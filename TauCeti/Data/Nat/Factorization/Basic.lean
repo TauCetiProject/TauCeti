@@ -5,8 +5,9 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Data.Nat.Factorization.Basic
-import Mathlib.Algebra.Order.Interval.Finset.SuccPred
+import TauCeti.Data.Nat.Interval
 
 /-!
 # Removing prime-power factors
@@ -23,11 +24,11 @@ prime-power blocks. For a divisor `n ∣ m`, the `p`-free parts are related by
 a divisor of `p * k` with the same `p`-free part as `k` either divides `k` or is `p * k`, and a
 divisor of `n` that does not divide `n / p` is divisible by the full `p`-part `p ^ v_p(n)` of `n`.
 The product of any set of prime factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to
-the product of all the prime factors of `n` exactly when it is coprime to `n`. Complementing
-Mathlib's `Nat.Ioc_filter_dvd_card_eq_div`, the non-multiples of `d` in `(0, n]` combine with
-`n / d` to give `n`, and on `[1, n)` those in `[1, n)` combine with `(n - 1) / d` to give
-`n - 1`. Monomial products of an injective family of primes (or fixed positive powers of their
-casts in characteristic zero) are injective on finitely supported exponent tuples.
+the product of all the prime factors of `n` exactly when it is coprime to `n`. Monomial products of
+an injective family of primes (or fixed positive powers of their casts in characteristic zero) are
+injective on finitely supported exponent tuples. Double counting prime powers `p ^ i` (`1 ≤ i ≤ a`)
+over `[1, n)` gives `(∑ h ∈ Ico 1 n, (a - padicValNat p h)) + ∑ i ∈ Icc 1 a, n / p ^ i = a * n`
+whenever `0 < n` and `a ≤ padicValNat p n`.
 
 ## Provenance
 
@@ -97,30 +98,6 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
   have hdp : d.factorization p = k.factorization p + 1 := by omega
   rw [← ordProj_mul_ordCompl_eq_self d p, h, hdp, pow_succ', mul_assoc,
     ordProj_mul_ordCompl_eq_self]
-
-section DivisibilityCounting
-
-open Finset
-
-/-- Among the naturals in `(0, n]`, those not divisible by `d` together with the `n / d`
-multiples of `d` account for all `n` elements. -/
-theorem Ioc_filter_not_dvd_card_add_div (n d : ℕ) :
-    #{x ∈ Ioc 0 n | ¬ d ∣ x} + n / d = n := by
-  have hpart := card_filter_add_card_filter_not (s := Ioc 0 n) (fun x ↦ d ∣ x)
-  rw [Ioc_filter_dvd_card_eq_div, Nat.card_Ioc, Nat.sub_zero, add_comm] at hpart
-  exact hpart
-
-/-- Among the naturals in `[1, n)`, those not divisible by `d` together with the `(n - 1) / d`
-multiples of `d` account for all `n - 1` elements. -/
-theorem Ico_filter_not_dvd_card_add_div (n d : ℕ) :
-    #{x ∈ Ico 1 n | ¬ d ∣ x} + (n - 1) / d = n - 1 := by
-  rcases n with _ | m
-  · simp
-  · have hIco : Ico 1 (m + 1) = Ioc 0 m := by
-      simpa only [Nat.zero_add] using Ico_add_one_add_one_eq_Ioc 0 m
-    rw [hIco, Nat.add_sub_cancel, Ioc_filter_not_dvd_card_add_div]
-
-end DivisibilityCounting
 
 /-- For a prime `p`, a divisor `d` of `n` that does not divide `n / p` is divisible by
 `p ^ v_p(n)`. -/
@@ -199,5 +176,42 @@ theorem finsuppProd_natCast_prime_pow_injective {R ι : Type*} [CommSemiring R] 
   exact Finsupp.mapRange_injective (m * ·) (mul_zero m) (mul_right_injective₀ hm)
     (finsuppProd_prime_pow_injective hp hinj
       (Nat.cast_injective ((hcast d₁).symm.trans (h.trans (hcast d₂)))))
+
+/-- Double-counting evaluation of `∑_{1 ≤ h < n} (a - padicValNat p h)` when `0 < n` and
+`a ≤ padicValNat p n`, using `Nat.Ico_filter_not_dvd_card_add_div`. -/
+theorem sum_Ico_sub_padicValNat_add_sum_Icc_div (p : ℕ) {n a : ℕ} (hn : 0 < n)
+    (ha : a ≤ padicValNat p n) :
+    (∑ h ∈ Finset.Ico 1 n, (a - padicValNat p h)) +
+      ∑ i ∈ Finset.Icc 1 a, n / p ^ i = a * n := by
+  rcases eq_or_ne p 1 with rfl | hp1
+  · have ha0 : a = 0 := by simpa [Nat.padicValNat_def] using ha
+    subst ha0
+    simp
+  have ha' : a ≤ multiplicity p n := by rwa [← Nat.padicValNat_def]
+  have hterm : ∀ h ∈ Finset.Ico 1 n,
+      a - padicValNat p h = ∑ i ∈ Finset.Icc 1 a, if ¬ p ^ i ∣ h then 1 else 0 := by
+    intro h hh
+    rw [Finset.mem_Ico] at hh
+    rw [Finset.sum_boole, Nat.cast_id]
+    have hfilt : {i ∈ Finset.Icc 1 a | ¬ p ^ i ∣ h} = Finset.Icc (padicValNat p h + 1) a := by
+      ext i
+      simp only [Finset.mem_filter, Finset.mem_Icc, Nat.padicValNat_def,
+        Nat.pow_dvd_iff_le_multiplicity hp1 (by omega : h ≠ 0)]
+      omega
+    rw [hfilt, Nat.card_Icc]
+    omega
+  rw [Finset.sum_congr rfl hterm, Finset.sum_comm, ← Finset.sum_add_distrib]
+  have hinner : ∀ i ∈ Finset.Icc 1 a,
+      (∑ h ∈ Finset.Ico 1 n, if ¬ p ^ i ∣ h then 1 else 0) + n / p ^ i = n := by
+    intro i hi
+    rw [Finset.mem_Icc] at hi
+    have hdvd : p ^ i ∣ n := (Nat.pow_dvd_iff_le_multiplicity hp1 hn.ne').mpr (hi.2.trans ha')
+    have hdiv : n / p ^ i = (n - 1) / p ^ i + 1 := by
+      conv_lhs => rw [← Nat.sub_add_cancel hn]
+      exact Nat.succ_div_of_dvd (by rw [Nat.sub_add_cancel hn]; exact hdvd)
+    rw [Finset.sum_boole, Nat.cast_id, hdiv, ← add_assoc, Nat.Ico_filter_not_dvd_card_add_div,
+      Nat.sub_add_cancel hn]
+  rw [Finset.sum_congr rfl hinner, Finset.sum_const, Nat.card_Icc, smul_eq_mul,
+    Nat.add_sub_cancel]
 
 end TauCeti

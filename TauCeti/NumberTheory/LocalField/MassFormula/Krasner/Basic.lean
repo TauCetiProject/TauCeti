@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Krasner.Box
-public import TauCeti.NumberTheory.LocalField.MassFormula.Main
+public import TauCeti.NumberTheory.LocalField.MassFormula.Strata
 import TauCeti.NumberTheory.LocalField.MassFormula.Total
-import TauCeti.NumberTheory.LocalField.ResidueCard
+import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard
+import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
 # Krasner's discriminant-refined count of totally ramified extensions
@@ -21,14 +22,12 @@ of `SeparableClosure K`. Integrating the root-count identity `∑_{L ∈ σ_K(n)
 where each root-count integral equals `q ^ (-(n + j)) (1 - q⁻¹)`.
 
 Comparing this localized integral with the Haar volume of `eisensteinBox K n j` proves uniformly in
-mixed and equal characteristic that every wild-exponent stratum `{E ∈ σ_K(n) | E.wildExponent = j}`
-and every bounded-discriminant stratum `{E ∈ σ_K(n) | E.discriminantExponent ≤ D}` is finite, and
-that `({E ∈ σ_K(n) | E.wildExponent = j}.ncard : ℚ) = krasnerCount K n j` (generalizing the
-`p`-adic count of Krasner and Pauli–Roblot, Theorem 6.1, to equal characteristic). Summing over
-`j` recovers Serre's first mass formula
-(`TauCeti.tsum_one_div_natCard_residueField_pow_wildExponent`), gives the isomorphism-class stratum
-mass `#{c = j} / n` via `IsRepresentativeSet.tsum_eq_tsum_div_natCard_algEquiv_mul`, and yields
-the finite total count `#σ_K(n)` whenever `(n : K) ≠ 0`.
+mixed and equal characteristic that
+`({E ∈ σ_K(n) | E.wildExponent = j}.ncard : ℚ) = krasnerCount K n j` (generalizing the `p`-adic
+count of Krasner and Pauli–Roblot, Theorem 6.1, to equal characteristic). Combining this with the
+box-independent stratum finiteness and mass-formula identities from
+`TauCeti.NumberTheory.LocalField.MassFormula.Strata` yields consistency with Serre's first mass
+formula and expresses `#σ_K(n)` as the finite sum of `krasnerCount K n j` whenever `(n : K) ≠ 0`.
 
 ## Main definitions
 
@@ -37,18 +36,17 @@ the finite total count `#σ_K(n)` whenever `(n : K) ≠ 0`.
 
 ## Main results
 
-* `TauCeti.finite_mem_totallyRamifiedOfDegree_wildExponent_eq`,
-  `TauCeti.finite_mem_totallyRamifiedOfDegree_discriminantExponent_le`: finiteness of each fixed
-  wild-exponent and bounded-discriminant stratum in any characteristic.
+* `TauCeti.krasnerCount_eq_zero_iff`, `TauCeti.krasnerCount_zero_left`,
+  `TauCeti.krasnerCount_one_left`, `TauCeti.krasnerCount_of_not_dvd`: vanishing and tame
+  evaluation of `krasnerCount`.
+* `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure`,
+  `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow`: measure and
+  cleared-denominator stratum count identities.
 * `TauCeti.natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCount`: Krasner's
   refined count `({E ∈ σ_K(n) | E.wildExponent = j}.ncard : ℚ) = krasnerCount K n j`.
-* `TauCeti.tsum_ncard_wildExponent_div_natCard_residueField_pow`,
-  `TauCeti.hasSum_krasnerCount_div_natCard_residueField_pow`: consistency with Serre's first mass
-  formula.
-* `TauCeti.IsRepresentativeSet.tsum_one_div_natCard_algEquiv_wildExponent_eq`: isomorphism-class
-  stratum mass `∑_{M ∈ R, c(M) = j} 1 / #Aut_K(M) = #{c = j} / n`.
-* `TauCeti.ncard_totallyRamifiedOfDegree_eq_sum`,
-  `TauCeti.natCast_ncard_totallyRamifiedOfDegree_eq_sum_krasnerCount`: finite total count away from
+* `TauCeti.hasSum_krasnerCount_div_natCard_residueField_pow`: consistency of `krasnerCount` with
+  Serre's first mass formula.
+* `TauCeti.natCast_ncard_totallyRamifiedOfDegree_eq_sum_krasnerCount`: finite total count away from
   `(n : K) = 0`.
 
 ## References
@@ -59,7 +57,7 @@ the finite total count `#σ_K(n)` whenever `(n : K) ≠ 0`.
   d'un corps local*, C. R. Acad. Sci. Paris Sér. A **286** (1978), 1031–1036.
 * S. Pauli and X.-F. Roblot, *On the computation of all extensions of a p-adic field of a given
   degree*, Math. Comp. **70** (2001), 1641–1659, Theorem 6.1 (stated over `p`-adic fields; this
-  module extends the refined count and stratum finiteness uniformly to equal characteristic).
+  module extends the refined count uniformly to equal characteristic).
 -/
 
 public section
@@ -75,13 +73,13 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 open Classical in
 variable (K) in
-/-- **Krasner's discriminant-refined count**: `0` unless `IsOreAdmissible K n j`, and otherwise
+/-- **Krasner's discriminant-refined count**: `0` unless `IsOreAdmissible 𝒪[K] n j`, and otherwise
 `n * q ^ ((n + j - 1) - ∑_{1 ≤ h < n} ν_h) * (if j % n = 0 then 1 else 1 - q⁻¹)`, where
-`q = Nat.card 𝓀[K]` and `ν_h = oreCoefficientDepth K n j h`. -/
+`q = Nat.card 𝓀[K]` and `ν_h = oreCoefficientDepth 𝒪[K] n j h`. -/
 def krasnerCount (n j : ℕ) : ℚ :=
-  if IsOreAdmissible K n j then
+  if IsOreAdmissible 𝒪[K] n j then
     (n : ℚ) * (Nat.card 𝓀[K] : ℚ) ^ (((n + j - 1 : ℕ) : ℤ) -
-      ((∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h : ℕ) : ℤ)) *
+      ((∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h : ℕ) : ℤ)) *
         (if j % n = 0 then 1 else 1 - (Nat.card 𝓀[K] : ℚ)⁻¹)
   else 0
 
@@ -90,25 +88,41 @@ variable (K) in
 /-- Unfolding `TauCeti.krasnerCount`. -/
 theorem krasnerCount_def (n j : ℕ) :
     krasnerCount K n j =
-      if IsOreAdmissible K n j then
+      if IsOreAdmissible 𝒪[K] n j then
         (n : ℚ) * (Nat.card 𝓀[K] : ℚ) ^ (((n + j - 1 : ℕ) : ℤ) -
-          ((∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h : ℕ) : ℤ)) *
+          ((∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h : ℕ) : ℤ)) *
             (if j % n = 0 then 1 else 1 - (Nat.card 𝓀[K] : ℚ)⁻¹)
       else 0 := by
   rw [krasnerCount]
 
 /-- For an Ore-admissible wild exponent, `krasnerCount` evaluates to Krasner's box formula. -/
-theorem krasnerCount_of_isOreAdmissible {n j : ℕ} (h : IsOreAdmissible K n j) :
+theorem krasnerCount_of_isOreAdmissible {n j : ℕ} (h : IsOreAdmissible 𝒪[K] n j) :
     krasnerCount K n j =
       (n : ℚ) * (Nat.card 𝓀[K] : ℚ) ^ (((n + j - 1 : ℕ) : ℤ) -
-        ((∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h : ℕ) : ℤ)) *
+        ((∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h : ℕ) : ℤ)) *
           (if j % n = 0 then 1 else 1 - (Nat.card 𝓀[K] : ℚ)⁻¹) := by
   rw [krasnerCount, ite_eq_left h]
 
 /-- Outside Ore's admissible wild exponents, `krasnerCount` vanishes. -/
-theorem krasnerCount_of_not_isOreAdmissible {n j : ℕ} (h : ¬ IsOreAdmissible K n j) :
+theorem krasnerCount_of_not_isOreAdmissible {n j : ℕ} (h : ¬ IsOreAdmissible 𝒪[K] n j) :
     krasnerCount K n j = 0 := by
   rw [krasnerCount, ite_eq_right h]
+
+/-- `krasnerCount K n j` vanishes if and only if `(n, j)` is not Ore-admissible over `𝒪[K]`. -/
+@[simp]
+theorem krasnerCount_eq_zero_iff {n j : ℕ} :
+    krasnerCount K n j = 0 ↔ ¬ IsOreAdmissible 𝒪[K] n j := by
+  by_cases hadm : IsOreAdmissible 𝒪[K] n j
+  · rw [iff_false_right (not_not.mpr hadm), krasnerCount_of_isOreAdmissible hadm]
+    have hn : (n : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hadm.pos.ne'
+    have hq0 : (Nat.card 𝓀[K] : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+    have hsub : (if j % n = 0 then (1 : ℚ) else 1 - (Nat.card 𝓀[K] : ℚ)⁻¹) ≠ 0 := by
+      split_ifs
+      · exact one_ne_zero
+      · exact sub_ne_zero.mpr
+          (ne_of_gt (inv_lt_one_of_one_lt₀ (by exact_mod_cast Finite.one_lt_card)))
+    exact mul_ne_zero (mul_ne_zero hn (zpow_ne_zero _ hq0)) hsub
+  · exact iff_of_true (krasnerCount_of_not_isOreAdmissible hadm) hadm
 
 variable (K) in
 /-- `krasnerCount K 0 j = 0`. -/
@@ -124,29 +138,16 @@ theorem krasnerCount_one_left (j : ℕ) : krasnerCount K 1 j = if j = 0 then 1 e
   · simp [krasnerCount_of_isOreAdmissible (isOreAdmissible_one_iff.mpr rfl)]
   · simp [hj, krasnerCount_of_not_isOreAdmissible (mt isOreAdmissible_one_iff.mp hj)]
 
-/-- In the tame case (`¬ ringChar 𝓀[K] ∣ n` and `0 < n`), `krasnerCount K n j` is `n` at `j = 0`
-and `0` otherwise. -/
-theorem krasnerCount_of_not_dvd {n j : ℕ} (hn : 0 < n) (hp : ¬ ringChar 𝓀[K] ∣ n) :
+/-- In the tame case (`¬ ringChar 𝓀[K] ∣ n`), `krasnerCount K n j` is `n` at `j = 0` and `0`
+otherwise. -/
+theorem krasnerCount_of_not_dvd {n j : ℕ} (hp : ¬ ringChar 𝓀[K] ∣ n) :
     krasnerCount K n j = if j = 0 then n else 0 := by
   rcases eq_or_ne j 0 with rfl | hj
-  · rw [ite_eq_left rfl,
-      krasnerCount_of_isOreAdmissible ((isOreAdmissible_iff_eq_zero_of_not_dvd hn hp).mpr rfl)]
+  · rw [ite_eq_left rfl, krasnerCount_of_isOreAdmissible
+      ((isOreAdmissible_iff_eq_zero_of_not_dvd (R := 𝒪[K]) hp).mpr rfl)]
     simp [Nat.card_Ico]
   · simp [hj, krasnerCount_of_not_isOreAdmissible
-      (mt (isOreAdmissible_iff_eq_zero_of_not_dvd hn hp).mp hj)]
-
-open Classical in
-/-- Restricting a `tsum` over `A` to the wild-exponent fiber `L.wildExponent = j`. -/
-private theorem tsum_ite_wildExponent_eq (A : Set (IntermediateField K (SeparableClosure K)))
-    (j : ℕ) (g : IntermediateField K (SeparableClosure K) → ℝ≥0∞) :
-    (∑' L : A, if L.val.wildExponent = j then g L.val else 0) =
-      ∑' E : {E ∈ A | E.wildExponent = j}, g E.val := by
-  refine Eq.trans ?_ ((_root_.tsum_subtype {L : A | L.val.wildExponent = j}
-    (fun L : A ↦ g L.val)).symm.trans
-      ((Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ A) fun E ↦ E.wildExponent = j).tsum_eq
-        fun E ↦ g E.val))
-  refine tsum_congr fun L ↦ ?_
-  by_cases h : L.val.wildExponent = j <;> simp [Set.indicator, h]
+      (mt (isOreAdmissible_iff_eq_zero_of_not_dvd (R := 𝒪[K]) hp).mp hj)]
 
 /-- Core integral identity on `eisensteinBox K n j`: the `encard` of the stratum
 `{E ∈ σ_K(n) | E.wildExponent = j}` times `q ^ (-(n + j)) (1 - q⁻¹)` equals
@@ -161,7 +162,8 @@ private theorem encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox {n j : �
   set w : ℝ≥0∞ := 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n + j) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))
   calc ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.encard : ℝ≥0∞) * w
       = ∑' L : totallyRamifiedOfDegree K n, if L.val.wildExponent = j then w else 0 :=
-          ((tsum_ite_wildExponent_eq (totallyRamifiedOfDegree K n) j fun _ ↦ w).trans
+          ((ENNReal.tsum_subtype_ite (totallyRamifiedOfDegree K n) (fun E ↦ E.wildExponent = j)
+              fun _ ↦ w).trans
             (ENNReal.tsum_set_const _ w)).symm
     _ = ∑' L : totallyRamifiedOfDegree K n,
           ∫⁻ a in eisensteinBox K n j, (L.val.rootCount a : ℝ≥0∞) ∂μ :=
@@ -174,30 +176,6 @@ private theorem encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox {n j : �
             (eisensteinBox_subset_eisensteinSet K n j ha)
           exact tsum_rootCount_eq_of_separable he hf
             (separable_monicOfCoeff_of_mem_eisensteinBox ha)
-
-/-- **Bounded wild-exponent finiteness**: in any characteristic, only finitely many members of
-`σ_K(n)` have wild exponent at most `D`. -/
-theorem finite_mem_totallyRamifiedOfDegree_wildExponent_le (n D : ℕ) :
-    {E ∈ totallyRamifiedOfDegree K n | E.wildExponent ≤ D}.Finite :=
-  finite_mem_totallyRamifiedOfDegree_wildExponent_le_of_tsum_ne_top
-    (tsum_one_div_natCard_residueField_pow_wildExponent (K := K) (n := n) ▸
-      ENNReal.natCast_ne_top n) D
-
-/-- **Bounded discriminant finiteness**: in any characteristic, only finitely many members of
-`σ_K(n)` have discriminant exponent at most `D`. -/
-theorem finite_mem_totallyRamifiedOfDegree_discriminantExponent_le (n D : ℕ) :
-    {E ∈ totallyRamifiedOfDegree K n | E.discriminantExponent ≤ D}.Finite :=
-  (finite_mem_totallyRamifiedOfDegree_wildExponent_le (K := K) n (D + 1)).subset fun _ ⟨hE, _⟩ ↦ by
-    have := IntermediateField.wildExponent_add_eq_discriminantExponent_add_one hE
-    exact ⟨hE, by omega⟩
-
-/-- **Finiteness of each wild-exponent stratum**: for every `n` and `j`, the set of
-`E ∈ σ_K(n)` with `E.wildExponent = j` is finite, including in equal characteristic `p` with
-`p ∣ n`. -/
-theorem finite_mem_totallyRamifiedOfDegree_wildExponent_eq (n j : ℕ) :
-    {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.Finite :=
-  (finite_mem_totallyRamifiedOfDegree_wildExponent_le (K := K) n j).subset
-    fun _ ⟨hE, hEq⟩ ↦ ⟨hE, hEq.le⟩
 
 /-- **Krasner's count in measure form**: for a left-invariant measure `μ` normalized on the integer
 box,
@@ -229,12 +207,12 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure {n j : 
     _ = n * q ^ (n + j) * μ (eisensteinBox K n j) := by rw [hid]; ring
 
 /-- Auxiliary weighted equality after cancelling `1 - q⁻¹` on an Ore-admissible stratum. -/
-private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreAdmissible K n j) :
+private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreAdmissible 𝒪[K] n j) :
     ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n + j)) =
       (n : ℝ≥0∞) *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^
-          (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h)) *
+          (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h)) *
         (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
   let : MeasurableSpace (Fin n → K) := borel _
   have : BorelSpace (Fin n → K) := ⟨rfl⟩
@@ -250,20 +228,20 @@ private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreA
       (ENNReal.sub_ne_top ENNReal.one_ne_top)
   rw [hid]
   calc
-    n * q ^ (n + j) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
+    n * q ^ (n + j) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) *
         (1 - 1 / q) * (if j % n = 0 then 1 else 1 - 1 / q)) / (1 - 1 / q) * (1 / q ^ (n + j))
-      = n * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h)) *
+      = n * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h)) *
           (if j % n = 0 then 1 else 1 - 1 / q) * (q ^ (n + j) / q ^ (n + j)) *
           ((1 - 1 / q) / (1 - 1 / q)) := by
           simp only [div_eq_mul_inv]; ring
     _ = _ := by rw [hpow, hsub, mul_one, mul_one]
 
 private theorem natCast_ncard_wildExponent_eq_div_pow_real {n j : ℕ}
-    (hadm : IsOreAdmissible K n j) :
+    (hadm : IsOreAdmissible 𝒪[K] n j) :
     ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ) /
         (Nat.card 𝓀[K] : ℝ) ^ (n + j) =
       (n : ℝ) /
-        (Nat.card 𝓀[K] : ℝ) ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
+        (Nat.card 𝓀[K] : ℝ) ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) *
         (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ)) := by
   have h := congrArg ENNReal.toReal (ncard_wildExponent_eq_mul_one_div_pow hadm)
   have hite :
@@ -281,19 +259,19 @@ private theorem natCast_ncard_wildExponent_eq_div_pow_real {n j : ℕ}
     div_eq_mul_inv, one_mul] using h
 
 /-- Exact `ℕ` clearing-denominators identity for `{E ∈ σ_K(n) | E.wildExponent = j}.ncard` when
-`IsOreAdmissible K n j`. -/
+`IsOreAdmissible 𝒪[K] n j`. -/
 theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow {n j : ℕ}
-    (hadm : IsOreAdmissible K n j) :
+    (hadm : IsOreAdmissible 𝒪[K] n j) :
     {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard *
-      Nat.card 𝓀[K] ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) =
+      Nat.card 𝓀[K] ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) =
       n * Nat.card 𝓀[K] ^ (n + j) *
         (if j % n = 0 then Nat.card 𝓀[K] else Nat.card 𝓀[K] - 1) := by
   have hR := natCast_ncard_wildExponent_eq_div_pow_real hadm
   have hq0 : (Nat.card 𝓀[K] : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   apply Nat.cast_injective (R := ℝ)
   push_cast
-  have hexp : 2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h =
-      (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) + 1 := by omega
+  have hexp : 2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h =
+      (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) + 1 := by omega
   rw [hexp, pow_succ]
   split_ifs at hR ⊢
   · field_simp at hR ⊢
@@ -308,21 +286,21 @@ degree-`n` subextensions of `SeparableClosure K` with wild exponent `j` equals
 theorem natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCount (n j : ℕ) :
     ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℚ) =
       krasnerCount K n j := by
-  by_cases hadm : IsOreAdmissible K n j
+  by_cases hadm : IsOreAdmissible 𝒪[K] n j
   · have hQ := congrArg (Nat.cast (R := ℚ))
       (ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow (K := K) hadm)
     have hn := hadm.pos
     have hq0 : (Nat.card 𝓀[K] : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
     have hpow0 :
-        (Nat.card 𝓀[K] : ℚ) ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) ≠ 0 :=
+        (Nat.card 𝓀[K] : ℚ) ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) ≠ 0 :=
       pow_ne_zero _ hq0
     push_cast at hQ
     rw [Nat.cast_sub Finite.one_lt_card.le, Nat.cast_one] at hQ
     have hnum : (Nat.card 𝓀[K] : ℚ) ^ (n + j) =
         (Nat.card 𝓀[K] : ℚ) ^ (n + j - 1) * (Nat.card 𝓀[K] : ℚ) := by
       rw [← pow_succ, Nat.sub_add_cancel (by omega)]
-    have hden : (Nat.card 𝓀[K] : ℚ) ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) =
-        (Nat.card 𝓀[K] : ℚ) ^ (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
+    have hden : (Nat.card 𝓀[K] : ℚ) ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) =
+        (Nat.card 𝓀[K] : ℚ) ^ (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) *
           (Nat.card 𝓀[K] : ℚ) ^ 2 := by
       rw [add_comm, pow_add]
     rw [eq_div_of_mul_eq hpow0 hQ, krasnerCount_of_isOreAdmissible hadm, zpow_sub₀ hq0,
@@ -331,30 +309,6 @@ theorem natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCoun
   · rw [krasnerCount_of_not_isOreAdmissible hadm,
       setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm,
       Set.ncard_empty, Nat.cast_zero]
-
-/-- Fiberwise summation of `w (L.wildExponent)` over `L ∈ σ_K(n)` weighted by stratum counts. -/
-private theorem tsum_ncard_wildExponent_mul (n : ℕ) (w : ℕ → ℝ≥0∞) :
-    (∑' j : ℕ, ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) * w j) =
-      ∑' L : totallyRamifiedOfDegree K n, w L.val.wildExponent := by
-  let g : totallyRamifiedOfDegree K n → ℕ := fun L ↦ L.val.wildExponent
-  rw [← tsum_fiberwise (fun L : totallyRamifiedOfDegree K n ↦ w (g L)) g]
-  refine tsum_congr fun j ↦ ?_
-  have hconst : ∀ L : g ⁻¹' {j}, w (g L.val) = w j := fun L ↦ congrArg w L.property
-  have heq : (∑' _ : g ⁻¹' {j}, w j) =
-      ∑' _ : {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}, w j :=
-    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ totallyRamifiedOfDegree K n)
-      fun E ↦ E.wildExponent = j).tsum_eq fun _ ↦ w j
-  rw [tsum_congr hconst, heq, ENNReal.tsum_set_const,
-    ← (finite_mem_totallyRamifiedOfDegree_wildExponent_eq (K := K) n j).cast_ncard_eq,
-    ENat.toENNReal_coe]
-
-/-- **Consistency with Serre's first mass formula**: summing the stratum counts weighted by
-`q ^ (-j)` recovers `n`. -/
-theorem tsum_ncard_wildExponent_div_natCard_residueField_pow (n : ℕ) :
-    ∑' j : ℕ, ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) /
-      (Nat.card 𝓀[K] : ℝ≥0∞) ^ j = n := by
-  rw [tsum_congr fun j ↦ div_eq_mul_one_div _ _,
-    tsum_ncard_wildExponent_mul, tsum_one_div_natCard_residueField_pow_wildExponent]
 
 /-- Real `HasSum` consistency of `krasnerCount` with Serre's first mass formula. -/
 theorem hasSum_krasnerCount_div_natCard_residueField_pow (n : ℕ) :
@@ -375,76 +329,6 @@ theorem hasSum_krasnerCount_div_natCard_residueField_pow (n : ℕ) :
     exact_mod_cast
       (natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCount (K := K) n j).symm
   simp [f, ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_natCast, hkr]
-
-/-- For a set of representatives `R` of `σ_K(n)`, each wild-exponent stratum `{M ∈ R | c(M) = j}`
-is finite. -/
-theorem IsRepresentativeSet.finite_wildExponent_eq {n : ℕ}
-    {R : Set (IntermediateField K (SeparableClosure K))} (hR : IsRepresentativeSet n R) (j : ℕ) :
-    {M ∈ R | M.wildExponent = j}.Finite :=
-  (finite_mem_totallyRamifiedOfDegree_wildExponent_eq (K := K) n j).subset
-    fun _ ⟨hM, hj⟩ ↦ ⟨hR.subset hM, hj⟩
-
-/-- **Isomorphism-class stratum mass**: for any set of representatives `R` of the `K`-isomorphism
-classes in `σ_K(n)`, the Serre mass `∑_{M ∈ R, c(M) = j} 1 / #Aut_K(M)` equals
-`#{E ∈ σ_K(n) | c(E) = j} / n`. -/
-theorem IsRepresentativeSet.tsum_one_div_natCard_algEquiv_wildExponent_eq {n : ℕ}
-    {R : Set (IntermediateField K (SeparableClosure K))} (hR : IsRepresentativeSet n R) (j : ℕ) :
-    ∑' M : {M ∈ R | M.wildExponent = j}, (1 / (Nat.card (M.val ≃ₐ[K] M.val) : ℝ≥0∞)) =
-      ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) / n := by
-  classical
-  rcases n.eq_zero_or_pos with rfl | hn
-  · obtain rfl : R = ∅ := Set.eq_empty_of_subset hR.subset totallyRamifiedOfDegree_zero
-    simp [totallyRamifiedOfDegree_zero]
-  let f : IntermediateField K (SeparableClosure K) → ℝ≥0∞ :=
-    fun L ↦ if L.wildExponent = j then 1 else 0
-  have hf := hR.tsum_eq_tsum_div_natCard_algEquiv_mul f fun e ↦ by
-    simp only [f, IntermediateField.wildExponent_eq_of_algEquiv e]
-  have hlhs : ∑' L : totallyRamifiedOfDegree K n, f L =
-      ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) := by
-    rw [tsum_ite_wildExponent_eq (totallyRamifiedOfDegree K n) j fun _ ↦ 1,
-      ENNReal.tsum_set_one,
-      ← (finite_mem_totallyRamifiedOfDegree_wildExponent_eq (K := K) n j).cast_ncard_eq,
-      ENat.toENNReal_coe]
-  let gR : IntermediateField K (SeparableClosure K) → ℝ≥0∞ :=
-    fun M ↦ 1 / (Nat.card (M ≃ₐ[K] M) : ℝ≥0∞)
-  have hrhs : ∑' M : R, (n : ℝ≥0∞) / Nat.card (M ≃ₐ[K] M) * f M =
-      (n : ℝ≥0∞) * ∑' M : {M ∈ R | M.wildExponent = j}, gR M.val := by
-    rw [← tsum_ite_wildExponent_eq R j gR, ← ENNReal.tsum_mul_left]
-    refine tsum_congr fun M ↦ ?_
-    by_cases h : M.val.wildExponent = j <;> simp [f, gR, h, div_eq_mul_inv]
-  rw [hlhs, hrhs] at hf
-  exact (ENNReal.eq_div_iff (by exact_mod_cast hn.ne') (ENNReal.natCast_ne_top n)).mpr hf.symm
-
-/-- **Krasner's total count (cardinal form)**: in any characteristic, the extended cardinality of
-`σ_K(n)` is the sum over all wild exponents `j` of the stratum counts. -/
-theorem tsum_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq (n : ℕ) :
-    ∑' j : ℕ, ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) =
-      (totallyRamifiedOfDegree K n).encard := by
-  simpa using (tsum_ncard_wildExponent_mul (K := K) n fun _ ↦ 1).trans (ENNReal.tsum_set_one _)
-
-/-- **Krasner's total count away from equal characteristic `p ∣ n`**: when `(n : K) ≠ 0`,
-`(totallyRamifiedOfDegree K n).ncard` is the finite sum of the stratum counts for
-`0 ≤ j ≤ n * v_K(n)`. -/
-theorem ncard_totallyRamifiedOfDegree_eq_sum {n : ℕ} (hnK : (n : K) ≠ 0) :
-    (totallyRamifiedOfDegree K n).ncard =
-      ∑ j ∈ Finset.range (n * natCastValuation K n hnK + 1),
-        {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard := by
-  have hfin : (totallyRamifiedOfDegree K n).Finite :=
-    (tsum_one_div_natCard_residueField_pow_wildExponent_ne_top_iff_finite hnK).mp <| by
-      rw [tsum_one_div_natCard_residueField_pow_wildExponent]
-      exact ENNReal.natCast_ne_top n
-  have htot := tsum_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq (K := K) n
-  rw [← hfin.cast_ncard_eq, ENat.toENNReal_coe,
-    tsum_eq_sum (s := Finset.range (n * natCastValuation K n hnK + 1))] at htot
-  · rw [← Nat.cast_sum] at htot
-    exact_mod_cast htot.symm
-  · intro j hj
-    rw [Finset.mem_range, not_lt] at hj
-    have hemp : {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j} = ∅ :=
-      Set.eq_empty_iff_forall_notMem.mpr fun E ⟨hE, hEj⟩ ↦
-        (Nat.lt_of_le_of_lt
-          (hEj ▸ IntermediateField.wildExponent_le_mul_natCastValuation hE hnK) hj).false
-    rw [hemp, Set.ncard_empty, Nat.cast_zero]
 
 /-- Away from `(n : K) = 0`, `((totallyRamifiedOfDegree K n).ncard : ℚ)` is the finite sum of
 `krasnerCount K n j` for `0 ≤ j ≤ n * v_K(n)`. -/

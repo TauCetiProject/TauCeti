@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
-import TauCeti.NumberTheory.LocalField.ResidueCard
+import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard
 
 /-!
 # The weights of Serre's mass formula

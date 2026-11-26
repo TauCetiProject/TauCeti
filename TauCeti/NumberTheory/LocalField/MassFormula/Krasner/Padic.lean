@@ -6,43 +6,48 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Krasner.Basic
-public import TauCeti.NumberTheory.LocalField.Padic
+public import TauCeti.NumberTheory.LocalField.MassFormula.Ore.Padic
 import TauCeti.Data.Nat.Factorization.Basic
+import TauCeti.Data.Nat.Interval
 
 /-!
 # Closed-form Krasner counts over `ℚ_[p]`
 
-Over `ℚ_[p]`, every positive integer has finite `p`-adic valuation `padicValNat p h`. Ore's
-admissibility condition reduces to `min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n` with
-`v_p(0)` read as `∞`, so `n ∣ j` forces `j = v_p(n) * n` (`TauCeti.isOreAdmissible_padic_iff`), and
-the sum of Ore coefficient depths `∑_{1 ≤ h < n} oreCoefficientDepth ℚ_[p] n j h` can be evaluated
-in closed form by double counting prime powers `p ^ i` dividing `1, …, n - 1` via
-`Nat.Ico_filter_not_dvd_card_add_div`. Substituting this closed form into
+Over `ℚ_[p]` for a prime `p`, every positive integer has finite `p`-adic valuation
+`padicValNat p h`. By `TauCeti.isOreAdmissible_padic_iff` (in
+`TauCeti.NumberTheory.LocalField.MassFormula.Ore.Padic`), Ore's admissibility condition reduces to
+the computable predicate `TauCeti.IsOreAdmissiblePadic p n j`, and the sum of Ore coefficient
+depths `∑_{1 ≤ h < n} oreCoefficientDepth 𝒪[ℚ_[p]] n j h` can be evaluated in closed form by
+double counting prime powers `p ^ i` dividing `1, …, n - 1` via
+`TauCeti.sum_Ico_sub_padicValNat_add_sum_Icc_div` and `Nat.Ico_filter_not_dvd_card_add_div`.
+
+Substituting this closed form into
 `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow` yields Pauli and Roblot's
-closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}` and for
-`#σ_{ℚ_[p]}(n)` — matching `#σ_{ℚ_[2]}(2) = 2 + 4 = 6`
+closed-form `ℕ` expression `TauCeti.krasnerCountPadic p n j` for the
+number of totally ramified degree-`n` subextensions inside `SeparableClosure ℚ_[p]` of wild
+exponent `j`, and sums to `#σ_{ℚ_[p]}(n)` — matching `#σ_{ℚ_[2]}(2) = 2 + 4 = 6`
 (`TauCeti.encard_totallyRamifiedOfDegree_two_padicTwo`) and giving `#σ_{ℚ_[3]}(3) = 21` and
 `#σ_{ℚ_[2]}(4) = 92`.
 
 ## Main definitions
 
-* `TauCeti.IsOreAdmissiblePadic p n j`: computable predicate characterizing Ore-admissible
-  `(n, j)` over `ℚ_[p]`.
-* `TauCeti.krasnerCountPadic p n j`: executable `ℕ` closed form for the number of totally ramified
-  degree-`n` extensions of `ℚ_[p]` with wild exponent `j`.
+* `TauCeti.krasnerCountPadic p n j`: executable `ℕ` closed form which, when `p` is prime, counts
+  the totally ramified degree-`n` subextensions inside `SeparableClosure ℚ_[p]` with wild exponent
+  `j`.
 
 ## Main results
 
-* `TauCeti.isOreAdmissible_padic_iff`: Ore's inequality characterizing admissible wild exponents
-  over `ℚ_[p]` (Pauli–Roblot, Proposition 3.1).
+* `TauCeti.krasnerCountPadic_eq_zero_iff`, `TauCeti.natCast_krasnerCountPadic`: vanishing criterion
+  and comparison `(krasnerCountPadic p n j : ℚ) = krasnerCount ℚ_[p] n j` for prime `p`.
 * `TauCeti.sum_oreCoefficientDepth_padic_of_mod_eq_zero`,
   `TauCeti.sum_oreCoefficientDepth_padic_of_mod_pos`: closed-form identities for the sum of Ore
-  coefficient depths over `ℚ_[p]`.
+  coefficient depths over `𝒪[ℚ_[p]]`.
 * `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic`: closed-form `ℕ`
-  count of totally ramified degree-`n` extensions of `ℚ_[p]` of wild exponent `j` (Pauli–Roblot,
-  Theorem 6.1).
-* `TauCeti.ncard_totallyRamifiedOfDegree_padic`: total count `#σ_{ℚ_[p]}(n)` as a finite sum of
-  `krasnerCountPadic p n j` over `0 ≤ j ≤ n * v_p(n)`.
+  count of totally ramified degree-`n` subextensions inside `SeparableClosure ℚ_[p]` of wild
+  exponent `j` (Pauli–Roblot, Theorem 6.1).
+* `TauCeti.ncard_totallyRamifiedOfDegree_padic`: total count of totally ramified degree-`n`
+  subextensions inside `SeparableClosure ℚ_[p]` as a finite sum of `krasnerCountPadic p n j` over
+  `0 ≤ j ≤ n * v_p(n)`.
 * `TauCeti.ncard_totallyRamifiedOfDegree_three_padicThree`,
   `TauCeti.ncard_totallyRamifiedOfDegree_four_padicTwo`: `#σ_{ℚ_[3]}(3) = 21` and
   `#σ_{ℚ_[2]}(4) = 92`.
@@ -61,21 +66,10 @@ open ValuativeRel IsDiscreteValuationRing
 
 namespace TauCeti
 
-/-- **Ore's `p`-adic admissibility predicate** (Pauli–Roblot, Proposition 3.1): computable condition
-on `(p, n, j)` equivalent to `IsOreAdmissible ℚ_[p] n j` (`TauCeti.isOreAdmissible_padic_iff`). -/
-@[expose] def IsOreAdmissiblePadic (p n j : ℕ) : Prop :=
-  0 < n ∧
-    (if j % n = 0 then padicValNat p n * n
-      else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
-      j ≤ padicValNat p n * n
-
-instance (p n j : ℕ) : Decidable (IsOreAdmissiblePadic p n j) := by
-  delta IsOreAdmissiblePadic
-  infer_instance
-
-/-- **Krasner's count over `ℚ_[p]`** (Pauli–Roblot, Theorem 6.1): executable `ℕ` formula for the
-number of totally ramified degree-`n` extensions of `ℚ_[p]` with wild exponent `j`, returning `0`
-unless `IsOreAdmissiblePadic p n j` holds. -/
+/-- **Krasner's count over `ℚ_[p]`** (Pauli–Roblot, Theorem 6.1): executable `ℕ` formula which,
+when `p` is prime, gives the number of totally ramified degree-`n` subextensions inside
+`SeparableClosure ℚ_[p]` with wild exponent `j`, returning `0` unless `IsOreAdmissiblePadic p n j`
+holds. -/
 @[expose] def krasnerCountPadic (p n j : ℕ) : ℕ :=
   if IsOreAdmissiblePadic p n j then
     if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
@@ -99,98 +93,34 @@ theorem krasnerCountPadic_of_not_isOreAdmissiblePadic {p n j : ℕ}
     krasnerCountPadic p n j = 0 := by
   rw [krasnerCountPadic, ite_eq_right h]
 
+/-- For prime `p`, `krasnerCountPadic p n j` vanishes if and only if `(n, j)` is not `p`-adically
+Ore-admissible. -/
+@[simp]
+theorem krasnerCountPadic_eq_zero_iff {p : ℕ} [Fact p.Prime] {n j : ℕ} :
+    krasnerCountPadic p n j = 0 ↔ ¬ IsOreAdmissiblePadic p n j := by
+  by_cases hadm : IsOreAdmissiblePadic p n j
+  · rw [iff_false_right (not_not.mpr hadm), krasnerCountPadic_of_isOreAdmissiblePadic hadm]
+    have hp0 : p ≠ 0 := (Fact.out : p.Prime).ne_zero
+    have hp1 : p - 1 ≠ 0 := Nat.sub_ne_zero_of_lt (Fact.out : p.Prime).one_lt
+    split_ifs <;> simp [hadm.1.ne', hp0, hp1]
+  · exact iff_of_true (krasnerCountPadic_of_not_isOreAdmissiblePadic hadm) hadm
+
 noncomputable section
 
-/-- **Ore's inequality over `ℚ_[p]`** (Pauli–Roblot, Proposition 3.1): a wild exponent `j` is
-Ore-admissible for degree `n` over `ℚ_[p]` if and only if `IsOreAdmissiblePadic p n j` holds, i.e.,
-`0 < n` and `min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n`, with `v_p(0)` read as `∞` so
-that `n ∣ j` requires `j = v_p(n) * n`. -/
-theorem isOreAdmissible_padic_iff (p : ℕ) [Fact p.Prime] {n j : ℕ} :
-    IsOreAdmissible ℚ_[p] n j ↔ IsOreAdmissiblePadic p n j := by
-  rw [IsOreAdmissiblePadic]
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  have hn0 : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  have hvn : addVal 𝒪[ℚ_[p]] (n : 𝒪[ℚ_[p]]) = (padicValNat p n : ℕ∞) := by
-    rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] n hn0,
-      _root_.Padic.natCastValuation_eq_padicValNat]
-  have hdiv := Nat.div_add_mod j n
-  have hlt := Nat.mod_lt j hn
-  rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
-  · rw [isOreAdmissible_iff_of_mod_eq_zero hmod, ite_eq_left hmod, hvn]
-    simp only [hn, true_and, ENat.natCast_inj]
-    rw [hmod, add_zero, Nat.mul_comm n (j / n)] at hdiv
-    rw [← hdiv, ← le_antisymm_iff, Nat.mul_div_cancel _ hn, Nat.mul_left_inj hn.ne', eq_comm]
-  · have hb0 : ((j % n : ℕ) : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hmod.ne'
-    have hvb : addVal 𝒪[ℚ_[p]] ((j % n : ℕ) : 𝒪[ℚ_[p]]) = (padicValNat p (j % n) : ℕ∞) := by
-      rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] (j % n) hb0,
-        _root_.Padic.natCastValuation_eq_padicValNat]
-    rw [isOreAdmissible_iff_of_mod_pos hmod, ite_eq_right hmod.ne', hvn, hvb]
-    simp only [hn, true_and]
-    norm_cast
-    rw [Nat.mul_comm n (j / n)] at hdiv
-    refine ⟨fun ⟨h1, h2⟩ ↦ ?_, fun ⟨h1, h2⟩ ↦ ?_⟩
-    · have hm1 := Nat.mul_le_mul_right n h1
-      have hm2 := Nat.mul_le_mul_right n h2
-      rw [Nat.add_one_mul] at hm2
-      exact ⟨(min_le_left _ _).trans (by omega), by omega⟩
-    · have hj_ne : j ≠ padicValNat p n * n := fun heq ↦ hmod.ne' (by rw [heq, Nat.mul_mod_left])
-      have hdiv_lt : j / n + 1 ≤ padicValNat p n :=
-        Nat.lt_of_mul_lt_mul_right (by omega : (j / n) * n < padicValNat p n * n)
-      rcases min_le_iff.mp h1 with hmin | hmin
-      · have hm_lt : padicValNat p (j % n) * n < (j / n + 1) * n := by rw [Nat.add_one_mul]; omega
-        exact ⟨Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_right hm_lt), hdiv_lt⟩
-      · exact absurd (le_antisymm h2 hmin) hj_ne
-
-/-- Double-counting evaluation of the base Ore depth sum `∑_{1 ≤ h < n} (j / n - v_p(h))` for an
-Ore-admissible pair `(n, j)` over `ℚ_[p]`, using `Nat.Ico_filter_not_dvd_card_add_div`. -/
-private theorem sum_Ico_div_sub_padicValNat_of_isOreAdmissible (p : ℕ) [Fact p.Prime] {n j : ℕ}
-    (hadm : IsOreAdmissible ℚ_[p] n j) :
-    (∑ h ∈ Finset.Ico 1 n, (j / n - padicValNat p h)) +
-      ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i = (j / n) * n := by
+/-- **Sum of Ore coefficient depths over `𝒪[ℚ_[p]]` when `n ∣ j`**: for an Ore-admissible pair
+`(n, j)` with `j % n = 0`, `(∑_{1 ≤ h < n} ν_h) + ∑_{1 ≤ i ≤ j / n} n / p ^ i = n + j - 1`. -/
+theorem sum_oreCoefficientDepth_padic_of_mod_eq_zero (p : ℕ) [Fact p.Prime] {n j : ℕ}
+    (hadm : IsOreAdmissible 𝒪[ℚ_[p]] n j) (hmod : j % n = 0) :
+    (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[ℚ_[p]] n j h) +
+      ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i = n + j - 1 := by
   have hn := hadm.pos
   have ha_le : j / n ≤ padicValNat p n := by
     have h := hadm.div_le_addVal
     rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] n (Nat.cast_ne_zero.mpr hn.ne'),
       _root_.Padic.natCastValuation_eq_padicValNat] at h
     exact_mod_cast h
-  have hterm : ∀ h ∈ Finset.Ico 1 n,
-      j / n - padicValNat p h = ∑ i ∈ Finset.Icc 1 (j / n), if ¬ p ^ i ∣ h then 1 else 0 := by
-    intro h hh
-    rw [Finset.mem_Ico] at hh
-    rw [Finset.sum_boole, Nat.cast_id]
-    have hfilt : {i ∈ Finset.Icc 1 (j / n) | ¬ p ^ i ∣ h} =
-        Finset.Icc (padicValNat p h + 1) (j / n) := by
-      ext i
-      simp only [Finset.mem_filter, Finset.mem_Icc, Nat.padicValNat_def,
-        multiplicity_dvd_iff_le (by omega : h ≠ 0)]
-      omega
-    rw [hfilt, Nat.card_Icc]
-    omega
-  rw [Finset.sum_congr rfl hterm, Finset.sum_comm, ← Finset.sum_add_distrib]
-  have hinner : ∀ i ∈ Finset.Icc 1 (j / n),
-      (∑ h ∈ Finset.Ico 1 n, if ¬ p ^ i ∣ h then 1 else 0) + n / p ^ i = n := by
-    intro i hi
-    rw [Finset.mem_Icc] at hi
-    rw [Nat.padicValNat_def] at ha_le
-    have hdvd : p ^ i ∣ n := (multiplicity_dvd_iff_le hn.ne').mpr (hi.2.trans ha_le)
-    have hdiv : n / p ^ i = (n - 1) / p ^ i + 1 := by
-      conv_lhs => rw [← Nat.sub_add_cancel hn]
-      exact Nat.succ_div_of_dvd (by rw [Nat.sub_add_cancel hn]; exact hdvd)
-    rw [Finset.sum_boole, Nat.cast_id, hdiv, ← add_assoc, Nat.Ico_filter_not_dvd_card_add_div,
-      Nat.sub_add_cancel hn]
-  rw [Finset.sum_congr rfl hinner, Finset.sum_const, Nat.card_Icc, smul_eq_mul,
-    Nat.add_sub_cancel]
-
-/-- **Sum of Ore coefficient depths over `ℚ_[p]` when `n ∣ j`**: for an Ore-admissible pair `(n, j)`
-with `j % n = 0`, `(∑_{1 ≤ h < n} ν_h) + ∑_{1 ≤ i ≤ j / n} n / p ^ i = n + j - 1`. -/
-theorem sum_oreCoefficientDepth_padic_of_mod_eq_zero (p : ℕ) [Fact p.Prime] {n j : ℕ}
-    (hadm : IsOreAdmissible ℚ_[p] n j) (hmod : j % n = 0) :
-    (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth ℚ_[p] n j h) +
-      ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i = n + j - 1 := by
-  have hn := hadm.pos
   have hdepth : ∀ h ∈ Finset.Ico 1 n,
-      oreCoefficientDepth ℚ_[p] n j h = 1 + (j / n - padicValNat p h) := by
+      oreCoefficientDepth 𝒪[ℚ_[p]] n j h = 1 + (j / n - padicValNat p h) := by
     intro h hh
     rw [Finset.mem_Ico] at hh
     rw [oreCoefficientDepth_of_natCast_ne_zero ℚ_[p] n j (Nat.cast_ne_zero.mpr (by omega)),
@@ -201,24 +131,29 @@ theorem sum_oreCoefficientDepth_padic_of_mod_eq_zero (p : ℕ) [Fact p.Prime] {n
     have := Nat.div_add_mod j n
     rwa [hmod, add_zero, Nat.mul_comm] at this
   rw [Finset.sum_congr rfl hdepth, Finset.sum_add_distrib, Finset.sum_const, Nat.card_Ico,
-    smul_eq_mul, mul_one, add_assoc, sum_Ico_div_sub_padicValNat_of_isOreAdmissible p hadm, hj]
+    smul_eq_mul, mul_one, add_assoc, sum_Ico_sub_padicValNat_add_sum_Icc_div p hn ha_le, hj]
   omega
 
-/-- **Sum of Ore coefficient depths over `ℚ_[p]` when `0 < j % n`**: for an Ore-admissible pair
+/-- **Sum of Ore coefficient depths over `𝒪[ℚ_[p]]` when `0 < j % n`**: for an Ore-admissible pair
 `(n, j)` with `0 < j % n`,
 `(∑_{1 ≤ h < n} ν_h) + (∑_{1 ≤ i ≤ j / n} n / p ^ i + (j % n) / p ^ (j / n + 1)) = n + j - 2`. -/
 theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j : ℕ}
-    (hadm : IsOreAdmissible ℚ_[p] n j) (hmod : 0 < j % n) :
-    (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth ℚ_[p] n j h) +
+    (hadm : IsOreAdmissible 𝒪[ℚ_[p]] n j) (hmod : 0 < j % n) :
+    (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[ℚ_[p]] n j h) +
       (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1)) = n + j - 2 := by
   have hn := hadm.pos
+  have ha_le : j / n ≤ padicValNat p n := by
+    have h := hadm.div_le_addVal
+    rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] n (Nat.cast_ne_zero.mpr hn.ne'),
+      _root_.Padic.natCastValuation_eq_padicValNat] at h
+    exact_mod_cast h
   obtain ⟨hvb, -⟩ := (isOreAdmissible_iff_of_mod_pos hmod).mp hadm |>.2
   rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] (j % n)
     (Nat.cast_ne_zero.mpr hmod.ne'), _root_.Padic.natCastValuation_eq_padicValNat] at hvb
   have hvb_le : padicValNat p (j % n) ≤ j / n := by exact_mod_cast hvb
   have hlt_b : j % n < n := Nat.mod_lt j hn
   have hdepth : ∀ h ∈ Finset.Ico 1 n,
-      oreCoefficientDepth ℚ_[p] n j h =
+      oreCoefficientDepth 𝒪[ℚ_[p]] n j h =
         1 + (j / n - padicValNat p h) +
           if h < j % n then (if ¬ p ^ (j / n + 1) ∣ h then 1 else 0) else 0 := by
     intro h hh
@@ -248,26 +183,27 @@ theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j :
       Nat.cast_id, hdiv]
     exact Nat.Ico_filter_not_dvd_card_add_div (j % n) (p ^ (j / n + 1))
   have := Nat.div_add_mod j n
-  have hbase := sum_Ico_div_sub_padicValNat_of_isOreAdmissible p hadm
+  have hbase := sum_Ico_sub_padicValNat_add_sum_Icc_div p hn ha_le
   rw [Nat.mul_comm (j / n) n] at hbase
   rw [Finset.sum_congr rfl hdepth, Finset.sum_add_distrib, Finset.sum_add_distrib,
     Finset.sum_const, Nat.card_Ico, smul_eq_mul, mul_one]
   omega
 
-/-- **Krasner's count over `ℚ_[p]`, closed form** (Pauli–Roblot, Theorem 6.1): for all `n` and `j`,
-`{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}.ncard` equals `krasnerCountPadic p n j`. -/
+/-- **Krasner's count over `ℚ_[p]`, closed form** (Pauli–Roblot, Theorem 6.1): for prime `p` and
+all `n, j : ℕ`, the number of totally ramified degree-`n` subextensions inside
+`SeparableClosure ℚ_[p]` with wild exponent `j` equals `krasnerCountPadic p n j`. -/
 theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic (p : ℕ)
     [Fact p.Prime] (n j : ℕ) :
     {E ∈ totallyRamifiedOfDegree ℚ_[p] n | E.wildExponent = j}.ncard =
       krasnerCountPadic p n j := by
   rw [krasnerCountPadic]
-  by_cases hadm : IsOreAdmissible ℚ_[p] n j
+  by_cases hadm : IsOreAdmissible 𝒪[ℚ_[p]] n j
   · rw [ite_eq_left ((isOreAdmissible_padic_iff p).mp hadm)]
     have hn := hadm.pos
     have hp_pos : 0 < p := (Fact.out : p.Prime).pos
     have hnat := ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow hadm
     rw [_root_.Padic.natCard_residueField p] at hnat
-    set S := ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth ℚ_[p] n j h
+    set S := ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[ℚ_[p]] n j h
     rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
     · rw [ite_eq_left hmod] at hnat ⊢
       set E := ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i
@@ -285,11 +221,20 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic (
   · rw [setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm,
       Set.ncard_empty, ite_eq_right fun h ↦ hadm ((isOreAdmissible_padic_iff p).mpr h)]
 
-/-- **Total number of totally ramified degree-`n` extensions of `ℚ_[p]`** as a finite sum of
-`krasnerCountPadic p n j` over `0 ≤ j ≤ n * v_p(n)`. -/
-theorem ncard_totallyRamifiedOfDegree_padic (p : ℕ) [Fact p.Prime] {n : ℕ} (hn : 0 < n) :
+/-- For prime `p`, the executable `ℕ` closed form `krasnerCountPadic p n j` agrees with
+`krasnerCount ℚ_[p] n j` in `ℚ`. -/
+theorem natCast_krasnerCountPadic (p : ℕ) [Fact p.Prime] (n j : ℕ) :
+    (krasnerCountPadic p n j : ℚ) = krasnerCount ℚ_[p] n j := by
+  rw [← ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic p n j,
+    natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCount]
+
+/-- **Total number of totally ramified degree-`n` subextensions inside `SeparableClosure ℚ_[p]`**
+(for prime `p`) as a finite sum of `krasnerCountPadic p n j` over `0 ≤ j ≤ n * v_p(n)`. -/
+theorem ncard_totallyRamifiedOfDegree_padic (p : ℕ) [Fact p.Prime] (n : ℕ) :
     (totallyRamifiedOfDegree ℚ_[p] n).ncard =
       ∑ j ∈ Finset.range (n * padicValNat p n + 1), krasnerCountPadic p n j := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [totallyRamifiedOfDegree_zero, krasnerCountPadic, IsOreAdmissiblePadic]
   rw [ncard_totallyRamifiedOfDegree_eq_sum (Nat.cast_ne_zero.mpr hn.ne'),
     _root_.Padic.natCastValuation_eq_padicValNat]
   exact Finset.sum_congr rfl fun j _ ↦
@@ -299,7 +244,7 @@ theorem ncard_totallyRamifiedOfDegree_padic (p : ℕ) [Fact p.Prime] {n : ℕ} (
 exponent `1`, `6` of wild exponent `2`, and `9` of wild exponent `3`). -/
 theorem ncard_totallyRamifiedOfDegree_three_padicThree :
     (totallyRamifiedOfDegree ℚ_[3] 3).ncard = 21 := by
-  rw [ncard_totallyRamifiedOfDegree_padic 3 (by decide)]
+  rw [ncard_totallyRamifiedOfDegree_padic 3 3]
   simp only [krasnerCountPadic, IsOreAdmissiblePadic, Nat.padicValNat_def,
     Nat.multiplicity_self (by decide : 1 < 3), Finset.sum_range_succ, Finset.sum_range_zero,
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 3 ∣ 1),
@@ -314,7 +259,7 @@ theorem ncard_totallyRamifiedOfDegree_four_padicTwo :
   have hIcc2 : (∑ i ∈ Finset.Icc 1 2, 4 / 2 ^ i) = 3 := by
     rw [Finset.sum_Icc_succ_top (by decide : 1 ≤ 2), Finset.Icc_self]
     norm_num
-  rw [ncard_totallyRamifiedOfDegree_padic 2 (by decide)]
+  rw [ncard_totallyRamifiedOfDegree_padic 2 4]
   simp only [krasnerCountPadic, IsOreAdmissiblePadic, Nat.padicValNat_def, hm4,
     Finset.sum_range_succ, Finset.sum_range_zero,
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 1),

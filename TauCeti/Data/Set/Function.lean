@@ -18,6 +18,7 @@ public import Mathlib.Data.Set.Function
   `s ∩ f ⁻¹' t`.
 * `Set.mapsTo_preimage_of_apply_eq`: a map compatible with maps `q` and `q'` to a common type
   carries preimages under `q` into preimages under `q'`.
+* `Set.mem_univ_pi_sdiff_update_iff`: membership in `univ.pi A \ univ.pi (Function.update A k B)`.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 * `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
@@ -54,6 +55,18 @@ carries preimages under `q` into preimages under `q'`. -/
 theorem mapsTo_preimage_of_apply_eq {γ : Type*} (f : α → β) {q : α → γ} {q' : β → γ}
     (hf : ∀ x, q' (f x) = q x) (S : Set γ) : MapsTo f (q ⁻¹' S) (q' ⁻¹' S) :=
   fun x hx ↦ by rw [mem_preimage, hf]; exact hx
+
+/-- Removing from a full product `univ.pi A` the subproduct with coordinate `k` updated to `B`
+leaves the tuples in `univ.pi A` whose `k`-th coordinate lies outside `B`. -/
+theorem mem_univ_pi_sdiff_update_iff {ι : Type*} [DecidableEq ι] {γ : ι → Type*}
+    (A : ∀ i, Set (γ i)) (k : ι) (B : Set (γ k)) {x : ∀ i, γ i} :
+    x ∈ univ.pi A \ univ.pi (Function.update A k B) ↔ (∀ i, x i ∈ A i) ∧ x k ∉ B := by
+  rw [mem_sdiff, mem_univ_pi, mem_univ_pi]
+  refine and_congr_right fun hx ↦ not_congr ?_
+  refine ⟨fun h ↦ by simpa only [Function.update_self] using h k, fun h i ↦ ?_⟩
+  rcases eq_or_ne i k with rfl | hik
+  · simpa only [Function.update_self] using h
+  · simpa only [Function.update_of_ne hik] using hx i
 
 end Set
 

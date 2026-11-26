@@ -9,11 +9,12 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.NumberTheory.LocalField.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
+import TauCeti.Data.Set.Function
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
-import TauCeti.NumberTheory.LocalField.ResidueCard
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
+import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard
 import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
@@ -59,10 +60,9 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
 * `TauCeti.isCompact_scaledIntegerBox`, `TauCeti.exists_mem_scaledIntegerBox`: the scaled
   integer boxes are compact, and for a uniformizer `ϖ` they exhaust `ι → K`.
 * `TauCeti.univ_pi_image_maximalIdeal_pow_subset`,
-  `TauCeti.mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff`,
   `TauCeti.isClosed_univ_pi_image_maximalIdeal_pow`,
   `TauCeti.measurableSet_univ_pi_image_maximalIdeal_pow`: boxes of ideal powers shrink as the
-  exponents grow, support single-coordinate box differences, and are closed and measurable.
+  exponents grow, and are closed and measurable.
 
 * `MeasureTheory.Measure.measure_image_mulVec_integerBox`: for a left-invariant `μ`,
   the image of the integer box has measure `q ^ (-k)` times that of the box.
@@ -71,7 +71,8 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
 * `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow`,
   `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one`: for a
   left-invariant `μ`, the box with factors `𝓂[K] ^ e i` has `q ^ (-∑ i, e i)` times the volume of
-  the integer box, and deepening one coordinate by `1` removes a factor `q⁻¹`.
+  the integer box; deepening one coordinate by `1` gives an inner box of `q⁻¹` times the original
+  volume and a set difference of `(1 - q⁻¹)` times the original volume.
 * `MeasureTheory.Measure.measure_integerBox_inter_coord_eq_zero`: a coordinate hyperplane
   inside an integer box of finite measure is null.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a Haar measure `μ`,
@@ -111,19 +112,6 @@ theorem univ_pi_image_maximalIdeal_pow_subset {ι : Type*} {e e' : ι → ℕ} (
     (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) ⊆
       univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e' i) :=
   pi_mono fun i _ ↦ image_mono <| Ideal.pow_le_pow_right (h i)
-
-/-- Removing from an ideal box the subbox with coordinate `k` replaced by `𝓂[K] ^ m` leaves the
-vectors in the box whose `k`-th coordinate avoids `𝓂[K] ^ m`. -/
-theorem mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff {ι : Type*} [DecidableEq ι]
-    (d : ι → ℕ) (k : ι) (m : ℕ) {a : ι → K} :
-    a ∈ (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
-        (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d k m i)) ↔
-      (∀ i, a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) ∧
-        a k ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m) := by
-  rw [Set.univ_pi_update k d m fun _ n ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ n)]
-  simp only [mem_sdiff, mem_inter_iff, mem_ofPred_eq, mem_pi, mem_univ, forall_true_left,
-    mem_compl_iff, mem_singleton_iff]
-  exact and_congr_right fun ha ↦ not_congr <| and_iff_left fun i _ ↦ ha i
 
 /-- The scaled integer box `{x | ϖ ^ k • x ∈ integerBox K ι}`, an additive subgroup of
 `ι → K`. -/
@@ -323,15 +311,17 @@ theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one (μ : Measur
             univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d' i) := by
       rintro _ ⟨x, hx, rfl⟩
       obtain ⟨c, hc, hcx⟩ := hx k (mem_univ k)
-      simp only [d', Function.update_self] at hc
-      rw [mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff]
+      simp_rw [d', Function.apply_update (fun (_ : ι) (n : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ n))]
+      rw [Set.mem_univ_pi_sdiff_update_iff]
       refine ⟨fun i ↦ ?_, fun ⟨y, hy, hyx⟩ ↦ hϖ_notMem ?_⟩
       · rcases eq_or_ne i k with rfl | hik
-        · exact ⟨ϖ ^ d i + c, add_mem hϖ_mem (Ideal.pow_le_pow_right (Nat.le_succ _) hc),
+        · have hc' : c ∈ 𝓂[K] ^ (d i + 1) := by simpa [d'] using hc
+          exact ⟨ϖ ^ d i + c, add_mem hϖ_mem (Ideal.pow_le_pow_right (Nat.le_succ _) hc'),
             by simp [v, hcx]⟩
         · simpa [v, d', Function.update_of_ne hik] using hx i (mem_univ i)
       · have heq : ϖ ^ d k + c = y := Subtype.ext (by simpa [v, hcx] using hyx.symm)
-        simpa [← heq] using sub_mem hy hc
+        have hc' : c ∈ 𝓂[K] ^ (d k + 1) := by simpa [d'] using hc
+        simpa [← heq] using sub_mem hy hc'
     have hpow0 : (1 : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (∑ i, d i + 1) ≠ 0 :=
       (ENNReal.div_pos one_ne_zero (ENNReal.pow_ne_top hq_top)).ne'
     have hv_top : μ (v +ᵥ univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d' i)) = ∞ := by

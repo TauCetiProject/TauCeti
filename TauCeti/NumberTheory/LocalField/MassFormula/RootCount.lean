@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.IntermediateField.RootCount
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Separable
 import TauCeti.NumberTheory.LocalField.Eisenstein.RootCount
 import TauCeti.NumberTheory.LocalField.RootCount.Measurable
+import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
 /-!
 # Root counts of Eisenstein polynomials in the counted extensions
@@ -85,7 +86,7 @@ private theorem adjoin_mem_totallyRamifiedOfDegree_of_mem_aroots {n : ℕ} {a : 
     {x : SeparableClosure K} (hx : x ∈ (monicOfCoeff a).aroots (SeparableClosure K)) :
     K⟮x⟯ ∈ totallyRamifiedOfDegree K n :=
   adjoin_mem_totallyRamifiedOfDegree_of_eisenstein he
-    (natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf)
+    (natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf)
     (hf ▸ (mem_aroots.mp hx).2)
 
 /-- **The root counts over `σ_K(n)` sum to `n`.** Let `f` be an Eisenstein polynomial over `𝒪[K]`
@@ -178,7 +179,7 @@ theorem _root_.IntermediateField.rootCount_eq_sum_ite_of_eisenstein {n : ℕ}
     one_mul] at hr
   rw [L.rootCount_def, ← hf, aroots_eq_map_roots_integerRing L hmonic, Multiset.card_map]
   exact card_roots_map_eq_sum_ite_of_eisenstein he
-    ((natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf).trans
+    ((natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf).trans
       hL'.1.symm)
     hr C hcover hdisj
 

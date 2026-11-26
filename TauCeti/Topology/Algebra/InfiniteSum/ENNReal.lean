@@ -24,7 +24,9 @@ a nonnegative function and integrated, this bounds its integral by a weighted su
 of its dyadic level sets.
 
 A finite product of infinite sums in `ℝ≥0∞` expands as the infinite sum over the dependent
-product type of the products of terms (`ENNReal.prod_tsum`).
+product type of the products of terms (`ENNReal.prod_tsum`). Restricting a series over a set `A`
+by a pointwise `ite` restricts the index to `{x ∈ A | p x}` (`ENNReal.tsum_subtype_ite`), and
+a fiber-constant series over `A` regroups by fiber cardinalities (`ENNReal.tsum_encard_sep_eq_mul`).
 
 ## Main declarations
 
@@ -32,6 +34,8 @@ product type of the products of terms (`ENNReal.prod_tsum`).
 * `ENNReal.tsum_indicator_one`: summing the indicator of `s` with value one gives `s.encard`.
 * `ENNReal.le_one_add_tsum_pow_indicator`: `y ≤ 1 + ∑ₖ 2^k 1{2^k < y}`.
 * `ENNReal.prod_tsum`: `∏ i, ∑' y, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i)`.
+* `ENNReal.tsum_subtype_ite`: restricting a `tsum` over `A` by `if p x.val then g x.val else 0`.
+* `ENNReal.tsum_encard_sep_eq_mul`: regrouping a `tsum` over `A` by fiber `encard`.
 -/
 
 public section
@@ -94,3 +98,27 @@ theorem ENNReal.prod_tsum {ι : Type*} [Fintype ι] {κ : ι → Type*}
   let e := (Fintype.equivFin ι).symm
   rw [← e.prod_comp, ENNReal.prod_tsum_fin, ← (Equiv.piCongrLeft κ e).tsum_eq]
   exact tsum_congr fun x ↦ Fintype.prod_equiv e _ _ fun j ↦ by rw [Equiv.piCongrLeft_apply_apply]
+
+/-- Restricting an extended nonnegative series over a set `A` by `if p x.val then g x.val else 0`
+equals the series over `{x ∈ A | p x}`. -/
+theorem ENNReal.tsum_subtype_ite {α : Type*} (A : Set α) (p : α → Prop) [DecidablePred p]
+    (g : α → ℝ≥0∞) :
+    (∑' x : A, if p x.val then g x.val else 0) = ∑' x : {x ∈ A | p x}, g x.val := by
+  refine Eq.trans ?_ ((_root_.tsum_subtype {x : A | p x.val} (fun x : A ↦ g x.val)).symm.trans
+    ((Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ A) p).tsum_eq fun x ↦ g x.val))
+  refine tsum_congr fun x ↦ ?_
+  by_cases h : p x.val <;> simp [Set.indicator, h]
+
+/-- Regrouping a fiber-constant extended nonnegative series over `A : Set α` by the extended
+cardinality of each fiber `{x ∈ A | f x = j}`. -/
+theorem ENNReal.tsum_encard_sep_eq_mul {α β : Type*} (A : Set α) (f : α → β)
+    (w : β → ℝ≥0∞) :
+    ∑' j : β, ({x ∈ A | f x = j}.encard : ℝ≥0∞) * w j = ∑' x : A, w (f x.val) := by
+  rw [← tsum_fiberwise (fun x : A ↦ w (f x.val)) (fun x : A ↦ f x.val)]
+  refine tsum_congr fun j ↦ ?_
+  have hconst : ∀ x : (fun x : A ↦ f x.val) ⁻¹' {j}, w (f x.val.val) = w j :=
+    fun x ↦ congrArg w x.property
+  have heq : (∑' _ : (fun x : A ↦ f x.val) ⁻¹' {j}, w j) =
+      ∑' _ : {x ∈ A | f x = j}, w j :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ A) fun x ↦ f x = j).tsum_eq fun _ ↦ w j
+  rw [tsum_congr hconst, heq, ENNReal.tsum_set_const]

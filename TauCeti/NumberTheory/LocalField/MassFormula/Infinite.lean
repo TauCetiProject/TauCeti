@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
-import TauCeti.NumberTheory.LocalField.MassFormula.Ore
+import TauCeti.NumberTheory.LocalField.MassFormula.Ore.Basic
 
 /-!
 # Infinitely many totally ramified extensions in equal characteristic
@@ -63,8 +63,9 @@ theorem exists_mem_totallyRamifiedOfDegree_discriminantExponent_eq {n : ℕ} (hn
   let j : ℕ := n * (m - 1) + 1
   have hmod : j % n = 1 := by
     rw [Nat.mul_add_mod, Nat.mod_eq_of_lt (by omega : 1 < n)]
-  have hadm : IsOreAdmissible K n j :=
-    (isOreAdmissible_iff_of_natCast_eq_zero hnK).mpr ⟨hn, by simp [hmod]⟩
+  have hadm : IsOreAdmissible 𝒪[K] n j :=
+    (isOreAdmissible_iff_of_natCast_eq_zero (Subtype.ext (by simpa using hnK) : (n : 𝒪[K]) = 0)).mpr
+      ⟨hn, by simp [hmod]⟩
   obtain ⟨L, hL, hLw⟩ := exists_mem_totallyRamifiedOfDegree_wildExponent_eq_iff.mpr hadm
   have hrel := IntermediateField.wildExponent_add_eq_discriminantExponent_add_one hL
   have hnm : n * (m - 1) + n = n * m := by

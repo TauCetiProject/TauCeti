@@ -141,11 +141,12 @@ theorem natDegree_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).natDegree = 
     exact degree_sum_monomial_lt c
   rw [monicOfCoeff, natDegree_add_eq_left_of_degree_lt hlt, natDegree_X_pow]
 
-/-- Any polynomial mapped injectively onto `monicOfCoeff c` has degree `n`. -/
+/-- Any polynomial mapped onto `monicOfCoeff c` with nonzero leading-coefficient image has degree
+`n`. -/
 theorem natDegree_eq_of_map_eq_monicOfCoeff {S : Type*} [Semiring S] {φ : S →+* R}
-    (hφ : Function.Injective φ) {f : S[X]} {c : Fin n → R} (hf : f.map φ = monicOfCoeff c) :
+    {f : S[X]} (hφ : φ f.leadingCoeff ≠ 0) {c : Fin n → R} (hf : f.map φ = monicOfCoeff c) :
     f.natDegree = n := by
-  rw [← natDegree_map_eq_of_injective hφ f, hf, natDegree_monicOfCoeff]
+  rw [← (natDegree_map_eq_iff (f := φ) (p := f)).mpr (.inl hφ), hf, natDegree_monicOfCoeff]
 
 omit [Nontrivial R] in
 /-- Every monic polynomial of degree `n` is the monic polynomial attached to its own lower

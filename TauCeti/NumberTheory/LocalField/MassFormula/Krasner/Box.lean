@@ -6,24 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Integral
-public import TauCeti.NumberTheory.LocalField.MassFormula.Ore
+public import TauCeti.NumberTheory.LocalField.MassFormula.Ore.Basic
 import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
-import TauCeti.NumberTheory.LocalField.ResidueCard
+import TauCeti.Data.Set.Function
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Polynomial.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
+import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
+import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard
 
 /-!
 # Krasner's discriminant boxes in Eisenstein coefficient space
 
 Let `K` be a nonarchimedean local field with residue field of cardinality `q`, and let `σ_K(n)`
 (`TauCeti.totallyRamifiedOfDegree K n`) be the family of totally ramified degree-`n` subextensions
-of `SeparableClosure K`. Krasner's discriminant-refined count stratifies `TauCeti.eisensteinSet K n`
-into pairwise disjoint boxes `TauCeti.eisensteinBox K n j` indexed by the wild exponent `j`.
+of `SeparableClosure K`. Krasner's discriminant-refined count stratifies the separable locus of
+`TauCeti.eisensteinSet K n` into pairwise disjoint boxes `TauCeti.eisensteinBox K n j` indexed by
+the wild exponent `j`.
 
 For an Ore-admissible pair `(n, j)`, `eisensteinBox K n j` consists of the Eisenstein coefficient
 vectors `a : Fin n → K` whose lower coordinates `a_h` (`1 ≤ h < n`) lie in
-`𝓂[K] ^ oreCoefficientDepth K n j h`, and additionally avoid the next power of `𝓂[K]` at `j % n`
-when `0 < j % n`; for inadmissible `(n, j)` the box is empty. Every polynomial in
+`𝓂[K] ^ oreCoefficientDepth 𝒪[K] n j h`, and additionally avoid the next power of `𝓂[K]` at
+`j % n` when `0 < j % n`; for inadmissible `(n, j)` the box is empty. Every polynomial in
 `eisensteinBox K n j` is separable over `K`, the boxes partition the separable locus of
 `eisensteinSet K n`, and for every `L ∈ σ_K(n)`, `L.rootCount` vanishes on `eisensteinSet K n`
 outside `eisensteinBox K n L.wildExponent`, localizing Serre's root-count integral
@@ -75,34 +79,34 @@ variable {K : Type*} [Field K] [ValuativeRel K] [IsDiscreteValuationRing 𝒪[K]
 
 variable (K) in
 /-- **Krasner's discriminant box** inside the coefficient space `Fin n → K`: empty unless
-`IsOreAdmissible K n j`, and otherwise the set of Eisenstein coefficient vectors `a` whose lower
-coordinates `a i` (`1 ≤ i < n`) lie in `𝓂[K] ^ oreCoefficientDepth K n j i`, with
-`a ⟨j % n, _⟩ ∉ 𝓂[K] ^ (oreCoefficientDepth K n j (j % n) + 1)` when `0 < j % n`. -/
+`IsOreAdmissible 𝒪[K] n j`, and otherwise the set of Eisenstein coefficient vectors `a` whose lower
+coordinates `a i` (`1 ≤ i < n`) lie in `𝓂[K] ^ oreCoefficientDepth 𝒪[K] n j i`, with
+`a ⟨j % n, _⟩ ∉ 𝓂[K] ^ (oreCoefficientDepth 𝒪[K] n j (j % n) + 1)` when `0 < j % n`. -/
 def eisensteinBox (n j : ℕ) : Set (Fin n → K) :=
-  {a | IsOreAdmissible K n j ∧ a ∈ eisensteinSet K n ∧
+  {a | IsOreAdmissible 𝒪[K] n j ∧ a ∈ eisensteinSet K n ∧
     (∀ i : Fin n, 1 ≤ (i : ℕ) →
-      a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth K n j i)) ∧
+      a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth 𝒪[K] n j i)) ∧
     ∀ i : Fin n, (i : ℕ) = j % n → 0 < j % n →
-      a i ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (oreCoefficientDepth K n j i + 1))}
+      a i ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (oreCoefficientDepth 𝒪[K] n j i + 1))}
 
 /-- Membership in `TauCeti.eisensteinBox`, unfolded. -/
 theorem mem_eisensteinBox {n j : ℕ} {a : Fin n → K} :
     a ∈ eisensteinBox K n j ↔
-      IsOreAdmissible K n j ∧ a ∈ eisensteinSet K n ∧
+      IsOreAdmissible 𝒪[K] n j ∧ a ∈ eisensteinSet K n ∧
         (∀ i : Fin n, 1 ≤ (i : ℕ) →
-          a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth K n j i)) ∧
+          a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth 𝒪[K] n j i)) ∧
         ∀ i : Fin n, (i : ℕ) = j % n → 0 < j % n →
-          a i ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (oreCoefficientDepth K n j i + 1)) := by
+          a i ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (oreCoefficientDepth 𝒪[K] n j i + 1)) := by
   rw [eisensteinBox, Set.mem_ofPred_eq]
 
 /-- For an inadmissible wild exponent, the discriminant box is empty. -/
-theorem eisensteinBox_of_not_isOreAdmissible {n j : ℕ} (h : ¬ IsOreAdmissible K n j) :
+@[simp]
+theorem eisensteinBox_of_not_isOreAdmissible {n j : ℕ} (h : ¬ IsOreAdmissible 𝒪[K] n j) :
     eisensteinBox K n j = ∅ := by
   ext a; simp [mem_eisensteinBox, h]
 
 variable (K) in
 /-- No discriminant box exists in degree `0`. -/
-@[simp]
 theorem eisensteinBox_zero_left (j : ℕ) : eisensteinBox K 0 j = ∅ :=
   eisensteinBox_of_not_isOreAdmissible (not_isOreAdmissible_zero_left j)
 
@@ -113,16 +117,16 @@ theorem eisensteinBox_subset_eisensteinSet (n j : ℕ) :
   fun _ ha ↦ (mem_eisensteinBox.mp ha).2.1
 
 /-- **Valuation characterization of `eisensteinBox`.** For `f : 𝒪[K][X]` mapping to
-`monicOfCoeff a`, `a ∈ eisensteinBox K n j` holds if and only if `IsOreAdmissible K n j`, `f` is
+`monicOfCoeff a`, `a ∈ eisensteinBox K n j` holds if and only if `IsOreAdmissible 𝒪[K] n j`, `f` is
 Eisenstein at `𝓂[K]`, every lower coefficient `f.coeff h` (`1 ≤ h < n`) has valuation at least
-`oreCoefficientDepth K n j h`, and when `0 < j % n` the coefficient `f.coeff (j % n)` has valuation
-equal to `oreCoefficientDepth K n j (j % n)`. -/
+`oreCoefficientDepth 𝒪[K] n j h`, and when `0 < j % n` the coefficient `f.coeff (j % n)` has
+valuation equal to `oreCoefficientDepth 𝒪[K] n j (j % n)`. -/
 theorem mem_eisensteinBox_iff_of_map_eq {n j : ℕ} {a : Fin n → K} {f : 𝒪[K][X]}
     (hf : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a) :
     a ∈ eisensteinBox K n j ↔
-      IsOreAdmissible K n j ∧ f.IsEisensteinAt 𝓂[K] ∧
-        (∀ h, 1 ≤ h → h < n → (oreCoefficientDepth K n j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h)) ∧
-        (0 < j % n → addVal 𝒪[K] (f.coeff (j % n)) = oreCoefficientDepth K n j (j % n)) := by
+      IsOreAdmissible 𝒪[K] n j ∧ f.IsEisensteinAt 𝓂[K] ∧
+        (∀ h, 1 ≤ h → h < n → (oreCoefficientDepth 𝒪[K] n j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h)) ∧
+        (0 < j % n → addVal 𝒪[K] (f.coeff (j % n)) = oreCoefficientDepth 𝒪[K] n j (j % n)) := by
   have heis : a ∈ eisensteinSet K n ↔ f.IsEisensteinAt 𝓂[K] := by
     rw [mem_eisensteinSet_iff_exists_isEisensteinAt]
     refine ⟨fun ⟨g, hg, hge⟩ ↦ ?_, fun he ↦ ⟨f, hf, he⟩⟩
@@ -135,8 +139,8 @@ theorem mem_eisensteinBox_iff_of_map_eq {n j : ℕ} {a : Fin n → K} {f : 𝒪[
   have hn : 0 < n := hadm.pos
   have hlower :
       (∀ i : Fin n, 1 ≤ (i : ℕ) →
-        a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth K n j i)) ↔
-      ∀ h, 1 ≤ h → h < n → (oreCoefficientDepth K n j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h) := by
+        a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth 𝒪[K] n j i)) ↔
+      ∀ h, 1 ≤ h → h < n → (oreCoefficientDepth 𝒪[K] n j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h) := by
     refine ⟨fun H h hh1 hhn ↦ ?_, fun H i hi1 ↦ ?_⟩
     · have hmem := H ⟨h, hhn⟩ hh1
       rwa [hai ⟨h, hhn⟩, Subtype.coe_injective.mem_set_image, SetLike.mem_coe,
@@ -157,14 +161,15 @@ theorem mem_eisensteinBox_iff_of_map_eq {n j : ℕ} {a : Fin n → K} {f : 𝒪[
     norm_cast
     omega
 
-/-- When `0 < n` and `n` is a unit of `𝒪[K]`, the tame box `eisensteinBox K n 0` is the entire
-Eisenstein region `eisensteinSet K n`. -/
-theorem eisensteinBox_zero_right_of_isUnit {n : ℕ} (hn : 0 < n) (hu : IsUnit (n : 𝒪[K])) :
+/-- When `n` is a unit of `𝒪[K]`, the tame box `eisensteinBox K n 0` is the entire Eisenstein
+region `eisensteinSet K n`. -/
+theorem eisensteinBox_zero_right_of_isUnit {n : ℕ} (hu : IsUnit (n : 𝒪[K])) :
     eisensteinBox K n 0 = eisensteinSet K n := by
+  have hn : 0 < n := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hu
   refine Set.Subset.antisymm (eisensteinBox_subset_eisensteinSet K n 0) fun a ha ↦ ?_
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
   have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
   refine (mem_eisensteinBox_iff_of_map_eq hf).mpr ⟨isOreAdmissible_zero_right_iff.mpr ⟨hn, hu⟩, he,
     fun h _ hhn ↦ ?_, fun hb ↦ by simp at hb⟩
   rw [oreCoefficientDepth_zero_right]
@@ -173,7 +178,7 @@ theorem eisensteinBox_zero_right_of_isUnit {n : ℕ} (hn : 0 < n) (hu : IsUnit (
 /-- A discriminant box is nonempty if and only if the pair `(n, j)` is Ore-admissible. -/
 @[simp]
 theorem nonempty_eisensteinBox_iff {n j : ℕ} :
-    (eisensteinBox K n j).Nonempty ↔ IsOreAdmissible K n j := by
+    (eisensteinBox K n j).Nonempty ↔ IsOreAdmissible 𝒪[K] n j := by
   refine ⟨fun ⟨a, ha⟩ ↦ (mem_eisensteinBox.mp ha).1, fun hadm ↦ ?_⟩
   obtain ⟨c, hf, hcoeff, hcrit⟩ := hadm.exists_monic_isEisensteinAt
   refine ⟨fun i ↦ c i, (mem_eisensteinBox_iff_of_map_eq (f := monicOfCoeff c) ?_).mpr
@@ -188,7 +193,7 @@ theorem separable_monicOfCoeff_of_mem_eisensteinBox {n j : ℕ} {a : Fin n → K
     (eisensteinBox_subset_eisensteinSet K n j ha)
   obtain ⟨hadm, -, hcoeff, hcrit⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha
   have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
   exact hf ▸ hadm.separable_map_of_isEisensteinAt he hdeg hcoeff hcrit
 
 variable (K) in
@@ -200,7 +205,7 @@ theorem pairwiseDisjoint_eisensteinBox (n : ℕ) :
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp
     (eisensteinBox_subset_eisensteinSet K n j₁ ha₁)
   have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
   obtain ⟨hadm₁, -, hcoeff₁, hcrit₁⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha₁
   obtain ⟨hadm₂, -, hcoeff₂, hcrit₂⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha₂
   have h₁ := (iInf_addVal_derivative_add_one_eq_iff hadm₁.pos he hdeg).mpr ⟨hadm₁, hcoeff₁, hcrit₁⟩
@@ -220,7 +225,7 @@ theorem setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox {n : ℕ} (hn 
     separable_monicOfCoeff_of_mem_eisensteinBox hj⟩⟩
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
   have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
   -- Step 1: separability of `monicOfCoeff a` ensures `f'` is nonzero, so the derivative valuation
   -- infimum `⨅ i, T i` is finite.
   have hf' : f.derivative ≠ 0 := by
@@ -250,16 +255,16 @@ theorem setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox {n : ℕ} (hn 
   exact ⟨m - n, (mem_eisensteinBox_iff_of_map_eq hf).mpr ⟨hadm, he, hcoeff, hcrit⟩⟩
 
 /-- Base ideal-box exponent vector for `eisensteinBox K n j`: `1` at coordinate `0` and
-`oreCoefficientDepth K n j i` at lower coordinates `1 ≤ i < n`. -/
+`oreCoefficientDepth 𝒪[K] n j i` at lower coordinates `1 ≤ i < n`. -/
 private def oreBoxExponent (K : Type*) [Field K] [ValuativeRel K] [IsDiscreteValuationRing 𝒪[K]]
     (n j : ℕ) (i : Fin n) : ℕ :=
-  if (i : ℕ) = 0 then 1 else oreCoefficientDepth K n j i
+  if (i : ℕ) = 0 then 1 else oreCoefficientDepth 𝒪[K] n j i
 
 private theorem sum_oreBoxExponent (n j : ℕ) (hn : 0 < n) :
     ∑ i : Fin n, oreBoxExponent K n j i =
-      1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h := by
+      1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h := by
   simp only [oreBoxExponent]
-  rw [Fin.sum_univ_eq_sum_range (fun h ↦ if h = 0 then 1 else oreCoefficientDepth K n j h),
+  rw [Fin.sum_univ_eq_sum_range (fun h ↦ if h = 0 then 1 else oreCoefficientDepth 𝒪[K] n j h),
     ← Nat.Ico_zero_eq_range, Finset.sum_eq_sum_Ico_succ_bot hn]
   simp only [↓reduceIte]
   refine congrArg (1 + ·) (Finset.sum_congr rfl fun h hh ↦ ?_)
@@ -274,19 +279,23 @@ private theorem mem_pi_oreBoxExponent_sdiff_iff {n j : ℕ} (hn : 0 < n) {a : Fi
             (oreBoxExponent K n j ⟨0, hn⟩ + 1) i)) ↔
       a ∈ eisensteinSet K n ∧
         ∀ i : Fin n, 1 ≤ (i : ℕ) →
-          a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth K n j i) := by
+          a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth 𝒪[K] n j i) := by
   set i₀ : Fin n := ⟨0, hn⟩
   set e := oreBoxExponent K n j
   have he₀ : e i₀ + 1 = 2 := by simp [e, oreBoxExponent, i₀]
-  rw [mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff, eisensteinSet_eq_sdiff hn]
+  simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m))]
+  rw [Set.mem_univ_pi_sdiff_update_iff, eisensteinSet_eq_sdiff hn]
   have heis_iff :
       a ∈ (Set.univ.pi fun _ ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K]) \
           (Set.univ.pi fun i ↦
             ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update (fun _ ↦ 1) i₀ 2 i)) ↔
         (∀ i, a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (1 : ℕ))) ∧
           a i₀ ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ 2) := by
-    simpa [pow_one] using
-      mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff (K := K) (fun _ : Fin n ↦ 1) i₀ 2 (a := a)
+    have h := Set.mem_univ_pi_sdiff_update_iff (fun _ : Fin n ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K])
+      i₀ (((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ 2)) (x := a)
+    simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m)),
+      pow_one]
+    exact h
   rw [heis_iff, he₀]
   refine ⟨fun ⟨hae, ha0⟩ ↦ ⟨⟨fun i ↦ ?_, ha0⟩, fun i hipos ↦ ?_⟩,
     fun ⟨⟨ha1, ha0⟩, hlow⟩ ↦ ⟨fun i ↦ ?_, ha0⟩⟩
@@ -294,16 +303,16 @@ private theorem mem_pi_oreBoxExponent_sdiff_iff {n j : ℕ} (hn : 0 < n) {a : Fi
       dsimp [e, oreBoxExponent]
       split_ifs
       · exact le_rfl
-      · exact one_le_oreCoefficientDepth K n j i
+      · exact one_le_oreCoefficientDepth 𝒪[K] n j i
     exact Set.image_mono (Ideal.pow_le_pow_right h1) (hae i)
-  · exact (ite_eq_right (by omega : (i : ℕ) ≠ 0) : e i = oreCoefficientDepth K n j i) ▸ hae i
+  · exact (ite_eq_right (by omega : (i : ℕ) ≠ 0) : e i = oreCoefficientDepth 𝒪[K] n j i) ▸ hae i
   · rcases Nat.eq_zero_or_pos (i : ℕ) with hi0 | hipos
     · have hi : i = i₀ := Fin.ext hi0
       simpa [hi, e, oreBoxExponent, i₀] using ha1 i₀
     · simpa only [e, oreBoxExponent, ite_eq_right hipos.ne'] using hlow i hipos
 
 /-- Box-difference presentation of `eisensteinBox K n j` when `j % n = 0`. -/
-private theorem eisensteinBox_eq_sdiff_of_mod_eq_zero {n j : ℕ} (hadm : IsOreAdmissible K n j)
+private theorem eisensteinBox_eq_sdiff_of_mod_eq_zero {n j : ℕ} (hadm : IsOreAdmissible 𝒪[K] n j)
     (hmod : j % n = 0) :
     eisensteinBox K n j =
       (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreBoxExponent K n j i)) \
@@ -315,7 +324,7 @@ private theorem eisensteinBox_eq_sdiff_of_mod_eq_zero {n j : ℕ} (hadm : IsOreA
   simp [hadm, hmod]
 
 /-- Box-difference presentation of `eisensteinBox K n j` when `0 < j % n`. -/
-private theorem eisensteinBox_eq_sdiff_of_mod_pos {n j : ℕ} (hadm : IsOreAdmissible K n j)
+private theorem eisensteinBox_eq_sdiff_of_mod_pos {n j : ℕ} (hadm : IsOreAdmissible 𝒪[K] n j)
     (hmod : 0 < j % n) :
     let e := oreBoxExponent K n j
     let i₀ : Fin n := ⟨0, hadm.pos⟩
@@ -333,12 +342,13 @@ private theorem eisensteinBox_eq_sdiff_of_mod_pos {n j : ℕ} (hadm : IsOreAdmis
   set ib : Fin n := ⟨j % n, Nat.mod_lt j hadm.pos⟩
   set e₂ := Function.update e ib (e ib + 1) with he₂
   have hib0 : ib ≠ i₀ := fun h ↦ hmod.ne' (congrArg Fin.val h)
-  have heb : e ib = oreCoefficientDepth K n j ib := ite_eq_right hmod.ne'
+  have heb : e ib = oreCoefficientDepth 𝒪[K] n j ib := ite_eq_right hmod.ne'
   ext a
   have hbase := mem_pi_oreBoxExponent_sdiff_iff (K := K) (j := j) hadm.pos (a := a)
-  rw [Set.mem_sdiff, mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff e₂ i₀,
-    mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff e i₀]
-  rw [mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff e i₀] at hbase
+  simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m))]
+    at hbase ⊢
+  rw [Set.mem_sdiff, Set.mem_univ_pi_sdiff_update_iff, Set.mem_univ_pi_sdiff_update_iff]
+  rw [Set.mem_univ_pi_sdiff_update_iff] at hbase
   rw [mem_eisensteinBox, ← and_assoc (a := a ∈ eisensteinSet K n), ← hbase]
   simp only [hadm, true_and, he₂, Function.update_of_ne hib0.symm]
   refine and_congr_right fun ⟨hae, ha0⟩ ↦ ⟨fun hcrit ⟨hae₂, _⟩ ↦ ?_, fun hnot i hi _ hmem ↦ ?_⟩
@@ -354,15 +364,15 @@ private theorem eisensteinBox_eq_sdiff_of_mod_pos {n j : ℕ} (hadm : IsOreAdmis
 
 end DiscreteValuationRing
 
-section LocalField
+section ValuativeTopology
 
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsValuativeTopology K]
+  [IsDiscreteValuationRing 𝒪[K]]
 
 /-- Every discriminant box is measurable. -/
 theorem measurableSet_eisensteinBox {n j : ℕ} [MeasurableSpace (Fin n → K)]
     [OpensMeasurableSpace (Fin n → K)] : MeasurableSet (eisensteinBox K n j) := by
-  by_cases hadm : IsOreAdmissible K n j
+  by_cases hadm : IsOreAdmissible 𝒪[K] n j
   · rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
     · rw [eisensteinBox_eq_sdiff_of_mod_eq_zero hadm hmod]
       exact (measurableSet_univ_pi_image_maximalIdeal_pow _).diff
@@ -375,20 +385,27 @@ theorem measurableSet_eisensteinBox {n j : ℕ} [MeasurableSpace (Fin n → K)]
   · rw [eisensteinBox_of_not_isOreAdmissible hadm]
     exact MeasurableSet.empty
 
+end ValuativeTopology
+
+section LocalField
+
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
 /-- **The volume of Krasner's discriminant box**: for an Ore-admissible pair `(n, j)` and a
 left-invariant measure `μ` on `Fin n → K` normalized on the integer box, `eisensteinBox K n j` has
 volume `q ^ (-(1 + ∑_{1 ≤ h < n} ν_h)) * (1 - q⁻¹) * (1 - q⁻¹) ^ [0 < j % n]`. -/
-theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible K n j)
+theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible 𝒪[K] n j)
     [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
     (μ : Measure (Fin n → K)) [μ.IsAddLeftInvariant] (hμ : μ (integerBox K (Fin n)) = 1) :
     μ (eisensteinBox K n j) =
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) *
         (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) *
         (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
   have hn := hadm.pos
   set e := oreBoxExponent K n j
   set i₀ : Fin n := ⟨0, hn⟩
-  set N := 1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h
+  set N := 1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h
   set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
   have hsum : ∑ i, e i = N := sum_oreBoxExponent (K := K) n j hn
   rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
@@ -407,7 +424,10 @@ theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible K n j)
         Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d i₀ (d i₀ + 1) i)
     have hbox : eisensteinBox K n j = S e \ S e₂ := eisensteinBox_eq_sdiff_of_mod_pos hadm hmod
     have hYX : S e₂ ⊆ S e := fun a ha ↦ by
-      rw [mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff] at ha ⊢
+      dsimp only [S] at ha ⊢
+      simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m))]
+        at ha ⊢
+      rw [Set.mem_univ_pi_sdiff_update_iff] at ha ⊢
       have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := e) (e := e₂)
         (le_update_iff.2 ⟨Nat.le_succ _, fun _ _ ↦ le_rfl⟩) (Set.mem_univ_pi.mpr ha.1)
       exact ⟨Set.mem_univ_pi.mp hsub, by simpa [e₂, Function.update_of_ne hib0.symm] using ha.2⟩
@@ -438,7 +458,7 @@ theorem mem_eisensteinBox_iff_wildExponent_adjoin_eq {n j : ℕ} {a : Fin n → 
     a ∈ eisensteinBox K n j ↔ (K⟮x⟯).wildExponent = j := by
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
   have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
   rw [mem_eisensteinBox_iff_of_map_eq hf,
     wildExponent_adjoin_eq_iff_of_eisenstein he hdeg (hf ▸ hx)]
   exact ⟨fun ⟨h₁, _, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, he, h₂, h₃⟩⟩

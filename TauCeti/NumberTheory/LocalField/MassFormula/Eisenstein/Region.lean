@@ -11,7 +11,9 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.Data.Set.Function
 import TauCeti.NumberTheory.LocalField.Uniformizer
+import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import Mathlib.RingTheory.Polynomial.GaussLemma
@@ -143,7 +145,7 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
         exact forall_valuation_le_iff_notMem_maximalIdeal_sq.1 h0
   · rintro ⟨f, hf, hE⟩
     have hdeg : f.natDegree = n :=
-      natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+      natDegree_eq_of_map_eq_monicOfCoeff (by simp [hE.isUnit_leadingCoeff.ne_zero]) hf
     have hcoeff (i : ℕ) : (monicOfCoeff a).coeff i = f.coeff i := by
       rw [← hf, coeff_map, Algebra.algebraMap_ofSubsemiring_apply]
     refine ⟨fun i ↦ ?_, ?_⟩
@@ -160,7 +162,7 @@ theorem irreducible_monicOfCoeff_of_mem_eisensteinSet {n : ℕ} (hn : 0 < n)
   have hmonic : f.Monic := (FaithfulSMul.algebraMap_injective 𝒪[K] K).monic_map_iff.mpr
     (hf ▸ monic_monicOfCoeff a)
   have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
   exact hf ▸ hmonic.irreducible_iff_irreducible_map_fraction_map.mp
     (he.irreducible (Ideal.IsMaximal.isPrime inferInstance) hmonic.isPrimitive (hdeg ▸ hn))
 
@@ -172,9 +174,10 @@ theorem eisensteinSet_eq_sdiff {n : ℕ} (hn : 0 < n) :
       Set.univ.pi fun i ↦
         ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update (fun _ ↦ 1) ⟨0, hn⟩ 2 i) := by
   ext a
-  have h := mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff
-    (K := K) (fun _ : Fin n ↦ 1) ⟨0, hn⟩ 2 (a := a)
-  simp only [pow_one] at h
+  have h := Set.mem_univ_pi_sdiff_update_iff (fun _ : Fin n ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K])
+    ⟨0, hn⟩ (((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ 2)) (x := a)
+  simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m)),
+    pow_one]
   rw [h, mem_eisensteinSet, coeff_monicOfCoeff a ⟨0, hn⟩]
   simp only [← valuation_lt_one_iff_mem_image_maximalIdeal]
   refine and_congr_right fun ha ↦ (forall_valuation_le_iff_notMem_maximalIdeal_sq
