@@ -83,7 +83,9 @@ eigenfunction.
   eigenspaces of `S` have trivial orthogonal complement, and only the nonzero eigenvalues are
   needed when `S` is injective.
 * `IsCoercive.exists_hilbertBasis_forall_apply_eq_smul_inner`: the variational eigenfunctions
-  form an orthonormal basis of `H`.
+  form an orthonormal basis of `H`, and
+  `IsCoercive.exists_eq_of_hilbertBasis_of_forall_apply_eq_smul_inner`: every variational
+  eigenvalue occurs in any such eigenbasis.
 
 ## References
 
@@ -667,5 +669,24 @@ theorem finite_setOf_le_of_orthonormal (hB : IsCoercive B) {J : V →L[ℝ] H}
     refine hfin.subset fun i hi ↦ ?_
     simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, abs_inv, abs_of_pos (hκ i)] at hi ⊢
     exact inv_anti₀ (hκ i) hi
+
+omit [CompleteSpace V] in
+/-- **Every variational eigenvalue occurs in any eigenbasis.** If the images `J uᵢ` of
+eigenfunctions of a symmetric coercive form `B`, with eigenvalues `κᵢ`, form an orthonormal basis
+of `H`, then every variational eigenvalue `κ'` of `B` is some `κᵢ`: its eigenfunction `w` has
+`J w ≠ 0` (`IsCoercive.apply_ne_zero_of_forall_apply_eq_smul_inner`), and `J w` would otherwise
+be orthogonal to every `J uᵢ`. -/
+theorem exists_eq_of_hilbertBasis_of_forall_apply_eq_smul_inner (hB : IsCoercive B)
+    {J : V →L[ℝ] H} {ι : Type*} (b : HilbertBasis ι ℝ H) {κ : ι → ℝ} {u : ι → V}
+    (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ)
+    (hsymm : ∀ u v, B u v = B v u) {w : V} (hw : w ≠ 0) {kappa' : ℝ}
+    (hweq : ∀ v, B w v = kappa' * ⟪J w, J v⟫_ℝ) : ∃ i, κ i = kappa' := by
+  by_contra! hne
+  refine hB.apply_ne_zero_of_forall_apply_eq_smul_inner J hw hweq
+    (b.repr.map_eq_zero_iff.1 (lp.ext (funext fun i ↦ ?_)))
+  have h := hsymm w (u i)
+  rw [hweq, heq, hJu, real_inner_comm] at h
+  rw [HilbertBasis.repr_apply_apply, lp.coeFn_zero, Pi.zero_apply]
+  exact (mul_eq_mul_right_iff.1 h.symm).resolve_left (hne i)
 
 end IsCoercive

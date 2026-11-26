@@ -1119,6 +1119,37 @@ theorem energyFormH1_one_zero_zero_eq_inner [DecidableEq ι] (u v : W1p mu Omega
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [EuclideanSpace.inner_eq_star_dotProduct])
 
+omit [mu.IsAddHaarMeasure] in
+/-- The coefficients of the Laplacian model `-Δ` are bounded: its energy integrand is
+essentially bounded on `Ω`. -/
+theorem memLp_energyIntegrand_one_zero_zero [DecidableEq ι] :
+    MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+        ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega) :=
+  have h1 := uniformlyEllipticOn_const_one_one (n := ι) (Omega : Set (EuclideanSpace ℝ ι))
+  memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0) h1.upper_nonneg
+    aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _x hx eta xi ↦ h1.upper_bound hx eta xi) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
+
+/-- The energy form of the Laplacian model `-Δ` is symmetric. -/
+theorem energyFormH1_one_zero_zero_comm [DecidableEq ι] (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => 1) 0 0 u v = energyFormH1 (fun _ => 1) 0 0 v u := by
+  rw [energyFormH1_one_zero_zero_eq_inner, energyFormH1_one_zero_zero_eq_inner, real_inner_comm]
+
+/-- The energy form of the Laplacian model `-Δ` is nonnegative: `a(w, w) = ∫_Ω |∇w|²`. -/
+theorem energyFormH1_one_zero_zero_self_nonneg [DecidableEq ι] (w : W1p mu Omega 2) :
+    0 ≤ energyFormH1 (fun _ => 1) 0 0 w w := by
+  rw [energyFormH1_one_zero_zero_eq_inner]
+  exact real_inner_self_nonneg
+
+/-- The `H¹(Ω)` norm through the energy form of the Laplacian model `-Δ`:
+`‖w‖²_{H¹} = ∫_Ω |∇w|² + ‖w‖²_{L²}`. In particular the form satisfies Gårding's inequality
+with `C₀ = β = 1`. -/
+theorem norm_sq_eq_energyFormH1_one_zero_zero_add [DecidableEq ι] (w : W1p mu Omega 2) :
+    ‖w‖ ^ 2 = energyFormH1 (fun _ => 1) 0 0 w w + ‖W1p.value w‖ ^ 2 := by
+  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
+    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq, add_comm]
+
 /-- The weak formulation of the Laplacian model `-Δ` is the classical one: `u ∈ H¹₀(Ω)` solves
 `-Δu = f` weakly exactly when `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. -/
 theorem isWeakSolutionDirichlet_one_zero_zero_iff [DecidableEq ι]
@@ -1290,10 +1321,7 @@ theorem exists_isCoercive_laplacian_of_isBounded
       IsCoercive (energyFormH1L0 hcoeff) := by
   have h1 := uniformlyEllipticOn_const_one_one (n := Fin (n + 1))
     (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) h1.upper_nonneg
-    aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi ↦ h1.upper_bound hx eta xi) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
+  have hcoeff := memLp_energyIntegrand_one_zero_zero (mu := volume) (Omega := Omega)
   obtain ⟨R, -, hball⟩ := hOmega.subset_ball_lt 0 0
   exact ⟨hcoeff, UniformlyEllipticOn.isCoercive_energyFormH1L0_of_subset_ball h1
     aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const

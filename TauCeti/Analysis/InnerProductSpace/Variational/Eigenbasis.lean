@@ -32,7 +32,8 @@ with every eigenvalue moved by `-β`, and finitely many of its eigenvalues
 lie below any bound (`TauCeti.IsCoercive.finite_setOf_le_of_orthonormal`). The basis is
 infinite because `H` is infinite-dimensional, so it can be enumerated by `ℕ` in nondecreasing
 order of eigenvalue (`TauCeti.exists_equiv_monotone_comp_of_finite_setOf_le`). Every eigenvalue
-occurs, since an eigenfunction of any other value would be orthogonal to the whole basis.
+occurs, since an eigenfunction of any other value would be orthogonal to the whole basis
+(`IsCoercive.exists_eq_of_hilbertBasis_of_forall_apply_eq_smul_inner`).
 
 Neither nonnegativity of `Q` nor coercivity is assumed, so the theorem covers forms, such as
 the Neumann form `∫ ∇u · ∇v` on `H¹(Ω)`, that only become coercive after a shift by the inner
@@ -57,30 +58,6 @@ namespace TauCeti
 variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   {Q : V →L[ℝ] V →L[ℝ] ℝ} {J : V →L[ℝ] H} {C₀ β : ℝ}
-
-omit [CompleteSpace V] [CompleteSpace H] in
-/-- **An eigenvalue of a Gårding form occurs in every eigenbasis.** If the images `J uᵢ` of
-eigenfunctions of a symmetric Gårding form `Q`, with eigenvalues `κᵢ`, form an orthonormal basis
-of `H`, then every variational eigenvalue `κ'` of `Q` is some `κᵢ`: its eigenfunction `w` has
-`J w ≠ 0` by Gårding's inequality, and `J w` would otherwise be orthogonal to every `J uᵢ`. -/
-private theorem exists_eq_of_hilbertBasis_of_garding {ι : Type*} (b : HilbertBasis ι ℝ H)
-    {κ : ι → ℝ} {u : ι → V} (hJu : ∀ i, J (u i) = b i)
-    (heq : ∀ i v, Q (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (hsymm : ∀ u v, Q u v = Q v u)
-    (hC₀ : 0 < C₀) (hQ : ∀ w, C₀ * ‖w‖ ^ 2 ≤ Q w w + β * ‖J w‖ ^ 2) {w : V} (hw : w ≠ 0)
-    {kappa' : ℝ} (hweq : ∀ v, Q w v = kappa' * ⟪J w, J v⟫_ℝ) : ∃ i, κ i = kappa' := by
-  by_contra! hne
-  have hJw : J w ≠ 0 := by
-    intro h0
-    have h := hQ w
-    rw [hweq w, h0, inner_zero_left, mul_zero, norm_zero, zero_pow two_ne_zero, mul_zero,
-      add_zero] at h
-    have h2 : ‖w‖ ^ 2 ≤ 0 := le_of_mul_le_mul_left (h.trans (mul_zero C₀).ge) hC₀
-    exact hw (norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (h2.antisymm (sq_nonneg _))))
-  refine hJw (b.repr.map_eq_zero_iff.1 (lp.ext (funext fun i ↦ ?_)))
-  have h := hsymm w (u i)
-  rw [hweq, heq, hJu, real_inner_comm] at h
-  rw [HilbertBasis.repr_apply_apply, lp.coeFn_zero, Pi.zero_apply]
-  exact (mul_eq_mul_right_iff.1 h.symm).resolve_left (hne i)
 
 /-- **The ordered eigenbasis of a symmetric Gårding form.** Let `Q` be symmetric and satisfy
 Gårding's inequality `C₀ ‖w‖² ≤ Q(w, w) + β ‖J w‖²` with `C₀ > 0`, for a compact `J` of dense
@@ -126,9 +103,9 @@ theorem exists_hilbertBasis_nat_monotone_of_garding (hJc : IsCompactOperator J)
   have hiff (kappa' : ℝ) : (∃ w : V, w ≠ 0 ∧ ∀ v, Q w v = kappa' * ⟪J w, J v⟫_ℝ) ↔
       ∃ k, κ (σ k) - β = kappa' := by
     refine ⟨fun ⟨w, hw, hweq⟩ ↦ ?_, fun ⟨k, hk⟩ ↦ ⟨u (σ k), fun h0 ↦ ?_, hk ▸ heqQ (σ k)⟩⟩
-    · obtain ⟨x, hx⟩ :=
-        exists_eq_of_hilbertBasis_of_garding b hJu' heqQ hsymm hC₀ hQ hw hweq
-      exact ⟨σ.symm x, by rw [Equiv.apply_symm_apply, hx]⟩
+    · obtain ⟨x, hx⟩ := hB.exists_eq_of_hilbertBasis_of_forall_apply_eq_smul_inner b hJu' heq
+        hsymmB hw (kappa' := kappa' + β) fun v ↦ by rw [hBQ, hweq]; ring
+      exact ⟨σ.symm x, by rw [Equiv.apply_symm_apply, hx]; ring⟩
     · have h := hJu' (σ k)
       rw [h0, map_zero] at h
       exact b.orthonormal.ne_zero _ h.symm

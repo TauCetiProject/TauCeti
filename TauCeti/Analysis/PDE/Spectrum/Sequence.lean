@@ -141,15 +141,12 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
       IsDirichletEigenvalue mu Omega a b c kappa' ↔ ∃ k, kappa (e k) = kappa' := by
     refine ⟨fun h ↦ ?_, fun ⟨k, hk⟩ ↦ hk ▸ heig (e k)⟩
     obtain ⟨w, hw, hweq⟩ := (isDirichletEigenvalue_iff _).1 h
-    by_contra! hne
-    have hwJ : W1p0.valueL w ≠ 0 := hcoercive.apply_ne_zero_of_forall_apply_eq_smul_inner
-      W1p0.valueL hw fun v ↦ by simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using hweq v
-    refine hwJ (B.repr.map_eq_zero_iff.1 (lp.ext (funext fun g ↦ ?_)))
-    have hg : kappa g ≠ kappa' := by simpa using hne (e.symm g)
-    have h := hsymm w (u g)
-    rw [hweq, heq, hvalue', real_inner_comm] at h
-    rw [HilbertBasis.repr_apply_apply, W1p0.valueL_apply, lp.coeFn_zero, Pi.zero_apply]
-    exact (mul_eq_mul_right_iff.1 h.symm).resolve_left hg
+    obtain ⟨g, hg⟩ := hcoercive.exists_eq_of_hilbertBasis_of_forall_apply_eq_smul_inner
+      (J := W1p0.valueL) B (u := u) (fun g ↦ by simpa only [W1p0.valueL_apply] using hvalue' g)
+      (fun g v ↦ by simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using heq g v)
+      (fun u v ↦ by simpa only [energyFormH1L0_apply] using hsymm u v) hw
+      fun v ↦ by simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using hweq v
+    exact ⟨e.symm g, by rw [Equiv.apply_symm_apply, hg]⟩
   refine ⟨basis, kappa ∘ e, u ∘ e, he, tendsto_comp_atTop_of_finite_setOf_le hfin e.injective,
     ?_, fun k ↦ by rw [hbasis]; exact hvalue' (e k), fun k v ↦ heq (e k) v, hiff,
     fun f ↦ ?_⟩
