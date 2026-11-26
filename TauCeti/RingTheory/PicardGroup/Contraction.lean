@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.PicardGroup
 
 /-!
@@ -23,11 +24,17 @@ functionals: `M^* ⊗ N^* ≃ (M ⊗ N)^*` by `TensorProduct.dualDistribEquiv`, 
 sequences cancel a common factor `det E ⊗ (det E)^*`.
 
 A free module of rank one, in particular a line over a field, is invertible
-(`Module.Invertible.of_finrank_eq_one`). In an invertible module, a vector `x` and a functional
-`ξ` with `ξ x = 1` are dual bases of `M` and of its dual: every vector `y` is `ξ y • x` and every
-functional `η` is `η x • ξ`. Consequently an element of `W ⊗ M^*` is the pure tensor of its
-evaluation at `x` with `ξ`. This is how an identity of determinant lines stated by evaluating a
-dual factor is turned into an identity of pure tensors.
+(`Module.Invertible.of_finrank_eq_one`). In an invertible module every functional `ξ`
+satisfies `ξ x • y = ξ y • x`, so a vector `x` and a functional `ξ` with `ξ x = 1` are dual
+bases of `M` and of its dual: every vector `y` is `ξ y • x` and every functional `η` is
+`η x • ξ`. Consequently an element of `W ⊗ M^*` is the pure tensor of its evaluation at `x` with
+`ξ`. This is how an identity of determinant lines stated by evaluating a dual factor is turned
+into an identity of pure tensors.
+
+Since the contraction `M^* ⊗ M → R` is surjective, there are finitely many pairs `(ξᵢ, xᵢ)`
+with `∑ ξᵢ xᵢ = 1` (`Module.Invertible.exists_finset_sum_apply_eq_one`). Together with the
+identity `ξ x • y = ξ y • x` (`Module.Invertible.apply_smul_comm`) they control the tensor powers
+of `M`, as used for the action of Frobenius on Picard groups.
 
 ## Main declarations
 
@@ -37,6 +44,11 @@ dual factor is turned into an identity of pure tensors.
 * `Module.Invertible.leftCancelDualEquiv`: the isomorphism `M ⊗ (M^* ⊗ P) ≃ P`.
 * `Module.Invertible.leftCancelDualEquiv_tmul_tmul`: its value `ℓ ⊗ (ξ ⊗ p) ↦ ξ ℓ • p`.
 * `Module.Invertible.leftCancelDualEquiv_tmul_apply`: its value on duals.
+* `Module.Invertible.apply_smul_comm`: the rank-one identity `ξ x • y = ξ y • x`.
+* `Module.Invertible.injective_of_ne_zero`: over a domain, a nonzero functional on an invertible
+  module is injective.
+* `Module.Invertible.exists_finset_sum_apply_eq_one`: pairs `(ξᵢ, xᵢ)` with `∑ ξᵢ xᵢ = 1`.
+* `Module.Invertible.nontrivial`: an invertible module over a nontrivial ring is nontrivial.
 * `Module.Invertible.apply_smul_eq_self`, `Module.Invertible.dual_apply_smul_eq_self`: the
   expansions `ξ y • x = y` and `η x • ξ = η` for `ξ x = 1`.
 * `Module.Invertible.rid_lTensor_eval_tmul_eq_self`: an element of `W ⊗ M^*` is the pure tensor
@@ -100,6 +112,36 @@ theorem leftCancelDualEquiv_tmul_apply {N : Type*} [AddCommMonoid N] [Module R N
     rw [TensorProduct.tmul_add, map_add, LinearMap.add_apply, h₁, h₂, map_add,
       LinearMap.add_apply]
 
+/-- In an invertible module, a functional `ξ` and vectors `x`, `y` satisfy
+`ξ x • y = ξ y • x`: an invertible module has rank one, so its vectors are proportional
+locally. -/
+theorem apply_smul_comm (ξ : Dual R M) (x y : M) : ξ x • y = ξ y • x := by
+  simpa using congr(TensorProduct.lid R M (ξ.rTensor M $(tmul_comm (R := R) (m₁ := x) (m₂ := y))))
+
+/-- Over a domain, a nonzero linear functional on an invertible module is injective. -/
+theorem injective_of_ne_zero [IsDomain R] {g : M →ₗ[R] R} (hg : g ≠ 0) :
+    Function.Injective g := by
+  obtain ⟨x, hx⟩ : ∃ x, g x ≠ 0 := by
+    by_contra! h
+    exact hg (LinearMap.ext h)
+  refine fun y z hyz ↦ smul_right_injective M hx ?_
+  simp only [apply_smul_comm g x, hyz]
+
+/-- An invertible module has finitely many vectors `xᵢ` and functionals `ξᵢ` with
+`∑ ξᵢ xᵢ = 1`, since the contraction `M^* ⊗ M → R` is surjective. -/
+theorem exists_finset_sum_apply_eq_one :
+    ∃ s : Finset (Dual R M × M), ∑ q ∈ s, q.1 q.2 = 1 := by
+  obtain ⟨s, hs⟩ := TensorProduct.exists_finset ((linearEquiv R M).symm 1)
+  refine ⟨s, ?_⟩
+  simpa using congr(linearEquiv R M $hs).symm
+
+variable (R M) in
+/-- An invertible module over a nontrivial ring is nontrivial. -/
+theorem nontrivial [Nontrivial R] : Nontrivial M := by
+  by_contra hM
+  rw [not_nontrivial_iff_subsingleton] at hM
+  exact not_subsingleton R (linearEquiv R M).symm.toEquiv.subsingleton
+
 section DualPair
 
 variable {x : M} {ξ : Dual R M} (hξ : ξ x = 1)
@@ -108,8 +150,7 @@ include hξ
 /-- In an invertible module, a vector `x` and a functional `ξ` with `ξ x = 1` are dual bases:
 every vector `y` is `ξ y • x`. -/
 theorem apply_smul_eq_self (y : M) : ξ y • x = y := by
-  have h : ξ ⊗ₜ[R] (ξ y • x) = ξ ⊗ₜ y := (linearEquiv R M).injective (by simp [hξ])
-  simpa [hξ] using congr(TensorProduct.lid R M ((Dual.eval R M x).rTensor M $h))
+  rw [← apply_smul_comm, hξ, one_smul]
 
 /-- In an invertible module, a vector `x` and a functional `ξ` with `ξ x = 1` are dual bases:
 every functional `η` is `η x • ξ`. -/

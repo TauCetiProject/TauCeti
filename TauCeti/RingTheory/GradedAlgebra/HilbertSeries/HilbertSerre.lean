@@ -12,8 +12,7 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 import TauCeti.Algebra.Algebra.Tower
 import TauCeti.Algebra.Module.GradedModule.Finite
-import TauCeti.Algebra.Module.GradedModule.Length
-import TauCeti.Algebra.Module.MvPolynomial
+import TauCeti.Algebra.Module.GradedModule.HilbertSerre
 import TauCeti.Algebra.Polynomial.Eval.IntCast
 import TauCeti.RingTheory.Artinian.FiniteLength
 import TauCeti.RingTheory.MvPolynomial.Finrank
@@ -33,19 +32,17 @@ modules are developed in `TauCeti.RingTheory.GradedAlgebra.FiniteType`,
 
 Over a commutative Artinian ring `A`, every graded piece `ℳ d` is a finite `A`-module of finite
 length (`TauCeti.GradedModule.moduleFinite_piece_mvPolynomial`,
-`TauCeti.GradedModule.length_piece_ne_top`) and vanishes for all `d` below some integer `d₀`
-(`TauCeti.GradedModule.exists_forall_lt_piece_eq_bot`). Inducting on `e` via multiplication by the
-last variable `X (Fin.last e)` — whose kernel and cokernel are finitely generated `ℤ`-graded modules
-over `e - 1` variables, by the Hilbert basis theorem since `A` is Artinian hence Noetherian — yields
-a polynomial `h : ℤ[X]` such that
-`(∑ n, (Module.length A (ℳ (d₀ + n))).toNat • Xⁿ) * (1 - X)^e = h` in `ℤ⟦X⟧`. More generally, for
-any commutative ring `A` and any starting degree `d₀ : ℤ`, the formal series of `ENat.toNat` length
-coefficients `(Module.length A (ℳ (d₀ + n))).toNat` — where `ENat.toNat ⊤ = 0`, so infinite-length
-pieces contribute `0` — still satisfies this rational identity
-(`exists_hilbertSeries_mul_one_sub_X_pow`), because any single finite-length piece in sufficiently
-high degree generates the tail of `M` and has Artinian annihilator quotient
-(`TauCeti.isArtinianRing_quotient_annihilator`); this series agrees with the genuine length Hilbert
-series whenever every piece has finite length (for instance when `A` is Artinian).
+`TauCeti.GradedModule.length_piece_ne_top`), vanishes for all `d` below some integer `d₀`
+(`TauCeti.GradedModule.exists_forall_lt_piece_eq_bot`), and has rational Hilbert series
+`h(X) / (1 - X)^e` (`TauCeti.MvPolynomial.exists_mk_length_mul_one_sub_X_pow_eq`). More
+generally, for any commutative ring `A` and any starting degree `d₀ : ℤ`, the formal series of
+`ENat.toNat` length coefficients `(Module.length A (ℳ (d₀ + n))).toNat` — where `ENat.toNat ⊤ = 0`,
+so infinite-length pieces contribute `0` — still satisfies this rational identity
+(`exists_hilbertSeries_mul_one_sub_X_pow`): a sufficiently high piece generates the tail of `M`,
+so either it has finite length and Artinian annihilator quotient
+(`TauCeti.isArtinianRing_quotient_annihilator`), or all sufficiently high `ENat.toNat`
+coefficients are zero; this series agrees with the genuine length Hilbert series whenever every
+piece has finite length (for instance when `A` is Artinian).
 
 Translating Mathlib's `Polynomial.hilbertPoly` by `d₀` then supplies the eventual Hilbert
 polynomial `P : ℚ[X]` of degree `< e` agreeing with `Module.length A (ℳ d)` for all sufficiently
@@ -54,7 +51,8 @@ polynomial for the `ENat.toNat` length coefficients over a ring with unique addi
 degree `< e` and takes integer values at every integer `z`. Restricting scalars along evaluation at
 finitely many algebra generators that shift grading by `1` transfers the theorem to any standard
 finitely generated `A`-algebra (`hilbertSerre_of_adjoin_eq_top`), and over a field `k` lengths
-coincide with `Module.finrank` and the theorem also records integer values at all integers
+coincide with `Module.finrank` and the theorem also records that the rational polynomial agrees with
+the graded-piece dimensions in sufficiently high degrees and takes integer values at every integer
 (`hilbertSerre_field`).
 
 ## Main results
@@ -90,238 +88,6 @@ universe u v w
 /-! ### Rational Hilbert–Serre series -/
 
 section RationalSeries
-
-/-- Coefficientwise length identity `(1 - X) * H_M = H_Q - X * H_K` for a degree-1 endomorphism
-`μ` on an internally `ℤ`-graded module vanishing below `d₀`. -/
-private theorem hilbertSeries_mul_one_sub_X {A S M : Type*} [Ring A] [Ring S] [SMul A S]
-    [AddCommGroup M] [Module A M] [Module S M] [IsScalarTower A S M]
-    (G : InternalGrading A M ℤ) {μ : M →ₗ[S] M}
-    (hμ : LinearMap.IsHomogeneous μ G.piece G.piece 1)
-    {d₀ : ℤ} (hd₀ : ∀ d < d₀, G.piece d = ⊥)
-    (hfinM : ∀ d, Module.length A (G.piece d) ≠ ⊤) :
-    let GK := G.ker hμ
-    let GQ := G.quotient (LinearMap.range μ) hμ.isHomogeneous_range
-    (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (G.piece (d₀ + n))).toNat : ℤ)) *
-        (1 - PowerSeries.X) =
-      (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (GQ.piece (d₀ + n))).toNat : ℤ)) -
-        PowerSeries.X *
-          (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (GK.piece (d₀ + n))).toNat : ℤ)) := by
-  intro GK GQ
-  have hfinK (d : ℤ) : Module.length A (GK.piece d) ≠ ⊤ :=
-    ne_top_of_le_ne_top (hfinM d) (GradedModule.length_ker_piece_le G hμ d)
-  have hfinQ (d : ℤ) : Module.length A (GQ.piece d) ≠ ⊤ :=
-    ne_top_of_le_ne_top (hfinM d)
-      (GradedModule.length_quotient_piece_le G (LinearMap.range μ) hμ.isHomogeneous_range d)
-  have hstep (j : ℤ) :
-      ((Module.length A (G.piece (j + 1))).toNat : ℤ) -
-          ((Module.length A (G.piece j)).toNat : ℤ) =
-        ((Module.length A (GQ.piece (j + 1))).toNat : ℤ) -
-          ((Module.length A (GK.piece j)).toNat : ℤ) := by
-    have h := congrArg ENat.toNat (GradedModule.length_piece_add_quotient_eq_add_ker G hμ j)
-    rw [ENat.toNat_add (hfinM j) (hfinQ (j + 1)),
-      ENat.toNat_add (hfinM (j + 1)) (hfinK j)] at h
-    omega
-  ext n
-  rw [mul_sub, mul_one, map_sub, map_sub, PowerSeries.coeff_mk, PowerSeries.coeff_mk]
-  cases n with
-  | zero =>
-    simp only [PowerSeries.coeff_zero_X_mul, PowerSeries.coeff_zero_mul_X, sub_zero]
-    rw [Nat.cast_zero, add_zero]
-    have hbotM : G.piece (d₀ - 1) = ⊥ := hd₀ (d₀ - 1) (by omega)
-    have hbotK : GK.piece (d₀ - 1) = ⊥ := (Submodule.eq_bot_iff _).mpr fun x hx ↦
-      Subtype.ext ((Submodule.eq_bot_iff _).mp hbotM x.val ((G.mem_ker_piece hμ).mp hx))
-    have h0 := hstep (d₀ - 1)
-    rw [sub_add_cancel, hbotM, hbotK, Module.length_bot] at h0
-    simpa using h0
-  | succ n =>
-    rw [PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_mk,
-      PowerSeries.coeff_mk]
-    have heq : d₀ + ((n + 1 : ℕ) : ℤ) = (d₀ + (n : ℤ)) + 1 := by push_cast; ring
-    rw [heq]
-    exact hstep (d₀ + n)
-
-/-- Base case (`e = 0` variables) of the rational Hilbert–Serre series: `M` is finite over `A`,
-hence has only finitely many nonzero graded pieces, so its shifted Hilbert series is already a
-polynomial. -/
-private theorem exists_hilbertSeries_zero_vars {A : Type u} [CommRing A]
-    {M : Type w} [AddCommGroup M] [Module A M] [Module (MvPolynomial (Fin 0) A) M]
-    [IsScalarTower A (MvPolynomial (Fin 0) A) M] [Module.Finite (MvPolynomial (Fin 0) A) M]
-    (ℳ : ℤ → Submodule A M) [DirectSum.Decomposition ℳ] (d₀ : ℤ) :
-    ∃ h : Polynomial ℤ,
-      (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (ℳ (d₀ + n))).toNat : ℤ)) *
-        (1 - PowerSeries.X) ^ 0 = h.toPowerSeries := by
-  classical
-  have : Module.Finite A (MvPolynomial (Fin 0) A) :=
-    Module.Finite.equiv (MvPolynomial.isEmptyAlgEquiv A (Fin 0)).toLinearEquiv.symm
-  have : Module.Finite A M := Module.Finite.trans (MvPolynomial (Fin 0) A) M
-  let G := InternalGrading.ofDecomposition ℳ
-  have hfin : {d : ℤ | ℳ d ≠ ⊥}.Finite := by
-    simpa [G] using G.finite_piece_ne_bot
-  let S : Finset ℕ := (hfin.toFinset.image fun d ↦ (d - d₀).toNat)
-  let B : ℕ := if h : S.Nonempty then S.max' h + 1 else 0
-  let H : PowerSeries ℤ := PowerSeries.mk fun n : ℕ ↦ ((Module.length A (ℳ (d₀ + n))).toNat : ℤ)
-  refine ⟨PowerSeries.trunc B H, ?_⟩
-  rw [pow_zero, mul_one]
-  refine (PowerSeries.coe_trunc_eq_self_of_coeff_eq_zero fun n hn ↦ ?_).symm
-  rw [PowerSeries.coeff_mk]
-  have hbot : ℳ (d₀ + n) = ⊥ := by
-    by_contra hne
-    have hmemS : n ∈ S := Finset.mem_image.mpr ⟨d₀ + n, hfin.mem_toFinset.mpr hne, by omega⟩
-    have hle : n ≤ S.max' ⟨n, hmemS⟩ := Finset.le_max' S n hmemS
-    have hB : B = S.max' ⟨n, hmemS⟩ + 1 := dite_eq_left ⟨n, hmemS⟩
-    omega
-  rw [hbot, Module.length_bot, ENat.toNat_zero, Nat.cast_zero]
-
-/-- Any finitely generated `ℤ`-graded `MvPolynomial (Fin (e + 1)) A`-module annihilated by
-`X (Fin.last e)` restricts to a finitely generated `ℤ`-graded `MvPolynomial (Fin e) A`-module via
-`Fin.castSucc`, allowing the induction hypothesis on `e` variables to apply. -/
-private theorem exists_hilbertSeries_of_smul_last_eq_zero {A : Type u} [CommRing A] {e : ℕ}
-    (ih : ∀ {N : Type w} [AddCommGroup N] [Module A N]
-      [Module (MvPolynomial (Fin e) A) N] [IsScalarTower A (MvPolynomial (Fin e) A) N]
-      [Module.Finite (MvPolynomial (Fin e) A) N]
-      (𝒩 : ℤ → Submodule A N) [DirectSum.Decomposition 𝒩],
-      (∀ (i : ℕ) (j : ℤ) (p : MvPolynomial (Fin e) A),
-        p ∈ MvPolynomial.homogeneousSubmodule (Fin e) A i → ∀ n ∈ 𝒩 j, p • n ∈ 𝒩 (j + i)) →
-      ∀ (d₀ : ℤ), (∀ d < d₀, 𝒩 d = ⊥) →
-      ∃ h : Polynomial ℤ,
-        (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (𝒩 (d₀ + n))).toNat : ℤ)) *
-          (1 - PowerSeries.X) ^ e = h.toPowerSeries)
-    {N : Type w} [AddCommGroup N] [Module A N]
-    [Module (MvPolynomial (Fin (e + 1)) A) N] [IsScalarTower A (MvPolynomial (Fin (e + 1)) A) N]
-    [Module.Finite (MvPolynomial (Fin (e + 1)) A) N]
-    (𝒩 : ℤ → Submodule A N) [DirectSum.Decomposition 𝒩]
-    (hgraded : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial (Fin (e + 1)) A),
-      p ∈ MvPolynomial.homogeneousSubmodule (Fin (e + 1)) A i → ∀ n ∈ 𝒩 j, p • n ∈ 𝒩 (j + i))
-    (hkill : ∀ z : N, (MvPolynomial.X (Fin.last e) : MvPolynomial (Fin (e + 1)) A) • z = 0)
-    {d₀ : ℤ} (hd₀ : ∀ d < d₀, 𝒩 d = ⊥) :
-    ∃ h : Polynomial ℤ,
-      (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (𝒩 (d₀ + n))).toNat : ℤ)) *
-        (1 - PowerSeries.X) ^ e = h.toPowerSeries := by
-  let ι : MvPolynomial (Fin e) A →ₐ[A] MvPolynomial (Fin (e + 1)) A :=
-    MvPolynomial.rename Fin.castSucc
-  let : Module (MvPolynomial (Fin e) A) N := Module.compHom N ι.toRingHom
-  have : IsScalarTower A (MvPolynomial (Fin e) A) N := ι.isScalarTower_compHom
-  have : Module.Finite (MvPolynomial (Fin e) A) N :=
-    TauCeti.MvPolynomial.moduleFinite_compHom_rename_castSucc hkill
-  exact ih 𝒩 (fun i j p hp n hn ↦ hgraded i j (ι p) hp.rename_isHomogeneous n hn) d₀ hd₀
-
-/-- Induction step (`e → e + 1` variables) of the rational Hilbert–Serre series: multiplication by
-`X (Fin.last e)` splits the problem into its kernel and cokernel, both finite over `e` variables. -/
-private theorem exists_hilbertSeries_step {A : Type u} [CommRing A] [IsArtinianRing A] {e : ℕ}
-    (ih : ∀ {N : Type w} [AddCommGroup N] [Module A N]
-      [Module (MvPolynomial (Fin e) A) N] [IsScalarTower A (MvPolynomial (Fin e) A) N]
-      [Module.Finite (MvPolynomial (Fin e) A) N]
-      (𝒩 : ℤ → Submodule A N) [DirectSum.Decomposition 𝒩],
-      (∀ (i : ℕ) (j : ℤ) (p : MvPolynomial (Fin e) A),
-        p ∈ MvPolynomial.homogeneousSubmodule (Fin e) A i → ∀ n ∈ 𝒩 j, p • n ∈ 𝒩 (j + i)) →
-      ∀ (d₀ : ℤ), (∀ d < d₀, 𝒩 d = ⊥) →
-      ∃ h : Polynomial ℤ,
-        (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (𝒩 (d₀ + n))).toNat : ℤ)) *
-          (1 - PowerSeries.X) ^ e = h.toPowerSeries)
-    {M : Type w} [AddCommGroup M] [Module A M]
-    [Module (MvPolynomial (Fin (e + 1)) A) M] [IsScalarTower A (MvPolynomial (Fin (e + 1)) A) M]
-    [Module.Finite (MvPolynomial (Fin (e + 1)) A) M]
-    (ℳ : ℤ → Submodule A M) [DirectSum.Decomposition ℳ]
-    (hgraded : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial (Fin (e + 1)) A),
-      p ∈ MvPolynomial.homogeneousSubmodule (Fin (e + 1)) A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i))
-    {d₀ : ℤ} (hd₀ : ∀ d < d₀, ℳ d = ⊥) :
-    ∃ h : Polynomial ℤ,
-      (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (ℳ (d₀ + n))).toNat : ℤ)) *
-        (1 - PowerSeries.X) ^ (e + 1) = h.toPowerSeries := by
-  let R := MvPolynomial (Fin (e + 1)) A
-  let x : R := MvPolynomial.X (Fin.last e)
-  let μ : M →ₗ[R] M := LinearMap.lsmul R M x
-  let G := InternalGrading.ofDecomposition ℳ
-  have hGp : G.piece = ℳ := InternalGrading.ofDecomposition_piece ℳ
-  have hμ : LinearMap.IsHomogeneous μ G.piece G.piece (1 : ℤ) :=
-    LinearMap.isHomogeneous_def.mpr fun j m hm ↦ by
-      rw [hGp] at hm ⊢
-      exact hgraded 1 j x (MvPolynomial.isHomogeneous_X A (Fin.last e)) m hm
-  let K := LinearMap.ker μ
-  let Q := M ⧸ LinearMap.range μ
-  let GK := G.ker hμ
-  let GQ := G.quotient (LinearMap.range μ) hμ.isHomogeneous_range
-  have : Module.Finite R K := Module.Finite.of_fg (IsNoetherian.noetherian K)
-  have : Module.Finite R Q :=
-    Module.Finite.of_surjective (LinearMap.range μ).mkQ (Submodule.mkQ_surjective _)
-  obtain ⟨hK, hhK⟩ := exists_hilbertSeries_of_smul_last_eq_zero ih GK.piece
-    (fun i j p hp k hk ↦ by
-      rw [G.mem_ker_piece, hGp] at hk ⊢
-      exact hgraded i j p hp k.val hk)
-    (fun k ↦ Subtype.ext k.property)
-    (fun d hd ↦ (Submodule.eq_bot_iff _).mpr fun k hk ↦
-      Subtype.ext ((Submodule.eq_bot_iff _).mp (hd₀ d hd) k.val (hGp ▸ (G.mem_ker_piece hμ).mp hk)))
-  obtain ⟨hQ, hhQ⟩ := exists_hilbertSeries_of_smul_last_eq_zero ih GQ.piece
-    (fun i j p hp q hq ↦ by
-      obtain ⟨m, hm, rfl⟩ := (G.mem_quotient_piece_iff _ _).mp hq
-      exact G.mk_mem_quotient_piece _ _ (hGp ▸ hgraded i j p hp m (hGp ▸ hm)))
-    (fun q ↦ by
-      obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-      exact (Submodule.Quotient.mk_eq_zero _).mpr ⟨m, rfl⟩)
-    (fun d hd ↦ (Submodule.eq_bot_iff _).mpr fun q hq ↦ by
-      obtain ⟨m, hm, rfl⟩ := (G.mem_quotient_piece_iff _ _).mp hq
-      rw [(Submodule.eq_bot_iff _).mp (hd₀ d hd) m (hGp ▸ hm), Submodule.Quotient.mk_zero])
-  have hfinM : ∀ d, Module.length A (G.piece d) ≠ ⊤ := fun d ↦ by
-    let := MvPolynomial.gradedAlgebra (σ := Fin (e + 1)) (R := A)
-    rw [hGp]
-    exact GradedModule.length_piece_ne_top (MvPolynomial.homogeneousSubmodule (Fin (e + 1)) A)
-      (fun i ↦ TauCeti.homogeneousSubmodule_moduleFinite i) ℳ hgraded d
-  have hdiff := hilbertSeries_mul_one_sub_X G hμ (by simpa [hGp] using hd₀) hfinM
-  rw [hGp] at hdiff
-  refine ⟨hQ - Polynomial.X * hK, ?_⟩
-  rw [pow_succ', ← mul_assoc, hdiff, sub_mul, mul_assoc, hhQ, hhK]
-  simp
-
-/-- Induction on the number `e` of polynomial variables for the rational Hilbert–Serre series. -/
-private theorem exists_hilbertSeries_mul_one_sub_X_pow_fin {A : Type u} [CommRing A]
-    [IsArtinianRing A] :
-    ∀ (e : ℕ) {M : Type w} [AddCommGroup M] [Module A M]
-      [Module (MvPolynomial (Fin e) A) M] [IsScalarTower A (MvPolynomial (Fin e) A) M]
-      [Module.Finite (MvPolynomial (Fin e) A) M]
-      (ℳ : ℤ → Submodule A M) [DirectSum.Decomposition ℳ],
-      (∀ (i : ℕ) (j : ℤ) (p : MvPolynomial (Fin e) A),
-        p ∈ MvPolynomial.homogeneousSubmodule (Fin e) A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i)) →
-      ∀ (d₀ : ℤ), (∀ d < d₀, ℳ d = ⊥) →
-      ∃ h : Polynomial ℤ,
-        (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (ℳ (d₀ + n))).toNat : ℤ)) *
-          (1 - PowerSeries.X) ^ e = h.toPowerSeries
-  | 0, _, _, _, _, _, _, ℳ, _, _, d₀, _ =>
-    exists_hilbertSeries_zero_vars ℳ d₀
-  | e + 1, _, _, _, _, _, _, ℳ, _, hgraded, _, hd₀ =>
-    exists_hilbertSeries_step (exists_hilbertSeries_mul_one_sub_X_pow_fin e) ℳ hgraded hd₀
-
-/-- Rational Hilbert–Serre series over an Artinian base ring, from a vanishing bound `d₀`. -/
-private theorem exists_hilbertSeries_mul_one_sub_X_pow_of_artinian {A : Type u} [CommRing A]
-    [IsArtinianRing A] {σ : Type v} [Fintype σ] {M : Type w} [AddCommGroup M] [Module A M]
-    [Module (MvPolynomial σ A) M] [IsScalarTower A (MvPolynomial σ A) M]
-    [Module.Finite (MvPolynomial σ A) M]
-    (ℳ : ℤ → Submodule A M) [DirectSum.Decomposition ℳ]
-    (hgraded : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
-      p ∈ MvPolynomial.homogeneousSubmodule σ A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i))
-    {d₀ : ℤ} (hd₀ : ∀ d < d₀, ℳ d = ⊥) :
-    ∃ h : Polynomial ℤ,
-      (PowerSeries.mk fun n : ℕ ↦ ((Module.length A (ℳ (d₀ + n))).toNat : ℤ)) *
-        (1 - PowerSeries.X) ^ Fintype.card σ = h.toPowerSeries := by
-  let e : Fin (Fintype.card σ) ≃ σ := (Fintype.equivFin σ).symm
-  let φ : MvPolynomial (Fin (Fintype.card σ)) A ≃ₐ[A] MvPolynomial σ A :=
-    MvPolynomial.renameEquiv A e
-  let : Module (MvPolynomial (Fin (Fintype.card σ)) A) M := Module.compHom M φ.toRingHom
-  have : IsScalarTower A (MvPolynomial (Fin (Fintype.card σ)) A) M :=
-    φ.toAlgHom.isScalarTower_compHom
-  let : Algebra (MvPolynomial σ A) (MvPolynomial (Fin (Fintype.card σ)) A) :=
-    φ.symm.toRingHom.toAlgebra
-  have : IsScalarTower (MvPolynomial σ A) (MvPolynomial (Fin (Fintype.card σ)) A) M :=
-    IsScalarTower.of_algebraMap_smul fun p m ↦ by
-      rw [RingHom.algebraMap_toAlgebra, MulAction.compHom_smul_def]
-      simp
-  have : Module.Finite (MvPolynomial (Fin (Fintype.card σ)) A) M :=
-    Module.Finite.of_restrictScalars_finite
-      (MvPolynomial σ A) (MvPolynomial (Fin (Fintype.card σ)) A) M
-  have hgraded' : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial (Fin (Fintype.card σ)) A),
-      p ∈ MvPolynomial.homogeneousSubmodule (Fin (Fintype.card σ)) A i →
-        ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i) := fun i j p hp m hm ↦
-    hgraded i j (φ p) hp.rename_isHomogeneous m hm
-  exact exists_hilbertSeries_mul_one_sub_X_pow_fin (Fintype.card σ) ℳ hgraded' d₀ hd₀
 
 /-- Lifting an `A`-module grading on a module annihilated by `I` to `A ⧸ I` reduces the rational
 Hilbert–Serre series to the Artinian ring `A ⧸ I`. -/
@@ -379,8 +145,9 @@ private theorem exists_hilbertSeries_of_isTorsionBySet {A : Type u} [CommRing A]
       ((LinearEquiv.ofEq _ _ (e.apply_symm_apply (ℳ d)).symm).trans
         (((ℳB d).restrictScalarsEquiv A).restrictScalars A))).trans
       (Module.length_eq_of_surjective (S := A) (R := B) Ideal.Quotient.mk_surjective)
-  simpa only [hlen] using exists_hilbertSeries_mul_one_sub_X_pow_of_artinian ℳB hgradedB
+  obtain ⟨h, hh⟩ := TauCeti.MvPolynomial.exists_mk_length_mul_one_sub_X_pow_eq hgradedB
     (fun d hd ↦ by simp only [ℳB, hd₀ d hd, map_bot])
+  exact ⟨h, by simpa only [hlen] using hh⟩
 
 /-- The `MvPolynomial σ A`-submodule generated by a finite `A`-module piece `ℳ N₁` is finitely
 generated over `MvPolynomial σ A`, has zero homogeneous components below `N₁`, and is annihilated

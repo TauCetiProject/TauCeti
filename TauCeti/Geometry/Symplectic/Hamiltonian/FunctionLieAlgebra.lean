@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Bracket
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 
@@ -16,7 +17,10 @@ import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 Let `σ` be a two-form on a manifold `M` modelled on a real normed space, possibly of infinite
 dimension. A smooth function `f` is a **Hamiltonian function** when it has a smooth Hamiltonian
 vector field: a smooth vector field `X` with `ι_X σ = df`. The Hamiltonian functions form a real
-vector space (`TauCeti.SmoothTwoForm.hamiltonianFunctions`).
+vector space (`TauCeti.SmoothTwoForm.hamiltonianFunctions`). They contain the constants and, by the
+Leibniz rule `X_{fg} = f X_g + g X_f`, are closed under the pointwise product
+(`TauCeti.SmoothTwoForm.mul_mem_hamiltonianFunctions`), so they form a subalgebra of the smooth
+functions (`TauCeti.SmoothTwoForm.hamiltonianFunctionsSubalgebra`).
 
 In infinite dimension a fiberwise nondegenerate form need not have surjective flat maps
 `v ↦ σ(v, ·)`, so a smooth function need not have a Hamiltonian vector field, and the field
@@ -39,14 +43,22 @@ algebra, `TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra σ hσ`.
 * The map `f ↦ -X_f` is a Lie algebra homomorphism into the smooth vector fields with their Lie
   bracket (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.negVectorFieldLieHom`), whose
   kernel consists of the functions with vanishing differential
-  (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.mem_ker_negVectorFieldLieHom_iff`).
+  (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.mem_ker_negVectorFieldLieHom_iff`), the
+  constant functions when `M` is preconnected, by
+`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.mem_ker_negVectorFieldLieHom_iff_exists_const`.
+* The bracket satisfies the Leibniz rule `⁅f g, k⁆ = f ⁅g, k⁆ + g ⁅f, k⁆` for the pointwise product
+  (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.lie_apply_of_eq_mul`).
 
-For a fiberwise nondegenerate form on a finite-dimensional manifold every smooth function is
-Hamiltonian (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianFunctions_eq_top`), and the bracket
-is the Poisson bracket `TauCeti.SmoothTwoForm.poissonBracket`
-(`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.lie_apply_eq_poissonBracket`), the bracket of
-the Poisson Lie algebra `TauCeti.SmoothTwoForm.PoissonLieAlgebra`, which is identified with this Lie
-algebra in `TauCeti.Geometry.Symplectic.Hamiltonian.LieAlgebra`.
+If every flat map of `σ` is invertible, as for a strongly nondegenerate form on a Banach manifold,
+every smooth function is Hamiltonian
+(`TauCeti.SmoothTwoForm.hamiltonianFunctions_eq_top_of_isInvertible`), and the bracket is the
+Poisson bracket `TauCeti.SmoothTwoForm.poissonBracket`
+(`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.lie_apply_eq_poissonBracket_of_isInvertible`).
+This applies in particular to a fiberwise nondegenerate form on a finite-dimensional manifold
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianFunctions_eq_top`,
+`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.lie_apply_eq_poissonBracket`), where the
+bracket is that of the Poisson Lie algebra `TauCeti.SmoothTwoForm.PoissonLieAlgebra`, which is
+identified with this Lie algebra in `TauCeti.Geometry.Symplectic.Hamiltonian.LieAlgebra`.
 
 The Lie algebra is a type synonym of the Hamiltonian functions indexed by the proof `hσ` that `σ`
 is symplectic, as for `TauCeti.SmoothTwoForm.PoissonLieAlgebra`. It carries only the Lie bracket,
@@ -138,15 +150,64 @@ theorem eval₂_mem_hamiltonianFunctions [CompleteSpace E] (hσ : σ.IsClosed)
   exact hX.neg_mlieBracket hσ hY (f.contMDiff.of_le (by simp)) (g.contMDiff.of_le (by simp))
     (X.contMDiff.mdifferentiable (by simp)) (Y.contMDiff.mdifferentiable (by simp))
 
+/-- **The product of Hamiltonian functions is Hamiltonian.** If `X` and `Y` are smooth Hamiltonian
+vector fields of the smooth functions `f` and `g`, then `f • Y + g • X` is a smooth Hamiltonian
+vector field of `f * g` (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mul`). -/
+theorem mul_mem_hamiltonianFunctions {f g : C^∞⟮I, M; ℝ⟯} (hf : f ∈ σ.hamiltonianFunctions)
+    (hg : g ∈ σ.hamiltonianFunctions) : f * g ∈ σ.hamiltonianFunctions := by
+  obtain ⟨X, hX⟩ := hf
+  obtain ⟨Y, hY⟩ := hg
+  refine ⟨⟨fun x ↦ f x • Y x + g x • X x, (f.contMDiff.smul_section Y.contMDiff).add_section
+    (g.contMDiff.smul_section X.contMDiff)⟩, ?_⟩
+  rw [ContMDiffMap.coe_mul]
+  exact hX.mul hY (f.contMDiff.mdifferentiable (by simp)) (g.contMDiff.mdifferentiable (by simp))
+
+/-- **The constant function `1` is Hamiltonian**, with the Hamiltonian vector field `0`
+(`TauCeti.SmoothTwoForm.isHamiltonianVectorField_const`); other constants follow by scalar
+multiplication. -/
+theorem one_mem_hamiltonianFunctions : (1 : C^∞⟮I, M; ℝ⟯) ∈ σ.hamiltonianFunctions :=
+  ⟨0, by
+    rw [ContMDiffSection.coe_zero, ContMDiffMap.coe_one, Pi.one_def]
+    exact σ.isHamiltonianVectorField_const 1⟩
+
+variable (σ) in
+/-- The Hamiltonian functions of `σ` as a subalgebra of the smooth functions: they contain the
+constants (`TauCeti.SmoothTwoForm.one_mem_hamiltonianFunctions`) and are closed under the pointwise
+product (`TauCeti.SmoothTwoForm.mul_mem_hamiltonianFunctions`). -/
+def hamiltonianFunctionsSubalgebra : Subalgebra ℝ C^∞⟮I, M; ℝ⟯ :=
+  σ.hamiltonianFunctions.toSubalgebra one_mem_hamiltonianFunctions
+    fun _ _ ↦ mul_mem_hamiltonianFunctions
+
+/-- The subalgebra of Hamiltonian functions has the Hamiltonian functions as its underlying
+subspace. -/
+@[simp]
+theorem toSubmodule_hamiltonianFunctionsSubalgebra :
+    Subalgebra.toSubmodule σ.hamiltonianFunctionsSubalgebra = σ.hamiltonianFunctions :=
+  Submodule.toSubalgebra_toSubmodule _ _ _
+
+/-- A smooth function lies in the subalgebra of Hamiltonian functions exactly when it is
+Hamiltonian. -/
+@[simp]
+theorem mem_hamiltonianFunctionsSubalgebra_iff {f : C^∞⟮I, M; ℝ⟯} :
+    f ∈ σ.hamiltonianFunctionsSubalgebra ↔ f ∈ σ.hamiltonianFunctions :=
+  Iff.rfl
+
+/-- **Every smooth function is Hamiltonian for a strongly nondegenerate form.** On a manifold
+modelled on a Banach space, if every flat map of `σ` is invertible, the Hamiltonian vector field
+`X_f = (σ♭)⁻¹ df` of a smooth function is smooth. -/
+theorem hamiltonianFunctions_eq_top_of_isInvertible [CompleteSpace E]
+    (h : ∀ x, (σ.flat x).IsInvertible) : σ.hamiltonianFunctions = ⊤ :=
+  eq_top_iff.2 fun f _ ↦
+    ⟨⟨σ.hamiltonianVectorField f, contMDiff_hamiltonianVectorField_of_isInvertible h le_rfl
+        (f.contMDiff.of_le (by simp))⟩,
+      isHamiltonianVectorField_hamiltonianVectorField_of_isInvertible h f⟩
+
 /-- **Every smooth function is Hamiltonian in finite dimension.** For a fiberwise nondegenerate
 form on a finite-dimensional manifold, the Hamiltonian vector field `X_f = (σ♭)⁻¹ df` of a smooth
 function is smooth. -/
 theorem IsNondegenerate.hamiltonianFunctions_eq_top [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) : σ.hamiltonianFunctions = ⊤ :=
-  eq_top_iff.2 fun f _ ↦
-    ⟨⟨σ.hamiltonianVectorField f, h.contMDiff_hamiltonianVectorField le_rfl
-        (f.contMDiff.of_le (by simp))⟩,
-      h.isHamiltonianVectorField_hamiltonianVectorField f⟩
+  hamiltonianFunctions_eq_top_of_isInvertible h.isInvertible_flat
 
 /-! ### The Lie algebra of Hamiltonian functions -/
 
@@ -252,6 +313,23 @@ theorem vectorField_sub (f g : σ.HamiltonianFunctionLieAlgebra hσ) :
     vectorField (f - g) = vectorField f - vectorField g := by
   rw [sub_eq_add_neg, vectorField_add, vectorField_neg, sub_eq_add_neg]
 
+/-- **The Leibniz rule for Hamiltonian vector fields.** If the Hamiltonian function `h` is the
+pointwise product of the Hamiltonian functions `f` and `g`, then `X_h = f X_g + g X_f`. -/
+theorem vectorField_apply_of_eq_mul {f g h : σ.HamiltonianFunctionLieAlgebra hσ}
+    (hfg : (σ.hamiltonianFunctionLieAlgebraEquiv hσ h : C^∞⟮I, M; ℝ⟯) =
+      (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯) *
+        (σ.hamiltonianFunctionLieAlgebraEquiv hσ g : C^∞⟮I, M; ℝ⟯)) (x : M) :
+    vectorField h x =
+      (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯) x • vectorField g x +
+        (σ.hamiltonianFunctionLieAlgebraEquiv hσ g : C^∞⟮I, M; ℝ⟯) x • vectorField f x := by
+  have hX := (isHamiltonianVectorField_vectorField f).mul (isHamiltonianVectorField_vectorField g)
+    ((σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯).contMDiff.mdifferentiable
+      (by simp))
+    ((σ.hamiltonianFunctionLieAlgebraEquiv hσ g : C^∞⟮I, M; ℝ⟯).contMDiff.mdifferentiable
+      (by simp))
+  rw [← ContMDiffMap.coe_mul, ← hfg] at hX
+  exact (congrFun (isHamiltonianVectorField_iff_eq_vectorField.1 hX) x).symm
+
 variable [CompleteSpace E]
 
 /-- The bracket `⁅f, g⁆ = σ(X_f, X_g)` of the Lie algebra of Hamiltonian functions. -/
@@ -293,6 +371,24 @@ theorem lie_apply_eq_mvfderiv (f g : σ.HamiltonianFunctionLieAlgebra hσ) (x : 
         (vectorField g x) := by
   rw [hamiltonianFunctionLieAlgebraEquiv_lie_apply,
     isHamiltonianVectorField_iff.1 (isHamiltonianVectorField_vectorField f)]
+
+/-- **The Leibniz rule for the bracket of Hamiltonian functions.** If the Hamiltonian function `h`
+is the pointwise product of the Hamiltonian functions `f` and `g`, then
+`⁅h, k⁆ = f ⁅g, k⁆ + g ⁅f, k⁆`. -/
+theorem lie_apply_of_eq_mul {f g h : σ.HamiltonianFunctionLieAlgebra hσ}
+    (hfg : (σ.hamiltonianFunctionLieAlgebraEquiv hσ h : C^∞⟮I, M; ℝ⟯) =
+      (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯) *
+        (σ.hamiltonianFunctionLieAlgebraEquiv hσ g : C^∞⟮I, M; ℝ⟯))
+    (k : σ.HamiltonianFunctionLieAlgebra hσ) (x : M) :
+    (σ.hamiltonianFunctionLieAlgebraEquiv hσ ⁅h, k⁆ : C^∞⟮I, M; ℝ⟯) x =
+      (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯) x *
+          (σ.hamiltonianFunctionLieAlgebraEquiv hσ ⁅g, k⁆ : C^∞⟮I, M; ℝ⟯) x +
+        (σ.hamiltonianFunctionLieAlgebraEquiv hσ g : C^∞⟮I, M; ℝ⟯) x *
+          (σ.hamiltonianFunctionLieAlgebraEquiv hσ ⁅f, k⁆ : C^∞⟮I, M; ℝ⟯) x := by
+  rw [hamiltonianFunctionLieAlgebraEquiv_lie_apply, hamiltonianFunctionLieAlgebraEquiv_lie_apply,
+    hamiltonianFunctionLieAlgebraEquiv_lie_apply, vectorField_apply_of_eq_mul hfg,
+    SmoothBundleForm.eval₂_add_left, SmoothBundleForm.eval₂_smul_left,
+    SmoothBundleForm.eval₂_smul_left, smul_eq_mul, smul_eq_mul]
 
 /-- **`f ↦ X_f` reverses brackets**: the Hamiltonian vector field of `⁅f, g⁆` is
 `-[X_f, X_g]`. -/
@@ -403,7 +499,43 @@ theorem mem_ker_negVectorFieldLieHom_iff {f : σ.HamiltonianFunctionLieAlgebra h
       (isHamiltonianVectorField_iff.2 fun y v ↦ ?_)).symm x
     rw [Pi.zero_apply, SmoothBundleForm.eval₂_zero_left, h y, zero_apply]
 
-/-! ### Comparison with the Poisson bracket in finite dimension -/
+/-- **On a preconnected manifold the kernel of `f ↦ -X_f` consists of the constant functions.** -/
+theorem mem_ker_negVectorFieldLieHom_iff_exists_const [PreconnectedSpace M]
+    {f : σ.HamiltonianFunctionLieAlgebra hσ} :
+    f ∈ (negVectorFieldLieHom σ hσ).ker ↔
+      ∃ c : ℝ, ∀ x, (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯) x = c := by
+  set F := (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯)
+  rw [mem_ker_negVectorFieldLieHom_iff]
+  refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ x ↦ ?_⟩
+  · rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+    · exact ⟨0, fun x ↦ isEmptyElim x⟩
+    exact ⟨F x₀, fun x ↦ (F.contMDiff.mdifferentiable (by simp)).apply_eq_of_mfderiv_eq_zero
+      (fun y ↦ mvfderiv_eq_zero_iff.1 (h y)) x x₀⟩
+  · rw [show ⇑F = fun _ ↦ c from funext hc, mvfderiv_const]
+
+/-! ### Comparison with the Poisson bracket -/
+
+omit [CompleteSpace E] in
+/-- At a point where the flat map of `σ` is invertible, the vector field of a Hamiltonian function
+is `X_f = (σ♭)⁻¹ df`. -/
+theorem vectorField_apply_eq_hamiltonianVectorField_of_isInvertible {x : M}
+    (hx : (σ.flat x).IsInvertible) (f : σ.HamiltonianFunctionLieAlgebra hσ) :
+    vectorField f x =
+      σ.hamiltonianVectorField (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯) x :=
+  ((hamiltonianVectorField_eq_iff_of_isInvertible_flat hx).2
+    (isHamiltonianVectorField_iff.1 (isHamiltonianVectorField_vectorField f) x)).symm
+
+/-- At a point where the flat map of `σ` is invertible, as everywhere for a strongly nondegenerate
+form, the bracket of Hamiltonian functions is the Poisson bracket `{f, g} = σ(X_f, X_g)` with
+`X_f = (σ♭)⁻¹ df`. -/
+theorem lie_apply_eq_poissonBracket_of_isInvertible {x : M} (hx : (σ.flat x).IsInvertible)
+    (f g : σ.HamiltonianFunctionLieAlgebra hσ) :
+    (σ.hamiltonianFunctionLieAlgebraEquiv hσ ⁅f, g⁆ : C^∞⟮I, M; ℝ⟯) x =
+      σ.poissonBracket (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯)
+        (σ.hamiltonianFunctionLieAlgebraEquiv hσ g : C^∞⟮I, M; ℝ⟯) x := by
+  rw [hamiltonianFunctionLieAlgebraEquiv_lie_apply, poissonBracket_def,
+    vectorField_apply_eq_hamiltonianVectorField_of_isInvertible hx,
+    vectorField_apply_eq_hamiltonianVectorField_of_isInvertible hx]
 
 omit [CompleteSpace E] in
 /-- In finite dimension the vector field of a Hamiltonian function is `X_f = (σ♭)⁻¹ df`. -/
@@ -411,8 +543,8 @@ theorem vectorField_eq_hamiltonianVectorField [FiniteDimensional ℝ E]
     (f : σ.HamiltonianFunctionLieAlgebra hσ) :
     ⇑(vectorField f) =
       σ.hamiltonianVectorField (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯) :=
-  (hσ.isNondegenerate.isHamiltonianVectorField_iff_eq.1
-    (isHamiltonianVectorField_vectorField f))
+  funext fun x ↦ vectorField_apply_eq_hamiltonianVectorField_of_isInvertible
+    (hσ.isNondegenerate.isInvertible_flat x) f
 
 /-- In finite dimension the bracket of Hamiltonian functions is the Poisson bracket
 `{f, g} = σ(X_f, X_g)` with `X_f = (σ♭)⁻¹ df`. -/
@@ -420,9 +552,8 @@ theorem lie_apply_eq_poissonBracket [FiniteDimensional ℝ E]
     (f g : σ.HamiltonianFunctionLieAlgebra hσ) (x : M) :
     (σ.hamiltonianFunctionLieAlgebraEquiv hσ ⁅f, g⁆ : C^∞⟮I, M; ℝ⟯) x =
       σ.poissonBracket (σ.hamiltonianFunctionLieAlgebraEquiv hσ f : C^∞⟮I, M; ℝ⟯)
-        (σ.hamiltonianFunctionLieAlgebraEquiv hσ g : C^∞⟮I, M; ℝ⟯) x := by
-  rw [hamiltonianFunctionLieAlgebraEquiv_lie_apply, poissonBracket_def,
-    vectorField_eq_hamiltonianVectorField, vectorField_eq_hamiltonianVectorField]
+        (σ.hamiltonianFunctionLieAlgebraEquiv hσ g : C^∞⟮I, M; ℝ⟯) x :=
+  lie_apply_eq_poissonBracket_of_isInvertible (hσ.isNondegenerate.isInvertible_flat x) f g
 
 end HamiltonianFunctionLieAlgebra
 

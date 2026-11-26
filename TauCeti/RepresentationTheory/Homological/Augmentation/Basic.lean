@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import Mathlib.RepresentationTheory.Rep.Res
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
+import TauCeti.Algebra.MonoidAlgebra.Exactness
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The augmentation ideal and the augmentation sequence
@@ -40,6 +42,12 @@ Nothing here mentions cohomology: the cohomological consequences live in
   `[g] a - [1] a` and its image under the inclusion.
 * `TauCeti.AugmentationIdeal.ρ_singleSub`, `TauCeti.AugmentationIdeal.singleSub_one`:
   the group action and value at the identity.
+* `TauCeti.AugmentationIdeal.ι_asAlgebraHom_singleSub`: the action of `r ∈ k[G]` on
+  `[g] a - [1] a`, computed in `k[G]`.
+* `TauCeti.AugmentationIdeal.span_range_singleSub_eq_top`: if the `σ i` generate `G`, the
+  elements `[σ i] - 1` span `I_G` as a `k[G]`-module.
+* `Rep.augmentationι_comp_augmentation_apply`, `Rep.augmentationι_hom_mem_ker`: the augmentation
+  vanishes on the augmentation ideal, which lies in the kernel of the coefficient sum.
 * `TauCeti.AugmentationIdeal.sum_coeff_augmentationι`: the coefficients of an augmentation-ideal
   element sum to zero.
 
@@ -96,6 +104,18 @@ instance augmentationι_mono : Mono (augmentationι k G) :=
 @[reassoc (attr := simp)]
 theorem augmentationι_comp_augmentation : augmentationι k G ≫ augmentation k G = 0 :=
   kernel.condition (augmentation k G)
+
+/-- The augmentation vanishes on the augmentation ideal, pointwise. -/
+theorem augmentationι_comp_augmentation_apply (x : augmentationIdeal k G) :
+    (augmentation k G).hom ((augmentationι k G).hom x) = 0 := by
+  rw [← Representation.IntertwiningMap.comp_apply, ← hom_comp, augmentationι_comp_augmentation,
+    zero_hom, Representation.IntertwiningMap.coe_zero, Pi.zero_apply]
+
+/-- The inclusion of the augmentation ideal lands in the kernel of the coefficient sum
+`MonoidAlgebra.augmentation`. -/
+theorem augmentationι_hom_mem_ker (x : augmentationIdeal k G) :
+    (augmentationι k G).hom x ∈ RingHom.ker (MonoidAlgebra.augmentation k G) := by
+  rw [RingHom.mem_ker, ← augmentation_hom_apply, augmentationι_comp_augmentation_apply]
 
 /-- The inclusion of the augmentation ideal is a kernel of the augmentation. -/
 def augmentationιIsKernel :
@@ -177,14 +197,9 @@ def augmentationKerIso :
   have : Mono (augmentationKerToLeftRegular k G) := (Rep.mono_iff_injective _).2 fun x y h ↦
     (RestrictScalars.addEquiv k (MonoidAlgebra k G) _).injective (Subtype.ext h)
   have : Mono l.val := mono_of_mono_fac l.property
-  have hy (y : augmentationIdeal k G) :
-      (augmentationι k G).hom y ∈ RingHom.ker (MonoidAlgebra.augmentation k G) := by
-    rw [RingHom.mem_ker, ← augmentation_hom_apply, ← ConcreteCategory.comp_apply,
-      augmentationι_comp_augmentation]
-    rfl
   have : Epi l.val := (Rep.epi_iff_surjective _).2 fun y ↦
     ⟨(RestrictScalars.addEquiv k (MonoidAlgebra k G)
-      (RingHom.ker (MonoidAlgebra.augmentation k G))).symm ⟨_, hy y⟩,
+      (RingHom.ker (MonoidAlgebra.augmentation k G))).symm ⟨_, augmentationι_hom_mem_ker k G y⟩,
       (Rep.mono_iff_injective (augmentationι k G)).1 inferInstance <|
         (ConcreteCategory.comp_apply l.val (augmentationι k G) _).symm.trans
           (ConcreteCategory.congr_hom l.property _)⟩
@@ -262,14 +277,45 @@ theorem singleSub_one (a : k) : singleSub k G a (1 : G) = 0 := by
   apply augmentationι_injective k G
   rw [ι_singleSub, sub_self, map_zero]
 
+/-- The inclusion `I_G → k[G]` sends the action of `r ∈ k[G]` on the element `[g] a - [1] a` of
+the augmentation ideal to the product `r * ([g] a - [1] a)`. -/
+theorem ι_asAlgebraHom_singleSub (r : MonoidAlgebra k G) (a : k) (g : G) :
+    (augmentationι k G).hom ((augmentationIdeal k G).ρ.asAlgebraHom r (singleSub k G a g)) =
+      r * (MonoidAlgebra.single g a - MonoidAlgebra.single 1 a) := by
+  rw [Representation.IntertwiningMap.apply_asAlgebraHom, ι_singleSub]
+  exact Representation.asAlgebraHom_ofMulAction_smul_eq_mul _ _
+
+/-- If the `σ i` generate `G`, the elements `[σ i] - 1` span the augmentation ideal `I_G` as a
+`k[G]`-module. -/
+theorem span_range_singleSub_eq_top {ι : Type*} {σ : ι → G}
+    (hσ : Subgroup.closure (Set.range σ) = ⊤) :
+    Submodule.span (MonoidAlgebra k G) (Set.range fun i ↦
+      (augmentationIdeal k G).ρ.asModuleEquiv.symm (singleSub k G 1 (σ i))) = ⊤ := by
+  classical
+  refine eq_top_iff.2 fun y _ ↦ ?_
+  -- The image of `y` in `k[G]` is a combination of the `[σ i] - 1`.
+  have hmem := augmentationι_hom_mem_ker k G ((augmentationIdeal k G).ρ.asModuleEquiv y)
+  rw [TauCeti.MonoidAlgebra.ker_augmentation_eq_span_of_closure_eq_top k hσ, ← Set.range_comp]
+    at hmem
+  obtain ⟨c, hc⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hmem
+  have hy : y = ∑ i ∈ c.support,
+      c i • (augmentationIdeal k G).ρ.asModuleEquiv.symm (singleSub k G 1 (σ i)) := by
+    apply (augmentationIdeal k G).ρ.asModuleEquiv.injective
+    apply augmentationι_injective k G
+    rw [← hc, Finsupp.sum, map_sum, map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Representation.asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply,
+      ι_asAlgebraHom_singleSub, MonoidAlgebra.one_def]
+    rfl
+  rw [hy]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
 /-- The coefficients of an element of the augmentation ideal sum to zero after inclusion in the
 group ring. -/
 @[simp]
 theorem sum_coeff_augmentationι (x : augmentationIdeal k G) :
     ((augmentationι k G).hom x).coeff.sum (fun _ a ↦ a) = 0 := by
-  have h : (augmentation k G).hom ((augmentationι k G).hom x) = 0 := by
-    rw [← ConcreteCategory.comp_apply, augmentationι_comp_augmentation]
-    rfl
-  simpa [augmentation, leftRegularHom, MonoidAlgebra.lift_apply] using h
+  simpa [augmentation, leftRegularHom, MonoidAlgebra.lift_apply] using
+    augmentationι_comp_augmentation_apply k G x
 
 end TauCeti.AugmentationIdeal

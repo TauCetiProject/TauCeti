@@ -63,7 +63,8 @@ coefficient vanishing at all large frequencies is smoothing
 vanishes depends on the compact set of positions
 (`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`), while in positive
 dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`); it is a symbol of
-no negative order (`TauCeti.Symbol.not_exists_coefficient_eq_const`).
+no negative order (`TauCeti.Symbol.not_exists_coefficient_eq_const`). On `ℝ⁰`, where the only
+frequency is `0`, every symbol is smoothing (`TauCeti.Symbol.isSmoothing_of_dim_eq_zero`).
 
 The estimates are only required locally uniformly in `x`. The predicate `TauCeti.Symbol.IsUniform`
 asks for constants independent of `x`, and `TauCeti.Symbol.HasCompactSpatialSupport` asks that the
@@ -424,9 +425,8 @@ theorem HasCompactSpatialSupport.neg {a : Symbol n V W m} (ha : a.HasCompactSpat
   exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
 
 theorem HasCompactSpatialSupport.sub {a b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport := by
-  rw [sub_eq_add_neg]
-  exact ha.add hb.neg
+    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport :=
+  sub_eq_add_neg a b ▸ ha.add hb.neg
 
 end Module
 
@@ -740,6 +740,15 @@ theorem frequencyLaplacian_eq_sum (a : Symbol n V W m) :
       ∑ j, inclusion (by linarith) (frequencyDeriv j (frequencyDeriv (m := m) j a)) := by
   simp [frequencyLaplacian]
 
+/-- Mixed derivatives of `Δ_ξ a` are sums of those of `a` with two more frequency derivatives. -/
+@[simp]
+theorem mixedDeriv_frequencyLaplacian (a : Symbol n V W m) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (frequencyLaplacian a).coefficient x ξ =
+      ∑ j, mixedDeriv α (β ++ [j, j]) a.coefficient x ξ := by
+  simp [frequencyLaplacian_eq_sum, coefficient_sum, coefficient_inclusion,
+    mixedDeriv_sum fun _ _ => Symbol.contDiff_coefficient _]
+
 /-- The iterated frequency Laplacian `Δ_ξ^N a` of a symbol of order `m`, a symbol of order
 `m - 2N`. -/
 def frequencyLaplacianPow : (N : ℕ) → {m : ℝ} → Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2 * N)
@@ -759,14 +768,33 @@ theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
     (frequencyLaplacianPow (N + 1) a).coefficient =
       (frequencyLaplacian (frequencyLaplacianPow N a)).coefficient := by
   induction N generalizing m with
-  | zero =>
-    funext ⟨x, ξ⟩
-    simp only [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacian,
-      coefficient_frequencyLaplacianPow_zero]
+  | zero => exact funext fun ⟨x, ξ⟩ => by simp [coefficient_frequencyLaplacianPow_succ]
   | succ N ih =>
     funext ⟨x, ξ⟩
     rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
       coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
+
+/-- **Locality of the frequency Laplacian.** If at a position `x` the coefficients of `a` and `b`
+agree for frequencies near `ξ`, then so do the coefficients of `Δ_ξ^N a` and `Δ_ξ^N b`. -/
+theorem _root_.Filter.EventuallyEq.coefficient_frequencyLaplacianPow {m' : ℝ} {a : Symbol n V W m}
+    {b : Symbol n V W m'} {x ξ : CoordinateSpace n}
+    (h : (fun η => a.coefficient (x, η)) =ᶠ[nhds ξ] fun η => b.coefficient (x, η)) (N : ℕ) :
+    (fun η => (frequencyLaplacianPow N a).coefficient (x, η)) =ᶠ[nhds ξ]
+      fun η => (frequencyLaplacianPow N b).coefficient (x, η) := by
+  induction N with
+  | zero => simpa using h
+  | succ N ih =>
+    filter_upwards [Filter.eventually_all.2 fun j => (ih.coordinateDeriv [j]).coordinateDeriv [j]]
+      with η hη
+    simp [coefficient_frequencyLaplacianPow_succ', hη]
+
+/-- If `a` vanishes at `x` for all frequencies in an open set `U`, then so does `Δ_ξ^N a`. -/
+theorem coefficient_frequencyLaplacianPow_eq_zero_of_isOpen (a : Symbol n V W m)
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U) (x : CoordinateSpace n)
+    (ha : ∀ ξ ∈ U, a.coefficient (x, ξ) = 0) (N : ℕ) {ξ : CoordinateSpace n} (hξ : ξ ∈ U) :
+    (frequencyLaplacianPow N a).coefficient (x, ξ) = 0 := by
+  simpa using (Filter.EventuallyEq.coefficient_frequencyLaplacianPow (b := (0 : Symbol n V W m))
+    (Filter.eventually_of_mem (hU.mem_nhds hξ) fun η hη => by simpa using ha η hη) N).eq_of_nhds
 
 /-- If a symbol vanishes for all frequencies at the position `x`, so does each of its frequency
 derivatives. -/
@@ -1446,12 +1474,22 @@ theorem not_exists_coefficient_eq_const [NeZero n] {T : V →L[ℂ] W} (hT : T �
   linarith
 
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
-`-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
+`-2`. On `ℝ⁰` every symbol is smoothing (`TauCeti.Symbol.isSmoothing_of_dim_eq_zero`). -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     (const T : Symbol n V W 0).IsSmoothing ↔ T = 0 := by
   refine ⟨fun h => of_not_not fun hT => ?_, fun h => h ▸ fun _ => ⟨0, by funext p; simp⟩⟩
   have : NeZero n := ⟨hn⟩
   exact not_exists_coefficient_eq_const hT (by norm_num) ((h (-2)).imp fun b hb _ => by simp [hb])
+
+/-- **Symbols on `ℝ⁰` are smoothing.** The only frequency is `0`, where `⟨ξ⟩ = 1`, so the estimates
+of every order hold with the same constants. -/
+theorem isSmoothing_of_dim_eq_zero (hn : n = 0) (a : Symbol n V W m) : a.IsSmoothing := by
+  subst hn
+  refine isSmoothing_iff_forall_exists_bound.2 fun m' K hK α β ↦ ?_
+  obtain rfl : α = [] := List.eq_nil_iff_forall_not_mem.2 fun i ↦ i.elim0
+  obtain rfl : β = [] := List.eq_nil_iff_forall_not_mem.2 fun i ↦ i.elim0
+  obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK [] []
+  exact ⟨C, hC0, fun x hx ξ ↦ by simpa [Subsingleton.elim ξ 0] using hC x hx ξ⟩
 
 end Smoothing
 

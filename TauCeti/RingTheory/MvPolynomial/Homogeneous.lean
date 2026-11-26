@@ -26,7 +26,8 @@ The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof support
 notation such as `hp.eval₂_const_mul` and `hp.aeval_smul_of_algebra`, the latter for a scalar
 algebra that may differ from the coefficient algebra; Mathlib supplies `hp.aeval_smul` and
 `hp.eval_smul` themselves. For `a = -1` this gives `hp.eval_neg`, and `hp.eval_neg_of_even` in
-even degree. In the same way
+even degree; without zero divisors, `hp.eval_smul_ne_zero_iff` records that scaling the point by a
+nonzero scalar does not change whether the value vanishes. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
@@ -114,6 +115,13 @@ theorem eval_neg_of_even {σ R : Type*} [CommRing R] {p : MvPolynomial σ R} {n 
     (hp : p.IsHomogeneous n) (hn : Even n) (x : σ → R) :
     _root_.MvPolynomial.eval (-x) p = _root_.MvPolynomial.eval x p := by
   rw [hp.eval_neg, hn.neg_one_pow, one_mul]
+
+/-- Without zero divisors, a homogeneous polynomial vanishes at `s • x`, for a nonzero scalar `s`,
+exactly when it vanishes at `x`. -/
+theorem eval_smul_ne_zero_iff {σ R : Type*} [CommSemiring R] [NoZeroDivisors R]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) {s : R} (hs : s ≠ 0) (x : σ → R) :
+    _root_.MvPolynomial.eval (s • x) p ≠ 0 ↔ _root_.MvPolynomial.eval x p ≠ 0 := by
+  rw [hp.eval_smul, mul_ne_zero_iff, and_iff_right (pow_ne_zero _ hs)]
 
 /-- The coefficient of `X_j ^ n` in a homogeneous polynomial of degree `n` is its value at the
 `j`-th basis vector: every other monomial involves a variable other than `X_j`. -/

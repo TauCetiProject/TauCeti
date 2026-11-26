@@ -16,8 +16,10 @@ import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Zero
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.Eigenspace.Det
 import TauCeti.LinearAlgebra.Eigenspace.Matrix
 import TauCeti.LinearAlgebra.Matrix.Signature
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The Conley–Zehnder index of a path of linear symplectic maps
@@ -129,6 +131,26 @@ theorem coe_toGLSymplectic {b : Basis (ι ⊕ ι) ℝ V}
     ((ω.toGLSymplectic hb A hA : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) =
       LinearMap.toMatrix b b A := by
   simp [toGLSymplectic, GLSymplectic.coe_ofSymplecticGroup]
+
+/-- The matrix `1 - [A]_b` of `TauCeti.SymplecticForm.toGLSymplectic` has the determinant of
+`1 - A`. -/
+theorem det_one_sub_toGLSymplectic {b : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) (A : V →ₗ[ℝ] V)
+    (hA : ∀ u v, ω (A u) (A v) = ω u v) :
+    (1 - ((ω.toGLSymplectic hb A hA : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ)).det =
+      LinearMap.det (1 - A) := by
+  rw [coe_toGLSymplectic, ← LinearMap.det_toMatrix b, map_sub, LinearMap.toMatrix_one]
+
+/-- The matrix `1 - [A]_b` of `TauCeti.SymplecticForm.toGLSymplectic` is invertible exactly when
+`A` does not have the eigenvalue `1`. -/
+theorem det_one_sub_toGLSymplectic_ne_zero_iff {b : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) (A : V →ₗ[ℝ] V)
+    (hA : ∀ u v, ω (A u) (A v) = ω u v) :
+    (1 - ((ω.toGLSymplectic hb A hA : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ)).det ≠ 0 ↔
+      Module.End.eigenspace A 1 = ⊥ := by
+  have := Module.Free.of_basis b
+  have := Module.Finite.of_basis b
+  rw [det_one_sub_toGLSymplectic, ← Module.End.det_smul_one_sub_ne_zero_iff A 1, one_smul]
 
 /-- The symplectic matrix of a linear map only depends on the map. -/
 theorem toGLSymplectic_congr {b : Basis (ι ⊕ ι) ℝ V}
@@ -253,8 +275,8 @@ theorem continuous_toGLSymplectic {X : Type*} [TopologicalSpace X] {b : Basis (�
     (hf : Continuous f) (hf' : ∀ p u v, ω (f p u) (f p v) = ω u v) :
     Continuous fun p ↦ ω.toGLSymplectic hb (f p) (hf' p) :=
   (GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ).continuous.comp
-    (Continuous.subtype_mk ((LinearMap.continuous_of_finiteDimensional
-      ((LinearMap.toMatrix b b).toLinearMap ∘ₗ ContinuousLinearMap.coeLM ℝ)).comp hf) _)
+    (Continuous.subtype_mk (((ContinuousLinearMap.toMatrixCLM b).continuous.comp hf).congr
+      fun p ↦ ContinuousLinearMap.toMatrixCLM_apply b (f p)) _)
 
 /-- The matrices, in a symplectic basis `b`, of a path `Ψ` of linear maps preserving `ω`, as a
 path of symplectic matrices. -/

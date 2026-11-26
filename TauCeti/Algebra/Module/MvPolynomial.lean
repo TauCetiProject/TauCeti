@@ -7,17 +7,29 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.MvPolynomial.Basic
 import TauCeti.Algebra.MvPolynomial.Rename
 
 /-!
 # Modules over multivariate polynomial rings
 
-This file records finiteness criteria for modules over a multivariate polynomial ring
-`MvPolynomial τ A` when variables outside the range of an injective renaming `f : σ → τ` act by
-zero: restricting scalars along `MvPolynomial.rename f` preserves finite generation.
+This file records finiteness criteria for modules over multivariate polynomial rings:
+
+* When every variable acts by zero, every polynomial acts through its constant coefficient, so a
+  finitely generated `A[X_σ]`-module is finitely generated over `A`
+  (`TauCeti.MvPolynomial.smul_eq_constantCoeff_smul`,
+  `TauCeti.MvPolynomial.finite_of_forall_X_smul_eq_zero`).
+* When variables outside the range of an injective renaming `f : σ → τ` act by zero, restricting
+  scalars along `MvPolynomial.rename f` preserves finite generation
+  (`TauCeti.MvPolynomial.moduleFinite_compHom_rename`,
+  `TauCeti.MvPolynomial.moduleFinite_compHom_rename_castSucc`).
 
 ## Main results
 
+* `TauCeti.MvPolynomial.smul_eq_constantCoeff_smul`: a polynomial acts through its constant
+  coefficient.
+* `TauCeti.MvPolynomial.finite_of_forall_X_smul_eq_zero`: a finitely generated module on which
+  all variables act by zero is finitely generated over the coefficients.
 * `TauCeti.MvPolynomial.moduleFinite_compHom_rename`: a finitely generated `MvPolynomial τ A`-module
   annihilated by every variable outside `Set.range f` (for injective `f : σ → τ`) is finitely
   generated over `MvPolynomial σ A` via `MvPolynomial.rename f`.
@@ -27,9 +39,43 @@ zero: restricting scalars along `MvPolynomial.rename f` preserves finite generat
 
 public section
 
+open _root_.MvPolynomial
+
 namespace TauCeti.MvPolynomial
 
-open _root_.MvPolynomial
+section ZeroAction
+
+variable {σ A M : Type*} [CommSemiring A] [AddCommMonoid M] [Module A M]
+  [Module (MvPolynomial σ A) M] [IsScalarTower A (MvPolynomial σ A) M]
+
+/-- A polynomial acts through its constant coefficient on a module on which every variable acts
+by zero. -/
+theorem smul_eq_constantCoeff_smul
+    (h : ∀ (i : σ) (m : M), (X i : MvPolynomial σ A) • m = 0) {p : MvPolynomial σ A} (m : M) :
+    p • m = constantCoeff p • m := by
+  induction p using _root_.MvPolynomial.induction_on with
+  | C a => rw [constantCoeff_C, ← algebraMap_eq, algebraMap_smul]
+  | add p q hp hq => rw [add_smul, hp, hq, map_add, add_smul]
+  | mul_X p i _ => rw [mul_smul, h, smul_zero, map_mul, constantCoeff_X, mul_zero, zero_smul]
+
+/-- A finitely generated module over a polynomial ring on which every variable acts by zero is
+finitely generated over the coefficients. -/
+theorem finite_of_forall_X_smul_eq_zero [Module.Finite (MvPolynomial σ A) M]
+    (h : ∀ (i : σ) (m : M), (X i : MvPolynomial σ A) • m = 0) : Module.Finite A M := by
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := MvPolynomial σ A) (M := M)
+  refine ⟨⟨s, Submodule.eq_top_iff'.mpr fun m ↦ ?_⟩⟩
+  have hm : m ∈ Submodule.span (MvPolynomial σ A) (s : Set M) := hs ▸ Submodule.mem_top
+  induction hm using Submodule.span_induction with
+  | mem x hx => exact Submodule.subset_span hx
+  | zero => exact Submodule.zero_mem _
+  | add x y _ _ hx hy => exact Submodule.add_mem _ hx hy
+  | smul p x _ hx =>
+    rw [smul_eq_constantCoeff_smul h]
+    exact Submodule.smul_mem _ _ hx
+
+end ZeroAction
+
+section Rename
 
 /-- A finitely generated `MvPolynomial τ A`-module `N` annihilated by every variable outside the
 range of an injective map `f : σ → τ` is finitely generated over `MvPolynomial σ A` via
@@ -77,5 +123,7 @@ theorem moduleFinite_compHom_rename_castSucc {A : Type*} [CommSemiring A] {e : �
     rcases Fin.eq_castSucc_or_eq_last i with ⟨j, rfl⟩ | rfl
     · exact (hi ⟨j, rfl⟩).elim
     · exact hkill z
+
+end Rename
 
 end TauCeti.MvPolynomial

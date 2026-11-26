@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Artinian.Ring
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+import TauCeti.Algebra.Module.GradedModule.Internal
 import TauCeti.RingTheory.Artinian.FiniteLength
 import TauCeti.RingTheory.GradedAlgebra.FiniteType
 import TauCeti.RingTheory.MvPolynomial.Finrank
@@ -70,21 +71,17 @@ theorem exists_finset_homogeneous_span {A B M ι : Type*} [DecidableEq ι] [Semi
     ∃ G : Finset (ι × M), (∀ p ∈ G, p.2 ∈ ℳ p.1) ∧
       Submodule.span B (Set.range fun p : G ↦ p.val.2) = ⊤ := by
   classical
-  obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := B) (M := M)
-  let G : Finset (ι × M) :=
-    S.biUnion fun s ↦ (decompose ℳ s).support.image fun j ↦ (j, (decompose ℳ s j : M))
+  obtain ⟨S, hS, hspan⟩ := (InternalGrading.ofDecomposition ℳ).exists_finset_span_eq_top B
+  rw [InternalGrading.ofDecomposition_piece] at hS
+  let G : Finset (ι × M) := S.attach.image fun x ↦ ((hS x.val x.property).choose, x.val)
   refine ⟨G, ?_, ?_⟩
-  · intro p hp
-    simp only [G, Finset.mem_biUnion, Finset.mem_image] at hp
-    rcases hp with ⟨s, -, j, -, rfl⟩
-    exact (decompose ℳ s j).property
-  · rw [← top_le_iff, ← hS, Submodule.span_le]
-    intro s hs
-    rw [← sum_support_decompose ℳ s]
-    refine Submodule.sum_mem _ fun j hj ↦ Submodule.subset_span ?_
-    have hmem : (j, (decompose ℳ s j : M)) ∈ G :=
-      Finset.mem_biUnion.mpr ⟨s, hs, Finset.mem_image.mpr ⟨j, hj, rfl⟩⟩
-    exact ⟨⟨(j, (decompose ℳ s j : M)), hmem⟩, rfl⟩
+  · rintro ⟨j, x⟩ hp
+    rcases Finset.mem_image.mp hp with ⟨⟨y, hy⟩, -, hxy⟩
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj hxy
+    exact (hS y hy).choose_spec
+  · convert hspan using 2
+    ext y
+    simp [G]
 
 /-- The degree-`d` component of `b • m`, for `m ∈ ℳ j`, vanishes whenever `d < j`. -/
 theorem decompose_smul_eq_zero_of_lt {A B M : Type*} [Semiring A] [Semiring B]

@@ -56,6 +56,8 @@ orientation is used, and `M` may have boundary or corners.
   absolute value of its determinant.
 * `TauCeti.riemannianJacobian_eq_normDet`: for an orthonormal basis, the Jacobian is the norm
   determinant of the differential.
+* `TauCeti.riemannianJacobian_eq_sqrt_pow_of_inner_mfderiv`: for an orthonormal basis, the
+  Jacobian of a map whose differential multiplies inner products by `c` is `√c ^ n`.
 * `TauCeti.setLIntegral_riemannianJacobian_changeBasis`: the Jacobian-weighted coordinate integral
   does not depend on the basis.
 * `Module.Basis.setLIntegral_riemannianVolume_image_of_injOn`: nonnegative change of variables
@@ -207,6 +209,29 @@ theorem riemannianJacobian_eq_normDet {V : Type*} [NormedAddCommGroup V] [InnerP
   rw [h, riemannianJacobian_eq_sqrt_det_gram, OrthonormalBasis.coe_toBasis]
   rfl
 
+/-- **The Riemannian Jacobian of a conformal map.** If the differential of `f` at `x` multiplies
+the inner product of an inner product space by a factor `c`, then the Riemannian Jacobian of `f`
+at `x`, for an orthonormal basis, is `√c ^ n`, where `n` is the dimension. -/
+theorem riemannianJacobian_eq_sqrt_pow_of_inner_mfderiv {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (b : OrthonormalBasis ι ℝ V) {f : V → M} {x : V} {c : ℝ}
+    (hf : ∀ a a' : V, ⟪mfderiv 𝓘(ℝ, V) I f x a, mfderiv 𝓘(ℝ, V) I f x a'⟫_ℝ = c * ⟪a, a'⟫_ℝ) :
+    riemannianJacobian (I := I) b.toBasis f x = Real.sqrt c ^ Fintype.card ι := by
+  have hgram : Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, V) I f x (b.toBasis i)) =
+      c • (1 : Matrix ι ι ℝ) := by
+    ext i j
+    rw [Matrix.gram_apply, OrthonormalBasis.coe_toBasis, hf, orthonormal_iff_ite.1 b.orthonormal,
+      Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
+  rw [riemannianJacobian_eq_sqrt_det_gram, hgram, Matrix.det_smul, Matrix.det_one, mul_one]
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+  · simp
+  -- The factor is nonnegative, since it is the squared length of the image of a unit vector.
+  have hc : 0 ≤ c := by
+    have h := hf (b i) (b i)
+    rw [real_inner_self_eq_norm_sq (b i), b.orthonormal.1 i, one_pow, mul_one] at h
+    exact h ▸ real_inner_self_nonneg
+  rw [← Real.sqrt_sq (pow_nonneg (Real.sqrt_nonneg c) _), ← pow_mul, mul_comm, pow_mul,
+    Real.sq_sqrt hc]
+
 end Jacobian
 
 section Integral
@@ -268,37 +293,19 @@ theorem riemannianJacobian_finBasis_eq_abs_det_mul_chartVolumeDensity
       |(mfderiv I 𝓘(ℝ, E) (extChartAt I α) (f x) ∘L
         mfderiv 𝓘(ℝ, E) I f x : E →L[ℝ] E).det| *
       chartVolumeDensity (I := I) α (f x) := by
-  have hα : f x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hx
-  let b := Module.finBasis ℝ E
-  let bα := (trivializationAt E (TangentSpace I) α).basisAt b hα
-  let D : E →L[ℝ] TangentSpace I (f x) := mfderiv 𝓘(ℝ, E) I f x
-  let L : E →L[ℝ] E := mfderiv I 𝓘(ℝ, E) (extChartAt I α) (f x) ∘L D
-  have hmat : LinearMap.toMatrix b bα D.toLinearMap =
-      LinearMap.toMatrix b b L.toLinearMap := by
-    ext k i
-    simp only [LinearMap.toMatrix_apply, bα, Trivialization.basisAt,
-      Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
-      Trivialization.linearEquivAt_apply]
-    rw [← Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hα,
-      TangentBundle.continuousLinearMapAt_trivializationAt hx]
-    rfl
-  have hgram : Matrix.gram ℝ (fun i ↦ D (b i)) =
-      LinearMap.BilinForm.toMatrix b
-        (LinearMap.BilinForm.comp (innerₗ (TangentSpace I (f x))) D.toLinearMap D.toLinearMap) := by
-    ext i j
-    simp [Matrix.gram_apply, LinearMap.BilinForm.toMatrix_apply]
-  have hdet : (Matrix.gram ℝ (fun i ↦ D (b i))).det =
-      L.det ^ 2 * (chartGramMatrix (I := I) α (f x)).det := by
-    rw [hgram, chartGramMatrix_eq_toMatrix α hα,
-      LinearMap.BilinForm.toMatrix_comp bα b, hmat, Matrix.det_mul, Matrix.det_mul,
-      Matrix.det_transpose, LinearMap.det_toMatrix, ContinuousLinearMap.det]
-    ring
+  have hb : (Module.finBasis ℝ E).map (ContinuousLinearEquiv.refl ℝ E).toLinearEquiv =
+      (Module.finBasis ℝ E).reindex (Equiv.refl _) := by
+    rw [Module.Basis.reindex_refl]
+    ext i
+    simp only [Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.refl_apply]
   rw [riemannianJacobian_eq_sqrt_det_gram]
-  -- As in `riemannianJacobian_changeBasis`: `D` is the differential with its domain
-  -- `TangentSpace 𝓘(ℝ, E) x` read as `E`, an identification Mathlib makes definitionally.
-  change Real.sqrt (Matrix.gram ℝ (fun i ↦ D (b i))).det = _
-  rw [hdet, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, chartVolumeDensity_def]
+  -- Mathlib identifies the tangent space of the model with the model vector space.
+  have h := sqrt_det_gram_eq_abs_det_mul_chartVolumeDensity hb hx (mfderiv 𝓘(ℝ, E) I f x)
+  rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
+    ContinuousLinearMap.id_comp] at h
+  -- Read the self-model tangent spaces as model vector spaces in the coordinate maps.
+  convert h using 2
 
 variable [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
@@ -385,7 +392,8 @@ private theorem setLIntegral_riemannianVolume_image_of_subset_chart
     (fun x hx ↦ hmap hx) (fun x hx ↦ (hf (A x) hx).comp x A.differentiableAt.mdifferentiableAt) φ
   rw [him] at hcov
   have hA : MeasurableEmbedding A := A.toHomeomorph.measurableEmbedding
-  rw [hcov, ← hμ, hA.restrict_map, hA.lintegral_map]
+  have hpres : MeasurePreserving A c.addHaar b.addHaar := ⟨A.continuous.measurable, hμ⟩
+  rw [hcov, ← hpres.setLIntegral_comp_preimage_emb hA]
   apply setLIntegral_congr_fun (hs.preimage A.continuous.measurable)
   intro x hx
   simp only [Function.comp_apply]

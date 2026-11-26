@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.Length
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 import TauCeti.Algebra.Polynomial.Eval.IntCast
+import TauCeti.RingTheory.Length
 
 /-!
 # Lengths of graded pieces and eventual length polynomials
@@ -16,13 +17,14 @@ import TauCeti.Algebra.Polynomial.Eval.IntCast
 This file records basic properties of `Module.length` on internally graded modules and of
 polynomials that eventually agree with the `ENat.toNat` lengths of graded pieces:
 
+* For a homogeneous linear map `f : M → N` of degree `r` between internally `ι`-graded modules,
+  the exact sequences `0 → K_p → M_p → N_{p+r} → C_{p+r} → 0` give
+  `ℓ(K_p) + ℓ(N_{p+r}) = ℓ(M_p) + ℓ(C_{p+r})`
+  (`TauCeti.InternalGrading.length_ker_piece_add_length_piece_add`).
 * In a short exact sequence of internally `ι`-graded `S`-modules (over any cancellative additive
   monoid `ι`), homogeneous maps of degrees `r₁` and `r₂` induce short exact sequences on each
   graded piece, giving `ℓ((ℳ₂)_{d + r₁}) = ℓ((ℳ₁)_d) + ℓ((ℳ₃)_{d + r₁ + r₂})`
   (`TauCeti.GradedModule.length_piece_eq_add_of_exact`).
-* Splitting a homogeneous endomorphism `μ` of degree `r` at its image yields the alternating-length
-  identity `ℓ(G_j) + ℓ((coker μ)_{j + r}) = ℓ(G_{j + r}) + ℓ((ker μ)_j)`
-  (`TauCeti.GradedModule.length_piece_add_quotient_eq_add_ker`).
 * Over any ring `R` with unique additive division (`HasUniqueDiv R`), polynomials eventually
   agreeing with `(Module.length A (ℳᵢ d)).toNat` add across degree-zero short exact sequences
   (`TauCeti.GradedModule.eq_add_of_exact_of_eventually_eval_length`) and shift by `X + C a` under
@@ -30,10 +32,11 @@ polynomials that eventually agree with the `ENat.toNat` lengths of graded pieces
 
 ## Main results
 
+* `TauCeti.InternalGrading.length_ker_piece_add_length_piece_add`: the lengths of the graded
+  pieces of the kernel, source, target and cokernel of a homogeneous map satisfy
+  `ℓ(K_p) + ℓ(N_{p+r}) = ℓ(M_p) + ℓ(C_{p+r})`.
 * `TauCeti.GradedModule.length_piece_eq_add_of_exact`: additivity of piece lengths in a homogeneous
   short exact sequence over any cancellative grading monoid.
-* `TauCeti.GradedModule.length_piece_add_quotient_eq_add_ker`: alternating-length identity for a
-  homogeneous endomorphism.
 * `TauCeti.GradedModule.length_ker_piece_le` and `TauCeti.GradedModule.length_quotient_piece_le`:
   length bounds on graded pieces of kernels and quotients.
 * `TauCeti.GradedModule.eq_add_of_exact_of_eventually_eval_length`: additivity of eventual length
@@ -45,6 +48,61 @@ polynomials that eventually agree with the `ENat.toNat` lengths of graded pieces
 public section
 
 open DirectSum
+
+namespace TauCeti.InternalGrading
+
+variable {ι R S M N : Type*} [DecidableEq ι] [AddRightCancelMonoid ι] [Ring R] [Ring S] [SMul R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
+
+/-- A homogeneous map `f` of degree `r`, with kernel `K` and cokernel `C`, gives exact sequences
+`0 → K_p → M_p → N_{p+r} → C_{p+r} → 0`, hence this identity of lengths. -/
+theorem length_ker_piece_add_length_piece_add (G : InternalGrading R M ι)
+    {H : InternalGrading R N ι} {f : M →ₗ[S] N} {r : ι}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (p : ι) :
+    Module.length R ((G.ker hf).piece p) + Module.length R (H.piece (p + r)) =
+      Module.length R (G.piece p) +
+        Module.length R ((H.quotient _ hf.isHomogeneous_range).piece (p + r)) := by
+  let U := LinearMap.range f
+  -- The three maps of the sequence: inclusion, `f`, and the quotient map.
+  let f₁ : (G.ker hf).piece p →ₗ[R] G.piece p :=
+    ((LinearMap.ker f).subtype.restrictScalars R).restrict fun _ hz ↦ (G.mem_ker_piece hf).1 hz
+  let f₂ : G.piece p →ₗ[R] H.piece (p + r) :=
+    (f.restrictScalars R).restrict fun _ hx ↦ by
+      rw [LinearMap.restrictScalars_apply]
+      exact hf.map_mem hx
+  let f₃ : H.piece (p + r) →ₗ[R] (H.quotient U hf.isHomogeneous_range).piece (p + r) :=
+    (U.mkQ.restrictScalars R).restrict fun _ hx ↦ by
+      rw [LinearMap.restrictScalars_apply, Submodule.mkQ_apply]
+      exact H.mk_mem_quotient_piece U _ hx
+  -- `LinearMap.restrict_apply` does not match `f₁` syntactically through the kernel's module
+  -- structure, so `simp` unfolds `LinearMap.restrict` there.
+  have hf₁ (z) : (f₁ z : M) = ((z : LinearMap.ker f) : M) := by simp [f₁, LinearMap.restrict]
+  have hf₂ (x) : (f₂ x : N) = f x := by simp [f₂]
+  have hf₃ (x) : (f₃ x : N ⧸ U) = Submodule.Quotient.mk (x : N) := by simp [f₃]
+  refine length_add_length_eq_length_add_length_of_exact (f₁ := f₁) (f₂ := f₂) (f₃ := f₃)
+    (fun z₁ z₂ h ↦ ?_) (fun y ↦ ?_) (fun y ↦ ?_) (fun y ↦ ?_)
+  · exact Subtype.ext (Subtype.ext (by rw [← hf₁, ← hf₁, h]))
+  · rw [← Subtype.coe_inj, hf₂, ZeroMemClass.coe_zero]
+    constructor
+    · intro hy
+      exact ⟨⟨⟨y, hy⟩, (G.mem_ker_piece hf).2 y.property⟩, Subtype.ext (hf₁ _)⟩
+    · rintro ⟨z, rfl⟩
+      rw [hf₁]
+      exact (z : LinearMap.ker f).property
+  · rw [← Subtype.coe_inj, hf₃, ZeroMemClass.coe_zero, Submodule.Quotient.mk_eq_zero]
+    constructor
+    · -- The degree-`p` component of a preimage is a homogeneous preimage.
+      rintro ⟨m, hm⟩
+      refine ⟨⟨_, (decompose G.piece m p).property⟩, Subtype.ext ?_⟩
+      rw [hf₂, hf.map_decompose, hm, decompose_of_mem_same H.piece y.property]
+    · rintro ⟨x, rfl⟩
+      rw [hf₂]
+      exact LinearMap.mem_range_self f x
+  · obtain ⟨x, hx, hxy⟩ := (H.mem_quotient_piece_iff U _).mp y.property
+    exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩
+
+end TauCeti.InternalGrading
 
 namespace TauCeti.GradedModule
 
@@ -90,38 +148,6 @@ theorem length_piece_eq_add_of_exact {A S ι M₁ M₂ M₃ : Type*} [Ring A] [S
       exact hdec
     · rintro ⟨x, rfl⟩
       exact Subtype.ext ((hex (f x)).mpr ⟨x, rfl⟩)
-
-/-- For any homogeneous `S`-linear endomorphism `μ` of degree `r` on an internally `ι`-graded
-`A`-module `G` (where `S` acts compatibly with `A`), the `A`-lengths of the pieces of `G`, `ker μ`,
-and `coker μ = M ⧸ range μ` satisfy
-`ℓ(G_j) + ℓ((coker μ)_{j + r}) = ℓ(G_{j + r}) + ℓ((ker μ)_j)`. -/
-theorem length_piece_add_quotient_eq_add_ker {A S ι M : Type*} [Ring A] [Ring S] [SMul A S]
-    [DecidableEq ι] [AddRightCancelMonoid ι]
-    [AddCommGroup M] [Module A M] [Module S M] [IsScalarTower A S M]
-    (G : InternalGrading A M ι) {μ : M →ₗ[S] M} {r : ι}
-    (hμ : LinearMap.IsHomogeneous μ G.piece G.piece r) (j : ι) :
-    Module.length A (G.piece j) +
-        Module.length A ((G.quotient (LinearMap.range μ) hμ.isHomogeneous_range).piece (j + r)) =
-      Module.length A (G.piece (j + r)) + Module.length A ((G.ker hμ).piece j) := by
-  let I := G.submodule (LinearMap.range μ) hμ.isHomogeneous_range
-  let K := G.ker hμ
-  let Q := G.quotient (LinearMap.range μ) hμ.isHomogeneous_range
-  have hK_hom : LinearMap.IsHomogeneous (LinearMap.ker μ).subtype K.piece G.piece 0 :=
-    LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by simpa using (G.mem_ker_piece hμ).mp hx
-  have h1 := length_piece_eq_add_of_exact K.piece G.piece I.piece
-    hK_hom (G.isHomogeneous_rangeRestrict hμ)
-    (Submodule.subtype_injective _) (LinearMap.surjective_rangeRestrict μ)
-    (fun x ↦ ⟨fun hx ↦ ⟨⟨x, congrArg Subtype.val hx⟩, rfl⟩,
-      fun ⟨⟨_, hy⟩, h⟩ ↦ Subtype.ext (h ▸ hy)⟩) j
-  rw [add_zero] at h1
-  have h2 := length_piece_eq_add_of_exact I.piece G.piece Q.piece
-    (G.isHomogeneous_subtype (LinearMap.range μ) hμ.isHomogeneous_range)
-    (G.isHomogeneous_mkQ (LinearMap.range μ) hμ.isHomogeneous_range)
-    (Submodule.subtype_injective _) (Submodule.mkQ_surjective _)
-    (fun x ↦ by simp [Submodule.Quotient.mk_eq_zero]) (j + r)
-  rw [add_zero, add_zero] at h2
-  rw [h1, h2]
-  abel
 
 /-- The `A`-length of each graded piece of the kernel of a homogeneous map is at most that of the
 source piece. -/
