@@ -495,22 +495,10 @@ theorem classicalPrincipalSymbol_zero (x : M)
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) x ξ = 0 := by
   simpa using classicalPrincipalSymbol_smul (m := m) (zero_mem _) 0 x ξ
 
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
-/-- The chart frequency `η` of a nonzero covector `ξ`, dual to `ξ ∘ (de_x)⁻¹`, is nonzero, since
-`⟪η, ·⟫ ∘ de_x = ξ`. -/
-private theorem toDual_symm_comp_inverse_mvfderiv_ne_zero
-    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) {x : M} (hx : x ∈ e.source)
-    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
-    (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
-      (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse) ≠ 0 := fun h ↦ hξ <| by
-  rw [← innerSL_toDual_symm_comp_inverse_mvfderiv
-    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx ξ, h]
-  simp
-
 /-- **The principal symbol of the identity** is `1` at every nonzero covector. In the preferred
 chart at `x`, the compression of the identity by a cutoff `χ` is multiplication by `χ²`, whose
 principal symbol is `χ²` at nonzero frequencies. -/
+@[simp]
 theorem classicalPrincipalSymbol_id (x : M) {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ}
     (hξ : ξ ≠ 0) :
     classicalPrincipalSymbol 0 (LinearMap.id : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
@@ -521,13 +509,11 @@ theorem classicalPrincipalSymbol_id (x : M) {ξ : TangentSpace 𝓘(ℝ, Coordin
   have hx : x ∈ e.source := mem_chart_source _ x
   set χ := (exists_cutoff_chartAt (n := n) x).choose
   have hχ : χ (e x) = 1 := (exists_cutoff_chartAt (n := n) x).choose_spec.self_of_nhds
-  have hχχ : ContDiff ℝ ∞ fun y ↦ ((χ y * χ y : ℝ) : ℂ) • ContinuousLinearMap.id ℂ ℂ :=
-    (Complex.ofRealCLM.contDiff.comp (χ.contDiff.mul χ.contDiff)).smul contDiff_const
   have h := coefficient_principal_apply_eq_classicalPrincipalSymbol
     id_mem_classicalPseudodifferentialOperators he χ χ
-    (ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id he χ χ hχχ) hx ξ
-  rw [ClassicalSymbol.coefficient_principal_ofSpatial _ _
-    (toDual_symm_comp_inverse_mvfderiv_ne_zero he hx hξ), hχ] at h
+    (ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id he χ χ) hx ξ
+  rw [ClassicalSymbol.coefficient_principal_ofSpatial _ _ (toDual_symm_comp_inverse_mvfderiv_ne_zero
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx hξ), hχ] at h
   simpa using h.symm
 
 /-- **Operators of lower order.** A classical pseudodifferential operator of order `m - 1` has
@@ -714,9 +700,10 @@ theorem classicalPrincipalSymbol_complexifyLinearMap {m : ℕ}
   -- The chart frequency `η` of `ξ`, which is nonzero since `⟪η, ·⟫ ∘ de_x = ξ`.
   set η := (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
     (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse)
-  have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv
-    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx ξ
-  have hη : η ≠ 0 := toDual_symm_comp_inverse_mvfderiv_ne_zero he hx hξ
+  have he₁ : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) he
+  have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv he₁ hx ξ
+  have hη : η ≠ 0 := toDual_symm_comp_inverse_mvfderiv_ne_zero he₁ hx hξ
   -- Compare the two descriptions of the principal symbol of the polynomial symbol of `D` in `e`.
   have h₁ := coefficient_principal_eq_classicalPrincipalSymbol
     (complexifyLinearMap_mem_classicalPseudodifferentialOperators hD) he χ χ

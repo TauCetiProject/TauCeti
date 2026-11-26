@@ -24,7 +24,8 @@ classical pseudodifferential operator `Q` of order `-m` with
 (`TauCeti.IsClassicalElliptic.exists_comp_sub_id_mem_classicalPseudodifferentialOperators`).
 Operators of negative order are compact between Sobolev spaces of a compact manifold, so these
 parametrices are what makes an elliptic operator Fredholm. A parametrix modulo operators of order
-`-∞` is the asymptotic sum of the parametrices constructed here.
+`-∞` is the asymptotic sum of the full Neumann series `Q₀ ∑ R^k` below, whose terms `Q₀ R^k` have
+order `-m - k`; this needs asymptotic summation of operators on `M` and is not done here.
 
 The construction has two steps.
 
@@ -38,7 +39,7 @@ The construction has two steps.
 * **The Neumann series.** With `R = 1 - P Q₀` and `L = 1 - Q₀ P`, both of order `-1`, the operator
   `Q = Q₀ (1 + R + ⋯ + R^{N-1})` satisfies `P Q = 1 - R^N`. Since `Q₀ R = L Q₀`, also
   `Q = (1 + L + ⋯ + L^{N-1}) Q₀`, and `Q P = 1 - L^N`. The powers `R^N` and `L^N` have order `-N`
-  (`TauCeti.comp_mem_classicalPseudodifferentialOperators`).
+  (`TauCeti.pow_mem_classicalPseudodifferentialOperators`).
 
 ## Main results
 
@@ -67,18 +68,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {P Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
 
-/-- The powers of an operator of order `-1` have order `-k`. -/
-private theorem pow_mem_classicalPseudodifferentialOperators
-    (hR : P ∈ classicalPseudodifferentialOperators (-1)) (k : ℕ) :
-    P ^ k ∈ classicalPseudodifferentialOperators (-k) := by
-  induction k with
-  | zero =>
-    rw [pow_zero, Nat.cast_zero, neg_zero, Module.End.one_eq_id]
-    exact id_mem_classicalPseudodifferentialOperators
-  | succ k ih =>
-    rw [pow_succ', Module.End.mul_eq_comp, Nat.cast_succ, neg_add, add_comm]
-    exact comp_mem_classicalPseudodifferentialOperators hR ih
-
 /-- **The Neumann series.** If `Q` of order `-m` inverts `P` modulo operators of order `-1` on
 both sides, then for every `N` the operator `Q (1 + R + ⋯ + R^{N-1})`, with `R = 1 - P Q`, inverts
 `P` modulo operators of order `-N` on both sides. -/
@@ -97,18 +86,22 @@ private theorem exists_comp_sub_id_mem_of_comp_sub_id_mem_neg_one
   have hL : L ∈ classicalPseudodifferentialOperators (-1) := by simpa [L] using neg_mem hQP
   have hQR : SemiconjBy Q R L := by
     simp only [SemiconjBy, R, L, mul_sub, sub_mul, mul_one, one_mul, mul_assoc]
+  -- The powers of an operator of order `-1` have order `-k`.
+  have hpow {A} (hA : A ∈ classicalPseudodifferentialOperators (n := n) (M := M) (-1)) (k : ℕ) :
+      A ^ k ∈ classicalPseudodifferentialOperators (-k) := by
+    simpa using pow_mem_classicalPseudodifferentialOperators hA k
   refine ⟨Q * ∑ k ∈ range N, R ^ k, ?_, ?_, ?_⟩
   · rw [mul_sum]
     refine Submodule.sum_mem _ fun k _ ↦ classicalPseudodifferentialOperators_le
       (m' := -m + -k) k (by ring) ?_
     rw [Module.End.mul_eq_comp]
     exact comp_mem_classicalPseudodifferentialOperators hQ
-      (pow_mem_classicalPseudodifferentialOperators hR k)
+      (hpow hR k)
   · rw [← mul_assoc, show P * Q = 1 - R by simp [R], mul_neg_geom_sum, sub_sub_cancel_left]
-    exact neg_mem (pow_mem_classicalPseudodifferentialOperators hR N)
+    exact neg_mem (hpow hR N)
   · rw [mul_sum, sum_congr rfl fun k _ ↦ (hQR.pow_right k).eq, ← sum_mul, mul_assoc,
       show Q * P = 1 - L by simp [L], geom_sum_mul_neg, sub_sub_cancel_left]
-    exact neg_mem (pow_mem_classicalPseudodifferentialOperators hL N)
+    exact neg_mem (hpow hL N)
 
 /-- **Inverting the principal symbol.** On a compact manifold, an elliptic classical
 pseudodifferential operator `P` of order `m` has an inverse modulo operators of order `-1`: an

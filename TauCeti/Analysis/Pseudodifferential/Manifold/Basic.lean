@@ -487,10 +487,12 @@ multiplication by `φ ψ`, the quantization of the symbol `φ(x) ψ(x)` of order
 theorem ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id
     {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (hφψ : ContDiff ℝ ∞ fun y ↦ ((φ y * ψ y : ℝ) : ℂ) • ContinuousLinearMap.id ℂ ℂ)
-    (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (ClassicalSymbol.ofSpatial _ hφψ).toSymbol.coefficient u x =
+    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue
+      (ClassicalSymbol.ofSpatial
+        (fun y ↦ Complex.ofRealCLM (φ y * ψ y) • ContinuousLinearMap.id ℂ ℂ)
+        ((Complex.ofRealCLM.contDiff.comp (φ.contDiff.mul ψ.contDiff)).smul
+          contDiff_const)).toSymbol.coefficient u x =
       e.complexChartCompression he φ ψ LinearMap.id (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x := by
   rw [ClassicalSymbol.toSymbol_ofSpatial, Symbol.quantizeSchwartzValue_ofSpatial,
     OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.id_apply]
@@ -508,8 +510,7 @@ of order `0`
 theorem id_mem_classicalPseudodifferentialOperators :
     LinearMap.id ∈ classicalPseudodifferentialOperators (n := n) (M := M) 0 :=
   mem_classicalPseudodifferentialOperators_iff.2 ⟨isProperlySupported_id, fun _ he φ ψ ↦
-    ⟨_, ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id he φ ψ
-      ((Complex.ofRealCLM.contDiff.comp (φ.contDiff.mul ψ.contDiff)).smul contDiff_const)⟩⟩
+    ⟨_, ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id he φ ψ⟩⟩
 
 /-- **Multiplication on the left.** If `P` is a classical pseudodifferential operator of order
 `m`, then so is `u ↦ g · P u` for every complex-valued smooth function `g`. In a chart, the

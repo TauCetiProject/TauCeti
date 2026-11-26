@@ -99,6 +99,8 @@ and `ψ`, for `χ` equal to `1` on the support of `ψ`.
 
 * `TauCeti.comp_mem_classicalPseudodifferentialOperators`: the composition of classical
   pseudodifferential operators of orders `m'` and `m` is classical of order `m' + m`.
+* `TauCeti.pow_mem_classicalPseudodifferentialOperators`: the `k`-th power of a classical
+  pseudodifferential operator of order `m` is classical of order `k m`.
 * `TauCeti.comp_mem_classicalPseudodifferentialOperators_of_local_left` and
   `TauCeti.comp_mem_classicalPseudodifferentialOperators_of_local_right`: the composition of a
   classical pseudodifferential operator with a local one, on either side, is a classical
@@ -424,6 +426,19 @@ theorem comp_mem_classicalPseudodifferentialOperators
     OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply]
   rw [← Finset.smul_sum]
   conv_rhs => rw [hsplit, map_sum, ContMDiffMap.coe_sum, Finset.sum_apply]
+
+/-- **Powers of classical pseudodifferential operators.** If `P` is a classical pseudodifferential
+operator of order `m`, then `P ^ k` is one of order `k m`. -/
+theorem pow_mem_classicalPseudodifferentialOperators
+    (hP : P ∈ classicalPseudodifferentialOperators m) (k : ℕ) :
+    P ^ k ∈ classicalPseudodifferentialOperators (k * m) := by
+  induction k with
+  | zero =>
+    rw [pow_zero, Nat.cast_zero, zero_mul, Module.End.one_eq_id]
+    exact id_mem_classicalPseudodifferentialOperators
+  | succ k ih =>
+    rw [pow_succ', Module.End.mul_eq_comp, Nat.cast_succ, add_one_mul, add_comm]
+    exact comp_mem_classicalPseudodifferentialOperators hP ih
 
 end General
 

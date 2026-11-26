@@ -65,7 +65,8 @@ open set.
   `η` under the inverse adjoint of the derivative of the transition `e₂ ∘ e₁⁻¹`, the
   transformation law of covectors; and
   `TauCeti.innerSL_toDual_symm_comp_inverse_mvfderiv`: a covector `ξ ∈ T*ₓM` is `⟪η, ·⟫ ∘ de_x`
-  for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`.
+  for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`, which is nonzero when `ξ` is
+  (`TauCeti.toDual_symm_comp_inverse_mvfderiv_ne_zero`).
 * `TauCeti.adjoint_ringInverse_fderiv_comp_symm_eq_one`: the inverse adjoint of the derivative of
   the transition from a chart to itself is the identity on the chart target.
 -/
@@ -460,6 +461,16 @@ theorem innerSL_toDual_symm_comp_inverse_mvfderiv {e : OpenPartialHomeomorph M E
       (ξ.comp (mvfderiv 𝓘(ℝ, E) e x).inverse))).comp (mvfderiv 𝓘(ℝ, E) e x) = ξ := by
   ext v
   simp [InnerProductSpace.toDual_symm_apply, (isInvertible_mvfderiv_chart he hx).inverse_apply_self]
+
+/-- The frequency `η` dual to `ξ ∘ (de_x)⁻¹` of a nonzero covector `ξ ∈ T*ₓM` is nonzero, since
+`⟪η, ·⟫ ∘ de_x = ξ`. -/
+theorem toDual_symm_comp_inverse_mvfderiv_ne_zero {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) {x : M} (hx : x ∈ e.source)
+    {ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+    (InnerProductSpace.toDual ℝ E).symm (ξ.comp (mvfderiv 𝓘(ℝ, E) e x).inverse) ≠ 0 :=
+  fun h ↦ hξ <| by
+    rw [← innerSL_toDual_symm_comp_inverse_mvfderiv he hx ξ, h, map_zero,
+      ContinuousLinearMap.zero_comp]
 
 end Dual
 
