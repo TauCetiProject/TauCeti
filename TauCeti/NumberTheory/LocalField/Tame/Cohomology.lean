@@ -160,11 +160,11 @@ theorem apply_eq_zero_of_mem_wildInertiaSubgroup
     (hg : g ∈ wildInertiaSubgroup K) :
     (c : Field.absoluteGaloisGroup K → M) g = 0 := by
   let f : wildInertiaSubgroup K →* Multiplicative M :=
-    { toFun := fun x ↦ Multiplicative.ofAdd ((c : Field.absoluteGaloisGroup K → M) x.1)
+    { toFun := fun x ↦ Multiplicative.ofAdd ((c : Field.absoluteGaloisGroup K → M) x.val)
       map_one' := by simp [z1_one]
       map_mul' := fun x y ↦ by
-        show Multiplicative.ofAdd ((c : Field.absoluteGaloisGroup K → M) (x.1 * y.1)) = _
-        rw [z1_mul c x.1 y.1, hP x.1 x.2, add_comm, ofAdd_add] }
+        change Multiplicative.ofAdd ((c : Field.absoluteGaloisGroup K → M) (x.val * y.val)) = _
+        rw [z1_mul c x.val y.val, hP x.val x.property, add_comm, ofAdd_add] }
   have hf_ker_open : IsOpen (f.ker : Set (wildInertiaSubgroup K)) :=
     (isOpen_discrete ({0} : Set M)).preimage ((z1_continuous c).comp continuous_subtypeVal)
   have hpro : IsProP (ringChar 𝓀[K]) (wildInertiaSubgroup K) :=
