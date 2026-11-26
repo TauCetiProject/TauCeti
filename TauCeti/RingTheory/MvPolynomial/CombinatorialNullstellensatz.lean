@@ -14,6 +14,8 @@ import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.MvPolynomial.Ideal
 import Mathlib.Tactic.Linarith
+import TauCeti.RingTheory.MvPolynomial.FirstJet
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Weighted Combinatorial Nullstellensatz with multiplicity
@@ -59,8 +61,8 @@ private lemma coeff_translate_eq_zero_of_mem_vanishingIdeal_pow {w : ι → K} {
       MvPolynomial.ringHom_ext (fun r ↦ by simp [T]) (fun i ↦ by simp [T])
     have h_const : constantCoeff (T q) = 0 := by
       simpa using (RingHom.congr_fun h_eq q).trans (by simpa using hq)
-    rw [Ideal.mem_comap, ← pow_one (idealOfVars ι K), mem_pow_idealOfVars_iff']
-    simpa [degree_eq_zero_iff, ← constantCoeff_eq] using h_const
+    rw [Ideal.mem_comap, ← ker_constantCoeff]
+    exact RingHom.mem_ker.2 h_const
   have h_mem : T p ∈ idealOfVars ι K ^ d := le_comap_pow T d (pow_right_mono h_origin d hp)
   exact (mem_pow_idealOfVars_iff' d _).1 h_mem γ hγ
 
@@ -85,11 +87,11 @@ theorem exists_forall_coeff_translate_eq [Finite S] {z : S → ι → K}
   classical
   have := Fintype.ofFinite S
   let d : ℕ := Γ.sup Finsupp.degree + 1
-  have h_ideal_inj : Function.Injective fun w : ι → K ↦ vanishingIdeal K {w} := fun w w' h_eq ↦ by
-    funext u
-    simpa [sub_eq_zero] using h_eq.ge (show X u - C (w' u) ∈ vanishingIdeal K {w'} by simp)
+  have h_ker (w : ι → K) : vanishingIdeal K {w} = RingHom.ker (eval w) := by
+    ext p
+    simp
   have h_coprime : Pairwise (Function.onFun IsCoprime fun t : S ↦ vanishingIdeal K {z t} ^ d) :=
-    fun t t' h_ne ↦ .pow (isCoprime_of_isMaximal ((h_ideal_inj.comp hz_inj).ne h_ne))
+    fun t t' h_ne ↦ .pow (by simpa only [h_ker] using isCoprime_ker_eval (hz_inj.ne h_ne))
   let q (t : S) : MvPolynomial ι K := aeval (X + C ∘ (-z t)) (∑ γ : Γ, monomial γ (y (t, γ)))
   obtain ⟨p, hp⟩ := exists_forall_sub_mem_ideal h_coprime q
   refine ⟨p, fun t γ ↦ ?_⟩
