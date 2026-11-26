@@ -81,6 +81,8 @@ forward differences of a monomial are divisible by `k!`, their norms carry the f
 * `TauCeti.norm_mul_sub_one_lt`, `TauCeti.norm_prod_sub_one_lt` and
   `TauCeti.norm_tprod_sub_one_lt`: finite and infinite products of elements strictly within `ε ≤ 1`
   of `1` remain strictly within `ε` of `1`.
+* `TauCeti.norm_mul_sub_one_le`: a product of two elements within distance at most `ε ≤ 1` of `1`
+  remains within distance at most `ε` of `1`.
 * `TauCeti.norm_inv_sub_one_eq`: inversion preserves distance less than one from `1`.
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
@@ -442,6 +444,20 @@ theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
         (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
     _ < ε := max_lt (max_lt ((norm_mul_le _ _).trans_lt
       ((mul_le_of_le_one_right (norm_nonneg _) (hb.le.trans hε)).trans_lt ha)) ha) hb
+
+/-- In an ultrametric normed ring, if `a` and `b` are both within distance at most `ε ≤ 1` of `1`,
+so is `a * b`. -/
+theorem norm_mul_sub_one_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
+    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ ≤ ε) (hb : ‖b - 1‖ ≤ ε) : ‖a * b - 1‖ ≤ ε := by
+  calc ‖a * b - 1‖ = ‖(a - 1) * (b - 1) + (a - 1) + (b - 1)‖ := by
+        congr 1
+        simp only [mul_sub, sub_mul, mul_one, one_mul]
+        abel
+    _ ≤ max (max ‖(a - 1) * (b - 1)‖ ‖a - 1‖) ‖b - 1‖ :=
+      (IsUltrametricDist.norm_add_le_max _ _).trans
+        (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
+    _ ≤ ε := max_le (max_le ((norm_mul_le _ _).trans
+      ((mul_le_of_le_one_right (norm_nonneg _) (hb.trans hε)).trans ha)) ha) hb
 
 /-- In an ultrametric normed division ring, an element `x` within distance less than one of `1`
 has an inverse at the same distance from `1`: `‖x⁻¹ - 1‖ = ‖x - 1‖`. Unlike the Neumann estimate
