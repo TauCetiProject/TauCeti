@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Asymptotics.DifferenceEquation.FormalSolution
 import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Algebra.ContinuedFractions.ReductionOfOrder
 import TauCeti.Analysis.Asymptotics.DiscreteVolterra
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -45,8 +46,6 @@ constant factor among the solutions of this size.
 * `TauCeti.exists_eventuallyEq_const_mul_of_isBigO_pow`: if `‖g n‖ ≥ γ` for large `n`, a solution
   that is `O(rⁿ)` with `r ^ 2 < γ` is, for large `n`, a constant multiple of any eventually nonzero
   solution of the same size.
-* `TauCeti.exists_difference_solution_eventuallyEq`: if `g` vanishes nowhere, a solution for
-  large `n` agrees for large `n` with a solution for all `n`.
 
 ## Implementation notes
 
@@ -445,26 +444,7 @@ private theorem exists_solution_of_tail_bounds {f g u : ℕ → ℂ} {R γ a t C
     (fun k hk ↦ (hu k hk.le).2) hh
   exact ⟨w, hw, _, hwu⟩
 
-/-! ### Uniqueness and extension of solutions -/
-
-/-- If `w₁` is eventually nonzero and the Casoratian `w₁ n * w (n + 1) - w₁ (n + 1) * w n`
-eventually vanishes, then `w` is eventually a constant multiple of `w₁`. -/
-private lemma exists_eventuallyEq_const_mul_of_casoratian {K : Type*} [Field K] {w₁ w : ℕ → K}
-    (hw₁0 : ∀ᶠ n in atTop, w₁ n ≠ 0)
-    (hC : ∀ᶠ n in atTop, w₁ n * w (n + 1) - w₁ (n + 1) * w n = 0) :
-    ∃ c : K, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
-  obtain ⟨n₂, hn₂⟩ := eventually_atTop.1 (hw₁0.and hC)
-  refine ⟨w n₂ / w₁ n₂, eventually_atTop.2 ⟨n₂, fun m hm ↦ ?_⟩⟩
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hm
-  induction k with
-  | zero =>
-    rw [add_zero]
-    field_simp [(hn₂ n₂ le_rfl).1]
-  | succ k ih =>
-    obtain ⟨h₀, hC0⟩ := hn₂ (n₂ + k) (by omega)
-    rw [ih (by omega)] at hC0
-    rw [← add_assoc]
-    exact mul_left_cancel₀ h₀ (by linear_combination hC0)
+/-! ### Uniqueness of small solutions -/
 
 /-- **Small solutions are proportional.** Let `‖g n‖ ≥ γ` for large `n` and let `w₁` and `w` be
 solutions of `w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n`, both `O(r ^ n)` with
@@ -473,17 +453,18 @@ solutions of `w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n`, both `
 The Casoratian `w₁ n * w (n + 1) - w₁ (n + 1) * w n` is multiplied by `g n` at each step, so it
 is either eventually zero or at least of the order `γ ^ n`; the bound `O((r ^ 2) ^ n)` excludes
 the second case. -/
-theorem exists_eventuallyEq_const_mul_of_isBigO_pow {f g w₁ w : ℕ → ℂ} {r γ : ℝ}
+theorem exists_eventuallyEq_const_mul_of_isBigO_pow {𝕜 : Type*} [NormedField 𝕜]
+    {f g w₁ w : ℕ → 𝕜} {r γ : ℝ}
     (hrγ : r ^ 2 < γ) (hgγ : ∀ᶠ n in atTop, γ ≤ ‖g n‖)
     (hw₁ : ∀ᶠ n in atTop, w₁ (n + 2) + f n * w₁ (n + 1) + g n * w₁ n = 0)
     (hw : ∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0)
     (hw₁0 : ∀ᶠ n in atTop, w₁ n ≠ 0) (hw₁r : w₁ =O[atTop] fun n ↦ r ^ n)
     (hwr : w =O[atTop] fun n ↦ r ^ n) :
-    ∃ c : ℂ, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
-  set C : ℕ → ℂ := fun n ↦ w₁ n * w (n + 1) - w₁ (n + 1) * w n with hC_def
+    ∃ c : 𝕜, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
+  set C : ℕ → 𝕜 := fun n ↦ w₁ n * w (n + 1) - w₁ (n + 1) * w n with hC_def
   have hγ0 : 0 < γ := (sq_nonneg r).trans_lt hrγ
   -- the Casoratian is `o(γ ^ n)`
-  have hshift {v : ℕ → ℂ} (hv : v =O[atTop] fun n ↦ r ^ n) :
+  have hshift {v : ℕ → 𝕜} (hv : v =O[atTop] fun n ↦ r ^ n) :
       (fun n ↦ v (n + 1)) =O[atTop] fun n ↦ r ^ n :=
     (hv.comp_tendsto (tendsto_add_atTop_nat 1)).trans
       ((isBigO_const_mul_self r _ _).congr_left fun n ↦ by simp [pow_succ, mul_comm])
@@ -516,33 +497,6 @@ theorem exists_eventuallyEq_const_mul_of_isBigO_pow {f g w₁ w : ℕ → ℂ} {
     exact isLittleO_irrefl (.of_forall fun m ↦ (pow_pos hγ0 m).ne') (hO.trans_isLittleO hCo)
   exact exists_eventuallyEq_const_mul_of_casoratian hw₁0
     (eventually_atTop.2 ⟨n₁, hCzero⟩)
-
-/-- **Extension of a solution backwards.** If `g` vanishes nowhere, a solution of
-`w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n` agrees for large `n` with a solution
-for all `n`. -/
-theorem exists_difference_solution_eventuallyEq {K : Type*} [Field K] {f g w : ℕ → K}
-    (hg : ∀ n, g n ≠ 0) (hw : ∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0) :
-    ∃ w' : ℕ → K, (∀ n, w' (n + 2) + f n * w' (n + 1) + g n * w' n = 0) ∧ w' =ᶠ[atTop] w := by
-  obtain ⟨n₀, hn₀⟩ := eventually_atTop.1 hw
-  induction n₀ generalizing w with
-  | zero => exact ⟨w, fun n ↦ hn₀ n (Nat.zero_le n), .rfl⟩
-  | succ n₀ ih =>
-    -- define the value at `n₀` by the equation and continue downwards
-    set v := Function.update w n₀ (-(w (n₀ + 2) + f n₀ * w (n₀ + 1)) / g n₀)
-    have hv : v =ᶠ[atTop] w := eventually_atTop.2 ⟨n₀ + 1, fun n hn ↦
-      Function.update_of_ne (by omega) _ _⟩
-    have hvsol (n : ℕ) (hn : n₀ ≤ n) : v (n + 2) + f n * v (n + 1) + g n * v n = 0 := by
-      rcases hn.eq_or_lt with rfl | hn
-      · simp only [v, Function.update_self, Function.update_of_ne (show n₀ + 2 ≠ n₀ by omega),
-          Function.update_of_ne (show n₀ + 1 ≠ n₀ by omega)]
-        field_simp [hg n₀]
-        ring
-      · simp only [v, Function.update_of_ne (show n + 2 ≠ n₀ by omega),
-          Function.update_of_ne (show n + 1 ≠ n₀ by omega), Function.update_of_ne
-          (show n ≠ n₀ by omega)]
-        exact hn₀ n hn
-    obtain ⟨w', hw', hw'v⟩ := ih (w := v) (eventually_atTop.2 ⟨n₀, hvsol⟩) hvsol
-    exact ⟨w', hw', hw'v.trans hv⟩
 
 /-- **Uniqueness of the recessive solution.** Let `g n → g₀` and `‖ρ‖ ^ 2 < ‖g₀‖`. Two solutions
 of `w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n` that are both asymptotic to
@@ -609,6 +563,21 @@ private lemma mul_ne_zero_of_norm_sq_lt {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ : 
   · have : gs 0 = ρ ^ 2 := by linear_combination hρ - ρ * h
     rw [this, norm_pow] at hlt
     exact lt_irrefl _ hlt
+
+/-- For `M ≥ 1` and `a₀ = 1`, the truncation `ρⁿ n^α ∑_{s < M} aₛ n⁻ˢ` is eventually between
+half and twice `|ρ|ⁿ n^{Re α}` in norm. -/
+private lemma eventually_norm_formalDifferenceSolution {a : ℕ → ℂ} (ha : a 0 = 1) (ρ α : ℂ)
+    {M : ℕ} (hM : 1 ≤ M) : ∀ᶠ k : ℕ in atTop,
+      ‖ρ‖ ^ k * (k : ℝ) ^ α.re / 2 ≤ ‖formalDifferenceSolution a ρ α M k‖ ∧
+        ‖formalDifferenceSolution a ρ α M k‖ ≤ 2 * (‖ρ‖ ^ k * (k : ℝ) ^ α.re) := by
+  filter_upwards [(isEquivalent_formalDifferenceSolution ha ρ α hM).isLittleO.bound
+    (by norm_num : (0 : ℝ) < 1 / 2), eventually_ne_atTop 0] with k hk hk0
+  rw [Pi.sub_apply] at hk
+  rw [← norm_pow_mul_cpow ρ α hk0]
+  have h₁ := norm_sub_norm_le (ρ ^ k * (k : ℂ) ^ α) (formalDifferenceSolution a ρ α M k)
+  have h₂ := norm_le_norm_add_norm_sub' (formalDifferenceSolution a ρ α M k) (ρ ^ k * (k : ℂ) ^ α)
+  rw [norm_sub_rev] at h₁
+  constructor <;> linarith [norm_nonneg (ρ ^ k * (k : ℂ) ^ α)]
 
 /-- **A solution to a given order.** For every `N`, there is a solution for large `n` whose
 difference from each truncation `ρⁿ n^α ∑_{s < N'} aₛ n⁻ˢ` with `N' ≤ N` is
@@ -697,19 +666,10 @@ theorem exists_eventually_difference_solution_of_norm_sq_lt {f g fs gs : ℕ →
       (hv : (fun n ↦ v n - formalDifferenceSolution a ρ α 1 n) =O[atTop]
         fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - (1 : ℕ))) :
       (fun n ↦ v n - ρ ^ n * (n : ℂ) ^ α) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α := by
-    have hsmall : (fun n : ℕ ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - (1 : ℕ))) =o[atTop]
-        fun n ↦ ρ ^ n * (n : ℂ) ^ α := by
-      have h₁ := (((isLittleO_one_iff ℝ).2 (tendsto_inv_atTop_nhds_zero_nat (𝕜 := ℝ))).mul_isBigO
-        (isBigO_refl (fun n : ℕ ↦ ‖ρ ^ n * (n : ℂ) ^ α‖) atTop)).trans_isBigO
-        ((isBigO_norm_left.2 (isBigO_refl (fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) atTop)).congr_left
-          fun n ↦ (one_mul _).symm)
-      refine h₁.congr' ?_ EventuallyEq.rfl
-      filter_upwards [eventually_ge_atTop 1] with n hn
-      have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
-      rw [norm_pow_mul_cpow ρ α (by omega), Nat.cast_one, Real.rpow_sub hn0, Real.rpow_one]
-      ring
-    refine (hv.trans_isLittleO hsmall).congr_left fun n ↦ ?_
-    simp [formalDifferenceSolution_def, a]
+    refine (hv.trans_isLittleO (isLittleO_norm_pow_mul_rpow_pow_mul_cpow ρ ?_)).congr_left
+      fun n ↦ ?_
+    · simp
+    · simp [formalDifferenceSolution_def, a]
   obtain ⟨w, hw, hwO⟩ := exists_eventually_solution_isBigO hf hg hg₀ hρ hα hlt 1
   refine ⟨w, hw, .of_isBigO fun N ↦ ?_⟩
   -- the solution built to order `N + 1` is `w`

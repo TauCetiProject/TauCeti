@@ -48,8 +48,9 @@ every `c ≤ a`.
 ## Complex powers of a positive real variable
 
 Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
-`O(t ^ Re w)`. For natural `n ≠ 0`, `‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α`, and
-`ρ ^ n * n ^ α = O(r ^ n)` as `n → ∞` whenever `‖ρ‖ < r`.
+`O(t ^ Re w)`. For natural `n ≠ 0`, `‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α` and
+`‖ρ ^ n * n ^ α * n⁻ᴹ‖ = ‖ρ‖ ^ n * n ^ (Re α - M)`. As `n → ∞`, `ρ ^ n * n ^ α = O(r ^ n)` whenever
+`‖ρ‖ < r`, and `‖ρ‖ ^ n * n ^ β = o(ρ ^ n * n ^ α)` whenever `β < Re α`.
 
 ## Families bounded by integer powers
 
@@ -166,6 +167,13 @@ theorem norm_pow_mul_cpow (ρ α : ℂ) {n : ℕ} (hn : n ≠ 0) :
     ‖ρ ^ n * (n : ℂ) ^ α‖ = ‖ρ‖ ^ n * (n : ℝ) ^ α.re := by
   rw [norm_mul, norm_pow, Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn)]
 
+/-- The norm of `ρ ^ n * n ^ α * n⁻ᴹ` is `‖ρ‖ ^ n * n ^ (Re α - M)` for `n ≠ 0`. -/
+theorem norm_pow_mul_cpow_mul_inv_pow (ρ α : ℂ) (M : ℕ) {n : ℕ} (hn : n ≠ 0) :
+    ‖ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ M‖ = ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - M) := by
+  have hn' : (0 : ℝ) < n := by positivity
+  simp [Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn), Real.rpow_sub hn',
+    Real.rpow_natCast, div_eq_mul_inv, mul_assoc]
+
 /-- The comparison `ρⁿ n^α = O(rⁿ)` for `‖ρ‖ < r`. -/
 theorem isBigO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h : ‖ρ‖ < r) :
     (fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) =O[atTop] fun n ↦ r ^ n := by
@@ -229,6 +237,16 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
     exact absurd h (Real.rpow_pos_of_pos hx b).ne'
   · filter_upwards [eventually_gt_atTop 0] with x hx
     rw [← Real.rpow_sub hx, neg_sub]
+
+/-- The comparison `‖ρ‖ⁿ n^β = o(ρⁿ n^α)` for `β < Re α`. -/
+theorem isLittleO_norm_pow_mul_rpow_pow_mul_cpow (ρ : ℂ) {α : ℂ} {β : ℝ} (h : β < α.re) :
+    (fun n : ℕ ↦ ‖ρ‖ ^ n * (n : ℝ) ^ β) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α := by
+  have hβ : (fun n : ℕ ↦ (n : ℝ) ^ β) =o[atTop] fun n ↦ (n : ℝ) ^ α.re :=
+    (isLittleO_rpow_rpow_atTop h).comp_tendsto tendsto_natCast_atTop_atTop
+  refine ((isBigO_refl (fun n : ℕ ↦ ‖ρ‖ ^ n) atTop).mul_isLittleO hβ).trans_isBigO
+    (isBigO_norm_right.1 (isBigO_refl _ _ |>.congr' .rfl ?_))
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  rw [norm_pow_mul_cpow ρ α hn]
 
 /-- For `1 / 2 < a * k`, the square root is negligible against the `k`-th power of `x ^ a`:
 `√x / (x ^ a) ^ k → 0` as `x → ∞`. -/
