@@ -13,6 +13,9 @@ import Mathlib.Analysis.SpecialFunctions.Log.Monotone
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.SpecialFunctions.Log.Limits
+import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 import TauCeti.Probability.BrownianMotion.NormalizedIncrements
 import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Gaussian.Cdf
@@ -115,35 +118,6 @@ end DeterministicChecks
 
 namespace ProbabilityTheory.IsBrownianReal
 
-private lemma geometric_mesh_bounds {b h : ℝ} {m₀ m : ℕ} (hb_gt1 : 1 < b) (hh_pos : 0 < h)
-    (hh_lt : h < 1 / b ^ m₀) (hm_eq : m = ⌊Real.log (1 / h) / Real.log b⌋₊) :
-    m₀ ≤ m ∧ h ≤ 1 / b ^ m ∧ 1 / b ^ (m + 1) < h ∧ 1 / h < b ^ (m + 1) ∧
-      (m : ℝ) * Real.log b ≤ Real.log (1 / h) := by
-  have : 0 < b := zero_lt_one.trans hb_gt1
-  have hlogb : 0 < Real.log b := Real.log_pos hb_gt1
-  have hbm₀_lt : b ^ m₀ < 1 / h :=
-    (lt_div_iff₀ hh_pos).2 (by rw [mul_comm]; exact (lt_div_iff₀ (by positivity)).1 hh_lt)
-  have h1_lt_1h : 1 < 1 / h := (one_le_pow₀ hb_gt1.le).trans_lt hbm₀_lt
-  have hm_ge : m₀ ≤ m := by
-    rw [hm_eq]
-    exact Nat.le_floor ((le_div_iff₀ hlogb).2
-      ((Real.log_pow b m₀).symm.trans_le (Real.log_le_log (by positivity) hbm₀_lt.le)))
-  have hm_log : (m : ℝ) * Real.log b ≤ Real.log (1 / h) := by
-    rw [hm_eq]
-    exact (le_div_iff₀ hlogb).1 (Nat.floor_le
-      (div_nonneg (Real.log_nonneg h1_lt_1h.le) hlogb.le))
-  have hh_le_bm : h ≤ 1 / b ^ m := by
-    have h1 : b ^ m ≤ 1 / h :=
-      (Real.log_le_log_iff (by positivity) (by positivity)).1 (by rwa [Real.log_pow])
-    rwa [le_div_iff₀ hh_pos, mul_comm, ← le_div_iff₀ (by positivity)] at h1
-  have h1h_lt_bm1 : 1 / h < b ^ (m + 1) := by
-    refine (Real.log_lt_log_iff (by positivity) (by positivity)).1 ?_
-    rw [Real.log_pow, Nat.cast_add, Nat.cast_one, hm_eq]
-    exact (div_lt_iff₀ hlogb).1 (Nat.lt_floor_add_one _)
-  have hh_gt_bm1 : 1 / b ^ (m + 1) < h := by
-    rwa [div_lt_iff₀ (by positivity), mul_comm, ← div_lt_iff₀ hh_pos]
-  exact ⟨hm_ge, hh_le_bm, hh_gt_bm1, h1h_lt_bm1, hm_log⟩
-
 section UpperBoundHelpers
 
 private lemma nat_add_le_pow_mul {n : ℕ} (hn : 2 ≤ n) (k : ℕ) :
@@ -180,13 +154,6 @@ private lemma sqrt_div_two_pow_step_le {n : ℕ} (hn : 2 ≤ n) (k : ℕ) :
         Real.sqrt_le_sqrt hfrac
     _ = √(((n + 1 : ℕ) : ℝ) / (2 : ℝ) ^ (n + 1)) * (6 / 7 : ℝ) ^ k := by
         rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity)]
-
-private lemma summable_const_mul_sqrt_div_two_pow (c : ℝ) :
-    Summable (fun r : ℕ ↦ c * √((r : ℝ) / (2 : ℝ) ^ r)) := by
-  refine Summable.mul_left c ((summable_nat_add_iff 3).1 ?_)
-  refine Summable.of_nonneg_of_le (fun _ ↦ Real.sqrt_nonneg _)
-    (fun k ↦ by simpa only [Nat.add_comm k 3] using sqrt_div_two_pow_step_le (n := 2) le_rfl k) ?_
-  exact (summable_geometric_of_lt_one (by positivity) (by norm_num)).mul_left _
 
 private lemma tsum_sqrt_div_two_pow_le {n : ℕ} (hn : 2 ≤ n) :
     (∑' k : ℕ, √(((n + 1 + k : ℕ) : ℝ) / (2 : ℝ) ^ (n + 1 + k))) ≤
@@ -488,19 +455,36 @@ private lemma ae_eventually_modulus_div_sqrt_le {Ω : Type*} [MeasurableSpace Ω
     (tail_div_sqrt_tendsto_zero p hp_pos (2 * ((1 + ε) * √(2 * Real.log 2) * 7))) ε hε_pos
   obtain ⟨M_pow, hM_pow⟩ :=
     exists_pow_lt_of_lt_one (half_pos hε_pos) (by norm_num : (1 / 2 : ℝ) < 1)
+  have hM_sum : Summable (fun r : ℕ ↦
+      (1 + ε) * √(2 * Real.log 2) * √((r : ℝ) / (2 : ℝ) ^ r)) := by
+    have hr : |(((2 : ℝ) ^ (1 / 2 : ℝ))⁻¹)| < 1 := by
+      rw [abs_of_pos (by positivity)]
+      exact inv_lt_one_of_one_lt₀ (Real.one_lt_rpow one_lt_two (by norm_num))
+    refine ((TauCeti.summable_rpow_mul_geometric_of_abs_lt_one (1 / 2) hr).congr
+      fun r ↦ ?_).mul_left _
+    rw [Real.sqrt_div r.cast_nonneg, Real.sqrt_eq_rpow, Real.sqrt_eq_rpow,
+      ← Real.rpow_pow_comm zero_le_two, inv_pow]
+    ring
   -- 2. Restrict to continuous paths outside finitely many bad dyadic levels and choose mesh `m`.
   filter_upwards [hB.cont, ae_eventually_notMem_dyadicBadEvent hB.toIsPreBrownianReal hq]
     with ω hcont hgood
   obtain ⟨N₀, hN₀⟩ := eventually_atTop.1 hgood
   let m₀ : ℕ := N₀ + M_tail + (M_pow + 1) * p + 2
-  filter_upwards [Ioo_mem_nhdsGT (show 0 < min ((1 / 2 : ℝ) ^ m₀) (Real.exp (-1) / (1 + ε))
+  filter_upwards [Ioo_mem_nhdsGT (show 0 < min (1 / (2 : ℝ) ^ m₀) (Real.exp (-1) / (1 + ε))
     by positivity)] with h hh
-  set m : ℕ := ⌊Real.log (1 / h) / Real.log 2⌋₊
-  have hh_lt_2m₀ : h < 1 / (2 : ℝ) ^ m₀ := by
-    simpa only [one_div_pow] using hh.2.trans_le (min_le_left _ _)
-  obtain ⟨hm_ge, hh_le_2m, hh_gt_2m1, -, hm_log⟩ :=
-    geometric_mesh_bounds one_lt_two hh.1 hh_lt_2m₀ rfl
-  have hm_all : N₀ + M_tail + (M_pow + 1) * p + 2 ≤ m := hm_ge
+  set m : ℕ := ⌊Real.logb 2 (1 / h)⌋₊
+  have h2m₀_lt : (2 : ℝ) ^ m₀ < 1 / h :=
+    (lt_one_div (pow_pos zero_lt_two m₀) hh.1).2 (hh.2.trans_le (min_le_left _ _))
+  have h1_le_1h : 1 ≤ 1 / h := (one_le_pow₀ one_le_two).trans h2m₀_lt.le
+  have hm_all : N₀ + M_tail + (M_pow + 1) * p + 2 ≤ m :=
+    (Real.le_natFloor_logb_iff_pow_le one_lt_two h1_le_1h m₀).2 h2m₀_lt.le
+  have hh_le_2m : h ≤ 1 / (2 : ℝ) ^ m :=
+    (le_one_div hh.1 (by positivity)).2 (Real.pow_natFloor_logb_le_self one_lt_two h1_le_1h)
+  have hh_gt_2m1 : 1 / (2 : ℝ) ^ (m + 1) < h :=
+    (one_div_lt (by positivity) hh.1).2
+      (Real.lt_pow_natFloor_logb_add_one one_lt_two (one_div_pos.2 hh.1))
+  have hm_log : (m : ℝ) * Real.log 2 ≤ Real.log (1 / h) :=
+    (le_div_iff₀ (Real.log_pos one_lt_two)).1 (Nat.floor_le (Real.logb_nonneg one_lt_two h1_le_1h))
   have : m ≤ m + m / p := Nat.le_add_right m (m / p)
   -- 3. Verify fine-step and coarse-step bounds and apply deterministic dyadic chaining.
   have hstep (r : ℕ) (hr : m + m / p + 1 ≤ r) (i : ℕ) (hi : i < 2 ^ r) :
@@ -520,7 +504,7 @@ private lemma ae_eventually_modulus_div_sqrt_le {Ω : Type*} [MeasurableSpace Ω
     (m + m / p) (by positivity) (fun i j hij hj hlen ↦
       coarse_dyadic_dist_le hε_pos hh.1 hh_le_2m hh_gt_2m1 h1εh hpow_lt
         (hN₀ (m + m / p) (by omega)) hij hj hlen)
-    (summable_const_mul_sqrt_div_two_pow ((1 + ε) * √(2 * Real.log 2))) hstep
+    hM_sum hstep
   -- 4. Normalize by `√(2 * h * log (1 / h))` and bound the refinement tail by `ε`.
   obtain ⟨htail_ratio, hden_h_pos⟩ := dyadic_tail_tsum_div_sqrt_le hε_pos hh.1 (by omega)
     hh_gt_2m1 hm_log (hM_tail m (by omega))
@@ -676,7 +660,7 @@ private lemma le_modulus_div_sqrt_of_exists_gt {g : ℝ≥0 → ℝ} {b_nn : ℝ
     (hbdd : BddAbove {a : ℝ | ∃ x ∈ Iic (1 : ℝ≥0), ∃ y ∈ Iic (1 : ℝ≥0),
       dist x y ≤ h ∧ a = dist (g x) (g y)})
     (hb_gt1 : 1 < (b_nn : ℝ)) (hh_pos : 0 < h)
-    (h1h_gt : (b_nn : ℝ) < 1 / h) (hn_eq : n = ⌊Real.log (1 / h) / Real.log b_nn⌋₊)
+    (h1h_gt : (b_nn : ℝ) < 1 / h) (hn_eq : n = ⌊Real.logb b_nn (1 / h)⌋₊)
     {j : Fin ⌊(b_nn : ℝ) ^ (n + 1)⌋₊}
     (hj : (1 - ε) * √(2 * Real.log ((b_nn : ℝ) ^ (n + 1))) <
       |g (lowerGrid b_nn n j.succ) - g (lowerGrid b_nn n j.castSucc)| /
@@ -690,11 +674,14 @@ private lemma le_modulus_div_sqrt_of_exists_gt {g : ℝ≥0 → ℝ} {b_nn : ℝ
   have hδ_eq : δ = 1 / b ^ (n + 1) := by simp [hδ_def, b, one_div]
   have hδ_pos : 0 < δ := by rw [hδ_eq]; positivity
   -- 1. Relate the mesh `h` to the grid step `δ = b ^ (-(n + 1))` (`δ < h ≤ b * δ`).
-  have hh_lt_b : h < 1 / b ^ 1 := by
-    rw [pow_one]
-    exact (lt_div_iff₀ (by positivity)).2 (by rw [mul_comm]; exact (lt_div_iff₀ hh_pos).1 h1h_gt)
-  obtain ⟨-, hh_le_bn, hδ_lt_h, h1h_lt_bn1, -⟩ := geometric_mesh_bounds hb_gt1 hh_pos hh_lt_b hn_eq
-  rw [← hδ_eq] at hδ_lt_h
+  have h1h_lt_bn1 : 1 / h < b ^ (n + 1) :=
+    hn_eq ▸ Real.lt_pow_natFloor_logb_add_one hb_gt1 (one_div_pos.2 hh_pos)
+  have hδ_lt_h : δ < h := by
+    rw [hδ_eq]
+    exact (one_div_lt (by positivity) hh_pos).2 h1h_lt_bn1
+  have hh_le_bn : h ≤ 1 / b ^ n :=
+    (le_one_div hh_pos (by positivity)).2
+      (hn_eq ▸ Real.pow_natFloor_logb_le_self hb_gt1 (hb_gt1.trans h1h_gt).le)
   have hh_le_bδ : h ≤ b * δ :=
     hh_le_bn.trans_eq (by rw [hδ_eq, pow_succ']; dsimp only [b]; field_simp)
   -- 2. Turn the large grid increment into a lower bound on `modulusOfContinuityOn g (Iic 1) h`.
@@ -755,9 +742,11 @@ private lemma ae_eventually_le_modulus_div_sqrt {Ω : Type*} [MeasurableSpace Ω
   obtain ⟨N₀, hN₀⟩ := eventually_atTop.1 hgood
   filter_upwards [Ioo_mem_nhdsGT (show 0 < 1 / b ^ (N₀ + 1) by positivity)] with h hh
   have h1h_gt_pow : b ^ (N₀ + 1) < 1 / h :=
-    (lt_div_iff₀ hh.1).2 (by rw [mul_comm]; exact (lt_div_iff₀ (by positivity)).1 hh.2)
-  set n : ℕ := ⌊Real.log (1 / h) / Real.log b⌋₊
-  have hn_ge : N₀ + 1 ≤ n := (geometric_mesh_bounds hb_gt1 hh.1 hh.2 rfl).1
+    (lt_one_div (pow_pos (zero_lt_one.trans hb_gt1) _) hh.1).2 hh.2
+  set n : ℕ := ⌊Real.logb b (1 / h)⌋₊
+  have hn_ge : N₀ + 1 ≤ n :=
+    (Real.le_natFloor_logb_iff_pow_le hb_gt1 ((one_le_pow₀ hb_gt1.le).trans h1h_gt_pow.le) _).2
+      h1h_gt_pow.le
   have hnot : ω ∉ F n := hN₀ n (by omega)
   simp only [F, mem_ofPred_eq, not_forall, not_le] at hnot
   obtain ⟨j, hj⟩ := hnot
@@ -808,22 +797,6 @@ theorem ae_tendsto_modulusOfContinuityOn_Iic_one_div_sqrt_mul_log (hB : IsBrowni
   filter_upwards [hup K₁, hlow K₂] with h hh_up hh_low
   rw [Real.dist_eq, abs_lt]; exact ⟨by linarith, by linarith⟩
 
-private lemma tendsto_sqrt_log_div_log {T : ℝ} (hT_pos : 0 < T) :
-    Tendsto (fun h : ℝ ↦ √(Real.log (T / h) / Real.log (1 / h))) (𝓝[>] 0) (𝓝 1) := by
-  have hlog_atTop : Tendsto (fun h : ℝ ↦ Real.log (1 / h)) (𝓝[>] 0) atTop := by
-    simpa [Function.comp_def, one_div] using Real.tendsto_log_atTop.comp tendsto_inv_nhdsGT_zero
-  have hinv_zero : Tendsto (fun h : ℝ ↦ Real.log T * (Real.log (1 / h))⁻¹) (𝓝[>] 0) (𝓝 0) := by
-    simpa [Function.comp_def] using (tendsto_inv_atTop_zero.comp hlog_atTop).const_mul (Real.log T)
-  have h1 : Tendsto (fun h : ℝ ↦ √(1 + Real.log T * (Real.log (1 / h))⁻¹)) (𝓝[>] 0) (𝓝 1) := by
-    simpa using ((tendsto_const_nhds (x := (1 : ℝ))).add hinv_zero).sqrt
-  refine h1.congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT (by norm_num : (0 : ℝ) < 1)] with h hh
-  have hlog_ne : Real.log (1 / h) ≠ 0 := (Real.log_pos ((one_lt_div hh.1).2 hh.2)).ne'
-  congr 1
-  rw [show T / h = T * (1 / h) by ring, Real.log_mul hT_pos.ne' (one_div_pos.2 hh.1).ne',
-    add_div, div_self hlog_ne]
-  ring
-
 private lemma modulusOfContinuityOn_Iic_one_rescaled_div_sqrt_mul_log
     (g : ℝ≥0 → ℝ) {T : ℝ≥0} (hT : 0 < T) {h : ℝ} (hh_pos : 0 < h)
     (hh_lt_one : h < 1) (hh_lt_T : h < (T : ℝ)) :
@@ -868,8 +841,12 @@ theorem ae_tendsto_modulusOfContinuityOn_Iic_div_sqrt_mul_log (hB : IsBrownianRe
     tendsto_nhdsWithin_iff.2 ⟨by simpa using
       ((continuous_id.div_const (T : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds,
       by filter_upwards [self_mem_nhdsWithin] with h (hh : 0 < h); exact div_pos hh hT_pos⟩
+  have hlog_ratio : Tendsto (fun h : ℝ ↦ √(Real.log ((T : ℝ) / h) / Real.log (1 / h)))
+      (𝓝[>] 0) (𝓝 1) := by
+    simpa using ((Real.tendsto_log_div_div_log_div_nhdsNE_zero hT_pos.ne' one_ne_zero).mono_left
+      (nhdsWithin_mono 0 fun _ h ↦ ne_of_gt h)).sqrt
   filter_upwards [hW.ae_tendsto_modulusOfContinuityOn_Iic_one_div_sqrt_mul_log] with ω hω
-  have hcomp := (hω.comp hscale).mul (tendsto_sqrt_log_div_log hT_pos)
+  have hcomp := (hω.comp hscale).mul hlog_ratio
   rw [mul_one] at hcomp
   refine hcomp.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT (lt_min zero_lt_one hT_pos)] with h hh
