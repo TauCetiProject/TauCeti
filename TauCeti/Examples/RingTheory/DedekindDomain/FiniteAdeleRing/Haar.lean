@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.BorelSpace
+public import TauCeti.NumberTheory.NumberField.Countable
 public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Haar
 
@@ -18,8 +18,6 @@ the additive Haar measure on `𝔸_{K,f}` giving `∏_v 𝒪_v` mass one:
 * for a nonzero ideal `𝔞` of `𝓞 K`, the closure of `𝔞` in `∏_v 𝒪_v` has measure
   `(Ideal.absNorm 𝔞)⁻¹`;
 * `μ_f` is not a finite measure.
-
-For *adelic-borel-structure*: `GL₀(𝔸_K)` is a singleton, and it is second countable.
 -/
 
 public section
@@ -47,11 +45,5 @@ example {𝔞 : Ideal (𝓞 K)} (h𝔞 : 𝔞 ≠ ⊥) :
 /-- The normalized Haar measure on the finite adeles is not a finite measure. -/
 example : addHaarMeasure (integralAdelesPositiveCompacts (𝓞 K) K) Set.univ = ∞ :=
   addHaar_univ_eq_top _
-
-/-- `GL₀(𝔸_K)` is a singleton. -/
-example : Subsingleton (GL (Fin 0) (AdeleRing (𝓞 K) K)) := inferInstance
-
-/-- `GL₀(𝔸_K)` is second countable. -/
-example : SecondCountableTopology (GL (Fin 0) (AdeleRing (𝓞 K) K)) := inferInstance
 
 end TauCeti.Examples
