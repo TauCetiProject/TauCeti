@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
-public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
