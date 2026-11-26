@@ -17,8 +17,10 @@ on `WithMetric g` with those on `M` whenever `M` carries `g`, both in `[Riemanni
 (`TauCeti.WithMetric.mem_expDomain_iff_mfderiv_ofWithMetric`,
 `TauCeti.WithMetric.ofWithMetric_riemannianExp`) and in
 `letI` form at `toWithMetric g p` (`TauCeti.WithMetric.mem_expDomain_toWithMetric_iff`,
-`TauCeti.WithMetric.ofWithMetric_riemannianExp_toWithMetric`). It also intertwines `expDomain` and
-`riemannianExp` along `diffeomorphWithMetric` under constant metric rescaling `g ↦ c g`
+`TauCeti.WithMetric.ofWithMetric_riemannianExp_toWithMetric`). Under constant metric rescaling
+`g ↦ c g`, `diffeomorphWithMetric` scales tangent norms by `√c`
+(`TauCeti.WithMetric.norm_mfderiv_diffeomorphWithMetric_rescale_const`) and intertwines `expDomain`
+and `riemannianExp`
 (`TauCeti.WithMetric.mfderiv_diffeomorphWithMetric_rescale_const_mem_expDomain`,
 `TauCeti.WithMetric.riemannianExp_mfderiv_diffeomorphWithMetric_rescale_const`).
 -/
@@ -89,6 +91,21 @@ theorem ofWithMetric_riemannianExp_toWithMetric [I.Boundaryless] [T2Space M]
   let _ : IsContMDiffRiemannianBundle I ∞ E _ := Bundle.instIsContMDiffRiemannianBundle g
   simpa only [ofWithMetric_toWithMetric] using
     ofWithMetric_riemannianExp g g.inner_riemannianBundle (toWithMetric g p) v
+
+/-- Tangent norm scaling under `diffeomorphWithMetric` for constant metric rescaling. -/
+theorem norm_mfderiv_diffeomorphWithMetric_rescale_const
+    {c : ℝ} (hc : 0 < c) (x : WithMetric g) (v : TangentSpace I x) :
+    ‖(diffeomorphWithMetric g (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
+        ∞).mfderivToContinuousLinearEquiv (by simp) x v‖ = √c * ‖v‖ := by
+  set g_c := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
+  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
+  rw [mul_pow, Real.sq_sqrt hc.le, ← real_inner_self_eq_norm_sq,
+    ← real_inner_self_eq_norm_sq, inner_def, inner_def]
+  dsimp only [g_c]
+  rw [ContMDiffRiemannianMetric.rescale_inner]
+  congr 1
+  exact congr_mfderiv_ofWithMetric_diffeomorphWithMetric g_c ∞ (by simp)
+    (fun b u ↦ g.inner b u u) x v
 
 /-- Exponential-domain transport under `diffeomorphWithMetric` for constant metric rescaling. -/
 theorem mfderiv_diffeomorphWithMetric_rescale_const_mem_expDomain

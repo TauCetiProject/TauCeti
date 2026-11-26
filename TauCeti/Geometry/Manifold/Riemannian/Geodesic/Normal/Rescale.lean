@@ -45,22 +45,6 @@ variable
   (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
   [I.Boundaryless] [T2Space M]
 
-omit [I.Boundaryless] [T2Space M] in
-/-- Tangent norm scaling under `diffeomorphWithMetric` for constant metric rescaling. -/
-private theorem norm_mfderiv_diffeomorphWithMetric_rescale_const
-    {c : ℝ} (hc : 0 < c) (x : WithMetric g) (v : TangentSpace I x) :
-    ‖(diffeomorphWithMetric g (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
-        ∞).mfderivToContinuousLinearEquiv (by simp) x v‖ = √c * ‖v‖ := by
-  set g_c := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
-  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  rw [mul_pow, Real.sq_sqrt hc.le, ← real_inner_self_eq_norm_sq,
-    ← real_inner_self_eq_norm_sq, inner_def, inner_def]
-  dsimp only [g_c]
-  rw [ContMDiffRiemannianMetric.rescale_inner]
-  congr 1
-  exact congr_mfderiv_ofWithMetric_diffeomorphWithMetric g_c ∞ (by simp)
-    (fun b u ↦ g.inner b u u) x v
-
 /-- Forward implication for normal tangent balls under constant rescaling of `g` by `c > 0`. -/
 private theorem isNormalDomain_ball_rescale_const_of_div {c : ℝ} (hc : 0 < c) {p : M} {r : ℝ}
     (h : IsNormalDomain I (WithMetric g) (toWithMetric g p) (Metric.ball 0 (r / √c))) :
