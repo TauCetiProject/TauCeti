@@ -16,8 +16,12 @@ Eventual local multiplicative comparisons to a neighbourhood's centre propagate 
 a preconnected set. On a compact subset, one constant and one set of indices work at every
 point. A family with nonzero values at the base point can then be normalized by those values.
 
+This turns local Harnack estimates into the uniform bound in `IsCompact.harnack_inequality`
+and supplies normalized two-sided bounds for extracting positive limits.
+
 ## Main results
 
+* `IsPreconnected.exists_eventually_le_mul_of_locally`: comparison of any two points.
 * `IsPreconnected.exists_eventually_forall_le_mul_of_locally`: two-sided compact comparison.
 * `IsPreconnected.exists_eventually_forall_inv_le_div_le_of_locally`: bounds after normalizing
   by the base value.
@@ -35,7 +39,9 @@ section MonoidWithZero
 variable [MonoidWithZero R]
   {s : Set X} {u : ι → X → R} {l : Filter ι}
 
-private theorem IsPreconnected.exists_eventually_le_mul_of_locally
+/-- Eventual two-sided comparisons to each neighbourhood's centre propagate between any two
+points of a preconnected set, without a sign assumption on the values. -/
+theorem IsPreconnected.exists_eventually_le_mul_of_locally
     [PartialOrder R] [PosMulStrictMono R]
     (hs : IsPreconnected s)
     (hloc : ∀ x ∈ s, ∃ V ∈ 𝓝[s] x, ∃ C : R, 0 < C ∧
@@ -50,7 +56,7 @@ private theorem IsPreconnected.exists_eventually_le_mul_of_locally
       ⟨C, hC, h.mono fun i hi ↦ (hi b hb).1⟩⟩
   · rintro ⟨A, hA, hab⟩ ⟨B, hB, hbc⟩
     refine ⟨A * B, ?_, ?_⟩
-    · simpa only [mul_zero] using mul_lt_mul_of_pos_left hB hA
+    · exact mul_pos hA hB
     · filter_upwards [hab, hbc] with i hi hj
       simpa only [mul_assoc] using hi.trans (mul_le_mul_of_nonneg_left hj hA.le)
 
@@ -82,10 +88,9 @@ theorem IsPreconnected.exists_eventually_forall_le_mul_of_locally
     have hback : u t.1.2 p ≤ (D * A) * u t.1.2 t.2 := by
       rw [mul_assoc]
       exact hpx'.trans (mul_le_mul_of_nonneg_left hxy hD.le)
-    have hDA : 0 < D * A := by simpa only [mul_zero] using mul_lt_mul_of_pos_left hA hD
+    have hDA : 0 < D * A := mul_pos hD hA
     have hy0 : 0 ≤ u t.1.2 t.2 := le_of_not_gt fun hy ↦
-      (by simpa only [mul_zero] using mul_lt_mul_of_pos_left hy hDA :
-        (D * A) * u t.1.2 t.2 < 0).not_ge (hp0.trans hback)
+      (mul_neg_of_pos_of_neg hDA hy).not_ge (hp0.trans hback)
     exact ⟨hforward.trans (mul_le_mul_of_nonneg_right ((le_max_left ..).trans hCt) hp0),
       hback.trans (mul_le_mul_of_nonneg_right ((le_max_right ..).trans hCt) hy0)⟩
   let : CompactSpace K := isCompact_iff_compactSpace.1 hK
@@ -124,7 +129,7 @@ theorem IsPreconnected.exists_eventually_forall_inv_le_div_le_of_locally
         (hab : v i a ≤ B * v i b) : w i a ≤ D * w i b := by
       calc
         w i a ≤ B * w i b := by
-          change max (v i a) 0 ≤ B * max (v i b) 0
+          dsimp only [w]
           rw [mul_max_of_nonneg _ _ hB, mul_zero]
           exact max_le_max hab le_rfl
         _ ≤ D * w i b := mul_le_mul_of_nonneg_right hBD (le_max_right ..)
