@@ -143,6 +143,21 @@ theorem smoothCochainShortComplex_g :
     (smoothCochainShortComplex I W).g = smoothCochainRestriction I W :=
   (rfl)
 
+/-- The second map of the image under `Hom(-, ℝ)` of the sequence of smooth chains of the pair is
+precomposition with the chain map induced by the inclusion of `W`. -/
+private theorem smoothSingularPair_chainComplexShortComplex_op_map_g :
+    (((smoothSingularPair I W).chainComplexShortComplex (ModuleCat.of ℝ ℝ)).op.map
+      (ChainComplex.linearYonedaFunctor ℝ (ModuleCat.of ℝ ℝ))).g =
+      SSet.cochainComplexMap (R := ModuleCat.of ℝ ℝ) (k := ℝ) (M := ModuleCat.of ℝ ℝ)
+        (smoothSingularSubcomplexMap (Subtype.val : W → M) contMDiff_subtypeVal) := by
+  -- The second map of the opposite sequence is the first map `SSet.chainComplexMap P.hom` of the
+  -- sequence of chains, and `P.hom` is the map induced by the inclusion of `W`.
+  dsimp only [ShortComplex.map_g, ShortComplex.op_g, smoothSingularPair_hom]
+  -- `SSet.cochainComplexMap` is by definition the image under `Hom(-, ℝ)` of the induced chain map;
+  -- the two sides differ only in how source and target are written, which agree by
+  -- `smoothSingularPair_left` and `smoothSingularPair_right`.
+  rfl
+
 /-- The sequence of smooth cochains of the pair is the extension to `ℤ` of the image under
 `Hom(-, ℝ)` of the sequence of smooth chains; the identifications are identities. -/
 private def extendSmoothCochainShortComplexIso :
@@ -151,8 +166,15 @@ private def extendSmoothCochainShortComplexIso :
         (ComplexShape.embeddingUpNat.extendFunctor (ModuleCat ℝ)) ≅
       smoothCochainShortComplex I W :=
   ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    -- `SSetPair.cochainComplexπ` is by definition the image under `Hom(-, ℝ)` of
+    -- `SSetPair.chainComplexπ`, the first map of the opposite sequence of chains.
     (by simp only [Iso.refl_hom]; rfl)
-    (by simp only [Iso.refl_hom, smoothCochainRestriction_def]; rfl)
+    (by
+      rw [Iso.refl_hom, Iso.refl_hom, ShortComplex.map_g, ComplexShape.Embedding.extendFunctor_map,
+        smoothSingularPair_chainComplexShortComplex_op_map_g]
+      -- The identities only re-type objects, which agree by `smoothSingularPair_left`/`_right`.
+      exact (Category.id_comp _).trans ((smoothCochainRestriction_def I W).trans
+        (Category.comp_id _).symm))
 
 /-- The sequence of smooth cochains of an open pair is short exact: restriction of cochains to the
 smooth simplices of `W` is surjective, since a cochain on them extends by zero. -/
@@ -169,15 +191,18 @@ private theorem δ_shortExact_smoothCochainShortComplex (n₀ n₁ : ℤ) (h : n
       ((ChainComplex.shortExact_map_linearYonedaFunctor ℝ (ModuleCat.of ℝ ℝ)
         ((smoothSingularPair I W).shortExact_chainComplexShortComplex (ModuleCat.of ℝ ℝ))).extend
           ComplexShape.embeddingUpNat).δ n₀ n₁ h := by
-  -- The two sequences differ only in how their second map is written
-  -- (`smoothCochainRestriction_def`), and the connecting map depends only on the sequence.
-  have key : ∀ (g : (smoothCochainShortComplex I W).X₂ ⟶ (smoothCochainShortComplex I W).X₃),
-      g = smoothCochainRestriction I W → ∀ (hfg : (smoothCochainShortComplex I W).f ≫ g = 0)
-      (hS : (ShortComplex.mk _ _ hfg).ShortExact),
-      (shortExact_smoothCochainShortComplex I W).δ n₀ n₁ h = hS.δ n₀ n₁ h := by
-    rintro g rfl _ _
-    rfl
-  exact key _ (smoothCochainRestriction_def I W).symm _ _
+  -- Naturality of the connecting map along `extendSmoothCochainShortComplexIso`, whose components
+  -- are identities and so induce identities on cohomology.
+  have h₁ : homologyMap (extendSmoothCochainShortComplexIso I W).hom.τ₁ n₁ = 𝟙 _ :=
+    homologyMap_id _ _
+  have h₃ : homologyMap (extendSmoothCochainShortComplexIso I W).hom.τ₃ n₀ = 𝟙 _ :=
+    homologyMap_id _ _
+  have := HomologySequence.δ_naturality (extendSmoothCochainShortComplexIso I W).hom
+    ((ChainComplex.shortExact_map_linearYonedaFunctor ℝ (ModuleCat.of ℝ ℝ)
+      ((smoothSingularPair I W).shortExact_chainComplexShortComplex (ModuleCat.of ℝ ℝ))).extend
+        ComplexShape.embeddingUpNat) (shortExact_smoothCochainShortComplex I W) n₀ n₁ h
+  rw [h₁, h₃] at this
+  exact ((Category.id_comp _).symm.trans this.symm).trans (Category.comp_id _)
 
 /-- The lift of the relative smooth cochains of `(M, W)` to the mapping cocone of the restriction
 of smooth cochains: a relative cochain `a` goes to `(a, 0)`. It is a quasi-isomorphism. -/
