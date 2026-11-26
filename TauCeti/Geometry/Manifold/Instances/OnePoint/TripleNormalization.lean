@@ -38,9 +38,11 @@ The transformation carrying `0`, `1`, `∞` to `[P]`, `[Q]`, `[R]`, for nonzero 
 coordinates `P`, `Q`, `R` of three distinct points, is the class of the matrix with columns
 `det(Q, P) R` and `det(R, Q) P`: it sends `[1 : 0]` to `[R]`, `[0 : 1]` to `[P]`, and, by the
 three-term identity `det(Q, P) R + det(R, Q) P = det(R, P) Q`, `[1 : 1]` to `[Q]`. Its
-determinant `det(Q, P) det(R, Q) det(R, P)` does not vanish. Near a parameter `x₀`, the points have
-`C^n` homogeneous coordinates (`Projectivization.exists_contMDiffAt_eventually_eq_mk`), and the
-determinant has a square root that is analytic in it (`TauCeti.exists_analyticAt_pow_eq`).
+determinant `det(Q, P) det(R, Q) det(R, P)` does not vanish, where `det(v, w)` is the determinant
+of the matrix with rows `v` and `w` (`Projectivization.mk_eq_mk_iff_det_eq_zero`). Near a parameter
+`x₀`, the points have `C^n` homogeneous coordinates
+(`OnePoint.exists_contMDiffAt_eventually_equivProjectivization_eq_mk`), and the determinant has a
+square root that is analytic in it (`TauCeti.exists_analyticAt_pow_eq`).
 Dividing by it gives a family of matrices of determinant one, `C^n` at `x₀`, hence a `C^n` family
 in `SL(2, ℂ)` (`Matrix.SpecialLinearGroup.contMDiffAt_iff`), whose class in `PSL(2, ℂ)` is the
 transformation sought.
@@ -67,50 +69,28 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 namespace OnePoint
 
-/-- The determinant `v 0 * w 1 - v 1 * w 0` of the matrix with columns `v` and `w`. -/
-private def det₂ (v w : Fin 2 → ℂ) : ℂ := v 0 * w 1 - v 1 * w 0
-
-/-- Two nonzero vectors with vanishing determinant span the same line. -/
-private theorem mk_eq_mk_of_det₂_eq_zero {v w : Fin 2 → ℂ} (hv : v ≠ 0) (hw : w ≠ 0)
-    (h : det₂ v w = 0) : Projectivization.mk ℂ v hv = Projectivization.mk ℂ w hw := by
-  rw [Projectivization.mk_eq_mk_iff']
-  unfold det₂ at h
-  by_cases hw0 : w 0 = 0
-  · have hw1 : w 1 ≠ 0 := fun h1 ↦ hw (funext fun i ↦ by fin_cases i <;> assumption)
-    refine ⟨v 1 / w 1, funext fun i ↦ ?_⟩
-    fin_cases i
-    · simp only [Fin.zero_eta, Fin.isValue, Pi.smul_apply, smul_eq_mul, hw0, mul_zero]
-      have : v 0 * w 1 = 0 := by rw [hw0, mul_zero, sub_zero] at h; exact h
-      exact ((mul_eq_zero.mp this).resolve_right hw1).symm
-    · simp [div_mul_cancel₀ _ hw1]
-  · refine ⟨v 0 / w 0, funext fun i ↦ ?_⟩
-    fin_cases i
-    · simp [div_mul_cancel₀ _ hw0]
-    · simp only [Fin.mk_one, Fin.isValue, Pi.smul_apply, smul_eq_mul]
-      field_simp
-      linear_combination h
-
 /-- The matrix with columns `det(Q, P) R` and `det(R, Q) P`, which carries `[1 : 0]`, `[0 : 1]`
 and `[1 : 1]` to `[R]`, `[P]` and `[Q]`. -/
 private def tripleMatrix (P Q R : Fin 2 → ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
-  !![det₂ Q P * R 0, det₂ R Q * P 0; det₂ Q P * R 1, det₂ R Q * P 1]
+  !![(of ![Q, P]).det * R 0, (of ![R, Q]).det * P 0;
+    (of ![Q, P]).det * R 1, (of ![R, Q]).det * P 1]
 
 private theorem det_tripleMatrix (P Q R : Fin 2 → ℂ) :
-    (tripleMatrix P Q R).det = det₂ Q P * det₂ R Q * det₂ R P := by
-  simp only [tripleMatrix, det_fin_two_of, det₂]
+    (tripleMatrix P Q R).det = (of ![Q, P]).det * (of ![R, Q]).det * (of ![R, P]).det := by
+  simp only [tripleMatrix, det_fin_two, of_apply, cons_val_zero, cons_val_one]
   ring
 
 private theorem tripleMatrix_mulVec_zero_one (P Q R : Fin 2 → ℂ) :
-    tripleMatrix P Q R *ᵥ ![0, 1] = det₂ R Q • P := by
+    tripleMatrix P Q R *ᵥ ![0, 1] = (of ![R, Q]).det • P := by
   ext i; fin_cases i <;> simp [tripleMatrix]
 
 private theorem tripleMatrix_mulVec_one_zero (P Q R : Fin 2 → ℂ) :
-    tripleMatrix P Q R *ᵥ ![1, 0] = det₂ Q P • R := by
+    tripleMatrix P Q R *ᵥ ![1, 0] = (of ![Q, P]).det • R := by
   ext i; fin_cases i <;> simp [tripleMatrix]
 
 private theorem tripleMatrix_mulVec_one_one (P Q R : Fin 2 → ℂ) :
-    tripleMatrix P Q R *ᵥ ![1, 1] = det₂ R P • Q := by
-  ext i; fin_cases i <;> simp [tripleMatrix, det₂] <;> ring
+    tripleMatrix P Q R *ᵥ ![1, 1] = (of ![R, P]).det • Q := by
+  ext i; fin_cases i <;> simp [tripleMatrix, det_fin_two] <;> ring
 
 /-- If a matrix `A` of `SL(2, ℂ)` sends the homogeneous coordinates `v` of a point `x` to a multiple
 of `w`, then its class in `PSL(2, ℂ)` moves `x` to the point with homogeneous coordinates `w`. -/
@@ -125,11 +105,11 @@ private theorem equivProjectivization_smul_eq (A : SL(2, ℂ)) {v w : Fin 2 → 
 
 /-- Homogeneous coordinates of two distinct points of the Riemann sphere have nonzero
 determinant. -/
-private theorem det₂_ne_zero {x y : OnePoint ℂ} (hxy : x ≠ y) {v w : Fin 2 → ℂ} {hv : v ≠ 0}
+private theorem det_of_ne_zero {x y : OnePoint ℂ} (hxy : x ≠ y) {v w : Fin 2 → ℂ} {hv : v ≠ 0}
     {hw : w ≠ 0} (hx : equivProjectivization ℂ x = .mk ℂ v hv)
-    (hy : equivProjectivization ℂ y = .mk ℂ w hw) : det₂ v w ≠ 0 := fun h ↦
+    (hy : equivProjectivization ℂ y = .mk ℂ w hw) : (of ![v, w]).det ≠ 0 := fun h ↦
   hxy ((equivProjectivization ℂ).injective
-    (hx.trans ((mk_eq_mk_of_det₂_eq_zero hv hw h).trans hy.symm)))
+    (hx.trans (((Projectivization.mk_eq_mk_iff_det_eq_zero hv hw).2 h).trans hy.symm)))
 
 /-- For homogeneous coordinates `P`, `Q`, `R` of an ordered triple `q` of distinct points, the
 class of any matrix of `SL(2, ℂ)` proportional to the matrix with columns `det(Q, P) R` and
@@ -143,15 +123,15 @@ private theorem pslHomeomorphDistinctTriples_symm_eq_of_coe_eq_smul
     (pslHomeomorphDistinctTriples (zeroOneInftyTriple ℂ)).symm q = A := by
   have h₀ : (A : PSL(2, ℂ)) • ((0 : ℂ) : OnePoint ℂ) = q.val 0 :=
     (equivProjectivization ℂ).injective ((equivProjectivization_smul_eq A _ hP
-      (equivProjectivization_apply_coe ℂ 0) (a := a * det₂ R Q)
+      (equivProjectivization_apply_coe ℂ 0) (a := a * (of ![R, Q]).det)
       (by rw [hA, smul_mulVec, tripleMatrix_mulVec_zero_one, smul_smul])).trans hPq.symm)
   have h₁ : (A : PSL(2, ℂ)) • ((1 : ℂ) : OnePoint ℂ) = q.val 1 :=
     (equivProjectivization ℂ).injective ((equivProjectivization_smul_eq A _ hQ
-      (equivProjectivization_apply_coe ℂ 1) (a := a * det₂ R P)
+      (equivProjectivization_apply_coe ℂ 1) (a := a * (of ![R, P]).det)
       (by rw [hA, smul_mulVec, tripleMatrix_mulVec_one_one, smul_smul])).trans hQq.symm)
   have h₂ : (A : PSL(2, ℂ)) • (∞ : OnePoint ℂ) = q.val 2 :=
     (equivProjectivization ℂ).injective ((equivProjectivization_smul_eq A _ hR
-      (equivProjectivization_apply_infinity ℂ) (a := a * det₂ Q P)
+      (equivProjectivization_apply_infinity ℂ) (a := a * (of ![Q, P]).det)
       (by rw [hA, smul_mulVec, tripleMatrix_mulVec_one_zero, smul_smul])).trans hRq.symm)
   rw [pslHomeomorphDistinctTriples_symm_eq_iff, coe_zeroOneInftyTriple]
   intro i
@@ -161,26 +141,24 @@ private theorem pslHomeomorphDistinctTriples_symm_eq_of_coe_eq_smul
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
   {I : ModelWithCorners ℂ E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
 
-/-- A map to the Riemann sphere that is `C^n` at `x₀` has, near `x₀`, nonzero homogeneous
-coordinates that are `C^n` at `x₀`. -/
-private theorem exists_contMDiffAt_eventually_equivProjectivization_eq_mk {f : M → OnePoint ℂ}
-    {x₀ : M} (hf : ContMDiffAt I 𝓘(ℂ) n f x₀) :
-    ∃ F : M → Fin 2 → ℂ, ContMDiffAt I 𝓘(ℂ, Fin 2 → ℂ) n F x₀ ∧
-      ∀ᶠ x in 𝓝 x₀, ∃ hx : F x ≠ 0, equivProjectivization ℂ (f x) = .mk ℂ (F x) hx :=
-  Projectivization.exists_contMDiffAt_eventually_eq_mk
-    ((contMDiff_equivProjectivization.of_le le_top).contMDiffAt.comp x₀ hf)
-
 /-- The determinant of two vectors of `ℂ²` is a polynomial in their coordinates, hence analytic. -/
-private theorem contDiff_det₂ : ContDiff ℂ ω fun T : (Fin 2 → ℂ) × (Fin 2 → ℂ) ↦ det₂ T.1 T.2 := by
-  simp only [det₂]
+private theorem contDiff_det_of :
+    ContDiff ℂ ω fun T : (Fin 2 → ℂ) × (Fin 2 → ℂ) ↦ (of ![T.1, T.2]).det := by
+  have h : (fun T : (Fin 2 → ℂ) × (Fin 2 → ℂ) ↦ (of ![T.1, T.2]).det) =
+      fun T ↦ T.1 0 * T.2 1 - T.1 1 * T.2 0 := by
+    funext T
+    simp [det_fin_two]
+  rw [h]
   fun_prop
 
 /-- The determinant of two vectors depending `C^n` on a parameter is `C^n`. -/
-private theorem contMDiffAt_det₂ {v w : M → Fin 2 → ℂ} {x₀ : M}
+private theorem contMDiffAt_det_of {v w : M → Fin 2 → ℂ} {x₀ : M}
     (hv : ContMDiffAt I 𝓘(ℂ, Fin 2 → ℂ) n v x₀)
     (hw : ContMDiffAt I 𝓘(ℂ, Fin 2 → ℂ) n w x₀) :
-    ContMDiffAt I 𝓘(ℂ) n (fun x ↦ det₂ (v x) (w x)) x₀ :=
-  (contDiff_det₂.of_le le_top).contDiffAt.comp_contMDiffAt (hv.prodMk_space hw)
+    ContMDiffAt I 𝓘(ℂ) n (fun x ↦ (of ![v x, w x]).det) x₀ :=
+  -- Naming the inner map spares the unifier from unfolding `Matrix.det` to find it.
+  (contDiff_det_of.of_le le_top).contDiffAt.comp_contMDiffAt (f := fun x ↦ (v x, w x))
+    (hv.prodMk_space hw)
 
 /-- The matrix with columns `det(Q, P) R` and `det(R, Q) P` depends analytically on `P`, `Q`,
 `R`. -/
@@ -191,8 +169,8 @@ private theorem contDiff_tripleMatrix :
       fun i j : Fin 2 ↦ tripleMatrix T.1 T.2.1 T.2.2 i j := by
     refine contDiff_pi.2 fun i ↦ contDiff_pi.2 fun j ↦ ?_
     fin_cases i <;> fin_cases j <;>
-      simp only [tripleMatrix, det₂, Fin.isValue, Fin.zero_eta, Fin.mk_one, of_apply, cons_val',
-        cons_val_zero, cons_val_one, cons_val_fin_one] <;> fun_prop
+      simp only [tripleMatrix, det_fin_two, Fin.isValue, Fin.zero_eta, Fin.mk_one, of_apply,
+        cons_val', cons_val_zero, cons_val_one, cons_val_fin_one] <;> fun_prop
   -- `Matrix.of` identifies entry functions with matrices.
   convert (Matrix.ofContinuousLinearEquiv ℂ).contDiff.comp h using 1
   ext T i j
@@ -220,26 +198,28 @@ theorem contMDiffAt_pslHomeomorphDistinctTriples_symm {p : M → Fin 3 → OnePo
   obtain ⟨R, hR, hRev⟩ := exists_contMDiffAt_eventually_equivProjectivization_eq_mk (hpx 2)
   -- The determinant `d` of the matrix with columns `det(Q, P) R` and `det(R, Q) P` does not
   -- vanish at `x₀`, since the three points are distinct.
-  set d : M → ℂ := fun x ↦ det₂ (Q x) (P x) * det₂ (R x) (Q x) * det₂ (R x) (P x)
+  set d : M → ℂ := fun x ↦ (of ![Q x, P x]).det * (of ![R x, Q x]).det * (of ![R x, P x]).det
   have hd : ContMDiffAt I 𝓘(ℂ) n d x₀ :=
-    ((contMDiffAt_det₂ hQ hP).mul (contMDiffAt_det₂ hR hQ)).mul (contMDiffAt_det₂ hR hP)
+    ((contMDiffAt_det_of hQ hP).mul (contMDiffAt_det_of hR hQ)).mul (contMDiffAt_det_of hR hP)
   obtain ⟨_, hPx₀⟩ := hPev.self_of_nhds
   obtain ⟨_, hQx₀⟩ := hQev.self_of_nhds
   obtain ⟨_, hRx₀⟩ := hRev.self_of_nhds
   have hd₀ : d x₀ ≠ 0 :=
-    mul_ne_zero (mul_ne_zero (det₂_ne_zero ((hp x₀).ne (by decide)) hQx₀ hPx₀)
-      (det₂_ne_zero ((hp x₀).ne (by decide)) hRx₀ hQx₀))
-      (det₂_ne_zero ((hp x₀).ne (by decide)) hRx₀ hPx₀)
+    mul_ne_zero (mul_ne_zero (det_of_ne_zero ((hp x₀).ne (by decide)) hQx₀ hPx₀)
+      (det_of_ne_zero ((hp x₀).ne (by decide)) hRx₀ hQx₀))
+      (det_of_ne_zero ((hp x₀).ne (by decide)) hRx₀ hPx₀)
   -- A square root `c` of `d` near `x₀`, analytic in `d`, and the normalized matrix `B`.
   obtain ⟨root, hroot, -, hroot_sq⟩ :=
     TauCeti.exists_analyticAt_pow_eq two_ne_zero hd₀ (Complex.cpow_nat_inv_pow (d x₀) two_ne_zero)
-  have hc : ContMDiffAt I 𝓘(ℂ) n (fun x ↦ root (d x)) x₀ := hroot.contDiffAt.comp_contMDiffAt hd
+  -- Here and in `hB`, naming the inner map spares the unifier from unfolding the determinants.
+  have hc : ContMDiffAt I 𝓘(ℂ) n (fun x ↦ root (d x)) x₀ :=
+    hroot.contDiffAt.comp_contMDiffAt (f := d) hd
   have hc₀ : root (d x₀) ≠ 0 := fun h ↦ hd₀ (by rw [← hroot_sq (d x₀), h, zero_pow two_ne_zero])
   set B : M → Matrix (Fin 2) (Fin 2) ℂ :=
     fun x ↦ (root (d x))⁻¹ • tripleMatrix (P x) (Q x) (R x) with hB_def
   have hB : ContMDiffAt I 𝓘(ℂ, Matrix (Fin 2) (Fin 2) ℂ) n B x₀ :=
     (hc.inv₀ hc₀).smul ((contDiff_tripleMatrix.of_le le_top).contDiffAt.comp_contMDiffAt
-      (hP.prodMk_space (hQ.prodMk_space hR)))
+      (f := fun x ↦ (P x, Q x, R x)) (hP.prodMk_space (hQ.prodMk_space hR)))
   have hBdet {x : M} (hx : d x ≠ 0) : (B x).det = 1 := by
     rw [hB_def, det_smul, det_tripleMatrix, Fintype.card_fin, inv_pow, hroot_sq]
     exact inv_mul_cancel₀ hx

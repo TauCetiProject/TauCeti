@@ -155,11 +155,8 @@ theorem contMDiffAt_iff {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜
     [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
     {f : M → SpecialLinearGroup n 𝕜} {x : M} {k : ℕ∞ω} :
     ContMDiffAt I 𝓘(𝕜, Model n 𝕜) k f x ↔
-      ContMDiffAt I 𝓘(𝕜, Matrix n n 𝕜) k (fun y ↦ (f y : Matrix n n 𝕜)) x := by
-  have he := (isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).of_le (le_top : k ≤ ω)
-  rw [ContMDiffAt.iff_comp_isImmersionAt (he.isImmersion.isImmersionAt (f x)),
-    and_iff_right_of_imp fun h ↦ (he.isEmbedding.isInducing.continuousAt_iff).2 h.continuousAt,
-    Function.comp_def]
+      ContMDiffAt I 𝓘(𝕜, Matrix n n 𝕜) k (fun y ↦ (f y : Matrix n n 𝕜)) x :=
+  ((isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).of_le (le_top : k ≤ ω)).contMDiffAt_iff_comp
 
 /-- The special linear group is an analytic Lie group over its scalar field. -/
 instance instLieGroup : LieGroup 𝓘(𝕜, Model n 𝕜) ω (SpecialLinearGroup n 𝕜) := by
