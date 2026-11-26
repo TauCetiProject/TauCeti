@@ -17,7 +17,8 @@ these inner products depend continuously on the base point when those of `E` do:
 a continuous Riemannian bundle is a continuous Riemannian bundle
 (`Bundle.Pullback.instIsContinuousRiemannianBundle`). A continuous family `g` of bilinear forms
 defining the inner products of `E` pulls back to the family `x ↦ g (f x)`; in the pulled-back
-chart at `x₀` it reads, near `x₀`, as `g` does in the chart of `E` at `f x₀`.
+chart at `x₀` it reads, near `x₀`, as `g` does in the chart of `E` at `f x₀`
+(`ContinuousLinearMap.inCoordinates_pullback_of_mem₂`).
 
 For the inclusion of an open subset `U` of a manifold, this makes the restrictions of Riemannian
 bundles to `U` continuous Riemannian bundles, as needed to compare inner products and integrals of
@@ -28,6 +29,46 @@ public section
 
 open Bundle ContinuousLinearMap Filter
 open scoped Topology
+
+namespace ContinuousLinearMap
+
+variable {𝕜 B X F G K : Type*} [NontriviallyNormedField 𝕜]
+  [TopologicalSpace B] [TopologicalSpace X]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {V : B → Type*} {W : B → Type*}
+  [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ b, AddCommGroup (W b)] [∀ b, Module 𝕜 (W b)] [∀ b, TopologicalSpace (W b)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  [FunLike K X B] [ContinuousMapClass K X B]
+
+/-- The coordinates of a bilinear form on the fibres of two pullbacks along `f` are its
+coordinates as a bilinear form on the fibres of the original bundles at the image points, on the
+common chart domain. -/
+theorem inCoordinates_pullback_of_mem₂ (f : K) (x₀ x : X) (A : V (f x) →L[𝕜] W (f x) →L[𝕜] 𝕜)
+    (hV : f x ∈ (trivializationAt F V (f x₀)).baseSet)
+    (hW : f x ∈ (trivializationAt G W (f x₀)).baseSet) :
+    inCoordinates F ((f : X → B) *ᵖ V) (G →L[𝕜] 𝕜) (fun x ↦ ((f : X → B) *ᵖ W) x →L[𝕜] 𝕜)
+        x₀ x x₀ x A =
+      inCoordinates F V (G →L[𝕜] 𝕜) (fun b ↦ W b →L[𝕜] 𝕜) (f x₀) (f x) (f x₀) (f x) A := by
+  -- The chart of a pullback at `x₀` is the pullback of the chart at `f x₀`, whose base set is the
+  -- preimage of the original base set.
+  have hV' : x ∈ (trivializationAt F ((f : X → B) *ᵖ V) x₀).baseSet := hV
+  have hW' : x ∈ (trivializationAt G ((f : X → B) *ᵖ W) x₀).baseSet := hW
+  ext v w
+  rw [inCoordinates_apply_eq₂ hV hW (by simp)]
+  -- The pullback fibres inherit the original module instances; `erw` resolves these synonyms.
+  erw [inCoordinates_apply_eq₂ (E₁ := (f : X → B) *ᵖ V) (E₂ := (f : X → B) *ᵖ W)
+    (E₃ := fun _ : X ↦ 𝕜) hV' hW' (by simp)]
+  simp only [trivializationAt, FiberBundle.pullback_trivializationAt']
+  rw [Trivialization.symm_pullback _ f hV, Trivialization.symm_pullback _ f hW]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
+    LinearMap.id_coe, id_eq]
+  -- Unfolding `trivializationAt` left `FiberBundle.trivializationAt'` on one side only; it is
+  -- `trivializationAt` by definition.
+  rfl
+
+end ContinuousLinearMap
 
 namespace Bundle.Pullback
 
@@ -46,26 +87,9 @@ instance instIsContinuousRiemannianBundle [h : IsContinuousRiemannianBundle F E]
   have hc := (hg.continuousAt (x := f x₀)).comp (map_continuous f).continuousAt
   rw [continuousAt_hom_bundle] at hc ⊢
   refine ⟨continuousAt_id, hc.2.congr ?_⟩
-  -- Near `x₀`, the image point `f x` lies in the base set of the chart of `E` at `f x₀`, whose
-  -- pullback is the chart of `f *ᵖ E` at `x₀`; both coordinate expressions of `g (f x)` then
-  -- evaluate `g (f x)` on the same vectors of `E (f x)`.
-  filter_upwards [(map_continuous f).continuousAt.preimage_mem_nhds
-    ((trivializationAt F E (f x₀)).open_baseSet.mem_nhds
-      (FiberBundle.mem_baseSet_trivializationAt' _))] with x hx
-  have hx' : x ∈ (trivializationAt F ((f : B' → B) *ᵖ E) x₀).baseSet := hx
-  ext v w
-  dsimp only [Function.comp_apply]
-  rw [inCoordinates_apply_eq₂ hx hx (by simp)]
-  -- The fibres of `f *ᵖ E` carry the instances of the fibres of `E` only up to unfolding, so the
-  -- coordinate formula for the pullback is applied with `erw`.
-  erw [inCoordinates_apply_eq₂ (E₁ := (f : B' → B) *ᵖ E) (E₂ := (f : B' → B) *ᵖ E)
-    (E₃ := fun _ : B' ↦ ℝ) hx' hx' (by simp)]
-  simp only [trivializationAt, FiberBundle.pullback_trivializationAt']
-  rw [Trivialization.symm_pullback _ f hx, Trivialization.symm_pullback _ f hx]
-  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-    LinearMap.id_coe, id_eq]
-  -- Unfolding `trivializationAt` left `FiberBundle.trivializationAt'` on one side only; it is
-  -- `trivializationAt F E (f x₀)` by definition.
-  rfl
+  have hmem := (trivializationAt F E (f x₀)).open_baseSet.mem_nhds
+    (FiberBundle.mem_baseSet_trivializationAt' (f x₀))
+  filter_upwards [(map_continuous f).continuousAt.preimage_mem_nhds hmem] with x hx
+  exact (inCoordinates_pullback_of_mem₂ f x₀ x (g (f x)) hx hx).symm
 
 end Bundle.Pullback
