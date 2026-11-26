@@ -46,7 +46,7 @@ matrices throughout and imposing no global measurability hypotheses beyond squar
 ## Implementation notes
 
 Via the varying-space Cramér–Wold theorem
-`TauCeti.tendstoInDistribution_iff_tendstoInDistribution_inner`, both main theorems reduce to
+`TauCeti.tendstoInDistribution_iff_tendstoInDistribution_inner_dep`, both main theorems reduce to
 one dimension along every projection `z ↦ ⟪z, t⟫`. In each direction `t`, Cauchy–Schwarz transfers
 the Euclidean Lindeberg condition to the scalar Lindeberg condition at threshold `δ` via radius
 `δ / (2 ‖t‖)`, `TauCeti.variance_inner_eq_inner_covMatrix_map` identifies the projected variance as
@@ -144,7 +144,7 @@ theorem tendstoInDistribution_sum_of_lindeberg [DecidableEq κ]
   have hS : S.PosSemidef :=
     isClosed_setOfPred_posSemidef.mem_of_tendsto hcov (.of_forall fun n ↦
       (Matrix.PosSemidef.addSubmonoid κ ℝ).sum_mem fun i _ ↦ posSemidef_covMatrix_map (hL2 n i))
-  refine tendstoInDistribution_iff_tendstoInDistribution_inner.mpr fun t ↦ ?_
+  refine tendstoInDistribution_iff_tendstoInDistribution_inner_dep.mpr fun t ↦ ?_
   simp_rw [sum_inner]
   have hZt : HasLaw (fun ω' ↦ ⟪Z ω', t⟫)
       (gaussianReal 0 (⟪t, S.toEuclideanLin t⟫).toNNReal) μ' := by
@@ -323,7 +323,7 @@ theorem tendstoInDistribution_inv_sqrt_smul_sum_sub_euclidean
       (fun (n : ℕ) ω ↦ (√(n : ℝ))⁻¹ • ∑ i ∈ Finset.range n, (X i ω - ∫ ω', X 0 ω' ∂μ))
       atTop Z (fun _ ↦ μ) μ' := by
   have hS : (covMatrix (μ.map (X 0))).PosSemidef := posSemidef_covMatrix_map hL2
-  refine tendstoInDistribution_iff_tendstoInDistribution_inner.mpr fun t ↦ ?_
+  refine tendstoInDistribution_iff_tendstoInDistribution_inner_dep.mpr fun t ↦ ?_
   set U : ℕ → Ω → ℝ := fun i ω ↦ ⟪t, X i ω⟫
   have hU_var : Var[U 0; μ] = ⟪t, (covMatrix (μ.map (X 0))).toEuclideanLin t⟫ :=
     variance_inner_eq_inner_covMatrix_map hL2 t

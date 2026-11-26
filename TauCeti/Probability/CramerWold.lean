@@ -25,13 +25,17 @@ equivalence already entail almost-everywhere measurability of `X n` and `X'`.
 
 ## Main results
 
-* `TauCeti.tendstoInDistribution_iff_tendstoInDistribution_inner`: the Cramér–Wold theorem
+* `TauCeti.tendstoInDistribution_iff_tendstoInDistribution_inner_dep`: the Cramér–Wold theorem
   for sequences `X : (n : ℕ) → Ω n → E` on varying probability spaces `(Ω n, P n)`, without
   external measurability hypotheses.
 
 ## Implementation notes
 
-On the right-hand side of `tendstoInDistribution_iff_tendstoInDistribution_inner`, each
+The `_dep` suffix follows `MeasureTheory.Integrable.fintype_prod_dep` to distinguish the
+dependent-space generalization `(Ω n, P n)` from Mathlib's root-level single-space theorem
+`tendstoInDistribution_iff_tendstoInDistribution_inner`.
+
+On the right-hand side of `tendstoInDistribution_iff_tendstoInDistribution_inner_dep`, each
 projection `ω ↦ ⟪X n ω, t⟫` is almost everywhere measurable by
 `TendstoInDistribution.forall_aemeasurable`; Pettis' measurability theorem
 (`TauCeti.aestronglyMeasurable_iff_forall_inner`) reconstructs almost-everywhere strong
@@ -61,7 +65,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 vectors `X n : Ω n → E` on probability spaces `(Ω n, P n)` to `X' : Ω' → E` on `(Ω', P')`, where
 `E` is a finite-dimensional real inner product space with its Borel σ-algebra, is equivalent to
 convergence in distribution of all scalar projections `ω ↦ ⟪X n ω, t⟫` to `ω' ↦ ⟪X' ω', t⟫`. -/
-theorem tendstoInDistribution_iff_tendstoInDistribution_inner
+theorem tendstoInDistribution_iff_tendstoInDistribution_inner_dep
     {Ω : ℕ → Type*} {mΩ : ∀ n, MeasurableSpace (Ω n)} {P : (n : ℕ) → Measure (Ω n)}
     [∀ n, IsProbabilityMeasure (P n)]
     {Ω' : Type*} {mΩ' : MeasurableSpace Ω'} {P' : Measure Ω'} [IsProbabilityMeasure P']
