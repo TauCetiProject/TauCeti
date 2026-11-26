@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.FDeriv.CountableLevels
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.Dense
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
@@ -105,18 +106,6 @@ private lemma setOf_eq_or_ne_mem_nhds {X : Type*} [TopologicalSpace X] [T1Space 
   by_cases h : x = y
   · exact univ_mem' fun z ↦ (em (z = y)).imp_left fun hz ↦ hz.trans h.symm
   · exact mem_of_superset (isOpen_ne.mem_nhds h) fun z hz ↦ Or.inr hz
-
-/-- A dense set meets every open set `U` containing a non-isolated point `a` in `n` points of
-`U` other than `a`. -/
-private lemma exists_finset_subset_inter_diff {X : Type*} [TopologicalSpace X] [T1Space X]
-    {R U : Set X} (hR : Dense R) (hU : IsOpen U) {a : X} [(𝓝[≠] a).NeBot] (ha : a ∈ U) (n : ℕ) :
-    ∃ C : Finset X, ↑C ⊆ R ∩ (U \ {a}) ∧ C.card = n := by
-  refine Set.Infinite.exists_subset_card_eq (fun hfin ↦ ?_) n
-  obtain ⟨c, hc⟩ :=
-    (((infinite_of_mem_nhds a (hU.mem_nhds ha)).sdiff (finite_singleton a)).sdiff hfin).nonempty
-  obtain ⟨c', hc'U, hc'R⟩ :=
-    hR.inter_open_nonempty _ ((hU.sdiff isClosed_singleton).sdiff hfin.isClosed) ⟨c, hc⟩
-  exact hc'U.2 ⟨hc'R, hc'U.1⟩
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -294,11 +283,11 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
   have hR : Dense R := dense_setOf_forall_surjective_fderiv
     (fun z hz ↦ differentiableAt_comp_extChartAt_comp (hmd z) hz ℓ) rfl
   obtain ⟨C, hCR, hCn⟩ :=
-    exists_finset_subset_inter_diff hR isOpen_interior (mem_of_mem_nhds hfW) n
-  have hw (c : ℂ) (hc : c ∈ C) : ∃ z ∈ W, f z = c := interior_subset (hCR hc).2.1
+    ((hR.infinite_inter_of_mem_nhds hfW).sdiff (finite_singleton (f z₀))).exists_subset_card_eq n
+  have hw (c : ℂ) (hc : c ∈ C) : ∃ z ∈ W, f z = c := interior_subset (hCR hc).1.2
   choose! w hwW hwf using hw
   -- A radius `r` at which the cut is transverse.
-  obtain ⟨r, hr, htr⟩ := exists_mem_Ioo_forall_isTransverseCutAt hmd (fun c hc ↦ (hCR hc).1) hr₀
+  obtain ⟨r, hr, htr⟩ := exists_mem_Ioo_forall_isTransverseCutAt hmd (fun c hc ↦ (hCR hc).1.1) hr₀
     fun v hv ↦ (hr₀K hv).1
   have hD := closedBall_inter_range_inter_preimage_subset hr.2 hr₀K ℓ C
   have hK : closedBall (φ x₀) r ∩ range I ∩ ℓ ⁻¹' C ⊆ φ.target := fun v hv ↦ (hD hv).1
@@ -308,7 +297,7 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
   · -- The only point of the chart sent to `x₀` is `φ x₀`, which is off the cut as `f z₀ ∉ C`.
     rintro ⟨v, hv, hvy⟩
     obtain ⟨hvt, hvx₀ | hvy'⟩ := hD hv
-    · exact (hCR hv.2).2.2 (by rw [← φ.right_inv hvt, hvx₀]; rfl)
+    · exact (hCR hv.2).2 (by rw [← φ.right_inv hvt, hvx₀]; rfl)
     · exact hvy' hvy
   · refine Finset.card_image_of_injOn (fun a ha b hb hab ↦ ?_) |>.trans hCn
     rw [← hwf a ha, ← hwf b hb, hab]
