@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
 
+import TauCeti.Geometry.Manifold.Submersion.Split
+
 /-!
 # Regular values of functions of the actions on `T*Tⁿ`
 
@@ -52,8 +54,11 @@ theorem isRegularPoint_comp_torusActions_iff {h : (ι → ℝ) → ℝ}
     exact ⟨fun hz ↦ hz.of_comp hh.mdifferentiableAt
         ((contMDiff_torusActions p z).mdifferentiableAt (by simp)),
       fun hz ↦ hz.comp (isRegularPoint_iff.2 (surjective_mfderiv_torusActions p z))⟩
-  · refine iff_of_false
-      (fun hz ↦ hh ((mdifferentiableAt_comp_torusActions_iff p).1 hz.mdifferentiableAt)) ?_
+  · -- Differentiability descends along the submersion `I`, so `h ∘ I` is not differentiable.
+    have hI := ((contMDiff_torusActions (ι := ι) p).isSubmersionOfComplement_of_surjective_mfderiv
+      (by simp) (surjective_mfderiv_torusActions p)).isSubmersion.isSubmersionAt z
+    refine iff_of_false (fun hz ↦ hh (mdifferentiableAt_iff_differentiableAt.1
+      ((hI.mdifferentiableAt_comp_iff (by simp)).1 hz.mdifferentiableAt))) ?_
     rw [fderiv_zero_of_not_differentiableAt hh]
     intro h0
     obtain ⟨v, hv⟩ := h0 1

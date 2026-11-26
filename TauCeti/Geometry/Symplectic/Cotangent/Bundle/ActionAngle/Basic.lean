@@ -451,29 +451,6 @@ theorem mdifferentiableAt_comp_torusActions [DecidableEq ι] {h : (ι → ℝ) �
       (h ∘ torusActions p) z :=
   hh.mdifferentiableAt.comp z ((contMDiff_torusActions p z).mdifferentiableAt (by simp))
 
-/-- A function of the actions is differentiable at a covector exactly when its profile is
-differentiable at the actions of the covector. Conversely to
-`TauCeti.CotangentBundle.mdifferentiableAt_comp_torusActions`, the profile is the function of the
-actions composed with the smooth section `b ↦ κ(θ, b)` of the action map. -/
-theorem mdifferentiableAt_comp_torusActions_iff [DecidableEq ι] {h : (ι → ℝ) → ℝ}
-    {z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)} :
-    MDifferentiableAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) 𝓘(ℝ)
-      (h ∘ torusActions p) z ↔ DifferentiableAt ℝ h (torusActions p z) := by
-  refine ⟨fun hz ↦ ?_, mdifferentiableAt_comp_torusActions p⟩
-  obtain ⟨⟨θ, a⟩, rfl⟩ := surjective_actionAngleCover p z
-  rw [torusActions_actionAngleCover]
-  have hσ : MDifferentiableAt 𝓘(ℝ, ι → ℝ)
-      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
-      (fun b ↦ actionAngleCover p (θ, b)) a :=
-    ((contMDiff_actionAngleCover p).comp
-      (contMDiff_iff_contDiff.2 (contDiff_const.prodMk contDiff_id)) a).mdifferentiableAt
-      (by simp)
-  have hcomp : (h ∘ torusActions p) ∘ (fun b ↦ actionAngleCover p (θ, b)) = h :=
-    funext fun b ↦ by simp
-  have := hz.comp a hσ
-  rw [hcomp] at this
-  exact mdifferentiableAt_iff_differentiableAt.1 this
-
 /-! ### Properness of the action map -/
 
 section Proper
