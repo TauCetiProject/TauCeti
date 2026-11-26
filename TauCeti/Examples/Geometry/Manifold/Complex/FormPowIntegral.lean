@@ -11,7 +11,8 @@ public import TauCeti.Geometry.Manifold.Complex.FormPowIntegral
 /-!
 # Checks: top powers of a Hermitian metric and the sign of their integral
 
-* On `ℂ²` with the standard form `ω = dx₁ ∧ dy₁ + dx₂ ∧ dy₂` (`TauCeti.standardKahlerForm 2`),
+* On `ℂ²` with the standard form `ω = dx₁ ∧ dy₁ + dx₂ ∧ dy₂`
+  (`TauCeti.kahlerTwoForm (EuclideanSpace ℂ (Fin 2))`),
   `ω²(∂x₁, ∂y₁, ∂x₂, ∂y₂) = 2 = 2!`, as `ω^n = n!·dvol_g` requires.
 * Against the opposite orientation the integral `∫_X ω^n` of a taming form on a nonempty compact
   complex manifold of positive dimension is negative, so the sign convention of
@@ -31,11 +32,12 @@ noncomputable def frame : Fin 4 → EuclideanSpace ℂ (Fin 2) :=
     EuclideanSpace.single 1 I]
 
 /-- **`ω²(∂x₁, ∂y₁, ∂x₂, ∂y₂) = 2`** for the standard Kähler form `ω` of `ℂ²`. -/
-theorem standardKahlerForm_wedgePow_two_frame :
-    (standardKahlerForm 2).wedgePow 2 frame = 2 := by
+theorem kahlerTwoForm_wedgePow_two_frame :
+    (kahlerTwoForm (EuclideanSpace ℂ (Fin 2))).wedgePow 2 frame = 2 := by
   let b : Fin 2 × Fin 2 → EuclideanSpace ℂ (Fin 2) :=
     fun p ↦ EuclideanSpace.single p.1 (if p.2 = 0 then 1 else I)
-  have h := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (standardKahlerForm 2) b
+  have h := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv
+    (kahlerTwoForm (EuclideanSpace ℂ (Fin 2))) b
     (fun i j ↦ by
       by_cases hij : i = j
       · subst hij
