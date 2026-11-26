@@ -133,7 +133,7 @@ theorem units_smul_integer {u : Rˣ} (hu : v u = 1) : u • (v.integer : Set R) 
 /-- **A valuation bound on the values of a semilinear map persists on spans over the pulled-back
 integers.** For `σ : S →+* R` and a `σ`-semilinear `f : M → R`, if `v (f y) ≤ γ` for `y ∈ T`, the
 same bound holds on the span of `T` over the ring of `e : S` with `v (σ e) ≤ 1`. -/
-theorem map_apply_le_of_mem_span_comap_integer {S M : Type*} [CommRing S] [AddCommGroup M]
+theorem map_apply_le_of_mem_span_comap_integer {S M : Type*} [Ring S] [AddCommMonoid M]
     [Module S M] {σ : S →+* R} (f : M →ₛₗ[σ] R) {T : Set M} {γ : Γ₀}
     (hT : ∀ y ∈ T, v (f y) ≤ γ) {y : M} (hy : y ∈ Submodule.span (v.comap σ).integer T) :
     v (f y) ≤ γ := by
