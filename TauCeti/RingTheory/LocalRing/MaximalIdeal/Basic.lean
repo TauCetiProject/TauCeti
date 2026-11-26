@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import TauCeti.RingTheory.Ideal.Span
+import Mathlib.RingTheory.IntegralDomain
 
 /-!
 # Elements in the maximal ideal of a local ring
@@ -24,6 +25,9 @@ In a commutative local ring, a minimal nonzero ideal is annihilated by the maxim
 For a homomorphism `f` of commutative local rings, the maximal ideal of the target is the greatest
 ideal whose contraction along `f` is contained in the maximal ideal of the source
 (`Ideal.isGreatest_comap_le_maximalIdeal`).
+
+In a local domain that is not a field, such as a discrete valuation ring, the maximal ideal is
+infinite (`TauCeti.IsLocalRing.infinite_maximalIdeal`).
 -/
 
 public section
@@ -35,6 +39,18 @@ ideal. -/
 theorem mem_maximalIdeal_of_not_dvd {R : Type*} [CommSemiring R] [IsLocalRing R] {f a : R}
     (hfa : ¬ f ∣ a) : f ∈ _root_.IsLocalRing.maximalIdeal R :=
   of_not_not fun h ↦ hfa (_root_.IsLocalRing.notMem_maximalIdeal.mp h).dvd
+
+/-- In a local domain that is not a field, such as a discrete valuation ring, the maximal ideal is
+infinite. -/
+theorem infinite_maximalIdeal {R : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
+    (hR : ¬ IsField R) : (_root_.IsLocalRing.maximalIdeal R : Set R).Infinite := by
+  -- A finite domain is a field, so `R` is infinite, and `R` embeds in `𝔪` by `y ↦ x * y` for any
+  -- nonzero `x ∈ 𝔪`.
+  obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (_root_.IsLocalRing.isField_iff_maximalIdeal_eq.not.mp hR)
+  have : Infinite R := not_finite_iff_infinite.mp fun _ ↦ hR (Finite.isField_of_domain R)
+  exact Set.infinite_of_injective_forall_mem (mul_right_injective₀ hx0)
+    fun y ↦ Ideal.mul_mem_right y _ hx
 
 end TauCeti.IsLocalRing
 
