@@ -34,7 +34,8 @@ need it. The constant-structure API is recovered by specializing both functions 
 The within-set predicate carries the same two structural lemmas as the constant-structure one:
 `IsJHolomorphicWithinAt.mono` shrinks the set and `isJHolomorphicWithinAt_univ` identifies the
 `Set.univ` case with `IsJHolomorphicAt`. `IsJHolomorphicOn.mono` and `isJHolomorphicOn_univ`
-follow from them pointwise.
+follow from them pointwise, and `IsOpen.isJHolomorphicOn_iff` reduces the setwise predicate on an
+open set to the pointwise one.
 
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1.
@@ -251,6 +252,13 @@ lemma IsJHolomorphicOn.continuousOn {J : U → AlmostComplexStructure U}
     {J' : V → AlmostComplexStructure V} {f : U → V} {s : Set U}
     (hf : IsJHolomorphicOn J J' f s) : ContinuousOn f s :=
   fun x hx ↦ (hf x hx).continuousWithinAt
+
+/-- On an open set, setwise J-holomorphicity is J-holomorphicity at every point of the set. -/
+lemma _root_.IsOpen.isJHolomorphicOn_iff {J : U → AlmostComplexStructure U}
+    {J' : V → AlmostComplexStructure V} {f : U → V} {s : Set U} (hs : IsOpen s) :
+    IsJHolomorphicOn J J' f s ↔ ∀ x ∈ s, IsJHolomorphicAt J J' f x :=
+  ⟨fun hf x hx ↦ (hf x hx).isJHolomorphicAt_of_mem_nhds (hs.mem_nhds hx),
+    fun hf x hx ↦ (hf x hx).isJHolomorphicWithinAt⟩
 
 /-- A globally J-holomorphic map is J-holomorphic on every set. -/
 lemma IsJHolomorphic.isJHolomorphicOn {J : U → AlmostComplexStructure U}
