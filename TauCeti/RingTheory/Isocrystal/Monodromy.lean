@@ -8,11 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.RingTheory.Valuation.Basic
 public import Mathlib.RingTheory.WittVector.Isocrystal
-import Mathlib.LinearAlgebra.Charpoly.ToMatrix
-import Mathlib.RingTheory.WittVector.DiscreteValuationRing
-import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.LinearAlgebra.Charpoly.Semilinear
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import TauCeti.LinearAlgebra.Charpoly.Projective
+import TauCeti.RingTheory.WittVector.FractionRing
 
 /-!
 # Nilpotence of monodromy
@@ -42,11 +39,10 @@ nilpotent.
   with `k ≥ 1` forces `a = 0`, then `N.charpoly = X ^ dim V` and `N ^ dim V = 0`.
 * `TauCeti.pow_finrank_eq_zero_of_frobenius_monodromy_of_valuation`: the same conclusion over a
   field when `σ` preserves a valuation `v` with `v c ≠ 1`.
-* `TauCeti.eq_zero_of_frobenius_mul_p_pow_eq`: in the fraction field of the Witt vectors of a
-  perfect domain `k`, `φ(a) p ^ n = a` with `n ≥ 1` forces `a = 0`.
 * `TauCeti.pow_finrank_eq_zero_of_isocrystal_monodromy`: on a finite-dimensional isocrystal over
   the fraction field `K(p, k)` of `W(k)` in the sense of Mathlib's `WittVector.Isocrystal`, every
-  linear `N` with `N Φ = p Φ N` satisfies `N ^ dim V = 0`.
+  linear `N` with `N Φ = p Φ N` satisfies `N ^ dim V = 0`. The input over `K(p, k)` is
+  `WittVector.FractionRing.eq_zero_of_frobenius_mul_p_pow_eq`.
 
 ## References
 
@@ -71,17 +67,12 @@ reversed characteristic polynomial of `N` satisfies `σ(a_k) c ^ k = a_k`. -/
 private theorem map_coeff_reverse_charpoly_mul_pow (hN : ∀ x, N (φ x) = c • φ (N x)) (k : ℕ) :
     σ (N.charpoly.reverse.coeff k) * c ^ k = N.charpoly.reverse.coeff k := by
   -- `φ` conjugates `σ⁻¹(c) • N` to `N`.
-  have hsemi : Function.Semiconj φ ⇑(σ' c • N) N := fun x ↦ by
-    rw [LinearMap.coe_smul, Pi.smul_apply, map_smulₛₗ, RingHomInvPair.comp_apply_eq₂, hN]
-  have hunit : IsUnit ((σ' c • N).charpoly.leadingCoeff) := by
-    rw [(LinearMap.charpoly_monic _).leadingCoeff]
-    exact isUnit_one
-  calc σ (N.charpoly.reverse.coeff k) * c ^ k
-      = ((σ' c • N).charpoly.map σ).reverse.coeff k := by
-        rw [reverse_map_of_isUnit_leadingCoeff hunit, coeff_map, LinearMap.reverse_charpoly_smul,
-          comp_C_mul_X_coeff, map_mul, map_pow, RingHomInvPair.comp_apply_eq₂]
-    _ = N.charpoly.reverse.coeff k := by
-        rw [← φ.charpoly_eq_map_charpoly_of_semiconj hsemi]
+  have hsemi (x : V) : N (φ x) = φ ((σ' c • N) x) := by
+    rw [LinearMap.smul_apply, map_smulₛₗ, RingHomInvPair.comp_apply_eq₂, hN]
+  have h := congr(($(LinearMap.projectiveCharpolyRev_eq_map_of_comp_eq φ hsemi)).coeff k)
+  rw [coeff_map, LinearMap.coeff_projectiveCharpolyRev_smul, map_mul, map_pow,
+    RingHomInvPair.comp_apply_eq₂, LinearMap.projectiveCharpolyRev_eq_reverse_charpoly] at h
+  exact (mul_comm _ _).trans h.symm
 
 /-- **Nilpotence of monodromy**, characteristic polynomial form. Let `φ` be a `σ`-semilinear
 automorphism of a finite free module `V` and `N` an endomorphism with `N φ = c φ N`. If the only
@@ -144,46 +135,6 @@ open scoped Isocrystal
 variable (p : ℕ) [Fact p.Prime] (k : Type*) [CommRing k] [IsDomain k] [CharP k p]
   [PerfectRing k p]
 
-/-- In the fraction field `K(p, k)` of the Witt vectors `W(k)` of a perfect domain `k` of
-characteristic `p` (which is `W(k)[1/p]` when `k` is a field), the equation `φ(a) p ^ n = a` with
-`n ≥ 1` only has the solution `a = 0`. -/
-theorem eq_zero_of_frobenius_mul_p_pow_eq {a : K(p, k)} {n : ℕ} (hn : n ≠ 0)
-    (ha : φ(p, k) a * (p : K(p, k)) ^ n = a) : a = 0 := by
-  by_contra ha0
-  obtain ⟨x, y, hy, rfl⟩ := IsFractionRing.div_surjective (A := WittVector p k) a
-  have hy0 : y ≠ 0 := nonZeroDivisors.ne_zero hy
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    simp at ha0
-  have hinj := IsFractionRing.injective (WittVector p k) K(p, k)
-  have hσ (z : WittVector p k) : φ(p, k) (algebraMap (WittVector p k) K(p, k) z) =
-      algebraMap (WittVector p k) K(p, k) (frobenius z) := by
-    -- `φ(p, k)` is the ring map underlying the extension of `frobeniusEquiv p k` to `K(p, k)`.
-    simp [FractionRing.frobeniusRingHom, FractionRing.frobenius]
-  have hAy : algebraMap (WittVector p k) K(p, k) y ≠ 0 := by simpa using hinj.ne hy0
-  have hAFy : algebraMap (WittVector p k) K(p, k) (frobenius y) ≠ 0 := by
-    have : frobenius y ≠ 0 := by simpa using (frobenius_bijective p k).injective.ne hy0
-    simpa using hinj.ne this
-  -- Clear denominators: `F(x) p ^ n y = x F(y)` in `W(k)`.
-  have hW : frobenius x * (p : WittVector p k) ^ n * y = x * frobenius y := by
-    apply hinj
-    rw [map_div₀, hσ, hσ] at ha
-    simp only [map_mul, map_pow, map_natCast]
-    field_simp at ha
-    linear_combination ha
-  -- Write `x = p ^ m u` and `y = p ^ l w` with `u, w` of nonzero constant coefficient; after
-  -- cancelling `p ^ (m + l)`, the constant coefficients give `0 = u₀ w₀ ^ p`.
-  obtain ⟨m, u, hu, rfl⟩ := exists_eq_pow_p_mul x hx0
-  obtain ⟨l, w, hw, rfl⟩ := exists_eq_pow_p_mul y hy0
-  simp only [map_mul, map_pow, map_natCast] at hW
-  have hcancel : frobenius u * (p : WittVector p k) ^ n * w = u * frobenius w := by
-    apply mul_left_cancel₀ (pow_ne_zero (m + l) (p_ne_zero p k))
-    linear_combination hW
-  have h0 := congrArg WittVector.constantCoeff hcancel
-  simp only [map_mul, map_pow, map_natCast, CharP.cast_eq_zero, zero_pow hn, mul_zero, zero_mul,
-    WittVector.constantCoeff_apply, coeff_frobenius_charP] at h0
-  exact mul_ne_zero hu (pow_ne_zero _ hw) h0.symm
-
 /-- **Nilpotence of Hyodo–Kato monodromy**. On a finite-dimensional isocrystal `V` over the
 fraction field `K(p, k)` of the Witt vectors `W(k)` of a perfect domain `k` of characteristic `p`,
 every linear endomorphism `N` satisfying `N Φ = p Φ N` with the Frobenius `Φ` of `V` has
@@ -193,7 +144,7 @@ theorem pow_finrank_eq_zero_of_isocrystal_monodromy {V : Type*} [AddCommGroup V]
     (hN : ∀ x, N (Φ(p, k) x) = (p : K(p, k)) • Φ(p, k) (N x)) :
     N ^ finrank K(p, k) V = 0 :=
   pow_finrank_eq_zero_of_frobenius_monodromy hN fun _ _ hn ha ↦
-    eq_zero_of_frobenius_mul_p_pow_eq p k hn ha
+    FractionRing.eq_zero_of_frobenius_mul_p_pow_eq p k hn ha
 
 end Witt
 
