@@ -203,8 +203,7 @@ def criticalPoints (f : M → ℝ) : Set M :=
 
 /-- A point is critical when the vector-valued manifold derivative vanishes there. -/
 @[simp]
-theorem mem_criticalPoints : x ∈ criticalPoints I f ↔ mvfderiv I f x = 0 :=
-  Iff.rfl
+theorem mem_criticalPoints : x ∈ criticalPoints I f ↔ mvfderiv I f x = 0 := Iff.rfl
 
 /-- Whether `x` is a critical point of `f` depends only on the germ of `f` at `x`. -/
 theorem _root_.Filter.EventuallyEq.mem_criticalPoints_iff {f₁ f₂ : M → ℝ}
@@ -213,8 +212,7 @@ theorem _root_.Filter.EventuallyEq.mem_criticalPoints_iff {f₁ f₂ : M → ℝ
 
 /-- A point is critical exactly when the manifold derivative `mfderiv I 𝓘(ℝ) f` vanishes there. -/
 theorem mem_criticalPoints_iff_mfderiv_eq_zero :
-    x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 :=
-  mvfderiv_eq_zero_iff
+    x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 := mvfderiv_eq_zero_iff
 
 /-- On a normed space with its trivial model, a point is critical exactly when the Fréchet
 derivative vanishes there. -/
@@ -465,13 +463,11 @@ theorem _root_.IsLocalExtr.mem_criticalPoints (h : IsLocalExtr f x) (hx : I.IsIn
 
 /-- An interior local minimum is a critical point. -/
 theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) (hx : I.IsInteriorPoint x) :
-    x ∈ criticalPoints I f :=
-  IsLocalExtr.mem_criticalPoints (IsMinFilter.isExtrFilter h) hx
+    x ∈ criticalPoints I f := IsLocalExtr.mem_criticalPoints (IsMinFilter.isExtrFilter h) hx
 
 /-- An interior local maximum is a critical point. -/
 theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) (hx : I.IsInteriorPoint x) :
-    x ∈ criticalPoints I f :=
-  IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h) hx
+    x ∈ criticalPoints I f := IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h) hx
 
 /-- A nondegenerate critical point is a critical point. -/
 theorem IsManifoldNondegenerateCriticalPoint.mem_criticalPoints
@@ -778,8 +774,7 @@ theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
 
 /-- A Morse function on a compact manifold has finitely many critical points. -/
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :
-    (criticalPoints I f).Finite := by
-  simpa using hf.finite_criticalPoints_inter isCompact_univ
+    (criticalPoints I f).Finite := by simpa using hf.finite_criticalPoints_inter isCompact_univ
 
 /-- A Morse function on a compact manifold has finitely many zeros of its manifold derivative. -/
 theorem IsMorse.finite_setOf_mfderiv_eq_zero [CompactSpace M] (hf : IsMorse I f) :
@@ -986,6 +981,30 @@ theorem IsCriticalBandCut.strictMono {a : ℤ → ℝ} (h : IsCriticalBandCut I 
 theorem IsCriticalBandCut.monotone {a : ℤ → ℝ} (h : IsCriticalBandCut I f a) : Monotone a :=
   h.strictMono.monotone
 
+section Diffeomorph
+
+variable {F G M' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace M'] [ChartedSpace G M'] {n : WithTop ℕ∞}
+  {f' : M' → ℝ}
+
+/-- **Critical bands under a diffeomorphism.** If `σ : M → M'` is a `C^n` diffeomorphism with
+`1 ≤ n` and `f'⁻¹[s, t]` is a critical band of `f'`, then `(f' ∘ σ)⁻¹[s, t] = σ⁻¹(f'⁻¹[s, t])` is a
+critical band of `f' ∘ σ`, with the same critical value: `σ` is a homeomorphism matching the
+critical points of `f' ∘ σ` with those of `f'`. -/
+theorem IsCriticalBand.comp_diffeomorph (σ : M ≃ₘ^n⟮I, J⟯ M') (hn : 1 ≤ n) {s t : ℝ}
+    (h : IsCriticalBand J f' s t) : IsCriticalBand I (f' ∘ σ) s t := by
+  obtain ⟨c, hc, hcrit⟩ := h.exists_mem_Ioo_forall_eq
+  exact ⟨σ.toHomeomorph.isCompact_preimage.2 h.isCompact, c, hc, fun x hx hfx ↦
+    hcrit (σ x) (((σ.isLocalDiffeomorph x).mem_criticalPoints_comp_iff hn).1 hx) hfx⟩
+
+/-- **Critical-band cuts under a diffeomorphism.** If `σ : M → M'` is a `C^n` diffeomorphism with
+`1 ≤ n`, every critical-band cut of `f'` is a critical-band cut of `f' ∘ σ`. -/
+theorem IsCriticalBandCut.comp_diffeomorph {a : ℤ → ℝ} (σ : M ≃ₘ^n⟮I, J⟯ M') (hn : 1 ≤ n)
+    (h : IsCriticalBandCut J f' a) : IsCriticalBandCut I (f' ∘ σ) a :=
+  ⟨fun q ↦ (h.isCriticalBand q).comp_diffeomorph σ hn⟩
+
+end Diffeomorph
+
 /-- **Critical-band cuts exist on compact manifolds with finitely many critical values.** A
 continuous function `f` on a compact manifold with finitely many critical values has a
 critical-band cut `a : ℤ → ℝ` which starts below and ends above all values of `f`, so that the
@@ -1059,14 +1078,12 @@ noncomputable def criticalCount (f : M → ℝ) (j : ℕ) : ℕ∞ :=
   {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.encard
 
 /-- The total critical count is the extended cardinality of the critical set. -/
-theorem totalCriticalCount_def : totalCriticalCount I f = (criticalPoints I f).encard :=
-  (rfl)
+theorem totalCriticalCount_def : totalCriticalCount I f = (criticalPoints I f).encard := (rfl)
 
 /-- The critical count in index `j` is the extended cardinality of the critical points of index
 `j`. -/
 theorem criticalCount_def (j : ℕ) :
-    criticalCount I f j = {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.encard :=
-  (rfl)
+    criticalCount I f j = {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.encard := (rfl)
 
 /-- The critical count in index `j` vanishes exactly when no critical point has index `j`. -/
 theorem criticalCount_eq_zero_iff (j : ℕ) :
@@ -1075,8 +1092,7 @@ theorem criticalCount_eq_zero_iff (j : ℕ) :
 
 /-- The number of critical points of a given index is at most the number of critical points. -/
 theorem criticalCount_le_totalCriticalCount (j : ℕ) :
-    criticalCount I f j ≤ totalCriticalCount I f :=
-  encard_le_encard (sep_subset _ _)
+    criticalCount I f j ≤ totalCriticalCount I f := encard_le_encard (sep_subset _ _)
 
 /-- The number of critical points of index `j` is the cardinality of the set of critical points
 of index `j`; both are `0` when there are infinitely many. -/
