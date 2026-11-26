@@ -61,9 +61,9 @@ regarding the big direct image of an fppf sheaf as an étale sheaf is the big é
 the underlying étale sheaf (`AlgebraicGeometry.Scheme.epsilonFppfEtalePushforwardBaseChangeIso`),
 and dually for the inverse images
 (`AlgebraicGeometry.Scheme.epsilonFppfEtalePullbackBaseChangeIso`). The big direct and inverse
-images along `f`, `AlgebraicGeometry.Scheme.Hom.bigPushforward` and
-`AlgebraicGeometry.Scheme.Hom.bigPullback`, are defined for any topology on schemes in
-`TauCeti/AlgebraicGeometry/Sites/Big/Pushforward.lean`.
+images along `f` are `AlgebraicGeometry.Scheme.Hom.bigPushforward`, defined for any topology on
+schemes in `TauCeti/AlgebraicGeometry/Sites/Big/Pushforward.lean`, and Mathlib's
+`CategoryTheory.GrothendieckTopology.overMapPullback`.
 
 The site `Over X` is large (its objects form a type in the universe above that of the morphisms),
 so the existence of fppf sheafification on it (`HasWeakSheafify`) and of the inverse image of
@@ -280,7 +280,7 @@ on `X` back to the small étale site of `Y` and then to the big fppf site of `Y`
 pulling it back to the big fppf site of `X` and then along `f`: the left adjoints of the two
 composites in `aXPushforwardBaseChangeIso` agree. -/
 noncomputable def aXPullbackBaseChangeIso :
-    f.smallEtalePullback A ⋙ aXPullback Y A ≅ aXPullback X A ⋙ f.bigPullback fppfTopology A :=
+    f.smallEtalePullback A ⋙ aXPullback Y A ≅ aXPullback X A ⋙ fppfTopology.overMapPullback A f :=
   ((f.smallEtaleAdjunction A).comp (aXAdjunction Y A)).leftAdjointUniq
     (((aXAdjunction X A).comp (f.bigAdjunction fppfTopology A)).ofNatIsoRight
       (aXPushforwardBaseChangeIso A f))
@@ -294,7 +294,7 @@ theorem unit_aXPullbackBaseChangeIso_hom :
         Functor.whiskerRight (aXPullbackBaseChangeIso A f).hom
           (aXPushforward Y A ⋙ f.smallEtalePushforward A) =
       ((aXAdjunction X A).comp (f.bigAdjunction fppfTopology A)).unit ≫
-        Functor.whiskerLeft (aXPullback X A ⋙ f.bigPullback fppfTopology A)
+        Functor.whiskerLeft (aXPullback X A ⋙ fppfTopology.overMapPullback A f)
           (aXPushforwardBaseChangeIso A f).hom := by
   rw [aXPullbackBaseChangeIso, Adjunction.unit_leftAdjointUniq_hom]
   simp [Adjunction.ofNatIsoRight]
@@ -309,6 +309,11 @@ underlying étale sheaf: both are restriction along `Over.pullback f`. -/
 noncomputable def epsilonFppfEtalePushforwardBaseChangeIso :
     f.bigPushforward fppfTopology A ⋙ epsilonFppfEtalePushforward X A ≅
       epsilonFppfEtalePushforward Y A ⋙ f.bigPushforward etaleTopology A :=
+  -- `Functor.sheafPushforwardContinuous G` sends a sheaf `F` to the sheaf with underlying presheaf
+  -- `G.op ⋙ F.obj`. The direct image of `ε` is the case `G = 𝟭 (Over _)`, and composing with
+  -- `(𝟭 (Over _)).op` is definitionally the identity, so both composites send `F` to the sheaf
+  -- with underlying presheaf `(Over.pullback f).op ⋙ F.obj`, on the same morphisms; they are
+  -- equal by unfolding, and `Iso.refl` typechecks.
   Iso.refl _
 
 /-- The components of `epsilonFppfEtalePushforwardBaseChangeIso` are identities. -/
@@ -316,6 +321,9 @@ noncomputable def epsilonFppfEtalePushforwardBaseChangeIso :
 theorem epsilonFppfEtalePushforwardBaseChangeIso_hom_app_hom
     (F : Sheaf (fppfTopology.over Y) A) :
     ((epsilonFppfEtalePushforwardBaseChangeIso A f).hom.app F).hom = 𝟙 _ := by
+  -- The iso is `Iso.refl _`, so each component is the identity of `(Over.pullback f).op ⋙ F.obj`;
+  -- the two sides differ only in how that presheaf is written (through
+  -- `Functor.sheafPushforwardContinuous` and `𝟭 (Over _)`), which `rfl` unfolds.
   ext; rfl
 
 /-- The components of the inverse of `epsilonFppfEtalePushforwardBaseChangeIso` are identities. -/
@@ -323,6 +331,7 @@ theorem epsilonFppfEtalePushforwardBaseChangeIso_hom_app_hom
 theorem epsilonFppfEtalePushforwardBaseChangeIso_inv_app_hom
     (F : Sheaf (fppfTopology.over Y) A) :
     ((epsilonFppfEtalePushforwardBaseChangeIso A f).inv.app F).hom = 𝟙 _ := by
+  -- As in `epsilonFppfEtalePushforwardBaseChangeIso_hom_app_hom`.
   ext; rfl
 
 section EpsilonPullback
@@ -334,8 +343,8 @@ sheaf on `X`-schemes along `f` and then sheafifying for the fppf topology of `Y`
 sheafifying for the fppf topology of `X` and then restricting along `f`: the left adjoints of the
 two composites in `epsilonFppfEtalePushforwardBaseChangeIso` agree. -/
 noncomputable def epsilonFppfEtalePullbackBaseChangeIso :
-    f.bigPullback etaleTopology A ⋙ epsilonFppfEtalePullback Y A ≅
-      epsilonFppfEtalePullback X A ⋙ f.bigPullback fppfTopology A :=
+    etaleTopology.overMapPullback A f ⋙ epsilonFppfEtalePullback Y A ≅
+      epsilonFppfEtalePullback X A ⋙ fppfTopology.overMapPullback A f :=
   ((f.bigAdjunction etaleTopology A).comp (epsilonFppfEtaleAdjunction Y A)).leftAdjointUniq
     (((epsilonFppfEtaleAdjunction X A).comp (f.bigAdjunction fppfTopology A)).ofNatIsoRight
       (epsilonFppfEtalePushforwardBaseChangeIso A f))
@@ -349,7 +358,7 @@ theorem unit_epsilonFppfEtalePullbackBaseChangeIso_hom :
         Functor.whiskerRight (epsilonFppfEtalePullbackBaseChangeIso A f).hom
           (epsilonFppfEtalePushforward Y A ⋙ f.bigPushforward etaleTopology A) =
       ((epsilonFppfEtaleAdjunction X A).comp (f.bigAdjunction fppfTopology A)).unit ≫
-        Functor.whiskerLeft (epsilonFppfEtalePullback X A ⋙ f.bigPullback fppfTopology A)
+        Functor.whiskerLeft (epsilonFppfEtalePullback X A ⋙ fppfTopology.overMapPullback A f)
           (epsilonFppfEtalePushforwardBaseChangeIso A f).hom := by
   rw [epsilonFppfEtalePullbackBaseChangeIso, Adjunction.unit_leftAdjointUniq_hom]
   simp [Adjunction.ofNatIsoRight]
