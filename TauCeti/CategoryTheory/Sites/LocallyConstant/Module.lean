@@ -32,7 +32,7 @@ generated modules (`CategoryTheory.Sheaf.locallyConstantMapSieve`,
 out of a sheaf that is locally constant on `M` is determined, over an object `Y`, by the images of
 the constant sections `m : M` over `Y` (`CategoryTheory.Sheaf.hom_app_eq_of_comp_app_eq`); since
 `M` is finitely generated, these images are locally constant sections, given by a linear map
-`M ⟶ N` (`CategoryTheory.Sheaf.exists_mem_comp_app_eq`).
+`M ⟶ N` (`CategoryTheory.Presheaf.exists_mem_comp_app_eq`).
 
 Consequently kernels and cokernels of morphisms of sheaves of `Λ`-modules that are locally
 constant of finite type are again locally constant of finite type, for kernels when `Λ` is
@@ -53,32 +53,11 @@ universe w v u
 
 open CategoryTheory Limits Opposite
 
-namespace CategoryTheory.Sheaf
+namespace CategoryTheory
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} {Λ : Type w} [Ring Λ]
 
-section Local
-
-/-- **Morphisms out of locally constant sheaves are determined by constant sections.** Let
-`p : M ⟶ F` be a locally surjective morphism from the constant presheaf on a `Λ`-module `M` to a
-sheaf `F`, and let `a b : F ⟶ H` be morphisms of sheaves that agree on the sections `p m` over `Y`.
-Then `a` and `b` agree over every object mapping to `Y`. -/
-theorem hom_app_eq_of_comp_app_eq {M : ModuleCat.{w} Λ} {F H : Sheaf J (ModuleCat.{w} Λ)}
-    (p : (Functor.const Cᵒᵖ).obj M ⟶ F.obj) [Presheaf.IsLocallySurjective J p] {a b : F ⟶ H}
-    {Y : C} (h : p.app (op Y) ≫ a.hom.app (op Y) = p.app (op Y) ≫ b.hom.app (op Y))
-    {W : C} (g : W ⟶ Y) : a.hom.app (op W) = b.hom.app (op W) := by
-  ext s
-  have := (Presheaf.isLocallySurjective_iff_whisker_forget J p).1 inferInstance
-  refine Presheaf.ext_of_isLocallySurjective J (Functor.whiskerRight p (forget _))
-    (Z := (sheafCompose J (forget _)).obj H) s fun V f t ht ↦ ?_
-  have key (c : F ⟶ H) : H.obj.map f.op (c.hom.app (op W) s) =
-      H.obj.map (f ≫ g).op (c.hom.app (op Y) (p.app (op Y) t)) := by
-    rw [← NatTrans.naturality_apply c.hom, ← NatTrans.naturality_apply c.hom]
-    congr 1
-    exact ht.symm.trans (NatTrans.naturality_apply p (f ≫ g).op t)
-  have := congr($h t)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at this
-  exact (key a).trans ((congrArg _ this).trans (key b).symm)
+namespace Presheaf
 
 /-- **Morphisms between locally constant presheaves are locally constant.** Let `p : M ⟶ F` and
 `q : N ⟶ G` be morphisms from constant presheaves of `Λ`-modules, with `M` finitely generated and
@@ -128,6 +107,33 @@ theorem exists_mem_comp_app_eq {M N : ModuleCat.{w} Λ} [Module.Finite Λ M]
   simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
   exact (congrArg Subtype.val (e.apply_symm_apply ⟨L Z m, hrange ⟨m, rfl⟩⟩)).symm
 
+end Presheaf
+
+namespace Sheaf
+
+section Local
+
+/-- **Morphisms out of locally constant sheaves are determined by constant sections.** Let
+`p : M ⟶ F` be a locally surjective morphism from the constant presheaf on a `Λ`-module `M` to a
+sheaf `F`, and let `a b : F ⟶ H` be morphisms of sheaves that agree on the sections `p m` over `Y`.
+Then `a` and `b` agree over every object mapping to `Y`. -/
+theorem hom_app_eq_of_comp_app_eq {M : ModuleCat.{w} Λ} {F H : Sheaf J (ModuleCat.{w} Λ)}
+    (p : (Functor.const Cᵒᵖ).obj M ⟶ F.obj) [Presheaf.IsLocallySurjective J p] {a b : F ⟶ H}
+    {Y : C} (h : p.app (op Y) ≫ a.hom.app (op Y) = p.app (op Y) ≫ b.hom.app (op Y))
+    {W : C} (g : W ⟶ Y) : a.hom.app (op W) = b.hom.app (op W) := by
+  ext s
+  have := (Presheaf.isLocallySurjective_iff_whisker_forget J p).1 inferInstance
+  refine Presheaf.ext_of_isLocallySurjective J (Functor.whiskerRight p (forget _))
+    (Z := (sheafCompose J (forget _)).obj H) s fun V f t ht ↦ ?_
+  have key (c : F ⟶ H) : H.obj.map f.op (c.hom.app (op W) s) =
+      H.obj.map (f ≫ g).op (c.hom.app (op Y) (p.app (op Y) t)) := by
+    rw [← NatTrans.naturality_apply c.hom, ← NatTrans.naturality_apply c.hom]
+    congr 1
+    exact ht.symm.trans (NatTrans.naturality_apply p (f ≫ g).op t)
+  have := congr($h t)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at this
+  exact (key a).trans ((congrArg _ this).trans (key b).symm)
+
 end Local
 
 section Constant
@@ -147,8 +153,8 @@ theorem exists_mem_overPullback_map_eq_of_iso {F G : Sheaf J (ModuleCat.{w} Λ)}
         (overIsoRestrict eF f).hom ≫
           (J.overPullback (ModuleCat.{w} Λ) Z).map ((constantSheaf J (ModuleCat.{w} Λ)).map g) := by
   -- Over `Y`, `F` and `G` receive locally bijective maps from the constant presheaves.
-  obtain ⟨R, hR, hRg⟩ := exists_mem_comp_app_eq (J := J.over Y) (constToOver eF) (constToOver eG)
-    ((J.overPullback (ModuleCat.{w} Λ) Y).map φ).hom (Over.mk (𝟙 Y))
+  obtain ⟨R, hR, hRg⟩ := Presheaf.exists_mem_comp_app_eq (J := J.over Y) (constToOver eF)
+    (constToOver eG) ((J.overPullback (ModuleCat.{w} Λ) Y).map φ).hom (Over.mk (𝟙 Y))
   refine ⟨Sieve.overEquiv _ R, hR, fun Z f hf ↦ ?_⟩
   rw [Sieve.overEquiv_iff] at hf
   obtain ⟨g, hg⟩ := hRg _ hf
@@ -279,4 +285,6 @@ theorem IsLocallyConstantIn.cokernel [HasWeakSheafify J (ModuleCat.{w} Λ)]
 
 end Closure
 
-end CategoryTheory.Sheaf
+end Sheaf
+
+end CategoryTheory
