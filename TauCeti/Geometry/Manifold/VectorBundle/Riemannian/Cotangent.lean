@@ -81,6 +81,13 @@ private theorem inCoordinates_apply_finBasis (a : M) (z : CotangentBundle I M)
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
+omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
+/-- **Scaling a covector scales its norm.** This is `norm_smul` for the norm of covectors;
+instance search does not find `NormSMulClass` for covectors of the Riemannian fibre norm, so it is
+supplied from the `NormedSpace` instance. -/
+theorem norm_smul_snd (t : ℝ) (z : CotangentBundle I M) : ‖t • z.snd‖ = ‖t‖ * ‖z.snd‖ :=
+  (NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul t z.snd
+
 section Smooth
 
 variable {n : ℕ∞ω} [IsManifold I (n + 1) M]
@@ -162,10 +169,7 @@ theorem mfderiv_norm_snd_vectorBundleEulerField {z : CotangentBundle I M} (hz : 
       := by
     refine (hasDerivAt_mul_const ‖z.snd‖).congr_of_eventuallyEq ?_
     filter_upwards [lt_mem_nhds one_pos] with t ht
-    -- This is `norm_smul`; instance search does not find `NormSMulClass` for covectors of the
-    -- Riemannian fibre norm, so it is supplied from the `NormedSpace` instance.
-    exact ((NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul
-      t z.snd).trans (by rw [Real.norm_of_nonneg ht.le])
+    exact (norm_smul_snd t z).trans (by rw [Real.norm_of_nonneg ht.le])
   rw [mfderiv_vectorBundleEulerField hf, hray.hasFDerivAt.hasMFDerivAt.mfderiv]
   -- `toSpanSingleton ℝ v` sends `1` to `1 • v`. The lemma `toSpanSingleton_apply` cannot be used by
   -- `rw` here, since the derivative is typed as a map between tangent spaces of `ℝ`.

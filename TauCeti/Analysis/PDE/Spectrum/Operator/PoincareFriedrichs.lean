@@ -59,6 +59,13 @@ gradient, so no Poincaré–Friedrichs inequality holds and `0` is an eigenvalue
   `TauCeti.PDE.zero_mem_resolventSet_mixedOperator_laplacian_of_poincare` and
   `TauCeti.PDE.resolvent_mixedOperator_laplacian_zero_of_poincare`: the spectrum lies in
   `[P⁻², ∞)`, and the inverse of `-Δ_Γ` is the mixed solution operator.
+* `TauCeti.PDE.one_le_mul_sq_of_mem_spectrum_mixedOperator_laplacian` and
+  `TauCeti.PDE.pos_of_mem_spectrum_mixedOperator_laplacian_of_poincare`: every spectral value `κ`
+  has `1 ≤ κ P²`, so it is positive.
+* `TauCeti.PDE.isLeast_inv_sqrt_of_isLeast_spectrum_mixedOperator_laplacian`: under the Rellich
+  property, a positive least spectral value `λ₁` gives the optimal Poincaré–Friedrichs constant
+  `λ₁^{-1/2}`, by the Rayleigh principle
+  `TauCeti.PDE.isGreatest_of_isLeast_spectrum_mixedOperator_laplacian`.
 * `TauCeti.PDE.isGreatest_inv_norm_resolvent_mixedOperator_laplacian_zero_of_poincare`,
   `TauCeti.PDE.isLeast_sqrt_norm_resolvent_mixedOperator_laplacian_zero_of_poincare` and
   `TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_of_poincare`: `λ₁ = ‖R(0)‖⁻¹` is the
@@ -159,6 +166,27 @@ theorem zero_mem_resolventSet_mixedOperator_laplacian_of_poincare (hΓ : Disjoin
     (0 : ℝ) ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) Γ).resolventSet :=
   mem_resolventSet_mixedOperator_laplacian_of_poincare hΓ hP (by rw [zero_mul]; exact one_pos)
+
+/-- **The spectrum of `-Δ_Γ` lies above `1 / P²`** under a Poincaré–Friedrichs inequality
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`: every `κ` in it has `1 ≤ κ P²`. -/
+theorem one_le_mul_sq_of_mem_spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖)
+    {kappa : ℝ} (hkappa : kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum) :
+    1 ≤ kappa * P ^ 2 :=
+  not_lt.1 fun h ↦ (LinearPMap.mem_spectrum_iff _ _).1 hkappa
+    (mem_resolventSet_mixedOperator_laplacian_of_poincare hΓ hP h)
+
+/-- **The spectrum of `-Δ_Γ` is positive** under a Poincaré–Friedrichs inequality
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`. -/
+theorem pos_of_mem_spectrum_mixedOperator_laplacian_of_poincare (hΓ : Disjoint Γ Omega)
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖)
+    {kappa : ℝ} (hkappa : kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum) :
+    0 < kappa := by
+  have h := one_le_mul_sq_of_mem_spectrum_mixedOperator_laplacian hΓ hP hkappa
+  by_contra hle
+  nlinarith [mul_nonpos_of_nonpos_of_nonneg (not_lt.1 hle) (sq_nonneg P)]
 
 /-- **The inverse of the mixed Laplacian is the mixed solution operator**: under a
 Poincaré–Friedrichs inequality on `H¹_Γ(Ω)`, the resolvent of `-Δ_Γ` at `0` is minus the operator
@@ -286,6 +314,29 @@ theorem isLeast_spectrum_mixedOperator_laplacian_of_poincare (hΓ : Disjoint Γ 
     have hval : W1p.value (u : W1p mu Omega 2) ≠ 0 := fun h ↦
       hu (W1pVanishingOn.valueL_injective (by rw [W1pVanishingOn.valueL_apply, h, map_zero]))
     exact le_of_mul_le_mul_right hlow (by positivity)
+
+/-- **The optimal Poincaré–Friedrichs constant is `λ₁^{-1/2}`.** On a domain with the Rellich
+property, if the least point `λ₁` of the spectrum of the mixed Laplacian `-Δ_Γ` is positive, then
+`λ₁^{-1/2}` is the least `Q ≥ 0` with `‖u‖_{L²(Ω)} ≤ Q ‖∇u‖_{L²(Ω)}` for every
+`u ∈ H¹_Γ(Ω)`. Conversely any such inequality forces `λ₁ > 0`
+(`TauCeti.PDE.pos_of_mem_spectrum_mixedOperator_laplacian_of_poincare`). -/
+theorem isLeast_inv_sqrt_of_isLeast_spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) {lam : ℝ}
+    (hlam : IsLeast (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum lam) (hpos : 0 < lam) :
+    IsLeast {Q : ℝ | 0 ≤ Q ∧ ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ,
+      ‖W1p.value u‖ ≤ Q * ‖W1p.gradient u‖} (√lam)⁻¹ := by
+  have hsqrt : 0 < √lam := Real.sqrt_pos.2 hpos
+  refine ⟨⟨by positivity, fun u hu ↦ ?_⟩, fun Q ⟨_, hQ⟩ ↦ ?_⟩
+  · have h := (isGreatest_of_isLeast_spectrum_mixedOperator_laplacian hΓ hK hlam).1 ⟨u, hu⟩
+    rw [inv_mul_eq_div, le_div_iff₀ hsqrt]
+    refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 ?_
+    rw [mul_pow, Real.sq_sqrt hpos.le, mul_comm]
+    exact h
+  · have h := one_le_mul_sq_of_mem_spectrum_mixedOperator_laplacian hΓ hQ hlam.1
+    rw [inv_le_iff_one_le_mul₀' hsqrt]
+    refine (one_le_pow_iff_of_nonneg (by positivity) two_ne_zero).1 ?_
+    rwa [mul_pow, Real.sq_sqrt hpos.le]
 
 end Poincare
 

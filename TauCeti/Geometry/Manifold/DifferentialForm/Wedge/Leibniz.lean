@@ -215,6 +215,20 @@ theorem mextDeriv_wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   exact TauCeti.mextDeriv_wedgeWith μ (φ.mdifferentiableAt x) (ψ.mdifferentiableAt x) v
 
+/-- The exterior derivative of the paired wedge of a smooth `1`-form `φ` with a smooth function
+`ψ`, evaluated on two tangent vectors: `d(φ ψ)(v, w) = μ(dφ(v, w), ψ) - (μ(φ v, dψ w) -
+μ(φ w, dψ v))`. -/
+theorem mextDeriv_wedgeWith_apply_one_zero (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : SmoothForm I M F₁ 1) (ψ : SmoothForm I M F₂ 0) (x : M) (v w : TangentSpace I x) :
+    mextDeriv (RoughForm.wedgeWith μ φ.val ψ.val) x ![v, w] =
+      μ (mextDeriv φ.val x ![v, w]) (ψ.val x 0) -
+        (μ (φ.val x ![v]) (mextDeriv ψ.val x ![w]) -
+          μ (φ.val x ![w]) (mextDeriv ψ.val x ![v])) := by
+  have hvw : ∀ h : 1 + 1 + 0 = 1 + 0 + 1, (![v, w] ∘ Fin.cast h : Fin 2 → TangentSpace I x) =
+      ![v, w] := fun _ ↦ funext fun i ↦ by fin_cases i <;> rfl
+  rw [mextDeriv_wedgeWith_apply μ φ ψ x ![v, w], hvw, RoughForm.wedgeWith_apply_zero_right,
+    RoughForm.wedgeWith_apply_one_one, pow_one, neg_one_smul, ← sub_eq_add_neg]
+
 /-- The exterior derivative of the real wedge `RoughForm.wedge` of the underlying forms of two
 smooth forms, evaluated on tangent vectors. See `SmoothForm.mextDerivₗ_wedge` for the bundled
 law. -/
