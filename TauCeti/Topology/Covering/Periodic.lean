@@ -100,38 +100,18 @@ theorem exists_relIndex_ne_zero_forall_add_eq [PreconnectedSpace V]
   have hSfin : S.Finite :=
     Finite.of_finite_image (hfin.subset (image_subset_iff.2 fun f hf ↦ hf.2 x₀))
       fun f₁ hf₁ f₂ hf₂ h ↦ hE.eq_of_forall_prodMk_mem hf₁.1 hf₂.1 hf₁.2 hf₂.2 h
-  -- Translating a section by an element of `Λ` gives a section.
-  have htrans (ω : Λ) : (fun x ↦ g (x + ω)) ∈ S := by
-    refine ⟨by fun_prop, fun x ↦ ?_⟩
-    simpa using hΛ (-ω) (neg_mem ω.property) _ (hgE (x + ω))
-  -- The periods of `g` in `Λ`.
-  let L' : AddSubgroup V :=
-    { carrier := {ω | ω ∈ Λ ∧ ∀ x, g (x + ω) = g x}
-      zero_mem' := ⟨Λ.zero_mem, by simp⟩
-      add_mem' := fun {a b} ha hb ↦ ⟨Λ.add_mem ha.1 hb.1, fun x ↦ by
-        rw [← add_assoc, hb.2, ha.2]⟩
-      neg_mem' := fun {a} ha ↦ ⟨Λ.neg_mem ha.1, fun x ↦ by
-        rw [← ha.2 (x + -a), neg_add_cancel_right]⟩ }
-  refine ⟨L', fun ω hω ↦ hω.1, ?_, fun ω hω ↦ hω.2⟩
-  -- The translates `x ↦ g (x + ω)` are in bijection with the cosets of `L'` in `Λ`.
-  have hcoset (a b : Λ) : -a + b ∈ L'.addSubgroupOf Λ ↔
-      (fun x ↦ g (x + a)) = fun x ↦ g (x + b) := by
-    rw [AddSubgroup.mem_addSubgroupOf]
-    refine ⟨fun h ↦ funext fun x ↦ ?_, fun h ↦ ⟨(-a + b).property, fun x ↦ ?_⟩⟩
-    · rw [← h.2 (x + a)]
-      simp [add_assoc]
-    · have := congrFun h (x + -a)
-      simp only [neg_add_cancel_right] at this
-      simp [this, ← add_assoc]
-  let φ : Λ ⧸ L'.addSubgroupOf Λ → S :=
-    Quotient.lift (fun ω ↦ ⟨fun x ↦ g (x + ω), htrans ω⟩) fun a b hab ↦
-      Subtype.ext ((hcoset a b).1 (QuotientAddGroup.leftRel_apply.1 hab))
-  have hφ : Function.Injective φ := by
-    rintro ⟨a⟩ ⟨b⟩ hab
-    exact Quotient.sound
-      (QuotientAddGroup.leftRel_apply.2 ((hcoset a b).2 (congrArg Subtype.val hab)))
-  have : Finite S := hSfin.to_subtype
-  have : Finite (Λ ⧸ L'.addSubgroupOf Λ) := Finite.of_injective φ hφ
-  exact AddSubgroup.index_ne_zero_of_finite
+  -- `V` acts on `V → Y` by translation, `ψ ω +ᵥ f = fun x ↦ f (x + ω)`, through `DomAddAct`.
+  let ψ : V →+ DomAddAct Vᵃᵒᵖ := ⟨⟨fun ω ↦ .mk (.op ω), rfl⟩, fun _ _ ↦ rfl⟩
+  -- The periods of `g` in `Λ` form its stabilizer. By orbit–stabilizer, its index is the number
+  -- of distinct translates of `g` by `Λ`, which are sections, so there are finitely many.
+  refine ⟨(AddAction.stabilizer _ g).comap ψ ⊓ Λ, inf_le_right, ?_,
+    fun ω hω x ↦ congrFun hω.1 x⟩
+  rw [AddSubgroup.inf_relIndex_right, AddSubgroup.relIndex_comap, AddSubgroup.relIndex,
+    AddAction.stabilizer_addSubgroupOf, AddAction.index_stabilizer]
+  refine ncard_ne_zero_of_mem (AddAction.mem_orbit_self g) (hSfin.subset ?_)
+  rintro _ ⟨⟨_, ω, hω, rfl⟩, rfl⟩
+  change (fun x ↦ g (x + ω)) ∈ S
+  refine ⟨by fun_prop, fun x ↦ ?_⟩
+  simpa using hΛ (-ω) (neg_mem hω) _ (hgE (x + ω))
 
 end IsCoveringMap

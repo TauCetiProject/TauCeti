@@ -33,7 +33,8 @@ its points is the graph of a local solution of `D v = 0`.
 The torus `C` is *nondegenerate on its finite covers* when, for every subgroup `L' ≤ Λ` of finite
 index, the operator `D` pulled back to the covering torus `ℂ ⧸ L'` has no kernel: every
 `L'`-periodic solution of `D v = 0` vanishes. This file shows that under this condition the
-component lies on the zero section `C` (`TauCeti.snd_eq_zero_of_isCoveringMap`).
+component lies on the zero section `C`
+(`TauCeti.snd_eq_zero_of_isCoveringMap_of_conjWirtingerDeriv_add_add_eq_zero`).
 
 Indeed, since `ℂ` is simply connected, `E` is the union of the graphs of global continuous
 sections, one through each of its points
@@ -46,15 +47,18 @@ translations permute them, so each one is periodic for a subgroup `L'` of finite
 The condition holds for the flat normal structure `D = ∂bar + c` with a constant `c` whose
 holonomy has infinite order
 (`TauCeti.eq_zero_of_conjWirtingerDeriv_add_mul_eq_zero_of_irrational`), which gives the
-unconditional statement in that case (`TauCeti.snd_eq_zero_of_isCoveringMap_of_irrational`).
+unconditional statement in that case
+(`TauCeti.snd_eq_zero_of_isCoveringMap_of_conjWirtingerDeriv_add_mul_eq_zero_of_irrational`).
 
 ## Main results
 
-* `TauCeti.snd_eq_zero_of_isCoveringMap`: a deck-invariant curve covering the torus without
-  branching, locally the graph of solutions of `D v = 0`, lies on the zero section when `D` has
-  no nonzero periodic solution on any finite covering torus.
-* `TauCeti.snd_eq_zero_of_isCoveringMap_of_irrational`: the same for `D = ∂bar + c` with
-  holonomy of infinite order, with no further hypothesis on `D`.
+* `TauCeti.snd_eq_zero_of_isCoveringMap_of_conjWirtingerDeriv_add_add_eq_zero`: a
+  deck-invariant curve covering the torus without branching, locally the graph of solutions of
+  `D v = 0`, lies on the zero section when `D` has no nonzero periodic solution on any finite
+  covering torus.
+* `TauCeti.snd_eq_zero_of_isCoveringMap_of_conjWirtingerDeriv_add_mul_eq_zero_of_irrational`:
+  the same for `D = ∂bar + c` with holonomy of infinite order, with no further hypothesis on
+  `D`.
 
 ## References
 
@@ -96,7 +100,8 @@ the projection of `E` to the base is a covering map and, near each of its points
 contained in the graph of a local solution of `D v = ∂bar v + ν v + μ conj v = 0`. Suppose that
 for every subgroup `L' ≤ Λ` of finite index, every `L'`-periodic solution of `D v = 0` on `ℂ`
 vanishes. Then every point of `E` lies on the zero section. -/
-theorem snd_eq_zero_of_isCoveringMap (hE : IsCoveringMap fun q : E ↦ (q : ℂ × ℂ).1)
+theorem snd_eq_zero_of_isCoveringMap_of_conjWirtingerDeriv_add_add_eq_zero
+    (hE : IsCoveringMap fun q : E ↦ (q : ℂ × ℂ).1)
     {Λ : AddSubgroup ℂ} (hΛ : ∀ ω ∈ Λ, ∀ q ∈ E, (q.1 + ω, q.2) ∈ E) {z₀ : ℂ}
     (hfin : {w | (z₀, w) ∈ E}.Finite)
     (hloc : ∀ q ∈ E, ∃ v : ℂ → ℂ, DifferentiableAt ℝ v q.1 ∧
@@ -118,15 +123,16 @@ that `Im (c conj ω₀) / π` is irrational for some `ω₀ ∈ L`. Let `E ⊆ �
 translations of the base by `L`, with a finite fibre, such that the projection of `E` to the base
 is a covering map and, near each of its points, `E` is contained in the graph of a local solution
 of `D v = 0`. Then every point of `E` lies on the zero section. -/
-theorem snd_eq_zero_of_isCoveringMap_of_irrational {L : Submodule ℤ ℂ} [DiscreteTopology L]
-    [IsZLattice ℝ L] {c ω₀ : ℂ} (hω₀L : ω₀ ∈ L) (hω₀ : Irrational ((c * conj ω₀).im / π))
+theorem snd_eq_zero_of_isCoveringMap_of_conjWirtingerDeriv_add_mul_eq_zero_of_irrational
+    {L : Submodule ℤ ℂ} [DiscreteTopology L] [IsZLattice ℝ L] {c ω₀ : ℂ} (hω₀L : ω₀ ∈ L)
+    (hω₀ : Irrational ((c * conj ω₀).im / π))
     (hE : IsCoveringMap fun q : E ↦ (q : ℂ × ℂ).1) (hL : ∀ ω ∈ L, ∀ q ∈ E, (q.1 + ω, q.2) ∈ E)
     {z₀ : ℂ} (hfin : {w | (z₀, w) ∈ E}.Finite)
     (hloc : ∀ q ∈ E, ∃ v : ℂ → ℂ, DifferentiableAt ℝ v q.1 ∧
       conjWirtingerDeriv v q.1 1 + c * v q.1 = 0 ∧ ∀ᶠ p in 𝓝 q, p ∈ E → p.2 = v p.1)
     {q : ℂ × ℂ} (hq : q ∈ E) : q.2 = 0 :=
-  snd_eq_zero_of_isCoveringMap (ν := fun _ ↦ c) (μ := 0) (Λ := L.toAddSubgroup) hE hL hfin
-    (by simpa using hloc)
+  snd_eq_zero_of_isCoveringMap_of_conjWirtingerDeriv_add_add_eq_zero (ν := fun _ ↦ c) (μ := 0)
+    (Λ := L.toAddSubgroup) hE hL hfin (by simpa using hloc)
     (fun _ hL' hidx _ hv heq hper ↦
       eq_zero_of_conjWirtingerDeriv_add_mul_eq_zero_of_irrational hω₀L hω₀ hL' hidx hv
         (by simpa using heq) hper)

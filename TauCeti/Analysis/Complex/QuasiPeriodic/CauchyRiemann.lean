@@ -64,14 +64,14 @@ theorem eq_zero_of_conjWirtingerDeriv_add_mul_eq_zero_of_irrational {L : Submodu
   set e : ℂ → ℂ := fun z ↦ cexp (a * z - conj a * conj z) with he
   have he_diff : Differentiable ℝ e :=
     (contDiff_cexp_mul_sub_conj_mul_conj (n := 1) a).differentiable one_ne_zero
+  have he_cr (z : ℂ) : conjWirtingerDeriv e z 1 = c * e z := by
+    rw [he, conjWirtingerDeriv_cexp_mul_sub_conj_mul_conj, ha, map_neg, conj_conj, neg_neg]
   -- So `e v` is holomorphic.
   have hhol : Differentiable ℂ fun z ↦ e z * v z := fun z ↦ by
     rw [differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero (f := fun z ↦ e z * v z)
       ((he_diff z).mul (hv z)), conjWirtingerDeriv_fun_mul (he_diff z) (hv z)]
-    simp only [add_apply, smul_apply, smul_eq_mul, he,
-      conjWirtingerDeriv_cexp_mul_sub_conj_mul_conj]
-    rw [ha, map_neg, conj_conj]
-    linear_combination cexp (-conj c * z - -c * conj z) * heq z
+    simp only [add_apply, smul_apply, smul_eq_mul, he_cr]
+    linear_combination e z * heq z
   -- The holonomy of the flat line of `e v` along `ω` is `exp (2πi θ ω)`.
   let θ : L →+ ℝ :=
     { toFun := fun ω ↦ (c * conj (ω : ℂ)).im / π
@@ -83,13 +83,12 @@ theorem eq_zero_of_conjWirtingerDeriv_add_mul_eq_zero_of_irrational {L : Submodu
     exact AddSubgroup.toIntSubmodule.monotone hL'
   have hzero := hhol.eq_zero_of_add_eq_fourierChar_pow_smul (L := L) (c := θ) hθ hL''
     (by simpa using hidx) one_ne_zero fun z ω hω ↦ by
-      simp only [he, cexp_mul_add_sub_conj_mul_conj_add, hper ω hω z, pow_one,
-        Real.fourierChar_apply, smul_eq_mul, ← mul_assoc]
-      congr 3
-      simp only [θ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, ha]
+      have hθω : (a * ω).im = π * (((0 : ℤ) : ℝ) + θ ⟨ω, hL'' hω⟩) := by
+        simp [θ, ha, mul_div_cancel₀ _ pi_ne_zero, add_comm]
+      simp only [he, cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq a hθω, hper ω hω z, pow_one,
+        Real.fourierChar_apply, smul_eq_mul]
       push_cast
-      field_simp
-      simp [mul_comm]
+      ring
   funext z
   simpa [he, Complex.exp_ne_zero] using congrFun hzero z
 
