@@ -88,12 +88,24 @@ variable (H) in
 unitary factor domain of `Subgroup.cartanHomeomorph`. -/
 private def unitaryInfEquiv :
     (H ⊓ unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) ≃
-      {u : unitaryGroup n 𝕜 // Unitary.toUnits u ∈ H} :=
-  ((Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
-    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ unitarySubgroup (GL n 𝕜)) (· ∈ H)).symm).trans
-    (unitarySubgroupUnitsEquiv.symm.toEquiv.subtypeEquiv fun u ↦ by
-      rw [← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
-      rfl).symm
+      {u : unitaryGroup n 𝕜 // Unitary.toUnits u ∈ H} where
+  toFun k := ⟨unitarySubgroupUnitsEquiv ⟨k, (Subgroup.mem_inf.1 k.property).2⟩, by
+    rw [← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply, MulEquiv.symm_apply_apply]
+    exact (Subgroup.mem_inf.1 k.property).1⟩
+  invFun u := ⟨Unitary.toUnits u.val, Subgroup.mem_inf.2 ⟨u.property, by
+    rw [← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
+    exact (unitarySubgroupUnitsEquiv.symm u.val).property⟩⟩
+  left_inv k := Subtype.ext <| by
+    dsimp only
+    rw [← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply, MulEquiv.symm_apply_apply]
+  right_inv u := Subtype.ext <| (unitarySubgroupUnitsEquiv.eq_symm_apply.1 <|
+    Subtype.ext (TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply u.val)).symm
+
+/-- The inverse of `unitaryInfEquiv` is the canonical unitary inclusion. -/
+private theorem coe_unitaryInfEquiv_symm_apply
+    (u : {u : unitaryGroup n 𝕜 // Unitary.toUnits u ∈ H}) :
+    ((unitaryInfEquiv H).symm u : GL n 𝕜) = Unitary.toUnits u.val :=
+  rfl
 
 /-- For a closed `H`, the Hermitian part `𝔭_H` of the Lie algebra of `H`, viewed as the Hermitian
 matrices whose exponential line lies in `H`: the Hermitian factor domain of
@@ -109,6 +121,13 @@ private def hermitianLieSubmoduleEquiv (hH : IsClosed (H : Set (GL n 𝕜))) :
     (H.mem_linearLieSubalgebra_iff hH).2 (mem_linearLieAlgebra_iff.2 x.property)⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
+
+/-- The inverse of `hermitianLieSubmoduleEquiv` keeps the underlying matrix. -/
+private theorem coe_hermitianLieSubmoduleEquiv_symm_apply (hH : IsClosed (H : Set (GL n 𝕜)))
+    (x : {x : selfAdjoint (Matrix n n 𝕜) //
+      ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H}) :
+    ((hermitianLieSubmoduleEquiv hH).symm x : Matrix n n 𝕜) = x.val :=
+  rfl
 
 variable (H) in
 /-- The Cartan decomposition `(k, X) ↦ k * exp X` of a closed subgroup `H` of `GL n 𝕜` satisfying
@@ -139,16 +158,17 @@ private theorem coe_cartanEquiv_apply
 private theorem coe_cartanEquiv_symm_apply_fst (g : H) :
     (((cartanEquiv H hH hstar hexp).symm g).1 : GL n 𝕜) =
       Unitary.toUnits (g : GL n 𝕜).polarUnitary := by
-  rw [← Subgroup.coe_cartanHomeomorph_symm_apply_fst hstar hexp g,
-    ← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
-  rfl
+  rw [cartanEquiv, Equiv.symm_trans_apply, Equiv.prodCongr_symm, Equiv.prodCongr_apply,
+    Prod.map_fst, coe_unitaryInfEquiv_symm_apply, Homeomorph.coe_symm_toEquiv,
+    Subgroup.coe_cartanHomeomorph_symm_apply_fst]
 
 /-- The Hermitian factor of the inverse Cartan equivalence is `log √(gᴴ g)`. -/
 private theorem coe_cartanEquiv_symm_apply_snd (g : H) :
     (((cartanEquiv H hH hstar hexp).symm g).2 : Matrix n n 𝕜) =
       cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
-  rw [← CFC.log, ← Subgroup.coe_cartanHomeomorph_symm_apply_snd hstar hexp g]
-  rfl
+  rw [cartanEquiv, Equiv.symm_trans_apply, Equiv.prodCongr_symm, Equiv.prodCongr_apply,
+    Prod.map_snd, coe_hermitianLieSubmoduleEquiv_symm_apply,
+    Homeomorph.coe_symm_toEquiv, Subgroup.coe_cartanHomeomorph_symm_apply_snd, CFC.log]
 
 end CartanEquiv
 
