@@ -18,8 +18,8 @@ import TauCeti.NumberTheory.Multiplicity
 # Descending prime-power roots from a cyclotomic extension
 
 Let `p` be a prime, `M` a field and `L = M(μ_{p ^ e})` a `p ^ e`-th cyclotomic extension of `M`.
-If `p` is odd, or if `M` contains a square root `i` of `-1`, then an element of `M` that is a
-`p ^ e`-th power in `L` is already a `p ^ e`-th power in `M`
+If `p` is odd, or if `M` contains a square root `i` of `-1`, then for every `E ≥ e` an element of
+`M` that is a `p ^ E`-th power in `L` is already a `p ^ E`-th power in `M`
 (`TauCeti.exists_pow_eq_of_isCyclotomicExtension`). The hypothesis cannot be dropped:
 `16 = (1 + i) ^ 8` is an `8`-th power in `ℚ(μ_8)`, but not in `ℚ`.
 
@@ -48,8 +48,8 @@ in `M(μ_{p ^ e})` is returned to `M`. When `p = 2` and `i ∉ M`, the root is f
 
 * `TauCeti.exists_pow_eq_of_adjoin_eq_top`: a `p ^ E`-th root descends along a step `K ⊆ K(ω)`
   of the `p`-power cyclotomic tower above `K ∋ μ_{p ^ h}`, `p ^ h > 2`.
-* `TauCeti.exists_pow_eq_of_isCyclotomicExtension`: a `p ^ e`-th root descends from `M(μ_{p ^ e})`
-  to `M` when `p` is odd or `i ∈ M`.
+* `TauCeti.exists_pow_eq_of_isCyclotomicExtension`: a `p ^ E`-th root, `E ≥ e`, descends from
+  `M(μ_{p ^ e})` to `M` when `p` is odd or `i ∈ M`.
 
 ## References
 
@@ -214,10 +214,11 @@ private theorem coprime_finrank_of_pow_le {M L : Type*} [Field M] [Field L] [Alg
   rw [Subalgebra.bot_eq_top_iff_finrank_eq_one.1 hbot]
   exact Nat.coprime_one_right 2
 
-/-- `exists_pow_eq_of_isCyclotomicExtension` for a `p ^ E`-th root with `E ≥ e`, by induction
-on `e`. -/
-private theorem exists_pow_eq_aux {M : Type*} [Field M] (hM : p ≠ 2 ∨ ∃ i : M, i ^ 2 = -1)
-    (e : ℕ) (he : e ≤ E) (L : Type*) [Field L] [Algebra M L] [IsCyclotomicExtension {p ^ e} M L]
+/-- **Cyclotomic descent of prime-power roots.** Let `p` be a prime, `L` a `p ^ e`-th
+cyclotomic extension of `M` and `e ≤ E`. If `p` is odd, or if `-1` is a square in `M`, then an
+element of `M` that is a `p ^ E`-th power in `L` is a `p ^ E`-th power in `M`. -/
+theorem exists_pow_eq_of_isCyclotomicExtension {M L : Type*} [Field M] [Field L] [Algebra M L]
+    {e : ℕ} [IsCyclotomicExtension {p ^ e} M L] (he : e ≤ E) (hM : p ≠ 2 ∨ ∃ i : M, i ^ 2 = -1)
     {x : M} {y : L} (hy : y ^ p ^ E = algebraMap M L x) : ∃ z : M, z ^ p ^ E = x := by
   induction e generalizing L x y with
   | zero =>
@@ -249,14 +250,6 @@ private theorem exists_pow_eq_aux {M : Type*} [Field M] (hM : p ≠ 2 ∨ ∃ i 
     obtain ⟨z, hz⟩ := exists_pow_eq_of_adjoin_eq_top hζK h2
       ((hζ.pow_eq_one_iff_dvd _).2 (pow_dvd_pow p he)) (AdjoinSimple.algebraMap_gen M (ζ ^ p)).symm
       hgen (x := algebraMap M K x) (by rw [hy, IsScalarTower.algebraMap_apply M K L])
-    exact ih (by omega) K hz
-
-/-- **Cyclotomic descent of prime-power roots.** Let `p` be a prime and `L` a `p ^ e`-th
-cyclotomic extension of `M`. If `p` is odd, or if `-1` is a square in `M`, then an element of `M`
-that is a `p ^ e`-th power in `L` is a `p ^ e`-th power in `M`. -/
-theorem exists_pow_eq_of_isCyclotomicExtension {M L : Type*} [Field M] [Field L] [Algebra M L]
-    {e : ℕ} [IsCyclotomicExtension {p ^ e} M L] (hM : p ≠ 2 ∨ ∃ i : M, i ^ 2 = -1) {x : M}
-    {y : L} (hy : y ^ p ^ e = algebraMap M L x) : ∃ z : M, z ^ p ^ e = x :=
-  exists_pow_eq_aux hM e le_rfl L hy
+    exact ih (by omega) hz
 
 end TauCeti
