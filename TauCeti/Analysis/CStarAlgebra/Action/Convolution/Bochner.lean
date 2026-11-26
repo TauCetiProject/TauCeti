@@ -453,10 +453,10 @@ theorem lintegral_eNorm_twistedInvolution (u : C_c(G, A)) :
     ∫⁻ s, ‖α.twistedInvolution u s‖ₑ ∂μ = ∫⁻ s, ‖u s‖ₑ ∂μ := by
   rw [← ofReal_integral_norm_eq_lintegral_eNorm (α.twistedInvolution u).integrable,
     ← ofReal_integral_norm_eq_lintegral_eNorm u.integrable]
-  congr 1
-  simp only [norm_twistedInvolution_apply]
-  simpa only [smul_eq_mul] using integral_modularCharacter_smul_inv_eq_self
-    (μ := μ) (f := fun s => ‖u s‖) u.continuous.norm u.hasCompactSupport.norm
+  have h := ConvolutionAlgebra.norm_star (ConvolutionAlgebra.toConv (α := α) (μ := μ) u)
+  rw [ConvolutionAlgebra.norm_eq_integral_norm, ConvolutionAlgebra.norm_eq_integral_norm,
+    ConvolutionAlgebra.ofConv_star, ConvolutionAlgebra.ofConv_toConv] at h
+  rw [h]
 
 omit [μ.InnerRegularCompactLTTop] in
 /-- Construct the `L¹` majorant `W` for the twisted involution of a telescopic `C_c(G, A)` series
