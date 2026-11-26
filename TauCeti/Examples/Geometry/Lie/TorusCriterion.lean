@@ -27,10 +27,9 @@ on the groups `SU(2)`, `SU(2) × SU(2)` and `SO(3)`.
   `π₃(SU(2) × SU(2)) ≅ ℤ²`
   (`TauCeti.specialUnitaryGroupTwoProdHomotopyGroupThreeMulEquiv`). Both are
   proved in `TauCeti.Topology.Algebra.Quaternion.Unitary.HomotopyGroup`.
-* **`SO(3)`.** The finite cover of `SO(3)` by a torus times a simply connected group is the double
-  cover `SU(2) → SO(3)` (`TauCeti.SU2.isCoveringMap_toSO3`), with a trivial torus factor. A
-  covering map is bijective on the homotopy groups in degrees at least two, so
-  `π₃(SO(3)) ≅ π₃(S³) ≅ ℤ` at every base point
+* **`SO(3)`.** `SO(3)` is doubly covered by the simply connected group `Spin(3) ≅ S³`, so the
+  torus factor of its finite cover is trivial. A covering map is bijective on the homotopy groups
+  in degrees at least two, so `π₃(SO(3)) ≅ π₃(S³) ≅ ℤ` at every base point
   (`TauCeti.specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt`), while
   `π₂(SO(3)) = 0` (`TauCeti.subsingleton_homotopyGroup_specialOrthogonalGroup_three`). Hence
   `SO(3)` is not aspherical (`TauCeti.not_isAspherical_specialOrthogonalGroup_three`), and it is
