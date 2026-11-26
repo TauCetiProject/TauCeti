@@ -1,14 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Otis Chodosh
+Authors: Otis Chodosh, The Tau Ceti contributors
 -/
 module
 
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Ellipticity
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
 public import TauCeti.Analysis.Calculus.Gradient
-import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
@@ -23,14 +23,23 @@ The chain rule identifies this operator with the derivative of the native graph 
 In particular, twice continuous differentiability of the height suffices for continuously
 differentiable area flux; no higher regularity of the height is assumed.
 
+Adapted from Otis Chodosh's formalization in
+`ForTauCeti/Geometry/Euclidean/MinimalGraph/Equation/Linearization.lean` in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/f2d78185da1ed3b232e2cbdfeec25e7f18fbf23d/ForTauCeti/Geometry/Euclidean/MinimalGraph/Equation/Linearization.lean)
+(commit `f2d78185da1ed3b232e2cbdfeec25e7f18fbf23d`).
+
 ## Main declarations
 
-* `TauCeti.MinimalGraph.hasFDerivAt_normalizedFlux`: the actual normalized-flux derivative.
+* `TauCeti.MinimalGraph.hasFDerivAt_univUnitBall_fluxJacobian`: the normalized-flux derivative.
 * `TauCeti.MinimalGraph.contDiff_fluxJacobian`: smooth dependence of the coefficient operator.
 * `TauCeti.MinimalGraph.fderiv_areaFlux`: the native flux chain rule.
 * `TauCeti.MinimalGraph.contDiffOn_areaFlux`: finite regularity of the native flux.
 * `TauCeti.MinimalGraph.norm_sq_mul_le_inner_fluxJacobian_of_norm_le`: uniform lower ellipticity
   on bounded sets of gradients.
+
+## References
+
+* O. Chodosh, *Introduction to minimal surfaces*, Section 18.
 -/
 
 public noncomputable section
@@ -53,30 +62,22 @@ theorem fluxJacobian_apply (p v : E) :
   simp only [fluxJacobian, smul_apply, sub_apply, ContinuousLinearMap.id_apply, rankOne_apply,
     principalOperator_apply]
 
-omit [InnerProductSpace ℝ E] in
-private theorem normalizedFlux_weight (p : E) :
-    (1 + ‖p‖ ^ 2) ^ (-(3 / 2 : ℝ)) * (1 + ‖p‖ ^ 2) =
-      (1 + ‖p‖ ^ 2) ^ (-(1 / 2 : ℝ)) := by
-  calc
-    _ = (1 + ‖p‖ ^ 2) ^ (-(3 / 2 : ℝ)) * (1 + ‖p‖ ^ 2) ^ (1 : ℝ) := by
-      rw [Real.rpow_one]
-    _ = (1 + ‖p‖ ^ 2) ^ (-(3 / 2 : ℝ) + 1) :=
-      (Real.rpow_add (by positivity) _ _).symm
-    _ = _ := by congr 1; norm_num
-
 private theorem fluxJacobian_eq (p : E) :
     fluxJacobian p =
       (1 + ‖p‖ ^ 2) ^ (-(1 / 2 : ℝ)) • ContinuousLinearMap.id ℝ E +
         (-(1 + ‖p‖ ^ 2) ^ (-(3 / 2 : ℝ)) • innerSL ℝ p).smulRight p := by
   ext v
   rw [fluxJacobian_apply]
-  change (1 + ‖p‖ ^ 2) ^ (-(3 / 2 : ℝ)) • principalOperator p v =
-    (1 + ‖p‖ ^ 2) ^ (-(1 / 2 : ℝ)) • v +
-      (-(1 + ‖p‖ ^ 2) ^ (-(3 / 2 : ℝ)) * ⟪p, v⟫_ℝ) • p
-  rw [principalOperator_apply, smul_sub, smul_smul, normalizedFlux_weight]
-  simp only [neg_mul, neg_smul, mul_smul, sub_eq_add_neg]
+  simp only [add_apply, smul_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
+    smul_eq_mul]
+  rw [principalOperator_apply, smul_sub, smul_smul,
+    ← Real.rpow_add_one (by positivity : 1 + ‖p‖ ^ 2 ≠ 0)]
+  norm_num
+  simp only [mul_smul, sub_eq_add_neg]
 
-private theorem hasFDerivAt_univUnitBall_fluxJacobian (p : E) :
+/-- The radial unit-ball map has derivative given by the graph flux Jacobian. -/
+theorem hasFDerivAt_univUnitBall_fluxJacobian (p : E) :
     HasFDerivAt (OpenPartialHomeomorph.univUnitBall : E → E) (fluxJacobian p) p := by
   rw [fluxJacobian_eq]
   have h := OpenPartialHomeomorph.hasFDerivAt_univUnitBall p
@@ -115,13 +116,25 @@ private theorem areaFlux_eq_univUnitBall (u : E → ℝ) :
   funext x
   rw [areaFlux_apply, areaWeight_eq_inv_sqrt, OpenPartialHomeomorph.univUnitBall_apply]
 
+/-- The derivative of the graph area flux is the Jacobian composed with the gradient derivative. -/
+theorem hasFDerivAt_areaFlux {u : E → ℝ} {x : E}
+    (hgrad : DifferentiableAt ℝ (∇ u) x) :
+    HasFDerivAt (areaFlux u)
+      ((fluxJacobian (∇ u x)).comp (fderiv ℝ (∇ u) x)) x := by
+  rw [areaFlux_eq_univUnitBall]
+  exact (hasFDerivAt_univUnitBall_fluxJacobian (∇ u x)).comp x hgrad.hasFDerivAt
+
+/-- The normalized gradient is differentiable wherever the gradient is differentiable. -/
+theorem differentiableAt_areaFlux {u : E → ℝ} {x : E}
+    (hgrad : DifferentiableAt ℝ (∇ u) x) : DifferentiableAt ℝ (areaFlux u) x :=
+  (hasFDerivAt_areaFlux hgrad).differentiableAt
+
 /-- Differentiating the actual minimal graph area flux gives the normalized Jacobian. -/
 theorem fderiv_areaFlux (u : E → ℝ) (x : E) :
     fderiv ℝ (areaFlux u) x =
       (fluxJacobian (∇ u x)).comp (fderiv ℝ (∇ u) x) := by
   by_cases hu : DifferentiableAt ℝ (∇ u) x
-  · rw [areaFlux_eq_univUnitBall]
-    exact ((hasFDerivAt_univUnitBall_fluxJacobian (∇ u x)).comp x hu.hasFDerivAt).fderiv
+  · exact (hasFDerivAt_areaFlux hu).fderiv
   have hflux : ¬ DifferentiableAt ℝ (areaFlux u) x := by
     intro h
     have hx : areaFlux u x ∈ Metric.ball (0 : E) 1 :=
@@ -136,14 +149,17 @@ theorem fderiv_areaFlux (u : E → ℝ) (x : E) :
   rw [fderiv_zero_of_not_differentiableAt hflux, fderiv_zero_of_not_differentiableAt hu,
     ContinuousLinearMap.comp_zero]
 
-/-- A twice continuously differentiable graph has continuously differentiable area flux. -/
-theorem contDiffOn_areaFlux {u : E → ℝ} {Ω : Set E} (hΩ : IsOpen Ω)
-    (hu : ContDiffOn ℝ 2 u Ω) : ContDiffOn ℝ 1 (areaFlux u) Ω := by
-  have hgrad : ContDiffOn ℝ 1 (∇ u) Ω := by
+/-- The graph area flux has one fewer continuous derivative than the height. -/
+theorem contDiffOn_areaFlux {n : WithTop ℕ∞} {u : E → ℝ} {Ω : Set E} (hΩ : IsOpen Ω)
+    (hu : ContDiffOn ℝ (n + 1) u Ω) : ContDiffOn ℝ n (areaFlux u) Ω := by
+  have hgrad : ContDiffOn ℝ n (∇ u) Ω := by
     exact (toDual ℝ E).symm.toContinuousLinearEquiv.contDiff.comp_contDiffOn
-      (hu.fderiv_of_isOpen hΩ (by norm_num))
-  rw [areaFlux_eq_univUnitBall]
-  exact OpenPartialHomeomorph.contDiff_univUnitBall.comp_contDiffOn hgrad
+      (hu.fderiv_of_isOpen hΩ le_rfl)
+  have hflux : ContDiff ℝ n (fun p : E ↦ (1 + ‖p‖ ^ 2) ^ (-(1 / 2 : ℝ)) • p) :=
+    (TauCeti.contDiff_one_add_norm_sq_rpow _).smul contDiff_id
+  convert hflux.comp_contDiffOn hgrad using 1
+  funext x
+  rw [Function.comp_apply, areaFlux_apply, areaWeight_def]
 
 end CompleteSpace
 
@@ -172,7 +188,9 @@ theorem inner_fluxJacobian_le (p v : E) :
   calc
     _ ≤ (1 + ‖p‖ ^ 2) ^ (-(3 / 2 : ℝ)) * ((1 + ‖p‖ ^ 2) * ‖v‖ ^ 2) :=
       mul_le_mul_of_nonneg_left (principalForm_le p v) (by positivity)
-    _ = _ := by rw [← mul_assoc, normalizedFlux_weight]
+    _ = _ := by
+      rw [← mul_assoc, ← Real.rpow_add_one (by positivity : 1 + ‖p‖ ^ 2 ≠ 0)]
+      norm_num
 
 /-- The flux Jacobian quadratic form is bounded by the Euclidean squared norm. -/
 theorem inner_fluxJacobian_le_norm_sq (p v : E) : ⟪fluxJacobian p v, v⟫_ℝ ≤ ‖v‖ ^ 2 := by
