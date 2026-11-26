@@ -538,6 +538,43 @@ theorem deriv_covariantDerivative_apply_eq_of_mfderiv_eq
   simp only [metric_apply, map_sub, LinearMap.sub_apply, ContinuousLinearMap.toBilinForm_apply]
   linarith
 
+section RiemannianBundle
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- A Levi-Civita connection of a member of the family which is the installed metric is a
+Levi-Civita connection of the installed metric. -/
+theorem isLeviCivitaConnection_of_apply_eq_inner {p : P}
+    {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    (hcov : (g.metric p).IsLeviCivitaConnection cov)
+    (hg : ∀ y (u v : TangentSpace I y), g (p, y) u v = inner ℝ u v) :
+    cov.IsLeviCivitaConnection :=
+  ((g.metric p).isLeviCivitaConnection_iff_of_apply_eq_inner
+    (fun y u v ↦ by simpa only [metric_apply] using hg y u v)).mp hcov
+
+/-- Mathlib's Levi-Civita connection is a Levi-Civita connection of a member of the family which is
+the installed metric. -/
+theorem isLeviCivitaConnection_leviCivitaConnection_of_apply_eq_inner {p : P}
+    (hg : ∀ y (u v : TangentSpace I y), g (p, y) u v = inner ℝ u v) :
+    (g.metric p).IsLeviCivitaConnection (CovariantDerivative.leviCivitaConnection I M) :=
+  ((g.metric p).isLeviCivitaConnection_iff_of_apply_eq_inner
+    (fun y u v ↦ by simpa only [metric_apply] using hg y u v)).mpr
+    (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
+
+/-- A Levi-Civita connection of a member of the family which is the installed metric agrees with
+Mathlib's Levi-Civita connection on vector fields differentiable at the point. -/
+theorem apply_eq_leviCivitaConnection_of_apply_eq_inner {p : P}
+    {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    (hcov : (g.metric p).IsLeviCivitaConnection cov)
+    (hg : ∀ y (u v : TangentSpace I y), g (p, y) u v = inner ℝ u v)
+    {Y : Π x : M, TangentSpace I x} {x : M} (hY : MDiffAt (T% Y) x) (v : TangentSpace I x) :
+    cov Y x v = CovariantDerivative.leviCivitaConnection I M Y x v :=
+  (g.isLeviCivitaConnection_of_apply_eq_inner hcov hg).uniqueness I
+    (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I) hY v
+
+end RiemannianBundle
+
 end ContMDiffNondegenerateMetricFamily
 
 end TauCeti.Manifold

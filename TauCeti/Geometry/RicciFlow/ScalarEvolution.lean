@@ -67,8 +67,9 @@ private theorem divergence_rieszDual_divBilinearTensor_neg_two_ricciTensor (x : 
       mgradient I ((-1 : ℝ) • (leviCivitaConnection I M).scalarCurvature) := by
     funext y
     rw [mgradient_smul, Pi.smul_apply, mgradient_def,
-      ← hLC.isMetricCompatible.two_smul_divBilinearTensor_ricciTensor hLC.torsion y, ← map_smul,
-      divBilinearTensor_const_smul, smul_smul]
+      ← hLC.isMetricCompatible.two_smul_divBilinearTensor_ricciTensor_eq_mvfderiv_scalarCurvature
+        hLC.torsion y,
+      ← map_smul, divBilinearTensor_const_smul, smul_smul]
     norm_num
   rw [hfield, ← laplaceBeltrami_def, laplaceBeltrami_smul I _ hS, neg_one_mul]
 
@@ -127,9 +128,7 @@ theorem hasDerivAt_scalarCurvature_of_ricciFlow
   rw [divergence_rieszDual_divBilinearTensor_neg_two_ricciTensor,
     laplaceBeltrami_metricTrace_neg_two_ricciTensor] at hd
   have hLC : (r t).toNondegenerateMetric.IsLeviCivitaConnection (leviCivitaConnection I M) :=
-    (ContMDiffNondegenerateMetric.isLeviCivitaConnection_iff_of_apply_eq_inner
-      fun y u v ↦ by rw [← hr t, metric_apply, hg]).mpr
-      (isLeviCivitaConnection_leviCivitaConnection I)
+    hr t ▸ g.isLeviCivitaConnection_leviCivitaConnection_of_apply_eq_inner hg
   have hscal : (r t).scalarCurvature = (leviCivitaConnection I M).scalarCurvature := by
     funext y
     rw [(r t).scalarCurvature_eq_trace_inverse_ricciTensor _ hLC, ← hr t]

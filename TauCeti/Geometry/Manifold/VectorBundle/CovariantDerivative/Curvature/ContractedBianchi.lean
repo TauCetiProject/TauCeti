@@ -75,8 +75,9 @@ trace of `derivCurvatureTensor`.
   the trace of `∇Ric` is the derivative of scalar curvature.
 * `CovariantDerivative.IsMetricCompatible.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature`:
   the twice contracted second Bianchi identity `2 div Ric = d Scal`.
-* `CovariantDerivative.IsMetricCompatible.two_smul_divBilinearTensor_ricciTensor`: the same
-  identity for the divergence of the Ricci tensor as a field of bilinear forms.
+* `IsMetricCompatible.two_smul_divBilinearTensor_ricciTensor_eq_mvfderiv_scalarCurvature`, in the
+  namespace `CovariantDerivative`: the same identity for the divergence of the Ricci tensor as a
+  field of bilinear forms.
 
 ## References
 
@@ -422,7 +423,7 @@ theorem IsMetricCompatible.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvat
 
 /-- **The twice contracted second Bianchi identity** `2 div Ric = d Scal`, as an identity of
 covectors with the divergence `CovariantDerivative.divBilinearTensor` of the Ricci tensor. -/
-theorem IsMetricCompatible.two_smul_divBilinearTensor_ricciTensor
+theorem IsMetricCompatible.two_smul_divBilinearTensor_ricciTensor_eq_mvfderiv_scalarCurvature
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0) (x : M) :
     (2 : ℝ) • cov.divBilinearTensor (fun y ↦ (cov.ricciTensor y).toContinuousBilinearMap) x =
