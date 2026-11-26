@@ -795,6 +795,16 @@ theorem const_apply {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rw [const_toRoughForm, ContinuousAlternatingMap.compContinuousLinearMap_apply]
   rfl
 
+/-- A constant one-form evaluates a tangent vector as the model-space vector it is. -/
+theorem const_apply_one {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (A : V [⋀^Fin 1]→L[ℝ] F) {x : V} (v : TangentSpace (modelWithCornersSelf ℝ V) x) :
+    (const A).val x ![v] = A ![v] := by
+  rw [const_apply]
+  -- `NormedSpace.fromTangentSpace` is the identity on model-space tangent vectors, and the
+  -- remaining difference is the eta-expansion `fun i ↦ ![v] i` of `![v]`.
+  rfl
+
 /-- The coordinate one-form `dz` of the real line. -/
 def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
   const (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ 0 (ContinuousLinearMap.id ℝ ℝ))

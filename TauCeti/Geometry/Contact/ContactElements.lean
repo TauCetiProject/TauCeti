@@ -106,13 +106,6 @@ private theorem coverDy_apply {p : (ℝ × ℝ) × ℝ} (v : TangentSpace 𝓘(�
     coverDy ![v] = v.1.2 :=
   ContinuousAlternatingMap.ofSubsingleton_apply_apply ..
 
-/-- A constant one-form on `ℝ² × ℝ` evaluates a tangent vector as the model-space vector it is. -/
-private theorem const_apply_one (A : ((ℝ × ℝ) × ℝ) [⋀^Fin 1]→L[ℝ] ℝ) {p : (ℝ × ℝ) × ℝ}
-    (v : TangentSpace 𝓘(ℝ, (ℝ × ℝ) × ℝ) p) : (SmoothForm.const A).val p ![v] = A ![v] := by
-  simp only [SmoothForm.const_apply, NormedSpace.fromTangentSpace_apply (𝕜 := ℝ)]
-  -- The remaining difference is the eta-expansion `fun i ↦ ![v] i` of `![v]`.
-  rfl
-
 /-- A smooth function `g` of the angle `τ`, as a smooth function on `ℝ² × ℝ`. -/
 private def angleFun (g : ℝ → ℝ) (hg : ContDiff ℝ ∞ g) : C^∞⟮𝓘(ℝ, (ℝ × ℝ) × ℝ), (ℝ × ℝ) × ℝ; ℝ⟯ :=
   ⟨fun p ↦ g p.2, (hg.comp contDiff_snd).contMDiff⟩
@@ -141,7 +134,8 @@ private theorem mextDeriv_funSMulₗ_angleFun_apply {g g' : ℝ → ℝ} (hg : C
     ((angleFun g hg).contMDiff.contMDiffAt.mdifferentiableAt (by simp))
     ((SmoothForm.const A).mdifferentiableAt p), hA, coe_angleFun, mvfderiv_comp_snd hg',
     mvfderiv_comp_snd hg']
-  simp only [const_apply_one, Pi.zero_apply, ContinuousAlternatingMap.coe_zero, mul_zero, add_zero]
+  simp only [SmoothForm.const_apply_one, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
+    mul_zero, add_zero]
   ring
 
 /-- The contact form `cos τ dx + sin τ dy` on `ℝ² × ℝ`, with coordinates `p = ((x, y), τ)`. Its
@@ -157,9 +151,8 @@ as `cos τ a + sin τ b`. -/
 theorem contactElementForm_apply (p : (ℝ × ℝ) × ℝ) (v : TangentSpace 𝓘(ℝ, (ℝ × ℝ) × ℝ) p) :
     contactElementForm.val p ![v] = cos p.2 * v.1.1 + sin p.2 * v.1.2 := by
   simp only [contactElementForm, SmoothForm.add_toRoughForm, SmoothForm.coe_funSMulₗ, coe_angleFun,
-    Pi.add_apply,
-    ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, const_apply_one,
-    coverDx_apply, coverDy_apply, smul_eq_mul]
+    Pi.add_apply, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
+    SmoothForm.const_apply_one, coverDx_apply, coverDy_apply, smul_eq_mul]
 
 /-- The exterior derivative of `cos τ dx + sin τ dy` is
 `dτ ∧ (cos τ dy - sin τ dx)`. -/
