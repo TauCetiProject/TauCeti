@@ -35,9 +35,13 @@ This file sets up this notion on a symplectic vector space, the local model of t
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily ω Q`: the Hamiltonian endomorphisms of a
   family `Q` of quadratic forms generate a Cartan subalgebra of `sp(V, ω)`. This depends only on
   the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`), and is
-  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`). In
+  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`); a family
+  of multiples `c j • Q`, not all zero, is nondegenerate exactly when `Q` is
+  (`isNondegenerateQuadraticFamily_smul_iff`). In
   particular, forms on `V` and the forms they induce on the reduced space of `⊤` are nondegenerate
-  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`). By
+  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`), and reduced forms may be
+  tested on any symplectic slice of the reduced space
+  (`isNondegenerateQuadraticFamily_reduction_iff_of_slice`). By
   Mathlib's `LieSubalgebra.normalizer_eq_self_of_engel_le`, a Poisson-commuting family is
   nondegenerate as soon as it contains the Engel subalgebra of one Hamiltonian endomorphism
   (`isNondegenerateQuadraticFamily_of_engel_le`).
@@ -308,6 +312,39 @@ theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {U : Submodule �
   rw [← isNondegenerateQuadraticFamily_comp_iff ω.isSymplectomorphism_reducedSpaceTopEquiv]
   congr! with i
   ext v
+  simp
+
+/-- A family of multiples `c i • Q` of a single quadratic form, not all zero, is nondegenerate
+exactly when `Q` alone is: both span the line of `Q`. -/
+theorem isNondegenerateQuadraticFamily_smul_iff {c : ι → ℝ} {i : ι} (hi : c i ≠ 0)
+    (Q : QuadraticForm ℝ V) :
+    ω.IsNondegenerateQuadraticFamily (fun j ↦ c j • Q) ↔
+      ω.IsNondegenerateQuadraticFamily fun _ : Unit ↦ Q := by
+  refine isNondegenerateQuadraticFamily_iff_of_span_eq
+    (le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_))
+  · rintro _ ⟨j, rfl⟩
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨(), rfl⟩)
+  · rintro _ ⟨-, rfl⟩
+    have h := Submodule.smul_mem _ (c i)⁻¹ (Submodule.subset_span (R := ℝ) ⟨i, rfl⟩ :
+      c i • Q ∈ Submodule.span ℝ (Set.range fun j ↦ c j • Q))
+    rwa [smul_smul, inv_mul_cancel₀ hi, one_smul] at h
+
+/-- **Reduced families in the coordinates of a symplectic slice.** If `j : V₀ → V` has image in
+`U`, pulls `ω` back to the symplectic form `ω₀` and `V₀` has the dimension of the reduced space of
+`U`, then a family of reduced quadratic forms is nondegenerate exactly when the pullbacks `Q i ∘ j`
+of the original forms are nondegenerate for `ω₀`. -/
+theorem isNondegenerateQuadraticFamily_reduction_iff_of_slice {V₀ : Type*} [AddCommGroup V₀]
+    [Module ℝ V₀] [FiniteDimensional ℝ V₀] {ω₀ : SymplecticForm V₀} {U : Submodule ℝ V}
+    {j : V₀ →ₗ[ℝ] V} (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) (Q : ι → QuadraticForm ℝ V)
+    (hQ : ∀ i, ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q i) w u = 0) :
+    (ω.reduction U).IsNondegenerateQuadraticFamily
+        (fun i ↦ ω.reducedQuadraticForm U (Q i) (hQ i)) ↔
+      ω₀.IsNondegenerateQuadraticFamily fun i ↦ (Q i).comp j := by
+  rw [← isNondegenerateQuadraticFamily_comp_iff
+    (isSymplectomorphism_reducedSpaceEquivOfSlice hjU hjω hd)]
+  congr! with i
+  ext a
   simp
 
 /-- **Regular elements give Cartan subalgebras.** A family of pairwise Poisson-commuting quadratic
