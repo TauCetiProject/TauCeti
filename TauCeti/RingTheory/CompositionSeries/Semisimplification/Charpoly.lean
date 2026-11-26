@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Charpoly.Lsmul
 public import TauCeti.LinearAlgebra.Charpoly.Quotient
 public import TauCeti.LinearAlgebra.Charpoly.Trace
 public import TauCeti.RingTheory.CompositionSeries.Semisimplification.Basic
+public import TauCeti.RingTheory.Semisimple.Charpoly
 
 /-!
 # Characteristic polynomials on the semisimplification
@@ -32,6 +33,8 @@ hence semisimple and isomorphic to `M^ss`.
 * `TauCeti.charpoly_lsmul_semisimplification`: `charpoly (a | M^ss) = charpoly (a | M)`.
 * `TauCeti.trace_lsmul_semisimplification`: `trace (a | M^ss) = trace (a | M)`.
 * `TauCeti.det_lsmul_semisimplification`: `det (a | M^ss) = det (a | M)`.
+* `TauCeti.nonempty_linearEquiv_semisimplification_iff_charpoly_eq`: conversely, over any field
+  the characteristic polynomials of all `a : A` determine `M^ss` up to isomorphism.
 -/
 
 public section
@@ -92,6 +95,22 @@ theorem det_lsmul_semisimplification (a : A) :
     LinearMap.det (Algebra.lsmul k k (semisimplification A M) a) =
       LinearMap.det (Algebra.lsmul k k M a) :=
   LinearMap.det_eq_of_charpoly_eq (charpoly_lsmul_semisimplification a)
+
+variable {N : Type*} [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
+  [FiniteDimensional k N] [IsNoetherian A N] [IsArtinian A N]
+
+/-- **The characteristic polynomials determine the semisimplification**, over any field: for
+`A`-modules `M` and `N` that are finite-dimensional over a field `k` (with `A` a `k`-algebra),
+`M^ss ≅ N^ss` if and only if every `a : A` has the same characteristic polynomial on `M` as on
+`N`. -/
+theorem nonempty_linearEquiv_semisimplification_iff_charpoly_eq :
+    Nonempty (semisimplification A M ≃ₗ[A] semisimplification A N) ↔
+      ∀ a : A, (Algebra.lsmul k k M a).charpoly = (Algebra.lsmul k k N a).charpoly := by
+  refine ⟨fun ⟨e⟩ a => ?_, fun h =>
+    IsSemisimpleModule.nonempty_linearEquiv_of_forall_charpoly_eq (k := k) fun a => ?_⟩
+  · rw [← charpoly_lsmul_semisimplification, e.charpoly_lsmul_eq,
+      charpoly_lsmul_semisimplification]
+  · rw [charpoly_lsmul_semisimplification, charpoly_lsmul_semisimplification, h]
 
 end Charpoly
 

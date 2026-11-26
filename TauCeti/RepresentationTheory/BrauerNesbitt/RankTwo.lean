@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RepresentationTheory.Character
-public import TauCeti.RepresentationTheory.BaseChange.BrauerNesbitt
+public import TauCeti.RepresentationTheory.BrauerNesbitt
 import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
 import TauCeti.RepresentationTheory.Character.Charpoly
 
@@ -19,8 +19,8 @@ The characteristic polynomial of an endomorphism `f` of a two-dimensional space 
 representations of a monoid, the characters determine the characteristic polynomials at every
 element as soon as `2` is invertible
 (`Representation.charpoly_eq_of_character_eq_of_finrank_eq_two`), and Brauer–Nesbitt
-(`Representation.nonempty_equiv_of_charpoly_eq_of_perfectField`) turns equal characters into an
-equivalence of semisimple representations. This is the case `d = 2`, over a perfect field, of the
+(`Representation.nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation`) turns equal
+characters into an equivalence of semisimple representations. This is the case `d = 2` of the
 trace form of Brauer–Nesbitt in characteristic `p > d`.
 
 Over `𝔽₂` the trace of `f²` does not recover `det f`, but for a group the determinant of `ρ g` is a
@@ -29,7 +29,7 @@ representations of a group over `𝔽₂` with equal characters are again equiva
 
 ## Main results
 
-* `Representation.nonempty_equiv_of_character_eq_of_finrank_eq_two`: over a perfect field with
+* `Representation.nonempty_equiv_of_character_eq_of_finrank_eq_two`: over a field with
   `2 ≠ 0`, two-dimensional semisimple representations with equal characters are equivalent.
 * `Representation.nonempty_equiv_of_character_eq_of_finrank_eq_two_zmod_two`: the same for
   representations of a group over `𝔽₂`.
@@ -56,15 +56,15 @@ section Monoid
 
 variable [Monoid G]
 
-/-- **Brauer–Nesbitt in dimension two, trace form**: over a perfect field in which `2 ≠ 0`, two
+/-- **Brauer–Nesbitt in dimension two, trace form**: over a field in which `2 ≠ 0`, two
 semisimple two-dimensional representations of a monoid with the same character are equivalent. -/
-theorem nonempty_equiv_of_character_eq_of_finrank_eq_two [PerfectField k] (hk : (2 : k) ≠ 0)
+theorem nonempty_equiv_of_character_eq_of_finrank_eq_two (hk : (2 : k) ≠ 0)
     (ρ : Representation k G V) (σ : Representation k G W) [ρ.IsSemisimpleRepresentation]
     [σ.IsSemisimpleRepresentation] (hV : finrank k V = 2) (hW : finrank k W = 2)
     (h : ∀ g, ρ.character g = σ.character g) : Nonempty (ρ.Equiv σ) :=
   have := Module.finite_of_finrank_eq_succ hV
   have := Module.finite_of_finrank_eq_succ hW
-  nonempty_equiv_of_charpoly_eq_of_perfectField ρ σ
+  nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation ρ σ
     fun g ↦ charpoly_eq_of_character_eq_of_finrank_eq_two hk hV hW (h g) (h (g ^ 2))
 
 end Monoid
@@ -83,7 +83,7 @@ theorem nonempty_equiv_of_character_eq_of_finrank_eq_two_zmod_two {V W : Type*} 
     (h : ∀ g, ρ.character g = σ.character g) : Nonempty (ρ.Equiv σ) := by
   have := Module.finite_of_finrank_eq_succ hV
   have := Module.finite_of_finrank_eq_succ hW
-  refine nonempty_equiv_of_charpoly_eq_of_perfectField ρ σ fun g => ?_
+  refine nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation ρ σ fun g => ?_
   have htr := h g
   simp only [character] at htr
   rw [LinearMap.charpoly_of_finrank_eq_two hV, LinearMap.charpoly_of_finrank_eq_two hW,

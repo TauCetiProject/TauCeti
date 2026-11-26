@@ -36,12 +36,25 @@ monic polynomials `charpoly(a | T_i)` and agreeing in `k` agree
 (`Polynomial.eq_of_forall_prod_pow_eq`): in characteristic `p` the products are `p`-th powers
 once the common part is cancelled, and Frobenius is injective on `k[X]`.
 
+Over an arbitrary field the characteristic polynomials of *all* elements of `A` determine a
+finite-dimensional semisimple module
+(`IsSemisimpleModule.nonempty_linearEquiv_of_forall_charpoly_eq`). Jacobson density gives `a : A`
+acting as the identity on the simple modules of one isomorphism type `T` and as zero on all
+others (`IsSemisimpleModule.exists_forall_smul_eq_ite`); the eigenvalue `1` of `a` then has
+algebraic multiplicity `[M : T] * dim T`, which recovers the multiplicity `[M : T]` in every
+characteristic. The characteristic polynomial is not additive, so its values on a spanning set do
+not directly give its values on all of `A`; for representations over an arbitrary field this step
+passes through an algebraic closure, where the theorem above applies.
+
 ## Main results
 
 * `IsSemisimpleModule.charpoly_lsmul_eq_prod`: the characteristic polynomial of `a` on a
   semisimple module, computed from the multiplicities of its simple constituents.
-* `IsSemisimpleModule.nonempty_linearEquiv_of_charpoly_eq`: **Brauer–Nesbitt.** Semisimple
-  modules with the same characteristic polynomials on a spanning set of `A` are isomorphic.
+* `IsSemisimpleModule.nonempty_linearEquiv_of_forall_charpoly_eq`: over any field, semisimple
+  modules on which every element of `A` has the same characteristic polynomial are isomorphic.
+* `IsSemisimpleModule.nonempty_linearEquiv_of_charpoly_eq`: **Brauer–Nesbitt.** Over an
+  algebraically closed field, semisimple modules with the same characteristic polynomials on a
+  spanning set of `A` are isomorphic.
 
 ## References
 
@@ -83,7 +96,71 @@ theorem charpoly_lsmul_eq_prod (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ[A] 
   rw [Finset.prod_congr rfl fun x hx => by rw [(Finset.mem_filter.1 hx).2], Finset.prod_const,
     ← hσ i, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
+omit [Fintype ι] in
+/-- If `a` acts as the identity on `T i` and as zero on every other `T j`, then the eigenvalue `1`
+of `a` on `M` has algebraic multiplicity `[M : T i] * dim T i`. -/
+private theorem rootMultiplicity_one_charpoly_lsmul [Finite ι] [DecidableEq ι]
+    (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ[A] T j))
+    (hM : ∀ P : Submodule A M, IsSimpleModule A P → ∃ i, Nonempty (P ≃ₗ[A] T i)) {a : A} {i : ι}
+    (ha : ∀ j, Algebra.lsmul k k (T j) a = if j = i then 1 else 0) :
+    (Algebra.lsmul k k M a).charpoly.rootMultiplicity 1 =
+      jordanHolderMultiplicity A M (T i) * finrank k (T i) := by
+  have := Fintype.ofFinite ι
+  rw [charpoly_lsmul_eq_prod hT hM, ← Finset.mul_prod_erase _ _ (Finset.mem_univ i),
+    Finset.prod_congr rfl fun j hj => by
+      rw [ha j, ite_eq_right (Finset.ne_of_mem_erase hj), LinearMap.charpoly_zero, ← pow_mul],
+    Finset.prod_pow_eq_pow_sum, ha i, ite_eq_left rfl, LinearMap.charpoly_one, ← pow_mul,
+    mul_comm ((X - 1 : k[X]) ^ _), ← C_1,
+    rootMultiplicity_mul_X_sub_C_pow (pow_ne_zero _ X_ne_zero),
+    rootMultiplicity_eq_zero (by simp), zero_add, mul_comm]
+
 end Decomposition
+
+section Field
+
+variable {M N : Type*} [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+  [FiniteDimensional k M] [IsSemisimpleModule A M] [AddCommGroup N] [Module k N] [Module A N]
+  [IsScalarTower k A N] [FiniteDimensional k N] [IsSemisimpleModule A N]
+
+/-- **Semisimple modules are determined by their characteristic polynomials, over any field.** Two
+finite-dimensional semisimple modules over an algebra `A` over an arbitrary field `k`, on which
+every element of `A` acts with the same characteristic polynomial, are isomorphic. No finiteness
+is asked of `A`.
+
+The hypothesis concerns every element of `A`. Over an algebraically closed field the elements of
+a spanning set of `A` already suffice (`IsSemisimpleModule.nonempty_linearEquiv_of_charpoly_eq`). -/
+theorem nonempty_linearEquiv_of_forall_charpoly_eq
+    (h : ∀ a : A, (Algebra.lsmul k k M a).charpoly = (Algebra.lsmul k k N a).charpoly) :
+    Nonempty (M ≃ₗ[A] N) := by
+  classical
+  have : Module.Finite A M := Module.Finite.of_restrictScalars_finite k A M
+  have : Module.Finite A N := Module.Finite.of_restrictScalars_finite k A N
+  have : Module.Finite (Module.End A (M × N)) (M × N) :=
+    Module.Finite.of_restrictScalars_finite k _ _
+  obtain ⟨ι, _, T, hTs, hT, hM, hN⟩ := exists_simple_family (R := A) M N
+  have (i : ι) : FiniteDimensional k (T i) :=
+    .of_injective ((T i).subtype.restrictScalars k) Subtype.val_injective
+  have (i : ι) : IsSimpleModule A (T i) := hTs i
+  refine nonempty_linearEquiv_of_jordanHolderMultiplicity_eq M N fun S _ _ _ =>
+    apply_jordanHolderMultiplicity_eq_of_forall_eq id hM hN (fun i => ?_) S
+  -- Some `a : A` acts as the identity on `T i` and as zero on every other `T j`.
+  obtain ⟨a, ha⟩ := exists_forall_smul_eq_ite (R := A) (M := M × N) (T i)
+  have hai (j : ι) : Algebra.lsmul k k (T j) a = if j = i then 1 else 0 := by
+    refine LinearMap.ext fun x => Subtype.ext ?_
+    rw [Algebra.lsmul_coe, Submodule.coe_smul, ha (T j) (hTs j) x x.property]
+    by_cases hji : j = i
+    · subst hji
+      simp
+    · have := hT hji
+      simp [hji]
+  -- The multiplicity of the eigenvalue `1` of `a` is `[M : T i] * dim T i`, and likewise for `N`.
+  have : Nontrivial (T i) := IsSimpleModule.nontrivial A _
+  dsimp only [id_eq]
+  refine Nat.eq_of_mul_eq_mul_right (finrank_pos (R := k) (M := T i)) ?_
+  rw [← rootMultiplicity_one_charpoly_lsmul hT hM hai,
+    ← rootMultiplicity_one_charpoly_lsmul hT hN hai, h]
+
+end Field
 
 variable [IsAlgClosed k] {M N : Type*} [AddCommGroup M] [Module k M] [Module A M]
   [IsScalarTower k A M] [FiniteDimensional k M] [IsSemisimpleModule A M] [AddCommGroup N]
