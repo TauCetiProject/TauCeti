@@ -306,12 +306,8 @@ theorem smul_of_norm_le {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G
 vector `v` gives a Hölder function on `s` with constant `C ‖v‖`. -/
 theorem clm_apply_const [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {C α : ℝ≥0}
     {f : X → F →L[𝕜] G} {s : Set X} (hf : HolderOnWith C α f s) (v : F) :
-    HolderOnWith (C * ‖v‖₊) α (fun x ↦ f x v) s := fun x hx y hy ↦ by
-  calc edist (f x v) (f y v) ≤ edist (f x) (f y) * ‖v‖₊ := by
-        rw [edist_nndist, edist_nndist, nnDist_eq_nnNorm, nnDist_eq_nnNorm, ← sub_apply]
-        exact_mod_cast (f x - f y).le_opNNNorm v
-    _ ≤ C * edist x y ^ (α : ℝ) * ‖v‖₊ := by gcongr; exact hf x hx y hy
-    _ = _ := by push_cast; ring
+    HolderOnWith (C * ‖v‖₊) α (fun x ↦ f x v) s :=
+  ((ContinuousLinearMap.lipschitzWith_apply v).comp_holderOnWith hf).mono_const (mul_comm _ _).le
 
 /-- Evaluating a family of continuous linear maps, Hölder on `s`, at a vector of norm at most `1`
 keeps the Hölder constant. -/
