@@ -67,10 +67,12 @@ the universe `v` of the morphisms of `C`; this holds for pseudofunctors with val
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_bot_iff`: the two notions for the
   trivial topology.
 * `CategoryTheory.Pseudofunctor.StrongTrans.relativeFiber`: the relative fibre over an object,
-  unfolded to a 2-fibre product by `relativeFiber_def`, a stack (`isStack_relativeFiber`) with
-  groupoid fibres (`isGroupoid_relativeFiber_obj`).
-* `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_iff_isGerbe_relativeFiber`: `η` is a
-  relative gerbe if and only if its relative fibres are gerbes.
+  unfolded to a 2-fibre product by `relativeFiber_def`; it is a stack when `F` is a stack and `G`
+  a prestack (`isStack_relativeFiber`), and its fibre over `V` is a groupoid when that of `F` over
+  `V.left` is (`isGroupoid_relativeFiber_obj`).
+* `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_iff_isGerbe_relativeFiber`: for `F` a
+  stack with groupoid fibres and `G` a prestack, `η` is a relative gerbe if and only if its
+  relative fibres are gerbes.
 * `MonoidHom.isLocallyEssSurj_constSingleObjMap`,
   `MonoidHom.isRelativeGerbe_bot_constSingleObjMap_iff`,
   `TauCeti.not_isRelativeGerbe_bot_constSingleObjMap_subtype`: the transformation

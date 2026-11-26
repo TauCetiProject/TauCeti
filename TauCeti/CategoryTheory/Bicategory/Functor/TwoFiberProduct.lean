@@ -502,6 +502,7 @@ lemma map_iso_hom {X Y : LocallyDiscrete Cᵒᵖ} (u : X ⟶ Y) (x : (twoFiberPr
 with the same second component, given by an isomorphism `a` of the pullbacks of their first
 components whose image under `α` is the pullback of `e ≫ e'⁻¹`, conjugated by the naturality
 isomorphisms of `α`. Its second component is the identity. -/
+@[no_expose]
 def mapObjIsoMk {X Y : Cᵒᵖ} (f : X ⟶ Y) {x x' : F.obj (.mk X)} {s : G.obj (.mk X)}
     (e : (α.app (.mk X)).toFunctor.obj x ≅ (β.app (.mk X)).toFunctor.obj s)
     (e' : (α.app (.mk X)).toFunctor.obj x' ≅ (β.app (.mk X)).toFunctor.obj s)
