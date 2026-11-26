@@ -91,6 +91,23 @@ characteristic-zero structure theorems for `G_0` and `G_1` on arbitrary discrete
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §§1–2, Propositions 1, 2, 5, 6, 7, 9.
 * J.-P. Serre, *Sur les corps locaux à corps résiduel algébriquement clos*, Bull. Soc. Math.
   France **89** (1961), 105–154, §3.1, Proposition 1.
+* Adapted to arbitrary discrete valuation rings from two internal Tau Ceti precedents:
+  * `TauCeti/NumberTheory/LocalField/UnitFiltration/RamificationGroup.lean`: the uniformizer
+    ratio construction (`uniformizerRatio`), the graded principal-unit homomorphism and its
+    descent (`ramificationGroupToPrincipalUnitGraded`,
+    `ramificationGroupGradedToPrincipalUnitGraded`) with uniformizer-independence and
+    separable-residue kernel/injectivity, and the wild-inertia order formula
+    (`natCard_ramificationGroup_one`), adapted from `uniformizerRatio`,
+    `ramificationGroupToUnitFiltrationGraded`, `ramificationGroupGradedToUnitFiltrationGraded`,
+    and `natCard_ramificationGroup_one`.
+  * `TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean`: the tame and wild
+    inertia structure results (`tameCharacter_injective_iff`,
+    `isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot`,
+    `not_dvd_card_ramificationGroupGraded_zero`, and
+    `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`), adapted from the
+    function-field place statements (`isCyclic_quotient_ramificationGroup_one`,
+    `not_dvd_index_ramificationGroup_one`, and
+    `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`).
 -/
 
 public section
@@ -344,16 +361,11 @@ theorem principalUnitGradedZeroEquiv_comp_ramificationGroupGradedToPrincipalUnit
         (ramificationGroupGradedToPrincipalUnitGraded G 0 hϖ) =
       IsLocalRing.tameCharacterGraded G S := by
   refine MonoidHom.ext fun x ↦ ?_
-  induction x using QuotientGroup.induction_on with
-  | _ σ =>
-    have h := DFunLike.congr_fun
-      (principalUnitGradedZeroEquiv_comp_ramificationGroupToPrincipalUnitGraded G hϖ) σ
-    simp only [MonoidHom.comp_apply] at h ⊢
-    change (principalUnitGradedZeroEquiv S).toMonoidHom
-        (ramificationGroupGradedToPrincipalUnitGraded G 0 hϖ (QuotientGroup.mk σ)) =
-      IsLocalRing.tameCharacterGraded G S (σ : RamificationGroupGraded G S 0)
-    rwa [ramificationGroupGradedToPrincipalUnitGraded_mk,
-      ← ramificationGroupToPrincipalUnitGraded_apply, IsLocalRing.tameCharacterGraded_mk]
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective x
+  rw [MonoidHom.comp_apply, ramificationGroupGradedToPrincipalUnitGraded_mk,
+    ← ramificationGroupToPrincipalUnitGraded_apply, ← MonoidHom.comp_apply,
+    principalUnitGradedZeroEquiv_comp_ramificationGroupToPrincipalUnitGraded,
+    ← QuotientGroup.coe_mk', QuotientGroup.mk'_apply, IsLocalRing.tameCharacterGraded_mk]
 
 variable (G) in
 /-- At positive depth `n + 1`, composing `ramificationGroupToPrincipalUnitGraded G (n + 1) hϖ`
