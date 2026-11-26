@@ -23,10 +23,8 @@ associated to the twist with those of `s` tensored with powers of `E`:
 
 (`TauCeti.SpinCStructure.determinantLineTwistEquiv`,
 `TauCeti.SpinCStructure.halfSpinorBundleTwistEquiv`), as fibrewise continuous linear equivalences
-which are continuous on total spaces. So twisting by a line `E` multiplies the determinant line by
-`E²` and each half-spinor bundle by `E`. Once the determinant line of the canonical `Spinᶜ`
-structure of an almost complex four-manifold is identified with the anticanonical line `K⁻¹`
-(not yet available), this gives the determinant line `K⁻¹ ⊗ E²` of its twist by `E`.
+whose forward maps are continuous on total spaces. So twisting by a line `E` multiplies the
+determinant line by `E²` and each half-spinor bundle by `E`.
 
 In frames, the comparisons read
 
@@ -65,8 +63,8 @@ they form the tensor product vector bundles of `TauCeti.Topology.VectorBundle.Te
   `TauCeti.SpinCStructure.determinantLineTwistEquiv_symm_tmul`,
   `TauCeti.SpinCStructure.halfSpinorBundleTwistEquiv_symm_tmul` for their inverses.
 * `TauCeti.SpinCStructure.continuous_determinantLineTwistEquiv`,
-  `TauCeti.SpinCStructure.continuous_halfSpinorBundleTwistEquiv`: the comparisons are continuous
-  on total spaces.
+  `TauCeti.SpinCStructure.continuous_halfSpinorBundleTwistEquiv`: the forward comparisons are
+  continuous on total spaces.
 
 ## References
 
@@ -220,8 +218,8 @@ private theorem determinantLineTwistLinearEquiv_mk (s : SpinCStructure F V n) {x
 
 `L(s.twist Q)_x ≃ L(s)_x ⊗ (E_x ⊗ E_x)`,  `[[(p, q), h], w] ↦ [p, h w] ⊗ ([q, 1] ⊗ [q, 1])`
 
-(`TauCeti.SpinCStructure.determinantLineTwistEquiv_mk`). It is continuous on total spaces
-(`TauCeti.SpinCStructure.continuous_determinantLineTwistEquiv`). -/
+(`TauCeti.SpinCStructure.determinantLineTwistEquiv_mk`). Its forward map is continuous on total
+spaces (`TauCeti.SpinCStructure.continuous_determinantLineTwistEquiv`). -/
 def determinantLineTwistEquiv (s : SpinCStructure F V n) (x : X) :
     (s.twist Q).determinantLine x ≃L[ℂ]
       s.determinantLine x ⊗[ℂ]
@@ -280,7 +278,7 @@ theorem continuous_determinantLineTwistEquiv (s : SpinCStructure F V n) :
         (E := fun x ↦ s.determinantLine x ⊗[ℂ]
           (AssociatedBundle Circle Q ℂ x ⊗[ℂ] AssociatedBundle Circle Q ℂ x))
         v.proj (s.determinantLineTwistEquiv Q v.proj v.snd) := by
-  -- On `((P ×_X Q) × Spinᶜ(n)) × ℂ`, the comparison is
+  -- On `((P ×_X Q) × Spinᶜ(n)) × Λ`, `Λ = DeterminantModel n`, the comparison is
   -- `(((p, q), h), w) ↦ [p, h w] ⊗ ([q, 1] ⊗ [q, 1])`.
   refine (continuous_twist_associatedBundle_iff Q s).2 ?_
   have hc : Continuous fun y : (TotalSpace (SpinC × Circle) (FiberProd s.P Q) × SpinC) ×
@@ -369,8 +367,8 @@ half-spinor bundle with `E`,
 
 `W^ε(s.twist Q)_x ≃ W^ε(s)_x ⊗ E_x`,  `[[(p, q), h], ψ] ↦ [p, h ψ] ⊗ [q, 1]`
 
-(`TauCeti.SpinCStructure.halfSpinorBundleTwistEquiv_mk`). It is continuous on total spaces
-(`TauCeti.SpinCStructure.continuous_halfSpinorBundleTwistEquiv`). -/
+(`TauCeti.SpinCStructure.halfSpinorBundleTwistEquiv_mk`). Its forward map is continuous on total
+spaces (`TauCeti.SpinCStructure.continuous_halfSpinorBundleTwistEquiv`). -/
 def halfSpinorBundleTwistEquiv (s : SpinCStructure F V 4) (x : X) :
     (s.twist Q).halfSpinorBundle o hqf b ρ hρ ε x ≃L[ℂ]
       s.halfSpinorBundle o hqf b ρ hρ ε x ⊗[ℂ] AssociatedBundle Circle Q ℂ x :=
