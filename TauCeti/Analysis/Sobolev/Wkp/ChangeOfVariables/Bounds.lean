@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Hessian
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
