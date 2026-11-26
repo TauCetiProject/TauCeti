@@ -348,8 +348,8 @@ theorem IsOfType.exists_delBar_eq_of_polydisc {c : ι → ℂ} {r : ι → ℝ} 
     obtain ⟨f, hf, hfη⟩ := exists_delBar_eventually_eq_of_sum_wedgeWith (η := η) (S := univ)
       (by have := hη.add_eq; omega) w hw hwc g hg (Eventually.of_forall fun z ↦ by
         apply sum_wedgeWith_dz_apply hη w (fun i ↦ ?_) _ (fun i ↦ ?_)
-        · simp only [w, coe_mpullback_subtype_val_apply, dz_val]
-          rfl
+        · -- The restricted coordinate covector at `z`, read in the model fibre at `(z : ι → ℂ)`.
+          exact (coe_mpullback_subtype_val_apply (dz i) z).trans (dz_val i z)
         · exact congrArg (fun φ ↦ φ.val z) (hgβ i) |>.trans (holInteriorOpens_val _ _ _))
     rw [nhdsSet_univ] at hfη
     exact ⟨f, hf, Subtype.ext (funext fun z ↦ eventually_top.1 hfη z)⟩

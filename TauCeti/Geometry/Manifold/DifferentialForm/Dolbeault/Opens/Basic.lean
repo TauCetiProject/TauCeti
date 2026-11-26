@@ -95,6 +95,8 @@ theorem delBar_eq_alternatizeUncurryFin_of_opens {U : TopologicalSpace.Opens E}
       (ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Φ (z : E)))
   let A : SmoothForm 𝓘(ℝ, E) U F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
     { toFun φ := ((ofComplexManifold E U).delBar φ).val z
+      -- `∂bar` is additive; the final `rfl` identifies the zero and addition of the fibre at `z`
+      -- with those of its model space `E [⋀^Fin (k + 1)]→L[ℝ] F`.
       map_zero' := by rw [map_zero, ZeroMemClass.coe_zero, Pi.zero_apply]; rfl
       map_add' φ ψ := by rw [map_add, AddMemClass.coe_add, Pi.add_apply]; rfl }
   let B : SmoothForm 𝓘(ℝ, E) U F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
@@ -111,8 +113,9 @@ theorem delBar_eq_alternatizeUncurryFin_of_opens {U : TopologicalSpace.Opens E}
         have hadd : field (φ + ψ) = field φ + field ψ := by
           funext y
           by_cases hy : y ∈ U
-          · simp [field, hy]
-            rfl
+          · simp only [field, hy, ↓reduceDIte, Pi.add_apply]
+            -- The value of `φ + ψ` at `⟨y, hy⟩`, read in the model fibre `E [⋀^Fin k]→L[ℝ] F`.
+            exact congrFun (add_toRoughForm φ ψ) ⟨y, hy⟩
           · simp [field, hy]
         simp only [hadd, C, fderiv_add (hd φ) (hd ψ), map_add,
           ContinuousAlternatingMap.alternatizeUncurryFin_add] }

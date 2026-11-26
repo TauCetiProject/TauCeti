@@ -35,9 +35,10 @@ that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_
 
 ## Main declarations
 
-* `TauCeti.SmoothForm.holInterior`, `TauCeti.SmoothForm.isOfType_holInterior`,
-  `TauCeti.SmoothForm.delBar_holInterior`: contraction `ι_v - I • ι_{I • v}` by a constant vector,
-  its type shift, and its anticommutation with `∂bar`.
+* `TauCeti.SmoothForm.holInterior`, `TauCeti.SmoothForm.isOfType_holInterior`: contraction
+  `ι_v - I • ι_{I • v}` by a constant vector and its type shift. Its anticommutation with `∂bar`,
+  `TauCeti.SmoothForm.delBar_holInterior`, is derived in `Dolbeault/Opens.lean` from the
+  open-domain contraction.
 * `TauCeti.SmoothForm.dz`, `TauCeti.SmoothForm.isOfType_dz`, `TauCeti.SmoothForm.delBar_dz`:
   holomorphic coordinate one-forms on `ι → ℂ`.
 * `TauCeti.SmoothForm.sum_wedgeWith_dz_holInterior_apply`: the coordinate Euler identity.
@@ -54,8 +55,6 @@ that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_
 * `TauCeti.SmoothForm.IsOfType.apply_eq_of_conjCoeff_eq`,
   `TauCeti.SmoothForm.IsOfType.ext_conjCoeff`: `(0,k)`-forms are determined by their
   coefficients.
-* `TauCeti.conjCoeffForm`: the alternating map `∑_J a_J d(conj z)_J` with prescribed
-  coefficients, the pointwise value of a `(0,k)`-form.
 * `TauCeti.SmoothForm.exists_isOfType_conjCoeff_eq`: `(0,k)`-forms with prescribed smooth
   coefficients.
 
@@ -315,24 +314,6 @@ theorem isOfType_holInterior {p q : ℕ} {η : SmoothForm 𝓘(ℝ, E) E F (k + 
   have h := ContinuousAlternatingMap.IsOfType.holCurry (E := E) (hη.apply_modelSpace z) v
   rw [toEndomorphism_ofComplexManifold, holInterior_val]
   exact h
-
-/-- The `(1,0)`-contraction with a constant vector anticommutes with `∂bar`. -/
-theorem delBar_holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
-    (ofComplexManifold E E).delBar (holInterior v η) =
-      -holInterior v ((ofComplexManifold E E).delBar η) := by
-  refine Subtype.ext (funext fun z ↦ ?_)
-  let Θ : E → E [⋀^Fin (k + 1)]→L[ℝ] F := η.val
-  let C := (holCurry (k := k) (F := F) v).restrictScalars ℝ
-  have hdz : DifferentiableAt ℝ Θ z :=
-    (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
-  have hval : ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) = C ∘ Θ :=
-    funext fun y ↦ holInterior_val v η y
-  rw [neg_toRoughForm, Pi.neg_apply, holInterior_val, delBar_eq_alternatizeUncurryFin,
-    delBar_eq_alternatizeUncurryFin, hval, C.fderiv_comp_left hdz,
-    ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp]
-  exact ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp _
-    (fun u ↦ (ContinuousLinearMap.complexAntilinearPartL_apply_I_smul _ u).trans
-      (neg_smul I _).symm) v
 
 end Contraction
 

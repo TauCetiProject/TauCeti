@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-!
 # Flat differential forms on open subsets of normed spaces
@@ -136,17 +135,6 @@ theorem IsSmoothForm.exists_contDiffOn_opens {n : WithTop ℕ∞}
     (Subtype.val_injective.extend_apply
       (ω : U → E [⋀^Fin k]→L[ℝ] F) (0 : E → E [⋀^Fin k]→L[ℝ] F) x).symm
   exact ⟨ω₀, (isSmoothForm_opens_iff heq).mp hω, heq⟩
-
-open scoped ContDiff in
-/-- Near a point of an open subset `U` of a finite-dimensional real vector space `E`, a field
-`η₀` smooth on `U` agrees with a smooth form on `E`. -/
-theorem SmoothForm.exists_eventuallyEq_of_opens [FiniteDimensional ℝ E]
-    {η₀ : E → E [⋀^Fin k]→L[ℝ] F}
-    (hc : ContDiffOn ℝ ∞ η₀ U) (z : U) :
-    ∃ G : SmoothForm 𝓘(ℝ, E) E F k, G.val =ᶠ[𝓝 (z : E)] η₀ := by
-  obtain ⟨g, hg, -, hgη⟩ :=
-    hc.exists_contDiff_eventuallyEq_of_finiteDimensional (U.isOpen.mem_nhds z.property)
-  exact ⟨⟨g, (isSmoothForm_modelSpace_iff.mpr hg).mem_smoothBundleForms⟩, hgη⟩
 
 /-- A form on an open model domain is closed exactly when its ambient representative has
 vanishing flat exterior derivative on that domain. -/

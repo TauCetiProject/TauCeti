@@ -13,11 +13,10 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 /-!
 # Dolbeault calculus on open model domains
 
-The Dolbeault differential on open subsets of complex normed spaces agrees with that of any
-ambient smooth representative near the point. In finite dimensions smooth germs extend to
-ambient forms, preserving pure type. Constant-vector holomorphic contraction and its
-anticommutation with `∂bar` work in arbitrary dimension. The final comparison identifies
-coordinate differentiation on open subsets of finite-dimensional coordinate spaces.
+Constant-vector holomorphic contraction of smooth forms on open subsets of complex normed spaces
+and its anticommutation with `∂bar` work in arbitrary dimension; the anticommutation of the
+ambient contraction `SmoothForm.holInterior` is the case of the whole space. The final comparison
+identifies coordinate differentiation on open subsets of finite-dimensional coordinate spaces.
 -/
 
 public section
@@ -40,53 +39,6 @@ section Opens
 open TopologicalSpace
 
 variable {k : ℕ}
-
-/-- On an open subset `U` of a complex vector space `E`, the Dolbeault differential of a form `η`
-at a point `z` is that of any smooth form on `E` agreeing near `z` with an ambient representative
-`η₀` of `η`. -/
-theorem delBar_val_eq_of_eventuallyEq {U : Opens E} {η : SmoothForm 𝓘(ℝ, E) U F k}
-    {η₀ : E → E [⋀^Fin k]→L[ℝ] F} (hη₀ : ∀ x : U, η.val x = η₀ x)
-    {G : SmoothForm 𝓘(ℝ, E) E F k} {z : U} (hG : G.val =ᶠ[𝓝 (z : E)] η₀) :
-    ((ofComplexManifold E U).delBar η).val z = ((ofComplexManifold E E).delBar G).val z := by
-  obtain ⟨t, htG, ht, hzt⟩ := eventually_nhds_iff.1 hG
-  let V : Opens E := ⟨t ∩ U, ht.inter U.isOpen⟩
-  have hVU : V ≤ U := inter_subset_right
-  -- The restrictions of `η` and `G` to `V` agree, and restriction commutes with `∂bar`.
-  have hres : mpullback (Opens.inclusion hVU) (contMDiff_inclusion hVU) η =
-      mpullback (Subtype.val : V → E) contMDiff_subtypeVal G := by
-    refine Subtype.ext (funext fun y ↦ ?_)
-    rw [coe_mpullback, mpullback_inclusion_apply, coe_mpullback_subtype_val_apply, hη₀,
-      htG _ y.property.1]
-  have h := congrArg (fun φ ↦ ((ofComplexManifold E V).delBar φ).val ⟨z, hzt, z.property⟩) hres
-  simp only [← mpullback_delBar _ _ (isPseudoholomorphic_ofComplexManifold_inclusion hVU),
-    ← mpullback_delBar _ _ (isPseudoholomorphic_ofComplexManifold_subtype_val V)] at h
-  rwa [coe_mpullback, mpullback_inclusion_apply, coe_mpullback_subtype_val_apply] at h
-
-section FiniteDimensional
-
-variable [FiniteDimensional ℂ E]
-
-/-- Near a point of an open subset `U` of a finite-dimensional complex vector space `E`, a form of
-type `(p,q)` on `U`, with an ambient representative `η₀` smooth on `U`, agrees with a smooth form of
-type `(p,q)` on `E`: the type-`(p,q)` component of any smooth form on `E` agreeing with `η₀` near
-the point. -/
-theorem IsOfType.exists_isOfType_eventuallyEq_of_opens {U : Opens E} {p q : ℕ}
-    {η : SmoothForm 𝓘(ℝ, E) U F k} (hη : η.IsOfType (ofComplexManifold E U) p q)
-    {η₀ : E → E [⋀^Fin k]→L[ℝ] F} (hη₀ : ∀ x : U, η.val x = η₀ x)
-    (z : U) :
-    ∃ G : SmoothForm 𝓘(ℝ, E) E F k,
-      G.IsOfType (ofComplexManifold E E) p q ∧ G.val =ᶠ[𝓝 (z : E)] η₀ := by
-  have hc := (isSmoothForm_opens_iff hη₀).1 η.isSmoothForm
-  obtain ⟨G, hG⟩ := exists_eventuallyEq_of_opens hc z
-  refine ⟨(ofComplexManifold E E).typeProjection p q G,
-    (ofComplexManifold E E).isOfType_typeProjection hη.add_eq G, ?_⟩
-  filter_upwards [hG, U.isOpen.mem_nhds z.property] with y hy hyU
-  have h := hη.apply ⟨y, hyU⟩
-  rw [toEndomorphism_ofComplexManifold, hη₀] at h
-  simp only [coe_typeProjection, toEndomorphism_ofComplexManifold, hy]
-  exact h.typeProjection_self
-
-end FiniteDimensional
 
 /-- The holomorphic contraction of a smooth form by a constant vector, before bundling. -/
 private def holInteriorOpensFun {U : Opens E} (v : E) (η : SmoothForm 𝓘(ℝ, E) U F (k + 1)) :
@@ -169,6 +121,26 @@ theorem delBar_holInteriorOpens {U : Opens E} (v : E)
   exact ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp _
     (fun u ↦ (ContinuousLinearMap.complexAntilinearPartL_apply_I_smul _ u).trans
       (neg_smul I _).symm) v
+
+/-- The `(1,0)`-contraction with a constant vector anticommutes with `∂bar`. This is the case
+`U = ⊤` of `delBar_holInteriorOpens`. -/
+theorem delBar_holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
+    (ofComplexManifold E E).delBar (holInterior v η) =
+      -holInterior v ((ofComplexManifold E E).delBar η) := by
+  let U : Opens E := ⊤
+  have hval := isPseudoholomorphic_ofComplexManifold_subtype_val (E := E) U
+  -- Restriction to `U` intertwines the ambient and open-domain contractions.
+  have hres {n : ℕ} (θ : SmoothForm 𝓘(ℝ, E) E F (n + 1)) :
+      mpullback (Subtype.val : U → E) contMDiff_subtypeVal (holInterior v θ) =
+        holInteriorOpens v (mpullback (Subtype.val : U → E) contMDiff_subtypeVal θ) :=
+    Subtype.ext <| funext fun y ↦ by
+      rw [coe_mpullback_subtype_val_apply, holInterior_val, holInteriorOpens_val,
+        coe_mpullback_subtype_val_apply]
+  refine Subtype.ext (funext fun z ↦ ?_)
+  have h := congrArg (fun φ ↦ φ.val (⟨z, mem_univ z⟩ : U))
+    (delBar_holInteriorOpens v (mpullback (Subtype.val : U → E) contMDiff_subtypeVal η))
+  rwa [← hres, ← mpullback_delBar _ _ hval, ← mpullback_delBar _ _ hval, ← hres, ← map_neg,
+    coe_mpullback_subtype_val_apply, coe_mpullback_subtype_val_apply] at h
 
 end Opens
 
