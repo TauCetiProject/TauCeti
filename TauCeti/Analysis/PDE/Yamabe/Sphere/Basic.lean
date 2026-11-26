@@ -8,11 +8,11 @@ module
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Stereographic
 public import TauCeti.Analysis.PDE.Yamabe.ConformalInvariance
 public import TauCeti.Analysis.PDE.Yamabe.Sphere.Constant
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.PDE.Yamabe.Bubble.SobolevQuotient
+import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 
 /-!
 # The conformal Laplacian and Yamabe quotient of the round sphere
@@ -34,7 +34,8 @@ projection:
   `L^{pₙ}` norm on `Sⁿ` whenever `n ≠ 0, 2`.
 * **Stereographic conformal covariance.** In dimension `n ≠ 2`, for `t > 0` the bubble-rescaled
   stereographic map `Φ(x) = σ⁻¹((2 / t) (x - b))` is a local Riemannian isometry from the
-  metric-indexed copy of `ℝⁿ` carrying `U_{t,b} ^ (4 / (n - 2)) δ` into `Sⁿ`. Consequently, for
+  metric-indexed copy of `ℝⁿ` carrying `U_{t,b} ^ (4 / (n - 2)) δ` into `Sⁿ`
+  (`TauCeti.Yamabe.isLocalRiemannianIsometry_stereographic'_symm_smul_sub`). Consequently, for
   every `t ≥ 0` and any function `u` that is `C²` at `Φ(x)`,
   `aₙ (-Δ (U_{t,b} · (u ∘ Φ)))(x) = U_{t,b}(x) ^ ((n + 2) / (n - 2)) (L u)(Φ(x))`.
   At `u = 1` this recovers the Euclidean bubble equation from `Scal(Sⁿ) = n (n - 1)`.
@@ -57,11 +58,8 @@ All declarations are in the namespace `TauCeti.Yamabe`.
   `integral_abs_rpow_criticalExponent_roundSphereVolume_rpow_neg_inv`: the constant
   solution `|Sⁿ| ^ (-1 / pₙ)` of `L u = Y(Sⁿ) u ^ (pₙ - 1)` on `Sⁿ`, which has unit `L^{pₙ}` norm
   for `n ≠ 0, 2`.
-* `bubbleMetric`, `bubbleMetric_inner`, `conformalLaplacian_bubbleMetric`,
-  `isLocalRiemannianIsometry_stereographic'_symm_smul_sub`, and
-  `conformalCoefficient_mul_neg_laplacian_bubble_mul_comp_stereographic'_symm_smul_sub`:
-  the bubble conformal metric on `ℝⁿ`, its conformal Laplacian rescaling formula, stereographic
-  local isometry, and pointwise conformal covariance of `L`.
+* `conformalCoefficient_mul_neg_laplacian_bubble_mul_comp_stereographic'_symm_smul_sub`:
+  pointwise conformal covariance of `L` under rescaled stereographic projection.
 * `yamabeQuotient_sphere_one`, `yamabeQuotient_sphere_const`,
   `yamabeQuotient_sphereRoundMetricOfRadius`, and
   `yamabeQuotient_sphereRoundMetricOfRadius_one`: the Yamabe quotient on `Sⁿ` and `Sⁿ(r)`.
@@ -108,8 +106,9 @@ theorem conformalLaplacian_sphereRoundMetricOfRadius_const {r : ℝ} (hr : 0 < r
     scalarCurvature_sphereRoundMetricOfRadius]
 
 /-- **Constant Yamabe solution on `Sⁿ`.** In dimension `n ≠ 2`, the positive constant
-`cₙ = |Sⁿ| ^ (-1 / pₙ)` solves `L cₙ = Y(Sⁿ) cₙ ^ (pₙ - 1)` on the unit round sphere; for
-`n ≠ 0, 2`, it has unit `L^{pₙ}` norm on `Sⁿ`. -/
+`cₙ = |Sⁿ| ^ (-1 / pₙ)` solves `L cₙ = Y(Sⁿ) cₙ ^ (pₙ - 1)` on the unit round sphere; see
+`TauCeti.Yamabe.integral_abs_rpow_criticalExponent_roundSphereVolume_rpow_neg_inv` for its unit
+`L^{pₙ}` normalization when `n ≠ 0, 2`. -/
 theorem conformalLaplacian_sphere_roundSphereVolume_rpow_neg_inv (hn : n ≠ 2)
     (p : sphere (0 : E) 1) :
     conformalLaplacian (𝓡 n)
@@ -133,75 +132,8 @@ end ConformalLaplacian
 
 section StereographicCovariance
 
-/-- The bubble conformal metric `U_{t,b} ^ (4 / (n - 2)) δ` on `ℝⁿ`, obtained by rescaling the
-Euclidean metric by the Yamabe conformal factor of `TauCeti.Yamabe.bubble`. -/
-def bubbleMetric {n : ℕ} {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n)) :
-    ContMDiffRiemannianMetric (𝓡 n) ∞ (EuclideanSpace ℝ (Fin n))
-      (fun x : EuclideanSpace ℝ (Fin n) ↦ TangentSpace (𝓡 n) x) :=
-  ((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := ∞) le_top).rescale
-    (fun y ↦ bubble t b y ^ (4 / ((finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) - 2)))
-    ((contDiff_bubble t b (m := ∞)).contMDiff.rpow_const_of_ne
-      (fun y ↦ (bubble_pos ht b y).ne') _)
-    fun y ↦ Real.rpow_pos_of_pos (bubble_pos ht b y) _
-
-/-- The bubble conformal metric on `ℝⁿ` is `U_{t,b} ^ (4 / (n - 2))` times the Euclidean inner
-product. -/
-@[simp]
-theorem bubbleMetric_inner {n : ℕ} {t : ℝ} (ht : 0 < t) (b y : EuclideanSpace ℝ (Fin n))
-    (v w : TangentSpace (𝓡 n) y) :
-    (bubbleMetric ht b).inner y v w =
-      bubble t b y ^ (4 / ((n : ℝ) - 2)) * inner ℝ v w := by
-  rw [bubbleMetric, ContMDiffRiemannianMetric.rescale_inner,
-    ContMDiffRiemannianMetric.ofLE_inner, finrank_euclideanSpace_fin]
-  rfl
-
-/-- The conformal Laplacian of `bubbleMetric ht b` at `w` is `U_{t,b} ^ (-(n + 2) / (n - 2))` times
-the Euclidean conformal Laplacian of `U_{t,b} * w`. -/
-theorem conformalLaplacian_bubbleMetric {n : ℕ} (hn : n ≠ 2) {t : ℝ} (ht : 0 < t)
-    (b : EuclideanSpace ℝ (Fin n)) {w : EuclideanSpace ℝ (Fin n) → ℝ}
-    (hw : ContMDiff (𝓡 n) 𝓘(ℝ) 2 w) (x : EuclideanSpace ℝ (Fin n)) :
-    (letI : RiemannianBundle (fun y : EuclideanSpace ℝ (Fin n) ↦ TangentSpace (𝓡 n) y) :=
-       ⟨(bubbleMetric ht b).toRiemannianMetric⟩;
-     conformalLaplacian (𝓡 n) w x) =
-      bubble t b x ^ (-((n : ℝ) + 2) / ((n : ℝ) - 2)) *
-        (letI : RiemannianBundle (fun y : EuclideanSpace ℝ (Fin n) ↦ TangentSpace (𝓡 n) y) :=
-           ⟨((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE
-             (m := ∞) le_top).toRiemannianMetric⟩;
-         conformalLaplacian (𝓡 n) (bubble t b * w) x) := by
-  rw [bubbleMetric]
-  simpa only [finrank_euclideanSpace_fin] using
-    conformalLaplacian_rescale _ (by simpa using hn) (bubble_pos ht b) hw x
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
-
-/-- **Rescaled inverse stereographic projection is a local Riemannian isometry.** In dimension
-`n ≠ 2`, for `t > 0`, `x ↦ σ⁻¹((2 / t) (x - b))` is a smooth local Riemannian isometry from the
-metric-indexed copy of `ℝⁿ` carrying the bubble conformal metric `U_{t,b} ^ (4 / (n - 2)) δ` into
-the unit round sphere `Sⁿ`. -/
-theorem isLocalRiemannianIsometry_stereographic'_symm_smul_sub (hn : n ≠ 2) (v : sphere (0 : E) 1)
-    {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n)) :
-    IsLocalRiemannianIsometry (𝓡 n) (𝓡 n)
-      (((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) ∘
-        (WithMetric.ofWithMetric : WithMetric (bubbleMetric ht b) → _)) := by
-  let Φ : EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1 :=
-    (stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)
-  have hinner (y : WithMetric (bubbleMetric ht b)) (a c : TangentSpace (𝓡 n) y) :
-      inner ℝ (mfderiv (𝓡 n) (𝓡 n) (Φ ∘ WithMetric.ofWithMetric) y a)
-          (mfderiv (𝓡 n) (𝓡 n) (Φ ∘ WithMetric.ofWithMetric) y c) =
-        inner ℝ a c := by
-    rw [WithMetric.mfderiv_comp_ofWithMetric Φ y, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply, WithMetric.inner_def, bubbleMetric_inner]
-    exact inner_mfderiv_stereographic'_symm_smul_sub hn v ht b y.ofWithMetric _ _
-  refine
-    { contMDiff := ((isSmoothEmbedding_stereographic'_symm (k := ∞) v).contMDiff.comp
-        (((contDiff_id.sub contDiff_const).const_smul (2 / t)).contMDiff)).comp
-        WithMetric.contMDiff_ofWithMetric
-      isInvertible_mfderiv := fun y ↦ ?_
-      inner_mfderiv := hinner }
-  set L := mfderiv (𝓡 n) (𝓡 n) (Φ ∘ WithMetric.ofWithMetric) y
-  let eL := (L.toLinearMap.isometryOfInner (hinner y)).toLinearIsometryEquiv (by rfl)
-  exact ⟨eL.toContinuousLinearEquiv, by ext w; rfl⟩
 
 /-- **Stereographic conformal covariance of the conformal Laplacian.** In dimension `n ≠ 2`, let
 `t ≥ 0` and `Φ(y) = σ⁻¹((2 / t) (y - b))`. For any `u : Sⁿ → ℝ` that is `C²` at `Φ(x)`,
@@ -239,8 +171,9 @@ theorem conformalCoefficient_mul_neg_laplacian_bubble_mul_comp_stereographic'_sy
         hw.contMDiff.contMDiffAt,
       conformalLaplacian_congr_of_eventuallyEq
         (hw.contMDiff.comp WithMetric.contMDiff_ofWithMetric).contMDiffAt hev_wm,
-      hiso.conformalLaplacian_comp (x := WithMetric.toWithMetric (bubbleMetric ht b) x) hu]
-    rfl
+      hiso.conformalLaplacian_comp (x := WithMetric.toWithMetric (bubbleMetric ht b) x)
+        (by simpa only [Function.comp_apply, WithMetric.ofWithMetric_toWithMetric] using hu),
+      Function.comp_apply, WithMetric.ofWithMetric_toWithMetric]
   have hresc := conformalLaplacian_bubbleMetric hn ht b hw.contMDiff x
   have heq_prod : (bubble t b * w : EuclideanSpace ℝ (Fin n) → ℝ) =ᶠ[𝓝 x]
       fun y ↦ bubble t b y * u (Φ y) :=
@@ -273,17 +206,12 @@ theorem integral_abs_rpow_criticalExponent_roundSphereVolume_rpow_neg_inv
     ∫ _ : sphere (0 : E) 1,
         |roundSphereVolume n ^ (-(1 / criticalExponent n))| ^ criticalExponent n
         ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) = 1 := by
-  have : FiniteDimensional ℝ E :=
-    Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
-  let _ : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
-  obtain rfl : ‹MeasurableSpace (sphere (0 : E) 1)› = Subtype.instMeasurableSpace :=
-    BorelSpace.measurable_eq.trans BorelSpace.measurable_eq.symm
   have hp : criticalExponent n ≠ 0 := by
     rw [criticalExponent_def]
     exact div_ne_zero (mul_ne_zero two_ne_zero (Nat.cast_ne_zero.mpr hn₀))
       (sub_ne_zero.mpr (by exact_mod_cast hn₂))
-  rw [integral_const, smul_eq_mul, ← riemannianTotalVolume_def, riemannianTotalVolume_sphere,
+  rw [integral_const, smul_eq_mul, measureReal_def, riemannianVolume_sphere_univ,
+    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le,
     abs_of_pos (Real.rpow_pos_of_pos (roundSphereVolume_pos n) _),
     ← Real.rpow_mul (roundSphereVolume_pos n).le, neg_mul, one_div_mul_cancel hp,
     Real.rpow_neg_one, mul_inv_cancel₀ (roundSphereVolume_pos n).ne']
@@ -295,15 +223,12 @@ theorem yamabeQuotient_sphere_one
     [SigmaCompactSpace (sphere (0 : E) 1)]
     [MeasurableSpace (sphere (0 : E) 1)] [BorelSpace (sphere (0 : E) 1)] :
     yamabeQuotient (𝓡 n) (fun _ : sphere (0 : E) 1 ↦ (1 : ℝ)) = sphereYamabeConstant n := by
-  have : FiniteDimensional ℝ E :=
-    Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
-  let _ : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
-  obtain rfl : ‹MeasurableSpace (sphere (0 : E) 1)› = Subtype.instMeasurableSpace :=
-    BorelSpace.measurable_eq.trans BorelSpace.measurable_eq.symm
+  have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
   rw [yamabeQuotient_one, finrank_euclideanSpace_fin]
-  simp only [scalarCurvature_sphere, integral_const, smul_eq_mul, ← riemannianTotalVolume_def,
-    riemannianTotalVolume_sphere, mul_comm (roundSphereVolume n), sphereYamabeConstant_eq_div]
+  simp only [scalarCurvature_sphere, integral_const, smul_eq_mul, measureReal_def,
+    riemannianVolume_sphere_univ, riemannianTotalVolume_sphere,
+    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le, mul_comm (roundSphereVolume n),
+    sphereYamabeConstant_eq_div]
 
 /-- **The Yamabe quotient of any nonzero constant on `Sⁿ` (`n ≠ 2`) is `Y(Sⁿ)`.** -/
 theorem yamabeQuotient_sphere_const

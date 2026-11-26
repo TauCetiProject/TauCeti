@@ -103,16 +103,8 @@ theorem riemannianJacobian_stereographic'_symm (v : sphere (0 : E) 1)
     riemannianJacobian (I := 𝓡 n) (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
         (stereographic' n v).symm y =
       (4 / (‖y‖ ^ 2 + 4)) ^ n := by
-  rw [riemannianJacobian_eq_normDet (EuclideanSpace.basisFun (Fin n) ℝ)]
-  let J : EuclideanSpace ℝ (Fin n) →ₗ[ℝ]
-      TangentSpace (𝓡 n) ((stereographic' n v).symm y) :=
-    (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y).toLinearMap
-  change J.normDet = _
-  rw [J.normDet_eq_pow_finrank_of_norm_eq (c := 4 / (‖y‖ ^ 2 + 4)) fun u ↦ ?_,
-    finrank_euclideanSpace_fin]
-  have hinner := inner_mfderiv_stereographic'_symm v y u u
-  rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, ← mul_pow] at hinner
-  exact (sq_eq_sq₀ (norm_nonneg _) (by positivity)).mp hinner
+  rw [riemannianJacobian_eq_sqrt_pow_of_inner_mfderiv _ (inner_mfderiv_stereographic'_symm v y),
+    Fintype.card_fin, Real.sqrt_sq (by positivity)]
 
 /-- **Ambient Jacobian of inverse stereographic projection.** Composed with the inclusion of the
 unit sphere into `E`, `(stereographic' n v).symm` has norm determinant `(4 / (‖y‖² + 4)) ^ n` at
@@ -307,19 +299,6 @@ theorem map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMea
       rfl
   rwa [finrank_euclideanSpace_fin, Subtype.range_coe] at h
 
-/-- **The volume of the round sphere.** The unit sphere `Sⁿ` with its round metric has total volume
-`|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)`. -/
-@[simp]
-theorem riemannianTotalVolume_sphere :
-    riemannianTotalVolume (𝓡 n) (sphere (0 : E) 1) = roundSphereVolume n := by
-  have h := congr($(map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMeasure
-    (E := E) (n := n)) univ)
-  rw [Measure.map_apply measurable_subtypeVal MeasurableSet.univ, preimage_univ,
-    Measure.restrict_apply MeasurableSet.univ, univ_inter,
-    euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume Fact.out] at h
-  rw [riemannianTotalVolume_def, measureReal_def, h,
-    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le]
-
 end SurfaceMeasure
 
 section Hausdorff
@@ -333,8 +312,7 @@ normalized `n`-dimensional Hausdorff measure `μHE[n]` along the inclusion into 
 theorem riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure
     [LindelofSpace (sphere (0 : E) 1)] :
     riemannianVolume (𝓡 n) (sphere (0 : E) 1) = (μHE[n] : Measure E).comap (↑) := by
-  have : FiniteDimensional ℝ E :=
-    Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
+  have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
   let ι : sphere (0 : E) 1 → E := (↑)
   have hι : MeasurableEmbedding ι :=
     MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet
@@ -374,6 +352,16 @@ theorem riemannianVolume_sphere_univ
     (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).comap_apply, image_univ,
     Subtype.range_coe, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume Fact.out]
 
+/-- **The volume of the round sphere.** The unit sphere `Sⁿ` with its round metric has total volume
+`|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)`. -/
+@[simp]
+theorem riemannianTotalVolume_sphere
+    [CompactSpace (sphere (0 : E) 1)]
+    [MeasurableSpace (sphere (0 : E) 1)] [BorelSpace (sphere (0 : E) 1)] :
+    riemannianTotalVolume (𝓡 n) (sphere (0 : E) 1) = roundSphereVolume n := by
+  rw [riemannianTotalVolume_def, measureReal_def, riemannianVolume_sphere_univ,
+    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le]
+
 /-- **Total Riemannian volume of the round sphere of radius `r > 0`**: `Vol(Sⁿ(r)) = r ^ n |Sⁿ|`. -/
 @[simp]
 theorem riemannianTotalVolume_sphereRoundMetricOfRadius
@@ -381,10 +369,8 @@ theorem riemannianTotalVolume_sphereRoundMetricOfRadius
     riemannianTotalVolume (𝓡 n)
         (WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr)) =
       r ^ n * roundSphereVolume n := by
-  have : FiniteDimensional ℝ E :=
-    Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
-  let _ : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
+  let _ : MeasurableSpace (sphere (0 : E) 1) := borel _
+  have : BorelSpace (sphere (0 : E) 1) := ⟨rfl⟩
   have hrpow : (r ^ 2) ^ ((finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) / 2) = r ^ n := by
     rw [finrank_euclideanSpace_fin, ← Real.rpow_natCast r 2, ← Real.rpow_mul hr.le,
       Nat.cast_ofNat, mul_div_cancel₀ _ two_ne_zero, Real.rpow_natCast]
