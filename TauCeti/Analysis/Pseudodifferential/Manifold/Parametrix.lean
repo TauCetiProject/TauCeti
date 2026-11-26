@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.Analysis.Pseudodifferential.Manifold.AsymptoticSum
 import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 import TauCeti.Analysis.Pseudodifferential.Manifold.SymbolQuantization
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
@@ -19,8 +20,9 @@ Let `P` be a classical pseudodifferential operator of order `m` on a manifold `M
 `ℝⁿ` (`TauCeti.classicalPseudodifferentialOperators`). A **parametrix** of `P` is an operator `Q`
 inverting `P` modulo the operators of order `-∞` (`TauCeti.smoothingPseudodifferentialOperators`):
 `Q ∘ P - 1` and `P ∘ Q - 1` have order `-∞`. This file proves two facts on which the construction
-of a parametrix of an elliptic operator rests, and constructs parametrices modulo operators of
-arbitrarily low order on a compact manifold.
+of a parametrix of an elliptic operator rests, and constructs parametrices of elliptic operators on
+a compact manifold. Conversely, an operator with a parametrix is elliptic, so on a compact manifold
+the elliptic operators are exactly those invertible modulo operators of order `-∞`.
 
 **Left and right parametrices agree.** If `L` is a left parametrix and `R` a right parametrix of
 `P`, both classical pseudodifferential operators, then `L - R` has order `-∞`
@@ -56,9 +58,23 @@ of order `m` has, for every `N : ℕ`, an operator `Q` of order `-m` with `P ∘
 of order `-N`
 (`TauCeti.IsClassicalElliptic.exists_comp_sub_id_mem_classicalPseudodifferentialOperators`).
 Operators of negative order are compact between Sobolev spaces of a compact manifold, so these
-parametrices are what makes an elliptic operator Fredholm. A parametrix modulo operators of order
-`-∞` is the asymptotic sum of the full Neumann series `Q₀ ∑ R^k`, whose terms `Q₀ R^k` have order
-`-m - k`; this needs asymptotic summation of operators on `M` and is not done here.
+parametrices are what makes an elliptic operator Fredholm.
+
+**Parametrices modulo order `-∞`.** The full Neumann series `∑ R^k` has an asymptotic sum `S` of
+order `0` on a compact manifold, with `(1 - R) S - 1` of order `-∞`
+(`TauCeti.exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators`). Then `Q₀ S` is a
+right parametrix of `P`; in the same way a left parametrix is obtained from `Q₀ P = 1 - L`, and
+since left and right parametrices agree, `Q₀ S` is a two-sided parametrix of `P`
+(`TauCeti.IsClassicalElliptic.exists_comp_sub_id_mem_smoothingPseudodifferentialOperators`). It is
+unique modulo operators of order `-∞`
+(`TauCeti.comp_sub_id_mem_and_comp_sub_id_mem_iff_sub_mem_smoothingPseudodifferentialOperators`).
+
+**The converse.** If `Q` has order `-m` and `P ∘ Q - 1` has order `-1`, the principal symbols
+satisfy `σ_m(P) σ_{-m}(Q) = 1` at nonzero covectors
+(`TauCeti.classicalPrincipalSymbol_mul_classicalPrincipalSymbol_of_comp_sub_id_mem`), so both
+`P` and `Q` are elliptic and `σ_{-m}(Q) = σ_m(P)⁻¹`. In particular, on a compact manifold `P` is
+elliptic exactly when it has a two-sided parametrix modulo operators of order `-∞`
+(`TauCeti.isClassicalElliptic_iff_exists_comp_sub_id_mem_smoothingPseudodifferentialOperators`).
 
 ## Main results
 
@@ -76,6 +92,17 @@ parametrices are what makes an elliptic operator Fredholm. A parametrix modulo o
 * `TauCeti.IsClassicalElliptic.exists_comp_sub_id_mem_classicalPseudodifferentialOperators`: an
   elliptic classical pseudodifferential operator of order `m` on a compact manifold has, for every
   `N : ℕ`, a two-sided parametrix of order `-m` modulo operators of order `-N`.
+* `TauCeti.IsClassicalElliptic.exists_comp_sub_id_mem_smoothingPseudodifferentialOperators`: an
+  elliptic classical pseudodifferential operator of order `m` on a compact manifold has a two-sided
+  parametrix of order `-m` modulo operators of order `-∞`.
+* `TauCeti.comp_sub_id_mem_and_comp_sub_id_mem_iff_sub_mem_smoothingPseudodifferentialOperators`:
+  parametrices modulo operators of order `-∞` are unique modulo operators of order `-∞`.
+* `TauCeti.classicalPrincipalSymbol_eq_inv_of_comp_sub_id_mem`,
+  `TauCeti.isClassicalElliptic_left_of_comp_sub_id_mem`,
+  `TauCeti.isClassicalElliptic_right_of_comp_sub_id_mem`: if `P ∘ Q - 1` has order `-1`, then `P`
+  and `Q` are elliptic with inverse principal symbols.
+* `TauCeti.isClassicalElliptic_iff_exists_comp_sub_id_mem_smoothingPseudodifferentialOperators`:
+  on a compact manifold, ellipticity is invertibility modulo operators of order `-∞`.
 
 ## References
 
@@ -225,14 +252,15 @@ private theorem exists_comp_sub_id_mem_of_comp_sub_id_mem_neg_one
       mul_assoc, show Q * P = 1 - L by simp [L], geom_sum_mul_neg, sub_sub_cancel_left]
     exact neg_mem (hpow hL N)
 
-/-- **Inverting the principal symbol.** On a compact manifold, an elliptic classical
-pseudodifferential operator `P` of order `m` has an inverse modulo operators of order `-1`: an
-operator `Q` of order `-m` with principal symbol `σ_m(P)⁻¹`. -/
+/-- **Inverting the principal symbol.** On a compact manifold, an elliptic operator `P` of order
+`m` has an inverse modulo operators of order `-1`: an operator `Q` of order `-m` with principal
+symbol `σ_m(P)⁻¹`. -/
 private theorem IsClassicalElliptic.exists_comp_sub_id_mem_neg_one [CompactSpace M]
-    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P) :
+    (hPe : IsClassicalElliptic m P) :
     ∃ Q ∈ classicalPseudodifferentialOperators (-m),
       P ∘ₗ Q - LinearMap.id ∈ classicalPseudodifferentialOperators (-1) ∧
       Q ∘ₗ P - LinearMap.id ∈ classicalPseudodifferentialOperators (-1) := by
+  have hP := hPe.mem_of_isProperlySupported (isProperlySupported_of_compactSpace P)
   have hPe' (x : M) (ξ) (hξ : ξ ≠ 0) : classicalPrincipalSymbol m P x ξ ≠ 0 :=
     isClassicalEllipticAt_iff.1 (isClassicalElliptic_iff.1 hPe x) ξ hξ
   obtain ⟨Q, hQ, -, hσQ⟩ := hPe.exists_classicalPrincipalSymbol_eq_inv
@@ -257,18 +285,142 @@ private theorem IsClassicalElliptic.exists_comp_sub_id_mem_neg_one [CompactSpace
   · have h := classicalPrincipalSymbol_comp hQ hP x ξ
     rwa [neg_add_cancel, hσQ, mul_comm] at h
 
-/-- **Parametrices of elliptic operators.** On a compact manifold `M`, let `P` be a classical
-pseudodifferential operator of order `m` that is elliptic: its principal symbol vanishes at no
-nonzero covector. For every `N : ℕ` there is a classical pseudodifferential operator `Q` of order
-`-m` that inverts `P` modulo operators of order `-N` on both sides: `P ∘ Q - 1` and `Q ∘ P - 1`
-are classical pseudodifferential operators of order `-N`. -/
+/-- **Parametrices of elliptic operators.** On a compact manifold `M`, let `P` be an elliptic
+operator of order `m`: its principal symbol of order `m` vanishes at no nonzero covector (so `P` is
+a classical pseudodifferential operator of order `m`,
+`TauCeti.IsClassicalElliptic.mem_of_isProperlySupported`). For every `N : ℕ` there is a classical
+pseudodifferential operator `Q` of order `-m` that inverts `P` modulo operators of order `-N` on
+both sides: `P ∘ Q - 1` and `Q ∘ P - 1` are classical pseudodifferential operators of order
+`-N`. -/
 theorem IsClassicalElliptic.exists_comp_sub_id_mem_classicalPseudodifferentialOperators
-    [CompactSpace M] (hP : P ∈ classicalPseudodifferentialOperators m)
-    (hPe : IsClassicalElliptic m P) (N : ℕ) :
+    [CompactSpace M] (hPe : IsClassicalElliptic m P) (N : ℕ) :
     ∃ Q ∈ classicalPseudodifferentialOperators (-m),
       P ∘ₗ Q - LinearMap.id ∈ classicalPseudodifferentialOperators (-N) ∧
       Q ∘ₗ P - LinearMap.id ∈ classicalPseudodifferentialOperators (-N) := by
-  obtain ⟨Q, hQ, hPQ, hQP⟩ := hPe.exists_comp_sub_id_mem_neg_one hP
+  obtain ⟨Q, hQ, hPQ, hQP⟩ := hPe.exists_comp_sub_id_mem_neg_one
   exact exists_comp_sub_id_mem_of_comp_sub_id_mem_neg_one hQ hPQ hQP N
+
+/-! ### The principal symbol of a parametrix -/
+
+section PrincipalSymbol
+
+variable (hP : P ∈ classicalPseudodifferentialOperators m)
+  (hQ : Q ∈ classicalPseudodifferentialOperators (-m))
+  (hPQ : P ∘ₗ Q - LinearMap.id ∈ classicalPseudodifferentialOperators (-1))
+
+include hP hQ hPQ
+
+/-- **The principal symbols of an operator and of a right parametrix are inverse.** If `P` has
+order `m`, `Q` has order `-m` and `P ∘ Q - 1` has order `-1`, then
+`σ_m(P)(x, ξ) σ_{-m}(Q)(x, ξ) = 1` at every nonzero covector `ξ ∈ T*ₓM`. -/
+theorem classicalPrincipalSymbol_mul_classicalPrincipalSymbol_of_comp_sub_id_mem {x : M}
+    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+    classicalPrincipalSymbol m P x ξ * classicalPrincipalSymbol (-m) Q x ξ = 1 := by
+  have h : P ∘ₗ Q = LinearMap.id + (P ∘ₗ Q - LinearMap.id) := by abel
+  rw [← classicalPrincipalSymbol_comp hP hQ, add_neg_cancel, h,
+    classicalPrincipalSymbol_add_of_mem_sub_one (by simpa using hPQ),
+    classicalPrincipalSymbol_id x hξ]
+
+/-- **The principal symbol of a right parametrix.** If `P` has order `m`, `Q` has order `-m` and
+`P ∘ Q - 1` has order `-1`, then `σ_{-m}(Q)(x, ξ) = σ_m(P)(x, ξ)⁻¹` for every covector `ξ`. At
+`ξ = 0` both sides vanish. -/
+theorem classicalPrincipalSymbol_eq_inv_of_comp_sub_id_mem (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol (-m) Q x ξ = (classicalPrincipalSymbol m P x ξ)⁻¹ := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · simp
+  · exact eq_inv_of_mul_eq_one_right
+      (classicalPrincipalSymbol_mul_classicalPrincipalSymbol_of_comp_sub_id_mem hP hQ hPQ hξ)
+
+/-- **An operator with a right parametrix is elliptic.** If `P` has order `m` and there is an
+operator `Q` of order `-m` such that `P ∘ Q - 1` has order `-1`, then `P` is elliptic. -/
+theorem isClassicalElliptic_left_of_comp_sub_id_mem : IsClassicalElliptic m P :=
+  isClassicalElliptic_iff.2 fun _ ↦ isClassicalEllipticAt_iff.2 fun _ hξ ↦
+    left_ne_zero_of_mul_eq_one
+      (classicalPrincipalSymbol_mul_classicalPrincipalSymbol_of_comp_sub_id_mem hP hQ hPQ hξ)
+
+/-- **A right parametrix is elliptic.** If `P` has order `m` and `Q` is an operator of order `-m`
+such that `P ∘ Q - 1` has order `-1`, then `Q` is elliptic. -/
+theorem isClassicalElliptic_right_of_comp_sub_id_mem : IsClassicalElliptic (-m) Q :=
+  isClassicalElliptic_iff.2 fun _ ↦ isClassicalEllipticAt_iff.2 fun _ hξ ↦
+    right_ne_zero_of_mul_eq_one
+      (classicalPrincipalSymbol_mul_classicalPrincipalSymbol_of_comp_sub_id_mem hP hQ hPQ hξ)
+
+end PrincipalSymbol
+
+/-! ### Parametrices modulo operators of order `-∞` -/
+
+/-- **Parametrices of elliptic operators.** On a compact manifold `M`, let `P` be an elliptic
+operator of order `m`: its principal symbol of order `m` vanishes at no nonzero covector (so `P` is
+a classical pseudodifferential operator of order `m`,
+`TauCeti.IsClassicalElliptic.mem_of_isProperlySupported`). Then there is a classical
+pseudodifferential operator `Q` of order `-m` that inverts `P` modulo operators of order `-∞` on
+both sides: `P ∘ Q - 1` and `Q ∘ P - 1` have order `-∞`.
+
+The parametrix `Q` is unique modulo operators of order `-∞`
+(`TauCeti.comp_sub_id_mem_and_comp_sub_id_mem_iff_sub_mem_smoothingPseudodifferentialOperators`),
+elliptic of order `-m` (`TauCeti.isClassicalElliptic_right_of_comp_sub_id_mem`) and its
+principal symbol is `σ_m(P)⁻¹` (`TauCeti.classicalPrincipalSymbol_eq_inv_of_comp_sub_id_mem`). -/
+theorem IsClassicalElliptic.exists_comp_sub_id_mem_smoothingPseudodifferentialOperators
+    [CompactSpace M] (hPe : IsClassicalElliptic m P) :
+    ∃ Q ∈ classicalPseudodifferentialOperators (-m),
+      P ∘ₗ Q - LinearMap.id ∈ smoothingPseudodifferentialOperators ∧
+      Q ∘ₗ P - LinearMap.id ∈ smoothingPseudodifferentialOperators := by
+  have hP := hPe.mem_of_isProperlySupported (isProperlySupported_of_compactSpace P)
+  obtain ⟨Q₀, hQ₀, hPQ₀, hQ₀P⟩ := hPe.exists_comp_sub_id_mem_neg_one
+  -- `P Q₀ = 1 - R` and `Q₀ P = 1 - L` with `R`, `L` of order `-1`. The Neumann series inverts
+  -- `1 - R` on the right by `S` and `1 - L` on the left by `S'`, modulo order `-∞`.
+  obtain ⟨S, hS, hS₁, -⟩ := exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators
+    (R := LinearMap.id - P ∘ₗ Q₀) (by simpa using neg_mem hPQ₀)
+  obtain ⟨S', hS', -, hS'₁⟩ := exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators
+    (R := LinearMap.id - Q₀ ∘ₗ P) (by simpa using neg_mem hQ₀P)
+  -- So `Q₀ S` is a right parametrix and `S' Q₀` a left parametrix; hence both are two-sided.
+  have hR : Q₀ ∘ₗ S ∈ classicalPseudodifferentialOperators (-m) := by
+    simpa using comp_mem_classicalPseudodifferentialOperators hQ₀ hS
+  have hL : S' ∘ₗ Q₀ ∈ classicalPseudodifferentialOperators (-m) := by
+    simpa using comp_mem_classicalPseudodifferentialOperators hS' hQ₀
+  have hPR : P ∘ₗ (Q₀ ∘ₗ S) - LinearMap.id ∈ smoothingPseudodifferentialOperators := by
+    simpa [Module.End.mul_eq_comp, Module.End.one_eq_id, LinearMap.comp_assoc] using hS₁
+  have hLP : (S' ∘ₗ Q₀) ∘ₗ P - LinearMap.id ∈ smoothingPseudodifferentialOperators := by
+    simpa [Module.End.mul_eq_comp, Module.End.one_eq_id, LinearMap.comp_assoc] using hS'₁
+  exact ⟨Q₀ ∘ₗ S, hR, hPR,
+    right_comp_sub_id_mem_smoothingPseudodifferentialOperators hL hR hLP hPR hP⟩
+
+/-- **Ellipticity is invertibility modulo operators of order `-∞`.** On a compact manifold, a
+classical pseudodifferential operator `P` of order `m` is elliptic exactly when it has a two-sided
+parametrix of order `-m`: an operator `Q` of order `-m` with `P ∘ Q - 1` and `Q ∘ P - 1` of order
+`-∞`. -/
+theorem isClassicalElliptic_iff_exists_comp_sub_id_mem_smoothingPseudodifferentialOperators
+    [CompactSpace M] (hP : P ∈ classicalPseudodifferentialOperators m) :
+    IsClassicalElliptic m P ↔ ∃ Q ∈ classicalPseudodifferentialOperators (-m),
+      P ∘ₗ Q - LinearMap.id ∈ smoothingPseudodifferentialOperators ∧
+      Q ∘ₗ P - LinearMap.id ∈ smoothingPseudodifferentialOperators :=
+  ⟨fun hPe ↦ hPe.exists_comp_sub_id_mem_smoothingPseudodifferentialOperators,
+    fun ⟨_, hQ, hPQ, _⟩ ↦ isClassicalElliptic_left_of_comp_sub_id_mem hP hQ
+      (smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators _ hPQ)⟩
+
+/-- **Parametrices are unique modulo operators of order `-∞`.** Let `Q` be a two-sided parametrix
+of a classical pseudodifferential operator `P` modulo operators of order `-∞`. A classical
+pseudodifferential operator `Q'` is also a two-sided parametrix of `P` exactly when `Q' - Q` has
+order `-∞`. -/
+theorem comp_sub_id_mem_and_comp_sub_id_mem_iff_sub_mem_smoothingPseudodifferentialOperators
+    {m' m'' : ℝ} {Q' : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m')
+    (hQ' : Q' ∈ classicalPseudodifferentialOperators m'')
+    (hPQ : P ∘ₗ Q - LinearMap.id ∈ smoothingPseudodifferentialOperators)
+    (hQP : Q ∘ₗ P - LinearMap.id ∈ smoothingPseudodifferentialOperators) :
+    (P ∘ₗ Q' - LinearMap.id ∈ smoothingPseudodifferentialOperators ∧
+      Q' ∘ₗ P - LinearMap.id ∈ smoothingPseudodifferentialOperators) ↔
+      Q' - Q ∈ smoothingPseudodifferentialOperators := by
+  refine ⟨fun ⟨_, hQ'P⟩ ↦
+    sub_mem_smoothingPseudodifferentialOperators_of_comp_sub_id hQ' hQ hQ'P hPQ, fun h ↦ ⟨?_, ?_⟩⟩
+  · rw [show P ∘ₗ Q' - LinearMap.id = (P ∘ₗ Q - LinearMap.id) + P ∘ₗ (Q' - Q) by
+      ext u : 1; simp]
+    exact add_mem hPQ (comp_mem_smoothingPseudodifferentialOperators_of_right hP h)
+  · rw [show Q' ∘ₗ P - LinearMap.id = (Q ∘ₗ P - LinearMap.id) + (Q' - Q) ∘ₗ P by
+      ext u : 1; simp]
+    exact add_mem hQP (comp_mem_smoothingPseudodifferentialOperators_of_left h hP)
 
 end TauCeti

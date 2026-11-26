@@ -9,11 +9,12 @@ public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
 import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
-# The adjacency, degree and Laplacian matrices: coefficients and edge-disjoint unions
+# The adjacency, degree and Laplacian matrices
 
 The adjacency matrix `G.adjMatrix R` and the degree matrix `G.degMatrix R` of a simple graph have
 entries built from `0`, `1` and natural-number casts, so applying a coefficient map entrywise
-gives the same matrix over the target ring.
+gives the same matrix over the target ring. The entries of the square of the adjacency matrix
+count common neighbours.
 
 The adjacency, degree and Laplacian matrices are additive over the union `G ⊔ H` of two
 edge-disjoint graphs on one vertex type. Consequently, for `G ≤ H` the Laplacian of the graph
@@ -26,6 +27,8 @@ spectra under adding edges rest on this decomposition.
   and `1` to `1`.
 * `SimpleGraph.degMatrix_map`: the degree matrix is preserved by any additive map sending `1`
   to `1`.
+* `SimpleGraph.adjMatrix_sq_apply`: the `(v, w)` entry of `A²` is the number of common neighbours
+  of `v` and `w`.
 * `SimpleGraph.adjMatrix_sup_of_disjoint`, `SimpleGraph.degMatrix_sup_of_disjoint`,
   `SimpleGraph.lapMatrix_sup_of_disjoint`: the matrices of the union of two edge-disjoint graphs
   are the sums of their matrices.
@@ -54,6 +57,16 @@ theorem degMatrix_map [AddMonoidWithOne R] [AddMonoidWithOne S] [AddMonoidHomCla
     (G.degMatrix R).map f = G.degMatrix S := by
   ext v w
   simp [degMatrix, diagonal_apply, apply_ite f, map_natCast' f (map_one f)]
+
+/-- The `(v, w)` entry of the square of the adjacency matrix is the number of common neighbours
+of `v` and `w`; on the diagonal this is the degree of `v`. -/
+theorem adjMatrix_sq_apply [Fintype V] [DecidableEq V] [Semiring R] (v w : V) :
+    (G.adjMatrix R ^ 2) v w = Fintype.card (G.commonNeighbors v w) := by
+  rw [sq, adjMatrix_mul_apply, Fintype.card_subtype]
+  simp only [adjMatrix_apply, Finset.sum_boole]
+  congr 2
+  ext u
+  simp [commonNeighbors, adj_comm]
 
 /-! ### Edge-disjoint unions -/
 

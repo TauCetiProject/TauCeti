@@ -121,11 +121,7 @@ theorem unipotentRadicalDefiningIdeal_eq_augmentation_of_finite_kernel
       (geometricallyConnected_unipotentRadical H)
   have hbot := HopfIdeal.augmentation_eq_bot_of_moduleFinite
     (k := k) (H := unipotentRadical H)
-  have h := congrArg (fun I : HopfIdeal k (unipotentRadical H) ↦
-    I.comapOfSurjective (CommHopfAlgCat.mkQuotient H.obj (unipotentRadicalDefiningIdeal H)).hom
-      (CommHopfAlgCat.mkQuotient_surjective _ _)) hbot
-  simpa only [HopfIdeal.comapOfSurjective_augmentation, HopfIdeal.comapOfSurjective_bot,
-    CommHopfAlgCat.hom_mkQuotient, HopfIdeal.kerOfSurjective_mkBialgHom] using h.symm
+  exact (HopfIdeal.augmentation_quotient_eq_bot_iff (unipotentRadicalDefiningIdeal H)).mp hbot
 
 end FiniteTypeCommHopfAlgCat
 

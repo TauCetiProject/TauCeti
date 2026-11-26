@@ -24,7 +24,7 @@ linearized Floer operator is the translation-invariant operator
 `D_u = ∂s + J_t(x(t)) (∂t - S_t)`,  `S_t = dX_{H_t}(x(t))`,
 
 and its realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)`
-(`TauCeti.SymplecticForm.floerSobolevOperator`) is injective as soon as the structures
+(`TauCeti.SymplecticForm.floerSobolevOperator 2`) is injective as soon as the structures
 `J_t(x(t))` are `ω`-compatible
 (`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt`). This file
 proves that it is onto, hence an isomorphism of Banach spaces: the invertible block of a stationary
@@ -167,7 +167,7 @@ finite-dimensional complex inner product space, carrying `Im ⟪·, ·⟫` to `�
 `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator is onto. -/
 theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).range = ⊤ := by
   have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
   have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by norm_num)
@@ -226,7 +226,7 @@ the realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the lin
 stationary cylinder `u(s, t) = x(t)` is an isomorphism of Banach spaces. -/
 theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   ⟨.ofBijective _ (ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt ω hX
       (hH.of_le (by norm_num)) hx (continuous_toContinuousLinearMap_of_frame hΦ hΦi hΦJ)
@@ -259,7 +259,7 @@ operator is onto. This is the case of the identity frame of
 theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).range = ⊤ :=
   range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp
@@ -279,7 +279,7 @@ identity frame of
 theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp
@@ -320,7 +320,7 @@ theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatibl
     (hJx₂ : ContDiff ℝ 2 fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap)
     (hJxp : Periodic (fun t ↦ J t (x t)) 1)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, E) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   -- The frame of `J_t(x(t))` is `Ψ_t Φ`, for the unitary frames `Ψ_t` of the loop.
   isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp

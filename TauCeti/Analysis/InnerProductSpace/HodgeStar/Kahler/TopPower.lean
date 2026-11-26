@@ -106,16 +106,11 @@ theorem wedgePow_apply_complexRealFrame_relEigenvectorBasis {n : ℕ} (hn : finr
         ((isSymm_hermitianSesqForm hα).relEigenvectorBasis hn)) =
       n.factorial * ∏ j, (isSymm_hermitianSesqForm hα).relEigenvalues hn j := by
   set u := (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn
-  have hH (i j : Fin n) : α.hermitianForm (u i) (u j) =
-      if i = j then ((isSymm_hermitianSesqForm hα).relEigenvalues hn i : ℂ) else 0 := by
-    rw [← hermitianSesqForm_apply hα]
-    exact (isSymm_hermitianSesqForm hα).apply_relEigenvectorBasis hn i j
   rw [complexRealFrame_def]
-  refine wedgePow_apply_finProdFinEquiv_eq_mul_prod α
+  exact wedgePow_apply_finProdFinEquiv_eq_mul_prod α
     (fun p : Fin n × Fin 2 ↦ ![u p.1, ofComplexModule E (u p.1)] p.2)
-    ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (fun i j ↦ ?_) (fun i j ↦ ?_)
-  · simpa [← im_hermitianForm, apply_ite] using congrArg Complex.im (hH i j)
-  · simpa [ofComplexModule_apply, ← re_hermitianForm, apply_ite] using congrArg Complex.re (hH i j)
+    ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (apply_relEigenvectorBasis_eq_zero hα hn)
+    (apply_relEigenvectorBasis_ofComplexModule hα hn)
 
 /-- **The top power of a (1,1)-form**: on a complex inner product space of dimension `n`, with
 `ω` the Kähler form of multiplication by `i`, a real two-form `α` of type (1,1) satisfies
@@ -125,12 +120,9 @@ theorem wedgePow_ofComplexModule {n : ℕ} (hn : finrank ℂ E = n) :
     α.wedgePow n = (∏ j, (isSymm_hermitianSesqForm hα).relEigenvalues hn j) •
       (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n := by
   set u := (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn
-  have huR : Orthonormal ℝ (u : Fin n → E) := u.orthonormal.real
-  have hJu (i j : Fin n) : inner ℝ ((ofComplexModule E) (u i)) (u j) = 0 := by
-    rw [ofComplexModule_apply]
-    exact (huR.complex_iff_forall_real_inner_I_smul_eq_zero).1 u.orthonormal i j
   rw [eq_smul_kahlerPowerForm real_inner_ofComplexModule_ofComplexModule
-      (by rw [finrank_real_of_complex, hn]) huR hJu (α.wedgePow n),
+      (by rw [finrank_real_of_complex, hn]) u.orthonormal.real
+      u.orthonormal.real_inner_ofComplexModule_eq_zero (α.wedgePow n),
     wedgePow_apply_complexRealFrame_relEigenvectorBasis hα hn,
     kahlerPowerForm_def, smul_smul]
   congr 1

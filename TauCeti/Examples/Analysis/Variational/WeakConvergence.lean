@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 public import TauCeti.Examples.Analysis.Variational.WeakLowerSemicontinuity
-public import TauCeti.Topology.Algebra.Module.WeakSpace
+public import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # Checks: weakly convergent sequences of unit vectors in `ℓ²`

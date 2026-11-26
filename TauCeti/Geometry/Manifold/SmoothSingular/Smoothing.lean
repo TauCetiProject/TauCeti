@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Countable
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
+public import TauCeti.Geometry.Manifold.SmoothSingular.MayerVietoris
 
 import TauCeti.Algebra.Homology.DerivedCategory.KProjective
 import TauCeti.Algebra.Homology.Homotopy
@@ -18,7 +19,6 @@ import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
 import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
-import TauCeti.Geometry.Manifold.SmoothSingular.MayerVietoris
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Topology.MayerVietoris
 
@@ -79,10 +79,12 @@ to a chosen chain homotopy (`TauCeti.smoothSingularChainHomotopyEquivInvNaturali
   the chain homotopy witnessing naturality of its inverse.
 * `TauCeti.smoothSingularCochainHomotopyEquiv`,
   `TauCeti.quasiIso_cochainComplexMap_smoothSingularSubcomplex_ι`,
+  `TauCeti.quasiIso_cochainComplexMap_smallSmoothSingularSubcomplex_ι`,
   `TauCeti.smoothSingularCohomologyIso`, and
   `TauCeti.homologyMap_smoothSingularCochainHomotopyEquiv_inv`: the induced cochain homotopy
-  equivalence, cochain quasi-isomorphism, cohomology isomorphism, and compatibility of the cochain
-  inverse with `smoothSingularCohomologyIso`.
+  equivalence, cochain quasi-isomorphisms (also onto the smooth singular simplices subordinate to
+  an open cover), cohomology isomorphism, and compatibility of the cochain inverse with
+  `smoothSingularCohomologyIso`.
 
 ## References
 
@@ -409,6 +411,26 @@ instance quasiIso_cochainComplexMap_smoothSingularSubcomplex_ι :
       (smoothSingularSubcomplex I M).ι) := by
   rw [← smoothSingularCochainHomotopyEquiv_hom I M R k Y]
   exact (smoothSingularCochainHomotopyEquiv I M R k Y).quasiIso_hom
+
+/-- Restriction from singular cochains to the cochains of the smooth singular simplices
+subordinate to an open cover `U` of `M` is a quasi-isomorphism when the chain coefficient object
+`R` is projective. It is restriction to smooth singular chains, a quasi-isomorphism by the smoothing
+theorem, followed by restriction from smooth to small smooth singular chains, a cochain homotopy
+equivalence by the small-chain theorem (`TauCeti.subcomplexSmallChainHomotopyEquiv`). -/
+theorem quasiIso_cochainComplexMap_smallSmoothSingularSubcomplex_ι {ι : Type*} (U : ι → Set M)
+    (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ) :
+    QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := Y)
+      (smallSmoothSingularSubcomplex I U).ι) := by
+  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := Y)
+      (SSet.Subcomplex.homOfLE (inf_le_left :
+        smoothSingularSubcomplex I M ⊓ (TopCat.of M).smallSingularSubcomplex U ≤ _))) := by
+    have := ((subcomplexSmallChainHomotopyEquiv R (smoothSingularSubcomplex I M) U hU
+      hcov).linearYonedaFunctorMap k Y).quasiIso_hom
+    rwa [HomotopyEquiv.linearYonedaFunctorMap_hom, subcomplexSmallChainHomotopyEquiv_hom] at this
+  rw [smallSmoothSingularSubcomplex_eq, ← SSet.Subcomplex.homOfLE_ι (inf_le_left :
+    smoothSingularSubcomplex I M ⊓ (TopCat.of M).smallSingularSubcomplex U ≤ _),
+    SSet.cochainComplexMap_comp]
+  exact quasiIso_comp _ _
 
 variable {I M J N} in
 /-- **Naturality up to cochain homotopy of the dual smoothing inverse.** For any smooth map

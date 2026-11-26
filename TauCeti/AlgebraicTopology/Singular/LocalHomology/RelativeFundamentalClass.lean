@@ -159,19 +159,6 @@ variable {X M : Type w} {N : Type*} [TopologicalSpace X] [TopologicalSpace N] {�
 
 variable [TopologicalSpace M]
 
-section CollarInterior
-
-variable (hι : IsOpenEmbedding ι) {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCollar f c)
-  (hιf : range ι = (range f)ᶜ)
-include hι hc hιf
-
-private lemma isCompact_preimage_compl_collarPart [CompactSpace X] {t : ℝ} (ht : 0 < t) :
-    IsCompact (ι ⁻¹' (collarPart c t)ᶜ) :=
-  hι.isInducing.isCompact_preimage' (hc.isOpen_collarPart t).isClosed_compl.isCompact
-    (hc.compl_collarPart_subset_range hιf ht)
-
-end CollarInterior
-
 variable [T1Space X] [CompactSpace X] [T2Space M] {E : Type w} [NormedAddCommGroup E]
   [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ} (hn : finrank ℝ E = n)
   (hι : IsOpenEmbedding ι) (hιf : range ι = (range f)ᶜ)
@@ -188,7 +175,7 @@ private lemma exists_localHomologyRestriction_compl_collarPart_eq {c : N × Ico 
       ∀ x (hx : ι x ∈ (collarPart c t)ᶜ), localHomologyRestriction R (singleton_subset_iff.2 hx) n
         β = (localHomologyIsoOfIsOpenEmbedding R hι x n).hom (α x) := by
   obtain ⟨δ, hδ, -⟩ := existsUnique_localHomologyRestriction_eq_of_invariant R hn
-    (isCompact_preimage_compl_collarPart hι hc hιf ht) α hα
+    (hc.isCompact_preimage_compl_collarPart hι.isInducing hιf ht) α hα
   refine ⟨localHomologyMap R ⟨ι, hι.continuous⟩ (subset_refl _) n δ, fun x hx ↦ ?_⟩
   rw [localHomologyMap_comp_localHomologyRestriction_singleton_apply _ hι _ hx, hδ x hx]
 
@@ -222,7 +209,8 @@ theorem existsUnique_localHomologyRestriction_range_eq_of_invariant (hf : IsColl
         localHomologyRestriction R (singleton_subset_iff.2 hx) n γ =
           localHomologyRestriction R (singleton_subset_iff.2 hx) n γ') : γ = γ' :=
     localHomology_ext_of_isOpenEmbedding R hn hι (hc.isOpen_collarPart t).isClosed_compl
-      (hc.compl_collarPart_subset_range hιf ht) (isCompact_preimage_compl_collarPart hι hc hιf ht) h
+      (hc.compl_collarPart_subset_range hιf ht)
+      (hc.isCompact_preimage_compl_collarPart hι.isInducing hιf ht) h
   -- Work at depth `1 / 2`, where `r : Hₙ(X, ∂X) ⟶ Hₙ(X, X ∖ K₁/₂)` is an isomorphism.
   have h₂ : (0 : ℝ) < 1 / 2 := by norm_num
   set r := localHomologyRestriction R (hc.compl_collarPart_subset_range hιf h₂) n

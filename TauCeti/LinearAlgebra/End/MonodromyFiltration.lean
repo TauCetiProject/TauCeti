@@ -431,7 +431,7 @@ variable [Ring R] [AddCommGroup V] [Module R V] (N : Module.End R V) {F : ℤ �
 endomorphism `N` lowering `F` by two steps. -/
 noncomputable def gradedPieceMap (hF : ∀ a, (F a).map N ≤ F (a - 2)) (a : ℤ) :
     GradedPiece F a →ₗ[R] GradedPiece F (a - 2) :=
-  GradedPiece.map N (map_le_iff_le_comap.1 (hF a))
+  GradedPiece.mapOfLE N (map_le_iff_le_comap.1 (hF a))
     (map_le_iff_le_comap.1 ((hF (a - 1)).trans_eq (by rw [sub_right_comm])))
 
 section gradedPieceMap
@@ -444,7 +444,7 @@ theorem gradedPieceMap_mk {a : ℤ} (x : F a) :
     N.gradedPieceMap hF a (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk ⟨N x, map_le_iff_le_comap.1 (hF a) x.property⟩ := by
   unfold gradedPieceMap
-  exact GradedPiece.map_mk _ _ _ x
+  exact GradedPiece.mapOfLE_mk _ _ _ x
 
 variable (N) in
 /-- The primitive part `P_a = ker (N : gr_a → gr_{a - 2})` of the graded piece `gr_a`, in the lower
@@ -591,8 +591,8 @@ theorem primitivePart_eq_bot_of_lt (hF : N.IsMonodromyFiltration c F) {a : ℤ} 
 theorem gradedPiece_map_pow_bijective (hF : N.IsMonodromyFiltration c F) (r : ℕ)
     (h : F (c + r) ≤ (F (c - r)).comap (N ^ r))
     (h' : F (c + r - 1) ≤ (F (c - r - 1)).comap (N ^ r)) :
-    Function.Bijective (GradedPiece.map (N ^ r) h h') := by
-  rw [Function.Bijective, GradedPiece.map_injective_iff, GradedPiece.map_surjective_iff,
+    Function.Bijective (GradedPiece.mapOfLE (N ^ r) h h') := by
+  rw [Function.Bijective, GradedPiece.mapOfLE_injective_iff, GradedPiece.mapOfLE_surjective_iff,
     hF.inf_comap_pow, hF.map_pow_sup]
   exact ⟨le_rfl, le_rfl⟩
 
@@ -600,7 +600,7 @@ theorem gradedPiece_map_pow_bijective (hF : N.IsMonodromyFiltration c F) (r : �
 `F` has image the primitive part `P_a`. -/
 private theorem range_gradedPiece_map_id_eq_primitivePart (hF : N.IsMonodromyFiltration c F)
     (a : ℤ) :
-    LinearMap.range (GradedPiece.map (F := fun b => LinearMap.ker N ⊓ F b) LinearMap.id
+    LinearMap.range (GradedPiece.mapOfLE (F := fun b => LinearMap.ker N ⊓ F b) LinearMap.id
       (p := a) (q := a) (inf_le_right.trans_eq (comap_id _).symm)
       (inf_le_right.trans_eq (comap_id _).symm)) = N.primitivePart hF.map_le a := by
   ext z
@@ -609,7 +609,7 @@ private theorem range_gradedPiece_map_id_eq_primitivePart (hF : N.IsMonodromyFil
   constructor
   · rintro ⟨w, hw⟩
     induction w using Submodule.Quotient.induction_on with | _ x
-    rw [GradedPiece.map_mk, GradedPiece.mk_eq_mk_iff, Subtype.coe_mk, LinearMap.id_apply] at hw
+    rw [GradedPiece.mapOfLE_mk, GradedPiece.mk_eq_mk_iff, Subtype.coe_mk, LinearMap.id_apply] at hw
     have hx := mem_comap.1 (mem_inf.1
       ((hF.ker_inf_sup_eq_inf_comap a).le (mem_sup_left x.property))).2
     rw [show (y : V) = x - (x - y) by abel, map_sub]
@@ -618,7 +618,7 @@ private theorem range_gradedPiece_map_id_eq_primitivePart (hF : N.IsMonodromyFil
     obtain ⟨x, hx, w, hw, hxw⟩ :=
       mem_sup.1 ((hF.ker_inf_sup_eq_inf_comap a).ge ⟨y.property, hNy⟩)
     refine ⟨Submodule.Quotient.mk ⟨x, hx⟩, ?_⟩
-    rw [GradedPiece.map_mk, GradedPiece.mk_eq_mk_iff, ← hxw]
+    rw [GradedPiece.mapOfLE_mk, GradedPiece.mk_eq_mk_iff, ← hxw]
     simpa using hw
 
 /-- For a monodromy filtration, the graded pieces of the filtration `ker N ⊓ F` induced on the
@@ -626,7 +626,7 @@ kernel of `N` are the primitive parts: `gr_a (ker N) ≅ P_a`, the class of `x �
 going to its class in `gr_a`. -/
 noncomputable def gradedPieceKerEquiv (hF : N.IsMonodromyFiltration c F) (a : ℤ) :
     GradedPiece (fun b => LinearMap.ker N ⊓ F b) a ≃ₗ[R] N.primitivePart hF.map_le a :=
-  (LinearEquiv.ofInjective _ ((GradedPiece.map_injective_iff _ _ _).2 fun _ hx => by
+  (LinearEquiv.ofInjective _ ((GradedPiece.mapOfLE_injective_iff _ _ _).2 fun _ hx => by
     rw [comap_id] at hx
     exact mem_inf.2 ⟨(mem_inf.1 (mem_inf.1 hx).1).1, (mem_inf.1 hx).2⟩)).trans
     (LinearEquiv.ofEq _ _ (hF.range_gradedPiece_map_id_eq_primitivePart a))
@@ -639,7 +639,7 @@ theorem coe_gradedPieceKerEquiv_mk (hF : N.IsMonodromyFiltration c F) {a : ℤ}
       Submodule.Quotient.mk ⟨x, x.property.2⟩ := by
   rw [gradedPieceKerEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
     LinearEquiv.ofInjective_apply]
-  exact GradedPiece.map_mk (F := fun b => LinearMap.ker N ⊓ F b) _ _ _ x
+  exact GradedPiece.mapOfLE_mk (F := fun b => LinearMap.ker N ⊓ F b) _ _ _ x
 
 end IsMonodromyFiltration
 
