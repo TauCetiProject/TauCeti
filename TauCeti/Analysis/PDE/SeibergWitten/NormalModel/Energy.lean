@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.PDE.Vortex.SpectralGap
 import TauCeti.MeasureTheory.Function.Lp.Slice
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Topology.Algebra.Support
 
 /-!
@@ -537,13 +538,6 @@ private theorem integrable_parts_familyNormalModel (hx : Continuous x) (hΞ : Co
       (.of_forall fun p ↦ by rw [Real.norm_of_nonneg (hb p)]; linarith [ha p, hd p])
   exact ⟨hai, hbi, ((hR.sub hai).sub hbi).congr (.of_forall fun p ↦ by
     simp only [Pi.sub_apply]; ring)⟩
-
-/-- Integrating a slicewise bound `c F w ≤ ∫ g (w, z) dz` over the base. -/
-private theorem mul_integral_le_integral_prod_of_forall {F : ℂ → ℝ} {g : ℂ × ℂ → ℝ} {c : ℝ}
-    (hF : Integrable F μ) (hg : Integrable g (μ.prod ν)) (h : ∀ w, c * F w ≤ ∫ z, g (w, z) ∂ν) :
-    c * ∫ w, F w ∂μ ≤ ∫ p, g p ∂μ.prod ν := by
-  rw [integral_prod _ hg, ← integral_const_mul]
-  exact integral_mono (hF.const_mul c) hg.integral_prod_left h
 
 /-- Integrating a lower bound `c ∫ |η|² ≤ ∫ |L_x* η|²` along the normal slices bounds the paired
 family: `c ∫ |Η|² ≤ ∫ |L_x* Η|²`. -/
