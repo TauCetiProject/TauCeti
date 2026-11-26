@@ -98,6 +98,13 @@ theorem freeClassIndex_exists_eq
     ((LinearMap.range f.val).toAddSubgroup.index : ℕ∞))
   exact ⟨f.val, f.property.1, f.property.2, hf.trans (freeClassIndex_def R e M).symm⟩
 
+private theorem index_range_comp_addEquiv {A B C D : Type*}
+    [AddGroup A] [AddGroup B] [AddGroup C] [AddGroup D]
+    (a : A ≃+ B) (f : B →+ C) (b : C ≃+ D) :
+    (((b : C →+ D).comp f).comp (a : A →+ B)).range.index = f.range.index := by
+  simp only [AddMonoidHom.range_comp, AddEquiv.range_eq_top, AddSubgroup.map_top,
+    AddSubgroup.index_map_equiv]
+
 private theorem freeClassIndex_le_semilinearEquiv {S : Type*} [Ring S] {N : Type*}
     [AddCommGroup N] [Module S N] {σ : R →+* S} {τ : S →+* R}
     [RingHomInvPair σ τ] [RingHomInvPair τ σ] (a : M ≃ₛₗ[σ] N) :
@@ -110,11 +117,9 @@ private theorem freeClassIndex_le_semilinearEquiv {S : Type*} [Ring S] {N : Type
   let g : (Fin e → S) →ₗ[S] N := h.comp c.toLinearMap
   have hi : (LinearMap.range g).toAddSubgroup.index =
       (LinearMap.range f.val).toAddSubgroup.index := by
-    dsimp only [g]
-    rw [LinearEquiv.range_comp, LinearMap.range_toAddSubgroup, LinearMap.range_toAddSubgroup]
-    dsimp only [h]
-    rw [LinearMap.toAddMonoidHom_comp, AddMonoidHom.range_comp]
-    exact AddSubgroup.index_map_equiv _ a.toAddEquiv
+    simpa only [g, h, LinearMap.range_toAddSubgroup, LinearMap.toAddMonoidHom_comp,
+      LinearEquiv.toAddMonoidHom_commutes, AddEquiv.toAddMonoidHom_eq_coe] using
+      index_range_comp_addEquiv c.toAddEquiv f.val.toAddMonoidHom a.toAddEquiv
   simpa only [hi] using freeClassIndex_le g
     (a.injective.comp (f.property.1.comp c.injective)) (hi ▸ f.property.2)
 

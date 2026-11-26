@@ -86,53 +86,43 @@ theorem classIndex_zero : O.classIndex 0 = 1 := by
     exact (Module.one_le_freeClassIndex (R := O) (e := 0) (M := M)).trans
       (le_iSup_of_le M (le_iSup_of_le hM le_rfl))
 
+section Transport
+
+-- Use the inverse-pair instances locally when mapping submodules by the transport equivalence.
+attribute [local instance] RingHomInvPair.of_ringEquiv
+
 /-- Coordinate transport over the image order preserves and reflects full lattices after
 restriction to the integers. -/
 theorem isFullLattice_map_piCongrRightₛₗ_iff {E : Type*} [Ring E] [Algebra ℚ E]
     {ι : Type*} (f : D ≃ₐ[ℚ] E) (M : Submodule O (ι → D)) :
-    let r := ((f.restrictScalars ℤ).subalgebraMap O).toRingEquiv
-    have := RingHomInvPair.of_ringEquiv r
-    have := RingHomInvPair.symm (r : O →+* O.map (f.restrictScalars ℤ).toAlgHom)
-      (r.symm : O.map (f.restrictScalars ℤ).toAlgHom →+* O)
-    let a := LinearEquiv.piCongrRightₛₗ
-      (fun _ : ι => O.equivMapSemilinear (f.restrictScalars ℤ))
-    ((M.map a.toLinearMap).restrictScalars ℤ).IsFullLattice ℚ ↔
+    Submodule.IsFullLattice ℚ
+      ((M.map (O.equivMapPiSemilinear (f.restrictScalars ℤ) ι).toLinearMap).restrictScalars ℤ) ↔
       (M.restrictScalars ℤ).IsFullLattice ℚ := by
-  let r := ((f.restrictScalars ℤ).subalgebraMap O).toRingEquiv
-  have := RingHomInvPair.of_ringEquiv r
-  have := RingHomInvPair.symm (r : O →+* O.map (f.restrictScalars ℤ).toAlgHom)
-    (r.symm : O.map (f.restrictScalars ℤ).toAlgHom →+* O)
-  let a := LinearEquiv.piCongrRightₛₗ
-    (fun _ : ι => O.equivMapSemilinear (f.restrictScalars ℤ))
+  let a := O.equivMapPiSemilinear (f.restrictScalars ℤ) ι
   let c := LinearEquiv.piCongrRight (fun _ : ι => f.toLinearEquiv)
   have heq : (M.map a.toLinearMap).restrictScalars ℤ =
       (M.restrictScalars ℤ).map (c.toLinearMap.restrictScalars ℤ) := by
     have h_apply (x : ι → D) : a.toLinearMap x = c.toLinearMap x := by
       funext i
-      simp only [a, c, LinearEquiv.coe_coe, LinearEquiv.piCongrRightₛₗ_apply,
-        equivMapSemilinear_apply, LinearEquiv.piCongrRight_apply,
+      simp only [a, c, LinearEquiv.coe_coe, equivMapPiSemilinear_apply,
+        LinearEquiv.piCongrRight_apply,
         AlgEquiv.toLinearEquiv_apply, AlgEquiv.restrictScalars_apply]
     ext x
     simp only [Submodule.restrictScalars_mem, Submodule.mem_map,
       LinearMap.restrictScalars_apply, h_apply]
-  -- Reduce the local transport bindings in the statement to the named maps above.
-  change ((M.map a.toLinearMap).restrictScalars ℤ).IsFullLattice ℚ ↔ _
   rw [heq, Submodule.isFullLattice_map_iff]
 
 /-- Transporting an order by a rational algebra equivalence preserves its class index. -/
 theorem classIndex_map {E : Type*} [Ring E] [Algebra ℚ E] (f : D ≃ₐ[ℚ] E) :
     (O.map (f.restrictScalars ℤ).toAlgHom).classIndex e = O.classIndex e := by
-  let r := ((f.restrictScalars ℤ).subalgebraMap O).toRingEquiv
-  have := RingHomInvPair.of_ringEquiv r
-  have := RingHomInvPair.symm (r : O →+* O.map (f.restrictScalars ℤ).toAlgHom)
-    (r.symm : O.map (f.restrictScalars ℤ).toAlgHom →+* O)
-  let a := LinearEquiv.piCongrRightₛₗ
-    (fun _ : Fin e => O.equivMapSemilinear (f.restrictScalars ℤ))
+  let a := O.equivMapPiSemilinear (f.restrictScalars ℤ) (Fin e)
   rw [classIndex_def, classIndex_def]
   rw [← (Submodule.orderIsoMapComapOfBijective a.toLinearMap a.bijective).toEquiv.iSup_comp]
   refine iSup_congr fun M => ?_
   exact iSup_congr_Prop (O.isFullLattice_map_piCongrRightₛₗ_iff f M) fun _ =>
     (Module.freeClassIndex_equiv (a.submoduleMap M)).symm
+
+end Transport
 
 end Subalgebra
 
@@ -178,8 +168,8 @@ theorem IsOrder.exists_injective_index_ne_zero (hO : IsOrder ℚ O)
     rw [Units.smul_def, Units.val_mk0, Int.cast_smul_eq_zsmul]
   have hP (x : Fin e → D) : x ∈ P ↔ ∃ y ∈ N, n • y = x := by
     exact (Submodule.mem_smul_pointwise_iff_exists x u N).trans (by simp only [hu])
-  -- The map `f` was constructed by scaling `g` and bundling the result in `M`.
-  have hf_apply (y : Fin e → O) : (f y : Fin e → D) = n • g y := rfl
+  have hf_apply (y : Fin e → O) : (f y : Fin e → D) = n • g y := by
+    exact (LinearMap.codRestrict_apply M (n • g) y).trans (LinearMap.smul_apply n g y)
   have hgroup : (LinearMap.range f).toAddSubgroup =
       P.toAddSubgroup.comap (M.subtype.toAddMonoidHom) := by
     ext x
