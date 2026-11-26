@@ -23,8 +23,9 @@ where `σₐ` are the Pauli matrices, that is, the isomorphism
 `TauCeti.suTwoEquiv : ℝ³ ≃ 𝔰𝔲(2)`, `x ↦ -(i/2) (x₀ σ₁ + x₁ σ₂ + x₂ σ₃)`. In this basis:
 
 * the bracket is the cross product, `⁅suTwoEquiv x, suTwoEquiv y⁆ = suTwoEquiv (x ⨯₃ y)`
-  (`TauCeti.lie_suTwoEquiv`), so `𝔰𝔲(2)` is isomorphic to `so(3)` with `-iσₐ/2` corresponding
-  to the infinitesimal rotation about the `a`-th axis (`TauCeti.suTwoLieEquivSoThree`);
+  (`TauCeti.lie_suTwoEquiv`), so `𝔰𝔲(2)` is not abelian (`TauCeti.SU2.not_isLieAbelian_lieAlgebra`)
+  and is isomorphic to `so(3)` with `-iσₐ/2` corresponding to the infinitesimal rotation about the
+  `a`-th axis (`TauCeti.suTwoLieEquivSoThree`);
 * the basis is orthonormal for the invariant form `B(X, Y) = -2 tr(XY)`
   (`TauCeti.trace_toMatrix_suTwoEquiv_mul`); the dot product therefore identifies `ℝ³` with the
   dual `𝔰𝔲(2)*` (`TauCeti.suTwoDualEquiv`), compatibly with the identification of `so(3)*`
@@ -195,6 +196,16 @@ theorem trace_toMatrix_suTwoEquiv_mul (x y : Fin 3 → ℝ) :
 /-- The Lie algebra `𝔰𝔲(2)` has dimension `3`. -/
 theorem SU2.finrank_lieAlgebra : finrank ℝ SU2.lieAlgebra = 3 := by
   rw [← suTwoEquiv.finrank_eq, finrank_fin_fun]
+
+/-- **`𝔰𝔲(2)` is not abelian**: `⁅-iσ₂/2, -iσ₃/2⁆ = -iσ₁/2`, the cross product `e₂ ⨯₃ e₃ = e₁` in
+the basis `-iσₐ/2`. -/
+theorem SU2.not_isLieAbelian_lieAlgebra : ¬IsLieAbelian SU2.lieAlgebra := by
+  intro h
+  have h₁ : suTwoEquiv ((Pi.single 1 1 : Fin 3 → ℝ) ⨯₃ Pi.single 2 1) = 0 := by
+    rw [← lie_suTwoEquiv]
+    exact trivial_lie_zero _ _ _ _
+  have h₀ := congrFun ((map_eq_zero_iff _ suTwoEquiv.injective).mp h₁) 0
+  simp [cross_apply] at h₀
 
 /-! ### The isomorphism with `so(3)` -/
 

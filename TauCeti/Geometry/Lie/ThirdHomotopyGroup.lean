@@ -34,11 +34,10 @@ The nontrivial class is represented by a homomorphism out of `Spin(3) ≅ S³`.
   of `Spin(3)` (`TauCeti.CliffordAlgebra.realSpinLieEquivSo`). Since `Spin(3)` is simply
   connected, the inclusion integrates to a smooth homomorphism `φ : Spin(3) → G` with injective
   differential (`LieHom.integrate`).
-* Take `y, z` in the Lie algebra of `Spin(3)` with `x = ⁅y, z⁆ ≠ 0`. Then `dφ x` is a nonzero
-  element of the derived algebra of the Lie algebra of `G`, which meets the centre only in `0`,
-  so the Killing form `B` of `G` takes a nonzero (negative) value at `dφ x`. Hence the Cartan
-  three-form `B(·, ⁅·, ·⁆)` pulls back along `φ` to a nonzero top form, and `φ` is not
-  null-homotopic (`ContMDiffMonoidMorphism.not_nullhomotopic_of_lie_eq_of_apply_ne_zero`).
+* The Lie algebra of `Spin(3)` is not abelian, so a homomorphism out of `Spin(3)` with injective
+  differential is detected by the Cartan three-form `B(·, ⁅·, ·⁆)` of a positive-definite
+  invariant form `B` of `G`: it pulls back along `φ` to a nonzero top form, and `φ` is not
+  null-homotopic (`ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap`).
 * `Spin(3)` is homeomorphic to the unit sphere `S³` of `ℝ⁴`, so `φ` gives a map `S³ → G`, based
   at any chosen `g ∈ G` after a left translation, which is not null-homotopic. Its class in
   `π₃(G, g)` is therefore nontrivial (`HomotopyGroup.nontrivial_of_not_nullhomotopic`).
@@ -116,39 +115,13 @@ theorem exists_contMDiffMonoidMorphism_realSpinThree_not_nullhomotopic
   have hφ : Function.Injective (lieMap φ) := by
     rw [LieHom.lieMap_integrate]
     exact hf.comp (realSpinLieEquivSo 3).injective
-  refine ⟨φ, hφ, ?_⟩
-  let eS := leftInvariantDerivationLieEquivGroupLieAlgebra
-    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, realSpinLieModel 3)) (n := ∞) (by simp)
-      (1 : spinGroup (realCliffordForm 3 0)))
-  let eG := leftInvariantDerivationLieEquivGroupLieAlgebra
-    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  have hκ : ∀ x y z : LeftInvariantDerivation I G,
-      killingForm ℝ _ ⁅x, y⁆ z = -killingForm ℝ _ y ⁅x, z⁆ :=
-    LieModule.traceForm_apply_lie_apply' ℝ _ _
-  obtain ⟨y, z, hyz⟩ := exists_lie_ne_zero_realSpinThree
-  refine φ.not_nullhomotopic_of_lie_eq_of_apply_ne_zero ?_
-    ((killingForm ℝ _).compl₁₂ eG.symm.toLinearMap eG.symm.toLinearMap)
-    (LinearMap.BilinMap.compl₁₂_lieInvariant hκ eG.symm.toLieHom)
-    (x := eS ⁅y, z⁆) (y := eS y) (z := eS z) (eS.map_lie y z).symm ?_
+  refine ⟨φ, hφ, φ.not_nullhomotopic_of_injective_lieMap ?_ (fun h ↦ ?_) hφ⟩
   · rw [← finrank_leftInvariantDerivation_eq_modelVectorSpace
       (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, realSpinLieModel 3)) (n := ∞) (by simp)
         (1 : spinGroup (realCliffordForm 3 0))),
       (realSpinLieEquivSo 3).toLinearEquiv.finrank_eq, finrank_so_three]
-  · -- The differential of `φ` at the identity is `lieMap φ`, read through `eS` and `eG`.
-    have hd : eG.symm (φ.toMonoidHom.groupLieAlgebraMap _ I (eS ⁅y, z⁆)) = lieMap φ ⁅y, z⁆ :=
-      leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap φ ⁅y, z⁆
-    simp only [LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, hd]
-    rw [ne_eq, LeftInvariantDerivation.killingForm_self_eq_zero_iff]
-    intro hc
-    -- `dφ ⁅y, z⁆` is central and in the derived algebra, hence zero.
-    have hder : lieMap φ ⁅y, z⁆ ∈ derivedSeries ℝ (LeftInvariantDerivation I G) 1 := by
-      rw [LieHom.map_lie]
-      exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top _) (LieSubmodule.mem_top _)
-    have h0 := (isCompl_center_derivedSeries_one_of_compactSpace (I := I) (G := G)).inf_eq_bot
-    have : lieMap φ ⁅y, z⁆ = 0 := by
-      rw [← LieSubmodule.mem_bot (R := ℝ) (L := LeftInvariantDerivation I G), ← h0]
-      exact ⟨hc, hder⟩
-    exact hyz (hφ (this.trans (map_zero _).symm))
+  · obtain ⟨y, z, hyz⟩ := exists_lie_ne_zero_realSpinThree
+    exact hyz (trivial_lie_zero _ _ y z)
 
 /-- **A compact Lie group with non-abelian Lie algebra has nontrivial third homotopy group**, at
 every base point. The nontrivial class is that of an essential homomorphism `Spin(3) → G`
