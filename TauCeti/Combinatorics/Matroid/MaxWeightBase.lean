@@ -162,7 +162,7 @@ theorem IsBase.exists_bijOn_of_forall_exchange [M.RankFinite] (hB : M.IsBase B)
 
 /-- The threshold criterion implies the exchange criterion. -/
 theorem le_of_forall_isBasis_inter
-    (h : ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e})) (he : e ∉ B) (hf : f ∈ B)
+    (h : ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e})) (he : e ∉ B)
     (hB' : M.IsBase (insert e (B \ {f}))) : w e ≤ w f := by
   by_contra hlt
   have heE : e ∈ M.E := hB'.subset_ground (mem_insert _ _)
@@ -181,7 +181,7 @@ every matroid and for weights with values in any preorder. -/
 theorem IsBase.forall_exchange_iff_forall_isBasis (hB : M.IsBase B) :
     (∀ ⦃e f⦄, e ∉ B → f ∈ B → M.IsBase (insert e (B \ {f})) → w e ≤ w f) ↔
       ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e}) :=
-  ⟨hB.isBasis_inter_of_forall_exchange, fun h _ _ ↦ le_of_forall_isBasis_inter h⟩
+  ⟨hB.isBasis_inter_of_forall_exchange, fun h _ _ he _ ↦ le_of_forall_isBasis_inter h he⟩
 
 end Preorder
 
@@ -212,7 +212,7 @@ theorem IsBase.isMaxWeightBase_of_forall_exchange [M.RankFinite] (hB : M.IsBase 
 /-- The threshold criterion implies maximality, without cancellation in `R`. -/
 theorem IsBase.isMaxWeightBase_of_forall_isBasis [M.RankFinite] (hB : M.IsBase B)
     (h : ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e})) : M.IsMaxWeightBase w B :=
-  hB.isMaxWeightBase_of_forall_exchange fun _ _ ↦ le_of_forall_isBasis_inter h
+  hB.isMaxWeightBase_of_forall_exchange fun _ _ he _ ↦ le_of_forall_isBasis_inter h he
 
 end OrderedMonoid
 
