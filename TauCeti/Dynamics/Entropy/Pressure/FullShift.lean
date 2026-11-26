@@ -89,7 +89,7 @@ private lemma pressureNetSum_agreeOn_Iio_le (f : α → ℝ) (c n : ℕ) :
       simp only [Nat.cast_id, add_zero, image_id', mem_agreeOn, mem_Iio]
       exact fun i hi ↦ congrFun hxy ⟨i, hi⟩
     have hyy : (y, y) ∈ dynEntourage (shift (1 : ℕ)) (agreeOn (Iio c)) n :=
-      agreeOn_window_subset_dynEntourage_shift hwin n (mem_agreeOn.mpr fun _ _ ↦ rfl)
+      mem_dynEntourage.2 fun _ _ ↦ mem_agreeOn.2 fun _ _ ↦ rfl
     exact Set.disjoint_left.mp (hs.2 hx hy hne) (SetRel.mem_ball.mpr (SetRel.mem_inv.mpr hxy'))
       (SetRel.mem_ball.mpr (SetRel.mem_inv.mpr hyy))
   calc ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) n x))
@@ -113,9 +113,8 @@ private lemma pow_le_pressureNetSum_agreeOn_zero (f : α → ℝ) (n : ℕ) :
       pressureNetSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) (agreeOn {0}) n := by
   classical
   let e := extendWord (α := α) (Finset.range n)
-  have heinj : Function.Injective e := fun w w' h ↦ funext fun k ↦ by
-    rw [← extendWord_of_mem w k.property, ← extendWord_of_mem w' k.property]
-    exact congrFun h k
+  have heinj : Function.Injective e := fun w w' h ↦
+    extendWord_mem_agreeOn_iff.1 (mem_agreeOn.2 fun _ _ ↦ congrFun h _)
   have hnet : IsDynNetIn (shift (1 : ℕ)) univ (agreeOn {0}) n
       ((Finset.univ.image e : Finset (ℕ → α)) : Set (ℕ → α)) := by
     refine ⟨subset_univ _, fun x hx y hy hne ↦ Set.disjoint_left.mpr fun z hzx hzy ↦ hne ?_⟩
@@ -124,9 +123,8 @@ private lemma pow_le_pressureNetSum_agreeOn_zero (f : α → ℝ) (n : ℕ) :
     obtain ⟨w', rfl⟩ := hy
     simp only [SetRel.mem_ball, SetRel.mem_inv, dynEntourage_shift_agreeOn_singleton_zero,
       Nat.cast_id, image_id', mem_agreeOn, mem_Iio] at hzx hzy
-    refine congrArg e (funext fun k ↦ ?_)
-    have hk : (k : ℕ) < n := Finset.mem_range.mp k.property
-    rw [← extendWord_of_mem w k.property, ← extendWord_of_mem w' k.property]
+    refine congrArg e (extendWord_mem_agreeOn_iff.1 (mem_agreeOn.2 fun k hk ↦ ?_))
+    have hk : k < n := Finset.mem_range.1 (Finset.mem_coe.1 hk)
     exact (hzx k hk).trans (hzy k hk).symm
   have hw (w : Finset.range n → α) :
       ENNReal.ofReal (Real.exp (birkhoffSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) n (e w))) =

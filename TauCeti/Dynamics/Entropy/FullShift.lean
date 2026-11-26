@@ -81,6 +81,14 @@ theorem extendWord_of_mem [Nonempty α] {S : Finset G} (w : S → α) {i : G} (h
     extendWord S w i = w ⟨i, hi⟩ := by
   simp [extendWord, hi]
 
+/-- The extensions of two words on `S` agree on `S` exactly when the words are equal. -/
+theorem extendWord_mem_agreeOn_iff [Nonempty α] {S : Finset G} {w w' : S → α} :
+    (extendWord S w, extendWord S w') ∈ (agreeOn (S : Set G) : SetRel (G → α) (G → α)) ↔
+      w = w' := by
+  refine ⟨fun h ↦ funext fun i ↦ ?_, fun h ↦ h ▸ mem_agreeOn.2 fun _ _ ↦ rfl⟩
+  rw [← extendWord_of_mem w i.property, ← extendWord_of_mem w' i.property]
+  exact mem_agreeOn.1 h i i.property
+
 section Counting
 
 variable [Fintype α]
