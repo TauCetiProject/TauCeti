@@ -56,6 +56,35 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
+/-- **Hölder bound for a coefficient field paired with a Hessian-like field.** If the entries of
+`a` are `α`-Hölder on a set `s` with constant `L` and bounded by `M` there, and the field `H` of
+bilinear maps is `α`-Hölder on `s` with constant `J` and bounded by `B` there, then
+`∑ᵢⱼ aᵢⱼ H(eᵢ, eⱼ)` is `α`-Hölder on `s` with constant `(n + 1)² (M J + B L)`. For `H = D²u`
+this is the Hölder bound for `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`. -/
+theorem holderOnWith_sum_sum_mul_apply_single {α L M J B : ℝ≥0} {s : Set E}
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {H : E → E [×2]→L[ℝ] ℝ}
+    (hL : ∀ i j, HolderOnWith L α (fun x => a x i j) s) (hM : ∀ x ∈ s, ∀ i j, |a x i j| ≤ M)
+    (hJ : HolderOnWith J α H s) (hB : ∀ x ∈ s, ‖H x‖ ≤ B) :
+    HolderOnWith (((n + 1 : ℝ≥0) ^ 2) * (M * J + B * L)) α
+      (fun x => ∑ i, ∑ j, a x i j *
+        H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
+  have hterm (i j : Fin (n + 1)) : HolderOnWith (M * J + B * L) α (fun x => a x i j *
+      H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
+    have hh : HolderOnWith J α (fun x => H x
+        ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
+      simpa using hJ.apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) i j
+    have hp := (ContinuousLinearMap.mul ℝ ℝ).holderOnWith_comp₂ (hL i j) hh
+      (Mf := M) (Mg := B)
+      (fun x hx => by simpa [Real.norm_eq_abs] using hM x hx i j)
+      (fun x hx => by
+        simpa using ((H x).norm_apply_orthonormalBasis_le (EuclideanSpace.basisFun _ ℝ) i j).trans
+          (hB x hx))
+    simpa only [ContinuousLinearMap.opNNNorm_mul, one_mul,
+      ContinuousLinearMap.mul_apply'] using hp
+  -- Sum the entries as Hölder functions on the subtype `s`.
+  refine HolderWith.restrict_iff.1 ((HolderWith.sum fun i _ => HolderWith.sum fun j _ =>
+    (hterm i j).holderWith).mono (le_of_eq (by simp [Finset.card_univ]; ring)))
+
 /-- The error of freezing a coefficient field that is Hölder on a set has the product Hölder
 bound there. -/
 private theorem holderOnWith_frozen_hessian_error {α ε L J B : ℝ≥0} {s : Set E}
@@ -67,24 +96,10 @@ private theorem holderOnWith_frozen_hessian_error {α ε L J B : ℝ≥0} {s : S
     HolderOnWith (((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) α
       (fun x => ∑ i, ∑ j, (A i j - a x i j) *
         H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
-  have hterm (i j : Fin (n + 1)) : HolderOnWith (ε * J + B * L) α (fun x => (A i j - a x i j) *
-      H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
-    have hc : HolderOnWith L α (fun x => A i j - a x i j) s := fun x hx y hy => by
-      simpa only [edist_sub_left] using hL i j x hx y hy
-    have hh : HolderOnWith J α (fun x => H x
-        ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
-      simpa using hJ.apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) i j
-    have hp := (ContinuousLinearMap.mul ℝ ℝ).holderOnWith_comp₂ hc hh
-      (Mf := ε) (Mg := B)
-      (fun x hx => by simpa [Real.norm_eq_abs, abs_sub_comm] using ha x hx i j)
-      (fun x hx => by
-        simpa using ((H x).norm_apply_orthonormalBasis_le (EuclideanSpace.basisFun _ ℝ) i j).trans
-          (hB x hx))
-    simpa only [ContinuousLinearMap.opNNNorm_mul, one_mul,
-      ContinuousLinearMap.mul_apply'] using hp
-  -- Sum the entries as Hölder functions on the subtype `s`.
-  refine HolderWith.restrict_iff.1 ((HolderWith.sum fun i _ => HolderWith.sum fun j _ =>
-    (hterm i j).holderWith).mono (le_of_eq (by simp [Finset.card_univ]; ring)))
+  simpa only [Matrix.sub_apply] using holderOnWith_sum_sum_mul_apply_single
+    (a := fun x => A - a x) (fun i j x hx y hy => by
+      simpa only [Matrix.sub_apply, edist_sub_left] using hL i j x hx y hy)
+    (fun x hx i j => by simpa [Matrix.sub_apply, abs_sub_comm] using ha x hx i j) hJ hB
 
 /-- **Freezing the coefficients on a set.** The frozen operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` is `α`-Hölder on a
 set `s` when the operator with coefficients `a`, within `ε` of `A` and `L`-Hölder on `s`, is
