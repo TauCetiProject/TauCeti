@@ -1147,14 +1147,6 @@ theorem energyFormH1_one_zero_zero_self_nonneg [DecidableEq ι] (v : W1p mu Omeg
   rw [energyFormH1_one_zero_zero_eq_inner]
   exact real_inner_self_nonneg
 
-/-- The `H¹` norm is the energy of the Laplacian model `-Δ` plus the `L²` norm of the value:
-`‖v‖²_{H¹} = ∫_Ω |∇v|² + ‖v‖²_{L²}`. In particular the energy form of `-Δ` satisfies a Gårding
-inequality on `H¹(Ω)` with constants `θ = ω = 1`. -/
-theorem norm_sq_eq_energyFormH1_one_zero_zero_add [DecidableEq ι] (v : W1p mu Omega 2) :
-    ‖v‖ ^ 2 = energyFormH1 (fun _ => 1) 0 0 v v + ‖W1p.value v‖ ^ 2 := by
-  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
-    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq, add_comm]
-
 /-- The Gårding inequality of the Laplacian model `-Δ`:
 `min 1 ω ‖v‖²_{H¹} ≤ ∫_Ω |∇v|² + ω ‖v‖²_{L²}` for every `ω`. -/
 theorem min_mul_norm_sq_le_energyFormH1_one_zero_zero_add [DecidableEq ι] (omega : ℝ)

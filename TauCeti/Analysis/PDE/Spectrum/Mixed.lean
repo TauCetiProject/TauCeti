@@ -9,15 +9,17 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.Sequence
 public import TauCeti.Analysis.PDE.Spectrum.MinMax
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
+import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 
 /-!
 # Mixed and Neumann eigenvalues
 
 Let `Ω ⊆ ℝⁿ` be open, let `Γ` be a set disjoint from `Ω`, typically a part of its boundary, and
-let `H¹_Γ(Ω)` be the space `TauCeti.w1pVanishingOnSubmodule mu Ω 2 Γ` of Sobolev functions
-vanishing on `Γ`: the closure in `H¹(Ω)` of the restrictions of test functions supported away
-from `closure Γ`, so it depends on `Γ` only through `closure Γ`. For the divergence-form operator
+let `H¹_Γ(Ω)` be the space `TauCeti.W1pVanishingOn mu Ω 2 Γ` of Sobolev functions vanishing on
+`Γ`, the subspace `TauCeti.w1pVanishingOnSubmodule`: the closure in `H¹(Ω)` of the restrictions
+of test functions supported away from `closure Γ`, so it depends on `Γ` only through
+`closure Γ`. For the divergence-form operator
 `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` with energy form `a(u, v)`, a real number `κ` is a
 **mixed eigenvalue** (`TauCeti.PDE.IsMixedEigenvalue`) when some nonzero `u ∈ H¹_Γ(Ω)` satisfies
 
@@ -45,9 +47,9 @@ eigenvalues form a sequence
 
 repeated according to multiplicity, with an orthonormal basis of `L²(Ω)` of eigenfunctions in
 `H¹_Γ(Ω)` (`TauCeti.PDE.exists_hilbertBasis_nat_isMixedEigenvalue_monotone`). The eigenvalues of
-the shifted form are `λₖ + ω`; they are positive, and the abstract eigenbasis of a coercive form
-along a compact embedding of dense range applies to it. The value map `H¹_Γ(Ω) → L²(Ω)` has dense
-range because `H¹_Γ(Ω)` contains `H¹₀(Ω)` when `Γ` misses `Ω`.
+the shifted form `TauCeti.PDE.mixedForm` are `λₖ + ω`; they are positive, and the abstract
+eigenbasis of a coercive form along a compact embedding of dense range applies to it. The value
+map `H¹_Γ(Ω) → L²(Ω)` has dense range because `H¹_Γ(Ω)` contains `H¹₀(Ω)` when `Γ` misses `Ω`.
 
 The **min–max principle** defines the `k`-th mixed eigenvalue `λₖ` without eigenfunctions
 (`TauCeti.PDE.mixedEigenvalue`): the infimum of the `C` for which some subspace of `H¹_Γ(Ω)`, whose
@@ -113,14 +115,8 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ}
 
-/-- Shortcut instance for the normed group structure of `H¹_Γ(Ω)`, inherited through the nested
-Sobolev subspaces; instance search can time out on it inside abstract Hilbert space lemmas. -/
-local instance : NormedAddCommGroup (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule :=
-  inferInstance
-
-/-- Shortcut instance for the Hilbert space structure of `H¹_Γ(Ω)`. -/
-local instance : InnerProductSpace ℝ (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule :=
-  inferInstance
+attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
+  W1pVanishingOn.instInnerProductSpace
 
 /-! ### Mixed eigenvalues -/
 
@@ -164,61 +160,19 @@ theorem isMixedEigenvalue_frontier_iff (kappa : ℝ) :
 
 /-! ### The shifted energy form on `H¹_Γ(Ω)` -/
 
-/-- The energy form on `H¹_Γ(Ω)` shifted by `ω` times the `L²` inner product of the values, in
-the shape `B + ω ⟪J ·, J ·⟫` of `TauCeti.isCoercive_add_smul_toSesqForm_comp_of_garding`. -/
-private def shiftedForm
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (Γ : Set (EuclideanSpace ℝ ι)) (omega : ℝ) :
-    (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ]
-      (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ] ℝ :=
-  (energyFormH1L hcoeff).bilinearComp (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL
-      (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL +
-    omega • ((ContinuousLinearMap.toSesqForm W1pVanishingOn.valueL).comp W1pVanishingOn.valueL :
-      (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ]
-        (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ] ℝ)
-
-private theorem shiftedForm_apply
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (omega : ℝ) (u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
-    shiftedForm hcoeff Γ omega u v =
-      energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
-        omega * ⟪W1pVanishingOn.valueL u, W1pVanishingOn.valueL v⟫_ℝ := by
-  rw [← energyFormH1L_apply hcoeff]
-  -- Definitional unfolding: `shiftedForm` is `B.bilinearComp ι ι + ω • (toSesqForm J).comp J`
-  -- for the inclusion `ι = subtypeL` and `J = valueL`, and evaluating it uses only
-  -- `ContinuousLinearMap.add_apply`, `smul_apply`, `bilinearComp_apply`, `comp_apply` and
-  -- `toSesqForm_apply_coe`, which all hold by `rfl`. Rewriting with them after unfolding
-  -- `shiftedForm` (by `rw` or `simp only`) exceeds the heartbeat limit.
-  rfl
-
 /-- The eigenvalue equations of the energy form and of its shift by `ω` correspond, with
 eigenvalues `κ` and `κ + ω`. -/
-private theorem forall_shiftedForm_eq_iff
+private theorem forall_mixedForm_eq_iff
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (omega kappa : ℝ) (u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
-    (∀ v, shiftedForm hcoeff Γ omega u v =
+    (∀ v, mixedForm hcoeff Γ omega u v =
         (kappa + omega) * ⟪W1pVanishingOn.valueL u, W1pVanishingOn.valueL v⟫_ℝ) ↔
       ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
         energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
           kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
   refine forall_congr' fun v ↦ ?_
-  rw [shiftedForm_apply, W1pVanishingOn.valueL_apply, W1pVanishingOn.valueL_apply, add_mul]
+  rw [mixedForm_apply, W1pVanishingOn.valueL_apply, W1pVanishingOn.valueL_apply, add_mul]
   exact add_left_inj _
-
-/-- A Gårding inequality on `H¹_Γ(Ω)` is coercivity of the shifted form
-(`TauCeti.isCoercive_add_smul_toSesqForm_comp_of_garding`). -/
-private theorem isCoercive_shiftedForm
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    {theta omega : ℝ} (htheta : 0 < theta)
-    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
-      theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
-        energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
-          omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2) :
-    IsCoercive (shiftedForm hcoeff Γ omega) :=
-  isCoercive_add_smul_toSesqForm_comp_of_garding htheta fun v ↦ by
-    rw [ContinuousLinearMap.bilinearComp_apply, Submodule.subtypeL_apply, energyFormH1L_apply,
-      W1pVanishingOn.valueL_apply]
-    exact hgarding v
 
 /-! ### The mixed eigenvalues as a sequence -/
 
@@ -254,20 +208,20 @@ theorem exists_hilbertBasis_nat_isMixedEigenvalue_monotone [Nonempty ι]
         energyFormH1 a b c (u k : W1p mu Omega 2) (v : W1p mu Omega 2) =
           kappa k * ⟪W1p.value (u k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) ∧
       ∀ kappa' : ℝ, IsMixedEigenvalue mu Omega Γ a b c kappa' ↔ ∃ k, kappa k = kappa' := by
-  have hB := isCoercive_shiftedForm hcoeff htheta hgarding
+  have hB := isCoercive_mixedForm hcoeff htheta hgarding
   obtain ⟨basis, kappa, u, hmono, htendsto, -, hvalue, heq, hiff, -⟩ :=
     hB.exists_hilbertBasis_nat_forall_apply_eq_smul_inner_monotone
       (W1pVanishingOn.isCompactOperator_valueL hrellich)
       (W1pVanishingOn.denseRange_valueL_two hΓ)
-      (fun u v ↦ by rw [shiftedForm_apply, shiftedForm_apply, hsymm, real_inner_comm])
+      (fun u v ↦ by rw [mixedForm_apply, mixedForm_apply, hsymm, real_inner_comm])
       (L2.not_finiteDimensional_restrict_of_isOpen mu Omega.isOpen hOmega_nonempty)
   refine ⟨basis, fun k ↦ kappa k - omega, u, fun k l hkl ↦ by simpa using hmono hkl,
     by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-omega) htendsto,
     fun k ↦ by rw [← W1pVanishingOn.valueL_apply, hvalue],
-    fun k ↦ (forall_shiftedForm_eq_iff hcoeff omega _ (u k)).1 ?_, fun kappa' ↦ ?_⟩
+    fun k ↦ (forall_mixedForm_eq_iff hcoeff omega _ (u k)).1 ?_, fun kappa' ↦ ?_⟩
   · simpa only [sub_add_cancel] using heq k
   · rw [isMixedEigenvalue_iff]
-    simp_rw [← forall_shiftedForm_eq_iff hcoeff omega kappa', hiff (kappa' + omega),
+    simp_rw [← forall_mixedForm_eq_iff hcoeff omega kappa', hiff (kappa' + omega),
       sub_eq_iff_eq_add]
 
 /-! ### The min–max principle -/
@@ -345,20 +299,19 @@ private theorem isLeast_of_hilbertBasis
       J v = W1p.value (v : W1p mu Omega 2) := by
     simp [J]
   have hB (u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
-      (shiftedForm hcoeff Γ omega).toLinearMap₁₂ u v =
+      (mixedForm hcoeff Γ omega).toLinearMap₁₂ u v =
         energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ⟪J u, J v⟫_ℝ := by
-    rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, shiftedForm_apply,
-      W1pVanishingOn.valueL_apply, W1pVanishingOn.valueL_apply, hJ, hJ]
+    rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, mixedForm_apply, hJ, hJ]
   -- `C` is admissible for the form exactly when `C + ω` is admissible for the shifted form.
   have hmem (W : Submodule ℝ (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) (C : ℝ) :
-      (∀ v ∈ W, (shiftedForm hcoeff Γ omega).toLinearMap₁₂ v v ≤ (C + omega) * ‖J v‖ ^ 2) ↔
+      (∀ v ∈ W, (mixedForm hcoeff Γ omega).toLinearMap₁₂ v v ≤ (C + omega) * ‖J v‖ ^ 2) ↔
         ∀ v ∈ W, energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) ≤
           C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 := by
     refine forall₂_congr fun v _ ↦ ?_
     rw [hB, real_inner_self_eq_norm_sq, hJ, add_mul]
     exact add_le_add_iff_right (omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
-  have h := isLeast_minMax_of_hilbertBasis (B := (shiftedForm hcoeff Γ omega).toLinearMap₁₂)
+  have h := isLeast_minMax_of_hilbertBasis (B := (mixedForm hcoeff Γ omega).toLinearMap₁₂)
     (J := J) (fun v w ↦ by rw [hB, hB, hsymm, real_inner_comm])
     (fun v ↦ by rw [hB, real_inner_self_eq_norm_sq, hJ]; exact hlower v)
     basis (kappa := fun j ↦ kappa j + omega) (fun _ _ hij ↦ by simpa using hkappa hij)
@@ -586,8 +539,8 @@ theorem mixedEigenvalue_laplacian_le_of_subset (hΓΓ' : Γ ⊆ Γ') (hΓ' : Dis
     mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k ≤ mixedEigenvalue mu Omega Γ' (fun _ ↦ 1) 0 0 k :=
   mixedEigenvalue_le_of_subset hΓΓ' (memLp_energyIntegrand_const_zero_zero 1)
     (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ'
-    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) one_pos
-    (fun _ ↦ by rw [one_mul, one_mul, norm_sq_eq_energyFormH1_one_zero_zero_add])
+    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) (lt_min one_pos one_pos)
+    (fun v ↦ by exact min_mul_norm_sq_le_energyFormH1_one_zero_zero_add 1 (v : W1p mu Omega 2))
     hOmega_nonempty k
 
 /-- **The mixed eigenvalues of `-Δ` lie below the Dirichlet ones**: on a nonempty bounded
@@ -619,8 +572,8 @@ theorem exists_hilbertBasis_mixedEigenvalue_laplacian :
             ⟪W1p.value (u k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
   exists_hilbertBasis_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1)
     (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
-    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) one_pos
-    (fun _ ↦ by rw [one_mul, one_mul, norm_sq_eq_energyFormH1_one_zero_zero_add])
+    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) (lt_min one_pos one_pos)
+    (fun v ↦ by exact min_mul_norm_sq_le_energyFormH1_one_zero_zero_add 1 (v : W1p mu Omega 2))
     hOmega_nonempty
 
 /-- **The min–max principle for `-Δ` is attained**: `λₖ` is the least `C` for which some subspace
@@ -637,8 +590,8 @@ theorem isLeast_mixedEigenvalue_laplacian (k : ℕ) :
       (mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k) :=
   isLeast_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1)
     (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
-    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) one_pos
-    (fun _ ↦ by rw [one_mul, one_mul, norm_sq_eq_energyFormH1_one_zero_zero_add])
+    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) (lt_min one_pos one_pos)
+    (fun v ↦ by exact min_mul_norm_sq_le_energyFormH1_one_zero_zero_add 1 (v : W1p mu Omega 2))
     hOmega_nonempty k
 
 /-- **The mixed spectrum of `-Δ`.** On a nonempty bounded Lipschitz domain and for `Γ` missing
@@ -656,16 +609,15 @@ theorem mixedEigenvalue_laplacian_spectrum :
     energyFormH1_one_zero_zero_comm (u : W1p mu Omega 2) v
   have hnonneg (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :=
     energyFormH1_one_zero_zero_self_nonneg (v : W1p mu Omega 2)
-  have hgarding (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
-      1 * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤ energyFormH1 (fun _ ↦ 1) 0 0 (v : W1p mu Omega 2) v +
-        1 * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 := by
-    rw [one_mul, one_mul, norm_sq_eq_energyFormH1_one_zero_zero_add]
+  have hgarding (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :=
+    min_mul_norm_sq_le_energyFormH1_one_zero_zero_add 1 (v : W1p mu Omega 2)
+  have htheta : (0 : ℝ) < min 1 1 := lt_min one_pos one_pos
   have hrellich := W1p.isCompactOperator_valueL_of_isLipschitzDomain (mu := mu) (p := 2) hΩ hb
   exact ⟨mixedEigenvalue_nonneg hnonneg 0,
-    monotone_mixedEigenvalue hcoeff hrellich hΓ hsymm one_pos hgarding hOmega_nonempty,
-    tendsto_mixedEigenvalue_atTop hcoeff hrellich hΓ hsymm one_pos hgarding
+    monotone_mixedEigenvalue hcoeff hrellich hΓ hsymm htheta hgarding hOmega_nonempty,
+    tendsto_mixedEigenvalue_atTop hcoeff hrellich hΓ hsymm htheta hgarding
       hOmega_nonempty,
-    isMixedEigenvalue_iff_exists_mixedEigenvalue_eq hcoeff hrellich hΓ hsymm one_pos
+    isMixedEigenvalue_iff_exists_mixedEigenvalue_eq hcoeff hrellich hΓ hsymm htheta
       hgarding hOmega_nonempty⟩
 
 end Laplacian
