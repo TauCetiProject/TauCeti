@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Derivative
 import Mathlib.Tactic.Ring
+import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
 # The jet pairing of polynomials with formal power series
@@ -23,14 +24,15 @@ polynomials is represented by a unique formal power series via this pairing.
 ## References
 
 The pairing and its basic identities adapt `New.jet` and related lemmas in ShortProof
-(`grh/src/Lib/GLn/SchurModule/Basic.lean` in <https://github.com/lsernau/grh-lean>).
+(`src/Lib/GLn/SchurModule/Basic.lean` in <https://github.com/lsernau/grh-lean>,
+Apache 2.0, Copyright 2026 Anthropic, PBC).
 ShortProof is Claude’s Lean rewriting of Levent Alpöge’s proof, published by Anthropic.
 -/
 
 public section
 
 /-- Increasing one exponent multiplies the product of factorials by that exponent plus one. -/
-theorem Finsupp.prod_factorial_add_single {σ R : Type*} [CommSemiring R]
+private theorem prod_factorial_add_single {σ R : Type*} [CommSemiring R]
     (d : σ →₀ ℕ) (i : σ) :
     ((d + Finsupp.single i 1).prod fun _ n ↦ (n.factorial : R)) =
       ((d i : R) + 1) * d.prod fun _ n ↦ (n.factorial : R) := by
@@ -64,15 +66,20 @@ noncomputable def jetPairing : MvPolynomial σ R →ₗ[R] MvPowerSeries σ R �
   (basisMonomials σ R).constr R fun d ↦
     (d.prod fun _ n ↦ (n.factorial : R)) • MvPowerSeries.coeff d
 
+private theorem jetPairing_basisMonomials (d : σ →₀ ℕ) (f : MvPowerSeries σ R) :
+    jetPairing (basisMonomials σ R d) f =
+      (d.prod fun _ n ↦ (n.factorial : R)) * MvPowerSeries.coeff d f := by
+  simp only [jetPairing, Module.Basis.constr_basis, LinearMap.smul_apply, smul_eq_mul]
+
 /-- A monomial tests the coefficient at its exponent, weighted by the multi-index factorial. -/
 @[simp]
 theorem jetPairing_monomial (d : σ →₀ ℕ) (a : R) (f : MvPowerSeries σ R) :
     jetPairing (monomial d a) f =
       a * (d.prod fun _ n ↦ (n.factorial : R)) * MvPowerSeries.coeff d f := by
-  rw [show monomial d a = a • monomial d 1 by simp [smul_monomial],
-    map_smul, LinearMap.smul_apply, ← congrFun (coe_basisMonomials σ R) d,
-    jetPairing, Module.Basis.constr_basis]
-  simp [mul_assoc]
+  have hmon : monomial d a = a • basisMonomials σ R d := by
+    simp [coe_basisMonomials, smul_monomial]
+  simp only [hmon, map_smul, LinearMap.smul_apply, jetPairing_basisMonomials, smul_eq_mul,
+    mul_assoc]
 
 /-- A constant polynomial tests the constant term. -/
 @[simp]
@@ -81,12 +88,26 @@ theorem jetPairing_C (a : R) (f : MvPowerSeries σ R) :
   rw [← monomial_zero', jetPairing_monomial]
   simp [MvPowerSeries.coeff_zero_eq_constantCoeff]
 
+/-- The unit polynomial tests the constant term. -/
+@[simp]
+theorem jetPairing_one (f : MvPowerSeries σ R) :
+    jetPairing 1 f = MvPowerSeries.constantCoeff f := by
+  simpa only [C_1, one_mul] using jetPairing_C 1 f
+
+/-- A variable tests the coefficient of its degree-one monomial. -/
+@[simp]
+theorem jetPairing_X (i : σ) (f : MvPowerSeries σ R) :
+    jetPairing (X i) f = MvPowerSeries.coeff (Finsupp.single i 1) f := by
+  simp [X]
+
 /-- The jet pairing in coefficient coordinates. -/
 theorem jetPairing_eq_sum (p : MvPolynomial σ R) (f : MvPowerSeries σ R) :
     jetPairing p f =
       ∑ d ∈ p.support, p.coeff d * (d.prod fun _ n ↦ (n.factorial : R)) *
         MvPowerSeries.coeff d f := by
-  rw [jetPairing, Module.Basis.constr_apply, show (basisMonomials σ R).repr p = p.coeff from rfl]
+  have hrepr : (basisMonomials σ R).repr p = p.coeff :=
+    Finsupp.ext fun d ↦ basisMonomials_repr_apply p d
+  rw [jetPairing, Module.Basis.constr_apply, hrepr]
   simp only [Finsupp.sum, finsupp_support_eq_support, LinearMap.sum_apply,
     LinearMap.smul_apply, smul_eq_mul, mul_assoc]
 
@@ -97,7 +118,7 @@ theorem jetPairing_mul_X (p : MvPolynomial σ R) (f : MvPowerSeries σ R) (i : �
   rw [jetPairing_eq_sum, jetPairing_eq_sum, support_mul_X, Finset.sum_map]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [addRightEmbedding_apply, coeff_mul_X, MvPowerSeries.coeff_pderiv,
-    Finsupp.prod_factorial_add_single]
+    prod_factorial_add_single]
   ring
 
 /-- The jet pairing commutes with a change of coefficients. -/
