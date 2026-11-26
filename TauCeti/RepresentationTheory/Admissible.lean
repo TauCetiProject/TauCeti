@@ -33,8 +33,9 @@ for finitely generated invariants under compact open subgroups.
 * `Representation.HasFiniteMultiplicities.finiteDimensional`: in a representation with finite
   multiplicities, `Hom_G(σ, ρ)` is finite-dimensional for every irreducible `σ`, in any universe.
 * `Representation.HasFiniteMultiplicities.subrepresentation`,
+  `Representation.HasFiniteMultiplicities.of_injective`,
   `Representation.HasFiniteMultiplicities.directSum`: finite multiplicities pass to
-  subrepresentations and to finite direct sums.
+  subrepresentations, along injective intertwining maps and to finite direct sums.
 * `Representation.hasFiniteMultiplicities_of_finiteDimensional`: a finite-dimensional
   representation has finite multiplicities.
 
@@ -121,17 +122,23 @@ theorem of_forall {V : Type v} [AddCommGroup V] [Module k V] {ρ : Representatio
       σ.IsIrreducible → FiniteDimensional k (IntertwiningMap σ ρ)) :
     ρ.HasFiniteMultiplicities := fun U hU ↦ h U.toSubmodule U.toRepresentation hU
 
-/-- A subrepresentation of a representation with finite multiplicities has finite
-multiplicities. -/
-theorem subrepresentation (hρ : ρ.HasFiniteMultiplicities) (N : Subrepresentation ρ) :
-    N.toRepresentation.HasFiniteMultiplicities := by
+variable {σ} in
+/-- A representation with an injective intertwining map into a representation with finite
+multiplicities has finite multiplicities. -/
+theorem of_injective (hρ : ρ.HasFiniteMultiplicities) (ι : IntertwiningMap σ ρ)
+    (hι : Function.Injective ι) : σ.HasFiniteMultiplicities := by
   intro U hU
   have := hρ.finiteDimensional U.toRepresentation
   refine Module.Finite.of_injective
-    (IntertwiningMap.llcomp U.toRepresentation _ _ N.subtype) fun f f' h ↦ ?_
+    (IntertwiningMap.llcomp U.toRepresentation _ _ ι) fun f f' h ↦ ?_
   ext w
-  have h' : N.subtype (f w) = N.subtype (f' w) := congr($h w)
-  simpa using h'
+  exact hι congr($h w)
+
+/-- A subrepresentation of a representation with finite multiplicities has finite
+multiplicities. -/
+theorem subrepresentation (hρ : ρ.HasFiniteMultiplicities) (N : Subrepresentation ρ) :
+    N.toRepresentation.HasFiniteMultiplicities :=
+  hρ.of_injective N.subtype N.subtype_injective
 
 /-- A finite direct sum of representations with finite multiplicities has finite
 multiplicities. -/
