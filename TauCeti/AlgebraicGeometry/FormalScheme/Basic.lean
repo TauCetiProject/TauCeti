@@ -57,6 +57,16 @@ instance : CoeSort FormalScheme Type* := ⟨fun X ↦ X.toLocallyRingedSpace⟩
 instance (X : FormalScheme) : TopologicalSpace X :=
   inferInstanceAs (TopologicalSpace X.toLocallyRingedSpace)
 
+/-- The underlying space of a formal scheme is T₀: two inseparable points lie in a common open
+formal spectrum, whose underlying space is a subspace of a prime spectrum. -/
+instance (X : FormalScheme) : T0Space X := by
+  refine (t0Space_iff_inseparable X).mpr fun x y h ↦ ?_
+  obtain ⟨A, _, _, _, _, f, hf, x', rfl⟩ := X.local_spf x
+  obtain ⟨y', rfl⟩ := (h.mem_open_iff hf.base_open.isOpen_range).mp ⟨x', rfl⟩
+  -- the points of `Spf A` are open primes of `A`, with the subspace topology of `Spec A`
+  have : T0Space (Spf A).toPresheafedSpace := inferInstanceAs (T0Space (Spf.carrier A))
+  exact congrArg f.base (hf.base_open.isInducing.inseparable_iff.mp h).eq
+
 /-- Formal schemes have exactly the morphisms of their underlying locally ringed spaces. -/
 instance : Category FormalScheme :=
   inferInstanceAs (Category (InducedCategory LocallyRingedSpace toLocallyRingedSpace))
