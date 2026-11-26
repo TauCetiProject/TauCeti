@@ -47,9 +47,12 @@ The one remaining case, `xᵢⱼ(c)` against `xⱼᵢ(d)`, is deliberately absen
 roots is zero, and no commutator formula in terms of a single root subgroup holds.
 
 The opposite root subgroups nevertheless build the standard Weyl representative
-`nᵢⱼ = xᵢⱼ(1) xⱼᵢ(-1) xᵢⱼ(1)`. The file records its inverse and its conjugation action on
-the other transvections; this is the normalizer half of the data pinning the elementary matrices
-against the torus.
+`nᵢⱼ = xᵢⱼ(1) xⱼᵢ(-1) xᵢⱼ(1)`, the signed Weyl word. Over every ring it is the signed permutation
+matrix `!![0, 1; -1, 0]` in the coordinates `i`, `j` and the identity elsewhere, its square is
+`-1` on the plane of `i` and `j`, and the product `nᵢⱼ nₖᵢ` is the permutation matrix of a
+three-cycle. The file also records its inverse and its conjugation action on the other
+transvections; this is the normalizer half of the data pinning the elementary matrices against
+the torus.
 
 Conjugating a transvection by an invertible diagonal matrix rescales its parameter by the value of
 the corresponding root: `TauCeti.diagGL_mul_transvectionUnit_mul_inv` says that `t xᵢⱼ(c) t⁻¹` is
@@ -85,6 +88,15 @@ elementary matrices against the diagonal torus.
   permutation matrix relabels the two indices.
 * `TauCeti.map_transvectionUnit` and `TauCeti.map_transvectionWeylElement`: transvections and their
   Weyl representatives are natural in the base ring.
+* `TauCeti.coe_transvectionWeylElement` and `TauCeti.coe_transvectionWeylElement_fin_two`: the
+  signed Weyl word is `1 - Eᵢᵢ - Eⱼⱼ + Eᵢⱼ - Eⱼᵢ`, which in size two is `!![0, 1; -1, 0]`.
+* `TauCeti.transvectionWeylElement_mul_self` and
+  `TauCeti.transvectionWeylElement_fin_two_mul_self`: its square is the diagonal matrix with
+  `-1` in positions `i` and `j`, which in size two is `-1`.
+* `TauCeti.transvectionWeylElement_eq_diagGL_mul_permutationGL`: it is the permutation matrix of
+  the transposition of `i` and `j` with its `j`-th row negated.
+* `TauCeti.permutationGL_swap_mul_swap_same_eq_transvectionWeylElement_mul`: the permutation
+  matrix of the three-cycle `(i j) (i k)` is `nᵢⱼ nₖᵢ`.
 * `TauCeti.transvectionWeylElement_inv`: the representative for the opposite root is the inverse.
 * `TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_self` and
   `TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_symm`: the reflection exchanges
@@ -277,6 +289,17 @@ theorem commutatorElement_transvectionUnit_reverse
       rw [commutatorElement_transvectionUnit hki hij hkj]
     _ = transvectionUnit hkj (-(d * c)) := transvectionUnit_inv hkj (d * c)
 
+/-- The commutator of opposite transvections `xᵢₖ(c)` and `xₖᵢ(d)` with `d * c = 0` is the
+matrix `1 + (c * d) Eᵢᵢ`, which differs from the identity only in the diagonal entry `(i, i)`. -/
+theorem coe_commutatorElement_transvectionUnit_of_mul_eq_zero (hik : i ≠ k) {c d : A}
+    (hdc : d * c = 0) :
+    (⁅transvectionUnit hik c, transvectionUnit hik.symm d⁆ : GL n A) =
+      (1 : Matrix n n A) + single i i (c * d) := by
+  simp only [commutatorElement_def, Units.val_mul, transvectionUnit_inv,
+    coe_transvectionUnit_eq_one_add_single]
+  simp [add_mul, mul_add, hik, hik.symm, single_mul_single_same, hdc, mul_assoc, ← single_neg]
+  abel
+
 /-! ## Weyl elements -/
 
 /-- The standard representative in `GL n A` of the Weyl-group transposition exchanging `i` and
@@ -300,6 +323,95 @@ theorem commute_transvectionUnit_transvectionWeylElement (hij : i ≠ j) (hkl : 
   have hneg : Commute (transvectionUnit hkl c) (transvectionUnit hij.symm (-1 : A)) :=
     commute_transvectionUnit hkl hij.symm hlj hik c (-1)
   exact (hpos.mul_right hneg).mul_right hpos
+
+/-- **The signed Weyl word as a matrix.** The Weyl representative `xᵢⱼ(1) xⱼᵢ(-1) xᵢⱼ(1)` is
+`1 - Eᵢᵢ - Eⱼⱼ + Eᵢⱼ - Eⱼᵢ`: in the coordinates `i`, `j` it is `!![0, 1; -1, 0]`, and it is the
+identity on the other coordinates. -/
+theorem coe_transvectionWeylElement (hij : i ≠ j) :
+    ((transvectionWeylElement (A := A) hij : GL n A) : Matrix n n A) =
+      1 - single i i 1 - single j j 1 + single i j 1 - single j i 1 := by
+  simp only [transvectionWeylElement_def, Units.val_mul, coe_transvectionUnit_eq_one_add_single]
+  simp [add_mul, mul_add, hij.symm, ← single_neg]
+  abel
+
+/-- The entries of the Weyl representative exchanging `i` and `j`: its `i`-th row is the `j`-th
+row of the identity, its `j`-th row is minus the `i`-th row of the identity, and every other row
+is that of the identity. -/
+theorem coe_transvectionWeylElement_apply (hij : i ≠ j) (a b : n) :
+    ((transvectionWeylElement (A := A) hij : GL n A) : Matrix n n A) a b =
+      if a = i then (1 : Matrix n n A) j b
+      else if a = j then -(1 : Matrix n n A) i b
+      else (1 : Matrix n n A) a b := by
+  rw [coe_transvectionWeylElement]
+  by_cases hai : a = i <;> by_cases haj : a = j <;> by_cases hbi : b = i <;>
+    by_cases hbj : b = j <;> subst_vars <;> simp_all [Matrix.one_apply, eq_comm]
+
+private theorem coe_transvectionWeylElement_mul_apply (hij : i ≠ j) (M : Matrix n n A)
+    (a b : n) :
+    (((transvectionWeylElement (A := A) hij : GL n A) : Matrix n n A) * M) a b =
+      if a = i then M j b else if a = j then -M i b else M a b := by
+  rw [Matrix.mul_apply]
+  simp_rw [coe_transvectionWeylElement_apply hij a]
+  by_cases hai : a = i
+  · subst a
+    simp [Matrix.one_apply]
+  · by_cases haj : a = j
+    · subst a
+      simp [Matrix.one_apply, hij.symm]
+    · simp [Matrix.one_apply, hai, haj]
+
+/-- **The square of the signed Weyl word** is the diagonal matrix with `-1` in positions `i` and
+`j` and `1` elsewhere: on the plane of the coordinates `i` and `j` it is `-1`. -/
+theorem transvectionWeylElement_mul_self (hij : i ≠ j) :
+    transvectionWeylElement (A := A) hij * transvectionWeylElement hij =
+      diagGL (Pi.mulSingle i (-1) * Pi.mulSingle j (-1)) := by
+  ext a b
+  rw [Units.val_mul, coe_transvectionWeylElement_mul_apply, diagGL_apply]
+  by_cases hai : a = i <;> by_cases haj : a = j <;> by_cases hbi : b = i <;>
+    by_cases hbj : b = j <;> subst_vars <;>
+    simp_all [coe_transvectionWeylElement_apply, Matrix.one_apply, eq_comm]
+
+/-- The signed Weyl word is a signed permutation matrix: it is the permutation matrix of the
+transposition of `i` and `j`, with its `j`-th row negated. -/
+theorem transvectionWeylElement_eq_diagGL_mul_permutationGL (hij : i ≠ j) :
+    transvectionWeylElement (A := A) hij =
+      diagGL (Pi.mulSingle j (-1)) * permutationGL (Equiv.swap i j) := by
+  ext a b
+  rw [coe_transvectionWeylElement_apply, Units.val_mul, diagGL_coe, permutationGL_coe,
+    Matrix.diagonal_mul]
+  by_cases hai : a = i <;> by_cases haj : a = j <;> by_cases hbi : b = i <;>
+    by_cases hbj : b = j <;> subst_vars <;>
+    simp_all [Matrix.one_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_apply,
+      Equiv.swap_apply_def, eq_comm]
+
+/-- The permutation matrix of the three-cycle `(i j) (i k)` is the product of the two signed Weyl
+words `nᵢⱼ nₖᵢ`: their signs cancel. -/
+theorem permutationGL_swap_mul_swap_same_eq_transvectionWeylElement_mul (hij : i ≠ j)
+    (hik : i ≠ k) :
+    permutationGL (k := A) (Equiv.swap i j * Equiv.swap i k) =
+      transvectionWeylElement hij * transvectionWeylElement hik.symm := by
+  ext a b
+  rw [Units.val_mul, coe_transvectionWeylElement_mul_apply, permutationGL_coe]
+  simp only [coe_transvectionWeylElement_apply, Matrix.one_apply, Equiv.Perm.permMatrix,
+    PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, Option.mem_def, Option.some.injEq,
+    _root_.mul_inv_rev, Equiv.swap_inv, Equiv.Perm.coe_mul, Function.comp_apply,
+    Equiv.swap_apply_def]
+  split_ifs <;> grind
+
+/-- In size two the signed Weyl word `x₀₁(1) x₁₀(-1) x₀₁(1)` is the matrix `!![0, 1; -1, 0]`. -/
+theorem coe_transvectionWeylElement_fin_two :
+    ((transvectionWeylElement (A := A) (zero_ne_one : (0 : Fin 2) ≠ 1) : GL (Fin 2) A) :
+      Matrix (Fin 2) (Fin 2) A) = !![0, 1; -1, 0] := by
+  ext a b
+  fin_cases a <;> fin_cases b <;> simp [coe_transvectionWeylElement_apply]
+
+/-- In size two the square of the signed Weyl word is `-1`. -/
+theorem transvectionWeylElement_fin_two_mul_self :
+    transvectionWeylElement (A := A) (zero_ne_one : (0 : Fin 2) ≠ 1) *
+      transvectionWeylElement zero_ne_one = -1 := by
+  rw [transvectionWeylElement_mul_self]
+  ext a b
+  fin_cases a <;> fin_cases b <;> simp
 
 end Ring
 
@@ -335,54 +447,6 @@ theorem det_transvectionUnit (hij : i ≠ j) (c : A) :
     Matrix.GeneralLinearGroup.det (transvectionUnit hij c) = 1 := by
   rw [← toGL_transvection_eq_transvectionUnit]
   exact SpecialLinearGroup.coeToGL_det _
-
-private theorem coe_transvectionWeylElement_apply (hij : i ≠ j) (a b : n) :
-    ((transvectionWeylElement (A := A) hij : GL n A) : Matrix n n A) a b =
-      if a = i then (1 : Matrix n n A) j b
-      else if a = j then -(1 : Matrix n n A) i b
-      else (1 : Matrix n n A) a b := by
-  rw [transvectionWeylElement_def]
-  simp only [Units.val_mul, coe_transvectionUnit]
-  rw [mul_assoc]
-  by_cases hai : a = i
-  · subst a
-    rw [Matrix.transvection_mul_apply_same,
-      Matrix.transvection_mul_apply_of_ne (ha := hij),
-      Matrix.transvection_mul_apply_same]
-    by_cases hbi : b = i
-    · subst b
-      simp [Matrix.transvection, hij, hij.symm]
-    · by_cases hbj : b = j
-      · subst b
-        simp [Matrix.transvection, hij]
-      · simp [Matrix.transvection, Matrix.single_apply, Matrix.one_apply, hij]
-  · rw [Matrix.transvection_mul_apply_of_ne (ha := hai)]
-    by_cases haj : a = j
-    · subst a
-      rw [Matrix.transvection_mul_apply_same]
-      by_cases hbi : b = i
-      · subst b
-        simp [Matrix.transvection, hij, hij.symm]
-      · by_cases hbj : b = j
-        · subst b
-          simp [Matrix.transvection, hij, hij.symm]
-        · simp [Matrix.transvection, Matrix.single_apply, Matrix.one_apply, hij, hij.symm]
-    · rw [Matrix.transvection_mul_apply_of_ne (ha := haj)]
-      simp [Matrix.transvection, Matrix.one_apply, hai, haj, Ne.symm hai]
-
-private theorem coe_transvectionWeylElement_mul_apply (hij : i ≠ j) (M : Matrix n n A)
-    (a b : n) :
-    (((transvectionWeylElement (A := A) hij : GL n A) : Matrix n n A) * M) a b =
-      if a = i then M j b else if a = j then -M i b else M a b := by
-  rw [Matrix.mul_apply]
-  simp_rw [coe_transvectionWeylElement_apply hij a]
-  by_cases hai : a = i
-  · subst a
-    simp [Matrix.one_apply]
-  · by_cases haj : a = j
-    · subst a
-      simp [Matrix.one_apply, hij.symm]
-    · simp [Matrix.one_apply, hai, haj]
 
 private theorem transpose_coe_transvectionWeylElement_symm (hij : i ≠ j) :
     (((transvectionWeylElement (A := A) hij.symm : GL n A) : Matrix n n A).transpose) =

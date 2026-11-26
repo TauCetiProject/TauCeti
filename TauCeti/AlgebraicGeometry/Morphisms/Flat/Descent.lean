@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatDescent
-public import TauCeti.RingTheory.Flat.Descent
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 
 /-!
-# Flat morphisms satisfy fpqc descent
+# Flat morphisms satisfy flat descent
 
-A morphism whose base change along a surjective, flat and quasi-compact morphism is flat is
-itself flat. The affine statement is the descent of flatness of a module along a faithfully
-flat extension of scalars (`RingHom.Flat.codescendsAlong_faithfullyFlat`), and Mathlib's
-`AlgebraicGeometry.HasRingHomProperty.descendsAlong_flat` globalizes it.
+A morphism whose base change along a surjective flat morphism is flat is itself flat
+(`AlgebraicGeometry.Flat.descendsAlong_surjective_inf_flat`). No quasi-compactness or finite
+presentation is needed: the base-changed cover is again flat and surjective, so this is
+`AlgebraicGeometry.Flat.of_comp_surjective`, which is checked on stalks. In particular flatness
+satisfies fpqc descent (`AlgebraicGeometry.Flat.descendsAlong_surjective_inf_flat_inf_quasicompact`)
+and fppf descent
+(`AlgebraicGeometry.Flat.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation`).
 
 We also provide
 `CategoryTheory.MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact`, which
@@ -48,11 +51,28 @@ theorem _root_.CategoryTheory.MorphismProperty.of_isPullback_of_surjective_of_fl
     (Q := @Surjective ⊓ @Flat ⊓ @QuasiCompact) h
     ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩ hfst
 
+/-- **Flatness descends along flat surjective morphisms.** A morphism whose base change along a
+surjective flat morphism is flat is itself flat. -/
+instance Flat.descendsAlong_surjective_inf_flat :
+    MorphismProperty.DescendsAlong @Flat.{u} (@Surjective ⊓ @Flat) where
+  of_isPullback {_ _ _ _ fst snd f g} h hf hfst := by
+    have : Surjective snd := MorphismProperty.of_isPullback h hf.1
+    have : Flat snd := MorphismProperty.of_isPullback h hf.2
+    have : Flat (snd ≫ g) := h.w ▸ MorphismProperty.comp_mem _ fst f hfst hf.2
+    exact Flat.of_comp_surjective snd g
+
 /-- **Flat morphisms satisfy fpqc descent.** Flatness descends along surjective, flat,
 quasi-compact morphisms. -/
+@[stacks 02L2 "descent along a surjective, flat and quasi-compact morphism"]
 instance Flat.descendsAlong_surjective_inf_flat_inf_quasicompact :
     MorphismProperty.DescendsAlong @Flat.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
-  HasRingHomProperty.descendsAlong_flat RingHom.Flat.codescendsAlong_faithfullyFlat
+  .of_le inf_le_left
+
+/-- **Flat morphisms satisfy fppf descent.** Flatness descends along surjective, flat morphisms
+locally of finite presentation. -/
+instance Flat.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation :
+    MorphismProperty.DescendsAlong @Flat.{u} (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
+  .of_le inf_le_left
 
 end AlgebraicGeometry
 

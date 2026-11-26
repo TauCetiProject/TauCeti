@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Pi
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
+public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Pi
 
@@ -41,6 +42,8 @@ and permutations of the components.
 * `TauCeti.IntegralLattice.dualCarrier_pi`: the dual carrier of an orthogonal sum is the product
   of the dual carriers.
 * `TauCeti.IntegralLattice.discriminantGroupPiEquiv`: `A_(⊥ i, L i) ≃ Π i, A_(L i)`.
+* `TauCeti.IntegralLattice.discriminant_pi`: the discriminant of an orthogonal sum is the product
+  of the discriminants of the summands.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPi`: for even nondegenerate summands, this
   equivalence is an isometry of finite quadratic modules.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPiOfIsometry`: the isometry
@@ -65,7 +68,7 @@ public section
 
 namespace TauCeti.IntegralLattice
 
-universe u v w x
+universe u v w x a b
 
 variable {ι : Type v} [Fintype ι] {V : ι → Type u} [∀ i, AddCommGroup (V i)]
   [∀ i, Module ℚ (V i)]
@@ -81,10 +84,10 @@ theorem mem_dualCarrier_pi_iff (x : ∀ i, V i) :
   simp only [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
   constructor
   · intro hx i y hy
-    rw [← piForm_single_right L x i y, ← pi_form]
+    rw [← LinearMap.BilinForm.pi_apply_single_right (fun i ↦ (L i).form) x i y, ← pi_form]
     exact hx _ (single_mem_pi_carrier L i hy)
   · intro hx y hy
-    rw [pi_form, piForm_apply]
+    rw [pi_form, LinearMap.BilinForm.pi_apply]
     exact Submodule.sum_mem _ fun i _ ↦ hx i (y i) ((mem_pi_carrier_iff L y).mp hy i)
 
 /-- The dual carrier of an orthogonal sum is the product of the dual carriers. -/
@@ -154,6 +157,14 @@ theorem discriminantGroupPiEquiv_symm_mk (x : ∀ i, (L i).dualCarrier) :
       Submodule.Quotient.mk ((piDualCarrierEquiv L).symm x) := by
   rw [LinearEquiv.symm_apply_eq, discriminantGroupPiEquiv_mk, LinearEquiv.apply_symm_apply]
 
+/-- **The discriminant of an orthogonal sum is the product of the discriminants** of its summands.
+When some summand is degenerate, both sides are `0`. -/
+@[simp]
+theorem discriminant_pi : (pi L).discriminant = ∏ i, (L i).discriminant := by
+  rw [← natCard_discriminantGroup, Nat.card_congr (discriminantGroupPiEquiv L).toEquiv,
+    Nat.card_pi]
+  simp only [natCard_discriminantGroup]
+
 /-! ## The discriminant quadratic module -/
 
 /-- For even nondegenerate summands, the orthogonal-sum equivalence of discriminant groups is an
@@ -175,7 +186,7 @@ noncomputable def discriminantQuadraticIsometryPi [∀ i, (L i).IsNondegenerate]
         (pi L).discriminantQuadraticMap _ (Submodule.Quotient.mk x)
       refine (FiniteQuadraticModule.pi_quadratic _ _).trans ?_
       simp only [discriminantGroupPiEquiv_mk, discriminantQuadraticModule_quadratic,
-        discriminantQuadraticMap_mk, pi_form, piForm_apply, Finset.sum_div,
+        discriminantQuadraticMap_mk, pi_form, LinearMap.BilinForm.pi_apply, Finset.sum_div,
         coe_piDualCarrierEquiv_apply]
       exact (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ))) _ _).symm
 
@@ -201,7 +212,7 @@ theorem discriminantQuadraticIsometryPi_symm_apply [∀ i, (L i).IsNondegenerate
 modules of even nondegenerate lattices induce an isometry from the orthogonal sum `Π i, A_i` to
 the discriminant module of the orthogonal sum `⊥ i, L i`. -/
 noncomputable def discriminantQuadraticIsometryPiOfIsometry [∀ i, (L i).IsNondegenerate]
-    {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{u}}
+    {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{a}}
     (f : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i))) :
     FiniteQuadraticModule.Isometry (FiniteQuadraticModule.pi A)
       ((pi L).discriminantQuadraticModule (isEven_pi hL)) :=
@@ -211,7 +222,7 @@ noncomputable def discriminantQuadraticIsometryPiOfIsometry [∀ i, (L i).IsNond
 identifies `Π i, A_(L i)` with `A_(⊥ i, L i)`. -/
 @[simp]
 theorem discriminantQuadraticIsometryPiOfIsometry_apply [∀ i, (L i).IsNondegenerate]
-    {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{u}}
+    {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{a}}
     (f : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
     (x : ∀ i, A i) :
     discriminantQuadraticIsometryPiOfIsometry L f x =
@@ -222,12 +233,26 @@ theorem discriminantQuadraticIsometryPiOfIsometry_apply [∀ i, (L i).IsNondegen
 group of each summand the image of the corresponding letter. -/
 @[simp]
 theorem discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry
-    [∀ i, (L i).IsNondegenerate] {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{u}}
+    [∀ i, (L i).IsNondegenerate] {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{a}}
     (f : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
     (x : ∀ i, A i) (i : ι) :
     discriminantGroupPiEquiv L (discriminantQuadraticIsometryPiOfIsometry L f x) i = f i (x i) := by
   rw [discriminantQuadraticIsometryPiOfIsometry_apply]
   exact congrFun ((discriminantGroupPiEquiv L).apply_symm_apply fun i ↦ f i (x i)) i
+
+/-- The inverse of the isometry induced by summandwise alphabet isometries decodes each coordinate
+of a discriminant class through the corresponding inverse alphabet isometry. -/
+@[simp]
+theorem discriminantQuadraticIsometryPiOfIsometry_symm_apply [∀ i, (L i).IsNondegenerate]
+    {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{a}}
+    (f : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
+    (c : (pi L).DiscriminantGroup) (i : ι) :
+    (discriminantQuadraticIsometryPiOfIsometry L f).symm c i =
+      (f i).symm (discriminantGroupPiEquiv L c i) := by
+  refine (f i).eq_symm_apply.mpr ?_
+  refine (discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry L f _ i).symm.trans ?_
+  exact congrArg (fun x ↦ discriminantGroupPiEquiv L x i)
+    ((discriminantQuadraticIsometryPiOfIsometry L f).apply_symm_apply c)
 
 /-! ## Naturality
 
@@ -261,7 +286,7 @@ transports the class of an alphabet family `x` to the class of `i ↦ g i (x i)`
 theorem discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry
     [∀ i, (L i).IsNondegenerate] [∀ i, (M i).IsNondegenerate]
     {hL : ∀ i, (L i).IsEven} {hM : ∀ i, (M i).IsEven}
-    {A : ι → FiniteQuadraticModule.{u}} {B : ι → FiniteQuadraticModule.{w}}
+    {A : ι → FiniteQuadraticModule.{a}} {B : ι → FiniteQuadraticModule.{b}}
     (a : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
     (b : ∀ i, FiniteQuadraticModule.Isometry (B i) ((M i).discriminantQuadraticModule (hM i)))
     (f : ∀ i, Isometry (L i) (M i)) (g : ∀ i, A i → B i)
@@ -295,6 +320,18 @@ theorem discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft (σ : κ ≃
     simp only [Isometry.discriminantGroupEquiv_mk, discriminantGroupPiEquiv_mk]
     exact congrArg Submodule.Quotient.mk (Subtype.ext (by simp))
 
+/-- The inverse of reindexing an orthogonal sum by `σ : κ ≃ ι` reads the coordinate in position
+`k` of a discriminant class from position `σ k`. -/
+@[simp]
+theorem discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft_symm (σ : κ ≃ ι)
+    (c : (pi L).DiscriminantGroup) (k : κ) :
+    discriminantGroupPiEquiv (fun k ↦ L (σ k))
+        ((Isometry.piCongrLeft L σ).discriminantGroupEquiv.symm c) k =
+      discriminantGroupPiEquiv L c (σ k) := by
+  conv_rhs =>
+    rw [← LinearEquiv.apply_symm_apply (Isometry.piCongrLeft L σ).discriminantGroupEquiv c]
+  exact (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft L σ _ k).symm
+
 /-- On discriminant groups the one-summand isometry extracts the unique component. -/
 @[simp]
 theorem Isometry.discriminantGroupEquiv_piUnique [Unique ι]
@@ -312,7 +349,7 @@ theorem Isometry.discriminantGroupEquiv_piUnique [Unique ι]
 orthogonal sum by `σ : κ ≃ ι` transports the class of an alphabet family `x` over `κ` to the class
 of the reindexed family `Equiv.piCongrLeft A σ x` over `ι`. -/
 theorem discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry
-    [∀ i, (L i).IsNondegenerate] {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{u}}
+    [∀ i, (L i).IsNondegenerate] {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{a}}
     (a : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
     (σ : κ ≃ ι) (x : ∀ k, A (σ k)) :
     (Isometry.piCongrLeft L σ).discriminantQuadraticIsometry (isEven_pi fun k ↦ hL (σ k))
@@ -339,7 +376,7 @@ theorem
     [∀ i, (L i).IsNondegenerate] {W' : κ → Type w} [∀ k, AddCommGroup (W' k)]
     [∀ k, Module ℚ (W' k)] {M' : ∀ k, IntegralLattice (W' k)} [∀ k, (M' k).IsNondegenerate]
     {hL : ∀ i, (L i).IsEven} {hM : ∀ k, (M' k).IsEven}
-    {A : ι → FiniteQuadraticModule.{u}} {B : κ → FiniteQuadraticModule.{w}}
+    {A : ι → FiniteQuadraticModule.{a}} {B : κ → FiniteQuadraticModule.{b}}
     (a : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
     (b : ∀ k, FiniteQuadraticModule.Isometry (B k) ((M' k).discriminantQuadraticModule (hM k)))
     (σ : κ ≃ ι) (f : ∀ k, Isometry (L (σ k)) (M' k)) (g : ∀ k, A (σ k) → B k)

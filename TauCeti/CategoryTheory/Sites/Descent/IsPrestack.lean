@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.FunctorCategory
+public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
@@ -26,12 +28,18 @@ This file also shows that `pullHom` is compatible with composition and identitie
 hence sends isomorphisms to isomorphisms
 (`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.inv_pullHom`), and that it sends the
 pullback `f^* φ` of a morphism `φ` to its pullback along the composite
-(`CategoryTheory.Pseudofunctor.pullHom_map`).
+(`CategoryTheory.Pseudofunctor.pullHom_map`). Composition and identities of local morphisms are
+therefore morphisms of presheaves on `Over S`
+(`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`).
 
 It also shows that pulling back morphisms between pullbacks commutes with restricting `F` along a
 functor `p : D ⥤ C`: for the pseudofunctor `p.op.toPseudofunctor.comp F`, pulling back along `g`
 is pulling back along `p.map g` for `F`
 (`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`).
+
+If `M` and `N` admit morphisms after pullback along the arrows of a covering sieve, the objects of
+`Over S` over which `presheafHom M N` has a section cover the slice site
+(`CategoryTheory.Pseudofunctor.coversTop_presheafHom`).
 
 For a prestack `F` for a Grothendieck topology `J`, this gives the descent of morphisms along a
 covering sieve in the form used to build descent data by hand: a morphism is determined by its
@@ -117,6 +125,19 @@ lemma map_presheafHomObjHomEquiv_symm {M N : F.obj (.mk (op S))}
   rw [Equiv.apply_symm_apply] at this
   exact this.symm
 
+/-- The identification of morphisms of `F` over `S` with sections of `F.presheafHom` over the
+terminal object sends identities to identities. -/
+lemma presheafHomObjHomEquiv_id (M : F.obj (.mk (op S))) :
+    F.presheafHomObjHomEquiv (𝟙 M) = 𝟙 _ :=
+  (Iso.homCongr_apply _ _ _).trans (by simp)
+
+/-- The identification of morphisms of `F` over `S` with sections of `F.presheafHom` over the
+terminal object is compatible with composition. -/
+lemma presheafHomObjHomEquiv_comp {M N P : F.obj (.mk (op S))} (φ : M ⟶ N) (ψ : N ⟶ P) :
+    F.presheafHomObjHomEquiv (φ ≫ ψ) =
+      F.presheafHomObjHomEquiv φ ≫ F.presheafHomObjHomEquiv ψ :=
+  Iso.homCongr_comp _ _ _ φ ψ
+
 variable {F}
 
 /-- The pullback of a composite of local morphisms is the composite of their pullbacks. -/
@@ -138,6 +159,34 @@ lemma pullHom_id_self ⦃X : C⦄ ⦃M : F.obj (.mk (op X))⦄ ⦃Y : C⦄ (f : 
     (g : Y' ⟶ Y) (gf : Y' ⟶ X) (hgf : g ≫ f = gf) :
     pullHom (𝟙 ((F.map f.op.toLoc).toFunctor.obj M)) g gf gf hgf hgf = 𝟙 _ := by
   simp [pullHom]
+
+open MonoidalCategory in
+/-- Composition of local morphisms, as a morphism of presheaves on `Over S`. -/
+def presheafHomComp (M N P : F.obj (.mk (op S))) :
+    F.presheafHom M N ⊗ F.presheafHom N P ⟶ F.presheafHom M P where
+  app T := TypeCat.ofHom fun p ↦ p.1 ≫ p.2
+  naturality T T' g := by
+    ext ⟨f, g⟩
+    exact (pullHom_comp _ _ _ _ _ _).symm
+
+open MonoidalCategory in
+/-- Identities of local morphisms, as a morphism of presheaves on `Over S`. -/
+def presheafHomId (M : F.obj (.mk (op S))) :
+    𝟙_ ((Over S)ᵒᵖ ⥤ Type _) ⟶ F.presheafHom M M where
+  app T := TypeCat.ofHom fun _ ↦ 𝟙 _
+  naturality T T' g := by
+    ext p
+    simp
+
+open MonoidalCategory in
+lemma presheafHomComp_app_apply (M N P : F.obj (.mk (op S))) (T : (Over S)ᵒᵖ)
+    (p : (F.presheafHom M N ⊗ F.presheafHom N P).obj T) :
+    (presheafHomComp M N P).app T p = p.1 ≫ p.2 := (rfl)
+
+open MonoidalCategory in
+lemma presheafHomId_app_apply (M : F.obj (.mk (op S))) (T : (Over S)ᵒᵖ)
+    (p : (𝟙_ ((Over S)ᵒᵖ ⥤ Type _)).obj T) :
+    (presheafHomId M).app T p = 𝟙 _ := (rfl)
 
 /-- The pullback of `f^* φ` is `(g ≫ f)^* φ`. -/
 @[simp]
@@ -214,6 +263,21 @@ lemma inv_pullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂
   IsIso.inv_eq_of_hom_inv_id (by simp [← pullHom_comp])
 
 end LocallyDiscreteOpToCat
+
+/-- If there are morphisms from `M` to `N` after pullback along every arrow of a covering sieve of
+`S`, the objects of `Over S` over which the presheaf of morphisms from `M` to `N` has a section
+cover the slice site `(Over S, J.over S)`. -/
+lemma coversTop_presheafHom {J : GrothendieckTopology C} {M N : F.obj (.mk (op S))}
+    (h : ∃ R ∈ J S, ∀ ⦃V : C⦄ (f : V ⟶ S), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj M ⟶ (F.map f.op.toLoc).toFunctor.obj N)) :
+    (J.over S).CoversTop
+      fun T : {T : Over S // Nonempty ((F.presheafHom M N).obj (op T))} ↦ T.val := by
+  obtain ⟨R, hR, hMN⟩ := h
+  intro T
+  rw [GrothendieckTopology.mem_over_iff]
+  refine J.superset_covering (fun V g hg ↦ ?_) (J.pullback_stable T.hom hR)
+  rw [Sieve.overEquiv_iff]
+  exact ⟨⟨Over.mk (g ≫ T.hom), (hMN _ hg)⟩, ⟨𝟙 _⟩⟩
 
 namespace IsPrestack
 

@@ -98,6 +98,12 @@ theorem induction {P : SignedSym G → Prop}
   | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
   | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
+/-- The image of the generating module generates the signed symmetric algebra as an `R`-algebra. -/
+@[simp]
+theorem adjoin_range_generator : Algebra.adjoin R (Set.range (generator G)) = ⊤ :=
+  top_unique fun a _ => induction G (Subalgebra.algebraMap_mem _)
+    (fun x => Algebra.subset_adjoin ⟨x, rfl⟩) (fun _ _ => mul_mem) (fun _ _ => add_mem) a
+
 /-- Algebra maps out of the signed symmetric algebra are determined by their generators. -/
 @[ext 1200]
 theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : SignedSym G →ₐ[R] A}

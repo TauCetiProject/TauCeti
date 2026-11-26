@@ -31,6 +31,7 @@ separable over `κ(x) = k` (`TauCeti.Algebra.Etale.exists_isPrime_isSeparable_re
 
 * `TauCeti.Algebra.Smooth.exists_isMaximal_isSeparable`: a nonzero smooth algebra over a field
   `k` has a maximal ideal whose residue field is a finite separable extension of `k`.
+* `TauCeti.Algebra.Smooth.isSeparable`: a field extension that is smooth is separable.
 
 ## References
 
@@ -72,5 +73,12 @@ theorem Smooth.exists_isMaximal_isSeparable (k A : Type*) [Field k] [CommRing A]
   have hfield : IsField (A ⧸ RingHom.ker φ) :=
     (Algebra.IsIntegral.isField_iff_isField (algebraMap k _).injective).mp (Field.toIsField k)
   exact ⟨_, Ideal.Quotient.maximal_of_isField _ hfield, Algebra.IsIntegral.finite, hsep⟩
+
+/-- A field extension `K / k` with `K` smooth over `k` is separable. -/
+theorem Smooth.isSeparable (k K : Type*) [Field k] [Field K] [Algebra k K] [Algebra.Smooth k K] :
+    Algebra.IsSeparable k K := by
+  obtain ⟨m, hm, -, hsep⟩ := exists_isMaximal_isSeparable k K
+  obtain rfl : m = ⊥ := Ideal.eq_bot_of_prime m
+  exact AlgEquiv.Algebra.isSeparable (AlgEquiv.quotientBot k K)
 
 end TauCeti.Algebra

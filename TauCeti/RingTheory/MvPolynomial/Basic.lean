@@ -11,28 +11,55 @@ public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.LinearAlgebra.Dimension.BaseChange
 
 /-!
-# Finiteness of `MvPolynomial.map`
+# Module-finiteness of multivariate polynomial maps and monomial coordinates
 
 `MvPolynomial.map f` is a finite ring map whenever `f` is: a family generating `S` over `R`
 generates `MvPolynomial σ S` over `MvPolynomial σ R` once its members are read as constants.
+Moreover, module-finiteness of `MvPolynomial.aeval x` is preserved under precomposition with any
+surjective reindexing of the variables (`AlgHom.Finite.aeval_comp_of_surjective`).
 
-This is the coefficient-extension half of the finiteness that Stacks 10.161.13 (tag 032O)
-records as "`R'[x^{1/q}]` is finite over `R[x]`"; the `expand` half lives in
+The `MvPolynomial.map` lemma is the coefficient-extension half of the finiteness that Stacks
+10.161.13 (tag 032O) records as "`R'[x^{1/q}]` is finite over `R[x]`"; the `expand` half lives in
 `TauCeti/RingTheory/MvPolynomial/Expand.lean`. Nothing here mentions `expand`, which is why it
 sits in this file rather than that one.
+
+The coordinates of a polynomial in the monomial basis `MvPolynomial.basisMonomials` are its
+coefficients (`MvPolynomial.basisMonomials_repr_apply`).
 
 ## Main results
 
 * `TauCeti.MvPolynomial.finite_map`: `MvPolynomial.map f` is finite when `f` is.
+* `AlgHom.Finite.aeval_comp_of_surjective`: `(MvPolynomial.aeval x).Finite` implies
+  `(MvPolynomial.aeval (x ∘ e)).Finite` when `e` is surjective.
+* `MvPolynomial.basisMonomials_repr_apply`: coordinates in the monomial basis are coefficients.
 
 ## Provenance
 
-The argument is Stacks 10.161.13 (tag 032O), which is univariate and whose proof records it as
-"Since `R` is N-2 we see that `R′` is finite over `R` and hence `R′[x^{1/q}]` is finite over
-`R[x]`"; the multivariate form is not claimed as source material.
+The argument for `finite_map` is Stacks 10.161.13 (tag 032O), which is univariate and whose proof
+records it as "Since `R` is N-2 we see that `R′` is finite over `R` and hence `R′[x^{1/q}]` is
+finite over `R[x]`"; the multivariate form is not claimed as source material.
 -/
 
 public section
+
+namespace MvPolynomial
+
+/-- The coordinates of a polynomial in the monomial basis are its coefficients. -/
+@[simp]
+theorem basisMonomials_repr_apply {σ R : Type*} [CommSemiring R] (p : MvPolynomial σ R)
+    (s : σ →₀ ℕ) : (basisMonomials σ R).repr p s = p.coeff s :=
+  (rfl)
+
+end MvPolynomial
+
+/-- Module-finiteness of `MvPolynomial.aeval x` is preserved under precomposition with a surjective
+reindexing of the variables. -/
+theorem AlgHom.Finite.aeval_comp_of_surjective {σ τ R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] {x : τ → A} {e : σ → τ} (hx : (MvPolynomial.aeval (R := R) x).Finite)
+    (he : Function.Surjective e) :
+    (MvPolynomial.aeval (R := R) (x ∘ e)).Finite := by
+  rw [← MvPolynomial.aeval_comp_rename]
+  exact hx.comp (.of_surjective _ (MvPolynomial.rename_surjective e he))
 
 namespace TauCeti
 

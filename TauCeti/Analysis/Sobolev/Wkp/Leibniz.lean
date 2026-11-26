@@ -164,6 +164,22 @@ theorem iteratedGradient_one_ae_eq_of_value_ae_eq_mul (hzeta : ContDiff ℝ ∞ 
   simp only [hx, Pi.add_apply, value_succ, hfd, leibnizRemainder_def]
   abel
 
+/-- **The Leibniz remainder of a product is measurable.** If `u, w ∈ W^{2,p}(Ω)` and `w = ζ u`
+almost everywhere on `Ω` for a smooth `ζ`, then the Leibniz remainder
+`∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` is almost everywhere strongly measurable on `Ω`: it is
+`D²w - ζ D²u`. -/
+theorem aestronglyMeasurable_leibnizRemainder_of_value_ae_eq_mul (hzeta : ContDiff ℝ ∞ zeta)
+    {u w : Wkp mu Omega p 2}
+    (hw : (value 2 w : E → ℝ) =ᵐ[mu.restrict Omega] fun x => zeta x * value 2 u x) :
+    AEStronglyMeasurable
+      (fun x => leibnizRemainder zeta (iteratedGradient 0 (lowerOrder 1 u) x) (value 2 u x) x)
+      (mu.restrict Omega) := by
+  refine ((Lp.aestronglyMeasurable (iteratedGradient 1 w)).sub
+    (hzeta.continuous.aestronglyMeasurable.smul
+      (Lp.aestronglyMeasurable (iteratedGradient 1 u)))).congr ?_
+  filter_upwards [iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hw] with x hx
+  rw [Pi.sub_apply, hx, Pi.smul_apply', add_sub_cancel_left]
+
 /-- **The weak Hessian of a product, minus the principal part.** If `u, w ∈ W^{2,p}(Ω)` and
 `w = ζ u` almost everywhere on `Ω` for a smooth `ζ` with `‖∇ζ‖ ≤ c₁` and `‖D²ζ‖ ≤ c₂`, and
 `ζ D²u ∈ Lᵖ(Ω)`, then
@@ -274,8 +290,7 @@ theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : C
     filter_upwards [iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hw] with x hx
     rw [hx, add_sub_cancel_left]
   have hR := (memLp_leibnizRemainder_and_lpNorm_le le_rfl hM₁ hM₂ u
-    (((Lp.aestronglyMeasurable _).sub (hzeta.continuous.aestronglyMeasurable.smul
-      (Lp.aestronglyMeasurable _))).congr hDT)).1.ae_eq hDT.symm
+    (aestronglyMeasurable_leibnizRemainder_of_value_ae_eq_mul hzeta hw)).1.ae_eq hDT.symm
   have hζH : MemLp (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega) := by
     convert (Lp.memLp (iteratedGradient 1 w)).sub hR using 1
     ext x

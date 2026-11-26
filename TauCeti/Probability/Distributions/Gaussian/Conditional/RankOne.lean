@@ -27,9 +27,10 @@ regression mean is `m₁ + a (b ⬝ (x₂ - m₂)) / (b ⬝ b)` at every observa
 the observed deviation `x₂ - m₂` is a multiple of `b`, so the conditional law is the point mass
 at `m₁ + a (x₂ k - m₂ k) / b k` for any observed coordinate `k` with `b k ≠ 0`.
 
-Constant covariance `v` describes jointly Gaussian coordinates that are almost surely identical
-up to their means. Conditioning on any number of these coordinates, for instance on `(Z, Z)`,
-gives the point mass at the retained means shifted by one observed deviation.
+Constant positive covariance `v` describes jointly Gaussian coordinates that are almost surely
+identical up to their means. With a nonempty observed block, the pointwise kernel shifts the
+retained means by the average observed deviation. Almost surely this agrees with the shift by
+any one observed deviation.
 
 ## Main results
 
@@ -37,6 +38,8 @@ gives the point mass at the retained means shifted by one observed deviation.
   observed loading is nonzero;
 * `EuclideanSpace.gaussianCondMean_vecMulVec_self_apply`: the regression mean;
 * `EuclideanSpace.gaussianCondKernel_vecMulVec_self`: the conditional kernel is a point mass;
+* `EuclideanSpace.gaussianCondKernel_matrixOf_const`: for positive constant covariance the
+  pointwise kernel uses the average observed deviation;
 * `TauCeti.Probability.condDistrib_multivariateGaussian_vecMulVec_self`: the regular conditional
   law is the point mass determined by one observed coordinate;
 * `TauCeti.Probability.condDistrib_multivariateGaussian_const`: the case of identical
@@ -115,6 +118,27 @@ theorem gaussianCondKernel_vecMulVec_self (m : EuclideanSpace ℝ (ι ⊕ κ)) {
   rw [gaussianCondKernel_apply, Matrix.gaussianCondCov_vecMulVec_self hc,
     TauCeti.Probability.multivariateGaussian_zero_right]
 
+/-- With positive constant covariance and a nonempty observed block, the conditional Gaussian
+kernel is Dirac at the retained means shifted by the average observed deviation. This holds at
+every ambient observation, including outside the affine support. -/
+theorem gaussianCondKernel_matrixOf_const [Nonempty κ] (m : EuclideanSpace ℝ (ι ⊕ κ))
+    {c : ℝ} (hc : 0 < c) (x : EuclideanSpace ℝ κ) :
+    m.gaussianCondKernel (Matrix.of fun _ _ ↦ c) x =
+      Measure.dirac (WithLp.toLp 2 fun i ↦ m (Sum.inl i) +
+        (∑ j, (x j - m (Sum.inr j))) / Fintype.card κ) := by
+  have hcov : (Matrix.of fun _ _ ↦ c : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) =
+      vecMulVec (fun _ ↦ √c) (fun _ ↦ √c) := by
+    rw [vecMulVec_const_const, Real.mul_self_sqrt hc.le]
+  have hload : ∃ j : κ, (fun _ : ι ⊕ κ ↦ √c) (Sum.inr j) ≠ 0 :=
+    ⟨Classical.arbitrary κ, (Real.sqrt_pos.2 hc).ne'⟩
+  rw [hcov, m.gaussianCondKernel_vecMulVec_self hload]
+  congr 1
+  ext i
+  rw [gaussianCondMean_vecMulVec_self_apply]
+  simp only [← Finset.mul_sum, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    Real.sq_sqrt hc.le, ← mul_assoc, Real.mul_self_sqrt hc.le]
+  rw [mul_comm (Fintype.card κ : ℝ) c, mul_div_mul_left _ _ hc.ne']
+
 end EuclideanSpace
 
 namespace TauCeti.Probability
@@ -184,8 +208,7 @@ theorem condDistrib_multivariateGaussian_const {Ω : Type*} [MeasurableSpace Ω]
   · -- Positive variance is the rank-one case with every loading equal to `√v`.
     have hcov : (Matrix.of fun _ _ ↦ v : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) =
         vecMulVec (fun _ ↦ √v) (fun _ ↦ √v) := by
-      ext
-      simp [vecMulVec_apply, Real.mul_self_sqrt hv.le]
+      rw [vecMulVec_const_const, Real.mul_self_sqrt hv.le]
     rw [hcov] at hX
     have hsqrt : √v ≠ 0 := (Real.sqrt_pos.2 hv).ne'
     filter_upwards [condDistrib_multivariateGaussian_vecMulVec_self X m hX (k := k) hsqrt]
