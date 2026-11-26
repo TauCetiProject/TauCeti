@@ -84,30 +84,6 @@ variable [IsIntegralPerfectoid p A] [IsIntegralPerfectoid p A'] [IsIntegralPerfe
   [Fact ¬IsUnit (p : A)] [Fact ¬IsUnit (p : A')] [Fact ¬IsUnit (p : B)] {f : A →+* A'}
   (hf : Function.Surjective f) (g : B →+* A')
 
-/-- Fontaine's map of `A ×_{A'} B` is computed componentwise on
-`A_inf(A) ×_{A_inf(A')} A_inf(B)`. -/
-private theorem coe_fontaineTheta_pullback (v : WittVector p (PreTilt (f.pullback g) p)) :
-    (fontaineTheta (f.pullback g) p v : A × B) =
-      (fontaineTheta A p (PreTilt.wittVectorPullbackEquiv p f g v :
-          WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).1,
-        fontaineTheta B p (PreTilt.wittVectorPullbackEquiv p f g v :
-          WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).2) := by
-  simp
-
-/-- An element of `A_inf(A ×_{A'} B)` lies in `ker θ` exactly when both of its components in
-`A_inf(A)` and `A_inf(B)` do. -/
-private theorem mem_ker_fontaineTheta_pullback_iff
-    {v : WittVector p (PreTilt (f.pullback g) p)} :
-    v ∈ RingHom.ker (fontaineTheta (f.pullback g) p) ↔
-      (PreTilt.wittVectorPullbackEquiv p f g v :
-        WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).1 ∈
-          RingHom.ker (fontaineTheta A p) ∧
-      (PreTilt.wittVectorPullbackEquiv p f g v :
-        WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).2 ∈
-          RingHom.ker (fontaineTheta B p) := by
-  rw [RingHom.mem_ker, ← ZeroMemClass.coe_eq_zero, coe_fontaineTheta_pullback, Prod.mk_eq_zero,
-    RingHom.mem_ker, RingHom.mem_ker]
-
 include hf
 
 /-- Fontaine's map of `A ×_{A'} B` is surjective. -/
@@ -186,7 +162,7 @@ private theorem exists_ker_fontaineTheta_pullback_eq_span :
   refine ⟨ξ, le_antisymm (fun v hv ↦ ?_) ?_,
     PreTilt.isDistinguished_iff_wittVectorPullbackEquiv.mpr (hξ ▸ ⟨hAd, hBd⟩)⟩
   · -- write the components of `v` as multiples `yA ξA` and `yB ξB`
-    rw [mem_ker_fontaineTheta_pullback_iff, hA, hB, mem_span_singleton',
+    rw [PreTilt.mem_ker_fontaineTheta_iff_wittVectorPullbackEquiv, hA, hB, mem_span_singleton',
       mem_span_singleton'] at hv
     obtain ⟨⟨yA, hyA⟩, ⟨yB, hyB⟩⟩ := hv
     have hy : WittVector.map (PreTilt.map p f) yA = WittVector.map (PreTilt.map p g) yB := by
@@ -196,7 +172,8 @@ private theorem exists_ker_fontaineTheta_pullback_eq_span :
     refine mem_span_singleton'.mpr ⟨e.symm ⟨(yA, yB), RingHom.mem_pullback.mpr hy⟩,
       e.injective (Subtype.ext ?_)⟩
     rw [map_mul, RingEquiv.apply_symm_apply, Subring.coe_mul, hξ, Prod.mk_mul_mk, hyA, hyB]
-  · rw [span_singleton_le_iff_mem, mem_ker_fontaineTheta_pullback_iff, hξ, hA, hB]
+  · rw [span_singleton_le_iff_mem, PreTilt.mem_ker_fontaineTheta_iff_wittVectorPullbackEquiv, hξ,
+      hA, hB]
     exact ⟨mem_span_singleton_self _, mem_span_singleton_self _⟩
 
 /-- The fibre product of nonzero integral perfectoid rings along a surjection is integral
