@@ -170,7 +170,6 @@ theorem kummerUBracket_intCast (a w : ℂ) (n : ℤ) : kummerUBracket a n w = 0 
 
 /-- At `a = 0`, Tricomi's bracket is `F(0, b, w) = sin(πb) / π` for all complex `b` and `w`, so
 that `(π / sin πb) F(0, b, w) = 1` for `b ∉ ℤ`; this is `U(0, b, z) = 1` (DLMF 13.6.3). -/
-@[simp]
 theorem kummerUBracket_zero_left (b w : ℂ) : kummerUBracket 0 b w = sin (π * b) / π := by
   have hM : regularizedHGFun {0} {b} (exp w) = (Gamma b)⁻¹ := by
     simp [regularizedHGFun_of_zero_mem]
