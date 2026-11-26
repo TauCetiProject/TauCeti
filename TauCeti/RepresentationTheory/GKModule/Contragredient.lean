@@ -31,7 +31,6 @@ A morphism `φ : M → N` of `(𝔤, K)`-modules (`TauCeti.GKModule.Hom`) has a 
 ## Main statements
 
 * `TauCeti.GKModule.dual_lie`: the dual actions of `K` and `𝔤` are covariant.
-* `TauCeti.GKModule.isGFinite_dual_lie`: a `K`-finite linear form stays `K`-finite under `𝔤`.
 * `TauCeti.GKModule.contragredientSubmodule_eq_top`: for finite-dimensional `V` the contragredient
   is the whole dual.
 * `TauCeti.GKModule.Hom.dualMap_id`, `TauCeti.GKModule.Hom.dualMap_comp`: transposition is a
@@ -69,29 +68,13 @@ theorem dual_lie (g : K) (x : 𝔤) (f : Dual k V) :
   simp only [dual_apply, Dual.transpose_apply, LinearMap.coe_comp, Function.comp_apply,
     Module.Dual.lie_apply, M.map_lie, inv_self_apply]
 
-/-- **The `K`-finite linear forms are stable under `𝔤`.** For a finite-dimensional `𝔤`, if `f`
-is `K`-finite then so is `⁅x, f⁆`: its orbit lies in the span of the brackets of a basis of `𝔤`
-with the orbit of `f`. -/
-theorem isGFinite_dual_lie [FiniteDimensional k 𝔤] {f : Dual k V} (hf : M.ρ.dual.IsGFinite f)
-    (x : 𝔤) : M.ρ.dual.IsGFinite ⁅x, f⁆ := by
-  let b := Module.finBasis k 𝔤
-  let O := Submodule.span k (Set.range fun g : K ↦ M.ρ.dual g f)
-  -- The orbit span `O` is finite-dimensional, hence so is the supremum of its images below.
-  have : FiniteDimensional k O := (isGFinite_iff _ _).1 hf
-  refine IsGFinite.of_forall_apply_mem
-    (W := ⨆ j, O.map (LieModule.toEnd k 𝔤 (Dual k V) (b j))) fun g ↦ ?_
-  rw [dual_lie, ← b.sum_repr (Ad g x), sum_lie]
-  refine Submodule.sum_mem _ fun j _ ↦ ?_
-  rw [smul_lie]
-  exact Submodule.smul_mem _ _ (Submodule.mem_iSup_of_mem j
-    (Submodule.mem_map_of_mem (Submodule.subset_span ⟨g, rfl⟩)))
-
 /-- The `K`-finite linear forms on `V`, a Lie submodule of `Dual k V` when `𝔤` is
-finite-dimensional. -/
+finite-dimensional: by covariance (`dual_lie`) they are stable under `𝔤`
+(`Representation.IsGFinite.lie`). -/
 def contragredientSubmodule [FiniteDimensional k 𝔤] : LieSubmodule k 𝔤 (Dual k V) where
   toSubmodule := M.ρ.dual.gFiniteSubrepresentation.toSubmodule
   lie_mem {x _} hf := M.ρ.dual.mem_gFiniteSubrepresentation.2
-    (M.isGFinite_dual_lie (M.ρ.dual.mem_gFiniteSubrepresentation.1 hf) x)
+    ((M.ρ.dual.mem_gFiniteSubrepresentation.1 hf).lie M.dual_lie x)
 
 @[simp]
 theorem mem_contragredientSubmodule [FiniteDimensional k 𝔤] {f : Dual k V} :
