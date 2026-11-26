@@ -216,4 +216,19 @@ theorem _root_.Meromorphic.meromorphicOrderAt_rieszRemainderMellin_neg_iff {L : 
   · have hneg : (-1 : WithTop ℤ) < 0 := by decide
     simp [(hL.rieszRemainderMellin_simplePole hz₀ hz₁ hn.symm hne).1, hne, hneg]
 
+/-- At a real point `β ∈ (0, 1)` where `L` has finite positive order, the Mellin expression has
+a positive real leading Laurent coefficient, which is its residue since the pole is simple. -/
+theorem _root_.Meromorphic.exists_pos_meromorphicTrailingCoeffAt_rieszRemainderMellin
+    {L : ℂ → ℂ} (hL : Meromorphic L) {β : ℝ} (hβ₀ : 0 < β) (hβ₁ : β < 1)
+    (hfin : meromorphicOrderAt L β ≠ ⊤) (hpos : 0 < meromorphicOrderAt L β) :
+    ∃ c : ℝ, 0 < c ∧ meromorphicTrailingCoeffAt (rieszRemainderMellin L) β = (c : ℂ) := by
+  lift meromorphicOrderAt L β to ℤ using hfin with n hn
+  have hnpos : 0 < n := WithTop.coe_lt_coe.mp hpos
+  have h₀ : (β : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hβ₀.ne'
+  have h₁ : (β : ℂ) ≠ 1 := by exact_mod_cast hβ₁.ne
+  refine ⟨(n : ℝ) / (β * (1 - β)), by positivity, ?_⟩
+  rw [(hL.rieszRemainderMellin_simplePole h₀ h₁ hn.symm hnpos.ne').2]
+  push_cast
+  ring
+
 end TauCeti

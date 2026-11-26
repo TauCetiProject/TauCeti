@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
-import Mathlib.Analysis.Meromorphic.RCLike
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
@@ -33,12 +32,5 @@ theorem dedekindZetaC_ne_zero_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) (hs₁ : 
   · exact ne_zero_of_eqOn_dedekindZeta h.symm hs₁
       (analyticAt_dedekindZetaC K hs₁).differentiableAt fun _ hz ↦
         dedekindZetaC_eq_dedekindZeta K hz
-
-/-- The continued Dedekind zeta function has finite order at every point, since it has a
-simple pole at `1` and therefore is not the zero meromorphic function. -/
-theorem meromorphicOrderAt_dedekindZetaC_ne_top (z : ℂ) :
-    meromorphicOrderAt (dedekindZetaC K) z ≠ ⊤ :=
-  ((meromorphic_dedekindZetaC K).exists_meromorphicOrderAt_ne_top_iff_forall.mp
-    ⟨1, by simp [meromorphicOrderAt_dedekindZetaC_one]⟩) z
 
 end TauCeti.LFunctions

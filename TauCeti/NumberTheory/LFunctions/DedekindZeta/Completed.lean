@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
+import Mathlib.Analysis.Meromorphic.RCLike
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
@@ -68,6 +69,8 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
 * `TauCeti.LFunctions.analyticAt_dedekindZetaC_iff`,
   `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_one`: `ζ_K` is analytic exactly away
   from `1`, where it has a simple pole.
+* `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_ne_top`: `ζ_K` has finite order
+  everywhere.
 * `TauCeti.LFunctions.tendsto_sub_one_mul_dedekindZetaC`: its residue at `s = 1` is
   `NumberField.dedekindZeta_residue K = 2 ^ r₁ (2π) ^ r₂ h R / (w √|d_K|)`.
 
@@ -466,6 +469,13 @@ theorem meromorphicOrderAt_dedekindZetaC_one :
     meromorphicOrderAt (dedekindZetaC K) 1 = (-1 : ℤ) :=
   (meromorphic_dedekindZetaC K 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
     (ofReal_ne_zero.mpr (dedekindZeta_residue_pos K).ne') (tendsto_sub_one_mul_dedekindZetaC K)
+
+/-- `ζ_K` has finite order at every point, since it has a simple pole at `1` and therefore is
+not the zero meromorphic function. -/
+theorem meromorphicOrderAt_dedekindZetaC_ne_top (z : ℂ) :
+    meromorphicOrderAt (dedekindZetaC K) z ≠ ⊤ :=
+  ((meromorphic_dedekindZetaC K).exists_meromorphicOrderAt_ne_top_iff_forall.mp
+    ⟨1, by simp [meromorphicOrderAt_dedekindZetaC_one]⟩) z
 
 /-- `ζ_K` is analytic at `s` if and only if `s ≠ 1`. -/
 @[simp]

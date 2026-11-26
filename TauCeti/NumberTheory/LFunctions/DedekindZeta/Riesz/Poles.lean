@@ -74,15 +74,12 @@ theorem exists_pos_meromorphicTrailingCoeffAt_rieszRemainderMellin_dedekindZetaC
     (hβ : 0 < β) (hpole : meromorphicOrderAt (rieszRemainderMellin (dedekindZetaC K)) β < 0) :
     ∃ c : ℝ, 0 < c ∧
       meromorphicTrailingCoeffAt (rieszRemainderMellin (dedekindZetaC K)) β = (c : ℂ) := by
-  have h₀ : (β : ℂ) ≠ 0 := ofReal_ne_zero.mpr hβ.ne'
   have hβ₁ : β < 1 := lt_of_not_ge fun h ↦
     hpole.not_ge (analyticAt_rieszRemainderMellin_dedekindZetaC_of_one_le_re K
       (by simpa using h)).meromorphicOrderAt_nonneg
-  have hzero := (meromorphicOrderAt_rieszRemainderMellin_dedekindZetaC_neg_iff K h₀).mp hpole
-  rw [(rieszRemainderMellin_dedekindZetaC_simplePole K h₀ hzero).2]
-  lift meromorphicOrderAt (dedekindZetaC K) (β : ℂ) to ℤ using
-    meromorphicOrderAt_dedekindZetaC_ne_top K β with m
-  have hm : 0 < m := WithTop.coe_lt_coe.mp hzero
-  exact ⟨(m : ℝ) / (β * (1 - β)), by positivity, by push_cast; rfl⟩
+  exact (meromorphic_dedekindZetaC K).exists_pos_meromorphicTrailingCoeffAt_rieszRemainderMellin
+    hβ hβ₁ (meromorphicOrderAt_dedekindZetaC_ne_top K β)
+    ((meromorphicOrderAt_rieszRemainderMellin_dedekindZetaC_neg_iff K
+      (ofReal_ne_zero.mpr hβ.ne')).mp hpole)
 
 end TauCeti.LFunctions
