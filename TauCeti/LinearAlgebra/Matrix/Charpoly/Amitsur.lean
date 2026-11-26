@@ -111,33 +111,40 @@ private lemma mk_X_pow_eq_iff {e : ℕ} {p q : A[X]} :
   rw [AdjoinRoot.mk_eq_mk, X_pow_dvd_iff]
   simp [sub_eq_zero]
 
+/-- On pure tensors `1 ⊗ₜ s`, `det (1 - c • amitsurLift ρ e (1 ⊗ₜ s))` is the reversed
+characteristic polynomial of `ρ s` evaluated at `c`. -/
+private lemma det_one_sub_smul_amitsurLift_tmul (ρ : Λ →ₐ[B] Matrix n n A) (e : ℕ) (s : Λ)
+    (c : amitsurSubalg B A e) :
+    det (1 - c • amitsurLift ρ e (1 ⊗ₜ s)) =
+      aeval (c : AdjoinRoot (X ^ e : A[X])) (ρ s).charpoly.reverse := by
+  simpa [(amitsurSubalg B A e).smul_def] using
+    (aeval_reverse_charpoly (ρ s) (c : AdjoinRoot (X ^ e : A[X]))).symm
+
 /-- Inductive step for Amitsur's theorem: working modulo `X ^ e` over `amitsurSubalg B A e`, adding
 `t ^ j • γ` to `β` preserves membership of `det (1 - t • f β)` in `amitsurSubalg B A e`. -/
 private theorem amitsur_det_one_sub_smul_mem (ρ : Λ →ₐ[B] Matrix n n A) {S : Set Λ}
     (hS : Submodule.span B S = ⊤)
-    (hρ : ∀ s ∈ S, ∀ k : ℕ, (ρ s).charpoly.coeff k ∈ (algebraMap B A).range) (e : ℕ)
-    {j : ℕ} (hj : j ≤ e) (γ β : amitsurSubalg B A e ⊗[B] Λ)
+    (hρ : ∀ s ∈ S, ∀ k : ℕ, (ρ s).charpoly.coeff k ∈ (algebraMap B A).range) (e j : ℕ)
+    (γ β : amitsurSubalg B A e ⊗[B] Λ)
     (hβ : det (1 - amitsurRoot B A e • amitsurLift ρ e β) ∈ amitsurSubalg B A e) :
     det (1 - amitsurRoot B A e • amitsurLift ρ e (β + amitsurRoot B A e ^ j • γ)) ∈
       amitsurSubalg B A e := by
   let R := amitsurSubalg B A e
   let t : R := amitsurRoot B A e
   let f := amitsurLift ρ e
+  have ht_pow : t ^ e = 0 := Subtype.ext (by simp [t, ← mk_X, ← map_pow])
+  rcases lt_or_ge e j with hlt | hj
+  · have htj : t ^ j = 0 := by rw [← Nat.add_sub_of_le hlt.le, pow_add, ht_pow, zero_mul]
+    simpa [t, htj] using hβ
   have hdet_mem (s : Λ) (hs : s ∈ S) (c : R) : det (1 - c • f (1 ⊗ₜ s)) ∈ R := by
     obtain ⟨y, hy⟩ : ∃ y : B[X], y.map (algebraMap B A) = (ρ s).charpoly :=
       (lifts_iff_coeff_lifts _).2 (hρ s hs)
-    have hdet : det (1 - c • f (1 ⊗ₜ s)) = aeval (c : AdjoinRoot (X ^ e : A[X]))
-        (ρ s).charpoly.reverse := by
-      simpa [f, R.smul_def] using
-        (aeval_reverse_charpoly (ρ s) (c : AdjoinRoot (X ^ e : A[X]))).symm
-    rw [hdet, reverse, ← hy, reflect_map, aeval_map_algebraMap]
+    rw [det_one_sub_smul_amitsurLift_tmul, reverse, ← hy, reflect_map, aeval_map_algebraMap]
     simp
   have hspan (x : R ⊗[B] Λ) : x ∈ Submodule.span R (TensorProduct.mk B R Λ 1 '' S) := by
     simp [← Submodule.baseChange_span, hS]
   induction hj using Nat.decreasingInduction generalizing γ β with
-  | self =>
-    have ht_pow : t ^ e = 0 := Subtype.ext (by simp [t, ← mk_X, ← map_pow])
-    simpa [t, ht_pow] using hβ
+  | self => simpa [t, ht_pow] using hβ
   | of_succ j _ ih =>
     induction hspan γ using Submodule.closure_induction generalizing β with
     | zero => simpa using hβ
@@ -169,14 +176,10 @@ theorem charpoly_coeff_mem_range_of_span (ρ : Λ →ₐ[B] Matrix n n A) {S : S
     (w : Λ) (k : ℕ) : (ρ w).charpoly.coeff k ∈ (algebraMap B A).range := by
   let e : ℕ := revAt (ρ w).charpoly.natDegree k + 1
   have hmem : det (1 - amitsurRoot B A e • amitsurLift ρ e (1 ⊗ₜ w)) ∈ amitsurSubalg B A e := by
-    simpa using amitsur_det_one_sub_smul_mem ρ hS hρ e e.zero_le (1 ⊗ₜ w) 0 (by simp)
-  obtain ⟨q, hq⟩ := hmem
-  have hdet : det (1 - amitsurRoot B A e • amitsurLift ρ e (1 ⊗ₜ w)) =
-      aeval (root (X ^ e : A[X])) (ρ w).charpoly.reverse := by
-    simpa [(amitsurSubalg B A e).smul_def] using
-      (aeval_reverse_charpoly (ρ w) (root (X ^ e : A[X]))).symm
-  change aeval (root (X ^ e : A[X])) q = _ at hq
-  rw [aeval_eq_of_algebra, hdet, aeval_eq] at hq
+    simpa using amitsur_det_one_sub_smul_mem ρ hS hρ e 0 (1 ⊗ₜ w) 0 (by simp)
+  obtain ⟨q, hq⟩ := (AlgHom.mem_range _).1 hmem
+  have hroot : (amitsurRoot B A e : AdjoinRoot (X ^ e : A[X])) = root (X ^ e : A[X]) := by simp
+  rw [aeval_eq_of_algebra, det_one_sub_smul_amitsurLift_tmul, hroot, aeval_eq] at hq
   have hagree : ∀ d < e, (q.map (algebraMap B A)).coeff d = (ρ w).charpoly.reverse.coeff d :=
     mk_X_pow_eq_iff.1 hq
   refine ⟨q.coeff (e - 1), ?_⟩
