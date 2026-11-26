@@ -179,10 +179,14 @@ private def vertexTimeMap :
     rw [MoorePath.toUnitPath_zero, vertexTimePath, source_brokenMoorePath, vertexTime_zero], by
     rw [MoorePath.toUnitPath_one, vertexTimePath, target_brokenMoorePath, vertexTime_last hr hδ q]⟩⟩
 
+private theorem coe_vertexTimeMap :
+    (vertexTimeMap hr hδ q : C(unitInterval, ℝ)) = (vertexTimePath hr hδ q).toUnitPath :=
+  (rfl)
+
 private theorem vertexTimeMap_arcPoint_zero (j : Fin (m + 2)) :
     (vertexTimeMap hr hδ q : C(unitInterval, ℝ)) (unitInterval.arcPoint (m + 1) j 0) =
-      vertexTime q j :=
-  toUnitPath_vertexTimePath_arcPoint hr hδ q j
+      vertexTime q j := by
+  rw [coe_vertexTimeMap, toUnitPath_vertexTimePath_arcPoint]
 
 /-- The broken path of the segments through the vertices of the vertex time map is itself. -/
 private theorem brokenPath_vertexTimeMap :
@@ -195,11 +199,12 @@ private theorem brokenPath_vertexTimeMap :
     (fun j ↦ (toUnitPath_vertexTimePath_arcPoint hr hδ q j).symm) fun i ↦ ⟨trivial, fun h ↦ by
       rw [length_vertexTimePath] at h
       exact vertexTime_succ_of_length_eq_zero hr hδ q i h⟩
+  rw [coe_vertexTimeMap]
   funext s
   have hs := MoorePath.toUnitPath_brokenPathMap isPathInterpolation_segment m.succ_pos
     ⟨vertexTimePath hr hδ q, hA⟩ s
   rw [hB] at hs
-  refine hs.symm.trans ?_
+  rw [← hs]
   congr 2
   exact brokenMoorePath_congr _ _ _ rfl (funext fun _ ↦ by rw [length_vertexTimePath])
 
@@ -400,6 +405,10 @@ private def durationTimeMap (s : unitInterval) :
     rw [MoorePath.toUnitPath_one, durationPath, target_brokenMoorePath,
       vertexTime_last hr hδ q]⟩⟩
 
+private theorem coe_durationTimeMap (s : unitInterval) :
+    (durationTimeMap hr hδ q s : C(unitInterval, ℝ)) = (durationPath hr hδ q s).toUnitPath :=
+  (rfl)
+
 /-- The homotopy changing the durations of the arcs, as a path of time maps from the vertex time
 map to the time map `s ↦ L s`. -/
 private def durationTimeMapPath :
@@ -412,11 +421,14 @@ private def durationTimeMapPath :
     simp only [durationTime]
     fun_prop
   -- At time zero every arc lasts `L / (m + 1)`.
-  source' := Subtype.ext <| congrArg MoorePath.toUnitPath <|
-    brokenMoorePath_congr _ _ _ rfl (funext fun i ↦ by simp [durationTime])
+  source' := by
+    refine Subtype.ext ?_
+    rw [coe_durationTimeMap, coe_vertexTimeMap]
+    exact congrArg MoorePath.toUnitPath <|
+      brokenMoorePath_congr _ _ _ rfl (funext fun i ↦ by simp [durationTime])
   target' := by
     refine Subtype.ext (ContinuousMap.ext fun t ↦ ?_)
-    refine (MoorePath.toUnitPath_apply (durationPath hr hδ q 1) t).trans ?_
+    rw [coe_durationTimeMap, MoorePath.toUnitPath_apply]
     -- At time one every arc lasts the distance between its end points, so the time map runs at
     -- unit speed.
     rw [MooreFreeLoopSpace.coe_mulTimeMap_apply, length_durationPath,
@@ -469,11 +481,11 @@ private theorem brokenPathDurationHomotopy_reparam_vertexTimeMap
         rw [hcs, hcs']
         exact nndist_eq_zero.1
           (nndist_eq_zero_of_durationTime_eq_zero hr hδ q ((hdur i).symm.trans h0))⟩,
-    MooreFreeLoopSpace.toMoorePath_reparam]
+    MooreFreeLoopSpace.toMoorePath_reparam, coe_durationTimeMap]
   have e := MoorePath.ofUnitPath_toUnitPath_rescale_length
     ((durationPath hr hδ q s).map (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.extend)
   rw [MoorePath.toUnitPath_map, MoorePath.length_map, length_durationPath] at e
-  refine Eq.trans ?_ e.symm
+  rw [e]
   rw [durationPath, map_brokenMoorePath _ (isPathInterpolation_geodesicInterpolation hr) _ _ _ _ _
     (fun i ↦ ⟨by
       rw [Set.mem_ofPred_eq, extend_vertexTime_castSucc hr hδ q, extend_vertexTime_succ hr hδ q]
