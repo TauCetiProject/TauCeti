@@ -38,8 +38,7 @@ Rescaled coordinates send any compact subset of a finite-dimensional real normed
 arbitrarily small ball of `Fin n → ℝ`.
 
 A family of bases whose vectors depend continuously on a parameter has frame and coordinate maps
-that depend continuously on the parameter in the operator norm, and the determinant relative to a
-fixed basis is a continuous function of a family of vectors. Conversely, near a point where a
+that depend continuously on the parameter in the operator norm. Conversely, near a point where a
 continuous family of vectors in subspaces of constant dimension is linearly independent, the
 vectors span those subspaces.
 
@@ -57,8 +56,6 @@ vectors span those subspaces.
   the same space in a finite-dimensional space are isomorphic.
 * `TauCeti.exists_isOpen_linearIndependent_span_range_eq`: a continuous family of vectors in
   subspaces of constant dimension, linearly independent at a point, spans the subspaces nearby.
-* `Module.Basis.continuous_det`: the determinant relative to a basis is a continuous function of
-  the family of vectors.
 * `TauCeti.continuous_det_div_conj`: the determinant phase `det A / conj (det A)` of a continuous
   family of continuous linear automorphisms varies continuously.
 * `Module.Basis.continuous_equivFunL_symm_of_continuous`,
@@ -278,16 +275,6 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
   exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
     (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
     (continuous_equivFunL_symm_of_continuous h).continuousAt
-
-/-- **The determinant relative to a basis is continuous** as a function of the family of
-vectors. -/
-theorem continuous_det [Fintype ι] [DecidableEq ι] (b : Basis ι 𝕜 F) :
-    Continuous fun v : ι → F ↦ b.det v := by
-  have := b.finiteDimensional_of_finite
-  simp_rw [det_apply]
-  refine Continuous.matrix_det (continuous_matrix fun i j ↦ ?_)
-  simp_rw [toMatrix_apply]
-  exact (b.coord i).continuous_of_finiteDimensional.comp (continuous_apply j)
 
 /-- A set of continuous linear maps is bounded when their values on the vectors of a finite basis
 are uniformly bounded. -/

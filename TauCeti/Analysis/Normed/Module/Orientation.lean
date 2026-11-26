@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.LinearAlgebra.Orientation.Basic
 public import TauCeti.LinearAlgebra.Orientation.ShortExact
+import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Orientation.Basis
@@ -123,8 +124,8 @@ has the orientation of `B₀`: relative to `B₀`, their determinant tends to `1
 theorem Module.Basis.eventually_orientation_eq_of_tendsto [DecidableEq ι] {α : Type*}
     {l : Filter α} (B₀ : Basis ι ℝ E) {w : α → ι → E} (hw : Tendsto w l (𝓝 ⇑B₀)) :
     ∀ᶠ x in l, ∀ B : Basis ι ℝ E, ⇑B = w x → B.orientation = B₀.orientation := by
-  have h := (B₀.continuous_det.tendsto _).comp hw
-  rw [Function.comp_def, B₀.det_self] at h
+  have h := ((map_continuous B₀.continuousDet).tendsto _).comp hw
+  simp only [Function.comp_def, Basis.continuousDet_apply, B₀.det_self] at h
   filter_upwards [h.eventually (lt_mem_nhds one_pos)] with x hx B hB
   exact ((B₀.orientation_eq_iff_det_pos B).2 (hB ▸ hx)).symm
 
