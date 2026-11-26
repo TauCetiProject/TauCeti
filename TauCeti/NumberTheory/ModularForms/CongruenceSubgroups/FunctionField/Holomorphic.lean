@@ -37,20 +37,20 @@ namespace TauCeti
 
 variable {N : ℕ} [NeZero N]
 
-/-- A modular function of level `N` is integral over `ℂ[j]` exactly when it has no poles on
-the upper half-plane. Poles at the cusps are allowed. -/
-theorem isIntegral_adjoin_jMeromorphicFunction_iff
-    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+/-- For a finite-index subgroup `H` of `SL(2, ℤ)`, a meromorphic function on `X_H` is integral
+over `ℂ[j]` exactly when it has no poles on the upper half-plane. Poles at the cusps are
+allowed. -/
+theorem _root_.Subgroup.isIntegral_adjoin_jMeromorphicFunction_iff (H : Subgroup SL(2, ℤ))
+    [H.FiniteIndex] (F : MeromorphicFunction (H.map sl2zToPSL2R).CompactifiedQuotient) :
     IsIntegral (Algebra.adjoin ℂ
-      {Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
+      {Subgroup.compactifiedQuotientComap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
         ModularGroup.jMeromorphicFunction}) F ↔
       ∀ τ : ℍ, F (ofQuotient (Quotient.mk _ τ)) ≠ ∞ := by
-  let := (Subgroup.isCofinite_map_sl2zToPSL2R (Gamma N)).compactSpace_compactifiedQuotient
+  let := (Subgroup.isCofinite_map_sl2zToPSL2R H).compactSpace_compactifiedQuotient
   let β := ModularGroup.jFiniteHolomorphicMap.comp
-    (Fuchsian.compactifiedQuotientFiniteHolomorphicMap
-      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R)
+    (Fuchsian.compactifiedQuotientFiniteHolomorphicMap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R)
   have hj : comapₐ β β.holomorphic β.nonconstant coordinate =
-      Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
+      Subgroup.compactifiedQuotientComap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
         ModularGroup.jMeromorphicFunction := by
     ext x
     simp [β, ModularGroup.coe_jMeromorphicFunction]
@@ -66,7 +66,7 @@ theorem isIntegral_adjoin_jMeromorphicFunction_iff
       | h τ => exact h τ
     | ofCusp C => exact (hx (by simp [β])).elim
 
-/-- Coefficient conjugation preserves the modular functions integral over `ℂ[j]`. -/
+/-- Coefficient conjugation preserves the modular functions of level `N` integral over `ℂ[j]`. -/
 private theorem isIntegral_adjoin_jMeromorphicFunction_coeffAction
     (σ : ℂ ≃+* ℂ)
     {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
@@ -106,12 +106,10 @@ theorem forall_ne_infty_modularFunctionCoeffAction_iff (σ : ℂ ≃+* ℂ)
     (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
     (∀ τ : ℍ, modularFunctionCoeffAction N σ F (ofQuotient (Quotient.mk _ τ)) ≠ ∞) ↔
       ∀ τ : ℍ, F (ofQuotient (Quotient.mk _ τ)) ≠ ∞ := by
-  rw [← isIntegral_adjoin_jMeromorphicFunction_iff,
-    ← isIntegral_adjoin_jMeromorphicFunction_iff]
+  rw [← (Gamma N).isIntegral_adjoin_jMeromorphicFunction_iff,
+    ← (Gamma N).isIntegral_adjoin_jMeromorphicFunction_iff]
   refine ⟨fun h ↦ ?_, isIntegral_adjoin_jMeromorphicFunction_coeffAction σ⟩
   have h := isIntegral_adjoin_jMeromorphicFunction_coeffAction σ.symm h
-  have hσ : σ.symm * σ = 1 := inv_mul_cancel σ
-  simpa only [← RingAut.mul_apply, ← map_mul, hσ, map_one,
-    RingAut.one_apply] using h
+  rwa [modularFunctionCoeffAction_symm_apply_apply] at h
 
 end TauCeti

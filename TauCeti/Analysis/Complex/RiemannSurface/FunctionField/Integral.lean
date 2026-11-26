@@ -55,8 +55,8 @@ theorem apply_ne_infty_of_isIntegral_adjoin_singleton {f g : MeromorphicFunction
       rw [mul_apply_of_eq_coe (coe_finitePart ha).symm (coe_finitePart hb).symm]
       exact OnePoint.coe_ne_infty _
   obtain ⟨p, hp, hpf⟩ := hf
-  have heval : (p.map (Algebra.adjoin ℂ {g}).val.toRingHom).eval f = 0 := by
-    rw [eval_map]
+  have heval : (p.map (algebraMap (Algebra.adjoin ℂ {g}) (MeromorphicFunction X))).eval f = 0 := by
+    rw [eval_map, ← aeval_def]
     exact hpf
   have hv := (order x).toValuation.le_one_of_root_monic (hp.map _)
     (fun i _ ↦ by

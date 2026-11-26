@@ -184,6 +184,14 @@ theorem modularFunctionCoeffAction_apply_eq_iff {σ : ℂ ≃+* ℂ}
   rw [← laurentQExpansion_modularFunctionCoeffAction, (laurentQExpansion_injective _).eq_iff,
     eq_comm]
 
+/-- Conjugating the coefficients by `σ⁻¹` undoes conjugating them by `σ`. -/
+@[simp]
+theorem modularFunctionCoeffAction_symm_apply_apply (σ : ℂ ≃+* ℂ)
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+    modularFunctionCoeffAction N σ.symm (modularFunctionCoeffAction N σ F) = F := by
+  rw [← RingAut.mul_apply, ← map_mul, show σ.symm * σ = 1 from inv_mul_cancel σ, map_one,
+    RingAut.one_apply]
+
 /-- The conjugate of a constant function is the conjugate constant. -/
 @[simp]
 theorem modularFunctionCoeffAction_algebraMap (σ : ℂ ≃+* ℂ) (c : ℂ) :
