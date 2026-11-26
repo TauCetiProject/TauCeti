@@ -72,7 +72,9 @@ singular chains.
   `Hₙ(X (q + 1), X q) ⟶ Hₙ(X' (q + 1), X' q)` induced by `g`
   (`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality`), so if these maps are
   isomorphisms, the morphism of spectral sequences is an isomorphism on every page
-  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`). On the abutment, the underlying
+  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`). A homeomorphism matching the two
+  filtrations induces an isomorphism of spectral sequences
+  (`TauCeti.filteredSpaceSpectralSequenceIso`). On the abutment, the underlying
   morphism of spectral objects is the map `Hₙ(g)` in singular homology
   (`TauCeti.chainFiltrationAbutmentIso_hom_naturality`). For finite filtrations this gives the
   comparison theorem: if `g` induces isomorphisms on the relative homology of the pairs
@@ -757,6 +759,43 @@ theorem isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap {a b : �
     (((singularChainComplexFunctor A).obj R).map g) n)
   rw [← e]
   infer_instance
+
+/-- **A homeomorphism of filtered spaces induces an isomorphism of spectral sequences.** If an
+isomorphism `e : Y ≅ Y'` in `TopCat` carries each `X q` into `X' q` and its inverse carries each
+`X' q` into `X q`, the morphisms of spectral sequences induced by `e` and by its inverse are
+inverse to each other. -/
+def filteredSpaceSpectralSequenceIso (e : Y ≅ Y') (he : ∀ q, Set.MapsTo e.hom (X q) (X' q))
+    (he' : ∀ q, Set.MapsTo e.inv (X' q) (X q)) :
+    filteredSpaceSpectralSequence R hX ≅ filteredSpaceSpectralSequence R hX' where
+  hom := filteredSpaceSpectralSequenceMap R hX hX' e.hom he
+  inv := filteredSpaceSpectralSequenceMap R hX' hX e.inv he'
+  hom_inv_id := by
+    rw [← filteredSpaceSpectralSequenceMap_comp R hX hX' hX _ he _ he'
+      fun q ↦ (he' q).comp (he q)]
+    -- The composite `e.hom ≫ e.inv` is the identity, up to the proof that it preserves `X`.
+    simp only [Iso.hom_inv_id, filteredSpaceSpectralSequenceMap_id]
+  inv_hom_id := by
+    rw [← filteredSpaceSpectralSequenceMap_comp R hX' hX hX' _ he' _ he
+      fun q ↦ (he q).comp (he' q)]
+    simp only [Iso.inv_hom_id, filteredSpaceSpectralSequenceMap_id]
+
+/-- The isomorphism of spectral sequences of a homeomorphism of filtered spaces is the morphism
+induced by the homeomorphism. -/
+@[simp]
+lemma filteredSpaceSpectralSequenceIso_hom (e : Y ≅ Y') (he : ∀ q, Set.MapsTo e.hom (X q) (X' q))
+    (he' : ∀ q, Set.MapsTo e.inv (X' q) (X q)) :
+    (filteredSpaceSpectralSequenceIso R hX hX' e he he').hom =
+      filteredSpaceSpectralSequenceMap R hX hX' e.hom he :=
+  (rfl)
+
+/-- The inverse of the isomorphism of spectral sequences of a homeomorphism of filtered spaces is
+the morphism induced by the inverse homeomorphism. -/
+@[simp]
+lemma filteredSpaceSpectralSequenceIso_inv (e : Y ≅ Y') (he : ∀ q, Set.MapsTo e.hom (X q) (X' q))
+    (he' : ∀ q, Set.MapsTo e.inv (X' q) (X q)) :
+    (filteredSpaceSpectralSequenceIso R hX hX' e he he').inv =
+      filteredSpaceSpectralSequenceMap R hX' hX e.inv he' :=
+  (rfl)
 
 end Naturality
 
