@@ -112,8 +112,7 @@ theorem Subgroup.isHeckeFunction_indicator_one (K : Subgroup G) :
   · have hout : q.out ∈ (K : Set G) := by
       by_contra h
       exact hq (Set.indicator_of_notMem h _)
-    rw [Set.mem_singleton_iff, ← Quotient.out_eq q]
-    exact QuotientGroup.eq.2 (by simpa [leftRel_apply] using K.inv_mem hout)
+    exact Set.mem_singleton_iff.2 (QuotientGroup.out_mem_iff_eq_mk_one.1 hout)
   · by_cases hg : g ∈ K
     · simp [Set.indicator_of_mem (K.mul_mem hk hg), Set.indicator_of_mem hg]
     · have hkg : k * g ∉ (K : Set G) := fun h ↦ hg (by simpa using K.mul_mem (K.inv_mem hk) h)
@@ -133,18 +132,6 @@ private theorem finite_support_smul {K : Subgroup G} {f : G → A}
     (x : G ⧸ K → M) :
     (Function.support fun q : G ⧸ K ↦ f q.out • x q).Finite :=
   hf.subset (support_smul_subset x)
-
-/-- Reindex a `finsum` over `G ⧸ K` along left multiplication by `a : G` when the summand is
-right `K`-invariant. -/
-private theorem finsum_mulLeft_eq {K : Subgroup G} {M : Type*} [AddCommMonoid M]
-    (a : G) (F : G → M) (hF : ∀ g : G, ∀ k ∈ K, F (g * k) = F g) :
-    (∑ᶠ q : G ⧸ K, F (a * q.out)) = ∑ᶠ q : G ⧸ K, F q.out := by
-  have hcongr : ∀ x y : G, leftRel K x y ↔ leftRel K (a * x) (a * y) := fun x y ↦ by
-    simp [leftRel_apply, mul_assoc]
-  refine (finsum_congr fun q ↦ ?_).trans
-    (finsum_comp_equiv (Quotient.congr (Equiv.mulLeft a) hcongr))
-  obtain ⟨k, hk, heq⟩ := QuotientGroup.out_congr_eq_mul (Equiv.mulLeft a) hcongr q
-  rw [heq, Equiv.coe_mulLeft, hF _ k hk]
 
 /-- The Hecke operator attached to `f : G → A` on a representation `π : Representation A G W`,
 defined by summing `f q.out • π q.out v` over left cosets `q : G ⧸ K`. -/
@@ -193,14 +180,12 @@ theorem Representation.heckeOp_indicator_one {K : Subgroup G} (π : Representati
     (hv : ∀ k ∈ K, π k v = v) :
     π.heckeOp K (Set.indicator (K : Set G) 1) v = v := by
   rw [heckeOp_def, finsum_eq_single _ (QuotientGroup.mk (1 : G))]
-  · obtain ⟨⟨k, hk⟩, h1⟩ := QuotientGroup.mk_out_eq_mul K 1
-    have hout : ((QuotientGroup.mk (1 : G) : G ⧸ K).out : G) ∈ K := by
-      simpa [h1] using hk
+  · have hout : ((QuotientGroup.mk (1 : G) : G ⧸ K).out : G) ∈ K :=
+      QuotientGroup.out_mem_iff_eq_mk_one.2 rfl
     simp [hv _ hout]
   · intro q hq
-    have hout : q.out ∉ (K : Set G) := fun hmem ↦ hq <| by
-      rw [← Quotient.out_eq q]
-      exact QuotientGroup.eq.2 (by simpa [leftRel_apply] using K.inv_mem hmem)
+    have hout : q.out ∉ (K : Set G) := fun hmem ↦
+      hq (QuotientGroup.out_mem_iff_eq_mk_one.1 hmem)
     simp [Set.indicator_of_notMem hout]
 
 /-- The Hecke operator of a bi-`K`-invariant function sends `K`-fixed vectors to `K`-fixed
@@ -213,33 +198,40 @@ theorem Representation.heckeOp_mem_fixed {K : Subgroup G} (π : Representation A
       ∑ᶠ q : G ⧸ K, f (k * q.out) • π (k * q.out) v :=
     finsum_congr fun q ↦ by rw [map_smul, map_mul, mul_apply_eq_comp, hf.mul_left _ hk]
   rw [h1]
-  exact finsum_mulLeft_eq k (fun g ↦ f g • π g v) fun g k' hk' ↦ by
+  exact QuotientGroup.finsum_mulLeft_eq k (fun g ↦ f g • π g v) fun g k' hk' ↦ by
     rw [hf.mul_right _ hk', map_mul, mul_apply_eq_comp, hv k' hk']
 
-private theorem apply_inv_of_doubleCoset {K : Subgroup G} {f : G → A} (hf : K.IsHeckeFunction f)
-    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
-    f (τ g)⁻¹ = f g := by
-  obtain ⟨a, ha, b, hb, hg⟩ := hτg g⁻¹
-  rw [inv_inv] at hg
-  have hinv : (τ g)⁻¹ = b⁻¹ * g * a⁻¹ := by rw [hg]; group
-  rw [hinv, hf.mul_right _ (K.inv_mem ha), hf.mul_left _ (K.inv_mem hb)]
+private def quotientEquivOfDoubleCoset {K : Subgroup G} (τ : G ≃* G)
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) : G ⧸ K ≃ G ⧸ K :=
+  Quotient.congr τ.toEquiv (K.leftRel_map_iff_of_inv_mem_doubleCoset (τ := τ) hτg)
+
+private theorem out_quotientEquivOfDoubleCoset_eq_mul {K : Subgroup G} (τ : G ≃* G)
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
+    ∃ k ∈ K, (quotientEquivOfDoubleCoset (K := K) τ hτg q).out = τ q.out * k := by
+  simpa [quotientEquivOfDoubleCoset] using
+    QuotientGroup.out_congr_eq_mul τ.toEquiv
+      (K.leftRel_map_iff_of_inv_mem_doubleCoset (τ := τ) hτg) q
+
+private theorem apply_map_inv_of_doubleCoset {K : Subgroup G} {f : G → A}
+    (hf : K.IsHeckeFunction f) (τ : G ≃* G)
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    f (τ g⁻¹) = f g := by
+  obtain ⟨a, ha, b, hb, hg⟩ := hτg g
+  rw [hg, hf.mul_right _ hb, hf.mul_left _ ha]
 
 /-- If `τ : G ≃* G` sends every `g⁻¹` into `K * g * K`, then for any Hecke function `f` and ring
 endomorphism `σ : A →+* A`, the dual function `g ↦ σ (f g⁻¹)` is again a Hecke function. -/
 theorem Subgroup.IsHeckeFunction.dual {K : Subgroup G} {f : G → A} (hf : K.IsHeckeFunction f)
     (σ : A →+* A) (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) :
     K.IsHeckeFunction (fun g ↦ σ (f g⁻¹)) := by
-  have hτK : ∀ g : G, τ g ∈ K ↔ g ∈ K := K.map_mem_iff_of_inv_mem_doubleCoset hτg
-  have hcongr : ∀ a b : G, leftRel K a b ↔ leftRel K (τ a) (τ b) := fun a b ↦ by
-    simp [leftRel_apply, ← map_inv, ← map_mul, hτK]
-  let e : G ⧸ K ≃ G ⧸ K := Quotient.congr τ.toEquiv hcongr
+  let e := quotientEquivOfDoubleCoset (K := K) τ hτg
   refine ⟨(hf.finite_support.image e).subset fun q hq ↦ ⟨e.symm q, ?_, e.apply_symm_apply q⟩,
     fun g k hk ↦ ⟨?_, ?_⟩⟩
-  · obtain ⟨k, hk, heq⟩ := QuotientGroup.out_congr_eq_mul τ.toEquiv hcongr (e.symm q)
+  · obtain ⟨k, hk, heq⟩ := out_quotientEquivOfDoubleCoset_eq_mul (K := K) τ hτg (e.symm q)
     rw [e.apply_symm_apply] at heq
     have h1 : f q.out⁻¹ = f (e.symm q).out := by
-      rw [heq, MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, mul_inv_rev,
-        hf.mul_left _ (K.inv_mem hk), apply_inv_of_doubleCoset hf τ hτg]
+      rw [heq, mul_inv_rev, hf.mul_left _ (K.inv_mem hk), ← map_inv,
+        apply_map_inv_of_doubleCoset hf τ hτg]
     exact fun h0 ↦ hq (by dsimp only; rw [h1, h0, map_zero])
   · dsimp only; rw [mul_inv_rev, hf.mul_right _ (K.inv_mem hk)]
   · dsimp only; rw [mul_inv_rev, hf.mul_left _ (K.inv_mem hk)]
@@ -255,24 +247,23 @@ theorem Subgroup.IsHeckeFunction.heckeOp_adjoint {K : Subgroup G} {f : G → A}
     (hv : ∀ k ∈ K, π k v = v) (hv' : ∀ k ∈ K, π' k v' = v')
     (hB : ∀ (g : G) (x : W) (y : W'), B (π g x) (π' g y) = B x y) :
     B (π.heckeOp K f v) v' = B v (π'.heckeOp K (fun g ↦ σ (f g⁻¹)) v') := by
-  have hτK : ∀ g : G, τ g ∈ K ↔ g ∈ K := K.map_mem_iff_of_inv_mem_doubleCoset hτg
-  have hcongr : ∀ a b : G, leftRel K a b ↔ leftRel K (τ a) (τ b) := fun a b ↦ by
-    simp [leftRel_apply, ← map_inv, ← map_mul, hτK]
-  let e : G ⧸ K ≃ G ⧸ K := Quotient.congr τ.toEquiv hcongr
+  let e := quotientEquivOfDoubleCoset (K := K) τ hτg
   have hmove (x : G) (w : W) (w' : W') : B w (π' x w') = B (π x⁻¹ w) w' := by
     rw [← hB x⁻¹ w (π' x w'), ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one,
       one_apply_eq_self]
   have hq_term (q : G ⧸ K) :
       f (e q).out⁻¹ = f q.out ∧ B v (π' (e q).out v') = B (π q.out v) v' := by
-    obtain ⟨k, hk, heq⟩ := QuotientGroup.out_congr_eq_mul τ.toEquiv hcongr q
+    obtain ⟨k, hk, heq⟩ := out_quotientEquivOfDoubleCoset_eq_mul (K := K) τ hτg q
     obtain ⟨a, ha, b, hb, hg⟩ := hτg q.out⁻¹
     rw [inv_inv] at hg
+    have heq' : (e q).out = a * q.out⁻¹ * (b * k) := by
+      simpa [e, hg, mul_assoc] using heq
     refine ⟨?_, ?_⟩
-    · rw [heq, MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, mul_inv_rev,
-        hf.mul_left _ (K.inv_mem hk), apply_inv_of_doubleCoset hf τ hτg]
-    · rw [heq, MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, map_mul, mul_apply_eq_comp, hv' k hk,
-        hg, map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, hv' b hb, hmove,
-        hv _ (K.inv_mem ha), hmove, inv_inv]
+    · rw [heq, mul_inv_rev, hf.mul_left _ (K.inv_mem hk), ← map_inv,
+        apply_map_inv_of_doubleCoset hf τ hτg]
+    · have hbk : π' (a * q.out⁻¹ * (b * k)) v' = π' a (π' q.out⁻¹ v') := by
+        simp [map_mul, hv' _ hk, hv' _ hb]
+      rw [heq', hbk, hmove a, hv _ (K.inv_mem ha), hmove q.out⁻¹, inv_inv]
   rw [Representation.heckeOp_def, Representation.heckeOp_def, ← LinearMap.flip_apply B _ v',
     map_finsum (B.flip v') (finite_support_smul hf.finite_support _),
     map_finsum (B v)
@@ -285,8 +276,8 @@ theorem Subgroup.IsHeckeFunction.heckeOp_adjoint {K : Subgroup G} {f : G → A}
 def Subgroup.heckeConv (K : Subgroup G) (f' f : G → A) (x : G) : A :=
   ∑ᶠ q : G ⧸ K, f' q.out * f (q.out⁻¹ * x)
 
-/-- Evaluation of `Subgroup.heckeConv`. -/
-@[simp] theorem Subgroup.heckeConv_apply (K : Subgroup G) (f' f : G → A) (x : G) :
+/-- Definitional unfolding of `Subgroup.heckeConv`. -/
+theorem Subgroup.heckeConv_def (K : Subgroup G) (f' f : G → A) (x : G) :
     K.heckeConv f' f x = ∑ᶠ q : G ⧸ K, f' q.out * f (q.out⁻¹ * x) :=
   (rfl)
 
@@ -310,7 +301,7 @@ private theorem mem_conv_prod_image_of_heckeConv_ne_zero {K : Subgroup G} {f f' 
       ({q | f' q.out ≠ 0} ×ˢ {r | f r.out ≠ 0}) := by
   have hex : ∃ q : G ⧸ K, f' q.out * f (q.out⁻¹ * s.out) ≠ 0 := by
     by_contra h; push Not at h
-    exact hs (by simp [Subgroup.heckeConv_apply, finsum_eq_zero_of_forall_eq_zero h])
+    exact hs (by simp [Subgroup.heckeConv_def, finsum_eq_zero_of_forall_eq_zero h])
   obtain ⟨q, hq⟩ := hex
   exact mem_conv_prod_image hf (left_ne_zero_of_mul hq) (right_ne_zero_of_mul hq)
 
@@ -321,16 +312,16 @@ theorem Subgroup.IsHeckeFunction.heckeConv {K : Subgroup G} {f' f : G → A}
   refine ⟨((hf'.finite_support.prod hf.finite_support).image _).subset fun _ hs ↦
       mem_conv_prod_image_of_heckeConv_ne_zero hf hs,
     fun x k hk ↦ ⟨?_, ?_⟩⟩
-  · simp only [Subgroup.heckeConv_apply]
+  · simp only [Subgroup.heckeConv_def]
     have h1 : (∑ᶠ q : G ⧸ K, f' (k * q.out) * f ((k * q.out)⁻¹ * (k * x))) =
         ∑ᶠ q : G ⧸ K, f' q.out * f (q.out⁻¹ * x) :=
       finsum_congr fun q ↦ by
         have hinv : (k * q.out)⁻¹ * (k * x) = q.out⁻¹ * x := by group
         rw [hf'.mul_left _ hk, hinv]
     rw [← h1]
-    exact (finsum_mulLeft_eq k (fun g ↦ f' g * f (g⁻¹ * (k * x))) fun g k' hk' ↦ by
+    exact (QuotientGroup.finsum_mulLeft_eq k (fun g ↦ f' g * f (g⁻¹ * (k * x))) fun g k' hk' ↦ by
       rw [hf'.mul_right _ hk', mul_inv_rev, mul_assoc, hf.mul_left _ (K.inv_mem hk')]).symm
-  · simp only [Subgroup.heckeConv_apply]
+  · simp only [Subgroup.heckeConv_def]
     exact finsum_congr fun q ↦ by rw [← mul_assoc, hf.mul_right _ hk]
 
 /-- Composition of two Hecke operators on a `K`-fixed vector is the Hecke operator of their
@@ -365,7 +356,7 @@ theorem Subgroup.IsHeckeFunction.heckeOp_comp {K : Subgroup G} {π : Representat
           ∑ᶠ r : G ⧸ K, (f' q.out * f (q.out⁻¹ * (q.out * r.out))) • π (q.out * r.out) v :=
         finsum_congr fun r ↦ by rw [inv_mul_cancel_left]
       rw [h3]
-      exact finsum_mulLeft_eq q.out (fun g ↦ (f' q.out * f (q.out⁻¹ * g)) • π g v)
+      exact QuotientGroup.finsum_mulLeft_eq q.out (fun g ↦ (f' q.out * f (q.out⁻¹ * g)) • π g v)
         fun g k hk ↦ by rw [← mul_assoc, hf.mul_right _ hk, map_mul, mul_apply_eq_comp, hv k hk]
     exact h1.trans <| h2.trans <| finsum_eq_sum_of_support_subset _ fun s hs ↦
       hS.mem_toFinset.2 (mem_conv_prod_image hf (hf'.finite_support.mem_toFinset.1 hq)
@@ -374,7 +365,7 @@ theorem Subgroup.IsHeckeFunction.heckeOp_comp {K : Subgroup G} {π : Representat
     finsum_eq_sum_of_support_subset _ (s := hS.toFinset) fun _ hr ↦
       hS.mem_toFinset.2 (mem_conv_prod_image_of_heckeConv_ne_zero hf (support_smul_subset _ hr))]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [← Finset.sum_smul, Subgroup.heckeConv_apply,
+  rw [← Finset.sum_smul, Subgroup.heckeConv_def,
     finsum_eq_sum_of_support_subset _ (s := hf'.finite_support.toFinset)
       (fun q hq ↦ hf'.finite_support.mem_toFinset.2 (left_ne_zero_of_mul hq))]
 
@@ -384,25 +375,21 @@ theorem Subgroup.IsHeckeFunction.heckeConv_comm {K : Subgroup G} {f f' : G → A
     (hf : K.IsHeckeFunction f) (hf' : K.IsHeckeFunction f') (τ : G ≃* G)
     (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) :
     K.heckeConv f f' = K.heckeConv f' f := by
-  have hτK : ∀ g : G, τ g ∈ K ↔ g ∈ K := K.map_mem_iff_of_inv_mem_doubleCoset hτg
-  have happly_τ (h : G → A) (hh : K.IsHeckeFunction h) (g : G) : h (τ g⁻¹) = h g := by
-    obtain ⟨a, ha, b, hb, hg⟩ := hτg g
-    rw [hg, hh.mul_right _ hb, hh.mul_left _ ha]
   funext x
-  simp only [Subgroup.heckeConv_apply]
+  simp only [Subgroup.heckeConv_def]
   obtain ⟨a, ha, b, hb, hb_eq⟩ := hτg x
   let φ : G ≃ G := τ.toEquiv.trans (Equiv.mulLeft (x * b))
   have hcongr : ∀ g g' : G, leftRel K g g' ↔ leftRel K (φ g) (φ g') := fun g g' ↦ by
-    simp [φ, leftRel_apply, ← map_inv, ← map_mul, hτK, mul_assoc]
+    simpa [φ, leftRel_apply, mul_assoc] using K.leftRel_map_iff_of_inv_mem_doubleCoset hτg g g'
   refine (finsum_congr fun q ↦ ?_).trans (finsum_comp_equiv (Quotient.congr φ hcongr))
   obtain ⟨k, hk, heq⟩ := QuotientGroup.out_congr_eq_mul φ hcongr q
   have hf'_eq : f' (x * b * τ q.out * k) = f' (q.out⁻¹ * x) := by
-    rw [← happly_τ f' hf' (q.out⁻¹ * x), hf'.mul_right _ hk]
+    rw [← apply_map_inv_of_doubleCoset hf' τ hτg (q.out⁻¹ * x), hf'.mul_right _ hk]
     have hmul : τ (q.out⁻¹ * x)⁻¹ = a * (x * b * τ q.out) := by
       rw [mul_inv_rev, inv_inv, map_mul, hb_eq]; group
     rw [hmul, hf'.mul_left _ ha]
   have hf_eq : f ((x * b * τ q.out * k)⁻¹ * x) = f q.out := by
-    rw [← happly_τ f hf q.out]
+    rw [← apply_map_inv_of_doubleCoset hf τ hτg q.out]
     have hmul : (x * b * τ q.out * k)⁻¹ * x = k⁻¹ * (τ q.out⁻¹ * b⁻¹) := by
       rw [map_inv]; group
     rw [hmul, hf.mul_left _ (K.inv_mem hk), hf.mul_right _ (K.inv_mem hb)]

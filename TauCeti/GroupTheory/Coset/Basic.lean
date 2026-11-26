@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.GroupTheory.Coset.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
@@ -459,13 +460,38 @@ theorem out_congr_eq_mul {G : Type*} [Group G] {K : Subgroup G} (φ : G ≃ G)
     simpa only [Quotient.out_eq] using Quotient.congr_mk φ hφ q.out
   rw [hq, hq']
 
+/-- The chosen representative of a left coset `q : G ⧸ K` lies in `K` iff `q` is the coset of
+`1`. -/
+theorem out_mem_iff_eq_mk_one {G : Type*} [Group G] {K : Subgroup G} {q : G ⧸ K} :
+    q.out ∈ K ↔ q = mk 1 := by
+  constructor
+  · intro h
+    rw [← Quotient.out_eq q]
+    exact QuotientGroup.eq.2 (by simpa [leftRel_apply] using K.inv_mem h)
+  · rintro rfl
+    obtain ⟨⟨k, hk⟩, h1⟩ := mk_out_eq_mul K 1
+    simpa [h1] using hk
+
+/-- Reindex a `finsum` over `G ⧸ K` along left multiplication by `a : G` when the summand is
+right `K`-invariant. -/
+theorem finsum_mulLeft_eq {G M : Type*} [Group G] [AddCommMonoid M] {K : Subgroup G}
+    (a : G) (F : G → M) (hF : ∀ g : G, ∀ k ∈ K, F (g * k) = F g) :
+    (∑ᶠ q : G ⧸ K, F (a * q.out)) = ∑ᶠ q : G ⧸ K, F q.out := by
+  have hcongr : ∀ x y : G, leftRel K x y ↔ leftRel K (a * x) (a * y) := fun x y ↦ by
+    simp [leftRel_apply, mul_assoc]
+  refine (finsum_congr fun q ↦ ?_).trans
+    (finsum_comp_equiv (Quotient.congr (Equiv.mulLeft a) hcongr))
+  obtain ⟨k, hk, heq⟩ := out_congr_eq_mul (Equiv.mulLeft a) hcongr q
+  rw [heq, Equiv.coe_mulLeft, hF _ k hk]
+
 end QuotientGroup
 
 namespace Subgroup
 
-/-- If a group automorphism `τ : G ≃* G` sends every `g⁻¹` into the double coset `K * g * K`,
+/-- If a monoid homomorphism `τ : G →* G` sends every `g⁻¹` into the double coset `K * g * K`,
 then `τ` preserves `K`. -/
-theorem map_mem_iff_of_inv_mem_doubleCoset {G : Type*} [Group G] {K : Subgroup G} {τ : G ≃* G}
+theorem map_mem_iff_of_inv_mem_doubleCoset {G F : Type*} [Group G] {K : Subgroup G}
+    [FunLike F G G] [MonoidHomClass F G G] {τ : F}
     (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
     τ g ∈ K ↔ g ∈ K := by
   constructor
@@ -480,5 +506,14 @@ theorem map_mem_iff_of_inv_mem_doubleCoset {G : Type*} [Group G] {K : Subgroup G
     rw [inv_inv] at hg
     rw [hg]
     exact K.mul_mem (K.mul_mem ha (K.inv_mem h)) hb
+
+/-- If a monoid homomorphism `τ : G →* G` sends every `g⁻¹` into the double coset `K * g * K`,
+then `τ` respects left congruence modulo `K`. -/
+theorem leftRel_map_iff_of_inv_mem_doubleCoset {G F : Type*} [Group G] {K : Subgroup G}
+    [FunLike F G G] [MonoidHomClass F G G] {τ : F}
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (a b : G) :
+    QuotientGroup.leftRel K a b ↔ QuotientGroup.leftRel K (τ a) (τ b) := by
+  simp [QuotientGroup.leftRel_apply, ← map_inv, ← map_mul,
+    K.map_mem_iff_of_inv_mem_doubleCoset hτg]
 
 end Subgroup
