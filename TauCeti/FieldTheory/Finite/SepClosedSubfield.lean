@@ -37,6 +37,10 @@ extension of the prime field.
   `GaloisField p n`.
 * `TauCeti.exists_mem_frobeniusFixedSubfield`: an algebraic closure of the prime field is the union
   of these subfields.
+* `TauCeti.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`: over a finite field `k`,
+  the fixed field in an algebraic extension of the arithmetic Frobenius is `k`.
+* `TauCeti.restrictNormalHom_frobeniusAlgEquivOfAlgebraic`: the arithmetic Frobenius
+  restricts to the arithmetic Frobenius of any normal subextension.
 * `TauCeti.natCard_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow` and
   `TauCeti.finrank_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow`: over a finite field `k`
   with `q` elements, the fixed field in a separable closure of the `r`-th power of the arithmetic
@@ -163,7 +167,29 @@ section FrobeniusPow
 open IntermediateField
 
 variable (k L : Type*) [Field k] [Fintype k] [Field L] [Algebra k L] [Algebra.IsAlgebraic k L]
-  [IsSepClosed L]
+
+/-- The fixed field of the arithmetic Frobenius of `L` is `k`. -/
+theorem fixedField_zpowers_frobeniusAlgEquivOfAlgebraic :
+    fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L)) = ⊥ := by
+  refine eq_bot_iff.2 fun x hx ↦ ?_
+  rw [mem_fixedField_zpowers_iff, FiniteField.coe_frobeniusAlgEquivOfAlgebraic] at hx
+  rw [IntermediateField.mem_bot]
+  exact (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap x).1
+    (by rwa [Nat.card_eq_fintype_card])
+
+/-- **Restricting Frobenius to a normal subextension gives its Frobenius.** For a tower
+`L / E / k` with `E / k` normal, the restriction to `E` of the arithmetic Frobenius `x ↦ x ^ q` of
+`L` is the arithmetic Frobenius of `E`. -/
+@[simp]
+theorem restrictNormalHom_frobeniusAlgEquivOfAlgebraic (E : Type*) [Field E]
+    [Algebra k E] [Algebra E L] [IsScalarTower k E L] [Normal k E] :
+    AlgEquiv.restrictNormalHom E (FiniteField.frobeniusAlgEquivOfAlgebraic k L) =
+      FiniteField.frobeniusAlgEquivOfAlgebraic k E := by
+  ext x
+  apply (algebraMap E L).injective
+  simp [AlgEquiv.restrictNormalHom]
+
+variable [IsSepClosed L]
 
 /-- **The extension of degree `r` inside a separable closure has `q ^ r` elements.** Let `k` be a
 finite field with `q` elements and `L` an algebraic extension of `k` that is separably closed, for

@@ -19,6 +19,9 @@ taking the same combination of the coefficients of `r • p` recovers `r`. In pa
 `r • p = 0` if and only if `r = 0`. This holds in every commutative semiring, including rings with
 torsion, where `p` having a nonzero coefficient would not be enough.
 
+The coefficient of a single variable `Xᵢ` in a product obeys the Leibniz rule at `0`, as for the
+linear coefficient of a univariate power series (`PowerSeries.coeff_one_mul`).
+
 ## Main results
 
 * `MvPolynomial.coeff_sum_linearCombination_X_pow_of_fintype`: the coefficients of a power sum of
@@ -27,6 +30,8 @@ torsion, where `p` having a nonzero coefficient would not be enough.
   coefficients of `p` is `1`, then `r ↦ r • p` is injective.
 * `MvPolynomial.smul_eq_zero_iff_left_of_sum_coeff_mul_eq_one`: under the same hypothesis,
   `r • p = 0 ↔ r = 0`.
+* `MvPolynomial.coeff_single_one_mul`: the coefficient of `Xᵢ` in `p * q` is
+  `pᵢ q(0) + p(0) qᵢ`.
 -/
 
 public section
@@ -59,5 +64,15 @@ theorem coeff_sum_linearCombination_X_pow_of_fintype [Fintype σ] (s : Finset ι
       else 0 := by
   simp only [coeff_sum, coeff_linearCombination_X_pow_of_fintype]
   split_ifs <;> simp [Finset.mul_sum]
+
+/-- **The linear coefficients of a product**: the coefficient of the variable `Xᵢ` in `p * q` is
+`pᵢ q(0) + p(0) qᵢ`, so taking it is a derivation at `0`. -/
+theorem coeff_single_one_mul (i : σ) (p q : MvPolynomial σ R) :
+    (p * q).coeff (Finsupp.single i 1) =
+      p.coeff (Finsupp.single i 1) * constantCoeff q +
+        constantCoeff p * q.coeff (Finsupp.single i 1) := by
+  classical
+  rw [coeff_mul, Finsupp.antidiagonal_single, Finset.sum_map]
+  simp [Finset.Nat.antidiagonal_succ, constantCoeff_eq, add_comm]
 
 end MvPolynomial

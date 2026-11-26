@@ -10,7 +10,7 @@ public import Mathlib.Topology.Connected.LocallyPathConnected
 import Mathlib.Topology.Separation.Regular
 
 /-!
-# Compact connected sets between a compact set and a connected open set
+# Compact connected sets in locally path-connected spaces; locality and retracts
 
 In a locally compact, locally path-connected R1 space (for instance a Hausdorff one), a compact
 subset `K` of a preconnected open set `U` is enclosed by a compact preconnected `L` with
@@ -22,10 +22,17 @@ connected open region by a single compact connected set inside the region: gluin
 logarithms along that set needs exactly its connectedness, and gluing along closed sets needs
 its compactness.
 
+Local path-connectedness is a local property: a space in which every point has a neighbourhood
+that is locally path-connected as a subspace is locally path-connected. It also passes to
+retracts, since a retraction with a continuous section is a quotient map.
+
 ## Main results
 
 * `TauCeti.exists_isCompact_isPreconnected_between` — a compact preconnected set between a
   compact set and a preconnected open set containing it.
+* `LocallyPathConnectedSpace.of_forall_exists_mem_nhds` — local path-connectedness is local.
+* `Function.LeftInverse.locallyPathConnectedSpace` — a retract of a locally path-connected space
+  is locally path-connected.
 -/
 
 public section
@@ -84,3 +91,30 @@ theorem exists_isCompact_isPreconnected_between [R1Space X] [LocallyCompactSpace
     exact hz.elim (fun hz => hMU (hclM x hz)) fun hz => hSU x (htK x hx) hz
 
 end TauCeti
+
+section Locality
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- **Local path-connectedness is local.** A space in which every point has a neighbourhood that
+is locally path-connected as a subspace is locally path-connected. -/
+theorem LocallyPathConnectedSpace.of_forall_exists_mem_nhds
+    (h : ∀ x : X, ∃ U ∈ 𝓝 x, LocallyPathConnectedSpace U) : LocallyPathConnectedSpace X where
+  path_connected_basis x := by
+    obtain ⟨U, hU, _⟩ := h x
+    rw [Filter.hasBasis_self]
+    intro t ht
+    obtain ⟨s, ⟨hs, hsc⟩, hst : s ⊆ _⟩ := (path_connected_basis
+      (⟨x, mem_of_mem_nhds hU⟩ : U)).mem_iff.1
+      (continuous_subtypeVal.continuousAt.preimage_mem_nhds ht)
+    exact ⟨(↑) '' s, map_nhds_subtypeVal_eq_nhds (mem_of_mem_nhds hU) hU ▸ Filter.image_mem_map hs,
+      hsc.image continuous_subtypeVal, image_subset_iff.2 hst⟩
+
+/-- **A retract of a locally path-connected space is locally path-connected.** The retraction
+`r` has the continuous section `s`, so it is a quotient map. -/
+theorem Function.LeftInverse.locallyPathConnectedSpace [LocallyPathConnectedSpace Y] {s : X → Y}
+    {r : Y → X} (h : Function.LeftInverse r s) (hr : Continuous r) (hs : Continuous s) :
+    LocallyPathConnectedSpace X :=
+  (IsQuotientMap.of_inverse hs hr h).locallyPathConnectedSpace
+
+end Locality

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 
 /-!
-# Comparing an angle with an arccosine
+# Comparing an angle with an arccosine, and the values of `arccos` at `±1/2`
 
 Mathlib's `Analysis/SpecialFunctions/Trigonometric/Inverse.lean` carries a complete comparison
 family for `Real.arcsin` — `Real.arcsin_le_iff_le_sin`, `Real.le_arcsin_iff_sin_le`,
@@ -44,6 +44,9 @@ sides: they have the shape `arccos x ≤ y ↔ cos y ≤ x` where the `arcsin` f
 * `Real.le_pi_div_arccos_iff`, `Real.le_pi_div_arccos_iff'`, `Real.lt_pi_div_arccos_iff`, and
   `Real.pi_div_arccos_lt_iff` — equivalences comparing `π / arccos x` with a threshold `y` via
   comparisons between `x` and `cos (π / y)`.
+* `Real.arccos_one_half` and `Real.arccos_neg_one_half` — the values `arccos (1 / 2) = π / 3` and
+  `arccos (-(1 / 2)) = 2π / 3`, the `Real.arccos` counterparts of Mathlib's
+  `Real.cos_pi_div_three`.
 -/
 
 public section
@@ -198,5 +201,14 @@ theorem pi_div_arccos_lt_iff {x y : ℝ} (hx : x < 1) (hy : 1 < y) :
   have hy₀ : 0 < y := zero_lt_one.trans hy
   rw [div_lt_iff₀ (arccos_pos.2 hx), ← div_lt_iff₀' hy₀,
     lt_arccos_iff_lt_cos' ⟨(div_pos pi_pos hy₀).le, div_lt_self pi_pos hy⟩]
+
+/-- `arccos (1 / 2) = π / 3`. -/
+theorem arccos_one_half : arccos (1 / 2) = π / 3 := by
+  rw [← cos_pi_div_three, arccos_cos (by positivity) (by linarith [pi_pos])]
+
+/-- `arccos (-(1 / 2)) = 2π / 3`. -/
+theorem arccos_neg_one_half : arccos (-(1 / 2)) = 2 * π / 3 := by
+  rw [arccos_neg, arccos_one_half]
+  ring
 
 end Real
