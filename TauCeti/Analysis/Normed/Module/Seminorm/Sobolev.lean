@@ -31,13 +31,12 @@ the spanning half of the Poincaré–Birkhoff–Witt theorem.
 
 ## Main definitions
 
-* `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
+* `TauCeti.SobolevIndex.toBoundedWord`: the ordered monomial word of an index in
+  `TauCeti.SobolevIndex m k`, as a word of length at most `k`.
 * `LinearMap.endSobolevSeminorm f D k`: the Sobolev seminorm `Q^D_k`.
 
 ## Main results
 
-* `TauCeti.exists_sobolevIndex_monomialWord_eq`: a sorted word of length at most `k` is the
-  ordered monomial word `TauCeti.monomialWord α` of an index `α` in `SobolevIndex m k`.
 * `LinearMap.endSobolevSeminorm_apply`: the Sobolev seminorm as a square root of a sum of squares.
 * `LinearMap.norm_apply_le_endSobolevSeminorm`: `‖f(D^α x)‖ ≤ Q^D_k(x)` for `|α| ≤ k`.
 * `LinearMap.endSobolevSeminorm_le_endWordSeminorm`: `Q^D_k ≤ P^D_k`.
@@ -56,35 +55,16 @@ noncomputable section
 
 namespace TauCeti
 
-/-! ### Ordered monomials -/
+/-! ### Ordered monomials as bounded words -/
 
 variable {m : ℕ}
-
-/-- The exponent vectors `α : Fin m → ℕ` of total degree `|α| = ∑ i, α i ≤ k`, with entries
-recorded in `Fin (k + 1)` so that they form a finite type. -/
-abbrev SobolevIndex (m k : ℕ) : Type :=
-  {α : Fin m → Fin (k + 1) // ∑ i, (α i : ℕ) ≤ k}
-
-/-- The exponent vector in `ℕ` of an index in `SobolevIndex m k`. -/
-def SobolevIndex.exponent {k : ℕ} (α : SobolevIndex m k) (i : Fin m) : ℕ :=
-  α.val i
-
-/-- The `i`-th entry of the exponent vector of `α`. -/
-@[simp]
-theorem SobolevIndex.exponent_apply {k : ℕ} (α : SobolevIndex m k) (i : Fin m) :
-    α.exponent i = α.val i :=
-  (rfl)
-
-/-- An index in `SobolevIndex m k` is determined by its exponent vector. -/
-theorem SobolevIndex.exponent_injective {k : ℕ} :
-    Function.Injective (SobolevIndex.exponent (m := m) (k := k)) := fun _ _ h ↦
-  Subtype.ext (funext fun i ↦ Fin.ext (congrFun h i))
 
 /-- The ordered monomial word of an index in `SobolevIndex m k`, as a word of length at most
 `k`. -/
 def SobolevIndex.toBoundedWord {k : ℕ} (α : SobolevIndex m k) : BoundedWord (Fin m) k :=
   ⟨⟨(monomialWord α.exponent).length, by
-      rw [length_monomialWord]; exact Nat.lt_succ_of_le α.property⟩,
+      simpa only [length_monomialWord, SobolevIndex.exponent_apply] using
+        Nat.lt_succ_of_le α.property⟩,
     (monomialWord α.exponent).get⟩
 
 /-- The word `SobolevIndex.toBoundedWord α` spells the ordered monomial word of `α`. -/
@@ -99,18 +79,6 @@ theorem SobolevIndex.toBoundedWord_injective {k : ℕ} :
   have := congrArg (fun w : BoundedWord (Fin m) k ↦ List.ofFn w.2) h
   simp only [SobolevIndex.ofFn_toBoundedWord] at this
   exact SobolevIndex.exponent_injective (monomialWord_injective this)
-
-/-- A sorted word of length at most `k` is the ordered monomial word of an index in
-`SobolevIndex m k`. -/
-theorem exists_sobolevIndex_monomialWord_eq {k : ℕ} {w : List (Fin m)}
-    (hw : w.Pairwise (· ≤ ·)) (hk : w.length ≤ k) :
-    ∃ α : SobolevIndex m k, monomialWord α.exponent = w := by
-  have hsum : ∑ i, w.count i = w.length := by
-    rw [← length_monomialWord, monomialWord_count hw]
-  refine ⟨⟨fun i ↦ ⟨w.count i, Nat.lt_succ_of_le (List.count_le_length.trans hk)⟩, ?_⟩, ?_⟩
-  · simpa [hsum] using hk
-  · refine (congrArg monomialWord (funext fun i ↦ ?_)).trans (monomialWord_count hw)
-    simp only [SobolevIndex.exponent_apply]
 
 end TauCeti
 
