@@ -299,11 +299,10 @@ theorem isStronglyCocartesian_of_isInert (φ : X ⟶ Y) (hφ : φ.toAssoc.base.I
   refine ⟨fun {Z} g φ' hl ↦ ?_⟩
   have hφ' : φ'.toAssoc.base = φ.toAssoc.base ≫ g := isHomLift_iff.1 hl
   -- The universal property of `φ.toAssoc` for `Assoc.toFinPointed`, applied to `φ'.toAssoc`.
-  -- Both of its instance arguments, `hcc` and `hl'`, are passed explicitly.
-  have hl' : Assoc.toFinPointed.IsHomLift (φ.toAssoc.base ≫ g) φ'.toAssoc :=
+  have : Assoc.toFinPointed.IsHomLift (φ.toAssoc.base ≫ g) φ'.toAssoc :=
     Assoc.isHomLift_iff.2 hφ'
-  obtain ⟨χ, ⟨hχ, hfac⟩, huniq⟩ := @IsStronglyCocartesian.universal_property _ _ _ _
-    Assoc.toFinPointed _ _ _ _ φ.toAssoc.base φ.toAssoc hcc _ _ g _ rfl φ'.toAssoc hl'
+  obtain ⟨χ, ⟨hχ, hfac⟩, huniq⟩ := IsStronglyCocartesian.universal_property Assoc.toFinPointed
+    φ.toAssoc.base φ.toAssoc g _ rfl φ'.toAssoc
   have hχ' : χ.base = g := Assoc.isHomLift_iff.1 hχ
   -- The colors of `Y` are those of `X` along `σ`, so `χ` has the profiles of `φ'`.
   have hprofile (k : Fin Z.len) : IsProfile (Z.color k) ((χ.word k).map Y.color) := by
@@ -378,10 +377,11 @@ def Hom.ofInert (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPoint
   isProfile j := by
     obtain ⟨i, hi⟩ := Assoc.Hom.exists_word_eq_singleton_of_isInert
       (f := (Assoc.Hom.ofBase f : Assoc.mk X.len ⟶ Assoc.mk k)) (by rwa [Assoc.Hom.ofBase_base]) j
-    have hmem (i' : Fin X.len) : f.toFun i'.succ = j.succ ↔ i' = i := by
-      simpa [Assoc.Hom.ofBase_word] using congrArg (i' ∈ ·) hi
+    have hmem : f.toFun i.succ = j.succ := by
+      simpa using ((Assoc.Hom.ofBase f : Assoc.mk X.len ⟶ Assoc.mk k).mem_word_iff i j).1
+        (by simp [hi])
     rw [hi, List.map_singleton, isProfile_singleton_iff]
-    exact (X.pushforwardColor_eq_of_isInert f hf ((hmem i).2 rfl)).symm
+    exact (X.pushforwardColor_eq_of_isInert f hf hmem).symm
 
 @[simp]
 lemma Hom.ofInert_toAssoc (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
