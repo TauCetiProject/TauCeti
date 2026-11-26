@@ -63,6 +63,8 @@ pseudoholomorphic curves from positive cohomology assignments.
   `σ`.
 * `ContinuousMap.sectionZeroCharge_eq_zeroCharge_of_mem_baseSet`: the zero charge in a local
   trivialization.
+* `ContinuousMap.exists_forall_sectionZeroCharge_comp_eq_zeroCharge`: along a map from a
+  contractible space, the zero charges are those of one coordinate function.
 * `ContinuousMap.sectionZeroCharge_eq_of_eq_smul`: invariance under nonvanishing rescaling.
 * `ContinuousMap.sectionZeroCharge_eq_of_homotopy`, `ContinuousMap.sectionZeroCharge_comp`,
   `ContinuousMap.sectionZeroCharge_eq_sum`: the homotopy, degree and additivity laws.
@@ -164,6 +166,19 @@ theorem sectionZeroCharge_of_not_isCompact {σ : C(𝔻, Y)}
   obtain ⟨Φ, C, hΦ, hC⟩ := exists_continuous_frame_coordinate (𝕜 := ℂ) (α.comp σ)
   rw [α.sectionZeroCharge_eq_comp hΦ hC (ContinuousMap.id 𝔻) fun _ ↦ rfl, C.comp_id]
   exact zeroCharge_of_not_isCompact ((preimage_coordinate_zero α hC).symm ▸ h)
+
+/-- **The zero charges along a map from a contractible space.** Let `G : B → Y` be a continuous map
+from a contractible paracompact R₁ space, such as `[0, 1] × 𝔻`. Then `α ∘ G` has a continuous
+coordinate `c : B → ℂ` in a frame of `E` along it, which vanishes exactly at the zeros of `α ∘ G`,
+and the zero charge of every disc `G ∘ τ` for `α` is the zero charge of `τ` for `c`. -/
+theorem exists_forall_sectionZeroCharge_comp_eq_zeroCharge {B : Type*} [TopologicalSpace B]
+    [R1Space B] [ParacompactSpace B] [ContractibleSpace B] (G : C(B, Y)) :
+    ∃ c : C(B, ℂ), (∀ b, c b = 0 ↔ (α (G b)).snd = 0) ∧
+      ∀ τ : C(𝔻, B), α.sectionZeroCharge (G.comp τ) = c.zeroCharge τ := by
+  obtain ⟨Φ, C, hΦ, hC⟩ := exists_continuous_frame_coordinate (𝕜 := ℂ) (α.comp G)
+  refine ⟨C, fun b ↦ ?_, fun τ ↦ ?_⟩
+  · rw [snd_eq_frame_apply α (G := G) hC b, (Φ b).map_eq_zero_iff]
+  · rw [α.sectionZeroCharge_eq_comp hΦ hC τ fun _ ↦ rfl, id_zeroCharge_comp]
 
 /-- **Vacuum.** The zero charge of a disc missing the zeros of `α` vanishes. -/
 theorem sectionZeroCharge_eq_zero_of_forall_ne_zero {σ : C(𝔻, Y)}
