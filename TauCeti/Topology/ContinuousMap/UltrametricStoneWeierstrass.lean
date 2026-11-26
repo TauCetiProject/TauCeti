@@ -14,7 +14,6 @@ import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.RingTheory.Ideal.Maximal
 -- `ContinuousMap.isUltrametricDist`: the supremum norm on `C(X, k)` is ultrametric.
 import Mathlib.Topology.MetricSpace.Ultra.ContinuousMaps
-import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 
 /-!
 # Ultrametric Stone–Weierstrass theorem for modules and subalgebras
@@ -33,7 +32,8 @@ with `φ` on the fiber
 
 As immediate corollaries we obtain:
 * the submodule density theorem when `N.leftOrder` separates points and `N` vanishes
-  nowhere (`ContinuousMap.submodule_topologicalClosure_eq_top_of_separatesPoints`), and
+  nowhere
+  (`ContinuousMap.submodule_topologicalClosure_eq_top_of_separatesPoints_ultrametric`), and
 * Kaplansky's ultrametric Stone–Weierstrass theorem for subalgebras: every point-separating
   subalgebra `A : Subalgebra k C(X, k)` is dense in `C(X, k)`
   (`ContinuousMap.subalgebra_topologicalClosure_eq_top_of_separatesPoints_ultrametric`).
@@ -53,8 +53,9 @@ form a proper ideal of `B`, hence are contained in a maximal ideal `m`. On the c
 * I. Kaplansky, *The Weierstrass theorem in fields with valuations*, Proc. Amer. Math. Soc. 1
   (1950), 356–357.
 * J. B. Prolla, *Approximation of Vector Valued Functions*, North-Holland (1977).
-* Adapted from the formalization by L. Alpöge and L. Sernau in
-  `Lib/GaloisRep/WeightCongruence.lean` (`New.stoneWeierstrass_ultrametric`).
+* Adapted from the formalization by L. Alpöge and L. Sernau of `New.stoneWeierstrass_ultrametric`
+  in `src/Lib/GaloisRep/WeightCongruence.lean` of the `riemann-hypothesis` repository,
+  <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
 -/
 
 public section
@@ -94,7 +95,7 @@ private lemma exists_maximal_ideal_of_far (N : Submodule k C(X, k)) (φ : C(X, k
       add_mem' := fun {f g} hf hg ↦ (IsUltrametricDist.norm_add_le_max f g).trans (max_le hf hg)
       zero_mem' := by simpa using hε.le
       smul_mem' := fun c f hf ↦ by
-        change ‖(c : C(X, k)) * f‖ ≤ ε
+        rw [Set.mem_ofPred_eq, Subring.smul_def, smul_eq_mul]
         exact (norm_mul_le (c : C(X, k)) f).trans
           ((mul_le_of_le_one_left (norm_nonneg f) c.property.2).trans hf) }
   let I : Ideal B := (N' ⊔ ball).comap (LinearMap.toSpanSingleton B C(X, k) φ)
@@ -121,7 +122,7 @@ private lemma exists_mul_norm_le_of_le_on_zeroSet {N : Submodule k C(X, k)}
     · exact ⟨1, by simpa [U] using hg x hx⟩
     · push Not at hx
       obtain ⟨f, hf⟩ := hx
-      obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (show 0 < r / (‖g x‖ + 1) by positivity) hf
+      obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (by positivity : 0 < r / (‖g x‖ + 1)) hf
       refine ⟨f ^ n, ?_⟩
       simp only [U, mem_preimage, mem_closedBall_zero_iff, ContinuousMap.mul_apply,
         SubmonoidClass.coe_pow, ContinuousMap.coe_pow, Pi.pow_apply, norm_mul, norm_pow]
@@ -185,7 +186,8 @@ private lemma eq_on_zeroSet_of_mem_multiplier {N : Submodule k C(X, k)}
     have h1 := hy ⟨f.val - w, hdw⟩
     have hvne : v y ≠ 0 := norm_pos_iff.1 h_pos
     have hval : ((f.val - w : boundedMultipliers N) : C(X, k)) y = 0 := by
-      change (f : C(X, k)) y - (v y)⁻¹ * ((f : C(X, k)) y * v y) = 0
+      simp only [w, AddSubgroupClass.coe_sub, ContinuousMap.sub_apply, ContinuousMap.smul_apply,
+        ContinuousMap.mul_apply, smul_eq_mul]
       rw [mul_comm ((f : C(X, k)) y), ← mul_assoc, inv_mul_cancel₀ hvne, one_mul, sub_self]
     rw [hval, norm_zero] at h1
     linarith
@@ -211,8 +213,7 @@ theorem exists_mem_norm_sub_le_of_eq_on_multiplier_fibers (N : Submodule k C(X, 
       refine ⟨d, hd, fun x hx ↦ ?_⟩
       have hxa : φ x = d x :=
         hφd x fun u hu ↦ eq_on_zeroSet_of_mem_multiplier (m := m) hu hx ha
-      change ‖φ x - d x‖ ≤ ε
-      rw [hxa, sub_self, norm_zero]
+      rw [ContinuousMap.sub_apply, hxa, sub_self, norm_zero]
       exact hε.le
     · exact ⟨0, N.zero_mem, fun x hx ↦ (hZ ⟨x, hx⟩).elim⟩
   obtain ⟨d, hd, h_bound⟩ := hd_exists
@@ -226,8 +227,7 @@ with some element of `N` on every multiplier fiber of `N`, then `φ ∈ N.topolo
 theorem mem_topologicalClosure_of_eq_on_multiplier_fibers (N : Submodule k C(X, k)) (φ : C(X, k))
     (h_fiber : ∀ a : X, ∃ d ∈ N, ∀ x : X, (∀ u ∈ N.leftOrder, u x = u a) → φ x = d x) :
     φ ∈ N.topologicalClosure := by
-  change φ ∈ closure (N : Set C(X, k))
-  rw [Metric.mem_closure_iff]
+  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe, Metric.mem_closure_iff]
   intro ε hε
   obtain ⟨g, hg, hle⟩ :=
     exists_mem_norm_sub_le_of_eq_on_multiplier_fibers N φ h_fiber (half_pos hε)
@@ -239,16 +239,16 @@ theorem mem_topologicalClosure_of_eq_on_multiplier_fibers (N : Submodule k C(X, 
 subalgebra `A : Subalgebra k C(X, k)` stabilizes `N` and `φ` agrees with some element of `N` on
 every fiber of `A`, then `φ ∈ N.topologicalClosure`. -/
 theorem mem_topologicalClosure_of_eq_on_subalgebra_fibers (N : Submodule k C(X, k))
-    (A : Subalgebra k C(X, k)) (hAN : ∀ u ∈ A, ∀ d ∈ N, u * d ∈ N) (φ : C(X, k))
+    (A : Subalgebra k C(X, k)) (hAN : A ≤ N.leftOrder) (φ : C(X, k))
     (h_fiber : ∀ a : X, ∃ d ∈ N, ∀ x : X, (∀ u ∈ A, u x = u a) → φ x = d x) :
     φ ∈ N.topologicalClosure :=
   mem_topologicalClosure_of_eq_on_multiplier_fibers N φ fun a ↦
     let ⟨d, hd, hφd⟩ := h_fiber a
-    ⟨d, hd, fun x hx ↦ hφd x fun u hu ↦ hx u (Submodule.mem_leftOrder_iff.2 (hAN u hu))⟩
+    ⟨d, hd, fun x hx ↦ hφd x fun u hu ↦ hx u (hAN hu)⟩
 
 /-- **Density of a submodule whose multipliers separate points.** If `N.leftOrder`
 separates points of `X` and `N` vanishes nowhere on `X`, then `N` is dense in `C(X, k)`. -/
-theorem submodule_topologicalClosure_eq_top_of_separatesPoints (N : Submodule k C(X, k))
+theorem submodule_topologicalClosure_eq_top_of_separatesPoints_ultrametric (N : Submodule k C(X, k))
     (hsep : N.leftOrder.SeparatesPoints) (hvan : ∀ a : X, ∃ d ∈ N, d a ≠ 0) :
     N.topologicalClosure = ⊤ := by
   rw [eq_top_iff]
@@ -261,26 +261,18 @@ theorem submodule_topologicalClosure_eq_top_of_separatesPoints (N : Submodule k 
     obtain ⟨_, ⟨u, hu, rfl⟩, hux⟩ := hsep hne
     exact hux (hx u hu)
   subst hxa
-  change φ x = φ x * (d₀ x)⁻¹ * d₀ x
-  rw [mul_assoc, inv_mul_cancel₀ hda, mul_one]
+  rw [ContinuousMap.smul_apply, smul_eq_mul, mul_assoc, inv_mul_cancel₀ hda, mul_one]
 
 /-- **Kaplansky's ultrametric Stone–Weierstrass theorem for subalgebras.** Every point-separating
 `k`-subalgebra `A` of `C(X, k)` over an ultrametric normed field `k` is dense in `C(X, k)`. -/
 theorem subalgebra_topologicalClosure_eq_top_of_separatesPoints_ultrametric
     (A : Subalgebra k C(X, k)) (hsep : A.SeparatesPoints) :
     A.topologicalClosure = ⊤ := by
-  rw [eq_top_iff]
-  intro φ _
-  change φ ∈ (Subalgebra.toSubmodule A).topologicalClosure
-  refine mem_topologicalClosure_of_eq_on_subalgebra_fibers (Subalgebra.toSubmodule A) A
-    (fun u hu d hd ↦ A.mul_mem hu hd) φ fun a ↦ ?_
-  refine ⟨algebraMap k C(X, k) (φ a), A.algebraMap_mem (φ a), fun x hx ↦ ?_⟩
-  have hxa : x = a := by
-    by_contra hne
-    obtain ⟨_, ⟨u, hu, rfl⟩, hux⟩ := hsep hne
-    exact hux (hx u hu)
-  subst hxa
-  simp
+  have h := submodule_topologicalClosure_eq_top_of_separatesPoints_ultrametric
+    (Subalgebra.toSubmodule A) (by rwa [Subalgebra.leftOrder_toSubmodule])
+    fun _ ↦ ⟨1, A.one_mem, by simp⟩
+  rw [← SetLike.coe_set_eq, Subalgebra.topologicalClosure_coe, Algebra.coe_top]
+  simpa [← SetLike.coe_set_eq, Submodule.topologicalClosure_coe] using h
 
 /-- **Kaplansky's ultrametric Stone–Weierstrass theorem (epsilon form).** For a point-separating
 subalgebra `A` of `C(X, k)` over an ultrametric normed field `k`, every `φ : C(X, k)` can be
@@ -289,11 +281,10 @@ theorem exists_mem_subalgebra_norm_sub_lt_of_separatesPoints_ultrametric
     (A : Subalgebra k C(X, k)) (hsep : A.SeparatesPoints) (φ : C(X, k)) {ε : ℝ} (hε : 0 < ε) :
     ∃ g ∈ A, ‖φ - g‖ < ε := by
   have hcl : φ ∈ closure (A : Set C(X, k)) := by
-    have htop := subalgebra_topologicalClosure_eq_top_of_separatesPoints_ultrametric A hsep
-    have hmem : φ ∈ A.topologicalClosure := by
-      rw [htop]
-      trivial
-    exact hmem
+    rw [← Subalgebra.topologicalClosure_coe,
+      subalgebra_topologicalClosure_eq_top_of_separatesPoints_ultrametric A hsep,
+      Algebra.coe_top]
+    exact mem_univ φ
   obtain ⟨g, hg, hdist⟩ := Metric.mem_closure_iff.1 hcl ε hε
   exact ⟨g, hg, by rwa [← dist_eq_norm]⟩
 
