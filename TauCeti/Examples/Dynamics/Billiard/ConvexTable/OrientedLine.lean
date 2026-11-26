@@ -37,10 +37,7 @@ towards `−1`. -/
 theorem orientedLine_circle_zero : (circle 1).orientedLine 0 (Real.pi / 2) = (-1, 0) := by
   have hdir : ((circle 1).orientedLine 0 (Real.pi / 2)).1 = -1 := by
     refine Circle.ext ?_
-    rw [coe_orientedLine_fst, deriv_circle, Circle.coe_neg, Circle.coe_one]
-    push_cast
-    rw [zero_div, circleMap_zero, ofReal_one, one_mul, ofReal_zero, zero_mul, Complex.exp_zero,
-      one_mul, Complex.exp_pi_div_two_mul_I, I_mul_I]
+    simp [deriv_circle, circleMap, Complex.exp_pi_div_two_mul_I]
   refine Prod.ext hdir ?_
   rw [orientedLine_snd, ← coe_orientedLine_fst, hdir, circle_apply]
   simp [circleMap]
@@ -57,13 +54,7 @@ example : orientedLineSet ((circle 1).orientedLine 0 Real.pi) ∩ interior (circ
 theorem orientedLine_circle_pi : (circle 1).orientedLine Real.pi (Real.pi / 2) = (1, 0) := by
   have hdir : ((circle 1).orientedLine Real.pi (Real.pi / 2)).1 = 1 := by
     refine Circle.ext ?_
-    rw [coe_orientedLine_fst, deriv_circle, Circle.coe_one, div_one,
-      circleMap_zero, ofReal_one, one_mul]
-    push_cast
-    rw [Complex.exp_pi_mul_I, Complex.exp_pi_div_two_mul_I]
-    ring_nf
-    rw [I_sq]
-    ring
+    simp [deriv_circle, circleMap, Complex.exp_pi_mul_I, Complex.exp_pi_div_two_mul_I]
   refine Prod.ext hdir ?_
   rw [orientedLine_snd, ← coe_orientedLine_fst, hdir, circle_apply]
   simp [circleMap, Complex.exp_pi_mul_I]

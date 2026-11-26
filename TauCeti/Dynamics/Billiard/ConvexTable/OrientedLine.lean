@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.OrientedLine
 public import TauCeti.Dynamics.Billiard.ConvexTable.Exit
 public import TauCeti.Dynamics.Billiard.OrientedLine
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -17,25 +18,19 @@ import TauCeti.Analysis.Complex.Circle.Basic
 
 An oriented line of the plane `ℂ` is represented by a pair `(e, c) ∈ Circle × ℝ`: the line
 `{z | e × z = c}` (`TauCeti.orientedLineSet`), oriented by its direction `e`, where
-`a × b = Im (conj a * b)`. The line through `z` with direction `e` is `(e, e × z)`
-(`TauCeti.orientedLineThrough`), and:
-
-* `TauCeti.orientedLineSet_eq_range`: the line `(e, c)` is `{z + t e : t ∈ ℝ}` for any of its
-  points `z`;
-* `TauCeti.orientedLineThrough_eq_iff`: two (direction, point) pairs give the same oriented line
-  exactly when the directions agree and the points differ by a multiple of the direction, so every
-  oriented line has exactly one representation;
-* `TauCeti.orientedLineSet_neg`, `TauCeti.orientedLineSet_eq_orientedLineSet_iff`: reversing the
-  orientation, `(e, c) ↦ (−e, −c)`, keeps the point set, and two representations have the same
-  point set exactly when they are equal or opposite.
+`a × b = Im (conj a * b)`; reversing the orientation, `(e, c) ↦ (−e, −c)`, keeps the point set
+(`TauCeti.orientedLineSet_neg`), so it preserves the lines meeting any set
+(`TauCeti.neg_mem_setOf_orientedLineSet_inter_nonempty_iff`).
 
 For a convex table `γ` with unit tangent `τ`, the oriented line of the state `(s, δ)` is
 `Λ(s, δ) = (exp(iδ) τ(s), exp(iδ) τ(s) × γ(s))` (`TauCeti.ConvexTable.orientedLine`), the line
-along which the ball leaves `γ(s)` at the angle `δ`. It contains the exit point `γ(s₁)` of §1.3
-(`TauCeti.ConvexTable.apply_exitParam_mem_orientedLineSet`). The main result is that `Λ` is a
-homeomorphism from the phase cylinder `AddCircle ℓ × (0, π)` onto the set of oriented lines meeting
-the interior of the region `Ω` bounded by `γ` (`TauCeti.ConvexTable.orientedLineHomeomorph`),
-which is open (`TauCeti.ConvexTable.isOpen_setOf_orientedLineSet_inter_interior_nonempty`):
+along which the ball leaves `γ(s)` at the angle `δ`. It contains the exit point `γ(s₁)`
+(`TauCeti.ConvexTable.exitParam`, `TauCeti.ConvexTable.apply_exitParam_mem_orientedLineSet`).
+The main result is that `Λ` is a homeomorphism from the phase cylinder `AddCircle ℓ × (0, π)`
+onto the set of oriented lines meeting the interior of the region `Ω` bounded by `γ`
+(`TauCeti.ConvexTable.orientedLineHomeomorph`), which is open
+(`TauCeti.ConvexTable.isOpen_setOf_orientedLineSet_inter_interior_nonempty`), with inverse the
+entry state (`TauCeti.ConvexTable.orientedLineHomeomorph_symm_apply_mk`):
 
 * for `δ ∈ (0, π)` the line meets the interior of `Ω`, and the tangent lines (`sin δ = 0`) do not
   (`TauCeti.ConvexTable.orientedLineSet_orientedLine_inter_interior_nonempty`,
@@ -64,116 +59,6 @@ open Function Set Filter Topology Complex
 open scoped ComplexConjugate
 
 namespace TauCeti
-
-/-! ### Oriented lines of the plane -/
-
-/-- The point set `{z | e × z = c}` of the oriented line `p = (e, c) ∈ Circle × ℝ`, where
-`a × b = Im (conj a * b)`; the line is oriented by its direction `e`. -/
-def orientedLineSet (p : Circle × ℝ) : Set ℂ :=
-  {z | (conj (p.1 : ℂ) * z).im = p.2}
-
-theorem mem_orientedLineSet {p : Circle × ℝ} {z : ℂ} :
-    z ∈ orientedLineSet p ↔ (conj (p.1 : ℂ) * z).im = p.2 :=
-  Iff.rfl
-
-/-- The oriented line `(e, e × z)` through `z` with direction `e`. -/
-def orientedLineThrough (e : Circle) (z : ℂ) : Circle × ℝ :=
-  (e, (conj (e : ℂ) * z).im)
-
-theorem orientedLineThrough_def (e : Circle) (z : ℂ) :
-    orientedLineThrough e z = (e, (conj (e : ℂ) * z).im) :=
-  (rfl)
-
-theorem mem_orientedLineSet_orientedLineThrough (e : Circle) (z : ℂ) :
-    z ∈ orientedLineSet (orientedLineThrough e z) :=
-  mem_orientedLineSet.2 rfl
-
-/-- Moving along the direction `e` does not change `e × z`. -/
-theorem im_conj_mul_add_smul (e : Circle) (z : ℂ) (t : ℝ) :
-    (conj (e : ℂ) * (z + t • (e : ℂ))).im = (conj (e : ℂ) * z).im := by
-  rw [mul_add, real_smul, mul_left_comm, Circle.conj_coe_mul_self, mul_one, add_im, ofReal_im,
-    add_zero]
-
-/-- The oriented line `(e, c)` is `{z + t e : t ∈ ℝ}` for any of its points `z`. -/
-theorem orientedLineSet_eq_range {p : Circle × ℝ} {z : ℂ} (hz : z ∈ orientedLineSet p) :
-    orientedLineSet p = range fun t : ℝ => z + t • (p.1 : ℂ) := by
-  ext w
-  refine ⟨fun hw => ⟨(conj (p.1 : ℂ) * (w - z)).re, ?_⟩, ?_⟩
-  · have him : (conj (p.1 : ℂ) * (w - z)).im = 0 := by
-      rw [mul_sub, sub_im, hw, hz, sub_self]
-    have hreal : ((conj (p.1 : ℂ) * (w - z)).re : ℂ) = conj (p.1 : ℂ) * (w - z) :=
-      Complex.ext (by simp) (by simp [him])
-    simp only
-    rw [real_smul, hreal]
-    linear_combination (w - z) * Circle.conj_coe_mul_self p.1
-  · rintro ⟨t, rfl⟩
-    rw [mem_orientedLineSet, im_conj_mul_add_smul, hz]
-
-/-- **Every oriented line has exactly one representation.** The oriented lines through `z` with
-direction `e` and through `z'` with direction `e'` agree exactly when `e = e'` and `z' − z` is a
-real multiple of `e`. -/
-theorem orientedLineThrough_eq_iff {e e' : Circle} {z z' : ℂ} :
-    orientedLineThrough e z = orientedLineThrough e' z' ↔
-      e = e' ∧ ∃ t : ℝ, z' = z + t • (e : ℂ) := by
-  constructor
-  · intro h
-    have he : e = e' := congrArg Prod.fst h
-    subst he
-    have hz' : z' ∈ orientedLineSet (orientedLineThrough e z) := (congrArg Prod.snd h).symm
-    rw [orientedLineSet_eq_range (mem_orientedLineSet_orientedLineThrough e z)] at hz'
-    obtain ⟨t, ht⟩ := hz'
-    exact ⟨rfl, t, ht.symm⟩
-  · rintro ⟨rfl, t, rfl⟩
-    rw [orientedLineThrough_def, orientedLineThrough_def, im_conj_mul_add_smul]
-
-/-- **Reversing the orientation** `(e, c) ↦ (−e, −c)` keeps the point set of the line. -/
-@[simp]
-theorem orientedLineSet_neg (p : Circle × ℝ) : orientedLineSet (-p) = orientedLineSet p := by
-  ext z
-  simp only [mem_orientedLineSet, Prod.fst_neg, Prod.snd_neg, Circle.coe_neg, map_neg, neg_mul,
-    neg_im, neg_inj]
-
-/-- A point of the line `(e, c)`: `c i e`. -/
-theorem smul_I_mul_mem_orientedLineSet (p : Circle × ℝ) :
-    p.2 • (I * (p.1 : ℂ)) ∈ orientedLineSet p := by
-  rw [mem_orientedLineSet, real_smul, mul_left_comm, mul_left_comm (conj _),
-    Circle.conj_coe_mul_self, mul_one, mul_comm]
-  simp
-
-/-- Two representations have the same point set exactly when they are equal or opposite. -/
-theorem orientedLineSet_eq_orientedLineSet_iff {p q : Circle × ℝ} :
-    orientedLineSet p = orientedLineSet q ↔ q = p ∨ q = -p := by
-  refine ⟨fun h => ?_, ?_⟩
-  · set z := p.2 • (I * (p.1 : ℂ))
-    have hz : z ∈ orientedLineSet p := smul_I_mul_mem_orientedLineSet p
-    have hze : z + (1 : ℝ) • (p.1 : ℂ) ∈ orientedLineSet p := by
-      rw [orientedLineSet_eq_range hz]
-      exact ⟨1, rfl⟩
-    rw [h, mem_orientedLineSet] at hz hze
-    -- `u = conj e' e` is a real point of the circle.
-    set u : Circle := q.1⁻¹ * p.1 with hu
-    have hu' : (u : ℂ) = conj (q.1 : ℂ) * p.1 := by
-      rw [hu, Circle.coe_mul, Circle.coe_inv_eq_conj]
-    have huim : (u : ℂ).im = 0 := by
-      rw [one_smul, mul_add, add_im, hz] at hze
-      rw [hu']
-      linarith
-    have hpe : (p.1 : ℂ) = q.1 * u := by
-      rw [hu', ← mul_assoc, Circle.coe_mul_conj_self, one_mul]
-    have hqz : (conj (q.1 : ℂ) * z).im = q.2 := hz
-    rcases (Circle.im_coe_eq_zero_iff u).1 huim with hu1 | hu1
-    · have he : q.1 = p.1 := Circle.ext (by rw [hpe, hu1, Circle.coe_one, mul_one])
-      refine Or.inl (Prod.ext he ?_)
-      rw [← hqz, he]
-      simp [z, real_smul, mul_left_comm, Circle.conj_coe_mul_self]
-    · have he : q.1 = -p.1 :=
-        Circle.ext (by rw [Circle.coe_neg, hpe, hu1, Circle.coe_neg, Circle.coe_one]; ring)
-      refine Or.inr (Prod.ext he ?_)
-      rw [← hqz, he, Prod.snd_neg]
-      simp [z, real_smul, mul_left_comm, Circle.conj_coe_mul_self]
-  · rintro (rfl | rfl)
-    · rfl
-    · exact (orientedLineSet_neg p).symm
 
 /-! ### The oriented lines of a convex table -/
 
@@ -215,6 +100,7 @@ theorem orientedLine_snd (s δ : ℝ) :
 theorem continuous_orientedLine : Continuous fun x : ℝ × ℝ => T.orientedLine x.1 x.2 := by
   have hdir : Continuous fun x : ℝ × ℝ => Circle.exp x.2 * T.tangent x.1 :=
     (Circle.exp.continuous.comp continuous_snd).mul (T.continuous_tangent.comp continuous_fst)
+  simp only [orientedLine_def, orientedLineThrough_def]
   refine hdir.prodMk (continuous_im.comp ?_)
   exact (continuous_conj.comp (continuous_subtypeVal.comp hdir)).mul
     (T.continuous.comp continuous_fst)
@@ -230,11 +116,11 @@ theorem apply_mem_orientedLineSet (s δ : ℝ) : T s ∈ orientedLineSet (T.orie
 /-- The points `γ(s) + r exp(iδ) τ(s)` lie on the line `Λ(s, δ)`. -/
 theorem add_smul_mem_orientedLineSet (s δ r : ℝ) :
     T s + r • (exp (δ * I) * deriv T s) ∈ orientedLineSet (T.orientedLine s δ) := by
-  rw [← coe_orientedLine_fst, mem_orientedLineSet, im_conj_mul_add_smul]
-  exact T.apply_mem_orientedLineSet s δ
+  rw [← coe_orientedLine_fst, mem_orientedLineSet, Circle.im_conj_mul_add_smul]
+  exact mem_orientedLineSet.1 (T.apply_mem_orientedLineSet s δ)
 
-/-- **The line leaves at the exit point.** For `0 < δ < π`, the exit point `γ(s₁)` of §1.3 lies on
-the line `Λ(s, δ)`. -/
+/-- **The line leaves at the exit point.** For `0 < δ < π`, the exit point `γ(s₁)`
+(`TauCeti.ConvexTable.exitParam`) lies on the line `Λ(s, δ)`. -/
 theorem apply_exitParam_mem_orientedLineSet {s δ : ℝ} (hδ : δ ∈ Ioo 0 Real.pi) :
     T (T.exitParam s δ) ∈ orientedLineSet (T.orientedLine s δ) := by
   rw [eq_add_of_sub_eq' (T.apply_exitParam_sub_eq_norm_smul hδ)]
@@ -252,20 +138,15 @@ theorem orientedLineSet_orientedLine_inter_interior_eq_empty {s δ : ℝ} (hδ :
     orientedLineSet (T.orientedLine s δ) ∩ interior T.region = ∅ := by
   refine eq_empty_of_forall_notMem fun z ⟨hz, hint⟩ => ?_
   have hpos := (T.mem_interior_region_iff.1 hint) s
-  have hline : (conj (exp (δ * I) * deriv T s) * (z - T s)).im = 0 := by
-    rw [mem_orientedLineSet, coe_orientedLine_fst, orientedLine_snd] at hz
-    rw [mul_sub, sub_im, hz, sub_self]
-  have hcos := Real.sin_eq_zero_iff_cos_eq.1 hδ
-  rw [map_mul, mul_assoc, ← exp_conj, map_mul, conj_ofReal, conj_I, mul_neg, ← neg_mul,
-    exp_mul_I] at hline
-  set w := conj (deriv T s) * (z - T s)
-  have : ((Real.cos (-δ) : ℂ) + (Real.sin (-δ) : ℂ) * I) * w =
-      (Real.cos δ : ℂ) * w - (Real.sin δ : ℂ) * (I * w) := by
-    rw [Real.cos_neg, Real.sin_neg]; push_cast; ring
-  rw [← ofReal_neg, ← ofReal_cos, ← ofReal_sin, this, hδ] at hline
-  simp only [ofReal_zero, zero_mul, sub_zero, mul_im, ofReal_re, ofReal_im, zero_mul,
-    add_zero] at hline
-  rcases hcos with h | h <;> rw [h] at hline <;> linarith
+  -- For `sin δ = 0` the direction `exp(iδ) τ(s)` is `±τ(s)`.
+  have hexp : Circle.exp δ = 1 ∨ Circle.exp δ = -1 :=
+    (Circle.im_coe_eq_zero_iff _).1 (by rw [Circle.coe_exp, exp_ofReal_mul_I_im, hδ])
+  rw [orientedLine_def, mem_orientedLineSet, orientedLineThrough_def, ← sub_eq_zero, ← sub_im,
+    ← mul_sub] at hz
+  rcases hexp with h | h <;>
+    simp only [h, one_mul, neg_mul, Circle.coe_neg, map_neg, neg_im, neg_eq_zero,
+      coe_tangent] at hz <;>
+    exact hpos.ne' hz
 
 /-- **Injectivity on the phase cylinder.** For `δ ∈ (0, π)` and `δ' ∈ [0, π]`, the states `(s, δ)`
 and `(s', δ')` have the same oriented line exactly when `s ≡ s'` modulo `ℓ` and `δ = δ'`. -/
@@ -351,53 +232,34 @@ theorem exists_orientedLine_eq {p : Circle × ℝ}
   refine ⟨s, arg (u : ℂ), harg, ?_⟩
   have hdir : Circle.exp (arg (u : ℂ)) * T.tangent s = p.1 := by
     rw [Circle.exp_arg, mul_comm, ← mul_assoc, mul_inv_cancel, one_mul]
-  rw [orientedLine_def, hdir, orientedLineThrough_def]
-  refine Prod.ext rfl ?_
   have hw' : w = z₀ + (-r₀) • e := by simp only [w]; module
-  change (conj e * T s).im = p.2
-  rw [hs, hw']
-  exact (im_conj_mul_add_smul p.1 z₀ (-r₀)).trans hz₀
+  rw [orientedLine_def, hdir, orientedLineThrough_def, hs, hw', Circle.im_conj_mul_add_smul,
+    mem_orientedLineSet.1 hz₀]
 
-/-- **The lines meeting the interior form an open set.** If `z₀` is an interior point on the line
-`(e, c)`, then `z₀ + (c' − e' × z₀) i e'` lies on the nearby line `(e', c')`, close to `z₀`. -/
+/-- The oriented lines meeting the interior of `Ω` form an open set. -/
 theorem isOpen_setOf_orientedLineSet_inter_interior_nonempty :
-    IsOpen {p : Circle × ℝ | (orientedLineSet p ∩ interior T.region).Nonempty} := by
-  refine isOpen_iff_mem_nhds.2 fun p ⟨z₀, hz₀, hint⟩ => ?_
-  set f : Circle × ℝ → ℂ := fun q => z₀ + (q.2 - (conj (q.1 : ℂ) * z₀).im) • (I * (q.1 : ℂ))
-  have hf : Continuous f := by
-    simp only [f, real_smul]
-    fun_prop
-  have hfp : f p = z₀ := by
-    simp only [f]
-    rw [hz₀, sub_self, zero_smul, add_zero]
-  have hmem (q : Circle × ℝ) : f q ∈ orientedLineSet q := by
-    rw [mem_orientedLineSet]
-    simp only [f, mul_add, add_im, real_smul]
-    rw [mul_left_comm, mul_left_comm (conj (q.1 : ℂ)), Circle.conj_coe_mul_self, mul_one]
-    simp
-  filter_upwards [hf.continuousAt.preimage_mem_nhds (hfp ▸ isOpen_interior.mem_nhds hint)]
-    with q hq
-  exact ⟨f q, hmem q, hq⟩
+    IsOpen {p : Circle × ℝ | (orientedLineSet p ∩ interior T.region).Nonempty} :=
+  isOpen_setOf_orientedLineSet_inter_nonempty isOpen_interior
 
 /-- `Λ` on `AddCircle ℓ × ℝ`. -/
-def circleOrientedLine (x : AddCircle ℓ × ℝ) : Circle × ℝ :=
+def addCircleOrientedLine (x : AddCircle ℓ × ℝ) : Circle × ℝ :=
   (T.periodic_orientedLine x.2).lift x.1
 
 @[simp]
-theorem circleOrientedLine_mk (s δ : ℝ) :
-    T.circleOrientedLine ((s : AddCircle ℓ), δ) = T.orientedLine s δ :=
+theorem addCircleOrientedLine_mk (s δ : ℝ) :
+    T.addCircleOrientedLine ((s : AddCircle ℓ), δ) = T.orientedLine s δ :=
   (rfl)
 
-theorem continuous_circleOrientedLine : Continuous T.circleOrientedLine :=
+theorem continuous_addCircleOrientedLine : Continuous T.addCircleOrientedLine :=
   ((QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id).isQuotientMap
     (X := ℝ × ℝ)).continuous_iff.2 T.continuous_orientedLine
 
 /-- `Λ` on the compact closed cylinder `AddCircle ℓ × [0, π]`. -/
 private def closedLine (x : AddCircle ℓ × Icc 0 Real.pi) : Circle × ℝ :=
-  T.circleOrientedLine (x.1, x.2)
+  T.addCircleOrientedLine (x.1, x.2)
 
 private theorem continuous_closedLine : Continuous T.closedLine :=
-  T.continuous_circleOrientedLine.comp (continuous_fst.prodMk
+  T.continuous_addCircleOrientedLine.comp (continuous_fst.prodMk
     (continuous_subtypeVal.comp continuous_snd))
 
 /-- The set of oriented lines meeting the interior of `Ω`. -/
@@ -465,6 +327,14 @@ def orientedLineHomeomorph :
 theorem coe_orientedLineHomeomorph_apply (s : ℝ) (δ : Ioo 0 Real.pi) :
     (T.orientedLineHomeomorph ((s : AddCircle ℓ), δ) : Circle × ℝ) = T.orientedLine s δ :=
   (rfl)
+
+/-- The inverse of `Λ` sends the line `Λ(s, δ)` to its entry state `(s, δ)`. -/
+@[simp]
+theorem orientedLineHomeomorph_symm_apply_mk (s : ℝ) (δ : Ioo 0 Real.pi)
+    (h : (orientedLineSet (T.orientedLine s δ) ∩ interior T.region).Nonempty) :
+    T.orientedLineHomeomorph.symm ⟨T.orientedLine s δ, h⟩ = ((s : AddCircle ℓ), δ) :=
+  T.orientedLineHomeomorph.symm_apply_eq.2
+    (Subtype.ext (T.coe_orientedLineHomeomorph_apply s δ).symm)
 
 end ConvexTable
 
