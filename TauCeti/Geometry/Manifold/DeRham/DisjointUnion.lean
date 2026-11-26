@@ -66,9 +66,8 @@ theorem injective_pi_mpullback_inclusion_iSup :
   obtain ⟨y, rfl⟩ : ∃ y : s i, Opens.inclusion (le_iSup s i) y = x :=
     ⟨⟨x, hi⟩, (Set.inclusion_mk _ _).trans (Subtype.coe_eta _ _)⟩
   have h := congrFun (congrArg Subtype.val (congrFun hφ i)) y
-  rw [LinearMap.pi_apply, coe_mpullback, mpullback_inclusion_apply, Pi.zero_apply,
-    ZeroMemClass.coe_zero, Pi.zero_apply] at h
-  rw [ZeroMemClass.coe_zero, Pi.zero_apply]
+  simp only [LinearMap.pi_apply, coe_mpullback, mpullback_inclusion_apply, ZeroMemClass.coe_zero,
+    Pi.zero_apply] at h ⊢
   exact h
 
 /-- Smooth forms on pairwise disjoint open sets `s i` are the restrictions of a smooth form on
