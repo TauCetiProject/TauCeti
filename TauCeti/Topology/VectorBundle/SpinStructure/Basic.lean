@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Euclidean
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Real
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Extension
 
 /-!
@@ -181,10 +181,7 @@ Hermitian four-manifold and the canonical lift `U(2) → Spinᶜ(4)`, this is th
 structure. -/
 noncomputable abbrev OrthonormalFrameLift.extendSpinC : SpinCStructure F V n :=
   s.extend σ hσ hσρ
-    (fun g ↦ TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n
-      (spinCGroup.toSpecialOrthogonal _ _ g))
-    (fun v ↦ (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n
-      v).comp (spinCGroup.continuous_toSpecialOrthogonal_pi _ _))
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
 
 /-- **The frame of `[p, 1]`** in the `Spinᶜ` structure induced by a lift is the frame of `p`. -/
 @[simp]
