@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Algebra.Polynomial.Div
+import TauCeti.RingTheory.Perfect.Basic
 
 /-!
 # Twisted Teichmüller lifts in equal characteristic
@@ -149,20 +150,10 @@ noncomputable def twistedTeichmuller (Q : Polynomial S⟦X⟧) (a : S) : S⟦X�
 
 variable {p f} {Q : Polynomial S⟦X⟧}
 
-/-- The `(p ^ f) ^ n`-th power of the `p ^ (f * n)`-th root of `a` is `a`. -/
-private theorem iterateFrobeniusEquiv_symm_pow (n : ℕ) (a : S) :
-    (iterateFrobeniusEquiv S p (f * n)).symm a ^ (p ^ f) ^ n = a := by
-  rw [← pow_mul, ← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
-
 /-- The constant lift of the `p ^ (f * n)`-th root of `a` lifts a `(p ^ f) ^ n`-th root of `a`. -/
 private theorem constantCoeff_C_iterateFrobeniusEquiv_symm_pow (n : ℕ) (a : S) :
     constantCoeff (C ((iterateFrobeniusEquiv S p (f * n)).symm a)) ^ (p ^ f) ^ n = a := by
-  rw [constantCoeff_C, iterateFrobeniusEquiv_symm_pow]
-
-/-- Raising to a power of `p` is injective on a perfect ring of characteristic `p`. -/
-private theorem pow_pow_injective (k : ℕ) : Function.Injective fun x : S ↦ x ^ (p ^ f) ^ k := by
-  simpa only [← pow_mul, ← iterateFrobeniusEquiv_def] using
-    (iterateFrobeniusEquiv S p (f * k)).injective
+  rw [constantCoeff_C, ← pow_mul, iterateFrobeniusEquiv_symm_pow]
 
 /-- For `k ≤ n`, iterating `n` times on a lift of a `(p ^ f) ^ n`-th root of `a` agrees modulo
 `X ^ (k + 1)` with iterating `k` times on a lift of a `(p ^ f) ^ k`-th root of `a`. -/
@@ -175,9 +166,9 @@ private theorem X_pow_succ_dvd_iterate_eval_sub_of_le (hf : f ≠ 0)
   rw [Function.iterate_add_apply]
   refine X_pow_succ_dvd_iterate_eval_sub hf hQ k (X_dvd_iff.2 ?_)
   rw [map_sub, sub_eq_zero, constantCoeff_iterate_eval hQ]
-  refine pow_pow_injective (p := p) (f := f) k ?_
+  refine pow_p_pow_injective (p := p) (f * k) ?_
   dsimp only
-  rw [hb', ← pow_mul, ← pow_add, add_comm, hb]
+  rw [pow_mul, hb', ← pow_mul, ← pow_add, add_comm, hb]
 
 /-- The coefficients of `Q_n(b)` up to degree `n` are those of `[a]_Q`, for every lift `b` of a
 `(p ^ f) ^ n`-th root of `a`. -/
@@ -254,8 +245,9 @@ theorem eq_twistedTeichmuller_of_eval (hf : f ≠ 0)
       ring_nf
   funext a
   refine (eq_twistedTeichmuller_iff hf hQ).2 fun n ↦
-    ⟨L ((iterateFrobeniusEquiv S p (f * n)).symm a), by rw [hL, iterateFrobeniusEquiv_symm_pow], ?_⟩
-  rw [← key, iterateFrobeniusEquiv_symm_pow, sub_self]
+    ⟨L ((iterateFrobeniusEquiv S p (f * n)).symm a),
+      by rw [hL, ← pow_mul, iterateFrobeniusEquiv_symm_pow], ?_⟩
+  rw [← key, ← pow_mul, iterateFrobeniusEquiv_symm_pow, sub_self]
   exact dvd_zero _
 
 /-- **Naturality.** A ring map `g` of perfect rings of characteristic `p` carries `[a]_Q` to the
@@ -266,7 +258,7 @@ theorem map_twistedTeichmuller {T : Type*} [CommRing T] [CharP T p] [PerfectRing
     map g (twistedTeichmuller p f Q a) = twistedTeichmuller p f (Q.map (map g)) (g a) := by
   have hroot (n : ℕ) : g ((iterateFrobeniusEquiv S p (f * n)).symm a) =
       (iterateFrobeniusEquiv T p (f * n)).symm (g a) :=
-    pow_pow_injective (p := p) (f := f) n <| by
+    pow_p_pow_injective (p := p) (f * n) <| by
       dsimp only
       rw [← map_pow, iterateFrobeniusEquiv_symm_pow, iterateFrobeniusEquiv_symm_pow]
   have hcomm : Function.Semiconj (map g) (Q.eval ·) ((Q.map (map g)).eval ·) := fun x ↦
