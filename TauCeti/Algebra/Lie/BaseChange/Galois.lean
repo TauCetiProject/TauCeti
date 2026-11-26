@@ -23,9 +23,9 @@ that a Galois-stable subspace of `E ⊗[K] M` is the extension of scalars of the
 So the Lie submodules arising by extension of scalars are exactly the Galois-stable ones.
 
 Applied to the nilradical, this gives the nilradical counterpart of
-`LieAlgebra.radical_baseChange`: for a finite-dimensional `L`, the nilradical of `E ⊗[K] L` is
-extended from an ideal of `L`, that ideal is nilpotent because nilpotency descends along a field
-extension (`LieIdeal.isNilpotent_baseChange_iff`), hence it lies in the nilradical of `L`. With
+`LieAlgebra.radical_baseChange`: the nilradical of `E ⊗[K] L` is extended from an ideal of `L`,
+and that ideal lies in the nilradical of `L` because membership in the nilradical may be tested
+after a field extension (`LieAlgebra.one_tmul_mem_nilradical_baseChange_iff`). With
 `LieAlgebra.baseChange_nilradical_le` this gives
 
 ```text
@@ -44,8 +44,8 @@ quotient is abelian.
 * `LieSubmodule.existsUnique_baseChange_eq_iff_forall_map_mem`: along a Galois extension, the Lie
   submodules of `E ⊗[K] M` that are extended from `M` are exactly those stable under the
   scalar-factor Galois action, and each is extended from a unique Lie submodule of `M`.
-* `LieAlgebra.nilradical_baseChange`: **the nilradical of a finite-dimensional Lie algebra commutes
-  with extension of scalars along a Galois extension**.
+* `LieAlgebra.nilradical_baseChange`: **the nilradical of a Lie algebra commutes with extension of
+  scalars along a Galois extension**, with no finiteness hypothesis.
 
 ## References
 
@@ -95,11 +95,11 @@ open TauCeti.LieAlgebra
 
 section Galois
 
-variable (K L E : Type*) [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [Field E] [Algebra K E] [IsGalois K E]
+variable (K L E : Type*) [Field K] [LieRing L] [LieAlgebra K L] [Field E] [Algebra K E]
+  [IsGalois K E]
 
-/-- **The nilradical commutes with extension of scalars along a Galois extension.** For a
-finite-dimensional Lie algebra `L` over `K` and a Galois extension `E / K`, possibly infinite, the
+/-- **The nilradical commutes with extension of scalars along a Galois extension.** For a Lie
+algebra `L` over `K` and a Galois extension `E / K`, both possibly infinite-dimensional, the
 nilradical of `E ⊗[K] L` is the extension of scalars of the nilradical of `L`. In characteristic
 zero this applies to an algebraic closure of `K`. The containment `⊇` is
 `LieAlgebra.baseChange_nilradical_le`, which holds for every coefficient algebra. -/
@@ -108,16 +108,15 @@ theorem nilradical_baseChange :
     nilradical E (E ⊗[K] L) = (nilradical K L).baseChange E := by
   refine le_antisymm ?_ (baseChange_nilradical_le K L E)
   -- The nilradical of `E ⊗[K] L` is Galois-stable, hence extended from an ideal `N` of `L`, which
-  -- is nilpotent because nilpotency descends along the field extension.
+  -- lies in the nilradical because membership in the nilradical descends.
   obtain ⟨N, hN, -⟩ := (LieSubmodule.existsUnique_baseChange_eq_iff_forall_map_mem
     (nilradical E (E ⊗[K] L))).mpr fun σ _ hx ↦ σ.tensorProduct_map_mem_lieNilradical hx
-  have : LieRing.IsNilpotent N := by
-    rw [← LieIdeal.isNilpotent_baseChange_iff E, hN]
-    infer_instance
+  have hle : N ≤ nilradical K L := fun x hx ↦
+    (one_tmul_mem_nilradical_baseChange_iff K L E x).mp
+      (hN ▸ LieSubmodule.tmul_mem_baseChange_of_mem 1 hx)
   rw [← hN, ← LieSubmodule.toSubmodule_le_toSubmodule, LieSubmodule.coe_baseChange,
     LieSubmodule.coe_baseChange]
-  exact Submodule.baseChange_mono E
-    ((LieSubmodule.toSubmodule_le_toSubmodule _ _).2 (LieIdeal.le_nilradical K L N this))
+  exact Submodule.baseChange_mono E ((LieSubmodule.toSubmodule_le_toSubmodule _ _).2 hle)
 
 end Galois
 
