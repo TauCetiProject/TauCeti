@@ -269,9 +269,7 @@ theorem archWeight_mul_heckeTheta_unitScale (χ : Grossencharacter K 𝔪)
     by_cases hε : χ.heckeEpsilon = 0
     · rw [hε, zero_mul]
     obtain ⟨-, hdeg⟩ := not_or.mp (mt χ.heckeEpsilon_eq_zero_iff.mpr hε)
-    rw [not_not, harmonicDegree_def] at hdeg
-    have hexp (w : InfinitePlace K) : χ.harmonicExponent w = 0 :=
-      Finset.sum_eq_zero_iff.mp hdeg w (Finset.mem_univ w)
+    have hexp := χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero (not_not.mp hdeg)
     simp [μ, hexp]
   linear_combination (χ.archWeight y : ℂ) * key + (χ.archWeight y : ℂ) * hεμ
 
