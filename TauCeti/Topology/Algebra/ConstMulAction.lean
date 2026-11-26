@@ -50,6 +50,8 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
   every invariant subspace.
 * `Function.Injective.properlyDiscontinuousSMul`: proper discontinuity pulls back along an
   injective map of acting types that is compatible with the actions.
+* `Function.Surjective.properlyDiscontinuousSMul`: proper discontinuity pushes forward along a
+  surjective map of acting types that is compatible with the actions.
 * `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
@@ -394,6 +396,24 @@ theorem Function.Injective.properlyDiscontinuousSMul {M N X : Type*} [Topologica
       hf.injOn).subset ?_
     rintro m ⟨_, ⟨x, hx, rfl⟩, hxL⟩
     exact ⟨m • x, ⟨x, hx, hsmul m x⟩, hxL⟩
+
+/-- **Proper discontinuity pushes forward along surjective maps of acting types.** If
+`f : M → N` is surjective, each `f m` acts as `m` does, and `M` acts properly discontinuously on
+`X`, then so does `N`: the elements of `N` moving a compact `K` to meet a compact `L` are images
+of the finitely many such elements of `M`. -/
+@[to_additive
+/-- **Proper discontinuity pushes forward along surjective maps of acting types.** If
+`f : M → N` is surjective, each `f m` acts as `m` does, and `M` acts properly discontinuously on
+`X`, then so does `N`. -/]
+theorem Function.Surjective.properlyDiscontinuousSMul {M N X : Type*} [TopologicalSpace X]
+    [SMul M X] [SMul N X] [ProperlyDiscontinuousSMul M X] {f : M → N} (hf : Surjective f)
+    (hsmul : ∀ (m : M) (x : X), f m • x = m • x) : ProperlyDiscontinuousSMul N X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := M) hK hL).image
+      f).subset ?_
+    intro n hn
+    obtain ⟨m, rfl⟩ := hf n
+    exact ⟨m, by simpa only [Set.mem_ofPred_eq, hsmul] using hn, rfl⟩
 
 namespace SubMulAction
 
