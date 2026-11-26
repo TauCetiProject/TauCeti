@@ -176,6 +176,14 @@ def fiberEquiv (b : B) : J.Fiber b ≃L[ℝ] V b where
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
+/-- The identification `J.Fiber b ≃ V b` is the identity of the underlying vectors. -/
+theorem fiberEquiv_apply (b : B) (v : J.Fiber b) : J.fiberEquiv b v = v :=
+  (rfl)
+
+/-- The inverse identification `V b ≃ J.Fiber b` is the identity of the underlying vectors. -/
+theorem fiberEquiv_symm_apply (b : B) (v : V b) : (J.fiberEquiv b).symm v = v :=
+  (rfl)
+
 theorem fiberEquiv_smul (b : B) (z : ℂ) (v : J.Fiber b) :
     J.fiberEquiv b (z • v) = z.re • J.fiberEquiv b v + z.im • J b (J.fiberEquiv b v) :=
   (J.almostComplexStructureAt b).complexModule_smul_def z v
