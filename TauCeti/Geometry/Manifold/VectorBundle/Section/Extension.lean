@@ -33,7 +33,9 @@ prescribed neighbourhood of its base point
 value, cut off by a smooth bump function. More generally, any section that is `C^n` (`n ≤ ∞`) on a
 neighbourhood `U` of a compact set `K` extends to a global compactly supported `C^n` section
 agreeing with it near `K` and supported in `U`
-(`ContMDiffSection.exists_eventuallyEq_isCompact_tsupport_subset`). In the same way, a `C^n`
+(`ContMDiffSection.exists_eventuallyEq_isCompact_tsupport_subset`); on functions supported in `K`
+acting fibrewise, a section may therefore be replaced by one with compact support
+(`IsCompact.exists_isCompact_tsupport_forall_smul_eq`). In the same way, a `C^n`
 section over an open subset, multiplied by a `C^n` function with compact closed support in that
 subset and extended by zero, gives a global compactly supported `C^n` section supported in the
 subset and agreeing with it wherever the function is `1`
@@ -470,6 +472,25 @@ theorem exists_eventuallyEq_isCompact_tsupport_subset_of_opens {U : TopologicalS
   refine ⟨t, htc, htU, eventually_nhdsSet_iff_forall.2 fun x hx ↦ ?_⟩
   exact (continuous_subtypeVal.continuousAt.eventually
     (hσ1.filter_mono (nhds_le_nhdsSet (mem_image_of_mem _ hx)))).mono ht
+
+/-- **Cutting off a section near a compact set.** For a compact set `K` and a `C^n` section `h`
+(`n ≤ ∞`) there is a `C^n` section `h'` with compact support, equal to `h` near `K`
+(`ContMDiffSection.exists_eventuallyEq_isCompact_tsupport_subset`), such that `f • h = f • h'`
+for every `C^n` function `f` with values in a normed `ℝ`-algebra `𝕜`, acting fibrewise, that is
+supported in `K`. -/
+theorem _root_.IsCompact.exists_isCompact_tsupport_forall_smul_eq (𝕜 : Type*)
+    [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+    [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V] {K : Set M} (hK : IsCompact K)
+    (h : Cₛ^n⟮I; F, V⟯) :
+    ∃ h' : Cₛ^n⟮I; F, V⟯, IsCompact h'.tsupport ∧
+      ∀ f : C^n⟮I, M; 𝓘(ℝ, 𝕜), 𝕜⟯, _root_.tsupport f ⊆ K → f • h = f • h' := by
+  obtain ⟨h', hh', hc, -⟩ := exists_eventuallyEq_isCompact_tsupport_subset hK
+    Filter.univ_mem h.contMDiff.contMDiffOn
+  refine ⟨h', hc, fun f hf ↦ ?_⟩
+  ext x
+  by_cases hx : x ∈ _root_.tsupport f
+  · simp only [smul_apply_of_normedAlgebra, hh'.self_of_nhdsSet x (hf hx)]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
 
 end LocalExtension
 

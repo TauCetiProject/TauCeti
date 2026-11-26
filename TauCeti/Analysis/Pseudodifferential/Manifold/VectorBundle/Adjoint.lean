@@ -12,6 +12,7 @@ import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Complex
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Formal adjoints of pseudodifferential operators between vector bundles
@@ -213,7 +214,8 @@ theorem mem_sectionClassicalPseudodifferentialOperators_of_isFormalAdjoint
   -- section `σ` with compact support. The outputs `Q (f σ)` are then supported in a compact set
   -- `K'`, covered by finitely many open sets `N (c i)` carrying orthonormal frames `e (c i)`, with
   -- `∑ᵢ gᵢ² = 1` on `K'`.
-  obtain ⟨σ, hσ, hfσ⟩ := hK.exists_isCompact_tsupport_forall_smul_eq (t.cutoffFrameSection ψ hψ w)
+  obtain ⟨σ, hσ, hfσ⟩ :=
+    hK.exists_isCompact_tsupport_forall_smul_eq ℂ (t.cutoffFrameSection ψ hψ w)
   obtain ⟨K', hK', hQK', -⟩ := isSectionProperlySupported_iff.1 hQ K hK
   choose N hN _ e he using fun x : M ↦ exists_nhds_orthonormal_sections
     (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) (F := V) (V := E) x

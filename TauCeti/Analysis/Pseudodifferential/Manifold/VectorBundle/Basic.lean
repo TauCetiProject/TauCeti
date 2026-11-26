@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Classical pseudodifferential operators between vector bundles
@@ -704,7 +705,7 @@ theorem cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferenti
   refine mem_classicalPseudodifferentialOperators_iff_forall_isCompact.2
     ⟨hP.1.cutoffFrameCoeff_comp_comp_toSpanSingleton t' χ hχ ℓ s, fun K hK ↦ ?_⟩
   -- On functions supported in `K`, `s` may be replaced by a section with compact support.
-  obtain ⟨s', hs', hss'⟩ := hK.exists_isCompact_tsupport_forall_smul_eq s
+  obtain ⟨s', hs', hss'⟩ := hK.exists_isCompact_tsupport_forall_smul_eq ℂ s
   refine ⟨_, cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_of_isCompact t' χ hχ ℓ hP hs',
     fun f hf ↦ ?_⟩
   simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
