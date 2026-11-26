@@ -533,31 +533,6 @@ theorem sectionClassicalPrincipalSymbol_add_of_mem_sub_one
       hP (by simpa using sub_mem h hQm)
     rw [sectionClassicalPrincipalSymbol_of_notMem hP, sectionClassicalPrincipalSymbol_of_notMem hPQ]
 
-omit [FiniteDimensional ℂ W] in
-/-- **The principal symbol of the identity.** The identity of `Γ(E)` has principal symbol of order
-`0` the identity of `E_x` at every nonzero covector `ξ ∈ T*ₓM`. -/
-@[simp]
-theorem sectionClassicalPrincipalSymbol_id (x : M)
-    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
-    sectionClassicalPrincipalSymbol 0 (LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
-      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) x ξ = LinearMap.id := by
-  refine linearMap_ext_trivializationAt V V fun v ℓ ↦ ?_
-  rw [coord_sectionClassicalPrincipalSymbol id_mem_sectionClassicalPseudodifferentialOperators]
-  -- Each entry of the identity is the multiplication by its value on the constant function `1`.
-  set T := sectionEntry (trivializationAt V E x) (frameCutoff (V := V) (W := V) n E E x)
-    (tsupport_frameCutoff_subset_left (V := V) (W := V) n E E x) v (trivializationAt V E x)
-    (frameCutoff (V := V) (W := V) n E E x)
-    (tsupport_frameCutoff_subset_right (V := V) (W := V) n E E x) ℓ
-  have hT : T LinearMap.id = LinearMap.mulLeft ℂ (T LinearMap.id 1) ∘ₗ LinearMap.id := by
-    ext f y
-    simp only [T, sectionEntry_apply, LinearMap.comp_apply, LinearMap.id_apply,
-      LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply, one_smul,
-      ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, Complex.real_smul]
-    ring
-  rw [hT, classicalPrincipalSymbol_mulLeft_comp id_mem_classicalPseudodifferentialOperators,
-    classicalPrincipalSymbol_id x hξ, mul_one]
-  simp [T, frameCutoff_self (V := V) (W := V) n E E x]
-
 /-! ### Homogeneity -/
 
 /-- The principal symbol vanishes at the zero covector. -/
@@ -666,15 +641,6 @@ theorem isSectionClassicalEllipticAt_of_subsingleton [Subsingleton (CoordinateSp
     inferInstanceAs (Subsingleton (CoordinateSpace n))
   exact absurd (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]) hξ
 
-omit [FiniteDimensional ℂ W] in
-/-- **The identity is elliptic** of order `0`: its principal symbol at a nonzero covector is the
-identity of the fibre. -/
-theorem isSectionClassicalElliptic_id :
-    IsSectionClassicalElliptic 0 (LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
-      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) := fun x ξ hξ ↦ by
-  rw [sectionClassicalPrincipalSymbol_id x hξ]
-  exact Function.bijective_id
-
 /-! ### Differential operators -/
 
 /-- **The principal symbol of a differential operator between bundles.** Let
@@ -747,5 +713,35 @@ theorem sectionClassicalPrincipalSymbol_apply_of_map_smul
     (covectorLift 𝓘(ℝ, CoordinateSpace n) hxI ξ) (hf ▸ hξ) s
   rw [hf] at h
   simpa using h
+
+/-! ### The identity -/
+
+omit [FiniteDimensional ℂ W] in
+/-- **The principal symbol of the identity.** The identity of `Γ(E)` has principal symbol of order
+`0` the identity of `E_x` at every nonzero covector `ξ ∈ T*ₓM`: the case `P = id` of
+`TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`. -/
+@[simp]
+theorem sectionClassicalPrincipalSymbol_id (x : M)
+    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+    sectionClassicalPrincipalSymbol 0 (LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) x ξ = LinearMap.id := by
+  ext v
+  -- `v` is the value at `x` of the cut-off frame section `ρ t⁻¹ (t v)`, with `ρ x = 1`.
+  have hv : (trivializationAt V E x).cutoffFrameSection (frameCutoff (V := V) (W := V) n E E x)
+      (tsupport_frameCutoff_subset_left (V := V) (W := V) n E E x)
+      (trivializationAt V E x ⟨x, v⟩).2 x = v := by
+    rw [Trivialization.cutoffFrameSection_apply, frameCutoff_self, one_smul,
+      (trivializationAt V E x).symm_apply_apply_mk (FiberBundle.mem_baseSet_trivializationAt V E x)]
+  rw [← hv]
+  exact sectionClassicalPrincipalSymbol_apply_of_map_smul (fun _ _ ↦ rfl) hξ _
+
+omit [FiniteDimensional ℂ W] in
+/-- **The identity is elliptic** of order `0`: its principal symbol at a nonzero covector is the
+identity of the fibre. -/
+theorem isSectionClassicalElliptic_id :
+    IsSectionClassicalElliptic 0 (LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) := fun x ξ hξ ↦ by
+  rw [sectionClassicalPrincipalSymbol_id x hξ]
+  exact Function.bijective_id
 
 end TauCeti
