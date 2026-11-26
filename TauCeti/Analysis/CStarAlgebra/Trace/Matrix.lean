@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.Trace.Domain
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Matrix amplification of traces
@@ -113,18 +114,19 @@ theorem isDenselyDefined_matrixTrace (hτ : IsTrace τ) (hd : IsDenselyDefined �
     IsDenselyDefined (matrixTrace τ n) := by
   refine isDenselyDefined_iff.2 fun x hx ↦ ?_
   obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp (Set.mem_ofPred.1 hx)
-  -- Matrices over `𝔫_τ` are dense in `Matrix n n B`: `Set.matrix_eq_pi` writes them as a product
-  -- set, and Mathlib defines the matrix topology as the product one (as in `IsOpen.matrix`, the
-  -- identity map transfers between them). `CStarMatrix.ofMatrixL` carries them into `M_n(B)`.
-  have hM : Dense ((sqIntegrable τ).matrix : Set (Matrix n n B)) :=
-    Set.matrix_eq_pi ▸ (dense_pi Set.univ fun _ _ ↦ dense_pi Set.univ fun _ _ ↦
-      hτ.dense_sqIntegrable_of_isDenselyDefined hd).preimage IsOpenMap.id
-  have hS : Dense {S : CStarMatrix n n B | ∀ i j, S i j ∈ sqIntegrable τ} :=
-    hM.preimage CStarMatrix.ofMatrixL.symm.toHomeomorph.isOpenMap
+  -- Matrices over `𝔫_τ` are dense in `Matrix n n B`, and `CStarMatrix.ofMatrixL` carries them
+  -- into `M_n(B)`.
+  have hS : Dense (CStarMatrix.ofMatrixL.symm ⁻¹' (sqIntegrable τ).matrix :
+      Set (CStarMatrix n n B)) :=
+    (hτ.dense_sqIntegrable_of_isDenselyDefined hd).matrix.preimage
+      CStarMatrix.ofMatrixL.symm.toHomeomorph.isOpenMap
   have hcont : Continuous fun S : CStarMatrix n n B ↦ star S * S :=
     continuous_star.mul continuous_id
+  -- `CStarMatrix.ofMatrixL` keeps the entries (`CStarMatrix.ofMatrix_symm_apply`), so the entries
+  -- of each `S` in the preimage lie in `𝔫_τ`.
   exact map_mem_closure (f := fun S : CStarMatrix n n B ↦ star S * S) hcont (hS R) fun S hSmem ↦
-    star_mul_self_mem_finitePart_iff.2 (hτ.mem_sqIntegrable_matrixTrace_iff.2 hSmem)
+    star_mul_self_mem_finitePart_iff.2
+      (hτ.mem_sqIntegrable_matrixTrace_iff.2 (Set.mem_matrix.1 hSmem))
 
 end IsTrace
 
