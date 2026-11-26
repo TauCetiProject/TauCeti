@@ -70,7 +70,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- Beyond a height `R ≥ 2 + ∑_q |L_q|` on every end, past every neck and collar, the components of
 the pair-of-pants perturbation with continuation necks are those of the pair-of-pants
 perturbation of the outer Hamiltonians. -/
-private theorem pairOfPantsContinuationPerturbation_components_eq {M : Type*}
+theorem pairOfPantsContinuationPerturbation_components_eq {M : Type*}
     {G H : Puncture → ℝ → M → ℝ}
     {L : Puncture → ℝ} {R : ℝ} (hR : 2 + ∑ r, |L r| ≤ R) (q : Puncture) {z : ℝ × ℝ}
     (hz : R ≤ (positiveEndCoord q z).1) :
