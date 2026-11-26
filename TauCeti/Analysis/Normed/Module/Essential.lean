@@ -154,8 +154,7 @@ theorem apply_mem_essentialSubmodule_of_comm {M N : A →L[𝕜] E →L[𝕜] E}
   (essentialSubmodule_le_iff (p := M.essentialSubmodule.comap (N b).toLinearMap)
     ((isClosed_essentialSubmodule M).preimage (N b).continuous)).2
     (fun a y ↦ by
-      change N b (M a y) ∈ M.essentialSubmodule
-      rw [← hMN]
+      rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, ← hMN]
       exact apply_mem_essentialSubmodule M a (N b y))
     hx
 
@@ -266,8 +265,7 @@ theorem apply_left_mem_essentialBimoduleSubmodule [Mul A] {L R : A →L[𝕜] E 
       (p := (essentialBimoduleSubmodule L R).comap (L a).toLinearMap)
       ((isClosed_essentialBimoduleSubmodule L R).preimage (L a).continuous)).2
     (fun b c y ↦ by
-      change L a (L b (R c y)) ∈ essentialBimoduleSubmodule L R
-      rw [← hL]
+      rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, ← hL]
       exact apply_left_apply_right_mem_essentialBimoduleSubmodule L R (a * b) c y)
     hx
 
@@ -280,8 +278,7 @@ theorem apply_right_mem_essentialBimoduleSubmodule [Mul A] {L R : A →L[𝕜] E
       (p := (essentialBimoduleSubmodule L R).comap (R a).toLinearMap)
       ((isClosed_essentialBimoduleSubmodule L R).preimage (R a).continuous)).2
     (fun b c y ↦ by
-      change R a (L b (R c y)) ∈ essentialBimoduleSubmodule L R
-      rw [← hLR, ← hR]
+      rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, ← hLR, ← hR]
       exact apply_left_apply_right_mem_essentialBimoduleSubmodule L R b (c * a) y)
     hx
 
