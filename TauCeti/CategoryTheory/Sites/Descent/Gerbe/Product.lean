@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Pi.Basic
 public import TauCeti.CategoryTheory.Sites.Descent.Banding
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
 public import TauCeti.CategoryTheory.Sites.Descent.Pi
@@ -31,7 +30,9 @@ factors indexed by `WalkingPair`, for `A ⨯ B`), then the product carries the `
 at the `x i`. With it:
 
 * the projections `π F i : pi F ⟶ F i` are compatible with the projections `c.proj i` of the fan
-  (`TauCeti.Stack.pi.bandCompatible_π`);
+  (`TauCeti.Stack.pi.bandCompatible_π`), and a transformation into the product is compatible with
+  a morphism into `c.pt` if and only if its projections are compatible with the projections of the
+  morphism (`TauCeti.Stack.pi.bandCompatible_iff_comp_π`);
 * the strong transformation into the product induced by transformations `a i : K ⟶ F i`
   compatible with morphisms `φ i : B ⟶ A i` is compatible with the induced morphism `B ⟶ c.pt`
   (`TauCeti.Stack.pi.bandCompatible_lift`);
@@ -47,9 +48,10 @@ A family of modifications `m i : η i ⟶ θ i` induces the modification
 
 * `TauCeti.Stack.pi.isGerbe`: the product of a finite family of gerbes is a gerbe.
 * `CategoryTheory.Pseudofunctor.AbelianBanding.pi`: the product banding.
-* `TauCeti.Stack.pi.bandCompatible_π`, `TauCeti.Stack.pi.bandCompatible_lift`,
-  `TauCeti.Stack.pi.bandCompatible_piMap`, `TauCeti.Stack.pi.bandPreserving_piMap`: compatibility of
-  the projections, of induced transformations and of products of transformations with the bands.
+* `TauCeti.Stack.pi.bandCompatible_π`, `TauCeti.Stack.pi.bandCompatible_iff_comp_π`,
+  `TauCeti.Stack.pi.bandCompatible_lift`, `TauCeti.Stack.pi.bandCompatible_piMap`,
+  `TauCeti.Stack.pi.bandPreserving_piMap`: compatibility of the projections, of transformations
+  into the product, of induced transformations and of products of transformations with the bands.
 
 ## References
 
@@ -77,19 +79,11 @@ instance pi.isGerbe {I : Type w} [Finite I]
     [∀ i, (F i).IsGerbe J] : (pi F).IsGerbe J where
   isGroupoid _ := inferInstance
   exists_covering_nonempty U := by
-    classical
-    let := Fintype.ofFinite I
     choose R hR h using fun i ↦ IsGerbe.exists_covering_nonempty (F := F i) (J := J) U
-    have hR' : ⨅ i, R i ∈ J _ := by
-      simpa [Finset.inf_eq_iInf] using J.finset_inf_mem (t := Finset.univ) (fun i _ ↦ hR i)
-    exact ⟨⨅ i, R i, hR', fun _ f hf ↦ ⟨fun i ↦ (h i f (iInf_le R i _ hf)).some⟩⟩
+    exact ⟨⨅ i, R i, J.iInf_mem hR, fun _ f hf ↦ ⟨fun i ↦ (h i f (iInf_le R i _ hf)).some⟩⟩
   exists_covering_iso x y := by
-    classical
-    let := Fintype.ofFinite I
     choose R hR h using fun i ↦ IsGerbe.exists_covering_iso (F := F i) (J := J) (x i) (y i)
-    have hR' : ⨅ i, R i ∈ J _ := by
-      simpa [Finset.inf_eq_iInf] using J.finset_inf_mem (t := Finset.univ) (fun i _ ↦ hR i)
-    exact ⟨⨅ i, R i, hR', fun _ f hf ↦
+    exact ⟨⨅ i, R i, J.iInf_mem hR, fun _ f hf ↦
       ⟨Pi.isoMk fun i ↦ (h i f (iInf_le R i _ hf)).some⟩⟩
 
 /-- The terminal pseudofunctor is a gerbe. -/
@@ -123,9 +117,13 @@ private lemma piMulEquiv_asIso_hom (U : C) (x : (TauCeti.Stack.pi F).obj (.mk (o
     (a : Multiplicative (c.pt.obj.obj (op U))) (i : I) :
     (piMulEquiv b hc U x a).asIso.hom i =
       ((b i).mulEquiv U (x i) (.ofAdd ((c.proj i).hom.app (op U) a.toAdd))).asIso.hom :=
-  -- Unfolding the composite of multiplicative equivalences leaves the section equivalence.
-  congrArg (fun s ↦ ((b i).mulEquiv U (x i) (.ofAdd s)).asIso.hom)
-    (Sheaf.fanSectionsAddEquiv_apply hc (op U) a.toAdd i)
+  let x' : pi.Fiber F (op U) := x
+  -- Unfolding the composite of multiplicative equivalences leaves the inverse of
+  -- `Pi.autMulEquiv` applied to the family of band automorphisms of the sections of the factors.
+  (congrArg (fun e : x' ≅ x' ↦ e.hom i) (Pi.autMulEquiv_symm_apply_asIso x' fun i ↦
+    (b i).mulEquiv U (x' i) (.ofAdd (Sheaf.fanSectionsAddEquiv hc (op U) a.toAdd i)))).trans
+    (congrArg (fun s ↦ ((b i).mulEquiv U (x i) (.ofAdd s)).asIso.hom)
+      (Sheaf.fanSectionsAddEquiv_apply hc (op U) a.toAdd i))
 
 /-- The product of bandings: for `A i`-bandings `b i` of the `F i` and a limit fan `c` of the
 `A i`, the `c.pt`-banding of the product `pi F` whose band automorphism of a section `a` at a
@@ -171,22 +169,32 @@ instance bandCompatible_π (i : I) :
     rw [Functor.mapAut_apply_asIso]
     exact AbelianBanding.pi_mulEquiv_asIso_hom b hc U x a i
 
+/-- A strong transformation `η : K ⟶ pi F` is compatible with a morphism `u : B ⟶ c.pt` if and
+only if each of its projections `η ≫ π F i` is compatible with the projection `u ≫ c.proj i`. -/
+theorem bandCompatible_iff_comp_π
+    {K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w u'}}
+    {B : Sheaf J AddCommGrpCat.{max w t}} (bK : K.AbelianBanding J B) (u : B ⟶ c.pt)
+    (η : K ⟶ TauCeti.Stack.pi F) :
+    BandCompatible u bK (AbelianBanding.pi b hc) η ↔
+      ∀ i, BandCompatible (u ≫ c.proj i) bK (b i) (η ≫ π F i) :=
+  ⟨fun _ i ↦ BandCompatible.comp (AbelianBanding.pi b hc) u (c.proj i) η (π F i),
+    fun h ↦ ⟨fun U x s ↦ Aut.ext <| Iso.ext <| funext fun i ↦ by
+      rw [Functor.mapAut_apply_asIso, AbelianBanding.pi_mulEquiv_asIso_hom]
+      -- The `i`-th component of the image under `η` is by definition the image under
+      -- `η ≫ π F i`, and the section of `u ≫ c.proj i` is by definition the projection of the
+      -- section of `u`.
+      exact BandCompatible.map_mulEquiv_hom (b i) (u ≫ c.proj i) (η ≫ π F i) U x s⟩⟩
+
 /-- The strong transformation `lift a : K ⟶ pi F` induced by transformations `a i : K ⟶ F i`
 compatible with morphisms `φ i : B ⟶ A i` is compatible with the morphism `B ⟶ c.pt` induced by
 the `φ i`. -/
 theorem bandCompatible_lift {K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w u'}}
     {B : Sheaf J AddCommGrpCat.{max w t}} (bK : K.AbelianBanding J B) (φ : ∀ i, B ⟶ A i)
     (a : ∀ i, K ⟶ F i) [∀ i, BandCompatible (φ i) bK (b i) (a i)] :
-    BandCompatible (Fan.IsLimit.lift hc φ) bK (AbelianBanding.pi b hc) (lift a) where
-  mapAut_mulEquiv U x s := Aut.ext <| Iso.ext <| funext fun i ↦ by
-    rw [Functor.mapAut_apply_asIso]
-    simp only [Functor.mapIso_hom, lift_app_map_apply, AbelianBanding.pi_mulEquiv_asIso_hom,
-      BandCompatible.map_mulEquiv_hom (b i) (φ i) (a i), toAdd_ofAdd]
-    rw [← congr(($(Fan.IsLimit.fac hc φ i)).hom.app (op U) s.toAdd)]
-    -- The section of the composite `Fan.IsLimit.lift hc φ ≫ c.proj i` is by definition the
-    -- projection of the section of `Fan.IsLimit.lift hc φ`, and the objects at which the band
-    -- automorphisms are taken agree by definition of `lift`.
-    rfl
+    BandCompatible (Fan.IsLimit.lift hc φ) bK (AbelianBanding.pi b hc) (lift a) :=
+  (bandCompatible_iff_comp_π b hc bK _ _).2 fun i ↦ by
+    rw [Fan.IsLimit.fac]
+    exact .of_iso (liftCompπ a i).symm
 
 variable {G : I → Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w u'}}
 

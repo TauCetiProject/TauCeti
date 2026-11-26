@@ -30,11 +30,12 @@ composition. More generally, for a morphism `φ : A ⟶ B` of sheaves of abelian
 transformation from an `A`-banded to a `B`-banded pseudofunctor is compatible with `φ` when its
 component functors carry the band automorphism of each coefficient `a` to the band automorphism of
 `φ a`; compatibility with the identity is band preservation, and compatibility is closed under
-composition.
+composition and invariant under isomorphisms of transformations.
 
 Both notions restrict to the slice site `(Over U, J.over U)`: an `A`-banding of `F` restricts to an
 `A.over U`-banding of the restriction `F.over U`, and the restriction of a band-preserving
-transformation, its whiskering by `(Over.forget U).op`, preserves the restricted bands.
+transformation, its whiskering by `(Over.forget U).op`, preserves the restricted bands; likewise
+the restriction of a transformation compatible with `φ` is compatible with the restriction of `φ`.
 
 ## Main declarations
 
@@ -51,7 +52,8 @@ transformation, its whiskering by `(Over.forget U).op`, preserves the restricted
   transformation to the slice site over `U` preserves the restricted bands.
 * `CategoryTheory.Pseudofunctor.BandCompatible`: the property of a strong transformation of
   carrying the band of the source to the band of the target along a morphism `φ : A ⟶ B` of
-  sheaves of abelian groups, with `bandCompatible_id_iff` and `BandCompatible.comp`.
+  sheaves of abelian groups, with `bandCompatible_id_iff`, `BandCompatible.comp`,
+  `bandCompatible_iff_of_iso` and `BandCompatible.over`.
 
 ## References
 
@@ -201,19 +203,6 @@ instance id : BandPreserving bF bF (StrongTrans.id F) where
     rfl
 
 open scoped Pseudofunctor.StrongTrans in
-variable (bG) in
-/-- The composite of band-preserving transformations is band-preserving. -/
-lemma comp (η : F ⟶ G) (θ : G ⟶ H) [BandPreserving bF bG η] [BandPreserving bG bH θ] :
-    BandPreserving bF bH (η ≫ θ) where
-  mapAut_mulEquiv U x a := by
-    ext
-    rw [Functor.mapAut_apply_asIso]
-    simp only [StrongTrans.comp_app, Cat.Hom.comp_toFunctor, Functor.mapIso_hom, Functor.comp_map]
-    rw [map_mulEquiv_hom bG η, map_mulEquiv_hom bH θ]
-    -- The two sides differ only by `Functor.comp_obj`, which holds by definition.
-    rfl
-
-open scoped Pseudofunctor.StrongTrans in
 /-- The restriction of a band-preserving transformation `η` to the slice site over `U`, the
 whiskering of `η` by `(Over.forget U).op`, preserves the restricted bands. -/
 instance over (η : F ⟶ G) [BandPreserving bF bG η] (U : C) :
@@ -279,6 +268,47 @@ lemma BandCompatible.comp (φ : A ⟶ B) (ψ : B ⟶ D) (η : F ⟶ G) (θ : G �
     -- The two sides differ only by `Functor.comp_obj` and by the evaluation of `φ ≫ ψ` on
     -- sections, both of which hold by definition.
     rfl
+
+open scoped Pseudofunctor.StrongTrans in
+variable {bG : G.AbelianBanding J A} {bH : H.AbelianBanding J A} in
+variable (bG) in
+/-- The composite of band-preserving transformations is band-preserving. -/
+lemma BandPreserving.comp (η : F ⟶ G) (θ : G ⟶ H) [BandPreserving bF bG η]
+    [BandPreserving bG bH θ] : BandPreserving bF bH (η ≫ θ) :=
+  (bandCompatible_id_iff _).1 (by simpa using BandCompatible.comp bG (𝟙 A) (𝟙 A) η θ)
+
+open scoped Pseudofunctor.StrongTrans in
+variable {bG : G.AbelianBanding J B} in
+/-- Compatibility with `φ` transfers along an isomorphism of strong transformations: the
+components of an isomorphism `η ≅ θ` conjugate the images of band automorphisms under `η` to those
+under `θ`, and band automorphisms are invariant under conjugation. -/
+lemma BandCompatible.of_iso {φ : A ⟶ B} {η θ : F ⟶ G} (e : η ≅ θ) [BandCompatible φ bF bG η] :
+    BandCompatible φ bF bG θ where
+  mapAut_mulEquiv U x a := by
+    ext
+    rw [Functor.mapAut_apply_asIso, Functor.mapIso_hom]
+    let e' := (Cat.Hom.toNatIso (StrongTrans.isoApp e (.mk (op U)))).app x
+    have he : e'.hom = (e.hom.as.app (.mk (op U))).toNatTrans.app x :=
+      congrArg (fun m ↦ m.toNatTrans.app x) (StrongTrans.isoApp_hom e (.mk (op U)))
+    have h := (e.hom.as.app (.mk (op U))).toNatTrans.naturality (bF.mulEquiv U x a).asIso.hom
+    rw [← he, BandCompatible.map_mulEquiv_hom bG φ η, ← e'.inv_comp_eq] at h
+    rw [← h, bG.inv_comp_mulEquiv_hom_comp]
+
+open scoped Pseudofunctor.StrongTrans in
+variable {bG : G.AbelianBanding J B} in
+/-- Isomorphic strong transformations are compatible with the same morphisms of bands. -/
+lemma bandCompatible_iff_of_iso {φ : A ⟶ B} {η θ : F ⟶ G} (e : η ≅ θ) :
+    BandCompatible φ bF bG η ↔ BandCompatible φ bF bG θ :=
+  ⟨fun _ ↦ .of_iso e, fun _ ↦ .of_iso e.symm⟩
+
+open scoped Pseudofunctor.StrongTrans in
+variable {bG : G.AbelianBanding J B} in
+/-- The restriction of a transformation `η` compatible with `φ` to the slice site over `U`, the
+whiskering of `η` by `(Over.forget U).op`, is compatible with the restriction of `φ`. -/
+instance BandCompatible.over (φ : A ⟶ B) (η : F ⟶ G) [BandCompatible φ bF bG η] (U : C) :
+    BandCompatible ((J.overPullback _ U).map φ) (bF.over U) (bG.over U)
+      ((Over.forget U).op.toPseudofunctor.whiskerLeft η) where
+  mapAut_mulEquiv X x a := BandCompatible.mapAut_mulEquiv (bG := bG) (φ := φ) (η := η) X.left x a
 
 end BandCompatible
 

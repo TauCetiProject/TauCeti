@@ -26,8 +26,8 @@ of modifications between their projections (`pi.homMk`, `pi.isoMk`) and are dete
 (`pi.hom_ext`). A family of strong transformations `f i : F i ⟶ G i` induces their product
 `TauCeti.Stack.piMap f : pi F ⟶ pi G`, whose components are equivalences when those of the `f i`
 are (`isEquivalence_piMap_app`), and a family of modifications `m i : f i ⟶ g i` induces their
-product `TauCeti.Stack.piMap₂ m : piMap f ⟶ piMap g`, compatibly with identities and composition
-(`piMap₂_id`, `piMap₂_comp`).
+product `TauCeti.Stack.piMap₂ m : piMap f ⟶ piMap g`, whose projections are the `m i`
+(`piMap₂_whiskerRight_π`), compatibly with identities and composition (`piMap₂_id`, `piMap₂_comp`).
 
 The product of the empty family is the terminal pseudofunctor `TauCeti.Stack.terminal`, whose
 fibers are the category with one object and one morphism: every pseudofunctor has a strong
@@ -55,8 +55,8 @@ The fibers of `pi F` for `I : Type w` and `F i` with values in `Cat.{v', u'}` li
   into the product.
 * `TauCeti.Stack.piMap`: the product of a family of strong transformations, with
   `isEquivalence_piMap_app`.
-* `TauCeti.Stack.piMap₂`: the product of a family of modifications, with `piMap₂_id` and
-  `piMap₂_comp`.
+* `TauCeti.Stack.piMap₂`: the product of a family of modifications, with
+  `piMap₂_whiskerRight_π`, `piMap₂_id` and `piMap₂_comp`.
 * `TauCeti.Stack.terminal`: the terminal pseudofunctor, with `terminal.lift`, `terminal.homMk`,
   `terminal.hom_ext` and `terminal.isEquivalence_lift_app`.
 -/
@@ -509,7 +509,8 @@ end
 
 /-! ### The product of a family of modifications
 
-`piMap₂` is not exposed: its components are computed by `piMap₂_as_app_app`. -/
+`piMap₂` is not exposed: its components are computed by `piMap₂_as_app_app` and its projections
+by `piMap₂_whiskerRight_π`. -/
 
 public section
 
@@ -534,6 +535,13 @@ lemma piMap₂_as_app_app {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (X
   -- unfolding.
   erw [Category.id_comp, Category.comp_id]
   rfl
+
+/-- The `i`-th projection of `piMap₂ m` is `m i`, whiskered by the `i`-th projection and
+conjugated by the comparisons `piMapCompπ`. -/
+@[simp]
+lemma piMap₂_whiskerRight_π {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (i : I) :
+    piMap₂ m ▷ pi.π G i = (piMapCompπ f i).hom ≫ pi.π F i ◁ m i ≫ (piMapCompπ g i).inv := by
+  rw [piMap₂, pi.homMk_whiskerRight_π]
 
 /-- The product of identity modifications is the identity. -/
 @[simp]
