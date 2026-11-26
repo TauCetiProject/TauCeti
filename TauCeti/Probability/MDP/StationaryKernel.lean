@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.MDP.Bellman
 public import TauCeti.Probability.MDP.PolicyGradient.Value
 public import TauCeti.Probability.Kernel.Matrix.Basic
-public import TauCeti.Analysis.Matrix.Stochastic
 
 /-!
 # The state kernel of a stationary policy and the matrix form of its value
