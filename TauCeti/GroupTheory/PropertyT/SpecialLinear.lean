@@ -83,8 +83,8 @@ Let `P` be the spectral projection-valued measure of `ρ|_{ℤ²}` on the compac
   `TauCeti.relativePropertyT_inl_iff_not_amenable_of_injective`: Burger's theorem (sufficiency,
   necessity, and exact characterizations) for any group admitting an injective homomorphism into
   `SL(2, ℤ)` in arbitrary group and Hilbert-space universes.
-* `TauCeti.relativePropertyT_inl_of_not_hasFoelnerSets`,
-  `TauCeti.relativePropertyT_inl_iff_not_hasFoelnerSets`,
+* `Subgroup.relativePropertyT_inl_of_not_hasFoelnerSets`,
+  `Subgroup.relativePropertyT_inl_iff_not_hasFoelnerSets`,
   `TauCeti.relativePropertyT_inl_of_not_amenable`, and
   `TauCeti.relativePropertyT_inl_iff_not_amenable`: Burger's theorem and the exact Følner-set and
   amenability characterizations for subgroups `G ≤ SL(2, ℤ)`.
@@ -781,7 +781,7 @@ theorem relativePropertyT_inl_iff_not_amenable_of_injective.{u, v}
 
 /-- **Burger's theorem** for subgroups `G ≤ SL(2, ℤ)` (Følner form): if `G` does not have Følner
 sets, then the pair `(ℤ² ⋊ G, ℤ²)` has relative property (T) in every Hilbert-space universe `u`. -/
-theorem relativePropertyT_inl_of_not_hasFoelnerSets.{u}
+theorem _root_.Subgroup.relativePropertyT_inl_of_not_hasFoelnerSets.{u}
     (G : Subgroup SL(2, ℤ)) (hG : ¬ HasFoelnerSets G) :
     (SemidirectProduct.inl (G := G)
       (φ := slTwoAction.comp G.subtype)).range.RelativePropertyT.{u} :=
@@ -790,7 +790,7 @@ theorem relativePropertyT_inl_of_not_hasFoelnerSets.{u}
 /-- **Følner characterization of relative property (T) for `(ℤ² ⋊ G, ℤ²)`**: for any subgroup
 `G ≤ SL(2, ℤ)`, the pair `(ℤ² ⋊ G, ℤ²)` has relative property (T) in universe `u` if and only if
 `G` does not have Følner sets. -/
-theorem relativePropertyT_inl_iff_not_hasFoelnerSets.{u} (G : Subgroup SL(2, ℤ)) :
+theorem _root_.Subgroup.relativePropertyT_inl_iff_not_hasFoelnerSets.{u} (G : Subgroup SL(2, ℤ)) :
     (SemidirectProduct.inl (G := G)
         (φ := slTwoAction.comp G.subtype)).range.RelativePropertyT.{u} ↔
       ¬ HasFoelnerSets G :=
