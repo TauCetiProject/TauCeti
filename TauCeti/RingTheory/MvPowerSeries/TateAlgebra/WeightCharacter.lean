@@ -32,8 +32,10 @@ character `n : Oˣ →* R` together with a restricted series `N ∈ R{y/r}` expa
   `(x ⊕ x')ᵢ = xᵢ + x'ᵢ + xᵢ x'ᵢ` is the multiplicative formal group law in each coordinate.
 
 The second condition is the multiplicativity of `n` on `1 + I` stated without evaluation at
-points, so it is meaningful over nonreduced and integral coefficient rings. For `k = 1` it says
-that `N - 1` is an endomorphism of the multiplicative formal group law.
+points, so it is meaningful over nonreduced and integral coefficient rings. On its own it only
+forces `N(0)` to be idempotent; the first condition gives `N(0) = n(1) = 1`
+(`TauCeti.MvPowerSeries.AnalyticWeight.constantCoeff_expansion`). For `k = 1`, the two together
+say that `N - 1` is an endomorphism of the multiplicative formal group law.
 
 For an analytic weight whose radii lie below one and contain the images of `I`, the factor
 
