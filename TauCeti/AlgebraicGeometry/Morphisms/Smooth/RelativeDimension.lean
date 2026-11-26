@@ -53,6 +53,7 @@ subsets of a Jacobson scheme, so they contain closed points.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_of_smoothOfRelativeDimension`: over any base,
   a morphism smooth of relative dimension `n` has fibres of dimension at most `n`;
 * `TauCeti.AlgebraicGeometry.exists_smoothOfRelativeDimension_open_of_smooth`,
+  `TauCeti.AlgebraicGeometry.topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open`,
   `TauCeti.AlgebraicGeometry.exists_topologicalKrullDim_fiber_eq_nat`,
   `TauCeti.AlgebraicGeometry.isLocallyConstant_topologicalKrullDim_fiber`, and
   `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_of_forall_topologicalKrullDim_fiber_eq`:
@@ -220,7 +221,7 @@ theorem exists_smoothOfRelativeDimension_open_of_smooth [Smooth f] (x : X) :
 
 /-- If an open subset `V` of `X` meets an irreducible fibre `f.fiber y` and `f` is smooth of
 relative dimension `m` on `V`, then `f.fiber y` has Krull dimension `m`. -/
-private lemma topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open [Smooth f]
+lemma topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open [Smooth f]
     {V : X.Opens} {m : ℕ} [SmoothOfRelativeDimension m (V.ι ≫ f)] {y : Y}
     [IrreducibleSpace (f.fiber y)] {x : X} (hxV : x ∈ V) (hfx : f x = y) :
     topologicalKrullDim (f.fiber y) = m := by

@@ -74,10 +74,7 @@ def toAbelianVarietyMulEquiv (A B : AbelianScheme (Spec (.of K))) :
     have hL := (toOverHom_toAbelianVarietyFunctor_map (f * g)).trans (toOverHom_mul f g)
     have hR := AbelianVariety.Hom.toOverHom_mul
       (toAbelianVarietyFunctor.map f) (toAbelianVarietyFunctor.map g)
-    simp only [CategoryTheory.Hom.mul_def] at hL hR
-    -- `erw` bridges `A.toAbelianVariety.toOver` and `A.toOver`, which are defeq across the
-    -- exposed adapter but not syntactically equal at `rw`'s implicit transparency.
-    erw [toOverHom_toAbelianVarietyFunctor_map, toOverHom_toAbelianVarietyFunctor_map] at hR
+    simp only [toOverHom_toAbelianVarietyFunctor_map] at hR
     exact hL.trans hR.symm
 
 @[simp]
@@ -183,26 +180,6 @@ lemma ofAbelianVarietyProdIso_hom_snd (A B : AbelianVariety K) :
   (ofAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
     (prod.binaryFanIsLimit (ofAbelianVariety A) (ofAbelianVariety B)) ⟨WalkingPair.right⟩
 
-private lemma toOverHom_eqToHom {A B : AbelianVariety K} (h : A = B) :
-    AbelianVariety.Hom.toOverHom (eqToHom h) =
-      eqToHom (congrArg AbelianVariety.toOver h) := by
-  subst h
-  exact AbelianVariety.Hom.toOverHom_id A
-
-private lemma toOverHom_abelianVarietyBaseChangeFunctor_map {A B : AbelianVariety K} (f : A ⟶ B)
-    (L : Type u) [Field L] [Algebra K L] :
-    AbelianVariety.Hom.toOverHom ((AbelianVariety.baseChangeFunctor L).map f) =
-      eqToHom (by rw [AbelianVariety.baseChangeFunctor_obj, AbelianVariety.baseChange_toOver]) ≫
-        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
-          (AbelianVariety.Hom.toOverHom f) ≫
-        eqToHom (by
-          rw [AbelianVariety.baseChangeFunctor_obj, AbelianVariety.baseChange_toOver]) := by
-  rw [AbelianVariety.baseChangeFunctor_map, AbelianVariety.Hom.toOverHom_comp,
-    AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_baseChange,
-    toOverHom_eqToHom, toOverHom_eqToHom]
-  simp only [Category.assoc, eqToHom_trans]
-  rw [eqToHom_trans_assoc]
-
 /-- Naturality of `toAbelianVariety_baseChange`: the adapter functor commutes with base change
 along a field extension `K → L`. -/
 def toAbelianVarietyBaseChangeNatIso (L : Type u) [Field L] [Algebra K L] :
@@ -213,15 +190,13 @@ def toAbelianVarietyBaseChangeNatIso (L : Type u) [Field L] [Algebra K L] :
     (fun A ↦ eqToIso (by simp [toAbelianVariety_baseChange]))
     fun {A B} φ ↦ by
       apply AbelianVariety.Hom.toOverHom_injective
-      rw [eqToIso.hom, eqToIso.hom, AbelianVariety.Hom.toOverHom_comp,
-        AbelianVariety.Hom.toOverHom_comp, Functor.comp_map, Functor.comp_map,
+      simp only [eqToIso.hom, Functor.comp_map, AbelianVariety.Hom.toOverHom_comp,
         toOverHom_toAbelianVarietyFunctor_map, toOverHom_baseChangeFunctor_map,
-        toOverHom_abelianVarietyBaseChangeFunctor_map, toOverHom_toAbelianVarietyFunctor_map,
-        toOverHom_eqToHom, toOverHom_eqToHom]
-      -- `erw` is needed because `(toAbelianVarietyFunctor.obj _).toOver` and `_.toOver` are only
-      -- definitionally equal across the exposed adapter, not at `rw`'s implicit transparency.
-      erw [eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-      rfl
+        AbelianVariety.Hom.toOverHom_baseChangeFunctor_map, AbelianVariety.Hom.toOverHom_eqToHom,
+        eqToHom_trans_assoc]
+      change (Over.pullback _).map (toOverHom φ) ≫ eqToHom _ =
+        eqToHom rfl ≫ (Over.pullback _).map (toOverHom φ) ≫ eqToHom _
+      rw [eqToHom_refl, Category.id_comp]
 
 end
 

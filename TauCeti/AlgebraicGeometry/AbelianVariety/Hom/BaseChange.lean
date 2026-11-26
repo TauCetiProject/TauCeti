@@ -152,6 +152,19 @@ lemma baseChangeFunctor_map {A B : AbelianVariety K} (L : Type u) [Field L] [Alg
         eqToHom (baseChangeFunctor_obj L B).symm :=
   (rfl)
 
+/-- The underlying morphism over `Spec L` of `(baseChangeFunctor L).map f` is the pullback of
+`Hom.toOverHom f`, transported along `baseChange_toOver`. -/
+-- Not `@[simp]`: `baseChangeFunctor_map` and `Hom.toOverHom_baseChange` already rewrite the LHS.
+lemma Hom.toOverHom_baseChangeFunctor_map {A B : AbelianVariety K} (f : A ⟶ B)
+    (L : Type u) [Field L] [Algebra K L] :
+    Hom.toOverHom ((baseChangeFunctor L).map f) =
+      eqToHom (by rw [baseChangeFunctor_obj, baseChange_toOver]) ≫
+        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
+          (Hom.toOverHom f) ≫
+        eqToHom (by rw [baseChangeFunctor_obj, baseChange_toOver]) := by
+  simp only [baseChangeFunctor_map, Hom.toOverHom_comp, Hom.toOverHom_eqToHom,
+    Hom.toOverHom_baseChange, Category.assoc, eqToHom_trans_assoc, eqToHom_trans]
+
 /-! ### Compatibility with the pointwise group law
 
 Base change is a homomorphism for the pointwise group law of

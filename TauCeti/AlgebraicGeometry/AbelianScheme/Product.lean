@@ -192,6 +192,12 @@ def prodIdentityIso (A : AbelianScheme S) : A.prod (identity S) ≅ A :=
       ⟨prod.binaryFanIsLimit A (identity S)⟩
   asIso (prod.fst A (identity S))
 
+/-- The forward morphism of `prodIdentityIso` is the first projection. -/
+@[simp]
+lemma prodIdentityIso_hom (A : AbelianScheme S) :
+    (prodIdentityIso A).hom = prod.fst A (identity S) :=
+  (rfl)
+
 /-- The product of the identity abelian scheme `S` with `A` is canonically isomorphic to `A`. -/
 def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A :=
   haveI : IsIso (prod.snd (identity S) A) :=
@@ -199,6 +205,12 @@ def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A :=
       (BinaryFan.mk (prod.fst (identity S) A) (prod.snd (identity S) A))).mp
       ⟨prod.binaryFanIsLimit (identity S) A⟩
   asIso (prod.snd (identity S) A)
+
+/-- The forward morphism of `identityProdIso` is the second projection. -/
+@[simp]
+lemma identityProdIso_hom (A : AbelianScheme S) :
+    (identityProdIso A).hom = prod.snd (identity S) A :=
+  (rfl)
 
 /-- Base change preserves products of abelian schemes, respecting the group laws and projections. -/
 def baseChangeProdIso (A B : AbelianScheme S) (f : T ⟶ S) :
