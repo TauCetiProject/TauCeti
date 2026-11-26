@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.CartierDivisor.IdealSheaf
 public import TauCeti.AlgebraicGeometry.CartierDivisor.LocalEquations
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Stalk
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Basic
 
 /-!
@@ -195,6 +197,47 @@ theorem orderAt_neg (D : CartierDivisor X) (x : CodimensionOnePoint X) :
 theorem orderAt_sub (D E : CartierDivisor X) (x : CodimensionOnePoint X) :
     (D - E).orderAt x = D.orderAt x - E.orderAt x := by
   rw [sub_eq_add_neg, orderAt_add, orderAt_neg, sub_eq_add_neg]
+
+/-- The order of the Cartier divisor of an effective Cartier ideal sheaf `I` at a codimension-one
+point `x` whose local ring is a discrete valuation ring is `n` whenever the stalk ideal `I_x`
+equals `𝔪_x ^ n`. -/
+theorem orderAt_toCartierDivisor_eq_of_stalkIdeal_eq_maximalIdeal_pow
+    {I : X.IdealSheafData} (hI : I.IsEffectiveCartier) (x : CodimensionOnePoint X)
+    [IsDiscreteValuationRing (X.presheaf.stalk (x : X))] {n : ℕ}
+    (hstalk : I.stalkIdeal (x : X) = IsLocalRing.maximalIdeal (X.presheaf.stalk (x : X)) ^ n) :
+    hI.toCartierDivisor.orderAt x = n := by
+  obtain ⟨U, hxU, b, hb, hUb⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI (x : X)
+  let _ : Nonempty U.val := ⟨⟨(x : X), hxU⟩⟩
+  have hb0 : b ≠ 0 := hb.isLeftRegular.ne_zero
+  let f := Units.mk0 (X.germToFunctionField U.val b)
+    ((map_ne_zero_iff _ (X.germToFunctionField_injective U.val)).mpr hb0)
+  rw [orderAt_eq_of_restrict_eq_rationalUnitClass hI.toCartierDivisor x U.val hxU
+    (Additive.ofMul f) (hI.toCartierDivisor_restrict U hb0 hUb),
+    SchemeWeilDivisor.orderAt_apply, toMul_ofMul]
+  dsimp [f]
+  rw [← X.algebraMap_germ_eq_germToFunctionField hxU b, ord_algebraMap_stalk x.property]
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (X.presheaf.stalk (x : X))
+  have hspan : Ideal.span {X.presheaf.germ U.val (x : X) hxU b} = Ideal.span {ϖ ^ n} := by
+    have hs := I.stalkIdeal_eq_map U (x : X) hxU
+    rw [hUb, Ideal.map_span, Set.image_singleton] at hs
+    rw [← hs, hstalk, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
+  have hassoc := Ideal.span_singleton_eq_span_singleton.mp hspan
+  rw [Ring.ord_eq_of_associated hassoc,
+    Ring.ord_pow (mem_nonZeroDivisors_of_ne_zero hϖ.ne_zero) n, Ring.ord_of_irreducible hϖ,
+    nsmul_one, ENat.toNat_natCast]
+
+/-- The order of an effective Cartier divisor `D` at a codimension-one point `x` whose local
+ring is a discrete valuation ring is `n` whenever the stalk ideal of `hD.idealSheaf` at `x`
+equals `𝔪_x ^ n`. -/
+theorem IsEffective.orderAt_eq_of_stalkIdeal_eq_maximalIdeal_pow
+    {D : CartierDivisor X} (hD : D.IsEffective) (x : CodimensionOnePoint X)
+    [IsDiscreteValuationRing (X.presheaf.stalk (x : X))] {n : ℕ}
+    (hstalk : hD.idealSheaf.stalkIdeal (x : X) =
+      IsLocalRing.maximalIdeal (X.presheaf.stalk (x : X)) ^ n) :
+    D.orderAt x = n := by
+  rw [← hD.toCartierDivisor_idealSheaf]
+  exact orderAt_toCartierDivisor_eq_of_stalkIdeal_eq_maximalIdeal_pow
+    hD.isEffectiveCartier_idealSheaf x hstalk
 
 end LocallyNoetherian
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Scheme.Place.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 
 /-!
 # Dominant morphisms and the places of points
@@ -21,8 +22,7 @@ the local ring of `Y` at `f x` into the valuation ring of the place of `x`.
 
 When `k(X)` is algebraic over `f^* k(Y)`, this is what identifies the place of `f x` with the
 restriction of the place of `x` to `k(Y)`. It also shows that `f x` is not the generic point of
-`Y` as soon as some rational function on `Y` pulls back to one with a pole at `x`: at the generic
-point every rational function is regular.
+`Y`, since otherwise every rational function on `Y` would pull back into the valuation ring of `x`.
 
 ## Main results
 
@@ -33,6 +33,10 @@ point every rational function is regular.
 * `AlgebraicGeometry.Scheme.Hom.ne_genericPoint_of_functionFieldMap_notMem_toPlace_integers`: if
   some rational function pulls back to one with a pole at `x`, then `f x` is not the generic
   point.
+* `AlgebraicGeometry.Scheme.Hom.ne_genericPoint_of_isIntegral`: if `k(X)` is integral over `k(Y)`,
+  then `f x ≠ genericPoint Y`.
+* `AlgebraicGeometry.Scheme.Hom.toPlace_restrict_eq`: if `𝒪_{Y, f x}` is also a discrete valuation
+  ring, then `(X.toPlace x).restrict k Y.functionField = Y.toPlace (f x)`.
 
 ## References
 
@@ -46,6 +50,8 @@ public section
 namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
+
+section Irreducible
 
 variable {k : Type u} [Field k] {X Y : Scheme.{u}} [IsIntegral X] [IrreducibleSpace Y]
   [X.Over (Spec (.of k))]
@@ -85,5 +91,53 @@ theorem ne_genericPoint_of_functionFieldMap_notMem_toPlace_integers (f : X ⟶ Y
   obtain ⟨U, hU, s, rfl⟩ := TopCat.Presheaf.exists_germ_eq Y.presheaf z
   have : Nonempty U := ⟨⟨_, hU⟩⟩
   exact hz (functionFieldMap_germToFunctionField_mem_toPlace_integers f x (hfx ▸ hU) s)
+
+end Irreducible
+
+section Integral
+
+open TauCeti
+
+variable {k : Type u} [Field k] {X Y : Scheme.{u}} [IsIntegral X] [IsIntegral Y]
+  [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))]
+
+/-- **A DVR point maps away from the generic point** under a dominant morphism with integral
+function-field extension: if `f x` were the generic point of `Y`, every rational function on `Y`
+would pull back into `𝒪_{X,x}`, forcing the restricted valuation ring on `k(Y)` to be all of
+`k(Y)`. -/
+theorem ne_genericPoint_of_isIntegral (f : X ⟶ Y) [IsDominant f]
+    [Algebra Y.functionField X.functionField] [IsScalarTower k Y.functionField X.functionField]
+    [Algebra.IsIntegral Y.functionField X.functionField]
+    (hmap : ∀ z : Y.functionField,
+      algebraMap Y.functionField X.functionField z = f.functionFieldMap z)
+    (x : X) [IsDiscreteValuationRing (X.presheaf.stalk x)] :
+    f x ≠ genericPoint Y := by
+  by_contra hfx
+  apply ((X.toPlace (k := k) x).restrict k Y.functionField).integers_ne_top
+  rw [eq_top_iff]
+  intro z _
+  rw [Place.mem_integers_restrict_iff, hmap]
+  obtain ⟨U, hU, s, rfl⟩ := TopCat.Presheaf.exists_germ_eq Y.presheaf z
+  have : Nonempty U := ⟨⟨_, hU⟩⟩
+  exact functionFieldMap_germToFunctionField_mem_toPlace_integers f x (hfx ▸ hU) s
+
+/-- **Place restriction along a dominant morphism**: if `f : X ⟶ Y` is dominant with integral
+function-field extension along `f^*` and the stalks at `x` and `f x` are discrete valuation rings,
+then the place of `f x` is the restriction of the place of `x` to `k(Y)`. -/
+theorem toPlace_restrict_eq (f : X ⟶ Y) [IsDominant f]
+    [Algebra Y.functionField X.functionField] [IsScalarTower k Y.functionField X.functionField]
+    [Algebra.IsIntegral Y.functionField X.functionField]
+    (hmap : ∀ z : Y.functionField,
+      algebraMap Y.functionField X.functionField z = f.functionFieldMap z)
+    (x : X) [IsDiscreteValuationRing (X.presheaf.stalk x)]
+    [IsDiscreteValuationRing (Y.presheaf.stalk (f x))] :
+    (X.toPlace (k := k) x).restrict k Y.functionField = Y.toPlace (k := k) (f x) := by
+  refine (Place.restrict_eq_iff_integers_le k Y.functionField (X.toPlace (k := k) x)
+    (Y.toPlace (k := k) (f x))).mpr fun g hg ↦ ?_
+  obtain ⟨a, rfl⟩ := (Y.mem_toPlace_integers_iff_exists_stalk (k := k) (f x) g).mp hg
+  rw [hmap]
+  exact functionFieldMap_algebraMap_mem_toPlace_integers f x a
+
+end Integral
 
 end AlgebraicGeometry.Scheme.Hom
