@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Weighted
-public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Basic
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 import TauCeti.Analysis.Pseudodifferential.Manifold.FormalAdjoint
