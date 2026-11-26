@@ -107,9 +107,10 @@ theorem gaussianMellin_eq {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
       norm_num [a, smul_eq_mul, Complex.real_smul, one_div]
     _ = _ := by
       have h := Complex.integral_cpow_mul_exp_neg_mul_Ioi ha pi_pos
-      rw [show mellin f a = (1 / (π : ℂ)) ^ a * Complex.Gamma a by
+      have hmellin : mellin f a = (1 / (π : ℂ)) ^ a * Complex.Gamma a := by
         simpa only [mellin, f, smul_eq_mul, Complex.ofReal_exp, Complex.ofReal_neg,
-          Complex.ofReal_mul] using h]
+          Complex.ofReal_mul] using h
+      rw [hmellin]
       simp only [one_div, Complex.inv_cpow_ofReal_nonneg pi_nonneg, ← Complex.cpow_neg,
         a, neg_div, mul_assoc]
 
@@ -162,7 +163,7 @@ private theorem norm_gaussianTheta_term_le (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) 
 private theorem hasSum_gaussianTheta_majorant {u : ℝ} (hu : 0 < u) :
     HasSum (fun n : ℕ+ ↦ 3 * (exp (-u) ^ 2) ^ (n : ℕ))
       (3 * (exp (-u) ^ 2 / (1 - exp (-u) ^ 2))) := by
-  have hr : |exp (-u) ^ 2| < 1 := by simpa using hu
+  have hr : ‖exp (-u) ^ 2‖ < 1 := by simpa using hu
   exact (hasSum_geometric_pnat hr).mul_left 3
 
 /-- The Gaussian theta sum converges absolutely at positive scales for unit-bounded
@@ -177,9 +178,9 @@ for coefficients of norm at most one. -/
 theorem norm_gaussianTheta_le (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) {u : ℝ} (hu : 0 < u) :
     ‖gaussianTheta j c u‖ ≤ 3 * exp (-u) / u := by
   let r : ℝ := exp (-u) ^ 2
+  have hexp_mul : exp u * exp (-u) = 1 := by simp [← Real.exp_add]
   have hdenom : u * exp (-u) ≤ 1 - r := by
-    nlinarith [add_one_le_exp u, exp_pos (-u), exp_le_one_iff.2 (neg_nonpos.2 hu.le),
-      show exp u * exp (-u) = 1 by simp [← Real.exp_add]]
+    nlinarith [add_one_le_exp u, exp_pos (-u), exp_le_one_iff.2 (neg_nonpos.2 hu.le), hexp_mul]
   have hsum : 3 * (r / (1 - r)) ≤ 3 * exp (-u) / u := by
     calc 3 * (r / (1 - r)) ≤ 3 * (r / (u * exp (-u))) := by gcongr
       _ = 3 * exp (-u) / u := by simp [r, field]
