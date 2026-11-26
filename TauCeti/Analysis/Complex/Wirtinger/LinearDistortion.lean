@@ -6,23 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
+public import TauCeti.Analysis.InnerProductSpace.LinearDistortion
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.LinearAlgebra.Complex.Orientation
+import TauCeti.Analysis.InnerProductSpace.LinearDistortion.Comparison
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Planar linear maps: norm, minimal stretch and Jacobian
+# Planar linear maps: norm, minimal stretch, Jacobian and distortion
 
 Every real-linear map of the plane `ℂ` has the form `A z = z a + conj z b` for unique `a b : ℂ`: it
 is `TauCeti.wirtingerPartsCLM a b`, with `a` and `b` its two Wirtinger parts
 (`TauCeti.exists_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`). This file computes the
-three quantities of linear distortion of `A` in terms of `a` and `b`:
+three quantities of linear distortion of `A`, and its outer and inner distortion, in terms of `a`
+and `b`:
 
 * the operator norm `‖A‖ = |a| + |b|` (`TauCeti.norm_wirtingerPartsCLM`);
 * the minimal stretch `ℓ(A) = ||a| - |b||` (`TauCeti.minimalStretch_wirtingerPartsCLM`);
 * the Jacobian `J(A) = det A = |a|² - |b|²` (`TauCeti.det_wirtingerPartsCLM`), read off from the
-  real matrix of `A` in the basis `(1, i)` (`TauCeti.toMatrix_wirtingerPartsCLM`); for the
-  orientation of `ℂ` by the basis `(1, i)`, `Orientation.orientedJacobian_self` identifies the
-  oriented Jacobian of `A` with this determinant.
+  real matrix of `A` in the basis `(1, i)` (`TauCeti.toMatrix_wirtingerPartsCLM`); for any
+  orientation `o` of `ℂ` used on both sides, the oriented Jacobian of `A` is this determinant
+  (`Orientation.orientedJacobian_wirtingerPartsCLM`), positive exactly when `|b| < |a|`
+  (`Orientation.orientedJacobian_wirtingerPartsCLM_pos_iff`,
+  `Orientation.orientedJacobian_wirtingerPartsCLM_nonpos_iff`).
 
 The extremal directions are explicit. Writing `a = |a| e^{iα}` and `b = |b| e^{iβ}`, the image of
 the unit vector `e^{i((β - α)/2 + t)}` is `(|a| e^{it} + |b| e^{-it}) e^{i(α + β)/2}`
@@ -38,8 +45,18 @@ by such a `c`, the Wirtinger part `a` or `b` (`TauCeti.exists_norm_sub_smulRight
 `TauCeti.exists_norm_sub_smulRight_conjCLE_lt_of_det_neg`). This is how the sign of a transverse
 zero of a section of a complex line bundle is read from the real derivative of its chart reading.
 
-These formulas are the linear algebra behind the Beltrami coefficient `b / a` of a planar map:
-the outer distortion `‖A‖² / J(A)` of `A` is `(|a| + |b|) / (|a| - |b|)` when `|b| < |a|`.
+For any orientation `o` of `ℂ` used on both sides, the formulas above give the outer distortion
+`q_O(A) = ‖A‖² / J(A)` and the inner distortion `q_I(A) = J(A) / ℓ(A)²`:
+
+* if `|b| < |a|` then `q_O(A) = q_I(A) = (|a| + |b|) / (|a| - |b|)`
+  (`Orientation.outerDistortion_wirtingerPartsCLM_of_lt`,
+  `Orientation.innerDistortion_wirtingerPartsCLM_of_lt`);
+* if `|a| ≤ |b|` and `b ≠ 0` then `q_O(A) = ∞` and `q_I(A) = 0`
+  (`Orientation.outerDistortion_wirtingerPartsCLM_of_le`,
+  `Orientation.innerDistortion_wirtingerPartsCLM_of_le`);
+* for `k < 1`, `q_O(A) ≤ (1 + k) / (1 - k)` exactly when `|b| ≤ k |a|`
+  (`Orientation.outerDistortion_wirtingerPartsCLM_le_iff`): the Beltrami coefficient `b / a` of a
+  `K`-quasiconformal planar map has modulus at most `k = (K - 1) / (K + 1)`.
 
 ## References
 
@@ -189,35 +206,171 @@ theorem exists_norm_sub_smulRight_conjCLE_lt_of_det_neg {D : ℂ →L[ℝ] ℂ} 
     norm_wirtingerPartsCLM, norm_zero, add_zero]
   exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg b) h
 
+end TauCeti
+
+namespace Orientation
+
+open TauCeti
+
+attribute [local instance] Complex.finrank_real_complex_fact
+
+/-- For any orientation of `ℂ` used on both sides, the oriented Jacobian of
+`z ↦ z a + conj z b` is `|a|² - |b|²`. -/
+@[simp]
+theorem orientedJacobian_wirtingerPartsCLM (o : Orientation ℝ ℂ (Fin 2)) (a b : ℂ) :
+    o.orientedJacobian o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = ‖a‖ ^ 2 - ‖b‖ ^ 2 := by
+  rw [orientedJacobian_self, det_wirtingerPartsCLM]
+
+/-- For any orientation of `ℂ` used on both sides, `z ↦ z a + conj z b` preserves orientation
+strictly, that is its oriented Jacobian is positive, exactly when `|b| < |a|`. -/
+theorem orientedJacobian_wirtingerPartsCLM_pos_iff (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ} :
+    0 < o.orientedJacobian o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) ↔ ‖b‖ < ‖a‖ := by
+  rw [orientedJacobian_wirtingerPartsCLM, sub_pos, sq_lt_sq₀ (norm_nonneg b) (norm_nonneg a)]
+
+/-- For any orientation of `ℂ` used on both sides, the oriented Jacobian of
+`z ↦ z a + conj z b` is nonpositive exactly when `|a| ≤ |b|`. -/
+theorem orientedJacobian_wirtingerPartsCLM_nonpos_iff (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ} :
+    o.orientedJacobian o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) ≤ 0 ↔ ‖a‖ ≤ ‖b‖ := by
+  rw [← not_lt, orientedJacobian_wirtingerPartsCLM_pos_iff, not_lt]
+
+/-- If `|b| < |a|`, the inner distortion of `z ↦ z a + conj z b` is
+`(|a| + |b|) / (|a| - |b|)`. -/
+theorem innerDistortion_wirtingerPartsCLM_of_lt (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ}
+    (h : ‖b‖ < ‖a‖) :
+    o.innerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = (‖a‖ + ‖b‖) / (‖a‖ - ‖b‖) := by
+  have hs : 0 < ‖a‖ - ‖b‖ := sub_pos.mpr h
+  rw [innerDistortion_of_pos _ _ ((orientedJacobian_wirtingerPartsCLM_pos_iff o).mpr h),
+    orientedJacobian_wirtingerPartsCLM, minimalStretch_wirtingerPartsCLM, abs_of_pos hs,
+    div_eq_div_iff (pow_pos hs 2).ne' hs.ne']
+  ring
+
+/-- If `|b| < |a|`, the outer distortion of `z ↦ z a + conj z b` is
+`(|a| + |b|) / (|a| - |b|)`, the same as its inner distortion, since `q_O = q_I` in dimension `2`
+(`Orientation.outerDistortion_eq_ofReal_innerDistortion_of_fin_two`). -/
+theorem outerDistortion_wirtingerPartsCLM_of_lt (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ}
+    (h : ‖b‖ < ‖a‖) :
+    o.outerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) =
+      ENNReal.ofReal ((‖a‖ + ‖b‖) / (‖a‖ - ‖b‖)) := by
+  rw [o.outerDistortion_eq_ofReal_innerDistortion_of_fin_two o
+      ((orientedJacobian_wirtingerPartsCLM_pos_iff o).mpr h),
+    innerDistortion_wirtingerPartsCLM_of_lt o h]
+
+/-- If `|a| ≤ |b|` and `b ≠ 0`, the map `z ↦ z a + conj z b` is nonzero and does not preserve
+orientation strictly, so its outer distortion is `∞`. -/
+theorem outerDistortion_wirtingerPartsCLM_of_le (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ}
+    (h : ‖a‖ ≤ ‖b‖) (hb : b ≠ 0) :
+    o.outerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = ⊤ := by
+  refine outerDistortion_of_nonpos _ _
+    ((orientedJacobian_wirtingerPartsCLM_nonpos_iff o).mpr h) fun h0 ↦ ?_
+  have := norm_wirtingerPartsCLM a b
+  rw [← LinearMap.toContinuousLinearMap_coe (wirtingerPartsCLM a b), h0, map_zero,
+    norm_zero] at this
+  linarith [norm_nonneg a, norm_pos_iff.mpr hb]
+
+/-- If `|a| ≤ |b|`, the inner distortion of `z ↦ z a + conj z b` is `0`. -/
+theorem innerDistortion_wirtingerPartsCLM_of_le (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ}
+    (h : ‖a‖ ≤ ‖b‖) :
+    o.innerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = 0 :=
+  innerDistortion_of_nonpos _ _
+    ((orientedJacobian_wirtingerPartsCLM_nonpos_iff o).mpr h)
+
+/-- For `k < 1`, the outer distortion of `z ↦ z a + conj z b` is at most `(1 + k) / (1 - k)`
+exactly when `|b| ≤ k |a|`. -/
+theorem outerDistortion_wirtingerPartsCLM_le_iff (o : Orientation ℝ ℂ (Fin 2)) {k : ℝ}
+    (hk : k < 1) (a b : ℂ) :
+    o.outerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) ≤
+        ENNReal.ofReal ((1 + k) / (1 - k)) ↔
+      ‖b‖ ≤ k * ‖a‖ := by
+  have h1k : 0 < 1 - k := sub_pos.mpr hk
+  -- `ENNReal.ofReal` sends a negative bound to `0`, so clamp it below at `0`.
+  rw [show ENNReal.ofReal ((1 + k) / (1 - k)) = ENNReal.ofReal (max ((1 + k) / (1 - k)) 0) by
+      simp, outerDistortion_le_ofReal_iff _ _ two_pos (le_max_right _ _),
+    orientedJacobian_wirtingerPartsCLM, LinearMap.toContinuousLinearMap_coe,
+    norm_wirtingerPartsCLM]
+  have ha := norm_nonneg a
+  have hb := norm_nonneg b
+  rcases (add_nonneg ha hb).eq_or_lt with h0 | h0
+  · have ha0 : ‖a‖ = 0 := by linarith
+    have hb0 : ‖b‖ = 0 := by linarith
+    simp [ha0, hb0]
+  rcases le_or_gt 0 k with hk₀ | hk₀
+  · -- `(1 + k) (s² - t²) - (1 - k) (s + t)² = 2 (s + t) (k s - t)`.
+    rw [max_eq_left (by positivity), div_mul_eq_mul_div, le_div_iff₀ h1k]
+    constructor <;> intro h
+    · by_contra! h'
+      nlinarith [mul_pos h0 (sub_pos.mpr h')]
+    · nlinarith [mul_nonneg h0.le (sub_nonneg.mpr h)]
+  · -- The clamped bound `K` lies in `[0, 1)`, so both sides force `a = b = 0`.
+    have hK : max ((1 + k) / (1 - k)) 0 < 1 :=
+      max_lt ((div_lt_one h1k).mpr (by linarith)) one_pos
+    have hK₀ : 0 ≤ max ((1 + k) / (1 - k)) 0 := le_max_right _ _
+    constructor <;> intro h
+    · nlinarith [mul_nonneg hK₀ (mul_nonneg hb h0.le), mul_pos (sub_pos.mpr hK) (pow_pos h0 2)]
+    · have : k * ‖a‖ ≤ 0 := mul_nonpos_of_nonpos_of_nonneg hk₀.le ha
+      nlinarith [mul_neg_of_neg_of_pos hk₀ (show 0 < ‖a‖ by linarith)]
+
+end Orientation
+
+namespace TauCeti
+
+attribute [local instance] Complex.finrank_real_complex_fact
+
 /-! ### Checks -/
 
-/-- Check: `z ↦ z + conj z / 2` has `‖A‖ = 3/2`, `ℓ(A) = 1/2` and `J(A) = 3/4`. -/
+/-- Check: `z ↦ z + conj z / 2` has `‖A‖ = 3/2`, `ℓ(A) = 1/2`, `J(A) = 3/4` and
+`q_O(A) = (9/4) / (3/4) = 3`. -/
 example :
     ‖wirtingerPartsCLM (1 : ℂ) (1 / 2)‖ = 3 / 2 ∧
       (wirtingerPartsCLM (1 : ℂ) (1 / 2) : ℂ →ₗ[ℝ] ℂ).minimalStretch = 1 / 2 ∧
-      (wirtingerPartsCLM (1 : ℂ) (1 / 2) : ℂ →ₗ[ℝ] ℂ).det = 3 / 4 := by
+      (wirtingerPartsCLM (1 : ℂ) (1 / 2) : ℂ →ₗ[ℝ] ℂ).det = 3 / 4 ∧
+      Complex.orientation.outerDistortion Complex.orientation
+        (wirtingerPartsCLM (1 : ℂ) (1 / 2) : ℂ →ₗ[ℝ] ℂ) = 3 := by
   have h : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by simp
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
   · rw [norm_wirtingerPartsCLM, h, norm_one]
     norm_num
   · rw [minimalStretch_wirtingerPartsCLM, h, norm_one]
     norm_num [abs_of_pos]
   · rw [det_wirtingerPartsCLM, h, norm_one]
     norm_num
+  · rw [Complex.orientation.outerDistortion_wirtingerPartsCLM_of_lt (by rw [h, norm_one]; norm_num),
+      h, norm_one]
+    norm_num
 
-/-- Check: complex conjugation `z ↦ conj z` reverses orientation, `J(A) = -1`. -/
+/-- Check: complex conjugation `z ↦ conj z` reverses orientation, `J(A) = -1`, so
+`q_O(A) = ∞`. -/
 example :
-    (wirtingerPartsCLM (0 : ℂ) 1 : ℂ →ₗ[ℝ] ℂ).det = -1 := by
+    (wirtingerPartsCLM (0 : ℂ) 1 : ℂ →ₗ[ℝ] ℂ).det = -1 ∧
+      Complex.orientation.outerDistortion Complex.orientation
+        (wirtingerPartsCLM (0 : ℂ) 1 : ℂ →ₗ[ℝ] ℂ) = ⊤ := by
+  refine ⟨?_, Complex.orientation.outerDistortion_wirtingerPartsCLM_of_le (by simp) one_ne_zero⟩
   rw [det_wirtingerPartsCLM]
   norm_num
 
-/-- Check: `z ↦ 2 i z` stretches every direction by `2`, `‖A‖ = ℓ(A) = 2`. -/
+/-- Check: `z ↦ 2 i z` stretches every direction by `2`, `‖A‖ = ℓ(A) = 2`, so `q_O(A) = 1`. -/
 example :
     ‖wirtingerPartsCLM (2 * I) (0 : ℂ)‖ = 2 ∧
-      (wirtingerPartsCLM (2 * I) (0 : ℂ) : ℂ →ₗ[ℝ] ℂ).minimalStretch = 2 := by
+      (wirtingerPartsCLM (2 * I) (0 : ℂ) : ℂ →ₗ[ℝ] ℂ).minimalStretch = 2 ∧
+      Complex.orientation.outerDistortion Complex.orientation
+        (wirtingerPartsCLM (2 * I) (0 : ℂ) : ℂ →ₗ[ℝ] ℂ) = 1 := by
   have h : ‖(2 * I : ℂ)‖ = 2 := by simp
-  refine ⟨?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
   · rw [norm_wirtingerPartsCLM, h, norm_zero, add_zero]
   · rw [minimalStretch_wirtingerPartsCLM, h, norm_zero, sub_zero, abs_two]
+  · rw [Complex.orientation.outerDistortion_wirtingerPartsCLM_of_lt
+      (by rw [h, norm_zero]; norm_num), h, norm_zero]
+    norm_num
+
+/-- Check: `K = 2` corresponds to `k = 1/3`, and `z ↦ z + conj z / 3` has
+`q_O = (4/3) / (2/3) = 2`. -/
+example :
+    (1 + 1 / 3 : ℝ) / (1 - 1 / 3) = 2 ∧
+      Complex.orientation.outerDistortion Complex.orientation
+        (wirtingerPartsCLM (1 : ℂ) (1 / 3) : ℂ →ₗ[ℝ] ℂ) = 2 := by
+  have h : ‖(1 / 3 : ℂ)‖ = 1 / 3 := by simp
+  refine ⟨by norm_num, ?_⟩
+  rw [Complex.orientation.outerDistortion_wirtingerPartsCLM_of_lt (by rw [h, norm_one]; norm_num),
+    h, norm_one]
+  norm_num
 
 end TauCeti
