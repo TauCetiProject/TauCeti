@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
+import TauCeti.Algebra.Homology.HomologySequenceLemmas
+
 /-!
 # Functors preserving acyclicity of complexes in an adapted class
 
@@ -23,7 +25,9 @@ with terms in `P` which vanish below some degree
 (`HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlyGE`). The cycles `Zⁿ` lie in `P` by
 induction, using the short exact sequences `0 ⟶ Zⁿ ⟶ Qⁿ ⟶ Zⁿ⁺¹ ⟶ 0`, and `F` keeps these exact;
 this gives exactness of `F(Q)` degree by degree
-(`HomologicalComplex.mapHomologicalComplex_obj_exactAt_of_exact_map`).
+(`HomologicalComplex.mapHomologicalComplex_obj_exactAt_of_exact_map`). Consequently, `F` sends a
+monomorphism and quasi-isomorphism into a bounded below complex, between complexes with terms in
+`P`, to a quasi-isomorphism (`CategoryTheory.Functor.quasiIso_map_of_mono_of_isStrictlyGE`).
 
 ## References
 
@@ -191,3 +195,32 @@ theorem map_of_shortExact_of_isStrictlyGE (b : ℤ) [K.IsStrictlyGE b] (hK : K.A
 end Int
 
 end HomologicalComplex.Acyclic
+
+namespace CategoryTheory.Functor
+
+variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
+  (F : C ⥤ D) [F.Additive] (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms]
+  (hP : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃)
+  (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
+
+include hP hF in
+/-- Let `P` be a class of objects closed under isomorphisms and under cokernels of
+monomorphisms, on whose short exact sequences `F` is exact. Then `F` sends a monomorphism and
+quasi-isomorphism `K ⟶ L` between complexes with terms in `P`, where `L` vanishes below some degree
+`b`, to a quasi-isomorphism. -/
+theorem quasiIso_map_of_mono_of_isStrictlyGE {K L : CochainComplex C ℤ} (f : K ⟶ L) [Mono f]
+    [QuasiIso f] (b : ℤ) [L.IsStrictlyGE b] (hK : ∀ n, P (K.X n))
+    (hL : ∀ n, P (L.X n)) : QuasiIso ((F.mapHomologicalComplex _).map f) := by
+  let S := ShortComplex.cokernelSequence f
+  have hS : S.ShortExact := TauCeti.cokernelSequence_shortExact f
+  have hSn := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS
+  -- the cokernel of `f` is acyclic, vanishes below degree `b` and has terms in `P`
+  have : S.X₃.IsStrictlyGE b := (CochainComplex.isStrictlyGE_iff _ b).2 fun i hi ↦
+    have : Epi (S.g.f i) := (hSn i).epi_g
+    (L.isZero_of_isStrictlyGE b i hi).of_epi (S.g.f i)
+  have hFS : (S.map (F.mapHomologicalComplex _)).ShortExact :=
+    HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ hF _ (hSn n) (hK n) (hL n)
+  exact hFS.quasiIso_f_iff.2 (HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlyGE F P hP hF
+    b (hS.quasiIso_f_iff.1 (inferInstanceAs (QuasiIso f))) fun n ↦ hP _ (hSn n) (hK n) (hL n))
+
+end CategoryTheory.Functor

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Homology.CochainComplex.Plus.InjectiveResolution
 public import TauCeti.Algebra.Homology.HomologicalComplex.Acyclic
 
 import Mathlib.Algebra.Homology.Factorizations.CM5a
-import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
 # Adapted quasi-isomorphisms on bounded-below cochain complexes
@@ -76,36 +75,19 @@ theorem quasiIso_map_of_adapted_to_injective
       rw [CochainComplex.cm5b.fac]
       infer_instance
     exact quasiIso_of_comp_right ψ (CochainComplex.cm5b.p K.obj L)
-  -- Apply `F` to the short exact cokernel sequence `0 ⟶ K ⟶ cone(𝟙 (I K)) ⊞ L ⟶ coker(ψ) ⟶ 0`.
-  let S := ShortComplex.cokernelSequence ψ
-  have hS : S.ShortExact := TauCeti.cokernelSequence_shortExact ψ
-  have hSn := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS
-  have hX₂ (n : ℤ) : P (S.X₂.X n) := by
+  let M := CochainComplex.mappingCone (𝟙 (CochainComplex.cm5b.I K.obj)) ⊞ L
+  have hX₂ (n : ℤ) : P (M.X n) := by
     have : Injective ((HomologicalComplex.eval C (.up ℤ) n).obj
         (CochainComplex.mappingCone (𝟙 (CochainComplex.cm5b.I K.obj)))) := by
       dsimp
       infer_instance
     have : Injective ((HomologicalComplex.eval C (.up ℤ) n).obj L) := (I.obj.X n).property
-    have : Injective (S.X₂.X n) := Injective.of_iso
+    have : Injective (M.X n) := Injective.of_iso
       ((HomologicalComplex.eval C (.up ℤ) n).mapBiprod _ _).symm inferInstance
     exact hinj _ inferInstance
-  have hQge : S.X₃.IsStrictlyGE b := by
-    have : S.X₂.IsStrictlyGE b :=
-      inferInstanceAs
-        ((CochainComplex.mappingCone (𝟙 (CochainComplex.cm5b.I K.obj)) ⊞ L).IsStrictlyGE b)
-    rw [CochainComplex.isStrictlyGE_iff]
-    intro n hn
-    have := (hSn n).epi_g
-    exact IsZero.of_epi (S.g.f n) (S.X₂.isZero_of_isStrictlyGE b n hn)
-  have hFS : (S.map (F.mapHomologicalComplex _)).ShortExact :=
-    HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
-      hF _ (hSn n) (hK n) (hX₂ n)
-  have : QuasiIso S.f := by
-    dsimp [S, ShortComplex.cokernelSequence]
-    infer_instance
+  have : M.IsStrictlyGE b := inferInstance
   have : QuasiIso ((F.mapHomologicalComplex _).map ψ) :=
-    hFS.quasiIso_f_iff.2 (HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlyGE F P hP hF
-      b (hS.quasiIso_f_iff.1 inferInstance) fun n ↦ hP _ (hSn n) (hK n) (hX₂ n))
+    F.quasiIso_map_of_mono_of_isStrictlyGE P hP hF ψ b hK hX₂
   have : QuasiIso ((F.mapHomologicalComplex _).map (CochainComplex.cm5b.p K.obj L)) :=
     (F.mapHomotopyEquiv (CochainComplex.cm5b.homotopyEquiv K.obj L)).quasiIso_hom
   rw [← CochainComplex.cm5b.fac i.hom, Functor.map_comp]
