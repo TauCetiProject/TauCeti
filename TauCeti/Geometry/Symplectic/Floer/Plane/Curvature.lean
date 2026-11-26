@@ -206,6 +206,16 @@ theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × �
   rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
   simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
+/-- The real and imaginary parts of the derivative of the end lift of a PSS plane in the direction
+`∂s` have squared norm the Jacobian of the end lift. -/
+theorem sq_add_sq_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (ζ : ℝ × ℝ) :
+    (fderiv ℝ (realChart p.cylindricalEndLift) ζ stdComplexLineReal).1 ^ 2 +
+        (fderiv ℝ (realChart p.cylindricalEndLift) ζ stdComplexLineReal).2 ^ 2 =
+      (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det := by
+  rw [TauCeti.Complex.fderiv_realChart_apply (p.hasDerivAt_cylindricalEndLift _),
+    TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _), Complex.normSq_apply]
+  simp [stdComplexLineReal, sq]
+
 /-- **The Jacobian of the end lift.** In real coordinates, the Jacobian determinant of the end lift
 `φ` at `ζ` is `4π² |φ(ζ)|²`. -/
 theorem det_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (ζ : ℝ × ℝ) :
@@ -265,6 +275,19 @@ theorem exists_realChart_cylindricalEndLift_eq (p : PSSPlane) {T : ℝ} {z : ℝ
   refine ⟨(c.re, Int.fract c.im), ?_, ⟨Int.fract_nonneg _, Int.fract_lt_one _⟩, hζ⟩
   rw [← hζ] at hz
   exact p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.1 hz
+
+/-- The end lift maps the half-strip `ε s > R`, `0 ≤ t < 1` onto the part `‖w‖ > exp (2π R)` of
+the plane. -/
+theorem image_realChart_cylindricalEndLift_prod_Ico (p : PSSPlane) (R : ℝ) :
+    realChart p.cylindricalEndLift '' ({s : ℝ | R < p.endSign * s} ×ˢ Ico 0 1) =
+      {z | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖} := by
+  ext z
+  constructor
+  · rintro ⟨ζ, hζ, rfl⟩
+    exact p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ.1
+  · intro hz
+    obtain ⟨ζ, hζ1, hζ2, hζz⟩ := p.exists_realChart_cylindricalEndLift_eq hz
+    exact ⟨ζ, ⟨hζ1, hζ2⟩, hζz⟩
 
 /-- The half-cylinder `s > a` of the positive plane lies in the part `‖w‖ > exp (2πa)` of the
 plane. -/
