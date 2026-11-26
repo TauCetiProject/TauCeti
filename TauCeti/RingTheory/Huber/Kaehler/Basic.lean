@@ -50,6 +50,8 @@ here holds for every adic `A → B` with `B` complete and Hausdorff.
   induce the same `B`-module structure.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.fromKaehler_fromIdeal`: the comparison is induced
   by the completion map on diagonal ideals.
+* `TauCeti.Huber.ContinuousKaehlerDifferential.fromKaehler_bijective_of_bijective_toCompletion`:
+  `fromKaehler A B` is bijective whenever `B ⊗[A] B → B ⊗̂_A B` is bijective.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.subsingleton_of_surjective`: `Ωᶜ[B⁄A] = 0` when
   `A → B` is surjective; in particular `Ωᶜ[A⁄A] = 0` for complete Hausdorff `A`.
 
@@ -182,6 +184,17 @@ theorem smul_eq_mulRingHom_smul (x : CompletedTensor A B B)
   refine Ideal.Cotangent.smul_eq_zero_of_mem (I := ideal A B) ?_ ω
   simp
 
+/-- Scalar multiplication of `B ⊗̂_A B` on `Ωᶜ[B⁄A]` is continuous for the natural `B`-module
+topology. -/
+instance : ContinuousSMul (CompletedTensor A B B) (ContinuousKaehlerDifferential A B) where
+  continuous_smul := by
+    have h : (fun p : CompletedTensor A B B × ContinuousKaehlerDifferential A B ↦ p.1 • p.2) =
+        fun p ↦ mulRingHom A B p.1 • p.2 := by
+      ext ⟨r, ω⟩
+      exact smul_eq_mulRingHom_smul r ω
+    rw [h]
+    exact ((continuous_mulRingHom A B).comp continuous_fst).smul continuous_snd
+
 /-- The right coprojection induces the same `B`-action on `Ωᶜ[B⁄A]` as the left one. -/
 @[simp] theorem inr_smul (b : B) (ω : ContinuousKaehlerDifferential A B) :
     inr A B B b • ω = b • ω := by
@@ -199,17 +212,12 @@ noncomputable def D : Derivation A B (ContinuousKaehlerDifferential A B) :=
   Derivation.mk'
     { toFun b := fromIdeal A B ⟨inr A B B b - inl A B B b, inr_sub_inl_mem_ideal A B b⟩
       map_add' b c := by
-        rw [← map_add]
-        congr 1
-        ext
-        simp only [map_add, Submodule.coe_add]
-        ring
+        rw [← map_add]; congr 1; ext; simp only [map_add, Submodule.coe_add]; ring
       map_smul' a b := by
         rw [RingHom.id_apply,
           ← algebraMap_smul (CompletedTensor A B B) (M := ContinuousKaehlerDifferential A B) a,
           ← map_smul]
-        congr 1
-        ext
+        congr 1; ext
         simp only [Algebra.smul_def, map_mul, inl_algebraMap, inr_algebraMap,
           Submodule.coe_smul, Algebra.algebraMap_self, RingHom.id_apply]
         ring }
@@ -248,15 +256,13 @@ private theorem tensorProductTo_D (x : B ⊗[A] B) :
   induction x using TensorProduct.inductionOn with
   | tmul b c =>
     rw [Derivation.tensorProductTo_tmul, D_apply, ← inl_smul, ← map_smul]
-    congr 1
-    ext
+    congr 1; ext
     simp only [Submodule.coe_smul, smul_eq_mul, toCompletion_tmul,
       Algebra.TensorProduct.lmul'_apply_tmul, map_mul]
     ring
   | add x y hx hy =>
     rw [map_add, hx, hy, ← map_add]
-    congr 1
-    ext
+    congr 1; ext
     simp only [map_add, Submodule.coe_add]
     ring
 
@@ -274,6 +280,28 @@ theorem fromKaehler_fromIdeal (x : KaehlerDifferential.ideal A B) :
   simp [RingHom.mem_ker.mp x.property]
 
 variable {A B}
+
+/-- Whenever the canonical map `B ⊗[A] B → B ⊗̂_A B` is bijective, the comparison
+`fromKaehler A B : Ω[B⁄A] →ₗ[B] Ωᶜ[B⁄A]` is bijective. -/
+theorem fromKaehler_bijective_of_bijective_toCompletion
+    (hbij : Function.Bijective (toCompletion A B B)) :
+    Function.Bijective (fromKaehler A B) := by
+  let e : B ⊗[A] B ≃+* CompletedTensor A B B := RingEquiv.ofBijective (toCompletion A B B) hbij
+  have hmem (x : B ⊗[A] B) : e x ∈ ideal A B ↔ x ∈ KaehlerDifferential.ideal A B := by
+    simp [e, mem_ideal_iff, KaehlerDifferential.ideal]
+  have hmap_sq : ((KaehlerDifferential.ideal A B) ^ 2).map e.toRingHom = ideal A B ^ 2 := by
+    rw [Ideal.map_pow]; congr 1; ext y; obtain ⟨x, rfl⟩ := e.surjective y
+    rw [Ideal.mem_map_iff_of_surjective e.toRingHom e.surjective, hmem]
+    exact ⟨fun ⟨z, hz, hze⟩ ↦ e.injective hze ▸ hz, fun hx ↦ ⟨x, hx, rfl⟩⟩
+  refine ⟨LinearMap.ker_eq_bot.mp (eq_bot_iff.mpr fun η hη ↦ ?_), fun ω ↦ ?_⟩
+  · obtain ⟨⟨x, hx⟩, rfl⟩ := KaehlerDifferential.fromIdeal_surjective A B η
+    rw [LinearMap.mem_ker, fromKaehler_fromIdeal, fromIdeal_eq_zero_iff, ← hmap_sq] at hη
+    obtain ⟨z, hz, hze⟩ := (Ideal.mem_map_iff_of_surjective _ e.surjective).mp hη
+    obtain rfl := e.injective hze
+    exact ((KaehlerDifferential.ideal A B).toCotangent_eq_zero _).mpr hz
+  · obtain ⟨⟨y, hy⟩, rfl⟩ := fromIdeal_surjective A B ω
+    refine ⟨KaehlerDifferential.fromIdeal A B ⟨e.symm y, (hmem _).mp (by simpa using hy)⟩, ?_⟩
+    rw [fromKaehler_fromIdeal]; congr 1; ext; exact e.apply_symm_apply y
 
 /-- **Continuous differentials vanish along a surjection**: if `A → B` is surjective, then
 `Ωᶜ[B⁄A] = 0`, because multiplication `B ⊗̂_A B → B` is then injective. -/
