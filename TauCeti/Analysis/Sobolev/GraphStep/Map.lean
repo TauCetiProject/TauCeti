@@ -104,26 +104,18 @@ variable {α D₁ D₂ F₁ F₂ : Type*} {m : MeasurableSpace α} {μ : Measure
   [NormedAddCommGroup D₂] [NormedSpace ℝ D₂] [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
   [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] (ι₁ : D₁ →L[ℝ] F₁) (ι₂ : D₂ →L[ℝ] F₂)
 
-/-- Two composites of `compLpL` operators agree when the composites of the underlying maps do. -/
-private theorem compLpL_comp_compLpL_eq {G₁ G₂ G₃ G₄ : Type*} [NormedAddCommGroup G₁]
-    [NormedSpace ℝ G₁] [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [NormedAddCommGroup G₃]
-    [NormedSpace ℝ G₃] [NormedAddCommGroup G₄] [NormedSpace ℝ G₄] {A : G₂ →L[ℝ] G₃}
-    {B : G₁ →L[ℝ] G₂} {C : G₄ →L[ℝ] G₃} {D : G₁ →L[ℝ] G₄} (h : A.comp B = C.comp D) :
-    (A.compLpL p μ).comp (B.compLpL p μ) = (C.compLpL p μ).comp (D.compLpL p μ) := by
-  rw [ContinuousLinearMap.compLpL_comp_compLpL, ContinuousLinearMap.compLpL_comp_compLpL, h]
-
 /-! The compatibilities of `ι₁ ⊕ ι₂` with the projections onto and inclusions of the factors, in
 the form required by `TauCeti.WeakDerivStep.mapL`. -/
 
 private theorem withLpProd_fst_compat :
     (ι₁.compLpL p μ).comp ((WithLp.fstL q ℝ D₁ D₂).compLpL p μ) =
       ((WithLp.fstL q ℝ F₁ F₂).compLpL p μ).comp ((ι₁.withLpProdMap q ι₂).compLpL p μ) :=
-  compLpL_comp_compLpL_eq (by ext; simp)
+  ContinuousLinearMap.compLpL_comp_compLpL_eq (by ext; simp)
 
 private theorem withLpProd_snd_compat :
     (ι₂.compLpL p μ).comp ((WithLp.sndL q ℝ D₁ D₂).compLpL p μ) =
       ((WithLp.sndL q ℝ F₁ F₂).compLpL p μ).comp ((ι₁.withLpProdMap q ι₂).compLpL p μ) :=
-  compLpL_comp_compLpL_eq (by ext; simp)
+  ContinuousLinearMap.compLpL_comp_compLpL_eq (by ext; simp)
 
 private theorem withLpProd_inl_compat :
     ((ι₁.withLpProdMap q ι₂).compLpL p μ).comp
@@ -134,7 +126,7 @@ private theorem withLpProd_inl_compat :
           F₁ × F₂ →L[ℝ] WithLp q (F₁ × F₂)).comp
             (ContinuousLinearMap.inl ℝ F₁ F₂)).compLpL p μ).comp
         (ι₁.compLpL p μ) :=
-  compLpL_comp_compLpL_eq (by ext; simp)
+  ContinuousLinearMap.compLpL_comp_compLpL_eq (by ext; simp)
 
 private theorem withLpProd_inr_compat :
     ((ι₁.withLpProdMap q ι₂).compLpL p μ).comp
@@ -145,7 +137,7 @@ private theorem withLpProd_inr_compat :
           F₁ × F₂ →L[ℝ] WithLp q (F₁ × F₂)).comp
             (ContinuousLinearMap.inr ℝ F₁ F₂)).compLpL p μ).comp
         (ι₂.compLpL p μ) :=
-  compLpL_comp_compLpL_eq (by ext; simp)
+  ContinuousLinearMap.compLpL_comp_compLpL_eq (by ext; simp)
 
 end Compat
 
