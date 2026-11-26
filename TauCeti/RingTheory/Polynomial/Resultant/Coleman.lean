@@ -17,7 +17,6 @@ import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.RingTheory.Polynomial.Resultant.Multiplicity
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -229,14 +228,26 @@ theorem colemanDBounded_map (φ : R →+* S) (B P : R[X]) (n m : ℕ) :
 /-- Coleman's transform of rank `n` is a polynomial of degree at most `n`. -/
 theorem natDegree_colemanDBounded_le (B P : R[X]) (n m : ℕ) :
     (colemanDBounded B P n m).natDegree ≤ n := by
-  rw [colemanDBounded]
-  refine (natDegree_resultant_le (a := 0) (b := 1) (fun i ↦ ?_) (fun i ↦ ?_) n m).trans_eq
-    (by simp)
-  · simp
-  · rw [coeff_sub, coeff_one, coeff_C_mul, coeff_map]
-    refine (natDegree_sub_le _ _).trans (max_le ?_ ?_)
-    · split_ifs <;> simp
-    · exact natDegree_mul_le.trans (by rw [natDegree_C, add_zero]; exact natDegree_X_le)
+  -- the first `n` columns of the Sylvester matrix hold the coefficients of `1 - T B`, which are
+  -- of degree at most one in `T`; the other `m` columns hold constants
+  have key := Matrix.natDegree_det_le_of_natDegree_le
+    (sylvester ((P.reflect n).map C) (1 - C X * B.map C) n m)
+    (fun j ↦ Fin.addCases (fun _ ↦ 1) (fun _ ↦ 0) j) fun i j ↦ by
+      induction j using Fin.addCases with
+      | left j =>
+        simp only [sylvester, Matrix.of_apply, Fin.addCases_left]
+        split_ifs
+        · rw [coeff_sub, coeff_C_mul, coeff_map]
+          refine (natDegree_sub_le _ _).trans (max_le ?_ ?_)
+          · rw [coeff_one]
+            split_ifs <;> simp
+          · exact natDegree_mul_le.trans (by rw [natDegree_C, add_zero]; exact natDegree_X_le)
+        · simp
+      | right j =>
+        simp only [sylvester, Matrix.of_apply, Fin.addCases_right]
+        split_ifs <;> simp
+  rw [colemanDBounded, resultant]
+  simpa [Fin.sum_univ_add] using key
 
 /-- The value of Coleman's transform at `t` is the resultant over `R` of the reversal of `P` and
 `1 - t B`, with the same degree bounds. -/

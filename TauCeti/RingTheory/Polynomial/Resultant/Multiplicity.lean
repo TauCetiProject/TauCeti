@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.Algebra.Polynomial.Taylor
 import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
-import TauCeti.LinearAlgebra.Matrix.Determinant.Degree
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!

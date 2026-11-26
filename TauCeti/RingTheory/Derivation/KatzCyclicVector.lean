@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Derivation.DifferentialRing
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
 import TauCeti.RingTheory.Derivation.Basic
-import TauCeti.LinearAlgebra.Matrix.Determinant.Degree
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.PolynomialFamily
 import TauCeti.RingTheory.Jacobson.Polynomial
 

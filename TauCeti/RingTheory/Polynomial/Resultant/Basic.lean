@@ -65,8 +65,6 @@ polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
   irreducible polynomial has nonzero resultant against every polynomial it does not divide.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
-* `Polynomial.resultant_taylor_of_natDegree_le`: translating the variable by `a` preserves the
-  resultant at any valid explicit degree bounds.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
   modulo an ideal in the Jacobson radical are coprime are themselves coprime.
 
@@ -318,39 +316,6 @@ theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
     split_ifs with h
     · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
     · rfl
-
-/-- Translating the variable by `a` preserves the resultant at any valid explicit degree bounds. -/
-theorem resultant_taylor_of_natDegree_le (f g : R[X]) (a : R) {m n : ℕ}
-    (hf : f.natDegree ≤ m) (hg : g.natDegree ≤ n) :
-    (taylor a f).resultant (taylor a g) m n = f.resultant g m n := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hf
-  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hg
-  have hpad (p q : R[X]) (k l : ℕ) :
-      p.resultant q (p.natDegree + k) (q.natDegree + l) =
-        (-1) ^ ((q.natDegree + l) * k) * q.coeff (q.natDegree + l) ^ k *
-          p.leadingCoeff ^ l * p.resultant q := by
-    rw [resultant_add_left_deg _ _ _ _ _ le_rfl, resultant_add_right_deg _ _ _ _ _ le_rfl,
-      coeff_natDegree]
-    ring
-  have htf : (taylor a f).natDegree = f.natDegree := natDegree_taylor f a
-  have htg : (taylor a g).natDegree = g.natDegree := natDegree_taylor g a
-  have hcg : (taylor a g).coeff (g.natDegree + l) = g.coeff (g.natDegree + l) := by
-    rcases l with _ | l
-    · simp
-    · rw [coeff_eq_zero_of_natDegree_lt (by rw [htg]; omega),
-        coeff_eq_zero_of_natDegree_lt (by omega)]
-  calc
-    (taylor a f).resultant (taylor a g) (f.natDegree + k) (g.natDegree + l)
-      = (taylor a f).resultant (taylor a g) ((taylor a f).natDegree + k)
-          ((taylor a g).natDegree + l) := by rw [htf, htg]
-    _ = (-1) ^ (((taylor a g).natDegree + l) * k) *
-          (taylor a g).coeff ((taylor a g).natDegree + l) ^ k *
-          (taylor a f).leadingCoeff ^ l * (taylor a f).resultant (taylor a g) :=
-        hpad (taylor a f) (taylor a g) k l
-    _ = (-1) ^ ((g.natDegree + l) * k) * g.coeff (g.natDegree + l) ^ k *
-          f.leadingCoeff ^ l * f.resultant g := by
-        rw [resultant_taylor, htg, hcg, leadingCoeff_taylor]
-    _ = f.resultant g (f.natDegree + k) (g.natDegree + l) := (hpad f g k l).symm
 
 /-- **Resultants of congruent polynomials are congruent.** If `f ≡ f'` and `g ≡ g'` modulo an
 ideal `I`, then the resultants at the same degree bounds are congruent modulo `I`. -/
