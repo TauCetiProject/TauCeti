@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -112,14 +113,12 @@ variable (n) {V : Type*} [NormedAddCommGroup V] (E : M → Type*) [TopologicalSp
 private theorem exists_frameCutoff (x : M) :
     ∃ ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯,
       tsupport ρ ⊆ (trivializationAt V E x).baseSet ∩ (trivializationAt W F x).baseSet ∧
-        ∀ᶠ y in 𝓝 x, ρ y = 1 := by
-  obtain ⟨f, -, hf⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := 𝓘(ℝ, CoordinateSpace n)) x).mem_iff.1
-      (inter_mem ((trivializationAt V E x).open_baseSet.mem_nhds
-          (FiberBundle.mem_baseSet_trivializationAt V E x))
-        ((trivializationAt W F x).open_baseSet.mem_nhds
-          (FiberBundle.mem_baseSet_trivializationAt W F x)))
-  exact ⟨⟨f, f.contMDiff⟩, hf, f.eventuallyEq_one⟩
+        ∀ᶠ y in 𝓝 x, ρ y = 1 :=
+  ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (inter_mem ((trivializationAt V E x).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt V E x))
+      ((trivializationAt W F x).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt W F x)))
 
 /-- The cutoff through which the principal symbol at `x` is read off: a real smooth function equal
 to `1` near `x`, supported in the base sets of the preferred trivializations of `E` and `F` at
@@ -282,12 +281,10 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_input
   set k : Fin (finrank ℂ V) → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := fun i ↦
     (trivializationAt V E x).cutoffFrameCoeff _ hρ ((finBasis ℂ V).coord i).toContinuousLinearMap
       (t.cutoffFrameSection ψ hψ v)
-  obtain ⟨f₀, -, hθU⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := 𝓘(ℝ, CoordinateSpace n)) x).mem_iff.1
+  obtain ⟨θ, hθU, hθ⟩ :=
+    ContMDiffMap.exists_tsupport_subset_eventually_eq_one (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
       (inter_mem (frameCutoff_eventually_eq_one (V := V) (W := W) n E F x)
         ((trivializationAt V E x).open_baseSet.mem_nhds hx))
-  set θ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ := ⟨f₀, f₀.contMDiff⟩
-  have hθ : ∀ᶠ y in 𝓝 x, θ y = 1 := f₀.eventuallyEq_one
   set θc := ContMDiffMap.ofReal θ
   -- Near `x` the input section is `∑ᵢ kᵢ ρ t₀⁻¹ bᵢ`; the rest is cut off by `1 - θ`.
   have hs := (trivializationAt V E x).smul_eq_sum_smul_cutoffFrameSection_add _ hρ
