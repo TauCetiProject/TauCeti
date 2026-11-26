@@ -74,7 +74,10 @@ The adjoint commutes with real scalars whenever these act on operators through `
 (`ContinuousLinearMap.starModule_real`).
 A continuous endomorphism of a real Hilbert space lies in the Lie algebra
 `so(V) = skewAdjointLieSubalgebra (innerₗ V)` exactly when it is skew-adjoint, `A† = -A`
-(`ContinuousLinearMap.coe_mem_skewAdjointLieSubalgebra_innerₗ_iff`).
+(`ContinuousLinearMap.coe_mem_skewAdjointLieSubalgebra_innerₗ_iff`). For any endomorphism this
+membership means `⟪A v, w⟫ = -⟪v, A w⟫` (`TauCeti.mem_skewAdjointLieSubalgebra_innerₗ_iff`), so
+the coordinates of a skew-adjoint endomorphism of a Euclidean space are antisymmetric
+(`TauCeti.apply_single_apply_eq_neg_of_mem_skewAdjointLieSubalgebra`).
 
 ## Further results
 
@@ -325,6 +328,35 @@ theorem coe_mem_skewAdjointLieSubalgebra_innerₗ_iff {V : Type*}
 end SkewAdjointLieSubalgebra
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+open scoped InnerProductSpace
+
+/-- An endomorphism of a real inner product space lies in `so(V)`, the Lie algebra of
+endomorphisms that are skew-adjoint for the inner product, exactly when
+`⟪A v, w⟫ = -⟪v, A w⟫` for all `v` and `w`. -/
+theorem mem_skewAdjointLieSubalgebra_innerₗ_iff {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {A : Module.End ℝ V} :
+    A ∈ skewAdjointLieSubalgebra (innerₗ V) ↔ ∀ v w, ⟪A v, w⟫_ℝ = -⟪v, A w⟫_ℝ := by
+  -- Membership in `skewAdjointLieSubalgebra B` is membership in `B.skewAdjointSubmodule`, and
+  -- Mathlib states its characterization only for the submodule.
+  change _ ∈ LinearMap.skewAdjointSubmodule _ ↔ _
+  rw [LinearMap.mem_skewAdjointSubmodule]
+  simp only [LinearMap.IsSkewAdjoint, LinearMap.IsAdjointPair, innerₗ_apply_apply,
+    Pi.neg_apply, inner_neg_right]
+
+/-- The coordinates of a skew-adjoint endomorphism `A` of a Euclidean space are antisymmetric:
+the `i`-th coordinate of `A eⱼ` is minus the `j`-th coordinate of `A eᵢ`. -/
+theorem apply_single_apply_eq_neg_of_mem_skewAdjointLieSubalgebra {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {A : Module.End ℝ (EuclideanSpace ℝ ι)}
+    (hA : A ∈ skewAdjointLieSubalgebra (innerₗ (EuclideanSpace ℝ ι))) (i j : ι) :
+    A (EuclideanSpace.single j 1) i = -A (EuclideanSpace.single i 1) j := by
+  simpa [EuclideanSpace.inner_single_left, EuclideanSpace.inner_single_right] using
+    mem_skewAdjointLieSubalgebra_innerₗ_iff.1 hA (EuclideanSpace.single j 1)
+      (EuclideanSpace.single i 1)
+
+end TauCeti
 
 /-! ### The spectral gap at `0` -/
 

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.CrossProduct
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # The cross product of Euclidean three-space
@@ -33,8 +34,6 @@ inner product space `ℝ³`, as the Lie algebra of its orthogonal group does
 ## Main declarations
 
 * `EuclideanSpace.volumeForm_basisFun_orientation_three`: the volume form is the triple product.
-* `TauCeti.apply_single_apply_eq_neg_of_mem_skewAdjointLieSubalgebra`: the coordinates of a
-  skew-adjoint endomorphism of a Euclidean space are antisymmetric.
 * `TauCeti.euclideanCrossProduct`: the infinitesimal rotation `v ↦ u ⨯₃ v`, linear in `u`.
 * `TauCeti.euclideanSoThreeEquiv`: the hat map `ℝ³ ≃ₗ[ℝ] so(3)`.
 * `TauCeti.lie_euclideanSoThreeEquiv`: the hat map carries the cross product to the commutator.
@@ -84,25 +83,8 @@ theorem inner_euclideanCrossProduct_apply_left (u v w : EuclideanSpace ℝ (Fin 
 /-- The infinitesimal rotation about `u` lies in the orthogonal Lie algebra `so(3)` of the
 skew-adjoint endomorphisms of Euclidean three-space. -/
 theorem euclideanCrossProduct_mem_skewAdjointLieSubalgebra (u : EuclideanSpace ℝ (Fin 3)) :
-    euclideanCrossProduct u ∈ skewAdjointLieSubalgebra (innerₗ (EuclideanSpace ℝ (Fin 3))) := by
-  change _ ∈ LinearMap.skewAdjointSubmodule _
-  rw [LinearMap.mem_skewAdjointSubmodule]
-  intro v w
-  simp only [innerₗ_apply_apply, Pi.neg_apply, inner_neg_right]
-  exact inner_euclideanCrossProduct_apply_left u v w
-
-/-- The coordinates of a skew-adjoint endomorphism `A` of a Euclidean space are antisymmetric:
-the `i`-th coordinate of `A eⱼ` is minus the `j`-th coordinate of `A eᵢ`. -/
-theorem apply_single_apply_eq_neg_of_mem_skewAdjointLieSubalgebra {ι : Type*} [Fintype ι]
-    [DecidableEq ι] {A : Module.End ℝ (EuclideanSpace ℝ ι)}
-    (hA : A ∈ skewAdjointLieSubalgebra (innerₗ (EuclideanSpace ℝ ι))) (i j : ι) :
-    A (EuclideanSpace.single j 1) i = -A (EuclideanSpace.single i 1) j := by
-  change _ ∈ LinearMap.skewAdjointSubmodule _ at hA
-  rw [LinearMap.mem_skewAdjointSubmodule] at hA
-  have h := hA (EuclideanSpace.single j 1) (EuclideanSpace.single i 1)
-  simp only [innerₗ_apply_apply, Pi.neg_apply, inner_neg_right,
-    EuclideanSpace.inner_single_left, EuclideanSpace.inner_single_right] at h
-  simpa using h
+    euclideanCrossProduct u ∈ skewAdjointLieSubalgebra (innerₗ (EuclideanSpace ℝ (Fin 3))) :=
+  mem_skewAdjointLieSubalgebra_innerₗ_iff.2 (inner_euclideanCrossProduct_apply_left u)
 
 /-- The **hat map** of Euclidean three-space: the linear isomorphism from `ℝ³` onto the orthogonal
 Lie algebra `so(3)` of skew-adjoint endomorphisms sending the axis `u` to the infinitesimal
