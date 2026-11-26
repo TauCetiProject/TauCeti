@@ -1205,8 +1205,7 @@ private theorem ChartPDEData.exists_abs_dirichletForm_le_of_wkp {p : M}
       |dirichletForm w (ofSmooth Φ)| ≤ C * ‖toLp (ofSmooth Φ)‖ := by
   have hUΩ' : U ≤ d.Ω := SetLike.coe_subset_coe.mp (subset_closure.trans hUΩ)
   have hUt : MapsTo (coordEquiv E).symm U (extChartAt I p).target := d.hΩt.mono_left hUΩ'
-  -- The entries of `a = chartMatrix p` and their derivatives are bounded on the compact
-  -- `closure U`.
+  -- The entries of `a = chartMatrix p` and their derivatives are bounded on compact `closure U`.
   have hcd := contDiffOn_chartMatrix p d.hΩt
   choose K hK using fun i j ↦ hU.exists_bound_of_continuousOn (((hcd i j).continuousOn.prodMk
     ((hcd i j).continuousOn_fderiv_of_isOpen d.Ω.isOpen (by simp))).mono hUΩ)
