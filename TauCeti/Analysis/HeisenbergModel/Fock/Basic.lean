@@ -104,12 +104,10 @@ theorem sign_mul_sign (i : ι) : ((ε i : ℤ) : ℂ) * ((ε i : ℤ) : ℂ) = 1
   rcases sign_eq_one_or (ε := ε) i with h | h <;> simp [h]
 
 omit [Fintype ι] [DecidableEq ι] in
-@[simp]
 theorem conj_sign (i : ι) : conj ((ε i : ℤ) : ℂ) = ((ε i : ℤ) : ℂ) := by
   simp
 
 omit [Fintype ι] [DecidableEq ι] in
-@[simp]
 theorem norm_sign (i : ι) : ‖((ε i : ℤ) : ℂ)‖ = 1 := by
   rcases sign_eq_one_or (ε := ε) i with h | h <;> simp [h]
 
@@ -430,13 +428,13 @@ private theorem det_posProj_add_mul_inv (x : unitaryGroup ε) :
 private theorem det_fromBlocks_mul_fromBlocks (g h : unitaryGroup ε)
     (T : Matrix ι ι ℂ → Matrix ι ι ℂ) (hT : ∀ x, T x = posProj ε + (1 - posProj ε) * x) :
     (((T ((h : GL ι ℂ) : Matrix ι ι ℂ)).fromBlocks (1 - posProj ε) 0
-          (T ((((g * h)⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) * (((g *
-              h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)))ᴴ *
+          (T ((((g * h)⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) *
+              (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)))ᴴ *
         (posProj ε).fromBlocks (posProj ε - 1) 1 1 *
         fromBlocks 1 1 (-T ((h : GL ι ℂ) : Matrix ι ι ℂ))
           (-T ((h : GL ι ℂ) : Matrix ι ι ℂ) +
-            T (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) * (((g *
-                h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))).det =
+            T (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) *
+                (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))).det =
       multiplier ε g * multiplier ε h * multiplier ε (g * h)⁻¹ := by
   set k : unitaryGroup ε := g * h
   have h_conj_det_T (x : unitaryGroup ε) :
@@ -497,10 +495,10 @@ private theorem star_dotProduct_conjTranspose_mul_mulVec (M : Matrix ι ι ℂ) 
 private theorem cocycle_integrand (g h : unitaryGroup ε) (x y : ι → ℂ) :
     gaussian ι (h • x) * gaussian ι ((g * h) • y) * heisenbergDatum ε x y * gaussian ι (x + y) =
       cexp (-(star (Sum.elim x y) ⬝ᵥ ((2⁻¹ : ℂ) •
-        ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 (((g *
-            h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
-                fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 (((g *
-                    h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
+        ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+            (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
+                fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+                    (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
           fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)) *ᵥ (Sum.elim x y - 0))) := by
   simp only [gaussian_eq_exp_star_dotProduct, heisenbergDatum_apply, smul_def, ← Complex.exp_add]
   congr 1
@@ -513,10 +511,10 @@ private theorem cocycle_integrand (g h : unitaryGroup ε) (x y : ι → ℂ) :
 
 /-- The determinant of the Gaussian of the cocycle is `Δ g Δ h Δ (g h)⁻¹`. -/
 private theorem det_cocycleMatrix (g h : unitaryGroup ε) :
-    ((2⁻¹ : ℂ) • ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 (((g *
-        h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
-            fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 (((g *
-                h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
+    ((2⁻¹ : ℂ) • ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+        (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
+            fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+                (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
       fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)).det =
       multiplier ε g * multiplier ε h * multiplier ε (g * h)⁻¹ := by
   set k : unitaryGroup ε := g * h
@@ -548,10 +546,10 @@ private theorem det_cocycleMatrix (g h : unitaryGroup ε) :
 theorem cocycle_multiplier (g h : unitaryGroup ε) :
     (multiplier ε).cocycle (gaussian ι) g h = 1 := by
   set A : Matrix (ι ⊕ ι) (ι ⊕ ι) ℂ := (2⁻¹ : ℂ) •
-    ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 (((g *
-        h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
-            fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 (((g *
-                h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
+    ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+        (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
+            fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+                (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
       fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)
   have hA : A.IsStrictlyAccretive := isStrictlyAccretive_cocycleMatrix h (g * h)
   have h_det : A.det = multiplier ε g * multiplier ε h * multiplier ε (g * h)⁻¹ :=
