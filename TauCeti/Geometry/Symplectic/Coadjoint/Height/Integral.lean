@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Perfect
+import TauCeti.Geometry.Manifold.Morse.CWModel
 import TauCeti.Geometry.Manifold.Morse.IntegralHomology
 
 /-!

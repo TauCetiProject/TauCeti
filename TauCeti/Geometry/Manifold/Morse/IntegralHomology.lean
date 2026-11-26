@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.Perfect
 import Mathlib.Algebra.Field.ULift
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.LinearAlgebra.FreeModule.PID
-import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 import TauCeti.AlgebraicTopology.Singular.Coefficients.PrimeField
 import TauCeti.Geometry.Manifold.Morse.CWModel
 
@@ -25,7 +24,8 @@ file deduces the integral statement:
 * the integral homology `Hⱼ(M; ℤ)` vanishes in odd degrees
   (`TauCeti.IsMorse.isZero_singularHomology_int_of_odd`);
 * it is a free abelian group in every degree (`TauCeti.IsMorse.free_singularHomology_int`), of
-  finite rank (`TauCeti.finite_singularHomology_int_of_isManifold`).
+  finite rank (`TauCeti.finite_singularHomology_int_of_isManifold`, in
+  `TauCeti.Geometry.Manifold.Morse.CWModel`).
 
 The argument uses no cell structure beyond finiteness. Every compact boundaryless manifold has
 finite CW type (`TauCeti.FiniteCWType.of_isManifold`), so its integral homology is finitely
@@ -40,8 +40,6 @@ and one on which every prime acts surjectively is zero
 
 ## Main results
 
-* `TauCeti.finite_singularHomology_int_of_isManifold`: the integral homology of a compact
-  boundaryless manifold is finitely generated.
 * `TauCeti.IsMorse.isZero_singularHomology_int_of_odd`: if all indices are even, the odd-degree
   integral homology vanishes.
 * `TauCeti.IsMorse.free_singularHomology_int`: if all indices are even, the integral homology is
@@ -67,17 +65,6 @@ namespace TauCeti
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [CompactSpace M] {f : M → ℝ}
-
-omit [FiniteDimensional ℝ E] in
-variable (I M) in
-include I in
-/-- **The integral homology of a compact manifold is finitely generated.** A compact boundaryless
-smooth manifold `M` has finitely generated integral homology `Hⱼ(M; ℤ)` in every degree. -/
-theorem finite_singularHomology_int_of_isManifold (j : ℕ) :
-    Module.Finite ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) j).obj
-      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) := by
-  have := FiniteCWType.of_isManifold M I
-  exact finite_singularHomology_int_of_finiteCWType M j
 
 /-- For a Morse function with only even indices on a compact boundaryless manifold `M`, the
 homology of `M` with coefficients in the integer module `ℤ/p`, for a prime `p`, vanishes in odd
