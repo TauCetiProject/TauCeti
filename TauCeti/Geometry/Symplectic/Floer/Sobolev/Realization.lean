@@ -22,8 +22,9 @@ in `t`, a section-level differential operator
 `D_u ξ = ∂s ξ + J(z, u z) ∂t ξ + A(z) ξ`,
 
 with zeroth-order part `A = TauCeti.SymplecticForm.floerLinearizationCoeff`. This file realizes
-`D_u` as a bounded operator `W^{1,p}(ℝ × S¹, V) → Lᵖ(ℝ × S¹, V)` for every exponent `1 ≤ p`, and for
-`p = 2` it proves that it has
+`D_u` as a bounded operator `W^{1,p}(ℝ × S¹, V) → Lᵖ(ℝ × S¹, V)` for every exponent `1 ≤ p < ∞`
+(at `p = ∞` its domain is `TauCeti.CylinderSobolev.W1p V ∞`, the closure of the test sections, not
+`W^{1,∞}`), and for `p = 2` it proves that it has
 finite-dimensional kernel and closed range, the Fredholm property of `D_u` minus the finiteness of
 its cokernel, for Floer data that are cylindrical near the ends: equal to `(J₋_t, 0, H₋_t)` for
 `s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`, with `u` asymptotic to nondegenerate one-periodic
@@ -45,8 +46,8 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
 * `TauCeti.SymplecticForm.floerSobolevOperator p` is the resulting operator on the Sobolev space
   `TauCeti.CylinderSobolev.W1p V p` (`TauCeti.SymplecticForm.floerSobolevOperator_def`); for
   `p = 2` this is `TauCeti.CylinderSobolev.H1`, the setting of the Fredholm theory below, and for
-  `p > 2` its elements are continuous sections (`TauCeti.CylinderSobolev.continuousValue`), so that
-  the nonlinear Floer operator can be evaluated at `u + ξ`. It acts
+  `2 < p < ∞` its elements are continuous sections (`TauCeti.CylinderSobolev.continuousValue`), so
+  that the nonlinear Floer operator can be evaluated at `u + ξ`. It acts
   pointwise by the coefficient field (`TauCeti.SymplecticForm.coeFn_floerSobolevOperator`), and on
   the jet of a test section it is `D_u ξ`
   (`TauCeti.SymplecticForm.floerSobolevOperator_jetLp_ae_eq`), provided its coefficients are
@@ -185,8 +186,9 @@ theorem floerJetCoeff_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructu
   simp [floerLinearizationCoeff_apply, hamiltonianVectorField_const]
 
 /-- The linearized Floer operator `D_u` along `u`, as an operator from the Sobolev space
-`W^{1,p}(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.W1p`) to `Lᵖ(ℝ × S¹, V)`. It is `0` by convention
-when the coefficients of `D_u` are not essentially bounded on the cylinder. -/
+`W^{1,p}(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.W1p`; for `p = ∞` only the closure of the test
+sections, not `W^{1,∞}`) to `Lᵖ(ℝ × S¹, V)`. It is `0` by convention when the coefficients of
+`D_u` are not essentially bounded on the cylinder. -/
 def floerSobolevOperator (ω : SymplecticForm V) (p : ℝ≥0∞) [Fact (1 ≤ p)]
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
     W1p V p →L[ℝ] Lp V p stripMeasure :=

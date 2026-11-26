@@ -42,8 +42,10 @@ and `‖C‖` (`TauCeti.norm_le_norm_firstOrderJetCoeff_left`,
 The Sobolev spaces on the cylinder (with the strip measure) and on conformally weighted domains
 of the plane (with Lebesgue measure restricted to the domain) both realize first-order operators
 through this one construction. The Hilbert space theory of these operators (adjoints, Fredholm
-estimates) uses `p = 2`. For `p > 2` the elements of the Sobolev spaces `W^{1,p}` of the plane are
-continuous sections, so nonlinear terms such as `J(u + ξ)` can be evaluated on them.
+estimates) uses `p = 2`. For `2 < p < ∞` the elements of the Sobolev space
+`TauCeti.CylinderSobolev.W1p V p` of the cylinder are continuous sections
+(`TauCeti.CylinderSobolev.continuousValue`), so nonlinear terms such as `J(u + ξ)` can be evaluated
+on them.
 
 ## References
 
