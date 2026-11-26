@@ -37,6 +37,9 @@ presheaves on the category of all schemes.
   with respect to the corresponding sieve on `Y.left`.
 * `CategoryTheory.Over.isSheaf_over_iff_isSheaf_sigmaPresheaf`: `P` is a sheaf for `J.over S`
   if and only if `sigmaPresheaf P` is a sheaf for `J`, when `S` is a sheaf for `J`.
+* `CategoryTheory.Over.map_left_op_map_hom_op`: for a presheaf of types `F` on `C`, restricting
+  a section of `F` over `S` to `Y` and then along a morphism `Z ⟶ Y` over `S` is restricting it
+  to `Z`.
 * `CategoryTheory.Presieve.IsSheaf.isSheafFor_ofArrows_over`: a sheaf for `J.over S` satisfies
   the sheaf condition for a family of morphisms over `S` whose underlying morphisms in `C`
   generate a covering sieve for `J`.
@@ -211,6 +214,13 @@ theorem isSheaf_over_iff_isSheaf_sigmaPresheaf (J : GrothendieckTopology C)
   ⟨fun hP _ R hR ↦ isSheafFor_sigmaPresheaf R (hS R hR) fun h ↦
       hP _ (J.overEquiv_symm_mem_over (mk h) R hR),
     fun hP _ R hR ↦ isSheafFor_of_isSheafFor_sigmaPresheaf R (hS _ hR).isSeparatedFor (hP _ hR)⟩
+
+/-- For a presheaf of types `F` on `C` and a morphism `f : Z ⟶ Y` over `S`, restricting a section
+`z` of `F` over `S` to `Y` and then along `f.left` is restricting it to `Z`. -/
+lemma map_left_op_map_hom_op (F : Cᵒᵖ ⥤ Type w) {Y Z : Over S} (f : Z ⟶ Y)
+    (z : F.obj (op S)) : F.map f.left.op (F.map Y.hom.op z) = F.map Z.hom.op z := by
+  rw [← Over.w f, op_comp, Functor.map_comp]
+  rfl
 
 end CategoryTheory.Over
 

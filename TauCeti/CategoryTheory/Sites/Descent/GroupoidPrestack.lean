@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Sites.Descent.IsPrestack
 public import Mathlib.CategoryTheory.Sites.Subsheaf
 public import TauCeti.CategoryTheory.Sites.GroupoidObject
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # The prestack of a groupoid object in sheaves
@@ -25,6 +26,12 @@ presheaf of morphisms from `x` to `y` on `Over S` sends `T ⟶ S` to the section
 `T` with `s r = x|_T` and `t r = y|_T`, the fibre of `(s, t) : R ⟶ X × X` over `(x, y)`; it is a
 sheaf because `R` is a sheaf and `X` is separated. Its stackification is the quotient stack
 `[X/R]` (Stacks, Definition 78.20.1 (044Q), there for groupoids in algebraic spaces).
+
+The construction follows the discrete pseudofunctor `CategoryTheory.Pseudofunctor.ofPresheaf` of
+a presheaf of types (`TauCeti.CategoryTheory.Sites.Descent.Discrete`), which is likewise the
+pseudofunctor `Functor.toPseudofunctor'` of a functor to `Cat` built by restriction of sections.
+This file generalizes its discrete case, where every arrow is an identity, to groupoids with a
+sheaf of arrows `R`.
 
 ## Main declarations
 
@@ -178,13 +185,6 @@ lemma pullHom_arr ⦃X₁ X₂ : C⦄ ⦃M₁ : (toPseudofunctor.{w'} G).obj (.m
     c_e_left, c_e_right]
   rfl
 
-/-- Restricting to `T ⟶ S` and then along `p : T' ⟶ T` over `S` is restricting to `T' ⟶ S`. -/
-private lemma map_map_over {S : C} (P : Cᵒᵖ ⥤ Type w) {T T' : (Over S)ᵒᵖ} (p : T ⟶ T')
-    (z : P.obj (op S)) :
-    P.map p.unop.left.op (P.map T.unop.hom.op z) = P.map T'.unop.hom.op z := by
-  rw [← Over.w p.unop, op_comp, Functor.map_comp]
-  rfl
-
 variable (G) in
 /-- For sections `x` and `y` of the sheaf of objects of `G` over `S`, the subfunctor of the
 restriction of the sheaf of arrows to `Over S` whose sections over `T ⟶ S` are the arrows from
@@ -195,9 +195,9 @@ def homSubfunctor {S : C} (x y : G.X.obj.obj (op S)) :
     G.t.hom.app _ r = G.X.obj.map T.unop.hom.op y}
   map p r hr :=
     ⟨(NatTrans.naturality_apply G.s.hom p.unop.left.op r).trans
-        ((congrArg _ hr.1).trans (map_map_over G.X.obj p x)),
+        ((congrArg _ hr.1).trans (Over.map_left_op_map_hom_op G.X.obj p.unop x)),
       (NatTrans.naturality_apply G.t.hom p.unop.left.op r).trans
-        ((congrArg _ hr.2).trans (map_map_over G.X.obj p y))⟩
+        ((congrArg _ hr.2).trans (Over.map_left_op_map_hom_op G.X.obj p.unop y))⟩
 
 /-- A section of `R` over `T ⟶ S` lies in `homSubfunctor G x y` iff it is an arrow from `x|_T` to
 `y|_T`. -/
@@ -241,8 +241,8 @@ instance isPrestack_toPseudofunctor : (toPseudofunctor.{w'} G).IsPrestack J wher
       ((isSheaf_iff_isSheaf_of_type _ _).1 (G.R.over S).property)).2 fun T r hr ↦ ?_
     refine ⟨(hX _ hr).ext fun Y f hf ↦ ?_, (hX _ hr).ext fun Y f hf ↦ ?_⟩
     · exact (NatTrans.naturality_apply G.s.hom f.left.op r).symm.trans
-        (hf.1.trans (map_map_over G.X.obj f.op x.as).symm)
+        (hf.1.trans (Over.map_left_op_map_hom_op G.X.obj f x.as).symm)
     · exact (NatTrans.naturality_apply G.t.hom f.left.op r).symm.trans
-        (hf.2.trans (map_map_over G.X.obj f.op y.as).symm)
+        (hf.2.trans (Over.map_left_op_map_hom_op G.X.obj f y.as).symm)
 
 end TauCeti.CategoryTheory.GroupoidObject
