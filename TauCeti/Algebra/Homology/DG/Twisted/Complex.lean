@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Cocycle
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
@@ -47,6 +48,8 @@ Right modules are represented as left modules over `Aᵐᵒᵖ`, so `α · a` is
 ## Main results
 
 * `TauCeti.twistedDifferential_single`: the formula on a homogeneous elementary tensor.
+* `TauCeti.twistedDifferential_trivialGrading_apply`: for coefficients concentrated in degree `0`,
+  `(D f) y = dM (f y) + Σ_x op (m x y) • f x`.
 * `TauCeti.twistedDifferential_mem_twistedTotalGrading`: `D` raises the total degree by one.
 * `TauCeti.twistedDifferential_sq_zero`: `D ∘ D = 0` under the twisting equation, and
   `TauCeti.TwistingCocycle.twistedDifferential_sq_zero` for a twisting cocycle.
@@ -82,6 +85,25 @@ theorem mem_twistedTotalGrading_iff {ℳ : ℤ → Submodule R M} {n : ℤ} {f :
     f ∈ twistedTotalGrading ℳ ind n ↔ ∀ x, f x ∈ ℳ (n + ind x) := by
   rw [twistedTotalGrading, Submodule.mem_pi]
   simp only [Set.mem_univ, true_implies]
+
+/-- Restriction from `P` to a set `S` of generators preserves the total degree. -/
+theorem domRestrict_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : ℤ} (S : Set P)
+    {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
+    S.domRestrict f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n :=
+  mem_twistedTotalGrading_iff.mpr fun x ↦ mem_twistedTotalGrading_iff.mp hf x
+
+/-- A family of total degree `n` on a set `S` of generators, extended by zero, has total
+degree `n`. -/
+theorem extendByZero_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : ℤ} {S : Set P}
+    {f : S → M} (hf : f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n) :
+    Function.ExtendByZero.linearMap R M (Subtype.val : S → P) f ∈ twistedTotalGrading ℳ ind n :=
+  mem_twistedTotalGrading_iff.2 fun x ↦ by
+    by_cases hx : x ∈ S
+    · rw [Function.ExtendByZero.linearMap_apply, Subtype.val_injective.extend_apply f 0 ⟨x, hx⟩]
+      exact mem_twistedTotalGrading_iff.1 hf ⟨x, hx⟩
+    · rw [Function.ExtendByZero.linearMap_apply,
+        Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.property)]
+      exact zero_mem _
 
 section GradedSMul
 
@@ -237,6 +259,12 @@ theorem twistedDifferential_single_apply [DecidableEq P] (x z : P) {q : ℤ} {α
       (Pi.single x (dM α) : P → M) z + q.negOnePow • (op (m x z) • α) := by
   rw [twistedDifferential_single m dM x hα, Pi.add_apply, Finset.sum_apply]
   simp [Pi.single_apply]
+
+/-- **Coefficients in degree zero.** For coefficients concentrated in degree `0`, the Koszul twist
+is the identity, and the twisted differential is `(D f) y = dM (f y) + Σ_x op (m x y) • f x`. -/
+theorem twistedDifferential_trivialGrading_apply (f : P → M) (y : P) :
+    twistedDifferential m (trivialGrading R M) dM f y = dM (f y) + ∑ x, op (m x y) • f x := by
+  simp [twistedDifferential_apply]
 
 end Differential
 

@@ -57,9 +57,9 @@ def restrictedProductCongrRight {H : ι → Type w} [∀ i, Group (H i)]
     (Πʳ i, [G i, (U i : Set (G i))]) ≃*
       (Πʳ i, [H i, (U' i : Set (H i))]) where
   toFun x := ⟨fun i ↦ φ i (x i), by
-    filter_upwards [x.2, hφ] with i hx hi using hi.mapsTo hx⟩
+    filter_upwards [x.property, hφ] with i hx hi using hi.mapsTo hx⟩
   invFun y := ⟨fun i ↦ (φ i).symm (y i), by
-    filter_upwards [y.2, hφ] with i hy hi using hi.equiv_symm.mapsTo hy⟩
+    filter_upwards [y.property, hφ] with i hy hi using hi.equiv_symm.mapsTo hy⟩
   left_inv x := by
     ext i
     exact (φ i).symm_apply_apply (x i)
@@ -89,6 +89,20 @@ theorem restrictedProductCongrRight_symm_apply {H : ι → Type w} [∀ i, Group
     (y : Πʳ i, [H i, (U' i : Set (H i))]) (i : ι) :
     (restrictedProductCongrRight U U' φ hφ).symm y i = (φ i).symm (y i) := by
   rfl
+
+/-- Pulling a coordinate box back along `restrictedProductCongrRight` yields the box of
+coordinatewise preimages. -/
+@[to_additive (attr := simp) preimage_addRestrictedProductCongrRight_box
+/-- Pulling a coordinate box back along `addRestrictedProductCongrRight` yields the box of
+coordinatewise preimages. -/]
+theorem preimage_restrictedProductCongrRight_box {H : ι → Type w} [∀ i, Group (H i)]
+    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    (φ : ∀ i, G i ≃* H i)
+    (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i)) (C : ∀ i, Set (H i)) :
+    restrictedProductCongrRight U U' φ hφ ⁻¹'
+      (RestrictedProduct.box C : Set (Πʳ i, [H i, (U' i : Set (H i))])) =
+      RestrictedProduct.box fun i ↦ φ i ⁻¹' C i :=
+  RestrictedProduct.preimage_map_box (fun i ↦ φ i) (hφ.mono fun _ hi ↦ hi.mapsTo) C
 
 /-- A componentwise equivalence which carries the reference subgroup bijectively at every index
 carries the everywhere-integral subgroup onto the everywhere-integral subgroup. The hypothesis is

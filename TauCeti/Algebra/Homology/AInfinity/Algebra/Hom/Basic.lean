@@ -45,8 +45,14 @@ zero and is a chain map for the unary operations.
   equation, and `TauCeti.AInfinityHom.taylor_ofTaylor`: every solution of it arises.
 * `TauCeti.AInfinityHom.comp_assoc`, `TauCeti.AInfinityHom.comp_id`, and
   `TauCeti.AInfinityHom.id_comp`: the category laws.
+* `TauCeti.AInfinityHom.taylor_comp_apply_of_mem_filtration`: composing a morphism with linear
+  part the identity with one that is `letter` on the words of length at most `e` adds their Taylor
+  maps, minus `letter`, on the words of length at most `e + 1`.
 * `TauCeti.AInfinityHom.linearPart_m_one`: the linear part is a chain map.
 * `TauCeti.AInfinityHom.linearPart_mem`: the linear part preserves degrees.
+* `TauCeti.AInfinityHom.barMap_apply_eq_self_of_mem_filtration` and
+  `TauCeti.AInfinityHom.taylor_comp_apply_of_mem_filtration_of_taylor_eq_letter`: an `A∞` morphism
+  whose Taylor components equal `letter` up to length `n` acts as the identity on `filtration n`.
 
 ## References
 
@@ -302,6 +308,24 @@ theorem linearPart_comp (g : AInfinityHom BB CC) (f : AInfinityHom AA BB) :
   rw [LinearMap.comp_apply, linearPart_apply, taylor_comp, LinearMap.comp_apply,
     barMap_ofLetter, linearPart_apply g]
 
+/-- **Composing with a morphism that is `letter` to order `e`.**  Let `f : AA ⟶ AA'` be an `A∞`
+morphism with linear part the identity and `g : AA' ⟶ AA''` one whose Taylor map is `letter` on the
+words of length at most `e`.  Then on the words of length at most `e + 1` the Taylor map of `g ∘ f`
+is `f.taylor + g.taylor - letter`: `f` moves such a word by a word of length at most `e`, on which
+`g` is `letter`. -/
+theorem taylor_comp_apply_of_mem_filtration {AA' AA'' : AInfinityAlgebra R A}
+    (g : AInfinityHom AA' AA'') (f : AInfinityHom AA AA') (hf : f.linearPart = LinearMap.id)
+    {e : ℕ}
+    (hg : ∀ w ∈ ReducedTensorWords.filtration R A e, g.taylor w = ReducedTensorWords.letter R A w)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A (e + 1)) :
+    (g.comp f).taylor z = f.taylor z + g.taylor z - ReducedTensorWords.letter R A z := by
+  have hsub : f.barMap z - z ∈ ReducedTensorWords.filtration R A e :=
+    f.isCoalgHom_barMap.sub_mem_filtration (LinearMap.ext fun a ↦ by
+      rw [LinearMap.comp_apply, barMap_ofLetter, hf, LinearMap.id_apply]) hz
+  rw [taylor_comp, LinearMap.comp_apply, ← sub_add_cancel (f.barMap z) z, map_add, hg _ hsub,
+    map_sub, taylor_def f, LinearMap.comp_apply]
+  abel
+
 /-- An `A∞` morphism whose linear part is the identity has Taylor map `letter` on the words of
 length at most one. -/
 theorem taylor_apply_eq_letter_of_linearPart_eq_id {AA' : AInfinityAlgebra R A}
@@ -314,6 +338,27 @@ theorem taylor_apply_eq_letter_of_linearPart_eq_id {AA' : AInfinityAlgebra R A}
   intro z hz
   rw [← sub_eq_zero, ← LinearMap.sub_apply]
   exact ReducedTensorWords.apply_eq_zero_of_mem_filtration_one R A h z hz
+
+/-- If the Taylor components of `f` agree with `letter` on the words of length at most `n`, then
+`f.barMap` is the identity on those words. -/
+theorem barMap_apply_eq_self_of_mem_filtration {AA' : AInfinityAlgebra R A}
+    {f : AInfinityHom AA AA'} {n : ℕ}
+    (hf : ∀ w ∈ ReducedTensorWords.filtration R A n,
+      f.taylor w = ReducedTensorWords.letter R A w)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    f.barMap z = z :=
+  f.isCoalgHom_barMap.apply_eq_of_mem_filtration (ReducedTensorWords.isCoalgHom_id A)
+    (fun w hw ↦ by rw [← LinearMap.comp_apply, ← taylor_def, hf w hw, LinearMap.id_apply]) hz
+
+/-- Composing on the right with a morphism whose Taylor components equal `letter` up to length `n`
+leaves the Taylor components unchanged on the words of length at most `n`. -/
+theorem taylor_comp_apply_of_mem_filtration_of_taylor_eq_letter {AA' : AInfinityAlgebra R A}
+    (g : AInfinityHom AA' BB) {f : AInfinityHom AA AA'} {n : ℕ}
+    (hf : ∀ w ∈ ReducedTensorWords.filtration R A n,
+      f.taylor w = ReducedTensorWords.letter R A w)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    (g.comp f).taylor z = g.taylor z := by
+  rw [taylor_comp, LinearMap.comp_apply, barMap_apply_eq_self_of_mem_filtration hf hz]
 
 end AInfinityHom
 

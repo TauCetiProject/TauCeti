@@ -174,6 +174,10 @@ def betaEquiv (g : D.Generator) : Equiv.Perm (Fin n) := g.1
 theorem point_apply (g : D.Generator) (i : Fin n) : D.point g i = g.2 i := by
   simp [point]
 
+/-- The matching of a generator is the permutation it stores. -/
+theorem betaEquiv_eq_fst (g : D.Generator) : D.betaEquiv g = g.1 :=
+  (rfl)
+
 /-- The matching index is the `β`-label of the chosen point. -/
 @[simp]
 theorem betaEquiv_apply (g : D.Generator) (i : Fin n) :
@@ -230,6 +234,18 @@ theorem generatorChain_eq_sum_single [DecidableEq Point] (g : D.Generator) :
     exact Pi.single_eq_of_ne this 1
   · simp
 
+/-- A generator is determined by its `0`-chain: its point on each `α`-curve is the unique point of
+that curve where the chain is nonzero. -/
+theorem generatorChain_injective : Function.Injective D.generatorChain := by
+  classical
+  intro g g' h
+  refine D.point_injective (funext fun i => ?_)
+  have := congrFun h (g.2 i)
+  simp only [generatorChain_apply, point_apply, alpha_coe, ite_true] at this
+  split_ifs at this with h'
+  · simpa using h'.symm
+  · exact absurd this one_ne_zero
+
 /-- Pairing the `0`-chain of a generator with a function on intersection points sums the
 function over the points of the generator. Only the zero and one scalar laws are needed, so
 the values may lie in any commutative additive monoid with a zero-preserving `ℤ`-action. -/
@@ -243,6 +259,13 @@ theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommMonoid M]
   rw [Finset.sum_congr rfl fun q hq => by rw [(Finset.mem_filter.mp hq).2],
     Finset.sum_ite_eq]
   simp
+
+/-- Pairing the `0`-chain of a generator with a ring-valued function on intersection points sums
+the function over the points of the generator. -/
+theorem sum_generatorChain_mul [Fintype Point] {R : Type*} [Ring R] (g : D.Generator)
+    (f : Point → R) : ∑ q, (D.generatorChain g q : R) * f q = ∑ i, f (D.point g i) := by
+  simp_rw [← zsmul_eq_mul]
+  exact D.sum_generatorChain_smul g f
 
 /-- Two generators with the same chosen points are equal. -/
 @[ext]
@@ -307,7 +330,7 @@ noncomputable def generatorEquivBetaPoint :
     D.Generator ≃ {q : Fin n → Point // (∀ j, D.beta (q j) = j) ∧
       Function.Bijective (D.alpha ∘ q)} where
   toFun g := ⟨D.betaPoint g, D.beta_betaPoint g, D.alpha_comp_betaPoint_bijective g⟩
-  invFun q := D.generatorOfBetaPoint q.1 q.2.1 q.2.2
+  invFun q := D.generatorOfBetaPoint q.val q.property.1 q.property.2
   left_inv g := D.betaPoint_injective (by simp)
   right_inv q := Subtype.ext (by simp)
 
@@ -319,7 +342,7 @@ theorem coe_generatorEquivBetaPoint (g : D.Generator) :
 @[simp]
 theorem generatorEquivBetaPoint_symm_apply (q : {q : Fin n → Point // (∀ j, D.beta (q j) = j) ∧
       Function.Bijective (D.alpha ∘ q)}) :
-    D.generatorEquivBetaPoint.symm q = D.generatorOfBetaPoint q.1 q.2.1 q.2.2 :=
+    D.generatorEquivBetaPoint.symm q = D.generatorOfBetaPoint q.val q.property.1 q.property.2 :=
   (rfl)
 
 end HeegaardIntersectionSystem

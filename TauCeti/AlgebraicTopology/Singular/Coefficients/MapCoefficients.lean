@@ -39,6 +39,8 @@ Extension of scalars is another example of the chain-level statement, since it p
   naturally in `X`.
 * `CategoryTheory.Functor.singularHomologyFunctorObjCompIso`: `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`,
   naturally in `X`.
+* `CategoryTheory.Functor.isZero_singularHomologyFunctor_iff`: when `F` is also faithful,
+  `Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`.
 -/
 
 public section
@@ -62,6 +64,13 @@ def singularChainComplexFunctorObjCompMapIso :
     (singularChainComplexFunctor C).obj R ⋙ F.mapHomologicalComplex (.down ℕ) ≅
       (singularChainComplexFunctor D).obj (F.obj R) :=
   Functor.isoWhiskerLeft TopCat.toSSet (SSet.chainComplexFunctorObjCompMapIso F R)
+
+/-- The inverse of `F (C(X; R)) ≅ C(X; F R)` at a space `X` is the inverse of Mathlib's simplicial
+comparison at the singular simplicial set of `X`. -/
+lemma singularChainComplexFunctorObjCompMapIso_inv_app (X : TopCat.{w}) :
+    (singularChainComplexFunctorObjCompMapIso F R).inv.app X =
+      (SSet.chainComplexFunctorObjCompMapIso F R).inv.app (TopCat.toSSet.obj X) :=
+  (rfl)
 
 variable [CategoryWithHomology C] [CategoryWithHomology D] [F.PreservesHomology]
 
@@ -87,5 +96,24 @@ lemma singularHomologyFunctorObjCompIso_hom_app (n : ℕ) (X : TopCat.{w}) :
         HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).hom.app X)
           n :=
   (rfl)
+
+/-- The inverse of `F (Hₙ(X; R)) ≅ Hₙ(X; F R)` at a space `X` is the map induced by
+`C(X; F R) ≅ F (C(X; R))`, followed by the comparison of the homology of the image complex with
+the image of the homology. -/
+lemma singularHomologyFunctorObjCompIso_inv_app (n : ℕ) (X : TopCat.{w}) :
+    (singularHomologyFunctorObjCompIso F R n).inv.app X =
+      HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).inv.app X)
+          n ≫
+        (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).hom.app
+          (((singularChainComplexFunctor C).obj R).obj X) :=
+  (rfl)
+
+/-- For a faithful additive functor `F : C ⥤ D` preserving coproducts and homology,
+`Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`. -/
+lemma isZero_singularHomologyFunctor_iff [F.Faithful] (n : ℕ) (X : TopCat.{w}) :
+    IsZero (((singularHomologyFunctor D n).obj (F.obj R)).obj X) ↔
+      IsZero (((singularHomologyFunctor C n).obj R).obj X) := by
+  rw [← ((singularHomologyFunctorObjCompIso F R n).app X).isZero_iff,
+    IsZero.iff_id_eq_zero, IsZero.iff_id_eq_zero, Functor.comp_obj, ← F.map_id, F.map_eq_zero_iff]
 
 end CategoryTheory.Functor

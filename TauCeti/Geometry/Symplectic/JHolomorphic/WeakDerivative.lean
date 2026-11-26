@@ -7,6 +7,11 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
+public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
+import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability
+import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Analysis.Calculus.FDeriv.Inv
+import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
@@ -22,7 +27,24 @@ The full differential is integrable across the puncture: the Cauchy--Riemann equ
 it by a constant times the real-direction derivative, and finite energy gives integrability
 on the bounded disc. The continuous filling from
 `SymplecticForm.exists_continuousOn_update_of_finite_energy` then satisfies integration by
-parts across the exceptional point. Smooth removal still requires elliptic regularity.
+parts across the exceptional point.
+
+Together with the higher integrability of the differential
+(`SymplecticForm.exists_pos_forall_memLp_fderiv_of_finite_energy`), this makes the filling a weak
+solution of the Cauchy--Riemann equation `∂ₛu + J(u) ∂ₜu = 0` across the puncture, in the sense of
+`TauCeti.IsWeakCauchyRiemannOn`, with exponent `p > 2` on a smaller disc
+(`SymplecticForm.exists_isWeakCauchyRiemannOn_update_of_finite_energy`). The form `∂ₜu = J(u) ∂ₛu`
+of the classical equation is equivalent to it because `J² = -1` along the image. The same holds
+at the end of a finite-energy plane: the inverted map `w ↦ u w⁻¹`, filled at `0` with the limit of
+`u` at infinity, is such a weak solution near `0`
+(`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Both give a
+continuous `W^{1,p}` weak solution with `p > 2` for a `C²` structure `J`, the input of interior
+elliptic regularity for the nonlinear Cauchy--Riemann equation. That regularity theorem is not
+proved here but in `TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`;
+`TauCeti.contDiffOn_ball_and_fderiv_apply_one_add_eq_of_isWeakCauchyRiemannOn` applies it
+across a puncture, and `TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`
+uses that to complete the removal of singularities for the filling. The regularity it gives the
+filling is limited by that of `J`, so a smooth filling also needs a smooth `J`.
 
 ## References
 
@@ -32,7 +54,7 @@ parts across the exceptional point. Smooth removal still requires elliptic regul
 
 public section
 
-open Complex Filter MeasureTheory Metric Set TopologicalSpace
+open Complex Filter MeasureTheory Metric Set Topology TopologicalSpace
 
 namespace TauCeti.SymplecticForm
 
@@ -92,5 +114,76 @@ theorem exists_hasWeakFDerivOn_update_of_finite_energy
     filter_upwards [isOpen_compl_singleton.mem_nhds hz'.2] with w hw
     exact Function.update_of_ne hw _ _
   exact hdu.hasFDerivAt.congr_of_eventuallyEq heq
+
+open Classical in
+/-- **The filled puncture is a weak solution.** The continuous filling of a finite-energy
+pseudoholomorphic puncture solves the Cauchy--Riemann equation `∂ₛu + J(u) ∂ₜu = 0` weakly on a
+smaller disc around the puncture, with weak derivative in `Lᵖ` for some `p > 2`. The filling value
+`q` is the limit of `u` at the puncture, and the filling keeps the image in the compact set `K`. -/
+theorem exists_isWeakCauchyRiemannOn_update_of_finite_energy
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
+    (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
+    (hCR : ∀ z ∈ ball z₀ R \ {z₀}, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (huK : MapsTo u (ball z₀ R \ {z₀}) K)
+    (htame : ∀ z ∈ ball z₀ R \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
+    ∃ q ∈ K, Tendsto u (𝓝[≠] z₀) (𝓝 q) ∧ MapsTo (Function.update u z₀ q) (ball z₀ R) K ∧
+      ∃ ε > 0, ε < R ∧ ∃ p : ℝ, 2 < p ∧
+        IsWeakCauchyRiemannOn (ENNReal.ofReal p) (ball z₀ ε) (fun _ ↦ J) 0
+          (Function.update u z₀ q) := by
+  obtain ⟨q, hq, hcont, hmaps, hweak⟩ := ω.exists_hasWeakFDerivOn_update_of_finite_energy
+    hg hc hR hW hJ hK hKW hJsq hu hCR huK htame henergy
+  obtain ⟨ε, hε, hεR, p, hp, hmem⟩ := ω.exists_pos_two_lt_memLp_fderiv_of_finite_energy
+    hg hc hR hW hJ hK hKW hJsq hu hCR huK htame henergy
+  have hεR' : ball z₀ ε ⊆ ball z₀ R := ball_subset_ball hεR.le
+  refine ⟨q, hq, continuousAt_update_same.1 (hcont.continuousAt (ball_mem_nhds z₀ hR)), hmaps,
+    ε, hε, hεR, p, hp, ?_⟩
+  -- Pass to the open ball as an element of `Opens ℂ`, the form taken by the weak derivative.
+  rw [← Opens.coe_mk (U := ball z₀ ε) (hU := isOpen_ball), isWeakCauchyRiemannOn_iff_of_isOpen]
+  refine ⟨hcont.mono hεR', (hcont.mono hεR').memLpLoc, fderiv ℝ u,
+    hweak.mono (SetLike.coe_subset_coe.1 hεR'), hmem.memLpLoc, ?_⟩
+  -- Off the puncture the classical equation `∂ₜu = J(u) ∂ₛu` and `J² = -1` give the weak one.
+  filter_upwards [ae_restrict_mem measurableSet_ball,
+    ae_restrict_of_ae (volume.ae_ne z₀)] with z hz hzz
+  have hz' : z ∈ ball z₀ R \ {z₀} := ⟨hεR' hz, hzz⟩
+  rw [Function.update_of_ne hzz, hCR z hz', hJsq _ (huK hz')]
+  simp
+
+open Classical in
+/-- **The filled end of a plane is a weak solution.** For a finite-energy pseudoholomorphic curve
+on the exterior `‖z‖ > R` of a disc, with compact image, the inverted map `w ↦ u w⁻¹`, filled at
+`0` with the limit `q` of `u` at infinity, solves the Cauchy--Riemann equation
+`∂ₛv + J(v) ∂ₜv = 0` weakly on a disc around `0`, with weak derivative in `Lᵖ` for some `p > 2`.
+This is the chart of the Riemann sphere at the point at infinity of the plane. -/
+theorem exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
+    (hu : ContDiffOn ℝ 3 u (closedBall 0 R)ᶜ)
+    (hCR : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (huK : MapsTo u (closedBall 0 R)ᶜ K)
+    (htame : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (closedBall 0 R)ᶜ) :
+    ∃ q ∈ K, Tendsto u (cocompact ℂ) (𝓝 q) ∧ ∃ ε > 0, ∃ p : ℝ, 2 < p ∧
+      IsWeakCauchyRiemannOn (ENNReal.ofReal p) (ball 0 ε) (fun _ ↦ J) 0
+        (Function.update (fun w ↦ u w⁻¹) 0 q) := by
+  -- A radius `R ≤ 0` is replaced by `1`: the exterior of the unit disc is smaller.
+  wlog hR : 0 < R generalizing R
+  · have hS : (closedBall (0 : ℂ) 1)ᶜ ⊆ (closedBall (0 : ℂ) R)ᶜ :=
+      compl_subset_compl.2 (closedBall_subset_closedBall (by linarith [not_lt.1 hR]))
+    exact this (hu.mono hS) (fun z hz ↦ hCR z (hS hz)) (huK.mono_left hS)
+      (fun z hz ↦ htame z (hS hz)) (henergy.mono_set hS) one_pos
+  -- The inverted map is a finite-energy solution on the punctured disc of radius `R⁻¹`.
+  obtain ⟨hv, hCRv, hvK, hvtame, hvenergy⟩ :=
+    contDiffOn_comp_inv_and_integrableOn_of_finite_energy (hJ.continuousOn.mono hKW) hK hJsq hu
+      hCR huK htame henergy
+  obtain ⟨q, hq, hlim, -, ε, hε, -, p, hp, hweak⟩ :=
+    ω.exists_isWeakCauchyRiemannOn_update_of_finite_energy hg hc (inv_pos.2 hR) hW hJ hK hKW
+      hJsq hv hCRv hvK hvtame hvenergy
+  refine ⟨q, hq, ?_, ε, hε, p, hp, hweak⟩
+  rw [← Metric.cobounded_eq_cocompact]
+  simpa [Function.comp_def] using hlim.comp tendsto_inv₀_cobounded'
 
 end TauCeti.SymplecticForm

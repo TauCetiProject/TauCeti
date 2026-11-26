@@ -28,6 +28,10 @@ identity, and preserves the integer-stage API used by the rational solver.
   certificate yields the complex character-table specification.
 * `TauCeti.ClassData.IsIntegerCharacterTableSpec.sum_characterDegree_eq_sum_degree`: the degrees
   of a successful certificate sum to the sum of the character degrees of the group.
+* `TauCeti.ClassData.IsIntegerCharacterTableSpec.exists_equiv_characterTable`: the rows of the
+  character table, numbered along a successful certificate, with their values and degrees.
+* `TauCeti.ClassData.IsIntegerCharacterTableSpec.irreducibleCharacters_eq_range`: the irreducible
+  characters are the rows of a successful certificate, read through the class numbering.
 -/
 
 public section
@@ -113,6 +117,13 @@ theorem isCharacterTableSpec :
     IsCharacterTableSpec G (d.complexTableOfInteger table) :=
   IsExactCharacterTableSpec.isCharacterTableSpec h (Int.castRingHom ℂ) fun x => by simp
 
+/-- **The rows of a certified integer table are the irreducible characters** of `G`: the
+irreducible complex characters are exactly the functions `g ↦ table i (d.index g)`. -/
+theorem irreducibleCharacters_eq_range :
+    irreducibleCharacters ℂ G = Set.range fun i g => (table i (d.index g) : ℂ) := by
+  simpa only [eq_intCast] using
+    IsExactCharacterTableSpec.irreducibleCharacters_eq_range h (Int.castRingHom ℂ) fun x ↦ by simp
+
 /-- **The degree vector of a certified integer table sums to the sum of the character degrees** of
 `G`: the identity column of the cast table is the degree vector, and it lists the character
 degrees up to order. -/
@@ -120,6 +131,17 @@ theorem sum_characterDegree_eq_sum_degree :
     ∑ i, characterDegree ℂ (G := G) i = ∑ j, degree j := by
   exact IsExactCharacterTableSpec.sum_characterDegree_eq_sum_degree h (Int.castRingHom ℂ)
     fun x ↦ by simp
+
+/-- **The rows of the character table, numbered along a certified integer table**: some bijection
+`τ` from the numbering of `d` to the rows of `TauCeti.characterTable` sends each row `j` of `table`
+to a row of the character table whose value at `g` is `table j (d.index g)` and whose degree is
+`degree j`. -/
+theorem exists_equiv_characterTable :
+    ∃ τ : Fin d.numClasses ≃ Fin (Nat.card (ConjClasses G)),
+      (∀ j g, characterTable ℂ G (τ j) (ConjClasses.mk g) = (table j (d.index g) : ℂ)) ∧
+        ∀ j, characterDegree ℂ (τ j) = degree j := by
+  simpa only [eq_intCast] using
+    IsExactCharacterTableSpec.exists_equiv_characterTable h (Int.castRingHom ℂ) fun x ↦ by simp
 
 end IsIntegerCharacterTableSpec
 

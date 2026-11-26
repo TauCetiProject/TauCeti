@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
+import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Topology.Compactification.OnePoint.Nhds
 
@@ -180,6 +181,17 @@ private theorem prod_sub_zpow_ne_zero {s : Finset ℂ} (n : ℂ → ℤ) {y : �
     ∏ u ∈ s, (y - u) ^ n u ≠ 0 :=
   Finset.prod_ne_zero_iff.2 fun _ hu ↦ zpow_ne_zero _ (sub_ne_zero.2 fun h ↦ hy (h ▸ hu))
 
+/-- The product of the `(z - u) ^ n u` over a finite set of `u` is a nonzero meromorphic
+function. -/
+private theorem prod_coordinate_sub_zpow_ne_zero (s : Finset ℂ) (n : ℂ → ℤ) :
+    ∏ u ∈ s, (coordinate - algebraMap ℂ (MeromorphicFunction (OnePoint ℂ)) u) ^ n u ≠ 0 := by
+  -- It takes a nonzero value at a finite point outside the finite set.
+  obtain ⟨y, hy⟩ := s.finite_toSet.infinite_compl.nonempty
+  intro h
+  have := prod_coordinate_sub_zpow_apply s n hy
+  rw [h, coe_zero] at this
+  exact prod_sub_zpow_ne_zero n hy (coe_injective this).symm
+
 /-- If on `ℂ` the finite part of `f` is `∏ (z - u) ^ d(u)` times an analytic function `g`, away
 from a codiscrete set, then the quotient of `f` by the rational function `∏ (z - u) ^ d(u)` agrees
 with `g` at every point of `ℂ`. -/
@@ -231,12 +243,7 @@ private theorem ofRatFunc_surjective : Surjective ofRatFunc := by
   have hcoord : coordinate ∈ S :=
     AlgHom.mem_fieldRange.2 ⟨RatFunc.X, by simpa using ofRatFunc_algebraMap Polynomial.X⟩
   have hφS : φ ∈ S := prod_mem fun u _ ↦ zpow_mem (sub_mem hcoord (algebraMap_mem S u)) _
-  have hφne : φ ≠ 0 := by
-    obtain ⟨y, hy⟩ := s.finite_toSet.infinite_compl.nonempty
-    intro h
-    have : φ y = _ := prod_coordinate_sub_zpow_apply s d hy
-    rw [h, coe_zero] at this
-    exact prod_sub_zpow_ne_zero d hy (coe_injective this).symm
+  have hφne : φ ≠ 0 := prod_coordinate_sub_zpow_ne_zero s d
   -- The quotient `G = f / φ` agrees on `ℂ` with the analytic function `g` without zeros, so it is
   -- constant, and `f = G * φ` is rational.
   set G := f * φ⁻¹
@@ -276,6 +283,44 @@ theorem ratFuncEquiv_apply_coe (r : RatFunc ℂ) {z : ℂ} (hz : r.denom.eval z 
   rw [ratFuncEquiv_apply, ofRatFunc, RatFunc.liftAlgHom_apply, div_eq_mul_inv,
     mul_apply_of_eq_coe hnum (inv_apply_of_eq_coe hden hz), RatFunc.eval, eval₂_id, eval₂_id,
     div_eq_mul_inv]
+
+/-- A meromorphic function on the sphere is a polynomial in the coordinate exactly when it
+has no poles at finite points. -/
+theorem exists_aeval_coordinate_eq_iff (f : MeromorphicFunction (OnePoint ℂ)) :
+    (∃ p : ℂ[X], aeval coordinate p = f) ↔ ∀ z : ℂ, f z ≠ ∞ := by
+  refine ⟨?_, fun hf ↦ ?_⟩
+  · rintro ⟨p, rfl⟩ z
+    rw [aeval_coordinate_apply_coe]
+    exact OnePoint.coe_ne_infty _
+  · let r := ratFuncEquiv.symm f
+    have hr : ratFuncEquiv r = f := ratFuncEquiv.apply_symm_apply f
+    have hmul : aeval coordinate r.num = f * aeval coordinate r.denom := by
+      rw [← hr, ← ratFuncEquiv_algebraMap, ← ratFuncEquiv_algebraMap, ← map_mul]
+      congr 1
+      exact ((div_eq_iff (RatFunc.algebraMap_ne_zero r.denom_ne_zero)).mp r.num_div_denom)
+    have hden (z : ℂ) : r.denom.eval z ≠ 0 := by
+      intro hz
+      have hn : r.num.eval z = 0 := by
+        have h := congrArg (fun g : MeromorphicFunction (OnePoint ℂ) ↦ g z) hmul
+        rw [aeval_coordinate_apply_coe, mul_apply_of_eq_coe (coe_finitePart (hf z)).symm
+          (aeval_coordinate_apply_coe _ _), hz, mul_zero] at h
+        exact OnePoint.coe_injective h
+      simpa [Polynomial.aeval_def, hn, hz] using
+        (Polynomial.aeval_ne_zero_of_isCoprime r.isCoprime_num_denom z)
+    have hdeg : r.denom.degree ≤ 0 := by
+      by_contra h
+      obtain ⟨z, hz⟩ := Complex.exists_root (lt_of_not_ge h)
+      exact hden z hz
+    have hc := Polynomial.eq_C_of_degree_le_zero hdeg
+    refine ⟨r.num * C ((r.denom.coeff 0)⁻¹), ?_⟩
+    calc
+      _ = aeval coordinate r.num / aeval coordinate r.denom := by
+        rw [hc]
+        simp [div_eq_mul_inv]
+      _ = ratFuncEquiv r := by
+        rw [← ratFuncEquiv_algebraMap, ← ratFuncEquiv_algebraMap, ← map_div₀,
+          RatFunc.num_div_denom]
+      _ = f := hr
 
 /-! ### Zeros -/
 

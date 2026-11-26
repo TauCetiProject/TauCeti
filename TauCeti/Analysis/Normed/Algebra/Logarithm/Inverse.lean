@@ -21,6 +21,7 @@ a complete normed `ℚ`-algebra (the setting of Mathlib's scalar-free exponentia
 
 * `NormedSpace.eventually_log_exp`: near zero, `log (exp x) = x`.
 * `NormedSpace.eventually_exp_log`: near one, `exp (log x) = x`.
+* `NormedSpace.range_exp_mem_nhds_one`: the range of the exponential is a neighbourhood of one.
 
 ## Implementation notes
 
@@ -156,5 +157,10 @@ theorem eventually_exp_log : ∀ᶠ x in 𝓝 (1 : A), exp (log x) = x := by
   rw [sub_self] at hzero
   filter_upwards [hzero.eventually_eq_zero] with x hx
   exact sub_eq_zero.mp hx
+
+/-- Every element close enough to one is an exponential: the range of the exponential is a
+neighbourhood of one. -/
+theorem range_exp_mem_nhds_one : Set.range (exp : A → A) ∈ 𝓝 (1 : A) :=
+  (eventually_exp_log A).mono fun x hx ↦ ⟨log x, hx⟩
 
 end NormedSpace

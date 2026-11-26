@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Closure
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Pi
 
 /-!
 # Projective models by closure in projective space
@@ -60,6 +61,9 @@ namespace Model
 variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
+
+section ProjectiveClosure
+
 variable (M : Type u) [AddCommMonoid M] [Module R M] [Module.Finite R M]
 variable (j : C ⟶ Proj (homogeneousSubmodule K (K ⊗[R] M))) [IsClosedImmersion j]
   (hj : j ≫ projToSpec K (K ⊗[R] M) = toK)
@@ -109,6 +113,8 @@ lemma ker_projectiveClosureι :
 lemma isProper_projectiveClosure : (projectiveClosure M j hj).IsProper :=
   isProper_closure (toR := projToSpec R M) _ _
 
+end ProjectiveClosure
+
 /-- A closed subscheme `C` of a projective space `ℙ(V)` over `K`, with `V` a finite-dimensional
 `K`-vector space of linear coordinates, has a proper model over `R` which is a closed subscheme of
 the projective space `ℙ(R^n)` over `R`, with `n = dim V`. -/
@@ -119,7 +125,7 @@ theorem exists_isClosedImmersion_isProper (V : Type u) [AddCommGroup V] [Module 
       (ι : X.total ⟶ Proj (homogeneousSubmodule R (Fin (Module.finrank K V) → R))),
       IsClosedImmersion ι ∧ ι ≫ projToSpec R _ = X.toBase ∧ X.IsProper := by
   let e : (K ⊗[R] (Fin (Module.finrank K V) → R)) ≃ₗ[K] V :=
-    TensorProduct.piScalarRight R K K _ ≪≫ₗ (Module.finBasis K V).equivFun.symm
+    (Module.finBasis K V).tensorPiEquiv R
   let j' := j ≫ (Proj.symmetricAlgebraMapIso K e).hom
   have hj' : j' ≫ projToSpec K _ = toK := by
     rw [Category.assoc, Proj.symmetricAlgebraMapIso_hom_projToSpec, hj]

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The absolute Galois group of a finite separable extension as an open subgroup
@@ -69,7 +70,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   fixing the normal closure of `L` in `Kˢ`, with no embedding chosen.
 * `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
   `Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K` between Mathlib's absolute Galois
-  groups, `galoisSubgroupEquiv K L σ` followed by the inclusion of `galoisSubgroup K L σ`.
+  groups, `galoisSubgroupEquiv K L σ` followed by the inclusion of `galoisSubgroup K L σ`;
+  `TauCeti.continuousAbsoluteGaloisGroupExtend K L σ` bundles it as `G_L →ₜ* G_K`.
 * `TauCeti.absoluteGaloisGroupExtendEquiv K L σ hU`: for a subgroup `U` of
   `Field.absoluteGaloisGroup K` that is the image of `absoluteGaloisGroupExtend K L σ`, the
   isomorphism of topological groups `Field.absoluteGaloisGroup L ≃ₜ* U`.
@@ -113,8 +115,6 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   `galoisOpenNormalSubgroup K E E.val` for a finite Galois intermediate field `E` of `Kˢ/K`.
 * `TauCeti.fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup`: for a finite Galois `L/K`,
   `fixingOpenNormalSubgroup K L` is `galoisOpenNormalSubgroup K L σ` for every embedding `σ`.
-* `TauCeti.restrictNormalHom_of_compatible`: a compatible pair between normal subextensions of
-  `Kˢ` carries restriction to the larger field to restriction to the smaller field.
 
 ## References
 
@@ -277,9 +277,30 @@ theorem absoluteGaloisGroupExtend_apply_separableClosureRingEquiv
 /-- The embedding `G_L → G_K` induced by an embedding of a finite extension is continuous. -/
 theorem continuous_absoluteGaloisGroupExtend : Continuous (absoluteGaloisGroupExtend K L σ) :=
   (absoluteGaloisGroupRestrictEquiv K).symm.continuous_toFun.comp <|
-    continuous_subtype_val.comp <|
+    continuous_subtypeVal.comp <|
       (galoisSubgroupEquiv K L σ).continuous_toFun.comp
         (absoluteGaloisGroupRestrictEquiv L).continuous_toFun
+
+/-- **The absolute Galois group of a finite extension inside that of `K`**, as a continuous
+homomorphism `G_L →ₜ* G_K` along a `K`-embedding `σ : L →ₐ[K] Kˢ`
+(`TauCeti.absoluteGaloisGroupExtend`). -/
+def continuousAbsoluteGaloisGroupExtend :
+    Field.absoluteGaloisGroup L →ₜ* Field.absoluteGaloisGroup K :=
+  ⟨absoluteGaloisGroupExtend K L σ, continuous_absoluteGaloisGroupExtend K L σ⟩
+
+/-- `continuousAbsoluteGaloisGroupExtend` is `absoluteGaloisGroupExtend`. -/
+@[simp]
+theorem continuousAbsoluteGaloisGroupExtend_apply (τ : Field.absoluteGaloisGroup L) :
+    continuousAbsoluteGaloisGroupExtend K L σ τ = absoluteGaloisGroupExtend K L σ τ :=
+  (rfl)
+
+/-- `continuousAbsoluteGaloisGroupExtend`, as a homomorphism, is `absoluteGaloisGroupExtend`. -/
+@[simp]
+theorem coe_continuousAbsoluteGaloisGroupExtend :
+    (continuousAbsoluteGaloisGroupExtend K L σ :
+        Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K) =
+      absoluteGaloisGroupExtend K L σ :=
+  (rfl)
 
 /-- The map `G_L → G_K` induced by an embedding of a finite extension is injective. -/
 theorem injective_absoluteGaloisGroupExtend :
@@ -297,7 +318,7 @@ theorem mem_range_absoluteGaloisGroupExtend_iff {g : Field.absoluteGaloisGroup K
   refine ⟨?_, fun hg ↦ ?_⟩
   · rintro ⟨τ, rfl⟩
     rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend]
-    exact (galoisSubgroupEquiv K L σ _).2
+    exact (galoisSubgroupEquiv K L σ _).property
   · refine ⟨(absoluteGaloisGroupRestrictEquiv L).symm
       ((galoisSubgroupEquiv K L σ).symm ⟨absoluteGaloisGroupRestrictEquiv K g, hg⟩),
       (absoluteGaloisGroupRestrictEquiv K).injective ?_⟩
@@ -329,9 +350,9 @@ continuous injection from a compact group to a Hausdorff one. -/
 def absoluteGaloisGroupExtendEquiv {U : Subgroup (Field.absoluteGaloisGroup K)}
     (hU : (absoluteGaloisGroupExtend K L σ).range = U) : Field.absoluteGaloisGroup L ≃ₜ* U :=
   haveI : T2Space (Field.absoluteGaloisGroup K) := krullTopology_t2
-  let f : Field.absoluteGaloisGroup L →ₜ* Field.absoluteGaloisGroup K :=
-    ⟨absoluteGaloisGroupExtend K L σ, continuous_absoluteGaloisGroupExtend K L σ⟩
-  have hf : (f : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K).range = U := hU
+  let f := continuousAbsoluteGaloisGroupExtend K L σ
+  have hf : (f : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K).range = U := by
+    rw [coe_continuousAbsoluteGaloisGroupExtend, hU]
   hf ▸ f.equivRangeOfIsEmbedding ((continuous_absoluteGaloisGroupExtend K L σ).isClosedEmbedding
     (injective_absoluteGaloisGroupExtend K L σ)).isEmbedding
 
@@ -370,9 +391,9 @@ def absoluteGaloisGroupRestrictSubgroupEquiv {U : Subgroup (Field.absoluteGalois
       AbsoluteGaloisGroup K).subgroupMap U).trans
     (MulEquiv.subgroupCongr (hU ▸ map_range_absoluteGaloisGroupExtend K L σ))
   continuous_toFun :=
-    ((absoluteGaloisGroupRestrictEquiv K).continuous.comp continuous_subtype_val).subtype_mk _
+    ((absoluteGaloisGroupRestrictEquiv K).continuous.comp continuous_subtypeVal).subtype_mk _
   continuous_invFun :=
-    ((absoluteGaloisGroupRestrictEquiv K).symm.continuous.comp continuous_subtype_val).subtype_mk _
+    ((absoluteGaloisGroupRestrictEquiv K).symm.continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- `absoluteGaloisGroupRestrictSubgroupEquiv` is the restriction isomorphism
 `absoluteGaloisGroupRestrictEquiv K`. -/
@@ -416,28 +437,6 @@ theorem quotientFixingSubgroupFieldRangeEquiv_mk (g : AbsoluteGaloisGroup K) :
     AlgEquiv.restrictNormalHom_apply, ← AlgHom.equivFieldRange_apply_coe]
 
 end Normal
-
-/-! ### Restriction along compatible normal subextensions -/
-
-section CompatibleRestriction
-
-variable {K : Type*} [Field K]
-  {E M : IntermediateField K (SeparableClosure K)} [Normal K E] [Normal K M]
-  (pi : (M ≃ₐ[K] M) →* (E ≃ₐ[K] E)) (iota : E →ₐ[K] M)
-  (hpiiota : ∀ g x, iota (pi g x) = g (iota x))
-  (hiota : ∀ x, M.val (iota x) = E.val x)
-include hpiiota hiota
-
-/-- Along a compatible pair `(pi, iota)` between normal subextensions of `Kˢ`, with `iota`
-compatible with their inclusions into `Kˢ`, `pi` carries restriction to `M` to restriction to
-`E`. -/
-theorem restrictNormalHom_of_compatible (g : AbsoluteGaloisGroup K) :
-    pi (AlgEquiv.restrictNormalHom M g) = AlgEquiv.restrictNormalHom E g :=
-  AlgEquiv.ext fun x ↦ E.val.injective <| (hiota _).symm.trans <|
-    (congrArg M.val (hpiiota _ x)).trans <| (AlgEquiv.restrictNormal_commutes g M (iota x)).trans <|
-      (congrArg g (hiota x)).trans (AlgEquiv.restrictNormal_commutes g E x).symm
-
-end CompatibleRestriction
 
 /-! ### Finite normal extensions: the open normal subgroup -/
 
@@ -524,9 +523,8 @@ variable {K} in
 /-- **The fixed field of an open subgroup of `G_K` is a finite extension of `K`**: the subgroup
 fixing it is the open subgroup itself. -/
 instance finiteDimensional_fixedField_toSubgroup (U : OpenSubgroup (AbsoluteGaloisGroup K)) :
-    FiniteDimensional K (fixedField U.toSubgroup) := by
-  rw [← InfiniteGalois.isOpen_iff_finite, ← toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl]
-  exact U.isOpen
+    FiniteDimensional K (fixedField U.toSubgroup) :=
+  IntermediateField.finiteDimensional_fixedField_of_isOpen U.isOpen
 
 variable {K} in
 /-- Below every open subgroup `W` of `G_K` lies an open subgroup whose fixed field contains the

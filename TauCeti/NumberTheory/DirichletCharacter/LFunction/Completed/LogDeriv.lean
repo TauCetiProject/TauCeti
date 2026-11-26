@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
+public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 
 /-!
@@ -14,7 +14,8 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 The archimedean factor of a Dirichlet character `χ` has the logarithmic derivative of `Γℝ` at
 `s + a`, where `a` is `0` for even and `1` for odd characters; off its poles this is
 `ψ((s + a)/2)/2 − ½ log π`. On each compact subset of the positive half-plane these logarithmic
-derivatives are bounded by one constant for all characters of all moduli.
+derivatives are bounded by one constant for all characters of all moduli, and on the real interval
+`[1, 2]` their norm is bounded explicitly by `TauCeti.gammaLogDerivBound`.
 
 On the positive half-plane, away from the zeros of `L(χ, ·)`, the logarithmic derivative of
 Mathlib's completed function `Λ(χ, s)` is the sum of those of the archimedean factor and of
@@ -67,6 +68,36 @@ theorem logDeriv_gammaFactor_eq_digamma {s : ℂ} (hs : χ.gammaFactor s ≠ 0) 
   · rw [ite_eq_right ho.not_even] at hn
     exact (gammaFactor_eq_zero_iff_of_odd ho).mpr ⟨n, hn⟩
 
+open scoped Classical in
+/-- The distance from zero to the first strictly negative pole of the archimedean factor:
+`2` for an even character and `1` for an odd character. -/
+noncomputable def gammaPoleOffset : ℝ := if χ.Even then 2 else 1
+
+/-- The first strictly negative gamma pole of an even character is at `-2`. -/
+theorem gammaPoleOffset_of_even (he : χ.Even) : χ.gammaPoleOffset = 2 := by
+  simp [gammaPoleOffset, he]
+
+/-- The first strictly negative gamma pole of an odd character is at `-1`. -/
+theorem gammaPoleOffset_of_odd (ho : χ.Odd) : χ.gammaPoleOffset = 1 := by
+  simp [gammaPoleOffset, ho.not_even]
+
+/-- The offset to the first strictly negative gamma pole is positive. -/
+theorem gammaPoleOffset_pos : 0 < χ.gammaPoleOffset := by
+  rcases χ.even_or_odd with he | ho
+  · rw [χ.gammaPoleOffset_of_even he]; norm_num
+  · rw [χ.gammaPoleOffset_of_odd ho]; exact zero_lt_one
+
+/-- Away from the poles, shifting the real gamma factor by the first negative pole's offset
+`a` puts the contribution of the possible pole at the origin into `(a - 1) / s`. -/
+theorem logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div {s : ℂ} (hs : χ.gammaFactor s ≠ 0) :
+    logDeriv χ.gammaFactor s = logDeriv Gammaℝ (s + χ.gammaPoleOffset) -
+      ((χ.gammaPoleOffset : ℂ) - 1) / s := by
+  rcases χ.even_or_odd with he | ho
+  · rw [χ.gammaPoleOffset_of_even he, he.logDeriv_gammaFactor, ofReal_ofNat,
+      logDeriv_Gammaℝ_add_two (he.gammaFactor_def s ▸ hs)]
+    ring
+  · simp [χ.gammaPoleOffset_of_odd ho, ho.logDeriv_gammaFactor]
+
 /-- On every compact subset of the positive half-plane, the logarithmic derivatives of the
 archimedean factors of all Dirichlet characters are bounded by one constant. -/
 theorem exists_norm_logDeriv_gammaFactor_le (K : Set ℂ) (hK : IsCompact K)
@@ -86,6 +117,16 @@ theorem exists_norm_logDeriv_gammaFactor_le (K : Set ℂ) (hK : IsCompact K)
     exact hC s (.inl hs)
   · rw [ho.logDeriv_gammaFactor]
     exact hC (s + 1) (.inr ⟨s, hs, rfl⟩)
+
+/-- For `σ ∈ [1, 2]`, the logarithmic derivative of the archimedean factor of any Dirichlet
+character has norm at most `TauCeti.gammaLogDerivBound`. -/
+theorem norm_logDeriv_gammaFactor_ofReal_le {σ : ℝ} (hσ : σ ∈ Set.Icc 1 2) :
+    ‖logDeriv χ.gammaFactor σ‖ ≤ TauCeti.gammaLogDerivBound := by
+  rcases χ.even_or_odd with he | ho
+  · rw [he.logDeriv_gammaFactor]
+    exact norm_logDeriv_Gammaℝ_ofReal_le ⟨hσ.1, by linarith [hσ.2]⟩
+  · rw [ho.logDeriv_gammaFactor, ← ofReal_one, ← ofReal_add]
+    exact norm_logDeriv_Gammaℝ_ofReal_le ⟨by linarith [hσ.1], by linarith [hσ.2]⟩
 
 variable [NeZero N]
 

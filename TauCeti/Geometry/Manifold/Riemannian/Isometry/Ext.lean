@@ -75,7 +75,7 @@ theorem eqOn_connectedComponent_of_mfderiv_eq (Φ Ψ : RiemannianIsometry I J M 
     intro x hx
     refine ⟨congrArg TotalSpace.proj (hx 0), ?_⟩
     ext v
-    exact congrArg (fun z : TangentBundle J N => (z.2 : F)) (hx v)
+    exact congrArg (fun z : TangentBundle J N => (z.snd : F)) (hx v)
   have hmem : ∀ x, Φ x = Ψ x → mfderiv I J Φ x = mfderiv I J Ψ x → x ∈ S := by
     intro x hx hd v
     exact TotalSpace.ext hx (heq_of_eq (DFunLike.congr_fun hd v))

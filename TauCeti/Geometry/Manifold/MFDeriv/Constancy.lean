@@ -13,8 +13,9 @@ public import Mathlib.Analysis.Calculus.MeanValue
 
 A differentiable map with zero differential on an open subset of a real manifold is locally
 constant there. Both manifolds may have boundary or corners, and neither needs to be finite
-dimensional. On a preconnected source the map is constant. Conversely, a locally constant map is
-smooth (`IsLocallyConstant.contMDiff`).
+dimensional. On a preconnected source, or on a preconnected open set, the map is constant.
+Conversely, a locally constant map is smooth (`IsLocallyConstant.contMDiff`), and a locally
+constant vector-valued function has zero differential (`IsLocallyConstant.mvfderiv_eq_zero`).
 
 These results turn infinitesimal independence of a parameter into independence of that
 parameter itself, for example when separating the factors of a product isometry.
@@ -91,6 +92,19 @@ theorem eventuallyEq_const_of_mfderiv_eq_zero (hf : MDifferentiableOn I J f s)
   simpa only [g, Function.comp_apply, c.left_inv hys, c.left_inv (mem_extChartAt_source x)]
     using hconst _ hyr
 
+/-- A differentiable map with zero differential on a preconnected open set takes the same value at
+any two points of that set. Both manifolds may have boundary or corners. -/
+theorem apply_eq_of_mfderiv_eq_zero (hf : MDifferentiableOn I J f s) (hs : IsOpen s)
+    (hs' : IsPreconnected s) (hzero : ∀ y ∈ s, mfderiv I J f y = 0) {x y : M} (hx : x ∈ s)
+    (hy : y ∈ s) : f x = f y := by
+  have : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs'
+  -- The restriction of `f` to `s` is locally constant, hence constant on the preconnected `s`.
+  have hloc : IsLocallyConstant (s.domRestrict f) :=
+    (IsLocallyConstant.iff_eventually_eq _).mpr fun z ↦
+      (continuous_subtypeVal.tendsto z).eventually
+        (hf.eventuallyEq_const_of_mfderiv_eq_zero hs hzero z.property)
+  exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
+
 end MDifferentiableOn
 
 namespace MDifferentiable
@@ -132,5 +146,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddC
 agrees with a constant map. -/
 theorem contMDiff (hf : IsLocallyConstant f) {n : WithTop ℕ∞} : ContMDiff I J n f := fun x ↦
   contMDiffAt_const.congr_of_eventuallyEq ((IsLocallyConstant.iff_eventually_eq f).mp hf x)
+
+/-- A locally constant vector-valued function on a manifold has zero differential: near each point
+it agrees with a constant function. -/
+theorem mvfderiv_eq_zero {g : M → F} (hg : IsLocallyConstant g) (x : M) : mvfderiv I g x = 0 := by
+  rw [mvfderiv, Filter.EventuallyEq.mfderiv_eq ((IsLocallyConstant.iff_eventually_eq g).mp hg x),
+    mfderiv_const]
+  exact ContinuousLinearMap.comp_zero _
 
 end IsLocallyConstant

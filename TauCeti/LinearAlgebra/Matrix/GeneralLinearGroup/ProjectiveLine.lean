@@ -16,7 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.jordanGL` occurs in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- `TauCeti.GL2NonSplitTorusHom` occurs in the statements below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus.Basic
 -- `TauCeti.stabilizer_quotientGroup_mk` is the fixed-coset criterion the counts below run on, and
 -- this module re-exports the action of a group on the cosets of a subgroup.
 public import TauCeti.GroupTheory.QuotientGroup.Basic
@@ -124,7 +124,7 @@ theorem natCard_fixedCosets_eq_zero {g : GL (Fin 2) R}
     rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def,
       MulAut.conj_apply] at hmem
     exact h y⁻¹ hmem
-  have : IsEmpty {c : GL (Fin 2) R ⧸ GL2Borel R // g • c = c} := ⟨fun c => hnone c.1 c.2⟩
+  have : IsEmpty {c : GL (Fin 2) R ⧸ GL2Borel R // g • c = c} := ⟨fun c => hnone c.val c.property⟩
   exact Nat.card_of_isEmpty
 
 end CommRing

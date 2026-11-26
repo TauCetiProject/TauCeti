@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.HeatKernel.BoundedContinuous
 public import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 public import TauCeti.Topology.ContinuousMap.Bounded.UniformContinuous
+public import TauCeti.Analysis.Holder.UniformContinuous
+import TauCeti.Analysis.Holder.Iterated
 
 /-!
 # Heat regularization of bounded uniformly continuous data
@@ -18,8 +20,10 @@ continuous functions gives `TauCeti.heatCauchyPotentialBUC`.
 
 On that subspace the regularizations converge in supremum norm to the initial datum. In
 particular, smooth functions with bounded derivatives of every order are dense there, with no
-increase of the supremum norm. Such approximants allow comparison estimates for smooth-data
-parabolic problems to pass to uniformly continuous initial traces. This file asserts neither
+increase of the supremum norm. Since a bounded field with a bounded derivative is Hölder, bounded
+`C^{k+1,α}` functions are dense there for `α ≤ 1` (`TauCeti.CkHolderSpace.denseRange_toBUC`). Such
+approximants allow comparison estimates for smooth-data parabolic problems to pass to uniformly
+continuous initial traces. This file asserts neither
 solvability for variable coefficients nor a uniform bound on derivatives as time tends to zero.
 
 The analytic inputs are the derivative bounds for heat convolutions in
@@ -40,7 +44,7 @@ noncomputable section
 namespace TauCeti
 
 open BoundedContinuousFunction Filter MeasureTheory
-open scoped Topology Convolution ContDiff
+open scoped Topology Convolution ContDiff NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -122,5 +126,28 @@ theorem exists_contDiff_bounded_derivatives_approximation
   · simpa only [one_mul] using
       (heatCauchyPotentialBUC t).le_of_opNorm_le (norm_heatCauchyPotentialBUC_le t) g
   · exact ⟨_, norm_iteratedFDeriv_heatCauchyPotentialBCF_le htg g.val m⟩
+
+namespace CkHolderSpace
+
+variable {k : ℕ} {α : ℝ≥0}
+
+/-- **Density of `C_b^{k+1,α}` in `BUC`.** On a finite-dimensional real inner product space, every
+bounded uniformly continuous function is a uniform limit of bounded `C^{k+1,α}` functions, for
+`α ≤ 1`. -/
+theorem denseRange_toBUC (hα : α ≤ 1) :
+    DenseRange (toBUC (k := k) (α := α) (E := E) (F := F)) := by
+  intro w
+  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
+  obtain ⟨h, hsmooth, hdist, -, hbdd⟩ := exists_contDiff_bounded_derivatives_approximation w hε
+  choose C hC using hbdd
+  obtain ⟨G, hG⟩ := exists_coe_eq_of_contDiff hα (k + 1) (hsmooth.of_le (mod_cast le_top))
+    fun i _ ↦ ⟨C i, hC i⟩
+  refine ⟨toBUC G, ⟨_, rfl⟩, ?_⟩
+  have heq : toBUC G = h :=
+    Subtype.ext <| BoundedContinuousFunction.ext fun x ↦ by rw [toBUC_apply, hG]
+  rw [heq, dist_comm, dist_eq_norm]
+  exact hdist
+
+end CkHolderSpace
 
 end TauCeti

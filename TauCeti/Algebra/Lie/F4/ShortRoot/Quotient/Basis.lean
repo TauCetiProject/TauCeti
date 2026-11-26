@@ -16,6 +16,14 @@ simple coroots at zero-based Lean indices `0` and `1`. The special F4 root permu
 these coordinates by the same `Fin 26` labels as the short-root basis. Their images in the quotient
 form a basis with the normalization required by the special isogeny.
 
+## Implementation notes
+
+`range_f4LongRootBasisCoordinate`, `f4ModularChevalleyBasis_longRootBasisCoordinate_twelve` and
+`f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen` are deliberately not `@[simp]`. Their
+discrimination-tree keys unfold the reducible F₄ carrier types into tens of thousands of keys, and
+the per-module simp summary in the olean then holds a list chain deep enough to overflow the stack
+of `leantar` when the build cache is packed or unpacked. Pass them to `simp` by name.
+
 ## References
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11, for the
@@ -166,7 +174,7 @@ private theorem exists_f4LongRootBasisCoordinate_eq_inr
 
 /-- The complementary coordinates exhaust exactly the Chevalley coordinates that are not short:
 the twenty-four long roots and the two long simple coroots. -/
-@[simp] theorem range_f4LongRootBasisCoordinate :
+theorem range_f4LongRootBasisCoordinate :
     Set.range f4LongRootBasisCoordinate = f4ShortChevalleyIndicesᶜ := by
   ext x
   refine ⟨?_, fun hx => ?_⟩
@@ -214,7 +222,7 @@ noncomputable def f4LongRootComplementBasis :
   simp [f4LongRootComplementBasis, Basis.map_apply, Basis.span_apply]
 
 /-- Complement coordinate twelve is the surviving simple coroot at index one. -/
-@[simp] theorem f4ModularChevalleyBasis_longRootBasisCoordinate_twelve :
+theorem f4ModularChevalleyBasis_longRootBasisCoordinate_twelve :
     f4ModularChevalleyBasis (f4LongRootBasisCoordinate 12) =
       f4ModularSimpleCoroot (Fin.cast rank_F4.symm (1 : Fin 4)) := by
   simp only [f4LongRootBasisCoordinate, f4ShortRootWeightIndexEquiv_apply_twelve]
@@ -224,7 +232,7 @@ noncomputable def f4LongRootComplementBasis :
     f4LongSimpleIndex_zero).trans (f4ModularSimpleCoroot_eq_basis _).symm
 
 /-- Complement coordinate thirteen is the surviving simple coroot at index zero. -/
-@[simp] theorem f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen :
+theorem f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen :
     f4ModularChevalleyBasis (f4LongRootBasisCoordinate 13) =
       f4ModularSimpleCoroot (Fin.cast rank_F4.symm (0 : Fin 4)) := by
   simp only [f4LongRootBasisCoordinate, f4ShortRootWeightIndexEquiv_apply_thirteen]
@@ -287,6 +295,19 @@ theorem f4ShortRootQuotientBasis_thirteen :
   apply congrArg f4ShortRootSubspace.mkQ
   apply congrArg f4ModularRootVector
   exact (f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv γ).symm
+
+/-- A short-root lift vanishes after quotienting by the short-root ideal. -/
+@[simp] theorem f4ShortRootSubspace_quotientMk_rootVector_eq_zero_of_short
+    (α : Fin 48) (hα : f4Length α = 1) :
+    (Submodule.Quotient.mk (f4ModularRootVector α) :
+      f4ModularChevalleyLieAlgebra ⧸ f4ShortRootSubspace) = 0 :=
+  (Submodule.Quotient.mk_eq_zero _).2 (f4ModularRootVector_mem_shortRootSubspace α hα)
+
+/-- A short-root lift vanishes under the bundled quotient map by the short-root ideal. -/
+theorem f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short
+    (α : Fin 48) (hα : f4Length α = 1) :
+    f4ShortRootSubspace.mkQ (f4ModularRootVector α) = 0 :=
+  (Submodule.mkQ_apply _ _).trans (f4ShortRootSubspace_quotientMk_rootVector_eq_zero_of_short α hα)
 
 
 end

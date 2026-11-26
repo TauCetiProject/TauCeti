@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.AdicCompletion.Basic
+public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 import Mathlib.Algebra.Module.Projective
 import Mathlib.RingTheory.Finiteness.Cardinality
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
@@ -31,7 +36,10 @@ schemes. Neither noetherianity of `A` nor finite generation of `I` is needed.
 ## Main definitions
 
 * `TauCeti.ModuleTower.IsAdicSystem`: the tower is an `I`-adic system.
+* `TauCeti.ModuleTower.IsAdicSystem.levelModule`: each term over `A ⧸ I ^ (n + 1)`, with
+  quotient-linear transition `levelTransition` and bijective base-change map `levelReduction`.
 * `TauCeti.ModuleTower.IsAdicSystem.limQuotientEquiv`: `L ⧸ I^{n+1} L ≃ Mₙ`.
+* `TauCeti.ModuleTower.IsAdicSystem.limBaseChangeEquiv`: quotient-linear scalar change of the limit.
 * `TauCeti.ModuleTower.IsAdicSystem.ofLimHom`: the morphism of adic systems induced by a linear map
   of their limits.
 * `TauCeti.ModuleTower.IsAdicSystem.limMapEquiv`: morphisms of adic systems are the linear maps of
@@ -40,8 +48,15 @@ schemes. Neither noetherianity of `A` nor finite generation of `I` is needed.
 ## Main results
 
 * `TauCeti.ModuleTower.IsAdicSystem.pow_smul_top_eq_bot`: `I^{n+1} Mₙ = 0`.
+* `TauCeti.ModuleTower.IsAdicSystem.surjective_limπ_comp`: bottom surjectivity implies
+  surjectivity onto each term.
+* `TauCeti.ModuleTower.IsAdicSystem.surjective_of_surjective_limπ_zero_comp`: bottom surjectivity
+  from an `I`-adically precomplete module implies surjectivity onto the limit.
+* `TauCeti.ModuleTower.IsAdicSystem.finite_obj`: if `M₀` is finite, then so is every `Mₙ`.
 * `TauCeti.ModuleTower.IsAdicSystem.finite_lim`: the limit is a finite module.
 * `TauCeti.ModuleTower.IsAdicSystem.ker_limπ`: the kernel of `L → Mₙ` is `I^{n+1} L`.
+* `TauCeti.ModuleTower.IsAdicSystem.isBaseChange_limπ`: `L → Mₙ` exhibits scalar change to
+  `A ⧸ I ^ (n + 1)`.
 
 ## References
 
@@ -91,7 +106,7 @@ variable {P : Type*} [AddCommGroup P] [Module A P] {φ : P →ₗ[A] F.lim}
 
 /-- Nakayama's lemma along the tower: if `P → L → M₀` is surjective, then so is every
 `P → L → Mₙ`. -/
-private theorem surjective_limπ_comp (hφ : Function.Surjective (F.limπ 0 ∘ₗ φ)) (n : ℕ) :
+theorem surjective_limπ_comp (hφ : Function.Surjective (F.limπ 0 ∘ₗ φ)) (n : ℕ) :
     Function.Surjective (F.limπ n ∘ₗ φ) := by
   rw [← LinearMap.range_eq_top] at hφ ⊢
   induction n with
@@ -134,13 +149,13 @@ private theorem exists_mem_pow_smul_top_eq [IsPrecomplete I P]
     (hφ : ∀ n, Function.Surjective (F.limπ n ∘ₗ φ)) {n : ℕ} {z : F.lim}
     (hz : F.limπ n z = 0) : ∃ a ∈ I ^ (n + 1) • (⊤ : Submodule A P), φ a = z := by
   choose c hc hcz using fun m (w : {w : F.lim // F.limπ m w = 0}) ↦
-    hF.exists_mem_pow_smul_top_limπ_sub_eq_zero hφ w.2
+    hF.exists_mem_pow_smul_top_limπ_sub_eq_zero hφ w.property
   -- The remainders `wⱼ = z - φ(sⱼ)`, vanishing in `Mₙ₊ⱼ`, and the partial sums `sⱼ`.
   let w : ∀ j, {w : F.lim // F.limπ (n + j) w = 0} := fun j ↦
-    Nat.rec ⟨z, hz⟩ (fun j wj ↦ ⟨wj.1 - φ (c (n + j) wj), hcz (n + j) wj⟩) j
+    Nat.rec ⟨z, hz⟩ (fun j wj ↦ ⟨wj.val - φ (c (n + j) wj), hcz (n + j) wj⟩) j
   let s : ℕ → P := fun j ↦ ∑ i ∈ Finset.range j, c (n + i) (w i)
   have hs_succ (j : ℕ) : s (j + 1) = s j + c (n + j) (w j) := Finset.sum_range_succ _ _
-  have hs (j : ℕ) : z - φ (s j) = (w j).1 := by
+  have hs (j : ℕ) : z - φ (s j) = (w j).val := by
     induction j with
     | zero => simp [s, w]
     | succ j ih => rw [hs_succ, map_add, ← sub_sub, ih]
@@ -165,41 +180,166 @@ private theorem exists_mem_pow_smul_top_eq [IsPrecomplete I P]
     hF.pow_smul_top_le_ker (F.limπ m ∘ₗ φ) (has (m + 1))
   have h₂ : F.limπ m (z - φ (s (m + 1))) = 0 := by
     rw [hs, ← LinearMap.congr_fun (F.transitionOfLE_comp_limπ (by omega : m ≤ n + (m + 1))),
-      LinearMap.comp_apply, (w (m + 1)).2, map_zero]
+      LinearMap.comp_apply, (w (m + 1)).property, map_zero]
   have hdiff : φ a - z = φ (a - s (m + 1)) - (z - φ (s (m + 1))) := by
     rw [map_sub]; abel
   have h : F.limπ m (φ a) = F.limπ m z := by
     rw [← sub_eq_zero, ← map_sub, hdiff, map_sub, h₁, h₂, sub_zero]
   simpa using h
 
-/-- A finite free module mapping onto every term of an adic system with finite `M₀`. -/
-private theorem exists_fin_surjective_limπ_comp [Module.Finite A (F.obj (op 0))] :
-    ∃ (k : ℕ) (φ : (Fin k → A) →ₗ[A] F.lim), ∀ n, Function.Surjective (F.limπ n ∘ₗ φ) := by
+/-- A linear map to the limit of an `I`-adic system is surjective if its source is
+`I`-adically precomplete and its composite with the bottom projection is surjective. -/
+theorem surjective_of_surjective_limπ_zero_comp [IsPrecomplete I P]
+    (hφ : Function.Surjective (F.limπ 0 ∘ₗ φ)) : Function.Surjective φ := by
+  have hφn := hF.surjective_limπ_comp hφ
+  intro z
+  obtain ⟨c, hc⟩ := hφ (F.limπ 0 z)
+  obtain ⟨a, -, ha⟩ := hF.exists_mem_pow_smul_top_eq hφn (n := 0) (z := z - φ c) <| by
+    rw [map_sub, sub_eq_zero]
+    exact hc.symm
+  exact ⟨a + c, by rw [map_add, ha, sub_add_cancel]⟩
+
+/-- A finite free module mapping onto the bottom term of an adic system with finite `M₀`. -/
+private theorem exists_fin_surjective_limπ_zero_comp [Module.Finite A (F.obj (op 0))] :
+    ∃ (k : ℕ) (φ : (Fin k → A) →ₗ[A] F.lim), Function.Surjective (F.limπ 0 ∘ₗ φ) := by
   obtain ⟨k, g, hg⟩ := Module.Finite.exists_fin' A (F.obj (op 0))
   obtain ⟨φ, hφ⟩ := Module.projective_lifting_property (F.limπ 0) g
     (F.limπ_surjective hF.transition_surjective 0)
-  exact ⟨k, φ, hF.surjective_limπ_comp (hφ ▸ hg)⟩
+  exact ⟨k, φ, hφ ▸ hg⟩
+
+/-- **Every term of an `I`-adic system with `M₀` finite is a finite module**, over any commutative
+ring: `Mₙ` is generated by lifts of generators of `M₀ = Mₙ ⧸ I Mₙ`, as `I` is nilpotent on `Mₙ`. -/
+theorem finite_obj [Module.Finite A (F.obj (op 0))] (n : ℕ) :
+    Module.Finite A (F.obj (op n)) := by
+  obtain ⟨k, φ, hφ⟩ := hF.exists_fin_surjective_limπ_zero_comp
+  exact Module.Finite.of_surjective _ (hF.surjective_limπ_comp hφ n)
+
+noncomputable section QuotientLevels
+
+open scoped ChangeOfRings
+
+/-- The ideal `I ^ (n + 1)` annihilates the `n`-th term of an adic system. -/
+lemma isTorsionBySet_obj (n : ℕ) :
+    Module.IsTorsionBySet A (F.obj (op n)) (I ^ (n + 1) : Ideal A) :=
+  (Module.isTorsionBySet_iff_subset_annihilator _ _).2 <| by
+    rw [← Submodule.annihilator_top]
+    exact Submodule.le_annihilator_iff.2 (hF.pow_smul_top_eq_bot n)
+
+/-- The `n`-th term of an `I`-adic system, as a module over `A ⧸ I ^ (n + 1)`. -/
+-- This is a type abbreviation: quotient scalar-action lemmas must see the original carrier.
+abbrev levelModule (n : ℕ) : ModuleCat.{v} (A ⧸ I ^ (n + 1)) :=
+  letI := (isTorsionBySet_obj hF n).module
+  ModuleCat.of _ (F.obj (op n))
+
+/-- The transition `Mₙ₊₁ → Mₙ` of an `I`-adic system, as a map of `A ⧸ I ^ (n + 2)`-modules. -/
+def levelTransition (n : ℕ) :
+    levelModule hF (n + 1) ⟶ (ModuleCat.restrictScalars (Ideal.Quotient.factor
+      (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))).obj (levelModule hF n) :=
+  ModuleCat.semilinearMapAddEquiv (Ideal.Quotient.factor
+    (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))
+      (levelModule hF (n + 1)) (levelModule hF n)
+    { toFun := F.transition n
+      map_add' := map_add _
+      map_smul' s x := by
+        obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective s
+        rw [Ideal.Quotient.factor_mk]
+        exact (congrArg (F.transition n) ((isTorsionBySet_obj hF (n + 1)).mk_smul r x)).trans
+          (((F.transition n).map_smul r x).trans
+            ((isTorsionBySet_obj hF n).mk_smul r (F.transition n x)).symm) }
+
+/-- The quotient-linear transition is the original transition on elements. -/
+@[simp]
+lemma levelTransition_apply (n : ℕ) (x : levelModule hF (n + 1)) :
+    (levelTransition hF n).hom x = F.transition n x :=
+  (rfl)
+
+omit hF
+
+variable {F : ModuleTower.{max u v} A} (hF : F.IsAdicSystem I)
+
+/-- The map `(A ⧸ I ^ (n + 1)) ⊗ Mₙ₊₁ ⟶ Mₙ` induced by the transition of an `I`-adic system. -/
+def levelReduction (n : ℕ) :
+    (ModuleCat.extendScalars (Ideal.Quotient.factor
+      (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))).obj (levelModule hF (n + 1)) ⟶
+      levelModule hF n :=
+  ((ModuleCat.extendRestrictScalarsAdj _).homEquiv _ _).symm (levelTransition hF n)
+
+/-- The base-change map sends `1 ⊗ x` to the transition of `x`. -/
+@[simp]
+lemma levelReduction_one_tmul (n : ℕ) (x : levelModule hF (n + 1)) :
+    (levelReduction hF n).hom ((1 : A ⧸ I ^ (n + 1)) ⊗ₜ[A ⧸ I ^ (n + 1 + 1),
+      Ideal.Quotient.factor (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))]
+        x) =
+      F.transition n x :=
+  ModuleCat.extendRestrictScalarsAdj_homEquiv_apply (levelReduction hF n) _ |>.symm.trans <| by
+    rw [levelReduction, Equiv.apply_symm_apply]
+    exact levelTransition_apply hF n x
+
+/-- `(A ⧸ I ^ (n + 1)) ⊗ Mₙ₊₁ ⟶ Mₙ` is bijective: the transition `Mₙ₊₁ → Mₙ` is surjective with
+kernel `I ^ (n + 1) Mₙ₊₁`, which is the kernel of `Mₙ₊₁ → (A ⧸ I ^ (n + 1)) ⊗ Mₙ₊₁`. -/
+lemma levelReduction_bijective (n : ℕ) : Function.Bijective (levelReduction hF n).hom := by
+  let φ := Ideal.Quotient.factor (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))
+  have hφ : Function.Surjective φ := Ideal.Quotient.factor_surjective _
+  let := φ.toAlgebra
+  let := (isTorsionBySet_obj hF (n + 1)).module
+  have := (isTorsionBySet_obj hF (n + 1)).isScalarTower (S := A)
+  let e := ModuleCat.extendScalarsAlgebraMapIso (S := A ⧸ I ^ (n + 1))
+    (levelModule hF (n + 1))
+  refine ⟨(injective_iff_map_eq_zero _).2 fun z hz ↦ ?_, fun y ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ := e.toLinearEquiv.symm.surjective z
+    obtain ⟨x, rfl⟩ := TensorProduct.mk_surjective (A ⧸ I ^ (n + 1 + 1)) (levelModule hF (n + 1))
+      (A ⧸ I ^ (n + 1)) hφ z
+    -- Select the original `A`-module carrier for the adic-system kernel formula.
+    have hx : (show F.obj (op (n + 1)) from x) ∈
+        I ^ (n + 1) • (⊤ : Submodule A (F.obj (op (n + 1)))) := by
+      rw [← hF.ker_transition n, LinearMap.mem_ker, ← levelReduction_one_tmul hF n x]
+      exact (congrArg (levelReduction hF n).hom
+        (ModuleCat.extendScalarsAlgebraMapIso_inv_tmul (S := A ⧸ I ^ (n + 1))
+          (levelModule hF (n + 1)) 1 x).symm).trans hz
+    have ht : (1 : A ⧸ I ^ (n + 1)) ⊗ₜ[A ⧸ I ^ (n + 1 + 1)] x = 0 := by
+      apply (LinearMap.mem_ker (f := TensorProduct.mk _ _ _ 1)).mp
+      rw [TensorProduct.ker_mk_one_of_surjective hφ]
+      -- Restricting `ker φ • Mₙ₊₁` to `A` gives `I ^ (n + 1) • Mₙ₊₁`.
+      dsimp only [RingHom.algebraMap_toAlgebra, φ]
+      rw [Ideal.Quotient.factor_ker]
+      exact (Submodule.restrictScalars_mem A _ _).mp <|
+        (SetLike.ext_iff.mp (Ideal.smul_restrictScalars (M := F.obj (op (n + 1)))
+          (I ^ (n + 1)) (⊤ : Submodule (A ⧸ I ^ (n + 1 + 1)) _)) x).mpr hx
+    exact (congrArg e.inv ht).trans (map_zero _)
+  · obtain ⟨x, rfl⟩ := hF.transition_surjective n y
+    exact ⟨_, levelReduction_one_tmul hF n x⟩
+
+variable {F : ModuleTower.{v} A} (hF : F.IsAdicSystem I)
+  [IsNoetherianRing A] [Module.Finite A (F.obj (op 0))]
+
+/-- Over a noetherian ring, every quotient-ring level of a finite adic system is finitely
+presented. -/
+lemma finitePresentation_levelModule (n : ℕ) :
+    Module.FinitePresentation (A ⧸ I ^ (n + 1)) (levelModule hF n) := by
+  let := (isTorsionBySet_obj hF n).module
+  have := (isTorsionBySet_obj hF n).isScalarTower (S := A)
+  have := hF.finite_obj n
+  have : Module.Finite (A ⧸ I ^ (n + 1)) (levelModule hF n) :=
+    Module.Finite.of_restrictScalars_finite A (A ⧸ I ^ (n + 1)) (F.obj (op n))
+  exact Module.finitePresentation_of_finite _ _
+
+end QuotientLevels
 
 variable [IsPrecomplete I A] [Module.Finite A (F.obj (op 0))]
 
 /-- **The kernel of `lim Mₙ → Mₙ` is `I^{n+1} lim Mₙ`** for an `I`-adic system over an
 `I`-adically precomplete ring with `M₀` finite (EGA I, Ch. 0, 7.2.9). -/
 theorem ker_limπ (n : ℕ) : LinearMap.ker (F.limπ n) = I ^ (n + 1) • ⊤ := by
-  obtain ⟨k, φ, hφ⟩ := hF.exists_fin_surjective_limπ_comp
+  obtain ⟨k, φ, hφ⟩ := hF.exists_fin_surjective_limπ_zero_comp
   refine le_antisymm (fun z hz ↦ ?_) (hF.pow_smul_top_le_ker _)
-  obtain ⟨a, ha, rfl⟩ := hF.exists_mem_pow_smul_top_eq hφ hz
+  obtain ⟨a, ha, rfl⟩ := hF.exists_mem_pow_smul_top_eq (hF.surjective_limπ_comp hφ) hz
   exact Submodule.smul_top_le_comap_smul_top _ φ ha
 
 /-- **The limit of an `I`-adic system with `M₀` finite is a finite module** over an `I`-adically
 precomplete ring (EGA I, Ch. 0, 7.2.9). -/
 theorem finite_lim : Module.Finite A F.lim := by
-  obtain ⟨k, φ, hφ⟩ := hF.exists_fin_surjective_limπ_comp
-  refine Module.Finite.of_surjective φ fun z ↦ ?_
-  obtain ⟨c, hc⟩ := hφ 0 (F.limπ 0 z)
-  obtain ⟨a, -, ha⟩ := hF.exists_mem_pow_smul_top_eq hφ (n := 0) (z := z - φ c) <| by
-    rw [map_sub, sub_eq_zero]
-    exact hc.symm
-  exact ⟨a + c, by rw [map_add, ha, sub_add_cancel]⟩
+  obtain ⟨k, φ, hφ⟩ := hF.exists_fin_surjective_limπ_zero_comp
+  exact Module.Finite.of_surjective φ (hF.surjective_of_surjective_limπ_zero_comp hφ)
 
 /-- **`lim Mₙ ⧸ I^{n+1} lim Mₙ ≃ Mₙ`** for an `I`-adic system over an `I`-adically precomplete ring
 with `M₀` finite (EGA I, Ch. 0, 7.2.9), induced by the projection `lim Mₙ → Mₙ`. -/
@@ -212,6 +352,35 @@ noncomputable def limQuotientEquiv (n : ℕ) :
 theorem limQuotientEquiv_mk (n : ℕ) (x : F.lim) :
     hF.limQuotientEquiv n (Submodule.Quotient.mk x) = F.limπ n x := by
   simp [limQuotientEquiv]
+
+open scoped TensorProduct
+
+/-- The limit projection exhibits the `n`-th term as scalar change to `A ⧸ I ^ (n + 1)`. -/
+theorem isBaseChange_limπ (n : ℕ) :
+    letI := (hF.isTorsionBySet_obj n).isScalarTower (S := A)
+    IsBaseChange (N := hF.levelModule n) (A ⧸ I ^ (n + 1)) (F.limπ n) := by
+  have := (hF.isTorsionBySet_obj n).isScalarTower (S := A)
+  exact (IsBaseChange.quotient_iff (N := hF.levelModule n) _ _).2
+    ⟨F.limπ_surjective hF.transition_surjective n, hF.ker_limπ n⟩
+
+/-- The quotient-linear scalar-change equivalence induced by a limit projection. -/
+noncomputable def limBaseChangeEquiv (n : ℕ) :
+    (A ⧸ I ^ (n + 1)) ⊗[A] F.lim ≃ₗ[A ⧸ I ^ (n + 1)] hF.levelModule n :=
+  (hF.isBaseChange_limπ n).equiv
+
+/-- The scalar-change equivalence evaluates `1 ⊗ x` by the limit projection. -/
+@[simp↓]
+theorem limBaseChangeEquiv_one_tmul (n : ℕ) (x : F.lim) :
+    hF.limBaseChangeEquiv n (1 ⊗ₜ[A] x) = F.limπ n x := by
+  unfold limBaseChangeEquiv
+  simp only [IsBaseChange.equiv_tmul, one_smul]
+
+/-- The inverse scalar-change equivalence sends a projected element to `1 ⊗ x`. -/
+@[simp↓]
+theorem limBaseChangeEquiv_symm_limπ (n : ℕ) (x : F.lim) :
+    (hF.limBaseChangeEquiv n).symm (F.limπ n x) = 1 ⊗ₜ[A] x := by
+  apply (hF.limBaseChangeEquiv n).injective
+  rw [LinearEquiv.apply_symm_apply, hF.limBaseChangeEquiv_one_tmul]
 
 /-! ### Morphisms of adic systems and linear maps of their limits -/
 

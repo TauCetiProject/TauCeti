@@ -120,7 +120,7 @@ theorem IsCofinite.exists_isBounded_dirichletDomain_diff_iUnion_horodisc (hΓ : 
     C.cuspDatum.exists_finset_isBounded_dirichletDomain_inter_setOf_dist_smul_lt_diff p hδ
   -- these translates are the horodiscs of the transported cusp data
   let E (i : Σ C : Γ.CuspOrbit, s C) : Γ.CuspDatum :=
-    i.1.cuspDatum.conj (conjAct_pointwise_smul_eq_self (le_normalizer i.2.1.2))
+    i.1.cuspDatum.conj (conjAct_pointwise_smul_eq_self (le_normalizer i.2.val.property))
   have hE (i : Σ C : Γ.CuspOrbit, s C) :
       (E i).horodisc (A i.1) = (i.2 : Γ) • i.1.cuspDatum.horodisc (A i.1) :=
     i.1.cuspDatum.horodisc_conj _ _
@@ -135,7 +135,7 @@ theorem IsCofinite.exists_isBounded_dirichletDomain_diff_iUnion_horodisc (hΓ : 
   right
   simp only [mem_thickPart, not_forall, not_le, exists_prop] at hthick
   obtain ⟨g, hg₁, hgz⟩ := hthick
-  rcases hδΓ g g.2 z hgz with ⟨w, hw⟩ | hpar
+  rcases hδΓ g g.property z hgz with ⟨w, hw⟩ | hpar
   · exact Or.inl ⟨hz, g, hg₁, ⟨w, hw⟩, hgz.le⟩
   -- a parabolic element fixes a cusp point, in the orbit of the cusp of a chosen datum
   right
@@ -248,9 +248,7 @@ theorem isCofinite_iff_exists_convexPolygon_carrier_eq_dirichletDomain [Discrete
       (ne_top_of_le_ne_top (b := volume (dirichletDomain Γ p)) ?_ ?_)
     · rw [← hP, ConvexPolygon.volume_carrier]
       exact ENNReal.ofReal_ne_top
-    · calc volume s = volume (⋃ g : Γ, g • dirichletDomain Γ p ∩ s) := by
-            rw [← iUnion_inter, iUnion_smul_dirichletDomain, univ_inter]
-        _ ≤ ∑' g : Γ, volume (g • dirichletDomain Γ p ∩ s) := measure_iUnion_le _
-        _ = volume (dirichletDomain Γ p) := (hs.measure_eq_tsum _).symm
+    · exact hs.measure_le_of_subset_iUnion_smul <| by
+        rw [iUnion_smul_dirichletDomain]; exact subset_univ s
 
 end Subgroup

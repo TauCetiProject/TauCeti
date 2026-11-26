@@ -28,14 +28,16 @@ step in making it a Huber pair over `(A, A⁺)`.
 Fix a pair of definition `(A₀, I)` of `A` and a finitely generated `A₀`-submodule `M₀ ⊆ B`
 containing `1` and spanning `B` over `A`. The submodules `Iⁿ • M₀` are a neighbourhood basis of
 `0` (`TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero_idealOfDefinition_pow_smul`). The
-*multiplier ring* `B₀ = {b ∈ B | b M₀ ⊆ M₀}` is a subring of `B` (`AddSubgroup.multiplierRing`).
+*multiplier ring* `B₀ = {b ∈ B | b M₀ ⊆ M₀}` is a subring of `B` (`AddSubgroup.multiplierRing`),
+the underlying subring of the left order `O_l(M₀)`, an `A₀`-subalgebra (`Submodule.leftOrder`).
 Since `M₀ * M₀` is finitely generated, a power `Iʲ` carries it into `M₀`
 (`TauCeti.Huber.PairOfDefinition.exists_pow_smul_le`), so `Iʲ • M₀ ⊆ B₀`
-(`Submodule.smul_subset_multiplierRing`) and `B₀` is open. With the extension `J` of `I` to
-`B₀`, one gets `I^(n + j) • M₀ ⊆ Jⁿ ⊆ Iⁿ • M₀` (`Submodule.smul_subset_coe_map_pow`,
-`Submodule.coe_map_pow_subset`), the second inclusion because `1 ∈ M₀` and `B₀ M₀ ⊆ M₀`. So the
-topology of `B₀` is the `J`-adic one and `(B₀, J)` is a pair of definition of `B`. When `A` is
-Tate, the image of a pseudouniformiser of `A` is one of `B`.
+(`Submodule.smul_subset_leftOrder`) and `B₀` is open. With the extension `J` of `I` along
+the structure map `A₀ → O_l(M₀)`, one gets `I^(n + j) • M₀ ⊆ Jⁿ ⊆ Iⁿ • M₀`
+(`Submodule.smul_subset_coe_map_pow`, `Submodule.coe_map_pow_subset`), the second inclusion
+because `1 ∈ M₀` and `B₀ M₀ ⊆ M₀`. So the topology of `B₀` is the `J`-adic one and `(B₀, J)` is
+a pair of definition of `B`. When `A` is Tate, the image of a pseudouniformiser of `A` is one of
+`B`.
 
 ## Main results
 
@@ -104,20 +106,22 @@ theorem exists_pairOfDefinition_isIntegral (P : PairOfDefinition A) :
     rw [Submodule.span_mul_span]
     exact Submodule.fg_span (hT.mul hT)
   obtain ⟨j, hj⟩ := P.exists_pow_smul_le M₀ hfg (by simp [hspan])
-  have hjB₀ := Submodule.smul_subset_multiplierRing hj
-  set B₀ := M₀.toAddSubgroup.multiplierRing
-  set J := P.idealOfDefinition.map M₀.toMultiplierRing
+  -- `B₀` is the underlying subring of the left order `O_l(M₀)`
+  set B₀ := M₀.leftOrder.toSubring
+  have hjB₀ := Submodule.smul_subset_leftOrder hj
+  set J : Ideal M₀.leftOrder := P.idealOfDefinition.map (algebraMap _ M₀.leftOrder)
   refine ⟨{ ringOfDefinition := B₀
             isOpen_ringOfDefinition := B₀.toAddSubgroup.isOpen_of_mem_nhds
               (mem_of_superset (hbasis.mem_of_mem (i := j) trivial) hjB₀)
             idealOfDefinition := J
             fg_idealOfDefinition := P.fg_idealOfDefinition.map _
             isAdic_idealOfDefinition := isAdic_iff.mpr ⟨fun n ↦ ?_, fun U hU ↦ ?_⟩ },
-    fun a ha ↦ M₀.algebraMap_mem_multiplierRing ⟨a, ha⟩,
-    fun b hb ↦ Submodule.isIntegral_of_mem_multiplierRing (Submodule.fg_span hT) h1 hb⟩
+    fun a ha ↦ M₀.leftOrder.algebraMap_mem ⟨a, ha⟩,
+    fun b hb ↦ (Submodule.fg_span hT).isIntegral_of_mem_multiplierRing h1
+      (by rwa [← Submodule.toSubring_leftOrder])⟩
   · -- `Jⁿ` contains the neighbourhood `I^(n + j) • M₀` of `0`
     refine (J ^ n).toAddSubgroup.isOpen_of_mem_nhds (g := 0) ?_
-    have hmem := continuous_subtype_val.continuousAt.preimage_mem_nhds
+    have hmem := continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (hbasis.mem_of_mem (i := n + j) trivial) (x := (0 : B₀))
     refine mem_of_superset hmem fun x hx ↦ ?_
     obtain ⟨y, hy, hxy⟩ := Submodule.smul_subset_coe_map_pow hjB₀ n hx
@@ -180,7 +184,7 @@ theorem isOpen_integralClosure_map_algebraMap [IsHuberRing A] {C : Subring A}
   -- `b` is integral over `A₀`, hence over the image of `C ⊇ A₀`
   let φ : P.ringOfDefinition →+* C.map (algebraMap A B) :=
     ((algebraMap A B).comp P.ringOfDefinition.subtype).codRestrict _
-      fun a ↦ Subring.mem_map.mpr ⟨a, hP a.2, rfl⟩
+      fun a ↦ Subring.mem_map.mpr ⟨a, hP a.property, rfl⟩
   exact (hQ b hb).map_of_comp_eq φ (RingHom.id B) (RingHom.ext fun _ ↦ rfl)
 
 end CommRing

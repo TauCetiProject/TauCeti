@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.StripAction
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
@@ -56,10 +54,10 @@ The first variation formula shows that the **Hamiltonian chords** from `L₀` to
 fixed, gives a variation along which the action has a nonzero derivative. Hence, on a manifold
 without boundary modelled on a finite-dimensional space, the critical paths are exactly the
 Hamiltonian chords (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianPathActionCritical_iff`).
-These are the generators of the Floer complex of the pair `(L₀, L₁)`. The converse follows the
-argument for loops,
-`TauCeti.SmoothTwoForm.IsNondegenerate.mem_periodicSolutions_of_forall_integral_eq_zero`, with the
-chart variations `TauCeti.Manifold.sinChartVariation`.
+These are the generators of the Floer complex of the pair `(L₀, L₁)`. The converse applies the
+chart-variation argument for paths of `TauCeti.Geometry.Symplectic.Hamiltonian.LoopVariation`,
+shared with the action of seamed paths, to the chart variations
+`TauCeti.Manifold.sinChartVariation`, which fix the endpoints.
 
 ## Main definitions
 
@@ -141,36 +139,36 @@ omit [TopologicalSpace N₀] [TopologicalSpace N₁] in
 /-- The first variation formula, for any variation whose two sides have line integrals of `α`
 given by the changes of `f₀ ∘ c₀` and `f₁ ∘ c₁`. -/
 private theorem hasDerivAt_lagrangianPathAction_of_pathIntegral (hω : ω.IsNondegenerate)
-    (hα : mextDeriv α.1 = ω.1) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hα : mextDeriv α.val = ω.val) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w) {s₀ : ℝ}
-    (h₀ : ∀ s, pathIntegral α.1 (fun s ↦ w (s, 0)) s₀ s = f₀ (c₀ s) - f₀ (c₀ s₀))
-    (h₁ : ∀ s, pathIntegral α.1 (fun s ↦ w (s, 1)) s₀ s = f₁ (c₁ s) - f₁ (c₁ s₀)) :
-    HasDerivAt (fun s ↦ lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ w (s, t)) (c₀ s) (c₁ s))
-      (∫ t in 0..1, ω.1 (w (s₀, t))
+    (h₀ : ∀ s, pathIntegral α.val (fun s ↦ w (s, 0)) s₀ s = f₀ (c₀ s) - f₀ (c₀ s₀))
+    (h₁ : ∀ s, pathIntegral α.val (fun s ↦ w (s, 1)) s₀ s = f₁ (c₁ s) - f₁ (c₁ s₀)) :
+    HasDerivAt (fun s ↦ lagrangianPathAction α.val f₀ f₁ H (fun t ↦ w (s, t)) (c₀ s) (c₁ s))
+      (∫ t in 0..1, ω.val (w (s₀, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - ω.hamiltonianVectorField (H t) (w (s₀, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)]) s₀ := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   have hw₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w := hw.of_le one_le_two
   set g : ℝ → ℝ := fun s ↦ ∫ t in (0 : ℝ)..1,
-    TauCeti.mpullback 𝓘(ℝ, ℝ × ℝ) I w ω.1 (s, t) ![(1, 0), (0, 1)]
+    TauCeti.mpullback 𝓘(ℝ, ℝ × ℝ) I w ω.val (s, t) ![(1, 0), (0, 1)]
   have hg : Continuous g := continuous_integral_mpullback hω₀ hw₁ 0 1
   -- Stokes' formula on `[s₀, s] × [0, 1]`, with the sides in the Lagrangians
   have hstokes (s : ℝ) : ∫ x in s₀..s, g x =
-      (pathIntegral α.1 (fun t ↦ w (s, t)) 0 1 - pathIntegral α.1 (fun t ↦ w (s₀, t)) 0 1) -
+      (pathIntegral α.val (fun t ↦ w (s, t)) 0 1 - pathIntegral α.val (fun t ↦ w (s₀, t)) 0 1) -
         ((f₁ (c₁ s) - f₁ (c₁ s₀)) - (f₀ (c₀ s) - f₀ (c₀ s₀))) := by
     have h := rectangleIntegral_mextDeriv (α.isSmoothForm.of_le (by simp)) hw (s₀, 0) (s, 1)
     rwa [hα, rectangleIntegral_def, h₀, h₁] at h
-  have hfun : (fun s ↦ lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ w (s, t)) (c₀ s) (c₁ s)) =
-      fun s ↦ (lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ w (s₀, t)) (c₀ s₀) (c₁ s₀) +
+  have hfun : (fun s ↦ lagrangianPathAction α.val f₀ f₁ H (fun t ↦ w (s, t)) (c₀ s) (c₁ s)) =
+      fun s ↦ (lagrangianPathAction α.val f₀ f₁ H (fun t ↦ w (s₀, t)) (c₀ s₀) (c₁ s₀) +
         ∫ t in 0..1, H t (w (s₀, t))) - (∫ x in s₀..s, g x) - ∫ t in 0..1, H t (w (s, t)) := by
     funext s
     rw [hstokes, lagrangianPathAction_def, lagrangianPathAction_def]
     ring
   rw [hfun]
   -- the primitives part of the action has the derivative of the swept area
-  have hg₀ : g s₀ = ∫ t in 0..1, ω.1 (w (s₀, t))
+  have hg₀ : g s₀ = ∫ t in 0..1, ω.val (w (s₀, t))
       ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1)] :=
-    intervalIntegral.integral_congr fun t _ ↦ mpullback_apply_pair w ω.1 (s₀, t) (1, 0) (0, 1)
+    intervalIntegral.integral_congr fun t _ ↦ mpullback_apply_pair w ω.val (s₀, t) (1, 0) (0, 1)
   exact hω.hasDerivAt_sub_intervalIntegral hH hw₁
     (hg₀ ▸ (hg.integral_hasStrictDerivAt s₀ s₀).hasDerivAt.const_sub _)
 
@@ -180,17 +178,17 @@ Hamiltonian, and `w` a `C²` variation through paths from `L₀` to `L₁`: its 
 `w(s, 0) = i₀(c₀(s))` and `w(s, 1) = i₁(c₁(s))` for `C¹` curves `c₀` and `c₁`, where
 `i₀^* α = d f₀` and `i₁^* α = d f₁`. Then the action of the paths `w (s, ·)` has derivative
 `∫₀¹ ω(∂_t w - X_{H_t}(w), ∂_s w) dt` at `s₀`, with all terms taken at `(s₀, t)`. -/
-theorem hasDerivAt_lagrangianPathAction (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1)
+theorem hasDerivAt_lagrangianPathAction (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w)
     {i₀ : N₀ → M} (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hc₀ : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c₀) {i₁ : N₁ → M} (hi₁ : MDifferentiable I₁ I i₁)
     (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁))
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁))
     (hc₁ : ContMDiff 𝓘(ℝ, ℝ) I₁ 1 c₁) (hw₀ : ∀ s, w (s, 0) = i₀ (c₀ s))
     (hw₁ : ∀ s, w (s, 1) = i₁ (c₁ s)) (s₀ : ℝ) :
-    HasDerivAt (fun s ↦ lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ w (s, t)) (c₀ s) (c₁ s))
-      (∫ t in 0..1, ω.1 (w (s₀, t))
+    HasDerivAt (fun s ↦ lagrangianPathAction α.val f₀ f₁ H (fun t ↦ w (s, t)) (c₀ s) (c₁ s))
+      (∫ t in 0..1, ω.val (w (s₀, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - ω.hamiltonianVectorField (H t) (w (s₀, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)]) s₀ :=
   -- the sides lie in the Lagrangians, where the line integrals of `α` are changes of primitives
@@ -204,16 +202,16 @@ theorem hasDerivAt_lagrangianPathAction (hω : ω.IsNondegenerate) (hα : mextDe
 `ω = dα` on a finite-dimensional manifold, maps `i₀`, `i₁` with `i₀^* α = d f₀` and
 `i₁^* α = d f₁`, and a jointly `C¹` Hamiltonian, a `C²` path from `i₀(y₀)` to `i₁(y₁)` with
 `γ'(t) = X_{H_t}(γ(t))` for `t ∈ [0, 1]` is a critical point of the action. -/
-theorem isLagrangianPathActionCritical (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1)
+theorem isLagrangianPathActionCritical (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {i₀ : N₀ → M}
     (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀)) {i₁ : N₁ → M}
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀)) {i₁ : N₁ → M}
     (hi₁ : MDifferentiable I₁ I i₁) (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁)) {γ : ℝ → M}
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁)) {γ : ℝ → M}
     {y₀ : N₀} {y₁ : N₁} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) (h₀ : γ 0 = i₀ y₀) (h₁ : γ 1 = i₁ y₁)
     (hchord : ∀ t ∈ Icc (0 : ℝ) 1, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t
       ((1 : ℝ →L[ℝ] ℝ).smulRight (ω.hamiltonianVectorField (H t) (γ t)))) :
-    IsLagrangianPathActionCritical I₀ I₁ α.1 f₀ f₁ i₀ i₁ H γ y₀ y₁ where
+    IsLagrangianPathActionCritical I₀ I₁ α.val f₀ f₁ i₀ i₁ H γ y₀ y₁ where
   contMDiff := hγ
   apply_zero := h₀
   apply_one := h₁
@@ -233,7 +231,7 @@ theorem isLagrangianPathActionCritical (hω : ω.IsNondegenerate) (hα : mextDer
       exact Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
         (hchord t ht).hasMFDerivWithinAt uniqueDiffWithinAt_univ
     rw [hv, sub_self]
-    exact (ω.1 (w (0, t))).map_coord_zero 0 rfl
+    exact (ω.val (w (0, t))).map_coord_zero 0 rfl
 
 end FirstVariation
 
@@ -254,14 +252,14 @@ target. The chart variation fixes the endpoints, so it is a variation through pa
 `L₁` with constant lifts, and the first variation formula along it gives `∫₀¹ φ g = 0` for the
 pairing `g` of `γ' - X_H` with the tangent vectors of chart coordinates `e`. -/
 private theorem _root_.TauCeti.IsLagrangianPathActionCritical.integral_mul_apply_eq_zero
-    (hc : IsLagrangianPathActionCritical I₀ I₁ α.1 f₀ f₁ i₀ i₁ H γ y₀ y₁)
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1)
+    (hc : IsLagrangianPathActionCritical I₀ I₁ α.val f₀ f₁ i₀ i₁ H γ y₀ y₁)
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hJo : IsOpen J) (hJ01 : J ⊆ Ioo 0 1)
     (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
     (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
       extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
     (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J) :
-    (∫ t in 0..1, φ t * ω.1 (γ t) ![Manifold.curveVelocity I γ t -
+    (∫ t in 0..1, φ t * ω.val (γ t) ![Manifold.curveVelocity I γ t -
       ω.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ
         (γ t) e]) = 0 := by
   have hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 (Manifold.sinChartVariation I γ x₀ J φ e) :=
@@ -286,83 +284,30 @@ exact two-form on a manifold without boundary modelled on a finite-dimensional s
 jointly `C¹` Hamiltonian. Then a critical point `γ` of the action of paths between two exact
 Lagrangians satisfies `γ'(t) = X_{H_t}(γ(t))` for `t ∈ [0, 1]`. -/
 theorem _root_.TauCeti.IsLagrangianPathActionCritical.hasMFDerivAt
-    (hc : IsLagrangianPathActionCritical I₀ I₁ α.1 f₀ f₁ i₀ i₁ H γ y₀ y₁)
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1)
+    (hc : IsLagrangianPathActionCritical I₀ I₁ α.val f₀ f₁ i₀ i₁ H γ y₀ y₁)
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {t₀ : ℝ} (ht₀ : t₀ ∈ Icc (0 : ℝ) 1) :
     HasMFDerivAt 𝓘(ℝ, ℝ) I γ t₀
       ((1 : ℝ →L[ℝ] ℝ).smulRight (ω.hamiltonianVectorField (H t₀) (γ t₀))) := by
-  have hγd : MDifferentiable 𝓘(ℝ, ℝ) I γ := hc.contMDiff.mdifferentiable two_ne_zero
-  suffices hv : Manifold.curveVelocity I γ t₀ = ω.hamiltonianVectorField (H t₀) (γ t₀) by
-    rw [← hv]
-    exact Manifold.hasMFDerivAt_curveVelocity (hγd t₀)
-  by_contra hne
-  set x₀ := γ t₀
-  -- a chart vector `e` whose tangent vector at `x₀` pairs positively with the obstruction
-  -- `γ' - X_H` at `t₀`, and a radius `δ` of times near `t₀` along which `γ` stays in the chart at
-  -- `x₀` and the points displaced by at most `e` stay in the chart target
-  obtain ⟨e, he, hU⟩ :=
-    hω.exists_pos_apply_and_eventually_add_smul_mem_target (sub_ne_zero.mpr hne)
-  obtain ⟨δ, hδ, hδU⟩ := Metric.eventually_nhds_iff.mp
-    ((hc.contMDiff.continuous.continuousAt (x := t₀)).eventually hU)
-  -- `g t` pairs the obstruction at `t` with the tangent vector of chart coordinates `e`
-  set g : ℝ → ℝ := fun t ↦ ω.1 (γ t) ![Manifold.curveVelocity I γ t -
-    ω.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e]
-  have hg₀ : 0 < g t₀ := he
-  -- on a set of times within `δ` of `t₀`, `γ` stays in the chart, and the points displaced by a
-  -- profile bounded by `1` stay in the chart target
-  have hJ : ∀ {K : Set ℝ}, K ⊆ ball t₀ δ → ∀ t ∈ K, γ t ∈ (extChartAt I x₀).source :=
-    fun hK t ht ↦ (hδU (hK ht)).1
-  have hT : ∀ {K : Set ℝ} {ψ : ℝ → ℝ}, K ⊆ ball t₀ δ → (∀ t, |ψ t| ≤ 1) → ∀ t ∈ K, ∀ c : ℝ,
-      |c| ≤ 1 → extChartAt I x₀ (γ t) + (c * ψ t) • e ∈ (extChartAt I x₀).target :=
-    fun hK hψ t ht c hc1 ↦ (hδU (hK ht)).2 _ (by
-      rw [abs_mul]
-      exact (mul_le_mul hc1 (hψ t) (abs_nonneg _) zero_le_one).trans_eq (one_mul 1))
-  have hbump : ∀ {c : ℝ} (b : ContDiffBump c) (t : ℝ), |b t| ≤ 1 := fun b t ↦
-    abs_le.mpr ⟨by linarith [b.nonneg (x := t)], b.le_one⟩
-  -- `g` is continuous at `t₀`, where it agrees with `φ g` for a bump `φ` equal to `1` near `t₀`
-  have hgcont : ContinuousAt g t₀ := by
-    obtain ⟨b, hbJ⟩ := exists_contDiffBump_tsupport_subset_ball t₀ hδ
-    refine (hω.continuous_mul_apply_curveVelocity_sub hH (n := 2) (by norm_num) isOpen_ball
-      (hJ subset_rfl)
-      (hT subset_rfl (hbump b)) b.contDiff hbJ hc.contMDiff).continuousAt.congr ?_
-    filter_upwards [closedBall_mem_nhds t₀ b.rIn_pos] with t ht
-    rw [b.one_of_mem_closedBall ht, one_mul]
-  obtain ⟨ε, hε, hεg⟩ := Metric.eventually_nhds_iff.mp (hgcont.eventually (lt_mem_nhds hg₀))
-  -- an interior time `t₁` near `t₀`, and a ball around it inside `(0, 1)` where `g > 0`
-  obtain ⟨t₁, ht₁, ht₁₀⟩ : ∃ t₁ ∈ Ioo (0 : ℝ) 1, dist t₀ t₁ < min δ ε :=
-    Metric.mem_closure_iff.mp (by rwa [closure_Ioo zero_ne_one]) _ (lt_min hδ hε)
-  obtain ⟨r, hr, hrsub⟩ := Metric.isOpen_iff.mp (isOpen_Ioo.inter isOpen_ball) t₁
-    ⟨ht₁, by rwa [mem_ball, dist_comm]⟩
-  have hrδ : ball t₁ r ⊆ ball t₀ δ := fun t ht ↦ ball_subset_ball (min_le_left _ _) (hrsub ht).2
-  have hg : ∀ t ∈ ball t₁ r, 0 < g t := fun t ht ↦
-    hεg ((mem_ball.mp (hrsub ht).2).trans_le (min_le_right _ _))
-  obtain ⟨b, hbJ⟩ := exists_contDiffBump_tsupport_subset_ball t₁ hr
-  have hint := hc.integral_mul_apply_eq_zero hω hα hH isOpen_ball (fun t ht ↦ (hrsub ht).1)
-    (hJ hrδ) (hT hrδ (hbump b)) b.contDiff hbJ
-  have hcont := hω.continuous_mul_apply_curveVelocity_sub hH (n := 2) (by norm_num) isOpen_ball
-    (hJ hrδ) (hT hrδ (hbump b)) b.contDiff hbJ hc.contMDiff
-  -- `b g` is nonnegative, as `g > 0` on the support of `b`, and `b g = g > 0` at `t₁`
-  refine (intervalIntegral.integral_pos zero_lt_one hcont.continuousOn (fun t _ ↦ ?_)
-    ⟨t₁, Ioo_subset_Icc_self ht₁, ?_⟩).ne' hint
-  · by_cases hb : b t = 0
-    · rw [hb, zero_mul]
-    · exact mul_nonneg b.nonneg (hg t (hbJ (subset_tsupport _ hb))).le
-  · rw [b.one_of_mem_closedBall (mem_closedBall_self b.rIn_pos.le), one_mul]
-    exact hg t₁ (mem_ball_self hr)
+  rw [← hω.curveVelocity_eq_hamiltonianVectorField_of_forall_integral_mul_eq_zero hH (n := 2)
+    (by norm_num) hc.contMDiff (fun _ _ _ _ hJo hJ01 hJ hT hφ hφJ ↦
+      hc.integral_mul_apply_eq_zero hω hα hH hJo hJ01 hJ hT hφ hφJ) ht₀]
+  exact Manifold.hasMFDerivAt_curveVelocity
+    ((hc.contMDiff t₀).mdifferentiableAt two_ne_zero)
 
 /-- **The critical points of the action are the Hamiltonian chords.** Let `ω = dα` be a
 nondegenerate exact two-form on a manifold without boundary modelled on a finite-dimensional
 space, `i₀`, `i₁` maps with `i₀^* α = d f₀` and `i₁^* α = d f₁`, and `H` a jointly `C¹`
 Hamiltonian. A `C²` path `γ` from `i₀(y₀)` to `i₁(y₁)` is a critical point of the action exactly
 when it is a Hamiltonian chord, `γ'(t) = X_{H_t}(γ(t))` for `t ∈ [0, 1]`. -/
-theorem isLagrangianPathActionCritical_iff (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1)
+theorem isLagrangianPathActionCritical_iff (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hi₁ : MDifferentiable I₁ I i₁) (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁))
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁))
     (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) (h₀ : γ 0 = i₀ y₀) (h₁ : γ 1 = i₁ y₁) :
-    IsLagrangianPathActionCritical I₀ I₁ α.1 f₀ f₁ i₀ i₁ H γ y₀ y₁ ↔
+    IsLagrangianPathActionCritical I₀ I₁ α.val f₀ f₁ i₀ i₁ H γ y₀ y₁ ↔
       ∀ t ∈ Icc (0 : ℝ) 1, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t
         ((1 : ℝ →L[ℝ] ℝ).smulRight (ω.hamiltonianVectorField (H t) (γ t))) :=
   ⟨fun hc _ ht ↦ hc.hasMFDerivAt hω hα hH ht,

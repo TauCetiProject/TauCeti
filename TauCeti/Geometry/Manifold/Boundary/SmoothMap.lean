@@ -13,7 +13,10 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 
 A map to the actual boundary manifold is smooth exactly when its composite with the boundary
 inclusion is smooth. The reverse implication uses the existing local smooth retractions of a
-smooth embedding with boundaryless source.
+smooth embedding with boundaryless source. Conversely, a smooth map on the ambient manifold
+restricts to a smooth map on the boundary manifold (`ContMDiff.comp_subtypeVal_boundary`), and a
+proper map on it restricts to a proper map on the closed boundary
+(`IsProperMap.comp_subtypeVal_boundary`).
 -/
 
 public section
@@ -31,15 +34,11 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
 
 /-- A map to the induced boundary manifold is smooth within a set precisely when its ambient
 inclusion is smooth within that set. The evaluation point need not belong to the set. -/
-theorem contMDiffWithinAt_iff_comp_subtypeVal_boundary (hk : k ≠ 0)
+theorem contMDiffWithinAt_iff_comp_subtypeVal_boundary
     {f : X → (𝓡∂ (n + 1)).boundary M} {s : Set X} {x : X} :
-    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
-      IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
     ContMDiffWithinAt I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k f s x ↔
       ContMDiffWithinAt I (𝓡∂ (n + 1)) k (Subtype.val ∘ f) s x := by
-  let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
-    IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
-  let hi := isSmoothEmbedding_subtypeVal_boundary (n := n) M hk
+  let hi := isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k) M
   refine ⟨fun hf ↦ hi.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hf, fun hf ↦ ?_⟩
   obtain ⟨V, hV, hxV, r, hr, hrf⟩ :=
     (hi.isImmersion.isImmersionAt (f x)).exists_contMDiffOn_retraction hi.isEmbedding
@@ -51,15 +50,25 @@ theorem contMDiffWithinAt_iff_comp_subtypeVal_boundary (hk : k ≠ 0)
   · exact (hrf (f x) hxV).symm
 
 /-- Smoothness of a map into the intrinsic boundary can be checked after ambient inclusion. -/
-theorem contMDiff_iff_comp_subtypeVal_boundary (hk : k ≠ 0)
+theorem contMDiff_iff_comp_subtypeVal_boundary
     {f : X → (𝓡∂ (n + 1)).boundary M} :
-    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
-      IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
     ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k f ↔
       ContMDiff I (𝓡∂ (n + 1)) k (Subtype.val ∘ f) := by
-  let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
-    IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
   simp only [ContMDiff, ← contMDiffWithinAt_univ,
-    contMDiffWithinAt_iff_comp_subtypeVal_boundary hk]
+    contMDiffWithinAt_iff_comp_subtypeVal_boundary]
+
+/-- The restriction of a smooth map to the boundary manifold is smooth. -/
+theorem _root_.ContMDiff.comp_subtypeVal_boundary {F : M → X}
+    (hF : ContMDiff (𝓡∂ (n + 1)) I k F) :
+    ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I k
+      (F ∘ (Subtype.val : (𝓡∂ (n + 1)).boundary M → M)) :=
+  hF.comp (isImmersion_subtypeVal_boundary M).contMDiff
+
+/-- The restriction of a proper map to the boundary manifold is proper, since the boundary is
+closed. -/
+theorem _root_.IsProperMap.comp_subtypeVal_boundary {Y : Type*} [TopologicalSpace Y] {F : M → Y}
+    (hF : IsProperMap F) :
+    IsProperMap (F ∘ (Subtype.val : (𝓡∂ (n + 1)).boundary M → M)) :=
+  hF.restrict ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional M)
 
 end TauCeti

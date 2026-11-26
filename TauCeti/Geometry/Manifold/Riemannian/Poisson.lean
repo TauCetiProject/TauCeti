@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import TauCeti.Geometry.Manifold.Riemannian.Poincare
+import TauCeti.MeasureTheory.Function.L2Space.Pairing
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
@@ -80,8 +81,7 @@ private def integralCLM : StrongDual ℝ (SobolevH1 I M) :=
 private theorem integralCLM_apply (w : SobolevH1 I M) :
     integralCLM w = ∫ x, toLp w x ∂riemannianVolume I M := by
   rw [integralCLM, ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm,
-    inner_toLp_ofSmooth_right]
-  simp
+    integral_toLp_eq_inner_toLp_ofSmooth_one]
 
 /-- The value of the constant function `1` has integral `Vol(M)`. -/
 private theorem integral_toLp_ofSmooth_one :
@@ -109,7 +109,7 @@ theorem exists_norm_toLp_sq_le :
         ((riemannianVolume I M).real univ)⁻¹ * (∫ x, toLp w x ∂riemannianVolume I M) ^ 2 := by
   obtain ⟨C, hC⟩ := exists_integral_sq_sub_average_le_mul_integral_norm_sq_mgradient
     (I := I) (M := M)
-  refine ⟨C, C.2, fun w ↦ ?_⟩
+  refine ⟨C, C.property, fun w ↦ ?_⟩
   simp only [← integralCLM_apply]
   refine induction_on w (isClosed_le (by fun_prop) (by fun_prop)) fun u ↦ ?_
   set μ := riemannianVolume I M
@@ -157,9 +157,9 @@ theorem existsUnique_dirichletForm_eq (f : Lp ℝ 2 (riemannianVolume I M))
     ∃! w : SobolevH1 I M, ∫ x, toLp w x ∂riemannianVolume I M = 0 ∧
       ∀ v, dirichletForm w v = ∫ x, f x * toLp v x ∂riemannianVolume I M := by
   -- The right-hand side as a continuous linear functional.
-  set ℓ : StrongDual ℝ (SobolevH1 I M) := (innerSL ℝ f).comp toLp
-  have hℓ (v : SobolevH1 I M) : ℓ v = ∫ x, f x * toLp v x ∂riemannianVolume I M := by
-    simp [ℓ, L2.inner_def, mul_comm]
+  set ℓ : StrongDual ℝ (SobolevH1 I M) := Lp.pairingL f toLp
+  have hℓ (v : SobolevH1 I M) : ℓ v = ∫ x, f x * toLp v x ∂riemannianVolume I M :=
+    Lp.pairingL_apply f toLp v
   obtain ⟨w, hw, huniq⟩ := isCoercive_poissonForm.existsUnique_forall_eq ℓ
   -- Testing against `1` shows that the Lax–Milgram solution has integral zero.
   have hw0 : integralCLM w = 0 := by

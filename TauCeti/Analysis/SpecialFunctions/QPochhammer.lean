@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Complex.Periodic
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
-public import TauCeti.Analysis.Normed.Ring.InfiniteProd
+public import TauCeti.Algebra.Ring.QPochhammer
+public import TauCeti.Analysis.Normed.Ring.InfiniteProd.Basic
 public import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Analysis.Normed.Field.Instances
 import Mathlib.Analysis.Normed.Module.Completion
@@ -27,7 +28,8 @@ convergence, its nonvanishing and its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_
 at `w = -1` and at `q = w²`. These evaluations, together with Euler's identity
 `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1`, compute the Siegel functions of level two. Its
 evaluations at `q = w³` and at a primitive cube root of unity `w`, multiplied by an Euler function,
-compute those of level three. When
+compute those of level three. Euler's two series expansions of `(z; q)_∞ = ∏_{n ≥ 0} (1 - z qⁿ)`
+and of its reciprocal are the input to Jacobi's triple product identity. When
 `q` and
 `w` depend continuously on `τ` in an open set `U ⊆ ℂ` with `‖q‖ < 1` on `U`, the product converges
 locally uniformly on `U`, and is holomorphic there when `q` and `w` are; for example
@@ -85,6 +87,17 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `(P(s)ᵏ - P(-s)ᵏ) / s → -2k` as `s → 0`.
 * `TauCeti.tendsto_tprod_one_sub_qParam_pow_odd_pow`: `P(q)ᵏ → 1` at `i∞`, for
   `q = e^{2π i τ}` on the upper half-plane.
+* `TauCeti.multipliable_one_sub_mul_pow`, `TauCeti.tendsto_qPochhammer_atTop`: for `‖q‖ < 1` the
+  infinite q-Pochhammer product `(z; q)_∞ = ∏_{n ≥ 0} (1 - z qⁿ)` converges, and is the limit of
+  the finite products `(z; q)_N` (`TauCeti.qPochhammer`); these do not vanish when `‖z‖ < 1`
+  (`TauCeti.qPochhammer_ne_zero_of_norm_lt_one`).
+* `TauCeti.tprod_one_sub_mul_pow_eq_qPochhammer_mul`: for `‖q‖ < 1` the infinite product splits
+  as `(z; q)_∞ = (z; q)_N (z q^N; q)_∞`.
+* `TauCeti.hasSum_tprod_one_sub_mul_pow`, `TauCeti.hasSum_inv_tprod_one_sub_mul_pow`: **Euler's
+  expansions** `(z; q)_∞ = ∑_{k ≥ 0} (-1)ᵏ q^{k(k-1)/2} zᵏ / (q; q)_k` for every `z`, and
+  `1 / (z; q)_∞ = ∑_{k ≥ 0} zᵏ / (q; q)_k` for `‖z‖ < 1`, the latter absolutely convergent
+  (`TauCeti.summable_norm_pow_div_qPochhammer`). Both follow from the q-difference equation
+  `F(z) = (1 - z) F(z q)` of `F = (z; q)_∞`, iterated towards `z = 0`.
 * `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for `q` and `w` continuous on an open set
   `U` with `‖q‖ < 1` there, `∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`.
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
@@ -474,6 +487,225 @@ theorem qTheta_mul_tprod_of_sq_add_add_one_eq_zero {q ω : 𝕜} (hq : ‖q‖ <
   exact congrArg₂ (· * ·) rfl (tprod_congr fun n ↦ by
     rw [hinv]
     linear_combination (-(1 - q ^ (n + 1)) * (q ^ (n + 1)) ^ 2) * hω)
+
+section EulerExpansions
+
+/-! ### Euler's expansions of `(z; q)_∞` and `1 / (z; q)_∞` -/
+
+open Filter Topology
+
+omit [CompleteSpace 𝕜] in
+/-- For `‖x‖ < 1` and `‖q‖ ≤ 1` no factor of the finite q-Pochhammer product `(x; q)_n`
+vanishes, so neither does the product. -/
+theorem qPochhammer_ne_zero_of_norm_lt_one {x q : 𝕜} (hx : ‖x‖ < 1) (hq : ‖q‖ ≤ 1)
+    (n : ℕ) : qPochhammer x q n ≠ 0 := by
+  rw [Ne, qPochhammer_eq_zero_iff]
+  rintro ⟨i, -, h⟩
+  have h₁ : ‖x * q ^ i‖ < 1 := by
+    rw [norm_mul, norm_pow]
+    exact (mul_le_of_le_one_right (norm_nonneg x) (pow_le_one₀ (norm_nonneg q) hq)).trans_lt hx
+  exact one_sub_ne_zero_of_norm_lt_one h₁ (sub_eq_zero.2 h.symm)
+
+/-- For `‖q‖ < 1` the infinite q-Pochhammer product `(z; q)_∞ = ∏_{n ≥ 0} (1 - z qⁿ)`
+converges. -/
+theorem multipliable_one_sub_mul_pow {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
+    Multipliable fun n : ℕ ↦ 1 - z * q ^ n :=
+  multipliable_one_sub_of_summable <| by
+    simpa [norm_pow] using (summable_geometric_of_lt_one (norm_nonneg q) hq).mul_left ‖z‖
+
+/-- For `‖q‖ < 1` the finite q-Pochhammer products `(z; q)_N` tend to `(z; q)_∞` as `N → ∞`. -/
+theorem tendsto_qPochhammer_atTop {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
+    Tendsto (qPochhammer z q) atTop (𝓝 (∏' n : ℕ, (1 - z * q ^ n))) :=
+  (multipliable_one_sub_mul_pow hq z).tendsto_prod_tprod_nat.congr fun N ↦
+    (qPochhammer_def z q N).symm
+
+/-- For `‖q‖ < 1` the infinite q-Pochhammer product splits as
+`(z; q)_∞ = (z; q)_N (z q^N; q)_∞`. -/
+theorem tprod_one_sub_mul_pow_eq_qPochhammer_mul {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) (N : ℕ) :
+    ∏' n : ℕ, (1 - z * q ^ n) = qPochhammer z q N * ∏' n : ℕ, (1 - z * q ^ N * q ^ n) := by
+  have hm : Multipliable fun n : ℕ ↦ 1 - z * q ^ (n + N) :=
+    (multipliable_one_sub_mul_pow hq (z * q ^ N)).congr fun n ↦ by ring
+  rw [← Multipliable.prod_mul_tprod_nat_mul' (f := fun n : ℕ ↦ 1 - z * q ^ n) hm,
+    qPochhammer_def]
+  exact congrArg _ (tprod_congr fun n ↦ by ring)
+
+omit [CompleteSpace 𝕜] in
+/-- The ratio of consecutive terms of Euler's expansion of `(z; q)_∞`. -/
+private theorem euler_term_succ {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) (k : ℕ) :
+    (-1) ^ (k + 1) * q ^ (k + 1).choose 2 * z ^ (k + 1) / qPochhammer q q (k + 1) *
+        (1 - q ^ (k + 1)) =
+      -(z * q ^ k) * ((-1) ^ k * q ^ k.choose 2 * z ^ k / qPochhammer q q k) := by
+  have hD := qPochhammer_ne_zero_of_norm_lt_one hq hq.le k
+  have h₁ : 1 - q ^ (k + 1) ≠ 0 := one_sub_pow_ne_zero hq k.succ_ne_zero
+  rw [qPochhammer_succ, Nat.choose_succ_succ, Nat.choose_one_right, ← pow_succ']
+  field_simp
+  ring
+
+omit [CompleteSpace 𝕜] in
+/-- The terms of Euler's expansion of `(z; q)_∞` are absolutely summable for `‖q‖ < 1`. -/
+private theorem summable_norm_euler_term {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
+    Summable fun k : ℕ ↦ ‖(-1) ^ k * q ^ k.choose 2 * z ^ k / qPochhammer q q k‖ := by
+  have hq₁ : 0 < 1 - ‖q‖ := by linarith
+  have ht : Tendsto (fun k : ℕ ↦ ‖z‖ / (1 - ‖q‖) * ‖q‖ ^ k) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg q) hq).const_mul
+      (‖z‖ / (1 - ‖q‖))
+  refine summable_of_ratio_norm_eventually_le (r := 1 / 2) (by norm_num) ?_
+  filter_upwards [ht.eventually (gt_mem_nhds (by norm_num : (0 : ℝ) < 1 / 2))] with k hk
+  have h := congrArg norm (euler_term_succ hq z k)
+  rw [norm_mul, norm_mul, norm_neg, norm_mul, norm_pow] at h
+  rw [norm_norm, norm_norm]
+  have hpos := one_sub_norm_le_norm_one_sub_pow hq.le k.succ_ne_zero
+  calc _ ≤ ‖z‖ * ‖q‖ ^ k / (1 - ‖q‖) * _ := by
+        rw [div_mul_eq_mul_div, le_div_iff₀ hq₁, ← h]
+        exact mul_le_mul_of_nonneg_left hpos (norm_nonneg _)
+    _ ≤ 1 / 2 * _ :=
+        mul_le_mul_of_nonneg_right (by rw [mul_div_right_comm]; exact hk.le) (norm_nonneg _)
+
+/-- The series `F(z) = ∑_{k ≥ 0} (-1)ᵏ q^{k(k-1)/2} zᵏ / (q; q)_k` satisfies the q-difference
+equation `F(z) = (1 - z) F(z q)` of `(z; q)_∞`. -/
+private theorem tsum_euler_term_eq {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
+    ∑' k : ℕ, (-1) ^ k * q ^ k.choose 2 * z ^ k / qPochhammer q q k =
+      (1 - z) * ∑' k : ℕ, (-1) ^ k * q ^ k.choose 2 * (z * q) ^ k / qPochhammer q q k := by
+  have hs := (summable_norm_euler_term hq (z * q)).of_norm
+  refine ((hasSum_nat_add_iff' 1).mp ?_).tsum_eq
+  convert ((hasSum_nat_add_iff' 1).mpr hs.hasSum).sub (hs.hasSum.mul_left z) using 1
+  · funext k
+    have e := euler_term_succ hq z k
+    simp only [mul_pow]
+    linear_combination e
+  · simp
+    ring
+
+/-- **Euler's expansion** of the infinite q-Pochhammer product: for `‖q‖ < 1` and every `z`,
+`(z; q)_∞ = ∏_{n ≥ 0} (1 - z qⁿ) = ∑_{k ≥ 0} (-1)ᵏ q^{k(k-1)/2} zᵏ / (q; q)_k`
+(Gasper–Rahman, *Basic Hypergeometric Series*, (1.3.16)). -/
+theorem hasSum_tprod_one_sub_mul_pow {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
+    HasSum (fun k : ℕ ↦ (-1) ^ k * q ^ k.choose 2 * z ^ k / qPochhammer q q k)
+      (∏' n : ℕ, (1 - z * q ^ n)) := by
+  set a : ℕ → 𝕜 → 𝕜 := fun k z ↦ (-1) ^ k * q ^ k.choose 2 * z ^ k / qPochhammer q q k
+  set f : 𝕜 → 𝕜 := fun z ↦ ∑' k, a k z
+  -- `f` is continuous at `0`, where it takes the value `1`.
+  have hcont : ContinuousAt f 0 := by
+    refine (continuousOn_tsum (u := fun k ↦ ‖a k 1‖) (s := Metric.closedBall 0 1)
+      (fun k ↦ by simp only [a]; fun_prop) (summable_norm_euler_term hq 1)
+      fun k x hx ↦ ?_).continuousAt (Metric.closedBall_mem_nhds 0 one_pos)
+    rw [mem_closedBall_zero_iff] at hx
+    simp only [a, one_pow, mul_one, norm_div, norm_mul, norm_pow]
+    exact div_le_div_of_nonneg_right
+      (mul_le_of_le_one_right (by positivity) (pow_le_one₀ (norm_nonneg x) hx)) (norm_nonneg _)
+  have hf0 : f 0 = 1 := by
+    simp only [f]
+    rw [tsum_eq_single 0 fun k hk ↦ by simp [a, hk]]
+    simp [a]
+  have hfq (z : 𝕜) : f z = (1 - z) * f (z * q) := by
+    simp only [f, a]
+    exact tsum_euler_term_eq hq z
+  -- Iterating the q-difference equation, `f z = (z; q)_N f (z q^N) → (z; q)_∞`.
+  have hiter : ∀ N z, f z = qPochhammer z q N * f (z * q ^ N) := by
+    intro N
+    induction N with
+    | zero => simp
+    | succ N ih =>
+      intro z
+      rw [hfq z, ih (z * q), qPochhammer_succ', pow_succ']
+      ring_nf
+  have hlim : Tendsto (fun N ↦ qPochhammer z q N * f (z * q ^ N)) atTop
+      (𝓝 ((∏' n : ℕ, (1 - z * q ^ n)) * f 0)) := by
+    refine (tendsto_qPochhammer_atTop hq z).mul (hcont.tendsto.comp ?_)
+    simpa using (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hq).const_mul z
+  rw [hf0, mul_one] at hlim
+  rw [← tendsto_nhds_unique (tendsto_const_nhds.congr (hiter · z)) hlim]
+  exact (summable_norm_euler_term hq z).of_norm.hasSum
+
+omit [CompleteSpace 𝕜] in
+/-- For `‖q‖ < 1` and `0 ≤ ρ < 1` the series `∑_{k ≥ 0} ρᵏ / ‖(q; q)_k‖` converges. -/
+private theorem summable_pow_div_norm_qPochhammer {q : 𝕜} (hq : ‖q‖ < 1) {ρ : ℝ} (hρ₀ : 0 ≤ ρ)
+    (hρ : ρ < 1) : Summable fun k : ℕ ↦ ρ ^ k / ‖qPochhammer q q k‖ := by
+  have ht : Tendsto (fun k : ℕ ↦ ρ / (1 - ‖q‖ ^ (k + 1))) atTop (𝓝 (ρ / (1 - 0))) :=
+    tendsto_const_nhds.div (tendsto_const_nhds.sub
+      ((tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg q) hq).comp
+        (tendsto_add_atTop_nat 1))) (by norm_num)
+  refine summable_of_ratio_norm_eventually_le (r := (1 + ρ) / 2) (by linarith) ?_
+  filter_upwards [ht.eventually (gt_mem_nhds (show ρ / (1 - 0) < (1 + ρ) / 2 by
+    rw [sub_zero, div_one]; linarith))] with k hk
+  have hD := norm_pos_iff.2 (qPochhammer_ne_zero_of_norm_lt_one hq hq.le k)
+  have hq₁ : ‖q‖ ^ (k + 1) < 1 := pow_lt_one₀ (norm_nonneg q) hq k.succ_ne_zero
+  have h₁ : 1 - ‖q‖ ^ (k + 1) ≤ ‖1 - q ^ (k + 1)‖ := by
+    simpa [norm_pow] using norm_sub_norm_le (1 : 𝕜) (q ^ (k + 1))
+  rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), qPochhammer_succ,
+    ← pow_succ', norm_mul, pow_succ, mul_div_mul_comm]
+  calc ρ ^ k / ‖qPochhammer q q k‖ * (ρ / ‖1 - q ^ (k + 1)‖)
+      ≤ ρ ^ k / ‖qPochhammer q q k‖ * (ρ / (1 - ‖q‖ ^ (k + 1))) := by
+        gcongr
+    _ ≤ ρ ^ k / ‖qPochhammer q q k‖ * ((1 + ρ) / 2) := by
+        gcongr
+    _ = (1 + ρ) / 2 * (ρ ^ k / ‖qPochhammer q q k‖) := mul_comm _ _
+
+omit [CompleteSpace 𝕜] in
+/-- For `‖q‖ < 1` and `‖z‖ < 1` the series `∑_{k ≥ 0} zᵏ / (q; q)_k` converges absolutely. -/
+theorem summable_norm_pow_div_qPochhammer {q z : 𝕜} (hq : ‖q‖ < 1) (hz : ‖z‖ < 1) :
+    Summable fun k : ℕ ↦ ‖z ^ k / qPochhammer q q k‖ := by
+  simpa [norm_pow] using summable_pow_div_norm_qPochhammer hq (norm_nonneg z) hz
+
+/-- The series `G(z) = ∑_{k ≥ 0} zᵏ / (q; q)_k` satisfies the q-difference equation
+`(1 - z) G(z) = G(z q)` of `1 / (z; q)_∞`. -/
+private theorem one_sub_mul_tsum_pow_div_qPochhammer {q z : 𝕜} (hq : ‖q‖ < 1) (hz : ‖z‖ < 1) :
+    (1 - z) * ∑' k : ℕ, z ^ k / qPochhammer q q k = ∑' k : ℕ, (z * q) ^ k / qPochhammer q q k := by
+  have hs := (summable_norm_pow_div_qPochhammer hq hz).of_norm
+  refine ((hasSum_nat_add_iff' 1).mp ?_).tsum_eq.symm
+  convert ((hasSum_nat_add_iff' 1).mpr hs.hasSum).sub (hs.hasSum.mul_left z) using 1
+  · funext k
+    have hD := qPochhammer_ne_zero_of_norm_lt_one hq hq.le k
+    have h₁ : 1 - q ^ (k + 1) ≠ 0 := one_sub_pow_ne_zero hq k.succ_ne_zero
+    rw [qPochhammer_succ, ← pow_succ']
+    field_simp
+    ring
+  · simp
+    ring
+
+/-- **Euler's expansion** of the reciprocal of the infinite q-Pochhammer product: for `‖q‖ < 1`
+and `‖z‖ < 1`, `1 / (z; q)_∞ = 1 / ∏_{n ≥ 0} (1 - z qⁿ) = ∑_{k ≥ 0} zᵏ / (q; q)_k`
+(Gasper–Rahman, *Basic Hypergeometric Series*, (1.3.15)). -/
+theorem hasSum_inv_tprod_one_sub_mul_pow {q z : 𝕜} (hq : ‖q‖ < 1) (hz : ‖z‖ < 1) :
+    HasSum (fun k : ℕ ↦ z ^ k / qPochhammer q q k) (∏' n : ℕ, (1 - z * q ^ n))⁻¹ := by
+  set g : 𝕜 → 𝕜 := fun z ↦ ∑' k : ℕ, z ^ k / qPochhammer q q k
+  -- `g` is continuous at `0`, where it takes the value `1`.
+  have hcont : ContinuousAt g 0 := by
+    refine (continuousOn_tsum (u := fun k ↦ (1 / 2 : ℝ) ^ k / ‖qPochhammer q q k‖)
+      (s := Metric.closedBall 0 (1 / 2)) (fun k ↦ by fun_prop)
+      (summable_pow_div_norm_qPochhammer hq (by norm_num) (by norm_num))
+      fun k x hx ↦ ?_).continuousAt (Metric.closedBall_mem_nhds 0 (by norm_num))
+    rw [mem_closedBall_zero_iff] at hx
+    rw [norm_div, norm_pow]
+    gcongr
+  have hg0 : g 0 = 1 := by
+    simp only [g]
+    rw [tsum_eq_single 0 fun k hk ↦ by simp [hk]]
+    simp
+  have hgq {z : 𝕜} (hz : ‖z‖ < 1) : (1 - z) * g z = g (z * q) := by
+    simp only [g]
+    exact one_sub_mul_tsum_pow_div_qPochhammer hq hz
+  -- Iterating, `g z (z; q)_N = g (z q^N) → 1`.
+  have hiter : ∀ N z, ‖z‖ < 1 → g z * qPochhammer z q N = g (z * q ^ N) := by
+    intro N
+    induction N with
+    | zero => simp
+    | succ N ih =>
+      intro z hz
+      have hzq : ‖z * q‖ < 1 := by
+        rw [norm_mul]
+        exact (mul_le_of_le_one_right (norm_nonneg z) hq.le).trans_lt hz
+      rw [qPochhammer_succ', ← mul_assoc, mul_comm (g z), hgq hz, ih (z * q) hzq, pow_succ',
+        mul_assoc]
+  have hlim : Tendsto (fun N ↦ g z * qPochhammer z q N) atTop (𝓝 (g 0)) := by
+    refine (tendsto_congr fun N ↦ (hiter N z hz).symm).mp (hcont.tendsto.comp ?_)
+    simpa using (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hq).const_mul z
+  have h := tendsto_nhds_unique (tendsto_qPochhammer_atTop hq z |>.const_mul (g z)) hlim
+  rw [hg0] at h
+  rw [← eq_inv_of_mul_eq_one_left h]
+  exact (summable_norm_pow_div_qPochhammer hq hz).of_norm.hasSum
+
+end EulerExpansions
 
 end NormedField
 

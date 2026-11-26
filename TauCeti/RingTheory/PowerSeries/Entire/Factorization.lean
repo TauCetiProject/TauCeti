@@ -7,13 +7,15 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.DiscApproximation
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Factorisation of entire series by their zeros
 
 Let `K` be a complete ultrametric normed field and `f` an entire power series over `K`. In every
 complete normed field extension of `K`, the zeros of a nonzero `f` in each closed disc form a
-finite multiset `PowerSeries.zeroMultiset`, so the zeros of `f` form a countable set.
+finite multiset `PowerSeries.zeroMultiset`, so the zeros of `f` form a countable set and any family
+listing zeros with at most their multiplicities satisfies `‖α i‖ → ∞` cofinitely.
 
 Suppose now that `K` is algebraically closed and `f(0) = 1`. The polynomial factor `P_r` of the
 normalised preparation of `f` on the closed disc of radius `r` is then the product of the factors
@@ -26,7 +28,8 @@ f = ∏ (1 - X / α)
 
 over the zeros of `f`, defined as the limit of its finite subproducts over closed discs. In
 particular two entire series with constant coefficient `1` and the same zeros, counted with
-multiplicity, are equal, and an entire series with only finitely many zeros is a polynomial.
+multiplicity, are equal, any two entire series with the same Taylor orders everywhere agree up to
+a nonzero constant factor, and an entire series with only finitely many zeros is a polynomial.
 
 These statements concern the whole affine line. On a disc of finite radius the zeros may
 accumulate towards the boundary, and the corresponding products need not converge.
@@ -35,11 +38,20 @@ accumulate towards the boundary, and the corresponding products need not converg
 
 * `PowerSeries.IsEntire.countable_setOf_evalAt_eq_zero`: a nonzero entire series has countably
   many zeros in every complete normed field extension.
+* `PowerSeries.IsEntire.finite_setOf_norm_le_of_encard_le_order_taylor`,
+  `PowerSeries.IsEntire.tendsto_norm_cofinite_atTop_of_encard_le_order_taylor` and
+  `PowerSeries.IsEntire.tendsto_norm_cofinite_atTop_of_injective_of_evalAt_eq_zero`: in any
+  complete normed field extension, a family listing zeros of a nonzero entire series with at most
+  their multiplicities has only finitely many terms in each bounded ball, so `‖α i‖ → ∞`
+  cofinitely.
 * `PowerSeries.IsEntire.tendsto_gaussNorm_sub_prod_zeroMultiset` and
   `PowerSeries.IsEntire.tendsto_polynomialHom_prod_zeroMultiset`: the product expansion, in each
   Gauss norm and in the topology of entire series.
-* `PowerSeries.IsEntire.eq_of_order_taylor_eq`: an entire series with constant coefficient `1` is
-  determined by the multiplicities of its zeros.
+* `PowerSeries.IsEntire.eq_of_order_taylor_eq` and
+  `PowerSeries.IsEntire.exists_eq_C_mul_of_order_taylor_eq`: over an algebraically closed complete
+  ultrametric normed field, an entire series with constant coefficient `1` is determined by the
+  multiplicities of its zeros, and arbitrary entire series with the same zero multiplicities differ
+  by a nonzero constant factor.
 * `PowerSeries.IsEntire.eq_prod_zeroMultiset_of_forall_norm_le` and
   `PowerSeries.IsEntire.exists_polynomial_eq_of_finite`: an entire series with finitely many zeros
   is a polynomial, namely the product over its zeros when `f(0) = 1`.
@@ -77,6 +89,75 @@ theorem countable_setOf_evalAt_eq_zero {L : Type*} [NormedField L] [NormedAlgebr
       ⟨hn.trans (by linarith), hx⟩⟩
   exact (Set.countable_iUnion fun n : ℕ ↦
     (Multiset.finite_toSet (f.zeroMultiset (n + 1) L)).countable).mono hset
+
+omit [CompleteSpace K] in
+/-- **Finitely many zeros in each bounded ball, with multiplicity.** Let `f` be a nonzero entire
+series over an ultrametric normed field `K` and `L` a complete normed field extension of `K`. If a
+family `α : ι → L` repeats each value `α i` at most as often as its multiplicity as a zero of `f`
+(the order of the Taylor translate at `α i`), then only finitely many indices satisfy `‖α i‖ ≤ r`.
+Completeness of `K` is not needed, since the mapped series over `L` is itself entire and nonzero. -/
+theorem finite_setOf_norm_le_of_encard_le_order_taylor {ι L : Type*} [NormedField L]
+    [NormedAlgebra K L] [CompleteSpace L] (hf : f.IsEntire) (hf0 : f ≠ 0) {α : ι → L}
+    (hα : ∀ i : ι, {j : ι | α j = α i}.encard ≤
+      (_root_.PowerSeries.taylor (α i) (_root_.PowerSeries.map (algebraMap K L) f)).order)
+    (r : ℝ) : {i : ι | ‖α i‖ ≤ r}.Finite := by
+  classical
+  have : IsUltrametricDist L := .of_normedAlgebra K
+  set F : PowerSeries L := _root_.PowerSeries.map (algebraMap K L) f
+  have hF : F.IsEntire := hf.map (algebraMap K L) (C := 1) fun a ↦ by rw [norm_algebraMap', one_mul]
+  have hF0 : F ≠ 0 := fun h ↦ hf0 <| _root_.PowerSeries.ext fun n ↦
+    (map_eq_zero_iff (algebraMap K L) (algebraMap K L).injective).mp
+      (by simpa [F] using congrArg (_root_.PowerSeries.coeff n) h)
+  set R : ℝ := max r 1
+  have hR0 : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_right r 1)
+  have hcount : ∀ i, ‖α i‖ ≤ R → {j : ι | α j = α i}.encard ≤ (F.zeroMultiset R L).count (α i) := by
+    intro i hi
+    have ho := (hF.isRestricted R).order_taylor_eq_count_zeroMultiset (L := L) hR0 hF0 hi
+    simp only [Algebra.algebraMap_self, _root_.PowerSeries.map_id] at ho
+    exact (hα i).trans_eq ho
+  refine ((F.zeroMultiset R L).toFinset.finite_toSet.biUnion (t := fun x ↦ {j : ι | α j = x})
+      fun x hx ↦ ?_).subset fun i hi ↦ ?_
+  · rcases Set.eq_empty_or_nonempty {j : ι | α j = x} with he | ⟨i, rfl⟩
+    · simp [he]
+    · have hiR : ‖α i‖ ≤ R :=
+        _root_.PowerSeries.norm_le_of_mem_zeroMultiset (Multiset.mem_toFinset.mp hx)
+      exact Set.encard_lt_top_iff.mp ((hcount i hiR).trans_lt (ENat.natCast_lt_top _))
+  · have hiR : ‖α i‖ ≤ R := hi.trans (le_max_left r 1)
+    have h1 : (1 : ℕ∞) ≤ {j : ι | α j = α i}.encard :=
+      Set.one_le_encard_iff_nonempty.mpr ⟨i, rfl⟩
+    have hc : 0 < (F.zeroMultiset R L).count (α i) := by
+      exact_mod_cast h1.trans (hcount i hiR)
+    exact Set.mem_biUnion (Multiset.mem_toFinset.mpr (Multiset.count_pos.mp hc)) rfl
+
+omit [CompleteSpace K] in
+/-- **Zero-norm growth, with multiplicity.** Let `f` be a nonzero entire series over an ultrametric
+normed field `K` and `L` a complete normed field extension of `K`. For any family `α : ι → L`
+repeating each point at most as often as its multiplicity as a zero of `f`, `‖α i‖ → ∞` along the
+cofinite filter (and in particular as `n → ∞` when `ι = ℕ`, via `Nat.cofinite_eq_atTop`). -/
+theorem tendsto_norm_cofinite_atTop_of_encard_le_order_taylor {ι L : Type*} [NormedField L]
+    [NormedAlgebra K L] [CompleteSpace L] (hf : f.IsEntire) (hf0 : f ≠ 0) {α : ι → L}
+    (hα : ∀ i : ι, {j : ι | α j = α i}.encard ≤
+      (_root_.PowerSeries.taylor (α i) (_root_.PowerSeries.map (algebraMap K L) f)).order) :
+    Tendsto (fun i ↦ ‖α i‖) cofinite atTop :=
+  tendsto_atTop.mpr fun r ↦ eventually_cofinite.mpr <|
+    (hf.finite_setOf_norm_le_of_encard_le_order_taylor hf0 hα r).subset fun _ hi ↦ le_of_not_ge hi
+
+omit [CompleteSpace K] in
+/-- **Zero-norm growth for distinct zeros.** In any complete normed field extension `L` of an
+ultrametric normed field `K`, an injective family `α : ι → L` of zeros of a nonzero entire series
+satisfies `‖α i‖ → ∞` along the cofinite filter. -/
+theorem tendsto_norm_cofinite_atTop_of_injective_of_evalAt_eq_zero {ι L : Type*} [NormedField L]
+    [NormedAlgebra K L] [CompleteSpace L] (hf : f.IsEntire) (hf0 : f ≠ 0) {α : ι → L}
+    (hinj : Function.Injective α)
+    (hα : ∀ i : ι, (_root_.PowerSeries.map (algebraMap K L) f).evalAt (α i) = 0) :
+    Tendsto (fun i ↦ ‖α i‖) cofinite atTop := by
+  refine hf.tendsto_norm_cofinite_atTop_of_encard_le_order_taylor hf0 fun i ↦ ?_
+  have hset : {j : ι | α j = α i} = {i} :=
+    Set.ext fun j ↦ ⟨fun h ↦ hinj h, fun h ↦ congrArg α (Set.mem_singleton_iff.mp h)⟩
+  rw [hset, Set.encard_singleton, Order.one_le_iff_ne_zero,
+    _root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero,
+    _root_.PowerSeries.constantCoeff_taylor]
+  exact hα i
 
 variable [IsAlgClosed K]
 
@@ -146,6 +227,49 @@ theorem eq_of_order_taylor_eq (hf : f.IsEntire) (hg : g.IsEntire) (hf0 : constan
     (hf.tendsto_polynomialHom_prod_zeroMultiset hf0)
     (hg.tendsto_polynomialHom_prod_zeroMultiset hg0)
     (hz.mono fun r hr ↦ by simp only [hr]))
+
+/-- **Entire series with the same zero divisor agree up to a nonzero constant.** Over an
+algebraically closed complete ultrametric normed field, two entire series with the same Taylor
+order at every point differ by a nonzero constant factor. -/
+theorem exists_eq_C_mul_of_order_taylor_eq (hf : f.IsEntire) (hg : g.IsEntire)
+    (h : ∀ x : K, (_root_.PowerSeries.taylor x f).order = (_root_.PowerSeries.taylor x g).order) :
+    ∃ c : K, c ≠ 0 ∧ f = C c * g := by
+  by_cases hf0 : f = 0
+  · subst hf0
+    have hg0 : g = 0 := by
+      have h0 := h 0
+      simpa [_root_.PowerSeries.taylor_zero, _root_.PowerSeries.order_eq_top] using h0.symm
+    exact ⟨1, one_ne_zero, by simp [hg0]⟩
+  have hg0 : g ≠ 0 := by
+    rintro rfl
+    have h0 := h 0
+    simp [_root_.PowerSeries.taylor_zero, _root_.PowerSeries.order_eq_top, hf0] at h0
+  obtain ⟨f₁, hf₁, hf₁_const, hff₁, hf₁_ord⟩ :=
+    hf.exists_eq_C_mul_X_pow_mul_with_constantCoeff_eq_one hf0
+  obtain ⟨g₁, hg₁, hg₁_const, hgg₁, hg₁_ord⟩ :=
+    hg.exists_eq_C_mul_X_pow_mul_with_constantCoeff_eq_one hg0
+  have hord1 (x : K) :
+      (_root_.PowerSeries.taylor x f₁).order = (_root_.PowerSeries.taylor x g₁).order := by
+    by_cases hx0 : x = 0
+    · subst hx0
+      rw [_root_.PowerSeries.taylor_zero, _root_.PowerSeries.taylor_zero,
+        _root_.PowerSeries.order_eq_zero_iff_constantCoeff_ne_zero.mpr (by simp [hf₁_const]),
+        _root_.PowerSeries.order_eq_zero_iff_constantCoeff_ne_zero.mpr (by simp [hg₁_const])]
+    · rw [hf₁_ord x hx0, hg₁_ord x hx0, h x]
+  have heq : f₁ = g₁ := hf₁.eq_of_order_taylor_eq hg₁ hf₁_const hg₁_const hord1
+  have hord0 : f.order.toNat = g.order.toNat := by
+    simpa [_root_.PowerSeries.taylor_zero] using congrArg ENat.toNat (h 0)
+  set cf : K := coeff f.order.toNat f
+  set cg : K := coeff g.order.toNat g
+  have hcf0 : cf ≠ 0 := _root_.PowerSeries.coeff_order hf0
+  have hcg0 : cg ≠ 0 := _root_.PowerSeries.coeff_order hg0
+  refine ⟨cf * cg⁻¹, mul_ne_zero hcf0 (inv_ne_zero hcg0), ?_⟩
+  have hcg : C cg * C cg⁻¹ = (1 : PowerSeries K) := by
+    rw [← map_mul, mul_inv_cancel₀ hcg0, map_one]
+  conv_lhs => rw [hff₁, heq, hord0]
+  conv_rhs => rhs; rw [hgg₁]
+  rw [map_mul]
+  linear_combination (-(C cf * X ^ g.order.toNat * g₁)) * hcg
 
 /-- **Finitely many zeros, normalised form.** Let `f` be an entire series with constant coefficient
 `1` over an algebraically closed complete ultrametric normed field. If all zeros of `f` lie in the

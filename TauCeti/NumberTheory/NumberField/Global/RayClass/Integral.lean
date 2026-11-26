@@ -79,7 +79,7 @@ by the exponent divides the finite part (`Modulus.pow_exponent_dvd_finitePart`);
 conditions are carried over unchanged. -/
 theorem isCongrOne_of_sub_one_mem {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa : (x : K) = a)
     (hmem : a - 1 ∈ 𝔪.finitePart)
-    (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
+    (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K)) :
     IsCongrOne 𝔪 x := by
   exact isCongrOne_iff_mem_congruenceSubgroup_and_pos.mpr
     ⟨(Ideal.mem_congruenceSubgroup_iff_sub_one_mem hxa).mpr hmem, hpos⟩
@@ -116,7 +116,7 @@ theorem exists_mem_isCongrOne {𝔪 : Modulus K} {D : Ideal (𝓞 K)} (hD : D �
     simpa only [sub_add_sub_cancel] using
       𝔪.finitePart.add_mem (Ideal.mul_le_right hbu) hu1
   exact ⟨b, Units.mk0 (b : K) (RingOfIntegers.coe_ne_zero_iff.mpr hb0), hbD, rfl,
-    isCongrOne_of_sub_one_mem rfl hb1 fun w _ ↦ isTotallyPositive_iff.mp hbpos w.1 w.2⟩
+    isCongrOne_of_sub_one_mem rfl hb1 fun w _ ↦ isTotallyPositive_iff.mp hbpos w.val w.property⟩
 
 /-! ### The moving lemma -/
 
@@ -130,7 +130,7 @@ theorem exists_isCongrOne_span_eq_mul {𝔪 : Modulus K} (I : integralIdealsPrim
     ∃ (J : integralIdealsPrimeTo 𝔪) (a : 𝓞 K) (x : Kˣ), (x : K) = a ∧ IsCongrOne 𝔪 x ∧
       Ideal.span {a} = (I : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)) := by
   obtain ⟨hIbot, hsup⟩ :=
-    Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)
+    Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)
   obtain ⟨a, x, haI, hxa, hx⟩ := exists_mem_isCongrOne hIbot hsup
   obtain ⟨J, hJ⟩ :=
     Ideal.dvd_iff_le.mpr ((Ideal.span_singleton_le_iff_mem (I := (I : Ideal (𝓞 K)))).mpr haI)
@@ -190,7 +190,7 @@ theorem idealClass_surjective (𝔪 : Modulus K) : Function.Surjective (idealCla
     rw [Subgroup.coe_subtype, NumberFieldArithmetic.coe_integralIdealsAwayHom, hPv]
   intro c
   obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
-  obtain ⟨I', hI', hI'I⟩ := Subgroup.mem_map.mp (hT I.2)
+  obtain ⟨I', hI', hI'I⟩ := Subgroup.mem_map.mp (hT I.property)
   obtain ⟨J, hJ⟩ := hI'
   exact ⟨J, by rw [hJ]; congr 1; exact Subtype.ext hI'I⟩
 
@@ -288,7 +288,7 @@ part and positive at every real place of the infinite part.  This differs from
 spelled out instead of packaged as `IsCongrOne`. -/
 theorem idealClass_eq_one_iff_exists_generator {𝔪 : Modulus K} (J : integralIdealsPrimeTo 𝔪) :
     idealClass 𝔪 J = 1 ↔ ∃ α : 𝓞 K, α - 1 ∈ 𝔪.finitePart ∧ (∀ w ∈ 𝔪.infinitePart,
-      0 < InfinitePlace.embedding_of_isReal w.2 (algebraMap (𝓞 K) K α)) ∧
+      0 < InfinitePlace.embedding_of_isReal w.property (algebraMap (𝓞 K) K α)) ∧
       (J : Ideal (𝓞 K)) = Ideal.span {α} := by
   rw [idealClass_eq_one_iff]
   constructor
@@ -349,5 +349,46 @@ theorem idealClass_eq_one_iff_exists_integral {𝔪 : Modulus K} (I : integralId
       map_mul (FractionalIdeal.spanSingleton _), ← hcoe, mul_assoc,
       ← map_mul (FractionalIdeal.spanSingleton _), mul_inv_cancel₀ hb0,
       map_one (FractionalIdeal.spanSingleton _), mul_one]
+
+/-- **Congruent generators of the same sign define the same ray class.** If `(a)` and `(b)` are
+prime to `𝔪`, satisfy `b - a ∈ 𝔪.finitePart`, and have the same strict sign at every real place of
+`𝔪.infinitePart`, then they represent the same class in `RayClassGroup 𝔪`. -/
+theorem idealClass_span_eq_of_sub_mem {𝔪 : Modulus K} {a b : 𝓞 K}
+    (ha : Ideal.span {a} ∈ integralIdealsPrimeTo 𝔪)
+    (hb : Ideal.span {b} ∈ integralIdealsPrimeTo 𝔪) (hsub : b - a ∈ 𝔪.finitePart)
+    (hsign : ∀ w ∈ 𝔪.infinitePart,
+      0 < InfinitePlace.embedding_of_isReal w.property (a : K) *
+        InfinitePlace.embedding_of_isReal w.property (b : K)) :
+    idealClass 𝔪 ⟨Ideal.span {b}, hb⟩ = idealClass 𝔪 ⟨Ideal.span {a}, ha⟩ := by
+  let Ia : integralIdealsPrimeTo 𝔪 := ⟨Ideal.span {a}, ha⟩
+  let Ib : integralIdealsPrimeTo 𝔪 := ⟨Ideal.span {b}, hb⟩
+  obtain ⟨J, c, x, hxc, hx, hspan⟩ := exists_isCongrOne_span_eq_mul Ia
+  obtain ⟨d, rfl⟩ : a ∣ c :=
+    Ideal.span_singleton_le_span_singleton.mp (Ideal.dvd_iff_le.mp ⟨J, hspan⟩)
+  have ha_bot : Ideal.span {a} ≠ ⊥ := (NumberFieldArithmetic.mem_integralIdealsAway_iff.mp ha).1
+  have hJspan : Ideal.span {d} = (J : Ideal (𝓞 K)) := mul_left_cancel₀ ha_bot
+    (by rw [Ideal.span_singleton_mul_span_singleton, hspan])
+  have hbd1 : b * d - 1 ∈ 𝔪.finitePart := by
+    have heq : b * d - 1 = (b - a) * d + (a * d - 1) := by ring
+    rw [heq]
+    exact 𝔪.finitePart.add_mem (𝔪.finitePart.mul_mem_right d hsub)
+      (sub_one_mem_of_isCongrOne hxc hx)
+  have hb0 : (b : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr fun h ↦
+    (NumberFieldArithmetic.mem_integralIdealsAway_iff.mp hb).1 (by simp [h])
+  have hd0 : (d : K) ≠ 0 := fun h ↦ x.ne_zero (by rw [hxc]; push_cast; simp [h])
+  have hbd0 : ((b * d : 𝓞 K) : K) ≠ 0 := by push_cast; exact mul_ne_zero hb0 hd0
+  have hy : IsCongrOne 𝔪 (Units.mk0 ((b * d : 𝓞 K) : K) hbd0) := by
+    refine isCongrOne_of_sub_one_mem rfl hbd1 fun w hw ↦ ?_
+    let σ := InfinitePlace.embedding_of_isReal w.property
+    have hpos_ad : 0 < σ (a : K) * σ (d : K) := by
+      simpa [σ, hxc] using (isCongrOne_iff_mem_congruenceSubgroup_and_pos.mp hx).2 w hw
+    have hpos_sq : 0 < σ (a : K) ^ 2 * (σ (b : K) * σ (d : K)) := by
+      calc 0 < (σ (a : K) * σ (b : K)) * (σ (a : K) * σ (d : K)) := mul_pos (hsign w hw) hpos_ad
+        _ = σ (a : K) ^ 2 * (σ (b : K) * σ (d : K)) := by ring
+    simpa [σ] using pos_of_mul_pos_right hpos_sq (sq_nonneg _)
+  have hspan_bd : Ideal.span {b * d} = (Ib : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)) := by
+    rw [← Ideal.span_singleton_mul_span_singleton, hJspan]
+  exact mul_right_cancel ((idealClass_mul_eq_one_of_span_eq_mul rfl hy hspan_bd).trans
+    (idealClass_mul_eq_one_of_span_eq_mul hxc hx hspan).symm)
 
 end TauCeti.GlobalNumberFields

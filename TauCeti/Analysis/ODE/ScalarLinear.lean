@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Solutions of a scalar linear equation
@@ -29,8 +30,15 @@ For a continuous, time-dependent real coefficient `g`, a differentiable solution
 on an interval `J`, open or closed, is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
 (`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt_smul`), by the integrating factor
 `exp (-∫ₛᵘ g)`. For a constant coefficient `c`, a function with `v' = c • v` at every time
-`τ ≤ a` (with a two-sided derivative at `a`) is `v τ = exp (c (τ - a)) • v a` for `τ ≤ a`
+between `s` and `t` is `v t = exp (c (t - s)) • v s`
+(`TauCeti.eq_exp_smul_of_hasDerivAt_smul`); in particular, a function with `v' = c • v` at every
+time `τ ≤ a` (with a two-sided derivative at `a`) is `v τ = exp (c (τ - a)) • v a` for `τ ≤ a`
 (`TauCeti.eq_exp_smul_of_hasDerivAt_smul_of_le`).
+
+For a complex coefficient `k` with a known primitive `A` on a preconnected set of times `s`, a
+solution of `f' = k • f` within `s` is `f b = exp (A b - A a) • f a` for all `a, b ∈ s`
+(`IsPreconnected.eq_exp_sub_smul_of_hasDerivWithinAt`). With `A t = t i`, this says that a
+solution of `f' = i f` is rotated by the angle `b - a`.
 -/
 
 public section
@@ -128,7 +136,7 @@ theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {J : Set ℝ} (hJc : J.Ord
   have hle : s ⊓ t ≤ s ⊔ t := inf_le_sup
   set g' : ℝ → ℝ := fun u ↦ g (projIcc (s ⊓ t) (s ⊔ t) hle u)
   have hg' : Continuous g' :=
-    (hg.mono hsub).comp_continuous (continuous_subtype_val.comp continuous_projIcc)
+    (hg.mono hsub).comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
       fun u ↦ Subtype.mem _
   have hgg' (u : ℝ) (hu : u ∈ uIcc s t) : g' u = g u := by
     simp only [g', projIcc_of_mem hle hu]
@@ -149,14 +157,40 @@ theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {J : Set ℝ} (hJc : J.Ord
   rw [hGs, neg_zero, Real.exp_zero, one_smul] at hconst
   rw [← hconst, smul_smul, ← Real.exp_add, ← hGt, add_neg_cancel, Real.exp_zero, one_smul]
 
+/-- **Constant-coefficient solutions.** If `v' = c • v` at every time between `s` and `t`, then
+`v t = exp (c (t - s)) • v s`. The times `s` and `t` may come in either order. -/
+theorem eq_exp_smul_of_hasDerivAt_smul {v : ℝ → V} {c s t : ℝ}
+    (hv : ∀ τ ∈ uIcc s t, HasDerivAt v (c • v τ) τ) :
+    v t = Real.exp (c * (t - s)) • v s := by
+  have h := eq_exp_integral_smul_of_hasDerivWithinAt_smul ordConnected_uIcc continuousOn_const
+    (fun τ hτ ↦ (hv τ hτ).hasDerivWithinAt) left_mem_uIcc right_mem_uIcc
+  rwa [intervalIntegral.integral_const, smul_eq_mul, mul_comm] at h
+
 /-- **Constant-coefficient solutions on a closed left half-line.** If `v' = c • v` at every time
 `τ ≤ a`, then `v τ = exp (c (τ - a)) • v a` for every `τ ≤ a`. The equation is only required at
 times `τ ≤ a` (with a two-sided derivative at `a`), so `v` need not solve it after time `a`. -/
 theorem eq_exp_smul_of_hasDerivAt_smul_of_le {v : ℝ → V} {c a : ℝ}
     (hv : ∀ τ, τ ≤ a → HasDerivAt v (c • v τ) τ) {τ : ℝ} (hτ : τ ≤ a) :
-    v τ = Real.exp (c * (τ - a)) • v a := by
-  have h := eq_exp_integral_smul_of_hasDerivWithinAt_smul ordConnected_Iic continuousOn_const
-    (fun σ hσ ↦ (hv σ hσ).hasDerivWithinAt) (s := a) (mem_Iic.2 le_rfl) (mem_Iic.2 hτ)
-  rwa [intervalIntegral.integral_const, smul_eq_mul, mul_comm] at h
+    v τ = Real.exp (c * (τ - a)) • v a :=
+  eq_exp_smul_of_hasDerivAt_smul fun σ hσ ↦ hv σ (uIcc_of_ge hτ ▸ hσ).2
 
 end TauCeti
+
+namespace IsPreconnected
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- **Integrating factor with a given primitive.** On a preconnected set of times `s`, let `A` be a
+primitive of the complex coefficient `k` within `s`. A solution of `f' = k • f` within `s` then
+satisfies `f b = exp (A b - A a) • f a` for all `a, b ∈ s`. -/
+theorem eq_exp_sub_smul_of_hasDerivWithinAt {s : Set ℝ} (hs : IsPreconnected s) {A k : ℝ → ℂ}
+    {f : ℝ → V} (hA : ∀ t ∈ s, HasDerivWithinAt A (k t) s t)
+    (hf : ∀ t ∈ s, HasDerivWithinAt f (k t • f t) s t) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
+    f b = exp (A b - A a) • f a := by
+  -- `t ↦ exp (-A t) • f t` has zero derivative within `s`, so it is constant there.
+  have h := hs.eq_of_hasDerivWithinAt_zero (f := fun t ↦ exp (-A t) • f t)
+    (fun t ht ↦ ((hA t ht).neg.cexp.smul (hf t ht)).congr_deriv (by module)) hb ha
+  rw [sub_eq_add_neg, exp_add, mul_smul, ← h, smul_smul, ← exp_add, add_neg_cancel, exp_zero,
+    one_smul]
+
+end IsPreconnected

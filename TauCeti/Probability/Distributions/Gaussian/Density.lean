@@ -13,6 +13,8 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The density of a multivariate Gaussian measure
@@ -39,21 +41,31 @@ form into the one of `S⁻¹`.
 
 ## Main results
 
+* `TauCeti.Probability.multivariateGaussianPDFReal_smul` — a scaling formula for the density
+  expression at `c • S`, for every real `c` and every `S`; it is a Lebesgue density of
+  `multivariateGaussian m (c • S)` only when `(c • S).PosDef`;
 * `TauCeti.Probability.stdGaussian_eq_withDensity` — the standard Gaussian on `EuclideanSpace ℝ ι`
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
 * `TauCeti.Probability.stdGaussian_eq_withDensity_norm` — the same density on any
-  finite-dimensional real inner product space;
+  finite-dimensional real inner product space, and
+  `TauCeti.Probability.map_smul_stdGaussian_eq_withDensity_norm` for a nonzero scalar multiple;
 * `TauCeti.Probability.support_multivariateGaussian` — the support at a positive-semidefinite
   covariance is the affine range `m + range S`;
 * `TauCeti.Probability.ae_mem_affineRange_multivariateGaussian` — the law is almost surely in
   this affine range;
+* `TauCeti.Probability.ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self` — at a rank-one
+  covariance `c cᵀ` the law is almost surely on the line through `m` in the direction `c`;
 * `TauCeti.Probability.multivariateGaussian_eq_withDensity` — the density presentation of the law;
 * `TauCeti.Probability.hasPDF_of_hasLaw_multivariateGaussian` and
   `TauCeti.Probability.pdf_eq_multivariateGaussianPDF_of_hasLaw_multivariateGaussian` — the `HasPDF`
   bridge
   and the identification of `MeasureTheory.pdf`;
 * `TauCeti.Probability.rnDeriv_multivariateGaussian` — the Radon–Nikodym derivative;
+* `TauCeti.Probability.multivariateGaussian_absolutelyContinuous` — absolute continuity with
+  respect to Lebesgue measure;
+* `TauCeti.Probability.ae_ne_zero_multivariateGaussian` — hence, in positive dimension, the law is
+  almost surely nonzero;
 * `TauCeti.Probability.mutuallySingular_multivariateGaussian_volume` — singularity at every
   covariance
   parameter that is not positive definite.
@@ -100,6 +112,19 @@ theorem multivariateGaussianPDFReal_def (m : EuclideanSpace ℝ ι) (S : Matrix 
 theorem multivariateGaussianPDF_def (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
     multivariateGaussianPDF m S =
       fun x => ENNReal.ofReal (multivariateGaussianPDFReal m S x) := (rfl)
+
+/-- **Scaling formula for the density expression.** For every real scalar `c` and every square
+matrix `S`, `multivariateGaussianPDFReal m (c • S) x` equals
+`(2π)^(-d/2) * (c^d * det S)^(-1/2) * exp (-(c⁻¹ * ⟪x - m, S⁻¹ (x - m)⟫) / 2)`, under Lean's
+conventions `0⁻¹ = 0` for scalars and matrices. It is a Lebesgue density of
+`multivariateGaussian m (c • S)` only when `(c • S).PosDef`
+(`TauCeti.Probability.multivariateGaussian_eq_withDensity`). -/
+theorem multivariateGaussianPDFReal_smul (c : ℝ) (m x : EuclideanSpace ℝ ι) :
+    multivariateGaussianPDFReal m (c • S) x =
+      (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * (c ^ Fintype.card ι * S.det) ^ (-(1 : ℝ) / 2) *
+        exp (-(c⁻¹ * ⟪x - m, S⁻¹.toEuclideanLin (x - m)⟫) / 2) := by
+  rw [multivariateGaussianPDFReal_def, Matrix.det_smul, Matrix.nonsing_inv_smul]
+  simp [inner_smul_right]
 
 /-- The density is positive wherever the determinant is, in particular at a positive-definite
 covariance, where `Matrix.PosDef.det_pos` supplies the hypothesis. -/
@@ -195,6 +220,40 @@ theorem stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup E]
   funext x
   simp
 
+/-- Rescaling `ProbabilityTheory.stdGaussian` on a finite-dimensional real inner product space `E`
+by a nonzero scalar `c` yields Lebesgue measure weighted by
+`(2π * c ^ 2) ^ (-d / 2) * exp (-‖x‖ ^ 2 / (2 * c ^ 2))`, where `d = Module.finrank ℝ E`. -/
+theorem map_smul_stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {c : ℝ} (hc : c ≠ 0) :
+    (stdGaussian E).map (c • ·) =
+      volume.withDensity fun x =>
+        ENNReal.ofReal
+          ((2 * π * c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) *
+            exp (-‖x‖ ^ 2 / (2 * c ^ 2))) := by
+  let u : ℝˣ := Units.mk0 c hc
+  let A : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft u
+  have hc_abs : 0 < |c| := abs_pos.2 hc
+  have hAlin : (A : E →ₗ[ℝ] E) = c • LinearMap.id := LinearMap.ext fun x => by simp [A, u]
+  have hAsymm : ∀ z : E, A.symm z = c⁻¹ • z := fun z =>
+    A.symm_apply_eq.mpr <| by simp [A, u, smul_smul, hc]
+  have hAfun : (c • · : E → E) = fun x => 0 + A x :=
+    funext fun x => by simp [A, u]
+  rw [stdGaussian_eq_withDensity_norm E, hAfun, Measure.map_affine_withDensity volume A 0]
+  refine withDensity_congr_ae (.of_forall fun y => ?_)
+  have hdet : |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| =
+      (c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
+    rw [hAlin, LinearMap.det_smul, LinearMap.det_id, mul_one, abs_inv, abs_pow,
+      ← Real.rpow_natCast |c|, ← Real.rpow_neg hc_abs.le, ← sq_abs c,
+      ← Real.rpow_natCast |c| 2, ← Real.rpow_mul hc_abs.le]
+    exact congrArg _ (by ring)
+  have hnorm : -‖A.symm (y - 0)‖ ^ 2 / 2 = -‖y‖ ^ 2 / (2 * c ^ 2) := by
+    rw [sub_zero, hAsymm, norm_smul, Real.norm_eq_abs, abs_inv, mul_pow, inv_pow, sq_abs]
+    field_simp
+  dsimp only
+  rw [← ENNReal.ofReal_mul (abs_nonneg _), hdet, hnorm, ← mul_assoc, mul_comm ((c ^ 2) ^ _),
+    ← Real.mul_rpow (by positivity) (sq_nonneg c)]
+
 /-- The standard Gaussian measure on a finite-dimensional real inner product space has full
 support. -/
 @[simp]
@@ -261,14 +320,28 @@ theorem ae_mem_affineRange_multivariateGaussian (hS : S.PosSemidef)
   exact Filter.eventually_mem_set.mpr <|
     support_multivariateGaussian hS m ▸ (multivariateGaussian m S).support_mem_ae
 
+open Matrix in
+/-- A Gaussian vector with rank-one covariance `c cᵀ` lies almost surely on the line through
+its mean in the direction `c`. -/
+theorem ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self (m : EuclideanSpace ℝ ι)
+    (c : ι → ℝ) :
+    ∀ᵐ x ∂multivariateGaussian m (vecMulVec c c), ∃ t : ℝ, ∀ j, x j - m j = t * c j := by
+  filter_upwards [ae_mem_affineRange_multivariateGaussian
+    (posSemidef_vecMulVec_self c) m] with x hx
+  simp only [SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub, LinearMap.mem_range] at hx
+  obtain ⟨y, hy⟩ := hx
+  refine ⟨c ⬝ᵥ y, fun j ↦ ?_⟩
+  have hj := congrArg (fun z : EuclideanSpace ℝ ι ↦ z j) hy
+  simp only [Matrix.toLpLin_apply, vecMulVec_mulVec, PiLp.sub_apply] at hj
+  rw [← hj]
+  simp [MulOpposite.smul_eq_mul_unop, mul_comm]
+
 /-- **A nondegenerate multivariate Gaussian law is Lebesgue measure with the Gaussian density.** -/
 theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m S = volume.withDensity (multivariateGaussianPDF m S) := by
   -- The square root of `S` gives the affine substitution `x ↦ m + √S x` carrying the standard
   -- Gaussian to this one; `Measure.map_affine_withDensity` transports the density along it, and
   -- the inverse square root turns the isotropic quadratic form into the one of `S⁻¹`.
-  have hR : (CFC.sqrt S).PosSemidef := Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)
-  have hRR : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
   have hdetS : 0 < S.det := hS.det_pos
   have hdetR : (CFC.sqrt S).det = √S.det := by simpa using hS.posSemidef.det_sqrt
   have hdetRpos : 0 < (CFC.sqrt S).det := by rw [hdetR]; positivity
@@ -277,15 +350,6 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   have hAfun : (fun x : EuclideanSpace ℝ ι => m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x)
       = fun x => m + Matrix.toEuclideanCLE (CFC.sqrt S) hRunit x :=
     funext fun x => by rw [Matrix.toEuclideanCLM_apply, Matrix.toEuclideanCLE_apply]
-  -- the inverse square root pulls the isotropic quadratic form back to the one of `S⁻¹`
-  have hconj : ((CFC.sqrt S)⁻¹).conjTranspose * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
-    rw [mul_one, hR.isHermitian.inv.eq, ← Matrix.mul_inv_rev, hRR]
-  have hnorm : ∀ z : EuclideanSpace ℝ ι,
-      ‖(CFC.sqrt S)⁻¹.toEuclideanLin z‖ ^ 2 = ⟪z, S⁻¹.toEuclideanLin z⟫ :=
-    fun z => by
-      rw [← real_inner_self_eq_norm_sq, ← hconj,
-        ← Matrix.inner_toEuclideanLin_toEuclideanLin (CFC.sqrt S)⁻¹ 1 z]
-      simp
   have hrpow : S.det ^ (-(1 : ℝ) / 2) = (√S.det)⁻¹ := by
     rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hdetS.le]
     congr 1
@@ -295,6 +359,9 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   simp only [multivariateGaussianPDF, multivariateGaussianPDFReal,
     Matrix.toEuclideanCLE_symm_apply]
+  have hnorm : ‖(CFC.sqrt S)⁻¹.toEuclideanLin (y - m)‖ ^ 2 =
+      ⟪y - m, S⁻¹.toEuclideanLin (y - m)⟫ := by
+    simpa using hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt (y - m)
   rw [← ENNReal.ofReal_mul (by positivity), hnorm, abs_of_pos (by positivity), hdetR, hrpow]
   congr 1
   ring
@@ -319,6 +386,19 @@ theorem rnDeriv_multivariateGaussian (hS : S.PosDef) (m : EuclideanSpace ℝ ι)
     (multivariateGaussian m S).rnDeriv volume =ᵐ[volume] multivariateGaussianPDF m S := by
   rw [multivariateGaussian_eq_withDensity hS]
   exact Measure.rnDeriv_withDensity _ (measurable_multivariateGaussianPDF m S)
+
+/-- A nondegenerate multivariate Gaussian law is absolutely continuous with respect to Lebesgue
+measure. -/
+theorem multivariateGaussian_absolutelyContinuous (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
+    multivariateGaussian m S ≪ volume := by
+  rw [multivariateGaussian_eq_withDensity hS]
+  exact withDensity_absolutelyContinuous _ _
+
+/-- In positive dimension, a multivariate Gaussian vector with positive-definite covariance is
+almost surely nonzero. -/
+theorem ae_ne_zero_multivariateGaussian [Nonempty ι] (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
+    ∀ᵐ x ∂multivariateGaussian m S, x ≠ 0 :=
+  multivariateGaussian_absolutelyContinuous hS m (by simp)
 
 /-- **Every degenerate multivariate Gaussian law is singular.** A positive-semidefinite but
 singular covariance carries the law on the proper affine subspace `m + range (CFC.sqrt S)`; any

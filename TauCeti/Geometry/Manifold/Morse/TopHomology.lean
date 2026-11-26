@@ -54,7 +54,8 @@ principal ideal ring without zero divisors) for manifolds with a proper Morse fu
 `TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le`). In degree `d + 1` this uses
 projectivity/freeness of `H_d`, which kills the term `Ext¹(H_d, N)`. None of these statements says
 that the degree-`d` integral cohomology is torsion-free: it contains `Ext¹(H_{d-1}, ℤ)`, which can
-be nonzero.
+be nonzero. For instance `H^N(ℝℙᴺ; ℤ) ≅ ℤ/2` for even `N ≥ 2`
+(`TauCeti.RealProjectiveSpace.not_isAddTorsionFree_singularCohomology_succ_int`).
 
 Projectivity and freeness are proved along Milnor's induction over the critical levels,
 `TauCeti.IsMorse.band_induction`, together with the vanishing of `H_{d+1}`. Across one critical
@@ -141,9 +142,9 @@ theorem IsMorse.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_l
       @hasExactColimitsOfShape_discrete_finite A _ _ Abelian.hasFiniteBiproducts _ _
     have : IsEmpty (cell C (d + 1)) := (hcell (d + 1)).some.isEmpty_congr.2
       ⟨fun q ↦ by
-        have hq : f q.1.1 = f p := q.1.2.2
-        have := hd q.1.1 ⟨q.1.2.1, by rw [mem_preimage, hq]; exact ⟨hap.le, hpb.le⟩⟩
-        have := q.2
+        have hq : f q.val.val = f p := q.val.property.2
+        have := hd q.val.val ⟨q.val.property.1, by rw [mem_preimage, hq]; exact ⟨hap.le, hpb.le⟩⟩
+        have := q.property
         lia⟩
     have hzero := isZero_singularHomology_complexBasePair_of_isEmpty_cell C R (d + 1)
     have hproj := projective_singularHomology_complexBasePair_of_isEmpty_cell C R d
@@ -156,7 +157,7 @@ theorem IsMorse.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_l
     have : Projective ((TopTriple.innerPair.obj T).singularHomology R d) := h₁.2
     have : Projective ((TopTriple.outerPair.obj T).singularHomology R d) := h₂.2
     exact ⟨T.isZero_singularHomology_totalPair R (d + 1) h₁.1 h₂.1,
-      T.projective_singularHomology_totalPair R d h₂.1⟩
+      T.projective_singularHomology_totalPair R d (h₂.1.eq_of_src _ 0)⟩
 
 /-- **Homology of a compact regular sublevel is projective in the degree of the largest index.**
 Let `f` be a Morse function, let `b` be a regular value of `f` with compact sublevel `{f ≤ b}`, and
@@ -222,9 +223,9 @@ theorem IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hf 
     refine ⟨ε, hε, hεδ, ?_⟩
     have : IsEmpty (cell C (d + 1)) := (hcell (d + 1)).some.isEmpty_congr.2
       ⟨fun q ↦ by
-        have hq : f q.1.1 = f p := q.1.2.2
-        have := hd q.1.1 ⟨q.1.2.1, by rw [mem_preimage, hq]; exact ⟨hap.le, hpb.le⟩⟩
-        have := q.2
+        have hq : f q.val.val = f p := q.val.property.2
+        have := hd q.val.val ⟨q.val.property.1, by rw [mem_preimage, hq]; exact ⟨hap.le, hpb.le⟩⟩
+        have := q.property
         lia⟩
     have hzero := isZero_singularHomology_complexBasePair_of_isEmpty_cell C V (d + 1)
     have hfree := free_singularHomology_complexBasePair_of_isEmpty_cell C V d

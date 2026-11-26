@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IntermediateField.Basic
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # Intermediate fields of an intermediate field
@@ -31,6 +31,7 @@ is the subfield dictionary of
 * `IntermediateField.liftOrderIso`: the resulting order isomorphism with `Set.Iic E`, with
   `IntermediateField.liftOrderIso_apply` and `IntermediateField.liftOrderIso_symm_apply` giving
   its two directions as `lift` and `restrict`.
+* `IntermediateField.restrict_sup`: `restrict` preserves composita.
 -/
 
 public section
@@ -57,9 +58,9 @@ order isomorphism. Its body is not exposed: rewrite with `liftOrderIso_apply` an
 `liftOrderIso_symm_apply`, which evaluate it as `lift` and `restrict`, rather than unfolding it. -/
 def liftOrderIso : IntermediateField F E ≃o Set.Iic E where
   toFun E' := ⟨lift E', lift_le E'⟩
-  invFun E' := restrict E'.2
+  invFun E' := restrict E'.property
   left_inv E' := restrict_lift E'
-  right_inv E' := Subtype.ext (lift_restrict E'.2)
+  right_inv E' := Subtype.ext (lift_restrict E'.property)
   map_rel_iff' := lift_le_lift_iff
 
 @[simp]
@@ -69,8 +70,14 @@ theorem liftOrderIso_apply (E' : IntermediateField F E) :
 
 @[simp]
 theorem liftOrderIso_symm_apply (E' : Set.Iic E) :
-    (liftOrderIso E).symm E' = restrict E'.2 :=
+    (liftOrderIso E).symm E' = restrict E'.property :=
   (rfl)
+
+/-- **Restriction preserves composita.** For `L₁` and `L₂` below `E`, restricting their compositum
+to `E` gives the compositum of their restrictions. -/
+theorem restrict_sup {L₁ L₂ : IntermediateField F L} (h₁ : L₁ ≤ E) (h₂ : L₂ ≤ E) :
+    restrict (sup_le h₁ h₂) = restrict h₁ ⊔ restrict h₂ :=
+  lift_injective E (by rw [lift_sup, lift_restrict, lift_restrict, lift_restrict])
 
 end IntermediateField
 

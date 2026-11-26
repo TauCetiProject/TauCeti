@@ -29,6 +29,8 @@ segments.
 * `TauCeti.GenEq.IsTiedTo`: the boundary `p` of `μ` is tied to the boundary `q` of `Δ(μ)`, with a
   `Decidable` instance.
 * `TauCeti.GenEq.tiedBoundary`: the boundary of `Δ(μ)` to which a boundary of `μ` is tied.
+* `TauCeti.GenEq.tiedSegment`: the *matched word* of an item of `μ`, the word of the segment of
+  `Δ(μ)` between the boundaries tied to its end-points, inverted when `ε(μ) ≠ ε(Δμ)`.
 
 ## Main results
 
@@ -39,8 +41,30 @@ segments.
   `TauCeti.GenEq.IsFormallyConsistent.lt_of_isTiedTo_of_sign_ne`: the tie is strictly increasing
   for dual bases of equal signs and strictly decreasing for dual bases of opposite signs.
 * `TauCeti.GenEq.IsFormallyConsistent.strictMonoOn_tiedBoundary_of_sign_eq`,
-  `TauCeti.GenEq.IsFormallyConsistent.strictAntiOn_tiedBoundary_of_sign_ne`: the same for the
-  function `tiedBoundary μ` on the tied boundaries of `μ`.
+  `TauCeti.GenEq.IsFormallyConsistent.strictAntiOn_tiedBoundary_of_sign_ne`,
+  `TauCeti.GenEq.IsFormallyConsistent.injOn_tiedBoundary`: monotonicity and injectivity of
+  `tiedBoundary μ` on the tied boundaries of `μ`.
+* `TauCeti.GenEq.IsFormallyConsistent.lift_mk_segment_eq_of_isTiedTo_of_sign_eq`,
+  `TauCeti.GenEq.IsFormallyConsistent.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne`: any group
+  assignment satisfying the equations of `μ` identifies each segment between tied boundaries of `μ`
+  with the corresponding segment of `Δ(μ)` (or its inverse).
+* `TauCeti.GenEq.Solution.substituteVars_segment_eq_of_isTiedTo_of_sign_eq`,
+  `TauCeti.GenEq.Solution.substituteVars_segment_eq_invRev_of_isTiedTo_of_sign_ne`: the same
+  identification as reduced words under a graphical solution.
+* `TauCeti.GenEq.IsFormallyConsistent.tiedSegment_of_sign_eq`,
+  `TauCeti.GenEq.IsFormallyConsistent.tiedSegment_of_sign_ne`,
+  `TauCeti.GenEq.IsFormallyConsistent.tiedSegment_ne_nil`,
+  `TauCeti.GenEq.isReduced_substituteVars_tiedSegment`: for an item of `μ` whose end-points are
+  tied, in a formally consistent generalised equation, the matched word is the nonempty word
+  `h[b(k), b(k + 1)]` or `h[b(k + 1), b(k)]⁻¹`, a factor of the word of `Δ(μ)` or the formal
+  inverse of one.
+* `TauCeti.GenEq.Solution.prefixLength_of_isTiedTo`: a tie `(p, q)` of `μ` as an identity between
+  the positions of `p` and `q` in the words of a solution.
+* `TauCeti.GenEq.Solution.adjacent_of_length_word_eq_one_of_isTiedTo`,
+  `TauCeti.GenEq.Solution.adjacent_of_mem_constBases`: under a solution, the boundaries to which
+  the two end-points of an item with a one-letter word, for instance a constant item, are tied
+  through the same base are adjacent. For a constant item and ties by boundary connections this is
+  condition 5 of formal consistency (Definition 10(5)).
 
 ## References
 
@@ -273,6 +297,314 @@ theorem IsFormallyConsistent.strictAntiOn_tiedBoundary_of_sign_ne (hΩ : Ω.IsFo
     (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) :
     StrictAntiOn (Ω.tiedBoundary μ) {p | ∃ q, Ω.IsTiedTo μ p q} := fun _ hp _ hp' =>
   hΩ.lt_of_isTiedTo_of_sign_ne hs (isTiedTo_tiedBoundary_iff.2 hp) (isTiedTo_tiedBoundary_iff.2 hp')
+
+/-- In a formally consistent generalised equation the ties of a base `μ` with `ε(μ) = ε(Δμ)`
+preserve `≤`. -/
+theorem IsFormallyConsistent.le_of_isTiedTo_of_sign_eq (hΩ : Ω.IsFormallyConsistent)
+    (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
+    (hp : p ≤ p') : q ≤ q' := by
+  rcases hp.eq_or_lt with rfl | hp
+  · exact (hΩ.isTiedTo_unique h h').le
+  · exact (hΩ.lt_of_isTiedTo_of_sign_eq hs h h' hp).le
+
+/-- In a formally consistent generalised equation the ties of a base `μ` with `ε(μ) ≠ ε(Δμ)`
+reverse `≤`. -/
+theorem IsFormallyConsistent.le_of_isTiedTo_of_sign_ne (hΩ : Ω.IsFormallyConsistent)
+    (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
+    (hp : p ≤ p') : q' ≤ q := by
+  rcases hp.eq_or_lt with rfl | hp
+  · exact (hΩ.isTiedTo_unique h' h).le
+  · exact (hΩ.lt_of_isTiedTo_of_sign_ne hs h h' hp).le
+
+/-- In a formally consistent generalised equation `tiedBoundary μ` is injective on the tied
+boundaries of `μ`. -/
+theorem IsFormallyConsistent.injOn_tiedBoundary (hΩ : Ω.IsFormallyConsistent) :
+    Set.InjOn (Ω.tiedBoundary μ) {p | ∃ q, Ω.IsTiedTo μ p q} := by
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · exact (hΩ.strictMonoOn_tiedBoundary_of_sign_eq hs).injOn
+  · exact (hΩ.strictAntiOn_tiedBoundary_of_sign_ne hs).injOn
+
+/-! ### Segments between tied boundaries -/
+
+section Segments
+
+open FreeGroup (substituteVars mk_substituteVars)
+
+/-- If a group assignment satisfies the basic equation of `μ` and the boundary equation of
+`(p, μ, q)` (when `(p, μ, q)` is a boundary connection), and `ε(μ) = ε(Δμ)`, then for every tie
+`(p, q)` of `μ` the prefix `h[α(μ), p]` evaluates to `h[α(Δμ), q]`. -/
+theorem IsTiedTo.lift_mk_segment_left_of_sign_eq {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H} (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q)
+    (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2))
+    (hc : (p, μ, q) ∈ Ω.connections →
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2)) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) q true)) := by
+  rcases h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · have e := hc h
+    rwa [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_eq hs] at e
+  · simp only [hs, ite_true, Ω.lift_mk_segment_eq_one f le_rfl]
+  · simp only [hs, ite_true]
+    exact Ω.lift_mk_segment_eq_of_sign_eq hs hb
+
+/-- If a group assignment satisfies the basic equation of `μ` and the boundary equation of
+`(p, μ, q)` (when `(p, μ, q)` is a boundary connection), and `ε(μ) ≠ ε(Δμ)`, then for every tie
+`(p, q)` of `μ` the prefix `h[α(μ), p]` evaluates to `h[q, β(Δμ)]⁻¹`. -/
+theorem IsTiedTo.lift_mk_segment_left_of_sign_ne {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H} (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q)
+    (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2))
+    (hc : (p, μ, q) ∈ Ω.connections →
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2)) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)) =
+      (FreeGroup.lift f (FreeGroup.mk (Ω.segment q (Ω.right (Ω.dual μ)) true)))⁻¹ := by
+  rcases h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · have e := hc h
+    rwa [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne hs, Ω.lift_mk_segment_false] at e
+  · simp only [hs, ite_false, Ω.lift_mk_segment_eq_one f le_rfl, inv_one]
+  · simp only [hs, ite_false]
+    exact Ω.lift_mk_segment_eq_inv_of_sign_ne hs hb
+
+/-- In a formally consistent generalised equation, any group assignment satisfying the basic
+equation of `μ` and the boundary equations of `(p, μ, q)` and `(p', μ, q')` (when they are boundary
+connections) identifies `h[p, p']` with `h[q, q']` whenever `p, p'` are `μ`-tied to `q, q'` and
+`ε(μ) = ε(Δμ)`. -/
+theorem IsFormallyConsistent.lift_mk_segment_eq_of_isTiedTo_of_sign_eq {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H} (hΩ : Ω.IsFormallyConsistent)
+    (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
+    (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2))
+    (hc : (p, μ, q) ∈ Ω.connections →
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2))
+    (hc' : (p', μ, q') ∈ Ω.connections →
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p', μ, q')).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p', μ, q')).2)) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment p p' true)) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment q q' true)) := by
+  rcases le_or_gt p p' with hp | hp
+  · have hq : q ≤ q' := hΩ.le_of_isTiedTo_of_sign_eq hs h h' hp
+    apply mul_left_cancel (a := FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)))
+    rw [← Ω.lift_mk_segment_eq_mul f h.left_le hp,
+      h.lift_mk_segment_left_of_sign_eq hs hb hc,
+      h'.lift_mk_segment_left_of_sign_eq hs hb hc',
+      Ω.lift_mk_segment_eq_mul f h.left_dual_le hq]
+  · rw [Ω.lift_mk_segment_eq_one f hp.le,
+      Ω.lift_mk_segment_eq_one f (hΩ.lt_of_isTiedTo_of_sign_eq hs h' h hp).le]
+
+/-- In a formally consistent generalised equation, any group assignment satisfying the basic
+equation of `μ` and the boundary equations of `(p, μ, q)` and `(p', μ, q')` (when they are boundary
+connections) identifies `h[p, p']` with `h[q', q]⁻¹` whenever `p, p'` are `μ`-tied to `q, q'` and
+`ε(μ) ≠ ε(Δμ)`. -/
+theorem IsFormallyConsistent.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H} (hΩ : Ω.IsFormallyConsistent)
+    (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
+    (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2))
+    (hc : (p, μ, q) ∈ Ω.connections →
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2))
+    (hc' : (p', μ, q') ∈ Ω.connections →
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p', μ, q')).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p', μ, q')).2)) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment p p' true)) =
+      (FreeGroup.lift f (FreeGroup.mk (Ω.segment q' q true)))⁻¹ := by
+  rcases le_or_gt p p' with hp | hp
+  · have hq : q' ≤ q := hΩ.le_of_isTiedTo_of_sign_ne hs h h' hp
+    apply mul_left_cancel (a := FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)))
+    rw [← Ω.lift_mk_segment_eq_mul f h.left_le hp,
+      h.lift_mk_segment_left_of_sign_ne hs hb hc,
+      h'.lift_mk_segment_left_of_sign_ne hs hb hc',
+      Ω.lift_mk_segment_eq_mul f hq h.le_right_dual, mul_inv_rev]
+  · rw [Ω.lift_mk_segment_eq_one f hp.le,
+      Ω.lift_mk_segment_eq_one f (hΩ.lt_of_isTiedTo_of_sign_ne hs h' h hp).le, inv_one]
+
+/-- Under a solution `U`, a segment `U[p, p']` between `μ`-tied boundaries `(p, q)` and `(p', q')`
+equals `U[q, q']` when `ε(μ) = ε(Δμ)`. -/
+theorem Solution.substituteVars_segment_eq_of_isTiedTo_of_sign_eq (U : Ω.Solution)
+    (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q') :
+    substituteVars U.word (Ω.segment p p' true) =
+      substituteVars U.word (Ω.segment q q' true) := by
+  refine (U.isReduced_substituteVars_segment_of_le μ h.left_le h'.le_right).eq_of_mk_eq
+    (U.isReduced_substituteVars_segment_of_le (Ω.dual μ) h.left_dual_le h'.le_right_dual) ?_
+  rw [mk_substituteVars, mk_substituteVars]
+  exact U.isFormallyConsistent.lift_mk_segment_eq_of_isTiedTo_of_sign_eq hs h h'
+    (U.lift_mk_eq_of_mem_equations (Ω.basicEquation_mem_equations μ))
+    (fun hc => U.lift_mk_eq_of_mem_equations (Ω.boundaryEquation_mem_equations hc))
+    (fun hc' => U.lift_mk_eq_of_mem_equations (Ω.boundaryEquation_mem_equations hc'))
+
+/-- Under a solution `U`, a segment `U[p, p']` between `μ`-tied boundaries `(p, q)` and `(p', q')`
+equals the formal inverse of `U[q', q]` when `ε(μ) ≠ ε(Δμ)`. -/
+theorem Solution.substituteVars_segment_eq_invRev_of_isTiedTo_of_sign_ne (U : Ω.Solution)
+    (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q') :
+    substituteVars U.word (Ω.segment p p' true) =
+      FreeGroup.invRev (substituteVars U.word (Ω.segment q' q true)) := by
+  refine (U.isReduced_substituteVars_segment_of_le μ h.left_le h'.le_right).eq_of_mk_eq
+    (U.isReduced_substituteVars_segment_of_le (Ω.dual μ) h'.left_dual_le h.le_right_dual).invRev ?_
+  rw [mk_substituteVars, ← FreeGroup.inv_mk, mk_substituteVars]
+  exact U.isFormallyConsistent.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne hs h h'
+    (U.lift_mk_eq_of_mem_equations (Ω.basicEquation_mem_equations μ))
+    (fun hc => U.lift_mk_eq_of_mem_equations (Ω.boundaryEquation_mem_equations hc))
+    (fun hc' => U.lift_mk_eq_of_mem_equations (Ω.boundaryEquation_mem_equations hc'))
+
+end Segments
+
+/-! ### The segment of `Δ(μ)` matched with an item of `μ` -/
+
+section TiedSegment
+
+variable {k : Fin Ω.numItems}
+
+/-- The segment of `Δ(μ)` matched with an item of `μ` whose end-points are tied starts inside
+`Δ(μ)`. -/
+theorem left_dual_le_min_tiedBoundary (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) :
+    (Ω.left (Ω.dual μ) : ℕ) ≤ min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) :=
+  le_min (Fin.le_def.1 h₁.left_dual_le) (Fin.le_def.1 h₂.left_dual_le)
+
+/-- The segment of `Δ(μ)` matched with an item of `μ` whose end-points are tied ends inside
+`Δ(μ)`. -/
+theorem max_tiedBoundary_le_right_dual (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) :
+    max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) ≤ Ω.right (Ω.dual μ) :=
+  max_le (Fin.le_def.1 h₁.le_right_dual) (Fin.le_def.1 h₂.le_right_dual)
+
+/-- In a formally consistent generalised equation, when `ε(μ) = ε(Δμ)`, the boundaries tied to the
+end-points of an item of `μ` come in the same order as the end-points. -/
+theorem IsFormallyConsistent.tiedBoundary_castSucc_lt_succ_of_sign_eq
+    (hΩ : Ω.IsFormallyConsistent) (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) :
+    Ω.tiedBoundary μ k.castSucc < Ω.tiedBoundary μ k.succ :=
+  hΩ.lt_of_isTiedTo_of_sign_eq hs h₁ h₂ k.castSucc_lt_succ
+
+/-- In a formally consistent generalised equation, when `ε(μ) ≠ ε(Δμ)`, the boundaries tied to the
+end-points of an item of `μ` come in the opposite order. -/
+theorem IsFormallyConsistent.tiedBoundary_succ_lt_castSucc_of_sign_ne
+    (hΩ : Ω.IsFormallyConsistent) (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) :
+    Ω.tiedBoundary μ k.succ < Ω.tiedBoundary μ k.castSucc :=
+  hΩ.lt_of_isTiedTo_of_sign_ne hs h₁ h₂ k.castSucc_lt_succ
+
+/-- In a formally consistent generalised equation the boundaries tied to the two end-points of an
+item of `μ` are distinct: the segment of `Δ(μ)` between them is nonempty. -/
+theorem IsFormallyConsistent.min_lt_max_tiedBoundary (hΩ : Ω.IsFormallyConsistent)
+    (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) :
+    min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) <
+      max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) := by
+  rw [min_lt_max, Ne, ← Fin.ext_iff]
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · exact (hΩ.tiedBoundary_castSucc_lt_succ_of_sign_eq h₁ h₂ hs).ne
+  · exact (hΩ.tiedBoundary_succ_lt_castSucc_of_sign_ne h₁ h₂ hs).ne'
+
+variable (Ω μ) in
+/-- The *matched word* of the item `k` with respect to the base `μ`: the word
+`h[min (b(k), b(k + 1)), max (b(k), b(k + 1))] ^ ±1`, with exponent `+1` when `ε(μ) = ε(Δμ)` and
+`-1` otherwise, where `b = Ω.tiedBoundary μ`. Since `tiedBoundary` returns an untied boundary
+unchanged, this is defined for every item. When both end-points of `k` are tied and `Ω` is formally
+consistent, it is the word `h[b(k), b(k + 1)]` of the segment of `Δ(μ)` matched with `k` when
+`ε(μ) = ε(Δμ)` (`TauCeti.GenEq.IsFormallyConsistent.tiedSegment_of_sign_eq`), and the formal
+inverse `h[b(k + 1), b(k)]⁻¹` of the word of that segment otherwise
+(`TauCeti.GenEq.IsFormallyConsistent.tiedSegment_of_sign_ne`). -/
+def tiedSegment (k : Fin Ω.numItems) : List ((Fin Ω.numItems ⊕ A) × Bool) :=
+  Ω.segment (min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
+    (max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
+    (decide (Ω.sign μ = Ω.sign (Ω.dual μ)))
+
+variable (Ω μ) in
+/-- The matched word of an item, unfolded: the segment between the smaller and the larger of the
+boundaries `tiedBoundary μ` assigns to its end-points, inverted when `ε(μ) ≠ ε(Δμ)`. -/
+theorem tiedSegment_def (k : Fin Ω.numItems) :
+    Ω.tiedSegment μ k =
+      Ω.segment (min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
+        (max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
+        (decide (Ω.sign μ = Ω.sign (Ω.dual μ))) :=
+  (rfl)
+
+/-- In a formally consistent generalised equation, when `ε(μ) = ε(Δμ)`, the matched word of an
+item `hₖ` of `μ` whose end-points are tied is `h[b(k), b(k + 1)]`. -/
+theorem IsFormallyConsistent.tiedSegment_of_sign_eq (hΩ : Ω.IsFormallyConsistent)
+    (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) :
+    Ω.tiedSegment μ k =
+      Ω.segment (Ω.tiedBoundary μ k.castSucc) (Ω.tiedBoundary μ k.succ) true := by
+  have hlt := Fin.lt_def.1 (hΩ.tiedBoundary_castSucc_lt_succ_of_sign_eq h₁ h₂ hs)
+  rw [tiedSegment_def, min_eq_left hlt.le, max_eq_right hlt.le, decide_eq_true hs]
+
+/-- In a formally consistent generalised equation, when `ε(μ) ≠ ε(Δμ)`, the matched word of an
+item `hₖ` of `μ` whose end-points are tied is `h[b(k + 1), b(k)]⁻¹`. -/
+theorem IsFormallyConsistent.tiedSegment_of_sign_ne (hΩ : Ω.IsFormallyConsistent)
+    (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) :
+    Ω.tiedSegment μ k =
+      Ω.segment (Ω.tiedBoundary μ k.succ) (Ω.tiedBoundary μ k.castSucc) false := by
+  have hlt := Fin.lt_def.1 (hΩ.tiedBoundary_succ_lt_castSucc_of_sign_ne h₁ h₂ hs)
+  rw [tiedSegment_def, min_eq_right hlt.le, max_eq_left hlt.le, decide_eq_false hs]
+
+/-- In a formally consistent generalised equation the matched word of an item of `μ` whose
+end-points are tied is nonempty. -/
+theorem IsFormallyConsistent.tiedSegment_ne_nil (hΩ : Ω.IsFormallyConsistent)
+    (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) : Ω.tiedSegment μ k ≠ [] := by
+  rw [tiedSegment_def, Ne, ← List.length_eq_zero_iff, length_segment]
+  have := hΩ.min_lt_max_tiedBoundary h₁ h₂
+  have := max_tiedBoundary_le_right_dual h₁ h₂
+  have := Fin.is_le (Ω.right (Ω.dual μ))
+  lia
+
+/-- If substituting `W` makes the word of `Δ(μ)` reduced as written, it makes the matched word of
+every item of `μ` whose end-points are tied reduced as written: this is a factor of the word of
+`Δ(μ)`, or the formal inverse of one. -/
+theorem isReduced_substituteVars_tiedSegment {W : Fin Ω.numItems → List (A × Bool)}
+    (hW : FreeGroup.IsReduced (FreeGroup.substituteVars W
+      (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))
+    (h₁ : Ω.IsTiedTo μ k.castSucc (Ω.tiedBoundary μ k.castSucc))
+    (h₂ : Ω.IsTiedTo μ k.succ (Ω.tiedBoundary μ k.succ)) :
+    FreeGroup.IsReduced (FreeGroup.substituteVars W (Ω.tiedSegment μ k)) := by
+  rw [tiedSegment_def, isReduced_substituteVars_segment_iff]
+  exact Ω.isReduced_substituteVars_segment_of_le_of_le hW (left_dual_le_min_tiedBoundary h₁ h₂)
+    (max_tiedBoundary_le_right_dual h₁ h₂)
+
+end TiedSegment
+
+/-! ### Ties under a solution -/
+
+/-- The tie of a boundary `p` of `μ` to a boundary `q` of `Δ(μ)`, as an identity between the
+positions of `p` and `q` in the words of a solution: `p` lies as far from the left end of the word
+of `μ` as `q` from the left end of the word of `Δ(μ)` when `ε(μ) = ε(Δμ)`, and from its right end
+otherwise. -/
+theorem Solution.prefixLength_of_isTiedTo (U : Ω.Solution) (h : Ω.IsTiedTo μ p q) :
+    if Ω.sign μ = Ω.sign (Ω.dual μ) then
+      U.prefixLength p + U.prefixLength (Ω.left (Ω.dual μ)) =
+        U.prefixLength q + U.prefixLength (Ω.left μ)
+    else
+      U.prefixLength p + U.prefixLength q =
+        U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ) := by
+  have e := U.prefixLength_right_add_prefixLength_left_dual μ
+  rcases Ω.isTiedTo_iff.1 h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · exact U.prefixLength_boundary h
+  all_goals split_ifs <;> lia
+
+/-- Under a solution, the boundaries to which the two end-points of an item carrying a one-letter
+word are tied through the same base are adjacent. -/
+theorem Solution.adjacent_of_length_word_eq_one_of_isTiedTo (U : Ω.Solution) {k : Fin Ω.numItems}
+    (hk : (U.word k).length = 1) (hq : Ω.IsTiedTo μ k.castSucc q) (hq' : Ω.IsTiedTo μ k.succ q') :
+    (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q :=
+  U.adjacent_of_length_word_eq_one_of_prefixLength_eq hk (U.prefixLength_of_isTiedTo hq)
+    (U.prefixLength_of_isTiedTo hq')
+
+/-- In a generalised equation with a solution, the boundaries to which the two end-points of a
+constant item are tied through the same base are adjacent: the item carries a word of one letter.
+For ties by boundary connections this is condition 5 of formal consistency; here the end-points of
+the base are allowed as well. -/
+theorem Solution.adjacent_of_mem_constBases (U : Ω.Solution) {b : Fin Ω.numItems × (A × Bool)}
+    (hb : b ∈ Ω.constBases) (hq : Ω.IsTiedTo μ b.1.castSucc q)
+    (hq' : Ω.IsTiedTo μ b.1.succ q') : (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q :=
+  U.adjacent_of_length_word_eq_one_of_isTiedTo
+    (by rw [U.word_of_mem_constBases hb, List.length_singleton]) hq hq'
 
 /-! ### Examples -/
 

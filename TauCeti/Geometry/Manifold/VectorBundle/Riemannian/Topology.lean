@@ -142,7 +142,7 @@ theorem antitone_chartCkTopology :
     Antitone (chartCkTopology (I := I) (M := M)) := fun _ l hkl ↦
   let _ := chartCkTopology (I := I) (M := M) l
   continuous_iff_le_induced.1 (continuous_pi fun x ↦ continuous_pi fun m ↦
-    continuous_chartMetricDerivative l x (m.2.trans hkl))
+    continuous_chartMetricDerivative l x (m.property.trans hkl))
 
 /-- A family is continuous in the chart Cᵏ topology exactly when its coordinate derivatives of
 order at most `k` depend jointly continuously on the parameter and chart variable. -/
@@ -177,9 +177,48 @@ theorem continuousAt_iteratedFDeriv_chartMetric [LocallyCompactSpace E] (x : M) 
   have hmap : map (Prod.map id Subtype.val) (𝓝 (g₀, (⟨z₀, hz₀⟩ : (extChartAt I x).target))) =
       𝓝 (g₀, z₀) := by
     rw [nhds_prod_eq, nhds_prod_eq, ← prod_map_map_eq', map_id,
-      map_nhds_subtype_coe_eq_nhds hz₀ ((isOpen_extChartAt_target x).mem_nhds hz₀)]
+      map_nhds_subtypeVal_eq_nhds hz₀ ((isOpen_extChartAt_target x).mem_nhds hz₀)]
   rw [ContinuousAt, ← hmap, tendsto_map'_iff]
   exact h.continuousAt
+
+open TauCeti.Manifold in
+/-- Metric tensor evaluation is jointly continuous in the metric and the base point in every
+chart Cᵏ topology. -/
+theorem continuous_metricTensor_chartCk [LocallyCompactSpace E] :
+    withMetricOperatorNorms E in
+    letI := chartCkTopology (I := I) (M := M) k
+    Continuous (fun p : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _) × M ↦
+      TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
+      p.2 (p.1.inner p.2)) := by
+  let _ := chartCkTopology (I := I) (M := M) k
+  refine continuous_iff_continuousAt.mpr fun p ↦
+    (continuousAt_hom_bundle (RingHom.id ℝ) _).mpr ⟨continuous_snd.continuousAt, ?_⟩
+  have h := continuousAt_iteratedFDeriv_chartMetric (I := I) (k := k) p.2
+    (m := 0) bot_le p.1 (mem_extChartAt_target p.2)
+  have hchart : ContinuousAt (fun q :
+      ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _) × E ↦
+      q.1.toNondegenerateMetric.chartMetric p.2 q.2) (p.1, extChartAt I p.2 p.2) := by
+    have heval : Continuous (fun L : ContinuousMultilinearMap ℝ (fun _ : Fin 0 ↦ E)
+        (E →L[ℝ] E →L[ℝ] ℝ) ↦ L 0) :=
+      continuous_eval_const (0 : Fin 0 → E)
+    simpa only [iteratedFDeriv_zero_apply] using heval.continuousAt.comp' h
+  have hp := continuous_fst.continuousAt (x := p) |>.prodMk
+    ((continuousAt_extChartAt (I := I) p.2).comp continuous_snd.continuousAt)
+  have hlocal : ContinuousAt (fun q :
+      ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _) × M ↦
+      q.1.toNondegenerateMetric.chartMetric p.2 (extChartAt I p.2 q.2)) p :=
+    hchart.comp' (f := fun q :
+      ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _) × M ↦
+        (q.1, extChartAt I p.2 q.2)) hp
+  refine hlocal.congr ?_
+  filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
+    (extChartAt_source_mem_nhds (I := I) p.2)] with q hq
+  rw [← tangentBilinFormInCoordinates_def]
+  ext v w
+  rw [q.1.toNondegenerateMetric.chartMetric_extChartAt_apply hq,
+    tangentBilinFormInCoordinates_apply p.2 (by simpa only [mem_preimage, extChartAt_source,
+      TangentBundle.trivializationAt_baseSet] using hq), toNondegenerateMetric_apply]
 
 /-- The order-`m` coordinate derivatives of a family of metrics in the chart at `x` converge in
 the compact-open topology exactly when they converge uniformly on every compact subset of the
@@ -204,7 +243,7 @@ theorem tendsto_chartMetricDerivative_iff {P : Type*} {l : Filter P}
     exact (congrArg₂ dist (chartMetricDerivative_apply g₀ x m ⟨z, hKx hz⟩)
       (chartMetricDerivative_apply (g p) x m ⟨z, hKx hz⟩)).symm.trans_lt (hp ⟨z, hKx hz⟩ hz)
   · intro h K hK
-    exact ((((h _ (image_subset_iff.mpr fun z _ ↦ z.2) (hK.image continuous_subtype_val)).comp
+    exact ((((h _ (image_subset_iff.mpr fun z _ ↦ z.property) (hK.image continuous_subtypeVal)).comp
       Subtype.val).mono (subset_preimage_image _ _)).congr (Eventually.of_forall fun p z _ ↦
         (chartMetricDerivative_apply (g p) x m z).symm)).congr_right fun z _ ↦
           (chartMetricDerivative_apply g₀ x m z).symm

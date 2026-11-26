@@ -52,6 +52,8 @@ genus-one pointed matched circle this summand is the torus algebra.
 * `TauCeti.StrandsAlgebra.oneStrandIdem R M p`, `TauCeti.StrandsAlgebra.oneStrandChord R M h`: the
   idempotent `I({p})` of a matched pair `p` and the single strand of a chord `i < j`, as elements
   of the matched summand with one strand.
+* `TauCeti.StrandsAlgebra.oneStrandChordCoord R M h`: the coordinate of the chord `i < j` on the
+  matched summand with one strand.
 * `TauCeti.StrandsAlgebra.matchedSummandAlgEquiv R M`: as an `R`-algebra, the matched subalgebra
   is the product of its summands.
 
@@ -293,8 +295,8 @@ theorem coe_strandSummand_one :
 /-- `A(n, k)` is a unital algebra, with unit `TauCeti.StrandsAlgebra.strandSummandOne R α k`. -/
 instance : Semiring (strandSummand R α k) where
   __ := (strandSummand R α k).toNonUnitalSemiring
-  one_mul x := Subtype.ext (strandSummandOne_mul_of_mem x.2)
-  mul_one x := Subtype.ext (mul_strandSummandOne_of_mem x.2)
+  one_mul x := Subtype.ext (strandSummandOne_mul_of_mem x.property)
+  mul_one x := Subtype.ext (mul_strandSummandOne_of_mem x.property)
 
 instance {R : Type*} [CommRing R] : Ring (strandSummand R α k) where
   __ := (inferInstance : Semiring (strandSummand R α k))
@@ -459,8 +461,8 @@ theorem coe_matchedSummand_one :
 `TauCeti.StrandsAlgebra.matchedSummandOne R M k`. -/
 instance : Semiring (matchedSummand R M k) where
   __ := (matchedSummand R M k).toNonUnitalSemiring
-  one_mul x := Subtype.ext (matchedSummandOne_mul_of_mem x.2)
-  mul_one x := Subtype.ext (mul_matchedSummandOne_of_mem x.2)
+  one_mul x := Subtype.ext (matchedSummandOne_mul_of_mem x.property)
+  mul_one x := Subtype.ext (mul_matchedSummandOne_of_mem x.property)
 
 instance {R : Type*} [CommRing R] : Ring (matchedSummand R M k) where
   __ := (inferInstance : Semiring (matchedSummand R M k))
@@ -532,7 +534,7 @@ no crossing to resolve. -/
 theorem matchedSummandDifferential_apply_of_le_one {k : ℕ} (hk : k ≤ 1)
     (x : matchedSummand R M k) : matchedSummandDifferential R M k x = 0 :=
   Subtype.ext <| differential_eq_zero_of_mem_strandCountPart hk <|
-    mem_strandCountPart.2 fun φ hφ ↦ x.2.2 φ (Finsupp.mem_support_iff.1 hφ)
+    mem_strandCountPart.2 fun φ hφ ↦ x.property.2 φ (Finsupp.mem_support_iff.1 hφ)
 
 end Differential
 
@@ -574,17 +576,35 @@ theorem oneStrandChord_ne_zero [Nontrivial R] {i j : α} (h : i < j) : oneStrand
     exact (linearIndependent_oneStrandFamily (R := R) M).ne_zero (.inr ⟨(i, j), h⟩)
       (by simpa using congrArg Subtype.val h')
 
+variable (R) in
+/-- The coordinate of the chord from `i` to `j` on the matched summand with one strand: the
+coefficient of an element on the strand diagram `i ↦ j`. -/
+def oneStrandChordCoord {i j : α} (h : i < j) : Module.Dual R (matchedSummand R M 1) :=
+  ((basis R α).coord (single i j h.le)).comp (matchedSummand R M 1).toSubmodule.subtype
+
+/-- The coordinate of the chord from `i` to `j` is the coefficient on the strand diagram
+`i ↦ j`. -/
+theorem oneStrandChordCoord_apply {i j : α} (h : i < j) (x : matchedSummand R M 1) :
+    oneStrandChordCoord R M h x = (basis R α).repr x (single i j h.le) :=
+  (rfl)
+
+/-- The coordinate of a chord on a chord is `1` if they agree and `0` otherwise. -/
+@[simp]
+theorem oneStrandChordCoord_oneStrandChord {i j i' j' : α} (h : i < j) (h' : i' < j') :
+    oneStrandChordCoord R M h (oneStrandChord R M h') = if i' = i ∧ j' = j then 1 else 0 := by
+  simp [oneStrandChordCoord_apply, basis_repr_of, Finsupp.single_apply, single_inj]
+
 variable [DecidableEq β]
 
 variable (R) in
 /-- The idempotent `I({p})` of a matched pair `p` of `M`, as an element of the matched summand with
 one strand. For a pair `p = {a, b}` it is `I({a}) + I({b})`. -/
 def oneStrandIdem (p : Set.range M) : matchedSummand R M 1 :=
-  ⟨matchedIdem R M {p.1}, by simpa using matchedIdem_mem_matchedSummand (R := R) M {p.1}⟩
+  ⟨matchedIdem R M {p.val}, by simpa using matchedIdem_mem_matchedSummand (R := R) M {p.val}⟩
 
 @[simp]
 theorem coe_oneStrandIdem (p : Set.range M) :
-    (oneStrandIdem R M p : StrandsAlgebra R α) = matchedIdem R M {p.1} :=
+    (oneStrandIdem R M p : StrandsAlgebra R α) = matchedIdem R M {p.val} :=
   (rfl)
 
 /-- The idempotents `I({p})` are orthogonal: `I({p}) I({q})` is `I({p})` when `p = q` and zero
@@ -596,6 +616,13 @@ theorem oneStrandIdem_mul_oneStrandIdem (p q : Set.range M) :
   rw [MulMemClass.coe_mul, coe_oneStrandIdem, coe_oneStrandIdem, matchedIdem_mul_matchedIdem,
     apply_ite Subtype.val, coe_oneStrandIdem, ZeroMemClass.coe_zero]
   exact if_congr (by rw [singleton_inj, Subtype.ext_iff]) rfl rfl
+
+/-- The coordinate of a chord on an idempotent is `0`: an idempotent has only horizontal
+strands. -/
+@[simp]
+theorem oneStrandChordCoord_oneStrandIdem {i j : α} (h : i < j) (p : Set.range M) :
+    oneStrandChordCoord R M h (oneStrandIdem R M p) = 0 := by
+  simp [oneStrandChordCoord_apply, repr_matchedIdem_apply, single_ne_idOn h]
 
 theorem isIdempotentElem_oneStrandIdem (p : Set.range M) :
     IsIdempotentElem (oneStrandIdem R M p) :=
@@ -619,7 +646,8 @@ theorem oneStrandIdem_ne_zero [Nontrivial R] (p : Set.range M) : oneStrandIdem R
 chord when `p` is the pair of `i`, and zero otherwise. -/
 @[simp]
 theorem oneStrandIdem_mul_oneStrandChord (p : Set.range M) {i j : α} (h : i < j) :
-    oneStrandIdem R M p * oneStrandChord R M h = if p.1 = M i then oneStrandChord R M h else 0 := by
+    oneStrandIdem R M p * oneStrandChord R M h = if p.val = M i then oneStrandChord R M h else 0
+        := by
   refine Subtype.ext ?_
   rw [MulMemClass.coe_mul, apply_ite Subtype.val, ZeroMemClass.coe_zero, coe_oneStrandIdem,
     coe_oneStrandChord, ← horizontalCompletion_empty (M := M),
@@ -631,7 +659,8 @@ theorem oneStrandIdem_mul_oneStrandChord (p : Set.range M) {i j : α} (h : i < j
 when `p` is the pair of `j`, and zero otherwise. -/
 @[simp]
 theorem oneStrandChord_mul_oneStrandIdem (p : Set.range M) {i j : α} (h : i < j) :
-    oneStrandChord R M h * oneStrandIdem R M p = if p.1 = M j then oneStrandChord R M h else 0 := by
+    oneStrandChord R M h * oneStrandIdem R M p = if p.val = M j then oneStrandChord R M h else 0
+        := by
   refine Subtype.ext ?_
   rw [MulMemClass.coe_mul, apply_ite Subtype.val, ZeroMemClass.coe_zero, coe_oneStrandIdem,
     coe_oneStrandChord, ← horizontalCompletion_empty (M := M),
@@ -673,22 +702,22 @@ Thurston as a product of algebras. Its compatibility with the differential is
 `TauCeti.StrandsAlgebra.matchedSummandAlgEquiv_matchedDifferential`. -/
 def matchedSummandAlgEquiv :
     matchedSubalgebra R M ≃ₐ[R] Π k : Fin (Fintype.card α + 1), matchedSummand R M k where
-  toFun x k := ⟨matchedSummandOne R M k * x, matchedSummandOne_mul_mem x.2⟩
+  toFun x k := ⟨matchedSummandOne R M k * x, matchedSummandOne_mul_mem x.property⟩
   invFun y := ⟨∑ k, (y k : StrandsAlgebra R α),
-    sum_mem fun k _ ↦ matchedSummand_le_matchedSubalgebra (k : ℕ) (y k).2⟩
-  left_inv x := Subtype.ext (sum_matchedSummandOne_mul x.2)
+    sum_mem fun k _ ↦ matchedSummand_le_matchedSubalgebra (k : ℕ) (y k).property⟩
+  left_inv x := Subtype.ext (sum_matchedSummandOne_mul x.property)
   right_inv y := funext fun k ↦ Subtype.ext <| by
     -- `dsimp only` projects the values out of the anonymous constructors above.
     dsimp only
     rw [mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mem_matchedSummand M k).2
-      fun j ↦ (y j).2.2, matchedSummandOne_mul_of_mem (y k).2]
+      fun j ↦ (y j).property.2, matchedSummandOne_mul_of_mem (y k).property]
   map_mul' x y := funext fun k ↦ Subtype.ext <| by
     -- Only the part of `y` with `k` strands contributes to `(e_k x) y`.
     dsimp only
     rw [Pi.mul_apply, MulMemClass.coe_mul, MulMemClass.coe_mul]
-    have h := mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mul_mem (k := k) x.2).2
-      (y := fun j ↦ matchedSummandOne R M j * y) fun j ↦ (matchedSummandOne_mul_mem y.2).2
-    rw [sum_matchedSummandOne_mul y.2] at h
+    have h := mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mul_mem (k := k) x.property).2
+      (y := fun j ↦ matchedSummandOne R M j * y) fun j ↦ (matchedSummandOne_mul_mem y.property).2
+    rw [sum_matchedSummandOne_mul y.property] at h
     rw [← mul_assoc, h]
   map_add' x y := funext fun k ↦ Subtype.ext (mul_add _ _ _)
   commutes' r := funext fun k ↦ Subtype.ext <| by
@@ -720,12 +749,12 @@ theorem matchedSummandAlgEquiv_matchedDifferential (x : matchedSubalgebra R M)
     coe_matchedSummandAlgEquiv_apply, coe_matchedDifferential]
   -- The differential of `x` is the sum of the differentials of its parts, and each of these keeps
   -- its number of strands.
-  conv_lhs => rw [← sum_matchedSummandOne_mul x.2, map_sum]
+  conv_lhs => rw [← sum_matchedSummandOne_mul x.property, map_sum]
   rw [mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mem_matchedSummand M k).2
       (y := fun j ↦ differential R α (matchedSummandOne R M j * x))
-      fun j ↦ (differential_mem_matchedSummand (matchedSummandOne_mul_mem x.2)).2,
+      fun j ↦ (differential_mem_matchedSummand (matchedSummandOne_mul_mem x.property)).2,
     matchedSummandOne_mul_of_mem
-      (differential_mem_matchedSummand (matchedSummandOne_mul_mem x.2))]
+      (differential_mem_matchedSummand (matchedSummandOne_mul_mem x.property))]
 
 end AlgEquiv
 

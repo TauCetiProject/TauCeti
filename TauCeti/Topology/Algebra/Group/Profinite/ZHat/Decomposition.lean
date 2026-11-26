@@ -60,6 +60,8 @@ domain (`zHat.not_isDomain`). The finite sums of the prime idempotents tend to `
 * `TauCeti.zHat.idem_ne_intCast`: `ω_ℓ` is not an integer.
 * `TauCeti.zHat.not_surjective_ofInt`: the integers are a proper subgroup of `ℤ̂`.
 * `TauCeti.zHat.not_isDomain`: the profinite integers are not a domain.
+* The `IsMulTorsionFree zHat` instance and `TauCeti.zHat.lift_gen_pow_injective`: the profinite
+  integers are torsion free, so raising to a nonzero power is injective.
 
 ## References
 
@@ -72,7 +74,7 @@ namespace TauCeti
 
 namespace zHat
 
-universe u
+universe u v
 
 open Additive Multiplicative
 
@@ -108,7 +110,7 @@ of the family, assembled by the Chinese remainder theorem `ZMod.equivPi`. It is 
 step of `zHat.exists_forall_component_eq`, and is characterized by `zHat.cast_residue`. -/
 private noncomputable def residue (n : ℕ+) : ZMod n :=
   (ZMod.equivPi n n.ne_zero).symm fun p ↦
-    have hp : Fact (p : ℕ).Prime := ⟨Nat.prime_of_mem_primeFactors p.2⟩
+    have hp : Fact (p : ℕ).Prime := ⟨Nat.prime_of_mem_primeFactors p.property⟩
     PadicInt.toZModPow ((n : ℕ).factorization p) (u ⟨p, hp.out⟩)
 
 /-- The reduction of `residue u n` modulo a prime power `p ^ k` dividing `n` is the reduction of
@@ -117,8 +119,8 @@ private theorem cast_residue (n : ℕ+) (p : Nat.Primes) {k : ℕ} (hk : k ≠ 0
     (h : (p : ℕ) ^ k ∣ n) :
     (ZMod.cast (residue u n) : ZMod ((p : ℕ) ^ k)) = PadicInt.toZModPow k (u p) := by
   have hpn : (p : ℕ) ∈ (n : ℕ).primeFactors :=
-    Nat.mem_primeFactors.mpr ⟨p.2, (dvd_pow_self (p : ℕ) hk).trans h, n.ne_zero⟩
-  have hk' : k ≤ (n : ℕ).factorization p := (p.2.pow_dvd_iff_le_factorization n.ne_zero).mp h
+    Nat.mem_primeFactors.mpr ⟨p.property, (dvd_pow_self (p : ℕ) hk).trans h, n.ne_zero⟩
+  have hk' : k ≤ (n : ℕ).factorization p := (p.property.pow_dvd_iff_le_factorization n.ne_zero).mp h
   -- At the level `p ^ n.factorization p` the residue reduces to the reduction of `u p`, by
   -- construction; cast down to `p ^ k`.
   have hv : ZMod.equivPi n n.ne_zero (residue u n) ⟨p, hpn⟩ =
@@ -145,7 +147,7 @@ theorem exists_forall_component_eq :
   -- level `ℓ ^ 0` follows by casting down.
   have hk (k : ℕ) :
       PadicInt.toZModPow (k + 1) (component ℓ a) = PadicInt.toZModPow (k + 1) (u ℓ) := by
-    let n : ℕ+ := ⟨(ℓ : ℕ) ^ (k + 1), pow_pos ℓ.2.pos _⟩
+    let n : ℕ+ := ⟨(ℓ : ℕ) ^ (k + 1), pow_pos ℓ.property.pos _⟩
     rw [← cast_toZMod_eq_toZModPow_component n dvd_rfl a, ha n,
       cast_residue u n ℓ k.succ_ne_zero dvd_rfl]
   refine PadicInt.ext_of_toZModPow.mp fun k ↦ ?_
@@ -189,6 +191,26 @@ compact space `Additive zHat` to the Hausdorff space `∀ ℓ, ℤ_[ℓ]` is a h
 theorem continuous_ringEquivPiPadicInt_symm : Continuous ringEquivPiPadicInt.{u}.symm := by
   rw [← RingEquiv.coe_coe_toEquiv_symm]
   exact continuous_ringEquivPiPadicInt.continuous_symm_of_equiv_compact_to_t2
+
+/-- The profinite integers are torsion free: by the product decomposition, `n • a = 0` with
+`n ≠ 0` forces every `ℓ`-adic component of `a` to vanish. -/
+instance : IsAddTorsionFree (Additive zHat.{u}) :=
+  Function.Injective.isAddTorsionFree ringEquivPiPadicInt.toAddMonoidHom
+    ringEquivPiPadicInt.injective
+
+/-- The profinite integers, written multiplicatively, are torsion free. -/
+instance : IsMulTorsionFree zHat.{u} :=
+  inferInstanceAs (IsMulTorsionFree (Multiplicative (Additive zHat.{u})))
+
+/-- Raising to a nonzero power `n` is injective on the profinite integers, also when composed
+with the change of universe `zHat.lift gen`: the lift of `gen ^ n` is injective. -/
+theorem lift_gen_pow_injective {n : ℕ} (hn : n ≠ 0) :
+    Function.Injective (lift (gen.{u} ^ n) : zHat.{v} →ₜ* zHat.{u}) := by
+  intro x y hxy
+  rw [← zpow_natCast, lift_zpow_apply, lift_zpow_apply, zpow_natCast, zpow_natCast] at hxy
+  have h := congrArg (lift gen.{v} : zHat.{u} →ₜ* zHat.{v})
+    (Commute.eq_of_pow_eq_pow (mul_comm' _ _) hn hxy)
+  rwa [map_lift, map_lift, lift_gen, lift_gen_apply, lift_gen_apply] at h
 
 end ProductDecomposition
 

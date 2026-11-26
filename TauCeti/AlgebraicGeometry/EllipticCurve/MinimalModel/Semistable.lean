@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
-public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+public import TauCeti.RingTheory.DedekindDomain.Localization.AtPrime
 -- Proof-only: of two coprime elements of a local ring, one is a unit.
 import TauCeti.RingTheory.LocalRing.Basic
 -- Proof-only: the integral model of an equation read over the fraction field.
@@ -309,7 +309,7 @@ theorem IsSemistable.baseChange {W : WeierstrassCurve F} [W.IsElliptic] (h : IsS
         IsUnit (algebraMap O' (Localization.AtPrime w.asIdeal) (algebraMap O O' y)) := by
       refine (IsLocalization.AtPrime.isUnit_to_map_iff _ w.asIdeal _).mpr fun hy ↦ ?_
       have : (y : O) ∈ w.asIdeal.comap (algebraMap O O') := hy
-      exact nonZeroDivisors.ne_zero y.2 (by simp [hp] at this)
+      exact nonZeroDivisors.ne_zero y.property (by simp [hp] at this)
     let g : F →+* Localization.AtPrime w.asIdeal := IsLocalization.lift (M := nonZeroDivisors O)
       (g := (algebraMap O' _).comp (algebraMap O O')) hunit
     have hg : (algebraMap (Localization.AtPrime w.asIdeal) L).comp g = algebraMap F L :=

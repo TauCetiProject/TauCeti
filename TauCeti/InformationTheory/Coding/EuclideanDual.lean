@@ -14,10 +14,13 @@ public import Mathlib.FieldTheory.Finiteness
 
 A linear code on a finite coordinate type is a submodule of the corresponding function space.
 Its Euclidean dual consists of the words whose dot product with every codeword vanishes. This
-file gives that construction its order-theoretic API and proves that dot-product duality is an
-involution over a field. In particular, the dimensions of a code and its dual add to the number
-of coordinates, and over a finite field their cardinalities multiply to the cardinality of the
-whole word space.
+file gives that construction its order-theoretic API: Euclidean duality is a Galois connection
+with the order dual (`Submodule.euclideanDual_gc`), and over a field it is an inclusion-reversing
+involution (`Submodule.euclideanDualOrderIso`). The dimensions of a code and its dual add to the
+number of coordinates, and over a finite field their cardinalities multiply to the cardinality of
+the whole word space; in particular, the Euclidean dual of a hyperplane is spanned by any nonzero
+orthogonal vector (`Submodule.euclideanDual_eq_span_singleton`), which cuts out the hyperplane by a
+single dot-product equation (`Submodule.mem_iff_dotProduct_eq_zero_of_finrank_add_one`).
 
 A code is self-orthogonal when it lies in its Euclidean dual and self-dual when it equals it.
 These are predicates on the code itself rather than a new bundled type, so the full `Submodule`
@@ -69,24 +72,6 @@ theorem mem_euclideanDual_span {s : Set (ι → R)} {y : ι → R} :
   simp only [euclideanDual, LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span,
     dotProductBilin_apply_apply]
 
-/-- The dual of the zero code is the whole word space. -/
-@[simp]
-theorem euclideanDual_bot_eq_top :
-    euclideanDual (⊥ : Submodule R (ι → R)) = ⊤ :=
-  by simp [euclideanDual]
-
-/-- The dual of the whole word space is the zero code. -/
-@[simp]
-theorem euclideanDual_top_eq_bot :
-    euclideanDual (⊤ : Submodule R (ι → R)) = ⊥ :=
-  by simpa only [euclideanDual] using
-    LinearMap.BilinForm.orthogonal_top_eq_bot
-      (B := dotProductBilin R R) (dotProductBilin_isPerfPair R ι).nondegenerate
-
-/-- Euclidean duality reverses inclusion. -/
-theorem euclideanDual_antitone : Antitone (euclideanDual (R := R) (ι := ι)) :=
-  fun _ _ h ↦ LinearMap.BilinForm.orthogonal_le h
-
 /-- Orthogonality of two codes is symmetric. -/
 theorem le_euclideanDual_comm {C D : Submodule R (ι → R)} :
     C ≤ euclideanDual D ↔ D ≤ euclideanDual C := by
@@ -98,12 +83,37 @@ theorem le_euclideanDual_comm {C D : Submodule R (ι → R)} :
     (Submodule.le_orthogonalBilin_flip_iff_le_orthogonalBilin
       (B := dotProductBilin R R) (S := C) (T := D))
 
+variable (R ι) in
+/-- Euclidean duality is a Galois connection between codes and codes ordered by reverse
+inclusion. -/
+theorem euclideanDual_gc :
+    @GaloisConnection (Submodule R (ι → R)) (Submodule R (ι → R))ᵒᵈ _ _
+      euclideanDual euclideanDual :=
+  fun _ _ ↦ le_euclideanDual_comm
+
+/-- The dual of the zero code is the whole word space. -/
+@[simp]
+theorem euclideanDual_bot_eq_top :
+    euclideanDual (⊥ : Submodule R (ι → R)) = ⊤ :=
+  (euclideanDual_gc R ι).l_bot
+
+/-- The dual of the whole word space is the zero code. -/
+@[simp]
+theorem euclideanDual_top_eq_bot :
+    euclideanDual (⊤ : Submodule R (ι → R)) = ⊥ :=
+  by simpa only [euclideanDual] using
+    LinearMap.BilinForm.orthogonal_top_eq_bot
+      (B := dotProductBilin R R) (dotProductBilin_isPerfPair R ι).nondegenerate
+
+/-- Euclidean duality reverses inclusion. -/
+theorem euclideanDual_antitone : Antitone (euclideanDual (R := R) (ι := ι)) :=
+  (euclideanDual_gc R ι).monotone_l
+
 /-- The Euclidean dual of a sum is the intersection of the Euclidean duals. -/
 @[simp]
 theorem euclideanDual_sup (C D : Submodule R (ι → R)) :
-    euclideanDual (C ⊔ D) = euclideanDual C ⊓ euclideanDual D := by
-  simp only [euclideanDual, LinearMap.BilinForm.orthogonal]
-  exact Submodule.orthogonalBilin_sup (B := dotProductBilin R R) C D
+    euclideanDual (C ⊔ D) = euclideanDual C ⊓ euclideanDual D :=
+  (euclideanDual_gc R ι).l_sup
 
 /-! ### Self-orthogonal and self-dual codes -/
 
@@ -170,26 +180,47 @@ theorem euclideanDual_euclideanDual (C : Submodule K (ι → K)) :
       (B := dotProductBilin K K) (dotProductBilin_isPerfPair K ι).nondegenerate
         (isSymm_dotProductBilin (R := K) (ι := ι)).isRefl C
 
+variable (ι K) in
+open OrderDual in
+/-- Over a field, Euclidean duality is an inclusion-reversing involution of the lattice of
+codes. -/
+def euclideanDualOrderIso : Submodule K (ι → K) ≃o (Submodule K (ι → K))ᵒᵈ where
+  toFun C := toDual (euclideanDual C)
+  invFun C := euclideanDual (ofDual C)
+  left_inv C := by simp only [ofDual_toDual, euclideanDual_euclideanDual]
+  right_inv C := by simp only [euclideanDual_euclideanDual, toDual_ofDual]
+  map_rel_iff' {C D} := by
+    simp only [Equiv.coe_fn_mk, toDual_le_toDual]
+    rw [le_euclideanDual_comm, euclideanDual_euclideanDual]
+
+/-- The order isomorphism sends a code to its Euclidean dual. -/
+@[simp]
+theorem euclideanDualOrderIso_apply (C : Submodule K (ι → K)) :
+    euclideanDualOrderIso ι K C = OrderDual.toDual (euclideanDual C) := by
+  rfl
+
+/-- The inverse of the order isomorphism is again Euclidean duality. -/
+@[simp]
+theorem euclideanDualOrderIso_symm_apply (C : (Submodule K (ι → K))ᵒᵈ) :
+    (euclideanDualOrderIso ι K).symm C = euclideanDual (OrderDual.ofDual C) := by
+  rfl
+
 /-- Dual inclusion is equivalent to inclusion in the opposite direction. -/
 theorem euclideanDual_le_euclideanDual_iff {C D : Submodule K (ι → K)} :
     euclideanDual C ≤ euclideanDual D ↔ D ≤ C := by
-  constructor
-  · intro h
-    simpa only [euclideanDual_euclideanDual] using euclideanDual_antitone (R := K) h
-  · exact fun h ↦ euclideanDual_antitone (R := K) h
+  simpa using (euclideanDualOrderIso ι K).le_iff_le (x := D) (y := C)
 
 /-- Two codes have the same Euclidean dual exactly when they are equal. -/
 theorem euclideanDual_injective :
-    Function.Injective (euclideanDual (R := K) (ι := ι)) := by
-  intro C D h
-  simpa only [euclideanDual_euclideanDual] using congrArg euclideanDual h
+    Function.Injective (euclideanDual (R := K) (ι := ι)) :=
+  fun _ _ h ↦ (euclideanDualOrderIso ι K).injective (by simpa using h)
 
 /-- The Euclidean dual of an intersection is the sum of the Euclidean duals. -/
 @[simp]
 theorem euclideanDual_inf (C D : Submodule K (ι → K)) :
     euclideanDual (C ⊓ D) = euclideanDual C ⊔ euclideanDual D := by
-  apply euclideanDual_injective
-  simp only [euclideanDual_euclideanDual, euclideanDual_sup]
+  simpa only [euclideanDualOrderIso_apply, ← toDual_sup, OrderDual.toDual_inj] using
+    (euclideanDualOrderIso ι K).map_inf C D
 
 /-- The dimensions of a code and its Euclidean dual add to the number of coordinates. -/
 theorem finrank_add_finrank_euclideanDual (C : Submodule K (ι → K)) :
@@ -250,6 +281,36 @@ theorem IsSelfDual.natCard_eq {C : Submodule K (ι → K)} (hC : IsSelfDual C) :
     Nat.card C = Nat.card K ^ (Fintype.card ι / 2) := by
   rw [Module.natCard_eq_pow_finrank (K := K), ← hC.two_mul_finrank_eq_card,
     Nat.mul_div_cancel_left _ two_pos]
+
+/-- The Euclidean dual of a hyperplane in `ι → K` is spanned by any nonzero vector orthogonal to
+every vector in the hyperplane. -/
+theorem euclideanDual_eq_span_singleton {C : Submodule K (ι → K)}
+    (hC : finrank K C + 1 = Fintype.card ι) {a : ι → K} (ha : a ≠ 0)
+    (hCa : ∀ x ∈ C, x ⬝ᵥ a = 0) : euclideanDual C = K ∙ a := by
+  have hdim : finrank K (euclideanDual C) = 1 := by
+    have := finrank_add_finrank_euclideanDual C
+    omega
+  exact eq_span_singleton_of_mem_of_finrank_eq_one hdim (mem_euclideanDual.mpr hCa) ha
+
+/-- A hyperplane in `ι → K` consists of the vectors having dot product zero with any fixed nonzero
+vector orthogonal to it. -/
+theorem mem_iff_dotProduct_eq_zero_of_finrank_add_one {C : Submodule K (ι → K)}
+    (hC : finrank K C + 1 = Fintype.card ι) {a : ι → K} (ha : a ≠ 0)
+    (hCa : ∀ x ∈ C, x ⬝ᵥ a = 0) {x : ι → K} :
+    x ∈ C ↔ x ⬝ᵥ a = 0 := by
+  conv_lhs => rw [← euclideanDual_euclideanDual C, euclideanDual_eq_span_singleton hC ha hCa]
+  simp [dotProduct_comm]
+
+/-- Any vector orthogonal to a hyperplane in `ι → K` is a scalar multiple of any fixed nonzero
+vector orthogonal to it. -/
+theorem exists_smul_eq_of_forall_dotProduct_eq_zero {C : Submodule K (ι → K)}
+    (hC : finrank K C + 1 = Fintype.card ι) {a b : ι → K} (ha : a ≠ 0)
+    (hCa : ∀ x ∈ C, x ⬝ᵥ a = 0) (hCb : ∀ x ∈ C, x ⬝ᵥ b = 0) :
+    ∃ c : K, c • a = b := by
+  have hb : b ∈ K ∙ a := by
+    rw [← euclideanDual_eq_span_singleton hC ha hCa, mem_euclideanDual]
+    exact hCb
+  exact mem_span_singleton.mp hb
 
 end Field
 

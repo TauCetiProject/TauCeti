@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Index
 public import TauCeti.Topology.Homotopy.Covering
 
 import Mathlib.Data.Finite.Perm
+import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
 /-!
 # The subgroup a cover recovers from a chosen lift of the basepoint
@@ -63,6 +64,9 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
 * `IsCoveringMap.joined_monodromy` and `IsCoveringMap.pathConnectedSpace_iff`: conversely a
   point is joined to its image under monodromy, so over a path-connected base the total space is
   path connected exactly when monodromy is transitive on a nonempty fibre.
+* `IsCoveringMap.exists_section_iff_forall_monodromy_eq`: over a path-connected, locally
+  path-connected base, a continuous section through a lift of the basepoint exists exactly when
+  monodromy around every loop fixes that lift.
 * `IsCoveringMap.fiberEquivQuotientRange` and
   `IsCoveringMap.card_fiber_eq_index`: the fibre is the coset space of the recovered
   subgroup, so the number of sheets is its index.
@@ -127,8 +131,9 @@ attaches to the pointed cover `(E, e)`. -/
 theorem _root_.IsCoveringMap.monodromy_eq_self_iff_mem_range (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (γ : FundamentalGroup X x) :
     hp.monodromy γ.toPath e = e ↔
-      γ ∈ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
-  have he : p (e : E) = x := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.2
+      γ ∈ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range := by
+  have he : p (e : E) = x := by simpa only [Set.mem_preimage,
+      Set.mem_singleton_iff] using e.property
   -- Rewriting `mapOfEq_apply` cannot type-check the fibre-membership proof `e.2` at implicit
   -- transparency. Use the explicit equality `he` so the map's basepoint argument is visible.
   change hp.monodromy γ.toPath e = e ↔
@@ -166,7 +171,7 @@ theorem _root_.IsCoveringMap.monodromy_eq_self_iff_mem_range (hp : IsCoveringMap
 theorem _root_.IsCoveringMap.stabilizer_eq_range (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
     letI := hp.fundamentalGroupMulAction x
     MulAction.stabilizer (FundamentalGroup X x) e =
-      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range := by
   let := hp.fundamentalGroupMulAction x
   ext γ
   exact IsCoveringMap.monodromy_eq_self_iff_mem_range hp e γ
@@ -176,7 +181,7 @@ of a chosen lift `e` of the basepoint is the image of `π₁(E, e)` under the co
 theorem _root_.IsCoveringMap.comap_stabilizer_monodromyPerm (hp : IsCoveringMap p)
     (e : p ⁻¹' {x}) :
     (MulAction.stabilizer (Equiv.Perm (p ⁻¹' {x})) e).comap (hp.monodromyPerm x) =
-      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range := by
   ext γ
   rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, Equiv.Perm.smul_def,
     IsCoveringMap.coe_monodromyPerm, IsCoveringMap.monodromy_eq_self_iff_mem_range]
@@ -196,8 +201,10 @@ theorem _root_.IsCoveringMap.monodromyPerm_pow_eq_one (hp : IsCoveringMap p)
 carries the first lift to the second. -/
 theorem _root_.IsCoveringMap.exists_monodromy_eq_of_joined (hp : IsCoveringMap p) {e e' : p ⁻¹' {x}}
     (h : Joined (e : E) (e' : E)) : ∃ γ : FundamentalGroup X x, hp.monodromy γ.toPath e = e' := by
-  have he : p (e : E) = x := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.2
-  have he' : p (e' : E) = x := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e'.2
+  have he : p (e : E) = x := by simpa only [Set.mem_preimage,
+      Set.mem_singleton_iff] using e.property
+  have he' : p (e' : E) = x := by simpa only [Set.mem_preimage,
+      Set.mem_singleton_iff] using e'.property
   set Γ : Path.Homotopic.Quotient (e : E) (e' : E) := Path.Homotopic.Quotient.mk h.somePath
   refine ⟨FundamentalGroup.fromPath
     ((Γ.map ⟨p, hp.continuous⟩).cast he.symm he'.symm), hp.monodromy_eq_of_map_eq Γ ?_⟩
@@ -250,6 +257,25 @@ theorem _root_.IsCoveringMap.pathConnectedSpace_iff [PathConnectedSpace X] (hp :
       exact hp.joined_monodromy γ.toPath f
     exact (hf.trans hff').trans hf'.symm
 
+/-! ### Sections -/
+
+/-- **A covering map has a section through a lift exactly when monodromy fixes that lift.** Over
+a path-connected, locally path-connected base, there is a continuous section `s` of `p` with
+`s x = e` if and only if monodromy around every loop at `x` fixes `e`. -/
+theorem _root_.IsCoveringMap.exists_section_iff_forall_monodromy_eq [PathConnectedSpace X]
+    [LocallyPathConnectedSpace X] (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
+    (∃ s : C(X, E), s x = e ∧ p ∘ s = id) ↔
+      ∀ γ : FundamentalGroup X x, hp.monodromy γ.toPath e = e := by
+  constructor
+  · rintro ⟨s, hsx, hps⟩ γ
+    have h := hp.monodromy_section s.continuous (fun y ↦ congrFun hps y) γ.toPath
+    rwa [show (⟨s x, congrFun hps x⟩ : p ⁻¹' {x}) = e from Subtype.ext hsx] at h
+  · intro h
+    obtain ⟨s, ⟨hsx, hps⟩, -⟩ := hp.existsUnique_continuousMap_lifts_of_range_le_subgroup
+      (f := ContinuousMap.id X) (a₀ := x) (e₀ := e) e.property ⊤ le_top
+      fun γ _ ↦ (hp.monodromy_eq_self_iff_mem_range e γ).1 (h γ)
+    exact ⟨s, hsx, hps⟩
+
 /-! ### The fibre as a coset space -/
 
 /-- **Orbit-stabiliser for a covering map.** Choosing a lift `e` of the basepoint identifies the
@@ -259,7 +285,7 @@ noncomputable def _root_.IsCoveringMap.fiberEquivQuotientRange
     [PathConnectedSpace E] (hp : IsCoveringMap p)
     (e : p ⁻¹' {x}) :
     p ⁻¹' {x} ≃
-      FundamentalGroup X x ⧸ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range :=
+      FundamentalGroup X x ⧸ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range :=
   letI := hp.fundamentalGroupMulAction x
   haveI := IsCoveringMap.monodromy_isPretransitive hp x
   (Equiv.subtypeUnivEquiv (p := fun e' : p ⁻¹' {x} =>
@@ -297,7 +323,7 @@ theorem _root_.IsCoveringMap.fiberEquivQuotientRange_symm_apply_mk
 theorem _root_.IsCoveringMap.card_fiber_eq_index
     [PathConnectedSpace E] (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
     Nat.card (p ⁻¹' {x}) =
-      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range.index := by
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range.index := by
   let := hp.fundamentalGroupMulAction x
   have := IsCoveringMap.monodromy_isPretransitive hp x
   rw [← IsCoveringMap.stabilizer_eq_range hp e, MulAction.index_stabilizer_of_transitive]
@@ -307,8 +333,8 @@ theorem _root_.IsCoveringMap.card_fiber_eq_index
 /-- Moving the chosen lift by monodromy conjugates the recovered subgroup. -/
 theorem _root_.IsCoveringMap.range_mapOfEq_monodromy
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ (hp.monodromy γ.toPath e).2).range =
-      ((FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range).map
+    (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ (hp.monodromy γ.toPath e).property).range =
+      ((FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range).map
         (MulAut.conj γ).toMonoidHom := by
   let := hp.fundamentalGroupMulAction x
   rw [← IsCoveringMap.stabilizer_eq_range hp e, ← IsCoveringMap.stabilizer_eq_range hp
@@ -320,8 +346,8 @@ theorem _root_.IsCoveringMap.exists_range_eq_map_conj_of_joined
     (hp : IsCoveringMap p) {e e' : p ⁻¹' {x}}
     (h : Joined (e : E) (e' : E)) :
     ∃ γ : FundamentalGroup X x,
-      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e'.2).range =
-        ((FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range).map
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e'.property).range =
+        ((FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range).map
           (MulAut.conj γ).toMonoidHom := by
   obtain ⟨γ, hγ⟩ := IsCoveringMap.exists_monodromy_eq_of_joined hp h
   exact ⟨γ, by rw [← hγ, IsCoveringMap.range_mapOfEq_monodromy hp e γ]⟩
@@ -331,8 +357,8 @@ unpointed connected cover determines only the conjugacy class of the subgroup. -
 theorem _root_.IsCoveringMap.exists_range_eq_map_conj
     [PathConnectedSpace E] (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
     ∃ γ : FundamentalGroup X x,
-      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e'.2).range =
-        ((FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range).map
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e'.property).range =
+        ((FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range).map
           (MulAut.conj γ).toMonoidHom :=
   IsCoveringMap.exists_range_eq_map_conj_of_joined hp (PathConnectedSpace.joined (e : E) (e' : E))
 
@@ -341,10 +367,10 @@ exactly when it does not depend on which lift is chosen. This is the subgroup-si
 the cover to be regular. -/
 theorem _root_.IsCoveringMap.normal_range_iff
     [PathConnectedSpace E] (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
-    (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range.Normal ↔
+    (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range.Normal ↔
       ∀ e' : p ⁻¹' {x},
-        (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e'.2).range =
-          (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
+        (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e'.property).range =
+          (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range := by
   constructor
   · intro hnormal e'
     obtain ⟨γ, hγ⟩ := IsCoveringMap.exists_range_eq_map_conj hp e e'

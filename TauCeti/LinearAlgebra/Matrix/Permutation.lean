@@ -9,12 +9,31 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
-# Nonnegative sums of permutation matrices
+# Permutation matrices: multiplication, basis action, and nonnegative sums
+
+Multiplying a matrix on the left by `Matrix.permMatrixHom σ` permutes its rows by `σ.symm`, and
+multiplying on the right permutes its columns by `σ`. In the standard basis
+`Finsupp.basisSingleOne`, `Matrix.permMatrixHom σ` is the matrix of the permutation endomorphism
+`Finsupp.lmapDomain R R σ`.
 
 Each permutation's weight bounds the entries on its diagonal in a nonnegative weighted
 sum of permutation matrices. This lets support arguments recover a whole permutation
 diagonal from a positive weight. A positively weighted combination of permutations, each
 lying in the support of a matrix `K` and together covering it, has the zero pattern of `K`.
+
+## Main results
+
+* `Equiv.Perm.permMatrix_nonneg`: every entry of a permutation matrix is nonnegative.
+* `Matrix.permMatrixHom_mul`, `Matrix.permMatrixHom_mul_apply`: multiplying on the left by
+  `permMatrixHom σ` permutes rows by `σ.symm`.
+* `Matrix.mul_permMatrixHom`, `Matrix.mul_permMatrixHom_apply`: multiplying on the right by
+  `permMatrixHom σ` permutes columns by `σ`.
+* `LinearMap.toMatrix_basisSingleOne_lmapDomain`: in `Finsupp.basisSingleOne`, the matrix of
+  `Finsupp.lmapDomain R R σ` is `Matrix.permMatrixHom σ`.
+* `Matrix.weight_le_sum_permMatrix`: a nonnegative weighted sum of permutation matrices has entries
+  on each included diagonal at least as large as that permutation's weight.
+* `Matrix.sum_smul_permMatrix_apply_eq_zero_iff`: a positively weighted sum of permutations
+  covering the support of `K` has the zero pattern of `K`.
 -/
 
 public section
@@ -29,6 +48,50 @@ theorem permMatrix_nonneg {n R : Type*} [DecidableEq n]
   exact (Pi.single_nonneg (α := fun _ : n ↦ R)).2 zero_le_one _
 
 end Equiv.Perm
+
+namespace Matrix
+
+/-- Multiplying a matrix on the left by `permMatrixHom σ` permutes its rows by `σ.symm`. -/
+theorem permMatrixHom_mul {m k R : Type*} [Fintype m] [DecidableEq m] [NonAssocSemiring R]
+    (σ : Equiv.Perm m) (M : Matrix m k R) :
+    permMatrixHom (R := R) σ * M = M.submatrix σ.symm id := by
+  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Equiv.Perm.inv_def]
+
+/-- Entrywise form of `Matrix.permMatrixHom_mul`:
+`(permMatrixHom σ * M) i j = M (σ.symm i) j`. -/
+theorem permMatrixHom_mul_apply {m k R : Type*} [Fintype m] [DecidableEq m] [NonAssocSemiring R]
+    (σ : Equiv.Perm m) (M : Matrix m k R) (i : m) (j : k) :
+    (permMatrixHom (R := R) σ * M) i j = M (σ.symm i) j := by
+  rw [permMatrixHom_mul, submatrix_apply, id]
+
+/-- Multiplying a matrix on the right by `permMatrixHom σ` permutes its columns by `σ`. -/
+theorem mul_permMatrixHom {l m R : Type*} [Fintype m] [DecidableEq m] [NonAssocSemiring R]
+    (M : Matrix l m R) (σ : Equiv.Perm m) :
+    M * permMatrixHom (R := R) σ = M.submatrix id σ := by
+  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.mul_toMatrix_toPEquiv, Equiv.Perm.inv_def,
+    Equiv.symm_symm]
+
+/-- Entrywise form of `Matrix.mul_permMatrixHom`: `(M * permMatrixHom σ) i j = M i (σ j)`. -/
+theorem mul_permMatrixHom_apply {l m R : Type*} [Fintype m] [DecidableEq m] [NonAssocSemiring R]
+    (M : Matrix l m R) (σ : Equiv.Perm m) (i : l) (j : m) :
+    (M * permMatrixHom (R := R) σ) i j = M i (σ j) := by
+  rw [mul_permMatrixHom, submatrix_apply, id]
+
+end Matrix
+
+namespace LinearMap
+
+/-- In the standard basis `Finsupp.basisSingleOne`, the matrix of the permutation endomorphism
+`Finsupp.lmapDomain R R σ` is `Matrix.permMatrixHom σ`. -/
+theorem toMatrix_basisSingleOne_lmapDomain {n R : Type*} [CommSemiring R] [Fintype n]
+    [DecidableEq n] (σ : Equiv.Perm n) :
+    LinearMap.toMatrix Finsupp.basisSingleOne Finsupp.basisSingleOne
+      (Finsupp.lmapDomain R R σ) = Matrix.permMatrixHom (R := R) σ := by
+  ext p q
+  simp [LinearMap.toMatrix_apply, Finsupp.single_apply, Matrix.permMatrixHom_apply,
+    PEquiv.toMatrix_apply, Equiv.Perm.inv_def, Equiv.eq_symm_apply, eq_comm]
+
+end LinearMap
 
 namespace Matrix
 

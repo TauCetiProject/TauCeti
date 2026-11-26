@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
 
+import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Map
+
 /-!
 # Restricting moment maps to subgroups and along homomorphisms
 
@@ -22,7 +24,9 @@ is a moment map of the action of `K`. Indeed, the fundamental vector field of `�
 `⟨μ ∘ dφ, ξ⟩` is the component `⟨μ, dφ ξ⟩`, whose Hamiltonian vector field is `(dφ ξ)_M = ξ_M`.
 
 Coadjoint equivariance is preserved, because `dφ` intertwines the adjoint actions,
-`dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)` (`MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`).
+`dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)` (`MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`), so
+pulling back along `dφ` intertwines the coadjoint actions
+(`MonoidHom.coadjointRepresentation_comp_groupLieAlgebraMap`).
 More precisely, the defect from equivariance of the restricted map is the restriction of the
 defect of `μ`,
 
@@ -46,6 +50,10 @@ subgroup used in reduction in stages, and the moment map of a subtorus of a toru
   moment map along a homomorphism.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.comp_subtype`: restriction of a group-level moment
   map to a Lie subgroup.
+* `TauCeti.SmoothTwoForm.isMomentMap_comp_monoidHom_iff`,
+  `TauCeti.SmoothTwoForm.isEquivariantMomentMap_comp_monoidHom_iff`: conversely, along a surjective
+  homomorphism with surjective differential, `μ` is a (group-level) moment map as soon as
+  `μ ∘ dφ` is one.
 
 ## References
 
@@ -79,11 +87,8 @@ theorem momentDefect_comp_groupLieAlgebraMap {φ : K →* G}
     (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (k : K) (x : M) :
     momentDefect (fun y ↦ (μ y).comp (φ.groupLieAlgebraMap J I).toLinearMap) k x =
       (momentDefect μ (φ k) x).comp (φ.groupLieAlgebraMap J I).toLinearMap := by
-  ext ξ
-  have hAd := φ.groupLieAlgebraMap_adjointContinuousLinearMap (I := I) (J := J) k⁻¹ ξ
-  rw [map_inv] at hAd
-  simp only [momentDefect_def, LinearMap.sub_apply, LinearMap.comp_apply,
-    Lie.coadjointRepresentation_apply, ContinuousLinearMap.coe_coe, hsmul, hAd]
+  simp only [momentDefect_def, hsmul, LinearMap.sub_comp,
+    φ.coadjointRepresentation_comp_groupLieAlgebraMap]
 
 end Defect
 
@@ -122,6 +127,39 @@ theorem IsMomentMap.comp_monoidHom
     simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
       InfinitesimalAction.fundamental_apply] using hX
 
+/-- **Moment maps along a homomorphism with surjective differential.** Let `K` act through a
+homomorphism `φ : K →* G` that is differentiable at the identity, with surjective differential
+`dφ`. If `x ↦ μ x ∘ dφ` is a moment map of the action of `K` by fundamental vector fields, then `μ`
+is a moment map of the action of `G`. -/
+theorem IsMomentMap.of_comp_monoidHom (φ : K →* G) (hφ : MDifferentiableAt J I φ 1)
+    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x)
+    (hdφ : Function.Surjective (φ.groupLieAlgebraMap J I))
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental J K I' M) fun x ↦
+      (μ x).comp (φ.groupLieAlgebraMap J I).toLinearMap) :
+    σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ where
+  contMDiff ξ := by
+    obtain ⟨ζ, rfl⟩ := hdφ ξ
+    simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] using h.contMDiff ζ
+  isHamiltonianVectorField ξ := by
+    obtain ⟨ζ, rfl⟩ := hdφ ξ
+    have hX := h.isHamiltonianVectorField ζ
+    rw [InfinitesimalAction.fundamental_apply,
+      ← φ.fundamentalVectorField_groupLieAlgebraMap hφ hsmul] at hX
+    simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+      InfinitesimalAction.fundamental_apply] using hX
+
+/-- **Moment maps along a homomorphism with surjective differential.** For an action through a
+homomorphism `φ : K →* G` that is differentiable at the identity with surjective differential `dφ`,
+the map `μ` is a moment map of the action of `G` exactly when `x ↦ μ x ∘ dφ` is a moment map of the
+action of `K`. -/
+theorem isMomentMap_comp_monoidHom_iff (φ : K →* G) (hφ : MDifferentiableAt J I φ 1)
+    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x)
+    (hdφ : Function.Surjective (φ.groupLieAlgebraMap J I)) :
+    σ.IsMomentMap (InfinitesimalAction.fundamental J K I' M)
+        (fun x ↦ (μ x).comp (φ.groupLieAlgebraMap J I).toLinearMap) ↔
+      σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ :=
+  ⟨IsMomentMap.of_comp_monoidHom φ hφ hsmul hdφ, fun h ↦ h.comp_monoidHom φ hφ hsmul⟩
+
 namespace IsEquivariantMomentMap
 
 /-- **Restriction of a group-level moment map along a homomorphism.** If `K` acts through a
@@ -138,6 +176,24 @@ theorem comp_monoidHom (h : σ.IsEquivariantMomentMap μ) (φ : K →* G)
     ⟨h.toIsMomentMap.comp_monoidHom φ hφ hsmul, fun k x ↦ ?_⟩
   rw [momentDefect_comp_groupLieAlgebraMap hsmul, hμ, LinearMap.zero_comp]
 
+/-- **Group-level moment maps along a surjective homomorphism.** Let `K` act through a surjective
+homomorphism `φ : K →* G` that is differentiable at the identity, with surjective differential
+`dφ`. If `x ↦ μ x ∘ dφ` is a coadjoint-equivariant moment map of the action of `K`, then `μ` is a
+coadjoint-equivariant moment map of the action of `G`. -/
+theorem of_comp_monoidHom (φ : K →* G) (hφ : MDifferentiableAt J I φ 1)
+    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (hφs : Function.Surjective φ)
+    (hdφ : Function.Surjective (φ.groupLieAlgebraMap J I))
+    (h : σ.IsEquivariantMomentMap fun x ↦ (μ x).comp (φ.groupLieAlgebraMap J I).toLinearMap) :
+    σ.IsEquivariantMomentMap μ := by
+  have hμ := (isEquivariantMomentMap_iff_momentDefect_eq_zero.1 h).2
+  refine isEquivariantMomentMap_iff_momentDefect_eq_zero.2
+    ⟨h.toIsMomentMap.of_comp_monoidHom φ hφ hsmul hdφ, fun g x ↦ ?_⟩
+  obtain ⟨k, rfl⟩ := hφs g
+  have hk := hμ k x
+  rw [momentDefect_comp_groupLieAlgebraMap hsmul, ← LinearMap.zero_comp
+    (φ.groupLieAlgebraMap J I).toLinearMap] at hk
+  exact (LinearMap.cancel_right hdφ).1 hk
+
 /-- **Restriction of a group-level moment map to a Lie subgroup.** If a subgroup `L` of `G` carries
 a Lie group structure for which the inclusion is differentiable at the identity, a
 coadjoint-equivariant moment map `μ` of the action of `G` restricts to the coadjoint-equivariant
@@ -151,6 +207,18 @@ theorem comp_subtype {L : Subgroup G} [ChartedSpace HK L] [LieGroup J (minSmooth
   h.comp_monoidHom L.subtype hL fun _ _ ↦ (Subgroup.smul_def _ _)
 
 end IsEquivariantMomentMap
+
+/-- **Group-level moment maps along a surjective homomorphism.** For an action through a surjective
+homomorphism `φ : K →* G` that is differentiable at the identity with surjective differential `dφ`,
+the map `μ` is a coadjoint-equivariant moment map of the action of `G` exactly when
+`x ↦ μ x ∘ dφ` is one of the action of `K`. -/
+theorem isEquivariantMomentMap_comp_monoidHom_iff (φ : K →* G)
+    (hφ : MDifferentiableAt J I φ 1) (hsmul : ∀ (k : K) (x : M), k • x = φ k • x)
+    (hφs : Function.Surjective φ) (hdφ : Function.Surjective (φ.groupLieAlgebraMap J I)) :
+    σ.IsEquivariantMomentMap (fun x ↦ (μ x).comp (φ.groupLieAlgebraMap J I).toLinearMap) ↔
+      σ.IsEquivariantMomentMap μ :=
+  ⟨IsEquivariantMomentMap.of_comp_monoidHom φ hφ hsmul hφs hdφ,
+    fun h ↦ h.comp_monoidHom φ hφ hsmul⟩
 
 end SmoothTwoForm
 

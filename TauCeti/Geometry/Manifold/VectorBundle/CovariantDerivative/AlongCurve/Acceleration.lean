@@ -42,6 +42,9 @@ along-curve derivative.  Under a reparametrization `φ` the acceleration obeys t
   `u'' + Γ (u', u')` does in the chart at the current point.
 * `CovariantDerivative.accelerationWithin_comp` and `CovariantDerivative.acceleration_comp`: the
   chain rule for the acceleration under reparametrization.
+* `CovariantDerivative.accelerationWithin_congr_covariantDerivative` and
+  `CovariantDerivative.acceleration_congr_covariantDerivative`: dependence on the connection only
+  through vector fields differentiable at the point.
 
 ## References
 
@@ -161,7 +164,7 @@ theorem accelerationWithin_comp {φ : 𝕜 → 𝕜} {s u : Set 𝕜} {t : 𝕜}
     (hφ' : DifferentiableWithinAt 𝕜 (derivWithin φ u) u t) (hmaps : MapsTo φ u s)
     (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s)
     (hV : DifferentiableWithinAt 𝕜
-      (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t)) :
+      (sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t)) :
     accelerationWithin cov (γ ∘ φ) u t =
       derivWithin (derivWithin φ u) u t • curveVelocityWithin I γ s (φ t) +
         derivWithin φ u t ^ 2 • accelerationWithin cov γ s (φ t) := by
@@ -175,7 +178,7 @@ theorem accelerationWithin_comp {φ : 𝕜 → 𝕜} {s u : Set 𝕜} {t : 𝕜}
   have hchart : DifferentiableWithinAt 𝕜 (extChartAt I (γ (φ t)) ∘ γ) s (φ t) :=
     (hasDerivWithinAt_extChartAt_comp_curve
       (hasMFDerivWithinAt_curveVelocityWithin (hγ (φ t) (hmaps ht)))).differentiableWithinAt
-  have hVcomp : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) (γ ∘ φ)
+  have hVcomp : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) (γ ∘ φ)
       (fun r ↦ curveVelocityWithin I γ s (φ r)) ((γ ∘ φ) t)) u t := by
     rw [sectionCoord_comp]
     exact hV.comp t (hφ t ht) hmaps
@@ -191,7 +194,7 @@ theorem acceleration_comp {φ : 𝕜 → 𝕜} {t : 𝕜}
     (hφ : ∀ᶠ r in 𝓝 t, DifferentiableAt 𝕜 φ r)
     (hφ' : DifferentiableAt 𝕜 (deriv φ) t)
     (hγ : ∀ᶠ r in 𝓝 (φ t), MDifferentiableAt 𝓘(𝕜, 𝕜) I γ r)
-    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ (curveVelocity I γ) (γ (φ t))) (φ t)) :
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) (γ (φ t))) (φ t)) :
     acceleration cov (γ ∘ φ) t =
       deriv (deriv φ) t • curveVelocity I γ (φ t) + deriv φ t ^ 2 • acceleration cov γ (φ t) := by
   have hφd := hφ.self_of_nhds
@@ -199,7 +202,7 @@ theorem acceleration_comp {φ : 𝕜 → 𝕜} {t : 𝕜}
       fun r ↦ deriv φ r • curveVelocity I γ (φ r) := by
     filter_upwards [hφd.continuousAt.eventually hγ, hφ] with r hγr hφr
     exact curveVelocity_comp hφr.hasDerivAt hγr
-  have hVcomp : DifferentiableAt 𝕜 (sectionCoord (F := E) (γ ∘ φ)
+  have hVcomp : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) (γ ∘ φ)
       (fun r ↦ curveVelocity I γ (φ r)) (γ (φ t))) t := by
     rw [sectionCoord_comp]
     exact hV.comp t hφd
@@ -238,8 +241,8 @@ theorem _root_.Filter.EventuallyEq.acceleration_eq (h : γ =ᶠ[𝓝 t] η) :
     exact congrArg (fun L : TangentSpace 𝓘(𝕜, 𝕜) u →L[𝕜] TangentSpace I (γ u) ↦
       L ((1 : 𝕜) : TangentSpace 𝓘(𝕜, 𝕜) u))
       (Filter.EventuallyEq.mfderiv_eq (I := 𝓘(𝕜, 𝕜)) (I' := I) hu)
-  have hcoord (x : M) : sectionCoord (F := E) γ (curveVelocity I γ) x =ᶠ[𝓝 t]
-      sectionCoord (F := E) η (curveVelocity I η) x := by
+  have hcoord (x : M) : sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) x =ᶠ[𝓝 t]
+      sectionCoord 𝕜 (F := E) η (curveVelocity I η) x := by
     filter_upwards [h, hvel] with u hu hv
     rw [sectionCoord_apply, sectionCoord_apply, hv]
     -- The two sides read the same vector in the trivialization at base points `γ u` and `η u`,
@@ -291,5 +294,29 @@ theorem accelerationWithin_eq_symmL {x : M} {s : Set 𝕜} {t : 𝕜} (hs : Uniq
     accelerationWithin_def]
 
 end Chart
+
+section ConnectionCongr
+
+variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+
+/-- Covariant acceleration within `s` at `t` depends on the connection only through its action on
+vector fields differentiable at `γ t`. -/
+theorem accelerationWithin_congr_covariantDerivative
+    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜}
+    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
+    accelerationWithin cov₁ γ s t = accelerationWithin cov₂ γ s t := by
+  simpa only [accelerationWithin_def] using alongCurveWithin_congr_covariantDerivative h
+
+/-- Unrestricted covariant acceleration at `t` depends on the connection only through its action on
+vector fields differentiable at `γ t`. -/
+theorem acceleration_congr_covariantDerivative
+    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    {γ : 𝕜 → M} {t : 𝕜}
+    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
+    acceleration cov₁ γ t = acceleration cov₂ γ t := by
+  simpa only [← accelerationWithin_univ] using accelerationWithin_congr_covariantDerivative h
+
+end ConnectionCongr
 
 end CovariantDerivative

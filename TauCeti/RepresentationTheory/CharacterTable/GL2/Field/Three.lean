@@ -21,6 +21,8 @@ import TauCeti.Algebra.Ring.Hom
 -- Non-public: a quadratic extension of a field with three elements, to remove `E` from the table.
 import Mathlib.Algebra.CharP.CharAndCard
 import Mathlib.FieldTheory.Finite.Extension
+-- Non-public: `(i√2) ^ 2 = -2`, for the values of the cuspidal characters.
+import TauCeti.Analysis.Complex.Sqrt
 
 /-!
 # The character table of `GL₂(𝔽₃)`
@@ -360,7 +362,7 @@ private theorem exists_principalSeries_row (hF : Fintype.card F = 3) {u : Eˣ}
 /-- The cuspidal character attached to `θ` at the eight normal forms, in terms of `ζ = θ(u)`. -/
 private theorem cuspidal_apply_gl2FieldThreeNormalForm (hF : Fintype.card F = 3) {u : Eˣ}
     (hu : (u : E) * u = u + 1) (θ : Eˣ →* ℂˣ) (j : Fin 8) :
-    (GL2CuspidalVirtualCharacter F E θ (AddChar.FiniteField.primitiveChar_to_Complex F)).1
+    (GL2CuspidalVirtualCharacter F E θ (AddChar.FiniteField.primitiveChar_to_Complex F)).val
         (gl2FieldThreeNormalForm u j) =
       ![2, 2 * (θ u : ℂ) ^ 4, -((θ u : ℂ) ^ 2 + (θ u : ℂ) ^ 6), -((θ u : ℂ) + (θ u : ℂ) ^ 3),
         -((θ u : ℂ) ^ 5 + (θ u : ℂ) ^ 15), -1, -(θ u : ℂ) ^ 4, 0] j := by
@@ -437,9 +439,6 @@ private theorem exists_cuspidal_row (hF : Fintype.card F = 3) {u : Eˣ}
     have hw : θ u * θ u = 1 := Units.ext (by rw [Units.val_mul, ← pow_two]; exact hζ)
     obtain ⟨n, rfl⟩ := exists_zpow_eq hF hu v
     simp [hF, pow_three, ← mul_zpow, hw]
-  have hI : (Complex.I * √2) ^ 2 = -2 := by
-    rw [mul_pow, Complex.I_sq, ← Complex.ofReal_pow, Real.sq_sqrt (by norm_num)]
-    norm_num
   rcases mul_eq_zero.mp (show (ζ ^ 4 - 1) * (ζ ^ 4 + 1) = 0 by linear_combination h8)
     with h4 | h4
   · -- `ζ` is a primitive fourth root of unity
@@ -458,7 +457,7 @@ private theorem exists_cuspidal_row (hF : Fintype.card F = 3) {u : Eˣ}
     fin_cases j <;> simp [hz, p3, p4, p5, p6, p15, one_add_one_eq_two]
   · -- `ζ` is a primitive eighth root of unity, and `(ζ + ζ³)² = -2`
     have hs : (ζ + ζ ^ 3) ^ 2 = (Complex.I * √2) ^ 2 := by
-      rw [hI]
+      rw [Complex.I_mul_ofReal_sqrt_sq zero_le_two, Complex.ofReal_ofNat]
       linear_combination (ζ ^ 2 + 2) * h4
     have p4 : ζ ^ 4 = -1 := by linear_combination h4
     have p5 : ζ ^ 5 = -ζ := by linear_combination ζ * h4

@@ -16,8 +16,8 @@ pieces whose relative interiors cover `M` defines the finite-atlas `C^k` norm
 `ContMDiffMap.finiteAtlasSeminorm`. This file packages it as a normed space structure on the
 vector-valued `C^k` maps (`ContMDiffMap.finiteAtlasNormedAddCommGroup`,
 `ContMDiffMap.finiteAtlasNormedSpace`) whose topology is, by definition, the weak Whitney
-topology, and proves that this normed space is complete when `M` is boundaryless and modelled
-on a locally compact space over `ℝ` or `ℂ` and the target is complete
+topology, and proves that this normed space is complete when `M`, possibly with boundary or
+corners, is modelled on a locally compact space over `ℝ` or `ℂ` and the target is complete
 (`ContMDiffMap.completeSpace_finiteAtlas`). Such atlases exist on every compact manifold modelled
 on a locally compact space (`TauCeti.exists_finite_compact_chart_cover`), and any two of them give
 equivalent norms (`ContMDiffMap.exists_finiteAtlasSeminorm_le`).
@@ -87,11 +87,11 @@ theorem norm_finiteAtlas (f : C^k⟮I, M; 𝓘(𝕜, F), F⟯) :
     ‖f‖ = finiteAtlasSeminorm c K k le_rfl f :=
   rfl
 
-/-- **The Banach space of `C^k` maps.** On a boundaryless manifold modelled on a locally compact
-space over `ℝ` or `ℂ`, the vector-valued `C^k` maps with values in a Banach space form a complete
-normed space for the finite-atlas norm. -/
+/-- **The Banach space of `C^k` maps.** On a manifold, possibly with boundary or corners, modelled
+on a locally compact space over `ℝ` or `ℂ`, the vector-valued `C^k` maps with values in a Banach
+space form a complete normed space for the finite-atlas norm. -/
 theorem completeSpace_finiteAtlas [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E]
-    [I.Boundaryless] [CompleteSpace F] :
+    [CompleteSpace F] :
     letI := finiteAtlasNormedAddCommGroup (F := F) k hK
     CompleteSpace C^k⟮I, M; 𝓘(𝕜, F), F⟯ := by
   let _ := finiteAtlasNormedAddCommGroup (F := F) k hK

@@ -141,7 +141,7 @@ theorem exists_rationalPoint_mem_orbitBoundary_of_not_isClosed (x : 𝟙_ (Over 
     ∃ (y : 𝟙_ (Over (Spec (.of k))) ⟶ X) (a : (𝟙_ (Over (Spec (.of k)))).left),
       y.left a ∈ orbitBoundary G x := by
   obtain ⟨y, hyπ, hy⟩ := (isClosed_orbitBoundary G x).isLocallyClosed.exists_rationalPoint_mem
-    X.hom (Set.nonempty_iff_ne_empty.mpr ((isClosed_orbit_iff_orbitBoundary_eq_empty G x).not.mp h))
+    X.hom (Set.ne_empty_iff_nonempty.mp ((isClosed_orbit_iff_orbitBoundary_eq_empty G x).not.mp h))
   exact ⟨Over.homMk y hyπ, _, hy⟩
 
 /-- **Closed-orbit lemma.** If the orbit of `x` has minimal dimension among the orbits of the

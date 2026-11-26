@@ -16,7 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.KulkarniNomizu
 For a metric-compatible torsion-free connection on a Riemannian tangent bundle, the
 metric-lowered curvature tensor `Rm(u, v, w, z) = ⟨R(u, v)w, z⟩` is antisymmetric in each pair of
 arguments and satisfies the first Bianchi identity. By the polarization identity
-`LinearMap.six_mul_apply_eq_of_cyclic_eq_zero` it is therefore determined by the numerators
+`LinearMap.six_nsmul_apply_eq_of_cyclic_eq_zero` it is therefore determined by the numerators
 `⟨R(u, v)v, u⟩` of the sectional curvatures, and in fact by their values on linearly independent
 pairs `u, v`, which are the pairs spanning a tangent two-plane
 (`CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent`).
@@ -96,7 +96,7 @@ theorem HasSectionalCurvatureAt.curvatureTensor_eq_smul_inner_sub
     (w u v : TangentSpace I x) :
     curvature x w u v = κ • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) := by
   set g := innerₗ (TangentSpace I x)
-  have hg : LinearMap.BilinForm.IsSymm g := isSymm_iff.mpr isSymm_inner
+  have hg : LinearMap.BilinForm.IsSymm g := TauCeti.isSymm_innerₗ
   have hκg : LinearMap.BilinForm.IsSymm ((κ / 2) • g) := isSymm_def.2 fun a b ↦ by
     simp only [LinearMap.smul_apply, hg.eq a b]
   -- The constant-curvature tensor is `(κ / 2) g ⊙ g`.
@@ -215,10 +215,8 @@ theorem exists_curvatureTensor_eq_smul_inner_sub_of_finrank_eq_two
       curvature x w u v = K • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) := by
   let e := (stdOrthonormalBasis ℝ (TangentSpace I x)).reindex (finCongr hx)
   set K := ⟪curvature x (e 0) (e 1) (e 1), e 0⟫_ℝ with hK
-  have hzero (w : TangentSpace I x) : ⟪curvature x (e 0) (e 1) w, w⟫_ℝ = 0 := by
-    have := hcov.inner_curvatureTensor_eq_neg x (e 0) (e 1) w w
-    rw [real_inner_comm w] at this ⊢
-    linarith
+  have hzero (w : TangentSpace I x) : ⟪curvature x (e 0) (e 1) w, w⟫_ℝ = 0 :=
+    hcov.inner_curvatureTensor_self_eq_zero x (e 0) (e 1) w
   have hswap : ⟪curvature x (e 0) (e 1) (e 0), e 1⟫_ℝ = -K := by
     rw [hcov.inner_curvatureTensor_eq_neg, real_inner_comm]
   have he := e.orthonormal
@@ -253,6 +251,17 @@ theorem curvatureTensor_eq_scalarCurvature_div_two_smul
   rw [hx] at hscal
   rw [hK, hscal]
   norm_num
+
+variable (cov) in
+/-- On a surface, the Ricci tensor of a metric-compatible connection is half the scalar
+curvature times the metric. No torsion assumption is needed. -/
+theorem ricciTensor_eq_scalarCurvature_div_two_smul
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    {x : M} (hx : Module.finrank ℝ (TangentSpace I x) = 2) :
+    cov.ricciTensor x = (cov.scalarCurvature x / 2) • innerₗ (TangentSpace I x) := by
+  rw [cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub x _
+    (cov.curvatureTensor_eq_scalarCurvature_div_two_smul hcov hx)]
+  norm_num [hx]
 
 variable (cov) in
 /-- **The Gaussian curvature of a surface is half its scalar curvature.** In dimension two the

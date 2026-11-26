@@ -221,6 +221,13 @@ noncomputable def rep :
   TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sp (Fin (n + 1)) ℚ)
     ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)
 
+/-- The standard enveloping-algebra representation is induced by the Lie action on coordinate
+vectors. -/
+theorem rep_def :
+    rep n = TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sp (Fin (n + 1)) ℚ)
+      ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
+  (rfl)
+
 theorem rep_ι_apply (x : sp (Fin (n + 1)) ℚ)
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
@@ -658,6 +665,12 @@ theorem isCartanWeightVector_single (a : Fin (n + 1) ⊕ Fin (n + 1)) :
 /-- The standard coordinate `ℤ`-lattice in the symplectic module. -/
 noncomputable def lattice : Submodule ℤ ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
   TauCeti.coordinateLattice (Fin (n + 1) ⊕ Fin (n + 1))
+
+/-- The standard symplectic coordinate lattice is finitely generated and spans the rational
+coordinate space. -/
+instance instIsFullLatticeLattice : Submodule.IsFullLattice ℚ (lattice n) := by
+  rw [lattice]
+  exact TauCeti.instIsFullLatticeCoordinateLattice (Fin (n + 1) ⊕ Fin (n + 1))
 
 /-- A vector is in the standard lattice exactly when all its coordinates are integers. -/
 @[simp] theorem mem_lattice_iff {v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ} :

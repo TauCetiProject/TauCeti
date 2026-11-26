@@ -68,6 +68,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   homomorphisms out of `R ⧸ I` are determined by their composites with the quotient map.
 * `ContinuousAlgHom.continuous_quotientKerAlgEquivOfSurjective`: the algebraic first isomorphism
   `A ⧸ ker f ≃ B` induced by a continuous surjective algebra homomorphism is continuous.
+* `RingHom.isClosed_ker`: the kernel of a continuous ring homomorphism into a `T₁` semiring is
+  closed.
 * `RingHom.denseRange_quotientMap`: a ring homomorphism with dense range induces a map with
   dense range on quotients by an ideal and its extension.
 * `RingHom.isHomeomorph_kerLift`: the map `R ⧸ ker f →+* S` induced by `f` is a homeomorphism when
@@ -76,6 +78,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   structure comes along with it and needs no transport of its own.
 * `IsOpenQuotientMap.isTopologicalRing`: the target of an open quotient ring homomorphism out of a
   topological ring is a topological ring.
+* `RingEquiv.isOpen_map_ideal`: a ring equivalence whose inverse is continuous maps open ideals
+  to open ideals.
 
 ## References
 
@@ -219,6 +223,12 @@ end ContinuousAlgHom
 
 namespace RingHom
 
+/-- The kernel of a continuous ring homomorphism into a `T₁` semiring is closed. -/
+theorem isClosed_ker {R S F : Type*} [Semiring R] [TopologicalSpace R] [Semiring S]
+    [TopologicalSpace S] [T1Space S] [FunLike F R S] [RingHomClass F R S] {f : F}
+    (hf : Continuous f) : IsClosed (ker f : Set R) :=
+  ker_eq f ▸ isClosed_singleton.preimage hf
+
 /-- A homomorphism with dense range induces a map with dense range on ideal quotients. -/
 theorem denseRange_quotientMap {A B : Type*} [CommRing A] [CommRing B]
     [TopologicalSpace B] (f : A →+* B) (hd : DenseRange f)
@@ -294,3 +304,14 @@ theorem IsOpenQuotientMap.isTopologicalRing {F R B : Type*} [NonUnitalNonAssocRi
   exact {}
 
 end OpenQuotient
+
+namespace RingEquiv
+
+/-- A ring equivalence whose inverse is continuous maps open ideals to open ideals. -/
+theorem isOpen_map_ideal {R S : Type*} [Semiring R] [TopologicalSpace R] [Semiring S]
+    [TopologicalSpace S] (e : R ≃+* S) (he' : Continuous e.symm) (J : Ideal R)
+    (hJ : IsOpen (J : Set R)) : IsOpen (Ideal.map (e : R →+* S) J : Set S) := by
+  rw [Ideal.map_eq_image_of_surjective (e : R →+* S) e.surjective]
+  exact (IsOpenMap.of_inverse he' e.apply_symm_apply e.symm_apply_apply) J hJ
+
+end RingEquiv

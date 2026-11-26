@@ -54,6 +54,15 @@ finitely many of a family of pairwise non-isomorphic simple modules
 * `IsSemisimpleModule.exists_forall_smul_eq_ite`: for a semisimple module finite over its
   endomorphism ring, an element of the ring acts as the identity on the simple submodules of a
   given type and as zero on all the others, by Jacobson density.
+
+* `TauCeti.iSupIndep_isotypicComponents_restrictScalars`: the isotypic components of a module
+  stay independent after restricting scalars.
+
+* `IsIsotypic.isotypicComponents_eq_singleton_top`: a nonzero isotypic semisimple module is its
+  only isotypic component.
+
+* `IsSemisimpleModule.smul_eq_ite_of_injective`: such an element acts in the same way on every
+  simple module embedded in the semisimple module.
 -/
 
 public section
@@ -157,6 +166,22 @@ theorem finsupp (h : IsIsotypicOfType R M N) (ι : Type*) :
   have : IsSimpleModule R (LinearMap.range f) := .congr e.symm
   exact ⟨e.trans (h (LinearMap.range f)).some⟩
 
+/-- **Schur's lemma for multiples of simple modules.** If direct sums of copies of the simple
+modules `V` and `V'` are isomorphic, with at least one copy of `V`, then `V ≅ V'`. -/
+theorem _root_.LinearEquiv.nonempty_linearEquiv_of_finsupp {V V' ι ι' : Type*}
+    [AddCommGroup V] [Module R V] [AddCommGroup V'] [Module R V'] [IsSimpleModule R V]
+    [IsSimpleModule R V'] [Nonempty ι] (e : (ι →₀ V) ≃ₗ[R] (ι' →₀ V')) :
+    Nonempty (V ≃ₗ[R] V') := by
+  -- The direct sum of copies of `V'` is isotypic of type `V'`, so a copy of `V` maps to zero in
+  -- it unless `V ≅ V'`.
+  obtain ⟨j⟩ := ‹Nonempty ι›
+  by_contra hne
+  have h0 := ((IsIsotypicOfType.of_isSimpleModule R V').finsupp ι').linearMap_eq_zero hne
+    (e.toLinearMap ∘ₗ Finsupp.lsingle j)
+  have : Nontrivial V := IsSimpleModule.nontrivial R V
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact hv (by simpa using LinearMap.congr_fun h0 v)
+
 end IsIsotypicOfType
 
 namespace IsSemisimpleModule
@@ -167,7 +192,7 @@ variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M] [IsSemisimpleModul
 /-- **A semisimple module is the direct sum of its isotypic components.** The equivalence sends
 an element to its family of components, and its inverse adds the components up. This is the
 module-level counterpart of `IsSemisimpleModule.endAlgEquiv`. -/
-noncomputable def linearEquivIsotypicComponents : M ≃ₗ[R] Π₀ c : isotypicComponents R M, c.1 :=
+noncomputable def linearEquivIsotypicComponents : M ≃ₗ[R] Π₀ c : isotypicComponents R M, c.val :=
   .symm <| ((sSupIndep_iff _).mp <| sSupIndep_isotypicComponents R M).linearEquiv <|
     (sSup_eq_iSup' _).symm.trans <| sSup_isotypicComponents R M
 
@@ -176,14 +201,14 @@ variable {R M}
 /-- The inverse of `linearEquivIsotypicComponents` sends the family that is `x` at the isotypic
 component `c` and zero elsewhere to `x`, viewed as an element of `M`. -/
 @[simp]
-theorem linearEquivIsotypicComponents_symm_single (c : isotypicComponents R M) (x : c.1) :
+theorem linearEquivIsotypicComponents_symm_single (c : isotypicComponents R M) (x : c.val) :
     (linearEquivIsotypicComponents R M).symm (DFinsupp.single c x) = x := by
   simp [linearEquivIsotypicComponents]
 
 /-- `linearEquivIsotypicComponents` sends an element `x` of an isotypic component `c`, viewed as an
 element of `M`, to the family that is `x` at `c` and zero elsewhere. -/
 @[simp]
-theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x : c.1) :
+theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x : c.val) :
     linearEquivIsotypicComponents R M x = DFinsupp.single c x := by
   rw [← linearEquivIsotypicComponents_symm_single, LinearEquiv.apply_symm_apply]
 
@@ -194,7 +219,7 @@ theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x 
 /-- An element `x` of `M` lying in an isotypic component `c` is sent by
 `linearEquivIsotypicComponents` to the family that is `x` at `c` and zero elsewhere. -/
 theorem linearEquivIsotypicComponents_apply_of_mem {c : isotypicComponents R M} {x : M}
-    (hx : x ∈ c.1) : linearEquivIsotypicComponents R M x = DFinsupp.single c ⟨x, hx⟩ :=
+    (hx : x ∈ c.val) : linearEquivIsotypicComponents R M x = DFinsupp.single c ⟨x, hx⟩ :=
   linearEquivIsotypicComponents_apply_coe ⟨x, hx⟩
 
 end IsSemisimpleModule
@@ -273,6 +298,25 @@ theorem exists_forall_smul_eq_ite [IsSemisimpleModule R M] [Module.Finite (Modul
   · exact Submodule.projection_apply_of_mem_left hcompl ((hle T hT).1 h hx)
   · exact Submodule.projection_apply_of_mem_right hcompl ((hle T hT).2 h hx)
 
+open scoped Classical in
+/-- An element acting as in `IsSemisimpleModule.exists_forall_smul_eq_ite` on the simple
+submodules of `X` acts in the same way on every simple module embedded in `X`. -/
+theorem smul_eq_ite_of_injective {X : Type*} [AddCommGroup X] [Module R X]
+    {S : Type*} [AddCommGroup S] [Module R S] {a : R}
+    (ha : ∀ T : Submodule R X, IsSimpleModule R T → ∀ x ∈ T,
+      a • x = if Nonempty (T ≃ₗ[R] S) then x else 0)
+    {Y : Type*} [AddCommGroup Y] [Module R Y] [IsSimpleModule R Y]
+    (f : Y →ₗ[R] X) (hf : Function.Injective f) (y : Y) :
+    a • y = if Nonempty (S ≃ₗ[R] Y) then y else 0 := by
+  let e := LinearEquiv.ofInjective f hf
+  have hT : IsSimpleModule R (LinearMap.range f) := IsSimpleModule.congr e.symm
+  have hiff : Nonempty (LinearMap.range f ≃ₗ[R] S) ↔ Nonempty (S ≃ₗ[R] Y) :=
+    ⟨fun ⟨e'⟩ => ⟨e'.symm.trans e.symm⟩, fun ⟨e'⟩ => ⟨(e'.trans e).symm⟩⟩
+  have hy := ha _ hT (f y) (LinearMap.mem_range_self f y)
+  rw [← map_smul, hiff] at hy
+  apply hf
+  split_ifs at hy ⊢ <;> simpa using hy
+
 end Projection
 
 end IsSemisimpleModule
@@ -297,7 +341,7 @@ theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddC
     exact ⟨N, ‹_›, e.isotypicComponent_eq.symm⟩
   rw [← iSupIndep_ne_bot]
   refine ((sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M)).comp
-    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.1 j.2⟩) ?_
+    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.val j.property⟩) ?_
   intro ⟨i, hi⟩ ⟨j, _⟩ hij
   -- A simple submodule of the common component is a copy of both `S i` and `S j`.
   obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hi
@@ -337,4 +381,31 @@ theorem disjoint_isotypicComponent (S S' : Type*) [AddCommGroup S] [Module R S]
     (IsIsotypicOfType.isotypicComponent R M S') N (hN.trans inf_le_right)
   exact h ⟨e.symm.trans e'⟩
 
+variable {R M} in
+/-- The isotypic components of an `R`-module `M` stay independent after restricting scalars to
+`k`. -/
+theorem iSupIndep_isotypicComponents_restrictScalars (k : Type*) [Semiring k] [Module k M]
+    [SMul k R] [IsScalarTower k R M] :
+    iSupIndep fun c : isotypicComponents R M ↦ c.val.restrictScalars k := by
+  intro c
+  simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
+    using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M) c
+
 end TauCeti
+
+namespace IsIsotypic
+
+/-- The only isotypic component of a nonzero isotypic semisimple module is the whole module. -/
+theorem isotypicComponents_eq_singleton_top {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [IsSemisimpleModule R M] [Nontrivial M] (h : IsIsotypic R M) :
+    isotypicComponents R M = {⊤} := by
+  ext m
+  refine ⟨?_, ?_⟩
+  · rintro ⟨S, _, rfl⟩
+    exact isotypicComponent_eq_top_iff.mpr (h S)
+  · rintro rfl
+    obtain ⟨S, -, _⟩ :=
+      (IsSemisimpleModule.eq_bot_or_exists_simple_le (⊤ : Submodule R M)).resolve_left top_ne_bot
+    exact ⟨S, inferInstance, (isotypicComponent_eq_top_iff.mpr (h S)).symm⟩
+
+end IsIsotypic

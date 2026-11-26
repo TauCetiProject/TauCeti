@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
+public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 public import TauCeti.KnotTheory.Grid.Stabilization.Comparison
-public import TauCeti.KnotTheory.Grid.Stabilization.Components
-public import TauCeti.KnotTheory.Grid.Stabilization.Map.Grading
 
 /-!
 # Stabilization invariance of `GH⁻`
@@ -25,14 +23,14 @@ quasi-isomorphism of complexes of `A`-modules (`GridDiagram.quasiIso_stabilizeXM
 part followed by `σ` on coefficients, so it is even `σ`-semilinear over `S`
 (`GridDiagram.stabilizeXChainMap`). This file descends it to a `σ`-semilinear map
 `GH⁻(G') → GH⁻(G)` on unblocked grid homology (`GridDiagram.stabilizeXHomologyMap`), sending the
-class of a cycle `z` to the class of its image, and shows that this map is bijective and, for a
-diagram with an odd number of components, preserves the Alexander grading.
+class of a cycle `z` to the class of its image, and shows that this map is bijective.
 
 For a knot grid `G`, the diagram `G'` is again a knot grid, and `U` acts on both homologies as
-any one variable. Since `σ` commutes with the evaluation `V_j ↦ U`, the map on homology is an
-isomorphism of graded `R[U]`-modules of Alexander degree zero
-(`GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX`). Only this one stabilization type is
-treated here; the other stabilization types and commutation moves are not.
+any one variable. Since `σ` commutes with the evaluation `V_j ↦ U` and the map preserves the
+`O`-Maslov and Alexander gradings (`Stabilization/Bigraded.lean`), it is an isomorphism of bigraded
+`R[U]`-modules (`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_stabilizeX`, in
+`Homology/Bigraded/Invariance.lean`). Only this one stabilization type is treated here; the other
+stabilization types and commutation moves are not.
 
 ## Main definitions
 
@@ -53,10 +51,6 @@ treated here; the other stabilization types and commutation moves are not.
   goes to the class of `stabilizeXChainMap z`.
 * `TauCeti.GridDiagram.stabilizeXHomologyMap_bijective`: **stabilization invariance of `GH⁻`**,
   the map on homology is bijective.
-* `OddComponentGridDiagram.stabilizeXHomologyMap_mem_alexanderUnblockedHomologyGrading_piece`:
-  it preserves the Alexander grading.
-* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX`: for a knot grid, `GH⁻(G)`
-  and `GH⁻(G')` are isomorphic as Alexander-graded `R[U]`-modules.
 
 ## References
 
@@ -214,7 +208,7 @@ theorem stabilizeXHomologyMap_unblockedHomologyClass
     G.stabilizeXHomologyMap s R
         ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedHomologyClass R z) =
       G.unblockedHomologyClass R
-        ⟨G.stabilizeXChainMap s R z, G.stabilizeXChainMap_mem_ker s R z.2⟩ := by
+        ⟨G.stabilizeXChainMap s R z, G.stabilizeXChainMap_mem_ker s R z.property⟩ := by
   simp only [stabilizeXHomologyMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_eq]
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
@@ -229,9 +223,9 @@ theorem stabilizeXHomologyMap_bijective : Function.Bijective (G.stabilizeXHomolo
   · obtain ⟨z, rfl⟩ := unblockedHomologyClass_surjective _ R y
     rw [stabilizeXHomologyMap_unblockedHomologyClass, unblockedHomologyClass_eq_zero_iff] at hy
     rw [unblockedHomologyClass_eq_zero_iff]
-    exact G.mem_range_of_stabilizeXChainMap_mem_range s R z.2 hy
+    exact G.mem_range_of_stabilizeXChainMap_mem_range s R z.property hy
   · obtain ⟨c, rfl⟩ := unblockedHomologyClass_surjective _ R y
-    obtain ⟨m, hm, hcm⟩ := G.exists_sub_stabilizeXChainMap_mem_range s R c.2
+    obtain ⟨m, hm, hcm⟩ := G.exists_sub_stabilizeXChainMap_mem_range s R c.property
     refine ⟨_, (G.stabilizeXHomologyMap_unblockedHomologyClass s R ⟨m, hm⟩).trans ?_⟩
     rw [← sub_eq_zero, ← map_sub, unblockedHomologyClass_eq_zero_iff, Submodule.coe_sub,
       ← neg_sub]
@@ -258,65 +252,5 @@ theorem stabilizeXHomologyEquiv_apply
     G.stabilizeXHomologyEquiv s R y = G.stabilizeXHomologyMap s R y := (rfl)
 
 end GridDiagram
-
-namespace OddComponentGridDiagram
-
-variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n) (R : Type*) [CommRing R] [CharP R 2]
-
-/-- **The map of an `X`-stabilization on `GH⁻` preserves the Alexander grading.** The
-stabilization `G'` of `G` again has an odd number of components, and a class of `GH⁻(G')` of
-Alexander degree `a` goes to a class of `GH⁻(G)` of Alexander degree `a`. -/
-theorem stabilizeXHomologyMap_mem_alexanderUnblockedHomologyGrading_piece {a : ℤ}
-    {y : (G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomology R}
-    (hy : y ∈ (alexanderUnblockedHomologyGrading
-      ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-        (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R).piece a) :
-    G.1.stabilizeXHomologyMap s R y ∈ (G.alexanderUnblockedHomologyGrading R).piece a := by
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff, mem_alexanderHomologyGrading_piece_iff]
-    at hy ⊢
-  obtain ⟨z, hz, hzy⟩ := hy
-  obtain rfl : y = (G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomologyClass R z := by
-    apply ((ModuleCat.mono_iff_injective
-      ((G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomologyIso R).hom).mp
-        inferInstance)
-    rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass, hzy]
-  refine ⟨_, ?_, (GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass _ _ _).symm.trans
-    (congrArg _ (G.1.stabilizeXHomologyMap_unblockedHomologyClass s R z).symm)⟩
-  have hG' : G.stabilizeX s = ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-      (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ :=
-    Subtype.ext (G.val_stabilizeX s)
-  have key : ∀ c, c ∈ alexanderChainMinusPiece ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-      (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R a →
-        G.1.stabilizeXChainMap s R c ∈ G.alexanderChainMinusPiece R a := by
-    rw [← hG']
-    intro c hc
-    have h := G.stabilizeXMap_mem_alexanderChainMinusPiece s R hc
-    rwa [GridDiagram.stabilizeXMap_f_apply] at h
-  exact key _ hz
-
-end OddComponentGridDiagram
-
-namespace GridDiagram.IsKnot
-
-variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s : Fin n)
-  (K : Type*) [CommRing K] [CharP K 2]
-
-/-- **`GH⁻` is invariant under `X`-stabilization.** The stabilization of a knot grid `G` splitting
-the `X`-marking of column `s` is a knot grid whose `GH⁻` is isomorphic to `GH⁻(G)` as an
-Alexander-graded `K[U]`-module. -/
-theorem unblockedHomologyIsomorphic_stabilizeX :
-    hG.UnblockedHomologyIsomorphic
-      ((G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG) K := by
-  refine (UnblockedHomologyIsomorphic.of_semilinearMap
-    (fun p ↦ by rw [AlgHom.coe_toRingHom, aeval_rename, Function.comp_def])
-    (G.stabilizeXHomologyMap s K) (G.stabilizeXHomologyMap_bijective s K) fun a y hy ↦ ?_).symm
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff]
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy
-  exact OddComponentGridDiagram.stabilizeXHomologyMap_mem_alexanderUnblockedHomologyGrading_piece
-    _ s K hy
-
-end GridDiagram.IsKnot
 
 end TauCeti

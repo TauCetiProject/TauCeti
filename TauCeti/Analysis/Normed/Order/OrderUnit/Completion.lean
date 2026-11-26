@@ -8,7 +8,8 @@ module
 public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Operator.Basic
-public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
+public import TauCeti.Analysis.Normed.Order.OrderUnit
+public import TauCeti.Analysis.Normed.Order.StateSpace
 import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
@@ -31,8 +32,12 @@ local to the wrapper type rather than registering a global order on `UniformSpac
 * `TauCeti.OrderUnitCompletion.coe`: the canonical dense linear isometry
   `E →ₗᵢ[ℝ] OrderUnitCompletion he` preserving and reflecting order (an embedding when `E` is
   separated).
+* `TauCeti.OrderUnitCompletion.closedNonnegCone`: the closed positive cone of
+  `OrderUnitCompletion he`.
 * `TauCeti.OrderUnitCompletion.extend`: the unique continuous linear extension of a bounded real
   linear map `E →L[ℝ] F` into a complete space `F`.
+* `TauCeti.OrderUnitCompletion.stateHomeomorph`: the weak-* homeomorphism between the states of
+  `OrderUnitCompletion he` and the states of `E`.
 
 ## Main results
 
@@ -65,13 +70,13 @@ namespace TauCeti
 the positive cone of `E` as its positive cone. -/
 @[ext]
 structure OrderUnitCompletion {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) where
+    [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) where
   /-- The underlying element of `UniformSpace.Completion E`. -/
   toCompletion : UniformSpace.Completion E
 
 namespace OrderUnitCompletion
 
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Preorder E]
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   [IsOrderedAddMonoid E] {e : E} {he : IsOrderUnitNorm e}
 
 instance : Zero (OrderUnitCompletion he) := ⟨⟨0⟩⟩
@@ -181,10 +186,10 @@ private theorem norm_sub_le_norm_add_of_mem_closedNonnegCone (he : IsOrderUnitNo
     ‖v - u‖ ≤ ‖v + u‖ := by
   let C : Set (OrderUnitCompletion he) := coe he '' {a : E | 0 ≤ a}
   have hclosed : IsClosed {p : OrderUnitCompletion he × OrderUnitCompletion he |
-      ‖p.1 - p.2‖ ≤ ‖p.1 + p.2‖} :=
+      ‖p.fst - p.snd‖ ≤ ‖p.fst + p.snd‖} :=
     isClosed_le (continuous_fst.sub continuous_snd).norm
       (continuous_fst.add continuous_snd).norm
-  have hsub : C ×ˢ C ⊆ {p | ‖p.1 - p.2‖ ≤ ‖p.1 + p.2‖} := by
+  have hsub : C ×ˢ C ⊆ {p | ‖p.fst - p.snd‖ ≤ ‖p.fst + p.snd‖} := by
     rintro ⟨_, _⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
     simp only [Set.mem_ofPred_eq, ← map_sub, ← map_add, (coe he).norm_map]
     exact norm_sub_le_norm_add_of_nonneg he ha hb
@@ -214,7 +219,7 @@ private theorem norm_le_of_mem_closedNonnegCone (he : IsOrderUnitNorm e)
   have hsum : (x + y) + (y - x) = (2 : ℝ) • y := by rw [two_smul]; abel
   rw [hdiff, hsum, norm_smul, norm_smul, Real.norm_eq_abs, abs_of_pos zero_lt_two] at hineq
   have hy : ‖y‖ = r := by
-    simp [y, norm_smul, Real.norm_eq_abs, abs_of_nonneg hr, (coe he).norm_map, he.norm_e]
+    simp [y, norm_smul, Real.norm_eq_abs, abs_of_nonneg hr, (coe he).norm_map, he.norm_eq_one]
   linarith
 
 instance : PartialOrder (OrderUnitCompletion he) where
@@ -290,22 +295,21 @@ private theorem le_norm_smul_coe (x : OrderUnitCompletion he) : x ≤ ‖x‖ �
 
 /-- The order-unit norm on `OrderUnitCompletion he` satisfies `IsOrderUnitNorm (coe he e)`. -/
 theorem isOrderUnitNorm (he : IsOrderUnitNorm e) : IsOrderUnitNorm (coe he e) where
-  norm_e := by rw [(coe he).norm_map, he.norm_e]
-  norm_le_iff x r hr := by
+  norm_eq_one := by rw [(coe he).norm_map, he.norm_eq_one]
+  norm_le_iff {x r} hr := by
     refine ⟨fun hx => ?_, fun ⟨h1, h2⟩ => ?_⟩
     · have hupper : ∀ y : OrderUnitCompletion he, ‖y‖ ≤ r → y ≤ r • coe he e := by
         intro y hy
         have hnonneg : (0 : OrderUnitCompletion he) ≤ (r - ‖y‖) • coe he e := by
           rw [← (coe he).map_zero, ← (coe he).map_smul, coe_le_coe_iff]
-          exact he.smul_nonneg_of_nonneg (sub_nonneg.mpr hy)
+          exact he.smul_nonneg (sub_nonneg.mpr hy)
         calc y ≤ ‖y‖ • coe he e := le_norm_smul_coe y
           _ ≤ ‖y‖ • coe he e + (r - ‖y‖) • coe he e := le_add_of_nonneg_right hnonneg
           _ = r • coe he e := by rw [← add_smul, add_sub_cancel]
       refine ⟨?_, hupper x hx⟩
-      rw [neg_smul]
       exact neg_le.mp (hupper (-x) (by simpa [norm_neg] using hx))
     · refine norm_le_of_mem_closedNonnegCone he hr ?_ ?_
-      · rw [le_iff_mem_closedNonnegCone, neg_smul, sub_neg_eq_add] at h1
+      · rw [le_iff_mem_closedNonnegCone, sub_neg_eq_add] at h1
         exact h1
       · exact (le_iff_mem_closedNonnegCone _ _).mp h2
 
@@ -369,6 +373,71 @@ theorem monotone_extend {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [
     simpa only [map_zero] using hT ha
   exact closure_minimal hsub hclosed
     (mem_closedNonnegCone_iff.mp ((le_iff_mem_closedNonnegCone x y).mp hxy))
+
+private theorem monotone_coe_toContinuousLinearMap (he : IsOrderUnitNorm e) :
+    Monotone (coe he).toContinuousLinearMap :=
+  fun _ _ h => (coe_le_coe_iff _ _).mpr h
+
+private def stateRestrict (he : IsOrderUnitNorm e) :
+    OrderUnit.stateSpace (coe he e) → OrderUnit.stateSpace e :=
+  OrderUnit.statePullback (coe he).toContinuousLinearMap
+    (monotone_coe_toContinuousLinearMap he) rfl
+
+private theorem stateRestrict_apply (he : IsOrderUnitNorm e)
+    (φ : OrderUnit.stateSpace (coe he e)) (a : E) :
+    (stateRestrict he φ).val a = φ.val (coe he a) :=
+  OrderUnit.statePullback_apply _ _ _ φ a
+
+private def stateExtend (he : IsOrderUnitNorm e) (φ : OrderUnit.stateSpace e) :
+    OrderUnit.stateSpace (coe he e) :=
+  ⟨StrongDual.toWeakDual (extend he (WeakDual.toStrongDual φ.val)),
+    OrderUnit.mem_stateSpace_iff.2
+      ⟨monotone_extend (OrderUnit.monotone_of_mem_stateSpace φ.property),
+        by simp [OrderUnit.apply_eq_one_of_mem_stateSpace φ.property]⟩⟩
+
+private theorem stateExtend_apply_coe (he : IsOrderUnitNorm e) (φ : OrderUnit.stateSpace e)
+    (a : E) : (stateExtend he φ).val (coe he a) = φ.val a :=
+  extend_coe (WeakDual.toStrongDual φ.val) a
+
+private theorem stateExtend_stateRestrict (he : IsOrderUnitNorm e) :
+    Function.LeftInverse (stateExtend he) (stateRestrict he) := by
+  intro φ
+  apply Subtype.ext
+  apply WeakDual.toStrongDual.injective
+  dsimp only [stateExtend]
+  rw [StrongDual.toStrongDual_toWeakDual]
+  exact (extend_unique _ (S := WeakDual.toStrongDual φ.val) fun a =>
+    (stateRestrict_apply he φ a).symm).symm
+
+private theorem stateRestrict_stateExtend (he : IsOrderUnitNorm e) :
+    Function.RightInverse (stateExtend he) (stateRestrict he) := fun φ =>
+  Subtype.ext (DFunLike.ext _ _ fun a =>
+    (stateRestrict_apply he (stateExtend he φ) a).trans (stateExtend_apply_coe he φ a))
+
+/-- Restriction along `coe he` and unique continuous extension define a weak-* homeomorphism
+between the states of `OrderUnitCompletion he` and the states of `E`. -/
+def stateHomeomorph (he : IsOrderUnitNorm e) :
+    OrderUnit.stateSpace (coe he e) ≃ₜ OrderUnit.stateSpace e :=
+  @Continuous.homeoOfEquivCompactToT2 _ _ _ _
+    (isCompact_iff_compactSpace.mp (isOrderUnitNorm he).isCompact_stateSpace) _
+    { toFun := stateRestrict he
+      invFun := stateExtend he
+      left_inv := stateExtend_stateRestrict he
+      right_inv := stateRestrict_stateExtend he }
+    (OrderUnit.continuous_statePullback (coe he).toContinuousLinearMap
+      (monotone_coe_toContinuousLinearMap he) rfl)
+
+@[simp]
+theorem stateHomeomorph_apply (he : IsOrderUnitNorm e)
+    (φ : OrderUnit.stateSpace (coe he e)) (a : E) :
+    (stateHomeomorph he φ).val a = φ.val (coe he a) :=
+  stateRestrict_apply he φ a
+
+@[simp]
+theorem stateHomeomorph_symm_apply_coe (he : IsOrderUnitNorm e)
+    (φ : OrderUnit.stateSpace e) (a : E) :
+    ((stateHomeomorph he).symm φ).val (coe he a) = φ.val a :=
+  stateExtend_apply_coe he φ a
 
 end OrderUnitCompletion
 

@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.Algebra.Homology.Single.Coproduct
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
+public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 import Mathlib.Algebra.Homology.BifunctorShift
 import TauCeti.Algebra.Homology.HomologySequenceLemmas
@@ -54,13 +55,17 @@ K-flat. K-flat resolutions of unbounded complexes are constructed in
 * `CochainComplex.quasiIso_id_tensorHom`, `CochainComplex.isKFlat_iff_quasiIso_id_tensorHom`:
   tensoring with a K-flat complex preserves quasi-isomorphisms, and this characterizes
   K-flatness.
-* `CochainComplex.isKFlat_single_of_flat`, `CochainComplex.isKFlat_of_bounded_flat`: flat
-  objects and bounded complexes of flat objects are K-flat.
+* `CochainComplex.isKFlat_single_of_flat`, `CochainComplex.isKFlat_tensorUnit`,
+  `CochainComplex.isKFlat_of_bounded_flat`: flat objects, the monoidal unit complex, and bounded
+  complexes of flat objects are K-flat.
+* `HomologicalComplex.Acyclic.mapHomologicalComplex_tensorRight`: in a braided category,
+  tensoring on the right with a flat object preserves acyclic complexes.
 * `CochainComplex.isKFlat_of_isColimit`: closure under suitable colimits.
 * `CochainComplex.isKFlat_of_boundedAbove_flat`: bounded above complexes of flat objects are
   K-flat.
 * `CochainComplex.isKFlat_of_d_eq_zero`: complexes with zero differentials and flat terms are
   K-flat.
+* `CochainComplex.isKFlat_tensorUnit'`: the monoidal unit `𝟙_ (CochainComplex C ℤ)` is K-flat.
 
 The tensor factor containing the K-flat complex is placed on the left. In a symmetric
 monoidal category this is the usual K-flat condition, with the two factors interchanged
@@ -168,6 +173,19 @@ theorem isKFlat_X₃ {S : ShortComplex (CochainComplex C ℤ)}
 
 end CategoryTheory.ShortComplex.ShortExact
 
+omit [∀ K L : CochainComplex C ℤ, HasTensor K L] in
+/-- In a braided monoidal abelian category, tensoring on the right with a flat object `G` preserves
+acyclic complexes: by the braiding, `- ⊗ G` is isomorphic to `G ⊗ -`, which is exact. -/
+theorem HomologicalComplex.Acyclic.mapHomologicalComplex_tensorRight [BraidedCategory C]
+    {ι : Type*} {c : ComplexShape ι} {E : HomologicalComplex C c} (hE : E.Acyclic) (G : C)
+    [PreservesFiniteLimits (tensorLeft G)] [PreservesFiniteColimits (tensorLeft G)] :
+    (((tensorRight G).mapHomologicalComplex c).obj E).Acyclic := by
+  have : PreservesFiniteLimits (tensorRight G) :=
+    preservesFiniteLimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
+  have : PreservesFiniteColimits (tensorRight G) :=
+    preservesFiniteColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
+  exact fun i ↦ (hE i).map (tensorRight G)
+
 namespace CochainComplex
 
 /-- A flat object placed in any integer degree is K-flat. -/
@@ -180,6 +198,14 @@ theorem isKFlat_single_of_flat (M : C) (n : ℤ)
   refine ExactAt.of_iso (L := tensorObj ((single C (.up ℤ) n).obj M) A) ?_ e.symm
   exact (exactAt_shift_iff (((tensorLeft M).mapHomologicalComplex (.up ℤ)).obj A)
     (-n) i (-n + i) rfl).2 ((hA _).map (tensorLeft M))
+
+/-- The unit cochain complex `HomologicalComplex.tensorUnit C (.up ℤ)` is K-flat. -/
+instance isKFlat_tensorUnit : IsKFlat (HomologicalComplex.tensorUnit C (.up ℤ)) := by
+  have : PreservesFiniteLimits (tensorLeft (𝟙_ C)) :=
+    preservesFiniteLimits_of_natIso (MonoidalCategory.leftUnitorNatIso C).symm
+  have : PreservesFiniteColimits (tensorLeft (𝟙_ C)) :=
+    preservesFiniteColimits_of_natIso (MonoidalCategory.leftUnitorNatIso C).symm
+  exact isKFlat_single_of_flat (𝟙_ C) 0
 
 /-- The mapping cone of a morphism between K-flat complexes is K-flat. -/
 instance isKFlat_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) [K.IsKFlat] [L.IsKFlat] :
@@ -376,5 +402,18 @@ theorem isKFlat_of_boundedAbove_flat [HasColimitsOfShape ℕ C] [HasExactColimit
   exact isKFlat_of_isColimit K.isColimitStupidTruncGESequenceCocone
 
 end Bounded
+
+section TensorUnit
+
+variable [∀ (X Y : GradedObject ℤ C), GradedObject.HasTensor X Y]
+  [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)]
+  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensor₁₂Tensor X Y Z]
+  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensorTensor₂₃ X Y Z]
+
+/-- The monoidal unit of cochain complexes, the unit `𝟙_ C` placed in degree `0`, is K-flat. -/
+instance isKFlat_tensorUnit' : (𝟙_ (CochainComplex C ℤ)).IsKFlat :=
+  ⟨fun A hA i ↦ (hA i).of_iso (λ_ A).symm⟩
+
+end TensorUnit
 
 end CochainComplex

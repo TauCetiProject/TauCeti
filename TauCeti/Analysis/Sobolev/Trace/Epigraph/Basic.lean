@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.GraphFlattening
+public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
 public import TauCeti.Analysis.Sobolev.Trace.Kernel
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 
@@ -43,7 +43,8 @@ condition by the trace.
 ## Main declarations
 
 * `TauCeti.W1p.normalEpigraphEquivL`: `W^{1,p}` of the region is isomorphic to `W^{1,p}` of the
-  half-space, with `TauCeti.W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff`.
+  half-space, with `TauCeti.W1p.normalEpigraphEquivL_apply` and
+  `TauCeti.W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff`.
 * `TauCeti.W1p.normalEpigraphTrace`: the trace on the graph, with
   `TauCeti.W1p.norm_normalEpigraphTrace_le`, `TauCeti.W1p.opNorm_normalEpigraphTrace_le`, their
   `H¹` versions `TauCeti.W1p.norm_normalEpigraphTrace_two_le` and
@@ -86,10 +87,7 @@ half-space. -/
 private def flattenL (hφ : LipschitzWith K φ) :
     W1p volume (normalEpigraph φ) p →L[ℝ] W1p volume (normalHalfSpace (E := E) 0) p :=
   W1p.compMeasurePreservingL (M := 1 + K) (measurePreserving_graphFlattening_symm φ φ.continuous)
-    (by
-      rw [← Homeomorph.image_eq_preimage_symm, coe_normalEpigraph, graphFlattening_image_lt]
-      ext x
-      exact mem_normalHalfSpace 0 x)
+    (coe_normalHalfSpace_eq_preimage_graphFlattening_symm φ)
     (lipschitzWith_graphFlattening_symm hφ).locallyLipschitz.locallyLipschitzOn
     fun _ _ => by
       simpa using norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_graphFlattening_symm hφ)
@@ -133,19 +131,20 @@ inverse the precomposition with `TauCeti.graphFlattening φ`. Both directions ha
 `1 + K` (`TauCeti.W1p.norm_normalEpigraphEquivL_le`). -/
 def W1p.normalEpigraphEquivL (hφ : LipschitzWith K φ) :
     W1p volume (normalEpigraph φ) p ≃L[ℝ] W1p volume (normalHalfSpace (E := E) 0) p :=
-  ContinuousLinearEquiv.equivOfInverse (flattenL hφ) (unflattenL hφ)
-    (unflattenL_flattenL hφ) (flattenL_unflattenL hφ)
+  ContinuousLinearEquiv.ofContinuousLinearMap (flattenL hφ) (unflattenL hφ)
+    (ContinuousLinearMap.ext (flattenL_unflattenL hφ))
+    (ContinuousLinearMap.ext (unflattenL_flattenL hφ))
 
 private theorem normalEpigraphEquivL_apply_eq (hφ : LipschitzWith K φ)
     (u : W1p volume (normalEpigraph φ) p) :
     W1p.normalEpigraphEquivL hφ u = flattenL hφ u :=
-  ContinuousLinearEquiv.equivOfInverse_apply _ _ _ _ u
+  congrFun (ContinuousLinearEquiv.coe_ofContinuousLinearMap _ _ _ _) u
 
 private theorem normalEpigraphEquivL_symm_apply_eq (hφ : LipschitzWith K φ)
     (v : W1p volume (normalHalfSpace (E := E) 0) p) :
     (W1p.normalEpigraphEquivL hφ).symm v = unflattenL hφ v := by
-  rw [W1p.normalEpigraphEquivL, ContinuousLinearEquiv.symm_equivOfInverse,
-    ContinuousLinearEquiv.equivOfInverse_apply]
+  rw [W1p.normalEpigraphEquivL, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- Flattening multiplies the `W^{1,p}` norm by at most `1 + K`. -/
 theorem W1p.norm_normalEpigraphEquivL_le (hφ : LipschitzWith K φ)
@@ -187,6 +186,19 @@ theorem W1p.value_normalEpigraphEquivL_ae (hφ : LipschitzWith K φ)
       fun x => W1p.value u ((graphFlattening φ φ.continuous).symm x) := by
   rw [normalEpigraphEquivL_apply_eq]
   exact W1p.value_compMeasurePreservingL_ae _ _ _ _ u
+
+/-- Flattening is precomposition with inverse graph flattening, as an operator
+`TauCeti.W1p.compMeasurePreservingL` for any admissible bound on the derivative. -/
+theorem W1p.normalEpigraphEquivL_apply (hφ : LipschitzWith K φ) {M : ℝ}
+    (hl : LocallyLipschitzOn (normalHalfSpace (E := E) 0) (graphFlattening φ φ.continuous).symm)
+    (hM : ∀ x ∈ (normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))),
+      ‖fderiv ℝ (graphFlattening φ φ.continuous).symm x‖ ≤ M)
+    (u : W1p volume (normalEpigraph φ) p) :
+    W1p.normalEpigraphEquivL hφ u = W1p.compMeasurePreservingL
+      (measurePreserving_graphFlattening_symm φ φ.continuous)
+      (coe_normalHalfSpace_eq_preimage_graphFlattening_symm φ) hl hM u :=
+  W1p.ext_value (Lp.ext ((W1p.value_normalEpigraphEquivL_ae hφ u).trans
+    (W1p.value_compMeasurePreservingL_ae _ _ _ _ u).symm))
 
 /-- The weak gradient of the flattened function is given by the chain rule. -/
 theorem W1p.gradient_normalEpigraphEquivL_ae (hφ : LipschitzWith K φ)

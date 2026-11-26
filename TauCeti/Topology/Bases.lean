@@ -19,6 +19,8 @@ of a preconnected space from second-countable pieces with countably many neighbo
 
 ## Main results
 
+* `Subtype.instSecondCountableTopology`: every subtype `Subtype p` of a second-countable space is
+  second countable, covering `SetLike` carriers as well as `Set` subtypes.
 * `TauCeti.secondCountableTopology_of_isOpen_cover`: a preconnected space covered by open
   second-countable subsets, each meeting only countably many cover members, is second countable.
 * `TauCeti.secondCountableTopology_of_preimage_isOpen_cover`: a preconnected space mapping into a
@@ -26,6 +28,8 @@ of a preconnected space from second-countable pieces with countably many neighbo
   disjoint open second-countable pieces is second countable.
 * `TauCeti.mk_le_continuum_of_secondCountableTopology`: a second-countable `T₀` space has at most
   `𝔠` points; in particular so does every Polish space.
+* `Pairwise.lift_mk_le_of_isOpen_disjoint_of_denseRange`: a pairwise disjoint family of nonempty
+  open sets has cardinality at most that of any dense-range index type.
 
 ## References
 
@@ -39,7 +43,24 @@ public section
 
 open Set Function Cardinal TopologicalSpace
 
-universe u
+universe u v
+
+/-- Every subtype of a second-countable space is second countable. -/
+instance Subtype.instSecondCountableTopology {α : Type*} [TopologicalSpace α]
+    [SecondCountableTopology α] (p : α → Prop) : SecondCountableTopology (Subtype p) :=
+  Topology.IsInducing.subtypeVal.secondCountableTopology
+
+/-- A pairwise disjoint family of nonempty open sets has lifted index cardinality at most that of
+any dense-range map into the ambient space. -/
+theorem _root_.Pairwise.lift_mk_le_of_isOpen_disjoint_of_denseRange
+    {X : Type*} [TopologicalSpace X] {ι : Type u} {α : Type v}
+    {U : ι → Set X} (hUo : ∀ i, IsOpen (U i))
+    (hd : Pairwise (Function.onFun Disjoint U))
+    (hne : ∀ i, (U i).Nonempty) {ψ : α → X} (hψ : DenseRange ψ) :
+    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #α := by
+  choose q hq using fun i ↦ hψ.exists_mem_open (hUo i) (hne i)
+  refine Cardinal.lift_mk_le'.2 ⟨⟨q, fun i₁ i₂ heq ↦ by_contra fun hne' ↦ ?_⟩⟩
+  exact (hd hne').notMem_of_mem_left (hq i₁) (heq ▸ hq i₂)
 
 namespace TauCeti
 
@@ -110,9 +131,9 @@ theorem secondCountableTopology_of_preimage_isOpen_cover [PreconnectedSpace E]
     (hSU : ∀ i, f ⁻¹' U i ⊆ ⋃ j, S i j) : SecondCountableTopology E := by
   obtain ⟨T, hTc, hTcover⟩ := isOpen_iUnion_countable U hUo
   have := hTc.to_subtype
-  let V : (Σ i : T, κ i.1) → Set E := fun a ↦ S a.1.1 a.2
-  have hVo (a) : IsOpen (V a) := hSo a.1.1 a.2
-  have hVsc (a) : SecondCountableTopology (V a) := hSsc a.1.1 a.2
+  let V : (Σ i : T, κ i.val) → Set E := fun a ↦ S a.1.val a.2
+  have hVo (a) : IsOpen (V a) := hSo a.1.val a.2
+  have hVsc (a) : SecondCountableTopology (V a) := hSsc a.1.val a.2
   refine secondCountableTopology_of_isOpen_cover V hVo ?_ hVsc fun a ↦ ?_
   · refine eq_univ_of_forall fun e ↦ ?_
     have hx : f e ∈ ⋃ i ∈ T, U i := hTcover ▸ hU (mem_range_self e)
@@ -120,16 +141,16 @@ theorem secondCountableTopology_of_preimage_isOpen_cover [PreconnectedSpace E]
     obtain ⟨j, hj⟩ := mem_iUnion.mp (hSU i hei)
     exact mem_iUnion.mpr ⟨⟨⟨i, hiT⟩, j⟩, hj⟩
   · have hsub : {b | (V a ∩ V b).Nonempty} ⊆
-        ⋃ i : T, Sigma.mk i '' {j | (V a ∩ S i.1 j).Nonempty} := by
+        ⋃ i : T, Sigma.mk i '' {j | (V a ∩ S i.val j).Nonempty} := by
       rintro ⟨i, j⟩ hb
       exact mem_iUnion.mpr ⟨i, j, hb, rfl⟩
     refine Countable.mono hsub (countable_iUnion fun i ↦ Countable.image ?_ _)
     have := (hVsc a).to_separableSpace
     exact Set.PairwiseDisjoint.countable_of_isOpen
-      (s := fun j ↦ ((↑) : V a → E) ⁻¹' S i.1 j)
-      (a := {j | (V a ∩ S i.1 j).Nonempty})
-      (fun j₁ _ j₂ _ hne ↦ (hSd i.1 hne).preimage _)
-      (fun j _ ↦ (hSo i.1 j).preimage continuous_subtype_val)
+      (s := fun j ↦ ((↑) : V a → E) ⁻¹' S i.val j)
+      (a := {j | (V a ∩ S i.val j).Nonempty})
+      (fun j₁ _ j₂ _ hne ↦ (hSd i.val hne).preimage _)
+      (fun j _ ↦ (hSo i.val j).preimage continuous_subtypeVal)
       (fun j ⟨e, he, he'⟩ ↦ ⟨⟨e, he⟩, he'⟩)
 
 end TauCeti

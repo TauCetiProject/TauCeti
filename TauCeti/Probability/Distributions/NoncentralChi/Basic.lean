@@ -20,9 +20,10 @@ The parameters are a real degree, a nonnegative noncentrality `δ`, and a real s
 degree and positive scale give probability measures; negative degree or nonpositive scale give
 the zero measure. At zero noncentrality the law is the central chi law.
 
-This file supplies the measure, its parameter measurability, the scaling and squaring identities,
-almost-sure positivity, the atom at zero, and the cumulative distribution function. Everything is
-transported from the noncentral chi-squared law along the scaled square root.
+This file supplies the measure, its parameter measurability, the scaling and squaring identities
+and their random-variable forms, almost-sure positivity, the atom at zero, and the cumulative
+distribution function. Everything is transported from the noncentral chi-squared law along the
+scaled square root.
 
 ## References
 
@@ -139,6 +140,14 @@ theorem noncentralChiMeasure_map_const_mul (hc : 0 < c) :
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
+/-- Multiplying a noncentral chi variable by a positive constant multiplies its scale by that
+constant. -/
+theorem hasLaw_noncentralChiMeasure_const_mul (hc : 0 < c)
+    (hX : HasLaw X (noncentralChiMeasure k δ s) P) :
+    HasLaw (fun ω ↦ c * X ω) (noncentralChiMeasure k δ (c * s)) P := by
+  rw [← noncentralChiMeasure_map_const_mul hc]
+  exact (hasLaw_map (X := fun x : ℝ ↦ c * x) (by fun_prop)).fun_comp hX
+
 /-- Taking a scaled square root of a noncentral chi-squared variable gives the noncentral chi
 law. -/
 theorem hasLaw_noncentralChiMeasure_of_hasLaw_noncentralChiSquaredMeasure (hs : 0 < s)
@@ -156,6 +165,14 @@ theorem noncentralChiMeasure_map_sq (hs : 0 < s) :
   apply Measure.map_congr
   filter_upwards [ae_nonneg_noncentralChiSquaredMeasure k (δ ^ 2)] with x hx
   simp [mul_pow, Real.sq_sqrt hx]
+
+/-- Squaring a noncentral chi variable gives a scaled noncentral chi-squared variable. -/
+theorem hasLaw_noncentralChiSquaredMeasure_of_hasLaw_noncentralChiMeasure (hs : 0 < s)
+    (hX : HasLaw X (noncentralChiMeasure k δ s) P) :
+    HasLaw (fun ω ↦ X ω ^ 2)
+      ((noncentralChiSquaredMeasure k (δ ^ 2)).map (fun x ↦ s ^ 2 * x)) P := by
+  rw [← noncentralChiMeasure_map_sq hs]
+  exact (hasLaw_map (X := fun x : ℝ ↦ x ^ 2) (by fun_prop)).fun_comp hX
 
 /-- A noncentral chi variable is nonnegative almost surely. -/
 theorem ae_nonneg_noncentralChiMeasure (k : ℝ) (δ : ℝ≥0) (s : ℝ) :
