@@ -741,6 +741,17 @@ theorem frequencyLaplacian_eq_sum (a : Symbol n V W m) :
       ∑ j, inclusion (by linarith) (frequencyDeriv j (frequencyDeriv (m := m) j a)) := by
   simp [frequencyLaplacian]
 
+/-- The mixed derivatives of `Δ_ξ a` are the sums of the mixed derivatives of `a` with two more
+frequency derivatives along each coordinate. -/
+@[simp]
+theorem mixedDeriv_frequencyLaplacian (a : Symbol n V W m) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (frequencyLaplacian a).coefficient x ξ =
+      ∑ j, mixedDeriv α (β ++ [j, j]) a.coefficient x ξ := by
+  rw [frequencyLaplacian_eq_sum, coefficient_sum,
+    mixedDeriv_sum fun j _ => Symbol.contDiff_coefficient _]
+  simp [coefficient_inclusion]
+
 /-- The iterated frequency Laplacian `Δ_ξ^N a` of a symbol of order `m`, a symbol of order
 `m - 2N`. -/
 def frequencyLaplacianPow : (N : ℕ) → {m : ℝ} → Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2 * N)
@@ -760,14 +771,34 @@ theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
     (frequencyLaplacianPow (N + 1) a).coefficient =
       (frequencyLaplacian (frequencyLaplacianPow N a)).coefficient := by
   induction N generalizing m with
-  | zero =>
-    funext ⟨x, ξ⟩
-    simp only [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacian,
-      coefficient_frequencyLaplacianPow_zero]
+  | zero => exact funext fun ⟨x, ξ⟩ => by simp [coefficient_frequencyLaplacianPow_succ]
   | succ N ih =>
     funext ⟨x, ξ⟩
     rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
       coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
+
+/-- **Locality of the frequency Laplacian.** If at a position `x` the coefficients of `a` and `b`
+agree for frequencies near `ξ`, then so do the coefficients of `Δ_ξ^N a` and `Δ_ξ^N b`. -/
+theorem _root_.Filter.EventuallyEq.coefficient_frequencyLaplacianPow {m' : ℝ} {a : Symbol n V W m}
+    {b : Symbol n V W m'} {x ξ : CoordinateSpace n}
+    (h : (fun η => a.coefficient (x, η)) =ᶠ[nhds ξ] fun η => b.coefficient (x, η)) (N : ℕ) :
+    (fun η => (frequencyLaplacianPow N a).coefficient (x, η)) =ᶠ[nhds ξ]
+      fun η => (frequencyLaplacianPow N b).coefficient (x, η) := by
+  induction N with
+  | zero => simpa using h
+  | succ N ih =>
+    filter_upwards [Filter.eventually_all.2 fun j => (ih.coordinateDeriv [j]).coordinateDeriv [j]]
+      with η hη
+    simp only [coefficient_frequencyLaplacianPow_succ', coefficient_frequencyLaplacian]
+    exact Finset.sum_congr rfl fun j _ => hη j
+
+/-- If `a` vanishes at `x` for all frequencies in an open set `U`, then so does `Δ_ξ^N a`. -/
+theorem coefficient_frequencyLaplacianPow_eq_zero_of_isOpen (a : Symbol n V W m)
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U) (x : CoordinateSpace n)
+    (ha : ∀ ξ ∈ U, a.coefficient (x, ξ) = 0) (N : ℕ) {ξ : CoordinateSpace n} (hξ : ξ ∈ U) :
+    (frequencyLaplacianPow N a).coefficient (x, ξ) = 0 := by
+  simpa using (Filter.EventuallyEq.coefficient_frequencyLaplacianPow (b := (0 : Symbol n V W m))
+    (Filter.eventually_of_mem (hU.mem_nhds hξ) fun η hη => by simpa using ha η hη) N).eq_of_nhds
 
 /-- If a symbol vanishes for all frequencies at the position `x`, so does each of its frequency
 derivatives. -/
