@@ -25,10 +25,10 @@ edge, and the functors of fibers associated to an edge, are unique up to equival
 * For an inner fibration `p`, two coCartesian transports along `e`
   (`SSet.CoCartesianTransport`) are joined by an equivalence of the functor quasicategory
   `Fun(X_s, X_t)`. Their homotopies form a family of horns `Λ[2, 0]` parametrized by `X_s`. Such a
-  family is filled by the relative, parametrized form of horn filling along coCartesian edges,
-  deduced from its form for prisms (`SSet.prodStdSimplex.exists_lift_unionProd_horn_zero`) like
-  the parametrized form of Joyal's theorem (`SSet.Quasicategory.exists_lift_pre_horn_zero`). The
-  components of the resulting natural transformation are equivalences by the first point.
+  family is filled by the relative, parametrized form of horn filling along coCartesian edges
+  (`SSet.exists_lift_ihomOver_pre_horn_zero`), whose case over a point is the parametrized form
+  of Joyal's theorem (`SSet.Quasicategory.exists_lift_pre_horn_zero`). The components of the
+  resulting natural transformation are equivalences by the first point.
 
 In particular the functors of fibers associated to the inert projections, through which the Segal
 condition `SSet.IsSegal` is stated, are unique up to equivalence.
@@ -252,65 +252,24 @@ section parametrized
 
 variable {X S : SSet.{u}} (p : X ⟶ S) {m : ℕ} (β : Δ[m + 2] ⟶ S)
 
-/-- The boundary case of `SSet.exists_lift_tensor_horn_zero`, in curried form: a lifting problem
-of `∂Δ[n] ⟶ Δ[n]` against restriction `Fun_S(Δ[m + 2], X) ⟶ Fun_S(Λ[m + 2, 0], X)` is an
-extension problem along the prism `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n])`. -/
-private lemma exists_lift_boundary_pre_horn_zero [InnerFibration p] {n : ℕ}
-    (t₀ : (∂Δ[n] : SSet.{u}) ⟶ ihomOver p β) (b₀ : Δ[n] ⟶ ihomOver p (Λ[m + 2, 0].ι ≫ β))
-    (w₀ : t₀ ≫ ihomOver.pre Λ[m + 2, 0].ι = ∂Δ[n].ι ≫ b₀)
-    (hb₀ : ∀ z : Δ[n] _⦋0⦌, (Edge.mk' ((ihomOver.obj₀Equiv (b₀.app _ z)).val.app _
-      (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsCoCartesian p) :
-    ∃ l : Δ[n] ⟶ ihomOver p β, ∂Δ[n].ι ≫ l = t₀ ∧ l ≫ ihomOver.pre Λ[m + 2, 0].ι = b₀ := by
-  have hw : Λ[m + 2, 0].ι ▷ _ ≫ (ihomOver.homEquiv t₀).val =
-      _ ◁ ∂Δ[n].ι ≫ (ihomOver.homEquiv b₀).val := by
-    rw [← ihomOver.homEquiv_comp_pre_coe, w₀, ihomOver.homEquiv_comp_coe]
-  have hpush := Subcomplex.unionProd.isPushout Λ[m + 2, 0] ∂Δ[n]
-  let a := hpush.desc (ihomOver.homEquiv t₀).val (ihomOver.homEquiv b₀).val hw
-  obtain ⟨L, hL₁, hL₂⟩ := prodStdSimplex.exists_lift_unionProd_horn_zero p a (fst _ _ ≫ β)
-    (hpush.hom_ext (by simp [a, (ihomOver.homEquiv t₀).property])
-      (by simp [a, (ihomOver.homEquiv b₀).property]))
-    fun v ↦ by
-      have hv := hb₀ (stdSimplex.obj₀Equiv.symm v)
-      rw [ihomOver.obj₀Equiv_app_coe] at hv
-      have h₁ : (lift (𝟙 _) (const (stdSimplex.obj₀Equiv.symm v))).app _
-          (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
-          (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), stdSimplex.const n v _) := by
-        rw [lift_id_const_app_one, Edge.id_edge, SimplicialObject.σ_def,
-          stdSimplex.obj₀Equiv_symm_apply, stdSimplex.map_const]
-      have h₂ := hpush.inr_desc (ihomOver.homEquiv t₀).val (ihomOver.homEquiv b₀).val hw
-      exact hv.of_edge_eq ((congrArg ((ihomOver.homEquiv b₀).val.app _) h₁).trans
-        (congrArg (fun f : (Λ[m + 2, 0] : SSet.{u}) ⊗ Δ[n] ⟶ X ↦ f.app _
-          (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), stdSimplex.const n v _))
-            h₂).symm)
-  refine ⟨ihomOver.homEquiv.symm ⟨L, hL₂⟩, ihomOver.homEquiv.injective (Subtype.ext ?_),
-    ihomOver.homEquiv.injective (Subtype.ext ?_)⟩
-  · rw [ihomOver.homEquiv_comp_coe, Equiv.apply_symm_apply, ← Subcomplex.unionProd.ι₁_ι,
-      Category.assoc, hL₁, hpush.inl_desc]
-  · rw [ihomOver.homEquiv_comp_pre_coe, Equiv.apply_symm_apply, ← Subcomplex.unionProd.ι₂_ι,
-      Category.assoc, hL₁, hpush.inr_desc]
-
-/-- **Lifting along horns with coCartesian initial edges, parametrized.** Let `p : X ⟶ S` be an
-inner fibration and `β : Δ[m + 2] ⟶ S`. A family `b : Z ⊗ Λ[m + 2, 0] ⟶ X` of horns over `β`,
+/-- **Lifting families of horns with coCartesian initial edges.** Let `p : X ⟶ S` be an inner
+fibration and `β : Δ[m + 2] ⟶ S`. A family `b : Z ⊗ Λ[m + 2, 0] ⟶ X` of horns over `β`,
 parametrized by a simplicial set `Z`, whose initial edges `(z, 0 ⟶ 1)` are all `p`-coCartesian,
-extends to a family `Z ⊗ Δ[m + 2] ⟶ X` of simplices over `β`. -/
+extends to a family `Z ⊗ Δ[m + 2] ⟶ X` of simplices over `β`. This is the case of the empty
+simplicial subset of `Z` in `SSet.exists_lift_ihomOver_pre_horn_zero`. -/
 theorem exists_lift_tensor_horn_zero [InnerFibration p] {Z : SSet.{u}}
     (b : Z ⊗ (Λ[m + 2, 0] : SSet) ⟶ X) (hb : b ≫ p = snd _ _ ≫ Λ[m + 2, 0].ι ≫ β)
     (hZ : ∀ z : Z _⦋0⦌, (Edge.mk' (b.app _
       (Z.σ 0 z, horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsCoCartesian p) :
     ∃ l : Z ⊗ Δ[m + 2] ⟶ X, Z ◁ Λ[m + 2, 0].ι ≫ l = b ∧ l ≫ p = snd _ _ ≫ β := by
   -- By adjunction, this is a lifting problem against the restriction
-  -- `Fun_S(Δ[m + 2], X) ⟶ Fun_S(Λ[m + 2, 0], X)` of functors over `β`, over its full
-  -- subcategory of horns with coCartesian initial edge. Lifting problems of boundary inclusions
-  -- are extension problems along prisms, and these imply lifting along every monomorphism.
+  -- `Fun_S(Δ[m + 2], X) ⟶ Fun_S(Λ[m + 2, 0], X)` of functors over `β`, along `∅ ⟶ Z`.
   -- The braided family `Λ[m + 2, 0] ⊗ Z ⟶ X`, as a map `Z ⟶ Fun_S(Λ[m + 2, 0], X)`.
   let b' : (Λ[m + 2, 0] : SSet) ⊗ Z ⟶ X := (β_ _ _).hom ≫ b
   have hb' : b' ≫ p = fst _ _ ≫ Λ[m + 2, 0].ι ≫ β := by
     rw [Category.assoc, hb, braiding_hom_snd_assoc]
-  obtain ⟨l, -, hl⟩ := exists_lift_of_forall_boundary (ihomOver.pre Λ[m + 2, 0].ι)
-    (fun v ↦ (Edge.mk' ((ihomOver.obj₀Equiv v).val.app _
-      (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsCoCartesian p)
-    (fun _ t₀ b₀ w₀ hb₀ ↦ exists_lift_boundary_pre_horn_zero p β t₀ b₀ w₀ hb₀)
-    (initial.to Z) (initial.to _) (ihomOver.homEquiv.symm ⟨b', hb'⟩) (initial.hom_ext _ _)
+  obtain ⟨l, -, hl⟩ := exists_lift_ihomOver_pre_horn_zero p β (initial.to Z) (initial.to _)
+    (ihomOver.homEquiv.symm ⟨b', hb'⟩) (initial.hom_ext _ _)
     fun z ↦ by
       rw [ihomOver.obj₀Equiv_app_coe, Equiv.apply_symm_apply]
       have hz : (lift (𝟙 _) (const z)).app _ (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)) =

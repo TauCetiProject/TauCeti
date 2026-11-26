@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
+public import TauCeti.Analysis.Normed.Module.Dual.Norming
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Metric
 import Mathlib.Analysis.Normed.Module.HahnBanach
-import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import TauCeti.Analysis.Normed.Operator.Norming
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Metric
@@ -23,7 +25,8 @@ theorem** says that `f` is strongly measurable exactly when it is weakly measura
 separable range. This file proves it on a measurable space, without any measure, in two forms:
 
 * `TauCeti.stronglyMeasurable_iff_scalar_tests`: the criterion with all of `StrongDual 𝕜 X` as
-  tests, for an arbitrary normed space `X`;
+  tests, for an arbitrary real or complex seminormed space `X`, with the equivalent
+  separable-range form `TauCeti.stronglyMeasurable_iff_isSeparable_scalar_tests`;
 * `TauCeti.stronglyMeasurable_iff_separating_tests`: when `f` takes values in a complete separable
   subspace `E`, any set of functionals separating the points of `E` suffices as tests.
 
@@ -42,8 +45,14 @@ the norm-Borel σ-algebra in two situations:
   The injective continuous map `x ↦ (x' x)_{x' ∈ T₀}` is then a measurable embedding by the
   Lusin–Souslin theorem.
 
-In both cases the tests are first reduced to a countable subfamily `T₀ ⊆ T` with the same property
-(`exists_countable_norming_subset`, `exists_countable_separating_subset`).
+Without completeness, a family of tests recovering the norm on a separable supporting subspace
+still detects strong measurability (`Submodule.stronglyMeasurable_iff_norming_tests`): a countable
+subfamily recovers the distances, and measurable distance functions give strong measurability
+(`TauCeti.stronglyMeasurable_iff_measurable_dist`). This needs no measurable structure on the
+target, and gives the full-dual criterion for seminormed spaces.
+
+In the σ-algebra comparisons the tests are first reduced to a countable subfamily `T₀ ⊆ T` with
+the same property (`exists_countable_norming_subset`, `exists_countable_separating_subset`).
 
 The single functional `0` generates the trivial σ-algebra (`evalMeasurableSpace_singleton_zero`),
 so the comparison needs some separation of points.
@@ -220,27 +229,80 @@ theorem evalMeasurableSpace_univ_eq_borel [SeparableSpace X] :
     let ⟨g, hg, hgx⟩ := exists_dual_vector'' 𝕜 x
     ⟨g, mem_univ g, hg, by simpa [hgx] using hr⟩
 
-/-- **Pettis' measurability theorem.** A function into a normed space is strongly measurable
-exactly when its values lie in a closed separable subspace and each scalar function
-`s ↦ x' (f s)`, for `x'` a continuous linear functional, is measurable. -/
-theorem stronglyMeasurable_iff_scalar_tests {mS : MeasurableSpace S} {f : S → X} :
-    StronglyMeasurable f ↔
-      (∃ E : Submodule 𝕜 X, IsClosed (E : Set X) ∧ IsSeparable (E : Set X) ∧ ∀ s, f s ∈ E) ∧
-        ∀ x' : StrongDual 𝕜 X, Measurable fun s ↦ x' (f s) := by
-  refine ⟨fun hf ↦ ⟨⟨(Submodule.span 𝕜 (range f)).topologicalClosure,
-    Submodule.isClosed_topologicalClosure _, ?_, fun s ↦ ?_⟩,
-    fun x' ↦ (x'.continuous.comp_stronglyMeasurable hf).measurable⟩, ?_⟩
-  · rw [Submodule.topologicalClosure_coe]
-    exact hf.isSeparable_range.span.closure
-  · exact Submodule.le_topologicalClosure _ (Submodule.subset_span (mem_range_self s))
-  rintro ⟨⟨E, -, hEsep, hfE⟩, htest⟩
-  have : SeparableSpace E := hEsep.separableSpace
-  refine stronglyMeasurable_of_evalMeasurableSpace_eq_borel E evalMeasurableSpace_univ_eq_borel
-    hfE fun y _ ↦ ?_
-  -- Each functional on `E` extends to `X`, by the Hahn–Banach theorem.
-  obtain ⟨g, hg, -⟩ := exists_extension_norm_eq E y
-  simpa only [← hg] using htest g
-
 end RCLike
+
+end TauCeti
+
+section Norming
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+  [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Norming scalar tests detect strong measurability on a separable supporting linear
+subspace, even when that subspace is incomplete. -/
+theorem Submodule.stronglyMeasurable_iff_norming_tests (S : Submodule 𝕜 E)
+    (hS : IsSeparable (S : Set E)) (D : Set (StrongDual 𝕜 E))
+    (hD : ∀ x ∈ S, IsLUB ((fun φ : StrongDual 𝕜 E ↦ ‖φ x‖) '' D) ‖x‖)
+    (f : α → E) (hf : ∀ a, f a ∈ S) :
+    StronglyMeasurable f ↔ ∀ φ ∈ D, Measurable (fun a ↦ φ (f a)) := by
+  refine ⟨fun h φ _ ↦ (φ.continuous.comp_stronglyMeasurable h).measurable, fun h ↦ ?_⟩
+  obtain ⟨D', hsub, hcount, hnorm⟩ := hS.exists_countable_dual_norming_subset hD
+  have := hcount.to_subtype
+  have := hS.separableSpace
+  let g : α → S := fun a ↦ ⟨f a, hf a⟩
+  have hg : StronglyMeasurable g := by
+    refine (TauCeti.stronglyMeasurable_iff_measurable_dist g).2 ⟨.of_separableSpace _, ?_⟩
+    intro x
+    simp only [dist_eq_norm]
+    refine Measurable.isLUB (f := fun φ : D' ↦ fun a ↦ ‖φ.val (f a) - φ.val x‖)
+      (fun φ ↦ ((h φ (hsub φ.property)).sub_const _).norm) ?_
+    intro a
+    simpa [Set.image, Set.range, Subtype.exists, map_sub, g,
+      ← Submodule.norm_coe, Submodule.coe_sub] using
+      hnorm (f a - x) (S.sub_mem (hf a) x.property)
+  exact continuous_subtypeVal.comp_stronglyMeasurable hg
+
+end Norming
+
+namespace TauCeti
+
+section Seminormed
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The range-separability form of Pettis' measurability theorem for an arbitrary seminormed
+target over the real or complex numbers. -/
+theorem stronglyMeasurable_iff_isSeparable_scalar_tests (f : α → E) :
+    StronglyMeasurable f ↔ IsSeparable (range f) ∧
+      ∀ φ : StrongDual 𝕜 E, Measurable (fun a ↦ φ (f a)) := by
+  refine ⟨fun hf ↦ ⟨hf.isSeparable_range,
+    fun φ ↦ (φ.continuous.comp_stronglyMeasurable hf).measurable⟩, fun ⟨hs, htests⟩ ↦ ?_⟩
+  let S := Submodule.span 𝕜 (range f)
+  have hS : IsSeparable (S : Set E) := hs.span
+  obtain ⟨D, -, -, hD⟩ := hS.exists_countable_dual_norming (𝕜 := 𝕜)
+  exact (S.stronglyMeasurable_iff_norming_tests hS D hD f
+    (fun a ↦ Submodule.subset_span (mem_range_self a))).2 (fun φ _ ↦ htests φ)
+
+/-- **Pettis measurability theorem** for real or complex seminormed targets: strong measurability
+is equivalent to a closed separable supporting linear subspace and measurable scalar tests.
+No completeness assumption is required. -/
+theorem stronglyMeasurable_iff_scalar_tests (f : α → E) :
+    StronglyMeasurable f ↔
+      (∃ S : Submodule 𝕜 E, IsClosed (S : Set E) ∧ IsSeparable (S : Set E) ∧
+        ∀ a, f a ∈ S) ∧
+      ∀ φ : StrongDual 𝕜 E, Measurable (fun a ↦ φ (f a)) := by
+  refine ⟨fun hf ↦ ⟨?_, fun φ ↦ (φ.continuous.comp_stronglyMeasurable hf).measurable⟩,
+    fun ⟨⟨S, _hclosed, hS, hf⟩, htests⟩ ↦ ?_⟩
+  · refine ⟨(Submodule.span 𝕜 (range f)).topologicalClosure,
+      (Submodule.span 𝕜 (range f)).isClosed_topologicalClosure, ?_, ?_⟩
+    · rw [Submodule.topologicalClosure_coe]
+      exact hf.isSeparable_range.span.closure
+    · intro a
+      exact Submodule.le_topologicalClosure _ (Submodule.subset_span (mem_range_self a))
+  · exact (stronglyMeasurable_iff_isSeparable_scalar_tests (𝕜 := 𝕜) f).2
+      ⟨hS.mono (range_subset_iff.mpr hf), htests⟩
+
+end Seminormed
 
 end TauCeti

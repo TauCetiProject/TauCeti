@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
+public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexOp
+public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Basic
 
 /-!
 # Fibers of maps of simplicial sets
 
 For a map of simplicial sets `q : X ⟶ Y` and a subcomplex `A` of `Y`, the restriction
 `A.fromPreimage q : A.preimage q ⟶ A` of `q` over `A` is a base change of `q`, so it inherits every
-right lifting property of `q`. In particular it is an inner fibration, or a Kan fibration, when `q`
+right lifting property of `q`. In particular it is an inner, left, right or Kan fibration when `q`
 is.
 
 The fiber `SSet.fiber q y` of `q` over a vertex `y` of `Y` is the preimage of the subcomplex
@@ -40,6 +42,7 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 * `SSet.fiber.isTerminalOfIsIso`: the fibers of an isomorphism are terminal.
 * `SSet.fiber.quasicategory`, `SSet.fiber.kanComplex`: the fibers of inner fibrations are
   quasicategories, and those of Kan fibrations are Kan complexes.
+* `SSet.fiber_opFunctor_map`: the fibers of the opposite of a map are the opposites of its fibers.
 
 ## References
 
@@ -79,6 +82,20 @@ instance hasLiftingProperty_fromPreimage {P Q : SSet.{u}} (i : P ⟶ Q) (q : X �
 instance innerFibration_fromPreimage (q : X ⟶ Y) [InnerFibration q] (A : Y.Subcomplex) :
     InnerFibration (A.fromPreimage q) :=
   ⟨fun _ _ i hi ↦ have := InnerFibration.mem (q := q) i hi; inferInstance⟩
+
+/-- The restriction of a left fibration over a subcomplex is a left fibration. -/
+instance leftFibration_fromPreimage (q : X ⟶ Y) [LeftFibration q] (A : Y.Subcomplex) :
+    LeftFibration (A.fromPreimage q) :=
+  (leftFibration_iff_hasLiftingProperty _).2 fun _ i hi ↦
+    have := (leftFibration_iff_hasLiftingProperty q).1 inferInstance i hi
+    inferInstance
+
+/-- The restriction of a right fibration over a subcomplex is a right fibration. -/
+instance rightFibration_fromPreimage (q : X ⟶ Y) [RightFibration q] (A : Y.Subcomplex) :
+    RightFibration (A.fromPreimage q) :=
+  (rightFibration_iff_hasLiftingProperty _).2 fun _ i h0 ↦
+    have := (rightFibration_iff_hasLiftingProperty q).1 inferInstance i h0
+    inferInstance
 
 /-- The restriction of a Kan fibration over a subcomplex is a Kan fibration. -/
 instance fibration_fromPreimage (q : X ⟶ Y) [Fibration q] (A : Y.Subcomplex) :
@@ -136,6 +153,7 @@ lemma mem_fiber_of_app_eq_map (q : X ⟶ Y) (y : Y _⦋0⦌) {n : ℕ} (x : X _�
   rw [mem_fiber_iff, hx, Subsingleton.elim g]
 
 /-- A vertex of the fiber of `q` over `y` lies over `y`. -/
+@[simp]
 lemma fiber.app_coe_obj₀ (q : X ⟶ Y) {y : Y _⦋0⦌} (z : (fiber q y : SSet) _⦋0⦌) :
     q.app _ z.val = y := by
   have hz := z.property
@@ -234,5 +252,15 @@ instance fiber.kanComplex (q : X ⟶ Y) [Fibration q] (y : Y _⦋0⦌) : KanComp
   -- `fiber q y` is by definition the source of the restriction of `q` over `ofSimplex y`.
   isFibrant_of_fibration (X := ((Subcomplex.ofSimplex y).preimage q : SSet))
     ((Subcomplex.ofSimplex y).fromPreimage q)
+
+/-- The fibre of the opposite `qᵒᵖ` of a map over a vertex `y` is the opposite of the fibre of `q`
+over `y`. -/
+lemma fiber_opFunctor_map (q : X ⟶ Y) (y : Y _⦋0⦌) :
+    fiber (opFunctor.map q) (opObjEquiv.symm y) = (fiber q y).op := by
+  ext n x
+  rw [mem_fiber_iff, Subcomplex.mem_op_obj_iff, mem_fiber_iff, opFunctor_map, op_map,
+    Equiv.apply_symm_apply, opObjEquiv.symm.injective.eq_iff]
+  -- Both sides compare with a degeneracy of `y`, along the unique map `n ⟶ ⦋0⦌`.
+  congr!
 
 end SSet

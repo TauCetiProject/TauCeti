@@ -20,11 +20,12 @@ pushout-join description of outer horns, this says that horns `Λ[n + 2, 0] ⟶ 
 edge is `f` can be filled over every `(n + 2)`-simplex of `S` (HTT Remark 2.4.1.4).
 
 This file proves this horn filling and its form for prisms: for an inner fibration `p`, maps
-`(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n]) ⟶ X` whose vertical edges `(0, t) ⟶ (1, t)` are
-`p`-coCartesian lift to `Δ[m + 2] ⊗ Δ[n]`. Mathlib's regular pairing of Moss for this inclusion
-attaches inner horns, which lift along the inner fibration `p`, and horns `Λ[d + 2, 0]` whose
-initial edge is a vertical edge (`SSet.prodStdSimplex.pairingCore.Type₁.map_edge_of_index_eq_zero`),
-which lift along coCartesian edges. Over a point, the coCartesian edges of a quasicategory are its
+`(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n]) ⟶ X` which are defined on the vertical edge
+`(0, 0) ⟶ (1, 0)` and send it to a `p`-coCartesian edge lift to `Δ[m + 1] ⊗ Δ[n]`. Mathlib's
+regular pairing of Moss for this inclusion attaches inner horns, which lift along the inner
+fibration `p`, and horns `Λ[d + 2, 0]` whose initial edge is this vertical edge
+(`SSet.prodStdSimplex.pairingCore.Type₁.map_edge_of_index_eq_zero`), which lift along coCartesian
+edges. Over a point, the coCartesian edges of a quasicategory are its
 equivalences, and this is the prism form of Joyal's theorem on special outer horns
 (`SSet.prodStdSimplex.exists_ext_unionProd_horn_zero`).
 
@@ -35,8 +36,8 @@ equivalences, and this is the prism form of Joyal's theorem on special outer hor
 * `SSet.Edge.isEquivalence_iff_isCoCartesian`: the edges of a quasicategory which are coCartesian
   over a point are its equivalences.
 * `SSet.prodStdSimplex.exists_lift_unionProd_horn_zero`: lifting along the prism
-  `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n]) ⟶ Δ[m + 2] ⊗ Δ[n]` against an inner fibration,
-  when the vertical edges `(0, t) ⟶ (1, t)` are coCartesian.
+  `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n]) ⟶ Δ[m + 1] ⊗ Δ[n]` against an inner fibration,
+  when the vertical edge `(0, 0) ⟶ (1, 0)` lies in the domain and is sent to a coCartesian edge.
 
 ## References
 
@@ -112,45 +113,42 @@ open Subcomplex
 
 variable {X S : SSet.{u}}
 
-/-- **Lifting along a prism with coCartesian vertical edges.** Let `p : X ⟶ S` be an inner
-fibration. A map `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n]) ⟶ X` over `b : Δ[m + 2] ⊗ Δ[n] ⟶ S`
-lifts to a map `Δ[m + 2] ⊗ Δ[n] ⟶ X` over `b` provided that, for every vertex `t` of `Δ[n]`, it
-sends the vertical edge `(0, t) ⟶ (1, t)` to a `p`-coCartesian edge. -/
+/-- **Lifting along a prism with a coCartesian initial vertical edge.** Let `p : X ⟶ S` be an
+inner fibration. A map `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n]) ⟶ X` over
+`b : Δ[m + 1] ⊗ Δ[n] ⟶ S` lifts to a map `Δ[m + 1] ⊗ Δ[n] ⟶ X` over `b` provided that the vertical
+edge `(0, 0) ⟶ (1, 0)` lies in its domain and is sent to a `p`-coCartesian edge. The edge lies in
+`Λ[m + 1, 0] ⊗ Δ[n]` when `1 ≤ m` and in `Δ[m + 1] ⊗ ∂Δ[n]` when `1 ≤ n`. -/
 theorem exists_lift_unionProd_horn_zero (p : X ⟶ S) [InnerFibration p] {m n : ℕ}
-    (a : (unionProd Λ[m + 2, 0] ∂Δ[n] : SSet.{u}) ⟶ X) (b : Δ[m + 2] ⊗ Δ[n] ⟶ S)
-    (hab : a ≫ p = (unionProd Λ[m + 2, 0] ∂Δ[n]).ι ≫ b)
-    (ha : ∀ t : Fin (n + 1), (Edge.mk' (a.app _ ((unionProd.ι₂ _ _).app _
-      (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp),
-        stdSimplex.const n t _)))).IsCoCartesian p) :
-    ∃ l : Δ[m + 2] ⊗ Δ[n] ⟶ X, (unionProd Λ[m + 2, 0] ∂Δ[n]).ι ≫ l = a ∧ l ≫ p = b := by
+    (a : (unionProd Λ[m + 1, 0] ∂Δ[n] : SSet.{u}) ⟶ X) (b : Δ[m + 1] ⊗ Δ[n] ⟶ S)
+    (hab : a ≫ p = (unionProd Λ[m + 1, 0] ∂Δ[n]).ι ≫ b)
+    (hmem : (stdSimplex.edge (m + 1) 0 1 (Fin.zero_le _), stdSimplex.const n 0 _) ∈
+      (unionProd Λ[m + 1, 0] ∂Δ[n]).obj (Opposite.op ⦋1⦌))
+    (ha : (Edge.mk' (a.app _ ⟨_, hmem⟩)).IsCoCartesian p) :
+    ∃ l : Δ[m + 1] ⊗ Δ[n] ⟶ X, (unionProd Λ[m + 1, 0] ∂Δ[n]).ι ≫ l = a ∧ l ≫ p = b := by
   -- Moss's regular pairing for the inclusion attaches inner horns, which lift along the inner
-  -- fibration `p`, and horns `Λ[d + 2, 0]` whose initial edge is a vertical edge, which lift
-  -- along coCartesian edges.
-  refine (pairingCore (0 : Fin (m + 2)) n).exists_lift_of_hornFilling p a b hab
+  -- fibration `p`, and horns `Λ[d + 2, 0]` whose initial edge is the vertical edge
+  -- `(0, 0) ⟶ (1, 0)`, which lift along coCartesian edges.
+  refine (pairingCore (0 : Fin (m + 1)) n).exists_lift_of_hornFilling p a b hab
     fun s B hB g hg hgp σ₀ hσ₀ ↦ ?_
-  have hτ : (σ₀ ≫ g) ≫ p = Λ[(pairingCore (0 : Fin (m + 2)) n).dim s + 1,
-      (pairingCore (0 : Fin (m + 2)) n).index s].ι ≫
-        yonedaEquiv.symm ((pairingCore (0 : Fin (m + 2)) n).simplex s) ≫ b := by
+  have hτ : (σ₀ ≫ g) ≫ p = Λ[(pairingCore (0 : Fin (m + 1)) n).dim s + 1,
+      (pairingCore (0 : Fin (m + 1)) n).index s].ι ≫
+        yonedaEquiv.symm ((pairingCore (0 : Fin (m + 1)) n).simplex s) ≫ b := by
     rw [Category.assoc, hgp, ← Category.assoc σ₀, hσ₀, Category.assoc]
   by_cases hs : s.index = 0
-  · -- The type (I) simplex starts with the vertical edge `(0, t) ⟶ (1, t)`, and it has
+  · -- The type (I) simplex starts with the vertical edge `(0, 0) ⟶ (1, 0)`, and it has
     -- dimension at least `2`.
-    obtain ⟨d, hd⟩ := s.exists_dim_eq_add_one
-    -- The initial edge of the horn is the vertical edge at the first vertex of the simplex,
-    -- which lies in `Λ[m + 2, 0] ⊗ Δ[n]`, where `g` is `a`.
+    obtain ⟨d, hd⟩ := s.exists_dim_eq_add_one hmem
+    -- The initial edge of the horn is the vertical edge `(0, 0) ⟶ (1, 0)` of the prism, which
+    -- lies in the domain of `a`, where `g` is `a`.
     have hedge (H) : (σ₀ ≫ g).app _ (horn.edge (s.d + 1) _ 0 1 (Fin.zero_le _) H) =
-        a.app _ ((unionProd.ι₂ _ _).app _ (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp),
-          stdSimplex.const n ((s.x.cast s.hd).simplex.2 0) _)) := by
+        a.app _ ⟨_, hmem⟩ := by
       have he : σ₀.app _ (horn.edge (s.d + 1) _ 0 1 (Fin.zero_le _) H) =
-          (Subcomplex.homOfLE hB).app _ ((unionProd.ι₂ _ _).app _
-            (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp),
-              stdSimplex.const n ((s.x.cast s.hd).simplex.2 0) _)) := by
+          (Subcomplex.homOfLE hB).app _ ⟨_, hmem⟩ := by
         apply Subtype.ext
         exact (congrArg (fun f ↦ f.app _ (horn.edge (s.d + 1) _ 0 1 (Fin.zero_le _) H))
           hσ₀).trans (s.map_edge_of_index_eq_zero hs)
-      exact (congrArg (g.app _) he).trans (congrArg (fun f ↦ f.app _ ((unionProd.ι₂ _ _).app _
-        (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp),
-          stdSimplex.const n ((s.x.cast s.hd).simplex.2 0) _))) hg)
+      exact (congrArg (g.app _) he).trans (congrArg (fun f ↦ f.app _
+        (⟨_, hmem⟩ : (unionProd Λ[m + 1, 0] ∂Δ[n] : SSet.{u}) _⦋1⦌)) hg)
     -- The horn of the pairing has dimension `s.d + 1` and index `s.index.castSucc`, which are
     -- `d + 2` and `0` only propositionally; `key` generalizes them so that substituting `hd` and
     -- `hs` puts the horn in the form `Λ[d + 2, 0]` required by `exists_lift_horn_zero`.
@@ -161,7 +159,7 @@ theorem exists_lift_unionProd_horn_zero (p : X ⟶ S) [InnerFibration p] {m n : 
       rintro N i rfl rfl φ τ hφ H
       exact (H (by simp)).exists_lift_horn_zero φ rfl τ hφ
     exact key s.d s.index.castSucc hd (by simp [hs]) (σ₀ ≫ g) _ hτ fun H ↦
-      (ha _).of_edge_eq (hedge H).symm
+      ha.of_edge_eq (hedge H).symm
   · -- An inner horn lifts along the inner fibration `p`.
     have h0 : 0 < s.index.castSucc := by
       rw [Fin.pos_iff_ne_zero, Ne, Fin.castSucc_eq_zero_iff]

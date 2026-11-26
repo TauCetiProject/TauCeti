@@ -108,6 +108,7 @@ lemma lift_id_const_app_one {W : SSet.{u}} (x : X _⦋0⦌) (e : W _⦋1⦌) :
 
 /-- Simplicial operators fix the constant simplices of `Δ[n]`: the image of the simplex
 concentrated in the vertex `k` is again concentrated in `k`. -/
+@[simp]
 lemma stdSimplex.map_const (n : ℕ) (k : Fin (n + 1)) {m m' : SimplexCategoryᵒᵖ} (f : m ⟶ m') :
     Δ[n].map f (stdSimplex.const n k m) = stdSimplex.const n k m' :=
   -- `Δ[n].map f` precomposes with `f.unop`, and a constant map precomposed is constant.

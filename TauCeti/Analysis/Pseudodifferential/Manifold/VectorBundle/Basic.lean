@@ -519,15 +519,7 @@ theorem exists_quantizeSchwartzValue_eq_apply_chartCutoffSection [FiniteDimensio
           (P (t.chartCutoffSection he hE ψ u) (e.symm y)) := by
   -- A cutoff `ρ` on `M`, supported in the chart source and equal to `1` over the supports of `φ`
   -- and `ψ`, gives cut-off frames which are frames there.
-  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
-  set ρ := e.cutoffPullback he χ 1
-  have hρs : tsupport ρ ⊆ e.source := (e.tsupport_cutoffPullback_subset he χ 1).trans <| by
-    rintro _ ⟨y, hy, rfl⟩
-    exact e.map_target (χ.tsupport_subset hy)
-  have hρ (y : CoordinateSpace n) (hy : y ∈ tsupport φ ∪ tsupport ψ) : ρ (e.symm y) = 1 := by
-    have hyt : y ∈ e.target := (union_subset φ.tsupport_subset ψ.tsupport_subset) hy
-    rw [e.cutoffPullback_one_apply_of_mem he _ (e.map_target hyt), e.right_inv hyt]
-    exact hχ.self_of_nhdsSet y hy
+  obtain ⟨ρ, hρs, hρ⟩ := e.exists_tsupport_subset_source_and_eq_one he φ ψ
   set bV := Module.finBasis ℂ V
   set bW := Module.finBasis ℂ W
   -- The entries of `P` in these frames have symbols `a i j` in the chart.
