@@ -11,6 +11,9 @@ public import TauCeti.AlgebraicGeometry.Grassmannian.IdealLocus
 public import TauCeti.RingTheory.Grassmannian.Chart.StableLocus
 public import TauCeti.RingTheory.Grassmannian.StableLocus
 
+import Mathlib.RingTheory.DualNumber
+import Mathlib.RingTheory.Spectrum.Prime.Noetherian
+import TauCeti.Algebra.DualNumber.Basic
 import TauCeti.AlgebraicGeometry.Grassmannian.Proper
 
 /-!
@@ -26,8 +29,10 @@ change `t_A` of `t`. Nothing is assumed about `R`, `M` or `t`, and the test alge
 nonreduced, so this closed subscheme carries its natural, possibly nonreduced, scheme structure.
 
 For `t` the multiplication by the uniformizer on the free module `X^(-N) R⟦X⟧ⁿ / X^N R⟦X⟧ⁿ` of
-rank `2nN`, the points of this closed subscheme are the lattices of pole order at most `N`, and it
-is the chart of pole order `N` of the loop Grassmannian of `GL_n` (Zhu, §1.1).
+rank `2nN`, the points of this closed subscheme over `A` are the lattices `L` with
+`X^N A⟦X⟧ⁿ ⊆ L ⊆ X^(-N) A⟦X⟧ⁿ` whose quotient `X^(-N) A⟦X⟧ⁿ / L` is finite projective of constant
+rank `k`; the union of these closed subschemes over `k` is the chart of pole order `N` of the loop
+Grassmannian of `GL_n` (Zhu, §1.1).
 
 The closed subscheme is the instance `Module.Grassmannian.schemeIdealLocus` of the general
 construction of closed subschemes of `G(k, M)` cut out by ideals of points: stability is cut out
@@ -346,29 +351,19 @@ theorem not_isReduced_subscheme_schemeStableLocus_of_jordanBlock [Nontrivial R] 
   intro h
   have := isReduced_of_isOpenImmersion (jordanBlockStableLocusHom b ht₁ ht₂)
   rw [affine_isReduced_iff] at this
-  have hε : (ε : R[ε]) = 0 := IsNilpotent.eq_zero ⟨2, by rw [sq, eps_mul_eps]⟩
-  exact one_ne_zero (congrArg TrivSqZeroExt.snd hε)
+  exact DualNumber.not_isReduced (R := R) this
 
 end JordanBlock
 
 open DualNumber in
 /-- **Over a field, the closed subscheme of stable lines of a nilpotent Jordan block has a single
-point**: it is `Spec K[ε]`, whose only prime ideal is `(ε)`. -/
+point**: it is `Spec K[ε]`, and `K[ε]` is a local ring of dimension zero. -/
 theorem subsingleton_subscheme_schemeStableLocus_of_jordanBlock {K : Type u} [Field K] {M : Type u}
     [AddCommGroup M] [Module K M] (b : Basis (Fin 1 ⊕ Fin 1) K M) {t : Module.End K M}
     (ht₁ : t (b (.inl 0)) = 0) (ht₂ : t (b (.inr 0)) = b (.inl 0)) :
     Subsingleton (schemeStableLocus 1 t).subscheme := by
-  -- every prime ideal of `K[ε]` is the kernel of `K[ε] → K`, the non-units
-  have hprime (p : PrimeSpectrum K[ε]) (x : K[ε]) : x ∈ p.asIdeal ↔ x.fst = 0 := by
-    refine ⟨fun hx ↦ by_contra fun h ↦ p.isPrime.ne_top ((Ideal.eq_top_of_isUnit_mem _ hx
-      (TrivSqZeroExt.isUnit_iff_isUnit_fst.2 (isUnit_iff_ne_zero.2 h)))), fun hx ↦ ?_⟩
-    have hε : (ε : K[ε]) ∈ p.asIdeal := p.isPrime.mem_of_pow_mem 2 (by
-      rw [sq, eps_mul_eps]; exact p.asIdeal.zero_mem)
-    have : x = TrivSqZeroExt.inl x.snd * ε := by ext <;> simp [hx]
-    rw [this]
-    exact p.asIdeal.mul_mem_left _ hε
-  have : Subsingleton (Spec (.of K[ε])) :=
-    ⟨fun p q ↦ PrimeSpectrum.ext (Ideal.ext fun x ↦ (hprime p x).trans (hprime q x).symm)⟩
+  -- `K[ε]` is artinian, so its spectrum is a single point
+  have : Subsingleton (Spec (.of K[ε])) := Ring.KrullDimLE.subsingleton_primeSpectrum K[ε]
   exact (jordanBlockStableLocusHom b ht₁ ht₂).homeomorph.symm.injective.subsingleton
 
 end Module.Grassmannian

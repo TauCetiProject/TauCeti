@@ -23,9 +23,9 @@ when `a e₁ = c (e₁ + a e₂)` for some `c`, that is, when `a² = 0`
 line lies in this chart: over a residue field of `A`, a stable line containing `e₂` would contain
 `t e₂ = e₁`, hence be everything (`Module.Grassmannian.mem_chart_of_stableLocus_eq_bot`). So the
 `t`-stable lines over `A` are the lines of `e₁ + a e₂` with `a² = 0`, naturally in `A`
-(`Module.Grassmannian.jordanBlockStableEquiv`). Over a field the only stable line is the line of
-`e₁` (`Module.Grassmannian.stableLocus_eq_bot_iff_toSubmodule_eq_span`), but over the dual numbers
-`a = ε` gives a second one.
+(`Module.Grassmannian.jordanBlockStableEquiv`). Over a reduced ring, such as a field, the only
+stable line is the line of `e₁` (`Module.Grassmannian.stableLocus_eq_bot_iff_toSubmodule_eq_span`),
+but over the dual numbers `a = ε` gives a second one.
 
 This is a test case for the scheme structure of the closed subscheme of stable submodules
 (`Module.Grassmannian.schemeStableLocus`) on nonreduced test rings: here it is `Spec R[a]/(a²)`,
@@ -45,8 +45,8 @@ which is not reduced.
 * `Module.Grassmannian.toSubmodule_jordanBlockStableEquiv_symm_apply` and
   `Module.Grassmannian.map_jordanBlockStableEquiv_symm_apply`: the stable line of `a` is spanned by
   `e₁ + a e₂`, naturally in `A`.
-* `Module.Grassmannian.stableLocus_eq_bot_iff_toSubmodule_eq_span`: over a field the only stable
-  line is the line of `e₁`.
+* `Module.Grassmannian.stableLocus_eq_bot_iff_toSubmodule_eq_span`: over a reduced ring the only
+  stable line is the line of `e₁`.
 -/
 
 public section
@@ -192,16 +192,17 @@ theorem map_jordanBlockStableEquiv_symm_apply {B : Type w} [CommRing B] [Algebra
   simp
 
 include ht₁ ht₂ in
-/-- **Over a field there is a single stable line**, the line of `e₁`: a point of
+/-- **Over a reduced ring there is a single stable line**, the line of `e₁`: a point of
 `G(1, K ⊗[R] M; K)` is stable under `t` exactly when it is the line spanned by `e₁`. -/
-theorem stableLocus_eq_bot_iff_toSubmodule_eq_span {K : Type w} [Field K] [Algebra R K]
+theorem stableLocus_eq_bot_iff_toSubmodule_eq_span {K : Type w} [CommRing K] [IsReduced K]
+    [Algebra R K]
     (N : G(1, K ⊗[R] M; K)) :
     N.stableLocus t = ⊥ ↔ N.toSubmodule = Submodule.span K {(1 : K) ⊗ₜ[R] b (.inl 0)} := by
   rw [stableLocus_eq_bot_iff]
   refine ⟨fun hN ↦ ?_, fun hN ↦ ?_⟩
   · -- the coordinate `a` of `N` satisfies `a² = 0`, so `a = 0`
     set a := jordanBlockStableEquiv b ht₁ ht₂ K ⟨N, hN⟩
-    have ha : a.val = 0 := pow_eq_zero_iff two_ne_zero |>.1 a.property
+    have ha : a.val = 0 := IsNilpotent.eq_zero ⟨2, a.property⟩
     have := toSubmodule_jordanBlockStableEquiv_symm_apply b ht₁ ht₂ a
     rwa [Equiv.symm_apply_apply, ha, zero_smul, add_zero] at this
   · rw [hN, Module.End.mem_invtSubmodule, Submodule.span_le, Set.singleton_subset_iff,

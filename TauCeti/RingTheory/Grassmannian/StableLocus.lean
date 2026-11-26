@@ -118,6 +118,8 @@ locus of `N`. -/
 @[simp]
 theorem stableLocus_map (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)) (t : Module.End R M) :
     (map f N).stableLocus t = Ideal.map f (N.stableLocus t) := by
+  -- adapted from the proof of `Module.Grassmannian.incidenceLocus_map`, with the image of `N`
+  -- under `t_A` in place of the second Grassmannian point
   algebraize [f.toRingHom]
   -- `algebraize` makes `f` the structure map of `B` as an `A`-algebra
   have hf : IsScalarTower.toAlgHom R A B = f := AlgHom.ext fun _ ↦ rfl
