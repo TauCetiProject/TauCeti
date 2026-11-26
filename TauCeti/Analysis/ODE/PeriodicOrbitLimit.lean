@@ -176,6 +176,13 @@ theorem sliceDefect_comp_snd_eq_zero {x : ℝ → V} (hx : ∀ t, HasDerivAt x (
     (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
   simp [sliceDefect_def, h.fderiv]
 
+/-- A map which agrees near `z` with the map `(s, t) ↦ x(t)` constant in `s`, along a solution of
+`x' = X(t, x)`, has vanishing defect at `z`. -/
+theorem sliceDefect_eq_zero_of_eventuallyEq {x : ℝ → V} (hx : ∀ t, HasDerivAt x (X t (x t)) t)
+    {z : ℝ × ℝ} (hu : u =ᶠ[𝓝 z] fun w ↦ x w.2) : sliceDefect X u z = 0 := by
+  rw [sliceDefect_def, hu.fderiv_eq, hu.eq_of_nhds, ← sliceDefect_def,
+    sliceDefect_comp_snd_eq_zero hx, Pi.zero_apply]
+
 /-- The defect of a map that is `C¹` on an open set `U` is continuous on `U`, for a continuous
 vector field. -/
 theorem continuousOn_sliceDefect {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U)
