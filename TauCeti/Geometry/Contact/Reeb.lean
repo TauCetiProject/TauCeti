@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.LinearAlgebra.Projection.SplittingEquiv
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # The Reeb vector field of a contact form
@@ -45,7 +46,9 @@ for all `w ∈ ξ`
 Evaluating `α` on it gives `α(R_(f α)) = 1 / f`
 (`TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`), which is where the factor
 `f²` in the equation for `Y` comes from. For a constant `c ≠ 0` this gives `R_(c α) = R_α / c`
-(`TauCeti.SmoothForm.IsContactForm.reebVectorField_smul`), and in particular `R_(-α) = -R_α`.
+(`TauCeti.SmoothForm.IsContactForm.reebVectorField_smul`), and in particular `R_(-α) = -R_α`; the
+same holds for a locally constant factor
+(`TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_of_isLocallyConstant`).
 
 The Reeb vector field is the characteristic vector field of the stable Hamiltonian structure
 `(α, dα)` (`TauCeti.SmoothForm.characteristicVectorField_mextDerivₗ`), so its basic equations are
@@ -77,6 +80,8 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 * `TauCeti.SmoothForm.IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff`: the
   correction `Z = f R_(f α) - R_α` is the unique such vector.
 * `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`: `α(R_(f α)) = 1 / f`.
+* `TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_of_isLocallyConstant`:
+  `R_(c α) = R_α / c` for a locally constant `c`.
 
 ## References
 
@@ -353,6 +358,20 @@ theorem IsContactForm.apply_reebVectorField_of_eq_smul (hα : α.IsContactForm)
   rw [← add_sub_cancel ((f x)⁻¹ • α.reebVectorField x) (β.reebVectorField x),
     ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
     hα.apply_reebVectorField, hy.1, smul_eq_mul, mul_one, add_zero]
+
+/-- **Reeb vector field under a locally constant rescaling.** If `β = c α` for a locally constant
+function `c`, such as a constant on each connected component, then `R_β = R_α / c`. -/
+theorem IsContactForm.reebVectorField_eq_inv_smul_of_isLocallyConstant (hα : α.IsContactForm)
+    {β : SmoothForm I M ℝ 1} {c : M → ℝ} (hc : IsLocallyConstant c)
+    (hβ : ∀ y, β.val y = c y • α.val y) (x : M) :
+    β.reebVectorField x = (c x)⁻¹ • α.reebVectorField x := by
+  have hdc : mvfderiv I c x = 0 :=
+    (Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ c x)
+      ((IsLocallyConstant.iff_eventually_eq c).1 hc x)).trans (mvfderiv_const _)
+  simpa using (hα.reebVectorField_eq_inv_smul_add_iff (hc.contMDiff x) hβ 0).2
+    ⟨(α.val x).map_coord_zero (m := ![0]) 0 rfl, fun w _ ↦ by
+      rw [hdc, zero_apply, zero_div]
+      exact (mextDeriv α.val x).map_coord_zero (m := ![0, w]) 0 rfl⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying a contact form by a nonzero constant `c` divides its Reeb vector field by `c`. -/
