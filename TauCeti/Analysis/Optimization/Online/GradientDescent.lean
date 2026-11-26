@@ -20,7 +20,7 @@ against `g t` and back onto `K`:
 
 The vector `g t` is meant to be a subgradient, at `x t`, of the loss `f t` revealed after `x t`
 is played. Since `x t` depends only on `g s` for `s < t`, the losses may be chosen adaptively.
-The start `x₀` need not lie in `K`; every later iterate does.
+The start `x₀` need not lie in `K`; every later iterate does when `K` is nonempty.
 
 The projection inequality gives the one-step inequality
 `‖x (t + 1) - u‖ ^ 2 ≤ ‖x t - u‖ ^ 2 - 2 * η t * ⟪g t, x t - u⟫ + η t ^ 2 * ‖g t‖ ^ 2` for every

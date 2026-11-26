@@ -42,7 +42,9 @@ online gradient descent.
   complete convex set is a nearest point of the set.
 * `TauCeti.exists_norm_sub_eq_infDist_of_isComplete`: a nonempty complete convex set in a real
   inner product space has a nearest point to every point.
-* `TauCeti.inner_sub_metricProj_sub_metricProj_nonpos`: the variational inequality.
+* `TauCeti.inner_sub_sub_nonpos_of_norm_sub_eq_infDist`,
+  `TauCeti.inner_sub_metricProj_sub_metricProj_nonpos`: the variational inequality, for any
+  nearest point and for the metric projection.
 * `TauCeti.metricProj_eq_iff`, `TauCeti.eq_metricProj_of_norm_sub_eq_infDist`: the variational
   inequality characterizes the metric projection, which is the unique nearest point.
 * `TauCeti.norm_metricProj_sub_sq_add_norm_sub_metricProj_sq_le`: the projection inequality.
@@ -105,6 +107,10 @@ theorem metricProj_eq_self_of_mem (hx : x ∈ s) : metricProj s x = x := by
   rw [infDist_zero_of_mem hx, norm_sub_eq_zero_iff] at hdist
   exact hdist.symm
 
+/-- `Metric.infDist x s` as an infimum of norms. -/
+private theorem infDist_eq_iInf_norm_sub : infDist x s = ⨅ y : s, ‖x - y‖ := by
+  simp [infDist_eq_iInf, dist_eq_norm]
+
 end NormedAddCommGroup
 
 section InnerProductSpace
@@ -116,7 +122,7 @@ point `x`: some `y ∈ K` has `‖x - y‖ = Metric.infDist x K`. -/
 theorem exists_norm_sub_eq_infDist_of_isComplete (hne : K.Nonempty) (hc : IsComplete K)
     (hK : Convex ℝ K) (x : E) : ∃ y ∈ K, ‖x - y‖ = infDist x K := by
   obtain ⟨y, hy, h⟩ := exists_norm_eq_iInf_of_complete_convex hne hc hK x
-  exact ⟨y, hy, by simp [h, infDist_eq_iInf, dist_eq_norm]⟩
+  exact ⟨y, hy, h.trans infDist_eq_iInf_norm_sub.symm⟩
 
 /-- The metric projection onto a nonempty complete convex set lies in the set. -/
 theorem metricProj_mem (hne : K.Nonempty) (hc : IsComplete K) (hK : Convex ℝ K) (x : E) :
@@ -128,6 +134,12 @@ theorem norm_sub_metricProj (hne : K.Nonempty) (hc : IsComplete K) (hK : Convex 
     ‖x - metricProj K x‖ = infDist x K :=
   norm_sub_metricProj_of_exists (exists_norm_sub_eq_infDist_of_isComplete hne hc hK x)
 
+/-- **The variational inequality of a nearest point.** If `K` is convex and `y ∈ K` is nearest
+to `x`, that is `‖x - y‖ = Metric.infDist x K`, then `⟪x - y, z - y⟫ ≤ 0` for every `z ∈ K`. -/
+theorem inner_sub_sub_nonpos_of_norm_sub_eq_infDist (hK : Convex ℝ K) {x y : E} (hy : y ∈ K)
+    (h : ‖x - y‖ = infDist x K) : ∀ z ∈ K, ⟪x - y, z - y⟫ ≤ 0 :=
+  (norm_eq_iInf_iff_real_inner_le_zero hK hy).1 (h.trans infDist_eq_iInf_norm_sub)
+
 /-- **The variational inequality of the metric projection.** If `K` is a complete convex set
 and `u ∈ K`, then `⟪x - metricProj K x, u - metricProj K x⟫ ≤ 0`: the segment from the
 projection to `u` makes a non-acute angle (at least `π / 2`) with the segment from the projection
@@ -135,9 +147,8 @@ to `x`. -/
 theorem inner_sub_metricProj_sub_metricProj_nonpos (hc : IsComplete K) (hK : Convex ℝ K)
     (x : E) {u : E} (hu : u ∈ K) : ⟪x - metricProj K x, u - metricProj K x⟫ ≤ 0 := by
   have h := exists_norm_sub_eq_infDist_of_isComplete ⟨u, hu⟩ hc hK x
-  have hmem := metricProj_mem_of_exists h
-  refine (norm_eq_iInf_iff_real_inner_le_zero hK hmem).1 ?_ u hu
-  simp [norm_sub_metricProj_of_exists h, infDist_eq_iInf, dist_eq_norm]
+  exact inner_sub_sub_nonpos_of_norm_sub_eq_infDist hK (metricProj_mem_of_exists h)
+    (norm_sub_metricProj_of_exists h) u hu
 
 /-- **The variational characterization of the metric projection.** For a nonempty complete
 convex set `K`, `metricProj K x = p` if and only if `p ∈ K` and `⟪x - p, z - p⟫ ≤ 0` for every
@@ -161,10 +172,9 @@ theorem metricProj_eq_iff (hne : K.Nonempty) (hc : IsComplete K) (hK : Convex �
 
 /-- Every nearest point of a complete convex set `K` to `x` is the metric projection of `x`. -/
 theorem eq_metricProj_of_norm_sub_eq_infDist (hc : IsComplete K) (hK : Convex ℝ K) {x y : E}
-    (hy : y ∈ K) (h : ‖x - y‖ = infDist x K) : y = metricProj K x := by
-  refine ((metricProj_eq_iff ⟨y, hy⟩ hc hK).2 ⟨hy, ?_⟩).symm
-  refine (norm_eq_iInf_iff_real_inner_le_zero hK hy).1 ?_
-  simp [h, infDist_eq_iInf, dist_eq_norm]
+    (hy : y ∈ K) (h : ‖x - y‖ = infDist x K) : y = metricProj K x :=
+  ((metricProj_eq_iff ⟨y, hy⟩ hc hK).2
+    ⟨hy, inner_sub_sub_nonpos_of_norm_sub_eq_infDist hK hy h⟩).symm
 
 /-- **The projection inequality.** If `K` is a complete convex set in a real inner product
 space and `u ∈ K`, then
