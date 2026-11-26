@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Geometry.Euclidean.Triangle
 import TauCeti.Analysis.Normed.Module.Ball.Touching
@@ -64,6 +64,8 @@ over a preconnected set, `IsPreconnected.eqOn_const_of_eventually_eq`.
   constant.
 * `TauCeti.PDE.pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: the
   derivative form, the outer normal derivative is positive where it exists.
+* `TauCeti.PDE.fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: the full derivative
+  form, `0 < fderiv ℝ u x₀ (x₀ - y)` when `u` is differentiable at `x₀`.
 * `TauCeti.PDE.eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax`: a
   subsolution with a nonnegative local maximum is constant near it.
 * `TauCeti.PDE.eqOn_const_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isMaxOn`: **the strong
@@ -381,6 +383,32 @@ theorem pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR :
   rw [slope_def_field, zero_smul, add_zero, sub_zero, le_div_iff_of_neg ht.2]
   linarith
 
+/-- **Hopf's boundary-point lemma, full derivative form.** For a subsolution satisfying
+`pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv` and differentiable at the
+contact point, the derivative applied to the outward radius `x₀ - y` is positive. -/
+theorem fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR : 0 < R)
+    (hx₀ : x₀ ∈ sphere y R) (hlam : 0 < lam)
+    (ha : ∀ x ∈ ball y R, ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (htr : ∀ x ∈ ball y R, (a x).trace ≤ Λ) (hb : ∀ x ∈ ball y R, ‖b x‖ ≤ β)
+    (hcγ : ∀ x ∈ ball y R, c x ≤ γ)
+    (hcd : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x) (hderiv : DifferentiableAt ℝ u x₀)
+    (hsub : ∀ x ∈ ball y R, c x * u x ≤
+      ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ u x (b x))
+    (hlt : ∀ x ∈ ball y R, u x < u x₀)
+    (hsign : (∀ x ∈ ball y R, c x = 0) ∨ ((∀ x ∈ ball y R, 0 ≤ c x) ∧ 0 ≤ u x₀) ∨ u x₀ = 0) :
+    0 < fderiv ℝ u x₀ (x₀ - y) := by
+  set ν := R⁻¹ • (x₀ - y)
+  have hline : HasDerivAt (fun t : ℝ ↦ x₀ + t • ν) ν 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const ν).const_add x₀
+  have hd : HasDerivAt (fun t : ℝ ↦ u (x₀ + t • ν)) (fderiv ℝ u x₀ ν) 0 :=
+    hderiv.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hline (by simp)
+  have hpos := pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hR hx₀ hlam ha
+    htr hb hcγ hcd hderiv.continuousAt.continuousWithinAt hsub hlt hsign
+    hd.hasDerivWithinAt
+  rw [map_smul, smul_eq_mul] at hpos
+  exact pos_of_mul_pos_right hpos (inv_nonneg.mpr hR.le)
+
 /-- A subsolution as in Hopf's lemma with `c ≥ 0` and `u x₀ ≥ 0` that is differentiable at `x₀`
 has no local maximum there: its derivative along the outer normal is positive. -/
 private theorem not_isLocalMax_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR : 0 < R)
@@ -395,16 +423,9 @@ private theorem not_isLocalMax_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR : 
     (hlt : ∀ x ∈ ball y R, u x < u x₀) (hnonneg : 0 ≤ u x₀) :
     ¬IsLocalMax u x₀ := by
   intro hmax
-  set ν := R⁻¹ • (x₀ - y)
-  have hline : HasDerivAt (fun t : ℝ ↦ x₀ + t • ν) ν 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const ν).const_add x₀
-  have hd : HasDerivAt (fun t : ℝ ↦ u (x₀ + t • ν)) (fderiv ℝ u x₀ ν) 0 :=
-    hderiv.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hline (by simp)
-  have hpos := pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hR hx₀ hlam ha
-    htr hb hcγ hcd hderiv.continuousAt.continuousWithinAt hsub hlt (Or.inr (Or.inl ⟨hc, hnonneg⟩))
-    hd.hasDerivWithinAt
-  rw [hmax.fderiv_eq_zero, _root_.zero_apply] at hpos
-  exact lt_irrefl _ hpos
+  have hpos := fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hR hx₀ hlam ha
+    htr hb hcγ hcd hderiv hsub hlt (Or.inr (Or.inl ⟨hc, hnonneg⟩))
+  simp only [hmax.fderiv_eq_zero, _root_.zero_apply, lt_self_iff_false] at hpos
 
 /-- **Local strong maximum principle** for `L u = ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu` with zeroth-order
 coefficient `c`. Let `u` be `C²` at a local maximum point `x` with `0 ≤ u x`, and near `x` let `a`

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Nilpotent.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.Adjoin.Singleton
+import TauCeti.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
@@ -33,6 +34,9 @@ For a unipotent unit, integral multiples of its logarithm exponentiate to its in
 These two formulas are adapted from `yuma-mizuno-lean/Mei`, commit
 `2f6cbcc81315ba2d32fd3e4bfc4c592476cf5471`, `Mei/RingTheory/Nilpotent/Log.lean`
 (Apache 2.0).
+Conjugation by a unit commutes with the finite logarithm (`Units.log_conj`), and the logarithm of
+an integral power of a unipotent unit is the corresponding multiple of its logarithm
+(`Units.log_zpow`).
 
 ## References
 
@@ -65,7 +69,7 @@ theorem log_eq_sum {a : A} {n : ℕ} (hn : (a - 1) ^ n = 0) :
   classical
   rw [log_def]
   apply sum_subset (range_mono (TauCeti.nilpotencyClass_le_of_pow_eq_zero hn))
-  intro i hi hni
+  intro i _ hni
   rw [mem_range, not_lt] at hni
   rw [pow_eq_zero_of_le hni (pow_nilpotencyClass ⟨n, hn⟩), smul_zero]
 
@@ -113,7 +117,7 @@ theorem subst_C_exp {a : A} (ha : IsNilpotent a) :
   obtain ⟨n, hn⟩ := ha
   rw [subst_C_eq_C_aeval_trunc hn, IsNilpotent.exp_eq_sum hn]
   congr 1
-  rw [Polynomial.aeval_def, eval₂_trunc_eq_sum_range]
+  rw [aeval_trunc]
   simp [coeff_exp, Algebra.smul_def]
 
 /-- The formal logarithm at a nilpotent constant is the finite logarithm of one plus it. -/
@@ -122,7 +126,7 @@ theorem subst_C_log {a : A} (ha : IsNilpotent a) :
   obtain ⟨n, hn⟩ := ha
   rw [subst_C_eq_C_aeval_trunc hn, IsNilpotent.log_eq_sum (n := n) (by simpa using hn)]
   congr 1
-  rw [Polynomial.aeval_def, eval₂_trunc_eq_sum_range]
+  rw [aeval_trunc]
   apply Finset.sum_congr rfl
   intro i _
   by_cases hi : i = 0 <;> simp [coeff_log, hi, Algebra.smul_def]
@@ -228,9 +232,9 @@ theorem Commute.nilpotentLog {A : Type*} [Ring A] [Algebra ℚ A] {a b : A}
     (h : Commute a b) : Commute (IsNilpotent.log a) (IsNilpotent.log b) := by
   rw [IsNilpotent.log_def, IsNilpotent.log_def]
   apply Commute.sum_left
-  intro i hi
+  intro i _
   apply Commute.sum_right
-  intro j hj
+  intro j _
   have hab : Commute (a - 1) (b - 1) :=
     (h.sub_left (Commute.one_left b)).sub_right (Commute.one_right (a - 1))
   exact ((hab.pow_pow i j).smul_left _).smul_right _
@@ -248,6 +252,20 @@ theorem IsNilpotent.log_mul_of_commute {A : Type*} [Ring A] [Algebra ℚ A]
     (hlog.isNilpotent_add (IsNilpotent.isNilpotent_log ha) (IsNilpotent.isNilpotent_log hb))]
 
 namespace Units
+
+/-- Conjugation by a unit commutes with the finite logarithm. When `a - 1` is not nilpotent,
+both sides are the junk value `0`. -/
+theorem log_conj {A : Type*} [Ring A] [Module ℚ A] (v : Aˣ) (a : A) :
+    IsNilpotent.log ((v : A) * a * (v⁻¹ : Aˣ)) = v * IsNilpotent.log a * (v⁻¹ : Aˣ) := by
+  have hsub : (v : A) * a * (v⁻¹ : Aˣ) - 1 = v * (a - 1) * (v⁻¹ : Aˣ) := by
+    simp [mul_sub, sub_mul, mul_assoc]
+  have hclass : nilpotencyClass ((v : A) * a * (v⁻¹ : Aˣ) - 1) = nilpotencyClass (a - 1) := by
+    simp only [nilpotencyClass, hsub, v.conj_pow]
+    congr 1
+    ext k
+    simp [mul_assoc]
+  rw [IsNilpotent.log_def, IsNilpotent.log_def, hclass, hsub]
+  simp only [v.conj_pow, Finset.mul_sum, Finset.sum_mul, mul_smul_comm, smul_mul_assoc]
 
 /-- The exponential unit of the logarithm of a unipotent unit is the original unit. -/
 @[simp]
@@ -267,5 +285,12 @@ theorem exp_zsmul_log {A : Type*} [Ring A] [Algebra ℚ A]
   have h := (TauCeti.expSMulHom ℤ (IsNilpotent.isNilpotent_log hu)).map_zpow
     (Multiplicative.ofAdd (1 : ℤ)) n
   simpa [TauCeti.expSMulHom_apply, he] using congrArg (fun v : Aˣ => (v : A)) h
+
+/-- The finite logarithm of an integral power of a unipotent unit is the corresponding integral
+multiple of its logarithm. -/
+theorem log_zpow {A : Type*} [Ring A] [Algebra ℚ A]
+    (u : Aˣ) (hu : IsNilpotent ((u : A) - 1)) (n : ℤ) :
+    IsNilpotent.log ((u ^ n : Aˣ) : A) = n • IsNilpotent.log (u : A) := by
+  rw [← exp_zsmul_log u hu n, IsNilpotent.log_exp ((IsNilpotent.isNilpotent_log hu).smul n)]
 
 end Units

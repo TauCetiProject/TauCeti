@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NewtonPolygon.Irreducible
 public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 public import TauCeti.RingTheory.PowerSeries.EvalAt
@@ -48,9 +49,12 @@ the slope-`m` factor.
   disjoint finite slopes (not both vanishing at `0`) are coprime.
 * `Polynomial.IsPureSlopeFactorization.natDegree_apply`,
   `Polynomial.IsPureSlopeFactorization.mulSupport_eq`,
-  `Polynomial.IsPureSlopeFactorization.pairwise_isCoprime` and
-  `Polynomial.IsPureSlopeFactorization.unique`: degree determination, support, pairwise coprimality
-  and uniqueness of pure slope factorisations.
+  `Polynomial.IsPureSlopeFactorization.pairwise_isCoprime`,
+  `Polynomial.IsPureSlopeFactorization.exists_isCoprime_mul_eq` and
+  `Polynomial.IsPureSlopeFactorization.unique`: degree determination, support, pairwise coprimality,
+  coprime cofactors and uniqueness of pure slope factorisations.
+* `Polynomial.IsPureSlopeFactorization.irreducible_apply`: for a valuation taking integer values on
+  nonzero elements, a factor whose degree is the denominator of its rational slope is irreducible.
 * `Polynomial.exists_mul_newtonSlopes_filter_le`: threshold factorisation `f = P * Q` separating
   finite slopes `≤ σ` from finite slopes `> σ`.
 * `Polynomial.existsUnique_isPureSlopeFactorization`,
@@ -248,11 +252,7 @@ theorem newtonSlopes_apply (hg : f.IsPureSlopeFactorization v g) (m : ℝ) :
   have hc0 : (g m).coeff 0 ≠ 0 := by
     rw [hg.coeff_zero m]
     exact fun h => WithTop.zero_ne_top (v.map_one.symm.trans (h ▸ v.map_zero))
-  have hcard : ((g m).newtonSlopes v).card = (g m).natDegree := by
-    rw [card_newtonSlopes (g m) v hv,
-      natTrailingDegree_eq_zero_of_constantCoeff_ne_zero hc0, Nat.sub_zero]
-  rw [← hcard, Multiset.eq_replicate_card]
-  exact hg.newtonSlopes_eq m
+  exact newtonSlopes_eq_replicate_of_forall_eq hv hc0 (hg.newtonSlopes_eq m)
 
 /-- The degree of the slope-`m` factor is the multiplicity of `m` in `f.newtonSlopes v`. -/
 theorem natDegree_apply (hg : f.IsPureSlopeFactorization v g) (m : ℝ) :
@@ -314,6 +314,20 @@ theorem pairwise_isCoprime (hg : f.IsPureSlopeFactorization v g) :
   isCoprime_of_forall_mem_newtonSlopes_eq v (hg.apply_ne_zero m₁) (hg.apply_ne_zero m₂)
     (.inl (by simp [hg.coeff_zero m₁])) (hg.newtonSlopes_eq m₁) (hg.newtonSlopes_eq m₂) hne
 
+/-- Each factor `g m` of a pure slope factorisation of `f` over a field is a coprime factor of `f`:
+`f = g m * c` with `g m` and `c` coprime. -/
+theorem exists_isCoprime_mul_eq (hg : f.IsPureSlopeFactorization v g) (m : ℝ) :
+    ∃ c : K[X], IsCoprime (g m) c ∧ g m * c = f := by
+  have hv0 : ∀ x, v x = ⊤ → x = 0 := fun _ => v.top_iff.mp
+  set T := (f.newtonSlopes v).toFinset
+  refine ⟨∏ x ∈ T.erase m, g x, IsCoprime.prod_right fun x hx =>
+    hg.pairwise_isCoprime (Finset.ne_of_mem_erase hx).symm, ?_⟩
+  by_cases hm : m ∈ T
+  · rw [Finset.mul_prod_erase T g hm, hg.prod_toFinset_eq hv0]
+  · rw [Finset.erase_eq_of_notMem hm,
+      (hg.apply_eq_one_iff hv0).mpr (by simpa [T, Multiset.mem_toFinset] using hm), one_mul,
+      hg.prod_toFinset_eq hv0]
+
 /-- Over a field, a polynomial has at most one pure slope factorisation. -/
 theorem unique (hg₁ : f.IsPureSlopeFactorization v g₁)
     (hg₂ : f.IsPureSlopeFactorization v g₂) : g₁ = g₂ := by
@@ -343,11 +357,21 @@ theorem unique (hg₁ : f.IsPureSlopeFactorization v g₁)
     obtain ⟨c, -, hcu⟩ := Polynomial.isUnit_iff.mp u.isUnit
     rw [← hcu] at hu
     have hc1 : c = 1 := by
-      have h0 := congrArg (coeff · 0) hu
+      have h0 := congrArg (AddMonoidAlgebra.coeff · 0) hu
       simpa [mul_coeff_zero, hg₁.coeff_zero m, hg₂.coeff_zero m] using h0
     simpa [hc1] using hu
   · have hm' : m ∉ f.newtonSlopes v := by simpa [Multiset.mem_toFinset] using hm
     rw [(hg₁.apply_eq_one_iff hv0).mpr hm', (hg₂.apply_eq_one_iff hv0).mpr hm']
+
+/-- If the valuation takes integer values on nonzero elements and the rational slope `q` occurs in
+`f.newtonSlopes v` with multiplicity equal to its denominator, then the slope-`q` factor `g q` of
+a pure slope factorisation of `f` is irreducible. When the multiplicity is a larger multiple of the
+denominator, the Newton polygon alone does not decide irreducibility. -/
+theorem irreducible_apply (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ))
+    (hg : f.IsPureSlopeFactorization v g) {q : ℚ} (hq : (f.newtonSlopes v).count (q : ℝ) = q.den) :
+    Irreducible (g q) :=
+  irreducible_of_forall_mem_newtonSlopes_eq hint (by simp [hg.coeff_zero q])
+    (hg.newtonSlopes_eq q) (by rw [hg.natDegree_apply (fun _ => v.top_iff.mp), hq])
 
 end IsPureSlopeFactorization
 
@@ -383,8 +407,7 @@ theorem exists_mul_newtonSlopes_filter_le {f : K[X]} (hf0 : f.coeff 0 = 1) (σ :
   obtain ⟨l, j, hface⟩ := exists_isFiniteFace_newtonPolygon
     (newtonPolygon_ne_top_of_ne_zero (fun _ => v.top_iff.mp) hf_ne) σ
   have hfd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (f : K⟦X⟧) :=
-    PowerSeries.isDistinguished_of_isFiniteFace v hb hv
-      (TauCeti.PowerSeries.isRestricted_polynomial f) (f.newtonPolygon_coe v ▸ hface)
+    PowerSeries.isDistinguished_of_isFiniteFace v hb hv (f.newtonPolygon_coe v ▸ hface)
   obtain ⟨e, ω, he, hωm, heω⟩ := hfd.exists_isUnit_isMonicOfDegree_mul_eq
     hfd.coeff_ne_zero.isUnit hc (TauCeti.PowerSeries.isRestricted_polynomial f)
   have hωd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (ω : K⟦X⟧) :=

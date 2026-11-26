@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -25,9 +26,16 @@ before mapping to the coefficient ring. In particular, the definition has the in
 The first two degrees are reduced to ordinary character sums. These forms supply the constant
 terms used in Eisenstein series with character.
 
+The scalar `-Bₖ,χ / k` is the algebraic Dirichlet value
+`DirichletCharacter.algebraicDirichletValue`. For complex values and `k ≥ 1` it is the L-value
+`L(χ, 1 - k)`, as proved in
+`TauCeti.NumberTheory.DirichletCharacter.LFunction.NonpositiveIntegers`. It is defined here,
+without any analysis, so that complex and `p`-adic L-values can be compared through it.
+
 ## Main definitions
 
 * `DirichletCharacter.generalizedBernoulli` is the generalized Bernoulli number `Bₙ,χ`.
+* `DirichletCharacter.algebraicDirichletValue χ k` is the scalar `-Bₖ,χ / k`.
 
 ## Main results
 
@@ -40,6 +48,8 @@ terms used in Eisenstein series with character.
   `DirichletCharacter.generalizedBernoulli_one` reduce the first two degrees to character sums.
 * `DirichletCharacter.generalizedBernoulli_zero_of_ne_one` gives `B₀,χ = 0` for a nontrivial
   character, while `DirichletCharacter.generalizedBernoulli_zero_one` evaluates the trivial one.
+* `DirichletCharacter.generalizedBernoulli_one_kroneckerChar_neg_three` evaluates `B₁,χ₋₃`
+  as the image of `-1 / 3` in any rational coefficient algebra.
 * `DirichletCharacter.generalizedBernoulli_one_of_ne_one` and
   `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_ne_one` give the two useful forms
   of `B₁,χ` for a nontrivial character, and
@@ -49,6 +59,11 @@ terms used in Eisenstein series with character.
   `k ≥ 2` from the representatives in `{0, …, N - 1}`, since `Bₖ(0) = Bₖ(1)`.
 * `DirichletCharacter.generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg` gives `Bₖ,χ = 0` when
   the parities of `χ` and `k` differ, except for `k = 1` at modulus one.
+* `DirichletCharacter.map_algebraicDirichletValue`,
+  `DirichletCharacter.algebraicDirichletValue_modOne` and
+  `DirichletCharacter.algebraicDirichletValue_eq_zero_of_apply_neg_one_eq_neg` give
+  naturality under `ℚ`-algebra maps, the modulus-one value and parity vanishing for
+  `-Bₖ,χ / k`.
 
 ## References
 
@@ -150,6 +165,33 @@ theorem generalizedBernoulli_one [NeZero N] (χ : DirichletCharacter R N) :
   simp only [generalizedBernoulli_def, Nat.cast_one, sub_self, zpow_zero, map_one, one_mul,
     Polynomial.bernoulli_one, eval_sub, eval_X, eval_C, map_sub, mul_sub,
     Finset.sum_sub_distrib, Finset.sum_mul, mul_comm (algebraMap ℚ R 2⁻¹)]
+
+section KroneckerNegThree
+
+local instance : NeZero (-3 : ℤ).natAbs := ⟨by decide⟩
+
+/-- The first generalized Bernoulli number for the quadratic character `(-3 / ·)` is the
+image of `-1 / 3` in the coefficient ring. -/
+@[simp]
+theorem generalizedBernoulli_one_kroneckerChar_neg_three :
+    (TauCeti.kroneckerChar R (-3) (by decide) (by decide)).generalizedBernoulli 1 =
+      algebraMap ℚ R (-1 / 3) := by
+  have hU : (Finset.univ : Finset (ZMod (-3 : ℤ).natAbs)) = {0, 1, 2} := by decide
+  rw [generalizedBernoulli_one, hU]
+  have h1 : (1 : ZMod (-3 : ℤ).natAbs) ≠ 2 := by decide
+  have h01 : (0 : ZMod (-3 : ℤ).natAbs) ≠ 1 := by decide
+  have h02 : (0 : ZMod (-3 : ℤ).natAbs) ≠ 2 := by decide
+  simp only [Finset.sum_insert, Finset.sum_singleton, Finset.mem_insert, Finset.mem_singleton,
+    h1, h01, h02, or_self, not_false_eq_true]
+  have hv1 : (1 : ZMod (-3 : ℤ).natAbs).val = 1 := by decide
+  have hv2 : (2 : ZMod (-3 : ℤ).natAbs).val = 2 := by decide
+  have h8 : ZMod.χ₈ (-3 : ZMod 8) = -1 := by decide
+  norm_num [TauCeti.kroneckerChar_apply, h01.symm, h02.symm, hv1, hv2,
+    TauCeti.kroneckerSym_two_right, h8]
+  rw [← sub_eq_add_neg, ← map_sub]
+  norm_num
+
+end KroneckerNegThree
 
 /-- For a nontrivial character, `B₁,χ` is the character-weighted sum of the rational residues
 `a / N`; the constant term of the first Bernoulli polynomial cancels. -/
@@ -263,5 +305,64 @@ theorem generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval [NeZero N]
     rw [add_zero, zero_pow (by omega : k - 1 ≠ 0), mul_zero, add_zero] at h1
     simp [h1]
   · simp [ha]
+
+section AlgebraicDirichletValue
+
+variable [NeZero N]
+
+/-- The **algebraic Dirichlet value** `-Bₖ,χ / k` of a character `χ` with values in a
+`ℚ`-algebra. For `k ≥ 1` and complex values it is `L(χ, 1 - k)`
+(`DirichletCharacter.LFunction_one_sub_natCast` in
+`TauCeti.NumberTheory.DirichletCharacter.LFunction.NonpositiveIntegers`). At `k = 0` it is `0`.
+-/
+def algebraicDirichletValue (χ : DirichletCharacter R N) (k : ℕ) : R :=
+  -((k : ℚ)⁻¹ • χ.generalizedBernoulli k)
+
+/-- The defining formula of `DirichletCharacter.algebraicDirichletValue`. -/
+theorem algebraicDirichletValue_def (χ : DirichletCharacter R N) (k : ℕ) :
+    χ.algebraicDirichletValue k = -((k : ℚ)⁻¹ • χ.generalizedBernoulli k) := by
+  rw [algebraicDirichletValue]
+
+/-- The algebraic Dirichlet value vanishes in degree zero. -/
+@[simp]
+theorem algebraicDirichletValue_zero (χ : DirichletCharacter R N) :
+    χ.algebraicDirichletValue 0 = 0 := by
+  simp [algebraicDirichletValue_def]
+
+/-- Over a field, the algebraic Dirichlet value is `-Bₖ,χ / k`. -/
+theorem algebraicDirichletValue_eq_neg_div {F : Type*} [Field F] [Algebra ℚ F]
+    (χ : DirichletCharacter F N) (k : ℕ) :
+    χ.algebraicDirichletValue k = -χ.generalizedBernoulli k / k := by
+  rw [algebraicDirichletValue_def, Algebra.smul_def, map_inv₀, map_natCast, neg_div,
+    div_eq_inv_mul]
+
+/-- Algebraic Dirichlet values commute with every `ℚ`-algebra map of the coefficients. -/
+@[simp]
+theorem map_algebraicDirichletValue {S : Type*} [CommRing S] [Algebra ℚ S]
+    (χ : DirichletCharacter R N) (f : R →ₐ[ℚ] S) (k : ℕ) :
+    f (χ.algebraicDirichletValue k) =
+      algebraicDirichletValue (χ.ringHomComp (f : R →+* S) : DirichletCharacter S N) k := by
+  rw [algebraicDirichletValue_def, algebraicDirichletValue_def, map_neg, map_smul,
+    map_generalizedBernoulli]
+
+/-- At modulus one the algebraic Dirichlet value is the image of `-B'ₖ / k`, with the
+positive-first-convention Bernoulli number `bernoulli'`. In degree one it is `-1 / 2`, the value
+`ζ(0)`. -/
+@[simp]
+theorem algebraicDirichletValue_modOne (χ : DirichletCharacter R 1) (k : ℕ) :
+    χ.algebraicDirichletValue k = algebraMap ℚ R (-_root_.bernoulli' k / k) := by
+  rw [algebraicDirichletValue_def, generalizedBernoulli_modOne, Algebra.smul_def, ← map_mul,
+    ← map_neg, neg_div, div_eq_inv_mul]
+
+/-- **Parity vanishing.** The algebraic Dirichlet value vanishes when `χ (-1) = -(-1) ^ k`,
+except for `k = 1` at modulus one, where it is `-1 / 2`. -/
+@[simp]
+theorem algebraicDirichletValue_eq_zero_of_apply_neg_one_eq_neg {χ : DirichletCharacter R N}
+    {k : ℕ} (hk : k ≠ 1 ∨ N ≠ 1) (hχ : χ (-1) = -(-1) ^ k) :
+    χ.algebraicDirichletValue k = 0 := by
+  rw [algebraicDirichletValue_def, generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg hk hχ,
+    smul_zero, neg_zero]
+
+end AlgebraicDirichletValue
 
 end DirichletCharacter

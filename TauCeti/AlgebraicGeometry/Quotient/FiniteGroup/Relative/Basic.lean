@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Quotient.Affine
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
 import Mathlib.RingTheory.RingHom.Injective
 import TauCeti.AlgebraicGeometry.Morphisms.Epi
+import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.UniversalProperty
 import TauCeti.RingTheory.Invariant.Localization
 
@@ -253,7 +254,7 @@ theorem isLocalization_invariantSections_basicOpen [Finite G] [A.X.IsQuasicohere
       (.powers (algebraMap Γ(X, U) (invariantSections ρ U) r))) Γ(A.X, X.basicOpen r) := by
     rw [Algebra.algebraMapSubmonoid_powers]
     exact A.isLocalization_basicOpen hU r
-  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff _
+  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff
     (fun g ↦ (sectionsAlgHom (ρ g).asIso.hom U).toRingHom)
     (fun g ↦ (sectionsAlgHom (ρ g).asIso.hom (X.basicOpen r)).toRingHom)
     (fun g ↦ sectionsAlgHom_restrictSections _ i) Subtype.val_injective (hmem U)
@@ -287,17 +288,15 @@ lemma relativeSpecMap_invariantSubalgebraPresheaf_relativeSpecπ (g : G) :
 
 /-- The quotient projection is integral. -/
 instance : IsIntegralHom (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
-  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @IsIntegralHom).mpr fun U ↦ ?_
   exact IsIntegralHom.SpecMap_iff.mpr
-    (algebraMap_isIntegral_iff.mpr (isIntegral_invariantSections ρ U.1))
+    (algebraMap_isIntegral_iff.mpr (isIntegral_invariantSections ρ U.val))
 
 /-- The quotient projection is surjective. -/
 instance : Surjective (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
   refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @Surjective).mpr fun U ↦ ?_
-  have := isIntegral_invariantSections ρ U.1
-  exact ⟨Algebra.IsIntegral.comap_surjective (invariantSections ρ U.1) Γ(A.X, U.1)⟩
+  have := isIntegral_invariantSections ρ U.val
+  exact ⟨Algebra.IsIntegral.comap_surjective (invariantSections ρ U.val) Γ(A.X, U.val)⟩
 
 /-- The quotient projection is finite when `Spec_X(A)` is locally of finite type over `X`. -/
 instance isFinite_invariantSubalgebraPresheaf_relativeSpecπ

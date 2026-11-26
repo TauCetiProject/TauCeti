@@ -34,10 +34,9 @@ Both trade a stubborn `g` for a better-behaved one without leaving the coset.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`HeckeRIngs/AbstractHeckeRing/Commutativity.lean`,
-<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), per the
-ModularForms roadmap's dependency policy, rebuilt on the one-sided multiplicity count of the
-vendored Mathlib stack. The two reductions are generalised from `Gamma0_AL_scalar_reduce` and
-`bar_mem_DC_of_bar_conj_mem` in that project's
+<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), rebuilt on the
+one-sided multiplicity count `DoubleCoset.multiplicity_eq_card_filter`. The two reductions are
+generalised from `Gamma0_AL_scalar_reduce` and `bar_mem_DC_of_bar_conj_mem` in that project's
 [`HeckeRIngs/GLn/CongruenceHecke/AtkinLehner.lean`](https://github.com/CBirkbeck/AINTLIB),
 Apache-2.0 at commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`: there they are stated for the
 Atkin-Lehner anti-involution of `Γ₀(N)`, and the conjugation one is proved by hand for an
@@ -98,7 +97,7 @@ by which witness appears. -/
 def bar (x : G) (hx : x ∈ Δ) : G := ((ι.toFun ⟨x, hx⟩).unop : G)
 
 /-- The anti-involution maps `Δ` into itself. -/
-lemma bar_mem_Δ (x : G) (hx : x ∈ Δ) : ι.bar x hx ∈ Δ := ((ι.toFun ⟨x, hx⟩).unop).2
+lemma bar_mem_Δ (x : G) (hx : x ∈ Δ) : ι.bar x hx ∈ Δ := ((ι.toFun ⟨x, hx⟩).unop).property
 
 /-- `bar` does not depend on the membership witness; equal elements have equal images. -/
 lemma bar_congr {x y : G} (e : x = y) (hx : x ∈ Δ) (hy : y ∈ Δ) :
@@ -136,7 +135,7 @@ def ofAmbient (f : G →* Gᵐᵒᵖ) (hinv : ∀ g, (f (f g).unop).unop = g)
     (hH : ∀ g ∈ H, (f g).unop ∈ H) (hΔ : ∀ g ∈ Δ, (f g).unop ∈ Δ) :
     HeckeAntiInvolution Δ H where
   toFun :=
-    { toFun g := MulOpposite.op ⟨(f g).unop, hΔ g g.2⟩
+    { toFun g := MulOpposite.op ⟨(f g).unop, hΔ g g.property⟩
       map_one' := by
         apply MulOpposite.unop_injective
         exact Subtype.ext (by simp)
@@ -163,17 +162,17 @@ lemma bar_mem_doubleCoset [IsHeckeTriple Δ H H] {a x : G} (ha : a ∈ Δ) (hx :
 
 /-- The induced action of the anti-involution on the double cosets `H\Δ/H`. -/
 noncomputable def onHeckeCoset (D : HeckeCoset Δ H H) : HeckeCoset Δ H H :=
-  HeckeCoset.mk H H ⟨ι.bar (D.rep : G) D.rep.2, ι.bar_mem_Δ _ _⟩
+  HeckeCoset.mk H H ⟨ι.bar (D.rep : G) D.rep.property, ι.bar_mem_Δ _ _⟩
 
 /-- `onHeckeCoset` sends the class of `g` to the class of `bar g`. -/
 @[simp] lemma onHeckeCoset_mk [IsHeckeTriple Δ H H] (g : Δ) :
     ι.onHeckeCoset (HeckeCoset.mk H H g) =
-      HeckeCoset.mk H H ⟨ι.bar (g : G) g.2, ι.bar_mem_Δ _ _⟩ := by
+      HeckeCoset.mk H H ⟨ι.bar (g : G) g.property, ι.bar_mem_Δ _ _⟩ := by
   refine HeckeCoset.eq_iff.mpr ?_
   have hrep : ((HeckeCoset.mk H H g).rep : G) ∈ doubleCoset (g : G) (H : Set G) H := by
     have h := HeckeCoset.rep_mem (HeckeCoset.mk H H g)
     rwa [HeckeCoset.toSet_mk] at h
-  exact doubleCoset_eq_of_mem (ι.bar_mem_doubleCoset g.2 _ hrep)
+  exact doubleCoset_eq_of_mem (ι.bar_mem_doubleCoset g.property _ hrep)
 
 /-- The induced action on double cosets is an involution. -/
 @[simp] lemma onHeckeCoset_onHeckeCoset [IsHeckeTriple Δ H H] (D : HeckeCoset Δ H H) :
@@ -181,13 +180,13 @@ noncomputable def onHeckeCoset (D : HeckeCoset Δ H H) : HeckeCoset Δ H H :=
   induction D using HeckeCoset.induction with
   | h g =>
     rw [ι.onHeckeCoset_mk, ι.onHeckeCoset_mk]
-    exact congrArg (HeckeCoset.mk H H) (Subtype.ext (ι.bar_bar g.2 _))
+    exact congrArg (HeckeCoset.mk H H) (Subtype.ext (ι.bar_bar g.property _))
 
 /-- When the anti-involution fixes every double coset, `bar g` lies in the double coset of
 `g` for every `g ∈ Δ`. -/
 lemma bar_mem_doubleCoset_self [IsHeckeTriple Δ H H]
     (h_fix : ∀ D : HeckeCoset Δ H H, ι.onHeckeCoset D = D) (g : Δ) :
-    ι.bar (g : G) g.2 ∈ doubleCoset (g : G) (H : Set G) H := by
+    ι.bar (g : G) g.property ∈ doubleCoset (g : G) (H : Set G) H := by
   have hg := congrArg HeckeCoset.toSet ((ι.onHeckeCoset_mk g).symm.trans (h_fix _))
   rw [HeckeCoset.toSet_mk, HeckeCoset.toSet_mk] at hg
   exact hg ▸ mem_doubleCoset_self H H _
@@ -233,8 +232,9 @@ private lemma exists_bar_eq [IsHeckeTriple Δ H H]
     (h_fix : ∀ D : HeckeCoset Δ H H, ι.onHeckeCoset D = D) {g : Δ} {x : G}
     (hx : x ∈ doubleCoset (g : G) (H : Set G) H) :
     ∃ a ∈ H, ∃ b ∈ H,
-      ι.bar x (IsHeckeTriple.mem_of_mem_doubleCoset g.2 hx) = a * (g : G) * b := by
-  have hbar := ι.bar_mem_doubleCoset g.2 (IsHeckeTriple.mem_of_mem_doubleCoset g.2 hx) hx
+      ι.bar x (IsHeckeTriple.mem_of_mem_doubleCoset g.property hx) = a * (g : G) * b := by
+  have hbar := ι.bar_mem_doubleCoset g.property (IsHeckeTriple.mem_of_mem_doubleCoset g.property hx)
+      hx
   rw [doubleCoset_eq_of_mem (ι.bar_mem_doubleCoset_self h_fix g)] at hbar
   exact mem_doubleCoset.mp hbar
 
@@ -268,30 +268,30 @@ one-sided term is assumed to lie there. `g₂` is an arbitrary group element —
 constrains it to `Δ`. -/
 private lemma inv_mul_mul_inv_mul_mem_doubleCoset_of_bar_eq (hHΔ : H.toSubmonoid ≤ Δ)
     (g₁ d : Δ) g₂ {aD bD : G}
-    (hbD : bD ∈ H) (hbarD : ι.bar (d : G) d.2 = aD * (d : G) * bD)
+    (hbD : bD ∈ H) (hbarD : ι.bar (d : G) d.property = aD * (d : G) * bD)
     {a₁ b₁ : G} (ha₁ : a₁ ∈ H) (hb₁ : b₁ ∈ H)
-    (hbar₁ : ι.bar (g₁ : G) g₁.2 = a₁ * (g₁ : G) * b₁)
+    (hbar₁ : ι.bar (g₁ : G) g₁.property = a₁ * (g₁ : G) * b₁)
     {i : DecompQuotient H H (g₁ : G)}
     (hxΔ : ((i.out : G) * g₁)⁻¹ * (d : G) ∈ Δ)
     {a b : G} (hb : b ∈ H)
     (hbar : ι.bar (((i.out : G) * g₁)⁻¹ * (d : G)) hxΔ = a * g₂ * b) :
     (aD⁻¹ * a * g₂)⁻¹ * (d : G) ∈ doubleCoset (g₁ : G) (H : Set G) H := by
-  have houtΔ : ((i.out : H) : G) ∈ Δ := hHΔ (i.out : H).2
-  have houtg₁Δ : (i.out : G) * (g₁ : G) ∈ Δ := mul_mem houtΔ g₁.2
+  have houtΔ : ((i.out : H) : G) ∈ Δ := hHΔ (i.out : H).property
+  have houtg₁Δ : (i.out : G) * (g₁ : G) ∈ Δ := mul_mem houtΔ g₁.property
   have hd : (d : G) = (i.out : G) * (g₁ : G) * (((i.out : G) * g₁)⁻¹ * (d : G)) := by
     group
-  have h2 : ι.bar (d : G) d.2 =
+  have h2 : ι.bar (d : G) d.property =
       ι.bar (((i.out : G) * g₁)⁻¹ * (d : G)) hxΔ *
-        (ι.bar (g₁ : G) g₁.2 * ι.bar (i.out : G) houtΔ) := by
-    rw [ι.bar_congr hd d.2 (mul_mem houtg₁Δ hxΔ), ι.bar_mul houtg₁Δ hxΔ,
-      ι.bar_mul houtΔ g₁.2]
+        (ι.bar (g₁ : G) g₁.property * ι.bar (i.out : G) houtΔ) := by
+    rw [ι.bar_congr hd d.property (mul_mem houtg₁Δ hxΔ), ι.bar_mul houtg₁Δ hxΔ,
+      ι.bar_mul houtΔ g₁.property]
   have hkey : aD * (d : G) * bD =
       a * g₂ * b * (a₁ * (g₁ : G) * b₁) * ι.bar (i.out : G) houtΔ := by
     rw [← hbarD, ← hbar, ← hbar₁, h2]
     group
   refine mem_doubleCoset.mpr ⟨b * a₁, H.mul_mem hb ha₁,
     b₁ * ι.bar (i.out : G) houtΔ * bD⁻¹,
-    H.mul_mem (H.mul_mem hb₁ (ι.bar_mem_H houtΔ (i.out : H).2)) (H.inv_mem hbD), ?_⟩
+    H.mul_mem (H.mul_mem hb₁ (ι.bar_mem_H houtΔ (i.out : H).property)) (H.inv_mem hbD), ?_⟩
   have hADd : aD * (d : G) =
       a * g₂ * (b * a₁ * (g₁ : G) * (b₁ * ι.bar (i.out : G) houtΔ * bD⁻¹)) := by
     calc aD * (d : G) = aD * (d : G) * bD * bD⁻¹ := by group
@@ -312,23 +312,23 @@ count set of `m(g₁, g₂; d)` to a member of the one-sided count set of `m(g�
 private noncomputable def commFwdMap [IsHeckeTriple Δ H H]
     (h_fix : ∀ D : HeckeCoset Δ H H, ι.onHeckeCoset D = D)
     (g₁ g₂ d : Δ) {aD bD : G} (haD : aD ∈ H) (hbD : bD ∈ H)
-    (hbarD : ι.bar (d : G) d.2 = aD * (d : G) * bD)
+    (hbarD : ι.bar (d : G) d.property = aD * (d : G) * bD)
     {a₁ b₁ : G} (ha₁ : a₁ ∈ H) (hb₁ : b₁ ∈ H)
-    (hbar₁ : ι.bar (g₁ : G) g₁.2 = a₁ * (g₁ : G) * b₁)
+    (hbar₁ : ι.bar (g₁ : G) g₁.property = a₁ * (g₁ : G) * b₁)
     (p : {i : DecompQuotient H H (g₁ : G) |
       ((i.out : G) * g₁)⁻¹ * (d : G) ∈ doubleCoset (g₂ : G) (H : Set G) H}) :
     {j : DecompQuotient H H (g₂ : G) |
       ((j.out : G) * g₂)⁻¹ * (d : G) ∈ doubleCoset (g₁ : G) (H : Set G) H} :=
   have hx : ∃ a ∈ H, ∃ b ∈ H,
-      ι.bar (((p.1.out : G) * g₁)⁻¹ * (d : G))
-        (IsHeckeTriple.mem_of_mem_doubleCoset g₂.2 p.2) = a * (g₂ : G) * b :=
-    ι.exists_bar_eq h_fix p.2
+      ι.bar (((p.val.out : G) * g₁)⁻¹ * (d : G))
+        (IsHeckeTriple.mem_of_mem_doubleCoset g₂.property p.property) = a * (g₂ : G) * b :=
+    ι.exists_bar_eq h_fix p.property
   ⟨QuotientGroup.mk ⟨aD⁻¹ * hx.choose, H.mul_mem (H.inv_mem haD) hx.choose_spec.1⟩,
     out_mul_inv_mul_mem _
       (inv_mul_mul_inv_mul_mem_doubleCoset_of_bar_eq ι
         (fun {_} hy ↦ IsHeckeTriple.mem_of_mem_left (Δ := Δ) H hy)
         g₁ d (g₂ : G) hbD hbarD ha₁ hb₁ hbar₁
-        (IsHeckeTriple.mem_of_mem_doubleCoset g₂.2 p.2)
+        (IsHeckeTriple.mem_of_mem_doubleCoset g₂.property p.property)
         hx.choose_spec.2.choose_spec.1 hx.choose_spec.2.choose_spec.2)⟩
 
 /-- Transport back through the anti-involution: two elements of `Δ` whose barred
@@ -347,17 +347,17 @@ private lemma bar_diff_mem [IsHeckeTriple Δ H H] {x₁ x₂ : G} (hx₁ : x₁ 
   have hb₁'Δ : b₁' ∈ Δ := IsHeckeTriple.mem_of_mem_left (Δ := Δ) H hb₁'
   have hmb₂'Δ : m * b₂' ∈ Δ := mul_mem (IsHeckeTriple.mem_of_mem_left (Δ := Δ) H hconj)
     (IsHeckeTriple.mem_of_mem_left (Δ := Δ) H hb₂')
-  have ha₁g₂Δ : a₁' * (g₂ : G) ∈ Δ := mul_mem ha₁'Δ g₂.2
+  have ha₁g₂Δ : a₁' * (g₂ : G) ∈ Δ := mul_mem ha₁'Δ g₂.property
   -- expand the involution through the two decompositions
-  have hx₁' : x₁ = ι.bar b₁' hb₁'Δ * (ι.bar (g₂ : G) g₂.2 * ι.bar a₁' ha₁'Δ) := by
+  have hx₁' : x₁ = ι.bar b₁' hb₁'Δ * (ι.bar (g₂ : G) g₂.property * ι.bar a₁' ha₁'Δ) := by
     have h := (ι.bar_bar hx₁ (ι.bar_mem_Δ x₁ hx₁)).symm
     rw [ι.bar_congr hbar₁' (ι.bar_mem_Δ x₁ hx₁) (mul_mem ha₁g₂Δ hb₁'Δ),
-      ι.bar_mul ha₁g₂Δ hb₁'Δ, ι.bar_mul ha₁'Δ g₂.2] at h
+      ι.bar_mul ha₁g₂Δ hb₁'Δ, ι.bar_mul ha₁'Δ g₂.property] at h
     exact h
-  have hx₂' : x₂ = ι.bar (m * b₂') hmb₂'Δ * (ι.bar (g₂ : G) g₂.2 * ι.bar a₁' ha₁'Δ) := by
+  have hx₂' : x₂ = ι.bar (m * b₂') hmb₂'Δ * (ι.bar (g₂ : G) g₂.property * ι.bar a₁' ha₁'Δ) := by
     have h := (ι.bar_bar hx₂ (ι.bar_mem_Δ x₂ hx₂)).symm
     rw [ι.bar_congr hx₂eq (ι.bar_mem_Δ x₂ hx₂) (mul_mem ha₁g₂Δ hmb₂'Δ),
-      ι.bar_mul ha₁g₂Δ hmb₂'Δ, ι.bar_mul ha₁'Δ g₂.2] at h
+      ι.bar_mul ha₁g₂Δ hmb₂'Δ, ι.bar_mul ha₁'Δ g₂.property] at h
     exact h
   -- the common right factor cancels
   have hcalc : x₂ * x₁⁻¹ = ι.bar (m * b₂') hmb₂'Δ * (ι.bar b₁' hb₁'Δ)⁻¹ := by
@@ -372,19 +372,19 @@ the left of `g₁`. -/
 private lemma commFwdMap_injective [IsHeckeTriple Δ H H]
     (h_fix : ∀ D : HeckeCoset Δ H H, ι.onHeckeCoset D = D)
     (g₁ g₂ d : Δ) {aD bD : G} (haD : aD ∈ H) (hbD : bD ∈ H)
-    (hbarD : ι.bar (d : G) d.2 = aD * (d : G) * bD)
+    (hbarD : ι.bar (d : G) d.property = aD * (d : G) * bD)
     {a₁ b₁ : G} (ha₁ : a₁ ∈ H) (hb₁ : b₁ ∈ H)
-    (hbar₁ : ι.bar (g₁ : G) g₁.2 = a₁ * (g₁ : G) * b₁) :
+    (hbar₁ : ι.bar (g₁ : G) g₁.property = a₁ * (g₁ : G) * b₁) :
     Function.Injective (ι.commFwdMap h_fix g₁ g₂ d haD hbD hbarD ha₁ hb₁ hbar₁) := by
   intro p₁ p₂ heq
   have hx₁ : ∃ a ∈ H, ∃ b ∈ H,
-      ι.bar (((p₁.1.out : G) * g₁)⁻¹ * (d : G))
-        (IsHeckeTriple.mem_of_mem_doubleCoset g₂.2 p₁.2) = a * (g₂ : G) * b :=
-    ι.exists_bar_eq h_fix p₁.2
+      ι.bar (((p₁.val.out : G) * g₁)⁻¹ * (d : G))
+        (IsHeckeTriple.mem_of_mem_doubleCoset g₂.property p₁.property) = a * (g₂ : G) * b :=
+    ι.exists_bar_eq h_fix p₁.property
   have hx₂ : ∃ a ∈ H, ∃ b ∈ H,
-      ι.bar (((p₂.1.out : G) * g₁)⁻¹ * (d : G))
-        (IsHeckeTriple.mem_of_mem_doubleCoset g₂.2 p₂.2) = a * (g₂ : G) * b :=
-    ι.exists_bar_eq h_fix p₂.2
+      ι.bar (((p₂.val.out : G) * g₁)⁻¹ * (d : G))
+        (IsHeckeTriple.mem_of_mem_doubleCoset g₂.property p₂.property) = a * (g₂ : G) * b :=
+    ι.exists_bar_eq h_fix p₂.property
   have hmk : (QuotientGroup.mk ⟨aD⁻¹ * hx₁.choose,
         H.mul_mem (H.inv_mem haD) hx₁.choose_spec.1⟩ : DecompQuotient H H (g₂ : G)) =
       QuotientGroup.mk ⟨aD⁻¹ * hx₂.choose,
@@ -395,18 +395,18 @@ private lemma commFwdMap_injective [IsHeckeTriple Δ H H]
   have hconj' : ((g₂ : G))⁻¹ * (hx₁.choose⁻¹ * hx₂.choose) * g₂ ∈ H := by
     simpa [mul_assoc] using hconj
   -- transport back through the anti-involution: the two count-set elements differ by `H`
-  have hdiff : (((p₂.1.out : G) * g₁)⁻¹ * (d : G)) *
-      ((((p₁.1.out : G) * g₁)⁻¹ * (d : G)))⁻¹ ∈ H :=
-    ι.bar_diff_mem (IsHeckeTriple.mem_of_mem_doubleCoset g₂.2 p₁.2)
-      (IsHeckeTriple.mem_of_mem_doubleCoset g₂.2 p₂.2)
+  have hdiff : (((p₂.val.out : G) * g₁)⁻¹ * (d : G)) *
+      ((((p₁.val.out : G) * g₁)⁻¹ * (d : G)))⁻¹ ∈ H :=
+    ι.bar_diff_mem (IsHeckeTriple.mem_of_mem_doubleCoset g₂.property p₁.property)
+      (IsHeckeTriple.mem_of_mem_doubleCoset g₂.property p₂.property)
       hx₁.choose_spec.1 hx₁.choose_spec.2.choose_spec.1 hx₂.choose_spec.2.choose_spec.1
       hx₁.choose_spec.2.choose_spec.2 hx₂.choose_spec.2.choose_spec.2 hconj'
   -- conclude equality in the decomposition quotient through the coset injectivity
-  have hcoset : (((p₂.1.out : G) * g₁ : G) : G ⧸ H) = (((p₁.1.out : G) * g₁ : G) : G ⧸ H) := by
+  have hcoset : (((p₂.val.out : G) * g₁ : G) : G ⧸ H) = (((p₁.val.out : G) * g₁ : G) : G ⧸ H) := by
     rw [QuotientGroup.eq]
-    have : (((p₂.1.out : G) * g₁)⁻¹ * (d : G)) *
-        ((((p₁.1.out : G) * g₁)⁻¹ * (d : G)))⁻¹ =
-        ((p₂.1.out : G) * g₁)⁻¹ * ((p₁.1.out : G) * g₁) := by group
+    have : (((p₂.val.out : G) * g₁)⁻¹ * (d : G)) *
+        ((((p₁.val.out : G) * g₁)⁻¹ * (d : G)))⁻¹ =
+        ((p₂.val.out : G) * g₁)⁻¹ * ((p₁.val.out : G) * g₁) := by group
     exact this ▸ hdiff
   exact Subtype.ext (mk_out_mul_injective H H (g₁ : G) hcoset.symm)
 

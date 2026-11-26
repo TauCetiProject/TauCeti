@@ -39,6 +39,8 @@ as in Krebs's proof of Cobham's theorem.
 
 * `Nat.exists_length_eq_ofDigits_eq_of_le_two_mul_pow`: for `n ≥ 1`, every `z ≤ 2 b ^ n` is the
   value of a word of length `n` with digits at most `2b`.
+* `Nat.eq_and_eq_of_add_mul_eq`: the digit `j < b` and the quotient `y` are determined by
+  `j + b * y`.
 * `Nat.sum_digits_add_mul`: the digit sum of `j + b * y` is `j` plus the digit sum of `y`.
 * `Nat.prod_map_digits_add_mul`: `∏ g(dᵢ)` over the digits of `j + b * y` is `g j` times the
   product over the digits of `y`, whenever `g 0 = 1`.
@@ -80,7 +82,7 @@ theorem exists_length_eq_ofDigits_eq_of_le_two_mul_pow {b n z : ℕ} (hn : 0 < n
     ∃ w : List (Fin (2 * b + 1)), w.length = n ∧ ofDigits b (w.map Fin.val) = z := by
   induction n, hn using le_induction generalizing z with
   | base => exact ⟨[⟨z, by simpa using lt_succ_of_le hz⟩], rfl, ofDigits_singleton⟩
-  | succ n hn ih =>
+  | succ n _ ih =>
     -- Split off the last digit `z % b`; the quotient `z / b` is at most `2 b ^ n`.
     obtain ⟨w, hw, hwz⟩ := ih (z := z / b) (Nat.div_le_of_le_mul (hz.trans_eq (by ring)))
     have hr : z % b < 2 * b + 1 := by
@@ -90,6 +92,14 @@ theorem exists_length_eq_ofDigits_eq_of_le_two_mul_pow {b n z : ℕ} (hn : 0 < n
         omega
     refine ⟨⟨z % b, hr⟩ :: w, by simp [hw], ?_⟩
     rw [List.map_cons, ofDigits_cons, hwz, mod_add_div]
+
+/-- Base `b` digits are unique: `j + b * y` with a digit `j < b` determines `j` and `y`. -/
+theorem eq_and_eq_of_add_mul_eq {b j y j' y' : ℕ} (hj : j < b) (hj' : j' < b)
+    (h : j + b * y = j' + b * y') : j = j' ∧ y = y' := by
+  have hb : 0 < b := by omega
+  have h₁ := (Nat.div_mod_unique (a := j + b * y) hb).2 ⟨rfl, hj⟩
+  have h₂ := (Nat.div_mod_unique (a := j + b * y) hb).2 ⟨h.symm, hj'⟩
+  omega
 
 /-- The digit sum of `j + b * y`, for a digit `j < b`, is `j` plus the digit sum of `y`. -/
 theorem sum_digits_add_mul {b j : ℕ} (hj : j < b) (y : ℕ) :

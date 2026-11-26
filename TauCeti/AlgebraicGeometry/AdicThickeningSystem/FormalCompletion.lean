@@ -23,8 +23,11 @@ compatible with the transitions. For `I = ⊥` the formal completion is the cons
 (`formalCompletion.botIso`), and for `I = ⊤` every level is empty. A morphism `f : X ⟶ Y` with
 `J.comap f ≤ I`, i.e. carrying `V(I)` into `V(J)` scheme-theoretically, induces a morphism of formal
 completions `formalCompletion.map f : X.formalCompletion I ⟶ Y.formalCompletion J`, functorially in
-`f`; it is adic when `J.comap f = I`. The formal completion of a locally Noetherian scheme is
-locally Noetherian.
+`f`; it is adic when `J.comap f = I`, and then every level `V(I ^ (n + 1))` is the inverse image
+of `V(J ^ (n + 1))` under `f`. In particular, for an open immersion `f` and `I = J.comap f` the
+levels of `formalCompletion.map f` are open immersions onto the inverse images of the image of `f`,
+so the formal completions of the members of an open cover of `X` cover the levels of `X/V(I)`. The
+formal completion of a locally Noetherian scheme is locally Noetherian.
 
 For an ideal `J` of a ring `R`, the formal completion of `Spec R` along `V(J)` is the system
 `spf J` of the affine schemes `Spec (R ⧸ J ^ (n + 1))` (`formalCompletion.specIso`, Stacks,
@@ -37,6 +40,10 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
 * `AlgebraicGeometry.Scheme.formalCompletion`: the adic thickening system `n ↦ V(I ^ (n + 1))`.
 * `AlgebraicGeometry.Scheme.formalCompletion.toScheme`: the closed immersions
   `V(I ^ (n + 1)) ⟶ X`.
+* `AlgebraicGeometry.Scheme.formalCompletion.toOfScheme`: the canonical morphism from `X/V(I)` to
+  the constant adic thickening system of `X`.
+* `AlgebraicGeometry.Scheme.formalCompletion.subschemeIsoLevelZero`: the canonical isomorphism
+  `V(I) ≅ (X.formalCompletion I).X 0` over `X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.map`: functoriality in pairs `(X, I)`.
 * `AlgebraicGeometry.Scheme.formalCompletion.botIso`: the formal completion along `V(⊥)` is the
   constant system of `X`.
@@ -57,6 +64,12 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
   locally Noetherian scheme is locally Noetherian.
 * `AlgebraicGeometry.Scheme.formalCompletion.isAdicHom_map`: `formalCompletion.map f` is adic when
   `J.comap f = I`.
+* `AlgebraicGeometry.Scheme.formalCompletion.isPullback_map_app`: when `J.comap f = I`, the level
+  `V(I ^ (n + 1))` is the inverse image of `V(J ^ (n + 1))` under `f`.
+* `AlgebraicGeometry.Scheme.formalCompletion.isOpenImmersion_map_app`,
+  `AlgebraicGeometry.Scheme.formalCompletion.opensRange_map_app`: for an open immersion `f`, the
+  levels of `formalCompletion.map f` are open immersions onto the inverse images of the image
+  of `f`.
 
 ## References
 
@@ -78,8 +91,8 @@ variable (X : Scheme.{u}) (I : X.IdealSheafData)
 /-- The level maps of the tower `n ↦ V(I ^ (n + 1))` are the inclusions `V(I) ⟶ V(I ^ (n + 1))`. -/
 private lemma levelMap_inclusion_eq (n : ℕ) :
     TauCeti.AlgebraicGeometry.levelMap (fun k ↦ (I ^ (k + 1)).subscheme)
-        (fun k ↦ inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (k + 1) 1))) n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_left 1 n)) := by
+        (fun k ↦ inclusion (I.pow_le_pow_right (Nat.le_add_right (k + 1) 1))) n =
+      inclusion (I.pow_le_pow_right (Nat.le_add_left 1 n)) := by
   induction n with
   | zero => rw [TauCeti.AlgebraicGeometry.levelMap_zero, inclusion_id]
   | succ n ih => rw [TauCeti.AlgebraicGeometry.levelMap_succ, ih, inclusion_comp]
@@ -95,10 +108,10 @@ Stacks, Lemma 87.14.2 (0AIZ) and Definition 87.14.3 (0AMC). -/
 @[stacks 0AMC, expose, simps X]
 noncomputable def formalCompletion : AdicThickeningSystem.{u} where
   X n := (I ^ (n + 1)).subscheme
-  ι n := inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1))
+  ι n := inclusion (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1))
   isThickening n := by
     have := IsFirstOrderThickening.inclusion_pow_succ
-      (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1) :
+      (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1) :
         I ^ (n + 2) ≤ I ^ (n + 1))
     infer_instance
   adic n := by
@@ -108,7 +121,7 @@ noncomputable def formalCompletion : AdicThickeningSystem.{u} where
 closed subschemes. -/
 theorem formalCompletion_ι (n : ℕ) :
     (X.formalCompletion I).ι n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1)) :=
+      inclusion (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1)) :=
   (rfl)
 
 /-- The `n`-th reduction of the formal completion is the infinitesimal neighbourhood
@@ -121,7 +134,7 @@ theorem formalCompletion_reduction (n : ℕ) :
 `V(I ^ (m + 1)) ⟶ V(I ^ (n + 1))`. -/
 theorem formalCompletion_transition {m n : ℕ} (h : m ≤ n) :
     (X.formalCompletion I).transition h =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.add_le_add_right h 1)) := by
+      inclusion (I.pow_le_pow_right (Nat.add_le_add_right h 1)) := by
   induction n with
   | zero =>
     obtain rfl : m = 0 := by omega
@@ -137,7 +150,7 @@ theorem formalCompletion_transition {m n : ℕ} (h : m ≤ n) :
 subschemes. -/
 theorem formalCompletion_levelMap (n : ℕ) :
     (X.formalCompletion I).levelMap n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_left 1 n)) := by
+      inclusion (I.pow_le_pow_right (Nat.le_add_left 1 n)) := by
   rw [AdicThickeningSystem.levelMap_eq_transition, formalCompletion_transition]
 
 namespace formalCompletion
@@ -163,6 +176,34 @@ theorem ker_toScheme (n : ℕ) : (toScheme X I n).ker = I ^ (n + 1) :=
 theorem ι_toScheme (n : ℕ) :
     (X.formalCompletion I).ι n ≫ toScheme X I (n + 1) = toScheme X I n :=
   inclusion_subschemeι _
+
+/-- The canonical morphism `X/V(I) ⟶ X` from the formal completion to the constant adic thickening
+system of `X`, with components the closed immersions `toScheme X I n : V(I ^ (n + 1)) ⟶ X`. -/
+noncomputable def toOfScheme : X.formalCompletion I ⟶ AdicThickeningSystem.ofScheme.obj X where
+  app n := toScheme X I n
+  naturality n := (ι_toScheme X I n).trans (Category.comp_id _).symm
+
+@[simp]
+theorem toOfScheme_app (n : ℕ) : (toOfScheme X I).app n = toScheme X I n :=
+  (rfl)
+
+/-- The canonical isomorphism `V(I) ≅ V(I ^ 1)` between the closed subscheme cut out by `I` and
+the zeroth level of `X.formalCompletion I`. -/
+noncomputable def subschemeIsoLevelZero : I.subscheme ≅ (X.formalCompletion I).X 0 where
+  hom := inclusion (pow_one I).le
+  inv := inclusion (pow_one I).ge
+  hom_inv_id := (inclusion_comp _ _).trans (inclusion_id _)
+  inv_hom_id := (inclusion_comp _ _).trans (inclusion_id _)
+
+@[reassoc (attr := simp)]
+theorem subschemeIsoLevelZero_hom_toScheme :
+    (subschemeIsoLevelZero X I).hom ≫ toScheme X I 0 = I.subschemeι :=
+  inclusion_subschemeι (pow_one I).le
+
+@[reassoc (attr := simp)]
+theorem subschemeIsoLevelZero_inv_subschemeι :
+    (subschemeIsoLevelZero X I).inv ≫ I.subschemeι = toScheme X I 0 :=
+  inclusion_subschemeι (pow_one I).ge
 
 /-- The ideal sheaf of `V(I ^ (n + 1))` in `V(I ^ (n + 2))` is the inverse image of `I ^ (n + 1)`
 along `V(I ^ (n + 2)) ⟶ X`. -/
@@ -193,9 +234,34 @@ noncomputable def botIso : X.formalCompletion ⊥ ≅ AdicThickeningSystem.ofSch
   AdicThickeningSystem.isoMk (fun n ↦ (asIso (toScheme X ⊥ n) : _ ≅ X)) fun n ↦
     (ι_toScheme X ⊥ n).trans (Category.comp_id _).symm
 
-@[simp]
 theorem botIso_hom_app (n : ℕ) : (botIso X).hom.app n = toScheme X ⊥ n :=
   (AdicThickeningSystem.isoMk_hom_app _ _ n).trans (asIso_hom (toScheme X ⊥ n))
+
+/-- The inverse of `botIso` at level `n` is the inverse of the isomorphism `toScheme X ⊥ n`. -/
+@[simp]
+theorem botIso_inv_app (n : ℕ) : (botIso X).inv.app n = inv (toScheme X ⊥ n) :=
+  (AdicThickeningSystem.isoMk_inv_app _ _ n).trans (asIso_inv (toScheme X ⊥ n))
+
+/-- The forward morphism of `botIso` is `toOfScheme X ⊥`. -/
+@[simp]
+theorem botIso_hom : (botIso X).hom = toOfScheme X ⊥ := by
+  ext n
+  exact botIso_hom_app X n
+
+/-- Postcomposing `toOfScheme X ⊥` with `(botIso X).inv` gives the identity. -/
+@[reassoc (attr := simp)]
+theorem toOfScheme_botIso_inv : toOfScheme X ⊥ ≫ (botIso X).inv = 𝟙 (X.formalCompletion ⊥) := by
+  rw [← botIso_hom, Iso.hom_inv_id]
+
+/-- Precomposing `toOfScheme X ⊥` with `(botIso X).inv` gives the identity. -/
+@[reassoc (attr := simp)]
+theorem botIso_inv_toOfScheme :
+    (botIso X).inv ≫ toOfScheme X ⊥ = 𝟙 (AdicThickeningSystem.ofScheme.obj X) := by
+  rw [← botIso_hom, Iso.inv_hom_id]
+
+instance isIso_toOfScheme_bot : IsIso (toOfScheme X ⊥) := by
+  rw [← botIso_hom]
+  infer_instance
 
 /-- The formal completion along the empty closed subscheme `V(⊤)` has empty levels. -/
 instance isEmpty_X_top (n : ℕ) : IsEmpty ((X.formalCompletion ⊤).X n) := by
@@ -222,6 +288,12 @@ theorem map_app_toScheme (f : X ⟶ Y) (hf : J.comap f ≤ I) (n : ℕ) :
     (map f hf).app n ≫ toScheme Y J n = toScheme X I n ≫ f :=
   subschemeMap_subschemeι _ _ _ (pow_le_map_pow hf (n + 1))
 
+@[reassoc (attr := simp)]
+theorem map_toOfScheme (f : X ⟶ Y) (hf : J.comap f ≤ I) :
+    map f hf ≫ toOfScheme Y J = toOfScheme X I ≫ AdicThickeningSystem.ofScheme.map f := by
+  ext n
+  exact map_app_toScheme f hf n
+
 @[simp]
 theorem map_id (h : I.comap (𝟙 X) ≤ I) : map (𝟙 X) h = 𝟙 (X.formalCompletion I) := by
   ext n
@@ -236,6 +308,35 @@ theorem map_comp (f : X ⟶ Y) (g : Y ⟶ Z) (hf : J.comap f ≤ I) (hg : K.coma
   rw [← cancel_mono (toScheme Z K n), map_app_toScheme, AdicThickeningSystem.comp_app,
     Category.assoc, map_app_toScheme, map_app_toScheme_assoc]
 
+/-- Composition of `formalCompletion.map` along a commuting triangle `f ≫ g = h`. -/
+@[reassoc]
+theorem map_comp_eq {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z} (hfg : f ≫ g = h)
+    (hf : J.comap f ≤ I) (hg : K.comap g ≤ J) (hh : K.comap h ≤ I) :
+    map f hf ≫ map g hg = map h hh := by
+  subst hfg
+  exact map_comp f g hf hg
+
+/-- An isomorphism of schemes `u : X ≅ Y` identifying ideal sheaves induces an isomorphism of
+formal completions. -/
+noncomputable def mapIso (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    X.formalCompletion I ≅ Y.formalCompletion J where
+  hom := map u.hom hu.le
+  inv := map u.inv (by rw [← hu, ← comap_comp, Iso.inv_hom_id, comap_id])
+  hom_inv_id := (map_comp_eq u.hom_inv_id _ _ (by rw [comap_id])).trans (map_id _)
+  inv_hom_id := (map_comp_eq u.inv_hom_id _ _ (by rw [comap_id])).trans (map_id _)
+
+/-- The forward morphism of `mapIso u hu` is `map u.hom hu.le`. -/
+@[simp]
+theorem mapIso_hom (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    (mapIso u hu).hom = map u.hom hu.le :=
+  (rfl)
+
+/-- The inverse morphism of `mapIso u hu` is `map u.inv _`. -/
+@[simp]
+theorem mapIso_inv (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    (mapIso u hu).inv = map u.inv (by rw [← hu, ← comap_comp, Iso.inv_hom_id, comap_id]) :=
+  (rfl)
+
 /-- If `V(I)` is the scheme-theoretic inverse image of `V(J)` under `f`, i.e. `J.comap f = I`, then
 the induced morphism of formal completions is adic: each `V(I ^ (n + 1))` is the inverse image of
 `V(J ^ (n + 1))`. -/
@@ -244,6 +345,32 @@ theorem isAdicHom_map (f : X ⟶ Y) (hf : J.comap f = I) :
   rw [AdicThickeningSystem.isAdicHom_iff_ker_comap]
   intro n
   rw [ker_ι, ker_ι, ← comap_comp, map_app_toScheme, comap_comp, comap_pow, hf]
+
+/-- If `V(I)` is the scheme-theoretic inverse image of `V(J)` under `f`, then every level
+`V(I ^ (n + 1))` of the formal completion of `X` is the inverse image of the level `V(J ^ (n + 1))`
+of the formal completion of `Y`: the square formed by `(map f _).app n`, `f` and the closed
+immersions into `X` and `Y` is cartesian. -/
+theorem isPullback_map_app (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
+    IsPullback (toScheme X I n) ((map f hf.le).app n) f (toScheme Y J n) :=
+  isPullback_of_isClosedImmersion _ _ _ _ (map_app_toScheme f hf.le n).symm <| by
+    rw [ker_toScheme, ker_toScheme, comap_pow, hf]
+
+/-- The morphism of formal completions induced by an open immersion `f : X ⟶ Y`, for the inverse
+image of an ideal sheaf on `Y`, is an open immersion at every level. -/
+instance isOpenImmersion_map_app (f : X ⟶ Y) [IsOpenImmersion f] (n : ℕ) :
+    IsOpenImmersion ((map (I := J.comap f) f le_rfl).app n) :=
+  MorphismProperty.of_isPullback (P := @IsOpenImmersion) (isPullback_map_app f rfl n) ‹_›
+
+/-- The image of the `n`-th level of the morphism of formal completions induced by an open
+immersion `f : X ⟶ Y` is the inverse image of the image of `f` in `V(J ^ (n + 1))`. -/
+theorem opensRange_map_app (f : X ⟶ Y) [IsOpenImmersion f] (n : ℕ) :
+    ((map (I := J.comap f) f le_rfl).app n).opensRange = toScheme Y J n ⁻¹ᵁ f.opensRange := by
+  have H := isPullback_map_app (J := J) f rfl n
+  calc ((map (I := J.comap f) f le_rfl).app n).opensRange =
+        (H.isoPullback.hom ≫ pullback.snd f (toScheme Y J n)).opensRange := by
+          congr 1
+          exact H.isoPullback_hom_snd.symm
+    _ = _ := (Scheme.Hom.opensRange_comp_of_isIso _ _).trans (Scheme.Hom.opensRange_pullbackSnd _ _)
 
 end formalCompletion
 
@@ -299,6 +426,13 @@ theorem specIso_inv_app_toScheme (J : Ideal R) (n : ℕ) :
   rw [specIso, Iso.symm_inv, AdicThickeningSystem.isoMk_hom_app, specLevelIso_hom_toScheme,
     AdicThickeningSystem.spfToSpec_app]
 
+/-- Under `specIso`, `toOfScheme` corresponds to `spfToSpec`. -/
+@[reassoc (attr := simp)]
+theorem specIso_inv_toOfScheme (J : Ideal R) :
+    (specIso J).inv ≫ toOfScheme _ _ = AdicThickeningSystem.spfToSpec J := by
+  ext n
+  exact specIso_inv_app_toScheme J n
+
 /-- For a finitely generated ideal `J` of `R`, the formal completion of `Spec R` along `V(J)` is
 the formal spectrum of the `J`-adic completion `R̂` of `R`, compatibly with the morphisms to
 `Spec R` (`specIsoSpfCompletion_inv_app_toScheme`). Stacks, Lemma 87.14.6 (0GBA). -/
@@ -319,6 +453,17 @@ theorem specIsoSpfCompletion_inv_app_toScheme (J : Ideal R) (fg : J.FG) (n : ℕ
   rw [specIsoSpfCompletion, Iso.trans_inv, Iso.symm_inv, AdicThickeningSystem.comp_app,
     Category.assoc, specIso_inv_app_toScheme]
   exact congrArg (·.app n) (Spf.completionIso_hom_spfToSpec J fg)
+
+/-- Under `specIsoSpfCompletion`, `toOfScheme` factors through
+`Spf.toSpec (AdicRing.completion J fg)`. -/
+@[reassoc (attr := simp)]
+theorem specIsoSpfCompletion_inv_toOfScheme (J : Ideal R) (fg : J.FG) :
+    (specIsoSpfCompletion J fg).inv ≫ toOfScheme _ _ =
+      Spf.toSpec (AdicRing.completion J fg) ≫
+        AdicThickeningSystem.ofScheme.map
+          (Spec.map (CommRingCat.ofHom (algebraMap R (AdicCompletion J R)))) := by
+  ext n
+  exact specIsoSpfCompletion_inv_app_toScheme J fg n
 
 end formalCompletion
 

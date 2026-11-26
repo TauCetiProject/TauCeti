@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Basic
+import TauCeti.Analysis.Calculus.FDeriv.AlmostComplexType
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!
@@ -47,6 +48,8 @@ shows that the alternation of the derivative, the exterior derivative, has compo
   `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_ofComplexManifold`,
   `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del_ofComplexManifold`:
   `∂² = 0`, `∂bar² = 0` and `∂ ∂bar + ∂bar ∂ = 0` on a complex manifold.
+* `TauCeti.SmoothAlmostComplexStructure.delBarType_delBarType_ofComplexManifold`: `∂bar² = 0` on
+  forms of type `(p,q)`.
 
 ## References
 
@@ -77,11 +80,11 @@ variable {φ : SmoothForm 𝓘(ℝ, E) M F k} {p q P Q : ℕ}
 multiplication by `i`. -/
 private theorem IsOfType.inChartAt_isOfType (hφ : φ.IsOfType (ofComplexManifold E M) p q) (x : M)
     {z : E} (hz : z ∈ (extChartAt 𝓘(ℝ, E) x).target) :
-    (RoughForm.inChartAt φ.1 x z).IsOfType (Complex.I • ContinuousLinearMap.id ℝ E) p q := by
+    (RoughForm.inChartAt φ.val x z).IsOfType (Complex.I • ContinuousLinearMap.id ℝ E) p q := by
   have h := hφ.apply ((extChartAt 𝓘(ℝ, E) x).symm z)
   rw [toEndomorphism_ofComplexManifold] at h
-  have heq : RoughForm.inChartAt φ.1 x z =
-      (φ.1 ((extChartAt 𝓘(ℝ, E) x).symm z)).compContinuousLinearMap
+  have heq : RoughForm.inChartAt φ.val x z =
+      (φ.val ((extChartAt 𝓘(ℝ, E) x).symm z)).compContinuousLinearMap
         (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x).symm (range 𝓘(ℝ, E)) z) := by
     ext v
     rw [RoughForm.inChartAt_apply]
@@ -99,34 +102,18 @@ theorem IsOfType.typeProjection_mextDerivₗ_eq_zero_ofComplexManifold
     (ofComplexManifold E M).typeProjection P Q (mextDerivₗ 𝓘(ℝ, E) k φ) = 0 :=
   Subtype.ext <| funext fun x ↦ by
     -- In the chart at `x`, the almost complex structure is the constant structure `L`, and the
-    -- coordinate expression `f` of `φ` satisfies the type equation `D_L f = c • f` for `L`.
-    -- Differentiating it, every derivative of `f` has type `(p,q)` for `L`.
+    -- coordinate expression `f` of `φ` has type `(p,q)` for `L`, so every derivative of `f` has
+    -- type `(p,q)` for `L`.
     set L : E →L[ℝ] E := Complex.I • ContinuousLinearMap.id ℝ E
-    set c : ℂ := ((p : ℂ) - q) * Complex.I
-    set f := RoughForm.inChartAt φ.1 x
-    set z₀ := extChartAt 𝓘(ℝ, E) x x
+    set f := RoughForm.inChartAt φ.val x
     have hL (v : E) : L (L v) = -v := by
       simp [L, smul_smul]
-    have hd : HasFDerivWithinAt f (fderivWithin ℝ f (range 𝓘(ℝ, E)) z₀) (range 𝓘(ℝ, E)) z₀ :=
-      ((φ.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt
-        (by simp)).hasFDerivWithinAt
-    let T := (ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM F
-      (ContinuousLinearMap.id ℝ E) (ι := Fin k)).flip L
-    have hT (β : E [⋀^Fin k]→L[ℝ] F) : T β = L.alternatingDerivation β := by
-      simp only [T, ContinuousLinearMap.flip_apply,
-        ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM_apply,
-        ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap]
-    have heq : (fun z ↦ T (f z)) =ᶠ[𝓝[range 𝓘(ℝ, E)] z₀] fun z ↦ c • f z := by
-      filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
-      rw [hT]
-      exact (hφ.inChartAt_isOfType x hz).alternatingDerivation_eq
-    have hD := (𝓘(ℝ, E).uniqueDiffOn.uniqueDiffWithinAt (mem_range_self _)).eq
-      ((T.hasFDerivAt.comp_hasFDerivWithinAt z₀ hd).congr_of_eventuallyEq heq.symm
-        (heq.symm.eq_of_nhdsWithin (mem_range_self _))) (hd.const_smul c)
-    have hη (v : E) : (fderivWithin ℝ f (range 𝓘(ℝ, E)) z₀ v).IsOfType L p q := by
-      refine ContinuousAlternatingMap.isOfType_iff.2 ⟨hφ.add_eq, ?_⟩
-      rw [← hT]
-      exact congrArg (fun A ↦ A v) hD
+    have hη (v : E) :
+        (fderivWithin ℝ f (range 𝓘(ℝ, E)) (extChartAt 𝓘(ℝ, E) x x) v).IsOfType L p q :=
+      ContinuousAlternatingMap.isOfType_fderivWithin
+        (𝓘(ℝ, E).uniqueDiffOn.uniqueDiffWithinAt (mem_range_self _)) (mem_range_self _)
+        (Filter.mem_of_superset (extChartAt_target_mem_nhdsWithin x)
+          fun _ hz ↦ hφ.inChartAt_isOfType x hz) v
     simp only [coe_typeProjection, mextDerivₗ_apply, ZeroMemClass.coe_zero, Pi.zero_apply]
     rw [mextDeriv_def, extDerivWithin, toEndomorphism_ofComplexManifold]
     exact ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType
@@ -167,6 +154,14 @@ theorem delBar_delBar_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :
     (ofComplexManifold E M).delBar ((ofComplexManifold E M).delBar φ) = 0 :=
   delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar
     mextDerivₗ_eq_del_add_delBar_ofComplexManifold mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
+
+/-- `∂bar² = 0` on the forms of type `(p,q)` of a complex manifold. -/
+@[simp]
+theorem delBarType_delBarType_ofComplexManifold (p q : ℕ)
+    (φ : (ofComplexManifold E M).typeForms (F := F) p q) :
+    (ofComplexManifold E M).delBarType p (q + 1) ((ofComplexManifold E M).delBarType p q φ) = 0 :=
+  Subtype.ext <| by
+    rw [coe_delBarType, coe_delBarType, delBar_delBar_ofComplexManifold, Submodule.coe_zero]
 
 /-- **`∂` and `∂bar` anticommute on a complex manifold**: `∂ ∂bar φ + ∂bar ∂φ = 0`. -/
 theorem del_delBar_add_delBar_del_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :

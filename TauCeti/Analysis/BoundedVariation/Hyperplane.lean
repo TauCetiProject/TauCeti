@@ -26,7 +26,9 @@ hyperplane the perimeter is the volume `ω_{n-1} r^(n-1)` of an `(n - 1)`-dimens
 same radius (`TauCeti.perimeter_ball_setOf_inner_lt`). This is the model computation behind
 De Giorgi's structure theorem: at a point of the reduced boundary, the blow-ups of a set of finite
 perimeter converge to a half-space, and the perimeter of that half-space in the unit ball fixes the
-density `|Dχ_E|(B_r(x)) / (ω_{n-1} r^(n-1)) → 1` of the perimeter measure.
+density `|Dχ_E|(B_r(x)) / (ω_{n-1} r^(n-1)) → 1` of the perimeter measure. Since every compact
+set lies in such a ball, a half-space has locally finite perimeter
+(`TauCeti.exists_totalVariationOn_indicator_setOf_inner_lt_ne_top`).
 
 Both bounds come from the divergence theorem on the half-space,
 `∫_H div φ = ∫_{⟪x, ν⟫ = c} ⟪φ, ν⟫ dHⁿ⁻¹`
@@ -82,9 +84,9 @@ private lemma perimeter_setOf_inner_lt_le (hν : ‖ν‖ = 1) (c : ℝ) (Ω : O
   calc ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x)
       ≤ ‖∫ x in S, ⟪φ x, ν⟫ ∂μHE[finrank ℝ F - 1]‖ₑ := by
         rw [hdiv]
-        exact Real.ofReal_le_enorm _
+        exact Real.ofReal_le_eNorm _
     _ ≤ ∫⁻ x in S, (Ω : Set F).indicator 1 x ∂μHE[finrank ℝ F - 1] :=
-        (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono hle)
+        (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono hle)
     _ = μHE[finrank ℝ F - 1] (Ω ∩ S) := by
         rw [lintegral_indicator_one Ω.isOpen.measurableSet, Measure.restrict_apply
           Ω.isOpen.measurableSet]
@@ -154,33 +156,23 @@ theorem perimeter_ball_setOf_inner_lt (hν : ‖ν‖ = 1) (x : F) {r : ℝ} (hr
     perimeter volume ⟨ball x r, isOpen_ball⟩ {y | ⟪y, ν⟫ < ⟪x, ν⟫} =
       ENNReal.ofReal r ^ (finrank ℝ F - 1) *
         volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
-  set c := ⟪x, ν⟫
-  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
-  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
-  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
-  -- The point `x` is `c • ν + x₀` with `x₀ ∈ (ℝ ∙ ν)ᗮ`, so the part of the hyperplane in the
-  -- ball is the image of the ball of radius `r` about `x₀` in `(ℝ ∙ ν)ᗮ`.
-  have hx₀ : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
-    rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
-      real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
-    ring
-  have hι := isometry_smul_add_coe (ν := ν) c
-  have hpre : (fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F)) ⁻¹' ball x r = ball ⟨x - c • ν, hx₀⟩ r := by
-    convert hι.preimage_ball ⟨x - c • ν, hx₀⟩ r
-    simp
-  -- An orthonormal basis identifies `(ℝ ∙ ν)ᗮ` with `ℝ^(n-1)`, preserving volume and unit balls.
-  have hball : volume (ball (0 : (ℝ ∙ ν)ᗮ) 1) =
-      volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
-    let e := ((stdOrthonormalBasis ℝ (ℝ ∙ ν)ᗮ).reindex (finCongr
-      (Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0))).repr
-    rw [← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
-      e.preimage_ball, map_zero]
   rw [perimeter_setOf_inner_lt hν, Opens.coe_mk,
-    ← Measure.restrict_apply' (measurableSet_eq_fun (by fun_prop) measurable_const),
-    euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
-    Measure.map_apply hι.continuous.measurable measurableSet_ball, hpre,
-    Measure.addHaar_ball_of_pos _ _ hr,
-    Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
-    ENNReal.ofReal_pow hr.le, hball]
+    euclideanHausdorffMeasure_ball_inter_setOf_inner_eq hν x hr]
+
+/-- **A half-space has locally finite perimeter.** For a unit vector `ν`, every compact set `K`
+lies in an open set, a ball centred on the boundary hyperplane, in which the half-space
+`{x | ⟪x, ν⟫ < c}` has finite perimeter. -/
+theorem exists_totalVariationOn_indicator_setOf_inner_lt_ne_top (hν : ‖ν‖ = 1) (c : ℝ)
+    {K : Set F} (hK : IsCompact K) :
+    ∃ U : Opens F, K ⊆ (U : Set F) ∧
+      totalVariationOn volume U ({x | ⟪x, ν⟫ < c}.indicator 1) ≠ ∞ := by
+  obtain ⟨r, hr, hKr⟩ := hK.isBounded.subset_ball_lt 0 (c • ν)
+  refine ⟨⟨ball (c • ν) r, isOpen_ball⟩, hKr, ?_⟩
+  have hc : ⟪c • ν, ν⟫ = c := by
+    rw [real_inner_smul_left, real_inner_self_eq_norm_sq, hν, one_pow, mul_one]
+  have h := perimeter_ball_setOf_inner_lt hν (c • ν) hr
+  rw [hc] at h
+  rw [← perimeter_def, h]
+  exact ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.ofReal_ne_top) measure_ball_lt_top.ne
 
 end TauCeti

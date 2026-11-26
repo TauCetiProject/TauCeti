@@ -65,11 +65,8 @@ data, which is a separate development.
 
 ## References
 
-This implements the second bullet of Layer 4 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md)
-(`A ≅ Mₙ(D)` for a central division algebra `D`, with `finrank K A = n² · finrank K D`) together
-with its finite-field worked example. See R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12,
-and P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Chapter 2.
+See R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12, and P. Gille, T. Szamuely, *Central
+Simple Algebras and Galois Cohomology*, Chapter 2.
 -/
 
 public section
@@ -155,7 +152,6 @@ theorem algebraMap_baseFieldAlgEquivOfFinite (x : D) :
   rw [← baseFieldAlgEquivOfFinite_symm_apply, AlgEquiv.symm_apply_apply]
 
 /-- A finite central division algebra over a field is one-dimensional over it. -/
-@[simp]
 theorem finrank_eq_one_of_finite : Module.finrank K D = 1 := by
   rw [(baseFieldAlgEquivOfFinite K D).toLinearEquiv.finrank_eq, Module.finrank_self]
 

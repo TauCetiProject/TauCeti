@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Pi
+import TauCeti.Logic.Function.Extend
 
 /-!
 # Linear extension of coordinate functions by zero
 
 Mathlib's `Function.ExtendByZero.linearMap` along an injective index map `e` evaluates at `e i`
 to the `i`-th coordinate. Along `Fin.castSucc` it views `M^N` as the coordinate hyperplane of
-`M^(N + 1)` with vanishing last coordinate, and `Fin.init` inverts it. Along `Fin.succ` it is
-the coordinate shift `e_i ↦ e_(i + 1)`, which together with the first basis vector
-`e₀ = Pi.single 0 1` splits `R^(N + 1)`: every vector is its first coordinate times `e₀` plus
-the shift of its tail.
+`M^(N + 1)` with vanishing last coordinate, `v ↦ Fin.snoc v 0`, and `Fin.init` inverts it.
+Along `Fin.succ` it is the coordinate shift `e_i ↦ e_(i + 1)`, which together with the first
+basis vector `e₀ = Pi.single 0 1` splits `R^(N + 1)`: every vector is its first coordinate times
+`e₀` plus the shift of its tail.
 -/
 
 public section
@@ -41,13 +42,12 @@ theorem linearMap_single {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {e : 
     (he : Injective e) (i : ι) (a : M) : linearMap R M e (Pi.single i a) = Pi.single (e i) a :=
   he.extend_single i a
 
-/-- Extension by zero along a composite of injective index maps is the composite of the
-extensions. -/
-theorem linearMap_comp {ι κ η : Type*} {e : ι → κ} {e' : κ → η} (he : Injective e)
-    (he' : Injective e') :
+/-- Extension by zero along `e' ∘ e` is the composite of the extensions, provided the outer map
+`e'` is injective; the inner map `e` may be arbitrary. -/
+theorem linearMap_comp {ι κ η : Type*} {e : ι → κ} {e' : κ → η} (he' : Injective e') :
     linearMap R M (e' ∘ e) = linearMap R M e' ∘ₗ linearMap R M e := by
   ext v : 1
-  exact he.extend_comp he' v 0
+  exact he'.extend_comp_extend v 0
 
 /-- Extension by zero along the identity is the identity. -/
 @[simp]
@@ -68,6 +68,12 @@ theorem init_linearMap_castSucc (v : Fin N → M) :
 theorem linearMap_castSucc_last (v : Fin N → M) :
     linearMap R M Fin.castSucc v (Fin.last N) = 0 := by
   simp
+
+/-- The extension by zero along `Fin.castSucc` appends a zero last coordinate. -/
+theorem linearMap_castSucc_apply (v : Fin N → M) :
+    linearMap R M Fin.castSucc v = Fin.snoc v 0 := by
+  rw [← Fin.snoc_init_self (linearMap R M Fin.castSucc v), init_linearMap_castSucc,
+    linearMap_castSucc_last]
 
 variable {R} in
 /-- Every vector of `R^(N + 1)` is its first coordinate times `e₀` plus the shift of its tail. -/

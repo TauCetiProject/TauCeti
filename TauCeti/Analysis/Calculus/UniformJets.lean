@@ -80,8 +80,8 @@ theorem HasUniformJetBoundsOn.bound_all {n : ℕ} {s : Set E} {f : ι → E → 
     ∃ C : ℝ, 0 ≤ C ∧ ∀ j, j ≤ m → ∀ i x, x ∈ s →
       ‖iteratedFDeriv 𝕜 j (f i) x‖ ≤ C := by
   classical
-  choose c hc using fun j : Finset.range (m + 1) ↦ h j.1
-    (Nat.le_trans (Nat.le_of_lt_succ (Finset.mem_range.1 j.2)) hm)
+  choose c hc using fun j : Finset.range (m + 1) ↦ h j.val
+    (Nat.le_trans (Nat.le_of_lt_succ (Finset.mem_range.1 j.property)) hm)
   let C : ℝ := ∑ j : Finset.range (m + 1), max (c j) 0
   have hC : 0 ≤ C := Finset.sum_nonneg (fun j _ ↦ le_max_right _ _)
   refine ⟨C, hC, fun j hj i x hx ↦ ?_⟩
@@ -140,8 +140,8 @@ theorem HasUniformJetBoundsOn.comp {n : ℕ} {U : Set E} {V : Set F}
     (hmap : ∀ i, MapsTo (f i) U V) :
     HasUniformJetBoundsOn 𝕜 n U (fun i ↦ g i ∘ f i) := by
   intro m hm
-  obtain ⟨Af, hAf, hAf'⟩ := hf.bound_all hm
-  obtain ⟨Ag, hAg, hAg'⟩ := hg.bound_all hm
+  obtain ⟨Af, _, hAf'⟩ := hf.bound_all hm
+  obtain ⟨Ag, _, hAg'⟩ := hg.bound_all hm
   refine ⟨Nat.factorial m * Ag * (max Af 1) ^ m, fun i x hx ↦ ?_⟩
   apply norm_iteratedFDeriv_comp_le_of_contDiffAt
     ((hcg i (f i x) (hmap i hx)).of_le (by exact_mod_cast hm))

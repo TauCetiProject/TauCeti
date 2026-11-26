@@ -13,19 +13,19 @@ public import TauCeti.Analysis.Contour.Residue.LogDeriv
 # The argument principle for an arbitrary null-homologous cycle
 
 For `f` whose zeros and poles *in* an open set `U` all lie in a finite set `S`, and a closed
-piecewise-`C¹` curve `γ` that is **null-homologous** in `U` and avoids `S`,
+absolutely continuous curve `γ` in `U` that is **null-homologous** there and avoids `S`,
 
 `∫ t in a..b, γ' t • logDeriv f (γ t) = 2πi · ∑_{z ∈ S} n_z(γ) · ord z`,
 
 where `n_z(γ)` is the generalized winding number of `γ` about `z` and `ord` is a caller-supplied
-integer-valued function required to agree with `meromorphicOrderAt f` only at the points of `S`
-that lie in `U` — positive at a zero, negative at a pole. Nothing is asked of `f` or of `ord` at a
-point of `S` outside `U`: null-homology forces the winding number there to vanish, so its term
-drops out whatever `ord` says. This is the arbitrary-cycle form of the argument principle: the
-roadmap's Layer-2 statement `TauCeti.Contour.argumentPrinciple` fixes the contour to be a round
-circle with every special point strictly inside, so each order is counted exactly once; here the
-contour is any piecewise-`C¹` loop and each order is counted with the multiplicity with which the
-loop winds around it.
+integer-valued function required to agree with `meromorphicOrderAt f` only at the points of `S` that
+lie in `U` — positive at a zero, negative at a pole. Nothing is asked of `f` or of `ord` at a point
+of `S` outside `U`: null-homology forces the winding number there to vanish, so its term drops out
+whatever `ord` says. This is the arbitrary-cycle form of the argument principle: the circle
+statement `TauCeti.Contour.argumentPrinciple` fixes the contour to be a round circle with every
+special point strictly inside, so each order is counted exactly once; here the contour is any
+absolutely continuous loop and each order is counted with the multiplicity with which the loop
+winds around it.
 
 The proof is the classical one-liner over the two pieces the repository already has: the residue
 theorem for a null-homologous cycle (`TauCeti.Contour.classicalResidueTheorem_nullHomologous`)
@@ -45,14 +45,16 @@ every point of `U ∖ S`, so no pointwise "wrong value" there is tolerated. Noth
 asked at the points of `S` lying in `U`, where only meromorphy is required, nor anywhere outside
 `U`. The circle proof may instead replace `f` by its meromorphic normal form, because a circle
 integral is unchanged by a change of integrand on a set codiscrete within the sphere
-(`circleIntegral.circleIntegral_congr_codiscreteWithin`); no such congruence is available for a
-general piecewise-`C¹` contour, and the null-homologous residue theorem used here asks for honest
-differentiability of `logDeriv f` on `U ∖ S`.
+(`circleIntegral.circleIntegral_congr_codiscreteWithin`). The statements here make no such
+replacement: the null-homologous residue theorem they are deduced from asks for honest
+differentiability of `logDeriv f` on `U ∖ S`. The divisor form
+`TauCeti.Contour.argumentPrinciple_nullHomologous_divisor` does make it, for a closed absolutely
+continuous curve on `frontier K`.
 
 ## Main results
 
 * `TauCeti.Contour.argumentPrinciple_nullHomologous` — the argument principle for a closed
-  null-homologous piecewise-`C¹` cycle: `∮_γ f'/f = 2πi · ∑_{z ∈ S} n_z(γ) · ord z`.
+  null-homologous absolutely continuous curve: `∮_γ f'/f = 2πi · ∑_{z ∈ S} n_z(γ) · ord z`.
 * `TauCeti.Contour.argumentPrinciple_nullHomologous_local` — the one-point case
   `∮_γ f'/f = 2πi · n_{z₀}(γ) · n`, the arbitrary-cycle counterpart of
   `TauCeti.Contour.argumentPrinciple_local`.
@@ -61,9 +63,8 @@ differentiability of `logDeriv f` on `U ∖ S`.
   `∮_γ f'/f = 2πi · ∑_{z ∈ S} n_z(γ) · analyticOrderNatAt f z`, the winding-weighted count of the
   zeros of `f` with multiplicity.
 
-This is the arbitrary-cycle upgrade of a Layer-2 target of the contour-integration roadmap; like
-the residue theorem it rests on it, it is a Layer-3 statement, since its hypotheses and its proof
-go through the homology Cauchy theorem.
+This is the arbitrary-cycle upgrade of the circle argument principle; like the residue theorem it
+rests on, its hypotheses and its proof go through the homology Cauchy theorem.
 
 ## Provenance
 
@@ -90,7 +91,7 @@ namespace TauCeti.Contour
 /-- **The argument principle for an arbitrary null-homologous cycle.** Let `U` be open, `S` a
 finite set collecting every zero and pole of `f` in `U`: `f` is analytic and non-vanishing at each
 point of `U ∖ S`, and meromorphic of order `ord s` at each `s ∈ S` lying in `U`. Let `γ` be a
-closed piecewise-`C¹` curve in `U`, **null-homologous** in `U`, that **avoids** `S`. Then the
+closed absolutely continuous curve in `U`, **null-homologous** in `U`, that **avoids** `S`. Then the
 contour integral of the logarithmic derivative counts the orders, each weighted by the winding
 number of `γ` about it:
 
@@ -111,7 +112,7 @@ theorem argumentPrinciple_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {U :
     (hU : IsOpen U) (hoff : ∀ z ∈ U, z ∉ S → AnalyticAt ℂ f z ∧ f z ≠ 0)
     (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s)
     (hord : ∀ s ∈ S, s ∈ U → meromorphicOrderAt f s = (ord s : WithTop ℤ))
-    {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b)
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b)
     (hγoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) (hnull : IsNullHomologous γ a b U) :
     ∫ t in a..b, deriv γ t • logDeriv f (γ t)
@@ -119,7 +120,7 @@ theorem argumentPrinciple_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {U :
   -- Off `S` the function is analytic and non-vanishing, so its logarithmic derivative is
   -- holomorphic there; at a point of `S` it is meromorphic, being `deriv f / f`.
   have hdiff : DifferentiableOn ℂ (logDeriv f) (U \ (↑S : Set ℂ)) := fun z hz =>
-    (analyticAt_logDeriv_of_analyticAt (hoff z hz.1 hz.2).1
+    ((hoff z hz.1 hz.2).1.logDeriv
       (hoff z hz.1 hz.2).2).differentiableAt.differentiableWithinAt
   have hmeroL : ∀ s ∈ S, s ∈ U → MeromorphicAt (logDeriv f) s := fun s hs hsU =>
     (hmero s hs hsU).deriv.div (hmero s hs hsU)
@@ -134,7 +135,7 @@ theorem argumentPrinciple_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {U :
 
 /-- **The argument principle for a cycle around a single zero or pole.** If `z₀` is the only point
 of an open `U` at which `f` fails to be analytic and non-vanishing, of order `n` there, and `γ` is a
-closed piecewise-`C¹` curve in `U`, null-homologous in `U`, missing `z₀`, then
+closed absolutely continuous curve in `U`, null-homologous in `U`, missing `z₀`, then
 
 `∫ t in a..b, γ' t • logDeriv f (γ t) = 2πi · n_{z₀}(γ) · n`.
 
@@ -151,7 +152,7 @@ theorem argumentPrinciple_nullHomologous_local {f : ℂ → ℂ} {U : Set ℂ} {
     (hU : IsOpen U) (hmero : z₀ ∈ U → MeromorphicAt f z₀)
     (hn : z₀ ∈ U → meromorphicOrderAt f z₀ = (n : WithTop ℤ))
     (hoff : ∀ z ∈ U, z ≠ z₀ → AnalyticAt ℂ f z ∧ f z ≠ 0)
-    {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b)
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b)
     (hγoff : ∀ t ∈ uIcc a b, γ t ≠ z₀) (hnull : IsNullHomologous γ a b U) :
     ∫ t in a..b, deriv γ t • logDeriv f (γ t)
@@ -164,8 +165,8 @@ theorem argumentPrinciple_nullHomologous_local {f : ℂ → ℂ} {U : Set ℂ} {
   simpa using key
 
 /-- **Winding-weighted zero counting.** Let `f` be analytic on an open `U` with all its zeros in a
-finite set `S`, and let `γ` be a closed piecewise-`C¹` curve in `U`, null-homologous in `U`, along
-which `f` does not vanish. Then
+finite set `S`, and let `γ` be a closed absolutely continuous curve in `U`, null-homologous in `U`,
+along which `f` does not vanish. Then
 
 `∫ t in a..b, γ' t • logDeriv f (γ t) = 2πi · ∑_{z ∈ S} n_z(γ) · analyticOrderNatAt f z`:
 
@@ -182,7 +183,7 @@ The zeros are automatically of finite order (`TauCeti.analyticOrderAt_ne_top_of_
 confining them to a finite set already rules out `f` vanishing identically near a point of `U`. -/
 theorem argumentPrinciple_nullHomologous_of_analyticOnNhd {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
     (hU : IsOpen U) (hf : AnalyticOnNhd ℂ f U) (hzeros : ∀ z ∈ U, f z = 0 → z ∈ S)
-    {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b)
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b)
     (hγoff : ∀ t ∈ uIcc a b, f (γ t) ≠ 0) (hnull : IsNullHomologous γ a b U) :
     ∫ t in a..b, deriv γ t • logDeriv f (γ t)

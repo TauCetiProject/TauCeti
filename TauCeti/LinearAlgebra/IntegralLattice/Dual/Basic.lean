@@ -33,7 +33,7 @@ that `Lᵛ` is again a full lattice.  It also identifies the natural pairing map
 * `TauCeti.IntegralLattice.dualCarrier`: the dual lattice as a submodule of the common ambient
   rational vector space.
 * `TauCeti.IntegralLattice.le_dualCarrier`: the inclusion `L.carrier ≤ L.dualCarrier`.
-* `TauCeti.IntegralLattice.instIsLatticeDualCarrier`: the dual carrier is a full lattice.
+* `TauCeti.IntegralLattice.instIsFullLatticeDualCarrier`: the dual carrier is a full lattice.
 * `TauCeti.IntegralLattice.finrank_dualCarrier`: the dual carrier has the same rank as the ambient
   rational space.
 * `TauCeti.IntegralLattice.dualPairing`: the pairing of a dual-lattice vector with a lattice vector,
@@ -54,8 +54,6 @@ that `Lᵛ` is again a full lattice.  It also identifies the natural pairing map
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md` (Layer 2)
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
 -/
 
 public section
@@ -85,26 +83,29 @@ extending any `ℤ`-basis of the carrier. -/
 theorem dualCarrier_eq_span_dualBasis (L : IntegralLattice V) [L.IsNondegenerate]
     {ι : Type*} [Finite ι] (b : Basis ι ℤ L.carrier) :
     L.dualCarrier = Submodule.span ℤ
-      (Set.range (L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ))) := by
+      (Set.range (L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ))) := by
   calc
     L.dualCarrier = L.form.dualSubmodule
-        (Submodule.span ℤ (Set.range (b.extendOfIsLattice ℚ))) :=
-      congrArg L.form.dualSubmodule b.span_range_extendOfIsLattice.symm
-    _ = _ := L.form.dualSubmodule_span_of_basis L.form_nondegenerate (b.extendOfIsLattice ℚ)
+        (Submodule.span ℤ (Set.range (b.extendOfIsFullLattice ℚ))) :=
+      congrArg L.form.dualSubmodule b.span_range_extendOfIsFullLattice.symm
+    _ = _ := L.form.dualSubmodule_span_of_basis L.form_nondegenerate (b.extendOfIsFullLattice ℚ)
 
-open Classical in
 /-- The dual carrier of a nondegenerate integral lattice is a full lattice in the same rational
 ambient space. -/
-noncomputable instance instIsLatticeDualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
-    L.dualCarrier.IsLattice ℚ := by
-  let b := Module.Free.chooseBasis ℤ L.carrier
-  rw [L.dualCarrier_eq_span_dualBasis b]
-  exact isLattice_span_basis (L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ))
+instance instIsFullLatticeDualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
+    L.dualCarrier.IsFullLattice ℚ :=
+  L.form.isFullLattice_dualSubmodule L.form_nondegenerate L.carrier
+
+instance (L : IntegralLattice V) [L.IsNondegenerate] : Module.Free ℤ L.dualCarrier :=
+  Submodule.IsLattice.free ℚ L.dualCarrier
+
+instance (L : IntegralLattice V) [L.IsNondegenerate] : Module.Finite ℤ L.dualCarrier :=
+  Submodule.IsLattice.finite ℚ L.dualCarrier
 
 /-- The dual carrier has the same rank as the ambient rational space. -/
 theorem finrank_dualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
     Module.finrank ℤ L.dualCarrier = Module.finrank ℚ V :=
-  Submodule.finrank_eq_finrank ℚ L.dualCarrier Submodule.IsLattice.span_eq_top
+  Submodule.finrank_eq_finrank ℚ L.dualCarrier Submodule.IsFullLattice.span_eq_top
 
 /-- The pairing of a dual-lattice vector with a lattice vector, valued in `ℤ`. -/
 noncomputable def dualPairing (L : IntegralLattice V) :
@@ -147,7 +148,7 @@ open Classical in
 regarded as an element of the dual carrier. -/
 noncomputable def dualBasisElem (L : IntegralLattice V) [L.IsNondegenerate]
     {ι : Type*} [Finite ι] (b : Basis ι ℤ L.carrier) (i : ι) : L.dualCarrier :=
-  ⟨L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ) i, by
+  ⟨L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ) i, by
     rw [L.dualCarrier_eq_span_dualBasis b]
     exact Submodule.subset_span (Set.mem_range_self i)⟩
 
@@ -158,7 +159,7 @@ bilinear dual basis. -/
 theorem coe_dualBasisElem (L : IntegralLattice V) [L.IsNondegenerate]
     {ι : Type*} [Finite ι] (b : Basis ι ℤ L.carrier) (i : ι) :
     (L.dualBasisElem b i : V) =
-      L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ) i := by
+      L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ) i := by
   unfold dualBasisElem
   rfl
 
@@ -174,11 +175,11 @@ theorem dualPairingEquiv_dualBasisElem (L : IntegralLattice V) [L.IsNondegenerat
   apply Int.cast_injective (α := ℚ)
   rw [L.dualPairingEquiv_cast, L.coe_dualBasisElem]
   calc
-    L.form (L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ) i) (b j : V) =
-        L.form (L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ) i)
-          ((b.extendOfIsLattice ℚ) j) := by rw [Basis.extendOfIsLattice_apply ℚ b j]
+    L.form (L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ) i) (b j : V) =
+        L.form (L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ) i)
+          ((b.extendOfIsFullLattice ℚ) j) := by rw [Basis.extendOfIsFullLattice_apply ℚ b j]
     _ = if j = i then 1 else 0 :=
-      L.form.apply_dualBasis_left L.form_nondegenerate (b.extendOfIsLattice ℚ) i j
+      L.form.apply_dualBasis_left L.form_nondegenerate (b.extendOfIsFullLattice ℚ) i j
     _ = ((b.dualBasis i (b j) : ℤ) : ℚ) := by
       simp only [Basis.dualBasis_apply, Basis.repr_self, Finsupp.single_apply]
       split_ifs <;> simp_all

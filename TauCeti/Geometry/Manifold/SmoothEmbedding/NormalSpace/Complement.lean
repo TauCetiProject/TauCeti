@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Coordinates
 public import TauCeti.Analysis.Calculus.QuotientRange
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Fixed complementary coordinates for intrinsic normal spaces
@@ -62,7 +63,7 @@ def normalSpaceEquivOfComplement (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hy : f x ∈ (chartAt G (f x₀)).source) (B : P →L[𝕜] F)
     (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible) :
-    f.NormalSpace x hn ≃L[𝕜] P :=
+    f.isImmersion.NormalSpace x hn ≃L[𝕜] P :=
   (f.normalSpaceEquivInTangentCoordinates hn hx hy).trans
     ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).quotientRangeEquiv B hB)
@@ -76,7 +77,7 @@ of tangent-chart coordinates. -/
     (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
     (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivOfComplement hn hx hy B hB (f.normalClass x hn v) =
+    f.normalSpaceEquivOfComplement hn hx hy B hB (f.isImmersion.normalClass x hn v) =
       (inTangentCoordinates I J _root_.id (f : M → N)
         (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B
         ((trivializationAt F (TangentSpace J) (f x₀)) ⟨f x, v⟩).2 := by
@@ -91,7 +92,8 @@ tangent chart and take its normal class. -/
     (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible) (w : P) :
     (f.normalSpaceEquivOfComplement hn hx hy B hB).symm w =
-      f.normalClass x hn ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
+      f.isImmersion.normalClass x hn
+          ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
   simp [normalSpaceEquivOfComplement]
 
 /-- Changing the complement and the ambient tangent chart gives the normal-coordinate
@@ -172,9 +174,14 @@ theorem exists_contMDiffOn_inTangentCoordinates_quotientRangeCoordinate
     (mfderiv I J (f : M → N)) x₀
   have hA : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F) m A x₀ :=
     f.contMDiff.contMDiffAt.mfderiv_const hm
-  obtain ⟨Q, hQ, W, hW, hxW, hInv⟩ := hA.continuousAt.exists_isInvertible_coprod_subtypeL
-    (f.hasLeftInverse_inTangentCoordinates_mfderiv hn (mem_chart_source H x₀)
-      (mem_chart_source G (f x₀)))
+  -- The differential at `x₀` is split-injective, hence so is its tangent-coordinate expression.
+  have hleft : (inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x₀).HasLeftInverse := by
+    rw [inTangentCoordinates, id_eq, ContinuousLinearMap.hasLeftInverse_inCoordinates_iff
+      (FiberBundle.mem_baseSet_trivializationAt' x₀)
+      (FiberBundle.mem_baseSet_trivializationAt' (f x₀))]
+    exact isDiffImmersionAt_iff.1 (f.isImmersion.isDiffImmersionAt hn x₀)
+  obtain ⟨Q, hQ, W, hW, hxW, hInv⟩ := hA.continuousAt.exists_isInvertible_coprod_subtypeL hleft
   obtain ⟨V, hV, hAV⟩ := (contMDiffAt_iff_contMDiffOn_nhds hm').mp hA
   let S := (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source
   have hS : IsOpen S := (chartAt H x₀).open_source.inter

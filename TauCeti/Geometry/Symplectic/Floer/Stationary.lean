@@ -25,9 +25,12 @@ the convention `ι_{X_H} ω = dH`. This file is the manifold-target counterpart 
 action and shows that the action is free elsewhere.
 
 The *stationary* maps `u(s, t) = x(t)` are fixed by every translation. Such a map has
-`∂_s u = 0` and `∂_t u = x'`, so it solves the Floer equation exactly when
-`x' = X_{H_t}(x)`, whatever the almost complex structure
-(`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_snd_iff`). In particular the stationary
+`∂_s u = 0` and `∂_t u = x'`, so the Floer equation for `u` holds at `(s, t)` exactly when
+`x'(t) = X_{H_t}(x(t))`, whatever the almost complex structure
+(`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_snd_iff`). This equivalence holds for
+every curve `x`, with Mathlib's totalized derivatives, which are `0` where `x` is not
+differentiable; it says that `x` solves Hamilton's equation classically only when `x` is
+differentiable. In particular the stationary
 cylinder over a `1`-periodic orbit (`TauCeti.periodicSolutions`) is a Floer cylinder
 (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_snd_of_mem_periodicSolutions`), and its
 energy density vanishes.
@@ -47,13 +50,15 @@ over each of the infinitely many disjoint period rectangles of the strip, so its
 nonstationary finite-energy solution is fixed by no nontrivial translation
 (`SmoothTwoForm.IsNondegenerate.eq_zero_of_lintegral_floerEnergyDensity_ne_top_of_periodic`).
 
-These are statements about classical solutions; no Sobolev completion, compactness or
-transversality is asserted.
+Apart from that totalized equivalence, these are statements about classical solutions; no Sobolev
+completion, compactness or transversality is asserted.
 
 ## Main results
 
-* `SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_snd_iff`: stationary solutions are the
-  Hamiltonian orbits.
+* `SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_snd_iff`: a stationary map solves the
+  Floer equation exactly when its velocity is the Hamiltonian vector field, an identity of
+  totalized derivatives; for differentiable curves, stationary solutions are the Hamiltonian
+  orbits.
 * `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`: a solution has zero
   energy exactly when it is stationary.
 * `SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_periodic`: a finite-energy map invariant
@@ -89,15 +94,18 @@ variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {x : ℝ → M} {z : �
 /-- **Stationary Floer cylinders are Hamiltonian orbits.** For the cylindrical perturbation
 `K = H_t dt` and any almost complex structure `J` on the tangent space, the stationary map
 `(s, t) ↦ x(t)` solves the Floer equation at `z` exactly when `x'(t) = X_{H_t}(x(t))`, where
-`t = z.2`. -/
+`t = z.2`. Both derivatives are Mathlib's totalized ones, which vanish where `x` is not
+differentiable, so for an arbitrary curve this is an identity of totalized derivatives: it says
+that `x` solves Hamilton's equation classically at `t` only when `x` is differentiable at `t`
+(for `H = 0`, both sides hold at every `t` where `x` is not differentiable). -/
 theorem isComplexLinearMap_perturbedMFDeriv_comp_snd_iff
-    {J : AlmostComplexStructure (TangentSpace I (x z.2))} (hx : MDifferentiableAt 𝓘(ℝ) I x z.2) :
+    {J : AlmostComplexStructure (TangentSpace I (x z.2))} :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
         (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z).toLinearMap ↔
       Manifold.curveVelocity I x z.2 = ω.hamiltonianVectorField (H z.2) (x z.2) := by
   rw [ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ (fun w ↦ x w.2) z J,
-    stdComplexLineReal_eq, stdComplexLineImag_eq, Manifold.mfderiv_comp_snd_apply_one_zero hx,
-    Manifold.mfderiv_comp_snd_apply_zero_one hx, hamiltonianVectorField_const, Pi.zero_apply,
+    stdComplexLineReal_eq, stdComplexLineImag_eq, Manifold.mfderiv_comp_snd_apply_one_zero,
+    Manifold.mfderiv_comp_snd_apply_zero_one, hamiltonianVectorField_const, Pi.zero_apply,
     sub_zero, zero_add]
   -- An almost complex structure is injective, since `J (J v) = -v`.
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, sub_self, map_zero]⟩
@@ -115,7 +123,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_snd_of_mem_periodicSolutions {T
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z).toLinearMap := by
   have h := (mem_periodicSolutions.1 hx).1 z.2
-  rw [isComplexLinearMap_perturbedMFDeriv_comp_snd_iff h.mdifferentiableAt]
+  rw [isComplexLinearMap_perturbedMFDeriv_comp_snd_iff]
   simpa only [Manifold.curveVelocityWithin_univ] using
     Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt h.hasMFDerivWithinAt
       uniqueDiffWithinAt_univ
@@ -123,10 +131,10 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_snd_of_mem_periodicSolutions {T
 /-- **The energy density of a stationary map.** For the cylindrical perturbation `K = H_t dt`,
 the Floer energy density of `(s, t) ↦ x(t)` vanishes. -/
 @[simp]
-theorem floerEnergyDensity_comp_snd (hx : MDifferentiableAt 𝓘(ℝ) I x z.2) :
+theorem floerEnergyDensity_comp_snd :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z = 0 := by
   rw [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
-    stdComplexLineReal_eq, Manifold.mfderiv_comp_snd_apply_one_zero hx,
+    stdComplexLineReal_eq, Manifold.mfderiv_comp_snd_apply_one_zero,
     hamiltonianVectorField_const, Pi.zero_apply, sub_zero, SmoothBundleForm.eval₂_apply]
   exact ContinuousAlternatingMap.map_coord_zero _ 0 rfl
 
@@ -301,7 +309,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (hu : MDifferentiable �
     (ne_top_of_le_ne_top hfin (lintegral_mono_set strip_Ioo_subset_Icc))
   have hae : (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 =ᵐ[volume] (univ : Set ℝ) ×ˢ Icc 0 1 := by
     rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ioo_ae_eq_Icc
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc
   rwa [← setLIntegral_congr hae]
 
 /-- **Translations act freely on nonstationary finite-energy Floer cylinders.** Under the

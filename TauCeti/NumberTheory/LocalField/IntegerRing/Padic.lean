@@ -55,7 +55,7 @@ theorem coe_padicInt_smul_integerIdeal (I : Ideal 𝒪[K]) (c : ℤ_[p]) (x : I)
   -- The named module restricts scalars; expose that action before using the coercion lemmas.
   change ((((Padic.integerRingEquiv p).symm c • x : I) : 𝒪[K]) : K) = _
   rw [Submodule.coe_smul_of_tower, Algebra.smul_def, Subring.coe_mul,
-    coe_algebraMap_integerRing, Padic.coe_integerRingEquiv_symm_apply]
+    Valuation.HasExtension.val_algebraMap, Padic.coe_integerRingEquiv_symm_apply]
 
 /-- P-adic scalar multiplication is continuous on an integer-ring ideal with its subspace
 topology. -/
@@ -66,8 +66,8 @@ theorem continuousSMul_integerIdealPadicInt (I : Ideal 𝒪[K]) :
   have hc : Continuous fun z : ℤ_[p] × I =>
       algebraMap ℚ_[p] K (z.1 : ℚ_[p]) * (z.2 : K) :=
     ((continuous_algebraMap_of_valuativeExtension ℚ_[p] K).comp
-      (continuous_subtype_val.comp continuous_fst)).mul
-        (continuous_subtype_val.comp (continuous_subtype_val.comp continuous_snd))
+      (continuous_subtypeVal.comp continuous_fst)).mul
+        (continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_snd))
   have hs : Continuous fun z : ℤ_[p] × I => (((z.1 • z.2 : I) : 𝒪[K]) : K) :=
     hc.congr fun z => (coe_padicInt_smul_integerIdeal I z.1 z.2).symm
   exact ⟨(hs.subtype_mk _).subtype_mk _⟩

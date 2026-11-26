@@ -15,6 +15,7 @@ import TauCeti.NumberTheory.LegendreSymbol.NormForm
 import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Norm.Quadratic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
 
 /-!
 # The ring of integers of a quadratic field
@@ -68,17 +69,6 @@ open Polynomial NumberField Module
 namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- A rational number whose image in a number field is an algebraic integer is an integer. -/
-private theorem exists_intCast_eq_of_algebraMap_mem_range {q : ℚ}
-    (h : algebraMap ℚ K q ∈ (algebraMap (𝓞 K) K).range) : ∃ n : ℤ, (n : ℚ) = q := by
-  obtain ⟨w, hw⟩ := h
-  have hint : IsIntegral ℤ q := by
-    have hwint : IsIntegral ℤ (algebraMap ℚ K q) := by
-      rw [← hw]; exact (IsIntegralClosure.isIntegral ℤ K w).algebraMap
-    exact (isIntegral_algHom_iff (IsScalarTower.toAlgHom ℤ ℚ K)
-      (FaithfulSMul.algebraMap_injective ℚ K)).mp hwint
-  exact (IsIntegrallyClosed.isIntegral_iff).mp hint
 
 /-- If `d` is squarefree and `d · B²` is an integer for a rational `B`, then `B` is an integer:
 the reduced denominator squared divides `d`, so is a unit. -/
@@ -139,8 +129,9 @@ private theorem exists_intCast_coords (hmin : minpoly ℤ θ = X ^ 2 - C d)
       rw [this] at hroot; linear_combination hroot
     rw [heq, map_sub, map_mul, map_pow, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K,
       RingOfIntegers.coe_eq_algebraMap]
-  obtain ⟨N, hN⟩ := exists_intCast_eq_of_algebraMap_mem_range hmem
-  exact ⟨N, hN⟩
+  obtain ⟨w, hw⟩ := hmem
+  obtain ⟨N, rfl⟩ := RingOfIntegers.exists_intCast_eq_of_coe_mem_range (y := w) ⟨_, hw.symm⟩
+  exact ⟨N, (algebraMap ℚ K).injective (by simpa using hw)⟩
 
 /-- **Parity from the norm residue.** If `A² - d·B² = 4N` with `d ≡ 2, 3 (mod 4)`, then `A` and
 `B` are both even: squares are `0, 1 (mod 4)`, so `A² ≡ d·B² (mod 4)` is impossible unless `B`
@@ -505,15 +496,9 @@ theorem isSquare_neg_one_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) {p : ℕ} [Fact p.Prime]
     (hpd : (p : ℤ) ∣ d) {z : 𝓞 K} (hz : Algebra.norm ℚ (z : K) = -1) :
     IsSquare (-1 : ZMod p) := by
-  by_cases hp2 : p = 2
-  · subst hp2
-    exact ⟨1, rfl⟩
   obtain ⟨A, B, hAB⟩ := exists_sq_sub_mul_sq_eq_four_mul_norm hmin hgen hsf z
   have hzℤ : Algebra.norm ℤ z = -1 := by exact_mod_cast (Algebra.coe_norm_int z).trans hz
-  have hp1 : ¬ (p : ℤ) ∣ -1 := by
-    rw [Int.dvd_neg, Int.natCast_dvd_ofNat, Nat.dvd_one]
-    exact (Fact.out : p.Prime).ne_one
-  have h := jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq Fact.out hpd hp1
+  have h := jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq (n := -1) hpd (by simp)
     (by rw [hAB, hzℤ])
   rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym.eq_one_iff p (by simp)] at h
   exact_mod_cast h

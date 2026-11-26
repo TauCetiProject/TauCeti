@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Compactness
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
+import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Components
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Data.ENNReal.InterpolatedExponent
 
 /-!
@@ -25,7 +27,9 @@ compact by local Rellich compactness (`TauCeti.W1p.isCompactOperator_valueL_rest
 the uniformly bounded equi-Lipschitz whole-space representatives.
 
 Compactness then gives the Poincaré–Wirtinger inequality on bounded connected Lipschitz domains,
-with a constant that is not explicit.
+with a constant that is not explicit. On a finite disjoint union of bounded preconnected
+Lipschitz open sets, one instead subtracts the mean on each piece, with a constant uniform in
+the Sobolev function. Empty pieces are allowed, and no separation of the closures is required.
 
 Compactness passes to every subcritical target exponent: if `Ω` has dimension `n`, `1 ≤ p < ∞`
 and `1 ≤ q < ∞` with `1/p - 1/q < 1/n`, then `W^{1,p}(Ω) → L^q(Ω)` is compact. For `p < n` this is
@@ -42,8 +46,12 @@ strict: at `q = p⋆` the inclusion is bounded but not compact.
 
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`: Rellich–Kondrachov
   compactness of `W^{1,p}(Ω) → Lᵖ(Ω)`.
+* `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv`: the same
+  on an affine-isometric copy of `Ω`.
 * `TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith`: the
   Poincaré–Wirtinger inequality on a bounded connected Lipschitz domain.
+* `TauCeti.W1p.exists_eqOn_setAverage_and_eLpNorm_value_sub_le_of_finite_isLipschitzDomain`:
+  Poincaré–Wirtinger after subtracting the mean on each piece of a finite disjoint cover.
 * `TauCeti.W1p.exists_isCompactOperator_of_isLipschitzDomainWith`: Rellich–Kondrachov
   compactness of `W^{1,p}(Ω) → L^q(Ω)` for every subcritical `q`.
 
@@ -58,7 +66,7 @@ public section
 noncomputable section
 
 open Bornology MeasureTheory Module Set TopologicalSpace
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Function
 
 namespace TauCeti
 
@@ -72,7 +80,7 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := Ω) (p := p)) := by
-  obtain ⟨T, hT⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
+  obtain ⟨T, hT, _⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
   have hK : IsCompactOperator
       ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (W1p.restrictL le_top)) :=
     W1p.isCompactOperator_valueL_restrictL hb.isCompact_closure (subset_univ _)
@@ -82,6 +90,20 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
     rw [ContinuousLinearMap.comp_assoc, hT, ContinuousLinearMap.comp_id]
   rw [heq]
   exact hK.comp_clm T
+
+/-- **Rellich–Kondrachov on rigid copies of bounded Lipschitz domains.** Let an affine isometry
+`e` carry `U` onto a bounded Lipschitz domain `Ω ⊆ ℝ × E`, in the sense that `Ω = e⁻¹⁻¹(U)`.
+Then for `1 ≤ p ≤ ∞` the value map `W^{1,p}(U) → Lᵖ(U)` is a compact operator. -/
+theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [MeasurableSpace F] [BorelSpace F] {U : Opens F}
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+    (hΩU : (Ω : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' U) :
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) :=
+  W1p.isCompactOperator_valueL_of_affineIsometryEquiv e
+    (hΩU ▸ (e.toHomeomorph.toEquiv.preimage_symm_preimage U).symm)
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb)
 
 /-- **The Poincaré–Wirtinger inequality on bounded connected Lipschitz domains.** Let `Ω` be a
 bounded, preconnected Lipschitz domain, let `S ⊆ Ω` have positive measure, and let `1 ≤ p ≤ ∞`.
@@ -98,6 +120,41 @@ theorem W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith
   W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator
     (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb) hconn
     hb.measure_lt_top.ne hS hS0
+
+/-- **Poincaré–Wirtinger on finitely many components.** On a finite disjoint union of bounded
+preconnected Lipschitz open sets, the gradient controls the deviation from the mean on each
+piece, for every `1 ≤ p ≤ ∞`. Empty pieces are allowed. The constant is uniform in the Sobolev
+function. -/
+theorem W1p.exists_eqOn_setAverage_and_eLpNorm_value_sub_le_of_finite_isLipschitzDomain
+    {ι : Type*} [Finite ι] {U : ι → Opens (WithLp 2 (ℝ × E))}
+    (hd : Pairwise (Disjoint on fun i ↦ (U i : Set (WithLp 2 (ℝ × E)))))
+    (hcover : ⋃ i, (U i : Set (WithLp 2 (ℝ × E))) = Ω)
+    (hL : ∀ i, (U i : Set (WithLp 2 (ℝ × E))).IsLipschitzDomain E)
+    (hb : ∀ i, IsBounded (U i : Set (WithLp 2 (ℝ × E))))
+    (hc : ∀ i, IsPreconnected (U i : Set (WithLp 2 (ℝ × E)))) :
+    ∃ C : ℝ≥0, ∀ u : W1p volume Ω p, ∃ m : WithLp 2 (ℝ × E) → ℝ,
+      (∀ i, EqOn m (fun _ ↦ ⨍ y in U i, W1p.value u y) (U i)) ∧
+      eLpNorm (fun x ↦ W1p.value u x - m x) p (volume.restrict Ω) ≤ C * ‖W1p.gradient u‖ₑ := by
+  classical
+  let := Fintype.ofFinite ι
+  have hP (i : ι) : ∃ C : ℝ≥0, ∀ v : W1p volume (U i) p,
+      eLpNorm (fun x ↦ W1p.value v x - ⨍ y in U i, W1p.value v y)
+        p (volume.restrict (U i)) ≤ C * ‖W1p.gradient v‖ₑ := by
+    rcases (U i : Set (WithLp 2 (ℝ × E))).eq_empty_or_nonempty with hemp | hne
+    · exact ⟨0, fun v ↦ by simp [hemp]⟩
+    obtain ⟨L, hLi⟩ := (hL i).exists_isLipschitzDomainWith
+      ((hb i).isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure)
+    obtain ⟨C, hC, hP⟩ := W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith
+      (p := p) hLi (hb i) (hc i) subset_rfl
+      ((U i).isOpen.measure_pos volume hne).ne'
+    rw [ENNReal.ofReal_eq_coe_nnreal hC] at hP
+    exact ⟨⟨C, hC⟩, hP⟩
+  choose C hC using hP
+  refine ⟨Finset.univ.sup C, fun u ↦
+    W1p.exists_eqOn_setAverage_and_eLpNorm_value_sub_le_of_pairwise_disjoint
+      hd hcover _ (fun i v ↦ ?_) u⟩
+  exact (hC i v).trans <| mul_le_mul_left (by
+    exact_mod_cast (Finset.le_sup (f := C) (Finset.mem_univ i))) _
 
 /-- **Rellich–Kondrachov for subcritical target exponents.** Let `Ω ⊆ ℝ × E` be a bounded
 Lipschitz domain of dimension `n`, let `1 ≤ p ≤ ∞`, and let `1 ≤ q < ∞` with `1/p - 1/q < 1/n`.
@@ -126,9 +183,8 @@ theorem W1p.exists_isCompactOperator_of_isLipschitzDomainWith {q : ℝ≥0∞}
     exact hK.of_forall_ae_eq_of_le hqp hS₀
   -- For `p ≤ q`, interpolate between `Lᵖ(Ω)` and `L^s(Ω)` for a finite `s > q` in the
   -- subcritical range.
-  obtain ⟨s, θ, hs₁, hs, hps, hθ0, hθ1, hrel⟩ := exists_inv_eq_of_inv_lt_inv_add Fact.out hq
-    (ENNReal.inv_ne_top.2 (by exact_mod_cast (Module.finrank_pos (R := ℝ)
-      (M := WithLp 2 (ℝ × E))).ne')) hpq' hpq
+  obtain ⟨s, θ, hs₁, hs, hps, hθ0, hθ1, hrel⟩ :=
+    exists_inv_eq_of_inv_lt_inv_add Fact.out hq hpq' hpq
   have : Fact (1 ≤ s) := ⟨hs₁⟩
   obtain ⟨T, hT⟩ := W1p.exists_lpEmbeddingL_of_eLpNorm_value_le subset_rfl
     (W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith hs hps hΩ hb)

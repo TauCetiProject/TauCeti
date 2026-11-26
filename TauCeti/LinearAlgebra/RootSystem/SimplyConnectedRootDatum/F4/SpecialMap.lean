@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 
 /-!
@@ -33,10 +33,11 @@ computed here as well.
 These equations are the explicit `F₄` input for the root-datum special-isogeny construction, the
 last of the three beside the type `B₂` case of
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/B/SpecialMap.lean` and the same-shape
-`G₂` implementation proposed in
+`G₂` implementation of
+`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/G2/SpecialMap.lean` from
 [Tau Ceti PR #4116](https://github.com/TauCetiProject/TauCeti/pull/4116).
-They do not yet construct a group-scheme morphism; Layer 9 of the reductive-groups roadmap requires
-that later lift, together with its action on root subgroups, before the Suzuki--Ree lane can use it.
+They do not construct a group-scheme morphism: that is a lift of these data, together with its
+action on root subgroups.
 
 ## Main definitions
 
@@ -156,6 +157,13 @@ image. This is a length-exchanging compatibility, not a Cartan automorphism. -/
     f4SpecialIsogenyIndex (f4ReflectionIndex j k) =
       f4ReflectionIndex (f4SpecialIsogenyIndex j) (f4SpecialIsogenyIndex k) := by
   decide +revert
+
+/-- The special root permutation commutes with passing to the opposite root. -/
+theorem f4SpecialIsogenyIndexEquiv_f4OppositeRootIndex (α : Fin 48) :
+    f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex α) =
+      f4OppositeRootIndex (f4SpecialIsogenyIndexEquiv α) := by
+  simp only [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum_reflectionPerm,
+    f4SpecialIsogenyIndexEquiv_apply, f4SpecialIsogenyIndex_f4ReflectionIndex]
 
 /-! ## Action on the pinned root datum -/
 

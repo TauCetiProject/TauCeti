@@ -37,6 +37,10 @@ hence so is the cycle integral.
 * `TauCeti.Contour.Cycle.homologyCauchyTheorem` — Cauchy's theorem for a null-homologous cycle.
 * `TauCeti.Contour.Cycle.integral_eq_of_windingNumber_eq` — cycles with the same winding numbers
   about the singular set have the same integral.
+* `TauCeti.Contour.Cycle.differentiableOn_integral_div_sub` and
+  `TauCeti.Contour.Cycle.tendsto_integral_div_sub_cocompact`: for every `f`, the Cauchy integral
+  `w ↦ ∮_C f(z)/(z - w) dz` is holomorphic off the trace of `C` and tends to `0` at infinity. These
+  are the two properties of Dixon's second auxiliary function that the proof uses.
 
 ## References
 
@@ -63,9 +67,9 @@ namespace TauCeti.Contour.Cycle
 /-- An open set containing the trace of a nonzero cycle contains a point outside that trace. -/
 private theorem exists_mem_not_mem_trace {C : Cycle} {U : Set ℂ} (hU : IsOpen U)
     (hCU : IsIn C U) (hC : C ≠ 0) : ∃ w ∈ U, w ∉ trace C := by
-  have hsupp : (FreeAbelianGroup.support C).Nonempty := by
+  have hsupp : (FreeAddCommGroup.support C).Nonempty := by
     by_contra h
-    rw [Finset.not_nonempty_iff_eq_empty, FreeAbelianGroup.support_eq_empty] at h
+    rw [Finset.not_nonempty_iff_eq_empty, FreeAddCommGroup.support_eq_empty] at h
     exact hC h
   obtain ⟨γ, hγ⟩ := hsupp
   have htrace_ne : (trace C).Nonempty :=
@@ -82,13 +86,13 @@ private theorem exists_mem_not_mem_trace {C : Cycle} {U : Set ℂ} (hU : IsOpen 
 
 /-- Dixon's first auxiliary function, additively extended over the support of a cycle. -/
 private def cycleDixonH1 (f : ℂ → ℂ) (C : Cycle) (w : ℂ) : ℂ :=
-  ∑ γ ∈ FreeAbelianGroup.support C,
-    (FreeAbelianGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH1 f γ γ.a γ.b w
+  ∑ γ ∈ FreeAddCommGroup.support C,
+    (FreeAddCommGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH1 f γ γ.a γ.b w
 
 /-- Dixon's second auxiliary function, additively extended over the support of a cycle. -/
 private def cycleDixonH2 (f : ℂ → ℂ) (C : Cycle) (w : ℂ) : ℂ :=
-  ∑ γ ∈ FreeAbelianGroup.support C,
-    (FreeAbelianGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH2 f γ γ.a γ.b w
+  ∑ γ ∈ FreeAddCommGroup.support C,
+    (FreeAddCommGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH2 f γ γ.a γ.b w
 
 /-- Dixon's glued function for a cycle: the finite sum of `h₁` terms on `U` and of `h₂` terms
 off `U`. -/
@@ -97,13 +101,6 @@ private def cycleDixonFunction (f : ℂ → ℂ) (U : Set ℂ) (C : Cycle) (w : 
     classical
     exact if w ∈ U then cycleDixonH1 f C w else cycleDixonH2 f C w
 
-/-- Every supported curve of a cycle contained in `U` maps its parameter interval into `U`. -/
-private theorem mapsTo_of_mem_support {C : Cycle} {U : Set ℂ} (hCU : IsIn C U)
-    {γ : PiecewiseC1ClosedCurve} (hγ : γ ∈ FreeAbelianGroup.support C) :
-    ∀ t ∈ uIcc γ.a γ.b, γ t ∈ U := by
-  intro t ht
-  exact isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
-
 /-- The cycle `h₁`/`h₂` identity. Away from the trace, their difference is the winding number
 of the whole cycle, not a separate hypothesis on each generator. -/
 private theorem cycleDixonH1_eq_cycleDixonH2_sub {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ}
@@ -111,30 +108,30 @@ private theorem cycleDixonH1_eq_cycleDixonH2_sub {f : ℂ → ℂ} {C : Cycle} {
     cycleDixonH1 f C w = cycleDixonH2 f C w -
       2 * (Real.pi : ℂ) * Complex.I * windingNumber w C * f w := by
   rw [cycleDixonH1, cycleDixonH2, windingNumber_eq_sum_support]
-  have hterm : ∀ γ ∈ FreeAbelianGroup.support C,
+  have hterm : ∀ γ ∈ FreeAddCommGroup.support C,
       TauCeti.Contour.dixonH1 f γ γ.a γ.b w =
         TauCeti.Contour.dixonH2 f γ γ.a γ.b w -
           2 * (Real.pi : ℂ) * Complex.I *
             TauCeti.Contour.windingNumber γ γ.a γ.b w * f w := by
     intro γ hγ
     have hoff := avoids_of_mem_support hw hγ
-    have hγU := mapsTo_of_mem_support hCU hγ
+    have hγU := hCU.mapsTo_of_mem_support hγ
     exact TauCeti.Contour.dixonH1_eq_dixonH2_sub_windingNumber_mul_f γ.continuousOn hoff
       (TauCeti.Contour.cauchy_integrand_intervalIntegrable hf γ.continuousOn hγU
         γ.intervalIntegrable_deriv hoff)
       (TauCeti.Contour.intervalIntegrable_inv_sub_mul_deriv γ.continuousOn hoff
         γ.intervalIntegrable_deriv)
   calc
-    ∑ γ ∈ FreeAbelianGroup.support C,
-        (FreeAbelianGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH1 f γ γ.a γ.b w =
-      ∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℂ) *
+    ∑ γ ∈ FreeAddCommGroup.support C,
+        (FreeAddCommGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH1 f γ γ.a γ.b w =
+      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℂ) *
         (TauCeti.Contour.dixonH2 f γ γ.a γ.b w - 2 * (Real.pi : ℂ) * Complex.I *
           TauCeti.Contour.windingNumber γ γ.a γ.b w * f w) :=
       Finset.sum_congr rfl fun γ hγ ↦ by rw [hterm γ hγ]
-    _ = (∑ γ ∈ FreeAbelianGroup.support C,
-          (FreeAbelianGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH2 f γ γ.a γ.b w) -
+    _ = (∑ γ ∈ FreeAddCommGroup.support C,
+          (FreeAddCommGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH2 f γ γ.a γ.b w) -
         2 * (Real.pi : ℂ) * Complex.I *
-          (∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℂ) *
+          (∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℂ) *
             TauCeti.Contour.windingNumber γ γ.a γ.b w) * f w := by
       simp only [Finset.mul_sum, Finset.sum_mul, ← Finset.sum_sub_distrib]
       exact Finset.sum_congr rfl fun _ _ ↦ by ring
@@ -151,6 +148,15 @@ private theorem cycleDixonFunction_eq_cycleDixonH2 {f : ℂ → ℂ} {C : Cycle}
     ring
   · rw [cycleDixonFunction, ite_eq_right hwU]
 
+/-- The cycle `h₂` function is holomorphic off the trace of the cycle, termwise over the finite
+support. -/
+private theorem differentiableAt_cycleDixonH2 (f : ℂ → ℂ) {C : Cycle} {w : ℂ}
+    (hw : w ∉ trace C) : DifferentiableAt ℂ (cycleDixonH2 f C) w := by
+  unfold cycleDixonH2
+  exact DifferentiableAt.fun_sum fun γ hγ ↦
+    (TauCeti.Contour.hasDerivAt_dixonH2 (f := f) γ.continuousOn
+      (avoids_of_mem_support hw hγ)).differentiableAt.const_mul (FreeAddCommGroup.coeff γ C : ℂ)
+
 /-- The cycle Dixon function is entire. Null-homology makes the finite sum of the boundary jumps
 vanish, even though the individual generator jumps need not vanish. -/
 private theorem differentiable_cycleDixonFunction {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ}
@@ -160,23 +166,15 @@ private theorem differentiable_cycleDixonFunction {f : ℂ → ℂ} {C : Cycle} 
     unfold cycleDixonH1
     exact DifferentiableOn.fun_sum fun γ hγ ↦
       (TauCeti.Contour.differentiableOn_dixonH1 hU hf γ.continuousOn
-        (mapsTo_of_mem_support hCU hγ) γ.intervalIntegrable_deriv).const_mul
-          (FreeAbelianGroup.coeff γ C : ℂ)
+        (hCU.mapsTo_of_mem_support hγ) γ.intervalIntegrable_deriv).const_mul
+          (FreeAddCommGroup.coeff γ C : ℂ)
   intro w
   by_cases hwU : w ∈ U
   · refine (hH1.differentiableAt (hU.mem_nhds hwU)).congr_of_eventuallyEq ?_
     filter_upwards [hU.mem_nhds hwU] with w' hw'U
     rw [cycleDixonFunction, ite_eq_left hw'U]
   · have hwtrace : w ∉ trace C := fun hw ↦ hwU (isIn_iff.mp hCU hw)
-    have hH2 : DifferentiableAt ℂ (cycleDixonH2 f C) w := by
-      unfold cycleDixonH2
-      exact DifferentiableAt.fun_sum fun γ hγ ↦ by
-        have hoff := avoids_of_mem_support hwtrace hγ
-        exact (TauCeti.Contour.hasDerivAt_dixonH2 γ.continuousOn hoff
-          (TauCeti.Contour.cauchy_integrand_intervalIntegrable hf.continuousOn γ.continuousOn
-            (mapsTo_of_mem_support hCU hγ) γ.intervalIntegrable_deriv
-              hoff)).differentiableAt.const_mul
-              (FreeAbelianGroup.coeff γ C : ℂ)
+    have hH2 := differentiableAt_cycleDixonH2 f hwtrace
     obtain ⟨ε, hε, hball⟩ :=
       Metric.isOpen_iff.mp (isCompact_trace C).isClosed.isOpen_compl w hwtrace
     refine hH2.congr_of_eventuallyEq ?_
@@ -191,22 +189,12 @@ private theorem differentiable_cycleDixonFunction {f : ℂ → ℂ} {C : Cycle} 
     exact cycleDixonFunction_eq_cycleDixonH2 hf.continuousOn hCU hw'trace hw'wind
 
 /-- The cycle `h₂` function tends to zero at infinity, termwise over the finite support. -/
-private theorem cycleDixonH2_tendsto_zero {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ}
-    (hf : DifferentiableOn ℂ f U) (hCU : IsIn C U) :
+private theorem cycleDixonH2_tendsto_zero (f : ℂ → ℂ) (C : Cycle) :
     Tendsto (cycleDixonH2 f C) (cocompact ℂ) (nhds 0) := by
   unfold cycleDixonH2
-  have hterm : ∀ γ ∈ FreeAbelianGroup.support C,
-      Tendsto (fun w ↦ (FreeAbelianGroup.coeff γ C : ℂ) *
-        TauCeti.Contour.dixonH2 f γ γ.a γ.b w) (cocompact ℂ) (nhds 0) := by
-    intro γ hγ
-    obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn γ.continuousOn
-    have hγU := mapsTo_of_mem_support hCU hγ
-    have hint : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume γ.a γ.b :=
-      γ.intervalIntegrable_deriv.continuousOn_mul (hf.continuousOn.comp γ.continuousOn hγU)
-    simpa using (tendsto_const_nhds.mul
-      (TauCeti.Contour.dixonH2_tendsto_zero_of_integrable
-        (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hint))
-  simpa using tendsto_finsetSum (FreeAbelianGroup.support C) hterm
+  simpa using tendsto_finsetSum (FreeAddCommGroup.support C) fun γ _ ↦
+    tendsto_const_nhds.mul (TauCeti.Contour.dixonH2_tendsto_zero_of_continuousOn (f := f)
+      γ.continuousOn)
 
 /-- The cycle Dixon function vanishes by Liouville's theorem. -/
 private theorem cycleDixonFunction_eq_zero {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ}
@@ -217,21 +205,37 @@ private theorem cycleDixonFunction_eq_zero {f : ℂ → ℂ} {C : Cycle} {U : Se
     exact cycleDixonFunction_eq_cycleDixonH2 hf.continuousOn hCU hw.1 hw.2
   exact Differentiable.apply_eq_of_tendsto_cocompact
     (differentiable_cycleDixonFunction hU hf hCU hnull) w
-    ((cycleDixonH2_tendsto_zero hf hCU).congr' (Filter.EventuallyEq.symm hfar))
+    ((cycleDixonH2_tendsto_zero f C).congr' (Filter.EventuallyEq.symm hfar))
+
+/-- Dixon's `h₂` for a cycle is the Cauchy integral `∮_C f(z)/(z - w) dz`. -/
+private theorem cycleDixonH2_eq_integral (f : ℂ → ℂ) (C : Cycle) (w : ℂ) :
+    cycleDixonH2 f C w = integral (fun z ↦ f z / (z - w)) C := by
+  rw [cycleDixonH2, integral_eq_sum_support]
+  refine Finset.sum_congr rfl fun γ _ ↦ ?_
+  rw [← Int.cast_smul_eq_zsmul ℂ, smul_eq_mul, TauCeti.Contour.dixonH2_def]
+  exact congrArg _ (intervalIntegral.integral_congr fun t _ ↦ by rw [smul_eq_mul, mul_comm])
 
 /-- Dixon's `h₂` for the twist `(z - w) * f z` is the cycle integral of `f`, provided `w` is
 outside the trace. -/
 private theorem cycleDixonH2_twist_eq_integral {f : ℂ → ℂ} {C : Cycle} {w : ℂ}
     (hw : w ∉ trace C) :
-    cycleDixonH2 (fun z ↦ (z - w) * f z) C w = integral f C := by
-  rw [cycleDixonH2, integral_eq_sum_support]
-  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
-  rw [← Int.cast_smul_eq_zsmul ℂ, smul_eq_mul]
-  apply congrArg (fun z : ℂ ↦ (FreeAbelianGroup.coeff γ C : ℂ) * z)
-  rw [TauCeti.Contour.dixonH2_def]
-  refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [mul_div_cancel_left₀ _ (sub_ne_zero.mpr
-    (avoids_of_mem_support hw hγ t ht)), smul_eq_mul, mul_comm]
+    cycleDixonH2 (fun z ↦ (z - w) * f z) C w = integral f C :=
+  (cycleDixonH2_eq_integral _ C w).trans (integral_congr fun _ hz ↦
+    mul_div_cancel_left₀ _ (sub_ne_zero.mpr fun h ↦ hw (h ▸ hz)))
+
+/-- **The Cauchy integral over a cycle is holomorphic off its trace.** For every `f : ℂ → ℂ`, the
+function `w ↦ ∮_C f(z)/(z - w) dz` is complex differentiable on the complement of the trace of
+`C`. -/
+theorem differentiableOn_integral_div_sub (f : ℂ → ℂ) (C : Cycle) :
+    DifferentiableOn ℂ (fun w ↦ integral (fun z ↦ f z / (z - w)) C) (trace C)ᶜ := fun _ hw ↦
+  ((differentiableAt_cycleDixonH2 f hw).congr_of_eventuallyEq
+    (Eventually.of_forall fun w ↦ (cycleDixonH2_eq_integral f C w).symm)).differentiableWithinAt
+
+/-- **The Cauchy integral over a cycle vanishes at infinity.** For every `f : ℂ → ℂ`, the function
+`w ↦ ∮_C f(z)/(z - w) dz` tends to `0` along `cocompact ℂ`. -/
+theorem tendsto_integral_div_sub_cocompact (f : ℂ → ℂ) (C : Cycle) :
+    Tendsto (fun w ↦ integral (fun z ↦ f z / (z - w)) C) (cocompact ℂ) (𝓝 0) :=
+  (cycleDixonH2_tendsto_zero f C).congr fun w ↦ cycleDixonH2_eq_integral f C w
 
 /-- The scalar case of `homologyCauchyTheorem`, by Dixon's argument. -/
 private theorem homologyCauchyTheorem_complex {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ} (hU : IsOpen U)
@@ -252,7 +256,7 @@ private theorem homologyCauchyTheorem_complex {f : ℂ → ℂ} {C : Cycle} {U :
     simpa using hzero
 
 /-- **The homology Cauchy theorem for contour cycles.** Let `C` be a finite formal integer
-combination of closed piecewise-`C¹` curves whose trace lies in an open set `U`. If `C` is
+combination of closed absolutely continuous curves whose trace lies in an open set `U`. If `C` is
 null-homologous in `U` and `f` is holomorphic on `U`, with values in any complex normed space,
 then the contour integral of `f` over the whole cycle vanishes.
 
@@ -268,9 +272,18 @@ theorem homologyCauchyTheorem {E : Type*} [NormedAddCommGroup E] [NormedSpace �
       intervalIntegrable_of_mem_support (hf.continuousOn.mono (isIn_iff.mp hCU))]
     exact homologyCauchyTheorem_complex hU hCU (ℓ.differentiable.comp_differentiableOn hf) hnull
   · -- Without completeness every Bochner integral valued in `E` vanishes.
-    rw [integral_eq_sum_support]
-    exact Finset.sum_eq_zero fun γ _ ↦ by
-      simp [intervalIntegral, integral_of_not_completeSpace hE]
+    exact integral_of_not_completeSpace hE f C
+
+/-- Two cycles null-homologous in `U` with the same winding number about every point of `K`
+differ by a cycle null-homologous in `U \ K`. -/
+theorem isNullHomologous_sub_of_windingNumber_eq {U K : Set ℂ} {C D : Cycle}
+    (hCU : IsNullHomologous C U) (hDU : IsNullHomologous D U)
+    (hCD : ∀ z ∈ K, windingNumber z C = windingNumber z D) : IsNullHomologous (C - D) (U \ K) :=
+  isNullHomologous_iff.mpr fun z hz ↦ by
+    rw [map_sub, sub_eq_zero]
+    by_cases hzU : z ∈ U
+    · exact hCD z (by simpa [hzU] using hz)
+    · rw [isNullHomologous_iff.mp hCU z hzU, isNullHomologous_iff.mp hDU z hzU]
 
 /-- **Homologous cycles have equal integrals.** Let `f` be holomorphic on `U \ K`, with `U` open
 and `K` closed, and let `C` and `D` be cycles in `U \ K` that are null-homologous in `U`. If `C`
@@ -283,13 +296,8 @@ theorem integral_eq_of_windingNumber_eq {E : Type*} [NormedAddCommGroup E] [Norm
     (hCD : ∀ z ∈ K, windingNumber z C = windingNumber z D) :
     integral f C = integral f D := by
   rw [← sub_eq_zero, ← map_sub]
-  refine homologyCauchyTheorem (hU.sdiff hK) ?_ hf (isNullHomologous_iff.mpr fun z hz ↦ ?_)
-  · rw [sub_eq_add_neg]
-    exact hC.add (isIn_neg_iff.mpr hD)
-  · rw [map_sub, sub_eq_zero]
-    by_cases hzU : z ∈ U
-    · exact hCD z (by simpa [hzU] using hz)
-    · rw [isNullHomologous_iff.mp hCU z hzU, isNullHomologous_iff.mp hDU z hzU]
+  exact homologyCauchyTheorem (hU.sdiff hK) (hC.sub hD) hf
+    (isNullHomologous_sub_of_windingNumber_eq hCU hDU hCD)
 
 end TauCeti.Contour.Cycle
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
+public import TauCeti.Geometry.Sphere.LinearIsometry
 import TauCeti.Algebra.Group.ZMultiples
 
 /-!
@@ -19,24 +21,30 @@ pointed homotopy classes form `πₙ₊₂(X, x)` (`HomotopyGroup.sphereEquiv`).
 such a map is the image of the fundamental class of the sphere, and the Hurewicz map is injective
 on `πₙ₊₂(X, x)` by the Hurewicz theorem. So two pointed maps inducing the same map on
 `Hₙ₊₂(-; ℤ)` are homotopic relative to the north pole
-(`ContinuousMap.homotopicRel_of_singularHomologyMap_eq`).
+(`ContinuousMap.homotopicRel_of_singularHomologyMap_eq`). Without any connectivity hypothesis, a
+map `Sⁿ → Y`, `n ≥ 1`, is null-homotopic as soon as the homotopy group `πₙ(Y, y)` at the image of
+the north pole is trivial (`ContinuousMap.nullhomotopic_of_subsingleton_homotopyGroup`).
 
 For `X = Sⁿ⁺²` this is the pointed form of Hopf's theorem for self-maps of a sphere of dimension at
 least two: the homotopy class of a pointed self-map is determined by its degree. In particular a
 pointed self-map `δ` of degree `±1`, that is, one inducing a surjection on `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`,
-satisfies `δ ∘ δ ≃ id` relative to the north pole
-(`ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`): the induced map on
-`ℤ` is multiplication by `±1`, so its square is the identity. Barraud, Damian, Humilière and Oancea
-use this to retract the double loop space of a sphere off that of a manifold in the proof of
-their Lemma 7.6.
+satisfies `δ ∘ δ ≃ id` relative to the north pole: the induced map on `ℤ` is multiplication by
+`±1`, so its square is the identity. Since the sphere is homogeneous
+(`TauCeti.Sphere.exists_homeomorph_apply_eq`), conjugating by a homeomorphism extends this to
+self-maps fixing any point `y`, with `δ ∘ δ ≃ id` relative to `y`
+(`ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`). Barraud, Damian,
+Humilière and Oancea use this to retract the double loop space of a sphere off that of a manifold
+in the proof of their Lemma 7.6.
 
 ## Main results
 
+* `ContinuousMap.nullhomotopic_of_subsingleton_homotopyGroup`: a map out of `Sⁿ` is
+  null-homotopic when `πₙ` vanishes at the image of the north pole.
 * `ContinuousMap.homotopicRel_of_singularHomologyMap_eq`: pointed maps from `Sⁿ⁺²` to an
   `(n + 1)`-connected space are homotopic relative to the north pole when they agree on
   `Hₙ₊₂(-; ℤ)`.
 * `ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`: a pointed self-map
-  of `Sⁿ⁺²` of degree `±1` squares to the identity up to pointed homotopy.
+  of `Sⁿ⁺²` of degree `±1`, at any base point, squares to the identity up to pointed homotopy.
 
 ## References
 
@@ -51,6 +59,17 @@ open CategoryTheory AlgebraicTopology Metric TauCeti
 open scoped Topology.Homotopy
 
 namespace ContinuousMap
+
+/-- **A map out of a sphere is null-homotopic when the homotopy group it represents is trivial.**
+For `n ≥ 1`, a map `f : Sⁿ → Y` is null-homotopic as soon as `πₙ(Y, f N)` is trivial, where `N`
+is the north pole. -/
+theorem nullhomotopic_of_subsingleton_homotopyGroup {Y : Type*} [TopologicalSpace Y] {n : ℕ}
+    [NeZero n] (f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, Y))
+    (hf : Subsingleton (HomotopyGroup (Fin n) Y (f (sphereNorthPole n)))) : f.Nullhomotopic := by
+  let p := (GenLoop.sphereEquiv n Y (f (sphereNorthPole n))).symm ⟨f, rfl⟩
+  have hp : GenLoop.toSphere p = f := by
+    rw [← GenLoop.coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  exact hp ▸ (HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere p).1 (hf.elim _ _)
 
 variable {X : Type} [TopologicalSpace X] {x : X} {n : ℕ}
 
@@ -82,10 +101,9 @@ theorem homotopicRel_of_singularHomologyMap_eq
     exact LinearMap.congr_fun h _
   simpa only [hp, hq] using GenLoop.homotopic_iff_toSphere.1 (Quotient.exact hpq)
 
-/-- **A pointed self-map of a sphere of degree `±1` is an involution up to pointed homotopy.** If
-a pointed self-map `δ` of `Sⁿ⁺²` induces a surjection on `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`, then `δ ∘ δ` is
-homotopic to the identity relative to the north pole. -/
-theorem homotopicRel_comp_self_id_of_surjective_singularHomologyMap
+/-- The case of `homotopicRel_comp_self_id_of_surjective_singularHomologyMap` at the north pole,
+where the homology classification of pointed maps applies directly. -/
+private theorem homotopicRel_comp_self_id_of_surjective_singularHomologyMap_northPole
     {δ : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
       sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)}
     (hδ : δ (sphereNorthPole (n + 2)) = sphereNorthPole (n + 2))
@@ -106,5 +124,43 @@ theorem homotopicRel_comp_self_id_of_surjective_singularHomologyMap
   ext y
   rw [singularHomologyMap_comp, singularHomologyMap_id]
   exact hinv y
+
+/-- **A pointed self-map of a sphere of degree `±1` is an involution up to pointed homotopy.** If
+a self-map `δ` of `Sⁿ⁺²` fixing a point `y` induces a surjection on `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`, then
+`δ ∘ δ` is homotopic to the identity relative to `y`. -/
+theorem homotopicRel_comp_self_id_of_surjective_singularHomologyMap
+    {y : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1}
+    {δ : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
+      sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)}
+    (hδ : δ y = y) (h : Function.Surjective (singularHomologyMap ℤ (n + 2) δ)) :
+    (δ.comp δ).HomotopicRel (ContinuousMap.id _) {y} := by
+  -- Conjugating by a homeomorphism `a` with `a N = y` gives a self-map `ε = a⁻¹ ∘ δ ∘ a` fixing
+  -- the north pole `N`, still of degree `±1`, so `ε ∘ ε ≃ id` relative to `N`.
+  obtain ⟨a, ha⟩ := Sphere.exists_homeomorph_apply_eq (sphereNorthPole (n + 2)) y
+  let A : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
+    sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) := a
+  let A' : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
+    sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) := a.symm
+  obtain ⟨ε, hεdef⟩ : ∃ ε, ε = A'.comp (δ.comp A) := ⟨_, rfl⟩
+  have hεε := homotopicRel_comp_self_id_of_surjective_singularHomologyMap_northPole
+    (δ := ε) (by simp [hεdef, A, A', ha, hδ, a.symm_apply_eq]) (by
+      have hcomp : ⇑(singularHomologyMap ℤ (n + 2) ε) = singularHomologyMap ℤ (n + 2) A' ∘
+          singularHomologyMap ℤ (n + 2) δ ∘ singularHomologyMap ℤ (n + 2) A := by
+        funext z
+        simp only [hεdef, Function.comp_apply, singularHomologyMap_comp]
+      rw [hcomp]
+      exact (a.symm.toHomotopyEquiv.bijective_singularHomologyMap ℤ (n + 2)).2.comp
+        (h.comp (a.toHomotopyEquiv.bijective_singularHomologyMap ℤ (n + 2)).2))
+  -- Conjugating back by `a` gives `δ ∘ δ = a ∘ ε ∘ ε ∘ a⁻¹ ≃ id` relative to `y`.
+  have hr : A.comp ((ε.comp ε).comp A') = δ.comp δ := by
+    ext1 z
+    simp [hεdef, A, A']
+  have hpre : A' ⁻¹' {sphereNorthPole (n + 2)} = {y} := by
+    ext z
+    simp [A', ← ha, a.symm_apply_eq]
+  have hid : A.comp ((ContinuousMap.id _).comp A') = ContinuousMap.id _ := by
+    ext1 z
+    simp [A, A']
+  simpa only [hr, hpre, hid] using (hεε.precomp A').comp_continuousMap A
 
 end ContinuousMap

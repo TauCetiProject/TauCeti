@@ -88,7 +88,7 @@ theorem _root_.MeasureTheory.Measure.integral_exp_mul_sub_integral_le_of_abs_sub
   have hml := (ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc (μ := ν)
     hX (ae_of_all _ hmem)).mgf_le t
   have hexp : ((((‖(A + C) - A‖₊ / 2) ^ 2 : NNReal) : ℝ)) = (C / 2) ^ 2 := by
-    rw [add_sub_cancel_left, Real.nnnorm_of_nonneg hC]
+    rw [add_sub_cancel_left, Real.nnNorm_of_nonneg hC]
     push_cast
     ring
   rw [ProbabilityTheory.mgf, hexp] at hml
@@ -222,10 +222,10 @@ theorem hasSubgaussianMGF_add_of_condExp_eq_zero [IsProbabilityMeasure μ] {m : 
       simp [mgf, mul_add, exp_add]
     rw [hmul]
     calc _ ≤ exp ((‖b - a‖₊ / 2) ^ 2 * t ^ 2 / 2) * ∫ ω, exp (t * S ω) ∂μ :=
-          integral_mul_le_of_condExp_le hm (hZ t)
-            (Filter.Eventually.of_forall fun ω ↦ (exp_pos _).le) (hS.integrable_exp_mul t)
-            (hWint t) (hZW t)
-            (condExp_exp_mul_le (mΩ := mΩ) hm hX hbound hmean t)
+          integral_mul_le_of_condExp_le hm (hZ t) (hS.integrable_exp_mul t) (hWint t) (hZW t) <| by
+            filter_upwards [condExp_exp_mul_le (mΩ := mΩ) hm hX hbound hmean t] with ω hω
+            rw [mul_comm _ (exp (t * S ω))]
+            exact mul_le_mul_of_nonneg_left hω (exp_pos _).le
       _ ≤ exp ((‖b - a‖₊ / 2) ^ 2 * t ^ 2 / 2) * exp (c * t ^ 2 / 2) :=
           mul_le_mul_of_nonneg_left (hS.mgf_le t) (exp_pos _).le
       _ = _ := by rw [← exp_add]; push_cast; ring_nf
@@ -297,7 +297,7 @@ theorem measureReal_sum_range_ge_le_of_bounded_martingale_differences
     exact abs_le.mp hω
   have hterm (i : ℕ) :
       ((‖(b i : ℝ) - -(b i : ℝ)‖₊ / 2) ^ 2 : ℝ) = (b i : ℝ) ^ 2 := by
-    simp only [coe_nnnorm, Real.norm_eq_abs, sub_neg_eq_add]
+    simp only [coe_nnNorm, Real.norm_eq_abs, sub_neg_eq_add]
     rw [abs_of_nonneg (by positivity : 0 ≤ (b i : ℝ) + (b i : ℝ))]
     ring
   have hbound' := measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
@@ -373,7 +373,7 @@ theorem measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences
     exact abs_le.mp hω
   have hterm (i : ℕ) :
       ((‖(b i : ℝ) - -(b i : ℝ)‖₊ / 2) ^ 2 : ℝ) = (b i : ℝ) ^ 2 := by
-    simp only [coe_nnnorm, Real.norm_eq_abs, sub_neg_eq_add]
+    simp only [coe_nnNorm, Real.norm_eq_abs, sub_neg_eq_add]
     rw [abs_of_nonneg (by positivity : 0 ≤ (b i : ℝ) + (b i : ℝ))]
     ring
   have hbound' := measureReal_abs_sum_range_ge_le_of_mem_Icc_martingale_differences

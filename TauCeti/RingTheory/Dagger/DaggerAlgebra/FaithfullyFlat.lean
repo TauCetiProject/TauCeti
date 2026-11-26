@@ -45,13 +45,14 @@ and compares `A` and `Â` locally at their classical points.
   `Â_{m Â}`, so one local ring is regular iff the other is. Hence `A` is a regular ring iff `Â` is.
 
 Since `τ` is injective, `A` is reduced, resp. a domain, as soon as `Â` is
-(`isReduced_of_injective`, `Function.Injective.isDomain`), and normality descends along the
-faithfully flat `τ`.
+(`isReduced_of_injective`, `Function.Injective.isDomain`), and integral closedness descends along
+the faithfully flat `τ`.
 
 ## Main results
 
-* `TauCeti.Dagger.faithfullyFlat_toCompletion`: the completion map `τ : A → Â` is faithfully flat,
-  and `TauCeti.Dagger.toCompletion_injective`: it is injective.
+* `TauCeti.Dagger.faithfullyFlat_toCompletion` and
+  `TauCeti.Dagger.faithfullyFlat_completionAlgebra`: the completion map `τ : A → Â` is faithfully
+  flat, and `TauCeti.Dagger.toCompletion_injective`: it is injective.
 * `TauCeti.Dagger.comap_map_toCompletion`: every ideal `J` of `A` satisfies `J Â ∩ A = J`.
 * `TauCeti.Dagger.quotientMap_map_toCompletion_bijective`: for an ideal `J` of `A` of finite
   codimension, the map `A ⧸ J → Â ⧸ J Â` is bijective.
@@ -64,8 +65,7 @@ faithfully flat `τ`.
   with maximal radical and along its extension agree; for a maximal ideal these are the completed
   local rings.
 * `TauCeti.Dagger.isRegularRing_completion_iff`: `Â` is a regular ring iff `A` is.
-* `TauCeti.Dagger.isIntegrallyClosed_of_completion`: if `Â` is an integrally closed domain, so
-  is `A`.
+* `TauCeti.Dagger.isIntegrallyClosed_of_completion`: if `Â` is integrally closed, so is `A`.
 
 ## References
 
@@ -140,6 +140,12 @@ theorem faithfullyFlat_toCompletion : (toCompletion K A).toRingHom.FaithfullyFla
   rw [hmap]
   exact he.comp hq
 
+/-- `completion K A` is faithfully flat over `A` under `completionAlgebra K A`. -/
+theorem faithfullyFlat_completionAlgebra :
+    letI := completionAlgebra K A
+    Module.FaithfullyFlat A (completion K A) :=
+  faithfullyFlat_toCompletion (K := K) (A := A)
+
 /-- A dagger algebra embeds in its affinoid completion, including when it has nilpotents. -/
 theorem toCompletion_injective : Function.Injective (toCompletion K A) :=
   faithfullyFlat_toCompletion.injective
@@ -150,8 +156,8 @@ satisfies `J Â ∩ A = J`, since `τ` is faithfully flat. -/
 @[simp]
 theorem comap_map_toCompletion (J : Ideal A) :
     (J.map (toCompletion K A)).comap (toCompletion K A) = J := by
-  let := (toCompletion K A).toRingHom.toAlgebra
-  have : Module.FaithfullyFlat A (completion K A) := faithfullyFlat_toCompletion (K := K)
+  let := completionAlgebra K A
+  have := faithfullyFlat_completionAlgebra (K := K) (A := A)
   exact J.comap_map_eq_self_of_faithfullyFlat (B := completion K A)
 
 variable (K) in
@@ -278,12 +284,12 @@ theorem isRegularRing_completion_iff : IsRegularRing (completion K A) ↔ IsRegu
       isAffinoidAlgebra_completion.comap_isMaximal _ m
     exact (isRegularLocalRing_localization_iff m).mpr (h _)
 
-/-- **Normality descends from the completion.** If the completion `Â` of a dagger algebra `A` is
-an integrally closed domain, then `A` is integrally closed. -/
-theorem isIntegrallyClosed_of_completion [IsDomain (completion K A)]
-    [IsIntegrallyClosed (completion K A)] : IsIntegrallyClosed A := by
-  let := (toCompletion K A).toRingHom.toAlgebra
-  have : Module.FaithfullyFlat A (completion K A) := faithfullyFlat_toCompletion (K := K)
+/-- **Integral closedness descends from the completion.** If the completion `Â` of a dagger
+algebra `A` is integrally closed, then `A` is integrally closed. -/
+theorem isIntegrallyClosed_of_completion [IsIntegrallyClosed (completion K A)] :
+    IsIntegrallyClosed A := by
+  let := completionAlgebra K A
+  have := faithfullyFlat_completionAlgebra (K := K) (A := A)
   exact IsIntegrallyClosed.of_faithfullyFlat A (completion K A)
 
 end TauCeti.Dagger

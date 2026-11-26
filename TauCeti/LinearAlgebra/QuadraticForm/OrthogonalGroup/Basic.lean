@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.LinearMap.EqOn
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
+import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
@@ -36,8 +36,8 @@ covers are stated against, and the reflections are the generators into which the
 theorem `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_eq` factors an orthogonal
 automorphism. The structural declarations and reflections
 defined using an invertible norm hold over an arbitrary commutative ring. The coefficient-spelling
-lemmas assume a field, and the second spelling also requires `2 ≠ 0`. The equal-norm dichotomy,
-Witt transitivity and the fixed-subspace correction assume a field in which `2` is nonzero. The
+lemmas assume a field, and the second spelling also requires `2 ≠ 0`. The equal-norm dichotomy
+and Witt transitivity assume a field in which `2` is nonzero. The
 characteristic restriction is not incidental: in characteristic two `polar Q v v = 2 • Q v`
 vanishes, so `v` lies in the kernel of `polar Q v`, `reflection Q v` fixes `v`, and it is not a
 reflection in a complement of `v`. Over a field it is a transvection when `polar Q v ≠ 0` and the
@@ -64,6 +64,12 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   `orthogonalGroup Q`, so that statements about products of reflections and about the ranges of the
   Pin and Spin actions can name it. `TauCeti.QuadraticMap.reflectionOrthogonal_mul_self` and
   `TauCeti.QuadraticMap.reflectionOrthogonal_inv` are its group-level involution facts.
+* `TauCeti.QuadraticMap.reflectionOrthogonalOfNeZero Q v hv`: over a field, the same reflection
+  for a vector with `hv : Q v ≠ 0`, for statements quantifying over vectors of nonzero norm, with
+  its formula, its fixed vectors, its involution facts
+  `TauCeti.QuadraticMap.reflectionOrthogonalOfNeZero_mul_self` and
+  `TauCeti.QuadraticMap.reflectionOrthogonalOfNeZero_inv`, and its compatibility with restriction
+  to a submodule.
 * `QuadraticMap.negOrthogonal Q`: the isometry `x ↦ -x`, as an element of
   `orthogonalGroup Q`.
 
@@ -76,9 +82,12 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   identification of the isometries of a quadratic form with the isometries of its polar bilinear
   form. At the level of groups this is
   `TauCeti.QuadraticMap.orthogonalGroup_eq_isometryGroup_polarBilin`: `O(Q)` is the isometry group
-  `LinearMap.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
+  `LinearMap.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
   determinant-one counterpart is
   `TauCeti.QuadraticMap.specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin`.
+* `TauCeti.QuadraticMap.orthogonalGroup.coe_mul_apply` and
+  `TauCeti.QuadraticMap.orthogonalGroup.inv_apply_eq_of_apply_eq`: the group operations of
+  `orthogonalGroup Q` act on vectors by composition and inversion.
 * `TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv`: the underlying set of the orthogonal
   group is Mathlib's type of self-isometries `Q.IsometryEquiv Q`. This is the compatibility with the
   Mathlib vocabulary; the point of `orthogonalGroup` is the group structure, which
@@ -96,8 +105,11 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
   `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes every vector orthogonal to `v`,
-  `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by an invertible scalar does not change
-  it, and `TauCeti.QuadraticMap.det_reflection` computes its determinant on a finite free module.
+  `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by a scalar keeping the norm invertible
+  does not change it, and `TauCeti.QuadraticMap.det_reflection` computes its determinant on a
+  finite free module. In characteristic two it is the transvection
+  `y ↦ y + (polar Q v y / Q v) • v` (`TauCeti.QuadraticMap.reflection_apply_of_charTwo`,
+  `TauCeti.QuadraticMap.reflectionOrthogonal_apply_of_charTwo`).
   These are the factors in the Cartan-Dieudonné theorem
   `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_eq` (a field of characteristic not
   two, a nondegenerate form, finite dimension; none of that is assumed here), and the image of the
@@ -119,9 +131,6 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
 * `QuadraticMap.reflectionTransport`: a specified transport between equal nonzero norm vectors,
   with its one-reflection and two-reflection characteristic equations. No nondegeneracy or
   finite-dimensionality is needed.
-* `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton`: at most
-  two anisotropic reflections supply the one-step fixed-subspace correction used by
-  Cartan--Dieudonne induction.
 * `TauCeti.QuadraticMap.specialOrthogonalGroup_normal`: `SO(Q)` is normal in `O(Q)`, being the
   kernel of the determinant restricted there.
 * `TauCeti.QuadraticMap.orthogonalDet_sq`: if the polar form is left-separating on a finite free
@@ -148,8 +157,8 @@ subtraction in `M` and `N`, since `QuadraticMap.polar` is stated for `[AddCommGr
 additive group over a `CommRing`, and the
 reflections need to divide by `Q v` and so are stated for a `QuadraticForm R M`, that is, for
 `N = R`. The `ReflectionField` section divides by `Q v` over a field; its second coefficient
-spelling also assumes `2 ≠ 0`. The fixed-subspace correction assumes a field and `2 ≠ 0`; the
-closing Cartan--Dieudonne dichotomy assumes a field, a nonzero common quadratic value, and `2 ≠ 0`.
+spelling also assumes `2 ≠ 0`. The closing Cartan--Dieudonne dichotomy assumes a field, a nonzero
+common quadratic value, and `2 ≠ 0`.
 The determinant's square needs a separating polar form on a finite free module over a domain, and
 its range and index a nondegenerate form on a nonzero finite-dimensional space over a field in
 which `2 ≠ 0`.
@@ -216,11 +225,21 @@ theorem isOrtho_iff_of_mem_orthogonalGroup {f : M ≃ₗ[R] M} (hf : f ∈ ortho
     Q.IsOrtho (f x) (f y) ↔ Q.IsOrtho x y := by
   simp only [isOrtho_def, ← map_add, map_app_of_mem_orthogonalGroup hf]
 
+/-- The product in `orthogonalGroup Q` acts on vectors by composition. -/
+theorem orthogonalGroup.coe_mul_apply (g h : orthogonalGroup Q) (x : M) :
+    ((g * h : orthogonalGroup Q) : M ≃ₗ[R] M) x = (g : M ≃ₗ[R] M) ((h : M ≃ₗ[R] M) x) := by
+  rw [Subgroup.coe_mul, mul_apply_eq_comp]
+
+/-- An orthogonal automorphism sending `x` to `y` has inverse sending `y` back to `x`. -/
+theorem orthogonalGroup.inv_apply_eq_of_apply_eq {g : orthogonalGroup Q} {x y : M}
+    (h : (g : M ≃ₗ[R] M) x = y) : ((g⁻¹ : orthogonalGroup Q) : M ≃ₗ[R] M) y = x := by
+  rw [← h, ← orthogonalGroup.coe_mul_apply, inv_mul_cancel, Subgroup.coe_one, one_apply_eq_self]
+
 /-- The orthogonal group of `Q`, as a set, is Mathlib's type of self-isometries of `Q`. The content
 of `orthogonalGroup` is the group structure, which `QuadraticMap.IsometryEquiv` does not carry. -/
 def orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N) :
     orthogonalGroup Q ≃ Q.IsometryEquiv Q where
-  toFun f := { (f : M ≃ₗ[R] M) with map_app' := mem_orthogonalGroup_iff.mp f.2 }
+  toFun f := { (f : M ≃ₗ[R] M) with map_app' := mem_orthogonalGroup_iff.mp f.property }
   invFun e := ⟨(e : M ≃ₗ[R] M), mem_orthogonalGroup_iff.mpr e.map_app⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -249,13 +268,6 @@ theorem orthogonalGroup_neg {R : Type u} {M : Type v} {N : Type w} [CommRing R]
     QuadraticMap.orthogonalGroup (-Q) = QuadraticMap.orthogonalGroup Q := by
   ext g
   simp
-
-@[simp]
-theorem toLinearEquiv_orthogonalGroupEquivIsometryEquiv {R : Type u} {M : Type v} {N : Type w}
-    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    (Q : QuadraticMap R M N) (f : QuadraticMap.orthogonalGroup Q) :
-    (QuadraticMap.orthogonalGroupEquivIsometryEquiv Q f).toLinearEquiv = (f : M ≃ₗ[R] M) :=
-  LinearEquiv.ext <| congrFun (QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv Q f)
 
 end TauCeti
 
@@ -300,16 +312,16 @@ def orthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
 @[simp]
 theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthogonalGroup Q₁) (m : M₂) :
     (e.orthogonalGroupCongr f : M₂ ≃ₗ[R] M₂) m
-      = e.toLinearEquiv ((f : M₁ ≃ₗ[R] M₁) (e.toLinearEquiv.symm m)) := by
+      = e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
   simp [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
     LinearEquiv.autCongr_apply_apply]
 
 @[simp]
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
     (m : M₁) : ((e.orthogonalGroupCongr).symm g : M₁ ≃ₗ[R] M₁) m
-      = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
+      = e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
   simp only [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
-    LinearEquiv.autCongr_symm_apply_apply]
+    LinearEquiv.autCongr_symm_apply_apply, coe_toLinearEquiv, coe_symm_toLinearEquiv]
 
 /-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
 @[simp]
@@ -336,7 +348,6 @@ theorem orthogonalGroupCongr_symm
     e.orthogonalGroupCongr.symm = e.symm.orthogonalGroupCongr := by
   ext g m
   simp
-  rfl
 
 end Congr
 
@@ -385,15 +396,15 @@ section PolarBilin
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The orthogonal group of a quadratic form is the isometry group of its polar bilinear form, as
-soon as `2` is a regular scalar: `orthogonalGroup Q` and `LinearMap.BilinForm.isometryGroup
+soon as `2` is a regular scalar: `orthogonalGroup Q` and `LinearMap.isometryGroup
 Q.polarBilin` are then two names for the same subgroup of `M ≃ₗ[R] M`, and the bilinear-form API —
 the Gram-matrix criterion, `det ^ 2 = 1`, base change — applies to `O(Q)` through it. Some such
 hypothesis is needed: in characteristic two the polarization forgets `Q` on the diagonal. -/
 theorem orthogonalGroup_eq_isometryGroup_polarBilin (h2 : IsSMulRegular R (2 : R))
     (Q : QuadraticForm R M) :
-    orthogonalGroup Q = LinearMap.BilinForm.isometryGroup Q.polarBilin := by
+    orthogonalGroup Q = LinearMap.isometryGroup Q.polarBilin := by
   ext f
-  simp only [mem_orthogonalGroup_iff_polar h2, LinearMap.BilinForm.mem_isometryGroup_iff,
+  simp only [mem_orthogonalGroup_iff_polar h2, LinearMap.mem_isometryGroup_iff,
     QuadraticMap.polarBilin_apply_apply]
 
 end PolarBilin
@@ -421,7 +432,7 @@ theorem mem_specialOrthogonalGroup_iff {f : M ≃ₗ[R] M} :
 @[simp]
 theorem det_coe_specialOrthogonalGroup (g : specialOrthogonalGroup Q) :
     LinearEquiv.det (g : M ≃ₗ[R] M) = 1 :=
-  (mem_specialOrthogonalGroup_iff.mp g.2).2
+  (mem_specialOrthogonalGroup_iff.mp g.property).2
 
 theorem specialOrthogonalGroup_le_orthogonalGroup (Q : QuadraticMap R M N) :
     specialOrthogonalGroup Q ≤ orthogonalGroup Q := inf_le_left
@@ -474,6 +485,13 @@ end QuadraticMap
 end TauCeti
 
 namespace QuadraticMap
+
+@[simp]
+theorem toLinearEquiv_orthogonalGroupEquivIsometryEquiv {R : Type*} {M : Type*} {N : Type*}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (Q : QuadraticMap R M N) (f : TauCeti.QuadraticMap.orthogonalGroup Q) :
+    (TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q f).toLinearEquiv = (f : M ≃ₗ[R] M) :=
+  LinearEquiv.ext <| congrFun (TauCeti.QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv Q f)
 
 section Neg
 
@@ -551,7 +569,7 @@ theorem specialOrthogonalWithin_eq_subgroupOf :
       (TauCeti.QuadraticMap.specialOrthogonalGroup Q).subgroupOf
         (TauCeti.QuadraticMap.orthogonalGroup Q) := by
   ext g
-  simp [Subgroup.mem_subgroupOf, g.2]
+  simp [Subgroup.mem_subgroupOf, g.property]
 
 /-- The inclusion `SO(Q) →* O(Q)`. -/
 noncomputable def specialOrthogonalToOrthogonal (Q : QuadraticMap R M N) :
@@ -739,7 +757,6 @@ theorem specialOrthogonalGroupCongr_symm
     e.specialOrthogonalGroupCongr.symm = e.symm.specialOrthogonalGroupCongr := by
   ext g m
   simp
-  rfl
 
 end SpecialCongr
 
@@ -884,20 +901,17 @@ theorem reflection_apply (y : M) :
     reflection Q v y = y - (⅟(Q v) * polar Q v y) • v := by
   rw [reflection, Module.reflection_apply, reflectionDual_apply]
 
-/-- Rescaling a vector of invertible norm by an invertible scalar does not change its quadratic
-reflection. -/
+/-- In characteristic two the reflection in `v` is the transvection
+`y ↦ y + (polar Q v y / Q v) • v`. -/
+theorem reflection_apply_of_charTwo [CharP R 2] (y : M) :
+    reflection Q v y = y + (⅟(Q v) * polar Q v y) • v := by
+  rw [reflection_apply, sub_eq_add_neg, ← neg_smul, CharTwo.neg_eq]
+
+/-- Rescaling a vector of invertible norm by a scalar that keeps the norm invertible does not
+change its quadratic reflection. -/
 @[simp]
-theorem reflection_smul_eq (a : R) [Invertible a] :
-    let _ : Invertible (Q (a • v)) := by
-      rw [QuadraticMap.map_smul]
-      let _ : Invertible (a * a) := invertibleMul a a
-      exact invertibleMul (a * a) (Q v)
+theorem reflection_smul_eq (a : R) [Invertible (Q (a • v))] :
     reflection Q (a • v) = reflection Q v := by
-  dsimp only
-  let _ : Invertible (Q (a • v)) := by
-    rw [QuadraticMap.map_smul]
-    let _ : Invertible (a * a) := invertibleMul a a
-    exact invertibleMul (a * a) (Q v)
   have hcoeff : ⅟(Q (a • v)) * a * a = ⅟(Q v) := by
     rw [← mul_right_inj_of_invertible (c := Q v)]
     calc
@@ -983,20 +997,17 @@ theorem coe_reflectionOrthogonal :
     (reflectionOrthogonal Q v : M ≃ₗ[R] M) = reflection Q v := by
   simp only [reflectionOrthogonal]
 
-/-- Rescaling the defining vector by an invertible scalar does not change the bundled orthogonal
-reflection. -/
+/-- In characteristic two the bundled reflection in `v` is the transvection
+`y ↦ y + (polar Q v y / Q v) • v`. -/
+theorem reflectionOrthogonal_apply_of_charTwo [CharP R 2] (y : M) :
+    (reflectionOrthogonal Q v : M ≃ₗ[R] M) y = y + (⅟(Q v) * polar Q v y) • v := by
+  rw [coe_reflectionOrthogonal, reflection_apply_of_charTwo]
+
+/-- Rescaling the defining vector by a scalar that keeps its norm invertible does not change the
+bundled orthogonal reflection. -/
 @[simp]
-theorem reflectionOrthogonal_smul_eq (a : R) [Invertible a] :
-    let _ : Invertible (Q (a • v)) := by
-      rw [QuadraticMap.map_smul]
-      let _ : Invertible (a * a) := invertibleMul a a
-      exact invertibleMul (a * a) (Q v)
+theorem reflectionOrthogonal_smul_eq (a : R) [Invertible (Q (a • v))] :
     reflectionOrthogonal Q (a • v) = reflectionOrthogonal Q v := by
-  dsimp only
-  let _ : Invertible (Q (a • v)) := by
-    rw [QuadraticMap.map_smul]
-    let _ : Invertible (a * a) := invertibleMul a a
-    exact invertibleMul (a * a) (Q v)
   apply Subtype.ext
   simp only [coe_reflectionOrthogonal]
   exact reflection_smul_eq Q v a
@@ -1090,7 +1101,7 @@ theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonal
   intro _
   rw [reflection_map_apply e v x, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv e.symm,
     ← QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
-    toLinearEquiv_orthogonalGroupEquivIsometryEquiv,
+    _root_.QuadraticMap.toLinearEquiv_orthogonalGroupEquivIsometryEquiv,
     coe_orthogonalGroupEquivIsometryEquiv]
 
 end ReflectionMap
@@ -1104,6 +1115,51 @@ variable (Q : QuadraticForm K V)
 theorem reflection_apply_eq_sub_div (v : V) [Invertible (Q v)] (x : V) :
     reflection Q v x = x - (polar Q v x / Q v) • v := by
   rw [reflection_apply, invOf_eq_inv, div_eq_inv_mul]
+
+/-- Over a field, the reflection in a vector `v` of nonzero norm, as an element of
+`orthogonalGroup Q`: this is `reflectionOrthogonal Q v` with the `Invertible (Q v)` instance built
+from `hv`, for statements that quantify over the vectors of nonzero norm. -/
+noncomputable def reflectionOrthogonalOfNeZero (v : V) (hv : Q v ≠ 0) : orthogonalGroup Q :=
+  letI := invertibleOfNonzero hv
+  reflectionOrthogonal Q v
+
+/-- `reflectionOrthogonalOfNeZero` agrees with `reflectionOrthogonal` for any `Invertible (Q v)`
+instance. -/
+theorem reflectionOrthogonalOfNeZero_eq (v : V) (hv : Q v ≠ 0) [Invertible (Q v)] :
+    reflectionOrthogonalOfNeZero Q v hv = reflectionOrthogonal Q v := by
+  rw [reflectionOrthogonalOfNeZero, Subsingleton.elim (invertibleOfNonzero hv) ‹_›]
+
+/-- The reflection in a vector `v` of nonzero norm is `x ↦ x - ((Q v)⁻¹ * polar Q v x) • v`. -/
+theorem reflectionOrthogonalOfNeZero_apply (v : V) (hv : Q v ≠ 0) (x : V) :
+    (reflectionOrthogonalOfNeZero Q v hv : V ≃ₗ[K] V) x = x - ((Q v)⁻¹ * polar Q v x) • v := by
+  let _ := invertibleOfNonzero hv
+  rw [reflectionOrthogonalOfNeZero_eq, coe_reflectionOrthogonal, reflection_apply, invOf_eq_inv]
+
+/-- The reflection in `v` fixes every vector in the kernel of `polar Q v`. -/
+theorem reflectionOrthogonalOfNeZero_apply_of_polar_eq_zero (v : V) (hv : Q v ≠ 0) {x : V}
+    (hx : polar Q v x = 0) : (reflectionOrthogonalOfNeZero Q v hv : V ≃ₗ[K] V) x = x := by
+  rw [reflectionOrthogonalOfNeZero_apply, hx, mul_zero, zero_smul, sub_zero]
+
+/-- The reflection in a vector of nonzero norm is an involution. -/
+@[simp]
+theorem reflectionOrthogonalOfNeZero_mul_self (v : V) (hv : Q v ≠ 0) :
+    reflectionOrthogonalOfNeZero Q v hv * reflectionOrthogonalOfNeZero Q v hv = 1 := by
+  let _ := invertibleOfNonzero hv
+  rw [reflectionOrthogonalOfNeZero_eq, reflectionOrthogonal_mul_self]
+
+/-- The reflection in a vector of nonzero norm is its own inverse in the orthogonal group. -/
+@[simp]
+theorem reflectionOrthogonalOfNeZero_inv (v : V) (hv : Q v ≠ 0) :
+    (reflectionOrthogonalOfNeZero Q v hv)⁻¹ = reflectionOrthogonalOfNeZero Q v hv :=
+  inv_eq_of_mul_eq_one_left (reflectionOrthogonalOfNeZero_mul_self Q v hv)
+
+/-- On a submodule `U`, the reflection in a vector `v ∈ U` of the ambient form restricts to the
+reflection in `v` of the restricted form `Q.restrict U`. -/
+theorem reflectionOrthogonalOfNeZero_restrict_apply (U : Submodule K V) (v : U)
+    (hv : Q.restrict U v ≠ 0) (y : U) :
+    (reflectionOrthogonalOfNeZero Q v (by rwa [QuadraticMap.restrict_apply] at hv) :
+      V ≃ₗ[K] V) y = ((reflectionOrthogonalOfNeZero (Q.restrict U) v hv : U ≃ₗ[K] U) y : V) := by
+  simp [reflectionOrthogonalOfNeZero_apply, QuadraticMap.restrict_apply, QuadraticMap.polar]
 
 end ReflectionField
 
@@ -1302,19 +1358,16 @@ in this branch consists of two equal reflections. -/
 theorem reflectionTransport_self (x : V) (hx : Q x ≠ 0) :
     Q.reflectionTransport x x rfl hx = 1 := by
   let := (isUnit_iff_ne_zero.mpr hx).invertible
-  let : Invertible (2 : K) := (isUnit_iff_ne_zero.mpr two_ne_zero).invertible
   let : Invertible (Q (x + x)) := by
     apply (isUnit_iff_ne_zero.mpr ?_).invertible
     simpa only [← two_smul K x, Q.map_smul, smul_eq_mul] using
       mul_ne_zero (mul_ne_zero two_ne_zero two_ne_zero) hx
   have hrefl : reflectionOrthogonal Q (x + x) = reflectionOrthogonal Q x := by
-    apply Subtype.ext
-    apply LinearEquiv.ext
-    intro z
-    have hz := congrArg (fun r : TauCeti.QuadraticMap.orthogonalGroup Q ↦
-      (r : V ≃ₗ[K] V) z) (TauCeti.QuadraticMap.reflectionOrthogonal_smul_eq Q x (2 : K))
-    simpa only [TauCeti.QuadraticMap.coe_reflectionOrthogonal,
-      TauCeti.QuadraticMap.reflection_apply_eq_sub_div, two_smul] using hz
+    have key (y : V) (hy : y = (2 : K) • x) [Invertible (Q y)] :
+        reflectionOrthogonal Q y = reflectionOrthogonal Q x := by
+      subst hy
+      exact TauCeti.QuadraticMap.reflectionOrthogonal_smul_eq Q x (2 : K)
+    exact key (x + x) (two_smul K x).symm
   rw [reflectionTransport_eq_reflection_mul_reflection Q x x rfl hx (by simp), hrefl]
   exact TauCeti.QuadraticMap.reflectionOrthogonal_mul_self Q x
 
@@ -1330,72 +1383,6 @@ namespace TauCeti
 
 namespace QuadraticMap
 
-section CartanDieudonneStep
-
-section FixedSubspace
-
-variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-variable (Q : QuadraticForm K V) [NeZero (2 : K)]
-
-/-- If `g` fixes a subspace `W` pointwise and `x` is anisotropic and orthogonal to `W`, a list of
-at most two anisotropic reflections can be multiplied into `g` so that the product fixes
-`W ⊔ K ∙ x` pointwise. -/
-theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
-    (g : QuadraticMap.orthogonalGroup Q) (W : Submodule K V)
-    (hfix : ∀ w ∈ W, ((g : V ≃ₗ[K] V) w) = w)
-    (x : V) [Invertible (Q x)]
-    (hx : ∀ w ∈ W, Q.IsOrtho x w) :
-    ∃ l : List (QuadraticMap.orthogonalGroup Q),
-      (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
-        QuadraticMap.reflectionOrthogonal Q v = r) ∧
-      l.length ≤ 2 ∧
-      ∀ y ∈ W ⊔ Submodule.span K {x},
-        (((l.prod * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
-  have hmap : Q ((g : V ≃ₗ[K] V) x) = Q x :=
-    QuadraticMap.map_app_of_mem_orthogonalGroup g.2 x
-  have hgx (w : V) (hw : w ∈ W) : QuadraticMap.polar Q ((g : V ≃ₗ[K] V) x) w = 0 := by
-    rw [← hfix w hw, QuadraticMap.polar_apply_of_mem_orthogonalGroup g.2]
-    exact (hx w hw).polar_eq_zero
-  -- Both cases correct `g` by an `r` that fixes `W` pointwise and sends `g x` back to `x`; then
-  -- `r * g` fixes `W` and `x`, hence `W ⊔ K ∙ x`.
-  have key (r : QuadraticMap.orthogonalGroup Q) (hr : ∀ w ∈ W, (r : V ≃ₗ[K] V) w = w)
-      (hrx : (r : V ≃ₗ[K] V) ((g : V ≃ₗ[K] V) x) = x) :
-      ∀ y ∈ W ⊔ Submodule.span K {x},
-        ((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y = y :=
-    (LinearMap.eqOn_sup_span_singleton_iff
-      (f := (r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap) (g := LinearMap.id)).2
-      ⟨fun w hw => by simp [hfix w hw, hr w hw], by simpa using hrx⟩
-  rcases QuadraticMap.isUnit_sub_or_add_of_map_eq Q _ x hmap
-      (isUnit_of_invertible (Q x)).ne_zero with hsubUnit | haddUnit
-  · -- One reflection, in `g x - x`.
-    let : Invertible (Q ((g : V ≃ₗ[K] V) x - x)) := hsubUnit.invertible
-    refine ⟨[QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - x)],
-      by simpa using ⟨_, inferInstance, rfl⟩, by simp, ?_⟩
-    rw [List.prod_singleton]
-    refine key _ (fun w hw => ?_) ?_ <;> rw [QuadraticMap.coe_reflectionOrthogonal]
-    · exact QuadraticMap.reflection_apply_of_polar_eq_zero Q _ (by
-        rw [QuadraticMap.polar_sub_left, hgx w hw, (hx w hw).polar_eq_zero, sub_self])
-    · exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap
-  · -- Two reflections: in `g x + x`, and then in `x`.
-    let : Invertible (Q ((g : V ≃ₗ[K] V) x + x)) := haddUnit.invertible
-    refine ⟨[QuadraticMap.reflectionOrthogonal Q x,
-      QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x + x)], ?_, by simp, ?_⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> exact ⟨_, inferInstance, rfl⟩
-    · rw [List.prod_cons, List.prod_singleton]
-      refine key _ (fun w hw => ?_) ?_ <;>
-        rw [Subgroup.coe_mul, mul_apply_eq_comp, QuadraticMap.coe_reflectionOrthogonal,
-          QuadraticMap.coe_reflectionOrthogonal]
-      · rw [QuadraticMap.reflection_apply_of_polar_eq_zero Q ((g : V ≃ₗ[K] V) x + x) (by
-            rw [QuadraticMap.polar_add_left, hgx w hw, (hx w hw).polar_eq_zero, add_zero]),
-          QuadraticMap.reflection_apply_of_polar_eq_zero Q x (hx w hw).polar_eq_zero]
-      · rw [QuadraticMap.reflection_add_apply_eq_neg_of_map_eq Q _ x hmap, map_neg,
-          QuadraticMap.reflection_apply_self, neg_neg]
-
-end FixedSubspace
-
-end CartanDieudonneStep
-
 section DetSquare
 
 variable {R : Type u} {M : Type v} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
@@ -1407,7 +1394,7 @@ determinant `±1`. -/
 theorem orthogonalDet_sq {Q : QuadraticForm R M} (hQ : Q.polarBilin.SeparatingLeft)
     (g : orthogonalGroup Q) : orthogonalDet Q g ^ 2 = 1 := by
   have hg : BilinForm.IsIsometry Q.polarBilin (g : M ≃ₗ[R] M) :=
-    BilinForm.isIsometry_iff.mpr fun x y => polar_apply_of_mem_orthogonalGroup g.2 x y
+    BilinForm.isIsometry_iff.mpr fun x y => polar_apply_of_mem_orthogonalGroup g.property x y
   have h := hg.det_sq_eq_one (Module.Free.chooseBasis R M)
     (mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero _).mp hQ))
   ext
@@ -1487,7 +1474,7 @@ theorem range_orthogonalGroup_toLinearMap (Q : QuadraticForm R M)
   ext f
   constructor
   · rintro ⟨g, rfl⟩ x
-    exact mem_orthogonalGroup_iff.mp g.2 x
+    exact mem_orthogonalGroup_iff.mp g.property x
   · intro hf
     exact exists_orthogonalGroup_toLinearMap_eq hQ hf
 

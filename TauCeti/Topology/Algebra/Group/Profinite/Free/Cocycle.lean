@@ -102,16 +102,8 @@ theorem exists_mem_Z1_forall_apply_of_eq (hM : IsProP p (Multiplicative M)) (v :
       (by rw [FactorSet.groupExtension_rightHom]; exact FactorSet.continuous_rightHom _) hM
       (fun x ↦ ⟨Multiplicative.ofAdd (v x), of x⟩) fun x ↦ by
         rw [FactorSet.groupExtension_rightHom, FactorSet.rightHom_apply]
-  have hright : ∀ g, (s g).right = g := fun g ↦ by
-    have h := s.rightHom_splitting g
-    rwa [FactorSet.groupExtension_rightHom, FactorSet.rightHom_apply] at h
-  refine ⟨fun g ↦ Multiplicative.toAdd (s g).left, mem_Z1_iff.2 ⟨?_, fun g h ↦ ?_⟩, fun x ↦ ?_⟩
-  · exact continuous_toAdd.comp (FactorSet.Extension.continuous_left.comp hs)
-  · -- The cocycle identity is the `M`-component of `s (g * h) = s g * s h`.
-    simp only [map_mul, FactorSet.Extension.mul_left, hright, FactorSet.trivial_apply, mul_one,
-      toAdd_mul, Multiplicative.toAdd_smul]
-    exact add_comm _ _
-  · exact congrArg (fun z ↦ Multiplicative.toAdd z.left) (hsv x)
+  exact ⟨_, FactorSet.mem_Z1_of_splitting s hs,
+    fun x ↦ congrArg (fun z ↦ Multiplicative.toAdd z.left) (hsv x)⟩
 
 variable (hM : IsProP p (Multiplicative M))
 
@@ -122,7 +114,7 @@ noncomputable def Z1Equiv : Z1 (freeProP p X) M ≃+ (X → M) where
   invFun v := ⟨(exists_mem_Z1_forall_apply_of_eq hM v).choose,
     (exists_mem_Z1_forall_apply_of_eq hM v).choose_spec.1⟩
   left_inv c := Subtype.ext (eq_of_mem_Z1_of_forall_of
-    (exists_mem_Z1_forall_apply_of_eq hM _).choose_spec.1 c.2
+    (exists_mem_Z1_forall_apply_of_eq hM _).choose_spec.1 c.property
     (exists_mem_Z1_forall_apply_of_eq hM _).choose_spec.2)
   right_inv v := funext (exists_mem_Z1_forall_apply_of_eq hM v).choose_spec.2
   map_add' _ _ := rfl
@@ -157,7 +149,8 @@ theorem cocyclesMap1_surjective (f : M →+ N) (hf : Continuous f)
   intro c
   choose v hv using fun x : X ↦ hsurj ((c : freeProP p X → N) (of x))
   obtain ⟨c', hc', hc'v⟩ := exists_mem_Z1_forall_apply_of_eq hM v
-  refine ⟨⟨c', hc'⟩, Subtype.ext (eq_of_mem_Z1_of_forall_of (Subtype.property _) c.2 fun x ↦ ?_)⟩
+  refine ⟨⟨c', hc'⟩, Subtype.ext (eq_of_mem_Z1_of_forall_of (Subtype.property _) c.property fun x ↦
+      ?_)⟩
   simp [cocyclesMap1_apply, hc'v, hv]
 
 include hM in

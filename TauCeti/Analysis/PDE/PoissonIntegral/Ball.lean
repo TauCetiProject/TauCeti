@@ -192,8 +192,8 @@ theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (F
     fun x hx y hxy ↦ hx (by
       have hxy' : x = (y : EuclideanSpace ℝ (Fin n)) := by simpa only using hxy
       rw [hxy']
-      exact y.2)
-  have h := harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtype_val
+      exact y.property)
+  have h := harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtypeVal
     (isOpen_ne_fun continuous_fst continuous_snd) contDiffOn_ballPoissonKernel
     isClosed_sphere.isOpen_compl hU fun y ↦
       (harmonicOnNhd_ballPoissonKernel_left (norm_eq_of_mem_sphere y)).mono
@@ -356,8 +356,6 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
         (∀ z : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, u z = g z) ∧
           EqOn u (ballPoissonIntegral g) (ball 0 1) := by
   classical
-  have hgi : Integrable g volume.toSphere :=
-    hg.integrable_of_hasCompactSupport (.of_compactSpace g)
   let u : EuclideanSpace ℝ (Fin n) → ℝ := fun x ↦
     if hx : x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) 1 then g ⟨x, hx⟩ else ballPoissonIntegral g x
   have hball : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, x ∉ sphere 0 1 := fun x hx hs ↦
@@ -368,7 +366,7 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
   have huP : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, u =ᶠ[𝓝 x] ballPoissonIntegral g :=
     fun x hx ↦ Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) hu
   refine ⟨u, fun x hx ↦ (harmonicAt_congr_nhds (huP x hx)).2 (hP x hx), ?_,
-    fun z ↦ dite_eq_left z.2, hu⟩
+    fun z ↦ dite_eq_left z.property, hu⟩
   rw [← ball_union_sphere]
   intro x hx
   rcases hx with hx | hx
@@ -380,7 +378,7 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
       exact (tendsto_ballPoissonIntegral hg ⟨x, hx⟩).congr'
         (Filter.eventually_of_mem self_mem_nhdsWithin fun y hy ↦ (hu hy).symm)
     · have hres : (sphere (0 : EuclideanSpace ℝ (Fin n)) 1).domRestrict u = g :=
-        funext fun z ↦ dite_eq_left z.2
+        funext fun z ↦ dite_eq_left z.property
       exact (continuousOn_iff_continuous_domRestrict.2 (hres ▸ hg)) x hx
 
 /-- **Poisson representation of harmonic functions on the unit ball.**  A function continuous on
@@ -393,7 +391,7 @@ theorem eqOn_ballPoissonIntegral_of_harmonicOnNhd (hn : n ≠ 0)
       (ball 0 1) := by
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
   obtain ⟨v, hv, hvc, hvu, hvP⟩ := exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
-    (hc.comp_continuous continuous_subtype_val fun y ↦ sphere_subset_closedBall y.2)
+    (hc.comp_continuous continuous_subtypeVal fun y ↦ sphere_subset_closedBall y.property)
   -- By the maximum principle, `u` agrees with the Poisson solution `v` of its boundary values.
   have huv := eqOn_of_harmonicOnNhd_of_eqOn_frontier (isCompact_closedBall 0 1) hc hvc
     (by rwa [interior_closedBall _ one_ne_zero]) (by rwa [interior_closedBall _ one_ne_zero])
@@ -433,7 +431,7 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere {c : E} {r
     simp [φ, norm_smul, abs_of_pos hr, norm_eq_of_mem_sphere y]
   have hφc : Continuous φ := continuous_const.add (continuous_const.smul e.symm.continuous)
   have hgφ : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) 1 ↦
-      g (φ y) := hg.comp_continuous (hφc.comp continuous_subtype_val) hφs
+      g (φ y) := hg.comp_continuous (hφc.comp continuous_subtypeVal) hφs
   obtain ⟨u₀, hu₀, hu₀c, hu₀g, -⟩ :=
     exists_harmonicOnNhd_ball_continuousOn_closedBall_eq hgφ
   have hψc : Continuous ψ :=

@@ -87,8 +87,8 @@ noncomputable abbrev indexSpectralSequence :=
 /-- The step `p` of `indexFiltrationFunctor` is the subcomplex `F_p`. -/
 noncomputable def indexFiltrationFunctorObjIso (p : ℤ) :
     (m.indexFiltrationFunctor hM hm).obj p ≅ m.indexCochainComplex hM hm p :=
-  CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (m.indexCochainComplexι hM hm)
-    (m.indexSubobject_eq_mk hM hm) p
+  CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (m.indexCochainComplexι hM hm p)
+    (m.indexSubobject_eq_mk hM hm p)
 
 /-- The identification of a step of `indexFiltrationFunctor` with `F_p` is compatible with the
 inclusions into the coefficient complex. -/
@@ -97,8 +97,8 @@ theorem indexFiltrationFunctorObjIso_hom_comp_ι (p : ℤ) :
     (m.indexFiltrationFunctorObjIso hM hm p).hom ≫ m.indexCochainComplexι hM hm p =
       (CochainComplex.filtrationFunctorObjIso _ _ p).hom ≫
         (CochainComplex.filtrationEInt (m.indexSubobject hM hm) p).arrow :=
-  CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp _ _ (m.indexCochainComplexι hM hm)
-    (m.indexSubobject_eq_mk hM hm) p
+  CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp _ _ (m.indexCochainComplexι hM hm p)
+    (m.indexSubobject_eq_mk hM hm p)
 
 /-- The transition map `F_p ⟶ F_{p+1}` of `indexFiltrationFunctor` is the inclusion of
 subcomplexes `indexCochainComplexMap`. -/
@@ -153,6 +153,60 @@ theorem indexSpectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) :
         (HomologicalComplex.homologyFunctor _ _ _).mapIso (m.indexCokernelIso hM hm pq.2) := by
   apply Iso.ext
   rfl
+
+/-- The graded piece `F_p / F_q`, for `q + 1 = p`, with the indices given by an equation: the
+cokernel of the transition map `F_q ⟶ F_p` of the functor of the index filtration is the complex
+of families of coefficients on the generators of index `p`. -/
+noncomputable def indexCokernelIsoOfEq (q p : ℤ) (hqp : q + 1 = p) :
+    cokernel ((m.indexFiltrationFunctor hM hm).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm))) ≅
+      rowFiniteIndexGradedPieceComplex ind hM p := by
+  subst hqp
+  exact m.indexCokernelIso hM hm q
+
+/-- With the standard indices, `indexCokernelIsoOfEq` is `indexCokernelIso`. -/
+theorem indexCokernelIsoOfEq_self (q : ℤ) :
+    m.indexCokernelIsoOfEq hM hm q (q + 1) rfl = m.indexCokernelIso hM hm q :=
+  -- The equality `q + 1 = q + 1` is `rfl`, so the transport in the definition reduces.
+  (rfl)
+
+/-- The graded-piece isomorphism identifies the cokernel projection with restriction to the
+generators of index `p`. -/
+@[reassoc (attr := simp)]
+theorem cokernel_π_comp_indexCokernelIsoOfEq_hom (q p : ℤ) (hqp : q + 1 = p) :
+    cokernel.π ((m.indexFiltrationFunctor hM hm).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm))) ≫
+      (m.indexCokernelIsoOfEq hM hm q p hqp).hom =
+    (m.indexFiltrationFunctorObjIso hM hm p).hom ≫ m.indexCochainComplexProj hM hm p := by
+  subst hqp
+  exact m.cokernel_π_comp_indexCokernelIso_hom hM hm q
+
+/-- **The first page of the index spectral sequence**, with the indices `q`, `q + 1` and `p + q`
+given by equations, as in `CochainComplex.spectralSequenceFirstPageXIsoCokernel`: the object at
+`(p, q)` is the cohomology in degree `p + q` of the graded piece of index `q + 1`. -/
+noncomputable def indexSpectralSequenceFirstPageXIsoOfEq (pq : ℤ × ℤ) (i₁ i₂ : ℤ)
+    (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    ((m.indexSpectralSequence hM hm).page 2).X pq ≅
+      (rowFiniteIndexGradedPieceComplex ind hM i₂).homology n :=
+  CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq i₁ i₂ hi₁ hi₂ n hn ≪≫
+    HomologicalComplex.homologyMapIso (m.indexCokernelIsoOfEq hM hm i₁ i₂ (by omega)) n
+
+/-- `indexSpectralSequenceFirstPageXIsoOfEq` is the generic identification with the cokernel,
+followed by the isomorphism on cohomology induced by `indexCokernelIsoOfEq`. -/
+theorem indexSpectralSequenceFirstPageXIsoOfEq_eq (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2)
+    (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    m.indexSpectralSequenceFirstPageXIsoOfEq hM hm pq i₁ i₂ hi₁ hi₂ n hn =
+      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq i₁ i₂ hi₁ hi₂ n hn ≪≫
+        HomologicalComplex.homologyMapIso (m.indexCokernelIsoOfEq hM hm i₁ i₂ (by omega)) n :=
+  -- The first page isomorphism is defined as this composite.
+  (rfl)
+
+/-- With the standard indices, `indexSpectralSequenceFirstPageXIsoOfEq` is
+`indexSpectralSequenceFirstPageXIso`. -/
+theorem indexSpectralSequenceFirstPageXIsoOfEq_self (pq : ℤ × ℤ) :
+    m.indexSpectralSequenceFirstPageXIsoOfEq hM hm pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl =
+      m.indexSpectralSequenceFirstPageXIso hM hm pq :=
+  (m.indexSpectralSequenceFirstPageXIso_eq hM hm pq).symm
 
 /-! ### Convergence -/
 

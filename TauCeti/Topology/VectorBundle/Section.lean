@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.VectorBundle.Basic
 
+import TauCeti.Topology.VectorBundle.RestrictScalars
 import TauCeti.Topology.VectorBundle.Smul
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Continuous sections of vector bundles and partitions of unity
@@ -25,7 +27,8 @@ sections are continuous (`ContinuousAt.add_section`, `ContinuousAt.smul_section`
 `ContinuousAt.sum_section`, `Continuous.finsum_section_of_locallyFinite`; for global scalar
 multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
-continuous section (`ContinuousOn.smul_section_of_tsupport`).
+continuous section (`ContinuousOn.smul_section_of_tsupport`). For global continuity of
+fibrewise sums along a varying base map from another space, use `Continuous.add_totalSpace`.
 
 A linear trivialization reconstructs a section from arbitrary model coordinates by
 `Bundle.Trivialization.sectionFromCoordinates`, with the two coordinate inverse laws on its base
@@ -36,6 +39,11 @@ of `exists_continuous_forall_mem_convex_of_local`: over a normal paracompact bas
 fibrewise conditions can be met by sections that are continuous near each point, then they are met
 by a single global continuous section. This is how continuous fibre metrics, and other
 fibrewise-convex structures on bundles over paracompact bases, are constructed.
+Its affine counterpart `TauCeti.exists_continuous_section_map_eq_of_local` solves a fibrewise
+linear equation `A x (s x) = c x` globally once it is solvable locally; it applies to bundles over
+any normed `ℝ`-algebra, in particular to complex bundles. Local solutions can be built from
+single vectors with `FiberBundle.continuousOn_extend`: Mathlib's extension `FiberBundle.extend` of
+a vector of a fibre is a section continuous near its base point.
 
 The statements and proofs are the continuous counterparts of Mathlib's smooth section API
 `ContMDiffWithinAt.add_section`, `ContMDiffOn.smul_section_of_tsupport` and
@@ -77,6 +85,53 @@ theorem continuousOn_section_iff {a : Set B} (ha : a ⊆ e.baseSet) :
 
 end Bundle.Trivialization
 
+section MovingBase
+
+variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+
+variable {Y : Type*} [TopologicalSpace Y] {b : Y → B} {s t : ∀ y, E (b y)}
+  {u : Set Y} {y₀ : Y}
+
+variable (𝕜) in
+include 𝕜 in
+/-- The fibrewise sum of maps into a vector bundle over a common, possibly varying, base map,
+both continuous at a point within a set, is continuous there. -/
+theorem ContinuousWithinAt.add_totalSpace
+    (hs : ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (s y)) u y₀)
+    (ht : ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (t y)) u y₀) :
+    ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) u y₀ := by
+  rw [FiberBundle.continuousWithinAt_totalSpace] at hs ht ⊢
+  obtain ⟨h, h₀⟩ :=
+    (trivializationAt F E (b y₀)).toPretrivialization.snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+      (s := s) (t := t) (fun _ g ↦ g.map_add) hs.1 (mem_baseSet_trivializationAt F E (b y₀))
+  exact ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq h h₀⟩
+
+variable (𝕜) in
+include 𝕜 in
+/-- The fibrewise sum of maps into a vector bundle over a common, possibly varying, base map,
+both continuous at a point, is continuous there. -/
+theorem ContinuousAt.add_totalSpace
+    (hs : ContinuousAt (fun y ↦ TotalSpace.mk' F (b y) (s y)) y₀)
+    (ht : ContinuousAt (fun y ↦ TotalSpace.mk' F (b y) (t y)) y₀) :
+    ContinuousAt (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) y₀ := by
+  rw [← continuousWithinAt_univ] at hs ht ⊢
+  exact hs.add_totalSpace 𝕜 ht
+
+variable (𝕜) in
+include 𝕜 in
+/-- The fibrewise sum of continuous maps into a vector bundle over a common, possibly
+varying, base map is continuous. -/
+theorem Continuous.add_totalSpace
+    (hs : Continuous (fun y ↦ TotalSpace.mk' F (b y) (s y)))
+    (ht : Continuous (fun y ↦ TotalSpace.mk' F (b y) (t y))) :
+    Continuous (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) :=
+  continuous_iff_continuousAt.2 fun _ ↦ hs.continuousAt.add_totalSpace 𝕜 ht.continuousAt
+
+end MovingBase
+
 section Operations
 
 variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
@@ -91,24 +146,16 @@ include 𝕜 in
 theorem ContinuousWithinAt.add_section
     (hs : ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (s x)) u x₀)
     (ht : ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (t x)) u x₀) :
-    ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (s x + t x)) u x₀ := by
-  rw [FiberBundle.continuousWithinAt_section] at hs ht ⊢
-  -- The coordinates in the preferred trivialization at `x₀` are linear near `x₀`.
-  set e := trivializationAt F E x₀
-  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E x₀
-  have hlin {x} (hx : x ∈ e.baseSet) := (e.linear 𝕜 hx).map_add (s x) (t x)
-  refine (hs.add ht).congr_of_eventuallyEq ?_ (hlin hx₀)
-  filter_upwards [mem_nhdsWithin_of_mem_nhds (e.open_baseSet.mem_nhds hx₀)] with x hx
-  exact hlin hx
+    ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (s x + t x)) u x₀ :=
+  hs.add_totalSpace (b := id) 𝕜 ht
 
 variable (𝕜) in
 include 𝕜 in
 /-- The sum of two sections continuous at a point is continuous there. -/
 theorem ContinuousAt.add_section (hs : ContinuousAt (fun x ↦ TotalSpace.mk' F x (s x)) x₀)
     (ht : ContinuousAt (fun x ↦ TotalSpace.mk' F x (t x)) x₀) :
-    ContinuousAt (fun x ↦ TotalSpace.mk' F x (s x + t x)) x₀ := by
-  simp_rw [← continuousWithinAt_univ] at hs ht ⊢
-  exact hs.add_section 𝕜 ht
+    ContinuousAt (fun x ↦ TotalSpace.mk' F x (s x + t x)) x₀ :=
+  hs.add_totalSpace (b := id) 𝕜 ht
 
 variable (𝕜) in
 include 𝕜 in
@@ -124,7 +171,7 @@ include 𝕜 in
 theorem Continuous.add_section (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
     (ht : Continuous fun x ↦ TotalSpace.mk' F x (t x)) :
     Continuous fun x ↦ TotalSpace.mk' F x (s x + t x) :=
-  continuous_iff_continuousAt.mpr fun _ ↦ hs.continuousAt.add_section 𝕜 ht.continuousAt
+  hs.add_totalSpace (b := id) 𝕜 ht
 
 /-- The product of a scalar function and a section, both continuous at a point within a set, is
 continuous there. -/
@@ -207,7 +254,26 @@ theorem Bundle.Trivialization.continuousOn_mk_symmL (e : Trivialization F (π F 
 
 end Operations
 
+namespace FiberBundle
+
+variable {B : Type*} (F : Type*) [TopologicalSpace B] [TopologicalSpace F] {E : B → Type*}
+  [∀ x, Zero (E x)] [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E]
+
+/-- The extension `FiberBundle.extend F v₀` of a vector `v₀ ∈ E x₀`, which has constant coordinates
+in the trivialization at `x₀`, is a section continuous on the base set of that trivialization, an
+open neighbourhood of `x₀` (`FiberBundle.mem_baseSet_trivializationAt'`). -/
+theorem continuousOn_extend {x₀ : B} (v₀ : E x₀) :
+    ContinuousOn (fun x ↦ TotalSpace.mk' F x (extend F v₀ x)) (trivializationAt F E x₀).baseSet :=
+  (trivializationAt F E x₀).continuousOn_symm_prodMk_left.congr fun x hx ↦ by
+    rw [extend]
+    exact (trivializationAt F E x₀).mk_symm hx _
+
+end FiberBundle
+
 namespace TauCeti
+
+section ConvexGluing
 
 variable {B F : Type*} [TopologicalSpace B] [NormalSpace B] [ParacompactSpace B]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type*}
@@ -233,6 +299,41 @@ theorem exists_continuous_section_forall_mem_convex_of_local (t : ∀ x, Set (E 
       ((hsc i).mono interior_subset)
   · refine (ht x).finsum_mem (fun i ↦ ρ.nonneg i x) (ρ.sum_eq_one (mem_univ x)) fun i hi ↦ ?_
     exact hst i x (interior_subset (hρ i (subset_closure hi)))
+
+end ConvexGluing
+
+section AffineGluing
+
+variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+  [TopologicalSpace B] [NormalSpace B] [ParacompactSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  {G : B → Type*} [∀ x, AddCommMonoid (G x)] [∀ x, Module 𝕜 (G x)]
+
+/-- Let `A x : E x → G x` be a family of linear maps out of the fibres of a vector bundle over a
+normal paracompact space, and `c x ∈ G x`. If near each point the equation `A x (s x) = c x` has
+a solution `s` which is a section continuous there, then it has a global continuous solution.
+The scalar field `𝕜` may be any normed `ℝ`-algebra, for instance `ℝ` or `ℂ`. -/
+theorem exists_continuous_section_map_eq_of_local (A : ∀ x, E x →ₗ[𝕜] G x) (c : ∀ x, G x)
+    (H : ∀ x₀ : B, ∃ U ∈ 𝓝 x₀, ∃ s : ∀ x, E x,
+      ContinuousOn (fun x ↦ TotalSpace.mk' F x (s x)) U ∧ ∀ y ∈ U, A y (s y) = c y) :
+    ∃ s : ∀ x, E x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧ ∀ x, A x (s x) = c x := by
+  -- Restrict the scalars of `F`, `E` and `G` to `ℝ` and glue along the convex sets of solutions.
+  -- The `ℝ`-actions are defined through `algebraMap ℝ 𝕜`, so the scalar towers hold by `rfl`.
+  let : NormedSpace ℝ F := NormedSpace.restrictScalars ℝ 𝕜 F
+  have : IsScalarTower ℝ 𝕜 F := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let (x : B) : Module ℝ (E x) := Module.compHom (E x) (algebraMap ℝ 𝕜)
+  have (x : B) : IsScalarTower ℝ 𝕜 (E x) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let (x : B) : Module ℝ (G x) := Module.compHom (G x) (algebraMap ℝ 𝕜)
+  have (x : B) : IsScalarTower ℝ 𝕜 (G x) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : VectorBundle ℝ F E := VectorBundle.restrictScalars ℝ 𝕜 F E
+  simpa only [mem_preimage, mem_singleton_iff] using
+    exists_continuous_section_forall_mem_convex_of_local (fun x ↦ A x ⁻¹' {c x})
+      (fun x ↦ (convex_singleton (c x)).linear_preimage ((A x).restrictScalars ℝ))
+      (by simpa only [mem_preimage, mem_singleton_iff] using H)
+
+end AffineGluing
 
 end TauCeti
 

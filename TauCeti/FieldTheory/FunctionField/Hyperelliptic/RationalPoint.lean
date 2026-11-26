@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
+-- Proof-only: every place of `k(x)` has a place of `F` above it.
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 -- Proof-only: the action of `Aut(F / k(x))` on places.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 import TauCeti.FieldTheory.FunctionField.Place.Extension.RatFunc
 -- Proof-only: the involution `y ↦ -y` of `F / k(x)`.
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 
 /-!
 # The rational place of an affine point of `y² = f(x)`

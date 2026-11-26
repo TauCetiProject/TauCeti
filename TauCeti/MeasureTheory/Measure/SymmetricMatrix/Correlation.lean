@@ -116,24 +116,24 @@ correlation matrix exactly when it is positive semidefinite. -/
 def correlationMatrix :
     (strictLowerTriangle p → ℝ) →ᴬ[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) where
   toFun x := (symmetricCoordinates p).symm fun ij =>
-    if h : ij.1.1 < ij.1.2 then x ⟨(ij.1.2, ij.1.1), h⟩ else 1
+    if h : ij.val.1 < ij.val.2 then x ⟨(ij.val.2, ij.val.1), h⟩ else 1
   linear := (symmetricCoordinates p).symm.toLinearMap ∘ₗ
-    { toFun x ij := if h : ij.1.1 < ij.1.2 then x ⟨(ij.1.2, ij.1.1), h⟩ else 0
+    { toFun x ij := if h : ij.val.1 < ij.val.2 then x ⟨(ij.val.2, ij.val.1), h⟩ else 0
       map_add' x y := by
         funext ij
-        by_cases h : ij.1.1 < ij.1.2 <;> simp [h]
+        by_cases h : ij.val.1 < ij.val.2 <;> simp [h]
       map_smul' c x := by
         funext ij
-        by_cases h : ij.1.1 < ij.1.2 <;> simp [h] }
+        by_cases h : ij.val.1 < ij.val.2 <;> simp [h] }
   map_vadd' x v := by
     simp only [vadd_eq_add, LinearMap.coe_comp, Function.comp_apply, LinearMap.coe_mk,
       AddHom.coe_mk, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
     rw [← map_add]
     congr 1
     funext ij
-    by_cases h : ij.1.1 < ij.1.2 <;> simp [h]
+    by_cases h : ij.val.1 < ij.val.2 <;> simp [h]
   cont := (symmetricCoordinates p).symm.continuous.comp <| continuous_pi fun ij => by
-    by_cases h : ij.1.1 < ij.1.2
+    by_cases h : ij.val.1 < ij.val.2
     · simpa [h] using continuous_apply _
     · simpa [h] using continuous_const
 
@@ -197,21 +197,21 @@ unit-diagonal matrices it inverts `TauCeti.correlationMatrix`. -/
 def correlationCoordinates :
     selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) →L[ℝ] (strictLowerTriangle p → ℝ) :=
   LinearMap.toContinuousLinearMap
-    { toFun A ij := (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2
+    { toFun A ij := (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
 
 @[simp]
 theorem correlationCoordinates_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (ij : strictLowerTriangle p) :
-    correlationCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 :=
+    correlationCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 :=
   (rfl)
 
 @[simp]
 theorem correlationCoordinates_correlationMatrix (x : strictLowerTriangle p → ℝ) :
     correlationCoordinates p (correlationMatrix p x) = x := by
   funext ij
-  simp [ij.2]
+  simp [ij.property]
 
 variable (p) in
 theorem leftInverse_correlationCoordinates_correlationMatrix :
@@ -287,8 +287,9 @@ theorem map_correlationMatrix_withDensity
     ((volume : Measure (strictLowerTriangle p → ℝ)).withDensity fun x ↦
         g (correlationMatrix p x)).map (correlationMatrix p) =
       (correlationLebesgue p).withDensity g :=
-  Measure.map_withDensity_eq_withDensity (jac := 1) (correlationMatrix p).continuous.measurable
-    measurable_const hg (by rw [withDensity_one]; rfl) (ae_of_all _ fun _ ↦ one_mul _)
+  Measure.map_withDensity_eq_withDensity (jac := 1)
+    (correlationMatrix p).continuous.measurable.aemeasurable aemeasurable_const hg.aemeasurable
+    (by rw [withDensity_one]; rfl) (ae_of_all _ fun _ ↦ one_mul _)
 
 variable (p) in
 /-- `TauCeti.correlationLebesgue p`-almost every symmetric matrix has unit diagonal. -/
@@ -306,7 +307,7 @@ instance correlationLebesgueSigmaFinite : SigmaFinite (correlationLebesgue p) :=
 theorem correlationLebesgue_of_le_one (hp : p ≤ 1) :
     correlationLebesgue p = Measure.dirac ⟨1, IsSelfAdjoint.one _⟩ := by
   have : IsEmpty (strictLowerTriangle p) :=
-    ⟨fun ij => by have := ij.2; have := ij.1.1.2; omega⟩
+    ⟨fun ij => by have := ij.property; have := ij.val.1.isLt; omega⟩
   have h0 : correlationMatrix p 0 = ⟨1, IsSelfAdjoint.one _⟩ :=
     Subtype.ext coe_correlationMatrix_zero
   rw [correlationLebesgue, volume_pi, Measure.pi_of_empty _ 0,
@@ -368,7 +369,7 @@ def correlationCoordinatesOfPartialCorrelation (z : strictLowerTriangle p → �
 theorem correlationCoordinatesOfPartialCorrelation_apply (z : strictLowerTriangle p → ℝ)
     (ij : strictLowerTriangle p) :
     correlationCoordinatesOfPartialCorrelation z ij =
-      partialCorrelationGram z ij.1.1 ij.1.2 := (rfl)
+      partialCorrelationGram z ij.val.1 ij.val.2 := (rfl)
 
 /-- On the closed partial-correlation cube, reconstruction from correlation coordinates
 returns the original Gram matrix. -/
@@ -407,8 +408,8 @@ theorem continuous_correlationCoordinatesOfPartialCorrelation :
   apply continuous_pi
   intro ij
   simp only [correlationCoordinatesOfPartialCorrelation_apply]
-  exact (continuous_apply ij.1.2).comp
-    ((continuous_apply ij.1.1).comp continuous_partialCorrelationGram)
+  exact (continuous_apply ij.val.2).comp
+    ((continuous_apply ij.val.1).comp continuous_partialCorrelationGram)
 
 /-- The partial-correlation forward map is smooth on the open cube. -/
 theorem contDiffOn_correlationCoordinatesOfPartialCorrelation :
@@ -417,33 +418,34 @@ theorem contDiffOn_correlationCoordinatesOfPartialCorrelation :
   apply contDiffOn_pi.2
   intro ij
   simp only [correlationCoordinatesOfPartialCorrelation_apply]
-  exact contDiffOn_pi.1 (contDiffOn_pi.1 contDiffOn_partialCorrelationGram ij.1.1) ij.1.2
+  exact contDiffOn_pi.1 (contDiffOn_pi.1 contDiffOn_partialCorrelationGram ij.val.1) ij.val.2
 
 /-! ### The partial-correlation Jacobian -/
 
 private def partialCorrelationPrefix (z : strictLowerTriangle p → ℝ) (i j : Fin p) : ℝ :=
-  ∏ kl : strictLowerTriangle p with kl.1.1 = i ∧ kl.1.2 < j,
+  ∏ kl : strictLowerTriangle p with kl.val.1 = i ∧ kl.val.2 < j,
     Real.sqrt (1 - z kl ^ 2)
 
 private abbrev partialCorrelationJacobianOccurrence (p : ℕ) :=
   Σ ij : strictLowerTriangle p,
-    {kl : strictLowerTriangle p // kl.1.1 = ij.1.1 ∧ kl.1.2 < ij.1.2} ⊕
-      {kl : strictLowerTriangle p // kl.1.1 = ij.1.2 ∧ kl.1.2 < ij.1.2}
+    {kl : strictLowerTriangle p // kl.val.1 = ij.val.1 ∧ kl.val.2 < ij.val.2} ⊕
+      {kl : strictLowerTriangle p // kl.val.1 = ij.val.2 ∧ kl.val.2 < ij.val.2}
 
 private abbrev partialCorrelationJacobianMultiplicity (p : ℕ) :=
-  Σ kl : strictLowerTriangle p, {k : Fin p // kl.1.2 < k ∧ k ≠ kl.1.1}
+  Σ kl : strictLowerTriangle p, {k : Fin p // kl.val.2 < k ∧ k ≠ kl.val.1}
 
 private def partialCorrelationJacobianOccurrenceEquiv :
     partialCorrelationJacobianOccurrence p ≃ partialCorrelationJacobianMultiplicity p where
   toFun q := match q with
-    | ⟨ij, Sum.inl kl⟩ => ⟨kl, ⟨ij.1.2, kl.2.2, fun h ↦ ij.2.ne (h.trans kl.2.1)⟩⟩
-    | ⟨ij, Sum.inr kl⟩ => ⟨kl, ⟨ij.1.1, kl.2.2.trans ij.2,
-        fun h ↦ ij.2.ne' (h.trans kl.2.1)⟩⟩
-  invFun q := if h : q.2.1 < q.1.1.1 then
-      ⟨⟨(q.1.1.1, q.2.1), h⟩, Sum.inl ⟨q.1, rfl, q.2.2.1⟩⟩
+    | ⟨ij, Sum.inl kl⟩ => ⟨kl, ⟨ij.val.2, kl.property.2, fun h ↦ ij.property.ne
+        (h.trans kl.property.1)⟩⟩
+    | ⟨ij, Sum.inr kl⟩ => ⟨kl, ⟨ij.val.1, kl.property.2.trans ij.property,
+        fun h ↦ ij.property.ne' (h.trans kl.property.1)⟩⟩
+  invFun q := if h : q.2.val < q.1.val.1 then
+      ⟨⟨(q.1.val.1, q.2.val), h⟩, Sum.inl ⟨q.1, rfl, q.2.property.1⟩⟩
     else
-      ⟨⟨(q.2.1, q.1.1.1), lt_of_le_of_ne (not_lt.1 h) q.2.2.2.symm⟩,
-        Sum.inr ⟨q.1, rfl, q.1.2⟩⟩
+      ⟨⟨(q.2.val, q.1.val.1), lt_of_le_of_ne (not_lt.1 h) q.2.property.2.symm⟩,
+        Sum.inr ⟨q.1, rfl, q.1.property⟩⟩
   left_inv q := by
     rcases q with ⟨⟨⟨i, j⟩, hij⟩, kl | kl⟩
     · rcases kl with ⟨⟨⟨a, b⟩, hab⟩, hrow, hcol⟩
@@ -454,26 +456,26 @@ private def partialCorrelationJacobianOccurrenceEquiv :
       simp [not_lt_of_ge hij.le]
   right_inv q := by
     rcases q with ⟨kl, k⟩
-    by_cases h : k.1 < kl.1.1
+    by_cases h : k.val < kl.val.1
     · simp [h]
     · simp [h]
 
 @[simp]
 private theorem partialCorrelationJacobianOccurrenceEquiv_fst_inl
     (ij : strictLowerTriangle p)
-    (kl : {kl : strictLowerTriangle p // kl.1.1 = ij.1.1 ∧ kl.1.2 < ij.1.2}) :
+    (kl : {kl : strictLowerTriangle p // kl.val.1 = ij.val.1 ∧ kl.val.2 < ij.val.2}) :
     (partialCorrelationJacobianOccurrenceEquiv ⟨ij, Sum.inl kl⟩).1 = kl := rfl
 
 @[simp]
 private theorem partialCorrelationJacobianOccurrenceEquiv_fst_inr
     (ij : strictLowerTriangle p)
-    (kl : {kl : strictLowerTriangle p // kl.1.1 = ij.1.2 ∧ kl.1.2 < ij.1.2}) :
+    (kl : {kl : strictLowerTriangle p // kl.val.1 = ij.val.2 ∧ kl.val.2 < ij.val.2}) :
     (partialCorrelationJacobianOccurrenceEquiv ⟨ij, Sum.inr kl⟩).1 = kl := rfl
 
 private theorem partialCorrelationPrefix_eq_prod_subtype
     (z : strictLowerTriangle p → ℝ) (i j : Fin p) :
     partialCorrelationPrefix z i j =
-      ∏ kl : {kl : strictLowerTriangle p // kl.1.1 = i ∧ kl.1.2 < j},
+      ∏ kl : {kl : strictLowerTriangle p // kl.val.1 = i ∧ kl.val.2 < j},
         Real.sqrt (1 - z kl ^ 2) := by
   unfold partialCorrelationPrefix
   exact Finset.prod_subtype _ (by simp) _
@@ -486,8 +488,8 @@ private def partialCorrelationJacobianOccurrenceCoordinate :
 private theorem prod_partialCorrelationPrefix_eq_prod_multiplicity
     (z : strictLowerTriangle p → ℝ) :
     (∏ ij : strictLowerTriangle p,
-        partialCorrelationPrefix z ij.1.1 ij.1.2 *
-          partialCorrelationPrefix z ij.1.2 ij.1.2) =
+        partialCorrelationPrefix z ij.val.1 ij.val.2 *
+          partialCorrelationPrefix z ij.val.2 ij.val.2) =
       ∏ q : partialCorrelationJacobianMultiplicity p, Real.sqrt (1 - z q.1 ^ 2) := by
   calc
     _ = ∏ q : partialCorrelationJacobianOccurrence p,
@@ -507,26 +509,26 @@ private theorem prod_partialCorrelationPrefix_eq_prod_multiplicity
 
 private theorem card_partialCorrelationJacobianMultiplicity
     (kl : strictLowerTriangle p) :
-    Fintype.card {k : Fin p // kl.1.2 < k ∧ k ≠ kl.1.1} = p - kl.1.2.1 - 2 := by
-  let A := {k : Fin p // kl.1.2 < k}
+    Fintype.card {k : Fin p // kl.val.2 < k ∧ k ≠ kl.val.1} = p - kl.val.2.val - 2 := by
+  let A := {k : Fin p // kl.val.2 < k}
   calc
-    Fintype.card {k : Fin p // kl.1.2 < k ∧ k ≠ kl.1.1} =
-        Fintype.card {k : A // k.1 ≠ kl.1.1} :=
+    Fintype.card {k : Fin p // kl.val.2 < k ∧ k ≠ kl.val.1} =
+        Fintype.card {k : A // k.val ≠ kl.val.1} :=
       Fintype.card_congr
-        (Equiv.subtypeSubtypeEquivSubtypeInter (fun k : Fin p ↦ kl.1.2 < k)
-          (fun k ↦ k ≠ kl.1.1)).symm
-    _ = Fintype.card A - Fintype.card {k : A // k.1 = kl.1.1} := by
+        (Equiv.subtypeSubtypeEquivSubtypeInter (fun k : Fin p ↦ kl.val.2 < k)
+          (fun k ↦ k ≠ kl.val.1)).symm
+    _ = Fintype.card A - Fintype.card {k : A // k.val = kl.val.1} := by
       simpa only [not_not] using
-        Fintype.card_subtype_compl (fun k : A ↦ k.1 = kl.1.1)
-    _ = p - kl.1.2.1 - 2 := by
-      have hcardA : Fintype.card A = p - 1 - kl.1.2.1 := by
+        Fintype.card_subtype_compl (fun k : A ↦ k.val = kl.val.1)
+    _ = p - kl.val.2.val - 2 := by
+      have hcardA : Fintype.card A = p - 1 - kl.val.2.val := by
         calc
-          Fintype.card A = Fintype.card (Finset.Ioi kl.1.2) :=
+          Fintype.card A = Fintype.card (Finset.Ioi kl.val.2) :=
             Fintype.card_congr (Equiv.subtypeEquivRight (by simp))
-          _ = (Finset.Ioi kl.1.2).card := Fintype.card_coe _
-          _ = p - 1 - kl.1.2.1 := Fin.card_Ioi kl.1.2
-      have hcardEq : Fintype.card {k : A // k.1 = kl.1.1} = 1 := by
-        refine Fintype.card_eq_one_iff.mpr ⟨⟨⟨kl.1.1, kl.2⟩, rfl⟩, ?_⟩
+          _ = (Finset.Ioi kl.val.2).card := Fintype.card_coe _
+          _ = p - 1 - kl.val.2.val := Fin.card_Ioi kl.val.2
+      have hcardEq : Fintype.card {k : A // k.val = kl.val.1} = 1 := by
+        refine Fintype.card_eq_one_iff.mpr ⟨⟨⟨kl.val.1, kl.property⟩, rfl⟩, ?_⟩
         rintro ⟨k, hk⟩
         apply Subtype.ext
         apply Subtype.ext
@@ -538,7 +540,7 @@ private theorem prod_partialCorrelationJacobianMultiplicity
     (z : strictLowerTriangle p → ℝ) :
     (∏ q : partialCorrelationJacobianMultiplicity p, Real.sqrt (1 - z q.1 ^ 2)) =
       ∏ kl : strictLowerTriangle p,
-        Real.sqrt (1 - z kl ^ 2) ^ (p - kl.1.2.1 - 2) := by
+        Real.sqrt (1 - z kl ^ 2) ^ (p - kl.val.2.val - 2) := by
   rw [Fintype.prod_sigma]
   apply Finset.prod_congr rfl
   intro kl _
@@ -553,37 +555,37 @@ private theorem partialCorrelationCholesky_apply_self_eq_prefix
   apply Finset.prod_congr
   · ext kl
     simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-    exact ⟨fun hkl ↦ ⟨hkl, hkl ▸ kl.2⟩, And.left⟩
+    exact ⟨fun hkl ↦ ⟨hkl, hkl ▸ kl.property⟩, And.left⟩
   · simp
 
 private theorem correlationCoordinatesOfPartialCorrelation_apply_eq
     (z : strictLowerTriangle p → ℝ) (ij : strictLowerTriangle p) :
     correlationCoordinatesOfPartialCorrelation z ij =
-      (∑ k ∈ Finset.Iio ij.1.2,
-        partialCorrelationCholesky z ij.1.1 k *
-          partialCorrelationCholesky z ij.1.2 k) +
-      z ij * partialCorrelationPrefix z ij.1.1 ij.1.2 *
-        partialCorrelationPrefix z ij.1.2 ij.1.2 := by
+      (∑ k ∈ Finset.Iio ij.val.2,
+        partialCorrelationCholesky z ij.val.1 k *
+          partialCorrelationCholesky z ij.val.2 k) +
+      z ij * partialCorrelationPrefix z ij.val.1 ij.val.2 *
+        partialCorrelationPrefix z ij.val.2 ij.val.2 := by
   simp only [correlationCoordinatesOfPartialCorrelation_apply]
   rw [partialCorrelationGram_def, Matrix.mul_apply]
   simp only [Matrix.transpose_apply]
   have hsum :
-      (∑ k : Fin p, partialCorrelationCholesky z ij.1.1 k *
-          partialCorrelationCholesky z ij.1.2 k) =
-        ∑ k ∈ Finset.Iic ij.1.2, partialCorrelationCholesky z ij.1.1 k *
-          partialCorrelationCholesky z ij.1.2 k := by
+      (∑ k : Fin p, partialCorrelationCholesky z ij.val.1 k *
+          partialCorrelationCholesky z ij.val.2 k) =
+        ∑ k ∈ Finset.Iic ij.val.2, partialCorrelationCholesky z ij.val.1 k *
+          partialCorrelationCholesky z ij.val.2 k := by
     symm
     apply Finset.sum_subset (Finset.subset_univ _)
     intro k _ hk
     simp only [Finset.mem_Iic, not_le] at hk
     rw [partialCorrelationCholesky_apply_of_lt z hk, mul_zero]
   rw [hsum, Finset.Iic_eq_cons_Iio, Finset.sum_cons]
-  rw [partialCorrelationCholesky_apply_of_gt z ij.2]
+  rw [partialCorrelationCholesky_apply_of_gt z ij.property]
   rw [partialCorrelationCholesky_apply_self_eq_prefix]
   -- The entry lemma expands the prefix product; restore its named form before rearranging.
   change
-    z ij * partialCorrelationPrefix z ij.1.1 ij.1.2 *
-        partialCorrelationPrefix z ij.1.2 ij.1.2 + _ = _
+    z ij * partialCorrelationPrefix z ij.val.1 ij.val.2 *
+        partialCorrelationPrefix z ij.val.2 ij.val.2 + _ = _
   ring
 
 private def partialCorrelationLine (z : strictLowerTriangle p → ℝ)
@@ -592,7 +594,7 @@ private def partialCorrelationLine (z : strictLowerTriangle p → ℝ)
 
 private theorem partialCorrelationPrefix_add_single_of_not_mem
     (z : strictLowerTriangle p → ℝ) (kl : strictLowerTriangle p) (t : ℝ) (i j : Fin p)
-    (hkl : ¬ (kl.1.1 = i ∧ kl.1.2 < j)) :
+    (hkl : ¬ (kl.val.1 = i ∧ kl.val.2 < j)) :
     partialCorrelationPrefix (partialCorrelationLine z kl t) i j =
       partialCorrelationPrefix z i j := by
   unfold partialCorrelationPrefix
@@ -616,14 +618,14 @@ private theorem add_single_apply_self (z : strictLowerTriangle p → ℝ)
 
 private theorem partialCorrelationCholesky_line_of_lt_col
     (z : strictLowerTriangle p → ℝ) (kl : strictLowerTriangle p) (t : ℝ)
-    {i k : Fin p} (hki : k < i) (hk : k < kl.1.2) :
+    {i k : Fin p} (hki : k < i) (hk : k < kl.val.2) :
     partialCorrelationCholesky (partialCorrelationLine z kl t) i k =
       partialCorrelationCholesky z i k := by
   rw [partialCorrelationCholesky_apply_of_gt _ hki,
     partialCorrelationCholesky_apply_of_gt _ hki]
   have hne : (⟨(i, k), hki⟩ : strictLowerTriangle p) ≠ kl := by
     intro h
-    have hcol := congrArg (fun ab : strictLowerTriangle p ↦ ab.1.2) h
+    have hcol := congrArg (fun ab : strictLowerTriangle p ↦ ab.val.2) h
     exact hk.ne hcol
   rw [add_single_apply_of_ne z kl _ t hne]
   apply congrArg (z ⟨(i, k), hki⟩ * ·)
@@ -632,7 +634,7 @@ private theorem partialCorrelationCholesky_line_of_lt_col
 
 private theorem sum_partialCorrelationCholesky_line_of_le_col
     (z : strictLowerTriangle p → ℝ) (kl : strictLowerTriangle p) (t : ℝ)
-    {i j : Fin p} (hji : j < i) (hjle : j ≤ kl.1.2) :
+    {i j : Fin p} (hji : j < i) (hjle : j ≤ kl.val.2) :
     (∑ k ∈ Finset.Iio j,
       partialCorrelationCholesky (partialCorrelationLine z kl t) i k *
         partialCorrelationCholesky (partialCorrelationLine z kl t) j k) =
@@ -641,7 +643,7 @@ private theorem sum_partialCorrelationCholesky_line_of_le_col
   apply Finset.sum_congr rfl
   intro k hk
   have hkj := Finset.mem_Iio.1 hk
-  have hkkl : k < kl.1.2 := hkj.trans_le hjle
+  have hkkl : k < kl.val.2 := hkj.trans_le hjle
   rw [partialCorrelationCholesky_line_of_lt_col z kl t (hkj.trans hji) hkkl,
     partialCorrelationCholesky_line_of_lt_col z kl t hkj hkkl]
 
@@ -649,20 +651,20 @@ private theorem correlationCoordinatesOfPartialCorrelation_add_single_self
     (z : strictLowerTriangle p → ℝ) (ij : strictLowerTriangle p) (t : ℝ) :
     correlationCoordinatesOfPartialCorrelation (partialCorrelationLine z ij t) ij =
       correlationCoordinatesOfPartialCorrelation z ij +
-        t * (partialCorrelationPrefix z ij.1.1 ij.1.2 *
-          partialCorrelationPrefix z ij.1.2 ij.1.2) := by
+        t * (partialCorrelationPrefix z ij.val.1 ij.val.2 *
+          partialCorrelationPrefix z ij.val.2 ij.val.2) := by
   rw [correlationCoordinatesOfPartialCorrelation_apply_eq,
     correlationCoordinatesOfPartialCorrelation_apply_eq]
-  rw [sum_partialCorrelationCholesky_line_of_le_col z ij t ij.2 le_rfl,
+  rw [sum_partialCorrelationCholesky_line_of_le_col z ij t ij.property le_rfl,
     add_single_apply_self,
-    partialCorrelationPrefix_add_single_of_not_mem z ij t ij.1.1 ij.1.2
+    partialCorrelationPrefix_add_single_of_not_mem z ij t ij.val.1 ij.val.2
       (fun h ↦ (lt_irrefl _) h.2),
-    partialCorrelationPrefix_add_single_of_not_mem z ij t ij.1.2 ij.1.2
-      (fun h ↦ ij.2.ne h.1.symm)]
+    partialCorrelationPrefix_add_single_of_not_mem z ij t ij.val.2 ij.val.2
+      (fun h ↦ ij.property.ne h.1.symm)]
   ring
 
 private def strictLowerTriangleKey (ij : strictLowerTriangle p) : Fin p ×ₗ Fin p :=
-  toLex (ij.1.2, ij.1.1)
+  toLex (ij.val.2, ij.val.1)
 
 private theorem strictLowerTriangleKey_injective :
     Function.Injective (strictLowerTriangleKey (p := p)) := by
@@ -703,25 +705,25 @@ private theorem toMatrix_fderiv_correlationCoordinatesOfPartialCorrelation_diag
     LinearMap.toMatrix (Pi.basisFun ℝ (strictLowerTriangle p))
         (Pi.basisFun ℝ (strictLowerTriangle p))
         (fderiv ℝ (correlationCoordinatesOfPartialCorrelation (p := p)) z) ij ij =
-      partialCorrelationPrefix z ij.1.1 ij.1.2 *
-        partialCorrelationPrefix z ij.1.2 ij.1.2 := by
+      partialCorrelationPrefix z ij.val.1 ij.val.2 *
+        partialCorrelationPrefix z ij.val.2 ij.val.2 := by
   have hactual :=
     hasDerivAt_correlationCoordinatesOfPartialCorrelation_partialCorrelationLine hz ij ij
   have hformula : (fun t : ℝ ↦
       correlationCoordinatesOfPartialCorrelation (partialCorrelationLine z ij t) ij) =
       fun t ↦ correlationCoordinatesOfPartialCorrelation z ij +
-        t * (partialCorrelationPrefix z ij.1.1 ij.1.2 *
-          partialCorrelationPrefix z ij.1.2 ij.1.2) := by
+        t * (partialCorrelationPrefix z ij.val.1 ij.val.2 *
+          partialCorrelationPrefix z ij.val.2 ij.val.2) := by
     funext t
     exact correlationCoordinatesOfPartialCorrelation_add_single_self z ij t
   rw [hformula] at hactual
   have hexpected : HasDerivAt (fun t : ℝ ↦ correlationCoordinatesOfPartialCorrelation z ij +
-      t * (partialCorrelationPrefix z ij.1.1 ij.1.2 *
-        partialCorrelationPrefix z ij.1.2 ij.1.2))
-      (partialCorrelationPrefix z ij.1.1 ij.1.2 *
-        partialCorrelationPrefix z ij.1.2 ij.1.2) 0 := by
-    exact (hasDerivAt_mul_const (partialCorrelationPrefix z ij.1.1 ij.1.2 *
-      partialCorrelationPrefix z ij.1.2 ij.1.2)).const_add
+      t * (partialCorrelationPrefix z ij.val.1 ij.val.2 *
+        partialCorrelationPrefix z ij.val.2 ij.val.2))
+      (partialCorrelationPrefix z ij.val.1 ij.val.2 *
+        partialCorrelationPrefix z ij.val.2 ij.val.2) 0 := by
+    exact (hasDerivAt_mul_const (partialCorrelationPrefix z ij.val.1 ij.val.2 *
+      partialCorrelationPrefix z ij.val.2 ij.val.2)).const_add
         (correlationCoordinatesOfPartialCorrelation z ij)
   exact hactual.unique hexpected
 
@@ -735,14 +737,14 @@ private theorem correlationCoordinatesOfPartialCorrelation_add_single_of_key_lt
     subst kl
     exact (lt_irrefl _ hkey)
   rw [strictLowerTriangleKey, strictLowerTriangleKey, Prod.Lex.toLex_lt_toLex] at hkey
-  have hjle : ij.1.2 ≤ kl.1.2 := hkey.elim (fun h ↦ h.le) (fun h ↦ h.1.le)
+  have hjle : ij.val.2 ≤ kl.val.2 := hkey.elim (fun h ↦ h.le) (fun h ↦ h.1.le)
   rw [correlationCoordinatesOfPartialCorrelation_apply_eq,
     correlationCoordinatesOfPartialCorrelation_apply_eq]
-  rw [sum_partialCorrelationCholesky_line_of_le_col z kl t ij.2 hjle,
+  rw [sum_partialCorrelationCholesky_line_of_le_col z kl t ij.property hjle,
     add_single_apply_of_ne z kl ij t hne,
-    partialCorrelationPrefix_add_single_of_not_mem z kl t ij.1.1 ij.1.2
+    partialCorrelationPrefix_add_single_of_not_mem z kl t ij.val.1 ij.val.2
       (fun h ↦ (not_lt_of_ge hjle) h.2),
-    partialCorrelationPrefix_add_single_of_not_mem z kl t ij.1.2 ij.1.2
+    partialCorrelationPrefix_add_single_of_not_mem z kl t ij.val.2 ij.val.2
       (fun h ↦ (not_lt_of_ge hjle) h.2)]
 
 private theorem toMatrix_fderiv_correlationCoordinatesOfPartialCorrelation_of_key_lt
@@ -776,8 +778,8 @@ private theorem abs_det_fderiv_correlationCoordinatesOfPartialCorrelation_eq_pre
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
     |(fderiv ℝ (correlationCoordinatesOfPartialCorrelation (p := p)) z).det| =
       ∏ ij : strictLowerTriangle p,
-        partialCorrelationPrefix z ij.1.1 ij.1.2 *
-          partialCorrelationPrefix z ij.1.2 ij.1.2 := by
+        partialCorrelationPrefix z ij.val.1 ij.val.2 *
+          partialCorrelationPrefix z ij.val.2 ij.val.2 := by
   rw [ContinuousLinearMap.det,
     ← LinearMap.det_toMatrix (Pi.basisFun ℝ (strictLowerTriangle p)),
     (blockTriangular_toMatrix_fderiv_correlationCoordinatesOfPartialCorrelation hz).det_eq_prod_diag
@@ -797,14 +799,14 @@ theorem abs_det_fderiv_correlationCoordinatesOfPartialCorrelation
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
     |(fderiv ℝ (correlationCoordinatesOfPartialCorrelation (p := p)) z).det| =
       ∏ ij : strictLowerTriangle p,
-        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2) := by
+        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.val.2.val - 2) := by
   rw [abs_det_fderiv_correlationCoordinatesOfPartialCorrelation_eq_prefix hz,
     prod_partialCorrelationPrefix_eq_prod_multiplicity,
     prod_partialCorrelationJacobianMultiplicity]
 /-- The Cholesky factor of a positive-definite correlation matrix has unit-length rows. -/
 private theorem sum_sq_cholesky_correlationMatrix {x : strictLowerTriangle p → ℝ}
     (hx : x ∈ posDefCorrelationRegion p) (i : Fin p) :
-    ∑ j, (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 i j ^ 2 = 1 := by
+    ∑ j, (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).val i j ^ 2 = 1 := by
   have h := congrFun (congrFun
     (cholesky_mul_transpose ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩) i) i
   simpa [Matrix.mul_apply, sq] using h
@@ -814,8 +816,8 @@ lie in the open cube. -/
 theorem abs_partialCorrelationOfCholesky_cholesky_lt_one {x : strictLowerTriangle p → ℝ}
     (hx : x ∈ posDefCorrelationRegion p) (ij : strictLowerTriangle p) :
     |Matrix.partialCorrelationOfCholesky
-      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 ij| < 1 :=
-  abs_partialCorrelationOfCholesky_lt_one (fun i ↦ ((cholesky _).2.2 i).ne')
+      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).val ij| < 1 :=
+  abs_partialCorrelationOfCholesky_lt_one (fun i ↦ ((cholesky _).property.2 i).ne')
     (sum_sq_cholesky_correlationMatrix hx) ij
 
 /-- The partial correlations of the Cholesky factor of a positive-definite correlation matrix
@@ -825,10 +827,11 @@ theorem correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCholesky_
     {x : strictLowerTriangle p → ℝ} (hx : x ∈ posDefCorrelationRegion p) :
     correlationCoordinatesOfPartialCorrelation
       (Matrix.partialCorrelationOfCholesky
-        (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1) = x := by
+        (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).val) = x := by
   funext ⟨⟨i, j⟩, hji⟩
   rw [correlationCoordinatesOfPartialCorrelation_apply, partialCorrelationGram_def,
-    partialCorrelationCholesky_partialCorrelationOfCholesky (cholesky _).2.1 (cholesky _).2.2
+    partialCorrelationCholesky_partialCorrelationOfCholesky (cholesky _).property.1
+        (cholesky _).property.2
       (sum_sq_cholesky_correlationMatrix hx), cholesky_mul_transpose]
   exact coe_correlationMatrix_apply_of_gt x hji
 
@@ -840,7 +843,7 @@ def partialCorrelationOfCorrelationCoordinates (x : strictLowerTriangle p → �
     strictLowerTriangle p → ℝ :=
   if hx : x ∈ posDefCorrelationRegion p then
     Matrix.partialCorrelationOfCholesky
-      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1
+      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).val
   else 0
 
 /-- On the positive-definite correlation region, the inverse map reads the partial correlations
@@ -849,7 +852,7 @@ theorem partialCorrelationOfCorrelationCoordinates_of_mem {x : strictLowerTriang
     (hx : x ∈ posDefCorrelationRegion p) :
     partialCorrelationOfCorrelationCoordinates x =
       Matrix.partialCorrelationOfCholesky
-        (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 := by
+        (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).val := by
   simp only [partialCorrelationOfCorrelationCoordinates, hx, ↓reduceDIte]
 
 /-- The inverse partial-correlation map is Borel measurable. -/
@@ -858,9 +861,9 @@ theorem measurable_partialCorrelationOfCorrelationCoordinates :
     Measurable (partialCorrelationOfCorrelationCoordinates (p := p)) := by
   classical
   have hL : Continuous fun x : posDefCorrelationRegion p ↦
-      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 x.2⟩).1 :=
-    continuous_subtype_val.comp <| continuous_cholesky.comp <|
-      ((correlationMatrix p).continuous.comp continuous_subtype_val).subtype_mk _
+      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 x.property⟩).val :=
+    continuous_subtypeVal.comp <| continuous_cholesky.comp <|
+      ((correlationMatrix p).continuous.comp continuous_subtypeVal).subtype_mk _
   have hP : Measurable (Matrix.partialCorrelationOfCholesky (p := p)) := by
     refine Measurable.of_eval fun ij ↦ ?_
     simp only [Matrix.partialCorrelationOfCholesky_apply]
@@ -985,7 +988,7 @@ theorem closure_posDefCorrelationRegion :
   refine Subset.antisymm ?_ fun x hx => ?_
   · refine closure_minimal (fun x hx => hx.posSemidef) ?_
     exact isClosed_setOfPred_posSemidef.preimage
-      (continuous_subtype_val.comp (correlationMatrix p).continuous)
+      (continuous_subtypeVal.comp (correlationMatrix p).continuous)
   · have hmem : ∀ᶠ t in 𝓝[<] (1 : ℝ), t • x ∈ posDefCorrelationRegion p := by
       filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with t ht
       rw [mem_posDefCorrelationRegion, coe_correlationMatrix_smul, add_comm]
@@ -1034,7 +1037,7 @@ is integrable on the open cube. -/
 theorem integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff
     (g : (strictLowerTriangle p → ℝ) → E) :
     IntegrableOn (fun z ↦ (∏ ij : strictLowerTriangle p,
-        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
+        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.val.2.val - 2)) •
           g (correlationCoordinatesOfPartialCorrelation z)) {z | ∀ ij, |z ij| < 1} ↔
       IntegrableOn g (posDefCorrelationRegion p) := by
   rw [← image_correlationCoordinatesOfPartialCorrelation,
@@ -1052,7 +1055,7 @@ partial-correlation forward map, weighted by the Jacobian `∏ √(1 - z ij ^ 2)
 theorem setIntegral_comp_correlationCoordinatesOfPartialCorrelation
     (g : (strictLowerTriangle p → ℝ) → E) :
     ∫ z in {z | ∀ ij, |z ij| < 1}, (∏ ij : strictLowerTriangle p,
-        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
+        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.val.2.val - 2)) •
           g (correlationCoordinatesOfPartialCorrelation z) =
       ∫ x in posDefCorrelationRegion p, g x := by
   rw [← image_correlationCoordinatesOfPartialCorrelation,
@@ -1072,7 +1075,7 @@ region. -/
 theorem map_withDensity_correlationCoordinatesOfPartialCorrelation :
     ((volume.restrict {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1}).withDensity fun z ↦
         ENNReal.ofReal (∏ ij : strictLowerTriangle p,
-          Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2))).map
+          Real.sqrt (1 - z ij ^ 2) ^ (p - ij.val.2.val - 2))).map
         correlationCoordinatesOfPartialCorrelation =
       volume.restrict (posDefCorrelationRegion p) := by
   have hcube := isOpen_setOf_forall_abs_lt_one (ι := strictLowerTriangle p)
@@ -1114,8 +1117,8 @@ private theorem map_correlationLebesgue_of_signedPerm
 the sorted pair `(max (σ i) (σ j), min (σ i) (σ j))`. -/
 private def permStrictLower (σ : Equiv.Perm (Fin p)) (ij : strictLowerTriangle p) :
     strictLowerTriangle p :=
-  ⟨(max (σ ij.1.1) (σ ij.1.2), min (σ ij.1.1) (σ ij.1.2)),
-    min_lt_max.2 (σ.injective.ne ij.2.ne')⟩
+  ⟨(max (σ ij.val.1) (σ ij.val.2), min (σ ij.val.1) (σ ij.val.2)),
+    min_lt_max.2 (σ.injective.ne ij.property.ne')⟩
 
 private theorem permStrictLower_inv (σ : Equiv.Perm (Fin p)) (ij : strictLowerTriangle p) :
     permStrictLower σ⁻¹ (permStrictLower σ ij) = ij := by
@@ -1153,7 +1156,7 @@ theorem map_symmetricCongruenceLinearMap_permMatrix_correlationLebesgue
   funext ij
   simp [-Matrix.coe_symmetricCongruenceLinearMap_apply,
     Matrix.coe_symmetricCongruenceLinearMap_permMatrix_apply,
-    coe_correlationMatrix_apply_of_ne x (σ.injective.ne ij.2.ne'),
+    coe_correlationMatrix_apply_of_ne x (σ.injective.ne ij.property.ne'),
     permStrictLowerEquiv, permStrictLower]
 
 variable (p) in
@@ -1163,20 +1166,16 @@ theorem map_symmetricCongruenceLinearMap_diagonal_correlationLebesgue {s : Fin p
     (hs : ∀ i, |s i| = 1) :
     (correlationLebesgue p).map (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s)) =
       correlationLebesgue p := by
-  have hcoe : ∀ (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (i j : Fin p),
-      (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s) A : Matrix (Fin p) (Fin p) ℝ) i j =
-        s i * (A : Matrix (Fin p) (Fin p) ℝ) i j * s j := fun A i j => by
-    simp [Matrix.diagonal_mul, Matrix.mul_diagonal]
   refine map_correlationLebesgue_of_signedPerm
     (LinearMap.continuous_of_finiteDimensional _).measurable
-    (Equiv.refl _) (fun ij => s ij.1.1 * s ij.1.2) (fun ij => by simp [abs_mul, hs])
+    (Equiv.refl _) (fun ij => s ij.val.1 * s ij.val.2) (fun ij => by simp [abs_mul, hs])
     fun x => ?_
   have hsq : ∀ i, s i * s i = 1 := fun i => by rw [← abs_mul_abs_self, hs, one_mul]
   rw [← correlationMatrix_correlationCoordinates (A := Matrix.symmetricCongruenceLinearMap _ _)
-    fun i => by simp [hcoe, hsq]]
+    fun i => by simp [Matrix.coe_symmetricCongruenceLinearMap_diagonal_apply, hsq]]
   congr 1
   funext ij
-  simp [hcoe, ij.2]
+  simp [Matrix.coe_symmetricCongruenceLinearMap_diagonal_apply, ij.property]
   ring
 
 end TauCeti

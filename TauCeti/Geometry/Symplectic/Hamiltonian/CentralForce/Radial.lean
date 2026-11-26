@@ -330,7 +330,7 @@ theorem radialProjection_circularMotion (m : ℝ) {r₀ : ℝ} (hr₀ : 0 ≤ r�
     (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (huw : ⟪u, w⟫_ℝ = 0) (t : ℝ) :
     radialProjection (circularMotion m r₀ ω u w t) = (r₀, 0) := by
   have h : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw (by simpa using huw)
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw (by simpa using huw)).2
       (Real.cos_sq_add_sin_sq (ω * t))
   simp only [circularMotion, radialProjection, radialMomentum, norm_smul, h, Real.norm_eq_abs,
     abs_of_nonneg hr₀, mul_one, Prod.mk.injEq, true_and]
@@ -346,11 +346,11 @@ theorem sq_sub_inner_sq_circularMotion (m r₀ ω : ℝ) {u w : V} (hu : ‖u‖
       (m * r₀ ^ 2 * ω) ^ 2 := by
   have huw' : RCLike.re ⟪u, w⟫_ℝ = 0 := by simpa using huw
   have h₁ : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw huw'
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw huw').2
       (Real.cos_sq_add_sin_sq (ω * t))
   have h₂ : ‖-Real.sin (ω * t) • u + Real.cos (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw huw'
-      (γ := -Real.sin (ω * t)) (σ := Real.cos (ω * t))
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw huw'
+      (γ := -Real.sin (ω * t)) (σ := Real.cos (ω * t))).2
       (by rw [neg_sq]; exact Real.sin_sq_add_cos_sq (ω * t))
   simp only [circularMotion, norm_smul, h₁, h₂, Real.norm_eq_abs, mul_one, mul_pow, sq_abs,
     inner_smul_left, inner_smul_right, inner_add_left, inner_add_right, real_inner_self_eq_norm_sq,
@@ -428,6 +428,21 @@ theorem hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential {
     stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
       hU.hasDerivAt hr] at hγ
   convert (hasFDerivAt_fst (𝕜 := ℝ) (p := γ t)).comp_hasDerivAt t hγ using 1 <;>
+    simp [Function.comp_def]
+
+/-- **The radial force.** Along an integral curve of the reduced Hamiltonian vector field in the
+half-line `r > 0`, with `U` differentiable at the radius, the radial momentum has derivative
+`p_r' = ℓ² / (m r³) - U'(r)`, the negative of the derivative of the effective potential. -/
+theorem hasDerivAt_snd_of_hasDerivAt_hamiltonianVectorField_effectivePotential {m ℓ : ℝ}
+    {U : ℝ → ℝ} {γ : ℝ → ℝ × ℝ} {t : ℝ}
+    (hγ : HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
+      (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
+    (hr : 0 < (γ t).1) (hU : DifferentiableAt ℝ U (γ t).1) :
+    HasDerivAt (fun s ↦ (γ s).2) (ℓ ^ 2 / (m * (γ t).1 ^ 3) - deriv U (γ t).1) t := by
+  rw [← Prod.mk.eta (p := γ t),
+    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
+      hU.hasDerivAt hr] at hγ
+  convert (hasFDerivAt_snd (𝕜 := ℝ) (p := γ t)).comp_hasDerivAt t hγ using 1 <;>
     simp [Function.comp_def]
 
 /-! ### The radial projection of the Hamiltonian flow -/

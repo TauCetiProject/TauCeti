@@ -6,21 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+import TauCeti.Analysis.InnerProductSpace.Complex
 
 /-!
 # Real inner products with a unit complex number
 
-Multiplication by a unit complex number `ζ` is a rotation of the plane, so the real inner product
-of `ζ` with `ζ * w` is the real inner product of `1` with `w`, namely the real part of `w`. This
-lets the level sets `⟪ζ, z⟫_ℝ = t` be read in the rotated coordinate `w = conj ζ * z`.
+Scalar multiplication by `ζ` scales the real inner product by `‖ζ‖ ^ 2`
+(`TauCeti.real_inner_smul_smul`). In particular multiplication by a unit complex number `ζ`
+is a rotation of the plane, so the real inner product of `ζ` with `ζ * w` is the real inner
+product of `1` with `w`, namely the real part of `w`. This lets the level sets `⟪ζ, z⟫_ℝ = t` be
+read in the rotated coordinate `w = conj ζ * z`.
 
 ## Main declarations
 
-* `Complex.mul_conj_eq_one_of_norm_eq_one` -- a unit complex number times its conjugate is `1`.
-* `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
 * `Complex.inner_mul_mul_of_norm_eq_one` -- `⟪ζ * a, ζ * b⟫_ℝ = ⟪a, b⟫_ℝ` for a unit `ζ`.
+* `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
 * `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
-* `LinearIsometry.norm_map_I` -- a linear isometry from the plane maps `i` to a unit vector.
+* `Complex.real_inner_I_left`, `Complex.real_inner_one_left` -- `⟪i, z⟫_ℝ = z.im` and
+  `⟪1, z⟫_ℝ = z.re`: the imaginary and real parts are height functions.
+* `Complex.inner_one_smul_I_sub_inner_I_smul_one` -- the infinitesimal rotation
+  `z ↦ ⟪z, 1⟫_ℝ i - ⟪z, i⟫_ℝ` of the plane is multiplication by `i`.
+* `Complex.I_mul_I_mul` -- `i (i z) = -z`.
+* `Complex.real_inner_I_mul_left` -- multiplication by `i` is skew-adjoint:
+  `⟪i x, y⟫_ℝ = -⟪x, i y⟫_ℝ`.
+* `Real.inner_ofReal_I_mul_ofReal` -- `⟪x, i y⟫_ℝ = 0` for real `x`, `y`: the real line is
+  orthogonal to its rotation by `i`.
 -/
 
 public section
@@ -29,28 +39,54 @@ namespace Complex
 
 variable {ζ : ℂ}
 
-/-- A complex number of norm `1` times its conjugate is `1`. -/
-theorem mul_conj_eq_one_of_norm_eq_one (hζ : ‖ζ‖ = 1) : ζ * (starRingEnd ℂ) ζ = 1 := by
-  rw [mul_conj', hζ]
-  norm_num
-
-/-- The real inner product of a unit complex number `ζ` with `ζ * w` is the real part of `w`. -/
-theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by
-  rw [Complex.inner, mul_comm ζ w, mul_assoc, mul_conj_eq_one_of_norm_eq_one hζ, mul_one]
-
 /-- Multiplication by a unit complex number `ζ` preserves the real inner product. -/
 theorem inner_mul_mul_of_norm_eq_one (hζ : ‖ζ‖ = 1) (a b : ℂ) :
     inner ℝ (ζ * a) (ζ * b) = inner ℝ a b := by
-  rw [Complex.inner, Complex.inner, map_mul, mul_mul_mul_comm, mul_comm ζ,
-    mul_comm (starRingEnd ℂ ζ), mul_conj_eq_one_of_norm_eq_one hζ, one_mul]
+  simpa only [smul_eq_mul, hζ, one_pow, one_mul] using TauCeti.real_inner_smul_smul ζ a b
+
+/-- The real inner product of a unit complex number `ζ` with `ζ * w` is the real part of `w`. -/
+theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by
+  simpa [Complex.inner] using inner_mul_mul_of_norm_eq_one hζ 1 w
 
 /-- The real inner product of `z` with `i` is the imaginary part of `z`. -/
 theorem real_inner_I_right (z : ℂ) : inner ℝ z I = z.im := by
   simp [Complex.inner]
 
+/-- The real inner product of `i` with `z` is the imaginary part of `z`. -/
+theorem real_inner_I_left (z : ℂ) : inner ℝ I z = z.im := by
+  simp [Complex.inner]
+
+/-- The real inner product of `1` with `z` is the real part of `z`. -/
+theorem real_inner_one_left (z : ℂ) : inner ℝ 1 z = z.re := by
+  simp [Complex.inner]
+
+/-- The infinitesimal rotation `z ↦ ⟪z, 1⟫ i - ⟪z, i⟫` of the plane `ℂ` is multiplication by `i`. -/
+theorem inner_one_smul_I_sub_inner_I_smul_one (z : ℂ) :
+    inner ℝ z 1 • I - inner ℝ z I • (1 : ℂ) = I * z := by
+  apply Complex.ext <;> simp [Complex.inner]
+
+/-- Multiplying twice by `i` negates. -/
+@[simp]
+theorem I_mul_I_mul (z : ℂ) : I * (I * z) = -z := by
+  rw [← mul_assoc, I_mul_I, neg_one_mul]
+
+/-- Multiplication by `i` is skew-adjoint for the real inner product of `ℂ`. -/
+theorem real_inner_I_mul_left (x y : ℂ) : inner ℝ (I * x) y = -inner ℝ x (I * y) := by
+  simp only [Complex.inner, mul_re, mul_im, conj_re, conj_im, I_re, I_im]
+  ring
+
+/-- The squared norm is the sum of squared real inner products with a unit complex number
+and its rotation by `i`. -/
+theorem norm_sq_eq_real_inner_sq_add_real_inner_mul_I_sq (v w : ℂ) (hw : ‖w‖ = 1) :
+    ‖v‖ ^ 2 = inner ℝ v w ^ 2 + inner ℝ v (w * I) ^ 2 := by
+  have h : w.re * w.re + w.im * w.im = 1 := by
+    rw [← Complex.normSq_apply, ← Complex.sq_norm, hw, one_pow]
+  simp [Complex.sq_norm, Complex.normSq_apply, Complex.inner, Complex.mul_re]
+  linear_combination -(v.re ^ 2 + v.im ^ 2) * h
+
 end Complex
 
-/-- A linear isometry from the plane maps `i` to a unit vector. -/
-theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
-  (ι.norm_map _).trans Complex.norm_I
+/-- The real line is orthogonal to its rotation by `i`: `⟪x, i y⟫_ℝ = 0` for real `x`, `y`. That
+is, `F = ℝ ⊆ ℂ` satisfies the orthogonality `⟪F, J F⟫ = 0` for `J = i`. -/
+theorem Real.inner_ofReal_I_mul_ofReal (x y : ℝ) : inner ℝ (x : ℂ) (Complex.I * y) = 0 := by
+  simp [Complex.inner]

@@ -141,84 +141,6 @@ private theorem kinkHalfEdgeEquiv_inr (τ : Fin 2 × Bool ≃ Fin 4) (t : Fin 2)
       PDCode.halfEdgeSuccEquiv n (.inr (τ (t, b))) := by
   simp [kinkHalfEdgeEquiv]
 
-/-- Read the last crossing of a code `r` times from its next slot. -/
-private def rotateLast (r : ℕ) (C : OrientedPDCode (n + 1)) : OrientedPDCode (n + 1) :=
-  (fun C ↦ C.rotateCrossing (Fin.last n))^[r] C
-
-private theorem rotateLast_succ (r : ℕ) (C : OrientedPDCode (n + 1)) :
-    rotateLast (r + 1) C = (rotateLast r C).rotateCrossing (Fin.last n) :=
-  Function.iterate_succ_apply' _ _ _
-
-private theorem rotateLast_zero (C : OrientedPDCode (n + 1)) : rotateLast 0 C = C :=
-  Function.iterate_zero_apply _ _
-
-private theorem rotateLast_edgePair (r : ℕ) (C : OrientedPDCode (n + 1)) :
-    (rotateLast r C).edgePair = C.edgePair := by
-  induction r with
-  | zero => rw [rotateLast_zero]
-  | succ r ih => simp [rotateLast_succ, ih]
-
-private theorem rotateLast_orientation (r : ℕ) (C : OrientedPDCode (n + 1)) :
-    (rotateLast r C).orientation = C.orientation := by
-  induction r with
-  | zero => rw [rotateLast_zero]
-  | succ r ih => simp [rotateLast_succ, ih]
-
-private theorem rotateLast_crossinglessComponentCount (r : ℕ) (C : OrientedPDCode (n + 1)) :
-    (rotateLast r C).crossinglessComponentCount = C.crossinglessComponentCount := by
-  induction r with
-  | zero => rw [rotateLast_zero]
-  | succ r ih => simp [rotateLast_succ, ih]
-
-private theorem rotateLast_halfEdge_castSucc (r : ℕ) (C : OrientedPDCode (n + 1)) (c : Fin n)
-    (slot : Fin 4) :
-    (rotateLast r C).halfEdge (PDCode.crossingSlotEquiv (n + 1) (c.castSucc, slot)) =
-      C.halfEdge (PDCode.crossingSlotEquiv (n + 1) (c.castSucc, slot)) := by
-  induction r with
-  | zero => rw [rotateLast_zero]
-  | succ r ih =>
-    rw [rotateLast_succ, OrientedPDCode.toPDCode_rotateCrossing,
-      PDCode.rotateCrossing_crossing_of_ne _ _ (Fin.castSucc_ne_last c), ih]
-
-private theorem rotateLast_halfEdge_last (r : ℕ) (C : OrientedPDCode (n + 1)) (slot : Fin 4) :
-    (rotateLast r C).halfEdge (PDCode.crossingSlotEquiv (n + 1) (Fin.last n, slot)) =
-      C.halfEdge (PDCode.crossingSlotEquiv (n + 1) (Fin.last n, slot + Fin.ofNat 4 r)) := by
-  induction r generalizing slot with
-  | zero => simp [rotateLast_zero]
-  | succ r ih =>
-    rw [rotateLast_succ, OrientedPDCode.toPDCode_rotateCrossing,
-      PDCode.rotateCrossing_crossing_self, ih]
-    congr 3
-    ext
-    simp only [Fin.val_add, Fin.val_ofNat, Fin.val_one]
-    omega
-
-private theorem rotateLast_overPair_castSucc (r : ℕ) (C : OrientedPDCode (n + 1)) (c : Fin n) :
-    (rotateLast r C).overPair c.castSucc = C.overPair c.castSucc := by
-  induction r with
-  | zero => rw [rotateLast_zero]
-  | succ r ih =>
-    rw [rotateLast_succ, OrientedPDCode.toPDCode_rotateCrossing,
-      PDCode.rotateCrossing_overPair_of_ne _ _ (Fin.castSucc_ne_last c), ih]
-
-private theorem rotateLast_overPair_last (r : ℕ) (C : OrientedPDCode (n + 1)) :
-    (rotateLast r C).overPair (Fin.last n) = (C.overPair (Fin.last n) ^^ decide (r % 2 = 1)) := by
-  induction r with
-  | zero => simp [rotateLast_zero]
-  | succ r ih =>
-    rw [rotateLast_succ, OrientedPDCode.toPDCode_rotateCrossing,
-      PDCode.rotateCrossing_overPair_self, ih]
-    rcases Nat.mod_two_eq_zero_or_one r with h | h <;>
-      simp [h, Nat.succ_mod_two_eq_one_iff]
-
-private theorem reidemeisterEquiv_rotateLast (r : ℕ) (C : OrientedPDCode (n + 1)) :
-    OrientedPDCode.ReidemeisterEquiv C (rotateLast r C) := by
-  induction r with
-  | zero => rw [rotateLast_zero]
-  | succ r ih =>
-    rw [rotateLast_succ]
-    exact ih.trans (OrientedPDCode.reidemeisterEquiv_rotateCrossing _ _)
-
 /-! ### A kink cut into an arc -/
 
 section Arc
@@ -345,36 +267,47 @@ uses. -/
 private theorem relabel_toOrientedPDCode_insertKink_eq (side b : Bool) (r : ℕ)
     (hslot : ∀ slot : Fin 4, kinkSlot side (if decide (slot = 0 ∨ slot = 2) = o then 0 else 1,
       if s = 1 then decide (slot = 2 ∨ slot = 3) else decide (slot = 1 ∨ slot = 2)) =
-        slot + Fin.ofNat 4 r)
+        slot + r • 1)
     (hb : (b ^^ decide (r % 2 = 1)) = false) :
     (D.insertKink k o s).toOrientedPDCode.relabel
         ((visitHalfEdgeEquiv (n + 1 + 1)).symm.trans (kinkHalfEdgeEquiv k (kinkSlotEquiv side)))
         (Equiv.refl _) =
-      rotateLast r (D.toOrientedPDCode.reidemeisterOne (kinkArcEnd k side) b) := by
+      (fun C : OrientedPDCode (n + 1 + 1) ↦ C.rotateCrossing (Fin.last (n + 1)))^[r]
+        (D.toOrientedPDCode.reidemeisterOne (kinkArcEnd k side) b) := by
   apply relabel_toOrientedPDCode_eq (by omega)
   · intro i
-    rw [rotateLast_edgePair]
+    rw [OrientedPDCode.toPDCode_iterate_rotateCrossing, PDCode.iterate_rotateCrossing_edgePair]
     exact edgePair_reidemeisterOne_kinkHalfEdgeEquiv D k side b i
   · intro i b'
-    rw [rotateLast_orientation]
+    rw [OrientedPDCode.iterate_rotateCrossing_orientation]
     exact orientation_reidemeisterOne_kinkHalfEdgeEquiv D k side b i b'
   · intro c slot
     induction c using Fin.lastCases with
     | last =>
-      rw [rotateLast_halfEdge_last, crossingVisit_insertKink_last, crossingOutgoing_insertKink_last,
-        kinkHalfEdgeEquiv_inr, kinkSlotEquiv_apply, hslot,
+      rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+        PDCode.iterate_rotateCrossing_crossing_self, crossingVisit_insertKink_last,
+        crossingOutgoing_insertKink_last, kinkHalfEdgeEquiv_inr, kinkSlotEquiv_apply, hslot,
         PDCode.crossingSlotEquiv_succ_last, OrientedPDCode.toPDCode_reidemeisterOne,
         PDCode.reidemeisterOne_crossing_last]
     | cast c =>
-      rw [rotateLast_halfEdge_castSucc, crossingVisit_insertKink_castSucc,
-        crossingOutgoing_insertKink_castSucc, kinkHalfEdgeEquiv_inl,
-        PDCode.crossingSlotEquiv_succ_castSucc, OrientedPDCode.toPDCode_reidemeisterOne,
-        PDCode.reidemeisterOne_crossing_castSucc, PDCode.crossing_apply, toOrientedPDCode_crossing]
+      rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+        PDCode.iterate_rotateCrossing_crossing_of_ne _ _ _ (Fin.castSucc_ne_last c),
+        crossingVisit_insertKink_castSucc, crossingOutgoing_insertKink_castSucc,
+        kinkHalfEdgeEquiv_inl, PDCode.crossingSlotEquiv_succ_castSucc,
+        OrientedPDCode.toPDCode_reidemeisterOne, PDCode.reidemeisterOne_crossing_castSucc,
+        PDCode.crossing_apply, toOrientedPDCode_crossing]
   · intro c
     induction c using Fin.lastCases with
-    | last => rw [rotateLast_overPair_last]; simpa using hb
-    | cast c => rw [rotateLast_overPair_castSucc]; simp
-  · rw [rotateLast_crossinglessComponentCount]
+    | last =>
+      rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+        PDCode.iterate_rotateCrossing_overPair_self]
+      simpa using hb
+    | cast c =>
+      rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+        PDCode.iterate_rotateCrossing_overPair_of_ne _ _ _ (Fin.castSucc_ne_last c)]
+      simp
+  · rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+      PDCode.iterate_rotateCrossing_crossinglessComponentCount]
     simp
 
 /-- Inserting a kink into a Gauss code with at least one crossing changes its PD-code by a first
@@ -384,14 +317,14 @@ private theorem reidemeisterEquiv_toOrientedPDCode_insertKink_succ :
   obtain ⟨side, b, r, hslot, hb⟩ : ∃ side b : Bool, ∃ r : ℕ,
       (∀ slot : Fin 4, kinkSlot side (if decide (slot = 0 ∨ slot = 2) = o then 0 else 1,
         if s = 1 then decide (slot = 2 ∨ slot = 3) else decide (slot = 1 ∨ slot = 2)) =
-          slot + Fin.ofNat 4 r) ∧ (b ^^ decide (r % 2 = 1)) = false := by
+          slot + r • 1) ∧ (b ^^ decide (r % 2 = 1)) = false := by
     rcases Int.units_eq_one_or s with rfl | rfl <;> cases o
     · exact ⟨false, true, 3, by decide, by decide⟩
     · exact ⟨true, true, 1, by decide, by decide⟩
     · exact ⟨true, false, 2, by decide, by decide⟩
     · exact ⟨false, false, 0, by decide, by decide⟩
   refine ((OrientedPDCode.reidemeisterEquiv_reidemeisterOne _ (kinkArcEnd k side) b).trans
-    (reidemeisterEquiv_rotateLast r _)).trans ?_
+    (OrientedPDCode.reidemeisterEquiv_iterate_rotateCrossing _ (Fin.last (n + 1)) r)).trans ?_
   rw [← relabel_toOrientedPDCode_insertKink_eq D k o s side b r hslot hb]
   exact (OrientedPDCode.reidemeisterEquiv_relabel _ _ _).symm
 
@@ -420,48 +353,54 @@ private theorem relabel_toOrientedPDCode_insertKink_eq_zero (τ : Fin 2 × Bool 
     (horient : ∀ t b', ![false, true, true, false] (τ (t, b')) = b')
     (hslot : ∀ slot : Fin 4, τ (if decide (slot = 0 ∨ slot = 2) = o then 0 else 1,
       if s = 1 then decide (slot = 2 ∨ slot = 3) else decide (slot = 1 ∨ slot = 2)) =
-        slot + Fin.ofNat 4 r)
+        slot + r • 1)
     (hb : (b ^^ decide (r % 2 = 1)) = false) :
     (D.insertKink k o s).toOrientedPDCode.relabel
         ((visitHalfEdgeEquiv (0 + 1)).symm.trans (kinkHalfEdgeEquiv k (Equiv.ofBijective τ hτ)))
         (Equiv.refl _) =
-      rotateLast r (OrientedPDCode.empty.adjoinKink true b) := by
+      (fun C : OrientedPDCode (0 + 1) ↦ C.rotateCrossing (Fin.last 0))^[r]
+        (OrientedPDCode.empty.adjoinKink true b) := by
   apply relabel_toOrientedPDCode_eq (by omega)
   · intro i
     obtain ⟨x | t, rfl⟩ := (kinkVisitEquiv 0 k).surjective i
     · exact x.elim0
-    · rw [rotateLast_edgePair, finRotate_kinkVisitEquiv_zero, kinkHalfEdgeEquiv_inr,
-        kinkHalfEdgeEquiv_inr, OrientedPDCode.toPDCode_adjoinKink, PDCode.adjoinKink_edgePair_inr,
-        Equiv.ofBijective_apply, Equiv.ofBijective_apply, hedge]
+    · rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+        PDCode.iterate_rotateCrossing_edgePair, finRotate_kinkVisitEquiv_zero,
+        kinkHalfEdgeEquiv_inr, kinkHalfEdgeEquiv_inr, OrientedPDCode.toPDCode_adjoinKink,
+        PDCode.adjoinKink_edgePair_inr, Equiv.ofBijective_apply, Equiv.ofBijective_apply, hedge]
   · intro i b'
     obtain ⟨x | t, rfl⟩ := (kinkVisitEquiv 0 k).surjective i
     · exact x.elim0
-    · rw [rotateLast_orientation, kinkHalfEdgeEquiv_inr, OrientedPDCode.orientation_adjoinKink_inr,
-        Equiv.ofBijective_apply]
+    · rw [OrientedPDCode.iterate_rotateCrossing_orientation, kinkHalfEdgeEquiv_inr,
+        OrientedPDCode.orientation_adjoinKink_inr, Equiv.ofBijective_apply]
       simpa using horient t b'
   · intro c slot
     obtain rfl : c = Fin.last 0 := Fin.ext (by omega)
-    rw [rotateLast_halfEdge_last, crossingVisit_insertKink_last, crossingOutgoing_insertKink_last,
-      kinkHalfEdgeEquiv_inr, Equiv.ofBijective_apply, hslot, PDCode.crossingSlotEquiv_succ_last,
-      OrientedPDCode.toPDCode_adjoinKink, PDCode.adjoinKink_halfEdge]
+    rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+      PDCode.iterate_rotateCrossing_crossing_self, crossingVisit_insertKink_last,
+      crossingOutgoing_insertKink_last, kinkHalfEdgeEquiv_inr, Equiv.ofBijective_apply, hslot,
+      PDCode.crossingSlotEquiv_succ_last, OrientedPDCode.toPDCode_adjoinKink,
+      PDCode.adjoinKink_halfEdge]
     simp [Equiv.permCongr_apply]
   · intro c
     obtain rfl : c = Fin.last 0 := Fin.ext (by omega)
-    rw [rotateLast_overPair_last, OrientedPDCode.toPDCode_adjoinKink, PDCode.adjoinKink_overPair,
-      Fin.snoc_last, hb]
-  · rw [rotateLast_crossinglessComponentCount, OrientedPDCode.toPDCode_adjoinKink,
+    rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+      PDCode.iterate_rotateCrossing_overPair_self, OrientedPDCode.toPDCode_adjoinKink,
+      PDCode.adjoinKink_overPair, Fin.snoc_last, hb]
+  · rw [OrientedPDCode.toPDCode_iterate_rotateCrossing,
+      PDCode.iterate_rotateCrossing_crossinglessComponentCount, OrientedPDCode.toPDCode_adjoinKink,
       PDCode.adjoinKink_crossinglessComponentCount, ← OrientedPDCode.card_crossinglessComponents,
       OrientedPDCode.crossinglessComponents_empty, Multiset.card_zero]
 
 private theorem reidemeisterEquiv_toOrientedPDCode_insertKink_zero :
     OrientedPDCode.ReidemeisterEquiv D.toOrientedPDCode (D.insertKink k o s).toOrientedPDCode := by
   obtain ⟨τ, hτ, b, r, hedge, horient, hslot, hb⟩ : ∃ τ : Fin 2 × Bool → Fin 4,
-      ∃ hτ : Function.Bijective τ, ∃ b : Bool, ∃ r : ℕ,
+      ∃ _ : Function.Bijective τ, ∃ b : Bool, ∃ r : ℕ,
       (∀ t, PDCode.slotSmoothing true (τ (t, true)) = τ (t + 1, false)) ∧
       (∀ t b', ![false, true, true, false] (τ (t, b')) = b') ∧
       (∀ slot : Fin 4, τ (if decide (slot = 0 ∨ slot = 2) = o then 0 else 1,
         if s = 1 then decide (slot = 2 ∨ slot = 3) else decide (slot = 1 ∨ slot = 2)) =
-          slot + Fin.ofNat 4 r) ∧ (b ^^ decide (r % 2 = 1)) = false := by
+          slot + r • 1) ∧ (b ^^ decide (r % 2 = 1)) = false := by
     let τ' : Fin 2 × Bool → Fin 4 := fun p ↦ kinkSlot false (p.1 + 1, p.2)
     have hswap : Function.Bijective τ' := by decide
     have hedge (τ : Fin 2 × Bool → Fin 4)
@@ -481,7 +420,7 @@ private theorem reidemeisterEquiv_toOrientedPDCode_insertKink_zero :
     OrientedPDCode.unlinkEquiv.symm.injective (by simp [OrientedPDCode.unlinkEquiv_symm_apply])
   rw [hD]
   refine ((OrientedPDCode.reidemeisterEquiv_adjoinKink _ true b).trans
-    (reidemeisterEquiv_rotateLast r _)).trans ?_
+    (OrientedPDCode.reidemeisterEquiv_iterate_rotateCrossing _ (Fin.last 0) r)).trans ?_
   rw [← relabel_toOrientedPDCode_insertKink_eq_zero D k o s τ hτ b r hedge horient hslot hb]
   exact (OrientedPDCode.reidemeisterEquiv_relabel _ _ _).symm
 

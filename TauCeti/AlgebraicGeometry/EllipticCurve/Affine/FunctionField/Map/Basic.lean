@@ -75,12 +75,9 @@ statements here. A single map covers both readings, and neither is built in.
   disjoint over `F` inside `K(W.map f)`, that is, `F`-linearly independent functions stay
   `K`-linearly independent. This is what makes base change preserve degrees of isogenies.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0.5** (README:369), whose first milestone
-(README:376-378) asks for "base change of Weierstrass equations, coordinate rings, function
-fields, points, and isogenies". This is the function-field entry of that list; the isogeny entry
-is `Isogeny/BaseChange.lean`, which is what consumes everything here.
+This is the function-field part of base change for Weierstrass curves, alongside their equations,
+coordinate rings, points and isogenies; the isogeny part is `Isogeny/BaseChange/Basic.lean`, the
+main consumer of everything here.
 -/
 
 public section
@@ -212,26 +209,27 @@ theorem linearIndependent_map {ι : Type*} {v : ι → W.FunctionField}
   obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples W.CoordinateRing⁰ s v
   choose a ha using hd
   have hd0 : algebraMap W.CoordinateRing W.FunctionField d ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.2
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.property
   -- the numerators `a i` are linearly independent over `F`
-  have hav : LinearIndependent F fun j : s ↦ a j j.2 := by
+  have hav : LinearIndependent F fun j : s ↦ a j j.property := by
     refine LinearIndependent.of_comp
       (IsScalarTower.toAlgHom F W.CoordinateRing W.FunctionField).toLinearMap ?_
-    have : (fun j : s ↦ algebraMap W.CoordinateRing W.FunctionField (a j j.2)) =
+    have : (fun j : s ↦ algebraMap W.CoordinateRing W.FunctionField (a j j.property)) =
         fun j : s ↦ algebraMap W.CoordinateRing W.FunctionField d * v j := by
       ext j
-      rw [ha j j.2, Algebra.smul_def]
+      rw [ha j j.property, Algebra.smul_def]
     simp only [Function.comp_def, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom', this]
     exact (hv.comp _ Subtype.val_injective).map' (LinearMap.mulLeft F _)
       (LinearMap.ker_eq_bot.2 (mul_right_injective₀ hd0))
   -- the relation, multiplied by the image of `d`, is a relation among the images of the `a i`
-  have hrel : ∑ j : s, g j • CoordinateRing.map W f (a j j.2) = 0 := by
+  have hrel : ∑ j : s, g j • CoordinateRing.map W f (a j j.property) = 0 := by
     apply FaithfulSMul.algebraMap_injective (W.map f).CoordinateRing (W.map f).FunctionField
     have := congrArg (map W f (algebraMap W.CoordinateRing W.FunctionField d) * ·) hg
     simp only [mul_zero, Finset.mul_sum] at this
     rw [map_zero, map_sum, ← this, ← Finset.sum_coe_sort s]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [Algebra.smul_def, map_mul, ← map_algebraMap_coordinateRing, ha j j.2, Algebra.smul_def,
+    rw [Algebra.smul_def, map_mul, ← map_algebraMap_coordinateRing, ha j j.property,
+        Algebra.smul_def,
       map_mul, Function.comp_apply, Algebra.smul_def, ← IsScalarTower.algebraMap_apply]
     ring
   have hf : f.Flat := by

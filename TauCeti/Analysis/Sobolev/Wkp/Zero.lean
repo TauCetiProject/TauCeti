@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Classical
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # The Sobolev spaces `W^{k,p}_0(Ω)`
@@ -33,9 +34,14 @@ Sobolev functions and density results comparing different domains are not proved
 * `TauCeti.iteratedGradientTestFunction`: the recursively bundled classical derivatives of a
   test function.
 * `TauCeti.Wkp.ofTestFunctionₗ`: the injective linear embedding `C_c^∞(Ω) → W^{k,p}(Ω)`.
+* `TauCeti.Wkp.value_ofTestFunctionₗ_ae`, `TauCeti.Wkp.value_ofTestFunctionₗ_top_ae`: an embedded
+  test function is represented by the test function itself.
 * `TauCeti.Wkp.enorm_value_ofTestFunctionₗ`, `TauCeti.Wkp.enorm_iteratedGradient_ofTestFunctionₗ`:
   the Sobolev components of an embedded test function have the `Lᵖ` norms of its classical
   derivatives on the whole space.
+* `TauCeti.Wkp.norm_ofTestFunctionₗ_le_sum_lpNorm_iteratedFDeriv`: the `W^{k,p}(Ω)` norm of an
+  embedded test function is at most the sum of the `Lᵖ` norms of its classical derivatives through
+  order `k`.
 * `TauCeti.wkp0Submodule` and `TauCeti.Wkp0`: the closure of the test functions in `W^{k,p}(Ω)`
   and its complete normed-space type.
 * `TauCeti.Wkp0.ofTestFunctionₗ` and `TauCeti.Wkp0.lowerOrderL`: the dense test-function
@@ -45,9 +51,7 @@ Sobolev functions and density results comparing different domains are not proved
 
 ## References
 
-This is the arbitrary-order `C_c^∞(Ω)`-closure part of Lane A.2 in
-`TauCetiRoadmap/PDE/README.md`.  The construction follows L. C. Evans, *Partial Differential
-Equations*, Section 5.2.
+The construction follows L. C. Evans, *Partial Differential Equations*, Section 5.2.
 -/
 
 public section
@@ -291,6 +295,20 @@ theorem Wkp.value_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
   rw [Wkp.ofTestFunctionₗ_apply]
   exact Wkp.value_ofTestFunction k phi
 
+/-- The value of an embedded test function agrees almost everywhere on `Ω` with the test
+function itself. -/
+theorem Wkp.value_ofTestFunctionₗ_ae (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    Wkp.value k (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi) =ᵐ[mu.restrict Omega] phi := by
+  rw [Wkp.value_ofTestFunctionₗ]
+  exact testFunctionLp_apply_ae p phi
+
+/-- On the whole space, the value of an embedded test function agrees `μ`-almost everywhere with
+the test function itself. -/
+theorem Wkp.value_ofTestFunctionₗ_top_ae (k : ℕ) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    Wkp.value k (Wkp.ofTestFunctionₗ (mu := mu) (Omega := ⊤) (p := p) k phi) =ᵐ[mu] phi := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    Wkp.value_ofTestFunctionₗ_ae (mu := mu) (Omega := ⊤) (p := p) k phi
+
 /-- The highest iterated-gradient component of an embedded test function is its classical
 iterated gradient as an `Lᵖ` class. -/
 theorem Wkp.iteratedGradient_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
@@ -322,12 +340,27 @@ theorem Wkp.enorm_iteratedGradient_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega
   have hm : AEStronglyMeasurable (iteratedFDeriv ℝ (k + 1) (phi : E → ℝ)) mu :=
     (phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
   -- The restriction is dropped on the pointwise norms, since `phi` vanishes outside `Omega`.
-  rw [Wkp.iteratedGradient_ofTestFunctionₗ, Lp.enorm_def, ← eLpNorm_norm _ hm,
+  rw [Wkp.iteratedGradient_ofTestFunctionₗ, Lp.eNorm_def, ← eLpNorm_norm _ hm,
     ← eLpNorm_restrict_eq_of_support_subset (s := Omega) hm.norm
       (by simpa using (support_iteratedFDeriv_subset _).trans phi.tsupport_subset)]
   refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hm.norm.restrict ?_
   filter_upwards [iteratedGradientTestFunctionLp_apply_ae (mu := mu) p k phi] with x hx
   rw [hx, iteratedGradientTestFunction_def, norm_iteratedGradientChain, norm_norm]
+
+/-- The norm of an embedded test function in `W^{k,p}(Ω)` is at most the sum of the `Lᵖ` norms,
+for the ambient measure, of its classical derivatives of orders `0` through `k`. -/
+theorem Wkp.norm_ofTestFunctionₗ_le_sum_lpNorm_iteratedFDeriv (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    ‖Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi‖ ≤
+      ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i (phi : E → ℝ)) p mu := by
+  refine (Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k _
+    (phi.contDiff.of_le (by exact_mod_cast le_top)).contDiffOn ?_).trans_eq
+    (Finset.sum_congr rfl fun i _ => ?_)
+  · rw [Wkp.value_ofTestFunctionₗ]
+    exact testFunctionLp_apply_ae p phi
+  · -- The restriction is dropped, since `phi` vanishes outside `Omega`.
+    rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_restrict_eq_of_support_subset
+      (phi.contDiff.continuous_iteratedFDeriv (by exact_mod_cast le_top)).aestronglyMeasurable
+      ((support_iteratedFDeriv_subset i).trans phi.tsupport_subset)]
 
 /-- The test-function embedding into `W^{k,p}(Ω)` is injective. -/
 theorem Wkp.ofTestFunctionₗ_injective (k : ℕ) :
@@ -387,6 +420,18 @@ theorem wkp0Submodule_one : wkp0Submodule mu Omega p 1 = w1p0Submodule mu Omega 
   rw [coe_wkp0Submodule, Wkp.ofTestFunctionₗ_one]
   exact (coe_w1p0Submodule (mu := mu) (Omega := Omega) (p := p)).symm
 
+/-- If the value of `u ∈ W^{k+1,p}(Ω)` agrees almost everywhere on `Ω` with that of an element
+of `W^{1,p}_0(Ω)`, then the first-order part of `u` lies in `W^{1,p}_0(Ω)`. -/
+theorem Wkp.firstOrder_mem_w1p0Submodule_of_value_ae_eq {k : ℕ} {u : Wkp mu Omega p (k + 1)}
+    {v : W1p mu Omega p} (hv : v ∈ w1p0Submodule mu Omega p)
+    (h : W1p.value v =ᵐ[mu.restrict Omega] Wkp.value (k + 1) u) :
+    Wkp.firstOrder k u ∈ w1p0Submodule mu Omega p := by
+  have hu : Wkp.firstOrder k u = v := by
+    refine W1p.ext_value (Lp.ext ?_)
+    rw [Wkp.value_firstOrder]
+    exact h.symm
+  exact hu ▸ hv
+
 /-- The Sobolev space `W^{k,p}_0(Ω)`, the closure of `C_c^∞(Ω)` in `W^{k,p}(Ω)`. -/
 noncomputable abbrev Wkp0 (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E)
     (p : ENNReal) [Fact (1 ≤ p)] (k : ℕ) := (wkp0Submodule mu Omega p k).toSubmodule
@@ -409,7 +454,7 @@ theorem Wkp0.denseRange_ofTestFunctionₗ (k : ℕ) :
   intro u
   rw [closure_subtype, ← Set.range_comp]
   have hu : (u : Wkp mu Omega p k) ∈
-      (wkp0Submodule mu Omega p k : Set (Wkp mu Omega p k)) := u.2
+      (wkp0Submodule mu Omega p k : Set (Wkp mu Omega p k)) := u.property
   rw [coe_wkp0Submodule] at hu
   simpa only [Function.comp_def, Wkp0.coe_ofTestFunctionₗ] using hu
 
@@ -430,7 +475,7 @@ def Wkp0.lowerOrderL (k : ℕ) : Wkp0 mu Omega p (k + 1) →L[ℝ] Wkp0 mu Omega
     (wkp0Submodule mu Omega p k).toSubmodule
     (fun u => by
       rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, Wkp.lowerOrderL_apply k]
-      exact Wkp.lowerOrder_mem_wkp0Submodule k u.2)
+      exact Wkp.lowerOrder_mem_wkp0Submodule k u.property)
 
 /-- The zero-boundary lower-order projection is the usual Sobolev projection. -/
 -- The dependent successor index prevents this rule from matching in `simp`.

@@ -5,14 +5,14 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Crossing.Finiteness
 import TauCeti.Analysis.Contour.Crossing.PVAggregation
 import TauCeti.Analysis.Contour.Crossing.Windows
+import TauCeti.Analysis.Contour.HigherOrder.Asymptotics
 import TauCeti.Analysis.Contour.PerWindow.HigherOrder
 
 /-!
@@ -60,14 +60,12 @@ window integral of the order-`k` polar term converges to the boundary difference
 antiderivative, at every window radius whose window lies inside `[a, b]` and contains no other
 crossing. -/
 private theorem perWindow_boundary_tendsto_of_interior {γ : ℝ → ℂ} {a b t₀ : ℝ} {s : ℂ}
-    {k n : ℕ} {P : Set ℝ} (h_imm : IsPwC1ImmersionOn γ a b)
+    {k n : ℕ} (h_imm : IsPwC1ImmersionOn γ a b)
     (h_at : γ t₀ = s) (hk : 2 ≤ k) (hkn : k ≤ n) (h_flat : FlatOfOrder γ t₀ n)
     (h_B : ∀ L_R L_L : ℂ, Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R) →
       Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L) →
       (L_R / (‖L_R‖ : ℂ)) ^ (k - 1) = ((-L_L) / (‖L_L‖ : ℂ)) ^ (k - 1))
-    (c : ℂ) (hP : P.Countable)
-    (hγ_diffP : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
-    {ρ : ℝ} (hρ_pos : 0 < ρ) (h_lo : a < t₀ - ρ) (h_hi : t₀ + ρ ≤ b)
+    (c : ℂ) {ρ : ℝ} (hρ_pos : 0 < ρ) (h_lo : a < t₀ - ρ) (h_hi : t₀ + ρ ≤ b)
     (h_unique : ∀ t ∈ Icc (t₀ - ρ) (t₀ + ρ), γ t = s → t = t₀) :
     Tendsto (fun ε : ℝ => ∫ t in (t₀ - ρ)..(t₀ + ρ),
         if ‖γ t - s‖ > ε then c / (γ t - s) ^ k * deriv γ t else 0)
@@ -83,37 +81,9 @@ private theorem perWindow_boundary_tendsto_of_interior {γ : ℝ → ℂ} {a b t
   obtain ⟨L_L, hL_L, h_tend_L⟩ := h_imm.exists_deriv_left_limit
     (by rw [hmin, hmax]; exact ⟨ht₀.1, ht₀.2.le⟩)
   refine perWindow_higherOrder_truncated_integral_tendsto hρ_pos h_at
-    (h_imm.continuousOn.mono (by
-      rw [uIcc_of_le hab.le]
-      exact Icc_subset_Icc (by linarith) h_hi))
-    hL_R hL_L h_tend_R h_tend_L hP
-    (fun t ht => hγ_diffP t ⟨by
-      rw [hmin, hmax]
-      exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩, ht.2⟩)
-    (h_imm.isPiecewiseC1On.intervalIntegrable_deriv.mono_set (by
-      rw [uIcc_of_le (by linarith : t₀ - ρ ≤ t₀ + ρ), uIcc_of_le hab.le]
-      exact Icc_subset_Icc (by linarith) h_hi))
-    h_unique h_flat hk hkn (h_B L_R L_L h_tend_R h_tend_L) c
-
-/-- On a pole-free subinterval of `[a, b]`, the integral of the order-`k` polar term along a
-piecewise-`C¹` curve is the boundary difference of its antiderivative — the plain-piece input
-to the telescoping aggregation. -/
-private theorem plain_piece_integral_eq {γ : ℝ → ℂ} {a b : ℝ} {s : ℂ} {k : ℕ}
-    (h_imm : IsPwC1ImmersionOn γ a b) (hk : 2 ≤ k) (c : ℂ)
-    {l u : ℝ} (hal : a ≤ l) (hlu : l ≤ u) (hub : u ≤ b) (h_ne : ∀ t ∈ Icc l u, γ t ≠ s) :
-    ∫ t in l..u, c / (γ t - s) ^ k * deriv γ t =
-      c * (-(↑(k - 1) : ℂ)⁻¹ * ((γ u - s) ^ (k - 1))⁻¹) -
-        c * (-(↑(k - 1) : ℂ)⁻¹ * ((γ l - s) ^ (k - 1))⁻¹) := by
-  have hab : a ≤ b := hal.trans (hlu.trans hub)
-  obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
-  refine integral_pow_inv_mul_deriv_eq_sub hk c hlu p.countable_toSet h_ne
-    (fun t ht => hp t ⟨by
-      rw [min_eq_left hab, max_eq_right hab]
-      exact ⟨lt_of_le_of_lt hal ht.1.1, lt_of_lt_of_le ht.1.2 hub⟩, ht.2⟩)
-    ((h_imm.continuousOn.mono (uIcc_of_le hab).ge).mono (Icc_subset_Icc hal hub))
-    (h_imm.isPiecewiseC1On.intervalIntegrable_deriv.mono_set (by
-      rw [uIcc_of_le hlu, uIcc_of_le hab]
-      exact Icc_subset_Icc hal hub))
+    (h_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.mono (uIcc_subset_uIcc
+      (mem_uIcc_of_le h_lo.le (by linarith)) (mem_uIcc_of_le (by linarith) h_hi)))
+    hL_R hL_L h_tend_R h_tend_L h_unique h_flat hk hkn (h_B L_R L_L h_tend_R h_tend_L) c
 
 /-- **The principal value of a higher-order polar term along a piecewise-`C¹` immersion is the
 boundary difference of its antiderivative**: if every parameter of `[a, b]` where `γ` meets
@@ -144,14 +114,21 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
   have h_Ioo : ∀ t ∈ T, t ∈ Ioo a b := fun t ht =>
     h_interior t (hT_mem.mp ht).1 (hT_mem.mp ht).2
   have hγ_cont : ContinuousOn γ (Icc a b) := h_imm.continuousOn.mono (uIcc_of_le hab.le).ge
-  obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t => if ‖γ t - s‖ > ε then c / (γ t - s) ^ k * deriv γ t else 0)
       MeasureTheory.volume a b :=
     fun _ hε => intervalIntegrable_pow_inv_mul_deriv_truncated c k
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
-  have h_plain := fun l u =>
-    plain_piece_integral_eq (s := s) h_imm hk c (l := l) (u := u)
+  -- On a pole-free subinterval the polar term integrates to the boundary difference of its
+  -- antiderivative.
+  have h_plain : ∀ l u : ℝ, a ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, γ t ≠ s) →
+      ∫ t in l..u, c / (γ t - s) ^ k * deriv γ t =
+        c * (-(↑(k - 1) : ℂ)⁻¹ * ((γ u - s) ^ (k - 1))⁻¹) -
+          c * (-(↑(k - 1) : ℂ)⁻¹ * ((γ l - s) ^ (k - 1))⁻¹) := fun l u hal hlu hub h_ne =>
+    integral_pow_inv_mul_deriv_eq_sub hk c
+      (h_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.mono (uIcc_subset_uIcc
+        (mem_uIcc_of_le hal (hlu.trans hub)) (mem_uIcc_of_le (hal.trans hlu) hub)))
+      (uIcc_of_le hlu ▸ h_ne)
   -- The same uniform radius as in `InvSubCPVExistence`; the constant bound `1` is inert here,
   -- and the strict margins it returns are what removes the halving this used to need.
   -- No case split on `T` is needed: `exists_common_window_radius_le` supplies a radius when
@@ -160,14 +137,14 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
     exists_common_window_radius_le h_Ioo (fun _ => 1) fun _ _ => one_pos
   exact hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint
     (Φ := fun z => c * (-(↑(k - 1) : ℂ)⁻¹ * ((z - s) ^ (k - 1))⁻¹))
-    hab.le T (fun _ => hρ_pos.le)
+    hab.le T
     (fun t ht => by linarith [(h_endpts t ht).1])
     (fun t ht => by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne => (h_pair t ht t' ht' hne).le)
     h_int_tr h_plain
     (fun t₀ ht₀ => perWindow_boundary_tendsto_of_interior h_imm
       (hT_mem.mp ht₀).2 hk hkn (h_flat t₀ (hT_mem.mp ht₀).1 (hT_mem.mp ht₀).2)
-      (h_B t₀ (hT_mem.mp ht₀).1 (hT_mem.mp ht₀).2) c p.countable_toSet hp hρ_pos
+      (h_B t₀ (hT_mem.mp ht₀).1 (hT_mem.mp ht₀).2) c hρ_pos
       (by linarith [(h_endpts t₀ ht₀).1]) (by linarith [(h_endpts t₀ ht₀).2])
       fun t ht h_eq => eq_of_mem_window_of_eq_of_lt_of_two_mul_lt (h_endpts t₀ ht₀)
         (h_pair t₀ ht₀) h_complete ht h_eq)

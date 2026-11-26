@@ -28,7 +28,8 @@ The extension from finite vectors uses Mathlib's `IndepFun.process_indepFun`; eq
 path laws uses `HasIndepIncrements.identDistrib_finset`, `isProjectiveLimit_map` and uniqueness
 of projective limits. `HasIndepIncrements.shift` preserves independent increments, and
 `HasIndepIncrements.identDistrib_shift` gives the path law of a centered deterministic shift
-under fixed-shift stationarity of increment laws.
+under fixed-shift stationarity of increment laws. `HasIndepIncrements.identDistrib_nat`
+gives full path-law uniqueness for nondecreasing natural-valued count processes.
 -/
 
 public section
@@ -53,6 +54,13 @@ theorem HasIndepIncrements.shift {T Ω E : Type*} [Preorder T] [Add T] [AddLeftM
   have h := hX n (fun i ↦ t + u i) (fun i j hij ↦ add_le_add_right (hu hij) t)
   refine h.congr fun i ↦ ae_of_all _ fun ω ↦ ?_
   exact (sub_sub_sub_cancel_right _ _ _).symm
+
+/-- Adding any time-constant random variable on the left preserves independent increments. -/
+theorem HasIndepIncrements.add_left {T Ω E : Type*} [Preorder T] [MeasurableSpace Ω]
+    [MeasurableSpace E] [AddCommGroup E] {P : Measure Ω} {X : T → Ω → E}
+    (hX : HasIndepIncrements X P) (ξ : Ω → E) :
+    HasIndepIncrements (fun t ω ↦ ξ ω + X t ω) P := fun n t ht ↦ by
+  simpa only [add_sub_add_left_eq_sub] using hX n t ht
 
 attribute [local instance] TauCeti.measurableAdd₂_of_measurableSub₂
 
@@ -83,7 +91,7 @@ theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
     apply Measurable.of_eval
     intro i
     apply Finset.measurable_sum
-    intro j hj
+    intro j _
     split_ifs <;> fun_prop
   have hrec : (fun ω ↦ f (fun i ↦ D i ω)) =ᵐ[P] (fun ω (i : I) ↦ X i ω) := by
     filter_upwards [h0] with ω hω
@@ -116,7 +124,7 @@ theorem HasIndepIncrements.indepFun_past_sub (hX : HasIndepIncrements X P)
   let J : Finset T := I.image Subtype.val
   have hj : ∀ i ∈ J, i ≤ s := by
     simp only [J, Finset.mem_image]
-    rintro i ⟨j, hj, rfl⟩
+    rintro i ⟨j, -, rfl⟩
     exact j.property
   have h := hX.indepFun_finset_sub hm h0 J hj hst
   exact h.comp (Measurable.of_eval fun (i : I) ↦ measurable_pi_apply
@@ -318,20 +326,73 @@ namespace ProbabilityTheory
 
 variable {T Ω : Type*} [Preorder T] [MeasurableSpace Ω] {P : Measure Ω} {N : T → Ω → ℕ}
 
-/-- Casting a nondecreasing natural-valued process to the integers preserves independent
-increments. Monotonicity is needed because subtraction in the natural numbers is truncated. -/
-theorem HasIndepIncrements.natCast (hN : HasIndepIncrements N P)
-    (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω)) :
-    HasIndepIncrements (fun t ω ↦ (N t ω : ℤ)) P := by
+/-- Casting a natural-valued process to an additive group with one preserves independent
+increments, provided each pair of ordered times has almost surely ordered values. This order
+condition is needed because subtraction in the natural numbers is truncated; the exceptional null
+set may depend on the pair of times. -/
+theorem HasIndepIncrements.natCast {R : Type*} [MeasurableSpace R] [AddGroupWithOne R]
+    (hN : HasIndepIncrements N P) (hmono : ∀ ⦃s t : T⦄, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
+    HasIndepIncrements (fun t ω ↦ (N t ω : R)) P := by
   intro n t ht
-  have h := (hN n t ht).comp (fun _ (x : ℕ) ↦ (x : ℤ)) (fun _ ↦ measurable_of_countable _)
+  have h := (hN n t ht).comp (fun _ (x : ℕ) ↦ (x : R)) (fun _ ↦ measurable_of_countable _)
   refine h.congr fun i ↦ ?_
-  filter_upwards [hmono] with ω hω
-  exact Int.ofNat_sub (hω (ht i.castSucc_le_succ))
+  filter_upwards [hmono (ht i.castSucc_le_succ)] with ω hω
+  exact Nat.cast_sub hω
 
 end ProbabilityTheory
 
 namespace ProbabilityTheory
+
+/-- Equal laws of differences of natural-valued random variables remain equal after casting
+to the integers, provided the subtrahends are a.e. at most the minuends.
+The sample spaces may differ. -/
+theorem IdentDistrib.natCast_sub_of_le {Ω Ω' : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
+    {a b : Ω → ℕ} {a' b' : Ω' → ℕ}
+    (h : IdentDistrib (fun ω ↦ b ω - a ω) (fun ω ↦ b' ω - a' ω) P Q)
+    (hab : ∀ᵐ ω ∂P, a ω ≤ b ω) (hab' : ∀ᵐ ω ∂Q, a' ω ≤ b' ω) :
+    IdentDistrib (fun ω ↦ (b ω : ℤ) - a ω)
+      (fun ω ↦ (b' ω : ℤ) - a' ω) P Q := by
+  have hcast := h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))
+  have hx : (fun ω ↦ ((b ω - a ω : ℕ) : ℤ)) =ᵐ[P]
+      (fun ω ↦ (b ω : ℤ) - a ω) := by
+    filter_upwards [hab] with ω hω using Int.ofNat_sub hω
+  have hy : (fun ω ↦ ((b' ω - a' ω : ℕ) : ℤ)) =ᵐ[Q]
+      (fun ω ↦ (b' ω : ℤ) - a' ω) := by
+    filter_upwards [hab'] with ω hω using Int.ofNat_sub hω
+  exact (IdentDistrib.of_ae_eq hcast.aemeasurable_fst hx).symm.trans
+    (hcast.trans (IdentDistrib.of_ae_eq hcast.aemeasurable_snd hy))
+
+/-- Nondecreasing count processes starting at zero have the same full path law if they have
+independent increments and corresponding increment laws agree. The sample spaces may differ.
+Monotonicity makes natural-number subtraction agree with subtraction after casting to integers. -/
+theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [OrderBot T]
+    [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
+    {X : T → Ω → ℕ} {Y : T → Ω' → ℕ}
+    (hX : HasIndepIncrements X P) (hY : HasIndepIncrements Y Q)
+    (hmX : ∀ t, Measurable (X t)) (hmY : ∀ t, Measurable (Y t))
+    (h0X : ∀ᵐ ω ∂P, X ⊥ ω = 0) (h0Y : ∀ᵐ ω ∂Q, Y ⊥ ω = 0)
+    (hmonoX : ∀ᵐ ω ∂P, Monotone (fun t ↦ X t ω))
+    (hmonoY : ∀ᵐ ω ∂Q, Monotone (fun t ↦ Y t ω))
+    (hlaw : ∀ s t, s ≤ t → IdentDistrib (fun ω ↦ X t ω - X s ω)
+      (fun ω ↦ Y t ω - Y s ω) P Q) :
+    IdentDistrib (fun ω t ↦ X t ω) (fun ω t ↦ Y t ω) P Q := by
+  have hmXZ (t : T) : Measurable (fun ω ↦ (X t ω : ℤ)) :=
+    (measurable_of_countable (fun n : ℕ ↦ (n : ℤ))).comp (hmX t)
+  have hmYZ (t : T) : Measurable (fun ω ↦ (Y t ω : ℤ)) :=
+    (measurable_of_countable (fun n : ℕ ↦ (n : ℤ))).comp (hmY t)
+  have h0XZ : ∀ᵐ ω ∂P, (X ⊥ ω : ℤ) = 0 := by
+    filter_upwards [h0X] with ω hω using by simp [hω]
+  have h0YZ : ∀ᵐ ω ∂Q, (Y ⊥ ω : ℤ) = 0 := by
+    filter_upwards [h0Y] with ω hω using by simp [hω]
+  have hdist := (hX.natCast fun _ _ hst ↦ hmonoX.mono fun _ hω ↦ hω hst).identDistrib
+    (hY.natCast fun _ _ hst ↦ hmonoY.mono fun _ hω ↦ hω hst)
+    hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦
+      (hlaw s t hst).natCast_sub_of_le
+        (hmonoX.mono fun _ hω ↦ hω hst) (hmonoY.mono fun _ hω ↦ hω hst))
+  simpa only [Function.comp_def, Int.toNat_natCast] using
+    hdist.comp (Measurable.of_eval fun _ ↦
+      (measurable_of_countable Int.toNat).comp (measurable_pi_apply _))
 
 /-- A measurable process starting at zero with independent increments has its original full
 path law after shifting time by `t` and subtracting its current value, provided its increment
@@ -373,7 +434,8 @@ theorem HasIndepIncrements.indepFun_shift_nat (hN : HasIndepIncrements N P)
     filter_upwards [h0] with ω hω using by simp [hω]
   -- The local bottom is zero, so the history theorem's initial-time hypothesis is h0Z.
   have hbotZ : ∀ᵐ ω ∂P, (N (⊥ : T) ω : ℤ) = 0 := h0Z
-  have h := (hN.natCast hmono).indepFun_future_past hmZ hbotZ t
+  have h := (hN.natCast fun _ _ hst ↦ hmono.mono fun _ hω ↦ hω hst).indepFun_future_past
+    hmZ hbotZ t
   have hf : Measurable (fun (z : Ici t → ℤ) (s : T) ↦
       (z ⟨t + s, by simp only [Set.mem_Ici]; exact le_self_add⟩).toNat) := by fun_prop
   have hg : Measurable (fun (z : Iic t → ℤ) (s : Iic t) ↦ (z s).toNat) := by fun_prop

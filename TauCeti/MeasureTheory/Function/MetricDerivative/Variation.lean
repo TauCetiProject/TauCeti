@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.Topology.EMetricSpace.VariationOnFromTo
 
 /-!
 # Total variation and the metric speed of absolutely continuous curves
@@ -73,9 +74,9 @@ theorem absolutelyContinuousOnInterval_variationOnFromTo
   have hcontrol {s u : ℝ} (hs : s ∈ uIcc a b) (hu : u ∈ uIcc a b) (hsu : s ≤ u) :
       edist (variationOnFromTo γ (uIcc a b) a s) (variationOnFromTo γ (uIcc a b) a u) ≤
         ∫⁻ t in uIoc s u, TauCeti.metricDerivative γ t := by
-    rw [edist_comm, edist_eq_enorm_sub,
+    rw [edist_comm, eDist_eq_eNorm_sub,
       variationOnFromTo.sub_right hBV.locallyBoundedVariationOn left_mem_uIcc hu hs,
-      variationOnFromTo.eq_of_le _ _ hsu, Real.enorm_eq_ofReal ENNReal.toReal_nonneg,
+      variationOnFromTo.eq_of_le _ _ hsu, Real.eNorm_eq_ofReal ENNReal.toReal_nonneg,
       ENNReal.ofReal_toReal ((eVariationOn.mono _ inter_subset_left).trans_lt hBV.lt_top).ne]
     refine (eVariationOn.mono _ inter_subset_right).trans ?_
     simpa only [uIcc_of_le hsu] using
@@ -87,6 +88,17 @@ theorem absolutelyContinuousOnInterval_variationOnFromTo
   · exact hcontrol hs hu hsu
   · rw [edist_comm, uIoc_comm]
     exact hcontrol hu hs hus
+
+/-- The cumulative total variation `variationOnFromTo γ (Icc a b) a` of an absolutely continuous
+metric-valued curve is an absolutely continuous real function on `[a, b]`. -/
+theorem absolutelyContinuousOnInterval_variationOnFromTo_Icc
+    (hγ : AbsolutelyContinuousOnInterval γ a b) :
+    AbsolutelyContinuousOnInterval (variationOnFromTo γ (Icc a b) a) a b := by
+  rcases le_or_gt a b with hab | hba
+  · simpa only [uIcc_of_le hab] using hγ.absolutelyContinuousOnInterval_variationOnFromTo
+  · rw [Icc_eq_empty_of_lt hba,
+      funext (variationOnFromTo.eq_zero_of_subsingleton γ subsingleton_empty a)]
+    exact (LipschitzWith.const 0).lipschitzOnWith.absolutelyContinuousOnInterval
 
 /-- Total variation of an absolutely continuous metric-valued curve is its integrated metric
 speed, for either orientation of the parameter interval. -/
@@ -118,7 +130,7 @@ theorem eVariationOn_eq_lintegral_metricDerivative (hγ : AbsolutelyContinuousOn
       ∫⁻ t in uIoc a b, ‖deriv V t‖ₑ = ∫⁻ t in uIoc a b, ENNReal.ofReal (deriv V t) := by
         apply lintegral_congr_ae
         filter_upwards [hnonneg'] with t ht
-        exact Real.enorm_eq_ofReal ht
+        exact Real.eNorm_eq_ofReal ht
       _ = ENNReal.ofReal (∫ t in a..b, deriv V t) := by
         rw [← ofReal_integral_eq_lintegral_ofReal hV.intervalIntegrable_deriv.def' hnonneg',
           uIoc_of_le hab, ← intervalIntegral.integral_of_le hab]
@@ -143,8 +155,8 @@ theorem eVariationOn_eq_lintegral_enorm_deriv (hγ : AbsolutelyContinuousOnInter
   rw [hγ.eVariationOn_eq_lintegral_metricDerivative]
   apply lintegral_congr_ae
   rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_uIoc]
-  filter_upwards [hγ.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht hmem
-  exact (ht (uIoc_subset_uIcc hmem)).hasDerivAt.metricDerivative_eq
+  filter_upwards [hγ.boundedVariationOn.ae_metricDerivative_eq_enorm_deriv] with t ht hmem
+  exact ht (uIoc_subset_uIcc hmem)
 
 /-- The real integrated speed of an absolutely continuous finite-dimensional curve is its total
 variation converted to `ℝ`, on a nonnegative oriented parameter interval. -/
@@ -155,7 +167,7 @@ theorem integral_norm_deriv_eq_eVariationOn_toReal
     ∫ t in a..b, ‖deriv γ t‖ = ∫ t in uIoc a b, ‖deriv γ t‖ := by
       rw [uIoc_of_le hab, intervalIntegral.integral_of_le hab]
     _ = (∫⁻ t in uIoc a b, ‖deriv γ t‖ₑ).toReal :=
-      integral_norm_eq_lintegral_enorm
+      integral_norm_eq_lintegral_eNorm
         hγ.intervalIntegrable_deriv_of_finiteDimensional.def'.aestronglyMeasurable
     _ = (eVariationOn γ (uIcc a b)).toReal :=
       congrArg ENNReal.toReal hγ.eVariationOn_eq_lintegral_enorm_deriv.symm

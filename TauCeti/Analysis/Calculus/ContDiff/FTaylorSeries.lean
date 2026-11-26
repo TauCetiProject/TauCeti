@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import TauCeti.Analysis.Calculus.FDeriv.Submodule
 public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
+public import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
 # Taylor derivative series: transport, limits, and gluing
@@ -24,11 +25,20 @@ isometry’s range; this lifting does not require the range to be closed.
 Over a real or complex normed field, locally uniform limits of the coefficients of Taylor
 derivative series are again Taylor derivative series, provided the underlying functions converge
 pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
-The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`.
+The set need not be open: it suffices that each of its points has a convex neighbourhood within
+it, as for the closed half-spaces and orthants that are the chart targets of manifolds with
+boundary or corners. The limit argument along segments in those neighbourhoods is
+`Convex.hasFDerivWithinAt_of_tendstoLocallyUniformlyOn`.
+`IsOpen.exists_smooth_of_locallyUniform_jet_limits` specializes this to canonical iterated
+derivatives on an open set, recovering a smooth limit with those derivatives, and
+`IsOpen.exists_contDiffOn_tendstoLocallyUniformlyOn_iteratedFDeriv` produces a `Cᵏ` limit of maps
+whose derivatives through order `k` are uniformly Cauchy on compact sets, for a complete target.
 
 Taylor series with matching coefficients glue across two closed sets on their union.
 For a closed cover of the whole space this gives a global piecewise Cᵏ criterion.
 Finite sums and constant scalar multiples carry the corresponding coefficientwise series.
+Basic evaluation and identity formulas for `ftaylorSeries` are also provided
+(`TauCeti.ftaylorSeries_apply`, `TauCeti.ftaylorSeries_id`).
 -/
 
 public section
@@ -69,10 +79,14 @@ theorem HasFTaylorSeriesUpTo.apply_mem_of_range_subset
     simpa only [ContinuousMultilinearMap.curryLeft_apply, Fin.cons_self_tail]
       using hv (Fin.tail v)
 
-/-- On an open set, locally uniform limits of Taylor derivative series are Taylor derivative
-series of the pointwise limit. No completeness of the target is needed once limits are given. -/
-theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn [IsRCLikeNormedField 𝕜]
-    {s : Set D} (hs : IsOpen s) {ι : Type*} {l : Filter ι} [l.NeBot]
+/-- **Uniform limits of Taylor series on locally convex sets.** On a set each of whose points has
+a convex neighbourhood within the set, locally uniform limits of Taylor derivative series are
+Taylor derivative series of the pointwise limit. Such sets include convex sets, open sets, and
+their intersections, for instance the closed half-spaces and orthants of models with boundary or
+corners. No completeness of the target is needed once limits are given. -/
+theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn_of_convex [IsRCLikeNormedField 𝕜]
+    [NormedSpace ℝ D] {s : Set D} (hs : ∀ x ∈ s, ∃ t ⊆ s, Convex ℝ t ∧ t ∈ 𝓝[s] x)
+    {ι : Type*} {l : Filter ι} [l.NeBot]
     {fᵢ : ι → D → F} {qᵢ : ι → D → FormalMultilinearSeries 𝕜 D F}
     (h : ∀ i, HasFTaylorSeriesUpToOn n (fᵢ i) (qᵢ i) s)
     (hq : ∀ m : ℕ, m ≤ n →
@@ -87,15 +101,35 @@ theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn [IsRCLikeNormedField
       simpa only [Function.comp_def, continuousMultilinearCurryFin0_apply,
         ← ContinuousMultilinearMap.curry0_apply, (h _).zero_eq _ hx] using hf x hx)
   · intro m hm x hx
+    obtain ⟨t, hts, htc, ht⟩ := hs x hx
     have hsuc : ((m + 1 : ℕ) : WithTop ℕ∞) ≤ n :=
       ENat.add_one_natCast_le_withTop_of_lt hm
     have hc := (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (m + 1) ↦ D) F).isometry
     have hlim := hc.uniformContinuous.comp_tendstoLocallyUniformlyOn (hq (m + 1) hsuc)
-    exact (hasFDerivAt_of_tendstoLocallyUniformlyOn hs hlim
-      (fun i y hy ↦ ((h i).fderivWithin m hm y hy).hasFDerivAt (hs.mem_nhds hy))
-      (fun y hy ↦ (hq m hm.le).tendsto_at hy) hx).hasFDerivWithinAt
+    exact (htc.hasFDerivWithinAt_of_tendstoLocallyUniformlyOn (hlim.mono hts)
+      (fun i y hy ↦ ((h i).fderivWithin m hm y (hts hy)).mono hts)
+      (fun y hy ↦ (hq m hm.le).tendsto_at (hts hy))
+      (mem_of_mem_nhdsWithin hx ht)).mono_of_mem_nhdsWithin ht
   · intro m hm
     exact (hq m hm).continuousOn (Filter.Eventually.of_forall fun i ↦ (h i).cont m hm).frequently
+
+/-- On an open set, locally uniform limits of Taylor derivative series are Taylor derivative
+series of the pointwise limit. No completeness of the target is needed once limits are given. -/
+theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn [IsRCLikeNormedField 𝕜]
+    {s : Set D} (hs : IsOpen s) {ι : Type*} {l : Filter ι} [l.NeBot]
+    {fᵢ : ι → D → F} {qᵢ : ι → D → FormalMultilinearSeries 𝕜 D F}
+    (h : ∀ i, HasFTaylorSeriesUpToOn n (fᵢ i) (qᵢ i) s)
+    (hq : ∀ m : ℕ, m ≤ n →
+      TendstoLocallyUniformlyOn (fun i x ↦ qᵢ i x m) (fun x ↦ q x m) l s)
+    (hf : ∀ x ∈ s, Tendsto (fun i ↦ fᵢ i x) l (𝓝 (f x))) :
+    HasFTaylorSeriesUpToOn n f q s := by
+  -- Balls are convex for the real structure obtained by restricting scalars.
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let _ : NormedSpace ℝ D := NormedSpace.restrictScalars ℝ 𝕜 D
+  refine of_tendstoLocallyUniformlyOn_of_convex (fun x hx ↦ ?_) h hq hf
+  obtain ⟨r, hr, hrs⟩ := Metric.isOpen_iff.mp hs x hx
+  exact ⟨Metric.ball x r, hrs, convex_ball x r,
+    mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds x hr)⟩
 
 /-- Locally uniform limits of Taylor derivative series are Taylor derivative series of the
 pointwise limit. This is the whole-source specialization of the open-set result. -/
@@ -110,6 +144,69 @@ theorem HasFTaylorSeriesUpTo.of_tendstoLocallyUniformly [IsRCLikeNormedField �
     (HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn isOpen_univ
       (fun i ↦ (h i).hasFTaylorSeriesUpToOn univ)
       (fun m hm ↦ (hq m hm).tendstoLocallyUniformlyOn) (fun x _ ↦ hf x))
+
+
+namespace IsOpen
+
+/-- Locally uniform limits of all derivatives of smooth maps are the derivatives of one
+smooth limit on an open set. The index filter is arbitrary and the target need not be complete. -/
+theorem exists_smooth_of_locallyUniform_jet_limits [IsRCLikeNormedField 𝕜]
+    {ι : Type*} {l : Filter ι} [l.NeBot] {Ω : Set D} (hΩ : IsOpen Ω)
+    (f : ι → D → F) (hf : ∀ i, ContDiffOn 𝕜 ∞ (f i) Ω)
+    (g : (m : ℕ) → D → D [×m]→L[𝕜] F)
+    (hg : ∀ m, TendstoLocallyUniformlyOn
+      (fun i ↦ iteratedFDeriv 𝕜 m (f i)) (g m) l Ω) :
+    ∃ u : D → F, ContDiffOn 𝕜 ∞ u Ω ∧ ∀ m, EqOn (iteratedFDeriv 𝕜 m u) (g m) Ω := by
+  let u : D → F := fun x ↦ (g 0 x).curry0
+  have hlim (m : ℕ) : TendstoLocallyUniformlyOn
+      (fun i x ↦ ftaylorSeriesWithin 𝕜 (f i) Ω x m) (g m) l Ω := by
+    apply (hg m).congr
+    exact fun i x hx ↦ (iteratedFDerivWithin_of_isOpen (f := f i) m hΩ hx).symm
+  have hT : HasFTaylorSeriesUpToOn ∞ u (fun x m ↦ g m x) Ω :=
+    HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn hΩ
+      (fun i ↦ (hf i).ftaylorSeriesWithin hΩ.uniqueDiffOn) (fun m _ ↦ hlim m) fun x hx ↦ by
+        have ht := ((continuousMultilinearCurryFin0 𝕜 D F).continuous.tendsto (g 0 x)).comp
+          ((hg 0).tendsto_at hx)
+        simpa only [u, Function.comp_def, iteratedFDeriv_zero_eq_comp,
+          continuousMultilinearCurryFin0_apply, ContinuousMultilinearMap.curry0_apply,
+          continuousMultilinearCurryFin0_symm_apply_apply] using ht
+  refine ⟨u, hT.contDiffOn, fun m x hx ↦ ?_⟩
+  exact (iteratedFDerivWithin_of_isOpen m hΩ hx).symm.trans
+    (hT.eq_iteratedFDerivWithin_of_uniqueDiffOn (by simp) hΩ.uniqueDiffOn hx).symm
+
+/-- Maps that are `Cᵏ` on an open set `s`, with derivatives of every order `i ≤ k` uniformly
+Cauchy on compact subsets of `s`, converge in all these derivatives, locally uniformly on `s`, to a
+map that is `Cᵏ` on `s`. Here the limits are not given but come from completeness of `F`; for
+smooth maps with given limits of all orders see
+`IsOpen.exists_smooth_of_locallyUniform_jet_limits`. -/
+theorem exists_contDiffOn_tendstoLocallyUniformlyOn_iteratedFDeriv [IsRCLikeNormedField 𝕜]
+    [LocallyCompactSpace D] [CompleteSpace F] {s : Set D} (hs : IsOpen s) {k : ℕ}
+    {ι : Type*} {l : Filter ι} [l.NeBot] {f : ι → D → F} (hf : ∀ m, ContDiffOn 𝕜 k (f m) s)
+    (hc : ∀ i ≤ k, ∀ K : Set D, IsCompact K → K ⊆ s →
+      UniformCauchySeqOn (fun m ↦ iteratedFDeriv 𝕜 i (f m)) l K) :
+    ∃ g : D → F, ContDiffOn 𝕜 k g s ∧ ∀ i ≤ k,
+      TendstoLocallyUniformlyOn (fun m ↦ iteratedFDeriv 𝕜 i (f m)) (iteratedFDeriv 𝕜 i g) l s := by
+  set Q : (i : ℕ) → D → D [×i]→L[𝕜] F := fun i x ↦ limUnder l fun m ↦ iteratedFDeriv 𝕜 i (f m) x
+  have hpt : ∀ i ≤ k, ∀ x ∈ s, Tendsto (fun m ↦ iteratedFDeriv 𝕜 i (f m) x) l (𝓝 (Q i x)) :=
+    fun i hi x hx ↦ tendsto_nhds_limUnder (CompleteSpace.complete
+      ((hc i hi {x} isCompact_singleton (singleton_subset_iff.2 hx)).cauchy_map (mem_singleton x)))
+  have hloc : ∀ i ≤ k, TendstoLocallyUniformlyOn (fun m ↦ iteratedFDeriv 𝕜 i (f m)) (Q i) l s :=
+    fun i hi ↦ (tendstoLocallyUniformlyOn_iff_forall_isCompact hs).2 fun K hKs hK ↦
+      (hc i hi K hK hKs).tendstoUniformlyOn_of_tendsto fun x hx ↦ hpt i hi x (hKs hx)
+  have hT : HasFTaylorSeriesUpToOn k (fun x ↦ Q 0 x 0) (fun x i ↦ Q i x) s :=
+    HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn hs
+      (fun m ↦ (hf m).ftaylorSeriesWithin hs.uniqueDiffOn)
+      (fun i hi ↦ (hloc i (by exact_mod_cast hi)).congr fun m x hx ↦
+        (iteratedFDerivWithin_of_isOpen i hs hx).symm)
+      fun x hx ↦ by
+        simpa only [Function.comp_def, iteratedFDeriv_zero_apply] using
+          ((continuous_eval_const (0 : Fin 0 → D)).tendsto (Q 0 x)).comp
+            (hpt 0 (Nat.zero_le k) x hx)
+  refine ⟨fun x ↦ Q 0 x 0, hT.contDiffOn, fun i hi ↦ (hloc i hi).congr_right fun x hx ↦ ?_⟩
+  exact (hT.eq_iteratedFDerivWithin_of_uniqueDiffOn (by exact_mod_cast hi) hs.uniqueDiffOn
+    hx).trans (iteratedFDerivWithin_of_isOpen i hs hx)
+
+end IsOpen
 
 noncomputable section
 
@@ -244,7 +341,7 @@ theorem _root_.HasFTaylorSeriesUpToOn.contDiff_piecewise {k : ℕ∞} {f g : E �
     rw [← hf.zero_eq x hx.1, ← hg.zero_eq x hx.2, hmatch x hx 0 (by simp)]
   have hf' : HasFTaylorSeriesUpToOn k (s.piecewise f g) r s := by
     apply (hf.congr (fun x hx ↦ by simp [hx])).congr_series
-    intro m hm x hx
+    intro m _ x hx
     simp [r, hx]
   have hg' : HasFTaylorSeriesUpToOn k (s.piecewise f g) r t := by
     have hfunction : HasFTaylorSeriesUpToOn k (s.piecewise f g) q t := by
@@ -264,3 +361,36 @@ theorem _root_.HasFTaylorSeriesUpToOn.contDiff_piecewise {k : ℕ∞} {f g : E �
   exact contDiffOn_univ.mp hglobal.contDiffOn
 
 end ClosedCoverOperations
+
+namespace TauCeti
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Unfold `ftaylorSeries` at a given order `n` to `iteratedFDeriv`. -/
+theorem ftaylorSeries_apply (f : E → F) (x : E) (n : ℕ) :
+    ftaylorSeries 𝕜 f x n = iteratedFDeriv 𝕜 n f x :=
+  (rfl)
+
+/-- The formal Taylor series of the identity map at `x` is `FormalMultilinearSeries.id 𝕜 E x`. -/
+@[simp]
+theorem ftaylorSeries_id (x : E) :
+    ftaylorSeries 𝕜 (_root_.id : E → E) x = FormalMultilinearSeries.id 𝕜 E x := by
+  funext m
+  match m with
+  | 0 =>
+    ext v
+    simp [ftaylorSeries_apply]
+  | 1 =>
+    ext v
+    simp [ftaylorSeries_apply]
+  | m + 2 =>
+    rw [ftaylorSeries_apply, FormalMultilinearSeries.id_apply_of_one_lt _ _ _ (by omega),
+      ← norm_eq_zero, ← norm_iteratedFDeriv_fderiv]
+    have h : fderiv 𝕜 (_root_.id : E → E) = fun _ ↦ ContinuousLinearMap.id 𝕜 E :=
+      funext fun _ ↦ fderiv_id
+    rw [h, iteratedFDeriv_succ_const]
+    simp
+
+end TauCeti

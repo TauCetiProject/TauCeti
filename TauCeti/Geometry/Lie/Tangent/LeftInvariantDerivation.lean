@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.LeftInvariantDerivation
 public import TauCeti.Geometry.Manifold.DerivationBundle
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Geometry.Manifold.VectorField.Derivation
 
 /-!
@@ -28,14 +29,11 @@ The latter is the manifold model vector space, so this also determines the Lie a
   left-invariant derivations and the tangent Lie algebra.
 * `leftInvariantDerivationLinearIsometryEquivModelVectorSpace`: the canonical isometric linear
   equivalence with the manifold model vector space.
-* `finiteDimensional_leftInvariantDerivation`: the Lie algebra is finite-dimensional.
+* `finiteDimensional_leftInvariantDerivation`: the Lie algebra is finite-dimensional, also
+  available as the instance `LeftInvariantDerivation.instFiniteDimensional` without boundary.
 * `finrank_leftInvariantDerivation_eq_modelVectorSpace`: its dimension equals that of the manifold
   model vector space.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The Lie algebra and the tangent space at `1`".
+* `subsingleton_leftInvariantDerivation`: it is zero when the model vector space is zero.
 -/
 
 public section
@@ -319,6 +317,20 @@ theorem finiteDimensional_leftInvariantDerivation
     (groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)).symm.finiteDimensional
   exact (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
     h₁).symm.finiteDimensional
+
+/-- If the model vector space is trivial, so is the Lie algebra of left-invariant derivations of a
+finite-dimensional smooth real Lie group. -/
+theorem subsingleton_leftInvariantDerivation [Subsingleton E]
+    [FiniteDimensional ℝ E] [ContMDiffMul I ∞ G] [T2Space G]
+    (h₁ : I.IsInteriorPoint (1 : G)) : Subsingleton (LeftInvariantDerivation I G) :=
+  (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G) h₁).injective.subsingleton
+
+/-- The Lie algebra of a finite-dimensional smooth real Lie group without boundary is
+finite-dimensional. -/
+instance LeftInvariantDerivation.instFiniteDimensional
+    [FiniteDimensional ℝ E] [ContMDiffMul I ∞ G] [T2Space G]
+    [BoundarylessManifold I G] : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+  finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
 
 /-- The Lie algebra of a finite-dimensional smooth real Lie group has the dimension of the
 manifold model vector space. -/

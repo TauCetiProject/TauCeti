@@ -184,8 +184,7 @@ private theorem mem_of_forall_gauge_le_one {w : V} (h : ∀ ε ∈ Ioo (0 : ℝ)
   -- The off-plane component vanishes.
   have hp : F.proj w = 0 := by
     by_contra hp
-    have hN := norm_pos_iff.2 hp
-    set ε := min (‖F.proj w‖ / 2) (1 / 2) with hε
+    set ε := min (‖F.proj w‖ / 2) (1 / 2)
     have hε₀ : 0 < ε := lt_min (by positivity) (by norm_num)
     have hε₁ : ε < 1 := (min_le_right _ _).trans_lt (by norm_num)
     have h₁ := h ε ⟨hε₀, hε₁⟩
@@ -198,7 +197,7 @@ private theorem mem_of_forall_gauge_le_one {w : V} (h : ∀ ε ∈ Ioo (0 : ℝ)
   have hg : 0 ≤ F.g w := by
     by_contra hg
     push Not at hg
-    set ε := min (-F.g w / 2) (1 / 2) with hε
+    set ε := min (-F.g w / 2) (1 / 2)
     have hε₀ : 0 < ε := lt_min (by linarith) (by norm_num)
     have hε₁ : ε < 1 := (min_le_right _ _).trans_lt (by norm_num)
     have h₁ := h ε ⟨hε₀, hε₁⟩
@@ -211,9 +210,9 @@ private theorem mem_of_forall_gauge_le_one {w : V} (h : ∀ ε ∈ Ioo (0 : ℝ)
   refine ⟨hp, hg, ?_⟩
   by_contra hfg
   push Not at hfg
-  set δ := |F.f w| + F.g w - 1 with hδ
+  set δ := |F.f w| + F.g w - 1
   have hδ₀ : 0 < δ := by linarith
-  set ε := min (1 / 2) (δ / (2 * (F.g w + 1))) with hε
+  set ε := min (1 / 2) (δ / (2 * (F.g w + 1)))
   have hε₀ : 0 < ε := lt_min (by norm_num) (by positivity)
   have hε₁ : ε < 1 := (min_le_left _ _).trans_lt (by norm_num)
   have h₁ := h ε ⟨hε₀, hε₁⟩
@@ -362,16 +361,19 @@ private theorem eventually_forall_one_le_gauge {K : Set V} (hK : IsCompact K)
     exact mem_iInter.1 hw ⟨ε, hε⟩
   have hdt : Directed (· ⊇ ·) t := by
     intro ε₁ ε₂
-    refine ⟨⟨min ε₁ ε₂, lt_min ε₁.2.1 ε₂.2.1, (min_le_left _ _).trans_lt ε₁.2.2⟩,
+    refine ⟨⟨min ε₁ ε₂, lt_min ε₁.property.1 ε₂.property.1,
+        (min_le_left _ _).trans_lt ε₁.property.2⟩,
       fun w hw => ?_, fun w hw => ?_⟩
-    · exact (gauge_anti (lt_min ε₁.2.1 ε₂.2.1) (min_le_left _ _) ε₁.2.2.le w).trans hw
-    · exact (gauge_anti (lt_min ε₁.2.1 ε₂.2.1) (min_le_right _ _) ε₂.2.2.le w).trans hw
+    · exact (gauge_anti (lt_min ε₁.property.1 ε₂.property.1) (min_le_left _ _) ε₁.property.2.le
+        w).trans hw
+    · exact (gauge_anti (lt_min ε₁.property.1 ε₂.property.1) (min_le_right _ _) ε₂.property.2.le
+        w).trans hw
   obtain ⟨ε₀, hε₀⟩ := hK.elim_directed_family_closed t htc hst hdt
-  filter_upwards [Ioc_mem_nhdsGT ε₀.2.1] with ε hε w hw
+  filter_upwards [Ioc_mem_nhdsGT ε₀.property.1] with ε hε w hw
   by_contra hlt
   push Not at hlt
   exact Set.disjoint_left.1 hε₀ hw
-    ((gauge_anti hε.1 hε.2 ε₀.2.2.le w).trans hlt.le)
+    ((gauge_anti hε.1 hε.2 ε₀.property.2.le w).trans hlt.le)
 
 end Frame
 

@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
 public import TauCeti.GroupTheory.Amenable.Content
 public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.GroupTheory.Amenable.Foelner
 public import TauCeti.GroupTheory.Amenable.WeakStar
 public import TauCeti.MeasureTheory.Group.Foelner.AddContent
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Averages over finite sets and amenability from Følner sets
@@ -52,9 +52,9 @@ unspecified weak-* cluster point.
 * `TauCeti.Mean.average_leftTranslation`: `m_F (L_g f) = m_{g⁻¹F} f`.
 * `TauCeti.Mean.abs_average_leftTranslation_sub_le`: the estimate
   `|m_F (L_g f) - m_F f| ≤ ‖f‖ · |g⁻¹F △ F| / |F|`.
-* `TauCeti.Amenable.of_tendsto_card_smul_symmDiff_div_card`: a topological group with finite
-  nonempty sets `F i` such that `|g F i △ F i| / |F i| → 0` for every `g`, along a nontrivial
-  filter, is amenable.
+* `TauCeti.Amenable.of_tendsto_card_smul_symmDiff_div_card`: a topological group with eventually
+  nonempty finite sets `F i` such that `|g F i △ F i| / |F i| → 0` for every `g`, along a
+  nontrivial filter, is amenable.
 * `TauCeti.Amenable.of_isFoelner`: the same for a counting-measure Følner family.
 * `TauCeti.Amenable.of_hasFoelnerSets`: a group with Følner sets is amenable for every group
   topology.
@@ -170,34 +170,39 @@ end Mean
 
 end Discrete
 
-/-- A topological group is amenable when it has finite nonempty sets `F i` with
+/-- A topological group is amenable when it has eventually nonempty finite sets `F i` with
 `|g F i △ F i| / |F i| → 0` for every `g`, along a nontrivial filter. The averages over `F i` are
 then approximately left-invariant means. -/
 theorem Amenable.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {ι : Type*}
-    {l : Filter ι} [l.NeBot] {F : ι → Finset G} (hne : ∀ i, (F i).Nonempty)
+    {l : Filter ι} [l.NeBot] {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)
     (h : ∀ g : G, Tendsto (fun i => (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0)) :
-    Amenable G :=
-  .of_tendsto (l := l) (ms := fun i => Mean.average (F i) (hne i)) fun g f =>
-    squeeze_zero_norm (fun i => by
+    Amenable G := by
+  let s := {i | (F i).Nonempty}
+  have : (comap ((↑) : s → ι) l).NeBot := comap_coe_neBot_of_le_principal (le_principal_iff.2 hne)
+  exact .of_tendsto (l := comap ((↑) : s → ι) l) (ms := fun i : s => Mean.average (F i) i.property)
+    fun g f => squeeze_zero_norm (fun i => by
       simpa only [Real.norm_eq_abs, mul_div_assoc] using
-        Mean.abs_average_leftTranslation_sub_le (hne i) g f)
-      (by simpa using (h g⁻¹).const_mul ‖f‖)
+        Mean.abs_average_leftTranslation_sub_le i.property g f)
+      (by simpa [Function.comp_def] using ((h g⁻¹).comp tendsto_comap).const_mul ‖f‖)
 
 /-- A topological group is amenable when it has a Følner family for counting measure, along a
 nontrivial filter. -/
-theorem Amenable.of_isFoelner [MeasurableSpace G] [MeasurableSingletonClass G] {ι : Type*}
+theorem Amenable.of_isFoelner [MeasurableSpace G] {ι : Type*}
     {l : Filter ι} [l.NeBot] {F : ι → Set G}
     (hF : IsFoelner G MeasureTheory.Measure.count l F) : Amenable G := by
   classical
   -- Restrict to the indices where `F i` is finite and nonempty, and view those sets as finsets.
-  let s := {i | MeasureTheory.Measure.count (F i) ≠ 0 ∧ MeasureTheory.Measure.count (F i) ≠ ⊤}
+  let s := {i | MeasurableSet (F i) ∧ MeasureTheory.Measure.count (F i) ≠ 0 ∧
+    MeasureTheory.Measure.count (F i) ≠ ⊤}
   have : (comap ((↑) : s → ι) l).NeBot := comap_coe_neBot_of_le_principal <| le_principal_iff.2 <|
-    hF.eventually_meas_ne_zero.and hF.eventually_meas_ne_top
+    hF.eventually_measurableSet.and (hF.eventually_meas_ne_zero.and hF.eventually_meas_ne_top)
   obtain ⟨F', hF'⟩ : ∃ F' : s → Finset G, ∀ i, (F' i : Set G) = F i := ⟨fun i =>
-    (MeasureTheory.Measure.count_apply_lt_top.1 (lt_top_iff_ne_top.2 i.2.2)).toFinset, by simp⟩
+    ((MeasureTheory.Measure.count_apply_lt_top' i.property.1).1
+      (lt_top_iff_ne_top.2 i.property.2.2)).toFinset, by simp⟩
   have hne (i : s) : (F' i).Nonempty := by
-    simpa [← coe_nonempty, hF', Set.nonempty_iff_ne_empty] using i.2.1
-  refine .of_tendsto_card_smul_symmDiff_div_card (l := comap (↑) l) hne fun g => ?_
+    simpa [← coe_nonempty, hF', ← Set.ne_empty_iff_nonempty] using i.property.2.1
+  refine .of_tendsto_card_smul_symmDiff_div_card (l := comap (↑) l) (Eventually.of_forall hne)
+    fun g => ?_
   have hF's : IsFoelner G MeasureTheory.Measure.count (comap ((↑) : s → ι) l)
       (fun i => (F' i : Set G)) := by
     simpa only [hF', Function.comp_def] using
@@ -205,7 +210,7 @@ theorem Amenable.of_isFoelner [MeasurableSpace G] [MeasurableSingletonClass G] {
   exact hF's.tendsto_card_smul_symmDiff_div_card g
 
 /-- A group with Følner sets is amenable, for every group topology. -/
-theorem Amenable.of_hasFoelnerSets (h : HasFoelnerSets G) : Amenable G :=
+theorem Amenable.of_hasFoelnerSets (_ : HasFoelnerSets G) : Amenable G :=
   let : MeasurableSpace G := ⊤
   .of_isFoelner (isFoelner_maxFoelner G MeasureTheory.Measure.count)
 

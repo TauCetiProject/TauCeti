@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 import TauCeti.Analysis.Contour.Curve.ExcisionMeasure
+import TauCeti.Analysis.Normed.Group.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Calculus.Deriv.CountableLevels
 
@@ -22,7 +23,7 @@ eventually `IntervalIntegrable` and its integral tends to `v` as `ε → 0⁺`.
 This is the set-level (`…On`) companion of `HasCauchyPVAt` (`CauchyPrincipalValue.lean`), which
 excises a single prescribed point `z₀`; the naming mirrors Mathlib's `MeromorphicAt` (at a point)
 versus `MeromorphicOn` (on a set). The **finite excision set** `S` is bound **existentially**, so
-the predicate is intrinsic to `(γ, f)` and stays faithful to the roadmap's `S`-free signature: it
+the predicate is intrinsic to `(γ, f)` and its signature is `S`-free: it
 holds when *some* finite set satisfies the two clauses. A prescribed set — for instance the pole set
 of the generalized residue theorem, with intended value `2πi · ∑_{s ∈ S} n_γ(s) · res f s` — can be
 used as the witness once its integrability and `Tendsto` clauses have been proved. Enlarging a
@@ -74,9 +75,8 @@ of `f` (which fails at an on-curve singularity), never silently identifying the 
 ## Provenance
 
 Migrated and adapted from the AINTLIB `LeanModularForms` project (the multi-point principal value
-`CauchyPrincipalValueExistsOn`), specialised to the raw-function (`γ : ℝ → ℂ` on `[a, b]`) design of
-the contour-integration roadmap, with the singular set bound existentially and the
-truncated-integrability clause added.
+`CauchyPrincipalValueExistsOn`), specialised to curves given as raw functions `γ : ℝ → ℂ` on
+`[a, b]`, with the singular set bound existentially and the truncated-integrability clause added.
 
 ## References
 
@@ -219,19 +219,6 @@ theorem HasCauchyPV.of_integrable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → �
   · refine tendsto_const_nhds.congr fun ε => ?_
     exact intervalIntegral.integral_congr fun t _ => by simp
 
-/-- If `z` is none of the finitely many points of `S`, then for all small enough `ε > 0` the point
-`z` is farther than `ε` from every point of `S`; i.e. the excision at `S` eventually keeps `z`. -/
-private theorem eventually_not_exists_mem_le (z : ℂ) (S : Finset ℂ) (h : ∀ s ∈ S, z ≠ s) :
-    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ¬ ∃ s ∈ S, ‖z - s‖ ≤ ε := by
-  have key : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ s ∈ S, ε < ‖z - s‖ := by
-    rw [Filter.eventually_all_finset]
-    intro s hs
-    have hpos : (0 : ℝ) < ‖z - s‖ := by rw [norm_pos_iff, sub_ne_zero]; exact h s hs
-    exact nhdsWithin_le_nhds (Iio_mem_nhds hpos)
-  filter_upwards [key] with ε hε
-  rintro ⟨s, hs, hle⟩
-  exact absurd hle (not_le.mpr (hε s hs))
-
 /-- **An integrable integrand has principal value the ordinary integral, for *any* prescribed
 excision set.** Where the contour integrand is interval-integrable and the curve meets the excised
 points only on a null set of parameters, shrinking the excised neighbourhoods recovers the ordinary
@@ -256,7 +243,8 @@ theorem HasCauchyPVWith.of_integrable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ �
       (fun t => if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else g t)
       (MeasureTheory.volume.restrict (Set.uIoc a b)) := fun ε =>
     (aestronglyMeasurable_indicator_excision (γ := γ) h_int.def'.aestronglyMeasurable
-      (fun t ht => by simp [_hg, deriv_zero_of_not_differentiableAt ht]) S ε).congr
+      (Filter.Eventually.of_forall fun t ht => by
+        simp [_hg, deriv_zero_of_not_differentiableAt fun hd => ht hd.continuousAt]) S ε).congr
       (Filter.Eventually.of_forall fun t => by
         dsimp only
         by_cases h : ∃ s ∈ S, ‖γ t - s‖ ≤ ε
@@ -275,9 +263,8 @@ theorem HasCauchyPVWith.of_integrable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ �
       refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
       exact Filter.Eventually.of_forall fun ε => by
         by_cases h : ∃ s ∈ S, ‖γ t - s‖ ≤ ε <;> simp [h, hg0]
-    · have hne : ∀ s ∈ S, γ t ≠ s := fun s hs hst => hS (hst ▸ hs)
-      refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
-      filter_upwards [eventually_not_exists_mem_le (γ t) S hne] with ε hε
+    · refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+      filter_upwards [eventually_not_exists_norm_sub_le hS] with ε hε
       exact (ite_eq_right hε).symm
   refine ⟨Filter.Eventually.of_forall fun ε =>
       h_int.mono_fun (hsm ε) (Filter.Eventually.of_forall (hle ε)), ?_⟩
@@ -494,17 +481,11 @@ private theorem tendsto_truncatedIntegrand_sub_ae {γ : ℝ → ℂ} {a b : ℝ}
       simp only [truncatedIntegrand, hF0, ite_self, sub_zero]
     rw [hzero]
     exact tendsto_const_nhds
-  · rw [Finset.coe_union, Set.mem_union, not_or] at hc
+  · rw [Finset.coe_union, Set.mem_union, Finset.mem_coe, Finset.mem_coe, not_or] at hc
     obtain ⟨hc1, hc2⟩ := hc
-    have hne1 : ∀ s ∈ S₁, γ t ≠ s := by
-      intro s hs heq
-      exact hc1 (by rw [heq]; exact Finset.mem_coe.mpr hs)
-    have hne2 : ∀ s ∈ S₂, γ t ≠ s := by
-      intro s hs heq
-      exact hc2 (by rw [heq]; exact Finset.mem_coe.mpr hs)
     refine Tendsto.congr' ?_ tendsto_const_nhds
-    filter_upwards [eventually_not_exists_mem_le (γ t) S₁ hne1,
-      eventually_not_exists_mem_le (γ t) S₂ hne2] with ε h1 h2
+    filter_upwards [eventually_not_exists_norm_sub_le hc1,
+      eventually_not_exists_norm_sub_le hc2] with ε h1 h2
     simp only [truncatedIntegrand, ite_eq_right h1, ite_eq_right h2, sub_self]
 
 /-- **Enlargement inertness of the excision set (difference form).** For finite excision sets `S₁`
@@ -706,7 +687,9 @@ private theorem truncatedIntegrand_union_integrable {γ : ℝ → ℂ} {a b : �
   rw [intervalIntegrable_iff] at h ⊢
   rw [truncatedIntegrand_union_eq_indicator]
   exact h.norm.mono' (aestronglyMeasurable_indicator_excision (γ := γ) h.aestronglyMeasurable
-    (fun t ht => by simp [truncatedIntegrand, deriv_zero_of_not_differentiableAt ht]) S' ε)
+    (Filter.Eventually.of_forall fun t ht => by
+      simp [truncatedIntegrand, deriv_zero_of_not_differentiableAt fun hd => ht hd.continuousAt])
+    S' ε)
     (Filter.Eventually.of_forall fun t => norm_indicator_le_norm_self _ _)
 
 /-- **Additivity.** The set-level principal value is additive: if `f₁` and `f₂` each have a

@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Binomial
 public import Mathlib.Probability.Independence.CharacteristicFunction
 public import Mathlib.Probability.Moments.Basic
+public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.GeneratingFunction
 import TauCeti.Probability.Distributions.Bernoulli.Basic
@@ -26,6 +27,9 @@ characterization of Mathlib's binomial measure.  The native law remains
   carrier;
 * `TauCeti.Probability.variance_id_map_cast_binomial` computes the variance of the cast law;
 * `TauCeti.Probability.integral_sq_id_map_cast_binomial` computes its second raw moment;
+* `TauCeti.Probability.integrableExpSet_binomial` and
+  `TauCeti.Probability.integrableExpSet_map_cast_binomial` identify the exact
+  exponential-integrability domains of the native and cast laws;
 * `TauCeti.Probability.mgf_id_map_cast_binomial` and
   `TauCeti.Probability.cgf_id_map_cast_binomial` compute its moment and cumulant generating
   functions;
@@ -38,7 +42,6 @@ characterization of Mathlib's binomial measure.  The native law remains
 
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley,
   2005, Chapter 3.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, "Bernoulli and binomial".
 -/
 
 public section
@@ -66,6 +69,19 @@ theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
   apply Finset.sum_congr rfl
   intro k _
   ring
+
+/-- Every real observable of a native binomial law has full exponential-integrability domain. -/
+@[simp]
+theorem integrableExpSet_binomial (X : ℕ → ℝ) (n : ℕ) (p : unitInterval) :
+    integrableExpSet X Bin(n, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_binomial _
+
+/-- Every real observable of a cast binomial law has full exponential-integrability domain. -/
+@[simp]
+theorem integrableExpSet_map_cast_binomial {R : Type*} [MeasurableSpace R]
+    [AddMonoidWithOne R] [MeasurableSingletonClass R] (X : R → ℝ) (n : ℕ)
+    (p : unitInterval) : integrableExpSet X Bin(R, n, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_map_cast_binomial _
 
 /-- The moment generating function of the real-valued binomial law. -/
 theorem mgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
@@ -102,7 +118,7 @@ theorem charFun_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
       intro k _
       have hexp : Complex.exp (((k : ℝ) * t) * Complex.I) =
           Complex.exp (Complex.I * t) ^ k := by
-        rw [← Complex.exp_nat_mul]
+        rw [← Complex.exp_natCast_mul]
         congr 1
         push_cast
         ring

@@ -6,6 +6,7 @@ Authors: Jon Crall
 module
 
 public import Mathlib.Topology.Algebra.Module.LinearPMap
+import Mathlib.Topology.Sequences
 
 /-!
 # Closed-graph limits for partial linear maps
@@ -15,11 +16,15 @@ Mathlib's `LinearPMap.HasCore` is the canonical abstraction for graph cores:
 recovers `A`. No second graph-core predicate is needed.
 
 A closed graph contains the limit of a domain-valued net whenever the vectors
-and their images both converge along a nontrivial filter. Dually, a closed set
+and their images both converge along a nontrivial filter. On first-countable spaces
+sequences suffice, and this sequential condition characterises closed partial maps,
+`LinearPMap.isClosed_iff_forall_tendsto`. Dually, a closed set
 containing the graph of the restriction of a partial map to a core contains its
-whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`. Conversely, a submodule of the
-domain of a closed partial map is a core once the closure of the graph of the restriction
-contains the whole graph, `LinearPMap.HasCore.of_graph_subset_closure`.
+whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`. For a closed partial map
+this characterises cores: a submodule of its domain is a core exactly when the closure of
+the graph of the restriction contains the whole graph,
+`LinearPMap.IsClosed.hasCore_iff_graph_subset_closure`. A closed partial map is also
+its own closure, `LinearPMap.IsClosed.closure_eq`.
 
 ## Provenance
 
@@ -51,8 +56,31 @@ theorem IsClosed.mem_domain_of_tendsto
     (.of_forall fun i => A.mem_graph ⟨u i, hu i⟩)
   exact ⟨mem_domain_of_mem_graph h, ((image_iff _).2 h).symm⟩
 
+/-- **The sequential closed-graph criterion.** On first-countable spaces, a partial map `A` is
+closed if and only if, whenever domain vectors `u n` converge to `x` and their images `A (u n)`
+converge to `y`, the limit `x` lies in the domain of `A` and `A x = y`. -/
+theorem isClosed_iff_forall_tendsto [FirstCountableTopology E] [FirstCountableTopology F]
+    {A : E →ₗ.[R] F} :
+    A.IsClosed ↔ ∀ (u : ℕ → A.domain) (x : E) (y : F),
+      Tendsto (fun n => (u n : E)) atTop (𝓝 x) → Tendsto (fun n => A (u n)) atTop (𝓝 y) →
+        ∃ h : x ∈ A.domain, A ⟨x, h⟩ = y := by
+  refine ⟨fun hA u x y hx hy => hA.mem_domain_of_tendsto (fun n => (u n).property) hx hy,
+    fun h => ?_⟩
+  refine IsSeqClosed.isClosed fun z p hz hp => ?_
+  choose u hu₁ hu₂ using fun n => A.mem_graph_iff.mp (hz n)
+  obtain ⟨hp₁, hp₂⟩ := h u p.1 p.2 (by simpa only [hu₁] using hp.fst_nhds)
+    (by simpa only [hu₂] using hp.snd_nhds)
+  exact A.mem_graph_iff.mpr ⟨⟨p.1, hp₁⟩, rfl, hp₂⟩
+
 variable [ContinuousAdd E] [ContinuousAdd F]
 variable [TopologicalSpace R] [ContinuousSMul R E] [ContinuousSMul R F]
+
+/-- A closed partial linear map is its own closure: its graph is already topologically closed. -/
+theorem IsClosed.closure_eq {A : E →ₗ.[R] F} (hA : A.IsClosed) : A.closure = A := by
+  refine eq_of_eq_graph ?_
+  rw [← hA.isClosable.graph_closure_eq_closure_graph]
+  rw [IsClosed] at hA
+  exact hA.submodule_topologicalClosure_eq
 
 /-- A closed set containing the graph of the restriction of `A` to a core `S` contains the whole
 graph of `A`, since that graph is the closure of the graph of the restriction. -/
@@ -65,12 +93,13 @@ theorem HasCore.graph_subset_of_isClosed {A : E →ₗ.[R] F} {S : Submodule R E
     exact closure_minimal h hs
   · rwa [closure_def' hT]
 
-/-- A submodule `S` of the domain of a closed partial map `A` is a core for `A` as soon as the graph
-of `A` lies in the closure of the graph of the restriction of `A` to `S`. -/
-theorem HasCore.of_graph_subset_closure {A : E →ₗ.[R] F} (hA : A.IsClosed) {S : Submodule R E}
-    (hS : S ≤ A.domain)
-    (h : (A.graph : Set (E × F)) ⊆ _root_.closure ((A.domRestrict S).graph : Set (E × F))) :
-    A.HasCore S := by
+/-- A submodule `S` of the domain of a closed partial map `A` is a core for `A` if and only if the
+graph of `A` lies in the closure of the graph of the restriction of `A` to `S`. -/
+theorem IsClosed.hasCore_iff_graph_subset_closure {A : E →ₗ.[R] F} (hA : A.IsClosed)
+    {S : Submodule R E} (hS : S ≤ A.domain) :
+    A.HasCore S ↔
+      (A.graph : Set (E × F)) ⊆ _root_.closure ((A.domRestrict S).graph : Set (E × F)) := by
+  refine ⟨fun hS' => hS'.graph_subset_of_isClosed isClosed_closure subset_closure, fun h => ?_⟩
   have hT : (A.domRestrict S).IsClosable := hA.isClosable.leIsClosable domRestrict_le
   refine ⟨hS, eq_of_eq_graph ?_⟩
   rw [← hT.graph_closure_eq_closure_graph]

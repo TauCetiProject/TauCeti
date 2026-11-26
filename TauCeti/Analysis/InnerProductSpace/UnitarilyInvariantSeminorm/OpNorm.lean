@@ -24,6 +24,8 @@ needs to be finite-dimensional.
   seminorm on `E →ₗ[𝕜] F`.
 * `TauCeti.UnitarilyInvariantSeminorm.opNorm_apply`: its value is the operator norm of the
   associated continuous linear map.
+* `TauCeti.UnitarilyInvariantSeminorm.opNorm_apply_adjoint_comp_self`: the C⋆-identity
+  `‖A† A‖ = ‖A‖²`.
 
 ## References
 
@@ -47,7 +49,7 @@ noncomputable def opNorm : UnitarilyInvariantSeminorm 𝕜 E F where
         (U : F →L[𝕜] F).comp ((LinearMap.toContinuousLinearMap A).comp (V : E →L[𝕜] E)) := by
       ext; simp
     simp only [Seminorm.comp_apply, coe_normSeminorm, LinearEquiv.coe_coe, h]
-    rcases subsingleton_or_nontrivial E with hE | hE
+    rcases subsingleton_or_nontrivial E with hE | _
     · simp [Subsingleton.elim (LinearMap.toContinuousLinearMap A) 0]
     · simp
 
@@ -58,5 +60,15 @@ map. -/
 @[simp]
 theorem opNorm_apply (A : E →ₗ[𝕜] F) : opNorm 𝕜 E F A = ‖LinearMap.toContinuousLinearMap A‖ :=
   (rfl)
+
+/-- The operator norm of the Gram operator `A† A` is the square of the operator norm of `A`. -/
+theorem opNorm_apply_adjoint_comp_self [FiniteDimensional 𝕜 F] (A : E →ₗ[𝕜] F) :
+    opNorm 𝕜 E E (LinearMap.adjoint A ∘ₗ A) = opNorm 𝕜 E F A ^ 2 := by
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
+  have h : LinearMap.toContinuousLinearMap (LinearMap.adjoint A ∘ₗ A) =
+      (LinearMap.toContinuousLinearMap A).adjoint ∘L LinearMap.toContinuousLinearMap A :=
+    ContinuousLinearMap.ext fun x ↦ by simp [LinearMap.adjoint_eq_toCLM_adjoint]
+  rw [opNorm_apply, opNorm_apply, h, ContinuousLinearMap.norm_adjoint_comp_self, sq]
 
 end TauCeti.UnitarilyInvariantSeminorm

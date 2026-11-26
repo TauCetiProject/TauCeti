@@ -107,6 +107,8 @@ cap classes of actual loops.
   in each input.
 * `TauCeti.Floer.SphericalCapClass.productClass_glue₂_mk`: the product class of actual caps is the
   class of the sphere by which the output cap differs from the glued cap.
+* `TauCeti.Floer.SphericalCapClass.existsUnique_zsmul_vadd_eq`: when a nonzero class `σ` generates
+  the period group, any two cap classes of a contractible loop differ by a unique multiple of `σ`.
 
 ## References
 
@@ -148,6 +150,12 @@ variable {γ γ₀ γ₁ γ₂ : Ω X x}
 theorem nonempty_iff : Nonempty (RawCap γ) ↔ γ.Homotopic (Path.refl x) := by
   rw [← Path.joined_iff_homotopic]
   exact ⟨fun ⟨D⟩ => ⟨D.out⟩, fun ⟨D⟩ => ⟨Path.Homotopic.Quotient.mk D⟩⟩
+
+/-- **If the fundamental group at `x` is trivial, every loop at `x` has a raw cap.** This covers
+every simply connected space. -/
+instance [Subsingleton (FundamentalGroup X x)] : Nonempty (RawCap γ) :=
+  nonempty_iff.2 <| Quotient.exact <| congrArg FundamentalGroup.toPath <|
+    Subsingleton.elim (FundamentalGroup.fromPath ⟦γ⟧) (FundamentalGroup.fromPath ⟦Path.refl x⟧)
 
 /-- Gluing a sphere `a ∈ π₂(X, x)` at the centre of a disc: `a +ᵥ D` is `D` followed by the loop
 of loops at the constant loop corresponding to `a`. -/
@@ -318,6 +326,14 @@ theorem mk_vsub_mk (D' D : RawCap γ) :
     mk ω c D' -ᵥ mk ω c D = SphericalPeriodGroup.ofHomotopyGroup ω c x (D' -ᵥ D) :=
   (rfl)
 
+/-- Two cap classes are equal exactly when the class of the period group by which they differ is
+zero. Unlike the torsor lemma `vsub_eq_zero_iff_eq`, this needs no path-connectedness. -/
+protected theorem vsub_eq_zero_iff_eq {q' q : SphericalCapClass ω c γ} : q' -ᵥ q = 0 ↔ q' = q := by
+  induction q' using induction_on with | h D' =>
+  induction q using induction_on with
+  | h D => rw [mk_vsub_mk, mk_eq_mk_iff, PeriodGroup.ext_iff, map_zero, map_zero,
+      SphericalPeriodGroup.area_ofHomotopyGroup, SphericalPeriodGroup.chern_ofHomotopyGroup]
+
 variable {A : Type*} [AddMonoid A]
 
 /-- The descent to cap classes of a function `f` on raw caps obeying the recapping law
@@ -328,7 +344,7 @@ def lift (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)
     SphericalCapClass ω c γ → A :=
   Quotient.lift (s := AddAction.orbitRel _ _) f fun D D' ⟨k, hk⟩ => by
     rw [← hk]
-    simp only [AddSubgroup.vadd_def, hf, AddMonoidHom.mem_ker.1 k.2, map_zero, zero_add]
+    simp only [AddSubgroup.vadd_def, hf, AddMonoidHom.mem_ker.1 k.property, map_zero, zero_add]
 
 @[simp]
 theorem lift_mk (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)
@@ -500,6 +516,20 @@ theorem lift_vadd (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)
   obtain ⟨a, rfl⟩ := SphericalPeriodGroup.ofHomotopyGroup_surjective (ω := ω) (c := c) x g
   induction q using induction_on with
   | h D => rw [ofHomotopyGroup_vadd_mk, lift_mk, lift_mk, hf]
+
+/-- **Recapping in a cyclic period group.** If a nonzero class `σ` generates the period group, as
+the class of the generating sphere does on the two-sphere and on complex projective space, any two
+cap classes of a contractible loop differ by recapping with a unique multiple of `σ`. -/
+theorem existsUnique_zsmul_vadd_eq {σ : SphericalPeriodGroup ω c}
+    (hσ : AddSubgroup.zmultiples σ = ⊤) (hσ0 : σ ≠ 0) (D D' : SphericalCapClass ω c γ) :
+    ∃! k : ℤ, k • σ +ᵥ D = D' := by
+  have : Nonempty (RawCap γ) := by
+    induction D using induction_on with | h D₀ => exact ⟨D₀⟩
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 ((AddSubgroup.eq_top_iff' _).1 hσ (D' -ᵥ D))
+  refine ⟨k, ?_, fun l hl => IsAddTorsionFree.zsmul_left_injective hσ0 ?_⟩
+  · dsimp only
+    rw [hk, vsub_vadd]
+  · simp only [hk, ← hl, vadd_vsub]
 
 end SphericalCapClass
 

@@ -8,8 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 public import TauCeti.MeasureTheory.Measure.Glue
+public import TauCeti.Geometry.Manifold.Measure.Chart
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
+import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -29,8 +32,11 @@ transition map, so its absolute value transforms exactly as Lebesgue measure doe
 measures agree on chart overlaps and, on a Lindelöf manifold, glue to a unique measure on the
 Borel `σ`-algebra. No orientation is used, the form may vanish, and manifolds with boundary or
 corners are allowed. The same computation shows that a differentiable homeomorphism `Φ : M → N`
-carries `|Φ^* ψ|` to `|ψ|` (`Homeomorph.measurePreserving_measure_mpullback`); in particular a
-diffeomorphism preserving `ψ` preserves `|ψ|`.
+carries `|Φ^* ψ|` to `|ψ|` (`Homeomorph.measurePreserving_measure_mpullback`), also when `M` and `N`
+are modelled on different spaces of the same dimension; in particular a diffeomorphism preserving
+`ψ` preserves `|ψ|`. More generally, a differentiable measurable embedding `f : M → N`, such as the
+inclusion of an open subset, carries `|f^* ψ|` to the restriction of `|ψ|` to its range
+(`MeasurableEmbedding.map_measure_mpullback`).
 
 For a continuous form the measure is locally finite, and if moreover the form vanishes nowhere,
 every nonempty open set has positive measure. Applied to the symplectic volume form `ωⁿ / n!`,
@@ -49,12 +55,18 @@ this construction gives the Liouville measure of a symplectic manifold.
   `TauCeti.RoughForm.measure_zero`: `|c • φ| = |c| • |φ|`.
 * `TauCeti.RoughForm.isLocallyFiniteMeasure_measure`: the measure of a continuous form is locally
   finite.
+* `TauCeti.RoughForm.aemeasurable_ofReal_abs_inChartAt`: the coordinate density of a continuous
+  form is a.e.-measurable on chart images, for any measure on the model space.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
+* `TauCeti.RoughForm.nullSingletonClass_measure`: in positive dimension points are null.
 * `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
   measure of a basis `b` with density `|φ(b)|`.
 * `Homeomorph.measurePreserving_measure_mpullback`: a differentiable homeomorphism `Φ` carries
   `|Φ^* ψ|` to `|ψ|`.
+* `MeasurableEmbedding.map_measure_mpullback`, `MeasurableEmbedding.measure_mpullback`: a
+  differentiable measurable embedding `f` carries `|f^* ψ|` to the restriction of `|ψ|` to its
+  range, so `|f^* ψ|` is the pullback of `|ψ|` along `f`.
 
 ## References
 
@@ -107,7 +119,7 @@ private theorem chartMeasure_apply (φ : RoughForm I M ℝ k) (α : M) {s : Set 
       ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
         ENNReal.ofReal |φ.inChartAt α y (finBasisOfFinrankEq ℝ E hk.out)|
           ∂(finBasisOfFinrankEq ℝ E hk.out).addHaar := by
-  rw [chartMeasure, Measure.map_apply measurable_subtype_coe hs,
+  rw [chartMeasure, Measure.map_apply measurable_subtypeVal hs,
     (measurableEmbedding_extChartAt_restrict α).comap_apply, image_domRestrict,
     withDensity_apply _ ((hs.inter (isOpen_extChartAt_source α).measurableSet).image_extChartAt α
       inter_subset_right)]
@@ -222,32 +234,29 @@ theorem isLocallyFiniteMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoot
     IsLocallyFiniteMeasure φ.measure := by
   refine ⟨fun x ↦ ?_⟩
   set b := finBasisOfFinrankEq ℝ E hk.out
-  set e := extChartAt I x
-  set g : E → ℝ := fun y ↦ |φ.inChartAt x y b|
-  have hg : ContinuousOn g e.target :=
+  have hg : ContinuousOn (fun y ↦ |φ.inChartAt x y b|) (extChartAt I x).target :=
     continuous_abs.comp_continuousOn
       ((continuous_eval_const (b : Fin k → E)).comp_continuousOn
         (hφ.continuousOn_inChartAt x))
-  have hxe : x ∈ e.source := mem_extChartAt_source x
-  -- Near `e x` in the model, the coordinate density stays below `g (e x) + 1`.
-  have hbound : {y | g y < g (e x) + 1} ∈ 𝓝[range I] (e x) := by
-    rw [← nhdsWithin_extChartAt_target_eq' hxe]
-    exact (hg (e x) (e.map_source hxe)).eventually_lt_const (lt_add_one _)
-  set t := {y | g y < g (e x) + 1} ∩ Metric.ball (e x) 1
-  have ht : t ∈ 𝓝[range I] (e x) :=
-    Filter.inter_mem hbound (mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds _ one_pos))
-  have hs : e.source ∩ e ⁻¹' t ∈ 𝓝 x :=
-    Filter.inter_mem (extChartAt_source_mem_nhds' hxe)
-      (extChartAt_preimage_mem_nhds_of_mem_nhdsWithin hxe ht)
-  refine ⟨interior (e.source ∩ e ⁻¹' t), interior_mem_nhds.2 hs, ?_⟩
-  rw [φ.measure_apply_of_subset isOpen_interior.measurableSet
-    (interior_subset.trans inter_subset_left)]
-  have himage : e '' interior (e.source ∩ e ⁻¹' t) ⊆ t := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact (interior_subset hz).2
-  refine setLIntegral_lt_top_of_le_nnreal ?_ ⟨(g (e x) + 1).toNNReal, fun y hy ↦ ?_⟩
-  · exact ((measure_mono (himage.trans inter_subset_right)).trans_lt measure_ball_lt_top).ne
-  · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
+  -- Near each point the coordinate density is bounded, so its integral is finite.
+  obtain ⟨U, hUo, hxU, hUsub, hU⟩ :=
+    exists_isOpen_setLIntegral_image_extChartAt_lt_top hg b.addHaar
+  refine ⟨U, hUo.mem_nhds hxU, ?_⟩
+  rwa [φ.measure_apply_of_subset hUo.measurableSet hUsub]
+
+omit [FiniteDimensional ℝ E] hk [LindelofSpace M] in
+/-- The coordinate density `|φ(v)|` of a continuous top form in the chart at `α` is
+a.e.-measurable, for any measure on `E`, on the coordinate image of a measurable subset of the
+chart source. -/
+theorem aemeasurable_ofReal_abs_inChartAt [MeasurableSpace E] [OpensMeasurableSpace E]
+    {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (v : Fin k → E) {α : M} {s : Set M}
+    (hs : MeasurableSet s) (hsα : s ⊆ (extChartAt I α).source) {μ : Measure E} :
+    AEMeasurable (fun y ↦ ENNReal.ofReal |φ.inChartAt α y v|) (μ.restrict (extChartAt I α '' s)) :=
+  (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
+    ((continuous_eval_const v).comp_continuousOn
+      ((hφ.continuousOn_inChartAt α).mono
+        ((image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset))))).aemeasurable
+    (hs.image_extChartAt α hsα)
 
 /-- **The measure of a continuous nowhere-vanishing top form is positive on nonempty open sets.**
 In a chart the coefficient of such a form vanishes nowhere, and a nonempty open subset of a chart
@@ -265,21 +274,10 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
   refine ((?_ : 0 < φ.measure V).trans_le (measure_mono inter_subset_left)).ne'
   rw [φ.measure_apply_of_subset hV.measurableSet hVsub]
   -- The coordinate image of `V` has positive Lebesgue measure.
-  have hApos : 0 < b.addHaar (e '' V) := by
-    rw [e.image_eq_target_inter_inv_preimage hVsub]
-    apply Measure.measure_pos_of_nonempty_interior
-    refine Set.Nonempty.of_closure ⟨e x, ?_⟩
-    simpa only [inter_comm] using
-      (extChartAt_mem_closure_interior (I := I) (x₀ := x)
-        (subset_closure (mem_interior_iff_mem_nhds.mpr (hV.mem_nhds ⟨hx, mem_extChartAt_source x⟩)))
-        (mem_extChartAt_source x))
+  have hApos : 0 < b.addHaar (e '' V) := measure_image_extChartAt_inter_source_pos hU
+    ⟨x, hx, mem_extChartAt_source x⟩ _
   -- The coordinate density is measurable and vanishes nowhere on that image.
-  have hd : AEMeasurable (fun y ↦ ENNReal.ofReal |φ.inChartAt x y b|)
-      (b.addHaar.restrict (e '' V)) :=
-    (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
-      ((continuous_eval_const (b : Fin k → E)).comp_continuousOn
-        ((hφ.continuousOn_inChartAt x).mono
-          (e.image_source_eq_target ▸ image_mono hVsub))))).aemeasurable hA
+  have hd := aemeasurable_ofReal_abs_inChartAt hφ b hV.measurableSet hVsub (μ := b.addHaar)
   have hpos : ∀ y ∈ e '' V, ENNReal.ofReal |φ.inChartAt x y b| ≠ 0 := by
     rintro _ ⟨z, hz, rfl⟩
     have hz0 : φ.inChartAt x (e z) ≠ 0 := by
@@ -296,6 +294,18 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
     ((ae_restrict_iff' hA).1 h).mono fun y hy hyA ↦ hpos y hyA (hy hyA)
   exact hApos.ne' (measure_eq_zero_iff_ae_notMem.2 hnull)
 
+/-- **In positive dimension points are null for the measure of a top form.** A point of a chart
+source has a single point as coordinate image, which is null for Lebesgue measure. -/
+instance nullSingletonClass_measure [Nontrivial E] (φ : RoughForm I M ℝ k) :
+    NullSingletonClass φ.measure where
+  measure_singleton x := by
+    have hsub : {x} ⊆ (extChartAt I x).source := singleton_subset_iff.2 (mem_extChartAt_source x)
+    -- A point is measurable, even without separation axioms: its chart image is.
+    have hx : MeasurableSet {x} :=
+      (measurableSet_image_extChartAt_iff x hsub).1 (image_singleton ▸ measurableSet_singleton _)
+    rw [φ.measure_apply_of_subset hx hsub, image_singleton]
+    exact setLIntegral_measure_zero _ _ (measure_singleton _)
+
 /-! ### Top forms on the model space -/
 
 section ModelSpace
@@ -309,26 +319,20 @@ theorem measure_eq_withDensity_addHaar [mE : MeasurableSpace E]
   obtain rfl : mE = borel E := hE.measurable_eq
   set b₀ := finBasisOfFinrankEq ℝ E hk.out
   refine (eq_measure_iff.2 fun α s hs _ ↦ ?_).symm
-  -- In the identity chart, the coefficient in `b₀` is `det_b b₀` times the coefficient in `b`.
-  have hchart (y : E) : φ.inChartAt α y b₀ = b.det b₀ * φ y b := by
+  -- In the identity chart, the coefficients of `φ` are those of `φ` itself.
+  have hchart (y : E) : φ.inChartAt α y b₀ = φ y b₀ := by
     -- `simp` cannot rewrite the chart under the dependently typed `mfderiv`, so `rw` does it.
     rw [inChartAt_apply, extChartAt_model_space_eq_id]
     simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
       mfderivWithin_univ, mfderiv_id]
-    have h := congr($((φ y).toAlternatingMap.eq_smul_basis_det b) b₀)
-    rw [smul_apply, smul_eq_mul] at h
-    exact h.trans (mul_comm _ _)
-  have hdet : ENNReal.ofReal |(b.det b₀)⁻¹| * ENNReal.ofReal |b.det b₀| = 1 := by
-    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b₀).ne_zero,
-      abs_one, ENNReal.ofReal_one]
-  rw [withDensity_apply _ hs, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id,
-    b.addHaar_eq_smul_of_basis b₀, Measure.restrict_smul, lintegral_smul_measure]
-  have hint : ∫⁻ y in s, ENNReal.ofReal |φ.inChartAt α y b₀| ∂b.addHaar =
-      ENNReal.ofReal |b.det b₀| * ∫⁻ y in s, ENNReal.ofReal |φ y b| ∂b.addHaar := by
-    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    refine setLIntegral_congr_fun hs fun y _ ↦ ?_
-    rw [hchart, abs_mul, ENNReal.ofReal_mul (abs_nonneg _)]
-  rw [hint, smul_eq_mul, ← mul_assoc, hdet, one_mul]
+    -- `id y` is `y` and the identity map fixes each `b₀ i`, both by definition; `simp` cannot use
+    -- `ContinuousLinearMap.id_apply` on the tangent space `TangentSpace 𝓘(ℝ, E) y` here.
+    rfl
+  -- The density `|φ_y(b)|` against the Haar measure of `b` may be computed in `b₀` instead.
+  rw [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id]
+  refine congr($(b₀.addHaar_withDensity_ofReal_abs_apply_eq b fun y ↦ φ y) s).trans ?_
+  rw [withDensity_apply _ hs]
+  exact setLIntegral_congr_fun hs fun y _ ↦ congrArg (fun t ↦ ENNReal.ofReal |t|) (hchart y).symm
 
 /-- **The measure of a constant top form on the model space.** If a top form `φ` on `E` takes the
 same value `c` on a basis `b` at every point, then `|φ|` is `|c|` times the Haar measure
@@ -344,47 +348,110 @@ end RoughForm
 
 end TauCeti
 
+/-! ### Pullback along measurable embeddings -/
+
+namespace MeasurableEmbedding
+
+open TauCeti
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [hk' : Fact (finrank ℝ E' = k)] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
+  [LindelofSpace M] [LindelofSpace N] {f : M → N}
+
+/-- The chart-local case of `MeasurableEmbedding.map_measure_mpullback`: on a measurable set `A`
+inside a chart source at `x` and mapped by `f` into a chart source at `f x`, the measure of `f^* ψ`
+is the measure of `ψ` on `f '' A`. -/
+private theorem measure_mpullback_apply_of_subset (hf : MeasurableEmbedding f)
+    (hfd : MDifferentiable I J f) (ψ : RoughForm J N ℝ k) {x : M} {A : Set M}
+    (hA : MeasurableSet A)
+    (hAsub : A ⊆ (extChartAt I x).source ∩ f ⁻¹' (extChartAt J (f x)).source) :
+    (mpullback I J f ψ).measure A = ψ.measure (f '' A) := by
+  -- Compare the model spaces through the linear equivalence carrying the basis normalizing the
+  -- coordinate measure of `E` to that of `E'`.
+  set b := finBasisOfFinrankEq ℝ E hk.out
+  set b' := finBasisOfFinrankEq ℝ E' hk'.out
+  set C : E ≃L[ℝ] E' := (b.equiv b' (Equiv.refl _)).toContinuousLinearEquiv
+  have hb : b.map C.toLinearEquiv = b' := by
+    simp [C, Basis.map_equiv]
+  have hμ : b.addHaar.map C = b'.addHaar := by
+    simpa [C] using (b.measurePreserving_equiv b' (Equiv.refl _)).map_eq
+  rw [RoughForm.measure_apply_of_subset _ hA (hAsub.trans inter_subset_left),
+    ψ.measure_apply_of_subset (hf.measurableSet_image.2 hA)
+      (image_subset_iff.2 (hAsub.trans inter_subset_right)),
+    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ C
+      hf.injective.injOn (fun x _ ↦ hfd x) hA.isChartMeasurable hAsub,
+    hb, hμ]
+
+/-- **Change of variables for the measure of a top form along an embedding.** A differentiable
+measurable embedding `f : M → N` between manifolds modelled on spaces of the same dimension, such
+as the inclusion of an open subset, carries the measure of the pulled-back form `f^* ψ` to the
+restriction of the measure of `ψ` to the range of `f`. No orientation is involved. -/
+theorem map_measure_mpullback (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
+    (ψ : RoughForm J N ℝ k) :
+    (mpullback I J f ψ).measure.map f = ψ.measure.restrict (range f) := by
+  -- Countably many open sets `V x`, each mapped by `f` into a chart source at `f x`, cover `M`.
+  -- Their images, together with the complement of the range of `f`, cover `N`.
+  set V : M → Set M := fun x ↦ (extChartAt I x).source ∩ f ⁻¹' (extChartAt J (f x)).source
+  have hV (x : M) : IsOpen (V x) :=
+    (isOpen_extChartAt_source x).inter ((isOpen_extChartAt_source _).preimage hfd.continuous)
+  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover V fun x ↦
+    (hV x).mem_nhds ⟨mem_extChartAt_source x, mem_extChartAt_source (f x)⟩
+  set U : Option M → Set N := fun o ↦ o.elim (range f)ᶜ fun x ↦ f '' V x
+  refine Measure.ext_of_biUnion_eq_univ (S := insert none (some '' t)) (s := U)
+    ((ht.image _).insert _) (eq_univ_of_forall fun y ↦ ?_) ?_
+  · by_cases hy : y ∈ range f
+    · obtain ⟨x, rfl⟩ := hy
+      obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 (hcover.symm ▸ mem_univ x : x ∈ ⋃ z ∈ t, V z)
+      exact mem_iUnion₂.2 ⟨some z, mem_insert_of_mem _ (mem_image_of_mem _ hz),
+        mem_image_of_mem f hxz⟩
+    · exact mem_iUnion₂.2 ⟨none, mem_insert _ _, hy⟩
+  rintro (_ | z) -
+  · -- Off the range of `f`, both measures vanish.
+    ext s hs
+    rw [Measure.restrict_apply hs, Measure.restrict_apply hs, hf.map_apply,
+      Measure.restrict_apply' hf.measurableSet_range]
+    simp [U, inter_assoc]
+  simp only [U, Option.elim_some]
+  ext s hs
+  -- Both sides are the measure of the chart piece `f ⁻¹' s ∩ V z` and of its image.
+  have hrange : s ∩ f '' V z ⊆ range f := inter_subset_right.trans (image_subset_range f _)
+  rw [Measure.restrict_apply hs, Measure.restrict_apply hs, hf.map_apply,
+    Measure.restrict_apply' hf.measurableSet_range, inter_eq_left.2 hrange, preimage_inter,
+    preimage_image_eq _ hf.injective, ← image_preimage_inter]
+  exact measure_mpullback_apply_of_subset hf hfd ψ
+    ((hf.measurable hs).inter (hV z).measurableSet) inter_subset_right
+
+/-- **The measure of a top form pulled back along an embedding.** For a differentiable measurable
+embedding `f : M → N` between manifolds modelled on spaces of the same dimension, the measure of
+`f^* ψ` is the pullback along `f` of the measure of `ψ`: it gives a set `s` the measure of
+`f '' s`. -/
+theorem measure_mpullback (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
+    (ψ : RoughForm J N ℝ k) : (mpullback I J f ψ).measure = ψ.measure.comap f := by
+  rw [← hf.comap_map (mpullback I J f ψ).measure, hf.map_measure_mpullback hfd, hf.comap_restrict,
+    preimage_range, Measure.restrict_univ]
+
+end MeasurableEmbedding
+
 /-! ### Invariance under differentiable homeomorphisms -/
 
 namespace Homeomorph
 
 open TauCeti
 
-variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N]
-  [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [hk' : Fact (finrank ℝ E' = k)] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
   [LindelofSpace M] [LindelofSpace N]
 
 /-- **Change of variables for the measure of a top form.** A differentiable homeomorphism
-`Φ : M → N` between manifolds modelled on the same space carries the measure of the pulled-back
-form `Φ^* ψ` to the measure of `ψ`. In particular a diffeomorphism preserving a top form preserves
-its measure. No orientation is involved. -/
+`Φ : M → N` between manifolds modelled on spaces of the same dimension carries the measure of the
+pulled-back form `Φ^* ψ` to the measure of `ψ`. In particular a diffeomorphism preserving a top
+form preserves its measure. No orientation is involved. -/
 theorem measurePreserving_measure_mpullback (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ)
     (ψ : RoughForm J N ℝ k) :
-    MeasurePreserving Φ (mpullback I J Φ ψ).measure ψ.measure := by
-  refine ⟨Φ.measurable, ?_⟩
-  -- Near each point `y`, the two measures agree on subsets of a chart source at `y` whose
-  -- preimages lie in a chart source at `Φ.symm y`; a countable family of these sets covers `N`.
-  set U : N → Set N := fun y ↦
-    (extChartAt J y).source ∩ Φ.symm ⁻¹' (extChartAt I (Φ.symm y)).source
-  have hU (y : N) : IsOpen (U y) :=
-    (isOpen_extChartAt_source y).inter ((isOpen_extChartAt_source _).preimage Φ.symm.continuous)
-  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover U fun y ↦
-    (hU y).mem_nhds ⟨mem_extChartAt_source y, mem_extChartAt_source (Φ.symm y)⟩
-  refine Measure.ext_of_biUnion_eq_univ ht hcover fun y _ ↦ ?_
-  ext s hs
-  have hsU : MeasurableSet (s ∩ U y) := hs.inter (hU y).measurableSet
-  have hpre : MeasurableSet (Φ ⁻¹' (s ∩ U y)) := hsU.preimage Φ.measurable
-  have hsub : Φ ⁻¹' (s ∩ U y) ⊆
-      (extChartAt I (Φ.symm y)).source ∩ Φ ⁻¹' (extChartAt J y).source := by
-    intro x hx
-    refine ⟨?_, hx.2.1⟩
-    simpa only [mem_preimage, Homeomorph.symm_apply_apply] using hx.2.2
-  rw [Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.map_apply Φ.measurable hsU,
-    RoughForm.measure_apply_of_subset _ hpre (hsub.trans inter_subset_left),
-    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ (ContinuousLinearEquiv.refl ℝ E)
-      Φ.injective.injOn (fun x _ ↦ hΦ x) hpre.isChartMeasurable hsub,
-    map_basis_refl, map_measure_refl,
-    image_preimage_eq _ Φ.surjective,
-    ψ.measure_apply_of_subset hsU (inter_subset_right.trans inter_subset_left)]
+    MeasurePreserving Φ (mpullback I J Φ ψ).measure ψ.measure :=
+  ⟨Φ.measurable, by
+    rw [Φ.measurableEmbedding.map_measure_mpullback hΦ, Φ.range_coe, Measure.restrict_univ]⟩
 
 end Homeomorph

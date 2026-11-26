@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.FieldDivision
+public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 import Mathlib.Algebra.Polynomial.BigOperators
+import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 /-!
 # The monic irreducible factors of a polynomial over a field
@@ -46,21 +49,30 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
-* `Polynomial.sum_natDegree_normalizedFactors`: the degrees of the normalized irreducible
-  factors, counted with multiplicity, sum to the degree.
 * `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
   exactly when the polynomial is irreducible.
 * `Polynomial.count_one_map_natDegree_normalizedFactors`: a nonzero squarefree polynomial has as
   many linear normalized factors as distinct roots.
+* `Polynomial.sum_natDegree_toFinset_normalizedFactors`: the degrees of the distinct normalized
+  factors of a squarefree polynomial add up to its degree.
 * `Polynomial.monic_squarefree_normalizedFactors_prod`: a product of distinct monic irreducible
   polynomials is monic and squarefree, and its normalized factors are those polynomials.
+* `Polynomial.filter_aroots_eq_count_normalizedFactors_nsmul_aroots`: the roots of `g` in an
+  extension field at which a monic irreducible `p` vanishes are the roots of `p`, repeated with the
+  multiplicity of `p` in the normalized factorization of `g`.
+* `Polynomial.card_filter_aroots_eq_count_normalizedFactors_mul_natDegree`: their number, for `g`
+  split over the extension.
+* `Polynomial.Monic.eq_of_forall_card_filter_aroots_eq`: monic polynomials which split over an
+  extension are equal if every monic irreducible polynomial vanishes at equally many of their
+  roots there.
 
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`, section `EtaleDecomposition`. The source is written against
-Lean `v4.32.0`; this is a forward port.
+Lean `v4.32.0`; this is a forward port. The section on the roots of the normalized irreducible
+factors is not taken from that source.
 -/
 
 public section
@@ -80,11 +92,11 @@ abbrev Factors (f : K[X]) : Type _ := {p : K[X] // Irreducible p ∧ p.Monic ∧
 
 namespace Factors
 
-lemma irreducible (p : f.Factors) : Irreducible (p : K[X]) := p.2.1
+lemma irreducible (p : f.Factors) : Irreducible (p : K[X]) := p.property.1
 
-lemma monic (p : f.Factors) : (p : K[X]).Monic := p.2.2.1
+lemma monic (p : f.Factors) : (p : K[X]).Monic := p.property.2.1
 
-lemma dvd (p : f.Factors) : (p : K[X]) ∣ f := p.2.2.2
+lemma dvd (p : f.Factors) : (p : K[X]) ∣ f := p.property.2.2
 
 lemma ne_zero (p : f.Factors) : (p : K[X]) ≠ 0 := p.irreducible.ne_zero
 
@@ -111,7 +123,7 @@ lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
     ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hf).1 hsq)
     (Finset.univ.nodup.map Subtype.val_injective)).2 fun p => ?_
   rw [Polynomial.mem_normalizedFactors_iff hf, Multiset.mem_map]
-  exact ⟨fun hp => ⟨⟨p, hp⟩, Finset.mem_univ _, rfl⟩, fun ⟨q, _, hq⟩ => hq ▸ q.2⟩
+  exact ⟨fun hp => ⟨⟨p, hp⟩, Finset.mem_univ _, rfl⟩, fun ⟨q, _, hq⟩ => hq ▸ q.property⟩
 
 /-- The zero polynomial has infinitely many distinct monic irreducible factors, since every monic
 irreducible polynomial divides it. -/
@@ -149,17 +161,11 @@ lemma subsingleton_iff_exists_associated_pow :
     Subsingleton f.Factors ↔ ∃ q : K[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) f := by
   classical
   by_cases hf : f = 0
-  · subst f
-    constructor
-    · intro h
-      let x : (0 : K[X]).Factors := ⟨X, irreducible_X, monic_X, dvd_zero X⟩
-      let y : (0 : K[X]).Factors :=
-        ⟨X - C 1, irreducible_X_sub_C 1, monic_X_sub_C 1, dvd_zero (X - C 1)⟩
-      have hxy : (x : K[X]) = y := congrArg Subtype.val (h.elim x y)
-      have := congrArg (coeff · 0) hxy
-      simp [x, y] at this
-    · rintro ⟨q, hq, n, hq0⟩
-      exact ((pow_ne_zero n hq.ne_zero) (hq0.eq_zero_iff.mpr rfl)).elim
+  · -- Both sides fail: `0` has infinitely many factors and is not associated to a power of an
+    -- irreducible polynomial.
+    subst f
+    exact iff_of_false (not_subsingleton _) fun ⟨q, hq, n, hq0⟩ ↦
+      pow_ne_zero n hq.ne_zero (hq0.eq_zero_iff.mpr rfl)
   refine ⟨fun h ↦ ?_, fun ⟨q, hq, n, hqf⟩ ↦ ⟨fun a b ↦ Subtype.ext ?_⟩⟩
   · by_cases hu : IsUnit f
     · exact ⟨X, irreducible_X, 0, by rw [pow_zero]; exact (associated_one_iff_isUnit.mpr hu).symm⟩
@@ -178,12 +184,12 @@ noncomputable def linearEquivRoots :
     {p : f.Factors // (p : K[X]).natDegree = 1} ≃ {x : K // f.eval x = 0} where
   toFun p := ⟨-((p : f.Factors) : K[X]).coeff 0,
     eval_eq_zero_of_dvd_of_eval_eq_zero (p : f.Factors).dvd <| by
-      conv_lhs => rw [(p : f.Factors).monic.eq_X_add_C p.2]
+      conv_lhs => rw [(p : f.Factors).monic.eq_X_add_C p.property]
       simp⟩
   invFun x := ⟨⟨X - C (x : K), irreducible_X_sub_C _, monic_X_sub_C _,
-    dvd_iff_isRoot.mpr x.2⟩, natDegree_X_sub_C _⟩
+    dvd_iff_isRoot.mpr x.property⟩, natDegree_X_sub_C _⟩
   left_inv p := Subtype.ext <| Subtype.ext <| by
-    simpa using ((p : f.Factors).monic.eq_X_add_C p.2).symm
+    simpa using ((p : f.Factors).monic.eq_X_add_C p.property).symm
   right_inv x := Subtype.ext <| by simp
 
 /-- `linearEquivRoots` sends a monic linear factor to the root it records, the negated constant
@@ -217,13 +223,14 @@ lemma associated_prod [Fintype f.Factors] (hsq : Squarefree f) :
   rw [Finset.prod_eq_multiset_prod, ← normalizedFactors_eq_map_univ_val hsq]
   exact prod_normalizedFactors hsq.ne_zero
 
-/-- The degrees of the distinct monic irreducible factors of `f ≠ 0` sum to at most the
-degree of `f`. -/
-lemma sum_natDegree_le [Fintype f.Factors] (hf : f ≠ 0) :
+/-- The degrees of the distinct monic irreducible factors of `f` sum to at most the degree of
+`f`. The `Fintype` instance forces `f ≠ 0`, by `finite_iff`. -/
+lemma sum_natDegree_le [Fintype f.Factors] :
     ∑ p : f.Factors, (p : K[X]).natDegree ≤ f.natDegree := by
   rw [← natDegree_prod _ _ fun p _ ↦ p.ne_zero]
   exact natDegree_le_of_dvd
-    (Fintype.prod_dvd_of_coprime (fun p q hpq ↦ isCoprime hpq) fun p ↦ p.dvd) hf
+    (Fintype.prod_dvd_of_coprime (fun p q hpq ↦ isCoprime hpq) fun p ↦ p.dvd)
+    (finite_iff.mp inferInstance)
 
 /-- For `f` nonzero and squarefree, the ideal `(f)` is the intersection of the ideals `(p)` over
 the monic irreducible factors `p` of `f`. This is the input for the Chinese Remainder
@@ -261,32 +268,12 @@ the cost of forgetting multiplicities. The lemmas below are the counterparts for
 
 variable [DecidableEq K]
 
-/-- The degrees of the normalized irreducible factors of a polynomial over a field, counted with
-multiplicity, sum to its degree. -/
-lemma sum_natDegree_normalizedFactors (g : K[X]) :
-    ((normalizedFactors g).map natDegree).sum = g.natDegree := by
-  by_cases hg : g = 0
-  · simp [hg]
-  · rw [← natDegree_multiset_prod _ (zero_notMem_normalizedFactors g)]
-    exact natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (prod_normalizedFactors hg))
-
-/-- A polynomial over a field with exactly one normalized irreducible factor, counted with
-multiplicity, is irreducible. -/
-lemma irreducible_of_card_normalizedFactors_eq_one {g : K[X]}
-    (h : (normalizedFactors g).card = 1) : Irreducible g := by
-  obtain ⟨q, hq⟩ := Multiset.card_eq_one.mp h
-  have hg : g ≠ 0 := by rintro rfl; simp at h
-  have hprod := prod_normalizedFactors hg
-  rw [hq, Multiset.prod_singleton] at hprod
-  exact hprod.irreducible
-    (irreducible_of_normalized_factor q (hq ▸ Multiset.mem_singleton_self q))
-
 /-- The degrees of the normalized irreducible factors of a polynomial over a field form the
 singleton `{g.natDegree}` exactly when the polynomial is irreducible. -/
 @[simp]
 lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
     (normalizedFactors g).map natDegree = {g.natDegree} ↔ Irreducible g := by
-  refine ⟨fun h ↦ irreducible_of_card_normalizedFactors_eq_one ?_, fun h ↦ ?_⟩
+  refine ⟨fun h ↦ card_normalizedFactors_eq_one_iff.mp ?_, fun h ↦ ?_⟩
   · simpa using congrArg Multiset.card h
   · rw [normalizedFactors_irreducible h, Multiset.map_singleton, natDegree_normalize]
 
@@ -307,6 +294,18 @@ lemma count_one_map_natDegree_normalizedFactors {g : K[X]} (hsq : Squarefree g) 
   rw [hlin, Nat.card_congr Factors.linearEquivRoots, ← Nat.card_eq_finsetCard]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ by simp [hg])
 
+/-- For a squarefree polynomial over a field, the degrees of its distinct normalized irreducible
+factors add up to its degree. -/
+lemma sum_natDegree_toFinset_normalizedFactors {g : K[X]} (hsq : Squarefree g) :
+    ∑ p ∈ (normalizedFactors g).toFinset, p.natDegree = g.natDegree := by
+  -- Squarefreeness means that no normalized factor is repeated.
+  have hnodup : (normalizedFactors g).Nodup :=
+    (squarefree_iff_nodup_normalizedFactors hsq.ne_zero).mp hsq
+  calc ∑ p ∈ (normalizedFactors g).toFinset, p.natDegree
+      = ((normalizedFactors g).map natDegree).sum := by
+        rw [Finset.sum_eq_multiset_sum, Multiset.toFinset_val, hnodup.dedup]
+    _ = g.natDegree := sum_natDegree_normalizedFactors g
+
 /-- The product of a duplicate-free multiset of monic irreducible polynomials is monic and
 squarefree, and its normalized factors are the multiset itself. -/
 theorem monic_squarefree_normalizedFactors_prod {s : Multiset K[X]}
@@ -319,6 +318,98 @@ theorem monic_squarefree_normalizedFactors_prod {s : Multiset K[X]}
   rw [squarefree_iff_nodup_normalizedFactors
     (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
   exact snodup
+
+/-! ### Roots of the normalized irreducible factors
+
+In an extension field `L`, the roots of `g` at which a monic irreducible `p` vanishes
+are the roots of `p`, repeated as often as `p` occurs among the normalized irreducible factors of
+`g`: a root of a monic irreducible polynomial has it as its minimal polynomial, so it is a root of
+no other monic irreducible factor. Counting these roots therefore recovers the factorization of a
+polynomial which splits over `L`.
+-/
+
+section Roots
+
+variable {L : Type*} [Field L] [Algebra K L] [DecidableEq L]
+
+/-- The roots in `L` of `g`, counted with multiplicity, at which a monic irreducible `p` vanishes
+are the roots of `p`, each repeated as often as `p` occurs in the normalized factorization of
+`g`. -/
+theorem filter_aroots_eq_count_normalizedFactors_nsmul_aroots (g : K[X]) {p : K[X]}
+    (hp : Irreducible p) (hpm : p.Monic) :
+    (g.aroots L).filter (fun a ↦ aeval a p = 0) = (normalizedFactors g).count p • p.aroots L := by
+  rcases eq_or_ne g 0 with rfl | hg
+  · simp
+  have hmem {q : K[X]} (hq : q ∈ normalizedFactors g) :=
+    (Polynomial.mem_normalizedFactors_iff hg).1 hq
+  -- The roots of `g` are those of its normalized factors.
+  have haroots : g.aroots L = (normalizedFactors g).bind fun q ↦ q.aroots L := by
+    conv_lhs => rw [← leadingCoeff_mul_prod_normalizedFactors g]
+    rw [aroots_C_mul _ (leadingCoeff_ne_zero.2 hg), aroots, Polynomial.map_multiset_prod,
+      roots_multiset_prod, Multiset.bind_map]
+    simp only [Multiset.mem_map, not_exists, not_and]
+    exact fun q hq h ↦ (hmem hq).1.ne_zero
+      ((Polynomial.map_eq_zero_iff (algebraMap K L).injective).1 h)
+  -- At a root of a normalized factor `q`, the polynomial `p` vanishes exactly when `p = q`.
+  have hfactor : ∀ q ∈ normalizedFactors g, (q.aroots L).filter (fun a ↦ aeval a p = 0) =
+      if q = p then p.aroots L else 0 := fun q hq ↦ by
+    obtain ⟨hqi, hqm, -⟩ := hmem hq
+    split_ifs with h
+    · exact h ▸ Multiset.filter_eq_self.2 fun a ha ↦ (mem_aroots.1 (h ▸ ha)).2
+    · refine Multiset.filter_eq_nil.2 fun a ha hpa ↦ h ?_
+      rw [minpoly.eq_of_irreducible_of_monic hqi (mem_aroots.1 ha).2 hqm,
+        minpoly.eq_of_irreducible_of_monic hp hpa hpm]
+  rw [haroots, Multiset.filter_bind, Multiset.bind_congr hfactor]
+  induction normalizedFactors g using Multiset.induction_on with
+  | empty => simp
+  | cons q s ih =>
+    obtain rfl | h := eq_or_ne q p
+    · simp [ih, succ_nsmul, add_comm]
+    · simp [h, ih, Multiset.count_cons_of_ne h.symm]
+
+/-- If `g` splits over `L`, the number of its roots in `L`, counted with multiplicity, at which a
+monic irreducible `p` vanishes is the multiplicity of `p` in the normalized factorization of `g`
+times the degree of `p`. -/
+theorem card_filter_aroots_eq_count_normalizedFactors_mul_natDegree {g p : K[X]}
+    (hs : (g.map (algebraMap K L)).Splits) (hp : Irreducible p) (hpm : p.Monic) :
+    ((g.aroots L).filter fun a ↦ aeval a p = 0).card =
+      (normalizedFactors g).count p * p.natDegree := by
+  rw [filter_aroots_eq_count_normalizedFactors_nsmul_aroots g hp hpm, Multiset.card_nsmul]
+  rcases eq_or_ne g 0 with rfl | hg
+  · simp
+  by_cases hpg : p ∈ normalizedFactors g
+  · rw [aroots, ← (hs.of_dvd ((Polynomial.map_ne_zero_iff (algebraMap K L).injective).2 hg)
+      (Polynomial.map_dvd _ (dvd_of_mem_normalizedFactors hpg))).natDegree_eq_card_roots,
+      natDegree_map]
+  · simp [Multiset.count_eq_zero.2 hpg]
+
+omit [DecidableEq K] in
+/-- Two monic polynomials which split over `L` are equal if every monic irreducible polynomial
+vanishes at equally many of their roots in `L`, counted with multiplicity. -/
+theorem Monic.eq_of_forall_card_filter_aroots_eq {g₁ g₂ : K[X]} (hg₁ : g₁.Monic)
+    (hg₂ : g₂.Monic) (hs₁ : (g₁.map (algebraMap K L)).Splits)
+    (hs₂ : (g₂.map (algebraMap K L)).Splits)
+    (h : ∀ p : K[X], Irreducible p → p.Monic →
+      ((g₁.aroots L).filter fun a ↦ aeval a p = 0).card =
+        ((g₂.aroots L).filter fun a ↦ aeval a p = 0).card) :
+    g₁ = g₂ := by
+  classical
+  have hfac : normalizedFactors g₁ = normalizedFactors g₂ := by
+    ext p
+    by_cases hp : Irreducible p ∧ p.Monic
+    · have := h p hp.1 hp.2
+      rw [card_filter_aroots_eq_count_normalizedFactors_mul_natDegree hs₁ hp.1 hp.2,
+        card_filter_aroots_eq_count_normalizedFactors_mul_natDegree hs₂ hp.1 hp.2] at this
+      exact Nat.eq_of_mul_eq_mul_right hp.1.natDegree_pos this
+    · have hnot {g : K[X]} (hg : g ≠ 0) : p ∉ normalizedFactors g := fun hm ↦
+        hp ⟨((Polynomial.mem_normalizedFactors_iff hg).1 hm).1,
+          ((Polynomial.mem_normalizedFactors_iff hg).1 hm).2.1⟩
+      rw [Multiset.count_eq_zero.2 (hnot hg₁.ne_zero), Multiset.count_eq_zero.2 (hnot hg₂.ne_zero)]
+  have hprod {g : K[X]} (hg : g.Monic) : (normalizedFactors g).prod = g := by
+    simpa [hg.leadingCoeff] using leadingCoeff_mul_prod_normalizedFactors g
+  rw [← hprod hg₁, ← hprod hg₂, hfac]
+
+end Roots
 
 end Polynomial
 

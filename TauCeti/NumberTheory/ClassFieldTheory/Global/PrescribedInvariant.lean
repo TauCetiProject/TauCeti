@@ -29,8 +29,8 @@ finite Galois layer `L/F` of the idele formation of `K` has a refinement `L'/F` 
 `H²(Gal(L'/F), I_{L'})` whose local invariants sum to `1 / [L : F]`
 (`exists_refinement_ideleSumLocalInv_eq`).
 
-The class is first built over `G_K` (`exists_sumLocalInv_ideleLocalization_eq`). Fix a finite place
-`v` of `K` whose residue field has `q` elements, and `n ≥ 1`. The class of `q` in
+The class is first built over `G_K` (`AddCircle.exists_sumLocalInv_ideleLocalization_eq`). Fix a
+finite place `v` of `K` whose residue field has `q` elements, and `n ≥ 1`. The class of `q` in
 `(ℤ / (q ^ n - 1))ˣ` has order `n`, so some character `ψ` of this group sends it to `1 / n`. Let `χ`
 be `ψ` of the action of `G_K` on a primitive `(q ^ n - 1)`-th root of unity `ζ`: a character of
 the cyclotomic extension `K(ζ)/K`. Let `a` be the idele with a uniformizer `π` of `K_v` at `v` and
@@ -87,8 +87,8 @@ invariant `1 / [U : V]` (`exists_ideleSumLocalInv_eq_one_div_degree_of_prime`).
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.exists_sumLocalInv_ideleLocalization_eq`: for every `n ≥ 1` there is
-  a class of `H²(G_K, I_{Kˢ})` whose local invariants sum to `1 / n`.
+* `AddCircle.exists_sumLocalInv_ideleLocalization_eq`: every element of `ℚ/ℤ` is the
+  sum of the local invariants of a class of `H²(G_K, I_{Kˢ})`.
 * `TauCeti.ClassFieldTheory.ideleLocalization_surjective`: every family of local Brauer classes is
   the family of localizations of a class of `H²(G_K, I_{Kˢ})`.
 * `TauCeti.ClassFieldTheory.exists_refinement_ideleLayerCorInfl_eq_index_nsmul`: `[G_K : U]`
@@ -355,13 +355,27 @@ private theorem exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux {E : 
   refine ⟨x, (ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ).trans ?_⟩
   rw [sumLocalInvSection_apply, ideleLocalization_fst_apply, ← hx, AddEquiv.symm_apply_apply]
 
-/-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`.** -/
-theorem exists_sumLocalInv_ideleLocalization_eq {n : ℕ} (hn : n ≠ 0) :
+/-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed localization at one finite place** and
+trivial localizations at the other places. -/
+private theorem exists_ideleLocalization_eq_sumLocalInvSection
+    [DecidableEq (HeightOneSpectrum (𝓞 K))] (v : HeightOneSpectrum (𝓞 K))
+    (r : AddCircle (1 : ℚ)) :
     ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
-      sumLocalInv K (ideleLocalization K x) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+      ideleLocalization K x = sumLocalInvSection K v r := by
+  -- `r` is an integer multiple of `1 / n` for some `n ≥ 1`.
+  obtain ⟨n, hn, hr⟩ := AddCircle.exists_mem_torsionBy_rat r
+  obtain ⟨k, rfl⟩ := AddCircle.exists_zsmul_eq_of_mem_torsionBy (1 : ℚ)
+    (by exact_mod_cast hn.ne' : (n : ℚ) ≠ 0) hr
+  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl v
+    hn.ne'
+  exact ⟨k • x, by rw [map_zsmul, hx, map_zsmul]⟩
+
+/-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed sum of local invariants.** -/
+theorem _root_.AddCircle.exists_sumLocalInv_ideleLocalization_eq (r : AddCircle (1 : ℚ)) :
+    ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K), sumLocalInv K (ideleLocalization K x) = r := by
   classical
-  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl
-    (Classical.arbitrary (HeightOneSpectrum (𝓞 K))) hn
+  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection
+    (Classical.arbitrary (HeightOneSpectrum (𝓞 K))) r
   exact ⟨x, by rw [hx, sumLocalInv_sumLocalInvSection]⟩
 
 variable (K) in
@@ -392,8 +406,8 @@ theorem exists_refinement_ideleSumLocalInv_eq (L : NormalLayer (AbsoluteGaloisGr
       (y : L'.H (ideleFormation K) 2),
       ideleSumLocalInv K L' y = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) := by
   have hd : L.ground.toSubgroup.index ≠ 0 := Subgroup.FiniteIndex.index_ne_zero
-  obtain ⟨x, hx⟩ := exists_sumLocalInv_ideleLocalization_eq (K := K)
-    (mul_ne_zero L.degree_pos.ne' hd)
+  obtain ⟨x, hx⟩ := AddCircle.exists_sumLocalInv_ideleLocalization_eq (K := K)
+    ((1 / (L.degree * L.ground.toSubgroup.index : ℕ) : ℚ) : AddCircle (1 : ℚ))
   obtain ⟨L', T, y, hy⟩ := exists_refinement_ideleLayerCorInfl_eq_index_nsmul K L x
   refine ⟨L', T, y, ?_⟩
   rw [ideleSumLocalInv_apply, hy, map_nsmul, map_nsmul, hx, ← AddCircle.coe_nsmul]
@@ -601,13 +615,9 @@ private theorem exists_coe_eq_ofMul_units_map {U : Subgroup (AbsoluteGaloisGroup
   have hle : τ'.fieldRange.fixingSubgroup ≤ U.comap
       (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup (v.adicCompletion K) →*
         AbsoluteGaloisGroup K) := by
-    intro g' hg'
-    rw [Subgroup.mem_comap, hF, IntermediateField.mem_fixingSubgroup_iff]
-    intro x hx
-    have h : τ (absoluteGaloisGroupMap τ g' x) = τ x := by
-      rw [absoluteGaloisGroupMap_commutes, hτ ⟨x, hx⟩]
-      exact (IntermediateField.mem_fixingSubgroup_iff _ _).1 hg' _ ⟨_, rfl⟩
-    exact τ.injective h
+    rw [hF]
+    exact F.fixingSubgroup_le_comap_absoluteGaloisGroupMap τ'.fieldRange τ
+      (fun x hx ↦ ⟨algebraMap F (w.adicCompletion F) ⟨x, hx⟩, (hτ ⟨x, hx⟩).symm⟩)
   obtain ⟨b₀, hb₀⟩ : ((Additive.toMul (c : UnitsCoeff (v.adicCompletion K)) :
       (SeparableClosure (v.adicCompletion K))ˣ) : SeparableClosure (v.adicCompletion K)) ∈
         τ'.fieldRange := by
@@ -617,7 +627,7 @@ private theorem exists_coe_eq_ofMul_units_map {U : Subgroup (AbsoluteGaloisGroup
     exact congrArg (fun z : UnitsCoeff (v.adicCompletion K) ↦
       ((Additive.toMul z : (SeparableClosure (v.adicCompletion K))ˣ) :
         SeparableClosure (v.adicCompletion K)))
-      ((FixedPoints.mem_addSubgroup _ _ _).1 c.2 ⟨g', hle hg'⟩)
+      ((FixedPoints.mem_addSubgroup _ _ _).1 c.property ⟨g', hle hg'⟩)
   have hb₀0 : b₀ ≠ 0 := by
     rintro rfl
     exact (Additive.toMul (c : UnitsCoeff (v.adicCompletion K))).ne_zero (by rw [← hb₀, map_zero])
@@ -659,10 +669,10 @@ private theorem ideleInfiniteBrLocalization_explicitCor2_characterCarryCocycle_e
       (characterCarryCocycle χ hχ a : H2 U (IdeleCoeff K))) = 0 := by
   obtain ⟨τ⟩ : Nonempty (SeparableClosure K →ₐ[K] SeparableClosure w.Completion) :=
     ⟨IsSepClosed.lift⟩
-  rw [ideleInfiniteBrLocalization_explicitCor2 U hU τ (fun D ↦ Quotient.out D)
-    (fun D ↦ DoubleCoset.out_eq' D)]
-  refine Finset.sum_eq_zero fun D _ ↦ ?_
-  rw [explicitMap2_characterCarryCocycle_eq_zero _ _ _ _ χ hχ a (ha _), map_zero, map_zero]
+  simp only [ideleInfiniteBrLocalization_explicitCor2 U hU τ (fun D ↦ Quotient.out D)
+    (fun D ↦ DoubleCoset.out_eq' D),
+    explicitMap2_characterCarryCocycle_eq_zero _ _ _ _ χ hχ a (ha _), map_zero,
+    Finset.sum_const_zero]
 
 /-- The invariant of the localization of a carry class along `τ₁` only depends on `τ₁`. -/
 private theorem subgroupInvMap_explicitMap2_characterCarryCocycle_congr
@@ -674,7 +684,7 @@ private theorem subgroupInvMap_explicitMap2_characterCarryCocycle_congr
       (explicitMap2 U (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
         ((absoluteGaloisGroupMap τ₁).subgroupComap U) (ideleCoeffComponent τ₁)
         continuous_of_discreteTopology (fun y m ↦
-          ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.1 m)
+          ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.val m)
         (characterCarryCocycle χ hχ a : H2 U (IdeleCoeff K))) =
     subgroupInvMap (v.adicCompletion K)
       (U.comap (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup (v.adicCompletion K) →*
@@ -682,7 +692,7 @@ private theorem subgroupInvMap_explicitMap2_characterCarryCocycle_congr
       (explicitMap2 U (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
         ((absoluteGaloisGroupMap τ).subgroupComap U) (ideleCoeffComponent τ)
         continuous_of_discreteTopology (fun y m ↦
-          ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.1 m)
+          ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.val m)
         (characterCarryCocycle χ hχ a : H2 U (IdeleCoeff K))) := by
   subst h
   rfl
@@ -707,7 +717,7 @@ private theorem invMap_ideleBrLocalization_explicitCor2_characterCarryCocycle
         (explicitMap2 U (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
           ((absoluteGaloisGroupMap τ).subgroupComap U) (ideleCoeffComponent τ)
           continuous_of_discreteTopology (fun y m ↦
-            ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.1 m)
+            ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.val m)
           (characterCarryCocycle χ hχ a : H2 U (IdeleCoeff K))) := by
   classical
   -- Representatives of the double cosets, with `1` for the double coset of `1`.
@@ -771,7 +781,7 @@ private theorem ideleSumLocalInv_eq_subgroupInvMap_of_explicitInfl2_eq
         (explicitMap2 L.ground.toSubgroup (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
           ((absoluteGaloisGroupMap τ).subgroupComap L.ground.toSubgroup) (ideleCoeffComponent τ)
           continuous_of_discreteTopology (fun y m ↦
-            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.1 m)
+            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.val m)
           (characterCarryCocycle χ hχ a : H2 L.ground.toSubgroup (IdeleCoeff K))) := by
   have hfin' (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ≠ v) : ideleLocalInvAt K L v' y = 0 := by
     rw [ideleLocalInvAt_apply, ideleLayerCorInfl_apply, hy,
@@ -823,7 +833,7 @@ private theorem ideleSumLocalInv_eq_subgroupInvMap_of_ofAdicCompletion
         (explicitMap2 L.ground.toSubgroup (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
           ((absoluteGaloisGroupMap τ).subgroupComap L.ground.toSubgroup) (ideleCoeffComponent τ)
           continuous_of_discreteTopology (fun y m ↦
-            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.1 m)
+            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.val m)
           (characterCarryCocycle χ hχ a : H2 L.ground.toSubgroup (IdeleCoeff K))) := by
   refine ideleSumLocalInv_eq_subgroupInvMap_of_explicitInfl2_eq L χ hχ a τ
     (fun v' hv' τ₁ ↦ ?_) (fun u τ₁ ↦ ?_) (fun s hs ↦ ?_) y hy
@@ -847,11 +857,11 @@ the class `a ∪ δχ'` of the layer, for the idele `a` of `F` concentrated at `
 has sum of local invariants `inv_H (c ∪ δχ)`. -/
 private theorem exists_ideleSumLocalInv_eq_subgroupInvMap
     (L : NormalLayer (AbsoluteGaloisGroup K))
-    (χ' : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     (χ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ))
     (hχ : IsOpen (χ.ker : Set (Additive L.ground.toSubgroup)))
     (hχχ' : ∀ u : L.ground.toSubgroup,
-      χ (.ofMul u) = χ' (.ofMul (Abelianization.of (u : L.Gal))))
+      χ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))))
     {F : IntermediateField K (SeparableClosure K)} [NumberField F]
     (hF : L.ground.toSubgroup = F.fixingSubgroup) {v : HeightOneSpectrum (𝓞 K)}
     (w : HeightOneSpectrum (𝓞 F)) [w.asIdeal.LiesOver v.asIdeal]
@@ -886,7 +896,7 @@ private theorem exists_ideleSumLocalInv_eq_subgroupInvMap
         ideleCoeffOfIntermediateField K F (.ofMul (IdeleGroup.ofAdicCompletion (𝓞 F) F w b)) :=
     smul_ideleCoeffOfIntermediateField_of_mem_fixingSubgroup (by rw [← hF]; exact hu) _
   let a : H0 L.ground.toSubgroup (IdeleCoeff K) :=
-    ⟨_, (FixedPoints.mem_addSubgroup _ _ _).2 fun u ↦ ha₀ u u.2⟩
+    ⟨_, (FixedPoints.mem_addSubgroup _ _ _).2 fun u ↦ ha₀ u u.property⟩
   -- The class `a ∪ δχ'` of the layer, inflated to `U`, is the carry class of `χ` and `a`.
   have hy := L.explicitInfl2_artinCharacterCup (ideleCoeffEquivIdeleFormation K)
     (ideleCoeffEquivIdeleFormation_smul K) ⟨ideleCoeffEquivIdeleFormation K a,
@@ -898,7 +908,8 @@ private theorem exists_ideleSumLocalInv_eq_subgroupInvMap
         L.ground.toSubgroup.comap (absoluteGaloisGroupMap τ :
           AbsoluteGaloisGroup (v.adicCompletion K) →* AbsoluteGaloisGroup K) →*
             L.ground.toSubgroup) (ideleCoeffComponent τ)
-      (fun y m ↦ ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.1 m)
+      (fun y m ↦ ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.val
+          m)
       a = c := by
     refine Subtype.ext ?_
     rw [coe_explicitMap0, hcb]
@@ -911,11 +922,11 @@ private theorem exists_ideleSumLocalInv_eq_subgroupInvMap
 sum of the local invariants of a class of the layer, for `F`, `w`, `τ'` and `τ` as above. -/
 private theorem exists_ideleSumLocalInv_eq_apply_of_fixingSubgroup
     (L : NormalLayer (AbsoluteGaloisGroup K))
-    (χ' : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     (χ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ))
     (hχ : IsOpen (χ.ker : Set (Additive L.ground.toSubgroup)))
     (hχχ' : ∀ u : L.ground.toSubgroup,
-      χ (.ofMul u) = χ' (.ofMul (Abelianization.of (u : L.Gal))))
+      χ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))))
     {F : IntermediateField K (SeparableClosure K)} [NumberField F]
     (hF : L.ground.toSubgroup = F.fixingSubgroup) {v : HeightOneSpectrum (𝓞 K)}
     (w : HeightOneSpectrum (𝓞 F)) [w.asIdeal.LiesOver v.asIdeal]
@@ -953,12 +964,12 @@ idele formation, `v` a finite place of `K`, `τ : Kˢ → K_vˢ` an embedding of
 invariants summing to `χ'` of the image of `φ_τ(g)` in `U ⧸ V`. -/
 theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
     (L : NormalLayer (AbsoluteGaloisGroup K))
-    (χ' : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     {v : HeightOneSpectrum (𝓞 K)}
     (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
     (g : AbsoluteGaloisGroup (v.adicCompletion K)) (hg : absoluteGaloisGroupMap τ g ∈ L.ground) :
     ∃ y : L.H (ideleFormation K) 2,
-      ideleSumLocalInv K L y = χ' (.ofMul (Abelianization.of
+      ideleSumLocalInv K L y = χ' (.ofMul (Group.Abelianization.of
         (QuotientGroup.mk (⟨absoluteGaloisGroupMap τ g, hg⟩ : L.ground) : L.Gal))) := by
   -- The fixed field `F` of the ground `U` of the layer, a number field with `G_F = U`.
   obtain ⟨F, _, hF⟩ : ∃ F : IntermediateField K (SeparableClosure K),
@@ -974,8 +985,8 @@ theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
   -- The character `χ'` read on `U`; it kills the open subgroup `V`.
   obtain ⟨χ, hχ, hχχ'⟩ : ∃ χ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ),
       IsOpen (χ.ker : Set (Additive L.ground.toSubgroup)) ∧ ∀ u : L.ground.toSubgroup,
-        χ (.ofMul u) = χ' (.ofMul (Abelianization.of (u : L.Gal))) :=
-    ⟨(χ'.comp Abelianization.of.toAdditive).comp
+        χ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))) :=
+    ⟨(χ'.comp Group.Abelianization.of.toAdditive).comp
       (QuotientGroup.mk' L.relativeTop : L.ground.toSubgroup →* L.Gal).toAdditive,
       AddSubgroup.isOpen_mono
         (H₁ := Subgroup.toAddSubgroup (G := L.ground.toSubgroup) L.relativeTop)
@@ -1001,12 +1012,13 @@ theorem exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic
       ideleSumLocalInv K L y = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) := by
   obtain ⟨γ, hγ⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := L.Gal)
   obtain ⟨⟨g, hg⟩, hgγ⟩ := hv γ
-  -- The Galois group is commutative, so `Abelianization.of` is injective and `γ` keeps its order.
-  have hof : orderOf (Abelianization.of γ) = L.degree :=
-    ((orderOf_injective _ Abelianization.of_injective γ).trans hγ).trans
+  -- The Galois group is commutative, so `Group.Abelianization.of` is injective and `γ` keeps its
+  -- order.
+  have hof : orderOf (Group.Abelianization.of γ) = L.degree :=
+    ((orderOf_injective _ Group.Abelianization.of_injective γ).trans hγ).trans
       L.degree_eq_natCard_gal.symm
   obtain ⟨χ', hχ'⟩ := CharacterModule.exists_apply_eq_inv_addOrderOf
-    (Additive.ofMul (Abelianization.of γ))
+    (Additive.ofMul (Group.Abelianization.of γ))
   obtain ⟨y, hy⟩ := exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap L χ' τ g hg
   refine ⟨y, hy.trans ?_⟩
   have hγ' : (QuotientGroup.mk (⟨absoluteGaloisGroupMap τ g, hg⟩ : L.ground) : L.Gal) = γ :=
@@ -1038,21 +1050,6 @@ place `w`, take the carry class of the idele concentrated at `w` with component 
 character `ψ` of the action of `G_K` on a primitive fourth root of unity `ζ` with `ψ (-1) = 1 / 2`.
 The Artin symbol of `-1 ∈ K_w = ℝ` is complex conjugation, which inverts `ζ`, so this class has
 invariant `ψ (-1) = 1 / 2` at `w` and vanishes at every other place. -/
-
-/-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed localization at one finite place** and
-trivial localizations at the other places. -/
-private theorem exists_ideleLocalization_eq_sumLocalInvSection
-    [DecidableEq (HeightOneSpectrum (𝓞 K))] (v : HeightOneSpectrum (𝓞 K))
-    (r : AddCircle (1 : ℚ)) :
-    ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
-      ideleLocalization K x = sumLocalInvSection K v r := by
-  -- `r` is an integer multiple of `1 / n` for some `n ≥ 1`.
-  obtain ⟨n, hn, hr⟩ := AddCircle.exists_mem_torsionBy_rat r
-  obtain ⟨k, rfl⟩ := AddCircle.exists_zsmul_eq_of_mem_torsionBy (1 : ℚ)
-    (by exact_mod_cast hn.ne' : (n : ℚ) ≠ 0) hr
-  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl v
-    hn.ne'
-  exact ⟨k • x, by rw [map_zsmul, hx, map_zsmul]⟩
 
 omit [NumberField K] in
 /-- **At a real place, the Artin symbol of `-1` inverts the fourth roots of unity**: if `σ`

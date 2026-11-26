@@ -22,6 +22,10 @@ It also records the form of quadratic reciprocity for an integer numerator `a �
 either sign: `J(a | b) = J(b | |a|)` for odd `b`, and that a square factor prime to `b` can be
 dropped from the numerator.
 
+Finally, a nonsquare integer `a` is a quadratic nonresidue modulo some odd prime `p`, that is
+`J(a | p) = -1`. This is what makes the Kronecker character `(D / ·)` of a nonsquare discriminant
+`D` nontrivial.
+
 The proof of the reflection law for a natural numerator is adapted from the proof of Mathlib's
 `jacobiSym.mod_right'`: both split off the power of `2` and apply quadratic reciprocity to the odd
 part.
@@ -37,6 +41,13 @@ part.
   `a ≡ 1 (mod 4)` and odd `b`.
 * `TauCeti.jacobiSym_sq_mul_of_isCoprime`: `J(x² y | b) = J(y | b)` for `x` prime to `b`, and
   `TauCeti.jacobiSym_mul_pow_two_mul_mul_of_isCoprime`, its form `J(s x^(2k) y | b) = J(s y | b)`.
+* `TauCeti.exists_prime_jacobiSym_eq_neg_one`: a nonsquare integer is a quadratic nonresidue
+  modulo some odd prime.
+* `TauCeti.jacobiSym_val_eq_of_intCast_eq`: `J(x.val | b) = J(a | b)` for an integer `a`
+  representing `x : ZMod b`.
+* `TauCeti.exists_modEq_one_jacobiSym_eq_neg_one_of_prime`: for an odd prime `p` coprime to `n`,
+  some `u ≡ 1 (mod n)` has `J(u | p) = -1` (the Chinese remainder step of
+  `TauCeti.exists_prime_jacobiSym_eq_neg_one`).
 
 ## References
 
@@ -162,5 +173,87 @@ theorem jacobiSym_mul_pow_two_mul_mul_of_isCoprime {x : ℤ} {b : ℕ} (hx : IsC
     (s y : ℤ) (k : ℕ) : jacobiSym (s * (x ^ (2 * k) * y)) b = jacobiSym (s * y) b := by
   rw [show s * (x ^ (2 * k) * y) = (x ^ k) ^ 2 * (s * y) by ring,
     jacobiSym_sq_mul_of_isCoprime hx.pow_left]
+
+/-- For `x : ZMod b` and any integer `a` with `(a : ZMod b) = x`, `J(x.val | b) = J(a | b)`. For
+`b ≠ 0`, `x.val` is the canonical representative of `x` in `[0, b)`; for `b = 0` the equality
+holds because both symbols are `J(· | 0) = 1`. -/
+theorem jacobiSym_val_eq_of_intCast_eq {b : ℕ} {x : ZMod b} {a : ℤ} (hx : (a : ZMod b) = x) :
+    jacobiSym x.val b = jacobiSym a b := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · rw [jacobiSym.zero_right, jacobiSym.zero_right]
+  have : NeZero b := ⟨hb⟩
+  exact jacobiSym.mod_left' ((ZMod.intCast_eq_intCast_iff' _ _ _).1
+    (by rw [Int.cast_natCast, ZMod.natCast_zmod_val, hx]))
+
+/-- For an odd prime `p` coprime to `n`, some natural number `u ≡ 1 (mod n)` is a quadratic
+nonresidue modulo `p`, that is `J(u | p) = -1`. -/
+theorem exists_modEq_one_jacobiSym_eq_neg_one_of_prime {p n : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
+    (hpn : p.Coprime n) : ∃ u : ℕ, u ≡ 1 [MOD n] ∧ jacobiSym u p = -1 := by
+  have : Fact p.Prime := ⟨hp⟩
+  obtain ⟨a, ha⟩ := quadraticChar_exists_neg_one (F := ZMod p) (by rwa [ZMod.ringChar_zmod_n])
+  obtain ⟨u, hu1, hua⟩ := Nat.chineseRemainder hpn.symm 1 a.val
+  refine ⟨u, hu1, ?_⟩
+  -- `(u : ZMod p) = a`, since `u ≡ a.val (mod p)`
+  have hu : ((u : ℤ) : ZMod p) = a := by
+    rw [Int.cast_natCast, (ZMod.natCast_eq_natCast_iff _ _ _).2 hua, ZMod.natCast_zmod_val]
+  rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym, hu, ha]
+
+/-- For a nonsquare integer `a` some odd natural number `n` has `J(a | n) = -1`. -/
+private theorem exists_odd_jacobiSym_eq_neg_one {a : ℤ} (ha : ¬ IsSquare a) :
+    ∃ n : ℕ, Odd n ∧ jacobiSym a n = -1 := by
+  rw [Int.isSquare_iff_nonneg_even_factorization] at ha
+  push Not at ha
+  by_cases hneg : a < 0
+  · -- reflecting `1` to `4 |a| - 1` multiplies the symbol by `sign a = -1`
+    have hpos : 0 < a.natAbs := Int.natAbs_pos.mpr hneg.ne
+    refine ⟨4 * a.natAbs - 1, Nat.odd_iff.mpr (by omega), ?_⟩
+    rw [jacobiSym_eq_sign_mul_of_dvd_add a odd_one (by rw [Nat.add_sub_cancel' (by omega)]),
+      jacobiSym.one_right, mul_one, Int.sign_eq_neg_one_of_neg hneg]
+  obtain ⟨q, hq, hv⟩ := ha (not_lt.mp hneg)
+  have ha₀ : a ≠ 0 := by rintro rfl; simp at hv
+  -- write `a = q ^ v * b` with `v` odd and `q ∤ b`
+  set v := a.natAbs.factorization q
+  set b := ordCompl[q] a.natAbs
+  have hb : ¬ q ∣ b := Nat.not_dvd_ordCompl hq (Int.natAbs_ne_zero.mpr ha₀)
+  have hab : a = (q : ℤ) ^ v * b := by
+    rw [← Int.natAbs_of_nonneg (not_lt.mp hneg)]
+    exact_mod_cast (Nat.ordProj_mul_ordCompl_eq_self a.natAbs q).symm
+  clear_value v b
+  have hb₀ : 0 < b := Nat.pos_of_ne_zero fun h ↦ hb (h ▸ dvd_zero q)
+  -- for `n ≡ 1 (mod 4 b)` the factor `b` contributes `J(b | n) = J(b | 1) = 1`
+  have hbn {n : ℕ} (hn : n % (4 * b) = 1) : Odd n ∧ jacobiSym b n = 1 := by
+    have hodd : Odd n := Nat.odd_iff.mpr (by
+      rw [← Nat.mod_mod_of_dvd n (dvd_mul_of_dvd_left (by norm_num : 2 ∣ 4) b), hn])
+    exact ⟨hodd, by rw [jacobiSym.mod_right _ hodd, Int.natAbs_natCast, hn, jacobiSym.one_right]⟩
+  rcases hq.eq_two_or_odd' with rfl | hq₂
+  · -- `q = 2`: then `b` is odd, and `n = 4 b + 1 ≡ 5 (mod 8)` has `J(2 | n) = χ₈ n = -1`
+    have hn : (4 * b + 1) % (4 * b) = 1 := by
+      rw [Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
+    refine ⟨4 * b + 1, (hbn hn).1, ?_⟩
+    rw [hab, jacobiSym.mul_left, jacobiSym.pow_left, Nat.cast_ofNat, jacobiSym.at_two (hbn hn).1,
+      χ₈_nat_mod_eight, show (4 * b + 1) % 8 = 5 by grind, (hbn hn).2]
+    simp [hv.neg_one_pow]
+  · -- `q` odd: choose `n ≡ 1 (mod 4 b)` that is a nonresidue modulo `q`
+    have hq2 : q ≠ 2 := by rintro rfl; exact absurd hq₂ (by decide)
+    have hcop : q.Coprime (4 * b) := (Nat.Prime.coprime_iff_not_dvd hq).mpr fun h ↦ by
+      rcases (Nat.Prime.dvd_mul hq).mp h with h4 | h
+      · exact hq2 ((Nat.prime_dvd_prime_iff_eq hq Nat.prime_two).mp
+          (hq.dvd_of_dvd_pow (n := 2) h4))
+      · exact hb h
+    obtain ⟨n, hnb, hnq⟩ := exists_modEq_one_jacobiSym_eq_neg_one_of_prime hq hq2 hcop
+    have hn : n % (4 * b) = 1 := by rw [hnb, Nat.mod_eq_of_lt (by omega)]
+    refine ⟨n, (hbn hn).1, ?_⟩
+    have hn4 : n % 4 = 1 := by
+      rw [← Nat.mod_mod_of_dvd n (dvd_mul_right 4 b), hn]
+    rw [hab, jacobiSym.mul_left, jacobiSym.pow_left, (hbn hn).2, mul_one,
+      ← jacobiSym.quadratic_reciprocity_one_mod_four hn4 hq₂, hnq, hv.neg_one_pow]
+
+/-- **A nonsquare integer is a quadratic nonresidue modulo some odd prime**: if `a` is not a
+square, there is an odd prime `p` with `J(a | p) = -1`. In particular `p ∤ a`. -/
+theorem exists_prime_jacobiSym_eq_neg_one {a : ℤ} (ha : ¬ IsSquare a) :
+    ∃ p : ℕ, p.Prime ∧ p ≠ 2 ∧ jacobiSym a p = -1 := by
+  obtain ⟨n, hn, h⟩ := exists_odd_jacobiSym_eq_neg_one ha
+  obtain ⟨p, hp, hpn, hp'⟩ := jacobiSym.eq_neg_one_at_prime_divisor_of_eq_neg_one h
+  exact ⟨p, hp, fun h2 ↦ (Nat.not_even_iff_odd.mpr hn) (even_iff_two_dvd.mpr (h2 ▸ hpn)), hp'⟩
 
 end TauCeti

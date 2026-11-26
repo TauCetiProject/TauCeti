@@ -9,7 +9,7 @@ public import TauCeti.CategoryTheory.Exact.BaseChange
 public import TauCeti.CategoryTheory.Exact.Biproduct
 public import TauCeti.CategoryTheory.Exact.Functor
 public import TauCeti.CategoryTheory.Exact.Split
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 
@@ -87,10 +87,9 @@ The recursion is on the *deep* end of the chain: `TauCeti.ExactStructure.FiniteR
 is a resolution of length zero of an object already satisfying `P`, and
 `TauCeti.ExactStructure.FiniteResolution.step` prepends one conflation `K ↪ Q ↠ X` to a
 resolution of `K`. This is the presentation in which zero padding is the operation that rewrites
-the `base` leaf, and it is the one the roadmap's `AdmitsFiniteResolutionAlong` uses. The
-conflations are stored by their two maps rather than as a `CategoryTheory.ShortComplex`, so that
-the resolved object is a genuine index of the family and `FiniteResolution E P X` never needs an
-equality of objects to be matched on.
+the `base` leaf. The conflations are stored by their two maps rather than as a
+`CategoryTheory.ShortComplex`, so that the resolved object is a genuine index of the family and
+`FiniteResolution E P X` never needs an equality of objects to be matched on.
 
 Every operation is sealed behind its `@[simp]` equations, with two exceptions.
 `TauCeti.ExactStructure.FiniteResolution.syzygy` is the type index of
@@ -269,6 +268,29 @@ theorem prop_syzygy {X : C} (r : FiniteResolution E P X) {n : ℕ} (hn : r.lengt
 /-- The last syzygy of a resolution satisfies `P`. -/
 theorem prop_syzygy_length {X : C} (r : FiniteResolution E P X) : P (r.syzygy r.length) :=
   r.prop_syzygy le_rfl
+
+section Eq
+
+variable {E' : ExactStructure C}
+
+/-- Transport a resolution along an equality of exact structures. -/
+def ofEq (h : E = E') {X : C} (r : FiniteResolution E P X) : FiniteResolution E' P X :=
+  h ▸ r
+
+/-- Transport along an equality of exact structures preserves the length. -/
+@[simp] theorem length_ofEq (h : E = E') {X : C} (r : FiniteResolution E P X) :
+    (ofEq h r).length = r.length := by
+  subst h
+  rfl
+
+/-- Transport along an equality of exact structures preserves the alternating fold. -/
+@[simp] theorem foldAlternating_ofEq {A : Type*} [AddGroup A] (f : ∀ Z : C, P Z → A)
+    (h : E = E') {X : C} (r : FiniteResolution E P X) :
+    (ofEq h r).foldAlternating f = r.foldAlternating f := by
+  subst h
+  rfl
+
+end Eq
 
 section Iso
 

@@ -5,24 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # The parity lemma for nebentypus character spaces
 
 The weight and the nebentypus of a nonzero modular form determine each other's parity:
 `M_k(Γ₁(N), χ) ≠ 0` forces `χ(-1) = (-1)^k`. This is the emptiness criterion that odd
-weights and Eisenstein constructions consume, and the ModularForms roadmap pins it at
-Layer 0, alongside the diamond operators and character spaces of
-`TauCeti.NumberTheory.ModularForms.DiamondOperators` on which it is stated.
+weights and Eisenstein constructions consume. It is stated on the diamond operators and
+character spaces of `TauCeti.NumberTheory.ModularForms.DiamondOperators`.
 
 The mechanism is `-I`. It lies in `Γ₀(N)` at every level, and its lower-right entry is the
 unit `-1`, so it represents the diamond operator `⟨-1⟩`. On the other hand `-I` acts
 trivially on `ℍ` and has determinant `1`, so slashing by it is multiplication by the scalar
 `(-1)^k` (`ModularForm.slash_neg_one`). Comparing the two readings gives
 `⟨-1⟩ = (-1)^k` as an operator (`diamondOp_neg_one`), and hence `χ(-1) = (-1)^k` on any
-nonzero element of the `χ`-eigenspace.
+nonzero element of the `χ`-eigenspace. The same comparison needs no holomorphy: it already holds
+for the bare `χ`-invariant functions of `functionCharSpace`, and the statement for modular forms
+is read off from there.
 
 The criterion is one-directional: matching parities do not make the space nonzero, and
 nothing here claims they do. At the degenerate levels `N ∣ 2`, where `-I` lies in `Γ₁(N)`
@@ -35,6 +38,10 @@ additional to it: there `-1 = 1` in `(ZMod N)ˣ`, so every `χ` has `χ(-1) = 1 
 
 * `diamondOp_neg_one`, `diamondOpCusp_neg_one`: the diamond operator `⟨-1⟩` is the scalar
   `(-1)^k`.
+* `char_neg_one_of_mem_functionCharSpace`: the parity lemma for bare functions,
+  `χ(-1) = (-1)^k` for a nonzero `χ`-invariant function of weight `k`, with
+  `char_neg_one_smul_of_mem_functionCharSpace` its scalar form and
+  `functionCharSpace_eq_bot_of_char_neg_one_ne` its emptiness criterion.
 * `char_neg_one_of_mem_modFormCharSpace`, `char_neg_one_of_mem_cuspFormCharSpace`: the parity
   lemma, `χ(-1) = (-1)^k` for a nonzero form in the `χ`-eigenspace.
 * `modFormCharSpace_eq_bot_of_char_neg_one_ne`, `cuspFormCharSpace_eq_bot_of_char_neg_one_ne`:
@@ -44,6 +51,9 @@ additional to it: there `-1 = 1` in `(ZMod N)ˣ`, so every `χ` has `χ(-1) = 1 
   the classical `M_k(Γ₀(N)) = 0` for odd `k`; `even_of_mem_modFormCharSpace_one_of_ne_zero` and
   `even_of_mem_cuspFormCharSpace_one_of_ne_zero` read it as the evenness of the weight of a
   nonzero form.
+* `even_changeLevel_inv_mul_changeLevel_of_modFormCharSpace_ne_bot`: the quotient of the
+  zero-extended nebentypes of nonzero spaces `M_k(Γ₁(N), χ)` and `M_k(Γ₁(M), ψ)` of the same
+  weight, lifted to a common multiple of the levels, is even.
 * `ModularForm.eq_zero_of_odd_of_dvd_two`: at the levels `N ∣ 2` all of `M_k(Γ₁(N))` vanishes
   in odd weight.
 
@@ -95,19 +105,39 @@ theorem diamondOpCusp_neg_one (k : ℤ) (f : CuspForm ((Gamma1 N).map (mapGL ℝ
 
 /-! ### The parity lemma -/
 
+/-- On a `χ`-invariant function of weight `k` for `Γ₀(N)`, the scalars `χ(-1)` and `(-1)^k`
+act alike: both are the slash by `-I ∈ Γ₀(N)`, read once through the nebentypus relation and
+once as a scalar matrix. No analytic condition on `f` is involved. -/
+theorem char_neg_one_smul_of_mem_functionCharSpace {f : ℍ → ℂ}
+    (hf : f ∈ functionCharSpace k χ) : (χ (-1) : ℂ) • f = (-1 : ℂ) ^ k • f := by
+  have h := slash_mapGL_eq_smul_of_mem_functionCharSpace hf (Gamma0.negOne N)
+  rw [Gamma0.coe_negOne, mapGL_neg_one, ModularForm.slash_neg_one,
+    Gamma0Map_toHomUnits_negOne] at h
+  rw [← h]
+  funext z
+  simp
+
+/-- **The parity lemma for `χ`-invariant functions.** If a nonzero function `f : ℍ → ℂ`
+satisfies the weight-`k` nebentypus relation for `Γ₀(N)` and `χ`, then `χ(-1) = (-1)^k`. -/
+theorem char_neg_one_of_mem_functionCharSpace {f : ℍ → ℂ} (hf : f ∈ functionCharSpace k χ)
+    (hf0 : f ≠ 0) : (χ (-1) : ℂ) = (-1 : ℂ) ^ k :=
+  (smul_left_inj hf0).mp (char_neg_one_smul_of_mem_functionCharSpace hf)
+
+/-- If the parities of `χ` and `k` disagree, no nonzero function is `χ`-invariant of
+weight `k`. -/
+theorem functionCharSpace_eq_bot_of_char_neg_one_ne (h : (χ (-1) : ℂ) ≠ (-1 : ℂ) ^ k) :
+    functionCharSpace (N := N) k χ = ⊥ :=
+  Submodule.eq_bot_iff _ |>.mpr fun _f hf ↦
+    not_not.mp fun hf0 ↦ h (char_neg_one_of_mem_functionCharSpace hf hf0)
+
 /-- **The parity lemma.** If `M_k(Γ₁(N), χ)` contains a nonzero form then `χ(-1) = (-1)^k`.
 
-Equivalently: the nebentypus of a nonzero modular form has the parity of its weight. The
-proof compares the two descriptions of `-I`, as the representative of the diamond operator
-`⟨-1⟩` (which acts by `χ(-1)` on the `χ`-eigenspace) and as a scalar matrix (which slashes
-by `(-1)^k`). -/
+Equivalently: the nebentypus of a nonzero modular form has the parity of its weight. This is
+`char_neg_one_of_mem_functionCharSpace` read on the underlying function. -/
 theorem char_neg_one_of_mem_modFormCharSpace {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hf : f ∈ modFormCharSpace k χ) (hf0 : f ≠ 0) : (χ (-1) : ℂ) = (-1 : ℂ) ^ k := by
-  have hne : (⇑f : ℍ → ℂ) ≠ 0 := fun h ↦ hf0 (DFunLike.coe_injective (by simpa using h))
-  have h : ((-1 : ℂ) ^ k) • (⇑f : ℍ → ℂ) = (χ (-1) : ℂ) • (⇑f : ℍ → ℂ) := by
-    rw [← coe_diamondOp_neg_one k f, diamondOp_apply_of_mem_modFormCharSpace k χ (-1) hf]
-    simp
-  exact ((smul_left_inj hne).mp h).symm
+    (hf : f ∈ modFormCharSpace k χ) (hf0 : f ≠ 0) : (χ (-1) : ℂ) = (-1 : ℂ) ^ k :=
+  char_neg_one_of_mem_functionCharSpace ((coe_mem_functionCharSpace_iff k χ f).mpr hf)
+    fun h ↦ hf0 (DFunLike.coe_injective (by simpa using h))
 
 /-- **The parity lemma for cusp forms.** If `S_k(Γ₁(N), χ)` contains a nonzero form then
 `χ(-1) = (-1)^k`. -/
@@ -131,13 +161,12 @@ theorem cuspFormCharSpace_eq_bot_of_char_neg_one_ne (h : (χ (-1) : ℂ) ≠ (-1
   Submodule.eq_bot_iff _ |>.mpr fun _f hf ↦
     not_not.mp fun hf0 ↦ h (char_neg_one_of_mem_cuspFormCharSpace hf hf0)
 
-/-- **The parity lemma**, in the form the roadmap states it: if `M_k(Γ₁(N), χ)` is nonzero
-then `χ(-1) = (-1)^k`. -/
+/-- **The parity lemma**: if `M_k(Γ₁(N), χ)` is nonzero then `χ(-1) = (-1)^k`. -/
 theorem char_neg_one_of_modFormCharSpace_ne_bot (h : modFormCharSpace (N := N) k χ ≠ ⊥) :
     (χ (-1) : ℂ) = (-1 : ℂ) ^ k :=
   not_not.mp fun hne ↦ h (modFormCharSpace_eq_bot_of_char_neg_one_ne hne)
 
-/-- **The parity lemma for cusp forms**, in the form the roadmap states it. -/
+/-- **The parity lemma for cusp forms**: if `S_k(Γ₁(N), χ)` is nonzero then `χ(-1) = (-1)^k`. -/
 theorem char_neg_one_of_cuspFormCharSpace_ne_bot (h : cuspFormCharSpace (N := N) k χ ≠ ⊥) :
     (χ (-1) : ℂ) = (-1 : ℂ) ^ k :=
   not_not.mp fun hne ↦ h (cuspFormCharSpace_eq_bot_of_char_neg_one_ne hne)
@@ -177,6 +206,26 @@ theorem even_of_mem_cuspFormCharSpace_one_of_ne_zero
     (hf : f ∈ cuspFormCharSpace k 1) (hf0 : f ≠ 0) : Even k := by
   refine Int.even_or_odd k |>.resolve_right fun hk ↦ hf0 ?_
   simpa using (cuspFormCharSpace_one_eq_bot_of_odd hk).le hf
+
+/-! ### The quotient of two nebentypes -/
+
+/-- **The quotient of two nebentypes of the same weight is even.** If `M_k(Γ₁(N), χ)` and
+`M_k(Γ₁(M), ψ)` are both nonzero, the parity lemma gives `χ(-1) = ψ(-1) = (-1)^k`, so the
+quotient `χ⁻¹ ψ` of the zero-extended characters, lifted to any common multiple `L` of the
+levels, is even. -/
+theorem even_changeLevel_inv_mul_changeLevel_of_modFormCharSpace_ne_bot {M L : ℕ}
+    {ψ : (ZMod M)ˣ →* ℂˣ} (hN : N ∣ L) (hM : M ∣ L) (hχ : modFormCharSpace (N := N) k χ ≠ ⊥)
+    (hψ : modFormCharSpace (N := M) k ψ ≠ ⊥) :
+    ((DirichletCharacter.changeLevel hN (MulChar.ofUnitHom χ))⁻¹ *
+      DirichletCharacter.changeLevel hM (MulChar.ofUnitHom ψ)).Even := by
+  have hpar {N : ℕ} {χ : (ZMod N)ˣ →* ℂˣ} (h : modFormCharSpace (N := N) k χ ≠ ⊥) :
+      MulChar.ofUnitHom χ (-1) = (-1 : ℂ) ^ k := by
+    rw [← Units.val_one, ← Units.val_neg, MulChar.ofUnitHom_coe]
+    exact char_neg_one_of_modFormCharSpace_ne_bot h
+  rw [DirichletCharacter.Even, MulChar.mul_apply, MulChar.inv_apply_eq_inv',
+    DirichletCharacter.changeLevel_apply_neg_one, DirichletCharacter.changeLevel_apply_neg_one,
+    hpar hχ, hpar hψ]
+  exact inv_mul_cancel₀ (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero))
 
 /-! ### The degenerate levels `N ∣ 2` -/
 

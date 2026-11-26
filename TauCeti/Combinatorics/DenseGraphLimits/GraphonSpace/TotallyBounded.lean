@@ -66,16 +66,16 @@ private def netPoint {n N : ℕ} (hN : 0 < N)
     (p : {w : Fin n → Fin (N + 1) // ∑ i, (w i : ℕ) = N} ×
       {c : Fin n → Fin n → Fin (N + 2) // ∀ i j, c i j = c j i}) : GraphonSpaceI :=
   SeparationQuotient.mk
-    (unitIntervalModel (gridWeightMeasure hN (fun i => (p.1.1 i : ℕ)) p.1.2)
-      (Graphon.ofMatrix (gridWeightMeasure hN (fun i => (p.1.1 i : ℕ)) p.1.2)
-        (fun i j => gridValue N (p.2.1 i j))
-        (fun i j => congrArg (gridValue N) (p.2.2 i j))))
+    (unitIntervalModel (gridWeightMeasure hN (fun i => (p.1.val i : ℕ)) p.1.property)
+      (Graphon.ofMatrix (gridWeightMeasure hN (fun i => (p.1.val i : ℕ)) p.1.property)
+        (fun i j => gridValue N (p.2.val i j))
+        (fun i j => congrArg (gridValue N) (p.2.property i j))))
 
 /-- **Graphon space over the unit interval is totally bounded.** -/
 theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpaceI) := by
   rw [Metric.totallyBounded_iff]
   intro ε hε
-  obtain ⟨n, N, hn0, hnge, hN, hgrid, hweight⟩ :=
+  obtain ⟨n, N, _, hnge, hN, hgrid, hweight⟩ :=
     TauCeti.exists_nat_ge_and_div_le (K := ℝ) (by positivity : (0 : ℝ) < ε / 4)
       (4 ^ Nat.ceil (1 / (ε / 4) ^ 2))
   refine ⟨Set.range (netPoint (n := n) hN), Set.finite_range _, ?_⟩

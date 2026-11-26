@@ -5,20 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.CategoryTheory.Abelian.FunctorCategory
-
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
-import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Comparing projective dimensions, and subobjects of projectives
 
-If every bound `HasProjectiveDimensionLT X n` on one object implies the same bound on another
-object `Y`, possibly in a different abelian category, then the projective dimension of `Y` is at
-most that of `X`. This compares projective dimensions degree by degree without unfolding their
-definition as an infimum.
+The projective dimension of an object `Y` is at most that of an object `X`, possibly in a
+different abelian category, exactly when every bound `HasProjectiveDimensionLT X n` implies the
+same bound on `Y` (`CategoryTheory.projectiveDimension_le_projectiveDimension_iff`). This compares
+projective dimensions degree by degree without unfolding their definition as an infimum.
 
 In an abelian category with enough projectives, every object has projective dimension at most one
 if and only if every subobject of a projective object is projective. This is the hereditary
@@ -27,12 +25,13 @@ condition, expressed using Mathlib's existing projective-dimension predicate.
 A morphism `f` of projective objects shifts dimension by two between its kernel and its cokernel
 (`CategoryTheory.hasProjectiveDimensionLT_cokernel_iff_kernel`).
 
-When every object has projective dimension at most one, the criterion shows that the cycles and
-boundaries of a complex of projective objects are projective. Surjections onto these boundaries
-then split, so the cycles split off the terms.
+If a morphism `g : X ⟶ Y` has projective kernel and projective target, and its cokernel has
+projective dimension at most one, for instance in a hereditary abelian category, then `X` is
+projective (`Quiver.Hom.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one`).
 
 The chosen projective presentation `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of an object is short exact
-(`CategoryTheory.Projective.kernelShortComplex_shortExact`).
+(`CategoryTheory.Projective.kernelShortComplex_shortExact`), and `ker π` is projective when the
+object has projective dimension at most one.
 
 When coproducts indexed by `ι` are exact, for instance for direct sums of modules, a coproduct of
 objects of projective dimension at most `n` has projective dimension at most `n`
@@ -52,22 +51,43 @@ namespace CategoryTheory
 
 variable {C : Type*} [Category* C] [Abelian C]
 
-/-- If every bound on the projective dimension of `X` is also a bound for `Y`, then the projective
-dimension of `Y` is at most that of `X`. The objects may lie in different abelian categories. -/
-theorem projectiveDimension_le_of_hasProjectiveDimensionLT {D : Type*} [Category* D] [Abelian D]
-    {X : C} {Y : D}
-    (h : ∀ n : ℕ, HasProjectiveDimensionLT X n → HasProjectiveDimensionLT Y n) :
-    projectiveDimension Y ≤ projectiveDimension X :=
-  sInf_le_sInf fun _ hd i hi ↦ h i (hd i hi)
+/-- The projective dimension of `Y` is at most that of `X` exactly when every bound on the
+projective dimension of `X` is also a bound for `Y`. The objects may lie in different abelian
+categories. -/
+theorem projectiveDimension_le_projectiveDimension_iff {D : Type*} [Category* D] [Abelian D]
+    {X : C} {Y : D} :
+    projectiveDimension Y ≤ projectiveDimension X ↔
+      ∀ n : ℕ, HasProjectiveDimensionLT X n → HasProjectiveDimensionLT Y n :=
+  ⟨fun h _ hX ↦ projectiveDimension_lt_iff.1 (h.trans_lt (projectiveDimension_lt_iff.2 hX)),
+    fun h ↦ by
+      unfold projectiveDimension
+      refine sInf_le_sInf fun d hd ↦ ?_
+      simp only [Set.mem_ofPred_eq] at hd ⊢
+      exact fun i hi ↦ h i (hd i hi)⟩
+
+/-- If `g : X ⟶ Y` has projective kernel and projective target, and its cokernel has projective
+dimension at most one (for instance in an abelian category of projective dimension at most one),
+then `X` is projective. -/
+theorem _root_.Quiver.Hom.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one
+    {X Y : C} (g : X ⟶ Y) [Projective (kernel g)] [Projective Y]
+    [HasProjectiveDimensionLE (cokernel g) 1] : Projective X := by
+  -- The image of `g` is a subobject of `Y` with quotient the cokernel of `g`, so it is projective,
+  -- and `X` is an extension of it by `kernel g`.
+  have : Projective (image g) := projective_iff_hasProjectiveDimensionLT_one.mpr
+    ((ShortComplex.shortExact_image_ι_cokernel_π g).hasProjectiveDimensionLT_X₁ 1
+      inferInstance inferInstance)
+  have hS := ShortComplex.kernelSequence_exact g
+  exact projective_iff_hasProjectiveDimensionLT_one.mpr
+    (hS.shortExact_factorThruImage.hasProjectiveDimensionLT_X₂ 1
+      (inferInstanceAs (HasProjectiveDimensionLT (kernel g) 1))
+      (inferInstanceAs (HasProjectiveDimensionLT (image g) 1)))
 
 /-- A subobject of a projective object is projective if its quotient has projective dimension
 at most one. -/
 theorem projective_of_mono_of_hasProjectiveDimensionLE_one {X Y : C} (f : X ⟶ Y)
-    [Mono f] [Projective Y] [HasProjectiveDimensionLE (cokernel f) 1] : Projective X := by
-  have hS : (ShortComplex.mk f (cokernel.π f) (cokernel.condition f)).ShortExact :=
-    { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f) }
-  exact projective_iff_hasProjectiveDimensionLT_one.mpr
-    (hS.hasProjectiveDimensionLT_X₁ 1 inferInstance inferInstance)
+    [Mono f] [Projective Y] [HasProjectiveDimensionLE (cokernel f) 1] : Projective X :=
+  have : Projective (kernel f) := (isZero_kernel_of_mono f).projective
+  f.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one
 
 /-- **Dimension shifting along a morphism of projectives.** For a morphism `f : P ⟶ Q` of
 projective objects, the exact sequence `0 ⟶ ker f ⟶ P ⟶ Q ⟶ coker f ⟶ 0` lowers the projective
@@ -90,24 +110,6 @@ theorem hasProjectiveDimensionLT_cokernel_iff_kernel {P Q : C} (f : P ⟶ Q) [Pr
 
 variable (C) [EnoughProjectives C]
 
-/-- Every object has projective dimension at most one precisely when every monomorphism into a
-projective object has projective source. -/
-theorem forall_hasProjectiveDimensionLE_one_iff_projective_of_mono :
-    (∀ X : C, HasProjectiveDimensionLE X 1) ↔
-      ∀ ⦃X Y : C⦄ (f : X ⟶ Y) [Mono f] [Projective Y], Projective X := by
-  constructor
-  · intro h X Y f _ _
-    have := h (cokernel f)
-    exact projective_of_mono_of_hasProjectiveDimensionLE_one f
-  · intro h X
-    obtain ⟨P⟩ := EnoughProjectives.presentation X
-    have : Projective P.p := P.projective
-    have : Epi P.f := P.epi
-    have : Projective (kernel P.f) := h (kernel.ι P.f)
-    have hS : (ShortComplex.mk (kernel.ι P.f) P.f (kernel.condition P.f)).ShortExact :=
-      { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel P.f) }
-    exact hS.hasProjectiveDimensionLT_X₃ 1 inferInstance inferInstance
-
 variable {C} in
 /-- The short complex `ker π ⟶ P ⟶ X` of the chosen projective presentation `π : P ⟶ X`. -/
 noncomputable abbrev Projective.kernelShortComplex (X : C) : ShortComplex C :=
@@ -121,6 +123,26 @@ theorem Projective.kernelShortComplex_shortExact (X : C) :
 
 instance (X : C) : Projective (Projective.kernelShortComplex X).X₂ :=
   inferInstanceAs (Projective (Projective.over X))
+
+/-- The kernel of the chosen projective cover of an object of projective dimension at most one is
+projective. -/
+instance (X : C) [HasProjectiveDimensionLE X 1] :
+    Projective (Projective.kernelShortComplex X).X₁ :=
+  projective_iff_hasProjectiveDimensionLT_one.2
+    ((Projective.kernelShortComplex_shortExact X).hasProjectiveDimensionLT_X₁ 1 inferInstance ‹_›)
+
+/-- Every object has projective dimension at most one precisely when every monomorphism into a
+projective object has projective source. -/
+theorem forall_hasProjectiveDimensionLE_one_iff_projective_of_mono :
+    (∀ X : C, HasProjectiveDimensionLE X 1) ↔
+      ∀ ⦃X Y : C⦄ (f : X ⟶ Y) [Mono f] [Projective Y], Projective X :=
+  ⟨fun h _ _ f _ _ ↦ have := h (cokernel f); projective_of_mono_of_hasProjectiveDimensionLE_one f,
+    fun h X ↦
+      -- Name both instances, so that instance search does not try the local hypothesis `h`.
+      have : Projective (Projective.over X) := Projective.projective_over X
+      have : Projective (kernel (Projective.π X)) := h (kernel.ι _)
+      (Projective.kernelShortComplex_shortExact X).hasProjectiveDimensionLT_X₃ 1
+        inferInstance inferInstance⟩
 
 section Coproducts
 
@@ -146,14 +168,11 @@ theorem hasProjectiveDimensionLT_of_isColimit_cofan {X : ι → C} {c : Cofan X}
         (X₂ := Discrete.functor fun i ↦ Projective.over (X i)) (X₃ := Discrete.functor X)
         (Discrete.natTrans fun i ↦ kernel.ι (Projective.π (X i.as)))
         (Discrete.natTrans fun i ↦ Projective.π (X i.as)) (by ext; simp)
-    have hT : T.ShortExact := by
-      have hP : JointlyReflectIsomorphisms fun i : Discrete ι ↦ (evaluation _ C).obj i :=
-        ⟨fun f h ↦ have : ∀ i, IsIso (f.app i) := h; NatIso.isIso_of_isIso_app f⟩
-      exact (hP.shortExact_iff T).2 fun i ↦ hK i.as
+    have hT : T.ShortExact := ShortComplex.shortExact_of_forall_evaluation T fun i ↦ hK i.as
     -- Taking coproducts gives a short exact sequence `∐ ker ⟶ ∐ P ⟶ ∐ X`.
     have h₁ : HasProjectiveDimensionLT (colimit T.X₁) (n + 1) :=
-      ih (colimit.isColimit _) fun i ↦ (hK i).hasProjectiveDimensionLT_X₁ (n + 1)
-        (hasProjectiveDimensionLT_of_ge _ 1 _ (by lia)) (h i)
+      ih (colimit.isColimit _) fun i ↦
+        (hK i).hasProjectiveDimensionLT_X₁ (n + 1) inferInstance (h i)
     have : Projective (colimit T.X₂) := Projective.of_isColimit_cofan (colimit.isColimit
       (Discrete.functor fun i ↦ Projective.over (X i)))
     have : HasProjectiveDimensionLT (colimit (Discrete.functor X)) (n + 2) :=

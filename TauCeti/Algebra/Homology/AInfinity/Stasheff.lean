@@ -85,9 +85,10 @@ propositionally equal arities.
   `TauCeti.AInfinity.stasheffSum_three` and `TauCeti.AInfinity.stasheffSum_four`: the four
   identities written out using the supplied degree family.
 * `TauCeti.AInfinity.stasheffSum_two_eq_zero_iff`,
-  `TauCeti.AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero` and
-  `TauCeti.AInfinity.stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero`: the
-  differential graded degeneration.
+  `TauCeti.AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero`,
+  `TauCeti.AInfinity.stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero` and
+  `TauCeti.AInfinity.stasheffSum_eq_zero_of_m_eq_zero_of_three_le`: the differential graded
+  degeneration.
 
 The unsuspended terms, sums, and low-arity formulas work over any ring. Commutativity of the
 ground ring is used for the signed multilinear maps in the suspension and one-slot substitution
@@ -105,7 +106,6 @@ public section
 
 open scoped BigOperators
 open _root_.MultilinearMap
-open TauCeti.MultilinearMap
 
 universe uR uA
 
@@ -229,7 +229,7 @@ theorem sum_stasheff_reflect {M : Type*} [AddCommMonoid M] (n : ℕ)
 section Stasheff
 
 variable [Ring R] [AddCommMonoid A] [Module R A]
-variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
+variable (m : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
 /-- The `(p, s, t)` term of the unsuspended Stasheff identity in arity `p + s + t`: the arity-`s`
 operation is substituted into the `p`-th slot of the arity-`p + 1 + t` operation.  Its sign is the
@@ -337,10 +337,22 @@ theorem stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero
   simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top,
     stasheffTerm_eq_zero_of_inner_eq_zero, stasheffTerm_eq_zero_of_outer_eq_zero, h₃, h₄]
 
+/-- When the operations of arity at least three vanish, the Stasheff identities of arity at least
+four hold term by term: every term has an inner or an outer operation of arity at least three. -/
+theorem stasheffSum_eq_zero_of_m_eq_zero_of_three_le {n : ℕ} (hn : 4 ≤ n)
+    (hm : ∀ k, 3 ≤ k → m k = 0) : stasheffSum m d x n = 0 := by
+  rw [stasheffSum_def]
+  refine Finset.sum_eq_zero fun p hp ↦ Finset.sum_eq_zero fun s hs ↦ ?_
+  rw [Finset.mem_range] at hp
+  rw [Finset.mem_Icc] at hs
+  rcases lt_or_ge s 3 with hs3 | hs3
+  · exact stasheffTerm_eq_zero_of_outer_eq_zero m d x (hm _ (by omega))
+  · exact stasheffTerm_eq_zero_of_inner_eq_zero m d x (hm s hs3)
+
 /-- **Naturality of the Stasheff sums.** A linear map which intertwines two families of
 operations intertwines their Stasheff sums. -/
 theorem map_stasheffSum {B : Type*} [AddCommMonoid B] [Module R B] (f : A →ₗ[R] B)
-    (m' : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ B) B)
+    (m' : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ B) B)
     (hf : ∀ (k : ℕ) (y : Fin k → A), f (m k y) = m' k fun i ↦ f (y i)) (n : ℕ) :
     f (stasheffSum m d x n) = stasheffSum m' d (fun i ↦ f (x i)) n := by
   simp only [stasheffSum_def, stasheffTerm_def, _root_.map_sum, map_smul, evalNat_def, hf,
@@ -351,7 +363,7 @@ end Stasheff
 section SuspendedStasheff
 
 variable [CommRing R] [AddCommMonoid A] [Module R A]
-variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
+variable (m : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
 /-- Up to the structural coefficient `(-1) ^ (p + s * t)`, a Stasheff term is the existing signed
 one-slot substitution evaluated after the canonical reindexing of its three input blocks. -/
@@ -474,7 +486,7 @@ end SuspendedStasheff
 section LowArity
 
 variable [Ring R] [AddCommGroup A] [Module R A]
-variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
+variable (m : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
 /- Expand the finite sums before normalizing their tuples and signs. The insertion API evaluates
 each operation and collapses its block; the integer sign character computes the constant signs. -/
@@ -549,7 +561,7 @@ variable {σ : Type*} [SetLike σ A] (𝒜 : ℤ → σ)
 
 /-- `TauCeti.AInfinity.blockDeg` is the degree of the value of an operation of degree `2 - s` on a
 block of homogeneous inputs. -/
-theorem evalNat_mem_blockDeg {s : ℕ} (f : MultilinearMap R (fun _ : Fin s ↦ A) A)
+theorem evalNat_mem_blockDeg {s : ℕ} (f : MultilinearMap (RingHom.id R) (fun _ : Fin s ↦ A) A)
     {d : ℕ → ℤ} {x : ℕ → A}
     (hf : MultilinearMap.IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - s))
     (p : ℕ) (hx : ∀ j < s, x (p + j) ∈ 𝒜 (d (p + j))) :
@@ -568,13 +580,8 @@ theorem replaceBlock_mem_replaceDeg_of_mem_blockDeg {n p s : ℕ} {d : ℕ → �
     (hx : ∀ i < n, x i ∈ 𝒜 (d i)) (he : e ∈ 𝒜 (blockDeg d p s)) (hps : p + s ≤ n)
     {i : ℕ} (hi : i < p + 1 + (n - p - s)) :
     replaceBlock x p s e i ∈ 𝒜 (replaceDeg d p s i) := by
-  rcases lt_trichotomy i p with h | rfl | h
-  · rw [replaceBlock_of_lt _ _ _ _ h, replaceDeg_of_lt _ _ _ h]
-    exact hx i (by omega)
-  · rw [replaceBlock_self, replaceDeg_self]
-    exact he
-  · rw [replaceBlock_of_gt _ _ _ _ h, replaceDeg_of_gt _ _ _ h]
-    exact hx _ (by omega)
+  rw [replaceDeg]
+  exact replaceBlock_mem 𝒜 hx he hps hi
 
 end Comparison
 

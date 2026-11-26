@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-public import Mathlib.Analysis.PSeries
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.PSeries.Shifted
 
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
@@ -40,6 +40,11 @@ product when `E` has them.
 * `TauCeti.CircleSobolev.reflect`: the linear isometric reflection `n ↦ -n` of the Fourier
   coefficients.
 * `TauCeti.CircleSobolev.inclusion`: the continuous inclusion `H^s → H^t` for `t ≤ s`.
+* `TauCeti.CircleSobolev.fourierMultiplierOfBound g hg`: the Fourier multiplier `H^s → H^t`
+  multiplying the `n`-th coefficient by `g n`, for a symbol with
+  `(1 + |n|) ^ t ‖g n‖ ≤ C (1 + |n|) ^ s` with an explicit constant `C`. The multipliers with a
+  symbol of a given order are `TauCeti.CircleSobolev.fourierMultiplier`, in
+  `TauCeti/Analysis/Sobolev/Circle/FourierMultiplier.lean`.
 * `TauCeti.CircleSobolev.restrict`: a continuous linear map `H^t → H^t'` carrying `H^s` into
   `H^s'`, as a continuous linear map `H^s → H^s'` (by the closed graph theorem), and
   `TauCeti.CircleSobolev.restrictEquiv`, its analogue for continuous linear isomorphisms.
@@ -93,6 +98,14 @@ def weight (s : ℝ) (n : ℤ) : ℝ :=
 theorem weight_def (s : ℝ) (n : ℤ) : weight s n = (1 + |(n : ℝ)|) ^ s :=
   (rfl)
 
+/-- At a natural-number order `k` the weight is the ordinary power `(1 + |n|) ^ k`. -/
+theorem weight_natCast (k : ℕ) (n : ℤ) : weight k n = (1 + |(n : ℝ)|) ^ k :=
+  Real.rpow_natCast _ k
+
+theorem weight_ofNat (k : ℕ) [k.AtLeastTwo] (n : ℤ) :
+    weight (OfNat.ofNat k) n = (1 + |(n : ℝ)|) ^ (OfNat.ofNat k : ℕ) :=
+  weight_natCast k n
+
 private theorem one_le_one_add_abs (n : ℤ) : 1 ≤ 1 + |(n : ℝ)| :=
   le_add_of_nonneg_right (abs_nonneg _)
 
@@ -109,8 +122,20 @@ theorem norm_weight (s : ℝ) (n : ℤ) : ‖weight s n‖ = weight s n :=
 theorem weight_zero_left (n : ℤ) : weight 0 n = 1 :=
   Real.rpow_zero _
 
+/-- The constant mode has weight `1` in every `H^s`. -/
+@[simp]
+theorem weight_zero_right (s : ℝ) : weight s 0 = 1 := by
+  simp [weight_def]
+
 theorem weight_add (s t : ℝ) (n : ℤ) : weight (s + t) n = weight s n * weight t n :=
   Real.rpow_add (zero_lt_one.trans_le (one_le_one_add_abs n)) s t
+
+theorem weight_add_one (s : ℝ) (n : ℤ) : weight (s + 1) n = weight s n * (1 + |(n : ℝ)|) := by
+  rw [weight_add, weight_def 1, Real.rpow_one]
+
+theorem weight_add_two (s : ℝ) (n : ℤ) :
+    weight (s + 2) n = weight s n * (1 + |(n : ℝ)|) ^ 2 := by
+  rw [weight_add, weight_def 2, Real.rpow_two]
 
 theorem weight_neg (s : ℝ) (n : ℤ) : weight (-s) n = (weight s n)⁻¹ :=
   Real.rpow_neg (zero_le_one.trans (one_le_one_add_abs n)) s
@@ -159,12 +184,8 @@ theorem weight_le_of_le_abs {s : ℝ} (hs : s ≤ 0) {N : ℕ} {n : ℤ} (hn : (
   Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hs
 
 /-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
-theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) := by
-  refine Summable.of_norm_bounded_eventually (Real.summable_abs_int_rpow (b := -r) (by linarith)) ?_
-  filter_upwards [eventually_cofinite_ne 0] with n hn
-  rw [neg_neg, norm_weight]
-  exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
-    (le_add_of_nonneg_left zero_le_one) (by linarith)
+theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) :=
+  (summable_one_add_abs_int_rpow hr).congr fun n ↦ (weight_def r n).symm
 
 /-- Exponential decay beats every polynomial weight: `∑ₙ (1 + |n|) ^ r e^{-a |n|} < ∞` for
 `a > 0` and every real `r`. -/
@@ -525,6 +546,15 @@ theorem inner_eq_tsum (a b : CircleSobolev s F) :
     inner ℂ a b = ∑' n, (weight (2 * s) n : ℂ) * inner ℂ (a.coeff n) (b.coeff n) :=
   (hasSum_inner a b).tsum_eq.symm
 
+/-- The real Hilbert structure of `H^s`, the real part of its complex inner product. Operators
+with real-linear coefficients, such as the linearized Hamiltonian operators on loops, are
+symmetric only for this inner product. -/
+noncomputable instance instInnerProductSpaceReal : InnerProductSpace ℝ (CircleSobolev s F) :=
+  InnerProductSpace.complexToReal
+
+theorem real_inner_eq_re_inner (a b : CircleSobolev s F) : inner ℝ a b = (inner ℂ a b).re :=
+  (rfl)
+
 end Inner
 
 /-! ### Fourier monomials and density of trigonometric polynomials -/
@@ -640,6 +670,49 @@ theorem norm_inclusion_le (h : t ≤ s) (a : CircleSobolev s E) : ‖inclusion h
   simpa using norm_le_of_forall_le (a := a) (b := inclusion h a) (C := 1)
     (by simpa using weight_mul_norm_le_of_le h a)
 
+/-! ### Fourier multipliers -/
+
+section FourierMultiplier
+
+variable {g : ℤ → ℂ} {C : ℝ}
+
+private theorem weight_mul_norm_smul_coeff_le (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
+    (a : CircleSobolev s E) (n : ℤ) :
+    weight t n * ‖g n • a.coeff n‖ ≤ C * (weight s n * ‖a.coeff n‖) := by
+  rw [norm_smul, ← mul_assoc, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (hg n) (norm_nonneg _)
+
+/-- The **Fourier multiplier** with symbol `g` and an explicit bound, as a bounded operator
+`H^s → H^t`: it multiplies the `n`-th Fourier coefficient by `g n`. It is bounded, with norm at
+most `C`, as soon as `(1 + |n|) ^ t ‖g n‖ ≤ C (1 + |n|) ^ s` for every `n`. -/
+def fourierMultiplierOfBound (g : ℤ → ℂ) (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n) :
+    CircleSobolev s E →L[ℂ] CircleSobolev t E :=
+  LinearMap.mkContinuous
+    { toFun a := ⟨fun n ↦ g n • a.coeff n, memℓp_of_forall_le (weight_mul_norm_smul_coeff_le hg a)⟩
+      map_add' a b := CircleSobolev.ext (funext fun n ↦ smul_add _ (a.coeff n) (b.coeff n))
+      map_smul' c a := CircleSobolev.ext (funext fun n ↦ smul_comm _ c (a.coeff n)) }
+    C fun a ↦ norm_le_of_forall_le (weight_mul_norm_smul_coeff_le hg a)
+
+@[simp]
+theorem coeff_fourierMultiplierOfBound (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
+    (a : CircleSobolev s E) (n : ℤ) :
+    (fourierMultiplierOfBound g hg a).coeff n = g n • a.coeff n :=
+  (rfl)
+
+theorem norm_fourierMultiplierOfBound_le (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
+    (a : CircleSobolev s E) : ‖fourierMultiplierOfBound g hg a‖ ≤ C * ‖a‖ :=
+  norm_le_of_forall_le (weight_mul_norm_smul_coeff_le hg a)
+
+@[simp]
+theorem fourierMultiplierOfBound_single (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n) (n : ℤ)
+    (x : E) : fourierMultiplierOfBound g hg (single n x) = single n (g n • x) :=
+  CircleSobolev.ext (funext fun m ↦ by
+    rcases eq_or_ne m n with rfl | hm
+    · simp
+    · simp [hm])
+
+end FourierMultiplier
+
 section Restrict
 
 variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s')
@@ -702,10 +775,10 @@ variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s') (P : CircleSobolev t E ≃
 `P : H^t → H^t'` such that `P` carries `H^s` into `H^s'` and `P⁻¹` carries `H^s'` into `H^s`, for
 `t ≤ s` and `t' ≤ s'`, as a continuous linear isomorphism `H^s → H^s'`. -/
 def restrictEquiv [CompleteSpace E] : CircleSobolev s E ≃L[ℂ] CircleSobolev s' E :=
-  ContinuousLinearEquiv.equivOfInverse (restrict h h' P fun a ↦ by simpa using hP a)
+  ContinuousLinearEquiv.ofContinuousLinearMap (restrict h h' P fun a ↦ by simpa using hP a)
     (restrict h' h P.symm fun b ↦ by simpa using hP' b)
-    (fun a ↦ inclusion_injective h (by simp))
-    (fun b ↦ inclusion_injective h' (by simp))
+    (ContinuousLinearMap.ext fun b ↦ inclusion_injective h' (by simp))
+    (ContinuousLinearMap.ext fun a ↦ inclusion_injective h (by simp))
 
 /-- In `H^t'`, `restrictEquiv` is `P`. -/
 @[simp]
@@ -725,7 +798,7 @@ end RestrictEquiv
 `t < s` when `E` is finite-dimensional. -/
 theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     IsCompactOperator (inclusion (E := E) h.le) := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   have := FiniteDimensional.proper ℂ E
   -- The inclusion is the operator-norm limit of the truncations `F N` of the Fourier series to the
   -- frequencies `|n| ≤ N`, which factor through finitely many copies of `E`.
@@ -966,6 +1039,19 @@ theorem isOpen_setOf_forall_toContinuousMap_mem (hs : 1 / 2 < s) {U : Set E} (hU
     IsOpen {a : CircleSobolev s E | ∀ x, toContinuousMap T hs a x ∈ U} := by
   simpa [Set.MapsTo] using (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_univ hU).preimage
     (toContinuousMap T hs).continuous
+
+/-- For `s > 1/2` and an open set `U ⊆ ι → E`, the families `u : ι → H^s` whose continuous
+representatives take their joint values `x ↦ (u i x)ᵢ` in `U` form an open set. -/
+theorem isOpen_setOf_forall_toContinuousMap_pi_mem (hs : 1 / 2 < s) {ι : Type*}
+    {U : Set (ι → E)} (hU : IsOpen U) :
+    IsOpen {u : ι → CircleSobolev s E | ∀ x, (fun i ↦ toContinuousMap T hs (u i) x) ∈ U} := by
+  let Φ : (ι → CircleSobolev s E) → C(AddCircle T, ι → E) :=
+    fun u ↦ ContinuousMap.pi fun i ↦ toContinuousMap T hs (u i)
+  have hΦ : Continuous Φ := ContinuousMap.continuous_of_continuous_uncurry _ <|
+    continuous_pi fun i ↦ continuous_eval.comp
+      (((toContinuousMap T hs).continuous.comp ((continuous_apply i).comp
+        continuous_fst)).prodMk continuous_snd)
+  simpa [Set.MapsTo, Φ] using (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_univ hU).preimage hΦ
 
 end Continuous
 

@@ -9,9 +9,11 @@ public import TauCeti.Analysis.Sobolev.Trace.HalfSpace
 public import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Analysis.SpecialFunctions.LinearCutoff
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -43,7 +45,8 @@ Dominated convergence then passes to the limit.
 ## Main declarations
 
 * `TauCeti.normalLinearReflection`: the linear reflection `(t, y) ↦ (-t, y)`, which is Mathlib's
-  `Submodule.reflection` in the hyperplane `{0} × E`.
+  `Submodule.reflection` in the hyperplane `{0} × E`, orthogonal to the normal `(1, 0)`
+  (`TauCeti.normalLinearReflection_eq_reflection`).
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
   its measure preservation and derivative. It is the special case of
   `TauCeti.hyperplaneReflection` with normal `(1, 0)`
@@ -56,7 +59,8 @@ Dominated convergence then passes to the limit.
   half in `H`, and its integral is twice the integral over that half.
 * `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
   supported a positive distance inside the half-space, with the common bound
-  `TauCeti.exists_normalCutoff_bound` on it and its gradient.
+  `TauCeti.exists_normalCutoff_bound` on it and its gradient. It is the cutoff
+  `TauCeti.linearCutoff` along the normal coordinate (`TauCeti.normalCutoff_eq_linearCutoff`).
 * `TauCeti.tendsto_integral_normalCutoff_mul` and
   `TauCeti.tendsto_integral_mul_fderiv_normalCutoff_apply`: the two limits behind integration by
   parts up to the boundary. Multiplying by the cutoffs does not change integrals over the
@@ -125,6 +129,15 @@ theorem normalLinearReflection_normalLinearReflection (x : WithLp 2 (ℝ × E)) 
 @[simp]
 theorem normalLinearReflection_symm : (normalLinearReflection E).symm = normalLinearReflection E :=
   Submodule.reflection_symm
+
+/-- The linear normal reflection, as a continuous linear map, is an involution. Not `@[simp]`: the
+simp normal form of the left-hand side is the coercion of `ContinuousLinearEquiv.trans`. -/
+theorem normalLinearReflection_comp_normalLinearReflection :
+    (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+      (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) =
+      ContinuousLinearMap.id ℝ _ := by
+  ext x
+  exact normalLinearReflection_normalLinearReflection x
 
 /-- The linear normal reflection is self-adjoint. -/
 theorem inner_normalLinearReflection_left_eq_right (x y : WithLp 2 (ℝ × E)) :
@@ -202,8 +215,16 @@ theorem normalReflection_eq_self_iff (a : ℝ) (x : WithLp 2 (ℝ × E)) :
 /-- The normal reflection in `{a} × E` exchanges the open half-spaces on either side. -/
 theorem normalReflection_mem_normalHalfSpace_iff (a : ℝ) (x : WithLp 2 (ℝ × E)) :
     normalReflection E a x ∈ normalHalfSpace (E := E) a ↔ x.fst < a := by
-  simp only [mem_normalHalfSpace, normalReflection_apply]
+  simp only [mem_normalHalfSpace, normalReflection_apply, WithLp.toLp_fst]
   constructor <;> intro h <;> linarith
+
+/-- The normal reflection in `{a} × E` maps the half-space `TauCeti.normalHalfSpace a` off
+itself. -/
+theorem normalReflection_notMem_normalHalfSpace {a : ℝ} {x : WithLp 2 (ℝ × E)}
+    (hx : x ∈ normalHalfSpace (E := E) a) :
+    normalReflection E a x ∉ normalHalfSpace (E := E) a := by
+  rw [normalReflection_mem_normalHalfSpace_iff]
+  exact ((mem_normalHalfSpace a x).1 hx).not_gt
 
 /-- The normal reflection in `{a} × E` is its linear part `TauCeti.normalLinearReflection`
 followed by the translation by `(2a, 0)`. -/
@@ -220,6 +241,16 @@ theorem normalReflection_eq_hyperplaneReflection (a : ℝ) :
   ext x
   obtain ⟨⟨t, y⟩⟩ := x
   rw [normalReflection_apply, hyperplaneReflection_apply]
+  simp [WithLp.prod_inner_apply, ← WithLp.toLp_smul, ← WithLp.toLp_sub]
+  ring
+
+/-- The linear normal reflection is the reflection in the hyperplane orthogonal to the normal
+direction `(1, 0)`, the linear part of `TauCeti.hyperplaneReflection` with that normal. -/
+theorem normalLinearReflection_eq_reflection :
+    normalLinearReflection E = (ℝ ∙ WithLp.toLp 2 ((1 : ℝ), (0 : E)))ᗮ.reflection := by
+  ext x
+  obtain ⟨⟨t, y⟩⟩ := x
+  rw [normalLinearReflection_apply, reflection_orthogonal_singleton_apply_div_norm_sq]
   simp [WithLp.prod_inner_apply, ← WithLp.toLp_smul, ← WithLp.toLp_sub]
   ring
 
@@ -279,10 +310,9 @@ theorem gradient_normalReflection_of_forall_eq_neg {a : ℝ} {U : Set (WithLp 2 
 
 /-- The normal reflection in `{a} × E` maps every ball centred on that hyperplane into itself. -/
 theorem mapsTo_normalReflection_ball {a : ℝ} {x₀ : WithLp 2 (ℝ × E)} (hx₀ : x₀.fst = a) (r : ℝ) :
-    MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) := fun x hx => by
-  rw [Metric.mem_ball, ← (normalReflection_eq_self_iff a x₀).2 hx₀,
-    (normalReflection E a).dist_map]
-  exact hx
+    MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) :=
+  normalReflection_eq_hyperplaneReflection (E := E) a ▸
+    mapsTo_hyperplaneReflection_ball (by simpa [WithLp.prod_inner_apply] using hx₀) r
 
 variable [MeasurableSpace E] [BorelSpace E]
 
@@ -292,6 +322,16 @@ theorem measurePreserving_normalReflection (a : ℝ) :
   rw [normalReflection_eq_add]
   exact (measurePreserving_add_right (volume : Measure (WithLp 2 (ℝ × E)))
     (WithLp.toLp 2 (2 * a, 0))).comp (normalLinearReflection E).measurePreserving
+
+/-- The reflection `ρ` in `{a} × E` preserves volume, restricted to the whole space. -/
+theorem measurePreserving_normalReflection_top (a : ℝ) :
+    MeasurePreserving (normalReflection E a)
+      ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
+        Set (WithLp 2 (ℝ × E))))
+      ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
+        Set (WithLp 2 (ℝ × E)))) := by
+  rw [Measure.restrict_coe_opens_top]
+  exact measurePreserving_normalReflection a
 
 /-- Change of variables by the normal reflection: integrals against Lebesgue measure are
 invariant under it. -/
@@ -331,7 +371,7 @@ private theorem indicator_ae_eq_add_indicator_comp_normalReflection {a : ℝ}
       rw [indicator_of_mem hxU, indicator_of_notMem h1, indicator_of_mem h2, hg x hxU, zero_add]
     · have h1 : x ∈ U ∩ H := ⟨hxU, (mem_normalHalfSpace a x).2 hgt⟩
       have h2 : normalReflection E a x ∉ U ∩ H := fun h =>
-        absurd ((normalReflection_mem_normalHalfSpace_iff a x).1 h.2) (not_lt.2 hgt.le)
+        normalReflection_notMem_normalHalfSpace h1.2 h.2
       rw [indicator_of_mem hxU, indicator_of_mem h1, indicator_of_notMem h2, add_zero]
   · have h1 : x ∉ U ∩ H := fun h => hxU h.1
     have h2 : normalReflection E a x ∉ U ∩ H := fun h => hxU (hρU.1 h.1)
@@ -474,27 +514,34 @@ private theorem eventually_normalCutoff_eq_one {a : ℝ} {x : WithLp 2 (ℝ × E
 
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 
+/-- The boundary-layer cutoff is the cutoff of slope `c` along the normal coordinate, at the level
+`a + c⁻¹`. -/
+theorem normalCutoff_eq_linearCutoff (a c : ℝ) :
+    normalCutoff (E := E) a c = linearCutoff (WithLp.fstL 2 ℝ ℝ E) c (a + c⁻¹) := by
+  funext x
+  rw [normalCutoff_def, linearCutoff_def, WithLp.fstL_apply]
+  rcases eq_or_ne c 0 with rfl | hc
+  · rw [zero_mul, zero_mul, Real.smoothTransition.zero_of_nonpos (by norm_num),
+      Real.smoothTransition.zero_of_nonpos le_rfl]
+  · rw [show c * (x.fst - (a + c⁻¹)) = c * (x.fst - a) - c * c⁻¹ by ring,
+      mul_inv_cancel₀ hc]
+
 private theorem contDiff_cutoffArg (a : ℝ) (n : ℕ) :
     ContDiff ℝ ∞ (cutoffArg (E := E) a n) :=
   (contDiff_const.mul ((WithLp.fstL 2 ℝ ℝ E).contDiff.sub contDiff_const)).sub contDiff_const
 
 /-- The boundary-layer cutoff is smooth. -/
-theorem contDiff_normalCutoff (a c : ℝ) : ContDiff ℝ ∞ (normalCutoff (E := E) a c) :=
-  Real.smoothTransition.contDiff.comp
-    ((contDiff_const.mul ((WithLp.fstL 2 ℝ ℝ E).contDiff.sub contDiff_const)).sub contDiff_const)
+theorem contDiff_normalCutoff (a c : ℝ) : ContDiff ℝ ∞ (normalCutoff (E := E) a c) := by
+  rw [normalCutoff_eq_linearCutoff]
+  exact contDiff_linearCutoff _ c _
 
 /-- The derivative of the boundary-layer cutoff is `σ'(c (x.fst - a) - 1) c` times the normal
 coordinate. -/
 theorem hasFDerivAt_normalCutoff (a c : ℝ) (x : WithLp 2 (ℝ × E)) :
     HasFDerivAt (normalCutoff a c)
-      ((deriv Real.smoothTransition (c * (x.fst - a) - 1) * c) • WithLp.fstL 2 ℝ ℝ E) x := by
-  have hℓ : HasFDerivAt (fun y : WithLp 2 (ℝ × E) => c * (y.fst - a) - 1)
-      (c • WithLp.fstL 2 ℝ ℝ E) x :=
-    (((WithLp.fstL 2 ℝ ℝ E).hasFDerivAt.sub_const a).const_mul c).sub_const 1
-  have hst : HasDerivAt Real.smoothTransition
-      (deriv Real.smoothTransition (c * (x.fst - a) - 1)) (c * (x.fst - a) - 1) :=
-    ((Real.smoothTransition.contDiff (n := 1)).differentiable one_ne_zero _).hasDerivAt
-  exact (hst.comp_hasFDerivAt x hℓ).congr_fderiv (by rw [smul_smul])
+      ((deriv Real.smoothTransition (c * (x.fst - a) - 1) * c) • WithLp.fstL 2 ℝ ℝ E) x :=
+  ((((WithLp.fstL 2 ℝ ℝ E).hasFDerivAt.sub_const a).const_mul c).sub_const 1).smoothTransition
+    |>.congr_fderiv (by rw [smul_smul, WithLp.fstL_apply])
 
 /-- The product rule for a cutoff times a differentiable function. -/
 private theorem lineDeriv_normalCutoff_mul (a : ℝ) (n : ℕ) {χ : WithLp 2 (ℝ × E) → ℝ}
@@ -543,28 +590,12 @@ section CutoffBound
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
 /-- The boundary-layer cutoff and its gradient are bounded by a common constant. -/
-theorem exists_normalCutoff_bound (a : ℝ) {c : ℝ} (hc : 0 ≤ c) :
+theorem exists_normalCutoff_bound (a c : ℝ) :
     ∃ M, 0 ≤ M ∧ (∀ x, |normalCutoff (E := E) a c x| ≤ M) ∧
       ∀ x, ‖∇ (normalCutoff (E := E) a c) x‖ ≤ M := by
-  obtain ⟨B, hB⟩ := (Real.smoothTransition.contDiff.continuous_deriv le_rfl).norm
-    |>.bddAbove_range_of_hasCompactSupport Real.smoothTransition.hasCompactSupport_deriv.norm
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB ⟨0, rfl⟩)
-  refine ⟨max 1 (B * c), zero_le_one.trans (le_max_left _ _), fun x => ?_, fun x => ?_⟩
-  · rw [abs_of_nonneg (normalCutoff_nonneg a c x)]
-    exact (normalCutoff_le_one a c x).trans (le_max_left _ _)
-  · have hfst : ‖WithLp.fstL 2 ℝ ℝ E‖ ≤ 1 :=
-      ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
-        rw [one_mul]
-        exact WithLp.norm_fst_le ℝ y
-    rw [norm_gradient_eq_norm_fderiv, (hasFDerivAt_normalCutoff a c x).fderiv, norm_smul,
-      norm_mul, Real.norm_of_nonneg hc]
-    calc ‖deriv Real.smoothTransition (c * (x.fst - a) - 1)‖ * c * ‖WithLp.fstL 2 ℝ ℝ E‖
-        ≤ B * c * 1 := by
-          gcongr
-          exact hB ⟨_, rfl⟩
-      _ ≤ max 1 (B * c) := by
-          rw [mul_one]
-          exact le_max_right _ _
+  obtain ⟨M, hM, hbound, hderiv⟩ := exists_linearCutoff_bound (WithLp.fstL 2 ℝ ℝ E) c (a + c⁻¹)
+  rw [normalCutoff_eq_linearCutoff]
+  exact ⟨M, hM, hbound, fun x => (norm_gradient_eq_norm_fderiv _ x).trans_le (hderiv x)⟩
 
 end CutoffBound
 
@@ -613,9 +644,9 @@ private theorem norm_mul_deriv_cutoff_le {a : ℝ} {w : WithLp 2 (ℝ × E) → 
   · simpa [image_eq_zero_of_notMem_tsupport hxK] using hb0
   by_cases hxa : a < x.fst
   swap
-  · simpa [Real.smoothTransition.deriv_of_neg (cutoffArg_neg_of_not_lt n hxa)] using hb0
+  · simpa [Real.smoothTransition.deriv_of_nonpos (cutoffArg_neg_of_not_lt n hxa).le] using hb0
   by_cases hs : 1 < cutoffArg a n x
-  · simpa [Real.smoothTransition.deriv_of_one_lt hs] using hb0
+  · simpa [Real.smoothTransition.deriv_of_one_le hs.le] using hb0
   push Not at hs
   have hpos : (0 : ℝ) < (n : ℝ) + 1 := by positivity
   have hs' : -1 ≤ cutoffArg a n x := by
@@ -669,9 +700,9 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
   -- derivative of `smoothTransition` vanishes; outside it the cutoff argument is negative.
   · by_cases hxa : a < x.fst
     · exact tendsto_const_nhds.congr' <| (eventually_lt_cutoffArg hxa 1).mono fun n hn => by
-        simp [Real.smoothTransition.deriv_of_one_lt hn]
+        simp [Real.smoothTransition.deriv_of_one_le hn.le]
     · exact tendsto_const_nhds.congr fun n => by
-        simp [Real.smoothTransition.deriv_of_neg (cutoffArg_neg_of_not_lt n hxa)]
+        simp [Real.smoothTransition.deriv_of_nonpos (cutoffArg_neg_of_not_lt n hxa).le]
 
 /-- **The boundary-layer error vanishes in the limit.** Let `G` be a locally integrable vector
 field, and let `χ` be smooth with compact support and vanishing on the
@@ -851,7 +882,7 @@ private theorem integral_add_comp_normalReflection_mul_inner {a : ℝ}
       inner ℝ (G x + normalLinearReflection E (G (ρ x))) d =
         inner ℝ (G x) d + ε * inner ℝ (G (ρ x)) d := by
     rw [inner_add_left, inner_normalLinearReflection_left_eq_right, hd, real_inner_smul_right]
-  set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x) with hψdef
+  set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x)
   have hψ : ContDiff ℝ ∞ ψ := hφ.comp (contDiff_normalReflection a)
   have hψc : HasCompactSupport ψ := hφc.comp_homeomorph ρ.toHomeomorph
   have J1 : Integrable fun x => φ x * inner ℝ (G x) d := by
@@ -992,7 +1023,7 @@ theorem HasWeakFDerivOn.hasWeakLineDerivOn_sub_comp_normalReflection {a : ℝ}
   -- The odd reflection is twice the extension by zero minus the even reflection.
   have hz := (hw.hasWeakLineDerivOn d).top_of_normalHalfSpace hd hwl (hGl.inner_const d) hw0
     fun x hx => by simp [hG0 x hx]
-  have h := (hz.const_smul 2).sub
+  have h := (hz.const_smul (2 : ℝ)).sub
     ((hw.add_comp_normalReflection hwl hGl hw0 hG0).hasWeakLineDerivOn d)
   convert h using 1
   · funext x

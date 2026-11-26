@@ -34,8 +34,9 @@ the mean of `f` over the ball of radius `r` centred at `x`. It is the mollificat
 normalized indicator of a ball, and it is the smoothing operator behind the Fréchet--Kolmogorov
 compactness criterion in `Lᵖ`, hence behind the Rellich--Kondrachov theorem.
 
-Four estimates are proved here, all for `1 ≤ p < ∞` and an additive Haar measure `μ` on a proper
-normed additive group. Writing `V = μ (Metric.ball 0 r)` for the volume of the ball, they are
+Four estimates are proved here, for an additive Haar measure `μ` on a proper normed additive
+group, the first two for `1 ≤ p ≤ ∞` and the last two for `1 ≤ p < ∞`. Writing
+`V = μ (Metric.ball 0 r)` for the volume of the ball, they are
 
 `‖A_r f x‖ ≤ V ^ (-1/p) ‖f‖_p`,
 `‖A_r f (x + e) - A_r f x‖ ≤ V ^ (-1/p) ‖f(· + e) - f‖_p`,
@@ -213,7 +214,7 @@ private theorem lintegral_enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) {G :
       (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ∫⁻ x, ‖G x e‖ₑ ^ q ∂mu ∂mu := by
   have hV0 : mu (ball (0 : E) r) ≠ 0 := (measure_ball_pos mu 0 hr).ne'
   have hjoint : Measurable fun z : E × E => ‖G z.1 z.2‖ₑ ^ q :=
-    ENNReal.continuous_rpow_const.measurable.comp hG.enorm
+    ENNReal.continuous_rpow_const.measurable.comp hG.eNorm
   calc ∫⁻ x, ‖⨍ e in ball (0 : E) r, G x e ∂mu‖ₑ ^ q ∂mu
       ≤ ∫⁻ x, (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ‖G x e‖ₑ ^ q ∂mu ∂mu :=
         lintegral_mono fun x => enorm_setAverage_rpow_le hq
@@ -244,11 +245,11 @@ omit [ProperSpace E] in
 /-- The `L^∞` bound on the ball average: it is controlled by the `Lᵖ` seminorm of `f`, at the
 cost of the scale-dependent volume factor `μ (ball 0 r) ^ (-1/p)`. No measurability hypothesis
 on `f` is needed. -/
-theorem enorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (x : E) :
+theorem enorm_ballAverage_le (hp : 1 ≤ p) (x : E) :
     ‖ballAverage mu r f x‖ₑ ≤ mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm f p mu := by
   have hball : mu (ball x r) = mu (ball (0 : E) r) := Measure.addHaar_ball_center mu x r
   rw [ballAverage_apply, ← hball]
-  refine (enorm_setAverage_le hp hp').trans ?_
+  refine (enorm_setAverage_le hp).trans ?_
   exact mul_le_mul' le_rfl (eLpNorm_mono_measure _ Measure.restrict_le_self)
 
 /-- The increment of the ball average is the ball average of the increment. -/
@@ -267,25 +268,24 @@ theorem ballAverage_sub_ballAverage (hp : 1 ≤ p) (hf : MemLp f p mu) (e x : E)
 continuity of `f` itself, up to the scale-dependent volume factor
 `μ (ball 0 r) ^ (-1/p)`. Thus, at each fixed positive `r`, a family whose translates move
 uniformly little in `Lᵖ` has uniformly equicontinuous ball averages. -/
-theorem enorm_ballAverage_add_sub_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p mu)
-    (e x : E) :
+theorem enorm_ballAverage_add_sub_ballAverage_le (hp : 1 ≤ p) (hf : MemLp f p mu) (e x : E) :
     ‖ballAverage mu r f (x + e) - ballAverage mu r f x‖ₑ ≤
       mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm (fun y => f (y + e) - f y) p mu := by
   rw [ballAverage_sub_ballAverage hp hf]
-  exact enorm_ballAverage_le hp hp' x
+  exact enorm_ballAverage_le hp x
 
 /-- The ball averages of a family of `Lᵖ` functions whose translation
 increments are uniformly small in `Lᵖ` form a uniformly equicontinuous family. For `r ≤ 0` the
 balls are empty and every ball average is zero. -/
 theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
-    (hp : 1 ≤ p) (hp' : p ≠ ∞) (hu : ∀ i, MemLp (u i) p mu)
+    (hp : 1 ≤ p) (hu : ∀ i, MemLp (u i) p mu)
     (htrans : ∀ ε : ℝ≥0∞, 0 < ε → ∃ δ > 0, ∀ i, ∀ h : E, ‖h‖ < δ →
       eLpNorm (fun x => u i (x + h) - u i x) p mu ≤ ε) :
     UniformEquicontinuous fun i => ballAverage mu r (u i) := by
   rcases le_or_gt r 0 with hr | hr
   · simp only [ballAverage_eq_zero_of_nonpos hr]
     rw [Metric.uniformEquicontinuous_iff]
-    exact fun c hc => ⟨1, one_pos, fun x y _ i => by simpa using hc⟩
+    exact fun c hc => ⟨1, one_pos, fun x y _ _ => by simpa using hc⟩
   set V : ℝ≥0∞ := mu (ball (0 : E) r)
   have hV0 : V ≠ 0 := (measure_ball_pos mu 0 hr).ne'
   have hVt : V ≠ ∞ := measure_ball_lt_top.ne
@@ -299,8 +299,7 @@ theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
     (ENNReal.mul_pos (ENNReal.ofReal_pos.2 (by linarith)).ne' hVinv)
   refine ⟨δ, hδ, fun x y hxy i => ?_⟩
   have hyx : ‖y - x‖ < δ := by rwa [← dist_eq_norm, dist_comm]
-  have hbound := enorm_ballAverage_add_sub_ballAverage_le (mu := mu) (r := r) hp hp' (hu i)
-    (y - x) x
+  have hbound := enorm_ballAverage_add_sub_ballAverage_le (mu := mu) (r := r) hp (hu i) (y - x) x
   rw [add_sub_cancel] at hbound
   have hb2 := hbound.trans (mul_le_mul' (le_refl (V ^ (-(p.toReal)⁻¹))) (hδS i _ hyx))
   rw [hcancel] at hb2
@@ -331,8 +330,8 @@ theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p 
       ENNReal.Tendsto.const_mul htrans (Or.inr hfactor)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hupper_zero
     (fun _ => bot_le) fun y => ?_
-  rw [edist_eq_enorm_sub]
-  have hbound := enorm_ballAverage_add_sub_ballAverage_le (r := r) hp hp' hf (y - x) x
+  rw [eDist_eq_eNorm_sub]
+  have hbound := enorm_ballAverage_add_sub_ballAverage_le (r := r) hp hf (y - x) x
   rwa [add_sub_cancel] at hbound
 
 /-- **The ball average is an `Lᵖ` contraction**, for `1 ≤ p < ∞` (for `r ≤ 0` it is zero).
@@ -353,9 +352,9 @@ theorem eLpNorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStrongly
   have hcore := lintegral_enorm_setAverage_rpow_le (mu := mu) (q := p.toReal) hq
     (G := fun x e => g (x + e)) (hgm.comp_measurable (measurable_fst.add measurable_snd)) hr
   simp only [← ballAverage_eq_setAverage_ball_zero] at hcore
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp'
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp'
       (stronglyMeasurable_ballAverage hgm).aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hgm.aestronglyMeasurable]
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hgm.aestronglyMeasurable]
   refine ENNReal.rpow_le_rpow (hcore.trans_eq ?_) (by positivity)
   have hslice : ∀ e : E, ∫⁻ x, ‖g (x + e)‖ₑ ^ p.toReal ∂mu = ∫⁻ x, ‖g x‖ₑ ^ p.toReal ∂mu :=
     fun e => lintegral_add_right_eq_self (fun y => ‖g y‖ₑ ^ p.toReal) e
@@ -384,7 +383,7 @@ theorem tendsto_ballAverage_cocompact (hf : MemLp f p mu) (hp : 1 ≤ p) (hp' : 
   -- The finite measure `ν` with density `‖f‖ ^ p` gives vanishing mass to far balls.
   set ν := mu.withDensity fun y => ‖f y‖ₑ ^ p.toReal
   have : IsFiniteMeasure ν := isFiniteMeasure_withDensity
-    (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp).ne' hp'
+    (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp).ne' hp'
       hf.eLpNorm_lt_top).ne
   have hν : Filter.Tendsto (fun x => ν (closedBall x r)) (Filter.cocompact E) (nhds 0) := by
     have htight := isTightMeasureSet_singleton (μ := ν)
@@ -445,7 +444,7 @@ private theorem eLpNorm_ballAverage_sub_le_of_stronglyMeasurable (hp : 1 ≤ p) 
     have h := ENNReal.rpow_le_rpow (hC e he) hq0.le
     have hsm : StronglyMeasurable fun y => f (y + e) - f y :=
       (hfm.comp_measurable (measurable_id.add_const e)).sub hfm
-    rwa [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsm.aestronglyMeasurable,
+    rwa [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hsm.aestronglyMeasurable,
       ← ENNReal.rpow_mul, one_div_mul_cancel hq0.ne', ENNReal.rpow_one] at h
   have hmain : ∫⁻ x, ‖ballAverage mu r f x - f x‖ₑ ^ p.toReal ∂mu ≤ C ^ p.toReal := by
     refine hcore.trans ?_
@@ -459,7 +458,7 @@ private theorem eLpNorm_ballAverage_sub_le_of_stronglyMeasurable (hp : 1 ≤ p) 
             mul_assoc, ENNReal.inv_mul_cancel hV0 hVt, mul_one]
   have hsub : StronglyMeasurable fun x => ballAverage mu r f x - f x :=
     (stronglyMeasurable_ballAverage hfm).sub hfm
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hsub.aestronglyMeasurable]
   calc (∫⁻ x, ‖ballAverage mu r f x - f x‖ₑ ^ p.toReal ∂mu) ^ (1 / p.toReal)
       ≤ (C ^ p.toReal) ^ (1 / p.toReal) := ENNReal.rpow_le_rpow hmain (by positivity)
     _ = C := by rw [← ENNReal.rpow_mul, mul_one_div_cancel hq0.ne', ENNReal.rpow_one]

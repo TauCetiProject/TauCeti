@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 public import TauCeti.RingTheory.Syntomic.FittingIdeal
 
 /-!
@@ -42,10 +42,10 @@ the singular subscheme exactly when it is outside the smooth locus. -/
 @[simp]
 theorem mem_support_singularLocus_iff_notMem_smoothLocus (x : X) :
     x ∈ (X.singularLocus R).support ↔ x ∉ (X ↘ Spec (.of R)).smoothLocus := by
-  obtain ⟨U, hx, e, hU⟩ :=
+  obtain ⟨U, hx, _, hU⟩ :=
     SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension_appLE_top
       1 (X ↘ Spec (.of R)) x
-  let φ := ((X.baseRingToStructurePresheaf R).app (op U.1)).hom
+  let φ := ((X.baseRingToStructurePresheaf R).app (op U.val)).hom
   let : Algebra R Γ(X, U) := φ.toAlgebra
   have hφ : TauCeti.IsStandardSyntomicOfRelativeDimension 1 φ := by
     dsimp only [φ]
@@ -56,15 +56,15 @@ theorem mem_support_singularLocus_iff_notMem_smoothLocus (x : X) :
     (TauCeti.isStandardSyntomicOfRelativeDimension_iff 1 φ).mp hφ
   have := TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.finitePresentation
     (n := 1) (R := R) (S := Γ(X, U))
-  let q := U.2.primeIdealOf ⟨x, hx⟩
+  let q := U.property.primeIdealOf ⟨x, hx⟩
   have hs : x ∈ (X.singularLocus R).support ↔
       TauCeti.fittingIdeal Γ(X, U) Ω[Γ(X, U)⁄R] 1 ≤ q.asIdeal := by
     rw [IdealSheafData.mem_support_iff_of_mem hx, X.singularLocus_ideal (R := R) U]
     let I := TauCeti.fittingIdeal Γ(X, U) Ω[Γ(X, U)⁄R] 1
-    have hq : U.2.fromSpec q = x := U.2.fromSpec_primeIdealOf ⟨x, hx⟩
-    have hZ := congrArg (q ∈ ·) (U.2.fromSpec_preimage_zeroLocus (I : Set Γ(X, U)))
-    have hpre := (Set.mem_preimage (f := U.2.fromSpec) (a := q)
-      (s := X.zeroLocus (U := U.1) (I : Set Γ(X, U)))).symm.trans
+    have hq : U.property.fromSpec q = x := U.property.fromSpec_primeIdealOf ⟨x, hx⟩
+    have hZ := congrArg (q ∈ ·) (U.property.fromSpec_preimage_zeroLocus (I : Set Γ(X, U)))
+    have hpre := (Set.mem_preimage (f := U.property.fromSpec) (a := q)
+      (s := X.zeroLocus (U := U.val) (I : Set Γ(X, U)))).symm.trans
         (hZ.to_iff.trans (PrimeSpectrum.mem_zeroLocus q (I : Set Γ(X, U))))
     simpa only [I, hq, SetLike.coe_subset_coe] using hpre
   have hm := (X ↘ Spec (.of R)).mem_smoothLocus_iff_isSmoothAt hx

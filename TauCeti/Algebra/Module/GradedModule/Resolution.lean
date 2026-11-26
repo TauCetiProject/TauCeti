@@ -52,6 +52,9 @@ degree zero.
   graded projective resolutions.
 * `TauCeti.GradedProjectiveResolution.isLinear_directSum_iff`: the direct-sum resolution is linear
   exactly when every component resolution is linear.
+* `TauCeti.GradedProjectiveResolution.shift` and
+  `TauCeti.GradedProjectiveResolution.isMinimal_shift_iff`: regrading a resolution by a fixed
+  internal shift preserves exactness, projectivity, and minimality.
 
 ## Implementation notes
 
@@ -82,7 +85,7 @@ universe uk uA uM w
 
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 variable (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜]
-variable {M : Type uM} [AddCommGroup M] [Module k M] [Module A M] (G : InternalGrading k M)
+variable {M : Type uM} [AddCommGroup M] [Module k M] [Module A M] (G : InternalGrading k M ℤ)
 
 /-- A **graded projective resolution** of the graded `𝒜`-module `(M, G)`: projective graded
 `𝒜`-modules `X n`, degree-zero homogeneous `𝒜`-linear differentials `d n : X (n + 1) ⟶ X n` and
@@ -96,7 +99,7 @@ structure GradedProjectiveResolution where
   [moduleBase (n : ℕ) : Module k (X n)]
   [isScalarTower (n : ℕ) : IsScalarTower k A (X n)]
   /-- The internal grading of the term in homological degree `n`. -/
-  grading (n : ℕ) : InternalGrading k (X n)
+  grading (n : ℕ) : InternalGrading k (X n) ℤ
   [gradedSMul (n : ℕ) : SetLike.GradedSMul 𝒜 (grading n).piece]
   /-- Every term is a projective `𝒜`-module. -/
   projective (n : ℕ) : Module.Projective A (X n)
@@ -171,6 +174,65 @@ theorem IsLinear.isGeneratedInDegree_zero (hr : r.IsLinear) : G.IsGeneratedInDeg
   rintro _ ⟨z, hz, rfl⟩
   simpa using r.isHomogeneous_π.map_mem hz
 
+/-! ### Shifting a resolution -/
+
+omit [GradedAlgebra 𝒜] in
+/-- Regrade a graded projective resolution simultaneously by `c : ℤ`, resolving `G.shift c` with
+the same underlying modules, differentials, and augmentation. -/
+abbrev shift (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    GradedProjectiveResolution 𝒜 (G.shift c) where
+  X := r.X
+  grading n := (r.grading n).shift c
+  gradedSMul n := ⟨fun {_ _} _ _ ha hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    simpa [add_assoc] using SetLike.GradedSMul.smul_mem (B := (r.grading n).piece) ha hx⟩
+  projective := r.projective
+  d := r.d
+  «π» := r.π
+  isHomogeneous_d n := LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    rw [add_right_comm]
+    exact (r.isHomogeneous_d n).map_mem hx
+  isHomogeneous_π := LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    rw [add_right_comm]
+    exact r.isHomogeneous_π.map_mem hx
+  surjective_π := r.surjective_π
+  exact_d_π := r.exact_d_π
+  exact_d_d := r.exact_d_d
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves its underlying modules unchanged. -/
+@[simp]
+theorem shift_X (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).X n = r.X n := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution shifts the internal grading of each term by the same amount. -/
+@[simp]
+theorem shift_grading (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).grading n = (r.grading n).shift c := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves its differentials unchanged. -/
+@[simp]
+theorem shift_d (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).d n = r.d n := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves its augmentation unchanged. -/
+@[simp]
+theorem shift_π (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    (r.shift c).π = r.π := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Regrading a resolution by an internal shift preserves minimality, since `A₊ (X n)` depends only
+on the algebra grading and the underlying module. -/
+@[simp]
+theorem isMinimal_shift_iff (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    (r.shift c).IsMinimal ↔ r.IsMinimal :=
+  Iff.rfl
+
 end GradedProjectiveResolution
 
 /-! ### Direct sums -/
@@ -183,7 +245,7 @@ variable {𝒜}
 variable {ι : Type ui} {N : ι → Type uN}
   [∀ i, AddCommGroup (N i)] [∀ i, Module k (N i)] [∀ i, Module A (N i)]
   [∀ i, IsScalarTower k A (N i)]
-  (G : ∀ i, InternalGrading k (N i)) [∀ i, SetLike.GradedSMul 𝒜 (G i).piece]
+  (G : ∀ i, InternalGrading k (N i) ℤ) [∀ i, SetLike.GradedSMul 𝒜 (G i).piece]
   (r : ∀ i, GradedProjectiveResolution.{uk, uA, uN, uX} 𝒜 (G i))
 
 /-- The componentwise direct sum of a family of graded projective resolutions. Its terms,

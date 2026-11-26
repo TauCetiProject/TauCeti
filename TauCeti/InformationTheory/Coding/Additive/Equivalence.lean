@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import TauCeti.InformationTheory.Coding.Reindex
 public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
+public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Permutation equivalence of additive codes
@@ -15,10 +16,15 @@ public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
 Coordinate relabelling transports additive codes over an arbitrary group alphabet. It requires
 no scalar closure, and restricts to an additive equivalence of codewords. Permutation equivalence
 preserves cardinality and minimum distance, including the zero-code convention. The permutation
-automorphism group acts additively on codewords by the same coordinate relabelling.
+automorphism group acts additively on codewords by the same coordinate relabelling
+(`permutationAutToMulAut`, written multiplicatively for semidirect products), and coordinate
+relabelling induces a conjugation isomorphism between permutation automorphism groups
+(`reindexPermutationAutEquiv`).
 
 These constructions permit coordinate changes for codes over discriminant alphabets. For linear
-codes, forgetting scalar closure commutes with reindexing and preserves permutation equivalence.
+codes, forgetting scalar closure commutes with reindexing, preserves permutation equivalence, and
+identifies the additive and linear permutation automorphism groups over any nontrivial ring
+(`permutationAutToAddSubgroupMulEquiv`).
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §1.6.
 -/
@@ -212,7 +218,7 @@ theorem comp_symm_mem_of_mem_permutationAut {C : AddSubgroup (ι → A)} {e : Eq
 /-- Permutation automorphisms act additively on the codewords. -/
 instance instSMulPermutationAut (C : AddSubgroup (ι → A)) : SMul (permutationAut C) C where
   smul e x := ⟨(x : ι → A) ∘ (e : Equiv.Perm ι).symm,
-    comp_symm_mem_of_mem_permutationAut e.2 x.2⟩
+    comp_symm_mem_of_mem_permutationAut e.property x.property⟩
 
 /-- The action on codewords is the underlying coordinate permutation. -/
 @[simp]
@@ -228,6 +234,21 @@ instance instDistribMulActionPermutationAut (C : AddSubgroup (ι → A)) :
     simp [Equiv.Perm.mul_def])
   smul_zero e := Subtype.ext (by ext; simp)
   smul_add e x y := Subtype.ext (by ext; simp)
+
+/-- The action of the permutation automorphisms on the codewords, `e • x = x ∘ e⁻¹`, as a
+homomorphism to the automorphisms of the code written multiplicatively. This is the action
+defining the semidirect product of a code by its permutation automorphism group. -/
+def permutationAutToMulAut (C : AddSubgroup (ι → A)) :
+    permutationAut C →* MulAut (Multiplicative C) where
+  toFun e := AddEquiv.toMultiplicative (DistribMulAction.toAddEquiv _ e)
+  map_one' := MulEquiv.ext fun x ↦ by simp
+  map_mul' e f := MulEquiv.ext fun x ↦ by simp [mul_smul]
+
+/-- A permutation automorphism acts on a codeword written multiplicatively by `x ↦ e • x`. -/
+@[simp]
+theorem permutationAutToMulAut_apply (C : AddSubgroup (ι → A)) (e : permutationAut C)
+    (x : Multiplicative C) :
+    permutationAutToMulAut C e x = Multiplicative.ofAdd (e • x.toAdd) := (rfl)
 
 /-- Permutation automorphisms preserve Hamming weight. -/
 @[simp↓]
@@ -245,6 +266,58 @@ theorem hammingDist_smul_permutationAut [Fintype ι] [DecidableEq A]
       hammingDist (x : ι → A) (y : ι → A) := by
   rw [coe_smul_permutationAut, coe_smul_permutationAut]
   exact Equiv.hammingDist_comp (e : Equiv.Perm ι).symm (x : ι → A) (y : ι → A)
+
+/-- Coordinate relabelling is injective on additive codes. -/
+@[simp]
+theorem reindex_eq_reindex_iff {C D : AddSubgroup (ι → A)} (e : κ ≃ ι) :
+    reindex C e = reindex D e ↔ C = D := by
+  rw [le_antisymm_iff, le_antisymm_iff, reindex_le_reindex_iff, reindex_le_reindex_iff]
+
+/-- Permutation automorphisms of a reindexed additive code correspond to those of the original code
+by conjugation along `e`. -/
+theorem mem_permutationAut_reindex {C : AddSubgroup (ι → A)} {e : κ ≃ ι} {σ : Equiv.Perm κ} :
+    σ ∈ permutationAut (reindex C e) ↔ e.permCongr σ ∈ permutationAut C := by
+  have hcomp : e.trans (e.permCongr σ).symm = σ.symm.trans e := by
+    ext j
+    simp [Equiv.permCongr_def]
+  rw [mem_permutationAut, reindex_reindex, ← hcomp, ← reindex_reindex, reindex_eq_reindex_iff,
+    mem_permutationAut]
+
+/-- Coordinate relabelling maps the permutation automorphism group along `e.symm.permCongrHom`. -/
+theorem permutationAut_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
+    permutationAut (reindex C e) = (permutationAut C).map e.symm.permCongrHom.toMonoidHom := by
+  rw [Subgroup.map_equiv_eq_comap_symm', ← Equiv.permCongrHom_symm, MulEquiv.symm_symm]
+  ext σ
+  exact mem_permutationAut_reindex
+
+/-- Coordinate relabelling induces a group isomorphism between permutation automorphism groups. -/
+def reindexPermutationAutEquiv (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
+    permutationAut C ≃* permutationAut (reindex C e) :=
+  (e.symm.permCongrHom.subgroupMap (permutationAut C)).trans
+    (MulEquiv.subgroupCongr (permutationAut_reindex C e).symm)
+
+/-- The forward isomorphism conjugates underlying permutations along `e.symm`. -/
+@[simp]
+theorem coe_reindexPermutationAutEquiv_apply (C : AddSubgroup (ι → A)) (e : κ ≃ ι)
+    (g : permutationAut C) :
+    (reindexPermutationAutEquiv C e g : Equiv.Perm κ) = e.symm.permCongr (g : Equiv.Perm ι) :=
+  (rfl)
+
+/-- The inverse isomorphism conjugates underlying permutations along `e`. -/
+@[simp]
+theorem coe_reindexPermutationAutEquiv_symm_apply (C : AddSubgroup (ι → A)) (e : κ ≃ ι)
+    (g : permutationAut (reindex C e)) :
+    ((reindexPermutationAutEquiv C e).symm g : Equiv.Perm ι) =
+      e.permCongr (g : Equiv.Perm κ) := by
+  apply e.symm.permCongr.injective
+  rw [← coe_reindexPermutationAutEquiv_apply, MulEquiv.apply_symm_apply, ← Equiv.permCongr_symm,
+    Equiv.symm_apply_apply]
+
+/-- Relabelling preserves the order of the permutation automorphism group. -/
+@[simp↓]
+theorem natCard_permutationAut_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
+    Nat.card (permutationAut (reindex C e)) = Nat.card (permutationAut C) :=
+  Nat.card_congr (reindexPermutationAutEquiv C e).symm.toEquiv
 
 section Ring
 
@@ -289,6 +362,59 @@ theorem mem_permutationAut_toAddSubgroup_iff (C : Submodule R (ι → R)) (e : E
   simp only [TauCeti.funCongrLeft_mem_permutationGroup, true_and,
     Submodule.toAddSubgroup_injective.eq_iff]
 
+/-- Over a nontrivial ring, the additive permutation automorphism group of `C.toAddSubgroup` is
+canonically isomorphic to the linear permutation automorphism group `TauCeti.permutationAut C`. -/
+noncomputable def permutationAutToAddSubgroupMulEquiv (C : Submodule R (ι → R)) [Nontrivial R] :
+    permutationAut C.toAddSubgroup ≃* TauCeti.permutationAut C :=
+  MulEquiv.ofBijective
+    ({ toFun := fun e ↦ ⟨LinearEquiv.funCongrLeft R R (e : Equiv.Perm ι).symm,
+         (mem_permutationAut_toAddSubgroup_iff C e).mp e.property⟩
+       map_one' := by ext; simp [Equiv.Perm.one_def]
+       map_mul' := fun _ _ ↦ by ext; simp [Equiv.Perm.mul_def] } :
+      permutationAut C.toAddSubgroup →* TauCeti.permutationAut C)
+    ⟨fun _ _ h ↦ Subtype.ext <|
+        ((LinearEquiv.funCongrLeft_injective R R).comp Equiv.symm_bijective.injective)
+          (congrArg Subtype.val h),
+      fun f ↦ by
+        obtain ⟨e, he⟩ := TauCeti.mem_permutationGroup.mp (TauCeti.mem_permutationAut.mp
+            f.property).1
+        exact ⟨⟨e, (mem_permutationAut_toAddSubgroup_iff C e).mpr (he.symm ▸ f.property)⟩,
+          Subtype.ext he⟩⟩
+
+/-- `permutationAutToAddSubgroupMulEquiv` sends a coordinate permutation `e` to the linear
+equivalence `LinearEquiv.funCongrLeft R R e.symm`. -/
+@[simp]
+theorem coe_permutationAutToAddSubgroupMulEquiv_apply (C : Submodule R (ι → R)) [Nontrivial R]
+    (e : permutationAut C.toAddSubgroup) :
+    (permutationAutToAddSubgroupMulEquiv C e : (ι → R) ≃ₗ[R] (ι → R)) =
+      LinearEquiv.funCongrLeft R R (e : Equiv.Perm ι).symm :=
+  (rfl)
+
+/-- Reconstructing the linear equivalence from the inverse of `permutationAutToAddSubgroupMulEquiv`
+recovers the original automorphism. -/
+@[simp]
+theorem funCongrLeft_symm_permutationAutToAddSubgroupMulEquiv_symm
+    (C : Submodule R (ι → R)) [Nontrivial R] (f : TauCeti.permutationAut C) :
+    LinearEquiv.funCongrLeft R R
+      ((permutationAutToAddSubgroupMulEquiv C).symm f : Equiv.Perm ι).symm =
+      (f : (ι → R) ≃ₗ[R] (ι → R)) := by
+  rw [← coe_permutationAutToAddSubgroupMulEquiv_apply, MulEquiv.apply_symm_apply]
+
+/-- The action of `permutationAutToAddSubgroupMulEquiv C e` on codewords agrees with coordinate
+composition by `e.symm`. -/
+theorem coe_smul_permutationAutToAddSubgroupMulEquiv (C : Submodule R (ι → R)) [Nontrivial R]
+    (e : permutationAut C.toAddSubgroup) (x : C) :
+    ((permutationAutToAddSubgroupMulEquiv C e • x : C) : ι → R) =
+      (x : ι → R) ∘ (e : Equiv.Perm ι).symm := by
+  ext j
+  simp
+
+/-- Over a nontrivial ring, the additive and linear permutation automorphism groups of a linear code
+have the same cardinality. -/
+theorem natCard_permutationAut_toAddSubgroup (C : Submodule R (ι → R)) [Nontrivial R] :
+    Nat.card (permutationAut C.toAddSubgroup) = Nat.card (TauCeti.permutationAut C) :=
+  Nat.card_congr (permutationAutToAddSubgroupMulEquiv C).toEquiv
+
 end Ring
 
 section Linear
@@ -301,6 +427,13 @@ theorem reindex_toAddSubgroup (C : LinearCode F ι) (e : κ ≃ ι) :
     reindex C.toAddSubgroup e = (TauCeti.reindex C e).toAddSubgroup := by
   rw [TauCeti.reindex_def]
   exact reindex_toAddSubgroup_eq_map C e
+
+/-- Coordinate permutation automorphisms of a reindexed linear code conjugate along `e`. -/
+theorem mem_permutationAut_reindex_toAddSubgroup {C : LinearCode F ι} {e : κ ≃ ι}
+    {σ : Equiv.Perm κ} :
+    σ ∈ permutationAut (TauCeti.reindex C e).toAddSubgroup ↔
+      e.permCongr σ ∈ permutationAut C.toAddSubgroup := by
+  rw [← reindex_toAddSubgroup, mem_permutationAut_reindex]
 
 end Linear
 

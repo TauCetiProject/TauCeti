@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Jacobian.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import Mathlib.Tactic.DeriveFintype
+import TauCeti.RingTheory.Noetherian.ULift
 
 /-!
 # The universal elliptic curve
@@ -306,7 +307,7 @@ lemma equation_point : pointedCurve.toAffine.Equation (polyToField (C X)) (polyT
     ((curve.map (algebraMap _ Universal.Field)).toAffine.polynomial) = 0
   have h : (evalEvalRingHom (polyToField (C X)) (polyToField Y)).comp
       (mapRingHom <| mapRingHom (algebraMap _ Universal.Field)) = polyToField := by
-    ext <;> simp [polyToField, algebraMap_field_eq_comp]
+    ext <;> simp [polyToField, algebraMap_field_eq_comp, single_eq_monomial]
   have : ∀ p, evalEval (polyToField (C X)) (polyToField Y)
       (p.map (mapRingHom (algebraMap _ Universal.Field))) = polyToField p :=
     fun p ↦ congr($h p)
@@ -496,7 +497,7 @@ lemma ringEval_root : ringEval eqn (AdjoinRoot.root _) = y := by
 point does not disturb the substitution of `W`'s coefficients. -/
 @[simp]
 lemma polyEval_comp_eq_specialize : (polyEval W x y).comp (algebraMap _ _) = W.specialize := by
-  ext <;> simp [polyEval]
+  ext <;> simp [polyEval, Polynomial.single_eq_monomial]
 
 /-- The `Universal.Ring` counterpart of `polyEval_comp_eq_specialize`: `ringEval eqn` also restricts
 to `W.specialize` on the coefficient ring. This is the compatibility that makes
@@ -657,7 +658,7 @@ theorem exists_map_eq_of_isElliptic :
   -- the copy `ULift.{u} Universal.EllipticRing` of the universal ring in `Type u`
   ⟨ULift.{u} Universal.EllipticRing, inferInstance,
     ULift.ringEquiv.toMulEquiv.isDomain Universal.EllipticRing,
-    isNoetherianRing_of_ringEquiv Universal.EllipticRing ULift.ringEquiv.symm,
+    inferInstance,
     Universal.ellipticCurve.map ULift.ringEquiv.symm.toRingHom, inferInstance,
     W.specializeElliptic.comp ULift.ringEquiv.toRingHom, by
       rw [map_map, RingHom.comp_assoc, RingEquiv.toRingHom_comp_symm_toRingHom, RingHom.comp_id,

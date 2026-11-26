@@ -17,13 +17,16 @@ useful before projection closure is available: semialgebraicity of a graph alone
 us recover its projection onto the input coordinates.
 
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
-piecewise-gluing laws and shows that polynomial maps, and more generally functions whose graph
-over a semialgebraic domain is cut out by polynomial equations
+piecewise-gluing laws and shows that polynomial maps, coordinatewise rational maps over a linearly
+ordered field (`TauCeti.isSemialgebraicOn_eval_div`, `TauCeti.isSemialgebraicMap_eval_div`), and
+more generally functions whose graph over a semialgebraic domain is cut out by polynomial equations
 (`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are semialgebraic.  It also proves the
 operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
 eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
 assembling a function from its coordinates (`TauCeti.IsSemialgebraicOn.pi`),
-precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise
+precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), constant fibers
+and their complements (`TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq_const`,
+`TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_ne_const`), pointwise
 negation (`TauCeti.IsSemialgebraicOn.neg`), and bijective changes of the input or output
 coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
 `TauCeti.isSemialgebraicOn_comp_equiv_iff`).  It deliberately does not assert closure under
@@ -200,6 +203,38 @@ theorem isSemialgebraicMap_eval [Finite τ] (p : τ → MvPolynomial σ R) :
   rw [← isSemialgebraicOn_univ]
   exact isSemialgebraicOn_eval p isSemialgebraic_univ
 
+/-- Over a linearly ordered field, a coordinatewise rational map
+`x ↦ (eval x (N i) / eval x (D i))` (with Lean's total division `a / 0 = 0`) into a
+finite-dimensional coordinate space is semialgebraic on every semialgebraic domain. -/
+theorem isSemialgebraicOn_eval_div {K : Type*} [Field K] [LinearOrder K] [Finite τ]
+    (N D : τ → MvPolynomial σ K) {s : Set (σ → K)} (hs : IsSemialgebraic s) :
+    IsSemialgebraicOn (fun x i ↦ eval x (N i) / eval x (D i)) s := by
+  refine isSemialgebraicOn_def.2 ⟨hs, ?_⟩
+  convert (hs.preimage_comp Sum.inl).inter
+    (IsSemialgebraic.iInter fun i ↦
+      ((isSemialgebraic_eval_eq_zero (rename Sum.inl (D i))).inter
+        (isSemialgebraic_eval_eq_zero (X (Sum.inr i)))).union
+      ((isSemialgebraic_eval_ne_zero (rename Sum.inl (D i))).inter
+        (isSemialgebraic_eval_eq_zero
+          (rename Sum.inl (D i) * X (Sum.inr i) - rename Sum.inl (N i))))) using 1
+  ext z
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [mem_inter_iff, mem_preimage, mem_iInter, mem_union, mem_ofPred_eq, map_sub, map_mul,
+    eval_rename, eval_X, Function.comp_apply, funext_iff, sub_eq_zero]
+  refine and_congr_right fun _ ↦ forall_congr' fun i ↦ ?_
+  by_cases hD : eval (z ∘ Sum.inl) (D i) = 0
+  · simp [hD, eq_comm]
+  · simp only [hD, false_and, true_and, false_or, ne_eq, not_false_eq_true]
+    rw [div_eq_iff hD, mul_comm, eq_comm]
+
+/-- Over a linearly ordered field, a coordinatewise rational map
+`x ↦ (eval x (N i) / eval x (D i))` into a finite-dimensional coordinate space is semialgebraic. -/
+theorem isSemialgebraicMap_eval_div {K : Type*} [Field K] [LinearOrder K] [Finite τ]
+    (N D : τ → MvPolynomial σ K) :
+    IsSemialgebraicMap (fun x i ↦ eval x (N i) / eval x (D i)) := by
+  rw [← isSemialgebraicOn_univ]
+  exact isSemialgebraicOn_eval_div N D isSemialgebraic_univ
+
 /-- A constant map into a finite-dimensional coordinate space is semialgebraic on every
 semialgebraic domain. -/
 theorem isSemialgebraicOn_const [Finite τ] (c : τ → R) {s : Set (σ → R)}
@@ -282,7 +317,7 @@ theorem IsSemialgebraicOn.comp_eval {f : (σ → R) → (τ → R)} {s : Set (σ
     using 1
   ext z
   simp only [mem_preimage_sumArrowEquivProdArrow_graphOn,
-    mem_preimage (f := fun (x : σ' ⊕ τ → R) (i : σ ⊕ τ) => eval x _), Function.comp_def,
+    mem_preimage (f := fun (x : σ' ⊕ τ → R) (_ : σ ⊕ τ) => eval x _), Function.comp_def,
     Sum.elim_inl, Sum.elim_inr, eval_rename, eval_X]
   simp only [mem_preimage]
 
@@ -290,6 +325,28 @@ theorem IsSemialgebraicOn.comp_eval {f : (σ → R) → (τ → R)} {s : Set (σ
 theorem IsSemialgebraicMap.comp_eval {f : (σ → R) → (τ → R)} (hf : IsSemialgebraicMap f)
     (p : σ → MvPolynomial σ' R) : IsSemialgebraicMap (f ∘ fun x i => eval x (p i)) := by
   simpa using (isSemialgebraicOn_univ.2 hf).comp_eval p
+
+/-- The fiber of a semialgebraic function over a constant value `c` inside its domain is
+semialgebraic. No projection is needed: the fiber is the inverse image of the graph under the
+polynomial slice `x ↦ (x, c)`. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq_const {f : (σ → R) → (τ → R)}
+    {s : Set (σ → R)} (hf : IsSemialgebraicOn f s) (c : τ → R) :
+    IsSemialgebraic (s ∩ {x | f x = c}) := by
+  convert hf.graph.preimage_eval (Sum.elim X fun j ↦ C (c j)) using 1
+  ext x
+  rw [mem_inter_iff, mem_preimage, mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [Function.comp_def, Sum.elim_inl, Sum.elim_inr, eval_X, eval_C]
+  rfl
+
+/-- The complement of a constant fiber of a semialgebraic function inside its domain is
+semialgebraic. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_ne_const {f : (σ → R) → (τ → R)}
+    {s : Set (σ → R)} (hf : IsSemialgebraicOn f s) (c : τ → R) :
+    IsSemialgebraic (s ∩ {x | f x ≠ c}) := by
+  convert hf.isSemialgebraic.sdiff (hf.isSemialgebraic_inter_setOf_eq_const c) using 1
+  ext x
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_sdiff]
+  tauto
 
 /-- The pointwise negation of a semialgebraic function is semialgebraic.  No projection is needed:
 the new graph is the inverse image of the old one under negation of the output coordinates. -/
@@ -300,7 +357,7 @@ theorem IsSemialgebraicOn.neg {f : (σ → R) → (τ → R)} {s : Set (σ → R
     using 1
   ext z
   simp only [mem_preimage_sumArrowEquivProdArrow_graphOn,
-    mem_preimage (f := fun (x : σ ⊕ τ → R) (i : σ ⊕ τ) => eval x _), Function.comp_def,
+    mem_preimage (f := fun (x : σ ⊕ τ → R) (_ : σ ⊕ τ) => eval x _), Function.comp_def,
     Sum.elim_inl, Sum.elim_inr, eval_X, map_neg]
   rw [Pi.neg_apply, neg_eq_iff_eq_neg]
   rfl

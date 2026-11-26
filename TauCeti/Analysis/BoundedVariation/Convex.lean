@@ -20,14 +20,16 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 /-!
 # Cutting by half-spaces and the perimeter of convex sets
 
-Let `μ` be a measure on a finite-dimensional real inner product space `E`, finite on compact sets
-(an additive Haar measure for the results on convex sets). This file proves that cutting a set of
+Let `μ` be a measure on a finite-dimensional real inner product space `E` (an additive Haar measure
+for the results on convex sets). The half-space and truncation results only need `μ s < ∞` for the
+set `s` being cut, not local finiteness of `μ`. This file proves that cutting a set of
 finite measure by a closed half-space does not increase its perimeter, and deduces that
 intersecting such a set with a convex set does not increase its perimeter either. In particular
 the perimeter is monotone under inclusion of convex sets: a convex set has perimeter at most that
 of any null-measurable set of finite measure containing it, and bounded convex sets have finite
-perimeter. Cutting by the half-spaces bounding large cubes also shows that a set of finite
-measure is the limit of bounded subsets whose perimeters converge to its own.
+perimeter. Consequently every convex set has locally finite perimeter. Cutting by the half-spaces
+bounding large cubes also shows that a set of finite measure is the limit of bounded subsets whose
+perimeters converge to its own.
 
 Monotonicity under convex inclusion is how perimeters of convex bodies are compared. For a
 convex body `K` containing the ball `closedBall c r`, the outer parallel body
@@ -54,6 +56,11 @@ across a slab of width `1 / (n + 1)` because the normal components agree on the 
 * `Convex.perimeter_inter_le`: `P(s ∩ C) ≤ P(s)` for `C` convex and `μ s < ∞`.
 * `Convex.perimeter_le_of_subset`: `P(K) ≤ P(L)` for `K` convex and `K ⊆ L`, `μ L < ∞`.
 * `Convex.perimeter_lt_top`: a bounded convex set has finite perimeter.
+* `Convex.perimeter_lt_top_of_isBounded_opens`: every convex set has finite perimeter in every
+  bounded open set.
+* `Convex.exists_opens_totalVariationOn_indicator_ne_top`: every bounded set lies in an open set in
+  which a given convex set has finite perimeter, the local finiteness hypothesis of the structure
+  theorems for sets of finite perimeter.
 
 ## References
 
@@ -112,7 +119,7 @@ private theorem exists_normal_extension (f : StrongDual ℝ E) (hf : f ≠ 0) (c
     simp [hψ, hx, hw, Real.smoothTransition.zero_of_nonpos h₀]
   · rw [hdivψ x hx, norm_neg, norm_mul]
     exact mul_le_mul (hM _) (hfφ x) (norm_nonneg _) ((norm_nonneg _).trans (hM 0))
-  · rw [hdivψ x hx, Real.smoothTransition.deriv_of_neg (by linarith), zero_mul, neg_zero]
+  · rw [hdivψ x hx, Real.smoothTransition.deriv_of_nonpos (by linarith), zero_mul, neg_zero]
 
 
 variable [MeasurableSpace E] {μ : Measure E} {Ω : Opens E} {s : Set E}
@@ -176,13 +183,10 @@ theorem ofReal_setIntegral_add_setIntegral_le_perimeter [OpensMeasurableSpace E]
   exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
     ENNReal.ofReal (∫ x in s, divergenceCLM φ x ∂μ)) (Φ n) (hΦ n) le_rfl
 
-/-- **Cutting by a half-space does not increase the perimeter.** For a null-measurable set `s` of
-finite measure and a closed half-space `{f ≤ c}`, `P(s ∩ {f ≤ c}) ≤ P(s)`.
-
-The finiteness of `μ s` cannot be dropped: for an additive Haar measure the whole space has
-perimeter zero, while a half-space `{f ≤ c}` with `f ≠ 0` has positive perimeter (infinite in
-dimension at least two). -/
-theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
+/-- The half-space cut for a measure that is finite on compact sets; the general case
+`TauCeti.perimeter_inter_halfSpace_le` follows by restricting to `s`. -/
+private theorem perimeter_inter_halfSpace_le_of_isFiniteMeasureOnCompacts [OpensMeasurableSpace E]
+    [IsFiniteMeasureOnCompacts μ]
     (f : StrongDual ℝ E) (c : ℝ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
     perimeter μ ⊤ (s ∩ {x | f x ≤ c}) ≤ perimeter μ ⊤ s := by
   by_cases hf : f = 0
@@ -233,11 +237,28 @@ theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOn
   refine le_of_tendsto' (ENNReal.tendsto_ofReal hlim) fun n => ?_
   exact ofReal_setIntegral_add_setIntegral_le_perimeter f c hφ (hψn n) (hφψ n) hs
 
+/-- **Cutting by a half-space does not increase the perimeter.** For a null-measurable set `s` of
+finite measure and a closed half-space `{f ≤ c}`, `P(s ∩ {f ≤ c}) ≤ P(s)`.
+
+The finiteness of `μ s` cannot be dropped: for an additive Haar measure the whole space has
+perimeter zero, while a half-space `{f ≤ c}` with `f ≠ 0` has positive perimeter (infinite in
+dimension at least two). -/
+theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E]
+    (f : StrongDual ℝ E) (c : ℝ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
+    perimeter μ ⊤ (s ∩ {x | f x ≤ c}) ≤ perimeter μ ⊤ s := by
+  -- Pass to the finite measure `μ.restrict s`, which sees the same perimeters of subsets of `s`.
+  have := isFiniteMeasure_restrict.2 hμs
+  have hsν : NullMeasurableSet s (μ.restrict s) :=
+    hs.mono_ac Measure.restrict_le_self.absolutelyContinuous
+  rw [← perimeter_restrict_of_subset (inter_subset_left (t := {x | f x ≤ c})),
+    ← perimeter_restrict_of_subset (subset_refl s)]
+  exact perimeter_inter_halfSpace_le_of_isFiniteMeasureOnCompacts f c hsν (measure_ne_top _ _)
+
 /-- **Cutting by finitely many half-spaces does not increase the perimeter.** For a
 null-measurable set `s` of finite measure and finitely many closed half-spaces `{g k ≤ c k}`,
 `k ∈ S`, the perimeter of `s ∩ ⋂ k ∈ S, {g k ≤ c k}` is at most `P(s)`. -/
 theorem perimeter_inter_biInter_halfSpace_le [OpensMeasurableSpace E]
-    [IsFiniteMeasureOnCompacts μ] {κ : Type*} (g : κ → StrongDual ℝ E)
+    {κ : Type*} (g : κ → StrongDual ℝ E)
     (c : κ → ℝ) (S : Finset κ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
     perimeter μ ⊤ (s ∩ ⋂ k ∈ S, {x | g k x ≤ c k}) ≤ perimeter μ ⊤ s := by
   classical
@@ -262,8 +283,7 @@ measure, whose perimeters are at most `P(s)` and converge to `P(s)`. The perimet
 extended-valued, so `s` may have infinite perimeter. The finiteness of `μ s` cannot be dropped,
 since bounded subsets of a set of infinite measure do not converge to it in measure. -/
 theorem _root_.MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approximation
-    [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ] (hs : NullMeasurableSet s μ)
-    (hμs : μ s ≠ ⊤) :
+    [OpensMeasurableSpace E] (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ⊤) :
     ∃ t : ℕ → Set E, Monotone t ∧
       (∀ n, t n ⊆ s ∧ NullMeasurableSet (t n) μ ∧ Bornology.IsBounded (t n) ∧
         perimeter μ ⊤ (t n) ≤ perimeter μ ⊤ s) ∧
@@ -309,10 +329,18 @@ theorem _root_.MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approx
   refine ⟨t, fun m n hmn => inter_subset_inter_right s (hQmono hmn),
     fun n => ⟨inter_subset_left, ht n, htb n, htP n⟩, hlim, ?_⟩
   refine tendsto_of_le_liminf_of_limsup_le ?_ (limsup_le_of_le (h := .of_forall htP))
-  refine perimeter_le_liminf (.of_forall ht) hs fun K _ _ => ?_
+  -- Lower semicontinuity for the finite measure `μ.restrict s`.
+  have := isFiniteMeasure_restrict.2 hμs
+  have hac : μ.restrict s ≪ μ := Measure.restrict_le_self.absolutelyContinuous
+  have hts (n : ℕ) : t n ⊆ s := inter_subset_left
+  rw [show (fun n => perimeter μ ⊤ (t n)) = fun n => perimeter (μ.restrict s) ⊤ (t n) from
+    funext fun n => (perimeter_restrict_of_subset (hts n)).symm,
+    ← perimeter_restrict_of_subset (subset_refl s)]
+  refine perimeter_le_liminf (.of_forall fun n => (ht n).mono_ac hac) (hs.mono_ac hac)
+    fun K _ _ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
-    fun n => measure_mono ?_
-  rw [symmDiff_of_le (inter_subset_left : t n ⊆ s)]
+    fun n => (Measure.restrict_apply_le _ _).trans (measure_mono ?_)
+  rw [symmDiff_of_le (hts n)]
   exact inter_subset_left
 
 /-- **Intersecting with a convex set does not increase the perimeter.** For a convex set `C` and
@@ -393,5 +421,28 @@ theorem _root_.Convex.perimeter_lt_top [BorelSpace E] [μ.IsAddHaarMeasure] {K :
   rw [perimeter_ball hr]
   exact ENNReal.mul_lt_top (ENNReal.mul_lt_top (by simp) ENNReal.ofReal_lt_top)
     measure_ball_lt_top
+
+/-- Every convex set, bounded or not, has finite perimeter in every bounded open set `Ω`, since
+there it agrees with its intersection with a ball containing `Ω`, which is a bounded convex
+set. -/
+theorem _root_.Convex.perimeter_lt_top_of_isBounded_opens [BorelSpace E] [μ.IsAddHaarMeasure]
+    {K : Set E} (hK : Convex ℝ K) (hΩ : Bornology.IsBounded (Ω : Set E)) : perimeter μ Ω K < ∞ := by
+  obtain ⟨r, hΩr⟩ := hΩ.subset_ball 0
+  calc perimeter μ Ω K ≤ perimeter μ ⟨ball 0 r, isOpen_ball⟩ K := perimeter_mono hΩr
+    _ = perimeter μ ⟨ball 0 r, isOpen_ball⟩ (K ∩ ball 0 r) :=
+      perimeter_congr_of_inter_eq (by simp)
+    _ ≤ perimeter μ ⊤ (K ∩ ball 0 r) := perimeter_mono le_top
+    _ < ∞ :=
+      (hK.inter (convex_ball 0 r)).perimeter_lt_top (isBounded_ball.subset inter_subset_right)
+
+/-- **Convex sets have locally finite perimeter.** Every bounded set `C` lies in an open set `U` in
+which a convex set `K` has finite perimeter, `totalVariationOn μ U (K.indicator 1) ≠ ∞`. -/
+theorem _root_.Convex.exists_opens_totalVariationOn_indicator_ne_top [BorelSpace E]
+    [μ.IsAddHaarMeasure] {K C : Set E} (hK : Convex ℝ K) (hC : Bornology.IsBounded C) :
+    ∃ U : Opens E, C ⊆ (U : Set E) ∧ totalVariationOn μ U (K.indicator 1) ≠ ∞ := by
+  obtain ⟨r, hr⟩ := hC.subset_ball 0
+  refine ⟨⟨ball 0 r, isOpen_ball⟩, hr, ?_⟩
+  rw [← perimeter_def]
+  exact (hK.perimeter_lt_top_of_isBounded_opens (Ω := ⟨ball 0 r, isOpen_ball⟩) isBounded_ball).ne
 
 end TauCeti

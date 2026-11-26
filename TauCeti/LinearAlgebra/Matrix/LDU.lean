@@ -49,6 +49,8 @@ how membership in the big cell is read off a Bruhat normal form.
 * `Matrix.BlockUnitriangular.det_eq_one`, `Matrix.BlockUnitriangular.mul` and
   `Matrix.BlockUnitriangular.inv`: block unitriangular matrices have determinant one and are
   closed under products and inverses.
+* `Matrix.BlockUnitriangular.mul_apply_of_covBy`: one step above the diagonal blocks, a product
+  of block unitriangular matrices has the sum of the entries of its factors.
 * `Matrix.mul_eq_of_blockUnitriangular_toDual`: a block diagonal matrix multiplied on the left by
   a block lower unitriangular matrix is unchanged once the product is block upper triangular.
 * `Matrix.det_toSquareBlockProp_blockLDU`: the leading block minors of `L * D * U` are those of
@@ -113,7 +115,7 @@ theorem blockUnitriangular_of_apply_eq_one_apply_of_not_lt {α : Type*} [Preorde
     {b : m → α} (h : ∀ r s, ¬ b r < b s → M r s = (1 : Matrix m m R) r s) :
     M.BlockUnitriangular b := by
   refine ⟨fun r s hsr => ?_, fun r s hrs => h r s (by rw [hrs]; exact lt_irrefl _)⟩
-  rw [h r s (not_lt_of_gt hsr), Matrix.one_apply_ne]
+  rw [h r s (not_lt_of_gt hsr), one_apply_ne]
   exact fun hrs => (ne_of_lt hsr) (congrArg b hrs.symm)
 
 /-- Restricting a block unitriangular matrix along an injective map of indices keeps it block
@@ -178,6 +180,22 @@ theorem BlockUnitriangular.mul (hA : A.BlockUnitriangular b) (hB : B.BlockUnitri
     (A * B).BlockUnitriangular b :=
   ⟨hA.1.mul hB.1, fun _ _ hij => (hA.mul_apply_of_eq hB.1 hij).trans (hB.2 hij)⟩
 
+/-- One step above the diagonal blocks, the entries of a product of block unitriangular matrices
+are the sums of the entries of the factors: such an entry only meets the identity diagonal blocks
+of the two factors. -/
+theorem BlockUnitriangular.mul_apply_of_covBy (hA : A.BlockUnitriangular b)
+    (hB : B.BlockUnitriangular b) {i j : m} (hij : b i ⋖ b j) :
+    (A * B) i j = A i j + B i j := by
+  rw [Matrix.mul_apply, Fintype.sum_eq_add i j fun h => hij.ne (congrArg b h)]
+  · simp [hA.apply_of_eq rfl, hB.apply_of_eq rfl, add_comm]
+  · rintro k ⟨hki, hkj⟩
+    rcases lt_trichotomy (b k) (b i) with hk | hk | hk
+    · rw [hA.1 hk, zero_mul]
+    · rw [hA.2 hk.symm, one_apply_ne (Ne.symm hki), zero_mul]
+    · rcases (not_lt.mp (hij.2 hk)).lt_or_eq with hjk | hjk
+      · rw [hB.1 hjk, mul_zero]
+      · rw [hB.2 hjk.symm, one_apply_ne hkj, mul_zero]
+
 /-- A block diagonal matrix `D`, multiplied on the left by a block lower unitriangular matrix, is
 unchanged as soon as the product is block upper triangular. -/
 theorem mul_eq_of_blockUnitriangular_toDual {Z D : Matrix m m R}
@@ -201,7 +219,7 @@ theorem BlockUnitriangular.det_eq_one (h : M.BlockUnitriangular b) : M.det = 1 :
   refine Finset.prod_eq_one fun a _ => ?_
   have : M.toSquareBlock b a = 1 := by
     ext i j
-    rw [toSquareBlock_def, of_apply, h.2 (i.2.trans j.2.symm)]
+    rw [toSquareBlock_def, of_apply, h.2 (i.property.trans j.property.symm)]
     by_cases hij : i = j
     · subst hij
       simp
@@ -264,9 +282,9 @@ private theorem blockTriangular_one_add_rowMultiplier_mul (M : Matrix m m R)
   rw [Matrix.add_mul, Matrix.one_mul, Matrix.add_apply, Matrix.mul_apply,
     ← Fintype.sum_subtype_add_sum_subtype fun k => b k < b i,
     Fintype.sum_eq_zero (fun k : {k // ¬b k < b i} => rowMultiplier b M i k * M k j) fun k => by
-      rw [rowMultiplier_apply_of_not_lt M k.2, zero_mul], add_zero,
+      rw [rowMultiplier_apply_of_not_lt M k.property, zero_mul], add_zero,
     Finset.sum_congr rfl fun (k : {k // b k < b i}) _ => by
-      rw [rowMultiplier_apply_of_lt M k.2, Subtype.coe_eta], hsum, add_neg_cancel]
+      rw [rowMultiplier_apply_of_lt M k.property, Subtype.coe_eta], hsum, add_neg_cancel]
 
 /-- **Block row reduction.** If, for every index `i`, the leading block of `M` on the indices of
 rank strictly below `b i` has a unit determinant, then some block lower unitriangular matrix `P`
@@ -382,7 +400,7 @@ theorem exists_blockLDU_iff (M : Matrix m m R) :
         fun j => ⟨fun _ => hk j (Finset.mem_univ j), fun _ => trivial⟩]
       exact hM k
     rwa [det_mul, det_mul, hL.det_eq_one, hU.det_eq_one, one_mul, mul_one] at hfull
-  · rintro ⟨L, D, U, hL, hD, hD', hU, hDdet, rfl⟩ i
+  · rintro ⟨L, D, U, hL, hD, _, hU, hDdet, rfl⟩ i
     have hp : ∀ ⦃j k⦄, b k ≤ b j → b j ≤ b i → b k ≤ b i := fun _ _ h₁ h₂ => h₁.trans h₂
     rw [det_toSquareBlockProp_blockLDU hL hU hp]
     exact hD.isUnit_det_toSquareBlockProp hDdet hp

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 
 /-!
 # Exact pairings in rigid monoidal categories
@@ -36,8 +38,25 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   object having a right (resp. left) dual is a right (resp. left) adjoint on the left and a left
   (resp. right) adjoint on the right, so in a rigid category tensoring on either side preserves all
   limits and colimits;
+* `TauCeti.whiskerLeft_zero_of_hasLeftDual` and `TauCeti.zero_whiskerRight_of_hasRightDual`:
+  whiskering by an object with a left (resp. right) dual preserves zero morphisms;
+* `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` of an exact pairing is nonzero when `X`
+  is not a zero object, by the zigzag identity;
+* `TauCeti.coevaluation_eq_zero_of_isZero_left` and `TauCeti.evaluation_eq_zero_of_isZero_right`:
+  the coevaluation (resp. evaluation) of an exact pairing vanishes when its left (resp. right)
+  object is a zero object;
+* `TauCeti.isZero_right_of_isZero_left` and `TauCeti.isZero_left_of_isZero_right`: the right and
+  left duals of a zero object are zero objects;
 * `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
-  correspond to morphisms `𝟙_ C ⟶ Y`.
+  correspond to morphisms `𝟙_ C ⟶ Y`;
+* `TauCeti.tensorRightHomEquiv_whiskerRight_comp`, `TauCeti.tensorRightHomEquiv_symm_comp`, and
+  `TauCeti.tensorRightHomEquiv_whiskerLeft_comp`: naturality and dinaturality of
+  `CategoryTheory.tensorRightHomEquiv`;
+* `TauCeti.coevaluation_whiskerRight_tensorLeftHomEquiv`: the two Frobenius reciprocities
+  `CategoryTheory.tensorLeftHomEquiv` and `CategoryTheory.tensorRightHomEquiv` of a morphism
+  `S ⊗ T' ⟶ U` agree after inserting coevaluations;
+* `TauCeti.whiskerLeft_rightAdjointMate_comp_evaluation`: for `φ : R ≅ 𝟙_ C` and a normalized
+  pairing of `Rᘁ` and `R`, contracting `R` with the right adjoint mate of `φ.hom` is `φ`.
 -/
 
 public section
@@ -199,6 +218,26 @@ instance isRightAdjoint_tensorRight [HasLeftDual X] : (tensorRight X).IsRightAdj
 
 end Adjoint
 
+section Zero
+
+variable [Limits.HasZeroMorphisms C]
+
+/-- Whiskering on the left by an object with a left dual preserves zero morphisms, since
+`tensorLeft` is then a left adjoint. -/
+@[simp]
+theorem whiskerLeft_zero_of_hasLeftDual (W : C) [HasLeftDual W] {X Y : C} :
+    W ◁ (0 : X ⟶ Y) = 0 := by
+  simpa using (tensorLeft W).map_zero X Y
+
+/-- Whiskering on the right by an object with a right dual preserves zero morphisms, since
+`tensorRight` is then a left adjoint. -/
+@[simp]
+theorem zero_whiskerRight_of_hasRightDual (W : C) [HasRightDual W] {X Y : C} :
+    (0 : X ⟶ Y) ▷ W = 0 := by
+  simpa using (tensorRight W).map_zero X Y
+
+end Zero
+
 namespace ExactPairing
 
 variable (X Y : C) [ExactPairing X Y]
@@ -225,5 +264,138 @@ theorem homUnitEquiv_symm_apply (s : 𝟙_ C ⟶ Y) :
   simp [homUnitEquiv, tensorRightHomEquiv, unitors_equal, unitors_inv_equal]
 
 end ExactPairing
+
+open Limits in
+/-- The coevaluation of an exact pairing of `X` with `Y` is nonzero when `X` is nonzero: otherwise
+the zigzag identity would make the identity of `X` zero. Only zero morphisms are needed. -/
+theorem coevaluation_ne_zero [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : ¬IsZero X) : η_ X Y ≠ 0 := by
+  intro h
+  have hz := ExactPairing.evaluation_coevaluation X Y
+  have := (tensorRightAdjunction X Y).isLeftAdjoint
+  have h0 : (0 : 𝟙_ C ⟶ X ⊗ Y) ▷ X = 0 := (tensorRight X).map_zero _ _
+  rw [h, h0, zero_comp] at hz
+  exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
+
+open Limits in
+/-- The coevaluation of an exact pairing of a zero object `X` with `Y` is zero, since it lands in
+the zero object `X ⊗ Y`. -/
+theorem coevaluation_eq_zero_of_isZero_left [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : IsZero X) : η_ X Y = 0 :=
+  have := (tensorRightAdjunction X Y).isRightAdjoint
+  ((tensorRight Y).map_isZero hX).eq_of_tgt _ _
+
+open Limits in
+/-- The evaluation of an exact pairing of `X` with a zero object `Y` is zero, since it starts at
+the zero object `Y ⊗ X`. -/
+theorem evaluation_eq_zero_of_isZero_right [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hY : IsZero Y) : ε_ X Y = 0 :=
+  have := (tensorRightAdjunction X Y).isLeftAdjoint
+  ((tensorRight X).map_isZero hY).eq_of_src _ _
+
+open Limits in
+/-- The right dual of a zero object is a zero object: the coevaluation `η_ X Y` is zero, so the
+zigzag identity on `Y` makes the identity of `Y` zero. -/
+theorem isZero_right_of_isZero_left [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : IsZero X) : IsZero Y := by
+  have := (tensorLeftAdjunction X Y).isLeftAdjoint
+  have hz := ExactPairing.coevaluation_evaluation X Y
+  have h0 : Y ◁ (0 : 𝟙_ C ⟶ X ⊗ Y) = 0 := (tensorLeft Y).map_zero _ _
+  rw [coevaluation_eq_zero_of_isZero_left hX, h0, zero_comp] at hz
+  exact (IsZero.iff_id_eq_zero Y).2 (by simpa using (ρ_ Y).inv ≫= hz.symm =≫ (λ_ Y).hom)
+
+open Limits in
+/-- The left dual of a zero object is a zero object: the evaluation `ε_ X Y` is zero, so the
+zigzag identity on `X` makes the identity of `X` zero. -/
+theorem isZero_left_of_isZero_right [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hY : IsZero Y) : IsZero X := by
+  have := (tensorLeftAdjunction X Y).isRightAdjoint
+  have hz := ExactPairing.evaluation_coevaluation X Y
+  have h0 : X ◁ (0 : Y ⊗ X ⟶ 𝟙_ C) = 0 := (tensorLeft X).map_zero _ _
+  rw [evaluation_eq_zero_of_isZero_right hY, h0, comp_zero, comp_zero] at hz
+  exact (IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom)
+
+/-- Naturality of `CategoryTheory.tensorRightHomEquiv` in its first argument. -/
+@[reassoc]
+theorem tensorRightHomEquiv_whiskerRight_comp {X X' Y Y' Z : C} [ExactPairing Y Y']
+    (f : X ⟶ X') (g : X' ⊗ Y ⟶ Z) :
+    tensorRightHomEquiv X Y Y' Z (f ▷ Y ≫ g) = f ≫ tensorRightHomEquiv X' Y Y' Z g := by
+  apply (tensorRightHomEquiv X Y Y' Z).symm.injective
+  rw [Equiv.symm_apply_apply, tensorRightHomEquiv_symm_naturality, Equiv.symm_apply_apply]
+
+/-- Naturality of `(CategoryTheory.tensorRightHomEquiv _ _ _ _).symm` in its target argument. -/
+@[reassoc]
+theorem tensorRightHomEquiv_symm_comp {X Y Y' Z Z' : C} [ExactPairing Y Y']
+    (f : X ⟶ Z ⊗ Y') (g : Z ⟶ Z') :
+    (tensorRightHomEquiv X Y Y' Z).symm f ≫ g =
+      (tensorRightHomEquiv X Y Y' Z').symm (f ≫ g ▷ Y') := by
+  apply (tensorRightHomEquiv X Y Y' Z').injective
+  rw [tensorRightHomEquiv_naturality, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- Dinaturality of `CategoryTheory.tensorRightHomEquiv` in the dualized object: precomposing
+`g : X ⊗ Y' ⟶ Z` with `X ◁ f` corresponds under `tensorRightHomEquiv` to postcomposing with
+`Z ◁ fᘁ`. -/
+@[reassoc]
+theorem tensorRightHomEquiv_whiskerLeft_comp {X Y Y' Z : C} [HasRightDual Y] [HasRightDual Y']
+    (f : Y ⟶ Y') (g : X ⊗ Y' ⟶ Z) :
+    tensorRightHomEquiv X Y Yᘁ Z (X ◁ f ≫ g) =
+      tensorRightHomEquiv X Y' Y'ᘁ Z g ≫ Z ◁ fᘁ := by
+  dsimp only [tensorRightHomEquiv, Equiv.coe_fn_mk]
+  calc _ = 𝟙 _ ⊗≫ X ◁ (η_ Y Yᘁ ≫ f ▷ Yᘁ) ⊗≫ g ▷ Yᘁ := by
+          simp only [comp_whiskerRight]; monoidal
+    _ = 𝟙 _ ⊗≫ X ◁ (η_ Y' Y'ᘁ ≫ Y' ◁ fᘁ) ⊗≫ g ▷ Yᘁ := by
+          rw [coevaluation_comp_rightAdjointMate]
+    _ = 𝟙 _ ⊗≫ X ◁ η_ Y' Y'ᘁ ⊗≫ ((X ⊗ Y') ◁ fᘁ ≫ g ▷ Yᘁ) := by monoidal
+    _ = _ := by rw [whisker_exchange]; monoidal
+
+/-- Inserting the coevaluation of `T'` and `T` before the Frobenius reciprocity
+`CategoryTheory.tensorLeftHomEquiv` through `S'` is inserting the coevaluation of `S'` and `S`
+before the Frobenius reciprocity `CategoryTheory.tensorRightHomEquiv` through `T'`. -/
+@[reassoc]
+theorem coevaluation_whiskerRight_tensorLeftHomEquiv {S S' T T' U : C} [ExactPairing S' S]
+    [ExactPairing T' T] (h : S ⊗ T' ⟶ U) :
+    η_ T' T ≫ tensorLeftHomEquiv T' S' S U h ▷ T ≫ (α_ _ _ _).hom =
+      η_ S' S ≫ S' ◁ tensorRightHomEquiv S T' T U h := by
+  dsimp only [tensorLeftHomEquiv, tensorRightHomEquiv, Equiv.coe_fn_mk]
+  calc
+    _ = 𝟙 _ ⊗≫ (𝟙_ C ◁ η_ T' T ≫ η_ S' S ▷ (T' ⊗ T)) ⊗≫ S' ◁ h ▷ T ⊗≫ 𝟙 _ := by
+      simp only [comp_whiskerRight, Category.assoc]
+      monoidal
+    _ = 𝟙 _ ⊗≫ (η_ S' S ▷ 𝟙_ C ≫ (S' ⊗ S) ◁ η_ T' T) ⊗≫ S' ◁ h ▷ T ⊗≫ 𝟙 _ := by
+      rw [whisker_exchange]
+    _ = _ := by
+      simp only [whiskerLeft_comp]
+      monoidal
+
+/-- For `φ : R ≅ 𝟙_ C` and a pairing of `Rᘁ` and `R` normalized by `η_ Rᘁ R ≫ ε_ R Rᘁ = 𝟙`,
+contracting `R` with the right adjoint mate `φ.homᘁ : 𝟙_ C ⟶ Rᘁ` through the pairing is `φ`. -/
+theorem whiskerLeft_rightAdjointMate_comp_evaluation {R : C} [HasRightDual R]
+    [P : ExactPairing Rᘁ R] (φ : R ≅ 𝟙_ C) (hP : η_ (Rᘁ : C) R ≫ ε_ R Rᘁ = 𝟙 (𝟙_ C)) :
+    R ◁ φ.homᘁ ≫ ε_ (Rᘁ : C) R = (ρ_ R).hom ≫ φ.hom := by
+  -- By the normalization, the mate of `φ.hom` is `φ` applied after the coevaluation.
+  have hm : (φ.homᘁ : 𝟙_ C ⟶ Rᘁ) = η_ (Rᘁ : C) R ≫ (Rᘁ : C) ◁ φ.hom ≫ (ρ_ _).hom := by
+    apply (ExactPairing.homUnitEquiv R Rᘁ).symm.injective
+    rw [← cancel_epi φ.inv, ExactPairing.homUnitEquiv_symm_apply,
+      ExactPairing.homUnitEquiv_symm_apply, rightAdjointMate_comp_evaluation]
+    trans 𝟙 (𝟙_ C)
+    · -- The evaluation of the unit object is its right unitor.
+      change φ.inv ≫ (λ_ R).inv ≫ 𝟙_ C ◁ φ.hom ≫ (ρ_ (𝟙_ C)).hom = _
+      rw [← leftUnitor_inv_naturality_assoc, Iso.inv_hom_id_assoc, unitors_inv_equal,
+        Iso.inv_hom_id]
+    · rw [leftUnitor_inv_naturality_assoc, whisker_exchange_assoc, unitors_inv_equal,
+        ← rightUnitor_inv_naturality_assoc]
+      simp only [Category.assoc, Iso.hom_inv_id_assoc, ← whiskerLeft_comp_assoc, Iso.hom_inv_id,
+        whiskerLeft_id, Category.id_comp, hP]
+  rw [hm]
+  calc
+    _ = 𝟙 _ ⊗≫ R ◁ η_ (Rᘁ : C) R ⊗≫ ((R ⊗ Rᘁ) ◁ φ.hom ≫ ε_ (Rᘁ : C) R ▷ 𝟙_ C) ⊗≫ 𝟙 _ := by
+      simp only [whiskerLeft_comp]
+      monoidal
+    _ = 𝟙 _ ⊗≫ (R ◁ η_ (Rᘁ : C) R ⊗≫ ε_ (Rᘁ : C) R ▷ R) ⊗≫ φ.hom := by
+      rw [whisker_exchange]
+      monoidal
+    _ = _ := by
+      rw [ExactPairing.coevaluation_evaluation'']
+      monoidal
 
 end TauCeti

@@ -34,8 +34,12 @@ form of that computation: every element of `H ⊔ K` is a product `x * t` with `
 * `TauCeti.map_conj_eq_conj_smul`: the image of `H` under the inner automorphism of `s` is
   `MulAut.conj s • H`, which converts Mathlib's statements phrased with `Subgroup.map`, such as
   `MulAction.stabilizer_smul_eq_stabilizer_map_conj` and `Ideal.inertia_smul`, to this convention.
+* `TauCeti.conjAct_inv_smul_inf_conjAct_smul_le`: the intersection `U ∩ gUg⁻¹`, conjugated back
+  by `g⁻¹`, lies in `U`.
 * `Subgroup.mem_sup_of_right_le_normalizer_left`: if `K` normalizes `H`, an element of `H ⊔ K` is
   a product of an element of `H` followed by an element of `K`.
+* `Subgroup.mem_smul_set_iff_exists_smul_mem`: a point lies in the translate `H • t` of a set by a
+  subgroup exactly when some element of `H` moves it into `t`.
 -/
 
 public section
@@ -65,6 +69,12 @@ theorem card_conj_smul_eq (s : G) (H : Subgroup G) :
     Nat.card (MulAut.conj s • H : Subgroup G) = Nat.card H :=
   Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
 
+/-- The intersection of `U` with its conjugate `gUg⁻¹`, translated back by `g⁻¹`, lies in `U`. -/
+theorem conjAct_inv_smul_inf_conjAct_smul_le (U : Subgroup G) (g : G) :
+    ConjAct.toConjAct g⁻¹ • (U ⊓ ConjAct.toConjAct g • U) ≤ U := by
+  rw [Subgroup.smul_inf, map_inv, inv_smul_smul]
+  exact inf_le_right
+
 end TauCeti
 
 namespace Subgroup
@@ -79,5 +89,18 @@ theorem mem_sup_of_right_le_normalizer_left (hLE : K ≤ normalizer (H : Set G))
     g ∈ H ⊔ K ↔ ∃ x ∈ H, ∃ t ∈ K, x * t = g := by
   rw [← SetLike.mem_coe, coe_mul_of_right_le_normalizer_left H K hLE, Set.mem_mul]
   simp only [SetLike.mem_coe]
+
+/-- A point lies in the translate `H • t` of a set `t` by a subgroup `H` exactly when some element
+of `H` moves it into `t`. -/
+@[to_additive /-- A point lies in the translate `H +ᵥ t` of a set `t` by an additive subgroup `H`
+exactly when some element of `H` moves it into `t`. -/]
+theorem mem_smul_set_iff_exists_smul_mem {α : Type*} [MulAction G α] {t : Set α} {x : α} :
+    x ∈ (H : Set G) • t ↔ ∃ g ∈ H, g • x ∈ t := by
+  rw [Set.mem_smul]
+  constructor
+  · rintro ⟨g, hg, y, hy, rfl⟩
+    exact ⟨g⁻¹, H.inv_mem hg, by rwa [inv_smul_smul]⟩
+  · rintro ⟨g, hg, hx⟩
+    exact ⟨g⁻¹, H.inv_mem hg, g • x, hx, inv_smul_smul g x⟩
 
 end Subgroup

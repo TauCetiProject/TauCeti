@@ -29,6 +29,10 @@ Baker--Campbell--Hausdorff expansion.
 ## Main results
 
 * `RCLike.exp_ofReal`: the exponential on real scalars in real or complex normed fields.
+* `RCLike.norm_exp`: the norm of the exponential of a real or complex scalar is the real
+  exponential of its real part.
+* `IsIdempotentElem.exp_mul`: for an idempotent `P` commuting with `a`,
+  `exp (P * a) = P * exp a + 1 - P`.
 * `NormedSpace.exp_real_smul_one`: the exponential of a real scalar multiple of the unit.
 * `NormedSpace.contDiff_exp`: the exponential is smooth of every order, including analytic.
 * `NormedSpace.tendsto_exp_nhds_zero_nhds_one`: the exponential tends to `1` at the origin.
@@ -36,6 +40,7 @@ Baker--Campbell--Hausdorff expansion.
   `1 + x + 2⁻¹ • x ^ 2`.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
   origin.
+* `NormedSpace.hasSum_exp_sub_one`: `exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
@@ -85,6 +90,21 @@ theorem _root_.RCLike.exp_ofReal {𝕜 : Type*} [RCLike 𝕜] (x : ℝ) :
     exp (x : 𝕜) = (Real.exp x : 𝕜) := by
   simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using (exp_real_smul_one (A := 𝕜) x)
 
+/-- The norm of the exponential of a real or complex scalar is the real exponential of its real
+part. -/
+theorem _root_.RCLike.norm_exp {𝕜 : Type*} [RCLike 𝕜] (w : 𝕜) :
+    ‖exp w‖ = Real.exp (RCLike.re w) := by
+  have hconj : (starRingEnd 𝕜) (exp w) = exp ((starRingEnd 𝕜) w) :=
+    map_exp _ RCLike.continuous_conj w
+  have hsq : (‖exp w‖ : 𝕜) ^ 2 = ((Real.exp (RCLike.re w) ^ 2 : ℝ) : 𝕜) := by
+    rw [← RCLike.mul_conj, hconj, ← exp_add, RCLike.add_conj, ← Real.exp_natCast_mul,
+      ← RCLike.exp_ofReal]
+    push_cast
+    ring_nf
+  have h := congrArg RCLike.re hsq
+  rw [← RCLike.ofReal_pow, RCLike.ofReal_re, RCLike.ofReal_re] at h
+  exact (pow_left_inj₀ (norm_nonneg _) (Real.exp_pos _).le two_ne_zero).1 h
+
 variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
   [CharZero 𝕂] [ContinuousSMul ℚ 𝕂] [CompleteSpace A]
 
@@ -103,6 +123,12 @@ theorem isBigO_exp_sub_quadratic :
     (fun x : A ↦ exp x - (1 + x + (2⁻¹ : 𝕂) • x ^ 2)) =O[𝓝 (0 : A)] fun x ↦ ‖x‖ ^ 3 := by
   simpa only [zero_add, expSeries_partialSum_three] using
     (exp_hasFPowerSeriesAt_zero (𝕂 := 𝕂) (𝔸 := A)).isBigO_sub_partialSum_pow 3
+
+/-- **The exponential series without its constant term.** In a complete normed algebra,
+`exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`, the form a power series without constant term takes. -/
+theorem hasSum_exp_sub_one (x : A) :
+    HasSum (fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • x ^ (n + 1)) (exp x - 1) := by
+  simpa using (hasSum_nat_add_iff' 1).2 (exp_series_hasSum_exp' (𝕂 := 𝕂) x)
 
 /-! ### Additivity and cancellation in a complete normed algebra -/
 
@@ -126,9 +152,29 @@ namespace TauCeti
 
 open NormedSpace
 
-/-! ### Norm bounds by a scalar exponential -/
-
 variable {𝔸 : Type*} [NormedRing 𝔸]
+
+/-! ### The exponential along an idempotent -/
+
+/-- For an idempotent `P` commuting with `a`, the exponential of `P * a` is `exp a` on the range
+of `P` and the identity on the range of `1 - P`. -/
+theorem _root_.IsIdempotentElem.exp_mul [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] {P a : 𝔸}
+    (hP : IsIdempotentElem P) (hPa : Commute P a) : exp (P * a) = P * exp a + 1 - P := by
+  have hpow (k : ℕ) : (P * a) ^ (k + 1) = P * a ^ (k + 1) := by
+    rw [hPa.mul_pow, hP.pow_succ_eq k]
+  have h := ((exp_series_hasSum_exp' (𝕂 := ℚ) a).mul_left P).update 0 1
+  have hf : Function.update (fun k ↦ P * ((k.factorial⁻¹ : ℚ) • a ^ k)) 0 1 =
+      fun k ↦ (k.factorial⁻¹ : ℚ) • (P * a) ^ k := by
+    funext k
+    rcases k with _ | k
+    · simp
+    · simp [hpow]
+  rw [hf] at h
+  rw [(exp_series_hasSum_exp' (𝕂 := ℚ) (P * a)).unique h]
+  simp only [Nat.factorial_zero, Nat.cast_one, inv_one, pow_zero, one_smul, mul_one]
+  abel
+
+/-! ### Norm bounds by a scalar exponential -/
 
 /-- In a normed `ℚ`-algebra, if the powers of `x` satisfy `‖x ^ n‖ ≤ M * r ^ n`, then
 `‖exp x‖ ≤ M * Real.exp r`. -/

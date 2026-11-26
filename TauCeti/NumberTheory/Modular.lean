@@ -15,7 +15,9 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
+import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -36,6 +38,12 @@ which Mathlib's Second Fundamental Domain Lemma is an honest disjointness rather
 statement about a boundary. Covering is then only almost everywhere, the two domains differing
 by the null frontier. Tiled over the cosets of a subgroup this gives a fundamental domain at
 every level, which is what a Petersson product for a congruence subgroup is an integral over.
+
+A final section introduces the half-open domain `ModularGroup.fdHalfOpen`, which keeps exactly
+one of each pair of boundary pieces of `𝒟` identified by `T` or `S`: the left vertical side and
+the left half of the unit arc. It lies between `𝒟ᵒ` and `𝒟`, has interior `𝒟ᵒ`, and is again a
+fundamental domain, so it can replace `𝒟ᵒ` in every measure-theoretic statement while retaining
+the elliptic points `i` and `ρ`.
 
 ## Main results
 
@@ -58,6 +66,8 @@ every level, which is what a Petersson product for a congruence subgroup is an i
   conjugating the image of `Γ` onto that of `Γ'` carries a fundamental domain for `Γ` to one for
   `Γ'` — the step that lets a Petersson product be compared with its translate under the Fricke
   or an Atkin–Lehner matrix, or under the matrix of a double coset operator.
+* `ModularGroup.fdHalfOpen`: the half-open fundamental domain, with `interior_fdHalfOpen`,
+  `fdHalfOpen_ae_eq_fdo`, `volume_fdHalfOpen` and `isFundamentalDomain_fdHalfOpen`.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
@@ -103,7 +113,7 @@ private theorem strip_lintegral_lt_top {c : ℝ} (hc : 0 < c) :
         gcongr with y; rw [Real.volume_Icc]; norm_num
     _ = _ := by simp
     _ < ⊤ := lt_of_le_of_lt (setLIntegral_mono' measurableSet_Ioi
-        fun y _ ↦ Real.ofReal_le_enorm _)
+        fun y _ ↦ Real.ofReal_le_eNorm _)
         (integrableOn_zpow_neg_two_Ioi hc).hasFiniteIntegral
 
 private theorem setLIntegral_im_eq_prod (g : ℝ → ENNReal) (T : Set (ℝ × ℝ)) :
@@ -127,7 +137,7 @@ theorem volume_fd_lt_top : (volume : Measure ℍ) fd < ⊤ := by
         obtain ⟨τ, -, rfl⟩ := hz
         rw [← ENNReal.ofReal_coe_nnreal]
         congr 1
-        push_cast [Real.nnnorm_of_nonneg τ.im_pos.le]
+        push_cast [Real.nnNorm_of_nonneg τ.im_pos.le]
         rw [one_div, inv_pow, zpow_neg]
         norm_num
     _ ≤ ∫⁻ z in measurableEquivRealProd ⁻¹' T, ENNReal.ofReal (z.im ^ (-2 : ℤ)) :=
@@ -200,10 +210,8 @@ theorem volume_fd : (volume : Measure ℍ) fd = ENNReal.ofReal (Real.pi / 3) := 
     ext z
     simp only [fd, mem_ofPred_eq, TauCeti.UpperHalfPlane.mem_idealRegion_iff, abs_le]
     tauto
-  have harccos : Real.arccos (1 / 2) = Real.pi / 3 := by
-    rw [← Real.cos_pi_div_three, Real.arccos_cos (by positivity) (by linarith [Real.pi_pos])]
   rw [hfd, TauCeti.UpperHalfPlane.volume_idealRegion (by norm_num) (by norm_num) (by norm_num),
-    Real.arccos_neg, harccos]
+    Real.arccos_neg, Real.arccos_one_half]
   congr 1
   ring
 
@@ -372,5 +380,81 @@ theorem isFundamentalDomain_smul_of_inv_conjAct_eq {Γ Γ' : Subgroup SL(2, ℤ)
   rw [← Set.preimage_smul_inv]
   exact hS.preimage_of_equiv (measurePreserving_smul α⁻¹ volume).quasiMeasurePreserving hbij
     fun g τ ↦ by simp only [Subgroup.smul_def, he, inv_smul_smul]
+
+/-! ### The half-open fundamental domain -/
+
+/-- The half-open standard fundamental domain: the points of the closed domain `𝒟` with
+`-1/2 ≤ re z ≤ 0`, together with the points of the open domain `𝒟ᵒ` with `0 < re z`. Of each
+pair of boundary pieces of `𝒟` identified by `T` or `S`, it keeps the left vertical side and the
+left half of the unit arc, so it contains the elliptic points `i` and `ρ` but not `ρ + 1`. It is
+the domain `F` of Duke, Imamoglu and Tóth (*Geometric invariants for real quadratic fields*,
+Ann. of Math. 184 (2016), §2). It differs from `𝒟ᵒ` only by a null set, so for measure-theoretic
+purposes it is interchangeable with `𝒟ᵒ`. -/
+def fdHalfOpen : Set ℍ :=
+  {z | (-(1 / 2) ≤ z.re ∧ z.re ≤ 0 ∧ 1 ≤ normSq (z : ℂ)) ∨
+    (0 < z.re ∧ z.re < 1 / 2 ∧ 1 < normSq (z : ℂ))}
+
+@[simp]
+theorem mem_fdHalfOpen {z : ℍ} :
+    z ∈ fdHalfOpen ↔ (-(1 / 2) ≤ z.re ∧ z.re ≤ 0 ∧ 1 ≤ normSq (z : ℂ)) ∨
+      (0 < z.re ∧ z.re < 1 / 2 ∧ 1 < normSq (z : ℂ)) :=
+  Iff.rfl
+
+theorem measurableSet_fdHalfOpen : MeasurableSet fdHalfOpen := by
+  have hre : Measurable fun z : ℍ ↦ z.re := UpperHalfPlane.continuous_re.measurable
+  have hn : Measurable fun z : ℍ ↦ normSq (z : ℂ) :=
+    (Complex.continuous_normSq.comp UpperHalfPlane.continuous_coe).measurable
+  simp only [fdHalfOpen, ofPred_or, ofPred_and]
+  exact ((measurableSet_le measurable_const hre).inter
+    ((measurableSet_le hre measurable_const).inter (measurableSet_le measurable_const hn))).union
+    ((measurableSet_lt measurable_const hre).inter
+      ((measurableSet_lt hre measurable_const).inter (measurableSet_lt measurable_const hn)))
+
+theorem fdo_subset_fdHalfOpen : fdo ⊆ fdHalfOpen := by
+  rintro z ⟨hn, hre⟩
+  rw [abs_lt] at hre
+  rcases le_or_gt z.re 0 with h | h
+  · exact Or.inl ⟨hre.1.le, h, hn.le⟩
+  · exact Or.inr ⟨h, hre.2, hn⟩
+
+theorem fdHalfOpen_subset_fd : fdHalfOpen ⊆ fd := by
+  rintro z (⟨h₁, h₂, hn⟩ | ⟨h₁, h₂, hn⟩)
+  · exact ⟨hn, abs_le.mpr ⟨h₁, by linarith⟩⟩
+  · exact ⟨hn.le, abs_le.mpr ⟨by linarith, h₂.le⟩⟩
+
+/-- The interior of the half-open fundamental domain is the open fundamental domain. -/
+theorem interior_fdHalfOpen : interior fdHalfOpen = fdo :=
+  subset_antisymm (fdo_eq_interior_fd ▸ interior_mono fdHalfOpen_subset_fd)
+    (isOpen_fdo.subset_interior_iff.mpr fdo_subset_fdHalfOpen)
+
+/-- The half-open and the open fundamental domains agree almost everywhere for the invariant
+measure, so set integrals over them coincide. -/
+theorem fdHalfOpen_ae_eq_fdo : (fdHalfOpen : Set ℍ) =ᶠ[ae (volume : Measure ℍ)] fdo :=
+  ae_eq_set.mpr ⟨measure_mono_null (sdiff_subset_sdiff_left fdHalfOpen_subset_fd)
+    (ae_eq_set.mp fd_ae_eq_fdo).1, by rw [sdiff_eq_empty.mpr fdo_subset_fdHalfOpen, measure_empty]⟩
+
+/-- The half-open fundamental domain has invariant measure `π / 3`. -/
+theorem volume_fdHalfOpen : (volume : Measure ℍ) fdHalfOpen = ENNReal.ofReal (Real.pi / 3) := by
+  rw [measure_congr fdHalfOpen_ae_eq_fdo, ← measure_congr fd_ae_eq_fdo, volume_fd]
+
+/-- **The half-open domain is a fundamental domain for `PSL(2, ℤ)` acting on `ℍ`**, with respect to
+the invariant measure. -/
+theorem isFundamentalDomain_fdHalfOpen :
+    MeasureTheory.IsFundamentalDomain PSL(2, ℤ) (fdHalfOpen : Set ℍ) volume :=
+  isFundamentalDomain_fdo.congr_set fdHalfOpen_ae_eq_fdo.symm fun g ↦
+    (measurePreserving_smul g volume).quasiMeasurePreserving
+
+/-- The elliptic point `i` lies in the half-open fundamental domain, on its unit arc. -/
+theorem I_mem_fdHalfOpen : UpperHalfPlane.I ∈ fdHalfOpen :=
+  Or.inl ⟨by simp, by simp, by simp⟩
+
+/-- The elliptic point `ρ` lies in the half-open fundamental domain, at its left corner. -/
+theorem ρ_mem_fdHalfOpen : ρ ∈ fdHalfOpen :=
+  Or.inl ⟨by simp, by simp, ρ_mem_fd.1⟩
+
+/-- The right corner `ρ + 1`, which `T` identifies with `ρ`, is not in the half-open fundamental
+domain. -/
+theorem vadd_one_ρ_notMem_fdHalfOpen : (1 : ℝ) +ᵥ ρ ∉ fdHalfOpen := by
+  rintro (⟨-, h, -⟩ | ⟨-, h, -⟩) <;> norm_num [vadd_re] at h
 
 end ModularGroup

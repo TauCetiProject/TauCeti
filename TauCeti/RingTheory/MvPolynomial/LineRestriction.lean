@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Polynomial.BigOperators
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.Algebra.MvPolynomial.PDeriv
 
 /-!
 # Top coefficients of affine line restrictions
@@ -17,6 +18,11 @@ Its coefficient in the original top degree is the top homogeneous component eval
 the direction, independently of the starting point. The coefficient homomorphism may take
 values in another commutative semiring, so the starting point can itself consist of polynomial
 variables. This gives constant leading coefficients for generic shears.
+
+For a polynomial homogeneous of degree `m`, the restriction to the line through `x` in the
+direction `a` has degree at most `m`, with coefficient `p(a)` in degree `m`; so it has degree
+exactly `m` and leading coefficient `p(a)` when `p(a) ≠ 0`. Its derivative is the restriction of
+the directional derivative `D_a p = ∑ᵢ aᵢ ∂p/∂Xᵢ`.
 -/
 
 public section
@@ -52,7 +58,7 @@ theorem coeff_aeval_C_mul_X (p : MvPolynomial σ R) (v : σ → R) (m : ℕ) :
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   by_cases h : d.degree = m
   · simp [h]
-  · simp [h, Ne.symm h]
+  · simp [Ne.symm h]
 
 /-- Evaluation of the affine-line restriction is evaluation at the corresponding point. -/
 @[simp]
@@ -107,10 +113,10 @@ theorem coeff_eval₂_C_add_C_mul_X_of_totalDegree_le (p : MvPolynomial σ R)
     rw [Finsupp.degree_apply, Finsupp.prod,
       Polynomial.coeff_prod_sum_eq_of_natDegree_le]
     · apply Finset.prod_congr rfl
-      intro i hi
+      intro i _
       simpa [add_comm] using (Polynomial.coeff_pow_of_natDegree_le (m := d i)
         (Polynomial.natDegree_linear_le (a := v i) (b := a i)))
-    · intro i hi
+    · intro i _
       exact Polynomial.natDegree_pow_le.trans (by
         simpa only [add_comm, mul_one] using
           Nat.mul_le_mul_left (d i)
@@ -120,6 +126,53 @@ theorem coeff_eval₂_C_add_C_mul_X_of_totalDegree_le (p : MvPolynomial σ R)
     exact Polynomial.coeff_eq_zero_of_natDegree_lt
       ((natDegree_eval₂_C_add_C_mul_X_le (monomial d (p.coeff d)) f a v).trans_lt
         ((totalDegree_monomial_le _ _).trans_lt (lt_of_le_of_ne hdn heq)))
+
+/-- The restriction of a polynomial homogeneous of degree `m` to an affine line has degree at
+most `m`. -/
+theorem natDegree_aeval_C_add_C_mul_X_le_of_isHomogeneous {p : MvPolynomial σ R} {m : ℕ}
+    (hp : p.IsHomogeneous m) (x a : σ → R) :
+    (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p).natDegree ≤ m := by
+  simpa [aeval_def, Polynomial.algebraMap_eq] using
+    (p.natDegree_eval₂_C_add_C_mul_X_le (RingHom.id R) x a).trans hp.totalDegree_le
+
+/-- The coefficient of degree `m` of the restriction of a polynomial homogeneous of degree `m` to
+the affine line through `x` in the direction `a` is `p(a)`, whatever the starting point. -/
+theorem coeff_aeval_C_add_C_mul_X_of_isHomogeneous {p : MvPolynomial σ R} {m : ℕ}
+    (hp : p.IsHomogeneous m) (x a : σ → R) :
+    (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p).coeff m =
+      eval a p := by
+  simpa [aeval_def, Polynomial.algebraMap_eq, homogeneousComponent_eq_self hp] using
+    p.coeff_eval₂_C_add_C_mul_X_of_totalDegree_le (RingHom.id R) x a hp.totalDegree_le
+
+/-- The restriction of a polynomial homogeneous of degree `m` to an affine line in a direction `a`
+with `p(a) ≠ 0` has degree exactly `m`. -/
+theorem natDegree_aeval_C_add_C_mul_X_of_isHomogeneous {p : MvPolynomial σ R} {m : ℕ}
+    (hp : p.IsHomogeneous m) (x : σ → R) {a : σ → R} (ha : eval a p ≠ 0) :
+    (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p).natDegree = m :=
+  Polynomial.natDegree_eq_of_le_of_coeff_ne_zero
+    (natDegree_aeval_C_add_C_mul_X_le_of_isHomogeneous hp x a)
+    (by rwa [coeff_aeval_C_add_C_mul_X_of_isHomogeneous hp])
+
+/-- The restriction of a polynomial homogeneous of degree `m` to an affine line in a direction `a`
+with `p(a) ≠ 0` has leading coefficient `p(a)`. -/
+theorem leadingCoeff_aeval_C_add_C_mul_X_of_isHomogeneous {p : MvPolynomial σ R} {m : ℕ}
+    (hp : p.IsHomogeneous m) (x : σ → R) {a : σ → R} (ha : eval a p ≠ 0) :
+    (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p).leadingCoeff =
+      eval a p := by
+  rw [Polynomial.leadingCoeff, natDegree_aeval_C_add_C_mul_X_of_isHomogeneous hp x ha,
+    coeff_aeval_C_add_C_mul_X_of_isHomogeneous hp]
+
+/-- The derivative of the restriction of `p` to the affine line through `x` in the direction `a`
+is the restriction of the directional derivative `D_a p = ∑ᵢ aᵢ ∂p/∂Xᵢ` to the same line. -/
+theorem derivative_aeval_C_add_C_mul_X [Fintype σ] (p : MvPolynomial σ R) (x a : σ → R) :
+    Polynomial.derivative
+        (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p) =
+      aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X)
+        (∑ i, a i • pderiv i p) := by
+  rw [derivative_aeval, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [Polynomial.smul_eq_C_mul]
+  ring
 
 section Shear
 
@@ -153,6 +206,27 @@ theorem shearToPolynomial_X_succAbove (i : Fin (n + 1)) (a : Fin n → R) (j : F
       Polynomial.C (X j) + Polynomial.C (C (a j)) * Polynomial.X := by
   simp [shearToPolynomial_def]
 
+/-- Evaluating the sheared polynomial in an `R`-algebra at a base tuple `y` and a height `t`
+is evaluation of the original polynomial at the sheared tuple `i.insertNth t (y + a • t)`. -/
+@[simp]
+theorem eval₂_aeval_shearToPolynomial {A : Type*} [CommSemiring A] [Algebra R A]
+    (p : MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) (a : Fin n → R) (y : Fin n → A) (t : A) :
+    Polynomial.eval₂ (↑(aeval (R := R) y)) t (shearToPolynomial i a p) =
+      aeval (i.insertNth t fun j ↦ y j + a j • t) p := by
+  rw [shearToPolynomial_def, ← Polynomial.coe_eval₂RingHom, map_eval₂Hom]
+  have hC :
+      (Polynomial.eval₂RingHom (↑(aeval (R := R) y) : MvPolynomial (Fin n) R →+* A) t).comp
+          (Polynomial.C.comp C) =
+        algebraMap R A := by
+    ext c
+    simp
+  rw [hC, aeval_def, coe_eval₂Hom]
+  congr 1
+  funext k
+  refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k
+  · simp
+  · simp [Algebra.smul_def]
+
 /-- Evaluating the sheared polynomial at a base point and a height is evaluation of the
 original polynomial at the sheared point. -/
 @[simp]
@@ -160,19 +234,12 @@ theorem eval₂_shearToPolynomial (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a y : Fin n → R) (t : R) :
     Polynomial.eval₂ (eval y) t (shearToPolynomial i a p) =
       eval (i.insertNth t (y + t • a)) p := by
-  rw [shearToPolynomial_def, ← Polynomial.coe_eval₂RingHom, map_eval₂Hom]
-  have hC : (Polynomial.eval₂RingHom (eval y) t).comp (Polynomial.C.comp C) =
-      RingHom.id R := by
-    ext c
-    simp
-  rw [hC, coe_eval₂Hom, eval₂_id]
+  have heval : eval y = ↑(aeval (R := R) y) :=
+    RingHom.ext fun q ↦ by simp [← aeval_eq_eval]
+  rw [heval, p.eval₂_aeval_shearToPolynomial, aeval_eq_eval]
   congr 2
   funext k
-  refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k
-  · simp only [Fin.insertNth_apply_same, Polynomial.coe_eval₂RingHom, Polynomial.eval₂_X]
-  · simp only [Fin.insertNth_apply_succAbove, Polynomial.coe_eval₂RingHom,
-      Polynomial.eval₂_add, Polynomial.eval₂_C, Polynomial.eval₂_mul, Polynomial.eval₂_X,
-      eval_X, eval_C, Pi.add_apply, Pi.smul_apply, smul_eq_mul, mul_comm]
+  refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k <;> simp [mul_comm]
 
 private theorem shear_variables (i : Fin (n + 1)) (a : Fin n → R) :
     i.insertNth Polynomial.X

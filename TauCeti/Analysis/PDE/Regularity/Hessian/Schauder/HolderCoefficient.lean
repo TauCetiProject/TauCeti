@@ -37,7 +37,8 @@ the coefficients frozen at `x`. That estimate bounds the Hölder constant of `D�
 `closedBall x (Rₓ / 2)`. Finitely many of the balls `B(x, Rₓ / 2)` cover `K`. If `δ` is a Lebesgue
 number of this cover (`lebesgue_number_lemma_of_metric`), two points of `K` at distance less than
 `δ` lie in one of these balls, while at larger distances
-`‖D²u(x) - D²u(y)‖ ≤ 2N ≤ 2N δ^(-α) ‖x - y‖^α` (`HolderOnWith.of_dist_lt_of_dist_le`).
+`‖D²u(x) - D²u(y)‖ ≤ 2N ≤ 2N δ^(-α) ‖x - y‖^α`. This covering argument is
+`IsCompact.exists_holderOnWith_of_forall_holderOnWith_ball_inter`.
 
 ## References
 
@@ -141,46 +142,17 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_hold
   choose! R hR hRΩ C hC using fun x hx =>
     exists_holderOnWith_iteratedFDeriv_two_closedBall_half hα hα1 hΩ (hKΩ hx) (ha x hx)
       (hell x hx)
-  obtain ⟨t, htK, hcover⟩ :=
-    hK.elim_nhds_subcover (fun x => ball x (R x / 2)) fun x hx =>
-      ball_mem_nhds x (half_pos (hR x hx))
-  -- A Lebesgue number `δ` of the finite cover by the half balls.
-  obtain ⟨δ, hδ, hδK⟩ := lebesgue_number_lemma_of_metric hK
-    (c := fun z : t => ball (z : E) (R z / 2)) (fun _ => isOpen_ball) fun y hy => by
-      obtain ⟨z, hzt, hyz⟩ := mem_iUnion₂.1 (hcover hy)
-      exact mem_iUnion.2 ⟨⟨z, hzt⟩, hyz⟩
-  set δ' : ℝ≥0 := ⟨δ, hδ.le⟩
-  refine ⟨∑ z ∈ t, C z + 2 * δ' ^ (-(α : ℝ)), fun {u N M} hu hN₀ hN₁ hN₂ hV hM => ?_⟩
-  -- Points of `K` at distance less than `δ` lie in one half ball.
-  have hloc : ∀ x ∈ K, ∀ y ∈ K, dist x y < δ' → dist (iteratedFDeriv ℝ 2 u x)
-      (iteratedFDeriv ℝ 2 u y) ≤ ((∑ z ∈ t, C z) * (M + N) : ℝ≥0) * dist x y ^ (α : ℝ) := by
-    intro x hx y hy hxy
-    obtain ⟨⟨z, hzt⟩, hz⟩ := hδK x hx
-    have hzK := htK z hzt
-    have hsub : ball z (R z) ⊆ Ω := ball_subset_closedBall.trans (hRΩ z hzK)
-    obtain ⟨V, hV'⟩ := hV _ (hRΩ z hzK) (isCompact_closedBall z (R z))
-    have key := hC z hzK (hu.mono hsub) (fun y hy => hN₀ y (hsub hy))
-      (fun y hy => hN₁ y (hsub hy)) (fun y hy => hN₂ y (hsub hy))
-      (hV'.mono ball_subset_closedBall) (hM.mono hsub)
-    have hxz : x ∈ closedBall z (R z / 2) := ball_subset_closedBall (hz (mem_ball_self hδ))
-    have hyz : y ∈ closedBall z (R z / 2) :=
-      ball_subset_closedBall (hz (mem_ball.2 (by rw [dist_comm]; exact hxy)))
-    refine (key.dist_le hxz hyz).trans ?_
-    gcongr
-    exact_mod_cast Finset.single_le_sum (fun _ _ => zero_le) hzt
-  -- Points at larger distance are handled by the bound `‖D²u‖ ≤ N`.
-  have hD : ∀ x ∈ K, ∀ y ∈ K,
-      dist (iteratedFDeriv ℝ 2 u x) (iteratedFDeriv ℝ 2 u y) ≤ ((2 * N : ℝ≥0) : ℝ) := by
-    intro x hx y hy
-    refine (dist_le_norm_add_norm _ _).trans ?_
-    push_cast
-    linarith [hN₂ x (hKΩ hx), hN₂ y (hKΩ hy)]
-  refine (HolderOnWith.of_dist_lt_of_dist_le (by exact_mod_cast hδ) hloc hD).mono_const ?_
-  calc (∑ z ∈ t, C z) * (M + N) + 2 * N * δ' ^ (-(α : ℝ))
-      ≤ (∑ z ∈ t, C z) * (M + N) + 2 * δ' ^ (-(α : ℝ)) * (M + N) := by
-        rw [mul_right_comm]
-        gcongr
-        exact le_add_self
-    _ = (∑ z ∈ t, C z + 2 * δ' ^ (-(α : ℝ))) * (M + N) := by ring
+  -- The covering lemma assembles the estimates on the half balls into one on `K`.
+  obtain ⟨A, hA⟩ := hK.exists_holderOnWith_of_forall_holderOnWith_ball_inter
+    (fun x hx => half_pos (hR x hx)) C (α := α) (Y := E [×2]→L[ℝ] ℝ)
+  refine ⟨A, fun {u N M} hu hN₀ hN₁ hN₂ hV hM => hA (fun x hx => (hN₂ x (hKΩ hx)).trans ?_)
+    fun z hzK => ?_⟩
+  · push_cast
+    exact le_add_of_nonneg_left M.coe_nonneg
+  have hsub : ball z (R z) ⊆ Ω := ball_subset_closedBall.trans (hRΩ z hzK)
+  obtain ⟨V, hV'⟩ := hV _ (hRΩ z hzK) (isCompact_closedBall z (R z))
+  exact (hC z hzK (hu.mono hsub) (fun y hy => hN₀ y (hsub hy)) (fun y hy => hN₁ y (hsub hy))
+    (fun y hy => hN₂ y (hsub hy)) (hV'.mono ball_subset_closedBall) (hM.mono hsub)).mono
+    (inter_subset_left.trans ball_subset_closedBall)
 
 end TauCeti.PDE

@@ -7,10 +7,14 @@ module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
-# Identities for finite sums in commutative rings
+# Identities for finite sums and products in commutative rings
+
+`Finset.sq_dvd_prod_sub_one_sub_sum_add_card` expands a product of elements congruent to `1`
+modulo `r`, up to terms divisible by `r ^ 2`.
 
 ## Scaling weighted sums of natural numbers
 
@@ -25,6 +29,21 @@ inequalities with coefficients in a `d`-dimensional space, into inequalities for
 `TauCeti.sum_sum_sum_mul_sub_eq` writes the difference between a triple sum
 `∑ x, ∑ y, ∑ z, a x y * b x z * c y z` and the sum of the constant product of the three constants
 over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one-factor discrepancies.
+
+## Weights of total weight one
+
+`TauCeti.sum_mul_const_of_sum_eq_one`: weights of total weight `1` average a constant to itself.
+
+## Coefficients of a Cauchy product
+
+`TauCeti.sum_range_mul_pow_mul_mul_pow_sub`: the `n`-th term
+`∑_{k ≤ n} uₖ ζᵏ v_{n-k} ζ^{n-k}` of the Cauchy product of `∑ uₖ ζᵏ` and `∑ vₖ ζᵏ` is
+`ζⁿ ∑_{k ≤ n} uₖ v_{n-k}`.
+
+## Restricting a weighted sum to the points in a set
+
+`Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
+`∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
 -/
 
 public section
@@ -59,7 +78,7 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
     rw [sum_comm]
     exact sum_congr rfl fun _ _ ↦ sum_comm
   have e₃ : (#s₀ * #s₁ * #s₂ : R) * (p * q * r) =
-      ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, p * q * r := by
+      ∑ _ ∈ s₀, ∑ _ ∈ s₁, ∑ _ ∈ s₂, p * q * r := by
     simp only [sum_const, nsmul_eq_mul]
     ring
   have e₄ : (#s₀ : R) * ∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r) =
@@ -70,4 +89,49 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
   refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun z _ ↦ ?_
   ring
 
+/-- Weights of total weight `1` average a constant to itself. -/
+theorem sum_mul_const_of_sum_eq_one {ι α : Type*} [NonAssocSemiring α] {s : Finset ι}
+    {p : ι → α} (hp : ∑ i ∈ s, p i = 1) (c : α) : ∑ i ∈ s, p i * c = c := by
+  rw [← Finset.sum_mul, hp, one_mul]
+
+open Finset in
+/-- The coefficient of `ζⁿ` in the Cauchy product of `∑ uₖ ζᵏ` and `∑ vₖ ζᵏ`, written as `ζⁿ`
+times a sum of coefficients. -/
+theorem sum_range_mul_pow_mul_mul_pow_sub {R : Type*} [CommSemiring R] (ζ : R)
+    (u v : ℕ → R) (n : ℕ) :
+    ∑ k ∈ range (n + 1), u k * ζ ^ k * (v (n - k) * ζ ^ (n - k)) =
+      ζ ^ n * ∑ k ∈ range (n + 1), u k * v (n - k) := by
+  rw [mul_sum]
+  refine sum_congr rfl fun k hk ↦ ?_
+  rw [← pow_mul_pow_sub ζ (mem_range_succ_iff.mp hk)]
+  ring
+
 end TauCeti
+
+namespace Finset
+
+/-- If the weight `w` vanishes outside `U`, then the weighted sum over the points of `S` lying in
+`U` is the weighted sum over all of `S`. -/
+theorem sum_filter_mem_mul_eq {α R : Type*} [NonUnitalNonAssocSemiring R] (S : Finset α)
+    (U : Set α) [DecidablePred (· ∈ U)] {w r : α → R} (hw : ∀ s ∉ U, w s = 0) :
+    ∑ s ∈ S.filter (· ∈ U), w s * r s = ∑ s ∈ S, w s * r s :=
+  sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by rw [hw s hsU, zero_mul]
+
+/-- If every factor is `1` modulo `r`, its product is `1 + ∑ (u i - 1)` modulo `r²`. -/
+theorem sq_dvd_prod_sub_one_sub_sum_add_card {R ι : Type*} [CommRing R] (s : Finset ι)
+    {u : ι → R} {r : R} (hu : ∀ i ∈ s, r ∣ u i - 1) :
+    r ^ 2 ∣ ∏ i ∈ s, u i - 1 - ∑ i ∈ s, u i + s.card := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s has ih =>
+    obtain ⟨f, hf⟩ := ih fun i hi ↦ hu i (mem_insert_of_mem hi)
+    obtain ⟨c, hc⟩ := hu a (mem_insert_self a s)
+    obtain ⟨e, he⟩ : r ∣ ∑ i ∈ s, u i - s.card := by
+      simpa [sum_sub_distrib] using dvd_sum fun i hi ↦ hu i (mem_insert_of_mem hi)
+    rw [prod_insert has, sum_insert has, card_insert_of_notMem has]
+    push_cast
+    refine ⟨f + c * (r * f + e), ?_⟩
+    linear_combination (∏ i ∈ s, u i - 1) * hc + (1 + r * c) * hf + r * c * he
+
+end Finset

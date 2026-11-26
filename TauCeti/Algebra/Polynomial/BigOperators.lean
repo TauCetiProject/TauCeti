@@ -20,9 +20,18 @@ factors in the degrees `n i`. Mathlib proves this for a uniform bound `n`
 what is needed to read off the top coefficient of a determinant whose columns have different
 degree bounds.
 
+A product of monomials over a list is the monomial of the summed degrees and the ordered product
+of the coefficients.
+
 This file also groups products of linear factors according to their constant terms, records
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
+
+A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`, and
+a power of a linear factor splits off a product of linear factors over a multiset in which its
+root occurs often enough, and `∏_{a ∈ D} (X - a)` evaluates to `∏_{a ∈ D} (z - a)`. Without
+zero divisors, a nonzero constant multiple of `∏_{i ∈ s} (X - r i)` has exactly the roots `r i`
+with `i ∈ s` (`TauCeti.isRoot_C_mul_prod_X_sub_C_iff`).
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
@@ -53,6 +62,14 @@ theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
   have := mem_range.1 hj
   omega
 
+/-- A product of monomials over a list is the monomial of the summed degrees and the product
+of the coefficients, in the same order. -/
+theorem list_prod_map_monomial {α : Type*} (l : List α) (e : α → ℕ) (a : α → R) :
+    (l.map fun i ↦ monomial (e i) (a i)).prod = monomial (l.map e).sum (l.map a).prod := by
+  induction l with
+  | nil => simp
+  | cons i l ih => simp [ih, monomial_mul_monomial]
+
 end Semiring
 
 section MapProd
@@ -67,6 +84,40 @@ theorem natDegree_map_prod (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (
   exact natDegree_prod _ _ h
 
 end MapProd
+
+section ProdXSubCPow
+
+variable {ι R : Type*} [CommRing R]
+
+/-- A finite product of powers `(X - a i) ^ m i` of linear factors is monic. -/
+theorem monic_prod_X_sub_C_pow (s : Finset ι) (a : ι → R) (m : ι → ℕ) :
+    (∏ i ∈ s, (X - C (a i)) ^ m i).Monic :=
+  monic_prod_of_monic _ _ fun i _ ↦ (monic_X_sub_C (a i)).pow (m i)
+
+/-- A finite product of powers `(X - a i) ^ m i` of linear factors has degree `∑ i, m i`. -/
+@[simp]
+theorem natDegree_prod_X_sub_C_pow [Nontrivial R] (s : Finset ι) (a : ι → R) (m : ι → ℕ) :
+    (∏ i ∈ s, (X - C (a i)) ^ m i).natDegree = ∑ i ∈ s, m i := by
+  rw [natDegree_prod_of_monic _ _ fun i _ ↦ (monic_X_sub_C (a i)).pow (m i)]
+  simp [(monic_X_sub_C _).natDegree_pow]
+
+/-- If `a` occurs at least `n` times in the multiset `D`, then `n` copies of the linear factor
+`X - a` split off the product `∏_{b ∈ D} (X - b)`, leaving the product over `D` with `n` copies
+of `a` removed. -/
+theorem multiset_prod_X_sub_C_eq_pow_mul [DecidableEq R] {D : Multiset R} {a : R} {n : ℕ}
+    (hn : n ≤ D.count a) :
+    (D.map fun b ↦ X - C b).prod =
+      (X - C a) ^ n * ((D - Multiset.replicate n a).map fun b ↦ X - C b).prod := by
+  conv_lhs => rw [← add_tsub_cancel_of_le (Multiset.le_count_iff_replicate_le.1 hn)]
+  rw [Multiset.map_add, Multiset.prod_add, Multiset.map_replicate, Multiset.prod_replicate]
+
+/-- The product `∏_{a ∈ D} (X - a)` evaluates at `z` to `∏_{a ∈ D} (z - a)`. -/
+@[simp]
+theorem eval_multiset_prod_X_sub_C (D : Multiset R) (z : R) :
+    (D.map fun a ↦ X - C a).prod.eval z = (D.map fun a ↦ z - a).prod := by
+  simp [eval_multiset_prod, Multiset.map_map]
+
+end ProdXSubCPow
 
 variable {ι R : Type*} [CommSemiring R]
 
@@ -123,7 +174,7 @@ theorem natDegree_geom_sum₂ {S : Type*} [Semiring S] [CharZero S]
   · have hc : (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).coeff
         ((n - 1) * p.natDegree) = (n : S) := by
       rw [finsetSum_coeff]
-      trans ∑ i ∈ range n, (1 : S)
+      trans ∑ _ ∈ range n, (1 : S)
       · apply sum_congr rfl
         intro i hi
         rw [← hd i hi]
@@ -137,6 +188,17 @@ end Polynomial
 namespace TauCeti
 
 open Polynomial
+
+/-- A nonzero constant multiple of a product of linear factors over a ring without zero divisors
+vanishes exactly at the `r i` with `i ∈ s`. -/
+@[simp↓]
+theorem isRoot_C_mul_prod_X_sub_C_iff {R ι : Type*} [CommRing R] [NoZeroDivisors R] {l : R}
+    (hl : l ≠ 0) (s : Finset ι) (r : ι → R) (z : R) :
+    (C l * ∏ i ∈ s, (X - C (r i))).IsRoot z ↔ ∃ i ∈ s, r i = z := by
+  have : Nontrivial R := ⟨⟨l, 0, hl⟩⟩
+  have := NoZeroDivisors.to_isDomain R
+  rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
+  simp only [root_X_sub_C]
 
 /-- **The polynomial form of `cᵢ = bᵢ + qᵢ + qᵢ₋₁`.**  If `c₀ = b₀ + q₀` and
 `cᵢ₊₁ = bᵢ₊₁ + qᵢ₊₁ + qᵢ` for `i < n`, then

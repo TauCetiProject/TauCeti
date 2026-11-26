@@ -23,8 +23,7 @@ on `ℝ≥0`.
 
 ## Scope
 
-This is the **existence** half of the Bernstein milestone in
-`TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B. Uniqueness of the representing measure
+This is the **existence** half of Bernstein's theorem. Uniqueness of the representing measure
 is `TauCeti.RepresentsLaplace.unique`, the converse direction is
 `TauCeti.isContinuousCompletelyMonotoneOnIoi_laplaceTransform`, and all three combine in
 `Bernstein/HausdorffBernsteinWidder.lean` as `TauCeti.hausdorff_bernstein_widder` and
@@ -48,13 +47,11 @@ tight. The three remaining steps are:
    which represents the non-constant part `f - L`;
 3. add the atom `L • δ₀`, whose Laplace transform is the constant `L`, to represent `f` itself.
 
-Step 1 uses `finite_measure_cluster_limit` rather than its subsequence form
-`finite_measure_subseq_limit`. Every ingredient is a filter limit, so an ultrafilter below `atTop`
-suffices, and being `NeBot` it still gives uniqueness of limits.
+Step 1 uses `exists_ultrafilter_tendsto_integral_of_isTightMeasureSet` rather than its subsequence
+form `exists_subseq_tendsto_integral_of_isTightMeasureSet`. Every ingredient is a filter limit, so
+an ultrafilter below `atTop` suffices, and being `NeBot` it still gives uniqueness of limits.
 
 ## References
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
 
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013) — the approximating measures this proof
   passes to the limit.
@@ -130,9 +127,10 @@ theorem exists_representsLaplace_of_isCompletelyMonotone
     ∃ μ : Measure ℝ≥0, RepresentsLaplace μ f := by
   obtain ⟨L, C, hL, hL_nn, -, hmass⟩ := chafaiRescaled_prokhorov_mass_bound f hcm
   have hmass' : ∀ n, (chafaiRescaled f n) univ ≤ (C : ℝ≥0∞) := fun n => (hmass n).2
-  obtain ⟨μ₀, U, hU, hμ₀fin, -, hweak⟩ :=
-    finite_measure_cluster_limit (chafaiRescaled f) C hmass'
-      (isTightMeasureSet_range_chafaiRescaled hcm)
+  obtain ⟨μ₀, U, hU, -, hμ₀fin, -, hweak⟩ :=
+    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet (chafaiRescaled f) atTop C
+      (forall_mem_range.2 hmass') (isTightMeasureSet_range_chafaiRescaled hcm)
+      (.of_forall mem_range_self)
   -- The limit represents the non-constant part `f - L`.
   have key : ∀ t : ℝ, 0 ≤ t → f t - L = ∫ p, Real.exp (-(t * (p : ℝ))) ∂μ₀ :=
     fun t ht => sub_eq_integral_exp_neg_mul_of_weak_limit hcm hL (.of_forall hmass') hU hweak ht

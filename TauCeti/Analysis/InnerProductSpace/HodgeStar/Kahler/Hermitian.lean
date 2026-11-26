@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.ComplexStructure
 
 /-!
@@ -50,6 +51,8 @@ that the orientation is the complex one.
 ## Main definitions
 
 * `TauCeti.AlmostComplexStructure.hermitianForm J F`: the Hermitian part `B` of `F`.
+* `TauCeti.AlmostComplexStructure.continuousHermitianForm J`: `(F, v, w) ↦ B(v, w)` as a
+  continuous trilinear map.
 
 ## Main results
 
@@ -57,6 +60,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `hermitianForm_apply_self`: `B(v, v) = F(v, J v)`.
 * `hermitianForm_kahlerForm`: the Hermitian part of `ω` is the inner product.
+* `continuousHermitianForm_apply`: the continuous trilinear map evaluates to `B(v, w)`.
 * `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
   for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
   `B(v, w) = η(v, J w)`.
@@ -100,12 +104,16 @@ symmetric bilinear form `QuadraticMap.associated` to the quadratic form `B(v, v)
 def hermitianForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V →ₗ[ℝ] LinearMap.BilinForm ℝ V :=
   QuadraticMap.associated ∘ₗ LinearMap.BilinMap.toQuadraticMapLinearMap ℝ ℝ V ∘ₗ
     LinearMap.compRight ℝ ((innerₗ V).compl₂ J.toLinearMap) ∘ₗ
-      ⟨⟨twoVectorContraction, twoVectorContraction_add⟩, twoVectorContraction_smul⟩
+      twoVectorContractionₗ
 
 /-- The Hermitian part is `B(v, w) = (F(v, J w) + F(w, J v)) / 2`. -/
 theorem hermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v w : V) :
     J.hermitianForm F v w = (⟪F, ιMulti ℝ 2 ![v, J w]⟫ + ⟪F, ιMulti ℝ 2 ![w, J v]⟫) / 2 := by
-  simp [hermitianForm, QuadraticMap.associated_toQuadraticMap, inner_twoVectorContraction_apply]
+  simp only [hermitianForm, LinearMap.coe_comp, Function.comp_apply,
+    QuadraticMap.associated_apply, Module.End.smul_def,
+    QuadraticMap.half_moduleEnd_apply_eq_half_smul]
+  simp [invOf_eq_inv, LinearMap.BilinMap.toQuadraticMap_apply, inner_twoVectorContraction_apply,
+    map_add]
   ring
 
 /-- The quadratic form of the Hermitian part is `B(v, v) = F(v, J v)`. -/
@@ -114,14 +122,28 @@ theorem hermitianForm_apply_self (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 
     J.hermitianForm F v v = ⟪F, ιMulti ℝ 2 ![v, J v]⟫ := by
   rw [hermitianForm, LinearMap.comp_apply, QuadraticMap.associated_eq_self_apply]
   simp only [LinearMap.comp_apply, LinearMap.BilinMap.toQuadraticMapLinearMap_apply,
-    LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compRight_apply, LinearMap.coe_mk,
-    AddHom.coe_mk, LinearMap.compl₂_apply, innerₗ_apply_apply, inner_twoVectorContraction_apply]
+    LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compRight_apply,
+    twoVectorContractionₗ_apply, LinearMap.compl₂_apply, innerₗ_apply_apply,
+    inner_twoVectorContraction_apply]
 
 omit [FiniteDimensional ℝ V] in
 /-- The Hermitian part of a two-form is symmetric. -/
 theorem isSymm_hermitianForm (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) :
     (J.hermitianForm F).IsSymm :=
   ⟨QuadraticMap.associated_isSymm ℝ _⟩
+
+/-- The Hermitian part `(F, v, w) ↦ B(v, w)` as a continuous trilinear map: in finite dimension
+`J.hermitianForm` is continuous, with values in the continuous bilinear forms on `V`. -/
+def continuousHermitianForm (J : AlmostComplexStructure V) :
+    ⋀[ℝ]^2 V →L[ℝ] V →L[ℝ] V →L[ℝ] ℝ :=
+  (J.hermitianForm.compr₂ (LinearMap.toContinuousLinearMap : (V →ₗ[ℝ] ℝ) ≃ₗ[ℝ] _).toLinearMap)
+    |>.toContinuousBilinearMap
+
+/-- The continuous trilinear map `J.continuousHermitianForm` evaluates to `B(v, w)`. -/
+@[simp]
+theorem continuousHermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v w : V) :
+    J.continuousHermitianForm F v w = J.hermitianForm F v w := by
+  simp [continuousHermitianForm]
 
 /-- **The Hermitian part of the Kähler form is the metric**: for an orthogonal `J`,
 `ω(v, J w) = ⟪v, w⟫`. -/

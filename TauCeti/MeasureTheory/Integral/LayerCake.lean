@@ -55,6 +55,12 @@ together with the measurability of the distribution function `t ↦ m {f > t}`. 
 a layer-cake argument work with finite quantities; monotone convergence removes it again, and the
 truncated integrals `∫ g ^ q min(g, k) ^ δ` increase to `∫ g ^ (q + δ)` as `k → ∞`.
 
+A dyadic discretization of the layer-cake formula bounds `∫ ((f - m)⁺) ^ s` by
+`∑_{k ∈ ℤ} 4 ^ s 2 ^ {k s} ν {f ≥ m + 2 ^ {k + 1}}`, the form in which Maz'ya's truncation method
+sums weak-type estimates over dyadic heights. A discretization at the integer heights bounds
+`∫ exp (-f)` for `f ≥ 0` by `exp (-N) ν(univ) + ∑_{j < N} exp (-j) ν {f < j + 1}`, which turns
+measure bounds for the sublevel sets of `f` into bounds for exponential integrals.
+
 For positive real powers on a finite measure space, it also characterizes integrability by the
 weighted strict tail `μ.real {x | t < f x} * t ^ (p - 1)`, either on `(0, ∞)` or at infinity.
 The weighted tail is measurable without any measurability assumption on `f`, and its contribution
@@ -94,6 +100,10 @@ therefore makes every shifted tail integrable.
   `|x - y| ^ p` of a distance, as mixtures of hinges.
 * `TauCeti.lintegral_ofReal_sub_sub_eq` and `TauCeti.lintegral_edist_rpow_eq` — their integrated
   forms for a measure on pairs of real variables;
+* `TauCeti.setLIntegral_ofReal_max_sub_rpow_le_tsum` — a dyadic layer-cake bound for a power of
+  a positive part, through its superlevel sets at the heights `m + 2^{k+1}`, `k ∈ ℤ`;
+* `Filter.EventuallyLE.integral_exp_neg_le_add_sum_measureReal_setOf_lt` — a layer-cake bound for
+  `∫ exp (-f)` through the sublevel sets of `f` at the integer heights `j + 1`, `j < N`;
 * `TauCeti.integral_indicator_Iio_sub_indicator_Iio_zero` — the signed layer-cake representation
   `a = ∫ (1_{t < a} - 1_{t < 0}) dt` of a real number, with
   `TauCeti.integral_abs_indicator_Iio_sub_indicator_Iio_zero` computing the `L¹` norm `|a|` of
@@ -207,7 +217,7 @@ private theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff_of_measurable
       · rw [Set.indicator_of_notMem hs,
           Set.indicator_of_notMem (fun hq ↦ hs ((hmem_Ico a s).mp hq))]
     rw [hfun, lintegral_indicator_one measurableSet_Ico, Real.volume_Ico, max_sub_min_eq_abs,
-      abs_sub_comm, Real.enorm_eq_ofReal_abs]
+      abs_sub_comm, Real.eNorm_eq_ofReal_abs]
   have hsection : ∀ s : ℝ,
       (∫⁻ a, F.indicator 1 (a, s) ∂m) = m ({a | f a ≤ s} ∆ {a | g a ≤ s}) := by
     intro s
@@ -321,11 +331,11 @@ theorem measure_symmDiff_setOf_lt_indicator_le (m : Measure α) {u : α → ℝ}
     m ({x | t < u x} ∆ s) ≤ (∫⁻ x, ‖u x - s.indicator 1 x‖ₑ ∂m) / ENNReal.ofReal δ := by
   refine (measure_mono ?_).trans
     (meas_ge_le_lintegral_div
-      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).enorm
+      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).eNorm
       (ne_of_gt (ENNReal.ofReal_pos.mpr hδ)) ENNReal.ofReal_ne_top)
   intro x hx
   rw [mem_symmDiff] at hx
-  rw [mem_ofPred_eq, Pi.sub_apply, Real.enorm_eq_ofReal_abs]
+  rw [mem_ofPred_eq, Pi.sub_apply, Real.eNorm_eq_ofReal_abs]
   apply ENNReal.ofReal_le_ofReal
   rcases hx with ⟨hx, hxs⟩ | ⟨hxs, hx⟩
   · rw [indicator_of_notMem hxs, sub_zero]
@@ -621,6 +631,110 @@ theorem lintegral_edist_rpow_eq {p : ℝ} (hp : 1 < p) (m : Measure (ℝ × ℝ)
   refine lintegral_congr fun r ↦ ?_
   rw [lintegral_const_mul _ (by fun_prop), lintegral_add_left (by fun_prop)]
 
+/-! ### A dyadic layer-cake bound -/
+
+/-- **Dyadic domination of a positive part.** For `s > 0`, the integral of `((f - m)⁺)^s` over `Ω`
+is at most `∑_{k ∈ ℤ} 4^s 2^{ks} ν(Ω ∩ {f ≥ m + 2^{k+1}})`: a point with `f > m` lies in the
+superlevel set of height `2^{k+1}` for which `f - m ≤ 4 · 2^k`. This is the discrete layer-cake
+bound behind Maz'ya's truncation method. -/
+theorem setLIntegral_ofReal_max_sub_rpow_le_tsum {ν : Measure α} {Ω : Set α} {f : α → ℝ}
+    (hΩ : MeasurableSet Ω) (hf : Measurable f) (m : ℝ) {s : ℝ} (hs0 : 0 < s) :
+    ∫⁻ x in Ω, ENNReal.ofReal (max (f x - m) 0) ^ s ∂ν ≤
+      ∑' k : ℤ, 4 ^ s * (ENNReal.ofReal ((2 : ℝ) ^ k) ^ s *
+        ν (Ω ∩ {x | m + 2 * (2 : ℝ) ^ k ≤ f x})) := by
+  set A : ℤ → Set α := fun k => Ω ∩ {x | m + 2 * (2 : ℝ) ^ k ≤ f x}
+  have hAm : ∀ k, MeasurableSet (A k) := fun k => hΩ.inter (measurableSet_le measurable_const hf)
+  have hpt : ∀ x ∈ Ω, ENNReal.ofReal (max (f x - m) 0) ^ s ≤
+      ∑' k : ℤ, 4 ^ s * (ENNReal.ofReal ((2 : ℝ) ^ k) ^ s * (A k).indicator 1 x) := by
+    intro x hx
+    rcases le_or_gt (f x - m) 0 with h | h
+    · rw [max_eq_right h, ENNReal.ofReal_zero, ENNReal.zero_rpow_of_pos hs0]
+      exact bot_le
+    obtain ⟨k, hk1, hk2⟩ := exists_mem_Ioc_zpow h one_lt_two
+    refine le_trans ?_ (le_tsum _ (k - 1))
+    have h2k : 2 * (2 : ℝ) ^ (k - 1) = 2 ^ k := by
+      rw [zpow_sub_one₀ two_ne_zero]
+      ring
+    have hxA : x ∈ A (k - 1) := ⟨hx, by simp only [mem_ofPred_eq]; linarith⟩
+    rw [indicator_of_mem hxA, Pi.one_apply, mul_one, ← ENNReal.mul_rpow_of_nonneg _ _ hs0.le]
+    gcongr
+    rw [← ENNReal.ofReal_ofNat 4, ← ENNReal.ofReal_mul (by norm_num), max_eq_left h.le]
+    refine ENNReal.ofReal_le_ofReal (hk2.trans_eq ?_)
+    rw [zpow_add_one₀ two_ne_zero, ← h2k]
+    ring
+  calc _ ≤ ∫⁻ x in Ω, ∑' k : ℤ,
+        4 ^ s * (ENNReal.ofReal ((2 : ℝ) ^ k) ^ s * (A k).indicator 1 x) ∂ν :=
+        setLIntegral_mono' hΩ hpt
+    _ = ∑' k : ℤ, ∫⁻ x in Ω,
+        4 ^ s * (ENNReal.ofReal ((2 : ℝ) ^ k) ^ s * (A k).indicator 1 x) ∂ν :=
+        lintegral_tsum fun k =>
+          ((measurable_const.indicator (hAm k)).const_mul _ |>.const_mul _).aemeasurable
+    _ = _ := by
+        congr 1
+        funext k
+        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hs0.le (by simp)),
+          lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hs0.le ENNReal.ofReal_ne_top),
+          lintegral_indicator_one (hAm k), Measure.restrict_apply (hAm k),
+          inter_eq_left.2 inter_subset_left]
+
+/-- **A discrete layer-cake bound for `exp (-f)`.** For a finite measure `ν`, a function `f`
+with `0 ≤ f` almost everywhere and `N : ℕ`,
+`∫ x, exp (-f x) ∂ν ≤ exp (-N) ν(univ) + ∑_{j < N} exp (-j) ν {x | f x < j + 1}`. -/
+theorem _root_.Filter.EventuallyLE.integral_exp_neg_le_add_sum_measureReal_setOf_lt
+    {ν : Measure α} [IsFiniteMeasure ν] {f : α → ℝ} (hf0 : 0 ≤ᵐ[ν] f) (N : ℕ) :
+    ∫ x, Real.exp (-f x) ∂ν ≤ Real.exp (-(N : ℝ)) * ν.real univ +
+      ∑ j ∈ Finset.range N, Real.exp (-(j : ℝ)) * ν.real {x | f x < j + 1} := by
+  by_cases hint : Integrable (fun x => Real.exp (-f x)) ν
+  swap
+  · rw [integral_undef hint]
+    positivity
+  -- `f` is almost everywhere measurable, so it may be replaced by a measurable modification `g`.
+  have hfm : AEMeasurable f ν :=
+    (Real.measurable_log.comp_aemeasurable hint.aemeasurable).neg.congr
+      (ae_of_all _ fun x => by simp)
+  obtain ⟨g, hgm, hfg⟩ : ∃ g, Measurable g ∧ f =ᵐ[ν] g :=
+    ⟨hfm.mk f, hfm.measurable_mk, hfm.ae_eq_mk⟩
+  have hsets : ∀ j : ℕ, ν.real {x | f x < j + 1} = ν.real {x | g x < j + 1} := fun j =>
+    measureReal_congr (Filter.eventuallyEqSet_iff.2 (by filter_upwards [hfg] with x hx; simp [hx]))
+  rw [integral_congr_ae (hfg.mono fun x hx => by rw [hx])]
+  simp_rw [hsets]
+  set S : ℕ → Set α := fun j => {x | g x < j + 1}
+  have hS : ∀ j, MeasurableSet (S j) := fun j => measurableSet_lt hgm measurable_const
+  have hind : ∀ j : ℕ, Integrable ((S j).indicator fun _ => Real.exp (-(j : ℝ))) ν :=
+    fun j => (integrable_const _).indicator (hS j)
+  -- A point with `g x < N` lies in the sublevel set of height `⌊g x⌋₊ + 1`, where
+  -- `exp (-g x) ≤ exp (-⌊g x⌋₊)`.
+  have hpt : ∀ᵐ x ∂ν, Real.exp (-g x) ≤ Real.exp (-(N : ℝ)) +
+      ∑ j ∈ Finset.range N, (S j).indicator (fun _ => Real.exp (-(j : ℝ))) x := by
+    filter_upwards [hf0, hfg] with x hx hxg
+    rw [hxg] at hx
+    have hsum0 : 0 ≤ ∑ j ∈ Finset.range N, (S j).indicator (fun _ => Real.exp (-(j : ℝ))) x :=
+      Finset.sum_nonneg fun j _ => indicator_nonneg (fun _ _ => (Real.exp_pos _).le) _
+    rcases lt_or_ge (g x) N with h | h
+    · have hxS : x ∈ S ⌊g x⌋₊ := by
+        simp only [S, mem_ofPred_eq]
+        exact Nat.lt_floor_add_one (g x)
+      calc Real.exp (-g x) ≤ Real.exp (-(⌊g x⌋₊ : ℝ)) :=
+            Real.exp_le_exp.2 (neg_le_neg (Nat.floor_le hx))
+        _ = (S ⌊g x⌋₊).indicator (fun _ => Real.exp (-(⌊g x⌋₊ : ℝ))) x :=
+            (indicator_of_mem hxS fun _ => Real.exp (-(⌊g x⌋₊ : ℝ))).symm
+        _ ≤ ∑ j ∈ Finset.range N, (S j).indicator (fun _ => Real.exp (-(j : ℝ))) x :=
+            Finset.single_le_sum (f := fun j => (S j).indicator (fun _ => Real.exp (-(j : ℝ))) x)
+              (fun j _ => indicator_nonneg (fun _ _ => (Real.exp_pos _).le) _)
+              (Finset.mem_range.2 ((Nat.floor_lt hx).2 h))
+        _ ≤ _ := le_add_of_nonneg_left (Real.exp_pos _).le
+    · exact (Real.exp_le_exp.2 (neg_le_neg h)).trans (le_add_of_nonneg_right hsum0)
+  calc ∫ x, Real.exp (-g x) ∂ν ≤ ∫ x, (Real.exp (-(N : ℝ)) +
+        ∑ j ∈ Finset.range N, (S j).indicator (fun _ => Real.exp (-(j : ℝ))) x) ∂ν :=
+      integral_mono_of_nonneg (ae_of_all _ fun x => (Real.exp_pos _).le)
+        ((integrable_const _).add (integrable_finsetSum _ fun j _ => hind j)) hpt
+    _ = _ := by
+      rw [integral_add (integrable_const _) (integrable_finsetSum _ fun j _ => hind j),
+        integral_const, integral_finsetSum _ fun j _ => hind j, smul_eq_mul, mul_comm]
+      congr 1
+      exact Finset.sum_congr rfl fun j _ => by
+        rw [integral_indicator_const _ (hS j), smul_eq_mul, mul_comm]
+
 /-! ### The signed layer-cake representation of a real number -/
 
 /-- `1_{t < a} - 1_{t < 0}`, as a function of `t`, is the signed indicator of the interval
@@ -694,7 +808,7 @@ theorem integrable_rpow_iff_integrableOn_weighted_tail
     lintegral_rpow_eq_lintegral_meas_lt_mul μ hfn hf hp]
   have heq : (∫⁻ t in Ioi (0 : ℝ), μ {x | t < f x} * ENNReal.ofReal (t ^ (p - 1))) =
       ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (μ.real {x | t < f x} * t ^ (p - 1)) := by
-    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+    refine setLIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_
     rw [ENNReal.ofReal_mul measureReal_nonneg, measureReal_def,
       ENNReal.ofReal_toReal (measure_ne_top μ _)]
   rw [heq, ENNReal.mul_lt_top_iff]

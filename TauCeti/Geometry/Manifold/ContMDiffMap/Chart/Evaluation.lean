@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Hom.ContinuousEval
 public import Mathlib.Topology.UniformSpace.UniformConvergence
@@ -95,10 +96,6 @@ private theorem eventually_mem_source_and_iteratedFDerivWithin_mem {f₀ : C^n�
           (extChartAt I x).target p.2 ∈ V := by
   set φ := extChartAt I x
   set ψ := extChartAt J y
-  let : LocallyCompactSpace φ.target := by
-    rw [extChartAt_target]
-    exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
-      I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
   obtain ⟨W, hWV, hW, hW₀⟩ := mem_nhds_iff.mp hV
   -- Near `w₀`, the map `f₀` passes the test with the open set `W`.
   have hA : {v | f₀ (φ.symm v) ∈ ψ.source ∧
@@ -113,7 +110,7 @@ private theorem eventually_mem_source_and_iteratedFDerivWithin_mem {f₀ : C^n�
     (isOpen_chartJetSet x y m hm hCc hW).mem_nhds (mem_chartJetSet.mpr fun z hz ↦ hCA hz)
   have hC' : Subtype.val '' C ∈ 𝓝[φ.target] w₀ := by
     have h := image_mem_map (m := Subtype.val) hC
-    rwa [map_nhds_subtype_val] at h
+    rwa [map_nhds_subtypeVal] at h
   filter_upwards [prod_mem_prod hT hC'] with ⟨f, v⟩ ⟨hf, z, hz, hzv⟩
   obtain rfl := hzv
   obtain ⟨h₁, h₂⟩ := mem_chartJetSet.mp hf z hz
@@ -178,14 +175,14 @@ theorem tendstoUniformlyOn_iteratedFDerivWithin_extChartAt {f₀ : C^n⟮I, M; J
   obtain ⟨t, htC, hcover⟩ := hC.elim_nhdsWithin_subcover U hUnhds
   -- The piece `U c` is compact, so it gives an open chart derivative test around `f₀`.
   let K (c : E) : Set φ.target := Subtype.val ⁻¹' U c
-  have hKcompact (c : E) (hc : c ∈ C) : IsCompact (K c) := by
+  have hKcompact (c : E) : IsCompact (K c) := by
     refine Topology.IsEmbedding.subtypeVal.isCompact_iff.2 ?_
     rw [Subtype.image_preimage_coe, inter_eq_right.2 (inter_subset_left.trans hCx)]
     exact hC.inter_right Metric.isClosed_closedBall
   have hT : ⋂ c ∈ t, chartJetSet (J := J) (n := n) x y m (K c) (Metric.ball (D f₀ c) (ε / 4)) ∈
       𝓝 f₀ := by
     refine (biInter_finset_mem t).2 fun c hc ↦ ?_
-    refine (isOpen_chartJetSet x y m hm (hKcompact c (htC c hc)) Metric.isOpen_ball).mem_nhds ?_
+    refine (isOpen_chartJetSet x y m hm (hKcompact c) Metric.isOpen_ball).mem_nhds ?_
     rw [mem_chartJetSet]
     rintro ⟨z, hz⟩ ⟨hzC, hzc⟩
     refine ⟨hCy z hzC, ?_⟩

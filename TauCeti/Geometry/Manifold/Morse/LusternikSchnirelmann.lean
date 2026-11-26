@@ -19,7 +19,9 @@ as the unnormalized Lusternik–Schnirelmann category of `M`:
 (`TauCeti.lsCategoryCount_univ_le_totalCriticalCount`). No nondegeneracy is assumed. Points are
 counted, not critical values, and an infinite critical set has count `⊤`. For nonempty `M`, whose
 normalized category is `cat M = lsCategoryCount M univ - 1`, this says that `f` has at least
-`cat M + 1` critical points.
+`cat M + 1` critical points. When `f` has finitely many critical points, `M` therefore has a
+categorical cover by exactly that many open sets
+(`TauCeti.nonempty_lsCategoricalCover_univ_of_totalCriticalCount_eq`).
 
 The bound is proved on the sublevels `{f ≤ t}`, by induction over the critical values
 (`TauCeti.lsCategoryCount_sublevel_le_encard`). Across a compact band without critical points the
@@ -57,6 +59,8 @@ commutative ring `R` (`TauCeti.lsCupLength_add_one_le_totalCriticalCount`).
   critical points in `{f ≤ t}`.
 * `TauCeti.lsCategoryCount_univ_le_totalCriticalCount`: the Lusternik–Schnirelmann theorem on a
   compact manifold.
+* `TauCeti.nonempty_lsCategoricalCover_univ_of_totalCriticalCount_eq`: a categorical cover of `M`
+  by as many open sets as `f` has critical points.
 * `TauCeti.lsCategoryCount_univ_le_encard_criticalPoints_inter`: the same bound for a compact open
   part of `M`, such as a connected component of a compact manifold.
 * `TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`: equality in dimension
@@ -109,11 +113,7 @@ theorem lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton [Subsingleton
     lsCategoryCount M univ = totalCriticalCount I f := by
   have : Subsingleton H := I.injective.subsingleton
   have : DiscreteTopology M := ChartedSpace.discreteTopology H M
-  -- Each tangent space is the zero space `E`, on which the derivative of `f` vanishes.
-  have hcrit : criticalPoints I f = univ := eq_univ_of_forall fun x ↦ by
-    have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
-    exact mem_criticalPoints.mpr (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0])
-  rw [lsCategoryCount_eq_encard, totalCriticalCount_def, hcrit]
+  rw [lsCategoryCount_eq_encard, totalCriticalCount_def, criticalPoints_eq_univ_of_subsingleton]
 
 variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I ∞ M]
 
@@ -170,7 +170,7 @@ theorem lsCategoryCount_sublevel_le_encard (hf : ContMDiff I 𝓘(ℝ) ∞ f) {t
       by_contra hne
       obtain ⟨x, hx, hxt⟩ := exists_mem_criticalPoints_of_isCompact_sublevel (I := I)
         hf.continuous.continuousOn (hcpt isClosed_Iic (Iic_subset_Iic.mpr htb.le))
-        (nonempty_iff_ne_empty.mpr hne)
+        (Set.ne_empty_iff_nonempty.mp hne)
       exact hC.subset ⟨hx, hxt⟩
     simp [hempty]
   -- Otherwise let `c = f p ≤ t` be the largest critical value in `{f ≤ t}`, and cross the level
@@ -193,7 +193,7 @@ theorem lsCategoryCount_sublevel_le_encard (hf : ContMDiff I 𝓘(ℝ) ∞ f) {t
   have hbelow := ih _ hlt (by linarith) rfl
   -- Between `c + ε` and `t` there are no critical points.
   have habove : lsCategoryCount M {x | f x ≤ t} ≤ lsCategoryCount M {x | f x ≤ f p + ε} := by
-    rcases le_or_gt t (f p + ε) with h | h
+    rcases le_or_gt t (f p + ε) with h | _
     · exact lsCategoryCount_mono fun x (hx : f x ≤ t) ↦ hx.trans h
     · refine lsCategoryCount_sublevel_le_of_band hf (hcpt isClosed_Icc fun y hy ↦ hy.2.trans htb.le)
         fun x hx₁ hx₂ hx ↦ ?_
@@ -228,6 +228,20 @@ theorem lsCategoryCount_univ_le_totalCriticalCount [CompactSpace M]
     simpa [hu, totalCriticalCount_def] using lsCategoryCount_sublevel_le_encard hf (lt_add_one t)
       (isClosed_le hf.continuous continuous_const).isCompact (hfin.subset inter_subset_left)
 
+/-- **A categorical cover by as many open sets as critical points.** If a smooth function `f` on a
+compact boundaryless manifold `M` has exactly `n` critical points, then `M` is covered by `n` open
+sets each of whose inclusions into `M` is nullhomotopic. The critical points may be degenerate,
+and `M` may be empty, in which case `n = 0`. -/
+theorem nonempty_lsCategoricalCover_univ_of_totalCriticalCount_eq [CompactSpace M]
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {n : ℕ} (hn : totalCriticalCount I f = n) :
+    Nonempty (LSCategoricalCover M univ n) := by
+  cases isEmpty_or_nonempty M with
+  | inl _ =>
+    rw [totalCriticalCount_of_isEmpty, eq_comm, Nat.cast_eq_zero] at hn
+    exact hn ▸ LSCategoricalCover.nonempty_zero_iff.mpr (eq_empty_of_isEmpty _)
+  | inr _ =>
+    exact nonempty_lsCategoricalCover_iff.mpr (hn ▸ lsCategoryCount_univ_le_totalCriticalCount hf)
+
 /-- **The Lusternik–Schnirelmann bound on a compact open part.** If `C` is a compact open subset
 of a boundaryless manifold `M`, for instance a connected component of a compact manifold, then the
 Lusternik–Schnirelmann count of `C`, as a space in its own right, is at most the number of critical
@@ -244,7 +258,7 @@ theorem lsCategoryCount_univ_le_encard_criticalPoints_inter {C : Set M}
   let U : Opens M := ⟨C, hCo⟩
   have : CompactSpace U := isCompact_iff_compactSpace.mp hCc
   have h := lsCategoryCount_univ_le_totalCriticalCount (I := I) (M := U)
-    (hf.comp_contMDiff contMDiff_subtype_val Subtype.prop)
+    (hf.comp_contMDiff contMDiff_subtypeVal Subtype.prop)
   rw [totalCriticalCount_comp_subtypeVal] at h
   -- The open submanifold `U` has carrier `C` by construction, so `↥U` is the subtype `↥C`.
   exact h

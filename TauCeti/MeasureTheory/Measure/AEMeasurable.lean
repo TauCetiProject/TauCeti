@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.AEMeasurable
 
 /-!
-# Pushing forward measures
+# Pushforwards and measurable majorants
 
 Restricting a measure before pushing it forward along an almost everywhere measurable map can only
 decrease the pushforward. This complements Mathlib's
@@ -18,15 +18,93 @@ function `g` that is not almost everywhere measurable. In that case Mathlib's pu
 nonzero measure is a fallback Dirac measure, the same for `g` and for `g ∘ f`, and for the zero
 measure both pushforwards are zero.
 
+For an ordered target, if a function `f` is bounded almost everywhere by an a.e. measurable
+function `g` and pointwise by a measurable majorant `u`, then `g` has a measurable representative
+that still bounds `f` everywhere.
+
 ## Main results
 
 * `MeasureTheory.Measure.map_restrict_le_map` — `(μ.restrict s).map f ≤ μ.map f` for an
   almost everywhere measurable `f`, with no hypothesis on `s`.
 * `MeasurableEmbedding.map_map_measure` — `(μ.map f).map g = μ.map (g ∘ f)` for a measurable
   embedding `f`, with no measurability assumption on `g`.
+* `AEMeasurable.exists_measurable_ge_ae_eq_of_ae_le`: a measurable representative of an a.e.
+  measurable a.e. majorant that still dominates pointwise.
+* `AEMeasurable.eval_selector_of_countable`: evaluating a countable family along an a.e.
+  measurable selector is a.e. measurable when every nonnull fibre is a.e. measurable.
 -/
 
 public section
+
+namespace AEMeasurable
+
+open MeasureTheory
+
+/-- Given a function `f` bounded almost everywhere by an a.e. measurable function `g` and
+pointwise by a measurable majorant `u`, there is a measurable representative `g'` of `g` that
+bounds `f` everywhere. -/
+theorem exists_measurable_ge_ae_eq_of_ae_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    [LE β] {μ : Measure α} {f g u : α → β} (hg : AEMeasurable g μ) (hfg : f ≤ᵐ[μ] g)
+    (hu : Measurable u) (hfu : f ≤ u) :
+    ∃ g' : α → β, Measurable g' ∧ f ≤ g' ∧ g =ᵐ[μ] g' := by
+  classical
+  have hfg' : ∀ᵐ x ∂μ, f x ≤ hg.mk g x :=
+    (hfg.and hg.ae_eq_mk).mono fun _ ⟨h1, h2⟩ ↦ h2 ▸ h1
+  obtain ⟨s, hs, hsm, hsμ⟩ := exists_measurable_superset_of_null (ae_iff.mp hfg')
+  refine ⟨s.piecewise u (hg.mk g), hu.piecewise hsm hg.measurable_mk, ?_, ?_⟩
+  · intro x
+    by_cases hx : x ∈ s
+    · simp [hx, hfu x]
+    · have hle : f x ≤ hg.mk g x := by
+        by_contra h
+        exact hx (hs h)
+      simp [hx, hle]
+  · filter_upwards [hg.ae_eq_mk, compl_mem_ae_iff.mpr hsμ] with x hx hxs
+    simpa only [Set.piecewise_eq_of_notMem s _ _ hxs] using hx
+
+/-- Evaluating a countable family along an a.e. measurable selector is a.e. measurable when
+every component selected on a set of nonzero measure is a.e. measurable. -/
+theorem eval_selector_of_countable {Ω I B : Type*} [MeasurableSpace Ω] [Countable I]
+    [MeasurableSpace I] [MeasurableSingletonClass I] [MeasurableSpace B] {P : Measure Ω}
+    {Z : Ω → I} {Y : I → Ω → B} (hZ : AEMeasurable Z P)
+    (hY : ∀ i, P (Z ⁻¹' {i}) ≠ 0 → AEMeasurable (Y i) P) :
+    AEMeasurable (fun ω ↦ Y (Z ω) ω) P := by
+  by_cases hP : P = 0
+  · simp [hP]
+  obtain ⟨i₀, hi₀⟩ : ∃ i, P (Z ⁻¹' {i}) ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hP
+    rw [← Measure.measure_univ_eq_zero]
+    have huniv : (Set.univ : Set Ω) = ⋃ i, Z ⁻¹' {i} := by
+      ext ω
+      simp
+    rw [huniv]
+    exact measure_iUnion_null h
+  let g : I → Ω → B := fun i ↦ if hi : P (Z ⁻¹' {i}) ≠ 0 then
+    (hY i hi).mk (Y i) else (hY i₀ hi₀).mk (Y i₀)
+  have hg : Measurable fun z : I × Ω ↦ g z.1 z.2 :=
+    measurable_from_prod_countable_right fun i ↦ by
+      simp only [g]
+      split_ifs with hi
+      · exact (hY i hi).measurable_mk
+      · exact (hY i₀ hi₀).measurable_mk
+  have hactive : ∀ᵐ i ∂P.map Z, P (Z ⁻¹' {i}) ≠ 0 :=
+    ae_iff_of_countable.2 fun i hi hi' ↦ hi <| by
+      rw [Measure.map_apply_of_aemeasurable hZ (measurableSet_singleton i), hi']
+  have hpos : ∀ᵐ ω ∂P, P (Z ⁻¹' {Z ω}) ≠ 0 :=
+    (ae_map_iff hZ MeasurableSet.of_discrete).1 hactive
+  have hYg : ∀ᵐ ω ∂P, ∀ i, P (Z ⁻¹' {i}) ≠ 0 → Y i ω = g i ω :=
+    ae_all_iff.2 fun i ↦ by
+      by_cases hi : P (Z ⁻¹' {i}) ≠ 0
+      · filter_upwards [(hY i hi).ae_eq_mk] with ω hω
+        intro
+        simpa only [g, dite_eq_left hi] using hω
+      · exact ae_of_all _ fun _ hi' ↦ (hi hi').elim
+  exact (hg.comp_aemeasurable (hZ.prodMk aemeasurable_id)).congr <| by
+    filter_upwards [hpos, hYg] with ω hω hω' using (hω' (Z ω) hω).symm
+
+end AEMeasurable
 
 namespace MeasureTheory.Measure
 

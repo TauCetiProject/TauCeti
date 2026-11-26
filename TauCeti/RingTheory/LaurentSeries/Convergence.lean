@@ -18,7 +18,7 @@ coefficient eventually agrees with the corresponding coefficient of the limit. E
 order of the difference eventually exceeds every prescribed integer.
 
 The common lower bound is essential. The monomials `X⁻¹, X⁻², ...` have every fixed coefficient
-eventually equal to zero, but they do not converge to zero in the valuation topology.
+eventually equal to zero, but they have no limit in the valuation topology.
 
 The order formulation is the form used to prove continuity of operations on Laurent series: a
 map is continuous once every prescribed order of the output difference is reached from some order of
@@ -76,12 +76,12 @@ theorem tendsto_laurentSeries_iff_coeff {ι : Type*} {l : Filter ι}
     · rintro ⟨⟨b, hlb⟩, hcoeff⟩
       intro U hU
       obtain ⟨γ, hγ⟩ := Valued.mem_nhds.mp hU
-      let D := 1 - log (MonoidWithZeroHom.ValueGroup₀.embedding γ.1)
-      have hD : exp (-D) < MonoidWithZeroHom.ValueGroup₀.embedding γ.1 := by
+      let D := 1 - log (MonoidWithZeroHom.ValueGroup₀.embedding γ.val)
+      have hD : exp (-D) < MonoidWithZeroHom.ValueGroup₀.embedding γ.val := by
         rw [← lt_log_iff_exp_lt (by simp), neg_sub]
         omega
       rw [Filter.mem_map]
-      filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb hcoeff D] with i hi
+      filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb D fun z _ ↦ hcoeff z] with i hi
       apply hγ
       rw [Set.mem_ofPred_eq, Valued.v.restrict_lt_iff_lt_embedding]
       exact lt_of_le_of_lt ((LaurentSeries.valuation_le_iff_coeff_lt_eq_zero K).2
@@ -98,7 +98,7 @@ theorem tendsto_laurentSeries_iff_orderTop_sub {ι : Type*} {l : Filter ι}
   rw [tendsto_laurentSeries_iff_coeff]
   constructor
   · rintro ⟨⟨b, hlb⟩, hcoeff⟩ D
-    filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb hcoeff D] with i hi
+    filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb D fun z _ ↦ hcoeff z] with i hi
     rw [HahnSeries.le_orderTop_iff_forall]
     intro z hz
     rw [HahnSeries.coeff_sub, hi z (WithTop.coe_lt_coe.mp hz), sub_self]
@@ -136,21 +136,15 @@ theorem laurentSeries_eventually_coeff_single_neg_succ_eq_zero {R : Type*} [Zero
   · omega
   · rfl
 
-/-- The sequence `X⁻¹, X⁻², ...` does not converge to zero in the Laurent valuation topology,
+/-- The sequence `X⁻¹, X⁻², ...` has no limit in the Laurent valuation topology,
 despite the eventual vanishing of each fixed coefficient. -/
-theorem laurentSeries_not_tendsto_single_neg_succ :
+theorem laurentSeries_not_tendsto_single_neg_succ {g : LaurentSeries K} :
     ¬ Tendsto (fun n : ℕ ↦
-      (HahnSeries.single (-((n + 1 : ℕ) : ℤ)) (1 : K) : LaurentSeries K)) atTop (nhds 0) := by
+      (HahnSeries.single (-((n + 1 : ℕ) : ℤ)) (1 : K) : LaurentSeries K)) atTop (nhds g) := by
   intro h
   obtain ⟨b, hb⟩ := (tendsto_laurentSeries_iff_coeff _ _).1 h |>.1
-  obtain ⟨N, hN⟩ := eventually_atTop.1 hb
-  let n := N + b.natAbs + 1
-  have hn : N ≤ n := by omega
-  have hlt : -((n + 1 : ℕ) : ℤ) < b := by
-    have hbnd : -b ≤ (b.natAbs : ℤ) := by
-      simpa using (Int.le_natAbs (a := -b))
-    omega
-  have hzero := hN n hn (-((n + 1 : ℕ) : ℤ)) hlt
+  obtain ⟨n, hn, hnb⟩ := (hb.and (eventually_ge_atTop (-b).toNat)).exists
+  have hzero := hn (-((n + 1 : ℕ) : ℤ)) (by omega)
   simp at hzero
 
 end TauCeti

@@ -69,10 +69,14 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
   `TauCeti.ModularForm.exists_laurentQExpansion_j_coeff_eq_intCast`: these coefficients are
   integers.
 * `TauCeti.ModularForm.j_J_smul`: `j (-conj τ) = conj (j τ)`, from the integrality of these
-  coefficients.
-* `TauCeti.ModularForm.laurentQExpansion_j` and
-  `TauCeti.ModularForm.orderTop_laurentQExpansion_j`: the Laurent `q`-expansion of `j`, of
-  order `-1`, with first coefficients `TauCeti.ModularForm.laurentQExpansion_j_coeff_neg_one`,
+  coefficients; hence `j τ` is real whenever `2 * τ.re` is an integer
+  (`TauCeti.ModularForm.im_j_eq_zero_of_two_mul_re_eq_intCast`).
+* `TauCeti.ModularForm.laurentQExpansion_j`,
+  `TauCeti.ModularForm.orderTop_laurentQExpansion_j` and
+  `TauCeti.ModularForm.order_laurentQExpansion_j`: the Laurent `q`-expansion of `j`, of
+  order `-1` and leading coefficient `1`
+  (`TauCeti.ModularForm.leadingCoeff_laurentQExpansion_j`); its first coefficients are
+  `TauCeti.ModularForm.laurentQExpansion_j_coeff_neg_one`,
   `TauCeti.ModularForm.laurentQExpansion_j_coeff_zero` and
   `TauCeti.ModularForm.laurentQExpansion_j_coeff_one`.
 
@@ -128,13 +132,7 @@ theorem j_smul_SL2Z (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
 @[simp]
 theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
     j ((map (Int.castRingHom ℝ) γ) • z) = j z := by
-  have hAction : (map (Int.castRingHom ℝ) γ) • z = γ • z := by
-    rw [MulAction.compHom_smul_def, MulAction.compHom_smul_def]
-    have hMap : mapGL ℝ (map (Int.castRingHom ℝ) γ) = mapGL ℝ γ := by
-      ext i j
-      simp [mapGL_coe_matrix]
-    exact congrArg (· • z) hMap
-  rw [hAction]
+  rw [map_intCastRingHom_smul]
   exact j_smul_SL2Z γ z
 
 /-- The identity `j - 1728 = E₆² / Δ`. -/
@@ -332,7 +330,7 @@ theorem qExpansion_qParam_mul_j_mul_qExpansion_discriminant :
     one_mem_strictPeriods_SL
   have hE := ModularFormClass.analyticAt_cuspFunction_zero (E₄.pow 3) one_pos
     one_mem_strictPeriods_SL
-  have hq := TauCeti.UpperHalfPlane.analyticAt_cuspFunction_qParam one_pos
+  have hq := TauCeti.UpperHalfPlane.analyticAt_cuspFunction_qParam 1
   have hfun : (fun τ : ℍ ↦ 𝕢 1 τ * j τ) * ⇑CuspForm.discriminant =
       (fun τ : ℍ ↦ 𝕢 1 τ) * ⇑(E₄.pow 3) := by
     rw [ModularForm.coe_pow]
@@ -450,7 +448,7 @@ theorem laurentQExpansion_j :
 /-- The Laurent `q`-expansion of `j` has order `-1`: `j` has a simple pole at `i∞`. -/
 @[simp]
 theorem orderTop_laurentQExpansion_j : (UpperHalfPlane.laurentQExpansion 1 j).orderTop = -1 := by
-  rw [UpperHalfPlane.orderTop_laurentQExpansion one_pos meromorphicAt_cuspFunction_j,
+  rw [UpperHalfPlane.orderTop_laurentQExpansion meromorphicAt_cuspFunction_j,
     meromorphicOrderAt_cuspFunction_j]
 
 /-- The Laurent `q`-coefficients of `j` are those of `q j`, shifted down by one. -/
@@ -465,6 +463,22 @@ theorem laurentQExpansion_j_coeff_natCast_sub_one (n : ℕ) :
 theorem laurentQExpansion_j_coeff_neg_one :
     (UpperHalfPlane.laurentQExpansion 1 j).coeff (-1) = 1 := by
   simpa [constantCoeff_qExpansion_qParam_mul_j] using laurentQExpansion_j_coeff_natCast_sub_one 0
+
+/-- The Laurent `q`-expansion of `j` has order `-1`. -/
+@[simp]
+theorem order_laurentQExpansion_j : (UpperHalfPlane.laurentQExpansion 1 j).order = -1 := by
+  have hne : UpperHalfPlane.laurentQExpansion 1 j ≠ 0 := by
+    rw [← HahnSeries.orderTop_ne_top, orderTop_laurentQExpansion_j]
+    exact WithTop.coe_ne_top
+  exact WithTop.coe_injective (by
+    rw [HahnSeries.order_eq_orderTop_of_ne_zero hne, orderTop_laurentQExpansion_j]
+    norm_num)
+
+/-- The Laurent `q`-expansion of `j` has leading coefficient `1`. -/
+@[simp]
+theorem leadingCoeff_laurentQExpansion_j :
+    (UpperHalfPlane.laurentQExpansion 1 j).leadingCoeff = 1 := by
+  rw [HahnSeries.leadingCoeff_eq, order_laurentQExpansion_j, laurentQExpansion_j_coeff_neg_one]
 
 /-- The constant Laurent `q`-coefficient of `j` is `744`. -/
 @[simp]
@@ -530,5 +544,16 @@ theorem j_J_smul (τ : ℍ) : j (J • τ) = starRingEnd ℂ (j τ) := by
   have h := h₁.unique h₂
   rw [map_sub, map_inv₀] at h
   simpa using h
+
+/-- **`j(τ)` is real whenever `2 * τ.re` is an integer**: if `2 * τ.re = k` (`k ∈ ℤ`), then
+`-conj τ = τ - k = T ^ (-k) • τ`, so `conj (j τ) = j (J • τ) = j τ`. -/
+theorem im_j_eq_zero_of_two_mul_re_eq_intCast {τ : ℍ} {k : ℤ} (h : 2 * τ.re = k) :
+    (j τ).im = 0 := by
+  have hJT : J • τ = _root_.ModularGroup.T ^ (-k) • τ := by
+    apply UpperHalfPlane.ext
+    rw [coe_J_smul, modular_T_zpow_smul, coe_vadd]
+    apply Complex.ext <;> simp
+    linarith
+  exact Complex.conj_eq_iff_im.mp ((j_J_smul τ).symm.trans (by rw [hJT, j_smul_SL2Z]))
 
 end TauCeti.ModularForm

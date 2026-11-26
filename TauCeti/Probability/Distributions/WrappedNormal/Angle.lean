@@ -6,10 +6,13 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.WrappedNormal.Density
+public import TauCeti.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Quantile
+import TauCeti.Probability.Distributions.Gaussian.PDF
 import TauCeti.Probability.Distributions.Gaussian.Periodization
 import TauCeti.MeasureTheory.Measure.AddCircle
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The wrapped normal law in the fixed angle chart
@@ -18,7 +21,8 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 variance its real density is the periodized Gaussian density. Its cdf is the integral
 of that density from `-π`, with zero and one extensions outside the chart. Interior quantiles
 are the unique roots of this integral, vary continuously and strictly increasingly with the
-probability level, and tend to the chart endpoints.
+probability level, and tend to the chart endpoints. Since the chart is bounded, every exponential
+moment of its real coordinate exists.
 
 At variance zero the angle law is the Dirac mass at the chosen representative of the location.
 The location parameter remains a circle point, so the formulas are independent of its real
@@ -93,11 +97,20 @@ theorem ae_mem_Ico_wrappedNormalAngleMeasure (m : AddCircle (2 * π)) (v : ℝ�
   rw [wrappedNormalAngleMeasure_def]
   have hm : Measurable (fun θ : AddCircle (2 * π) ↦
       (AddCircle.equivIco (2 * π) (-π) θ : ℝ)) :=
-    measurable_subtype_coe.comp (AddCircle.measurableEquivIco (2 * π) (-π)).measurable
+    measurable_subtypeVal.comp (AddCircle.measurableEquivIco (2 * π) (-π)).measurable
   apply (ae_map_iff hm.aemeasurable measurableSet_Ico).2
   exact ae_of_all _ fun θ ↦ by
     have hπ : -π + 2 * π = π := by ring
     simpa only [mem_Ico, hπ] using (AddCircle.equivIco (2 * π) (-π) θ).property
+
+/-- Every exponential moment of the fixed-chart wrapped normal angle exists. -/
+@[simp]
+theorem integrableExpSet_id_wrappedNormalAngleMeasure
+    (m : AddCircle (2 * π)) (v : ℝ≥0) :
+    integrableExpSet id (wrappedNormalAngleMeasure m v) = univ := by
+  apply TauCeti.integrableExpSet_eq_univ_of_mem_Icc measurable_id.aemeasurable
+  exact (ae_mem_Ico_wrappedNormalAngleMeasure m v).mono
+    fun _ hx ↦ Set.Ico_subset_Icc_self hx
 
 /-- At positive variance the angle law has no atoms. -/
 theorem nullSingletonClass_wrappedNormalAngleMeasure (hv : v ≠ 0) :
@@ -142,9 +155,9 @@ theorem cdf_wrappedNormalAngleMeasure_eq_integral (hv : v ≠ 0) (hx : x ∈ Icc
     ((continuous_wrappedNormalPDFReal m v).comp (AddCircle.continuous_mk' _)).div_const _
   rw [cdf_eq_real, wrappedNormalAngleMeasure_eq_withDensity hv,
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
-    measureReal_withDensity_ofReal
+    MeasureTheory.measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (wrappedNormalPDFReal_pos _ hv _) two_pi_pos).le)
-      measurableSet_Iic ((hf.integrableOn_Icc.mono_set Ioc_subset_Icc_self).integrableOn),
+      nullMeasurableSet_Iic hf.aemeasurable,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hx.2,
     ← intervalIntegral.integral_of_le hx.1, intervalIntegral.integral_div]
 
@@ -178,8 +191,7 @@ theorem hasSum_gaussianReal_wrappedNormalAngleMeasure (a : ℝ) (hv : v ≠ 0)
   simp only [Function.comp_apply]
   rw [intervalIntegral.integral_comp_add_right,
     intervalIntegral.integral_of_le (by linarith [hx.1]),
-    measureReal_def, gaussianReal_apply_eq_integral a hv,
-    ENNReal.toReal_ofReal (integral_nonneg (gaussianPDFReal_nonneg _ _))]
+    measureReal_gaussianReal_eq_setIntegral a hv]
 
 /-- The fixed-chart cdf is the sum of Gaussian interval probabilities, with the location
 specified by any real representative. -/
@@ -299,7 +311,7 @@ theorem tendsto_quantile_wrappedNormalAngleMeasure_nhdsLT_one (hv : v ≠ 0) :
 theorem measurable_wrappedNormalAngleMeasure :
     Measurable fun p : AddCircle (2 * π) × ℝ≥0 ↦ wrappedNormalAngleMeasure p.1 p.2 := by
   simp only [wrappedNormalAngleMeasure_def]
-  exact (Measure.measurable_map _ (measurable_subtype_coe.comp
+  exact (Measure.measurable_map _ (measurable_subtypeVal.comp
     (AddCircle.measurableEquivIco (2 * π) (-π)).measurable)).comp measurable_wrappedNormalMeasure
 
 end TauCeti.Probability
@@ -317,7 +329,7 @@ theorem HasLaw.angle_wrappedNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P :
     HasLaw (fun ω ↦ (AddCircle.equivIco (2 * π) (-π) (X ω) : ℝ))
       (wrappedNormalAngleMeasure m v) P := by
   rw [wrappedNormalAngleMeasure_def]
-  exact (hasLaw_map (measurable_subtype_coe.comp
+  exact (hasLaw_map (measurable_subtypeVal.comp
     (AddCircle.measurableEquivIco (2 * π) (-π)).measurable).aemeasurable).comp hX
 
 end ProbabilityTheory

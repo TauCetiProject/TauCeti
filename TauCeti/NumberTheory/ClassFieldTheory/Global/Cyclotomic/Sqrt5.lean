@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Prime
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Five
 import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Subfields
 import TauCeti.NumberTheory.NumberField.Frobenius
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
@@ -74,7 +75,8 @@ exactly when `ℓ ≡ ±1 (mod 5)`. -/
 private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] SeparableClosure ℚ)
     (hs : s ^ 2 = 5) (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
-    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     σ s = s ↔ Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
   have hr : ∀ _ : Unit, s ^ 2 = algebraMap ℤ E 5 := fun _ ↦ by simpa using hs
   have htop : IntermediateField.adjoin ℚ (Set.range fun _ : Unit ↦ s) = ⊤ := by
@@ -82,9 +84,7 @@ private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] 
   have := Multiquadratic.isMulCommutative_of_adjoin_eq_top (d := fun _ : Unit ↦ (5 : ℚ))
     (fun _ ↦ by rw [hs, map_ofNat]) htop
   obtain ⟨p, hpv⟩ : ∃ p, Ideal.absNorm v.asIdeal = p := ⟨_, rfl⟩
-  have : Fact p.Prime := ⟨by
-    rw [← hpv, Rat.HeightOneSpectrum.absNorm_asIdeal]
-    exact Rat.HeightOneSpectrum.prime_natGenerator v⟩
+  have : Fact p.Prime := ⟨hpv ▸ Rat.HeightOneSpectrum.prime_absNorm_asIdeal v⟩
   have hp5 : ¬ (p : ℤ) ∣ 5 := by
     have := mt (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd v (n := 5)).mpr
       (by exact_mod_cast hv)
@@ -113,7 +113,8 @@ negates it otherwise. -/
 theorem globalArtinMap_Qsqrt5_prime_apply (ι : E →ₐ[ℚ] SeparableClosure ℚ) (hs : s ^ 2 = 5)
     (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
-    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     σ s = if Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 then s else -s := by
   have h := globalArtinMap_Qsqrt5_prime_apply_eq_self_iff ι hs hgen v hv hσ
   split_ifs with hc
@@ -127,7 +128,8 @@ automorphism representing the Artin symbol of a prime `ℓ ≠ 5` is the identit
 theorem globalArtinMap_Qsqrt5_prime (ι : E →ₐ[ℚ] SeparableClosure ℚ) (hs : s ^ 2 = 5)
     (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
-    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     (Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 → σ = 1) ∧
       (Ideal.absNorm v.asIdeal % 5 = 2 ∨ Ideal.absNorm v.asIdeal % 5 = 3 → σ s = -s) := by
   have h := globalArtinMap_Qsqrt5_prime_apply ι hs hgen v hv hσ
@@ -146,7 +148,7 @@ theorem globalArtinMap_Qsqrt5_prime_eq_zero_iff (ι : E →ₐ[ℚ] SeparableClo
       Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
   refine ⟨fun h ↦ (globalArtinMap_Qsqrt5_prime_apply_eq_self_iff ι hs hgen v hv (σ := 1)
     (by rw [h, map_one, ofMul_one])).mp rfl, fun hc ↦ ?_⟩
-  obtain ⟨σ, hσ⟩ := Abelianization.exists_eq_ofMul_of
+  obtain ⟨σ, hσ⟩ := Group.Abelianization.exists_eq_ofMul_of
     (globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)))
   rw [hσ, (globalArtinMap_Qsqrt5_prime ι hs hgen v hv hσ).1 hc, map_one, ofMul_one]
 
@@ -164,36 +166,16 @@ the fifth cyclotomic field. An automorphism representing the global Artin symbol
 theorem globalArtinMap_zeta5_restrict_Qsqrt5 (ι : E →ₐ[ℚ] SeparableClosure ℚ)
     {M : IntermediateField ℚ E} (hM : Module.finrank ℚ M = 2) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
-    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     (∀ x ∈ M, σ x = x) ↔ Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
-  rw [← IntermediateField.mem_fixingSubgroup_iff]
-  have hH : M.fixingSubgroup.index = 2 :=
-    (IntermediateField.finrank_eq_fixingSubgroup_index E M).symm.trans hM
+  rw [← IntermediateField.mem_fixingSubgroup_iff,
+    IntermediateField.mem_fixingSubgroup_zeta5_iff hM]
   have hval : (Rat.galEquivZMod 5 E σ : ZMod 5).val = Ideal.absNorm v.asIdeal % 5 := by
     rw [galEquivZMod_globalArtinMap_prime ι v hv hσ, ZMod.val_natCast]
-  rw [← hval, ← (by decide : ∀ c : (ZMod 5)ˣ,
-    (c = 1 ∨ c = -1) ↔ ((c : ZMod 5).val = 1 ∨ (c : ZMod 5).val = 4)) _]
-  constructor
-  · -- An element of `(ℤ/5ℤ)ˣ` other than `±1` generates it, so the fixing group would be
-    -- everything, of index one.
-    intro hσH
-    by_contra hc
-    rw [not_or] at hc
-    have hgen : ∀ d : (ZMod 5)ˣ, ∃ k < 4, d = Rat.galEquivZMod 5 E σ ^ k :=
-      (by decide : ∀ c : (ZMod 5)ˣ, c ≠ 1 → c ≠ -1 → ∀ d, ∃ k < 4, d = c ^ k) _ hc.1 hc.2
-    have htop : M.fixingSubgroup = ⊤ := (Subgroup.eq_top_iff' _).mpr fun τ ↦ by
-      obtain ⟨k, -, hk⟩ := hgen (Rat.galEquivZMod 5 E τ)
-      have hτ : τ = σ ^ k := (Rat.galEquivZMod 5 E).injective (by rw [map_pow]; exact hk)
-      exact hτ ▸ pow_mem hσH k
-    rw [htop, Subgroup.index_top] at hH
-    exact absurd hH (by norm_num)
-  · -- `±1` are squares in `(ℤ/5ℤ)ˣ`, and a subgroup of index two contains every square.
-    intro hc
-    obtain ⟨d, hd⟩ := (by decide : ∀ c : (ZMod 5)ˣ, c = 1 ∨ c = -1 → ∃ d : (ZMod 5)ˣ, c = d ^ 2)
-      _ hc
-    have hσd : σ = ((Rat.galEquivZMod 5 E).symm d) ^ 2 := (Rat.galEquivZMod 5 E).injective
-      (by rw [map_pow, MulEquiv.apply_symm_apply]; exact hd)
-    exact hσd ▸ Subgroup.sq_mem_of_index_two hH _
+  rw [← hval]
+  exact (by decide : ∀ c : (ZMod 5)ˣ,
+    (c = 1 ∨ c = -1) ↔ ((c : ZMod 5).val = 1 ∨ (c : ZMod 5).val = 4)) _
 
 end Zeta5
 

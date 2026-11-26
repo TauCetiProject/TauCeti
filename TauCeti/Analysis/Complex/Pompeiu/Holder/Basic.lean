@@ -49,7 +49,7 @@ theorem norm_pi_inv_smul_integral_sub_inv_smul_le
     ‖(Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z‖ ≤ 2 * (r + R) * M := by
   rw [integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw, norm_smul]
   have hb := norm_integral_kernel_smul_sub_le
-    (integrable_truncatedCauchyKernel (r + R)) hM w
+    (integrable_truncatedCauchyKernel (r + R)) (ae_of_all _ fun z ↦ hM (w - z))
   rw [integral_norm_truncatedCauchyKernel (add_nonneg hr hR)] at hb
   calc
     _ ≤ ‖(Real.pi : ℂ)⁻¹‖ * ((2 * Real.pi * (r + R)) * M) :=
@@ -73,7 +73,7 @@ theorem holderOnWith_pi_inv_smul_integral_sub_inv_smul
         (2 * (r + R)).toNNReal * H := by
     apply NNReal.eq
     rw [integral_norm_truncatedCauchyKernel (add_nonneg hr hR)]
-    simp only [NNReal.coe_mul, coe_nnnorm]
+    simp only [NNReal.coe_mul, coe_nnNorm]
     rw [
       Real.coe_toNNReal _ (by positivity), Real.coe_toNNReal _ (by positivity)]
     simp only [norm_inv, norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos]

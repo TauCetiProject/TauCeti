@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
+import TauCeti.LinearAlgebra.Basis.RestrictScalars
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 
 /-!
@@ -33,7 +34,9 @@ of `(-i τ)^{1/2}`; its square is integral weight. In rank two the two laws comp
 `jacobiTheta(-1/τ)² = -i τ jacobiTheta(τ)²` follows from the lattice inversion law, which is
 proved by Poisson summation over the lattice (`jacobiTheta_S_smul_sq`). This
 checks the exponent `π i ‖v‖² τ` and the constant `(covol L)⁻¹ (-i)^k τ^k` of the lattice
-inversion law against the classical rank-one formula.
+inversion law against the classical rank-one formula. In rank two the weight is `1`, so inverting
+twice multiplies `Θ_{ℤ b}` by `-1`, the action of `S S = -I` in odd weight
+(`ZLattice.thetaSeries_span_orthonormalBasis_slash_S_mul_S`).
 
 ## Main statements
 
@@ -43,6 +46,8 @@ inversion law against the classical rank-one formula.
   `Θ_{ℤ b}(-1/τ) = (-i τ)^k Θ_{ℤ b}(τ)`.
 * `jacobiTheta_S_smul_sq`: `jacobiTheta(-1/τ)² = -i τ jacobiTheta(τ)²`, from the
   lattice inversion law in rank two.
+* `ZLattice.thetaSeries_span_orthonormalBasis_slash_S_mul_S`: in rank two,
+  `Θ_{ℤ b} ∣[1] (S S) = -Θ_{ℤ b}`.
 
 ## References
 
@@ -53,7 +58,7 @@ inversion law against the classical rank-one formula.
 public section
 
 open Complex Module Submodule
-open scoped Pointwise Real RealInnerProductSpace UpperHalfPlane
+open scoped ModularForm Pointwise Real RealInnerProductSpace UpperHalfPlane
 
 namespace ZLattice
 
@@ -74,12 +79,8 @@ theorem thetaSeries_span_orthonormalBasis (τ : ℍ) :
   -- The lattice vector with coordinates `m` is `∑ i, (m i : ℝ) • b i`, of squared norm
   -- `∑ i, (m i)²` by orthonormality.
   have hv : ((b.toBasis.restrictScalars ℤ).equivFun.symm m : E) = ∑ i, (m i : ℝ) • b i := by
-    rw [Basis.equivFun_symm_apply, Submodule.coe_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    -- The `ℤ`-action on the span is the one of `Basis.restrictScalars`, so `coe_smul` only
-    -- matches up to instances.
-    erw [Submodule.coe_smul]
-    rw [Basis.restrictScalars_apply, b.coe_toBasis, Int.cast_smul_eq_zsmul]
+    rw [Basis.coe_restrictScalars_equivFun_symm, Basis.equivFun_symm_apply, b.coe_toBasis]
+    simp only [eq_intCast]
   have hn : ‖((b.toBasis.restrictScalars ℤ).equivFun.symm m : E)‖ ^ 2 = ∑ i, (m i : ℝ) ^ 2 := by
     rw [hv]
     simpa using b.orthonormal.orthogonalFamily.norm_sum (fun i ↦ (m i : ℝ)) Finset.univ
@@ -118,5 +119,17 @@ theorem _root_.jacobiTheta_S_smul_sq (τ : ℍ) :
   have h := thetaSeries_span_orthonormalBasis_S_smul (EuclideanSpace.basisFun (Fin 2) ℝ)
     (k := 1) (by simp) τ
   simpa only [thetaSeries_span_orthonormalBasis, Fintype.card_fin, pow_one] using h
+
+/-- **The central element acts by `-1` on the theta series of `ℤ²`**: if `b` is an orthonormal
+basis of a plane, then in weight `1`, `Θ_{ℤ b} ∣[1] (S S) = -Θ_{ℤ b}`. Here `S S = -I`, which
+acts in weight `1` by `-1`. -/
+theorem thetaSeries_span_orthonormalBasis_slash_S_mul_S (hι : Fintype.card ι = 2) :
+    thetaSeries (span ℤ (Set.range b)) ∣[(1 : ℤ)] (ModularGroup.S * ModularGroup.S) =
+      -thetaSeries (span ℤ (Set.range b)) := by
+  have := b.toBasis.finiteDimensional_of_finite
+  rw [← b.coe_toBasis]
+  have h := thetaSeries_slash_S_mul_S (span ℤ (Set.range b.toBasis)) (k := 1)
+    ((finrank_eq_card_basis b.toBasis).trans hι)
+  simpa only [Nat.cast_one, pow_one, neg_one_smul] using h
 
 end ZLattice

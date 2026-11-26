@@ -7,9 +7,14 @@ module
 
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.RingTheory.ClassGroup.HeightOneSpectrum
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 
 /-!
 # Small prime ideals generate the class group
+
+Every ideal class of a number field contains a nonzero integral ideal of norm at most the
+Minkowski bound, so the class number is at most the number of such ideals
+(`TauCeti.NumberField.classNumber_le_card_idealsLE`).
 
 The classes of prime ideals of norm at most the Minkowski bound generate the class group of
 any number field. The bound may be replaced by a larger real number, allowing a numerical
@@ -34,6 +39,27 @@ namespace TauCeti.NumberField
 
 variable (K : Type*) [Field K] [NumberField K]
 
+/-- **Minkowski's bound as an ideal count.** The class number of `K` is at most the number of
+nonzero integral ideals of `𝓞 K` of norm at most `x`, whenever `x` is at least the Minkowski
+bound.
+
+In particular, the exact Minkowski bound can be used by taking `hx := le_rfl`. -/
+theorem classNumber_le_card_idealsLE {x : ℝ}
+    (hx : (4 / Real.pi) ^ NumberField.InfinitePlace.nrComplexPlaces K *
+      ((Nat.factorial (Module.finrank ℚ K) : ℝ) /
+        (Module.finrank ℚ K) ^ (Module.finrank ℚ K) *
+        Real.sqrt |NumberField.discr K|) ≤ x) :
+    NumberField.classNumber K ≤ (TauCeti.idealsLE K x).card := by
+  classical
+  -- Each ideal class is the class of a nonzero integral ideal of norm at most `x`.
+  have hM : Set.SurjOn ClassGroup.mk0 (TauCeti.idealsLE K x : Set (Ideal (𝓞 K))⁰)
+      (Finset.univ : Finset (ClassGroup (𝓞 K))) := by
+    intro C _
+    obtain ⟨I, hI, hle⟩ := NumberField.exists_ideal_in_class_of_norm_le C
+    exact ⟨I, (TauCeti.mem_normLE _).mpr (hle.trans hx), hI⟩
+  have hcard := Finset.card_le_card_of_surjOn _ hM
+  rwa [Finset.card_univ, ← NumberField.classNumber] at hcard
+
 /-- **Minkowski's class-group generation bound.** The classes of nonzero prime ideals of norm
 at most `B` generate the class group whenever `B` is at least the Minkowski bound.
 
@@ -50,7 +76,7 @@ theorem closure_classGroupMk_image_absNorm_le_eq_top {B : ℝ}
   have hI0 := nonZeroDivisors.coe_ne_zero I
   refine ClassGroup.mk0_mem_closure_of_count_eq K 1 fun v hv ↦ ?_
   rw [Units.val_one, map_one, FractionalIdeal.count_one,
-    FractionalIdeal.count_coe K v hI0, Nat.cast_eq_zero]
+    FractionalIdeal.count_coeIdeal K v hI0, Nat.cast_eq_zero]
   by_contra hc
   have hd : v.asIdeal ∣ (I : Ideal (𝓞 K)) :=
     (Associates.count_ne_zero_iff_dvd hI0 v.irreducible).mp hc

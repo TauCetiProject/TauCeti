@@ -8,14 +8,25 @@ module
 public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
-# The Japanese bracket in `L²` and the `L¹` bound by a weighted `L²` norm
+# The Japanese bracket in `Lᵖ` and the `L¹` bound by a weighted `L²` norm
 
 Let `V` be a finite-dimensional real normed space of dimension `d`. For `2s > d` the negative
 power `(1 + ‖x‖ ^ 2) ^ (-s / 2)` of the Japanese bracket is square integrable for every additive
 Haar measure (`TauCeti.memLp_rpow_neg_one_add_norm_sq`), since its square is the integrable
-function `(1 + ‖x‖ ^ 2) ^ (-2s / 2)` (`integrable_rpow_neg_one_add_norm_sq`). For every `s`, the
+function `(1 + ‖x‖ ^ 2) ^ (-2s / 2)` (`integrable_rpow_neg_one_add_norm_sq`). More generally, on a
+nontrivial space and for `0 < p < ∞`, the power lies in `Lᵖ` exactly when `d < p s`
+(`TauCeti.memLp_rpow_neg_one_add_norm_sq_iff`). A
+function of polynomial growth `C (1 + ‖x‖) ^ k` becomes square integrable after multiplication by
+`(1 + ‖x‖ ^ 2) ^ (s / 2)` once `d < -2 (s + k)`
+(`TauCeti.memLp_two_one_add_norm_sq_rpow_smul_of_norm_le`), and rescaled weights
+`(1 + c * ‖x‖ ^ 2) ^ (-r / 2)` are integrable whenever `0 < c` and `d < r`
+(`TauCeti.integrable_rpow_neg_one_add_mul_norm_sq`). For every `s`, the
 Cauchy–Schwarz inequality gives
 
 `‖v‖₁ ≤ ‖(1 + ‖·‖ ^ 2) ^ (-s / 2)‖₂ ‖(1 + ‖·‖ ^ 2) ^ (s / 2) v‖₂`
@@ -48,7 +59,7 @@ theorem memLp_rpow_neg_one_add_norm_sq [NormedSpace ℝ V] [FiniteDimensional �
   have hc : Continuous fun x : V => (1 + ‖x‖ ^ 2) ^ (-s / 2) :=
     (by fun_prop : Continuous fun x : V => 1 + ‖x‖ ^ 2).rpow_const fun x =>
       Or.inl (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2).ne'
-  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
+  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
     hc.aestronglyMeasurable]
   convert (integrable_rpow_neg_one_add_norm_sq (μ := μ) hs).lintegral_lt_top using 2
   funext x
@@ -56,6 +67,49 @@ theorem memLp_rpow_neg_one_add_norm_sq [NormedSpace ℝ V] [FiniteDimensional �
   rw [← ofReal_norm, Real.norm_of_nonneg (by positivity), ENNReal.toReal_ofNat,
     ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← Real.rpow_mul hpos.le]
   ring_nf
+
+/-- **Exact `Lᵖ` integrability of the Japanese bracket.** On a nontrivial finite-dimensional real
+normed space of dimension `d`, for `0 < p < ∞`, `x ↦ (1 + ‖x‖ ^ 2) ^ (-s / 2)` lies in `Lᵖ` of an
+additive Haar measure exactly when `d < p s`. -/
+theorem memLp_rpow_neg_one_add_norm_sq_iff [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+    [BorelSpace V] [Nontrivial V] (μ : Measure V) [μ.IsAddHaarMeasure] (s : ℝ) {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) :
+    MemLp (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-s / 2)) p μ ↔ (finrank ℝ V : ℝ) < p.toReal * s := by
+  have hc : Continuous fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-s / 2) :=
+    (by fun_prop : Continuous fun x : V ↦ 1 + ‖x‖ ^ 2).rpow_const fun x ↦
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2).ne'
+  rw [← integrable_norm_rpow_iff hc.aestronglyMeasurable hp0 hp,
+    ← integrable_rpow_neg_one_add_norm_sq_iff μ]
+  refine integrable_congr (Filter.Eventually.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_mul (by positivity)]
+  ring_nf
+
+/-- **A negative Japanese bracket weight makes polynomial growth square integrable.** If
+`‖f x‖ ≤ C (1 + ‖x‖) ^ k` almost everywhere, then `x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x` is square
+integrable for every additive Haar measure on a finite-dimensional real normed space of dimension
+`d < -2 (s + k)`. -/
+theorem memLp_two_one_add_norm_sq_rpow_smul_of_norm_le [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+    [BorelSpace V] (μ : Measure V) [μ.IsAddHaarMeasure] {f : V → F}
+    (hf : AEStronglyMeasurable f μ) {C : ℝ} {k : ℕ} (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C * (1 + ‖x‖) ^ k)
+    {s : ℝ} (hs : (finrank ℝ V : ℝ) < -2 * (s + k)) :
+    MemLp (fun x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x) 2 μ := by
+  refine ((memLp_rpow_neg_one_add_norm_sq μ (s := -(s + k)) (by linarith)).const_mul
+    (C * 2 ^ k)).mono' ((((continuous_const.add (continuous_norm.pow 2)).rpow_const fun x ↦
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2).ne').aestronglyMeasurable).smul hf) ?_
+  filter_upwards [hfC] with x hx
+  -- `⟨x⟩ ^ s (1 + ‖x‖) ^ k ≤ 2 ^ k ⟨x⟩ ^ (s + k)`.
+  have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hx) (by positivity)
+  have hk : (1 + ‖x‖) ^ k ≤ 2 ^ k * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+    simpa [one_add_one_eq_two] using Real.one_add_mul_abs_rpow_le ‖x‖ zero_le_one k.cast_nonneg
+  rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+  calc (1 + ‖x‖ ^ 2) ^ (s / 2) * ‖f x‖
+      ≤ (1 + ‖x‖ ^ 2) ^ (s / 2) * (C * (2 ^ k * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2))) := by
+        gcongr
+        exact hx.trans (by gcongr)
+    _ = C * 2 ^ k * (1 + ‖x‖ ^ 2) ^ (-(-(s + k)) / 2) := by
+        rw [neg_neg, one_add_norm_sq_rpow_add]
+        ring
 
 /-- **The `L¹` norm is bounded by a weighted `L²` norm.** For every `s` and every function `v`,
 `‖v‖₁ ≤ ‖(1 + ‖·‖ ^ 2) ^ (-s / 2)‖₂ ‖(1 + ‖·‖ ^ 2) ^ (s / 2) v‖₂`. The first factor is finite
@@ -67,9 +121,20 @@ theorem eLpNorm_one_le_eLpNorm_rpow_neg_one_add_norm_sq_mul_eLpNorm_one_add_norm
   have h : v = (fun x : V => (1 + ‖x‖ ^ 2) ^ (-s / 2)) •
       fun x => (1 + ‖x‖ ^ 2) ^ (s / 2) • v x := by
     funext x
-    rw [Pi.smul_apply', smul_smul, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel,
-      Real.rpow_zero, one_smul]
+    rw [Pi.smul_apply', smul_smul, one_add_norm_sq_rpow_neg_mul_rpow, one_smul]
   conv_lhs => rw [h]
   exact eLpNorm_smul_le_mul_eLpNorm_of_pos one_pos
+
+/-- **Rescaled Japanese-bracket integrability** on a finite-dimensional real normed space: for
+`0 < c` and `finrank ℝ E < r`, `v ↦ (1 + c * ‖v‖ ^ 2) ^ (-r / 2)` is `μ`-integrable. -/
+theorem integrable_rpow_neg_one_add_mul_norm_sq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {c r : ℝ} (hc : 0 < c) (hr : (finrank ℝ E : ℝ) < r) :
+    Integrable (fun v : E ↦ (1 + c * ‖v‖ ^ 2) ^ (-r / 2)) μ := by
+  have hbase := integrable_rpow_neg_one_add_norm_sq (μ := μ) hr
+  have hsqrt : Real.sqrt c ≠ 0 := (Real.sqrt_pos.mpr hc).ne'
+  refine (hbase.comp_smul hsqrt).congr (.of_forall fun v ↦ ?_)
+  dsimp only
+  rw [TauCeti.norm_sqrt_smul_sq hc.le v]
 
 end TauCeti

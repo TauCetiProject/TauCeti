@@ -17,8 +17,8 @@ tangent bundle pulled back along the embedding. This construction uses no metric
 complement, and applies to embeddings in arbitrary ambient manifolds. Its projection and
 zero section are continuous.
 
-A commuting square with differentiable base map and C¹ ambient map induces a continuous
-map of these total spaces: the ambient tangent map descends through the quotient. This is
+A commuting square with C¹ ambient map induces a continuous map of these total spaces: the
+ambient tangent map descends through the quotient. This is
 the topological compatibility needed to express normal-bundle coordinates in different
 ambient manifold charts.
 
@@ -48,27 +48,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 `K` of the target total space does not affect the quotient construction. -/
 def normalQuotientMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
-    TotalSpace K (fun x => f.NormalSpace x hn) :=
-  ⟨p.proj, f.normalClass p.proj hn p.2⟩
+    TotalSpace K (fun x => f.isImmersion.NormalSpace x hn) :=
+  ⟨p.proj, f.isImmersion.normalClass p.proj hn p.snd⟩
 
 omit [IsManifold J 1 N] in
 /-- The quotient map preserves the base and takes the fibrewise normal class. -/
 @[simp] theorem normalQuotientMap_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
-    f.normalQuotientMap (K := K) hn p = ⟨p.proj, f.normalClass p.proj hn p.2⟩ := (rfl)
+    f.normalQuotientMap (K := K) hn p = ⟨p.proj, f.isImmersion.normalClass p.proj hn p.snd⟩ := (rfl)
 
 omit [IsManifold J 1 N] in
 /-- Every point of the intrinsic normal total space has an ambient tangent representative. -/
 theorem normalQuotientMap_surjective (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
     Surjective (f.normalQuotientMap (K := K) hn) := by
   rintro ⟨x, w⟩
-  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn w
+  obtain ⟨v, rfl⟩ := f.isImmersion.normalClass_surjective x hn w
   exact ⟨⟨x, v⟩, rfl⟩
 
 /-- The intrinsic normal total space has the quotient topology from the pulled-back
 ambient tangent bundle. -/
 instance instTopologicalSpaceNormalBundle (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
-    TopologicalSpace (TotalSpace K (fun x => f.NormalSpace x hn)) :=
+    TopologicalSpace (TotalSpace K (fun x => f.isImmersion.NormalSpace x hn)) :=
   TopologicalSpace.coinduced (f.normalQuotientMap hn) inferInstance
 
 /-- Ambient tangent representatives give a quotient map onto the intrinsic normal bundle. -/
@@ -80,25 +80,26 @@ theorem isQuotientMap_normalQuotientMap (f : SmoothEmbedding I J n M N) (hn : n 
 /-- A map out of the normal bundle is continuous exactly when its expression on ambient
 tangent representatives is continuous. -/
 theorem continuous_normalBundle_iff (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    {X : Type*} [TopologicalSpace X] {q : TotalSpace K (fun x => f.NormalSpace x hn) → X} :
+    {X : Type*} [TopologicalSpace X]
+        {q : TotalSpace K (fun x => f.isImmersion.NormalSpace x hn) → X} :
     Continuous q ↔ Continuous (q ∘ f.normalQuotientMap hn) :=
   (f.isQuotientMap_normalQuotientMap hn).continuous_iff
 
 /-- The intrinsic normal-bundle projection is continuous. -/
 theorem continuous_normalBundle_proj (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
-    Continuous (π K (fun x => f.NormalSpace x hn)) := by
+    Continuous (π K (fun x => f.isImmersion.NormalSpace x hn)) := by
   rw [f.continuous_normalBundle_iff hn]
   exact Pullback.continuous_proj F (TangentSpace J) (f : M → N)
 
 /-- The zero section of the intrinsic normal bundle is continuous. -/
 theorem continuous_normalBundle_zeroSection (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
-    Continuous (zeroSection K (fun x => f.NormalSpace x hn)) := by
+    Continuous (zeroSection K (fun x => f.isImmersion.NormalSpace x hn)) := by
   have hz : Continuous (zeroSection F ((f : M → N) *ᵖ (TangentSpace J))) :=
     Bundle.Trivialization.continuous_zeroSection 𝕜
   convert (f.isQuotientMap_normalQuotientMap (K := K) hn).continuous.comp hz using 1
   funext x
   simp only [Function.comp_apply, zeroSection, normalQuotientMap_apply]
-  exact congrArg (TotalSpace.mk x) (f.normalClass x hn).map_zero.symm
+  exact congrArg (TotalSpace.mk x) (f.isImmersion.normalClass x hn).map_zero.symm
 
 section Map
 
@@ -115,30 +116,28 @@ omit [IsManifold J 1 N] in
 class of the ambient differential of the representative. -/
 @[simp↓] theorem normalBundleMap_normalQuotientMap
     (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
-    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'}
-    (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
-    (h : v ∘ f = g ∘ u) (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
-    f.normalBundleMap (K := K) (K' := K') g hn hm hu hv h (f.normalQuotientMap hn p) =
+    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'} (h : v ∘ f = g ∘ u)
+    (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
+    f.normalBundleMap (K := K) (K' := K') g hn hm h (f.normalQuotientMap hn p) =
       g.normalQuotientMap hm (⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
-        (mfderiv J J' v (f p.proj) p.2)⟩ : TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J'))) := by
+        (mfderiv J J' v (f p.proj) p.snd)⟩ : TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J')))
+            := by
   rw [normalBundleMap_apply]
   exact congrArg (TotalSpace.mk (u p.proj))
-    (f.normalMap_normalClass g hn hm (hu p.proj) (hv (f p.proj)) (Filter.EventuallyEq.of_eq h) p.2)
+    (f.normalMap_normalClass g hn hm (Filter.EventuallyEq.of_eq h) p.snd)
 
-/-- A commuting square with differentiable base map and C¹ ambient map induces a continuous
-map of intrinsic normal bundles. -/
+/-- A commuting square with C¹ ambient map induces a continuous map of intrinsic normal bundles.
+The base map is then continuous, since the target embedding reflects continuity. -/
 theorem continuous_normalBundleMap
     [IsManifold J' 1 N']
     (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
-    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'}
-    (hu : MDifferentiable I I' u) (hv : ContMDiff J J' 1 v)
+    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'} (hv : ContMDiff J J' 1 v)
     (h : v ∘ f = g ∘ u) :
-    Continuous (f.normalBundleMap (K := K) (K' := K') g hn hm hu
-      (hv.mdifferentiable (by simp)) h) := by
+    Continuous (f.normalBundleMap (K := K) (K' := K') g hn hm h) := by
   let T : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J)) →
       TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J')) := fun p =>
     ⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
-      (mfderiv J J' v (f p.proj) p.2)⟩
+      (mfderiv J J' v (f p.proj) p.snd)⟩
   have hT : Continuous T := by
     apply (inducing_pullbackTotalSpaceEmbedding F' (TangentSpace J')
       (g : M' → N')).continuous_iff.mpr
@@ -153,12 +152,14 @@ theorem continuous_normalBundleMap
       apply TotalSpace.ext (congrFun h p.proj).symm
       rfl
     rw [heq]
-    exact (hu.continuous.comp (Pullback.continuous_proj F (TangentSpace J) f)).prodMk
+    have hu : Continuous u :=
+      g.isEmbedding.continuous_iff.2 (h ▸ hv.continuous.comp f.contMDiff.continuous)
+    exact (hu.comp (Pullback.continuous_proj F (TangentSpace J) f)).prodMk
       (hv.continuous_tangentMap le_rfl |>.comp (Pullback.continuous_lift F (TangentSpace J) f))
   rw [f.continuous_normalBundle_iff hn]
   convert (g.isQuotientMap_normalQuotientMap (K := K') hm).continuous.comp hT using 1
   funext p
-  exact f.normalBundleMap_normalQuotientMap g hn hm hu _ h p
+  exact f.normalBundleMap_normalQuotientMap g hn hm h p
 
 end Map
 

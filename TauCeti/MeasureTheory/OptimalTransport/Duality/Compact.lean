@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.MeasurableSpace.Metric
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Compact
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Duality
+import TauCeti.MeasureTheory.Integral.Bochner.Fintype
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -87,8 +88,6 @@ development at commit `003655ccf010cdf44c4f67d6675167b54ce0e9df` contain related
 approximation proofs. The proof here was written independently against Tau Ceti's existing
 raw-measure, `ℝ≥0∞`-valued transport-cost and finite-duality APIs; no code was taken from either
 development.
-
-This is Layer 2, item 4 of the optimal-transport roadmap, in its compact continuous case.
 -/
 
 public section
@@ -169,16 +168,6 @@ end Transform
 section Lift
 
 variable [MeasurableSpace X] [MeasurableSpace Y]
-
-/-- The expectation of a function of a finitely valued measurable map is the finite sum of its
-values weighted by the masses of the fibres. -/
-private theorem integral_comp_eq_sum (μ : Measure X) [IsProbabilityMeasure μ] {n : ℕ}
-    {q : X → Fin n} (hq : Measurable q) (a : Fin n → ℝ) :
-    ∫ x, a (q x) ∂μ = ∑ i, (μ (q ⁻¹' {i})).toReal * a i := by
-  rw [← integral_map hq.aemeasurable (Measurable.of_discrete (f := a)).aestronglyMeasurable,
-    integral_fintype Integrable.of_finite]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [measureReal_def, Measure.map_apply hq (MeasurableSet.singleton i), smul_eq_mul]
 
 /-- A nonzero matrix entry has a nonzero source fibre. -/
 private theorem row_fiber_ne_zero {n m : ℕ} {q : X → Fin n} {μ : Measure X}
@@ -265,9 +254,7 @@ private theorem transportCost_le_ofReal_cost {n m : ℕ} {qX : X → Fin n} {qY 
   have hblock : ∀ i j, T i j * ∫⁻ z, ENNReal.ofReal (c z) ∂((μ[|qX ⁻¹' {i}]).prod
       (ν[|qY ⁻¹' {j}])) ≤ T i j * ENNReal.ofReal (C (i, j)) := by
     intro i j
-    refine mul_le_mul_of_nonneg_left (lintegral_cond_prod_le
-      (hqX (MeasurableSet.singleton i)).nullMeasurableSet
-      (hqY (MeasurableSet.singleton j)).nullMeasurableSet fun x hx y hy ↦ ?_) (by positivity)
+    refine mul_le_mul_of_nonneg_left (lintegral_cond_prod_le fun x hx y hy ↦ ?_) (by positivity)
     have hxi : qX x = i := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hx
     have hyj : qY y = j := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hy
     exact ENNReal.ofReal_le_ofReal ((hC x y).trans_eq (by rw [hxi, hyj]))
@@ -369,9 +356,10 @@ theorem exists_continuous_forall_add_le_transportCost_le [IsProbabilityMeasure �
   refine ⟨φ, ψ, hφc, hψc, hfeas', hlift.trans (ENNReal.ofReal_le_ofReal ?_)⟩
   have hint : kantorovichDualValue μ ν (fun x ↦ a (qX x)) (fun y ↦ b (qY y))
       = finiteDualValue pμ pν a b := by
-    rw [kantorovichDualValue_def, finiteDualValue_def, integral_comp_eq_sum μ hqX a,
-      integral_comp_eq_sum ν hqY b]
-    simp only [hpμ, hpν]
+    rw [kantorovichDualValue_def, finiteDualValue_def,
+      integral_comp_eq_sum_measureReal_preimage_singleton hqX.aemeasurable a,
+      integral_comp_eq_sum_measureReal_preimage_singleton hqY.aemeasurable b]
+    simp only [hpμ, hpν, measureReal_def, smul_eq_mul]
   have hmono : kantorovichDualValue μ ν (fun x ↦ a (qX x)) (fun y ↦ b (qY y))
       ≤ kantorovichDualValue μ ν φ ψ := by
     rw [kantorovichDualValue_def, kantorovichDualValue_def]

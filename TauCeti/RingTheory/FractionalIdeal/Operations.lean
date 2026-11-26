@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.FractionalIdeal.Operations
 public import Mathlib.RingTheory.PicardGroup
 
+import TauCeti.RingTheory.PicardGroup.Submodule
+
 /-!
 # Operations on fractional ideals
 
@@ -37,13 +39,20 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
   localization.
 * `FractionalIdeal.spanSingleton_inv_mul_cancel_left`: scaling by a unit and then by its inverse
   returns the fractional ideal.
+* `FractionalIdeal.spanSingleton_smul_eq` and `FractionalIdeal.spanSingleton_units_smul`: scaling
+  the generator of a principal fractional ideal by a unit of the base ring leaves the ideal
+  unchanged.
+* `FractionalIdeal.coe_unitsMulEquivSubmodule`: the invertible submodule of an invertible
+  fractional ideal is its underlying submodule.
+* `FractionalIdeal.tensorEquivMul` and `FractionalIdeal.coe_tensorEquivMul_tmul`: the isomorphism
+  `I ⊗ J ≃ I * J` of invertible fractional ideals is multiplication.
 * `Ideal.moduleInvertible_of_isUnit_fractionalIdeal`: an ideal invertible in a faithful
   localization is an invertible module over the base ring.
 -/
 
 public section
 
-open scoped nonZeroDivisors
+open scoped nonZeroDivisors TensorProduct
 
 namespace FractionalIdeal
 
@@ -99,7 +108,8 @@ theorem ringEquivOfRingEquiv_coeIdeal (K L : Type*)
   apply FractionalIdeal.coeToSubmodule_injective
   dsimp only
   rw [← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val,
-    FractionalIdeal.val_eq_coe, FractionalIdeal.coe_coeIdeal, FractionalIdeal.coe_coeIdeal]
+    FractionalIdeal.val_eq_coe, FractionalIdeal.coeToSubmodule_coeIdeal,
+    FractionalIdeal.coeToSubmodule_coeIdeal]
   ext x
   simp only [Submodule.mem_map, FractionalIdeal.mem_coeSubmodule]
   constructor
@@ -118,6 +128,32 @@ section Localization
 variable {R : Type*} [CommRing R] {S : Submonoid R} {P : Type*} [CommRing P] [Algebra R P]
   [IsLocalization S P]
 
+/-- The invertible submodule `unitsMulEquivSubmodule I` is the underlying submodule of `I`. -/
+@[simp]
+theorem coe_unitsMulEquivSubmodule (I : (FractionalIdeal S P)ˣ) :
+    ((unitsMulEquivSubmodule I : (Submodule R P)ˣ) : Submodule R P) =
+      ((I : FractionalIdeal S P) : Submodule R P) :=
+  rfl
+
+/-- The isomorphism `I ⊗ J ≃ I * J` of invertible fractional ideals, given by multiplication
+(`FractionalIdeal.coe_tensorEquivMul_tmul`); Mathlib's `Submodule.tensorEquivMul` for their
+underlying submodules. -/
+noncomputable def tensorEquivMul [FaithfulSMul R P] (I J : (FractionalIdeal S P)ˣ) :
+    ((I : FractionalIdeal S P) : Submodule R P) ⊗[R] ((J : FractionalIdeal S P) : Submodule R P)
+      ≃ₗ[R] (((I * J : (FractionalIdeal S P)ˣ) : FractionalIdeal S P) : Submodule R P) :=
+  TensorProduct.congr (.ofEq _ _ (coe_unitsMulEquivSubmodule I).symm)
+      (.ofEq _ _ (coe_unitsMulEquivSubmodule J).symm) ≪≫ₗ
+    Submodule.tensorEquivMul _ _ ≪≫ₗ .ofEq _ _ (by rw [← map_mul, coe_unitsMulEquivSubmodule])
+
+/-- The isomorphism `I ⊗ J ≃ I * J` of invertible fractional ideals is multiplication. -/
+theorem coe_tensorEquivMul_tmul [FaithfulSMul R P] (I J : (FractionalIdeal S P)ˣ)
+    (x : ((I : FractionalIdeal S P) : Submodule R P))
+    (y : ((J : FractionalIdeal S P) : Submodule R P)) :
+    (tensorEquivMul I J (x ⊗ₜ y) : P) = x * y := by
+  rw [tensorEquivMul, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, TensorProduct.congr_tmul, Submodule.coe_tensorEquivMul_tmul,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.coe_ofEq_apply]
+
 /-- A fractional ideal is invertible exactly when its integral numerator is invertible.
 This extends Mathlib's `FractionalIdeal.isUnit_num` to any localization. -/
 @[simp]
@@ -130,6 +166,20 @@ theorem isUnit_num_iff {I : FractionalIdeal S P} :
 theorem spanSingleton_inv_mul_cancel_left (x : Pˣ) (I : FractionalIdeal S P) :
     spanSingleton S ((x⁻¹ : Pˣ) : P) * (spanSingleton S (x : P) * I) = I := by
   rw [← mul_assoc, ← map_mul (spanSingleton _), Units.inv_mul, map_one (spanSingleton _), one_mul]
+
+/-- Scaling the generator of a principal fractional ideal by a unit of the base ring leaves the
+ideal unchanged. -/
+theorem spanSingleton_smul_eq {r : R} (hr : IsUnit r) (x : P) :
+    spanSingleton S (r • x) = spanSingleton S x := by
+  rw [← coeToSubmodule_inj, coeToSubmodule_spanSingleton, coeToSubmodule_spanSingleton,
+    Submodule.span_singleton_smul_eq hr]
+
+/-- Scaling the generator of a principal fractional ideal by an element of `Rˣ` leaves the ideal
+unchanged. -/
+@[simp]
+theorem spanSingleton_units_smul (u : Rˣ) (x : P) :
+    spanSingleton S (u • x) = spanSingleton S x :=
+  spanSingleton_smul_eq u.isUnit x
 
 /-- **Criterion for invertibility of a fractional ideal.** A fractional ideal whose
 `A`-submodule has an `A`-submodule inverse for multiplication, with product the image of `R`,
@@ -157,7 +207,7 @@ lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
     {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (u : Kˣ) :
     toPrincipalIdeal R K u = 1 ↔ ∃ a : Rˣ, Units.map (algebraMap R K : R →* K) a = u := by
   rw [← Units.val_inj, coe_toPrincipalIdeal, Units.val_one, ← coeToSubmodule_inj,
-    coe_spanSingleton, coe_one, Submodule.span_singleton_eq_one_iff]
+    coeToSubmodule_spanSingleton, coeToSubmodule_one, Submodule.span_singleton_eq_one_iff]
   exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, Units.ext ha.symm⟩, fun ⟨a, ha⟩ ↦ ⟨a, by rw [← ha]; rfl⟩⟩
 
 /-- Negating a generator preserves its principal ideal, because `-1` is a unit of the base ring. -/
@@ -186,7 +236,7 @@ theorem moduleInvertible_of_isUnit_fractionalIdeal {R : Type*} [CommRing R]
     congrArg FractionalIdeal.coeToSubmodule hI.unit_spec
   have hmap : Submodule.map (Algebra.linearMap R P) I =
       (I : FractionalIdeal S P).coeToSubmodule := by
-    rw [FractionalIdeal.coe_coeIdeal, IsLocalization.coeSubmodule]
+    rw [FractionalIdeal.coeToSubmodule_coeIdeal, IsLocalization.coeSubmodule]
   let e : I ≃ₗ[R] U :=
     (Submodule.equivMapOfInjective (Algebra.linearMap R P)
       (FaithfulSMul.algebraMap_injective R P) I).trans

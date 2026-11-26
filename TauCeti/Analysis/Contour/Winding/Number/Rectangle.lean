@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Curve.Rectangle
-public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Green.Polygonal.Geometry
-import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.Winding.Number.Segment.Bounds
-import TauCeti.Analysis.Contour.Winding.StarConvex
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 
 /-!
 # Winding numbers of the boundary of a rectangle
@@ -48,17 +48,16 @@ variable {z w p : ℂ}
 /-- **The winding number of a rectangle boundary vanishes outside the closed rectangle.** -/
 theorem windingNumber_rectBoundary_eq_zero (hp : p ∉ Rectangle z w) :
     windingNumber (rectBoundary z w) 0 4 p = 0 :=
-  windingNumber_eq_zero_of_starConvex
-    ((convex_rectangle z w).starConvex (rectBoundary_mem_rectangle 0))
-    (isPiecewiseC1On_rectBoundary z w) (by simp) (fun t _ ↦ rectBoundary_mem_rectangle t)
-    hp
+  AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_starConvex
+    (isPiecewiseC1On_rectBoundary z w).absolutelyContinuousOnInterval
+    ((convex_rectangle z w).starConvex (rectBoundary_mem_rectangle 0)) (by simp)
+    (fun t _ ↦ rectBoundary_mem_rectangle t) hp
 
 /-- **The boundary of a rectangle is null-homologous in every set containing the rectangle.** -/
 theorem isNullHomologous_rectBoundary {U : Set ℂ} (hU : Rectangle z w ⊆ U) :
     IsNullHomologous (rectBoundary z w) 0 4 U :=
-  (isNullHomologous_of_starConvex
-    ((convex_rectangle z w).starConvex (rectBoundary_mem_rectangle 0))
-    (isPiecewiseC1On_rectBoundary z w) (by simp)
+  ((isPiecewiseC1On_rectBoundary z w).absolutelyContinuousOnInterval.isNullHomologous_of_starConvex
+    ((convex_rectangle z w).starConvex (rectBoundary_mem_rectangle 0)) (by simp)
     (fun t _ ↦ rectBoundary_mem_rectangle t)).mono hU
 
 /-- **The boundary of a rectangle winds once around every point of the open rectangle.** The
@@ -66,10 +65,7 @@ hypothesis forces `z` to be the lower left corner, so that the boundary is trave
 counterclockwise. -/
 theorem windingNumber_rectBoundary_eq_one (hp : p ∈ Ioo z.re w.re ×ℂ Ioo z.im w.im) :
     windingNumber (rectBoundary z w) 0 4 p = 1 := by
-  have hfr : p ∉ frontier (Rectangle z w) := by
-    have hint := hp
-    rw [← interior_rectangle (hp.1.1.trans hp.1.2).le (hp.2.1.trans hp.2.2).le] at hint
-    exact disjoint_left.1 disjoint_interior_frontier hint
+  have hfr : p ∉ frontier (Rectangle z w) := notMem_frontier_rectangle_of_mem_Ioo hp
   obtain ⟨⟨h₁, h₂⟩, h₃, h₄⟩ := hp
   -- Off the boundary, the winding number is the sum of the winding numbers of the four edges.
   have hsum := (rectPolygon z w).windingNumber_contourCycle (boundary_rectPolygon z w ▸ hfr)
@@ -94,9 +90,9 @@ theorem windingNumber_rectBoundary_eq_one (hp : p ∈ Ioo z.re w.re ×ℂ Ioo z.
   have e₃ := hedge 3 (Green.im_div_sub_pos_of_triangleDet_pos (by
     simp [Green.triangleDet_def, finRotate_apply]; nlinarith))
   -- The winding number of the closed curve is an integer, which must be `1`.
-  obtain ⟨n, hn⟩ := (isPiecewiseC1On_rectBoundary z w).exists_int_windingNumber (by simp)
-    fun t ht (h : rectBoundary z w t = p) ↦
-      hfr (h ▸ rectBoundary_mem_frontier t)
+  obtain ⟨n, hn⟩ :=
+    (isPiecewiseC1On_rectBoundary z w).absolutelyContinuousOnInterval.exists_int_windingNumber
+      (by simp) fun ⟨t, _, (h : rectBoundary z w t = p)⟩ ↦ hfr (h ▸ rectBoundary_mem_frontier t)
   have hre := congrArg re hsum
   simp only [add_re, hn, intCast_re] at hre
   have hpos : (0 : ℤ) < n := by

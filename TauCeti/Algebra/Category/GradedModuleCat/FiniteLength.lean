@@ -64,8 +64,7 @@ theorem exists_mono_cokernel_finrank_lt (M : GradedModuleCat.{v} 𝒜) [Module.F
   have : Nontrivial Q := by
     by_contra hzero
     rw [not_nontrivial_iff_subsingleton] at hzero
-    exact hQ ((IsZero.iff_id_eq_zero Q).mpr
-      (hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)))
+    exact hQ (isZero_of_subsingleton Q)
   have hdim : Module.finrank k Q = Module.finrank k M - Module.finrank k Y := by
     rw [Submodule.finrank_quotient (R := k),
       ← LinearEquiv.finrank_eq ((LinearEquiv.ofInjective i.hom hinj).restrictScalars k)]
@@ -110,7 +109,7 @@ theorem exists_simple_quotient (M : GradedModuleCat.{v} 𝒜) [Module.Finite k M
   | _ n ih =>
     by_cases hs : Simple M
     · exact ⟨M, 𝟙 M, inferInstance, hs, inferInstance⟩
-    obtain ⟨Y, i, hi, hYfinite, hQfinite, hQ, _, hdim⟩ :=
+    obtain ⟨Y, i, _, _, hQfinite, hQ, _, hdim⟩ :=
       M.exists_mono_cokernel_finrank_lt hM hs
     have : Module.Finite k (cokernelObj i) := hQfinite
     obtain ⟨N, f, hN, hsN, hf⟩ := ih _ (hn ▸ hdim) (cokernelObj i) hQ rfl

@@ -425,9 +425,9 @@ open NormalLayer
 
 variable (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
   (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
-  (χ' : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
+  (χ' : Additive (Group.Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
   (hχ' : ∀ g : AbsoluteGaloisGroup K, χ (.ofMul g) =
-    χ' (.ofMul (Abelianization.of
+    χ' (.ofMul (Group.Abelianization.of
       ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))))
   (a' : (ideleFormation K).level (ofOpenNormal V).ground)
 
@@ -446,7 +446,7 @@ theorem ideleLayerCorInfl_artinCharacterCup
       (characterCarryCocycle χ hχ a : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) := by
   -- The carry of `χ` at `u, v ∈ G_K` is the carry of `χ'` at their classes in `G_K ⧸ V`.
   have hcarry (u v : (ofOpenNormal V).ground) :
-      characterCarry (χ'.comp Abelianization.of.toAdditive) (u : (ofOpenNormal V).Gal) v =
+      characterCarry (χ'.comp Group.Abelianization.of.toAdditive) (u : (ofOpenNormal V).Gal) v =
         characterCarry χ (u : AbsoluteGaloisGroup K) v := by
     simpa only [galOfOpenNormalEquiv_symm_mk] using
       characterCarry_galOfOpenNormalEquiv_symm V χ' χ hχ' u v
@@ -519,7 +519,7 @@ theorem ideleSumLocalInv_artinCharacterCup
     ⟨(ideleCoeffEquivIdeleFormation K).symm a', (FixedPoints.mem_addSubgroup _ _ _).2 fun g ↦
       (ideleCoeffEquivIdeleFormation K).injective <| by
         rw [ideleCoeffEquivIdeleFormation_smul, AddEquiv.apply_symm_apply]
-        exact (Formation.mem_level _).1 a'.2 g (by simp)⟩
+        exact (Formation.mem_level _).1 a'.property g (by simp)⟩
   rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχ' a' hχ a
     ((ideleCoeffEquivIdeleFormation K).apply_symm_apply _)]
   exact sumLocalInv_ideleLocalization_characterCarryCocycle_eq_finsum χ hχ a τ b σ τ' b' σ' hb hσ
@@ -570,9 +570,9 @@ theorem ClassFormation.apply_artinMap_eq_finsum_of_inv_eq_ideleSumLocalInv
   -- The layer morphism induced on `V ◁ G_K` by the map from ideles to idele classes is the
   -- identity on the Galois group of the layer, and it carries `a' ∪ δχ'` to `[a'] ∪ δχ'`.
   have hχ'' : χ'.comp (((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).galEquiv
-      |>.abelianizationCongr : Abelianization (ofOpenNormal V).Gal →*
-        Abelianization (ofOpenNormal V).Gal).toAdditive = χ' := by
-    rw [NormalLayer.repMapLayerHom_galEquiv, abelianizationCongr_refl]
+      |>.abelianizationCongr : Group.Abelianization (ofOpenNormal V).Gal →*
+        Group.Abelianization (ofOpenNormal V).Gal).toAdditive = χ' := by
+    rw [NormalLayer.repMapLayerHom_galEquiv, Group.abelianizationCongr_refl]
     rfl
   have h := (congrArg (fun χ'' ↦
     ((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).cohomologyMap 2
@@ -707,7 +707,7 @@ end Brauer
 section Cyclic
 
 variable [NumberField K] (E : IntermediateField K (SeparableClosure K)) [FiniteDimensional K E]
-  [IsGalois K E] {g : Gal(E/K)} (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
+  [IsGalois K E] {g : Gal(E/K)}
   {χ : Additive Gal(E/K) →+ AddCircle (1 : ℚ)}
   (τ : ∀ v : HeightOneSpectrum (𝓞 K),
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
@@ -715,13 +715,13 @@ variable [NumberField K] (E : IntermediateField K (SeparableClosure K)) [FiniteD
   (σ : Kˣ → ∀ v : HeightOneSpectrum (𝓞 K), Field.absoluteGaloisGroup (v.adicCompletion K))
   (σ' : Kˣ → ∀ w : InfinitePlace K, Field.absoluteGaloisGroup w.Completion)
 
-include hg in
 /-- **The sum of the local invariants on the classes split by a cyclic extension.** Let `E/K` be a
-cyclic Galois extension of a number field inside `Kˢ`, with generator `g`, and `χ` the character of
-`Gal(E/K)` with `χ(g) = 1 / [E : K]`. For every `a ∈ Kˣ`, choose at every place a representative
-of the local Artin symbol of `a` and read it in `Gal(E/K)` through a decomposition map. Then the
-sum of the local invariants vanishes on every Brauer class split by `E` exactly when the product
-formula `∑_v χ (Art_v a) = 0` holds for every `a ∈ Kˣ`. -/
+Galois extension of a number field inside `Kˢ`, and `χ` a character of `Gal(E/K)` with
+`χ(g) = 1 / [E : K]` at some `g` (which is then a generator, so `E/K` is cyclic). For every
+`a ∈ Kˣ`, choose at every place a representative of the local Artin symbol of `a` and read it in
+`Gal(E/K)` through a decomposition map. Then the sum of the local invariants vanishes on every
+Brauer class split by `E` exactly when the product formula `∑_v χ (Art_v a) = 0` holds for every
+`a ∈ Kˣ`. -/
 theorem forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff
     (hχ : χ (.ofMul g) = ((1 / Module.finrank K E : ℚ) : AddCircle (1 : ℚ)))
     (hσ : ∀ a v, (σ a v : Field.absoluteGaloisGroupAbelianization (v.adicCompletion K)) =
@@ -734,6 +734,8 @@ theorem forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff
           (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ a v))))) +
         ∑ w, χ (.ofMul (AlgEquiv.restrictNormalHom E (absoluteGaloisGroupMap (τ' w)
           (absoluteGaloisGroupRestrictEquiv w.Completion (σ' a w))))) = 0 := by
+  have hg := AddCircle.forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div (1 : ℚ)
+    (IsGalois.card_aut_eq_finrank K E).le hχ
   -- The sum of the local invariants of the carry class of `a` is the sum in the statement.
   have hsum (a : Kˣ) := sumLocalInv_brLocalization_characterCarryCocycle_eq_finsum
     (χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure K) E).toAdditive)
@@ -742,7 +744,7 @@ theorem forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff
   refine ⟨fun h a ↦ ?_, fun h y ↦ ?_⟩
   · rw [← hsum, ← relBrInfl_cyclicClass E hg hχ]
     exact h _
-  · obtain ⟨a, ha⟩ := exists_characterCarryCocycle_eq_relBrInfl E hg hχ y
+  · obtain ⟨a, ha⟩ := exists_characterCarryCocycle_eq_relBrInfl E hχ y
     rw [← ha, hsum]
     exact h a
 

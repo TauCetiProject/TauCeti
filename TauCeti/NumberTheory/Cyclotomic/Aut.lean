@@ -22,6 +22,12 @@ containing `K` by exactly one `K`-algebra map.
 
 * `IsCyclotomicExtension.card_aut_eq_totient`: `#Gal(L / K) = φ n` when `Φ_n` is irreducible.
 * `IsCyclotomicExtension.isCyclic_aut`: the group is cyclic when `(ZMod n)ˣ` is.
+* `IsCyclotomicExtension.autEquivPow_symm_inv_unitOfCoprime_apply`: the inverse of the
+  arithmetic Frobenius `x ↦ x ^ ℓ` raises `n`-th roots of unity to the power `(ℓ⁻¹ : ZMod n).val`.
+* `IsCyclotomicExtension.neZero_of_nontrivial_aut`: a nontrivial Galois group forces `n ≠ 0`.
+* `IsCyclotomicExtension.algebraMap_autEquivPow_symm_unitsMap_apply`: for `F ⊆ K ⊆ L` of levels
+  `m ∣ n`, the automorphism of `L` given by `t ∈ (ZMod n)ˣ` restricts to the one of `K` given by
+  `t` modulo `m`.
 * `IsPrimitiveRoot.existsUnique_algHom_apply_eq`: exactly one `K`-algebra map sends a given
   primitive root to any other when `Φ_n` is irreducible.
 
@@ -48,10 +54,20 @@ open Polynomial
 
 namespace IsCyclotomicExtension
 
-variable {n : ℕ} [NeZero n] (K : Type*) [Field K] (L : Type*) [CommRing L] [IsDomain L]
+/-- **A nontrivial cyclotomic Galois group has nonzero level.** At level `0` the algebra map
+`A → B` is surjective, so the identity is the only `A`-algebra automorphism of `B`. -/
+theorem neZero_of_nontrivial_aut {n : ℕ} (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
+    [IsCyclotomicExtension {n} A B] [Nontrivial (B ≃ₐ[A] B)] : NeZero n := by
+  refine ⟨?_⟩
+  rintro rfl
+  have : Subsingleton (Subalgebra A B) := subsingleton_of_bot_eq_top <|
+    (Algebra.surjective_algebraMap_iff.mp
+      (isCyclotomicExtension_zero_iff.mp ‹_›)).symm
+  exact not_nontrivial (B ≃ₐ[A] B) ‹_›
+
+variable {n : ℕ} (K : Type*) [Field K] (L : Type*) [CommRing L] [IsDomain L]
   [Algebra K L] [IsCyclotomicExtension {n} K L]
 
-omit [NeZero n] in
 /-- **The order of a cyclotomic Galois group.** If `Φ_n` is irreducible over `K` then the Galois
 group of an `n`-th cyclotomic extension of `K` has exactly `φ n` elements.
 
@@ -62,7 +78,15 @@ theorem card_aut_eq_totient (h : Irreducible (cyclotomic n K)) :
   rw [Nat.card_congr (autEquivPow L h).toEquiv, Nat.card_eq_fintype_card,
     ZMod.card_units_eq_totient]
 
-omit [NeZero n] in
+/-- The inverse of the arithmetic Frobenius `σ_ℓ : x ↦ x ^ ℓ`, the image of
+`(ZMod.unitOfCoprime ℓ hcop)⁻¹` under `(autEquivPow L h).symm`, raises `n`-th roots of
+unity to the power `(ℓ⁻¹ : ZMod n).val`. -/
+theorem autEquivPow_symm_inv_unitOfCoprime_apply [NeZero n] (h : Irreducible (cyclotomic n K))
+    {ℓ : ℕ} (hcop : ℓ.Coprime n) {x : L} (hx : x ^ n = 1) :
+    (autEquivPow L h).symm (ZMod.unitOfCoprime ℓ hcop)⁻¹ x = x ^ ((ℓ : ZMod n)⁻¹).val := by
+  rw [autEquivPow_apply_of_pow_eq_one L h _ hx, MulEquiv.apply_symm_apply, ← ZMod.inv_coe_unit,
+    ZMod.coe_unitOfCoprime]
+
 /-- **A cyclotomic Galois group is cyclic when the unit group is.** The hypothesis holds at every
 power of an odd prime, where it is `ZMod.isCyclic_units_of_prime_pow`. -/
 theorem isCyclic_aut [IsCyclic (ZMod n)ˣ] : IsCyclic Gal(L/K) := by
@@ -75,14 +99,44 @@ theorem isCyclic_aut [IsCyclic (ZMod n)ˣ] : IsCyclic Gal(L/K) := by
   · have : NeZero n := ⟨hn⟩
     exact isCyclic_of_injective _ ((zeta_spec n K L).autToPow_injective K)
 
+/-- **The Galois action on roots of unity is compatible with restriction.** Let `K ⊆ L` be `m`-th
+and `n`-th cyclotomic extensions of `F` with `m ∣ n`, over which `Φ_m` and `Φ_n` are irreducible.
+The automorphism of `L` acting on `n`-th roots of unity through `t ∈ (ZMod n)ˣ` restricts on `K`
+to the automorphism acting on `m`-th roots of unity through the reduction of `t` modulo `m`. -/
+theorem algebraMap_autEquivPow_symm_unitsMap_apply {F K L : Type*} [Field F] [CommRing K]
+    [IsDomain K] [CommRing L] [IsDomain L] [Algebra F K] [Algebra F L] [Algebra K L]
+    [IsScalarTower F K L] {m n : ℕ} [NeZero m] [NeZero n] [IsCyclotomicExtension {m} F K]
+    [IsCyclotomicExtension {n} F L] (hK : Irreducible (cyclotomic m F))
+    (hL : Irreducible (cyclotomic n F)) (hmn : m ∣ n) (t : (ZMod n)ˣ) (x : K) :
+    algebraMap K L ((autEquivPow K hK).symm (ZMod.unitsMap hmn t) x) =
+      (autEquivPow L hL).symm t (algebraMap K L x) := by
+  -- Both sides are `F`-algebra maps `K → L`, so it suffices to compare them on `m`-th roots of
+  -- unity, which generate `K`.
+  suffices h : (IsScalarTower.toAlgHom F K L).comp
+      ((autEquivPow K hK).symm (ZMod.unitsMap hmn t)).toAlgHom =
+      ((autEquivPow L hL).symm t).toAlgHom.comp (IsScalarTower.toAlgHom F K L) from
+    AlgHom.congr_fun h x
+  refine AlgHom.ext_of_adjoin_eq_top ((iff_adjoin_eq_top {m} F K).1 ‹_›).2 ?_
+  rintro b ⟨k, hk, -, hb⟩
+  rw [Set.mem_singleton_iff] at hk
+  rw [hk] at hb
+  have hbm : algebraMap K L b ^ m = 1 := by rw [← map_pow, hb, map_one]
+  have hbn : algebraMap K L b ^ n = 1 := by
+    obtain ⟨c, rfl⟩ := hmn
+    rw [pow_mul, hbm, one_pow]
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, IsScalarTower.coe_toAlgHom']
+  rw [autEquivPow_apply_of_pow_eq_one K hK _ hb, autEquivPow_apply_of_pow_eq_one L hL _ hbn,
+    MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply, map_pow]
+  refine pow_eq_pow_of_modEq ?_ hbm
+  rw [← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val, ZMod.natCast_val, ZMod.unitsMap_val]
+
 end IsCyclotomicExtension
 
 namespace IsPrimitiveRoot
 
-variable {n : ℕ} [NeZero n] {K : Type*} [Field K] {L : Type*} [CommRing L] [IsDomain L]
+variable {n : ℕ} {K : Type*} [Field K] {L : Type*} [CommRing L] [IsDomain L]
   [Algebra K L] [IsCyclotomicExtension {n} K L] {ζ : L}
 
-omit [NeZero n] in
 /-- If `Φ_n` is irreducible over `K`, a primitive `n`-th root of unity in an `n`-th cyclotomic
 extension of `K` is sent to any given primitive `n`-th root of unity in a domain containing `K` by
 exactly one `K`-algebra map. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
@@ -38,16 +39,24 @@ exactly when `f` is nilpotent modulo `I`.
 * `TauCeti.FormalScheme.Spf.basicOpen f`: the basic open set `D(f)` of the underlying space.
 * `TauCeti.FormalScheme.Spf.comap`: the continuous map of underlying spaces induced by a
   continuous ring homomorphism.
+* `TauCeti.FormalScheme.Spf.pointOfIsMaximal`: the point of `Spf A` given by a maximal ideal of
+  an adic ring `A`.
 
 ## Main results
 
 * `TauCeti.FormalScheme.Spf.mem_carrier_iff_le`: for an ideal of definition `I`, a prime is open
   if and only if it contains `I`.
-* `TauCeti.FormalScheme.Spf.carrier_eq_zeroLocus`, `TauCeti.FormalScheme.Spf.isClosed_carrier`:
-  the underlying space is the Zariski closed set `V(I)`.
+* `TauCeti.FormalScheme.Spf.carrier_eq_zeroLocus`, `TauCeti.FormalScheme.Spf.isClosed_carrier`,
+  `TauCeti.FormalScheme.Spf.compactSpace_carrier`: the underlying space is the Zariski closed set
+  `V(I)`, hence quasi-compact.
+* `TauCeti.FormalScheme.Spf.isClosed_singleton_iff_isMaximal`,
+  `TauCeti.FormalScheme.Spf.mem_carrier_of_isMaximal`: the closed points are the maximal ideals,
+  and for a complete adic ring every maximal ideal is a point.
 * `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of a
   separated ring with an ideal of definition is empty exactly when the ring is zero.
-* `TauCeti.FormalScheme.Spf.isBasis_basicOpen`: the basic open sets form a basis.
+* `TauCeti.FormalScheme.Spf.isBasis_basicOpen`, `TauCeti.FormalScheme.Spf.exists_basicOpen_le`,
+  `TauCeti.FormalScheme.Spf.le_iSup_basicOpen_le`, `TauCeti.FormalScheme.Spf.isCompact_basicOpen`:
+  the basic open sets form a basis of quasi-compact opens covering every open set.
 * `TauCeti.FormalScheme.Spf.basicOpen_le_basicOpen_iff`: `D(g) ⊆ D(f)` if and only if `g` lies
   in the radical of `f A + I`.
 * `TauCeti.FormalScheme.Spf.basicOpen_eq_bot_iff`: `D(f)` is empty if and only if `f` lies in
@@ -97,6 +106,46 @@ theorem carrier_eq_zeroLocus (hI : IsAdic I) : carrier A = zeroLocus I := by
 theorem isClosed_carrier (hI : IsAdic I) : IsClosed (carrier A) :=
   carrier_eq_zeroLocus hI ▸ isClosed_zeroLocus _
 
+/-- If `I` defines the topology of `A`, the underlying space of `Spf A` is quasi-compact. -/
+theorem compactSpace_carrier (hI : IsAdic I) : CompactSpace (carrier A) :=
+  isCompact_iff_compactSpace.mp (isClosed_carrier hI).isCompact
+
+/-- If `I` defines the topology of `A`, a point of the formal spectrum is closed exactly when it
+is a maximal ideal of `A`: the underlying space is closed in `Spec A`. -/
+theorem isClosed_singleton_iff_isMaximal (hI : IsAdic I) {p : carrier A} :
+    IsClosed ({p} : Set (carrier A)) ↔ (p : PrimeSpectrum A).asIdeal.IsMaximal := by
+  rw [(isClosed_carrier hI).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed,
+    Set.image_singleton, PrimeSpectrum.isClosed_singleton_iff_isMaximal]
+
+/-- If `I` defines the topology of `A` and lies in the Jacobson radical of `A`, every maximal
+ideal of `A` is open. This applies when `A` is `I`-adically complete, by
+`IsAdicComplete.le_jacobson`. Together with `isClosed_singleton_iff_isMaximal`, the closed
+points of `Spf A` are then exactly the maximal ideals of `A`. -/
+theorem mem_carrier_of_isMaximal (hI : IsAdic I) (hIJ : I ≤ Ring.jacobson A)
+    {m : PrimeSpectrum A} (hm : m.asIdeal.IsMaximal) : m ∈ carrier A :=
+  have := hm
+  (mem_carrier_iff_le hI).mpr (hIJ.trans (Ring.jacobson_le_of_isMaximal _))
+
+section IsAdicRing
+
+variable [IsTopologicalRing A] [IsAdicRing A]
+
+/-- The point of the formal spectrum of an adic ring `A` given by a maximal ideal `m` of `A`,
+which is open since `A` is complete for an ideal of definition (`mem_carrier_of_isMaximal`).
+The body is exposed so the point's ideal is `m` by definition, matching its local ring with
+`Localization.AtPrime m`. -/
+@[expose] def pointOfIsMaximal (m : Ideal A) [hm : m.IsMaximal] : carrier A :=
+  have hI := IsAdicRing.ideal_spec A
+  have : IsAdicComplete (IsAdicRing.ideal A) A := hI.2.2
+  ⟨⟨m, hm.isPrime⟩, mem_carrier_of_isMaximal hI.2.1 (IsAdicComplete.le_jacobson _) hm⟩
+
+@[simp]
+theorem pointOfIsMaximal_asIdeal (m : Ideal A) [m.IsMaximal] :
+    (pointOfIsMaximal m : PrimeSpectrum A).asIdeal = m :=
+  rfl
+
+end IsAdicRing
+
 /-- For a discrete ring every prime is open, so the formal spectrum has the same points as the
 spectrum. -/
 @[simp]
@@ -123,7 +172,7 @@ theorem carrier_eq_empty_iff_subsingleton [T1Space A] (hI : IsAdic I) :
 /-- If `I` defines the topology of `A` and `A` is separated and nonzero, the formal spectrum is
 nonempty. -/
 theorem carrier_nonempty [T1Space A] [Nontrivial A] (hI : IsAdic I) : (carrier A).Nonempty :=
-  Set.nonempty_iff_ne_empty.mpr fun h ↦
+  Set.ne_empty_iff_nonempty.mp fun h ↦
     not_subsingleton A ((carrier_eq_empty_iff_subsingleton hI).mp h)
 
 section Quotient
@@ -170,7 +219,7 @@ section BasicOpen
 /-- The basic open set `D(f)` of the underlying space of `Spf A`: the open primes of `A` not
 containing `f`. -/
 def basicOpen (f : A) : Opens (carrier A) :=
-  (PrimeSpectrum.basicOpen f).comap ⟨Subtype.val, continuous_subtype_val⟩
+  (PrimeSpectrum.basicOpen f).comap ⟨Subtype.val, continuous_subtypeVal⟩
 
 @[simp]
 theorem mem_basicOpen {f : A} {p : carrier A} :
@@ -180,7 +229,7 @@ theorem mem_basicOpen {f : A} {p : carrier A} :
 @[simp]
 theorem basicOpen_one : basicOpen (1 : A) = ⊤ := by
   ext p
-  simpa using (Ideal.ne_top_iff_one _).mp p.1.isPrime.ne_top
+  simpa using (Ideal.ne_top_iff_one _).mp p.val.isPrime.ne_top
 
 @[simp]
 theorem basicOpen_zero : basicOpen (0 : A) = ⊥ := by
@@ -189,7 +238,7 @@ theorem basicOpen_zero : basicOpen (0 : A) = ⊥ := by
 
 theorem basicOpen_mul (f g : A) : basicOpen (f * g) = basicOpen f ⊓ basicOpen g := by
   ext p
-  simp [p.1.isPrime.mul_mem_iff_mem_or_mem, not_or]
+  simp [p.val.isPrime.mul_mem_iff_mem_or_mem, not_or]
 
 /-- The basic open sets `D(f)` form a basis of the topology of the underlying space of `Spf A`. -/
 theorem isBasis_basicOpen : Opens.IsBasis (Set.range (basicOpen (A := A))) := by
@@ -197,6 +246,30 @@ theorem isBasis_basicOpen : Opens.IsBasis (Set.range (basicOpen (A := A))) := by
   convert IsInducing.subtypeVal.isTopologicalBasis (isTopologicalBasis_basic_opens (R := A))
   ext
   simp [basicOpen, Function.comp_def]
+
+/-- Every point of an open set `U` of `Spf A` has a basic open neighbourhood `D(f) ⊆ U`. -/
+theorem exists_basicOpen_le {U : Opens (carrier A)} {p : carrier A} (hp : p ∈ U) :
+    ∃ f : A, p ∈ basicOpen f ∧ basicOpen f ≤ U := by
+  obtain ⟨_, ⟨f, rfl⟩, hpf, hfU⟩ := Opens.isBasis_iff_nbhd.mp isBasis_basicOpen hp
+  exact ⟨f, hpf, hfU⟩
+
+/-- Every open set `U` of `Spf A` is covered by the basic open sets `D(f) ⊆ U`. -/
+theorem le_iSup_basicOpen_le (U : Opens (carrier A)) :
+    U ≤ ⨆ p : { f : A // basicOpen f ≤ U }, basicOpen p.val := fun _ hz ↦
+  let ⟨f, hzf, hfU⟩ := exists_basicOpen_le hz
+  Opens.mem_iSup.mpr ⟨⟨f, hfU⟩, hzf⟩
+
+/-- If `I` defines the topology of `A`, every basic open set `D(f)` of `Spf A` is quasi-compact. -/
+theorem isCompact_basicOpen (hI : IsAdic I) (f : A) :
+    IsCompact (basicOpen f : Set (carrier A)) := by
+  rw [IsInducing.subtypeVal.isCompact_iff, basicOpen, Opens.coe_comap, ContinuousMap.coe_mk,
+    Set.image_preimage_eq_inter_range, Subtype.range_val]
+  exact (PrimeSpectrum.isCompact_basicOpen f).inter_right (isClosed_carrier hI)
+
+/-- If `I` defines the topology of `A`, every basic open set `D(f)` of `Spf A` is a compact space
+under the subspace topology. -/
+theorem compactSpace_basicOpen (hI : IsAdic I) (f : A) : CompactSpace (basicOpen f) :=
+  isCompact_iff_compactSpace.mp (isCompact_basicOpen hI f)
 
 /-- If `I` defines the topology of `A`, then `D(g) ⊆ D(f)` in `Spf A` if and only if `g` lies in
 the radical of `f A + I`, that is, if and only if `f` divides a power of `g` modulo `I`. -/
@@ -210,7 +283,7 @@ theorem basicOpen_le_basicOpen_iff (hI : IsAdic I) {f g : A} :
     by_contra hg
     exact h (x := ⟨p, (mem_carrier_iff_le hI).mpr hp⟩) hg hf
   · exact Set.singleton_subset_iff.mp
-      (h ⟨Set.singleton_subset_iff.mpr hf, (mem_carrier_iff_le hI).mp p.2⟩)
+      (h ⟨Set.singleton_subset_iff.mpr hf, (mem_carrier_iff_le hI).mp p.property⟩)
 
 /-- If `I` defines the topology of `A`, then `D(f)` is empty if and only if `f` lies in the
 radical of `I`, that is, if and only if `f` is nilpotent modulo `I`. -/
@@ -230,8 +303,8 @@ variable {B : Type*} [CommRing B] [TopologicalSpace B] {C : Type*} [CommRing C]
 `B`, so it induces a continuous map from the underlying space of `Spf A` to that of `Spf B`
 (EGA I, Ch. I, 10.2.1). -/
 def comap (φ : B →+* A) (hφ : Continuous φ) : C(carrier A, carrier B) where
-  toFun p := ⟨PrimeSpectrum.comap φ p, p.2.preimage hφ⟩
-  continuous_toFun := ((continuous_comap φ).comp continuous_subtype_val).subtype_mk _
+  toFun p := ⟨PrimeSpectrum.comap φ p, p.property.preimage hφ⟩
+  continuous_toFun := ((continuous_comap φ).comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_comap_apply (φ : B →+* A) (hφ : Continuous φ) (p : carrier A) :

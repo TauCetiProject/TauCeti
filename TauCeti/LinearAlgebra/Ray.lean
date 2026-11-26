@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Ray
+public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Order.Preorder.Finite
+import Mathlib.RingTheory.SimpleRing.DivisionRing
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
 # Vectors in the same ray: partitions, sums, finite orbits, and durations of segments
@@ -22,11 +25,18 @@ the final value. The explicit-partition induction follows the pattern of the Apa
 formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
 
+Tensor products of vectors on the same rays lie on the same ray (`SameRay.tmul`).
+
 Negating a ray twice gives it back (`Module.Ray.neg_neg`), in a form that `rw` and `simp` find on
 orientations. Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`),
 complementing Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear
-equivalence (`Module.Ray.map_units_smul`). Over a linearly ordered ring, any map of rays
+equivalence (`Module.Ray.map_units_smul`). The sign comparing two signed copies `(-1) ^ m • x` and
+`(-1) ^ n • x` of a ray is `(-1) ^ m * (-1) ^ n` (`Module.Ray.ite_neg_one_pow_smul_eq`,
+`Module.Ray.ite_neg_one_pow_smul_eq_self`). Over a linearly ordered ring, any map of rays
 commuting with negation also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
+Over a linearly ordered field, the chosen vector of a ray is a positive multiple of any nonzero
+vector representing it (`Module.Ray.exists_pos_someVector_eq_smul`), and that of `-x` a positive
+multiple of minus that of `x` (`Module.Ray.exists_pos_someVector_neg_eq_smul`).
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
@@ -64,7 +74,45 @@ theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (f 
   induction v using Module.Ray.ind with | h v hv =>
     simp only [smul_rayOfNeZero, Module.Ray.map_apply, Units.smul_def, map_smul]
 
+/-- **Tensor products of vectors on the same rays lie on the same ray.** -/
+theorem SameRay.tmul {N : Type*} [AddCommMonoid N] [Module R N] {x₀ : M} {y y₀ : N}
+    (hx : SameRay R x x₀) (hy : SameRay R y y₀) : SameRay R (x ⊗ₜ[R] y) (x₀ ⊗ₜ y₀) := by
+  rcases hx with rfl | rfl | ⟨r₁, r₂, hr₁, hr₂, h⟩
+  · simp
+  · simp
+  rcases hy with rfl | rfl | ⟨s₁, s₂, hs₁, hs₂, h'⟩
+  · simp
+  · simp
+  exact Or.inr (Or.inr ⟨r₁ * s₁, r₂ * s₂, mul_pos hr₁ hs₁, mul_pos hr₂ hs₂, by
+    rw [← TensorProduct.smul_tmul_smul, h, h', TensorProduct.smul_tmul_smul]⟩)
+
 end Semiring
+
+section Semilinear
+
+/-- A semilinear map over ordered commutative semirings whose scalar homomorphism preserves strict
+positivity preserves the same-ray relation. -/
+theorem SameRay.mapSemilinear_of_pos {R R' M N : Type*} [CommSemiring R] [PartialOrder R]
+    [IsStrictOrderedRing R] [CommSemiring R'] [PartialOrder R'] [IsStrictOrderedRing R']
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R' N] {σ : R →+* R'} {x y : M}
+    (h : SameRay R x y) (g : M →ₛₗ[σ] N) (hσ : ∀ r : R, 0 < r → 0 < σ r) :
+    SameRay R' (g x) (g y) := by
+  rcases h with rfl | rfl | ⟨r₁, r₂, hr₁, hr₂, heq⟩
+  · simp
+  · simp
+  · exact Or.inr (Or.inr ⟨σ r₁, σ r₂, hσ r₁ hr₁, hσ r₂ hr₂,
+      by rw [← map_smulₛₗ, ← map_smulₛₗ, heq]⟩)
+
+/-- A semilinear map from a partially ordered field to a strictly ordered semiring along a monotone
+ring homomorphism preserves the same-ray relation. -/
+theorem SameRay.mapSemilinear {R R' M N : Type*} [Field R] [PartialOrder R] [IsStrictOrderedRing R]
+    [AddCommMonoid M] [Module R M] [CommSemiring R'] [PartialOrder R'] [IsStrictOrderedRing R']
+    [AddCommMonoid N] [Module R' N] {σ : R →+* R'} {x y : M} (h : SameRay R x y) (g : M →ₛₗ[σ] N)
+    (hσ : Monotone σ) : SameRay R' (g x) (g y) :=
+  h.mapSemilinear_of_pos g fun _ hr ↦ by
+    simpa only [map_zero] using hσ.strictMono_of_injective σ.injective hr
+
+end Semilinear
 
 section Partition
 
@@ -128,6 +176,23 @@ theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(
   induction v using Module.Ray.ind with | h v hv =>
     simp only [neg_rayOfNeZero, smul_rayOfNeZero, Units.smul_def, smul_neg]
 
+open Classical in
+/-- The sign comparing two signed copies `(-1) ^ m • x` and `(-1) ^ n • x` of a ray is
+`(-1) ^ m * (-1) ^ n`. -/
+theorem Module.Ray.ite_neg_one_pow_smul_eq [IsDomain R] [IsTorsionFree R M] (x : Module.Ray R M)
+    (m n : ℕ) :
+    (if (-1 : Rˣ) ^ m • x = (-1 : Rˣ) ^ n • x then (1 : ℤ) else -1) = (-1) ^ m * (-1) ^ n := by
+  rcases Nat.even_or_odd m with hm | hm <;> rcases Nat.even_or_odd n with hn | hn <;>
+    simp [hm.neg_one_pow, hn.neg_one_pow, Module.Ray.neg_units_smul, Module.Ray.ne_neg_self,
+      (Module.Ray.ne_neg_self x).symm]
+
+open Classical in
+/-- The sign comparing a signed copy `(-1) ^ n • x` of a ray with `x` is `(-1) ^ n`. -/
+theorem Module.Ray.ite_neg_one_pow_smul_eq_self [IsDomain R] [IsTorsionFree R M]
+    (x : Module.Ray R M) (n : ℕ) :
+    (if (-1 : Rˣ) ^ n • x = x then (1 : ℤ) else -1) = (-1) ^ n := by
+  simpa using ite_neg_one_pow_smul_eq x n 0
+
 end Neg
 
 section LinearOrder
@@ -144,6 +209,28 @@ theorem Module.Ray.units_smul_of_map_neg {F : Module.Ray R M → Module.Ray R N}
   · rw [units_smul_of_pos u hu, units_smul_of_pos u hu]
 
 end LinearOrder
+
+section SomeVector
+
+variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
+  [Module R M]
+
+/-- The chosen vector of a ray is a positive multiple of any nonzero vector representing it. -/
+theorem Module.Ray.exists_pos_someVector_eq_smul {x : Module.Ray R M} {v : M} (hv : v ≠ 0)
+    (h : rayOfNeZero R v hv = x) : ∃ r : R, 0 < r ∧ x.someVector = r • v := by
+  have h' : SameRay R v x.someVector := by
+    rwa [← ray_eq_iff hv x.someVector_ne_zero, someVector_ray]
+  obtain ⟨r, hr, h'⟩ := h'.exists_pos_left hv x.someVector_ne_zero
+  exact ⟨r, hr, h'.symm⟩
+
+/-- The chosen vector of the negation of a ray is a positive multiple of the negation of the
+chosen vector of the ray. -/
+theorem Module.Ray.exists_pos_someVector_neg_eq_smul (x : Module.Ray R M) :
+    ∃ r : R, 0 < r ∧ (-x).someVector = r • -x.someVector :=
+  exists_pos_someVector_eq_smul (neg_ne_zero.2 x.someVector_ne_zero) <| by
+    rw [← neg_rayOfNeZero R _ x.someVector_ne_zero, someVector_ray]
+
+end SomeVector
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] [IsDomain R]
   [AddCommGroup M] [Module R M] [IsTorsionFree R M] {x y z : M}
@@ -203,7 +290,7 @@ end Orbit
 
 section Duration
 
-variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
+variable {R M : Type*} [Field R] [PartialOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
   [Module R M] {S : Set M}
 
 /-- If no two distinct points of a set `S ∌ 0` lie in the same ray, a pair `(d, v)` with `0 < d`
@@ -219,11 +306,12 @@ theorem Set.Pairwise.eq_of_snd_eq_of_inv_smul_mem (hS : S.Pairwise fun u v ↦ �
   have hv : v ≠ 0 := by
     rintro rfl
     exact h0 (by simpa using hx.2)
-  -- Both velocities are positive multiples of `v`, hence equal.
+  -- Both velocities lie in the same ray, hence are equal: by the definition of `SameRay`, the
+  -- positive coefficients `d` and `e` witness this, since `d • d⁻¹ • v = v = e • e⁻¹ • v`.
   have hde : d⁻¹ • v = e⁻¹ • v := by
     by_contra hne
-    exact hS hx.2 hy.2 hne
-      ((SameRay.rfl.pos_smul_left (inv_pos.2 hx.1)).pos_smul_right (inv_pos.2 hy.1))
+    refine hS hx.2 hy.2 hne (.inr <| .inr ⟨d, e, hx.1, hy.1, ?_⟩)
+    rw [smul_inv_smul₀ hx.1.ne', smul_inv_smul₀ hy.1.ne']
   rw [inv_inj.1 (smul_left_injective R hv hde)]
 
 /-- If no two distinct points of a set `S ∌ 0` lie in the same ray, a list of pairs `(d, v)` with
@@ -243,11 +331,12 @@ theorem Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem
       rw [List.forall_mem_cons] at hp hq
       rw [hS.eq_of_snd_eq_of_inv_smul_mem h0 hp.1 hq.1 h.1, ih hp.2 hq.2 h.2]
 
-omit [LinearOrder R] [IsStrictOrderedRing R] in
-/-- Rescaling a pair `(d, v)` by a nonzero factor does not change the velocity `d⁻¹ • v`. -/
-theorem Prod.inv_fst_smul_snd_smul {a : R} (ha : a ≠ 0) (z : R × M) :
-    (a • z).1⁻¹ • (a • z).2 = z.1⁻¹ • z.2 := by
-  rw [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_smul, inv_smul_smul₀ ha]
+end Duration
+
+section Velocity
+
+variable {R M : Type*} [Semifield R] [PartialOrder R] [IsStrictOrderedRing R] [AddCommMonoid M]
+  [Module R M]
 
 /-- Two pairs `(d, v)` and `(e, w)` with `0 < d` and `0 < e` lie in the same ray exactly when they
 have the same velocity, `d⁻¹ • v = e⁻¹ • w`. -/
@@ -255,9 +344,9 @@ theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz :
     SameRay R y z ↔ y.1⁻¹ • y.2 = z.1⁻¹ • z.2 := by
   constructor
   · intro h
-    obtain ⟨r, hr, rfl⟩ := h.exists_pos_left (fun h0 ↦ hy.ne' (by simp [h0]))
+    obtain ⟨r₁, r₂, hr₁, hr₂, h⟩ := h.exists_pos (fun h0 ↦ hy.ne' (by simp [h0]))
       (fun h0 ↦ hz.ne' (by simp [h0]))
-    exact (inv_fst_smul_snd_smul hr.ne' y).symm
+    rw [← Prod.inv_fst_smul_snd_smul hr₁.ne' y, ← Prod.inv_fst_smul_snd_smul hr₂.ne' z, h]
   · intro h
     -- Both pairs are positive multiples of `(1, u)`, where `u` is their common velocity.
     have hy' : y = y.1 • ((1 : R), z.1⁻¹ • z.2) := by
@@ -268,4 +357,4 @@ theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz :
       hy.le).nonneg_smul_right hz.le
     rwa [← hy', ← hz'] at h
 
-end Duration
+end Velocity

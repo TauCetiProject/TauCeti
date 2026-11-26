@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Poisson.Basic
-public import TauCeti.Probability.PointProcess.OccurrenceTime
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Distributions.Gamma.Cdf
 public import TauCeti.Probability.Distributions.Poisson.Tail
@@ -67,8 +67,7 @@ theorem IsPoissonRandomMeasure.measureReal_occurrenceTime_le
   have hevent : {ω | (N ω).occurrenceTime n ≤ t} =ᵐ[P]
       {ω | (n + 1 : ℝ≥0∞) ≤ N ω (Iic t)} := by
     filter_upwards [hfinite] with ω hω
-    exact propext ((N ω).occurrenceTime_le_iff_of_measure_Iic_ne_top n t
-      ⟨t + 1, lt_add_one t, hω⟩)
+    exact (N ω).occurrenceTime_le_iff_of_measure_Iic_ne_top n t ⟨t + 1, lt_add_one t, hω⟩
   rw [measureReal_congr hevent,
     (hcount t).measureReal_eq (p := fun x : ℝ≥0∞ => (n + 1 : ℝ≥0∞) ≤ x)
       measurableSet_Ici,
@@ -151,5 +150,13 @@ theorem IsPoissonRandomMeasure.hasLaw_toReal_occurrenceTime_zero
     HasLaw (fun ω => ((N ω).occurrenceTime 0).toReal) (expMeasure r) P := by
   simpa only [Nat.cast_zero, zero_add, expMeasure] using
     h.hasLaw_toReal_occurrenceTime hr 0
+
+/-- For zero intensity, every occurrence time of a temporal Poisson random measure is
+simultaneously infinite almost surely. -/
+theorem IsPoissonRandomMeasure.ae_forall_occurrenceTime_eq_top_of_zero
+    (h : IsPoissonRandomMeasure P N 0) :
+    ∀ᵐ ω ∂P, ∀ n, (N ω).occurrenceTime n = ∞ := by
+  filter_upwards [h.ae_eq_zero_measure] with ω hω n
+  simp [hω]
 
 end TauCeti.Probability

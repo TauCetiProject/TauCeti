@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import TauCeti.Algebra.Order.Group.ZMultiples
 public import TauCeti.Combinatorics.Network.Residual
 import TauCeti.Combinatorics.Network.Shift
 
@@ -30,12 +30,14 @@ flows is assembled.
 
 ## Main definitions
 
-* `TauCeti.BoundedFlow lo hi s t`: bounded `s`–`t` assignments, with value `BoundedFlow.val`.
+* `TauCeti.BoundedFlow lo hi s t`: bounded `s`–`t` assignments, with value `BoundedFlow.val` and
+  reindexing equivalence `BoundedFlow.congr`.
 * `TauCeti.cutBound lo hi S`: the total upper bound leaving `S` minus the total lower bound
   entering `S`.
 * `TauCeti.BoundedFlow.swap`: the same assignment as a bounded `t`–`s` assignment.
 * `TauCeti.BoundedFlow.update`: the residual update by a residual `s`–`t` assignment.
-* `TauCeti.Flow cap s t`: ordinary `s`–`t` flows for the capacities `cap`.
+* `TauCeti.Flow cap s t`: ordinary `s`–`t` flows for the capacities `cap`, with reindexing
+  equivalence `Flow.congr`.
 * `TauCeti.Flow.zero`: the zero flow for nonnegative capacities.
 * `TauCeti.BoundedFlow.swapFlow`: terminal exchange, turning a capacity-feasible assignment of
   nonpositive value into an ordinary flow in the opposite direction.
@@ -62,6 +64,8 @@ flows is assembled.
   `f` by a flow of its residual network.
 * `TauCeti.Flow.exists_nsmul_eq_val`: a flow with arrow values in `zmultiples d` has value
   `n • d` for a natural number `n`.
+* `TauCeti.Flow.exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le`: a compatible flow value and
+  the capacity of any source--sink cut have natural multipliers `n ≤ m`.
 
 ## References
 
@@ -220,6 +224,46 @@ theorem excessAt_eq_single_sub_single [DecidableEq V] (f : BoundedFlow lo hi s t
         simp [← val_def, hvs]
       · simp [f.conserve v hvs hvt, hvs, hvt]
 
+/-- Reindex a bounded terminal assignment along equalities of bounds and terminals. -/
+def congr {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+    (hs : s = s') (ht : t = t') : BoundedFlow lo hi s t ≃ BoundedFlow lo' hi' s' t' where
+  toFun f :=
+    { toFun := f.toFun
+      mem_Icc := hlo ▸ hhi ▸ f.mem_Icc
+      conserve v hvs hvt := f.conserve v (hs ▸ hvs) (ht ▸ hvt) }
+  invFun f :=
+    { toFun := f.toFun
+      mem_Icc := hlo.symm ▸ hhi.symm ▸ f.mem_Icc
+      conserve v hvs hvt := f.conserve v (hs.symm ▸ hvs) (ht.symm ▸ hvt) }
+  left_inv _ := BoundedFlow.ext rfl
+  right_inv _ := BoundedFlow.ext rfl
+
+@[simp]
+theorem congr_apply_toFun {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+    (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).toFun = f.toFun :=
+  (rfl)
+
+@[simp]
+theorem congr_symm {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+    (hs : s = s') (ht : t = t') :
+    (BoundedFlow.congr hlo hhi hs ht).symm =
+      BoundedFlow.congr hlo.symm hhi.symm hs.symm ht.symm :=
+  (rfl)
+
+@[simp]
+theorem congr_refl :
+    BoundedFlow.congr (rfl : lo = lo) (rfl : hi = hi) (rfl : s = s) (rfl : t = t) =
+      Equiv.refl _ :=
+  (rfl)
+
+@[simp]
+theorem val_congr {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+    (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).val = f.val := by
+  subst ht
+  rw [val_def, val_def, congr_apply_toFun]
+
 end Preorder
 
 section Ordered
@@ -338,8 +382,8 @@ variable {cap : Assignment Q K} {s t : V}
 def zero (hcap : 0 ≤ cap) : Flow cap s t where
   toFun := 0
   mem_Icc := ⟨le_rfl, hcap⟩
-  conserve v _ _ := excessAt_zero v
-  excessAt_sink_nonneg := (excessAt_zero t).ge
+  conserve v _ _ := excessAt_zero_apply v
+  excessAt_sink_nonneg := (excessAt_zero_apply t).ge
 
 @[simp]
 theorem zero_toFun (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).toFun = 0 :=
@@ -347,7 +391,7 @@ theorem zero_toFun (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).toFun = 0 :=
 
 @[simp]
 theorem val_zero (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).val = 0 := by
-  rw [BoundedFlow.val_def, zero_toFun, excessAt_zero]
+  rw [BoundedFlow.val_def, zero_toFun, excessAt_zero_apply]
 
 theorem nonneg (f : Flow cap s t) {x y : V} (e : Q x y) : 0 ≤ f.toFun e :=
   f.lower_le e
@@ -359,7 +403,7 @@ theorem val_nonneg (f : Flow cap s t) : 0 ≤ f.val :=
 nonnegative value. -/
 def equivBoundedFlow : Flow cap s t ≃ {f : BoundedFlow 0 cap s t // 0 ≤ f.val} where
   toFun f := ⟨f.toBoundedFlow, f.val_nonneg⟩
-  invFun f := ⟨f.1, f.2⟩
+  invFun f := ⟨f.val, f.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -371,6 +415,35 @@ theorem coe_equivBoundedFlow_apply (f : Flow cap s t) :
 @[simp]
 theorem toBoundedFlow_equivBoundedFlow_symm_apply (f : {f : BoundedFlow 0 cap s t // 0 ≤ f.val}) :
     (equivBoundedFlow.symm f).toBoundedFlow = f :=
+  (rfl)
+
+/-- Reindex an ordinary flow along equalities of capacities and terminals. -/
+def congr {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s') (ht : t = t') :
+    Flow cap s t ≃ Flow cap' s' t' where
+  toFun f :=
+    { toBoundedFlow := f.toBoundedFlow.congr rfl hcap hs ht
+      excessAt_sink_nonneg := ht ▸ f.excessAt_sink_nonneg }
+  invFun f :=
+    { toBoundedFlow := f.toBoundedFlow.congr rfl hcap.symm hs.symm ht.symm
+      excessAt_sink_nonneg := ht.symm ▸ f.excessAt_sink_nonneg }
+  left_inv _ := Flow.ext rfl
+  right_inv _ := Flow.ext rfl
+
+@[simp]
+theorem toBoundedFlow_congr {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') (f : Flow cap s t) :
+    (Flow.congr hcap hs ht f).toBoundedFlow = f.toBoundedFlow.congr rfl hcap hs ht :=
+  (rfl)
+
+@[simp]
+theorem congr_symm {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') :
+    (Flow.congr hcap hs ht).symm = Flow.congr hcap.symm hs.symm ht.symm :=
+  (rfl)
+
+@[simp]
+theorem congr_refl :
+    Flow.congr (rfl : cap = cap) (rfl : s = s) (rfl : t = t) = Equiv.refl _ :=
   (rfl)
 
 end Flow
@@ -451,15 +524,28 @@ natural number `n`. -/
 theorem Flow.exists_nsmul_eq_val [Preorder K] [AddLeftMono K] {cap : Assignment Q K}
     {s t : V} {d : K} (hd : 0 < d) {f : Flow cap s t}
     (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) :
-    ∃ n : ℕ, n • d = f.val := by
-  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (excessAt_mem hf t)
-  rw [← BoundedFlow.val_def] at hk
-  rcases k with n | n
-  · exact ⟨n, by simpa using hk⟩
-  · have hn := nsmul_pos hd (Nat.succ_ne_zero n)
-    have h := f.val_nonneg
-    rw [← hk, negSucc_zsmul, neg_nonneg] at h
-    exact (hn.not_ge h).elim
+    ∃ n : ℕ, n • d = f.val :=
+  exists_nsmul_eq_of_nonneg_of_mem_zmultiples hd f.val_nonneg <| by
+    rw [BoundedFlow.val_def]
+    exact excessAt_mem hf t
+
+/-- For positive `d`, a flow whose capacities and arrow values lie in `zmultiples d` has value
+`n • d`, while the capacity of any source--sink cut is `m • d`, for natural numbers `n ≤ m`.
+When `s ≠ t`, taking the cut `{s}` bounds the multiplier of the flow value by that of the total
+capacity leaving the source. -/
+theorem Flow.exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le [Preorder K] [AddLeftMono K]
+    [DecidableEq V] {cap : Assignment Q K} {s t : V} {d : K} (hd : 0 < d)
+    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ AddSubgroup.zmultiples d) {f : Flow cap s t}
+    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) {S : Finset V}
+    (hs : s ∈ S) (ht : t ∉ S) :
+    ∃ n m : ℕ, n • d = f.val ∧ m • d = arrowSum cap S Sᶜ ∧ n ≤ m := by
+  have hcap_nonneg : 0 ≤ cap := fun v w e ↦
+    (f.mem_Icc.1 v w e).trans (f.mem_Icc.2 v w e)
+  obtain ⟨n, hn⟩ := f.exists_nsmul_eq_val hd hf
+  obtain ⟨m, hm⟩ := exists_nsmul_eq_arrowSum hd hcap_nonneg hcap S Sᶜ
+  refine ⟨n, m, hn, hm, (nsmul_strictMono_of_pos hd).le_iff_le.mp ?_⟩
+  rw [hn, hm]
+  exact f.val_le_arrowSum hs ht
 
 end BoundedFlow
 

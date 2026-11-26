@@ -8,7 +8,10 @@ module
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Dual
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
+import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
@@ -25,9 +28,18 @@ of the dual.
 The result assumes σ-finiteness on the open domain. The Hilbert-space theorem in
 `TestFunctionLp/Basic` remains available without that measure hypothesis.
 
+On a finite-dimensional real inner product space `E` of dimension `d`, the same duality represents
+functionals bounded by the gradient: a linear functional `ℓ` on the test functions of `Ω` with
+`|ℓ φ| ≤ M ‖∇φ‖_{Lᵠ}` is `φ ↦ ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with `‖H‖_{Lᵖ} ≤ d² M`
+(`TauCeti.exists_memLp_forall_eq_integral_inner_gradient_of_abs_le`), that is, `ℓ = -div H` in the
+sense of distributions. The functional extends by Hahn–Banach through the partial derivatives
+`φ ↦ (⟪bᵢ, ∇φ⟫)ᵢ` into `(Lᵠ(Ω))ᵈ`, and the dual of `(Lᵠ(Ω))ᵈ` is `(Lᵖ(Ω))ᵈ`.
+
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, second edition, §5.8.2.
+* G. P. Galdi, *An Introduction to the Mathematical Theory of the Navier–Stokes Equations*, 2nd ed.,
+  Springer, 2011, Section III.3.
 -/
 
 public section
@@ -38,6 +50,8 @@ namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace Filter
 open scoped ContDiff Distributions ENNReal NNReal
+
+section LineDeriv
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
@@ -86,7 +100,7 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
         M * eLpNorm (φ : E → ℝ) q μ) →
       ∃ g : E → G, HasWeakLineDerivOn μ Ω u g v ∧ eLpNorm g p (μ.restrict Ω) ≤ C * M := by
   classical
-  have := FiniteDimensional.complete ℝ G
+  have := FiniteDimensional.completeSpace ℝ G
   let b := Module.finBasis ℝ G
   let c : Fin (Module.finrank ℝ G) → G →L[ℝ] ℝ := fun i => LinearMap.toContinuousLinearMap
     (b.coord i)
@@ -105,7 +119,7 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
       simp only [map_smul, smul_eq_mul]
     have hreal : ‖∫ z, lineDeriv ℝ (φ : E → ℝ) z v • u z ∂μ‖ ≤
         M.toReal * (eLpNorm (φ : E → ℝ) q μ).toReal := by
-      rw [← ENNReal.toReal_mul, ← toReal_enorm]
+      rw [← ENNReal.toReal_mul, ← toReal_eNorm]
       exact ENNReal.toReal_mono (ENNReal.mul_ne_top hM hφ) (hbound φ)
     rw [hint, ← Real.norm_eq_abs, mul_assoc]
     exact ((c i).le_opNorm _).trans (mul_le_mul_of_nonneg_left hreal (norm_nonneg _))
@@ -129,13 +143,142 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
     calc eLpNorm (fun z => (g i : E → ℝ) z • b i) p (μ.restrict (Ω : Set E))
         ≤ ‖b i‖₊ * eLpNorm (g i : E → ℝ) p (μ.restrict (Ω : Set E)) :=
           eLpNorm_le_mul_eLpNorm_of_ae_le_mul' hmeas
-            (Eventually.of_forall fun z => by rw [enorm_smul, mul_comm, enorm_eq_nnnorm]) p
+            (Eventually.of_forall fun z => by rw [eNorm_smul, mul_comm, eNorm_eq_nnNorm]) p
       _ ≤ ‖b i‖₊ * (‖c i‖₊ * M) := by
           gcongr
           calc eLpNorm (g i : E → ℝ) p (μ.restrict (Ω : Set E))
-              = ENNReal.ofReal ‖g i‖ := by simp [← Lp.enorm_def]
+              = ENNReal.ofReal ‖g i‖ := by simp [← Lp.eNorm_def]
             _ ≤ ENNReal.ofReal (‖c i‖ * M.toReal) := ENNReal.ofReal_le_ofReal (hgn i)
-            _ = ‖c i‖₊ * M := by simp [ENNReal.ofReal_mul, hM, enorm_eq_nnnorm]
+            _ = ‖c i‖₊ * M := by simp [ENNReal.ofReal_mul, hM, eNorm_eq_nnNorm]
       _ = ↑(‖c i‖₊ * ‖b i‖₊) * M := by push_cast; ring
+
+end LineDeriv
+
+section Gradient
+
+open Module
+open scoped Gradient InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω : Opens E}
+
+variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+  {p q : ℝ≥0∞}
+
+/-- The partial derivatives `⟪bᵢ, ∇φ⟫` of a test function along an orthonormal basis, as a linear
+map into `(Lᵠ(Ω))ᵈ`. -/
+private def partialDerivativesLp (b : OrthonormalBasis (Fin (finrank ℝ E)) ℝ E) :
+    𝓓(Ω, ℝ) →ₗ[ℝ] (Fin (finrank ℝ E) → Lp ℝ q (μ.restrict Ω)) :=
+  LinearMap.pi fun i => (testFunctionLpₗ μ Ω q).comp
+    (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ (b i)).toLinearMap
+
+private theorem partialDerivativesLp_apply_ae (b : OrthonormalBasis (Fin (finrank ℝ E)) ℝ E)
+    (φ : 𝓓(Ω, ℝ)) (i : Fin (finrank ℝ E)) :
+    ∀ᵐ x ∂μ.restrict Ω, partialDerivativesLp (μ := μ) (q := q) b φ i x =
+      ⟪b i, ∇ (φ : E → ℝ) x⟫_ℝ := by
+  filter_upwards [testFunctionLp_apply_ae (mu := μ) q
+    (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ (b i) φ)] with x hx
+  simp only [partialDerivativesLp, LinearMap.pi_apply, LinearMap.coe_comp, Function.comp_apply,
+    testFunctionLpₗ_apply, ContinuousLinearMap.coe_coe]
+  rw [hx, TestFunction.lineDerivCLM_apply_eq_inner]
+
+/-- The `Lᵠ` norm of the gradient of a test function is at most `d` times the norm of its
+partial derivatives in `(Lᵠ(Ω))ᵈ`. -/
+private theorem toReal_eLpNorm_gradient_le [Fact (1 ≤ q)]
+    (b : OrthonormalBasis (Fin (finrank ℝ E)) ℝ E) (φ : 𝓓(Ω, ℝ)) :
+    (eLpNorm (∇ (φ : E → ℝ)) q μ).toReal ≤
+      finrank ℝ E * ‖partialDerivativesLp (μ := μ) (q := q) b φ‖ := by
+  set T := partialDerivativesLp (μ := μ) (q := q) b
+  have hDnorm (i : Fin (finrank ℝ E)) :
+      ‖T φ i‖ₑ = eLpNorm (fun x => ⟪b i, ∇ (φ : E → ℝ) x⟫_ℝ) q μ := by
+    simp only [T, partialDerivativesLp, LinearMap.pi_apply, LinearMap.coe_comp,
+      Function.comp_apply, testFunctionLpₗ_apply, ContinuousLinearMap.coe_coe]
+    rw [enorm_testFunctionLp_eq_eLpNorm]
+    congr 1
+    funext x
+    exact TestFunction.lineDerivCLM_apply_eq_inner φ (b i) x
+  have h := b.toBasis.eLpNorm_le_sum_enorm_mul_eLpNorm_coord (p := q) (μ := μ)
+    (continuous_gradient_testFunction φ).aestronglyMeasurable
+  have hb (i : Fin (finrank ℝ E)) : ‖b i‖ₑ = 1 := by
+    rw [← ofReal_norm, b.orthonormal.1 i, ENNReal.ofReal_one]
+  simp only [OrthonormalBasis.coe_toBasis, hb, one_mul,
+    OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply,
+    Basis.coord_apply] at h
+  simp_rw [← hDnorm] at h
+  have hfin : ∀ i ∈ Finset.univ, ‖T φ i‖ₑ ≠ ⊤ := fun i _ => eNorm_ne_top
+  calc (eLpNorm (∇ (φ : E → ℝ)) q μ).toReal ≤ (∑ i, ‖T φ i‖ₑ).toReal :=
+        ENNReal.toReal_mono (ENNReal.sum_ne_top.2 hfin) h
+    _ = ∑ i, ‖T φ i‖ := by
+        rw [ENNReal.toReal_sum hfin]
+        simp only [toReal_eNorm]
+    _ ≤ ∑ _i : Fin (finrank ℝ E), ‖T φ‖ := Finset.sum_le_sum fun i _ => norm_le_pi_norm (T φ) i
+    _ = finrank ℝ E * ‖T φ‖ := by simp
+
+/-- **Hahn–Banach for gradient bounds.** A linear functional on test functions bounded by `M`
+times the `Lᵠ` norm of the gradient extends to a continuous functional on `(Lᵠ(Ω))ᵈ`, of norm at
+most `d M`, through the partial derivatives. -/
+private theorem exists_dual_comp_partialDerivativesLp_eq [Fact (1 ≤ q)]
+    (b : OrthonormalBasis (Fin (finrank ℝ E)) ℝ E) (ℓ : 𝓓(Ω, ℝ) →ₗ[ℝ] ℝ) {M : ℝ} (hM : 0 ≤ M)
+    (hℓ : ∀ φ : 𝓓(Ω, ℝ), |ℓ φ| ≤ M * (eLpNorm (∇ (φ : E → ℝ)) q μ).toReal) :
+    ∃ Λ : StrongDual ℝ (Fin (finrank ℝ E) → Lp ℝ q (μ.restrict Ω)), ‖Λ‖ ≤ finrank ℝ E * M ∧
+      ∀ φ, Λ (partialDerivativesLp (μ := μ) (q := q) b φ) = ℓ φ := by
+  set T := partialDerivativesLp (μ := μ) (q := q) b
+  have hbound (φ : 𝓓(Ω, ℝ)) : |ℓ φ| ≤ finrank ℝ E * M * ‖T φ‖ :=
+    (hℓ φ).trans (by
+      rw [mul_comm (finrank ℝ E : ℝ) M, mul_assoc]; gcongr; exact toReal_eLpNorm_gradient_le b φ)
+  have hker : LinearMap.ker T.rangeRestrict ≤ LinearMap.ker ℓ := by
+    rw [LinearMap.ker_rangeRestrict]
+    intro φ hφ
+    have h := hbound φ
+    rw [LinearMap.mem_ker.mp hφ, norm_zero, mul_zero] at h
+    exact LinearMap.mem_ker.mpr (abs_nonpos_iff.mp h)
+  let f₀ : LinearMap.range T →ₗ[ℝ] ℝ :=
+    T.rangeRestrict.liftOfSurjective T.surjective_rangeRestrict ⟨ℓ, hker⟩
+  have hf₀_apply (φ : 𝓓(Ω, ℝ)) : f₀ (T.rangeRestrict φ) = ℓ φ :=
+    LinearMap.equivOfSurjective_apply T.surjective_rangeRestrict hker
+  have hf₀ : ∀ s, ‖f₀ s‖ ≤ finrank ℝ E * M * ‖s‖ := by
+    intro s
+    obtain ⟨φ, rfl⟩ := T.surjective_rangeRestrict s
+    rw [hf₀_apply, Real.norm_eq_abs, ← Submodule.norm_coe, LinearMap.codRestrict_apply]
+    exact hbound φ
+  obtain ⟨Λ, hΛ, hΛnorm⟩ := exists_extension_norm_eq _ (f₀.mkContinuous (finrank ℝ E * M) hf₀)
+  refine ⟨Λ, hΛnorm.trans_le (LinearMap.mkContinuous_norm_le _ (by positivity) hf₀),
+    fun φ => ?_⟩
+  have h := hΛ (T.rangeRestrict φ)
+  simpa only [LinearMap.codRestrict_apply, LinearMap.mkContinuous_apply, hf₀_apply] using h
+
+/-- **Functionals bounded by the gradient are divergences.** Let `1 < q < ∞` and let `p` be its
+conjugate exponent. If a linear functional `ℓ` on the test functions of `Ω` satisfies
+`|ℓ φ| ≤ M ‖∇φ‖_{L^q}`, then `ℓ φ = ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with
+`‖H‖_{Lᵖ(Ω)} ≤ d² M`, where `d` is the dimension. In other words `ℓ = -div H` in the sense of
+distributions. -/
+theorem exists_memLp_forall_eq_integral_inner_gradient_of_abs_le [SigmaFinite (μ.restrict Ω)]
+    [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q] (hq : 1 < q) (hq_top : q ≠ ⊤)
+    (ℓ : 𝓓(Ω, ℝ) →ₗ[ℝ] ℝ) {M : ℝ} (hM : 0 ≤ M)
+    (hℓ : ∀ φ : 𝓓(Ω, ℝ), |ℓ φ| ≤ M * (eLpNorm (∇ (φ : E → ℝ)) q μ).toReal) :
+    ∃ H : E → E, MemLp H p (μ.restrict Ω) ∧
+      eLpNorm H p (μ.restrict Ω) ≤ (finrank ℝ E : ℝ≥0∞) ^ 2 * ENNReal.ofReal M ∧
+      ∀ φ : 𝓓(Ω, ℝ), ℓ φ = ∫ x in Ω, ⟪H x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ := by
+  set b := stdOrthonormalBasis ℝ E
+  obtain ⟨Λ, hΛ, hΛT⟩ := exists_dual_comp_partialDerivativesLp_eq (μ := μ) (q := q) b ℓ hM hℓ
+  obtain ⟨H, hH, hHnorm, hHΛ⟩ := Lp.exists_memLp_forall_dual_pi_apply_eq (p := p) hq hq_top b Λ
+  rw [Fintype.card_fin] at hHnorm
+  refine ⟨H, hH, ?_, fun φ => ?_⟩
+  · calc eLpNorm H p (μ.restrict Ω) ≤ finrank ℝ E * ENNReal.ofReal ‖Λ‖ := hHnorm
+      _ ≤ finrank ℝ E * ENNReal.ofReal (finrank ℝ E * M) := by gcongr
+      _ = (finrank ℝ E : ℝ≥0∞) ^ 2 * ENNReal.ofReal M := by
+          rw [ENNReal.ofReal_mul (Nat.cast_nonneg _), ENNReal.ofReal_natCast, sq, mul_assoc]
+  -- `∑ᵢ ⟪H, bᵢ⟫ ⟪bᵢ, ∇φ⟫ = ⟪H, ∇φ⟫`.
+  have hint (i : Fin (finrank ℝ E)) : Integrable (fun x => ⟪H x, b i⟫_ℝ *
+      partialDerivativesLp (μ := μ) (q := q) b φ i x) (μ.restrict Ω) :=
+    (((innerSL ℝ).flip (b i)).comp_memLp' hH).integrable_mul (Lp.memLp _)
+  rw [← hΛT φ, hHΛ, ← integral_finsetSum _ fun i _ => hint i]
+  refine integral_congr_ae ?_
+  filter_upwards [ae_all_iff.2 fun i => partialDerivativesLp_apply_ae (μ := μ) (q := q) b φ i]
+    with x hx
+  simp only [hx]
+  exact b.sum_inner_mul_inner (H x) (∇ (φ : E → ℝ) x)
+
+end Gradient
 
 end TauCeti

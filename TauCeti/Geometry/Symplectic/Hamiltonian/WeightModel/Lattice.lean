@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
+public import TauCeti.Geometry.Toric.Delzant.Basic
+import Mathlib.Analysis.Real.Cardinality
 
 /-!
 # Integral weights of the weight model
@@ -28,11 +30,21 @@ of `N`: `α_j(i n)` is the `j`-th coordinate of `n` in `b`. This is the local mo
 toric manifold at a fixed point. Then:
 
 * `μ(z)` paired with `i(b_k)` is `-½ |z_k|²`, and the image of `μ` is the simplicial cone
-  `{ν | ν(i(b_k)) ≤ 0 for all k}`;
+  `{ν | ν(i(b_k)) ≤ 0 for all k}`, the facet polyhedron with inward normals `-b_k` and support
+  constants `0`;
 * the stabilizer of `z` in `𝔱` is `2π i(N) + span{i(b_k) | z_k = 0}`, the preimage of the subtorus
   spanned by the normals `i(b_k)` of the facets `ν(i(b_k)) = 0` containing `μ(z)`;
 * the torus acts effectively, and it acts freely at `z` exactly when `μ(z)` lies in the open cone
   `{ν | ν(i(b_k)) < 0 for all k}`.
+
+**Effective models of complexity zero.** Conversely, let there be at most `dim 𝔱` weights, and
+suppose the action of `𝔱` descends to an effective action of the torus: `ξ` acts trivially
+exactly when `ξ ∈ 2π i(N)`. Then the weights are dual to a `ℤ`-basis of `N`, so all of the above
+applies. The weights take integer values on `i(N)`, since `2π i(N)` acts trivially; they are
+linearly independent, since a line of trivially acting elements cannot lie in the countable set
+`2π i(N)`; so they identify `𝔱` with `ℝ^ι`, and effectiveness says that this identification
+carries `i(N)` onto `ℤ^ι`. This is the step from the weight normal form of an effective toric
+action at a fixed point to the smoothness of the moment polytope at the image of that point.
 
 ## Main results
 
@@ -42,12 +54,18 @@ toric manifold at a fixed point. Then:
   basis.
 * `TauCeti.weightRotation_apply_eq_self_iff_of_basis_weightMomentMap`: the stabilizer of `z` is
   determined by the facets of the moment cone through `μ(z)`.
-* `TauCeti.range_weightMomentMap_of_basis`: the image is the simplicial cone of the basis.
+* `TauCeti.range_weightMomentMap_of_basis`,
+  `TauCeti.range_weightMomentMap_eq_facetPolyhedron_of_basis`: the image is the simplicial cone of
+  the basis.
 * `TauCeti.linearIndependent_of_forall_apply_eq_coord`: such weights are linearly independent, so
   the results of the basic weight model for independent weights apply to them.
 * `TauCeti.weightRotation_eq_id_iff_of_basis`,
   `TauCeti.forall_weightRotation_apply_eq_self_imp_iff_of_basis`: the torus acts effectively, and
   freely exactly over the open cone.
+* `TauCeti.eq_zero_of_forall_apply_eq_zero_of_weightRotation`: when only the elements of
+  `2π i(N)` act trivially, the weights have no common zero but `0`.
+* `TauCeti.exists_basis_iff_forall_weightRotation_eq_id_iff`: at most `dim 𝔱` weights are dual to
+  a lattice basis exactly when the torus `𝔱 / 2π i(N)` acts effectively.
 
 ## References
 
@@ -276,6 +294,99 @@ theorem range_weightMomentMap_of_basis :
     rw [Real.sq_sqrt (by linarith [hν k])]
     ring
 
+include h in
+/-- **The moment cone as a facet polyhedron.** For weights dual to a lattice basis `b`, the image
+of the moment map is the facet polyhedron with inward normals `-b_k` and support constants `0`.
+Its apex `0` is a smooth vertex of this presentation
+(`TauCeti.isSmoothVertex_zero_of_basis`). -/
+theorem range_weightMomentMap_eq_facetPolyhedron_of_basis :
+    Set.range (weightMomentMap α) = Toric.facetPolyhedron i (fun k ↦ -b k) 0 := by
+  rw [range_weightMomentMap_of_basis h b hα]
+  ext ν
+  simp
+
+omit [Fintype ι] hα in
+/-- **The apex is a smooth vertex.** The apex `0` is a smooth vertex of the facet presentation of
+the moment cone in `TauCeti.range_weightMomentMap_eq_facetPolyhedron_of_basis`: every constraint
+is active at `0`, and the normals `-b_k` form the lattice basis `b.map (LinearEquiv.neg ℤ)`. -/
+theorem isSmoothVertex_zero_of_basis : Toric.IsSmoothVertex i (fun k ↦ -b k) 0 0 :=
+  Toric.isSmoothVertex_of_forall_apply_eq (b.map (LinearEquiv.neg ℤ)) (fun _ ↦ by simp)
+    fun _ ↦ by simp
+
 end Integral
+
+/-! ### Effective weight models of complexity zero -/
+
+section Effective
+
+variable {N : Type*} [AddCommGroup N] {i : N →+ 𝔱}
+
+/-- **The weights of an effective action separate points.** If only the elements of the countable
+set `2π i(N)` act trivially on `ℂ^ι`, then the only `ξ ∈ 𝔱` on which every weight vanishes is `0`:
+the whole line through such a `ξ` acts trivially. -/
+theorem eq_zero_of_forall_apply_eq_zero_of_weightRotation [Countable N] {α : ι → StrongDual ℝ 𝔱}
+    (heff : ∀ ξ, weightRotation (fun j ↦ α j ξ) = ContinuousLinearMap.id ℝ _ →
+      ∃ n : N, ξ = (2 * π) • i n)
+    {ξ : 𝔱} (hξ : ∀ j, α j ξ = 0) : ξ = 0 := by
+  by_contra hξ0
+  have ht (t : ℝ) : ∃ n : N, t • ξ = (2 * π) • i n :=
+    heff _ <| (weightRotation_eq_id_iff _).2 fun j ↦ ⟨0, by simp [hξ]⟩
+  choose n hn using ht
+  have hninj : Function.Injective n := fun s t hst ↦
+    smul_left_injective ℝ hξ0 (by simp only [hn, hst])
+  exact not_countable hninj.countable
+
+/-- **Effective weight models of complexity zero.** Let `i : N →+ 𝔱` be an integral lattice and
+let `α` be at most `dim 𝔱` weights. The action of `𝔱` on `ℂ^ι` descends to an effective action of
+the torus `𝔱 / 2π i(N)`, that is, `ξ ∈ 𝔱` acts trivially exactly when `ξ ∈ 2π i(N)`, exactly when
+the weights are dual to a `ℤ`-basis `b` of `N`: `α_j(i n)` is the `j`-th coordinate of `n` in `b`.
+In particular there are then exactly `dim 𝔱` weights.
+
+The bound on the number of weights is needed: the circle acting on `ℂ²` with weights `1` and `1`
+acts effectively, but two weights are never dual to a basis of `ℤ`. The reverse implication is
+`TauCeti.weightRotation_eq_id_iff_of_basis`, which needs no bound. -/
+theorem exists_basis_iff_forall_weightRotation_eq_id_iff (h : Toric.IsIntegralLattice i)
+    {α : ι → StrongDual ℝ 𝔱} (hcard : Fintype.card ι ≤ Module.finrank ℝ 𝔱) :
+    (∃ b : Module.Basis ι ℤ N, ∀ j n, α j (i n) = b.coord j n) ↔
+      ∀ ξ, weightRotation (fun j ↦ α j ξ) = ContinuousLinearMap.id ℝ _ ↔
+        ∃ n : N, ξ = (2 * π) • i n := by
+  refine ⟨fun ⟨b, hα⟩ ↦ weightRotation_eq_id_iff_of_basis h b hα, fun heff ↦ ?_⟩
+  have := h.finiteDimensional
+  have := h.finite
+  have : Countable N := Countable.of_moduleFinite (R := ℤ)
+  -- Read the weights as one linear map `A : 𝔱 → ℝ^ι`, injective since the action is effective.
+  let A : 𝔱 →ₗ[ℝ] ι → ℝ := LinearMap.pi fun j ↦ (α j : 𝔱 →ₗ[ℝ] ℝ)
+  have hA (ξ : 𝔱) (j : ι) : A ξ j = α j ξ := by simp [A]
+  have hAinj : Function.Injective A := (injective_iff_map_eq_zero A).2 fun ξ hξ ↦
+    eq_zero_of_forall_apply_eq_zero_of_weightRotation (fun ξ ↦ (heff ξ).1) fun j ↦ congrFun hξ j
+  -- The weights are real extensions of integral characters `m j`, since `2π i(N)` acts trivially.
+  obtain ⟨m, hm⟩ := Classical.axiomOfChoice <|
+    (forall_weightRotation_two_pi_smul_eq_id_iff h α).1 fun n ↦ (heff _).2 ⟨n, rfl⟩
+  simp only [weightRotation_eq_id_iff] at heff
+  have hAsurj : Function.Surjective A := by
+    have hle := LinearMap.finrank_le_finrank_of_injective hAinj
+    rw [Module.finrank_fintype_fun_eq_card] at hle
+    exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (by rw [Module.finrank_fintype_fun_eq_card]; omega)).1 hAinj
+  -- These characters form a `ℤ`-linear map `N → ℤ^ι`.
+  let e : N →ₗ[ℤ] ι → ℤ := (AddMonoidHom.pi m).toIntLinearMap
+  have he (n : N) (j : ι) : α j (i n) = e n j := by
+    rw [← ContinuousLinearMap.coe_coe, ← hm, h.realCharacter_apply]
+    simp [e]
+  -- It is injective because `A` and `i` are, and surjective because `A` is.
+  have heinj : Function.Injective e := fun n m hnm ↦ h.injective <| hAinj <| funext fun j ↦ by
+    rw [hA, hA, he, he, hnm]
+  have hesurj : Function.Surjective e := fun c ↦ by
+    obtain ⟨ξ, hξ⟩ := hAsurj fun j ↦ 2 * π * c j
+    obtain ⟨n, rfl⟩ := (heff ξ).1 fun j ↦ ⟨c j, by rw [← hA, hξ]; ring⟩
+    refine ⟨n, funext fun j ↦ Int.cast_injective (α := ℝ) ?_⟩
+    have hj := congrFun hξ j
+    rw [hA, map_smul, smul_eq_mul, he] at hj
+    exact mul_left_cancel₀ (by positivity : (2 * π) ≠ 0) hj
+  refine ⟨.ofEquivFun (.ofBijective e ⟨heinj, hesurj⟩), fun j n ↦ ?_⟩
+  rw [Module.Basis.coord_apply, Module.Basis.ofEquivFun_repr_apply, he]
+  exact congrArg _ (congrFun (LinearEquiv.ofBijective_apply e n).symm j)
+
+end Effective
 
 end TauCeti

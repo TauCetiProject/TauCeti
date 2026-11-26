@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
 public import TauCeti.Combinatorics.Hypergraph.Colored.Counting
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
-public import TauCeti.Data.Fintype.CardEmbedding
+public import TauCeti.Data.Fintype.Card.Embedding
 import TauCeti.Order.Partition.Pi
 import Mathlib.Data.Rat.BigOperators
 import Mathlib.Data.Rat.Cast.Order
@@ -48,6 +48,8 @@ count which an induced counting lemma compares with `H.inducedCopyCount F`.
 ## Main definitions
 
 * `TauCeti.PatternPlacement3`: an assignment of the pattern vertices to vertex cells.
+* `TauCeti.PatternPlacement3.equivFun`: placements are the maps from the pattern vertices to the
+  vertex cells.
 * `TauCeti.PairColorPlacement3`: a route, assigning pair colors to canonical pattern pairs.
 * `TauCeti.placementInjectionCount`: the number of cell-respecting injections of a placement.
 * `TauCeti.Colored3Graph.placedInducedCopyCount`: the induced copies realizing a placement and a
@@ -65,6 +67,8 @@ count which an induced counting lemma compares with `H.inducedCopyCount F`.
   add up to `|V| ^ F.k`.
 * `TauCeti.PairColorPlacement3.card_le_pairColorCount_pow`: a placement has at most
   `m ^ (F.k.choose 2)` routes, where `m` is the number of pair colors.
+* `TauCeti.PairColorPlacement3.sigma_ext`: a placement with a route is determined by its cells
+  and its pair colors.
 * `TauCeti.Colored3Graph.pairwiseDisjoint_placedInducedCopies`: distinct placements and routes
   are realized by disjoint sets of induced copies.
 * `TauCeti.Colored3Graph.inducedCopyCount_eq_sum_placedInducedCopyCount`: over a polyad
@@ -110,7 +114,7 @@ variable {C : TriadicComplex3 V} {F : FiniteColored3Pattern κ}
 assignments. -/
 instance : Fintype (PatternPlacement3 C F) :=
   Fintype.ofEquiv {c : Fin F.k → Finset V // ∀ i, c i ∈ C.skeleton.vertexPart.parts}
-    { toFun c := ⟨c.1, c.2⟩
+    { toFun c := ⟨c.val, c.property⟩
       invFun φ := ⟨φ.vertexCell, φ.vertexCell_mem⟩ }
 
 /-- A placement is transversal when it assigns pairwise distinct cells. -/
@@ -128,18 +132,38 @@ theorem eq_of_forall_mem {φ φ' : PatternPlacement3 C F} {g : Fin F.k → V}
   PatternPlacement3.ext <| funext fun i ↦
     C.skeleton.vertexPart.eq_of_mem_parts (φ.vertexCell_mem i) (φ'.vertexCell_mem i) (h i) (h' i)
 
+/-- A placement is the same as a map from the pattern vertices to the vertex cells. -/
+def equivFun : PatternPlacement3 C F ≃ (Fin F.k → C.skeleton.vertexPart.parts) where
+  toFun φ i := ⟨φ.vertexCell i, φ.vertexCell_mem i⟩
+  invFun c := ⟨fun i ↦ c i, fun i ↦ (c i).property⟩
+
+/-- The cell of a pattern vertex under `PatternPlacement3.equivFun` is its assigned cell. -/
+@[simp]
+theorem coe_equivFun_apply (φ : PatternPlacement3 C F) (i : Fin F.k) :
+    (equivFun φ i : Finset V) = φ.vertexCell i :=
+  (rfl)
+
+/-- The placement of a map to the vertex cells assigns to each pattern vertex its image. -/
+@[simp]
+theorem equivFun_symm_apply_vertexCell (c : Fin F.k → C.skeleton.vertexPart.parts)
+    (i : Fin F.k) : (equivFun.symm c).vertexCell i = c i :=
+  (rfl)
+
+/-- A placement is transversal exactly when its map to the vertex cells is injective. -/
+@[simp]
+theorem injective_equivFun_iff (φ : PatternPlacement3 C F) :
+    Injective (equivFun φ) ↔ φ.Transversal := by
+  rw [transversal_iff]
+  exact ⟨fun h _ _ hij ↦ h (Subtype.ext hij), fun h _ _ hij ↦ h (congrArg Subtype.val hij)⟩
+
 /-- The boxes of cells of the placements partition the maps `Fin F.k → V`, so their sizes add up
 to `|V| ^ F.k`. -/
 theorem sum_prod_card_vertexCell :
     ∑ φ : PatternPlacement3 C F, ∏ i, #(φ.vertexCell i) = Fintype.card V ^ F.k := by
   classical
-  -- A placement is a map from the pattern vertices to the vertex cells.
-  let e : PatternPlacement3 C F ≃ (Fin F.k → C.skeleton.vertexPart.parts) :=
-    { toFun φ i := ⟨φ.vertexCell i, φ.vertexCell_mem i⟩
-      invFun c := ⟨fun i ↦ c i, fun i ↦ (c i).2⟩ }
   have h := C.skeleton.vertexPart.sum_card_filter_piFinset_parts (ι := Fin F.k) fun _ ↦ True
   simp only [filter_true, Fintype.card_piFinset, card_univ, prod_const, Fintype.card_fin] at h
-  exact (Fintype.sum_equiv e _ _ fun _ ↦ rfl).trans h
+  exact (Fintype.sum_equiv equivFun _ _ fun _ ↦ rfl).trans h
 
 end PatternPlacement3
 
@@ -219,11 +243,20 @@ theorem card_le_pairColorCount_pow :
 route. -/
 theorem eq_of_forall_colorOfPair_eq_some {ψ ψ' : PairColorPlacement3 φ} {g : Fin F.k → V}
     (h : ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-      C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p))
+      C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ.pairColor p))
     (h' : ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-      C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ'.pairColor p)) :
+      C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ'.pairColor p)) :
     ψ = ψ' :=
   PairColorPlacement3.ext <| funext fun p ↦ Option.some_injective _ ((h p).symm.trans (h' p))
+
+/-- A placement together with a route over it is determined by its cells and its pair
+colors. -/
+theorem sigma_ext {σ τ : Σ φ : PatternPlacement3 C F, PairColorPlacement3 φ}
+    (h₁ : σ.1.vertexCell = τ.1.vertexCell) (h₂ : σ.2.pairColor = τ.2.pairColor) : σ = τ := by
+  obtain ⟨⟨A, hA⟩, ⟨k, hk⟩⟩ := σ
+  obtain ⟨⟨A', hA'⟩, ⟨k', hk'⟩⟩ := τ
+  subst h₁ h₂
+  rfl
 
 /-- The polyad that a route induces on the canonically ordered pattern triple `i < j < l`. -/
 def polyad (ψ : PairColorPlacement3 φ) (i j l : Fin F.k) (hij : i < j) (hjl : j < l) :
@@ -265,6 +298,13 @@ theorem polyad_color₀₂ :
 theorem polyad_color₁₂ : (ψ.polyad i j l hij hjl).color₁₂ = ψ.pairColor ⟨(j, l), hjl⟩ :=
   Polyad3.ofData_color₁₂ ..
 
+/-- The support of the polyad of a triple of vertices has at most as many elements as the product
+of the sizes of the vertex cells at the three vertices. -/
+theorem card_support_polyad_le :
+    #(ψ.polyad i j l hij hjl).support ≤
+      #(φ.vertexCell i) * #(φ.vertexCell j) * #(φ.vertexCell l) := by
+  simpa only [polyad_c₀, polyad_c₁, polyad_c₂] using (ψ.polyad i j l hij hjl).card_support_le
+
 end PairColorPlacement3
 
 /-! ### Placed induced copies -/
@@ -281,7 +321,7 @@ noncomputable def placedInducedCopies (φ : PatternPlacement3 C F) (ψ : PairCol
   classical
   exact (H.inducedCopies F).filter fun f ↦ (∀ i, f i ∈ φ.vertexCell i) ∧
     ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-      C.skeleton.pairColors.colorOfPair (f p.1.1) (f p.1.2) = some (ψ.pairColor p)
+      C.skeleton.pairColors.colorOfPair (f p.val.1) (f p.val.2) = some (ψ.pairColor p)
 
 variable {H} in
 /-- Membership in the placed induced copies. -/
@@ -290,7 +330,7 @@ theorem mem_placedInducedCopies {φ : PatternPlacement3 C F} {ψ : PairColorPlac
     {f : Fin F.k ↪ V} :
     f ∈ H.placedInducedCopies φ ψ ↔ H.IsInducedCopy F f ∧ (∀ i, f i ∈ φ.vertexCell i) ∧
       ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-        C.skeleton.pairColors.colorOfPair (f p.1.1) (f p.1.2) = some (ψ.pairColor p) := by
+        C.skeleton.pairColors.colorOfPair (f p.val.1) (f p.val.2) = some (ψ.pairColor p) := by
   classical
   simp [placedInducedCopies]
 
@@ -335,7 +375,7 @@ private noncomputable def placementOf (f : Fin F.k ↪ V) : PatternPlacement3 C 
 are the polyads of the images of the pattern triples. -/
 private noncomputable def routeOf (hC : C.IsPolyadDecomposition) (f : Fin F.k ↪ V) :
     PairColorPlacement3 (placementOf (C := C) f) where
-  pairColor p := C.skeleton.pairColors.color ⟨(f p.1.1, f p.1.2), f.injective.ne p.2.ne⟩
+  pairColor p := C.skeleton.pairColors.color ⟨(f p.val.1, f p.val.2), f.injective.ne p.property.ne⟩
   ofData_mem i j l hij hjl := by
     have hinj : Injective ![i, j, l] := by
       intro a b hab
@@ -384,19 +424,19 @@ noncomputable def expectedInducedCountAt (φ : PatternPlacement3 C F)
   (placementInjectionCount φ : ℝ) *
     (∏ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
       (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-        (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ)) *
+        (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ)) *
     ∏ t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2},
-      (H.relativeDensity (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
-        (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) : ℝ)
+      (H.relativeDensity (F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2)
+        (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2) : ℝ)
 
 theorem expectedInducedCountAt_def (φ : PatternPlacement3 C F) (ψ : PairColorPlacement3 φ) :
     H.expectedInducedCountAt φ ψ = (placementInjectionCount φ : ℝ) *
       (∏ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
         (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-          (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ)) *
+          (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ)) *
       ∏ t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2},
-        (H.relativeDensity (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
-          (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) : ℝ) :=
+        (H.relativeDensity (F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2)
+          (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2) : ℝ) :=
   (rfl)
 
 /-- Local predictions are nonnegative. -/
@@ -429,7 +469,7 @@ theorem sum_expectedInducedCountAt_le_placementInjectionCount (φ : PatternPlace
     ∑ ψ : PairColorPlacement3 φ, H.expectedInducedCountAt φ ψ ≤ placementInjectionCount φ := by
   classical
   set d : {p : Fin F.k × Fin F.k // p.1 < p.2} → Fin C.pairColorCount → ℝ := fun p c ↦
-    (pairColorDensity C.skeleton.pairColors c (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ)
+    (pairColorDensity C.skeleton.pairColors c (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ)
   have hd (p c) : 0 ≤ d p c := Rat.cast_nonneg.2 (pairColorDensity_nonneg _ _ _ _)
   have hinj : 0 ≤ (placementInjectionCount φ : ℝ) := Nat.cast_nonneg _
   calc ∑ ψ : PairColorPlacement3 φ, H.expectedInducedCountAt φ ψ
@@ -454,7 +494,7 @@ theorem sum_expectedInducedCountAt_le_placementInjectionCount (φ : PatternPlace
         refine mul_le_of_le_one_right hinj
           (prod_le_one₀ (fun p _ ↦ sum_nonneg fun c _ ↦ hd p c) fun p _ ↦ ?_)
         calc ∑ c, d p c = ((∑ c, pairColorDensity C.skeleton.pairColors c
-              (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℚ) : ℝ) := (Rat.cast_sum _ _).symm
+              (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℚ) : ℝ) := (Rat.cast_sum _ _).symm
           _ ≤ 1 := by exact_mod_cast sum_pairColorDensity_le_one C.skeleton.pairColors _ _
 
 variable (C F) in

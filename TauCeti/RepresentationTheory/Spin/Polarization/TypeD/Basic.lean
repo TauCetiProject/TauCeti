@@ -20,10 +20,6 @@ algebra and then with the quadratic elements of the Clifford algebra.
 The standard diagonal matrix indexed by `i` acts by `1` on the `i`-th isotropic basis vector and
 by `-1` on its dual. Under the comparison it is therefore the diagonal Clifford bivector used to
 compute the spin weights.
-
-## References
-
-* [Tau Ceti Roadmap, Spin Representations, Layer 5](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md#layer-5-the-fundamental-representations-of-b%E2%82%97-and-d%E2%82%97)
 -/
 
 public section
@@ -109,6 +105,16 @@ noncomputable def typeDQuadraticEquiv
   let _ : Module.Finite K V := Module.Finite.of_basis (P.typeDBasis b hline)
   exact skewAdjointMatricesEquivQuadratic Q (P.nondegenerate_of_line_eq_bot hline)
     (P.typeDBasis b hline) (P.polarBilin_toMatrix_typeDBasis b hline)
+
+/-- The split type-`D` Lie algebra on `ι ⊕ ι` has dimension `(2 |ι|) choose 2`: an even
+polarization with a basis of `W` indexed by `ι` identifies it with the quadratic Clifford elements
+of the `2 |ι|`-dimensional space `V` (`typeDQuadraticEquiv`). -/
+theorem finrank_typeD (b : Module.Basis ι K P.W) (hline : P.line = ⊥) :
+    Module.finrank K (LieAlgebra.Orthogonal.typeD ι K) = (2 * Fintype.card ι).choose 2 := by
+  have : Module.Free K V := Module.Free.of_basis (P.typeDBasis b hline)
+  have : Module.Finite K V := Module.Finite.of_basis (P.typeDBasis b hline)
+  rw [(P.typeDQuadraticEquiv b hline).toLinearEquiv.finrank_eq, finrank_quadraticLieSubalgebra,
+    Module.finrank_eq_card_basis (P.typeDBasis b hline), Fintype.card_sum, two_mul]
 
 /-- The type-`D` comparison acts on Clifford generators through the corresponding matrix
 endomorphism in the hyperbolic basis. -/

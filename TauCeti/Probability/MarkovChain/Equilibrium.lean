@@ -60,6 +60,7 @@ theorem Invariant.tendsto_tvDist_pow_comp (hπ : κ.Invariant π) (hκ : κ.IsAp
     (hπ.parallelComp hπ).isRecurrent_of_apply_singleton_ne_zero (by
       simpa only [← Set.singleton_prod_singleton, Measure.prod_prod] using mul_ne_zero hx hx)
   have hlim := κ.tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent hrec ν π
+    (measure_univ.trans measure_univ.symm)
   simpa only [hπ.pow_comp] using hlim
 
 end ProbabilityTheory.Kernel

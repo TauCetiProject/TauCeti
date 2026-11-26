@@ -12,12 +12,12 @@ import TauCeti.CategoryTheory.Groupoid.SingleObj
 import TauCeti.Topology.Homotopy.Path
 
 /-!
-# Basic results on fundamental groupoids and fundamental groups
+# Basic results on fundamental groups
 
-This file records a basic connectedness result for fundamental groupoids, the general
-transport facts about the basepoint-adjusted induced map `FundamentalGroup.mapOfEq`, and when a
-map induced on fundamental groups is trivial: a characterization of trivial range loop by loop,
-and the basic consequences of triviality of the *source* fundamental group.
+This file records the general transport facts about the basepoint-adjusted induced map
+`FundamentalGroup.mapOfEq`, and when a map induced on fundamental groups is trivial: a
+characterization of trivial range loop by loop, and the basic consequences of triviality of the
+*source* fundamental group.
 
 `TauCeti.FundamentalGroup.map_range_eq_bot_iff` was extracted from the proof of
 `semilocallySimplyConnectedAt_iff_range_eq_bot` in
@@ -41,8 +41,6 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   exactly when the image of the loop is nullhomotopic.
 * `FundamentalGroup.mapOfEq_mapOfEq_of_comp_eq_id`: the induced map of a map whose composite
   with `f` is the identity undoes the induced map of `f`.
-* `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
-  space is connected.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
   when every loop at the basepoint becomes nullhomotopic in the target.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_of_subsingleton`: if the source fundamental group
@@ -53,6 +51,13 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   induced-map range contained in any target subgroup.
 * `TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton`: the same triviality for the
   basepoint-transported induced map `FundamentalGroup.mapOfEq`.
+* `TauCeti.FundamentalGroup.mapOfEq_range_eq_of_subsingleton`: two such transported induced maps
+  into the same `π₁(X, x)` have the same range.
+* `TauCeti.FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq`: maps inducing the same homomorphism
+  on fundamental groups still do after precomposition with any pointed map.
+* `TauCeti.FundamentalGroup.mk_map_comp_eq_of_mapOfEq_eq`: two maps inducing the same
+  homomorphism on fundamental groups agree, in the fundamental groupoid of the target, on the
+  class of every path `α₀ · p · α₁⁻¹` through the basepoint.
 * `TauCeti.subsingleton_fundamentalGroup_iff`: the fundamental group at a basepoint is trivial
   exactly when every loop there is nullhomotopic.
 * `Path.homotopic_refl_of_forall_mem_of_subsingleton`: a loop lying in a set whose fundamental
@@ -66,16 +71,6 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 public section
 
 open CategoryTheory
-
-namespace FundamentalGroupoid
-
-/-- In the fundamental groupoid of a path-connected space every object receives a morphism from
-every other one, so the groupoid is connected. -/
-theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
-    [PathConnectedSpace Y] (x y : FundamentalGroupoid Y) : Nonempty (x ⟶ y) :=
-  ⟨Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)⟩
-
-end FundamentalGroupoid
 
 namespace FundamentalGroup
 
@@ -151,6 +146,28 @@ theorem mapOfEq_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x =
     FundamentalGroup.mapOfEq f₁ h₁ p = FundamentalGroup.mapOfEq f₂ h₂ p := by
   subst hfe
   rfl
+
+/-- Two factorizations of the same composite induce the same map on fundamental groups. -/
+theorem mapOfEq_mapOfEq_eq_mapOfEq {A B D : Type*} [TopologicalSpace A]
+    [TopologicalSpace B] [TopologicalSpace D] {a : A} {b : B} {d : D} {f : C(A, B)}
+    {g : C(B, D)} {k : C(A, D)} (h : g.comp f = k) (hf : f a = b) (hg : g b = d) (hk : k a = d)
+    (p : FundamentalGroup A a) :
+    FundamentalGroup.mapOfEq g hg (FundamentalGroup.mapOfEq f hf p) =
+      FundamentalGroup.mapOfEq k hk p := by
+  rw [FundamentalGroup.mapOfEq_comp]
+  exact FundamentalGroup.mapOfEq_congr h _ _ p
+
+/-- Two factorizations of the same map through different spaces induce the same map on
+fundamental groups. -/
+theorem mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq {A B C D : Type*} [TopologicalSpace A]
+    [TopologicalSpace B] [TopologicalSpace C] [TopologicalSpace D] {a : A} {b : B} {c : C}
+    {d : D} {f₁ : C(A, B)} {g₁ : C(B, D)} {f₂ : C(A, C)} {g₂ : C(C, D)}
+    (h : g₁.comp f₁ = g₂.comp f₂) (hf₁ : f₁ a = b) (hg₁ : g₁ b = d)
+    (hf₂ : f₂ a = c) (hg₂ : g₂ c = d) (p : FundamentalGroup A a) :
+    FundamentalGroup.mapOfEq g₁ hg₁ (FundamentalGroup.mapOfEq f₁ hf₁ p) =
+      FundamentalGroup.mapOfEq g₂ hg₂ (FundamentalGroup.mapOfEq f₂ hf₂ p) := by
+  rw [FundamentalGroup.mapOfEq_comp, FundamentalGroup.mapOfEq_comp]
+  exact FundamentalGroup.mapOfEq_congr h _ _ p
 
 /-- **A loop is killed exactly when its image is nullhomotopic.** The induced map `mapOfEq f h`
 sends the class of a loop `q` to `1` if and only if the image of `q` under `f` is homotopic,
@@ -251,6 +268,70 @@ theorem FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton
     (Set.subsingleton_coe _).mpr ((_root_.FundamentalGroup.mapOfEq f h).subsingleton_coe_range)
   exact Subgroup.eq_bot_of_subsingleton _
 
+/-- Two maps into `X` from spaces whose fundamental groups are subsingletons, transported to a
+common basepoint `x`, have the same (trivial) range in `π₁(X, x)`. For instance two simply
+connected covers of `X` recover the same subgroup. -/
+theorem FundamentalGroup.mapOfEq_range_eq_of_subsingleton
+    [Subsingleton (_root_.FundamentalGroup A a₀)] [Subsingleton (_root_.FundamentalGroup E e₀)]
+    (f : C(A, X)) (g : C(E, X)) {x : X} (hf : f a₀ = x) (hg : g e₀ = x) :
+    (_root_.FundamentalGroup.mapOfEq f hf).range =
+      (_root_.FundamentalGroup.mapOfEq g hg).range := by
+  rw [FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton,
+    FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton]
+
+/-- Two maps `f g : X → Y` inducing the same homomorphism on `π₁(X, x₀)` still do after
+precomposition with any map `e : A → X` sending `a₀` to `x₀`. -/
+theorem FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq {Y : Type*} [TopologicalSpace Y]
+    {f g : C(X, Y)} {a₀ : A} {x₀ : X} {y₀ : Y} (e : C(A, X)) (he : e a₀ = x₀) (hf : f x₀ = y₀)
+    (hg : g x₀ = y₀)
+    (hfg : _root_.FundamentalGroup.mapOfEq f hf = _root_.FundamentalGroup.mapOfEq g hg) :
+    _root_.FundamentalGroup.mapOfEq (f.comp e) (x := a₀) (by simp [he, hf]) =
+      _root_.FundamentalGroup.mapOfEq (g.comp e) (y := y₀) (by simp [he, hg]) := by
+  ext p
+  rw [← _root_.FundamentalGroup.mapOfEq_comp f e he hf,
+    ← _root_.FundamentalGroup.mapOfEq_comp g e he hg, hfg]
+
+/-- Two maps `f` and `g` with `g x₀ = f x₀` inducing the same homomorphism on `π₁(X, x₀)` agree,
+up to the identification of `g x₀` with `f x₀`, on the class of every path `α₀ · p · α₁⁻¹`. -/
+theorem FundamentalGroup.mk_map_comp_eq_of_mapOfEq_eq {Y : Type*} [TopologicalSpace Y]
+    {f g : C(X, Y)} {x₀ a b : X} (hg : g x₀ = f x₀)
+    (hfg : _root_.FundamentalGroup.mapOfEq f rfl = _root_.FundamentalGroup.mapOfEq g hg)
+    (α₀ : Path x₀ a) (p : Path a b) (α₁ : Path x₀ b) :
+    (Path.Homotopic.Quotient.mk (α₀.map f.continuous) : FundamentalGroupoid.mk (f x₀) ⟶ _) ≫
+      (Path.Homotopic.Quotient.mk (p.map f.continuous) : FundamentalGroupoid.mk (f a) ⟶ _) ≫
+      inv (Path.Homotopic.Quotient.mk (α₁.map f.continuous) : FundamentalGroupoid.mk (f x₀) ⟶ _) =
+    eqToHom congr(FundamentalGroupoid.mk $(hg.symm)) ≫
+      ((Path.Homotopic.Quotient.mk (α₀.map g.continuous) : FundamentalGroupoid.mk (g x₀) ⟶ _) ≫
+      (Path.Homotopic.Quotient.mk (p.map g.continuous) : FundamentalGroupoid.mk (g a) ⟶ _) ≫
+      inv (Path.Homotopic.Quotient.mk (α₁.map g.continuous) :
+        FundamentalGroupoid.mk (g x₀) ⟶ _)) ≫
+      eqToHom congr(FundamentalGroupoid.mk $hg) := by
+  -- The loop `α₀ · p · α₁⁻¹` at `x₀`, and its images under `f` and `g`.
+  let L : FundamentalGroupoid.mk x₀ ⟶ FundamentalGroupoid.mk x₀ :=
+    (Path.Homotopic.Quotient.mk α₀ : FundamentalGroupoid.mk x₀ ⟶ _) ≫
+      (Path.Homotopic.Quotient.mk p : FundamentalGroupoid.mk a ⟶ _) ≫
+      inv (Path.Homotopic.Quotient.mk α₁ : FundamentalGroupoid.mk x₀ ⟶ _)
+  have hmap (k : C(X, Y)) :
+      FundamentalGroupoid.fromPath (x₀ := k x₀) (Path.Homotopic.Quotient.map L k) =
+        (Path.Homotopic.Quotient.mk (α₀.map k.continuous) : FundamentalGroupoid.mk (k x₀) ⟶ _) ≫
+        (Path.Homotopic.Quotient.mk (p.map k.continuous) : FundamentalGroupoid.mk (k a) ⟶ _) ≫
+        inv (Path.Homotopic.Quotient.mk (α₁.map k.continuous) :
+          FundamentalGroupoid.mk (k x₀) ⟶ _) := by
+    -- `Path.Homotopic.Quotient.map L k` is the image of `L` under the functor `map k`, whose
+    -- source and target objects `mk (k x₀)` are those of `(map k).obj (mk x₀)` by definition.
+    change (FundamentalGroupoid.map k).map L = _
+    simp only [L, Functor.map_comp, Functor.map_inv]
+    simp only [FundamentalGroupoid.map_map, ← Path.Homotopic.Quotient.mk_map]
+    -- Both sides now agree as morphisms; only their implicit objects `(map k).obj (mk v)` and
+    -- `mk (k v)` differ, and these are equal by definition.
+    rfl
+  have h := congrArg CategoryTheory.End.asHom <|
+    DFunLike.congr_fun hfg (_root_.FundamentalGroup.fromArrow L)
+  simp only [_root_.FundamentalGroup.mapOfEq_apply] at h
+  rw [Path.Homotopic.Quotient.cast_rfl_rfl, ← FundamentalGroupoid.conj_eqToHom] at h
+  rw [← hmap f, ← hmap g]
+  exact h
+
 /-- A simply connected domain has induced fundamental-group range contained in any target
 subgroup. -/
 theorem FundamentalGroup.map_range_le_of_simplyConnectedSpace [SimplyConnectedSpace A]
@@ -280,7 +361,7 @@ theorem _root_.Path.homotopic_refl_of_forall_mem_of_subsingleton {s : Set X} {x 
     [Subsingleton (_root_.FundamentalGroup s x)] (γ : Path x.val x.val) (hγ : ∀ t, γ t ∈ s) :
     γ.Homotopic (Path.refl x.val) := by
   have h := (subsingleton_fundamentalGroup_iff.1 ‹_› (γ.codRestrict hγ)).map
-    ⟨_, continuous_subtype_val⟩
+    ⟨_, continuous_subtypeVal⟩
   rwa [Path.map_codRestrict, Path.map_refl] at h
 
 /-- **A path-connected space with a trivial fundamental group is simply connected.** It suffices

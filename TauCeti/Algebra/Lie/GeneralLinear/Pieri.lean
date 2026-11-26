@@ -143,8 +143,8 @@ private theorem exists_eq_smul_of_isGlHighestWeightVector_sub_single
     (hv : IsGlHighestWeightVector mu v) {t : Fin n} {x y : Module.Dual K (Fin n → K) ⊗[K] M}
     (hx : IsGlHighestWeightVector (mu - Pi.single t 1) x)
     (hy : IsGlHighestWeightVector (mu - Pi.single t 1) y) : ∃ c : K, y = c • x := by
-  obtain ⟨hx0, a, ha, hxa⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hx
-  obtain ⟨hy0, b, hb, hyb⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hy
+  obtain ⟨_, a, ha, hxa⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hx
+  obtain ⟨_, b, hb, hyb⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hy
   refine ⟨b / a, ?_⟩
   by_contra hne
   have hx' := hx.smul (div_ne_zero hb ha)
@@ -177,9 +177,9 @@ private noncomputable def pieriDenom (s : Fin n) : K :=
 private noncomputable def pieriVec (s : Fin n) : M :=
   if s ≤ t then (if s = t then v else 0) else
     (pieriDenom mu t s)⁻¹ • ∑ k ∈ (Finset.Iio s).attach,
-      ⁅(single s k.1 1 : Matrix (Fin n) (Fin n) K), pieriVec k.1⁆
+      ⁅(single s k.val 1 : Matrix (Fin n) (Fin n) K), pieriVec k.val⁆
 termination_by (s : ℕ)
-decreasing_by exact Fin.lt_def.mp (Finset.mem_Iio.mp k.2)
+decreasing_by exact Fin.lt_def.mp (Finset.mem_Iio.mp k.property)
 
 variable {mu v t}
 
@@ -251,11 +251,11 @@ private theorem sum_Iic_lie_single_pieriVec (hv : IsGlHighestWeightVector mu v)
   · rw [pieriVec_of_lt hit, smul_zero]
     exact Finset.sum_eq_zero fun k hk => by
       rw [pieriVec_of_lt ((Finset.mem_Iic.mp hk).trans_lt hit), lie_zero]
-  · rw [← Finset.Iio_insert, Finset.sum_insert Finset.notMem_Iio_self,
+  · rw [← Finset.insert_Iio, Finset.sum_insert Finset.notMem_Iio_self,
       Finset.sum_eq_zero fun k hk => by rw [pieriVec_of_lt (Finset.mem_Iio.mp hk), lie_zero],
       pieriVec_self, hv.lie_single_self_eq_smul]
     simp
-  · rw [← Finset.Iio_insert, Finset.sum_insert Finset.notMem_Iio_self,
+  · rw [← Finset.insert_Iio, Finset.sum_insert Finset.notMem_Iio_self,
       sum_lie_single_pieriVec_of_gt hmut hti, lie_single_self_pieriVec hv, ← add_smul]
     congr 1
     have hti' : (((i : ℕ) - t : ℕ) : K) = (((i : ℕ) - t - 1 : ℕ) : K) + 1 := by
@@ -398,7 +398,7 @@ theorem gl_dual_standard_pieri [IsAlgClosed K] (mu : Fin n → K) (hmu : IsGlDom
   refine nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_exists_eq_smul
     (lam := fun t : {t : Fin n // IsGlDominantIntegral (mu - Pi.single t 1)} =>
       mu - Pi.single (t : Fin n) 1) (fun s t hst => Subtype.ext ?_) (fun nu x hx hnu => ?_)
-    (fun t => exists_isGlHighestWeightVector_dual_tensorProduct hg t.2)
+    (fun t => exists_isGlHighestWeightVector_dual_tensorProduct hg t.property)
     (fun t x y hx hy => exists_eq_smul_of_isGlHighestWeightVector_sub_single hg hx hy)
   · by_contra hne
     have h := congr_fun hst (s : Fin n)

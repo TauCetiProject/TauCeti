@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
-import TauCeti.Probability.Process.Stopping
+public import TauCeti.Probability.Process.Progressive
+public import TauCeti.Probability.Process.Stopping
 
 /-!
 # Adapted representatives of local processes and filtration enlargement
@@ -31,8 +32,19 @@ merely adapted replacement at a general stopping time requires additional measur
 For any native local property, the stopped stages converge almost surely at each fixed time
 to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`).
 
+Cutting localizing times off at the initial time outside increasing, exhausting initial events
+preserves localization (`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`). The corresponding
+indicator-restricted stopped stages suffice to establish any local property
+(`ProbabilityTheory.IsLocalizingSequence.locally_of_indicator`).
+
+For strongly progressive processes with almost-surely continuous or right-continuous paths,
+adding these regularity requirements to any local property does not change locality.
+
 Enlarging a filtration preserves its localizing sequences. The stopping-time property
 transports to the larger filtration, while monotonicity and divergence are unchanged.
+An absolutely continuous change of measure also preserves localizing sequences, since their
+stopping-time conditions do not involve the measure and their path conditions hold almost surely.
+This does not assert preservation of the martingale property of stopped processes.
 
 ## References
 
@@ -47,10 +59,67 @@ open scoped Topology
 
 namespace ProbabilityTheory
 
+/-- An absolutely continuous change of measure preserves a pre-localizing sequence. No
+finiteness of either measure is needed. -/
+theorem IsPreLocalizingSequence.mono_ac {ι Ω : Type*} [Preorder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P Q : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsPreLocalizingSequence ℱ τ P) (hQP : Q ≪ P) :
+    IsPreLocalizingSequence ℱ τ Q :=
+  ⟨hτ.isStoppingTime, hQP.ae_le hτ.tendsto_top⟩
+
+/-- An absolutely continuous change of measure preserves a native localizing sequence,
+including its almost-sure monotonicity. It need not preserve any localized martingale identities. -/
+theorem IsLocalizingSequence.mono_ac {ι Ω : Type*} [Preorder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P Q : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsLocalizingSequence ℱ τ P) (hQP : Q ≪ P) :
+    IsLocalizingSequence ℱ τ Q :=
+  ⟨hτ.toIsPreLocalizingSequence.mono_ac hQP, hQP.ae_le hτ.mono⟩
+
+/-- Cutting a localizing sequence off at the initial time outside increasing initial-measurable
+events which eventually contain almost every sample point preserves localization. -/
+theorem IsLocalizingSequence.piecewise_bot {ι Ω : Type*} [Preorder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsLocalizingSequence ℱ τ P) {A : ℕ → Set Ω} [∀ n, DecidablePred (· ∈ A n)]
+    (hA : ∀ n, MeasurableSet[ℱ ⊥] (A n)) (hmono : Monotone A)
+    (hexhaust : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ A n) :
+    IsLocalizingSequence ℱ (fun n ↦ (A n).piecewise (τ n) (fun _ ↦ ⊥)) P := by
+  refine ⟨⟨fun n ↦ ?_, ?_⟩, ?_⟩
+  · exact (hτ.isStoppingTime n).piecewise_of_le (isStoppingTime_const ℱ ⊥)
+      (i := ⊥) (by simp) (by simp) (hA n)
+  · filter_upwards [hτ.tendsto_top, hexhaust] with ω hω hlarge
+    exact hω.congr' (hlarge.mono fun n hn ↦ by simp [hn])
+  · filter_upwards [hτ.mono] with ω hω n m hnm
+    by_cases hn : ω ∈ A n
+    · have hm : ω ∈ A m := hmono hnm hn
+      simpa [Set.piecewise, hn, hm] using hω hnm
+    · simp [Set.piecewise, hn]
+
 variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
   {ℱ : Filtration ι mΩ} {P : Measure Ω} {τ : ℕ → Ω → WithTop ι}
   {X : ι → Ω → E} [Zero E]
+
+/-- To establish a native local property, it suffices to establish it for stopped stages
+restricted to increasing, exhausting initial-measurable events. The localizers are cut off
+at the initial time outside those events, without any sigma-finiteness assumption. -/
+theorem IsLocalizingSequence.locally_of_indicator (hτ : IsLocalizingSequence ℱ τ P)
+    {A : ℕ → Set Ω} (hA : ∀ n, MeasurableSet[ℱ ⊥] (A n)) (hmono : Monotone A)
+    (hexhaust : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ A n) {p : (ι → Ω → E) → Prop}
+    (hp : ∀ n, p (fun t ↦ (A n).indicator (stoppedProcess
+      (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n) t))) :
+    Locally p ℱ X P := by
+  classical
+  refine ⟨_, hτ.piecewise_bot hA hmono hexhaust, fun n ↦ ?_⟩
+  convert hp n using 1
+  ext t ω
+  simp only [stoppedProcess_indicator_pos_apply]
+  by_cases hω : ω ∈ A n
+  · simp only [Set.piecewise, hω, ↓reduceIte, Set.indicator_of_mem hω]
+    simp only [stoppedProcess_indicator_pos_apply]
+  · simp [hω]
 
 /-- On one common full-measure event, native stopped stages along a localizing sequence
 are eventually equal to the original path on each bounded initial time interval.
@@ -141,3 +210,107 @@ theorem ae_tendsto_stoppedProcess_localSeq (hX : Locally p ℱ X P) (t : ι) :
   exact lt_of_le_of_lt (WithTop.coe_le_coe.mpr bot_le) hn
 
 end ProbabilityTheory.Locally
+
+namespace ProbabilityTheory.IsStable
+
+/-- Adding a stable property already satisfied by a process does not change locality. -/
+theorem locally_and_iff_of_prop
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] [Zero E]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ι mΩ}
+    {X : ι → Ω → E} {p q : (ι → Ω → E) → Prop}
+    (hq : IsStable ℱ q) (hqX : q X) :
+    Locally (fun Y ↦ p Y ∧ q Y) ℱ X P ↔ Locally p ℱ X P := by
+  refine ⟨Locally.left, ?_⟩
+  rintro ⟨τ, hτ, hpτ⟩
+  exact ⟨τ, hτ, fun n ↦ ⟨hpτ n, hq X hqX (τ n) (hτ.isStoppingTime n)⟩⟩
+
+end ProbabilityTheory.IsStable
+
+namespace MeasureTheory.Filtration
+
+open ProbabilityTheory
+
+/-- Strong progressivity is stable under native indicator-stopping. -/
+theorem isStable_isStronglyProgressive
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    [PseudoMetrizableSpace ι] [MeasurableSpace ι] [BorelSpace ι]
+    {mΩ : MeasurableSpace Ω} [TopologicalSpace E] [Zero E]
+    (ℱ : Filtration ι mΩ) : IsStable ℱ (IsStronglyProgressive (β := E) ℱ) := by
+  intro X hp τ hτ
+  rw [stoppedProcess_indicator_comm']
+  exact (hp.stoppedProcess hτ).indicator (fun t ↦ ℱ.mono bot_le _ (hτ.measurableSet_gt ⊥))
+
+/-- Almost-sure path continuity is stable under native indicator-stopping. -/
+theorem isStable_ae_continuous
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι]
+    {mΩ : MeasurableSpace Ω} [TopologicalSpace E] [Zero E]
+    (ℱ : Filtration ι mΩ) (P : Measure Ω) :
+    IsStable ℱ (fun X : ι → Ω → E ↦ ∀ᵐ ω ∂P, Continuous (X · ω)) := by
+  intro X hc τ _
+  filter_upwards [hc] with ω hω
+  rw [stoppedProcess_indicator_comm']
+  by_cases hpos : (⊥ : WithTop ι) < τ ω
+  · simpa only [Set.indicator_of_mem (s := {ω | ⊥ < τ ω}) hpos] using
+      hω.stoppedProcess (τ := τ)
+  · simpa only [Set.indicator_of_notMem (s := {ω | ⊥ < τ ω}) hpos] using
+      (continuous_const : Continuous (fun _ : ι ↦ (0 : E)))
+
+/-- Almost-sure path right continuity is stable under native indicator-stopping. -/
+theorem isStable_ae_isRightContinuous
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι]
+    {mΩ : MeasurableSpace Ω} [TopologicalSpace E] [Zero E]
+    (ℱ : Filtration ι mΩ) (P : Measure Ω) :
+    IsStable ℱ (fun X : ι → Ω → E ↦ ∀ᵐ ω ∂P, _root_.IsRightContinuous (X · ω)) := by
+  intro X hc τ _
+  filter_upwards [hc] with ω hω
+  rw [stoppedProcess_indicator_comm']
+  by_cases hpos : (⊥ : WithTop ι) < τ ω
+  · have hstop : _root_.IsRightContinuous (stoppedProcess X τ · ω) :=
+      fun t ↦ (hω t).stoppedProcess (τ := τ)
+    simpa only [Set.indicator_of_mem (s := {ω | ⊥ < τ ω}) hpos] using hstop
+  · simpa only [Set.indicator_of_notMem (s := {ω | ⊥ < τ ω}) hpos] using
+      (continuous_const.isRightContinuous : _root_.IsRightContinuous (fun _ : ι ↦ (0 : E)))
+
+end MeasureTheory.Filtration
+
+namespace MeasureTheory.IsStronglyProgressive
+
+open ProbabilityTheory
+
+/-- For a strongly progressive process with almost-surely continuous paths, localizing a property
+is equivalent to localizing it together with strong progressivity and almost-sure continuity. -/
+theorem locally_iff_locally_isStronglyProgressive_ae_continuous
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    [PseudoMetrizableSpace ι] [MeasurableSpace ι] [BorelSpace ι]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [TopologicalSpace E] [Zero E]
+    {ℱ : Filtration ι mΩ} {X : ι → Ω → E}
+    (hp : IsStronglyProgressive ℱ X) (hc : ∀ᵐ ω ∂P, Continuous (X · ω))
+    (p : (ι → Ω → E) → Prop) :
+    Locally p ℱ X P ↔ Locally (fun Y ↦ p Y ∧ IsStronglyProgressive ℱ Y ∧
+      ∀ᵐ ω ∂P, Continuous (Y · ω)) ℱ X P := by
+  exact ((ℱ.isStable_isStronglyProgressive.and (ℱ.isStable_ae_continuous P)).locally_and_iff_of_prop
+    ⟨hp, hc⟩).symm
+
+/-- For a strongly progressive process with almost-surely right-continuous paths, localizing a
+property is equivalent to localizing it together with both regularity requirements. -/
+theorem locally_iff_locally_isStronglyProgressive_ae_isRightContinuous
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    [PseudoMetrizableSpace ι] [MeasurableSpace ι] [BorelSpace ι]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [TopologicalSpace E] [Zero E]
+    {ℱ : Filtration ι mΩ} {X : ι → Ω → E}
+    (hp : IsStronglyProgressive ℱ X) (hc : ∀ᵐ ω ∂P, IsRightContinuous (X · ω))
+    (p : (ι → Ω → E) → Prop) :
+    Locally p ℱ X P ↔ Locally (fun Y ↦ p Y ∧ IsStronglyProgressive ℱ Y ∧
+      ∀ᵐ ω ∂P, IsRightContinuous (Y · ω)) ℱ X P := by
+  exact ((ℱ.isStable_isStronglyProgressive.and
+    (ℱ.isStable_ae_isRightContinuous P)).locally_and_iff_of_prop ⟨hp, hc⟩).symm
+
+end MeasureTheory.IsStronglyProgressive

@@ -63,7 +63,7 @@ the volume integral of the coefficient of the test form in `b`. -/
 private theorem enorm_integrationCurrent_apply_eq (o : Orientation ℝ E (Fin m))
     (b : OrthonormalBasis (Fin m) ℝ E) (ω : 𝓓^{n}(Ω, E [⋀^Fin m]→L[ℝ] ℝ)) :
     ‖o.integrationCurrent Ω ω‖ₑ = ‖∫ x, ω x b‖ₑ := by
-  rw [integrationCurrent_apply_eq_signBasis_mul o Ω b.toBasis, b.addHaar_eq_volume, enorm_mul,
+  rw [integrationCurrent_apply_eq_signBasis_mul o Ω b.toBasis, b.addHaar_eq_volume, eNorm_mul,
     b.coe_toBasis]
   rcases Int.units_eq_one_or (o.signBasis b.toBasis) with h | h <;> simp [h]
 
@@ -73,7 +73,7 @@ theorem enorm_integrationCurrent_apply_le_lintegral_enorm (o : Orientation ℝ E
   by_cases hm : finrank ℝ E = m
   · let b : OrthonormalBasis (Fin m) ℝ E := (stdOrthonormalBasis ℝ E).reindex (finCongr hm)
     rw [enorm_integrationCurrent_apply_eq o b]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
     rw [← ofReal_norm, ← ofReal_norm, (ω x).norm_eq_norm_apply_orthonormalBasis b]
   · simp [integrationCurrent_eq_zero_of_finrank_ne o Ω hm]
 
@@ -115,7 +115,7 @@ theorem mass_integrationCurrent (o : Orientation ℝ E (Fin m)) (hm : finrank �
   have hωb (x : E) : ω x b = ψ x := by
     have hx : ω x = b.toBasis.testTopFormEquiv.symm ψ x := by
       simp only [ω, monoCLM_apply, le_top, le_refl, and_self, ↓reduceIte]
-    rw [hx, ← b.coe_toBasis, Basis.testTopFormEquiv_symm_apply, Basis.det_self, mul_one]
+    rw [hx, ← b.coe_toBasis, Basis.testTopFormEquiv_symm_apply_self]
   have hω (x : E) : ‖ω x‖ ≤ 1 := by
     rw [(ω x).norm_eq_norm_apply_orthonormalBasis b, hωb]
     exact hψ x
@@ -151,9 +151,9 @@ theorem massMeasure_integrationCurrent (o : Orientation ℝ E (Fin m)) (hm : fin
     massMeasure (o.integrationCurrent Ω : 𝓓^{n}(Ω, E [⋀^Fin m]→L[ℝ] ℝ) →L[ℝ] ℝ) =
       volume.comap ((↑) : Ω → E) := by
   have hemb : MeasurableEmbedding ((↑) : Ω → E) :=
-    MeasurableEmbedding.subtype_coe Ω.isOpen.measurableSet
+    MeasurableEmbedding.subtypeVal Ω.isOpen.measurableSet
   have : (volume.comap ((↑) : Ω → E)).OuterRegular :=
-    Measure.OuterRegular.comap' _ continuous_subtype_val hemb
+    Measure.OuterRegular.comap' _ continuous_subtypeVal hemb
   refine (eq_massMeasure_of_preimage_coe (o.hasLocallyFiniteMass_integrationCurrent Ω) _
     fun U hU => ?_).symm
   rw [hemb.comap_apply, image_preimage_eq_inter_range, Subtype.range_coe_subtype, inter_comm,

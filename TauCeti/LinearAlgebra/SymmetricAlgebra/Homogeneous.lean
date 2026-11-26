@@ -38,9 +38,8 @@ degree one preserves every homogeneous submodule.
 * `TauCeti.SymmetricAlgebra.derivation_mem_homogeneousSubmodule`: a derivation sending generators
   to degree one preserves every homogeneous submodule.
 
-This is the homogeneous-piece prerequisite for the degreewise PBW comparison map in
-Layer 3, “PBW, a substantial sub-project”, of the
-[highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md).
+These pieces are the domains of the degreewise PBW comparison maps in
+`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous`.
 -/
 
 public section
@@ -60,6 +59,12 @@ abbrev homogeneousSubmodule (n : ℕ) : Submodule R (SymmetricAlgebra R M) :=
 theorem ι_mem_homogeneousSubmodule (x : M) :
     SymmetricAlgebra.ι R M x ∈ homogeneousSubmodule R M 1 := by
   simpa only [pow_one] using LinearMap.mem_range_self (SymmetricAlgebra.ι R M) x
+
+/-- A symmetric-algebra generator is homogeneous of degree `1 • 1`, the degree in which
+`HomogeneousLocalization.Away.mk` takes numerators over a degree-one denominator. -/
+theorem ι_mem_homogeneousSubmodule_one_smul (x : M) :
+    SymmetricAlgebra.ι R M x ∈ homogeneousSubmodule R M (1 • 1) := by
+  simp
 
 variable {R M} in
 /-- Algebra maps whose values on generators differ by a scalar in the target algebra
@@ -173,6 +178,15 @@ theorem ι_homogeneousSubmoduleOneEquiv_apply (x : homogeneousSubmodule R M 1) :
     SymmetricAlgebra.ι R M (homogeneousSubmoduleOneEquiv R M x) = x := by
   conv_rhs => rw [← (homogeneousSubmoduleOneEquiv R M).symm_apply_apply x]
   exact (coe_homogeneousSubmoduleOneEquiv_symm_apply R M _).symm
+
+/-- `homogeneousSubmoduleOneEquiv` sends the generator of an element of the module back to that
+element. -/
+@[simp]
+theorem homogeneousSubmoduleOneEquiv_mk_ι (m : M)
+    (h : SymmetricAlgebra.ι R M m ∈ homogeneousSubmodule R M 1) :
+    homogeneousSubmoduleOneEquiv R M ⟨SymmetricAlgebra.ι R M m, h⟩ = m :=
+  (homogeneousSubmoduleOneEquiv R M).eq_symm_apply.mp
+    (Subtype.ext (coe_homogeneousSubmoduleOneEquiv_symm_apply R M m).symm)
 
 /-- The homogeneous submodules form a graded monoid: the unit is homogeneous of degree zero, and
 multiplication adds degrees. -/

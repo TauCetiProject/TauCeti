@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Higher homotopy groups of the circle
@@ -29,9 +29,6 @@ real topological vector space are homotopic relative to the cube boundary, so al
 groups of such a space are subsingletons
 (`HomotopyGroup.subsingleton_of_topologicalVectorSpace`). Applying the covering-map
 isomorphism for `ℝ → AddCircle p` gives the circle calculation.
-
-This proves Stage 4, item 11 of the Tau Ceti universal-covers roadmap
-(`TauCetiRoadmap/UniversalCovers/README.md`): `π_n(S¹) = 0` for `n ≥ 2`.
 
 ## Main declarations
 

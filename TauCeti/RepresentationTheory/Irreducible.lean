@@ -9,6 +9,8 @@ public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import Mathlib.RingTheory.SimpleModule.Rank
+-- Private: the range of a representation's monoid-algebra action is used only inside proofs.
+import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import TauCeti.RingTheory.Semisimple.DoubleCentralizer
 import TauCeti.RingTheory.Semisimple.Schur
@@ -37,15 +39,20 @@ to its image in `ρ` under the inclusion of `σ.toSubmodule`.  In practice the a
 that gets proved -- one exhibits an invariant subspace of the ambient representation and shows it
 has no proper nonzero invariant subspace -- and the irreducibility form is the one that gets used.
 
-At the other extreme, a representation whose algebra map exhausts `End k V` is irreducible, because
-a vector space is a simple module over its own endomorphism ring, so a nonzero vector can be carried
-to any other.  This is the criterion a matrix block of a semisimple group algebra is recognised as
-irreducible by.
+At the other extreme, a representation on a nonzero space `V` whose algebra map exhausts
+`End k V` is irreducible, because a nonzero vector space is a simple module over its own
+endomorphism ring, so a nonzero vector can be carried to any other.  This is the criterion a matrix
+block of a semisimple group algebra is recognised as irreducible by.  It applies equally to a
+monoid acting on a nonzero space through an algebra that it spans, such as a compact real form of a
+group acting through a complex algebra: invariant subspaces and intertwiners of a spanning set of
+an algebra are those of the whole algebra.
 
 ## Main results
 
 * `Representation.IsIrreducible.nontrivial`: an irreducible representation has a nonzero
   carrier.
+* `Representation.IsIrreducible.of_comp`: a representation whose pullback along a monoid
+  homomorphism is irreducible is irreducible.
 * `Representation.IsIrreducible.finrank_pos`: a finite-dimensional irreducible
   representation has positive dimension.
 * `Representation.IsIrreducible.natCast_finrank_ne_zero`: in characteristic zero that
@@ -53,16 +60,25 @@ irreducible by.
 * `Representation.isIrreducible_of_finrank_eq_one`: a line is irreducible.
 * `Representation.isIrreducible_of_linearEquiv`: irreducibility transports along an
   equivariant linear equivalence.
+* `Representation.Equiv.isIrreducible`: the same for Mathlib's bundled `Representation.Equiv`.
 * `Representation.isIrreducible_toRepresentation_of_isAtom`: an atom of the lattice of
   subrepresentations carries an irreducible representation.
-* `Representation.isIrreducible_of_asAlgebraHom_surjective`: a representation whose
-  algebra map exhausts the endomorphisms is irreducible.
+* `Representation.isIrreducible_of_asAlgebraHom_surjective`: a representation on a nonzero space
+  whose algebra map exhausts the endomorphisms is irreducible.
+* `AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top`: so a monoid acting on a nonzero space
+  through a spanning image in an algebra whose action exhausts the endomorphisms acts
+  irreducibly.
 * `Representation.isIrreducible_of_finrank_intertwiningMap_self_eq_one`: a semisimple
   representation whose equivariant endomorphisms are the scalars is irreducible.
+* `Representation.IsIrreducible.eq_one_or_eq_neg_one_of_commute_of_mul_self_eq_one`: the
+  operator form of the next lemma.
 * `Representation.IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one`: Schur's lemma for an
   involutive equivariant endomorphism, over any field.
 * `Representation.asAlgebraHom_surjective_of_isIrreducible`: over an algebraically closed
   field, every finite-dimensional irreducible representation exhausts the endomorphisms.
+* `Representation.span_range_eq_top_of_isIrreducible`: equivalently, the image of such a
+  representation spans the endomorphisms; `Representation.span_range_eq_top_of_finrank_eq_one`
+  records the same for every one-dimensional representation, over any field.
 * `Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul`: consequently the
   monoid algebra, acting on the left factor of a nonzero tensor in `V ⊗ M`, reaches every
   `v ⊗ m` for one fixed nonzero `m`.
@@ -76,6 +92,9 @@ irreducible by.
   finite-dimensional representation contains an irreducible subrepresentation.
 * `Representation.IsIrreducible.exists_forall_apply_eq_smul`: Schur's lemma over an
   algebraically closed field, for an unbundled equivariant endomorphism.
+* `Representation.map_mul_of_forall_apply_eq_smul` and
+  `Representation.map_one_of_forall_apply_eq_smul`: the scalars by which a representation acts on
+  a nonzero space are multiplicative.
 * `Representation.IsIrreducible.exists_unit_smul_of_intertwines`: two equivariant isomorphisms
   out of an irreducible representation differ by a unit scalar.
 -/
@@ -98,6 +117,20 @@ theorem IsIrreducible.nontrivial {ρ : Representation k G V}
   have _ : ρ.IsIrreducible := h
   have _ := IsSimpleModule.nontrivial k[G] ρ.asModule
   ρ.asModuleEquiv.symm.toEquiv.nontrivial
+
+/-- A representation whose pullback along a monoid homomorphism `f : H →* G` is irreducible is
+irreducible: every subrepresentation of `ρ` is one of `ρ.comp f`. -/
+theorem IsIrreducible.of_comp {H : Type*} [Monoid H] {ρ : Representation k G V} (f : H →* G)
+    [hρ : Representation.IsIrreducible (ρ.comp f)] : ρ.IsIrreducible := by
+  have := hρ.nontrivial
+  refine ⟨fun S => ?_⟩
+  refine (eq_bot_or_eq_top (S.res f)).imp (fun h => ?_) fun h => ?_
+  · apply Subrepresentation.toSubmodule_injective
+    simpa only [Subrepresentation.toSubmodule_res, Subrepresentation.toSubmodule_bot] using
+      congrArg Subrepresentation.toSubmodule h
+  · apply Subrepresentation.toSubmodule_injective
+    simpa only [Subrepresentation.toSubmodule_res, Subrepresentation.toSubmodule_top] using
+      congrArg Subrepresentation.toSubmodule h
 
 /-- **A finite-dimensional irreducible representation has positive dimension.** This is what makes
 the degree of an irreducible character positive, and, cast into the base field by
@@ -157,6 +190,13 @@ theorem isIrreducible_of_linearEquiv {W : Type*} [AddCommGroup W] [Module k W]
     rw [← hmap, hτ, Subrepresentation.toSubmodule_top, Submodule.map_top, LinearEquiv.range,
       Subrepresentation.toSubmodule_top]
 
+/-- **Irreducibility transports along an equivalence of representations**: the form of
+`Representation.isIrreducible_of_linearEquiv` for Mathlib's bundled `Representation.Equiv`. -/
+theorem Equiv.isIrreducible {W : Type*} [AddCommGroup W] [Module k W]
+    {ρ : Representation k G V} {σ : Representation k G W} (e : ρ.Equiv σ)
+    (h : ρ.IsIrreducible) : σ.IsIrreducible :=
+  isIrreducible_of_linearEquiv e.toLinearEquiv e.toIntertwiningMap.isIntertwining h
+
 /-- A subrepresentation that is an **atom** of the lattice of subrepresentations -- nonzero, with
 no subrepresentation strictly between it and zero -- carries an irreducible representation.  The
 translation is the correspondence between the subrepresentations of `σ.toRepresentation` and the
@@ -167,8 +207,9 @@ theorem isIrreducible_toRepresentation_of_isAtom {ρ : Representation k G V}
     σ.asModuleEquivAsSubmodule.isSimpleModule_iff, Subrepresentation.isSimpleModule_asSubmodule_iff]
   exact h
 
-/-- **A representation whose algebra map exhausts the endomorphisms is irreducible.** Every nonzero
-vector then generates, because a vector space is a simple module over its endomorphism ring. -/
+/-- **A representation on a nonzero space whose algebra map exhausts the endomorphisms is
+irreducible.** Every nonzero vector then generates, because a nonzero vector space is a simple
+module over its endomorphism ring. -/
 theorem isIrreducible_of_asAlgebraHom_surjective [Nontrivial V] (ρ : Representation k G V)
     (h : Function.Surjective ρ.asAlgebraHom) : ρ.IsIrreducible := by
   rw [Representation.irreducible_iff_isSimpleModule_asModule,
@@ -180,6 +221,25 @@ theorem isIrreducible_of_asAlgebraHom_surjective [Nontrivial V] (ρ : Representa
   obtain ⟨r, rfl⟩ := h T
   refine ⟨r, ρ.asModuleEquiv.injective ?_⟩
   rw [LinearMap.toSpanSingleton_apply, Representation.asModuleEquiv_map_smul, hT]
+
+/-- **A monoid acting through a spanning image in an algebra of all endomorphisms acts
+irreducibly.** If `V` is nonzero, the image of `φ : G →* A` spans the `k`-algebra `A` and
+`F : A →ₐ[k] End k V` is surjective, then the representation `g ↦ F (φ g)` is irreducible. This
+applies to the restriction of an algebra action along a spanning monoid map, such as a compact
+real form of a group acting through a complex algebra that it spans. -/
+theorem _root_.AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top [Nontrivial V] {A : Type*}
+    [Semiring A] [Algebra k A] (F : A →ₐ[k] Module.End k V) (hF : Function.Surjective F)
+    (φ : G →* A) (hφ : Submodule.span k (Set.range φ) = ⊤) :
+    Representation.IsIrreducible ((F : A →* Module.End k V).comp φ) := by
+  refine isIrreducible_of_asAlgebraHom_surjective _ ?_
+  rw [← AlgHom.range_eq_top, ← Algebra.toSubmodule_eq_top, toSubmodule_range_asAlgebraHom]
+  -- The restricted action takes the values `F (φ g)`, the image under `F` of the range of `φ`.
+  have hrange : Set.range ((F : A →* Module.End k V).comp φ) = F.toLinearMap '' Set.range φ := by
+    simp only [MonoidHom.coe_comp, AlgHom.coe_toMonoidHom, Set.range_comp,
+      AlgHom.coe_toLinearMap]
+  rw [hrange, Submodule.span_image, hφ, Submodule.map_top, LinearMap.range_eq_top,
+    AlgHom.coe_toLinearMap]
+  exact hF
 
 /-- **A semisimple representation whose intertwiners are the scalars is irreducible.** If every
 subrepresentation has an invariant complement and the equivariant endomorphisms of `ρ` form a line,
@@ -232,6 +292,18 @@ theorem IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one {ρ : Representati
   exact (mul_self_eq_one_iff.mp he).imp
     (fun h ↦ e.injective (by simpa using h)) fun h ↦ e.injective (by simpa using h)
 
+/-- **An involutive operator commuting with an irreducible representation is `±1`.** This is the
+operator form of `IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one`. -/
+theorem IsIrreducible.eq_one_or_eq_neg_one_of_commute_of_mul_self_eq_one
+    {ρ : Representation k G V} (hρ : ρ.IsIrreducible) {A : Module.End k V}
+    (hA : ∀ g, A * ρ g = ρ g * A) (hAA : A * A = 1) : A = 1 ∨ A = -1 := by
+  let T : IntertwiningMap ρ ρ := A.intertwiningMap_of_isIntertwiningMap ρ ρ fun g w ↦ by
+    rw [← mul_apply_eq_comp, hA, mul_apply_eq_comp]
+  have hT : T * T = 1 := DFunLike.ext _ _ fun w ↦ by simpa [T] using DFunLike.congr_fun hAA w
+  rcases hρ.eq_one_or_eq_neg_one_of_mul_self_eq_one hT with h | h
+  · exact Or.inl (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
+  · exact Or.inr (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
+
 open scoped MonoidAlgebra in
 /-- **Burnside density theorem.** The monoid algebra of a finite-dimensional irreducible
 representation over an algebraically closed field exhausts the full endomorphism algebra.
@@ -259,6 +331,23 @@ theorem asAlgebraHom_surjective_of_isIrreducible
   have hx := congrArg ρ.asModuleEquiv (LinearMap.congr_fun ha (ρ.asModuleEquiv.symm x))
   simpa only [Algebra.lsmul_apply, Representation.asModuleEquiv_map_smul, T',
     LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hx
+
+/-- **Burnside's theorem, spanning form.** Over an algebraically closed field, the image of a
+finite-dimensional irreducible representation spans all endomorphisms. -/
+theorem span_range_eq_top_of_isIrreducible [IsAlgClosed k] [FiniteDimensional k V]
+    {ρ : Representation k G V} (h : ρ.IsIrreducible) :
+    Submodule.span k (Set.range ρ) = ⊤ := by
+  rw [← toSubmodule_range_asAlgebraHom, Algebra.toSubmodule_eq_top, AlgHom.range_eq_top]
+  exact asAlgebraHom_surjective_of_isIrreducible ρ h
+
+/-- The image of a representation on a line spans its endomorphisms. -/
+theorem span_range_eq_top_of_finrank_eq_one (ρ : Representation k G V)
+    (h : Module.finrank k V = 1) : Submodule.span k (Set.range ρ) = ⊤ := by
+  have : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ h
+  have h1 : Module.finrank k (Module.End k V) = 1 := by rw [Module.finrank_linearMap, h]
+  refine eq_top_mono (Submodule.span_mono (Set.singleton_subset_iff.mpr ⟨1, map_one ρ⟩)) ?_
+  exact (finrank_eq_one_iff_of_ne_zero _ one_ne_zero).mp h1
 
 open scoped MonoidAlgebra in
 /-- **Burnside density on a tensor product.** Let `ρ` be a finite-dimensional irreducible
@@ -370,24 +459,36 @@ theorem IsIrreducible.exists_forall_apply_eq_smul [IsAlgClosed k] [FiniteDimensi
   refine ⟨c, fun v ↦ ?_⟩
   simpa [IntertwiningMap.algebraMap_apply] using (DFunLike.congr_fun hc v).symm
 
+/-- **Scalar operators multiply like the group.** If each `ρ g` acts on a nonzero space as
+multiplication by `c g`, then `c (g * h) = c g * c h`: both act on a nonzero vector as `ρ (g * h)`.
+This is how the scalars produced by Schur's lemma assemble into a character. -/
+theorem map_mul_of_forall_apply_eq_smul [Nontrivial V] (ρ : Representation k G V) {c : G → k}
+    (hc : ∀ g v, ρ g v = c g • v) (g h : G) : c (g * h) = c g * c h := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  refine smul_left_injective k hv ?_
+  dsimp only
+  rw [← hc, map_mul, mul_apply_eq_comp, hc h, map_smul, hc g, smul_smul, mul_comm]
+
+/-- **The scalar of the identity is one.** If each `ρ g` acts on a nonzero space as
+multiplication by `c g`, then `c 1 = 1`, since `ρ 1` is the identity. -/
+theorem map_one_of_forall_apply_eq_smul [Nontrivial V] (ρ : Representation k G V) {c : G → k}
+    (hc : ∀ g v, ρ g v = c g • v) : c 1 = 1 := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact smul_left_injective k hv (by simp [← hc])
+
 /-- **Two equivariant isomorphisms out of an irreducible representation differ by a unit
-scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, then `b⁻¹ ∘ a` is an
-equivariant automorphism of `V`, hence a nonzero scalar by Schur's lemma
-(`Representation.IsIrreducible.exists_forall_apply_eq_smul`). -/
+scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, they differ by a unit
+scalar (`Representation.exists_unit_smul_of_intertwines`), since every equivariant endomorphism of
+`V` is a scalar by Schur's lemma (`Representation.IsIrreducible.exists_forall_apply_eq_smul`). -/
 theorem IsIrreducible.exists_unit_smul_of_intertwines [IsAlgClosed k] [FiniteDimensional k V]
     {W : Type*} [AddCommGroup W] [Module k W] {ρ : Representation k G V} [hρ : ρ.IsIrreducible]
     {σ : Representation k G W} (a b : V ≃ₗ[k] W)
     (ha : ∀ g v, a (ρ g v) = σ g (a v)) (hb : ∀ g v, b (ρ g v) = σ g (b v)) :
     ∃ c : kˣ, ∀ v, a v = (c : k) • b v := by
   have : Nontrivial V := hρ.nontrivial
-  obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul (ρ := ρ) (a.trans b.symm).toLinearMap
-    fun g v ↦ b.injective (by simp [ha, hb])
-  have hne : c ≠ 0 := by
-    rintro rfl
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    exact hv ((a.trans b.symm).injective (by simpa using hc v))
-  refine ⟨Units.mk0 c hne, fun v ↦ ?_⟩
-  simpa using congrArg b (hc v)
+  refine Representation.exists_unit_smul_of_intertwines (fun f hf ↦ ?_) a b ha hb
+  obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul (ρ := ρ) f fun g v ↦ LinearMap.congr_fun (hf g) v
+  exact ⟨c, LinearMap.ext fun v ↦ by simp [hc]⟩
 
 /-- **Every nonzero finite-dimensional representation contains an irreducible subrepresentation.**
 Finite-dimensionality alone suffices; no semisimplicity is assumed.  This produces a single

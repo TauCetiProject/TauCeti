@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Lie.Killing.DualBasis
+public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 import Mathlib.Tactic.LinearCombination
@@ -33,10 +34,9 @@ This file builds that homomorphism, `TauCeti.LieAlgebra.adSkewAdjoint`, against
 `skewAdjointLieSubalgebra` — Mathlib's `𝔰𝔬` of a bilinear form — and identifies the kernel of its
 polar-form specialization `TauCeti.LieAlgebra.adjointSO` with the centre. The two names differ only
 in their codomain: `adSkewAdjoint` lands in the skew-adjoint endomorphisms of `B` itself, while
-`adjointSO`, the roadmap-pinned map, lands in those of the polar form. The form the latter targets
-is not `B`
-itself but the polar form of the quadratic form `x ↦ B x x`, which is `B + B.flip`; that is the
-shape a Clifford algebra consumes, since the Clifford relation `ι v * ι v = Q v` polarizes to
+`adjointSO` lands in those of the polar form. The form the latter targets is not `B` itself but the
+polar form of the quadratic form `x ↦ B x x`, which is `B + B.flip`; that is the shape a Clifford
+algebra consumes, since the Clifford relation `ι v * ι v = Q v` polarizes to
 `polar Q`. For symmetric `B` the polar form is `2 • B`; skew-adjointness for `B` always implies
 skew-adjointness for `2 • B`, and the two conditions agree when `2` is invertible in `R`, but not in
 general. Stating the codomain against `QuadraticMap.polarBilin` avoids a factor of two travelling
@@ -66,6 +66,9 @@ composite is not built here.
 
 * `TauCeti.mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff`: matrix skew-adjointness for a Gram
   matrix is equivalent to basis-free skew-adjointness.
+* `TauCeti.mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg`: for invertible `J`,
+  membership in `skewAdjointMatricesLieSubalgebra J` is `J.transposeConj A = -A`, that is,
+  `J⁻¹ * Aᵀ * J = -A`.
 * `skewAdjointLieSubalgebra.apply_left`: a skew-adjoint endomorphism moves across its
   form with a sign change, `B (A u) w = -B u (A w)`.
 * `skewAdjointLieSubalgebra.eq_zero_of_isSelfAdjoint`: an endomorphism skew-adjoint and
@@ -88,13 +91,13 @@ composite is not built here.
 
 ## Implementation notes
 
-The pinned signature in the roadmap's `Suggested.lean` carries a symmetry hypothesis on `B` and
-works over a field. Neither is used: invariance of `B` already forces invariance of `B.flip`
-(`TauCeti.LieAlgebra.lieInvariant_flip`), hence of the polar form `B + B.flip`, and the argument is
-a rearrangement of the invariance equation valid over any commutative ring. Symmetry is used only
-where it genuinely bites, in `polarBilin_killingQuadraticForm`, which is stated for the Killing form
-rather than hypothesised. Carrying an unused hypothesis on a `def` would in any case be rejected by
-the `unusedArguments` linter.
+`adjointSO` assumes neither that `B` is symmetric nor that the scalars form a field: invariance of
+`B` already forces invariance of `B.flip` (`TauCeti.LieAlgebra.lieInvariant_flip`), hence of the
+polar form `B + B.flip`, and the argument is a rearrangement of the invariance equation valid over
+any commutative ring. Symmetry is used only where it genuinely bites, in
+`polarBilin_killingQuadraticForm`, which is stated for the Killing form rather than hypothesised.
+Carrying an unused hypothesis on a `def` would in any case be rejected by the `unusedArguments`
+linter.
 
 The polar form and nondegeneracy of the Killing quadratic form are the general facts
 `LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip` and
@@ -171,6 +174,15 @@ theorem coe_skewAdjointLieEquivOfBasis_apply (b : Module.Basis n R M) (B : Bilin
 
 end Basis
 
+open Matrix in
+/-- For an invertible `J`, a matrix lies in the Lie algebra of matrices skew-adjoint for `J`
+exactly when `J.transposeConj A = -A`, that is, `J⁻¹ * Aᵀ * J = -A`. -/
+theorem mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg {R : Type u}
+    [CommRing R] {n : Type w} [Fintype n] [DecidableEq n] {J A : Matrix n n R} (hJ : IsUnit J) :
+    A ∈ skewAdjointMatricesLieSubalgebra J ↔ J.transposeConj A = -A := by
+  rw [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
+    Matrix.isSkewAdjoint_iff_transposeConj_eq_neg hJ]
+
 end TauCeti
 
 /-- A skew-adjoint endomorphism moves across its bilinear form with a sign change:
@@ -178,7 +190,7 @@ end TauCeti
 theorem skewAdjointLieSubalgebra.apply_left {R M : Type*} [CommRing R] [AddCommGroup M]
     [Module R M] {B : BilinForm R M} (A : skewAdjointLieSubalgebra B) (u w : M) :
     B ((A : Module.End R M) u) w = -B u ((A : Module.End R M) w) := by
-  rw [(LinearMap.mem_skewAdjointSubmodule (A : Module.End R M)).1 A.2 u w, Pi.neg_apply,
+  rw [(LinearMap.mem_skewAdjointSubmodule (A : Module.End R M)).1 A.property u w, Pi.neg_apply,
     map_neg]
 
 /-- An endomorphism both skew-adjoint and self-adjoint for a left-separating bilinear form
@@ -291,9 +303,8 @@ theorem coe_adjointSO (x : L) :
     (adjointSO B hB x : Module.End R L) = _root_.LieAlgebra.ad R L x :=
   coe_adSkewAdjoint _ (lieInvariant_polarBilin hB) x
 
-/-- The polar-form specialization acts by the bracket. This is the equation the roadmap pins
-`adjointSO` by; it is not `@[simp]`, since `coe_adjointSO` together with `LieAlgebra.ad_apply`
-already rewrites the left-hand side. -/
+/-- The polar-form specialization acts by the bracket. It is not `@[simp]`, since `coe_adjointSO`
+together with `LieAlgebra.ad_apply` already rewrites the left-hand side. -/
 theorem adjointSO_apply (x y : L) : (adjointSO B hB x : Module.End R L) y = ⁅x, y⁆ := by
   rw [coe_adjointSO, _root_.LieAlgebra.ad_apply]
 
@@ -320,8 +331,7 @@ Killing-semisimple and `2` is invertible in `R` (`killingQuadraticForm_nondegene
 noncomputable def killingQuadraticForm : QuadraticForm R L :=
   LinearMap.BilinMap.toQuadraticMap (killingForm R L)
 
-/-- The Killing quadratic form evaluates at `x` to `κ(x, x)`. This is the equation the roadmap pins
-`killingQuadraticForm` by. -/
+/-- The Killing quadratic form evaluates at `x` to `κ(x, x)`. -/
 @[simp]
 theorem killingQuadraticForm_apply (x : L) :
     killingQuadraticForm R L x = killingForm R L x x :=

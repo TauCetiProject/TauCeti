@@ -24,6 +24,8 @@ the tangent map of multiplication, it is differentiable wherever `V` is.
 
 ## Main definitions
 
+* `TauCeti.mulInvariantVectorFieldEquiv I g`: the continuous linear equivalence `v ↦ X_v g` from
+  the Lie algebra to the tangent space at `g`.
 * `TauCeti.leftMaurerCartanEval V`: the left Maurer-Cartan form evaluated on a vector field `V`.
 
 ## Main results
@@ -64,8 +66,6 @@ a vector field therefore takes values in `E`, so that its differentiability can 
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The Lie algebra and the tangent space at `1`".
 * The proofs of `contMDiff_mulInvariantVectorField_modelSpace` and
   `contMDiff_mulInvariantVectorField_infty` adapt Sébastien Gouëzel's proof of Mathlib's
   `contMDiff_mulInvariantVectorField`.
@@ -102,7 +102,7 @@ theorem tangentMap_mul_prod_apply [ContMDiffMul I 1 G] (p q : TangentBundle I G)
     (tangentMap% (fun r : G × G => r.1 * r.2))
       ((equivTangentBundleProd I G I G).symm (p, q)) =
       ⟨p.proj * q.proj,
-        mfderiv% (· * q.proj) p.proj p.2 + mfderiv% (p.proj * ·) q.proj q.2⟩ := by
+        mfderiv% (· * q.proj) p.proj p.snd + mfderiv% (p.proj * ·) q.proj q.snd⟩ := by
   simp only [tangentMap]
   rw [mfderiv_prod_eq_add_apply ((contMDiff_mul I 1).mdifferentiableAt (by simp))]
   simp +instances [equivTangentBundleProd]
@@ -120,7 +120,7 @@ theorem mfderiv_mul_apply_one [ContMDiffMul I 1 G] (v w : GroupLieAlgebra I G) :
       v + w := by
   have hmul_tangent := tangentMap_mul_prod_apply (I := I) (G := G)
     (⟨1, v⟩ : TangentBundle I G) (⟨1, w⟩ : TangentBundle I G)
-  have hmul_apply := congrArg (fun z : TangentBundle I G => z.2) hmul_tangent
+  have hmul_apply := congrArg (fun z : TangentBundle I G => z.snd) hmul_tangent
   -- Project the bundled tangent-map equation to its fiberwise `mfderiv` statement.
   change
     (mfderiv (I.prod I) I (fun p : G × G => p.1 * p.2) ((1, 1) : G × G))
@@ -303,6 +303,34 @@ theorem mfderiv_inv_mul_injective (g : G) : Function.Injective (mfderiv I I (g�
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
   rw [← mulInvariantVectorField_mfderiv_inv_mul v, hv]
   exact map_zero (mfderiv I I (g * ·) 1)
+
+variable (I) in
+/-- Left translation identifies the Lie algebra with each tangent space: the continuous linear
+equivalence `v ↦ X_v g` from `T₁G` to `T_gG`, the derivative at the identity of left translation
+by `g`, whose inverse is the derivative at `g` of left translation by `g⁻¹`. -/
+noncomputable def mulInvariantVectorFieldEquiv (g : G) :
+    GroupLieAlgebra I G ≃L[𝕜] TangentSpace I g :=
+  .ofContinuousLinearMap (mfderiv I I (g * ·) 1) (mfderiv I I (g⁻¹ * ·) g)
+    (ContinuousLinearMap.ext mulInvariantVectorField_mfderiv_inv_mul)
+    (ContinuousLinearMap.ext fun v ↦ mfderiv_inv_mul_mulInvariantVectorField v g)
+
+/-- The equivalence `mulInvariantVectorFieldEquiv I g` evaluates the invariant field at `g`. -/
+@[simp]
+theorem mulInvariantVectorFieldEquiv_apply (g : G) (v : GroupLieAlgebra I G) :
+    mulInvariantVectorFieldEquiv I g v = mulInvariantVectorField v g :=
+  (GroupLieAlgebra.mulInvariantVectorField_apply v g).symm
+
+/-- The inverse of `mulInvariantVectorFieldEquiv I g` translates back to the identity. -/
+@[simp]
+theorem mulInvariantVectorFieldEquiv_symm_apply (g : G) (v : TangentSpace I g) :
+    (mulInvariantVectorFieldEquiv I g).symm v = mfderiv I I (g⁻¹ * ·) g v :=
+  (rfl)
+
+/-- At the identity, `mulInvariantVectorFieldEquiv` is the identity of the Lie algebra. -/
+@[simp]
+theorem mulInvariantVectorFieldEquiv_one :
+    mulInvariantVectorFieldEquiv I (1 : G) = .refl 𝕜 (GroupLieAlgebra I G) :=
+  ContinuousLinearEquiv.ext <| funext fun v ↦ by simp
 
 /-- A map on a Lie group whose left translate `k ↦ f (g * k)` has vanishing derivative at the
 identity has vanishing derivative at `g`, since every tangent vector at `g` is the left translate

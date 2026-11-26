@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Formal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Component
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop.Basic
 
 /-!
 # Gauge-trivial quartic loop deformations of a zigzag algebra
@@ -86,15 +86,18 @@ open PathAlgebra DoubledQuiver AInfinity ReducedTensorWords
 
 universe u w
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
-  (hns : ∀ i : V, ∃ j, G.Adj i j)
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 /-! ### Backtrack operations -/
+
+section
+
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
 
 /-- The **backtrack operation** of two darts `d` and `e`: the product of the `d`-, `e`- and
 `e.symm`-arrow coordinates of its three inputs, times the arrow of `d`. -/
 noncomputable def zigzagBacktrackOperation (d e : G.Dart) :
-    MultilinearMap k (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
+    MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   ((MultilinearMap.mkPiAlgebra k (Fin 3) k).compLinearMap
     fun i ↦ (zigzagBasis k G hns).coord (.inr (.inl (![d, e, e.symm] i)))).smulRight
@@ -110,12 +113,13 @@ theorem zigzagBacktrackOperation_apply (d e : G.Dart) (x : Fin 3 → nonisolated
         zigzagMk k G (ofArrow (arrow G d.adj)) := by
   simp [zigzagBacktrackOperation, Fin.prod_univ_three, mul_assoc]
 
+end
+
 /-- The closed walk `d.symm, d, e, e.symm` in product order: read from the last entry it goes
 back and forth along `e` and then along `d`, so it is closed when `d.fst = e.snd`. -/
 def zigzagBacktrackWalk (d e : G.Dart) : Fin 4 → G.Dart :=
   ![d.symm, d, e, e.symm]
 
-omit [Finite V] in
 /-- The backtrack walk lists `d.symm`, `d`, `e` and `e.symm`. -/
 theorem zigzagBacktrackWalk_def (d e : G.Dart) :
     zigzagBacktrackWalk G d e = ![d.symm, d, e, e.symm] := by
@@ -123,13 +127,13 @@ theorem zigzagBacktrackWalk_def (d e : G.Dart) :
 
 variable {G}
 
-omit [Finite V] in
 /-- Every rotation of the backtrack walk of `d` and `e` is closed, read in product order, when `d`
 starts where `e` ends. -/
 theorem zigzagBacktrackWalk_fst_eq_snd {d e : G.Dart} (h : d.fst = e.snd) (j i : Fin 4) :
     (zigzagBacktrackWalk G d e (i + j)).fst = (zigzagBacktrackWalk G d e (i + 1 + j)).snd := by
   fin_cases i <;> fin_cases j <;> simp [zigzagBacktrackWalk, h]
 
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j) in
 /-- **The core coboundary identity.** When `d.fst = e.snd`, the Hochschild coboundary of the
 backtrack operation of `d` and `e` is the sum of the loop operations of the backtrack walk and of
 its rotation by one step. -/
@@ -154,14 +158,15 @@ theorem zigzagBacktrackOperation_coboundary {d e : G.Dart} (h : d.fst = e.snd)
 
 /-! ### Weighted families of backtrack operations -/
 
-section Family
+section
 
-variable {k} (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
+variable {k} [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+  (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
 
 /-- The **backtrack cochain** of a finite set `P` of pairs of darts with weights `a`: the sum of the
 backtrack operations of the pairs in `P`, weighted by `a`. -/
 noncomputable def zigzagBacktrackCochain :
-    MultilinearMap k (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
+    MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   ∑ p ∈ P, a p • zigzagBacktrackOperation k G hns p.1 p.2
 
@@ -175,13 +180,18 @@ theorem zigzagBacktrackCochain_apply (x : Fin 3 → nonisolatedZigzagQuotient k 
         zigzagMk k G (ofArrow (arrow G p.1.adj)) := by
   simp [zigzagBacktrackCochain, zigzagBacktrackOperation_apply, smul_smul]
 
+end
+
+section
+
+variable {k} (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
+
 /-- The coefficients of the loop operations of the backtrack walks of the pairs in `P` and of their
 rotations by one step, weighted by `a`. -/
 noncomputable def zigzagBacktrackCoefficients : (Fin 4 → G.Dart) →₀ k :=
   ∑ p ∈ P, (Finsupp.single (zigzagBacktrackWalk G p.1 p.2) (a p) +
     Finsupp.single (fun i ↦ zigzagBacktrackWalk G p.1 p.2 (i + 1)) (a p))
 
-omit [Finite V] in
 /-- The backtrack coefficients are the sum, over the pairs in `P`, of the single coefficients of the
 backtrack walk and of its rotation by one step. -/
 theorem zigzagBacktrackCoefficients_def :
@@ -192,7 +202,6 @@ theorem zigzagBacktrackCoefficients_def :
 
 variable {P}
 
-omit [Finite V] in
 /-- The backtrack coefficients are supported on closed walks, read in product order. -/
 theorem fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients
     (hP : ∀ p ∈ P, p.1.fst = p.2.snd) :
@@ -209,6 +218,14 @@ theorem fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients
   · subst h₂
     exact zigzagBacktrackWalk_fst_eq_snd (hP p hp) 1 i
   simp [h₁, h₂] at hpw
+
+end
+
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+
+section Family
+
+variable {k} {P : Finset (G.Dart × G.Dart)} (a : G.Dart × G.Dart → k)
 
 /-- The quartic operation of the loop deformation with backtrack coefficients is the weighted sum
 of the loop operations of the backtrack walks and of their rotations. -/
@@ -277,7 +294,7 @@ theorem zigzagBacktrackCochain_mul_zigzagBacktrackCochain_eq_zero
 
 section Twist
 
-variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
+variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G) ℤ}
   (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
 include h𝒢
 
@@ -292,21 +309,21 @@ private theorem zigzagBacktrackCochain_koszulTwist_one_zero
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![𝒢.koszulTwist 1 x, y, z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_koszulTwist h𝒢]
 
 /-- Twisting the second input of the backtrack cochain negates it. -/
 private theorem zigzagBacktrackCochain_koszulTwist_one_one
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![x, 𝒢.koszulTwist 1 y, z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_koszulTwist h𝒢]
 
 /-- Twisting the third input of the backtrack cochain negates it. -/
 private theorem zigzagBacktrackCochain_koszulTwist_one_two
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![x, y, 𝒢.koszulTwist 1 z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_koszulTwist h𝒢]
 
 /-- **The coboundary identity with suspension signs**: the form of
 `TauCeti.zigzagBacktrackCochain_coboundary` met in the arity-four component equation, where the
@@ -359,7 +376,7 @@ variable {k} {P : Finset (G.Dart × G.Dart)} (a : G.Dart × G.Dart → k)
 variable (P) in
 /-- The family of operations of the backtrack Taylor map: the backtrack cochain in arity three. -/
 private noncomputable def backtrackOps :
-    ∀ n : ℕ, MultilinearMap k (fun _ : Fin n ↦ nonisolatedZigzagQuotient k G)
+    ∀ n : ℕ, MultilinearMap (RingHom.id k) (fun _ : Fin n ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G)
   | 0 => 0
   | 1 => 0
@@ -648,7 +665,7 @@ private theorem backtrack_component_four (x : Fin 4 → nonisolatedZigzagQuotien
     letter_add_zigzagBacktrackTaylor_subword_one, letter_add_zigzagBacktrackTaylor_subword_three]
   -- All Koszul twists are those of one grading, in which the arity-four suspension twists the
   -- first and third letters; the remaining identity is the coboundary identity with signs.
-  set 𝒢 := (zigzagStrictAInfinityAlgebra k hns).grading with h𝒢
+  set 𝒢 := (zigzagStrictAInfinityAlgebra k hns).grading
   have hG : (zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a)
       (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)).grading = 𝒢 :=
     zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _

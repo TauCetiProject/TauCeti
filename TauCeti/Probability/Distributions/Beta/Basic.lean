@@ -10,10 +10,10 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Elementary theory of the beta distribution
@@ -26,6 +26,7 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 ## Main results
 
 * `TauCeti.Probability.betaPDFReal_nonneg` — nonnegativity of the density;
+* `TauCeti.Probability.betaPDF_nat_add_one_eq` — the factorial formula at positive integer shapes;
 * `TauCeti.Probability.integrable_betaMeasure_iff` and `TauCeti.Probability.integral_betaMeasure_eq`
   — integrability and
   integration against the beta law, transferred to the real density;
@@ -47,14 +48,16 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 * `TauCeti.Probability.variance_id_betaMeasure` — the variance is
   `α * β / ((α + β) ^ 2 * (α + β + 1))`;
 * `TauCeti.Probability.integrableExpSet_id_betaMeasure` — every exponential moment exists.
+* the results in `ProbabilityTheory.HasLaw` with the same moment names transfer mixed real-power
+  moments, natural moments, the mean, variance, and exponential integrability to random variables
+  with a beta law.
 
 The moment calculation rewrites the density integral as Euler's beta integral — the real-valued
 `TauCeti.integral_rpow_mul_one_sub_rpow`, proved in
-`TauCeti/Analysis/SpecialFunctions/Beta.lean` — and then uses the Gamma quotient.
+`TauCeti/Analysis/SpecialFunctions/Beta/Basic.lean` — and then uses the Gamma quotient.
 
 ## References
 
-* Tau Ceti roadmap, `StandardDistributions`, Layer 1, "Beta".
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
   2nd ed., Wiley, 1995.
 -/
@@ -76,6 +79,18 @@ theorem betaPDFReal_nonneg {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (x : ℝ)
       (Real.rpow_nonneg hx.1.le _))
       (Real.rpow_nonneg (sub_nonneg.mpr hx.2.le) _)
   · exact le_rfl
+
+/-- On the open unit interval, the beta density with shapes `a + 1` and `b + 1` is
+`(a + b + 1)! / (a! b!)` times `x ^ a * (1 - x) ^ b`. -/
+theorem betaPDF_nat_add_one_eq {a b : ℕ} {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) 1) :
+    betaPDF ((a : ℝ) + 1) ((b : ℝ) + 1) x =
+      ENNReal.ofReal (((a + b + 1).factorial : ℝ) / (a.factorial * b.factorial) *
+        x ^ a * (1 - x) ^ b) := by
+  have hsum : (a : ℝ) + 1 + ((b : ℝ) + 1) = ((a + b + 1 : ℕ) : ℝ) + 1 := by
+    push_cast
+    ring
+  simp only [betaPDF_of_pos_lt_one hx.1 hx.2, beta, hsum, Real.Gamma_nat_eq_factorial,
+    one_div_div, add_sub_cancel_right, Real.rpow_natCast]
 
 /-- The beta law presented by its real-valued density. -/
 theorem betaMeasure_eq_withDensity_ofReal (α β : ℝ) :
@@ -119,7 +134,7 @@ parameters exactly when its density-weighted version is Lebesgue integrable. -/
 theorem integrable_betaMeasure_iff {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) {g : ℝ → E} :
     Integrable g (betaMeasure α β) ↔ Integrable fun x ↦ betaPDFReal α β x • g x := by
   rw [betaMeasure_eq_withDensity_ofReal]
-  exact Probability.integrable_withDensity_ofReal_iff (measurable_betaPDFReal α β).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_betaPDFReal α β).aemeasurable
     (ae_of_all _ (betaPDFReal_nonneg hα hβ))
 
 /-- **Integral transfer.** An integral against a beta law with positive shape parameters is the
@@ -127,7 +142,7 @@ density-weighted Lebesgue integral. -/
 theorem integral_betaMeasure_eq {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (g : ℝ → E) :
     ∫ x, g x ∂betaMeasure α β = ∫ x, betaPDFReal α β x • g x := by
   rw [betaMeasure_eq_withDensity_ofReal]
-  exact Probability.integral_withDensity_ofReal (measurable_betaPDFReal α β).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_betaPDFReal α β).aemeasurable
     (ae_of_all _ (betaPDFReal_nonneg hα hβ)) g
 
 /-- **Integral transfer, kernel form.** An integral against a beta law with positive shape
@@ -357,3 +372,73 @@ theorem integrable_pow_abs_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < �
   simp only [integrableExpSet_id_betaMeasure hα hβ, interior_univ, mem_univ]
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {α β : ℝ}
+
+/-- Mixed real powers of a beta random variable are integrable exactly when their exponents remain
+above the two endpoint singularity thresholds. -/
+theorem integrable_rpow_mul_one_sub_rpow_betaMeasure_iff
+    (hX : HasLaw X (betaMeasure α β) P) (hα : 0 < α) (hβ : 0 < β) (q s : ℝ) :
+    Integrable (fun ω ↦ X ω ^ q * (1 - X ω) ^ s) P ↔
+      0 < α + q ∧ 0 < β + s := by
+  rw [← TauCeti.Probability.integrable_rpow_mul_one_sub_rpow_betaMeasure_iff hα hβ,
+    ← hX.map_eq, integrable_map_measure (by fun_prop) hX.aemeasurable]
+  simp only [Function.comp_def]
+
+/-- The mixed real-power moment of a beta random variable, on its exact integrability domain. -/
+theorem integral_rpow_mul_one_sub_rpow_betaMeasure
+    (hX : HasLaw X (betaMeasure α β) P) (hα : 0 < α) (hβ : 0 < β)
+    {q s : ℝ} (hq : 0 < α + q) (hs : 0 < β + s) :
+    ∫ ω, X ω ^ q * (1 - X ω) ^ s ∂P =
+      beta (α + q) (β + s) / beta α β := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ q * (1 - x) ^ s),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_rpow_mul_one_sub_rpow_betaMeasure hα hβ hq hs]
+
+/-- Every natural power of a beta random variable is integrable. -/
+theorem integrable_pow_betaMeasure (hX : HasLaw X (betaMeasure α β) P)
+    (hα : 0 < α) (hβ : 0 < β) (n : ℕ) : Integrable (fun ω ↦ X ω ^ n) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_pow_betaMeasure hα hβ n)
+
+/-- Every natural power of the absolute value of a beta random variable is integrable. -/
+theorem integrable_pow_abs_betaMeasure (hX : HasLaw X (betaMeasure α β) P)
+    (hα : 0 < α) (hβ : 0 < β) (n : ℕ) : Integrable (fun ω ↦ |X ω| ^ n) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_pow_abs_betaMeasure hα hβ n)
+
+/-- The natural raw moments of a beta random variable. -/
+theorem integral_pow_betaMeasure (hX : HasLaw X (betaMeasure α β) P)
+    (hα : 0 < α) (hβ : 0 < β) (n : ℕ) :
+    ∫ ω, X ω ^ n ∂P =
+      Real.Gamma (α + n) * Real.Gamma (α + β) /
+        (Real.Gamma α * Real.Gamma (α + β + n)) := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ n), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_betaMeasure hα hβ]
+
+/-- The expectation of a beta random variable is its first shape divided by the sum of its
+shapes. -/
+theorem integral_betaMeasure (hX : HasLaw X (betaMeasure α β) P)
+    (hα : 0 < α) (hβ : 0 < β) : ∫ ω, X ω ∂P = α / (α + β) := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_betaMeasure hα hβ]
+
+/-- The variance of a beta random variable with positive shape parameters. -/
+theorem variance_betaMeasure (hX : HasLaw X (betaMeasure α β) P)
+    (hα : 0 < α) (hβ : 0 < β) :
+    variance X P = α * β / ((α + β) ^ 2 * (α + β + 1)) := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_betaMeasure hα hβ]
+
+/-- Every real exponential moment of a beta random variable with positive shape parameters is
+integrable. -/
+theorem integrable_exp_mul_betaMeasure (hX : HasLaw X (betaMeasure α β) P)
+    (hα : 0 < α) (hβ : 0 < β) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  refine hX.integrable_fun_comp (f := fun x : ℝ ↦ Real.exp (t * x)) ?_
+  have ht : t ∈ integrableExpSet id (betaMeasure α β) := by
+    rw [TauCeti.Probability.integrableExpSet_id_betaMeasure hα hβ]
+    exact Set.mem_univ t
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, id_eq] using ht
+
+end ProbabilityTheory.HasLaw

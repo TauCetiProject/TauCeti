@@ -15,9 +15,12 @@ import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Cutoff
 import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.Calculus.Hadamard.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
+public import TauCeti.Analysis.Calculus.Jet.Realization
 
 /-!
-# Peetre's theorem: local operators have locally finite order
+# Peetre's theorem: local operators are differential operators of locally finite order
 
 Let `E` be a finite-dimensional real normed space and `P` a linear map from the smooth functions
 `E → F` to functions `E → G`. Suppose that on an open set `U` the operator `P` is *local*, that is
@@ -46,6 +49,24 @@ The proof has three steps.
 * A finite cover of `K` by such balls gives the uniform order
   (`LinearMap.exists_apply_eq_zero_of_iteratedFDeriv_eq_zero`).
 
+An operator of finite order is a differential operator with coefficients as regular as its values.
+The coefficient of order `k` at `x`, `LinearMap.jetCoeff P k x`, sends a continuous `k`-multilinear
+map `A` to `P` applied to the Taylor monomial `y ↦ A (y - x, …, y - x) / k!`
+(`TauCeti.taylorMonomial`), evaluated at `x`. If
+`(P u) x` only depends on the derivatives of `u` of order at most `r` at `x`, then Taylor's formula,
+whose remainder vanishes to order `r + 1` at `x`, gives
+
+`(P u) x = ∑_{k ≤ r} P.jetCoeff k x (D^k u(x))`
+
+(`LinearMap.apply_eq_sum_jetCoeff`), and these are the only coefficients representing `P` at `x`
+on symmetric multilinear maps (`LinearMap.jetCoeff_eq_of_forall_apply_eq_sum`). Expanding `y - x`
+in a basis writes each Taylor monomial at `x` as a combination of fixed smooth functions with
+coefficients polynomial in `x`, so `x ↦ P.jetCoeff k x A` is `C^n` wherever all values of `P` are
+(`LinearMap.contDiffOn_jetCoeff_apply`). Together with the finite local order this is Peetre's
+theorem in its classical form: a local operator is, on each compact subset of `U`, a differential
+operator of finite order (`LinearMap.exists_forall_apply_eq_sum_jetCoeff`), whose coefficients are
+`C^n` wherever all values of `P` are (`LinearMap.contDiffOn_jetCoeff_apply`).
+
 For operators between sections of vector bundles the hypotheses and the conclusion are local, so
 in charts and trivializations they reduce to this Euclidean form.
 
@@ -55,6 +76,13 @@ in charts and trivializations they reduce to this Euclidean form.
   `LinearMap.exists_apply_eq_apply_of_iteratedFDeriv_eq`: **Peetre's theorem**.
 * `LinearMap.exists_forall_mem_ball_apply_eq_zero`: its local form near a point.
 * `LinearMap.exists_norm_apply_le_of_tsupport_subset`: the estimate on punctured balls.
+* `LinearMap.jetCoeff`: the coefficient of order `k` of an operator at a point, characterized by
+  `LinearMap.jetCoeff_apply`.
+* `LinearMap.apply_eq_sum_jetCoeff`, `LinearMap.jetCoeff_eq_of_forall_apply_eq_sum`: an operator of
+  finite order at a point is the sum of its coefficients on the derivatives there, and on symmetric
+  multilinear maps these are the only coefficients that represent it.
+* `LinearMap.contDiffOn_jetCoeff_apply`: the coefficients are as regular as the values of `P`.
+* `LinearMap.exists_forall_apply_eq_sum_jetCoeff`: **Peetre's theorem**, coefficient form.
 
 ## References
 
@@ -196,7 +224,7 @@ theorem exists_norm_apply_le_of_tsupport_subset [CompleteSpace F]
         (∀ i ≤ r, ∀ z, ‖iteratedFDeriv ℝ i φ z‖ ≤ M) → ∀ y ∈ U, ‖P φ y‖ ≤ C * M := by
   obtain ⟨ρ₀, hρ₀, hρ₀U⟩ := Metric.isOpen_iff.mp hU x₀ hx₀
   by_contra! H
-  choose! ψ ρ' hρ'0 hρ'le hψs hψb y hy hyU hyP using fun ρ (hρ : 0 < ρ) (hρρ₀ : ρ ≤ ρ₀) ↦
+  choose! ψ ρ' hρ'0 hρ'le hψs hψb y hy _ hyP using fun ρ (hρ : 0 < ρ) (hρρ₀ : ρ ≤ ρ₀) ↦
     exists_tsupport_subset_annulus P hloc hρ (H ρ hρ ((ball_subset_ball hρρ₀).trans hρ₀U))
   -- The radii `s k ≤ ρ₀ / 2ᵏ` of nested annuli, with a counterexample `ψ (s k) k` in the `k`-th.
   let s : ℕ → ℝ := fun k ↦ Nat.rec ρ₀ (fun k ρ ↦ ρ' ρ k) k
@@ -452,5 +480,165 @@ theorem exists_apply_eq_apply_of_iteratedFDeriv_eq
   rwa [map_sub, Pi.sub_apply, sub_eq_zero] at h
 
 end Cutoff
+
+/-! ### The coefficients of an operator of finite order -/
+
+section Coefficients
+
+open scoped Nat
+
+/-- The Taylor monomial `TauCeti.taylorMonomial k A x` as a smooth map. -/
+private noncomputable def smoothTaylorMonomial (x : E) (k : ℕ) (A : E [×k]→L[ℝ] F) :
+    C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ :=
+  ⟨TauCeti.taylorMonomial k A x, (TauCeti.contDiff_taylorMonomial k A x).contMDiff⟩
+
+private theorem coe_smoothTaylorMonomial (x : E) (k : ℕ) (A : E [×k]→L[ℝ] F) :
+    ⇑(smoothTaylorMonomial x k A) = TauCeti.taylorMonomial k A x :=
+  rfl
+
+/-- The smooth Taylor monomial is linear in the continuous `k`-multilinear map `A`. -/
+private noncomputable def smoothTaylorMonomialₗ (x : E) (k : ℕ) :
+    (E [×k]→L[ℝ] F) →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ where
+  toFun := smoothTaylorMonomial x k
+  map_add' A B := ContMDiffMap.coe_injective <| by
+    ext y
+    simp only [ContMDiffMap.coe_add, Pi.add_apply, coe_smoothTaylorMonomial,
+      TauCeti.taylorMonomial_apply, add_apply, smul_add]
+  map_smul' c A := ContMDiffMap.coe_injective <| by
+    ext y
+    simp only [ContMDiffMap.coe_smul, Pi.smul_apply, coe_smoothTaylorMonomial,
+      TauCeti.taylorMonomial_apply, smul_apply, RingHom.id_apply, smul_comm _ c]
+
+/-- The **coefficient of order `k`** at the point `x` of a linear operator `P` on smooth functions.
+It sends a continuous `k`-multilinear map `A` to the value at `x` of `P` applied to the normalized
+Taylor monomial `TauCeti.taylorMonomial k A x`, that is `y ↦ A (y - x, …, y - x) / k!`
+(`LinearMap.jetCoeff_apply`), whose derivative of order `k` at `x` is `A` when `A` is symmetric
+(`TauCeti.iteratedFDeriv_taylorMonomial_self`). If `(P u) x` only depends on the derivatives of `u`
+at `x` of order at most `r`, then `(P u) x` is the sum over `k ≤ r` of these coefficients evaluated
+on the derivatives of `u` at `x` (`LinearMap.apply_eq_sum_jetCoeff`). -/
+noncomputable def jetCoeff (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ →ₗ[ℝ] E → G) (k : ℕ) (x : E) :
+    (E [×k]→L[ℝ] F) →ₗ[ℝ] G :=
+  LinearMap.proj x ∘ₗ P ∘ₗ smoothTaylorMonomialₗ x k
+
+/-- The coefficient of order `k` at `x` evaluated on `A` is the value at `x` of `P` applied to the
+normalized Taylor monomial `TauCeti.taylorMonomial k A x`, that is `y ↦ A (y - x, …, y - x) / k!`,
+as a smooth map `u`. -/
+theorem jetCoeff_apply (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ →ₗ[ℝ] E → G) {k : ℕ} {x : E}
+    (A : E [×k]→L[ℝ] F) {u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯}
+    (hu : ⇑u = TauCeti.taylorMonomial k A x) :
+    P.jetCoeff k x A = P u x := by
+  -- This is the definition of `jetCoeff`, once `u` is identified with the Taylor monomial.
+  obtain rfl : u = smoothTaylorMonomial x k A := ContMDiffMap.coe_injective hu
+  rfl
+
+/-- **An operator of finite order at a point is a differential operator there.** If `(P v) x = 0`
+for every smooth `v` whose derivatives of order at most `r` vanish at `x`, then
+
+`(P u) x = ∑_{k ≤ r} c_k(x) (D^k u(x))`
+
+for every smooth `u`, with the coefficients `c_k(x) = P.jetCoeff k x`. -/
+theorem apply_eq_sum_jetCoeff [CompleteSpace F] (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ →ₗ[ℝ] E → G)
+    {x : E} {r : ℕ}
+    (hr : ∀ v : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯, (∀ i ≤ r, iteratedFDeriv ℝ i v x = 0) → P v x = 0)
+    (u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) :
+    P u x = ∑ k ∈ Finset.range (r + 1), P.jetCoeff k x (iteratedFDeriv ℝ k u x) := by
+  have hu : ContDiff ℝ ∞ u := u.contMDiff.contDiff
+  -- The Taylor polynomial `T` of `u` of order `r` at `x`.
+  set T : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ :=
+    ∑ k ∈ Finset.range (r + 1), smoothTaylorMonomial x k (iteratedFDeriv ℝ k u x)
+  -- The remainder `u - T` is a smooth family of multilinear maps on `r + 1` copies of `y - x`,
+  -- so its derivatives of order at most `r` vanish at `x`.
+  have hrem : ⇑(u - T) = fun y ↦ TauCeti.taylorRemainderFactor r u x y fun _ ↦ y - x := by
+    ext y
+    rw [ContMDiffMap.coe_sub, Pi.sub_apply,
+      (hu.of_le (by exact_mod_cast le_top)).eq_sum_add_taylorRemainderFactor_apply (n := r) x y]
+    simp [T, ContMDiffMap.coe_sum, Finset.sum_apply, coe_smoothTaylorMonomial,
+      TauCeti.taylorMonomial_apply]
+  have hflat : ∀ i ≤ r, iteratedFDeriv ℝ i (u - T) x = 0 := fun i hi ↦ by
+    rw [hrem]
+    exact TauCeti.iteratedFDeriv_apply_sub_eq_zero_of_lt_add (m := 0)
+      ((hu.of_le (by exact_mod_cast le_top)).contDiff_taylorRemainderFactor (k := ⊤) x).contDiffAt
+      (fun _ h ↦ absurd h (Nat.not_lt_zero _)) (by omega) (by exact_mod_cast le_top)
+  have h := hr (u - T) hflat
+  rw [map_sub, Pi.sub_apply, sub_eq_zero] at h
+  rw [h, map_sum, Finset.sum_apply]
+  exact Finset.sum_congr rfl fun k _ ↦ (jetCoeff_apply P _ (coe_smoothTaylorMonomial ..)).symm
+
+/-- **The coefficients are unique on symmetric multilinear maps.** If `(P u) x` is given by
+`∑_{k ≤ r} c_k (D^k u(x))` for every smooth `u`, with any linear maps `c_k`, then for `k ≤ r` the
+coefficient `P.jetCoeff k x` agrees with `c_k` on every symmetric continuous `k`-multilinear map. -/
+theorem jetCoeff_eq_of_forall_apply_eq_sum (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ →ₗ[ℝ] E → G)
+    {x : E} {r : ℕ} (c : (k : ℕ) → (E [×k]→L[ℝ] F) →ₗ[ℝ] G)
+    (hc : ∀ u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯,
+      P u x = ∑ k ∈ Finset.range (r + 1), c k (iteratedFDeriv ℝ k u x))
+    {k : ℕ} (hk : k ≤ r) (A : E [×k]→L[ℝ] F)
+    (hA : ∀ (v : Fin k → E) (σ : Equiv.Perm (Fin k)), A (v ∘ σ) = A v) :
+    P.jetCoeff k x A = c k A := by
+  -- Test `P` on the Taylor monomial, whose only nonzero derivative at `x` is `A`, in order `k`.
+  rw [jetCoeff_apply P A (coe_smoothTaylorMonomial x k A), hc,
+    Finset.sum_eq_single k (fun j _ hj ↦ by
+      rw [coe_smoothTaylorMonomial, TauCeti.iteratedFDeriv_taylorMonomial_of_ne k A x hj,
+        map_zero])
+    (fun h ↦ absurd (Finset.mem_range.2 (Nat.lt_succ_of_le hk)) h),
+    coe_smoothTaylorMonomial, TauCeti.iteratedFDeriv_taylorMonomial_self k A x hA]
+
+variable [FiniteDimensional ℝ E]
+
+/-- **The coefficients are as regular as the values.** If `P u` is `C^n` on a set `s` for every
+smooth `u`, then so is each coefficient `x ↦ P.jetCoeff k x A`. -/
+theorem contDiffOn_jetCoeff_apply {n : WithTop ℕ∞} {s : Set E}
+    (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ →ₗ[ℝ] E → G) (hP : ∀ u, ContDiffOn ℝ n (P u) s) (k : ℕ)
+    (A : E [×k]→L[ℝ] F) :
+    ContDiffOn ℝ n (fun x ↦ P.jetCoeff k x A) s := by
+  classical
+  -- Expanding `y - x` in a basis writes the Taylor monomial at `x` as a combination of fixed
+  -- smooth functions `g w t` of `y`, with coefficients polynomial in the coordinates of `x`.
+  let b := Module.finBasis ℝ E
+  have hc (i) {m : WithTop ℕ∞} : ContDiff ℝ m fun x : E ↦ b.repr x i := by
+    have h : (fun x : E ↦ b.repr x i) = fun x ↦ b.equivFunL x i := by ext; simp
+    rw [h]
+    exact contDiff_pi.1 b.equivFunL.contDiff i
+  let g (w : Fin k → Fin (Module.finrank ℝ E)) (t : Finset (Fin k)) :
+      C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ :=
+    ⟨fun y ↦ (∏ j ∈ t, b.repr y (w j)) • ((k ! : ℝ)⁻¹ • A) fun j ↦ b (w j),
+      ((contDiff_prod fun j _ ↦ hc (w j)).smul contDiff_const).contMDiff⟩
+  have hg (w t) (y : E) :
+      g w t y = (∏ j ∈ t, b.repr y (w j)) • ((k ! : ℝ)⁻¹ • A) fun j ↦ b (w j) :=
+    rfl
+  have hexp (x : E) : smoothTaylorMonomial x k A = ∑ w, ∑ t ∈ Finset.univ.powerset,
+      (∏ j ∈ Finset.univ \ t, -b.repr x (w j)) • g w t := by
+    ext y
+    have hyx : (fun _ : Fin k ↦ y - x) = fun _ ↦ ∑ i, b.repr (y - x) i • b i :=
+      funext fun _ ↦ (b.sum_repr (y - x)).symm
+    simp only [coe_smoothTaylorMonomial, TauCeti.taylorMonomial_apply, ContMDiffMap.coe_sum,
+      ContMDiffMap.coe_smul, Finset.sum_apply, Pi.smul_apply, hg]
+    rw [← smul_apply, hyx, ContinuousMultilinearMap.map_sum]
+    refine Finset.sum_congr rfl fun w _ ↦ ?_
+    rw [ContinuousMultilinearMap.map_smul_univ]
+    simp_rw [map_sub, Finsupp.coe_sub, Pi.sub_apply, sub_eq_add_neg, Finset.prod_add,
+      Finset.sum_smul, smul_smul, mul_comm]
+  have hjet (x : E) : P.jetCoeff k x A = ∑ w, ∑ t ∈ Finset.univ.powerset,
+      (∏ j ∈ Finset.univ \ t, -b.repr x (w j)) • P (g w t) x := by
+    rw [jetCoeff_apply P A (coe_smoothTaylorMonomial x k A), hexp]
+    simp [map_sum, map_smul, Finset.sum_apply]
+  simp_rw [hjet]
+  exact ContDiffOn.sum fun w _ ↦ ContDiffOn.sum fun t _ ↦
+    ((contDiff_prod fun j _ ↦ (hc (w j)).neg).contDiffOn).smul (hP (g w t))
+
+end Coefficients
+
+/-- **Peetre's theorem**, coefficient form. Let `P` be local on the open set `U` with `P u`
+continuous on `U` for every `u`. Then on each compact `K ⊆ U` it is a differential operator of
+finite order: there is `r` such that `(P u) x = ∑_{k ≤ r} c_k(x) (D^k u(x))` for every `x ∈ K` and
+every smooth `u`, with the coefficients `c_k(x) = P.jetCoeff k x`. Their regularity is
+`LinearMap.contDiffOn_jetCoeff_apply`. -/
+theorem exists_forall_apply_eq_sum_jetCoeff [FiniteDimensional ℝ E] [CompleteSpace F]
+    (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ →ₗ[ℝ] E → G) (hU : IsOpen U)
+    (hloc : ∀ u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯, ∀ x ∈ U, (u : E → F) =ᶠ[𝓝 x] 0 → P u x = 0)
+    (hcont : ∀ u, ContinuousOn (P u) U) {K : Set E} (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ r : ℕ, ∀ x ∈ K, ∀ u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯,
+      P u x = ∑ k ∈ Finset.range (r + 1), P.jetCoeff k x (iteratedFDeriv ℝ k u x) := by
+  obtain ⟨r, hr⟩ := exists_apply_eq_zero_of_iteratedFDeriv_eq_zero P hU hloc hcont hK hKU
+  exact ⟨r, fun x hx u ↦ apply_eq_sum_jetCoeff P (hr x hx) u⟩
 
 end LinearMap

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, The Tau Ceti contributors
 -/
 module
 
@@ -21,13 +21,25 @@ inverse coset translation in `Subgroup.continuous_inv_smul_const`. A continuous 
 surjection onto a discrete space (`TauCeti.exists_continuous_lift`), and an injection into a
 discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`); these give
 surjectivity and the descent of cocycle conditions for continuous cochains of discrete modules
-in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`.
+in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`. A family of
+continuous maps indexed by a discrete space, read at a continuously varying index, is continuous
+(`TauCeti.continuous_uncurry_comp_of_discreteTopology`); this is how term realization on the
+functional coding space of a language is continuous.
+
+For explicit pullbacks of the discrete topology `⊥`, an injective map pulls `⊥` back to `⊥`
+(`TauCeti.induced_bot_of_injective`), and the neighbourhood filter at `x` in
+`TopologicalSpace.induced g ⊥` is the principal filter of the fibre `g ⁻¹' {g x}`
+(`TauCeti.nhds_induced_bot`).
 
 A family eventually contained in a subset and converging to one of its points witnesses
 nondiscreteness when it is frequently unequal to that point (`Filter.Tendsto.not_isDiscrete`).
 This criterion uses only the target topology and applies to ranges of homomorphisms whose
-nonidentity values accumulate at the identity. Conversely, a real family converging along a
-filter and eventually in the discrete lattice `c ℤ`, `c > 0`, is eventually constant
+nonidentity values accumulate at the identity. In the other direction, a family converging to a
+point of a discrete subset and eventually contained in it is eventually equal to its limit
+(`Filter.Tendsto.eventually_eq_of_isDiscrete`); for a map continuous at a point and taking values
+near it in a discrete subgroup, such as a lattice, this says the map is constant near the point.
+Similarly, a real family converging along a filter and eventually in the discrete lattice `c ℤ`,
+`c > 0`, is eventually constant
 (`Filter.Tendsto.exists_eventually_eq_mul_intCast`); this is how convergent integer-valued
 charges stabilize.
 -/
@@ -66,21 +78,52 @@ theorem continuous_of_injective_comp {X A B : Type*} [TopologicalSpace X] [Topol
     (h : Continuous fun x => f (a x)) : Continuous a :=
   (IsLocallyConstant.desc a f ((IsLocallyConstant.iff_continuous _).2 h) hf).continuous
 
+/-- A family of continuous maps indexed by a discrete space, read at a continuously varying index,
+is continuous: on a discrete index space, continuity in the index is automatic. -/
+theorem continuous_uncurry_comp_of_discreteTopology {X Y Z : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace Z] [DiscreteTopology Z] {g : X → Z → Y}
+    (hg : ∀ z, Continuous fun x => g x z) {a : X → Z} (ha : Continuous a) :
+    Continuous fun x => g x (a x) :=
+  ((continuous_prod_of_discrete_right (f := Function.uncurry g)).2 hg).comp
+    (continuous_id.prodMk ha)
+
+/-- An injective map pulls the discrete topology `⊥` back to `⊥`. -/
+theorem induced_bot_of_injective {X Y : Type*} {e : X → Y} (he : Function.Injective e) :
+    TopologicalSpace.induced e ⊥ = ⊥ := by
+  let _ : TopologicalSpace Y := ⊥
+  have := discreteTopology_bot Y
+  let _ : TopologicalSpace X := TopologicalSpace.induced e ⊥
+  exact (Topology.IsEmbedding.discreteTopology ⟨⟨rfl⟩, he⟩).eq_bot
+
+/-- In the topology induced from the discrete topology `⊥` along `g : X → Y`, the neighbourhood
+filter of `x` is the principal filter of the fibre `g ⁻¹' {g x}`. -/
+theorem nhds_induced_bot {X Y : Type*} (g : X → Y) (x : X) :
+    @nhds X (TopologicalSpace.induced g ⊥) x = Filter.principal (g ⁻¹' {g x}) := by
+  let _ : TopologicalSpace Y := ⊥
+  have := discreteTopology_bot Y
+  rw [nhds_induced, nhds_discrete]
+  exact Filter.comap_pure
+
 end TauCeti
 
 open Topology
 
 namespace Filter
 
+/-- A family converging to a point `a` of a discrete subset `s`, and eventually contained in `s`,
+is eventually equal to `a`. -/
+theorem Tendsto.eventually_eq_of_isDiscrete {X Y : Type*} [TopologicalSpace Y] {f : X → Y}
+    {l : Filter X} {a : Y} {s : Set Y} (hf : Tendsto f l (𝓝 a)) (ha : a ∈ s)
+    (hs : ∀ᶠ x in l, f x ∈ s) (hD : IsDiscrete s) : ∀ᶠ x in l, f x = a := by
+  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hf hs
+  rwa [nhdsWithin_of_mem_discrete hD ha, tendsto_pure] at heq
+
 /-- A subset containing the limit of an eventually contained family is nondiscrete if the family
 is frequently different from the limit. -/
 theorem Tendsto.not_isDiscrete {X Y : Type*} [TopologicalSpace Y] {f : X → Y} {l : Filter X}
     {a : Y} {s : Set Y} (hf : Tendsto f l (𝓝 a)) (ha : a ∈ s)
-    (hs : ∀ᶠ x in l, f x ∈ s) (hne : ∃ᶠ x in l, f x ≠ a) : ¬ IsDiscrete s := by
-  intro hD
-  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hf hs
-  rw [nhdsWithin_of_mem_discrete hD ha, tendsto_pure] at heq
-  exact hne (heq.mono fun _ h hne ↦ hne h)
+    (hs : ∀ᶠ x in l, f x ∈ s) (hne : ∃ᶠ x in l, f x ≠ a) : ¬ IsDiscrete s := fun hD ↦
+  hne ((hf.eventually_eq_of_isDiscrete ha hs hD).mono fun _ h hne ↦ hne h)
 
 /-- A real family that converges along `l` and eventually lies in the lattice `c ℤ`, `c > 0`, is
 eventually equal to one fixed multiple of `c`. -/

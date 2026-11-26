@@ -63,6 +63,8 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
   coefficient as a `ℂ`-linear functional on cusp forms.
 * `CuspForm.qExpansion_injective`: a cusp form is determined by its `q`-expansion.
+* `ModularFormClass.coe_eq_of_qExpansion_eq`: modular forms for possibly different groups with the
+  same `q`-expansion are the same function.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 * `TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq`,
@@ -152,23 +154,13 @@ theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
       mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
       Complex.exp_two_pi_mul_I, one_mul]
 
-/-- The cusp function of the `q`-parameter is analytic at `0`. -/
-theorem UpperHalfPlane.analyticAt_cuspFunction_qParam (hh : 0 < h) :
-    AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ) 0 :=
-  _root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh periodic_qParam_comp_ofComplex
-    (Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe)
-    ((_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ)
-
-/-- The `q`-expansion of the `q`-parameter itself is the variable `X`. -/
-@[simp]
-theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
-    qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ) = PowerSeries.X := by
-  ext m
-  rw [← qExpansion_coeff_unique hh (analyticAt_cuspFunction_qParam hh)
-    (c := fun m ↦ PowerSeries.coeff m (PowerSeries.X : PowerSeries ℂ)) (fun τ ↦ ?_) m]
-  convert hasSum_ite_eq 1 (Function.Periodic.qParam h (τ : ℂ)) using 2 with m
-  rw [PowerSeries.coeff_X]
-  split_ifs with hm <;> simp [hm]
+/-- Twisting an `h`-periodic function by a power of the `q`-parameter of width `h` keeps it
+`h`-periodic, read on `ℂ` through `ofComplex`. -/
+theorem UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex {f : ℍ → ℂ}
+    (hfper : Function.Periodic (f ∘ ofComplex) h) (k : ℕ) :
+    Function.Periodic
+      ((fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) ∘ ofComplex) h := fun z ↦ by
+  simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
 
 section CuspFunction
 
@@ -246,6 +238,22 @@ theorem UpperHalfPlane.cuspFunction_const (h : ℝ) (c : ℂ) :
   rw [cuspFunction, Function.Periodic.cuspFunction, h_lim]
   exact Function.update_eq_self 0 (fun _ ↦ c)
 
+/-- For `h ≤ 0`, the cusp function of `f` is constant near `0`, taking the value of `f` at the junk
+value `Classical.choice inferInstance` of `UpperHalfPlane.ofComplex` outside `ℍ`. -/
+theorem UpperHalfPlane.cuspFunction_eventuallyEq_const_of_nonpos (hh : h ≤ 0) (f : ℍ → ℂ) :
+    cuspFunction h f =ᶠ[𝓝 0] fun _ ↦ f (Classical.choice inferInstance) := by
+  refine cuspFunction_eventuallyEq_nhds_of_continuousAt ?_ continuousAt_const
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
+  have hlog : Real.log ‖q‖ ≤ 0 :=
+    Real.log_nonpos (norm_nonneg _) (mem_ball_zero_iff.mp hqn).le
+  have him : (Function.Periodic.invQParam h q).im ≤ 0 := by
+    rw [Function.Periodic.im_invQParam]
+    exact mul_nonpos_of_nonneg_of_nonpos
+      (div_nonneg (neg_nonneg.2 hh) (by positivity)) hlog
+  rw [cuspFunction_of_ne_zero hq, ofComplex_apply_of_im_nonpos him]
+
 /-- The cusp function of `1` is `1`. -/
 @[simp]
 theorem UpperHalfPlane.cuspFunction_one (h : ℝ) : cuspFunction h (1 : ℍ → ℂ) = 1 :=
@@ -312,6 +320,19 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
     MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=
   cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
 
+/-- The cusp function of a finite product is meromorphic at `0` when all the cusp functions of
+the factors are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} {s : Finset ι}
+    {F : ι → ℍ → ℂ} (hF : ∀ i ∈ s, MeromorphicAt (cuspFunction h (F i)) 0) :
+    MeromorphicAt (cuspFunction h (∏ i ∈ s, F i)) 0 := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [Pi.one_def]
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi]
+    exact meromorphicAt_cuspFunction_mul (hF i (Finset.mem_insert_self i s))
+      (ih fun k hk ↦ hF k (Finset.mem_insert_of_mem hk))
+
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
     (hf : MeromorphicAt (cuspFunction h f) 0) :
@@ -324,10 +345,30 @@ theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
 
 end CuspFunction
 
+/-- The cusp function of the `q`-parameter is analytic at `0`. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_qParam (h : ℝ) :
+    AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ) 0 := by
+  rcases le_or_gt h 0 with hh | hh
+  · exact analyticAt_const.congr (cuspFunction_eventuallyEq_const_of_nonpos hh _).symm
+  exact _root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh periodic_qParam_comp_ofComplex
+    (Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe)
+    ((_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ)
+
+/-- The `q`-expansion of the `q`-parameter itself is the variable `X`. -/
+@[simp]
+theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
+    qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ) = PowerSeries.X := by
+  ext m
+  rw [← qExpansion_coeff_unique hh (analyticAt_cuspFunction_qParam h)
+    (c := fun m ↦ PowerSeries.coeff m (PowerSeries.X : PowerSeries ℂ)) (fun τ ↦ ?_) m]
+  convert hasSum_ite_eq 1 (Function.Periodic.qParam h (τ : ℂ)) using 2 with m
+  rw [PowerSeries.coeff_X]
+  split_ifs with hm <;> simp [hm]
+
 /-- The cusp function of a power of the `q`-parameter is analytic at `0`. -/
-theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ) :
+theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (h : ℝ) (m : ℕ) :
     AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) 0 := by
-  have hq := analyticAt_cuspFunction_qParam hh
+  have hq := analyticAt_cuspFunction_qParam h
   rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m, cuspFunction_pow hq.continuousAt m]
   exact hq.pow m
 
@@ -336,7 +377,7 @@ theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ)
 theorem UpperHalfPlane.qExpansion_qParam_pow (hh : 0 < h) (m : ℕ) :
     qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) = PowerSeries.X ^ m := by
   rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m,
-    qExpansion_pow (analyticAt_cuspFunction_qParam hh) m, qExpansion_qParam hh]
+    qExpansion_pow (analyticAt_cuspFunction_qParam h) m, qExpansion_qParam hh]
 
 /-- A periodic function whose `q`-expansion has no constant term is asymptotic to its first
 coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/
@@ -383,6 +424,21 @@ lemma _root_.CuspForm.qExpansion_injective {Γ : Subgroup (GL (Fin 2) ℝ)}
     (_root_.ModularForm.qExpansion_injective hh hΓ
       (a₁ := ModularFormClass.modularForm f) (a₂ := ModularFormClass.modularForm g) hfg)
   simpa using this
+
+/-- **Modular forms with the same `q`-expansion are the same function**, even for different groups
+and weights: each is the sum of its `q`-expansion at every point of `ℍ`. This compares forms of
+different levels, where `ModularForm.qExpansion_injective` does not apply. -/
+theorem _root_.ModularFormClass.coe_eq_of_qExpansion_eq {F G : Type*} [FunLike F ℍ ℂ]
+    [FunLike G ℍ ℂ] {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} {k k' : ℤ} [ModularFormClass F Γ k]
+    [ModularFormClass G Γ' k'] (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods)
+    (hΓ' : h ∈ Γ'.strictPeriods) {f : F} {g : G} (hfg : qExpansion h f = qExpansion h g) :
+    ⇑f = ⇑g := by
+  have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods hh hΓ⟩
+  have : Fact (IsCusp OnePoint.infty Γ') := ⟨Γ'.isCusp_of_mem_strictPeriods hh hΓ'⟩
+  funext τ
+  refine (_root_.ModularForm.hasSum_qExpansion f hh hΓ τ).unique ?_
+  rw [hfg]
+  exact _root_.ModularForm.hasSum_qExpansion g hh hΓ' τ
 
 /-- The translate `1 / d +ᵥ σ`, read in `ℂ`, is the subtraction `TauCeti.Periodic.qParam_sub`
 expects: that lemma is stated at `z - j`, and the shift here enters as a `+ᵥ` on `ℍ`. Naming the

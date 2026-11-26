@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Jimbo
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Jimbo.Basic
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.LinearAlgebra.Dimension.Basic
+
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # The cyclic permutation-word module of the type-A Hecke algebra
@@ -110,33 +112,27 @@ theorem range_permutationOrbit :
         single (σ : Fin n → Fin n) (1 : R)) := by
   let P := Submodule.span R (Set.range fun σ : Equiv.Perm (Fin n) ↦
     single (σ : Fin n → Fin n) (1 : R))
-  have hT (i : Fin (n - 1)) (v) (hv : v ∈ P) : jimbo (Fin n) q (T q i) v ∈ P := by
-    induction hv using Submodule.span_induction with
-    | mem v hv =>
-      obtain ⟨σ, rfl⟩ := hv
-      rw [jimbo_T_single_perm]
-      split_ifs
-      · exact Submodule.subset_span ⟨_, rfl⟩
-      · exact P.add_mem (Submodule.subset_span ⟨_, rfl⟩)
-          (P.smul_mem _ (Submodule.subset_span ⟨σ, rfl⟩))
-    | zero => simp
-    | add x y hx hy ihx ihy => simpa only [map_add] using P.add_mem ihx ihy
-    | smul r x hx ih => simpa only [map_smul] using P.smul_mem r ih
-  have hstable (x : TypeAHeckeAlgebra R q n) : ∀ v ∈ P, jimbo (Fin n) q x v ∈ P := by
-    have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
-      rw [adjoin_range_T]; trivial
-    induction hx using Algebra.adjoin_induction with
-    | mem x hx => obtain ⟨i, rfl⟩ := hx; exact hT i
-    | algebraMap r => intro v hv; simpa using P.smul_mem r hv
-    | add x y hx hy ihx ihy =>
-      intro v hv
-      simpa using P.add_mem (ihx v hv) (ihy v hv)
-    | mul x y hx hy ihx ihy =>
-      intro v hv
-      simpa only [map_mul, mul_apply_eq_comp] using ihx _ (ihy v hv)
+  -- `P` is stable under the Jimbo action of every generator `T i`.
+  have hT : ∀ f ∈ Set.range (jimbo (Fin n) q ∘ T (n := n) q), ∀ v ∈ P, f • v ∈ P := by
+    rintro _ ⟨i, rfl⟩ v hv
+    rw [Function.comp_apply, Module.End.smul_def]
+    -- It suffices to check the spanning permutation words.
+    refine (Submodule.image_span_subset _ _ P).2 ?_ ⟨v, hv, rfl⟩
+    rintro _ ⟨σ, rfl⟩
+    rw [jimbo_T_single_perm]
+    split_ifs
+    · exact Submodule.subset_span ⟨_, rfl⟩
+    · exact P.add_mem (Submodule.subset_span ⟨_, rfl⟩)
+        (P.smul_mem _ (Submodule.subset_span ⟨σ, rfl⟩))
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
   · rintro v ⟨x, rfl⟩
-    exact hstable x _ (Submodule.subset_span ⟨1, rfl⟩)
+    -- The Jimbo images of the generators generate the Jimbo image of the Hecke algebra.
+    have hx : jimbo (Fin n) q x ∈
+        Algebra.adjoin R (Set.range (jimbo (Fin n) q ∘ T (n := n) q)) := by
+      rw [Set.range_comp, Algebra.adjoin_image_eq_range _ adjoin_range_T]
+      exact AlgHom.mem_range_self _ x
+    rw [permutationOrbit_apply, ← Module.End.smul_def]
+    exact P.smul_mem_of_mem_adjoin hT hx (Submodule.subset_span ⟨1, rfl⟩)
   · rintro v ⟨σ, rfl⟩
     exact single_perm_mem_range q σ
 

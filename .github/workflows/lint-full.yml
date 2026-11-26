@@ -8,7 +8,6 @@ name: Daily full lint
 # to repair; TauCetiWorker's `lint-repair` stage adapts TauCeti/ until it is green, and it merges
 # through the normal review and merge queue, like the daily Mathlib bump (update.yml). While a
 # repair PR is open, later runs comment the current violations on it instead of opening another.
-# stuck_alerts.py raises a Zulip alert when a repair PR stays open too long.
 
 on:
   schedule:
@@ -29,9 +28,7 @@ jobs:
   lint:
     # Keep unbounded/long-running research and maintenance off the hosted
     # capacity shared by small automation and roadmap merge builds.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
-      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     outputs:
       outcome: ${{ steps.lint.outputs.outcome }}
       sha: ${{ steps.lint.outputs.sha }}
@@ -58,10 +55,9 @@ jobs:
           fetch-depth: 100
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -161,7 +157,8 @@ jobs:
       # UInt64 and explicitly not cryptographic (Lake/Build/Trace.lean carries a TODO to replace
       # it), so content addressing is a deduplication scheme here, not an integrity guarantee.
       # Restoring on main also gives up main's former role as the one build that took nothing on
-      # faith. nightly-verify.yml reinstates it on a daily cadence: it rebuilds from source with the
+      # faith. Nightly verification (nightly-verify-schedule.yml, calling TauCetiTools'
+      # nightly-verify.yml) reinstates it on a daily cadence: it rebuilds from source with the
       # cache off and compares the resulting oleans byte for byte against a cache-restored build of
       # the same commit. That is a detector, not an equivalent guarantee, and its own header spells
       # out the exposure window it leaves. The two are a pair; do not enable this restore without

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Spec
 public import TauCeti.AlgebraicGeometry.Modules.Localization
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.RingTheory.Extension.Cotangent.Basic
@@ -35,6 +35,9 @@ which is the finiteness needed to form the Fitting ideal sheaves of `Ω_{X/R}`.
   quasi-coherent;
 * `TauCeti.AlgebraicGeometry.isFinitePresentation_relativeDifferentials`: `Ω_{X/R}` is finitely
   presented when `X` is locally of finite presentation over `Spec R`;
+* `TauCeti.AlgebraicGeometry.finitePresentation_sections_of_locallyOfFinitePresentation`: the
+  ring of functions on an affine open is a finitely presented `R`-algebra when `X` is locally of
+  finite presentation over `Spec R`;
 * `TauCeti.AlgebraicGeometry.relativeDifferentialsSectionsEquiv`: over an affine open `U`,
   `Ω[Γ(X, U)⁄R] ≃ Γ(Ω_{X/R}, U)`, characterized by
   `TauCeti.AlgebraicGeometry.relativeDifferentialsSectionsEquiv_D`;
@@ -118,23 +121,29 @@ private theorem isFinite_affinePresentation (U : X.affineOpens)
   apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
   apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
 
+/-- If `X` is locally of finite presentation over `Spec R`, then the ring of functions `Γ(X, U)`
+on every affine open `U` is a finitely presented `R`-algebra. -/
+theorem finitePresentation_sections_of_locallyOfFinitePresentation
+    [LocallyOfFinitePresentation (X ↘ Spec (.of R))] (U : X.affineOpens) :
+    letI : Algebra R Γ(X, U) :=
+      ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+    Algebra.FinitePresentation R Γ(X, U) := by
+  let : Algebra R Γ(X, U) :=
+    ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+  let : U.property.fromSpec.IsOver (Spec (.of R)) := isOver_fromSpec R X U
+  have : IsOpenImmersion U.property.fromSpec := IsAffineOpen.isOpenImmersion_fromSpec U.property
+  have hc : LocallyOfFinitePresentation (U.property.fromSpec ≫ X ↘ Spec (.of R)) :=
+    inferInstance
+  rw [HomIsOver.comp_over (f := U.property.fromSpec) (S := Spec (.of R)), specOverSpec_over] at hc
+  exact RingHom.finitePresentation_algebraMap.mp
+    ((LocallyOfFinitePresentation.SpecMap_iff _).mp hc)
+
 private theorem exists_finiteAffinePresentation
     [LocallyOfFinitePresentation (X ↘ Spec (.of R))] (U : X.affineOpens) :
     ∃ P : ((X.relativeDifferentials R).over U.val).Presentation, P.IsFinite := by
   let : Algebra R Γ(X, U) :=
     ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
-  let : U.property.fromSpec.IsOver (Spec (.of R)) := isOver_fromSpec R X U
-  let : IsOpenImmersion U.property.fromSpec :=
-    IsAffineOpen.isOpenImmersion_fromSpec U.property
-  have hfp : LocallyOfFinitePresentation
-      (Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U)))) := by
-    have hc : LocallyOfFinitePresentation (U.property.fromSpec ≫ X ↘ Spec (.of R)) :=
-      inferInstance
-    rw [HomIsOver.comp_over (f := U.property.fromSpec) (S := Spec (.of R))] at hc
-    exact hc
-  have : Algebra.FinitePresentation R Γ(X, U) :=
-    RingHom.finitePresentation_algebraMap.mp
-      ((LocallyOfFinitePresentation.SpecMap_iff _).mp hfp)
+  have := finitePresentation_sections_of_locallyOfFinitePresentation R X U
   obtain ⟨s, hs, t, ht⟩ := Module.FinitePresentation.out
     (R := Γ(X, U)) (M := Ω[Γ(X, U)⁄R])
   let P := presentationTilde (ModuleCat.of Γ(X, U) Ω[Γ(X, U)⁄R]) s hs t ht

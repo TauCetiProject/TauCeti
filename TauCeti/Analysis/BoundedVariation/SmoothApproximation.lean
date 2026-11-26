@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.RegularLevel
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Smooth approximation of sets of finite volume in perimeter
@@ -101,7 +102,7 @@ private theorem exists_regular_superlevel_approximation_of_isBounded (hs : NullM
     apply (ENNReal.div_le_iff (ne_of_gt (ENNReal.ofReal_pos.mpr hδ))
       ENNReal.ofReal_ne_top).mpr
     simpa only [χ, Pi.sub_apply] using
-      (lintegral_enorm_le_eLpNorm_one (f := u - χ)).trans hn.le
+      (lintegral_eNorm_le_eLpNorm_one (f := u - χ)).trans hn.le
   · have hvar : totalVariationOn μ ⊤ u ≤ perimeter μ ⊤ s := by
       rw [perimeter_def]
       exact (φ n).totalVariationOn_normed_convolution_le
@@ -150,40 +151,23 @@ theorem _root_.MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approxima
         perimeter μ ⊤ {x | t n < u n x} < ⊤) ∧
       Tendsto (fun n => μ ({x | t n < u n x} ∆ s)) atTop (𝓝 0) ∧
       Tendsto (fun n => perimeter μ ⊤ {x | t n < u n x}) atTop (𝓝 (perimeter μ ⊤ s)) := by
-  let δ : ℕ → ℝ := fun n => 1 / (n + 3)
-  let ε : ℕ → ℝ := fun n => 1 / (n + 1)
-  have hδ (n : ℕ) : 0 < δ n := by positivity
-  have hδ' (n : ℕ) : δ n < 1 / 2 := by
-    dsimp [δ]
-    apply one_div_lt_one_div_of_lt (by norm_num)
-    have := Nat.cast_nonneg (α := ℝ) n
-    linarith
-  have hε (n : ℕ) : 0 < ε n := by positivity
+  obtain ⟨δ, -, hδ, hδconv⟩ := exists_seq_strictAnti_tendsto' (show (0 : ℝ) < 1 / 2 by norm_num)
+  obtain ⟨ε, -, hε, hεconv⟩ := exists_seq_strictAnti_tendsto (0 : ℝ)
   choose u t hu huc ht hreg hc hfront hfinite hvol hP using
-    fun n => exists_regular_superlevel_approximation hs hμs (hδ n) (hδ' n) (hε n)
+    fun n => exists_regular_superlevel_approximation hs hμs (hδ n).1 (hδ n).2 (hε n)
   have hvolconv : Tendsto (fun n => μ ({x | t n < u n x} ∆ s)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (by simpa [ε] using (ENNReal.tendsto_ofReal
-        (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))))
-      (fun _ => zero_le) hvol
-  refine ⟨u, t, fun n => ⟨hu n, huc n, ⟨(hδ n).trans (ht n).1,
-    (ht n).2.trans (by linarith [hδ n])⟩, hreg n, hc n, hfront n, hfinite n⟩, hvolconv, ?_⟩
-  refine tendsto_of_le_liminf_of_limsup_le ?_ ?_
+      (by simpa using ENNReal.tendsto_ofReal hεconv) (fun _ => zero_le) hvol
+  refine ⟨u, t, fun n => ⟨hu n, huc n, ⟨(hδ n).1.trans (ht n).1,
+    (ht n).2.trans (by linarith [(hδ n).1])⟩, hreg n, hc n, hfront n, hfinite n⟩, hvolconv, ?_⟩
+  refine ENNReal.tendsto_of_le_liminf_of_le_div tendsto_const_nhds ?_ ?_ (.of_forall hP)
+  · simpa using ENNReal.tendsto_ofReal
+      ((tendsto_const_nhds (x := (1 : ℝ))).sub (hδconv.const_mul 2))
   · refine perimeter_le_liminf
       (.of_forall fun n =>
         (isOpen_lt continuous_const (hu n).continuous).measurableSet.nullMeasurableSet)
       hs fun K _ _ => ?_
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hvolconv
       (fun _ => zero_le) (fun n => measure_mono inter_subset_left)
-  · have hδconv : Tendsto δ atTop (𝓝 0) := by
-      simpa [δ, Function.comp_def, Nat.cast_add] using
-        ((tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ)).comp (tendsto_add_atTop_nat 3))
-    have hdenom : Tendsto (fun n => ENNReal.ofReal (1 - 2 * δ n)) atTop (𝓝 1) := by
-      simpa using ENNReal.tendsto_ofReal
-        ((tendsto_const_nhds (x := (1 : ℝ))).sub (hδconv.const_mul 2))
-    have hbound := ENNReal.Tendsto.const_div (a := perimeter μ ⊤ s) hdenom
-      (Or.inl ENNReal.one_ne_top)
-    rw [div_one] at hbound
-    exact (limsup_le_limsup (.of_forall hP)).trans_eq hbound.limsup_eq
 
 end TauCeti

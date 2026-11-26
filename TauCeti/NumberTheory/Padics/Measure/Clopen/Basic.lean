@@ -11,8 +11,9 @@ public import TauCeti.Topology.ContinuousMap.Clopen
 /-!
 # Restriction of measures to clopen subsets
 
-For a compact space `X`, a clopen subset `s` and a normed commutative ring `R`, a measure on `X`
-restricts to a measure on `s` by integrating extensions by zero of test functions on `s`:
+For a topological space `X`, a clopen subset `s` and a topological commutative ring `R`,
+a measure on `X` restricts to a measure on `s` by integrating extensions by zero of test functions
+on `s`:
 `restrictClopen s μ f = μ (zeroExtendClopen R s f)`. In the other direction, pushforward along the
 inclusion `s ↪ X` (Mathlib's `AbstractMeasure.map (ContinuousMap.subtypeVal s)`) extends a measure
 on `s` to `X`. Restriction is a left inverse of this extension, and extending the restriction of
@@ -54,9 +55,9 @@ open TopologicalSpace ContinuousMap
 
 namespace AbstractMeasure
 
-variable {X Y R E : Type*} [TopologicalSpace X] [CompactSpace X] [TopologicalSpace Y]
-  [CompactSpace Y] [NormedCommRing R] [AddCommGroup E] [TopologicalSpace E]
-  [IsTopologicalAddGroup E] [Module R E] [ContinuousSMul R E]
+variable {X Y R E : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+  [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+  [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module R E] [ContinuousSMul R E]
 
 /-- The restriction of a measure on `X` to a clopen subset `s`: it integrates a test function on
 `s` against the original measure after extending it by zero. -/
@@ -81,7 +82,7 @@ theorem restrictClopen_map_subtype (s : Clopens X) (ν : AbstractMeasure s R E) 
   congr 1
   ext x
   rw [comp_apply, subtypeVal_apply]
-  exact zeroExtendClopen_apply_mem s f x.2
+  exact zeroExtendClopen_apply_mem s f x.property
 
 /-- Extension of measures from a clopen subset is injective. -/
 theorem map_subtype_injective (s : Clopens X) :
@@ -94,7 +95,7 @@ theorem restrictClopen_map_subtype_of_disjoint {s t : Clopens X} (hst : Disjoint
   refine toCLMEquiv.injective (ContinuousLinearMap.ext fun f ↦ ?_)
   have hzero : (zeroExtendClopen R s f).comp (subtypeVal (t : Set X)) = 0 := by
     ext x
-    have hx : (x : X) ∉ s := fun hx ↦ (Clopens.coe_disjoint.2 hst).notMem_of_mem_right x.2 hx
+    have hx : (x : X) ∉ s := fun hx ↦ (Clopens.coe_disjoint.2 hst).notMem_of_mem_right x.property hx
     rw [comp_apply, subtypeVal_apply, zeroExtendClopen_apply_not_mem s f hx,
       ContinuousMap.zero_apply]
   rw [map_zero, _root_.zero_apply, coe_toCLMEquiv, restrictClopen_apply, map_apply,
@@ -249,7 +250,7 @@ example : restrictClopen zeroClopen (dirac ℤ (1 : Fin 2)) = 0 :=
 -- Every measure restricts to zero on the empty clopen.
 example (μ : D(Fin 2, ℤ)) : restrictClopen (⊥ : Clopens (Fin 2)) μ = 0 := by
   refine toCLMEquiv.injective (ContinuousLinearMap.ext fun f ↦ ?_)
-  have hf : f = 0 := ContinuousMap.ext fun x ↦ (Set.notMem_empty (x : Fin 2) x.2).elim
+  have hf : f = 0 := ContinuousMap.ext fun x ↦ (Set.notMem_empty (x : Fin 2) x.property).elim
   simp [hf]
 
 -- The decomposition of `2δ₀ - 3δ₁` along `{0}` is `(2δ₀, -3δ₁)`.

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 public import TauCeti.Topology.Covering.Homeomorph
 public import TauCeti.Topology.Covering.Prod
 
@@ -22,7 +22,8 @@ positive real axis and the unit-period circle through this explicit equivalence.
 The fixed-period circles embed smoothly with their existing smooth structures, and each has a
 smooth retraction from the total family. These maps identify each original circle with the
 subspace fiber of the period projection. The real representative map sends `(p, t)` to
-`(p, [t]_p)`; in normalized coordinates its angle is `[t/p]_1`.
+`(p, [t]_p)`; in normalized coordinates its angle is `[t/p]_1`. Two real representatives have the
+same image exactly when they differ by a deck translation `(p, t) ↦ (p, t + k p)`.
 
 The representative map is a covering and a local diffeomorphism, jointly in period and time.
 The total space is Hausdorff and second countable. No behavior at period zero is asserted.
@@ -127,7 +128,7 @@ theorem contMDiff_period (n : ℕ∞ω) :
 /-- The real-valued period projection is smooth. -/
 theorem contMDiff_periodReal {n : ℕ∞ω} :
     ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) n fun z : CircleFamily ↦ (z.period : ℝ) :=
-  contMDiff_subtype_val.comp (contMDiff_period n)
+  contMDiff_subtypeVal.comp (contMDiff_period n)
 
 /-- In normalized coordinates, a fixed-period inclusion rescales only the circle. -/
 @[simp]
@@ -175,21 +176,21 @@ theorem contMDiff_retraction (p : PositivePeriod) (n : ℕ∞ω) :
 def fiberHomeomorph (p : PositivePeriod) :
     AddCircle (p : ℝ) ≃ₜ {z : CircleFamily // z.period = p} where
   toFun x := ⟨mk p x, rfl⟩
-  invFun z := retraction p z.1
+  invFun z := retraction p z.val
   left_inv := retraction_mk p
-  right_inv z := Subtype.ext (mk_retraction z.2)
+  right_inv z := Subtype.ext (mk_retraction z.property)
   continuous_toFun := ((contMDiff_mk p 0).continuous).subtype_mk _
-  continuous_invFun := (contMDiff_retraction p 0).continuous.comp continuous_subtype_val
+  continuous_invFun := (contMDiff_retraction p 0).continuous.comp continuous_subtypeVal
 
 /-- The fiber homeomorphism is the original fixed-period inclusion. -/
 @[simp]
 theorem coe_fiberHomeomorph (p : PositivePeriod) (x : AddCircle (p : ℝ)) :
-    (fiberHomeomorph p x).1 = mk p x := (rfl)
+    (fiberHomeomorph p x).val = mk p x := (rfl)
 
 /-- The inverse fiber homeomorphism is the smooth retraction restricted to the fiber. -/
 @[simp]
 theorem fiberHomeomorph_symm_apply (p : PositivePeriod) (z : {z : CircleFamily // z.period = p}) :
-    (fiberHomeomorph p).symm z = retraction p z.1 := (rfl)
+    (fiberHomeomorph p).symm z = retraction p z.val := (rfl)
 
 /-- The real representative map of the positive-period total family. -/
 def representative (z : PositivePeriod × ℝ) : CircleFamily := mk z.1 (z.2 : AddCircle _)
@@ -217,6 +218,25 @@ theorem representative_add_intCast_mul (p : PositivePeriod) (t : ℝ) (k : ℤ) 
     representative (p, t + k * (p : ℝ)) = representative (p, t) := by
   simp [representative, ← zsmul_eq_mul]
 
+/-- Two real representatives have the same image in the circle family exactly when they differ
+by a deck translation `(p, t) ↦ (p, t + k p)`. -/
+theorem representative_eq_representative_iff {z w : PositivePeriod × ℝ} :
+    representative z = representative w ↔ ∃ k : ℤ, w = (z.1, z.2 + k * (z.1 : ℝ)) := by
+  constructor
+  · intro h
+    have hn := congrArg (normalization 0) h
+    simp only [normalization_representative, Prod.mk.injEq] at hn
+    obtain ⟨hp, ht⟩ := hn
+    rw [← hp, QuotientAddGroup.eq, AddSubgroup.mem_zmultiples_iff] at ht
+    obtain ⟨k, hk⟩ := ht
+    refine ⟨k, Prod.ext hp.symm ?_⟩
+    have hz : (z.1 : ℝ) ≠ 0 := z.1.property.ne'
+    field_simp at hk
+    simp only [zsmul_eq_mul, mul_one] at hk
+    linear_combination -hk
+  · rintro ⟨k, rfl⟩
+    exact (representative_add_intCast_mul z.1 z.2 k).symm
+
 /-- Normalize real representatives by dividing their time coordinate by their positive period. -/
 def realNormalization (n : ℕ∞ω) :
     (PositivePeriod × ℝ) ≃ₘ^n⟮𝓘(ℝ).prod 𝓘(ℝ), 𝓘(ℝ).prod 𝓘(ℝ)⟯
@@ -226,9 +246,9 @@ def realNormalization (n : ℕ∞ω) :
   left_inv z := by simp [z.1.property.ne']
   right_inv z := by simp [z.1.property.ne']
   contMDiff_toFun := contMDiff_fst.prodMk (contMDiff_snd.div₀
-    (contMDiff_subtype_val.comp contMDiff_fst) fun z ↦ z.1.property.ne')
+    (contMDiff_subtypeVal.comp contMDiff_fst) fun z ↦ z.1.property.ne')
   contMDiff_invFun := contMDiff_fst.prodMk
-    (contMDiff_snd.mul (contMDiff_subtype_val.comp contMDiff_fst))
+    (contMDiff_snd.mul (contMDiff_subtypeVal.comp contMDiff_fst))
 
 /-- Real normalization divides the time coordinate by the period. -/
 @[simp]

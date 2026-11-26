@@ -5,14 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.EMetricSpace.Weak
+-- Proof-only: Lebesgue measure and ball volumes for an additive Haar measure.
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
+-- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
+import TauCeti.MeasureTheory.Measure.Continuity
 -- Proof-only: the measure of the set where the centered Haar ball is small.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -71,6 +76,11 @@ rearrangement, which gives the case `p = ∞`.
 * `MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top`,
   `MeasureTheory.Integrable.toReal_schwarzRearrangement`: almost-everywhere finiteness and
   integrability of the real-valued rearrangement of the positive part of an integrable function.
+* `TauCeti.ae_schwarzRearrangement_ofReal_ne_top`: almost-everywhere finiteness of the
+  rearrangement of the positive part of an a.e.-measurable function with one superlevel set of
+  finite measure.
+* `TauCeti.addHaar_setOf_lt_toReal_schwarzRearrangement`: equimeasurability of the real-valued
+  rearrangement at nonnegative levels.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
 * `TauCeti.schwarzRearrangement_add_const`: rearrangement commutes with adding a constant.
@@ -93,32 +103,6 @@ open MeasureTheory Metric Set Filter Topology
 open scoped ENNReal
 
 namespace TauCeti
-
-section Distribution
-
-variable {α : Type*} [MeasurableSpace α] (μ : Measure α) {f : α → ℝ≥0∞}
-
-/-- **Right continuity of the distribution function.** The measure of a strict superlevel set
-`{t < f}` is approached by those of strictly higher levels, so anything below it is already below
-`μ {s < f}` for some `s > t`. -/
-theorem exists_lt_lt_measure_setOf_lt {t c : ℝ≥0∞} (h : c < μ {y | t < f y}) :
-    ∃ s, t < s ∧ c < μ {y | s < f y} := by
-  have ht : t ≠ ∞ := by
-    rintro rfl
-    simp at h
-  obtain ⟨u, hu, hut, hlim⟩ := exists_seq_strictAnti_tendsto' (lt_top_iff_ne_top.2 ht)
-  have hunion : {y | t < f y} = ⋃ n, {y | u n < f y} := by
-    ext y
-    simp only [mem_ofPred_eq, mem_iUnion]
-    exact ⟨fun hy ↦ (hlim.eventually (gt_mem_nhds hy)).exists,
-      fun ⟨n, hn⟩ ↦ (hut n).1.trans hn⟩
-  have hmono : Monotone fun n ↦ {y | u n < f y} :=
-    fun m n hmn y hy ↦ (hu.antitone hmn).trans_lt hy
-  rw [hunion, hmono.measure_iUnion, lt_iSup_iff] at h
-  obtain ⟨n, hn⟩ := h
-  exact ⟨u n, (hut n).1, hn⟩
-
-end Distribution
 
 section Measure
 
@@ -148,7 +132,7 @@ theorem lt_schwarzRearrangement_iff {x : E} {t : ℝ≥0∞} :
     obtain ⟨hball, hts⟩ := hs
     exact hball.trans_le (measure_mono fun y hy ↦ hts.trans hy)
   · intro h
-    obtain ⟨s, hts, hs⟩ := exists_lt_lt_measure_setOf_lt μ h
+    obtain ⟨s, hts, hs⟩ := μ.exists_lt_lt_measure_setOf_lt h
     exact ⟨s, lt_iSup_iff.2 ⟨hs, hts⟩⟩
 
 /-- The strict superlevel sets of the Schwarz rearrangement, as sets. -/
@@ -256,6 +240,50 @@ theorem schwarzRearrangement_le_essSup (f : E → ℝ≥0∞) (x : E) :
   schwarzRearrangement_apply_zero μ f ▸
     schwarzRearrangement_le_of_norm_le μ f (by simp : ‖(0 : E)‖ ≤ ‖x‖)
 
+/-- **`L^∞` contraction of Schwarz rearrangement.** The extended distance between two Schwarz
+rearrangements is bounded everywhere by the essential supremum of the distance between the two
+functions. No measurability hypothesis is needed, and the measure is arbitrary. -/
+theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
+    edist (schwarzRearrangement μ f x) (schwarzRearrangement μ g x) ≤
+      essSup (fun y ↦ edist (f y) (g y)) μ := by
+  set c := essSup (fun y ↦ edist (f y) (g y)) μ
+  have h := ENNReal.ae_le_essSup (μ := μ) fun y ↦ edist (f y) (g y)
+  -- If `f ≤ g + c` almost everywhere, then `f* ≤ g* + c`, by comparing superlevel sets.
+  have key : ∀ f g : E → ℝ≥0∞, (∀ᵐ y ∂μ, f y ≤ g y + c) →
+      schwarzRearrangement μ f x ≤ schwarzRearrangement μ g x + c := fun f g hfg ↦ by
+    refine le_of_forall_lt fun t ht ↦ ?_
+    rcases lt_or_ge t c with htc | hct
+    · exact htc.trans_le le_add_self
+    · rw [lt_schwarzRearrangement_iff μ] at ht
+      have hc : c ≠ ∞ := by
+        rintro hc
+        rw [hc, top_le_iff] at hct
+        subst hct
+        simp at ht
+      have hlt (u : ℝ≥0∞) : t < u + c ↔ t - c < u := (ENNReal.sub_lt_iff_lt_right hc hct).symm
+      rw [hlt]
+      exact (lt_schwarzRearrangement_iff μ).2 (ht.trans_le (measure_mono_ae (hfg.mono fun y hy hty ↦
+        (hlt (g y)).1 (hty.trans_le hy))))
+  exact (ENNReal.edist_le_iff_le_add_right _ _ _).2
+    ⟨key f g (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1),
+      key g f (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)⟩
+
+/-- If every centered ball has finite measure, a strict superlevel set of the Schwarz
+rearrangement whose original superlevel set has infinite measure is the whole space. -/
+theorem setOf_lt_schwarzRearrangement_eq_univ_of_measure_ball_lt_top (f : E → ℝ≥0∞) (t : ℝ≥0∞)
+    (hball : ∀ x : E, μ (ball 0 ‖x‖) < ∞) (h : μ {y | t < f y} = ∞) :
+    {x | t < schwarzRearrangement μ f x} = univ := by
+  simp [setOf_lt_schwarzRearrangement, h, hball]
+
+/-- For a measure that is finite on compact sets of a proper space, a strict superlevel set of the
+Schwarz rearrangement whose original superlevel set has infinite measure is the whole space. -/
+@[simp]
+theorem setOf_lt_schwarzRearrangement_eq_univ [ProperSpace E] [IsFiniteMeasureOnCompacts μ]
+    (f : E → ℝ≥0∞) (t : ℝ≥0∞) (h : μ {y | t < f y} = ∞) :
+    {x | t < schwarzRearrangement μ f x} = univ :=
+  setOf_lt_schwarzRearrangement_eq_univ_of_measure_ball_lt_top μ f t
+    (fun _ ↦ measure_ball_lt_top) h
+
 end Measure
 
 section AddHaar
@@ -284,6 +312,25 @@ theorem addHaar_setOf_lt_schwarzRearrangement (f : E → ℝ≥0∞) (t : ℝ≥
       rw [Subsingleton.eq_univ_of_nonempty (s := {y | t < f y}) ⟨x, hx⟩]
       exact isOpen_univ.measure_pos μ univ_nonempty
   · exact μ.addHaar_setOf_addHaar_ball_norm_lt _
+
+/-- A strict superlevel set of the Schwarz rearrangement whose original superlevel set has finite
+measure is a centered open ball of that same measure. -/
+theorem exists_setOf_lt_schwarzRearrangement_eq_ball (f : E → ℝ≥0∞) (t : ℝ≥0∞)
+    (h : μ {y | t < f y} ≠ ∞) :
+    ∃ r : ℝ, 0 ≤ r ∧ {x | t < schwarzRearrangement μ f x} = ball 0 r ∧
+      μ (ball 0 r) = μ {y | t < f y} := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In dimension zero the superlevel set is `∅ = ball 0 0` or `univ = ball 0 1`.
+    obtain ⟨r, hr₀, hr⟩ : ∃ r : ℝ, 0 ≤ r ∧ {x | t < schwarzRearrangement μ f x} = ball 0 r := by
+      rcases {x | t < schwarzRearrangement μ f x}.eq_empty_or_nonempty with hs | hs
+      · exact ⟨0, le_rfl, by rw [hs, ball_zero]⟩
+      · refine ⟨1, zero_le_one, ?_⟩
+        rw [hs.eq_univ, eq_comm, eq_univ_iff_forall]
+        simp [norm_of_subsingleton]
+    exact ⟨r, hr₀, hr, by rw [← hr, addHaar_setOf_lt_schwarzRearrangement]⟩
+  obtain ⟨r, hr₀, hr⟩ := μ.exists_nonneg_addHaar_ball_eq h
+  refine ⟨r, hr₀, ?_, hr⟩
+  rw [setOf_lt_schwarzRearrangement, ← hr, μ.setOf_addHaar_ball_norm_lt_addHaar_ball]
 
 /-- Two superlevel sets of Schwarz rearrangements are concentric, so their intersection has the
 smaller of the two original superlevel measures. No measurability or finiteness hypothesis is
@@ -357,6 +404,50 @@ theorem _root_.MeasureTheory.Integrable.toReal_schwarzRearrangement {u : E → �
   exact integrable_toReal_of_lintegral_ne_top (measurable_schwarzRearrangement μ _).aemeasurable
     hu.lintegral_schwarzRearrangement_ofReal_ne_top
 
+/-- The Schwarz rearrangement of the positive part of an a.e.-measurable real function is finite
+almost everywhere as soon as one superlevel set `{u > t}` has finite measure. -/
+theorem ae_schwarzRearrangement_ofReal_ne_top {u : E → ℝ} (hu : AEMeasurable u μ) {t : ℝ}
+    (ht : μ {x | t < u x} ≠ ∞) :
+    ∀ᵐ x ∂μ, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞ := by
+  have hlim := tendsto_measure_iInter_atTop (μ := μ) (s := fun n : ℕ ↦ {x | (n : ℝ) < u x})
+    (fun n ↦ nullMeasurableSet_lt aemeasurable_const hu)
+    (fun m n hmn x (hx : (n : ℝ) < u x) ↦ (Nat.cast_le.2 hmn).trans_lt hx)
+    ⟨⌈t⌉₊, ne_top_of_le_ne_top ht (measure_mono fun x (hx : (⌈t⌉₊ : ℝ) < u x) ↦
+      (Nat.le_ceil t).trans_lt hx)⟩
+  have hempty : ⋂ n : ℕ, {x | (n : ℝ) < u x} = ∅ :=
+    eq_empty_of_forall_notMem fun x hx ↦ by
+      obtain ⟨n, hn⟩ := exists_nat_ge (u x)
+      exact (mem_iInter.1 hx n).not_ge hn
+  rw [hempty, measure_empty] at hlim
+  refine ae_iff.2 (le_antisymm (ge_of_tendsto' hlim fun n ↦ ?_) zero_le)
+  calc μ {x | ¬schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞}
+      ≤ μ {x | ENNReal.ofReal n < schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x} :=
+        measure_mono fun x (hx : ¬_ ≠ ∞) ↦ by simp_all [mem_ofPred_eq]
+    _ = μ {x | (n : ℝ) < u x} := by
+        rw [addHaar_setOf_lt_schwarzRearrangement]
+        congr 1
+        ext x
+        exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg n.cast_nonneg
+
+/-- At a nonnegative level `s`, the real-valued Schwarz rearrangement of the positive part of `u`
+has the same superlevel measure as `u`, provided the extended rearrangement is finite almost
+everywhere. -/
+theorem addHaar_setOf_lt_toReal_schwarzRearrangement {u : E → ℝ}
+    (hu : ∀ᵐ x ∂μ, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞) {s : ℝ}
+    (hs : 0 ≤ s) :
+    μ {x | s < (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal} =
+      μ {x | s < u x} := by
+  calc μ {x | s < (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal}
+      = μ {x | ENNReal.ofReal s < schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x} := by
+        refine measure_congr ?_
+        filter_upwards [hu] with x hx
+        exact (ENNReal.ofReal_lt_iff_lt_toReal hs hx).symm
+    _ = μ {x | s < u x} := by
+        rw [addHaar_setOf_lt_schwarzRearrangement]
+        congr 1
+        ext x
+        exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg hs
+
 variable (μ)
 
 /-- The Schwarz rearrangement has the same `Lᵖ` seminorm as `f`, for every exponent
@@ -371,10 +462,10 @@ theorem eLpNorm_schwarzRearrangement (hf : AEMeasurable f μ) (p : ℝ≥0∞) :
   · rw [eLpNorm_exponent_zero hg, eLpNorm_exponent_zero hf']
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top hg, eLpNorm_exponent_top hf']
-    simp only [eLpNormEssSup_eq_essSup_enorm, enorm_eq_self, essSup_schwarzRearrangement]
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hg,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hf']
-  simp only [enorm_eq_self]
+    simp only [eLpNormEssSup_eq_essSup_eNorm, eNorm_eq_self, essSup_schwarzRearrangement]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hg,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf']
+  simp only [eNorm_eq_self]
   rw [lintegral_rpow_schwarzRearrangement μ hf (ENNReal.toReal_pos hp0 hptop)]
 
 /-- The Schwarz rearrangement of an a.e.-measurable function lies in `Lᵖ` exactly when the function
@@ -512,8 +603,7 @@ theorem lintegral_sub_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞} (hf 
   set G := hg.mk g
   have hF : Measurable F := hf.measurable_mk
   have hG : Measurable G := hg.measurable_mk
-  have hF' := measurable_schwarzRearrangement μ F
-  have hG' := measurable_schwarzRearrangement μ G
+  have _ := measurable_schwarzRearrangement μ G
   -- Write the power as a mixture of the hinges `f - g - r`, each of which contracts.
   simp_rw [rpow_eq_lintegral_mul_sub hp]
   rw [lintegral_lintegral_swap (by fun_prop)]
@@ -544,24 +634,6 @@ theorem lintegral_edist_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞} (h
   exact add_le_add (lintegral_sub_rpow_schwarzRearrangement_le μ hf hg hp)
     (lintegral_sub_rpow_schwarzRearrangement_le μ hg hf hp)
 
-/-- **`L^∞` contraction of Schwarz rearrangement.** The extended distance between two Schwarz
-rearrangements is bounded everywhere by the essential supremum of the distance between the two
-functions. No measurability hypothesis is needed. -/
-theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
-    edist (schwarzRearrangement μ f x) (schwarzRearrangement μ g x) ≤
-      essSup (fun y ↦ edist (f y) (g y)) μ := by
-  set c := essSup (fun y ↦ edist (f y) (g y)) μ
-  have h := ENNReal.ae_le_essSup (μ := μ) fun y ↦ edist (f y) (g y)
-  have hfg : schwarzRearrangement μ f ≤ fun x ↦ schwarzRearrangement μ g x + c := by
-    rw [← schwarzRearrangement_add_const]
-    exact schwarzRearrangement_mono_ae μ
-      (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1)
-  have hgf : schwarzRearrangement μ g ≤ fun x ↦ schwarzRearrangement μ f x + c := by
-    rw [← schwarzRearrangement_add_const]
-    exact schwarzRearrangement_mono_ae μ
-      (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)
-  exact (ENNReal.edist_le_iff_le_add_right _ _ _).2 ⟨hfg x, hgf x⟩
-
 /-- **`Lᵖ` contraction of Schwarz rearrangement.** For every exponent `1 ≤ p ≤ ∞`, the `Lᵖ`
 seminorm of the extended distance between two nonnegative functions can only decrease under
 Schwarz rearrangement. -/
@@ -578,14 +650,14 @@ theorem eLpNorm_edist_schwarzRearrangement_le {f g : E → ℝ≥0∞} (hf : AEM
   have hg' := (measurable_schwarzRearrangement μ g).aemeasurable (μ := μ)
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top (hmeas hf' hg'), eLpNorm_exponent_top (hmeas hf hg),
-      eLpNormEssSup_eq_essSup_enorm, eLpNormEssSup_eq_essSup_enorm]
-    simp only [enorm_eq_self]
+      eLpNormEssSup_eq_essSup_eNorm, eLpNormEssSup_eq_essSup_eNorm]
+    simp only [eNorm_eq_self]
     exact essSup_le_of_ae_le _
       (.of_forall (edist_schwarzRearrangement_le_essSup μ f g))
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop (hmeas hf' hg'),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop (hmeas hf hg)]
-  simp only [enorm_eq_self]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop (hmeas hf' hg'),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop (hmeas hf hg)]
+  simp only [eNorm_eq_self]
   exact ENNReal.rpow_le_rpow (lintegral_edist_rpow_schwarzRearrangement_le μ hf hg
     (by simpa using ENNReal.toReal_mono hptop hp)) (by positivity)
 

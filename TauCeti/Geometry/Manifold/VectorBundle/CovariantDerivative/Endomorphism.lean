@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Composition
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.LinearAlgebra.Trace
@@ -22,6 +22,9 @@ on taking the trace.
 The coordinate formula uses the native Hom connection `CovariantDerivative.hom` and the
 frame coefficient functionals of bundle trivializations. Only differentiability of `A`
 at the evaluated point is needed; the connection itself need not be differentiable.
+The trace of a composition of two bundle maps obeys the product rule
+(`CovariantDerivative.mvfderiv_trace_comp`); for a trace square this is twice the trace
+pairing with the derivative (`CovariantDerivative.mvfderiv_trace_comp_self`).
 
 ## References
 
@@ -56,6 +59,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [ContMDiffVectorBundle 1 G W I]
   {x : M}
 
+omit [FiniteDimensional 𝕜 G] in
 /-- In local frames of `V` and `W`, the induced Hom connection is `dA + Γ_W A - A Γ_V`.
 The first index is the row (output, `W`) index, and the second is the column (input, `V`)
 index. -/
@@ -124,5 +128,33 @@ theorem mvfderiv_trace_eq_trace_hom (cov : CovariantDerivative I F V)
     rw [Finset.sum_comm]
     exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
   rw [hswap, add_sub_cancel_right]
+
+/-- The trace of the composition of two differentiable bundle maps obeys the product rule.
+The two bundles may differ, and neither connection needs to be differentiable. -/
+theorem mvfderiv_trace_comp (covV : CovariantDerivative I F V)
+    (covW : CovariantDerivative I G W)
+    {A : Π x : M, V x →L[𝕜] W x} {B : Π x : M, W x →L[𝕜] V x}
+    (hA : MDiffAt (fun y ↦ TotalSpace.mk' (F →L[𝕜] G)
+      (E := fun z ↦ V z →L[𝕜] W z) y (A y)) x)
+    (hB : MDiffAt (fun y ↦ TotalSpace.mk' (G →L[𝕜] F)
+      (E := fun z ↦ W z →L[𝕜] V z) y (B y)) x) (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ LinearMap.trace 𝕜 (V y) ((B y).comp (A y)).toLinearMap) x v =
+      LinearMap.trace 𝕜 (V x) ((covW.hom covV B x v).comp (A x)).toLinearMap +
+      LinearMap.trace 𝕜 (V x) ((B x).comp (covV.hom covW A x v)).toLinearMap := by
+  rw [covV.mvfderiv_trace_eq_trace_hom (hB.clm_bundle_comp hA),
+    hom_comp covV covW covV hA hB, ContinuousLinearMap.toLinearMap_add, map_add]
+
+/-- Differentiating the trace square gives twice the trace pairing with the derivative. -/
+theorem mvfderiv_trace_comp_self (cov : CovariantDerivative I F V)
+    {A : Π x : M, V x →L[𝕜] V x}
+    (hA : MDiffAt (fun y ↦ TotalSpace.mk' (F →L[𝕜] F)
+      (E := fun z ↦ V z →L[𝕜] V z) y (A y)) x) (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ LinearMap.trace 𝕜 (V y) ((A y).comp (A y)).toLinearMap) x v =
+      2 * LinearMap.trace 𝕜 (V x) ((A x).comp (cov.hom cov A x v)).toLinearMap := by
+  have : FiniteDimensional 𝕜 (V x) := VectorBundle.finiteDimensional 𝕜 F V x
+  rw [cov.mvfderiv_trace_comp cov hA hA]
+  simp only [ContinuousLinearMap.toLinearMap_comp]
+  rw [LinearMap.trace_comp_comm' (cov.hom cov A x v).toLinearMap (A x).toLinearMap]
+  ring
 
 end CovariantDerivative

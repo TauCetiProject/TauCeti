@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Pr
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Splitting
 public import TauCeti.NumberTheory.NewtonPolygon.Multiplicity
 public import TauCeti.NumberTheory.NewtonPolygon.Zeros
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
 import TauCeti.RingTheory.Valuation.NormNormalization
 
@@ -23,7 +24,10 @@ real slope, so its finite slopes are locally finite: only finitely many
 finite unit edges have slope at most any real cutoff
 (`ContinuousLinearMap.IsPrCompact.finite_setOf_unitSlope_newtonPolygon_charPowerSeries_le`), and
 if there are infinitely many finite edges their slopes tend to infinity
-(`ContinuousLinearMap.IsPrCompact.tendsto_unitSlope_newtonPolygon_charPowerSeries`). The
+(`ContinuousLinearMap.IsPrCompact.tendsto_unitSlope_newtonPolygon_charPowerSeries`). Since the
+polygon starts at or below the origin, its height at the number `N` of unit edges of slope at most
+`σ` is at most `σ N`
+(`ContinuousLinearMap.IsPrCompact.newtonPolygon_charPowerSeries_ncard_setOf_unitSlope_le_le`). The
 multiplicity of a slope `σ` is `PowerSeries.newtonSlopeMultiplicity`, the number of finite unit
 edges of slope `σ`. A slope `σ` corresponds to zeros of `H_u` of valuation `-σ`, and a zero `α`
 gives the eigenvalue `α⁻¹` of `u`, so the slopes describe the valuations of the eigenvalues.
@@ -47,6 +51,11 @@ Over an algebraically closed `K` the slopes are exactly the valuations of the no
 counted with algebraic multiplicity: the multiplicity of `σ` is the sum, over the eigenvalues `μ`
 with `v μ = σ`, of the dimensions of the maximal generalised eigenspaces of `u` at `μ`
 (`ContinuousLinearMap.IsPrCompact.newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank`).
+Summing over the slopes up to a cutoff, the number of finite unit edges of slope at most `c` is
+the sum of the algebraic multiplicities of the eigenvalues of valuation at most `c`
+(`ContinuousLinearMap.IsPrCompact.ncard_setOf_unitSlope_newtonPolygon_charPowerSeries_le`); only
+finitely many eigenvalues of norm bounded below have nonzero algebraic multiplicity
+(`ContinuousLinearMap.IsPrCompact.finite_setOf_le_norm_and_finrank_maxGenEigenspace_ne_zero`).
 Thus every finite slope is the valuation of an eigenvalue
 (`ContinuousLinearMap.IsPrCompact.exists_hasEigenvalue_of_newtonSlopeMultiplicity_ne_zero`).
 The zeros of `H_u` of norm `b ^ σ`, counted with the orders of the zeros, number the multiplicity
@@ -61,6 +70,8 @@ not algebraically closed a slope need not be the valuation of an eigenvalue: the
 
 * `ContinuousLinearMap.IsPrCompact.exists_isFiniteFace_newtonPolygon_charPowerSeries`: the
   Fredholm polygon has a finite face of every slope.
+* `ContinuousLinearMap.IsPrCompact.newtonPolygon_charPowerSeries_ncard_setOf_unitSlope_le_le`:
+  the Fredholm polygon at the number `N` of slopes at most `σ` is at most `σ N`.
 * `ContinuousLinearMap.IsPrCompact.finite_setOf_unitSlope_newtonPolygon_charPowerSeries_le`,
   `ContinuousLinearMap.IsPrCompact.tendsto_unitSlope_newtonPolygon_charPowerSeries`: local
   finiteness of the slopes.
@@ -73,6 +84,9 @@ not algebraically closed a slope need not be the valuation of an eigenvalue: the
 * `ContinuousLinearMap.IsPrCompact.newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank`:
   over an algebraically closed field, the multiplicity of a slope is the sum of the algebraic
   multiplicities of the eigenvalues of that valuation.
+* `ContinuousLinearMap.IsPrCompact.ncard_setOf_unitSlope_newtonPolygon_charPowerSeries_le`: over
+  an algebraically closed field, the number of finite unit edges of slope at most `c` is the sum
+  of the algebraic multiplicities of the eigenvalues of valuation at most `c`.
 * `ContinuousLinearMap.IsPrCompact.exists_hasEigenvalue_of_newtonSlopeMultiplicity_ne_zero`: over
   an algebraically closed field, every finite slope is the valuation of an eigenvalue.
 
@@ -125,6 +139,22 @@ variable {K : Type w} [NontriviallyNormedField K] [IsUltrametricDist K] [Complet
   (v : AddValuation K (WithTop ℝ)) {M N : Type u} [SeminormedAddCommGroup M] [Module K M]
   [SeminormedAddCommGroup N] [Module K N] {u : M →L[K] M} {w : N →L[K] N}
 
+/-- A row-compact endomorphism of a module with property (Pr) has only finitely many eigenvalues
+of norm at least `ε > 0` with nonzero algebraic multiplicity: their inverses are zeros of the
+Fredholm series in the closed disc of radius `ε⁻¹`. -/
+theorem IsPrCompact.finite_setOf_le_norm_and_finrank_maxGenEigenspace_ne_zero
+    [IsBoundedSMul K M] (hu : u.IsPrCompact) {ε : ℝ} (hε : 0 < ε) :
+    {μ : K | ε ≤ ‖μ‖ ∧
+      Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) ≠ 0}.Finite := by
+  refine ((PowerSeries.IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero (L := K)
+    (hu.isEntire_charPowerSeries.isRestricted ε⁻¹) u.charPowerSeries_ne_zero).image
+      (·⁻¹)).subset ?_
+  rintro μ ⟨hεμ, hμ⟩
+  have hμ0 : μ ≠ 0 := norm_pos_iff.mp (hε.trans_le hεμ)
+  rw [← Nat.cast_ne_zero (R := ℕ∞), hu.finrank_maxGenEigenspace_eq_order_taylor hμ0,
+    PowerSeries.order_taylor_ne_zero_iff] at hμ
+  exact ⟨μ⁻¹, ⟨by simpa using inv_anti₀ hε hεμ, hμ⟩, inv_inv μ⟩
+
 namespace IsPrCompact
 
 variable {b : ℝ} (hb : 1 < b) (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
@@ -136,6 +166,22 @@ theorem exists_isFiniteFace_newtonPolygon_charPowerSeries (hu : u.IsPrCompact) (
     ∃ l l' : ℕ, IsFiniteFace (u.charPowerSeries.newtonPolygon v) σ l l' :=
   hu.isEntire_charPowerSeries.exists_isFiniteFace_newtonPolygon v hb hv
     u.charPowerSeries_ne_zero σ
+
+/-- **Slopes at most `σ` lie under the line of slope `σ`.** If the Fredholm polygon of a
+row-compact endomorphism `u` of a module with property (Pr) has `N` finite unit edges of slope
+at most `σ`, its height at `N` is at most `σ N`. Hence every lower bound of the polygon is at
+most `σ N` at `N`. -/
+theorem newtonPolygon_charPowerSeries_ncard_setOf_unitSlope_le_le (hu : u.IsPrCompact) (σ : ℝ) :
+    u.charPowerSeries.newtonPolygon v {n | n ∈ finiteEdges (u.charPowerSeries.newtonPolygon v) ∧
+      unitSlope (u.charPowerSeries.newtonPolygon v) n ≤ σ}.ncard ≤
+      ((σ * {n | n ∈ finiteEdges (u.charPowerSeries.newtonPolygon v) ∧
+        unitSlope (u.charPowerSeries.newtonPolygon v) n ≤ σ}.ncard : ℝ) : WithTop ℝ) := by
+  -- The polygon starts at or below the height `v 1 = 0` of the constant coefficient.
+  have hadm := (PowerSeries.isAdmissible_addValuation_coeff_iff_exists_isRestricted
+    u.charPowerSeries v hb hv).2 ⟨1, one_pos, hu.isEntire_charPowerSeries.isRestricted 1⟩
+  simpa only [zero_add] using
+    hu.isEntire_charPowerSeries.newtonPolygon_ncard_setOf_unitSlope_le_le v hb hv σ (a := 0) <| by
+      simpa using PowerSeries.newtonPolygon_le hadm 0
 
 /-- **Local finiteness of Fredholm slopes.** Only finitely many finite unit edges of the
 Fredholm polygon of a row-compact endomorphism have slope at most a given real number. -/
@@ -187,15 +233,12 @@ theorem newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank [IsAlgClosed K
       (Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) : ℕ∞) =
         (PowerSeries.taylor μ⁻¹ u.charPowerSeries).order :=
     hu.finrank_maxGenEigenspace_eq_order_taylor fun hμ0 ↦ by simp [hμ0] at hμ
-  -- Only the inverses of the finitely many zeros in the closed disc contribute.
+  -- Only finitely many eigenvalues of norm `b ^ (-σ)` contribute.
   have hfin : ({μ : K | v μ = σ} ∩ Function.support fun μ ↦
       Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ)).Finite := by
-    refine ((PowerSeries.IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero (L := K)
-      (hH.isRestricted (b ^ σ)) (Real.rpow_pos_of_pos hb0 σ) hH0).image (·⁻¹)).subset ?_
-    rintro μ ⟨hμσ, hμ⟩
-    rw [Function.mem_support, ← Nat.cast_ne_zero (R := ℕ∞), hord hμσ,
-      PowerSeries.order_taylor_ne_zero_iff] at hμ
-    exact ⟨μ⁻¹, ⟨((hmem μ).mp hμσ).le, hμ⟩, inv_inv μ⟩
+    refine (hu.finite_setOf_le_norm_and_finrank_maxGenEigenspace_ne_zero
+      (Real.rpow_pos_of_pos hb0 (-σ))).subset fun μ ⟨hμσ, hμ⟩ ↦ ⟨?_, hμ⟩
+    rw [Real.rpow_neg hb0.le, ← (hmem μ).mp hμσ, norm_inv, inv_inv]
   have key : (u.charPowerSeries.newtonSlopeMultiplicity v σ : ℕ∞) =
       ((∑ᶠ μ ∈ {μ : K | v μ = σ},
         Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) : ℕ) : ℕ∞) := by
@@ -203,6 +246,44 @@ theorem newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank [IsAlgClosed K
       ← Nat.coe_castAddMonoidHom, (Nat.castAddMonoidHom ℕ∞).map_finsum_mem' hfin]
     exact (finsum_mem_eq_of_bijOn _ hbij fun μ hμ ↦ hord hμ).symm
   exact_mod_cast key
+
+/-- **Cutoff counts.** Over a complete algebraically closed ultrametric field, the number of finite
+unit edges of slope at most `c` of the Fredholm polygon of a row-compact endomorphism `u` of a
+module with property (Pr) is the sum of the algebraic multiplicities
+`dim (maxGenEigenspace u μ)` over the eigenvalues `μ` of valuation at most `c`. -/
+theorem ncard_setOf_unitSlope_newtonPolygon_charPowerSeries_le [IsAlgClosed K]
+    [IsBoundedSMul K M] (hu : u.IsPrCompact) (c : ℝ) :
+    {n | n ∈ finiteEdges (u.charPowerSeries.newtonPolygon v) ∧
+      unitSlope (u.charPowerSeries.newtonPolygon v) n ≤ c}.ncard =
+      ∑ᶠ μ ∈ {μ : K | v μ ≤ c},
+        Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) := by
+  have hb0 : 0 < b := zero_lt_one.trans hb
+  -- An eigenvalue has valuation at most `c` exactly when its valuation is a real `σ ≤ c`.
+  have hset : {μ : K | v μ ≤ c} = v ⁻¹' ((↑) '' Set.Iic c) := by
+    ext μ
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage]
+    generalize v μ = x
+    cases x <;> simp
+  -- Only finitely many eigenvalues of norm at least `b ^ (-c)` contribute.
+  have hfin : (v ⁻¹' ((↑) '' Set.Iic c) ∩ Function.support fun μ ↦
+      Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ)).Finite := by
+    refine (hu.finite_setOf_le_norm_and_finrank_maxGenEigenspace_ne_zero
+      (Real.rpow_pos_of_pos hb0 (-c))).subset ?_
+    rintro μ ⟨⟨σ, hσc, hμσ⟩, hμ⟩
+    have hμ0 : μ ≠ 0 := by
+      rintro rfl
+      simp at hμσ
+    refine ⟨?_, hμ⟩
+    rw [hv μ hμ0, ← hμσ, WithTop.untop₀_coe]
+    exact Real.rpow_le_rpow_of_exponent_le hb.le (neg_le_neg hσc)
+  rw [PowerSeries.ncard_setOf_unitSlope_newtonPolygon_le
+      (finite_setOf_unitSlope_newtonPolygon_charPowerSeries_le v hb hv hu c),
+    finsum_mem_congr rfl fun σ _ ↦
+      newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank v hb hv hu σ,
+    hset, ← TauCeti.finsum_mem_fiberwise _ _ _ hfin,
+    finsum_mem_image WithTop.coe_injective.injOn]
+  -- The fibre `v ⁻¹' {σ}` is the set `{μ | v μ = σ}` by definition of the preimage.
+  rfl
 
 /-- **Eigenvalues at every slope.** Over a complete algebraically closed ultrametric field, every
 finite slope `σ` of the Fredholm polygon of a row-compact endomorphism `u` of a module with

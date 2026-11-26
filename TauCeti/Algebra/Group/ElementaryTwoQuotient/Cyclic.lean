@@ -25,10 +25,10 @@ case is `G ≃* Multiplicative ℤ`, whose elementary-2 quotient is `2 ^ finrank
 These are the cyclic building blocks promised by the product lemmas of
 `TauCeti.Algebra.Group.ElementaryTwoQuotient.Prod`: a finite abelian group is a product of cyclic
 groups, and combining that decomposition with this file reads off its 2-rank as the number of
-even-order cyclic factors. The multiquadratic roadmap consumes the even case through the torsion
-subgroup of a number field's unit group, which is finite cyclic of even order. The odd-order case
-also holds for any commutative group (no cyclicity), as
-`TauCeti.card_elementaryTwoQuotient_of_odd_card` in `Basic`.
+even-order cyclic factors. The even case applies, for instance, to the torsion subgroup of a
+number field's unit group, which is finite cyclic of even order. The odd-order case also holds for
+any commutative group (no cyclicity), as `TauCeti.card_elementaryTwoQuotient_of_odd_card` in
+`Basic`.
 
 ## Main results
 
@@ -66,5 +66,26 @@ theorem card_elementaryTwoQuotient_of_isCyclic_of_even (h : Even (Nat.card G)) :
 theorem twoRank_of_isCyclic_of_even (h : Even (Nat.card G)) : twoRank G = 1 :=
   twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow G
     ((card_elementaryTwoQuotient_of_isCyclic_of_even G h).trans (pow_one 2).symm)
+
+/-! ### The cyclic group of order eight
+
+In `Multiplicative (ZMod 8)` there are two square classes, each with four elements (a coset of the
+four squares), while the `2`-torsion subgroup has two elements. So a square class and the
+`2`-torsion subgroup are different carriers even though `G/G²` and the `2`-torsion have the same
+size. -/
+
+example : Nat.card (ElementaryTwoQuotient (Multiplicative (ZMod 8))) = 2 :=
+  card_elementaryTwoQuotient_of_isCyclic_of_even _ ⟨4, by simp⟩
+
+example (x : ElementaryTwoQuotient (Multiplicative (ZMod 8))) :
+    Nat.card {g : Multiplicative (ZMod 8) // elementaryTwoQuotientMk g = x} = 4 := by
+  have h := card_elementaryTwoQuotientMk_fiber_mul_card x
+  rw [card_elementaryTwoQuotient_of_isCyclic_of_even _ ⟨4, by simp⟩] at h
+  simp at h
+  omega
+
+example : Nat.card {g : Multiplicative (ZMod 8) // g ^ 2 = 1} = 2 := by
+  rw [← card_elementaryTwoQuotient_eq_card_twoTorsion,
+    card_elementaryTwoQuotient_of_isCyclic_of_even _ ⟨4, by simp⟩]
 
 end TauCeti

@@ -35,8 +35,12 @@ of `AlgebraicGeometry.Proj.isClosedImmersion_map_of_grade_subset_range`.
 * `CategoryTheory.CommMon.ι_relativeProjMap`: on the chart over `U`, the morphism of relative
   `Proj`s is the morphism of projective spectra, with the charts written as the coprojections of
   the gluing diagrams, as glued modules on the relative `Proj` use them.
+* `CategoryTheory.CommMon.image_basicOpen_le_preimage_relativeProjMap`: the morphism maps the
+  image of `D₊(φ b)` in a chart of `Proj_X(A)` into the image of `D₊(b)` in a chart of `Proj_X(B)`.
 * `CategoryTheory.CommMon.relativeProjMap_id` and `CategoryTheory.CommMon.relativeProjMap_comp`:
   the construction is contravariantly functorial.
+* `CategoryTheory.CommMon.relativeProjMapIso e`: an isomorphism `e : B ≅ A` of graded algebras
+  induces an isomorphism `Proj_X(A) ≅ Proj_X(B)` of relative `Proj`s over `X`.
 * `CategoryTheory.CommMon.isPullback_relativeProjMap`: over the chart of `Proj_X(B)` above an
   affine open `U`, the morphism is `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj (⨁ n, Γ(Bₙ, U))`.
 * `CategoryTheory.CommMon.isClosedImmersion_relativeProjMap`: a morphism surjective in positive
@@ -47,7 +51,7 @@ of `AlgebraicGeometry.Proj.isClosedImmersion_map_of_grade_subset_range`.
 ## References
 
 * [The Stacks Project, Lemma 27.11.3 (01N0)](https://stacks.math.columbia.edu/tag/01N0)
-* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NS)
+* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NM)
 -/
 
 public section
@@ -78,7 +82,7 @@ variable [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent] (φ :
 morphism `φ : B ⟶ A` of graded algebras, natural in the affine open `U`. -/
 def relativeProjFunctorMap :
     A.relativeProjFunctor ⟶ B.relativeProjFunctor where
-  app U := Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2)
+  app U := Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.property)
   naturality _ _ _ := (Proj.map_comp _ _ _ _).symm.trans <| (Proj.map_congr
     (CommMon.gradedSectionsGradedHom_comp_restrictGradedSectionsGradedHom φ _).symm _ _).trans
       (Proj.map_comp _ _ _ _)
@@ -87,7 +91,7 @@ def relativeProjFunctorMap :
 projective spectra induced by `φ`. -/
 theorem relativeProjFunctorMap_app (U : X.AffineZariskiSite) :
     (CommMon.relativeProjFunctorMap φ hφ).app U =
-      Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2) :=
+      Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.property) :=
   (rfl)
 
 /-- The morphisms induced by `φ` lie over the coefficient rings `Γ(X, U)`. -/
@@ -96,7 +100,8 @@ theorem relativeProjFunctorMap_app_toSpecCoeff
     (CommMon.relativeProjFunctorMap φ hφ).app U ≫
         Proj.toSpecCoeff (B.gradedSectionsGrading U.toOpens) =
       Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) :=
-  Proj.map_toSpecCoeff (f := CommMon.gradedSectionsGradedHom φ U.toOpens) (hf := hφ U.toOpens U.2)
+  Proj.map_toSpecCoeff (f := CommMon.gradedSectionsGradedHom φ U.toOpens) (hf
+      := hφ U.toOpens U.property)
     (hR := fun r ↦ Subtype.ext <| by simp)
 
 /-- The morphisms induced by `φ` lie over the coefficient rings `Γ(X, U)`, composed with a further
@@ -130,10 +135,22 @@ morphism of projective spectra induced by `φ`, with the charts written as the c
 gluing diagrams. -/
 theorem ι_relativeProjMap (U : X.AffineZariskiSite) :
     colimit.ι A.relativeProjGluingData.functor U ≫ CommMon.relativeProjMap φ hφ =
-      Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2) ≫
+      Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.property) ≫
         colimit.ι B.relativeProjGluingData.functor U :=
   (CommMon.relativeProjCover_f_relativeProjMap φ hφ U).trans
     (congrArg (· ≫ _) (CommMon.relativeProjFunctorMap_app φ hφ U))
+
+/-- The morphism of relative `Proj`s maps the image of `D₊(φ b)` in the chart of `Proj_X(A)` over
+`U` into the image of `D₊(b)` in the chart of `Proj_X(B)` over `U`. -/
+theorem _root_.CategoryTheory.CommMon.image_basicOpen_le_preimage_relativeProjMap
+    (U : X.AffineZariskiSite) (b : ⨁ n, Γ(B.X n, U.toOpens)) :
+    colimit.ι A.relativeProjGluingData.functor U ''ᵁ
+        Proj.basicOpen _ (CommMon.gradedSectionsGradedHom φ U.toOpens b) ≤
+      CommMon.relativeProjMap φ hφ ⁻¹ᵁ
+        (colimit.ι B.relativeProjGluingData.functor U ''ᵁ Proj.basicOpen _ b) := by
+  rintro _ ⟨z, hz, rfl⟩
+  exact ⟨Proj.map _ (hφ U.toOpens U.property) z, hz, congr($(CommMon.ι_relativeProjMap φ hφ U)
+      z).symm⟩
 
 /-- **The morphism of relative `Proj`s induced by `φ` lies over `X`.** -/
 @[reassoc (attr := simp)]
@@ -239,6 +256,74 @@ theorem relativeProjMap_comp (φ : C ⟶ B) (ψ : B ⟶ A)
 
 end Functoriality
 
+section Iso
+
+/-- An isomorphism `φ : B ⟶ A` of graded algebras satisfies the irrelevant-ideal condition of
+`CategoryTheory.CommMon.relativeProjMap`: it is bijective on sections over every open. -/
+theorem irrelevant_le_map_of_isIso (φ : B ⟶ A) [IsIso φ] (U : X.Opens) :
+    HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+      (HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U)).map
+        (CommMon.gradedSectionsGradedHom φ U) :=
+  HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ fun _ _ x _ ↦
+    ⟨CommMon.gradedSectionsGradedHom (inv φ) U x, by
+      rw [← GradedRingHom.comp_apply, ← CommMon.gradedSectionsGradedHom_comp, IsIso.inv_hom_id,
+        CommMon.gradedSectionsGradedHom_id]
+      rfl⟩
+
+variable [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent]
+
+/-- The morphism of relative `Proj`s induced by a morphism of graded algebras depends only on the
+morphism, not on the proof of the irrelevant-ideal condition. -/
+theorem relativeProjMap_congr {φ ψ : B ⟶ A} (h : φ = ψ) (hφ hψ) :
+    CommMon.relativeProjMap φ hφ = CommMon.relativeProjMap ψ hψ := by
+  subst h
+  rfl
+
+/-- An isomorphism `e : B ≅ A` of graded algebras with quasi-coherent homogeneous components
+induces an isomorphism `Proj_X(A) ≅ Proj_X(B)` of relative `Proj`s, inverse to the morphism
+induced by `e⁻¹`. -/
+def relativeProjMapIso (e : B ≅ A) : A.relativeProj ≅ B.relativeProj where
+  hom := CommMon.relativeProjMap e.hom (fun U _ ↦ irrelevant_le_map_of_isIso e.hom U)
+  inv := CommMon.relativeProjMap e.inv (fun U _ ↦ irrelevant_le_map_of_isIso e.inv U)
+  hom_inv_id := by
+    rw [← CommMon.relativeProjMap_comp _ _ _ _
+      (fun U _ ↦ irrelevant_le_map_of_isIso (e.inv ≫ e.hom) U),
+      relativeProjMap_congr e.inv_hom_id _ (fun U _ ↦ irrelevant_le_map_of_isIso (𝟙 A) U),
+      CommMon.relativeProjMap_id]
+  inv_hom_id := by
+    rw [← CommMon.relativeProjMap_comp _ _ _ _
+      (fun U _ ↦ irrelevant_le_map_of_isIso (e.hom ≫ e.inv) U),
+      relativeProjMap_congr e.hom_inv_id _ (fun U _ ↦ irrelevant_le_map_of_isIso (𝟙 B) U),
+      CommMon.relativeProjMap_id]
+
+@[simp]
+theorem relativeProjMapIso_hom (e : B ≅ A) :
+    (relativeProjMapIso e).hom =
+      CommMon.relativeProjMap e.hom (fun U _ ↦ irrelevant_le_map_of_isIso e.hom U) :=
+  (rfl)
+
+@[simp]
+theorem relativeProjMapIso_inv (e : B ≅ A) :
+    (relativeProjMapIso e).inv =
+      CommMon.relativeProjMap e.inv (fun U _ ↦ irrelevant_le_map_of_isIso e.inv U) :=
+  (rfl)
+
+/-- The isomorphism of relative `Proj`s induced by an isomorphism of graded algebras lies over
+`X`. -/
+@[reassoc]
+theorem relativeProjMapIso_hom_relativeProjToBase (e : B ≅ A) :
+    (relativeProjMapIso e).hom ≫ B.relativeProjToBase = A.relativeProjToBase :=
+  CommMon.relativeProjMap_relativeProjToBase _ _
+
+/-- The inverse of the isomorphism of relative `Proj`s induced by an isomorphism of graded
+algebras lies over `X`. -/
+@[reassoc]
+theorem relativeProjMapIso_inv_relativeProjToBase (e : B ≅ A) :
+    (relativeProjMapIso e).inv ≫ A.relativeProjToBase = B.relativeProjToBase :=
+  CommMon.relativeProjMap_relativeProjToBase _ _
+
+end Iso
+
 section ClosedImmersion
 
 variable [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent] (φ : B ⟶ A)
@@ -260,7 +345,7 @@ theorem isClosedImmersion_relativeProjMap :
     HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ (hφ U hU)) U
   have : IsClosedImmersion ((CommMon.relativeProjFunctorMap φ fun U hU ↦
       HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ (hφ U hU)).app U) :=
-    Proj.isClosedImmersion_map_of_grade_subset_range _ _ (hφ U.toOpens U.2)
+    Proj.isClosedImmersion_map_of_grade_subset_range _ _ (hφ U.toOpens U.property)
   exact Eq.mpr (congrArg IsClosedImmersion h.isoPullback_inv_snd.symm)
     ((MorphismProperty.cancel_left_of_respectsIso @IsClosedImmersion h.isoPullback.inv _).mpr this)
 

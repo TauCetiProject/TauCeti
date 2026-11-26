@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Antidiag.Prod
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import TauCeti.Order.Filter.AtTopBot.Finset
 
 /-!
 # Regrouping a series along finite fibres
@@ -14,11 +16,14 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 Mathlib's `HasSum.sigma` regroups a series over a sigma type into the sums of its fibres, which
 needs a regular topology and continuous addition to take the fibre sums. When every fibre is
 finite the fibre sums are finite sums, and the regrouping holds in any topological additive monoid.
+In particular a series over `A × A` can be regrouped along the antidiagonals `i + j = n`.
 
 ## Main results
 
 * `HasSum.sigma_of_finite`: a series over `Σ b, γ b` with finite fibres sums to the same value
   when grouped by `b`.
+* `HasSum.sum_antidiagonal`: a series over `A × A` sums to the same value when grouped along the
+  antidiagonals.
 -/
 
 public section
@@ -33,8 +38,15 @@ theorem HasProd.sigma_of_finite {α β : Type*} {γ : β → Type*} [CommMonoid 
     HasProd (fun b ↦ ∏ c, f ⟨b, c⟩) a := by
   classical
   -- the partial products over finite sets of `b` are partial products of `ha`
-  have hT : Tendsto (fun s : Finset β ↦ s.sigma fun b ↦ (Finset.univ : Finset (γ b))) atTop
-      atTop := by
-    refine tendsto_atTop_atTop.2 fun T ↦ ⟨T.image Sigma.fst, fun s hs x hx ↦ ?_⟩
-    exact Finset.mem_sigma.2 ⟨hs (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩
-  exact (ha.comp hT).congr fun s ↦ by simp [Finset.prod_sigma]
+  exact (ha.comp TauCeti.tendsto_finset_sigma_univ_atTop).congr fun s ↦ by
+    simp [Finset.prod_sigma]
+
+/-- **Regrouping along antidiagonals.** If a family over `A × A` has product `a`, then so does
+the family of its products `∏_{i + j = n} f (i, j)` along the antidiagonals. -/
+@[to_additive /-- **Regrouping along antidiagonals.** If a family over `A × A` sums to `a`, then
+so does the family of its sums `∑_{i + j = n} f (i, j)` along the antidiagonals. -/]
+theorem HasProd.prod_antidiagonal {α A : Type*} [CommMonoid α] [TopologicalSpace α] [AddMonoid A]
+    [HasAntidiagonal A] {f : A × A → α} {a : α} (ha : HasProd f a) :
+    HasProd (fun n ↦ ∏ q ∈ antidiagonal n, f q) a := by
+  simpa [prod_attach] using
+    (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasProd_iff.2 ha).sigma_of_finite

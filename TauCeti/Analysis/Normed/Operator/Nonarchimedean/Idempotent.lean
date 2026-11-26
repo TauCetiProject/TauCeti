@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Cyclicity
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.FredholmDet
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
+public import TauCeti.LinearAlgebra.Charpoly.Projective
+import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 
 /-!
 # Fredholm series along idempotent decompositions
@@ -50,6 +52,9 @@ is a polynomial for every continuous `u`
 (`ContinuousLinearMap.IsRowCompact.exists_charPowerSeries_matrixCoeff_mul_eq_coe`). Indeed
 `e = e π_S e w` for a finite coordinate projection `π_S` and a continuous `w`, so by cyclicity
 `H_(u e)` is the Fredholm series of `π_S (e w u e)`, the polynomial determinant of a finite block.
+When `u` preserves `range e`, that polynomial is the reversed characteristic polynomial
+`det (1 - X (u|_{range e}))`
+(`ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev`).
 Thus, if a row-compact `u` commutes with a row-compact idempotent `e`, the finite projective
 invariant summand `range e` splits off a polynomial factor `H_(u e)` of `H_u`, and the
 complementary factor is the Fredholm series `H_(u (1 - e))` on the invariant complement
@@ -67,6 +72,9 @@ complementary factor is the Fredholm series `H_(u (1 - e))` on the invariant com
   `H_u = H_(u e) H_(u (1 - e))` for an idempotent `e` commuting with `u`.
 * `ContinuousLinearMap.IsRowCompact.exists_charPowerSeries_matrixCoeff_mul_eq_coe`: for a
   row-compact idempotent `e`, the Fredholm series of `u e` is a polynomial.
+* `ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev`:
+  when `u` preserves `range e`, `H_(u e)` is the reversed characteristic polynomial of `u` on
+  `range e`.
 
 ## References
 
@@ -126,8 +134,7 @@ theorem charPowerSeries_matrixCoeff_sum_of_mul_eq_zero {ι : Type*} {s : Finset 
   | empty => simp [matrixCoeff_zero, Matrix.charPowerSeries_zero]
   | insert i s hi ih =>
     have hs : (∑ j ∈ s, u j).IsRowCompact :=
-      Finset.sum_induction u (fun w : C₀(I, R) →L[R] C₀(I, R) ↦ w.IsRowCompact)
-        (fun _ _ ↦ IsRowCompact.add) isRowCompact_zero fun j hj ↦ hu j (by simp [hj])
+      IsRowCompact.sum fun j hj ↦ hu j (by simp [hj])
     have hmul : u i * ∑ j ∈ s, u j = 0 := by
       rw [Finset.mul_sum (R := C₀(I, R) →L[R] C₀(I, R))]
       exact Finset.sum_eq_zero fun j hj ↦ h i (by simp) j (by simp [hj]) fun hij ↦ hi (hij ▸ hj)
@@ -197,5 +204,35 @@ theorem IsRowCompact.exists_charPowerSeries_matrixCoeff_mul_eq_coe
         rw [hc.charPowerSeries_matrixCoeff_mul_comm]
         simp only [mul_assoc]
     _ = _ := charPowerSeries_matrixCoeff_indicatorCLM_comp S _
+
+/-- For a row-compact idempotent `e` whose range is preserved by `u`, the Fredholm series of
+`u * e` is the reversed characteristic polynomial of `u` restricted to `e.range`. -/
+theorem IsRowCompact.charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
+    {e u : C₀(I, R) →L[R] C₀(I, R)} (he : e.IsRowCompact) (he' : IsIdempotentElem e)
+    (hu : ∀ x ∈ e.range, u x ∈ e.range) :
+    letI : AddCommGroup e.range := inferInstance
+    haveI : Module.Finite R e.range := he.finite_range_of_isIdempotentElem he'
+    haveI : Module.Projective R e.range := he.projective_range_of_isIdempotentElem he'
+    (u * e).matrixCoeff.charPowerSeries =
+      (((u.restrict hu).toLinearMap).projectiveCharpolyRev : PowerSeries R) := by
+  let : AddCommGroup e.range := inferInstance
+  have := he.finite_range_of_isIdempotentElem he'
+  have := he.projective_range_of_isIdempotentElem he'
+  let u_res : e.range →L[R] e.range := u.restrict hu
+  have hri : e.rangeRestrict.comp e.range.subtypeL = .id R e.range := by
+    ext ⟨_, y, rfl⟩ : 1
+    apply Subtype.ext
+    simpa only [comp_apply, Submodule.subtypeL_apply, coe_rangeRestrict,
+      Set.rangeFactorization_coe, id_apply, coe_coe, mul_apply_eq_comp] using congr($he'.eq y)
+  have hM : TauCeti.HasPr R e.range :=
+    (isPrCompact_iff_isRowCompact.2 he).hasPr_source.of_retract
+      e.range.subtypeL e.rangeRestrict hri
+  have hu_res := isPrCompact_of_finite (R := R) (M := e.range) (L := e.range) hM hM u_res
+  have hext : e.range.subtypeL.comp (u_res.comp e.rangeRestrict) = u * e := by
+    ext x : 1
+    rw [comp_apply, comp_apply, Submodule.subtypeL_apply, coe_restrict_apply hu,
+      coe_rangeRestrict, Set.rangeFactorization_coe, mul_apply_eq_comp]
+  have hchar := charPowerSeries_eq_projectiveCharpolyRev (R := R) (M := e.range) hM u_res
+  rw [← hext, ← hu_res.charPowerSeries_eq hri, hchar]
 
 end ContinuousLinearMap

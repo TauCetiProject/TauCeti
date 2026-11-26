@@ -34,11 +34,13 @@ public noncomputable section
 open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace
 open scoped ContDiff Manifold
 
+universe u
+
 namespace TauCeti.holomorphicStructureSheaf
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
-  (X : Type) [TopologicalSpace X] [ChartedSpace H X] (p : X)
+  (X : Type u) [TopologicalSpace X] [ChartedSpace H X] (p : X)
 
 /-- Evaluation of a holomorphic module section at a point of its domain. -/
 def sectionEval (U : Opens X) (hp : p ∈ U) :
@@ -54,20 +56,22 @@ theorem sectionEval_apply (U : Opens X) (hp : p ∈ U)
     (f : (holomorphicStructureSheafModules I X).obj.obj (op U)) :
     sectionEval I X p U hp f = f ⟨p, hp⟩ := (rfl)
 
+variable (X : Type) [TopologicalSpace X] [ChartedSpace H X] (p : X)
+
 /-- Evaluation of holomorphic module germs at their base point. -/
 def stalkEval : TopCat.Presheaf.stalk (X := TopCat.of X)
     (holomorphicStructureSheafModules I X).obj p ⟶ ModuleCat.of ℂ ℂ :=
   colimit.desc _
     { pt := ModuleCat.of ℂ ℂ
       ι :=
-        { app := fun U ↦ ModuleCat.ofHom (sectionEval I X p U.unop.1 U.unop.2)
+        { app := fun U ↦ ModuleCat.ofHom (sectionEval I X p U.unop.val U.unop.property)
           naturality := by
             intro U V h
             apply ModuleCat.hom_ext
             apply LinearMap.ext
             intro f
             exact holomorphicStructureSheafModules.map_apply I X
-              ((OpenNhds.inclusion (X := TopCat.of X) p).map h.unop).op f ⟨p, V.unop.2⟩ } }
+              ((OpenNhds.inclusion (X := TopCat.of X) p).map h.unop).op f ⟨p, V.unop.property⟩ } }
 
 /-- Evaluation after taking a germ is evaluation of the original section. -/
 @[reassoc (attr := simp)]
@@ -152,7 +156,7 @@ theorem exact_vanishingSheafι_evaluationToSkyscraper_app (U : Opens X) :
   · rintro ⟨g, rfl⟩ hp
     rw [vanishingSheafι_app_apply]
     exact (mem_vanishingIdeal_single_one I X p U _).mp
-      (vanishingSheafSectionsEquiv I X _ U g).2 hp
+      (vanishingSheafSectionsEquiv I X _ U g).property hp
 
 /-- The inclusion of functions vanishing at `p` followed by evaluation is zero. -/
 @[reassoc (attr := simp)]

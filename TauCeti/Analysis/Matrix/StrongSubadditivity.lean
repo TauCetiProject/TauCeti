@@ -215,14 +215,9 @@ theorem PosDef.conjTranspose_mul_relativeModularOperator_mul_partialTraceIsometr
   simp only [relativeModularOperator_mulVec_vec, partialTraceIsometry_mulVec_vec,
     star_vec_dotProduct_vec, conjTranspose_mul, conjTranspose_kronecker, conjTranspose_one, hsH,
     hrH]
-  set s := CFC.sqrt ρ.partialTraceRight
   set r := CFC.sqrt ρ
-  have hs : IsUnit s.det := hρ.partialTraceRight.isUnit_det_sqrt
-  have hss : s * s = ρ.partialTraceRight :=
-    CFC.sqrt_mul_sqrt_self _ hρ.partialTraceRight.posSemidef.nonneg
   have hr : IsUnit r.det := hρ.isUnit_det_sqrt
-  have hρinv : ρ⁻¹ = r⁻¹ * r⁻¹ := by
-    rw [← Matrix.mul_inv_rev, CFC.sqrt_mul_sqrt_self ρ hρ.posSemidef.nonneg]
+  have hρinv : ρ⁻¹ = r⁻¹ * r⁻¹ := hρ.posSemidef.inv_sqrt_mul_inv_sqrt.symm
   -- Cancel `ρ^(1/2) * ρ⁻¹ = ρ^(-1/2)`, then cycle the leading `ρ^(1/2)` around the trace.
   rw [hρinv]
   simp only [Matrix.mul_assoc, mul_nonsing_inv_cancel_left _ _ hr]
@@ -230,8 +225,8 @@ theorem PosDef.conjTranspose_mul_relativeModularOperator_mul_partialTraceIsometr
   simp only [Matrix.mul_assoc, nonsing_inv_mul _ hr, Matrix.mul_one]
   -- Merge the two Kronecker factors and trace out the second system.
   rw [trace_mul_comm, Matrix.mul_assoc, ← mul_kronecker_mul, Matrix.one_mul,
-    ← trace_partialTraceRight, partialTraceRight_mul_kronecker_one, ← hss, Matrix.mul_inv_rev,
-    trace_mul_comm Xᴴ]
+    ← trace_partialTraceRight, partialTraceRight_mul_kronecker_one,
+    ← hρ.partialTraceRight.posSemidef.inv_sqrt_mul_inv_sqrt, trace_mul_comm Xᴴ]
   simp only [Matrix.mul_assoc]
 
 -- Stated after the lemmas whose statements mention `Matrix.relativeModularOperator`: inside the

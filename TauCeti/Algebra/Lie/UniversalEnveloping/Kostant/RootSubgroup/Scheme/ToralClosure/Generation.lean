@@ -36,8 +36,10 @@ subgroups needs.
   ideals.
 * `kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary`:
   under the same hypothesis, the root-generated and toral carriers are equal.
-* `kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary`: the canonical comparison
-  is the transport along that equality, and hence is an isomorphism.
+* `kostantGeneratedToToral_eq_eqToHom_of_definingIdeal_eq`: equality of the defining ideals
+  identifies the canonical comparison with transport, and hence makes it an isomorphism.
+* `kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary`: the universal-point
+  specialization of this comparison.
 * `kostantToralBaseChangePresentationIdeal_eq_generated_of_universal_torus_mem_elementary`: under
   the same hypothesis, the transported toral and root-generated presentations agree over every
   commutative ring.
@@ -146,6 +148,30 @@ theorem kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_toru
     kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
       e h ρ M hM hnil b wt huniv]
 
+omit [Fintype κ] in
+/-- Equality of the toral and root-generated defining ideals identifies the canonical inclusion
+with transport along the induced equality of quotient spectra. -/
+theorem kostantGeneratedToToral_eq_eqToHom_of_definingIdeal_eq [Finite κ]
+    (hideal : kostantToralDefiningIdeal e h ρ M hM hnil b wt =
+      kostantGeneratedDefiningIdeal e h ρ M hM hnil b) :
+    kostantGeneratedToToral e h ρ M hM hnil b wt =
+      eqToHom (congrArg (CommHopfAlgCat.quotientSpec
+        (GeneralLinear.coordinateHopfAlgebra ℤ n)) hideal.symm) := by
+  apply (cancel_mono (kostantToralGroupSchemeι e h ρ M hM hnil b wt)).1
+  rw [kostantGeneratedToToral_comp_ι, kostantGeneratedGroupSchemeι_def,
+    kostantToralGroupSchemeι_def, ← Category.assoc, CommHopfAlgCat.eqToHom_comp_quotientSpecι]
+  exact hideal.symm
+
+omit [Fintype κ] in
+/-- Equality of the toral and root-generated defining ideals makes their canonical comparison
+an isomorphism. -/
+theorem isIso_kostantGeneratedToToral_of_definingIdeal_eq [Finite κ]
+    (hideal : kostantToralDefiningIdeal e h ρ M hM hnil b wt =
+      kostantGeneratedDefiningIdeal e h ρ M hM hnil b) :
+    IsIso (kostantGeneratedToToral e h ρ M hM hnil b wt) := by
+  rw [kostantGeneratedToToral_eq_eqToHom_of_definingIdeal_eq e h ρ M hM hnil b wt hideal]
+  infer_instance
+
 /-- Under generation of the universal torus point, the canonical inclusion of the root-generated
 carrier into the toral closure is the transport along their equality. -/
 theorem kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary
@@ -160,21 +186,10 @@ theorem kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary
     kostantGeneratedToToral e h ρ M hM hnil b wt =
       eqToHom
         (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary
-          e h ρ M hM hnil b wt huniv).symm := by
-  have hideal :=
-    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
-      e h ρ M hM hnil b wt huniv
-  have hgroup :
-      (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary
-        e h ρ M hM hnil b wt huniv).symm =
-        congrArg (CommHopfAlgCat.quotientSpec
-          (GeneralLinear.coordinateHopfAlgebra ℤ n)) hideal.symm :=
-    Subsingleton.elim _ _
-  apply (cancel_mono (kostantToralGroupSchemeι e h ρ M hM hnil b wt)).1
-  rw [kostantGeneratedToToral_comp_ι]
-  rw [kostantGeneratedGroupSchemeι_def, kostantToralGroupSchemeι_def, hgroup]
-  rw [← Category.assoc, CommHopfAlgCat.eqToHom_comp_quotientSpecι]
-  exact hideal.symm
+          e h ρ M hM hnil b wt huniv).symm :=
+  kostantGeneratedToToral_eq_eqToHom_of_definingIdeal_eq e h ρ M hM hnil b wt
+    (kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
+      e h ρ M hM hnil b wt huniv)
 
 /-- Generation of the universal weight-torus point makes the canonical comparison from the
 root-generated carrier to the toral closure an isomorphism. -/
@@ -187,10 +202,10 @@ theorem isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary
             (SplitTorus.characterGroup κ)) A := toConv (AlgHom.id ℤ T)
       kostantTorusPoints M b wt A (SplitTorus.pointsMulEquiv q) ∈
         kostantElementarySubgroup e h ρ M hM hnil A) :
-    IsIso (kostantGeneratedToToral e h ρ M hM hnil b wt) := by
-  rw [kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary
-    e h ρ M hM hnil b wt huniv]
-  infer_instance
+    IsIso (kostantGeneratedToToral e h ρ M hM hnil b wt) :=
+  isIso_kostantGeneratedToToral_of_definingIdeal_eq e h ρ M hM hnil b wt
+    (kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
+      e h ρ M hM hnil b wt huniv)
 
 /-- Generation of the universal weight-torus point makes the transported toral and root-generated
 presentations in `O(GLₙ/A)` equal, for every commutative ring `A`. This does not identify them

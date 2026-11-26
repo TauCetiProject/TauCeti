@@ -56,8 +56,6 @@ polynomials they generalize already live.
   involution is that of E. A. Bender and D. E. Knuth, *Enumeration of plane partitions*,
   J. Combinatorial Theory **13** (1972), 40--54.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7.
 -/
 
 public section
@@ -75,16 +73,16 @@ variable {N : ℕ} {μ : YoungDiagram}
 than the ones already present and the two it exchanges. -/
 def benderKnuth (T : BoundedSSYT N μ) {a b : Fin N} (hab : (b : ℕ) = (a : ℕ) + 1) :
     BoundedSSYT N μ :=
-  ⟨T.1.benderKnuth (a : ℕ), fun i j hij => by
-    rcases SemistandardYoungTableau.benderKnuth_apply_eq_or T.1 (a : ℕ) i j with h | h | h
-    · rw [h]; exact T.2 i j hij
+  ⟨T.val.benderKnuth (a : ℕ), fun i j hij => by
+    rcases SemistandardYoungTableau.benderKnuth_apply_eq_or T.val (a : ℕ) i j with h | h | h
+    · rw [h]; exact T.property i j hij
     · rw [h]; exact a.isLt
     · rw [h, ← hab]; exact b.isLt⟩
 
 @[simp]
 theorem benderKnuth_benderKnuth (T : BoundedSSYT N μ) {a b : Fin N}
     (hab : (b : ℕ) = (a : ℕ) + 1) : (T.benderKnuth hab).benderKnuth hab = T :=
-  Subtype.ext (SemistandardYoungTableau.benderKnuth_benderKnuth T.1 (a : ℕ))
+  Subtype.ext (SemistandardYoungTableau.benderKnuth_benderKnuth T.val (a : ℕ))
 
 theorem benderKnuth_involutive (N : ℕ) (μ : YoungDiagram) {a b : Fin N}
     (hab : (b : ℕ) = (a : ℕ) + 1) :
@@ -106,7 +104,7 @@ tableau. -/
 theorem weight_benderKnuth (T : BoundedSSYT N μ) {a b : Fin N} (hab : (b : ℕ) = (a : ℕ) + 1)
     (i : Fin N) : weight (T.benderKnuth hab) i = weight T (Equiv.swap a b i) := by
   rw [weight_apply, weight_apply, val_swap, hab]
-  exact SemistandardYoungTableau.content_benderKnuth T.1 (a : ℕ) (i : ℕ)
+  exact SemistandardYoungTableau.content_benderKnuth T.val (a : ℕ) (i : ℕ)
 
 /-- The weight of the Bender-Knuth image of a tableau, as the transported weight. -/
 theorem mapDomain_weight_swap (T : BoundedSSYT N μ) {a b : Fin N}

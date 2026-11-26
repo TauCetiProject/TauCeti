@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Dot products
@@ -24,8 +26,15 @@ transform the dot products `x' ⬝ᵥ y'` and `x ⬝ᵥ y` into each other. For 
 matrix of a special isogeny acting on roots and coroots, this is the rule by which the Cartan
 integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §11).
 
+Over a ring, the bilinear form of a matrix with its diagonal removed is the sum over
+ordered off-diagonal index pairs.
+
 ## Main results
 
+* `Matrix.apply_last_eq_of_dotProduct_eq_zero`: if `w ⬝ᵥ v = 0` and the last coordinate of `w` is
+  a unit, then the last coordinate of `v` is determined by its other coordinates.
+* `Module.Dual.apply_prod_eq_dotProduct_add_mul`: a linear functional on `(ι → R) × R` is
+  `(v, t) ↦ v ⬝ᵥ u + t * s`.
 * `LinearIndependent.exists_dotProduct_ne_zero`: `n` linearly independent forms on `K ^ n` do not
   all vanish at a nonzero point.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
@@ -34,11 +43,30 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
+* `TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero`: over a field in which `2 ≠ 0`,
+  every unit vector of `K³` has an orthogonal unit vector.
 -/
 
 public section
 
 open Matrix
+
+/-- The zero-diagonal part of a matrix bilinear form is its sum over ordered off-diagonal pairs. -/
+theorem Matrix.dotProduct_mulVec_sub_diagonal_eq_sum_offDiag {n 𝕜 : Type*}
+    [Fintype n] [DecidableEq n] [Ring 𝕜] (A : Matrix n n 𝕜) (u v : n → 𝕜) :
+    u ⬝ᵥ (A - diagonal A.diag) *ᵥ v =
+      ∑ p ∈ (Finset.univ : Finset n).offDiag, u p.1 * A p.1 p.2 * v p.2 := by
+  let f (p : n × n) := u p.1 * (A - diagonal A.diag) p.1 p.2 * v p.2
+  have he : u ⬝ᵥ (A - diagonal A.diag) *ᵥ v =
+      ∑ p ∈ (Finset.univ : Finset n) ×ˢ (Finset.univ : Finset n), f p := by
+    rw [dot_mulVec_eq_sum_sum, Finset.sum_comm, Finset.sum_product]
+  rw [he, ← Finset.diag_union_offDiag, Finset.sum_union (Finset.disjoint_diag_offDiag _),
+    Finset.sum_diag]
+  simp only [f, Matrix.sub_apply, diagonal_apply_eq, diag_apply, sub_self, mul_zero, zero_mul,
+    Finset.sum_const_zero, zero_add]
+  exact Finset.sum_congr rfl fun _ hp ↦ by
+    rw [diagonal_apply_ne _ (Finset.mem_offDiag.mp hp).2.2, sub_zero]
+
 
 /-- `n` linearly independent linear forms on `K ^ n` do not all vanish at a nonzero point. -/
 theorem LinearIndependent.exists_dotProduct_ne_zero {K ι : Type*} [Field K] [Fintype ι]
@@ -83,3 +111,58 @@ theorem TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul {m n R : Type*} [Fintype m] 
   have key := dotProduct_transpose_mulVec A x y'
   rwa [hx, hy, dotProduct_comm x, dotProduct_comm y', smul_dotProduct, smul_dotProduct,
     dotProduct_comm y, eq_comm] at key
+
+/-- If `w ⬝ᵥ v = 0` and `w (Fin.last n)` is a unit, then `v (Fin.last n)` is
+`-(w (last))⁻¹ * ∑ i, w i.castSucc * v i.castSucc`. -/
+theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [Ring R]
+    {w v : Fin (n + 1) → R} (hv : w ⬝ᵥ v = 0)
+    (hwunit : IsUnit (w (Fin.last n))) :
+    v (Fin.last n) =
+      -((hwunit.unit⁻¹ : Rˣ) : R) * ∑ i : Fin n, w i.castSucc * v i.castSucc := by
+  simp only [dotProduct, Fin.sum_univ_castSucc] at hv
+  calc v (Fin.last n) =
+      ((hwunit.unit⁻¹ : Rˣ) : R) * (w (Fin.last n) * v (Fin.last n)) := by
+        rw [← mul_assoc, hwunit.val_inv_mul, one_mul]
+    _ = _ := by rw [eq_neg_of_add_eq_zero_right hv, mul_neg, neg_mul]
+
+/-- Over a field in which `2 ≠ 0`, **every unit vector of the three-dimensional space has an
+orthogonal unit vector**: the reflection exchanging a suitable standard basis vector `eᵢ` with `p`
+carries another standard basis vector to one. -/
+theorem TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero {K : Type*} [Field K]
+    [NeZero (2 : K)] {p : Fin 3 → K} (hp : p ⬝ᵥ p = 1) : ∃ u, u ⬝ᵥ u = 1 ∧ p ⬝ᵥ u = 0 := by
+  -- Some coordinate satisfies `p i ≠ 1`, as otherwise `p ⬝ᵥ p = 3`.
+  obtain ⟨i, hi⟩ : ∃ i, p i ≠ 1 := by
+    by_contra! h
+    rw [dotProduct, Fin.sum_univ_three, h 0, h 1, h 2] at hp
+    exact two_ne_zero (by linear_combination hp : (2 : K) = 0)
+  obtain ⟨j, hj⟩ := exists_ne i
+  have hi' : 1 - p i ≠ 0 := sub_ne_zero.mpr hi.symm
+  -- The reflection exchanging `eᵢ` and `p` sends `eⱼ` to a unit vector orthogonal to `p`.
+  refine ⟨Pi.single j 1 + (p j / (1 - p i)) • (Pi.single i 1 - p), ?_, ?_⟩
+  · simp only [dotProduct_add, add_dotProduct, dotProduct_smul, smul_dotProduct, dotProduct_sub,
+      sub_dotProduct]
+    simp only [single_one_dotProduct, dotProduct_single_one, Pi.single_eq_same,
+      Pi.single_eq_of_ne hj, Pi.single_eq_of_ne hj.symm, hp, smul_eq_mul]
+    field_simp
+    ring
+  · simp only [dotProduct_add, dotProduct_smul, dotProduct_sub, dotProduct_single_one, hp,
+      smul_eq_mul]
+    field_simp
+    ring
+
+/-- A linear functional on `(ι → R) × R` is `(v, t) ↦ v ⬝ᵥ u + t * s`, where `u k` is its value at
+`(Pi.single k 1, 0)` and `s` its value at `(0, 1)`. -/
+theorem Module.Dual.apply_prod_eq_dotProduct_add_mul {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [CommSemiring R] (f : Module.Dual R ((ι → R) × R)) (v : ι → R) (t : R) :
+    f (v, t) = v ⬝ᵥ (fun k => f (Pi.single k 1, 0)) + t * f (0, 1) := by
+  have hsplit : (v, t) = (v, 0) + t • ((0 : ι → R), (1 : R)) := by ext <;> simp
+  rw [hsplit, map_add, map_smul, smul_eq_mul]
+  congr 1
+  have := LinearMap.pi_apply_eq_sum_univ (f.comp (LinearMap.inl R (ι → R) R)) v
+  simp only [LinearMap.comp_apply, LinearMap.inl_apply] at this
+  rw [this, dotProduct]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [smul_eq_mul]
+  congr 3
+  ext l
+  simp [Pi.single_apply, eq_comm]

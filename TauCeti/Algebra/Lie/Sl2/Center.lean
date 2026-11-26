@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
 public import TauCeti.Algebra.Lie.Sl2.DiagonalCartan
 public import TauCeti.Algebra.Lie.Sl2.Killing
 import Mathlib.Algebra.CharZero.Infinite
+import TauCeti.Algebra.Lie.Sl2.Associative
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Injective
 public import TauCeti.Algebra.Polynomial.EvenComp
 
@@ -106,24 +107,13 @@ variable {K : Type*} [Field K] [CharZero K]
 local notation "U" => _root_.UniversalEnvelopingAlgebra K
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι K
 
-omit [CharZero K] in
-/-- The relation `e f = f e + h` in `U(sl₂)`. -/
-private theorem ι_mul_ι_slFinTwoBasis :
-    ι (slFinTwoBasis K 0) * ι (slFinTwoBasis K 1) =
-      ι (slFinTwoBasis K 1) * ι (slFinTwoBasis K 0) + ι (slFinTwoBasis K 2) := by
-  have := (ι : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ U _).map_lie
-    (slFinTwoBasis K 0) (slFinTwoBasis K 1)
-  rw [lie_slFinTwoBasis_zero_one, LieRing.of_associative_ring_bracket] at this
-  rw [this]
-  abel
-
 /-- **`Ω` is eight times the Casimir element** of the Killing form. -/
 theorem slTwoOmega_eq_smul_casimirElement :
     slTwoOmega K = (8 : K) • casimirElement K (SpecialLinear.sl (Fin 2) K) := by
   rw [casimirElement_eq_sum (slFinTwoBasis K), killingDualBasis_slFinTwoBasis, Fin.sum_univ_three,
     slTwoOmega]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, map_smul, mul_smul_comm,
-    ι_mul_ι_slFinTwoBasis]
+    sub_eq_iff_eq_add'.mp (Sl2.ι_e_mul_ι_f_sub_mul K (lie_slFinTwoBasis_zero_one K))]
   module
 
 /-- `Ω` is central. -/
@@ -186,20 +176,6 @@ theorem vermaCentralCharacter_slTwoOmegaCenter
       lam (slTwoCartanGenerator K) ^ 2 + 2 * lam (slTwoCartanGenerator K) := by
   rw [← lift_hcProjection, hcProjection_slTwoOmegaCenter]
   simp
-
-/-- The value of a linear form at `h` is its pairing with the coroot of the simple root. -/
-theorem coroot'_slTwoRootIndex (lam : Module.Dual K (slTwoDiagonalCartan K)) :
-    (IsKilling.rootSystem (slTwoDiagonalCartan K)).coroot' (slTwoRootIndex K) lam =
-      lam (slTwoCartanGenerator K) := by
-  rw [rootSystem_coroot'_apply, IsKilling.rootSystem_coroot_apply, coe_slTwoRootIndex,
-    coroot_slTwoRoot]
-
-/-- The value of the Weyl vector at `h` is `1`. -/
-@[simp]
-theorem weylVector_slTwoCartanGenerator :
-    weylVector (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K)
-      (slTwoCartanGenerator K) = 1 := by
-  rw [← coroot'_slTwoRootIndex, coroot'_weylVector _ _ slTwoRootIndex_mem_support]
 
 /-- `χ_n(Ω) = n (n + 2)`, the central character at the highest weight `n`. -/
 theorem vermaCentralCharacter_slTwoWeight_natCast (n : ℕ) :

@@ -53,8 +53,8 @@ a canonical representative-independent summand; that would need coherent conjuga
 of the representations themselves.
 
 Everything in this file is a statement about subgroups of `G`, with no coefficients and no
-representations; it is placed with the induction files because `mackeySubgroup` is the
-roadmap-specific subgroup the induction and restriction of that layer run along.
+representations; it is placed with the induction files because `mackeySubgroup` is the subgroup
+along which the restriction and induction in each summand of the Mackey decomposition run.
 
 ## Main definitions
 
@@ -86,12 +86,6 @@ roadmap-specific subgroup the induction and restriction of that layer run along.
   of prime order therefore has a conjugate meeting it trivially.
 
 ## References
-
-Layer 3 of `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, which asks to
-"name the subgroup `mackeySubgroup s H K := K ⊓ (MulAut.conj s • H)`" carrying the two
-homomorphisms `mackeyToK` and `mackeyToConjH`, and Layer 4, which asks for the invariance of the
-Mackey data "under replacing `s` by `h₁ s h₂`" as its own lemma.  `mackeySubgroup` is pinned in the
-accompanying `Suggested.lean`.
 
 * [J.-P. Serre, *Linear Representations of Finite Groups*][serre1977], Section 7.3.
 -/
@@ -310,7 +304,21 @@ theorem stabilizer_eq_mackeySubgroup_subgroupOf (s : G) (H K : Subgroup G) :
   rw [Subgroup.mem_subgroupOf, mem_mackeySubgroup_iff, mem_stabilizer_iff,
     Subgroup.smul_def, ← mem_stabilizer_iff,
     stabilizer_quotientGroup_mk, mem_conj_smul]
-  exact ⟨fun hg => ⟨g.2, hg⟩, fun hg => hg.2⟩
+  exact ⟨fun hg => ⟨g.property, hg⟩, fun hg => hg.2⟩
+
+/-- Conjugation by `g` identifies the stabiliser `J ∩ g⁻¹ Γ g` of the coset `g⁻¹ Γ` with
+`Γ ∩ g J g⁻¹`, the stabiliser of the coset `g J` in `Γ`. -/
+theorem natCard_mackeySubgroup_inv_subgroupOf (Γ J : Subgroup G) (g : G) :
+    Nat.card ((mackeySubgroup g⁻¹ Γ J).subgroupOf J) = Nat.card (mackeySubgroup g J Γ) := by
+  rw [Nat.card_congr (Subgroup.subgroupOfEquivOfLe mackeySubgroup_le_right).toEquiv]
+  refine Nat.card_congr ((MulAut.conj g).toEquiv.subtypeEquiv fun x ↦ ?_)
+  simp only [mem_mackeySubgroup_iff, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv,
+    MulAut.conj_apply, inv_inv]
+  constructor
+  · rintro ⟨hx, hΓ⟩
+    exact ⟨by simpa [mul_assoc] using hΓ, by simpa [mul_assoc] using hx⟩
+  · rintro ⟨hΓ, hx⟩
+    exact ⟨by simpa [mul_assoc] using hx, by simpa [mul_assoc] using hΓ⟩
 
 /-- If `H` has finite index in `G` then the Mackey subgroup has finite index in `K`, so the Mackey
 summand attached to `s` is induced along a finite-index inclusion. -/
@@ -349,7 +357,7 @@ theorem stabilizer_smul_eq_mackeySubgroup_subgroupOf (s : G) (Γ : Subgroup G) (
   ext g
   rw [Subgroup.mem_subgroupOf, mem_mackeySubgroup_iff, mem_stabilizer_iff, Subgroup.smul_def,
     mem_stabilizer_iff, mul_smul, mul_smul]
-  exact ⟨fun hg => ⟨g.2, inv_smul_eq_iff.mpr hg⟩, fun hg => inv_smul_eq_iff.mp hg.2⟩
+  exact ⟨fun hg => ⟨g.property, inv_smul_eq_iff.mpr hg⟩, fun hg => inv_smul_eq_iff.mp hg.2⟩
 
 end Translate
 

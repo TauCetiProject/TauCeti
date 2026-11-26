@@ -68,6 +68,25 @@ theorem normalFlatMass_le_of_eq_add_comp_extDerivCLM
   exact iInf_le_of_le S (iInf_le_of_le hS (iInf_le_of_le (hres ▸ hR)
     (by rw [hres])))
 
+/-- A decomposition `T = R + ∂S` of a normal current into currents of finite mass bounds its flat
+mass. Both terms are then normal: `∂S = T - R`, and `∂R = ∂T` since `∂∂S = 0`. -/
+theorem normalFlatMass_le_of_eq_add_comp_extDerivCLM_of_mass_ne_top (hT : IsNormal T)
+    {R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ}
+    {S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ}
+    (hR : mass R ≠ ⊤) (hS : mass S ≠ ⊤) (h : T = R + S ∘L extDerivCLM) :
+    T.normalFlatMass ≤ mass R + mass S := by
+  refine normalFlatMass_le_of_eq_add_comp_extDerivCLM T ?_ ?_ h
+  · cases k with
+    | zero => exact isNormal_finZero_iff.2 hR
+    | succ k =>
+      refine isNormal_succ_iff.2 ⟨hR, ?_⟩
+      have hRd : R ∘L extDerivCLM = T ∘L extDerivCLM := by
+        rw [h, add_comp, comp_assoc S, extDerivCLM_comp_extDerivCLM, comp_zero, add_zero]
+      exact hRd ▸ (isNormal_succ_iff.1 hT).2
+  · refine isNormal_succ_iff.2 ⟨hS, ?_⟩
+    have hSd : S ∘L extDerivCLM = T - R := by rw [h]; abel
+    exact hSd ▸ ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hT.mass_ne_top, hR⟩) mass_sub_le
+
 /-- A strict flat-mass bound is witnessed by an actual normal decomposition. -/
 theorem normalFlatMass_lt_iff {c : ℝ≥0∞} : T.normalFlatMass < c ↔
     ∃ (R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ)
@@ -154,7 +173,7 @@ theorem enorm_apply_le_normalFlatMass_mul
   refine le_iInf fun S => le_iInf fun _ => le_iInf fun _ => ?_
   have heq : T ω = (T - S ∘L extDerivCLM) ω + S (extDerivCLM ω) := by simp
   rw [heq, add_mul]
-  exact (enorm_add_le _ _).trans (add_le_add
+  exact (eNorm_add_le _ _).trans (add_le_add
     ((enorm_apply_le_mass_mul (T - S ∘L extDerivCLM) ω).trans
       (mul_le_mul' le_rfl (le_max_left _ _)))
     ((enorm_apply_le_mass_mul S (extDerivCLM ω)).trans
@@ -175,7 +194,7 @@ private theorem normalFlatMass_smul_le (a : ℝ) :
   · simp [ha]
   have ha' : ‖a‖ₑ ≠ 0 := by simpa using ha
   conv_rhs => rw [normalFlatMass_def]
-  simp_rw [ENNReal.mul_iInf_of_ne ha' enorm_ne_top]
+  simp_rw [ENNReal.mul_iInf_of_ne ha' eNorm_ne_top]
   refine le_iInf fun S => le_iInf fun hS => le_iInf fun hR => ?_
   refine (normalFlatMass_le_of_eq_add_comp_extDerivCLM (a • T) (hR.smul a) (hS.smul a)
     (by simp [smul_sub])).trans_eq ?_
@@ -189,7 +208,7 @@ theorem normalFlatMass_smul (a : ℝ) :
   · simp [ha]
   refine le_antisymm (T.normalFlatMass_smul_le a) ?_
   have h := (a • T).normalFlatMass_smul_le a⁻¹
-  have hnorm : ‖a‖ₑ * ‖a⁻¹‖ₑ = 1 := by rw [← enorm_mul, mul_inv_cancel₀ ha]; simp
+  have hnorm : ‖a‖ₑ * ‖a⁻¹‖ₑ = 1 := by rw [← eNorm_mul, mul_inv_cancel₀ ha]; simp
   simpa [smul_smul, inv_mul_cancel₀ ha, ← mul_assoc, hnorm] using mul_le_mul' (le_refl ‖a‖ₑ) h
 
 /-- Reversing a current preserves its flat mass. -/
@@ -197,14 +216,14 @@ theorem normalFlatMass_smul (a : ℝ) :
 theorem normalFlatMass_neg : (-T).normalFlatMass = T.normalFlatMass := by
   have h := T.normalFlatMass_smul (-1 : ℝ)
   rw [_root_.neg_one_smul ℝ T] at h
-  simpa only [enorm_neg, enorm_one, one_mul] using h
+  simpa only [eNorm_neg, eNorm_one, one_mul] using h
 
 /-- Boundary is a contraction for the normal flat mass in positive degrees. -/
 theorem normalFlatMass_comp_extDerivCLM_le
     (V : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ) :
     (V ∘L extDerivCLM).normalFlatMass ≤ V.normalFlatMass := by
   conv_rhs => rw [normalFlatMass_def]
-  refine le_iInf fun S => le_iInf fun hS => le_iInf fun hR => ?_
+  refine le_iInf fun S => le_iInf fun _ => le_iInf fun hR => ?_
   have heq : V ∘L extDerivCLM = 0 + (V - S ∘L extDerivCLM) ∘L extDerivCLM := by
     simp [sub_comp, comp_assoc, extDerivCLM_comp_extDerivCLM]
   simpa using (normalFlatMass_le_of_eq_add_comp_extDerivCLM _ isNormal_zero hR heq).trans
@@ -233,7 +252,7 @@ theorem tendsto_apply_of_normalFlatMass_sub_tendsto_zero {ι : Type*} {l : Filte
     (h : Tendsto (fun i => (Ts i - T).normalFlatMass) l (𝓝 0))
     (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
     Tendsto (fun i => Ts i ω) l (𝓝 (T ω)) := by
-  rw [tendsto_iff_enorm_sub_tendsto_zero]
+  rw [tendsto_iff_eNorm_sub_tendsto_zero]
   have hb : Tendsto (fun i => (Ts i - T).normalFlatMass *
       max ‖(ω : E →ᵇ E [⋀^Fin k]→L[ℝ] ℝ)‖ₑ
         ‖(extDerivCLM ω : E →ᵇ E [⋀^Fin (k + 1)]→L[ℝ] ℝ)‖ₑ) l (𝓝 0) := by

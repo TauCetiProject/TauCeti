@@ -37,9 +37,22 @@ underlying real manifold.
 * `ContMDiffMul.contMDiffConstSMul`: smooth multiplication gives smooth left translations.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
+* `ContMDiffSMul.contMDiffConstSMul`: a `C^n` action is by `C^n` maps.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
+* `Subgroup.contMDiff_subtypeVal_of_contMDiffSMul`: a subgroup whose left multiplication on the
+  ambient group is a `C^n` action has a `C^n` inclusion.
 * `ContMDiffSMul.mdifferentiableAt_smul_const`: the orbit maps of a `C^1` action are
   differentiable.
+* `ContMDiffConstSMul.mdifferentiable_const_smul`, `ContMDiffSMul.mdifferentiable_const_smul`: the
+  translations `y ↦ g • y` of an action by `C^n` maps, with `n ≠ 0`, are differentiable.
+* `ContMDiffConstSMul.mfderiv_const_smul_comp`, `ContMDiffConstSMul.mfderiv_inv_smul_mfderiv_smul`,
+  `ContMDiffConstSMul.injective_mfderiv_const_smul`: the differentials of these translations
+  satisfy the chain rule `d(g •) ∘ d(h •) = d((g * h) •)`, the differential of the translation by
+  `g⁻¹` inverts that of the translation by `g`, and each of them is injective.
+* `ContMDiffSMul.prod_of_smul_eq`: an action on `M × N` through `C^n` maps to groups acting by
+  `C^n` actions on `M` and on `N`, such as the factorwise action of a product group, is `C^n`.
+* `ContMDiffSMul.contMDiffOn_comp_smul_symm`: in the coordinates `(w, g) ↦ e (g • e.symm w)` of
+  a `C^n` partial homeomorphism `e` with `C^n` inverse, a `C^n` action is jointly `C^n`.
 * `ContinuousLinearEquiv.contMDiffConstSMul_transContinuousLinearEquiv_iff`: a linear change of
   the model vector space does not change whether an action is by `C^n` maps.
 * `ContMDiffConstSMul.restrictScalars`: an action by maps that are `C^n` over `𝕜'` is by maps that
@@ -78,6 +91,21 @@ instance SetLike.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜
     [ContMDiffConstSMul I n G M] (s : S) : ContMDiffConstSMul I n s M where
   contMDiff_const_smul g := contMDiff_const_smul (g : G)
 
+/-- A `C^n` action is by `C^n` maps. This has to be a theorem instead of an instance because
+`ContMDiffSMul` depends on the model `I` of the acting type, which `ContMDiffConstSMul` doesn't. -/
+@[to_additive /-- A `C^n` additive action is by `C^n` maps. This has to be a theorem instead of an
+instance because `ContMDiffVAdd` depends on the model `I` of the acting type, which
+`ContMDiffConstVAdd` doesn't. -/]
+theorem ContMDiffSMul.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] : ContMDiffConstSMul I' n G M :=
+  ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+
 /-- The orbit map `g ↦ g • x` of a `C^n` action is `C^n`. -/
 @[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^n` additive action is `C^n`. -/]
 theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -90,6 +118,18 @@ theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedFie
     [ContMDiffSMul I I' n G M] (x : M) : ContMDiff I I' n fun g : G ↦ g • x :=
   contMDiff_id.smul contMDiff_const
 
+/-- The inclusion of a subgroup acting smoothly on the ambient group by left multiplication is
+smooth, since it is the action on `1`. -/
+theorem Subgroup.contMDiff_subtypeVal_of_contMDiffSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [Group G] [TopologicalSpace G] [ChartedSpace H G] {n : ℕ∞ω} (K : Subgroup G)
+    [ChartedSpace H' K] [ContMDiffSMul I' I n K G] : ContMDiff I' I n (fun h : K ↦ (h : G)) := by
+  simpa [Subgroup.smul_def] using ContMDiffSMul.contMDiff_smul_const (I := I') (I' := I) (n := n)
+    (G := K) (1 : G)
+
 /-- The orbit map `g ↦ g • x` of a `C^1` action is differentiable. -/
 @[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^1` additive action is differentiable. -/]
 theorem ContMDiffSMul.mdifferentiableAt_smul_const {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -101,6 +141,140 @@ theorem ContMDiffSMul.mdifferentiableAt_smul_const {𝕜 : Type*} [NontriviallyN
     {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M]
     [ContMDiffSMul I I' 1 G M] (x : M) (g : G) : MDifferentiableAt I I' (fun h : G ↦ h • x) g :=
   (contMDiff_smul_const (n := 1) x).mdifferentiableAt one_ne_zero
+
+/-- Each translation `y ↦ g • y` of an action by `C^n` maps, with `n ≠ 0`, is differentiable. -/
+@[to_additive /-- Each translation `y ↦ g +ᵥ y` of an additive action by `C^n` maps, with
+`n ≠ 0`, is differentiable. -/]
+theorem ContMDiffConstSMul.mdifferentiable_const_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {G : Type*} {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffConstSMul I n G M] (hn : n ≠ 0) (g : G) : MDifferentiable I I fun y : M ↦ g • y :=
+  (contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn
+
+/-- Each translation `y ↦ g • y` of a `C^n` action, with `n ≠ 0`, is differentiable. -/
+@[to_additive /-- Each translation `y ↦ g +ᵥ y` of a `C^n` additive action, with `n ≠ 0`, is
+differentiable. -/]
+theorem ContMDiffSMul.mdifferentiable_const_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] (hn : n ≠ 0) (g : G) : MDifferentiable I' I' fun y : M ↦ g • y :=
+  (ContMDiffSMul.contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn
+
+/-- **Chain rule for translations.** For an action by `C^n` maps, with `n ≠ 0`, the differential
+of the translation by `h` at `x`, followed by that of the translation by `g` at `y = h • x`, is the
+differential of the translation by `c = g * h` at `x`. -/
+@[to_additive /-- **Chain rule for additive translations.** For an additive action by `C^n` maps,
+with `n ≠ 0`, the differential of the translation by `h` at `x`, followed by that of the
+translation by `g` at `y = h +ᵥ x`, is the differential of the translation by `c = g + h` at
+`x`. -/]
+theorem ContMDiffConstSMul.mfderiv_const_smul_comp {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {G : Type*} [Monoid G] {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction G M]
+    {n : ℕ∞ω} [ContMDiffConstSMul I n G M] (hn : n ≠ 0) (g h : G) (x : M) {y : M}
+    (hy : h • x = y) {c : G} (hc : g * h = c) (v : TangentSpace I x) :
+    mfderiv I I (fun z : M ↦ g • z) y (mfderiv I I (fun z : M ↦ h • z) x v) =
+      mfderiv I I (fun z : M ↦ c • z) x v := by
+  subst hc
+  have hd := ContMDiffConstSMul.mdifferentiable_const_smul (I := I) (G := G) (M := M) hn
+  have hfun : (fun z : M ↦ (g * h) • z) = (fun z ↦ g • z) ∘ fun z ↦ h • z :=
+    funext fun z ↦ mul_smul g h z
+  rw [hfun]
+  exact (mfderiv_comp_apply_of_eq x (hd g y) (hd h x) hy v).symm
+
+/-- For an action of a group by `C^n` maps, with `n ≠ 0`, the differential of the translation by
+`g⁻¹` at `y = g • x` inverts the differential of the translation by `g` at `x`. -/
+@[to_additive /-- For an additive action of an additive group by `C^n` maps, with `n ≠ 0`, the
+differential of the translation by `-g` at `y = g +ᵥ x` inverts the differential of the
+translation by `g` at `x`. -/]
+theorem ContMDiffConstSMul.mfderiv_inv_smul_mfderiv_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {G : Type*} [Group G] {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction G M]
+    {n : ℕ∞ω} [ContMDiffConstSMul I n G M] (hn : n ≠ 0) (g : G) (x : M) {y : M}
+    (hy : g • x = y) (v : TangentSpace I x) :
+    mfderiv I I (fun z : M ↦ g⁻¹ • z) y (mfderiv I I (fun z : M ↦ g • z) x v) = v := by
+  rw [mfderiv_const_smul_comp hn g⁻¹ g x hy (inv_mul_cancel g) v]
+  have hid : (fun z : M ↦ (1 : G) • z) = id := funext (one_smul G)
+  rw [hid, mfderiv_id]
+  -- `ContinuousLinearMap.id` is stated in the fibre at `x` but applied in the fibre at `1 • x`;
+  -- the two fibres coincide only up to defeq, so `id_apply` closes the goal by `exact`, not `rw`.
+  exact ContinuousLinearMap.id_apply v
+
+/-- For an action of a group by `C^n` maps, with `n ≠ 0`, the differential of each translation is
+injective. -/
+@[to_additive /-- For an additive action of an additive group by `C^n` maps, with `n ≠ 0`, the
+differential of each translation is injective. -/]
+theorem ContMDiffConstSMul.injective_mfderiv_const_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {G : Type*} [Group G] {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction G M]
+    {n : ℕ∞ω} [ContMDiffConstSMul I n G M] (hn : n ≠ 0) (g : G) (x : M) :
+    Function.Injective (mfderiv I I (fun y : M ↦ g • y) x) :=
+  Function.LeftInverse.injective (mfderiv_inv_smul_mfderiv_smul hn g x rfl)
+
+/-- **Factorwise actions on products.** Let `K` act on `M × N` through `C^n` maps `φ : K → G` and
+`ψ : K → G'` into groups acting by `C^n` actions on `M` and on `N`,
+`k • (x, y) = (φ k • x, ψ k • y)`. Then the action of `K` is `C^n`. For instance, `G × G'` acting
+factorwise on `M × N`, with `φ` and `ψ` the two projections. -/
+@[to_additive prod_of_vadd_eq
+/-- **Factorwise additive actions on products.** Let `K` act additively on `M × N` through `C^n`
+maps `φ : K → G` and `ψ : K → G'` into types acting additively by `C^n` actions on `M` and on `N`,
+`k +ᵥ (x, y) = (φ k +ᵥ x, ψ k +ᵥ y)`. Then the additive action of `K` is `C^n`. -/]
+theorem ContMDiffSMul.prod_of_smul_eq {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {HF : Type*} [TopologicalSpace HF] {IF : ModelWithCorners 𝕜 F HF}
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {HF' : Type*} [TopologicalSpace HF'] {IF' : ModelWithCorners 𝕜 F' HF'}
+    {EK : Type*} [NormedAddCommGroup EK] [NormedSpace 𝕜 EK]
+    {HK : Type*} [TopologicalSpace HK] {IK : ModelWithCorners 𝕜 EK HK}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {G' : Type*} [TopologicalSpace G'] [ChartedSpace HF G']
+    {K : Type*} [TopologicalSpace K] [ChartedSpace HK K]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
+    {N : Type*} [TopologicalSpace N] [ChartedSpace HF' N]
+    [SMul G M] [SMul G' N] [SMul K (M × N)] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] [ContMDiffSMul IF IF' n G' N] {φ : K → G} {ψ : K → G'}
+    (hφ : ContMDiff IK I n φ) (hψ : ContMDiff IK IF n ψ)
+    (hsmul : ∀ (k : K) (p : M × N), k • p = (φ k • p.1, ψ k • p.2)) :
+    ContMDiffSMul IK (I'.prod IF') n K (M × N) where
+  contMDiff_smul := by
+    simp only [hsmul]
+    exact ((hφ.comp contMDiff_fst).smul (contMDiff_fst.comp contMDiff_snd)).prodMk
+      ((hψ.comp contMDiff_fst).smul (contMDiff_snd.comp contMDiff_snd))
+
+/-- In the coordinates of a `C^n` partial homeomorphism `e` with `C^n` inverse, a `C^n` action is
+the jointly `C^n` map `(w, g) ↦ e (g • e.symm w)` on the set of pairs for which it is defined.
+That set is open (`OpenPartialHomeomorph.isOpen_setOf_mem_target_smul_symm_mem_source`). -/
+@[to_additive /-- In the coordinates of a `C^n` partial homeomorphism `e` with `C^n` inverse, a
+`C^n` additive action is the jointly `C^n` map `(w, g) ↦ e (g +ᵥ e.symm w)` on the set of pairs
+for which it is defined. -/]
+theorem ContMDiffSMul.contMDiffOn_comp_smul_symm {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] {e : OpenPartialHomeomorph M F}
+    (he : ContMDiffOn I' 𝓘(𝕜, F) n e e.source) (hes : ContMDiffOn 𝓘(𝕜, F) I' n e.symm e.target) :
+    ContMDiffOn (𝓘(𝕜, F).prod I) 𝓘(𝕜, F) n (fun p : F × G ↦ e (p.2 • e.symm p.1))
+      {p : F × G | p.1 ∈ e.target ∧ p.2 • e.symm p.1 ∈ e.source} := by
+  have hj : ContMDiffOn (𝓘(𝕜, F).prod I) (I.prod I') n (fun p : F × G ↦ (p.2, e.symm p.1))
+      {p : F × G | p.1 ∈ e.target ∧ p.2 • e.symm p.1 ∈ e.source} :=
+    contMDiffOn_snd.prodMk (hes.comp contMDiffOn_fst fun p hp ↦ hp.1)
+  exact he.comp ((contMDiff_smul (I := I) (I' := I') (n := n)).comp_contMDiffOn hj)
+    fun p hp ↦ hp.2
 
 /-! ### Changes of model -/
 

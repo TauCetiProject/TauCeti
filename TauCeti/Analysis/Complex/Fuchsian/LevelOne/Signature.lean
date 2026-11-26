@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
+public import TauCeti.Analysis.Complex.Fuchsian.FreeLocus
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 
 /-!
@@ -28,6 +30,8 @@ level-one modular curve `X(1)`, the compactified quotient of `ℍ` by the effect
 * The covolume of the group is `π / 3` (`TauCeti.ModularGroup.covolume_psl2zToPSL2RRange`), which
   is `2π (-χ(X(1)) + 7 / 6 + 1)`.
 
+Removing the two elliptic orbits leaves the regular part of the quotient, which is path connected.
+
 The Euler characteristic is the finite-CW Euler characteristic `TauCeti.eulerChar` of the
 topological space `X(1)`. It is transported through the biholomorphism constructed from `j`, after
 the compactified quotient and its complex structure already exist.
@@ -35,8 +39,11 @@ the compactified quotient and its complex structure already exist.
 ## Main results
 
 * `TauCeti.ModularGroup.eulerChar_compactifiedQuotient`: `χ(X(1)) = 2`.
+* `TauCeti.ModularGroup.genus_compactifiedQuotient`: `X(1)` has topological genus `0`.
 * `TauCeti.ModularGroup.ellipticOrbits_psl2zToPSL2RRange`: the elliptic orbits are those of `ρ`
   and `i`.
+* `TauCeti.ModularGroup.isPathConnected_compl_pair_quotientMk_ρ_I`: the quotient with these two
+  orbits removed is path connected.
 * `TauCeti.ModularGroup.finsum_mem_ellipticOrbits_psl2zToPSL2RRange`:
   `∑ₑ (1 - 1 / mₑ) = 7 / 6` over the elliptic orbits.
 * `TauCeti.ModularGroup.covolume_psl2zToPSL2RRange_eq_two_pi_mul`: the orbifold area formula
@@ -74,6 +81,13 @@ theorem eulerChar_compactifiedQuotient :
   rw [jBiholomorph.toHomeomorph.eulerChar_eq, eulerChar_onePoint, Complex.finrank_real_complex]
   norm_num
 
+/-- **The level-one modular curve has genus `0`**: its topological genus
+`TauCeti.RiemannSurface.genus` is read off `χ(X(1)) = 2 = 2 - 2 · 0`. -/
+@[simp]
+theorem genus_compactifiedQuotient :
+    RiemannSurface.genus psl2zToPSL2R.range.CompactifiedQuotient = 0 :=
+  RiemannSurface.genus_eq_of_eulerChar_eq (by rw [eulerChar_compactifiedQuotient]; norm_num)
+
 /-- **The elliptic orbits of the modular group** are the orbits of `ρ` and of `i`. -/
 theorem ellipticOrbits_psl2zToPSL2RRange :
     psl2zToPSL2R.range.ellipticOrbits =
@@ -85,6 +99,15 @@ theorem ellipticOrbits_psl2zToPSL2RRange :
       stabilizer_psl2zToPSL2RRange_eq_bot_iff]
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     tauto
+
+/-- **The regular part of the level-one quotient is path connected.** Removing the two cone
+points, the orbits of `ρ` and of `i`, from the effective level-one quotient leaves a
+path-connected space. -/
+theorem isPathConnected_compl_pair_quotientMk_ρ_I :
+    IsPathConnected ({Quotient.mk (orbitRel psl2zToPSL2R.range ℍ) ρ, Quotient.mk _ I}ᶜ :
+      Set (orbitRel.Quotient psl2zToPSL2R.range ℍ)) := by
+  rw [← ellipticOrbits_psl2zToPSL2RRange]
+  exact Subgroup.isPathConnected_compl_ellipticOrbits _
 
 /-- The elliptic defect sum of the modular group: its elliptic orbits, of orders `3` and `2`, give
 `(1 - 1 / 3) + (1 - 1 / 2) = 7 / 6`. This is the elliptic term subtracted from the Euler

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.Injective.Resolution
 public import TauCeti.Algebra.Homology.Ext.AcyclicResolution
 public import TauCeti.Algebra.Homology.HomologicalComplex.FunctorCategory
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
@@ -66,6 +67,8 @@ shown to vanish.
 * `CategoryTheory.Sheaf.H'.cohomologyPresheafFunctor_map_app_resolutionClass` and
   `CategoryTheory.Sheaf.H'.homologyMap_comp_homologyIsoCohomologyPresheaf_hom`: classes of sections
   and the comparison `homologyIsoCohomologyPresheaf` are natural in morphisms of resolutions.
+* `CategoryTheory.InjectiveResolution.presheafComplex`: the complex of presheaves underlying an
+  injective resolution of an abelian sheaf.
 
 ## References
 
@@ -257,7 +260,7 @@ of a section of `Kⁿ` over `V`: the complex of sections `K(V)` is exact in degr
 theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n + 1) V))
     (s : (K.X (n + 1)).obj.obj (op V)) (hs : (K.d (n + 1) (n + 2)).hom.app (op V) s = 0) :
     ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s :=
-  (resolutionClass_succ_eq_zero_iff ι hι hι' hK V hKV s hs).1 (Subsingleton.elim _ _)
+  (resolutionClass_succ_eq_zero_iff ι hι hι' hK V hKV s hs).1 (hF.elim _ _)
 
 /-- **Classes of sections are compatible with restriction**: restricting the class of a section
 `s` of `Kⁿ` over `V` along `i : U ⟶ V` gives the class of the restricted section. -/
@@ -480,5 +483,16 @@ end Presheaf
 end H'
 
 end Sheaf
+
+namespace InjectiveResolution
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{v}] {F : Sheaf J AddCommGrpCat.{v}}
+
+/-- The cochain complex of presheaves underlying an injective resolution of an abelian sheaf. -/
+abbrev presheafComplex (R : InjectiveResolution F) : CochainComplex (Cᵒᵖ ⥤ AddCommGrpCat.{v}) ℕ :=
+  ((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj R.cocomplex
+
+end InjectiveResolution
 
 end CategoryTheory

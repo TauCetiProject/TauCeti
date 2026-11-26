@@ -8,8 +8,11 @@ module
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Basis
 public import Mathlib.RingTheory.AdjoinRoot
+public import TauCeti.Algebra.Module.Torsion.Finite
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Algebra.GroupWithZero.Irreducible
+import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # Quotients by distinguished restricted power series
@@ -64,19 +67,15 @@ theorem IsDistinguished.polynomialToRestricted_dvd_iff
   have hdiv : (g : PowerSeries R) = (g /ₘ p : PowerSeries R) * (p : PowerSeries R)
       + (g %ₘ p : PowerSeries R) := by
     exact_mod_cast (Polynomial.modByMonic_add_div g p).symm.trans (by ring)
-  have hr : ∀ n, s ≤ n → (g %ₘ p : PowerSeries R).coeff n = 0 := by
-    intro n hn
-    rw [Polynomial.coeff_coe]
-    apply Polynomial.coeff_eq_zero_of_degree_lt
-    exact (Polynomial.degree_modByMonic_lt g hm.monic).trans_le
-      (by rw [Polynomial.degree_eq_natDegree hm.ne_zero, hm.natDegree_eq]; exact_mod_cast hn)
+  have hr : ∀ n, s ≤ n → (g %ₘ p : PowerSeries R).coeff n = 0 := fun _ ↦
+    Polynomial.coeff_coe_eq_zero_of_degree_lt (hm.degree_modByMonic_lt g)
   have heq : (a : PowerSeries R) * (p : PowerSeries R) + 0 =
       (g /ₘ p : PowerSeries R) * (p : PowerSeries R) + (g %ₘ p : PowerSeries R) := by
     have hcoe := congrArg (fun x : PowerSeries.IsRestricted.subring (R := R) c ↦
       (x : PowerSeries R)) ha
     simp only [coe_polynomialToRestricted, Subring.coe_mul] at hcoe
     simpa [mul_comm] using hcoe.symm.trans hdiv
-  have hzero := (hp.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _) a.2
+  have hzero := (hp.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _) a.property
     (isRestricted_polynomial (g /ₘ p)) (fun n _ ↦ by simp) hr heq).2
   exact (Polynomial.modByMonic_eq_zero_iff_dvd hm.monic).mp
     (Polynomial.coe_injective R (by simpa using hzero.symm))
@@ -188,7 +187,7 @@ theorem IsDistinguished.exists_polynomialQuotientEquiv
     ∃ p : Polynomial R, p.IsMonicOfDegree s ∧
       Nonempty ((Polynomial R ⧸ Ideal.span {p}) ≃ₐ[R]
         (PowerSeries.IsRestricted.subring (R := R) c ⧸ Ideal.span {f})) := by
-  obtain ⟨e, p, he, hm, hmul⟩ := hf.exists_isUnit_isMonicOfDegree_mul_eq hu hc f.2
+  obtain ⟨e, p, he, hm, hmul⟩ := hf.exists_isUnit_isMonicOfDegree_mul_eq hu hc f.property
   have hfp : e * polynomialToRestricted c p = f := Subtype.ext (by simpa using hmul)
   have hp : IsDistinguished c s (p : PowerSeries R) :=
     (hmul.symm ▸ hf).of_isUnit_mul hc he
@@ -208,15 +207,8 @@ theorem IsDistinguished.finite_of_isTorsionBy
     [Module.Finite (PowerSeries.IsRestricted.subring (R := R) c) M]
     (hfM : Module.IsTorsionBy (PowerSeries.IsRestricted.subring (R := R) c) M f) :
     Module.Finite R M := by
-  -- `M` is a finite module over the quotient by `f`, which is finite over `R`.
-  let S := PowerSeries.IsRestricted.subring (R := R) c
-  have hM : Module.IsTorsionBySet S M (Ideal.span {f}) :=
-    (Module.isTorsionBySet_span_singleton_iff f).mpr hfM
-  let := hM.module
   have := (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).finite_quotient hc
-  have : IsScalarTower R (S ⧸ Ideal.span {f}) M := hM.isScalarTower
-  have : Module.Finite (S ⧸ Ideal.span {f}) M := Module.Finite.of_restrictScalars_finite S _ M
-  exact Module.Finite.trans (S ⧸ Ideal.span {f}) M
+  exact hfM.finite_of_finite_quotient (A := R)
 
 /-- A maximal ideal of restricted power series containing a distinguished series `f` with a unit
 dominant coefficient contracts to a maximal ideal of the coefficient ring. -/
@@ -251,7 +243,7 @@ theorem IsDistinguished.map_comap_polynomialToRestricted
   refine le_antisymm Ideal.map_comap_le fun x hx ↦ ?_
   set J := (I.comap (polynomialToRestricted c)).map (polynomialToRestricted c)
   -- `f` is a unit multiple of a monic polynomial `p`, which lies in `I`.
-  obtain ⟨e, p, he, -, hmul⟩ := hf.exists_isUnit_isMonicOfDegree_mul_eq hu hc f.2
+  obtain ⟨e, p, he, -, hmul⟩ := hf.exists_isUnit_isMonicOfDegree_mul_eq hu hc f.property
   have hfp : e * polynomialToRestricted c p = f := Subtype.ext (by simpa using hmul)
   have hpI : polynomialToRestricted c p ∈ I :=
     (Ideal.unit_mul_mem_iff_mem I he).mp (hfp ▸ hfI)

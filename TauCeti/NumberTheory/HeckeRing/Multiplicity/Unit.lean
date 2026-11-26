@@ -17,10 +17,8 @@ multiplying by such an `e` on either side, the multiplicity is `1` exactly on th
 `Γ₁gΓ₂ = Γ₁dΓ₂`. Specialised to a Hecke coset module, these compute the products `T(g) * T(1)`
 and `T(1) * T(g)` in later files.
 
-Vendored from the in-review mathlib4 PR
-[#41255](https://github.com/leanprover-community/mathlib4/pull/41255) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+Vendored from mathlib4 PR
+[#41255](https://github.com/leanprover-community/mathlib4/pull/41255) (Chris Birkbeck).
 
 ## Main results
 
@@ -52,7 +50,7 @@ private lemma exists_fibre_of_mem_right {g e d : G} (he : e ∈ Γ₂)
   obtain ⟨j₀⟩ : Nonempty (DecompQuotient Γ₂ Γ₂ e) := inferInstance
   rw [mem_leftCoset_iff] at hi₀
   refine ⟨(i₀, j₀), ?_⟩
-  rw [QuotientGroup.mk_mul_of_mem _ (Γ₂.mul_mem j₀.out.2 he), QuotientGroup.eq]
+  rw [QuotientGroup.mk_mul_of_mem _ (Γ₂.mul_mem j₀.out.property he), QuotientGroup.eq]
   exact hi₀
 
 private lemma exists_fibre_of_mem_left {e g d : G} (he : e ∈ Γ₁)
@@ -61,7 +59,7 @@ private lemma exists_fibre_of_mem_left {e g d : G} (he : e ∈ Γ₁)
       ((p.1.out : G) * e * ((p.2.out : G) * g) : G ⧸ Γ₂) = (d : G ⧸ Γ₂) := by
   obtain ⟨i₀⟩ : Nonempty (DecompQuotient Γ₁ Γ₁ e) := inferInstance
   set a := (i₀.out : G) * e with ha_def
-  have ha : a ∈ Γ₁ := Γ₁.mul_mem i₀.out.2 he
+  have ha : a ∈ Γ₁ := Γ₁.mul_mem i₀.out.property he
   have hd' : a⁻¹ * d ∈ doubleCoset g Γ₁ Γ₂ := by
     obtain ⟨h₁, hh₁, h₂, hh₂, rfl⟩ := mem_doubleCoset.mp hd
     exact mem_doubleCoset.mpr ⟨a⁻¹ * h₁, Γ₁.mul_mem (Γ₁.inv_mem ha) hh₁, h₂, hh₂,
@@ -81,9 +79,9 @@ theorem multiplicity_eq_zero_of_mem_right {g e d : G} (he : e ∈ Γ₂)
   rw [multiplicity_def] at h0
   obtain ⟨⟨p, hp⟩⟩ := (Nat.card_ne_zero.mp h0).1
   have hp' : _ = (d : G ⧸ Γ₂) := hp
-  rw [QuotientGroup.mk_mul_of_mem _ (Γ₂.mul_mem p.2.out.2 he), QuotientGroup.eq] at hp'
+  rw [QuotientGroup.mk_mul_of_mem _ (Γ₂.mul_mem p.2.out.property he), QuotientGroup.eq] at hp'
   exact h (doubleCoset_eq_of_mem (mem_doubleCoset.mpr
-    ⟨(p.1.out : G), p.1.out.2, _, hp', (mul_inv_cancel_left _ _).symm⟩)).symm
+    ⟨(p.1.out : G), p.1.out.property, _, hp', (mul_inv_cancel_left _ _).symm⟩)).symm
 
 /-- For `e ∈ Γ₂`, right multiplication by the identity double coset `Γ₂eΓ₂ = Γ₂` has
 multiplicity `1` exactly on the diagonal. -/
@@ -98,11 +96,11 @@ theorem multiplicity_eq_one_iff_of_mem_right {g e d : G} (he : e ∈ Γ₂) :
     have := subsingleton_decompQuotient_of_mem he
     obtain ⟨p, hp⟩ := exists_fibre_of_mem_right he (h ▸ mem_doubleCoset_self Γ₁ Γ₂ d)
     refine ⟨⟨fun q₁ q₂ ↦ Subtype.ext ?_⟩, ⟨p, hp⟩⟩
-    have hsnd : q₁.1.2 = q₂.1.2 := Subsingleton.elim _ _
-    have h₁ : _ = (d : G ⧸ Γ₂) := q₁.2
-    have h₂ : _ = (d : G ⧸ Γ₂) := q₂.2
+    have hsnd : q₁.val.2 = q₂.val.2 := Subsingleton.elim _ _
+    have h₁ : _ = (d : G ⧸ Γ₂) := q₁.property
+    have h₂ : _ = (d : G ⧸ Γ₂) := q₂.property
     rw [← hsnd] at h₂
-    exact Prod.ext (fst_eq_of_mul_snd_mem (Γ₂.mul_mem q₁.1.2.out.2 he) h₁ h₂) hsnd
+    exact Prod.ext (fst_eq_of_mul_snd_mem (Γ₂.mul_mem q₁.val.2.out.property he) h₁ h₂) hsnd
 
 /-- For `e ∈ Γ₁`, the multiplicity of left multiplication by the identity double coset
 `Γ₁eΓ₁ = Γ₁` vanishes off the diagonal. -/
@@ -114,7 +112,8 @@ theorem multiplicity_eq_zero_of_mem_left {e g d : G} (he : e ∈ Γ₁)
   have hp' : _ = (d : G ⧸ Γ₂) := hp
   rw [QuotientGroup.eq] at hp'
   exact h (doubleCoset_eq_of_mem (mem_doubleCoset.mpr
-    ⟨(p.1.out : G) * e * p.2.out, Γ₁.mul_mem (Γ₁.mul_mem p.1.out.2 he) p.2.out.2, _, hp',
+    ⟨(p.1.out : G) * e * p.2.out, Γ₁.mul_mem (Γ₁.mul_mem p.1.out.property he) p.2.out.property, _,
+        hp',
       by simp [mul_assoc]⟩)).symm
 
 /-- For `e ∈ Γ₁`, left multiplication by the identity double coset `Γ₁eΓ₁ = Γ₁` has
@@ -130,9 +129,9 @@ theorem multiplicity_eq_one_iff_of_mem_left {e g d : G} (he : e ∈ Γ₁) :
     have := subsingleton_decompQuotient_of_mem he
     obtain ⟨p, hp⟩ := exists_fibre_of_mem_left he (h ▸ mem_doubleCoset_self Γ₁ Γ₂ d)
     refine ⟨⟨fun q₁ q₂ ↦ Subtype.ext ?_⟩, ⟨p, hp⟩⟩
-    have hfst : q₁.1.1 = q₂.1.1 := Subsingleton.elim _ _
-    have h₁ : _ = (d : G ⧸ Γ₂) := q₁.2
-    have h₂ : _ = (d : G ⧸ Γ₂) := q₂.2
+    have hfst : q₁.val.1 = q₂.val.1 := Subsingleton.elim _ _
+    have h₁ : _ = (d : G ⧸ Γ₂) := q₁.property
+    have h₂ : _ = (d : G ⧸ Γ₂) := q₂.property
     rw [← hfst] at h₂
     exact Prod.ext hfst (snd_eq_of_fst_eq h₁ h₂)
 
@@ -150,8 +149,8 @@ lemma mulMapOf_one_right (h₁ : H₁.toSubmonoid ≤ Δ) (h₂ : H₂.toSubmono
     (p : DecompQuotient H₁ H₂ (g₁ : G) ×
       DecompQuotient H₂ H₂ (((1 : HeckeCoset Δ H₂ H₂).rep : G))) :
     mulMapOf h₁ h₂ H₂ g₁ (1 : HeckeCoset Δ H₂ H₂).rep p = mk H₁ H₂ g₁ :=
-  HeckeCoset.mulMapOf_eq_of_eq_mul_mul p.1.out.2
-    (H₂.mul_mem p.2.out.2 HeckeCoset.rep_one_mem) rfl
+  HeckeCoset.mulMapOf_eq_of_eq_mul_mul p.1.out.property
+    (H₂.mul_mem p.2.out.property HeckeCoset.rep_one_mem) rfl
 
 /-- Every pair of representatives multiplies into `mk H₁ H₂ g₁` when the second double coset is
 the identity. -/
@@ -169,7 +168,8 @@ lemma mulMapOf_one_left (h₁ : H₁.toSubmonoid ≤ Δ) (g₁ : Δ)
       DecompQuotient H₁ H₂ (g₁ : G)) :
     mulMapOf h₁ h₁ H₂ (1 : HeckeCoset Δ H₁ H₁).rep g₁ p = mk H₁ H₂ g₁ :=
   HeckeCoset.mulMapOf_eq_of_eq_mul_mul
-    (H₁.mul_mem (H₁.mul_mem p.1.out.2 (HeckeCoset.rep_one_mem (Δ := Δ))) p.2.out.2) H₂.one_mem
+    (H₁.mul_mem (H₁.mul_mem p.1.out.property (HeckeCoset.rep_one_mem (Δ
+        := Δ))) p.2.out.property) H₂.one_mem
     (by simp [mul_assoc])
 
 /-- Every pair of representatives multiplies into `mk H₁ H₂ g₁` when the first double coset is

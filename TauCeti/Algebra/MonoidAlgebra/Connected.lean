@@ -8,6 +8,7 @@ module
 import Mathlib.Algebra.Field.ZMod
 public import Mathlib.GroupTheory.PGroup
 import Mathlib.RingTheory.Idempotents
+import TauCeti.Algebra.MonoidAlgebra.Frobenius
 public import TauCeti.Algebra.MonoidAlgebra.Torsion
 
 /-!
@@ -20,6 +21,14 @@ characteristic `p`, the converse holds for finite abelian groups.
 
 This detects connected finite diagonalizable group schemes, including the
 nonreduced groups of roots of unity of prime-power order.
+
+## Main results
+
+* `TauCeti.isNilpotent_sub_algebraMap_counit_of_isPGroup`: for an abelian `p`-group, every
+  element differs from its augmentation by a nilpotent.
+* `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup`: over a commutative ring with
+  connected spectrum and of prime characteristic `p`, a finite abelian group has connected
+  group-algebra spectrum exactly when it is a `p`-group.
 
 ## References
 
@@ -41,8 +50,6 @@ every element differs from its augmentation by a nilpotent. No finiteness assump
 on the group is needed. -/
 theorem isNilpotent_sub_algebraMap_counit_of_isPGroup (hG : IsPGroup p G) (x : R[G]) :
     IsNilpotent (x - algebraMap R R[G] (Coalgebra.counit (R := R) x)) := by
-  have _ : ExpChar R[G] p :=
-    expChar_of_injective_algebraMap (Bialgebra.algebraMap_injective (R := R) R[G]) p
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp
   | add x y hx hy =>
@@ -103,7 +110,7 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup :
   let φ := MonoidAlgebra.mapRingHom G (ZMod.castHom (dvd_refl p) R)
   have hφ : Function.Injective φ :=
     MonoidAlgebra.map_injective _ (ZMod.castHom_injective R)
-  have hidem := (isIdempotentElem_groupAlgebraSubgroupAverage (ZMod p) P hnz).map φ
+  have hidem := (isIdempotentElem_groupAlgebraSubgroupAverage (ZMod p) P).map φ
   rcases hidem.eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
   · exact groupAlgebraSubgroupAverage_ne_zero (ZMod p) P hnz
       (hφ (hzero.trans (map_zero φ).symm))

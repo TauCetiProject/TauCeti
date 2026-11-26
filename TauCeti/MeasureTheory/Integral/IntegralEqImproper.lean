@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -19,8 +23,32 @@ the whole ray, the derivative identity also gives a formula for every higher ite
 derivative. These results apply to Banach-space-valued integrands and support differential
 closure arguments for improper integrals.
 
+For a real function `g` integrable on `(x, ∞)`, with tail integral
+`Ψ v = ∫ u in Ioi v, g u`, and `F` differentiable with continuous derivative `f`, the product
+`g * f ∘ Ψ` is integrable on `(x, ∞)` (`MeasureTheory.IntegrableOn.mul_comp_integral_Ioi`) with
+integral `F (Ψ x) - F 0` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_comp_integral_Ioi`). For
+integrability it suffices that `f` be continuous on `[-A, A]` for `A = ∫ u in Ioi x, ‖g u‖`, since
+`Ψ` takes values there on `[x, ∞)` (`MeasureTheory.IntegrableOn.integral_Ioi_mem_Icc`). In
+particular the integral of `g * Ψ ^ k` is `Ψ x ^ (k + 1) / (k + 1)`
+(`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`) and that of `g * exp Ψ` is
+`exp (Ψ x) - 1` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
+If `f` is only integrable on each `(y, ∞)` with `y > a` and continuous on `(a, ∞)`, the tail
+integral still has derivative `-f x` at every `x > a`
+(`MeasureTheory.hasDerivAt_integral_Ioi_of_continuousOn`).
+The tail integral of a function nonnegative on `(a, ∞)` is antitone there
+(`MeasureTheory.antitoneOn_integral_Ioi`). If `f` is continuous from the right at `a` and `f`
+and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
+`∫ x in Ioi a, f' x = -f a`
+(`MeasureTheory.integral_Ioi_of_hasDerivAt_of_integrableOn`).
+
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
-ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
+ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For general
+Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
+change of variables `y = c + b * x` (`0 < b`) on `Ioi a`.
+
+The integrals of a function integrable on a strip `ℝ × T` over the rectangles `[a i, b i] × T`
+converge to its integral over the strip as `a i → -∞` and `b i → ∞`
+(`TauCeti.tendsto_setIntegral_Icc_prod`).
 
 If nonnegative functions `f` and `g` satisfy `∫_{φ i} f ≤ ∫_{φ i} g + e i` along an exhaustion `φ`
 with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫ f ≤ ∫ g`
@@ -28,15 +56,18 @@ with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫
 `[-n, n] × T` of a strip `ℝ × T` this is
 `TauCeti.integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add`.
 
-A nonnegative function whose integrals over the preimages of the balls `closedBall x₀ (r i)`
-under a continuous map converge as the radii `r i` tend to infinity has the limit as its integral
+The preimages of the balls `closedBall x₀ (r i)` under a continuous map exhaust the space as the
+radii `r i` tend to infinity (`TauCeti.aecover_preimage_closedBall`), so the integrals of an
+integrable function over them converge to its integral. A nonnegative function whose integrals over
+these preimages converge as the radii `r i` tend to infinity has the limit as its integral
 over the whole space (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). For
 example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ ≤ r}` of `ℂ`.
 
 ## References
 
 * Mathlib's `intervalIntegral.integral_Ioi_sub_Ioi'`,
-  `intervalIntegral.integral_hasStrictDerivAt_right` and
+  `intervalIntegral.integral_hasStrictDerivAt_right`,
+  `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub` and
   `HasCompactSupport.integral_Ioi_deriv_eq`.
 -/
 
@@ -88,7 +119,140 @@ theorem iteratedDeriv_integral_Ioi (hint : IntegrableOn f (Ioi a))
     exact hint.deriv_integral_Ioi (hcont.continuousAt (isOpen_Ioi.mem_nhds hu)) hu
   rw [iteratedDeriv_succ', heq.iteratedDeriv_eq n, iteratedDeriv_fun_neg]
 
+section Real
+
+variable {g : ℝ → ℝ} {x : ℝ}
+
+/-- For `g` integrable on `(x, ∞)` and `v ≥ x`, the tail integral `∫ u in Ioi v, g u` lies in
+`[-A, A]` for `A = ∫ u in Ioi x, ‖g u‖`. -/
+theorem integral_Ioi_mem_Icc (hint : IntegrableOn g (Ioi x)) {v : ℝ} (hv : x ≤ v) :
+    ∫ u in Ioi v, g u ∈ Icc (-∫ u in Ioi x, ‖g u‖) (∫ u in Ioi x, ‖g u‖) :=
+  abs_le.1 ((norm_integral_le_integral_norm _).trans (setIntegral_mono_set hint.norm
+    (ae_of_all _ fun _ ↦ norm_nonneg _) (Ioi_subset_Ioi hv).eventuallySubset))
+
+/-- If `g` is integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, and `f` is
+continuous on `[-A, A]` for `A = ∫ u in Ioi x, ‖g u‖`, an interval containing the values of `Ψ`
+on `(x, ∞)`, then `v ↦ g v * f (Ψ v)` is integrable on `(x, ∞)`. -/
+theorem mul_comp_integral_Ioi (hint : IntegrableOn g (Ioi x)) {f : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc (-∫ u in Ioi x, ‖g u‖) (∫ u in Ioi x, ‖g u‖))) :
+    IntegrableOn (fun v ↦ g v * f (∫ u in Ioi v, g u)) (Ioi x) := by
+  have hΨ : ContinuousOn (fun v ↦ ∫ u in Ioi v, g u) (Ioi x) :=
+    hint.continuousOn_Ici_primitive_Ioi.mono Ioi_subset_Ici_self
+  have hmaps : MapsTo (fun v ↦ ∫ u in Ioi v, g u) (Ioi x) _ := fun v (hv : x < v) ↦
+    hint.integral_Ioi_mem_Icc hv.le
+  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hf
+  refine Integrable.mono' (hint.norm.mul_const M)
+    (hint.aestronglyMeasurable.mul ((hf.comp hΨ hmaps).aestronglyMeasurable measurableSet_Ioi)) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with v hv
+  rw [norm_mul]
+  exact mul_le_mul_of_nonneg_left (hM _ (hmaps hv)) (norm_nonneg _)
+
+/-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, and `F`
+differentiable with continuous derivative `f`, the integral of `g * f ∘ Ψ` over `(x, ∞)` is
+`F (Ψ x) - F 0`: on bounded intervals `-g * f ∘ Ψ` is the derivative of the absolutely continuous
+function `F ∘ Ψ`, and `Ψ` tends to `0` at infinity. -/
+theorem integral_Ioi_mul_comp_integral_Ioi (hint : IntegrableOn g (Ioi x)) {F f : ℝ → ℝ}
+    (hF : ∀ t, HasDerivAt F (f t) t) (hf : Continuous f) :
+    ∫ v in Ioi x, g v * f (∫ u in Ioi v, g u) = F (∫ u in Ioi x, g u) - F 0 := by
+  set Ψ : ℝ → ℝ := fun v ↦ ∫ u in Ioi v, g u
+  -- on `[x, y]`, `Ψ` is `Ψ x` minus a primitive of `g`
+  have hΨeq {y : ℝ} (hy : x ≤ y) : Ψ y = Ψ x - ∫ u in x..y, g u := by
+    simp only [Ψ, ← intervalIntegral.integral_interval_add_Ioi hint
+      (hint.mono_set (Ioi_subset_Ioi hy)), add_sub_cancel_left]
+  -- `F` is Lipschitz on the interval containing the values of `Ψ`
+  have hFC : ContDiff ℝ 1 F := contDiff_one_iff_deriv.2
+    ⟨fun t ↦ (hF t).differentiableAt, by simpa only [funext fun t ↦ (hF t).deriv] using hf⟩
+  obtain ⟨C, hC⟩ := hFC.contDiffOn.exists_lipschitzOnWith (s := Icc (-∫ u in Ioi x, ‖g u‖)
+    (∫ u in Ioi x, ‖g u‖)) one_ne_zero (convex_Icc _ _) isCompact_Icc
+  have hfin {y : ℝ} (hy : x ≤ y) :
+      ∫ v in x..y, g v * f (Ψ v) = F (Ψ x) - F (Ψ y) := by
+    have hgi : IntervalIntegrable g volume x y :=
+      (intervalIntegrable_iff_integrableOn_Ioc_of_le hy).2 (hint.mono_set Ioc_subset_Ioi_self)
+    have hΨac : AbsolutelyContinuousOnInterval Ψ x y :=
+      ((LipschitzWith.const (Ψ x)).lipschitzOnWith.absolutelyContinuousOnInterval.sub
+        (hgi.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)).congr
+        fun v hv ↦ (hΨeq (uIcc_of_le hy ▸ hv).1).symm
+    have hFac : AbsolutelyContinuousOnInterval (F ∘ Ψ) x y :=
+      hC.comp_absolutelyContinuousOnInterval
+        (fun v hv ↦ hint.integral_Ioi_mem_Icc (uIcc_of_le hy ▸ hv).1) hΨac
+    have hderiv : ∀ᵐ v, v ∈ uIoc x y → deriv (F ∘ Ψ) v = -(g v * f (Ψ v)) := by
+      filter_upwards [hgi.ae_hasDerivAt_integral, Measure.ae_ne volume y] with v hv hvy hvI
+      rw [uIoc_of_le hy] at hvI
+      have hvI' : v ∈ Ioo x y := ⟨hvI.1, hvI.2.lt_of_ne hvy⟩
+      have hΨv : HasDerivAt Ψ (-g v) v := by
+        rw [← zero_sub]
+        refine ((hasDerivAt_const v (Ψ x)).sub (hv (Ioc_subset_Icc_self.trans
+          (uIcc_of_le hy).symm.subset hvI) x left_mem_uIcc)).congr_of_eventuallyEq ?_
+        filter_upwards [Ioo_mem_nhds hvI'.1 hvI'.2] with w hw
+        exact hΨeq hw.1.le
+      rw [((hF (Ψ v)).comp v hΨv).deriv]
+      ring
+    have := hFac.integral_deriv_eq_sub
+    rw [intervalIntegral.integral_congr_ae hderiv, intervalIntegral.integral_neg] at this
+    simp only [Function.comp_apply] at this
+    linarith
+  refine tendsto_nhds_unique (intervalIntegral_tendsto_integral_Ioi x
+    (hint.mul_comp_integral_Ioi hf.continuousOn) tendsto_id) ?_
+  have htend : Tendsto Ψ atTop (𝓝 0) := tendsto_integral_Ioi_zero tendsto_id
+  exact (((hFC.continuous.tendsto 0).comp htend).const_sub (F (Ψ x))).congr'
+    ((eventually_ge_atTop x).mono fun y hy ↦ (hfin hy).symm)
+
+/-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, the integral
+of `g * Ψ ^ k` over `(x, ∞)` is `Ψ x ^ (k + 1) / (k + 1)`. This identity is behind the factorial
+decay of the Picard increments of Volterra integral equations on a half-line. -/
+theorem integral_Ioi_mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : ℕ) :
+    ∫ v in Ioi x, g v * (∫ u in Ioi v, g u) ^ k = (∫ u in Ioi x, g u) ^ (k + 1) / (k + 1) := by
+  have hF (t : ℝ) : HasDerivAt (fun t : ℝ ↦ t ^ (k + 1) / (k + 1)) (t ^ k) t := by
+    convert (hasDerivAt_pow (k + 1) t).div_const ((k : ℝ) + 1) using 1
+    rw [Nat.add_sub_cancel]
+    push_cast
+    field_simp
+  exact (hint.integral_Ioi_mul_comp_integral_Ioi hF (continuous_pow k)).trans (by simp)
+
+/-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, the integral
+of `g * exp Ψ` over `(x, ∞)` is `exp (Ψ x) - 1`. This gives the derivative bounds for solutions
+of Volterra integral equations on a half-line. -/
+theorem integral_Ioi_mul_exp_integral_Ioi (hint : IntegrableOn g (Ioi x)) :
+    ∫ v in Ioi x, g v * Real.exp (∫ u in Ioi v, g u) = Real.exp (∫ u in Ioi x, g u) - 1 := by
+  rw [hint.integral_Ioi_mul_comp_integral_Ioi Real.hasDerivAt_exp Real.continuous_exp,
+    Real.exp_zero]
+
+end Real
+
 end MeasureTheory.IntegrableOn
+
+namespace MeasureTheory
+
+/-- If `f` is continuous on `(a, ∞)` and integrable on `(y, ∞)` for every `y > a`, then its tail
+integral has derivative `-f x` at every `x > a`. Unlike `IntegrableOn.hasDerivAt_integral_Ioi`,
+`f` need not be integrable on `(a, ∞)` itself. -/
+theorem hasDerivAt_integral_Ioi_of_continuousOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} {a x : ℝ}
+    (hint : ∀ y ∈ Ioi a, IntegrableOn f (Ioi y)) (hcont : ContinuousOn f (Ioi a))
+    (hx : x ∈ Ioi a) : HasDerivAt (fun t ↦ ∫ s in Ioi t, f s) (-f x) x := by
+  obtain ⟨y, hay, hyx⟩ := exists_between (mem_Ioi.1 hx)
+  exact (hint y hay).hasDerivAt_integral_Ioi (hcont.continuousAt (isOpen_Ioi.mem_nhds hx)) hyx
+
+/-- If `f` is nonnegative on `(a, ∞)` and integrable on `(x, ∞)` for every `x > a`, then its tail
+integral `x ↦ ∫ v in Ioi x, f v` is antitone on `(a, ∞)`. -/
+theorem antitoneOn_integral_Ioi {f : ℝ → ℝ} {a : ℝ} (hf : ∀ v ∈ Ioi a, 0 ≤ f v)
+    (hint : ∀ x ∈ Ioi a, IntegrableOn f (Ioi x)) :
+    AntitoneOn (fun x ↦ ∫ v in Ioi x, f v) (Ioi a) := fun x (hx : a < x) _ _ hxy ↦
+  setIntegral_mono_set (hint x hx) ((ae_restrict_iff' measurableSet_Ioi).2
+    (ae_of_all _ fun v hv ↦ hf v (hx.trans hv))) (Ioi_subset_Ioi hxy).eventuallySubset
+
+/-- **Fundamental theorem of calculus on a half-line, with integrable primitive.** If `f` is
+continuous from the right at `a`, has derivative `f'` on `(a, ∞)`, and both `f` and `f'` are
+integrable on `(a, ∞)`, then `∫ x in Ioi a, f' x = -f a`. -/
+theorem integral_Ioi_of_hasDerivAt_of_integrableOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f f' : ℝ → E} {a : ℝ}
+    (hcont : ContinuousWithinAt f (Ici a) a) (hderiv : ∀ x ∈ Ioi a, HasDerivAt f (f' x) x)
+    (f'int : IntegrableOn f' (Ioi a)) (fint : IntegrableOn f (Ioi a)) :
+    ∫ x in Ioi a, f' x = -f a := by
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto hcont hderiv f'int
+    (tendsto_zero_of_hasDerivAt_of_integrableOn_Ioi hderiv f'int fint), zero_sub]
+
+end MeasureTheory
 
 section Ray
 
@@ -142,6 +306,23 @@ namespace TauCeti
 
 open MeasureTheory
 
+/-- **Integrals over a strip are limits over its truncations.** Let `T` be measurable and `f`
+integrable on the strip `ℝ × T`. If `a i → -∞` and `b i → ∞` along a countably generated filter,
+the integrals of `f` over the rectangles `[a i, b i] × T` converge to its integral over the
+strip. -/
+theorem tendsto_setIntegral_Icc_prod {ι β F : Type*} [MeasurableSpace β] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {μ : Measure (ℝ × β)} {l : Filter ι} [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {T : Set β}
+    (hT : MeasurableSet T) {f : ℝ × β → F} (hf : IntegrableOn f (univ ×ˢ T) μ) :
+    Tendsto (fun i ↦ ∫ z in Icc (a i) (b i) ×ˢ T, f z ∂μ) l (𝓝 (∫ z in univ ×ˢ T, f z ∂μ)) := by
+  have hφ : AECover (μ.restrict (univ ×ˢ T)) l fun i ↦ Icc (a i) (b i) ×ˢ T :=
+    aecover_restrict_of_ae_imp (MeasurableSet.univ.prod hT) (ae_of_all _ fun z hz ↦
+      ((ha.eventually_le_atBot z.1).and (hb.eventually_ge_atTop z.1)).mono fun _ h ↦
+        ⟨⟨h.1, h.2⟩, hz.2⟩) fun _ ↦ measurableSet_Icc.prod hT
+  refine (hφ.integral_tendsto_of_countably_generated hf).congr fun i ↦ ?_
+  rw [Measure.restrict_restrict (measurableSet_Icc.prod hT),
+    inter_eq_left.2 (prod_mono (subset_univ _) subset_rfl)]
+
 /-- **Integral bounds over a strip from its truncations.** Let `T ⊆ ℝ` be measurable, and let `f`
 and `g` be nonnegative on the strip `ℝ × T`, with `g` integrable there and `f` integrable on each
 truncation `[-n, n] × T`. If `∫_{[-n, n] × T} f ≤ ∫_{[-n, n] × T} g + e n` with errors `e n → 0`,
@@ -170,6 +351,16 @@ theorem integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add
     exact hfi n
   · simpa only [hres] using hle n
 
+/-- **The preimages of growing balls exhaust the space.** If the radii `r i` tend to infinity along
+`l`, the preimages of the balls `closedBall x₀ (r i)` under a continuous map `g` form an
+`AECover`: every point eventually lies in them. -/
+theorem aecover_preimage_closedBall {α X ι : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [OpensMeasurableSpace α] [PseudoMetricSpace X] {μ : Measure α} {l : Filter ι} {g : α → X}
+    {x₀ : X} (hg : Continuous g) {r : ι → ℝ} (hr : Tendsto r l atTop) :
+    AECover μ l fun i ↦ g ⁻¹' Metric.closedBall x₀ (r i) :=
+  ⟨ae_of_all _ fun z ↦ hr.eventually_ge_atTop (dist (g z) x₀),
+    fun _ ↦ (Metric.isClosed_closedBall.preimage hg).measurableSet⟩
+
 /-- **Exhausting a space by balls.** If a nonnegative function is integrable on the preimages of
 the balls `closedBall x₀ (r i)` under a continuous map `g`, and its integrals over them converge
 to `c` as the radii `r i` tend to infinity, then its integral over the whole space is `c`. -/
@@ -181,10 +372,18 @@ theorem lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall {α X ι : Type*}
     {c : ℝ} (hc : Tendsto (fun i ↦ ∫ z in g ⁻¹' Metric.closedBall x₀ (r i), f z ∂μ) l (𝓝 c)) :
     ∫⁻ z, ENNReal.ofReal (f z) ∂μ = ENNReal.ofReal c := by
   have hφ : AECover μ l fun i ↦ g ⁻¹' Metric.closedBall x₀ (r i) :=
-    ⟨ae_of_all _ fun z ↦ hr.eventually_ge_atTop (dist (g z) x₀),
-      fun _ ↦ (Metric.isClosed_closedBall.preimage hg).measurableSet⟩
+    aecover_preimage_closedBall hg hr
   rw [← ofReal_integral_eq_lintegral_ofReal
     (hφ.integrable_of_integral_tendsto_of_nonneg_ae c hfi hf hc) hf,
     hφ.integral_eq_of_tendsto_of_nonneg_ae c hf hfi hc]
+
+/-- Affine substitution `y = c + b * x` (`0 < b`) in a Bochner integral over `Ioi a`. -/
+theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (g : ℝ → E) (a c : ℝ) {b : ℝ} (hb : 0 < b) :
+    b • ∫ x in Ioi a, g (c + b * x) = ∫ y in Ioi (c + b * a), g y := by
+  rw [integral_comp_mul_left_Ioi' (fun y ↦ g (c + y)) a hb,
+    ← (measurePreserving_add_left volume c).setIntegral_preimage_emb (measurableEmbedding_addLeft c)
+      g (Ioi (c + b * a)),
+    preimage_const_add_Ioi, add_sub_cancel_left]
 
 end TauCeti

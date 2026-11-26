@@ -20,7 +20,7 @@ import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import TauCeti.Topology.Covering.Clopen
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 import TauCeti.Analysis.Normed.Module.Connected
 
@@ -146,11 +146,11 @@ theorem zpowers_puncturedDiscCircle_eq_top :
 noncomputable instance puncturedDiscSMul [NeZero e] :
     SMul (rootsOfUnity e ℂ) ↥(ball (0 : ℂ) 1 \ {0}) where
   smul ζ z := ⟨ζ • (z : ℂ), by
-    rcases z.2 with ⟨hz, hz0⟩
+    rcases z.property with ⟨hz, hz0⟩
     refine ⟨?_, ?_⟩
     · rw [mem_ball_zero_iff] at hz ⊢
       rwa [rootsOfUnity.smul_eq_mul, norm_mul,
-        Complex.norm_eq_one_of_mem_rootsOfUnity ζ.2, one_mul]
+        Complex.norm_eq_one_of_mem_rootsOfUnity ζ.property, one_mul]
     · rw [mem_singleton_iff, rootsOfUnity.smul_eq_mul]
       exact mul_ne_zero (ζ : ℂˣ).ne_zero hz0⟩
 
@@ -170,7 +170,7 @@ theorem coe_rootsOfUnity_smul_puncturedDisc [NeZero e] (ζ : rootsOfUnity e ℂ)
 noncomputable instance puncturedDiscContinuousConstSMul [NeZero e] :
     ContinuousConstSMul (rootsOfUnity e ℂ) ↥(ball (0 : ℂ) 1 \ {0}) where
   continuous_const_smul ζ :=
-    Continuous.subtype_mk ((continuous_const_smul ζ).comp continuous_subtype_val) _
+    Continuous.subtype_mk ((continuous_const_smul ζ).comp continuous_subtypeVal) _
 
 /-- Rotation by a root of unity acts cancellatively on the punctured disc. -/
 noncomputable instance puncturedDiscIsCancelSMul [NeZero e] :
@@ -178,7 +178,7 @@ noncomputable instance puncturedDiscIsCancelSMul [NeZero e] :
   right_cancel' ζ η z h := by
     apply Subtype.ext
     apply Units.ext
-    exact mul_right_cancel₀ z.2.2 <| by
+    exact mul_right_cancel₀ z.property.2 <| by
       simpa only [coe_rootsOfUnity_smul_puncturedDisc, rootsOfUnity.smul_eq_mul] using
         congrArg Subtype.val h
 
@@ -190,7 +190,7 @@ theorem pow_mem_ball_zero_one_diff_singleton_iff {𝕜 : Type*} [NormedDivisionR
 /-- The **power map** `z ↦ z ^ e` from the punctured unit disc `ball 0 1 \ {0}` to itself, for
 `e ≠ 0`. -/
 def puncturedDiscPow (he : e ≠ 0) : C(↥(ball (0 : ℂ) 1 \ {0}), ↥(ball (0 : ℂ) 1 \ {0})) where
-  toFun z := ⟨(z : ℂ) ^ e, (pow_mem_ball_zero_one_diff_singleton_iff he).2 z.2⟩
+  toFun z := ⟨(z : ℂ) ^ e, (pow_mem_ball_zero_one_diff_singleton_iff he).2 z.property⟩
   continuous_toFun := by fun_prop
 
 @[simp]
@@ -253,7 +253,7 @@ theorem isQuotientCoveringMap_puncturedDiscPow [NeZero e] :
   · intro w
     obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (w : ℂ) (Nat.pos_of_ne_zero he)
     have hzmem : z ∈ ball (0 : ℂ) 1 \ {0} :=
-      (pow_mem_ball_zero_one_diff_singleton_iff he).1 (hz ▸ w.2)
+      (pow_mem_ball_zero_one_diff_singleton_iff he).1 (hz ▸ w.property)
     exact ⟨⟨z, hzmem⟩, Subtype.ext hz⟩
   · intro z w
     rw [MulAction.mem_orbit_iff]
@@ -278,18 +278,17 @@ noncomputable def puncturedDiscPowDeckMulEquiv (he : e ≠ 0) :
       (0 : ℂ) one_pos)
   have : Nonempty ↥(ball (0 : ℂ) 1 \ {0}) :=
     ⟨⟨(1 / 2 : ℂ), by norm_num [mem_ball_zero_iff]⟩⟩
-  Deck.IsQuotientCoveringMap.deckMulEquiv
-    (isQuotientCoveringMap_puncturedDiscPow (e := e))
+  (isQuotientCoveringMap_puncturedDiscPow (e := e)).deckMulEquiv
 
 /-- A root of unity acts through `puncturedDiscPowDeckMulEquiv` by multiplying points of the
 punctured disc. -/
 @[simp]
 theorem puncturedDiscPowDeckMulEquiv_apply (he : e ≠ 0) (ζ : rootsOfUnity e ℂ)
     (z : ↥(ball (0 : ℂ) 1 \ {0})) :
-    ((puncturedDiscPowDeckMulEquiv he ζ).1 z : ℂ) = ζ • (z : ℂ) := by
+    ((puncturedDiscPowDeckMulEquiv he ζ).val z : ℂ) = ζ • (z : ℂ) := by
   let _ : NeZero e := ⟨he⟩
   rw [puncturedDiscPowDeckMulEquiv,
-    Deck.IsQuotientCoveringMap.deckMulEquiv_apply,
+    IsQuotientCoveringMap.deckMulEquiv_apply,
     coe_rootsOfUnity_smul_puncturedDisc]
 
 /-- Every deck transformation of the punctured-disc power map is rotation by the corresponding
@@ -297,10 +296,10 @@ root of unity under `puncturedDiscPowDeckMulEquiv`. -/
 @[simp]
 theorem puncturedDiscPowDeckMulEquiv_symm_apply (he : e ≠ 0)
     (φ : deck (puncturedDiscPow he)) (z : ↥(ball (0 : ℂ) 1 \ {0})) :
-    (((puncturedDiscPowDeckMulEquiv he).symm φ : ℂˣ) : ℂ) * (z : ℂ) = (φ.1 z : ℂ) := by
+    (((puncturedDiscPowDeckMulEquiv he).symm φ : ℂˣ) : ℂ) * (z : ℂ) = (φ.val z : ℂ) := by
   let _ : NeZero e := ⟨he⟩
   simpa only [puncturedDiscPowDeckMulEquiv_apply, rootsOfUnity.smul_eq_mul] using
-    congrArg (fun ψ : deck (puncturedDiscPow he) => (ψ.1 z : ℂ))
+    congrArg (fun ψ : deck (puncturedDiscPow he) => (ψ.val z : ℂ))
       ((puncturedDiscPowDeckMulEquiv he).apply_symm_apply φ)
 
 /-- The deck group of `z ↦ z ^ e` has order `e`. -/
@@ -324,11 +323,11 @@ theorem card_puncturedDiscPow_preimage_singleton (he : e ≠ 0) (w : ↥(ball (0
     · rintro ⟨z, hz, rfl⟩
       rw [← coe_puncturedDiscPow_apply he, Set.mem_singleton_iff.1 hz]
     · intro hz
-      refine ⟨⟨z, (pow_mem_ball_zero_one_diff_singleton_iff he).1 (hz ▸ w.2)⟩, ?_, rfl⟩
+      refine ⟨⟨z, (pow_mem_ball_zero_one_diff_singleton_iff he).1 (hz ▸ w.property)⟩, ?_, rfl⟩
       exact Set.mem_singleton_iff.2 (Subtype.ext hz)
   obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (w : ℂ) (Nat.pos_of_ne_zero he)
   rw [← Nat.card_image_of_injective Subtype.val_injective, himage, Nat.card_coe_set_eq,
-    Set.ncard_coe_finset, hζ.card_nthRootsFinset_of_pow_eq hα w.2.2]
+    Set.ncard_coe_finset, hζ.card_nthRootsFinset_of_pow_eq hα w.property.2]
 
 variable {E : Type*} [TopologicalSpace E] [ConnectedSpace E] {p : E → ↥(ball (0 : ℂ) 1 \ {0})}
 
@@ -419,7 +418,7 @@ theorem existsUnique_rootsOfUnity_smul_homeomorph (he : e ≠ 0)
       norm_num [mem_ball_zero_iff]⟩
     apply Subtype.ext
     apply Units.ext
-    apply mul_right_cancel₀ z.2.2
+    apply mul_right_cancel₀ z.property.2
     have hζ : (k (h.symm z) : ℂ) = ((ζ : ℂˣ) : ℂ) * (h (h.symm z) : ℂ) := by
       simpa only [ζ, φ, Homeomorph.trans_apply, h.apply_symm_apply] using
         (puncturedDiscPowDeckMulEquiv_symm_apply he φ z).symm

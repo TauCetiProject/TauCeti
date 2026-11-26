@@ -9,13 +9,15 @@ public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.Logic.Equiv.Fin.Rotate
 
+import Mathlib.Data.List.Flatten
 import TauCeti.Data.Fin.Basic
 
 /-!
 # Transporting list rotations
 
 This file records how list rotations act on their finite index types and interact with filtering,
-and how the permutation formed by a list interacts with mapping by an equivalence.
+with powers of words and with prefix products, and how the permutation formed by a list interacts
+with mapping by an equivalence.
 
 These lemmas transport a cyclic order, and the successor permutation it induces, across a
 renaming of indices. They are needed when comparing a combinatorial construction built from a
@@ -23,7 +25,12 @@ list with the same construction built from a cyclic rotation of that list: filte
 by the same predicate gives cyclically rotated sublists, which therefore form the same
 permutation, and renaming the entries by an equivalence conjugates that permutation. For
 example, `TauCeti.KnotTheory.BraidWord.Cyclic` uses them to identify the closures of cyclically
-rotated braid words.
+rotated braid words. Separately, rotating a power of a word gives a power of the rotated word:
+in the combinatorics of words of Lyndon and Schützenberger, a cyclic conjugate of a power is used
+throughout as a power of a cyclic conjugate. Finally, the prefix sums (and products) of a
+rotated list are computed from those of the original list, as needed when a construction indexed
+by the prefix sums of a cycle of digits is compared with the same construction for a rotated
+cycle.
 
 ## Main results
 
@@ -36,9 +43,20 @@ rotated braid words.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
 * `List.IsRotated.apply_prod_eq`: a function `φ` with `φ (x * y) = φ (y * x)`, such as a trace,
   takes the same value on the products of cyclically rotated lists.
+* `List.prod_take_mul_prod_take_rotate`: the prefix products of a rotated list, computed from
+  the prefix products of the doubled list.
 * `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
 * `List.apply_rotate_of_append_singleton`: a function of lists that is unchanged by moving the
   first entry to the end is invariant under every rotation.
+* `List.rotate_flatten_replicate`: rotating the power `wⁿ = (replicate n w).flatten` of a word
+  gives the `n`-th power of the same rotation of `w`.
+* `List.exists_isRotated_flatten_replicate_of_append_eq`: a cyclic conjugate of a power of a word
+  is a power of a cyclic conjugate of that word.
+
+## References
+
+* R. C. Lyndon, M. P. Schützenberger, *The equation `a^M = b^N c^P` in a free group*, Michigan
+  Math. J. 9 (1962), 289–298.
 -/
 
 public section
@@ -50,27 +68,27 @@ namespace List
 length. -/
 def rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ) :
     Fin (l.rotate k).length ≃ Fin l.length :=
-  (finCongr (List.length_rotate l k)).trans (finRotate l.length ^ k)
+  (finCongr (length_rotate l k)).trans (finRotate l.length ^ k)
 
 /-- Looking up an entry after rotation and translating its index gives the same entry in the
 original list. -/
 theorem getElem_rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ)
     (j : Fin (l.rotate k).length) :
-    (l.rotate k)[j.1] = l[(l.rotateIndexEquiv k j).1] := by
-  rw [List.getElem_rotate]
+    (l.rotate k)[j.val] = l[(l.rotateIndexEquiv k j).val] := by
+  rw [getElem_rotate]
   congr 1
   simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
 
 /-- Translating every index of a rotated list gives the correspondingly rotated list of the
 original indices. -/
 theorem map_finRange_rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ) :
-    (List.finRange (l.rotate k).length).map (l.rotateIndexEquiv k) =
-      (List.finRange l.length).rotate k := by
-  apply List.ext_getElem
+    (finRange (l.rotate k).length).map (l.rotateIndexEquiv k) =
+      (finRange l.length).rotate k := by
+  apply ext_getElem
   · simp
   · intro i hi hi'
-    simp only [List.length_map, List.length_finRange] at hi
-    simp only [List.getElem_map, List.getElem_finRange, List.getElem_rotate]
+    simp only [length_map, length_finRange] at hi
+    simp only [getElem_map, getElem_finRange, getElem_rotate]
     apply Fin.ext
     simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
 
@@ -80,15 +98,15 @@ theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
     (l.map e).formPerm = e.permCongr l.formPerm := by
   induction l with
   | nil =>
-    rw [List.map_nil, List.formPerm_nil, List.formPerm_nil, Equiv.Perm.one_def,
+    rw [map_nil, formPerm_nil, formPerm_nil, Equiv.Perm.one_def,
       Equiv.Perm.one_def, Equiv.permCongr_refl]
   | cons x l ih =>
     cases l with
     | nil =>
-      rw [List.map_singleton, List.formPerm_singleton, List.formPerm_singleton,
+      rw [map_singleton, formPerm_singleton, formPerm_singleton,
         Equiv.Perm.one_def, Equiv.Perm.one_def, Equiv.permCongr_refl]
     | cons y l =>
-      simp only [List.map_cons, List.formPerm_cons_cons, Equiv.permCongr_mul]
+      simp only [map_cons, formPerm_cons_cons, Equiv.permCongr_mul]
       rw [Equiv.permCongr_def, Equiv.symm_trans_swap_trans]
       exact congrArg (Equiv.swap (e x) (e y) * ·) ih
 
@@ -103,8 +121,8 @@ theorem formPerm_map_apply {α β : Type*} [DecidableEq α] [DecidableEq β] {f 
     cases l with
     | nil => simp
     | cons z l =>
-      rw [List.map_cons, List.map_cons, List.formPerm_cons_cons, List.formPerm_cons_cons,
-        Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, ← List.map_cons, ih, hf.swap_apply]
+      rw [map_cons, map_cons, formPerm_cons_cons, formPerm_cons_cons,
+        Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, ← map_cons, ih, hf.swap_apply]
 
 /-- On an entry `x` of `V`, the permutation formed by `T ++ V` agrees with the one formed by `V`,
 except that the last entry of `V`, which `V.formPerm` sends back to the head of `V`, is sent to
@@ -154,19 +172,36 @@ rotation. -/
 theorem IsRotated.filter {α : Type*} {l l' : List α} (h : l ~r l') (p : α → Bool) :
     l.filter p ~r l'.filter p := by
   obtain ⟨k, rfl⟩ := h
-  rw [List.rotate_eq_drop_append_take_mod, List.filter_append]
-  have hrot := List.isRotated_append
+  rw [rotate_eq_drop_append_take_mod, filter_append]
+  have hrot := isRotated_append
     (l := (l.take (k % l.length)).filter p)
     (l' := (l.drop (k % l.length)).filter p)
-  simpa only [← List.filter_append, List.take_append_drop] using hrot
+  simpa only [← filter_append, take_append_drop] using hrot
 
 /-- A function `φ` on a monoid with `φ (x * y) = φ (y * x)`, such as a trace, takes the same value
 on the products of cyclically rotated lists. -/
 theorem IsRotated.apply_prod_eq {M R : Type*} [Monoid M] {φ : M → R}
     (hφ : ∀ x y, φ (x * y) = φ (y * x)) {l l' : List M} (h : l ~r l') : φ l.prod = φ l'.prod := by
   obtain ⟨k, rfl⟩ := h
-  rw [List.rotate_eq_drop_append_take_mod, List.prod_append, hφ, ← List.prod_append,
-    List.take_append_drop]
+  rw [rotate_eq_drop_append_take_mod, prod_append, hφ, ← prod_append,
+    take_append_drop]
+
+/-- Prefix products of a rotated list, read off the doubled list `l ++ l`: for `r, j ≤ l.length`,
+the product of the first `r` entries of `l` times the product of the first `j` entries of
+`l.rotate r` is the product of the first `r + j` entries of `l ++ l`, that is, of the first `r + j`
+entries of `l` times the first `r + j - l.length` entries of `l`. -/
+@[to_additive /-- Prefix sums of a rotated list, read off the doubled list `l ++ l`: for
+`r, j ≤ l.length`, the sum of the first `r` entries of `l` plus the sum of the first `j` entries
+of `l.rotate r` is the sum of the first `r + j` entries of `l ++ l`, that is, of the first `r + j`
+entries of `l` plus the first `r + j - l.length` entries of `l`. -/]
+theorem prod_take_mul_prod_take_rotate {M : Type*} [Monoid M] {l : List M} {r j : ℕ}
+    (hr : r ≤ l.length) (hj : j ≤ l.length) :
+    (l.take r).prod * ((l.rotate r).take j).prod =
+      (l.take (r + j)).prod * (l.take (r + j - l.length)).prod := by
+  rw [rotate_eq_drop_append_take hr]
+  simp only [take_append, take_take, take_add, prod_append, length_drop, ← mul_assoc]
+  congr 3
+  omega
 
 /-- Precomposing a tuple with a power of the cyclic permutation `finRotate n` rotates the list of
 its entries by the same amount. -/
@@ -193,5 +228,30 @@ theorem apply_rotate_of_append_singleton {α β : Type*} (f : List α → β)
       rw [rotate_nil, ih]
     · rw [h] at ih
       rw [rotate_cons_succ, rotate_zero, hf, ih]
+
+/-- Rotating the power `wⁿ = (replicate n w).flatten` by `k` gives the `n`-th power of the rotation
+of `w` by `k`. -/
+@[simp]
+theorem rotate_flatten_replicate {α : Type*} (w : List α) (n k : ℕ) :
+    (replicate n w).flatten.rotate k = (replicate n (w.rotate k)).flatten := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [← rotate_rotate, ih, ← rotate_rotate]
+    -- It remains to rotate a power of `v := w.rotate k` by one letter.
+    rcases n with _ | n
+    · simp
+    obtain _ | ⟨c, v⟩ := w.rotate k
+    · simp
+    -- This is the identity `(c v)ⁿ c = c (v c)ⁿ`.
+    simpa [replicate_succ] using (append_flatten_map_append (replicate n v) [c]).symm
+
+/-- A cyclic rotation of a power is a power of a cyclic rotation: if `wⁿ = s ++ t`, then
+`t ++ s = w'ⁿ` for a cyclic rotation `w'` of `w`. -/
+theorem exists_isRotated_flatten_replicate_of_append_eq {α : Type*} {w s t : List α} {n : ℕ}
+    (h : (replicate n w).flatten = s ++ t) : ∃ w' : List α, w' ~r w ∧
+      t ++ s = (replicate n w').flatten :=
+  ⟨w.rotate s.length, IsRotated.forall w _,
+    by rw [← rotate_append_length_eq, ← h, rotate_flatten_replicate]⟩
 
 end List

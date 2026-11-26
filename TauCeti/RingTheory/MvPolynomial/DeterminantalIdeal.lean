@@ -1,0 +1,239 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.GroupTheory.Complement
+public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
+import TauCeti.Data.Fintype.Sort
+import TauCeti.LinearAlgebra.Matrix.Determinant.PluckerRelation
+
+/-!
+# Alternating properties, sorted generators and Plücker relations for generic minors
+
+The generic minors `Matrix.mvPolynomialMinor` of `Matrix.mvPolynomialX` are homogeneous of degree
+`Fintype.card t`, alternate under row/column permutations, vanish on repeated indices, and satisfy
+the shuffle and exchange Plücker relations. Consequently, `MvPolynomial.determinantalIdeal` is
+homogeneous, spanned by minors on `OrderEmbedding`s for linearly ordered index types, and every
+sorted minor is monic under `renameEquiv R toLex` for `MonomialOrder.lex` with diagonal leading
+term.
+-/
+
+public section
+
+open Equiv MvPolynomial
+
+namespace Matrix
+
+section Alternating
+
+variable (R : Type*) [CommRing R] {m n t : Type*} [Fintype t] [DecidableEq t]
+
+/-- Every `t × t` minor of `Matrix.mvPolynomialX` is homogeneous of degree `Fintype.card t`. -/
+theorem isHomogeneous_mvPolynomialMinor (r : t → m) (c : t → n) :
+    (mvPolynomialMinor R r c).IsHomogeneous (Fintype.card t) := by
+  rw [mvPolynomialMinor_eq_det_submatrix, det_apply, ← mem_homogeneousSubmodule]
+  refine sum_mem fun σ _ ↦ by
+    rw [Units.smul_def]
+    refine zsmul_mem ((mem_homogeneousSubmodule _ _).2 ?_) _
+    simpa using IsHomogeneous.prod Finset.univ (fun i ↦ X (r (σ i), c i)) (fun _ ↦ 1)
+      fun i _ ↦ isHomogeneous_X R (r (σ i), c i)
+
+/-- Permuting the rows of a generic minor multiplies it by the sign of the permutation. -/
+theorem mvPolynomialMinor_comp_perm_left (r : t → m) (c : t → n) (σ : Perm t) :
+    mvPolynomialMinor R (r ∘ σ) c = Perm.sign σ • mvPolynomialMinor R r c := by
+  rw [mvPolynomialMinor_eq_det_submatrix, mvPolynomialMinor_eq_det_submatrix]
+  exact (det_permute σ ((mvPolynomialX m n R).submatrix r c)).trans (by simp [Units.smul_def])
+
+/-- Permuting the columns of a generic minor multiplies it by the sign of the permutation. -/
+theorem mvPolynomialMinor_comp_perm_right (r : t → m) (c : t → n) (σ : Perm t) :
+    mvPolynomialMinor R r (c ∘ σ) = Perm.sign σ • mvPolynomialMinor R r c := by
+  rw [mvPolynomialMinor_eq_det_submatrix, mvPolynomialMinor_eq_det_submatrix]
+  exact (det_permute' σ ((mvPolynomialX m n R).submatrix r c)).trans (by simp [Units.smul_def])
+
+variable {R}
+
+/-- A generic minor with a repeated row index vanishes. -/
+theorem mvPolynomialMinor_eq_zero_of_not_injective_left {r : t → m} (hr : ¬ Function.Injective r)
+    (c : t → n) : mvPolynomialMinor R r c = 0 := by
+  obtain ⟨i, j, hij, hne⟩ := Function.not_injective_iff.1 hr
+  exact (mvPolynomialMinor_eq_det_submatrix (R := R) r c).trans <|
+    det_zero_of_row_eq hne (funext fun _ ↦ by simp [hij])
+
+/-- A generic minor with a repeated column index vanishes. -/
+theorem mvPolynomialMinor_eq_zero_of_not_injective_right (r : t → m) {c : t → n}
+    (hc : ¬ Function.Injective c) : mvPolynomialMinor R r c = 0 := by
+  obtain ⟨i, j, hij, hne⟩ := Function.not_injective_iff.1 hc
+  exact (mvPolynomialMinor_eq_det_submatrix (R := R) r c).trans <|
+    det_zero_of_column_eq hne fun _ ↦ by simp [hij]
+
+/-- On linearly ordered index types, an injective minor equals a sorted minor up to a sign. -/
+theorem exists_orderEmbedding_mvPolynomialMinor_eq_units_smul [LinearOrder t] [LinearOrder m]
+    [LinearOrder n] {r : t → m} {c : t → n} (hr : Function.Injective r)
+    (hc : Function.Injective c) :
+    ∃ (r' : t ↪o m) (c' : t ↪o n) (ε : ℤˣ),
+      mvPolynomialMinor R r c = ε • mvPolynomialMinor R r' c' := by
+  obtain ⟨σ, hσ, -⟩ := Perm.existsUnique_strictMono_comp hr
+  obtain ⟨τ, hτ, -⟩ := Perm.existsUnique_strictMono_comp hc
+  let r' := OrderEmbedding.ofStrictMono (r ∘ σ) hσ
+  let c' := OrderEmbedding.ofStrictMono (c ∘ τ) hτ
+  have hr' : ⇑r' ∘ ⇑σ⁻¹ = r := funext fun _ ↦ by simp [r', OrderEmbedding.coe_ofStrictMono]
+  have hc' : ⇑c' ∘ ⇑τ⁻¹ = c := funext fun _ ↦ by simp [c', OrderEmbedding.coe_ofStrictMono]
+  refine ⟨r', c', Perm.sign σ⁻¹ * Perm.sign τ⁻¹, ?_⟩
+  rw [← hr', ← hc', mvPolynomialMinor_comp_perm_left, mvPolynomialMinor_comp_perm_right, mul_smul]
+
+end Alternating
+
+section RenameToLex
+
+variable (R : Type*) [CommRing R] {m n t : Type*} [Fintype t]
+
+/-- Renaming the matrix variables along `toLex` expresses a generic minor as the corresponding
+determinant in `MvPolynomial (m ×ₗ n) R`. -/
+theorem renameEquiv_toLex_mvPolynomialMinor [DecidableEq t] (r : t → m) (c : t → n) :
+    renameEquiv R (toLex : m × n ≃ m ×ₗ n) (mvPolynomialMinor R r c) =
+      ((of fun i j ↦ (X (toLex (i, j)) : MvPolynomial (m ×ₗ n) R)).submatrix r c).det := by
+  rw [renameEquiv_apply, mvPolynomialMinor_eq_det_submatrix, AlgHom.map_det]
+  congr 1; ext i j; simp
+
+variable [LinearOrder t] [LinearOrder m] [LinearOrder n] [WellFoundedGT (m ×ₗ n)]
+
+/-- Under row-major `MonomialOrder.lex`, a sorted generic minor is monic. -/
+@[simp]
+theorem monic_rename_toLex_mvPolynomialMinor {r : t → m} {c : t → n} (hr : StrictMono r)
+    (hc : StrictMono c) : MonomialOrder.lex.Monic (rename toLex (mvPolynomialMinor R r c)) :=
+  (mvPolynomialMinor_eq_det_submatrix (R := R) r c) ▸
+    monic_rename_toLex_det_submatrix_mvPolynomialX hr hc
+
+/-- Under row-major `MonomialOrder.lex`, the leading exponent of a sorted generic minor is its main
+diagonal. -/
+@[simp]
+theorem degree_rename_toLex_mvPolynomialMinor [Nontrivial R] {r : t → m} {c : t → n}
+    (hr : StrictMono r) (hc : StrictMono c) :
+    MonomialOrder.lex.degree (rename toLex (mvPolynomialMinor R r c)) =
+      ∑ i, Finsupp.single (toLex (r i, c i)) 1 :=
+  (mvPolynomialMinor_eq_det_submatrix (R := R) r c) ▸
+    degree_rename_toLex_det_submatrix_mvPolynomialX hr hc
+
+variable {R}
+
+/-- Under row-major `MonomialOrder.lex`, the leading term of a sorted generic minor is the product
+of its diagonal entries. -/
+@[simp]
+theorem leadingTerm_rename_toLex_mvPolynomialMinor {r : t → m} {c : t → n} (hr : StrictMono r)
+    (hc : StrictMono c) :
+    MonomialOrder.lex.leadingTerm (rename toLex (mvPolynomialMinor R r c)) =
+      ∏ i, X (toLex (r i, c i)) :=
+  (mvPolynomialMinor_eq_det_submatrix (R := R) r c) ▸
+    leadingTerm_rename_toLex_det_submatrix_mvPolynomialX hr hc
+
+end RenameToLex
+
+section PluckerRelations
+
+variable (R : Type*) [CommRing R] {m n t t₁ t₂ : Type*} [Fintype t] [DecidableEq t] [Fintype t₁]
+  [DecidableEq t₁] [Fintype t₂] [DecidableEq t₂]
+  {ι₁ ι₂ κ₁ κ₂ : Type*} [Fintype κ₁] [Fintype κ₂] [DecidableEq κ₁] [DecidableEq κ₂]
+
+omit [DecidableEq t] in
+/-- **The shuffle relation** among minors of the generic matrix `Matrix.mvPolynomialX` on the
+columns `c ∘ j₁` and `c ∘ j₂`; see
+`Matrix.sum_sign_smul_det_submatrix_comp_mul_det_submatrix_comp_eq_zero`. -/
+theorem sum_sign_smul_mvPolynomialMinor_comp_mul_mvPolynomialMinor_comp_eq_zero (c : t → n)
+    (j₁ : t₁ → t) (j₂ : t₂ → t) (e₁ : t₁ ≃ ι₁ ⊕ κ₁) (e₂ : t₂ ≃ ι₂ ⊕ κ₂) (α : ι₁ → m) (β : ι₂ → m)
+    (γ : κ₁ ⊕ κ₂ → m) (hcard : Fintype.card t < Fintype.card κ₁ + Fintype.card κ₂)
+    {T : Finset (Perm (κ₁ ⊕ κ₂))}
+    (hT : Subgroup.IsComplement (T : Set (Perm (κ₁ ⊕ κ₂))) (Perm.sumCongrHom κ₁ κ₂).range) :
+    ∑ σ ∈ T, Perm.sign σ •
+      (mvPolynomialMinor R (Sum.elim α (γ ∘ σ ∘ Sum.inl) ∘ e₁) (c ∘ j₁) *
+        mvPolynomialMinor R (Sum.elim β (γ ∘ σ ∘ Sum.inr) ∘ e₂) (c ∘ j₂)) = 0 := by
+  simp only [mvPolynomialMinor_eq_det_submatrix]
+  exact sum_sign_smul_det_submatrix_comp_mul_det_submatrix_comp_eq_zero _ c j₁ j₂ e₁ e₂ α β γ
+    hcard hT
+
+/-- **The shuffle relation** among minors of the generic matrix `Matrix.mvPolynomialX`; see
+`Matrix.sum_sign_smul_det_submatrix_mul_det_submatrix_eq_zero`. -/
+theorem sum_sign_smul_mvPolynomialMinor_mul_mvPolynomialMinor_eq_zero (c : t → n)
+    (e₁ : t ≃ ι₁ ⊕ κ₁) (e₂ : t ≃ ι₂ ⊕ κ₂) (α : ι₁ → m) (β : ι₂ → m) (γ : κ₁ ⊕ κ₂ → m)
+    (hcard : Fintype.card t < Fintype.card κ₁ + Fintype.card κ₂)
+    {T : Finset (Perm (κ₁ ⊕ κ₂))}
+    (hT : Subgroup.IsComplement (T : Set (Perm (κ₁ ⊕ κ₂))) (Perm.sumCongrHom κ₁ κ₂).range) :
+    ∑ σ ∈ T, Perm.sign σ •
+      (mvPolynomialMinor R (Sum.elim α (γ ∘ σ ∘ Sum.inl) ∘ e₁) c *
+        mvPolynomialMinor R (Sum.elim β (γ ∘ σ ∘ Sum.inr) ∘ e₂) c) = 0 :=
+  sum_sign_smul_mvPolynomialMinor_comp_mul_mvPolynomialMinor_comp_eq_zero R c id id e₁ e₂ α β γ
+    hcard hT
+
+/-- **The exchange relation** between a minor of the generic matrix `Matrix.mvPolynomialX` on the
+columns `c ∘ j` and one on the columns `c`; see
+`Matrix.det_submatrix_comp_mul_det_submatrix_eq_sum`. -/
+theorem mvPolynomialMinor_comp_mul_mvPolynomialMinor_eq_sum (r : t₁ → m) (s : t → m) (c : t → n)
+    (j : t₁ → t) (i : t₁) :
+    mvPolynomialMinor R r (c ∘ j) * mvPolynomialMinor R s c =
+      ∑ k, mvPolynomialMinor R (Function.update r i (s k)) (c ∘ j) *
+        mvPolynomialMinor R (Function.update s k (r i)) c := by
+  simp only [mvPolynomialMinor_eq_det_submatrix]
+  exact det_submatrix_comp_mul_det_submatrix_eq_sum _ r s c j i
+
+/-- **The exchange relation** among minors of the generic matrix `Matrix.mvPolynomialX`; see
+`Matrix.det_submatrix_mul_det_submatrix_eq_sum`. -/
+theorem mvPolynomialMinor_mul_mvPolynomialMinor_eq_sum (r s : t → m) (c : t → n) (i : t) :
+    mvPolynomialMinor R r c * mvPolynomialMinor R s c =
+      ∑ k, mvPolynomialMinor R (Function.update r i (s k)) c *
+        mvPolynomialMinor R (Function.update s k (r i)) c :=
+  mvPolynomialMinor_comp_mul_mvPolynomialMinor_eq_sum R r s c id i
+
+end PluckerRelations
+
+end Matrix
+
+namespace MvPolynomial
+
+variable (R : Type*) [CommRing R] (m n t : Type*) [Fintype t]
+
+/-- On linearly ordered index types, `determinantalIdeal` is spanned by the sorted minors. -/
+theorem determinantalIdeal_eq_span_orderEmbedding [LinearOrder t] [LinearOrder m] [LinearOrder n] :
+    determinantalIdeal R m n t =
+      Ideal.span {f | ∃ (r : t ↪o m) (c : t ↪o n), Matrix.mvPolynomialMinor R r c = f} := by
+  refine le_antisymm (determinantalIdeal_le_iff.2 fun r c ↦ ?_)
+    (Ideal.span_le.2 fun _ ⟨r, c, h⟩ ↦ h ▸ mvPolynomialMinor_mem_determinantalIdeal r c)
+  by_cases hr : Function.Injective r
+  · by_cases hc : Function.Injective c
+    · obtain ⟨r', c', ε, hε⟩ :=
+        Matrix.exists_orderEmbedding_mvPolynomialMinor_eq_units_smul (R := R) hr hc
+      rw [hε, Units.smul_def, zsmul_eq_mul]
+      exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨r', c', rfl⟩)
+    · simp [Matrix.mvPolynomialMinor_eq_zero_of_not_injective_right r hc]
+  · simp [Matrix.mvPolynomialMinor_eq_zero_of_not_injective_left hr c]
+
+/-- Transporting `determinantalIdeal` along `renameEquiv R toLex` gives the ideal generated by the
+`toLex`-renamed generic minors. -/
+theorem map_renameEquiv_toLex_determinantalIdeal [DecidableEq t] :
+    Ideal.map (renameEquiv R (toLex : m × n ≃ m ×ₗ n)).toRingHom (determinantalIdeal R m n t) =
+      Ideal.span (rename toLex '' determinantalMinors R m n t) := by
+  rw [determinantalIdeal_eq_span_determinantalMinors, Ideal.map_span]; rfl
+
+/-- Pulling back the `toLex`-renamed determinantal ideal recovers `determinantalIdeal`. -/
+@[simp]
+theorem comap_rename_toLex_span_determinantalMinors [DecidableEq t] :
+    Ideal.comap (rename (toLex : m × n → m ×ₗ n))
+        (Ideal.span (rename toLex '' determinantalMinors R m n t)) =
+      determinantalIdeal R m n t :=
+  map_renameEquiv_toLex_determinantalIdeal R m n t ▸
+    Ideal.comap_map_of_bijective (f := (renameEquiv R (toLex : m × n ≃ m ×ₗ n)).toRingHom)
+      (renameEquiv R (toLex : m × n ≃ m ×ₗ n)).bijective
+
+attribute [local instance] MvPolynomial.gradedAlgebra in
+/-- Every determinantal ideal is homogeneous for the standard total-degree grading. -/
+theorem isHomogeneous_determinantalIdeal [DecidableEq t] :
+    (determinantalIdeal R m n t).IsHomogeneous (homogeneousSubmodule (m × n) R) :=
+  determinantalIdeal_eq_span_determinantalMinors R m n t ▸
+    Ideal.homogeneous_span _ _ fun _ hf ↦ by
+      obtain ⟨r, c, rfl⟩ := mem_determinantalMinors.1 hf
+      exact ⟨Fintype.card t, Matrix.isHomogeneous_mvPolynomialMinor R r c⟩
+
+end MvPolynomial

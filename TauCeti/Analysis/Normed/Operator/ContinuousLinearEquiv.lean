@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
-public import TauCeti.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Normalizing continuous linear equivalences
@@ -110,8 +111,8 @@ end ContinuousLinearEquiv
 
 namespace ContinuousLinearEquiv
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E F : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E]
+  [SeminormedAddCommGroup F] [Module 𝕜 F]
 
 /-- A quadratic lower bound `λ ‖y‖ ^ 2 ≤ ‖e y‖ ^ 2` with `0 < λ` on a continuous linear
 equivalence `e` bounds its inverse: `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`. -/
@@ -120,9 +121,32 @@ theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[𝕜] F) {lam : ℝ} (h
   -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
   have hx := h (e.symm x)
   rw [e.apply_symm_apply] at hx
+  have hsq : ‖e.symm x‖ ^ 2 ≤ lam⁻¹ * ‖x‖ ^ 2 := by
+    rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
+    exact hx
   rw [← Real.sqrt_inv]
-  refine Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg x) ?_
-  rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
-  exact hx
+  exact (Real.le_sqrt_of_sq_le hsq).trans_eq
+    (by rw [Real.sqrt_mul_sq, abs_norm])
+
+end ContinuousLinearEquiv
+
+namespace ContinuousLinearEquiv
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F]
+
+/-- The affine map `z ↦ x + L⁻¹ (t • z)` sends a subset of the unit ball into the ball of radius
+`R` around `x` as soon as `t ‖L⁻¹‖ < R`. -/
+theorem image_add_symm_smul_subset_ball (L : E ≃L[ℝ] F) (x : E) {t R : ℝ} (ht : 0 ≤ t)
+    (htR : t * ‖(L.symm : F →L[ℝ] E)‖ < R) {S : Set F} (hS : S ⊆ Metric.ball 0 1) :
+    (fun z ↦ x + L.symm (t • z)) '' S ⊆ Metric.ball x R := by
+  rintro _ ⟨z, hz, rfl⟩
+  have hz1 : ‖z‖ < 1 := mem_ball_zero_iff.1 (hS hz)
+  rw [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left]
+  calc ‖L.symm (t • z)‖
+      ≤ ‖(L.symm : F →L[ℝ] E)‖ * ‖t • z‖ := (L.symm : F →L[ℝ] E).le_opNorm _
+    _ = t * ‖(L.symm : F →L[ℝ] E)‖ * ‖z‖ := by rw [norm_smul, Real.norm_of_nonneg ht]; ring
+    _ ≤ t * ‖(L.symm : F →L[ℝ] E)‖ := mul_le_of_le_one_right (by positivity) hz1.le
+    _ < R := htR
 
 end ContinuousLinearEquiv

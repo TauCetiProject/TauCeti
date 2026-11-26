@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
@@ -22,7 +21,8 @@ perturbation does not depend on `s`, so the perturbed derivative of the translat
 translate of the perturbed derivative of `u` (`SymplecticForm.perturbedFDeriv_comp_add_right`).
 Hence the translate of a solution for the almost complex structures `J` solves the equation for
 the translated structures `J(· + (c, 0))`, which are `J` itself when `J` does not depend on `s`,
-and translations preserve the energy (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+and translations translate the energy density
+(`SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so they preserve the energy.
 This file identifies the fixed points of this action of `ℝ` on finite-energy solutions and shows
 that it is free elsewhere, so that the quotient by translations is taken only away from the
 stationary cylinders.
@@ -39,7 +39,9 @@ derivative of such a cylinder sends `(a, b)` to `b (x' - X_{H_t}(x))`
 vanishes (`SymplecticForm.floerEnergyDensity_comp_snd`). Conversely, for almost complex structures
 tamed by `ω`, a `C¹` solution has zero energy exactly when it is stationary
 (`SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`): the energy density of a solution
-vanishes only where `∂_s u = 0`.
+vanishes only where `∂_s u = 0`, and a map differentiable at every point of the closed strip is
+stationary there exactly when its `s`-derivative vanishes there
+(`TauCeti.fderiv_fst_eqOn_zero_iff`).
 
 A solution of finite energy that is invariant under a translation by `c ≠ 0` has the same energy
 over each of the infinitely many disjoint period rectangles of the strip, so its energy is zero
@@ -82,14 +84,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 section Cylinder
-
-/-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
-`(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
-private theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SymplecticForm V) (H : ℝ → V → ℝ)
-    (u : ℝ × ℝ → V) (c : ℝ) (z : ℝ × ℝ) :
-    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z =
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) := by
-  simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (c, 0) z
 
 variable {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {z : ℝ × ℝ}
 
@@ -172,21 +166,13 @@ private theorem eq_of_forall_floerEnergyDensity_eq_zero (ω : SymplecticForm V)
     have hz' := strip_Ioo_subset_Icc hz
     have h := (ω.floerEnergyDensity_eq_zero_iff (hJ z hz') (hfloer z hz')).1 (h0 z hz)
     simpa using congrArg (· stdComplexLineReal) h
-  -- By continuity it vanishes on the closed strip.
-  have hds' : EqOn (fun z ↦ fderiv ℝ u z stdComplexLineReal) 0 ((univ : Set ℝ) ×ˢ Icc 0 1) :=
-    hds.of_subset_closure
-      (((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono hRU)
-      continuous_zero.continuousOn strip_Ioo_subset_Icc closure_univ_prod_Ioo.ge
-  -- Along each horizontal line of the closed strip `u` has zero derivative, so it is constant.
-  intro s t ht
-  have hline (r : ℝ) : HasDerivAt (fun r ↦ u (r, t)) 0 r := by
-    have hr : (r, t) ∈ U := hRU ⟨mem_univ r, ht⟩
-    have h0 := hds' (show (r, t) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 from ⟨mem_univ r, ht⟩)
-    rw [stdComplexLineReal_eq] at h0
-    simpa [h0] using hasDerivAt_slice_left
-      ((hu.differentiableOn one_ne_zero _ hr).differentiableAt (hU.mem_nhds hr))
-  exact is_const_of_deriv_eq_zero (fun r ↦ (hline r).differentiableAt)
-    (fun r ↦ (hline r).deriv) s 0
+  -- By continuity it vanishes on the closed strip, so `u` is stationary there.
+  rw [stdComplexLineReal_eq] at hds
+  refine (fderiv_fst_eqOn_zero_iff fun z hz ↦
+    (hu.differentiableOn one_ne_zero z (hRU hz)).differentiableAt (hU.mem_nhds (hRU hz))).1 ?_
+  exact hds.of_subset_closure
+    (((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono hRU)
+    continuous_zero.continuousOn strip_Ioo_subset_Icc closure_univ_prod_Ioo.ge
 
 /-- A map that is `C¹` on a neighbourhood of the closed strip `ℝ × [0, 1]` and solves the Floer
 equation for `K = H_t dt` and tamed almost complex structures there has zero energy density at

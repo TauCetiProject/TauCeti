@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import TauCeti.Analysis.Real.OfDigits
 public import TauCeti.MeasureTheory.Measure.Lebesgue.CantorSet
+public import TauCeti.MeasureTheory.Measure.Stieltjes
 
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
@@ -35,6 +35,7 @@ Lebesgue-null Cantor set, hence mutually singular with Lebesgue measure.
 * `TauCeti.cantorFunction`: the Cantor–Lebesgue function.
 * `TauCeti.cantorStieltjesFunction`: `cantorFunction` as a Stieltjes function, whose measure
   is the Cantor measure `dC`.
+* `TauCeti.cantorReparam`: the increasing homeomorphism `t ↦ (t + C t) / 2` of `ℝ`.
 
 ## Main results
 
@@ -45,7 +46,11 @@ Lebesgue-null Cantor set, hence mutually singular with Lebesgue measure.
 * `TauCeti.ae_hasDerivAt_cantorFunction`: the derivative of `cantorFunction` is `0` almost
   everywhere.
 * `TauCeti.eVariationOn_cantorFunction`: the total variation of `cantorFunction` is `1`.
-* `TauCeti.not_absolutelyContinuousOnInterval_cantorFunction`.
+* `TauCeti.ae_hasDerivAt_cantorReparam` and `TauCeti.integral_deriv_cantorReparam`: the
+  derivative of `cantorReparam` is `1/2` almost everywhere, so `∫₀¹ cantorReparam' = 1/2`.
+* `TauCeti.not_absolutelyContinuousOnInterval_cantorFunction`, and likewise
+  `TauCeti.not_absolutelyContinuousOnInterval_cantorReparam`: an increasing homeomorphism of
+  `[0, 1]` need not be absolutely continuous.
 * `TauCeti.mutuallySingular_cantorStieltjesFunction_measure_volume`: `dC ⟂ volume`.
 
 ## References
@@ -86,7 +91,7 @@ private lemma range_ternary : range ternary = cantorSet := by
   ext x
   refine ⟨?_, fun hx ↦ ⟨cantorSetEquivNatToBool ⟨x, hx⟩, ?_⟩⟩
   · rintro ⟨s, rfl⟩
-    exact (cantorSetEquivNatToBool.symm s).2
+    exact (cantorSetEquivNatToBool.symm s).property
   · simp [ternary]
 
 private lemma bddAbove_image_dyadic (S : Set (ℕ → Bool)) : BddAbove (dyadic '' S) :=
@@ -197,9 +202,9 @@ theorem continuous_cantorFunction : Continuous cantorFunction := by
   have hsurj : Function.Surjective g := fun y ↦ by
     obtain ⟨x, hx⟩ : (y : ℝ) ∈ range cantorFunction := by
       rw [range_cantorFunction]
-      exact y.2
+      exact y.property
     exact ⟨x, Subtype.ext hx⟩
-  exact continuous_subtype_val.comp (hg.continuous_of_surjective hsurj)
+  exact continuous_subtypeVal.comp (hg.continuous_of_surjective hsurj)
 
 /-- The Cantor function is measurable. -/
 @[fun_prop]
@@ -257,6 +262,63 @@ theorem not_absolutelyContinuousOnInterval_cantorFunction :
     fun _ hx _ ↦ hx.deriv), cantorFunction_one, cantorFunction_zero] at hftc
   norm_num at hftc
 
+/-- The increasing homeomorphism `t ↦ (t + C t) / 2` of `ℝ`, where `C` is the Cantor function.
+It fixes `0` and `1`, so it restricts to an increasing homeomorphism of `[0, 1]`, and it is not
+absolutely continuous there (`TauCeti.not_absolutelyContinuousOnInterval_cantorReparam`). Being
+an order isomorphism of `ℝ`, it is a homeomorphism (`OrderIso.toHomeomorph`). -/
+noncomputable def cantorReparam : ℝ ≃o ℝ :=
+  StrictMono.orderIsoOfSurjective (fun t ↦ (t + cantorFunction t) / 2)
+    (fun _ _ hst ↦ by
+      have := monotone_cantorFunction hst.le
+      dsimp only
+      linarith)
+    (Continuous.surjective (by fun_prop [continuous_cantorFunction])
+      (tendsto_atTop_mono (fun t ↦ by simp only [id]; linarith [cantorFunction_nonneg t])
+        (tendsto_id.atTop_div_const two_pos))
+      (tendsto_atBot_mono (fun t ↦ by simp only [id]; linarith [cantorFunction_le_one t])
+        ((tendsto_atBot_add_const_right _ 1 tendsto_id).atBot_div_const two_pos)))
+
+/-- Evaluation of `cantorReparam`. -/
+theorem cantorReparam_apply (t : ℝ) : cantorReparam t = (t + cantorFunction t) / 2 := (rfl)
+
+/-- `cantorReparam` fixes `0`. -/
+@[simp]
+theorem cantorReparam_zero : cantorReparam 0 = 0 := by
+  simp [cantorReparam_apply]
+
+/-- `cantorReparam` fixes `1`. -/
+@[simp]
+theorem cantorReparam_one : cantorReparam 1 = 1 := by
+  simp [cantorReparam_apply]
+
+/-- Off the Cantor set, `cantorReparam` has derivative `1/2`. -/
+theorem hasDerivAt_cantorReparam_of_notMem {t : ℝ} (ht : t ∉ cantorSet) :
+    HasDerivAt cantorReparam (1 / 2) t := by
+  convert ((hasDerivAt_id t).add (hasDerivAt_cantorFunction_of_notMem ht)).div_const 2 using 1
+  · exact funext cantorReparam_apply
+  · norm_num
+
+/-- `cantorReparam` has derivative `1/2` at almost every point. -/
+theorem ae_hasDerivAt_cantorReparam : ∀ᵐ t, HasDerivAt cantorReparam (1 / 2) t :=
+  (measure_eq_zero_iff_ae_notMem.mp volume_cantorSet).mono
+    fun _ ↦ hasDerivAt_cantorReparam_of_notMem
+
+/-- `∫₀¹ cantorReparam' = 1/2`, while `cantorReparam 1 - cantorReparam 0 = 1`: the fundamental
+theorem of calculus fails, as `cantorReparam` is not absolutely continuous
+(`TauCeti.not_absolutelyContinuousOnInterval_cantorReparam`). -/
+theorem integral_deriv_cantorReparam : ∫ t in (0 : ℝ)..1, deriv cantorReparam t = 1 / 2 := by
+  rw [intervalIntegral.integral_congr_ae (g := fun _ ↦ (1 / 2 : ℝ))
+    (ae_hasDerivAt_cantorReparam.mono fun _ ht _ ↦ ht.deriv)]
+  simp
+
+/-- The increasing homeomorphism `cantorReparam` is not absolutely continuous on `[0, 1]`. -/
+theorem not_absolutelyContinuousOnInterval_cantorReparam :
+    ¬ AbsolutelyContinuousOnInterval cantorReparam 0 1 := fun h ↦
+  -- Otherwise the Cantor function `2 * cantorReparam t - t` would be absolutely continuous.
+  not_absolutelyContinuousOnInterval_cantorFunction <|
+    ((h.const_mul 2).sub LipschitzWith.id.lipschitzOnWith.absolutelyContinuousOnInterval).congr
+      fun t _ ↦ by simp only [Pi.sub_apply, cantorReparam_apply, id]; ring
+
 /-- The Cantor function as a Stieltjes function; it is continuous, so no right-limit
 modification as in `Monotone.stieltjesFunction` is needed. Its measure `dC` is the Cantor
 measure. -/
@@ -278,10 +340,8 @@ instance : IsProbabilityMeasure cantorStieltjesFunction.measure :=
       (cantorFunction_of_one_le hx).symm))
 
 /-- The Cantor measure has no atoms, since the Cantor function is continuous. -/
-instance : NullSingletonClass cantorStieltjesFunction.measure where
-  measure_singleton x := by
-    rw [StieltjesFunction.measure_singleton, coe_cantorStieltjesFunction,
-      continuous_cantorFunction.continuousWithinAt.leftLim_eq, sub_self, ENNReal.ofReal_zero]
+instance : NullSingletonClass cantorStieltjesFunction.measure :=
+  cantorStieltjesFunction.nullSingletonClass_measure_of_continuous continuous_cantorFunction
 
 /-- The Cantor measure is concentrated on the Cantor set. -/
 theorem cantorStieltjesFunction_measure_compl_cantorSet :

@@ -8,28 +8,49 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifold
 public import TauCeti.Analysis.Complex.Wirtinger.Polydisc
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Leibniz
+import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 
 /-!
-# Local exactness for smooth forms of type `(0,1)`
+# Local exactness for smooth forms of type `(p,q)`
 
-On a complex vector space, the Dolbeault differential of a smooth function is its conjugate
-Wirtinger derivative. For a smooth `(0,1)`-form `η`, its differential on `v,w` is
-`∂bar η(v,w) = ∂bar(η(w))(v) - ∂bar(η(v))(w)`. Thus closedness gives the symmetry of
-coordinate derivatives needed by the coordinate Dolbeault lemma.
+A smooth form of type `(p,q+1)` on `ι → ℂ` whose Dolbeault differential vanishes on a finite
+product of planar domains has a smooth primitive of type `(p,q)` near every compact subproduct.
+Both the input and the primitive are smooth on all of `ι → ℂ`, with coefficients in a complex
+Banach space; only closedness and the primitive equation are restricted to the indicated sets.
+Exactness is asserted near the compact product, and on polydiscs on every smaller concentric
+polydisc, with no claim of exactness on the whole original domain.
 
-An ambient smooth `(0,1)`-form whose Dolbeault differential vanishes on a finite product of
-planar domains has a smooth primitive near every compact subproduct. Both the input and the
-primitive use
-`SmoothForm`; the coordinate solver supplies a function, which is extended smoothly before
-being bundled as a zero-form. Exactness is asserted near the compact product, with no claim
-of exactness on the whole original domain.
+## Main declarations
+
+* `TauCeti.SmoothForm.IsOfType.exists_delBar_eventually_eq_of_pi`: local exactness of closed
+  `(p,q+1)`-forms on products of planar domains.
+* `TauCeti.SmoothForm.IsOfType.exists_delBar_eq_of_polydisc`: exactness of closed
+  `(p,q+1)`-forms on a polydisc, on every smaller concentric polydisc.
+
+## Implementation notes
+
+For forms of type `(0,q+1)` the coefficients of the input are closed for the coordinate operator
+`TauCeti.delBarCoeff` (`SmoothForm.conjCoeff_delBar`), the coordinate Dolbeault–Grothendieck lemma
+solves for the coefficients of a primitive near the compact product, and these are extended
+smoothly and assembled into a form (`SmoothForm.exists_isOfType_conjCoeff_eq`).
+
+The general case reduces to this one by induction on `p`. Applying the output-scaled contraction
+`ι_v - I • ι_{I • v}`, lowers the type `(p+1,q)` to `(p,q)`
+(`ContinuousAlternatingMap.IsOfType.curryLeftTopological_sub_I_smul`), and for a constant vector
+`v` it anticommutes with `∂bar`. The contractions `η_j` of a closed form `η` of type
+`(p+1,q+1)` with the coordinate vectors are therefore closed of type `(p,q+1)`, with primitives
+`g_j` near the compact product. The Euler identity `∑ j, dz_j ∧ η_j = 2 (p + 1) • η`
+(`ContinuousAlternatingMap.IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp`), the graded
+Leibniz rule and `∂bar dz_j = 0` then show that `-(2 (p + 1))⁻¹ • ∑ j, dz_j ∧ g_j` is a primitive
+of `η` of type `(p+1,q)`.
 
 ## References
 
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
-  North-Holland, 1990, Section 2.1.
+  North-Holland, 1990, Theorem 2.3.3.
 * P. Griffiths and J. Harris, *Principles of Algebraic Geometry*, Wiley, 1978, Chapter 0, §2.
+* J.-P. Demailly, *Complex Analytic and Differential Geometry*, Chapter I, (3.29).
 -/
 
 public section
@@ -46,140 +67,175 @@ open SmoothAlmostComplexStructure
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- On a complex model space the Dolbeault differential of a smooth zero-form is the conjugate
-Wirtinger derivative of its value function. -/
-theorem delBar_apply_eq_conjWirtingerDeriv (f : SmoothForm 𝓘(ℝ, E) E F 0) (z v : E) :
-    ((ofComplexManifold E E).delBar f).1 z ![v] =
-      conjWirtingerDeriv (fun y ↦ f.1 y 0) z v := by
-  have h := delBar_apply_apply (ofComplexManifold E E) f z v
-  -- Identify the model-space tangent fibre and its identity comparison with `E`.
-  simp only [ofComplexManifold_apply, mvfderiv_eq_fderiv] at h
-  rw [conjWirtingerDeriv_apply]
-  convert h using 1; rfl
-
-variable {η : SmoothForm 𝓘(ℝ, E) E F 1}
-
-/-- Read the type equation of a one-form in the model tangent fibre. -/
-private theorem IsOfType.modelSpace (hη : η.IsOfType (ofComplexManifold E E) 0 1) (z : E) :
-    (η.1 z : E [⋀^Fin 1]→L[ℝ] F).IsOfType (I • ContinuousLinearMap.id ℝ E) 0 1 := by
-  have h := hη.apply z
-  rw [toEndomorphism_ofComplexManifold] at h
-  -- The manifold tangent and coefficient fibres here are the underlying model spaces.
-  convert h using 1
-
-/-- On a smooth `(0,1)`-form the Dolbeault differential is the alternating conjugate Wirtinger
-derivative of its evaluations on constant tangent vectors. -/
-theorem IsOfType.delBar_apply_pair (hη : η.IsOfType (ofComplexManifold E E) 0 1)
-    (z v w : E) :
-    ((ofComplexManifold E E).delBar η).1 z ![v, w] =
-      conjWirtingerDeriv (fun y ↦ η.1 y ![w]) z v -
-        conjWirtingerDeriv (fun y ↦ η.1 y ![v]) z w := by
-  let Θ : E → E [⋀^Fin 1]→L[ℝ] F := η.1
-  let β : E [⋀^Fin 2]→L[ℝ] F := (mextDerivₗ 𝓘(ℝ, E) 1 η).1 z
-  -- Express tangent-fibre evaluations through the model-space field `Θ`.
-  change ((ofComplexManifold E E).delBar η).1 z ![v, w] =
-    conjWirtingerDeriv (fun y ↦ Θ y ![w]) z v -
-      conjWirtingerDeriv (fun y ↦ Θ y ![v]) z w
-  have hd : ContDiff ℝ ∞ Θ := isSmoothForm_modelSpace_iff.1 η.isSmoothForm
-  have heval (u : E) : DifferentiableAt ℝ (fun y ↦ Θ y ![u]) z :=
-    (ContinuousAlternatingMap.apply ℝ E F ![u]).differentiableAt.comp z
-      (hd.differentiable (by simp) z)
-  have hI (u : E) : (fun y ↦ Θ y ![I • u]) = fun y ↦ -I • Θ y ![u] := by
-    funext y
-    have ht : (Θ y).IsOfType (I • ContinuousLinearMap.id ℝ E) 0 1 := hη.modelSpace y
-    simpa only [conj_I] using ht.map_smul_conj I u
-  have hβ (a b : E) : β ![a, b] =
-      fderiv ℝ (fun y ↦ Θ y ![b]) z a - fderiv ℝ (fun y ↦ Θ y ![a]) z b := by
-    have hflat : β = extDeriv Θ z := by
-      have h := mextDeriv_eq_extDeriv η.1 z
-      rw [← mextDerivₗ_apply] at h
-      -- Only the model tangent and trivial coefficient fibres differ in this comparison.
-      convert h using 1; rfl
-    rw [hflat]
-    simpa only [Matrix.vec_single_eq_const] using
-      extDeriv_apply_pair_of_differentiableAt (hd.differentiable (by simp) z) a b
-  have hδ : ((ofComplexManifold E E).delBar η).1 z =
-      (I • ContinuousLinearMap.id ℝ E).typeProjection 0 2 β := by
-    rw [hη.delBar_eq, coe_typeProjection]
-    exact congrArg (fun A : E →L[ℝ] E ↦ A.typeProjection 0 2 β)
-      (toEndomorphism_ofComplexManifold (E := E) z)
-  rw [hδ]
-  -- Evaluation now takes place entirely in `E`, rather than its opaque tangent-space synonym.
-  change ((I • ContinuousLinearMap.id ℝ E).typeProjection 0 2 β : E [⋀^Fin 2]→L[ℝ] F)
-    ![v, w] = conjWirtingerDeriv (fun y ↦ Θ y ![w]) z v -
-      conjWirtingerDeriv (fun y ↦ Θ y ![v]) z w
-  rw [ContinuousLinearMap.typeProjection_zero_two_apply (by simp [smul_smul])]
-  simp only [smul_apply, ContinuousLinearMap.id_apply, hβ, hI,
-    fderiv_fun_const_smul (heval _) _, conjWirtingerDeriv_apply]
-  simp only [smul_sub, smul_add, smul_smul, mul_neg, I_mul_I]
-  module
+open ContinuousAlternatingMap (holCurry)
 
 section Coordinates
 
 variable {ι : Type*} [DecidableEq ι] [Fintype ι]
-  {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F 1}
 
-/-- A closed smooth `(0,1)`-form satisfies the symmetry of conjugate coordinate derivatives. -/
-theorem IsOfType.conjWirtingerDeriv_apply_single_eq
-    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 1) {z : ι → ℂ}
-    (hz : ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) (i j : ι) :
-    conjWirtingerDeriv (fun y ↦ η.1 y ![Pi.single j 1]) z (Pi.single i 1) =
-      conjWirtingerDeriv (fun y ↦ η.1 y ![Pi.single i 1]) z (Pi.single j 1) := by
-  apply sub_eq_zero.mp
-  rw [← hη.delBar_apply_pair, hz]
-  rfl
+/-- **Euler identity for smooth forms.** If the values at `z` of the forms `β i` are those of the
+`(1,0)`-contractions of a form `η` of type `(p,q)` with the coordinate vectors, then
+`∑ i, dz_i ∧ β i` takes the value `2 p • η` at `z`. -/
+private theorem sum_wedgeWith_dz_apply {k p q : ℕ} {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (k + 1)}
+    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p q)
+    (β : ι → SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) {z : ι → ℂ}
+    (hβ : ∀ i, (β i).val z = (holInterior (Pi.single i 1) η).val z) :
+    (∑ i, LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F n)
+      (Nat.add_comm 1 k) (wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ) (dz i) (β i))).val z =
+      (2 * p : ℂ) • η.val z := by
+  rw [← sum_wedgeWith_dz_holInterior_apply hη z]
+  ext v
+  simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply, cast_apply,
+    coe_wedgeWith, RoughForm.wedgeWith_apply', hβ]
+
+/-- **The inductive step.** If the `(1,0)`-contractions of a form `η` of type `(p+1,q+1)` with
+the coordinate vectors have primitives `g_i` of type `(p,q)` near a set `S`, then
+`-(2 (p + 1))⁻¹ • ∑ i, dz_i ∧ g_i` is a primitive of `η` of type `(p+1,q)` near `S`. -/
+private theorem IsOfType.exists_delBar_eventually_eq_of_holInterior {m p q : ℕ}
+    {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (m + 1 + 1)}
+    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) (p + 1) (q + 1)) {S : Set (ι → ℂ)}
+    (g : ι → SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F m)
+    (hg : ∀ i, (g i).IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p q)
+    (hgη : ∀ i, ∀ᶠ z in 𝓝ˢ S, ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (g i)).val z =
+      (SmoothForm.holInterior (Pi.single i 1) η).val z) :
+    ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (m + 1),
+      f.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) (p + 1) q ∧ ∀ᶠ z in 𝓝ˢ S,
+        ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).val z = η.val z := by
+  let μ : ℂ →L[ℝ] F →L[ℝ] F := ContinuousLinearMap.lsmul ℝ ℂ
+  have hμ₁ (c : ℂ) (a : ℂ) (b : F) : μ (c • a) b = c • μ a b := by simp [μ, mul_smul]
+  have hμ₂ (c : ℂ) (a : ℂ) (b : F) : μ a (c • b) = c • μ a b := by simp [μ, smul_comm a c]
+  let c : ℂ := -(2 * ((p + 1 : ℕ) : ℂ))⁻¹
+  have hdz (i : ι) := (isOfType_dz i).wedgeWith hμ₁ hμ₂ (hg i)
+  rw [Nat.add_comm 1 p, Nat.zero_add] at hdz
+  refine ⟨c • ∑ i, LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F n)
+    (Nat.add_comm 1 m) (SmoothForm.wedgeWith μ (dz i) (g i)), ?_, ?_⟩
+  · refine IsOfType.smul (Finset.sum_induction _
+      (fun φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (m + 1) ↦
+        φ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) (p + 1) q)
+      (fun _ _ ha hb ↦ ha.add hb) (isOfType_zero_iff.2 (by have := hη.add_eq; omega))
+      fun i _ ↦ (hdz i).cast _) c
+  -- By the Leibniz rule and `∂bar dz_i = 0`, `∂bar` of the primitive is `-c • ∑ dz_i ∧ ∂bar g_i`.
+  have hdf : (ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (c • ∑ i, LinearEquiv.cast (R := ℝ)
+      (M := fun n ↦ SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F n) (Nat.add_comm 1 m)
+        (SmoothForm.wedgeWith μ (dz i) (g i))) =
+      (-c) • ∑ i, LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F n)
+        (Nat.add_comm 1 (m + 1))
+          (SmoothForm.wedgeWith μ (dz i) ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (g i))) := by
+    simp only [map_smul, map_sum, delBar_cast, delBar_wedgeWith _ hμ₁ hμ₂, delBar_dz,
+      map_zero, LinearMap.zero_apply, zero_add, cast_cast, pow_one]
+    -- `simp` does not match `neg_one_smul` against the real action on smooth forms directly.
+    have hneg (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (m + 1 + 1)) : (-1 : ℝ) • φ = -φ :=
+      neg_one_smul ℝ φ
+    simp only [hneg, Finset.sum_neg_distrib, smul_neg]
+    exact (neg_smul c _).symm
+  filter_upwards [eventually_all.2 hgη] with z hz
+  have hc : -c * (2 * ((p + 1 : ℕ) : ℂ)) = 1 := by
+    rw [_root_.neg_neg]
+    exact inv_mul_cancel₀ (mul_ne_zero two_ne_zero (Nat.cast_ne_zero.2 p.succ_ne_zero))
+  rw [hdf, smul_toRoughForm, Pi.smul_apply, sum_wedgeWith_dz_apply hη _ hz, smul_smul, hc,
+    one_smul]
 
 variable [CompleteSpace F]
 
 omit [DecidableEq ι] in
-/-- A smooth `(0,1)`-form closed on a product of planar domains is Dolbeault-exact near every
-compact subproduct, with a globally smooth zero-form as a representative of the primitive. -/
-theorem IsOfType.exists_delBar_eventually_eq_of_pi
-    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 1)
+/-- The case `p = 0`: the coefficients of a closed form of type `(0,q+1)` are solved for by the
+coordinate Dolbeault–Grothendieck lemma, extended smoothly and assembled into a form. -/
+private theorem IsOfType.exists_delBar_eventually_eq_of_pi_zero {q : ℕ}
+    {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (q + 1)}
+    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 (q + 1))
     {U K : ι → Set ℂ} (hU : ∀ i, IsOpen (U i)) (hK : ∀ i, IsCompact (K i))
     (hKU : ∀ i, K i ⊆ U i)
     (hclosed : ∀ z ∈ univ.pi U,
-      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) :
-    ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F 0, ∀ᶠ z in 𝓝ˢ (univ.pi K),
-      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).1 z = η.1 z := by
+      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).val z = 0) :
+    ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F q,
+      f.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 q ∧ ∀ᶠ z in 𝓝ˢ (univ.pi K),
+        ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).val z = η.val z := by
   classical
-  have hd : ContDiff ℝ ∞ (fun y : ι → ℂ ↦ η.1 y) :=
-    isSmoothForm_modelSpace_iff.1 η.isSmoothForm
-  obtain ⟨u, hu⟩ := exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi hU
-    (f := fun j y ↦ η.1 y ![Pi.single j 1])
-    (fun j ↦ ((ContinuousAlternatingMap.apply ℝ (ι → ℂ) F ![Pi.single j 1]).contDiff.comp
-      hd).contDiffOn)
-    (fun z hz i j ↦ hη.conjWirtingerDeriv_apply_single_eq (hclosed z hz) i j) hK hKU
+  -- Order the coordinates, to index the coefficients of forms by increasing families.
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
+  -- Solve for the coefficients of a primitive near `∏ K_i`.
+  obtain ⟨u, hu⟩ := exists_contDiffAt_delBarCoeff_eventually_eq_of_pi hU (f := η.conjCoeff)
+    (fun I _ ↦ (contDiff_conjCoeff η I).contDiffOn)
+    (fun z hz I hI ↦ by
+      rw [← conjCoeff_delBar η, conjCoeff_of_card_eq _ hI, hclosed z hz]
+      rfl) hK hKU
   obtain ⟨V, hV, hKV, hVu⟩ := eventually_nhdsSet_iff_exists.1 hu
-  have huV : ContDiffOn ℝ ∞ u V := fun z hz ↦ (hVu z hz).1.contDiffWithinAt
-  obtain ⟨g, hg, -, -, -, hgu⟩ :=
-    huV.exists_contDiff_eventuallyEq_on_isCompact (isCompact_univ_pi hK) hV hKV
-  let f := ofFunction (I := 𝓘(ℝ, ι → ℂ)) ⟨g, hg.contMDiff⟩
-  refine ⟨f, eventually_nhdsSet_iff_forall.2 fun z hz ↦ ?_⟩
-  filter_upwards [hV.mem_nhds (hKV hz), (hgu z hz).eventuallyEq_nhds] with y hyV hgy
-  apply ContinuousAlternatingMap.ext
-  intro v
-  have hv : v = ![v 0] := by ext i; fin_cases i; rfl
-  rw [hv]
-  have hf := delBar_apply_eq_conjWirtingerDeriv f y (v 0)
-  have hfg : (fun y ↦ f.1 y 0) = g := ofFunction_apply_zero _
-  rw [hfg] at hf
-  refine hf.trans ?_
-  -- Expand both conjugate-linear covectors in the same complex coordinate basis.
-  have heq (i : ι) : conjWirtingerDeriv g y (Pi.single i 1) = η.1 y ![Pi.single i 1] := by
-    rw [hgy.conjWirtingerDeriv_eq]
-    exact (hVu y hyV).2 i
-  have hηsum := (hη.modelSpace y).apply_eq_sum_conj_smul (ι := ι) (v 0)
-  refine Eq.trans ?_ hηsum.symm
-  let w : ι → ℂ := v 0
-  have hsum : w = ∑ i, w i • Pi.single i (1 : ℂ) := by
-    simp [← Pi.single_smul, Finset.univ_sum_single]
-  calc
-    conjWirtingerDeriv g y w = conjWirtingerDeriv g y (∑ i, w i • Pi.single i (1 : ℂ)) :=
-      congrArg (conjWirtingerDeriv g y) hsum
-    _ = _ := by
-      simp only [map_sum, map_smulₛₗ, starRingEnd_apply, heq]
-      rfl
+  -- Extend them to smooth functions on `ι → ℂ`, and assemble these into a form of type `(0,q)`.
+  have hext (J : Finset ι) :
+      ∃ g : (ι → ℂ) → F, ContDiff ℝ ∞ g ∧ ∀ z ∈ univ.pi K, g =ᶠ[𝓝 z] u J := by
+    have huV : ContDiffOn ℝ ∞ (u J) V := fun z hz ↦ ((hVu z hz).1 J).contDiffWithinAt
+    obtain ⟨g, hg, -, -, -, hgu⟩ :=
+      huV.exists_contDiff_eventuallyEq_on_isCompact (isCompact_univ_pi hK) hV hKV
+    exact ⟨g, hg, hgu⟩
+  choose g hg hgu using hext
+  obtain ⟨f, hf, hfg⟩ := exists_isOfType_conjCoeff_eq (k := q) fun J _ ↦ hg J
+  refine ⟨f, hf, eventually_nhdsSet_iff_forall.2 fun z hz ↦ ?_⟩
+  have hgu' : ∀ᶠ y in 𝓝 z, ∀ J, g J =ᶠ[𝓝 y] u J :=
+    eventually_all.2 fun J ↦ (hgu J z hz).eventuallyEq_nhds
+  filter_upwards [hV.mem_nhds (hKV hz), hgu'] with y hyV hy
+  -- Both sides have type `(0,q+1)`, and their coefficients agree.
+  refine hf.delBar.apply_eq_of_conjCoeff_eq hη fun I hI ↦ ?_
+  rw [conjCoeff_delBar f, ← (hVu y hyV).2 I hI]
+  refine delBarCoeff_congr fun j hj ↦ ?_
+  rw [hfg _ (by rw [Finset.card_erase_of_mem hj, hI, Nat.add_sub_cancel])]
+  exact hy _
+
+omit [DecidableEq ι] in
+/-- **The Dolbeault–Grothendieck lemma for `(p,q)`-forms on product domains.** Let `η` be smooth
+on all of `ι → ℂ`, of type `(p,q+1)`, with coefficients in a complex Banach space. If its
+Dolbeault differential vanishes on a product `∏ U_i` of open subsets of `ℂ`, then it is
+Dolbeault-exact near every compact subproduct `∏ K_i`, `K_i ⊆ U_i`: some form `f`, smooth on
+all of `ι → ℂ` and of type `(p,q)`, satisfies `∂bar f = η` there. -/
+theorem IsOfType.exists_delBar_eventually_eq_of_pi {k p q : ℕ}
+    {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (k + 1)}
+    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p (q + 1))
+    {U K : ι → Set ℂ} (hU : ∀ i, IsOpen (U i)) (hK : ∀ i, IsCompact (K i))
+    (hKU : ∀ i, K i ⊆ U i)
+    (hclosed : ∀ z ∈ univ.pi U,
+      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).val z = 0) :
+    ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k,
+      f.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p q ∧ ∀ᶠ z in 𝓝ˢ (univ.pi K),
+        ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).val z = η.val z := by
+  classical
+  induction p generalizing k with
+  | zero =>
+    obtain rfl : k = q := by have := hη.add_eq; omega
+    exact hη.exists_delBar_eventually_eq_of_pi_zero hU hK hKU hclosed
+  | succ p ih =>
+    obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨p + q, by have := hη.add_eq; omega⟩
+    -- The `(1,0)`-contractions of `η` with the coordinate vectors are closed on `∏ U_i`, so they
+    -- are exact near `∏ K_i` by the inductive hypothesis.
+    have hstep (i : ι) : ∃ g : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F m,
+        g.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p q ∧ ∀ᶠ z in 𝓝ˢ (univ.pi K),
+          ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar g).val z =
+            (SmoothForm.holInterior (Pi.single i 1) η).val z := by
+      refine ih (isOfType_holInterior hη _) fun z hz ↦ ?_
+      rw [delBar_holInterior, Submodule.coe_neg, Pi.neg_apply, holInterior_val, hclosed z hz]
+      exact neg_eq_zero.2 (map_zero (holCurry (Pi.single i 1)))
+    choose g hg hgη using hstep
+    exact hη.exists_delBar_eventually_eq_of_holInterior g hg hgη
+
+omit [DecidableEq ι] in
+/-- **The Dolbeault–Grothendieck lemma for `(p,q)`-forms on polydiscs.** Let `η` be smooth on
+all of `ι → ℂ`, of type `(p,q+1)`, with coefficients in a complex Banach space. If its Dolbeault
+differential vanishes on `∏ B(c_i, r_i)`, then it is Dolbeault-exact on every concentric
+polydisc `∏ B(c_i, r'_i)` with `r'_i < r_i`: some form `f`, smooth on all of `ι → ℂ` and of type
+`(p,q)`, satisfies `∂bar f = η` there. -/
+theorem IsOfType.exists_delBar_eq_of_polydisc {k p q : ℕ}
+    {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (k + 1)}
+    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p (q + 1)) {c : ι → ℂ} {r r' : ι → ℝ}
+    (hr : ∀ i, r' i < r i)
+    (hclosed : ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r i),
+      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).val z = 0) :
+    ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k,
+      f.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p q ∧
+        ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r' i),
+          ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).val z = η.val z := by
+  obtain ⟨f, hf, hfη⟩ := hη.exists_delBar_eventually_eq_of_pi (fun i ↦ Metric.isOpen_ball)
+    (fun i ↦ isCompact_closedBall (c i) (r' i)) (fun i ↦ Metric.closedBall_subset_ball (hr i))
+    hclosed
+  exact ⟨f, hf, fun z hz ↦ hfη.self_of_nhdsSet z
+    (pi_mono (fun i _ ↦ Metric.ball_subset_closedBall) hz)⟩
 
 end Coordinates
 

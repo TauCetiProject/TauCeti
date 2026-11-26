@@ -32,7 +32,8 @@ unbounded domain. Finite unit slopes before a finite face are strictly less than
 on the face they equal its slope, and after it they are strictly greater. Consequently, on a
 domain with a first finite index, a finite face's left and right endpoints count the unit
 slopes respectively below and at most the face slope, and the unit edges of the face slope are
-exactly those inside the face, so their number is its width. These absolute endpoints are the
+exactly those inside the face, so their number is its width. If moreover `h 0 ≤ a`, the height
+at the number `N` of unit slopes at most `σ` is at most `a + σ N`. These absolute endpoints are the
 geometric interface later used to identify extremal coefficients and count slope multiplicities.
 A sequence lying above a line of slope `τ` meets every line of smaller slope only finitely often,
 which bounds the supporting faces of smaller slope.
@@ -390,8 +391,6 @@ theorem lt_unitSlope (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
   rw [hu_real, Nat.cast_sub (hui.trans (Nat.le_succ i))] at hs
   push_cast at hs
   have hui_real : (u : ℝ) ≤ i := Nat.cast_le.mpr hui
-  have hui_succ_real : (u : ℝ) < i + 1 := by
-    exact_mod_cast (lt_of_le_of_lt hui (Nat.lt_succ_self i))
   nlinarith
 
 /-- A finite face's left endpoint is the first finite index plus the number of finite unit
@@ -477,6 +476,24 @@ theorem finite_setOf_unitSlope_le (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq
     {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ}.Finite :=
   (Set.finite_Iio u).subset fun _ hi ↦ Set.mem_Iio.mpr <| lt_of_not_ge fun hui ↦
     (hf.lt_unitSlope hh hi.1 hui).not_ge hi.2
+
+/-- **Slope counts lie under the line of slope `σ` through `(0, a)`.** If `h 0 ≤ a` and `h` has
+a finite face of slope `σ`, let `N` be the number of finite unit edges of slope at most `σ`. Then
+`h N ≤ a + σ N`: these edges are the first `N` edges, and their slopes are at most `σ`. -/
+theorem apply_ncard_setOf_unitSlope_le_le (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
+    {a : ℝ} (h0 : h 0 ≤ a) :
+    h {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ}.ncard ≤
+      ((a + σ * {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ}.ncard : ℝ) : WithTop ℝ) := by
+  -- The right endpoint of the face is the number of these edges.
+  have hu := hf.right_eq_start_add_ncard_unitSlope_le hh (a := 0)
+    (ne_top_of_le_ne_top WithTop.coe_ne_top h0) fun n _ ↦ n.zero_le
+  rw [zero_add] at hu
+  rw [← hu, ← WithTop.coe_untop₀_of_ne_top hf.right_ne_top, WithTop.coe_le_coe]
+  -- The line of slope `σ` through the right endpoint supports `h`, in particular at `0`.
+  have h0' := (hf.isSupportingLine_untop₀_sub (Set.right_mem_Icc.mpr hf.left_le_right) 0).trans h0
+  rw [WithTop.coe_le_coe] at h0'
+  push_cast at h0'
+  linarith
 
 end IsFiniteFace
 
@@ -670,12 +687,12 @@ theorem exists_le_mem_supportingFace (hh : IsLowerConvexEnvelope a h)
     rw [← WithTop.coe_untop₀_of_ne_top hak, WithTop.coe_lt_coe] at hlt
     simp only [gap, hak, ↓reduceIte]
     linarith
-  set ε := (Finset.range (n + 1)).inf' Finset.nonempty_range_add_one gap with hε
+  set ε := (Finset.range (n + 1)).inf' Finset.nonempty_range_add_one gap
   have hεpos : 0 < ε := (Finset.lt_inf'_iff _).mpr fun k hk =>
     hgap k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
   -- Tilting the line about the abscissa `n + 1 / 2` gives a convex minorant of the points
   -- lying strictly above the envelope at `n`.
-  set δ := ε / (2 * n + 2) with hδ
+  set δ := ε / (2 * n + 2)
   have hδpos : 0 < δ := div_pos hεpos (by positivity)
   have hδε : δ * (2 * n + 2) = ε := div_mul_cancel₀ ε (by positivity)
   have hminor : (fun k : ℕ => ((c + δ * (2 * n + 1) + (σ - 2 * δ) * k : ℝ) : WithTop ℝ)) ≤ a := by
@@ -686,7 +703,6 @@ theorem exists_le_mem_supportingFace (hh : IsLowerConvexEnvelope a h)
       have hεk : ε ≤ gap k := Finset.inf'_le _ (Finset.mem_range.mpr (Nat.lt_succ_of_le hk))
       simp only [gap, hak, ↓reduceIte] at hεk
       rw [← WithTop.coe_untop₀_of_ne_top hak, WithTop.coe_le_coe]
-      have hk' : (k : ℝ) ≤ n := Nat.cast_le.mpr hk
       nlinarith
     · refine le_trans ?_ (hc k)
       rw [WithTop.coe_le_coe]

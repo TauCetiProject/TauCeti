@@ -36,6 +36,14 @@ and hence also its opposite group.
 * `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_tPrime`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
   `U² * S = T′`.
+* `TauCeti.ModularGroup.coe_tPrime_sq`, `TauCeti.ModularGroup.tPrime_sq_eq`: the matrix
+  `T′² = (1 0; 2 1)` and `T′² = S T⁻² S⁻¹`.
+* `TauCeti.ModularGroup.closure_T_tPrime`: `T` and `T′` generate `SL(2, ℤ)`.
+* `TauCeti.ModularGroup.hom_ext_T_tPrime`: homomorphisms out of `SL(2, ℤ)` agreeing on `T` and
+  `T′` are equal.
+* `TauCeti.ModularGroup.existsUnique_comp_eq_iff_exists_map_T_tPrime`: a homomorphism out of
+  `SL(2, ℤ)` factors through a surjection `π` iff some homomorphism agrees with it on `π T` and
+  `π T′`.
 -/
 
 public section
@@ -141,12 +149,47 @@ theorem _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S (g : PSL(
   rw [mul_assoc, ← sq, coe_S_sq, mul_one]
 
 /-- Popa and Zagier's `T′ = (1 0; 1 1)`, the lower-triangular counterpart of `T`. -/
-def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
+def tPrime : SL(2, ℤ) := .mk !![1, 0; 1, 1] (by decide +kernel)
 
 /-- The matrix of `T′`. -/
 @[simp]
 theorem coe_tPrime : (tPrime : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 1, 1] :=
   (rfl)
+
+/-- The matrix of `T′² = (1 0; 2 1)`. -/
+theorem coe_tPrime_sq : ((tPrime ^ 2 : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 2, 1] := by
+  rw [SpecialLinearGroup.coe_pow, coe_tPrime]
+  decide
+
+/-- `T′² = (1 0; 2 1)` is the conjugate `S T⁻² S⁻¹` of the translation by `-2`. -/
+theorem tPrime_sq_eq : tPrime ^ 2 = S * T ^ (-2 : ℤ) * S⁻¹ := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [sq, Matrix.mul_apply, Fin.sum_univ_two, ModularGroup.coe_S,
+      Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two]
+
+/-- `T` and `T′` generate `SL(2, ℤ)`: `S = (T T′⁻¹ T)⁻¹`. -/
+theorem closure_T_tPrime : Subgroup.closure {T, tPrime} = (⊤ : Subgroup SL(2, ℤ)) := by
+  rw [eq_top_iff, ← SpecialLinearGroup.SL2Z_generators, Subgroup.closure_le]
+  have hT : T ∈ Subgroup.closure {T, tPrime} := Subgroup.subset_closure (by simp)
+  have hT' : tPrime ∈ Subgroup.closure {T, tPrime} := Subgroup.subset_closure (by simp)
+  have hS : S = (T * tPrime⁻¹ * T)⁻¹ := by decide +kernel
+  exact Set.pair_subset (hS ▸ inv_mem (mul_mem (mul_mem hT (inv_mem hT')) hT)) hT
+
+/-- Homomorphisms out of `SL(2, ℤ)` that agree on `T` and on `T′ = !![1, 0; 1, 1]` are equal. -/
+theorem hom_ext_T_tPrime {G : Type*} [Monoid G] {f g : SL(2, ℤ) →* G} (hT : f T = g T)
+    (hT' : f tPrime = g tPrime) : f = g :=
+  MonoidHom.eq_of_eqOn_dense closure_T_tPrime (by rintro x (rfl | rfl) <;> assumption)
+
+/-- **Factorization through the generators `T` and `T′`.** For a surjective homomorphism
+`π : SL(2, ℤ) →* H`, a homomorphism `f` out of `SL(2, ℤ)` factors through `π`, necessarily
+uniquely, exactly when some homomorphism out of `H` agrees with `f` on `π T` and on `π T′`. -/
+theorem existsUnique_comp_eq_iff_exists_map_T_tPrime {H G : Type*} [Monoid H] [Monoid G]
+    {π : SL(2, ℤ) →* H} (hπ : Function.Surjective π) (f : SL(2, ℤ) →* G) :
+    (∃! φ : H →* G, φ.comp π = f) ↔ ∃ φ : H →* G, φ (π T) = f T ∧ φ (π tPrime) = f tPrime := by
+  refine ⟨fun ⟨φ, hφ, _⟩ ↦ ⟨φ, by simp [← hφ]⟩, fun ⟨φ, hT, hT'⟩ ↦ ⟨φ, ?_, fun ψ hψ ↦ ?_⟩⟩
+  · exact hom_ext_T_tPrime hT hT'
+  · exact (MonoidHom.cancel_right hπ).mp (hψ.trans (hom_ext_T_tPrime hT hT').symm)
 
 /-- In `PSL(2, ℤ)`, `U² * S = T′` for `U = T * S`; in `SL(2, ℤ)` the product is `-T′`. -/
 @[simp]

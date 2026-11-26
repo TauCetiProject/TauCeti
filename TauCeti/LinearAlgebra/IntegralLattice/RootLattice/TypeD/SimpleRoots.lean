@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 
 /-!
 # The simple-root basis of the checkerboard lattice
@@ -24,7 +24,7 @@ This file supplies that bridge, for `4 ≤ n`.  The Bourbaki-numbered simple roo
 ```
 
 are already pinned in classical orthogonal coordinates by
-`TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD`, together with their Gram matrix and their
+`TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic`, together with their Gram matrix and their
 linear independence.  Read in the rational ambient space `ℚⁿ` they lie in the checkerboard
 carrier, and they are proved here to be a `ℤ`-basis of it.  Consequently the Gram matrix of the
 checkerboard lattice in that basis is exactly `CartanMatrix.D n`, which is what makes the name
@@ -62,7 +62,6 @@ the lattice.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, §4.7.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5, the `Dₙ` rows of the ADE table.
 -/
 
 public section
@@ -81,16 +80,16 @@ variable {n : ℕ}
 the checkerboard lattice: the chain roots are `eᵢ - eᵢ₊₁` and the fork root is
 `e_{n-2} + e_{n-1}`. -/
 def checkerboardSimpleRoot (n : ℕ) (hn : 4 ≤ n) (i : Fin n) : Fin n → ℚ :=
-  fun j ↦ (DynkinType.typeDSimpleRoot n hn i j : ℚ)
+  fun j ↦ (DynkinType.typeDSimpleRoot n (by omega) i j : ℚ)
 
 @[simp]
 theorem checkerboardSimpleRoot_apply (hn : 4 ≤ n) (i j : Fin n) :
-    checkerboardSimpleRoot n hn i j = (DynkinType.typeDSimpleRoot n hn i j : ℚ) :=
+    checkerboardSimpleRoot n hn i j = (DynkinType.typeDSimpleRoot n (by omega) i j : ℚ) :=
   (rfl)
 
 /-- The coordinatewise cast of an integer vector into the rational ambient space, as a
 `ℤ`-linear map.  It is the comparison used to transport the classical root-system statements of
-`TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD` into the ambient space of the lattice. -/
+`TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic` into the ambient space of the lattice. -/
 private def ratOfIntVec (n : ℕ) : (Fin n → ℤ) →ₗ[ℤ] Fin n → ℚ :=
   (Algebra.linearMap ℤ ℚ).compLeft (Fin n)
 
@@ -99,7 +98,7 @@ private theorem ratOfIntVec_apply (w : Fin n → ℤ) (j : Fin n) :
   simp [ratOfIntVec]
 
 private theorem ratOfIntVec_typeDSimpleRoot (hn : 4 ≤ n) (i : Fin n) :
-    ratOfIntVec n (DynkinType.typeDSimpleRoot n hn i) = checkerboardSimpleRoot n hn i := by
+    ratOfIntVec n (DynkinType.typeDSimpleRoot n (by omega) i) = checkerboardSimpleRoot n hn i := by
   funext j
   rw [ratOfIntVec_apply, checkerboardSimpleRoot_apply]
 
@@ -112,23 +111,19 @@ private theorem ratOfIntVec_injective : Function.Injective (ratOfIntVec n) := by
 sum is `0` or `2`. -/
 theorem checkerboardSimpleRoot_mem_checkerboardCarrier (hn : 4 ≤ n) (i : Fin n) :
     checkerboardSimpleRoot n hn i ∈ checkerboardCarrier n :=
-  mem_checkerboardCarrier_of (DynkinType.typeDSimpleRoot n hn i)
-    (checkerboardSimpleRoot_apply hn i) (DynkinType.even_sum_typeDSimpleRoot hn i)
+  mem_checkerboardCarrier_of_even_sum (DynkinType.typeDSimpleRoot n (by omega) i)
+    (checkerboardSimpleRoot_apply hn i) (DynkinType.even_sum_typeDSimpleRoot (by omega) i)
 
 /-! ## The Gram matrix -/
 
 /-- **The Gram matrix of the Bourbaki simple roots in the checkerboard lattice is the Cartan
-matrix of type `Dₙ`.**
-
-Not a `simp` lemma: `checkerboardLattice_form` is `@[simp]`, so `simp` rewrites the head of the
-left-hand side to `Matrix.toBilin' 1` before this equation can fire.  Every sibling
-`checkerboardLattice_form_*` lemma is untagged for the same reason. -/
+matrix of type `Dₙ`.** -/
 theorem checkerboardLattice_form_checkerboardSimpleRoot_checkerboardSimpleRoot
     (hn : 4 ≤ n) (i j : Fin n) :
     (checkerboardLattice n).form (checkerboardSimpleRoot n hn i) (checkerboardSimpleRoot n hn j) =
       ((CartanMatrix.D n i j : ℤ) : ℚ) := by
   rw [checkerboardLattice_form_apply,
-    ← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j]
+    ← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j]
   push_cast [dotProduct]
   simp only [checkerboardSimpleRoot_apply]
 
@@ -137,9 +132,10 @@ theorem checkerboardLattice_form_checkerboardSimpleRoot_checkerboardSimpleRoot
 /-- The image of the integral span of the simple roots is their rational span. -/
 private theorem map_span_typeDSimpleRoot (hn : 4 ≤ n) :
     Submodule.map (ratOfIntVec n)
-        (Submodule.span ℤ (Set.range (DynkinType.typeDSimpleRoot n hn))) =
+        (Submodule.span ℤ (Set.range (DynkinType.typeDSimpleRoot n (by omega)))) =
       Submodule.span ℤ (Set.range (checkerboardSimpleRoot n hn)) := by
-  have hcomp : ratOfIntVec n ∘ DynkinType.typeDSimpleRoot n hn = checkerboardSimpleRoot n hn :=
+  have hcomp :
+      ratOfIntVec n ∘ DynkinType.typeDSimpleRoot n (by omega) = checkerboardSimpleRoot n hn :=
     funext (ratOfIntVec_typeDSimpleRoot hn)
   rw [Submodule.map_span, ← Set.range_comp, hcomp]
 
@@ -162,7 +158,7 @@ theorem span_range_checkerboardSimpleRoot (hn : 4 ≤ n) :
       rw [hsum]
       exact even_two_mul m
     have hmem := Submodule.mem_map_of_mem (f := ratOfIntVec n)
-      ((DynkinType.mem_span_range_typeDSimpleRoot_iff hn).2 heven)
+      ((DynkinType.mem_span_range_typeDSimpleRoot_iff (by omega)).2 heven)
     rw [map_span_typeDSimpleRoot hn] at hmem
     rwa [hxw]
 
@@ -171,7 +167,7 @@ ambient space of the checkerboard lattice. -/
 theorem linearIndependent_checkerboardSimpleRoot (hn : 4 ≤ n) :
     LinearIndependent ℤ (checkerboardSimpleRoot n hn) := by
   rw [← funext (ratOfIntVec_typeDSimpleRoot hn)]
-  exact (DynkinType.linearIndependent_typeDSimpleRoot hn).map' _
+  exact (DynkinType.linearIndependent_typeDSimpleRoot (by omega)).map' _
     (LinearMap.ker_eq_bot.mpr ratOfIntVec_injective)
 
 /-- **The Bourbaki simple roots of type `Dₙ` are a `ℤ`-basis of the checkerboard lattice.**  This
@@ -231,7 +227,7 @@ theorem D_det (hn : 2 ≤ n) : (D n).det = 4 := by
       norm_num [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
         Matrix.cons_val_fin_one]
   have : NeZero n := ⟨by omega⟩
-  have hsq := TauCeti.DynkinType.det_cartanMatrixD_eq_det_typeDSimpleRoot_sq hn4
+  have hsq := TauCeti.DynkinType.det_cartanMatrixD_eq_det_typeDSimpleRoot_sq (by omega)
   have hnonneg : 0 ≤ (D n).det := by
     rw [hsq]
     exact sq_nonneg _

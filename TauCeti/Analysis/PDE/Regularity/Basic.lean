@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.PDE.EnergyForm.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # `H²` regularity of whole-space weak solutions, and tangential regularity
@@ -218,8 +220,6 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWi
     ‖W1p.gradient (W1p.differenceQuotient le_rfl w t (hw t) (u : W1p mu Omega 2))‖ ≤
       ‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu Omega 2)‖) / lam := by
   have hlam := ha.pos
-  let : TopologicalSpace.PseudoMetrizableSpace (Matrix ι ι ℝ) :=
-    inferInstanceAs (TopologicalSpace.PseudoMetrizableSpace (ι → ι → ℝ))
   have hmeas : AEStronglyMeasurable a (mu.restrict Omega) :=
     (continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
       Omega.isOpen.measurableSet
@@ -232,10 +232,10 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWi
   -- The difference quotient `g = Dᵗ u` and the test function `v = D⁻ᵗ g`, both in `H¹₀(Ω)`.
   obtain ⟨g, hg0⟩ : ∃ g : W1p0 mu Omega 2,
       (g : W1p mu Omega 2) = W1p.differenceQuotient le_rfl w t (hw t) (u : W1p mu Omega 2) :=
-    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (hw t) (hrev t) u.2⟩, rfl⟩
+    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (hw t) (hrev t) u.property⟩, rfl⟩
   obtain ⟨v, hv0⟩ : ∃ v : W1p0 mu Omega 2,
       (v : W1p mu Omega 2) = W1p.differenceQuotient le_rfl w (-t) (hw (-t)) (g : W1p mu Omega 2) :=
-    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (hw (-t)) (hrev (-t)) g.2⟩, rfl⟩
+    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (hw (-t)) (hrev (-t)) g.property⟩, rfl⟩
   -- Discrete integration by parts is performed on the invariant domain itself.
   have hDQ := abs_energyFormH1_differenceQuotient_add_le hw hcoeff hK t
     (u : W1p mu Omega 2) (g : W1p mu Omega 2)
@@ -362,17 +362,9 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipsch
       simp [mul_sub]
     rw [eLpNorm_congr_ae hae]
     calc eLpNorm (fun x => ⟪W1p.gradient g x, y⟫_ℝ) 2 (mu.restrict Omega)
-        ≤ eLpNorm (‖y‖ • (W1p.gradient g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) 2
+        ≤ ‖y‖ₑ * eLpNorm (W1p.gradient g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) 2
             (mu.restrict Omega) :=
-          have hmeas : AEStronglyMeasurable (fun x => ⟪W1p.gradient g x, y⟫_ℝ)
-              (mu.restrict Omega) :=
-            (Lp.aestronglyMeasurable (W1p.gradient g)).inner_const
-          eLpNorm_mono_ae hmeas (Filter.Eventually.of_forall fun x => by
-            rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm, mul_comm]
-            exact abs_real_inner_le_norm _ y)
-      _ = ‖y‖ₑ * eLpNorm (W1p.gradient g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) 2
-            (mu.restrict Omega) := by
-          rw [eLpNorm_const_smul, enorm_norm]
+          eLpNorm_inner_const_le (𝕜 := ℝ) (W1p.gradient g) y 2
       _ = ‖y‖ₑ * ENNReal.ofReal ‖W1p.gradient g‖ := by
           rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _)]
       _ ≤ ‖y‖ₑ * ENNReal.ofReal

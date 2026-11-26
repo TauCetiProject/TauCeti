@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Kernel
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.RingTheory.PicardGroup
 
 import TauCeti.RingTheory.Ideal.Operations
 
@@ -20,12 +21,16 @@ import TauCeti.RingTheory.Ideal.Operations
 The scalar multiplication equivalence `S ⊗[R] R ≃ₗ[S] S` identifies the base change of
 an ideal with its extension along `algebraMap R S`. This permits kernel computations
 on tensor products to be read as membership statements in extended ideals.
+A two-sided ideal with flat quotient is recovered by contracting its scalar extension along an
+injective scalar map (`Ideal.comap_map_includeRight_of_flat_quotient_of_injective`). In particular,
+a flat closed subscheme over a domain is the schematic closure of its generic fibre.
 The extension of a module annihilator is contained in its annihilator after arbitrary
 scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
 commutative; extended ideals are left ideals.
 
-For an ideal `I` and a module `M`, injectivity of `I ⊗ M → R ⊗ M` is the vanishing of
-`Tor₁(R ⧸ I, M)`. `Ideal.sup_subtype_rTensor_injective` propagates it from `I` and `J` to `I ⊔ J`,
+For an ideal `I` and a module `M` over a commutative ring `R`, injectivity of `I ⊗ M → R ⊗ M` is
+the vanishing of `Tor₁(R ⧸ I, M)`; over a commutative semiring only the injectivity is meaningful.
+`Ideal.sup_subtype_rTensor_injective` propagates it from `I` and `J` to `I ⊔ J`,
 provided `I M ∩ J M = (I ⊓ J) M`. For an `M`-regular element `x` it holds for the ideal `(x)`
 (`IsSMulRegular.span_singleton_subtype_rTensor_injective`).
 
@@ -33,7 +38,8 @@ Along a flat ring map `R → S` the base change `S ⊗[R] I` is the extended ide
 (`Ideal.liftBaseChange_idealMap_bijective`), so the fibres of `I` and `I S` at a field-valued point
 of `S` have the same dimension (`Ideal.finrank_tensor_map_of_flat`). Without flatness, over a
 commutative `S`, the map `S ⊗[R] I → I S` is still surjective
-(`Ideal.liftBaseChange_idealMap_surjective`) and its kernel
+(`Ideal.liftBaseChange_idealMap_surjective`), hence bijective when `I` and `I S` are invertible
+(`Ideal.liftBaseChange_idealMap_bijective_of_invertible`), and its kernel
 is killed by `I S` (`Ideal.isTorsionBySet_ker_liftBaseChange_idealMap`). For an `S`-module `M`
 which is flat over `R`, it follows that `I S ⊗[S] M → M` is injective, that is
 `Tor₁ˢ(S ⧸ I S, M) = 0` (`Module.Flat.map_subtype_rTensor_injective`). For an idempotent ideal
@@ -64,6 +70,27 @@ theorem map_eq_baseChange_map_rid (I : Ideal R) :
   simp only [LinearEquiv.coe_coe, TensorProduct.mk_apply,
     AlgebraTensorModule.rid_tmul, Algebra.smul_def, mul_one]
   rfl
+
+/-- A two-sided ideal with flat quotient is recovered by contracting its scalar extension along an
+injective scalar map. The scalar extension need not be faithfully flat. -/
+theorem comap_map_includeRight_of_flat_quotient_of_injective {R A B : Type*} [CommRing R]
+    [Ring A] [Ring B] [Algebra R A] [Algebra R B] (I : Ideal B) [I.IsTwoSided]
+    [Module.Flat R (B ⧸ I)] (h : Function.Injective (algebraMap R A)) :
+    (I.map (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B)).comap
+      (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) = I := by
+  have hker := Algebra.TensorProduct.lTensor_ker (A := A) (Ideal.Quotient.mkₐ R I)
+    (Ideal.Quotient.mkₐ_surjective R I)
+  rw [← RingHom.ker_coe_toRingHom (Ideal.Quotient.mkₐ R I), Ideal.Quotient.mkₐ_ker] at hker
+  refine le_antisymm ?_ Ideal.le_comap_map
+  intro b hb
+  have hb' : Algebra.TensorProduct.map (AlgHom.id R A) (Ideal.Quotient.mkₐ R I)
+      (1 ⊗ₜ[R] b) = 0 := by
+    exact RingHom.mem_ker.mp (hker.ge hb)
+  have hzero : Ideal.Quotient.mk I b = 0 := by
+    apply Algebra.TensorProduct.includeRight_injective (B := B ⧸ I) h
+    simpa only [Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.map_tmul,
+      AlgHom.id_apply, Ideal.Quotient.mkₐ_eq_mk, TensorProduct.tmul_zero] using hb'
+  exact Ideal.Quotient.eq_zero_iff_mem.mp hzero
 
 end Ideal
 
@@ -139,9 +166,10 @@ end Ideal
 
 section IsSMulRegular
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- If `x` is `M`-regular, then `Tor₁ᴿ(R ⧸ (x), M) = 0`: the map `(x) ⊗[R] M → M` is injective. -/
+/-- If `x` is `M`-regular, the map `(x) ⊗[R] M → R ⊗[R] M` is injective. For a commutative ring `R`
+and an `R`-module `M`, this says `Tor₁ᴿ(R ⧸ (x), M) = 0`. -/
 theorem IsSMulRegular.span_singleton_subtype_rTensor_injective {x : R}
     (reg : IsSMulRegular M x) :
     Function.Injective ((Ideal.span {x}).subtype.rTensor M) := by
@@ -149,16 +177,17 @@ theorem IsSMulRegular.span_singleton_subtype_rTensor_injective {x : R}
   have h (t : Ideal.span {x} ⊗[R] M) : ∃ m, t = x' ⊗ₜ m := by
     induction t using TensorProduct.inductionOn with
     | tmul y m =>
-      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp y.2
+      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp y.property
       exact ⟨a • m, by rw [← smul_tmul]; congr 1; ext; simp [x', ← ha]⟩
     | add t u ht hu =>
       obtain ⟨m, rfl⟩ := ht
       obtain ⟨n, rfl⟩ := hu
       exact ⟨m + n, (tmul_add _ _ _).symm⟩
-  refine (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
+  intro t u htu
   obtain ⟨m, rfl⟩ := h t
-  have : x • m = 0 := by simpa [x'] using congr(TensorProduct.lid R M $ht)
-  rw [reg (this.trans (smul_zero x).symm), tmul_zero]
+  obtain ⟨n, rfl⟩ := h u
+  have : x • m = x • n := by simpa [x'] using congr(TensorProduct.lid R M $htu)
+  rw [reg this]
 
 end IsSMulRegular
 
@@ -197,9 +226,16 @@ theorem liftBaseChange_idealMap_surjective :
     map_le_iff_le_comap.mpr fun a ha ↦
       ⟨⟨algebraMap R S a, mem_map_of_mem _ ha⟩, ⟨1 ⊗ₜ ⟨a, ha⟩, by ext; simp⟩, rfl⟩
   intro y
-  obtain ⟨z, hz, hzy⟩ := hle y.2
+  obtain ⟨z, hz, hzy⟩ := hle y.property
   obtain ⟨x, rfl⟩ := hz
   exact ⟨x, Subtype.ext hzy⟩
+
+/-- If an ideal `I` and its extension `I S` are invertible, the map `S ⊗[R] I → I S` induced by
+`I → I S` is bijective. -/
+theorem liftBaseChange_idealMap_bijective_of_invertible [Module.Invertible R I]
+    [Module.Invertible S (I.map (algebraMap R S))] :
+    Function.Bijective ((Algebra.idealMap S I).liftBaseChange S) :=
+  Module.Invertible.bijective_of_surjective (liftBaseChange_idealMap_surjective S I)
 
 /-- The kernel of the surjection `S ⊗[R] I → I S` is killed by the extended ideal `I S`. -/
 theorem isTorsionBySet_ker_liftBaseChange_idealMap :
@@ -340,6 +376,22 @@ end Ideal
 
 namespace TensorProduct
 
+section Monoid
+
+variable {R S M : Type*} [CommSemiring R] [Semiring S] [Algebra R S] [AddCommMonoid M]
+  [Module R M]
+
+/-- If `m ∈ J M` for an ideal `J` of `R`, then `1 ⊗ m ∈ (J S) (S ⊗[R] M)`. -/
+theorem one_tmul_mem_map_smul_top {J : Ideal R} {m : M} (hm : m ∈ (J • ⊤ : Submodule R M)) :
+    (1 : S) ⊗ₜ[R] m ∈ (J.map (algebraMap R S) • ⊤ : Submodule S (S ⊗[R] M)) := by
+  refine Submodule.smul_induction_on hm (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)
+  · rw [tmul_smul, ← algebraMap_smul S a]
+    exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem _ ha) Submodule.mem_top
+  · rw [tmul_add]
+    exact add_mem hx hy
+
+end Monoid
+
 variable {R S M : Type*} [CommRing R] [CommRing S] [Algebra R S] [AddCommGroup M] [Module R M]
 
 /-- If `R → S ⧸ J` is surjective, then every element of `S ⊗[R] M` is of the form `1 ⊗ m` modulo
@@ -364,14 +416,5 @@ theorem exists_sub_one_tmul_mem_smul_top {J : Ideal S}
     rw [tmul_add]
     convert add_mem hm hm' using 1
     abel
-
-/-- If `m ∈ J M` for an ideal `J` of `R`, then `1 ⊗ m ∈ (J S) (S ⊗[R] M)`. -/
-theorem one_tmul_mem_map_smul_top {J : Ideal R} {m : M} (hm : m ∈ (J • ⊤ : Submodule R M)) :
-    (1 : S) ⊗ₜ[R] m ∈ (J.map (algebraMap R S) • ⊤ : Submodule S (S ⊗[R] M)) := by
-  refine Submodule.smul_induction_on hm (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)
-  · rw [tmul_smul, ← algebraMap_smul S a]
-    exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem _ ha) Submodule.mem_top
-  · rw [tmul_add]
-    exact add_mem hx hy
 
 end TensorProduct

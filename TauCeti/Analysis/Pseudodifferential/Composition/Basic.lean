@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Convolution
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
-import TauCeti.Analysis.Pseudodifferential.OutputSupport
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -38,6 +39,10 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
 * `TauCeti.Symbol.quantizeSchwartzValue_sharp`: **composition of quantizations**. For a Schwartz
   function `u`, `Op(a # b) u (x) = ∫ exp(2πi ⟪ζ, x⟫) a(x, 2πζ) (𝓕 (Op(b) u) ζ) dζ`, the Fourier
   integral defining `Op(a)` applied to the function `Op(b) u`.
+* `TauCeti.Symbol.coefficient_sharp_of_coefficient_eq_smul`: at a position `x`, `a # b` only
+  involves `a(x, ·)`. In particular, for a Schwartz function `ψ`, the composition `ψ # b` vanishes
+  at positions outside `tsupport ψ`
+  (`TauCeti.Symbol.coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport`).
 * `TauCeti.Symbol.spatialDeriv_sharp`, `TauCeti.Symbol.coefficient_frequencyDeriv_sharp`: the
   Leibniz rules `∂(a # b) = (∂a) # b + a # (∂b)` for position and frequency derivatives.
 * `TauCeti.Symbol.sharp_add`, `TauCeti.Symbol.add_sharp`, `TauCeti.Symbol.sharp_smul`,
@@ -48,20 +53,37 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   smoothing symbols form an ideal for `#`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le`: the decay
   `‖a(x, ξ + y) ∘ b̂(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-r)` of the integrand for frequency shifts
-  `‖y‖ ≤ R ‖η‖`.
+  `‖y‖ ≤ R ‖η‖`, with the explicit constant in terms of bounds for `a` and `b̂` given by
+  `TauCeti.Symbol.norm_comp_fourier_slice_le`.
 * `TauCeti.Symbol.sharpIntegrand`: the integrand `exp(2πi ⟪η, x⟫) a(x, ξ + sη) ∘ b̂(η, ξ)` with a
   scaled frequency shift, with its decay, continuity and integrability
   (`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_sharpIntegrand_le` and its companions).
 * `TauCeti.Symbol.exists_norm_mixedDeriv_le_of_leibniz`: the symbol estimates of a family of
-  functions of two symbols which satisfies the Leibniz rules follow from its growth bound.
+  functions of two symbols which satisfies the Leibniz rules follow from its growth bound, for
+  positions in a compact set or, for uniform symbols, at all positions, and uniformly over a family
+  of right factors.
 * `TauCeti.Symbol.HasCompactSpatialSupport.sharp`: if `a` also has compact spatial support, then
   so does `a # b`.
+* `TauCeti.Symbol.IsUniform.sharp`: if the estimates of `a` hold uniformly in the position, then
+  so do those of `a # b`.
 * `TauCeti.Symbol.coefficient_const_id_sharp`: the constant symbol `1` is a left identity,
   `1 # b = b`.
 * `TauCeti.Symbol.quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue`: `Op(a # b) u = Op(a) w`
   for the test function `w = Op(b) u`, and
   `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
   symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
+* `TauCeti.Symbol.smul_quantizeSchwartzValue_sharp_eq_add`: a symbol identity
+  `ψ(x) (c # b) = ψ(x) (1 + R)` gives the operator identity
+  `ψ · Op(c) (Op(b) u) = ψ · u + Op(ψ R) u`, the form of a local right parametrix.
+* `TauCeti.Symbol.coordSub_smul_coefficient_sharp`: **commutator with a coordinate function**,
+  `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`, where `(y - z)ⱼ b` is the composition
+  with the symbol `TauCeti.Symbol.coordSubSymbol z j` of multiplication by `(y - z)ⱼ`.
+* `TauCeti.Symbol.quantizeUniformCLM_sharp`: for `a` uniform in the position,
+  `Op(a # b) = Op(a) ∘ Op(b)` as continuous operators on Schwartz space.
+* `TauCeti.Symbol.sharp_assoc`: **associativity**, `(a # b) # c = a # (b # c)` for `b` and `c` with
+  compact spatial support, since both are the symbol of `Op(a) ∘ Op(b) ∘ Op(c)`.
+* `TauCeti.Symbol.quantizeSobolev_sharp`: if `a` also has compact spatial support, then
+  `Op(a # b) = Op(a) ∘ Op(b)` as operators between Bessel-potential spaces.
 
 The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
 `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
@@ -69,13 +91,14 @@ The facts used about `b̂` (rapid decay, joint continuity, differentiation in `�
 ## Proof outline
 
 By the rapid decay of `b̂` and Peetre's inequality `⟨ξ + 2πη⟩ ^ m' ≤ C ⟨ξ⟩ ^ m' ⟨η⟩ ^ |m'|`, the
-integrand is bounded by `C ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-(n + 1))`, locally uniformly in the position,
-which gives the order-`m' + m` bound on `a # b` itself. A derivative of the integrand in a position
-or frequency direction is the sum of the integrands for the pairs `(∂a, b)` and `(a, ∂b)`: in the
-position, the derivative of the phase becomes `(∂_x b)^` by the formula above. Differentiating
-under the integral sign therefore gives the Leibniz rules, smoothness follows by induction on the
-order of differentiability, and the symbol estimates by induction on the number of derivatives,
-each frequency derivative lowering the order of one of the two symbols by one. The composition of
+integrand is bounded by `C ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-(n + 1))`, locally uniformly in the position
+and uniformly if the bound on `a` is, which gives the order-`m' + m` bound on `a # b` itself. A
+derivative of the integrand in a position or frequency direction is the sum of the integrands for
+the pairs `(∂a, b)` and `(a, ∂b)`: in the position, the derivative of the phase becomes `(∂_x b)^`
+by the formula above. Differentiating under the integral sign therefore gives the Leibniz rules,
+smoothness follows by induction on the order of differentiability, and the symbol estimates by
+induction on the number of derivatives, each frequency derivative lowering the order of one of the
+two symbols by one. The composition of
 quantizations follows from the formula `𝓕 (Op(b) u) ζ' = ∫ b̂(ζ' - ζ, 2πζ) (𝓕 u ζ) dζ`
 (`HasCompactSpatialSupport.fourier_quantizeSchwartzValue`), Fubini's theorem for an integrand
 dominated by a convolution of integrable functions, and the change of frequency `ζ' = ζ + η`.
@@ -105,76 +128,90 @@ variable {n : ℕ} {m m' : ℝ} {V W U : Type*} [NormedAddCommGroup V] [NormedSp
 
 section Leibniz
 
-/-- **Symbol estimates from the Leibniz rules.** Let `F a b hb` be a family of smooth functions of
-the position and the frequency, indexed by a symbol `a` of order `m'` and a symbol `b` of order
-`m` with compact spatial support, which satisfies the Leibniz rules
-`∂ (F a b) = F (∂a) b + F a (∂b)` for the position and the frequency derivatives. If every member
-is bounded by `C ⟨ξ⟩ ^ (m' + m - s)` for positions in a compact set, then so is every mixed
-derivative `∂_x^α ∂_ξ^β (F a b)`, with the weight `⟨ξ⟩ ^ (m' + m - s - |β|)`: each frequency
-derivative falls on one of the two symbols and lowers its order by one. -/
-theorem exists_norm_mixedDeriv_le_of_leibniz (s : ℝ)
-    (F : ∀ {m m' : ℝ}, Symbol n W U m' → (b : Symbol n V W m) → b.HasCompactSpatialSupport →
+/-- **Symbol estimates from the Leibniz rules.** Let `F a b hb i` be smooth functions of the
+position and the frequency, indexed by a symbol `a` of order `m'`, a family `b` of symbols of
+order `m` satisfying a predicate `Q` and a member `i` of the family, which satisfy the Leibniz
+rules `∂ (F a b) = F (∂a) b + F a (∂b)` for the position and the frequency derivatives. Let `P` be
+a predicate on the symbols `a`, and let `P` and `Q` be stable under the position and frequency
+derivatives. If for every `a` with `P a` and every `b` with `Q b` the members are bounded by
+`C ⟨ξ⟩ ^ (m' + m - s)` for positions in a set `K`, with `C` independent of `i`, then so is every
+mixed derivative `∂_x^α ∂_ξ^β (F a b)`, with the weight `⟨ξ⟩ ^ (m' + m - s - |β|)`: each frequency
+derivative falls on one of the two symbols and lowers its order by one.
+
+For a single symbol `b` with compact spatial support, take for `ι` the unit type. Taking `P`
+trivial and `K` compact gives the local symbol estimates, and taking for `P` the estimates uniform
+in the position (`Symbol.IsUniform`) and `K = univ` gives uniform ones. -/
+theorem exists_norm_mixedDeriv_le_of_leibniz {ι : Type*} (s : ℝ)
+    (P : ∀ {m' : ℝ}, Symbol n W U m' → Prop)
+    (hPspatial : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (spatialDeriv j a))
+    (hPfrequency : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (frequencyDeriv j a))
+    (Q : ∀ {m : ℝ}, (ι → Symbol n V W m) → Prop)
+    (hQspatial : ∀ {m : ℝ} {b : ι → Symbol n V W m}, Q b → ∀ j, Q fun i ↦ spatialDeriv j (b i))
+    (hQfrequency : ∀ {m : ℝ} {b : ι → Symbol n V W m}, Q b →
+      ∀ j, Q fun i ↦ frequencyDeriv j (b i))
+    (F : ∀ {m m' : ℝ}, Symbol n W U m' → (b : ι → Symbol n V W m) → Q b → ι →
       CoordinateSpace n × CoordinateSpace n → V →L[ℂ] U)
-    (hF : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m}
-      (hb : b.HasCompactSpatialSupport), ContDiff ℝ ∞ (F a b hb))
-    (hspatial : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m}
-      (hb : b.HasCompactSpatialSupport) (j : Fin n) (x ξ : CoordinateSpace n),
-        coordinateDeriv [j] (fun y ↦ F a b hb (y, ξ)) x =
-          F (spatialDeriv j a) b hb (x, ξ) + F a (spatialDeriv j b) (hb.spatialDeriv j) (x, ξ))
-    (hfrequency : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m}
-      (hb : b.HasCompactSpatialSupport) (j : Fin n) (x ξ : CoordinateSpace n),
-        coordinateDeriv [j] (fun η ↦ F a b hb (x, η)) ξ =
-          F (frequencyDeriv j a) b hb (x, ξ) +
-            F a (frequencyDeriv j b) (hb.frequencyDeriv j) (x, ξ))
-    (hbound : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m}
-      (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}, IsCompact K →
-        ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖F a b hb (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - s) / 2))
-    (a : Symbol n W U m') {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
-    (α β : List (Fin n)) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (F a b hb) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - s - β.length) / 2) := by
+    (hF : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : ι → Symbol n V W m} (hb : Q b) (i : ι),
+      ContDiff ℝ ∞ (F a b hb i))
+    (hspatial : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : ι → Symbol n V W m} (hb : Q b)
+      (j : Fin n) (i : ι) (x ξ : CoordinateSpace n),
+        coordinateDeriv [j] (fun y ↦ F a b hb i (y, ξ)) x =
+          F (spatialDeriv j a) b hb i (x, ξ) + F a _ (hQspatial hb j) i (x, ξ))
+    (hfrequency : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : ι → Symbol n V W m} (hb : Q b)
+      (j : Fin n) (i : ι) (x ξ : CoordinateSpace n),
+        coordinateDeriv [j] (fun η ↦ F a b hb i (x, η)) ξ =
+          F (frequencyDeriv j a) b hb i (x, ξ) + F a _ (hQfrequency hb j) i (x, ξ))
+    {K : Set (CoordinateSpace n)}
+    (hbound : ∀ {m m' : ℝ} (a : Symbol n W U m'), P a → ∀ {b : ι → Symbol n V W m} (hb : Q b),
+        ∃ C, 0 ≤ C ∧ ∀ i, ∀ x ∈ K, ∀ ξ,
+          ‖F a b hb i (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - s) / 2))
+    (a : Symbol n W U m') (ha : P a) {b : ι → Symbol n V W m} (hb : Q b)
+    (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ i, ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (F a b hb i) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - s - β.length) / 2) := by
   obtain ⟨D, hD⟩ : ∃ D, α.length + β.length = D := ⟨_, rfl⟩
   induction D generalizing m m' α β with
   | zero =>
     obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
       simpa [List.length_eq_zero_iff] using hD
-    obtain ⟨C, hC0, hC⟩ := hbound a hb hK
-    exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+    obtain ⟨C, hC0, hC⟩ := hbound a ha hb
+    exact ⟨C, hC0, fun i x hx ξ ↦ by simpa using hC i x hx ξ⟩
   | succ D ih =>
     rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
     · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
       · simp at hD
-      · obtain ⟨C₁, hC₁0, hC₁⟩ := ih (spatialDeriv j a) hb α' [] (by simpa using hD)
-        obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (hb.spatialDeriv j) α' [] (by simpa using hD)
-        refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
+      · obtain ⟨C₁, hC₁0, hC₁⟩ := ih (spatialDeriv j a) (hPspatial ha j) hb α' []
+          (by simpa using hD)
+        obtain ⟨C₂, hC₂0, hC₂⟩ := ih a ha (hQspatial hb j) α' [] (by simpa using hD)
+        refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun i x hx ξ ↦ ?_⟩
         have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-            coordinateDeriv [j] (fun y ↦ F a b hb (y, q.2)) q.1) =
-              F (spatialDeriv j a) b hb + F a (spatialDeriv j b) (hb.spatialDeriv j) :=
-          funext fun q ↦ hspatial a hb j q.1 q.2
-        rw [← mixedDeriv_coordinateDeriv_fst (hF a hb), hfun]
-        exact norm_mixedDeriv_add_le (hF _ hb) (hF a _) (hC₁ x hx ξ) (hC₂ x hx ξ)
+            coordinateDeriv [j] (fun y ↦ F a b hb i (y, q.2)) q.1) =
+              F (spatialDeriv j a) b hb i + F a _ (hQspatial hb j) i :=
+          funext fun q ↦ hspatial a hb j i q.1 q.2
+        rw [← mixedDeriv_coordinateDeriv_fst (hF a hb i), hfun]
+        exact norm_mixedDeriv_add_le (hF _ hb i) (hF a _ i) (hC₁ i x hx ξ) (hC₂ i x hx ξ)
     · have hlen : α.length + β'.length = D := by
         simp only [List.length_append, List.length_singleton] at hD
         omega
-      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (frequencyDeriv j a) hb α β' hlen
-      obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (hb.frequencyDeriv j) α β' hlen
-      refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
+      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (frequencyDeriv j a) (hPfrequency ha j) hb α β' hlen
+      obtain ⟨C₂, hC₂0, hC₂⟩ := ih a ha (hQfrequency hb j) α β' hlen
+      refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun i x hx ξ ↦ ?_⟩
       have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-          coordinateDeriv [j] (fun η ↦ F a b hb (q.1, η)) q.2) =
-            F (frequencyDeriv j a) b hb + F a (frequencyDeriv j b) (hb.frequencyDeriv j) :=
-        funext fun q ↦ hfrequency a hb j q.1 q.2
+          coordinateDeriv [j] (fun η ↦ F a b hb i (q.1, η)) q.2) =
+            F (frequencyDeriv j a) b hb i + F a _ (hQfrequency hb j) i :=
+        funext fun q ↦ hfrequency a hb j i q.1 q.2
       have e₁ : (m' - 1 + m - s - β'.length) / 2 = (m' + m - s - (β' ++ [j]).length) / 2 := by
         simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
         ring
       have e₂ : (m' + (m - 1) - s - β'.length) / 2 = (m' + m - s - (β' ++ [j]).length) / 2 := by
         simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
         ring
-      have h₁ := hC₁ x hx ξ
-      have h₂ := hC₂ x hx ξ
+      have h₁ := hC₁ i x hx ξ
+      have h₂ := hC₂ i x hx ξ
       rw [e₁] at h₁
       rw [e₂] at h₂
       rw [← mixedDeriv_coordinateDeriv_snd, hfun]
-      exact norm_mixedDeriv_add_le (hF _ hb) (hF a _) h₁ h₂
+      exact norm_mixedDeriv_add_le (hF _ hb i) (hF a _ i) h₁ h₂
 
 end Leibniz
 
@@ -216,57 +253,73 @@ private theorem compIntegrand_eq_bilinear (p : CoordinateSpace n × CoordinateSp
   simp only [compIntegrand, sharpIntegrand_apply,
     ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply]
 
-variable (a) in
-/-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
-frequency shift `y` with `‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` decays in
-`η` faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for
-positions in a compact set. -/
-theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
-    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ)
-    {R : ℝ} (hR : 1 ≤ R) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η y : CoordinateSpace n, ‖y‖ ≤ R * ‖η‖ →
-      ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨Ca, hCa0, hCa⟩ := a.exists_bound_coefficient K hK
-  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (r + |m'|)
-  refine ⟨Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb, by positivity, fun x hx ξ η y hy ↦ ?_⟩
+/-- **Decay of the composition integrand, with explicit constants.** If `‖a(x, ζ)‖ ≤ A ⟨ζ⟩ ^ m'`
+at `ζ = ξ + y` and `‖b̂(η, ξ)‖ ≤ B ⟨ξ⟩ ^ m ⟨η⟩ ^ (-(r + |m'|))`, then for a frequency shift `y` with
+`‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` is at most
+`A 2 ^ (|m'| / 2) R ^ |m'| B ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-r)`, by Peetre's inequality. -/
+theorem norm_comp_fourier_slice_le {A B r R : ℝ} (hA : 0 ≤ A) (hR : 1 ≤ R)
+    {x ξ η y : CoordinateSpace n} (hy : ‖y‖ ≤ R * ‖η‖)
+    (ha : ‖a.coefficient (x, ξ + y)‖ ≤ A * (1 + ‖ξ + y‖ ^ 2) ^ (m' / 2))
+    (hb : ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ ≤
+      B * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) :
+    ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
+      A * 2 ^ (|m'| / 2) * R ^ |m'| * B * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) *
+        (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   have hshift : (1 + ‖y‖ ^ 2) ^ (|m'| / 2) ≤ R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2) := by
     have hy' : ‖y‖ ≤ ‖R • η‖ := by rwa [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hR)]
     refine (Real.rpow_le_rpow (by positivity)
       (show 1 + ‖y‖ ^ 2 ≤ 1 + ‖R • η‖ ^ 2 by gcongr) (by positivity)).trans ?_
     simpa only [abs_abs] using one_add_norm_smul_sq_rpow_le hR |m'| η
   have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
-      (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
+      (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) :=
+    (one_add_norm_sq_rpow_add ξ m' m).symm
   have hη : (1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2) =
       (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-    rw [← Real.rpow_add (by positivity)]
+    rw [← one_add_norm_sq_rpow_add]
     ring_nf
   calc ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖
       ≤ ‖a.coefficient (x, ξ + y)‖ * ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ :=
         ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ (Ca * (2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
+    _ ≤ (A * (2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
           (R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)))) *
-        (Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by
+        (B * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by
         gcongr
-        · exact (hCa x hx _).trans
-            (by gcongr; exact (one_add_norm_add_sq_rpow_le_mul m' ξ y).trans (by gcongr))
-        · exact hCb η ξ
-    _ = Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb *
+        exact ha.trans
+          (by gcongr; exact (one_add_norm_add_sq_rpow_le_mul m' ξ y).trans (by gcongr))
+    _ = A * 2 ^ (|m'| / 2) * R ^ |m'| * B *
           ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
           ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by ring
     _ = _ := by rw [hξ, hη]
 
-variable (a) in
+/-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
+frequency shift `y` with `‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` decays in
+`η` faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for
+positions in any set `K` on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`: a compact set
+(`Symbol.exists_bound_coefficient`), or all positions if `a` is uniform
+(`Symbol.IsUniform.exists_bound_coefficient`). -/
+theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
+    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η y : CoordinateSpace n, ‖y‖ ≤ R * ‖η‖ →
+      ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨Ca, hCa0, hCa⟩ := ha
+  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (r + |m'|)
+  exact ⟨Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb, by positivity, fun x hx ξ η y hy ↦
+    norm_comp_fourier_slice_le hCa0 hR hy (hCa x hx _) (hCb η ξ)⟩
+
 /-- **Decay of the shifted composition integrand.** For frequency shifts `sη` with `|s| ≤ R`, the
 integrand `sharpIntegrand a b s (x, ξ) η` decays in `η` faster than every power, with the weight
-`⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly in `s` and for positions in a compact set. -/
+`⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly in `s` and for positions in any set on which
+`‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`. -/
 theorem HasCompactSpatialSupport.exists_norm_sharpIntegrand_le (hb : b.HasCompactSpatialSupport)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
+    {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
     ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ η, ‖sharpIntegrand a b s (x, ξ) η‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_comp_fourier_slice_le a hK r hR
+  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_comp_fourier_slice_le ha r hR
   refine ⟨C, hC0, fun s hs x hx ξ η ↦ ?_⟩
   rw [sharpIntegrand_apply, norm_smul, Circle.norm_coe, one_mul]
   refine hC x hx ξ η _ ?_
@@ -296,22 +349,22 @@ theorem HasCompactSpatialSupport.continuous_sharpIntegrand (hb : b.HasCompactSpa
 /-- The shifted composition integrand is integrable. -/
 theorem HasCompactSpatialSupport.integrable_sharpIntegrand (hb : b.HasCompactSpatialSupport)
     (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) : Integrable (sharpIntegrand a b s p) := by
-  obtain ⟨C, -, hC⟩ := hb.exists_norm_sharpIntegrand_le a (isCompact_singleton (x := p.1))
-    ((n : ℝ) + 1) (le_max_left 1 |s|)
+  obtain ⟨C, -, hC⟩ := hb.exists_norm_sharpIntegrand_le
+    (a.exists_bound_coefficient {p.1} isCompact_singleton) ((n : ℝ) + 1) (le_max_left 1 |s|)
   exact (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul _).mono'
     ((hb.continuous_sharpIntegrand s).comp
       (continuous_const.prodMk continuous_id)).aestronglyMeasurable
     (.of_forall fun η ↦ hC s (le_max_right 1 |s|) p.1 rfl p.2 η)
 
-variable (a) in
 /-- `‖∫ sharpIntegrand a b s (x, ξ) η dη‖ ≤ C ⟨ξ⟩ ^ (m' + m)`, uniformly for `|s| ≤ R` and
-positions in a compact set. -/
+positions in any set on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`. -/
 theorem HasCompactSpatialSupport.exists_norm_integral_sharpIntegrand_le
-    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) {R : ℝ}
-    (hR : 1 ≤ R) :
+    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    {R : ℝ} (hR : 1 ≤ R) :
     ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ,
       ‖∫ η, sharpIntegrand a b s (x, ξ) η‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_sharpIntegrand_le a hK ((n : ℝ) + 1) hR
+  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_sharpIntegrand_le ha ((n : ℝ) + 1) hR
   set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
   have hI : 0 ≤ I := integral_nonneg fun η ↦ by positivity
   refine ⟨C * I, mul_nonneg hC0 hI, fun s hs x hx ξ ↦ ?_⟩
@@ -327,7 +380,8 @@ private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η, ‖compIntegrand a b (x, ξ) η‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   obtain ⟨C, hC0, hC⟩ :=
-    hb.exists_norm_sharpIntegrand_le a hK r (R := 2 * π) (by linarith [Real.two_le_pi])
+    hb.exists_norm_sharpIntegrand_le (a.exists_bound_coefficient K hK) r (R := 2 * π)
+      (by linarith [Real.two_le_pi])
   exact ⟨C, hC0, hC (2 * π) (abs_of_pos Real.two_pi_pos).le⟩
 
 private theorem continuous_compIntegrand (hb : b.HasCompactSpatialSupport) :
@@ -379,12 +433,13 @@ private theorem continuous_compCoeff (hb : b.HasCompactSpatialSupport) :
   exact .of_forall (hC p hp₁ hp₂)
 
 /-- **Growth of the composition coefficient.** `‖c(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m)` uniformly for
-positions in a compact set. -/
+positions in any set on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`. -/
 private theorem exists_norm_compCoeff_le (hb : b.HasCompactSpatialSupport)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2)) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖compCoeff a b (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
   obtain ⟨C, hC0, hC⟩ :=
-    hb.exists_norm_integral_sharpIntegrand_le a hK (R := 2 * π) (by linarith [Real.two_le_pi])
+    hb.exists_norm_integral_sharpIntegrand_le ha (R := 2 * π) (by linarith [Real.two_le_pi])
   exact ⟨C, hC0, hC (2 * π) (abs_of_pos Real.two_pi_pos).le⟩
 
 /-- The derivative of the integrand in the `j`-th position direction. The derivative of the phase
@@ -510,11 +565,9 @@ private theorem continuous_fderiv_compIntegrand_apply (hb : b.HasCompactSpatialS
       (continuous_const.prodMk continuous_id)
   simp only [fderiv_compIntegrand_apply hb]
   refine (continuous_finsetSum _ fun j _ ↦ ?_).add (continuous_finsetSum _ fun j _ ↦ ?_)
-  · have h₁ := hc (Symbol.spatialDeriv j a) hb
-    have h₂ := hc a (hb.spatialDeriv j)
+  · have h₂ := hc a (hb.spatialDeriv j)
     fun_prop
-  · have h₁ := hc (Symbol.frequencyDeriv j a) hb
-    have h₂ := hc a (hb.frequencyDeriv j)
+  · have h₂ := hc a (hb.frequencyDeriv j)
     fun_prop
 
 
@@ -526,13 +579,13 @@ private theorem exists_norm_fderiv_compIntegrand_le (hb : b.HasCompactSpatialSup
       p.2 ∈ Metric.closedBall p₀.2 1 → ∀ η,
         ‖fderiv ℝ (fun p ↦ compIntegrand a b p η) p‖ ≤
           D * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-  choose C₁ hC₁0 hC₁ using fun j ↦
+  choose C₁ _ hC₁ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := Symbol.spatialDeriv j a) hb p₀
-  choose C₂ hC₂0 hC₂ using fun j ↦
+  choose C₂ _ hC₂ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := a) (hb.spatialDeriv j) p₀
-  choose C₃ hC₃0 hC₃ using fun j ↦
+  choose C₃ _ hC₃ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := Symbol.frequencyDeriv j a) hb p₀
-  choose C₄ hC₄0 hC₄ using fun j ↦
+  choose C₄ _ hC₄ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := a) (hb.frequencyDeriv j) p₀
   refine ⟨∑ j, (C₁ j + C₂ j) + ∑ j, (C₃ j + C₄ j), fun p hp₁ hp₂ η ↦ ?_⟩
   refine ((fderiv ℝ (fun p ↦ compIntegrand a b p η) p).opNorm_le_of_apply_eq_sum _ _
@@ -647,16 +700,26 @@ private theorem contDiff_compCoeff (hb : b.HasCompactSpatialSupport) :
         (ih (a := a) (hb.frequencyDeriv j))).const_smul _)
 
 /-- The symbol estimates of order `m' + m` for the composition coefficient, from its Leibniz
-rules. -/
-private theorem exists_bound_compCoeff (hb : b.HasCompactSpatialSupport) (α β : List (Fin n))
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+rules, for positions in a set `K` on which every symbol `a` satisfying a predicate `P`, stable under
+derivatives, is bounded by `C ⟨ξ⟩ ^ m'`. -/
+private theorem exists_bound_compCoeff (P : ∀ {m' : ℝ}, Symbol n W U m' → Prop)
+    (hPspatial : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (spatialDeriv j a))
+    (hPfrequency : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (frequencyDeriv j a))
+    {K : Set (CoordinateSpace n)}
+    (hP : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a →
+      ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (ha : P a) (hb : b.HasCompactSpatialSupport) (α β : List (Fin n)) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (compCoeff a b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
-  simpa only [sub_zero] using exists_norm_mixedDeriv_le_of_leibniz 0 (fun a b _ ↦ compCoeff a b)
-    (fun _ _ hb ↦ contDiff_compCoeff hb) (fun _ _ hb ↦ coordinateDeriv_fst_compCoeff hb)
-    (fun _ _ hb ↦ coordinateDeriv_snd_compCoeff hb)
-    (fun a _ hb _ hK ↦ by simpa only [sub_zero] using exists_norm_compCoeff_le (a := a) hb hK)
-    a hb α β hK
+  obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_le_of_leibniz (ι := Unit) 0 P hPspatial
+    hPfrequency (fun b ↦ (b ()).HasCompactSpatialSupport) (fun hb j ↦ hb.spatialDeriv j)
+    (fun hb j ↦ hb.frequencyDeriv j) (fun a b _ _ ↦ compCoeff a (b ()))
+    (fun _ _ hb _ ↦ contDiff_compCoeff hb) (fun _ _ hb j _ ↦ coordinateDeriv_fst_compCoeff hb j)
+    (fun _ _ hb j _ ↦ coordinateDeriv_snd_compCoeff hb j)
+    (fun _ ha _ hb ↦ by
+      simpa only [sub_zero, forall_const] using exists_norm_compCoeff_le hb (hP ha))
+    a ha (b := fun _ ↦ b) hb α β
+  exact ⟨C, hC0, by simpa only [sub_zero] using hC ()⟩
 
 end Integrand
 
@@ -679,13 +742,38 @@ is only its leading term. -/
 def sharp (hb : b.HasCompactSpatialSupport) : Symbol n V U (m' + m) where
   coefficient := compCoeff a b
   contDiff_coefficient := contDiff_compCoeff hb
-  exists_bound _ hK α β := exists_bound_compCoeff hb α β hK
+  exists_bound K hK α β := exists_bound_compCoeff (fun _ ↦ True) (fun _ _ ↦ trivial)
+    (fun _ _ ↦ trivial) (fun {_} a _ ↦ a.exists_bound_coefficient K hK) trivial hb α β
 
 @[simp]
 theorem coefficient_sharp (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
     (a.sharp b hb).coefficient (x, ξ) = ∫ η, (𝐞 ⟪η, x⟫ : ℂ) •
       (a.coefficient (x, ξ + (2 * π) • η)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) :=
   (rfl)
+
+/-- At a position `x`, the composition symbol `a # b` only involves the left factor `a` at `x`: if
+`a'(x, ·) = t a(x, ·)` for a scalar `t`, then `(a' # b)(x, ·) = t (a # b)(x, ·)`. Taking `t = φ(x)`
+for a function `φ` of the position, multiplying the left factor by `φ` multiplies `a # b` by `φ`. -/
+theorem coefficient_sharp_of_coefficient_eq_smul {a' : Symbol n W U m'}
+    (hb : b.HasCompactSpatialSupport) {x : CoordinateSpace n} {t : ℂ}
+    (h : ∀ ξ, a'.coefficient (x, ξ) = t • a.coefficient (x, ξ)) (ξ : CoordinateSpace n) :
+    (a'.sharp b hb).coefficient (x, ξ) = t • (a.sharp b hb).coefficient (x, ξ) := by
+  rw [coefficient_sharp, coefficient_sharp, ← integral_smul]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [h, ContinuousLinearMap.smul_comp]
+  exact smul_comm _ _ _
+
+/-- The composition `ψ # a` of multiplication by a Schwartz function `ψ` with a symbol `a`
+vanishes at positions outside `tsupport ψ`. -/
+theorem coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)} {x : CoordinateSpace n}
+    (hx : x ∉ tsupport ψ) (ξ : CoordinateSpace n) :
+    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) = 0 := by
+  set F := ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W) ((ψ.smooth ⊤).smul contDiff_const)
+  -- At a position where `ψ` vanishes, so does the left factor `F`, and with it `F # a`.
+  rw [coefficient_sharp_of_coefficient_eq_smul (a := F) (a' := F) ha (t := 0)
+    (fun η ↦ by simp [F, image_eq_zero_of_notMem_tsupport hx]), zero_smul]
 
 /-- **Leibniz rule in the position** for the composition symbol. -/
 theorem spatialDeriv_sharp (hb : b.HasCompactSpatialSupport) (j : Fin n) :
@@ -742,6 +830,13 @@ theorem sharp_add (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
   simp only [compIntegrand, sharpIntegrand_apply, hb₁.fourier_slice_add hb₂,
     ContinuousLinearMap.comp_add, smul_add]
+
+/-- The composition `a # b` only depends on `b`, not on the proof of its compact spatial
+support. -/
+theorem sharp_congr {b' : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
+    (hb' : b'.HasCompactSpatialSupport) (h : b = b') : a.sharp b hb = a.sharp b' hb' := by
+  subst h
+  rfl
 
 @[simp]
 theorem smul_sharp (c : ℂ) (a : Symbol n W U m') (hb : b.HasCompactSpatialSupport) :
@@ -834,6 +929,19 @@ theorem HasCompactSpatialSupport.sharp (ha : a.HasCompactSpatialSupport)
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   exact hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ by simp [hKa x hx]⟩
 
+/-- **Uniform estimates for the composition symbol.** If the estimates of `a` hold uniformly in
+the position, then so do those of `a # b`, for every symbol `b` with compact spatial support. For
+instance, composing the quantization of `b` on the left with a Fourier multiplier of order `m'`
+(`Symbol.ofFrequency`), such as the Bessel potential (`Symbol.besselPotential`), gives the
+quantization of a uniform symbol of order `m' + m`, which need not have compact spatial support. -/
+theorem IsUniform.sharp (ha : a.IsUniform) (hb : b.HasCompactSpatialSupport) :
+    (a.sharp b hb).IsUniform := isUniform_iff.2 fun α β ↦ by
+  obtain ⟨C, hC0, hC⟩ := exists_bound_compCoeff IsUniform (fun ha j ↦ ha.spatialDeriv j)
+    (fun ha j ↦ ha.frequencyDeriv j) (K := Set.univ)
+    (fun ha ↦ ha.exists_bound_coefficient.imp fun _ hC ↦ ⟨hC.1, fun x _ ξ ↦ hC.2 x ξ⟩) ha hb α β
+  exact ⟨C, hC0, fun x ξ ↦ by
+    simpa only [coefficient_sharp_eq_compCoeff] using hC x (Set.mem_univ x) ξ⟩
+
 /-- The constant symbol `1` is a left identity for the composition: `1 # b = b`. On the level of
 coefficients this is the Fourier inversion formula `∫ exp(2πi ⟪η, x⟫) b̂(η, ξ) dη = b(x, ξ)`. -/
 @[simp]
@@ -849,6 +957,16 @@ theorem coefficient_const_id_sharp [CompleteSpace W] (hb : b.HasCompactSpatialSu
         refine integral_congr_ae (.of_forall fun η ↦ ?_)
         simp [coefficient_const, Circle.smul_def]
     _ = b.coefficient (x, ξ) := by rw [hinv, ← hf]
+
+/-- Composing multiplication by a Schwartz function `ψ` with a symbol `a` multiplies `a` pointwise
+by `ψ`: `(ψ # a)(x, ξ) = ψ(x) a(x, ξ)`. -/
+theorem coefficient_ofSpatial_smul_id_sharp [CompleteSpace W] {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (ψ : 𝓢(CoordinateSpace n, ℂ)) (x ξ : CoordinateSpace n) :
+    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) =
+      ψ x • a.coefficient (x, ξ) := by
+  rw [coefficient_sharp_of_coefficient_eq_smul (a := const (ContinuousLinearMap.id ℂ W)) ha
+    (t := ψ x) (fun _ ↦ by simp [coefficient_const]), coefficient_const_id_sharp]
 
 end Sharp
 
@@ -907,7 +1025,7 @@ integrable. -/
 private theorem integrable_fourier_slice_apply (hb : b.HasCompactSpatialSupport)
     (u : 𝓢(CoordinateSpace n, V)) (ζ' : CoordinateSpace n) :
     Integrable fun ζ ↦ 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ) (𝓕 u ζ) := by
-  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le 0
+  obtain ⟨Cb, _, hCb⟩ := hb.exists_norm_fourier_slice_le 0
   have hB : Continuous fun ζ : CoordinateSpace n ↦
       𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ) := by
     have h := hb.continuous_fourier_slice.comp (by fun_prop :
@@ -971,6 +1089,49 @@ theorem quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue [CompleteSpace W] [
     funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   rw [quantizeSchwartzValue_sharp hb, quantizeSchwartzValue_def, SchwartzMap.fourier_coe, hw]
 
+/-- **A right parametrix identity from a symbol identity.** If at the position `x` the
+composition `c # b` with a compactly supported `b` is the identity plus `R` after multiplication
+by `ψ(x)`, then `ψ · Op(c) (Op(b) u) = ψ · u + Op(ψ R) u` at `x`. -/
+theorem smul_quantizeSchwartzValue_sharp_eq_add [CompleteSpace V] [CompleteSpace W]
+    {c : Symbol n W V m'} (hb : b.HasCompactSpatialSupport) {m'' : ℝ} (R : Symbol n V V m'')
+    {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n)
+    (h : ∀ ξ, (ψ x : ℂ) • (c.sharp b hb).coefficient (x, ξ) =
+      (ψ x : ℂ) • (ContinuousLinearMap.id ℂ V + R.coefficient (x, ξ))) :
+    (ψ x : ℂ) • quantizeSchwartzValue c.coefficient
+        ((hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (b.contDiff_quantizeSchwartzValue u)) x =
+      (ψ x : ℂ) • u x + quantizeSchwartzValue ((ofSpatial
+        (fun x => ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)).comp R).coefficient
+          u x := by
+  -- The identity as the coefficient of a symbol, so that the quantization is additive in it.
+  have hId : (ofSpatial (n := n) (fun _ => ContinuousLinearMap.id ℂ V)
+      contDiff_const).coefficient = fun _ => ContinuousLinearMap.id ℂ V :=
+    funext fun p => coefficient_ofSpatial _ _ p
+  calc _ = quantizeSchwartzValue ((ψ x : ℂ) • (c.sharp b hb).coefficient) u x := by
+        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
+    _ = quantizeSchwartzValue ((ψ x : ℂ) • ((ofSpatial (fun _ => ContinuousLinearMap.id ℂ V)
+          contDiff_const).coefficient + R.coefficient)) u x :=
+        quantizeSchwartzValue_congr_left (fun ξ => by simpa [hId] using h ξ) u
+    _ = _ := by
+        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_coefficient_add, hId,
+          quantizeSchwartzValue_id, smul_add, ← quantizeSchwartzValue_smul_left]
+        exact congrArg _ (quantizeSchwartzValue_congr_left (fun ξ ↦ by
+          simp [coefficient_comp, ← Complex.coe_smul]) u)
+
+/-- **Composition of uniform quantizations.** For a symbol `b` with compact spatial support,
+`Op(a # b) = Op(a) ∘ Op(b)` on Schwartz space. -/
+theorem quantizeUniformCLM_sharp [CompleteSpace W] [CompleteSpace U] (ha : a.IsUniform)
+    (hb : b.HasCompactSpatialSupport) :
+    quantizeUniformCLM (a.sharp b hb) (ha.sharp hb) =
+      quantizeUniformCLM a ha ∘L quantizeUniformCLM b hb.isUniform := by
+  ext u x
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb,
+    ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply]
+  congr 1
+  ext y
+  simp
+
 /-- **Uniqueness of the composition symbol.** A symbol `c`, of any order, whose quantization is
 `Op(a) ∘ Op(b)` on compactly supported Schwartz functions has the coefficient of `a # b`. -/
 theorem coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq [CompleteSpace V] [CompleteSpace W]
@@ -984,6 +1145,155 @@ theorem coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq [CompleteSpace V
     (h u hu x).trans (quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u x).symm
 
 end Operator
+
+/-! ### Commutator with a coordinate function -/
+
+section Commutator
+
+/-- The symbol of order `0` of multiplication by the `j`-th coordinate `(y - z)ⱼ` of the
+displacement of the position `y` from a point `z`. -/
+def coordSubSymbol (z : CoordinateSpace n) (j : Fin n) : Symbol n W W 0 :=
+  ofSpatial (fun y ↦ (y - z) j • ContinuousLinearMap.id ℂ W)
+    (((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).contDiff.comp
+      (contDiff_id.sub contDiff_const)).smul contDiff_const)
+
+@[simp]
+theorem coefficient_coordSubSymbol (z : CoordinateSpace n) (j : Fin n)
+    (q : CoordinateSpace n × CoordinateSpace n) :
+    (coordSubSymbol (W := W) z j).coefficient q = (q.1 - z) j • ContinuousLinearMap.id ℂ W :=
+  coefficient_ofSpatial _ _ q
+
+/-- Multiplying a symbol by `(y - z)ⱼ` before quantizing multiplies the quantization by
+`(x - z)ⱼ`. -/
+theorem quantizeSchwartzValue_coordSubSymbol_comp (b : Symbol n V W m) (z : CoordinateSpace n)
+    (j : Fin n) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((coordSubSymbol z j).comp b).coefficient u x =
+      ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x := by
+  rw [quantizeSchwartzValue_congr_left (b := ((x - z) j : ℂ) • b.coefficient) (fun ξ ↦ by
+      simp [coefficient_comp, ← Complex.coe_smul]), quantizeSchwartzValue_smul_left]
+
+/-- **Commutator with a coordinate function.** For a symbol `b` with compact spatial support,
+`(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`: multiplying `Op(a) (Op(b) u)` by
+`(x - z)ⱼ` either falls on `Op(b) u` or differentiates `a` in the frequency. -/
+theorem coordSub_smul_coefficient_sharp [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
+    (a : Symbol n W U m') {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
+    (z : CoordinateSpace n) (j : Fin n) (x ξ : CoordinateSpace n) :
+    ((x - z) j : ℂ) • (a.sharp b hb).coefficient (x, ξ) =
+      (a.sharp ((coordSubSymbol z j).comp b) (hb.comp_left _)).coefficient (x, ξ) +
+        Complex.I • ((frequencyDeriv j a).sharp b hb).coefficient (x, ξ) := by
+  set L := (coordSubSymbol z j).comp (a.sharp b hb)
+  set R := a.sharp ((coordSubSymbol z j).comp b) (hb.comp_left _) +
+    Complex.I • inclusion (by linarith) ((frequencyDeriv j a).sharp b hb)
+  have hLR : L.coefficient = R.coefficient := by
+    refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦ funext fun y ↦ ?_
+    set w := (hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+      (b.contDiff_quantizeSchwartzValue u)
+    have hb' := hb.comp_left (coordSubSymbol z j)
+    set w' := (hb'.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+      (((coordSubSymbol z j).comp b).contDiff_quantizeSchwartzValue u)
+    have hw : ∀ y', w y' = quantizeSchwartzValue b.coefficient u y' :=
+      HasCompactSupport.toSchwartzMap_toFun _ _
+    -- The test function `w' = Op((y - z)ⱼ b) u` is `yⱼ w - zⱼ w`.
+    have hw' : w' = SchwartzMap.smulLeftCLM W (fun y' : CoordinateSpace n ↦ y' j) w -
+        ((z j : ℝ) : ℂ) • w := by
+      ext y'
+      have hg : (fun y' : CoordinateSpace n ↦ y' j).HasTemperateGrowth :=
+        (EuclideanSpace.proj j).hasTemperateGrowth
+      rw [HasCompactSupport.toSchwartzMap_toFun, quantizeSchwartzValue_coordSubSymbol_comp,
+        sub_apply, SchwartzMap.smulLeftCLM_apply_apply hg, smul_apply, hw, PiLp.sub_apply,
+        Complex.ofReal_sub, sub_smul, Complex.coe_smul]
+    obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice y
+    -- The left side is `(y - z)ⱼ Op(a) w (y)`.
+    have hL : quantizeSchwartzValue L.coefficient u y =
+        ((y - z) j : ℂ) • quantizeSchwartzValue a.coefficient w y := by
+      rw [quantizeSchwartzValue_coordSubSymbol_comp,
+        quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u y]
+    -- The right side is `Op(a) w' (y) + i Op(∂_{ξⱼ} a) w (y)`.
+    have hR : quantizeSchwartzValue R.coefficient u y =
+        quantizeSchwartzValue a.coefficient w' y +
+          Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient w y := by
+      rw [coefficient_add, quantizeSchwartzValue_coefficient_add, coefficient_smul,
+        quantizeSchwartzValue_smul_left, coefficient_inclusion,
+        quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb' u y,
+        quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u y]
+    -- Expand `Op(a) w'` and move the coordinate `yⱼ` out of `Op(a)`.
+    have hw'y : quantizeSchwartzValue a.coefficient w' y =
+        y j • quantizeSchwartzValue a.coefficient w y -
+          Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient w y -
+          ((z j : ℝ) : ℂ) • quantizeSchwartzValue a.coefficient w y := by
+      rw [hw', sub_eq_add_neg (SchwartzMap.smulLeftCLM W _ w), ← neg_smul,
+        quantizeSchwartzValue_add_right (a.continuous_coefficient_slice y).aestronglyMeasurable hC,
+        quantizeSchwartzValue_smul_right, a.ofLp_smul_quantizeSchwartzValue j w y, neg_smul]
+      abel
+    rw [hL, hR, hw'y, PiLp.sub_apply, Complex.ofReal_sub, sub_smul, Complex.coe_smul]
+    abel
+  calc ((x - z) j : ℂ) • (a.sharp b hb).coefficient (x, ξ) = L.coefficient (x, ξ) := by
+        simp [L, RCLike.real_smul_eq_coe_smul (K := ℂ)]
+    _ = R.coefficient (x, ξ) := congrFun hLR _
+    _ = _ := by simp [R]
+
+end Commutator
+
+/-! ### Associativity -/
+
+section Assoc
+
+variable {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] [CompleteSpace V]
+  [CompleteSpace W] [CompleteSpace U] [CompleteSpace U'] {m'' : ℝ}
+
+/-- **Associativity of the composition symbol.** For symbols `b` and `c` with compact spatial
+support, `(a # b) # c = a # (b # c)`, up to the identification of the orders
+`(m'' + m') + m = m'' + (m' + m)`: both are the symbol of `Op(a) ∘ Op(b) ∘ Op(c)`. -/
+theorem sharp_assoc (a : Symbol n U U' m'') {b : Symbol n W U m'} {c : Symbol n V W m}
+    (hb : b.HasCompactSpatialSupport) (hc : c.HasCompactSpatialSupport) :
+    (a.sharp b hb).sharp c hc =
+      inclusion (add_assoc m'' m' m).ge (a.sharp (b.sharp c hc) (hb.sharp hc)) := by
+  ext1
+  rw [coefficient_inclusion]
+  refine coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq (hb.sharp hc) fun u _ x ↦ ?_
+  rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hc,
+    quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb]
+  congr 1
+  ext y
+  simp only [HasCompactSupport.toSchwartzMap_toFun,
+    quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hc]
+
+end Assoc
+/-! ### The composition on Bessel-potential spaces -/
+
+section Sobolev
+
+variable {V W U : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+  [NormedAddCommGroup U] [InnerProductSpace ℂ U] [CompleteSpace U]
+  {a : Symbol n W U m'} {b : Symbol n V W m}
+
+/-- **Composition of quantizations on Bessel-potential spaces.** For symbols `a` and `b` with
+compact spatial support, the operator `Op(a # b) : H^s → H^{s - (m' + m)}` is the composition of
+`Op(b) : H^s → H^{s - m}` and `Op(a) : H^{s - m} → H^{s - m - m'}`. -/
+theorem quantizeSobolev_sharp (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (hab : (a.sharp b hb).HasCompactSpatialSupport) (s : ℝ) :
+    (a.sharp b hb).quantizeSobolev hab s =
+      BesselPotentialSpace.inclusion (by linarith) ∘L
+        (a.quantizeSobolev ha (s - m) ∘L b.quantizeSobolev hb s) := by
+  refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
+    BesselPotentialSpace.ext ?_
+  -- On a Schwartz function `u`, `Op(b) u` is the test function `w`.
+  set w := (hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+    (b.contDiff_quantizeSchwartzValue u)
+  have hw : b.quantizeSobolev hb s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+      SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 w := by
+    refine BesselPotentialSpace.ext ?_
+    ext φ
+    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+      SchwartzMap.toTemperedDistributionCLM_apply_apply, w, HasCompactSupport.toSchwartzMap_toFun]
+  ext φ
+  simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion, hw,
+    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb, w]
+
+end Sobolev
 
 end Symbol
 

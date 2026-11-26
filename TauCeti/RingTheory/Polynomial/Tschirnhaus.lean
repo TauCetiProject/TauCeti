@@ -55,6 +55,10 @@ recomputed at the transform, whose roots are in bijection with those of `f`.
   The `_field` variants cover arbitrary field polynomials in splitting domains, including `f = 0`.
 * `Polynomial.isRoot_tschirnhausPolynomial`: over a domain, `T(α)` is a root of the transform
   whenever `α` is a root of the nonzero polynomial `f`.
+* `Polynomial.minpoly_aeval_dvd_tschirnhausPolynomial`,
+  `Polynomial.minpoly_aeval_eq_tschirnhausPolynomial_iff`: over a field, the minimal polynomial
+  of `T(x)` divides the transform of the minimal polynomial of `x`, with equality exactly when
+  the two have the same degree.
 * `Polynomial.Monic.tschirnhausRootMap`, `Polynomial.tschirnhausRootMap`: the resulting map
   `α ↦ T(α)` from the roots of `f` to the roots of its transform, for monic `f` over a domain and
   for any field polynomial in a domain; it is surjective whenever `f` splits.
@@ -74,6 +78,8 @@ public section
 noncomputable section
 
 namespace Polynomial
+
+section CommRing
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
@@ -110,7 +116,7 @@ theorem map_tschirnhausPolynomial {f : R[X]} (hf : f.Monic) (T : R[X]) (φ : R �
   simp only [← coe_mapRingHom]
   rw [← resultant_map_map]
   have hC : (mapRingHom φ).comp C = C.comp φ := RingHom.ext fun a ↦ by simp
-  congr 1 <;> simp [Polynomial.map_map, hC]
+  congr 1 <;> simp [map_map, hC]
 
 /-- The Tschirnhaus transform commutes with an injective base change, without requiring `f` to
 be monic. -/
@@ -124,9 +130,9 @@ theorem map_tschirnhausPolynomial_of_injective (f T : R[X]) (φ : R →+* S)
   rw [← resultant_map_map]
   have hC : (mapRingHom φ).comp C = C.comp φ := RingHom.ext fun a ↦ by simp
   have hfmap : (f.map C).map (mapRingHom φ) = (f.map φ).map C := by
-    simp [Polynomial.map_map, hC]
+    simp [map_map, hC]
   have hgmap : (C X - T.map C : R[X][X]).map (mapRingHom φ) =
-      C X - (T.map φ).map C := by simp [Polynomial.map_map, hC]
+      C X - (T.map φ).map C := by simp [map_map, hC]
   rw [hfmap, hgmap]
   congr 1
   · simp [natDegree_map_eq_of_injective C_injective,
@@ -178,7 +184,7 @@ theorem isRoot_tschirnhausPolynomial [IsDomain R] {f : R[X]} (hf : f ≠ 0) {a :
     (algebraMap (FractionRing R) M).injective.comp (IsFractionRing.injective R _)
   have hf' : f.map φ ≠ 0 := (Polynomial.map_ne_zero_iff hφ).mpr hf
   have hs : (f.map φ).Splits := by
-    rw [← Polynomial.map_map]
+    rw [← map_map]
     exact SplittingField.splits _
   have hmem : φ (T.eval a) ∈ (tschirnhausPolynomial (f.map φ) (T.map φ)).roots := by
     rw [roots_tschirnhausPolynomial hs]
@@ -240,7 +246,7 @@ theorem tschirnhausPolynomial_X (f : R[X]) : tschirnhausPolynomial f X = f := by
     rw [show (C X - X : R[X][X]) = -(X - C X) by ring, natDegree_neg,
       natDegree_X_sub_C]
   -- Rewrite the mapped right input explicitly, since its default degree bound depends on it.
-  rw [tschirnhausPolynomial, Polynomial.map_X]
+  rw [tschirnhausPolynomial, map_X]
   rw [hdeg, resultant_C_sub_X_right _ _ _ le_rfl]
   simp [eval_map]
 
@@ -250,10 +256,12 @@ theorem tschirnhausPolynomial_C (f : R[X]) (c : R) :
     tschirnhausPolynomial f (C c) = (X - C c) ^ f.natDegree := by
   -- The second polynomial is constant in the outer variable, so `resultant_C_zero_right`
   -- applies with its outer degree explicitly rewritten to zero.
-  rw [tschirnhausPolynomial, Polynomial.map_C, ← C_sub]
+  rw [tschirnhausPolynomial, map_C, ← C_sub]
   simp only [natDegree_C]
   rw [resultant_C_zero_right]
   simp [natDegree_map_eq_of_injective C_injective]
+
+end CommRing
 
 section Algebra
 
@@ -367,19 +375,22 @@ theorem splits_map_tschirnhausPolynomial_field {f : K[X]}
   rw [map_tschirnhausPolynomial_of_injective f T _ (algebraMap K L).injective]
   exact splits_tschirnhausPolynomial hs _
 
+/-- Over a field, if `a` is a root in a domain of the nonzero polynomial `f`, then `T(a)` is a
+root of the Tschirnhaus transform of `f` by `T`. -/
+theorem aeval_tschirnhausPolynomial_eq_zero {f : K[X]} (hf : f ≠ 0) {a : L}
+    (ha : aeval a f = 0) (T : K[X]) : aeval (aeval a T) (tschirnhausPolynomial f T) = 0 := by
+  rw [← eval_map_algebraMap, map_tschirnhausPolynomial_of_injective f T _
+    (algebraMap K L).injective, ← eval_map_algebraMap]
+  exact isRoot_tschirnhausPolynomial (map_ne_zero hf) (by rwa [IsRoot, eval_map_algebraMap]) _
+
 /-- The map from the roots of a field polynomial to the roots of its Tschirnhaus transform in a
 domain, sending `α` to `T(α)`. -/
 noncomputable def tschirnhausRootMap (f T : K[X]) :
     f.rootSet L → (tschirnhausPolynomial f T).rootSet L :=
-  Set.MapsTo.restrict (fun a ↦ aeval a T) _ _ <| by
-    intro a ha
-    rw [mem_rootSet', ← eval_map_algebraMap] at ha ⊢
-    dsimp only
-    have hf : f ≠ 0 := fun hf ↦ ha.1 (by simp [hf])
-    refine ⟨map_ne_zero (ne_zero_tschirnhausPolynomial_field hf T), ?_⟩
-    rw [map_tschirnhausPolynomial_of_injective f T _ (algebraMap K L).injective,
-      ← eval_map_algebraMap]
-    exact isRoot_tschirnhausPolynomial ha.1 ha.2 _
+  Set.MapsTo.restrict (fun a ↦ aeval a T) _ _ fun _ ha ↦ by
+    rw [mem_rootSet] at ha ⊢
+    exact ⟨ne_zero_tschirnhausPolynomial_field ha.1 T,
+      aeval_tschirnhausPolynomial_eq_zero ha.1 ha.2 T⟩
 
 @[simp]
 theorem coe_tschirnhausRootMap (f T : K[X]) (x : f.rootSet L) :
@@ -395,6 +406,26 @@ theorem tschirnhausRootMap_surjective {f : K[X]}
   refine (Set.MapsTo.restrict_surjective_iff _).2 ?_
   rw [rootSet_tschirnhausPolynomial_field hs]
   exact Set.surjOn_image _ _
+
+/-- The minimal polynomial of `T(x)` divides the Tschirnhaus transform by `T` of the minimal
+polynomial of `x`. -/
+theorem minpoly_aeval_dvd_tschirnhausPolynomial {x : L} (hx : IsIntegral K x) (T : K[X]) :
+    minpoly K (aeval x T) ∣ tschirnhausPolynomial (minpoly K x) T :=
+  minpoly.dvd K _ (aeval_tschirnhausPolynomial_eq_zero (minpoly.ne_zero hx) (minpoly.aeval K x) T)
+
+/-- The minimal polynomial of `T(x)` is the Tschirnhaus transform by `T` of the minimal
+polynomial of `x` exactly when the two minimal polynomials have the same degree. -/
+theorem minpoly_aeval_eq_tschirnhausPolynomial_iff {x : L} (hx : IsIntegral K x) (T : K[X]) :
+    minpoly K (aeval x T) = tschirnhausPolynomial (minpoly K x) T ↔
+      (minpoly K (aeval x T)).natDegree = (minpoly K x).natDegree := by
+  have hm := monic_tschirnhausPolynomial (minpoly.monic hx) T
+  have hd := natDegree_tschirnhausPolynomial (minpoly.monic hx) T
+  refine ⟨fun h ↦ h ▸ hd, fun h ↦ ?_⟩
+  have hy : IsIntegral K (aeval x T) := ⟨_, hm, by
+    rw [← aeval_def]
+    exact aeval_tschirnhausPolynomial_eq_zero (minpoly.ne_zero hx) (minpoly.aeval K x) T⟩
+  exact (eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hy) hm
+    (minpoly_aeval_dvd_tschirnhausPolynomial hx T) (by omega)).symm
 
 end Domain
 

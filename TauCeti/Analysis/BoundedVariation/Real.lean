@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
+import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
@@ -35,9 +36,11 @@ derivative is a combination of approximate identities concentrating to the right
 points, so its pairing with `u` converges to `∑ᵢ |vᵢ₊₁ - vᵢ|` as `c → ∞`.
 
 For the indicator of a set `s`, almost every point is a Lebesgue point with value `0` or `1`.
-Counting alternations between points of `s` and of its complement gives the sharp
-one-dimensional isoperimetric inequality and its rigidity:
+Counting alternations between points of `s` and of its complement gives a local perimeter bound,
+the sharp one-dimensional isoperimetric inequality and its rigidity:
 
+* a set, null-measurable in an open interval `V`, that charges both itself and its complement in
+  `V` has perimeter at least `1` in `V` (`TauCeti.Real.one_le_perimeter_of_ordConnected`);
 * a null-measurable `s ⊆ ℝ` of positive finite measure has perimeter at least `2`
   (`TauCeti.Real.two_le_perimeter`);
 * if `s` has finite measure and does not agree almost everywhere with any interval, then it has
@@ -50,12 +53,19 @@ These are the statements about almost every line section that slicing arguments 
 finite perimeter in higher dimensions apply: a section of perimeter less than `4` is an interval
 up to a null set.
 
+By `TauCeti.perimeter_setOf_inner_lt`, a half-line with endpoint `x` has perimeter `1` in an open
+set containing `x` and `0` in any other open set (`TauCeti.Real.perimeter_Iio`,
+`TauCeti.Real.perimeter_Ioi`).
+
 ## Main results
 
 * `TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn`: the variation of `u` along Lebesgue
   points in `Ω` is at most `|Du|(Ω)`.
+* `TauCeti.Real.one_le_perimeter_of_ordConnected`: a set charging both itself and its complement
+  in an open interval has perimeter at least one there.
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
   `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
+* `TauCeti.Real.perimeter_Iio` and `TauCeti.Real.perimeter_Ioi`: the perimeter of a half-line.
 
 ## References
 
@@ -68,7 +78,7 @@ up to a null set.
 public section
 
 open Filter Set MeasureTheory Metric TopologicalSpace TestFunction LineDeriv
-open scoped Topology ENNReal Distributions BoundedContinuousFunction
+open scoped Topology ENNReal Distributions BoundedContinuousFunction RealInnerProductSpace
 
 namespace TauCeti.Real
 
@@ -117,6 +127,30 @@ private theorem sum_mul_smoothTransition_sub_eq_zero {m : ℕ} {x : Fin (m + 1) 
         _ ≤ c * (y - x j) := by gcongr; linarith [hx (Fin.le_last j)]
     simp [h]
 
+/-- The derivative of the smooth-step combination
+`∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))`. -/
+private theorem hasDerivAt_sum_mul_smoothTransition_sub {m : ℕ} (ε : Fin m → ℝ)
+    (x : Fin (m + 1) → ℝ) {c : ℝ} (y : ℝ) :
+    HasDerivAt (fun y => ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
+      Real.smoothTransition (c * (y - x i.succ))))
+      (∑ i : Fin m, ε i * (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
+        c * deriv Real.smoothTransition (c * (y - x i.succ)))) y := by
+  have hstep (p y : ℝ) : HasDerivAt (fun y => Real.smoothTransition (c * (y - p)))
+      (c * deriv Real.smoothTransition (c * (y - p))) y :=
+    (((hasDerivAt_id y).sub_const p).const_mul c).smoothTransition.congr_deriv
+      (by rw [id, mul_one, mul_comm])
+  exact HasDerivAt.fun_sum fun i _ => ((hstep _ y).sub (hstep _ y)).const_mul (ε i)
+
+/-- The smooth-step combination `∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` is smooth. -/
+private theorem contDiff_sum_mul_smoothTransition_sub {m : ℕ} {c : ℝ} (ε : Fin m → ℝ)
+    (x : Fin (m + 1) → ℝ) :
+    ContDiff ℝ (⊤ : ℕ∞) fun y => ∑ i : Fin m, ε i *
+      (Real.smoothTransition (c * (y - x i.castSucc)) -
+        Real.smoothTransition (c * (y - x i.succ))) := by
+  have hstep (p : ℝ) : ContDiff ℝ (⊤ : ℕ∞) fun y => Real.smoothTransition (c * (y - p)) :=
+    Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_id.sub contDiff_const))
+  exact ContDiff.sum fun i _ => contDiff_const.mul ((hstep _).sub (hstep _))
+
 /-- **The smooth-step test function.** For monotone points `x₀ ≤ ⋯ ≤ xₘ` with
 `[x₀, xₘ + c⁻¹] ⊆ Ω` and coefficients `|εᵢ| ≤ 1`, the combination
 `∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` is a test function on `Ω` of sup norm at most one.
@@ -136,18 +170,8 @@ private theorem ofReal_sum_mul_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ
   set I : ℝ → ℝ := fun p => ∫ y, c * deriv Real.smoothTransition (c * (y - p)) * u y
   set g : ℝ → ℝ := fun y => ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
     Real.smoothTransition (c * (y - x i.succ)))
-  have hstep (p y : ℝ) : HasDerivAt (fun y => Real.smoothTransition (c * (y - p)))
-      (c * deriv Real.smoothTransition (c * (y - p))) y :=
-    (((hasDerivAt_id y).sub_const p).const_mul c).smoothTransition.congr_deriv
-      (by rw [id, mul_one, mul_comm])
-  have hgd (y) : HasDerivAt g (∑ i : Fin m, ε i *
-      (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
-        c * deriv Real.smoothTransition (c * (y - x i.succ)))) y :=
-    HasDerivAt.fun_sum fun i _ => ((hstep _ y).sub (hstep _ y)).const_mul (ε i)
-  have hgsmooth : ContDiff ℝ (⊤ : ℕ∞) g := by
-    have hstep (p : ℝ) : ContDiff ℝ (⊤ : ℕ∞) fun y => Real.smoothTransition (c * (y - p)) :=
-      Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_id.sub contDiff_const))
-    exact ContDiff.sum fun i _ => contDiff_const.mul ((hstep _).sub (hstep _))
+  have hgd (y) : HasDerivAt g _ y := hasDerivAt_sum_mul_smoothTransition_sub (c := c) ε x y
+  have hgsmooth : ContDiff ℝ (⊤ : ℕ∞) g := contDiff_sum_mul_smoothTransition_sub ε x
   have hg0 (y) (hy : y ∉ Icc (x 0) (x (Fin.last m) + c⁻¹)) : g y = 0 :=
     sum_mul_smoothTransition_sub_eq_zero hx ε hc hy
   have hts : tsupport g ⊆ Ω :=
@@ -175,7 +199,7 @@ private theorem ofReal_sum_mul_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ
     _ ≤ ‖(1 : ℝ)‖ₑ * ‖(T : ℝ →ᵇ ℝ)‖ₑ * totalVariationOn volume Ω u :=
         ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn T 1
     _ ≤ totalVariationOn volume Ω u := by
-        rw [enorm_one, one_mul]
+        rw [eNorm_one, one_mul]
         exact mul_le_of_le_one_left zero_le hTnorm
 
 /-- **The variation along Lebesgue points is bounded by the total variation.** Let
@@ -224,21 +248,60 @@ theorem ofReal_sum_abs_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ
     rw [Real.closedBall_eq_Icc]
     exact ⟨by linarith [inv_pos.2 hc0], hy.2⟩
 
-/-- Monotone Lebesgue points of the indicator of a measurable set `s` bound its perimeter from
-below by the number of alternations between `s` and its complement. -/
-private theorem ofReal_sum_le_perimeter {s : Set ℝ} (hs : MeasurableSet s) {m : ℕ}
-    {x : Fin (m + 1) → ℝ} (hx : Monotone x)
+/-- Monotone Lebesgue points of the indicator of a measurable set `s`, spanning an interval in
+`V`, bound its perimeter in `V` from below by the number of alternations between `s` and its
+complement. -/
+private theorem ofReal_sum_le_perimeter {s : Set ℝ} (hs : MeasurableSet s) {V : Opens ℝ} {m : ℕ}
+    {x : Fin (m + 1) → ℝ} (hx : Monotone x) (hV : Icc (x 0) (x (Fin.last m)) ⊆ V)
     (hxs : ∀ i, Tendsto (fun r => ⨍ y in closedBall (x i) r,
       ‖s.indicator 1 y - s.indicator (1 : ℝ → ℝ) (x i)‖) (𝓝[>] 0) (𝓝 0)) :
     ENNReal.ofReal (∑ i : Fin m,
       |s.indicator 1 (x i.succ) - s.indicator (1 : ℝ → ℝ) (x i.castSucc)|)
-      ≤ perimeter volume ⊤ s := by
-  have hu : LocallyIntegrableOn (s.indicator (1 : ℝ → ℝ)) ((⊤ : Opens ℝ) : Set ℝ) := by
+      ≤ perimeter volume V s := by
+  have hu : LocallyIntegrableOn (s.indicator (1 : ℝ → ℝ)) V := by
     rw [Pi.one_def]
     exact ((locallyIntegrable_const 1).indicator hs).locallyIntegrableOn _
   rw [perimeter_def]
-  exact ofReal_sum_abs_sub_le_totalVariationOn (v := fun i => s.indicator 1 (x i)) hu hx
-    (by simp) hxs
+  exact ofReal_sum_abs_sub_le_totalVariationOn (v := fun i => s.indicator 1 (x i)) hu hx hV hxs
+
+/-- A measurable set `s ⊆ ℝ` that charges both itself and its complement in an open interval `V`
+has perimeter at least one in `V`. -/
+private theorem one_le_perimeter_of_ordConnected_of_measurableSet {s : Set ℝ}
+    (hs : MeasurableSet s) {V : Opens ℝ} (hV : (V : Set ℝ).OrdConnected)
+    (h1 : volume (s ∩ V) ≠ 0) (h0 : volume (sᶜ ∩ V) ≠ 0) : 1 ≤ perimeter volume V s := by
+  set P : ℝ → Prop := fun x => Tendsto (fun r => ⨍ y in closedBall x r,
+    ‖s.indicator 1 y - s.indicator (1 : ℝ → ℝ) x‖) (𝓝[>] 0) (𝓝 0)
+  have hae : ∀ᵐ x, P x := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
+    (f := s.indicator (1 : ℝ → ℝ)) ((locallyIntegrable_const 1).indicator hs)
+  -- Two ordered Lebesgue points in `V` bound the perimeter by the jump of the indicator.
+  have key {p q : ℝ} (hpq : p ≤ q) (hp : p ∈ V) (hq : q ∈ V) (hp' : P p) (hq' : P q) :
+      ENNReal.ofReal |s.indicator 1 q - s.indicator (1 : ℝ → ℝ) p| ≤ perimeter volume V s := by
+    simpa using ofReal_sum_le_perimeter hs (x := ![p, q])
+      (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hpq) (hV.out hp hq)
+      (Fin.forall_fin_two.2 ⟨hp', hq'⟩)
+  -- Lebesgue points of `s` and of its complement in `V`, in either order.
+  obtain ⟨a, ⟨has, haV⟩, ha⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h1
+    (ae_restrict_of_ae hae)
+  obtain ⟨b, ⟨hbs, hbV⟩, hb⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h0
+    (ae_restrict_of_ae hae)
+  rcases le_total a b with h | h
+  · simpa [has, notMem_of_mem_compl hbs] using key h haV hbV ha hb
+  · simpa [has, notMem_of_mem_compl hbs] using key h hbV haV hb ha
+
+/-- **A local lower bound for the perimeter on the line.** A set `s ⊆ ℝ`, null-measurable in an
+open interval `V`, that charges both itself and its complement in `V` has perimeter at least one
+in `V`. -/
+theorem one_le_perimeter_of_ordConnected {s : Set ℝ} {V : Opens ℝ}
+    (hs : NullMeasurableSet s (volume.restrict V)) (hV : (V : Set ℝ).OrdConnected)
+    (h1 : volume (s ∩ V) ≠ 0) (h0 : volume (sᶜ ∩ V) ≠ 0) : 1 ≤ perimeter volume V s := by
+  have hts := hs.toMeasurable_ae_eq
+  have hvol {u u' : Set ℝ} (h : u =ᵐ[volume.restrict V] u') :
+      volume (u ∩ V) = volume (u' ∩ V) := by
+    rw [← Measure.restrict_apply' V.isOpen.measurableSet,
+      ← Measure.restrict_apply' V.isOpen.measurableSet, measure_congr h]
+  rw [← perimeter_congr_ae hts]
+  exact one_le_perimeter_of_ordConnected_of_measurableSet (measurableSet_toMeasurable _ _) hV
+    (by rwa [hvol hts]) (by rwa [hvol hts.compl])
 
 /-- A null-measurable set agrees almost everywhere with a measurable set of the same perimeter
 and measure. -/
@@ -269,8 +332,8 @@ private theorem two_le_perimeter_of_measurableSet {s : Set ℝ} (hs : Measurable
   -- A Lebesgue point of `s`, with Lebesgue points of the complement on either side.
   obtain ⟨b, hbs, hb⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h0 (ae_restrict_of_ae hae)
   obtain ⟨⟨a, hab, has, ha⟩, c, hbc, hcs, hc⟩ := exists_notMem_lt_and_gt hfin hae b b
-  have h := ofReal_sum_le_perimeter hs (x := ![a, b, c])
-    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i <;> simp [hab.le, hbc.le])
+  have h := ofReal_sum_le_perimeter hs (V := ⊤) (x := ![a, b, c])
+    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i <;> simp [hab.le, hbc.le]) (by simp)
     (fun i => by fin_cases i <;> assumption)
   simpa [Fin.sum_univ_succ, has, hbs, hcs, one_add_one_eq_two] using h
 
@@ -299,9 +362,9 @@ private theorem four_le_perimeter_of_measurableSet {s : Set ℝ} (hs : Measurabl
     exact h I hI (ae_eq_set.2 ⟨measure_mono_null h₁ hnull, measure_mono_null h₂ hnull⟩)
   -- Lebesgue points of the complement on either side.
   obtain ⟨⟨a, hab, has, ha⟩, c, hb'c, hcs, hc⟩ := exists_notMem_lt_and_gt hfin hae b b'
-  have h := ofReal_sum_le_perimeter hs (x := ![a, b, z, b', c])
+  have h := ofReal_sum_le_perimeter hs (V := ⊤) (x := ![a, b, z, b', c])
     (Fin.monotone_iff_le_succ.2 fun i => by
-      fin_cases i <;> simp [hab.le, hbz.le, hzb'.le, hb'c.le])
+      fin_cases i <;> simp [hab.le, hbz.le, hzb'.le, hb'c.le]) (by simp)
     (fun i => by fin_cases i <;> assumption)
   have h4 : (1 + (1 + (1 + 1)) : ℝ) = 4 := by norm_num
   simpa [Fin.sum_univ_succ, has, hbs, hzs, hb's, hcs, h4] using h
@@ -341,6 +404,25 @@ theorem perimeter_Ioo {a b : ℝ} (hab : a < b) : perimeter volume ⊤ (Ioo a b)
   rw [Real.norm_eq_abs, abs_le] at ha hb
   linarith
 
+/-- **The perimeter of a half-line ending at a point**: by `TauCeti.perimeter_setOf_inner_lt`, the
+perimeter of `(-∞, x)` in an open set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/
+@[simp]
+theorem perimeter_Iio (x : ℝ) (Ω : Opens ℝ) :
+    perimeter volume Ω (Iio x) = (Ω : Set ℝ).indicator 1 x := by
+  have h := perimeter_setOf_inner_lt (F := ℝ) (ν := 1) (by simp) x Ω
+  have hlt : {y : ℝ | ⟪y, (1 : ℝ)⟫ < x} = Iio x := by ext y; simp
+  have heq : {y : ℝ | ⟪y, (1 : ℝ)⟫ = x} = {x} := by ext y; simp
+  rw [hlt, heq] at h
+  by_cases hx : x ∈ (Ω : Set ℝ) <;> simpa [hx] using h
+
+/-- **The perimeter of a half-line starting at a point**: the perimeter of `(x, ∞)` in an open
+set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/
+@[simp]
+theorem perimeter_Ioi (x : ℝ) (Ω : Opens ℝ) :
+    perimeter volume Ω (Ioi x) = (Ω : Set ℝ).indicator 1 x := by
+  rw [← compl_Iic, perimeter_compl, perimeter_congr_ae (ae_restrict_of_ae Iio_ae_eq_Iic.symm)]
+  exact perimeter_Iio x Ω
+
 /-- **Equality in the isoperimetric inequality on the line.** A null-measurable set of finite
 measure in `ℝ` has perimeter two exactly when it agrees almost everywhere with a nonempty bounded
 open interval. -/
@@ -357,5 +439,21 @@ theorem perimeter_eq_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : vo
       ((measure_congr hsI).symm ▸ hfin)
     exact hne a b hab (hsI.trans hIab)
   · rw [perimeter_congr_ae (ae_restrict_of_ae hsab), perimeter_Ioo hab]
+
+/-- A null-measurable set of finite length has perimeter at most two exactly when it agrees
+almost everywhere with an interval, possibly empty. -/
+theorem perimeter_le_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : volume s ≠ ∞) :
+    perimeter volume ⊤ s ≤ 2 ↔ ∃ I : Set ℝ, I.OrdConnected ∧ s =ᵐ[volume] I := by
+  refine ⟨fun hP ↦ ?_, fun ⟨I, hI, hsI⟩ ↦ ?_⟩
+  · by_contra! hbad
+    have hfour := four_le_perimeter hs hfin hbad
+    have : (4 : ℝ≥0∞) ≤ 2 := hfour.trans hP
+    norm_num at this
+  · by_cases hzero : volume s = 0
+    · rw [perimeter_congr_ae (ae_restrict_of_ae (ae_eq_empty.mpr hzero)), perimeter_empty]
+      exact zero_le
+    · obtain ⟨a, b, hab, hIab⟩ := hI.exists_ae_eq_Ioo
+        ((measure_congr hsI).symm ▸ hzero) ((measure_congr hsI).symm ▸ hfin)
+      exact (perimeter_eq_two_iff hs hfin).mpr ⟨a, b, hab, hsI.trans hIab⟩ |>.le
 
 end TauCeti.Real

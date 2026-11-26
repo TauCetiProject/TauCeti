@@ -96,6 +96,7 @@ end Pullback
 variable [Field k]
 variable [Finite G] [IsAlgClosed k] [Invertible (orderOf s : k)]
 
+omit [Finite G] in
 /-- **The `p`-section indicator, scaled by the order of `s`, is an `A`-combination of characters
 of the `p`-elementary subgroup**, for every subring `A` of `k` containing the roots of unity of
 order dividing `orderOf s`. On `⟨s⟩` the scaled indicator of `s` is `∑ χ, χ(s⁻¹) χ` over the
@@ -116,11 +117,8 @@ theorem orderOf_nsmul_pSectionIndicator_mem_span_virtualCharacters (A : Subring 
       split_ifs <;> simp
     · exact irreducibleCharacter_apply_mem_of_forall_pow_eq_one_mem k
         (by rwa [Nat.card_zpowers]) i g
-  have hiv : irreducibleCharacters k ↥(zpowers s) ⊆ virtualCharacters k ↥(zpowers s) :=
-    fun f hf => by
-      obtain ⟨V, rfl⟩ := irreducibleCharacters_subset_range hf
-      exact character_mem_virtualCharacters V
-  have h2 := comp_mem_span_virtualCharacters A (pFreePartHom s P hs) (Submodule.span_mono hiv h1)
+  have h2 := comp_mem_span_virtualCharacters A (pFreePartHom s P hs)
+    (Submodule.span_mono irreducibleCharacters_subset_virtualCharacters h1)
   rwa [Nat.card_zpowers, Pi.smul_comp, ← pSectionIndicator_eq_comp_pFreePartHom hs] at h2
 
 /-- **The induced `p`-section indicator, scaled by the order of `s`, is an `A`-combination of

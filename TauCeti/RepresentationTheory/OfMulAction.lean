@@ -18,7 +18,8 @@ free `k`-module `k[X]` commute with each other. For the left and right multiplic
 a group `G`, that is, commuting actions of `G` and `Gᵐᵒᵖ`, this makes `k[X]` a `k[G]`-bimodule.
 On `k[G]` itself, the left regular representation `Representation.ofMulAction k G G` is left
 multiplication by the monomials `single g 1`. Its equivariant endomorphism corresponding to
-`x : k[G]` under `Rep.leftRegularHomEquiv` is right multiplication by `x`.
+`x : k[G]` under `Rep.leftRegularHomEquiv` is right multiplication by `x`, and the morphism
+`Rep.leftRegularHom A x` from `k[G]` to a representation `A` is `a ↦ a • x`.
 
 When `G` and `H` are groups, `G` permutes the `H`-orbits, and the orbit sums of `k[X]` along the
 `H`-orbits are equivariant: the sum of the coefficients of `g • v` along the `H`-orbit of `g • x`
@@ -33,8 +34,10 @@ orbit of `x`, while a vector fixed by `G` has constant coefficients along each o
 determined by its coefficients at a set of orbit representatives. These are the inputs of the
 computation of the low-degree Tate cohomology of `k[X]`.
 
-Over a commutative ring `k`, the invariants of `k[X]` under a group `I` acting on a finite set `X`
-are free on the orbit space `MulAction.orbitRel.Quotient I X`, with the orbit sums as basis. If `I`
+Over a commutative ring `k`, the invariants of `k[X]` under a group `I` acting on a set `X` are
+free on the finite orbits, with the orbit sums as basis: an invariant vector has coefficients
+constant along orbits, so it vanishes on the infinite ones. When `X` is finite this basis is
+indexed by the orbit space `MulAction.orbitRel.Quotient I X`. If `I`
 is a normal subgroup of a group `D` acting on `X`, then `D ⧸ I` permutes the `I`-orbits, and the
 orbit sums identify the permutation representation of `D ⧸ I` on the free module on the `I`-orbits
 with the representation of `D ⧸ I` on the `I`-invariants of `k[X]` (Mathlib's
@@ -48,10 +51,18 @@ Galois group.
   representations on `k[X]`.
 * `Representation.ofMulAction_comp_subtype`: restricting a permutation representation to a
   subgroup gives the permutation representation of the subgroup.
+* `Representation.IntertwiningMap.coeff_ofMulAction_single_smul`: the matrix entries of an
+  intertwining map between permutation representations are invariant under the diagonal action.
 * `TauCeti.single_mul_eq_smul_ofMulAction`: on `k[G]`, left multiplication by a monomial
   `single g c` is `c` times the left regular action of `g`.
+* `Representation.leftRegular_apply_eq_single_mul`: the left regular action of `g` is left
+  multiplication by `single g 1`.
+* `Representation.IntertwiningMap.apply_eq_mul_apply_single_one`: an endomorphism of the left
+  regular representation, as an intertwining map, is right multiplication by its value at `1`.
 * `Rep.leftRegularHomEquiv_symm_apply`: equivariant endomorphisms of the left regular
   representation are right multiplications.
+* `Rep.leftRegularHom_hom_apply`: the morphism `Rep.leftRegularHom A x` out of the left regular
+  representation sends `a : k[G]` to `a • x`.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction`: the orbit sums of `k[X]` are invariant
   under the permutation representation.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction_smul`: for commuting actions of `G` and `H`,
@@ -68,8 +79,15 @@ Galois group.
   coefficient `|G_x|` at `x` and vanishes off the orbit of `x`.
 * `TauCeti.mem_invariants_ofMulAction_iff`: a vector of `k[X]` is invariant exactly when its
   coefficients are constant along orbits.
-* `TauCeti.invariantOrbitSumBasis`: the orbit-sum basis of the invariants of `k[X]`, indexed by
-  the orbit space.
+* `TauCeti.coeff_eq_zero_of_mem_invariants_of_infinite`: an invariant vector of `k[X]` vanishes
+  on the infinite orbits.
+* `TauCeti.invariantFiniteOrbitSumBasis`: the orbit-sum basis of the invariants of `k[X]`, indexed
+  by the finite orbits.
+* `TauCeti.coeff_invariantFiniteOrbitSumBasis`, `TauCeti.invariantFiniteOrbitSumBasis_mk_eq_sum`:
+  the basis vector at a finite orbit is the indicator of the orbit, the sum of the basis vectors at
+  its points.
+* `TauCeti.invariantOrbitSumBasis`: for finite `X`, the orbit-sum basis indexed by the orbit
+  space.
 * `TauCeti.coeff_invariantOrbitSumBasis`, `TauCeti.invariantOrbitSumBasis_mk_eq_sum`: the basis
   vector at an orbit is the indicator of the orbit, the sum of the basis vectors at its points.
 * `TauCeti.ofMulAction_invariantOrbitSumBasis_mk`: an element normalizing `I` sends the sum over
@@ -109,6 +127,27 @@ theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
   | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
   | single g' c' => simp [MonoidAlgebra.single_mul_single, MonoidAlgebra.smul_single]
 
+/-- A monoid element acts on the regular representation by left multiplication with the
+corresponding basis element: the case `c = 1` of `TauCeti.single_mul_eq_smul_ofMulAction`,
+oriented to rewrite the action. -/
+theorem _root_.Representation.leftRegular_apply_eq_single_mul (g : G) (x : MonoidAlgebra k G) :
+    leftRegular k G g x = MonoidAlgebra.single g 1 * x := by
+  rw [single_mul_eq_smul_ofMulAction, one_smul]
+
+/-- **An endomorphism of the regular representation is right multiplication** by its value at
+`1`: the intertwining-map form, over any semiring, of `Rep.leftRegularHomEquiv_symm_apply`. -/
+theorem _root_.Representation.IntertwiningMap.apply_eq_mul_apply_single_one
+    (f : (leftRegular k G).IntertwiningMap (leftRegular k G)) (x : MonoidAlgebra k G) :
+    f x = x * f (MonoidAlgebra.single 1 1) := by
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => rw [map_zero, zero_mul]
+  | add x y hx hy => rw [map_add, hx, hy, add_mul]
+  | single g c =>
+    have hg : MonoidAlgebra.single g c = c • leftRegular k G g (MonoidAlgebra.single 1 1) := by
+      simp [leftRegular_apply_eq_single_mul]
+    conv_lhs => rw [hg, map_smul, f.isIntertwining, leftRegular_apply_eq_single_mul]
+    rw [← smul_mul_assoc, MonoidAlgebra.smul_single', mul_one]
+
 /-- The permutation representation of a subgroup `H` on `k[X]` is the restriction of that of
 `G`. -/
 theorem _root_.Representation.ofMulAction_subgroup {G : Type*} [Group G] [MulAction G X]
@@ -122,6 +161,15 @@ the permutation representation of `S` on `k[X]`. -/
 theorem _root_.Representation.ofMulAction_comp_subtype {G : Type*} [Group G] [MulAction G X]
     (S : Subgroup G) : (ofMulAction k G X).comp S.subtype = ofMulAction k S X :=
   MonoidHom.ext fun s ↦ (ofMulAction_subgroup S s).symm
+
+/-- The matrix entries `(t, s) ↦ φ(s)(t)` of an intertwining map `φ : k[X] → k[Y]` between
+permutation representations are invariant under the diagonal action of `G` on `X × Y`. -/
+theorem _root_.Representation.IntertwiningMap.coeff_ofMulAction_single_smul {G Y : Type*}
+    [Group G] [MulAction G X] [MulAction G Y]
+    (φ : (ofMulAction k G X).IntertwiningMap (ofMulAction k G Y)) (g : G) (s : X) (t : Y) :
+    (φ (MonoidAlgebra.single (g • s) 1)).coeff (g • t) =
+      (φ (MonoidAlgebra.single s 1)).coeff t := by
+  rw [← ofMulAction_single, φ.isIntertwining, coeff_ofMulAction, inv_smul_smul]
 
 section LeftRegular
 
@@ -140,6 +188,18 @@ theorem _root_.Rep.leftRegularHomEquiv_symm_apply (x a : k[G]) :
       TauCeti.single_mul_eq_smul_ofMulAction, one_smul]
   | add a b ha hb => rw [map_add, ha, hb, add_mul]
   | smul c a ha => rw [map_smul, ha, smul_mul_assoc]
+
+/-- The morphism `Rep.leftRegularHom A x : k[G] ⟶ A` sends `a` to `a • x`, where `k[G]` acts on
+`A` through `Representation.asAlgebraHom`. Not `@[simp]`: `Rep.leftRegularHom` is an abbreviation,
+so `simp` unfolds the left-hand side before this lemma could fire. -/
+theorem _root_.Rep.leftRegularHom_hom_apply {A : Rep k G} (x : A) (a : k[G]) :
+    (Rep.leftRegularHom A x).hom a = A.ρ.asAlgebraHom a x := by
+  induction a using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add a b ha hb => rw [map_add, ha, hb, map_add, LinearMap.add_apply]
+  | single g r =>
+    rw [asAlgebraHom_single, LinearMap.smul_apply]
+    exact Rep.leftRegularHom_hom_single g x r
 
 end LeftRegular
 
@@ -261,45 +321,135 @@ theorem mem_invariants_ofMulAction_iff {v : k[X]} :
   ext x
   rw [coeff_ofMulAction, hv]
 
-variable (k I X) [Finite X]
+/-- An invariant vector of `k[X]` vanishes on every infinite orbit: its coefficients are constant
+along orbits and finitely supported. -/
+theorem coeff_eq_zero_of_mem_invariants_of_infinite {v : k[X]}
+    (hv : v ∈ (ofMulAction k I X).invariants) {x : X} (hx : (orbit I x).Infinite) :
+    v.coeff x = 0 := by
+  by_contra h
+  refine hx (v.coeff.support.finite_toSet.subset ?_)
+  rintro _ ⟨g, rfl⟩
+  exact Finsupp.mem_support_iff.2 ((coeff_smul_of_forall_ofMulAction_eq hv g x).symm ▸ h)
 
-/-- The coefficients of an invariant vector of `k[X]`, as a function on the orbit space; the
-inverse sends a function on the orbit space to the vector with that coefficient at each point of
-the corresponding orbit. -/
-private noncomputable def invariantsEquivFun :
-    (ofMulAction k I X).invariants ≃ₗ[k] (orbitRel.Quotient I X → k) where
-  toFun v ω := Quotient.liftOn' ω (v : k[X]).coeff fun _ _ ⟨g, hg⟩ ↦ by
-    rw [← hg]
-    exact coeff_smul_of_forall_ofMulAction_eq v.2 g _
-  map_add' v w := funext fun ω ↦ Quotient.inductionOn' ω fun _ ↦ rfl
-  map_smul' r v := funext fun ω ↦ Quotient.inductionOn' ω fun _ ↦ rfl
-  invFun c := ⟨ofCoeff (Finsupp.equivFunOnFinite.symm fun x ↦ c ⟦x⟧),
-    (mem_invariants_ofMulAction_iff).2 fun g x ↦ by simp⟩
-  left_inv v := Subtype.ext <| by ext x; simp [Quotient.liftOn'_mk'']
-  right_inv c := funext fun ω ↦ Quotient.inductionOn' ω fun x ↦ by simp [Quotient.liftOn'_mk'']
+variable (k I X)
+
+open Classical in
+/-- The coefficients of an invariant vector of `k[X]`, as a finitely supported function on the
+finite orbits; the inverse sends such a function to the vector with that coefficient at each point
+of the corresponding orbit, and zero on the infinite orbits. -/
+private noncomputable def invariantsFiniteOrbitEquiv :
+    (ofMulAction k I X).invariants ≃ₗ[k] ({ω : orbitRel.Quotient I X // ω.orbit.Finite} →₀ k) where
+  toFun v := Finsupp.subtypeDomain _ <| Finsupp.ofSupportFinite
+    (fun ω ↦ Quotient.liftOn' ω (v : k[X]).coeff fun _ _ ⟨g, hg⟩ ↦ by
+      rw [← hg]
+      exact coeff_smul_of_forall_ofMulAction_eq v.property g _)
+    (((v : k[X]).coeff.support.finite_toSet.image (Quotient.mk (orbitRel I X))).subset
+      fun ω hω ↦ by
+        induction ω using Quotient.inductionOn' with
+        | h x => exact ⟨x, Finsupp.mem_support_iff.2 hω, rfl⟩)
+  map_add' v w := Finsupp.ext fun ⟨ω, _⟩ ↦ by
+    induction ω using Quotient.inductionOn' with
+    | h x => simp [Finsupp.ofSupportFinite_coe, Quotient.liftOn'_mk'']
+  map_smul' r v := Finsupp.ext fun ⟨ω, _⟩ ↦ by
+    induction ω using Quotient.inductionOn' with
+    | h x => simp [Finsupp.ofSupportFinite_coe, Quotient.liftOn'_mk'']
+  invFun c := ⟨ofCoeff (Finsupp.ofSupportFinite (fun x ↦ c.extendDomain ⟦x⟧)
+      ((c.support.finite_toSet.biUnion fun ω _ ↦ ω.property).subset fun x hx ↦ by
+        rw [Function.mem_support, Finsupp.extendDomain_apply] at hx
+        split_ifs at hx
+        · exact Set.mem_biUnion (Finsupp.mem_support_iff.2 hx) (mem_orbit_self x)
+        · exact absurd rfl hx)),
+    (mem_invariants_ofMulAction_iff).2 fun g x ↦ by
+      simp only [Finsupp.ofSupportFinite_coe]
+      exact congrArg _ (Quotient.sound (mem_orbit x g))⟩
+  left_inv v := Subtype.ext <| by
+    ext x
+    simp only [Finsupp.ofSupportFinite_coe, Finsupp.extendDomain_apply]
+    split_ifs with h
+    · simp [Finsupp.ofSupportFinite_coe, Quotient.liftOn'_mk'']
+    · exact (coeff_eq_zero_of_mem_invariants_of_infinite v.property h).symm
+  right_inv c := Finsupp.ext fun ⟨ω, hω⟩ ↦ by
+    induction ω using Quotient.inductionOn' with
+    | h x =>
+      have hx : (orbit I x).Finite := hω
+      simp [Finsupp.ofSupportFinite_coe, Quotient.liftOn'_mk'', hx]
+
+/-- **The orbit-sum basis.** For a group `I` acting on a set `X`, the invariants of the permutation
+representation `k[X]` are free on the finite orbits: the basis vector at a finite orbit `ω` is the
+orbit sum `∑ x ∈ ω, x` (`TauCeti.invariantFiniteOrbitSumBasis_mk_eq_sum`). -/
+noncomputable def invariantFiniteOrbitSumBasis :
+    Module.Basis {ω : orbitRel.Quotient I X // ω.orbit.Finite} k (ofMulAction k I X).invariants :=
+  .ofRepr (invariantsFiniteOrbitEquiv k I X)
+
+variable {k I X}
+
+/-- The coordinate of an invariant vector at the finite orbit of `x` is its coefficient at `x`. -/
+@[simp]
+theorem invariantFiniteOrbitSumBasis_repr_mk (v : (ofMulAction k I X).invariants) {x : X}
+    (hx : (orbit I x).Finite) :
+    (invariantFiniteOrbitSumBasis k I X).repr v ⟨⟦x⟧, hx⟩ = (v : k[X]).coeff x := by
+  simp [invariantFiniteOrbitSumBasis, invariantsFiniteOrbitEquiv, Finsupp.ofSupportFinite_coe,
+    Quotient.liftOn'_mk'']
+
+/-- The invariant vector with coordinates `c` in the orbit-sum basis has coefficient `c ⟦x⟧` at
+a point `x` with finite orbit. -/
+theorem coeff_invariantFiniteOrbitSumBasis_repr_symm
+    (c : {ω : orbitRel.Quotient I X // ω.orbit.Finite} →₀ k) {x : X} (hx : (orbit I x).Finite) :
+    (((invariantFiniteOrbitSumBasis k I X).repr.symm c : _) : k[X]).coeff x = c ⟨⟦x⟧, hx⟩ := by
+  rw [← invariantFiniteOrbitSumBasis_repr_mk _ hx, LinearEquiv.apply_symm_apply]
+
+/-- The basis vector at a finite orbit `ω` is the indicator function of `ω`. -/
+@[simp]
+theorem coeff_invariantFiniteOrbitSumBasis (ω : {ω : orbitRel.Quotient I X // ω.orbit.Finite})
+    (x : X) :
+    (invariantFiniteOrbitSumBasis k I X ω : k[X]).coeff x = ω.val.orbit.indicator 1 x := by
+  classical
+  by_cases hx : (orbit I x).Finite
+  · rw [← Module.Basis.repr_symm_single_one, coeff_invariantFiniteOrbitSumBasis_repr_symm _ hx]
+    obtain ⟨ω, hω⟩ := ω
+    simp [Set.indicator_apply, Finsupp.single_apply, orbitRel.Quotient.mem_orbit, eq_comm,
+      Subtype.ext_iff]
+  · rw [coeff_eq_zero_of_mem_invariants_of_infinite (Subtype.property _) hx,
+      Set.indicator_of_notMem]
+    intro hxω
+    rw [orbitRel.Quotient.mem_orbit] at hxω
+    exact hx (by simpa [← hxω] using ω.property)
+
+/-- The basis vector at the finite orbit of `x` is the sum of the basis vectors of `k[X]` at the
+points of the orbit of `x`. -/
+theorem invariantFiniteOrbitSumBasis_mk_eq_sum (x : X) (hx : (orbit I x).Finite)
+    [Fintype (orbit I x)] :
+    (invariantFiniteOrbitSumBasis k I X ⟨⟦x⟧, hx⟩ : k[X]) =
+      ∑ y ∈ (orbit I x).toFinset, single y 1 := by
+  classical
+  ext y
+  simp [coeff_invariantFiniteOrbitSumBasis, Set.indicator_apply, coeff_sum,
+    Finsupp.finsetSum_apply, coeff_single, Finsupp.single_apply]
+
+variable (k I X) [Finite X]
 
 /-- **The orbit-sum basis.** For a group `I` acting on a finite set `X`, the invariants of the
 permutation representation `k[X]` are free on the orbit space: the basis vector at an orbit `ω`
-is the orbit sum `∑ x ∈ ω, x` (`TauCeti.invariantOrbitSumBasis_mk_eq_sum`). -/
+is the orbit sum `∑ x ∈ ω, x` (`TauCeti.invariantOrbitSumBasis_mk_eq_sum`). This is
+`TauCeti.invariantFiniteOrbitSumBasis`, every orbit being finite. -/
 noncomputable def invariantOrbitSumBasis :
     Module.Basis (orbitRel.Quotient I X) k (ofMulAction k I X).invariants :=
-  .ofEquivFun (invariantsEquivFun k I X)
+  (invariantFiniteOrbitSumBasis k I X).reindex (Equiv.subtypeUnivEquiv fun _ ↦ Set.toFinite _)
 
 variable {k I X}
 
 /-- The coordinate of an invariant vector at the orbit of `x` is its coefficient at `x`. -/
 @[simp]
 theorem invariantOrbitSumBasis_repr_mk (v : (ofMulAction k I X).invariants) (x : X) :
-    (invariantOrbitSumBasis k I X).repr v ⟦x⟧ = (v : k[X]).coeff x := by
-  simp [invariantOrbitSumBasis, invariantsEquivFun, Quotient.liftOn'_mk'']
+    (invariantOrbitSumBasis k I X).repr v ⟦x⟧ = (v : k[X]).coeff x :=
+  invariantFiniteOrbitSumBasis_repr_mk v (Set.toFinite _)
 
 /-- The basis vector at an orbit `ω` is the indicator function of `ω`. -/
 @[simp]
 theorem coeff_invariantOrbitSumBasis (ω : orbitRel.Quotient I X) (x : X) :
     (invariantOrbitSumBasis k I X ω : k[X]).coeff x = ω.orbit.indicator 1 x := by
-  classical
-  simp [invariantOrbitSumBasis, invariantsEquivFun, Set.indicator_apply, Pi.single_apply,
-    orbitRel.Quotient.mem_orbit]
+  rw [invariantOrbitSumBasis, Module.Basis.reindex_apply]
+  exact coeff_invariantFiniteOrbitSumBasis _ x
 
 /-- The vector with coordinates `c` in the orbit-sum basis has coefficient `c ⟦x⟧` at `x`. -/
 @[simp]
@@ -312,10 +462,8 @@ theorem coeff_invariantOrbitSumBasis_equivFun_symm (c : orbitRel.Quotient I X �
 of the orbit of `x`. -/
 theorem invariantOrbitSumBasis_mk_eq_sum (x : X) [Fintype (orbit I x)] :
     (invariantOrbitSumBasis k I X ⟦x⟧ : k[X]) = ∑ y ∈ (orbit I x).toFinset, single y 1 := by
-  classical
-  ext y
-  simp [coeff_invariantOrbitSumBasis, Set.indicator_apply, coeff_sum, Finsupp.finsetSum_apply,
-    coeff_single, Finsupp.single_apply]
+  rw [invariantOrbitSumBasis, Module.Basis.reindex_apply]
+  exact invariantFiniteOrbitSumBasis_mk_eq_sum x (Set.toFinite _)
 
 end OrbitSumBasis
 

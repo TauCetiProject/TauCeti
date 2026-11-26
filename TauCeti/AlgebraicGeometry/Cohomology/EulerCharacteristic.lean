@@ -65,8 +65,7 @@ the truncation degree.
 
 Additivity of the Euler characteristic is what makes the degree of a line bundle on a curve,
 `deg L := χ(L) - χ(𝒪_X)`, behave additively, and it is the step from which Riemann-Roch is
-proved by induction on a divisor. It is therefore Layer B infrastructure for
-`TauCetiRoadmap/JacobianChallenge/README.md`, "genus, Riemann-Roch, Serre duality".
+proved by induction on a divisor.
 
 No formalization is vendored. The alternating-sum bookkeeping reuses Mathlib's
 `LinearMap.finrank_range_add_finrank_ker`, `LinearMap.finrank_range_of_inj` and
@@ -106,6 +105,11 @@ def _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow (M : X.Modules) (n : 
   ∑ i ∈ Finset.range n, (-1) ^ i * (finrank k (Cohomology M i) : ℤ)
 
 variable {X}
+
+/-- The truncated Euler characteristic as its defining alternating sum. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_def (M : X.Modules) (n : ℕ) :
+    eulerCharBelow k X M n = ∑ i ∈ Finset.range n, (-1) ^ i * (finrank k (Cohomology M i) : ℤ) :=
+  (rfl)
 
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_zero (M : X.Modules) :

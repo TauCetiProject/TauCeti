@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.Sl2.Decomposition
 import Mathlib.Algebra.Lie.BaseChange
 import Mathlib.Data.Fin.Rev
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.Algebra.Module.LinearMap.Index
 import TauCeti.Algebra.Lie.Sl2.Spectrum
 import TauCeti.Algebra.Lie.Submodule.Decomposition
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
@@ -25,9 +25,8 @@ ambient Lie algebra; only its generated subalgebra acts in the argument.
 
 The result is the rank-one symmetry needed for Weyl invariance of weight multiplicities. For a root
 `α`, restriction to its `sl₂` triple identifies the reflection of a weight `λ` with the opposite
-weight on the corresponding `α`-string. Applying the theorem below to every such string gives the
-direct rank-one proof required by Layer 2 of the highest-weight roadmap, independently of Weyl's
-complete reducibility theorem.
+weight on the corresponding `α`-string. Applying the theorem below to every such string gives a
+direct rank-one proof, independently of Weyl's complete reducibility theorem.
 
 The construction uses `TauCeti.exists_isInternal_isIrreducible` to decompose the module under the
 generated `sl₂`. On each irreducible summand,
@@ -47,9 +46,6 @@ algebraic closure, which leaves both eigenspace dimensions unchanged.
 
 ## References
 
-This is the rank-one input to the "Weyl-invariance of multiplicities, directly from `sl₂`" target
-in Layer 2 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §13.2.
 -/
 
@@ -59,13 +55,6 @@ namespace TauCeti
 
 open LieModule Module
 open scoped TensorProduct
-
-private theorem finrank_ker_baseChange {K A V : Type*} [Field K] [Field A] [Algebra K A]
-    [AddCommGroup V] [Module K V] (g : V →ₗ[K] V) :
-    finrank A (LinearMap.ker (g.baseChange A)) = finrank K (LinearMap.ker g) := by
-  calc finrank A (LinearMap.ker (g.baseChange A))
-      = finrank A (A ⊗[K] LinearMap.ker g) := (LinearMap.tensorKerEquiv A A g).finrank_eq.symm
-    _ = finrank K (LinearMap.ker g) := Module.finrank_baseChange
 
 section Generated
 
@@ -193,8 +182,8 @@ theorem finrank_eigenspace_toEnd_neg (t : IsSl2Triple h e f) (μ : K) :
     simpa only [map_neg] using hbaseChange (-μ)
   rw [← hbaseChange μ, ← hbaseChange_neg] at hA
   rw [Module.End.eigenspace_def, Module.End.eigenspace_def]
-  rw [← finrank_ker_baseChange (A := A) (toEnd K L M h - μ • 1),
-    ← finrank_ker_baseChange (A := A) (toEnd K L M h - -μ • 1)]
+  rw [← LinearMap.finrank_ker_baseChange A (toEnd K L M h - μ • 1),
+    ← LinearMap.finrank_ker_baseChange A (toEnd K L M h - -μ • 1)]
   exact hA
 
 end Descent
@@ -237,7 +226,7 @@ theorem exists_int_and_toEnd_apply_eq_neg_smul (t : IsSl2Triple h e f) {x : H}
     rw [hbot, finrank_bot] at hsym
     exact hnB (Submodule.finrank_eq_zero.1 hsym)
   obtain ⟨u, humem, hu0⟩ := (Submodule.ne_bot_iff _).1 hnegB
-  refine ⟨m, hm, u, u.2, fun h0 ↦ hu0 (Subtype.ext h0), ?_⟩
+  refine ⟨m, hm, u, u.property, fun h0 ↦ hu0 (Subtype.ext h0), ?_⟩
   have h2 := congrArg Subtype.val (Module.End.mem_eigenspace_iff.1 humem)
   rw [hBA] at h2
   exact h2

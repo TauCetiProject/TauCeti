@@ -10,6 +10,8 @@ public import Mathlib.Algebra.QuadraticAlgebra.NormDeterminant
 public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 
+import TauCeti.Algebra.QuadraticAlgebra.Star
+
 /-!
 # The two complex algebra maps of `ℚ[√r]` and the coordinate bound
 
@@ -137,9 +139,8 @@ theorem negSqrtEmbedding_apply (z : QuadraticAlgebra ℚ r 0) :
 
 /-- **`σ₋ = σ₊ ∘ star`**, for every `r`. -/
 theorem negSqrtEmbedding_eq_comp_starAlgEquiv :
-    negSqrtEmbedding r = (sqrtEmbedding r).comp (starAlgEquiv : _ ≃ₐ[ℚ] _).toAlgHom := by
-  have h : star (ω : QuadraticAlgebra ℚ r 0) = -ω := by ext <;> simp
-  exact algHom_ext (by simp [h])
+    negSqrtEmbedding r = (sqrtEmbedding r).comp (starAlgEquiv : _ ≃ₐ[ℚ] _).toAlgHom :=
+  algHom_ext (by simp)
 
 theorem negSqrtEmbedding_apply_eq_sqrtEmbedding_star (z : QuadraticAlgebra ℚ r 0) :
     negSqrtEmbedding r z = sqrtEmbedding r (star z) := by
@@ -210,7 +211,6 @@ theorem abs_im_mul_sqrt_le (z : QuadraticAlgebra ℚ r 0) :
 `|v| ≤ (‖σ₊ z‖ + ‖σ₋ z‖)/(2 √|r|)`. -/
 theorem abs_im_le (hr : r ≠ 0) (z : QuadraticAlgebra ℚ r 0) :
     |(z.im : ℝ)| ≤ (‖sqrtEmbedding r z‖ + ‖negSqrtEmbedding r z‖) / (2 * √|(r : ℝ)|) := by
-  have hs : 0 < √|(r : ℝ)| := Real.sqrt_pos.mpr (abs_pos.mpr (by exact_mod_cast hr))
   rw [le_div_iff₀ (by positivity)]
   linarith [abs_im_mul_sqrt_le z]
 
@@ -218,12 +218,8 @@ theorem abs_im_le (hr : r ≠ 0) (z : QuadraticAlgebra ℚ r 0) :
 `r`: it sends `ω` to a square root of `r`. -/
 theorem algHom_eq_sqrtEmbedding_or_eq_negSqrtEmbedding (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) :
     σ = sqrtEmbedding r ∨ σ = negSqrtEmbedding r := by
-  have hσ : σ ω * σ ω = sqrtRadicand r * sqrtRadicand r := by
-    rw [← map_mul, sqrtRadicand_mul_self]
-    simp [omega_mul_omega_eq_algebraMap]
-  rcases mul_self_eq_mul_self_iff.mp hσ with h | h
-  · exact Or.inl (algHom_ext (by simp [h]))
-  · exact Or.inr (algHom_ext (by simp [h]))
+  simpa only [negSqrtEmbedding_eq_comp_starAlgEquiv] using
+    σ.eq_or_eq_comp_starAlgEquiv (sqrtEmbedding r)
 
 /-- A `ℚ`-algebra map `QuadraticAlgebra ℚ r 0 → ℂ` sends `ω` to a complex number of norm `√|r|`. -/
 theorem norm_apply_omega (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) : ‖σ ω‖ = √|(r : ℝ)| := by

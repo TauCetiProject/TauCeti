@@ -75,8 +75,8 @@ theorem map_weightTorusPoints (f : A →+* B) (s : Fin r → Aˣ) :
       (wt := weight r) f s)
   rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
   rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
-  simpa only [coe_weightTorusPoints,
-    UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints] using h
+  simpa only [coe_weightTorusPoints, UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints,
+    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply] using h
 
 end
 

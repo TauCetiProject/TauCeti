@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.RingTheory.Jacobson.Ideal
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Algebra.Ring.Idempotent.Basic
 
 /-!
 # Basic determinant formulas
@@ -37,6 +41,18 @@ differences of the remaining columns.
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
 * `Matrix.det_eq_det_of_col_zero_eq_one`: a square matrix whose first column is constant `1` has
   the determinant of its consecutive row differences on the remaining columns.
+* `Matrix.det_of_sum_rows`: the determinant of a matrix whose rows are sums over finite sets is the
+  sum, over the choices of one summand in each row, of the determinants of the resulting matrices.
+* `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
+  is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
+* `Matrix.isUnit_det_mul_add_one_sub`: for an idempotent `P` commuting with an invertible `g`,
+  the matrix `P * g + 1 - P` has invertible determinant.
+* `Matrix.isUnit_det_map_intCast`: an integer matrix with nonzero determinant has unit
+  determinant over every field of characteristic zero.
+* `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
+  homomorphism to a nontrivial commutative ring has nonzero determinant.
+* `Matrix.isUnit_det_one_add_smul`: a matrix congruent to `1` modulo an element of the Jacobson
+  radical has unit determinant.
 -/
 
 public section
@@ -124,4 +140,70 @@ theorem det_updateRow_updateRow_swap {ι R : Type*} [Fintype ι] [DecidableEq ι
   rw [← he, Matrix.det_permute]
   simp [M, Equiv.Perm.sign_swap h]
 
+/-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
+columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`
+is needed: the image of the minor of `A` is the minor of `A.map f` (`RingHom.map_det_submatrix`). -/
+theorem det_submatrix_ne_zero_of_map {m n R S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] (f : R →+* S) {A : Matrix m n R} {r : l → m} {c : l → n}
+    (h : ((A.map f).submatrix r c).det ≠ 0) : (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix] at h
+  exact ne_of_apply_ne f (by rwa [map_zero])
+
+/-- Along an injective ring homomorphism `f`, a minor of `A.map f` is nonzero exactly when the
+minor of `A` on the same rows and columns is nonzero. -/
+theorem det_submatrix_map_ne_zero_iff {m n R S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] {f : R →+* S} (hf : Function.Injective f) {A : Matrix m n R} {r : l → m}
+    {c : l → n} : ((A.map f).submatrix r c).det ≠ 0 ↔ (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix, map_ne_zero_iff f hf]
+
+/-- An integer matrix with nonzero determinant has unit determinant over every field of
+characteristic zero. -/
+theorem isUnit_det_map_intCast {n K : Type*} [Fintype n] [DecidableEq n] [Field K] [CharZero K]
+    {A : Matrix n n ℤ} (hA : A.det ≠ 0) : IsUnit (A.map ((↑) : ℤ → K)).det := by
+  rw [← Int.cast_det]
+  exact (Int.cast_ne_zero.2 hA).isUnit
+
+/-- **Multilinearity of the determinant in all rows at once.** The determinant of a matrix whose
+`i`-th row is a sum over a finite set `A i` is the sum, over the choices of one summand in each
+row, of the determinants of the resulting matrices. -/
+theorem det_of_sum_rows {ι R : Type*} {κ : ι → Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (A : ∀ i, Finset (κ i)) (g : ∀ i, κ i → ι → R) :
+    (Matrix.of fun i j => ∑ t ∈ A i, g i t j).det
+      = ∑ y ∈ Fintype.piFinset A, (Matrix.of fun i j => g i (y i) j).det := by
+  have key := (detRowAlternating (R := R) (n := ι)).toMultilinearMap.map_sum_finset
+    (A := A) (g := g)
+  have hrow : (fun i => ∑ t ∈ A i, g i t) = fun i j => ∑ t ∈ A i, g i t j := by
+    funext i j
+    exact Finset.sum_apply j _ _
+  rw [hrow] at key
+  exact key
+
+/-- For an idempotent matrix `P` commuting with an invertible matrix `g`, the matrix
+`P * g + 1 - P`, which acts as `g` on the range of `P` and as the identity on that of `1 - P`, has
+invertible determinant. -/
+theorem isUnit_det_mul_add_one_sub {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    {P g : Matrix n n R} (hP : IsIdempotentElem P) (hg : IsUnit g) (hPg : Commute P g) :
+    IsUnit (P * g + 1 - P).det :=
+  (isUnit_iff_isUnit_det _).1 (hP.isUnit_mul_add_one_sub hg hPg)
+
+/-- A matrix congruent to `1` modulo an element of the Jacobson radical is invertible. -/
+theorem isUnit_det_one_add_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] {r : R}
+    (hr : r ∈ Ring.jacobson R) (D : Matrix n n R) : IsUnit (1 + r • D).det := by
+  refine Ideal.isUnit_of_sub_one_mem_jacobson _ ?_
+  rw [det_one_add_smul, add_assoc, add_sub_cancel_left]
+  exact (Ring.jacobson R).add_mem (Ideal.mul_mem_left _ _ hr)
+    (Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ hr 2 two_pos))
+
 end Matrix
+
+namespace RingHom
+
+/-- The image of a matrix with unit determinant under a ring homomorphism to a nontrivial
+commutative ring has nonzero determinant. -/
+theorem det_map_ne_zero_of_isUnit_det {ι R K : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    [CommRing K] [Nontrivial K] (f : R →+* K) {A : Matrix ι ι R} (hdet : IsUnit A.det) :
+    (A.map f).det ≠ 0 := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact (hdet.map _).ne_zero
+
+end RingHom

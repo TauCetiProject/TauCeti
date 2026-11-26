@@ -8,8 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
@@ -37,6 +39,12 @@ to `κ g`.
 The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart, so
 the Ricci tensor pairs vector fields differentiable (respectively smooth) at a point to a function
 differentiable (respectively smooth) there.
+The tensor is itself a smooth bilinear-form bundle section. This supplies the continuity
+hypothesis for compact-bundle coercivity, which turns pointwise positive Ricci curvature into a
+uniform lower bound.
+
+The bundle-smoothness proof originated in
+[`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/dc053c9/ForTauCeti/Geometry/Manifold/Riemannian/Curvature/Ricci/Continuity.lean).
 
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is
@@ -278,6 +286,21 @@ theorem contMDiffAt_ricciTensor_apply {σ τ : Π x : M, TangentSpace I x} {x : 
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   ring
 
+/-- The Ricci tensor of a smooth tangent connection is a smooth bilinear-form bundle section. -/
+theorem contMDiff_ricciTensor :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
+      (fun x : M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x
+        (cov.ricciTensor x).toContinuousBilinearMap) := by
+  apply (TauCeti.Manifold.contMDiff_hom_iff _).2
+  intro σ hσ
+  apply (TauCeti.Manifold.contMDiff_hom_iff _).2
+  intro τ hτ
+  apply Bundle.Trivial.contMDiff_mk_iff.2
+  refine ⟨contMDiff_id, fun x ↦ ?_⟩
+  simpa only [LinearMap.toContinuousBilinearMap_apply] using
+    (cov.contMDiffAt_ricciTensor_apply (hσ x) (hτ x))
+
 section Prod
 
 open TauCeti.Manifold
@@ -307,8 +330,8 @@ theorem ricciTensor_eq_sum_factor_basis
           (covProd.curvatureTensor p
             ((tangentSpaceProdEquiv p).symm (0, stdOrthonormalBasis ℝ (TangentSpace J p.2) j))
             u v)).2 := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I p.1) with hb
-  set c := stdOrthonormalBasis ℝ (TangentSpace J p.2) with hc
+  set b := stdOrthonormalBasis ℝ (TangentSpace I p.1)
+  set c := stdOrthonormalBasis ℝ (TangentSpace J p.2)
   rw [ricciTensor_eq_sum _ p
     ((b.toBasis.prod c.toBasis).map (tangentSpaceProdEquiv p).symm.toLinearEquiv),
     Fintype.sum_sum_type]

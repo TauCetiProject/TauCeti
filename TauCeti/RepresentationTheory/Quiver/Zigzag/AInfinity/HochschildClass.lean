@@ -89,9 +89,8 @@ loop operation, a Hochschild cocycle
 (`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), is not a coboundary
 (`TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single` and
 `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk`),
-and `HH^{4, -2}(Z, Z) ≠ 0`. In particular this holds for the affine `Dₙ` graphs with `n ≥ 5`
-(`TauCeti.not_hochschildVanishesAt_four_affineD`), as it does for the affine `D₄` graph
-(`TauCeti.not_hochschildVanishesAt_four_affineD4`); see
+and `HH^{4, -2}(Z, Z) ≠ 0`. In particular this holds for every affine `Dₙ` graph with `n ≥ 4`
+(`TauCeti.not_hochschildVanishesAt_four_affineD`); see
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic` and
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
 
@@ -104,7 +103,7 @@ not.
 Kadeishvili's criterion
 `TauCeti.AInfinityAlgebra.isIntrinsicallyFormal_of_forall_hochschildVanishesAt` therefore does not
 apply to such zigzag algebras. That the corresponding loop deformation is not `A∞` isomorphic to
-the strict zigzag algebra, when `2` is invertible, is proved in
+the strict zigzag algebra over every nontrivial commutative ring is proved in
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`.
 
 ## Main definitions
@@ -113,15 +112,24 @@ the strict zigzag algebra, when `2` is invertible, is proved in
 
 ## Main results
 
+* `TauCeti.zigzagStrictAInfinityAlgebra_taylor_subword_eq_zero_of_ne_two` and
+  `TauCeti.zigzagStrictAInfinityAlgebra_taylor_subword_two`: the Taylor map of the strict zigzag
+  algebra on a block of letters, zero unless the block has two letters.
 * `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_mem`: the
   Hochschild differential of a degree-zero suspended cochain on a word of letters of path length
   one, of any length at least two.
 * `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod`: the same on a word
   of four letters, written out.
+* `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous`: the
+  Hochschild differential of a degree-zero suspended cochain on a word of homogeneous letters of
+  any degrees, with the Koszul signs of the collapsed products.
 * `TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`: `Λ` vanishes on coboundaries
   when its weights satisfy the balance condition.
-* `TauCeti.zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod`: the trace of the higher
-  operation of a loop deformation on a word of arrows, in every arity.
+* `TauCeti.obstruction_zigzagLoopAInfinityAlgebra_of_tprod_eq_m`,
+  `TauCeti.obstruction_zigzagLoopAInfinityAlgebra_of_tprod` and
+  `TauCeti.zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod`: the higher operation of a
+  loop deformation on any word as its operation on the Koszul-twisted letters, its value on a word
+  of arrows, in every arity, and the trace of that value.
 * `TauCeti.zigzagBacktrackPairing_obstruction`: the value of `Λ` on the quartic operation of a loop
   deformation.
 * `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`: the higher operation of
@@ -129,6 +137,10 @@ the strict zigzag algebra, when `2` is invertible, is proved in
 * `TauCeti.not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction`:
   a higher loop operation which is not a coboundary gives a nonzero class in
   `HH^{n + 2, -n}(Z, Z)`.
+* `TauCeti.exists_zigzagBacktrackPairing_obstruction_single_eq_one` and
+  `TauCeti.exists_zigzagBacktrackPairing_obstruction_single_eq_one_of_walk`: balanced backtrack
+  weights pairing to `1` on a single quartic loop at a four-valent vertex or between two branch
+  vertices.
 * `TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra` and
   `TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single`:
   quartic loop operations which are not Hochschild coboundaries.
@@ -141,7 +153,8 @@ the strict zigzag algebra, when `2` is invertible, is proved in
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Section 4, for minimal `A∞` deformations of zigzag algebras and their Hochschild cohomology.
 * J.-L. Loday, *Cyclic Homology*, Chapter 1, for Hochschild chains and cochains and their duality.
 -/
@@ -154,14 +167,17 @@ open PathAlgebra DoubledQuiver AInfinity ReducedTensorWords
 
 universe u w
 
-variable {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V} [Finite V]
-  {hns : ∀ i : V, ∃ j, G.Adj i j}
-
-local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
+variable {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
 
 local notation "𝔞" d:max => zigzagMk k G (ofArrow (arrow G (SimpleGraph.Dart.adj d)))
 
-/-! ### The Hochschild differential on words of four arrows -/
+section
+
+variable [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j}
+
+local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
+
+/-! ### The Hochschild differential on words of homogeneous letters -/
 
 section Differential
 
@@ -176,8 +192,9 @@ private theorem taylor_splice_of_ne {n : ℕ} (z : Fin n → nonisolatedZigzagQu
   · rw [splice_eq_zero_of_not_fits k z e hfit, map_zero]
 
 /-- The Taylor map of the strict zigzag algebra vanishes on blocks of length other than two. -/
-private theorem taylor_subword_of_ne {n : ℕ} (x : Fin n → nonisolatedZigzagQuotient k G)
-    (p d : ℕ) (h : d ≠ 2) : (𝒵).taylor (subword k x p d) = 0 := by
+theorem zigzagStrictAInfinityAlgebra_taylor_subword_eq_zero_of_ne_two {n : ℕ}
+    (x : Fin n → nonisolatedZigzagQuotient k G) (p d : ℕ) (h : d ≠ 2) :
+    (𝒵).taylor (subword k x p d) = 0 := by
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · rw [subword_length_zero, map_zero]
   by_cases hpd : p + d ≤ n
@@ -186,63 +203,92 @@ private theorem taylor_subword_of_ne {n : ℕ} (x : Fin n → nonisolatedZigzagQ
   · rw [subword_eq_zero_of_lt_add k x (by omega), map_zero]
 
 /-- The Taylor map of the strict zigzag algebra on a block of length two is the twisted product. -/
-private theorem taylor_subword_two {n : ℕ} (x : Fin n → nonisolatedZigzagQuotient k G)
-    (p : ℕ) (h : p + 2 ≤ n) :
+theorem zigzagStrictAInfinityAlgebra_taylor_subword_two {n : ℕ}
+    (x : Fin n → nonisolatedZigzagQuotient k G) (p : ℕ) (h : p + 2 ≤ n) :
     (𝒵).taylor (subword k x p 2) =
       (𝒵).grading.koszulTwist 1 (x ⟨p, by omega⟩) * x ⟨p + 1, by omega⟩ := by
   rw [subword_eq_of_tprod k x (by norm_num) h, AInfinityAlgebra.taylor_of_tprod,
     zigzagStrictAInfinityAlgebra_m_two_apply]
   norm_num
 
-/-- Collapsing the first two letters of a word of length four. -/
-private theorem splice_four_two_zero (z : Fin 4 → nonisolatedZigzagQuotient k G)
-    (e : nonisolatedZigzagQuotient k G) :
-    splice k z 0 4 0 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![e, z 2, z 3]) := by
-  rw [splice_eq_of_tprod k z e (by norm_num) (by norm_num) (by norm_num)]
-  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
-  fin_cases j <;> simp
+/-- A homogeneous cochain `φ` of suspended degree zero maps any subword of elements of path length
+one into path length one. -/
+theorem apply_subword_mem_zigzagIntegerGrade_one
+    {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
+    (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+      ((𝒵).grading.shift 1).piece 0)
+    {N : ℕ} {x : Fin N → nonisolatedZigzagQuotient k G}
+    (hx : ∀ i, x i ∈ zigzagIntegerGrade k G 1) (p d : ℕ) :
+    φ (subword k x p d) ∈ zigzagIntegerGrade k G 1 := by
+  have h := hφ.map_mem (subword_mem_gradedPiece x (fun _ ↦ 0) (fun i ↦ by
+    rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, zero_add]
+    exact hx i) p d)
+  rw [Finset.sum_const_zero, zero_add, InternalGrading.shift_piece,
+    zigzagStrictAInfinityAlgebra_grading_piece, zero_add] at h
+  exact h
 
-/-- Collapsing the middle two letters of a word of length four. -/
-private theorem splice_four_two_one (z : Fin 4 → nonisolatedZigzagQuotient k G)
-    (e : nonisolatedZigzagQuotient k G) :
-    splice k z 0 4 1 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![z 0, e, z 3]) := by
-  rw [splice_eq_of_tprod k z e (by norm_num) (by norm_num) (by norm_num)]
-  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
-  fin_cases j <;> simp
+/-- **The Hochschild differential on words of homogeneous letters.** For a suspended cochain `φ`
+of degree zero and letters `x₀, …, x_{n+1}` of path-length degrees `d₀, …, d_{n+1}`,
 
-/-- Collapsing the last two letters of a word of length four. -/
-private theorem splice_four_two_two (z : Fin 4 → nonisolatedZigzagQuotient k G)
-    (e : nonisolatedZigzagQuotient k G) :
-    splice k z 0 4 2 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![z 0, z 1, e]) := by
-  rw [splice_eq_of_tprod k z e (by norm_num) (by norm_num) (by norm_num)]
-  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
-  fin_cases j <;> simp
+```text
+δφ(x₀, …, x_{n+1}) = τ(φ(x₀, …, x_n)) x_{n+1} + τ(x₀) φ(x₁, …, x_{n+1})
+    - ∑_{p ≤ n} (-1)^((d₀ - 1) + ⋯ + (d_{p-1} - 1)) φ(x₀, …, τ(x_p) x_{p+1}, …, x_{n+1}),
+```
 
-/-- The first three letters of a word of length four. -/
-private theorem subword_four_three_zero (x : Fin 4 → nonisolatedZigzagQuotient k G) :
-    subword k x 0 3 = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, x 2]) := by
-  rw [subword_eq_of_tprod k x (by norm_num) (by norm_num)]
-  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
-  fin_cases j <;> simp
-
-/-- The last three letters of a word of length four. -/
-private theorem subword_four_three_one (x : Fin 4 → nonisolatedZigzagQuotient k G) :
-    subword k x 1 3 = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 1, x 2, x 3]) := by
-  rw [subword_eq_of_tprod k x (by norm_num) (by norm_num)]
-  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
-  fin_cases j <;> simp
-
-/-- The Taylor map of the strict zigzag algebra on a word of two letters is the product, with the
-Koszul twist of the first letter. -/
-private theorem taylor_of_tprod_two (x : Fin 2 → nonisolatedZigzagQuotient k G) :
-    (𝒵).taylor (of k _ (2 : ℕ+) (PiTensorProduct.tprod k x)) =
-      (𝒵).grading.koszulTwist 1 (x 0) * x 1 := by
-  -- `AInfinityAlgebra.taylor_of_tprod` indexes words by `{n : ℕ // 0 < n}`, while the splice
-  -- lemmas produce the `ℕ+` numeral `2`. The two types agree only after unfolding `ℕ+`, so
-  -- `rw` cannot match the numeral until it is restated as the subtype element `⟨2, two_pos⟩`.
-  change (𝒵).taylor (of k _ ⟨2, two_pos⟩ (PiTensorProduct.tprod k x)) = _
-  rw [AInfinityAlgebra.taylor_of_tprod, zigzagStrictAInfinityAlgebra_m_two_apply]
-  norm_num
+where `τ` is the Koszul twist acting on a homogeneous element of degree `e` by `(-1)^e`. On
+letters of degree one this is
+`zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_mem`. -/
+theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous
+    (φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G)
+    {n : ℕ} (x : ℕ → nonisolatedZigzagQuotient k G) (d : ℕ → ℤ)
+    (hx : ∀ i < n + 2, x i ∈ zigzagIntegerGrade k G (d i)) :
+    (𝒵).hochschildDifferential 0 φ
+        (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 2) ↦ x j)) =
+      (𝒵).grading.koszulTwist 1
+          (φ (of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ x j))) *
+          x (n + 1) +
+        (𝒵).grading.koszulTwist 1 (x 0) *
+          φ (of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ x (1 + j))) -
+        ∑ p ∈ Finset.range (n + 1), negOnePowCast k (∑ j ∈ Finset.range p, (d j - 1)) •
+          φ (of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦
+            replaceBlock x p 2 ((𝒵).grading.koszulTwist 1 (x p) * x (p + 1)) j)) := by
+  have hx' : ∀ i < n + 2, x i ∈ ((𝒵).grading.shift 1).piece (d i - 1) := fun i hi ↦ by
+    rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, sub_add_cancel]
+    exact hx i hi
+  rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul,
+    LinearMap.sub_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,
+    gradedCoderiv_of_tprod_of_homogeneous_nat _ _ _ _ x _ hx',
+    gradedCoderiv_of_tprod_of_homogeneous_nat _ _ _ _ x _ hx']
+  simp only [zero_mul, negOnePowCast_zero, one_smul, one_mul, map_sum, map_smul]
+  -- In `m{φ}` only the collapses of `n + 1` letters at the two ends survive.
+  rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single (n + 1)
+      (fun d _ hd ↦ taylor_splice_of_ne _ p d _ (by omega)) (by simp),
+    Finset.sum_range_succ', Finset.sum_range_succ',
+    Finset.sum_eq_zero fun p _ ↦ by rw [splice_eq_zero_of_block_lt_add k _ _ (by omega), map_zero],
+    zero_add, splice_collapse_init_eq k (n := n + 1) (by omega),
+    splice_collapse_tail_eq k (n := n + 1) (by omega), AInfinityAlgebra.taylor_of_two,
+    AInfinityAlgebra.taylor_of_two, zigzagStrictAInfinityAlgebra_m_two_apply,
+    zigzagStrictAInfinityAlgebra_m_two_apply]
+  -- In `φ{m}` only the collapses of two letters survive.
+  rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single 2
+      (fun d _ hd ↦ by
+        rw [zigzagStrictAInfinityAlgebra_taylor_subword_eq_zero_of_ne_two _ p d hd, splice_zero,
+          map_zero, smul_zero])
+      (by simp),
+    Finset.sum_range_succ, splice_eq_zero_of_block_lt_add k _ _ (by omega), map_zero, smul_zero,
+    add_zero]
+  have hinner (p : ℕ) (hp : p < n + 1) :
+      splice k (fun j : Fin (n + 2) ↦ x j) 0 (n + 2) p 2
+          ((𝒵).taylor (subword k (fun j : Fin (n + 2) ↦ x j) p 2)) =
+        of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦
+          replaceBlock x p 2 ((𝒵).grading.koszulTwist 1 (x p) * x (p + 1)) j) := by
+    rw [zigzagStrictAInfinityAlgebra_taylor_subword_two _ p (by omega),
+      splice_eq_of_tprod_replaceBlock k x two_pos (by omega)]
+    exact of_tprod_congr k _ _ (by omega) fun j ↦ by simp
+  rw [Finset.sum_congr rfl fun p hp ↦ by rw [hinner p (Finset.mem_range.mp hp)],
+    subword_eq_of_tprod k _ (by omega) (by omega), subword_eq_of_tprod k _ (by omega) (by omega)]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Fin.val_zero, Fin.val_last, zero_add]
+  abel
 
 /-- **The Hochschild differential on words of arrows of any length.** For a suspended cochain `φ`
 of degree zero and letters `x₀, …, x_{n+1}` of path length one, such as arrows,
@@ -264,43 +310,35 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
       ∑ p : Fin (n + 1), φ (splice k x 0 (n + 2) p 2 (x p.castSucc * x p.succ)) -
         φ (subword k x 0 (n + 1)) * x (Fin.last (n + 1)) -
         x 0 * φ (subword k x 1 (n + 1)) := by
-  have htw (y : nonisolatedZigzagQuotient k G) (hy : y ∈ zigzagIntegerGrade k G 1) :
-      (𝒵).grading.koszulTwist 1 y = -y := by
+  -- Read the letters off a family indexed by the natural numbers.
+  obtain ⟨y, rfl⟩ : ∃ y : ℕ → nonisolatedZigzagQuotient k G, (fun j : Fin (n + 2) ↦ y j) = x :=
+    ⟨fun i ↦ if h : i < n + 2 then x ⟨i, h⟩ else 0, funext fun j ↦ by simp⟩
+  have hy (i : ℕ) (hi : i < n + 2) : y i ∈ zigzagIntegerGrade k G 1 := hx ⟨i, hi⟩
+  have htw (z : nonisolatedZigzagQuotient k G) (hz : z ∈ zigzagIntegerGrade k G 1) :
+      (𝒵).grading.koszulTwist 1 z = -z := by
     rw [(𝒵).grading.koszulTwist_one_apply_of_mem (e := 1)
       (by rwa [zigzagStrictAInfinityAlgebra_grading_piece])]
     simp
-  have hx' : ∀ i, x i ∈ ((𝒵).grading.shift 1).piece ((fun _ ↦ (0 : ℤ)) i) := fun i ↦ by
-    rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, zero_add]
-    exact hx i
   -- `φ` sends a word of `n + 1` letters of path length one to path length one.
-  have hφx : φ (subword k x 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 := by
-    rw [subword_eq_of_tprod k x (by omega) (by omega)]
-    have h := hφ.map_mem (mem_gradedPiece_of_tprod ((𝒵).grading.shift 1) (n := n + 1)
-      (by omega) (fun j ↦ x ⟨0 + j.1, by omega⟩) (fun _ ↦ 0) fun i ↦ hx' _)
-    simpa [InternalGrading.shift_piece] using h
-  rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul,
-    LinearMap.sub_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,
-    gradedCoderiv_of_tprod_of_homogeneous _ _ _ _ x _ hx',
-    gradedCoderiv_of_tprod_of_homogeneous _ _ _ _ x _ hx']
-  simp only [dite_eq_ite, ite_self, Finset.sum_const_zero, mul_zero, Int.negOnePow_zero,
-    Units.val_one, Int.cast_one, one_smul, map_sum]
-  -- In `m{φ}` only the collapses of `n + 1` letters at the two ends survive.
-  rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single (n + 1)
-      (fun d _ hd ↦ taylor_splice_of_ne x p d _ (by omega)) (by simp),
-    Finset.sum_range_succ', Finset.sum_range_succ',
-    Finset.sum_eq_zero fun p _ ↦ by rw [splice_eq_zero_of_block_lt_add k x _ (by omega), map_zero],
-    zero_add, zero_add, splice_collapse_init_eq k (n := n + 1) (by omega),
-    splice_collapse_tail_eq k (n := n + 1) (by omega), taylor_of_tprod_two,
-    taylor_of_tprod_two]
-  -- In `φ{m}` only the collapses of two letters survive.
-  rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single 2
-      (fun d _ hd ↦ by rw [taylor_subword_of_ne x p d hd, splice_zero, map_zero]) (by simp),
-    Finset.sum_range_succ, splice_eq_zero_of_block_lt_add k x _ (by omega), map_zero, add_zero,
-    Finset.sum_range]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [htw _ hφx, htw _ (hx 0),
-    Finset.sum_congr rfl fun (p : Fin (n + 1)) _ ↦ by
-      rw [taylor_subword_two x p (by omega), htw _ (hx _), neg_mul, splice_neg, map_neg]]
+  have hφy : φ (subword k (fun j : Fin (n + 2) ↦ y j) 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 :=
+    apply_subword_mem_zigzagIntegerGrade_one hφ hx 0 (n + 1)
+  have hinit : subword k (fun j : Fin (n + 2) ↦ y j) 0 (n + 1) =
+      of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ y j) := by
+    rw [subword_eq_of_tprod k _ (by omega) (by omega)]
+    exact of_tprod_congr k _ _ rfl fun j ↦ by simp
+  have hsplice (p : ℕ) (hp : p < n + 1) (e : nonisolatedZigzagQuotient k G) :
+      of k _ ⟨n + 1, by omega⟩
+          (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ replaceBlock y p 2 e j) =
+        splice k (fun j : Fin (n + 2) ↦ y j) 0 (n + 2) p 2 e := by
+    rw [splice_eq_of_tprod_replaceBlock k y two_pos (by omega)]
+    exact of_tprod_congr k _ _ (by omega) fun j ↦ by simp
+  rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous φ y (fun _ ↦ 1) hy,
+    ← hinit, ← subword_eq_of_tprod k (fun j : Fin (n + 2) ↦ y j) (a := 1) (by omega) (by omega),
+    htw _ hφy, htw _ (hy 0 (by omega)), Finset.sum_range]
+  simp only [sub_self, Finset.sum_const_zero, negOnePowCast_zero, one_smul, Fin.val_castSucc,
+    Fin.val_succ, Fin.val_last, Fin.val_zero]
+  rw [Finset.sum_congr rfl fun (p : Fin (n + 1)) _ ↦ by
+    rw [htw _ (hy p (by omega)), neg_mul, hsplice p p.isLt, splice_neg, map_neg]]
   simp only [Finset.sum_neg_distrib, neg_mul, sub_neg_eq_add]
   abel
 
@@ -322,12 +360,143 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod
         φ (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, x 2 * x 3])) -
         φ (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, x 2])) * x 3 -
         x 0 * φ (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 1, x 2, x 3])) := by
+  have hsp₀ (e : nonisolatedZigzagQuotient k G) :
+      splice k x 0 4 0 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![e, x 2, x 3]) := by
+    rw [splice_eq_of_tprod k x e (by norm_num) (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
+  have hsp₁ (e : nonisolatedZigzagQuotient k G) :
+      splice k x 0 4 1 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, e, x 3]) := by
+    rw [splice_eq_of_tprod k x e (by norm_num) (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
+  have hsp₂ (e : nonisolatedZigzagQuotient k G) :
+      splice k x 0 4 2 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, e]) := by
+    rw [splice_eq_of_tprod k x e (by norm_num) (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
+  have hsub₀ : subword k x 0 3 =
+      of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, x 2]) := by
+    rw [subword_eq_of_tprod k x (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
+  have hsub₁ : subword k x 1 3 =
+      of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 1, x 2, x 3]) := by
+    rw [subword_eq_of_tprod k x (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
   rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_mem hφ x hx,
     Fin.sum_univ_three]
-  simp [splice_four_two_zero, splice_four_two_one, splice_four_two_two, subword_four_three_zero,
-    subword_four_three_one]
+  simp [hsp₀, hsp₁, hsp₂, hsub₀, hsub₁]
 
 end Differential
+
+/-! ### Higher loop obstructions and Hochschild cocycles -/
+
+section LoopObstruction
+
+/-- The higher operation of a loop deformation, its operation of arity `n + 2` for `n ≥ 1`, on a
+word of `n + 2` letters is the operation of arity `n + 2` of the loop deformation on the letters
+twisted by the Koszul signs of the suspension. -/
+theorem obstruction_zigzagLoopAInfinityAlgebra_of_tprod_eq_m {n : ℕ} (hn : 1 ≤ n)
+    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (y : Fin (n + 2) → nonisolatedZigzagQuotient k G) :
+    (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
+        (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k y)) =
+      (zigzagLoopAInfinityAlgebra hns c hc).m (n + 2) fun i ↦
+        (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist (n + 1 - i : ℕ) (y i) := by
+  simp only [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply]
+  rw [lengthProj_of_self, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
+    zigzagStrictAInfinityAlgebra_m_eq_zero (by dsimp only; omega), _root_.zero_apply, sub_zero]
+  congr 1
+  funext i
+  congr 2
+  dsimp only
+  omega
+
+/-- **The higher operation of a loop deformation on arrows.** For `n ≥ 1` and coefficients `c` on
+walks of length `n + 2`, the obstruction of the loop deformation, its operation of arity `n + 2`,
+takes the arrows of `n + 2` darts `w` to the coefficient of `w` times the volume class at the head
+of `w 0`, up to the sign `∏ i, (-1) ^ (n + 1 - i)` of the suspension. -/
+theorem obstruction_zigzagLoopAInfinityAlgebra_of_tprod {n : ℕ} (hn : 1 ≤ n)
+    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (w : Fin (n + 2) → G.Dart) :
+    (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
+        (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t))) =
+      ((((∏ i : Fin (n + 2), ((n + 1 - i : ℕ) : ℤ).negOnePow : ℤˣ) : ℤ) : k) * c w) •
+        zigzagVolume k G (w 0).snd := by
+  rw [obstruction_zigzagLoopAInfinityAlgebra_of_tprod_eq_m hn]
+  -- The suspension twists the `i`-th arrow by the sign `(-1) ^ (n + 1 - i)`.
+  have htw : (fun i : Fin (n + 2) ↦ (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist
+      (n + 1 - i : ℕ) (𝔞 (w i))) =
+      fun i : Fin (n + 2) ↦ (((n + 1 - (i : ℕ) : ℕ) : ℤ).negOnePow : k) • 𝔞 (w i) := by
+    funext i
+    rw [InternalGrading.koszulTwist_apply_of_mem _ (e := 1) (by
+      rw [zigzagLoopAInfinityAlgebra_grading_piece]
+      exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _), mul_one]
+  rw [htw, MultilinearMap.map_smul_univ, zigzagLoopAInfinityAlgebra_m_ofArrow _ _ (by omega),
+    smul_smul]
+  simp [Units.coe_prod]
+
+/-- **The higher operation of a loop deformation under the trace.** For `n ≥ 1` and coefficients
+`c` on walks of length `n + 2`, the trace of the obstruction of the loop deformation, its operation
+of arity `n + 2`, on the arrows of `n + 2` darts `w` is the coefficient of `w` times the sign
+`∏ i, (-1) ^ (n + 1 - i)` of the suspension. -/
+theorem zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod {n : ℕ} (hn : 1 ≤ n)
+    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (w : Fin (n + 2) → G.Dart) :
+    zigzagTrace k G hns ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
+      (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) =
+      (((∏ i : Fin (n + 2), ((n + 1 - i : ℕ) : ℤ).negOnePow : ℤˣ) : ℤ) : k) * c w := by
+  rw [obstruction_zigzagLoopAInfinityAlgebra_of_tprod hn, map_smul, zigzagTrace_zigzagVolume,
+    smul_eq_mul, mul_one]
+
+/-- **Loop obstructions are Hochschild cocycles.** The obstruction of the loop deformation with
+coefficients `c` on walks of length `n + 2` is a Hochschild cocycle of the strict zigzag algebra,
+since the two agree up to arity `n + 1`. For `n ≥ 1` this obstruction is the operation of arity
+`n + 2` of the loop deformation; for `n = 0` it vanishes. -/
+theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ}
+    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
+    (𝒵).hochschildDifferential 1
+      ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩) = 0 := by
+  have hG :=
+    zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading (hns := hns) c hc
+  -- The loop deformation agrees with the strict zigzag algebra except in arity `n + 2`.
+  have hm : ∀ r, 0 < r → (r = 2 ∨ r ≠ n + 2) →
+      (zigzagLoopAInfinityAlgebra hns c hc).m r = (𝒵).m r := by
+    intro r hr hr'
+    rcases eq_or_ne r 2 with rfl | h₂
+    · exact zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc
+    · rw [zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ (by omega),
+        zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- In arity two the obstruction vanishes: the two binary operations agree.
+    rw [AInfinityAlgebra.obstruction_eq_zero_of_m_eq hG (n := ⟨0 + 2, by omega⟩)
+      (hm 2 two_pos (Or.inl rfl)), AInfinityAlgebra.hochschildDifferential_zero]
+  exact AInfinityAlgebra.hochschildDifferential_obstruction isMinimal_zigzagStrictAInfinityAlgebra
+    (fun r hr ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG (n := n + 1) (by omega)
+    fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG
+      (fun r hr hrn ↦ hm r hr (by omega)) hz
+
+/-- **A loop obstruction which is not a coboundary gives a nonzero Hochschild class.** If the
+obstruction of a loop deformation in arity `n + 2` (for `n ≥ 1`, its operation of arity `n + 2`), a
+Hochschild cocycle of the strict zigzag algebra by
+`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
+differential of any suspended cochain of degree zero, then `HH^{n + 2, -n}(Z, Z) ≠ 0`. -/
+theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction {n : ℕ}
+    (c : (Fin (n + 2) → G.Dart) →₀ k)
+    (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (h : ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
+        nonisolatedZigzagQuotient k G,
+      LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+          ((𝒵).grading.shift 1).piece 0 ∧
+        (𝒵).hochschildDifferential 0 φ =
+          (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩) :
+    ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
+  intro hvan
+  obtain ⟨φ, hφ, -, hφc⟩ := AInfinityAlgebra.hochschildVanishesAt_iff.mp hvan _
+    (AInfinityAlgebra.isHomogeneous_obstruction
+      (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ hc) _)
+    (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _)
+    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra c hc)
+  exact h ⟨φ, hφ, hφc⟩
+
+end LoopObstruction
 
 /-! ### The pairing with a Hochschild cycle -/
 
@@ -371,18 +540,6 @@ end Pairing
 
 section Coboundary
 
-private theorem tprod_three_zero_left (b c : nonisolatedZigzagQuotient k G) :
-    PiTensorProduct.tprod k ![0, b, c] = 0 :=
-  (PiTensorProduct.tprod k).map_coord_zero (m := ![0, b, c]) 0 rfl
-
-private theorem tprod_three_zero_mid (a c : nonisolatedZigzagQuotient k G) :
-    PiTensorProduct.tprod k ![a, 0, c] = 0 :=
-  (PiTensorProduct.tprod k).map_coord_zero (m := ![a, 0, c]) 1 rfl
-
-private theorem tprod_three_zero_right (a b : nonisolatedZigzagQuotient k G) :
-    PiTensorProduct.tprod k ![a, b, 0] = 0 :=
-  (PiTensorProduct.tprod k).map_coord_zero (m := ![a, b, 0]) 2 rfl
-
 private theorem arrows_mem (d₀ d₁ d₂ d₃ : G.Dart) :
     ∀ i, ![𝔞 d₀, 𝔞 d₁, 𝔞 d₂, 𝔞 d₃] i ∈ zigzagIntegerGrade k G 1 := by
   intro i
@@ -410,7 +567,8 @@ private theorem trace_hochschildDifferential_rotate
     rw [zigzagMk_ofArrow_mul_ofArrow_symm, hd]
   rw [zigzagMk_ofArrow_mul_ofArrow_of_ne k G (d := e.symm) (e := d) (by simpa using hde), hdd,
     zigzagMk_ofArrow_mul_ofArrow_of_ne k G (d := d.symm) (e := e) (by simpa using hde.symm),
-    tprod_three_zero_left, tprod_three_zero_right]
+    (PiTensorProduct.tprod k).map_coord_zero (m := ![0, _, _]) (0 : Fin 3) rfl,
+    (PiTensorProduct.tprod k).map_coord_zero (m := ![_, _, 0]) (2 : Fin 3) rfl]
   simp only [map_zero, zero_add, add_zero, map_sub]
 
 /-- The trace of a Hochschild coboundary on the backtrack word `e, e.symm, d, d.symm`, for
@@ -439,7 +597,7 @@ private theorem trace_hochschildDifferential_backtrack
   have hee : 𝔞 e * 𝔞 e.symm = zigzagVolume k G v := by
     rw [zigzagMk_ofArrow_mul_ofArrow_symm, he]
   rw [hee, zigzagMk_ofArrow_mul_ofArrow_of_ne k G (d := e.symm) (e := d) (by simpa using hde), hdd,
-    tprod_three_zero_mid]
+    (PiTensorProduct.tprod k).map_coord_zero (m := ![_, 0, _]) (1 : Fin 3) rfl]
   simp only [map_zero, add_zero, map_sub, map_add]
 
 /-- The arrow of the reverse of the reverse of a dart. -/
@@ -472,8 +630,7 @@ private theorem trace_hochschildDifferential_double
   have hd' : 𝔞 d.symm * 𝔞 d = zigzagVolume k G d.fst := by
     have h := zigzagMk_ofArrow_mul_ofArrow_symm k G d.symm
     rw [arrow_symm_symm] at h
-    rw [h]
-    simp
+    simpa using h
   rw [hd, hd']
   simp only [map_add, map_sub]
 
@@ -547,9 +704,38 @@ private theorem trace_hochschildDifferential_double_symm_sub
 
 end Coboundary
 
+end
+
 section Vanishing
 
 variable [Fintype G.Dart]
+
+/-- Algebraic cancellation of the volume and boundary sums for a symmetric, balanced weight
+matrix. -/
+private theorem sum_balanced_cancel [DecidableEq G.Dart] {a : Matrix G.Dart G.Dart k}
+    (ha : a.IsSymm) (hbal : ∀ e, ∑ d, a d e = a e.symm e.symm)
+    (A B : G.Dart → k) (C : G.Dart → G.Dart → k) :
+    ∑ d, ∑ e, (a d e * (A e - B d - C d e + C e d) +
+        if d = e then a d d * (B d.symm - A d.symm) else 0) = 0 := by
+  simp only [Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  have hcol (f : G.Dart → k) : ∑ d, ∑ e, a d e * f e = ∑ d, a d d * f d.symm := by
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.sum_mul, hbal]
+    rw [← Equiv.sum_comp (Function.Involutive.toPerm (SimpleGraph.Dart.symm (G := G))
+      SimpleGraph.Dart.symm_involutive) fun e ↦ a e.symm e.symm * f e]
+    simp only [Function.Involutive.coe_toPerm, SimpleGraph.Dart.symm_symm]
+  have hrow (f : G.Dart → k) : ∑ d, ∑ e, a d e * f d = ∑ d, a d d * f d.symm := by
+    rw [Finset.sum_comm, ← hcol f]
+    exact Finset.sum_congr rfl fun d _ ↦ Finset.sum_congr rfl fun e _ ↦ by rw [ha.apply d e]
+  have hC : ∑ d, ∑ e, a d e * C e d = ∑ d, ∑ e, a d e * C d e := by
+    rw [Finset.sum_comm]
+    simp_rw [fun d e ↦ ha.apply d e]
+  simp only [mul_add, mul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib, hcol, hrow, hC]
+  ring
+
+variable [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j}
+
+local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
 
 /-- **The backtrack pairing vanishes on Hochschild coboundaries.** Let `a` be a symmetric matrix of
 weights on pairs of darts which vanishes on pairs of darts with distinct heads, and whose column
@@ -593,58 +779,7 @@ theorem zigzagBacktrackPairing_hochschildDifferential_eq_zero {a : Matrix G.Dart
     · rw [trace_hochschildDifferential_rotate_sub_backtrack hφ hde h]
     · rw [hhead d e h, zero_mul, zero_mul]
   rw [Finset.sum_congr rfl fun d _ ↦ Finset.sum_congr rfl fun e _ ↦ key d e]
-  simp only [Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  -- Reversing darts permutes them.
-  have hrev (g : G.Dart → k) : ∑ d : G.Dart, g d.symm = ∑ d, g d :=
-    Equiv.sum_comp (Function.Involutive.toPerm (SimpleGraph.Dart.symm (G := G))
-      SimpleGraph.Dart.symm_involutive) g
-  -- The balance condition, on columns and, by symmetry, on rows.
-  have hA : ∑ d, ∑ e, a d e * A e = ∑ d, a d d * A d.symm := by
-    rw [Finset.sum_comm]
-    simp_rw [← Finset.sum_mul, hbal]
-    rw [← hrev fun e ↦ a e.symm e.symm * A e]
-    simp only [SimpleGraph.Dart.symm_symm]
-  have hB : ∑ d, ∑ e, a d e * B d = ∑ d, a d d * B d.symm := by
-    simp_rw [← Finset.sum_mul]
-    have hrow (d : G.Dart) : ∑ e, a d e = a d.symm d.symm := by
-      rw [← hbal]
-      exact Finset.sum_congr rfl fun e _ ↦ (ha.apply d e).symm
-    simp_rw [hrow]
-    rw [← hrev fun e ↦ a e.symm e.symm * B e]
-    simp only [SimpleGraph.Dart.symm_symm]
-  have hC : ∑ d, ∑ e, a d e * C e d = ∑ d, ∑ e, a d e * C d e := by
-    rw [Finset.sum_comm]
-    simp_rw [fun d e ↦ ha.apply d e]
-  simp only [mul_add, mul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib, hA, hB, hC]
-  ring
-
-omit [Fintype G.Dart] in
-/-- **The higher operation of a loop deformation under the trace.** For `n ≥ 1` and coefficients
-`c` on walks of length `n + 2`, the trace of the obstruction of the loop deformation, its operation
-of arity `n + 2`, on the arrows of `n + 2` darts `w` is the coefficient of `w` times the sign
-`∏ i, (-1) ^ (n + 1 - i)` of the suspension. -/
-theorem zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod {n : ℕ} (hn : 1 ≤ n)
-    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
-    (w : Fin (n + 2) → G.Dart) :
-    zigzagTrace k G hns ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
-      (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) =
-      (((∏ i : Fin (n + 2), ((n + 1 - i : ℕ) : ℤ).negOnePow : ℤˣ) : ℤ) : k) * c w := by
-  simp only [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply]
-  rw [lengthProj_of_self, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
-    zigzagStrictAInfinityAlgebra_m_eq_zero (by dsimp only; omega), _root_.zero_apply, sub_zero]
-  -- The suspension twists the `i`-th arrow by the sign `(-1) ^ (n + 1 - i)`.
-  have htw : (fun i : Fin (n + 2) ↦ (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist
-      (((⟨n + 2, by omega⟩ : {n : ℕ // 0 < n}) : ℕ) - 1 - (i : ℕ)) (𝔞 (w i))) =
-      fun i : Fin (n + 2) ↦ (((n + 1 - (i : ℕ) : ℕ) : ℤ).negOnePow : k) • 𝔞 (w i) := by
-    funext i
-    rw [InternalGrading.koszulTwist_apply_of_mem _ (e := 1) (by
-      rw [zigzagLoopAInfinityAlgebra_grading_piece]
-      exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _), mul_one]
-    congr 4
-    dsimp only
-    omega
-  rw [htw, MultilinearMap.map_smul_univ, zigzagLoopAInfinityAlgebra_m_ofArrow _ _ (by omega)]
-  simp [Units.coe_prod]
+  exact sum_balanced_cancel ha hbal A B C
 
 /-- **The backtrack pairing of a quartic loop operation.** On the obstruction of the loop
 deformation with coefficients `c`, that is on its quartic operation, the backtrack pairing is
@@ -663,51 +798,6 @@ theorem zigzagBacktrackPairing_obstruction (a : Matrix G.Dart G.Dart k)
   rw [zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod (n := 2) one_le_two c hc,
     zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod (n := 2) one_le_two c hc, hsign,
     Units.val_one, Int.cast_one, one_mul, one_mul]
-
-omit [Fintype G.Dart] in
-/-- **Higher loop operations are Hochschild cocycles.** For `n ≥ 1`, the obstruction of the loop
-deformation with coefficients `c` on walks of length `n + 2`, that is its operation of arity
-`n + 2`, is a Hochschild cocycle of the strict zigzag algebra, since the two agree up to arity
-`n + 1`. -/
-theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ} (hn : 1 ≤ n)
-    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
-    (𝒵).hochschildDifferential 1
-      ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩) = 0 := by
-  have hG :=
-    zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading (hns := hns) c hc
-  -- The loop deformation agrees with the strict zigzag algebra up to arity `n + 1`.
-  have hm : ∀ r, 0 < r → r ≤ n + 1 → (zigzagLoopAInfinityAlgebra hns c hc).m r = (𝒵).m r := by
-    intro r hr hrn
-    rcases eq_or_ne r 2 with rfl | h₂
-    · exact zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc
-    · rw [zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ (by omega),
-        zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
-  exact AInfinityAlgebra.hochschildDifferential_obstruction isMinimal_zigzagStrictAInfinityAlgebra
-    (fun r hr ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG (n := n + 1) (by omega)
-    fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG hm hz
-
-omit [Fintype G.Dart] in
-/-- **A higher loop operation which is not a coboundary gives a nonzero Hochschild class.** If the
-operation of arity `n + 2` of a loop deformation, a Hochschild cocycle of the strict zigzag algebra
-by `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
-differential of any suspended cochain of degree zero, then `HH^{n + 2, -n}(Z, Z) ≠ 0`. -/
-theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction {n : ℕ}
-    (hn : 1 ≤ n) (c : (Fin (n + 2) → G.Dart) →₀ k)
-    (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
-    (h : ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
-        nonisolatedZigzagQuotient k G,
-      LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
-          ((𝒵).grading.shift 1).piece 0 ∧
-        (𝒵).hochschildDifferential 0 φ =
-          (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩) :
-    ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
-  intro hvan
-  obtain ⟨φ, hφ, -, hφc⟩ := AInfinityAlgebra.hochschildVanishesAt_iff.mp hvan _
-    (AInfinityAlgebra.isHomogeneous_obstruction
-      (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ hc) _)
-    (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _)
-    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra hn c hc)
-  exact h ⟨φ, hφ, hφc⟩
 
 /-- **Quartic loop operations which are not Hochschild coboundaries.** Let `a` be a symmetric
 matrix of weights on pairs of darts which vanishes on pairs of darts with distinct heads and
@@ -733,17 +823,29 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
   rw [hφc, zigzagBacktrackPairing_obstruction] at h0
   exact h h0
 
-omit [Finite V] [Fintype G.Dart] in
+end Vanishing
+
+/-! ### Weights built from single-entry matrices -/
+
 /-- The rotation by one step of the backtrack walk of `e.symm` and `d`, for darts `d` and `e` with
 a common head, is a closed walk: a single coefficient on it is supported on closed walks. -/
-theorem fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk {d e : G.Dart}
-    (h : e.snd = d.snd) (r : k) :
+theorem fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk {k : Type w} [Zero k]
+    {d e : G.Dart} (h : e.snd = d.snd) (r : k) :
     ∀ w ∈ (Finsupp.single (fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1)) r).support, ∀ i,
       (w i).fst = (w (i + 1)).snd :=
   fst_eq_snd_of_mem_support_single (fun i ↦ by
     simpa [add_assoc] using zigzagBacktrackWalk_fst_eq_snd (by simpa using h) 1 i) r
 
-omit [Finite V] in
+section Weights
+
+/-- A matrix with a single nonzero entry, on a pair of darts with a common head, vanishes on the
+pairs of darts with distinct heads. -/
+private theorem single_apply_eq_zero_of_snd_ne [DecidableEq V] {x y : G.Dart} (h : x.snd = y.snd)
+    (r : k) {d e : G.Dart} (hde : d.snd ≠ e.snd) : Matrix.single x y r d e = 0 :=
+  Matrix.single_apply_of_ne _ _ _ _ _ fun ⟨hx, hy⟩ ↦ hde (by rw [← hx, ← hy, h])
+
+variable [Fintype G.Dart]
+
 /-- On the coefficient one on the rotated backtrack walk of `e₀.symm` and `d₀`, for distinct
 darts, the sum computing the backtrack pairing of a quartic loop operation is the weight
 `a d₀ e₀`: no other rotated backtrack walk, and no backtrack walk, is this walk. -/
@@ -776,24 +878,6 @@ private theorem sum_mul_single_rotate_zigzagBacktrackWalk (a : Matrix G.Dart G.D
     exact (h (by rw [h1, ← h0, SimpleGraph.Dart.symm_symm])).elim
   simp [h₀, h₁, ite_and]
 
-end Vanishing
-
-/-! ### Weights built from single-entry matrices -/
-
-section Weights
-
-variable [DecidableEq V]
-
-omit [Finite V] in
-/-- A matrix with a single nonzero entry, on a pair of darts with a common head, vanishes on the
-pairs of darts with distinct heads. -/
-private theorem single_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd) (r : k)
-    {d e : G.Dart} (hde : d.snd ≠ e.snd) : Matrix.single x y r d e = 0 :=
-  Matrix.single_apply_of_ne _ _ _ _ _ fun ⟨hx, hy⟩ ↦ hde (by rw [← hx, ← hy, h])
-
-variable [Fintype G.Dart]
-
-omit [Finite V] in
 /-- The failure of the balance condition `∑ d, a d e = a e.symm e.symm` at each dart `e`. -/
 private def balanceDefect : Matrix G.Dart G.Dart k →ₗ[k] G.Dart → k where
   toFun a e := ∑ d, a d e - a e.symm e.symm
@@ -806,21 +890,18 @@ private def balanceDefect : Matrix G.Dart G.Dart k →ₗ[k] G.Dart → k where
     simp only [Matrix.smul_apply, smul_eq_mul, ← Finset.mul_sum, RingHom.id_apply, Pi.smul_apply]
     ring
 
-omit [Finite V] [DecidableEq V] in
 private theorem balanceDefect_apply (a : Matrix G.Dart G.Dart k) (e : G.Dart) :
     balanceDefect a e = ∑ d, a d e - a e.symm e.symm :=
   rfl
 
-omit [Finite V] in
-private theorem balanceDefect_single_of_ne {x y : G.Dart} (h : x ≠ y) (r : k) :
+private theorem balanceDefect_single_of_ne [DecidableEq V] {x y : G.Dart} (h : x ≠ y) (r : k) :
     balanceDefect (Matrix.single x y r) = Pi.single y r := by
   ext e
   rw [balanceDefect_apply,
     Matrix.single_apply_of_ne _ _ _ _ _ fun h' ↦ h (h'.1.trans h'.2.symm), sub_zero]
   simp [Matrix.single_apply, ite_and, Pi.single_apply, eq_comm]
 
-omit [Finite V] in
-private theorem balanceDefect_single_self (x : G.Dart) (r : k) :
+private theorem balanceDefect_single_self [DecidableEq V] (x : G.Dart) (r : k) :
     balanceDefect (Matrix.single x x r) = Pi.single x r - Pi.single x.symm r := by
   ext e
   have h : x = e.symm ↔ e = x.symm := by
@@ -854,13 +935,11 @@ private theorem fourWeights_sum (j : Fin 4) :
 private def fourDartWeights [DecidableEq V] (δ : Fin 4 → G.Dart) : Matrix G.Dart G.Dart k :=
   ∑ i, ∑ j, Matrix.single (δ i) (δ j) (fourWeights i j)
 
-omit [Finite V] in
 private theorem fourDartWeights_apply [DecidableEq V] {δ : Fin 4 → G.Dart}
     (hδ : Function.Injective δ) (i j : Fin 4) :
     (fourDartWeights δ : Matrix G.Dart G.Dart k) (δ i) (δ j) = fourWeights i j := by
   simp [fourDartWeights, Matrix.sum_apply, Matrix.single_apply, hδ.eq_iff, ite_and]
 
-omit [Finite V] in
 private theorem fourDartWeights_isSymm [DecidableEq V] (δ : Fin 4 → G.Dart) :
     (fourDartWeights δ : Matrix G.Dart G.Dart k).IsSymm := by
   simp only [Matrix.IsSymm, fourDartWeights, Matrix.transpose_sum, Matrix.transpose_single]
@@ -868,7 +947,6 @@ private theorem fourDartWeights_isSymm [DecidableEq V] (δ : Fin 4 → G.Dart) :
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   rw [(fourWeights_isSymm (k := k)).apply]
 
-omit [Finite V] in
 private theorem fourDartWeights_apply_eq_zero_of_snd_ne [DecidableEq V] {δ : Fin 4 → G.Dart}
     {v : V} (hv : ∀ i, (δ i).snd = v) {d e : G.Dart} (hde : d.snd ≠ e.snd) :
     (fourDartWeights δ : Matrix G.Dart G.Dart k) d e = 0 := by
@@ -876,7 +954,6 @@ private theorem fourDartWeights_apply_eq_zero_of_snd_ne [DecidableEq V] {δ : Fi
   exact Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦
     single_apply_eq_zero_of_snd_ne ((hv i).trans (hv j).symm) _ hde
 
-omit [Finite V] in
 private theorem balanceDefect_fourDartWeights [DecidableEq V] [Fintype G.Dart]
     {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) :
     balanceDefect (fourDartWeights δ : Matrix G.Dart G.Dart k) = 0 := by
@@ -893,6 +970,31 @@ private theorem balanceDefect_fourDartWeights [DecidableEq V] [Fintype G.Dart]
   refine Finset.sum_eq_zero fun j _ ↦ ?_
   rw [← Pi.single_zero (δ j), ← fourWeights_sum j]
   exact (map_sum (AddMonoidHom.single (fun _ : G.Dart ↦ k) (δ j)) _ _).symm
+
+variable [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j}
+
+local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
+
+/-- **Balanced backtrack weights evaluating to `1` on a single four-valent quartic loop.** Let
+`δ 0, …, δ 3` be four distinct darts with a common head `v`. There is a symmetric matrix `a` of
+weights on pairs of darts, vanishing on pairs with distinct heads and satisfying the balance
+condition `∑ d, a d e = a e.symm e.symm`, whose backtrack pairing with the quartic obstruction of
+the single closed walk `(δ 3).symm, δ 0, (δ 0).symm, δ 3` equals `1`. -/
+theorem exists_zigzagBacktrackPairing_obstruction_single_eq_one [Fintype G.Dart]
+    {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) :
+    ∃ a : Matrix G.Dart G.Dart k, a.IsSymm ∧ (∀ d e, d.snd ≠ e.snd → a d e = 0) ∧
+      (∀ e, ∑ d, a d e = a e.symm e.symm) ∧
+      zigzagBacktrackPairing hns a
+        ((zigzagLoopAInfinityAlgebra hns _
+          (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
+            ((hv 3).trans (hv 0).symm) (1 : k))).obstruction 𝒵 ⟨4, by norm_num⟩) = 1 := by
+  classical
+  refine ⟨fourDartWeights δ, fourDartWeights_isSymm δ,
+    fun d e hde ↦ fourDartWeights_apply_eq_zero_of_snd_ne hv hde,
+    fun e ↦ sub_eq_zero.mp (congrFun (balanceDefect_fourDartWeights hδ) e), ?_⟩
+  rw [zigzagBacktrackPairing_obstruction,
+    sum_mul_single_rotate_zigzagBacktrackWalk _ (hδ.ne (by decide)), fourDartWeights_apply hδ]
+  simp [fourWeights]
 
 /-- **A quartic loop operation which is not a Hochschild coboundary.** Let `δ 0, …, δ 3` be four
 distinct darts with a common head `v`, for instance the darts into `v` from four distinct
@@ -914,12 +1016,11 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
               ((hv 3).trans (hv 0).symm) (1 : k))).obstruction 𝒵 ⟨4, by norm_num⟩ := by
   classical
   have := Fintype.ofFinite V
-  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
-    (a := fourDartWeights δ) (fourDartWeights_isSymm δ)
-    (fun d e hde ↦ fourDartWeights_apply_eq_zero_of_snd_ne hv hde)
-    (fun e ↦ sub_eq_zero.mp (congrFun (balanceDefect_fourDartWeights hδ) e)) _ _ ?_
-  rw [sum_mul_single_rotate_zigzagBacktrackWalk _ (hδ.ne (by decide)), fourDartWeights_apply hδ]
-  simp [fourWeights]
+  obtain ⟨a, ha, hhead, hbal, h1⟩ :=
+    exists_zigzagBacktrackPairing_obstruction_single_eq_one (k := k) (hns := hns) hδ hv
+  rw [zigzagBacktrackPairing_obstruction] at h1
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra ha hhead hbal
+    _ _ (by rw [h1]; exact one_ne_zero)
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when four
 distinct darts of `G` have a common head, that is when some vertex has four distinct neighbours,
@@ -930,7 +1031,7 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra [Nontrivial k
     {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) :
     ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ :=
   not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
-    (n := 2) one_le_two _ _
+    (n := 2) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single hδ hv)
 
 end Four
@@ -945,24 +1046,14 @@ variable [DecidableEq V]
 private def pairWeights (x y : G.Dart) : Matrix G.Dart G.Dart k :=
   Matrix.single x y 1 + Matrix.single y x 1
 
-omit [Finite V] in
 private theorem pairWeights_isSymm (x y : G.Dart) :
     (pairWeights x y : Matrix G.Dart G.Dart k).IsSymm := by
   simp only [Matrix.IsSymm, pairWeights, Matrix.transpose_add, Matrix.transpose_single, add_comm]
 
-omit [Finite V] in
 private theorem pairWeights_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd)
     {d e : G.Dart} (hde : d.snd ≠ e.snd) : (pairWeights x y : Matrix G.Dart G.Dart k) d e = 0 := by
   rw [pairWeights, Matrix.add_apply, single_apply_eq_zero_of_snd_ne h _ hde,
     single_apply_eq_zero_of_snd_ne h.symm _ hde, add_zero]
-
-variable [Fintype G.Dart]
-
-omit [Finite V] in
-private theorem balanceDefect_pairWeights {x y : G.Dart} (h : x ≠ y) :
-    balanceDefect (pairWeights x y : Matrix G.Dart G.Dart k) = Pi.single x 1 + Pi.single y 1 := by
-  rw [pairWeights, map_add, balanceDefect_single_of_ne h, balanceDefect_single_of_ne h.symm,
-    add_comm]
 
 /-- The weights detecting a quartic Hochschild class at a vertex `d.snd` with three distinct
 neighbours, joined by the walk of darts `f` to another vertex with three distinct neighbours: the
@@ -977,7 +1068,6 @@ private def branchWeights (d e d' e' : G.Dart) {n : ℕ} (f : Fin (n + 1) → G.
 
 variable {d e d' e' : G.Dart} {n : ℕ} {f : Fin (n + 1) → G.Dart}
 
-omit [Finite V] [Fintype G.Dart] in
 private theorem branchWeights_isSymm :
     (branchWeights d e d' e' f : Matrix G.Dart G.Dart k).IsSymm :=
   Matrix.IsSymm.ext fun x y ↦ by
@@ -985,7 +1075,6 @@ private theorem branchWeights_isSymm :
       Matrix.sum_apply, Matrix.single_apply, and_comm, smul_add, Finset.sum_add_distrib]
     ring
 
-omit [Finite V] [Fintype G.Dart] in
 private theorem branchWeights_apply_eq_zero_of_snd_ne (hed : e.snd = d.snd)
     (hf₀ : (f 0).fst = d.snd) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
     (hd' : d'.snd = (f (Fin.last n)).snd) (he' : e'.snd = (f (Fin.last n)).snd)
@@ -1003,7 +1092,30 @@ private theorem branchWeights_apply_eq_zero_of_snd_ne (hed : e.snd = d.snd)
     pairWeights_apply_eq_zero_of_snd_ne hd' hxy, pairWeights_apply_eq_zero_of_snd_ne he' hxy]
   simp
 
-omit [Finite V] in
+private theorem branchWeights_apply_self (hde : d ≠ e) (hdf : d ≠ (f 0).symm)
+    (hef : e ≠ (f 0).symm) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
+    (hfd : ∀ t, (f t).snd ≠ d.snd) (hd' : d'.snd = (f (Fin.last n)).snd)
+    (he' : e'.snd = (f (Fin.last n)).snd) :
+    (branchWeights d e d' e' f : Matrix G.Dart G.Dart k) d e = 1 := by
+  -- Only the backtrack weight at `d.snd` sees the pair `(d, e)`; every other weight lives at
+  -- another vertex or on another pair.
+  have h₁ (t : Fin (n + 1)) : f t ≠ d := fun h ↦ hfd t (congrArg (·.snd) h)
+  have h₂ (t : Fin n) : (f t.succ).symm ≠ d := fun h ↦
+    hfd t.castSucc ((hf t).trans (by rw [← h]; simp))
+  have h₃ (t : Fin (n + 1)) : ¬((f t).symm = d ∧ (f t).symm = e) := fun h ↦
+    hde (h.1.symm.trans h.2)
+  have h₄ : d' ≠ d := fun h ↦ hfd (Fin.last n) (hd'.symm.trans (congrArg (·.snd) h))
+  have h₅ : e' ≠ d := fun h ↦ hfd (Fin.last n) (he'.symm.trans (congrArg (·.snd) h))
+  simp [branchWeights, pairWeights, Matrix.sum_apply, hde.symm, hdf.symm, hef.symm, h₁, h₂, h₃,
+    h₄, h₅]
+
+variable [Fintype G.Dart]
+
+private theorem balanceDefect_pairWeights {x y : G.Dart} (h : x ≠ y) :
+    balanceDefect (pairWeights x y : Matrix G.Dart G.Dart k) = Pi.single x 1 + Pi.single y 1 := by
+  rw [pairWeights, map_add, balanceDefect_single_of_ne h, balanceDefect_single_of_ne h.symm,
+    add_comm]
+
 private theorem balanceDefect_branchWeights (hde : d ≠ e) (hdf : d ≠ (f 0).symm)
     (hef : e ≠ (f 0).symm) (hf' : ∀ t : Fin n, f t.castSucc ≠ (f t.succ).symm) (hde' : d' ≠ e')
     (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
@@ -1023,29 +1135,44 @@ private theorem balanceDefect_branchWeights (hde : d ≠ e) (hdf : d ≠ (f 0).s
   have h (g : Fin n → G.Dart → k) : ∑ t : Fin n, (2 * ((-1) ^ (t : ℕ) * -1) : k) • g t =
       -∑ t : Fin n, (2 * (-1) ^ (t : ℕ) : k) • g t := by
     rw [← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun t _ ↦ by rw [← neg_smul]; ring_nf
+    exact Finset.sum_congr rfl fun t _ ↦ by rw [← neg_smul]; congr 1; ring
   rw [h]
   module
 
-omit [Finite V] [Fintype G.Dart] in
-private theorem branchWeights_apply_self (hde : d ≠ e) (hdf : d ≠ (f 0).symm)
-    (hef : e ≠ (f 0).symm) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
-    (hfd : ∀ t, (f t).snd ≠ d.snd) (hd' : d'.snd = (f (Fin.last n)).snd)
-    (he' : e'.snd = (f (Fin.last n)).snd) :
-    (branchWeights d e d' e' f : Matrix G.Dart G.Dart k) d e = 1 := by
-  -- Only the backtrack weight at `d.snd` sees the pair `(d, e)`; every other weight lives at
-  -- another vertex or on another pair.
-  have h₁ (t : Fin (n + 1)) : f t ≠ d := fun h ↦ hfd t (congrArg (·.snd) h)
-  have h₂ (t : Fin n) : (f t.succ).symm ≠ d := fun h ↦
-    hfd t.castSucc ((hf t).trans (by rw [← h]; simp))
-  have h₃ (t : Fin (n + 1)) : ¬((f t).symm = d ∧ (f t).symm = e) := fun h ↦
-    hde (h.1.symm.trans h.2)
-  have h₄ : d' ≠ d := fun h ↦ hfd (Fin.last n) (hd'.symm.trans (congrArg (·.snd) h))
-  have h₅ : e' ≠ d := fun h ↦ hfd (Fin.last n) (he'.symm.trans (congrArg (·.snd) h))
-  simp [branchWeights, pairWeights, Matrix.sum_apply, hde.symm, hdf.symm, hef.symm, h₁, h₂, h₃,
-    h₄, h₅]
-
 end Branch
+
+section BranchResults
+
+variable [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j}
+
+local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
+
+/-- **Balanced backtrack weights evaluating to `1` on a single quartic loop at two branch
+vertices.** Under the hypotheses of a non-backtracking walk joining two vertices with three
+distinct neighbours each, there is a symmetric matrix `a` of weights on pairs of darts, vanishing
+on pairs with distinct heads and satisfying the balance condition `∑ d, a d e = a e.symm e.symm`,
+whose backtrack pairing with the quartic obstruction of the single closed walk
+`e.symm, d, d.symm, e` equals `1`. -/
+theorem exists_zigzagBacktrackPairing_obstruction_single_eq_one_of_walk [Fintype G.Dart]
+    {d e d' e' : G.Dart} {n : ℕ} {f : Fin (n + 1) → G.Dart} (hde : d ≠ e)
+    (hed : e.snd = d.snd) (hf₀ : (f 0).fst = d.snd) (hdf : d ≠ (f 0).symm)
+    (hef : e ≠ (f 0).symm) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
+    (hf' : ∀ t : Fin n, f t.castSucc ≠ (f t.succ).symm) (hfd : ∀ t, (f t).snd ≠ d.snd)
+    (hde' : d' ≠ e') (hd' : d'.snd = (f (Fin.last n)).snd) (he' : e'.snd = (f (Fin.last n)).snd)
+    (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
+    ∃ a : Matrix G.Dart G.Dart k, a.IsSymm ∧ (∀ x y, x.snd ≠ y.snd → a x y = 0) ∧
+      (∀ x, ∑ y, a y x = a x.symm x.symm) ∧
+      zigzagBacktrackPairing hns a
+        ((zigzagLoopAInfinityAlgebra hns _
+          (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk hed (1 : k))).obstruction
+          𝒵 ⟨4, by norm_num⟩) = 1 := by
+  classical
+  refine ⟨branchWeights d e d' e' f, branchWeights_isSymm,
+    fun x y hxy ↦ branchWeights_apply_eq_zero_of_snd_ne hed hf₀ hf hd' he' hxy,
+    fun x ↦ sub_eq_zero.mp
+      (congrFun (balanceDefect_branchWeights hde hdf hef hf' hde' hdf' hef') x), ?_⟩
+  rw [zigzagBacktrackPairing_obstruction, sum_mul_single_rotate_zigzagBacktrackWalk _ hde,
+    branchWeights_apply_self hde hdf hef hf hfd hd' he']
 
 /-- **A quartic loop operation at a vertex joined by a walk to another branch vertex which is not a
 Hochschild coboundary.** Let `d` and `e` be distinct darts with a common head `v`, and let the
@@ -1074,14 +1201,12 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
             𝒵 ⟨4, by norm_num⟩ := by
   classical
   have := Fintype.ofFinite V
-  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
-    (a := branchWeights d e d' e' f) branchWeights_isSymm
-    (fun x y hxy ↦ branchWeights_apply_eq_zero_of_snd_ne hed hf₀ hf hd' he' hxy)
-    (fun x ↦ sub_eq_zero.mp
-      (congrFun (balanceDefect_branchWeights hde hdf hef hf' hde' hdf' hef') x)) _ _ ?_
-  rw [sum_mul_single_rotate_zigzagBacktrackWalk _ hde,
-    branchWeights_apply_self hde hdf hef hf hfd hd' he']
-  exact one_ne_zero
+  obtain ⟨a, ha, hhead, hbal, h1⟩ :=
+    exists_zigzagBacktrackPairing_obstruction_single_eq_one_of_walk (k := k) (hns := hns)
+      hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef'
+  rw [zigzagBacktrackPairing_obstruction] at h1
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra ha hhead hbal
+    _ _ (by rw [h1]; exact one_ne_zero)
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when `G` has
 two vertices with three distinct neighbours each, joined by a non-backtracking walk which leaves
@@ -1098,8 +1223,10 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk [Nont
     (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
     ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ :=
   not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
-    (n := 2) one_le_two _ _
+    (n := 2) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk
       hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef')
+
+end BranchResults
 
 end TauCeti

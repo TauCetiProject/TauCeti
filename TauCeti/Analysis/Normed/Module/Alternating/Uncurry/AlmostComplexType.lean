@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Module.Alternating.AlmostComplexType
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
+import TauCeti.LinearAlgebra.Complex.LinearPart
 
 /-!
 # Alternation and the `(p,q)` type of complex-valued forms
@@ -24,10 +25,23 @@ satisfies the derivative of the type equation. The alternation of `η` then has 
 types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only, and its two outer components,
 of types `(p+2,q-1)` and `(p-1,q+2)`, are determined by `ω` and the bilinear map
 `N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)` alone. When `J` does not vary, so that
-every `η v` has type `(p,q)`, only the types `(p+1,q)` and `(p,q+1)` remain.
+every `η v` has type `(p,q)`, only the types `(p+1,q)` and `(p,q+1)` remain. They are the
+alternations of the parts `½ (η - I • η ∘ J)` and `½ (η + I • η ∘ J)` of `η` which are
+complex-linear and conjugate-linear for `J`, respectively. This applies to the derivative of a
+family of forms of type `(p,q)`, which consists of forms of type `(p,q)` again
+(`ContinuousAlternatingMap.isOfType_fderivWithin`).
 
 On an almost complex manifold this is the pointwise reason why the exterior derivative of a form
 of type `(p,q)` has components of these four types only, and `N` is the Nijenhuis tensor.
+
+Alternating the interior products `v ↦ ι_{A v} ω` of a form `ω` gives the derivation of `A` on
+`ω`. For `A = id` and `A = J` this yields the Euler identities: the alternation of
+`v ↦ ι_v ω ∓ I • ι_{J v} ω` is `2 p • ω`, respectively `2 q • ω`, for `ω` of type `(p,q)`,
+without assuming `J² = -1`. When `J² = -1`, the complex-multilinear extension to the
+complexification of the underlying
+real space is recovered from contractions with `(1,0)`-vectors when `p > 0`, respectively
+`(0,1)`-vectors when `q > 0`. The coordinate wedge formulas are the specializations in complex
+coordinates.
 
 ## Main declarations
 
@@ -41,6 +55,16 @@ of type `(p,q)` has components of these four types only, and `N` is the Nijenhui
   outer bidegrees through `N`.
 * `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType`: the
   two bidegrees for a constant `J`.
+* `ContinuousAlternatingMap.isOfType_alternatizeUncurryFin_succ_left`,
+  `ContinuousAlternatingMap.isOfType_alternatizeUncurryFin_succ_right`: alternating a family of
+  forms of type `(p,q)` which is complex-linear, respectively conjugate-linear, for `J`.
+* `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_left`,
+  `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_right`: the two components
+  for a constant `J`.
+* `ContinuousAlternatingMap.IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp`,
+  `ContinuousAlternatingMap.IsOfType.alternatizeUncurryFin_curryLeft_add_I_smul_comp`: the Euler
+  real-linear alternation identities with coefficients `2p` and `2q`. For `J² = -1`, their
+  specializations in complex coordinates are the coordinate wedge–contraction formulas.
 
 ## References
 
@@ -69,9 +93,8 @@ theorem alternatingDerivation_eq_fderivCompContinuousLinearMap (J : E →L[ℝ] 
   rw [ContinuousLinearMap.alternatingDerivation_apply,
     ContinuousAlternatingMap.fderivCompContinuousLinearMap_apply]
   refine Finset.sum_congr rfl fun i _ ↦ congrArg φ (funext fun j ↦ ?_)
-  rcases eq_or_ne j i with rfl | hj
-  · simp
-  · simp [Function.update_of_ne hj]
+  simpa using (Function.apply_update (fun j (L : E →L[ℝ] E) ↦ L (v j))
+    (fun _ ↦ ContinuousLinearMap.id ℝ E) i J j).symm
 
 /-- Alternation intertwines the derivation induced by `J` on `(k+1)`-forms with the derivation
 `θ ↦ θ ∘ J + J.alternatingDerivation ∘ θ` of families of `k`-forms, where `θ'` is any family
@@ -343,5 +366,134 @@ theorem typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType
   refine (smul_eq_zero.1 hpoly).resolve_left
     (typeShift_sq_add_one_ne_zero (hPQ.trans (by rw [hk])) (fun h ↦ h₂ (Prod.ext h (by omega)))
       fun h ↦ h₁ (Prod.ext h (by omega)))
+
+section Linear
+
+variable {J : E →L[ℝ] E} {p q : ℕ} {η : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F}
+
+/-- If `J` acts on the first argument of `η` by `c`, and on each value of `η` by its derivation
+with eigenvalue `d`, then the derivation of `J` acts on the alternation of `η` by `c + d`. -/
+private theorem alternatingDerivation_alternatizeUncurryFin_eq_smul {c d : ℂ}
+    (hd : ∀ v, J.alternatingDerivation (η v) = d • η v) (hc : ∀ v, η (J v) = c • η v) :
+    J.alternatingDerivation (alternatizeUncurryFin η) = (c + d) • alternatizeUncurryFin η := by
+  rw [J.alternatingDerivation_alternatizeUncurryFin (θ' := d • η) hd,
+    show η ∘L J = c • η from ContinuousLinearMap.ext hc, alternatizeUncurryFin_smul,
+    alternatizeUncurryFin_smul, add_smul]
+
+/-- Alternating a family of forms of type `(p,q)` which depends complex-linearly on its argument,
+`η (J v) = I • η v`, gives a form of type `(p+1,q)`. -/
+theorem isOfType_alternatizeUncurryFin_succ_left (hη : ∀ v, (η v).IsOfType J p q)
+    (hJ : ∀ v, η (J v) = I • η v) : (alternatizeUncurryFin η).IsOfType J (p + 1) q := by
+  refine isOfType_iff.2 ⟨by rw [add_right_comm, (hη 0).add_eq], ?_⟩
+  rw [alternatingDerivation_alternatizeUncurryFin_eq_smul
+    (fun v ↦ (hη v).alternatingDerivation_eq) hJ]
+  push_cast
+  ring_nf
+
+/-- Alternating a family of forms of type `(p,q)` which depends conjugate-linearly on its argument,
+`η (J v) = -I • η v`, gives a form of type `(p,q+1)`. -/
+theorem isOfType_alternatizeUncurryFin_succ_right (hη : ∀ v, (η v).IsOfType J p q)
+    (hJ : ∀ v, η (J v) = -I • η v) : (alternatizeUncurryFin η).IsOfType J p (q + 1) := by
+  refine isOfType_iff.2 ⟨by rw [← add_assoc, (hη 0).add_eq], ?_⟩
+  rw [alternatingDerivation_alternatizeUncurryFin_eq_smul
+    (fun v ↦ (hη v).alternatingDerivation_eq) hJ]
+  push_cast
+  ring_nf
+
+/-- The complex-linear and conjugate-linear parts `½ (η ∓ I • η ∘ J)` of a family of forms of
+type `(p,q)` are families of forms of type `(p,q)` adding up to `η`. -/
+private theorem isOfType_linearPart (hJ : ∀ v, J (J v) = -v) (hη : ∀ v, (η v).IsOfType J p q) :
+    (∀ v, (((2 : ℂ)⁻¹ • (η - I • η ∘L J)) v).IsOfType J p q) ∧
+      (∀ v, ((2 : ℂ)⁻¹ • (η - I • η ∘L J)) (J v) = I • ((2 : ℂ)⁻¹ • (η - I • η ∘L J)) v) ∧
+      (∀ v, (((2 : ℂ)⁻¹ • (η + I • η ∘L J)) v).IsOfType J p q) ∧
+      (∀ v, ((2 : ℂ)⁻¹ • (η + I • η ∘L J)) (J v) = -I • ((2 : ℂ)⁻¹ • (η + I • η ∘L J)) v) ∧
+      (2 : ℂ)⁻¹ • (η - I • η ∘L J) + (2 : ℂ)⁻¹ • (η + I • η ∘L J) = η := by
+  -- The two parts are `TauCeti.complexLinearPart` and `TauCeti.complexAntilinearPart` of `η` for
+  -- `J` and multiplication by `I` on forms.
+  let J' : (E [⋀^Fin k]→L[ℝ] F) →ₗ[ℝ] E [⋀^Fin k]→L[ℝ] F := I • LinearMap.id
+  have hJJ : (J : E →ₗ[ℝ] E) ∘ₗ J = -LinearMap.id := LinearMap.ext hJ
+  have hJ'J' : J' ∘ₗ J' = -LinearMap.id := by
+    ext β : 1
+    simp [J', smul_smul]
+  have hlin : ((2⁻¹ : ℂ) • (η - I • η ∘L J)).toLinearMap =
+      TauCeti.complexLinearPart J J' η := by
+    ext v : 1
+    simp [J', ← Complex.coe_smul]
+  have hanti : ((2⁻¹ : ℂ) • (η + I • η ∘L J)).toLinearMap =
+      TauCeti.complexAntilinearPart J J' η := by
+    ext v : 1
+    simp [J', ← Complex.coe_smul]
+  refine ⟨fun v ↦ ((hη v).sub ((hη (J v)).smul I)).smul _, fun v ↦ ?_,
+    fun v ↦ ((hη v).add ((hη (J v)).smul I)).smul _, fun v ↦ ?_, ?_⟩
+  · simpa [← hlin, J'] using (TauCeti.isComplexLinear_complexLinearPart hJJ hJ'J' η).apply v
+  · simpa [← hanti, J', add_comm] using
+      (TauCeti.isComplexAntilinear_complexAntilinearPart hJJ hJ'J' η).apply v
+  · refine ContinuousLinearMap.coe_injective ?_
+    rw [ContinuousLinearMap.toLinearMap_add, hlin, hanti,
+      TauCeti.complexLinearPart_add_complexAntilinearPart]
+
+/-- **The `(p+1,q)` component for a constant structure.** If every form `η v` of a family has type
+`(p,q)` for `J` with `J² = -1`, the component of type `(p+1,q)` of the alternation of `η` is the
+alternation of its complex-linear part `½ (η - I • η ∘ J)`. -/
+theorem typeProjection_alternatizeUncurryFin_succ_left (hJ : ∀ v, J (J v) = -v)
+    (hη : ∀ v, (η v).IsOfType J p q) :
+    J.typeProjection (p + 1) q (alternatizeUncurryFin η) =
+      alternatizeUncurryFin ((2 : ℂ)⁻¹ • (η - I • η ∘L J)) := by
+  obtain ⟨h₁, h₂, h₃, h₄, h⟩ := isOfType_linearPart hJ hη
+  conv_lhs => rw [← h, alternatizeUncurryFin_add, map_add]
+  rw [(isOfType_alternatizeUncurryFin_succ_left h₁ h₂).typeProjection_self,
+    (isOfType_alternatizeUncurryFin_succ_right h₃ h₄).typeProjection_of_ne (by simp), add_zero]
+
+/-- **The `(p,q+1)` component for a constant structure.** If every form `η v` of a family has type
+`(p,q)` for `J` with `J² = -1`, the component of type `(p,q+1)` of the alternation of `η` is the
+alternation of its conjugate-linear part `½ (η + I • η ∘ J)`. -/
+theorem typeProjection_alternatizeUncurryFin_succ_right (hJ : ∀ v, J (J v) = -v)
+    (hη : ∀ v, (η v).IsOfType J p q) :
+    J.typeProjection p (q + 1) (alternatizeUncurryFin η) =
+      alternatizeUncurryFin ((2 : ℂ)⁻¹ • (η + I • η ∘L J)) := by
+  obtain ⟨h₁, h₂, h₃, h₄, h⟩ := isOfType_linearPart hJ hη
+  conv_lhs => rw [← h, alternatizeUncurryFin_add, map_add]
+  rw [(isOfType_alternatizeUncurryFin_succ_left h₁ h₂).typeProjection_of_ne (by simp),
+    (isOfType_alternatizeUncurryFin_succ_right h₃ h₄).typeProjection_self, zero_add]
+
+end Linear
+
+section Contraction
+
+variable {J : E →L[ℝ] E} {p q : ℕ} {ω : E [⋀^Fin (k + 1)]→L[ℝ] F}
+
+/-- Alternating the interior products `v ↦ ι_v ω + c • ι_{J v} ω` of a form `ω` of type `(p,q)`
+multiplies `ω` by `(k + 1) + c * ((p - q) * I)`. -/
+private theorem IsOfType.alternatizeUncurryFin_curryLeft_add_smul_comp (h : ω.IsOfType J p q)
+    (c : ℂ) : alternatizeUncurryFin (ω.curryLeft + c • ω.curryLeft ∘L J) =
+      (((k + 1 : ℕ) : ℂ) + c * (((p : ℂ) - q) * I)) • ω := by
+  rw [alternatizeUncurryFin_add, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
+    alternatizeUncurryFin_curryLeft_comp,
+    ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap,
+    h.alternatingDerivation_eq, smul_smul, ← Nat.cast_smul_eq_nsmul ℂ, ← add_smul]
+
+/-- **The Euler identity for the `(1,0)`-contraction.** Alternating the interior products
+`v ↦ ι_v ω - I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 p • ω`. For an almost complex
+structure `J² = -1`, this inserts `2 v^(1,0)` in the complex-multilinear extension to
+the complexification of the underlying real space. In complex coordinates
+`z_j` this is the identity `∑ j, dz_j ∧ ι_(∂/∂z_j) ω = p • ω`. -/
+theorem IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp (h : ω.IsOfType J p q) :
+    alternatizeUncurryFin (ω.curryLeft - I • ω.curryLeft ∘L J) = (2 * p : ℂ) • ω := by
+  rw [show ω.curryLeft - I • ω.curryLeft ∘L J = ω.curryLeft + (-I) • ω.curryLeft ∘L J by module,
+    h.alternatizeUncurryFin_curryLeft_add_smul_comp]
+  congr 1
+  have hk : ((k + 1 : ℕ) : ℂ) = p + q := by exact_mod_cast h.add_eq.symm
+  linear_combination hk - (p - q : ℂ) * I_sq
+
+/-- **The Euler identity for the `(0,1)`-contraction.** Alternating the interior products
+`v ↦ ι_v ω + I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 q • ω`. -/
+theorem IsOfType.alternatizeUncurryFin_curryLeft_add_I_smul_comp (h : ω.IsOfType J p q) :
+    alternatizeUncurryFin (ω.curryLeft + I • ω.curryLeft ∘L J) = (2 * q : ℂ) • ω := by
+  rw [h.alternatizeUncurryFin_curryLeft_add_smul_comp]
+  congr 1
+  have hk : ((k + 1 : ℕ) : ℂ) = p + q := by exact_mod_cast h.add_eq.symm
+  linear_combination hk + (p - q : ℂ) * I_sq
+
+end Contraction
 
 end ContinuousAlternatingMap

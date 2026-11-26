@@ -94,11 +94,11 @@ private lemma exists_delineation_ball_prod (he : IsAnalyticChart d S e) (hxe : x
   obtain ⟨δ, hδ, hδmem⟩ := Metric.mem_nhds_iff.mp hmem
   let r := min ε (min ρ δ)
   have hr : 0 < r := lt_min hε (lt_min hρ hδ)
-  let ι : ball a r → ball a ε := fun u ↦ ⟨u, ball_subset_ball (min_le_left _ _) u.2⟩
-  have hι : Continuous ι := continuous_subtype_val.subtype_mk _
+  let ι : ball a r → ball a ε := fun u ↦ ⟨u, ball_subset_ball (min_le_left _ _) u.property⟩
+  have hι : Continuous ι := continuous_subtypeVal.subtype_mk _
   refine ⟨r, hr,
     hφρ.mono (ball_subset_ball (min_le_right _ _ |>.trans (min_le_left _ _))),
-    fun u ↦ (hδmem (ball_subset_ball (min_le_right _ _ |>.trans (min_le_right _ _)) u.2)).2,
+    fun u ↦ (hδmem (ball_subset_ball (min_le_right _ _ |>.trans (min_le_right _ _)) u.property)).2,
     ⟨?_⟩⟩
   have hfamily : (fun (_ : Unit) (u : ball a ε) ↦
       p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ u))) =
@@ -162,7 +162,7 @@ private lemma exists_delineation_orderAt_prod_eq_ball {a : Fin d → ℝ} {r : �
     p.orderAt_root_eq_of_orderAt_discr_eq isOpen_ball (convex_ball a r).isPreconnected hφr
       (fun z hz ↦ (Polynomial.map_prod _ _ _).trans_ne
         (Finset.prod_ne_zero_iff.2 fun k _ ↦ hfiber k _ (hrmem ⟨z, hz⟩)))
-      (fun z hz ↦ hm _ (hrmem ⟨z, hz⟩)) hθcont hroot u.2 v.2
+      (fun z hz ↦ hm _ (hrmem ⟨z, hz⟩)) hθcont hroot u.property v.property
 
 /-- **Chart-local lifting of a non-nullified family.** Let `e` be an analytic chart of `S` around
 `x ∈ S`. If every member of a finite family has nonzero fibers of constant degree over `S`, and
@@ -213,12 +213,12 @@ theorem exists_analytic_delineation_of_orderAt_discr_eq
       (p.map (MvPolynomial.eval x)).natDegree = (p.map (MvPolynomial.eval y)).natDegree)
     (hdiscr : p.discr ≠ 0)
     (horder : ∀ x ∈ S, ∀ y ∈ S, p.discr.orderAt x = p.discr.orderAt y) :
-    ∃ D : Delineation (fun (_ : Unit) (x : S) ↦ p.map (MvPolynomial.eval x.1)),
+    ∃ D : Delineation (fun (_ : Unit) (x : S) ↦ p.map (MvPolynomial.eval x.val)),
       (∀ i, ∃ r : (Fin n → ℝ) → ℝ, AnalyticOnSubmanifold d r S ∧
         ∀ x : S, r x = D.root i x) ∧
       ∀ i, ∀ x y : S,
-        ((MvPolynomial.finSuccEquiv ℝ n).symm p).orderAt (Fin.cons (D.root i x) x.1) =
-          ((MvPolynomial.finSuccEquiv ℝ n).symm p).orderAt (Fin.cons (D.root i y) y.1) := by
+        ((MvPolynomial.finSuccEquiv ℝ n).symm p).orderAt (Fin.cons (D.root i x) x.val) =
+          ((MvPolynomial.finSuccEquiv ℝ n).symm p).orderAt (Fin.cons (D.root i y) y.val) := by
   classical
   -- Glue the chart-local stacks of the one-member family; ordered root lists glue without any
   -- choice of a global complex-root labelling, and constant order along sections is preserved.
@@ -232,12 +232,12 @@ theorem exists_analytic_delineation_of_orderAt_discr_eq
       (by rwa [Fintype.prod_unique])⟩
   simp only [Fintype.prod_unique] at hD
   -- Polynomial coefficients are intrinsically analytic, so the glued real roots are too.
-  have hcoeff (k : Unit) (j : ℕ) : AnalyticOnSubmanifold d
+  have hcoeff (j : ℕ) : AnalyticOnSubmanifold d
       (fun x ↦ (p.map (MvPolynomial.eval x)).coeff j) S :=
     hS.analyticOnSubmanifold_coeff_map_eval p j
   refine ⟨D, fun i ↦ ?_, hD⟩
   let r := Function.extend Subtype.val (D.root i) (fun _ ↦ 0)
   have hr (x : S) : r x = D.root i x := Subtype.val_injective.extend_apply _ _ x
-  exact ⟨r, D.analyticOnSubmanifold_root hS hcoeff i hr, hr⟩
+  exact ⟨r, D.analyticOnSubmanifold_root hS (fun _ ↦ hcoeff) i hr, hr⟩
 
 end TauCeti

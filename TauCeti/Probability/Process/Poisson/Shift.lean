@@ -43,7 +43,7 @@ theorem HasIndepIncrements.identDistrib_shift_of_hasLaw_poissonMeasure (hN : Has
   let Z : ℝ≥0 → Ω → ℤ := fun s ω ↦ (N s ω : ℤ)
   have hmZ (s : ℝ≥0) : Measurable (Z s) :=
     (measurable_of_countable (fun n : ℕ ↦ (n : ℤ))).comp (hm s)
-  have hZ : HasIndepIncrements Z P := hN.natCast hmono
+  have hZ : HasIndepIncrements Z P := hN.natCast fun _ _ hst ↦ hmono.mono fun _ hω ↦ hω hst
   have h0Z : ∀ᵐ ω ∂P, Z 0 ω = 0 := by
     filter_upwards [h0] with ω hω using by simp [Z, hω]
   have hinclaw : ∀ s u : ℝ≥0, s ≤ u →
@@ -56,17 +56,9 @@ theorem HasIndepIncrements.identDistrib_shift_of_hasLaw_poissonMeasure (hN : Has
     have hNat : IdentDistrib (fun ω ↦ N (t + u) ω - N (t + s) ω)
         (fun ω ↦ N u ω - N s ω) P P :=
       ⟨h1.aemeasurable, h2.aemeasurable, h1.map_eq.trans h2.map_eq.symm⟩
-    have hInt := hNat.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))
-    have hleft : (fun ω ↦ Z (t + u) ω - Z (t + s) ω) =ᵐ[P]
-        (fun ω ↦ ((N (t + u) ω - N (t + s) ω : ℕ) : ℤ)) := by
-      filter_upwards [hmono] with ω hω
-      exact (Int.ofNat_sub (hω (add_le_add le_rfl hsu))).symm
-    have hright : (fun ω ↦ Z u ω - Z s ω) =ᵐ[P]
-        (fun ω ↦ ((N u ω - N s ω : ℕ) : ℤ)) := by
-      filter_upwards [hmono] with ω hω
-      exact (Int.ofNat_sub (hω hsu)).symm
-    exact (IdentDistrib.of_ae_eq ((hmZ _).sub (hmZ _)).aemeasurable hleft).trans
-        (hInt.trans (IdentDistrib.of_ae_eq ((hmZ _).sub (hmZ _)).aemeasurable hright).symm)
+    exact hNat.natCast_sub_of_le
+      (hmono.mono fun _ hω ↦ hω (add_le_add le_rfl hsu))
+      (hmono.mono fun _ hω ↦ hω hsu)
   have hdist := hZ.identDistrib_shift hmZ h0Z t hinclaw
   have htoNat : Measurable (fun (z : ℝ≥0 → ℤ) s ↦ (z s).toNat) := by fun_prop
   convert hdist.comp htoNat using 1 <;> ext ω s <;> simp [Z]

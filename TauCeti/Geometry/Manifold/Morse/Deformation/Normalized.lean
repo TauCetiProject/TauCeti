@@ -94,7 +94,7 @@ theorem exists_flow_apply_eq_sub_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ)
       ∃ φ : Flow ℝ M, ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ φ p.1 p.2) ∧
         (∀ x, IsMIntegralCurve (fun t ↦ φ t x) X) ∧ (∀ x, Antitone fun t ↦ f (φ t x)) ∧
         ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   obtain ⟨X, hX, hXY, hXle, ⟨U, hU, hKU, hXU⟩, C, hC, hXC⟩ :=
     exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero hf hY hcompact fun x hx ↦
       hbandY x hx.1 hx.2
@@ -161,19 +161,18 @@ theorem exists_sublevelDeformation_neg_mgradient
           (∀ x, r (sublevelInclusion f a b hab x) = x) ∧
           Nonempty (ContinuousMap.HomotopyRel ((sublevelInclusion f a b hab).comp r)
             (ContinuousMap.id _) {x | f x ≤ a}) := by
-  -- Along `-grad f` the derivative of `f` is `-‖grad f‖²`, negative off the critical points.
-  have hdf : ∀ x, mvfderiv I f x (-mgradient I f x) = -‖mgradient I f x‖ ^ 2 := fun x ↦ by
-    rw [map_neg, mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq]
   have hY : ContMDiff I I.tangent ∞
       (fun x ↦ (⟨x, -mgradient I f x⟩ : TangentBundle I M)) :=
     have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
     contMDiff_neg_mgradient (n := ∞) (by simpa using hf)
+  -- Along `-grad f` the derivative of `f` is `-‖grad f‖²`, negative off the critical points.
   obtain ⟨X, hX, ⟨U, hU, hKU, hXU⟩, rest⟩ := exists_sublevelDeformation_of_mvfderiv_lt_zero hf hY
     hab hcompact fun x hxa hxb ↦ by
-      rw [hdf, neg_lt_zero]
+      rw [mvfderiv_apply_neg_mgradient, neg_lt_zero]
       exact pow_pos (norm_pos_iff.2 fun h ↦
         hreg x hxa hxb (mvfderiv_eq_zero_iff.1 (mgradient_eq_zero_iff.1 h))) 2
-  exact ⟨X, hX, ⟨U, hU, hKU, fun x hx ↦ by rw [hXU x hx, hdf, neg_neg]⟩, rest⟩
+  exact ⟨X, hX, ⟨U, hU, hKU, fun x hx ↦ by
+    rw [hXU x hx, mvfderiv_apply_neg_mgradient, neg_neg]⟩, rest⟩
 
 
 namespace IsAdaptedPseudoGradient

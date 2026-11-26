@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.GradedObject.Braiding
 public import Mathlib.CategoryTheory.Monoidal.CommMon_
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import TauCeti.CategoryTheory.EqToHom
 
 /-!
@@ -40,8 +41,12 @@ passes to sheaves along sheafification.
   `CategoryTheory.GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous`;
 * `CategoryTheory.GradedObject.Monoidal.oneOfDegreeZero`: the morphism `𝟙_ ⟶ X` determined by a
   morphism `𝟙_ C ⟶ X 0`;
+* `CategoryTheory.GradedObject.Monoidal.toTensorUnitOfDegreeZero`: the morphism `X ⟶ 𝟙_`
+  determined by a morphism `X 0 ⟶ 𝟙_ C`, when `C` has zero morphisms;
 * `CategoryTheory.GradedObject.monObjOfHomogeneous`: the monoid object structure defined by
-  homogeneous data satisfying the graded associativity and unit laws;
+  homogeneous data satisfying the graded associativity and unit laws, whose homogeneous unit and
+  multiplications are the given ones (`CategoryTheory.Mon.one_mk_monObjOfHomogeneous`,
+  `CategoryTheory.Mon.mul_mk_monObjOfHomogeneous`);
 * `CategoryTheory.GradedObject.isCommMonObj_monObjOfHomogeneous`: commutativity of that monoid
   object from graded commutativity of the homogeneous multiplications;
 * `CategoryTheory.GradedObject.isMonHom_of_homogeneous`: a morphism of graded objects between
@@ -49,7 +54,8 @@ passes to sheaves along sheafification.
   multiplication of homogeneous components;
 * `CategoryTheory.Mon.mul` and `CategoryTheory.Mon.one`: the homogeneous multiplication
   and degree-zero unit extracted from a monoid object in graded objects, together with their
-  associativity, unit, and functoriality laws; `CategoryTheory.CommMon.mul_comm` is their
+  associativity, unit, and functoriality laws and their compatibility with the transports
+  `eqToHom` identifying degrees; `CategoryTheory.CommMon.mul_comm` is their
   graded commutativity for a commutative monoid object;
 * `CategoryTheory.Mon.hom_ext_of_epi_mul`: morphisms out of an `ℕ`-graded monoid object
   generated in degree one, in the sense that its unit and the multiplications
@@ -126,6 +132,30 @@ degree-zero part of the tensor unit with `𝟙_ C`. -/
 lemma oneOfDegreeZero_zero (one : 𝟙_ C ⟶ X 0) :
     oneOfDegreeZero X one 0 = tensorUnit₀.hom ≫ one := by
   simp [oneOfDegreeZero, tensorUnit₀]
+
+section ToTensorUnit
+
+variable [HasZeroMorphisms C]
+
+/-- The morphism `X ⟶ 𝟙_` of graded objects given in degree zero by `f : X 0 ⟶ 𝟙_ C`; in every
+other degree the tensor unit is a zero object. -/
+def toTensorUnitOfDegreeZero (f : X 0 ⟶ 𝟙_ C) : X ⟶ tensorUnit := fun i ↦
+  if h : i = 0 then eqToHom (congrArg X h) ≫ f ≫ (singleObjApplyIsoOfEq 0 (𝟙_ C) i h).inv
+  else 0
+
+/-- In degree zero, the morphism determined by `f` is `f`, up to the identification of the
+degree-zero part of the tensor unit with `𝟙_ C`. -/
+@[simp]
+lemma toTensorUnitOfDegreeZero_zero (f : X 0 ⟶ 𝟙_ C) :
+    toTensorUnitOfDegreeZero X f 0 = f ≫ tensorUnit₀.inv := by
+  simp [toTensorUnitOfDegreeZero, tensorUnit₀]
+
+/-- Away from degree zero, the morphism determined by `f` vanishes. -/
+lemma toTensorUnitOfDegreeZero_of_ne (f : X 0 ⟶ 𝟙_ C) {i : I} (hi : i ≠ 0) :
+    toTensorUnitOfDegreeZero X f i = 0 := by
+  simp [toTensorUnitOfDegreeZero, hi]
+
+end ToTensorUnit
 
 end One
 
@@ -438,6 +468,20 @@ lemma mul_comm_of_laxBraided
     ← F.map_comp_assoc, mul_comm, TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_comm i j)]
   simp
 
+/-- Homogeneous multiplications satisfying commutativity with integer factors `s i j` retain
+those factors when transported along an additive lax braided functor and identifications
+`e n : Y n ≅ F.obj (X n)`. In particular, this transports Koszul signs. -/
+lemma mul_comm_zsmul_of_laxBraided [Preadditive C] [Preadditive D] [F.Additive]
+    (s : I → I → ℤ)
+    (mul_comm : ∀ i j, (β_ (X i) (X j)).hom ≫ mul j i =
+      s i j • (mul i j ≫ eqToHom (congrArg X (add_comm i j)))) (i j : I) :
+    (β_ (Y i) (Y j)).hom ≫ mul' j i =
+      s i j • (mul' i j ≫ eqToHom (congrArg Y (add_comm i j))) := by
+  rw [hmul, hmul, ← BraidedCategory.braiding_naturality_assoc, ← Functor.LaxBraided.braided_assoc,
+    ← F.map_comp_assoc, mul_comm, TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_comm i j)]
+  simp only [Functor.map_zsmul, Functor.map_comp, Preadditive.zsmul_comp,
+    Preadditive.comp_zsmul, Category.assoc, Iso.inv_hom_id_assoc]
+
 end LaxBraided
 
 end CategoryTheory.GradedObject
@@ -498,6 +542,24 @@ theorem mul_assoc (A : Mon (GradedObject I C)) (i j k : I) :
     GradedObject.Monoidal.ι_tensorHom_assoc] at h
   simpa only [mul, GradedObject.categoryOfGradedObjects_id, tensorHom_id, id_tensorHom,
     comp_whiskerRight, whiskerLeft_comp, Category.assoc] using h
+
+/-- Homogeneous multiplication commutes with the transport identifying the degree of its left
+factor. -/
+@[reassoc]
+theorem eqToHom_whiskerRight_mul (A : Mon (GradedObject I C)) {i i' : I} (h : i = i') (j : I) :
+    (eqToHom (congrArg A.X h) ▷ A.X j) ≫ A.mul i' j =
+      A.mul i j ≫ eqToHom (congrArg A.X (congrArg (· + j) h)) := by
+  subst h
+  simp
+
+/-- Homogeneous multiplication commutes with the transport identifying the degree of its right
+factor. -/
+@[reassoc]
+theorem whiskerLeft_eqToHom_mul (A : Mon (GradedObject I C)) (i : I) {j j' : I} (h : j = j') :
+    (A.X i ◁ eqToHom (congrArg A.X h)) ≫ A.mul i j' =
+      A.mul i j ≫ eqToHom (congrArg A.X (congrArg (i + ·) h)) := by
+  subst h
+  simp
 
 /-- A morphism of monoid objects in graded objects commutes with multiplication on every pair of
 homogeneous components. -/
@@ -575,6 +637,34 @@ theorem mul_one (A : Mon (GradedObject I C)) (n : I) :
   rw [← Iso.inv_comp_eq, ← cancel_mono (eqToHom (congrArg A.X (add_zero n)))]
   simpa only [one_eq, GradedObject.categoryOfGradedObjects_id, id_tensorHom, whiskerLeft_comp,
     Category.assoc, Category.comp_id, eqToHom_trans, eqToHom_refl] using h
+
+section Homogeneous
+
+variable (X : GradedObject I C) (one : 𝟙_ C ⟶ X 0) (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j))
+  (one_mul : ∀ n, (one ▷ X n) ≫ mul 0 n = (λ_ (X n)).hom ≫ eqToHom (congrArg X (zero_add n).symm))
+  (mul_one : ∀ n, (X n ◁ one) ≫ mul n 0 = (ρ_ (X n)).hom ≫ eqToHom (congrArg X (add_zero n).symm))
+  (mul_assoc : ∀ i j k, (mul i j ▷ X k) ≫ mul (i + j) k =
+    (α_ _ _ _).hom ≫ (X i ◁ mul j k) ≫ mul i (j + k) ≫
+      eqToHom (congrArg X (add_assoc i j k).symm))
+
+/-- The homogeneous multiplications of the monoid object defined by homogeneous data are the
+given ones. -/
+theorem mul_mk_monObjOfHomogeneous (i j : I) :
+    letI := GradedObject.monObjOfHomogeneous X one mul one_mul mul_one mul_assoc
+    (Mon.mk X).mul i j = mul i j :=
+  (mul_eq _ _ _).trans
+    ((GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous X mul i j (i + j) rfl).trans
+      (Category.comp_id _))
+
+/-- The homogeneous unit of the monoid object defined by homogeneous data is the given unit. -/
+theorem one_mk_monObjOfHomogeneous :
+    letI := GradedObject.monObjOfHomogeneous X one mul one_mul mul_one mul_assoc
+    (Mon.mk X).one = one :=
+  (one_eq _).trans
+    ((congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
+      (GradedObject.Monoidal.oneOfDegreeZero_zero X one)).trans (Iso.inv_hom_id_assoc _ _))
+
+end Homogeneous
 
 end CategoryTheory.Mon
 

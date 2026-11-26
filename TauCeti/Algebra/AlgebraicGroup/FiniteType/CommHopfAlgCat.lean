@@ -30,6 +30,8 @@ separately.
   finitely generated commutative `R`-algebras.
 * `TauCeti.FiniteTypeCommHopfAlgCat.pointsFunctor`: the inherited contravariant functor
   of points.
+* `TauCeti.FiniteTypeCommHopfAlgCat.autToAlgEquiv`: the group homomorphism
+  `Aut H →* (H.obj ≃ₐ[R] H.obj)`.
 
 ## References
 
@@ -143,6 +145,13 @@ lemma toBialgHom_ofHom {H K : Type v} [CommRing H] [CommRing K]
     toBialgHom (ofHom (R := R) φ) = φ :=
   rfl
 
+/-- The bialgebra equivalence `CommHopfAlgCat.ofIso` of an isomorphism `e` of finite-type
+commutative Hopf algebras has underlying bialgebra morphism `toBialgHom e.hom`. -/
+lemma toBialgHom_ofIso_ι_mapIso {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ K) :
+    (_root_.CommHopfAlgCat.ofIso ((ObjectProperty.ι _).mapIso e)).toBialgHom =
+      toBialgHom e.hom :=
+  rfl
+
 @[simp]
 lemma forget₂_commHopfAlgCat_obj (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
     (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).obj H =
@@ -210,6 +219,20 @@ lemma pointsFunctor_map_app_apply_apply {H K : (FiniteTypeCommHopfAlgCat.{u, v} 
       f.ofConv (toBialgHom φ.unop (h : K.unop.obj)) := by
   rw [pointsFunctor_map]
   exact CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (R := R) φ.unop.hom A f h
+
+/-- Viewing an automorphism `e : Aut H` in `FiniteTypeCommHopfAlgCat R` as an `R`-algebra
+equivalence `H.obj ≃ₐ[R] H.obj` is a group homomorphism. -/
+noncomputable def autToAlgEquiv (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
+    Aut H →* (H.obj ≃ₐ[R] H.obj) :=
+  (_root_.CommHopfAlgCat.autToAlgEquiv H.obj).comp
+    ((forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).mapAut H)
+
+/-- `autToAlgEquiv H e` acts on elements by `toBialgHom e.asIso.hom`. -/
+@[simp]
+theorem autToAlgEquiv_apply (H : FiniteTypeCommHopfAlgCat.{u, v} R) (e : Aut H) (x : H.obj) :
+    autToAlgEquiv H e x = toBialgHom e.asIso.hom x := by
+  rw [autToAlgEquiv, MonoidHom.comp_apply, _root_.CommHopfAlgCat.autToAlgEquiv_apply,
+    Functor.mapAut_apply_asIso, Functor.mapIso_hom, forget₂_commHopfAlgCat_map, toBialgHom]
 
 end FiniteTypeCommHopfAlgCat
 

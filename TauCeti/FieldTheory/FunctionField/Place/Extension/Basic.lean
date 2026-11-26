@@ -15,6 +15,10 @@ public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.RingTheory.Valuation.NontrivialComap
+-- Proof-only: linear disjointness transports linear independence of the constants.
+import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
+-- Proof-only: a surjective valuation is nontrivial.
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Extensions of places: the ramification index and the relative degree
@@ -56,10 +60,17 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
+* `TauCeti.Place.ramificationIdxIn`: the ramification index of a place `P` of the base in an
+  algebraic extension, computed at an arbitrary chosen place above `P` and zero when there is
+  none. Without the Galois hypothesis the places above `P` need not share one ramification
+  index; in a finite Galois extension they do
+  (`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`).
 
 ## Main results
 
-* `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`.
+* `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`,
+  and `TauCeti.Place.ramificationIdx_pos_and_ord_algebraMap_eq_of_integers_comap_eq` for the same
+  scaling at any contracting place without assuming `F' / F` integral.
 * `TauCeti.Place.ramificationIdx_eq_of_ringEquiv`: the ramification index is unchanged when the
   field below is replaced by an isomorphic copy with the same image in `F'`.
 * `TauCeti.Place.restrict_eq_iff_integers_le`, `TauCeti.Place.restrict_eq_iff_forall_ord_pos`
@@ -104,6 +115,15 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.isSeparable_residueField_of_isSeparable_restrict`: residue fields separable over
   the constants stay separable over the enlarged constants when the residue extension is
   separable.
+* `TauCeti.Place.linearIndependent_algebraMap_residueField_of_isPurelyInseparable`: for purely
+  inseparable `k' / k`, a residue field separable over `k` stays linearly disjoint from `k'`.
+* `TauCeti.Place.linearIndependent_algebraMap_constants_of_isPurelyInseparable`: the same linear
+  disjointness, read the other way: constants independent over `k` stay independent over `F_P`.
+* `TauCeti.Place.residueFieldMulMap`: the multiplication map `F_P ⊗[k] k' → F'_{P'}`, surjective
+  exactly when the constants span `F'_{P'}` over `F_P`
+  (`TauCeti.Place.residueFieldMulMap_surjective_iff`) and injective for purely inseparable `k' / k`
+  at a place with residue field separable over `k`
+  (`TauCeti.Place.residueFieldMulMap_injective_of_isPurelyInseparable`).
 * `TauCeti.Place.degree_restrict_le_degree_of_isPurelyInseparable`: for purely inseparable
   `k' / k`, a place with residue field separable over `k` has degree at most that of any place
   above it.
@@ -122,6 +142,9 @@ to the canonical fraction fields used by Mathlib's different API.
   Dedekind, finiteness, and separability properties of the local integral closure `𝒪'_P`.
 * `TauCeti.Place.isIntegral_algebraMap_iff_mem_integers`: the local integral closure `𝒪'_P`
   contracts to `𝒪_P`.
+* `TauCeti.Place.algebraMap_mem_integralClosure` and
+  `TauCeti.Place.algebraConstantsIntegralClosure`: for `k' / k` integral, the constants `k'` lie in
+  `𝒪'_P`, which makes `𝒪'_P` a `k'`-algebra.
 
 ## References
 
@@ -134,7 +157,7 @@ public section
 open IsDedekindDomain
 
 open scoped WithZero
-open scoped nonZeroDivisors
+open scoped nonZeroDivisors TensorProduct
 
 attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra
 
@@ -198,7 +221,7 @@ theorem isIntegral_algebraMap_iff_mem_integers {x : F} :
     IsIntegral ↥P.integers (algebraMap F F' x) ↔ x ∈ P.integers :=
   (isIntegral_algHom_iff (IsScalarTower.toAlgHom ↥P.integers F F')
       (algebraMap F F').injective (x := x)).trans
-    ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.2) hx,
+    ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.property) hx,
       fun hx ↦ isIntegral_algebraMap (x := (⟨x, hx⟩ : P.integers))⟩
 
 end LocalModel
@@ -264,6 +287,42 @@ instance isSeparable_fractionRing_integralClosure :
     AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
 
 end LocalIntegralClosure
+
+section IntegralConstants
+
+variable (P : Place k F) [Algebra.IsIntegral k k']
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- **The constants `k'` lie in the local model** `𝒪'_P`, the integral closure of `𝒪_P` in `F'`:
+they are integral over `k ⊆ 𝒪_P`. -/
+theorem algebraMap_mem_integralClosure (c : k') :
+    algebraMap k' F' c ∈ integralClosure P.integers F' :=
+  -- The scalar tower `k → 𝒪_P → F'` under `TauCeti.Place.algebraIntegersExtension`.
+  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply P.integers F F',
+      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
+  (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
+
+/-- The constants `k'` act on the local model `𝒪'_P`, through `F'`.
+
+This is not a global instance. Install it where the `k'`-structure of `𝒪'_P` is needed, together
+with `TauCeti.Place.isScalarTower_constants_integralClosure`. -/
+@[instance_reducible]
+noncomputable def algebraConstantsIntegralClosure :
+    Algebra k' (integralClosure P.integers F') :=
+  ((algebraMap k' F').codRestrict _ (algebraMap_mem_integralClosure P)).toAlgebra
+
+/-- The action `TauCeti.Place.algebraConstantsIntegralClosure` of `k'` on `𝒪'_P` is compatible with
+the inclusion into `F'`. -/
+theorem isScalarTower_constants_integralClosure :
+    letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
+    IsScalarTower k' (integralClosure P.integers F') F' :=
+  letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
+  .of_algebraMap_eq fun _ ↦ by
+    rw [Subalgebra.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+
+end IntegralConstants
 
 section Constants
 
@@ -382,6 +441,38 @@ theorem ord_algebraMap_restrict (f : F) :
     ramificationIdx_def, mul_comm] using
     (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
 
+variable {k F} in
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+  [Algebra.IsIntegral F F'] in
+/-- A place `Q'` of `F' / k'` whose valuation ring contracts to that of a place `Q` of `F / k` has
+positive ramification index over `F` scaling `Q.ord`, with no integrality assumption on `F' / F`. -/
+theorem ramificationIdx_pos_and_ord_algebraMap_eq_of_integers_comap_eq
+    {Q : Place k F} {Q' : Place k' F'} (hQ' : Q'.integers.comap (algebraMap F F') = Q.integers) :
+    0 < Q'.ramificationIdx F ∧
+      ∀ f : F, Q'.ord (algebraMap F F' f) = Q'.ramificationIdx F * Q.ord f := by
+  set w := Q'.valuation.comap (algebraMap F F')
+  have hw : w.IsEquiv Q.valuation := (Valuation.isEquiv_iff_valuationSubring _ _).mpr <| by
+    ext f; rw [Valuation.mem_valuationSubring_iff, Valuation.comap_apply, ← Q'.mem_integers_iff,
+      ← ValuationSubring.mem_comap, hQ', Q.mem_integers_iff, Valuation.mem_valuationSubring_iff]
+  obtain ⟨t, ht⟩ := Q.ord_surjective 1
+  have ht0 : t ≠ 0 := by rintro rfl; simp at ht
+  have hwt : w t < 1 := (Valuation.isEquiv_iff_val_lt_one.mp hw).mpr
+    (by rw [Q.valuation_eq_exp_neg_ord ht0, ht]; simp)
+  have : w.IsNontrivial := ⟨t, w.ne_zero_iff.mpr ht0, hwt.ne⟩
+  have hpos : 0 < Valuation.ordIndex w :=
+    Nat.pos_of_ne_zero (Valuation.ordIndex_ne_zero_of_isNontrivial w)
+  have hkt : w.IsTrivialOn k :=
+    ⟨fun c hc ↦ (Valuation.isEquiv_iff_val_eq_one.mp hw).mpr (Q.isTrivialOn.eq_one c hc)⟩
+  let Q₀ : Place k F := ⟨w.normalization, Valuation.normalization_surjective w hpos.ne',
+    Valuation.IsTrivialOn.normalization w⟩
+  have hQ₀ : w.normalization = Q.valuation :=
+    congrArg Place.valuation (eq_of_isEquiv ((Valuation.isEquiv_normalization w).trans hw) : Q₀ = Q)
+  refine ⟨by rwa [ramificationIdx_def], fun f ↦ ?_⟩
+  have hord := Valuation.ord_normalization_mul_ordIndex w f
+  rw [hQ₀, Q.ord_valuation, mul_comm, ← ramificationIdx_def, Valuation.ord_comap,
+    Q'.ord_valuation] at hord
+  exact hord.symm
+
 /-- The order at `P'` of the term `c y ^ i` of a polynomial evaluated at `y`, for `c ≠ 0 ≠ y`:
 `e(P' ∣ P) · ord_P c + i · ord_{P'} y`. -/
 theorem ord_algebraMap_mul_pow {y : F'} (hy0 : y ≠ 0) {c : F} (hc : c ≠ 0) (i : ℕ) :
@@ -499,7 +590,7 @@ theorem algebraMap_mem_integers_of_mem_integralClosure
     algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
   rw [Subalgebra.algebraMap_eq]
   exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
-    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
+    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.property) b.property
 
 variable {k F} in
 /-- An element of the local model `𝒪'_P` times one vanishing to order `a` at a place `Q'` over `P`
@@ -521,7 +612,6 @@ theorem algebraMap_mem_filtration {r : F} {m : ℕ}
   rw [mem_filtration_iff_le_ord _ h0] at hr
   rw [mem_filtration_iff_le_ord _ ((map_ne_zero _).mpr h0), ord_algebraMap_restrict k F P']
   have he : (1 : ℤ) ≤ ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
-  have hm : (0 : ℤ) ≤ m := by positivity
   nlinarith
 
 end Restrict
@@ -561,12 +651,25 @@ instance instHasExtensionValuation :
 latter is an algebra over the former. -/
 noncomputable instance instAlgebraIntegers : Algebra (P'.restrict k F).integers P'.integers :=
   (((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)).codRestrict
-    P'.integers fun x ↦ (mem_integers_restrict_iff k F P' (x : F)).mp x.2).toAlgebra
+    P'.integers fun x ↦ (mem_integers_restrict_iff k F P' (x : F)).mp x.property).toAlgebra
 
 @[simp]
 theorem coe_algebraMap_integers (x : (P'.restrict k F).integers) :
     ((algebraMap (P'.restrict k F).integers P'.integers x : P'.integers) : F') =
       algebraMap F F' (x : F) := (rfl)
+
+section
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- The valuation-ring extension `𝒪_P ⊆ 𝒪_{P'}` forms a scalar tower inside `F'`. -/
+instance isScalarTower_restrict_integers_field :
+    IsScalarTower (P'.restrict k F).integers P'.integers F' :=
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
+      ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply, coe_algebraMap_integers]
+
+end
 
 /-- The valuation-ring algebra map is local, so it induces the residue-field extension used by
 `relativeDegree`. -/
@@ -599,8 +702,8 @@ instance isAlgebraic_residueField_restrict :
   obtain ⟨q, hq⟩ := hlift
   rw [coe_mapRingHom] at hq
   refine ⟨q.map (algebraMap _ (P'.restrict k F).ResidueField), fun h ↦ ?_, ?_⟩
-  · have hc := congrArg (coeff · i₀) h
-    have hc' := congrArg (coeff · i₀) hq
+  · have hc := congrArg (fun r : (P'.restrict k F).ResidueField[X] ↦ r.coeff i₀) h
+    have hc' := congrArg (fun r : F[X] ↦ r.coeff i₀) hq
     simp only [coeff_map, coeff_zero, IsLocalRing.ResidueField.algebraMap_eq,
       IsLocalRing.residue_eq_zero_iff] at hc
     simp only [coeff_map, coeff_C_mul, inv_mul_cancel₀ hi₀] at hc'
@@ -690,6 +793,102 @@ theorem isSeparable_residueField_of_isSeparable_restrict
   have := Algebra.IsSeparable.trans k (P'.restrict k F).ResidueField P'.ResidueField
   exact Algebra.isSeparable_tower_top_of_isSeparable k k' P'.ResidueField
 
+/-- **A separable residue field stays linearly disjoint from purely inseparable constants**: if
+`k' / k` is purely inseparable and the residue field `F_P` of the place `P` below `P'` is separable
+over `k`, then a family of `F_P` linearly independent over `k` stays linearly independent over
+`k'` in `F'_{P'}`. -/
+theorem linearIndependent_algebraMap_residueField_of_isPurelyInseparable
+    [IsPurelyInseparable k k'] [Algebra.IsSeparable k (P'.restrict k F).ResidueField] {ι : Type*}
+    {b : ι → (P'.restrict k F).ResidueField} (hb : LinearIndependent k b) :
+    LinearIndependent k' (algebraMap (P'.restrict k F).ResidueField P'.ResidueField ∘ b) := by
+  -- The residue field of `P'` is a `k`-algebra through the constants `k'`, compatibly with the
+  -- residue field of the place below.
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
+  let φ := IsScalarTower.toAlgHom k (P'.restrict k F).ResidueField P'.ResidueField
+  exact LinearIndependent.map_of_isPurelyInseparable_of_isSeparable k'
+    (fun i ↦ (Algebra.IsSeparable.isSeparable k (b i)).map φ φ.injective)
+    (hb.map' φ.toLinearMap (LinearMap.ker_eq_bot.mpr φ.injective))
+
+/-- **Purely inseparable constants stay linearly disjoint from a separable residue field**: if
+`k' / k` is purely inseparable and the residue field `F_P` of the place `P` below `P'` is separable
+over `k`, then constants linearly independent over `k` have residues linearly independent over
+`F_P`. This is the other side of
+`TauCeti.Place.linearIndependent_algebraMap_residueField_of_isPurelyInseparable`: the image of
+`F_P` in `F'_{P'}` and the constants are linearly disjoint over `k`. -/
+theorem linearIndependent_algebraMap_constants_of_isPurelyInseparable
+    [IsPurelyInseparable k k'] [Algebra.IsSeparable k (P'.restrict k F).ResidueField] {ι : Type*}
+    {b : ι → k'} (hb : LinearIndependent k b) :
+    LinearIndependent (P'.restrict k F).ResidueField (algebraMap k' P'.ResidueField ∘ b) := by
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
+  let φ := IsScalarTower.toAlgHom k (P'.restrict k F).ResidueField P'.ResidueField
+  -- The image of `F_P` is separable over `k`, hence linearly disjoint from `k'`.
+  have : Algebra.IsSeparable k φ.fieldRange :=
+    Algebra.IsSeparable.of_algHom k _ φ.equivFieldRange.symm.toAlgHom
+  exact IntermediateField.LinearDisjoint.linearIndependent_algebraMap_comp
+    (φ.fieldRange.linearDisjoint_of_isPurelyInseparable_of_isSeparable k') hb
+
+/-- The **multiplication map of the residue fields**: the `F_P`-algebra map
+`F_P ⊗[k] k' → F'_{P'}`, `a ⊗ c ↦ a · c`, from the fibre of `k' / k` over the residue field `F_P`
+of the place below `P'`. It is surjective exactly when the residues of the constants span
+`F'_{P'}` over `F_P` (`TauCeti.Place.residueFieldMulMap_surjective_iff`), and then `F'_{P'}` is
+the quotient of the fibre by its kernel. -/
+noncomputable def residueFieldMulMap :
+    (P'.restrict k F).ResidueField ⊗[k] k' →ₐ[(P'.restrict k F).ResidueField] P'.ResidueField :=
+  letI := integersAlgebraBase k P'
+  haveI := isScalarTower_integersAlgebraBase k P'
+  haveI := isScalarTower_integers_restrict k F P'
+  AlgHom.liftEquiv k (P'.restrict k F).ResidueField k' P'.ResidueField
+    (IsScalarTower.toAlgHom k k' P'.ResidueField)
+
+/-- The multiplication map sends `a ⊗ c` to the product of `a` and the residue of `c`. -/
+@[simp]
+theorem residueFieldMulMap_tmul (a : (P'.restrict k F).ResidueField) (c : k') :
+    residueFieldMulMap k F P' (a ⊗ₜ c) =
+      algebraMap (P'.restrict k F).ResidueField P'.ResidueField a *
+        algebraMap k' P'.ResidueField c := by
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
+  rw [residueFieldMulMap, AlgHom.liftEquiv_tmul, IsScalarTower.coe_toAlgHom', Algebra.smul_def]
+
+/-- The multiplication map `F_P ⊗[k] k' → F'_{P'}` is surjective exactly when the residues of the
+constants span `F'_{P'}` over `F_P`. -/
+theorem residueFieldMulMap_surjective_iff :
+    Function.Surjective (residueFieldMulMap k F P') ↔
+      Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
+        ⊤ := by
+  rw [← AlgHom.coe_toLinearMap, ← LinearMap.range_eq_top]
+  refine ⟨fun h ↦ eq_top_iff.2 (h.symm.le.trans ?_), fun h ↦ eq_top_iff.2 (h.symm.le.trans ?_)⟩
+  · rintro _ ⟨x, rfl⟩
+    induction x using TensorProduct.inductionOn with
+    | tmul a c =>
+      rw [AlgHom.toLinearMap_apply, residueFieldMulMap_tmul, ← Algebra.smul_def]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self c))
+    | add x y hx hy => simpa using add_mem hx hy
+  · refine Submodule.span_le.2 ?_
+    rintro _ ⟨c, rfl⟩
+    exact ⟨1 ⊗ₜ c, by simp⟩
+
+/-- **The fibre of purely inseparable constants embeds in the residue field**: if `k' / k` is
+purely inseparable and the residue field `F_P` of the place below `P'` is separable over `k`, the
+multiplication map `F_P ⊗[k] k' → F'_{P'}` is injective. A `k`-basis of `k'` gives an `F_P`-basis
+of the fibre whose image stays linearly independent
+(`TauCeti.Place.linearIndependent_algebraMap_constants_of_isPurelyInseparable`). -/
+theorem residueFieldMulMap_injective_of_isPurelyInseparable [IsPurelyInseparable k k']
+    [Algebra.IsSeparable k (P'.restrict k F).ResidueField] :
+    Function.Injective (residueFieldMulMap k F P') := by
+  let b := Module.Free.chooseBasis k k'
+  let B := Algebra.TensorProduct.basis (P'.restrict k F).ResidueField b
+  have := B.injective_constr_of_linearIndependent (R₂ := (P'.restrict k F).ResidueField)
+    (v := fun i ↦ (residueFieldMulMap k F P').toLinearMap (B i)) <| by
+      simpa [B, Function.comp_def] using
+        linearIndependent_algebraMap_constants_of_isPurelyInseparable k F P' b.linearIndependent
+  rwa [B.constr_self] at this
+
 /-- **Purely inseparable constants keep separable residue degrees**: if `k' / k` is purely
 inseparable and the residue field `F_P` of the place `P` below `P'` is separable over `k`, then
 `deg P ≤ deg P'`. A `k`-basis of `F_P` stays linearly independent over `k'` in `F'_{P'}`. -/
@@ -701,19 +900,8 @@ theorem degree_restrict_le_degree_of_isPurelyInseparable [IsPurelyInseparable k 
   swap
   · rw [degree_eq_finrank, Module.finrank_of_not_finite hR]
     exact Nat.zero_le _
-  -- The residue field of `P'` is a `k`-algebra through the constants `k'`, compatibly with the
-  -- residue field of the place below.
-  let _ := integersAlgebraBase k P'
-  have := isScalarTower_integersAlgebraBase k P'
-  have := isScalarTower_integers_restrict k F P'
-  let ι := IsScalarTower.toAlgHom k R P'.ResidueField
-  let b := Module.finBasis k R
-  have hli : LinearIndependent k (ι ∘ b) :=
-    b.linearIndependent.map' ι.toLinearMap (LinearMap.ker_eq_bot.mpr ι.injective)
-  have hli' : LinearIndependent k' (ι ∘ b) :=
-    LinearIndependent.map_of_isPurelyInseparable_of_isSeparable k'
-      (fun i ↦ (Algebra.IsSeparable.isSeparable k (b i)).map ι ι.injective) hli
-  simpa [degree_eq_finrank] using hli'.fintype_card_le_finrank
+  simpa [degree_eq_finrank] using (linearIndependent_algebraMap_residueField_of_isPurelyInseparable
+    k F P' (Module.finBasis k R).linearIndependent).fintype_card_le_finrank
 
 end ResidueField
 
@@ -795,7 +983,7 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
     simp only [Finset.mem_sdiff, Finset.mem_singleton] at hj
     by_cases hAj : A j = 0
     · rw [hAj, map_zero]
-      exact zero_lt_iff.mpr ((Valuation.ne_zero_iff _).mpr hj₀A)
+      exact pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hj₀A)
     · obtain ⟨m, hm⟩ := hAord j hAj
       obtain ⟨m₀, hm₀⟩ := hAord j₀ hj₀A
       have hne : P'.ord (A j) ≠ P'.ord (A j₀) := by
@@ -997,9 +1185,9 @@ theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*}
   have hI := linearIndependent_mul_pow_of_linearIndependent_residue_finite k F P'
     (fun i : I ↦ s i) (hind.comp Subtype.val Subtype.val_injective) ht
   let f : S → I × Fin (ramificationIdx F P') :=
-    fun p ↦ (⟨p.1.1, Finset.mem_image_of_mem Prod.fst p.2⟩, p.1.2)
+    fun p ↦ (⟨p.val.1, Finset.mem_image_of_mem Prod.fst p.property⟩, p.val.2)
   exact hI.comp f fun p q h ↦ Subtype.ext <|
-    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
+    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.val, x.2)) h
 
 /-- **Expansion to finite order.** If the residues of `u i ∈ 𝒪_{P'}` span the residue field of
 `P'` over that of the place below, and `t` is a uniformizer at `P'`, then every function regular
@@ -1092,7 +1280,7 @@ private theorem linearIndependent_of_ord_neg_of_restrict_eq_finite {ι : Type*} 
     (fun i ↦ P₁.ord (c i)) ⟨i₁, by simpa using hi₁⟩
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hmS hmin
   -- The index at whose place the sum is tested: a minimizer other than `i₀` if there is one.
-  obtain ⟨j, hcj, hjmin, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
+  obtain ⟨j, hcj, _, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
       ∀ i, i ≠ j → c i ≠ 0 →
         (P j).ord (c j • z j) < (P j).ord (c i • z i) := by
     by_cases hA : ∃ j, j ≠ i₀ ∧ c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m)
@@ -1138,7 +1326,7 @@ theorem linearIndependent_of_ord_neg_of_restrict_eq {ι : Type*} {P₁ : Place k
     (P := fun i : T ↦ P i) (fun i ↦ hP i) (i₀ := ⟨i₀, Finset.mem_insert_self _ _⟩) hz₀ hord₀
     (fun i hi ↦ hpole i fun h ↦ hi (Subtype.ext h))
     (fun i j hij ↦ hreg i j fun h ↦ hij (Subtype.ext h))
-  exact hT.comp (fun i : S ↦ (⟨i, Finset.mem_insert_of_mem i.2⟩ : T))
+  exact hT.comp (fun i : S ↦ (⟨i, Finset.mem_insert_of_mem i.property⟩ : T))
     (fun _ _ h ↦ Subtype.ext (congrArg (fun i : T ↦ (i : ι)) h))
 
 end IndependenceOverPlace
@@ -1255,6 +1443,43 @@ theorem ramificationIdx_self : ramificationIdx F P = 1 := by
     Valuation.ordIndex_eq_one_of_surjective _ P.valuation_surjective]
 
 end Self
+
+section RamificationIdxIn
+
+variable [Algebra.IsIntegral F F']
+
+open scoped Classical in
+/-- **The ramification index of a place of the base in an algebraic extension**: the ramification
+index `e(P' ∣ P)` of a place `P'` of `F'` over `P`, where `P'` is an arbitrary choice among the
+places over `P`. It is `0` when no place of `F'` lies over `P`, which does not happen for an
+extension of function fields (`TauCeti.Place.ramificationIdxIn_pos`). Without
+the Galois hypothesis the places over `P` may have different ramification indices, so this value
+need not be common to them; for a finite Galois extension it is
+(`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`). This is the analogue for places of
+Mathlib's `Ideal.ramificationIdxIn`. -/
+noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
+    [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] : ℕ :=
+  if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
+
+/-- If some place of `F'` lies over `P`, the ramification index of `P` in `F'` is that of the
+chosen such place. -/
+theorem ramificationIdxIn_of_exists {P : Place k F} (h : ∃ P' : Place k F', P'.restrict k F = P) :
+    P.ramificationIdxIn F' = ramificationIdx F h.choose :=
+  dite_eq_left h
+
+/-- The ramification index of a place of the base vanishes exactly when no place lies above it. -/
+@[simp]
+theorem ramificationIdxIn_eq_zero_iff {P : Place k F} :
+    P.ramificationIdxIn F' = 0 ↔ ∀ P' : Place k F', P'.restrict k F ≠ P := by
+  constructor
+  · intro h P' hP'
+    rw [ramificationIdxIn, dite_eq_left ⟨P', hP'⟩] at h
+    exact absurd h (ramificationIdx_pos F _).ne'
+  · intro h
+    rw [ramificationIdxIn, dite_eq_right]
+    exact fun ⟨P', hP'⟩ ↦ h P' hP'
+
+end RamificationIdxIn
 
 end Place
 

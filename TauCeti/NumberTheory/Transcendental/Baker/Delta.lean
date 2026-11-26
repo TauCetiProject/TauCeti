@@ -9,10 +9,15 @@ public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.Algebra.Polynomial.Sequence
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.Binomial
-import Mathlib.Algebra.Polynomial.Taylor
+public import TauCeti.Analysis.Polynomial.L1Norm
 import Mathlib.Data.Nat.Choose.Bounds
-import TauCeti.Analysis.Polynomial.L1Norm
+import TauCeti.Algebra.Polynomial.HasseDeriv
+import TauCeti.Data.Nat.Choose.Bounds
+import TauCeti.Algebra.Polynomial.Degree.Operations
+import TauCeti.Algebra.Polynomial.Lifts
+import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -50,6 +55,7 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 ## Main results
 
 * `TauCeti.degree_multichoose_X_add_one`: `Δ(X; k)` has degree `k`.
+* `TauCeti.multichoose_X_add_one_ne_zero`: Baker's binomial polynomials are nonzero.
 * `TauCeti.multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts`: `Δ(a + L X; k)` has integral
   coefficients.
 * `TauCeti.pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`: Baker's
@@ -63,7 +69,14 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
   `Δ(q x; k) ∈ ℤ`.
 * `TauCeti.bakerDeltaSequence`: for `q ≠ 0`, the polynomials `Δ(q X; k)` over a field of
   characteristic zero form a polynomial sequence.
+* `TauCeti.l1Norm_taylor_multichoose_X_add_one_le`: the coefficient length of `Δ(X + x; k)` is
+  at most `(n + k + 1 choose k)` when `|x| ≤ n`.
 * `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_le`: the size bound.
+* `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le`: the size bound for
+  `Δ(q X; k)`, at points `x` with `|q x| ≤ n`.
+* `abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_multichoose_X_add_one_comp_C_mul_X_le`
+  (in `TauCeti`): a bound on a differential operator `P(d/dX)` applied to `Δ(q X; τ)`, with
+  rational rescaling and evaluation parameters.
 
 ## References
 
@@ -74,7 +87,7 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 
 public section
 
-open Polynomial
+open Polynomial Finset
 open scoped Nat
 
 namespace TauCeti
@@ -101,6 +114,10 @@ theorem degree_multichoose_X_add_one (k : ℕ) :
     rw [multichoose_X_add_one_succ, degree_mul, ih, ← C_1,
       degree_linear (inv_ne_zero (by positivity))]
     norm_cast
+
+/-- Baker's binomial polynomials are nonzero. -/
+theorem multichoose_X_add_one_ne_zero (k : ℕ) : Ring.multichoose (X + 1 : ℚ[X]) k ≠ 0 :=
+  fun h ↦ by simpa [h] using degree_multichoose_X_add_one k
 
 /-- Baker's binomial polynomial `Δ(X; k)` has natural degree `k`. -/
 @[simp]
@@ -180,15 +197,9 @@ is an integer. -/
 theorem pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast {k : ℕ} {L : ℤ}
     (hL : ∀ j ∈ Finset.Icc 1 k, (j : ℤ) ∣ L) (l m : ℕ) (x : ℤ) :
     (L : ℚ) ^ m * (hasseDeriv m (Ring.multichoose (X + 1 : ℚ[X]) k ^ l)).eval (x : ℚ) ∈
-      Set.range (Int.cast : ℤ → ℚ) := by
-  have h := pow_mem (multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts hL x) l
-  have e : (Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (x : ℚ) + C (L : ℚ) * X) ^ l =
-      (taylor (x : ℚ) (Ring.multichoose (X + 1 : ℚ[X]) k ^ l)).comp (C (L : ℚ) * X) := by
-    simp [taylor_apply, comp_assoc, add_comm]
-  rw [e, lifts_iff_coeff_lifts] at h
-  obtain ⟨z, hz⟩ := h m
-  rw [comp_C_mul_X_coeff, taylor_coeff, eq_intCast] at hz
-  exact ⟨z, hz.trans (mul_comm _ _)⟩
+      Set.range (Int.cast : ℤ → ℚ) :=
+  pow_mul_eval_hasseDeriv_mem_range_intCast_of_comp_mem_lifts
+    (by rw [pow_comp]; exact pow_mem (multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts hL x) l) m
 
 /-- **Baker's denominator bound**, classical form: for every integer `x` and all `l, m`,
 `lcm(1, …, k) ^ m Δ(x; k, l, m)` is an integer. -/
@@ -281,7 +292,7 @@ theorem isUnit_leadingCoeff_bakerDeltaSequence (K : Type*) [Field K] [CharZero K
 
 /-- The coefficient length of the translate `Δ(X + x; k)` is at most `(n + k + 1 choose k)`
 whenever `|x| ≤ n`. -/
-private theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx : |x| ≤ n)
+theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx : |x| ≤ n)
     (k : ℕ) :
     (taylor x (Ring.multichoose (X + 1 : ℚ[X]) k)).l1Norm ≤ ((n + k + 1).choose k : ℝ) := by
   induction k with
@@ -339,5 +350,67 @@ theorem abs_eval_hasseDeriv_multichoose_X_add_one_pow_le {x : ℚ} {n : ℕ} (hx
       (by exact_mod_cast Nat.choose_le_two_pow _ _)
   rw [← Rat.cast_le (K := ℝ)]
   simpa [← Rat.norm_cast_real, Real.norm_eq_abs] using h
+
+/-- **The size bound for `Δ(q X; k)`.** If `|q x| ≤ n`, then for all `k, l, m` the `m`-th Hasse
+derivative of `Δ(q X; k) ^ l` at `x` is at most `|q| ^ m 2 ^ (l (n + k + 1))` in absolute value:
+by the rescaling `Polynomial.eval_hasseDeriv_comp_C_mul_X` it is `q ^ m Δ(q x; k, l, m)`. -/
+theorem abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le {q x : ℚ} {n : ℕ}
+    (hx : |q * x| ≤ n) (k l m : ℕ) :
+    |(hasseDeriv m ((Ring.multichoose (X + 1 : ℚ[X]) k ^ l).comp (C q * X))).eval x| ≤
+      |q| ^ m * 2 ^ (l * (n + k + 1)) := by
+  rw [eval_hasseDeriv_comp_C_mul_X, abs_mul, abs_pow]
+  gcongr
+  exact abs_eval_hasseDeriv_multichoose_X_add_one_pow_le hx k l m
+
+/-- **A differential operator applied to `Δ(q X; τ)`.** Let `P` be a polynomial whose Hasse
+derivatives at `t` satisfy `|P^{[k]}(t)| ≤ H` for `k ≤ τ`. If `|q x| ≤ N`, then the sum
+`∑ₖ P⁽ᵏ⁾(t) (Δ(q X; τ))^{[k]}(x)`, pairing the iterated derivatives of `P` at `t` with the Hasse
+derivatives of `Δ(q X; τ)` at `x`, has absolute value at most
+`H (1 + τ |q|) ^ τ 2 ^ (N + τ + 1)`. Only the orders `k ≤ τ` contribute, since `Δ(q X; τ)` has
+degree at most `τ`. -/
+theorem abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_multichoose_X_add_one_comp_C_mul_X_le
+    {q x : ℚ} {N : ℕ}
+    (hx : |q * x| ≤ N) {τ : ℕ} {t : ℚ} {P : Polynomial ℚ} {H : ℚ}
+    (hP : ∀ k ≤ τ, |(Polynomial.hasseDeriv k P).eval t| ≤ H) :
+    |∑ k ∈ Finset.range (P.natDegree + 1), (Polynomial.derivative^[k] P).eval t *
+      (Polynomial.hasseDeriv k ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) τ).comp
+        (Polynomial.C q * Polynomial.X))).eval x| ≤
+      H * (1 + τ * |q|) ^ τ * 2 ^ (N + τ + 1) := by
+  set Q := (Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) τ).comp
+    (Polynomial.C q * Polynomial.X)
+  set f := fun k ↦ (Polynomial.derivative^[k] P).eval t *
+    (Polynomial.hasseDeriv k Q).eval x with hfdef
+  have hH : 0 ≤ H := (abs_nonneg _).trans (hP 0 (Nat.zero_le _))
+  -- The Hasse derivatives of `Q` of order above `τ` vanish.
+  have hf (k : ℕ) (hk : k ∉ Finset.range (τ + 1)) : |f k| = 0 := by
+    have hQ : Polynomial.hasseDeriv k Q = 0 := by
+      refine Polynomial.hasseDeriv_eq_zero_of_lt_natDegree _ _
+        (lt_of_le_of_lt ?_ (by simpa [Nat.lt_succ_iff] using hk))
+      exact (natDegree_comp_C_mul_X_le _ _).trans (natDegree_multichoose_X_add_one τ).le
+    simp [f, hQ]
+  calc |∑ k ∈ Finset.range (P.natDegree + 1), f k|
+      ≤ ∑ k ∈ Finset.range (P.natDegree + 1) ∪ Finset.range (τ + 1), |f k| :=
+        (abs_sum_le_sum_abs _ _).trans (sum_le_sum_of_subset_of_nonneg subset_union_left
+          fun _ _ _ ↦ abs_nonneg _)
+    _ = ∑ k ∈ Finset.range (τ + 1), |f k| :=
+        (sum_subset subset_union_right fun k _ hk ↦ hf k hk).symm
+    _ ≤ ∑ k ∈ Finset.range (τ + 1), (k.factorial : ℚ) * |q| ^ k * (H * 2 ^ (N + τ + 1)) := by
+        refine sum_le_sum fun k hk ↦ ?_
+        simp only [hfdef]
+        rw [Polynomial.eval_iterate_derivative_eq_factorial_mul, abs_mul, abs_mul, Nat.abs_cast]
+        have h₁ := hP k (Nat.lt_succ_iff.1 (mem_range.1 hk))
+        have h₂ : |(Polynomial.hasseDeriv k Q).eval x| ≤ |q| ^ k * 2 ^ (N + τ + 1) := by
+          simpa only [pow_one, one_mul] using
+            abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le hx τ 1 k
+        calc (k.factorial : ℚ) * |(Polynomial.hasseDeriv k P).eval t| *
+              |(Polynomial.hasseDeriv k Q).eval x|
+            ≤ k.factorial * H * (|q| ^ k * 2 ^ (N + τ + 1)) := by gcongr
+          _ = _ := by ring
+    _ = (∑ k ∈ Finset.range (τ + 1), (k.factorial : ℚ) * |q| ^ k) * (H * 2 ^ (N + τ + 1)) := by
+        rw [sum_mul]
+    _ ≤ (1 + τ * |q|) ^ τ * (H * 2 ^ (N + τ + 1)) :=
+        mul_le_mul_of_nonneg_right (Nat.sum_range_factorial_mul_pow_le _ (abs_nonneg _))
+          (by positivity)
+    _ = _ := by ring
 
 end TauCeti

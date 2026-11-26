@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.AlgebraicGeometry.ResidueDegree
+import Mathlib.FieldTheory.FinTrdeg
 
 /-!
 # Local dimension of schemes locally of finite type over a field
@@ -30,7 +31,7 @@ The first two statements are local on `X`. On an affine chart `Spec A ⟶ X` thr
 finitely generated `k`-algebra and `x` corresponding to a prime `p`, they are the affine statements
 `dim (A ⧸ p) = trdeg_k κ(p)` (`Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField`) and
 `dim_p Spec A = ht p + dim (A ⧸ p)`
-(`TauCeti.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`). The chart is an open
+(`PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`). The chart is an open
 embedding, so it preserves local dimension; it identifies the stalk `O_{X,x}` with `A_p`, whose
 dimension is `ht p`; and it identifies `κ(x)` with `κ(p)` as `k`-algebras. The closure of `x`
 meets the chart in a nonempty open part of an irreducible closed set, which has the dimension of
@@ -41,7 +42,8 @@ the components through `x` (`PrimeSpectrum.topologicalKrullDimAt_le_iSup_ringKru
 
 ## Main results
 
-All in the namespace `TauCeti.AlgebraicGeometry`:
+All in the namespace `TauCeti.AlgebraicGeometry`, except the last, which is in
+`AlgebraicGeometry.Scheme.Hom`:
 
 * `topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField`: `dim {x}⁻ = trdeg_k κ(x)`.
 * `topologicalKrullDimAt_eq_ringKrullDim_stalk_add_toNat_trdeg_residueField`:
@@ -50,12 +52,23 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
   `dim_x X = dim O_{X,x} + dim {x}⁻`.
 * `topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents`: `dim_x X` is the
   supremum of the dimensions of the irreducible components through `x`.
+* `topologicalKrullDimAt_eq_of_isPureDimensional`: if `X` is pure of dimension `d`, then
+  `dim_x X = d` at every point.
 * `topologicalKrullDimAt_eq_iSup_toNat_trdeg_residueField`: `dim_x X` is the supremum of
   `trdeg_k κ(ξ)` over the generic points `ξ` of the irreducible components through `x`.
 * `coheight_add_height_eq_topologicalKrullDim`: for `X` irreducible, `codim x + dim {x}⁻ = dim X`.
 * `height_eq_toNat_trdeg_residueField`: the height of `x` is `trdeg_k κ(x)`.
 * `height_apply_eq_height_of_residueDegree_ne_zero`: a morphism over `k` preserves the height of
   a point with finite residue field extension.
+* `height_apply_of_isOpenImmersion`: an open immersion into `X` preserves the height of points.
+* `trdeg_residueField_lt_aleph0`: every residue field `κ(x)` has finite transcendence degree
+  over `k`.
+* `trdeg_residueField_eq_add_of_over`: for a scheme `F` over a field `K` whose structure
+  morphism to `Spec k` factors through `Spec K ⟶ Spec k`,
+  `trdeg_k κ(z) = trdeg_k K + trdeg_K κ(z)`.
+* `AlgebraicGeometry.Scheme.Hom.trdeg_residueField_eq_of_isIso_residueFieldMap`: over any
+  commutative ring `k`, a morphism over `Spec k` inducing an isomorphism `κ(f x) ≅ κ(x)` preserves
+  the transcendence degree over `k` of the residue field.
 
 ## References
 
@@ -122,7 +135,7 @@ theorem topologicalKrullDimAt_eq_ringKrullDim_stalk_add_toNat_trdeg_residueField
     coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight,
     (g.residueFieldAlgEquivOfIsOpenImmersion φ hφ y).trdeg_eq]
   rw [← Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField k]
-  exact topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k y
+  exact y.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k
 
 include k in
 /-- **Local dimension via the stalk and the point closure.** On a scheme `X` locally of finite
@@ -145,7 +158,7 @@ theorem topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents 
     (topologicalKrullDimAt_eq_iInf x).ge.trans' (le_iInf fun U ↦ ?_))
   · -- In an affine chart `Spec R` through `x`, the local dimension is bounded by the dimensions
     -- of the components `V(q)` of `Spec R` through `x`, and each lies in a component of `X`.
-    obtain ⟨R, g, _, y, φ, hφ, rfl, hR⟩ := (X ↘ Spec (.of k)).exists_isOpenImmersion_finiteType x
+    obtain ⟨R, g, _, y, φ, _, rfl, hR⟩ := (X ↘ Spec (.of k)).exists_isOpenImmersion_finiteType x
     let := φ.hom.toAlgebra
     have : Algebra.FiniteType k R := hR
     have : IsNoetherianRing R := Algebra.FiniteType.isNoetherianRing k R
@@ -162,11 +175,11 @@ theorem topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents 
       rfl⟩) ?_)
     rw [← Ideal.topologicalKrullDim_zeroLocus]
     exact ((g.isOpenEmbedding.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict Z
-      fun v ↦ hVZ ⟨v.1, v.2, rfl⟩).isInducing.topologicalKrullDim_le
+      fun v ↦ hVZ ⟨v.val, v.property, rfl⟩).isInducing.topologicalKrullDim_le
   · -- A component `Z` through `x` meets every open neighbourhood `U` of `x` in a nonempty open
     -- part of `Z`, which has the dimension of `Z`.
     rw [← topologicalKrullDim_inter_eq_of_locallyOfFiniteType (X ↘ Spec (.of k)) hZ.1
-      (isClosed_of_mem_irreducibleComponents Z hZ) U.2.1 ⟨x, hxZ, U.2.2⟩]
+      (isClosed_of_mem_irreducibleComponents Z hZ) U.property.1 ⟨x, hxZ, U.property.2⟩]
     exact (IsEmbedding.inclusion Set.inter_subset_right).isInducing.topologicalKrullDim_le
 
 include k in
@@ -231,6 +244,87 @@ theorem height_apply_eq_height_of_residueDegree_ne_zero {Y : Scheme.{u}} [Y.Over
     ← trdeg_add_eq k (Y.residueField (f x)) (A := X.residueField x),
     trdeg_eq_zero (R := Y.residueField (f x)), add_zero]
 
+include k in
+/-- On a scheme locally of finite type over a field and pure of dimension `d`, the local
+dimension at every point is `d`. -/
+theorem topologicalKrullDimAt_eq_of_isPureDimensional {d : ℕ} (h : IsPureDimensional d X)
+    (x : X) :
+    topologicalKrullDimAt X x = d := by
+  rw [topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents k]
+  refine le_antisymm (iSup₂_le fun Z hZ ↦ iSup_le fun _ ↦ (isPureDimensional_iff.mp h Z hZ).le) ?_
+  exact le_iSup₂_of_le (irreducibleComponent x) (irreducibleComponent_mem_irreducibleComponents x)
+    (le_iSup_of_le mem_irreducibleComponent (isPureDimensional_iff.mp h _
+      (irreducibleComponent_mem_irreducibleComponents x)).ge)
+
+include k in
+/-- Over a field, an open immersion preserves the dimension of points: its residue degrees are
+one, so a point and its image have residue fields of the same transcendence degree over `k`. No
+structure over `k` is needed on the source, which is given the one induced from the target. -/
+theorem height_apply_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    (u : U) : Order.height (j u) = Order.height u := by
+  let : U.Over (Spec (.of k)) := ⟨j ≫ X ↘ Spec (.of k)⟩
+  have : LocallyOfFiniteType (U ↘ Spec (.of k)) :=
+    inferInstanceAs (LocallyOfFiniteType (j ≫ X ↘ Spec (.of k)))
+  have : j.IsOver (Spec (.of k)) := ⟨rfl⟩
+  exact height_apply_eq_height_of_residueDegree_ne_zero k j
+    (by rw [Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks]; exact one_ne_zero)
+
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace TauCeti.AlgebraicGeometry
+
+open CategoryTheory
+
+universe u
+
+section ResidueFieldTrdeg
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+
+/-- On a scheme locally of finite type over a field `k`, every residue field has finite
+transcendence degree over `k`. -/
+theorem trdeg_residueField_lt_aleph0 [LocallyOfFiniteType (X ↘ Spec (.of k))] (x : X) :
+    Algebra.trdeg k (X.residueField x) < Cardinal.aleph0 := by
+  obtain ⟨R, g, _, y, φ, hφ, rfl, hR⟩ := (X ↘ Spec (.of k)).exists_isOpenImmersion_finiteType x
+  let := φ.hom.toAlgebra
+  have : Algebra.FiniteType k R := hR
+  have := y.isPrime
+  rw [(g.residueFieldAlgEquivOfIsOpenImmersion φ hφ y).trdeg_eq]
+  have : Algebra.EssFiniteType k y.asIdeal.ResidueField := .comp k R _
+  exact trdeg_lt_aleph0 k _
+
+end ResidueFieldTrdeg
+
+/-- **Additivity of transcendence degrees of residue fields.** Let `F` be a scheme over fields
+`k` and `K`, with `K` a `k`-algebra, such that the structure morphism `F ⟶ Spec k` is the one to
+`Spec K` followed by `Spec K ⟶ Spec k`. Then for every point `z` of `F`,
+`trdeg_k κ(z) = trdeg_k K + trdeg_K κ(z)`. -/
+theorem trdeg_residueField_eq_add_of_over (k K : Type u) [Field k] [Field K] [Algebra k K]
+    {F : Scheme.{u}} [F.Over (Spec (.of k))] [F.Over (Spec (.of K))]
+    (h : F ↘ Spec (.of K) ≫ Spec.map (CommRingCat.ofHom (algebraMap k K)) = F ↘ Spec (.of k))
+    (z : F) :
+    Algebra.trdeg k (F.residueField z) =
+      Algebra.trdeg k K + Algebra.trdeg K (F.residueField z) := by
+  have : IsScalarTower k K (F.residueField z) := by
+    refine IsScalarTower.of_algebraMap_eq fun c ↦ ?_
+    simp only [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk, RingHom.comp_apply,
+      Scheme.baseRingToStalk_apply, Scheme.Modules.baseRingToGlobalSections_apply, ← h,
+      Scheme.Hom.comp_appTop, CommRingCat.comp_apply]
+    -- Both sides pull back `c` to global sections of `Spec K`, through `Spec k` or directly.
+    exact congr(F.residue z (F.presheaf.germ ⊤ z trivial ((F ↘ Spec (.of K)).appTop
+      ($(Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap k K))) c)))).symm
+  exact (trdeg_add_eq k K).symm
+
+/-- A morphism over `Spec k` inducing an isomorphism of residue fields at `x` preserves the
+transcendence degree of the residue field over `k`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.trdeg_residueField_eq_of_isIso_residueFieldMap
+    {k : Type u} [CommRing k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))]
+    (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (x : X) [IsIso (f.residueFieldMap x)] :
+    Algebra.trdeg k (X.residueField x) = Algebra.trdeg k (Y.residueField (f x)) := by
+  let e : Y.residueField (f x) ≃+* X.residueField x :=
+    (asIso (f.residueFieldMap x)).commRingCatIsoToRingEquiv
+  exact (AlgEquiv.ofRingEquiv (f := e) fun c ↦ f.residueFieldMap_algebraMap k x c).trdeg_eq.symm
+
+end TauCeti.AlgebraicGeometry

@@ -73,6 +73,9 @@ of bounded degree and bounded house.
 * `NumberField.one_le_norm_mul_house_pow`: Liouville's inequality, a nonzero algebraic integer
   `x` of a number field of degree `d` satisfies `1 ≤ ‖σ x‖ ⌈x⌉ᵈ⁻¹` for every complex embedding
   `σ`.
+* `NumberField.one_le_pow_mul_norm_embedding_mul_pow`: Liouville's inequality for a number of
+  known size, if `δ ^ a * α` is a nonzero algebraic integer of house at most `H`, then
+  `1 ≤ ‖σ δ‖ᵃ ‖σ α‖ Hᵈ⁻¹` for every complex embedding `σ`.
 * `NumberField.eq_zero_of_norm_le_exp_of_house_le_exp`: Liouville's inequality in exponential
   form, an element `y` of a number field with `m ^ N y` integral is zero once `‖σ y‖`, `⌈y⌉` and
   `|m| ^ N` are small enough.
@@ -129,7 +132,7 @@ modulus at most `C`. -/
 theorem house_le_iff {x : F} {C : ℝ} (hC : 0 ≤ C) :
     house x ≤ C ↔ ∀ z ∈ (minpoly ℚ x).rootSet ℂ, ‖z‖ ≤ C :=
   ⟨fun h _ hz ↦ (norm_le_house_of_mem_rootSet hz).trans h,
-    fun h ↦ Real.iSup_le (fun z ↦ h z z.2) hC⟩
+    fun h ↦ Real.iSup_le (fun z ↦ h z z.property) hC⟩
 
 /-- The house of an algebraic element is attained: it is the modulus of some complex conjugate. -/
 theorem exists_mem_rootSet_norm_eq_house {x : F} (hx : IsAlgebraic ℚ x) :
@@ -139,7 +142,7 @@ theorem exists_mem_rootSet_norm_eq_house {x : F} (hx : IsAlgebraic ℚ x) :
   have : Nonempty ((minpoly ℚ x).rootSet ℂ) :=
     ⟨⟨z, (mem_rootSet_of_ne (minpoly.ne_zero hint)).2 hz⟩⟩
   obtain ⟨w, hw⟩ := exists_eq_ciSup_of_finite (f := fun z : (minpoly ℚ x).rootSet ℂ ↦ ‖(z : ℂ)‖)
-  exact ⟨w, w.2, hw⟩
+  exact ⟨w, w.property, hw⟩
 
 /-- On a number field, the house is Mathlib's `NumberField.house`: the largest modulus of the
 image of `x` under a complex embedding. -/
@@ -150,7 +153,7 @@ theorem house_eq_numberField_house {K : Type*} [Field K] [NumberField K] (x : K)
   · obtain ⟨φ, rfl⟩ := hroots.symm.subset hz
     exact NumberField.norm_embedding_le_house x φ
   · obtain ⟨φ, -, hφ⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : K →+* ℂ ↦ ‖φ x‖₊
-    rw [NumberField.house_eq_sup', hφ, coe_nnnorm]
+    rw [NumberField.house_eq_sup', hφ, coe_nnNorm]
     exact norm_le_house_of_mem_rootSet (hroots ▸ ⟨φ, rfl⟩)
 
 open Height NumberField in
@@ -253,6 +256,33 @@ theorem house_add_le {x y : F} (hx : IsAlgebraic ℚ x) (hy : IsAlgebraic ℚ y)
   rw [← IntermediateField.coe_add, house_coe, house_coe, house_coe]
   exact NumberField.house_add_le a b
 
+/-- Negation preserves the house. -/
+@[simp]
+theorem house_neg (x : F) : house (-x) = house x := by
+  have hle (y : F) : house (-y) ≤ house y := by
+    by_cases hy : IsAlgebraic ℚ y
+    · have h1 : IsAlgebraic ℚ (-1 : F) := by simpa using isAlgebraic_intCast (R := ℚ) (-1 : ℤ)
+      have hmul := house_mul_le h1 hy
+      have hh1 : house (-1 : F) = 1 := by simpa using house_intCast (F := F) (-1 : ℤ)
+      simpa [neg_one_mul, hh1] using hmul
+    · have hny : ¬IsAlgebraic ℚ (-y) := fun h ↦ hy (by simpa using h.neg)
+      simp [hy, hny]
+  exact le_antisymm (hle x) (by simpa using hle (-x))
+
+/-- The house of a finite sum of algebraic elements is at most the sum of their houses. -/
+theorem house_sum_le {ι : Type*} (s : Finset ι) {f : ι → F}
+    (hf : ∀ i ∈ s, IsAlgebraic ℚ (f i)) :
+    house (∑ i ∈ s, f i) ≤ ∑ i ∈ s, house (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih =>
+    have halg_sum : IsAlgebraic ℚ (∑ i ∈ s, f i) := by
+      rw [← mem_algebraicClosure_iff]
+      exact sum_mem fun i hi ↦ mem_algebraicClosure_iff.mpr (hf i (Finset.mem_cons_of_mem hi))
+    rw [Finset.sum_cons, Finset.sum_cons]
+    linarith [house_add_le (hf a (Finset.mem_cons_self a s)) halg_sum,
+      ih fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)]
+
 /-- The house is multiplicative on powers. For transcendental `x` and `n ≠ 0` both sides are
 `0`. -/
 @[simp]
@@ -282,7 +312,7 @@ theorem exists_algEquiv_one_le_norm {L : IntermediateField ℚ ℂ} [FiniteDimen
     ∃ τ : Gal(L/ℚ), 1 ≤ ‖((τ x : L) : ℂ)‖ := by
   have : NumberField L := ⟨⟩
   obtain ⟨σ, hσ⟩ := NumberField.exists_conjugate_one_le_norm (α := ⟨x, hx⟩)
-    fun h ↦ h0 congr($h.1)
+    fun h ↦ h0 congr(Subtype.val $h)
   refine ⟨σ.toRatAlgHom.restrictNormal' L, ?_⟩
   -- `σ` restricted to the normal field `L` and followed by the inclusion is `σ` again.
   have hτ := σ.toRatAlgHom.restrictNormal_commutes L x
@@ -401,6 +431,22 @@ theorem _root_.NumberField.one_le_norm_mul_house_pow {K : Type*} [Field K] [Numb
   rw [← Real.norm_eq_abs, Rat.norm_cast_real] at h1
   exact h1.trans (NumberField.norm_norm_le_norm_mul_house_pow x σ)
 
+/-- **Liouville's inequality for a number of known size.** If `δ` and `α` are nonzero elements of a
+number field `K` of degree `d` and `δ ^ a * α` is an algebraic integer of house at most `H`, then
+`1 ≤ ‖σ δ‖ ^ a ‖σ α‖ Hᵈ⁻¹` for every embedding `σ : K →+* ℂ`. For an integer denominator `δ`,
+`‖σ δ‖ = |δ|`. This is `NumberField.one_le_norm_mul_house_pow` applied to `δ ^ a * α`, with its
+house bounded by `H`. It is an unbundled form of `AlgSize.one_le` in Michail Karatarakis's
+formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`, commit
+`1d51891b5be7ceeca95b4583cad39e0681c5e453`, files `AlgSize.lean` and `Liouville.lean` in
+`Mathlib/NumberTheory/Transcendental/Baker/`, Apache 2.0). -/
+theorem _root_.NumberField.one_le_pow_mul_norm_embedding_mul_pow {K : Type*} [Field K]
+    [NumberField K] {δ α : K} (hδ : δ ≠ 0) (hα : α ≠ 0) {a : ℕ} {H : ℝ}
+    (hint : IsIntegral ℤ (δ ^ a * α)) (hH : NumberField.house (δ ^ a * α) ≤ H) (σ : K →+* ℂ) :
+    1 ≤ ‖σ δ‖ ^ a * ‖σ α‖ * H ^ (Module.finrank ℚ K - 1) := by
+  have h := NumberField.one_le_norm_mul_house_pow hint (mul_ne_zero (pow_ne_zero _ hδ) hα) σ
+  simp only [map_mul, map_pow, norm_mul, norm_pow] at h
+  exact h.trans (by gcongr; exact NumberField.house_nonneg _)
+
 /-- **Liouville's inequality in exponential form.** Let `K` be a number field of degree `d`,
 `σ : K →+* ℂ`, `y ∈ K` and `m ≠ 0` an integer with `m ^ N y` an algebraic integer. If
 `‖σ y‖ ≤ exp A`, `⌈y⌉ ≤ exp B` and `|m| ^ N ≤ exp C` with `C + A + (d - 1) (C + B) < 0`,
@@ -412,22 +458,19 @@ theorem _root_.NumberField.eq_zero_of_norm_le_exp_of_house_le_exp {K : Type*} [F
     (h : C + A + (Module.finrank ℚ K - 1 : ℕ) * (C + B) < 0) :
     y = 0 := by
   by_contra hy0
-  have hx0 : (m : K) ^ N * y ≠ 0 := mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.2 hm)) hy0
-  have hσx : ‖σ ((m : K) ^ N * y)‖ ≤ Real.exp C * Real.exp A := by
-    rw [map_mul, map_pow, map_intCast, norm_mul, norm_pow, Complex.norm_intCast]
-    exact mul_le_mul hmC hσ (norm_nonneg _) (Real.exp_pos _).le
   have hhx : NumberField.house ((m : K) ^ N * y) ≤ Real.exp C * Real.exp B := by
     refine (NumberField.house_mul_le _ _).trans
       (mul_le_mul ?_ hy (NumberField.house_nonneg _) (Real.exp_pos _).le)
     rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
   have hlt :
       Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (Module.finrank ℚ K - 1) < 1 := by
-    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_natCast_mul, ← Real.exp_add]
     exact Real.exp_lt_one_iff.2 (by linarith)
   refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
-  exact (NumberField.one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx
-    (pow_le_pow_left₀ (NumberField.house_nonneg _) hhx _)
-    (pow_nonneg (NumberField.house_nonneg _) _) (by positivity)
+  refine (NumberField.one_le_pow_mul_norm_embedding_mul_pow (Int.cast_ne_zero.2 hm) hy0 hint hhx
+    σ).trans ?_
+  rw [map_intCast, Complex.norm_intCast]
+  gcongr
 
 /-- A Liouville-type lower bound for the conjugates of a nonzero algebraic number: if `b ≠ 0`
 and `b x` is integral over `ℤ`, then every complex conjugate `z` of `x` satisfies
@@ -444,11 +487,11 @@ theorem inv_norm_le_pow_mul_house_pow_of_mem_rootSet {x : F} {b : ℕ} (hb : b �
   rw [hmin] at hz
   obtain ⟨σ, rfl⟩ : ∃ σ : K →+* ℂ, σ α = z := by
     rwa [← NumberField.Embeddings.range_eval_eq_rootSet_minpoly] at hz
-  -- Liouville's inequality for the nonzero algebraic integer `b α`, whose conjugates have modulus
-  -- at most `b ⌈x⌉`.
-  have hnorm := NumberField.one_le_norm_mul_house_pow hint
-    (mul_ne_zero (Nat.cast_ne_zero.mpr hb) hα0) σ
-  rw [NumberField.house_nat_mul, hhouse, hfin, hmin] at hnorm
+  -- Liouville's inequality for `α` of size `(1, b ⌈x⌉)`.
+  have hnorm := NumberField.one_le_pow_mul_norm_embedding_mul_pow (a := 1)
+    (Nat.cast_ne_zero.mpr hb) hα0 (by rwa [pow_one])
+    (by rw [pow_one, NumberField.house_nat_mul, hhouse]) σ
+  rw [hfin, hmin] at hnorm
   have hd : (minpoly ℚ α).natDegree = (minpoly ℚ α).natDegree - 1 + 1 :=
     (Nat.sub_add_cancel (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral α))).symm
   have hσ : 0 < ‖σ α‖ := norm_pos_iff.mpr ((map_ne_zero σ).mpr hα0)

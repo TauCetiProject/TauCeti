@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.Real.Irrational
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Irrationality of squares of real fourth roots and of integer combinations
@@ -18,6 +19,13 @@ for `p = 2` (`TauCeti.irrational_two_rpow_one_quarter_sq`) — the square of `(p
 is irrational. This supplies the irrational-square condition `Irrational (c ^ 2)` for rank-one
 non-integral lattices `c ℤ ⊆ ℝ` such as `2 ^ (1 / 4) ℤ`.
 
+The ratio `(√3 - 1) / (√2 - 1)` is irrational
+(`TauCeti.irrational_sqrt_three_sub_one_div_sqrt_two_sub_one`).
+
+For an irrational real number `θ`, the only integer solution of `a + b * θ = 0` has
+`a = b = 0` (`Irrational.intCast_add_mul_eq_zero_iff`), and for nonzero `c` the multiple `c * θ`
+is not an integer multiple of `c` (`Irrational.intCast_mul_ne_mul`).
+
 If `θ₁` or `θ₂` is irrational, an integer matrix of nonzero determinant cannot send `(θ₁, θ₂)`
 into `ℚ²`: for `j ≠ 0` and `a d - b c ≠ 0`, `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)` are not both
 integers (`TauCeti.notMem_range_intCast_or_notMem_range_intCast_of_irrational`). These are the
@@ -26,11 +34,17 @@ twists of the powers and finite-cover pullbacks of a flat line over a torus with
 
 ## Main statements
 
+* `Irrational.intCast_add_mul_eq_zero_iff`: an integer relation between one and an irrational
+  real number has both coefficients zero.
+* `Irrational.intCast_mul_ne_mul`: for irrational `a` and nonzero `c`, `k * c ≠ c * a` for every
+  integer `k`.
 * `TauCeti.irrational_rpow_one_quarter_sq_iff`: for `0 ≤ x`,
   `Irrational ((x ^ (1 / 4 : ℝ)) ^ 2) ↔ Irrational √x`.
 * `Nat.Prime.irrational_rpow_one_quarter_sq`: for prime `p`,
   `Irrational (((p : ℝ) ^ (1 / 4 : ℝ)) ^ 2)`.
 * `TauCeti.irrational_two_rpow_one_quarter_sq`: `Irrational (((2 : ℝ) ^ (1 / 4 : ℝ)) ^ 2)`.
+* `TauCeti.irrational_sqrt_three_sub_one_div_sqrt_two_sub_one`:
+  `Irrational ((√3 - 1) / (√2 - 1))`.
 * `TauCeti.notMem_range_intCast_or_notMem_range_intCast_of_irrational`: if `θ₁` or `θ₂` is
   irrational, `j ≠ 0` and `a d - b c ≠ 0`, then `j (a θ₁ + b θ₂)` or `j (c θ₁ + d θ₂)` is not an
   integer.
@@ -59,6 +73,31 @@ theorem _root_.Nat.Prime.irrational_rpow_one_quarter_sq {p : ℕ} (hp : p.Prime)
 theorem irrational_two_rpow_one_quarter_sq :
     Irrational (((2 : ℝ) ^ ((1 : ℝ) / 4)) ^ 2) :=
   Nat.prime_two.irrational_rpow_one_quarter_sq
+
+/-- The ratio `(√3 - 1) / (√2 - 1)` is irrational. -/
+theorem irrational_sqrt_three_sub_one_div_sqrt_two_sub_one : Irrational ((√3 - 1) / (√2 - 1)) := by
+  -- If the ratio were a rational `q`, then `√3 = q √2 + (1 - q)`, and squaring gives
+  -- `3 = 2 q (1 - q) √2 + 2 q ^ 2 + (1 - q) ^ 2`, so `√2` would be rational unless
+  -- `q (1 - q) = 0`; but `q = 0` gives `√3 = 1` and `q = 1` gives `√3 = √2`.
+  have h2 := Real.one_lt_sqrt_two
+  rintro ⟨q, hq⟩
+  have h3 : √3 = q * √2 + (1 - q) := by
+    rw [eq_div_iff (by linarith)] at hq
+    linarith
+  have hsq : 2 * q * (1 - q) * √2 + (2 * q ^ 2 + (1 - q) ^ 2) = ((3 : ℕ) : ℝ) := by
+    have h3sq := Real.sq_sqrt (show (0 : ℝ) ≤ 3 by norm_num)
+    rw [h3] at h3sq
+    push_cast
+    linear_combination h3sq - (q : ℝ) ^ 2 * Real.sq_sqrt (show (0 : ℝ) ≤ 2 by norm_num)
+  by_cases hq₀ : 2 * q * (1 - q) = 0
+  · rcases mul_eq_zero.1 hq₀ with hq₀ | hq₀
+    · obtain rfl : q = 0 := by simpa using hq₀
+      norm_num at h3
+    · obtain rfl : q = 1 := (sub_eq_zero.1 hq₀).symm
+      norm_num at h3
+  · refine ((irrational_sqrt_two.ratCast_mul hq₀).add_ratCast (2 * q ^ 2 + (1 - q) ^ 2)).ne_nat
+      3 ?_
+    exact_mod_cast hsq
 
 open Set in
 /-- **Powers and finite-cover pullbacks of a flat line with infinite holonomy are nontrivial.** If
@@ -89,3 +128,30 @@ theorem notMem_range_intCast_or_notMem_range_intCast_of_irrational {θ₁ θ₂ 
     linear_combination (-(a : ℝ)) * hn + (c : ℝ) * hm
 
 end TauCeti
+
+namespace Irrational
+
+/-- An integer relation between one and an irrational real number has both coefficients zero. -/
+theorem intCast_add_mul_eq_zero_iff {θ : ℝ} (hθ : Irrational θ) {a b : ℤ} :
+    (a : ℝ) + (b : ℝ) * θ = 0 ↔ a = 0 ∧ b = 0 := by
+  constructor
+  · intro h
+    have hb : b = 0 := by
+      by_contra hn
+      apply (hθ.intCast_mul hn).ne_int (-a)
+      push_cast
+      linarith
+    have ha : (a : ℝ) = 0 := by
+      simpa only [hb, Int.cast_zero, zero_mul, add_zero] using h
+    exact ⟨Int.cast_eq_zero.mp ha, hb⟩
+  · rintro ⟨rfl, rfl⟩
+    simp only [Int.cast_zero, zero_mul, add_zero]
+
+/-- For an irrational real number `a` and a nonzero real number `c`, the multiple `c * a` is not an
+integer multiple of `c`. -/
+theorem intCast_mul_ne_mul {a c : ℝ} (ha : Irrational a) (hc : c ≠ 0) (k : ℤ) :
+    (k : ℝ) * c ≠ c * a := by
+  intro h
+  exact ha.ne_int k (mul_left_cancel₀ hc (by rw [← h, mul_comm]))
+
+end Irrational

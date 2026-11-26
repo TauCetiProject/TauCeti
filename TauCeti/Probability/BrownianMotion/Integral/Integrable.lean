@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 
 /-!
@@ -19,21 +20,27 @@ pathwise, on every finite horizon outside one common null set. These are domains
 stochastic integration, not assertions that a stochastic integral has already been constructed.
 
 For s-finite `P`, the expected-energy domain embeds into the pathwise-energy domain by Tonelli
-and a countable cofinal family of horizons. Both are closed under addition and scaling.
+and a countable cofinal family of horizons. Both are closed under addition, scaling and
+restriction to predictable sets. The expected-energy domain is also closed under multiplication
+by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
 variable, held constant in time, belongs to the pathwise domain without any moment assumption.
+The pathwise domain transfers to an absolutely continuous measure and is unchanged under
+an equivalent measure on the same filtration. This does not assert preservation of expected
+square energy or that the original driver remains Brownian.
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
-of the pullback Lebesgue measure to `(0,T]`. Pathwise membership uses native `MemLp`, so square
-energy means a finite nonnegative lower integral, never the default value of a divergent
+of the pullback Lebesgue measure to `(0,T]`, that is `TauCeti.Probability.timeMeasure T`
+(`TauCeti.BrownianIntegrable.memLp_timeMeasure`). Pathwise membership uses native `MemLp`, so
+square energy means a finite nonnegative lower integral, never the default value of a divergent
 Bochner integral.
 
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
-  §3.2.
+  §§3.2 and 3.5.
 -/
 
 public section
@@ -68,6 +75,19 @@ structure LocallyBrownianIntegrable (ℱ : Filtration ℝ≥0 mΩ) (P : Measure 
   ae_memLp : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, MemLp (fun t ↦ H t ω) 2
     ((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ))
 
+/-- Finite pathwise Brownian energy on all horizons survives an absolutely continuous
+change of measure, on the same filtration. No moment or probability hypothesis is needed. -/
+theorem LocallyBrownianIntegrable.mono_ac {Q : Measure Ω}
+    (hH : LocallyBrownianIntegrable ℱ P H) (hQP : Q ≪ P) : LocallyBrownianIntegrable ℱ Q H :=
+  ⟨hH.isStronglyPredictable, hQP.ae_le hH.ae_memLp⟩
+
+/-- Equivalent measures have the same predictable pathwise-square-energy domain. Unlike
+expected-square-energy membership, this needs no bound on either Radon–Nikodym density. -/
+theorem locallyBrownianIntegrable_iff_of_mutuallyAbsolutelyContinuous {Q : Measure Ω}
+    (hPQ : P ≪ Q) (hQP : Q ≪ P) :
+    LocallyBrownianIntegrable ℱ P H ↔ LocallyBrownianIntegrable ℱ Q H :=
+  ⟨fun h ↦ h.mono_ac hQP, fun h ↦ h.mono_ac hPQ⟩
+
 /-- A single a.e. statement for all finite horizons is equivalent to a separate a.e.
 statement for each integer horizon, together with predictability. -/
 theorem locallyBrownianIntegrable_iff_nat : LocallyBrownianIntegrable ℱ P H ↔
@@ -89,6 +109,12 @@ theorem locallyBrownianIntegrable_iff_nat : LocallyBrownianIntegrable ℱ P H �
         ← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc]
       exact Measure.restrict_mono_set _ (Ioc_subset_Ioc_right (by exact_mod_cast hn))
     exact (hω n).mono_measure hmeasure
+
+/-- The finite expected square energy of a Brownian-integrable integrand, for Lebesgue time
+`TauCeti.Probability.timeMeasure T` on `(0,T]` times `P`. -/
+theorem BrownianIntegrable.memLp_timeMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 ((Probability.timeMeasure T).prod P) := by
+  simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using h.memLp T
 
 /-- Finite expected energy on every finite horizon gives finite pathwise energy on all
 finite horizons simultaneously. -/
@@ -119,11 +145,46 @@ theorem BrownianIntegrable.const_mul (h : BrownianIntegrable ℱ P H) (c : ℝ) 
     BrownianIntegrable ℱ P (fun t ω ↦ c * H t ω) :=
   ⟨h.isStronglyPredictable.const_mul c, fun T ↦ (h.memLp T).const_mul c⟩
 
+/-- Multiplication by a predictable process that is essentially bounded on every finite
+horizon preserves finite expected square energy. -/
+theorem BrownianIntegrable.mul (hH : BrownianIntegrable ℱ P H)
+    (hK : IsStronglyPredictable ℱ K)
+    (hb : ∀ T : ℝ≥0, MemLp (Function.uncurry K) ∞
+      (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P)) :
+    BrownianIntegrable ℱ P (fun t ω ↦ H t ω * K t ω) :=
+  ⟨hH.isStronglyPredictable.mul hK, fun T ↦ (hH.memLp T).mul (hb T)⟩
+
+/-- Multiplication by a uniformly bounded predictable process preserves finite expected
+square energy. -/
+theorem BrownianIntegrable.mul_of_bound (hH : BrownianIntegrable ℱ P H)
+    (hK : IsStronglyPredictable ℱ K) (C : ℝ) (hb : ∀ t ω, ‖K t ω‖ ≤ C) :
+    BrownianIntegrable ℱ P (fun t ω ↦ H t ω * K t ω) :=
+  hH.mul hK fun _ ↦ memLp_top_of_bound
+    (hK.mono ℱ.predictable_le_prod).aestronglyMeasurable C
+    (Eventually.of_forall fun z ↦ hb z.1 z.2)
+
 /-- Scaling preserves finite pathwise square energy. -/
 theorem LocallyBrownianIntegrable.const_mul (h : LocallyBrownianIntegrable ℱ P H) (c : ℝ) :
     LocallyBrownianIntegrable ℱ P (fun t ω ↦ c * H t ω) :=
   ⟨h.isStronglyPredictable.const_mul c,
     h.ae_memLp.mono fun _ hω T ↦ (hω T).const_mul c⟩
+
+/-- Restriction to a predictable set preserves finite expected square energy. -/
+theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
+    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
+    BrownianIntegrable ℱ P (fun t ω ↦ A.indicator (Function.uncurry H) (t, ω)) := by
+  refine ⟨hH.isStronglyPredictable.indicator hA, fun T ↦ ?_⟩
+  exact (hH.memLp T).indicator (ℱ.predictable_le_prod A hA).nullMeasurableSet
+
+/-- Restriction to a predictable set preserves finite pathwise square energy. -/
+theorem LocallyBrownianIntegrable.indicator (hH : LocallyBrownianIntegrable ℱ P H)
+    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
+    LocallyBrownianIntegrable ℱ P (fun t ω ↦ A.indicator (Function.uncurry H) (t, ω)) := by
+  refine ⟨hH.isStronglyPredictable.indicator hA, ?_⟩
+  filter_upwards [hH.ae_memLp] with ω hω
+  intro T
+  exact (hω T).indicator ((ℱ.predictable_le_prod A hA).preimage
+    (measurable_id.prodMk measurable_const)).nullMeasurableSet
 
 /-- Product-a.e. replacement preserves the expected-energy domain, provided the new
 representative is predictable. -/

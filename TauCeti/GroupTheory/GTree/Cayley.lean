@@ -1,0 +1,252 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Combinatorics.Graph.Serre.Cayley
+public import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
+public import TauCeti.GroupTheory.FreeGroup.Nielsen
+public import TauCeti.GroupTheory.GTree.JSJ
+public import TauCeti.GroupTheory.GTree.Restrict
+
+/-!
+# The Cayley tree of a free group
+
+A free group acts by left multiplication on its Cayley graph with respect to a basis, which is a
+tree, and the action has no inversions because it preserves the letter of every dart. This is the
+Cayley tree of the free group, `GTree.cayley`.
+
+The action is free: the stabilizers of vertices and of darts are trivial, so every nontrivial
+element is hyperbolic. The translation length of an element is the length of its cyclic
+reduction, the least length of a conjugate (`GTree.cayley_translationLength`); for basis elements
+`a` and `b`, the element `a bⁿ` has translation length `n + 1`, and `a b a⁻¹` has translation
+length `1`. The Cayley tree is minimal, since the action is transitive on vertices.
+
+Since the action is free and minimal, the Cayley tree is a JSJ tree of the free group over every
+family of subgroups containing the trivial subgroup, relative to a family of trivial subgroups
+(`GTree.cayley_isJSJ`). Over such families the JSJ trees of a free group, among the trees whose
+vertices and darts lie in the universe of the basis, are exactly its minimal free actions
+(`GTree.isJSJ_iff_forall_stabilizer_eq_bot_freeGroup`).
+
+JSJ trees are not unique up to equivariant isomorphism: precomposing the action on a JSJ tree with
+an automorphism of the free group gives a JSJ tree (`GTree.IsJSJ.comap_freeGroup`), and
+equivariantly isomorphic trees have the same translation lengths. Precomposing the action on the
+Cayley tree of `F(a, b)` with the Nielsen automorphism `a ↦ a bⁿ` gives `a` the translation length
+`n + 1`, so these trees are pairwise non-isomorphic JSJ trees
+(`GTree.exists_isJSJ_pairwise_not_iso_freeGroup`); all of them lie in one deformation space, the
+JSJ deformation space (`GTree.IsJSJ.sameDeformationSpace`).
+
+## Main declarations
+
+* `TauCeti.GTree.cayley`: the Cayley tree of `FreeGroup α`, a tree for `FreeGroup α`, with
+  identity vertex `TauCeti.GTree.cayleyBaseVertex`.
+* `TauCeti.GTree.cayley_stabilizer_vertex`, `TauCeti.GTree.cayley_stabilizer_dart`: the action is
+  free.
+* `TauCeti.GTree.cayley_isHyperbolic_iff`: the hyperbolic elements are the nontrivial ones.
+* `TauCeti.GTree.cayley_translationLength`: the translation length is the length of the cyclic
+  reduction.
+* `TauCeti.GTree.cayley_isJSJ`: the Cayley tree is a JSJ tree of the free group, over a family
+  containing the trivial subgroup and relative to trivial subgroups.
+* `TauCeti.GTree.isJSJ_iff_forall_stabilizer_eq_bot_freeGroup`: over the same families, the JSJ
+  trees of a free group are its minimal free actions.
+* `TauCeti.GTree.IsJSJ.comap_freeGroup`: automorphisms of a free group act on its JSJ trees.
+* `TauCeti.GTree.exists_isJSJ_pairwise_not_iso_freeGroup`: the free group of rank two has
+  infinitely many pairwise non-isomorphic JSJ trees.
+
+## References
+
+* J.-P. Serre, *Trees*, Chapter I, §3.2 and §6.4.
+* V. Guirardel and G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.1,
+  §3.1, and the paragraph on uniqueness in the Introduction.
+-/
+
+public section
+
+universe u
+
+namespace TauCeti
+
+open SerreGraph _root_.MulAction
+
+namespace GTree
+
+variable {α : Type u}
+
+/-- The Cayley tree of a free group: its Cayley graph with respect to the basis, with the action
+by left multiplication. -/
+@[expose] def cayley (α : Type u) : GTree.{u, u} (FreeGroup α) where
+  toSerreGraph := SerreGraph.cayley α
+  isTree := cayley_isTree
+  action := cayleyMulLeft
+  action_smul_ne_rev g e h := by
+    -- Left multiplication keeps the letter of a dart, while reversal inverts it.
+    rw [← Aut.smul_dart_def] at h
+    simpa [Prod.ext_iff] using congrArg cayleyDartEquiv h
+
+/-- Left multiplication acts on the vertices of the Cayley tree. -/
+@[simp] theorem cayleyVertexEquiv_cayley_smul (g : FreeGroup α) (v : (cayley α).V) :
+    cayleyVertexEquiv (g • v) = g * cayleyVertexEquiv v :=
+  cayleyVertexEquiv_cayleyMulLeft_smul g v
+
+/-- Left multiplication moves the source of a dart of the Cayley tree and keeps its letter. -/
+@[simp] theorem cayleyDartEquiv_cayley_smul (g : FreeGroup α) (e : (cayley α).E) :
+    cayleyDartEquiv (g • e) = (g * (cayleyDartEquiv e).1, (cayleyDartEquiv e).2) :=
+  cayleyDartEquiv_cayleyMulLeft_smul g e
+
+/-- The identity vertex `1` of the Cayley `G`-tree of `FreeGroup α`. -/
+def cayleyBaseVertex (α : Type u) : (cayley α).V :=
+  cayleyVertexEquiv.symm 1
+
+@[simp] theorem cayleyVertexEquiv_cayleyBaseVertex (α : Type u) :
+    cayleyVertexEquiv (cayleyBaseVertex α) = 1 :=
+  Equiv.apply_symm_apply _ 1
+
+/-! ### The action is free -/
+
+/-- A free group acts freely on the vertices of its Cayley tree. -/
+theorem cayley_stabilizer_vertex (v : (cayley α).V) : stabilizer (FreeGroup α) v = ⊥ := by
+  refine eq_bot_iff.mpr fun g hg => Subgroup.mem_bot.mpr ?_
+  have h : g • v = v := mem_stabilizer_iff.mp hg
+  simpa using congrArg cayleyVertexEquiv h
+
+/-- A free group acts freely on the darts of its Cayley tree. -/
+theorem cayley_stabilizer_dart (e : (cayley α).E) : stabilizer (FreeGroup α) e = ⊥ := by
+  refine eq_bot_iff.mpr fun g hg => Subgroup.mem_bot.mpr ?_
+  have h : g • e = e := mem_stabilizer_iff.mp hg
+  simpa using congrArg (fun x => (cayleyDartEquiv x).1) h
+
+/-- Only the identity is elliptic in the Cayley tree. -/
+@[simp] theorem cayley_isElliptic_iff {g : FreeGroup α} : (cayley α).IsElliptic g ↔ g = 1 :=
+  ⟨fun h => by
+    obtain ⟨v, hv⟩ := isElliptic_iff.mp h
+    exact Subgroup.mem_bot.mp (cayley_stabilizer_vertex v ▸ mem_stabilizer_iff.mpr hv),
+    fun h => h ▸ isElliptic_one _⟩
+
+/-- Every nontrivial element of a free group is hyperbolic in the Cayley tree. -/
+@[simp] theorem cayley_isHyperbolic_iff {g : FreeGroup α} : (cayley α).IsHyperbolic g ↔ g ≠ 1 :=
+  (not_iff_comm.mp (not_isHyperbolic_iff.trans cayley_isElliptic_iff)).symm
+
+/-- The Cayley tree is relative to any family of subgroups containing the trivial subgroup and any
+family of trivial subgroups. -/
+theorem cayley_isRelative {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    (cayley α).IsRelative 𝒜 ℋ :=
+  isRelative_of_forall_stabilizer_eq_bot h𝒜 hℋ cayley_stabilizer_vertex
+
+/-- The Cayley tree of a free group is a minimal tree. -/
+theorem cayley_isMinimal : (cayley α).IsMinimal := by
+  refine isMinimal_iff.mpr fun S ⟨v, hv⟩ _ hS => Set.eq_univ_of_forall fun w => ?_
+  have hw : (cayleyVertexEquiv w * (cayleyVertexEquiv v)⁻¹) • v = w :=
+    cayleyVertexEquiv.injective (by simp)
+  exact hw ▸ hS _ v hv
+
+/-! ### Translation lengths -/
+
+/-- The translation length of an element of a free group on the Cayley tree is the length of its
+cyclic reduction. -/
+theorem cayley_translationLength [DecidableEq α] (g : FreeGroup α) :
+    (cayley α).translationLength g = (FreeGroup.reduceCyclically g.toWord).length := by
+  -- The vertex `v` is moved by the length of the conjugate `v⁻¹ * g * v`.
+  have key (v : (cayley α).V) : (cayley α).dist v (g • v) =
+      ((cayleyVertexEquiv v)⁻¹ * g * cayleyVertexEquiv v).norm :=
+    (SerreGraph.cayley_dist v (g • v)).trans (by rw [cayleyVertexEquiv_cayley_smul, mul_assoc])
+  refine le_antisymm ?_ ?_
+  · obtain ⟨v, hv⟩ : ∃ v : (cayley α).V, cayleyVertexEquiv v =
+        FreeGroup.mk (FreeGroup.reduceCyclically.conjugator g.toWord) :=
+      ⟨cayleyVertexEquiv.symm _, Equiv.apply_symm_apply _ _⟩
+    refine (translationLength_le g v).trans_eq ?_
+    rw [key, hv, FreeGroup.norm_inv_mk_conjugator_mul_mul]
+  · obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := cayley α) g
+    rw [← hv, key]
+    exact FreeGroup.length_reduceCyclically_toWord_le_norm_of_isConj
+      (isConj_iff.mpr ⟨(cayleyVertexEquiv v)⁻¹, by rw [inv_inv]⟩)
+
+/-- A basis element translates the Cayley tree by one step. -/
+theorem cayley_translationLength_of (a : α) :
+    (cayley α).translationLength (FreeGroup.of a) = 1 := by
+  classical
+  rw [cayley_translationLength, FreeGroup.toWord_of, FreeGroup.reduceCyclically.singleton,
+    List.length_singleton]
+
+/-- The element `a bⁿ` of a free group, for basis elements `a` and `b`, translates the Cayley tree
+by `n + 1` steps. -/
+theorem cayley_translationLength_of_mul_of_pow (a b : α) (n : ℕ) :
+    (cayley α).translationLength (FreeGroup.of a * FreeGroup.of b ^ n) = n + 1 := by
+  classical
+  -- The word `a bⁿ` is reduced, and cyclically reduced since its first and last letters are
+  -- positive.
+  have hw : (FreeGroup.of a * FreeGroup.of b ^ n).toWord =
+      (a, true) :: List.replicate n (b, true) :=
+    (FreeGroup.toWord_mk_mul_eq a true _).trans (by cases n <;> simp [List.replicate_succ])
+  rw [cayley_translationLength, hw]
+  rcases n with _ | n <;> simp [List.replicate_succ', FreeGroup.reduceCyclically.cons_append]
+
+/-- The product of two basis elements translates the Cayley tree by two steps. -/
+theorem cayley_translationLength_of_mul_of (a b : α) :
+    (cayley α).translationLength (FreeGroup.of a * FreeGroup.of b) = 2 := by
+  simpa using cayley_translationLength_of_mul_of_pow a b 1
+
+/-- The conjugate `a b a⁻¹` of a basis element translates the Cayley tree by one step. -/
+theorem cayley_translationLength_of_mul_of_mul_inv_of (a b : α) :
+    (cayley α).translationLength (FreeGroup.of a * FreeGroup.of b * (FreeGroup.of a)⁻¹) = 1 := by
+  rw [translationLength_conj, cayley_translationLength_of]
+
+/-! ### The Cayley tree is a JSJ tree -/
+
+/-- The Cayley tree of a free group is a JSJ tree, over any family of subgroups containing the
+trivial subgroup and relative to at most the trivial subgroup. -/
+theorem cayley_isJSJ {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    (cayley α).IsJSJ 𝒜 ℋ :=
+  .of_forall_stabilizer_eq_bot cayley_isMinimal (cayley_isRelative h𝒜 hℋ) cayley_stabilizer_vertex
+
+/-- Over a family of subgroups containing the trivial subgroup, relative to at most the trivial
+subgroup, a tree of a free group (with vertices and darts in the universe of the basis) is a JSJ
+tree exactly when it is minimal and its vertex stabilizers are trivial: the JSJ deformation space
+of a free group is the space of its minimal free actions. -/
+theorem isJSJ_iff_forall_stabilizer_eq_bot_freeGroup {T : GTree.{u, u} (FreeGroup α)}
+    {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    T.IsJSJ 𝒜 ℋ ↔ T.IsMinimal ∧ ∀ x : T.V, stabilizer (FreeGroup α) x = ⊥ :=
+  (cayley_isJSJ h𝒜 hℋ).isJSJ_iff_forall_stabilizer_eq_bot cayley_stabilizer_vertex
+
+/-! ### JSJ trees of a free group are not unique -/
+
+/-- Precomposing the action of a free group on a JSJ tree with an automorphism gives a JSJ tree,
+over a family of subgroups containing the trivial subgroup and relative to at most the trivial
+subgroup. -/
+theorem IsJSJ.comap_freeGroup {T : GTree.{u, u} (FreeGroup α)} {𝒜 ℋ : Set (Subgroup (FreeGroup α))}
+    (hT : T.IsJSJ 𝒜 ℋ) (e : FreeGroup α ≃* FreeGroup α) (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    (T.comap (e : FreeGroup α →* FreeGroup α)).IsJSJ 𝒜 ℋ := by
+  rw [isJSJ_iff_forall_stabilizer_eq_bot_freeGroup h𝒜 hℋ] at hT ⊢
+  refine ⟨hT.1.comap e.surjective, fun x => ?_⟩
+  rw [stabilizer_comap_vertex, hT.2, MonoidHom.comap_bot, MonoidHom.ker_eq_bot_iff]
+  exact e.injective
+
+/-- On the Cayley tree with the action precomposed with the Nielsen automorphism `a ↦ a bⁿ`, the
+basis element `a` has translation length `n + 1`. -/
+theorem cayley_comap_nielsenMul_translationLength_of {a b : α} (hab : a ≠ b) (n : ℕ) :
+    ((cayley α).comap
+      (FreeGroup.nielsenMul a b hab n : FreeGroup α →* FreeGroup α)).translationLength
+      (FreeGroup.of a) = n + 1 := by
+  simp [cayley_translationLength_of_mul_of_pow]
+
+/-- JSJ trees are not unique up to isomorphism: the free group of rank two has infinitely many JSJ
+trees, over any family of subgroups containing the trivial subgroup and relative to at most the
+trivial subgroup, no two of which are equivariantly isomorphic. -/
+theorem exists_isJSJ_pairwise_not_iso_freeGroup {𝒜 ℋ : Set (Subgroup (FreeGroup (Fin 2)))}
+    (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    ∃ T : ℕ → GTree.{0, 0} (FreeGroup (Fin 2)), (∀ n, (T n).IsJSJ 𝒜 ℋ) ∧
+      Pairwise fun m n => ¬∃ φ : (T m).toSerreGraph.Iso (T n).toSerreGraph,
+        ∀ (g : FreeGroup (Fin 2)) (x : (T m).V), φ.equivV (g • x) = g • φ.equivV x := by
+  -- The Cayley tree with the action precomposed with the Nielsen automorphisms `a ↦ a bⁿ`; the
+  -- basis element `a` has translation length `n + 1` on the `n`-th tree.
+  refine ⟨fun n : ℕ => (cayley (Fin 2)).comap (FreeGroup.nielsenMul (0 : Fin 2) 1 zero_ne_one n :
+    FreeGroup (Fin 2) →* FreeGroup (Fin 2)), fun n => (cayley_isJSJ h𝒜 hℋ).comap_freeGroup _ h𝒜 hℋ,
+    fun m n hmn ⟨φ, hφ⟩ => hmn ?_⟩
+  have h := translationLength_eq_of_iso φ hφ (FreeGroup.of 0)
+  simp only [cayley_comap_nielsenMul_translationLength_of] at h
+  lia
+
+end GTree
+
+end TauCeti

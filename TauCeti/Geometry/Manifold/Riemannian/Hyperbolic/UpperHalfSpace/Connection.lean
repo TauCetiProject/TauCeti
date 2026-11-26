@@ -44,7 +44,7 @@ noncomputable section
 
 namespace TauCeti.UpperHalfSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 local notation "P" => WithLp 2 (E × ℝ)
 local notation "J" => 𝓘(ℝ, P)
@@ -53,12 +53,10 @@ local notation "J" => 𝓘(ℝ, P)
 def constantField (v : P) (x : UpperHalfSpace E) : TangentSpace J x :=
   (tangentSpaceCastModel J x).symm v
 
-omit [FiniteDimensional ℝ E] in
 /-- The value of a constant coordinate vector field. -/
 @[simp] theorem constantField_apply (v : P) (x : UpperHalfSpace E) :
     constantField v x = (tangentSpaceCastModel J x).symm v := (rfl)
 
-omit [FiniteDimensional ℝ E] in
 private theorem mpullback_const (v : P) :
     mpullback J J coe (fun _ : P => v : ∀ y : P, TangentSpace J y) = constantField v := by
   let A : ∀ y : P, TangentSpace J y := fun _ => v
@@ -72,7 +70,6 @@ private theorem mpullback_const (v : P) :
   rw [mpullback_apply, hcoe, ContinuousLinearMap.inverse_equiv]
   rfl
 
-omit [FiniteDimensional ℝ E] in
 /-- Constant coordinate fields are smooth as sections of the tangent bundle. -/
 theorem contMDiff_constantField [CompleteSpace E] (v : P) : ContMDiff J ((J).prod J) ∞
     (fun y => (⟨y, constantField v y⟩ : TangentBundle J (UpperHalfSpace E))) := by
@@ -88,14 +85,12 @@ theorem contMDiff_constantField [CompleteSpace E] (v : P) : ContMDiff J ((J).pro
         rw [hcoe]
         exact ContinuousLinearMap.isInvertible_equiv) (by simp)
 
-omit [FiniteDimensional ℝ E] in
 private theorem mdifferentiableAt_constantField [CompleteSpace E] (v : P)
     (x : UpperHalfSpace E) :
     MDifferentiableAt J ((J).prod J)
       (fun y => (⟨y, constantField v y⟩ : TangentBundle J (UpperHalfSpace E))) x :=
   (contMDiff_constantField v x).mdifferentiableAt (by simp)
 
-omit [FiniteDimensional ℝ E] in
 /-- Constant coordinate fields commute. -/
 @[simp] theorem mlieBracket_constantField [CompleteSpace E] (u v : P) (x : UpperHalfSpace E) :
     mlieBracket J (constantField u) (constantField v) x = 0 := by
@@ -110,7 +105,6 @@ omit [FiniteDimensional ℝ E] in
   rw [← h]
   simp only [mpullback, mlieBracket_const_model_space, map_zero]
 
-omit [FiniteDimensional ℝ E] in
 private theorem mvfderiv_inner_constantField (u v w : P) (x : UpperHalfSpace E) :
     mvfderiv J (fun y => inner ℝ (constantField u y) (constantField v y)) x (constantField w x) =
       -2 * inner ℝ u v * w.snd / height x ^ 3 := by
@@ -138,6 +132,7 @@ private theorem mvfderiv_inner_constantField (u v w : P) (x : UpperHalfSpace E) 
   simp
   field_simp [(height_pos x).ne']
 
+variable [FiniteDimensional ℝ E] in
 /-- In the upper-half-space coordinates, the Levi-Civita derivative of the constant field
 `v` in direction `u` is `(⟪u,v⟫ eₜ - uₜ v - vₜ u) / t`, where `eₜ` is the vertical unit vector.
 The tangent-space identifications read the result in the Euclidean model. -/
@@ -164,7 +159,6 @@ The tangent-space identifications read the result in the Euclidean model. -/
   field_simp [(height_pos x).ne'] at h ⊢
   linarith
 
-omit [FiniteDimensional ℝ E] in
 private theorem eventually_symmL_eq_constantField (x : UpperHalfSpace E) :
     ∀ᶠ y in 𝓝 x, ∀ v : P,
       (trivializationAt P (TangentSpace J) x).symmL ℝ y v = constantField v y := by
@@ -176,7 +170,6 @@ private theorem eventually_symmL_eq_constantField (x : UpperHalfSpace E) :
   rw [TangentBundle.symmL_model_space] at h'
   exact h'
 
-omit [FiniteDimensional ℝ E] in
 private theorem frameCovariantDerivative_constantField {ι : Type*} [Fintype ι]
     (b : Module.Basis ι ℝ P)
     (x : UpperHalfSpace E) (v : P) :
@@ -212,6 +205,7 @@ private theorem frameCovariantDerivative_constantField {ι : Type*} [Fintype ι]
   rw [hzero]
   simp only [zero_apply, zero_smul]
 
+variable [FiniteDimensional ℝ E] in
 /-- The Christoffel map of the upper-half-space metric in its inherited coordinates,
 independently of the finite basis used to construct the map. The first input `v` is the field
 value and the second input `u` is the direction of differentiation. -/
@@ -228,8 +222,8 @@ value and the second input `u` is the direction of differentiation. -/
   have hc := TauCeti.Manifold.covariantDerivative_eq_add_christoffelForm b
     (cov.isCovariantDerivativeOn (s := e.baseSet)) hx (mdifferentiableAt_constantField v x)
   rw [frameCovariantDerivative_constantField b x v, zero_add] at hc
-  have hmap := TauCeti.Manifold.christoffelMap_apply b
-    (cov.isCovariantDerivativeOn (s := e.baseSet)) hx v u
+  have hmap := TauCeti.Manifold.christoffelMap_apply (x := x) b
+    (cov.isCovariantDerivativeOn (s := e.baseSet)) v u
   have he (a : P) : e.symmL ℝ x a = constantField a x := by
     exact (eventually_symmL_eq_constantField x).self_of_nhds a
   rw [he v, he u, ← hc] at hmap

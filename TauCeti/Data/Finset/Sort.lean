@@ -10,6 +10,8 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Fin.Tuple
+public import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Data.Fintype.Fin
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
 
@@ -31,6 +33,12 @@ pairs.
 The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
 elements of `s` below it.
 
+Deleting the elements of a finset `S` of `Fin n` and renumbering the remaining ones in increasing
+order renumbers the positions `0, …, n` by `Finset.collapse S`, the number of remaining elements
+in front of a position. It is monotone, increases by one exactly when passing a remaining element,
+and is inverse to the increasing enumeration `Sᶜ.orderEmbOfFin` of the remaining elements
+(`Finset.collapse_orderEmbOfFin`, `Finset.orderEmbOfFin_collapse`).
+
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
 sorted list of the image in reversed order; in particular, sorting the points of a finset of
 `Fin n` moved along the reversal `Fin.rev` reverses the list of their images.
@@ -38,7 +46,9 @@ sorted list of the image in reversed order; in particular, sorting the points of
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
 
-The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
+The `i`-th smallest element of `s` has exactly `i` elements of `s` below it, and it satisfies a
+predicate closed under passing to smaller elements exactly when more than `i` elements of `s` do.
+For a finset of `Fin n`, its value is at least `i`.
 
 Removing the position of `i` from the increasing enumeration of `s` gives the increasing
 enumeration of `s.erase i`.
@@ -49,6 +59,8 @@ Every nonempty finset can be listed by a monotone sequence strictly increasing t
 
 If every element of `I` is at most `s ≤ t`, the sequence `⊥`, the elements of `I` in increasing
 order, `s`, then constantly `t`, is monotone in `ℕ`, `Finset.monotone_bot_orderEmbOfFin_snoc`.
+
+Sorting the interval `[a, b)` of natural numbers lists `a, a + 1, …, b - 1`, `Nat.sort_Ico`.
 
 The support-enlargement and adjacent-swap ordered-product lemmas are adapted from
 `Mei/Algebra/BigOperators/Group/Finset/Ordered.lean` in
@@ -293,6 +305,130 @@ theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m :
   simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
     filter_gt_eq_Iio, Fin.card_Iio]
 
+/-- For a predicate `p` that passes to smaller elements, the `m`-th element of `s` in increasing
+order satisfies `p` exactly when more than `m` elements of `s` satisfy `p`. -/
+theorem lt_card_filter_iff_apply_orderEmbOfFin_of_imp (s : Finset α) {k : ℕ} (h : #s = k)
+    (m : Fin k) (p : α → Prop) [DecidablePred p] (hp : ∀ a b, b ≤ a → p a → p b) :
+    m < #{a ∈ s | p a} ↔ p (s.orderEmbOfFin h m) := by
+  have e := map_orderEmbOfFin_univ s h
+  generalize s.orderEmbOfFin h = a at e ⊢
+  subst e
+  rw [filter_map, card_map]
+  exact Fin.lt_card_filter_univ_iff_apply_of_imp _ fun i j hji ↦ hp _ _ (a.monotone hji)
+
+/-- The increasing enumeration of all elements of `Fin n` is the canonical cardinality cast. -/
+theorem orderEmbOfFin_univ_apply {n : ℕ} (c : Fin #(univ : Finset (Fin n))) :
+    (univ : Finset (Fin n)).orderEmbOfFin rfl c = finCongr (by simp) c := by
+  have hcard : #(univ : Finset (Fin n)) = n := by simp
+  calc
+    _ = (univ : Finset (Fin n)).orderEmbOfFin hcard (finCongr hcard c) :=
+      (orderEmbOfFin_eq_orderEmbOfFin_iff (s := univ) (h := rfl) (h' := hcard)
+        (i := c) (j := finCongr hcard c)).2 rfl
+    _ = finCongr hcard c :=
+      congrFun (Finset.orderEmbOfFin_unique hcard (fun _ ↦ mem_univ _) strictMono_id).symm _
+
+/-- The `m`-th element of a finset of `Fin n` in increasing order is at least `m`. -/
+theorem val_le_val_orderEmbOfFin {n : ℕ} (s : Finset (Fin n)) {k : ℕ} (h : #s = k) (m : Fin k) :
+    (m : ℕ) ≤ s.orderEmbOfFin h m :=
+  calc (m : ℕ) = #{x ∈ s | x < s.orderEmbOfFin h m} := (s.card_filter_lt_orderEmbOfFin h m).symm
+    _ ≤ #(Iio (s.orderEmbOfFin h m)) := card_le_card fun _ hx ↦ mem_Iio.2 (mem_filter.1 hx).2
+    _ = s.orderEmbOfFin h m := Fin.card_Iio _
+
+section Collapse
+
+variable {n : ℕ}
+
+/-- The number of elements of `Fin n` outside `S` below `j`. When the elements of `S` are deleted
+and the remaining ones are renumbered in increasing order, the position `j`, between the elements
+`j - 1` and `j`, becomes the position `S.collapse j`. -/
+def collapse (S : Finset (Fin n)) (j : ℕ) : ℕ :=
+  #(Sᶜ.filter fun k : Fin n => (k : ℕ) < j)
+
+theorem collapse_def (S : Finset (Fin n)) (j : ℕ) :
+    S.collapse j = #(Sᶜ.filter fun k : Fin n => (k : ℕ) < j) :=
+  (rfl)
+
+@[simp]
+theorem collapse_zero (S : Finset (Fin n)) : S.collapse 0 = 0 := by
+  simp [collapse]
+
+/-- A renumbered position is at most the number of remaining elements. -/
+theorem collapse_le_card (S : Finset (Fin n)) (j : ℕ) : S.collapse j ≤ #Sᶜ :=
+  card_le_card (filter_subset _ _)
+
+/-- The position `i` comes strictly before the position `j` after the deletion exactly when a
+remaining element lies between them. -/
+theorem collapse_lt_collapse_iff {S : Finset (Fin n)} {i j : ℕ} :
+    S.collapse i < S.collapse j ↔ ∃ k ∉ S, i ≤ (k : ℕ) ∧ (k : ℕ) < j := by
+  refine ⟨fun h => ?_, fun ⟨k, hk, hik, hkj⟩ => card_lt_card ?_⟩
+  · by_contra hne
+    refine h.not_ge (card_le_card fun k hk => ?_)
+    simp only [mem_filter, mem_compl] at hk ⊢
+    exact ⟨hk.1, by_contra fun hik => hne ⟨k, hk.1, not_lt.1 hik, hk.2⟩⟩
+  · refine (ssubset_iff_of_subset fun l hl => ?_).2 ⟨k, ?_, ?_⟩
+    · simp only [mem_filter] at hl ⊢
+      exact ⟨hl.1, by omega⟩
+    · simpa [mem_filter] using ⟨hk, hkj⟩
+    · simp only [mem_filter, not_and, not_lt]
+      exact fun _ => hik
+
+/-- The positions are renumbered monotonically. -/
+theorem collapse_mono (S : Finset (Fin n)) : Monotone S.collapse :=
+  fun _ _ hij => card_le_card fun k hk => by
+    simp only [mem_filter] at hk ⊢
+    exact ⟨hk.1, by omega⟩
+
+/-- Passing a remaining element increases a renumbered position by one. -/
+theorem collapse_succ_of_notMem {S : Finset (Fin n)} {k : Fin n} (hk : k ∉ S) :
+    S.collapse (k + 1) = S.collapse k + 1 := by
+  rw [collapse, collapse, ← card_insert_of_notMem (s := Sᶜ.filter _) (a := k) (by simp)]
+  congr 1
+  ext l
+  simp only [mem_filter, mem_compl, mem_insert]
+  grind [Fin.ext_iff]
+
+/-- Passing a deleted element does not change a renumbered position: the positions in front of
+and after a deleted element are identified. -/
+theorem collapse_succ_of_mem {S : Finset (Fin n)} {k : Fin n} (hk : k ∈ S) :
+    S.collapse (k + 1) = S.collapse k := by
+  rw [collapse, collapse]
+  congr 1
+  ext l
+  simp only [mem_filter, mem_compl]
+  grind [Fin.ext_iff]
+
+/-- The remaining element numbered `k` is in front of the renumbered position `k`. -/
+@[simp]
+theorem collapse_orderEmbOfFin (S : Finset (Fin n)) (k : Fin #Sᶜ) :
+    S.collapse (Sᶜ.orderEmbOfFin rfl k) = k :=
+  Sᶜ.card_filter_lt_orderEmbOfFin rfl k
+
+/-- The renumbered position in front of a remaining element `k` is followed by a remaining
+element (`k` itself), so it is the number of a remaining element. -/
+theorem collapse_lt_card {S : Finset (Fin n)} {k : Fin n} (hk : k ∉ S) : S.collapse k < #Sᶜ := by
+  have := S.collapse_le_card (k + 1)
+  rw [collapse_succ_of_notMem hk] at this
+  omega
+
+/-- Distinct remaining elements get distinct numbers. -/
+theorem collapse_injOn (S : Finset (Fin n)) :
+    Set.InjOn (fun k : Fin n => S.collapse k) (Sᶜ : Finset (Fin n)) := by
+  intro k hk l hl h
+  rw [coe_compl, Set.mem_compl_iff, mem_coe] at hk hl
+  rcases lt_trichotomy k l with hkl | hkl | hkl
+  · exact absurd h (collapse_lt_collapse_iff.2 ⟨k, hk, le_rfl, hkl⟩).ne
+  · exact hkl
+  · exact absurd h (collapse_lt_collapse_iff.2 ⟨l, hl, le_rfl, hkl⟩).ne'
+
+/-- A remaining element `k` gets the number `S.collapse k`. -/
+@[simp]
+theorem orderEmbOfFin_collapse {S : Finset (Fin n)} {k : Fin n} (hk : k ∉ S) :
+    Sᶜ.orderEmbOfFin rfl ⟨S.collapse k, collapse_lt_card hk⟩ = k :=
+  S.collapse_injOn (mem_coe.2 (orderEmbOfFin_mem Sᶜ rfl _)) (mem_coe.2 (mem_compl.2 hk))
+    (S.collapse_orderEmbOfFin _)
+
+end Collapse
+
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/
 theorem sort_map_revPerm {n : ℕ} (B : Finset (Fin n)) :
@@ -344,11 +480,12 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
 /-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
 enumeration of `s.erase i`. -/
 theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
-    (i : I) (s : Finset I) (hi : i ∈ s) (hsCard : s.card = (s.erase i).card + 1) :
+    (i : I) (s : Finset I) (hi : i ∈ s) {n : ℕ} (hsCard : s.card = n + 1)
+    (hn : (s.erase i).card = n) :
     ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
-      (s.erase i).orderEmbOfFin rfl := by
-  let e : Fin ((s.erase i).card + 1) ↪o I := s.orderEmbOfFin hsCard
-  let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+      (s.erase i).orderEmbOfFin hn := by
+  let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
   have hek : e k = i :=
     congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
   apply orderEmbOfFin_unique
@@ -391,3 +528,13 @@ theorem monotone_bot_orderEmbOfFin_snoc {T : Type*} [LinearOrder T] [OrderBot T]
       simp [hn, hnI, hncard, hne, h1]
 
 end Finset
+
+namespace Nat
+
+/-- Sorting the interval `[a, b)` of natural numbers gives the list `a, a + 1, …, b - 1`. -/
+@[simp]
+theorem sort_Ico (a b : ℕ) : (Finset.Ico a b).sort = List.range' a (b - a) := by
+  rw [Nat.Ico_eq_range']
+  exact List.mergeSort_eq_self _ List.pairwise_le_range'
+
+end Nat

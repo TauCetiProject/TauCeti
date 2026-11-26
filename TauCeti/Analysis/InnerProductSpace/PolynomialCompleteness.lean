@@ -35,7 +35,7 @@ orthogonal family satisfies. Requiring `degree` rather than `natDegree` matters 
 * `TauCeti.memLp_two_bareNormalized` — the normalized-family `MemLp` obligation, discharged from
   that same exponential moment so callers need not repeat it.
 * `TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot_of_span_eq_top` — the completeness input
-  of the B2 bridge, from spanning alone.
+  of `TauCeti.hilbertBasisOfWeightedMeasure`, from spanning alone.
 * `TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot` — its exact-degree specialization.
 -/
 
@@ -51,7 +51,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 theorem memLp_two_algebraMap_eval {ν : Measure ℝ}
     (hexp : ∃ a : ℝ, 0 < a ∧ Integrable (fun x : ℝ => Real.exp (a * |x|)) ν) (q : Polynomial ℝ) :
     MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) (q.eval x)) 2 ν :=
-  memLp_two_algebraMap_eval_of_forall_integrable_pow (𝕜 := 𝕜)
+  memLp_algebraMap_eval_of_forall_integrable_pow (𝕜 := 𝕜) ENNReal.ofNat_ne_top
     (integrable_pow_of_exp_moment hexp) q
 
 /-- Dividing by a constant keeps a polynomial in `L²`: `q/r` is again the evaluation of a
@@ -98,7 +98,7 @@ private theorem integral_algebraMap_eval_mul_eq_zero_of_span_eq_top {ν : Measur
     exact hfam n
   simpa [F] using LinearMap.congr_fun hF q
 
-/-- **Roadmap B1 → B2 bridge: completeness of a spanning polynomial family.**
+/-- **Completeness of a spanning polynomial family.**
 
 If the weighted measure `w·μ` carries one finite exponential moment and `p` spans `ℝ[X]`, then the
 normalized polynomials span a dense subspace of `L²(w·μ)` — the orthogonal complement of their span

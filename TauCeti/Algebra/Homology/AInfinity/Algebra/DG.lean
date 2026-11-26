@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Unital
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
 
 /-!
@@ -31,6 +32,8 @@ vanish.
 
 ## Main definitions
 
+* `TauCeti.AInfinity.dgOperation`: the operations `m₀ = w`, `m₁ = d`, `m₂` the product, and zero
+  in arity at least three, shared with the curved construction.
 * `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra`: the `A∞` algebra of a nonunital DG algebra.
 * `TauCeti.NonUnitalDGAlgHom.toAInfinityStrictHom`: a nonunital DG algebra morphism as a strict
   `A∞` morphism.
@@ -42,6 +45,8 @@ vanish.
 * `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply`,
   `toAInfinityAlgebra_m_two_apply`, and `toAInfinityAlgebra_m_of_three_le`: its operations are the
   differential, the product, and zero.
+* `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_taylor`: its Taylor map is the differential on
+  single letters and the signed product on two-letter words.
 * `TauCeti.IsDGAlgebra.strictUnit_one`: the unit of a DG algebra is a strict unit.
 * `TauCeti.AInfinityAlgebra.isNonUnitalDGAlgebra_differential` and
   `TauCeti.AInfinityAlgebra.isDGAlgebra_differential`: the unary operation of an `A∞` algebra
@@ -74,77 +79,91 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC} [CommRing R]
   [SetLike.GradedMul 𝒞] [DirectSum.Decomposition 𝒞]
   {d : A →ₗ[R] A} {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {dC : C →ₗ[R] C}
 
-namespace IsNonUnitalDGAlgebra
+namespace AInfinity
 
-/-- The `A∞` operations of a differential `d` on an algebra: `m₁ = d`, `m₂` is the product, and all
-other operations vanish. -/
-private noncomputable def operation (d : A →ₗ[R] A) :
-    ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A
-  | 0 => 0
-  | 1 => MultilinearMap.ofSubsingleton R A A 0 d
-  | 2 => (MultilinearMap.ofSubsingletonₗ R R A A (0 : Fin 1) ∘ₗ LinearMap.mul R A).uncurryLeft
+/-- The operations of a differential `d` and a curvature `w` on an algebra: `m₀ = w`, `m₁ = d`,
+`m₂` is the product, and all other operations vanish. For `w = 0` these are the `A∞` operations of
+a nonunital DG algebra; in general they are the curved `A∞` operations of a curved DG algebra. -/
+noncomputable def dgOperation (d : A →ₗ[R] A) (w : A) :
+    ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id R) _ w
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id R) A A 0 d
+  | 2 => (MultilinearMap.ofSubsingletonₗ R (RingHom.id R) A A (0 : Fin 1) ∘ₗ LinearMap.mul R
+      A).uncurryLeft
   | _ + 3 => 0
 
-private theorem operation_zero (d : A →ₗ[R] A) : operation d 0 = 0 := (rfl)
+/-- The nullary operation is the curvature. -/
+theorem dgOperation_zero_apply (d : A →ₗ[R] A) (w : A) (x : Fin 0 → A) :
+    dgOperation d w 0 x = w := (rfl)
 
-private theorem operation_one_apply (d : A →ₗ[R] A) (x : Fin 1 → A) :
-    operation d 1 x = d (x 0) := (rfl)
+/-- The nullary operation vanishes for curvature zero. -/
+theorem dgOperation_zero_zero (d : A →ₗ[R] A) : dgOperation d 0 0 = 0 := by
+  ext x
+  exact dgOperation_zero_apply d 0 x
 
-private theorem operation_two_apply (d : A →ₗ[R] A) (x : Fin 2 → A) :
-    operation d 2 x = x 0 * x 1 := by
-  simp [operation, LinearMap.uncurryLeft_apply, Fin.tail]
+/-- The unary operation is the differential. -/
+theorem dgOperation_one_apply (d : A →ₗ[R] A) (w : A) (x : Fin 1 → A) :
+    dgOperation d w 1 x = d (x 0) := (rfl)
 
-private theorem operation_of_three_le (d : A →ₗ[R] A) {n : ℕ} (hn : 3 ≤ n) :
-    operation d n = 0 := by
+/-- The binary operation is the product. -/
+theorem dgOperation_two_apply (d : A →ₗ[R] A) (w : A) (x : Fin 2 → A) :
+    dgOperation d w 2 x = x 0 * x 1 := by
+  simp [dgOperation, LinearMap.uncurryLeft_apply, Fin.tail]
+
+/-- The operations of arity at least three vanish. -/
+theorem dgOperation_of_three_le (d : A →ₗ[R] A) (w : A) {n : ℕ} (hn : 3 ≤ n) :
+    dgOperation d w n = 0 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
   rfl
 
-/-- The operation `operation d n` has degree `2 - n` when `d` raises degree by one. -/
-private theorem isHomogeneous_operation (h : IsNonUnitalDGAlgebra 𝒜 d) (n : ℕ) :
-    MultilinearMap.IsHomogeneous (operation d n) (fun _ ↦ 𝒜) 𝒜 (2 - n) := by
+omit [DirectSum.Decomposition 𝒜] in
+/-- The operation `dgOperation d w n` has degree `2 - n` when `d` raises degree by one and `w` has
+degree two. -/
+theorem isHomogeneous_dgOperation {w : A} (hd : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → d a ∈ 𝒜 (p + 1))
+    (hw : w ∈ 𝒜 2) (n : ℕ) :
+    MultilinearMap.IsHomogeneous (dgOperation d w n) (fun _ ↦ 𝒜) 𝒜 (2 - n) := by
   rw [MultilinearMap.isHomogeneous_def]
   intro e x hx
   rcases n with _ | _ | _ | n
-  · simp [operation_zero]
-  · simpa [operation_one_apply] using h.map_mem (hx 0)
-  · simpa [operation_two_apply] using SetLike.mul_mem_graded (hx 0) (hx 1)
-  · simp [operation_of_three_le d (by omega : 3 ≤ n + 3)]
+  · simpa [dgOperation_zero_apply] using hw
+  · simpa [dgOperation_one_apply] using hd (hx 0)
+  · simpa [dgOperation_two_apply] using SetLike.mul_mem_graded (hx 0) (hx 1)
+  · simp [dgOperation_of_three_le d w (by omega : 3 ≤ n + 3)]
+
+end AInfinity
+
+namespace IsNonUnitalDGAlgebra
+
+open AInfinity
 
 /-- The operations of a nonunital DG algebra satisfy every Stasheff identity on homogeneous
 inputs. -/
 private theorem stasheffSum_operation (h : IsNonUnitalDGAlgebra 𝒜 d) (n : ℕ) (e : ℕ → ℤ)
     (x : ℕ → A) (hx : ∀ i < n, x i ∈ 𝒜 (e i)) :
-    AInfinity.stasheffSum (operation d) e x n = 0 := by
+    AInfinity.stasheffSum (dgOperation d 0) e x n = 0 := by
   match n, hx with
   | 0, _ => exact AInfinity.stasheffSum_zero _ _ _
-  | 1, _ => simpa [AInfinity.stasheffSum_one, operation_one_apply] using h.sq_zero (x 0)
+  | 1, _ => simpa [AInfinity.stasheffSum_one, dgOperation_one_apply] using h.sq_zero (x 0)
   | 2, hx =>
     rw [AInfinity.stasheffSum_two_eq_zero_iff]
-    simpa [operation_one_apply, operation_two_apply, ← negOnePow_smul_eq_negOnePowCast_smul]
+    simpa [dgOperation_one_apply, dgOperation_two_apply, ← negOnePow_smul_eq_negOnePowCast_smul]
       using h.leibniz (hx 0 (by omega)) (x 1)
   | 3, _ =>
     rw [AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero _ _ _
-      (operation_of_three_le d le_rfl)]
-    simp [operation_two_apply, mul_assoc]
+      (dgOperation_of_three_le d 0 le_rfl)]
+    simp [dgOperation_two_apply, mul_assoc]
   | n + 4, _ =>
-    -- Each term has an inner operation of arity `s` and an outer one of arity `n + 5 - s`, and
-    -- one of them has arity at least three.
-    rw [AInfinity.stasheffSum_def]
-    refine Finset.sum_eq_zero fun p hp ↦ Finset.sum_eq_zero fun s hs ↦ ?_
-    rw [Finset.mem_range] at hp
-    rw [Finset.mem_Icc] at hs
-    rcases lt_or_ge s 3 with hs3 | hs3
-    · exact AInfinity.stasheffTerm_eq_zero_of_outer_eq_zero _ _ _
-        (operation_of_three_le d (by omega))
-    · exact AInfinity.stasheffTerm_eq_zero_of_inner_eq_zero _ _ _ (operation_of_three_le d hs3)
+    exact AInfinity.stasheffSum_eq_zero_of_m_eq_zero_of_three_le _ _ _ (by omega)
+      fun _ ↦ dgOperation_of_three_le d 0
 
 /-- The `A∞` algebra of a nonunital DG algebra: `m₁ = d`, `m₂` is the product, and `m n = 0` for
 `n ≥ 3`. -/
 noncomputable def toAInfinityAlgebra (h : IsNonUnitalDGAlgebra 𝒜 d) : AInfinityAlgebra R A :=
-  AInfinityAlgebra.ofStasheff (InternalGrading.ofDecomposition 𝒜) (operation d) (operation_zero d)
+  AInfinityAlgebra.ofStasheff (InternalGrading.ofDecomposition 𝒜) (dgOperation d 0)
+    (dgOperation_zero_zero d)
     (fun n _ ↦ by
       rw [InternalGrading.ofDecomposition_piece]
-      exact isHomogeneous_operation h n)
+      exact isHomogeneous_dgOperation h.map_mem (zero_mem _) n)
     (AInfinity.suspensionTaylor _ _) (AInfinity.isSuspension_suspensionTaylor _ _)
     (fun n _ e x hx ↦ by
       rw [InternalGrading.ofDecomposition_piece] at hx
@@ -160,19 +179,19 @@ theorem toAInfinityAlgebra_grading (h : IsNonUnitalDGAlgebra 𝒜 d) :
 @[simp]
 theorem toAInfinityAlgebra_m_one_apply (h : IsNonUnitalDGAlgebra 𝒜 d) (x : Fin 1 → A) :
     h.toAInfinityAlgebra.m 1 x = d (x 0) := by
-  rw [toAInfinityAlgebra, AInfinityAlgebra.ofStasheff_m, operation_one_apply]
+  rw [toAInfinityAlgebra, AInfinityAlgebra.ofStasheff_m, dgOperation_one_apply]
 
 /-- The binary operation of the `A∞` algebra of a nonunital DG algebra is the product. -/
 @[simp]
 theorem toAInfinityAlgebra_m_two_apply (h : IsNonUnitalDGAlgebra 𝒜 d) (x : Fin 2 → A) :
     h.toAInfinityAlgebra.m 2 x = x 0 * x 1 := by
-  rw [toAInfinityAlgebra, AInfinityAlgebra.ofStasheff_m, operation_two_apply]
+  rw [toAInfinityAlgebra, AInfinityAlgebra.ofStasheff_m, dgOperation_two_apply]
 
 /-- The operations of arity at least three of the `A∞` algebra of a nonunital DG algebra
 vanish. -/
 theorem toAInfinityAlgebra_m_of_three_le (h : IsNonUnitalDGAlgebra 𝒜 d) {n : ℕ} (hn : 3 ≤ n) :
     h.toAInfinityAlgebra.m n = 0 := by
-  rw [toAInfinityAlgebra, AInfinityAlgebra.ofStasheff_m, operation_of_three_le d hn]
+  rw [toAInfinityAlgebra, AInfinityAlgebra.ofStasheff_m, dgOperation_of_three_le d 0 hn]
 
 /-- The simp-normal form of `toAInfinityAlgebra_m_of_three_le`. -/
 @[simp]
@@ -194,6 +213,20 @@ theorem toAInfinityAlgebra_mul (h : IsNonUnitalDGAlgebra 𝒜 d) :
     h.toAInfinityAlgebra.mul = LinearMap.mul R A := by
   ext x y
   simp
+
+/-- The Taylor map of the `A∞` algebra of a nonunital DG algebra: the differential on single
+letters, and the product on two-letter words, with the Koszul twist `a ↦ (-1) ^ |a| a` of the left
+letter carrying the suspension sign. -/
+theorem toAInfinityAlgebra_taylor (h : IsNonUnitalDGAlgebra 𝒜 d) :
+    h.toAInfinityAlgebra.taylor = d ∘ₗ ReducedTensorWords.letter R A +
+      LinearMap.mul' R A ∘ₗ
+        TensorProduct.map
+          ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 ∘ₗ ReducedTensorWords.letter R A)
+          (ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.deconcatenation R A := by
+  have hμ : TensorProduct.lift (LinearMap.mul R A) = LinearMap.mul' R A :=
+    TensorProduct.ext' fun _ _ ↦ by simp
+  rw [h.toAInfinityAlgebra.taylor_eq_of_m_eq_zero fun _ ↦ h.toAInfinityAlgebra_m_of_three_le,
+    toAInfinityAlgebra_differential, toAInfinityAlgebra_mul, toAInfinityAlgebra_grading, hμ]
 
 end IsNonUnitalDGAlgebra
 
@@ -343,6 +376,14 @@ theorem toAInfinityStrictUnitalHom_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB
       g.toAInfinityStrictUnitalHom.comp f.toAInfinityStrictUnitalHom := by
   ext a
   simp
+
+/-- The `A∞` morphism underlying a DG algebra morphism is strictly unital. -/
+@[simp]
+theorem isStrictlyUnital_toAInfinityHom (f : DGAlgHom hA hB) :
+    f.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.IsStrictlyUnital
+      hA.strictUnit_one hB.strictUnit_one := by
+  simpa only [← DGAlgHom.toAInfinityStrictHom_toAInfinityStrictUnitalHom] using
+    f.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom
 
 end DGAlgHom
 

@@ -1,0 +1,119 @@
+/-
+Copyright (c) 2026 Tau Ceti. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Tau Ceti
+-/
+module
+
+public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
+public import TauCeti.RingTheory.Polynomial.Eulerian
+import Mathlib.Analysis.Calculus.Deriv.Add
+import TauCeti.Analysis.SpecialFunctions.Eulerian
+
+/-!
+# Rational formulas for nonpositive polylogarithms
+
+The Eulerian polynomial `Aᵣ = TauCeti.eulerianPolynomial r` is the reduced polynomial
+factor after factoring out `z` in `Li₋ᵣ(z) = z Aᵣ(z) / (1 - z)^(r+1)`.
+This identity holds even at the totalised value at 1. Its differential recurrence
+comes from the Euler operator `z d/dz`. The identity `Aᵣ(1) = r!` gives the exact
+leading coefficient at the pole and shows that no nonpositive weight is continuous at 1.
+These formulas describe the functions on the whole punctured plane, not just on a slit domain.
+
+## References
+
+* Joseph Oesterlé, *Polylogarithmes*, Séminaire Bourbaki, exposé 762,
+  Astérisque 216 (1993), §1.1, (2)–(3), p. 50, for the Euler differential recursion.
+  The polynomial recurrence and pole statements are elementary consequences.
+-/
+
+public section
+
+open Polynomial Filter Topology
+
+namespace TauCeti
+
+namespace Polylog
+
+private theorem polylog_neg_nat_eq_mul_iterate_of_ne_one (r : ℕ) {z : ℂ} (hz : z ≠ 1) :
+    polylog (-(r : ℤ)) z = z * ((shiftedEulerOp 1)^[r]) (fun w => (1 - w)⁻¹) z := by
+  induction r generalizing z with
+  | zero => simp [div_eq_mul_inv]
+  | succ r ih =>
+    let F : ℕ → ℂ → ℂ := fun k => ((shiftedEulerOp 1)^[k]) (fun w => (1 - w)⁻¹)
+    have hlocal : polylog (-(r : ℤ)) =ᶠ[𝓝 z] fun w : ℂ => w * F r w := by
+      filter_upwards [isOpen_ne.mem_nhds hz] with w hw
+      exact ih hw
+    have hF_local : F r =ᶠ[𝓝 z] fun w : ℂ => (shiftedEulerianPolynomial (1 : ℂ) r).eval w /
+        (1 - w) ^ (r + 1) :=
+      Eventually.of_forall fun w => iterate_shiftedEulerOp_inv_one_sub r w 1
+    have hF_diff : HasDerivAt (F r) (deriv (F r) z) z :=
+      (((analyticOnNhd_shiftedEulerianPolynomial_div r (z, 1) hz).comp
+        (f := fun w : ℂ => (w, (1 : ℂ)))
+        (analyticAt_id.prod analyticAt_const)).differentiableAt.congr_of_eventuallyEq
+        hF_local).hasDerivAt
+    have hmul := (hasDerivAt_id z).mul hF_diff
+    rw [polylog_neg_nat_succ, (hmul.congr_of_eventuallyEq hlocal).deriv,
+      Function.iterate_succ_apply', shiftedEulerOp_apply]
+    dsimp only [id_eq, F]
+    ring
+
+/-- Removing the pole of order `r + 1` gives the nonzero leading coefficient `r!`.
+The limit is punctured, so it does not use any assigned value of `Li₋ᵣ` at 1. -/
+theorem tendsto_one_sub_pow_mul_polylog_neg_nat_nhdsNE_one (r : ℕ) :
+    Tendsto (fun z : ℂ => (1 - z) ^ (r + 1) * polylog (-(r : ℤ)) z)
+      (𝓝[≠] 1) (𝓝 (r.factorial : ℂ)) := by
+  have hz1 : Tendsto (fun z : ℂ => z) (𝓝[≠] (1 : ℂ)) (𝓝 (1 : ℂ)) :=
+    continuousAt_id.tendsto.mono_left (nhdsWithin_le_nhds (a := (1 : ℂ)) (s := {1}ᶜ))
+  have hshared := tendsto_one_sub_pow_mul_iterate_shiftedEulerOp_inv_one_sub_nhdsNE_one r 1
+  have hprod : Tendsto (fun z : ℂ => z * ((1 - z) ^ (r + 1) *
+      ((shiftedEulerOp 1)^[r]) (fun w => (1 - w)⁻¹) z))
+      (𝓝[≠] 1) (𝓝 (1 * (r.factorial : ℂ))) := hz1.mul hshared
+  rw [one_mul] at hprod
+  refine hprod.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  have hne : z ≠ 1 := by simpa using hz
+  rw [polylog_neg_nat_eq_mul_iterate_of_ne_one r hne]
+  ring
+
+/-- Totalisation at the pole never makes a nonpositive polylogarithm continuous there. -/
+theorem not_continuousAt_polylog_neg_nat_one (r : ℕ) :
+    ¬ ContinuousAt (polylog (-(r : ℤ))) 1 := by
+  intro hc
+  have hzero : Tendsto
+      (fun z : ℂ => (1 - z) ^ (r + 1) * polylog (-(r : ℤ)) z)
+      (𝓝[≠] 1) (𝓝 0) := by
+    have hcont : ContinuousAt
+        (fun z : ℂ => (1 - z) ^ (r + 1) * polylog (-(r : ℤ)) z) 1 :=
+      ((continuous_const.sub continuous_id).pow (r + 1)).continuousAt.mul hc
+    simpa using hcont.tendsto.mono_left
+      (nhdsWithin_le_nhds (a := (1 : ℂ)) (s := {1}ᶜ))
+  have heq := tendsto_nhds_unique hzero
+    (tendsto_one_sub_pow_mul_polylog_neg_nat_nhdsNE_one r)
+  exact (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero r) : (r.factorial : ℂ) ≠ 0) heq.symm
+
+/-- Every nonpositive weight is the indicated rational function, including at the
+totalised pole, where both sides vanish. -/
+theorem polylog_neg_nat_eq_div (r : ℕ) (z : ℂ) :
+    polylog (-(r : ℤ)) z = z * aeval z (eulerianPolynomial r) / (1 - z) ^ (r + 1) := by
+  by_cases hz : z = 1
+  · subst z
+    cases r with
+    | zero => simp
+    | succ r =>
+      rw [polylog_neg_nat_succ, deriv_zero_of_not_differentiableAt
+        (mt DifferentiableAt.continuousAt (not_continuousAt_polylog_neg_nat_one r))]
+      simp
+  · rw [polylog_neg_nat_eq_mul_iterate_of_ne_one r hz,
+      iterate_shiftedEulerOp_inv_one_sub r z 1, shiftedEulerianPolynomial_one_left_eval_eq_aeval,
+      mul_div_assoc]
+
+/-- In weight minus two the rational numerator is `z(1 + z)`.
+The identity includes the totalised value at 1. -/
+theorem polylog_neg_two (z : ℂ) :
+    polylog (-2) z = z * (1 + z) / (1 - z) ^ 3 := by
+  simpa using polylog_neg_nat_eq_div 2 z
+
+end Polylog
+
+end TauCeti

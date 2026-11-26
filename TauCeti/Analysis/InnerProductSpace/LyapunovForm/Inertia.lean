@@ -267,7 +267,8 @@ private theorem finrank_pointSpectralSubspace_Iio_le_finrank_stableSubspace
   -- Orthonormal frames of the `W n` subconverge to an orthonormal frame `f`.
   have hframe (n : ℕ) : ∃ g : Fin m → E, Orthonormal ℝ g ∧ ∀ i, g i ∈ W n := by
     set b := (stdOrthonormalBasis ℝ (W n)).reindex (finCongr (hW n))
-    exact ⟨fun i ↦ (b i : E), b.orthonormal.comp_linearIsometry (W n).subtypeₗᵢ, fun i ↦ (b i).2⟩
+    exact ⟨fun i ↦ (b i : E), b.orthonormal.comp_linearIsometry (W n).subtypeₗᵢ, fun i ↦
+        (b i).property⟩
   choose F hF hFW using hframe
   obtain ⟨f, -, φ, hφ, hlim⟩ := (isCompact_closedBall (0 : Fin m → E) 1).tendsto_subseq
     (x := F) fun n ↦ by
@@ -349,7 +350,7 @@ theorem HasLyapunovForm.isCompl_stableSubspace_unstableSubspace (h : A.HasLyapun
     simpa using this
   set N := Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Iio 0)
   have hNc : Nᗮ = Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Ioi 0) := by
-    rw [hS.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
+    rw [hS.orthogonal_pointSpectralSubspace, compl_Iio, ← Set.insert_Ioi,
       Module.End.pointSpectralSubspace_insert_zero hker]
   have hdim : finrank ℝ E ≤ finrank ℝ A.stableSubspace + finrank ℝ A.unstableSubspace := by
     rw [finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio hS hc hcS,

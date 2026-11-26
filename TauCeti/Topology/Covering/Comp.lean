@@ -57,7 +57,7 @@ theorem exists_sheets {f : E → X} {x : X} {I : Type*}
   -- The sheet indexed by `i` is the part of `f ⁻¹' U` that `H` sends to `U × {i}`.
   refine ⟨U, hxU, hU, fun i ↦ Subtype.val '' (H ⁻¹' (Prod.snd ⁻¹' {i})), fun i ↦ ?_, fun i ↦ ?_,
     fun i ↦ ?_, fun i W hW ↦ ?_, fun i j hij ↦ ?_, ?_⟩
-  · exact hfU.isOpenMap_subtype_val _
+  · exact hfU.isOpenMap_subtypeVal _
       (((isOpen_discrete {i}).preimage continuous_snd).preimage H.continuous)
   · rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
     refine congrArg Subtype.val (H.injective (Prod.ext (Subtype.ext ?_) ?_))
@@ -67,7 +67,7 @@ theorem exists_sheets {f : E → X} {x : X} {I : Type*}
   · ext u
     refine ⟨?_, fun hu ↦ ⟨_, ⟨H.symm (⟨u, hu⟩, i), by simp, rfl⟩, by simp [← hH]⟩⟩
     rintro ⟨_, ⟨a, -, rfl⟩, rfl⟩
-    exact hH a ▸ (H a).1.2
+    exact hH a ▸ (H a).1.property
   · have : f ⁻¹' W ∩ Subtype.val '' (H ⁻¹' (Prod.snd ⁻¹' {i})) =
         Subtype.val '' (H ⁻¹' ((Subtype.val ⁻¹' W) ×ˢ {i})) := by
       ext e
@@ -83,7 +83,7 @@ theorem exists_sheets {f : E → X} {x : X} {I : Type*}
     simp only [mem_preimage, mem_iUnion, mem_image, mem_singleton_iff]
     refine ⟨fun he ↦ ⟨_, ⟨e, he⟩, rfl, rfl⟩, ?_⟩
     rintro ⟨_, a, -, rfl⟩
-    exact a.2
+    exact a.property
 
 /-- **Evenly covered points compose along finite fibres.** If `x` is evenly covered by `q` with
 finite fibre `I`, and every point of `Y` over `x` is evenly covered by `p`, then `x` is evenly
@@ -99,7 +99,7 @@ theorem comp {q : Y → X} {p : E → Y} {x : X} {I : Type*}
     exact hxU
   choose y hyS hyx using hy
   -- The sheets `T i j` of `p` over `V i ∋ y i`.
-  choose V hyV hV T hTo hTi hTim hTiff hTd hTV using fun i ↦ (hp (y i) (hyx i)).exists_sheets
+  choose V hyV hV T _ hTi hTim hTiff hTd hTV using fun i ↦ (hp (y i) (hyx i)).exists_sheets
   -- Shrink `U` to `W`, over which the lift of `W` to each `S i` lies in `V i`.
   obtain ⟨W, hWo, hxW, hWU, hWsurj, key⟩ :=
     TauCeti.exists_isOpen_lift_mem_of_finite_sheets hxU hU hSo hSi hSim hSiff hV hyS hyV hyx
@@ -119,7 +119,7 @@ theorem comp {q : Y → X} {p : E → Y} {x : X} {I : Type*}
       (hWo.mem_nhds hxW) (eq_empty_of_subset_empty (hexh.trans (iUnion_of_empty R).le))
   let _ : TopologicalSpace (Σ i, p ⁻¹' {y i}) := ⊥
   have : DiscreteTopology (Σ i, p ⁻¹' {y i}) := ⟨rfl⟩
-  have : Nonempty E := let ⟨⟨_, j⟩⟩ := hι; ⟨j.1⟩
+  have : Nonempty E := let ⟨⟨_, j⟩⟩ := hι; ⟨j.val⟩
   have hsurj : ∀ k, (R k).SurjOn (q ∘ p) W := by
     intro k w hw
     obtain ⟨z, ⟨hzS, hzV⟩, rfl⟩ := hWsurj k.1 w hw

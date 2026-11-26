@@ -72,9 +72,12 @@ universe u v w
 namespace TauCeti
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
-  [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ} {a b : ℝ}
-  {C : Type v} [Category.{w} C]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+section
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
+  {a b : ℝ} {C : Type v} [Category.{w} C]
 
 /-- **A compact band with no critical point of index `n` has no relative homology in degree `n`.**
 Let `f` be a Morse function, let `a ≤ b` be regular values of `f` with compact band `f⁻¹[a, b]`,
@@ -91,13 +94,13 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_ne [H
     (fun _ _ hst hcompact hcrit ↦ isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero
       hf.contMDiff hst hcompact
         (fun x hx₁ hx₂ hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hx₁, hx₂⟩) R n)
-    (fun p hp hap hpb _ hδ hcompact ↦ by
+    (fun p _ hap hpb _ hδ hcompact ↦ by
       obtain ⟨ε, hε, hεδ, hiso⟩ := hf.exists_singularHomology_sublevelPair_iso_sigma hδ hcompact
       -- No critical point of the level has index `n`, so the coproduct is empty.
       have : IsEmpty {q : ↥(criticalPoints I f ∩ f ⁻¹' {f p}) // manifoldMorseIndex I f q = n} :=
-        ⟨fun q ↦ hn q.1 ⟨q.1.2.1, by
-          have : f q.1 = f p := q.1.2.2
-          constructor <;> linarith⟩ q.2⟩
+        ⟨fun q ↦ hn q.val ⟨q.val.property.1, by
+          have : f q.val = f p := q.val.property.2
+          constructor <;> linarith⟩ q.property⟩
       exact ⟨ε, hε, hεδ,
         ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso (hiso R n).some⟩)
     -- The long exact sequence of the triple `(M_t, M_m, M_s)` joins the pieces.
@@ -130,7 +133,9 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex [H
   hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_ne hab hcompact ha hb
     (fun p hp ↦ (hn.trans_le (hd p hp)).ne') R
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+end
+
+variable {f : M → ℝ} {b : ℝ} in
 /-- **A compact sublevel is a band over the empty sublevel.** If `f` is continuous and the sublevel
 `{f ≤ b}` is compact, then some regular value `a ≤ b` lies below every value of `f`, so that the
 sublevel `{f ≤ a}` is empty and the band `f⁻¹[a, b]` is compact. -/
@@ -139,9 +144,14 @@ theorem exists_isEmpty_sublevelPair_of_isCompact_sublevel (hf : Continuous f)
     ∃ (a : ℝ) (hab : a ≤ b), IsEmpty (sublevelPair f hab).snd ∧
       IsCompact (f ⁻¹' Icc a b) ∧ IsRegularValue I 𝓘(ℝ) f a := by
   obtain ⟨a, hab, ha⟩ := exists_le_forall_lt_of_isCompact_sublevel hcompact hf.continuousOn
-  exact ⟨a, hab, ⟨fun x ↦ (ha x.1).not_ge x.2⟩,
+  exact ⟨a, hab, ⟨fun x ↦ (ha x.val).not_ge x.property⟩,
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hf) fun x hx ↦ hx.2,
     isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp⟩
+
+section
+
+variable [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ} {b : ℝ}
+  {C : Type v} [Category.{w} C]
 
 /-- **A compact regular sublevel whose critical points have index at most `d` has no homology
 above degree `d`.** Let `f` be a Morse function, let `b` be a regular value of `f` with compact
@@ -154,6 +164,12 @@ theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le [HasCo
     (hd : ∀ p ∈ criticalPoints I f, f p ≤ b → manifoldMorseIndex I f p ≤ d) (R : C) {n : ℕ}
     (hn : d < n) :
     IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of {x | f x ≤ b})) := by
+  rcases isEmpty_or_nonempty {x | f x ≤ b} with hK | hK
+  · -- An empty space is totally disconnected, so it has no homology in positive degrees.
+    exact isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R
+      (TopCat.of {x | f x ≤ b}) (by omega)
+  -- A nonempty compact sublevel forces the model space to be finite dimensional.
+  have := finiteDimensional_of_isCompact_sublevel hf.contMDiff.continuous hcompact hb
   obtain ⟨a, hab, _, hband, ha⟩ :=
     exists_isEmpty_sublevelPair_of_isCompact_sublevel (I := I) hf.contMDiff.continuous hcompact
   have hzero := hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hband ha hb
@@ -170,13 +186,22 @@ theorem IsMorse.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le
     [HasCoproducts.{u} C] [Abelian C] (hf : IsMorse I f) {d : ℕ}
     (hd : ∀ p ∈ criticalPoints I f, manifoldMorseIndex I f p ≤ d) (R : C) {n : ℕ} (hn : d < n) :
     IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of M)) := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · -- An empty space is totally disconnected, so it has no homology in positive degrees.
+    exact isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R (TopCat.of M)
+      (by omega)
+  -- A nonempty compact Hausdorff manifold is locally compact, so its model space is finite
+  -- dimensional.
+  have := FiniteDimensional.of_locallyCompact_manifold M I
   obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
     exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
   exact (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb
     (fun p hp ↦ hd p hp.1) R hn).of_iso (singularHomologyIsoSublevelPair hab
       (fun x ↦ (hf' x).1) (fun x ↦ (hf' x).2) R n)
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+end
+
+variable [IsManifold I ∞ M] {f : M → ℝ} in
 /-- **Homology along a regular sublevel exhaustion.** A proper Morse function `f`, bounded below,
 has increasing regular values `a 0 ≤ a 1 ≤ ⋯` with compact sublevels `{f ≤ a j}` along which
 singular homology is continuous: for every coefficient object `R` of an abelian category with
@@ -199,6 +224,8 @@ theorem IsMorse.exists_regular_sublevel_isColimit_singularHomology (hf : IsMorse
     obtain ⟨j, hj⟩ := K.exists_superset_of_isCompact hL
     exact ⟨j, fun x hx ↦ ⟨⟨x, by simpa [hKa j] using hj hx⟩, rfl⟩⟩
 
+variable [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ} {C : Type v}
+  [Category.{w} C] in
 /-- **A manifold with a proper Morse function whose indices are at most `d` has no homology above
 degree `d`.** Let `f` be a proper Morse function, bounded below, all of whose critical points have
 Morse index at most `d`. Then the singular homology `Hₙ(M; R)` vanishes for every `n > d` and every

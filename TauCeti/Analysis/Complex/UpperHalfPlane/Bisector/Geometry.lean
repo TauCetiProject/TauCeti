@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Segment
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
+import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 
@@ -20,6 +22,12 @@ points equidistant from the two centres. In particular, distance dominance regio
 geodesically convex, the geometric ingredient in convexity of Dirichlet domains. The
 equidistant locus has zero invariant area (`volume_setOf_dist_eq_dist`), as every geodesic
 line does.
+
+The closed Euclidean half-planes `{z | a ≤ Re z}` and `{z | Re z ≤ b}` bounded by vertical lines,
+and the closed exteriors `{z | ρ ≤ |z - c|²}` of discs centred on the real axis, are such
+distance dominance regions, so they are geodesically convex too
+(`geodesicSegment_subset_setOf_le_re`, `geodesicSegment_subset_setOf_re_le`,
+`geodesicSegment_subset_setOf_le_normSq_sub`). Ford polygons are cut out by such sets.
 
 The construction moves the segment onto the imaginary axis, dilates to its midpoint, and
 rotates by `π / 4` in `SL(2, ℝ)`, which rotates the tangent by `π / 2`.
@@ -182,11 +190,60 @@ theorem geodesicSegment_subset_setOf_dist_le_dist {p q z w : ℍ}
         ((mem_closure_leftHalfPlane_perpBisector_iff hpq z).mpr hz)
         ((mem_closure_leftHalfPlane_perpBisector_iff hpq w).mpr hw) hu
 
-/-- The two centres lie strictly on opposite sides of their perpendicular bisector, whichever
-orientation of it is chosen: no open half-plane bounded by the bisector contains both. -/
-theorem notMem_leftHalfPlane_of_range_eq_perpBisector {p q : ℍ} {k : PSL(2, ℝ)} (hpq : p ≠ q)
+/-- Closed half-planes `{z | a ≤ z.re}` bounded by a vertical line are geodesically convex. -/
+theorem geodesicSegment_subset_setOf_le_re {a : ℝ} {z w : ℍ} (hz : a ≤ z.re) (hw : a ≤ w.re) :
+    geodesicSegment z w ⊆ {u : ℍ | a ≤ u.re} := by
+  have key (u : ℍ) : a ≤ u.re ↔ dist u ((a + 1) +ᵥ I) ≤ dist u ((a - 1) +ᵥ I) := by
+    rw [dist_le_dist_iff_re_im, vadd_re, vadd_re, vadd_im, vadd_im, I_re, I_im]
+    constructor <;> intro h <;> nlinarith
+  exact fun u hu ↦ (key u).2 <|
+    geodesicSegment_subset_setOf_dist_le_dist ((key z).1 hz) ((key w).1 hw) hu
+
+/-- Closed half-planes `{z | z.re ≤ b}` bounded by a vertical line are geodesically convex. -/
+theorem geodesicSegment_subset_setOf_re_le {b : ℝ} {z w : ℍ} (hz : z.re ≤ b) (hw : w.re ≤ b) :
+    geodesicSegment z w ⊆ {u : ℍ | u.re ≤ b} := by
+  have key (u : ℍ) : u.re ≤ b ↔ dist u ((b - 1) +ᵥ I) ≤ dist u ((b + 1) +ᵥ I) := by
+    rw [dist_le_dist_iff_re_im, vadd_re, vadd_re, vadd_im, vadd_im, I_re, I_im]
+    constructor <;> intro h <;> nlinarith
+  exact fun u hu ↦ (key u).2 <|
+    geodesicSegment_subset_setOf_dist_le_dist ((key z).1 hz) ((key w).1 hw) hu
+
+/-- The closed exterior `{z | ρ ≤ |z - c|²}` of a disc centred on the real axis is geodesically
+convex: for `ρ > 0` it is the closed half-plane bounded by the semicircle of radius `√ρ` about
+`c`, and for `ρ ≤ 0` it is all of `ℍ`. -/
+theorem geodesicSegment_subset_setOf_le_normSq_sub {c ρ : ℝ} {z w : ℍ}
+    (hz : ρ ≤ Complex.normSq ((z : ℂ) - c)) (hw : ρ ≤ Complex.normSq ((w : ℂ) - c)) :
+    geodesicSegment z w ⊆ {u : ℍ | ρ ≤ Complex.normSq ((u : ℂ) - c)} := by
+  rcases le_or_gt ρ 0 with hρ | hρ
+  · exact fun u _ ↦ hρ.trans (Complex.normSq_nonneg _)
+  set r := Real.sqrt ρ
+  have hr : 0 < r := Real.sqrt_pos.2 hρ
+  have hr2 : r ^ 2 = ρ := Real.sq_sqrt hρ.le
+  -- The semicircle of radius `r` about `c` bisects `c + 2ri` and `c + ri/2`.
+  set p : ℍ := mk (c + (2 * r : ℝ) * Complex.I) (by simp [hr])
+  set q : ℍ := mk (c + (r / 2 : ℝ) * Complex.I) (by simp [hr])
+  have key (u : ℍ) : ρ ≤ Complex.normSq ((u : ℂ) - c) ↔ dist u p ≤ dist u q := by
+    rw [dist_le_dist_iff_re_im, Complex.normSq_sub_ofReal, coe_re, coe_im, ← hr2]
+    simp only [p, q, mk_re, mk_im, Complex.add_re, Complex.add_im, Complex.re_ofReal_mul,
+      Complex.im_ofReal_mul, Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im]
+    constructor <;> intro h <;> nlinarith
+  exact fun u hu ↦ (key u).2 <|
+    geodesicSegment_subset_setOf_dist_le_dist ((key z).1 hz) ((key w).1 hw) hu
+
+/-- No open half-plane bounded by the perpendicular bisector of two centres contains both
+centres, whichever orientation of the bisector is chosen. For distinct centres this says that
+they lie strictly on opposite sides of the bisector; at coincident centres the chosen line passes
+through the common centre. -/
+theorem notMem_leftHalfPlane_of_range_eq_perpBisector {p q : ℍ} {k : PSL(2, ℝ)}
     (hk : range (geodesicLine (perpBisector p q)) = range (geodesicLine k))
     (hp : p ∈ leftHalfPlane k) : q ∉ leftHalfPlane k := by
+  rcases eq_or_ne p q with rfl | hpq
+  · -- The arbitrary line through `p` chosen at coincident centres contains `p`.
+    refine absurd ?_ (disjoint_left.mp (disjoint_leftHalfPlane_range_geodesicLine k) hp)
+    rw [← hk]
+    refine ⟨0, ?_⟩
+    rw [geodesicLine_zero, perpBisector_def, dist_self, zero_div, mul_assoc, mul_smul]
+    simp [← geodesicLine_zero]
   rcases exists_eq_mul_dilation_or_eq_mul_pslS_mul_dilation_of_range_eq hk with
     ⟨s, rfl⟩ | ⟨s, rfl⟩
   · rw [leftHalfPlane_mul_dilation, mem_leftHalfPlane_perpBisector_iff hpq, dist_self]

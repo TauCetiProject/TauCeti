@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.ConditionallyCompleteLattice.WithTop
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Order.Bounds.Image
 public import Mathlib.Order.ConditionallyCompleteLattice.Basic
 public import TauCeti.Analysis.Convex.Sequence.Basic
+import TauCeti.Algebra.Order.WithTop.Untop0
 
 /-!
 # Lower convex envelopes of height sequences
@@ -165,7 +167,7 @@ open scoped Classical in
 sequence it is the pointwise supremum of all convex minorants. For an inadmissible
 sequence it is the all-infinite fallback, which is not an envelope of that sequence. -/
 noncomputable def lowerConvexEnvelope (a : ℕ → WithTop ℝ) : ℕ → WithTop ℝ :=
-  if IsAdmissible a then fun n => ⨆ g : {g : ℕ → WithTop ℝ // IsConvexSeq g ∧ g ≤ a}, g.1 n
+  if IsAdmissible a then fun n => ⨆ g : {g : ℕ → WithTop ℝ // IsConvexSeq g ∧ g ≤ a}, g.val n
   else ⊤
 
 variable {a b h : ℕ → WithTop ℝ}
@@ -479,7 +481,7 @@ theorem lowerConvexEnvelope_map_mul (a : ℕ → WithTop ℝ) {c : ℝ} (hc : 0 
   · have ha' : ¬IsAdmissible fun n => (a n).map (c * ·) := fun h' => ha <| by
       simpa only [WithTop.map_inv_mul_map_mul hc.ne'] using h'.map_mul (inv_nonneg.mpr hc.le)
     rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible ha']
-    funext n
+    funext _
     simp
 
 /-! ### Translation of indices -/

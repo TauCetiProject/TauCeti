@@ -5,6 +5,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
+public import TauCeti.Topology.UniformSpace.UniformConvergence.Range
 public import Mathlib.Topology.MetricSpace.Isometry
 public import Mathlib.Topology.Compactness.Compact
 
@@ -46,13 +47,12 @@ theorem Isometry.tendstoUniformly_of_distortion_and_pointwise [CompactSpace A]
     (isCompact_univ : IsCompact (univ : Set A)).finite_cover_balls hsmall
   have hnet : ∀ᶠ k in l, ∀ z ∈ s, dist (e z) (f k z) < ε / 5 := by
     apply hs.eventually_all.mpr
-    intro z hz
+    intro z _
     have h := (Metric.tendsto_nhds.mp (hpoint z)) (ε / 5) hsmall
     simpa only [dist_comm] using h
   filter_upwards [hnet, hdist (ε / 5) hsmall] with k hk hkd x
   obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.mp (hcover (mem_univ x))
-  -- Ball membership is the distance estimate used in the triangle inequality.
-  change dist x z < ε / 5 at hxz
+  rw [Metric.mem_ball] at hxz
   have hpair := hkd (z, x)
   rw [Real.dist_eq] at hpair
   have hupper : dist (f k z) (f k x) < dist z x + ε / 5 := by
@@ -84,26 +84,6 @@ theorem exists_isometric_ultrafilter_limit [CompactSpace B]
 
 end TauCeti
 
-/-- The compact source image contains every point that is eventually
-arbitrarily close to the approximating images. -/
-theorem Continuous.mem_range_of_uniform_limit_and_approximation
-    {A : Type*} [TopologicalSpace A] [CompactSpace A]
-    {l : Filter ι} [l.NeBot] {f : ι → A → B} {e : A → B}
-    (he : Continuous e) (hlim : TendstoUniformly f e l) {y : B}
-    (hnear : ∀ ε > 0, ∀ᶠ k in l, ∃ x, dist (f k x) y < ε) : y ∈ range e := by
-  have hclosed := (isCompact_range he).isClosed
-  rw [← hclosed.closure_eq]
-  apply Metric.mem_closure_iff.mpr
-  intro ε hε
-  have hhalf : 0 < ε / 2 := by positivity
-  obtain ⟨k, hk, hx⟩ := ((Metric.tendstoUniformly_iff.mp hlim (ε / 2) hhalf).and
-    (hnear (ε / 2) hhalf)).exists
-  obtain ⟨x, hx⟩ := hx
-  refine ⟨e x, mem_range_self x, ?_⟩
-  calc
-    dist y (e x) ≤ dist y (f k x) + dist (f k x) (e x) := dist_triangle _ _ _
-    _ = dist (f k x) y + dist (e x) (f k x) := by congr 1 <;> exact dist_comm _ _
-    _ < ε := by linarith [hk x]
 
 namespace TauCeti
 
@@ -146,6 +126,106 @@ theorem exists_common_isometric_limits_preserving_cross_distances
     exact tendsto_nhds_unique ((hpoint i x).dist (hpoint j y)) ((hcross i j x y).mono_left hU)
   · intro i y hy
     exact (hisom i).continuous.mem_range_of_uniform_limit_and_approximation (huniform i)
-      (fun ε hε ↦ hU (hy ε hε))
+      (fun ε hε ↦ Eventually.frequently (hU (hy ε hε)))
 
 end TauCeti
+
+/-- A point in the target ball is in the closure of the limiting image when it is
+frequently related to the source spaces by relations with vanishing distortion.
+Only the source balls, centered at the distinguished chart points, must be covered. -/
+theorem TendstoUniformly.mem_closure_range_of_relation_approximation
+    {A : Type*} {B : Type*} {ι : Type*} [PseudoMetricSpace B]
+    {X : ι → Type*} [∀ k, PseudoMetricSpace (X k)]
+    {Φ : ∀ k, A → X k} {R : ∀ k, X k → B → Prop}
+    {ψ : ι → A → B} {e : A → B} {o : A} {ρ : ℝ} {l : Filter ι}
+    (hlim : TendstoUniformly ψ e l)
+    {ε : ι → ℝ} (hε : Tendsto ε l (𝓝 0))
+    (hrelated : ∀ᶠ k in l, ∀ x : A, R k (Φ k x) (ψ k x))
+    (hdist : ∀ᶠ k in l, ∀ (x y : X k) (z w : B),
+      R k x z → R k y w → |dist x y - dist z w| ≤ ε k)
+    {y : B} (hy : y ∈ Metric.ball (e o) ρ)
+    (hcover : ∃ᶠ k in l, ∃ x : X k, R k x y)
+    (hchart : ∀ᶠ k in l, Metric.ball (Φ k o) ρ ⊆ range (Φ k)) :
+    y ∈ closure (range e) := by
+  have hinside : dist (e o) y < ρ := by
+    simpa only [Metric.mem_ball, dist_comm] using hy
+  let margin := ρ - dist (e o) y
+  have hmargin : 0 < margin := sub_pos.mpr hinside
+  apply hlim.mem_closure_range_of_approximation
+  intro η hη
+  have hcenter : ∀ᶠ k in l, dist (ψ k o) (e o) < margin / 3 :=
+    Metric.tendsto_nhds.mp (hlim.tendsto_at o) _ (div_pos hmargin (by norm_num))
+  have hsmall : ∀ᶠ k in l, ε k < margin / 3 :=
+    hε.eventually_lt_const (by positivity)
+  have herror : ∀ᶠ k in l, ε k < η := hε.eventually_lt_const hη
+  apply (hcover.and_eventually
+    (hrelated.and (hdist.and (hchart.and (hcenter.and (hsmall.and herror)))))).mono
+  rintro k ⟨⟨q, hq⟩, hkrel, hkdist, hkchart, hkcenter, hksmall, hkerror⟩
+  have hdistCenter := hkdist (Φ k o) q (ψ k o) y (hkrel o) hq
+  have hsource : dist (Φ k o) q < ρ := by
+    have hupper := (le_abs_self (dist (Φ k o) q - dist (ψ k o) y)).trans hdistCenter
+    have htriangle := dist_triangle (ψ k o) (e o) y
+    dsimp only [margin] at hkcenter hksmall
+    linarith
+  obtain ⟨x, hx⟩ := hkchart (by simpa only [Metric.mem_ball, dist_comm] using hsource)
+  have hxrel : R k (Φ k x) y := hx ▸ hq
+  have hclose := hkdist (Φ k x) (Φ k x) (ψ k x) y (hkrel x) hxrel
+  simp only [dist_self, zero_sub, abs_neg, abs_of_nonneg dist_nonneg] at hclose
+  exact ⟨x, hclose.trans_lt hkerror⟩
+
+/-- Vanishing relation distortion transfers source-ball coverage to the closure of the
+limiting image, with relation coverage required only frequently at each target point. -/
+theorem TendstoUniformly.ball_subset_closure_range_of_relation_approximation
+    {A : Type*} {B : Type*} {ι : Type*} [PseudoMetricSpace B]
+    {X : ι → Type*} [∀ k, PseudoMetricSpace (X k)]
+    {Φ : ∀ k, A → X k} {R : ∀ k, X k → B → Prop}
+    {ψ : ι → A → B} {e : A → B} {o : A} {ρ : ℝ} {l : Filter ι}
+    (hlim : TendstoUniformly ψ e l)
+    {ε : ι → ℝ} (hε : Tendsto ε l (𝓝 0))
+    (hrelated : ∀ᶠ k in l, ∀ x : A, R k (Φ k x) (ψ k x))
+    (hdist : ∀ᶠ k in l, ∀ (x y : X k) (z w : B),
+      R k x z → R k y w → |dist x y - dist z w| ≤ ε k)
+    (hcover : ∀ y ∈ Metric.ball (e o) ρ, ∃ᶠ k in l, ∃ x : X k, R k x y)
+    (hchart : ∀ᶠ k in l, Metric.ball (Φ k o) ρ ⊆ range (Φ k)) :
+    Metric.ball (e o) ρ ⊆ closure (range e) :=
+  fun _ hy ↦ hlim.mem_closure_range_of_relation_approximation hε hrelated hdist hy
+    (hcover _ hy) hchart
+
+/-- A compact continuous chart limit covers a target point frequently related to the
+covered source balls by relations with vanishing distortion. -/
+theorem Continuous.mem_range_of_uniform_relation_approximation
+    {A : Type*} {B : Type*} {ι : Type*}
+    [TopologicalSpace A] [CompactSpace A] [MetricSpace B]
+    {X : ι → Type*} [∀ k, PseudoMetricSpace (X k)]
+    {Φ : ∀ k, A → X k} {R : ∀ k, X k → B → Prop}
+    {ψ : ι → A → B} {e : A → B} {o : A} {ρ : ℝ} {l : Filter ι}
+    (he : Continuous e) (hlim : TendstoUniformly ψ e l)
+    {ε : ι → ℝ} (hε : Tendsto ε l (𝓝 0))
+    (hrelated : ∀ᶠ k in l, ∀ x : A, R k (Φ k x) (ψ k x))
+    (hdist : ∀ᶠ k in l, ∀ (x y : X k) (z w : B),
+      R k x z → R k y w → |dist x y - dist z w| ≤ ε k)
+    {y : B} (hy : y ∈ Metric.ball (e o) ρ)
+    (hcover : ∃ᶠ k in l, ∃ x : X k, R k x y)
+    (hchart : ∀ᶠ k in l, Metric.ball (Φ k o) ρ ⊆ range (Φ k)) :
+    y ∈ range e := by
+  simpa only [(isCompact_range he).isClosed.closure_eq] using
+    hlim.mem_closure_range_of_relation_approximation hε hrelated hdist hy hcover hchart
+
+/-- A compact continuous chart limit covers the target ball when each point is frequently
+related to the source balls by relations with vanishing distortion. -/
+theorem Continuous.ball_subset_range_of_uniform_relation_approximation
+    {A : Type*} {B : Type*} {ι : Type*}
+    [TopologicalSpace A] [CompactSpace A] [MetricSpace B]
+    {X : ι → Type*} [∀ k, PseudoMetricSpace (X k)]
+    {Φ : ∀ k, A → X k} {R : ∀ k, X k → B → Prop}
+    {ψ : ι → A → B} {e : A → B} {o : A} {ρ : ℝ} {l : Filter ι}
+    (he : Continuous e) (hlim : TendstoUniformly ψ e l)
+    {ε : ι → ℝ} (hε : Tendsto ε l (𝓝 0))
+    (hrelated : ∀ᶠ k in l, ∀ x : A, R k (Φ k x) (ψ k x))
+    (hdist : ∀ᶠ k in l, ∀ (x y : X k) (z w : B),
+      R k x z → R k y w → |dist x y - dist z w| ≤ ε k)
+    (hcover : ∀ y ∈ Metric.ball (e o) ρ, ∃ᶠ k in l, ∃ x : X k, R k x y)
+    (hchart : ∀ᶠ k in l, Metric.ball (Φ k o) ρ ⊆ range (Φ k)) :
+    Metric.ball (e o) ρ ⊆ range e := by
+  simpa only [(isCompact_range he).isClosed.closure_eq] using
+    hlim.ball_subset_closure_range_of_relation_approximation hε hrelated hdist hcover hchart

@@ -93,14 +93,12 @@ theorem exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution
   have h2 := hC₂.smul_of_eq_zero hU hN₂ hUN hχ20
   have h1 := hC₁.smul_of_eq_zero hDU.1 hN₁ (fun x hx ↦ (hDUN x hx).1) (hχD0 1)
   have hi := hCᵢ.smul_of_eq_zero hDU.2 hNᵢ (fun x hx ↦ (hDUN x hx).2) (hχD0 I)
-  have hneg : HolderWith (C₀ * H + M * C₀) α (fun x ↦ -(χ x * f x)) := by
-    intro x y
-    simpa only [edist_neg_neg, smul_eq_mul] using h0 x y
+  have hneg : HolderWith (C₀ * H + M * C₀) α (fun x ↦ -(χ x * f x)) := h0.neg
   have hΔ : HolderWith (A * (H + M)) α (Δ (fun x ↦ χ x * u x)) := by
     have h := ((hneg.add h2).add ((h1.add hi).smul (2 : ℝ)))
     convert h using 1
     · dsimp only [A]
-      simp only [Real.nnnorm_ofNat]
+      simp only [Real.nnNorm_ofNat]
       ring
     · funext x
       rw [((hχ.of_le (by simp : (2 : WithTop ℕ∞) ≤ ∞)).contDiffAt).laplacian_fun_mul_complex

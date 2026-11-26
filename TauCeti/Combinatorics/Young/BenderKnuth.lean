@@ -56,8 +56,6 @@ endpoints depend only on `a` and `b`, which a recut does not move.
 * E. A. Bender and D. E. Knuth, *Enumeration of plane partitions*, J. Combinatorial Theory **13**
   (1972), 40--54, where the involution originates.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7.
 -/
 
 public section
@@ -139,7 +137,7 @@ theorem rowCountLt_le_of_lt (T : SemistandardYoungTableau μ) {r k c i : ℕ} (h
 /-- A row past the height of the shape has no entries at all. -/
 theorem rowCountLt_eq_zero_of_colLen_le (T : SemistandardYoungTableau μ) {i : ℕ}
     (hi : μ.colLen 0 ≤ i) (x : ℕ) : rowCountLt T i x = 0 :=
-  Nat.le_zero.mp (YoungDiagram.rowLen_eq_zero_of_colLen_le hi ▸ T.rowCountLt_le_rowLen i x)
+  Nat.le_zero.mp (YoungDiagram.rowLen_eq_zero_iff.mpr hi ▸ T.rowCountLt_le_rowLen i x)
 
 /-! ### The block of a letter and its successor -/
 

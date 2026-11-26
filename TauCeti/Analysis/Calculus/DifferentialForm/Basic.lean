@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 
+import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
+
 /-!
 # Locality and linear pullback of the exterior derivative
 
@@ -21,16 +24,23 @@ using only within-set differentiability, with no second derivative or interior-d
 Its global form `ContinuousLinearMap.extDeriv_pullback` holds at each point where the form is
 differentiable, so pullback along a continuous linear map preserves closedness
 (`ContinuousLinearMap.extDeriv_pullback_eq_zero`), and it preserves regularity on the preimage of
-the domain (`TauCeti.contDiffOn_pullback_continuousLinearMap`).
+the domain (`TauCeti.contDiffOn_pullback_continuousLinearMap`) and at a point
+(`TauCeti.contDiffAt_pullback_continuousLinearMap`,
+`TauCeti.differentiableAt_pullback_continuousLinearMap`).
 `ContinuousLinearMap.extDerivWithin_compContinuousAlternatingMap` is the corresponding naturality
 in the coefficient space, and `TauCeti.extDerivWithin_smul_field` extends `extDerivWithin_smul` to
 scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
 `TauCeti.extDerivWithin_function_smul` is the Leibniz rule for multiplication by a scalar
-function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version of
+function, again with values in any normed field acting on the coefficients.
+`DifferentiableAt.extDerivWithin` is the exterior-derivative version of
 `DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
 `HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
 `HasCompactSupport.fderiv`. `TauCeti.extDerivWithin_of_isOpen` is the version of
-`fderivWithin_of_isOpen`. `TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
+`fderivWithin_of_isOpen`. `TauCeti.extDeriv_comp_add_smul` says that precomposing the
+coefficients with an affine dilation `z ↦ x₀ + c • z` multiplies the exterior derivative by `c`.
+`TauCeti.extDeriv_apply_pair` and `TauCeti.extDeriv_apply_triple`
+evaluate the exterior derivative of a one-form and of a two-form in terms of the derivative of the
+form, and `TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
 one-form `∑ᵢ ωᵢ dxᵢ` on `ι → 𝕜` as `∑ᵢ dωᵢ ∧ dxᵢ`.
 -/
 
@@ -58,9 +68,18 @@ namespace TauCeti
 
 /-- The exterior derivative of a form vanishes at a point where the form is not differentiable,
 because `fderiv` takes the junk value `0` there. -/
-lemma extDeriv_zero_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
-  simp only [extDeriv, fderiv_zero_of_not_differentiableAt h]
-  exact map_zero _
+theorem extDeriv_zero_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) :
+    extDeriv ω x = 0 := by
+  rw [extDeriv, fderiv_zero_of_not_differentiableAt h,
+    ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply, map_zero]
+
+/-- **The exterior derivative under an affine dilation of the domain.** Precomposing the
+coefficients of a form with `z ↦ x₀ + c • z` multiplies its exterior derivative by `c`. No
+differentiability is needed: both sides use the junk value `0` of `fderiv` at the same points. -/
+theorem extDeriv_comp_add_smul (x₀ : E) (c : 𝕜) (ω : E → E [⋀^Fin n]→L[𝕜] F) (y : E) :
+    extDeriv (fun z ↦ ω (x₀ + c • z)) y = c • extDeriv ω (x₀ + c • y) := by
+  rw [extDeriv, fderiv_comp_add_smul, ContinuousAlternatingMap.alternatizeUncurryFin_smul,
+    extDeriv]
 
 /-- The exterior derivative of a one-form on an ordered pair is the alternating part of its
 Fréchet derivative. This formula also respects the derivative's junk-value convention. -/
@@ -68,6 +87,18 @@ theorem extDeriv_apply_pair {ω : E → E [⋀^Fin 1]→L[𝕜] F} (x v w : E) :
     extDeriv ω x ![v, w] = (fderiv 𝕜 ω x v) (fun _ ↦ w) -
       (fderiv 𝕜 ω x w) (fun _ ↦ v) := by
   rw [extDeriv, ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair]
+
+/-- The exterior derivative of a two-form on three vectors:
+`dω(u, v, w) = ∂_u ω(v, w) - ∂_v ω(u, w) + ∂_w ω(u, v)`. This formula also respects the
+derivative's junk-value convention. -/
+theorem extDeriv_apply_triple {ω : E → E [⋀^Fin 2]→L[𝕜] F} (x u v w : E) :
+    extDeriv ω x ![u, v, w] = fderiv 𝕜 ω x u ![v, w] - fderiv 𝕜 ω x v ![u, w] +
+      fderiv 𝕜 ω x w ![u, v] := by
+  have h₀ : (0 : Fin 3).removeNth ![u, v, w] = ![v, w] := by funext i; fin_cases i <;> rfl
+  have h₁ : (1 : Fin 3).removeNth ![u, v, w] = ![u, w] := by funext i; fin_cases i <;> rfl
+  have h₂ : (2 : Fin 3).removeNth ![u, v, w] = ![u, v] := by funext i; fin_cases i <;> rfl
+  simp [extDeriv, ContinuousAlternatingMap.alternatizeUncurryFin_apply, Fin.sum_univ_three, h₀,
+    h₁, h₂, sub_eq_add_neg]
 
 /-- The exterior derivative of a zero-form on a single vector is its Fréchet derivative in that
 direction. This formula also respects the derivative's junk-value convention. -/
@@ -110,16 +141,8 @@ theorem extDeriv_apply_pair_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι]
 their exterior derivatives. -/
 theorem extDeriv_sub {ω₁ ω₂ : E → E [⋀^Fin n]→L[𝕜] F} (hω₁ : DifferentiableAt 𝕜 ω₁ x)
     (hω₂ : DifferentiableAt 𝕜 ω₂ x) : extDeriv (ω₁ - ω₂) x = extDeriv ω₁ x - extDeriv ω₂ x := by
-  have h : ω₁ - ω₂ = ω₁ + (-1 : 𝕜) • ω₂ := by
-    rw [neg_one_smul, sub_eq_add_neg]
-  rw [h, extDeriv_add hω₁ (hω₂.const_smul _), extDeriv_smul, neg_one_smul, sub_eq_add_neg]
-
-/-- Where a differential form is not differentiable, its exterior derivative is `0`, by the junk
-value convention of the Fréchet derivative. -/
-theorem extDeriv_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
-  rw [extDeriv, fderiv_zero_of_not_differentiableAt h]
-  ext v
-  simp [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
+  rw [extDeriv, fderiv_sub hω₁ hω₂, ContinuousAlternatingMap.alternatizeUncurryFin_sub,
+    extDeriv, extDeriv]
 
 /-- The exterior derivative within a set does not change when the set is modified away from a
 point `y`, as long as it is unchanged near the base point (punctured at `y`). -/
@@ -149,7 +172,7 @@ theorem extDerivWithin_extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
     extDerivWithin (extDerivWithin ω s) s x = extDerivWithin (extDerivWithin ω t) t x := by
   rw [extDerivWithin_congr_set h]
   apply Filter.EventuallyEq.extDerivWithin_eq
-  · filter_upwards [h.eventuallyEq_nhds.filter_mono nhdsWithin_le_nhds] with y hy
+  · filter_upwards [(Filter.Eventually.eventually_nhds h).filter_mono nhdsWithin_le_nhds] with y hy
     exact extDerivWithin_congr_set hy
   · exact extDerivWithin_congr_set h
 
@@ -173,8 +196,11 @@ theorem extDeriv_smul_field {R : Type*} [DivisionSemiring R] [Module R F]
 
 /-- The **Leibniz rule** for the exterior derivative within a set of a form multiplied by a
 scalar function: `d (c • ω) = c • dω + dc ∧ ω`. The term `dc ∧ ω` is the alternatization of
-`v ↦ dc(v) • ω`, which evaluates as `∑ i, (-1) ^ i • dc(vᵢ) • ω(v₀, …, v̂ᵢ, …, vₙ)`. -/
-theorem extDerivWithin_function_smul {c : E → 𝕜} (hs : UniqueDiffWithinAt 𝕜 s x)
+`v ↦ dc(v) • ω`, which evaluates as `∑ i, (-1) ^ i • dc(vᵢ) • ω(v₀, …, v̂ᵢ, …, vₙ)`. The function
+`c` may take values in any normed field `𝕜'` acting on the coefficients compatibly with `𝕜`, such
+as a complex-valued function multiplying a complex-valued form on a real space. -/
+theorem extDerivWithin_function_smul {𝕜' : Type*} [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+    [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {c : E → 𝕜'} (hs : UniqueDiffWithinAt 𝕜 s x)
     (hc : DifferentiableWithinAt 𝕜 c s x) (hω : DifferentiableWithinAt 𝕜 ω s x) :
     extDerivWithin (c • ω) s x = c x • extDerivWithin ω s x +
       ContinuousAlternatingMap.alternatizeUncurryFin ((fderivWithin 𝕜 c s x).smulRight (ω x)) := by
@@ -182,9 +208,11 @@ theorem extDerivWithin_function_smul {c : E → 𝕜} (hs : UniqueDiffWithinAt �
     ContinuousAlternatingMap.alternatizeUncurryFin_add,
     ContinuousAlternatingMap.alternatizeUncurryFin_smul, extDerivWithin]
 
-/-- The **Leibniz rule** for the exterior derivative of a form multiplied by a scalar function:
-`d (c • ω) = c • dω + dc ∧ ω`, where `dc ∧ ω` is the alternatization of `v ↦ dc(v) • ω`. -/
-theorem extDeriv_function_smul {c : E → 𝕜} (hc : DifferentiableAt 𝕜 c x)
+/-- The **Leibniz rule** for the exterior derivative of a form multiplied by a scalar function
+with values in a normed field `𝕜'` acting on the coefficients: `d (c • ω) = c • dω + dc ∧ ω`,
+where `dc ∧ ω` is the alternatization of `v ↦ dc(v) • ω`. -/
+theorem extDeriv_function_smul {𝕜' : Type*} [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+    [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {c : E → 𝕜'} (hc : DifferentiableAt 𝕜 c x)
     (hω : DifferentiableAt 𝕜 ω x) :
     extDeriv (c • ω) x = c x • extDeriv ω x +
       ContinuousAlternatingMap.alternatizeUncurryFin ((fderiv 𝕜 c x).smulRight (ω x)) := by
@@ -213,11 +241,6 @@ protected theorem DifferentiableAt.extDerivWithin (h : DifferentiableAt 𝕜 ω 
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {n : ℕ}
-
 /-- The exterior derivative of a continuous linear differential form is its alternatization. -/
 @[simp]
 lemma extDeriv_eq (ω : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) (x : E) :
@@ -238,12 +261,8 @@ theorem extDerivWithin_pullback {E' : Type*} [NormedAddCommGroup E'] [NormedSpac
   -- Express the flat pullback as a composite with the continuous-linear pullback operator.
   change fderivWithin 𝕜 (fun y ↦ (ω (L y)).compContinuousLinearMap L) s x =
     C.comp ((fderivWithin 𝕜 ω t (L x)).comp L) at hd
-  ext v
-  simp only [extDerivWithin, hd, ContinuousAlternatingMap.alternatizeUncurryFin_apply,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  apply Finset.sum_congr rfl
-  intro i _
-  rfl
+  rw [extDerivWithin, hd, extDerivWithin,
+    ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap]
 
 /-- Exterior differentiation commutes with pullback along a continuous linear map `A`, for a form
 differentiable at `A x`. -/
@@ -262,7 +281,7 @@ theorem extDeriv_pullback_eq_zero {E' : Type*} [NormedAddCommGroup E'] [NormedSp
     (hω : DifferentiableAt 𝕜 ω (A x)) (hdω : extDeriv ω (A x) = 0) :
     extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap A) x = 0 := by
   rw [A.extDeriv_pullback hω, hdω]
-  ext v
+  ext _
   simp
 
 /-- Pulling a `C^r` form on `t` back along a continuous linear map `A` gives a `C^r` form on
@@ -272,8 +291,26 @@ theorem _root_.TauCeti.contDiffOn_pullback_continuousLinearMap {E' : Type*}
     {ω : E' → E' [⋀^Fin n]→L[𝕜] F} {t : Set E'} (hω : ContDiffOn 𝕜 r ω t) (A : E →L[𝕜] E') :
     ContDiffOn 𝕜 r (fun x ↦ (ω (A x)).compContinuousLinearMap A) (A ⁻¹' t) := by
   have h := (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
-    A).contDiff.comp_contDiffOn (hω.comp A.contDiff.contDiffOn fun x (hx : x ∈ A ⁻¹' t) ↦ hx)
+    A).contDiff.comp_contDiffOn (hω.comp A.contDiff.contDiffOn (mapsTo_preimage A t))
   exact h.congr fun x _ ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
+
+/-- Pulling a form that is `C^r` at `A x` back along a continuous linear map `A` gives a form that
+is `C^r` at `x`. -/
+theorem _root_.TauCeti.contDiffAt_pullback_continuousLinearMap {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {r : WithTop ℕ∞}
+    {ω : E' → E' [⋀^Fin n]→L[𝕜] F} (A : E →L[𝕜] E') {x : E} (hω : ContDiffAt 𝕜 r ω (A x)) :
+    ContDiffAt 𝕜 r (fun x ↦ (ω (A x)).compContinuousLinearMap A) x :=
+  (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
+    A).contDiff.contDiffAt.comp x (hω.comp x A.contDiff.contDiffAt)
+
+/-- Pulling a form that is differentiable at `A x` back along a continuous linear map `A` gives a
+form that is differentiable at `x`. -/
+theorem _root_.TauCeti.differentiableAt_pullback_continuousLinearMap {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {ω : E' → E' [⋀^Fin n]→L[𝕜] F} (A : E →L[𝕜] E')
+    {x : E} (hω : DifferentiableAt 𝕜 ω (A x)) :
+    DifferentiableAt 𝕜 (fun x ↦ (ω (A x)).compContinuousLinearMap A) x :=
+  (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
+    A).differentiableAt.comp x (hω.comp x A.differentiableAt)
 
 /-- Exterior differentiation commutes with a fixed continuous linear map of coefficients, for a
 form differentiable within the set. -/

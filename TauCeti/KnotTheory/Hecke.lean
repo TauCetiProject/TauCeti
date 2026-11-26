@@ -16,15 +16,20 @@ The normalized braid trace `MarkovBraid.heckeTrace` and its Markov invariance ar
 factor and skein relations. This file proves its characterization by the skein relation and
 normalization.
 
-After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace`, the canonical specialization
-is obtained by taking `τ = ocneanuTrace R q z` and
+After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic`, the canonical
+specialization is obtained by taking `τ = ocneanuTrace R q z` and
 `hτ = isMarkovTrace_ocneanuTrace z`. In this case the invariant is the braid-closure invariant
-Jones constructs from the Ocneanu trace. Its comparison with the HOMFLY invariant built from
-Jimbo representations is not made here. The skein relation itself needs only linearity of `τ`.
+Jones constructs from the Ocneanu trace; its comparison with the finite-colour Jimbo traces and the
+HOMFLY polynomial is proved in `TauCeti.KnotTheory.Hecke.Homfly`, its regular Laurent
+polynomial extension across the zero-factor specializations is constructed in
+`TauCeti.KnotTheory.Hecke.Regular`, and its hyperbolic `(α, θ)` specialization is proved in
+`TauCeti.KnotTheory.Hecke.Hyperbolic`. The skein relation itself needs only linearity of `τ`.
 
 ## Main results
 
 * `TauCeti.MarkovBraid.eq_heckeTrace_of_skein`: the skein characterization.
+* `TauCeti.MarkovBraid.heckeTrace_eq_pow_componentCount_of_sub_inv_eq_zero`: closed-form evaluation
+  of any normalized Hecke Markov trace at `(q : R) - ↑q⁻¹ = 0` as `C ^ (β.componentCount - 1)`.
 
 ## References
 
@@ -64,5 +69,30 @@ theorem MarkovBraid.eq_heckeTrace_of_skein (hτ : IsMarkovTrace z τ)
     (by simpa only [smul_eq_mul] using hι)
     (fun n b ↦ by rw [smul_eq_mul, τ.heckeTrace_strandIncl])
     (by rw [h₁, heckeTrace_one_strand hτ.map_one])
+
+/-- **Zero-factor evaluation of a normalized Hecke trace.** When `(q : R) - ↑q⁻¹ = 0`, any
+normalized Markov trace with normalization parameters `(C, l)` evaluates on every braid closure `β`
+to `C ^ (β.componentCount - 1)`. -/
+theorem MarkovBraid.heckeTrace_eq_pow_componentCount_of_sub_inv_eq_zero (β : MarkovBraid)
+    (hτ : IsMarkovTrace z τ) (hpos : C * l * z = 1)
+    (hneg : C * ↑l⁻¹ * (z - ((q : R) - ↑q⁻¹)) = 1) (hq : (q : R) - ↑q⁻¹ = 0) :
+    β.heckeTrace τ C l = C ^ (β.componentCount - 1) := by
+  have hl : (↑l⁻¹ : R) = (l : R) := by
+    have h := (IsHeckeNormalization.mk hpos hneg).mul_sub_inv_eq_inv_sub
+    rw [hq, mul_zero] at h
+    exact sub_eq_zero.mp h.symm
+  symm
+  refine congrFun (eq_heckeTrace_of_skein hτ hpos hneg
+    (F := fun γ ↦ C ^ (γ.componentCount - 1))
+    (fun _ _ h ↦ by rw [h.componentCount_eq]) ?_ ?_ ?_) β
+  · intro n c i
+    have hc := componentCount_mul_sigma_inv_mul 1 c i
+    simp only [one_mul] at hc
+    rw [hc, hl, hq, sub_self, zero_mul]
+  · intro n b
+    have hpos' : 1 ≤ componentCount ⟨n, b⟩ := componentCount_pos ⟨n, b⟩
+    have he : componentCount ⟨n, b⟩ + 1 - 1 = (componentCount ⟨n, b⟩ - 1) + 1 := by omega
+    rw [componentCount_strandIncl, he, pow_succ']
+  · simp
 
 end TauCeti

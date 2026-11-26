@@ -16,6 +16,8 @@ For stopping times `σ` and `τ` on a raw filtration, the stochastic intervals `
 and `[0,τ]` are predictable. An event known at `σ` can also be imposed on `(σ,τ]`.
 Consequently, cutting a predictable integrand off at a stopping time preserves
 predictability. No right continuity or completeness of the filtration is needed.
+On any linearly ordered time index, half-open stochastic intervals `[σ, τ)` (and their
+restrictions to an event) equal differences of closed stochastic rays `[σ, ∞) \ [τ, ∞)`.
 
 The lower integral of a nonnegative integrand cut off at `τ` is the stopped cumulative
 integral. This pathwise identity includes infinite energies and infinite stopping times;
@@ -63,7 +65,7 @@ theorem IsStoppingTime.measurableSet_predictable_lt_inter (hσ : IsStoppingTime 
       obtain ⟨s, hs⟩ := WithTop.ne_top_iff_exists.mp (ne_top_of_lt hp)
       obtain ⟨q, hqS, hsq, hqt⟩ := hS s p.1 (WithTop.coe_lt_coe.mp (hs ▸ hp))
       exact ⟨q, hqS, hqt, hA, hs ▸ WithTop.coe_le_coe.mpr hsq⟩
-    · rintro ⟨q, hqD, hqt, hA, hsq⟩
+    · rintro ⟨q, _, hqt, hA, hsq⟩
       exact ⟨hsq.trans_lt (WithTop.coe_lt_coe.mpr hqt), hA⟩
   rw [he]
   exact MeasurableSet.biUnion hSc fun q _ ↦
@@ -148,5 +150,27 @@ theorem setLIntegral_ite_le_eq_stoppedProcess (f : ι → Ω → ℝ≥0∞)
       by_cases hs : s ≤ u <;> simp [hs]
     rw [he, lintegral_indicator measurableSet_Iic, Measure.restrict_restrict measurableSet_Iic,
       Iic_inter_Ioc_of_le hut]
+
+end TauCeti
+
+namespace TauCeti
+
+/-- A half-open stochastic interval `[σ, τ)` restricted to an event `A` is the difference of the
+closed stochastic ray `[σ, ∞)` restricted to `A` and the closed stochastic ray `[τ, ∞)`. -/
+theorem stochasticIco_inter_eq_sdiff {ι Ω : Type*} [LinearOrder ι]
+    (σ τ : Ω → WithTop ι) (A : Set Ω) :
+    {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) < τ p.2 ∧ p.2 ∈ A} =
+      {p : ι × Ω | σ p.2 ≤ p.1 ∧ p.2 ∈ A} \ {p : ι × Ω | τ p.2 ≤ p.1} := by
+  ext p
+  simp only [mem_ofPred_eq, mem_sdiff, not_le]
+  tauto
+
+/-- A half-open stochastic interval `[σ, τ)` is the difference of the closed stochastic rays
+`[σ, ∞)` and `[τ, ∞)`. -/
+theorem stochasticIco_eq_sdiff {ι Ω : Type*} [LinearOrder ι]
+    (σ τ : Ω → WithTop ι) :
+    {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) < τ p.2} =
+      {p : ι × Ω | σ p.2 ≤ p.1} \ {p : ι × Ω | τ p.2 ≤ p.1} := by
+  simpa using stochasticIco_inter_eq_sdiff σ τ Set.univ
 
 end TauCeti

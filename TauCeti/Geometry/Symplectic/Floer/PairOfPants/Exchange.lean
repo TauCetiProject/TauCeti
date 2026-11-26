@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.MeasureTheory.Group.LIntegral
@@ -42,9 +44,8 @@ rotation of the end at `∞` under `σ`. The main results are:
 * `TauCeti.Floer.exchangePerturbation_zero`: at `c = 0` the family is the pair-of-pants datum.
 * `TauCeti.Floer.exchangePerturbation_one`: at `c = 1` it is the pullback along `σ` of the
   pair-of-pants datum with exchanged inputs, `σ^*K'(w) = -K'(1 - w)`, since `dσ = -1`;
-  `TauCeti.Floer.perturbationPullback_pairOfPantsPerturbation_exchangeEndData` states this
-  for the components in real coordinates, the form used by
-  `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback`.
+  applied to this identity, `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_one_sub`
+  transfers solutions of the Floer equation for the exchanged datum to this end.
 * `TauCeti.Floer.exchangePerturbation_cylindricalEndLift` and
   `TauCeti.Floer.exchangePerturbation_add_cylindricalEndLift_inf`: for `0 ≤ c ≤ 1` every member
   is `H_q(t) dt` far out on the input end `q`, in the end lift `φ_q`, and `H_∞(t) dt` far out on
@@ -52,18 +53,41 @@ rotation of the end at `∞` under `σ`. The main results are:
 * `TauCeti.Floer.exchangePerturbation_of_norm_le`, `TauCeti.Floer.exchangePerturbation_eq_zero`
   and `TauCeti.Floer.exchangePerturbation_add`: for `0 ≤ c ≤ 1` every member is the pair-of-pants
   datum on the disc `|w| ≤ 3`, vanishes on the annulus `2 ≤ |w - c| ≤ 10`, and off the disc
-  `|w - c| < 3/2` is the pair-of-pants datum translated by `c`.
+  `|w - c| < 3/2` is the pair-of-pants datum translated by `c`. So far out it is the
+  pair-of-pants datum on the input ends and its translate by `c` on the output end
+  (`TauCeti.Floer.exchangePerturbation_eq_of_pos_fst_positiveEndCoord`,
+  `TauCeti.Floer.exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord`).
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
-  `c`, the domain point of `S` and the target point.
-* `TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation`: for `C¹` Hamiltonians on a normed
-  space, every member is `C¹` jointly in the domain point of `S`, in real coordinates, and the
-  target point.
+  `c`, the domain point of `S` and the target point; so is each member in the domain point of `S`,
+  in real coordinates, and the target point
+  (`TauCeti.Floer.contMDiffAt_exchangePerturbation_apply`), and so are its components
+  (`TauCeti.Floer.contMDiffOn_uncurry_exchangePerturbation`).
+* `TauCeti.Floer.contDiffAt_exchangePerturbation_apply`: for `C^n` Hamiltonians on a normed
+  space, the components of the family are `C^n` jointly in the parameter `c`, the domain point of
+  `S`, in real coordinates, and the target point; in particular every member is `C^n` jointly in
+  the domain point and the target point (`TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation`),
+  and so is the translated plane datum on all of `ℂ`
+  (`TauCeti.Floer.contDiff_uncurry_negativePlanePerturbation_sub`).
 * `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`: for
   Hamiltonians on a manifold with a smooth two-form, such as a closed symplectic manifold, the
   integrated curvature `∫ |R_K|` of every member with `0 ≤ c ≤ 1` is at most `B₀ + B₁ + B_∞`
   along any map, where `|H_q| ≤ B_q`; the bound does not depend on `c`. The symplectic vector
   space case (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`)
-  is the case of the constant form `TauCeti.SymplecticForm.constSmooth`.
+  is the case of the constant form `TauCeti.SymplecticForm.constSmooth`. Hence the integral of
+  the curvature over any set has absolute value at most `B₀ + B₁ + B_∞`
+  (`TauCeti.SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_exchangePerturbation_le`).
+* `TauCeti.SmoothTwoForm.hamiltonianCurvature_exchangePerturbation_eq_zero`: for `0 ≤ c ≤ 1` and
+  `R ≥ 2`, the curvature of every member vanishes on `S` outside the truncation with recentred
+  output end `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`; the symplectic vector space
+  case is `TauCeti.SymplecticForm.hamiltonianCurvature_exchangePerturbation_eq_zero`.
+* `TauCeti.Floer.exchangePerturbation_update_zero_eq_zero`: with the input Hamiltonian `H_0`
+  replaced by `0`, every member with `0 ≤ c ≤ 1` vanishes near `0`. For `L > 2` and
+  `R ≥ L - 1`, outside `exchangeTruncation c R` this datum agrees with the capped family
+  `cappedExchangePerturbation H L c` of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping`,
+  which caps the input at `0`
+  (`TauCeti.Floer.cappedExchangePerturbation_of_notMem_exchangeTruncation`), and it is used to
+  transfer its energy identity in
+  `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.LeftCapping`.
 
 The input part is supported in two small discs about `0` and `1`, and the translated plane datum
 vanishes on the disc of radius `2 exp (2π)` about `c`, so for `0 ≤ c ≤ 1` the two parts have
@@ -182,31 +206,6 @@ theorem exchangePerturbation_one (hH : Periodic (H inf) 1) (w : ℂ) (x : M) :
     hplane, exchangePerturbation_def, Complex.ofReal_one]
   abel
 
-/-- **The end of the family in real coordinates.** In the real coordinates `ℝ × ℝ ≃ ℂ`, the
-exchange is `σ(s, t) = (1 - s, -t)`, and the pullback along `σ` of the components of the
-pair-of-pants datum with exchanged Hamiltonians (`TauCeti.Floer.perturbationPullback`) is the end
-`c = 1` of the family. Since `σ` is holomorphic,
-`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback` turns solutions of
-the Floer equation for the exchanged datum, composed with `σ`, into solutions for this end. -/
-theorem perturbationPullback_pairOfPantsPerturbation_exchangeEndData
-    (hH : Periodic (H inf) 1) (v z : ℝ × ℝ) (x : M) :
-    perturbationPullback (fun z => (1, 0) - z)
-        (fun z x => pairOfPantsPerturbation (exchangeEndData H)
-          (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x => pairOfPantsPerturbation (exchangeEndData H)
-          (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
-      exchangePerturbation H 1 (Complex.equivRealProdCLM.symm z) x
-        (Complex.equivRealProdCLM.symm v) := by
-  have hσ : Complex.equivRealProdCLM.symm ((1, 0) - z) = 1 - Complex.equivRealProdCLM.symm z := by
-    apply Complex.ext <;> simp
-  have hv : Complex.equivRealProdCLM.symm v = v.1 • (1 : ℂ) + v.2 • Complex.I := by
-    apply Complex.ext <;> simp
-  rw [perturbationPullback_apply, fderiv_const_sub, fderiv_fun_id, exchangePerturbation_one hH, hσ,
-    hv]
-  simp only [neg_apply, ContinuousLinearMap.id_apply, Prod.fst_neg, Prod.snd_neg, map_add,
-    map_smul, smul_eq_mul]
-  ring
-
 /-! ### The ends of the family -/
 
 /-- The translated plane datum vanishes within distance `2` of `c`. -/
@@ -251,9 +250,9 @@ theorem exchangePerturbation_of_norm_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c �
   rw [exchangePerturbation_def,
     pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation H w x,
     negativePlanePerturbation_eq_zero_of_norm_le
-      (hwc.trans (by linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi])),
+      (hwc.trans (by linarith [fourteen_le_two_mul_exp_two_pi])),
     negativePlanePerturbation_eq_zero_of_norm_le
-      (hw.trans (by linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]))]
+      (hw.trans (by linarith [fourteen_le_two_mul_exp_two_pi]))]
 
 /-- **The family vanishes between its ends.** For `0 ≤ c ≤ 1`, on the annulus
 `2 ≤ |w - c| ≤ 10` the member `c` of the family vanishes. -/
@@ -262,7 +261,26 @@ theorem exchangePerturbation_eq_zero {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 
   rw [exchangePerturbation_def,
     pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ (by linarith),
     negativePlanePerturbation_eq_zero_of_norm_le
-      (hw₂.trans (by linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi])), add_zero]
+      (hw₂.trans (by linarith [fourteen_le_two_mul_exp_two_pi])), add_zero]
+
+/-- Within distance `1/2` of `0`, the input-exchange datum of the Hamiltonians with `H_0` replaced
+by `0` vanishes, for `0 ≤ c ≤ 1`. -/
+theorem exchangePerturbation_update_zero_eq_zero {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
+    (hw : ‖w‖ ≤ 1 / 2) (x : M) : exchangePerturbation (update H zero 0) c w x = 0 := by
+  have hw₁ : 1 / 2 ≤ ‖w - 1‖ := by
+    have h := norm_sub_norm_le (1 : ℂ) w
+    rw [norm_one, norm_sub_rev] at h
+    linarith
+  have hre : (one.endCoord w).re ≤ 0 :=
+    re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rwa [endCenter_one])
+  have hcut : smoothTransition ((one.endCoord w).re - 1) = 0 :=
+    smoothTransition.zero_of_nonpos (by linarith)
+  have hwc : ‖w - c‖ ≤ 2 * Real.exp (2 * π) := by
+    have h := norm_sub_le w (c : ℂ)
+    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at h
+    nlinarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
+  rw [exchangePerturbation_def, negativePlanePerturbation_eq_zero_of_norm_le hwc, add_zero]
+  simp [pairOfPantsPerturbation_def, Puncture.sum_univ, hcut]
 
 /-- **The family near the output is a translate.** For `0 ≤ c ≤ 1`, off the disc `|w| < 3/2`,
 the member `c` of the family at `w + c` is the pair-of-pants datum at `w`: only the translated
@@ -274,6 +292,28 @@ theorem exchangePerturbation_add {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {
     pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation H w x,
     pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub le_rfl zero_le_one
       (by simpa using hw)]
+
+/-- **The family far out on an input end.** For `0 ≤ c ≤ 1`, on the part `s > 0` of an input end,
+every member of the family is the pair-of-pants datum. -/
+theorem exchangePerturbation_eq_of_pos_fst_positiveEndCoord {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {q : Puncture} (hq : q ≠ inf) {z : ℝ × ℝ} (hz : 0 < (positiveEndCoord q z).1) (x : M) :
+    exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x =
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
+  rw [fst_positiveEndCoord, endSign_eq_one hq, one_mul] at hz
+  have hlt : ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ < 1 / 2 :=
+    not_le.1 fun h ↦ by linarith [re_endCoord_nonpos_of_le_norm_sub_endCenter hq h]
+  have h := norm_add_le (Complex.equivRealProdCLM.symm z - q.endCenter) q.endCenter
+  rw [sub_add_cancel] at h
+  exact exchangePerturbation_of_norm_le hc₀ hc₁ (by linarith [norm_endCenter_le_one q]) x
+
+/-- **The family far out on the output end.** For `0 ≤ c ≤ 1`, beyond the height `1` of the
+output end, the member `c` of the family at `z + (c, 0)` is the pair-of-pants datum at `z`. -/
+theorem exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {z : ℝ × ℝ} (hz : 1 < (positiveEndCoord inf z).1) (x : M) :
+    exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x =
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero, exchangePerturbation_add hc₀ hc₁
+    (by linarith [eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hz])]
 
 /-- **The family on an input end.** For `0 ≤ c ≤ 1`, on the part `s > 0` of an input end `q`, the
 pullback of every member of the family along the end lift `φ_q` is the continuation datum
@@ -333,16 +373,19 @@ theorem exchangePerturbation_add_cylindricalEndLift_inf (hH : Periodic (H inf) 1
 
 /-! ### Smoothness of the family -/
 
-/-- The input Hamiltonians, with the output Hamiltonian replaced by zero, inherit any property
-shared by the Hamiltonians `H q` and `0`. -/
-private theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : ∀ q, P (H q))
-    (q : Puncture) : P (update H inf 0 q) := by
-  rcases eq_or_ne q inf with rfl | hq
-  · simpa using h₀
-  · simpa [update_of_ne hq] using hH q
-
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+
+/-- The exchanged data of end data which are jointly `C^n` on `ℝ × M` are jointly `C^n`. -/
+theorem contMDiff_uncurry_exchangeEndData {n : WithTop ℕ∞} {G : Puncture → ℝ → M → ℝ}
+    (hG : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (G q))) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (exchangeEndData G q)) := by
+  cases q
+  · simpa using hG one
+  · simpa using hG zero
+  · rw [exchangeEndData_inf]
+    exact (hG inf).comp
+      (((contDiff_id.add contDiff_const).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
 
 /-- **The translated plane datum is smooth.** For a period-one Hamiltonian of class `C^n` on
 `ℝ × M`, the negative plane datum translated by the parameter, `(c, w, x) ↦ K(w - c)(x)`, is `C^n`
@@ -371,11 +414,35 @@ theorem contMDiffAt_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q
   have hin : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℝ × (ℂ × M) => pairOfPantsPerturbation (update H inf 0) p.2.1 p.2.2)
       (c, ((w : ℂ), x)) :=
-    (contMDiffAt_pairOfPantsPerturbation (forall_update_inf (P := fun f => Periodic f 1)
-      (fun _ => rfl) hH) (forall_update_inf
-        (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) contMDiff_const hHs)
+    (contMDiffAt_pairOfPantsPerturbation (forall_update_zero (P := fun f => Periodic f 1)
+      (fun _ => rfl) hH inf) (forall_update_zero
+        (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) contMDiff_const hHs inf)
       w x).comp (c, ((w : ℂ), x)) contMDiffAt_snd
   exact hin.add (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
+
+/-- **Each member of the family is smooth on `S`.** For period-one Hamiltonians of class `C^n` on
+`ℝ × M`, the member `c` of the family is `C^n` jointly in the domain point and the target point at
+every point of the thrice-punctured sphere `S = ℂ ∖ {0, 1}`, given in real coordinates. -/
+theorem contMDiffAt_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (c : ℝ) :
+    ∀ z ∈ thricePuncturedSphereReal, ∀ x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℂ × M ↦ exchangePerturbation H c p.1 p.2) (Complex.equivRealProdCLM.symm z, x) :=
+  fun _ hz x ↦
+    (contMDiffAt_exchangePerturbation hH hHs c ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
+      (f := fun p : ℂ × M ↦ (c, p)) _ (contMDiffAt_const.prodMk contMDiffAt_id)
+
+/-- **The components of each member are smooth on `S`.** For period-one Hamiltonians of class
+`C^n` on `ℝ × M`, the components of the member `c` of the family are `C^n` jointly in the domain
+point of `S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
+theorem contMDiffOn_uncurry_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (c : ℝ) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  exact (((contMDiffAt_exchangePerturbation_apply hH hHs c z hz x).comp (z, x)
+    ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).contMDiffAt.prodMk
+      contMDiffAt_snd)).clm_apply contMDiffAt_const).contMDiffWithinAt
 
 end TauCeti.Floer
 
@@ -383,29 +450,43 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
-/-- **The family is `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
-space, the member `c` of the family is `C¹` jointly in the domain point of
+/-- **The translated plane datum is `C^n` in real coordinates.** For a period-one `C^n`
+Hamiltonian on a normed space, the negative plane datum translated by `c ∈ ℝ` is `C^n` jointly in
+the domain point, in real coordinates, and the target point. -/
+theorem contDiff_uncurry_negativePlanePerturbation_sub {n : ℕ∞} {Hp : ℝ → V → ℝ}
+    (hH : Periodic Hp 1) (hHs : ContDiff ℝ n (uncurry Hp)) (c : ℝ) (v : ℂ) :
+    ContDiff ℝ n (uncurry fun z x ↦
+      negativePlanePerturbation Hp (Complex.equivRealProdCLM.symm z - c) x v) := by
+  have h := (SymplecticForm.contDiff_negativePlanePerturbation_apply hH hHs v).comp
+    (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) (by fun_prop)
+  simp only [Function.comp_def, uncurry,
+    TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero] at h
+  exact h
+
+/-- **The family is smooth in real coordinates.** For period-one `C^n` Hamiltonians on a normed
+space, the components of the family are `C^n` jointly in the parameter `c`, the domain point of
 `S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
-theorem contDiffAt_uncurry_exchangePerturbation (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
+theorem contDiffAt_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
-    ContDiffAt ℝ 1
+    ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦
+      exchangePerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) (c, (z, x)) := by
+  have h := contMDiffAt_exchangePerturbation (I := 𝓘(ℝ, V)) hH
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c ⟨_, hz⟩ x
+  exact contMDiffAt_iff_contDiffAt.1 ((h.comp (c, (z, x))
+    contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const)
+
+/-- **The family is `C^n` in real coordinates.** For period-one `C^n` Hamiltonians on a normed
+space, the member `c` of the family is `C^n` jointly in the domain point of
+`S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
+theorem contDiffAt_uncurry_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
+    ContDiffAt ℝ n
       (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
-      (z, x) := by
-  have hin := contDiffAt_uncurry_pairOfPantsPerturbation
-    (forall_update_inf (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH)
-    (forall_update_inf (P := fun f ↦ ContDiff ℝ 1 (uncurry f)) contDiff_const hHs) hz x v
-  have hpl : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦
-      negativePlanePerturbation (H inf) (Complex.equivRealProdCLM.symm (p.1 - (c, 0))) p.2 v)
       (z, x) :=
-    (SymplecticForm.contDiff_negativePlanePerturbation_apply (hH inf) (hHs inf) v).contDiffAt.comp
-      (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) _ (by fun_prop)
-  have he (z : ℝ × ℝ) :
-      Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
-    apply Complex.ext <;> simp
-  simp only [he] at hpl
-  exact (hin.add hpl).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ by
-    simp [exchangePerturbation_def, uncurry])
+  (contDiffAt_exchangePerturbation_apply hH hHs c hz x v).comp (z, x)
+    (f := fun p : (ℝ × ℝ) × V ↦ (c, p)) (by fun_prop)
 
 end TauCeti.Floer
 
@@ -450,8 +531,7 @@ theorem lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_l
   set A : Set (ℝ × ℝ) := {z | ‖e z - c‖ < 2 * Real.exp (2 * π)}
   have hcont : Continuous fun z : ℝ × ℝ => ‖e z - c‖ := (e.continuous.sub continuous_const).norm
   have hA : IsOpen A := isOpen_lt hcont continuous_const
-  have hexp : 3 < 2 * Real.exp (2 * π) := by
-    nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
+  have hexp : 3 < 2 * Real.exp (2 * π) := by linarith [fourteen_le_two_mul_exp_two_pi]
   have hin (v : ℂ) {z : ℝ × ℝ} (hz : z ∈ A) :
       (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) v) =ᶠ[𝓝 z] Ki v := by
     filter_upwards [hA.mem_nhds hz] with z' hz'
@@ -523,9 +603,9 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Smoot
         z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) := by
   -- The input part, with bounds `B₀`, `B₁`, `0`, vanishes away from `c`; the plane part has `B_∞`.
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_update_inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_update_inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
-      contMDiff_const hHs)
+    (forall_update_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH inf)
+    (forall_update_zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs inf)
     (B := update B inf 0) (fun q t x => by
       rcases eq_or_ne q inf with rfl | hq
       · simp
@@ -539,6 +619,104 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Smoot
         add_le_add hBin le_rfl
     _ = ∑ q, ENNReal.ofReal (B q) := by
         simp [Puncture.sum_univ]
+
+/-- The integral of the curvature of the member `c ∈ [0, 1]` of the input-exchange family along
+any map into a manifold, over any set, has absolute value at most `B₀ + B₁ + B_∞` when
+`|H_q| ≤ B_q`; the bound does not depend on `c`. -/
+theorem abs_setIntegral_hamiltonianCurvature_exchangePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {B : Puncture → ℝ}
+    (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (u : ℝ × ℝ → M)
+    (s : Set (ℝ × ℝ)) :
+    |∫ z in s, ω.hamiltonianCurvature
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)| ≤ ∑ q, B q := by
+  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
+  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
+    ← Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    (lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u))
+
+/-- **The curvature of the family vanishes outside the truncation.** For period-one `C¹`
+Hamiltonians `H_q` on a manifold `M` with a two-form `ω`, `0 ≤ c ≤ 1` and `R ≥ 2`, the curvature
+of the member `c` of the input-exchange family vanishes on `S = ℂ ∖ {0, 1}` outside the truncation
+with recentred output end `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`. There the member
+is the pair-of-pants datum near an input, or its translate by `c` near the output, at a point where
+the signed longitudinal coordinate of that end exceeds `2`, so the datum is cylindrical. -/
+theorem hamiltonianCurvature_exchangePerturbation_eq_zero (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {R : ℝ} (hR : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
+    (hzT : Complex.equivRealProdCLM.symm z ∉ exchangeTruncation c R) (x : M) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 := by
+  set e := Complex.equivRealProdCLM
+  have hρ : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have h₁ : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp (by nlinarith [Real.pi_pos])
+  -- Points near `z` satisfy any strict inequality on a distance that `z` satisfies.
+  have hcont (a : ℂ) : Continuous fun y : ℝ × ℝ ↦ ‖e.symm y - a‖ :=
+    continuous_norm.comp (e.symm.continuous.sub continuous_const)
+  -- Near an input `q`, the member is the pair-of-pants datum, cylindrical on the end at `q`.
+  have hin {q : Puncture} (hq : q ≠ inf)
+      (hzq : ‖e.symm z - q.endCenter‖ < Real.exp (-(2 * π * R)) / 2) :
+      ω.hamiltonianCurvature (fun z x ↦ exchangePerturbation H c (e.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (e.symm z) x Complex.I) z x = 0 := by
+    have h3 : ‖e.symm z - 0‖ < 3 := by
+      have h := norm_sub_le (e.symm z - q.endCenter) (-q.endCenter)
+      rw [sub_neg_eq_add, sub_add_cancel, norm_neg] at h
+      have hc : ‖q.endCenter‖ ≤ 1 := by
+        rcases q.endCenter_eq_zero_or_eq_one with hc | hc <;> simp [hc]
+      rw [sub_zero]
+      linarith
+    have hK (v : ℂ) : (fun y x ↦ exchangePerturbation H c (e.symm y) x v) =ᶠ[𝓝 z]
+        fun y x ↦ pairOfPantsPerturbation H (e.symm y) x v :=
+      ((hcont 0).continuousAt.eventually (gt_mem_nhds h3)).mono fun y hy ↦ funext fun x ↦ by
+        beta_reduce
+        rw [sub_zero] at hy
+        rw [exchangePerturbation_of_norm_le hc₀ hc₁ hy.le]
+    have hzc : e.symm z ≠ q.endCenter := by
+      rcases q.endCenter_eq_zero_or_eq_one with hc | hc <;> rw [hc]
+      exacts [hz.1, hz.2]
+    have hre : 2 < (positiveEndCoord q z).1 := by
+      rw [fst_positiveEndCoord, endSign_eq_one hq, one_mul]
+      have h := (re_endCoord_le_iff hq hzc).not.2 (not_le.2 hzq)
+      linarith [not_le.1 h]
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I)]
+    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz hre x
+  simp only [mem_exchangeTruncation, not_and_or, not_le] at hzT
+  rcases hzT with h₀ | h₁' | hc
+  · exact hin (q := zero) (by decide) (by rwa [endCenter_zero, sub_zero])
+  · exact hin (q := one) (by decide) (by rwa [endCenter_one])
+  -- Near the output, the member is the translate by `c` of the pair-of-pants datum, cylindrical
+  -- on the end at `∞`.
+  · have hK (v : ℂ) : (fun y x ↦ exchangePerturbation H c (e.symm y) x v) =ᶠ[𝓝 z]
+        fun y x ↦ pairOfPantsPerturbation H (e.symm (y - (c, 0))) x v :=
+      ((hcont c).continuousAt.eventually (lt_mem_nhds (by linarith : 3 / 2 < ‖e.symm z - c‖))).mono
+        fun y hy ↦ funext fun x ↦ by
+          have h := exchangePerturbation_add (H := H) hc₀ hc₁ hy.le x
+          rw [sub_add_cancel] at h
+          beta_reduce
+          rw [h, TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero]
+    have hzc : e.symm z - c ≠ 0 := norm_pos_iff.1 (by linarith)
+    have hz' : e.symm (z - (c, 0)) ≠ 0 ∧ e.symm (z - (c, 0)) ≠ 1 := by
+      rw [TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero]
+      refine ⟨hzc, fun h ↦ ?_⟩
+      rw [h, norm_one] at hc
+      linarith
+    have hre : 2 < (positiveEndCoord inf (z - (c, 0))).1 := by
+      rw [lt_fst_positiveEndCoord_inf_iff hz'.1,
+        TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero]
+      have : Real.exp (2 * π * 2) ≤ Real.exp (2 * π * R) :=
+        Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
+      linarith
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I),
+      ← sub_add_cancel z ((c : ℝ), (0 : ℝ)), ← ω.hamiltonianCurvature_comp_add_right]
+    simp only [add_sub_cancel_right]
+    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz' hre x
 
 end TauCeti.SmoothTwoForm
 
@@ -587,5 +765,22 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
         z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) := by
   simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le hH
     (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hB hc₀ hc₁ u
+
+/-- **The curvature of the family vanishes outside the truncation.** This is the vector-space
+case of `TauCeti.SmoothTwoForm.hamiltonianCurvature_exchangePerturbation_eq_zero`: for period-one
+`C¹` Hamiltonians `H_q`, `0 ≤ c ≤ 1` and `R ≥ 2`, the curvature of the member `c` of the
+input-exchange family vanishes on `S = ℂ ∖ {0, 1}` outside the truncation with recentred output end
+`TauCeti.ThricePuncturedSphere.exchangeTruncation c R`. -/
+theorem hamiltonianCurvature_exchangePerturbation_eq_zero (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {R : ℝ} (hR : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
+    (hzT : Complex.equivRealProdCLM.symm z ∉ exchangeTruncation c R) (x : V) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 := by
+  simpa using ω.constSmooth.hamiltonianCurvature_exchangePerturbation_eq_zero hH
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hc₀ hc₁ hR hz hzT x
 
 end TauCeti.SymplecticForm

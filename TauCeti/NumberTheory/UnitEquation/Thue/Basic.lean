@@ -198,14 +198,14 @@ theorem logHeight₁_div_le_of_eval_homogenize_eq {g : ℤ[X]} {n : ℕ} (hn : g
   obtain ⟨⟨ζ, e⟩, hζe, -⟩ := exist_unique_eq_mul_prod K (ε 0 / ε 2)
   have hX : logHeight₁ ((ε 0 / ε 2 : (𝓞 K)ˣ) : K) ≤ D * (B * L) := by
     rw [hζe]
-    exact logHeight₁_mul_prod_zpow_le ζ.2 (hB μ hμ _ _ hunit ζ ζ.2 e hζe)
+    exact logHeight₁_mul_prod_zpow_le ζ.property (hB μ hμ _ _ hunit ζ ζ.property e hζe)
   have hBL : 0 ≤ B * L := (mul_nonneg_iff_of_pos_left hD).mp ((zero_le_logHeight₁ _).trans hX)
   have hc₁ : 0 ≤ c₁ := by positivity
   have hlogm : 0 ≤ Real.log |(m : ℝ)| := Real.log_nonneg (by exact_mod_cast Int.one_le_abs hm)
   have hθ₀ := Real.posLog_nonneg (x := NumberField.house (θ 0 : K))
   have hθ₂ := Real.posLog_nonneg (x := NumberField.house (θ 2 : K))
   have hlog2 := Real.log_pos one_lt_two
-  rcases eq_or_ne y 0 with rfl | hy
+  rcases eq_or_ne y 0 with rfl | _
   · rw [Int.cast_zero, div_zero, logHeight₁_zero]
     nlinarith
   -- With `t = (μ 0 / μ 2) (ε 0 / ε 2) = (x - θ 0 y) / (x - θ 2 y)`, `t` determines `x / y`.

@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.Analysis.Normed.Field.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
+import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.Normed.Group.Ultra
 
 /-!
@@ -24,7 +25,8 @@ these sums give a nonsingular Tate equation, whose affine points are the solutio
 `y² + xy = x³ + a₄(q) x + a₆(q)`. The discriminant and the coefficient `a₆` have the
 same norm as the parameter, even when the ring norm is only submultiplicative, and the coefficient
 `a₄` has norm at most that of the parameter. The invariant `c₄` has norm one under `NormOneClass`
-(`‖1‖ = 1`). Over a field, `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
+(`‖1‖ = 1`). Over a field, `|j| = 1 / |q| > 1`, so `j` is neither `0` nor, over an ultrametric
+field where `|1728| ≤ 1`, `1728`. Point uniformisation requires further arguments.
 
 Over an ultrametric field, a solution of an equation `y² + xy = x³ + A₄x + A₆` with
 `‖A₄‖, ‖A₆‖ ≤ 1` whose first coordinate has norm above one satisfies `‖x‖ < ‖x + y‖`
@@ -116,6 +118,12 @@ theorem tateCurveAt_equation_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {x y : K} :
   simp only [tateCurveAt_a₁, tateCurveAt_a₂, tateCurveAt_a₃, tateCurveAt_a₄, tateCurveAt_a₆]
   constructor <;> intro h <;> linear_combination h
 
+/-- The invariant `c₄` of the specialized Tate equation is the evaluation of the formal
+invariant. -/
+theorem tateCurveAt_c₄ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    (tateCurveAt q hq).c₄ = evalIntSeries (q : K) hq tateCurve.c₄ := by
+  rw [tateCurveAt, WeierstrassCurve.map_c₄]
+
 /-- The discriminant of the specialized Tate equation is the evaluation of the formal
 discriminant of the Tate curve. -/
 theorem tateCurveAt_Δ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
@@ -176,6 +184,23 @@ of that of the parameter. In particular `|j| > 1`, so `j` is not integral. -/
     ‖(tateCurveAt q hq).j‖ = ‖(q : K)‖⁻¹ := by
   rw [WeierstrassCurve.j, norm_mul, norm_pow, norm_tateCurveAt_c₄, Units.val_inv_eq_inv_val,
     WeierstrassCurve.coe_Δ', norm_inv, norm_tateCurveAt_Δ, one_pow, mul_one]
+
+/-- The `j`-invariant of the specialized Tate equation has norm greater than one. -/
+theorem one_lt_norm_tateCurveAt_j (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    1 < ‖(tateCurveAt q hq).j‖ := by
+  rw [norm_tateCurveAt_j]
+  exact (one_lt_inv₀ (norm_pos_iff.mpr q.ne_zero)).mpr hq
+
+/-- The `j`-invariant of the specialized Tate equation is nonzero. -/
+theorem tateCurveAt_j_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) : (tateCurveAt q hq).j ≠ 0 :=
+  norm_pos_iff.mp (one_pos.trans (one_lt_norm_tateCurveAt_j q hq))
+
+/-- The `j`-invariant of the specialized Tate equation is not `1728`, which has norm at most one. -/
+theorem tateCurveAt_j_ne_1728 (q : Kˣ) (hq : ‖(q : K)‖ < 1) : (tateCurveAt q hq).j ≠ 1728 := by
+  intro h
+  have h1728 := IsUltrametricDist.norm_natCast_le_one K 1728
+  rw [Nat.cast_ofNat, ← h] at h1728
+  exact (one_lt_norm_tateCurveAt_j q hq).not_ge h1728
 
 end
 

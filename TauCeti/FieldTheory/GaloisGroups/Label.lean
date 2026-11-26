@@ -106,7 +106,6 @@ local instance factSplitsSplittingField (f : F[X]) :
     Fact ((f.map (algebraMap F f.SplittingField)).Splits) :=
   ⟨SplittingField.splits f⟩
 
--- Formalization source: `TauCetiRoadmap/PolynomialGaloisGroups/Suggested.lean`.
 /-- The Galois group of `f` carries the transitive-group label `j` of degree `n`: `f` is
 separable of degree `n`, and some numbering of its roots in the splitting field by `Fin n` carries
 the image of the Galois action on the roots to a conjugate of the reference subgroup
@@ -286,11 +285,11 @@ theorem HasGaloisLabel.isSolvable_iff (h : HasGaloisLabel f j) :
       (e.permCongrHom.subgroupMap _)
 
 /-- **The solvability of a Galois group with a label.** The Galois group of a polynomial with a
-label is solvable unless the label is `5T4` or `5T5`. This is a statement about the group, not
-about `solvableByRad`. -/
-theorem HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three (h : HasGaloisLabel f j) :
+label of degree at most five is solvable unless the label is `5T4` or `5T5`. This is a statement
+about the group, not about `solvableByRad`. -/
+theorem HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three (hn : n ≤ 5) (h : HasGaloisLabel f j) :
     Group.IsSolvable f.Gal ↔ n ≠ 5 ∨ (j : ℕ) < 3 := by
-  rw [h.isSolvable_iff, isSolvable_referenceSubgroup_iff]
+  rw [h.isSolvable_iff, isSolvable_referenceSubgroup_iff hn]
 
 /-- The Galois group of an irreducible polynomial whose root set is numbered by `Fin 5` is
 solvable exactly when its permutation image, read through that numbering `e`, lies in a
@@ -337,25 +336,26 @@ theorem HasGaloisLabel.isSquare_discr_iff (h : HasGaloisLabel f j)
     h.separable.isSquare_discr_iff_range_le_alternatingGroup (E := f.SplittingField) hchar]
 
 open scoped Classical in
-/-- The Galois image of a labelled polynomial consists of even permutations exactly for
-the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
-theorem HasGaloisLabel.range_le_alternatingGroup_iff_label (h : HasGaloisLabel f j) :
+/-- The Galois image of a polynomial labelled in degree at most five consists of even
+permutations exactly for the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
+theorem HasGaloisLabel.range_le_alternatingGroup_iff_label (hn : n ≤ 5)
+    (h : HasGaloisLabel f j) :
     (Gal.galActionHom f f.SplittingField).range ≤
         alternatingGroup (f.rootSet f.SplittingField) ↔
       n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
         (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
         (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
-  rw [h.range_le_alternatingGroup_iff, referenceSubgroup_le_alternatingGroup_iff]
+  rw [h.range_le_alternatingGroup_iff, referenceSubgroup_le_alternatingGroup_iff hn]
 
-/-- Away from characteristic two, a labelled polynomial has square discriminant
-exactly for the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
-theorem HasGaloisLabel.isSquare_discr_iff_label (h : HasGaloisLabel f j)
+/-- Away from characteristic two, a polynomial labelled in degree at most five has square
+discriminant exactly for the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
+theorem HasGaloisLabel.isSquare_discr_iff_label (hn : n ≤ 5) (h : HasGaloisLabel f j)
     (hchar : ringChar F ≠ 2) :
     IsSquare f.discr ↔
       n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
         (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
         (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
-  rw [h.isSquare_discr_iff hchar, referenceSubgroup_le_alternatingGroup_iff]
+  rw [h.isSquare_discr_iff hchar, referenceSubgroup_le_alternatingGroup_iff hn]
 
 /-- **Irreducibility over the discriminant field reads the even part of the label.** Away from
 characteristic `2`, a polynomial with a label stays irreducible over its discriminant field
@@ -388,7 +388,7 @@ theorem hasGaloisLabel_one_iff (j : TransitiveGroupIndex 1) :
     rw [separable_iff_derivative_ne_zero (irreducible_of_degree_eq_one
       ((degree_eq_iff_natDegree_eq_of_pos one_pos).mpr hdeg))]
     intro h0
-    have h := congrArg (coeff · 0) h0
+    have h := congrArg (AddMonoidAlgebra.coeff · 0) h0
     simp only [coeff_derivative, coeff_zero, zero_add, Nat.cast_zero, mul_one] at h
     have hf : f ≠ 0 := by rintro rfl; simp at hdeg
     exact hf (leadingCoeff_eq_zero.mp (by rwa [leadingCoeff, hdeg]))
@@ -429,10 +429,11 @@ theorem HasGaloisLabel.isPreprimitive_gal_iff (h : HasGaloisLabel f j) :
     Function.surjective_id (Gal.rootsEquivRootsAux f f.SplittingField).bijective
 
 /-- **The primitivity of a Galois group with a label.** The Galois group of a polynomial with a
-label acts primitively on the roots in the splitting field exactly when the label is not one of
-`4T1`, `4T2` and `4T3`. -/
-theorem HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le (h : HasGaloisLabel f j) :
+label of degree at most five acts primitively on the roots in the splitting field exactly when the
+label is not one of `4T1`, `4T2` and `4T3`. -/
+theorem HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le (hn : n ≤ 5)
+    (h : HasGaloisLabel f j) :
     IsPreprimitive f.Gal (f.rootSet f.SplittingField) ↔ n ≠ 4 ∨ 3 ≤ (j : ℕ) := by
-  rw [h.isPreprimitive_gal_iff, isPreprimitive_referenceSubgroup_iff]
+  rw [h.isPreprimitive_gal_iff, isPreprimitive_referenceSubgroup_iff hn]
 
 end TauCeti

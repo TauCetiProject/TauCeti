@@ -54,7 +54,7 @@ example (b : B) (d : D) :
     (cancelBaseChange A B C D).symm (toCompletion A B D (b ⊗ₜ[A] d)) =
       toCompletion C (CompletedTensor A B C) D
         (toCompletion A B C (b ⊗ₜ[A] (1 : C)) ⊗ₜ[C] d) := by
-  intro hAD
+  intro _
   exact cancelBaseChange_symm_tmul A B C D b d
 
 example [Subsingleton B] (x : CompletedTensor C (CompletedTensor A B C) D) :
@@ -84,9 +84,6 @@ section Projection
 
 /-- The first projection supplies the noninjective scalar extension in these checks. -/
 local instance projectionAlgebra : Algebra (ℤ × ℤ) ℤ := (RingHom.fst ℤ ℤ).toAlgebra
-
-local instance : IsAdicHom (algebraMap ℤ ℤ) := by
-  simpa using (IsAdicHom.id (A := ℤ))
 
 local instance : IsAdicHom (algebraMap ℤ (ℤ × ℤ)) :=
   IsAdicHom.of_discrete_iff.mpr inferInstance

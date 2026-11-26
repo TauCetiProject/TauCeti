@@ -93,9 +93,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
--- Provenance: the declaration sequence follows the human-authored specification in
--- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`, and the additive normalization of the
--- valuation is the convention fixed in that directory's `README.md`.
 variable (K) in
 /-- The unit filtration `U(K,i)` of a nonarchimedean local field `K`: the units of `𝒪[K]` that
 are congruent to `1` modulo `𝓂[K] ^ i`, viewed inside `Kˣ`. The depth-zero step is included in
@@ -330,7 +327,7 @@ theorem unitFiltration_succ_lt {i : ℕ} (hi : i ≠ 0) :
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
   have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hπ0 : 0 < valuation K (π : K) := by
-    rw [zero_lt_iff, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
+    rw [pos_iff_ne_zero, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
     exact hπ.ne_zero
   have hv : valuation K (1 + (π : K) ^ i) = 1 := (valuation K).map_one_add_of_lt <| by
     rw [map_pow]
@@ -420,7 +417,7 @@ theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 
   refine Units.ext ?_
   rw [Units.coe_map]
   exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
-    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.2)
+    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.property)
 
 -- Not a `simp` lemma: `unitFiltrationGradedZeroEquivResidueFieldUnits_mk` rewrites its left-hand
 -- side first.
@@ -463,8 +460,9 @@ instance : T2Space Kˣ := IsTopologicalGroup.t2Space_iff_one_closed.mpr <| by
   rw [← Subgroup.coe_bot, ← iInf_unitFiltration, Subgroup.coe_iInf]
   exact isClosed_iInter fun i ↦ (unitFiltration K i).isClosed_of_isOpen (isOpen_unitFiltration i)
 
-/-- The image in `K` of the depth-zero step of the unit filtration. -/
-private theorem image_unitFiltration_zero :
+/-- The image in `K` of the depth-zero step of the unit filtration is the set of elements of
+valuation one. -/
+theorem image_unitFiltration_zero :
     Units.val '' (unitFiltration K 0 : Set Kˣ) = {y : K | valuation K y = 1} := by
   ext y
   constructor

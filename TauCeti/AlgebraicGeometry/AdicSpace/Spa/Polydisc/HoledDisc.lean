@@ -119,14 +119,14 @@ variable {K : Type*} [CommRing K] [TopologicalSpace K] [NonarchimedeanRing K]
 closed subdisc `D(a, |c|)` with `v(dᵢ) ≤ v(T - bᵢ)` for every `i`. For a nonarchimedean normed
 field `K` this removes from `D(a, |c|)` the open discs of radius `‖dᵢ‖` about the `bᵢ`. -/
 noncomputable def holedDisc (a c : K) (b d : ι → K) : Set (closedPolydisc 1 K) :=
-  closedSubdisc a c ∩ ⋂ i, {v | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))}
+  closedSubdisc a c ∩ ⋂ i, {v | v.val.toValuativeRel.vle (C (d i)) (T - C (b i))}
 
 /-- Membership in a holed disc is membership in its outer disc together with the defining
 inequality of each hole. -/
 @[simp]
 theorem mem_holedDisc (a c : K) (b d : ι → K) (v : closedPolydisc 1 K) :
     v ∈ holedDisc a c b d ↔
-      v ∈ closedSubdisc a c ∧ ∀ i, v.1.toValuativeRel.vle (C (d i)) (T - C (b i)) := by
+      v ∈ closedSubdisc a c ∧ ∀ i, v.val.toValuativeRel.vle (C (d i)) (T - C (b i)) := by
   simp [holedDisc]
 
 /-- A holed disc lies in its outer disc. -/
@@ -146,7 +146,7 @@ indexed by a finset `s`, adding the index `i` cuts out `{v : v(dᵢ) ≤ v(T - b
 theorem holedDisc_insert [DecidableEq ι] (a c : K) (b d : ι → K) (i : ι) (s : Finset ι) :
     holedDisc a c (fun j : ↥(insert i s) ↦ b j) (fun j ↦ d j) =
       holedDisc a c (fun j : ↥s ↦ b j) (fun j ↦ d j) ∩
-        {v | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))} := by
+        {v | v.val.toValuativeRel.vle (C (d i)) (T - C (b i))} := by
   ext v
   simp only [mem_holedDisc, Subtype.forall, Finset.mem_insert, forall_eq_or_imp, Set.mem_inter_iff,
     Set.mem_ofPred_eq]
@@ -158,13 +158,13 @@ theorem holedDisc_insert [DecidableEq ι] (a c : K) (b d : ι → K) (i : ι) (s
 `⋃_{(a, c, H) ∈ P} D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)` for a finite set `P` of triples. -/
 def IsHoledDiscUnion (S : Set (closedPolydisc 1 K)) : Prop :=
   ∃ P : Finset (K × K × Finset (K × K)),
-    S = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2)
+    S = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.val.1) (fun q ↦ q.val.2)
 
 /-- Unfolding `IsHoledDiscUnion`: `S` is a finite union of holed discs exactly when it is
 `⋃_{(a, c, H) ∈ P} D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)` for some finite set `P` of triples. -/
 theorem isHoledDiscUnion_iff {S : Set (closedPolydisc 1 K)} :
     IsHoledDiscUnion S ↔ ∃ P : Finset (K × K × Finset (K × K)),
-      S = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2) :=
+      S = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.val.1) (fun q ↦ q.val.2) :=
   Iff.rfl
 
 /-- The empty set is a finite union of holed discs. -/
@@ -195,7 +195,7 @@ theorem IsHoledDiscUnion.union {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDi
 add the hole to each of them. -/
 theorem IsHoledDiscUnion.inter_setOf_vle {S : Set (closedPolydisc 1 K)}
     (hS : IsHoledDiscUnion S) (b d : K) :
-    IsHoledDiscUnion (S ∩ {v | v.1.toValuativeRel.vle (C d) (T - C b)}) := by
+    IsHoledDiscUnion (S ∩ {v | v.val.toValuativeRel.vle (C d) (T - C b)}) := by
   classical
   obtain ⟨P, rfl⟩ := hS
   refine ⟨P.image fun p ↦ (p.1, p.2.1, insert (b, d) p.2.2), ?_⟩
@@ -206,7 +206,7 @@ theorem IsHoledDiscUnion.inter_setOf_vle {S : Set (closedPolydisc 1 K)}
 holed discs. -/
 theorem IsHoledDiscUnion.inter_biInter_setOf_vle {ι : Type*} {S : Set (closedPolydisc 1 K)}
     (hS : IsHoledDiscUnion S) (s : Finset ι) (b d : ι → K) :
-    IsHoledDiscUnion (S ∩ ⋂ i ∈ s, {v | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))}) := by
+    IsHoledDiscUnion (S ∩ ⋂ i ∈ s, {v | v.val.toValuativeRel.vle (C (d i)) (T - C (b i))}) := by
   classical
   induction s using Finset.induction_on with
   | empty => simpa using hS
@@ -217,26 +217,26 @@ theorem IsHoledDiscUnion.inter_biInter_setOf_vle {ι : Type*} {S : Set (closedPo
 /-- A hole whose radius parameter is a unit `d` is the basic open `{v : v(d) ≤ v(T - b) ≠ 0}`: the
 inequality `v(d) ≤ v(T - b)` already forces `v(T - b) ≠ 0`. -/
 private theorem setOf_vle_eq_basicOpen (b : K) {d : K} (hd : IsUnit d) :
-    {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C d) (T - C b)} =
+    {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C d) (T - C b)} =
       Subtype.val ⁻¹' basicOpen (C d) (T - C b) := by
   ext v
-  have hd₀ : v.1.valuation (C d) ≠ 0 := ((hd.map C).map v.1.valuation).ne_zero
+  have hd₀ : v.val.valuation (C d) ≠ 0 := ((hd.map C).map v.val.valuation).ne_zero
   rw [Set.mem_ofPred_eq, Set.mem_preimage, mem_basicOpen_iff, iff_self_and,
-    ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
-  exact fun h h₀ ↦ hd₀ (le_zero_iff.mp (h₀ ▸ h))
+    ← valuation_le_iff, ← valuation_le_iff, map_zero, nonpos_iff_eq_zero]
+  exact fun h h₀ ↦ hd₀ (nonpos_iff_eq_zero.mp (h₀ ▸ h))
 
 /-- A hole whose radius parameter is a unit `d` is the rational subset `R({d} / (T - b))`: the
 inequality `v(d) ≤ v(T - b)` already forces `v(T - b) ≠ 0`. -/
 private theorem setOf_vle_eq_rationalSubset (b : K) {d : K} (hd : IsUnit d) :
-    {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C d) (T - C b)} =
+    {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C d) (T - C b)} =
       Subtype.val ⁻¹' rationalSubset (powerBoundedSubring (𝒯 K)) {C d} (T - C b) := by
   ext v
-  have hv : v.1 ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ v.2
-  have hd₀ : v.1.valuation (C d) ≠ 0 := ((hd.map C).map v.1.valuation).ne_zero
+  have hv : v.val ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ v.property
+  have hd₀ : v.val.valuation (C d) ≠ 0 := ((hd.map C).map v.val.valuation).ne_zero
   simp only [Set.mem_ofPred_eq, Set.mem_preimage, mem_rationalSubset_iff, hv, Finset.mem_singleton,
     forall_eq, true_and, iff_self_and]
-  rw [← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
-  exact fun h h₀ ↦ hd₀ (le_zero_iff.mp (h₀ ▸ h))
+  rw [← valuation_le_iff, ← valuation_le_iff, map_zero, nonpos_iff_eq_zero]
+  exact fun h h₀ ↦ hd₀ (nonpos_iff_eq_zero.mp (h₀ ▸ h))
 
 /-- **A holed disc whose holes have unit radius parameters is open** in the closed unit disc: it
 is the intersection of the open subset `closedSubdisc a c` with the finitely many basic opens
@@ -244,7 +244,7 @@ is the intersection of the open subset `closedSubdisc a c` with the finitely man
 theorem isOpen_holedDisc [Finite ι] (a c : K) (b : ι → K) {d : ι → K} (hd : ∀ i, IsUnit (d i)) :
     IsOpen (holedDisc a c b d) :=
   (isOpen_closedSubdisc a c).inter <| isOpen_iInter_of_finite fun i ↦
-    setOf_vle_eq_basicOpen (b i) (hd i) ▸ (isOpen_basicOpen _ _).preimage continuous_subtype_val
+    setOf_vle_eq_basicOpen (b i) (hd i) ▸ (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 /-- **A holed disc is a rational subset** of the closed unit disc over a Huber ring when `T - a`
 and `c` generate an open ideal and the holes have unit radius parameters: it is the intersection
@@ -257,7 +257,7 @@ theorem holedDisc_mem_spaRationalFamily [IsHuberRing K] [Finite ι] (a c : K)
       spaRationalFamily (powerBoundedSubring (𝒯 K)) := by
   classical
   have hhole (i : ι) : (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹'
-      {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))} ∈
+      {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C (d i)) (T - C (b i))} ∈
       spaRationalFamily (powerBoundedSubring (𝒯 K)) := by
     have hspan : Ideal.span (({C (d i)} : Finset (𝒯 K)) : Set (𝒯 K)) = ⊤ :=
       Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) ((hd i).map C)
@@ -296,7 +296,8 @@ theorem IsHoledDiscUnion.inter_closedSubdisc {S : Set (closedPolydisc 1 K)}
   classical
   obtain ⟨P, rfl⟩ := hS
   choose e r h using fun p : K × K × Finset (K × K) ↦
-    exists_holedDisc_inter_closedSubdisc_eq p.1 p.2.1 a c (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2)
+    exists_holedDisc_inter_closedSubdisc_eq p.1 p.2.1 a c (fun q : p.2.2 ↦ q.val.1)
+        (fun q ↦ q.val.2)
   refine ⟨P.image fun p ↦ (e p, r p, p.2.2), ?_⟩
   rw [Finset.set_biUnion_finset_image, Set.iUnion₂_inter]
   exact Set.iUnion₂_congr fun p _ ↦ h p
@@ -320,9 +321,9 @@ theorem IsHoledDiscUnion.inter {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDi
   obtain ⟨P, rfl⟩ := hS'
   rw [Set.inter_iUnion₂]
   refine isHoledDiscUnion_biUnion P fun p _ ↦ ?_
-  have h : S ∩ holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2) =
+  have h : S ∩ holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.val.1) (fun q ↦ q.val.2) =
       S ∩ closedSubdisc p.1 p.2.1 ∩
-        ⋂ q ∈ p.2.2, {v | v.1.toValuativeRel.vle (C q.2) (T - C q.1)} := by
+        ⋂ q ∈ p.2.2, {v | v.val.toValuativeRel.vle (C q.2) (T - C q.1)} := by
     ext v
     simp [and_assoc]
   rw [h]
@@ -352,7 +353,8 @@ theorem holedDisc_eq_empty_of_lt {a c : K} {b d : ι → K} (i : ι)
   have hsplit : T - C (b i) = (T - C a) + C (a - b i) := by
     rw [map_sub]
     ring
-  have key : v.1.valuation (C (d i)) ≤ max (v.1.valuation (C c)) (v.1.valuation (C (a - b i))) := by
+  have key : v.val.valuation (C (d i)) ≤ max (v.val.valuation (C c)) (v.val.valuation (C (a - b i)))
+      := by
     refine hd.trans ?_
     rw [hsplit]
     exact (Valuation.map_add _ _ _).trans (max_le_max hT le_rfl)
@@ -372,7 +374,7 @@ theorem classicalPoint_mem_holedDisc_iff [CompleteSpace K] (x : spa (powerBounde
   rw [mem_holedDisc, classicalPoint_mem_closedSubdisc_iff]
   refine and_congr_right' (forall_congr' fun i ↦ ?_)
   rw [classicalPoint_vle, map_sub, evalAtHom_weightedX, evalAtHom_weightedC, evalAtHom_weightedC,
-    vle_iff_norm_le_of_mem_spa x.2]
+    vle_iff_norm_le_of_mem_spa x.property]
 
 end NormedField
 
@@ -394,7 +396,7 @@ theorem discPoint_mem_holedDisc_iff (e : K) (he : ‖e‖ ≤ 1) (hr₀ : 0 < r)
   refine and_congr_right' (forall_congr' fun i ↦ ?_)
   rw [discPoint_vle_iff, taylorHom_weightedC, ← NNReal.coe_le_coe,
     coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC he,
-    closedDiscGaussValuation_weightedC, coe_nnnorm, norm_sub_rev]
+    closedDiscGaussValuation_weightedC, coe_nnNorm, norm_sub_rev]
 
 /-- **The point `η_{e,r⁺}` lies in a holed disc exactly when `‖e - a‖ ≤ ‖c‖`, `r < ‖c‖` and
 `‖dᵢ‖ ≤ max r ‖e - bᵢ‖` for every `i`.** Only the outer disc distinguishes it from `η_{e,r}`:
@@ -439,7 +441,7 @@ theorem holedDisc_eq_empty_iff {a c : K} (ha : ‖a‖ ≤ 1) (hc : ‖c‖ ≤ 
     rw [discPoint_mem_holedDisc_iff]
     exact ⟨⟨by simp, le_rfl⟩, hne.2⟩
   · rintro (rfl | ⟨i, hi⟩)
-    · exact Set.subset_eq_empty (holedDisc_subset_closedSubdisc a 0 b d)
+    · exact Set.eq_empty_of_subset (holedDisc_subset_closedSubdisc a 0 b d)
         (closedSubdisc_zero_right a)
     · exact holedDisc_eq_empty_of_lt i hi
 
@@ -460,11 +462,11 @@ omit [IsUltrametricDist K] in
 /-- A subset of the closed unit disc cut out by a condition on the underlying valuation is rational
 exactly when the same condition cuts out a rational subset of `Spa (K⟨T⟩, K⟨T⟩°)`. -/
 private theorem isRat_setOf_iff (P : Spv (𝒯 K) → Prop) :
-    IsRat {v : closedPolydisc 1 K | P v.1} ↔
-      {v : spa (powerBoundedSubring (𝒯 K)) | P v.1} ∈
+    IsRat {v : closedPolydisc 1 K | P v.val} ↔
+      {v : spa (powerBoundedSubring (𝒯 K)) | P v.val} ∈
         spaRationalFamily (powerBoundedSubring (𝒯 K)) := by
   have hpre : (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹'
-      {v : closedPolydisc 1 K | P v.1} = {v : spa (powerBoundedSubring (𝒯 K)) | P v.1} := by
+      {v : closedPolydisc 1 K | P v.val} = {v : spa (powerBoundedSubring (𝒯 K)) | P v.val} := by
     ext v
     simp only [Set.mem_preimage, Set.mem_ofPred_eq, Homeomorph.setCongr_symm_apply]
   rw [IsRat, hpre]
@@ -490,7 +492,7 @@ private theorem isRat_iInter {ι : Type*} [Finite ι] {S : ι → Set (closedPol
 omit [IsUltrametricDist K] in
 /-- The complement `{v : v(d) ≤ v(T - b)}` of the open disc `D⁻(b, |d|)` is rational. -/
 private theorem isRat_setOf_vle (b d : K) :
-    IsRat {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C d) (T - C b)} := by
+    IsRat {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C d) (T - C b)} := by
   classical
   rcases eq_or_ne d 0 with rfl | hd
   · simpa only [map_zero, ValuativeRel.zero_vle, Set.ofPred_true] using isRat_univ
@@ -503,7 +505,7 @@ private theorem isRat_setOf_vle (b d : K) :
 /-- The complement `{v : v(f) ≤ v(r) or v(σ) ≤ v(f)}` of an open annulus is rational. -/
 private theorem isRat_setOf_vle_or_vle (f : 𝒯 K) {r σ : K} (hr : r ≠ 0) (hrσ : ‖r‖ < ‖σ‖) :
     IsRat {v : closedPolydisc 1 K |
-      v.1.toValuativeRel.vle f (C r) ∨ v.1.toValuativeRel.vle (C σ) f} := by
+      v.val.toValuativeRel.vle f (C r) ∨ v.val.toValuativeRel.vle (C σ) f} := by
   have hσ : σ ≠ 0 := norm_pos_iff.mp ((norm_nonneg r).trans_lt hrσ)
   refine (isRat_setOf_iff fun w ↦ w.toValuativeRel.vle f (C r) ∨ w.toValuativeRel.vle (C σ) f).mpr
     (setOf_vle_or_vle_mem_spaRationalFamily _ f ((isUnit_iff_ne_zero.mpr hr).map C)
@@ -520,8 +522,8 @@ private theorem weightedX_sub_weightedC_eq_add (a b : K) :
 
 /-- If `v(s) ≤ v(T - b)` and `‖a - b‖ < ‖s‖`, then `v(T - a) = v(T - b)`. -/
 private theorem valuation_weightedX_sub_weightedC_eq_of_le {x : closedPolydisc 1 K} {a b s : K}
-    (hab : ‖a - b‖ < ‖s‖) (hx : x.1.valuation (C s) ≤ x.1.valuation (T - C b)) :
-    x.1.valuation (T - C a) = x.1.valuation (T - C b) := by
+    (hab : ‖a - b‖ < ‖s‖) (hx : x.val.valuation (C s) ≤ x.val.valuation (T - C b)) :
+    x.val.valuation (T - C a) = x.val.valuation (T - C b) := by
   rw [weightedX_sub_weightedC_eq_add a b, Valuation.map_add_eq_of_lt_left]
   refine lt_of_lt_of_le ?_ hx
   rw [closedPolydisc_valuation_weightedC_lt_iff, norm_sub_rev]
@@ -529,8 +531,8 @@ private theorem valuation_weightedX_sub_weightedC_eq_of_le {x : closedPolydisc 1
 
 /-- If `v(T - b) < v(s)` and `‖a - b‖ < ‖s‖`, then `v(T - a) < v(s)`. -/
 private theorem valuation_weightedX_sub_weightedC_lt_of_lt {x : closedPolydisc 1 K} {a b s : K}
-    (hab : ‖a - b‖ < ‖s‖) (hx : x.1.valuation (T - C b) < x.1.valuation (C s)) :
-    x.1.valuation (T - C a) < x.1.valuation (C s) := by
+    (hab : ‖a - b‖ < ‖s‖) (hx : x.val.valuation (T - C b) < x.val.valuation (C s)) :
+    x.val.valuation (T - C a) < x.val.valuation (C s) := by
   rw [weightedX_sub_weightedC_eq_add a b]
   refine (Valuation.map_add _ _ _).trans_lt (max_lt hx ?_)
   rw [closedPolydisc_valuation_weightedC_lt_iff, norm_sub_rev]
@@ -539,8 +541,8 @@ private theorem valuation_weightedX_sub_weightedC_lt_of_lt {x : closedPolydisc 1
 /-- Recentring the complement of an open disc inside it: if `‖a - b‖ < ‖s‖`, then
 `{v(s) ≤ v(T - b)} = {v(s) ≤ v(T - a)}`. -/
 private theorem setOf_vle_eq_of_norm_sub_lt {a b s : K} (hab : ‖a - b‖ < ‖s‖) :
-    {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C s) (T - C b)} =
-      {v | v.1.toValuativeRel.vle (C s) (T - C a)} := by
+    {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C s) (T - C b)} =
+      {v | v.val.toValuativeRel.vle (C s) (T - C a)} := by
   ext v
   simp only [Set.mem_ofPred_eq, ← valuation_le_iff]
   constructor
@@ -551,10 +553,10 @@ private theorem setOf_vle_eq_of_norm_sub_lt {a b s : K} (hab : ‖a - b‖ < ‖
 
 /-- The complement of an open disc of radius more than one is empty. -/
 private theorem setOf_vle_eq_empty {σ : K} (hσ : 1 < ‖σ‖) :
-    {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C σ) (T - C 0)} = ∅ := by
+    {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C σ) (T - C 0)} = ∅ := by
   refine Set.eq_empty_of_forall_notMem fun v hv ↦ ?_
   have h₁ := ((mem_closedSubdisc _ _ _).mp (closedSubdisc_zero_one (K := K) ▸ Set.mem_univ v)).1
-  have h₂ := (closedPolydisc_vle_weightedC_iff v σ 1).mp (v.1.toValuativeRel.vle_trans hv h₁)
+  have h₂ := (closedPolydisc_vle_weightedC_iff v σ 1).mp (v.val.toValuativeRel.vle_trans hv h₁)
   rw [norm_one] at h₂
   exact h₂.not_gt hσ
 
@@ -562,9 +564,9 @@ omit [IsUltrametricDist K] in
 /-- The value at a point of the product of the linear factors `T - a` over a finite family. -/
 private theorem valuation_prod_le_of_forall_le (x : closedPolydisc 1 K) {F : Finset (K × K)}
     {q₀ : K × K} (hq₀ : q₀ ∈ F) {ρ τ : K}
-    (h₀ : x.1.valuation (T - C q₀.1) ≤ x.1.valuation (C ρ))
-    (h : ∀ q ∈ F, x.1.valuation (T - C q.1) ≤ x.1.valuation (C τ)) :
-    x.1.valuation (∏ q ∈ F, (T - C q.1)) ≤ x.1.valuation (C (ρ * τ ^ (F.card - 1))) := by
+    (h₀ : x.val.valuation (T - C q₀.1) ≤ x.val.valuation (C ρ))
+    (h : ∀ q ∈ F, x.val.valuation (T - C q.1) ≤ x.val.valuation (C τ)) :
+    x.val.valuation (∏ q ∈ F, (T - C q.1)) ≤ x.val.valuation (C (ρ * τ ^ (F.card - 1))) := by
   classical
   rw [map_prod, ← Finset.mul_prod_erase F _ hq₀, map_mul, map_pow, map_mul, map_pow,
     ← Finset.card_erase_of_mem hq₀]
@@ -575,8 +577,8 @@ centre `a` of a nonempty finite family lies in `D⁻(b, |s|)`, then
 `v(s)ⁿ ≤ v(∏ (T - a))` exactly when `v(s) ≤ v(T - b)`, where `n` is the size of the family. -/
 private theorem vle_prod_iff (x : closedPolydisc 1 K) {F : Finset (K × K)} (hF : F.Nonempty)
     {b s : K} (h : ∀ q ∈ F, ‖q.1 - b‖ < ‖s‖) :
-    x.1.toValuativeRel.vle (C (s ^ F.card)) (∏ q ∈ F, (T - C q.1)) ↔
-      x.1.toValuativeRel.vle (C s) (T - C b) := by
+    x.val.toValuativeRel.vle (C (s ^ F.card)) (∏ q ∈ F, (T - C q.1)) ↔
+      x.val.toValuativeRel.vle (C s) (T - C b) := by
   classical
   rw [← valuation_le_iff, ← valuation_le_iff, map_pow, map_pow, map_prod]
   constructor
@@ -585,7 +587,7 @@ private theorem vle_prod_iff (x : closedPolydisc 1 K) {F : Finset (K × K)} (hF 
     by_contra hlt
     rw [not_le] at hlt
     obtain ⟨q₀, hq₀⟩ := hF
-    have hs : x.1.valuation (C s) ≠ 0 := by
+    have hs : x.val.valuation (C s) ≠ 0 := by
       rw [Ne, closedPolydisc_valuation_weightedC_eq_zero_iff]
       exact norm_pos_iff.mp ((norm_nonneg _).trans_lt (h q₀ hq₀))
     refine hle.not_gt ?_
@@ -594,7 +596,7 @@ private theorem vle_prod_iff (x : closedPolydisc 1 K) {F : Finset (K × K)} (hF 
       (valuation_weightedX_sub_weightedC_lt_of_lt (h q₀ hq₀) hlt)
       (Finset.prod_le_pow_card _ _ _ fun q hq ↦
         (valuation_weightedX_sub_weightedC_lt_of_lt (h q (Finset.mem_of_mem_erase hq)) hlt).le)
-      zero_le (zero_lt_iff.mpr (pow_ne_zero _ hs))
+      zero_le (pos_iff_ne_zero.mpr (pow_ne_zero _ hs))
   · -- if `v(s) ≤ v(T - b)`, every factor is `v(T - b)`
     intro hle
     exact Finset.pow_card_le_prod _ _ _ fun q hq ↦
@@ -607,7 +609,7 @@ private theorem valuation_prod_le_of_mem_closedSubdisc {x : closedPolydisc 1 K}
     {F : Finset (K × K)} {q₀ : K × K} (hq₀ : q₀ ∈ F) {ρ τ : K} (hρ : ‖q₀.2‖ ≤ ‖ρ‖)
     (hτ : ‖q₀.2‖ ≤ ‖τ‖) (hF : ∀ q ∈ F, ‖q.1 - q₀.1‖ ≤ ‖τ‖)
     (hx : x ∈ closedSubdisc q₀.1 q₀.2) :
-    x.1.valuation (∏ q ∈ F, (T - C q.1)) ≤ x.1.valuation (C (ρ * τ ^ (F.card - 1))) := by
+    x.val.valuation (∏ q ∈ F, (T - C q.1)) ≤ x.val.valuation (C (ρ * τ ^ (F.card - 1))) := by
   have hx₀ := (valuation_le_iff _ _ _).mpr ((mem_closedSubdisc _ _ _).mp hx).1
   refine valuation_prod_le_of_forall_le x hq₀
     (hx₀.trans ((closedPolydisc_valuation_weightedC_le_iff x _ _).mpr hρ)) fun q hq ↦ ?_
@@ -622,22 +624,22 @@ private theorem valuation_prod_le_of_mem_closedSubdisc {x : closedPolydisc 1 K}
 then the point is within `|τ|` of some centre: `v(T - a) < v(τ)` for some `a`. -/
 private theorem exists_valuation_weightedX_sub_weightedC_lt (x : closedPolydisc 1 K)
     {F : Finset (K × K)} (hF : F.Nonempty) {ρ τ : K} (hρτ : ‖ρ‖ < ‖τ‖)
-    (hx : x.1.valuation (∏ q ∈ F, (T - C q.1)) ≤ x.1.valuation (C (ρ * τ ^ (F.card - 1)))) :
-    ∃ q ∈ F, x.1.valuation (T - C q.1) < x.1.valuation (C τ) := by
+    (hx : x.val.valuation (∏ q ∈ F, (T - C q.1)) ≤ x.val.valuation (C (ρ * τ ^ (F.card - 1)))) :
+    ∃ q ∈ F, x.val.valuation (T - C q.1) < x.val.valuation (C τ) := by
   by_contra! h
-  have hτ₀ : x.1.valuation (C τ) ≠ 0 := by
+  have hτ₀ : x.val.valuation (C τ) ≠ 0 := by
     rw [Ne, closedPolydisc_valuation_weightedC_eq_zero_iff]
     exact norm_pos_iff.mp ((norm_nonneg _).trans_lt hρτ)
   refine ((Finset.pow_card_le_prod F _ _ h).trans
-    ((map_prod x.1.valuation _ F).symm.le.trans hx)).not_gt ?_
+    ((map_prod x.val.valuation _ F).symm.le.trans hx)).not_gt ?_
   -- split off one factor `v(τ)` to compare with `v(ρ τⁿ⁻¹) = v(ρ) v(τ)ⁿ⁻¹`
-  have hτpow : x.1.valuation (C τ) ^ F.card =
-      x.1.valuation (C τ) * x.1.valuation (C τ) ^ (F.card - 1) := by
+  have hτpow : x.val.valuation (C τ) ^ F.card =
+      x.val.valuation (C τ) * x.val.valuation (C τ) ^ (F.card - 1) := by
     rw [← pow_succ', Nat.sub_add_cancel (Finset.card_pos.mpr hF)]
   rw [map_mul, map_mul, map_pow, map_pow, hτpow]
   exact mul_lt_mul_of_pos_right
     ((closedPolydisc_valuation_weightedC_lt_iff x _ _).mpr hρτ)
-    (zero_lt_iff.mpr (pow_ne_zero _ hτ₀))
+    (pos_iff_ne_zero.mpr (pow_ne_zero _ hτ₀))
 
 /-- **Separating the discs of a finite family by a product of linear factors.** Let the discs
 `D(a, |c|)` of a nonempty finite family have radii at most `|ρ|` and centres pairwise within `|τ|`
@@ -648,12 +650,12 @@ private theorem setOf_vle_union_biUnion_closedSubdisc_eq {F : Finset (K × K)} (
     {b s ρ τ : K} (hb : ∀ q ∈ F, ‖q.1 - b‖ < ‖s‖) (hτs : ‖τ‖ < ‖s‖)
     (hρ : ∀ q ∈ F, ‖q.2‖ ≤ ‖ρ‖) (hρτ : ‖ρ‖ < ‖τ‖)
     (hdist : ∀ q ∈ F, ∀ q' ∈ F, ‖q.1 - q'.1‖ ≤ ‖τ‖) :
-    {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C s) (T - C b)} ∪
+    {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C s) (T - C b)} ∪
         ⋃ q ∈ F, closedSubdisc q.1 q.2 =
       {v : closedPolydisc 1 K |
-          v.1.toValuativeRel.vle (∏ q ∈ F, (T - C q.1)) (C (ρ * τ ^ (F.card - 1))) ∨
-          v.1.toValuativeRel.vle (C (s ^ F.card)) (∏ q ∈ F, (T - C q.1))} ∩
-        ⋂ q ∈ F, ({v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C τ) (T - C q.1)} ∪
+          v.val.toValuativeRel.vle (∏ q ∈ F, (T - C q.1)) (C (ρ * τ ^ (F.card - 1))) ∨
+          v.val.toValuativeRel.vle (C (s ^ F.card)) (∏ q ∈ F, (T - C q.1))} ∩
+        ⋂ q ∈ F, ({v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C τ) (T - C q.1)} ∪
           ⋃ q'' ∈ F.filter (fun q'' ↦ ‖q''.1 - q.1‖ < ‖τ‖), closedSubdisc q''.1 q''.2) := by
   classical
   ext x
@@ -664,14 +666,14 @@ private theorem setOf_vle_union_biUnion_closedSubdisc_eq {F : Finset (K × K)} (
   · rintro (hx | ⟨q₀, hq₀, hx⟩)
     · -- outside `D⁻(b, |s|)`, hence outside every `D⁻(a, |τ|)`
       refine ⟨Or.inr (hprod.mpr hx), fun q hq ↦ Or.inl ?_⟩
-      have hx' : x ∈ {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C s) (T - C q.1)} := by
+      have hx' : x ∈ {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C s) (T - C q.1)} := by
         rw [← setOf_vle_eq_of_norm_sub_lt (hb q hq)]
         exact hx
-      exact x.1.toValuativeRel.vle_trans
+      exact x.val.toValuativeRel.vle_trans
         ((closedPolydisc_vle_weightedC_iff x _ _).mpr hτs.le) hx'
     · have hq₀τ : ‖q₀.2‖ < ‖τ‖ := (hρ q₀ hq₀).trans_lt hρτ
       refine ⟨Or.inl ((valuation_le_iff _ _ _).mp (valuation_prod_le_of_mem_closedSubdisc hq₀
-        (hρ q₀ hq₀) hq₀τ.le (fun q hq ↦ hdist q hq q₀ hq₀) hx)), fun q hq ↦ ?_⟩
+        (hρ q₀ hq₀) hq₀τ.le (fun q hq ↦ hdist q hq q₀ hq₀) hx)), fun q _ ↦ ?_⟩
       by_cases hq₀q : ‖q₀.1 - q.1‖ < ‖τ‖
       · exact Or.inr ⟨q₀, Finset.mem_filter.mpr ⟨hq₀, hq₀q⟩, hx⟩
       · -- a disc of another class lies at distance at least `τ` from `q.1`
@@ -693,7 +695,7 @@ Let `s ≠ 0` and let `D(a, |c|)`, for `(a, c)` in a finite family `F`, be discs
 inside the open disc `D⁻(b, |s|)`. Then `{v(s) ≤ v(T - b)} ∪ ⋃ D(a, |c|)` is rational. -/
 private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)) :
     ∀ b s : K, s ≠ 0 → (∀ q ∈ F, q.2 ≠ 0 ∧ ‖q.1 - b‖ < ‖s‖ ∧ ‖q.2‖ < ‖s‖) →
-      IsRat ({v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C s) (T - C b)} ∪
+      IsRat ({v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C s) (T - C b)} ∪
         ⋃ q ∈ F, closedSubdisc q.1 q.2) := by
   -- Induction on `F`. Let `τ` be the largest of the radii `|c|` and of the distances `|a - a₁|`
   -- to a fixed centre `a₁`. If some radius is `|τ|`, that disc contains all the others and the
@@ -751,16 +753,16 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
     (hρ _ (Finset.mem_image_of_mem _ hq₁)))
   -- the class of each centre is a proper subfamily
   set G : K × K → Finset (K × K) := fun q ↦ F.filter fun q'' ↦ ‖q''.1 - q.1‖ < ‖τ‖
-  have hGF {q : K × K} (hq : q ∈ F) : G q ⊂ F := by
+  have hGF (q : K × K) : G q ⊂ F := by
     refine Finset.filter_ssubset.mpr ?_
     by_contra! h
     have h' := IsUltrametricDist.norm_sub_le_max_norm_sub q'.1 q.1 q₁.1
     rw [hτq'] at h'
     exact (h'.trans_lt (max_lt (h q' hq') (h q₁ hq₁))).false
-  have hGrat {q : K × K} (hq : q ∈ F) :
-      IsRat ({v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C τ) (T - C q.1)} ∪
+  have hGrat (q : K × K) :
+      IsRat ({v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C τ) (T - C q.1)} ∪
         ⋃ q'' ∈ G q, closedSubdisc q''.1 q''.2) :=
-    ih (G q) (hGF hq) q.1 τ hτ₀ fun q'' hq'' ↦ by
+    ih (G q) (hGF q) q.1 τ hτ₀ fun q'' hq'' ↦ by
       obtain ⟨hq''F, hq''τ⟩ := Finset.mem_filter.mp hq''
       exact ⟨(hF q'' hq''F).1, hq''τ, hA q'' hq''F⟩
   -- the radius `ε = ρ τⁿ⁻¹` of the product of the linear factors
@@ -774,14 +776,14 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
   rw [setOf_vle_union_biUnion_closedSubdisc_eq ⟨q₁, hq₁⟩ (fun q hq ↦ (hF q hq).2.1) hτs
     (fun q hq ↦ hρ _ (Finset.mem_image_of_mem _ hq)) hρτ fun q hq q' hq' ↦ hdist hq hq']
   exact (isRat_setOf_vle_or_vle _ (mul_ne_zero hρ₀ (pow_ne_zero _ hτ₀)) hεs).inter
-    (isRat_biInter F fun q hq ↦ hGrat hq)
+    (isRat_biInter F fun q _ ↦ hGrat q)
 
 /-- Two complements of open discs cover the disc when the smaller open disc `D⁻(b₀, |d₀|)` lies
 outside the larger one `D⁻(b, |d|)`. -/
 private theorem setOf_vle_union_setOf_vle_eq_univ {b b₀ d d₀ : K} (hd : ‖d₀‖ ≤ ‖d‖)
     (hb : ‖d‖ ≤ ‖b - b₀‖) :
-    {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C d) (T - C b)} ∪
-      {v | v.1.toValuativeRel.vle (C d₀) (T - C b₀)} = Set.univ := by
+    {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C d) (T - C b)} ∪
+      {v | v.val.toValuativeRel.vle (C d₀) (T - C b₀)} = Set.univ := by
   refine Set.eq_univ_of_forall fun x ↦ ?_
   simp only [Set.mem_union, Set.mem_ofPred_eq, ← valuation_le_iff]
   refine or_iff_not_imp_right.mpr fun h ↦ ?_
@@ -797,17 +799,17 @@ private theorem setOf_vle_union_setOf_vle_eq_univ {b b₀ d d₀ : K} (hd : ‖d
 lies in the complement of the smaller one. -/
 private theorem setOf_vle_subset_setOf_vle {b b₀ d d₀ : K} (hd : ‖d₀‖ ≤ ‖d‖)
     (hb : ‖b - b₀‖ < ‖d‖) :
-    {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C d) (T - C b)} ⊆
-      {v | v.1.toValuativeRel.vle (C d₀) (T - C b₀)} := by
+    {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C d) (T - C b)} ⊆
+      {v | v.val.toValuativeRel.vle (C d₀) (T - C b₀)} := by
   intro x hx
   rw [setOf_vle_eq_of_norm_sub_lt (a := b₀) (by rwa [norm_sub_rev])] at hx
-  exact x.1.toValuativeRel.vle_trans ((closedPolydisc_vle_weightedC_iff x _ _).mpr hd) hx
+  exact x.val.toValuativeRel.vle_trans ((closedPolydisc_vle_weightedC_iff x _ _).mpr hd) hx
 
 /-- A disc `D(a, |c|)` containing the open disc `D⁻(b₀, |d₀|)` covers the disc together with the
 complement of `D⁻(b₀, |d₀|)`. -/
 private theorem closedSubdisc_union_setOf_vle_eq_univ {a c b₀ d₀ : K} (hc : c ≠ 0)
     (hd : ‖d₀‖ ≤ ‖c‖) (ha : ‖a - b₀‖ ≤ ‖c‖) :
-    closedSubdisc a c ∪ {v | v.1.toValuativeRel.vle (C d₀) (T - C b₀)} = Set.univ := by
+    closedSubdisc a c ∪ {v | v.val.toValuativeRel.vle (C d₀) (T - C b₀)} = Set.univ := by
   refine Set.eq_univ_of_forall fun x ↦ ?_
   rw [closedSubdisc_eq_setOf_vle a (isUnit_iff_ne_zero.mpr hc)]
   simp only [Set.mem_union, Set.mem_ofPred_eq, ← valuation_le_iff]
@@ -822,7 +824,7 @@ private theorem closedSubdisc_union_setOf_vle_eq_univ {a c b₀ d₀ : K} (hc : 
 /-- A disc `D(a, |c|)` outside the open disc `D⁻(b₀, |d₀|)` lies in its complement. -/
 private theorem closedSubdisc_subset_setOf_vle {a c b₀ d₀ : K} (hc : ‖c‖ < ‖a - b₀‖)
     (hd : ‖d₀‖ ≤ ‖a - b₀‖) :
-    closedSubdisc a c ⊆ {v | v.1.toValuativeRel.vle (C d₀) (T - C b₀)} := by
+    closedSubdisc a c ⊆ {v | v.val.toValuativeRel.vle (C d₀) (T - C b₀)} := by
   intro x hx
   rw [Set.mem_ofPred_eq, ← valuation_le_iff, valuation_weightedX_sub_weightedC_of_mem_closedSubdisc
     hx (by rwa [norm_sub_rev]), closedPolydisc_valuation_weightedC_le_iff]
@@ -832,7 +834,7 @@ private theorem closedSubdisc_subset_setOf_vle {a c b₀ d₀ : K} (hc : ‖c‖
 large as it and meets it lies in its complement. -/
 private theorem closedSubdisc_subset_setOf_vle_of_not_lt {a c b₀ d₀ : K}
     (hcov : ‖d₀‖ ≤ ‖c‖ → ‖c‖ < ‖a - b₀‖) (hin : ‖a - b₀‖ < ‖d₀‖ → ‖d₀‖ ≤ ‖c‖) :
-    closedSubdisc a c ⊆ {v | v.1.toValuativeRel.vle (C d₀) (T - C b₀)} := by
+    closedSubdisc a c ⊆ {v | v.val.toValuativeRel.vle (C d₀) (T - C b₀)} := by
   by_cases h : ‖a - b₀‖ < ‖d₀‖
   · have h' := hin h
     exact absurd (hcov h') (not_lt.mpr (h.le.trans h'))
@@ -843,7 +845,7 @@ private theorem closedSubdisc_subset_setOf_vle_of_not_lt {a c b₀ d₀ : K}
 /-- **A finite union of discs and of complements of open discs is rational.** -/
 private theorem isRat_biUnion_closedSubdisc_union_biUnion_setOf_vle (𝒟 ℰ : Finset (K × K)) :
     IsRat ((⋃ q ∈ 𝒟, closedSubdisc q.1 q.2) ∪
-      ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e.2) (T - C e.1)}) := by
+      ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C e.2) (T - C e.1)}) := by
   -- Adding the empty complement of a disc of radius more than one, there is at least one
   -- complement. Let `D⁻(b₀, |d₀|)` be a smallest removed open disc. Any other removed open disc
   -- either contains it, and its complement is absorbed, or lies outside it, and the two
@@ -852,17 +854,17 @@ private theorem isRat_biUnion_closedSubdisc_union_biUnion_setOf_vle (𝒟 ℰ : 
   -- `isRat_setOf_vle_union_biUnion_closedSubdisc`.
   classical
   set U := (⋃ q ∈ 𝒟, closedSubdisc q.1 q.2) ∪
-    ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e.2) (T - C e.1)} with hU
+    ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C e.2) (T - C e.1)}
   obtain ⟨σ, hσ⟩ := NormedField.exists_one_lt_norm K
   set ℰ' := insert (0, σ) ℰ
   have hℰ' {e : K × K} (he : e ∈ ℰ') :
-      {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e.2) (T - C e.1)} ⊆ U := by
+      {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C e.2) (T - C e.1)} ⊆ U := by
     rcases Finset.mem_insert.mp he with rfl | he
     · rw [setOf_vle_eq_empty hσ]
       exact Set.empty_subset _
     · exact (Set.subset_biUnion_of_mem
         (u := fun e : K × K ↦ {v : closedPolydisc 1 K |
-          v.1.toValuativeRel.vle (C e.2) (T - C e.1)}) he).trans Set.subset_union_right
+          v.val.toValuativeRel.vle (C e.2) (T - C e.1)}) he).trans Set.subset_union_right
   have h𝒟 {q : K × K} (hq : q ∈ 𝒟) : closedSubdisc q.1 q.2 ⊆ U :=
     (Set.subset_biUnion_of_mem (u := fun q : K × K ↦ closedSubdisc q.1 q.2) hq).trans
       Set.subset_union_left
@@ -890,7 +892,7 @@ private theorem isRat_biUnion_closedSubdisc_union_biUnion_setOf_vle (𝒟 ℰ : 
   push Not at hsw
   -- the discs inside `D⁻(b₀, |d₀|)`
   set 𝒟' := 𝒟.filter fun q ↦ q.2 ≠ 0 ∧ ‖q.1 - e₀.1‖ < ‖e₀.2‖ ∧ ‖q.2‖ < ‖e₀.2‖
-  have hEq : U = {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e₀.2) (T - C e₀.1)} ∪
+  have hEq : U = {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C e₀.2) (T - C e₀.1)} ∪
       ⋃ q ∈ 𝒟', closedSubdisc q.1 q.2 := by
     refine subset_antisymm (Set.union_subset (Set.iUnion₂_subset fun q hq ↦ ?_)
       (Set.iUnion₂_subset fun e he ↦ (setOf_vle_subset_setOf_vle (hmin e
@@ -916,9 +918,9 @@ private theorem isRat_biUnion_closedSubdisc_union_biUnion_setOf_vle (𝒟 ℰ : 
 are rational. -/
 private theorem isRat_biUnion_holedDisc_union (P : Finset (K × K × Finset (K × K))) :
     ∀ 𝒟 ℰ : Finset (K × K), IsRat
-      ((⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2)) ∪
+      ((⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.val.1) (fun q ↦ q.val.2)) ∪
         ((⋃ q ∈ 𝒟, closedSubdisc q.1 q.2) ∪
-          ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e.2) (T - C e.1)})) := by
+          ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.val.toValuativeRel.vle (C e.2) (T - C e.1)})) := by
   -- Induction on the holed discs: a holed disc is the intersection of its outer disc with the
   -- complements of its holes, and the union distributes over this intersection.
   classical
@@ -936,7 +938,7 @@ private theorem isRat_biUnion_holedDisc_union (P : Finset (K × K × Finset (K �
       ext x
       simp only [Set.mem_union]
       tauto
-    · convert ih 𝒟 (insert q.1 ℰ) using 1
+    · convert ih 𝒟 (insert q.val ℰ) using 1
       rw [Finset.set_biUnion_insert]
       ext x
       simp only [Set.mem_union]

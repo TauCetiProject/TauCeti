@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
+public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.Analysis.Normed.Group.Prod
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 
@@ -23,8 +24,10 @@ such as the circle bundles of nonzero Euler number over the torus.
 `Nil` is also the real Heisenberg group `TauCeti.HeisenbergGroup ℝ` of unipotent upper triangular
 `3 × 3` matrices, whose product in the coordinates of the strictly upper triangle is
 `(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)`; the coordinates give a group isomorphism
-`Nil.toHeisenberg`. The one-forms `dx`, `dy` and `dz - x dy` are left-invariant, so the metric is
-left-invariant and left multiplication by any element is a Riemannian isometry. This gives an
+`Nil.toHeisenberg`. Multiplication and inversion are polynomial in the coordinates, so `Nil` is a
+real-analytic Lie group, and its centre is the `z`-axis `{(0, 0, z)}`. The one-forms `dx`, `dy`
+and `dz - x dy` are left-invariant, so the metric is left-invariant and left multiplication by any
+element is a Riemannian isometry. This gives an
 injective group homomorphism from `Nil` into its isometry group, and already its image acts
 transitively, so `Nil` is a homogeneous Riemannian manifold.
 
@@ -45,7 +48,8 @@ Section 4): every isometry is of this form by `TauCeti.Nil.semidirectProductToIs
   and the coordinates `Nil.x`, `Nil.y`, `Nil.z`.
 * `TauCeti.Nil.toProdDiffeomorph`: the smooth global coordinates in real three-space.
 * `TauCeti.Nil.instGroup`: the group structure of `Nil`, and `TauCeti.Nil.toHeisenberg`, the
-  group isomorphism with the real Heisenberg group.
+  group isomorphism with the real Heisenberg group. Its product and inversion are polynomial, so
+  `Nil` is a real-analytic Lie group (`LieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω Nil`).
 * `TauCeti.Nil.riemannianMetric`: the analytic metric `dx² + dy² + (dz - x dy)²`, which is the
   `RiemannianBundle` instance of `Nil`.
 * `TauCeti.Nil.toIsom`: left multiplication, as a homomorphism from `Nil` to its isometry group.
@@ -57,6 +61,7 @@ Section 4): every isometry is of this form by `TauCeti.Nil.semidirectProductToIs
 
 ## Main results
 
+* `TauCeti.Nil.mem_center_iff`: the centre of `Nil` is its `z`-axis.
 * `TauCeti.Nil.inner_def`: the inner product of two tangent vectors at a point with first
   coordinate `x` is `v₁ w₁ + v₂ w₂ + (v₃ - x v₂) (w₃ - x w₂)`.
 * `TauCeti.Nil.toIsom_injective`: distinct elements of `Nil` give distinct isometries.
@@ -163,6 +168,49 @@ def toProdDiffeomorph : Nil ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ
 
 @[simp] theorem coe_toProdDiffeomorph_symm : ⇑toProdDiffeomorph.symm = toProd.symm := (rfl)
 
+/-- The differential of global coordinates reads the tangent vector in the model space. -/
+@[simp] theorem mfderiv_toProd_apply (p : Nil) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd p v =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
+
+/-- The differential of inverse global coordinates retains the model vector. -/
+@[simp] theorem tangentSpaceCastModel_mfderiv_toProd_symm (r : ℝ × ℝ × ℝ)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) r) :
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm r)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm r v) = v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
+
+/-- Global coordinates are `C^n` for every `n`. -/
+theorem contMDiff_toProd {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (toProd : Nil → ℝ × ℝ × ℝ) :=
+  contDiff_id.contMDiff
+
+/-- Inverse global coordinates are `C^n` for every `n`. -/
+theorem contMDiff_toProd_symm {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (toProd.symm : ℝ × ℝ × ℝ → Nil) :=
+  contDiff_id.contMDiff
+
+/-- A self-map of `Nil` is `C^n` exactly when it is `C^n` in the global coordinates. -/
+theorem contDiff_toProd_conj_iff {n : WithTop ℕ∞} {f : Nil → Nil} :
+    ContDiff ℝ n (toProd ∘ f ∘ toProd.symm) ↔
+      ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n f :=
+  contMDiff_iff_contDiff.symm
+
+/-- The ordinary derivative of a map of `Nil` in global coordinates is its manifold derivative,
+read through the canonical tangent-space identifications. -/
+@[simp]
+theorem fderiv_toProd_conj_apply (f : Nil → Nil) (p : Nil)
+    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p)
+        (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (f p)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) f p u) := by
+  -- Nil has the inherited model-space charts. In those charts both tangent casts
+  -- are identities, and the coordinate map is the same function as the original map.
+  exact congrArg (fun L => L u) (mfderiv_eq_fderiv
+    (𝕜 := ℝ) (f := toProd ∘ f ∘ toProd.symm) (x := toProd p)).symm
+
 /-! ### The group structure -/
 
 /-- The product `(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)` of the real Heisenberg
@@ -211,6 +259,40 @@ def toHeisenberg : Nil ≃* HeisenbergGroup ℝ where
 @[simp] theorem y_toHeisenberg (p : Nil) : (toHeisenberg p).y = p.y := by simp [toHeisenberg]
 
 @[simp] theorem z_toHeisenberg (p : Nil) : (toHeisenberg p).z = p.z := by simp [toHeisenberg]
+
+/-- **The centre of Nil is the `z`-axis** `{(0, 0, z)}`, transported from the centre of the
+Heisenberg group (`TauCeti.HeisenbergGroup.center_eq_zAxis`). -/
+theorem mem_center_iff {p : Nil} : p ∈ Subgroup.center Nil ↔ p.x = 0 ∧ p.y = 0 := by
+  simp [← Subgroup.mem_map_iff_mem (f := (toHeisenberg : Nil →* HeisenbergGroup ℝ))
+    toHeisenberg.injective, HeisenbergGroup.center_eq_zAxis]
+
+/-! ### The Lie group structure -/
+
+/-- `Nil` is a real-analytic Lie group: in the global coordinates, the product
+`(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)` and the inversion
+`(x, y, z)⁻¹ = (-x, -y, -z + x y)` are polynomial. -/
+instance : LieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω Nil where
+  contMDiff_mul := by
+    have hmul : (fun p : Nil × Nil ↦ p.1 * p.2) =
+        toProd.symm ∘ (fun r : (ℝ × ℝ × ℝ) × ℝ × ℝ × ℝ ↦
+          (r.1.1 + r.2.1, r.1.2.1 + r.2.2.1, r.1.2.2 + r.2.2.2 + r.1.1 * r.2.2.1)) ∘
+          Prod.map toProd toProd := by
+      funext p
+      ext <;> simp
+    rw [hmul]
+    refine contMDiff_toProd_symm.comp (.comp ?_ (contMDiff_toProd.prodMap contMDiff_toProd))
+    -- The model of `ℝ³ × ℝ³` is the product of the models of the two factors.
+    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
+    exact ContDiff.contMDiff (by fun_prop)
+  contMDiff_inv := by
+    have hinv : (fun p : Nil ↦ p⁻¹) =
+        toProd.symm ∘ (fun r : ℝ × ℝ × ℝ ↦ (-r.1, -r.2.1, -r.2.2 + r.1 * r.2.1)) ∘ toProd := by
+      funext p
+      ext <;> simp
+    rw [hinv]
+    exact contMDiff_toProd_symm.comp ((ContDiff.contMDiff (by fun_prop)).comp contMDiff_toProd)
+
+instance : IsTopologicalGroup Nil := topologicalGroup_of_lieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω
 
 /-! ### The metric -/
 
@@ -313,14 +395,8 @@ private theorem mul_left_eq (p : Nil) :
   funext q
   ext <;> simp [linearPart, xL, yL, zL] <;> ring
 
-/- `Nil` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the two results below
-are the corresponding statements about the affine map `r ↦ linearPart p r + toProd p` of
-`ℝ × ℝ × ℝ`. -/
-
-private theorem contMDiff_mul_left {n : ℕ∞ω} (p : Nil) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (p * ·) := by
-  rw [mul_left_eq]
-  exact ((linearPart p).contDiff.add contDiff_const).contMDiff
+/- `Nil` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the result below is the
+corresponding statement about the affine map `r ↦ linearPart p r + toProd p` of `ℝ × ℝ × ℝ`. -/
 
 private theorem hasMFDerivAt_mul_left (p q : Nil) :
     HasMFDerivAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q (linearPart p) := by
@@ -349,39 +425,24 @@ private theorem inner_mfderiv_mul_left (p q : Nil) (v w : TangentSpace 𝓘(ℝ,
     ContinuousLinearMap.coe_comp, Function.comp_apply, smul_eq_mul]
   ring
 
-/-- Left multiplication by `p`, as an isometry of `Nil`. -/
-private def mulLeft (p : Nil) : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
-  toFun := (p * ·)
-  invFun := (p⁻¹ * ·)
-  left_inv q := inv_mul_cancel_left p q
-  right_inv q := mul_inv_cancel_left p q
-  contMDiff_toFun := contMDiff_mul_left p
-  contMDiff_invFun := contMDiff_mul_left p⁻¹
-  inner_mfderiv' q v w := by
-    -- The underlying map of the diffeomorphism under construction is `(p * ·)` by definition;
-    -- `change` states the goal in terms of that function, so that its differential applies.
-    change inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q v)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q w) = inner ℝ v w
-    exact inner_mfderiv_mul_left p q v w
-
-private theorem mulLeft_apply (p q : Nil) : mulLeft p q = p * q := (rfl)
+/-- Left multiplication by an element of `Nil` is smooth. -/
+instance contMDiffConstSMul : ContMDiffConstSMul 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ Nil Nil :=
+  ⟨fun _ ↦ contMDiff_mul_left⟩
 
 /-- Left multiplication, as a group homomorphism from `Nil` to its isometry group: the metric
 of `Nil` is left-invariant. -/
-def toIsom : Nil →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
-  toFun := mulLeft
-  map_one' := RiemannianIsometry.ext fun q ↦ by
-    rw [mulLeft_apply, RiemannianIsometry.one_apply, one_mul]
-  map_mul' p p' := RiemannianIsometry.ext fun q ↦ by
-    rw [RiemannianIsometry.mul_apply, mulLeft_apply, mulLeft_apply, mulLeft_apply, mul_assoc]
+def toIsom : Nil →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil :=
+  RiemannianIsometry.constSMulHom inner_mfderiv_mul_left
 
 /-- The isometry `toIsom p` is left multiplication by `p`. -/
 @[simp]
-theorem toIsom_apply (p q : Nil) : toIsom p q = p * q := (rfl)
+theorem toIsom_apply (p q : Nil) : toIsom p q = p * q := by
+  rw [toIsom, RiemannianIsometry.constSMulHom_apply, RiemannianIsometry.constSMul_apply,
+    smul_eq_mul]
 
 /-- Distinct elements of `Nil` act by distinct isometries. -/
-theorem toIsom_injective : Function.Injective toIsom := fun p p' h ↦ by
-  simpa using DFunLike.congr_fun h 1
+theorem toIsom_injective : Function.Injective toIsom :=
+  RiemannianIsometry.constSMulHom_injective _
 
 /-- The isometry group of `Nil` acts transitively: `Nil` is a homogeneous Riemannian manifold.
 This is transferred along `toIsom` from the transitive action of `Nil` on itself by left
@@ -516,16 +577,16 @@ def orthogonalMulAut : Matrix.orthogonalGroup (Fin 2) ℝ →* MulAut Nil where
 
 @[simp]
 theorem x_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
-    (orthogonalMulAut g p).x = g.1 0 0 * p.x + g.1 0 1 * p.y := (rfl)
+    (orthogonalMulAut g p).x = g.val 0 0 * p.x + g.val 0 1 * p.y := (rfl)
 
 @[simp]
 theorem y_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
-    (orthogonalMulAut g p).y = g.1 1 0 * p.x + g.1 1 1 * p.y := (rfl)
+    (orthogonalMulAut g p).y = g.val 1 0 * p.x + g.val 1 1 * p.y := (rfl)
 
 @[simp]
 theorem z_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
-    (orthogonalMulAut g p).z = g.1.det * (p.z - p.x * p.y / 2) +
-      (g.1 0 0 * p.x + g.1 0 1 * p.y) * (g.1 1 0 * p.x + g.1 1 1 * p.y) / 2 := (rfl)
+    (orthogonalMulAut g p).z = g.val.det * (p.z - p.x * p.y / 2) +
+      (g.val 0 0 * p.x + g.val 0 1 * p.y) * (g.val 1 0 * p.x + g.val 1 1 * p.y) / 2 := (rfl)
 
 /-- Distinct orthogonal matrices act by distinct automorphisms of `Nil`. -/
 theorem orthogonalMulAut_injective : Function.Injective orthogonalMulAut := fun g h hgh ↦ by
@@ -549,7 +610,7 @@ def orthogonalToIsom : Matrix.orthogonalGroup (Fin 2) ℝ →* Isom 𝓘(ℝ, �
     { toEquiv := (orthogonalMulAut g).toEquiv
       contMDiff_toFun := contMDiff_matrixHom _
       contMDiff_invFun := contMDiff_matrixHom _
-      inner_mfderiv' := inner_mfderiv_matrixHom g.2 }
+      inner_mfderiv' := inner_mfderiv_matrixHom g.property }
   map_one' := RiemannianIsometry.ext fun p ↦ by
     rw [RiemannianIsometry.one_apply]
     exact DFunLike.congr_fun (map_one orthogonalMulAut) p
@@ -571,12 +632,12 @@ theorem tangentSpaceCastModel_mfderiv_orthogonalToIsom_one
     let u := tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (1 : Nil) v
     tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (orthogonalToIsom g 1)
       (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (orthogonalToIsom g) 1 v) =
-        (g.1 0 0 * u.1 + g.1 0 1 * u.2.1,
-          g.1 1 0 * u.1 + g.1 1 1 * u.2.1, g.1.det * u.2.2) := by
-  have hfun : (orthogonalToIsom g : Nil → Nil) = matrixHom g.1 := rfl
+        (g.val 0 0 * u.1 + g.val 0 1 * u.2.1,
+          g.val 1 0 * u.1 + g.val 1 1 * u.2.1, g.val.det * u.2.2) := by
+  have hfun : (orthogonalToIsom g : Nil → Nil) = matrixHom g.val := rfl
   rw [hfun]
   simpa [matrixDeriv, firstL, secondL, xL, yL, zL] using
-    tangentSpaceCastModel_mfderiv_matrixHom g.1 1 v
+    tangentSpaceCastModel_mfderiv_matrixHom g.val 1 v
 
 /-- Distinct orthogonal matrices act by distinct isometries of `Nil`. -/
 theorem orthogonalToIsom_injective : Function.Injective orthogonalToIsom := fun _ _ h ↦

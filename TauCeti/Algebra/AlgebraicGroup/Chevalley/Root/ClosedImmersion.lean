@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Immersion
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
@@ -70,8 +70,6 @@ private theorem coordinateMap_conj_reflection (i : Fin t.rank) (γ : Fin t.numRo
   let z := toAdd (AdditiveGroup.gaPointsMulEquiv q0)
   let ε := t.chevalleyWeylSign ht (t.simpleIndex ht i) γ
   let P : Matrix.GeneralLinearGroup (Fin D.dim) ℤ := D.weylElement (t.simpleIndex ht i) ℤ 1
-  let q := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-    (ofAdd (((ε : ℤ) : A) * z))
   have hε : (ε : ℤ) * (ε : ℤ) = 1 := by simp [← Units.val_mul]
   have hεA : ((ε : ℤ) : A) * ((ε : ℤ) : A) = 1 := by
     rw [← Int.cast_mul, hε, Int.cast_one]

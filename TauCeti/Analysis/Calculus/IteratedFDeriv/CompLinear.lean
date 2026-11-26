@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 
@@ -16,13 +18,18 @@ import TauCeti.Analysis.Calculus.FDeriv.Comp
 Precomposing a function with a continuous linear map `g` multiplies the norm of its `i`-th
 iterated derivative by at most `‖g‖ ^ i`. This is the norm form of Mathlib's
 `ContinuousLinearMap.iteratedFDeriv_comp_right`; for a linear isometry equivalence the norm is
-preserved (`LinearIsometryEquiv.norm_iteratedFDeriv_comp_right`). Since the projections of a
-product have norm at most one, reading a function on one factor of a product does not increase the
-norms of its iterated derivatives (`TauCeti.norm_iteratedFDeriv_comp_fst_le`,
-`TauCeti.norm_iteratedFDeriv_comp_snd_le`). This needs no differentiability of the function: for
-a continuous linear map with a continuous linear right inverse, precomposition acts on the
-iterated derivatives by precomposition in every slot
-(`ContinuousLinearMap.iteratedFDeriv_comp_right_of_rightInverse`).
+preserved (`LinearIsometryEquiv.norm_iteratedFDeriv_comp_right`).
+
+For a continuous linear map `g` with a continuous linear right inverse `s`, no differentiability of
+the function is needed: precomposition with `g` acts on the iterated derivatives by precomposition
+in every slot (`ContinuousLinearMap.iteratedFDeriv_comp_right_of_rightInverse`). Precomposing that
+in every slot with `s` recovers the original derivative, so Mathlib's bound
+`ContinuousMultilinearMap.norm_compContinuousLinearMap_le`, applied with `g` and with `s`, bounds
+each of the two norms by the other times `‖g‖ ^ i` or `‖s‖ ^ i`. When `g` and `s` both have norm at
+most one the norms agree (`ContinuousLinearMap.norm_iteratedFDeriv_comp_right_of_rightInverse`).
+The projections of a product and the inclusions of its factors are such a pair, so reading a
+function on one factor of a product preserves the norms of its iterated derivatives
+(`Prod.norm_iteratedFDeriv_comp_fst`, `Prod.norm_iteratedFDeriv_comp_snd`).
 
 For a function of one variable, postcomposition with a continuous linear map commutes with the
 iterated derivative `iteratedDeriv`. This is the one-variable form of Mathlib's
@@ -34,6 +41,10 @@ A continuous linear map itself has vanishing iterated derivatives of every order
 norm at most its own norm (`ContinuousLinearMap.norm_iteratedFDeriv_le_norm`). In particular the
 projections of a product have iterated derivatives of positive order of norm at most one
 (`TauCeti.norm_iteratedFDeriv_fst_le_one`, `TauCeti.norm_iteratedFDeriv_snd_le_one`).
+
+The `k`-th derivative of a finite sum `x ↦ ∑ l ∈ u, A l (g l x)` of postcompositions with
+continuous linear maps is bounded pointwise by `∑ l ∈ u, ‖A l‖ ‖Dᵏ g l x‖`
+(`TauCeti.norm_iteratedFDeriv_sum_comp_left_le`).
 -/
 
 public section
@@ -53,7 +64,7 @@ theorem norm_iteratedFDeriv_comp_right_le (g : G →L[𝕜] E) {f : E → F} (hf
     ‖iteratedFDeriv 𝕜 i (f ∘ g) x‖ ≤ ‖iteratedFDeriv 𝕜 i f (g x)‖ * ‖g‖ ^ i := by
   rw [g.iteratedFDeriv_comp_right hf x hi]
   exact ((iteratedFDeriv 𝕜 i f (g x)).norm_compContinuousLinearMap_le _).trans_eq
-    (by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin])
+    (by rw [Fin.prod_const])
 
 /-- **Iterated derivatives under precomposition with a split surjection.** If a continuous linear
 map `g` has a continuous linear right inverse `s`, the `i`-th derivative of `f ∘ g` at `x` is the
@@ -66,7 +77,7 @@ theorem iteratedFDeriv_comp_right_of_rightInverse (g : G →L[𝕜] E) (s : E �
       (iteratedFDeriv 𝕜 i f (g x)).compContinuousLinearMap fun _ ↦ g := by
   induction i generalizing x with
   | zero =>
-    ext m
+    ext _
     simp [iteratedFDeriv_zero_apply, ContinuousMultilinearMap.compContinuousLinearMap_apply]
   | succ i ih =>
     let Φ := ContinuousMultilinearMap.compContinuousLinearMapL (F := F) (fun _ : Fin i ↦ g)
@@ -94,7 +105,35 @@ theorem norm_iteratedFDeriv_comp_right_le_of_rightInverse (g : G →L[𝕜] E) (
     ‖iteratedFDeriv 𝕜 i (f ∘ g) x‖ ≤ ‖iteratedFDeriv 𝕜 i f (g x)‖ * ‖g‖ ^ i := by
   rw [g.iteratedFDeriv_comp_right_of_rightInverse s hgs f x]
   exact ((iteratedFDeriv 𝕜 i f (g x)).norm_compContinuousLinearMap_le _).trans_eq
-    (by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin])
+    (by rw [Fin.prod_const])
+
+/-- If a continuous linear map `g` has a continuous linear right inverse `s`, the norm of the
+`i`-th iterated derivative of `f` at `g x` is at most that of `f ∘ g` at `x` times `‖s‖ ^ i`, with
+no differentiability assumption. -/
+theorem norm_iteratedFDeriv_le_norm_comp_right_mul_of_rightInverse (g : G →L[𝕜] E)
+    (s : E →L[𝕜] G) (hgs : Function.RightInverse s g) (f : E → F) (x : G) (i : ℕ) :
+    ‖iteratedFDeriv 𝕜 i f (g x)‖ ≤ ‖iteratedFDeriv 𝕜 i (f ∘ g) x‖ * ‖s‖ ^ i := by
+  rw [g.iteratedFDeriv_comp_right_of_rightInverse s hgs f x]
+  set M := iteratedFDeriv 𝕜 i f (g x)
+  -- precomposing with `s` in every slot recovers `M`, since `g ∘ s = id`
+  calc ‖M‖ = ‖(M.compContinuousLinearMap fun _ ↦ g).compContinuousLinearMap fun _ ↦ s‖ := by
+        congr 1
+        ext m
+        simp [hgs _]
+    _ ≤ _ := ((M.compContinuousLinearMap _).norm_compContinuousLinearMap_le _).trans_eq
+        (by rw [Fin.prod_const])
+
+/-- Precomposition with a continuous linear map `g` of norm at most one that has a continuous
+linear right inverse `s` of norm at most one preserves the norm of the `i`-th iterated derivative,
+with no differentiability assumption. -/
+theorem norm_iteratedFDeriv_comp_right_of_rightInverse (g : G →L[𝕜] E) (s : E →L[𝕜] G)
+    (hgs : Function.RightInverse s g) (hg : ‖g‖ ≤ 1) (hs : ‖s‖ ≤ 1) (f : E → F) (x : G)
+    (i : ℕ) : ‖iteratedFDeriv 𝕜 i (f ∘ g) x‖ = ‖iteratedFDeriv 𝕜 i f (g x)‖ :=
+  le_antisymm
+    ((g.norm_iteratedFDeriv_comp_right_le_of_rightInverse s hgs f x i).trans
+      (mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hg)))
+    ((g.norm_iteratedFDeriv_le_norm_comp_right_mul_of_rightInverse s hgs f x i).trans
+      (mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hs)))
 
 /-- Postcomposition with a continuous linear map `g` commutes with the `i`-th iterated derivative
 of a function of one variable that is `C^i` at the point. -/
@@ -123,6 +162,33 @@ theorem norm_iteratedFDeriv_le_norm (g : E →L[𝕜] F) {k : ℕ} (hk : 1 ≤ k
 
 end ContinuousLinearMap
 
+namespace Prod
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Reading a function on the first factor of a product preserves the norms of its iterated
+derivatives. -/
+@[simp]
+theorem norm_iteratedFDeriv_comp_fst {f : E → F} (p : E × G) {i : ℕ} :
+    ‖iteratedFDeriv 𝕜 i (f ∘ Prod.fst) p‖ = ‖iteratedFDeriv 𝕜 i f p.1‖ :=
+  (ContinuousLinearMap.fst 𝕜 E G).norm_iteratedFDeriv_comp_right_of_rightInverse
+    (ContinuousLinearMap.inl 𝕜 E G) (fun _ ↦ by simp) (ContinuousLinearMap.norm_fst_le 𝕜 E G)
+    (ContinuousLinearMap.norm_inl_le_one 𝕜 E G) f p i
+
+/-- Reading a function on the second factor of a product preserves the norms of its iterated
+derivatives. -/
+@[simp]
+theorem norm_iteratedFDeriv_comp_snd {f : G → F} (p : E × G) {i : ℕ} :
+    ‖iteratedFDeriv 𝕜 i (f ∘ Prod.snd) p‖ = ‖iteratedFDeriv 𝕜 i f p.2‖ :=
+  (ContinuousLinearMap.snd 𝕜 E G).norm_iteratedFDeriv_comp_right_of_rightInverse
+    (ContinuousLinearMap.inr 𝕜 E G) (fun _ ↦ by simp) (ContinuousLinearMap.norm_snd_le 𝕜 E G)
+    (ContinuousLinearMap.norm_inr_le_one 𝕜 E G) f p i
+
+end Prod
+
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -130,24 +196,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {n : WithTop ℕ∞}
-
-/-- Reading a function on the first factor of a product does not increase the norms of its
-iterated derivatives. -/
-theorem norm_iteratedFDeriv_comp_fst_le {f : E → F} (p : E × G) {i : ℕ} :
-    ‖iteratedFDeriv 𝕜 i (f ∘ Prod.fst) p‖ ≤ ‖iteratedFDeriv 𝕜 i f p.1‖ :=
-  ((ContinuousLinearMap.fst 𝕜 E G).norm_iteratedFDeriv_comp_right_le_of_rightInverse
-    (ContinuousLinearMap.inl 𝕜 E G) (fun _ ↦ rfl) f p i).trans
-    (mul_le_of_le_one_right (norm_nonneg _)
-      (pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_fst_le 𝕜 E G)))
-
-/-- Reading a function on the second factor of a product does not increase the norms of its
-iterated derivatives. -/
-theorem norm_iteratedFDeriv_comp_snd_le {f : G → F} (p : E × G) {i : ℕ} :
-    ‖iteratedFDeriv 𝕜 i (f ∘ Prod.snd) p‖ ≤ ‖iteratedFDeriv 𝕜 i f p.2‖ :=
-  ((ContinuousLinearMap.snd 𝕜 E G).norm_iteratedFDeriv_comp_right_le_of_rightInverse
-    (ContinuousLinearMap.inr 𝕜 E G) (fun _ ↦ rfl) f p i).trans
-    (mul_le_of_le_one_right (norm_nonneg _)
-      (pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_snd_le 𝕜 E G)))
 
 /-- The first projection of a product has iterated derivatives of every positive order of norm at
 most one. -/
@@ -164,5 +212,18 @@ theorem norm_iteratedFDeriv_snd_le_one {k : ℕ} (hk : 1 ≤ k) (p : E × G) :
   have h := (ContinuousLinearMap.snd 𝕜 E G).norm_iteratedFDeriv_le_norm hk p
   rw [ContinuousLinearMap.coe_snd'] at h
   exact h.trans (ContinuousLinearMap.norm_snd_le 𝕜 E G)
+
+/-- The `k`-th derivative of a finite sum `x ↦ ∑ l ∈ u, A l (g l x)` of postcompositions with
+continuous linear maps is bounded at `x` by `∑ l ∈ u, ‖A l‖ ‖Dᵏ g l x‖`, when each `g l` is `Cᵏ`
+at `x`. -/
+theorem norm_iteratedFDeriv_sum_comp_left_le {ι : Type*} (u : Finset ι) (A : ι → F →L[𝕜] G)
+    {g : ι → E → F} {x : E} {k : ℕ} (hg : ∀ l ∈ u, ContDiffAt 𝕜 k (g l) x) :
+    ‖iteratedFDeriv 𝕜 k (fun x ↦ ∑ l ∈ u, A l (g l x)) x‖ ≤
+      ∑ l ∈ u, ‖A l‖ * ‖iteratedFDeriv 𝕜 k (g l) x‖ := by
+  have hc (l : ι) (hl : l ∈ u) : ContDiffAt 𝕜 k (fun x ↦ A l (g l x)) x :=
+    (A l).contDiff.contDiffAt.comp x (hg l hl)
+  rw [iteratedFDeriv_fun_sum_apply hc]
+  exact (norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun l hl ↦ (A l).norm_iteratedFDeriv_comp_left (hg l hl) le_rfl)
 
 end TauCeti

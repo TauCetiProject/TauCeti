@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.BlackScholes.Greeks
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 
@@ -28,7 +28,8 @@ for a volatility `σ > 0` and strike `K > 0`. Here `Φ` is the standard Gaussian
   the money (`s > K`), to `0` out of the money (`s < K`) and to `1 / 2` at the money. The put
   delta, which is the call delta minus `1`, tends to `0`, `-1` and `-1 / 2` respectively.
 * **Gamma at maturity.** For a fixed spot `s ≠ K` the gamma `φ(d₊) / (s σ √τ)` of the call
-  (equivalently, of the put) tends to `0` as `τ → 0⁺`. At the money it blows up like `1 / √τ`:
+  (equivalently, of the put) tends to `0` as `τ → 0⁺`; this limit holds for every volatility and
+  every strike `K ≥ 0`. At the money it blows up like `1 / √τ`:
   `√τ ∂²C/∂s²(K, τ) → 1 / (K σ √(2π))`, so the gamma tends to `+∞` and has no finite terminal
   value at `s = K`.
 * **Vega at maturity.** For every fixed spot `s > 0`, including `s = K`, the vega `s φ(d₊) √τ`
@@ -94,18 +95,18 @@ variable {s r σ K τ : ℝ}
 -- and `0 ≤ P ≤ K e^{-rτ} Φ(-d₋)`.
 
 /-- **Call boundary at zero spot.** As the spot tends to `0`, the call price tends to `0`. -/
-theorem tendsto_callPrice_spot_zero (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+theorem tendsto_callPrice_spot_zero (hσ : 0 < σ) (hK : 0 ≤ K) (hτ : 0 < τ) :
     Tendsto (fun x => callPrice x r σ K τ) (𝓝[>] 0) (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (tendsto_nhdsWithin_of_tendsto_nhds (f := fun x => x) tendsto_id) ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with x hx
-    exact callPrice_nonneg hx hσ hK hτ
+    exact callPrice_nonneg hx hσ hτ
   · filter_upwards [self_mem_nhdsWithin] with x hx
-    exact callPrice_le (le_of_lt hx) hK.le
+    exact callPrice_le (le_of_lt hx) hK
 
 /-- **Put boundary at zero spot.** As the spot tends to `0`, the put price tends to the
 discounted strike `K e^{-rτ}`. -/
-theorem tendsto_putPrice_spot_zero (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+theorem tendsto_putPrice_spot_zero (hσ : 0 < σ) (hK : 0 ≤ K) (hτ : 0 < τ) :
     Tendsto (fun x => putPrice x r σ K τ) (𝓝[>] 0) (𝓝 (K * exp (-r * τ))) := by
   have h := ((tendsto_callPrice_spot_zero (r := r) hσ hK hτ).sub
     (tendsto_nhdsWithin_of_tendsto_nhds (f := fun x => x) tendsto_id)).add_const
@@ -130,8 +131,7 @@ theorem tendsto_putPrice_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
       (tendsto_neg_atTop_atBot.comp (tendsto_dMinus_spot_atTop hσ hK hτ))).const_mul
       (K * exp (-r * τ))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h ?_ ?_
-  · filter_upwards [eventually_gt_atTop 0] with x hx
-    exact putPrice_nonneg hx hσ hK hτ
+  · exact Eventually.of_forall fun _ => putPrice_nonneg hσ hK hτ
   · filter_upwards [eventually_ge_atTop 0] with x hx
     exact putPrice_le_mul_cdf hx
 
@@ -361,10 +361,18 @@ theorem tendsto_deriv_putPrice_spot_strike (hσ : σ ≠ 0) (hK : 0 < K) :
 /-! ### Gamma at maturity -/
 
 /-- **Gamma away from the money at maturity.** For a fixed spot `s > 0` with `s ≠ K`, the call
-gamma tends to `0` as the remaining maturity tends to `0⁺`. -/
-theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K)
+gamma tends to `0` as the remaining maturity tends to `0⁺`. This holds for every volatility `σ`
+and every strike `K ≥ 0`: at `σ = 0` the closed-form price is affine in the spot (through Lean's
+convention `x / 0 = 0`), and at `K = 0` it is `s Φ(d₊)` with `d₊` independent of the spot (through
+`log (s / 0) = log 0 = 0`), so in both cases its gamma vanishes. -/
+theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hK : 0 ≤ K)
     (hsK : s ≠ K) :
     Tendsto (fun u => deriv (deriv fun x => callPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) := by
+  rcases eq_or_ne σ 0 with rfl | hσ
+  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero
+      (zero_mul _)).symm
+  rcases hK.eq_or_lt with rfl | hK
+  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_callPrice_spot_strike_zero s r σ u).symm
   -- Writing `A(τ) = log (s / K) + (r + σ² / 2) τ = σ √τ d₊`, the gamma `φ(d₊) / (s σ √τ)` is
   -- `d₊ φ(d₊) / (s A(τ))`, where `d₊ φ(d₊) → 0` since `|d₊| → ∞` and `A(τ) → log (s / K) ≠ 0`.
   have hlog : log (s / K) ≠ 0 := by
@@ -376,34 +384,43 @@ theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 <
     (Continuous.continuousWithinAt (by fun_prop)).tendsto
   rw [mul_zero, add_zero] at hA
   have hd : Tendsto (dPlus s r σ K) (𝓝[>] 0) (cocompact ℝ) := by
-    rcases hsK.lt_or_gt with hsK | hsK
-    · exact (tendsto_dPlus_maturity_atBot (r := r) hσ hs hsK).mono_right atBot_le_cocompact
-    · exact (tendsto_dPlus_maturity_atTop (r := r) hσ hK hsK).mono_right atTop_le_cocompact
-  have h := (tendsto_mul_gaussianPDFReal_zero_one_cocompact.comp hd).div hA
+    have habs : Tendsto (dPlus s r |σ| K) (𝓝[>] 0) (cocompact ℝ) := by
+      rcases hsK.lt_or_gt with hsK | hsK
+      · exact (tendsto_dPlus_maturity_atBot (r := r) (abs_pos.2 hσ) hs hsK).mono_right
+          atBot_le_cocompact
+      · exact (tendsto_dPlus_maturity_atTop (r := r) (abs_pos.2 hσ) hK hsK).mono_right
+          atTop_le_cocompact
+    rcases abs_choice σ with hσa | hσa
+    · rwa [hσa] at habs
+    -- For `σ < 0`, `d₊` is the negative of `d₊` at the volatility `-σ`, and negation maps
+    -- `cocompact ℝ` to itself.
+    rw [hσa] at habs
+    refine ((Homeomorph.neg ℝ).isClosedEmbedding.tendsto_cocompact.comp habs).congr fun u => ?_
+    rw [Function.comp_apply, Homeomorph.coe_neg, dPlus_neg_volatility, neg_neg]
+  have h := ((tendsto_mul_gaussianPDFReal_cocompact 0 1).comp hd).div hA
     (mul_ne_zero hs.ne' hlog)
   rw [zero_div] at h
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin, hA.eventually_ne (mul_ne_zero hs.ne' hlog)] with u hu hAu
   have hsq := (sqrt_pos.2 hu).ne'
   have hdu : dPlus s r σ K u = (log (s / K) + (r + σ ^ 2 / 2) * u) / (σ * √u) := dPlus_def ..
-  rw [(hasDerivAt_deriv_callPrice_spot hs hK hσ.ne' hu).deriv, Pi.div_apply,
+  rw [(hasDerivAt_deriv_callPrice_spot hs hK hσ hu).deriv, Pi.div_apply,
     Function.comp_apply, hdu]
   have hA0 : log (s / K) + (r + σ ^ 2 / 2) * u ≠ 0 := right_ne_zero_of_mul hAu
   have := hs.ne'
-  have := hσ.ne'
   generalize gaussianPDFReal 0 1 _ = c
   generalize log (s / K) + (r + σ ^ 2 / 2) * u = A at hA0 ⊢
   field_simp
 
 /-- **Gamma at the money near maturity.** At the spot `s = K`, `√τ` times the call gamma tends to
 `1 / (K σ √(2π))` as the remaining maturity tends to `0⁺`. -/
-theorem tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (hσ : 0 < σ) (hK : 0 < K) :
+theorem tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (hσ : σ ≠ 0) (hK : 0 < K) :
     Tendsto (fun u => √u * deriv (deriv fun x => callPrice x r σ K u) K) (𝓝[>] 0)
       (𝓝 (1 / (K * σ * √(2 * π)))) := by
   have hφ : Continuous (gaussianPDFReal 0 1) := by
     simp_rw [funext gaussianPDFReal_zero_one]
     fun_prop
-  have h := ((hφ.tendsto 0).comp (tendsto_dPlus_maturity_strike (r := r) hσ.ne' hK.ne')).div_const
+  have h := ((hφ.tendsto 0).comp (tendsto_dPlus_maturity_strike (r := r) hσ hK.ne')).div_const
     (K * σ)
   rw [Function.comp_def, gaussianPDFReal_zero_one] at h
   have hval : (√(2 * π))⁻¹ * exp (-(0 ^ 2 / 2)) / (K * σ) = 1 / (K * σ * √(2 * π)) := by
@@ -413,14 +430,14 @@ theorem tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (hσ : 0 < σ) (hK : 
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with u hu
   have hsq := (sqrt_pos.2 hu).ne'
-  rw [(hasDerivAt_deriv_callPrice_spot hK hK hσ.ne' hu).deriv]
+  rw [(hasDerivAt_deriv_callPrice_spot hK hK hσ hu).deriv]
   field_simp
 
 /-- **Gamma blows up at the money.** At the spot `s = K` the call gamma tends to `+∞` as the
 remaining maturity tends to `0⁺`. -/
 theorem tendsto_deriv_deriv_callPrice_spot_strike_atTop (hσ : 0 < σ) (hK : 0 < K) :
     Tendsto (fun u => deriv (deriv fun x => callPrice x r σ K u) K) (𝓝[>] 0) atTop := by
-  have h := (tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (r := r) hσ hK).pos_mul_atTop
+  have h := (tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (r := r) hσ.ne' hK).pos_mul_atTop
     (by positivity) (tendsto_inv_nhdsGT_zero.comp tendsto_sqrt_nhdsGT_zero)
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with u hu
@@ -428,23 +445,27 @@ theorem tendsto_deriv_deriv_callPrice_spot_strike_atTop (hσ : 0 < σ) (hK : 0 <
 
 /-- For a positive maturity, put gamma and call gamma agree; as functions of the maturity they
 are eventually equal as `τ → 0⁺`. -/
-private theorem deriv_deriv_putPrice_spot_eventuallyEq (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) :
+private theorem deriv_deriv_putPrice_spot_eventuallyEq (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) :
     (fun u => deriv (deriv fun x => putPrice x r σ K u) s) =ᶠ[𝓝[>] 0]
       fun u => deriv (deriv fun x => callPrice x r σ K u) s := by
   filter_upwards [self_mem_nhdsWithin] with u hu
-  exact deriv_deriv_putPrice_spot hs hK hσ.ne' hu
+  exact deriv_deriv_putPrice_spot hs hK hσ hu
 
 /-- For a fixed spot `s > 0` with `s ≠ K`, the put gamma tends to `0` as the remaining maturity
-tends to `0⁺`. -/
-theorem tendsto_deriv_deriv_putPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K)
-    (hsK : s ≠ K) :
-    Tendsto (fun u => deriv (deriv fun x => putPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) :=
-  (tendsto_deriv_deriv_callPrice_spot_maturity_zero hs hσ hK hsK).congr'
+tends to `0⁺`. As for the call, this holds for every volatility `σ` and every strike `K ≥ 0`. -/
+theorem tendsto_deriv_deriv_putPrice_spot_maturity_zero (hs : 0 < s) (hK : 0 ≤ K) (hsK : s ≠ K) :
+    Tendsto (fun u => deriv (deriv fun x => putPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) := by
+  rcases eq_or_ne σ 0 with rfl | hσ
+  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero
+      (zero_mul _)).symm
+  rcases hK.eq_or_lt with rfl | hK
+  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_putPrice_spot_strike_zero s r σ u).symm
+  exact (tendsto_deriv_deriv_callPrice_spot_maturity_zero hs hK.le hsK).congr'
     (deriv_deriv_putPrice_spot_eventuallyEq hs hσ hK).symm
 
 /-- At the spot `s = K`, `√τ` times the put gamma tends to `1 / (K σ √(2π))` as the remaining
 maturity tends to `0⁺`. -/
-theorem tendsto_sqrt_mul_deriv_deriv_putPrice_spot_strike (hσ : 0 < σ) (hK : 0 < K) :
+theorem tendsto_sqrt_mul_deriv_deriv_putPrice_spot_strike (hσ : σ ≠ 0) (hK : 0 < K) :
     Tendsto (fun u => √u * deriv (deriv fun x => putPrice x r σ K u) K) (𝓝[>] 0)
       (𝓝 (1 / (K * σ * √(2 * π)))) :=
   (tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike hσ hK).congr' <| by
@@ -455,7 +476,7 @@ theorem tendsto_sqrt_mul_deriv_deriv_putPrice_spot_strike (hσ : 0 < σ) (hK : 0
 theorem tendsto_deriv_deriv_putPrice_spot_strike_atTop (hσ : 0 < σ) (hK : 0 < K) :
     Tendsto (fun u => deriv (deriv fun x => putPrice x r σ K u) K) (𝓝[>] 0) atTop :=
   (tendsto_deriv_deriv_callPrice_spot_strike_atTop hσ hK).congr'
-    (deriv_deriv_putPrice_spot_eventuallyEq hK hσ hK).symm
+    (deriv_deriv_putPrice_spot_eventuallyEq hK hσ.ne' hK).symm
 
 /-! ### Vega at maturity -/
 
@@ -467,8 +488,8 @@ theorem tendsto_deriv_callPrice_volatility_maturity_zero (hs : 0 < s) (hσ : σ 
   have hup := (tendsto_mul_sqrt_nhds_zero (s * (√(2 * π))⁻¹)).mono_left
     (nhdsWithin_le_nhds (s := Ioi 0))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hup ?_ ?_ <;>
-    filter_upwards [self_mem_nhdsWithin] with u hu <;>
-    rw [(hasDerivAt_callPrice_volatility hs hK hσ hu).deriv]
+    filter_upwards [self_mem_nhdsWithin] with u _ <;>
+    rw [(hasDerivAt_callPrice_volatility hs hK hσ).deriv]
   · have := gaussianPDFReal_nonneg 0 1 (dPlus s r σ K u)
     positivity
   · have hφ : gaussianPDFReal 0 1 (dPlus s r σ K u) ≤ (√(2 * π))⁻¹ := by
@@ -481,8 +502,8 @@ maturity tends to `0⁺`. -/
 theorem tendsto_deriv_putPrice_volatility_maturity_zero (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) :
     Tendsto (fun u => deriv (fun v => putPrice s r v K u) σ) (𝓝[>] 0) (𝓝 0) := by
   refine (tendsto_deriv_callPrice_volatility_maturity_zero (r := r) hs hσ hK).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with u hu
-  rw [(hasDerivAt_callPrice_volatility hs hK hσ hu).deriv,
-    (hasDerivAt_putPrice_volatility hs hK hσ hu).deriv]
+  filter_upwards [self_mem_nhdsWithin] with u _
+  rw [(hasDerivAt_callPrice_volatility hs hK hσ).deriv,
+    (hasDerivAt_putPrice_volatility hs hK hσ).deriv]
 
 end TauCeti.BlackScholes

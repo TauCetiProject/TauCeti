@@ -58,7 +58,7 @@ namespace TauCeti.InternalGrading
 universe u
 
 variable {k : Type*} {M : Type u} [Field k] [AddCommGroup M] [Module k M] [Module k[X] M]
-  [IsScalarTower k k[X] M] {G : InternalGrading k M} {d : ℕ}
+  [IsScalarTower k k[X] M] {G : InternalGrading k M ℤ} {d : ℕ}
 
 omit [IsScalarTower k k[X] M] in
 /-- For a homogeneous `t` with `X ^ (m - 1) • t ≠ 0` there is a `k`-linear functional `φ` that is
@@ -92,12 +92,12 @@ private theorem exists_functional_eval_X_pow_smul (hd : d ≠ 0)
         exact_mod_cast mul_right_cancel₀ hdz this
       rw [hφ, Submodule.coe_eq_zero.mp (DirectSum.decompose_of_mem_ne _ hmem hne), map_zero]
   · -- Homogeneity: `φ (X ^ j • y_r)` is either `0` or `φ (X ^ j • y)`.
-    have hmem := X_pow_smul_mem_piece hX j (DirectSum.decompose G.piece y r).2
+    have hmem := X_pow_smul_mem_piece hX j (DirectSum.decompose G.piece y r).property
     by_cases hr : r - (j : ℤ) * d = q
     · have key := coe_decompose_X_pow_smul hX j q y
       rw [show q + (j : ℤ) * d = r by omega] at key
       rw [← key, hφ,
-        Subtype.ext (DirectSum.decompose_of_mem_same _ (DirectSum.decompose G.piece _ q).2)]
+        Subtype.ext (DirectSum.decompose_of_mem_same _ (DirectSum.decompose G.piece _ q).property)]
       exact hy j
     · rw [hφ, Submodule.coe_eq_zero.mp (DirectSum.decompose_of_mem_ne _ hmem hr), map_zero]
 
@@ -207,7 +207,7 @@ private theorem exists_supIndep_sup_eq_of_isCompl [Module.Finite k[X] M] (hd : d
     have ht0 : t ≠ 0 := fun h ↦ hr (by rw [h, smul_zero])
     obtain ⟨K', hK', hCK', hCK'K⟩ :=
       exists_disjoint_span_singleton_sup_eq hd hX hK hKm htK
-        (DirectSum.decompose G.piece y r).2 hr
+        (DirectSum.decompose G.piece y r).property hr
     have hCK : k[X] ∙ t ≤ K := hCK'K ▸ le_sup_left
     have hCS : Disjoint (k[X] ∙ t) S := (hSK.mono_right hCK).symm
     have htor : Ideal.torsionOf k[X] M t = Ideal.span {X ^ m} :=
@@ -218,7 +218,7 @@ private theorem exists_supIndep_sup_eq_of_isCompl [Module.Finite k[X] M] (hd : d
         (h ▸ Submodule.mem_sup_right (Submodule.mem_span_singleton_self t))
     · intro t' ht'
       rcases Finset.mem_insert.mp ht' with rfl | ht'
-      · exact ⟨r, m, (DirectSum.decompose G.piece y r).2, hm, htor⟩
+      · exact ⟨r, m, (DirectSum.decompose G.piece y r).property, hm, htor⟩
       · exact hs.1 t' ht'
     · rwa [hsS]
     · rw [Finset.sup_insert, hsS, sup_comm]
@@ -245,8 +245,9 @@ theorem exists_iSupIndep_iSup_span_singleton_eq_of_le_torsion [Module.Finite k[X
   obtain ⟨s, hs, hsL⟩ := exists_supIndep_sup_eq_of_isCompl hd hX hLN ⊥ ∅ L
     ⟨by simp, Finset.supIndep_empty _⟩ (by simp) hL disjoint_bot_left (bot_sup_eq L)
   choose deg m hdeg hm hmt using hs.1
-  refine ⟨s, inferInstance, (↑), fun t ↦ deg t t.2, fun t ↦ m t t.2, fun t ↦ hdeg t t.2,
-    fun t ↦ hm t t.2, fun t ↦ hmt t t.2, hs.2.independent, ?_⟩
+  refine ⟨s, inferInstance, (↑), fun t ↦ deg t t.property, fun t ↦ m t t.property,
+      fun t ↦ hdeg t t.property,
+    fun t ↦ hm t t.property, fun t ↦ hmt t t.property, hs.2.independent, ?_⟩
   rw [← hsL, Finset.sup_eq_iSup, iSup_subtype']
 
 open scoped Classical in

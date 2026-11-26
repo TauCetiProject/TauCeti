@@ -232,12 +232,14 @@ lemma bigSectionsRestrictLE_congr {X X' : Scheme.{u}} {h : X ⟶ S} {h' : X' ⟶
   rfl
 
 /-- Local restriction along the inclusion of an open `V` of `X` is a bijection from the sections
-of `h^* F` over `V` to the global sections of the pullback of `F` to the `S`-scheme `V`. -/
-lemma bijective_bigSectionsRestrictLE_ι {X : Scheme.{u}} (h : X ⟶ S) (V : X.Opens) :
-    Function.Bijective (bigSectionsRestrictLE F V.ι rfl V ⊤ (by simp) :
-      Γ((pullback h).obj F, V) → Γ((pullback (V.ι ≫ h)).obj F, ⊤)) :=
+of `h^* F` over `V` to the global sections of the pullback of `F` to the `S`-scheme `V`, whose
+structure morphism `h'` is any morphism equal to `V.ι ≫ h`. -/
+lemma bijective_bigSectionsRestrictLE_ι {X : Scheme.{u}} (h : X ⟶ S) (V : X.Opens)
+    {h' : V.toScheme ⟶ S} (w : V.ι ≫ h = h') :
+    Function.Bijective (bigSectionsRestrictLE F V.ι w V ⊤ (by simp) :
+      Γ((pullback h).obj F, V) → Γ((pullback h').obj F, ⊤)) :=
   (ConcreteCategory.bijective_of_isIso
-    (((pullbackComp V.ι h).hom.app F ≫ (pullbackCongr rfl).hom.app F).app ⊤)).comp
+    (((pullbackComp V.ι h).hom.app F ≫ (pullbackCongr w).hom.app F).app ⊤)).comp
       (bijective_pullbackSectionsLE_ι _ V ⊤ rfl)
 
 /-- Restricting a global section to the `S`-scheme given by an open `V` is restricting it to `V`
@@ -254,15 +256,79 @@ lemma bigSectionsRestrict_homMk_ι (T : Over S) (V : T.left.Opens)
 the identifications of `bijective_bigSectionsRestrictLE_ι`, restriction of sections from `V` to
 `W`. -/
 lemma bigSectionsRestrict_homMk_homOfLE (T : Over S) {V W : T.left.Opens} (hWV : W ≤ V)
-    (s : Γ((pullback T.hom).obj F, V)) :
-    bigSectionsRestrict F (Over.homMk (T.left.homOfLE hWV) (by simp) :
-        Over.mk (W.ι ≫ T.hom) ⟶ Over.mk (V.ι ≫ T.hom))
-      (bigSectionsRestrictLE F V.ι rfl V ⊤ (by simp) s) =
-      bigSectionsRestrictLE F W.ι rfl W ⊤ (by simp)
+    {hV : V.toScheme ⟶ S} {hW : W.toScheme ⟶ S} (wV : V.ι ≫ T.hom = hV)
+    (wW : W.ι ≫ T.hom = hW) (s : Γ((pullback T.hom).obj F, V)) :
+    bigSectionsRestrict F (Over.homMk (T.left.homOfLE hWV) (by simp [← wV, ← wW]) :
+        Over.mk hW ⟶ Over.mk hV)
+      (bigSectionsRestrictLE F V.ι wV V ⊤ (by simp) s) =
+      bigSectionsRestrictLE F W.ι wW W ⊤ (by simp)
         (((pullback T.hom).obj F).presheaf.map (homOfLE hWV).op s) := by
+  subst wV wW
   rw [bigSectionsRestrict_eq_bigSectionsRestrictLE, bigSectionsRestrictLE_comp]
   refine (bigSectionsRestrictLE_congr F (b' := W.ι) (by simp) _ _ _ _ _).trans ?_
   rw [bigSectionsRestrictLE_map]
+
+variable {F} in
+/-- Local restriction along `b` commutes with a morphism `φ : h^* F ⟶ h^* G`, which acts on the
+restricted sections through its pullback `pullHom φ b` along `b`. -/
+lemma bigSectionsRestrictLE_app {G : S.Modules} {X X' : Scheme.{u}} {h : X ⟶ S} {h' : X' ⟶ S}
+    (b : X' ⟶ X) (w : b ≫ h = h') (φ : (pullback h).obj F ⟶ (pullback h).obj G)
+    (U : X.Opens) (U' : X'.Opens) (hU : U' ≤ b ⁻¹ᵁ U) (s : Γ((pullback h).obj F, U)) :
+    bigSectionsRestrictLE G b w U U' hU (φ.app U s) =
+      (pullHom (F := modulesPseudofunctor) (M₁ := F) (M₂ := G) (f₁ := h) (f₂ := h) φ b h' h'
+        w w).app U' (bigSectionsRestrictLE F b w U U' hU s) := by
+  rw [modulesPseudofunctor_pullHom, bigSectionsRestrictLE_apply, bigSectionsRestrictLE_apply,
+    ← Hom.pullbackSectionsLE_naturality]
+  have key : ((pullbackComp b h).hom.app F ≫ (pullbackCongr w).hom.app F) ≫
+      (pullbackCongr w).inv.app F ≫ (pullbackComp b h).inv.app F ≫ (pullback b).map φ ≫
+        (pullbackComp b h).hom.app G ≫ (pullbackCongr w).hom.app G =
+      (pullback b).map φ ≫ (pullbackComp b h).hom.app G ≫ (pullbackCongr w).hom.app G := by
+    simp
+  exact congr($(key).app U' (b.pullbackSectionsLE ((pullback h).obj F) U U' hU s)).symm
+
+variable {F} in
+/-- Restriction on the big site along `f : T ⟶ T'` commutes with a morphism
+`φ : h'^* F ⟶ h'^* G`, which acts on the restricted sections through `pullHom φ f.left`. -/
+lemma bigSectionsRestrict_app {G : S.Modules} {T T' : Over S} (f : T ⟶ T')
+    (φ : (pullback T'.hom).obj F ⟶ (pullback T'.hom).obj G) (s : Γ((pullback T'.hom).obj F, ⊤)) :
+    bigSectionsRestrict G f (φ.app ⊤ s) =
+      (pullHom (F := modulesPseudofunctor) (M₁ := F) (M₂ := G) (f₁ := T'.hom) (f₂ := T'.hom) φ
+        f.left T.hom T.hom (Over.w f) (Over.w f)).app ⊤ (bigSectionsRestrict F f s) := by
+  rw [bigSectionsRestrict_eq_bigSectionsRestrictLE, bigSectionsRestrict_eq_bigSectionsRestrictLE]
+  exact bigSectionsRestrictLE_app f.left (Over.w f) φ ⊤ ⊤ _ s
+
+/-- Local restriction along `b` of the pullback along `h` of a section of `F` is its pullback along
+`h' = b ≫ h`. -/
+lemma bigSectionsRestrictLE_pullbackSectionsLE {X X' : Scheme.{u}} {h : X ⟶ S} {h' : X' ⟶ S}
+    (b : X' ⟶ X) (w : b ≫ h = h') (U : S.Opens) (V : X.Opens) (V' : X'.Opens)
+    (hV : V ≤ h ⁻¹ᵁ U) (hV' : V' ≤ b ⁻¹ᵁ V) (hV'' : V' ≤ h' ⁻¹ᵁ U) (s : Γ(F, U)) :
+    bigSectionsRestrictLE F b w V V' hV' (h.pullbackSectionsLE F U V hV s) =
+      h'.pullbackSectionsLE F U V' hV'' s := by
+  rw [bigSectionsRestrictLE_apply, Hom.comp_app, ConcreteCategory.comp_apply,
+    Hom.pullbackSectionsLE_comp_hom, Hom.pullbackSectionsLE_congr]
+
+/-- Restriction on the big site along `f : T ⟶ T'` of the pullback of a section of `F` over an open
+`U` of `S` containing the image of `T'` is its pullback to `T`. -/
+lemma bigSectionsRestrict_pullbackSectionsLE {T T' : Over S} (f : T ⟶ T') (U : S.Opens)
+    (hU : ⊤ ≤ T'.hom ⁻¹ᵁ U) (hU' : ⊤ ≤ T.hom ⁻¹ᵁ U) (s : Γ(F, U)) :
+    bigSectionsRestrict F f (T'.hom.pullbackSectionsLE F U ⊤ hU s) =
+      T.hom.pullbackSectionsLE F U ⊤ hU' s := by
+  rw [bigSectionsRestrict_eq_bigSectionsRestrictLE]
+  exact bigSectionsRestrictLE_pullbackSectionsLE F f.left (Over.w f) U ⊤ ⊤ hU _ hU' s
+
+/-- Restricting the section `(h'^* 𝒪_S ≅ 𝒪_{T'})⁻¹ 1` of the big site along `f : T ⟶ T'` gives
+the section `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1`. -/
+lemma bigSectionsRestrict_pullbackObjUnitIso_inv_one {T T' : Over S} (f : T ⟶ T') :
+    bigSectionsRestrict (𝟙_ S.Modules) f
+        ((pullbackObjUnitIso T'.hom).inv.app ⊤ (1 : Γ(T'.left, ⊤))) =
+      (pullbackObjUnitIso T.hom).inv.app ⊤ (1 : Γ(T.left, ⊤)) := by
+  -- Both sections are pullbacks of `1 : Γ(S, ⊤)`: this is `bigSectionsRestrict_pullbackSectionsLE`.
+  have e (X : Scheme.{u}) (g : X ⟶ S) :
+      g.pullbackSectionsLE (𝟙_ S.Modules) ⊤ ⊤ le_top (1 : Γ(S, ⊤)) =
+        (pullbackObjUnitIso g).inv.app ⊤ (1 : Γ(X, ⊤)) :=
+    (g.pullbackSectionsLE_self _ ⊤ _).trans (Hom.pullbackObjUnitIso_inv_app_one g).symm
+  rw [← e, ← e]
+  exact bigSectionsRestrict_pullbackSectionsLE _ f ⊤ le_top le_top _
 
 /-- The presheaf of modules `(T, h) ↦ Γ(T, h^* F)` over the big structure sheaf of `S`, with
 restriction maps `bigSectionsRestrict`. For quasi-coherent `F` it is the module `F^a` on the big

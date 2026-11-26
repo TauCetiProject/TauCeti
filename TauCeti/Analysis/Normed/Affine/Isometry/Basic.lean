@@ -7,6 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Topology.MetricSpace.Holder
+import Mathlib.Analysis.Calculus.ContDiff.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Affine isometries
@@ -15,7 +20,13 @@ For a scalar `c` and an affine isometry `e : V ≃ᵃⁱ[𝕜] V₂` between nor
 isometry `TauCeti.dilateConj c e` has the linear part of `e` and translation part `c • e 0`. For
 `c ≠ 0` it is the conjugate `y ↦ c • e (c⁻¹ • y)` of `e` by the dilations by `c`.
 
-The derivative of an affine isometry equivalence has norm at most one.
+The derivative of an affine isometry equivalence has norm at most one. Composing a function with
+an affine isometry equivalence preserves the norms of its iterated derivatives: on the right in
+every order, and on the left in every positive order, since the translation part only shifts
+the values. These are the affine forms of Mathlib's
+`LinearIsometryEquiv.norm_iteratedFDeriv_comp_right` and
+`LinearIsometryEquiv.norm_iteratedFDeriv_comp_left`. Likewise, composing a map with affine
+isometries on both sides keeps the Hölder constant of its derivative.
 
 ## Main declarations
 
@@ -24,6 +35,12 @@ The derivative of an affine isometry equivalence has norm at most one.
 * `TauCeti.dilateConj_symm_apply`: the inverse of `dilateConj c e`, written out pointwise.
 * `AffineIsometryEquiv.norm_fderiv_le`: the derivative of an affine isometry equivalence has norm
   at most one.
+* `AffineIsometryEquiv.image_frontier`: an affine isometry equivalence maps frontiers to frontiers.
+* `AffineIsometryEquiv.norm_iteratedFDeriv_comp_left`,
+  `AffineIsometryEquiv.norm_iteratedFDeriv_comp_right`: composition with an affine isometry
+  equivalence preserves the norms of iterated derivatives.
+* `AffineIsometry.holderWith_fderiv_comp_comp`: composing a map with affine isometries on both
+  sides keeps the Hölder constant of its derivative.
 -/
 
 public section
@@ -38,7 +55,89 @@ theorem norm_fderiv_le {𝕜 W W₂ : Type*} [NontriviallyNormedField 𝕜]
     (e : W ≃ᵃⁱ[𝕜] W₂) (x : W) : ‖fderiv 𝕜 e x‖ ≤ 1 := by
   simpa using norm_fderiv_le_of_lipschitz 𝕜 e.lipschitzWith (x₀ := x)
 
+/-- An affine isometry equivalence maps the frontier of a set onto the frontier of its image. -/
+theorem image_frontier {𝕜 V V₂ P P₂ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [PseudoMetricSpace P] [NormedAddTorsor V P] [SeminormedAddCommGroup V₂]
+    [NormedSpace 𝕜 V₂] [PseudoMetricSpace P₂] [NormedAddTorsor V₂ P₂] (e : P ≃ᵃⁱ[𝕜] P₂)
+    (s : Set P) : e '' frontier s = frontier (e '' s) :=
+  e.toHomeomorph.image_frontier s
+
+section IteratedFDeriv
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Postcomposition with an affine isometry equivalence preserves the norms of the iterated
+derivatives of positive order. In order zero the translation part changes the values. -/
+theorem norm_iteratedFDeriv_comp_left (g : F ≃ᵃⁱ[𝕜] G) (f : E → F) (x : E) {i : ℕ}
+    (hi : i ≠ 0) : ‖iteratedFDeriv 𝕜 i (g ∘ f) x‖ = ‖iteratedFDeriv 𝕜 i f x‖ := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hi
+  have hg : g ∘ f = fun y ↦ (g.linearIsometryEquiv ∘ f) y + g 0 := by
+    funext y
+    simpa using g.map_vadd 0 (f y)
+  rw [hg, TauCeti.iteratedFDeriv_succ_add_const,
+    LinearIsometryEquiv.norm_iteratedFDeriv_comp_left]
+
+/-- Precomposition with an affine isometry equivalence preserves the norms of the iterated
+derivatives. -/
+theorem norm_iteratedFDeriv_comp_right (g : E ≃ᵃⁱ[𝕜] F) (f : F → G) (x : E) (i : ℕ) :
+    ‖iteratedFDeriv 𝕜 i (f ∘ g) x‖ = ‖iteratedFDeriv 𝕜 i f (g x)‖ := by
+  have hg (y : E) : g y = g.linearIsometryEquiv y + g 0 := by simpa using g.map_vadd 0 y
+  have hfg : f ∘ g = (fun z ↦ f (z + g 0)) ∘ g.linearIsometryEquiv := by
+    funext y
+    simp [hg y]
+  rw [hfg, LinearIsometryEquiv.norm_iteratedFDeriv_comp_right, iteratedFDeriv_comp_add_right,
+    ← hg]
+
+end IteratedFDeriv
+
 end AffineIsometryEquiv
+
+namespace AffineIsometry
+
+section Holder
+
+open scoped NNReal
+
+variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
+  [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- Composing a differentiable map with affine isometries on both sides keeps the Hölder constant
+of its derivative: if `Df` is `α`-Hölder with constant `K`, so is `D(g ∘ f ∘ e)`, since
+`D(g ∘ f ∘ e)(x)` is `Df(e x)` composed on both sides with linear maps of norm at most one. -/
+theorem holderWith_fderiv_comp_comp (e : E →ᵃⁱ[𝕜] F) (g : G →ᵃⁱ[𝕜] H) {f : F → G}
+    (hf : Differentiable 𝕜 f) {K α : ℝ≥0} (hK : HolderWith K α (fderiv 𝕜 f)) :
+    HolderWith K α (fderiv 𝕜 (g ∘ f ∘ e)) := by
+  set A := e.toContinuousAffineMap
+  set B := g.toContinuousAffineMap
+  have hd (x : E) : fderiv 𝕜 (g ∘ f ∘ e) x =
+      B.contLinear.comp ((fderiv 𝕜 f (e x)).comp A.contLinear) :=
+    ((B.hasFDerivAt (x := f (e x))).comp x
+      ((hf (e x)).hasFDerivAt.comp x (A.hasFDerivAt (x := x)))).fderiv
+  have hAn : ‖A.contLinear‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
+    rw [one_mul]
+    exact (e.linearIsometry.norm_map y).le
+  have hBn : ‖B.contLinear‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
+    rw [one_mul]
+    exact (g.linearIsometry.norm_map y).le
+  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
+  rw [hd, hd, dist_eq_norm, ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp]
+  calc ‖B.contLinear.comp ((fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)).comp A.contLinear)‖
+      ≤ ‖B.contLinear‖ * (‖fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)‖ * ‖A.contLinear‖) :=
+        (ContinuousLinearMap.opNorm_comp_le _ _).trans
+          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
+    _ ≤ 1 * (‖fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)‖ * 1) :=
+        mul_le_mul hBn (mul_le_mul_of_nonneg_left hAn (norm_nonneg _))
+          (mul_nonneg (norm_nonneg _) (norm_nonneg _)) zero_le_one
+    _ = dist (fderiv 𝕜 f (e x)) (fderiv 𝕜 f (e y)) := by
+        rw [one_mul, mul_one, dist_eq_norm]
+    _ ≤ K * dist (e x) (e y) ^ (α : ℝ) := hK.dist_le _ _
+    _ = K * dist x y ^ (α : ℝ) := by rw [e.dist_map]
+
+end Holder
+
+end AffineIsometry
 
 namespace TauCeti
 

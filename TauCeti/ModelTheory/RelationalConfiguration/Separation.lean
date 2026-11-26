@@ -57,6 +57,8 @@ Two consequences follow directly from uniform separation:
 
 * `TauCeti.RelationalConfiguration.exists_uniform_bfSeparation`: an analytic set of non-isomorphic
   pairs on a countable carrier is uniformly separated at a single countable back-and-forth level.
+* `TauCeti.RelationalConfiguration.exists_uniform_bfSeparation_prod`: two analytic classes with no
+  isomorphic members are separated at a single countable back-and-forth level.
 * `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_of_analyticSet`,
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_analyticSet`, and
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_measurableSet`: asymptotic saturation
@@ -108,8 +110,8 @@ private theorem tupleMap_append_singleton (g : V × V → V) (w : List (V × V))
     tupleMap g (w ++ [p]) =
       Fin.snoc (tupleMap g w) (g p) ∘ Fin.cast (by simp : (w ++ [p]).length = w.length + 1) := by
   funext i
-  rcases Nat.lt_succ_iff_lt_or_eq.mp (by simpa using i.2 : i.1 < w.length + 1) with hlt | heq
-  · have hi : Fin.cast (by simp : (w ++ [p]).length = w.length + 1) i = Fin.castSucc ⟨i.1, hlt⟩ :=
+  rcases Nat.lt_succ_iff_lt_or_eq.mp (by simpa using i.isLt : i.val < w.length + 1) with hlt | heq
+  · have hi : Fin.cast (by simp : (w ++ [p]).length = w.length + 1) i = Fin.castSucc ⟨i.val, hlt⟩ :=
       by ext; rfl
     rw [Function.comp_apply, hi, Fin.snoc_castSucc]
     simp [tupleMap, List.getElem_append_left hlt]
@@ -119,9 +121,9 @@ private theorem tupleMap_append_singleton (g : V × V → V) (w : List (V × V))
     simp [tupleMap, heq]
 
 private theorem tupleMap_eq_comp_append_singleton (g : V × V → V) (w : List (V × V)) (p : V × V) :
-    tupleMap g w = tupleMap g (w ++ [p]) ∘ fun i : Fin w.length => ⟨i.1, by simp⟩ := by
+    tupleMap g w = tupleMap g (w ++ [p]) ∘ fun i : Fin w.length => ⟨i.val, by simp⟩ := by
   funext i
-  simp [tupleMap, List.getElem_append_left i.2]
+  simp [tupleMap, List.getElem_append_left i.isLt]
 
 private theorem tupleMap_ofFn_comp_cast (g : V × V → V) {N : ℕ} (f : Fin N → V × V) :
     tupleMap g (List.ofFn f) ∘ Fin.cast List.length_ofFn.symm = fun i => g (f i) := by
@@ -131,7 +133,8 @@ private theorem tupleMap_ofFn_comp_cast (g : V × V → V) {N : ℕ} (f : Fin N 
 /-- Schedule constraint along an enumeration `enum : ℕ → V`: even positions prescribe the left
 entry `enum (i / 2)` and odd positions prescribe the right entry `enum (i / 2)`. -/
 private def bfSchedule (enum : ℕ → V) (w : List (V × V)) : Prop :=
-  ∀ i : Fin w.length, if Even i.1 then (w[i]).1 = enum (i.1 / 2) else (w[i]).2 = enum (i.1 / 2)
+  ∀ i : Fin w.length, if Even i.val then (w[i]).1 = enum (i.val / 2) else (w[i]).2 = enum
+      (i.val / 2)
 
 /-- Membership condition for the forced back-and-forth tree of `(c, d)` along `enum`: the schedule
 is respected and the projected tuples have the same atomic type in `c` and `d`. -/
@@ -143,13 +146,13 @@ private def bfNode (enum : ℕ → V) (c d : RelationalConfiguration L V) (w : L
 private theorem bfNode_of_append_singleton {enum : ℕ → V} {c d : RelationalConfiguration L V}
     {w : List (V × V)} {p : V × V} (h : bfNode enum c d (w ++ [p])) : bfNode enum c d w := by
   refine ⟨fun i => ?_, ?_⟩
-  · have hi := h.1 ⟨i.1, by simp⟩
-    simpa [List.getElem_append_left i.2] using hi
+  · have hi := h.1 ⟨i.val, by simp⟩
+    simpa [List.getElem_append_left i.isLt] using hi
   · rw [tupleMap_eq_comp_append_singleton Prod.fst w p,
       tupleMap_eq_comp_append_singleton Prod.snd w p]
     exact @SameAtomicType.comp L (w ++ [p]).length V V c.toStructure d.toStructure _
       (tupleMap Prod.fst (w ++ [p])) (tupleMap Prod.snd (w ++ [p])) h.2 w.length
-      fun i => ⟨i.1, by simp⟩
+      fun i => ⟨i.val, by simp⟩
 
 /-- The forced back-and-forth descriptive tree of `(c, d)` along `enum : ℕ → V`. -/
 private def bfTree (enum : ℕ → V) (c d : RelationalConfiguration L V) : Descriptive.tree (V × V) :=
@@ -167,7 +170,7 @@ private theorem isClosed_setOf_mem_bfTree (enum : ℕ → V) (w : List (V × V))
       w ∈ bfTree enum q.1 q.2} := by
   have heq : {q : RelationalConfiguration L V × RelationalConfiguration L V |
       w ∈ bfTree enum q.1 q.2} =
-      {q | bfSchedule enum w} ∩
+      {_q | bfSchedule enum w} ∩
         ⋂ idx : AtomicIdx L w.length,
           {q | @AtomicIdx.Holds L w.length V q.1.toStructure idx (tupleMap Prod.fst w) ↔
             @AtomicIdx.Holds L w.length V q.2.toStructure idx (tupleMap Prod.snd w)} := by
@@ -309,8 +312,9 @@ private theorem not_bfEquiv_of_rank_subAt_bfTree_le {enum : ℕ → V}
         (w ++ [p]).length (Fin.cast (by simp))
     have hmem : w ++ [p] ∈ bfTree enum c d := by
       refine ⟨fun i => ?_, ?_⟩
-      · rcases Nat.lt_succ_iff_lt_or_eq.mp (by simpa using i.2 : i.1 < w.length + 1) with hlt | heq
-        · simpa [List.getElem_append_left hlt] using hw.1 ⟨i.1, hlt⟩
+      · rcases Nat.lt_succ_iff_lt_or_eq.mp (by simpa using i.isLt : i.val < w.length + 1) with hlt |
+          heq
+        · simpa [List.getElem_append_left hlt] using hw.1 ⟨i.val, hlt⟩
         · simpa [heq] using hpsched
       · exact @BFEquiv.sameAtomicType L _ V V c.toStructure d.toStructure (w ++ [p]).length
           (tupleMap Prod.fst (w ++ [p])) (tupleMap Prod.snd (w ++ [p])) δ hpbf'
@@ -365,6 +369,17 @@ theorem exists_uniform_bfSeparation [Countable V]
     rw [← hβ₀_eq, bfEquivSetoid_lift] at hnot
     rw [bfEquivSetoid_lift] at hbf
     exact hnot hbf
+
+/-- **Uniform back-and-forth separation of two classes.** If `B` and `C` are analytic sets of
+configurations on a countable carrier `V` and no member of `B` is isomorphic to a member of `C`,
+then a single countable ordinal `β < ω₁` makes no member of `B` back-and-forth equivalent at depth
+`β` to a member of `C`. -/
+theorem exists_uniform_bfSeparation_prod [Countable V] {B C : Set (RelationalConfiguration L V)}
+    (hB : AnalyticSet B) (hC : AnalyticSet C) (hdisj : ∀ c ∈ B, ∀ d ∈ C, ¬ isoSetoid L V c d) :
+    ∃ β : Ordinal.{o}, β < ω₁ ∧ ∀ c ∈ B, ∀ d ∈ C, ¬ bfEquivSetoid L V β c d := by
+  obtain ⟨β, hβ, hsep⟩ := exists_uniform_bfSeparation.{u, v, w, o} (hB.prod hC)
+    fun p hp => hdisj p.1 hp.1 p.2 hp.2
+  exact ⟨β, hβ, fun c hc d hd => hsep (c, d) ⟨hc, hd⟩⟩
 
 /-! ### Asymptotic saturation of analytic and Borel splits -/
 

@@ -31,10 +31,12 @@ only interval-integrable.
   its decay at infinity.
 * `TauCeti.Contour.dixonH2_norm_le_of_integrable` / `dixonH2_tendsto_zero_of_integrable` — the `L¹`
   versions, via the shared estimate `norm_integral_inv_sub_smul_le`.
+* `TauCeti.Contour.dixonH2_tendsto_zero_of_continuousOn`: decay at infinity for every `f`, for a
+  curve continuous on `uIcc a b`.
 
 The decay of `dixonH2` (hence of Dixon's glued function, which agrees with it far out) is the input
 to the Liouville step of Dixon's proof of the homology form of Cauchy's theorem
-(`homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`).
+(`homologyCauchyTheorem`).
 
 ## Provenance
 
@@ -128,5 +130,24 @@ theorem dixonH2_tendsto_zero_of_integrable {R : ℝ} (hR : ∀ t ∈ Ι a b, ‖
     (hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b) :
     Tendsto (dixonH2 f γ a b) (cocompact ℂ) (nhds 0) :=
   tendsto_zero_cocompact_of_norm_le_div fun _ hw ↦ dixonH2_norm_le_of_integrable hR hg hw
+
+/-- **`dixonH2 f γ a b` tends to `0` along `cocompact ℂ` for a continuous curve.** For every
+`f : ℂ → ℂ` and every curve `γ` continuous on `uIcc a b`, `dixonH2 f γ a b w → 0` as `w → ∞`. -/
+theorem dixonH2_tendsto_zero_of_continuousOn (hγ : ContinuousOn γ (uIcc a b)) :
+    Tendsto (dixonH2 f γ a b) (cocompact ℂ) (nhds 0) := by
+  -- With an interval-integrable weight `f (γ ·) * deriv γ` this is the `L¹` decay bound. Otherwise
+  -- the Cauchy integrand is not integrable at any `w` off the curve, so `dixonH2 f γ a b w = 0`
+  -- at every `w` of large norm.
+  obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn hγ
+  by_cases hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b
+  · exact dixonH2_tendsto_zero_of_integrable (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hg
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [(isCompact_closedBall (0 : ℂ) R).compl_mem_cocompact] with w hw
+  have hoff : ∀ t ∈ uIcc a b, γ t - w ≠ 0 := fun t ht h ↦
+    hw (mem_closedBall_zero_iff.mpr (sub_eq_zero.mp h ▸ hR t ht))
+  -- Multiplying the Cauchy integrand by the continuous factor `γ t - w` recovers the weight.
+  refine ((dixonH2_def f γ a b w).trans (intervalIntegral.integral_undef fun hint ↦ hg
+    (intervalIntegrable_mul_deriv_of_pow_sub_mul_eq (n := 1) (w := w) hγ hint fun t ht ↦ ?_))).symm
+  field_simp [hoff t (uIoc_subset_uIcc ht)]
 
 end TauCeti.Contour

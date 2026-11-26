@@ -33,7 +33,7 @@ private theorem exists_subtypeValClosedBallTangentEquiv (x : closedBall (0 : V) 
       e.toContinuousLinearMap =
         (NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : V)).toContinuousLinearMap.comp
           (mfderiv (𝓡∂ n) 𝓘(ℝ, V) Subtype.val x) := by
-  obtain ⟨φ, hφ, hchart⟩ := exists_chartAt_closedBall_eq (n := n) x
+  obtain ⟨φ, _, hchart⟩ := exists_chartAt_closedBall_eq (n := n) x
   let z := extChartAt (𝓡∂ n) x x
   let c : EuclideanSpace ℝ (Fin n) := -EuclideanSpace.single 0 1
   have hzrange : z ∈ range (𝓡∂ n) := extChartAt_target_subset_range x (mem_extChartAt_target x)
@@ -83,6 +83,18 @@ normed-model tangent identification. -/
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : V)).toContinuousLinearMap.comp
         (mfderiv (𝓡∂ n) 𝓘(ℝ, V) Subtype.val x) :=
   (exists_subtypeValClosedBallTangentEquiv (n := n) x).choose_spec
+
+/-- The inclusion derivative sends the tangent vector corresponding to `v` back to `v`. -/
+@[simp] theorem mfderiv_subtypeVal_closedBall_symm_apply (x : closedBall (0 : V) 1) (v : V) :
+    mfderiv (𝓡∂ n) 𝓘(ℝ, V) Subtype.val x ((subtypeValClosedBallTangentEquiv (n := n) x).symm v) =
+      v := by
+  have he := ContinuousLinearMap.ext_iff.1
+    (subtypeValClosedBallTangentEquiv_toContinuousLinearMap (n := n) x)
+    ((subtypeValClosedBallTangentEquiv (n := n) x).symm v)
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at he
+  -- `NormedSpace.fromTangentSpace (x : V)` is the identity of `V` by definition, so `he` is the
+  -- claim read backwards.
+  exact he.symm
 
 /-- The inclusion of the closed unit ball has an injective derivative at every point, including at
 the points of its boundary sphere. -/

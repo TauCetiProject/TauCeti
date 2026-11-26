@@ -12,7 +12,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import Mathlib.Topology.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
@@ -30,6 +31,10 @@ inverse image as the base change from `R` to `S`. This is the affine-cover input
 and base change. The module structures remain caller parameters, including at the top open.
 Use `pullbackSectionsEquiv` for extension of scalars along the coordinate-ring map, and
 `isBaseChange_pullbackSections` for extension along the original base-ring map `R ⟶ S`.
+More generally, for affine opens `U` and `V ≤ g⁻¹ U`, pulling back sections and restricting them
+to `V` is a base change along `Γ(X, U) → Γ(Y, V)`, even when `g⁻¹ U` is not affine
+(`isBaseChange_pullbackSectionsLE`); this is the case of the cartesian-square statement below with
+identity vertical maps.
 
 When `R → S` is flat, the same holds over every quasi-compact quasi-separated open `U`, which is
 flat base change for the sections of a quasicoherent sheaf
@@ -56,8 +61,16 @@ statements.
 
 * `AlgebraicGeometry.Scheme.Hom.span_singleton_pullbackSections_eq_top`: over affine opens, the
   pullback of a generator of the sections generates the sections of the pullback.
+* `AlgebraicGeometry.Scheme.Hom.pullbackSections_injective`: over affine opens with faithfully
+  flat coordinate-ring map, pulling back sections is injective;
+  `AlgebraicGeometry.Scheme.Hom.pullbackSections_injective_of_field` treats any nonempty
+  scheme over a field.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`: base change of sections over an
   affine open, along any base-ring map.
+* `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSectionsLE`: for affine opens `U` and
+  `V ≤ g⁻¹ U`, sections over `V` of the pullback are the base change along `Γ(X, U) → Γ(Y, V)`;
+  `AlgebraicGeometry.Scheme.Hom.isBaseChange_app_pullbackSectionsLE_of_isIso` transports this
+  along a morphism `g^* M ⟶ N` inducing an isomorphism on sections over `V`.
 * `AlgebraicGeometry.Scheme.Hom.flat_sectionsBase_pullback`: flatness of the sections over an
   affine open survives every base change.
 * `AlgebraicGeometry.Scheme.Hom.liftBaseChange_pullbackSectionsBaseLinear_injective`: for flat
@@ -90,45 +103,9 @@ private lemma chartPullback_unit (s : Γ(M, U)) :
     ((restrictFunctorIsoPullback hU.fromSpec).hom.app M).app ⊤
       (M.fromSpecSectionsEquiv hU s) =
     Scheme.Hom.pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s := by
-  have h : (restrictAdjunction hU.fromSpec).unit.app M ≫
-      (pushforward hU.fromSpec).map ((restrictFunctorIsoPullback hU.fromSpec).hom.app M) =
-      (pullbackPushforwardAdjunction hU.fromSpec).unit.app M :=
-    Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction hU.fromSpec)
-      (pullbackPushforwardAdjunction hU.fromSpec) M
-  have he := congrArg (fun a ↦ a.app U s) h
-  simp only [Hom.comp_app, pushforward_map_app, restrictAdjunction_unit_app_app] at he
-  have he' : ((restrictFunctorIsoPullback hU.fromSpec).hom.app M).app
-      (hU.fromSpec ⁻¹ᵁ U)
-        (M.presheaf.map (homOfLE (hU.fromSpec.image_preimage_le U)).op s) =
-      hU.fromSpec.pullbackSections M U s := by
-    rw [Scheme.Hom.pullbackSections_apply]
-    exact he
-  have hn := PresheafOfModules.naturality_apply
-    ((restrictFunctorIsoPullback hU.fromSpec).hom.app M).val
-    (homOfLE (hU.fromSpec_preimage_self.ge)).op
-    (M.presheaf.map (homOfLE (hU.fromSpec.image_preimage_le U)).op s)
-  have hs : M.fromSpecSectionsEquiv hU s =
-      (M.restrict hU.fromSpec).presheaf.map (homOfLE (hU.fromSpec_preimage_self.ge)).op
-        (M.presheaf.map (homOfLE (hU.fromSpec.image_preimage_le U)).op s) := by
-    rw [fromSpecSectionsEquiv_apply]
-    apply (ConcreteCategory.bijective_of_isIso (M.restrictAppIso hU.fromSpec ⊤).hom).injective
-    rw [← ConcreteCategory.comp_apply, Iso.inv_hom_id, ConcreteCategory.id_apply]
-    -- Restriction along an open immersion computes on image opens.
-    change M.presheaf.map _ s = M.presheaf.map _ (M.presheaf.map _ s)
-    rw [← M.presheaf.map_comp_apply]
-    rfl
-  calc
-    _ = ((restrictFunctorIsoPullback hU.fromSpec).hom.app M).app ⊤
-        ((M.restrict hU.fromSpec).presheaf.map (homOfLE (hU.fromSpec_preimage_self.ge)).op
-          (M.presheaf.map (homOfLE (hU.fromSpec.image_preimage_le U)).op s)) :=
-      congrArg _ hs
-    _ = ((pullback hU.fromSpec).obj M).presheaf.map (homOfLE (hU.fromSpec_preimage_self.ge)).op
-        (((restrictFunctorIsoPullback hU.fromSpec).hom.app M).app (hU.fromSpec ⁻¹ᵁ U)
-          (M.presheaf.map (homOfLE (hU.fromSpec.image_preimage_le U)).op s)) := hn
-    _ = Scheme.Hom.pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s := by
-      rw [Scheme.Hom.pullbackSectionsLE_apply]
-      exact congrArg (((pullback hU.fromSpec).obj M).presheaf.map
-        (homOfLE (hU.fromSpec_preimage_self.ge)).op) he'
+  rw [fromSpecSectionsEquiv_apply, restrictFunctorIsoPullback_hom_app_restrictAppIso_inv,
+    Scheme.Hom.pullbackSectionsLE_map]
+
 private lemma chartPullback_unit_inv (s : Γ(M, U)) :
     ((restrictFunctorIsoPullback hU.fromSpec).inv.app M).app ⊤
       (Scheme.Hom.pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s) =
@@ -438,8 +415,8 @@ theorem liftBaseChange_pullbackSectionsBaseLinear_injective [Module.Flat R S] {U
   -- Cover `U` by finitely many affine opens `V i`.
   obtain ⟨s, hs, hsU⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hU
   have := hs.to_subtype
-  let V : s → X.Opens := fun i ↦ i.1
-  have hVU (i : s) : V i ≤ U := hsU ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.2
+  let V : s → X.Opens := fun i ↦ i.val
+  have hVU (i : s) : V i ≤ U := hsU ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.property
   have hUV : U ≤ ⨆ i, V i := by rw [hsU, iSup_subtype']
   let := fun i ↦ sectionsBaseModule R M (V i)
   let := fun i ↦ sectionsBaseModule S ((pullback g).obj M) (g ⁻¹ᵁ V i)
@@ -453,7 +430,7 @@ theorem liftBaseChange_pullbackSectionsBaseLinear_injective [Module.Flat R S] {U
     (f := sectionsRestrictPiBaseLinear R M V hVU)
     (f' := sectionsRestrictPiBaseLinear S ((pullback g).obj M) (fun i ↦ g ⁻¹ᵁ V i)
       fun i ↦ g.preimage_mono (hVU i)) ?_
-    (isBaseChange_pi_pullbackSectionsBaseLinear g M H V fun i ↦ i.1.2)
+    (isBaseChange_pi_pullbackSectionsBaseLinear g M H V fun i ↦ i.val.property)
     (sectionsRestrictPiBaseLinear_injective R M V hVU hUV)
   ext x i
   simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.coe_proj, Function.eval,
@@ -554,13 +531,15 @@ theorem isBaseChange_pullbackSections_of_isQuasiSeparated [Module.Flat R S] {U :
   -- Cover `U` by finitely many affine opens; their pairwise intersections are quasi-compact.
   obtain ⟨s, hs, hsU⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hU
   have := hs.to_subtype
-  have hVU (i : s) : (i.1 : X.Opens) ≤ U :=
-    hsU ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.2
-  exact isBaseChange_pullbackSectionsBaseLinear_of_cover g M H (fun i : s ↦ i.1) (fun i ↦ i.1.2)
-    hVU (by rw [hsU, iSup_subtype']) (fun p : s × s ↦ p.1.1 ⊓ p.2.1) Prod.fst Prod.snd
+  have hVU (i : s) : (i.val : X.Opens) ≤ U :=
+    hsU ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.property
+  exact isBaseChange_pullbackSectionsBaseLinear_of_cover g M H (fun i : s ↦ i.val)
+      (fun i ↦ i.val.property)
+    hVU (by rw [hsU, iSup_subtype']) (fun p : s × s ↦ p.1.val ⊓ p.2.val) Prod.fst Prod.snd
     (fun _ ↦ inf_le_left) (fun _ ↦ inf_le_right) (fun i j ↦ ⟨(i, j), rfl, rfl, le_rfl⟩)
-    fun p ↦ hU' _ _ (hVU p.1) p.1.1.1.isOpen p.1.1.2.isCompact (hVU p.2) p.2.1.1.isOpen
-      p.2.1.2.isCompact
+    fun p ↦ hU' _ _ (hVU p.1) p.1.val.val.isOpen p.1.val.property.isCompact
+        (hVU p.2) p.2.val.val.isOpen
+      p.2.val.property.isCompact
 
 /-- **Base change of global sections.** Let `Y = X ×_R S` with projection `g : Y ⟶ X`. For a
 quasi-coherent sheaf `M` on `X`, pulling back global sections exhibits the global sections of
@@ -646,20 +625,6 @@ lemma pullbackSectionsLEBaseLinear_apply (g' : X' ⟶ X) (M : X.Modules) (w : Co
       pullbackSectionsLEBaseLinear g' M w h eX eY eY' s = g'.pullbackSectionsLE M UX UY eY s := by
   intro _ _ _ _ _ _ s
   rfl
-
-/-- The structure map `Γ(B, V) ⟶ Γ(U, T)` of an open subscheme `U` of `Z` over the affine open `V`
-of `B`, for the algebra structure through `baseRingToStructurePresheaf`, is `k.appLE` followed by
-restriction to `T`. -/
-private lemma algebraMap_baseRingToStructurePresheaf_eq_appLE {Z B : Scheme.{u}} (k : Z ⟶ B)
-    {V : B.Opens} (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens)
-    (r : Γ(B, V)) :
-    letI : U.toScheme.Over (Spec (.of Γ(B, V))) := ⟨k.resLE V U e ≫ hV.isoSpec.hom⟩
-    letI : Algebra Γ(B, V) Γ(U.toScheme, T) :=
-      ((U.toScheme.baseRingToStructurePresheaf Γ(B, V)).app (op T)).hom.toAlgebra
-    algebraMap Γ(B, V) Γ(U.toScheme, T) r =
-      (U.ι.appLE U T (by simp)).hom ((k.appLE V U e).hom r) := by
-  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
-  exact congrArg (fun φ ↦ φ.hom r) (Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE k hV U e T)
 
 /-- Pulling sections back along the inclusion of the open subscheme `UX` identifies the sections
 of `M` over `UX` with the global sections of the pullback to `UX`, linearly over `Γ(S, W)`. -/
@@ -868,5 +833,119 @@ theorem isBaseChange_pullbackSectionsLEBaseLinear (g' : X' ⟶ X) (M : X.Modules
       IsBaseChange Γ(S', W') (pullbackSectionsLEBaseLinear g' M H.toCommSq h eX
         (hUY.le.trans inf_le_left) (hUY.le.trans inf_le_right)) :=
   isBaseChange_pullbackSectionsLEBaseLinear_aux g' M H hW hW' h eX (.inl hUX) hUY
+
+end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {X Y : Scheme.{u}} (g : Y ⟶ X) (M : X.Modules) [M.IsQuasicoherent]
+
+/-- **Base change of sections over affine opens inside the inverse image.** For affine opens `U`
+of `X` and `V ≤ g⁻¹ U` of `Y`, and `M` quasi-coherent, pulling back sections along `g` and
+restricting them to `V` exhibits `Γ(V, g^* M)` as the base change
+`Γ(Y, V) ⊗[Γ(X, U)] Γ(U, M)` along `g.appLE U V hVU`. Unlike `pullbackSectionsEquiv`, the inverse
+image `g⁻¹ U` need not be affine. The `Γ(X, U)`-algebra structure on `Γ(Y, V)`, which must be
+given by `g.appLE U V hVU`, the `Γ(X, U)`-module structure on `Γ(V, g^* M)` and the linear map
+are caller parameters. -/
+theorem isBaseChange_pullbackSectionsLE {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) [Algebra Γ(X, U) Γ(Y, V)]
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(Y, V) r = g.appLE U V hVU r)
+    [Module Γ(X, U) Γ((pullback g).obj M, V)]
+    [IsScalarTower Γ(X, U) Γ(Y, V) Γ((pullback g).obj M, V)]
+    (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback g).obj M, V))
+    (hφ : ∀ s, φ s = g.pullbackSectionsLE M U V hVU s) : IsBaseChange Γ(Y, V) φ := by
+  obtain rfl : ‹Algebra Γ(X, U) Γ(Y, V)› = (g.appLE U V hVU).hom.toAlgebra :=
+    Algebra.algebra_ext _ _ hA
+  -- Apply the base change theorem for cartesian squares to the square with identity verticals.
+  -- Its statement lets the identities act on functions through `(𝟙 _).appLE`, so the two
+  -- corresponding scalar towers are supplied explicitly.
+  have h := @isBaseChange_pullbackSectionsLEBaseLinear _ _ _ _ _ _ _ g M _
+    (IsPullback.id_vert g) U hU V hV hVU U le_rfl hU V (by simpa using hVU) _ _ _
+    (@IsScalarTower.of_algebraMap_smul _ _ _ _ _
+      (Scheme.Hom.appLE (𝟙 X) U U le_rfl).hom.toAlgebra _ _
+      fun r s ↦ by rw [RingHom.algebraMap_toAlgebra, appLE_eq_id_of_eq_id rfl _ le_rfl]; rfl)
+    (@IsScalarTower.of_algebraMap_smul _ _ _ _ _
+      (Scheme.Hom.appLE (𝟙 Y) V V le_rfl).hom.toAlgebra _ _
+      fun r s ↦ by rw [RingHom.algebraMap_toAlgebra, appLE_eq_id_of_eq_id rfl _ le_rfl]; rfl) _
+  convert h using 1
+  exact LinearMap.ext hφ
+
+-- Adapted from roed-math/TauCeti-w2-fresh, lookahead/StableReduction/relative-ampleness,
+-- commit efa6fc8f3735.
+/-- Pullback of sections to affine opens `U` and `V ≤ g⁻¹ U` is injective when the
+coordinate-ring map `g.appLE U V hVU` is faithfully flat. -/
+theorem pullbackSectionsLE_injective {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U)
+    (h : (g.appLE U V hVU).hom.FaithfullyFlat) :
+    Function.Injective (g.pullbackSectionsLE M U V hVU) := by
+  let := (g.appLE U V hVU).hom.toAlgebra
+  let := Module.compHom Γ((pullback g).obj M, V) (algebraMap Γ(X, U) Γ(Y, V))
+  have : IsScalarTower Γ(X, U) Γ(Y, V) Γ((pullback g).obj M, V) :=
+    IsScalarTower.of_compHom _ _ _
+  have : Module.FaithfullyFlat Γ(X, U) Γ(Y, V) := h
+  let φ : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback g).obj M, V) :=
+    { toFun := g.pullbackSectionsLE M U V hVU
+      map_add' := map_add _
+      map_smul' := fun r s ↦ (g.pullbackSectionsLE M U V hVU).map_smulₛₗ r s }
+  exact (g.isBaseChange_pullbackSectionsLE M hU hV hVU (fun _ ↦ rfl) φ (fun _ ↦ rfl))
+    |>.injective_of_tensorProduct_mk_injective
+      (Module.FaithfullyFlat.tensorProduct_mk_injective Γ(M, U))
+
+/-- Over affine opens with faithfully flat coordinate-ring map, pulling back sections of a
+quasi-coherent module is injective. -/
+theorem pullbackSections_injective {U : X.Opens} (hU : IsAffineOpen U)
+    (hV : IsAffineOpen (g ⁻¹ᵁ U)) (h : (g.app U).hom.FaithfullyFlat) :
+    Function.Injective (g.pullbackSections M U) := by
+  have hf : (g.appLE U (g ⁻¹ᵁ U) le_rfl).hom.FaithfullyFlat := by
+    simpa only [appLE_eq_app] using h
+  intro s t hst
+  apply g.pullbackSectionsLE_injective M hU hV le_rfl hf
+  rw [g.pullbackSectionsLE_self M U s, g.pullbackSectionsLE_self M U t, hst]
+
+/-- Pulling back global sections from a field spectrum to any nonempty scheme over that field
+is injective. In particular this applies to residue-field extensions. -/
+theorem pullbackSections_injective_of_field {k : Type u} [Field k] {Y : Scheme.{u}}
+    (g : Y ⟶ Spec (.of k)) [Nonempty Y] (N : (Spec (.of k)).Modules) :
+    Function.Injective (g.pullbackSections N ⊤) := by
+  let y : Y := Classical.choice ‹Nonempty Y›
+  obtain ⟨U, hU, hyU, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top y)
+  have : Nontrivial Γ(Y, U) := (Y.presheaf.germ U y hyU).hom.domain_nontrivial
+  have hk : IsField Γ(Spec (.of k), ⊤) :=
+    (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.toMulEquiv.isField (Field.toIsField k)
+  let := hk.toField
+  have hUtop : U ≤ g ⁻¹ᵁ ⊤ := by simp
+  let := (g.appLE ⊤ U hUtop).hom.toAlgebra
+  have hf : (g.appLE ⊤ U hUtop).hom.FaithfullyFlat := by
+    exact inferInstanceAs (Module.FaithfullyFlat Γ(Spec (.of k), ⊤) Γ(Y, U))
+  intro s t hst
+  apply g.pullbackSectionsLE_injective N (isAffineOpen_top _) hU hUtop hf
+  rw [pullbackSectionsLE_apply, pullbackSectionsLE_apply, hst]
+
+/-- Variant of `isBaseChange_pullbackSectionsLE` for a morphism `α : g^* M ⟶ N` inducing an
+isomorphism on sections over `V`, such as a component of a pulled-back graded algebra:
+pulling back sections to `V` and applying `α.app V` is a base change along `g.appLE U V hVU`. -/
+theorem isBaseChange_app_pullbackSectionsLE_of_isIso {N : Y.Modules}
+    (α : (pullback g).obj M ⟶ N) {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) [IsIso (α.app V)] [Algebra Γ(X, U) Γ(Y, V)]
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(Y, V) r = g.appLE U V hVU r)
+    [Module Γ(X, U) Γ(N, V)] [IsScalarTower Γ(X, U) Γ(Y, V) Γ(N, V)]
+    (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ(N, V))
+    (hφ : ∀ s, φ s = α.app V (g.pullbackSectionsLE M U V hVU s)) : IsBaseChange Γ(Y, V) φ := by
+  -- Restrict scalars on `Γ(V, g^* M)` along `Γ(X, U) → Γ(Y, V)`, so that pulling back sections
+  -- is `Γ(X, U)`-linear, and transport the base change along the sections of `α` over `V`.
+  let : Module Γ(X, U) Γ((pullback g).obj M, V) := Module.compHom _ (algebraMap Γ(X, U) Γ(Y, V))
+  have : IsScalarTower Γ(X, U) Γ(Y, V) Γ((pullback g).obj M, V) :=
+    .of_algebraMap_smul fun _ _ ↦ rfl
+  let ψ : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback g).obj M, V) :=
+    { toFun := g.pullbackSectionsLE M U V hVU
+      map_add' := map_add _
+      map_smul' r s := ((g.pullbackSectionsLE M U V hVU).map_smulₛₗ r s).trans
+        (congrArg (· • _) (hA r).symm) }
+  let e : Γ((pullback g).obj M, V) ≃ₗ[Γ(Y, V)] Γ(N, V) :=
+    LinearEquiv.ofBijective
+      { toFun := α.app V, map_add' := map_add _, map_smul' := α.app_smul }
+      (ConcreteCategory.bijective_of_isIso (α.app V))
+  exact (IsBaseChange.iff_of_equiv_comm (.refl _ _) e (LinearMap.ext hφ)).mp
+    (g.isBaseChange_pullbackSectionsLE M hU hV hVU hA ψ fun _ ↦ rfl)
 
 end AlgebraicGeometry.Scheme.Hom

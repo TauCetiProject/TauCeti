@@ -46,6 +46,10 @@ of multiplication by `2` (Silverman X.1.4).
 * `WeierstrassCurve.Affine.Point.sq_xCoord_add_sub_add_evalEval_polynomialX_div`: the square root
   `((x - e)² - c_T) / ψ₂` of `x(2P) - e` is fixed by translation by `O` and `T`, and changes sign
   under translation by the other two points of order two.
+* `WeierstrassCurve.Affine.Point.two_ne_zero_of_two_lt_card`: more than two points of order
+  dividing two force `2 ≠ 0` (for an elliptic curve), and
+  `WeierstrassCurve.Affine.Point.two_ne_zero_of_two_lt_card_ker_nsmul_two` is the same for the
+  kernel of multiplication by `2`.
 * `WeierstrassCurve.Affine.Point.xCoord_add_sub`: when `(x - e)² = c_T`, translation by a point
   of order two sends `x - e` to `±(x - e)`, with the same signs.
 
@@ -231,5 +235,58 @@ theorem Point.xCoord_add_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalE
     have hC := evalEval_polynomialX_add_evalEval_polynomialX hT.1 hψ hT₀.1 hψ₀ he
     apply mul_right_cancel₀ (sub_ne_zero.2 hx)
     linear_combination hA - hC + hx2
+
+omit [DecidableEq F] in
+/-- More than two points of order dividing two force `2 ≠ 0`: in characteristic two the affine
+points of order dividing two lie on `a₁x + a₃ = 0`, and there is at most one of them. -/
+theorem Point.two_ne_zero_of_two_lt_card [W.IsElliptic] {S : Finset W.Point}
+    (hS : ∀ T ∈ S, -T = T) (hcard : 2 < S.card) : (2 : F) ≠ 0 := by
+  classical
+  intro h2
+  let _ : CharP F 2 := (CharP.charP_iff_prime_eq_zero Nat.prime_two).mpr h2
+  -- An affine point of order dividing two satisfies `a₁x + a₃ = 0`, as `2y + a₁x + a₃ = 0`.
+  have hlin {x y : F} (h : W.Nonsingular x y) (hT : -Point.some x y h = Point.some x y h) :
+      W.a₁ * x + W.a₃ = 0 := by
+    rw [Point.neg_some, Point.some.injEq] at hT
+    have h := hT.2
+    simp only [negY] at h
+    linear_combination -h - y * h2
+  have hle : (S.erase 0).card ≤ 1 := by
+    refine Finset.card_le_one.mpr fun a ha b hb ↦ ?_
+    obtain ⟨ha0, haS⟩ := Finset.mem_erase.mp ha
+    obtain ⟨hb0, hbS⟩ := Finset.mem_erase.mp hb
+    cases a with
+    | zero => exact absurd rfl ha0
+    | some x y h =>
+    cases b with
+    | zero => exact absurd rfl hb0
+    | some x' y' h' =>
+    have hx := hlin h (hS _ haS)
+    have hx' := hlin h' (hS _ hbS)
+    -- `a₁ = 0` would force `a₃ = 0`, and then the discriminant vanishes.
+    have ha1 : W.a₁ ≠ 0 := fun h1 ↦ by
+      have h3 : W.a₃ = 0 := by simpa [h1] using hx
+      exact W.isUnit_Δ.ne_zero (by simp [W.Δ_of_char_two, h1, h3])
+    have hxx : x = x' := mul_left_cancel₀ ha1 (by linear_combination hx - hx')
+    subst hxx
+    have hn : W.negY x y' = y' := by
+      have h := hS _ hbS
+      rw [Point.neg_some, Point.some.injEq] at h
+      exact h.2
+    obtain rfl : y = y' := (Y_eq_of_X_eq h.left h'.left rfl).elim id (·.trans hn)
+    rfl
+  have := Finset.pred_card_le_card_erase (s := S) (a := 0)
+  omega
+
+/-- More than two points killed by `2` force `2 ≠ 0` (for an elliptic curve). -/
+theorem Point.two_ne_zero_of_two_lt_card_ker_nsmul_two [W.IsElliptic]
+    (hcard : 2 < Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker) : (2 : F) ≠ 0 := by
+  set k := (nsmulAddMonoidHom (α := W.Point) 2).ker
+  have : Finite k := Nat.finite_of_card_ne_zero (by lia)
+  let _ := Fintype.ofFinite k
+  refine two_ne_zero_of_two_lt_card (S := (Finset.univ : Finset k).map (.subtype (· ∈ k)))
+    (fun _ hT ↦ ?_) (by rwa [Finset.card_map, Finset.card_univ, ← Nat.card_eq_fintype_card])
+  obtain ⟨⟨T, hT⟩, -, rfl⟩ := Finset.mem_map.mp hT
+  exact neg_eq_of_add_eq_zero_right (by simpa [k, two_nsmul] using hT)
 
 end WeierstrassCurve.Affine

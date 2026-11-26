@@ -15,7 +15,16 @@ to a prime ideal of `T`. This is Mathlib's `Ideal.exists_ideal_over_prime_of_isI
 directly for `g`, so callers need not install an algebra structure.
 
 Along an integral algebra, maximal ideals contract to maximal ideals, so the extension of an
-ideal contained in the Jacobson radical is again contained in the Jacobson radical.
+ideal contained in the Jacobson radical of the contraction of an ideal `J` is contained in the
+Jacobson radical of `J`.
+
+For an integral algebra `S` over a local ring `R`, every maximal ideal of `S` therefore lies over
+the maximal ideal of `R`. For local `S` this includes `maximalIdeal S`, for which Mathlib's
+instance needs `IsLocalHom (algebraMap R S)`; an example is the integral closure of a local ring in
+a field whenever that closure is local.
+
+Incomparability over the zero ideal: an ideal of a `P`-algebra `B` lying over the zero ideal of `P`
+is minimal as soon as it contains a minimal prime `p` with `B ⧸ p` algebraic over `P`.
 
 ## Main results
 
@@ -25,16 +34,23 @@ ideal contained in the Jacobson radical is again contained in the Jacobson radic
   `T` contracts to a prime alone above `p` in any intermediate ring over which `T` is integral.
 * `Ideal.comap_eq_maximalIdeal_of_isIntegral`: along an integral algebra over a local ring, every
   maximal ideal contracts to the maximal ideal.
-* `Ideal.map_le_jacobson_bot_of_isIntegral`: along an integral algebra, the extension of an ideal
-  in the Jacobson radical lies in the Jacobson radical.
+* `Ideal.liesOver_maximalIdeal_of_isIntegral`: for an integral algebra `S` over a local ring `R`,
+  every maximal ideal of `S` lies over `maximalIdeal R`.
+* `TauCeti.radical_map_maximalIdeal_of_isIntegral`: along an integral algebra of local
+  rings, the radical of the extended maximal ideal is the maximal ideal of the target.
+* `Ideal.map_le_jacobson_of_isIntegral`: along an integral algebra, the extension of an ideal in
+  the Jacobson radical of an ideal `K` lies in the Jacobson radical of any ideal `J` above `K`.
+* `Ideal.mem_minimalPrimes_of_under_eq_bot_of_isAlgebraic_quotient`: an ideal over the zero ideal
+  is minimal when it contains a minimal prime with algebraic quotient.
 
 ## References
 
 * Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `a39c3781b9850b9f3d5cbc9920322a3b8e365ef2` (Apache-2.0),
-  `lean/Pcf/Stacks/Purity/FiniteAlgebraIdempotents.lean`: `map_le_jacobson_bot_of_isIntegral` is
-  the algebra form of its `Pcf.Stacks.map_le_jacobson_bot_of_le_jacobson_of_isIntegral`.
+  `lean/Pcf/Stacks/Purity/FiniteAlgebraIdempotents.lean`: `map_le_jacobson_of_isIntegral`
+  generalises the algebra form of its `Pcf.Stacks.map_le_jacobson_bot_of_le_jacobson_of_isIntegral`
+  from the zero ideals to arbitrary ideals.
 -/
 
 public section
@@ -48,8 +64,7 @@ containing the kernel of `g` is the contraction along `g` of a prime of `T`. -/
 theorem exists_comap_eq_of_isIntegral (P : Ideal S) [P.IsPrime]
     (g : S →+* T) (hg : g.IsIntegral) (hP : RingHom.ker g ≤ P) :
     ∃ Q : Ideal T, Q.IsPrime ∧ Q.comap g = P := by
-  let _ : Algebra S T := g.toAlgebra
-  have : Algebra.IsIntegral S T := ⟨hg⟩
+  algebraize [g]
   obtain ⟨Q, -, hQ, hQP⟩ := exists_ideal_over_prime_of_isIntegral P (⊥ : Ideal T)
     (by rwa [under_def, RingHom.algebraMap_toAlgebra, ← RingHom.ker_eq_comap_bot])
   exact ⟨Q, hQ, hQP⟩
@@ -60,28 +75,78 @@ theorem primesOver_eq_singleton_under_of_primesOver_eq_singleton {R : Type*} [Co
     [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Algebra.IsIntegral S T]
     [FaithfulSMul S T] {p : Ideal R} {P : Ideal T} (h : p.primesOver T = {P}) :
     p.primesOver S = {P.under S} := by
-  obtain ⟨_, _⟩ : P ∈ p.primesOver T := h ▸ rfl
+  obtain ⟨_, _⟩ : P ∈ p.primesOver T := h ▸ Set.mem_singleton P
   refine Set.eq_singleton_iff_unique_mem.mpr ⟨⟨inferInstance, inferInstance⟩, ?_⟩
   rintro Q ⟨_, _⟩
   obtain ⟨⟨Q', _, _⟩⟩ := nonempty_primesOver (S := T) Q
   have : Q'.LiesOver p := .trans Q' Q p
-  have hmem : Q' ∈ p.primesOver T := ⟨inferInstance, inferInstance⟩
-  rw [h] at hmem
-  rw [LiesOver.over (P := Q') (p := Q), hmem]
+  have hQ' : Q' = P := Set.mem_singleton_iff.mp <| h ▸ ⟨inferInstance, inferInstance⟩
+  rw [LiesOver.over (P := Q') (p := Q), hQ']
 
-/-- Along an integral algebra, the extension of an ideal in the Jacobson radical lies in the
-Jacobson radical, since maximal ideals contract to maximal ideals. -/
-theorem map_le_jacobson_bot_of_isIntegral [Algebra S T] [Algebra.IsIntegral S T] {I : Ideal S}
-    (hI : I ≤ jacobson ⊥) : I.map (algebraMap S T) ≤ jacobson ⊥ := by
-  refine le_sInf fun M ⟨_, hM⟩ ↦ map_le_iff_le_comap.mpr <| hI.trans <| sInf_le
-    ⟨bot_le, isMaximal_comap_of_isIntegral_of_isMaximal (algebraMap S T)
-      (fun x ↦ Algebra.IsIntegral.isIntegral x) M⟩
+/-- Along an integral algebra `S → T`, let `K` be an ideal of `S` contained in the contraction of
+an ideal `J` of `T`. Then the extension to `T` of an ideal of `S` contained in the Jacobson radical
+of `K` is contained in the Jacobson radical of `J`. Taking `K = J.under S` gives the sharpest
+form; taking `K` and `J` to be `⊥` gives the statement for the Jacobson radicals of the rings. -/
+theorem map_le_jacobson_of_isIntegral [Algebra S T] [Algebra.IsIntegral S T] {I K : Ideal S}
+    {J : Ideal T} (hKJ : K ≤ J.under S) (hI : I ≤ K.jacobson) :
+    I.map (algebraMap S T) ≤ J.jacobson :=
+  le_sInf fun M ⟨hJM, _⟩ ↦ map_le_iff_le_comap.mpr <| hI.trans <|
+    sInf_le ⟨hKJ.trans (comap_mono hJM), IsMaximal.under S M⟩
 
 /-- Along an integral algebra over a local ring, every maximal ideal contracts to the maximal
 ideal. -/
 theorem comap_eq_maximalIdeal_of_isIntegral {R : Type*} [CommRing R] [IsLocalRing R]
     [Algebra R S] [Algebra.IsIntegral R S] (P : Ideal S) [P.IsMaximal] :
     P.comap (algebraMap R S) = IsLocalRing.maximalIdeal R :=
-  IsLocalRing.eq_maximalIdeal (isMaximal_under_of_isIntegral_of_isMaximal (R := R) P)
+  IsLocalRing.eq_maximalIdeal (IsMaximal.under R P)
+
+/-- For an integral algebra `S` over a local ring `R`, every maximal ideal of `S` lies over the
+maximal ideal of `R`. In particular, when `S` is local, so does `maximalIdeal S`; unlike Mathlib's
+instance for that case, this needs no `IsLocalHom (algebraMap R S)`: the contraction of a maximal
+ideal is maximal by integrality. -/
+instance liesOver_maximalIdeal_of_isIntegral {R : Type*} [CommRing R] [IsLocalRing R]
+    [Algebra R S] [Algebra.IsIntegral R S] (P : Ideal S) [P.IsMaximal] :
+    P.LiesOver (IsLocalRing.maximalIdeal R) :=
+  ⟨(comap_eq_maximalIdeal_of_isIntegral P).symm⟩
+
+/-- **An ideal over zero above an algebraic component is minimal.** Let `B` be a `P`-algebra, `p` a
+minimal prime of `B` with `B ⧸ p` algebraic over `P`, and `q ≥ p` an ideal of `B` lying over the
+zero ideal of `P`. Then `q = p`, so `q` is a minimal prime: an ideal strictly above `p` contains a
+nonzero element of `B ⧸ p` algebraic over `P`, and hence a nonzero element of `P`. -/
+theorem mem_minimalPrimes_of_under_eq_bot_of_isAlgebraic_quotient {P B : Type*} [CommRing P]
+    [CommRing B] [Algebra P B] {p : Ideal B} (hp : p ∈ minimalPrimes B)
+    [Algebra.IsAlgebraic P (B ⧸ p)] {q : Ideal B} (hpq : p ≤ q) (hq : q.under P = ⊥) :
+    q ∈ minimalPrimes B := by
+  have := hp.1.1
+  -- The image of `q` in `B ⧸ p` lies over the zero ideal of `P`, like `q`.
+  have hq' : (q.map (Quotient.mk p)).under P = ⊥ := by
+    rw [← under_under (B := B), under, under, Quotient.algebraMap_eq, comap_map_mk hpq]
+    exact hq
+  suffices q ≤ p from (le_antisymm this hpq) ▸ hp
+  intro d hd
+  by_contra hdp
+  -- The image of `d` in the domain `B ⧸ p` is nonzero and algebraic over `P`.
+  have hd0 : Quotient.mk p d ≠ 0 := by rwa [ne_eq, Quotient.eq_zero_iff_mem]
+  exact under_ne_bot_of_algebraic_mem hd0 (mem_map_of_mem _ hd)
+    (Algebra.IsAlgebraic.isAlgebraic _) hq'
 
 end Ideal
+
+/-- Along an integral algebra `R → S` of local rings, the radical of the extended maximal ideal
+`𝔪_R S` is `𝔪_S`: the closed point of `Spec S` is the unique prime over `𝔪_R`. -/
+theorem TauCeti.radical_map_maximalIdeal_of_isIntegral {R S : Type*} [CommRing R]
+    [IsLocalRing R] [CommRing S] [IsLocalRing S] [Algebra R S] [Algebra.IsIntegral R S] :
+    ((IsLocalRing.maximalIdeal R).map (algebraMap R S)).radical =
+      IsLocalRing.maximalIdeal S := by
+  apply le_antisymm
+  · exact (Ideal.IsPrime.radical_le_iff inferInstance).mpr <|
+      Ideal.map_le_iff_le_comap.mpr
+        (Ideal.comap_eq_maximalIdeal_of_isIntegral (IsLocalRing.maximalIdeal S)).ge
+  · rw [Ideal.radical_eq_sInf]
+    refine le_sInf fun J ⟨hIJ, hJp⟩ ↦ ?_
+    have hcomap : IsLocalRing.maximalIdeal R = J.under R :=
+      (IsLocalRing.maximalIdeal.isMaximal R).eq_of_le (hJp.comap _).ne_top
+        (Ideal.map_le_iff_le_comap.mp hIJ)
+    exact (IsLocalRing.eq_maximalIdeal <|
+      Ideal.isMaximal_of_isIntegral_of_isMaximal_under (R := R) J
+        (hcomap ▸ IsLocalRing.maximalIdeal.isMaximal R)).ge

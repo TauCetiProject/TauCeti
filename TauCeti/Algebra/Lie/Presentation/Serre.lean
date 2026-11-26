@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Lie.SerreConstruction
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Basic
-import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Quotient
 
 /-!
@@ -44,25 +43,19 @@ relators rather than about the geometry behind them. Accordingly no statement be
 system: `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` are named after the free generators
 `Hᵢ`, `Eᵢ`, `Fᵢ` they are the images of, and reading them as a coroot and a pair of simple root
 vectors of a split semisimple Lie algebra needs the identification of the presented algebra with
-one, which is not proved here (see the Roadmap section below).
+one, which is not proved here (see the Applications section below).
 
 ## Main definitions
 
-* `TauCeti.serreMk`: the quotient map presenting `Matrix.ToLieAlgebra R CM`.
-* `TauCeti.serreH`, `TauCeti.serreE`, `TauCeti.serreF`: the generators of the presented algebra.
 * `TauCeti.IsSerreSystem`: three families of elements of a Lie algebra satisfying Serre's relations
   for `CM`.
+* `TauCeti.serreMk`: the quotient map presenting `Matrix.ToLieAlgebra R CM`.
+* `TauCeti.serreH`, `TauCeti.serreE`, `TauCeti.serreF`: the generators of the presented algebra.
 * `TauCeti.serreLift`: the homomorphism out of `Matrix.ToLieAlgebra R CM` determined by a Serre
   system.
 
 ## Main results
 
-* `TauCeti.isSerreSystem_serre`: the generators of `Matrix.ToLieAlgebra R CM` are a Serre system,
-  with the individual relations available as `TauCeti.lie_serreH_serreH` and its companions.
-* `TauCeti.serreLift_serreH`, `TauCeti.serreLift_serreE`, `TauCeti.serreLift_serreF` and
-  `TauCeti.serre_hom_ext`: `TauCeti.serreLift` sends the generators to the given Serre system, and
-  is the unique homomorphism doing so; `TauCeti.serre_equiv_ext` is the same extensionality
-  principle for equivalences out of the presented algebra.
 * `TauCeti.IsSerreSystem.lie_E_E_of_eq_zero` and `TauCeti.IsSerreSystem.lie_F_F_of_eq_zero`: in a
   Serre system, two raising or two lowering elements commute at nodes `i`, `j` with `CMᵢⱼ = 0`;
   `TauCeti.lie_serreE_serreE_of_eq_zero` and `TauCeti.lie_serreF_serreF_of_eq_zero` are the
@@ -76,23 +69,26 @@ one, which is not proved here (see the Roadmap section below).
 * `TauCeti.IsSerreSystem.lie_lie_E_E_F_of_ne` and `TauCeti.IsSerreSystem.lie_lie_F_F_E_of_ne`:
   the nested brackets `⁅⁅Eᵢ, Eⱼ⁆, Fⱼ⁆` and `⁅⁅Fᵢ, Fⱼ⁆, Eⱼ⁆` at distinct nodes are `-CMⱼᵢ • Eᵢ` and
   `-CMⱼᵢ • Fᵢ`.
+* `TauCeti.isSerreSystem_serre`: the generators of `Matrix.ToLieAlgebra R CM` are a Serre system,
+  with the individual relations available as `TauCeti.lie_serreH_serreH` and its companions.
+* `TauCeti.serreLift_serreH`, `TauCeti.serreLift_serreE`, `TauCeti.serreLift_serreF` and
+  `TauCeti.serre_hom_ext`: `TauCeti.serreLift` sends the generators to the given Serre system, and
+  is the unique homomorphism doing so; `TauCeti.serre_equiv_ext` is the same extensionality
+  principle for equivalences out of the presented algebra.
 * `TauCeti.serreLift_eq_id`: lifting the generators along their own Serre system is the identity.
-* `TauCeti.lieSpan_serreGenerators_eq_top`: the generators generate the presented algebra.
 * `TauCeti.lieSpan_serreE_union_serreF_eq_top`: the raising and lowering generators alone generate
   the presented algebra.
+* `TauCeti.lieSpan_serreGenerators_eq_top`: the generators generate the presented algebra.
 
-## Roadmap
+## Applications
 
-This is a prerequisite for the Chevalley--Demazure construction, Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which builds the split reductive group scheme over `ℤ`
-of a pinned root datum from a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra of
-the corresponding split semisimple Lie algebra. The Serre presentation of the pinned Cartan matrix
-is the explicit carrier of that Lie algebra, and the generators named here are the ones a Chevalley
-basis of it starts from. Consumed in turn by milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. The presentation theorem identifying the presented algebra
-with a concrete split semisimple Lie algebra is a separate target, Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`; it consumes `TauCeti.serreLift`
-to build its comparison map, and is not begun here.
+The Chevalley--Demazure construction builds the split reductive group scheme over `ℤ` of a pinned
+root datum from a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra of the
+corresponding split semisimple Lie algebra. The Serre presentation of the pinned Cartan matrix is
+the explicit carrier of that Lie algebra, and the generators named here are the ones a Chevalley
+basis of it starts from. The presentation theorem identifying the presented algebra with a concrete
+split semisimple Lie algebra uses `TauCeti.serreLift` to build its comparison map, and is not
+proved here.
 
 ## References
 
@@ -106,9 +102,263 @@ namespace TauCeti
 
 open CartanMatrix CartanMatrix.Relations LieAlgebra
 
-variable {B : Type*} [DecidableEq B] (R : Type*) [CommRing R] (CM : Matrix B B ℤ)
+/-! ## Serre systems -/
 
-/-! ## The generators -/
+section SerreSystem
+
+variable {B : Type*} (R : Type*) [CommRing R] (CM : Matrix B B ℤ)
+variable {L : Type*} [LieRing L] [LieAlgebra R L]
+
+/-- Three families `H`, `E`, `F` of elements of a Lie algebra form a *Serre system* for the matrix
+`CM` when they satisfy Serre's relations for `CM`. The fields are in bijection with the six
+families of relators generating `CartanMatrix.Relations.toIdeal`, the `⁅E, F⁆` family being split
+into its diagonal and off-diagonal halves. -/
+structure IsSerreSystem (H E F : B → L) : Prop where
+  /-- The `Hᵢ` commute. -/
+  lie_H_H : ∀ i j, ⁅H i, H j⁆ = 0
+  /-- `⁅Eᵢ, Fᵢ⁆` is `Hᵢ`. -/
+  lie_E_F_self : ∀ i, ⁅E i, F i⁆ = H i
+  /-- `Eᵢ` and `Fⱼ` commute for `i ≠ j`. -/
+  lie_E_F_of_ne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0
+  /-- `ad Hᵢ` multiplies `Eⱼ` by `CMᵢⱼ`. -/
+  lie_H_E : ∀ i j, ⁅H i, E j⁆ = CM i j • E j
+  /-- `ad Hᵢ` multiplies `Fⱼ` by `-CMᵢⱼ`. -/
+  lie_H_F : ∀ i j, ⁅H i, F j⁆ = -(CM i j • F j)
+  /-- The higher Serre relation on the `E`'s. -/
+  ad_pow_lie_E_E : ∀ i j, (ad R L (E i) ^ (-CM i j).toNat) ⁅E i, E j⁆ = 0
+  /-- The higher Serre relation on the `F`'s. -/
+  ad_pow_lie_F_F : ∀ i j, (ad R L (F i) ^ (-CM i j).toNat) ⁅F i, F j⁆ = 0
+
+namespace IsSerreSystem
+
+variable {R CM} {H E F : B → L}
+
+/-! ### Cartan weights and simple `sl₂` triples -/
+
+/-- A nonzero Cartan generator at a diagonal entry two forms an `sl₂` triple with its
+raising and lowering generators. -/
+theorem isSl2Triple (hs : IsSerreSystem R CM H E F) {i : B}
+    (hii : CM i i = 2) (hH : H i ≠ 0) : IsSl2Triple (H i) (E i) (F i) where
+  h_ne_zero := hH
+  lie_e_f := hs.lie_E_F_self i
+  lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
+  lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i
+
+/-- The raising weight relation with the Cartan entry read in the base ring. -/
+theorem lie_H_E_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
+    ⁅H i, E j⁆ = (CM i j : R) • E j := by
+  simpa only [Int.cast_smul_eq_zsmul] using hs.lie_H_E i j
+
+/-- The lowering weight relation with the negative Cartan entry read in the base ring. -/
+theorem lie_H_F_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
+    ⁅H i, F j⁆ = -(CM i j : R) • F j := by
+  simpa only [neg_smul, Int.cast_smul_eq_zsmul] using hs.lie_H_F i j
+
+/-- In a torsion-free Serre system, a zero Cartan generator forces every raising generator
+with a nonzero Cartan entry in its row to vanish. -/
+theorem E_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
+    E j = 0 := by
+  apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
+  simpa [hH] using (hs.lie_H_E i j).symm
+
+/-- In a torsion-free Serre system, a zero Cartan generator forces every lowering generator
+with a nonzero Cartan entry in its row to vanish. -/
+theorem F_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
+    F j = 0 := by
+  apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
+  simpa [hH] using (hs.lie_H_F i j).symm
+
+/-- In a torsion-free Serre system, a zero Cartan generator forces every Cartan generator with
+a nonzero Cartan entry in its row to vanish. -/
+theorem H_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
+    H j = 0 := by
+  rw [← hs.lie_E_F_self j, hs.E_eq_zero_of_H_eq_zero hH hij, zero_lie]
+
+/-- In a torsion-free Serre system, at a bond whose two Cartan entries are nonzero, a zero Cartan
+generator at the node `j` forces the raising and lowering generators at both nodes to vanish. -/
+theorem eq_zero_of_H_eq_zero_of_cartan_ne_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hij : CM i j ≠ 0) (hji : CM j i ≠ 0)
+    (hj : H j = 0) : E i = 0 ∧ F i = 0 ∧ E j = 0 ∧ F j = 0 := by
+  have hi0 : H i = 0 := hs.H_eq_zero_of_H_eq_zero hj hji
+  exact ⟨hs.E_eq_zero_of_H_eq_zero hj hji, hs.F_eq_zero_of_H_eq_zero hj hji,
+    hs.E_eq_zero_of_H_eq_zero hi0 hij, hs.F_eq_zero_of_H_eq_zero hi0 hij⟩
+
+/-! ### Orthogonal generators commute
+
+When `CMᵢⱼ = 0` the higher Serre relation `(ad Eᵢ) ^ (-CMᵢⱼ).toNat ⁅Eᵢ, Eⱼ⁆ = 0` has exponent
+zero, so it says that `Eᵢ` and `Eⱼ` commute, and likewise for the `F`'s. -/
+
+/-- In a Serre system, the raising elements at `i` and `j` commute when `CMᵢⱼ = 0`. -/
+theorem lie_E_E_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : CM i j = 0) : ⁅E i, E j⁆ = 0 := by
+  simpa [hij] using h.ad_pow_lie_E_E i j
+
+/-- In a Serre system, the lowering elements at `i` and `j` commute when `CMᵢⱼ = 0`. -/
+theorem lie_F_F_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : CM i j = 0) : ⁅F i, F j⁆ = 0 := by
+  simpa [hij] using h.ad_pow_lie_F_F i j
+
+/-! ### Stability of Serre systems
+
+Serre's relations are stable under reindexing the three families along an injective map of index
+sets, provided the matrix is reindexed the same way, and under the signed exchange of the raising
+and lowering families. Both are statements about an arbitrary Serre system in an arbitrary Lie
+algebra. Applied to the generators of the presented algebra, reindexing along an arbitrary
+injective map gives homomorphisms between different presentations, while only the
+matrix-preserving permutations and the signed exchange give automorphisms, in
+`TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean`. -/
+
+/-- The image of a Serre system under a Lie algebra homomorphism is a Serre system. -/
+theorem map {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (h : IsSerreSystem R CM H E F) (f : L →ₗ⁅R⁆ L') :
+    IsSerreSystem R CM (f ∘ H) (f ∘ E) (f ∘ F) where
+  lie_H_H i j := by
+    simp only [Function.comp_apply, ← f.map_lie, h.lie_H_H i j, map_zero]
+  lie_E_F_self i := by
+    simp only [Function.comp_apply, ← f.map_lie, h.lie_E_F_self i]
+  lie_E_F_of_ne i j hij := by
+    simp only [Function.comp_apply, ← f.map_lie, h.lie_E_F_of_ne i j hij, map_zero]
+  lie_H_E i j := by
+    simp only [Function.comp_apply, ← f.map_lie, h.lie_H_E i j, map_zsmul]
+  lie_H_F i j := by
+    simp only [Function.comp_apply, ← f.map_lie, h.lie_H_F i j, map_neg, map_zsmul]
+  ad_pow_lie_E_E i j := by
+    simp only [Function.comp_apply, ← f.map_lie, ← LieHom.map_ad_pow,
+      h.ad_pow_lie_E_E i j, map_zero]
+  ad_pow_lie_F_F i j := by
+    simp only [Function.comp_apply, ← f.map_lie, ← LieHom.map_ad_pow,
+      h.ad_pow_lie_F_F i j, map_zero]
+
+/-- Serre relations can be checked after an injective Lie algebra homomorphism. -/
+theorem of_injective {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : L →ₗ⁅R⁆ L') (hf : Function.Injective f)
+    (h : IsSerreSystem R CM (f ∘ H) (f ∘ E) (f ∘ F)) : IsSerreSystem R CM H E F where
+  lie_H_H i j := hf <| by
+    simpa only [Function.comp_apply, f.map_lie, map_zero] using h.lie_H_H i j
+  lie_E_F_self i := hf <| by
+    simpa only [Function.comp_apply, f.map_lie] using h.lie_E_F_self i
+  lie_E_F_of_ne i j hij := hf <| by
+    simpa only [Function.comp_apply, f.map_lie, map_zero] using h.lie_E_F_of_ne i j hij
+  lie_H_E i j := hf <| by
+    simpa only [Function.comp_apply, f.map_lie, map_zsmul] using h.lie_H_E i j
+  lie_H_F i j := hf <| by
+    simpa only [Function.comp_apply, f.map_lie, map_neg, map_zsmul] using h.lie_H_F i j
+  ad_pow_lie_E_E i j := hf <| by
+    simpa only [Function.comp_apply, LieHom.map_ad_pow, f.map_lie, map_zero] using
+      h.ad_pow_lie_E_E i j
+  ad_pow_lie_F_F i j := hf <| by
+    simpa only [Function.comp_apply, LieHom.map_ad_pow, f.map_lie, map_zero] using
+      h.ad_pow_lie_F_F i j
+
+/-- A Serre system over one base ring transfers to any other base ring for which the same Lie
+ring has a Lie-algebra structure. -/
+-- The other five fields are ring-independent as stated: the two eigenvector relations scale by
+-- the integer entry `CM i j` through its `ℤ`-action, and the remaining three mention no scalars.
+theorem changeScalars {S : Type*} [CommRing S] [LieAlgebra S L]
+    (h : IsSerreSystem R CM H E F) : IsSerreSystem S CM H E F :=
+  { h with
+    ad_pow_lie_E_E := fun i j => by
+      rw [← ad_pow_apply_eq_ad_pow_apply R S]
+      exact h.ad_pow_lie_E_E i j
+    ad_pow_lie_F_F := fun i j => by
+      rw [← ad_pow_apply_eq_ad_pow_apply R S]
+      exact h.ad_pow_lie_F_F i j }
+
+/-- Reindexing a Serre system along an injective map of index sets gives a Serre system for the
+matrix reindexed the same way. -/
+theorem submatrix {B' : Type*} {f : B' → B} (hf : Function.Injective f)
+    (h : IsSerreSystem R CM H E F) :
+    IsSerreSystem R (CM.submatrix f f) (H ∘ f) (E ∘ f) (F ∘ f) where
+  lie_H_H i j := h.lie_H_H (f i) (f j)
+  lie_E_F_self i := h.lie_E_F_self (f i)
+  lie_E_F_of_ne i j hij := h.lie_E_F_of_ne (f i) (f j) fun hc => hij (hf hc)
+  lie_H_E i j := h.lie_H_E (f i) (f j)
+  lie_H_F i j := h.lie_H_F (f i) (f j)
+  ad_pow_lie_E_E i j := h.ad_pow_lie_E_E (f i) (f j)
+  ad_pow_lie_F_F i j := h.ad_pow_lie_F_F (f i) (f j)
+
+/-- Reindexing a Serre system along a permutation `σ` of the index set that preserves the matrix
+gives a Serre system for the same matrix. -/
+theorem perm {σ : Equiv.Perm B} (h : IsSerreSystem R CM H E F) (hσ : CM.submatrix σ σ = CM) :
+    IsSerreSystem R CM (H ∘ σ) (E ∘ σ) (F ∘ σ) :=
+  hσ ▸ h.submatrix σ.injective
+
+/-- Negating the Cartan family of a Serre system and exchanging its raising and lowering families,
+again with a sign, gives a Serre system for the same matrix. This is the symmetry of Serre's
+relations behind the Chevalley involution. -/
+theorem neg_swap (h : IsSerreSystem R CM H E F) :
+    IsSerreSystem R CM (fun i => -H i) (fun i => -F i) (fun i => -E i) where
+  lie_H_H i j := by simp [h.lie_H_H i j]
+  lie_E_F_self i := by
+    rw [neg_lie, lie_neg, neg_neg, ← lie_skew, h.lie_E_F_self i]
+  lie_E_F_of_ne i j hij := by
+    rw [neg_lie, lie_neg, neg_neg, ← lie_skew, h.lie_E_F_of_ne j i (Ne.symm hij), neg_zero]
+  lie_H_E i j := by rw [neg_lie, lie_neg, neg_neg, h.lie_H_F i j, smul_neg]
+  lie_H_F i j := by rw [neg_lie, lie_neg, neg_neg, h.lie_H_E i j, smul_neg, neg_neg]
+  ad_pow_lie_E_E i j := by
+    rw [neg_lie, lie_neg, neg_neg]
+    exact ad_neg_pow_apply_eq_zero (h.ad_pow_lie_F_F i j)
+  ad_pow_lie_F_F i j := by
+    rw [neg_lie, lie_neg, neg_neg]
+    exact ad_neg_pow_apply_eq_zero (h.ad_pow_lie_E_E i j)
+
+/-! ### Single-bond and nested brackets
+
+At a Cartan entry of minus one, the higher Serre relation says that the bracket of two
+raising (or lowering) generators commutes with the first generator. Applying this at the
+reversed entry gives commutation with the second generator.
+
+The bracket relations of a Serre system determine the nested bracket of two raising elements at
+distinct nodes with the lowering element at the second node, and, through the signed exchange
+`TauCeti.IsSerreSystem.neg_swap`, its lowering counterpart. -/
+
+/-- At a Cartan entry of minus one, the raising bracket commutes with its first generator. -/
+theorem lie_E_lie_E_E_of_eq_neg_one (h : IsSerreSystem R CM H E F)
+    {i j : B} (hij : CM i j = -1) : ⁅E i, ⁅E i, E j⁆⁆ = 0 := by
+  simpa only [hij, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_E_E i j
+
+/-- At the reversed Cartan entry of minus one, the raising bracket commutes with its
+second generator. -/
+theorem lie_E_lie_E_E_swap_of_eq_neg_one (h : IsSerreSystem R CM H E F)
+    {i j : B} (hji : CM j i = -1) : ⁅E j, ⁅E i, E j⁆⁆ = 0 := by
+  rw [← lie_skew (E i) (E j), lie_neg, h.lie_E_lie_E_E_of_eq_neg_one hji, neg_zero]
+
+/-- At a Cartan entry of minus one, the lowering bracket commutes with its first generator. -/
+theorem lie_F_lie_F_F_of_eq_neg_one (h : IsSerreSystem R CM H E F)
+    {i j : B} (hij : CM i j = -1) : ⁅F i, ⁅F i, F j⁆⁆ = 0 := by
+  simpa only [hij, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_F_F i j
+
+/-- At the reversed Cartan entry of minus one, the lowering bracket commutes with its
+second generator. -/
+theorem lie_F_lie_F_F_swap_of_eq_neg_one (h : IsSerreSystem R CM H E F)
+    {i j : B} (hji : CM j i = -1) : ⁅F j, ⁅F i, F j⁆⁆ = 0 := by
+  rw [← lie_skew (F i) (F j), lie_neg, h.lie_F_lie_F_F_of_eq_neg_one hji, neg_zero]
+
+/-- At distinct nodes `i ≠ j`, the nested bracket `⁅⁅Eᵢ, Eⱼ⁆, Fⱼ⁆` is `-CMⱼᵢ • Eᵢ`. -/
+theorem lie_lie_E_E_F_of_ne (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : i ≠ j) : ⁅⁅E i, E j⁆, F j⁆ = -(CM j i • E i) := by
+  rw [lie_lie, h.lie_E_F_self, h.lie_E_F_of_ne i j hij, lie_zero, sub_zero,
+    ← lie_skew (E i) (H j), h.lie_H_E]
+
+/-- At distinct nodes `i ≠ j`, the nested bracket `⁅⁅Fᵢ, Fⱼ⁆, Eⱼ⁆` is `-CMⱼᵢ • Fᵢ`. -/
+theorem lie_lie_F_F_E_of_ne (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : i ≠ j) : ⁅⁅F i, F j⁆, E j⁆ = -(CM j i • F i) := by
+  have hswap := h.neg_swap.lie_lie_E_E_F_of_ne hij
+  simp only [neg_lie, lie_neg, neg_neg, smul_neg] at hswap
+  exact neg_eq_iff_eq_neg.mp hswap
+
+end IsSerreSystem
+
+end SerreSystem
+
+/-! ## The generators and Serre's relations in the presented algebra -/
+
+section Presented
+
+variable {B : Type*} [DecidableEq B] (R : Type*) [CommRing R] (CM : Matrix B B ℤ)
 
 /-- The quotient map presenting `Matrix.ToLieAlgebra R CM` as the free Lie algebra on the Serre
 generators modulo the Lie ideal generated by Serre's relations. -/
@@ -127,8 +377,7 @@ theorem serreMk_surjective : Function.Surjective (serreMk R CM) :=
 /-- A relator of Serre's presentation becomes zero in the presented algebra. -/
 theorem serreMk_eq_zero_of_mem_toSet {x : FreeLieAlgebra R (Generators B)}
     (hx : x ∈ Relations.toSet R CM) : serreMk R CM x = 0 :=
-  (LieIdeal.mkQ_apply _ x).trans
-    (LieSubmodule.Quotient.mk_eq_zero'.mpr (LieSubmodule.subset_lieSpan hx))
+  (Relations.toIdeal R CM).mkQ_eq_zero.mpr (LieSubmodule.subset_lieSpan hx)
 
 /-- The generator `Hᵢ` of `Matrix.ToLieAlgebra R CM`, the image of the free generator `Hᵢ`. -/
 noncomputable def serreH (i : B) : Matrix.ToLieAlgebra R CM :=
@@ -157,118 +406,54 @@ theorem serreMk_of_E (i : B) :
 theorem serreMk_of_F (i : B) :
     serreMk R CM (FreeLieAlgebra.of R (Generators.F i)) = serreF R CM i := (rfl)
 
-/-! ## The relators lie in the defining ideal
-
-Each of the six families of relators of `CartanMatrix.Relations.toSet` is a range, and membership
-in the union is recorded once here so that the relations below read off from a single lemma. These
-are proof-local plumbing: the relations themselves, below, are the public statement. -/
-
-private theorem mem_toSet_HH (i j : B) : HH R (i, j) ∈ Relations.toSet R CM := by
-  simp [Relations.toSet]
-
-private theorem mem_toSet_EF (i j : B) : EF R (i, j) ∈ Relations.toSet R CM := by
-  simp [Relations.toSet]
-
-private theorem mem_toSet_HE (i j : B) : HE R CM (i, j) ∈ Relations.toSet R CM := by
-  simp [Relations.toSet]
-
-private theorem mem_toSet_HF (i j : B) : HF R CM (i, j) ∈ Relations.toSet R CM := by
-  simp [Relations.toSet]
-
-private theorem mem_toSet_adE (i j : B) : adE R CM (i, j) ∈ Relations.toSet R CM := by
-  simp [Relations.toSet]
-
-private theorem mem_toSet_adF (i j : B) : adF R CM (i, j) ∈ Relations.toSet R CM := by
-  simp [Relations.toSet]
-
-/-! ## Serre's relations in the presented algebra -/
+/-! ### Serre's relations in the presented algebra -/
 
 /-- Serre's relation `⁅Hᵢ, Hⱼ⁆ = 0`: the generators `Hᵢ` commute. -/
 @[simp]
 theorem lie_serreH_serreH (i j : B) : ⁅serreH R CM i, serreH R CM j⁆ = 0 := by
-  have h := serreMk_eq_zero_of_mem_toSet R CM (mem_toSet_HH R CM i j)
-  simp only [Relations.HH, Function.uncurry, Function.comp_apply, LieHom.map_lie] at h
-  exact h
+  simpa [Relations.HH] using
+    serreMk_eq_zero_of_mem_toSet R CM (x := HH R (i, j)) (by simp [Relations.toSet])
 
 /-- Serre's relation `⁅Eᵢ, Fᵢ⁆ = Hᵢ`. -/
 @[simp]
 theorem lie_serreE_serreF_self (i : B) : ⁅serreE R CM i, serreF R CM i⁆ = serreH R CM i := by
-  have h := serreMk_eq_zero_of_mem_toSet R CM (mem_toSet_EF R CM i i)
-  have key : EF R ((i, i) : B × B) =
-      ⁅FreeLieAlgebra.of R (Generators.E i), FreeLieAlgebra.of R (Generators.F i)⁆ -
-        FreeLieAlgebra.of R (Generators.H i) := by
-    simp [Relations.EF]
-  rw [key, map_sub, LieHom.map_lie, sub_eq_zero] at h
-  exact h
+  simpa [Relations.EF, sub_eq_zero] using
+    serreMk_eq_zero_of_mem_toSet R CM (x := EF R (i, i)) (by simp [Relations.toSet])
 
 /-- Serre's relation `⁅Eᵢ, Fⱼ⁆ = 0` for `i ≠ j`. -/
 @[simp]
 theorem lie_serreE_serreF_of_ne {i j : B} (hij : i ≠ j) : ⁅serreE R CM i, serreF R CM j⁆ = 0 := by
-  have h := serreMk_eq_zero_of_mem_toSet R CM (mem_toSet_EF R CM i j)
-  have key : EF R ((i, j) : B × B) =
-      ⁅FreeLieAlgebra.of R (Generators.E i), FreeLieAlgebra.of R (Generators.F j)⁆ := by
-    simp [Relations.EF, hij]
-  rw [key, LieHom.map_lie] at h
-  exact h
+  simpa [Relations.EF, hij] using
+    serreMk_eq_zero_of_mem_toSet R CM (x := EF R (i, j)) (by simp [Relations.toSet])
 
 /-- Serre's relation `⁅Hᵢ, Eⱼ⁆ = CMᵢⱼ • Eⱼ`. -/
 @[simp]
 theorem lie_serreH_serreE (i j : B) : ⁅serreH R CM i, serreE R CM j⁆ = CM i j • serreE R CM j := by
-  have h := serreMk_eq_zero_of_mem_toSet R CM (mem_toSet_HE R CM i j)
-  simp only [Relations.HE, Function.uncurry, Function.comp_apply, map_sub, LieHom.map_lie,
-    map_zsmul, sub_eq_zero] at h
-  exact h
+  simpa [Relations.HE, sub_eq_zero] using
+    serreMk_eq_zero_of_mem_toSet R CM (x := HE R CM (i, j)) (by simp [Relations.toSet])
 
 /-- Serre's relation `⁅Hᵢ, Fⱼ⁆ = -(CMᵢⱼ • Fⱼ)`. -/
 @[simp]
 theorem lie_serreH_serreF (i j : B) :
     ⁅serreH R CM i, serreF R CM j⁆ = -(CM i j • serreF R CM j) := by
-  have h := serreMk_eq_zero_of_mem_toSet R CM (mem_toSet_HF R CM i j)
-  simp only [Relations.HF, Function.uncurry, Function.comp_apply, map_add, LieHom.map_lie,
-    map_zsmul, add_eq_zero_iff_eq_neg] at h
-  exact h
+  simpa [Relations.HF, add_eq_zero_iff_eq_neg] using
+    serreMk_eq_zero_of_mem_toSet R CM (x := HF R CM (i, j)) (by simp [Relations.toSet])
 
 /-- The higher Serre relation on the `E`'s: `(ad Eᵢ) ^ (-CMᵢⱼ).toNat ⁅Eᵢ, Eⱼ⁆ = 0`. -/
 @[simp]
 theorem ad_pow_lie_serreE_serreE (i j : B) :
     (ad R (Matrix.ToLieAlgebra R CM) (serreE R CM i) ^ (-CM i j).toNat)
       ⁅serreE R CM i, serreE R CM j⁆ = 0 := by
-  have h := serreMk_eq_zero_of_mem_toSet R CM (mem_toSet_adE R CM i j)
-  simp only [Relations.adE, Function.uncurry, Function.comp_apply] at h
-  rwa [LieHom.map_ad_pow, LieHom.map_lie] at h
+  simpa [Relations.adE, LieHom.map_ad_pow] using
+    serreMk_eq_zero_of_mem_toSet R CM (x := adE R CM (i, j)) (by simp [Relations.toSet])
 
 /-- The higher Serre relation on the `F`'s: `(ad Fᵢ) ^ (-CMᵢⱼ).toNat ⁅Fᵢ, Fⱼ⁆ = 0`. -/
 @[simp]
 theorem ad_pow_lie_serreF_serreF (i j : B) :
     (ad R (Matrix.ToLieAlgebra R CM) (serreF R CM i) ^ (-CM i j).toNat)
       ⁅serreF R CM i, serreF R CM j⁆ = 0 := by
-  have h := serreMk_eq_zero_of_mem_toSet R CM (mem_toSet_adF R CM i j)
-  simp only [Relations.adF, Function.uncurry, Function.comp_apply] at h
-  rwa [LieHom.map_ad_pow, LieHom.map_lie] at h
-
-/-! ## Serre systems and the universal property -/
-
-variable {L : Type*} [LieRing L] [LieAlgebra R L]
-
-/-- Three families `H`, `E`, `F` of elements of a Lie algebra form a *Serre system* for the matrix
-`CM` when they satisfy Serre's relations for `CM`. The fields are in bijection with the six
-families of relators generating `CartanMatrix.Relations.toIdeal`, the `⁅E, F⁆` family being split
-into its diagonal and off-diagonal halves. -/
-structure IsSerreSystem (H E F : B → L) : Prop where
-  /-- The `Hᵢ` commute. -/
-  lie_H_H : ∀ i j, ⁅H i, H j⁆ = 0
-  /-- `⁅Eᵢ, Fᵢ⁆` is `Hᵢ`. -/
-  lie_E_F_self : ∀ i, ⁅E i, F i⁆ = H i
-  /-- `Eᵢ` and `Fⱼ` commute for `i ≠ j`. -/
-  lie_E_F_of_ne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0
-  /-- `Eⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `CMᵢⱼ`. -/
-  lie_H_E : ∀ i j, ⁅H i, E j⁆ = CM i j • E j
-  /-- `Fⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `-CMᵢⱼ`. -/
-  lie_H_F : ∀ i j, ⁅H i, F j⁆ = -(CM i j • F j)
-  /-- The higher Serre relation on the `E`'s. -/
-  ad_pow_lie_E_E : ∀ i j, (ad R L (E i) ^ (-CM i j).toNat) ⁅E i, E j⁆ = 0
-  /-- The higher Serre relation on the `F`'s. -/
-  ad_pow_lie_F_F : ∀ i j, (ad R L (F i) ^ (-CM i j).toNat) ⁅F i, F j⁆ = 0
+  simpa [Relations.adF, LieHom.map_ad_pow] using
+    serreMk_eq_zero_of_mem_toSet R CM (x := adF R CM (i, j)) (by simp [Relations.toSet])
 
 /-- The generators of `Matrix.ToLieAlgebra R CM` are a Serre system for `CM`. -/
 theorem isSerreSystem_serre :
@@ -280,77 +465,6 @@ theorem isSerreSystem_serre :
   lie_H_F := lie_serreH_serreF R CM
   ad_pow_lie_E_E := ad_pow_lie_serreE_serreE R CM
   ad_pow_lie_F_F := ad_pow_lie_serreF_serreF R CM
-
-/-! ### Cartan weights and simple `sl₂` triples -/
-
-section CartanWeights
-
-variable {R CM} {H E F : B → L}
-
-omit [DecidableEq B] in
-/-- A nonzero Cartan generator at a diagonal entry two forms an `sl₂` triple with its
-raising and lowering generators. -/
-theorem IsSerreSystem.isSl2Triple (hs : IsSerreSystem R CM H E F) {i : B}
-    (hii : CM i i = 2) (hH : H i ≠ 0) : IsSl2Triple (H i) (E i) (F i) where
-  h_ne_zero := hH
-  lie_e_f := hs.lie_E_F_self i
-  lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
-  lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i
-
-omit [DecidableEq B] in
-/-- The raising weight relation with the Cartan entry read in the base ring. -/
-theorem IsSerreSystem.lie_H_E_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
-    ⁅H i, E j⁆ = (CM i j : R) • E j := by
-  simpa only [Int.cast_smul_eq_zsmul] using hs.lie_H_E i j
-
-omit [DecidableEq B] in
-/-- The lowering weight relation with the negative Cartan entry read in the base ring. -/
-theorem IsSerreSystem.lie_H_F_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
-    ⁅H i, F j⁆ = -(CM i j : R) • F j := by
-  simpa only [neg_smul, Int.cast_smul_eq_zsmul] using hs.lie_H_F i j
-
-omit [DecidableEq B] in
-/-- In a torsion-free Serre system, a zero Cartan generator forces every raising generator
-with a nonzero Cartan entry in its row to vanish. -/
-theorem IsSerreSystem.E_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
-    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
-    E j = 0 := by
-  apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
-  simpa [hH] using (hs.lie_H_E i j).symm
-
-omit [DecidableEq B] in
-/-- In a torsion-free Serre system, a zero Cartan generator forces every lowering generator
-with a nonzero Cartan entry in its row to vanish. -/
-theorem IsSerreSystem.F_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
-    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
-    F j = 0 := by
-  apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
-  simpa [hH] using (hs.lie_H_F i j).symm
-
-end CartanWeights
-
-/-! ### Orthogonal generators commute
-
-When `CMᵢⱼ = 0` the higher Serre relation `(ad Eᵢ) ^ (-CMᵢⱼ).toNat ⁅Eᵢ, Eⱼ⁆ = 0` has exponent
-zero, so it says that `Eᵢ` and `Eⱼ` commute, and likewise for the `F`'s. -/
-
-section Orthogonal
-
-variable {R CM} {H E F : B → L}
-
-omit [DecidableEq B] in
-/-- In a Serre system, the raising elements at `i` and `j` commute when `CMᵢⱼ = 0`. -/
-theorem IsSerreSystem.lie_E_E_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B}
-    (hij : CM i j = 0) : ⁅E i, E j⁆ = 0 := by
-  simpa [hij] using h.ad_pow_lie_E_E i j
-
-omit [DecidableEq B] in
-/-- In a Serre system, the lowering elements at `i` and `j` commute when `CMᵢⱼ = 0`. -/
-theorem IsSerreSystem.lie_F_F_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B}
-    (hij : CM i j = 0) : ⁅F i, F j⁆ = 0 := by
-  simpa [hij] using h.ad_pow_lie_F_F i j
-
-variable (R CM)
 
 /-- The generators `Eᵢ` and `Eⱼ` of the presented algebra commute when `CMᵢⱼ = 0`. -/
 @[simp]
@@ -364,197 +478,20 @@ theorem lie_serreF_serreF_of_eq_zero {i j : B} (hij : CM i j = 0) :
     ⁅serreF R CM i, serreF R CM j⁆ = 0 :=
   (isSerreSystem_serre R CM).lie_F_F_of_eq_zero hij
 
-end Orthogonal
+end Presented
 
-/-! ### Stability of Serre systems
+/-! ## The universal property -/
 
-Serre's relations are stable under reindexing the three families along an injective map of index
-sets, provided the matrix is reindexed the same way, and under the signed exchange of the raising
-and lowering families. Both are statements about an arbitrary Serre system in an arbitrary Lie
-algebra; applied to the generators of the presented algebra they give its automorphisms, in
-`TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean`. -/
-
-section Stability
-
-variable {R CM} {H E F : B → L} {σ : Equiv.Perm B}
-
-omit [DecidableEq B] in
-/-- The image of a Serre system under a Lie algebra homomorphism is a Serre system. -/
-theorem IsSerreSystem.map {L' : Type*} [LieRing L'] [LieAlgebra R L']
-    (h : IsSerreSystem R CM H E F) (f : L →ₗ⁅R⁆ L') :
-    IsSerreSystem R CM (f ∘ H) (f ∘ E) (f ∘ F) where
-  lie_H_H i j := by
-    simp only [Function.comp_apply, ← f.map_lie, h.lie_H_H i j, map_zero]
-  lie_E_F_self i := by
-    simp only [Function.comp_apply, ← f.map_lie, h.lie_E_F_self i]
-  lie_E_F_of_ne i j hij := by
-    simp only [Function.comp_apply, ← f.map_lie, h.lie_E_F_of_ne i j hij, map_zero]
-  lie_H_E i j := by
-    simp only [Function.comp_apply, ← f.map_lie, h.lie_H_E i j, map_zsmul]
-  lie_H_F i j := by
-    simp only [Function.comp_apply, ← f.map_lie, h.lie_H_F i j, map_neg, map_zsmul]
-  ad_pow_lie_E_E i j := by
-    simp only [Function.comp_apply, ← f.map_lie, ← LieHom.map_ad_pow,
-      h.ad_pow_lie_E_E i j, map_zero]
-  ad_pow_lie_F_F i j := by
-    simp only [Function.comp_apply, ← f.map_lie, ← LieHom.map_ad_pow,
-      h.ad_pow_lie_F_F i j, map_zero]
-
-omit [DecidableEq B] in
-/-- Serre relations can be checked after an injective Lie algebra homomorphism. -/
-theorem IsSerreSystem.of_injective {L' : Type*} [LieRing L'] [LieAlgebra R L']
-    (f : L →ₗ⁅R⁆ L') (hf : Function.Injective f)
-    (h : IsSerreSystem R CM (f ∘ H) (f ∘ E) (f ∘ F)) : IsSerreSystem R CM H E F where
-  lie_H_H i j := hf <| by
-    simpa only [Function.comp_apply, f.map_lie, map_zero] using h.lie_H_H i j
-  lie_E_F_self i := hf <| by
-    simpa only [Function.comp_apply, f.map_lie] using h.lie_E_F_self i
-  lie_E_F_of_ne i j hij := hf <| by
-    simpa only [Function.comp_apply, f.map_lie, map_zero] using h.lie_E_F_of_ne i j hij
-  lie_H_E i j := hf <| by
-    simpa only [Function.comp_apply, f.map_lie, map_zsmul] using h.lie_H_E i j
-  lie_H_F i j := hf <| by
-    simpa only [Function.comp_apply, f.map_lie, map_neg, map_zsmul] using h.lie_H_F i j
-  ad_pow_lie_E_E i j := hf <| by
-    simpa only [Function.comp_apply, LieHom.map_ad_pow, f.map_lie, map_zero] using
-      h.ad_pow_lie_E_E i j
-  ad_pow_lie_F_F i j := hf <| by
-    simpa only [Function.comp_apply, LieHom.map_ad_pow, f.map_lie, map_zero] using
-      h.ad_pow_lie_F_F i j
-
-omit [DecidableEq B] in
-/-- **A Serre system over one base ring transfers to any other base ring for which the same Lie
-ring has a Lie-algebra structure.** -/
--- The other five fields are ring-independent as stated: the two eigenvector relations scale by
--- the integer entry `CM i j` through its `ℤ`-action, and the remaining three mention no scalars.
-theorem IsSerreSystem.changeScalars {S : Type*} [CommRing S] [LieAlgebra S L]
-    (h : IsSerreSystem R CM H E F) : IsSerreSystem S CM H E F :=
-  { h with
-    ad_pow_lie_E_E := fun i j => by
-      rw [← TauCeti.ad_pow_apply_eq_ad_pow_apply R S]
-      exact h.ad_pow_lie_E_E i j
-    ad_pow_lie_F_F := fun i j => by
-      rw [← TauCeti.ad_pow_apply_eq_ad_pow_apply R S]
-      exact h.ad_pow_lie_F_F i j }
-
-omit [DecidableEq B] in
-/-- Reindexing a Serre system along an injective map of index sets gives a Serre system for the
-matrix reindexed the same way. -/
-theorem IsSerreSystem.submatrix {B' : Type*} {f : B' → B} (hf : Function.Injective f)
-    (h : IsSerreSystem R CM H E F) :
-    IsSerreSystem R (CM.submatrix f f) (H ∘ f) (E ∘ f) (F ∘ f) where
-  lie_H_H i j := h.lie_H_H (f i) (f j)
-  lie_E_F_self i := h.lie_E_F_self (f i)
-  lie_E_F_of_ne i j hij := h.lie_E_F_of_ne (f i) (f j) fun hc => hij (hf hc)
-  lie_H_E i j := h.lie_H_E (f i) (f j)
-  lie_H_F i j := h.lie_H_F (f i) (f j)
-  ad_pow_lie_E_E i j := h.ad_pow_lie_E_E (f i) (f j)
-  ad_pow_lie_F_F i j := h.ad_pow_lie_F_F (f i) (f j)
-
-omit [DecidableEq B] in
-/-- Reindexing a Serre system along a permutation `σ` of the index set that preserves the matrix
-gives a Serre system for the same matrix. -/
-theorem IsSerreSystem.perm (h : IsSerreSystem R CM H E F) (hσ : CM.submatrix σ σ = CM) :
-    IsSerreSystem R CM (H ∘ σ) (E ∘ σ) (F ∘ σ) :=
-  hσ ▸ h.submatrix σ.injective
-
-omit [DecidableEq B] in
-/-- Negating the Cartan family of a Serre system and exchanging its raising and lowering families,
-again with a sign, gives a Serre system for the same matrix. This is the symmetry of Serre's
-relations behind the Chevalley involution. -/
-theorem IsSerreSystem.neg_swap (h : IsSerreSystem R CM H E F) :
-    IsSerreSystem R CM (fun i => -H i) (fun i => -F i) (fun i => -E i) where
-  lie_H_H i j := by simp [h.lie_H_H i j]
-  lie_E_F_self i := by
-    rw [neg_lie, lie_neg, neg_neg, ← lie_skew, h.lie_E_F_self i]
-  lie_E_F_of_ne i j hij := by
-    rw [neg_lie, lie_neg, neg_neg, ← lie_skew, h.lie_E_F_of_ne j i (Ne.symm hij), neg_zero]
-  lie_H_E i j := by rw [neg_lie, lie_neg, neg_neg, h.lie_H_F i j, smul_neg]
-  lie_H_F i j := by rw [neg_lie, lie_neg, neg_neg, h.lie_H_E i j, smul_neg, neg_neg]
-  ad_pow_lie_E_E i j := by
-    rw [neg_lie, lie_neg, neg_neg]
-    exact ad_neg_pow_apply_eq_zero (h.ad_pow_lie_F_F i j)
-  ad_pow_lie_F_F i j := by
-    rw [neg_lie, lie_neg, neg_neg]
-    exact ad_neg_pow_apply_eq_zero (h.ad_pow_lie_E_E i j)
-
-end Stability
-
-/-! ### Nested brackets
-
-At a Cartan entry of minus one, the higher Serre relation says that the bracket of two
-raising (or lowering) generators commutes with the first generator. Applying this at the
-reversed entry gives commutation with the second generator.
-
-The bracket relations of a Serre system determine the nested bracket of two raising elements at
-distinct nodes with the lowering element at the second node, and, through the signed exchange
-`TauCeti.IsSerreSystem.neg_swap`, its lowering counterpart. -/
-
-section SingleBond
-
-variable {R CM} {H E F : B → L}
-
-omit [DecidableEq B] in
-/-- At a Cartan entry of minus one, the raising bracket commutes with its first generator. -/
-theorem IsSerreSystem.lie_E_lie_E_E_of_eq_neg_one (h : IsSerreSystem R CM H E F)
-    {i j : B} (hij : CM i j = -1) : ⁅E i, ⁅E i, E j⁆⁆ = 0 := by
-  simpa only [hij, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_E_E i j
-
-omit [DecidableEq B] in
-/-- At the reversed Cartan entry of minus one, the raising bracket commutes with its
-second generator. -/
-theorem IsSerreSystem.lie_E_lie_E_E_swap_of_eq_neg_one (h : IsSerreSystem R CM H E F)
-    {i j : B} (hji : CM j i = -1) : ⁅E j, ⁅E i, E j⁆⁆ = 0 := by
-  rw [← lie_skew (E i) (E j), lie_neg, h.lie_E_lie_E_E_of_eq_neg_one hji, neg_zero]
-
-omit [DecidableEq B] in
-/-- At a Cartan entry of minus one, the lowering bracket commutes with its first generator. -/
-theorem IsSerreSystem.lie_F_lie_F_F_of_eq_neg_one (h : IsSerreSystem R CM H E F)
-    {i j : B} (hij : CM i j = -1) : ⁅F i, ⁅F i, F j⁆⁆ = 0 := by
-  simpa only [hij, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_F_F i j
-
-omit [DecidableEq B] in
-/-- At the reversed Cartan entry of minus one, the lowering bracket commutes with its
-second generator. -/
-theorem IsSerreSystem.lie_F_lie_F_F_swap_of_eq_neg_one (h : IsSerreSystem R CM H E F)
-    {i j : B} (hji : CM j i = -1) : ⁅F j, ⁅F i, F j⁆⁆ = 0 := by
-  rw [← lie_skew (F i) (F j), lie_neg, h.lie_F_lie_F_F_of_eq_neg_one hji, neg_zero]
-
-end SingleBond
-
-section NestedBrackets
-
-variable {R CM} {H E F : B → L}
-
-omit [DecidableEq B] in
-/-- At distinct nodes `i ≠ j`, the nested bracket `⁅⁅Eᵢ, Eⱼ⁆, Fⱼ⁆` is `-CMⱼᵢ • Eᵢ`. -/
-theorem IsSerreSystem.lie_lie_E_E_F_of_ne (h : IsSerreSystem R CM H E F) {i j : B}
-    (hij : i ≠ j) : ⁅⁅E i, E j⁆, F j⁆ = -(CM j i • E i) := by
-  rw [lie_lie, h.lie_E_F_self, h.lie_E_F_of_ne i j hij, lie_zero, sub_zero,
-    ← lie_skew (E i) (H j), h.lie_H_E]
-
-omit [DecidableEq B] in
-/-- At distinct nodes `i ≠ j`, the nested bracket `⁅⁅Fᵢ, Fⱼ⁆, Eⱼ⁆` is `-CMⱼᵢ • Fᵢ`. -/
-theorem IsSerreSystem.lie_lie_F_F_E_of_ne (h : IsSerreSystem R CM H E F) {i j : B}
-    (hij : i ≠ j) : ⁅⁅F i, F j⁆, E j⁆ = -(CM j i • F i) := by
-  have hswap := h.neg_swap.lie_lie_E_E_F_of_ne hij
-  simp only [neg_lie, lie_neg, neg_neg, smul_neg] at hswap
-  exact neg_eq_iff_eq_neg.mp hswap
-
-end NestedBrackets
-
-/-! ### The universal property -/
-
-variable {R CM}
-
-omit [DecidableEq B] in
 /-- The map on Serre generators determined by three families of elements of a Lie algebra. -/
-private def serreGeneratorMap (H E F : B → L) : Generators B → L
+private def serreGeneratorMap {B L : Type*} (H E F : B → L) : Generators B → L
   | .H i => H i
   | .E i => E i
   | .F i => F i
 
-variable {H E F : B → L}
+section UniversalProperty
+
+variable {B : Type*} [DecidableEq B] {R : Type*} [CommRing R] {CM : Matrix B B ℤ}
+variable {L : Type*} [LieRing L] [LieAlgebra R L] {H E F : B → L}
 
 /-- A Serre system kills every relator, so the ideal they generate lies in the kernel of the
 homomorphism the system induces on the free Lie algebra.
@@ -643,13 +580,12 @@ theorem serreF_ne_zero (h : IsSerreSystem R CM H E F) {i : B} (hi : F i ≠ 0) :
 /-- Linear independence of the Cartan family of a Serre system lifts to the presented Cartan
 generators. -/
 theorem linearIndependent_serreH (h : IsSerreSystem R CM H E F)
-    (hH : LinearIndependent R H) : LinearIndependent R (serreH R CM) := by
-  refine LinearIndependent.of_comp (serreLift h).toLinearMap ?_
-  have : ⇑(serreLift h).toLinearMap ∘ serreH R CM = H :=
-    funext fun i => serreLift_serreH h i
-  rwa [this]
+    (hH : LinearIndependent R H) : LinearIndependent R (serreH R CM) :=
+  LinearIndependent.of_comp (serreLift h).toLinearMap <| by
+    simpa [Function.comp_def] using hH
 
-/-- Two homomorphisms out of `Matrix.ToLieAlgebra R CM` agreeing on the generators are equal. -/
+/-- Two homomorphisms out of `Matrix.ToLieAlgebra R CM` agreeing on the raising and lowering
+generators are equal. -/
 @[ext]
 theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
     (hE : ∀ i, g₁ (serreE R CM i) = g₂ (serreE R CM i))
@@ -662,10 +598,10 @@ theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
     | H i => exact hH i
     | E i => exact hE i
     | F i => exact hF i
-  refine (Relations.toIdeal R CM).lieHom_qext fun x => ?_
-  exact congrArg (fun ψ : FreeLieAlgebra R (Generators B) →ₗ⁅R⁆ L => ψ x) hcomp
+  exact (Relations.toIdeal R CM).lieHom_qext (DFunLike.congr_fun hcomp)
 
-/-- Two equivalences out of `Matrix.ToLieAlgebra R CM` agreeing on the generators are equal. -/
+/-- Two equivalences out of `Matrix.ToLieAlgebra R CM` agreeing on the raising and lowering
+generators are equal. -/
 @[ext]
 theorem serre_equiv_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM ≃ₗ⁅R⁆ L}
     (hE : ∀ i, g₁ (serreE R CM i) = g₂ (serreE R CM i))
@@ -673,15 +609,15 @@ theorem serre_equiv_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM ≃ₗ⁅R⁆ L}
   LieEquiv.ext fun x =>
     DFunLike.congr_fun (serre_hom_ext (g₁ := g₁.toLieHom) (g₂ := g₂.toLieHom) hE hF) x
 
-/-- `TauCeti.serreLift` is the unique homomorphism sending the generators to a given Serre
-system. -/
+/-- `TauCeti.serreLift` is the unique homomorphism sending the raising and lowering generators to
+those of a given Serre system. -/
 theorem eq_serreLift {h : IsSerreSystem R CM H E F} {g : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
     (hE : ∀ i, g (serreE R CM i) = E i) (hF : ∀ i, g (serreF R CM i) = F i) :
     g = serreLift h :=
   serre_hom_ext (fun i => by rw [hE, serreLift_serreE]) fun i => by rw [hF, serreLift_serreF]
 
-/-- A Serre system whose raising and lowering families generate the ambient Lie algebra presents
-it: the homomorphism it determines is surjective. -/
+/-- A Serre system whose raising and lowering families generate the ambient Lie algebra induces a
+surjective homomorphism from `Matrix.ToLieAlgebra R CM` onto it. -/
 theorem serreLift_surjective (h : IsSerreSystem R CM H E F)
     (hspan : LieSubalgebra.lieSpan R L (Set.range E ∪ Set.range F) = ⊤) :
     Function.Surjective (serreLift h) := by
@@ -699,38 +635,33 @@ theorem serreLift_eq_id :
     serreLift (isSerreSystem_serre R CM) = LieHom.id :=
   serre_hom_ext (fun i => by simp) fun i => by simp
 
-/-- The generators `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` generate
-`Matrix.ToLieAlgebra R CM` as a Lie subalgebra. -/
-theorem lieSpan_serreGenerators_eq_top :
-    LieSubalgebra.lieSpan R (Matrix.ToLieAlgebra R CM)
-        (Set.range (serreH R CM) ∪ Set.range (serreE R CM) ∪ Set.range (serreF R CM)) = ⊤ := by
-  set K := LieSubalgebra.lieSpan R (Matrix.ToLieAlgebra R CM)
-    (Set.range (serreH R CM) ∪ Set.range (serreE R CM) ∪ Set.range (serreF R CM))
-  have hgen : ∀ g : Generators B, serreMk R CM (FreeLieAlgebra.of R g) ∈ K := by
-    rintro (i | i | i) <;> refine LieSubalgebra.subset_lieSpan ?_
-    · exact Or.inl (Or.inl ⟨i, rfl⟩)
-    · exact Or.inl (Or.inr ⟨i, rfl⟩)
-    · exact Or.inr ⟨i, rfl⟩
-  have hle : LieSubalgebra.lieSpan R (FreeLieAlgebra R (Generators B))
-      (Set.range (FreeLieAlgebra.of R)) ≤ K.comap (serreMk R CM) := by
-    refine LieSubalgebra.lieSpan_le.mpr ?_
-    rintro _ ⟨g, rfl⟩
-    exact hgen g
-  refine eq_top_iff.2 fun y _ => ?_
-  obtain ⟨x, rfl⟩ := serreMk_surjective R CM y
-  exact hle (by rw [FreeLieAlgebra.lieSpan_range_of_eq_top]; trivial)
-
 /-- The raising and lowering generators of `Matrix.ToLieAlgebra R CM` generate it: the Cartan
 generators are their brackets `Hᵢ = ⁅Eᵢ, Fᵢ⁆`. -/
 theorem lieSpan_serreE_union_serreF_eq_top :
     LieSubalgebra.lieSpan R (Matrix.ToLieAlgebra R CM)
       (Set.range (serreE R CM) ∪ Set.range (serreF R CM)) = ⊤ := by
-  rw [eq_top_iff, ← lieSpan_serreGenerators_eq_top R CM, LieSubalgebra.lieSpan_le]
-  rintro _ ((⟨i, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩)
-  · rw [← lie_serreE_serreF_self R CM i]
+  have hspan :
+      LieSubalgebra.lieSpan R (Matrix.ToLieAlgebra R CM)
+        (serreMk R CM '' Set.range (FreeLieAlgebra.of R)) = ⊤ := by
+    rw [← LieSubalgebra.map_lieSpan, FreeLieAlgebra.lieSpan_range_of_eq_top,
+      ← LieHom.range_eq_map, LieHom.range_eq_top]
+    exact serreMk_surjective R CM
+  refine top_le_iff.mp (hspan.ge.trans (LieSubalgebra.lieSpan_le.mpr ?_))
+  rintro _ ⟨_, ⟨i | i | i, rfl⟩, rfl⟩
+  · rw [serreMk_of_H, ← lie_serreE_serreF_self R CM i]
     exact LieSubalgebra.lie_mem _ (LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩))
       (LieSubalgebra.subset_lieSpan (Or.inr ⟨i, rfl⟩))
   · exact LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩)
   · exact LieSubalgebra.subset_lieSpan (Or.inr ⟨i, rfl⟩)
+
+/-- The generators `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` generate
+`Matrix.ToLieAlgebra R CM` as a Lie subalgebra. -/
+theorem lieSpan_serreGenerators_eq_top :
+    LieSubalgebra.lieSpan R (Matrix.ToLieAlgebra R CM)
+        (Set.range (serreH R CM) ∪ Set.range (serreE R CM) ∪ Set.range (serreF R CM)) = ⊤ :=
+  top_le_iff.mp <| (lieSpan_serreE_union_serreF_eq_top R CM).ge.trans <|
+    LieSubalgebra.lieSpan_mono (Set.union_subset_union_left _ Set.subset_union_right)
+
+end UniversalProperty
 
 end TauCeti

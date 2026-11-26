@@ -52,10 +52,8 @@ Exhaustion -- that every finite-dimensional irreducible representation of `SU(2)
 
 ## References
 
-This is the "the `su2Irrep n` are irreducible, pairwise inequivalent" half of the classification
-asked for by the `SU(2)` engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, which insists that the
-classification be proved by the weight/highest-weight argument rather than read off Peter-Weyl.
+Irreducibility is proved by the weight/highest-weight argument above rather than read off from
+Peter-Weyl.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 3.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),

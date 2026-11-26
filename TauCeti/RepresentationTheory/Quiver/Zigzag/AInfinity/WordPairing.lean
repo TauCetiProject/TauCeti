@@ -100,9 +100,10 @@ operation of a single closed walk `w` is not a coboundary as soon as
 
 ## References
 
-* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 4, for the
+* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 6.1, for the
   quadratic dual of the zigzag algebra.
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Sections 3 and 4, for the comparison of zigzag Hochschild cohomology with the cyclic quotient of
   the preprojective algebra.
 * J.-L. Loday, *Cyclic Homology*, Chapter 1, for Hochschild chains and cochains and their duality.
@@ -249,7 +250,7 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero {n : ℕ}
     zigzagWordPairing hns n a ((𝒵).hochschildDifferential 0 φ) = 0 := by
   rw [zigzagWordPairing_apply]
   simp only [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_mem hφ _
-      fun i ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _,
+      fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _,
     map_sub, map_sum, mul_sub, Finset.mul_sum, Finset.sum_sub_distrib]
   rw [Finset.sum_comm, Finset.sum_eq_zero fun p _ ↦ sum_trace_inner_eq_zero p (hrel p)
     (fun d ↦ 𝔞 d) (fun d e he ↦ zigzagMk_ofArrow_mul_ofArrow_of_ne k G he)
@@ -301,25 +302,12 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic {n : ℕ}
     (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
       ((𝒵).grading.shift 1).piece 0) :
     zigzagWordPairing hns n (fun w ↦ f (List.ofFn fun t ↦ β (w t)).prod)
-      ((𝒵).hochschildDifferential 0 φ) = 0 := by
-  refine zigzagWordPairing_hochschildDifferential_eq_zero (fun u e ↦ ?_) (fun p u v ↦ ?_) hφ
-  · have hsnoc : (List.ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 2) → G.Dart) t)).prod =
-        (List.ofFn fun t ↦ β (u t)).prod * β e := by
-      rw [List.ofFn_succ' (n := n + 1), List.concat_eq_append, List.prod_append,
-        List.prod_singleton]
-      simp
-    have hcons : (List.ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 2) → G.Dart) t)).prod =
-        β e * (List.ofFn fun t ↦ β (u t)).prod := by
-      rw [show (fun t ↦ β ((Fin.cons e u : Fin (n + 2) → G.Dart) t)) =
-          Fin.cons (β e) fun t ↦ β (u t) from Fin.comp_cons β e u, List.ofFn_cons, List.prod_cons]
-    rw [hsnoc, hcons, hf]
-  · obtain ⟨L, R, h⟩ := List.exists_prod_ofFn_insertNth_insertNth β p u
-    simp_rw [h]
-    calc ∑ d : G.Dart with d.snd = v, f (L * β d * β d.symm * R)
-        = f (L * (∑ d : G.Dart with d.snd = v, β d * β d.symm) * R) := by
-          rw [Finset.mul_sum, Finset.sum_mul, map_sum]
-          simp only [mul_assoc]
-      _ = 0 := by rw [hβ, mul_zero, zero_mul, map_zero]
+      ((𝒵).hochschildDifferential 0 φ) = 0 :=
+  zigzagWordPairing_hochschildDifferential_eq_zero
+    (List.apply_prod_ofFn_snoc β f hf)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth_eq_zero β f _ id
+      SimpleGraph.Dart.symm (hβ v) p u)
+    hφ
 
 /-- **Higher loop operations detected by an anticyclic functional are not coboundaries.** Let `β`
 satisfy the signless relations `∑_{d.snd = v} β d * β d.symm = 0` and let `f` be a linear

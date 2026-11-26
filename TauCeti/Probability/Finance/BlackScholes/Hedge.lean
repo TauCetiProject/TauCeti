@@ -126,42 +126,47 @@ theorem hedgeBondHolding_putPrice_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0)
 stock have drift `μ` and volatility `σ`, and let the bond, at price `β`, grow at rate `r`. The Itô
 drift `V_t + μ s V_s + σ² s² / 2 V_ss` of `V(S_t, t)` equals the drift `μ s a + r β b` of the
 delta hedge `a = V_s`, `b = hedgeBondHolding (V · t) s β` exactly when `V` satisfies the
-Black–Scholes equation `V_t + σ² s² / 2 V_ss + r (s V_s - V) = 0` at `(s, t)`. -/
+Black–Scholes equation `V_t + σ² s² / 2 V_ss + r (s V_s - V) = 0` at `(s, t)`, i.e. its
+`residual` vanishes there. -/
 theorem itoDrift_eq_hedgeDrift_iff_pde (V : ℝ → ℝ → ℝ) (μ σ r s t : ℝ) (hβ : β ≠ 0) :
     deriv (fun u => V s u) t + μ * s * deriv (fun x => V x t) s +
         σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => V x t) s =
       μ * s * deriv (fun x => V x t) s + r * β * hedgeBondHolding (fun x => V x t) s β ↔
-    deriv (fun u => V s u) t + σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => V x t) s +
-      r * (s * deriv (fun x => V x t) s - V s t) = 0 := by
+    residual r σ V s t = 0 := by
   have hV := mul_deriv_add_mul_hedgeBondHolding (fun x => V x t) s hβ
+  rw [residual_def]
   constructor <;> intro h
   · linear_combination h + r * hV
   · linear_combination h - r * hV
 
 /-- **Drift of the call's delta hedge.** In calendar time `t < T`, the Itô drift of the
 Black–Scholes call price `C(s, t) = callPrice s r σ K (T - t)` under a stock drift `μ` equals
-the drift of its delta hedge with a bond at price `β ≠ 0` growing at rate `r`. -/
-theorem callPrice_itoDrift_eq_hedgeDrift (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hβ : β ≠ 0)
-    (μ : ℝ) {T t : ℝ} (ht : t < T) :
+the drift of its delta hedge with a bond at price `β ≠ 0` growing at rate `r`. The closed form
+satisfies this for every `t ≠ T`, as it satisfies the Black–Scholes equation there
+(`callPrice_pde`). -/
+theorem callPrice_itoDrift_eq_hedgeDrift (hs : 0 < s) (hK : 0 < K) (hβ : β ≠ 0)
+    (μ : ℝ) {T t : ℝ} (ht : t ≠ T) :
     deriv (fun u => callPrice s r σ K (T - u)) t +
         μ * s * deriv (fun x => callPrice x r σ K (T - t)) s +
         σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => callPrice x r σ K (T - t)) s =
       μ * s * deriv (fun x => callPrice x r σ K (T - t)) s +
         r * β * hedgeBondHolding (fun x => callPrice x r σ K (T - t)) s β :=
   (itoDrift_eq_hedgeDrift_iff_pde (fun x u => callPrice x r σ K (T - u)) μ σ r s t hβ).2
-    (callPrice_pde hs hK hσ ht)
+    (callPrice_pde hs hK ht)
 
 /-- **Drift of the put's delta hedge.** In calendar time `t < T`, the Itô drift of the
 Black–Scholes put price `P(s, t) = putPrice s r σ K (T - t)` under a stock drift `μ` equals
-the drift of its delta hedge with a bond at price `β ≠ 0` growing at rate `r`. -/
-theorem putPrice_itoDrift_eq_hedgeDrift (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hβ : β ≠ 0)
-    (μ : ℝ) {T t : ℝ} (ht : t < T) :
+the drift of its delta hedge with a bond at price `β ≠ 0` growing at rate `r`. The closed form
+satisfies this for every `t ≠ T`, as it satisfies the Black–Scholes equation there
+(`putPrice_pde`). -/
+theorem putPrice_itoDrift_eq_hedgeDrift (hs : 0 < s) (hK : 0 < K) (hβ : β ≠ 0)
+    (μ : ℝ) {T t : ℝ} (ht : t ≠ T) :
     deriv (fun u => putPrice s r σ K (T - u)) t +
         μ * s * deriv (fun x => putPrice x r σ K (T - t)) s +
         σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => putPrice x r σ K (T - t)) s =
       μ * s * deriv (fun x => putPrice x r σ K (T - t)) s +
         r * β * hedgeBondHolding (fun x => putPrice x r σ K (T - t)) s β :=
   (itoDrift_eq_hedgeDrift_iff_pde (fun x u => putPrice x r σ K (T - u)) μ σ r s t hβ).2
-    (putPrice_pde hs hK hσ ht)
+    (putPrice_pde hs hK ht)
 
 end TauCeti.BlackScholes

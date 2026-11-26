@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.LinearAlgebra.Dual.Lemmas
 
@@ -17,16 +18,16 @@ coordinate hyperplane where the zeroth coordinate vanishes; deleting that coordi
 continuous linear equivalence with `EuclideanSpace ℝ (Fin n)`.
 
 The construction is the standard-model prerequisite for putting a manifold structure on the
-boundary of a manifold modeled on a Euclidean half-space, as prescribed by Layer 1 of the
-GeometricTopology roadmap.  The parametrization and projection API below is intended to let
-boundary charts use this identification without unfolding its coordinate construction.  The file
-also splits the ambient Euclidean space into boundary and normal coordinates; the boundary
-inclusion and the standard product collar both use this one coordinate equivalence, and
-`TauCeti.euclideanFinConsEquiv` is the same equivalence with the boundary coordinates given as a
-function on `Fin k`, reindexed along `k = n`.  Finally,
-`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos` recognises a
-linear functional that is positive off the hyperplane near a boundary point within the half-space
-as a positive multiple of the boundary coordinate.
+boundary of a manifold modeled on a Euclidean half-space.  The parametrization and projection API
+below is intended to let boundary charts use this identification without unfolding its coordinate
+construction.  The file also splits the ambient Euclidean space into boundary and normal
+coordinates; the boundary inclusion and the standard product collar both use this one coordinate
+equivalence, and `TauCeti.euclideanFinConsEquiv` is the same equivalence with the boundary
+coordinates given as a function on `Fin k`, reindexed along `k = n`.  Finally,
+`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos` recognises a linear functional
+that is positive off the hyperplane near a boundary point within the half-space as a positive
+multiple of the boundary coordinate. Multiplication by a positive scalar is a diffeomorphism of the
+half-space model, `TauCeti.EuclideanHalfSpace.smulDiffeomorph`.
 -/
 
 public section
@@ -250,6 +251,14 @@ theorem euclideanHalfSpaceBoundary_eq_frontier (n : ℕ) :
   ext x
   simp [eq_comm]
 
+/-- The half-space model `𝓡∂ (n + 1)` sends a point to the frontier of its range exactly when the
+zeroth coordinate of the point vanishes. -/
+theorem modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff {n : ℕ}
+    (z : EuclideanHalfSpace (n + 1)) :
+    (𝓡∂ (n + 1)) z ∈ frontier (range (𝓡∂ (n + 1))) ↔ z.val 0 = 0 := by
+  rw [frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
+  exact eq_comm
+
 namespace EuclideanHalfSpace
 
 variable {n : ℕ}
@@ -263,21 +272,21 @@ noncomputable def boundaryParam (n : ℕ) :
 /-- Delete the zeroth coordinate of a point of the `(n + 1)`-dimensional Euclidean half-space. -/
 noncomputable def boundaryProj (n : ℕ) :
     EuclideanHalfSpace (n + 1) → EuclideanSpace ℝ (Fin n) :=
-  fun y ↦ euclideanHalfSpaceBoundaryProj n y.1
+  fun y ↦ euclideanHalfSpaceBoundaryProj n y.val
 
 /-- The parametrized boundary point, read in the ambient Euclidean space. -/
 @[simp]
 theorem boundaryParam_coe (x : EuclideanSpace ℝ (Fin n)) :
-    (boundaryParam n x).1 = euclideanHalfSpaceBoundaryParam n x := (rfl)
+    (boundaryParam n x).val = euclideanHalfSpaceBoundaryParam n x := (rfl)
 
 /-- The boundary projection agrees with the ambient linear projection. -/
 @[simp]
 theorem boundaryProj_coe (y : EuclideanHalfSpace (n + 1)) :
-    boundaryProj n y = euclideanHalfSpaceBoundaryProj n y.1 := (rfl)
+    boundaryProj n y = euclideanHalfSpaceBoundaryProj n y.val := (rfl)
 
 /-- The coordinates of the boundary projection are the positive-index coordinates. -/
 theorem boundaryProj_apply (y : EuclideanHalfSpace (n + 1)) (i : Fin n) :
-    boundaryProj n y i = y.1 i.succ := by
+    boundaryProj n y i = y.val i.succ := by
   rw [boundaryProj_coe, euclideanHalfSpaceBoundaryProj_apply]
 
 /-- Deleting the zeroth coordinate undoes the boundary parametrization. -/
@@ -288,8 +297,8 @@ theorem boundaryProj_boundaryParam (x : EuclideanSpace ℝ (Fin n)) :
 /-- On the boundary of the half-space, deleting and reinserting the zeroth coordinate is the
 identity. -/
 @[simp]
-theorem boundaryParam_boundaryProj {y : EuclideanHalfSpace (n + 1)} (hy : y.1 0 = 0) :
-    boundaryParam n (euclideanHalfSpaceBoundaryProj n y.1) = y :=
+theorem boundaryParam_boundaryProj {y : EuclideanHalfSpace (n + 1)} (hy : y.val 0 = 0) :
+    boundaryParam n (euclideanHalfSpaceBoundaryProj n y.val) = y :=
   Subtype.ext (euclideanHalfSpaceBoundaryParam_proj (mem_euclideanHalfSpaceBoundary.2 hy))
 
 /-- The boundary parametrization is continuous. -/
@@ -298,7 +307,7 @@ theorem continuous_boundaryParam : Continuous (boundaryParam n) :=
 
 /-- The boundary projection is continuous. -/
 theorem continuous_boundaryProj : Continuous (boundaryProj n) :=
-  (euclideanHalfSpaceBoundaryProj n).continuous.comp continuous_subtype_val
+  (euclideanHalfSpaceBoundaryProj n).continuous.comp continuous_subtypeVal
 
 /-- The inverse of the model map `𝓡∂ (n + 1)` sends the parametrized coordinate hyperplane to the
 boundary parametrization. -/
@@ -317,13 +326,87 @@ theorem boundaryParam_mem_range (x : EuclideanSpace ℝ (Fin n)) :
   rw [range_modelWithCornersEuclideanHalfSpace]
   simp
 
+section Scaling
+
+variable {m : ℕ} [NeZero m] {k : WithTop ℕ∞} {ε : ℝ}
+
+/-- The half-space is closed under multiplication by a positive scalar. -/
+private theorem smul_val_zero_nonneg (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    0 ≤ (ε • x.val) 0 := by
+  simpa using mul_nonneg hε.le x.property
+
+private theorem smul_mem_range (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    ε • (𝓡∂ m) x ∈ range (𝓡∂ m) := by
+  rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq,
+    modelWithCornersEuclideanHalfSpace_apply]
+  exact smul_val_zero_nonneg hε x
+
+/-- Multiplication by `ε` on the half-space model, the map underlying `smulDiffeomorph`. -/
+private noncomputable def smulMap (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    EuclideanHalfSpace m :=
+  ⟨ε • x.val, smul_val_zero_nonneg hε x⟩
+
+private theorem smulMap_val (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    (smulMap hε x).val = ε • x.val := rfl
+
+private theorem contMDiff_smulMap (hε : 0 < ε) :
+    ContMDiff (𝓡∂ m) (𝓡∂ m) k (smulMap (m := m) hε) := by
+  have hcoord : ContMDiff (𝓡∂ m) 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) k (fun x ↦ ε • (𝓡∂ m) x) :=
+    (contDiff_const_smul ε).contMDiff.comp (𝓡∂ m).contMDiff
+  refine ((𝓡∂ m).contMDiffOn_symm.comp_contMDiff hcoord (smul_mem_range hε)).congr fun x ↦ ?_
+  apply Subtype.ext
+  rw [smulMap_val, comp_apply, modelWithCornersEuclideanHalfSpace_apply,
+    modelWithCornersEuclideanHalfSpace_symm_apply_of_le (smul_val_zero_nonneg hε x)]
+
+variable (m k) in
+/-- **Scaling the half-space model.** Multiplication by a positive scalar `ε` is a `C^k`
+diffeomorphism of the Euclidean half-space, with inverse multiplication by `ε⁻¹`. -/
+noncomputable def smulDiffeomorph (hε : 0 < ε) :
+    EuclideanHalfSpace m ≃ₘ^k⟮𝓡∂ m, 𝓡∂ m⟯ EuclideanHalfSpace m where
+  toFun := smulMap hε
+  invFun := smulMap (inv_pos.2 hε)
+  left_inv x := Subtype.ext (inv_smul_smul₀ hε.ne' x.val)
+  right_inv x := Subtype.ext (smul_inv_smul₀ hε.ne' x.val)
+  contMDiff_toFun := contMDiff_smulMap hε
+  contMDiff_invFun := contMDiff_smulMap (inv_pos.2 hε)
+
+/-- The scaling diffeomorphism multiplies the underlying vector by `ε`. -/
+@[simp]
+theorem coe_smulDiffeomorph_apply (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    (smulDiffeomorph m k hε x).val = ε • x.val := (rfl)
+
+/-- The inverse of the scaling diffeomorphism multiplies the underlying vector by `ε⁻¹`. -/
+theorem coe_smulDiffeomorph_symm_apply (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    ((smulDiffeomorph m k hε).symm x).val = ε⁻¹ • x.val := (rfl)
+
+/-- The inverse of scaling by `ε` is scaling by `ε⁻¹`. -/
+@[simp]
+theorem smulDiffeomorph_symm (hε : 0 < ε) :
+    (smulDiffeomorph m k hε).symm = smulDiffeomorph m k (inv_pos.2 hε) :=
+  Diffeomorph.ext fun _ ↦ rfl
+
+variable (m k) in
+/-- Scaling by `1` is the identity. -/
+@[simp]
+theorem smulDiffeomorph_one : smulDiffeomorph m k one_pos = Diffeomorph.refl (𝓡∂ m) _ k :=
+  Diffeomorph.ext fun x ↦ Subtype.ext (one_smul ℝ x.val)
+
+/-- Scaling by `δ` and then by `ε` is scaling by `ε * δ`. -/
+@[simp]
+theorem smulDiffeomorph_trans {δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ) :
+    (smulDiffeomorph m k hδ).trans (smulDiffeomorph m k hε) =
+      smulDiffeomorph m k (mul_pos hε hδ) :=
+  Diffeomorph.ext fun x ↦ Subtype.ext (smul_smul ε δ x.val)
+
+end Scaling
+
 end EuclideanHalfSpace
 
 /-- The boundary of the Euclidean half-space, viewed as a manifold over itself, is the coordinate
 hyperplane where the zeroth coordinate vanishes. -/
 @[simp]
 theorem boundary_euclideanHalfSpace (n : ℕ) :
-    (𝓡∂ (n + 1)).boundary (EuclideanHalfSpace (n + 1)) = {y | y.1 0 = 0} := by
+    (𝓡∂ (n + 1)).boundary (EuclideanHalfSpace (n + 1)) = {y | y.val 0 = 0} := by
   ext y
   rw [ModelWithCorners.boundary, mem_ofPred_eq, ModelWithCorners.isBoundaryPoint_iff,
     frontier_range_modelWithCornersEuclideanHalfSpace]

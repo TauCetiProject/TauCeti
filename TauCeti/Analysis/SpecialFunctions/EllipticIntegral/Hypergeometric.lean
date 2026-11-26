@@ -27,6 +27,9 @@ The proof expands `(1 - m sin² θ)^(-a)` by the binomial series, which converge
 for `|m| < 1`, and integrates term by term with the Wallis integrals
 `∫₀^{π/2} sin²ⁿ θ dθ = (π/2) (1/2)ₙ / n!`.
 
+Subtracting the two series term by term gives
+`D(k) = (K(k) - E(k))/k² = (π/4) ₂F₁(1/2, 3/2; 2; k²)` for `0 < k² < 1` (DLMF 15.9.26).
+
 ## Main statements
 
 * `TauCeti.integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric`: the hypergeometric
@@ -35,12 +38,15 @@ for `|m| < 1`, and integrates term by term with the Wallis integrals
   on `(-1, 1)`.
 * `TauCeti.Real.legendreK_eq_ordinaryHypergeometric` and
   `TauCeti.Real.legendreEc_eq_ordinaryHypergeometric`: the series formulas in the modulus `k`.
+* `TauCeti.Real.legendreD_eq_ordinaryHypergeometric`: the series formula for
+  `D(k) = (K(k) - E(k))/k²`.
 * `TauCeti.Real.analyticOnNhd_legendreK` and `TauCeti.Real.analyticOnNhd_legendreEc`:
   analyticity in the modulus on `(-1, 1)`, for use in higher differential identities.
 
 ## References
 
 * NIST *Digital Library of Mathematical Functions*, §19.5, <https://dlmf.nist.gov/19.5>.
+* NIST *Digital Library of Mathematical Functions*, §15.9(iii), <https://dlmf.nist.gov/15.9.iii>.
 -/
 
 public section
@@ -68,7 +74,7 @@ theorem integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric {a m : �
         fun n => Ring.choose (a + n - 1) n).radius := by
       refine Metric.eball_subset_eball
         (Real.one_div_one_sub_rpow_hasFPowerSeriesOnBall_zero a).r_le ?_
-      simpa [edist_dist, Real.dist_0_eq_abs, enorm_eq_nnnorm] using hm
+      simpa [edist_dist, Real.dist_0_eq_abs, eNorm_eq_nnNorm] using hm
     simpa [FormalMultilinearSeries.ofScalars_apply_eq, norm_smul, ← Ring.multichoose_eq,
       mul_comm] using FormalMultilinearSeries.summable_norm_apply _ hmem
   -- integrate the binomial series term by term, dominated by its absolute series at `|m|`
@@ -89,17 +95,13 @@ theorem integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric {a m : �
         linarith [(le_abs_self _).trans ((hx θ).trans hm.le)]
       rwa [one_div, ← Real.rpow_neg h0] at h)
   -- identify the termwise integrals with the hypergeometric terms
-  have hc (n : ℕ) : Ring.multichoose a n = (ascPochhammer ℝ n).eval a / n ! := by
-    have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer a n
-    rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-    rw [← h]
-    field_simp
   rw [← key.tsum_eq, ordinaryHypergeometric_eq_tsum, ← tsum_mul_left]
   congr 1
   ext n
   simp_rw [mul_pow, ← pow_mul]
   rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    integral_sin_pow_even_eq_ascPochhammer, hc, ascPochhammer_eval_one, smul_eq_mul]
+    integral_sin_pow_even_eq_ascPochhammer,
+    Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, ascPochhammer_eval_one, smul_eq_mul]
   field_simp
 
 /-- For every real `a`, the integral `∫₀^{π/2} (1 - m sin² θ)^(-a) dθ` is a real-analytic function
@@ -144,6 +146,53 @@ theorem legendreEc_eq_ordinaryHypergeometric {k : ℝ} (hk : k ^ 2 < 1) :
   simpa only [legendreEc_def, legendreE_def, neg_div, neg_neg] using
     (integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric
       (a := (-1 / 2 : ℝ)) (by simpa only [abs_of_nonneg (sq_nonneg k)] using hk))
+
+/-- The complete elliptic integral `D(k) = (K(k) - E(k))/k²` (DLMF 19.2.6) is a hypergeometric
+function of the squared modulus (DLMF 15.9.26): for `0 < k² < 1`,
+`(K(k) - E(k))/k² = (π/4) ₂F₁(1/2, 3/2; 2; k²)`. -/
+theorem legendreD_eq_ordinaryHypergeometric {k : ℝ} (hk₀ : 0 < k ^ 2) (hk : k ^ 2 < 1) :
+    (legendreK k - legendreEc k) / k ^ 2 = π / 4 * ₂F₁ (1 / 2 : ℝ) (3 / 2) 2 (k ^ 2) := by
+  -- Termwise: the constant terms of the series of `K` and `E` cancel, and since
+  -- `(1/2)ₙ₊₁ - (-1/2)ₙ₊₁ = (n + 1) (1/2)ₙ`, the `(n + 1)`-st term of their difference is `k²/2`
+  -- times the `n`-th term of `₂F₁(1/2, 3/2; 2; k²)`.
+  rw [legendreK_eq_ordinaryHypergeometric hk, legendreEc_eq_ordinaryHypergeometric hk, ← mul_sub]
+  set m := k ^ 2
+  have hm : ‖m‖ < 1 := by rwa [Real.norm_of_nonneg hk₀.le]
+  have hdiff := (hasSum_nat_add_iff' 1).mpr
+    ((hasSum_ordinaryHypergeometric (1 / 2 : ℝ) (1 / 2) 1 hm).sub
+      (hasSum_ordinaryHypergeometric (-1 / 2 : ℝ) (1 / 2) 1 hm))
+  have h0 (a b c : ℝ) : ordinaryHypergeometricCoefficient a b c 0 = 1 := by
+    simp [ordinaryHypergeometricCoefficient]
+  simp only [Finset.range_one, Finset.sum_singleton, h0, sub_self, sub_zero] at hdiff
+  have hterm (n : ℕ) :
+      ordinaryHypergeometricCoefficient (1 / 2 : ℝ) (1 / 2) 1 (n + 1) • m ^ (n + 1) -
+          ordinaryHypergeometricCoefficient (-1 / 2 : ℝ) (1 / 2) 1 (n + 1) • m ^ (n + 1) =
+        m / 2 * (ordinaryHypergeometricCoefficient (1 / 2 : ℝ) (3 / 2) 2 n • m ^ n) := by
+    -- `(a)ₙ₊₁ = a (a + 1)ₙ`
+    have hl (a : ℝ) : (ascPochhammer ℝ (n + 1)).eval a = a * (ascPochhammer ℝ n).eval (a + 1) :=
+      (ascPochhammer_succ_eval n a).trans (ascPochhammer_eval_succ n a).symm
+    have h1 : (ascPochhammer ℝ (n + 1)).eval (1 / 2 : ℝ) =
+        (ascPochhammer ℝ n).eval (1 / 2) * (1 / 2 + n) := ascPochhammer_succ_eval _ _
+    have h2 : (ascPochhammer ℝ (n + 1)).eval (-1 / 2 : ℝ) =
+        -1 / 2 * (ascPochhammer ℝ n).eval (1 / 2) := by
+      rw [hl]
+      norm_num
+    have h3 : (ascPochhammer ℝ n).eval (3 / 2 : ℝ) =
+        2 * ((ascPochhammer ℝ n).eval (1 / 2) * (1 / 2 + n)) := by
+      rw [← h1, hl]
+      norm_num
+      ring
+    have h4 : (ascPochhammer ℝ n).eval (2 : ℝ) = ((n + 1)! : ℝ) := by
+      simpa [Nat.add_comm 1 n, one_add_one_eq_two] using factorial_mul_ascPochhammer ℝ 1 n
+    have hn : (n ! : ℝ) ≠ 0 := by positivity
+    simp only [ordinaryHypergeometricCoefficient, smul_eq_mul, h1, h2, h3, h4,
+      ascPochhammer_eval_one, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
+    field_simp
+    ring
+  simp only [hterm] at hdiff
+  rw [hdiff.unique ((hasSum_ordinaryHypergeometric (1 / 2 : ℝ) (3 / 2) 2 hm).mul_left (m / 2))]
+  field_simp
+  ring
 
 /-- The complete elliptic integral of the first kind is real analytic in the modulus on
 `(-1, 1)`. -/

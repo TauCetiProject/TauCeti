@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.ArtinSymbol
-import TauCeti.NumberTheory.NumberField.AlgEquiv
+import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
 # The unramified primes carrying a prescribed Artin class
@@ -50,7 +50,9 @@ existential is what keeps the fibres free of them.
   any unramifiedness proof in hand, membership is the equation `artinSymbol 𝔭.asIdeal hur = C`.
 * `NumberField.Chebotarev.mem_frobeniusPrimeSet_mk_iff_exists_isArithFrobAt`: for an unramified
   `𝔭` and an element `σ`, membership in the fibre of `[σ]` says exactly that `σ` is an arithmetic
-  Frobenius at *some* prime of `𝓞 L` above `𝔭`.
+  Frobenius at *some* prime of `𝓞 L` above `𝔭`; by
+  `NumberField.Chebotarev.exists_isArithFrobAt_conj_of_mem_frobeniusPrimeSet_mk`, a conjugate of
+  `σ` is one at *every* prime above `𝔭`.
 * `NumberField.Chebotarev.frobeniusPrimeSet_map_autCongr`: equivariance — an isomorphism
   `e : L ≃ₐ[K] L'` of extensions of `K` matches the fibre of `C` in `L` with the fibre in `L'` of
   the image of `C` under the induced isomorphism `AlgEquiv.autCongr e` of Galois groups.
@@ -85,11 +87,7 @@ and its Artin class is `C`.
 
 The unramifiedness proof is packaged existentially rather than assumed, because `artinSymbol`
 takes it as an argument and no value is assigned at a ramified prime. See
-`mem_frobeniusPrimeSet_iff_artinSymbol_eq` for the form used once such a proof is available.
-
-The carrier and this membership condition are taken from
-`TauCetiRoadmap/Chebotarev/Suggested.lean`, lines 64–76, described in the section
-`Frobenius prime sets and finite exceptional sets` of `TauCetiRoadmap/Chebotarev/README.md`. -/
+`mem_frobeniusPrimeSet_iff_artinSymbol_eq` for the form used once such a proof is available. -/
 def frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) : Set (HeightOneSpectrum (𝓞 K)) :=
   {𝔭 | ∃ hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
     Algebra.IsUnramifiedAt (𝓞 K) Q, artinSymbol 𝔭.asIdeal hur = C}
@@ -167,9 +165,22 @@ itself — not merely some conjugate of it — is an arithmetic Frobenius at som
 above `𝔭`. -/
 theorem exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk {𝔭 : HeightOneSpectrum (𝓞 K)}
     {σ : L ≃ₐ[K] L} (h : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ)) :
-    ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 := by
+    ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val := by
   obtain ⟨hur, hC⟩ := mem_frobeniusPrimeSet_iff.mp h
   exact exists_isArithFrobAt_of_artinSymbol_eq_mk 𝔭.asIdeal hur hC
+
+/-- **Every prime above is reached by a conjugate.** If `𝔭` lies in the fibre of the class of `σ`,
+then at every prime `Q` of `𝓞 L` above `𝔭` some conjugate of `σ` is an arithmetic Frobenius. -/
+theorem exists_isArithFrobAt_conj_of_mem_frobeniusPrimeSet_mk {𝔭 : HeightOneSpectrum (𝓞 K)}
+    {σ : L ≃ₐ[K] L} (h : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ)) (Q : Ideal (𝓞 L))
+    [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
+    ∃ γ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) (γ * σ * γ⁻¹) Q := by
+  obtain ⟨⟨Q₁, hQ₁⟩, hσ⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk h
+  have := hQ₁.1
+  have := hQ₁.2
+  obtain ⟨γ, rfl⟩ := Algebra.IsInvariant.exists_smul_of_under_eq (𝓞 K) (𝓞 L) (L ≃ₐ[K] L) Q₁ Q
+    (by rw [← Q₁.over_def 𝔭.asIdeal, ← Q.over_def 𝔭.asIdeal])
+  exact ⟨γ, hσ.conj γ⟩
 
 /-- **The fibre of a class, read off from any one representative.** For `𝔭` unramified in `L`,
 membership in the fibre of `[σ]` says exactly that `σ` is an arithmetic Frobenius at some prime
@@ -178,9 +189,9 @@ theorem mem_frobeniusPrimeSet_mk_iff_exists_isArithFrobAt {𝔭 : HeightOneSpect
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) Q) (σ : L ≃ₐ[K] L) :
     𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) ↔
-      ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 :=
+      ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val :=
   ⟨exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk, fun ⟨Q, hσ⟩ ↦
-    mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.1 hσ⟩
+    mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.val hσ⟩
 
 section IsoOfExtensions
 
@@ -208,10 +219,10 @@ theorem frobeniusPrimeSet_map_autCongr (C : ConjClasses (L ≃ₐ[K] L)) (e : L 
   simp only [mem_frobeniusPrimeSet_iff]
   constructor
   · rintro ⟨hur', hC⟩
-    have hur := (e.forall_isUnramifiedAt_iff 𝔭.asIdeal).mpr hur'
+    have hur := ((NumberField.RingOfIntegers.mapAlgEquiv e).isUnramifiedIn_iff 𝔭.asIdeal).mpr hur'
     exact ⟨hur, by rw [artinSymbol_eq_map_autCongr 𝔭.asIdeal e.symm hur' hur, hC, hcomp]⟩
   · rintro ⟨hur, hC⟩
-    have hur' := (e.forall_isUnramifiedAt_iff 𝔭.asIdeal).mp hur
+    have hur' := ((NumberField.RingOfIntegers.mapAlgEquiv e).isUnramifiedIn_iff 𝔭.asIdeal).mp hur
     exact ⟨hur', by rw [artinSymbol_eq_map_autCongr 𝔭.asIdeal e hur hur', hC]⟩
 
 end IsoOfExtensions

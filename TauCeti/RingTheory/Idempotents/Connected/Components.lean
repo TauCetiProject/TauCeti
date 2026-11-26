@@ -45,8 +45,7 @@ constructs a `Fintype` internally for the finite sum.
 * J. S. Milne, *Algebraic Groups* (2017), Section 2.a.
 
 This supplies the idempotent decomposition needed for the identity component and component group
-in Layer 3 of the ReductiveGroups roadmap; it does not itself assert compatibility with base
-change.
+of an affine group scheme; it does not itself assert compatibility with base change.
 -/
 
 public section
@@ -73,7 +72,7 @@ noncomputable def connectedComponentsIdempotent :
     ((isIdempotentElemEquivClopens (R := R)).symm
       (⟨ConnectedComponents.mk ⁻¹' ({C} : Set (ConnectedComponents (PrimeSpectrum R))),
         (isClopen_discrete {C}).preimage ConnectedComponents.continuous_coe⟩ :
-        TopologicalSpace.Clopens (PrimeSpectrum R))).1
+        TopologicalSpace.Clopens (PrimeSpectrum R))).val
 
 /-- Every component-indexed idempotent is idempotent. -/
 theorem isIdempotentElem_connectedComponentsIdempotent
@@ -83,7 +82,7 @@ theorem isIdempotentElem_connectedComponentsIdempotent
     ((isIdempotentElemEquivClopens (R := R)).symm
       (⟨ConnectedComponents.mk ⁻¹' ({C} : Set (ConnectedComponents (PrimeSpectrum R))),
         (isClopen_discrete {C}).preimage ConnectedComponents.continuous_coe⟩ :
-        TopologicalSpace.Clopens (PrimeSpectrum R))).2
+        TopologicalSpace.Clopens (PrimeSpectrum R))).property
 
 /-- The basic open of a component-indexed idempotent is the fibre of the quotient map over that
 component. -/

@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Affine
 
 import Mathlib.MeasureTheory.Group.Convolution
 import Mathlib.Probability.ProductMeasure
+import TauCeti.Analysis.Matrix.GramFactorization
 import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
@@ -136,6 +137,24 @@ theorem rank_coe_wishartGram_le (X : ι → EuclideanSpace ℝ (Fin p)) :
     Matrix.rank_conjTranspose_mul_self]
   exact Matrix.rank_le_card_height _
 
+/-- Gram sums of a finite family are exactly the positive-semidefinite matrices of rank
+at most the number of vectors. -/
+theorem range_wishartGram {ι : Type*} [Fintype ι] :
+    Set.range (wishartGram (p := p) (ι := ι)) =
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
+          (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ Fintype.card ι} := by
+  ext A
+  constructor
+  · rintro ⟨X, rfl⟩
+    exact ⟨posSemidef_coe_wishartGram X, rank_coe_wishartGram_le X⟩
+  · rintro ⟨hA, hr⟩
+    obtain ⟨B, hB⟩ := hA.exists_eq_conjTranspose_mul_self_of_rank_le hr
+    refine ⟨fun r ↦ WithLp.toLp 2 (B r), Subtype.ext ?_⟩
+    rw [coe_wishartGram, hB]
+    ext i j
+    simp [Matrix.sum_apply, Matrix.mul_apply, Matrix.vecMulVec_apply]
+
 /-- A linear image of the vectors congruates their Gram sum. -/
 theorem wishartGram_toEuclideanLin {q : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
     (X : ι → EuclideanSpace ℝ (Fin p)) :
@@ -242,6 +261,21 @@ theorem map_symmetricCongruenceLinearMap_wishartGramMeasure {q : ℕ} (ν : ℕ)
   rw [hfun, ← Measure.map_map measurable_wishartGram (by fun_prop),
     Measure.pi_map_pi fun _ ↦ (by fun_prop : Measurable _).aemeasurable, hmap]
 
+/-- Congruence by a rectangular matrix sends a Gaussian-Gram Wishart random matrix to the law
+whose scale is transformed by the same congruence. The matrix need not have full row rank. -/
+theorem _root_.ProbabilityTheory.HasLaw.symmetricCongruenceLinearMap_wishartGramMeasure
+    {p q : ℕ} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {W : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    {ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
+    (hW : HasLaw W (wishartGramMeasure ν S) P) (M : Matrix (Fin q) (Fin p) ℝ)
+    (hS : S.PosSemidef) :
+    HasLaw (fun ω ↦ Matrix.symmetricCongruenceLinearMap M (W ω))
+      (wishartGramMeasure ν (M * S * Mᵀ)) P := by
+  have hmap : Measurable (Matrix.symmetricCongruenceLinearMap M) :=
+    (LinearMap.continuous_of_finiteDimensional _).measurable
+  have hlaw := (hasLaw_map hmap.aemeasurable).comp hW
+  rwa [map_symmetricCongruenceLinearMap_wishartGramMeasure ν M hS] at hlaw
+
 /-- The Gaussian-Gram law of a positive-semidefinite scale `S` is the standard Gaussian-Gram law
 pushed forward by the congruence with `CFC.sqrt S`. -/
 theorem wishartGramMeasure_eq_map_sqrt (ν : ℕ) (hS : S.PosSemidef) :
@@ -274,7 +308,7 @@ theorem ae_posSemidef_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) 
   refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_posSemidef ν S)
   apply measurableSet_setOfPred.mp
   exact (_root_.isClosed_setOfPred_posSemidef (n := Fin p) (R := ℝ)).measurableSet.preimage
-    continuous_subtype_val.measurable
+    continuous_subtypeVal.measurable
 
 /-- Every value of the congruated Gram sum has rank at most `min ν S.rank`: the Gram sum of `ν`
 vectors caps the rank at `ν`, and congruating by the square root of `S` caps it at `S.rank`. -/
@@ -328,16 +362,11 @@ singular symmetric matrices, which are `TauCeti.symmetricLebesgue`-null. -/
 theorem mutuallySingular_wishartGramMeasure_symmetricLebesgue (ν : ℕ)
     (S : Matrix (Fin p) (Fin p) ℝ) (hrank : min ν S.rank < p) :
     (wishartGramMeasure ν S).MutuallySingular (symmetricLebesgue p) := by
-  refine ⟨{A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).det = 0}ᶜ, (measurableSet_setOfPred_det_eq_zero p).compl,
-    ?_, ?_⟩
-  · refine measure_mono_null (fun A hA ↦ ?_) (ae_iff.1 (ae_rank_le_wishartGramMeasure ν S))
-    have hdet : (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0 := hA
-    have hrk : (A : Matrix (Fin p) (Fin p) ℝ).rank = p := by
-      rw [Matrix.rank_of_isUnit _ ((Matrix.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hdet)),
-        Fintype.card_fin]
-    exact fun hle ↦ absurd (hrk.symm.trans_le hle) (not_le.2 hrank)
-  · rw [compl_compl, symmetricLebesgue_setOf_det_eq_zero]
+  refine mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero
+    ((ae_rank_le_wishartGramMeasure ν S).mono fun A hle ↦ ?_)
+  by_contra hdet
+  rw [Matrix.rank_of_det_ne_zero hdet, Fintype.card_fin] at hle
+  omega
 
 /-! ### Convolution -/
 
@@ -374,5 +403,18 @@ theorem wishartGramMeasure_conv_wishartGramMeasure (ν₁ ν₂ : ℕ)
   rw [MeasurableEquiv.coe_piCongrLeft, Function.comp_apply, Function.comp_apply,
     Function.comp_apply, wishartGram_piCongrLeft]
   rfl
+
+/-- The sum of independent Gaussian-Gram Wishart matrices with a common scale has the sum of
+their natural degrees. This includes zero degrees and invalid covariance matrices, whose laws are
+Dirac masses at zero. -/
+theorem _root_.ProbabilityTheory.IndepFun.hasLaw_add_wishartGramMeasure
+    {p : ℕ} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X Y : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    {ν₁ ν₂ : ℕ} {S : Matrix (Fin p) (Fin p) ℝ} (hXY : IndepFun X Y P)
+    (hX : HasLaw X (wishartGramMeasure ν₁ S) P)
+    (hY : HasLaw Y (wishartGramMeasure ν₂ S) P) :
+    HasLaw (X + Y) (wishartGramMeasure (ν₁ + ν₂) S) P := by
+  rw [← wishartGramMeasure_conv_wishartGramMeasure ν₁ ν₂ S]
+  exact hXY.hasLaw_add hX hY
 
 end TauCeti.Probability

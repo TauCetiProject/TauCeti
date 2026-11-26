@@ -79,7 +79,7 @@ invariant submodule `U` of an endomorphism, this is `A.restrict hU.apply_mem`. -
 def restrict (A : E →ₛₗ.[σ] F) {U : Submodule R E} {V : Submodule S F}
     (hUV : ∀ x : A.domain, (x : E) ∈ U → A x ∈ V) : U →ₛₗ.[σ] V where
   domain := A.domain.comap U.subtype
-  toFun := (A.toFun ∘ₛₗ U.subtype.restrict fun _ hx ↦ hx).codRestrict V fun x ↦ hUV _ x.1.2
+  toFun := (A.toFun ∘ₛₗ U.subtype.restrict fun _ hx ↦ hx).codRestrict V fun x ↦ hUV _ x.val.property
 
 section Restrict
 
@@ -98,7 +98,7 @@ theorem mem_restrict_domain {x : U} : x ∈ (A.restrict hUV).domain ↔ (x : E) 
 /-- The restriction acts as the original partial linear map. -/
 @[simp]
 theorem coe_restrict_apply (x : (A.restrict hUV).domain) :
-    ((A.restrict hUV x : V) : F) = A ⟨x, (mem_restrict_domain hUV).1 x.2⟩ :=
+    ((A.restrict hUV x : V) : F) = A ⟨x, (mem_restrict_domain hUV).1 x.property⟩ :=
   (rfl)
 
 end Restrict
@@ -111,7 +111,7 @@ theorem graph_restrict [Module R F] {A : E →ₗ.[R] F} {U : Submodule R E} {V 
   ext ⟨x, y⟩
   simp only [mem_graph_iff, Submodule.mem_comap, LinearMap.prodMap_apply, Submodule.subtype_apply,
     Subtype.exists, mem_restrict_domain, Subtype.ext_iff, coe_restrict_apply]
-  exact ⟨fun ⟨z, hzU, hz, hzx, hzy⟩ ↦ ⟨z, hz, hzx, hzy⟩,
-    fun ⟨z, hz, hzx, hzy⟩ ↦ ⟨z, hzx ▸ x.2, hz, hzx, hzy⟩⟩
+  exact ⟨fun ⟨z, _, hz, hzx, hzy⟩ ↦ ⟨z, hz, hzx, hzy⟩,
+    fun ⟨z, hz, hzx, hzy⟩ ↦ ⟨z, hzx ▸ x.property, hz, hzx, hzy⟩⟩
 
 end LinearPMap

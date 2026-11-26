@@ -94,6 +94,13 @@ theorem diskFunction_hardyBasis (n : ℕ) (w : ℂ) : (hardyBasis n).diskFunctio
       zero_mul]]
   rw [← hardyBasis_repr, HilbertBasis.repr_self, lp.single_apply, Pi.single_eq_same, one_mul]
 
+/-- The disk function of the Hardy function with coefficient sequence `a ∈ ℓ²` is the power series
+`∑ n, a n * w ^ n`. -/
+theorem diskFunction_hardyBasis_repr_symm (a : lp (fun _ : ℕ ↦ ℂ) 2) (w : ℂ) :
+    (hardyBasis.repr.symm a).diskFunction w = ∑' n, a n * w ^ n := by
+  rw [diskFunction_def]
+  exact tsum_congr fun n ↦ by rw [← hardyBasis_repr, LinearIsometryEquiv.apply_symm_apply]
+
 /-- The disk function of the zero Hardy function vanishes identically. -/
 @[simp]
 theorem diskFunction_zero (w : ℂ) : (0 : HardySpace).diskFunction w = 0 := by
@@ -305,14 +312,14 @@ theorem tendsto_eLpNorm_diskFunction_sub :
       (𝓝[<] 1) (𝓝 0) := by
   have hlim : Tendsto (fun r => ‖((x.radial r - x : HardySpace) :
       Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ₑ) (𝓝[<] (1 : ℝ)) (𝓝 0) := by
-    have h := ((continuous_enorm.comp continuous_subtype_val).tendsto 0).comp
+    have h := ((continuous_eNorm.comp continuous_subtypeVal).tendsto 0).comp
       (tendsto_sub_nhds_zero_iff.mpr x.tendsto_radial)
     simpa [Function.comp_def] using h
   refine hlim.congr' ?_
   have hev : ∀ᶠ r in 𝓝[<] (1 : ℝ), |r| < 1 :=
     eventually_of_mem (Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)) fun r hr => abs_lt.mpr hr
   filter_upwards [hev] with r hr
-  rw [Lp.enorm_def]
+  rw [Lp.eNorm_def]
   refine eLpNorm_congr_ae ?_
   filter_upwards [Lp.coeFn_sub (x.radial r : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) x,
     x.coe_radial_ae_eq hr] with t ht hrad

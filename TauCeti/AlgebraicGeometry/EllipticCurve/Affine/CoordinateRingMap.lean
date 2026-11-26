@@ -64,31 +64,24 @@ that carry those. So this is a result about the generators, not about points.
 
 Stated over arbitrary commutative rings; the curve need not be elliptic.
 
-The commutation results serve `TauCetiRoadmap/EllipticCurves/README.md` Layer 0.5 (README:369),
-whose first milestone (README:376-378) asks for "base change of Weierstrass equations, coordinate
-rings, function fields, points, and isogenies, compatible with identity, composition, degree,
-separability, `MapsInfinity`, duals, and induced point maps": these are that compatibility for the
-coordinate ring and the distinguished elements Mathlib singles out in it. They do not on their own
-supply the "induced point maps" clause, which needs the curve equation these statements do not
-assume.
+The commutation results are the base-change compatibility of the coordinate ring and of the
+distinguished elements Mathlib singles out in it. They do not on their own give the induced map on
+points, which needs the curve equation these statements do not assume.
 
-The surjectivity results support the Hasse strand of the same file, Layer 3. That
-roadmap's Layer-0 narrative makes the Frobenius "the key input to Layer 3", and the arithmetic
-Frobenius of the function field over a finite field is obtained by transporting the `q`-power map
-of the base to the coordinate ring, which needs exactly this bijectivity. The roadmap's §"What
-Mathlib already has (consume)" lists `Affine.CoordinateRing` as consumed infrastructure that "is
-load-bearing API here, not an implementation detail"; this is a complement to that API, not a
-reimplementation of it.
+The surjectivity results serve the Frobenius: the arithmetic Frobenius of the function field over a
+finite field is obtained by transporting the `q`-power map of the base to the coordinate ring, which
+needs exactly this bijectivity. This complements Mathlib's `Affine.CoordinateRing` API rather than
+reimplementing it.
 
 ## Provenance
 
 The need for these statements is from the AINTLIB `HasseWeil` project
-(`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by that roadmap at
-`dev/hasse-weil @ 513e83879e2f`), `HasseWeil/WeilPairing/FrobeniusFunctionFieldEquiv.lean`,
-declaration `coordRingMap_bijective`. There they are bundled as bijectivity of one map, for a ring
-*equivalence* only — surjectivity being obtained by lifting along `e.symm` — inside a 267-line
-file that also constructs the function-field Frobenius. Here there is no inverse to lift along:
-the statement is for an arbitrary surjective `f : R →+* S`, matching the generality of Mathlib's
+(`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at `dev/hasse-weil @ 513e83879e2f`),
+`HasseWeil/WeilPairing/FrobeniusFunctionFieldEquiv.lean`, declaration `coordRingMap_bijective`.
+There they are bundled as bijectivity of one map, for a ring *equivalence* only — surjectivity
+being obtained by lifting along `e.symm` — inside a 267-line file that also constructs the
+function-field Frobenius. Here there is no inverse to lift along: the statement is for an
+arbitrary surjective `f : R →+* S`, matching the generality of Mathlib's
 `CoordinateRing.map_injective`, and preimages come from `Polynomial.map_surjective`. The argument
 itself lives one level down, in `TauCeti/RingTheory/AdjoinRoot/Basic.lean`; the equivalence the
 source bundled it for is left to the use site.

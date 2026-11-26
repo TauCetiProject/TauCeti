@@ -106,7 +106,7 @@ theorem resolventTransform_semicircleReal_one_add_eq
       x • resolvent (R := ℝ) z x = 1 + z * resolvent (R := ℝ) z x := by
     filter_upwards [Measure.support_mem_ae] with x hx
     have hxz : (x : ℂ) - z ≠ 0 := sub_ne_zero.2 fun h ↦ hz ⟨x, hx, h⟩
-    rw [Complex.real_smul, resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap]
+    rw [Complex.real_smul, Complex.resolvent_real_eq_inv]
     field_simp
     ring
   rw [integral_congr_ae hae, integral_add (integrable_const _) (hint.const_mul z),
@@ -227,7 +227,7 @@ theorem eq_resolventTransform_marchenkoPastur_iff (hz : 0 < z.im) {w : ℂ} :
     resolventTransform_marchenkoPastur_quadratic_eq_zero
       (notMem_image_ofReal_of_im_ne_zero hz.ne')
   have hmim : 0 < m.im := im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz
-  refine ⟨fun h ↦ h ▸ ⟨hmim, hm⟩, fun ⟨hwim, hw⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ h ▸ ⟨hmim, hm⟩, fun ⟨_, hw⟩ ↦ ?_⟩
   by_contra hne
   -- Any root `w ≠ m` obeys `w * (y * (z * m)) = 1`, while `Im (z * m) > 0`, forcing `Im w ≤ 0`.
   have hprod : w * ((y : ℂ) * (z * m)) = 1 := by

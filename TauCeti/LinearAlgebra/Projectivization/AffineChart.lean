@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.PartialEquiv
 public import Mathlib.LinearAlgebra.Projectivization.Basic
-public import TauCeti.Algebra.Field.Fin.Tuple
+public import TauCeti.Algebra.GroupWithZero.Fin.Tuple
 public import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -37,11 +37,15 @@ of complex projective space are built.
 * `Projectivization.affineChart i`: the affine chart `U_i ≃ Fin n → K` by homogeneous ratios.
 * `Projectivization.affineChart_mk` and `Projectivization.affineChart_symm_apply`: the chart and
   its inverse in homogeneous coordinates.
+* `Projectivization.rep_div_rep_eq_insertNth_affineChart`: homogeneous ratios on the chart of `j`
+  as coordinates of `[Fin.insertNth j 1 z]`.
 * `Projectivization.affineChart_symm_zero`: the centre of the chart of `i` is the coordinate point
   `[eᵢ]`, which lies in no other standard affine open
   (`Projectivization.mk_single_mem_affineOpen_iff`).
 * `Projectivization.affineChart_symm_trans_source` and
   `Projectivization.affineChart_symm_trans_apply`: the domain and formula of the transition maps.
+* `Projectivization.affineChart_symm_trans_eq_inv_of_ne`: on the projective line, the change
+  between the two affine charts is `z ↦ 1 / z`.
 * `Projectivization.affineChart_apply_affineChart_symm`: a map of projective spaces given in
   homogeneous coordinates, read in standard affine charts.
 
@@ -128,10 +132,10 @@ the `i`-th homogeneous coordinate is nonzero, it is given by the ratios of the o
 that one, enumerated by `Fin.succAbove i`. Its inverse sends `z` to `[Fin.insertNth i 1 z]`. -/
 noncomputable def affineChart (i : Fin (n + 1)) : PartialEquiv (ℙ K (Fin (n + 1) → K)) (Fin n → K)
     where
-  toFun := Projectivization.lift (fun v j ↦ v.1 (i.succAbove j) / v.1 i) fun a b t h ↦ by
+  toFun := Projectivization.lift (fun v j ↦ v.val (i.succAbove j) / v.val i) fun a b t h ↦ by
     have ht : t ≠ 0 := by
       rintro rfl
-      exact a.2 (by simpa using h)
+      exact a.property (by simpa using h)
     ext j
     simp [h, mul_div_mul_left _ _ ht]
   invFun z := mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z)
@@ -162,6 +166,16 @@ the `i`-th one. Outside the chart domain both sides are `0`. -/
 theorem affineChart_mk (i : Fin (n + 1)) (v : Fin (n + 1) → K) (hv : v ≠ 0) :
     affineChart i (mk K v hv) = fun j ↦ v (i.succAbove j) / v i :=
   (rfl)
+
+/-- On the chart `j`, the ratio `x.rep i / x.rep j` is the `i`-th homogeneous coordinate of
+`[1 : z]` in the coordinate positions of the chart `j`, for `z` the affine coordinates of `x`. -/
+theorem rep_div_rep_eq_insertNth_affineChart (i : Fin (n + 1)) {j : Fin (n + 1)}
+    {x : ℙ K (Fin (n + 1) → K)} (hj : x ∈ affineOpen j) :
+    x.rep i / x.rep j = Fin.insertNth (α := fun _ ↦ K) j 1 (affineChart j x) i := by
+  have hx : x = mk K x.rep x.rep_ne_zero := (mk_rep x).symm
+  conv_rhs => rw [hx, affineChart_mk,
+    Fin.insertNth_one_div_eq_inv_smul j _ ((mem_affineOpen_iff j x).1 hj)]
+  simp [div_eq_inv_mul]
 
 /-- The inverse of the standard affine chart sends `z` to `[Fin.insertNth i 1 z]`. -/
 @[simp]
@@ -201,6 +215,15 @@ theorem affineChart_symm_trans_apply (i j : Fin (n + 1)) (z : Fin n → K) :
       fun k ↦ Fin.insertNth (α := fun _ ↦ K) i 1 z (j.succAbove k) /
         Fin.insertNth (α := fun _ ↦ K) i 1 z j :=
   (rfl)
+
+/-- The change between the two affine charts of the projective line is `z ↦ 1 / z`. -/
+theorem affineChart_symm_trans_eq_inv_of_ne {i j : Fin 2} (h : i ≠ j) :
+    ⇑((affineChart (K := K) i).symm.trans (affineChart j)) = fun z _ ↦ (z 0)⁻¹ := by
+  funext z k
+  obtain ⟨l, hl⟩ := Fin.exists_succAbove_eq h
+  rw [affineChart_symm_trans_apply, Subsingleton.elim k l]
+  dsimp only
+  rw [hl, Fin.insertNth_apply_same, Fin.insertNth_apply_of_ne_fin_two h, one_div]
 
 
 /-- A map `f` of projective spaces sending `[w]` to `[F w]` for `w = Fin.insertNth i 1 z`, read in

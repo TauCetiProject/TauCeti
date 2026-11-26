@@ -13,7 +13,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.RingTheory.Polynomial.Basic
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -41,7 +41,10 @@ Cauchy–Riemann operator `∂bar` on `TS²`. Their real dimension `6`
 (`OnePoint.finrank_real_holomorphicVectorFields`) agrees with the value
 `n χ + 2 c₁ = 1 · 2 + 2 · 2` of the Riemann–Roch index formula. This file only computes the
 dimension of the kernel: identifying it with the index also needs the vanishing of the cokernel of
-`∂bar` and the evaluation `c₁(TS²)[S²] = 2`, neither of which is proved here.
+`∂bar` and the evaluation `c₁(TS²)[S²] = 2`. The clutching form of that evaluation, the clutching
+number `2` of `TS²`, is `TauCeti.clutchingNumber_tangentSpace_riemannSphereSquare`; neither the
+vanishing of the cokernel nor the comparison of the clutching number with the `c₁` of the index
+formula is proved here.
 
 ## Main declarations
 

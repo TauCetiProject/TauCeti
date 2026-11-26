@@ -11,6 +11,7 @@ public import Mathlib.Order.LiminfLimsup
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.PolarCoord
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Fourier.Wirtinger
@@ -73,10 +74,10 @@ Nothing here is analytic: `g` is an arbitrary measurable weight, and the two inp
 polar-coordinate change of variables and Hölder's inequality. The analytic use is
 `TauCeti/Analysis/Complex/Conformal/LengthArea.lean`, which takes `g` to be `‖deriv f‖ₑ` cut off
 outside a set `s`, so that `circleLIntegral g ζ ρ` becomes the arc length of the image of a circular
-arc under a holomorphic `f` and `∫⁻ z, g z ^ 2` its Dirichlet integral, hence the area of the image;
-that file is the layer **L5** input of `TauCetiRoadmap/ConformalMapping/README.md`. Stating the
-estimates for a weight keeps them available to any other length-versus-area argument — the plane
-integral on the right need not be an area and the circle integral on the left need not be a length.
+arc under a holomorphic `f` and `∫⁻ z, g z ^ 2` its Dirichlet integral, hence the area of the
+image. Stating the estimates for a weight keeps them available to any other length-versus-area
+argument — the plane integral on the right need not be an area and the circle integral on the left
+need not be a length.
 
 ## Main definitions and results
 
@@ -239,11 +240,6 @@ theorem circleLIntegral_eq_lintegral_Ioc (g : ℂ → ℝ≥0∞) (ζ : ℂ) (ρ
   exact congrArg _ (setLIntegral_congr Ioo_ae_eq_Ioc)
 
 /-! ### Polar Fubini -/
-
-private theorem continuous_circleMap_uncurry (ζ : ℂ) :
-    Continuous fun p : ℝ × ℝ => circleMap ζ p.1 p.2 := by
-  simp only [circleMap]
-  fun_prop
 
 /-- **Polar Fubini for the lower integral.** Integrating the circle integrals of a measurable
 weight over all radii recovers its plane integral, whatever centre the circles are taken about.
@@ -552,7 +548,7 @@ theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup
       integral_of_not_completeSpace hG, norm_zero]
     exact mul_nonneg (norm_nonneg B) (intervalIntegral.integral_nonneg
       (by linarith [Real.pi_pos]) fun _ _ => by positivity)
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hc : ContDiff ℝ 1 (fun θ ↦ u (circleMap z₀ r θ)) :=
     contDiff_iff_contDiffAt.mpr fun θ ↦
       (hu θ).comp θ (contDiff_circleMap z₀ r).contDiffAt
@@ -582,7 +578,7 @@ theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
       ENNReal.ofReal ρ * circleLIntegral g ζ ρ := by
   rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos]),
     integral_Ioc_eq_integral_Ioo, circleLIntegral_def, ← mul_assoc]
-  refine (Real.ofReal_le_enorm _).trans ((enorm_integral_le_lintegral_enorm _).trans ?_)
+  refine (Real.ofReal_le_eNorm _).trans ((eNorm_integral_le_lintegral_eNorm _).trans ?_)
   rw [← lintegral_const_mul' _ _ (ENNReal.mul_ne_top
     ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top)]
   refine setLIntegral_mono' measurableSet_Ioo fun θ _ => ?_
@@ -593,7 +589,7 @@ theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
     rw [hd]
     simpa [norm_mul, norm_circleMap_zero, abs_of_pos hρ] using
       (fderiv ℝ u (circleMap ζ ρ θ)).le_opNorm (circleMap 0 ρ θ * Complex.I)
-  rw [Real.enorm_of_nonneg (sq_nonneg _)]
+  rw [Real.eNorm_of_nonneg (sq_nonneg _)]
   calc ENNReal.ofReal (‖deriv (fun θ ↦ u (circleMap ζ ρ θ)) θ‖ ^ 2)
       ≤ ENNReal.ofReal ((‖fderiv ℝ u (circleMap ζ ρ θ)‖ * ρ) ^ 2) := by
         gcongr

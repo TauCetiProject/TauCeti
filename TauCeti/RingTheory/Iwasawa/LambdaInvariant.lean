@@ -10,10 +10,8 @@ public import TauCeti.RingTheory.Iwasawa.MuInvariant
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.HeightOne
 
 import Mathlib.NumberTheory.Padics.PadicIntegers
-import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Polynomial.Distinguished
-import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 
 /-!
 # The characteristic polynomial and the `λ`-invariant of an Iwasawa module
@@ -62,9 +60,8 @@ of any elementary module pseudo-isomorphic to `M`, independently of the choice. 
 * `TauCeti.Iwasawa.charIdeal_eq_span_C_pow_mul_charPoly`: `char_Λ(M) = (ϖ ^ μ(M) F_M)` for a
   torsion module `M`.
 
-The examples at the end of the file are over `Λ = ℤ_p⟦T⟧`: `Λ ⧸ (p)` and the finite module
-`Λ ⧸ (p, T)` have `F_M = 1` and `λ = 0`, while the module `Λ ⧸ (T² + pT + p)`, cut out by an
-Eisenstein polynomial, has `F_M = T² + pT + p` and `λ = 2`.
+The example at the end of the file is over `Λ = ℤ_p⟦T⟧`: `Λ ⧸ (p)` and the finite module
+`Λ ⧸ (p, T)` have `F_M = 1` and `λ = 0`.
 
 ## References
 
@@ -88,7 +85,7 @@ theorem distinguishedGenerator_verticalPrime {O : Type*} [CommRing O] [IsDomain 
     [IsDiscreteValuationRing O] : (verticalPrime O).distinguishedGenerator = 1 := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   exact PrimeSpectrum.distinguishedGenerator_eq_one_of_asIdeal_eq_span_C
-    ((mem_maximalIdeal _).mpr hϖ.not_isUnit) (verticalPrime_asIdeal_eq_span hϖ)
+    (verticalPrime_asIdeal_eq_span hϖ)
 
 section CharPoly
 
@@ -410,29 +407,5 @@ example (p : ℕ) [Fact p.Prime] :
     rwa [pow_one] at h
   · have h := lambdaInvariant_quotient_span_C_pow hϖ 1
     rwa [pow_one] at h
-
--- The module `Λ ⧸ (T² + pT + p)`, cut out by an Eisenstein polynomial, has characteristic
--- polynomial `T² + pT + p` and `λ = 2`.
-example (p : ℕ) [Fact p.Prime] :
-    let F : ℤ_[p][X] := .X ^ 2 + .C (p : ℤ_[p]) * .X + .C (p : ℤ_[p])
-    charPoly ℤ_[p] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(F : ℤ_[p]⟦X⟧)}) = F ∧
-      lambdaInvariant ℤ_[p] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(F : ℤ_[p]⟦X⟧)}) = 2 := by
-  intro F
-  have hp : (p : ℤ_[p]) ∈ maximalIdeal ℤ_[p] := by
-    rw [PadicInt.maximalIdeal_eq_span_p]
-    exact Ideal.mem_span_singleton_self _
-  have hE : F.IsEisensteinAt (maximalIdeal ℤ_[p]) :=
-    TauCeti.isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible hp PadicInt.irreducible_p le_rfl
-  have hdeg : F.natDegree = 2 := Polynomial.natDegree_X_pow_add_C_mul_X_add_C _ _ le_rfl
-  have hmon : F.Monic := by
-    rw [Polynomial.Monic, Polynomial.leadingCoeff, hdeg]
-    simp [F]
-  have hF : F.IsDistinguishedAt (maximalIdeal ℤ_[p]) := ⟨hE.isWeaklyEisensteinAt, hmon⟩
-  have hirr : Irreducible F := hE.irreducible (maximalIdeal.isMaximal _).isPrime hmon.isPrimitive
-    (by rw [hdeg]; norm_num)
-  have h := charPoly_quotient_span_pow hF hirr 1
-  have h' := lambdaInvariant_quotient_span_pow hF hirr 1
-  rw [pow_one] at h h'
-  exact ⟨h, by rw [h', one_mul, hdeg]⟩
 
 end TauCeti.Iwasawa

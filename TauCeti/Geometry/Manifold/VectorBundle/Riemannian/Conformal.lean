@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Geometry.Manifold.ContMDiff.RPow
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
@@ -67,7 +68,7 @@ conformal Laplacian of `g` applied to `u`.
 public section
 
 open Bundle Bornology
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff ENNReal
 
 noncomputable section
 
@@ -113,6 +114,35 @@ theorem rescale_inner (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
     (hf : ContMDiff IB 𝓘(ℝ) n f) (hf_pos : ∀ b, 0 < f b) (b : B) (v w : E b) :
     (g.rescale f hf hf_pos).inner b v w = f b * g.inner b v w :=
   (rfl)
+
+/-- Rescaling a metric by a positive function `f` multiplies the norm of each vector over `b`
+by `√(f b)`. -/
+theorem norm_rescale [∀ b, IsTopologicalAddGroup (E b)]
+    (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
+    (hf : ContMDiff IB 𝓘(ℝ) n f) (hf_pos : ∀ b, 0 < f b) (b : B) (v : E b) :
+    (letI : RiemannianBundle E := ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩; ‖v‖) =
+      √(f b) * (letI : RiemannianBundle E := ⟨g.toRiemannianMetric⟩; ‖v‖) := by
+  let g' := g.rescale f hf hf_pos
+  let _ : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
+  have hv := norm_nonneg v
+  have hsq := (g'.norm_sq b v).trans
+    ((g.rescale_inner f hf hf_pos b v v).trans (congrArg (f b * ·) (g.norm_sq b v).symm))
+  let _ : RiemannianBundle E := ⟨g'.toRiemannianMetric⟩
+  rw [← Real.sqrt_sq (norm_nonneg v), hsq, Real.sqrt_mul (hf_pos b).le, Real.sqrt_sq hv]
+
+/-- Rescaling a metric by a positive function `f` multiplies the extended norm of each vector
+over `b` by `√(f b)`. -/
+theorem enorm_rescale [∀ b, IsTopologicalAddGroup (E b)]
+    (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
+    (hf : ContMDiff IB 𝓘(ℝ) n f) (hf_pos : ∀ b, 0 < f b) (b : B) (v : E b) :
+    (letI : RiemannianBundle E := ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩; ‖v‖ₑ) =
+      ENNReal.ofReal √(f b) * (letI : RiemannianBundle E := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) := by
+  let g' := g.rescale f hf hf_pos
+  let _ : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
+  have hv := ofReal_norm v
+  let _ : RiemannianBundle E := ⟨g'.toRiemannianMetric⟩
+  rw [← ofReal_norm v, ← hv, g.norm_rescale f hf hf_pos b v,
+    ENNReal.ofReal_mul (Real.sqrt_nonneg (f b))]
 
 /-- Dividing an orthonormal basis of the fibre over `x` for `g` by `√(f x)` gives an orthonormal
 basis of that fibre for the rescaled metric `f g`. -/
@@ -208,7 +238,7 @@ theorem rescale_const_mul_rpow {p c : ℝ} (hc : 0 < c) {u : B → ℝ}
       (g.rescale (fun b ↦ u b ^ p) hu hu_pos).rescale (fun _ ↦ c ^ p) contMDiff_const
         (fun _ ↦ Real.rpow_pos_of_pos hc p) := by
   ext b v w
-  simp [Real.mul_rpow_of_pos_left hc, mul_assoc]
+  simp [Real.mul_rpow_of_nonneg_left hc.le, mul_assoc]
 
 /-! ### The conformal class -/
 

@@ -174,7 +174,7 @@ theorem tendsto_mul (h : IsCenterEquationSolution κ β β') (hκ : 0 < κ) (hne
   have hlim : Tendsto (fun s ↦ κ - (β' s + κ * β s ^ 2) / β s ^ 2) atTop (𝓝 κ) := by
     simpa using h.isLittleO.tendsto_div_nhds_zero.const_sub κ
   refine ((tendsto_inv_smul_atTop_of_tendsto_deriv hinv hlim).inv₀ hκ.ne').congr' ?_
-  filter_upwards [hpos] with s hs
+  filter_upwards [hpos] with s _
   simp [mul_comm]
 
 /-- For `κ > 0`, a solution of the center equation that is not eventually zero is asymptotically
@@ -185,7 +185,7 @@ theorem isEquivalent (h : IsCenterEquationSolution κ β β') (hκ : 0 < κ) (hn
   have := (h.tendsto_mul hκ hne).const_mul κ
   rw [mul_inv_cancel₀ hκ.ne'] at this
   refine this.congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with s hs
+  filter_upwards [eventually_ne_atTop 0] with s _
   simp only [Pi.div_apply, div_inv_eq_mul]
   ring
 

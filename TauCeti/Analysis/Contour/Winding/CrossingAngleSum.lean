@@ -6,15 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Crossing.Finiteness
-public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Crossing.Windows
 import TauCeti.Analysis.Contour.InvSubCPVExistence
-import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
-import TauCeti.Analysis.Contour.PerWindow.CPV
-import TauCeti.Analysis.Contour.Winding.EndpointRatio
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 
 /-!
 # The crossing angles of a closed immersion, modulo an integer
@@ -27,7 +25,7 @@ a model sector of opening angle `α_ℓ`, and concludes
 `n_s(Λ) = n_s(\tilde{\Lambda}) + ∑_ℓ α_ℓ / 2π`.
 
 Since `\tilde{\Lambda}` avoids `s`, its winding number is an integer
-(`TauCeti.IsPiecewiseC1On.exists_int_windingNumber`). This file proves the identity in
+(`AbsolutelyContinuousOnInterval.exists_int_windingNumber`). This file proves the identity in
 the form that does not name the surgered curve:
 
 `n_s(Λ) - ∑_ℓ α_ℓ / 2π ∈ ℤ`,
@@ -41,7 +39,7 @@ The proof does not decompose the curve either. It exponentiates. The principal v
 `2πi · n_s(Λ)` is aggregated out of plain pieces and crossing windows exactly as the existence
 proof aggregates it (`TauCeti.Contour.IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub`), and both
 kinds of contribution exponentiate to a chord ratio: a plain piece to `(Λ u - s)/(Λ l - s)`
-(`TauCeti.IsPiecewiseC1On.exp_two_pi_I_mul_windingNumber`), and a crossing window to
+(`AbsolutelyContinuousOnInterval.exp_two_pi_I_mul_windingNumber`), and a crossing window to
 that same ratio times `exp (i α_ℓ)`
 (`TauCeti.Contour.exp_log_norm_add_arg_eq_mul_exp_crossingAngle` below, which is where the
 crossing angle enters). The ratios telescope along the curve and cancel at the closed-up
@@ -166,7 +164,8 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_forall_le {γ : ℝ → ℂ} 
       rw [((hT t).mp ht).2, sub_self, norm_zero] at hle
       linarith
     have hl : γ l - s ≠ 0 := sub_ne_zero.mpr (havoid l left_mem_uIcc)
-    simp only [hpc.exp_two_pi_I_mul_windingNumber havoid, hfilter]
+    simp only [hpc.absolutelyContinuousOnInterval.exp_two_pi_I_mul_windingNumber
+      fun ⟨t, ht, h⟩ ↦ havoid t ht h, hfilter]
     field_simp
 
 /-- **A crossing window of the aggregation.** On a window `[t₀ - ρ, t₀ + ρ]` inside `[a, b]` whose
@@ -183,7 +182,6 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window {γ : ℝ →
     (h_tend_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
     (h_tend_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
     (hspec : ∀ l u : ℝ, t₀ - R ≤ l → l < t₀ → t₀ < u → u ≤ t₀ + R → a < l → u ≤ b →
-      (∀ t ∈ Icc l u, γ t = s → t = t₀) →
       Tendsto (fun ε : ℝ => ∫ v in l..u,
         if ‖γ v - s‖ > ε then (γ v - s)⁻¹ * deriv γ v else 0) (𝓝[>] (0 : ℝ))
         (𝓝 (((Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ : ℝ) : ℂ) +
@@ -203,7 +201,7 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window {γ : ℝ →
   refine ⟨_, hasCauchyPVAt_iff.mpr ⟨Filter.eventually_iff_exists_mem.mpr ⟨Ioi 0,
     self_mem_nhdsWithin, fun ε hε => intervalIntegrable_inv_sub_truncated
       hpc.intervalIntegrable_deriv hε⟩, hspec _ _ (by linarith) (by linarith) (by linarith)
-      (by linarith) hlo hhi h_unique⟩, ?_⟩
+      (by linarith) hlo hhi⟩, ?_⟩
   have hnotmem : t₀ ∉ T.filter (fun t => t < t₀ - ρ) := by simp [hρ.le]
   have hfil : T.filter (fun t => t < t₀ + ρ) = insert t₀ (T.filter (fun t => t < t₀ - ρ)) := by
     ext t
@@ -272,7 +270,7 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
     · rintro l u₀ u - - ⟨v₁, h₁, e₁⟩ ⟨v₂, h₂, e₂⟩
       refine ⟨v₁ + v₂, h₁.concat h₂, ?_⟩
       rw [Complex.exp_add, mul_comm (Complex.exp v₁), mul_assoc, e₁, e₂]
-    · intro t₀ ht₀'
+    · intro t₀ ht₀' _
       have ht₀ : t₀ ∈ T := (Finset.mem_sort _).mp ht₀'
       exact exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window h_imm hab hT ht₀ hρ_pos
         (hρ_le_R t₀ ht₀) (by linarith [(h_endpts t₀ ht₀).1]) (by linarith [(h_endpts t₀ ht₀).2])
@@ -302,7 +300,7 @@ In HW's decomposition `Λ = \tilde{\Lambda} + Γ₁ + ⋯ + Γₙ` the integer i
 capping them off; that surgery is not performed here, so `k` is produced abstractly.
 Everything else is: the crossings' contribution is exactly their model-sector value `α_ℓ / 2π`.
 
-With no crossings this is `TauCeti.IsPiecewiseC1On.exists_int_windingNumber`, and with a
+With no crossings this is `AbsolutelyContinuousOnInterval.exists_int_windingNumber`, and with a
 single smooth crossing it gives the half-integral winding number of the half-residue regime
 (`exists_int_windingNumber_eq_add_card_div_two`). -/
 theorem IsPwC1ImmersionOn.exists_int_windingNumber_eq_add_sum_crossingAngle

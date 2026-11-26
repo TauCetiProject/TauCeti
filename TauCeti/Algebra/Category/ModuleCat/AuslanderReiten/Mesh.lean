@@ -74,15 +74,14 @@ theorem card_arrows_eq_card_arrows_of_translate_eq_some
   have hp : ¬ Projective m.representative := fun hp ↦ by
     rw [← (arTranslation.{u, v, w} k A).translate_eq_none_iff] at hp
     simp [hp] at h
-  obtain ⟨E, i, p, hip, hE, hS⟩ := exists_isAlmostSplit_arTranslate k m.representative
+  obtain ⟨E, i, p, hip, hE, hS⟩ := exists_isAlmostSplit_arTranslate k k
+    (TauCeti.length_quotient_linearMap_self_eq_one k) m.representative
     m.representative_property.2 hp
-  have : IsLocalRing (End (arTranslate k m.representative)) :=
-    isLocalRing_end_of_indecomposable (R := k) hS.isLeftAlmostSplit_f.indecomposable
   -- The translate of `m` is the class of the initial term of the sequence.
   rw [← IrreducibleMorphismQuiver.of_representative m, (arTranslation k A).translate_of _ _ hp,
     Option.some.injEq] at h
   subst h
-  have hA : Module.Finite A (arTranslate k m.representative) := inferInstance
+  have hA : Module.Finite A (arTranslate k k m.representative) := inferInstance
   have hmesh := IrreducibleMorphismQuiver.card_arrows_of_almostSplit_right_eq_left (k := k)
     (P := fun M : ModuleCat.{max u v w} A ↦ Module.Finite A M) hS hA
     m.representative_property.1 x.representative_property.1 x.representative_property.2

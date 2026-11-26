@@ -60,7 +60,7 @@ bounded by multiples of `N`.
 On the whole space only `‖u‖_∞` is allowed on the right, so the bounds of `Du` and `D²u` entering
 through the lower-order terms are removed by the interpolation inequalities
 `‖Du‖_∞, ‖D²u‖_∞ ≤ C_ε ‖u‖_∞ + 2 ε^α [D²u]_α`
-(`HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`), and the resulting
+(`HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`), and the resulting
 multiple of
 `[D²u]_α` is absorbed into the global principal-part estimate
 (`TauCeti.PDE.exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fderiv`) for
@@ -89,7 +89,7 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 /-- The Hölder constant of the lower-order part `b · ∇u + c u` on a set `s`, in terms of the
 Hölder constants and bounds of `u`, `Du`, `b` and `c` on `s`. -/
-private theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b : E → E}
+theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b : E → E}
     {c : E → ℝ} {α H₀ H₁ N₀ N₁ Lb Mb Lc Mc : ℝ≥0} (hu : HolderOnWith H₀ α u s)
     (hDu : HolderOnWith H₁ α (fderiv ℝ u) s) (hu0 : ∀ x ∈ s, |u x| ≤ N₀)
     (hDu0 : ∀ x ∈ s, ‖fderiv ℝ u x‖ ≤ N₁) (hb : HolderOnWith Lb α b s)
@@ -103,7 +103,7 @@ private theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b
   simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.lsmul_apply, smul_eq_mul] at h₁ h₂
   refine (h₁.add h₂).mono_const (add_le_add ?_ ?_)
   · exact mul_le_of_le_one_left zero_le (by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
+      rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
   · exact mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le
 
 /-- **The interior Schauder estimate with lower-order terms.** Let `0 < α < 1`, let
@@ -184,9 +184,9 @@ and let `λ`, `Λ`, `L` and `B` be given. Then there is a constant `C`, dependin
 (`UniformlyEllipticOn univ a λ Λ`) and globally `α`-Hölder entrywise with constant `L`, and let `b`
 be a vector field and `c` a function, both globally `α`-Hölder with constant `L` and bounded by
 `B`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + b · ∇u + c u`. Let `u` be `C²` with `|u| ≤ N`, and with `D²u`
-bounded and globally `α`-Hölder (with any constant). If `L u` is globally `α`-Hölder with constant
-`K`, then `D²u` is globally `α`-Hölder with constant `C (K + N)`, and `‖Du‖` and `‖D²u‖` are
-bounded by `C (K + N)`. -/
+globally `α`-Hölder (with any constant). If `L u` is globally `α`-Hölder with constant `K`, then
+`D²u` is globally `α`-Hölder with constant `C (K + N)`, and `‖Du‖` and `‖D²u‖` are bounded by
+`C (K + N)`. -/
 theorem
     exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) (lam Lam : ℝ) (L B : ℝ≥0) :
@@ -194,7 +194,7 @@ theorem
       UniformlyEllipticOn univ a lam Lam → (∀ i j, HolderWith L α (fun x => a x i j)) →
       HolderWith L α b → (∀ x, ‖b x‖ ≤ B) → HolderWith L α c → (∀ x, |c x| ≤ B) →
       ∀ {u : E → ℝ} {N K : ℝ≥0}, ContDiff ℝ 2 u → (∀ x, |u x| ≤ N) →
-      BddAbove (range fun x => ‖iteratedFDeriv ℝ 2 u x‖) → MemHolder α (iteratedFDeriv ℝ 2 u) →
+      MemHolder α (iteratedFDeriv ℝ 2 u) →
       HolderWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ u x (b x) +
           c x * u x) →
@@ -205,18 +205,15 @@ theorem
   -- `β` is the coefficient of the bound `P` of `Du` and `D²u` in the Hölder constant of
   -- `b · ∇u + c u`, and `ε` is an interpolation scale small enough to absorb `[D²u]_α`.
   set β : ℝ := 4 * B + L
-  have hβ : 0 ≤ β := by positivity
   obtain ⟨ε, hε, hε1, hεC⟩ :=
     Real.exists_pos_le_one_mul_rpow_le (2 * C₀ * β) (NNReal.coe_pos.2 hα)
       (by norm_num : (0 : ℝ) < 1 / 2)
   set e : ℝ := ε ^ (α : ℝ)
-  have he : 0 ≤ e := by positivity
   set c' : ℝ := 34 / ε + 32 / ε ^ 2
-  have hc' : 0 ≤ c' := by positivity
   set γ : ℝ := β * c' + 2 * B + L + 1
   have hγ : 0 ≤ γ := by positivity
   refine ⟨(2 * C₀ * (1 + γ)).toNNReal,
-    fun {a b c} hEll hLa hLb hBb hLc hBc {u N K} hu hN hbdd hmem hK => ?_⟩
+    fun {a b c} hEll hLa hLb hBb hLc hBc {u N K} hu hN hmem hK => ?_⟩
   -- The Hölder norm `H` of `D²u`, and the bound `P = c' N + 2 H ε^α` of `Du` and `D²u` given by
   -- the interpolation inequalities at scale `ε`.
   set H := nnHolderNorm α (iteratedFDeriv ℝ 2 u)
@@ -224,7 +221,7 @@ theorem
   set P : ℝ := c' * N + 2 * H * e
   have hP : 0 ≤ P := by positivity
   obtain ⟨h1, h2⟩ := hH.norm_fderiv_le_and_norm_iteratedFDeriv_two_le hu
-    (fun y => by simpa only [Real.norm_eq_abs] using hN y) hbdd hε hε1
+    (fun y => by simpa only [Real.norm_eq_abs] using hN y) hε hε1
   set P' : ℝ≥0 := P.toNNReal
   have hPP' : (P' : ℝ) = P := Real.coe_toNNReal _ hP
   -- `u` and `Du` are bounded by `N` and `P'`, with derivatives bounded by `P'`, hence `α`-Hölder.
@@ -247,7 +244,7 @@ theorem
     have h := (hK.holderOnWith univ).sub hlow
     simp only [Pi.sub_def, add_sub_add_right_eq_sub, add_sub_cancel_right] at h
     exact holderOnWith_univ.1 h
-  obtain ⟨hH₀, h₁, h₂⟩ := hC₀ hEll hLa hu hN hbdd hmem hprin
+  obtain ⟨hH₀, h₁, h₂⟩ := hC₀ hEll hLa hu hN hmem hprin
   -- Absorption: `C₀ (K₀ + N) = C₀ (K + γ N) + 2 C₀ β ε^α H` and `2 C₀ β ε^α ≤ 1 / 2`.
   have hK₀ : ((K₀ : ℝ) + N) = K + γ * N + 2 * β * e * H := by
     push_cast [K₀, γ, β, hPP', P]

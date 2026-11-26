@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.SchwartzSpace.WeightedPlancherel
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.TranslationTail
@@ -117,38 +120,6 @@ private theorem sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le {ι : Type*} [Finty
     pow_le_pow_left₀ (norm_nonneg _) (hB i) 2).trans_eq ?_)
   rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
-omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
-/-- On a function vanishing outside `closedBall 0 t`, multiplication by a continuous linear
-functional `L` costs at most the factor `t ‖L‖`. -/
-private theorem norm_clm_smul_le_of_tsupport_subset {g : V → H} {t : ℝ}
-    (hg : tsupport g ⊆ closedBall 0 t) (L : V →L[ℝ] ℝ) (ξ : V) :
-    ‖L ξ • g ξ‖ ≤ t * ‖L‖ * ‖g ξ‖ := by
-  by_cases hξ : ξ ∈ tsupport g
-  · rw [norm_smul]
-    gcongr
-    refine (L.le_opNorm ξ).trans ?_
-    rw [mul_comm t]
-    gcongr
-    simpa using hg hξ
-  · simp [image_eq_zero_of_notMem_tsupport hξ]
-
-omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
-/-- For `σ` vanishing outside `closedBall 0 t` and `‖v‖ ≤ 1`, the Leibniz rule bounds the
-`(k + 1)`-st derivative of `L σ` along `v` by
-`t ‖L‖ ‖∂_v^(k+1) σ‖ + (k + 1) ‖L‖ ‖∂_v^k σ‖`. -/
-private theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t : ℝ}
-    (hσ : tsupport σ ⊆ closedBall 0 t) {v : V} (hv : ‖v‖ ≤ 1) (L : V →L[ℝ] ℝ) (k : ℕ) (ξ : V) :
-    ‖(∂_{v})^[k + 1] (smulLeftCLM H L σ) ξ‖ ≤
-      t * ‖L‖ * ‖(∂_{v})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{v})^[k] σ ξ‖ := by
-  rw [iterate_lineDerivOp_smulLeftCLM_clm, add_apply, smul_apply,
-    smulLeftCLM_apply_apply L.hasTemperateGrowth]
-  refine (norm_add_le _ _).trans (add_le_add (norm_clm_smul_le_of_tsupport_subset
-    ((iteratedLineDerivOp_const_eq_iter_lineDerivOp (k + 1) v σ ▸
-      tsupport_iteratedLineDerivOp_subset _ σ).trans hσ) L ξ) ?_)
-  rw [norm_smul, norm_mul, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-  gcongr
-  exact (L.le_opNorm v).trans (mul_le_of_le_one_right (norm_nonneg _) hv)
-
 /-- If `σ` is bounded by `M` and vanishes outside `closedBall 0 t`, then multiplying it by a
 continuous linear functional `L` gives `L²` norm at most `t ‖L‖ M √|B(0, 1)| t ^ (n/2)`. -/
 private theorem norm_toLp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t M : ℝ} (ht : 0 ≤ t)
@@ -158,7 +129,8 @@ private theorem norm_toLp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t M : ℝ} (ht :
   refine norm_toLp_two_le_of_support_subset_closedBall _ ht ((subset_tsupport _).trans
     ((tsupport_smulLeftCLM_subset _ σ).trans (Set.inter_subset_left.trans hσ))) fun ξ ↦ ?_
   rw [smulLeftCLM_apply_apply L.hasTemperateGrowth]
-  refine (norm_clm_smul_le_of_tsupport_subset hσ L ξ).trans ?_
+  refine (L.norm_apply_smul_le_of_support_subset_closedBall
+    ((subset_tsupport _).trans hσ) ξ).trans ?_
   gcongr
   exact hσM ξ
 
@@ -177,8 +149,10 @@ private theorem sqrt_sum_norm_toLp_iterate_lineDerivOp_smulLeftCLM_clm_sq_le {ι
   refine sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b _ (k + 1) ht.le (by positivity)
     ((tsupport_smulLeftCLM_subset _ σ).trans (Set.inter_subset_left.trans hσ)) fun i ξ ↦ ?_
   calc ‖(∂_{b i})^[k + 1] (smulLeftCLM H L σ) ξ‖
-      ≤ t * ‖L‖ * ‖(∂_{b i})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{b i})^[k] σ ξ‖ :=
-        norm_iterate_lineDerivOp_smulLeftCLM_clm_le σ hσ (b.orthonormal.1 i).le L k ξ
+      ≤ t * ‖L‖ * ‖(∂_{b i})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{b i})^[k] σ ξ‖ := by
+        simpa only [b.norm_eq_one, mul_one] using
+          norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall σ L
+            ((subset_tsupport _).trans hσ) (b i) k ξ
     _ ≤ t * ‖L‖ * (A / t ^ (k + 1)) + (k + 1) * ‖L‖ * (A / t ^ k) := by
         gcongr
         exacts [hσk' i ξ, hσk i ξ]
@@ -191,7 +165,7 @@ end Real
 
 section Hilbert
 
-variable [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 
 /-- **The tail of the kernel of a band-limited symbol.** Let `b` be an orthonormal basis of the
 `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
@@ -201,12 +175,28 @@ bounded by `A t ^ (-N)`,
 `∫_{‖x‖ > R} ‖𝓕⁻ σ x‖ dx ≤ C A (t R) ^ (n/2 - N)` for every `R > 0`. -/
 theorem exists_setIntegral_norm_fourierInv_le_of_support_subset {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
-    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → 0 ≤ A → support σ ⊆ closedBall 0 t →
+    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
       (∀ i ξ, ‖(∂_{b i})^[N] σ ξ‖ ≤ A / t ^ N) → ∀ R, 0 < R →
         ∫ x in {x | R < ‖x‖}, ‖𝓕⁻ σ x‖ ≤ C * A * (t * R) ^ ((finrank ℝ V : ℝ) / 2 - N) := by
+  by_cases hH : CompleteSpace H
+  swap
+  · refine ⟨0, le_rfl, fun σ _ _ _ _ _ R _ ↦ ?_⟩
+    simp [fourierInv_eq_zero_of_not_completeSpace hH]
+  cases isEmpty_or_nonempty ι with
+  | inl _ =>
+    -- `V` is the zero space, so the set `{x | R < ‖x‖}` is empty.
+    refine ⟨0, le_rfl, fun σ _ _ _ _ _ R hR ↦ ?_⟩
+    have := b.subsingleton_of_isEmpty
+    have hs : {x : V | R < ‖x‖} = ∅ := Set.eq_empty_of_forall_notMem fun x hx ↦ by
+      rw [Set.mem_ofPred_eq, Subsingleton.elim x 0, norm_zero] at hx
+      exact absurd hx (not_lt.2 hR.le)
+    simp [hs]
+  | inr _ =>
+  obtain ⟨i₀⟩ : Nonempty ι := inferInstance
   obtain ⟨C₀, hC₀, hC⟩ := exists_setIntegral_norm_fourierInv_le (H := H) b hN
   refine ⟨C₀ * √(Fintype.card ι) * √(volume.real (ball (0 : V) 1)), by positivity,
-    fun σ t A ht hA hσ hσN R hR ↦ ?_⟩
+    fun σ t A ht hσ hσN R hR ↦ ?_⟩
+  have hA : 0 ≤ A := TauCeti.nonneg_of_le_div_pow ht (hσN i₀ 0) (norm_nonneg _)
   have hsum := sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b σ N ht.le (by positivity)
     (closure_minimal hσ isClosed_closedBall) hσN
   have hte : t ^ ((finrank ℝ V : ℝ) / 2 - N) = t ^ ((finrank ℝ V : ℝ) / 2) / t ^ N := by
@@ -226,6 +216,10 @@ theorem exists_integral_norm_fourierInv_le_of_support_subset {ι : Type*} [Finty
     ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
       (∀ ξ, ‖σ ξ‖ ≤ A) → (∀ i ξ, ‖(∂_{b i})^[N] σ ξ‖ ≤ A / t ^ N) →
         ∫ x, ‖𝓕⁻ σ x‖ ≤ C * A := by
+  by_cases hH : CompleteSpace H
+  swap
+  · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ ↦ ?_⟩
+    simp [fourierInv_eq_zero_of_not_completeSpace hH]
   obtain ⟨C₀, hC₀, hC⟩ := exists_integral_norm_fourierInv_le (H := H) b hN
   refine ⟨C₀ * √(volume.real (ball (0 : V) 1)) * (1 + √(Fintype.card ι)), by positivity,
     fun σ t A ht hσ hσA hσN ↦ ?_⟩
@@ -251,25 +245,29 @@ Schwartz function `σ` vanishes outside `closedBall 0 t` and its derivatives of 
 `∫ ‖𝓕⁻ σ (x + h) - 𝓕⁻ σ x‖ dx ≤ C A t ‖h‖` for every `h`. -/
 theorem exists_integral_norm_fourierInv_add_sub_le_of_support_subset {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
-    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → 0 ≤ A → support σ ⊆ closedBall 0 t →
+    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
       (∀ k ≤ N, ∀ i ξ, ‖(∂_{b i})^[k] σ ξ‖ ≤ A / t ^ k) → ∀ h,
         ∫ x, ‖𝓕⁻ σ (x + h) - 𝓕⁻ σ x‖ ≤ C * A * (t * ‖h‖) := by
+  by_cases hH : CompleteSpace H
+  swap
+  · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ ↦ ?_⟩
+    simp [fourierInv_eq_zero_of_not_completeSpace hH]
   obtain ⟨M, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : N ≠ 0)
   obtain ⟨C₁, hC₁, hC⟩ := exists_integral_norm_fourierInv_le (H := H) b hN
   refine ⟨2 * π * C₁ * √(volume.real (ball (0 : V) 1)) * (1 + √(Fintype.card ι) * (M + 2)),
-    by positivity, fun σ t A ht hA hσ hσk h ↦ ?_⟩
+    by positivity, fun σ t A ht hσ hσk h ↦ ?_⟩
   -- Translating the kernel by `h` costs `2π ∫ ‖𝓕⁻ τ‖` with `τ = ⟪·, h⟫ σ`. At `R = t⁻¹`, the
   -- `L¹` bound `exists_integral_norm_fourierInv_le` controls this by `‖τ‖_{L²}` and the `L²` norms
   -- of the `N`-th derivatives of `τ`, which the Leibniz rule bounds through those of `σ`.
   cases isEmpty_or_nonempty ι with
   | inl _ =>
     -- `V` is the zero space, so `h = 0` and the integrand vanishes.
-    have : Subsingleton V := Module.finrank_zero_iff.mp (by
-      rw [Module.finrank_eq_card_basis b.toBasis, Fintype.card_eq_zero])
-    simp only [Subsingleton.elim h 0, add_zero, sub_self, norm_zero, integral_zero]
-    positivity
+    have := b.subsingleton_of_isEmpty
+    simp only [Subsingleton.elim h 0, add_zero, sub_self, norm_zero, integral_zero, mul_zero,
+      le_refl]
   | inr _ =>
   obtain ⟨i₀⟩ : Nonempty ι := inferInstance
+  have hA : 0 ≤ A := TauCeti.nonneg_of_le_div_pow ht (hσk 0 (Nat.zero_le _) i₀ 0) (norm_nonneg _)
   have hσt : tsupport σ ⊆ closedBall 0 t := closure_minimal hσ isClosed_closedBall
   -- The symbol `τ ξ = ⟪h, ξ⟫ σ ξ` of the derivative of the kernel along `h`.
   have hi : (inner ℝ · h : V → ℝ) = ⇑(innerSL ℝ h) := funext fun _ ↦ real_inner_comm _ _
@@ -302,34 +300,49 @@ for every `h`: the smoothness bound is the better one when `t ‖h‖ ≤ 1`, th
 `t ‖h‖ > 1`. -/
 theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
-    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → 0 ≤ A → support σ ⊆ closedBall 0 t →
+    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
       (∀ k ≤ N, ∀ i ξ, ‖(∂_{b i})^[k] σ ξ‖ ≤ A / t ^ k) → ∀ h,
         ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖𝓕⁻ σ (x - h) - 𝓕⁻ σ x‖ ≤
           C * A * min (t * ‖h‖) ((t * ‖h‖) ^ ((finrank ℝ V : ℝ) / 2 - N)) := by
-  obtain ⟨C₁, hC₁, hC₁'⟩ := exists_setIntegral_norm_fourierInv_le_of_support_subset (H := H) b hN
+  by_cases hH : CompleteSpace H
+  swap
+  · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ ↦ ?_⟩
+    simp [fourierInv_eq_zero_of_not_completeSpace hH]
+  obtain ⟨C₁, _, hC₁'⟩ := exists_setIntegral_norm_fourierInv_le_of_support_subset (H := H) b hN
   obtain ⟨C₂, hC₂, hC₂'⟩ :=
     exists_integral_norm_fourierInv_add_sub_le_of_support_subset (H := H) b hN
-  refine ⟨max (2 * C₁) C₂, hC₂.trans (le_max_right _ _), fun σ t A ht hA hσ hσk h ↦ ?_⟩
+  refine ⟨max (2 * C₁) C₂, hC₂.trans (le_max_right _ _), fun σ t A ht hσ hσk h ↦ ?_⟩
+  have hexp : (finrank ℝ V : ℝ) / 2 - N ≠ 0 := by
+    have : (finrank ℝ V : ℝ) < 2 * N := by exact_mod_cast hN
+    linarith
   rcases eq_or_ne h 0 with rfl | hh
-  · simp only [sub_zero, sub_self, norm_zero, integral_zero, mul_zero]
-    positivity
+  · -- the exponent is nonzero, so the right-hand side is `C * A * min 0 0 = 0`
+    simp [Real.zero_rpow hexp]
+  -- for `h ≠ 0` the space is nonzero, so the index type is nonempty
+  obtain ⟨i₀⟩ : Nonempty ι := by
+    by_contra hne
+    rw [not_nonempty_iff] at hne
+    have := b.subsingleton_of_isEmpty
+    exact hh (Subsingleton.elim h 0)
+  have hA : 0 ≤ A := TauCeti.nonneg_of_le_div_pow ht (hσk 0 (Nat.zero_le _) i₀ 0) (norm_nonneg _)
   have hK := (𝓕⁻ σ).integrable (μ := volume)
   rw [mul_min_of_nonneg _ _ (mul_nonneg (hC₂.trans (le_max_right _ _)) hA)]
   refine le_min ?_ ?_
   · -- the smoothness of the kernel
     refine (setIntegral_le_integral ((hK.comp_sub_right h).sub hK).norm
       (.of_forall fun _ ↦ norm_nonneg _)).trans ?_
-    have := hC₂' σ ht hA hσ hσk (-h)
+    have := hC₂' σ ht hσ hσk (-h)
     simp only [← sub_eq_add_neg, norm_neg] at this
     refine this.trans ?_
     gcongr
     exact le_max_right _ _
   · -- the tail of the kernel
     calc ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖𝓕⁻ σ (x - h) - 𝓕⁻ σ x‖
-        ≤ 2 * ∫ x in {x | ‖h‖ < ‖x‖}, ‖𝓕⁻ σ x‖ := hK.setIntegral_norm_comp_sub_sub_le h
+        ≤ 2 * ∫ x in {x | ‖h‖ < ‖x‖}, ‖𝓕⁻ σ x‖ :=
+          hK.integrableOn.setIntegral_norm_comp_sub_sub_le (two_mul _).ge
       _ ≤ 2 * (C₁ * A * (t * ‖h‖) ^ ((finrank ℝ V : ℝ) / 2 - N)) := by
           gcongr
-          exact hC₁' σ ht hA hσ (hσk N le_rfl) ‖h‖ (norm_pos_iff.2 hh)
+          exact hC₁' σ ht hσ (hσk N le_rfl) ‖h‖ (norm_pos_iff.2 hh)
       _ ≤ max (2 * C₁) C₂ * A * (t * ‖h‖) ^ ((finrank ℝ V : ℝ) / 2 - N) := by
           rw [← mul_assoc, ← mul_assoc]
           gcongr
@@ -359,15 +372,12 @@ theorem exists_setIntegral_norm_fourierInv_sum_sub_sub_le {ι : Type*} [Fintype 
   have hq : (2 : ℝ) ^ (-δ) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
   refine ⟨D * (2 + (1 - (2 : ℝ) ^ (-δ))⁻¹), mul_nonneg hD (by
     have := inv_pos.2 (sub_pos.2 hq); positivity), fun σ s A hA hσ hσk h ↦ ?_⟩
-  rcases eq_or_ne h 0 with rfl | hh
-  · simp only [sub_zero, sub_self, norm_zero, integral_zero]
-    exact mul_nonneg (mul_nonneg hD (by have := inv_pos.2 (sub_pos.2 hq); positivity)) hA
   have he : (finrank ℝ V : ℝ) / 2 - N = -δ := by simp only [δ, neg_sub]
   set S : Set V := {x | 2 * ‖h‖ < ‖x‖}
   -- Each dyadic piece contributes at most `D A min (2 ^ j ‖h‖, (2 ^ j ‖h‖) ^ (-δ))`.
   have hterm (j : ℤ) (hj : j ∈ s) : ∫ x in S, ‖𝓕⁻ (σ j) (x - h) - 𝓕⁻ (σ j) x‖ ≤
       D * A * min (2 ^ j * ‖h‖) ((2 ^ j * ‖h‖) ^ (-δ)) :=
-    he ▸ hD' (σ j) (zpow_pos two_pos j) hA (hσ j hj) (hσk j hj) h
+    he ▸ hD' (σ j) (zpow_pos two_pos j) (hσ j hj) (hσk j hj) h
   have hint : ∀ j ∈ s, Integrable (fun x ↦ ‖𝓕⁻ (σ j) (x - h) - 𝓕⁻ (σ j) x‖) (volume.restrict S) :=
     fun j _ ↦ (((𝓕⁻ (σ j)).integrable.comp_sub_right h).sub (𝓕⁻ (σ j)).integrable).norm.restrict
   have hK := (𝓕⁻ (∑ j ∈ s, σ j)).integrable (μ := volume)
@@ -382,7 +392,7 @@ theorem exists_setIntegral_norm_fourierInv_sum_sub_sub_le {ι : Type*} [Fintype 
     _ = D * A * ∑ j ∈ s, min (2 ^ j * ‖h‖) ((2 ^ j * ‖h‖) ^ (-δ)) := by rw [Finset.mul_sum]
     _ ≤ D * A * (2 + (1 - (2 : ℝ) ^ (-δ))⁻¹) := by
         gcongr
-        exact TauCeti.sum_min_zpow_mul_rpow_neg_le hδ (norm_pos_iff.2 hh) s
+        exact (TauCeti.sum_min_zpow_mul_rpow_neg_le one_lt_two hδ ‖h‖ s).trans_eq (by norm_num)
     _ = D * (2 + (1 - (2 : ℝ) ^ (-δ))⁻¹) * A := by ring
 
 end Hilbert

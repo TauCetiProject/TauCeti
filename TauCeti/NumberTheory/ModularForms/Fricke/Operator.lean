@@ -28,13 +28,11 @@ that is `(-1) ^ k * N ^ (k - 2)`. That scalar is `frickeScalar N k` and the iden
 `frickeGL_sq_slash`, both in `TauCeti/NumberTheory/ModularForms/Fricke/Involution.lean`; they are
 not restated here.
 
-The roadmap's Fricke operator is the **normalized** `𝒲_N = (√N) ^ (2 - k) • (· ∣[k] W)`, which
-brings that scalar down to `(-1) ^ k` and so is an involution in even weight — the weights the
-sign theory lives in. It is a later rung, and every downstream statement about signs, eigenvalues
-and functional equations is about `𝒲_N`, not about the map defined here. The name
-`frickeOperator` is AINTLIB's own name for the un-normalized map that this file ports, and the
-roadmap names it as the declaration to migrate, so it is kept; a consumer wanting `𝒲_N` must
-supply the normalization.
+The **normalized** Fricke operator is `𝒲_N = (√N) ^ (2 - k) • (· ∣[k] W)`, which brings that
+scalar down to `(-1) ^ k` and so is an involution in even weight — the weights the sign theory
+lives in. Statements about signs, eigenvalues and functional equations are about `𝒲_N`, not about
+the map defined here. The name `frickeOperator` is AINTLIB's own name for the un-normalized map
+that this file ports; a consumer wanting `𝒲_N` must supply the normalization.
 
 ## Construction
 
@@ -77,13 +75,13 @@ transport of the later Fricke rungs is built from.
   **diamond shift** `W ∘ ⟨d⟩ = ⟨d⁻¹⟩ ∘ W`, on modular and on cusp forms.
 * `TauCeti.frickeGL_smul_eq_S_smul`: on `ℍ`, `W` acts as `τ ↦ -1 / (N τ)`, the inversion `S`
   after the dilation by `N`.
+* `TauCeti.frickeGL_smul_frickeGL_smul`: on `ℍ`, `W` acts as an involution, as `W²` is scalar.
 
 ## Provenance
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/Fricke.lean`](https://github.com/CBirkbeck/AINTLIB),
-commit `340875adfb2`, Apache-2.0, Chris Birkbeck), realizing part of Layer 6 of the ModularForms
-roadmap.
+commit `340875adfb2`, Apache-2.0, Chris Birkbeck).
 
 AINTLIB slashes by `(frickeGL N : GL (Fin 2) ℚ)` and lets the coercion to `GL (Fin 2) ℝ` do the
 work, so its `frickeSlash_invariant` consumes the hand-transported identity
@@ -134,6 +132,13 @@ public theorem frickeGL_smul_eq_S_smul (τ : ℍ) :
   rw [coe_smul_of_det_pos val_det_frickeGL_pos, modular_S_smul]
   simp [num, denom, coe_pos_real_smul, inv_neg, neg_div]
 
+/-- **The Fricke matrix acts on `ℍ` as an involution**: `W² = (-N) • 1` is scalar
+(`frickeGL_sq`), and scalar matrices act trivially. Unlike the slash by `W`, which squares to the
+nonzero scalar `frickeScalar N k`, the Möbius action of `W` squares to the identity. -/
+@[simp]
+public theorem frickeGL_smul_frickeGL_smul (τ : ℍ) : frickeGL ℝ N • frickeGL ℝ N • τ = τ := by
+  rw [← mul_smul, ← sq, frickeGL_sq, glScalar_smul]
+
 /-- **`W` normalizes `Γ₁(N)` in `GL (Fin 2) ℝ`**: conjugating the image of `Γ₁(N)` by the Fricke
 matrix returns that same subgroup. This is `frickeConjSL_mem_Gamma1` — that `W σ W⁻¹` stays in
 `Γ₁(N)` — turned into a statement about the subgroup itself, which is the form the operators
@@ -150,19 +155,19 @@ public theorem Gamma1_map_inv_conjAct_frickeGL_eq :
     ConjAct.ofConjAct_toConjAct, map_inv, inv_inv, Subgroup.mem_map]
   constructor
   · rintro ⟨τ, hτ, hτy⟩
-    refine ⟨frickeConjSL ⟨τ, Gamma1_in_Gamma0 N hτ⟩, frickeConjSL_mem_Gamma1 τ hτ, ?_⟩
+    refine ⟨frickeConjSL ⟨τ, Gamma1_le_Gamma0 N hτ⟩, frickeConjSL_mem_Gamma1 τ hτ, ?_⟩
     have h : mapGL ℝ τ * frickeGL ℝ N
-        = frickeGL ℝ N * mapGL ℝ (frickeConjSL ⟨τ, Gamma1_in_Gamma0 N hτ⟩) :=
-      mapGL_mul_frickeGL ℝ ⟨τ, Gamma1_in_Gamma0 N hτ⟩
+        = frickeGL ℝ N * mapGL ℝ (frickeConjSL ⟨τ, Gamma1_le_Gamma0 N hτ⟩) :=
+      mapGL_mul_frickeGL ℝ ⟨τ, Gamma1_le_Gamma0 N hτ⟩
     rw [hτy] at h
     refine (mul_left_cancel (a := frickeGL ℝ N) ?_).symm
     rw [← h]
     group
   · rintro ⟨σ, hσ, rfl⟩
-    refine ⟨frickeConjSL ⟨σ, Gamma1_in_Gamma0 N hσ⟩, frickeConjSL_mem_Gamma1 σ hσ, ?_⟩
+    refine ⟨frickeConjSL ⟨σ, Gamma1_le_Gamma0 N hσ⟩, frickeConjSL_mem_Gamma1 σ hσ, ?_⟩
     have h : frickeGL ℝ N * mapGL ℝ σ
-        = mapGL ℝ (frickeConjSL ⟨σ, Gamma1_in_Gamma0 N hσ⟩) * frickeGL ℝ N :=
-      frickeGL_mul_mapGL ℝ ⟨σ, Gamma1_in_Gamma0 N hσ⟩
+        = mapGL ℝ (frickeConjSL ⟨σ, Gamma1_le_Gamma0 N hσ⟩) * frickeGL ℝ N :=
+      frickeGL_mul_mapGL ℝ ⟨σ, Gamma1_le_Gamma0 N hσ⟩
     rw [h]
     group
 

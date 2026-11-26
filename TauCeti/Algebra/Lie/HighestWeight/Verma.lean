@@ -300,20 +300,18 @@ theorem lieSpan_vermaGenerator_eq_top :
 
 variable {N : Type w} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
 
-/-- **The universal property of the Verma module.** If `H` acts on a vector `v` of an `L`-module
-`N` through `lam` and the positive nilradical annihilates `v`, then there is a unique homomorphism
-of `L`-modules `M(lam) → N` carrying the canonical generator to `v`.
-
-The vector `v` is *not* assumed nonzero, so this does not presuppose that `M(lam)` is nonzero. -/
-theorem existsUnique_lieModuleHom_apply_vermaGenerator (v : N)
+/-- Under the hypotheses of the universal property of the Verma module, there is a `U(L)`-linear
+map `M(lam) → N`, for the `U(L)`-module structure of `N` given by its Lie module structure, sending
+the class of `u` to `u • v`. -/
+private theorem exists_linearMap_vermaMk_eq_smul (v : N)
     (hcartan : ∀ x : H, ⁅(x : L), v⁆ = lam x • v)
     (hpos : ∀ x ∈ positiveNilradical H b, ⁅x, v⁆ = 0) :
-    ∃! φ : VermaModule b lam →ₗ⁅K,L⁆ N, φ (vermaGenerator b lam) = v := by
+    letI := UniversalEnvelopingAlgebra.asModule K L N
+    ∃ g : VermaModule b lam →ₗ[U] N, ∀ u : U, g (vermaMk b lam u) = u • v := by
   let _ : Module U N := UniversalEnvelopingAlgebra.asModule K L N
   have _ : IsScalarTower K U N := UniversalEnvelopingAlgebra.isScalarTower_asModule K L N
   have hN : ∀ (x : L) (n : N), (ι K x : U) • n = ⁅x, n⁆ :=
     UniversalEnvelopingAlgebra.asModule_ι_smul K L N
-  have hM := vermaModule_ι_smul b lam
   set f : U →ₗ[U] N := LinearMap.toSpanSingleton U N v
   have hf : ∀ u : U, f u = u • v := by
     intro u
@@ -331,6 +329,23 @@ theorem existsUnique_lieModuleHom_apply_vermaGenerator (v : N)
       g (vermaMk b lam u) = f u := by
         apply Submodule.liftQ_apply
       _ = u • v := hf u
+  exact ⟨g, hg⟩
+
+/-- **The universal property of the Verma module.** If `H` acts on a vector `v` of an `L`-module
+`N` through `lam` and the positive nilradical annihilates `v`, then there is a unique homomorphism
+of `L`-modules `M(lam) → N` carrying the canonical generator to `v`.
+
+The vector `v` is *not* assumed nonzero, so this does not presuppose that `M(lam)` is nonzero. -/
+theorem existsUnique_lieModuleHom_apply_vermaGenerator (v : N)
+    (hcartan : ∀ x : H, ⁅(x : L), v⁆ = lam x • v)
+    (hpos : ∀ x ∈ positiveNilradical H b, ⁅x, v⁆ = 0) :
+    ∃! φ : VermaModule b lam →ₗ⁅K,L⁆ N, φ (vermaGenerator b lam) = v := by
+  let _ : Module U N := UniversalEnvelopingAlgebra.asModule K L N
+  have _ : IsScalarTower K U N := UniversalEnvelopingAlgebra.isScalarTower_asModule K L N
+  have hN : ∀ (x : L) (n : N), (ι K x : U) • n = ⁅x, n⁆ :=
+    UniversalEnvelopingAlgebra.asModule_ι_smul K L N
+  have hM := vermaModule_ι_smul b lam
+  obtain ⟨g, hg⟩ := exists_linearMap_vermaMk_eq_smul b lam v hcartan hpos
   have hcoe : ⇑((UniversalEnvelopingAlgebra.lieModuleHomEquiv hM hN).symm g) = ⇑g :=
     UniversalEnvelopingAlgebra.coe_lieModuleHomEquiv_symm hM hN g
   have hval : ((UniversalEnvelopingAlgebra.lieModuleHomEquiv hM hN).symm g)
@@ -396,9 +411,9 @@ theorem vermaIdeal_eq_span_range_ι_sub_algebraMap :
       (ι K (x : L) : U) - algebraMap K U (borelCharacter H b lam x)) := by
   refine le_antisymm (Submodule.span_le.mpr ?_) (Submodule.span_le.mpr ?_)
   · rintro _ (⟨x, rfl⟩ | ⟨x, hx, rfl⟩)
-    · exact Submodule.subset_span ⟨⟨x, le_borelSubalgebra H b x.2⟩, by
+    · exact Submodule.subset_span ⟨⟨x, le_borelSubalgebra H b x.property⟩, by
         dsimp only
-        rw [borelCharacter_apply_of_mem_cartan H b lam x.2]⟩
+        rw [borelCharacter_apply_of_mem_cartan H b lam x.property]⟩
     · exact Submodule.subset_span ⟨⟨x, positiveNilradical_le_borelSubalgebra H b hx⟩, by
         dsimp only
         rw [borelCharacter_apply_of_mem_positiveNilradical H b lam hx, map_zero, sub_zero]⟩
@@ -582,8 +597,10 @@ theorem irreducibleQuotientMk_vermaGenerator :
 `M(lam)` and the projection being surjective. So `L(lam)` is a highest weight module of weight
 `lam`. -/
 theorem lieSpan_irreducibleQuotientGenerator_eq_top :
-    LieSubmodule.lieSpan K L {irreducibleQuotientGenerator b lam} = ⊤ :=
-  lieSpan_mk_eq_top_of_lieSpan_eq_top (lieSpan_vermaGenerator_eq_top b lam) _
+    LieSubmodule.lieSpan K L {irreducibleQuotientGenerator b lam} = ⊤ := by
+  rw [← irreducibleQuotientMk_vermaGenerator]
+  exact lieSpan_apply_eq_top_of_lieSpan_eq_top (lieSpan_vermaGenerator_eq_top b lam)
+    (irreducibleQuotientMk_surjective b lam)
 
 /-- **`L(lam)` is irreducible, for every weight `lam`.** The Verma module is nonzero, so it is a
 highest weight module of weight `lam`, and its quotient by the maximal submodule is irreducible.

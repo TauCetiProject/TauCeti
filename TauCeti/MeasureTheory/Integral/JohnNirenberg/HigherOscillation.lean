@@ -66,12 +66,11 @@ private theorem setLAverage_enorm_sub_setAverage_rpow_le_of_pos {f : (ι → ℝ
       ENNReal.ofReal (7 * (2 ^ (Fintype.card ι + 1) * q / Real.log (3 / 2)) ^ q) * M ^ q := by
   set n := Fintype.card ι
   set K : ℝ := 2 ^ (n + 1) * q / Real.log (3 / 2)
-  have hlog : 0 < Real.log (3 / 2) := Real.log_pos (by norm_num)
   have hK : 0 < K := by positivity
   -- Closed and open balls agree up to a null set, so the BMO bound applies to closed balls.
   have hMc : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
       ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂μ‖ₑ ∂μ ≤ M := fun y ρ _ => by
-    rw [Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball y ρ)]
+    rw [μ.restrict_closedBall_eq_restrict_ball y ρ]
     exact (setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ y ρ).trans hM
   -- John–Nirenberg at the rate `σ` with `exp (2ⁿ⁺¹ σ M) = 3 / 2`.
   set σ : ℝ := Real.log (3 / 2) / (2 ^ (n + 1) * M)
@@ -80,7 +79,7 @@ private theorem setLAverage_enorm_sub_setAverage_rpow_le_of_pos {f : (ι → ℝ
     rw [div_mul_cancel₀ _ (by positivity), Real.exp_log (by norm_num)]
   have hJN := setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le (μ := μ)
     (hf.integrableOn_isCompact (isCompact_closedBall c r)) hMc (σ := σ) (by rw [hσM]; norm_num)
-  rw [hσM, Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball c r),
+  rw [hσM, μ.restrict_closedBall_eq_restrict_ball c r,
     measure_congr (μ.addHaar_closedBall_ae_eq_ball c r)] at hJN
   norm_num at hJN
   have h0 : μ (ball c r) ≠ 0 := (measure_ball_pos μ c hr).ne'
@@ -133,7 +132,7 @@ theorem setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le {f : (ι → 
           (ENNReal.continuous_coe.comp (continuous_const.add continuous_id)))
     simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   refine ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) => ?_)
-  refine setLAverage_enorm_sub_setAverage_rpow_le_of_pos hf (add_pos_of_nonneg_of_pos M.2 hε)
+  refine setLAverage_enorm_sub_setAverage_rpow_le_of_pos hf (add_pos_of_nonneg_of_pos M.property hε)
     (hM.trans ?_) hq c hr
   exact ENNReal.coe_le_coe.2 le_self_add
 
@@ -202,13 +201,13 @@ theorem setLIntegral_enorm_sub_mul_enorm_rpow_le {b : (ι → ℝ) → E} (hb : 
     field_simp
     ring
   have hbm : AEMeasurable (fun y => ‖b y - a‖ₑ) (μ.restrict S) :=
-    (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.restrict
-  have hfm : AEMeasurable (fun y => ‖f y‖ₑ) (μ.restrict S) := hf.enorm.restrict
+    (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).eNorm.restrict
+  have hfm : AEMeasurable (fun y => ‖f y‖ₑ) (μ.restrict S) := hf.eNorm.restrict
   -- The `Lᵖ` norm of `b - a` on `S`, by Minkowski's inequality and John–Nirenberg.
   have hLp : (∫⁻ y in S, ‖b y - a‖ₑ ^ p ∂μ) ^ p⁻¹ ≤ (J ^ p⁻¹ + κ) * M * μ S ^ p⁻¹ := by
     set bS := ⨍ y in S, b y ∂μ
     have hpt : ∀ y, ‖b y - a‖ₑ ≤ ‖b y - bS‖ₑ + ‖bS - a‖ₑ := fun y => by
-      simpa only [sub_add_sub_cancel] using enorm_add_le (b y - bS) (bS - a)
+      simpa only [sub_add_sub_cancel] using eNorm_add_le (b y - bS) (bS - a)
     have hosc : ∫⁻ y in S, ‖b y - bS‖ₑ ^ p ∂μ ≤ J * (M : ℝ≥0∞) ^ p * μ S := by
       rw [← measure_mul_setLAverage _ hStop, mul_comm]
       gcongr
@@ -221,7 +220,7 @@ theorem setLIntegral_enorm_sub_mul_enorm_rpow_le {b : (ι → ℝ) → E} (hb : 
             (∫⁻ _ in S, ‖bS - a‖ₑ ^ p ∂μ) ^ (1 / p) := by
           rw [inv_eq_one_div]
           exact ENNReal.lintegral_Lp_add_le
-            (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.restrict
+            (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).eNorm.restrict
             aemeasurable_const hp1
       _ ≤ (J * (M : ℝ≥0∞) ^ p * μ S) ^ (1 / p) + (κ * M) * μ S ^ p⁻¹ := by
           gcongr
@@ -237,7 +236,7 @@ theorem setLIntegral_enorm_sub_mul_enorm_rpow_le {b : (ι → ℝ) → E} (hb : 
   have hLq : ∫⁻ y in S, ‖f y‖ₑ ^ q ∂μ ≤ 2 ^ n * μ S * Mf := by
     have := setLIntegral_ball_le_two_pow_mul_measure_mul_maximalFunction μ
       (fun y => ‖f y‖ₑ ^ q) hx
-    simpa only [enorm_eq_self, Module.finrank_fintype_fun_eq_card] using this
+    simpa only [eNorm_eq_self, Module.finrank_fintype_fun_eq_card] using this
   -- Hölder's inequality with the exponents `a' = q / (q - t)` and `q / t`.
   have hexp1 : (p⁻¹) * t = 1 / a' := by
     simp only [p]

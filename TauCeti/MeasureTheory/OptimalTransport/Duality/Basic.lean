@@ -44,15 +44,17 @@ nor its integral needs to be finite or measurable.
   infimum;
 * `TauCeti.DualFeasible.add_const_sub_const` and
   `TauCeti.kantorovichDualValue_add_const_sub_const` — feasibility and value are unchanged by
-  the usual opposite additive shifts when the marginals have equal finite mass.
+  the usual opposite additive shifts when the marginals have equal finite mass;
+* `TauCeti.kantorovichDualValue_div` — dividing both potentials by `a` divides the value by `a`;
+* `TauCeti.kantorovichDualValue_add_const_left` and
+  `TauCeti.kantorovichDualValue_add_const_right` — shifting one potential by a constant `L` shifts
+  the value by `L` times the mass of the corresponding finite marginal.
 
 ## References
 
 * C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, 2003,
   §1.1.1, for the Kantorovich dual constraint and weak duality.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Chapter 5.
-
-This is Layer 2, item 1 of the optimal-transport roadmap.
 -/
 
 public section
@@ -85,19 +87,7 @@ theorem dualFeasible_iff {c : X × Y → EReal} : DualFeasible c φ ψ ↔
 `ENNReal.ofReal` loses no information because the cost is nonnegative. -/
 theorem dualFeasible_iff_ofReal_add_le : DualFeasible (fun z ↦ (c z : EReal)) φ ψ ↔
     ∀ x y, ENNReal.ofReal (φ x + ψ y) ≤ c (x, y) := by
-  constructor
-  · intro h x y
-    have hxy : ((φ x + ψ y : ℝ) : EReal) ≤ (c (x, y) : EReal) := by
-      simpa only [EReal.coe_add] using h x y
-    simpa only [EReal.real_coe_toENNReal, EReal.toENNReal_coe] using
-      EReal.toENNReal_le_toENNReal hxy
-  · intro h x y
-    have hcast : (ENNReal.ofReal (φ x + ψ y) : EReal) ≤ (c (x, y) : EReal) :=
-      EReal.coe_ennreal_le_coe_ennreal_iff.2 (h x y)
-    have hsum : ((φ x + ψ y : ℝ) : EReal) ≤ (ENNReal.ofReal (φ x + ψ y) : EReal) := by
-      rw [EReal.coe_ennreal_ofReal]
-      exact le_max_left ((φ x + ψ y : ℝ) : EReal) 0
-    simpa only [EReal.coe_add] using hsum.trans hcast
+  simp only [DualFeasible, ← EReal.real_coe_toENNReal, EReal.toENNReal_le_iff, EReal.coe_add]
 
 /-- A dual-feasible pair satisfies the extended-nonnegative pointwise constraint. -/
 theorem DualFeasible.ofReal_add_le (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (x : X) (y : Y) :
@@ -189,6 +179,30 @@ theorem kantorovichDualValue_add_const_sub_const [IsFiniteMeasure μ]
   rw [hmassReal]
   ring
 
+/-- Dividing both potentials by `a` divides the dual value by `a`. -/
+theorem kantorovichDualValue_div (a : ℝ) :
+    kantorovichDualValue μ ν (fun x ↦ φ x / a) (fun y ↦ ψ y / a) =
+      kantorovichDualValue μ ν φ ψ / a := by
+  simp only [kantorovichDualValue_def, integral_div, add_div]
+
+/-- Adding a constant `L` to an integrable first potential adds `μ.real univ * L` to the dual
+value, when the first marginal is finite. -/
+theorem kantorovichDualValue_add_const_left [IsFiniteMeasure μ] (hφ : Integrable φ μ) (L : ℝ) :
+    kantorovichDualValue μ ν (fun x ↦ φ x + L) ψ =
+      kantorovichDualValue μ ν φ ψ + μ.real Set.univ * L := by
+  rw [kantorovichDualValue_def, kantorovichDualValue_def, integral_add hφ (integrable_const L),
+    integral_const, smul_eq_mul]
+  ring
+
+/-- Adding a constant `L` to an integrable second potential adds `ν.real univ * L` to the dual
+value, when the second marginal is finite. -/
+theorem kantorovichDualValue_add_const_right [IsFiniteMeasure ν] (hψ : Integrable ψ ν) (L : ℝ) :
+    kantorovichDualValue μ ν φ (fun y ↦ ψ y + L) =
+      kantorovichDualValue μ ν φ ψ + ν.real Set.univ * L := by
+  rw [kantorovichDualValue_def, kantorovichDualValue_def, integral_add hψ (integrable_const L),
+    integral_const, smul_eq_mul]
+  ring
+
 /-- Against any coupling of the two marginals, the dual value is the integral of the split sum
 `(x, y) ↦ φ x + ψ y` of the two potentials. This identity is what turns the dual value into a
 statement about a single plan; it underlies both weak duality and complementary slackness. -/
@@ -220,7 +234,8 @@ theorem DualFeasible.kantorovichDualValue_le_lintegral
     (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) (hπ : IsCoupling π μ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ ((∫⁻ z, c z ∂π) : ℝ≥0∞) := by
-  exact EReal.coe_le_coe_ennreal_of_ofReal_le <|
+  apply EReal.toENNReal_le_iff.1
+  simpa only [EReal.real_coe_toENNReal] using
     h.ofReal_kantorovichDualValue_le_lintegral hφ hψ hπ
 
 /-- **Kantorovich weak duality, in extended-nonnegative form.** The positive part of every
@@ -246,7 +261,8 @@ theorem DualFeasible.kantorovichDualValue_le_transportCost
     (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ (transportCost c μ ν : ℝ≥0∞) := by
-  exact EReal.coe_le_coe_ennreal_of_ofReal_le <|
+  apply EReal.toENNReal_le_iff.1
+  simpa only [EReal.real_coe_toENNReal] using
     h.ofReal_kantorovichDualValue_le_transportCost hφ hψ
 
 end WeakDuality

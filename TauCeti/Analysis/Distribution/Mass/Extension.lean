@@ -9,19 +9,23 @@ public import TauCeti.Analysis.Distribution.Mass.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.Distribution.TestFunction.Approximation
+import TauCeti.Topology.Instances.ENNReal
 import TauCeti.MeasureTheory.Measure.Regular
 
 /-!
 # Evaluation of a current of locally finite mass on integrable forms
 
-Let `Ω` be an open set of a finite-dimensional real normed space `E` and let
-`T : 𝓓^{n}(Ω, F) → ℝ` be a real-linear map on `F`-valued test functions with locally finite mass
-and mass measure `‖T‖` (`Distribution.massMeasure`). With `F = E [⋀^Fin k]→L[ℝ] ℝ` this is a
-`k`-current of locally finite mass. The domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖` says that `T` is
-continuous for the `L¹(‖T‖)` norm on test functions, and test functions are dense in
-`L¹(‖T‖; F)`. So `T` extends uniquely to a continuous linear functional `extendL1 T` on
-`L¹(‖T‖; F)` of norm at most one. This evaluates `T` on every `‖T‖`-integrable form: compactly
-supported continuous forms, and products of test forms with bounded Borel functions.
+Let `Ω` be an open set of a real normed space `E` and let `T : 𝓓^{n}(Ω, F) → ℝ` be a real-linear map
+on `F`-valued test functions with locally finite mass and mass measure `‖T‖`
+(`Distribution.massMeasure`). With `F = E [⋀^Fin k]→L[ℝ] ℝ` this is a `k`-current of locally finite
+mass. The domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖` says that `T` is continuous for the `L¹(‖T‖)` norm on test
+functions, and test functions are dense in `L¹(‖T‖; F)`: for finite-dimensional `E` by
+`TestFunction.denseRange_toLp`, and trivially otherwise, since then `‖T‖ = 0`
+(`Distribution.massMeasure_eq_zero_of_not_finiteDimensional`). So `T` extends uniquely to a
+continuous linear functional `extendL1 T` on `L¹(‖T‖; F)` of norm at most one. This evaluates `T` on
+every `‖T‖`-integrable form: compactly supported continuous forms, and products of test forms with
+bounded Borel functions.
 
 In particular, for a measurable set `A ⊆ Ω` the **Borel restriction**
 `T ⌞ A : φ ↦ extendL1 T (1_A φ)` is again a continuous linear map on test functions with locally
@@ -36,6 +40,13 @@ have locally finite mass.
 * `Distribution.extendL1`: the extension of `T` to `L¹(‖T‖; F)`.
 * `Distribution.extendL1_toLp`, `Distribution.opNorm_extendL1_le`, `Distribution.extendL1_unique`:
   it extends `T`, has norm at most one, and is the only continuous extension.
+* `Distribution.extendContinuous`: the extension of `T` to compactly supported continuous tests,
+  `φ ↦ extendL1 T φ`, which extends `T` (`Distribution.extendContinuous_monoCLM`) and has mass
+  measure `‖T‖` (`Distribution.massMeasure_extendContinuous`).
+* `Distribution.apply_eq_zero_of_forall_monoCLM_eq_zero`: a map of locally finite mass that vanishes
+  on smooth tests vanishes.
+* `Distribution.extendContinuous_unique`: `Distribution.extendContinuous T` is the only extension
+  of `T` of locally finite mass.
 * `Distribution.massRestrict`: the Borel restriction `T ⌞ A`.
 * `Distribution.enorm_massRestrict_apply_le`: `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`.
 * `Distribution.mass_massRestrict_le`, `Distribution.massMeasure_massRestrict_le`: the mass
@@ -49,6 +60,8 @@ have locally finite mass.
 * `Distribution.dsupport_massRestrict_subset`: `T ⌞ A` is supported in the support of `T`.
 * `Distribution.tendsto_apply_smulLeftCLM_massRestrict`: smooth multiples `T (fᵢ φ)` converge to
   `(T ⌞ A) φ` when the bounded smooth functions `fᵢ` converge pointwise on `Ω` to `1_A`.
+* `Distribution.tendsto_massRestrict_apply`: `(T ⌞ Aᵢ) φ → (T ⌞ B) φ` when `‖T‖`-almost every point
+  eventually lies in `Aᵢ` exactly when it lies in `B`.
 
 ## References
 
@@ -67,7 +80,7 @@ open scoped ENNReal Distributions Topology
 
 namespace Distribution
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {n : ℕ∞}
   {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) ℝ] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ] {T : 𝓕}
@@ -85,7 +98,7 @@ def extendL1 (T : 𝓕) : Lp F 1 (massMeasure T) →L[ℝ] ℝ :=
 /-- The domination of `T` by its mass measure, in the form used by `LinearMap.extendOfNorm`. -/
 private theorem norm_apply_le_one_mul (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     ‖(T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) φ‖ ≤ 1 * ‖(TestFunction.toLp 1 (massMeasure T)).toLinearMap φ‖ := by
-  rw [one_mul, LinearMap.coe_ofClass, ContinuousLinearMap.coe_coe, ← enorm_le_iff_norm_le,
+  rw [one_mul, LinearMap.coe_ofClass, ContinuousLinearMap.coe_coe, ← eNorm_le_iff_norm_le,
     TestFunction.enorm_toLp_one]
   exact enorm_apply_le_lintegral_massMeasure hT φ
 
@@ -93,13 +106,25 @@ variable {A B : Set Ω}
 
 variable [CompleteSpace F]
 
+/-- Test functions are dense in `L¹(‖T‖; F)`. In infinite dimension `‖T‖ = 0`, so `L¹(‖T‖; F)` is
+trivial. -/
+private theorem denseRange_toLp_massMeasure :
+    DenseRange (TestFunction.toLp (n := n) (F := F) 1 (massMeasure T)) := by
+  by_cases hE : FiniteDimensional ℝ E
+  · exact TestFunction.denseRange_toLp ENNReal.one_ne_top
+  have h0 : ∀ μ : Measure Ω, μ = 0 → ∀ f : Lp F 1 μ, f = 0 := by
+    rintro μ rfl f
+    exact norm_eq_zero.1 (Lp.norm_measure_zero f)
+  exact Function.Surjective.denseRange fun f =>
+    ⟨0, by rw [map_zero, h0 _ (massMeasure_eq_zero_of_not_finiteDimensional hE) f]⟩
+
 /-- `extendL1 T` extends `T`: on the class of a test function it is the value of `T`. -/
 @[simp]
 theorem extendL1_toLp (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     extendL1 T (TestFunction.toLp 1 (massMeasure T) φ) = T φ := by
   rw [extendL1]
   exact LinearMap.extendOfNorm_eq (f := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ))
-    (TestFunction.denseRange_toLp ENNReal.one_ne_top)
+    denseRange_toLp_massMeasure
     ⟨1, norm_apply_le_one_mul hT⟩ φ
 
 /-- **Mass bound for the extension.** `|extendL1 T f| ≤ ∫ ‖f‖ d‖T‖`. -/
@@ -107,7 +132,7 @@ theorem norm_extendL1_apply_le (f : Lp F 1 (massMeasure T)) : ‖extendL1 T f‖
   by_cases hT : HasLocallyFiniteMass T
   · rw [extendL1]
     simpa using LinearMap.norm_extendOfNorm_apply_le (f := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ))
-      (TestFunction.denseRange_toLp ENNReal.one_ne_top) 1
+      denseRange_toLp_massMeasure 1
       (norm_apply_le_one_mul hT) f
   · -- Without locally finite mass `‖T‖ = 0`, so `L¹(‖T‖; F)` is trivial.
     obtain rfl : f = 0 := by
@@ -128,8 +153,144 @@ theorem extendL1_unique (hT : HasLocallyFiniteMass T) (S : Lp F 1 (massMeasure T
     extendL1 T = S := by
   rw [extendL1]
   exact LinearMap.extendOfNorm_unique (f := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ))
-    (TestFunction.denseRange_toLp ENNReal.one_ne_top) 1 (norm_apply_le_one_mul hT) S
+    denseRange_toLp_massMeasure 1 (norm_apply_le_one_mul hT) S
     (LinearMap.ext hS)
+
+/-! ### Extension to compactly supported continuous tests -/
+
+section Continuous
+
+open TestFunction
+
+omit [CompleteSpace F] in
+/-- The **extension of `T` to compactly supported continuous tests**: for a real-linear map `T` on
+tests of class `C^n` with locally finite mass, the continuous linear map `φ ↦ extendL1 T φ` on the
+compactly supported continuous `F`-valued tests, through the extension `Distribution.extendL1` of
+`T` to `L¹(‖T‖; F)`. It extends `T` (`Distribution.extendContinuous_monoCLM`) and its mass measure
+is `‖T‖` (`Distribution.massMeasure_extendContinuous`). If `T` does not have locally finite mass,
+it is `0`. For finite-dimensional inner product spaces `E` and `F`,
+`TauCeti.Analysis.Distribution.Mass.Polar.Vector` shows that it is `φ ↦ ∫ ⟪η x, φ x⟫ d‖T‖` for the
+polar vector field `η` of `T`. On a finite-dimensional `E` it is the only linear extension of `T`
+with locally finite mass (`Distribution.extendContinuous_unique`). -/
+def extendContinuous (T : 𝓕) : 𝓓^{0}(Ω, F) →L[ℝ] ℝ :=
+  (extendL1 T).comp (TestFunction.toLp 1 (massMeasure T))
+
+omit [CompleteSpace F] in
+/-- Unfolding lemma for `Distribution.extendContinuous`. -/
+theorem extendContinuous_apply (φ : 𝓓^{0}(Ω, F)) :
+    extendContinuous T φ = extendL1 T (TestFunction.toLp 1 (massMeasure T) φ) :=
+  (rfl)
+
+/-- **The extension extends `T`.** On a test of class `C^n`, the extension of a map `T` of locally
+finite mass is the value of `T`. -/
+@[simp]
+theorem extendContinuous_monoCLM (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
+    extendContinuous T (monoCLM ℝ φ) = T φ := by
+  rw [extendContinuous_apply, ← extendL1_toLp hT φ, TestFunction.toLp_apply,
+    TestFunction.toLp_apply]
+  exact congrArg _ (MemLp.toLp_congr _ _ (.of_eq (funext fun x => by
+    simp [coe_monoCLM_of_le zero_le le_rfl])))
+
+/-- **Domination of the extension by the mass measure.** `|extendContinuous T φ| ≤ ∫ ‖φ‖ d‖T‖`. -/
+theorem enorm_extendContinuous_apply_le (φ : 𝓓^{0}(Ω, F)) :
+    ‖extendContinuous T φ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂massMeasure T := by
+  rw [extendContinuous_apply, ← TestFunction.enorm_toLp_one]
+  exact eNorm_le_iff_norm_le.2 (norm_extendL1_apply_le _)
+
+/-- The extension of `T` to compactly supported continuous tests has locally finite mass. -/
+theorem hasLocallyFiniteMass_extendContinuous : HasLocallyFiniteMass (extendContinuous T) :=
+  hasLocallyFiniteMass_def.2 fun K hK hKΩ => by
+    obtain ⟨C, hC, h⟩ := hasLocallyFiniteMass_def.1
+      (TestFunction.hasLocallyFiniteMass_toLp (n := 0) (F := F) 1 (massMeasure T)) K hK hKΩ
+    exact ⟨C, hC, fun φ hφ => (norm_extendL1_apply_le _).trans (h φ hφ)⟩
+
+/-- **The mass measure of the extension** of `T` to compactly supported continuous tests is the
+mass measure `‖T‖`. -/
+@[simp]
+theorem massMeasure_extendContinuous : massMeasure (extendContinuous T) = massMeasure T := by
+  refine le_antisymm (massMeasure_le_of_enorm_apply_le _ enorm_extendContinuous_apply_le) ?_
+  by_cases hT : HasLocallyFiniteMass T
+  · refine massMeasure_le_of_enorm_apply_le _ fun φ => ?_
+    have h := enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_extendContinuous (T := T))
+      (monoCLM ℝ φ : 𝓓^{0}(Ω, F))
+    rwa [extendContinuous_monoCLM hT, coe_monoCLM_of_le zero_le le_rfl] at h
+  · rw [massMeasure_of_not_hasLocallyFiniteMass hT]
+    exact Measure.zero_le _
+
+/-- **The local mass of the extension.** For `T` of locally finite mass and `U` open, the local
+mass of the extension on `U`, a supremum over continuous tests, is the local mass of `T` on `U`, a
+supremum over tests of class `C^n`. -/
+theorem localMass_extendContinuous (hT : HasLocallyFiniteMass T) {U : Set E} (hU : IsOpen U) :
+    localMass (extendContinuous T) U = localMass T U := by
+  rw [← massMeasure_preimage_coe hasLocallyFiniteMass_extendContinuous hU,
+    massMeasure_extendContinuous, massMeasure_preimage_coe hT hU]
+
+/-- If `T` does not have locally finite mass, its extension to compactly supported continuous tests
+is `0`. -/
+@[simp]
+theorem extendContinuous_of_not_hasLocallyFiniteMass (hT : ¬HasLocallyFiniteMass T) :
+    extendContinuous T = 0 := by
+  ext φ
+  have h := enorm_extendContinuous_apply_le (T := T) φ
+  simpa [massMeasure_of_not_hasLocallyFiniteMass hT] using h
+
+/-- A test `φ` of class `C^n` is approximated by smooth tests in a compact set of finite local
+mass: there is a compact `K ⊆ Ω` with `localMass T K` finite and compact, measurable preimage in
+`Ω`, and for every `ε > 0` a smooth test `ψ` such that `φ - ψ` is supported in `K` and bounded by
+`ε`, so that `‖T (φ - ψ)‖ₑ ≤ localMass T K * ε`. -/
+theorem exists_isCompact_localMass_ne_top_approx [FiniteDimensional ℝ E]
+    (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
+    ∃ K : Set E, localMass T K ≠ ⊤ ∧ IsCompact ((↑) ⁻¹' K : Set Ω) ∧
+      MeasurableSet ((↑) ⁻¹' K : Set Ω) ∧ ∀ ε : ℝ, 0 < ε → ∃ ψ : 𝓓(Ω, F),
+        tsupport (⇑φ - ⇑ψ) ⊆ K ∧ (∀ x, ‖φ x - ψ x‖ ≤ ε) ∧
+          ‖T (φ - monoCLM ℝ ψ)‖ₑ ≤ localMass T K * ENNReal.ofReal ε := by
+  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_dist_le φ
+  have hKc := Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
+  refine ⟨K, (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ, hKc, hKc.measurableSet,
+    fun ε hε => ?_⟩
+  obtain ⟨ψ, hψK, hψφ⟩ := happrox ε hε
+  have hsub : tsupport (⇑φ - ⇑ψ) ⊆ K := (tsupport_sub _ _).trans (union_subset hφK hψK)
+  have hε' (x : E) : ‖φ x - ψ x‖ ≤ ε := by
+    rw [← dist_eq_norm_sub']
+    exact hψφ x
+  refine ⟨ψ, hsub, hε', enorm_apply_le_localMass_mul_of_forall_enorm_le T
+    (by simpa [coe_monoCLM_of_le le_top le_rfl] using hsub) fun x => ?_⟩
+  rw [← ofReal_norm]
+  simpa [coe_monoCLM_of_le le_top le_rfl] using ENNReal.ofReal_le_ofReal (hε' x)
+
+/-- **Smooth tests determine a map of locally finite mass.** A real-linear map on tests of class
+`C^n` with locally finite mass that vanishes on smooth tests vanishes: smooth tests approximate a
+test uniformly, with supports in a fixed compact set of finite local mass. -/
+theorem apply_eq_zero_of_forall_monoCLM_eq_zero [FiniteDimensional ℝ E]
+    (hT : HasLocallyFiniteMass T) (h : ∀ ψ : 𝓓(Ω, F), T (monoCLM ℝ ψ) = 0)
+    (φ : 𝓓^{n}(Ω, F)) : T φ = 0 := by
+  obtain ⟨K, hKT, -, -, happrox⟩ := exists_isCompact_localMass_ne_top_approx hT φ
+  refine eNorm_eq_zero.1 (nonpos_iff_eq_zero.1
+    (ENNReal.le_of_forall_pos_le_add_ofReal_mul hKT fun ε hε => ?_))
+  obtain ⟨ψ, -, -, hψ⟩ := happrox ε hε
+  rw [map_sub, h ψ, sub_zero, mul_comm] at hψ
+  rwa [zero_add]
+
+/-- **Uniqueness of the extension.** A real-linear map on compactly supported continuous tests
+with locally finite mass that agrees with `T` on the tests of class `C^n` is the extension
+`Distribution.extendContinuous T`. -/
+theorem extendContinuous_unique [FiniteDimensional ℝ E] {L : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ}
+    (hL : HasLocallyFiniteMass L) (h : ∀ φ : 𝓓^{n}(Ω, F), L (monoCLM ℝ φ) = T φ) :
+    L = (extendContinuous T : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ) := by
+  have hT : HasLocallyFiniteMass T := by
+    convert hL.comp_monoCLM (Ω' := Ω) (m := n) using 1
+    exact funext fun φ => (h φ).symm
+  have hsub : HasLocallyFiniteMass (L - (extendContinuous T : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ)) :=
+    hL.sub hasLocallyFiniteMass_extendContinuous
+  refine LinearMap.ext fun φ => sub_eq_zero.1 ?_
+  refine apply_eq_zero_of_forall_monoCLM_eq_zero hsub (fun ψ => ?_) φ
+  have hψ : (monoCLM ℝ ψ : 𝓓^{0}(Ω, F)) = monoCLM ℝ (monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) :=
+    TestFunction.ext fun x => by
+      simp [coe_monoCLM_of_le le_top le_rfl, coe_monoCLM_of_le zero_le le_rfl]
+  rw [LinearMap.sub_apply, hψ, h, ContinuousLinearMap.coe_coe, extendContinuous_monoCLM hT,
+    sub_self]
+
+end Continuous
 
 /-! ### Borel restriction -/
 
@@ -160,7 +321,7 @@ theorem massRestrict_apply (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
 /-- **Domination of the Borel restriction.** `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`. -/
 theorem enorm_massRestrict_apply_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
     ‖massRestrict T hA φ‖ₑ ≤ ∫⁻ x in A, ‖φ x‖ₑ ∂massMeasure T := by
-  rw [← TestFunction.enorm_indicatorToLp_one _ hA, massRestrict_apply, enorm_le_iff_norm_le]
+  rw [← TestFunction.enorm_indicatorToLp_one _ hA, massRestrict_apply, eNorm_le_iff_norm_le]
   exact norm_extendL1_apply_le _
 
 /-- A Borel restriction has locally finite mass. -/
@@ -193,6 +354,9 @@ theorem massRestrict_add_massRestrict_compl_apply (hT : HasLocallyFiniteMass T)
 /-- **Mass measure of a Borel restriction.** `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`. -/
 theorem massMeasure_massRestrict_le (hA : MeasurableSet A) :
     massMeasure (massRestrict T hA) ≤ (massMeasure T).restrict A := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [massMeasure_eq_zero_of_not_finiteDimensional hE]
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   exact massMeasure_le_of_enorm_apply_le _ (enorm_massRestrict_apply_le hA)
 
@@ -201,6 +365,9 @@ No finiteness of the total mass or regularity of the boundary is required. -/
 @[simp]
 theorem massMeasure_massRestrict (hT : HasLocallyFiniteMass T) (hA : MeasurableSet A) :
     massMeasure (massRestrict T hA) = (massMeasure T).restrict A := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [massMeasure_eq_zero_of_not_finiteDimensional hE]
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   let μ := massMeasure (massRestrict T hA)
   let ν := massMeasure (massRestrict T hA.compl)
@@ -209,7 +376,7 @@ theorem massMeasure_massRestrict (hT : HasLocallyFiniteMass T) (hA : MeasurableS
     intro φ
     rw [lintegral_add_measure,
       ← massRestrict_add_massRestrict_compl_apply hT hA φ]
-    exact (enorm_add_le _ _).trans (add_le_add
+    exact (eNorm_add_le _ _).trans (add_le_add
       (enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_massRestrict hA) φ)
       (enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_massRestrict hA.compl) φ))
   have hzero : ν.restrict A = 0 := by
@@ -244,7 +411,7 @@ theorem massRestrict_eq_zero (hA : MeasurableSet A) (hA0 : massMeasure T A = 0) 
   ext φ
   have h := enorm_massRestrict_apply_le (T := T) hA φ
   rw [Measure.restrict_eq_zero.2 hA0, lintegral_zero_measure, nonpos_iff_eq_zero,
-    enorm_eq_zero] at h
+    eNorm_eq_zero] at h
   simpa using h
 
 /-- A Borel restriction of a locally finite-mass current vanishes if and only if the
@@ -310,7 +477,7 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
           TestFunction.indicatorToLp 1 (massMeasure T) hA φ‖ =
         (∫⁻ x, ‖(f i x - A.indicator 1 x) • φ x‖ₑ ∂massMeasure T).toReal := by
     rw [TestFunction.toLp_apply, TestFunction.indicatorToLp_apply, ← MemLp.toLp_sub,
-      Lp.norm_toLp, eLpNorm_one_eq_lintegral_enorm]
+      Lp.norm_toLp, eLpNorm_one_eq_lintegral_eNorm]
     · refine congrArg ENNReal.toReal (lintegral_congr fun x => ?_)
       by_cases hx : x ∈ A <;> simp [hx, sub_smul]
     · exact ((TestFunction.memLp_subtype (p := 1) _).sub
@@ -321,23 +488,60 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
   rw [← lintegral_zero (μ := massMeasure T)]
   refine tendsto_lintegral_of_dominated_convergence' (fun x => (‖C‖ₑ + 1) * ‖φ x‖ₑ)
     (fun i => ?_) (fun i => ae_of_all _ fun x => ?_) ?_ (ae_of_all _ fun x => ?_)
-  · have hc : Continuous fun x : Ω => f i x • φ x :=
-      (((hf i).continuous.comp continuous_subtype_val).smul
-        (φ.continuous.comp continuous_subtype_val))
-    exact (hc.aestronglyMeasurable.sub ((φ.continuous.comp
-      continuous_subtype_val).aestronglyMeasurable.indicator hA)).enorm.congr
-      (ae_of_all _ fun x => by by_cases hx : x ∈ A <;> simp [hx, sub_smul])
+  · exact ((TestFunction.memLp_subtype (p := 1) (TestFunction.smulLeftCLM (hf i) φ)).sub
+      ((TestFunction.memLp_subtype φ).indicator hA.nullMeasurableSet)).aestronglyMeasurable
+      |>.eNorm.congr (ae_of_all _ fun x => by by_cases hx : x ∈ A <;> simp [hx, sub_smul])
   · dsimp only
-    rw [enorm_smul]
+    rw [eNorm_smul]
     gcongr
-    refine (enorm_sub_le).trans (add_le_add ?_ ?_)
+    refine (eNorm_sub_le).trans (add_le_add ?_ ?_)
     · rw [← ofReal_norm, ← ofReal_norm, Real.norm_eq_abs]
-      exact ENNReal.ofReal_le_ofReal ((hfC i x x.2).trans (le_abs_self C))
+      exact ENNReal.ofReal_le_ofReal ((hfC i x x.property).trans (le_abs_self C))
     · by_cases hx : x ∈ A <;> simp [hx]
   · rw [lintegral_const_mul' _ _ (by simp), ← TestFunction.enorm_toLp_one]
-    exact ENNReal.mul_ne_top (by simp) enorm_ne_top
-  · have h := ENNReal.Tendsto.mul_const ((hlim x).sub_const (A.indicator 1 x)).enorm
-      (Or.inr enorm_ne_top) (b := ‖φ x‖ₑ)
-    simpa [sub_self, enorm_smul] using h
+    exact ENNReal.mul_ne_top (by simp) eNorm_ne_top
+  · have h := ENNReal.Tendsto.mul_const ((hlim x).sub_const (A.indicator 1 x)).eNorm
+      (Or.inr eNorm_ne_top) (b := ‖φ x‖ₑ)
+    simpa [sub_self, eNorm_smul] using h
+
+open scoped symmDiff in
+/-- **Borel restrictions converge with their restricting sets.** If at `‖T‖`-almost every point
+`x`, eventually along `l` the point `x` lies in `Aᵢ` exactly when it lies in `B`, then
+`(T ⌞ Aᵢ) φ → (T ⌞ B) φ` for every test `φ`. -/
+theorem tendsto_massRestrict_apply {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    {A : ι → Set Ω} (hA : ∀ i, MeasurableSet (A i)) (hB : MeasurableSet B)
+    (hlim : ∀ᵐ x ∂massMeasure T, ∀ᶠ i in l, (x ∈ A i ↔ x ∈ B)) (φ : 𝓓^{n}(Ω, F)) :
+    Tendsto (fun i => massRestrict T (hA i) φ) l (𝓝 (massRestrict T hB φ)) := by
+  simp_rw [massRestrict_apply]
+  refine ((extendL1 T).continuous.tendsto _).comp ?_
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  -- The `L¹` distance is the integral of `‖φ‖` over the symmetric difference `Aᵢ ∆ B`.
+  have hpt (i : ι) (x : Ω) :
+      ‖(A i).indicator (fun y : Ω => φ y) x - B.indicator (fun y => φ y) x‖ₑ =
+        (A i ∆ B).indicator (fun y => ‖φ y‖ₑ) x := by
+    by_cases hx : x ∈ A i <;> by_cases hx' : x ∈ B <;> simp [hx, hx', mem_symmDiff]
+  have hnorm (i : ι) :
+      ‖TestFunction.indicatorToLp 1 (massMeasure T) (hA i) φ -
+          TestFunction.indicatorToLp 1 (massMeasure T) hB φ‖ =
+        (∫⁻ x, (A i ∆ B).indicator (fun y => ‖φ y‖ₑ) x ∂massMeasure T).toReal := by
+    rw [TestFunction.indicatorToLp_apply, TestFunction.indicatorToLp_apply, ← MemLp.toLp_sub,
+      Lp.norm_toLp, eLpNorm_one_eq_lintegral_eNorm]
+    · exact congrArg ENNReal.toReal (lintegral_congr (hpt i))
+    · exact (((TestFunction.memLp_subtype (p := 1) φ).indicator (hA i).nullMeasurableSet).sub
+        ((TestFunction.memLp_subtype φ).indicator hB.nullMeasurableSet)).aestronglyMeasurable
+  simp_rw [hnorm]
+  rw [← ENNReal.toReal_zero]
+  refine (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp ?_
+  rw [← lintegral_zero (μ := massMeasure T)]
+  refine tendsto_lintegral_filter_of_dominated_convergence (fun x => ‖φ x‖ₑ)
+    (.of_forall fun i => ?_) (.of_forall fun i => ae_of_all _ fun x => ?_) ?_ ?_
+  · exact (continuous_eNorm.comp (φ.continuous.comp continuous_subtypeVal)).measurable.indicator
+      ((hA i).symmDiff hB)
+  · exact indicator_le_self _ _ x
+  · rw [← TestFunction.enorm_toLp_one]
+    exact eNorm_ne_top
+  · filter_upwards [hlim] with x hx
+    refine tendsto_const_nhds.congr' (hx.mono fun i hi => ?_)
+    simp [mem_symmDiff, hi]
 
 end Distribution

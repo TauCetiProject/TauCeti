@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.InputFirst
 import Mathlib.Algebra.Polynomial.Div
 
 /-!
@@ -54,6 +54,9 @@ endomorphisms (`ContinuousLinearMap.IsRowCompact.aeval`).
 
 * `ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le`: a null row majorant of the entries
   gives row compactness.
+* `ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le_pow_snd`: entries of norm at most
+  `s ^ k` in the rows `(i, k)` of a matrix with rows indexed by `I × ℕ`, with `I` finite and
+  `s < 1`, give row compactness.
 * `ContinuousLinearMap.isRowCompact_of_apply_single_eq_sum`: columns that are uniformly bounded
   combinations of finitely many vectors give a row-compact map.
 * `ContinuousLinearMap.ringOpNorm_eq_iSup_rowNorm`: `‖u‖ = ⨆ i, rᵢ(u)` over ultrametric Tate
@@ -99,6 +102,12 @@ theorem rowNorm_def (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) :
     u.rowNorm i = ⨆ j, ‖u.matrixCoeff i j‖ :=
   (rfl)
 
+/-- The output-first row norm is the column supremum in input-first coordinates. Use a
+bound on the entries (automatic over Tate scalars) when using this real supremum as a bound. -/
+theorem rowNorm_eq_iSup_norm_matrixCoeffInputFirst (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) :
+    u.rowNorm i = ⨆ j, ‖u.matrixCoeffInputFirst j i‖ := by
+  simp only [rowNorm_def, matrixCoeffInputFirst_apply]
+
 theorem rowNorm_nonneg (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) : 0 ≤ u.rowNorm i :=
   Real.iSup_nonneg fun _ ↦ norm_nonneg _
 
@@ -124,6 +133,23 @@ theorem isRowCompact_iff {u : C₀(J, R) →L[R] C₀(I, R)} :
       (∃ C, ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) ∧ Tendsto u.rowNorm cofinite (𝓝 0) :=
   Iff.rfl
 
+/-- Row compactness in output-first coordinates is boundedness of the input-first entries
+and decay of their column suprema. The boundedness clause makes the suprema meaningful.
+This differs from the automatic decay of each input-first row. -/
+theorem isRowCompact_iff_matrixCoeffInputFirst {u : C₀(J, R) →L[R] C₀(I, R)} :
+    u.IsRowCompact ↔ (∃ C, ∀ j i, ‖u.matrixCoeffInputFirst j i‖ ≤ C) ∧
+      Tendsto (fun i ↦ ⨆ j, ‖u.matrixCoeffInputFirst j i‖) cofinite (𝓝 0) := by
+  rw [isRowCompact_iff]
+  constructor
+  · rintro ⟨hbound, hdecay⟩
+    obtain ⟨C, hC⟩ := hbound
+    exact ⟨⟨C, fun j i ↦ by simpa only [matrixCoeffInputFirst_apply] using hC i j⟩,
+      hdecay.congr fun i ↦ u.rowNorm_eq_iSup_norm_matrixCoeffInputFirst i⟩
+  · rintro ⟨hbound, hdecay⟩
+    obtain ⟨C, hC⟩ := hbound
+    exact ⟨⟨C, fun i j ↦ by simpa only [matrixCoeffInputFirst_apply] using hC j i⟩,
+      hdecay.congr fun i ↦ (u.rowNorm_eq_iSup_norm_matrixCoeffInputFirst i).symm⟩
+
 theorem IsRowCompact.tendsto_rowNorm {u : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) :
     Tendsto u.rowNorm cofinite (𝓝 0) :=
   hu.2
@@ -142,6 +168,18 @@ theorem isRowCompact_of_norm_matrixCoeff_le {u : C₀(J, R) →L[R] C₀(I, R)} 
   refine ⟨⟨C, fun i j ↦ (h i j).trans (hC ⟨i, rfl⟩)⟩, squeeze_zero (rowNorm_nonneg u)
     (fun i ↦ rowNorm_le_of_forall_le (le_max_right (r i) 0) fun j ↦ (h i j).trans
       (le_max_left _ _)) (by simpa using hr.max (tendsto_const_nhds (x := (0 : ℝ))))⟩
+
+/-- **Block row decay gives row compactness.** If `s < 1` and every entry in a row indexed by
+`(i, k)` of a map `C₀(J, R) →L[R] C₀(I × ℕ, R)`, for a finite `I`, has norm at most `s ^ k`, then
+the map is row compact, since each block `I × {k}` of rows is finite. -/
+theorem isRowCompact_of_norm_matrixCoeff_le_pow_snd [Finite I] {s : ℝ}
+    {u : C₀(J, R) →L[R] C₀(I × ℕ, R)} (hs₀ : 0 ≤ s) (hs₁ : s < 1)
+    (hA : ∀ i j, ‖u.matrixCoeff i j‖ ≤ s ^ i.2) : u.IsRowCompact := by
+  refine isRowCompact_of_norm_matrixCoeff_le ((tendsto_pow_atTop_nhds_zero_of_lt_one hs₀ hs₁).comp
+    ?_) hA
+  rw [← Nat.cofinite_eq_atTop]
+  exact Tendsto.cofinite_of_finite_preimage_singleton fun k ↦
+    (Set.finite_range fun i : I ↦ (i, k)).subset fun i hi ↦ ⟨i.1, Prod.ext rfl hi.symm⟩
 
 /-- **Bounded finite expansions of the columns give row decay.** If every column
 `u (single j 1)` of `u` is a combination `∑ k, a k • w k` of a fixed finite family `w` with
@@ -172,6 +210,13 @@ theorem IsRowCompact.add {u v : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowComp
   rw [matrixCoeff_add, Matrix.add_apply]
   exact (norm_add_le _ _).trans
     (add_le_add (hu.norm_matrixCoeff_le_rowNorm i j) (hv.norm_matrixCoeff_le_rowNorm i j))
+
+/-- A finite sum of row-compact maps is row compact. -/
+theorem IsRowCompact.sum {ι : Type*} {s : Finset ι}
+    {f : ι → C₀(J, R) →L[R] C₀(I, R)} (hf : ∀ i ∈ s, (f i).IsRowCompact) :
+    (∑ i ∈ s, f i).IsRowCompact :=
+  Finset.sum_induction f (fun w : C₀(J, R) →L[R] C₀(I, R) ↦ w.IsRowCompact)
+    (fun _ _ ↦ IsRowCompact.add) isRowCompact_zero hf
 
 theorem IsRowCompact.neg {u : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) :
     (-u).IsRowCompact :=

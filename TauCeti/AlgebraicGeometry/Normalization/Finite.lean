@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Normalization
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
-public import TauCeti.RingTheory.Japanese
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
+public import TauCeti.RingTheory.UniversallyJapanese
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 
 /-!
 # Finiteness of the relative normalization
@@ -21,12 +23,12 @@ each of these integral closures is a finite `Γ(Y, U)`-module.
 For an integral scheme `Y` and a finite extension `L` of its function field `k(Y)`, consider the
 normalization of `Y` in `Spec L`, along `Spec L ⟶ Spec k(Y) ⟶ Y`. Over a nonempty affine open `U`,
 the sections of `Spec L` are `L`, and `k(Y)` is the fraction field of `Γ(Y, U)`. So this
-normalization is finite when the rings `Γ(Y, U)` are Japanese; for instance when they are Nagata,
-as a Nagata domain is Japanese. For `L = k(Y)` itself, the normalization of `Y` in its function
-field is finite exactly when the rings `Γ(Y, U)` are N-1. This supplies the finiteness hypothesis
-of resolution of curves by normalization
-(`TauCeti.AlgebraicGeometry.isRegular_normalization_of_field`) for curves whose affine opens have
-Japanese rings.
+normalization is finite when the rings `Γ(Y, U)` are Japanese; for instance when `Y` is locally of
+finite type over a universally Japanese ring `R` (such as a field), or when the rings `Γ(Y, U)` are
+Nagata. For `L = k(Y)` itself, the normalization of `Y` in its function field is finite exactly
+when the rings `Γ(Y, U)` are N-1. This supplies the finiteness hypothesis of resolution of curves
+by normalization (`TauCeti.AlgebraicGeometry.isRegular_normalization_of_field`) for integral
+schemes of dimension one locally of finite type over a field.
 
 ## Main results
 
@@ -40,10 +42,16 @@ Japanese rings.
   every nonempty affine open of an integral scheme `Y` is Japanese, the normalization of `Y` in a
   finite extension of its function field is finite over `Y` (Stacks, Lemma 29.54.14 (0AVK), with
   the hypothesis on every affine open).
+* `TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_locallyOfFiniteType` and
+  `isFinite_fromNormalization_fromSpecStalk_genericPoint_of_locallyOfFiniteType`:
+  if `Y` is an integral scheme locally of finite type over `Spec R` for a universally Japanese ring
+  `R` (such as a field), the normalization of `Y` in any finite extension of `k(Y)`, and in `k(Y)`
+  itself, is finite over `Y`.
 
 ## References
 
 * [Stacks Project, Lemma 29.54.14](https://stacks.math.columbia.edu/tag/0AVK).
+* [Stacks Project, Proposition 10.162.16](https://stacks.math.columbia.edu/tag/0335).
 * [Stacks Project, Tag 035H](https://stacks.math.columbia.edu/tag/035H), for the relative
   normalization over affine opens.
 -/
@@ -67,7 +75,7 @@ theorem isFinite_fromNormalization_iff :
       Module.Finite Γ(Y, U) (integralClosure Γ(Y, U) Γ(X, f ⁻¹ᵁ U)) := by
   -- Over an affine open `U`, the map on sections is the algebra map to the integral closure,
   -- followed by the isomorphism `normalizationObjIso`.
-  have key : ∀ U (hU : IsAffineOpen U), (f.fromNormalization.app U).hom.Finite ↔
+  have key : ∀ U (_ : IsAffineOpen U), (f.fromNormalization.app U).hom.Finite ↔
       letI := (f.app U).hom.toAlgebra
       Module.Finite Γ(Y, U) (integralClosure Γ(Y, U) Γ(X, f ⁻¹ᵁ U)) := fun U hU ↦ by
     let := (f.app U).hom.toAlgebra
@@ -109,8 +117,7 @@ theorem isFinite_fromNormalization_fromSpecStalk_genericPoint_iff :
     obtain ⟨⟨y, hy⟩⟩ := hU
     exact (genericPoint_specializes y).mem_open U.isOpen hy
 
-variable (L : Type u) [Field L] [Algebra Y.functionField L]
-
+variable (L : Type u) [Field L] [Algebra Y.functionField L] in
 /-- **Finite normalization in a finite extension of the function field.** Let `Y` be an integral
 scheme such that the ring of sections of every nonempty affine open is Japanese, for instance
 Nagata. Then for every finite extension `L` of the function field `k(Y)`, the normalization of `Y`
@@ -140,5 +147,42 @@ theorem isFinite_fromNormalization_of_isJapanese
   · -- Over an open missing the generic point, the sections of `Spec L` are the zero ring.
     have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
     infer_instance
+
+section UniversallyJapanese
+
+variable {R : Type u} [CommRing R] [Ring.IsUniversallyJapanese R]
+
+/-- The ring of sections of every nonempty affine open of an integral scheme locally of finite type
+over `Spec R`, for a universally Japanese ring `R` (such as a field), is Japanese: it is an
+integral domain of finite type over `R`. -/
+theorem isJapanese_sections_of_locallyOfFiniteType (g : Y ⟶ Spec (.of R)) [LocallyOfFiniteType g]
+    {U : Y.Opens} (hU : IsAffineOpen U) [Nonempty U] : Ring.IsJapanese Γ(Y, U) := by
+  let : Algebra R Γ(Y, U) := ((Scheme.ΓSpecIso (.of R)).inv ≫ g.appLE ⊤ U le_top).hom.toAlgebra
+  have : Algebra.FiniteType R Γ(Y, U) := g.finiteType_ΓSpecIso_inv_comp_appLE hU
+  exact Ring.IsUniversallyJapanese.isJapanese R Γ(Y, U)
+
+/-- **Finite normalization in a finite extension over a universally Japanese base.** Let `Y` be an
+integral scheme locally of finite type over `Spec R`, where `R` is universally Japanese (for
+instance a field). Then for every finite extension `L` of `k(Y)`, the normalization of `Y` in
+`Spec L` is finite over `Y`. -/
+theorem isFinite_fromNormalization_of_locallyOfFiniteType (g : Y ⟶ Spec (.of R))
+    [LocallyOfFiniteType g] (L : Type u) [Field L] [Algebra Y.functionField L]
+    [FiniteDimensional Y.functionField L] :
+    IsFinite (Spec.map (CommRingCat.ofHom (algebraMap Y.functionField L)) ≫
+      Y.fromSpecStalk (genericPoint Y)).fromNormalization :=
+  isFinite_fromNormalization_of_isJapanese L fun _ hU _ ↦
+    isJapanese_sections_of_locallyOfFiniteType g hU
+
+/-- **Finite normalization of an integral scheme locally of finite type over a universally Japanese
+ring.** In particular, the normalization of an integral scheme locally of finite type over a field
+in its function field is finite over it. -/
+theorem isFinite_fromNormalization_fromSpecStalk_genericPoint_of_locallyOfFiniteType
+    (g : Y ⟶ Spec (.of R)) [LocallyOfFiniteType g] :
+    IsFinite (Y.fromSpecStalk (genericPoint Y)).fromNormalization :=
+  isFinite_fromNormalization_fromSpecStalk_genericPoint_iff.mpr fun _ hU _ ↦ by
+    have := isJapanese_sections_of_locallyOfFiniteType g hU
+    infer_instance
+
+end UniversallyJapanese
 
 end TauCeti.AlgebraicGeometry

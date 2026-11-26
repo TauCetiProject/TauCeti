@@ -22,6 +22,11 @@ The inequality `α f(t) ≤ t f'(t)` makes `f(t) / t^α` nondecreasing on positi
 intervals. It gives power bounds at smaller radii from data at a larger radius,
 including when `f` vanishes. No division by `f` or positivity assumption on `f` is needed.
 
+A nonnegative `f` differentiable on `(0, a)` has `t f'(t)` below any `ε > 0` somewhere in `(0, a)`
+(`TauCeti.exists_mem_Ioo_mul_lt_of_hasDerivAt`), since otherwise `f(t) - ε log t` would be
+nondecreasing. Applied to the energy of a punctured (half-)disc, this gives arbitrarily small radii
+with small boundary density.
+
 Conversely, the inequality `m(ρ) ^ (1 - a) ≤ K m'(ρ)`, holding only at almost every `ρ`, forces a
 monotone function `m` which is positive on `(0, r)` to grow at least like a power:
 `a r ≤ K m(r) ^ a` (`TauCeti.mul_le_mul_rpow_of_rpow_one_sub_le_mul_deriv`). No continuity of `m` is
@@ -87,6 +92,37 @@ theorem monotoneOn_div_rpow_of_mul_le_mul_deriv {f f' : ℝ → ℝ} {s : Set �
   rw [Real.rpow_sub_one ht0.ne']
   convert div_nonneg (mul_nonneg (sub_nonneg.mpr (hle t ht)) hp.le) ht0.le using 1
   field_simp
+
+/-- A nonnegative function differentiable on `(0, a)` has `t f'(t)` below any `ε > 0` at some
+`t ∈ (0, a)`. Otherwise `f(t) - ε log t` would be nondecreasing on `(0, a)`, and `f` would become
+negative near `0`. This produces radii at which a finite energy has small boundary density. -/
+theorem exists_mem_Ioo_mul_lt_of_hasDerivAt {f f' : ℝ → ℝ} {a ε : ℝ} (ha : 0 < a) (hε : 0 < ε)
+    (hf : ∀ t ∈ Ioo 0 a, HasDerivAt f (f' t) t) (hnonneg : ∀ t ∈ Ioo 0 a, 0 ≤ f t) :
+    ∃ t ∈ Ioo 0 a, t * f' t < ε := by
+  by_contra! h
+  -- `f t - ε log t` has derivative `f' t - ε / t ≥ 0` on `(0, a)`.
+  have hd (t : ℝ) (ht : t ∈ Ioo 0 a) :
+      HasDerivAt (fun t ↦ f t - ε * Real.log t) (f' t - ε * t⁻¹) t :=
+    (hf t ht).sub ((Real.hasDerivAt_log ht.1.ne').const_mul ε)
+  have hmono : MonotoneOn (fun t ↦ f t - ε * Real.log t) (Ioo 0 a) := by
+    refine monotoneOn_of_hasDerivWithinAt_nonneg (convex_Ioo 0 a)
+      (fun t ht ↦ (hd t ht).continuousAt.continuousWithinAt)
+      (fun t ht ↦ (hd t (interior_subset ht)).hasDerivWithinAt) fun t ht ↦ ?_
+    rw [interior_Ioo] at ht
+    rw [sub_nonneg, ← div_eq_mul_inv, div_le_iff₀ ht.1, mul_comm]
+    exact h t ht
+  -- Comparing `t = b e^{-(f b + 1) / ε}` with `b = a / 2` gives `f t ≤ -1`.
+  set b := a / 2
+  have hb : b ∈ Ioo 0 a := ⟨half_pos ha, half_lt_self ha⟩
+  set t := b * Real.exp (-(f b + 1) / ε)
+  have htb : t ≤ b := mul_le_of_le_one_right hb.1.le (Real.exp_le_one_iff.2
+    (div_nonpos_of_nonpos_of_nonneg (by linarith [hnonneg b hb]) hε.le))
+  have ht : t ∈ Ioo 0 a := ⟨mul_pos hb.1 (Real.exp_pos _), htb.trans_lt hb.2⟩
+  have hle := hmono ht hb htb
+  simp only at hle
+  rw [Real.log_mul hb.1.ne' (Real.exp_pos _).ne', Real.log_exp, mul_add,
+    mul_div_cancel₀ _ hε.ne'] at hle
+  linarith [hnonneg t ht]
 
 /-- **Power growth from an almost-everywhere differential inequality.** Let `m` be monotone on
 `[0, r]`, nonnegative at `0` and positive on `(0, r)`. If `m(ρ) ^ (1 - a) ≤ K m'(ρ)` for almost
@@ -220,7 +256,6 @@ theorem rpow_mul_le_rpow_mul_add_of_le_mul_deriv_add {f : ℝ → ℝ} {s t C δ
     (mul_nonneg hp0 hA) hf hfs h'
   -- The constant `B = p A / (4 - p)` lies in `[0, A]` because `p ≤ 2`.
   set B := p * A / (((4 : ℕ) : ℝ) - p)
-  have hB0 : 0 ≤ B := div_nonneg (mul_nonneg hp0 hA) (by linarith)
   have hBA : B ≤ A := by
     rw [div_le_iff₀ (by linarith)]
     push_cast
@@ -302,7 +337,7 @@ theorem le_mul_sq_of_le_mul_deriv_add {f : ℝ → ℝ} {σ σ₀ C δ A c h K M
     (hfσ : 0 ≤ f σ) (hM : f σ₀ ≤ M)
     (hf' : ∀ᵐ τ, τ ∈ Ioo σ σ₀ → f τ ≤ τ / 2 * (1 + C * τ) * (1 + δ) * deriv f τ + A * τ ^ 4) :
     f σ ≤ Real.exp (2 * K * (1 + |Real.log c|)) * ((1 + C * σ₀) / σ₀) ^ 2 * (M + A) * σ ^ 2 := by
-  set p := 2 / (1 + δ) with hp_def
+  set p := 2 / (1 + δ)
   set Λ := Real.exp (2 * K * (1 + |Real.log c|))
   have hσ0 : 0 < σ := (mul_pos hc hh).trans_le hσ
   have hσ₀0 : 0 < σ₀ := hσ0.trans_le hσσ₀
@@ -349,7 +384,7 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
       f τ ≤ τ / 2 * (1 + C * τ) * (1 + δ) * deriv f τ + A * τ ^ 4) :
     m / (c ^ 2 * (1 + C) ^ 2 * Real.exp (2 * K * (1 + |Real.log c|))) * σ ^ 2 ≤
       f σ + A * σ ^ 4 := by
-  set p := 2 / (1 + δ) with hp_def
+  set p := 2 / (1 + δ)
   set Λ := Real.exp (2 * K * (1 + |Real.log c|))
   have hch : 0 < c * h := mul_pos hc hh
   have hσ0 : 0 < σ := hch.trans_le hσ
@@ -378,7 +413,6 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
           gcongr
       _ ≤ (c * h / (1 + C * (c * h))) ^ p * (f σ + A * σ ^ 4) := key
       _ ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) := by gcongr
-  have h1C : 0 < 1 + C := by positivity
   -- Multiply `hineq` by `(1 + C) ^ 2` and cancel `h ^ 2`.
   rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
   refine le_of_mul_le_mul_right ?_ (pow_pos hh 2)

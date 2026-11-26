@@ -336,7 +336,7 @@ private theorem xOperator_lsmul (a : R) :
   intro p
   induction p using induction_on with
   | zero => simp
-  | add n b p hn hb ih =>
+  | add n b p _ _ ih =>
       simp only [map_add, mul_apply_eq_comp, LinearMap.add_apply, Algebra.lsmul_apply] at ih ⊢
       rw [ih]
       congr 1
@@ -349,7 +349,7 @@ private theorem xOperator_regularRepresentation (p : OreExtension σ δ) :
     xOperator * regularRepresentation p = regularRepresentation (xOperator p) := by
   induction p using induction_on with
   | zero => rw [map_zero, mul_zero, map_zero, map_zero]
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
       rw [map_add, map_add, mul_add, ih]
       simp only [regularRepresentation_monomial, xOperator_monomial, map_add]
       congr 1
@@ -366,13 +366,13 @@ private theorem regularRepresentation_smul (a : R) (p : OreExtension σ δ) :
     regularRepresentation (a • p) = Algebra.lsmul k k _ a * regularRepresentation p := by
   induction p using induction_on with
   | zero => simp
-  | add n b p hn hb ih => simp [ih, mul_add, mul_assoc]
+  | add n b p _ _ ih => simp [ih, mul_add, mul_assoc]
 
 private theorem regularRepresentation_mul (p q : OreExtension σ δ) :
     regularRepresentation (p * q) = regularRepresentation p * regularRepresentation q := by
   induction p using induction_on with
   | zero => rw [zero_mul, map_zero, zero_mul]
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
       simp only [add_mul, map_add, ih, monomial_mul_apply, regularRepresentation_smul,
         ← xOperator_pow_regularRepresentation, regularRepresentation_monomial, mul_assoc]
 
@@ -388,7 +388,7 @@ private theorem regularRepresentation_apply_C_one (p : OreExtension σ δ) :
     regularRepresentation p (C 1) = p := by
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih => simp [ih, mul_apply_eq_comp, xOperator_pow_C_one]
+  | add n a p _ _ ih => simp [ih, mul_apply_eq_comp, xOperator_pow_C_one]
 
 private theorem regularRepresentation_injective :
     Function.Injective (regularRepresentation (σ := σ) (δ := δ)) := by
@@ -445,6 +445,10 @@ theorem C_mul (a b : R) : C (σ := σ) (δ := δ) (a * b) = C a * C b := by
 
 theorem smul_eq_C_mul (a : R) (p : OreExtension σ δ) : a • p = C a * p := by
   rw [← monomial_zero_left, monomial_mul_apply, pow_zero, one_apply_eq_self]
+
+/-- Left scalar multiplication by `R` associates with multiplication in `R[X; σ, δ]`. -/
+instance instIsScalarTowerSelf : IsScalarTower R (OreExtension σ δ) (OreExtension σ δ) where
+  smul_assoc a p q := by rw [smul_eq_C_mul, smul_eq_C_mul, smul_eq_mul, smul_eq_mul, mul_assoc]
 
 @[simp]
 theorem coeff_C_mul (a : R) (p : OreExtension σ δ) (n : ℕ) :
@@ -525,7 +529,7 @@ theorem X_mul_monomial (n : ℕ) (a : R) :
 theorem coeff_X_mul_zero (p : OreExtension σ δ) : coeff (X * p) 0 = δ (coeff p 0) := by
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
     simp only [mul_add, coeff_add, X_mul_monomial, map_add, ih]
     by_cases h : n = 0 <;> simp [coeff_monomial, h]
 
@@ -535,7 +539,7 @@ theorem coeff_X_mul_succ (p : OreExtension σ δ) (n : ℕ) :
     coeff (X * p) (n + 1) = σ (coeff p n) + δ (coeff p (n + 1)) := by
   induction p using induction_on with
   | zero => simp
-  | add m a p hm ha ih =>
+  | add m a p hm _ ih =>
     simp only [mul_add, coeff_add, X_mul_monomial, map_add, ih, coeff_monomial]
     by_cases h : m = n
     · subst m
@@ -544,6 +548,34 @@ theorem coeff_X_mul_succ (p : OreExtension σ δ) (n : ℕ) :
       · subst m
         simp [add_comm, add_left_comm]
       · simp [h, h']
+
+/-- Right multiplication of `a Xⁿ` by `X` raises its degree by one. -/
+theorem monomial_mul_X (n : ℕ) (a : R) :
+    monomial (σ := σ) (δ := δ) n a * X = monomial (n + 1) a := by
+  rw [← C_mul_X_pow_eq_monomial, mul_assoc, ← pow_succ, C_mul_X_pow_eq_monomial]
+
+/-- Right multiplication by `X` clears the constant left coefficient. -/
+@[simp]
+theorem coeff_mul_X_zero (p : OreExtension σ δ) : coeff (p * X) 0 = 0 := by
+  induction p using induction_on with
+  | zero => simp
+  | add n a p _ _ ih => rw [add_mul, coeff_add, monomial_mul_X, coeff_monomial, ih]; simp
+
+/-- Right multiplication by `X` shifts left coefficients upward by one. -/
+@[simp]
+theorem coeff_mul_X_succ (p : OreExtension σ δ) (n : ℕ) :
+    coeff (p * X) (n + 1) = coeff p n := by
+  induction p using induction_on with
+  | zero => simp
+  | add m a p _ _ ih => rw [add_mul, coeff_add, monomial_mul_X, coeff_monomial, ih]; simp
+
+/-- Right multiplication by `Xᵐ` shifts left coefficients upward by `m`. -/
+@[simp]
+theorem coeff_mul_X_pow_add (p : OreExtension σ δ) (n m : ℕ) :
+    coeff (p * X ^ m) (n + m) = coeff p n := by
+  induction m with
+  | zero => simp
+  | succ m ih => rw [pow_succ, ← mul_assoc, ← Nat.add_assoc, coeff_mul_X_succ, ih]
 
 section UniversalProperty
 
@@ -564,14 +596,14 @@ private theorem eval₂_smul (f : R →+* S) (x : S) (a : R) (p : OreExtension �
     eval₂ f x (a • p) = f a * eval₂ f x p := by
   induction p using induction_on with
   | zero => simp
-  | add n b p hn hb ih => simp [ih, mul_add, mul_assoc]
+  | add n b p _ _ ih => simp [ih, mul_add, mul_assoc]
 
 private theorem eval₂_xOperator (f : R →+* S) (x : S)
     (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) (p : OreExtension σ δ) :
     eval₂ f x (xOperator p) = x * eval₂ f x p := by
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
       rw [map_add, xOperator_monomial]
       simp only [map_add, eval₂_monomial, ih]
       rw [mul_add]
@@ -592,7 +624,7 @@ theorem eval₂_mul (f : R →+* S) (x : S)
     eval₂ f x (p * q) = eval₂ f x p * eval₂ f x q := by
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
       simp [add_mul, ih, eval₂_smul, eval₂_xOperator_pow f x h, mul_assoc]
 
 /-- The universal map from an Ore extension. The chosen image `x` of the variable must satisfy
@@ -628,7 +660,7 @@ theorem ringHom_ext {f g : OreExtension σ δ →+* S}
   intro p
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
       simp only [map_add, ih, ← C_mul_X_pow_eq_monomial, map_mul, map_pow, hC, hX]
 
 variable [Algebra k S]

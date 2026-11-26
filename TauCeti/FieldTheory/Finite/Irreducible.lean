@@ -25,6 +25,8 @@ when reading off cycle types of Galois groups by reduction modulo primes.
   prescribed positive degree over a finite field.
 * `TauCeti.exists_monic_irreducible_natDegree_eq_ne_X`: such a polynomial can be chosen distinct
   from `X`.
+* `Polynomial.mem_normalizedFactors_X_pow_card_pow_sub_X_iff`: for `n ≠ 0`, the normalized factors
+  of `X ^ q ^ n - X` are the monic irreducible polynomials whose degree divides `n`.
 
 ## References
 
@@ -39,6 +41,22 @@ public section
 noncomputable section
 
 open Polynomial
+
+namespace Polynomial
+
+/-- For `n ≠ 0`, the normalized factors of `X ^ q ^ n - X` over a field with `q` elements are the
+monic irreducible polynomials whose degree divides `n`. -/
+@[simp]
+theorem mem_normalizedFactors_X_pow_card_pow_sub_X_iff {K : Type*} [Field K] [Finite K]
+    [DecidableEq K] {n : ℕ} (hn : n ≠ 0) {g : K[X]} :
+    g ∈ UniqueFactorizationMonoid.normalizedFactors (X ^ Nat.card K ^ n - X : K[X]) ↔
+      g.Monic ∧ Irreducible g ∧ g.natDegree ∣ n := by
+  rw [Polynomial.mem_normalizedFactors_iff
+    (X_pow_sub_X_ne_zero (Nat.one_lt_pow hn Finite.one_lt_card))]
+  exact ⟨fun ⟨hi, hm, hd⟩ ↦ ⟨hm, hi, hi.natDegree_dvd_iff_dvd_X_pow_card_pow_sub_X.mpr hd⟩,
+    fun ⟨hm, hi, hd⟩ ↦ ⟨hi, hm, hi.natDegree_dvd_iff_dvd_X_pow_card_pow_sub_X.mp hd⟩⟩
+
+end Polynomial
 
 namespace TauCeti
 
@@ -63,7 +81,7 @@ theorem exists_monic_irreducible_natDegree_eq_ne_X
     ∃ h : k[X], h.Monic ∧ Irreducible h ∧ h.natDegree = d ∧ h ≠ X := by
   rcases eq_or_ne d 1 with rfl | hd1
   · exact ⟨X + C 1, monic_X_add_C 1, irreducible_of_degree_eq_one (degree_X_add_C 1),
-      natDegree_X_add_C 1, fun h ↦ by simpa using congrArg (coeff · 0) h⟩
+      natDegree_X_add_C 1, fun h ↦ by simpa using congrArg (fun p : k[X] ↦ p.coeff 0) h⟩
   · obtain ⟨h, hmonic, hirr, rfl⟩ := exists_monic_irreducible_natDegree_eq k d hd
     exact ⟨h, hmonic, hirr, rfl, by rintro rfl; simp at hd1⟩
 

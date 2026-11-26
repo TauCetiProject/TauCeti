@@ -37,9 +37,8 @@ makes it well defined here.
 The finiteness is not reproved here. It is
 `TauCeti.ModularForm.finite_image_orbit_mk_setOf_orderOfVanishingAt_ne_zero_subgroup`, which
 bounds the image of the nonzero-order set in `𝒢 \ ℍ` for any `𝒢 ≤ GL (Fin 2) ℝ` of finite
-relative index in `𝒮ℒ`, by the norm-map route of the Tau Ceti ModularForms roadmap's Layer 1
-milestone **“General level — by the coset norm”**. What this file adds is the order *function*
-on the quotient, which that statement deliberately does not provide: a general `𝒢` may contain
+relative index in `𝒮ℒ`, by the coset-norm route. What this file adds is the order *function* on
+the quotient, which that statement deliberately does not provide: a general `𝒢` may contain
 elements of negative determinant, under which the order is not known to be invariant, while the
 image of a subgroup of `SL(2, ℤ)` has determinant `1` throughout.
 
@@ -88,7 +87,7 @@ noncomputable def slOrbitOfSubgroupOrbit
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
     orbitRel.Quotient SL(2, ℤ) ℍ :=
   Quotient.liftOn' o (fun p ↦ Quotient.mk'' p) fun a b ⟨g, hg⟩ ↦ by
-    obtain ⟨γ, -, hγ⟩ := g.2
+    obtain ⟨γ, -, hγ⟩ := g.property
     refine Quotient.sound' ⟨γ, ?_⟩
     have hb : (g : GL (Fin 2) ℝ) • b = a := hg
     simpa only [MulAction.compHom_smul_def, hγ] using hb
@@ -107,7 +106,7 @@ lemma slOrbitOfSubgroupOrbit_orbitOfCosetTranslate (p : ℍ)
       Quotient.mk'' p := by
   induction q using QuotientGroup.induction_on with
   | H h =>
-    obtain ⟨γ, hγ⟩ := h.2
+    obtain ⟨γ, hγ⟩ := h.property
     have hq : orbitOfCosetTranslate (𝒢 := (Γ : Subgroup (GL (Fin 2) ℝ))) p
         (h : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) =
         Quotient.mk'' ((h : GL (Fin 2) ℝ)⁻¹ • p) := by
@@ -162,7 +161,7 @@ lemma card_fiber_orbitOfCosetTranslate_eq_zero (p : ℍ)
       orbitOfCosetTranslate p q = o} = 0 := by
   have : IsEmpty {q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ //
       orbitOfCosetTranslate p q = o} :=
-    ⟨fun q ↦ ho (by rw [← q.2, slOrbitOfSubgroupOrbit_orbitOfCosetTranslate])⟩
+    ⟨fun q ↦ ho (by rw [← q.property, slOrbitOfSubgroupOrbit_orbitOfCosetTranslate])⟩
   simp
 
 /-- **The multiplicity of a `Γ`-orbit among the coset translates of `p`.** For a `Γ`-orbit inside
@@ -214,7 +213,8 @@ public def orderOfVanishingOnSubgroupOrbit
   Quotient.liftOn' q (orderOfVanishingAt f) fun _ b ⟨g, hg⟩ ↦ by
     have hg' : g • b = _ := hg
     rw [← hg', Subgroup.smul_def,
-      orderOfVanishingAt_smul f g.2 (det_pos_of_mem_slGL (Subgroup.map_le_range _ _ g.2)) b]
+      orderOfVanishingAt_smul f g.property (det_pos_of_mem_slGL
+          (Subgroup.map_le_range _ _ g.property)) b]
 
 /-- Evaluating the descended order on the orbit of `p` recovers the vanishing order at `p`. -/
 @[simp]
@@ -249,7 +249,7 @@ public lemma orderOfVanishingAt_quotientFunc_eq_orderOfVanishingOnSubgroupOrbit
     rw [_root_.SlashInvariantForm.quotientFunc_mk, orbitOfCosetTranslate_mk,
       orderOfVanishingOnSubgroupOrbit_mk, orderOfVanishingAt_slash (k := k)]
     -- the slash acts by `h⁻¹`, which lies in `𝒮ℒ` and so has positive determinant
-    exact det_pos_of_mem_slGL (inv_mem h.2)
+    exact det_pos_of_mem_slGL (inv_mem h.property)
 
 /-- A modular form for a finite-index subgroup `Γ ≤ SL(2, ℤ)` has nonzero vanishing order on
 only finitely many `Γ`-orbits in the upper half-plane.
@@ -295,7 +295,7 @@ public theorem orderOfVanishingAt_norm_eq_finsum_orbit
   · intro o ho
     by_contra hmem
     have : IsEmpty {q // orbitOfCosetTranslate p q = o} :=
-      ⟨fun q ↦ hmem (Finset.mem_coe.2 (Finset.mem_image.2 ⟨q.1, Finset.mem_univ _, q.2⟩))⟩
+      ⟨fun q ↦ hmem (Finset.mem_coe.2 (Finset.mem_image.2 ⟨q.val, Finset.mem_univ _, q.property⟩))⟩
     exact ho (by simp)
 
 end ModularForm

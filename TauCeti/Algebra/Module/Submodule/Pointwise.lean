@@ -9,15 +9,17 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
 
 /-!
 # Pointwise scalar actions on submodules
 
 This file also records how scalar products that fix or annihilate a scalar control its
-pointwise image of the whole module. The image-membership result needs only a distributive
-monoid action. Over a ring of scalars, negating the scalar does not change the pointwise image
-of a submodule, since a submodule is closed under negation. A unit of a ring stabilizes an
+pointwise image of the whole module, and that `b M ≤ a M` when `a` divides `b`. The
+image-membership result needs only a distributive monoid action. Over a ring of scalars, negating
+the scalar does not change the pointwise image of a submodule, since a submodule is closed under
+negation. A unit of a ring stabilizes an
 additive subgroup, viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its
 inverse both preserve it.
 
@@ -44,7 +46,9 @@ this file to restate both.
   `sⁿ : A` lands in `⟨s, _⟩ⁿ • M₀`, so a consumer speaking `A` needs no coercion plumbing.
 * `Submodule.pow_smul_antitone`: the family is antitone in the exponent.
 * `Submodule.pow_add_smul_mem`: `M₀` absorbs further powers of a scalar drawn from `S`.
+* `Submodule.smul_top_le_smul_top_of_dvd`: `b M ≤ a M` when `a ∣ b`.
 * `Submodule.neg_smul_eq_smul`: over a ring of scalars, `(-a) • N = a • N`.
+* `Ideal.span_singleton_eq_op_smul_top`: the left ideal `A e` is `MulOpposite.op e • ⊤`.
 * `Submodule.mem_stabilizer_units_iff`: a unit `u` of a ring stabilizes an additive subgroup `L`
   under the pointwise action exactly when multiplication by `u` and by `u⁻¹` carries `L` into
   itself.
@@ -117,6 +121,15 @@ theorem smul_mem_pow_smul {S : Subring A} (M₀ : Submodule S M) {s : A} (hs0 : 
   rw [he]
   exact Submodule.smul_mem_pointwise_smul _ _ _ hmem
 
+/-- If `a` divides `b`, then `b M ≤ a M`. -/
+theorem smul_top_le_smul_top_of_dvd {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {a b : R} (h : a ∣ b) : b • (⊤ : Submodule R M) ≤ a • ⊤ := by
+  obtain ⟨c, rfl⟩ := h
+  intro _ hm
+  obtain ⟨m, -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hm
+  rw [mul_smul]
+  exact smul_mem_pointwise_smul _ _ ⊤ mem_top
+
 section Ring
 
 variable {α R M : Type*} [Ring α] [Ring R] [AddCommGroup M] [Module α M] [Module R M]
@@ -181,6 +194,21 @@ theorem Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff {C : Subalgebra R S}
     rwa [← mul_assoc, ← Units.val_mul, mul_assoc, mul_inv_cancel, mul_one] at this
 
 end Subalgebra
+
+namespace Ideal
+
+variable {A : Type*} [Semiring A] {e : A}
+
+/-- **The principal left ideal `Ideal.span {e} = A e` is the pointwise image
+`MulOpposite.op e • ⊤`** of `A` under right multiplication by `e`, acting through the opposite
+ring. For an idempotent `e` this is the bridge to the Peirce decomposition
+`TauCeti.isInternal_smul_top`. -/
+theorem span_singleton_eq_op_smul_top :
+    (Ideal.span {e} : Ideal A) = MulOpposite.op e • (⊤ : Submodule A A) := by
+  ext x
+  simp [Ideal.mem_span_singleton', Submodule.mem_smul_pointwise_iff_exists]
+
+end Ideal
 
 namespace TauCeti
 

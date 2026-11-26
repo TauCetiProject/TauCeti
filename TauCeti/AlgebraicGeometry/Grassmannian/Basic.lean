@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 public import TauCeti.RingTheory.Grassmannian.Chart.Triple
 
 /-!
@@ -46,12 +47,15 @@ morphisms `Spec (ChartAlgebra R x) ⟶ Spec R` of the charts glue to the structu
 * `Module.Grassmannian.scheme R M k`: the scheme glued from the standard charts.
 * `Module.Grassmannian.toSpec R M k`: its structure morphism to `Spec R`.
 * `Module.Grassmannian.chartι R x`: the open immersion of the chart at `x`.
+* `Module.Grassmannian.chartOpenCover R M k`: the open cover of `G(k, M)` by its standard charts.
 
 ## Main results
 
 * `Module.Grassmannian.chartι_toSpec`: the structure morphism restricts on each chart to the
   structure morphism of the chart.
 * `Module.Grassmannian.isPullback_chartι`: the charts at `x` and `y` intersect in their overlap.
+* `Module.Grassmannian.chartι_preimage_opensRange_chartι`: inside the chart at `x`, the chart at
+  `y` is the basic open set of the transition determinant.
 
 ## References
 
@@ -207,6 +211,16 @@ theorem chartι_jointly_surjective (z : scheme R M k) :
     ∃ (x : Fin k → M) (y : Spec (.of (ChartAlgebra R x))), chartι R x y = z :=
   (glueData R M k).ι_jointly_surjective z
 
+variable (R M k) in
+/-- **The standard affine open cover of the Grassmannian.** -/
+noncomputable abbrev chartOpenCover : (scheme R M k).OpenCover where
+  I₀ := Fin k → M
+  X x := Spec (.of (ChartAlgebra R x))
+  f := chartι R
+  mem₀ := by
+    rw [Scheme.presieve₀_mem_precoverage_iff]
+    exact ⟨chartι_jointly_surjective, inferInstance⟩
+
 /-- **The charts at `x` and at `y` intersect in their overlap.** The square formed by the inclusions
 of `Spec (OverlapAlgebra R x y)` into the chart at `x` and, through the transition isomorphism, into
 the chart at `y` is a pullback square over the Grassmannian. -/
@@ -217,6 +231,13 @@ theorem isPullback_chartι (x y : Fin k → M) :
         Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R y) (OverlapAlgebra R y x))))
       (chartι R x) (chartι R y) :=
   IsPullback.of_isLimit ((glueData R M k).vPullbackConeIsLimit x y)
+
+/-- Inside the chart of the Grassmannian at `x`, the chart at `y` is the basic open set of the
+determinant `transitionDet R x y` of the universal transition matrix. -/
+theorem chartι_preimage_opensRange_chartι (x y : Fin k → M) :
+    chartι R x ⁻¹ᵁ (chartι R y).opensRange = PrimeSpectrum.basicOpen (transitionDet R x y) := by
+  rw [Scheme.preimage_opensRange_of_isPullback (isPullback_chartι x y).flip]
+  exact Scheme.Hom.opensRange_localizationAway (R := .of (ChartAlgebra R x)) _
 
 /-- **The charts agree on their overlap.** On the overlap of the charts at `x` and `y`, the chart at
 `x` is the chart at `y` composed with the transition isomorphism. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import Mathlib.GroupTheory.Coset.Defs
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.Isomorphisms
@@ -375,8 +375,6 @@ end TauCeti
 /-! ### The trivial module `R[K] ⧸ I_K` -/
 
 namespace MonoidAlgebra
-
-open TauCeti.MonoidAlgebra
 
 variable (R : Type u) [Ring R] (K : Type v) [Monoid K]
 

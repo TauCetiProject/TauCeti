@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Equiv
 public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.NumberTheory.RamificationInertia.Galois
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+import TauCeti.GroupTheory.Index.Basic
+import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
 # Lower ramification groups of a local field extension
@@ -47,15 +51,18 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   `Ideal.ramificationGroup` of the maximal ideal of `𝒪[L]`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero_eq_map_inertiaSubgroup`: `G_0` is
   Mathlib's `ValuationSubring.inertiaSubgroup` of the valuation subring of `L`.
-* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero`: `#G_0 = e(L/K)`.
+* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero` and
+  `TauCeti.LocalFieldsRamification.index_lowerRamificationGroup_zero`: `#G_0 = e(L/K)` and
+  `[Gal(L/K) : G_0] = f(L/K)`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero_eq_top_iff`: `G_0` is the whole
   Galois group exactly when `L/K` is totally ramified.
 * `TauCeti.LocalFieldsRamification.instNormalLowerRamificationGroup`: each `G_i` is normal.
-* `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot` and
-  `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_bot_iff`: `G_i = 1` for large `i`,
-  precisely for `i` past the largest jump when the Galois group is nontrivial;
-  `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_natCast_eq_bot` is the
-  first statement at natural indices.
+* `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot`,
+  `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_bot_iff`, and
+  `TauCeti.LocalFieldsRamification.lowerRamificationGroup_toNat_largestLowerJump_add_one`:
+  `G_i = 1` for large `i`, precisely for `i` past the largest jump when the Galois group is
+  nontrivial; `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_natCast_eq_bot`
+  is the first statement at natural indices.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_of_sub_one_lt_of_le`: the real
   indexing is constant on each interval `(i - 1, i]`.
 * `TauCeti.LocalFieldsRamification.mem_lowerRamificationGroupReal_iff_of_lowerIndex_eq`: when
@@ -67,6 +74,11 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   when the adjacent lower groups differ.
 * `TauCeti.LocalFieldsRamification.map_restrictScalarsHom_lowerRamificationGroup`: for a tower
   `L/K'/K`, the filtration of `H = Gal(L/K')` is `H ∩ G_i`.
+* `TauCeti.LocalFieldsRamification.comap_algAutCongr_lowerRamificationGroup_of_vle_iff`,
+  `TauCeti.LocalFieldsRamification.map_algAutCongr_lowerRamificationGroup`, and
+  `TauCeti.LocalFieldsRamification.map_autCongr_lowerRamificationGroup`: transport of the lower
+  filtration along valuation-preserving or base-continuous ring equivalences and `K`-algebra
+  equivalences.
 
 ## References
 
@@ -157,6 +169,15 @@ theorem natCard_lowerRamificationGroup_zero [IsGalois K L] :
   let _ : PerfectField (𝓂[L].under 𝒪[K]).ResidueField := inferInstance
   rw [lowerRamificationGroup_zero, Ideal.card_inertia_eq_ramificationIdx 𝒪[K] (L ≃ₐ[K] L) 𝓂[L],
     ramificationIndex_eq_ramificationIdx]
+
+/-- In a finite Galois local-field extension, the index of the inertia group `G_0` is the inertia
+degree. -/
+@[simp]
+theorem index_lowerRamificationGroup_zero [IsGalois K L] :
+    (lowerRamificationGroup K L 0).index = inertiaDegree K L :=
+  index_eq_of_natCard_eq_mul ramificationIndex_pos (natCard_lowerRamificationGroup_zero K L)
+    ((IsGalois.card_aut_eq_finrank K L).trans
+      (ramificationIndex_mul_inertiaDegree (K := K) (L := L)).symm)
 
 /-- **The inertia group is the whole Galois group exactly in the totally ramified case**:
 `G_0 = Gal(L/K)` if and only if `e(L/K) = [L : K]`. -/
@@ -249,6 +270,13 @@ theorem lowerRamificationGroup_eq_bot_of_largestLowerJump_lt {i : ℤ}
   refine eq_bot_iff.2 ((lowerRamificationGroup_antitone K L ?_).trans (eq_bot_iff.1 hmem))
   omega
 
+/-- At `J + 1 = (largestLowerJump K L).toNat + 1`, the lower ramification group of `L/K` is
+trivial. -/
+theorem lowerRamificationGroup_toNat_largestLowerJump_add_one :
+    lowerRamificationGroup K L (((largestLowerJump K L).toNat + 1 : ℕ) : ℤ) = ⊥ :=
+  lowerRamificationGroup_eq_bot_of_largestLowerJump_lt (K := K) (L := L)
+    (by have := neg_one_le_largestLowerJump K L; omega)
+
 /-- For a nontrivial automorphism group, the lower ramification group at the largest jump is
 nontrivial. -/
 theorem lowerRamificationGroup_largestLowerJump_ne_bot [Nontrivial (L ≃ₐ[K] L)] :
@@ -282,6 +310,13 @@ noncomputable def lowerRamificationGroupReal (u : ℝ) : Subgroup (L ≃ₐ[K] L
 theorem lowerRamificationGroupReal_def (u : ℝ) :
     lowerRamificationGroupReal K L u = lowerRamificationGroup K L ⌈u⌉ :=
   TauCeti.IsLocalRing.ramificationGroupReal_def _ _ u
+
+/-- The real-indexed local-field filtration is the real-indexed ramification filtration of the
+integer ring. -/
+theorem lowerRamificationGroupReal_eq_ramificationGroupReal (u : ℝ) :
+    lowerRamificationGroupReal K L u =
+      TauCeti.IsLocalRing.ramificationGroupReal (L ≃ₐ[K] L) 𝒪[L] u :=
+  (rfl)
 
 variable {K L} in
 /-- Membership in the real-indexed lower ramification groups. -/
@@ -438,5 +473,95 @@ theorem map_restrictScalarsHom_lowerRamificationGroupReal (u : ℝ) :
   rw [← comap_restrictScalarsHom_lowerRamificationGroupReal K L K', Subgroup.map_comap_eq]
 
 end Tower
+
+/-! ### Transport along ring and algebra equivalences -/
+
+section Transport
+
+section RingEquiv
+
+variable {K L} {K' L' : Type*}
+  [Field K'] [ValuativeRel K'] [TopologicalSpace K'] [IsNonarchimedeanLocalField K']
+  [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+  [Algebra K' L'] [ValuativeExtension K' L'] [Module.Finite K' L']
+
+/-- **Transport of lower ramification groups along a valuation-preserving ring isomorphism.** Given
+ring equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` commuting with `algebraMap` such that `e`
+preserves `≤ᵥ`, conjugation `e.algAutCongr eL heL` pulls `G_i(L'/K')` back to `G_i(L/K)`. -/
+theorem comap_algAutCongr_lowerRamificationGroup_of_vle_iff
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) (i : ℤ) :
+    (lowerRamificationGroup K' L' i).comap (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      lowerRamificationGroup K L i := by
+  have hvle (x y : L) : eL x ≤ᵥ eL y ↔ x ≤ᵥ y :=
+    eL.toRingHom.map_vle_map_iff_of_vle_iff e.toRingHom he heL x y
+  have hmem (x : L) : x ∈ 𝒪[L] ↔ eL x ∈ 𝒪[L'] := by
+    rw [Valuation.mem_integer_iff, Valuation.mem_integer_iff, ← map_one (valuation L),
+      ← map_one (valuation L'), ← (valuation L).vle_iff_le, ← (valuation L').vle_iff_le,
+      ← map_one eL, hvle]
+  let fInt : 𝒪[L] ≃+* 𝒪[L'] := eL.restrict 𝒪[L] 𝒪[L'] hmem
+  have hpow (n : ℕ) :
+      (IsLocalRing.maximalIdeal 𝒪[L'] ^ n).comap (fInt : 𝒪[L] →+* 𝒪[L']) =
+        IsLocalRing.maximalIdeal 𝒪[L] ^ n := by
+    rw [Ideal.comap_coe, ← Ideal.map_symm, Ideal.map_pow, IsLocalRing.map_ringEquiv_maximalIdeal]
+  symm
+  rw [lowerRamificationGroup_def, lowerRamificationGroup_def]
+  refine TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow
+    (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) (fInt : 𝒪[L] →+* 𝒪[L'])
+    (fun σ x ↦ ?_) hpow (fun _ y ↦ ⟨fInt.symm y, ?_⟩) i
+  · exact Subtype.ext (by simp [fInt])
+  · simp
+
+/-- Image form of `comap_algAutCongr_lowerRamificationGroup_of_vle_iff`. -/
+theorem map_algAutCongr_lowerRamificationGroup_of_vle_iff
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) (i : ℤ) :
+    (lowerRamificationGroup K L i).map (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      lowerRamificationGroup K' L' i := by
+  rw [← comap_algAutCongr_lowerRamificationGroup_of_vle_iff e he eL heL i,
+    Subgroup.map_comap_eq_self_of_surjective (e.algAutCongr eL heL).surjective]
+
+/-- **Transport of lower ramification groups along a base-continuous ring isomorphism.** -/
+theorem comap_algAutCongr_lowerRamificationGroup (e : K ≃+* K') (he : Continuous e)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) (i : ℤ) :
+    (lowerRamificationGroup K' L' i).comap (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      lowerRamificationGroup K L i :=
+  comap_algAutCongr_lowerRamificationGroup_of_vle_iff e
+    (e.toRingHom.map_vle_map_iff_of_continuous he) eL heL i
+
+/-- Image form of `comap_algAutCongr_lowerRamificationGroup`. -/
+theorem map_algAutCongr_lowerRamificationGroup (e : K ≃+* K') (he : Continuous e)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) (i : ℤ) :
+    (lowerRamificationGroup K L i).map (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      lowerRamificationGroup K' L' i :=
+  map_algAutCongr_lowerRamificationGroup_of_vle_iff e
+    (e.toRingHom.map_vle_map_iff_of_continuous he) eL heL i
+
+end RingEquiv
+
+section AlgEquiv
+
+variable {K L} {L' : Type*}
+  [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+  [Algebra K L'] [ValuativeExtension K L'] [Module.Finite K L']
+
+/-- **Transport of lower ramification groups along a `K`-algebra isomorphism `φ : L ≃ₐ[K] L'`.** -/
+theorem comap_autCongr_lowerRamificationGroup (φ : L ≃ₐ[K] L') (i : ℤ) :
+    (lowerRamificationGroup K L' i).comap (AlgEquiv.autCongr φ : (L ≃ₐ[K] L) →* (L' ≃ₐ[K] L')) =
+      lowerRamificationGroup K L i := by
+  rw [← RingEquiv.algAutCongr_refl_toRingEquiv φ φ.commutes]
+  exact comap_algAutCongr_lowerRamificationGroup (RingEquiv.refl K) continuous_id
+    (φ : L ≃+* L') φ.commutes i
+
+/-- Image form of `comap_autCongr_lowerRamificationGroup`. -/
+theorem map_autCongr_lowerRamificationGroup (φ : L ≃ₐ[K] L') (i : ℤ) :
+    (lowerRamificationGroup K L i).map (AlgEquiv.autCongr φ : (L ≃ₐ[K] L) →* (L' ≃ₐ[K] L')) =
+      lowerRamificationGroup K L' i := by
+  rw [← comap_autCongr_lowerRamificationGroup φ i,
+    Subgroup.map_comap_eq_self_of_surjective (AlgEquiv.autCongr φ).surjective]
+
+end AlgEquiv
+
+end Transport
 
 end TauCeti.LocalFieldsRamification

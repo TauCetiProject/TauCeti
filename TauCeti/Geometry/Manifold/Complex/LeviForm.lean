@@ -54,9 +54,13 @@ index is at most `dim_ℂ E + q`.
   parts of the Levi form in terms of the real critical Hessian.
 * `TauCeti.manifoldLeviForm_apply_self`: for `C²` `f`, its diagonal is the real number
   `(Hess f(v, v) + Hess f(I • v, I • v)) / 4`.
-* `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`,
+* `TauCeti.re_manifoldLeviForm_apply_self_nonpos_of_isLocalMax`: at a local maximum of a `C²`
+  function, the Levi form is negative semidefinite.
+* `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`, `TauCeti.manifoldLeviForm_smul`,
   `TauCeti.manifoldLeviForm_mul_apply`, `TauCeti.manifoldLeviForm_scalar_comp_apply`: the sum,
-  negation, product and composition rules.
+  negation, scalar multiple, product and composition rules, and `TauCeti.manifoldLeviForm_const`:
+  the Levi form of a constant function vanishes.
+* `TauCeti.manifoldLeviForm_I_smul_I_smul`: invariance under `I • ·` in both arguments.
 * `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
   convex function preserves positivity of the Levi form.
@@ -168,6 +172,18 @@ theorem isSymm_manifoldLeviForm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) 
     (manifoldLeviForm E f x).IsSymm :=
   isSymm_leviForm hf.contDiffAt_comp_chartAt_symm
 
+/-- **The Levi form at a local maximum.** If `f` is `C²` at a local maximum `x`, the real part of
+`L_f(x)(v, v)` is nonpositive. -/
+theorem re_manifoldLeviForm_apply_self_nonpos_of_isLocalMax
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) (hmax : IsLocalMax f x) (v : E) :
+    (manifoldLeviForm E f x v v).re ≤ 0 := by
+  have hx : (chartAt E x).symm (chartAt E x x) = x := (chartAt E x).left_inv (mem_chart_source E x)
+  have hmax' : IsLocalMax (f ∘ (chartAt E x).symm) (chartAt E x x) :=
+    IsLocalMax.comp_continuous (hx.symm ▸ hmax)
+      ((chartAt E x).continuousAt_symm (mem_chart_target E x))
+  rw [manifoldLeviForm_def]
+  exact re_leviForm_nonpos_of_isLocalMax hf.contDiffAt_comp_chartAt_symm hmax' v
+
 /-! ### Algebraic rules -/
 
 /-- **The sum rule** for the Levi form on a complex manifold. -/
@@ -181,6 +197,23 @@ theorem manifoldLeviForm_add {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘
 theorem manifoldLeviForm_neg (f : M → ℝ) (x : M) :
     manifoldLeviForm E (-f) x = -manifoldLeviForm E f x :=
   leviForm_neg (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- The Levi form of a constant function vanishes. -/
+@[simp]
+theorem manifoldLeviForm_const (c : ℝ) (x : M) : manifoldLeviForm E (fun _ : M ↦ c) x = 0 :=
+  leviForm_const c (chartAt E x x)
+
+/-- The Levi form on a complex manifold is real homogeneous in the function. -/
+@[simp]
+theorem manifoldLeviForm_smul (a : ℝ) (f : M → ℝ) (x : M) :
+    manifoldLeviForm E (a • f) x = (a : ℂ) • manifoldLeviForm E f x :=
+  leviForm_smul a (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- The Levi form on a complex manifold is invariant under applying the complex structure `I • ·`
+to both arguments. -/
+theorem manifoldLeviForm_I_smul_I_smul (f : M → ℝ) (x : M) (v w : E) :
+    manifoldLeviForm E f x (I • v) (I • w) = manifoldLeviForm E f x v w :=
+  leviForm_I_smul_I_smul (f ∘ (chartAt E x).symm) (chartAt E x x) v w
 
 /-- **The product rule** for the Levi form on a complex manifold. Writing `∂f` for the
 complex-linear extension `StrongDual.extendRCLike` of the real differential `mvfderiv 𝓘(ℝ, E) f x`,
@@ -256,8 +289,8 @@ theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u
     have hcoord : writtenInExtChartAt 𝓘(ℂ, E) 𝓘(ℂ, F) x g = G := by
       ext z
       rfl
-    have hpoint : extChartAt 𝓘(ℂ, E) x x = chartAt E x x := by rfl
-    rw [hcoord, modelWithCornersSelf_coe, Set.range_id, fderivWithin_univ, hpoint]
+    rw [hcoord, modelWithCornersSelf_coe, Set.range_id, fderivWithin_univ,
+      TauCeti.extChartAt_model_apply_eq_chartAt_apply]
   have hcomp : (u ∘ g) ∘ (chartAt E x).symm =ᶠ[𝓝 (chartAt E x x)]
       (u ∘ (chartAt F (g x)).symm) ∘ G := by
     have hcont : Tendsto (g ∘ (chartAt E x).symm) (𝓝 (chartAt E x x)) (𝓝 (g x)) := by
@@ -641,14 +674,20 @@ theorem IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le_of_mem_criticalPo
     manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E + q :=
   h.manifoldMorseIndex_le (hf.of_le hr) (mem_criticalPoints.1 hx)
 
+omit [FiniteDimensional ℂ E] in
 /-- **The index bound for strictly plurisubharmonic functions on a complex manifold.** At a
 critical point `x` of a function `f` which is `C²` at `x` and strictly plurisubharmonic at `x`, the
-Morse index of `f` is at most `dim_ℂ E`. -/
+Morse index of `f` is at most `dim_ℂ E`. In infinite dimensions the index is `0` and
+`finrank ℂ E = 0` by convention. -/
 theorem IsManifoldStrictlyPlurisubharmonicAt.manifoldMorseIndex_le [IsManifold 𝓘(ℂ, E) 2 M]
     (h : IsManifoldStrictlyPlurisubharmonicAt E f x) (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
     (hcrit : mvfderiv 𝓘(ℝ, E) f x = 0) :
     manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E := by
-  simpa using (h.isManifoldStronglyPseudoconvexAt 0).manifoldMorseIndex_le hf hcrit
+  by_cases hE : FiniteDimensional ℂ E
+  · simpa using (h.isManifoldStronglyPseudoconvexAt 0).manifoldMorseIndex_le hf hcrit
+  · rw [manifoldMorseIndex_def, morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+      hE (Module.Finite.of_restrictScalars_finite ℝ ℂ E)]
+    exact Nat.zero_le _
 
 end Critical
 

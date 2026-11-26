@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Concentration
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 
 /-!
@@ -136,6 +137,12 @@ private theorem differentiable_gaussianExtension (c : ℝ) (a : A) :
   set D := ‖z₀‖ + 1
   have hD (z : ℂ) (hz : z ∈ Metric.ball z₀ 1) : ‖z‖ ≤ D := (norm_lt_of_mem_ball hz).le
   -- dominate the kernel and its derivative on the unit ball about `z₀` by Gaussians in `t`
+  -- The kernel is the translated quadratic exponential with `a = -c²` and `b = t`.
+  have hderiv (t : ℝ) (z : ℂ) : HasDerivAt (fun z : ℂ => cexp (-(c * (t - z)) ^ 2))
+      (cexp (-(c * (t - z)) ^ 2) * (2 * c ^ 2 * (t - z))) z := by
+    convert Complex.hasDerivAt_cexp_mul_sub_sq (-(c : ℂ) ^ 2) t z using 1
+    · exact funext fun w => by ring_nf
+    · ring_nf
   have hG := integrable_exp_neg_mul_sq hb
   have hG' : Integrable fun t : ℝ => (|t| + D) * rexp (-(c ^ 2 / 2) * t ^ 2) := by
     refine ((integrable_mul_exp_neg_mul_sq hb).norm.add (hG.const_mul D)).congr
@@ -150,7 +157,7 @@ private theorem differentiable_gaussianExtension (c : ℝ) (a : A) :
     (.of_forall fun z => (α.continuous_gaussianIntegrand c a z).aestronglyMeasurable) ?_
     ?_ (ae_of_all _ fun t z hz => ?_) (hG'.const_mul _)
     (ae_of_all _ fun t z _ => by
-      simpa only [mul_assoc] using ((Complex.hasDerivAt_cexp_neg_mul_sub_sq c t z).const_mul
+      simpa only [mul_assoc] using ((hderiv t z).const_mul
         ((c : ℂ) / √π)).smul_const (α (Multiplicative.ofAdd t) a))).2.differentiableAt
   · refine Integrable.mono' ((hG.const_mul (‖(c : ℂ) / √π‖ * rexp (c ^ 2 * D ^ 2) * ‖a‖)))
       (α.continuous_gaussianIntegrand c a z₀).aestronglyMeasurable (ae_of_all _ fun t => ?_)
@@ -198,10 +205,8 @@ theorem entireExtension_gaussianSmear (c : ℝ) (a : A) (z : ℂ) :
 /-- **Gaussian smearings are entire analytic.** -/
 theorem isEntireAnalytic_gaussianSmear (c : ℝ) (a : A) :
     α.IsEntireAnalytic (α.gaussianSmear c a) := by
-  refine isEntireAnalytic_iff.mpr ⟨?_, fun t => ?_⟩
-  · simpa only [funext (α.entireExtension_gaussianSmear c a)] using
-      α.differentiable_gaussianExtension c a
-  · rw [entireExtension_gaussianSmear, gaussianExtension_ofReal]
+  refine (isEntireAnalytic_iff α _).mpr fun t => ?_
+  rw [entireExtension_gaussianSmear, gaussianExtension_ofReal]
 
 /-- The Gaussian smearing is odd in the parameter `c`. -/
 @[simp]

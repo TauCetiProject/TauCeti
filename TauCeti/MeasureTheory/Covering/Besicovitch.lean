@@ -23,6 +23,9 @@ Besicovitch covering property, Mathlib's density theorem
 We extend it to null-measurable sets and record its set form: a null-measurable set agrees almost
 everywhere with its set of density-one points. That set is a canonical representative of the
 `μ`-a.e. class of `s`, since it depends only on that class.
+Dually, a set filling at most a fraction `c < 1` of every small closed ball around every point is
+null (`TauCeti.measure_eq_zero_of_forall_measure_inter_closedBall_le`), with no measurability
+assumed.
 
 The Besicovitch covering property passes to subspaces (`Isometry.hasBesicovitchCovering`), so
 an open subset of a finite-dimensional real normed space has it too. This lets differentiation
@@ -75,13 +78,11 @@ sets. -/
 theorem ae_tendsto_measure_inter_div (hs : NullMeasurableSet s μ) :
     ∀ᵐ x ∂μ, Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0)
       (𝓝 (s.indicator 1 x)) := by
-  have hmeas : ∀ x r, μ (s ∩ closedBall x r) = μ (toMeasurable μ s ∩ closedBall x r) :=
-    fun x r => measure_congr (hs.toMeasurable_ae_eq.symm.inter (ae_eq_refl _))
   filter_upwards [Besicovitch.ae_tendsto_measure_inter_div_of_measurableSet μ
     (measurableSet_toMeasurable μ s),
     indicator_ae_eq_of_ae_eq_set (f := (1 : α → ℝ≥0∞)) hs.toMeasurable_ae_eq]
     with x hx hxs
-  simpa only [hmeas, hxs] using hx
+  simpa only [Measure.measure_toMeasurable_inter_of_sfinite measurableSet_closedBall, hxs] using hx
 
 /-- A null-measurable set agrees almost everywhere with its set of density points with
 respect to `μ`, the points at which its proportion of closed balls tends to one. -/
@@ -90,11 +91,9 @@ theorem ae_eq_setOf_tendsto_measure_inter_div (hs : NullMeasurableSet s μ) :
       (𝓝 1)} := by
   refine eventuallyEqSet_iff.2 ?_
   filter_upwards [hs.ae_tendsto_measure_inter_div] with x hx
-  by_cases hxs : x ∈ s
-  · simp only [indicator_of_mem hxs, Pi.one_apply] at hx
-    exact iff_of_true hxs hx
-  · simp only [indicator_of_notMem hxs] at hx
-    exact iff_of_false hxs fun h => zero_ne_one (tendsto_nhds_unique hx h)
+  -- `x ∈ s` exactly when the limit `s.indicator 1 x` of the proportions is `1`.
+  rw [← indicator_eq_one_iff_mem ℝ≥0∞]
+  exact ⟨fun h => h ▸ hx, tendsto_nhds_unique hx⟩
 
 end NullMeasurableSet
 
@@ -119,7 +118,7 @@ theorem Isometry.hasBesicovitchCovering {α β : Type*} [MetricSpace α] [Metric
 /-- A subspace of a metric space with the Besicovitch covering property has it too. -/
 instance Subtype.hasBesicovitchCovering {α : Type*} [MetricSpace α] [HasBesicovitchCovering α]
     (p : α → Prop) : HasBesicovitchCovering (Subtype p) :=
-  isometry_subtype_coe.hasBesicovitchCovering
+  isometry_subtypeVal.hasBesicovitchCovering
 
 /-! ### Differentiation along concentric closed balls -/
 
@@ -138,6 +137,28 @@ theorem ae_tendsto_average_closedBall (μ : Measure β) [IsLocallyFiniteMeasure 
     (hf : LocallyIntegrable f μ) :
     ∀ᵐ x ∂μ, Tendsto (fun r => ⨍ y in closedBall x r, f y ∂μ) (𝓝[>] 0) (𝓝 (f x)) := by
   filter_upwards [(Besicovitch.vitaliFamily μ).ae_tendsto_average hf] with x hx
-  exact hx.comp (Besicovitch.tendsto_filterAt μ x)
+    using hx.comp (Besicovitch.tendsto_filterAt μ x)
 
 end Besicovitch
+
+namespace TauCeti
+
+open MeasureTheory
+
+variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [SecondCountableTopology X]
+  [BorelSpace X] [HasBesicovitchCovering X]
+
+/-- **A density criterion for null sets.** A set filling at most a fraction `c < 1` of every small
+closed ball around every point is null, by Lebesgue's density theorem. No measurability is
+assumed. -/
+theorem measure_eq_zero_of_forall_measure_inter_closedBall_le (ν : Measure X)
+    [IsLocallyFiniteMeasure ν] (Q : Set X) {c : ℝ≥0∞} (hc : c < 1)
+    (h : ∀ z, ∀ᶠ r in 𝓝[>] 0, ν (Q ∩ closedBall z r) ≤ c * ν (closedBall z r)) : ν Q = 0 := by
+  by_contra hQ
+  have : (ae (ν.restrict Q)).NeBot := ae_neBot.2 (by rwa [Ne, Measure.restrict_eq_zero])
+  obtain ⟨z, hz⟩ := (Besicovitch.ae_tendsto_measure_inter_div ν Q).exists
+  have h1 : ∀ᶠ r in 𝓝[>] (0 : ℝ), ν (Q ∩ closedBall z r) / ν (closedBall z r) ≤ c :=
+    (h z).mono fun r hr => ENNReal.div_le_of_le_mul hr
+  exact absurd (le_of_tendsto hz h1) (not_le.2 hc)
+
+end TauCeti

@@ -64,7 +64,7 @@ theorem eVariationOn_eq_pathELength_open
           ((ContMDiffOn.subtypeVal_comp_iff U γ (Icc a b)).mpr hγ))
     _ = Manifold.pathELength 𝓘(ℝ, F) ((Subtype.val : U → F) ∘ γ) a b := by
       rw [Manifold.pathELength_eq_lintegral_mfderivWithin_Icc]
-      simp only [mfderivWithin_eq_fderivWithin, enorm_tangentSpace_vectorSpace]
+      simp only [mfderivWithin_eq_fderivWithin, eNorm_tangentSpace_vectorSpace]
       apply setLIntegral_congr_fun measurableSet_Icc
       intro t _
       -- The scalar tangent space is definitionally the model field, but its bundled instances hide
@@ -90,7 +90,7 @@ theorem pathELength_le_liminf_open
   rw [Manifold.pathELength_subtypeVal_comp]
   have hconv' : ∀ t ∈ Icc a b,
       Tendsto (fun i ↦ (γi i t : F)) l (𝓝 (γ t : F)) := fun t ht ↦
-    continuous_subtype_val.continuousAt.tendsto.comp (hconv t ht)
+    continuous_subtypeVal.continuousAt.tendsto.comp (hconv t ht)
   calc
     Manifold.pathELength 𝓘(ℝ, F) ((Subtype.val : U → F) ∘ γ) a b ≤
         liminf (fun i ↦
@@ -98,10 +98,10 @@ theorem pathELength_le_liminf_open
       pathELength_le_liminf_pathELength
         (hγi.mono fun i hi ↦
           (ContMDiffOn.subtypeVal_comp_iff U (γi i) (Icc a b)).mpr hi)
-        ((contMDiff_subtype_val.mdifferentiable one_ne_zero).comp_mdifferentiableOn hγ)
+        ((contMDiff_subtypeVal.mdifferentiable one_ne_zero).comp_mdifferentiableOn hγ)
         hconv'
     _ = liminf (fun i ↦ Manifold.pathELength 𝓘(ℝ, F) (γi i) a b) l :=
-      liminf_congr (hγi.mono fun i hi ↦
+      liminf_congr (hγi.mono fun i _ ↦
         Manifold.pathELength_subtypeVal_comp.symm)
 
 /-- **Lower semicontinuity under uniform convergence on an open submanifold.** Let `γᵢ` be

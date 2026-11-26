@@ -120,9 +120,9 @@ theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : 
   have hsub := thickening_lineSection_subset_preimage_sub_lineSection_thickening e he s hr
     (ρ := ρ) (by linarith)
   rw [mem_steinerSymmetrization_iff, mem_eball, edist_zero_right,
-    Real.enorm_eq_ofReal_abs] at hp ⊢
+    Real.eNorm_eq_ofReal_abs] at hp ⊢
   have hρ : 0 < ρ := (abs_nonneg _).trans_lt hcρ
-  have hA : {t : ℝ | p + t • e ∈ s}.Nonempty := nonempty_iff_ne_empty.2 fun h ↦ by simp [h] at hp
+  have hA : {t : ℝ | p + t • e ∈ s}.Nonempty := ne_empty_iff_nonempty.1 fun h ↦ by simp [h] at hp
   calc ENNReal.ofReal |⟪e, x⟫|
       ≤ ENNReal.ofReal |⟪e, p⟫| + ENNReal.ofReal |⟪e, x - p⟫| := by
         rw [← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _)]

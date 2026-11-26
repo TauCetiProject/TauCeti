@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.LinearAlgebra.Dimension.BaseChange
 
 /-!
-# Finiteness of `MvPolynomial.map`
+# Finiteness of `MvPolynomial.map`, and coordinates in the monomial basis
 
 `MvPolynomial.map f` is a finite ring map whenever `f` is: a family generating `S` over `R`
 generates `MvPolynomial σ S` over `MvPolynomial σ R` once its members are read as constants.
@@ -21,21 +21,32 @@ records as "`R'[x^{1/q}]` is finite over `R[x]`"; the `expand` half lives in
 `TauCeti/RingTheory/MvPolynomial/Expand.lean`. Nothing here mentions `expand`, which is why it
 sits in this file rather than that one.
 
+The coordinates of a polynomial in the monomial basis `MvPolynomial.basisMonomials` are its
+coefficients (`MvPolynomial.basisMonomials_repr_apply`).
+
 ## Main results
 
 * `TauCeti.MvPolynomial.finite_map`: `MvPolynomial.map f` is finite when `f` is.
+* `MvPolynomial.basisMonomials_repr_apply`: coordinates in the monomial basis are coefficients.
 
 ## Provenance
 
-Roadmap: EllipticCurves, the Layers 0-1 target *Function-field foundations and isogenies*
-(`TauCetiRoadmap/EllipticCurves/README.md:1096`), through the support module
-`RingTheory/IntegralClosure/NormalizationFinite`. The argument is Stacks 10.161.13 (tag 032O),
-which is univariate and whose proof records it as "Since `R` is N-2 we see that `R′` is finite
-over `R` and hence `R′[x^{1/q}]` is finite over `R[x]`"; the multivariate form is not claimed as
-source material.
+The argument is Stacks 10.161.13 (tag 032O), which is univariate and whose proof records it as
+"Since `R` is N-2 we see that `R′` is finite over `R` and hence `R′[x^{1/q}]` is finite over
+`R[x]`"; the multivariate form is not claimed as source material.
 -/
 
 public section
+
+namespace MvPolynomial
+
+/-- The coordinates of a polynomial in the monomial basis are its coefficients. -/
+@[simp]
+theorem basisMonomials_repr_apply {σ R : Type*} [CommSemiring R] (p : MvPolynomial σ R)
+    (s : σ →₀ ℕ) : (basisMonomials σ R).repr p s = p.coeff s :=
+  (rfl)
+
+end MvPolynomial
 
 namespace TauCeti
 

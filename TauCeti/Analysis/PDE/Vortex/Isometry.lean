@@ -25,7 +25,7 @@ The orientation-preserving isometries of the plane act on plane-vortex fields by
 gauge transformation fixing the framing at infinity, they preserve the affine Sobolev space
 `A_m^k = x_m + H^k` of framed degree-`m` fields (`TauCeti.Vortex.framedFieldSpace`), for every
 natural order `k`. The direction `H^k` is invariant under translations and rotations
-(`translateField_mem_sobolevFields_natCast`, `rotateField_mem_sobolevFields_natCast`), so the
+(`translateField_mem_sobolevFields_natCast`, `rotateField_mem_sobolevFields`), so the
 question is whether the transformed reference field `x_m` stays in `A_m^k`.
 
 * **Rotations.** The reference field is rotation-equivariant up to the constant line-frame gauge
@@ -71,14 +71,14 @@ theorem translateField_mem_sobolevFields_natCast (a : ℂ) {k : ℕ} {y : ℂ �
       comp_add_mem_realSobolevFunctions_natCast (by norm_num) (by norm_num) a
         (mem_sobolevFields.1 hy i)
 
-/-- Rotations preserve the integer-order Sobolev fields. -/
-theorem rotateField_mem_sobolevFields_natCast (u : Circle) {k : ℕ}
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
-    rotateField u y ∈ sobolevFields k := by
-  have h (j : Fin 4) : (fun z ↦ y ((u : ℂ) * z) j) ∈ realSobolevFunctions ℂ k 2 := by
+/-- Rotations preserve the Sobolev fields of every real order. -/
+theorem rotateField_mem_sobolevFields (u : Circle) {s : ℝ}
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) :
+    rotateField u y ∈ sobolevFields s := by
+  have h (j : Fin 4) : (fun z ↦ y ((u : ℂ) * z) j) ∈ realSobolevFunctions ℂ s 2 := by
     simpa only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       rotation_apply] using
-      comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast (by norm_num) (by norm_num)
+      comp_continuousLinearEquiv_mem_realSobolevFunctions (by norm_num) (by norm_num)
         (rotation u).toContinuousLinearEquiv (mem_sobolevFields.1 hy j)
   refine mem_sobolevFields.2 fun i ↦ ?_
   fin_cases i
@@ -119,17 +119,13 @@ theorem gaugeTransform_rotateField_referenceField (f : ContDiffBump (0 : ℝ)) (
       ring
     · simp only [mul_im, I_re, I_im, smul_im, smul_eq_mul, add_im]
       ring
-  -- The constant gauge has vanishing logarithmic derivative.
-  have hconst : gaugeForm (fun _ ↦ u⁻¹ ^ m) z = 0 := by
-    ext v
-    simp
   refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
-  · simp only [gaugeTransform_apply, hconst, rotateField_apply_zero,
+  · simp only [gaugeTransform_apply, gaugeForm_const, rotateField_apply_zero,
       referenceField_apply, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       zero_apply, sub_zero]
     rw [hlin 1]
     simp only [add_im, smul_im, smul_eq_mul, mul_one]
-  · simp only [gaugeTransform_apply, hconst, rotateField_apply_one,
+  · simp only [gaugeTransform_apply, gaugeForm_const, rotateField_apply_one,
       referenceField_apply, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       zero_apply, sub_zero]
     rw [hlin I]
@@ -159,7 +155,7 @@ theorem gaugeTransform_rotateField_mem_framedFieldSpace {f : ContDiffBump (0 : �
   rw [h]
   -- The constant gauge has bounded derivatives of every order.
   refine gaugeLinearAction_mem_sobolevFields_natCast contDiff_const (fun n _ ↦ ⟨1, fun z ↦ ?_⟩)
-    (rotateField_mem_sobolevFields_natCast u hx)
+    (rotateField_mem_sobolevFields u hx)
   rcases n with _ | n
   · simp
   · simp [iteratedFDeriv_const_of_ne n.succ_ne_zero]
@@ -201,7 +197,6 @@ private theorem contDiff_translationPhase (m : ℕ) (a : ℂ) :
       isOpen_lt (by fun_prop) continuous_const
     filter_upwards [hopen.mem_nhds hz] with w hw
     have hw' : ‖w‖ ^ 2 - ‖a‖ ^ 2 - 1 ≤ 0 := by
-      have hw : ‖w‖ ^ 2 < ‖a‖ ^ 2 + 1 := hw
       linarith
     simp [translationPhase, Real.smoothTransition.zero_of_nonpos hw']
   · obtain ⟨hza, hz0, -⟩ := norm_lt_of_sq_add_one_le hz
@@ -275,7 +270,7 @@ theorem coe_translationGauge_mul_pow {m : ℕ} {a z : ℂ} (hz : ‖a‖ ^ 2 + 2
       norm_mul_exp_arg_mul_I]
   -- The gauge is `exp (-i m arg w) = (exp (i arg w) ^ m)⁻¹`.
   have hg : (translationGauge m a z : ℂ) = (exp (arg (1 + a / z) * I) ^ m)⁻¹ := by
-    rw [translationGauge, Circle.coe_exp, translationPhase_eq hz, ← exp_nat_mul, ← exp_neg]
+    rw [translationGauge, Circle.coe_exp, translationPhase_eq hz, ← exp_natCast_mul, ← exp_neg]
     congr 1
     push_cast
     ring
@@ -324,7 +319,6 @@ private theorem exterior_of_lt_norm {a z : ℂ} {r : ℝ} (hr : 0 < r)
   have hza : ‖z‖ - ‖a‖ ≤ ‖z + a‖ := by
     simpa using norm_sub_norm_le z (-a)
   refine ⟨by nlinarith, by nlinarith, ?_⟩
-  have h1 : r + 2 ≤ ‖z + a‖ := by linarith
   nlinarith
 
 /-- **Bounded derivatives of the translation gauge.** Every iterated derivative of the translation
@@ -412,13 +406,13 @@ theorem gaugeTransform_translationGauge_translateField_mem_framedFieldSpace
     gaugeTransform (translationGauge m a) (translateField a x) ∈ framedFieldSpace f m k := by
   rw [mem_framedFieldSpace] at hx ⊢
   have hg := ((mem_framedGaugeGroup _).1 (translationGauge_mem_framedGaugeGroup m a)).1
-  have htr : ContDiff ℝ ∞ (translateField a (referenceField f m)) := by
-    rw [show translateField a (referenceField f m) = fun z ↦ referenceField f m (z + a) from
-      funext fun z ↦ translateField_apply a _ z]
-    exact (contDiff_referenceField f m).comp (contDiff_id.add contDiff_const)
+  have htr : ContDiff ℝ ∞
+      (gaugeTransform (translationGauge m a) (translateField a (referenceField f m))) := by
+    simpa using contDiff_framedGaugeGroup_smul ⟨_, translationGauge_mem_framedGaugeGroup m a⟩
+      (contDiff_translateField a (contDiff_referenceField f m))
   have hD : gaugeTransform (translationGauge m a) (translateField a (referenceField f m)) -
       referenceField f m ∈ sobolevFields k := mem_sobolevFields_of_hasCompactSupport
-    ((contDiff_gaugeTransform hg htr).sub (contDiff_referenceField f m))
+    (htr.sub (contDiff_referenceField f m))
     (hasCompactSupport_gaugeTransform_translationGauge_translateField_sub f m a) k
   have hsub : translateField a x - translateField a (referenceField f m) =
       translateField a (x - referenceField f m) := by

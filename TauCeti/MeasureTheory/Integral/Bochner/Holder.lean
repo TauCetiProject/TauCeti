@@ -7,9 +7,14 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
-# Hölder's inequality for a function supported in a set
+# Hölder-type bounds for Bochner integrals
+
+For `r ≥ 1`, Hölder's inequality against the constant function `1` bounds the `r`-th power of the
+extended norm of a Bochner integral: `‖∫ f‖ₑ ^ r ≤ μ univ ^ (r - 1) * ∫⁻ ‖f‖ₑ ^ r`. Under a measure
+of mass at most one this is Jensen's inequality `‖∫ f‖ₑ ^ r ≤ ∫⁻ ‖f‖ₑ ^ r`.
 
 Let `w` vanish almost everywhere off a set `A` of finite measure. For exponents `r, s > 0` with
 `1/r + 1/s ≤ 1`, Hölder's inequality with the three exponents `r`, `s` and
@@ -24,8 +29,9 @@ iteration.
 
 ## Main declarations
 
+* `TauCeti.enorm_integral_rpow_le_measure_univ_rpow_mul`: the bound on `‖∫ f‖ₑ ^ r`.
 * `TauCeti.MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow`: the
-  inequality.
+  inequality for a function vanishing off a set.
 -/
 
 public section
@@ -37,6 +43,16 @@ open MeasureTheory Set
 open scoped ENNReal NNReal
 
 namespace TauCeti
+
+/-- **Jensen's inequality for the norm of a Bochner integral**: for `r ≥ 1`, the `r`-th power of
+the extended norm of `∫ f ∂μ` is at most `μ univ ^ (r - 1) * ∫⁻ ‖f‖ₑ ^ r ∂μ`. In particular it is
+at most `∫⁻ ‖f‖ₑ ^ r ∂μ` when `μ` has mass at most one. No integrability or finiteness is
+assumed: a non-integrable `f`, or a codomain that is not complete, has integral `0`. -/
+theorem enorm_integral_rpow_le_measure_univ_rpow_mul {α E : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedSpace ℝ E] (f : α → E) {r : ℝ} (hr : 1 ≤ r) :
+    ‖∫ x, f x ∂μ‖ₑ ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, ‖f x‖ₑ ^ r ∂μ :=
+  (ENNReal.rpow_le_rpow (eNorm_integral_le_lintegral_eNorm f) (zero_le_one.trans hr)).trans
+    (rpow_lintegral_le_measure_univ_rpow_mul hr)
 
 namespace MeasureTheory
 
@@ -70,7 +86,7 @@ theorem norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow {f : Ω �
       rw [setIntegral_eq_integral_of_ae_compl_eq_zero (hwA.mono fun x hx hxA => by
         simp [hx hxA])]
     _ ≤ eLpNorm (f • w) 1 (μ.restrict A) :=
-      (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+      (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
     _ ≤ eLpNorm (f • w) p (μ.restrict A) * μ A ^ (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) := by
       refine (eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hp1 one_pos).trans_eq ?_
       rw [Measure.restrict_apply_univ, hp]

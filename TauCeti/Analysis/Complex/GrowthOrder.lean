@@ -23,11 +23,19 @@ growth input of Hadamard's factorization and of the convexity bounds for L-funct
 ## Main results
 
 * `TauCeti.OrderLE.mono`, `TauCeti.OrderLE.add`, `TauCeti.OrderLE.mul`, `TauCeti.OrderLE.sum`,
-  `TauCeti.OrderLE.prod`: the predicate is monotone in the exponent and closed under the ring
-  operations at a common exponent.
+  `TauCeti.OrderLE.multisetProd`, `TauCeti.OrderLE.prod`: the predicate is monotone in the
+  exponent and closed under the ring operations at a common exponent.
+* `TauCeti.orderLE_of_forall_exists_norm_le_mul_exp_rpow`: global bounds
+  `‖f z‖ ≤ C * exp (‖z‖ ^ b)` at every `b > A` give order at most `A`.
+* `TauCeti.OrderLE.one_le_of_not_isBigO_exp`: a function of order less than one is of
+  exponential type.
+* `TauCeti.not_isBigO_exp_mul_norm_of_factorial_le`: a function that is at least `n!` up to a
+  geometric factor along points of linearly growing norm is not of exponential type.
 * `TauCeti.OrderLE.comp_mul_add`: the order does not increase under an affine substitution
   `s ↦ a * s + b`.
 * `Polynomial.orderLE_eval`: polynomials have order at most `0`; constants have every order.
+* `Polynomial.orderLE_cexp_eval`: the exponential of a polynomial has order at most its
+  natural degree.
 * `TauCeti.orderLE_cexp_mul_pow`: `exp (a * s ^ n)` has order at most `n`, and
   `TauCeti.orderLE_cexp_pow_iff` shows that `exp (s ^ n)` has no smaller order when `n ≠ 0`.
   In particular `exp` has order exactly `1` (`TauCeti.orderLE_cexp_iff`).
@@ -61,11 +69,80 @@ theorem isBigO (h : OrderLE f A) {A' : ℝ} (hA' : A < A') :
     f =O[cobounded ℂ] fun s ↦ Real.exp (‖s‖ ^ A') :=
   h A' hA'
 
+/-- Continuity extends an asymptotic order bound to a global exponential bound at each larger
+exponent. -/
+theorem exists_norm_le_mul_exp_rpow (h : OrderLE f A) (hf : Continuous f)
+    {B : ℝ} (hAB : A < B) :
+    ∃ C > 0, ∀ z, ‖f z‖ ≤ C * Real.exp (‖z‖ ^ B) := by
+  let g : ℂ → ℝ := fun z ↦ Real.exp ((max 1 ‖z‖) ^ B)
+  have hg : Continuous g :=
+    Real.continuous_exp.comp ((continuous_const.max continuous_norm).rpow_const fun z ↦
+      Or.inl (ne_of_gt (lt_of_lt_of_le zero_lt_one (le_max_left 1 ‖z‖))))
+  have hq : Continuous (fun z ↦ ‖f z‖ / g z) :=
+    hf.norm.div hg (fun z ↦ Real.exp_ne_zero _)
+  have hfg : f =O[cobounded ℂ] g :=
+      (h.isBigO hAB).congr' (Filter.Eventually.of_forall fun _ ↦ rfl) <| by
+    filter_upwards [eventually_cobounded_le_norm (1 : ℝ)] with z hz
+    simp only [g, max_eq_right hz]
+  have hO : (fun z ↦ ‖f z‖ / g z) =O[cocompact ℂ] (1 : ℂ → ℝ) := by
+    rw [← Metric.cobounded_eq_cocompact]
+    exact (div_isBoundedUnder_of_isBigO hfg.norm_left).isBigO_const one_ne_zero
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp
+    (hq.isBounded_range_iff_isBigO.mpr hO)
+  have hCpos : 0 < max C 1 := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
+  refine ⟨max C 1 * Real.exp 1, by positivity, fun z ↦ ?_⟩
+  have hp : (max 1 ‖z‖) ^ B ≤ 1 + ‖z‖ ^ B := by
+    rcases le_total 1 ‖z‖ with hz | hz
+    · rw [max_eq_right hz]; linarith
+    · rw [max_eq_left hz, Real.one_rpow]
+      exact le_add_of_nonneg_right (Real.rpow_nonneg (norm_nonneg z) B)
+  calc
+    ‖f z‖ ≤ max C 1 * g z := (div_le_iff₀ (Real.exp_pos _)).mp <|
+      (le_abs_self _).trans ((hC _ (Set.mem_range_self z)).trans (le_max_left _ _))
+    _ ≤ max C 1 * (Real.exp 1 * Real.exp (‖z‖ ^ B)) := by
+      exact mul_le_mul_of_nonneg_left
+        (by rw [← Real.exp_add]; exact Real.exp_le_exp.mpr hp) hCpos.le
+    _ = max C 1 * Real.exp 1 * Real.exp (‖z‖ ^ B) := (mul_assoc _ _ _).symm
+
+/-- A continuous function of order at most `A` has a global logarithmic power bound at every
+larger nonnegative exponent. -/
+theorem exists_log_one_add_norm_le_rpow (h : OrderLE f A) (hf : Continuous f)
+    {B : ℝ} (hAB : A < B) (hB : 0 ≤ B) :
+    ∃ C > 0, ∀ z, Real.log (1 + ‖f z‖) ≤ C * (1 + ‖z‖) ^ B := by
+  obtain ⟨C, hC, hbound⟩ := h.exists_norm_le_mul_exp_rpow hf hAB
+  have hlog : 0 < Real.log (1 + C) := Real.log_pos (by linarith)
+  refine ⟨Real.log (1 + C) + 1, by linarith, fun z ↦ ?_⟩
+  have hexp : 1 ≤ Real.exp (‖z‖ ^ B) := Real.one_le_exp (Real.rpow_nonneg (norm_nonneg z) B)
+  have hpow : 1 ≤ (1 + ‖z‖) ^ B := Real.one_le_rpow (by linarith [norm_nonneg z]) hB
+  have hpow' : ‖z‖ ^ B ≤ (1 + ‖z‖) ^ B :=
+    Real.rpow_le_rpow (norm_nonneg z) (by linarith) hB
+  calc
+    Real.log (1 + ‖f z‖) ≤ Real.log ((1 + C) * Real.exp (‖z‖ ^ B)) :=
+      Real.log_le_log (by positivity) (by nlinarith [hbound z])
+    _ = Real.log (1 + C) + ‖z‖ ^ B := by
+      rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_exp]
+    _ ≤ (Real.log (1 + C) + 1) * (1 + ‖z‖) ^ B := by
+      nlinarith [mul_le_mul_of_nonneg_left hpow hlog.le]
+
+/-- A function of order less than one is of exponential type. Hence a function of order at most
+`A` that is not `O(exp ‖s‖)` has `1 ≤ A`. -/
+theorem one_le_of_not_isBigO_exp (h : OrderLE f A)
+    (hf : ¬ f =O[cobounded ℂ] fun s ↦ Real.exp ‖s‖) : 1 ≤ A := by
+  by_contra! hA
+  exact hf (by simpa using h.isBigO hA)
+
 /-- Order at most `A` implies order at most every `B ≥ A`. -/
 theorem mono (h : OrderLE f A) (hAB : A ≤ B) : OrderLE f B :=
   fun A' hA' ↦ h A' (hAB.trans_lt hA')
 
 end OrderLE
+
+/-- A global bound `‖f z‖ ≤ C * exp (‖z‖ ^ b)` at every exponent `b > A` gives order at most `A`.
+For continuous `f` this is the converse of `TauCeti.OrderLE.exists_norm_le_mul_exp_rpow`. -/
+theorem orderLE_of_forall_exists_norm_le_mul_exp_rpow
+    (h : ∀ b > A, ∃ C, ∀ z, ‖f z‖ ≤ C * Real.exp (‖z‖ ^ b)) : OrderLE f A := fun b hb ↦ by
+  obtain ⟨C, hC⟩ := h b hb
+  exact IsBigO.of_bound C (.of_forall fun z ↦ by simpa using hC z)
 
 /-- A function dominated at infinity by a function of order at most `A` has order at most `A`. -/
 theorem _root_.Asymptotics.IsBigO.orderLE (hfg : f =O[cobounded ℂ] g) (hg : OrderLE g A) :
@@ -116,16 +193,20 @@ theorem sum {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ} (h : ∀ i ∈
     OrderLE (fun s ↦ ∑ i ∈ t, F i s) A :=
   fun A' hA' ↦ (IsBigO.sum fun i hi ↦ h i hi A' hA').congr_left fun s ↦ Finset.sum_apply s t F
 
+/-- A product over a multiset of functions of order at most `A` has order at most `A`. -/
+theorem multisetProd {ι : Type*} {m : Multiset ι} {F : ι → ℂ → ℂ}
+    (h : ∀ i ∈ m, OrderLE (F i) A) : OrderLE (fun s ↦ (m.map fun i ↦ F i s).prod) A := by
+  induction m using Multiset.induction_on with
+  | empty => simp
+  | cons i m ih =>
+    simp only [Multiset.map_cons, Multiset.prod_cons]
+    exact (h i (Multiset.mem_cons_self i m)).mul
+      (ih fun j hj ↦ h j (Multiset.mem_cons_of_mem hj))
+
 /-- A finite product of functions of order at most `A` has order at most `A`. -/
 theorem prod {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ} (h : ∀ i ∈ t, OrderLE (F i) A) :
-    OrderLE (fun s ↦ ∏ i ∈ t, F i s) A := by
-  classical
-  induction t using Finset.induction_on with
-  | empty => simp
-  | insert i t hi ih =>
-    simp only [Finset.prod_insert hi]
-    exact (h i (Finset.mem_insert_self i t)).mul
-      (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+    OrderLE (fun s ↦ ∏ i ∈ t, F i s) A :=
+  multisetProd (m := t.val) h
 
 /-- The order does not increase under an affine substitution `s ↦ a * s + b`. -/
 theorem comp_mul_add (h : OrderLE f A) (a b : ℂ) : OrderLE (fun s ↦ f (a * s + b)) A := by
@@ -186,6 +267,18 @@ theorem orderLE_zero_of_isBigO_pow {n : ℕ} (h : f =O[cobounded ℂ] (· ^ n)) 
 theorem _root_.Polynomial.orderLE_eval (p : Polynomial ℂ) : OrderLE p.eval 0 :=
   orderLE_zero_of_isBigO_pow p.isBigO_cobounded_pow_natDegree
 
+/-- The exponential of a polynomial has order at most its natural degree, including the
+zero polynomial and constants. -/
+theorem _root_.Polynomial.orderLE_cexp_eval (P : Polynomial ℂ) :
+    OrderLE (fun z : ℂ ↦ cexp (P.eval z)) P.natDegree := by
+  intro q hq
+  obtain ⟨C, hC⟩ := P.isBigO_cobounded_pow_natDegree.bound
+  refine (IsBigO.of_bound 1 ?_).trans (isBigO_exp_mul_norm_rpow C hq)
+  filter_upwards [hC] with z hz
+  rw [norm_exp, Real.norm_eq_abs, Real.abs_exp, one_mul, Real.exp_le_exp,
+    Real.rpow_natCast]
+  exact (Complex.re_le_norm _).trans (by simpa only [norm_pow] using hz)
+
 /-- `exp (a * s ^ n)` has order at most `n`, for every `a : ℂ`. -/
 theorem orderLE_cexp_mul_pow (a : ℂ) (n : ℕ) : OrderLE (fun s ↦ cexp (a * s ^ n)) n := by
   intro A' hA'
@@ -197,6 +290,15 @@ theorem orderLE_cexp_mul_pow (a : ℂ) (n : ℕ) : OrderLE (fun s ↦ cexp (a * 
 /-- `exp (a * s)` has order at most `1`, for every `a : ℂ`. -/
 theorem orderLE_cexp_mul (a : ℂ) : OrderLE (fun s ↦ cexp (a * s)) 1 := by
   simpa using orderLE_cexp_mul_pow a 1
+
+/-- `b ^ (c * s)` has order at most `1`, for every base `b` and every `c : ℂ`. For `b = 0` the
+function only takes the values `0` and `1`. -/
+theorem orderLE_cpow_mul (b c : ℂ) : OrderLE (fun s ↦ b ^ (c * s)) 1 := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · refine (isBigO_of_le _ fun s ↦ ?_).orderLE (orderLE_const 1 1)
+    rcases eq_or_ne (c * s) 0 with h | h <;> simp [h]
+  convert orderLE_cexp_mul (Complex.log b * c) using 2 with s
+  rw [cpow_def_of_ne_zero hb, mul_assoc]
 
 /-- For `n ≠ 0`, `exp (s ^ n)` has order at most `A` exactly when `n ≤ A`: along the positive
 reals `exp (x ^ n)` outgrows `exp (x ^ A')` for every `A' < n`. -/
@@ -233,5 +335,38 @@ theorem orderLE_cexp_pow_iff {n : ℕ} (hn : n ≠ 0) :
 @[simp]
 theorem orderLE_cexp_iff : OrderLE cexp A ↔ 1 ≤ A := by
   simpa using orderLE_cexp_pow_iff (A := A) one_ne_zero
+
+/-! ### Lower bounds from factorial growth -/
+
+/-- If `f` is at least `n! / (L K ^ n)` along points `z n → ∞` with `‖z n‖ ≤ a n + b`, then `f`
+is not `O(exp (C ‖s‖))` for any `C`, since `n!` outgrows every geometric sequence. -/
+theorem not_isBigO_exp_mul_norm_of_factorial_le {z : ℕ → ℂ} {a b K L : ℝ}
+    (hz : Tendsto z atTop (cobounded ℂ)) (hnorm : ∀ n, ‖z n‖ ≤ a * n + b) (hK : 0 ≤ K)
+    (hL : 0 ≤ L) (hf : ∀ n, 1 ≤ n → (n.factorial : ℝ) ≤ L * K ^ n * ‖f (z n)‖) (C : ℝ) :
+    ¬ f =O[cobounded ℂ] fun s ↦ Real.exp (C * ‖s‖) := by
+  intro h
+  obtain ⟨c, hc0, hc⟩ := h.exists_pos
+  set M := K * Real.exp (|C| * a)
+  set D := L * c * Real.exp (|C| * b)
+  have hlim : Tendsto (fun n : ℕ ↦ D * (M ^ n / n.factorial)) atTop (𝓝 0) := by
+    simpa using (FloorSemiring.tendsto_pow_div_factorial_atTop M).const_mul D
+  obtain ⟨n, hn1, hlt, hle⟩ := ((eventually_ge_atTop 1).and
+    ((hlim.eventually (gt_mem_nhds one_pos)).and (hz.eventually hc.bound))).exists
+  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hle
+  have hexp : Real.exp (C * ‖z n‖) ≤ Real.exp (|C| * b) * Real.exp (|C| * a) ^ n := by
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
+    refine Real.exp_le_exp.2 ?_
+    calc C * ‖z n‖ ≤ |C| * ‖z n‖ := mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)
+      _ ≤ |C| * (a * n + b) := mul_le_mul_of_nonneg_left (hnorm n) (abs_nonneg C)
+      _ = |C| * b + n * (|C| * a) := by ring
+  have hfac : (n.factorial : ℝ) ≤ D * M ^ n :=
+    calc (n.factorial : ℝ) ≤ L * K ^ n * ‖f (z n)‖ := hf n hn1
+      _ ≤ L * K ^ n * (c * (Real.exp (|C| * b) * Real.exp (|C| * a) ^ n)) := by
+        gcongr
+        exact hle.trans (mul_le_mul_of_nonneg_left hexp hc0.le)
+      _ = D * M ^ n := by simp only [D, M, mul_pow]; ring
+  have hpos : (0 : ℝ) < n.factorial := by exact_mod_cast Nat.factorial_pos n
+  rw [← mul_div_assoc, div_lt_one hpos] at hlt
+  linarith
 
 end TauCeti

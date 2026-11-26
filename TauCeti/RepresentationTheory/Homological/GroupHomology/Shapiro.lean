@@ -55,7 +55,7 @@ open _root_.groupHomology
 
 universe u
 
-variable {k G : Type u} [CommRing k] [Group G] [DecidableEq G]
+variable {k G : Type u} [CommRing k] [Group G]
   (S : Subgroup G) (A : Rep.{u} k S)
 
 /-- The chain-level form of `indIso_inv`: going from inhomogeneous chains of `S` to the bar complex
@@ -76,10 +76,11 @@ private theorem shapiroChains :
     inhomogeneousChainsIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
     HomologicalComplex.Hom.isoOfComponents_inv_f, Iso.symm_hom, Iso.symm_inv,
     LinearEquiv.toModuleIso_inv, LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom,
-    LinearEquiv.coe_coe, coinvariantsTensorFreeLEquiv_symm_apply,
-    finsuppToCoinvariantsTensorFree_single, Functor.mapHomologicalComplex_map_f,
+    LinearEquiv.coe_coe, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+    Functor.mapHomologicalComplex_map_f,
     TauCeti.Rep.barComplex.resChainMap_f, NatIso.mapHomologicalComplex_hom_app_f,
     coinvariantsTensorIndNatIso_inv_app]
+  erw [finsuppToCoinvariantsTensorFree_single (A := A) x a]
   simp only [Functor.mapHomologicalComplex_obj_X, Functor.postcompose₂_obj_obj_obj_obj,
     MonoidalCategory.curriedTensor_obj_obj, coinvariantsFunctor_obj_carrier, tensor_V, tensor_ρ,
     Functor.postcompose₂_obj_obj_obj_map, MonoidalCategory.curriedTensor_obj_map,
@@ -93,8 +94,7 @@ private theorem shapiroChains :
 /-- **The inverse of Shapiro's isomorphism in homology is corestriction of the unit.** The
 inverse of the isomorphism `Hₙ(G, Ind_S^G A) ≅ Hₙ(S, A)` of `groupHomology.indIso` is the
 change-of-group map along `S ≤ G` induced by the unit `A ⟶ Res_S Ind_S^G A`, `a ↦ 1 ⊗ a`,
-of induction–restriction. The `DecidableEq G` instance is the one used by Mathlib's `indIso`;
-keeping it caller-supplied ensures that this equality rewrites the caller's isomorphism. -/
+of induction–restriction. -/
 theorem indIso_inv (n : ℕ) :
     (indIso S A n).inv =
       -- Universes pinned: an unsolved `max ?w u u = u` makes this statement slow to elaborate.

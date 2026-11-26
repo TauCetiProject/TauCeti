@@ -31,6 +31,11 @@ finite type* over `A`, that is, an open quotient of a restricted power-series al
 
 * `TauCeti.Huber.IsTopologicallyFiniteType.isAdicHom`: a topologically finite type homomorphism
   of Huber rings is adic.
+* `TauCeti.Huber.isPrecomplete_of_surjective`, `TauCeti.Huber.isPrecomplete_module_of_surjective`,
+  and `TauCeti.Huber.isAdicComplete_submodule_of_fg_of_surjective`: over an `I`-adic ring `A` with
+  `I` finitely generated, every quotient `B` of `A⟨X₁, …, Xₙ⟩` and every finite `B`-module is
+  `I·B`-adically precomplete, and every finitely generated submodule of an `I·B`-adically
+  separated `B`-module is `I·B`-adically complete.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_of_isAdic`: if `B` is `I·B`-adic,
   `I·B`-adically separated and complete, and `B ⧸ I·B` is a finitely generated `A ⧸ I`-algebra,
   then `B` is strictly topologically of finite type over `A`. The presentation sends the
@@ -71,9 +76,51 @@ theorem IsTopologicallyFiniteType.isAdicHom {A B : Type*} [CommRing A] [Topologi
     [IsTopologicalRing A] [IsHuberRing A] [CommRing B] [TopologicalSpace B]
     [IsTopologicalRing B] {f : A →+* B} (hf : IsTopologicallyFiniteType f) :
     IsAdicHom f := by
-  obtain ⟨k, T, hfinite, hT, π, hπ, _⟩ := isTopologicallyFiniteType_iff.mp hf
+  obtain ⟨k, T, _, hT, π, hπ, _⟩ := isTopologicallyFiniteType_iff.mp hf
   have : IsHuberRing B := IsHuberRing.of_isOpenQuotientMap hπ
   exact IsAdicHom.of_continuous_isOpen_map hf.continuous fun _ hI ↦ hf.isOpen_map hI
+
+/-! ### Precompleteness of quotients of restricted power series -/
+
+section Precompleteness
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+  {I : Ideal A} {B : Type*} [CommRing B] [Algebra A B]
+
+/-- Every quotient `B` of `A⟨X₁, …, Xₙ⟩` over an `I`-adic ring `A` (with `I` finitely generated)
+is `I·B`-adically precomplete. -/
+theorem isPrecomplete_of_surjective (hI : IsAdic I) (hfg : I.FG) {n : ℕ}
+    {π : restrictedMvPowerSeriesCompletion n A →ₐ[A] B} (hπ : Function.Surjective π) :
+    IsPrecomplete (I.map (algebraMap A B)) B := by
+  have hc := isAdicComplete_restrictedMvPowerSeriesCompletion n hI hfg
+  have : IsPrecomplete I (restrictedMvPowerSeriesCompletion n A) :=
+    IsPrecomplete.map_algebraMap_iff.mp hc.toIsPrecomplete
+  have : IsPrecomplete I B := IsPrecomplete.of_surjective I π.toLinearMap hπ
+  exact IsPrecomplete.map_algebraMap_iff.mpr inferInstance
+
+/-- Every finite module `E` over a quotient `B` of `A⟨X₁, …, Xₙ⟩` over an `I`-adic ring `A`
+(with `I` finitely generated) is `I·B`-adically precomplete. -/
+theorem isPrecomplete_module_of_surjective (hI : IsAdic I) (hfg : I.FG) {E : Type*}
+    [AddCommGroup E] [Module B E] [Module.Finite B E] {n : ℕ}
+    {π : restrictedMvPowerSeriesCompletion n A →ₐ[A] B} (hπ : Function.Surjective π) :
+    IsPrecomplete (I.map (algebraMap A B)) E := by
+  have := isPrecomplete_of_surjective hI hfg hπ
+  exact IsPrecomplete.of_finite (I.map (algebraMap A B)) E
+
+/-- In an `I·B`-adically separated module `E` over a quotient `B` of `A⟨X₁, …, Xₙ⟩` over an
+`I`-adic ring `A` (with `I` finitely generated) — for instance a finite free module over a
+separated `B`, via `IsHausdorff.of_free` — every finitely generated submodule `M` is
+`I·B`-adically separated and complete. -/
+theorem isAdicComplete_submodule_of_fg_of_surjective (hI : IsAdic I) (hfg : I.FG) {E : Type*}
+    [AddCommGroup E] [Module B E] [IsHausdorff (I.map (algebraMap A B)) E] {n : ℕ}
+    {π : restrictedMvPowerSeriesCompletion n A →ₐ[A] B} (hπ : Function.Surjective π)
+    {M : Submodule B E} (hM : M.FG) :
+    IsAdicComplete (I.map (algebraMap A B)) M := by
+  have : Module.Finite B M := Module.Finite.iff_fg.mpr hM
+  exact { toIsHausdorff := inferInstance
+          toIsPrecomplete := isPrecomplete_module_of_surjective hI hfg hπ }
+
+end Precompleteness
 
 /-! ### Algebras over an adic ring -/
 
@@ -121,10 +168,9 @@ theorem IsStrictlyTopologicallyFiniteType.isAdicComplete [IsNoetherianRing A]
   -- `B` is a finite module over the noetherian `I·A⟨X⟩`-adically complete ring `A⟨X⟩`
   let R := restrictedMvPowerSeriesCompletion k A
   let J := I.map (algebraMap A R)
-  have hJ : IsAdic J :=
-    isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion k hI (IsNoetherian.noetherian I)
   have : IsNoetherianRing R := isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic k hI
-  have : IsAdicComplete J R := hJ.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
+  have : IsAdicComplete J R :=
+    isAdicComplete_restrictedMvPowerSeriesCompletion k hI (IsNoetherian.noetherian I)
   let _ := π.toAlgebra
   have : Module.Finite R B := Module.Finite.of_surjective (Algebra.linearMap R B) hπ.surjective
   have : IsAdicComplete J B := IsAdicComplete.of_finite J B
@@ -185,7 +231,7 @@ theorem isStrictlyTopologicallyFiniteType_of_isAdic (hI : IsAdic I) (hfg : I.FG)
     (hB : IsAdic (I.map (algebraMap A B))) [hc : IsAdicComplete (I.map (algebraMap A B)) B]
     [Algebra.FiniteType (A ⧸ I) (B ⧸ I.map (algebraMap A B))] :
     IsStrictlyTopologicallyFiniteType (algebraMap A B) := by
-  set J := I.map (algebraMap A B) with hJ
+  set J := I.map (algebraMap A B)
   have : IsTopologicalRing B := hB ▸ J.nonarchimedean.toIsTopologicalRing
   let _ : UniformSpace B := IsTopologicalAddGroup.rightUniformSpace B
   have : IsUniformAddGroup B := isUniformAddGroup_of_addCommGroup
@@ -220,7 +266,7 @@ theorem isStrictlyTopologicallyFiniteType_of_isAdic (hI : IsAdic I) (hfg : I.FG)
   -- `ψ` is surjective modulo `I·B`, hence surjective, since `A⟨X⟩` is complete and `B` separated
   have hsurj : Function.Surjective ψ := by
     have : IsPrecomplete JR R :=
-      (hJR.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩).toIsPrecomplete
+      (isAdicComplete_restrictedMvPowerSeriesCompletion k hI hfg).toIsPrecomplete
     have : IsHausdorff (JR.map ψ) B := by
       rw [hmap]
       exact hc.toIsHausdorff

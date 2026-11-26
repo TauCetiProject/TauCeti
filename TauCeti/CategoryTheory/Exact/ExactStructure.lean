@@ -51,12 +51,6 @@ pullbacks in the ambient category.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69,
   <https://arxiv.org/abs/0811.1480>. Definition 2.1 and Remarks 2.2--2.8 give the axioms used
   here.
-* `TauCetiRoadmap/GrothendieckEulerForms/Suggested.lean`, the human-authored roadmap
-  formalization, fixes the design followed here: the `ConflationClass`/`ExactStructure`
-  split, the E0/E0op, E1/E1op, E2/E2op fields, and the derived inflation and deflation
-  predicates are its. This file replaces its bespoke `PushoutWitness` and `PullbackWitness`
-  by Mathlib's property-specific pushout and pullback classes, and its pair of composable
-  morphisms by a `CategoryTheory.ShortComplex`.
 -/
 
 public section
@@ -162,6 +156,14 @@ theorem conflation_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e : S 
 theorem conflation_iff_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e : S ≅ T) :
     E.Conflation S ↔ E.Conflation T :=
   E.Conflation.prop_iff_of_iso e
+
+/-- A conflation stays a conflation when its two maps are replaced by equal maps. -/
+theorem conflation_mk_of_eq (E : ConflationClass C) {X₁ X₂ X₃ : C} {f f' : X₁ ⟶ X₂}
+    {g g' : X₂ ⟶ X₃} {w : f ≫ g = 0} {w' : f' ≫ g' = 0}
+    (hS : E.Conflation (ShortComplex.mk f g w)) (hf : f = f') (hg : g = g') :
+    E.Conflation (ShortComplex.mk f' g' w') := by
+  subst hf hg
+  exact hS
 
 /-- Precomposing the inflation of a conflation with an isomorphism onto its first object gives a
 conflation. -/

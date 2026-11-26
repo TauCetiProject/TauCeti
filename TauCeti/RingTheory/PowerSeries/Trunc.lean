@@ -16,6 +16,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Inverse
 This file collects facts used to compare power series to a finite order `m`:
 * the truncation `trunc m φ` vanishes exactly when `φ` has order at least `m`,
 * two power series have equal `m`-truncations if and only if their coefficients agree below `m`,
+  and they are equal once they agree modulo every power of `X`,
 * the `m`-truncations of `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`, integer powers `u ^ k`,
   and products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a finite truncation of the
   input,
@@ -35,6 +36,10 @@ This file collects facts used to compare power series to a finite order `m`:
 * `PowerSeries.trunc_inv_aux_eq_of_trunc_eq`, `PowerSeries.trunc_invOfUnit_eq_of_trunc_eq`,
   `PowerSeries.trunc_inv_eq_of_trunc_eq`, `PowerSeries.trunc_val_inv_eq_of_trunc_eq`: the `m`-th
   truncation of an inverse power series depends only on `trunc m`.
+* `PowerSeries.eq_of_forall_X_pow_dvd_sub`: two power series that agree modulo every `X ^ (n + 1)`
+  are equal.
+* `PowerSeries.constantCoeff_val_zpow`: the constant coefficient of `u ^ k` for a unit
+  `u : R⟦X⟧ˣ` and `k : ℤ` is the `k`-th power of the constant coefficient of `u`.
 * `PowerSeries.trunc_val_zpow_eq_of_trunc_eq` and
   `PowerSeries.trunc_val_zpow_mul_derivative_eq_of_trunc_eq`: the finite jets of `u ^ k` and
   `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depend only on `trunc m u` and `trunc (m + 1) u`.
@@ -45,6 +50,11 @@ This file collects facts used to compare power series to a finite order `m`:
   a ring homomorphism to power series.
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
   polynomial `p` of degree less than `N`.
+* `PowerSeries.mk_span_X_pow_eq_sum`: modulo `X ^ n`, a series is `∑_{k < n} cₖ Xᵏ`.
+* `PowerSeries.eval_trunc`, `PowerSeries.aeval_trunc`: the value of the truncation below `n` at
+  `x` is the partial sum `∑_{i < n} cᵢ xⁱ`.
+* `Polynomial.exists_natDegree_le_forall_coeff_eq`: every polynomial agrees up to index `m` with
+  one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
   the truncation below `n` evaluates like any polynomial with the same coefficients below `n`.
 -/
@@ -61,8 +71,8 @@ variable {R : Type*} [Semiring R]
 order at least `m`. -/
 theorem trunc_eq_zero_iff_le_order {m : ℕ} {φ : R⟦X⟧} : trunc m φ = 0 ↔ (m : ℕ∞) ≤ φ.order := by
   rw [nat_le_order_iff]
-  refine ⟨fun h i hi ↦ ?_, fun h ↦ Polynomial.ext fun i ↦ ?_⟩
-  · simpa [coeff_trunc, hi] using congrArg (Polynomial.coeff · i) h
+  refine ⟨fun h i hi ↦ ?_, fun h ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun i ↦ ?_⟩
+  · simpa [coeff_trunc, hi] using congrArg (fun p : Polynomial R ↦ p.coeff i) h
   · rw [coeff_trunc, Polynomial.coeff_zero]
     split_ifs with hi
     exacts [h i hi, rfl]
@@ -71,14 +81,15 @@ theorem trunc_eq_zero_iff_le_order {m : ℕ} {φ : R⟦X⟧} : trunc m φ = 0 �
 `n < m`. -/
 theorem coeff_eq_of_trunc_eq {n m : ℕ} {φ ψ : R⟦X⟧} (h : trunc m φ = trunc m ψ) (hn : n < m) :
     coeff n φ = coeff n ψ := by
-  have hc := congrArg (Polynomial.coeff · n) h
+  have hc := congrArg (fun p : Polynomial R ↦ p.coeff n) h
   rwa [coeff_trunc, coeff_trunc, ite_eq_left hn, ite_eq_left hn] at hc
 
 /-- Two power series have the same `m`-truncation if and only if their coefficients agree in all
 degrees `< m`. -/
 theorem trunc_eq_trunc_iff {m : ℕ} {φ ψ : R⟦X⟧} :
     trunc m φ = trunc m ψ ↔ ∀ n < m, coeff n φ = coeff n ψ := by
-  refine ⟨fun h n hn ↦ coeff_eq_of_trunc_eq h hn, fun h ↦ Polynomial.ext fun n ↦ ?_⟩
+  refine ⟨fun h n hn ↦ coeff_eq_of_trunc_eq h hn,
+    fun h ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun n ↦ ?_⟩
   rw [coeff_trunc, coeff_trunc]
   split_ifs with hn
   exacts [h n hn, rfl]
@@ -125,7 +136,7 @@ theorem coeff_sum_C_mul_X_pow {m : ℕ} (a : Fin m → R) (n : ℕ) :
       simp [hni]]
     simp
   · refine Finset.sum_eq_zero fun i _ ↦ ?_
-    have hni : n ≠ (i : ℕ) := (i.2.trans_le (not_lt.mp h)).ne'
+    have hni : n ≠ (i : ℕ) := (i.isLt.trans_le (not_lt.mp h)).ne'
     simp [hni]
 
 /-- A power series has the same `m`-truncation as its finite expansion `∑_{i < m} aᵢ Xⁱ` along its
@@ -143,6 +154,18 @@ theorem coeff_coe_mul_eq_sum (p : Polynomial R) (g : R⟦X⟧) {N : ℕ} (hN : p
   rw [← Polynomial.eval₂_C_X_eq_coe, Polynomial.eval₂_eq_sum_range' _ hN, Finset.sum_mul,
     map_sum]
   simp [mul_assoc, coeff_C_mul]
+
+/-- The constant coefficient of an integer power of a unit `u` of `R⟦X⟧` is the same power of
+the constant coefficient of `u`, as a unit of `R`. -/
+theorem constantCoeff_val_zpow (u : R⟦X⟧ˣ) (k : ℤ) :
+    constantCoeff (↑(u ^ k) : R⟦X⟧) =
+      (↑(Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) u ^ k) : R) := by
+  rw [← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
+
+/-- The value at `x` of the truncation below degree `n` is the partial sum of the series. -/
+theorem eval_trunc (n : ℕ) (f : R⟦X⟧) (x : R) :
+    (trunc n f).eval x = ∑ i ∈ Finset.range n, coeff i f * x ^ i := by
+  simp only [Polynomial.eval, eval₂_trunc_eq_sum_range, RingHom.id_apply]
 
 end Semiring
 
@@ -200,7 +223,44 @@ theorem trunc_val_zpow_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
       Units.val_pow_eq_pow_val]
     exact trunc_pow_eq_of_trunc_eq (trunc_val_inv_eq_of_trunc_eq h) (n + 1)
 
+/-- Two power series that agree modulo every power of `X` are equal. -/
+theorem eq_of_forall_X_pow_dvd_sub {a b : R⟦X⟧} (h : ∀ n : ℕ, X ^ (n + 1) ∣ a - b) : a = b := by
+  ext n
+  rw [← sub_eq_zero, ← map_sub]
+  exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
+
 end Ring
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- The value of the truncation below degree `n` at an element `x` of an `R`-algebra is the
+partial sum `∑_{i < n} cᵢ • xⁱ` of the series. -/
+theorem aeval_trunc {A : Type*} [Semiring A] [Algebra R A] (n : ℕ) (f : R⟦X⟧) (x : A) :
+    Polynomial.aeval x (trunc n f) = ∑ i ∈ Finset.range n, coeff i f • x ^ i := by
+  simp [Polynomial.aeval_def, eval₂_trunc_eq_sum_range, Algebra.smul_def]
+
+/-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
+power series only through its coefficients below `n`: any polynomial with the same coefficients
+below `n` has the same value as the truncation. -/
+theorem aeval_trunc_eq_aeval_of_pow_eq_zero {A : Type*} [Semiring A] [Algebra R A] {x : A}
+    {n : ℕ} (hx : x ^ n = 0) {f : R⟦X⟧} {p : Polynomial R}
+    (h : ∀ d < n, coeff d f = p.coeff d) :
+    Polynomial.aeval x (trunc n f) = Polynomial.aeval x p := by
+  have key (P : Polynomial R) :
+      Polynomial.aeval x P = ∑ i ∈ Finset.range n, P.coeff i • x ^ i := by
+    rw [Polynomial.aeval_eq_sum_range' (n := max n (P.natDegree + 1))
+      (lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_right _ _))]
+    refine (Finset.sum_subset (Finset.range_mono (le_max_left _ _)) fun i _ hi => ?_).symm
+    rw [Finset.mem_range, not_lt] at hi
+    rw [pow_eq_zero_of_le hi hx, smul_zero]
+  rw [key, key]
+  exact Finset.sum_congr rfl fun d hd => by
+    rw [Finset.mem_range] at hd
+    simp [coeff_trunc, hd, h d hd]
+
+end CommSemiring
 
 section CommRing
 
@@ -216,15 +276,14 @@ theorem trunc_val_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ
     (trunc_val_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
     (by rw [trunc_derivative, trunc_derivative, h])
 
-/-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
-power series only through its coefficients below `n`: any polynomial with the same coefficients
-below `n` has the same value as the truncation. -/
-theorem aeval_trunc_eq_aeval_of_pow_eq_zero {A : Type*} [Ring A] [Algebra R A] {x : A} {n : ℕ}
-    (hx : x ^ n = 0) {f : R⟦X⟧} {p : Polynomial R} (h : ∀ d < n, coeff d f = p.coeff d) :
-    Polynomial.aeval x (trunc n f) = Polynomial.aeval x p := by
-  obtain ⟨q, hq⟩ : (Polynomial.X : Polynomial R) ^ n ∣ trunc n f - p :=
-    Polynomial.X_pow_dvd_iff.2 fun d hd => by simp [coeff_trunc, hd, h d hd]
-  rw [← sub_eq_zero, ← map_sub, hq, map_mul, map_pow, Polynomial.aeval_X, hx, zero_mul]
+/-- Modulo `X ^ n`, a power series is the sum of its first `n` monomials. -/
+theorem mk_span_X_pow_eq_sum (n : ℕ) (p : R⟦X⟧) :
+    Ideal.Quotient.mk (Ideal.span {(X ^ n : R⟦X⟧)}) p =
+      ∑ k : Fin n, coeff k p • Ideal.Quotient.mk _ (X ^ (k : ℕ)) := by
+  simp only [← Ideal.Quotient.mkₐ_eq_mk R, ← map_smul, ← map_sum]
+  simp only [Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, Ideal.mem_span_singleton, X_pow_dvd_iff]
+  intro m hm
+  simp [Fin.sum_univ_eq_sum_range (fun k ↦ coeff k p • (X ^ k : R⟦X⟧)), coeff_X_pow, hm]
 
 end CommRing
 
@@ -275,3 +334,14 @@ theorem trunc_map_sum_mul_eq (Φ : S →+* K⟦X⟧) {x : A}
 end Expansion
 
 end PowerSeries
+
+namespace Polynomial
+
+/-- Every polynomial agrees up to index `m` with one of degree at most `m`. -/
+theorem exists_natDegree_le_forall_coeff_eq {R : Type*} [Semiring R] (B : R[X]) (m : ℕ) :
+    ∃ B' : R[X], B'.natDegree ≤ m ∧ ∀ i ≤ m, B.coeff i = B'.coeff i :=
+  ⟨PowerSeries.trunc (m + 1) (B : PowerSeries R),
+    Nat.lt_succ_iff.1 (PowerSeries.natDegree_trunc_lt _ _), fun i hi ↦ by
+      simp [PowerSeries.coeff_trunc, Nat.lt_succ_of_le hi]⟩
+
+end Polynomial

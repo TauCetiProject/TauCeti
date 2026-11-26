@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 -- The equal-length certificate computes the explicit classical root enumeration and its
 -- signed-pair indexing rather than introducing a second invariant form.
-import all TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+import all TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 import all TauCeti.Data.Fin.DistinctPairs
 
 /-!
@@ -66,7 +66,7 @@ theorem d4Tripled_raisingPath_iff_mem_posRootCone (a b : Fin 24) :
   · intro h
     induction h with
     | refl => simp
-    | @tail b c h hbc ih =>
+    | @tail b c _ hbc ih =>
       obtain ⟨i, hi, rfl⟩ := (d4TripledRaisingStep_iff _ _).mp hbc
       have heq : μ (d4TripledReflection i b) - μ a =
           (μ b - μ a) + (P).root (typeDSimpleIndex 4 le_rfl i) := by

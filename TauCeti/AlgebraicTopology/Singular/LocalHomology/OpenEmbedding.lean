@@ -37,8 +37,17 @@ restrict to open subsets and are compared along homeomorphisms.
 ## Main results
 
 * `TauCeti.isIso_localHomologyMap`: excision along an open embedding.
+* `TauCeti.isZero_localHomology_iff_of_isOpenEmbedding`: excision along an open embedding
+  preserves and reflects vanishing of local homology.
+* `TauCeti.isIso_localHomologyMap_singleton_of_isOpenEmbedding_comp`: a map whose composite with
+  an open embedding is an open embedding, and which separates the image of a point from the
+  other points, induces an isomorphism of local homology at that point.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap`: the map induced by an
   open embedding undoes the inverse of this isomorphism.
+* `TauCeti.localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_comp`: the same for a map
+  composed with a local section lifting an open embedding.
+* `TauCeti.localHomologyMap_comp_localHomologyRestriction_singleton`: these isomorphisms are
+  natural with respect to restriction to a point.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding_id`,
   `TauCeti.localHomologyIsoOfIsOpenEmbedding_trans`: these isomorphisms are functorial.
 * `TauCeti.localHomologyTransport_comp_localHomologyIsoOfIsOpenEmbedding_hom`: open embeddings
@@ -93,6 +102,15 @@ theorem isIso_localHomologyMap (hj : IsOpenEmbedding j) {S : Set M} {T : Set N}
       rw [TopPair.ofSubsetMap_fst]
       exact subset_rfl
 
+/-- **Vanishing of local homology is invariant under excision along an open embedding.** Under
+the hypotheses of `TauCeti.isIso_localHomologyMap`, `Hₖ(M, M ∖ S)` vanishes if and only if
+`Hₖ(N, N ∖ T)` does. -/
+theorem isZero_localHomology_iff_of_isOpenEmbedding (hj : IsOpenEmbedding j) {S : Set M}
+    {T : Set N} (h : j ⁻¹' T = S) (hT : IsClosed T) (hTj : T ⊆ range j) (k : ℕ) :
+    IsZero (localHomology R S k) ↔ IsZero (localHomology R T k) :=
+  have := isIso_localHomologyMap R j hj h hT hTj k
+  (asIso (localHomologyMap R j h.subset k)).isZero_iff
+
 /-- An open embedding `j : M → N` into a `T₁` space identifies the local homology of `M` at `x`
 with the local homology of `N` at `j x`. -/
 def localHomologyIsoOfIsOpenEmbedding [T1Space N] {j : M → N} (hj : IsOpenEmbedding j) (x : M)
@@ -119,6 +137,34 @@ lemma localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap [T1Space N] {j
       𝟙 _ := by
   rw [Iso.inv_comp_eq, Category.comp_id, localHomologyIsoOfIsOpenEmbedding_hom]
 
+/-- If `j : M → N` is an open embedding into a `T₁` space and `s : M → P` lifts `j` through
+`π : P → N`, that is `π (s z) = j z` for all `z`, then `s_* ≫ π_*` undoes the inverse of
+`localHomologyIsoOfIsOpenEmbedding`. -/
+@[reassoc, elementwise]
+lemma localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_comp [T1Space N] {j : M → N}
+    (hj : IsOpenEmbedding j) (x : M) (π : C(P, N)) (s : C(M, P)) (hπs : ∀ z, π (s z) = j z)
+    {T : Set P} (hs : s ⁻¹' T ⊆ {x}) (hπ : π ⁻¹' {j x} ⊆ T) (k : ℕ) :
+    (localHomologyIsoOfIsOpenEmbedding R hj x k).inv ≫ localHomologyMap R s hs k ≫
+        localHomologyMap R π hπ k =
+      𝟙 _ := by
+  rw [localHomologyMap_comp,
+    localHomologyMap_congr R (j₂ := ⟨j, hj.continuous⟩) (ContinuousMap.ext hπs) _ k,
+    localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap]
+
+/-- **Naturality of the local isomorphisms of an open embedding.** For `j ⁻¹' T ⊆ S` and a point
+`x` with `j x ∈ T`, the map `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j` followed by restriction
+to `j x` is restriction to `x` followed by `localHomologyIsoOfIsOpenEmbedding`. -/
+@[reassoc, elementwise nosimp]
+lemma localHomologyMap_comp_localHomologyRestriction_singleton [T1Space N] {j : M → N}
+    (hj : IsOpenEmbedding j) {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) {x : M} (hxT : j x ∈ T)
+    (k : ℕ) :
+    localHomologyMap R ⟨j, hj.continuous⟩ h k ≫
+        localHomologyRestriction R (singleton_subset_iff.2 hxT) k =
+      localHomologyRestriction R (singleton_subset_iff.2 (h (mem_preimage.2 hxT))) k ≫
+        (localHomologyIsoOfIsOpenEmbedding R hj x k).hom := by
+  rw [localHomologyMap_comp_localHomologyRestriction, localHomologyIsoOfIsOpenEmbedding_hom,
+    localHomologyRestriction_comp_localHomologyMap]
+
 /-- The isomorphism of local homology induced by the identity is the identity. -/
 @[simp]
 lemma localHomologyIsoOfIsOpenEmbedding_id [T1Space M] (x : M) (k : ℕ) :
@@ -137,6 +183,28 @@ lemma localHomologyIsoOfIsOpenEmbedding_trans [T1Space N] [T1Space P] {j : M →
   ext : 1
   simp only [Iso.trans_hom, localHomologyIsoOfIsOpenEmbedding_hom, localHomologyMap_comp]
   rfl
+
+/-- **A map that is an open embedding near a point induces an isomorphism of local homology.**
+Let `j : M → N` be an open embedding and `g : N → P` a map such that `g ∘ j` is an open embedding
+and `j x` is the only point of `N` sent to `g (j x)`. Then `g` induces an isomorphism
+`Hₖ(N, N ∖ {j x}) ≅ Hₖ(P, P ∖ {g (j x)})`. Outside the image of `j`, `g` is only required to
+miss `g (j x)`; for the face map of a manifold with corners, `j` is the inclusion of the interior
+of the product of the two factors. -/
+theorem isIso_localHomologyMap_singleton_of_isOpenEmbedding_comp [T1Space N] [T1Space P]
+    (hj : IsOpenEmbedding j) (g : C(N, P)) (hgj : IsOpenEmbedding (g ∘ j)) (x : M)
+    (h : g ⁻¹' {g (j x)} ⊆ {j x}) (k : ℕ) : IsIso (localHomologyMap R g h k) := by
+  have h₁ : j ⁻¹' {j x} = {x} := by rw [← image_singleton, hj.injective.preimage_image]
+  have h₂ : (g.comp j) ⁻¹' {g (j x)} = {x} := by
+    rw [ContinuousMap.coe_comp, ← Function.comp_apply (f := g) (g := j) (x := x),
+      ← image_singleton, hgj.injective.preimage_image]
+  have := isIso_localHomologyMap R j hj h₁ isClosed_singleton
+    (singleton_subset_iff.2 (mem_range_self x)) k
+  -- The composite with the isomorphism induced by `j` is the isomorphism induced by `g ∘ j`.
+  have : IsIso (localHomologyMap R j h₁.subset k ≫ localHomologyMap R g h k) := by
+    rw [localHomologyMap_comp]
+    exact isIso_localHomologyMap R (g.comp j) hgj h₂ isClosed_singleton
+      (singleton_subset_iff.2 (mem_range_self x)) k
+  exact IsIso.of_isIso_comp_left (localHomologyMap R j h₁.subset k) _
 
 end OpenEmbedding
 

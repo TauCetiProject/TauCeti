@@ -66,13 +66,17 @@ nilpotently.
   nilpotently, with divided powers of its integer multiples preserving the lattice.
 * `TauCeti.DynkinType.kostantForm_chevalleySystem_smul_mem`: the all-root Kostant
   form preserves the lattice.
-* `TauCeti.DynkinType.kostantRootSubgroupParam_chevalleySystem`: comparison with the
-  generic Kostant root subgroup for the all-root system.
+* `TauCeti.DynkinType.kostantRootSubgroupParam_chevalleySystem` and
+  `TauCeti.DynkinType.chevalleyRootSubgroup_eq_kostantRootSubgroupPoints`: comparisons with the
+  generic Kostant root subgroup and its points for the all-root system.
 * `TauCeti.DynkinType.chevalleyRootSubgroup_simpleIndex` and
   `TauCeti.DynkinType.chevalleyRootSubgroup_reflectionPerm_simpleIndex`: at `±αᵢ` these are the
   simple root subgroups of the Kostant data.
 * `TauCeti.DynkinType.mapScalarExtensionAutomorphisms_chevalleyRootSubgroup`: naturality in the
   ring of points.
+* `TauCeti.DynkinType.map_chevalleyToralRootSubgroupPoints` and
+  `TauCeti.DynkinType.map_iterateFrobenius_chevalleyToralRootSubgroupPoints`: matrix naturality
+  under ring homomorphisms and its Frobenius specialization.
 * `TauCeti.DynkinType.kostantWeylGL_conj_chevalleyRootSubgroup`: the signed conjugation identity
   `nᵢ x_γ(u) nᵢ⁻¹ = x_{sᵢ γ}(ε u)`.
 * `TauCeti.DynkinType.map_range_chevalleyRootSubgroup_conj_kostantWeylGL` and
@@ -204,6 +208,16 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
 
+/-- A root subgroup is trivial when its root vector acts as zero in the representation. -/
+theorem chevalleyRootSubgroup_eq_one_of_apply_eq_zero (γ : Fin t.numRoots)
+    (hγ : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ)) = 0)
+    (A : CommAlgCat ℤ) (u : Multiplicative A) :
+    chevalleyRootSubgroup ρ M hM hnil γ A u = 1 := by
+  apply Units.ext
+  rw [chevalleyRootSubgroup_val,
+    baseChangeExp_of_pow_eq_zero _ M _ (k := 1) (by simpa only [pow_one] using hγ)]
+  simp
+
 /-- The all-root Kostant parameter is the Chevalley root subgroup on any Kostant-stable lattice
 with nilpotent simple root generators; stability under the all-root form is automatic
 (`TauCeti.DynkinType.kostantForm_chevalleySystem_smul_mem`). -/
@@ -215,6 +229,18 @@ theorem kostantRootSubgroupParam_chevalleySystem
       chevalleyRootSubgroup ρ M hM hnil γ A := by
   refine MonoidHom.ext fun u => Units.ext <| LinearMap.ext fun z => ?_
   rw [kostantRootSubgroupParam_val_apply, chevalleyRootSubgroup_val]
+
+/-- The Chevalley root subgroup at a parameter agrees with the points of the all-root
+Kostant subgroup on the same lattice. -/
+theorem chevalleyRootSubgroup_eq_kostantRootSubgroupPoints
+    (i : Fin t.numRoots) (A : CommAlgCat ℤ) (u : Multiplicative A) :
+    chevalleyRootSubgroup ρ M hM hnil i A u =
+      kostantRootSubgroupPoints (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) i
+        (isNilpotent_apply_ι_chevalleySystem ρ hnil i)
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) := by
+  rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil,
+    kostantRootSubgroupParam_apply]
 
 /-- Root-subgroup points commute when their Chevalley root vectors have zero bracket. -/
 theorem commute_chevalleyRootSubgroup_of_lie_eq_zero {α β : Fin t.numRoots}
@@ -244,8 +270,6 @@ theorem chevalleyRootSubgroup_mul_of_lie_eq {α β γ : Fin t.numRoots} {c : ℤ
   apply Units.ext
   simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
   exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hαβ hαγ hβγ
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
     (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil α)
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β)
@@ -324,8 +348,7 @@ theorem kostantWeylGL_conj_chevalleyRootSubgroup (i : Fin t.rank) (γ : Fin t.nu
       ((t.lieBasis ht).isSl2Triple_rootGenerator i)
       (isNilpotent_ad_rootGenerator_inl i).exists_pow_apply_eq_zero
       (isNilpotent_ad_rootGenerator_inr i).exists_pow_apply_eq_zero
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)]
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ)]
   have hw : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (weylAut ((t.lieBasis ht).isSl2Triple_rootGenerator i)
         (isNilpotent_ad_rootGenerator_inl i).exists_pow_apply_eq_zero
@@ -463,6 +486,43 @@ theorem coe_chevalleyToralRootSubgroupPoints
       Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
         (chevalleyRootSubgroup ρ M hM hnil γ (CommAlgCat.of ℤ A) u) :=
   (rfl)
+
+/-- The all-root toral points, viewed as matrices, are natural in the value ring. -/
+theorem map_chevalleyToralRootSubgroupPoints
+    {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (χ : Fin n → Fin t.rank → ℤ)
+    {A B : Type*} [CommRing A] [CommRing B] (φ : A →+* B)
+    (γ : Fin t.numRoots) (u : Multiplicative A) :
+    Matrix.GeneralLinearGroup.map φ
+        (chevalleyToralRootSubgroupPoints ρ M hM hnil b χ γ A u :
+          Matrix.GeneralLinearGroup (Fin n) A) =
+      (chevalleyToralRootSubgroupPoints ρ M hM hnil b χ γ B
+        (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) :
+          Matrix.GeneralLinearGroup (Fin n) B) := by
+  rw [coe_chevalleyToralRootSubgroupPoints, coe_chevalleyToralRootSubgroupPoints,
+    ← kostantRootSubgroupParam_chevalleySystem, ← kostantRootSubgroupParam_chevalleySystem,
+    basisMatrix_kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+      (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil) b A γ u,
+    basisMatrix_kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+      (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil) b B γ _,
+    map_kostantRootSubgroupMatrix, AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply,
+    RingHom.toIntAlgHom_apply]
+
+/-- Entrywise Frobenius raises every root parameter to its `p ^ k`-th power on any
+Kostant-stable lattice with nilpotent simple root generators. -/
+theorem map_iterateFrobenius_chevalleyToralRootSubgroupPoints
+    {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (χ : Fin n → Fin t.rank → ℤ)
+    (p k : ℕ) (A : Type*) [CommRing A] [ExpChar A p]
+    (γ : Fin t.numRoots) (u : Multiplicative A) :
+    Matrix.GeneralLinearGroup.map (iterateFrobenius A p k)
+        (chevalleyToralRootSubgroupPoints ρ M hM hnil b χ γ A u :
+          Matrix.GeneralLinearGroup (Fin n) A) =
+      (chevalleyToralRootSubgroupPoints ρ M hM hnil b χ γ A
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ p ^ k)) :
+          Matrix.GeneralLinearGroup (Fin n) A) := by
+  simpa only [iterateFrobenius_def] using
+    map_chevalleyToralRootSubgroupPoints ρ M hM hnil b χ (iterateFrobenius A p k) γ u
 
 /-- At a simple root the all-root toral homomorphism is the numbered positive root
 homomorphism of the Kostant data. -/

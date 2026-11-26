@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.CategoryTheory.Abelian.Ext
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.CategoryTheory.Limits.Preserves.Opposites
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
-import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
+import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.CategoryTheory.Linear.Yoneda
 
 /-!
 # Morphisms from a chain complex into an object
@@ -31,10 +33,10 @@ which is exact when every term of `X` is projective: it takes short exact sequen
 coefficients to short exact sequences of cochain complexes. For singular chains this gives the long
 exact cohomology sequence of a short exact sequence of coefficients.
 
-It also sends coproducts of chain complexes to products of cochain complexes, with smallness
-measured in the universe of morphisms of the coefficient category. This uses Mathlib's
-`whiskering_linearYoneda` comparison with the Yoneda embedding (Kim Morrison) and the transfer
-of limit preservation across opposite categories (Markus Himmel).
+It also sends colimits of chain complexes, in particular coproducts, to limits of cochain
+complexes. This uses the preservation of limits by `Hom(-, Y)`
+(`CategoryTheory.preservesLimits_linearYoneda_obj`) and Mathlib's transfer of limit preservation
+across opposite categories (Markus Himmel).
 
 The functor and its action on homotopies require only a preadditive `k`-linear category.
 Preservation of degreewise split short exact sequences additionally uses kernels,
@@ -56,12 +58,15 @@ singular cohomology is obtained from the one of chain complexes.
   `TauCeti.ChainComplex.mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f` does the same for a
   degreewise epimorphism `X₂ ⊞ X₃ ⟶ X₄` and the map `Hom(X₄, Y) ⟶ Hom(X₂, Y) ⊞ Hom(X₃, Y)`.
 * `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
-* `HomotopyEquiv.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy
-  equivalence to a cochain homotopy equivalence in the opposite direction.
+* `HomotopyEquiv.linearYonedaFunctorMap`,
+  `TauCeti.ChainComplex.homotopyEquivalences_linearYonedaFunctor_map`: `Hom(-, Y)` takes a chain
+  homotopy equivalence to a cochain homotopy equivalence in the opposite direction.
 * `ChainComplex.linearYonedaObjFunctor`: the functor `Y ↦ Hom(X, Y)` of the coefficients, with
   `ChainComplex.linearYonedaObjFunctorMap` the natural transformation induced by a chain map.
 * `ChainComplex.shortExact_map_linearYonedaObjFunctor`: for `X` with projective terms, `Hom(X, -)`
   preserves short exact sequences.
+* `TauCeti.ChainComplex.exists_d_comp_eq_of_δ_eq`: cochain representatives of the connecting
+  morphism of a coefficient sequence, for `X` with projective terms.
 * `TauCeti.ChainComplex.linearYonedaObjSingle₀Iso`: `Hom(-, Y)` sends the chain complex `X[0]`
   concentrated in degree zero to the cochain complex `Hom(X, Y)[0]`. It follows the unmerged Tau
   Ceti pull request https://github.com/TauCetiProject/TauCeti/pull/20882.
@@ -74,7 +79,7 @@ public section
 
 open CategoryTheory Limits Opposite
 
-universe w v u
+universe v u
 
 namespace TauCeti.ChainComplex
 
@@ -100,32 +105,27 @@ instance : (linearYonedaFunctor (α := α) k Y).Additive :=
   inferInstanceAs ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
     HomologicalComplex.unopFunctor _ _).Additive
 
-/-- The contravariant chain-to-cochain functor `Hom(-, Y)` preserves products in the opposite
-category of chain complexes, equivalently it sends coproducts of chains to products of cochains.
-The index type is small in the universe of the morphisms of `C`. -/
-instance linearYonedaFunctor_preservesLimitsOfShape_discrete {ι : Type w} [Small.{v} ι]
-    [HasColimitsOfShape (Discrete ι) C] :
-    PreservesLimitsOfShape (Discrete ι) (linearYonedaFunctor (α := α) k Y) := by
-  let _ : PreservesLimitsOfShape (Discrete ι)ᵒᵖ ((linearYoneda k C).obj Y) := by
-    have hforget : (linearYoneda k C).obj Y ⋙ forget (ModuleCat.{v} k) = yoneda.obj Y :=
-      Functor.congr_obj (whiskering_linearYoneda k C) Y
-    let _ : PreservesLimitsOfShape (Discrete (Shrink.{v} ι))ᵒᵖ
-        ((linearYoneda k C).obj Y ⋙ forget (ModuleCat.{v} k)) :=
-      hforget ▸ inferInstance
-    -- The forgetful functor reflects limits of small shape. Shrinking the index type makes
-    -- that reflection available without identifying the index and morphism universes.
-    let _ : PreservesLimitsOfShape (Discrete (Shrink.{v} ι))ᵒᵖ ((linearYoneda k C).obj Y) :=
-      preservesLimitsOfShape_of_reflects_of_preserves _ (forget (ModuleCat.{v} k))
-    exact preservesLimitsOfShape_of_equiv
-      (Discrete.equivalence (equivShrink.{v} ι)).symm.op _
-  let _ : PreservesColimitsOfShape (Discrete ι) ((linearYoneda k C).obj Y).rightOp :=
-    preservesColimitsOfShape_rightOp _ _
-  let _ : PreservesLimitsOfShape (Discrete ι)
+/-- The contravariant chain-to-cochain functor `Hom(-, Y)` preserves limits of shape `J` in the
+opposite category of chain complexes, equivalently it sends colimits of shape `Jᵒᵖ` of chains to
+limits of cochains. -/
+instance linearYonedaFunctor_preservesLimitsOfShape {J : Type*} [Category* J]
+    [HasColimitsOfShape Jᵒᵖ C] :
+    PreservesLimitsOfShape J (linearYonedaFunctor (α := α) k Y) := by
+  let _ : PreservesLimitsOfShape J
       (((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex (ComplexShape.down α)).op :=
     preservesLimitsOfShape_op _ _
-  exact inferInstanceAs (PreservesLimitsOfShape (Discrete ι)
+  exact inferInstanceAs (PreservesLimitsOfShape J
     ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
       HomologicalComplex.unopFunctor _ _))
+
+/-- The contravariant chain-to-cochain functor `Hom(-, Y)` preserves products in the opposite
+category of chain complexes, equivalently it sends coproducts of chains to products of cochains. -/
+instance linearYonedaFunctor_preservesLimitsOfShape_discrete {ι : Type*}
+    [HasColimitsOfShape (Discrete ι) C] :
+    PreservesLimitsOfShape (Discrete ι) (linearYonedaFunctor (α := α) k Y) :=
+  have : HasColimitsOfShape (Discrete ι)ᵒᵖ C :=
+    hasColimitsOfShape_of_equivalence (Discrete.opposite ι).symm
+  inferInstance
 
 /-- `Hom(-, Y)` takes a chain homotopy between two chain maps `φ, ψ : X ⟶ X'` to a cochain
 homotopy between the two maps `Hom(X', Y) ⟶ Hom(X, Y)` obtained by precomposition. -/
@@ -164,6 +164,14 @@ lemma _root_.HomotopyEquiv.linearYonedaFunctorMap_inv
     {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
     (h.linearYonedaFunctorMap k Y).inv =
       (linearYonedaFunctor k Y).map h.inv.op := (rfl)
+
+/-- `Hom(-, Y)` takes a chain homotopy equivalence `φ : X ⟶ X'` to a cochain homotopy equivalence
+`Hom(X', Y) ⟶ Hom(X, Y)`. -/
+lemma homotopyEquivalences_linearYonedaFunctor_map {X X' : ChainComplex C α} {φ : X ⟶ X'}
+    (hφ : HomologicalComplex.homotopyEquivalences _ _ φ) :
+    HomologicalComplex.homotopyEquivalences _ _ ((linearYonedaFunctor k Y).map φ.op) := by
+  obtain ⟨e, rfl⟩ := hφ
+  exact ⟨e.linearYonedaFunctorMap k Y, e.linearYonedaFunctorMap_hom k Y⟩
 
 /-- `Hom(-, Y)` takes a chain map that is an epimorphism in every degree to a monomorphism. -/
 lemma mono_linearYonedaFunctor_map_op_of_epi_f {X X' : ChainComplex C α} (φ : X ⟶ X')
@@ -274,6 +282,16 @@ lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
   -- The coefficient maps are postcomposition by definition (`linearYonedaObjMap_f_hom_apply`).
   ext i (a : X.X i ⟶ Y)
   exact (Category.assoc a g h).symm
+
+/-- Coefficient maps on cochain complexes are linear in the coefficient morphism: the coefficient
+map of `r • g` is `r` times the coefficient map of `g`. -/
+@[simp]
+lemma _root_.ChainComplex.linearYonedaObjMap_smul {S : Type*} [CommRing S] [Linear S C]
+    (X : ChainComplex C α) {Y Z : C} (r : S) (g : Y ⟶ Z) :
+    X.linearYonedaObjMap S (r • g) = r • X.linearYonedaObjMap S g := by
+  -- The coefficient maps are postcomposition by definition (`linearYonedaObjMap_f_hom_apply`).
+  ext i (a : X.X i ⟶ Y)
+  exact Linear.comp_smul _ _ _ a r g
 
 /-- Coefficient maps commute with the maps induced by chain maps: postcomposing with `g : Y ⟶ Z`
 and precomposing with `β : X ⟶ X'` can be done in either order. -/
@@ -435,6 +453,35 @@ lemma _root_.ChainComplex.shortExact_map_linearYonedaObjFunctor (X : ChainComple
     exact ⟨Projective.factorThru a S.g, Projective.factorThru_comp a S.g⟩
 
 end CoefficientSequence
+
+section Lift
+
+variable {X : _root_.ChainComplex C α} [∀ i, Projective (X.X i)] {S : ShortComplex C}
+  (hS : S.ShortExact)
+
+/-- **Cochain representatives of the connecting morphism of a coefficient sequence.** Let
+`0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` be a short exact sequence of coefficients and `X` a chain complex with
+projective terms. If the cocycle `z` of `Hom(X, M₁)` in degree `p'` represents the image of
+`x ∈ Hᵖ(Hom(X, M₃))` under the connecting morphism, where `p + 1 = p'`, then `x` is represented by
+a cocycle `a` which lifts to a cochain `φ : X_p ⟶ M₂` whose coboundary is `z` followed by
+`M₁ ⟶ M₂`, on the nose. -/
+lemma exists_d_comp_eq_of_δ_eq (p p' : α) (hp : p + 1 = p')
+    (x : (X.linearYonedaObj k S.X₃).homology p) (z : (X.linearYonedaObj k S.X₁).cycles p')
+    (hz : (X.linearYonedaObj k S.X₁).homologyπ p' z =
+      (X.shortExact_map_linearYonedaObjFunctor k hS).δ p p' hp x) :
+    ∃ (φ : X.X p ⟶ S.X₂) (a : (X.linearYonedaObj k S.X₃).cycles p),
+      X.d p' p ≫ φ = (X.linearYonedaObj k S.X₁).iCycles p' z ≫ S.f ∧
+        φ ≫ S.g = (X.linearYonedaObj k S.X₃).iCycles p a ∧
+          (X.linearYonedaObj k S.X₃).homologyπ p a = x := by
+  obtain ⟨φ, a, hφ, ha, hx⟩ :=
+    (X.shortExact_map_linearYonedaObjFunctor k hS).moduleCat_exists_d_eq_of_δ_eq p p' hp x z
+      hz.symm
+  -- The maps of the coefficient sequence of cochain complexes are postcomposition.
+  refine ⟨φ, a, ?_, ?_, hx⟩
+  · exact hφ.trans (X.linearYonedaObjMap_f_hom_apply k S.f p' _)
+  · exact (X.linearYonedaObjMap_f_hom_apply k S.g p φ).symm.trans ha
+
+end Lift
 
 end Abelian
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.MaximalSpectrum
+public import TauCeti.RingTheory.Spectrum.Maximal.Topology
 
 /-!
 # Affinoid subdomains
@@ -26,8 +27,9 @@ The universal property alone determines the points and the infinitesimal neighbo
   bijection onto `U`. In particular the represented set is determined by `φ`.
 
 The representing map is unique up to unique isomorphism, the identity represents `Sp A`, the zero
-quotient represents the empty set, and representing maps compose: if `φ` represents `U` and
-`φ' : B → C` represents `V ⊆ Sp B`, then `φ' ∘ φ` represents the image of `V` in `Sp A`.
+quotient represents the empty set, for every idempotent `e ∈ A` the quotient `A ⧸ (1 - e)`
+represents the clopen Zariski subset `D(e)`, and representing maps compose: if `φ` represents `U`
+and `φ' : B → C` represents `V ⊆ Sp B`, then `φ' ∘ φ` represents the image of `V` in `Sp A`.
 
 ## Main definitions
 
@@ -46,6 +48,8 @@ quotient represents the empty set, and representing maps compose: if `φ` repres
   the extension of the point of `U` below it.
 * `TauCeti.IsAffinoidSubdomainMap.range_maximalSpectrumComap`: the image of `Sp B → Sp A` is `U`.
 * `TauCeti.IsAffinoidSubdomainMap.maximalSpectrumComap_injective`: `Sp B → Sp A` is injective.
+* `TauCeti.IsAffinoidSubdomainMap.quotient_one_sub_of_isIdempotentElem`: for an idempotent `e`,
+  `A ⧸ (1 - e)` represents `D(e)`.
 * `TauCeti.IsAffinoidSubdomainMap.comp`: transitivity of affinoid subdomains.
 
 ## References
@@ -159,7 +163,7 @@ noncomputable def quotientPowAlgEquiv {x : MaximalSpectrum A} (hx : x ∈ U) (n 
     (A ⧸ x.asIdeal ^ n) ≃ₐ[K] B ⧸ (x.asIdeal ^ n).map φ :=
   -- The only maximal ideal containing a power of `𝔪ₓ` is `𝔪ₓ`; no maximal ideal contains `𝔪ₓ⁰`.
   h.quotientAlgEquiv hA fun y hy ↦ by
-    rcases Nat.eq_zero_or_pos n with rfl | hn
+    rcases Nat.eq_zero_or_pos n with rfl | _
     · exact absurd (by simpa using hy) y.isMaximal.ne_top
     · rwa [← MaximalSpectrum.ext (x.isMaximal.eq_of_le y.isMaximal.ne_top
         (Ideal.IsPrime.le_of_pow_le hy))]
@@ -226,6 +230,13 @@ theorem maximalSpectrumEquiv_symm_apply_asIdeal (x : U) :
   obtain ⟨y, rfl⟩ := (h.maximalSpectrumEquiv hA).surjective x
   rw [Equiv.symm_apply_apply, coe_maximalSpectrumEquiv, h.map_maximalSpectrumComap_asIdeal hA]
 
+include h hA in
+/-- **An affinoid subdomain is nonempty exactly when its representing algebra is nonzero**, since
+`Sp B ≃ U` and a ring has a maximal ideal exactly when it is nontrivial. -/
+theorem nonempty_iff_nontrivial : U.Nonempty ↔ Nontrivial B := by
+  rw [← Set.nonempty_coe_sort, ← (h.maximalSpectrumEquiv hA).nonempty_congr]
+  exact ⟨fun ⟨y⟩ ↦ y.toPrimeSpectrum.nontrivial, fun _ ↦ inferInstance⟩
+
 end Points
 
 section Uniqueness
@@ -275,6 +286,40 @@ theorem empty (hA : IsAffinoidAlgebra K A) :
     exact ⟨Ideal.Quotient.liftₐ _ ψ fun _ _ ↦ Subsingleton.elim _ _,
       AlgHom.ext fun _ ↦ Subsingleton.elim _ _,
       fun _ _ ↦ AlgHom.ext fun _ ↦ Subsingleton.elim _ _⟩
+
+/-- For an idempotent `e ∈ A`, the quotient map `A →ₐ[K] A ⧸ Ideal.span {1 - e}` represents the
+clopen Zariski subset `MaximalSpectrum.basicOpen e` as an affinoid subdomain. -/
+theorem quotient_one_sub_of_isIdempotentElem
+    (hA : IsAffinoidAlgebra K A) {e : A} (he : IsIdempotentElem e) :
+    IsAffinoidSubdomainMap (Ideal.Quotient.mkₐ K (Ideal.span {1 - e}))
+      (MaximalSpectrum.basicOpen e : Set (MaximalSpectrum A)) where
+  isAffinoidAlgebra := hA.quotient _
+  range_maximalSpectrumComap_subset := by
+    rintro _ ⟨y, rfl⟩
+    rw [SetLike.mem_coe, MaximalSpectrum.mem_basicOpen,
+      IsAffinoidAlgebra.maximalSpectrumComap_asIdeal]
+    intro he_mem
+    have h1_sub : 1 - e ∈ Ideal.comap (Ideal.Quotient.mkₐ K (Ideal.span {1 - e})) y.asIdeal := by
+      rw [Ideal.mem_comap, Ideal.Quotient.mkₐ_eq_mk,
+        Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))]
+      exact y.asIdeal.zero_mem
+    exact ((hA.quotient _).comap_isMaximal _ y.asIdeal).ne_top
+      ((Ideal.eq_top_iff_one _).mpr (by simpa only [add_sub_cancel] using add_mem he_mem h1_sub))
+  existsUnique_algHom {C} _ _ hC ψ hψ := by
+    have hunit : IsUnit (ψ e) := by
+      by_contra hne
+      obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ (mt Ideal.span_singleton_eq_top.mp hne)
+      have hx : hC.maximalSpectrumComap ψ ⟨m, hm⟩ ∈ MaximalSpectrum.basicOpen e :=
+        hψ ⟨⟨m, hm⟩, rfl⟩
+      rw [MaximalSpectrum.mem_basicOpen, IsAffinoidAlgebra.maximalSpectrumComap_asIdeal,
+        Ideal.mem_comap] at hx
+      exact hx (hle (Ideal.subset_span (Set.mem_singleton _)))
+    have hzero : ψ (1 - e) = 0 := hunit.mul_right_eq_zero.mp <| by
+      rw [← map_mul, mul_sub, mul_one, he.eq, sub_self, map_zero]
+    have hker : ∀ a ∈ Ideal.span ({1 - e} : Set A), ψ a = 0 := by
+      rintro a ha; obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton.mp ha; simp [hzero]
+    exact ⟨Ideal.Quotient.liftₐ _ ψ hker, Ideal.Quotient.liftₐ_comp _ ψ hker,
+      fun χ hχ ↦ Ideal.Quotient.algHom_ext K (hχ.trans (Ideal.Quotient.liftₐ_comp _ ψ hker).symm)⟩
 
 /-- **Transitivity of affinoid subdomains.** If `φ : A → B` represents `U ⊆ Sp A` and
 `φ' : B → C` represents `V ⊆ Sp B`, then `φ' ∘ φ` represents the image of `V` in `Sp A`. -/

@@ -31,7 +31,7 @@ algebras. In particular, this is an identification of the chosen coordinate Hopf
 only an abstract algebra isomorphism.
 
 This is the general-linear compatibility needed by the base-change part of the explicit
-Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
+Chevalley--Demazure construction.
 
 ## Main declarations
 
@@ -41,6 +41,8 @@ Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
   commutative-Hopf-algebra form, when the extension ring's universe contains the base ring's.
 * `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_determinantGroupLike`: scalar
   extension carries the generic determinant to the generic determinant.
+* `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_genericMatrix`: scalar
+  extension carries each generic matrix entry to the corresponding entry.
 * `TauCeti.GeneralLinear.finiteTypeCoordinateHopfAlgebraBaseChangeIso`: the corresponding
   isomorphism of finite-type commutative Hopf algebras.
 * `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X`: the value on a generic matrix
@@ -50,6 +52,8 @@ Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
   one step.
 * `TauCeti.GeneralLinear.pointToGeneralLinear_baseChangeMap`: scalar extension of a coordinate
   morphism preserves the matrix read from a point.
+* `TauCeti.GeneralLinear.pointToGeneralLinear_pointsBaseChange`: base change of a base-valued
+  point maps its matrix along `R → K`.
 
 ## References
 
@@ -385,6 +389,18 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix
     MvPolynomial.map_X] using
     coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v} R K n 1 (MvPolynomial.X (i, j))
 
+/-- The general-linear base-change isomorphism sends the scalar extension of each entry of the
+bundled generic matrix to the corresponding entry over the new base. Unlike
+`coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix`, the statement needs no `R`-algebra
+structure on the coordinate algebra over `K`. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_genericMatrix
+    (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+    (n : ℕ) (i j : Fin n) :
+    (coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (1 ⊗ₜ[R] genericMatrix R n i j) =
+      genericMatrix K n i j := by
+  rw [genericMatrix_apply, genericMatrix_apply]
+  exact coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X R K n i j
+
 /-- The inverse categorical base-change isomorphism sends an extended polynomial coordinate back
 to its scalar pure tensor. -/
 @[simp]
@@ -422,6 +438,21 @@ theorem coordinateHopfAlgebraBaseChangeIso_inv_X
       MvPolynomial.X (i, j) := by simp
   rw [hmap] at h
   simpa only [one_smul] using h
+
+/-- The inverse base-change isomorphism sends a generic matrix entry to the corresponding scalar
+pure tensor, stated for the underlying bialgebra morphism `.inv.hom`. This is the form produced by
+`BialgHom.coe_toAlgHom`, which `rw` cannot match against `coordinateHopfAlgebraBaseChangeIso_inv_X`
+(stated for the categorical coercion). -/
+@[simp]
+theorem coordinateHopfAlgebraBaseChangeIso_inv_hom_X
+    (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+    (n : ℕ) (i j : Fin n) :
+    (coordinateHopfAlgebraBaseChangeIso R K n).inv.hom
+        (coordinateHopfAlgebraAlgEquiv K n
+          (coordinateRingMap K n (MvPolynomial.X (i, j)))) =
+      1 ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n
+        (coordinateRingMap R n (MvPolynomial.X (i, j))) :=
+  coordinateHopfAlgebraBaseChangeIso_inv_X R K n i j
 
 /-- Transporting the base change of a coordinate morphism sends a generic matrix entry to the
 target base-change isomorphism applied to the pure tensor of its original value. -/
@@ -501,6 +532,21 @@ theorem pointToGeneralLinear_baseChangeMap
     AlgHom.comp_apply,
     AlgHom.baseChangePointsMulEquiv_symm_apply, _root_.CommHopfAlgCat.hom_comp]
   rw [coordinateHopfAlgebraBaseChangeIso_inv_X, CommHopfAlgCat.baseChangeMap_apply_tmul]
+
+/-- **Base change of a base-valued point maps its matrix along `R → K`.** Reading the base change
+`AlgHom.pointsBaseChange K f` of an `R`-point `f` of `O(GLₙ/R)` as a matrix through
+`K ⊗[R] O(GLₙ/R) ≅ O(GLₙ/K)` gives the matrix of `f` with entries mapped along `R → K`. -/
+theorem pointToGeneralLinear_pointsBaseChange
+    (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+    (n : ℕ) (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] R)) :
+    pointToGeneralLinear n
+        (WithConv.toConv ((AlgHom.pointsBaseChange K f).ofConv.comp
+          (coordinateHopfAlgebraBaseChangeIso R K n).inv.hom.toAlgHom)) =
+      (pointToGeneralLinear n f).map (algebraMap R K) := by
+  ext i j
+  simp only [pointToGeneralLinear_apply, Matrix.GeneralLinearGroup.map_apply, AlgHom.comp_apply,
+    BialgHom.coe_toAlgHom]
+  rw [coordinateHopfAlgebraBaseChangeIso_inv_hom_X, AlgHom.pointsBaseChange_apply_tmul, one_mul]
 
 /-- The canonical isomorphism
 `baseChange K (finiteTypeCoordinateHopfAlgebra R n) ≅ finiteTypeCoordinateHopfAlgebra K n`

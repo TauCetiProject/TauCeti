@@ -44,6 +44,9 @@ measure.
 * `MeasureTheory.Integrable.ae_eq_zero_of_forall_integral_hasCompactSupport_smul_eq_zero`: for a
   regular measure on a locally compact space, an integrable function whose integrals against all
   compactly supported continuous real functions vanish is zero almost everywhere.
+* `MeasureTheory.Integrable.integral_smul_eq_zero_of_span_closure_eq_top`: on a compact space, if
+  the integrals of an integrable function against a family of continuous scalar functions with
+  dense span vanish, then its integrals against all continuous scalar functions vanish.
 -/
 
 public section
@@ -164,9 +167,50 @@ theorem Integrable.ae_eq_zero_of_forall_integral_hasCompactSupport_smul_eq_zero
           simp [hxs, hxU, hφU hxU]
     _ = ∫ x in U \ K, ‖f x‖ ∂μ := integral_indicator hUK
     _ ≤ 0 + ε := by
-        rw [zero_add, integral_norm_eq_lintegral_enorm hf.aestronglyMeasurable.restrict]
+        rw [zero_add, integral_norm_eq_lintegral_eNorm hf.aestronglyMeasurable.restrict]
         exact (ENNReal.toReal_lt_of_lt_ofReal (hδε _ hμUK)).le
 
 end LocallyCompact
+
+section DenseSpan
+
+variable {X 𝕜 E : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
+  [OpensMeasurableSpace X] {μ : Measure X} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E] {f : X → E}
+
+/-- **Integrals against a dense family of test functions.** On a compact space, if `f` is
+integrable and `∫ x, φ x • f x ∂μ = 0` for every `φ` in a set `S` of continuous `𝕜`-valued
+functions whose span is uniformly dense, then the same holds for every continuous `φ`: integration
+against `f` is an `E`-valued continuous linear map on `C(X, 𝕜)` of norm at most `‖f‖₁`, so it
+vanishes on the closure of the span of `S`. -/
+theorem Integrable.integral_smul_eq_zero_of_span_closure_eq_top (hf : Integrable f μ)
+    {S : Set C(X, 𝕜)} (hS : (Submodule.span 𝕜 S).topologicalClosure = ⊤)
+    (h : ∀ φ ∈ S, ∫ x, φ x • f x ∂μ = 0) (φ : C(X, 𝕜)) : ∫ x, φ x • f x ∂μ = 0 := by
+  have hint (φ : C(X, 𝕜)) : Integrable (fun x ↦ φ x • f x) μ :=
+    hf.bdd_smul ‖φ‖ φ.continuous.aestronglyMeasurable_of_compactSpace
+      (ae_of_all _ φ.norm_coe_le_norm)
+  -- Integration against `f`, as an `E`-valued continuous linear map on `C(X, 𝕜)`.
+  let L : C(X, 𝕜) →ₗ[𝕜] E :=
+    { toFun := fun φ ↦ ∫ x, φ x • f x ∂μ
+      map_add' := fun φ ψ ↦ by
+        simp only [ContinuousMap.add_apply, add_smul]
+        exact integral_add (hint φ) (hint ψ)
+      map_smul' := fun c φ ↦ by
+        simp only [ContinuousMap.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
+        exact MeasureTheory.integral_smul c _ }
+  let Lc := L.mkContinuous (∫ x, ‖f x‖ ∂μ) fun φ ↦ by
+    refine (norm_integral_le_of_norm_le (hf.norm.const_mul ‖φ‖) (ae_of_all _ fun x ↦ ?_)).trans_eq
+      (by rw [integral_const_mul, mul_comm])
+    rw [norm_smul]
+    exact mul_le_mul_of_nonneg_right (φ.norm_coe_le_norm x) (norm_nonneg _)
+  have hLc (φ : C(X, 𝕜)) : Lc φ = ∫ x, φ x • f x ∂μ := by
+    simp [Lc, L]
+  -- It vanishes on `S`, hence everywhere, since the span of `S` is dense.
+  have hL0 : Lc = 0 :=
+    ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 hS) fun ψ hψ ↦ by
+      rw [hLc, h ψ hψ, zero_apply]
+  rw [← hLc, hL0, zero_apply]
+
+end DenseSpan
 
 end MeasureTheory

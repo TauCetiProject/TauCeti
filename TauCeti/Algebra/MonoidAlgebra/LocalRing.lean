@@ -10,9 +10,15 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.MonoidAlgebra.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 import Mathlib.Algebra.CharP.Lemmas
+import TauCeti.Algebra.CharP.LocalRing
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Algebra.MonoidAlgebra.Exactness
+import Mathlib.RepresentationTheory.Invariants
+import Mathlib.RingTheory.SimpleModule.Basic
+import TauCeti.RepresentationTheory.OfModule
+import TauCeti.RepresentationTheory.PGroupInvariants
 
 /-!
 # Monoid algebras over a local ring
@@ -22,20 +28,34 @@ the free module `R[G]^ι` of finite rank is a finitely generated `R`-module, so 
 over `R` detects surjectivity of its endomorphisms after reduction to `k[G]^ι`.
 The Orzech property then upgrades surjectivity to bijectivity.
 
-For a finite commutative `p`-group `Q` and a local ring `R` in which `p` is not a unit, the group
+For a commutative `p`-group `Q` and a local ring `R` in which `p` is not a unit, the group
 algebra `R[Q]` is itself local, and the augmentation `R[Q] → R` is a local homomorphism: an element
 of `R[Q]` is a unit as soon as its augmentation is. Indeed every maximal ideal of `R[Q]` lies over
-the maximal ideal of `R`, because `R[Q]` is finite over `R`, so its residue field has
+the maximal ideal of `R`, because `R[Q]` is integral over `R`, so its residue field has
 characteristic `p`; there `q - 1` is nilpotent, as `(q - 1) ^ (p ^ k) = q ^ (p ^ k) - 1 = 0`, and
 therefore zero. So every maximal ideal contains the augmentation ideal.
+
+For a finite `p`-group `G`, not necessarily commutative, the same holds: an element of `R[G]` is
+a unit as soon as its augmentation is, so `R[G]` is local. Over the residue field `k` of `R`, which
+has characteristic `p`, every simple `k[G]`-module has a nonzero vector fixed by `G`, so a proper
+left ideal of `k[G]` lies in the augmentation ideal; Nakayama's lemma over `R` lifts invertibility
+from `k[G]` to `R[G]`. Conversely, if `R[G]` is local for a finite group `G`, then `G` is a
+`p`-group: an element of prime order `q ≠ p` would give, `q` being a unit of `R`, the average of
+the cyclic subgroup it generates, which is neither a unit nor one minus a unit.
 
 ## Main results
 
 * `TauCeti.MonoidAlgebra.bijective_of_forall_exists_mapRingHom_residue_eq`: an `R[G]`-linear
   endomorphism of `R[G]^ι` that is onto modulo the maximal ideal is bijective.
-* `TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup`: for a finite commutative `p`-group `Q`
+* `TauCeti.MonoidAlgebra.isLocalHom_mapRingHom_residue`: for a finite monoid `G`, an element of
+  `R[G]` whose image in `k[G]` is a unit is a unit.
+* `TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup`: for a commutative `p`-group `Q`
   the augmentation `R[Q] → R` is a local homomorphism.
 * `TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup`: `R[Q]` is a local ring.
+* `TauCeti.MonoidAlgebra.isLocalHom_augmentation_of_isPGroup`: for a finite `p`-group `G`, not
+  necessarily commutative, the augmentation `R[G] → R` is a local homomorphism.
+* `TauCeti.MonoidAlgebra.isLocalRing_iff_isPGroup`: for a finite group `G`, the group algebra
+  `R[G]` is local if and only if `G` is a `p`-group.
 -/
 
 public section
@@ -71,14 +91,37 @@ theorem bijective_of_forall_exists_mapRingHom_residue_eq
       hle))
   exact ⟨OrzechProperty.injective_of_surjective_endomorphism (θ.restrictScalars R) hsurj, hsurj⟩
 
+/-- **Units of `R[G]` are detected modulo the maximal ideal.** For a finite monoid `G` and a local
+ring `R` with residue field `k`, an element of `R[G]` whose image in `k[G]` is a unit is a unit. -/
+instance isLocalHom_mapRingHom_residue : IsLocalHom (mapRingHom G (residue R)) := by
+  have hsurj : Function.Surjective (mapRingHom G (residue R)) := by
+    rw [coe_mapRingHom]
+    exact map_surjective (residue R).toAddMonoidHom residue_surjective
+  -- Right multiplication by an element whose image is a unit is onto modulo the maximal ideal,
+  -- hence bijective by Nakayama's lemma.
+  refine ⟨fun x hx ↦ IsUnit.isUnit_iff_mulRight_bijective.mpr ?_⟩
+  let θ : (Unit → MonoidAlgebra R G) →ₗ[MonoidAlgebra R G] (Unit → MonoidAlgebra R G) :=
+    LinearMap.pi fun _ ↦ (LinearMap.toSpanSingleton _ _ x).comp (LinearMap.proj ())
+  have hθ := bijective_of_forall_exists_mapRingHom_residue_eq θ fun y ↦ by
+    obtain ⟨z, hz⟩ := hsurj (mapRingHom G (residue R) (y ()) * ↑hx.unit⁻¹)
+    exact ⟨fun _ ↦ z, fun _ ↦ by simp [θ, hz, mul_assoc]⟩
+  let e := Equiv.funUnique Unit (MonoidAlgebra R G)
+  convert e.bijective.comp (hθ.comp e.symm.bijective) using 1
+  ext y
+  simp [θ, e]
+
 section PGroup
 
 variable {R : Type*} [CommRing R] [IsLocalRing R] {p : ℕ} [Fact p.Prime] {Q : Type*} [CommGroup Q]
-  [Finite Q]
 
 /-- Every maximal ideal of `R[Q]` contains `q - 1` for each `q` in the `p`-group `Q`. -/
 private theorem single_sub_one_mem_of_isMaximal (hp : ¬IsUnit (p : R)) (hQ : IsPGroup p Q)
     (𝔐 : Ideal (MonoidAlgebra R Q)) [𝔐.IsMaximal] (q : Q) : single q (1 : R) - 1 ∈ 𝔐 := by
+  -- `R[Q]` is integral over `R`: each group element has order a power of `p`.
+  have : Algebra.IsIntegral R (MonoidAlgebra R Q) :=
+    TauCeti.MonoidAlgebra.isIntegral_of_isMulTorsion fun m ↦ by
+      obtain ⟨k, hk⟩ := hQ m
+      exact isOfFinOrder_iff_pow_eq_one.2 ⟨p ^ k, pow_pos (Fact.out : p.Prime).pos k, hk⟩
   -- `𝔐` lies over the maximal ideal of `R`, which contains `p`.
   have hcomap : 𝔐.comap (algebraMap R (MonoidAlgebra R Q)) = maximalIdeal R :=
     IsLocalRing.eq_maximalIdeal (Ideal.isMaximal_under_of_isIntegral_of_isMaximal 𝔐)
@@ -95,9 +138,9 @@ private theorem single_sub_one_mem_of_isMaximal (hp : ¬IsUnit (p : R)) (hQ : Is
     ← pow_eq_zero_iff (pow_ne_zero k (Fact.out : p.Prime).ne_zero)]
   simp [sub_pow_char_pow, ← map_pow, single_pow, hk, ← one_def]
 
-/-- **The augmentation of the group algebra of a `p`-group is local.** For a finite commutative
-`p`-group `Q` and a local ring `R` in which `p` is not a unit, the augmentation `R[Q] → R` is a
-local homomorphism: an element of `R[Q]` whose augmentation is a unit is a unit. -/
+/-- **The augmentation of the group algebra of a `p`-group is local.** For a commutative `p`-group
+`Q` and a local ring `R` in which `p` is not a unit, the augmentation `R[Q] → R` is a local
+homomorphism: an element of `R[Q]` whose augmentation is a unit is a unit. -/
 theorem isLocalHom_lift_one_of_isPGroup (hp : ¬IsUnit (p : R)) (hQ : IsPGroup p Q) :
     IsLocalHom (MonoidAlgebra.lift R R Q 1) := by
   refine ⟨fun x hx ↦ ?_⟩
@@ -110,26 +153,156 @@ theorem isLocalHom_lift_one_of_isPGroup (hp : ¬IsUnit (p : R)) (hQ : IsPGroup p
     rw [ker_augmentation_eq_span, Ideal.span_le]
     rintro _ ⟨q, rfl⟩
     exact single_sub_one_mem_of_isMaximal hp hQ 𝔐 q
-  have haug : (MonoidAlgebra.lift R R Q 1 : MonoidAlgebra R Q →+* R) = augmentation R Q :=
-    MonoidAlgebra.ringHom_ext (fun _ ↦ by simp [MonoidAlgebra.lift_single]) fun _ ↦ by
-      simp [MonoidAlgebra.lift_single]
   -- `x` differs from the constant `algebraMap (augmentation x)` by an element of `𝔐`.
   have hdiff : ∀ y : MonoidAlgebra R Q,
       algebraMap R (MonoidAlgebra R Q) (MonoidAlgebra.lift R R Q 1 y) - y ∈ 𝔐 := fun y ↦
     hker <| by
-      rw [RingHom.mem_ker, map_sub, ← RingHom.coe_coe (MonoidAlgebra.lift R R Q 1), haug]
+      rw [RingHom.mem_ker, map_sub, MonoidAlgebra.lift_one_apply]
       simp
   have hmem := 𝔐.add_mem (hdiff x) hx𝔐
   rw [sub_add_cancel] at hmem
   exact h𝔐.ne_top (𝔐.eq_top_of_isUnit_mem hmem (hx.map _))
 
-/-- **The group algebra of a `p`-group is local.** For a finite commutative `p`-group `Q` and a
-local ring `R` in which `p` is not a unit, the group algebra `R[Q]` is a local ring. -/
+/-- **The group algebra of a `p`-group is local.** For a commutative `p`-group `Q` and a local
+ring `R` in which `p` is not a unit, the group algebra `R[Q]` is a local ring. -/
 theorem isLocalRing_of_isPGroup (hp : ¬IsUnit (p : R)) (hQ : IsPGroup p Q) :
     IsLocalRing (MonoidAlgebra R Q) :=
   have := isLocalHom_lift_one_of_isPGroup hp hQ
   (MonoidAlgebra.lift R R Q 1 : MonoidAlgebra R Q →+* R).domain_isLocalRing
 
 end PGroup
+
+section FinitePGroup
+
+variable {p : ℕ} [Fact p.Prime] {G : Type*} [Group G] [Finite G]
+
+/-- Over a field of characteristic `p`, an element of the group algebra of a finite `p`-group with
+nonzero augmentation has a left inverse. -/
+private theorem exists_mul_eq_one_of_augmentation_ne_zero {k : Type*} [Field k] [CharP k p]
+    (hG : IsPGroup p G) {x : MonoidAlgebra k G} (hx : augmentation k G x ≠ 0) :
+    ∃ y, y * x = 1 := by
+  -- Otherwise `x` lies in a maximal left ideal `𝔪`. The simple module `k[G] ⧸ 𝔪` is generated by
+  -- a nonzero vector fixed by `G`, so `x` acts on it both by zero and by its augmentation.
+  by_contra! h
+  obtain ⟨𝔪, h𝔪, hx𝔪⟩ := Ideal.exists_le_maximal (Ideal.span {x}) fun htop ↦ by
+    obtain ⟨y, hy⟩ := Ideal.mem_span_singleton'.mp (htop ▸ Submodule.mem_top (x := 1))
+    exact h y hy
+  have hx𝔪 : x ∈ 𝔪 := hx𝔪 (Ideal.mem_span_singleton_self x)
+  let M := MonoidAlgebra k G ⧸ 𝔪
+  have : IsSimpleModule (MonoidAlgebra k G) M := isSimpleModule_iff_isCoatom.mpr h𝔪.out
+  have : Nontrivial M := IsSimpleModule.nontrivial (MonoidAlgebra k G) M
+  -- A nonzero vector `s` fixed by `G`, on which `k[G]` acts through the augmentation.
+  obtain ⟨s, hs0, hs⟩ := Representation.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one p
+    (Representation.ofModule' (k := k) (G := G) M) fun g ↦ by
+      obtain ⟨n, hn⟩ := hG g
+      exact ⟨n, by rw [← map_pow, hn, map_one]⟩
+  have hact (y : MonoidAlgebra k G) : y • s = augmentation k G y • s := by
+    induction y using MonoidAlgebra.induction_linear with
+    | zero => simp
+    | add y z hy hz => rw [add_smul, hy, hz, map_add, add_smul]
+    | single g r =>
+      have hg : single g (1 : k) • s = s := by
+        simpa [TauCeti.Representation.ofModule'_apply] using hs g
+      calc single g r • s = r • (single g (1 : k) • s) := by
+            rw [← smul_assoc, smul_single', mul_one]
+        _ = augmentation k G (single g r) • s := by rw [hg, augmentation_single]
+  -- The vector `s` generates `M`, so `1 = y • s`, and `x • 1 = 0` since `x ∈ 𝔪`.
+  obtain ⟨y, hy⟩ := Submodule.mem_span_singleton.mp
+    (IsSimpleModule.span_singleton_eq_top (MonoidAlgebra k G) hs0 ▸
+      Submodule.mem_top (x := Submodule.Quotient.mk (1 : MonoidAlgebra k G)))
+  have h1 : (Submodule.Quotient.mk (1 : MonoidAlgebra k G) : M) ≠ 0 := by
+    rw [Ne, Submodule.Quotient.mk_eq_zero]
+    exact fun h1 ↦ h𝔪.ne_top ((Ideal.eq_top_iff_one _).mpr h1)
+  apply h1
+  have hx1 : x • (Submodule.Quotient.mk (1 : MonoidAlgebra k G) : M) = 0 := by
+    rw [← Submodule.Quotient.mk_smul, smul_eq_mul, mul_one, Submodule.Quotient.mk_eq_zero]
+    exact hx𝔪
+  rw [← hy, smul_smul, hact, map_mul, mul_smul, ← hact, hy] at hx1
+  exact (smul_eq_zero.mp hx1).resolve_left hx
+
+variable {R : Type*} [CommRing R] [IsLocalRing R]
+
+/-- **The augmentation of the group algebra of a finite `p`-group is local.** For a finite
+`p`-group `G`, not necessarily commutative, and a local ring `R` in which `p` is not a unit, an
+element of `R[G]` whose augmentation is a unit is a unit. -/
+theorem isLocalHom_augmentation_of_isPGroup (hp : ¬IsUnit (p : R)) (hG : IsPGroup p G) :
+    IsLocalHom (augmentation R G) := by
+  refine ⟨fun x hx ↦ ?_⟩
+  have : CharP (ResidueField R) p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr <| by
+    rw [← map_natCast (residue R), residue_eq_zero_iff]
+    exact hp
+  -- The reduction of `x` has a left inverse in the finite-dimensional algebra `k[G]`, so it is a
+  -- unit there, and units of `R[G]` are detected modulo the maximal ideal.
+  have := IsArtinianRing.of_finite (ResidueField R) (MonoidAlgebra (ResidueField R) G)
+  obtain ⟨ū, hū⟩ := exists_mul_eq_one_of_augmentation_ne_zero hG
+    (x := mapRingHom G (residue R) x) (by
+      rw [augmentation_mapRingHom]
+      exact (hx.map (residue R)).ne_zero)
+  exact (isUnit_map_iff (mapRingHom G (residue R)) x).mp (isUnit_iff_exists_inv'.mpr ⟨ū, hū⟩)
+
+omit [IsLocalRing R] in
+/-- **A finite group with local group algebra is a `p`-group.** If `R` is a local ring in which
+the prime `p` is not a unit and the group algebra `R[G]` of a finite group is local, then `G` is a
+`p`-group. The ring `R` need not be assumed local: it is the image of `R[G]` under the
+augmentation. -/
+theorem isPGroup_of_isLocalRing (hp : ¬IsUnit (p : R)) [IsLocalRing (MonoidAlgebra R G)] :
+    IsPGroup p G := by
+  classical
+  -- `R` is local, as the image of the augmentation.
+  have : Nontrivial R := by
+    by_contra h
+    rw [not_nontrivial_iff_subsingleton] at h
+    exact not_subsingleton (MonoidAlgebra R G) inferInstance
+  have : IsLocalRing R :=
+    IsLocalRing.of_surjective' (augmentation R G) fun r ↦ ⟨single 1 r, by simp⟩
+  rw [isPGroup_iff_primeFactors_card_subset (Fact.out : p.Prime).ne_zero]
+  intro q hq
+  obtain ⟨hqprime, hqdvd, -⟩ := Nat.mem_primeFactors.mp hq
+  have : Fact q.Prime := ⟨hqprime⟩
+  refine Nat.mem_primeFactors.mpr ⟨hqprime, ?_, (Fact.out : p.Prime).ne_zero⟩
+  -- Otherwise an element `h` of order `q` generates a subgroup whose average `e` is not a unit,
+  -- being killed by `h - 1`, while `1 - e` is not a unit either, having augmentation zero.
+  by_contra hqp
+  -- The prime `q` is a unit in `R`: the residue characteristic divides `p` but not `q`.
+  have hqR : IsUnit (q : R) := by
+    rw [IsLocalRing.isUnit_natCast_iff_not_dvd]
+    intro hq
+    rw [IsLocalRing.isUnit_natCast_iff_not_dvd, not_not] at hp
+    rcases (Nat.dvd_prime hqprime).mp hq with h1 | h1
+    · exact CharP.ringChar_ne_one h1
+    · exact hqp (h1 ▸ hp)
+  -- An element `h` of order `q` and the average `e` of the subgroup it generates.
+  obtain ⟨h, horder⟩ := exists_prime_orderOf_dvd_card' q hqdvd
+  let H := Subgroup.zpowers h
+  let _ : Fintype H := Fintype.ofFinite H
+  have hcard : IsUnit ((Fintype.card H : ℕ) : R) := by
+    rwa [← Nat.card_eq_fintype_card, Nat.card_zpowers, horder]
+  let _ := hcard.invertible
+  let e := mapDomainRingHom R H.subtype (GroupAlgebra.average R H)
+  have he : e * (single h 1 - 1) = 0 := by
+    have hh : single h (1 : R) =
+        mapDomainRingHom R H.subtype (single ⟨h, Subgroup.mem_zpowers h⟩ 1) := by
+      simp
+    rw [mul_sub, mul_one, hh, ← map_mul, GroupAlgebra.mul_average_right, sub_self]
+  have haug : augmentation R G e = 1 := by
+    rw [← RingHom.comp_apply, augmentation_comp_mapDomainRingHom]
+    simp [GroupAlgebra.average, Algebra.smul_def, Finset.card_univ]
+  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self e with he' | he'
+  · refine (single_sub_one_ne_zero_iff (R := R) (g := h)).mpr (fun h1 ↦ ?_)
+      (he'.mul_right_eq_zero.mp he)
+    rw [h1, orderOf_one] at horder
+    exact hqprime.one_lt.ne horder
+  · simpa [haug] using he'.map (augmentation R G)
+
+/-- **The group algebra of a finite group is local exactly over a `p`-group.** For a finite group
+`G`, not necessarily commutative, and a local ring `R` in which the prime `p` is not a unit, the
+group algebra `R[G]` is a local ring if and only if `G` is a `p`-group. -/
+theorem isLocalRing_iff_isPGroup (hp : ¬IsUnit (p : R)) :
+    IsLocalRing (MonoidAlgebra R G) ↔ IsPGroup p G :=
+  ⟨fun _ ↦ isPGroup_of_isLocalRing hp, fun hG ↦
+    have := isLocalHom_augmentation_of_isPGroup hp hG
+    (augmentation R G).domain_isLocalRing⟩
+
+end FinitePGroup
 
 end TauCeti.MonoidAlgebra

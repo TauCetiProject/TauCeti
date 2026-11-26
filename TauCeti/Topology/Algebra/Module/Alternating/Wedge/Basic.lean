@@ -24,8 +24,10 @@ import TauCeti.LinearAlgebra.Alternating.Alternatization
 This file constructs the paired wedge of continuous alternating maps on real modules with a
 topology. Its determinant normalization is the signed-permutation sum divided by the two input
 factorials. It provides bilinearity and pullback compatibility for general topological coefficient
-spaces, including the flip law, and transports a degree equality in the first factor through the
-wedge (`ContinuousAlternatingMap.pairedWedge_apply_of_left_eq_smul_cast`). A pairing that turns
+spaces, including the flip law and its consequence that a form of odd degree wedges to zero with
+itself along a symmetric pairing (`ContinuousAlternatingMap.pairedWedge_self_eq_zero_of_odd`), and
+transports a degree equality in the first factor through the wedge
+(`ContinuousAlternatingMap.pairedWedge_apply_of_left_eq_smul_cast`). A pairing that turns
 multiplication by one scalar into multiplication by another, such as a complex-bilinear pairing,
 makes the paired wedge semilinear in the same way, and the paired wedge is natural for coefficient
 maps intertwining two pairings.
@@ -79,7 +81,7 @@ theorem pairingLinear_tmul (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (x : F₁) 
 /-- The unalternated multilinear pairing underlying the paired wedge. -/
 noncomputable def wedgeWithUnalternated {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
-    MultilinearMap ℝ (fun _ : Fin (k + l) => E) F₃ :=
+    MultilinearMap (RingHom.id ℝ) (fun _ : Fin (k + l) => E) F₃ :=
   (pairingLinear μ).compMultilinearMap <|
     (MultilinearMap.domCoprod φ.toAlternatingMap.toMultilinearMap
       ψ.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv
@@ -203,7 +205,8 @@ twice cancel the determinant normalization. -/
 theorem pairedWedge_toAlternatingMap_of_eq_alternatization {k l : ℕ}
     (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
     {φ : E [⋀^Fin k]→L[ℝ] F₁} {ψ : E [⋀^Fin l]→L[ℝ] F₂}
-    {f : MultilinearMap ℝ (fun _ : Fin k => E) F₁} {g : MultilinearMap ℝ (fun _ : Fin l => E) F₂}
+    {f : MultilinearMap (RingHom.id ℝ) (fun _ : Fin k => E) F₁} {g : MultilinearMap (RingHom.id ℝ)
+        (fun _ : Fin l => E) F₂}
     (hf : φ.toAlternatingMap = f.alternatization) (hg : ψ.toAlternatingMap = g.alternatization) :
     (pairedWedge μ hμ φ ψ).toAlternatingMap =
       ((pairingLinear μ).compMultilinearMap
@@ -496,10 +499,11 @@ theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
     pairedWedge mu hmu phi psi v =
-      (-1 : ℝ) ^ (k * l) • pairedWedge (mu.pairingFlip hmu)
-        (mu.pairingFlip_continuous hmu) psi phi (v ∘ Fin.cast (Nat.add_comm l k)) :=
-  pairedWedge_flip_of_forall_apply_eq mu hmu _ (mu.pairingFlip_continuous hmu)
-    (fun a b ↦ ContinuousLinearMap.pairingFlip_apply mu hmu b a) phi psi v
+      (-1 : ℝ) ^ (k * l) • pairedWedge (mu.toLinearMap.pairingFlip hmu)
+        (mu.toLinearMap.continuous_uncurry_pairingFlip hmu) psi phi
+        (v ∘ Fin.cast (Nat.add_comm l k)) :=
+  pairedWedge_flip_of_forall_apply_eq mu hmu _ (mu.toLinearMap.continuous_uncurry_pairingFlip hmu)
+    (fun a b ↦ mu.toLinearMap.pairingFlip_apply hmu b a) phi psi v
 
 /-- Anticommutation of a paired wedge along a skew-symmetric pairing. -/
 theorem pairedWedge_anticomm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
@@ -526,6 +530,18 @@ theorem pairedWedge_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     pairedWedge mu hmu phi psi v =
       (-1 : ℝ) ^ (k * l) • pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l k)) :=
   pairedWedge_flip_of_forall_apply_eq mu hmu mu hmu (fun a b ↦ hsymm b a) phi psi v
+
+/-- A form of odd degree wedges to zero with itself along a symmetric pairing. For real one-forms
+this is `a ∧ a = 0`. -/
+theorem pairedWedge_self_eq_zero_of_odd {k : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+    (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
+    (hsymm : ∀ a b, mu a b = mu b a) (hk : Odd k) (phi : E [⋀^Fin k]→L[ℝ] F₁) :
+    pairedWedge mu hmu phi phi = 0 := by
+  ext v
+  have h := pairedWedge_comm hmu hsymm phi phi v
+  rw [Fin.cast_refl, Function.comp_id, (hk.mul hk).neg_one_pow, neg_one_smul,
+    eq_neg_iff_add_eq_zero, ← two_smul ℝ, smul_eq_zero] at h
+  simpa using h
 
 /-- Wedge with a degree-zero form on the left pairs its value on the empty tuple with the other
 form. -/

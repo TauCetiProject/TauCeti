@@ -33,20 +33,24 @@ a convenience of `Metric.diam`, which vanishes on unbounded sets: in `ℝ` the u
 Nothing here needs `V` to be open, connected, or measurable, and the ambient space is an arbitrary
 real normed space: only the segment and the norm are used.
 
-The intended consumer is layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's
-boundary correspondence. There the piece of a domain that a crosscut cuts off has to be shown small,
-and what is small is its boundary — the crosscut itself together with the arc of the domain boundary
-it separates; `TauCeti.diam_frontier` is what converts that into a bound on the piece.
-`TauCeti/Analysis/Complex/Conformal/CutDiameter.lean` carries out that conversion.
+The intended consumer is Carathéodory's boundary correspondence. There the piece of a domain that
+a crosscut cuts off has to be shown small, and what is small is its boundary — the crosscut itself
+together with the arc of the domain boundary it separates; `TauCeti.diam_frontier` is what converts
+that into a bound on the piece. `TauCeti/Analysis/Complex/Conformal/CutDiameter.lean` carries out
+that conversion.
 
 ## Main results
 
+* `Bornology.IsBounded.exists_add_smul_mem_frontier` — a ray from a point of a bounded set meets
+  its frontier.
 * `TauCeti.exists_mem_frontier_dist_le` — from a point of a bounded set, the ray away from any other
   base point reaches the frontier no sooner than it reaches that point.
 * `TauCeti.diam_le_diam_frontier` and `TauCeti.diam_frontier` — a bounded set is exactly as wide as
   its frontier.
 * `TauCeti.diam_le_diam_of_frontier_subset` — hence a bounded set is no wider than any bounded set
   containing its frontier, which is the form a boundary estimate is spent in.
+* `Bornology.IsBounded.eq_empty_of_frontier_eq_empty` — in a nontrivial space, a bounded set with
+  empty frontier is empty.
 -/
 
 public section
@@ -57,45 +61,40 @@ open Bornology Metric Set
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {V : Set E} {x y : E}
 
+/-- **A ray leaving a bounded set crosses its frontier.** For `x` in a bounded set `V` and any
+nonzero direction `v`, the ray `s ↦ x + s • v`, `s ≥ 0`, meets `frontier V`. -/
+theorem _root_.Bornology.IsBounded.exists_add_smul_mem_frontier (hV : IsBounded V) (hx : x ∈ V)
+    {v : E} (hv : v ≠ 0) :
+    ∃ s : ℝ, 0 ≤ s ∧ x + s • v ∈ frontier V := by
+  obtain ⟨R, hR⟩ := hV.subset_closedBall x
+  have hR0 : 0 ≤ R := dist_nonneg.trans (mem_closedBall.1 (hR hx))
+  set γ : ℝ → E := fun s => x + s • v
+  set T : ℝ := (R + 1) / ‖v‖
+  have hT : 0 ≤ T := by positivity
+  have hTV : γ T ∉ V := fun hmem => by
+    have := mem_closedBall.1 (hR hmem)
+    rw [dist_self_add_left, norm_smul, Real.norm_of_nonneg hT,
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hv)] at this
+    linarith
+  obtain ⟨_, ⟨s, hs, rfl⟩, hpf⟩ :=
+    (isPreconnected_Icc.image γ (by fun_prop : Continuous γ).continuousOn).inter_frontier_nonempty
+      ⟨x, ⟨0, ⟨le_rfl, hT⟩, by simp [γ]⟩, hx⟩ ⟨γ T, ⟨T, ⟨hT, le_rfl⟩, rfl⟩, hTV⟩
+  exact ⟨s, hs.1, hpf⟩
+
 /-- **A ray leaving a bounded set crosses its frontier, and does so no sooner than it passes
 through a given point of the set.** For `x` in a bounded set `V` and any base point `y ≠ x`, the
-ray from `y` through `x` meets `frontier V` at a point `p` with `dist y x ≤ dist y p`.
-
-The ray is followed from `x` outwards. It leaves `V` because `V` is bounded, the segment traced is
-connected, and `IsPreconnected.inter_frontier_nonempty` therefore hands back a frontier
-point on it; being beyond `x` on the ray, that point is at least as far from `y` as `x` is. -/
+ray from `y` through `x` meets `frontier V` at a point `p` with `dist y x ≤ dist y p`. -/
 theorem exists_mem_frontier_dist_le (hV : IsBounded V) (hx : x ∈ V) (hne : y ≠ x) :
     ∃ p ∈ frontier V, dist y x ≤ dist y p := by
-  obtain ⟨R, hR⟩ := hV.subset_closedBall y
-  set d : E := x - y with hd
-  have hdpos : 0 < ‖d‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hne.symm)
-  set γ : ℝ → E := fun t => y + t • d with hγ
-  have hγdist : ∀ t : ℝ, 0 ≤ t → dist y (γ t) = t * ‖d‖ := by
-    intro t ht
-    rw [hγ, dist_eq_norm]
-    simp [norm_smul, abs_of_nonneg ht]
-  have hγ1 : γ 1 = x := by simp [hγ, hd]
-  set T : ℝ := max 1 ((R + 1) / ‖d‖)
-  have hT1 : (1 : ℝ) ≤ T := le_max_left _ _
-  have hTd : R + 1 ≤ T * ‖d‖ := by
-    have := le_max_right 1 ((R + 1) / ‖d‖)
-    calc R + 1 = (R + 1) / ‖d‖ * ‖d‖ := by field_simp
-      _ ≤ T * ‖d‖ := by gcongr
-  have hTV : γ T ∉ V := by
-    intro hmem
-    have := mem_closedBall.mp (hR hmem)
-    rw [dist_comm] at this
-    rw [hγdist T (by linarith)] at this
-    linarith
-  have hcont : Continuous γ := by fun_prop
-  have hSconn : IsPreconnected (γ '' Icc 1 T) :=
-    isPreconnected_Icc.image γ hcont.continuousOn
-  obtain ⟨p, hpS, hpf⟩ := hSconn.inter_frontier_nonempty
-    ⟨x, ⟨1, ⟨le_rfl, hT1⟩, hγ1⟩, hx⟩ ⟨γ T, ⟨T, ⟨hT1, le_rfl⟩, rfl⟩, hTV⟩
-  obtain ⟨t, ht, rfl⟩ := hpS
-  refine ⟨γ t, hpf, ?_⟩
-  rw [← hγ1, hγdist 1 zero_le_one, hγdist t (by linarith [ht.1])]
-  nlinarith [ht.1]
+  obtain ⟨s, hs, hp⟩ := hV.exists_add_smul_mem_frontier hx (sub_ne_zero.2 hne.symm)
+  refine ⟨_, hp, ?_⟩
+  have hsub : x + s • (x - y) - y = (1 + s) • (x - y) := by
+    rw [add_smul, one_smul]
+    abel
+  have hdist : dist y (x + s • (x - y)) = (1 + s) * ‖x - y‖ := by
+    rw [dist_eq_norm', hsub, norm_smul, Real.norm_of_nonneg (by linarith)]
+  rw [hdist, dist_eq_norm']
+  nlinarith [norm_nonneg (x - y)]
 
 /-- **A bounded set is no wider than its frontier.** Every distance realised between two points of
 a bounded set `V` is already realised between two points of `frontier V`: push the first point away
@@ -139,5 +138,14 @@ theorem diam_le_diam_of_frontier_subset {W : Set E} (hV : IsBounded V) (hW : IsB
     (hVW : frontier V ⊆ W) : diam V ≤ diam W := by
   rw [← diam_frontier hV]
   exact diam_mono hVW hW
+
+/-- A bounded set with empty frontier in a nontrivial real normed space is empty: a ray from any
+of its points would cross the frontier (`TauCeti.exists_mem_frontier_dist_le`). -/
+theorem _root_.Bornology.IsBounded.eq_empty_of_frontier_eq_empty [Nontrivial E]
+    (hV : IsBounded V) (hfr : frontier V = ∅) : V = ∅ := by
+  refine eq_empty_of_forall_notMem fun x hx => ?_
+  obtain ⟨y, hy⟩ := exists_ne x
+  obtain ⟨p, hp, -⟩ := exists_mem_frontier_dist_le hV hx hy
+  simp [hfr] at hp
 
 end TauCeti

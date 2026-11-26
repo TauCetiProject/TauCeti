@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.MeasureTheory.Function.AEEqOfIntegralContinuous
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 
 /-!
 # Uniqueness of Fourier coefficients and Fourier coefficients of products on the circle
@@ -22,7 +23,9 @@ Fourier coefficients all vanish is zero almost everywhere. Integration against `
 linear functional on `C(AddCircle T, ℂ)` of norm at most `‖f‖₁`; it vanishes on the monomials by
 hypothesis, hence on the uniformly dense span of trigonometric polynomials and on every continuous
 function. An integrable function orthogonal to all bounded continuous functions vanishes almost
-everywhere (`MeasureTheory.Integrable.ae_eq_zero_of_forall_integral_smul_eq_zero`).
+everywhere (`MeasureTheory.Integrable.ae_eq_zero_of_forall_integral_smul_eq_zero`). Lifting a
+function from a period interval to the circle gives the same statement for Mathlib's Fourier
+coefficients `fourierCoeffOn` on an interval `[a, b]`.
 
 *Products.* If `f` and `g` are square integrable, then `f * g` is integrable (Mathlib's
 `MeasureTheory.MemLp.integrable_mul`) and its Fourier coefficients are the convolution of those of
@@ -44,6 +47,13 @@ adjoint is injective.
   the circle with vanishing Fourier coefficients is zero almost everywhere;
 * `MeasureTheory.Integrable.ae_eq_of_forall_fourierCoeff_eq`: integrable functions with the same
   Fourier coefficients agree almost everywhere;
+* `MeasureTheory.IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero`: a function integrable
+  on `(a, b]` with vanishing Fourier coefficients on `[a, b]` is zero almost everywhere there;
+* `MeasureTheory.IntegrableOn.integral_re_inner_continuousMap_eq_zero_of_dense`: a function on
+  `[0, T]` orthogonal to a dense set of continuous loops of period `T` is orthogonal to all of them;
+* `MeasureTheory.IntegrableOn.ae_eq_zero_of_forall_integral_re_inner_continuousMap_eq_zero`: a
+  function on `[0, T]` whose pairing with every continuous loop of period `T` vanishes is zero
+  almost everywhere;
 * `MeasureTheory.MemLp.hasSum_fourierCoeff_mul`: for square-integrable `f` and `g`,
   `(f g)^(n) = ∑ₘ f̂(m) ĝ(n - m)`;
 * `MeasureTheory.MemLp.fourierCoeff_mul_eq_zero_of_lt_add` and
@@ -70,46 +80,14 @@ section Uniqueness
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
   {f g : AddCircle T → E}
 
-omit [CompleteSpace E] in
-/-- If all Fourier coefficients of an integrable `f` vanish, then the integral of `f` against
-every continuous function on the circle vanishes. -/
-private theorem Integrable.integral_smul_eq_zero_of_forall_fourierCoeff_eq_zero
-    (hf : Integrable f haarAddCircle) (h : ∀ n, fourierCoeff f n = 0)
-    (φ : C(AddCircle T, ℂ)) : ∫ t, φ t • f t ∂haarAddCircle = 0 := by
-  have hint (φ : C(AddCircle T, ℂ)) : Integrable (fun t ↦ φ t • f t) haarAddCircle :=
-    hf.bdd_smul ‖φ‖ φ.continuous.aestronglyMeasurable (ae_of_all _ φ.norm_coe_le_norm)
-  -- Integration against `f`, as a continuous linear functional on `C(AddCircle T, ℂ)`.
-  let L : C(AddCircle T, ℂ) →ₗ[ℂ] E :=
-    { toFun := fun φ ↦ ∫ t, φ t • f t ∂haarAddCircle
-      map_add' := fun φ ψ ↦ by
-        simp only [ContinuousMap.add_apply, add_smul]
-        exact integral_add (hint φ) (hint ψ)
-      map_smul' := fun c φ ↦ by
-        simp only [ContinuousMap.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
-        exact MeasureTheory.integral_smul c _ }
-  let Lc := L.mkContinuous (∫ t, ‖f t‖ ∂haarAddCircle) fun φ ↦ by
-    refine (norm_integral_le_of_norm_le (hf.norm.const_mul ‖φ‖) (ae_of_all _ fun t ↦ ?_)).trans_eq
-      (by rw [integral_const_mul, mul_comm])
-    rw [norm_smul]
-    exact mul_le_mul_of_nonneg_right (φ.norm_coe_le_norm t) (norm_nonneg _)
-  have hLc (φ : C(AddCircle T, ℂ)) : Lc φ = ∫ t, φ t • f t ∂haarAddCircle := by
-    simp [Lc, L]
-  -- It vanishes on the Fourier monomials, hence on their dense span.
-  have hspan : Submodule.span ℂ (range (fourier (T := T))) ≤ LinearMap.ker (Lc : _ →ₗ[ℂ] E) :=
-    Submodule.span_le.2 <| range_subset_iff.2 fun n ↦ LinearMap.mem_ker.2 <| by
-      simpa [hLc, fourierCoeff, -fourier_apply] using h (-n)
-  have htop := Submodule.topologicalClosure_minimal _ hspan Lc.isClosed_ker
-  rw [span_fourier_closure_eq_top, top_le_iff] at htop
-  have hφ : φ ∈ LinearMap.ker (Lc : _ →ₗ[ℂ] E) := htop ▸ Submodule.mem_top
-  rw [← hLc]
-  exact LinearMap.mem_ker.1 hφ
-
 /-- **Uniqueness of Fourier coefficients for integrable functions.** An integrable function on the
 circle whose Fourier coefficients all vanish is zero almost everywhere. -/
 theorem Integrable.ae_eq_zero_of_forall_fourierCoeff_eq_zero (hf : Integrable f haarAddCircle)
     (h : ∀ n, fourierCoeff f n = 0) : f =ᵐ[haarAddCircle] 0 :=
   hf.ae_eq_zero_of_forall_integral_smul_eq_zero fun φ ↦ by
-    simpa [Complex.coe_smul] using hf.integral_smul_eq_zero_of_forall_fourierCoeff_eq_zero h
+    simpa [Complex.coe_smul] using hf.integral_smul_eq_zero_of_span_closure_eq_top
+      span_fourier_closure_eq_top (forall_mem_range.2 fun n ↦ by
+        simpa [fourierCoeff, -fourier_apply] using h (-n))
       ⟨fun t ↦ (φ t : ℂ), Complex.continuous_ofReal.comp φ.continuous⟩
 
 /-- Integrable functions on the circle with the same Fourier coefficients agree almost
@@ -123,6 +101,30 @@ theorem Integrable.ae_eq_of_forall_fourierCoeff_eq (hf : Integrable f haarAddCir
     rw [integral_sub (hf.fourier_smul _) (hg.fourier_smul _), hn, sub_self]
   filter_upwards [hfg] with t ht
   simpa [sub_eq_zero] using ht
+
+/-- **Uniqueness of Fourier coefficients on an interval.** A function integrable on `(a, b]` whose
+Fourier coefficients on `[a, b]` all vanish is zero almost everywhere on `(a, b]`. -/
+theorem IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero {a b : ℝ} (hab : a < b)
+    {f : ℝ → E} (hf : IntegrableOn f (Ioc a b)) (h : ∀ n : ℤ, fourierCoeffOn hab f n = 0) :
+    f =ᵐ[volume.restrict (Ioc a b)] 0 := by
+  have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
+  have hIoc : Ioc a (a + (b - a)) = Ioc a b := by rw [add_sub_cancel]
+  have hc : ENNReal.ofReal (b - a) ≠ 0 := by simpa using hab
+  -- Transport `f` to the circle of length `b - a`. By definition, `fourierCoeffOn` is the
+  -- Fourier coefficient of this lift.
+  have hlift : (fun x : ℝ ↦ liftIoc (b - a) a f x) =ᵐ[volume.restrict (Ioc a b)] f := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
+    exact liftIoc_coe_apply (hIoc ▸ hx)
+  have hint : Integrable (liftIoc (b - a) a f) haarAddCircle := by
+    rw [← integrable_smul_measure hc ENNReal.ofReal_ne_top, ← volume_eq_smul_haarAddCircle]
+    exact ((measurePreserving_subtypeVal measurableSet_Ioc).comp
+      (measurePreserving_equivIoc _)).integrable_comp_of_integrable (hIoc ▸ hf)
+  have hzero := hint.ae_eq_zero_of_forall_fourierCoeff_eq_zero fun n ↦ by
+    simpa only [fourierCoeffOn] using h n
+  rw [Filter.EventuallyEq, ← Measure.ae_ennreal_smul_measure_eq hc,
+    ← volume_eq_smul_haarAddCircle] at hzero
+  exact hlift.symm.trans
+    ((hIoc ▸ AddCircle.measurePreserving_mk (b - a) a).quasiMeasurePreserving.ae_eq_comp hzero)
 
 end Uniqueness
 
@@ -154,13 +156,13 @@ theorem MemLp.hasSum_fourierCoeff_mul (hf : MemLp f 2 AddCircle.haarAddCircle)
       smul_eq_mul, Pi.mul_apply]
     ring
   have hFb (m : ℤ) : ⟪F, fourierBasis m⟫_ℂ = fourierCoeff f (-m) := by
-    rw [← inner_conj_symm, ← HilbertBasis.repr_apply_apply, fourierBasis_repr,
+    rw [← inner_conj_symm, TauCeti.inner_fourierBasis_left,
       fourierCoeff_congr_ae hF, fourierCoeff, fourierCoeff, ← integral_conj]
     congr 1 with t
     simp only [smul_eq_mul, map_mul, Pi.star_apply, RCLike.star_def, RCLike.conj_conj, neg_neg,
       fourier_neg]
   have hbG (m : ℤ) : ⟪fourierBasis m, G⟫_ℂ = fourierCoeff g (m + n) := by
-    rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, fourierCoeff_congr_ae hG,
+    rw [TauCeti.inner_fourierBasis_left, fourierCoeff_congr_ae hG,
       fourierCoeff, fourierCoeff]
     congr 1 with t
     rw [smul_eq_mul, smul_eq_mul, neg_add, fourier_add, mul_assoc]
@@ -199,5 +201,86 @@ theorem MemLp.fourierCoeff_mul_eq_zero_of_add_lt (hf : MemLp f 2 AddCircle.haarA
   exact hsum.unique hasSum_zero
 
 end Product
+
+end MeasureTheory
+
+namespace MeasureTheory
+
+section Orthogonal
+
+open Set Complex
+
+variable {T : ℝ} [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+
+/-- **Orthogonality to a dense set of loops.** A function on `[0, T]`, integrable there, whose
+pairing `∫_{[0, T]} Re ⟪ψ, f⟫` vanishes for every loop `ψ` in a dense set of continuous loops of
+period `T`, has vanishing pairing with every continuous loop, since the pairing is continuous in
+the loop for the sup norm. -/
+theorem IntegrableOn.integral_re_inner_continuousMap_eq_zero_of_dense {f : ℝ → F}
+    (hf : IntegrableOn f (Icc 0 T))
+    {D : Set C(AddCircle T, F)} (hD : Dense D)
+    (h : ∀ ψ ∈ D, ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0) (ψ : C(AddCircle T, F)) :
+    ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0 := by
+  have hle (χ : C(AddCircle T, F)) (t : ℝ) : ‖(inner ℂ (χ t) (f t)).re‖ ≤ ‖χ‖ * ‖f t‖ :=
+    (abs_re_le_norm _).trans ((norm_inner_le_norm _ _).trans
+      (mul_le_mul_of_nonneg_right (χ.norm_coe_le_norm _) (norm_nonneg _)))
+  have hint (χ : C(AddCircle T, F)) :
+      IntegrableOn (fun t : ℝ ↦ (inner ℂ (χ t) (f t)).re) (Icc 0 T) :=
+    (hf.norm.const_mul ‖χ‖).mono' ((χ.continuous.comp (AddCircle.continuous_mk' T)
+      ).aestronglyMeasurable.inner (𝕜 := ℂ) hf.aestronglyMeasurable).re (ae_of_all _ (hle χ))
+  -- The pairing is additive in the loop and bounded by `‖χ‖ ∫_{[0, T]} ‖f‖`.
+  let Λ : C(AddCircle T, F) →+ ℝ :=
+    AddMonoidHom.mk' (fun χ ↦ ∫ t in Icc 0 T, (inner ℂ (χ t) (f t)).re) fun χ χ' ↦ by
+      simp only [ContinuousMap.add_apply, inner_add_left, add_re]
+      exact integral_add (hint χ) (hint χ')
+  have hΛ : Continuous Λ :=
+    AddMonoidHomClass.continuous_of_bound Λ (∫ t in Icc 0 T, ‖f t‖) fun χ ↦ by
+      rw [mul_comm, ← integral_const_mul]
+      exact norm_integral_le_of_norm_le (hf.norm.const_mul _) (ae_of_all _ (hle χ))
+  exact congrFun (hΛ.ext_on hD continuous_const h) ψ
+
+/-- **A function orthogonal to all continuous loops vanishes.** A function on `[0, T]`, integrable
+there, whose pairing `∫_{[0, T]} Re ⟪ψ, f⟫` with every continuous loop `ψ` of period `T` vanishes,
+is zero almost everywhere on `[0, T]`: testing against the loops `g(t) v` with `g` supported in
+`(0, T)` shows that `Re ⟪v, f⟫` vanishes almost everywhere for every vector `v`. -/
+theorem IntegrableOn.ae_eq_zero_of_forall_integral_re_inner_continuousMap_eq_zero
+    [SecondCountableTopology F] {f : ℝ → F}
+    (hf : IntegrableOn f (Icc 0 T))
+    (h : ∀ ψ : C(AddCircle T, F), ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0) :
+    ∀ᵐ t ∂volume.restrict (Icc 0 T), f t = 0 := by
+  have hv (v : F) : ∀ᵐ t, t ∈ Ioo 0 T → (inner ℂ v (f t)).re = 0 := by
+    refine isOpen_Ioo.ae_eq_zero_of_integral_contDiff_smul_eq_zero
+      (IntegrableOn.mono_set (t := Icc 0 T) (hf.const_inner (𝕜 := ℂ) v).re
+        Ioo_subset_Icc_self).locallyIntegrableOn
+      fun g hg _ hgs ↦ ?_
+    have hg0 (t : ℝ) (ht : t ∉ Ioo 0 T) : g t = 0 :=
+      image_eq_zero_of_notMem_tsupport fun h' ↦ ht (hgs h')
+    -- The loop `g(t) v`, continuous since `g` vanishes at `0` and `T`.
+    let ψ : C(AddCircle T, F) :=
+      ⟨AddCircle.liftIco T 0 fun t ↦ g t • v, AddCircle.liftIco_continuous
+        (by rw [hg0 0 (by simp), hg0 (0 + T) (by simp)])
+        (hg.continuous.smul continuous_const).continuousOn⟩
+    have hψ (t : ℝ) (ht : t ∈ Icc 0 T) : ψ t = g t • v := by
+      simp only [ψ, ContinuousMap.coe_mk]
+      rcases eq_or_lt_of_le ht.2 with htT | ht1
+      · -- At the endpoint `t = T` the loop takes its value at `0`, where `g` vanishes.
+        rw [htT, show ((T : ℝ) : AddCircle T) = ((0 : ℝ) : AddCircle T) by
+          rw [AddCircle.coe_period, QuotientAddGroup.mk_zero], AddCircle.liftIco_coe_apply
+          (by simp [hT.out]), hg0 0 (by simp), hg0 T (by simp)]
+      · exact AddCircle.liftIco_coe_apply ⟨ht.1, by simpa using ht1⟩
+    have h0 := h ψ
+    rw [setIntegral_congr_fun measurableSet_Icc fun t ht ↦ by rw [hψ t ht]] at h0
+    simp only [inner_smul_left_eq_smul, Complex.smul_re, smul_eq_mul] at h0
+    rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ by
+      rw [hg0 t fun h' ↦ ht (Ioo_subset_Icc_self h'), zero_mul]] at h0
+    simpa [smul_eq_mul] using h0
+  -- These are the real inner products `⟪v, f⟫_ℝ` for the underlying real inner product space.
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
+  refine ae_eq_zero_of_forall_inner (𝕜 := ℝ) fun v ↦ ?_
+  filter_upwards [(ae_restrict_iff' measurableSet_Ioo).2 (hv v)] with t ht
+  exact (real_inner_eq_re_inner ℂ v (f t)).trans ht
+
+end Orthogonal
 
 end MeasureTheory

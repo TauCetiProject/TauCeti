@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
-import Mathlib.Analysis.InnerProductSpace.Dual
+import TauCeti.Analysis.InnerProductSpace.Gram.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Nondegeneracy of the real inner product
@@ -16,7 +19,9 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 The real inner product `innerₗ E` is a nondegenerate bilinear form on `E`
 (`TauCeti.nondegenerate_inner`): a vector orthogonal to every vector is orthogonal to itself, hence
 zero. This is the hypothesis under which Mathlib's bilinear-form constructions, such as the dual
-basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. In finite dimension it is
+basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. The inner product is also
+symmetric (`TauCeti.isSymm_innerₗ`) and positive definite
+(`TauCeti.posDef_toQuadraticMap_innerₗ`). In finite dimension it is
 moreover a perfect pairing (`TauCeti.bijective_innerₗ`), as Mathlib's `exteriorPower.hodgeStar`
 requires of its bilinear form. Its pullback along an injective linear map, such as the metric
 induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
@@ -24,8 +29,9 @@ is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`).
 
 The dual basis of a basis `b` for the inner product pairs with a vector to give its coordinates
 in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained from `b` by the inverse of the Gram
-matrix (`Module.Basis.dualBasis_innerₗ_eq_sum`). In a coordinate frame of a Riemannian metric, these
-are the coordinate covectors `dxⁱ` with their musical isomorphism `gⁱʲ ∂ⱼ`.
+matrix (`Module.Basis.dualBasis_innerₗ_eq_sum`). In a coordinate frame `∂ᵢ` of a Riemannian metric
+`g`, the `i`-th dual basis vector is thus the image `(dxⁱ)♯ = ∑ⱼ gⁱʲ ∂ⱼ` of the coordinate covector
+`dxⁱ` under the sharp isomorphism.
 -/
 
 public section
@@ -39,6 +45,24 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The real inner product is a nondegenerate bilinear form. -/
 theorem nondegenerate_inner : (innerₗ E).Nondegenerate :=
   ⟨fun x hx ↦ inner_self_eq_zero.mp (hx x), fun y hy ↦ inner_self_eq_zero.mp (hy y)⟩
+
+/-- The real inner product is a symmetric bilinear form. -/
+theorem isSymm_innerₗ : LinearMap.BilinForm.IsSymm (innerₗ E) :=
+  LinearMap.BilinForm.isSymm_iff.2 isSymm_inner
+
+/-- The real inner product is a positive-definite bilinear form: its quadratic form `v ↦ ⟪v, v⟫`
+is positive away from `0`. -/
+theorem posDef_toQuadraticMap_innerₗ : (LinearMap.BilinMap.toQuadraticMap (innerₗ E)).PosDef :=
+  fun _ ↦ real_inner_self_pos.2
+
+/-- A nonzero scalar multiple of the real inner product is nondegenerate. -/
+theorem nondegenerate_toBilinForm_smul_innerSL {c : ℝ} (hc : c ≠ 0) :
+    (c • innerSL ℝ (E := E)).toBilinForm.Nondegenerate := by
+  have hform : (c • innerSL ℝ (E := E)).toBilinForm = c • innerₗ E := by
+    ext u v
+    simp [innerSL_apply_apply ℝ]
+  rw [hform]
+  exact (BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)).2 nondegenerate_inner
 
 /-- In finite dimension the real inner product is a perfect pairing: `v ↦ ⟪v, ·⟫` is a bijection
 onto the dual. -/
@@ -71,14 +95,11 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The inner product with the `i`-th vector of the dual basis of `b` is the `i`-th coordinate
 in `b`. -/
+@[simp]
 theorem inner_dualBasis_left {ι : Type*} [DecidableEq ι] [Finite ι] (b : Basis ι ℝ E) (i : ι)
     (v : E) :
     ⟪LinearMap.BilinForm.dualBasis (innerₗ E) nondegenerate_inner b i, v⟫ = b.repr v i := by
-  have : innerₗ E (LinearMap.BilinForm.dualBasis (innerₗ E) nondegenerate_inner b i) =
-      b.coord i :=
-    b.ext fun j ↦ by
-      rw [LinearMap.BilinForm.apply_dualBasis_left, coord_apply, repr_self, Finsupp.single_apply]
-  simpa using LinearMap.congr_fun this v
+  rw [LinearMap.BilinForm.repr_apply_eq_apply_dualBasis nondegenerate_inner, innerₗ_apply_apply]
 
 /-- **The dual basis through the inverse Gram matrix**: the `i`-th vector of the dual basis of
 `b` is `∑ⱼ (G⁻¹)ᵢⱼ bⱼ`, where `G = (⟪bᵢ, bⱼ⟫)` is the Gram matrix of `b`. -/
@@ -86,15 +107,7 @@ theorem dualBasis_innerₗ_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι] (b 
     (i : ι) :
     LinearMap.BilinForm.dualBasis (innerₗ E) nondegenerate_inner b i =
       ∑ j, (Matrix.gram ℝ b)⁻¹ i j • b j := by
-  have hdet : IsUnit (Matrix.gram ℝ b).det :=
-    isUnit_iff_ne_zero.2 (Matrix.det_gram_ne_zero_iff_linearIndependent.2 b.linearIndependent)
-  refine InnerProductSpace.ext_inner_right_basis b fun l ↦ ?_
-  have h := congr_fun (congr_fun (Matrix.nonsing_inv_mul _ hdet) i) l
-  rw [Matrix.mul_apply] at h
-  simp only [inner_dualBasis_left, repr_self, Finsupp.single_apply, sum_inner,
-    real_inner_smul_left]
-  simp only [Matrix.gram_apply, Matrix.one_apply] at h
-  rw [h]
-  simp [eq_comm]
+  rw [LinearMap.BilinForm.dualBasis_apply_eq_sum_inv_toMatrix_smul,
+    LinearMap.BilinForm.toMatrix_innerₗ]
 
 end Module.Basis

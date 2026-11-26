@@ -109,8 +109,8 @@ def ideleCongrOneSubgroup (𝔪 : Modulus K) : Subgroup (IdeleGroup (𝓞 K) K) 
         Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤
           WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
       ∀ w ∈ 𝔪.infinitePart,
-        0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
-          (w.1.ideleInfiniteCoord x : w.1.Completion)}
+        0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property
+          (w.val.ideleInfiniteCoord x : w.val.Completion)}
   one_mem' := ⟨fun v _ ↦ by simp, fun w _ ↦ by simp⟩
   mul_mem' := by
     rintro x y ⟨hx1, hx2⟩ ⟨hy1, hy2⟩
@@ -155,8 +155,8 @@ def ideleCongrOneSubgroup (𝔪 : Modulus K) : Subgroup (IdeleGroup (𝓞 K) K) 
           Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤
             WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
         ∀ w ∈ 𝔪.infinitePart,
-          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
-            (w.1.ideleInfiniteCoord x : w.1.Completion) :=
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property
+            (w.val.ideleInfiniteCoord x : w.val.Completion) :=
   Iff.rfl
 
 /-- The trivial modulus imposes no congruence conditions on an idele. -/
@@ -217,8 +217,8 @@ def ideleCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (IdeleGroup (𝓞 K) K
           Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤
             WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
         ∀ w ∈ 𝔪.infinitePart,
-          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
-            (w.1.ideleInfiniteCoord x : w.1.Completion) :=
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property
+            (w.val.ideleInfiniteCoord x : w.val.Completion) :=
   Iff.rfl
 
 namespace ideleCongruenceSubgroup
@@ -245,8 +245,8 @@ theorem valued_ideleFiniteCoord_sub_one_le (hx : x ∈ ideleCongruenceSubgroup �
 
 theorem extensionEmbeddingOfIsReal_pos (hx : x ∈ ideleCongruenceSubgroup 𝔪)
     {w : {w : InfinitePlace K // w.IsReal}} (hw : w ∈ 𝔪.infinitePart) :
-    0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
-      (w.1.ideleInfiniteCoord x : w.1.Completion) :=
+    0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property
+      (w.val.ideleInfiniteCoord x : w.val.Completion) :=
   (mem_ideleCongruenceSubgroup_iff.mp hx).2.2 w hw
 
 /-- **An idele of the congruence subgroup is a unit at every finite place.**  Away from the finite
@@ -272,7 +272,7 @@ this is the integrality of the component. -/
 theorem valued_snd_sub_one_le_of_pow_dvd (hx : x ∈ ideleCongruenceSubgroup 𝔪)
     {v : HeightOneSpectrum (𝓞 K)} {n : ℕ} (hn : v.asIdeal ^ n ∣ 𝔪.finitePart) :
     Valued.v ((x : 𝔸[K]).2 v - 1) ≤ WithZero.exp (-(n : ℤ)) := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn0
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · have h := sub_mem (snd_mem_adicCompletionIntegers hx v) (one_mem (v.adicCompletionIntegers K))
     rw [mem_adicCompletionIntegers] at h
     simpa using h
@@ -369,7 +369,8 @@ private theorem isOpen_setOf_congruenceConditions (𝔪 : Modulus K) :
       ({a | ∀ v ∈ 𝔪.support, Valued.v ((a.2 v : v.adicCompletion K) - 1) ≤
           WithZero.exp (-(𝔪.exponent v : ℤ))} ∩
         {a | ∀ w ∈ 𝔪.infinitePart,
-          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)}) : Set 𝔸[K]) := by
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property
+              (a.1 w.val)}) : Set 𝔸[K]) := by
   classical
   refine IsOpen.inter ?_ (IsOpen.inter ?_ ?_)
   · exact (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
@@ -383,14 +384,14 @@ private theorem isOpen_setOf_congruenceConditions (𝔪 : Modulus K) :
       (v.isOpen_setOf_valued_le (K := K) WithZero.exp_ne_zero).preimage
         (((RestrictedProduct.continuous_eval v).comp continuous_snd).sub continuous_const)
   · have h : {a : 𝔸[K] | ∀ w ∈ 𝔪.infinitePart,
-          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)} =
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property (a.1 w.val)} =
         ⋂ w ∈ 𝔪.infinitePart, {a : 𝔸[K] |
-          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)} := by
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property (a.1 w.val)} := by
       ext a; simp
     rw [h]
     exact isOpen_biInter_finset fun w _ ↦ isOpen_lt continuous_const
-      ((InfinitePlace.Completion.isometry_extensionEmbeddingOfIsReal w.2).continuous.comp
-        ((continuous_apply w.1).comp continuous_fst))
+      ((InfinitePlace.Completion.isometry_extensionEmbeddingOfIsReal w.property).continuous.comp
+        ((continuous_apply w.val).comp continuous_fst))
 
 /-- **The idele congruence subgroup is open.**  Away from the modulus the condition is membership
 in the open subring of everywhere-integral adeles, at the finitely many finite divisors of `𝔪` it
@@ -407,11 +408,11 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
       ({a | ∀ v ∈ 𝔪.support, Valued.v ((a.2 v : v.adicCompletion K) - 1) ≤
           WithZero.exp (-(𝔪.exponent v : ℤ))} ∩
         {a | ∀ w ∈ 𝔪.infinitePart,
-          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)})
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property (a.1 w.val)})
   have hAopen : IsOpen A := isOpen_setOf_congruenceConditions 𝔪
   have hmemA : ∀ x ∈ ideleCongruenceSubgroup 𝔪, (x : 𝔸[K]) ∈ A := by
     intro x hx
-    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · exact ideleCongruenceSubgroup.snd_mem_adicCompletionIntegers hx v
     · exact ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx
         (𝔪.pow_exponent_dvd_finitePart v)
@@ -433,7 +434,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
       have hinv := FiniteAdeleRing.mem_integralAdeles.mp hy1 v
       rw [mem_adicCompletionIntegers, ← HeightOneSpectrum.coe_ideleFiniteCoord, map_inv,
         Units.val_inv_eq_inv_val, map_inv₀] at hinv
-      exact (inv_le_one₀ (zero_lt_iff.mpr hne)).mp hinv
+      exact (inv_le_one₀ (pos_iff_ne_zero.mpr hne)).mp hinv
     · rw [HeightOneSpectrum.coe_ideleFiniteCoord]
       exact hx2 v ((Modulus.mem_support_iff 𝔪 v).mpr hv)
     · rw [InfinitePlace.coe_ideleInfiniteCoord]
@@ -451,12 +452,12 @@ completion is its `v`-adic valuation, and at a real place its sign is that of th
 theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ} :
     IdeleGroup.unitEmbedding (𝓞 K) K x ∈ ideleCongrOneSubgroup 𝔪 ↔ IsCongrOne 𝔪 x := by
   have hinf : ∀ w : {w : InfinitePlace K // w.IsReal},
-      InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
-        (w.1.ideleInfiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x) : w.1.Completion) =
-        InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+      InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property
+        (w.val.ideleInfiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x) : w.val.Completion) =
+        InfinitePlace.embedding_of_isReal w.property (x : K) := by
     intro w
     rw [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-    simp
+    simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
   simp only [mem_ideleCongrOneSubgroup_iff, valued_ideleFiniteCoord_unitEmbedding_sub_one, hinf,
     isCongrOne_iff]
 
@@ -544,8 +545,8 @@ private theorem extensionEmbeddingOfIsReal_pos_of_mem_inter {𝔪 𝔫 : Modulus
     {x : IdeleGroup (𝓞 K) K} (hx : x ∈ ideleCongruenceSubgroup (𝔪.gcd 𝔫))
     {w : {w : InfinitePlace K // w.IsReal}} (h𝔪 : w ∈ 𝔪.infinitePart)
     (h𝔫 : w ∈ 𝔫.infinitePart) :
-    0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
-      (w.1.ideleInfiniteCoord x : w.1.Completion) :=
+    0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property
+      (w.val.ideleInfiniteCoord x : w.val.Completion) :=
   ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx
     (by classical rw [Modulus.gcd_infinitePart]; exact Finset.mem_inter.mpr ⟨h𝔪, h𝔫⟩)
 
@@ -570,9 +571,9 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
   set T : Finset (InfinitePlace K) := Finset.univ.filter fun w ↦
     ∃ hw : w.IsReal, ⟨w, hw⟩ ∈ 𝔪.infinitePart ∧ ⟨w, hw⟩ ∉ 𝔫.infinitePart with hT
   have hmemT {w : {w : InfinitePlace K // w.IsReal}} :
-      w.1 ∈ T ↔ w ∈ 𝔪.infinitePart ∧ w ∉ 𝔫.infinitePart := by
+      w.val ∈ T ↔ w ∈ 𝔪.infinitePart ∧ w ∉ 𝔫.infinitePart := by
     simp only [hT, Finset.mem_filter, Finset.mem_univ, true_and]
-    exact ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨w.2, h⟩⟩
+    exact ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨w.property, h⟩⟩
   obtain ⟨y, z, hzy, hyf, hzf, hyi, hzi⟩ := NumberField.IdeleGroup.exists_mul_eq_coord_ite x S T
   refine Subgroup.mem_sup.mpr ⟨z, ?_, y, ?_, hzy⟩
   · -- The components of `z` satisfy the conditions of `𝔪`.
@@ -593,7 +594,7 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
       · exact extensionEmbeddingOfIsReal_pos_of_mem_inter hx hw
           (not_not.mp fun h𝔫 ↦ hwT (hmemT.mpr ⟨hw, h𝔫⟩))
   · -- The components of `y` satisfy the conditions of `𝔫`.
-    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · rw [hyf]
       split_ifs
       · exact hunit v

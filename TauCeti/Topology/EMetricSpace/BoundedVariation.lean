@@ -122,7 +122,7 @@ theorem comp_eq_of_edist_eq {F : Type*} [TopologicalSpace F] [WeakPseudoEMetricS
     (h : ∀ x ∈ s, ∀ y ∈ s, edist (g (f x)) (g (f y)) = edist (f x) (f y)) :
     eVariationOn (g ∘ f) s = eVariationOn f s := by
   refine iSup_congr fun p ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-  exact h _ (p.2.2.2 _) _ (p.2.2.2 _)
+  exact h _ (p.2.property.2 _) _ (p.2.property.2 _)
 
 open OrderDual in
 /-- The variation of `f ∘ φ` on `t ∩ [x, y]` for an antitone `φ` is the variation of `f` on the
@@ -178,7 +178,7 @@ theorem eVariationOn.add_le :
     _ ≤ ∑ i ∈ Finset.range n,
         (edist (f (u (i + 1))) (f (u i)) + edist (g (u (i + 1))) (g (u i))) := by
       apply Finset.sum_le_sum
-      intro i hi
+      intro i _
       exact edist_add_add_le (f (u (i + 1))) (g (u (i + 1))) (f (u i)) (g (u i))
     _ ≤ _ := by
       rw [Finset.sum_add_distrib]
@@ -228,7 +228,7 @@ variable {α E : Type*} [LinearOrder α] [TopologicalSpace E] [WeakPseudoEMetric
 /-- Total variation is the supremum of variations on finite subsets of the domain. -/
 theorem eq_iSup_finset (f : α → E) (s : Set α) :
     eVariationOn f s = ⨆ p : {p : Finset α // (p : Set α) ⊆ s},
-      eVariationOn f (p.1 : Set α) := by
+      eVariationOn f (p.val : Set α) := by
   classical
   apply le_antisymm
   · refine iSup_le fun ⟨n, u, hu, hus⟩ ↦ ?_
@@ -241,8 +241,8 @@ theorem eq_iSup_finset (f : α → E) (s : Set α) :
       simp only [p, Finset.mem_coe, Finset.mem_image, Finset.mem_range]
       exact ⟨i, by omega, rfl⟩)).trans
       (le_iSup (fun p : {p : Finset α // (p : Set α) ⊆ s} ↦
-        eVariationOn f (p.1 : Set α)) ⟨p, hp⟩)
-  · exact iSup_le fun p ↦ mono f p.2
+        eVariationOn f (p.val : Set α)) ⟨p, hp⟩)
+  · exact iSup_le fun p ↦ mono f p.property
 
 /-- Nested finite subsets recover the full extended variation. A prescribed finite set may be
 adjoined at each stage; this does not require any regularity of the function. -/
@@ -253,11 +253,11 @@ theorem exists_monotone_finset_tendsto (f : α → E) (s : Set α) (q : ℕ → 
       Tendsto (fun n ↦ eVariationOn f (p n : Set α)) atTop (𝓝 (eVariationOn f s)) := by
   classical
   let S := {p : Finset α // (p : Set α) ⊆ s}
-  let v : S → ℝ≥0∞ := fun p ↦ eVariationOn f (p.1 : Set α)
+  let v : S → ℝ≥0∞ := fun p ↦ eVariationOn f (p.val : Set α)
   have hne : (range v).Nonempty := ⟨v ⟨∅, by simp⟩, mem_range_self _⟩
   obtain ⟨w, _, _, hw, hmem⟩ := (isLUB_iSup (f := v)).exists_seq_monotone_tendsto hne
   choose r hr using hmem
-  let p (n : ℕ) := (Finset.range (n + 1)).biUnion fun i ↦ (r i).1 ∪ q i
+  let p (n : ℕ) := (Finset.range (n + 1)).biUnion fun i ↦ (r i).val ∪ q i
   have hmono : Monotone p := by
     intro i j hij x hx
     obtain ⟨k, hk, hx⟩ := Finset.mem_biUnion.mp hx
@@ -265,8 +265,8 @@ theorem exists_monotone_finset_tendsto (f : α → E) (s : Set α) (q : ℕ → 
   have hp (n : ℕ) : (p n : Set α) ⊆ s := by
     intro x hx
     obtain ⟨i, _, hi⟩ := Finset.mem_biUnion.mp hx
-    exact (Finset.mem_union.mp hi).elim (fun h ↦ (r i).2 h) (fun h ↦ hq i h)
-  have hrp (n : ℕ) : (r n).1 ⊆ p n := fun x hx ↦
+    exact (Finset.mem_union.mp hi).elim (fun h ↦ (r i).property h) (fun h ↦ hq i h)
+  have hrp (n : ℕ) : (r n).val ⊆ p n := fun x hx ↦
     Finset.mem_biUnion.mpr ⟨n, by simp, Finset.mem_union_left _ hx⟩
   refine ⟨p, hmono, hp, fun n x hx ↦
     Finset.mem_biUnion.mpr ⟨n, by simp, Finset.mem_union_right _ hx⟩, ?_⟩

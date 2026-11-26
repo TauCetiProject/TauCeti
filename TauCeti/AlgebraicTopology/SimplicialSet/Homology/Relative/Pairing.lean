@@ -33,6 +33,8 @@ This is how the coefficients of an absolute cochain act on relative chains in th
 * `SSetPair.chainComplexπ_chainComplexPairing`: it is the descent of
   `SSet.chainComplexPairing μ` along the quotient maps to relative chains.
 * `SSetPair.chainComplexPairing_naturality`: it is natural in the pair.
+* `SSetPair.chainComplexPairing_leftUnitor_hom_f`: the tensor unit acts on relative chains by the
+  left unitor.
 -/
 
 public section
@@ -65,7 +67,7 @@ private def chainComplexPairingX (P : SSetPair.{w}) (μ : M ⊗ S ⟶ N) (n : �
   (CokernelCofork.IsColimit.desc'
     (((chainComplexXSplitting S P n).map (tensorLeft M)).gIsCokernel)
     ((P.right.chainComplexPairing μ).f n ≫ (P.chainComplexπ N).f n)
-    (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).1
+    (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).val
 
 @[reassoc]
 private lemma whiskerLeft_chainComplexπ_f_chainComplexPairingX (P : SSetPair.{w})
@@ -74,7 +76,7 @@ private lemma whiskerLeft_chainComplexπ_f_chainComplexPairingX (P : SSetPair.{w
       (P.right.chainComplexPairing μ).f n ≫ (P.chainComplexπ N).f n :=
   (CokernelCofork.IsColimit.desc'
     (((chainComplexXSplitting S P n).map (tensorLeft M)).gIsCokernel) _
-    (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).2
+    (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).property
 
 instance epi_whiskerLeft_chainComplexπ_f (P : SSetPair.{w}) (S : C) (n : ℕ) :
     Epi (M ◁ (P.chainComplexπ S).f n) :=
@@ -132,5 +134,17 @@ lemma chainComplexPairing_naturality {P P' : SSetPair.{w}} (f : P ⟶ P') (μ : 
   dsimp at hN hμ ⊢
   rw [← cancel_epi (M ◁ (P.chainComplexπ S).f n)]
   simp [reassoc_of% hS, reassoc_of% hμ, hN]
+
+/-- The chain map `𝟙 ⊗ C(Y, X; S) ⟶ C(Y, X; S)` induced by the left unitor of `S` is, in each
+degree, the left unitor of the object of relative chains: the relative form of
+`SSet.chainComplexPairing_leftUnitor_hom_f`. -/
+@[simp]
+lemma chainComplexPairing_leftUnitor_hom_f [∀ J : Type w,
+      PreservesColimitsOfShape (Discrete J) (tensorLeft (𝟙_ C))] (P : SSetPair.{w}) (S : C)
+    (n : ℕ) :
+    (P.chainComplexPairing (λ_ S).hom).f n = (λ_ ((P.chainComplex S).X n)).hom := by
+  rw [← cancel_epi (𝟙_ C ◁ (P.chainComplexπ S).f n),
+    whiskerLeft_chainComplexπ_f_chainComplexPairing_f, SSet.chainComplexPairing_leftUnitor_hom_f,
+    leftUnitor_naturality]
 
 end SSetPair

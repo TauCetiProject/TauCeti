@@ -11,11 +11,12 @@ public import TauCeti.Algebra.QuadraticAlgebra.Etale
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
-public import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+public import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 public import TauCeti.RingTheory.Etale.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.Basic
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Tests for unramified, tamely and totally ramified extensions of a discrete valuation ring
@@ -191,7 +192,7 @@ theorem test_gaussian_two (hv : (2 : ℤ) ∈ v.asIdeal) {i : L} (hi : i ^ 2 = -
     rw [AlgHom.map_adjoin, Set.image_singleton, Algebra.map_top, Subalgebra.range_val]
     simp [β, B]
   have := FaithfulSMul.trans A ℚ L
-  have := hf.isDiscreteValuationRing_of_adjoin_eq_top hmo hx hadj
+  have := hf.isDiscreteValuationRing_of_adjoin_eq_top hx hadj
   have : Algebra.IsIntegral A B :=
     have := Algebra.finite_adjoin_simple_of_isIntegral (R := A) (x := 1 + i) ⟨f, hmo, hroot⟩
     inferInstance
@@ -200,11 +201,9 @@ theorem test_gaussian_two (hv : (2 : ℤ) ∈ v.asIdeal) {i : L} (hi : i ^ 2 = -
     rw [eq_top_iff, ← hgen, adjoin_simple_le_iff]
     simpa using sub_mem (mem_adjoin_simple_self ℚ (1 + i)) (one_mem ℚ⟮1 + i⟯)
   have he (P : Ideal B) [P.IsMaximal] : P.ramificationIdx A = 2 :=
-    hdeg ▸ hf.ramificationIdx_eq_natDegree hmo hx hadj P
+    hdeg ▸ hf.ramificationIdx_eq_natDegree hx hadj P
   refine ⟨inferInstance, inferInstance, he, fun h ↦ ?_⟩
   -- The ramification index `2` is the uniformizer of `A`, so it vanishes in the residue field.
-  have : (maximalIdeal B).LiesOver (maximalIdeal A) :=
-    ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A (maximalIdeal B))).symm⟩
   have := ((Algebra.isTamelyRamifiedWRT_iff_of_isIntegralClosure B).mp h (maximalIdeal B)).2
   rw [he, ← map_natCast (Ideal.Quotient.mk _), Nat.cast_ofNat,
     Ideal.Quotient.eq_zero_iff_mem.mpr ((mem_maximalIdeal _).mpr h2.not_isUnit)] at this
@@ -223,11 +222,9 @@ theorem test_cyclotomic_three (hv : (3 : ℤ) ∈ v.asIdeal) {ζ : L} (hζ : IsP
   have hπ : Irreducible (-3 : A) := (show Associated (3 : A) (-3) from ⟨-1, by simp⟩).irreducible
     (by simpa using
       v.irreducible_natCast_localizationAtPrime Nat.prime_three (by exact_mod_cast hv))
-  have hζ₃ : 1 + ζ + ζ ^ 2 = 0 := by
-    simpa [Finset.sum_range_succ] using hζ.geom_sum_eq_zero (by norm_num)
   have hα : (2 * ζ + 1) ^ 2 = algebraMap A L (-3) := by
     rw [map_neg, map_ofNat]
-    linear_combination 4 * hζ₃
+    linear_combination 4 * hζ.one_add_add_sq
   have hgen' : ℚ⟮2 * ζ + 1⟯ = ⊤ := by
     rw [eq_top_iff, ← hgen, adjoin_simple_le_iff]
     have h : algebraMap ℚ L (1 / 2) * (2 * ζ + 1 - 1) ∈ ℚ⟮2 * ζ + 1⟯ :=
@@ -242,12 +239,11 @@ theorem test_cyclotomic_three (hv : (3 : ℤ) ∈ v.asIdeal) {ζ : L} (hζ : IsP
       (Ideal.Quotient.mk (maximalIdeal A))
     norm_num at this ⊢
     exact this
-  exact ⟨(IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (K := ℚ) hπ
-      two_ne_zero hα hgen').mpr h2,
-    IsDiscreteValuationRing.isTotallyRamifiedWRT_of_pow_eq_of_irreducible (K := ℚ) hπ
-      two_ne_zero hα hgen',
-    fun P _ ↦ IsDiscreteValuationRing.ramificationIdx_eq_of_pow_eq_of_irreducible (K := ℚ) hπ
-      two_ne_zero hα hgen' P⟩
+  exact ⟨(IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (K := ℚ) hπ hα
+      hgen').mpr h2,
+    IsDiscreteValuationRing.isTotallyRamifiedWRT_of_pow_eq_of_irreducible (K := ℚ) hπ hα hgen',
+    fun P _ ↦ IsDiscreteValuationRing.ramificationIdx_eq_of_pow_eq_of_irreducible (K := ℚ) hπ hα
+      hgen' P⟩
 
 /-- *test_gaussian_five*: `ℚ(i)` is unramified with respect to `A = ℤ_(5)`, and the integral closure
 of `A` in `ℚ(i)` has exactly two maximal ideals. -/

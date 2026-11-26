@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Preadditive
+public import Mathlib.CategoryTheory.Monoidal.Linear
+public import TauCeti.CategoryTheory.Monoidal.Limits
 
 /-!
 # Negatives, differences and integer multiples in a monoidal preadditive category
@@ -23,6 +24,19 @@ morphisms.
 Consequently, if a natural number `e` kills an object `X`, in the sense that `e • 𝟙 X = 0`, then it
 kills `X ⊗ Y` and `Y ⊗ X` (`CategoryTheory.nsmul_id_tensor_eq_zero_of_left` and
 `CategoryTheory.nsmul_id_tensor_eq_zero_of_right`).
+
+In particular every monoidal preadditive category is `MonoidalLinear ℤ` for the `ℤ`-linear
+structure `CategoryTheory.Linear.preadditiveIntLinear` of a preadditive category
+(`CategoryTheory.MonoidalPreadditive.monoidalLinearInt`).  For a category of modules such as
+`ModuleCat ℤ` this is the `ℤ`-linear structure found by instance search, to which Mathlib's
+`MonoidalLinear` instance for its structure as a category of modules does not apply; files working
+with integral coefficients install it as a local instance.  It is not a global instance, as the
+simp lemmas of `MonoidalLinear` would then subsume the integer-multiple simp lemmas above.
+
+Since whiskering is additive, it preserves finite biproducts, so morphisms out of `(⨁ f) ⊗ U` or
+`U ⊗ ⨁ f` are determined by their restrictions to the whiskered summands
+(`CategoryTheory.Limits.biproduct.hom_ext_whiskerRight` and
+`CategoryTheory.Limits.biproduct.hom_ext_whiskerLeft`).
 -/
 
 public section
@@ -96,5 +110,32 @@ lemma tensorHom_zsmul {W X Y Z : C} (m : ℤ) (f : W ⟶ X) (g : Y ⟶ Z) :
     f ⊗ₘ (m • g) = m • (f ⊗ₘ g) := by
   rw [tensorHom_def', tensorHom_def', ← Preadditive.zsmul_comp]
   exact congrArg (· ≫ f ▷ Z) ((tensorLeft W).map_zsmul (f := g) (r := m))
+
+/-- A monoidal preadditive category is monoidal linear over `ℤ`, for the `ℤ`-linear structure
+`Linear.preadditiveIntLinear` of a preadditive category: whiskering commutes with integer
+multiples. Install it with `attribute [local instance]` where needed. -/
+lemma MonoidalPreadditive.monoidalLinearInt : MonoidalLinear ℤ C where
+  whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
+  smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
+
+namespace Limits
+
+variable {J : Type*} [Finite J] {f : J → C} [HasBiproduct f]
+
+/-- Morphisms out of `(⨁ f) ⊗ U` agree if they agree after each whiskered inclusion
+`biproduct.ι f j ▷ U`: `IsColimit.hom_ext_whiskerRight` for the biproduct cocone, which tensoring
+on the right preserves since it is additive. -/
+theorem biproduct.hom_ext_whiskerRight {U Z : C} {g h : (⨁ f) ⊗ U ⟶ Z}
+    (w : ∀ j, biproduct.ι f j ▷ U ≫ g = biproduct.ι f j ▷ U ≫ h) : g = h :=
+  (biproduct.isColimit f).hom_ext_whiskerRight fun j ↦ w j.as
+
+/-- Morphisms out of `U ⊗ ⨁ f` agree if they agree after each whiskered inclusion
+`U ◁ biproduct.ι f j`: `IsColimit.hom_ext_whiskerLeft` for the biproduct cocone, which tensoring
+on the left preserves since it is additive. -/
+theorem biproduct.hom_ext_whiskerLeft {U Z : C} {g h : U ⊗ (⨁ f) ⟶ Z}
+    (w : ∀ j, U ◁ biproduct.ι f j ≫ g = U ◁ biproduct.ι f j ≫ h) : g = h :=
+  (biproduct.isColimit f).hom_ext_whiskerLeft fun j ↦ w j.as
+
+end Limits
 
 end CategoryTheory

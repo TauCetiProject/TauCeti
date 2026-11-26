@@ -19,7 +19,10 @@ For a trivial value bundle, `mpullbackWithin` and `mpullback` retain the fixed c
 space. On model spaces they agree with precomposition by the Fréchet derivative.
 Pullback at `x` only depends on the germ of `f` at `x`, within-set pullback at `x` only on the
 value at `x` and the germ within the set, and when the derivative of `f` at `x`
-is surjective it determines the form at `f x`.
+is surjective it determines the form at `f x`. Pullback along a constant map sends every form
+of positive degree to zero (`TauCeti.mpullback_const`). On a normed space, the pullback along a
+translate `w ↦ u (w + c)` is the pullback along `u` at the translated point
+(`TauCeti.mpullback_comp_add_right`).
 
 This construction follows Lee, *Introduction to Smooth Manifolds*, second edition,
 Chapter 14. The proofs reuse Mathlib's manifold chain rule and alternating-map composition.
@@ -257,6 +260,16 @@ theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
   funext i
   fin_cases i <;> rfl
 
+/-- Evaluation of the pullback of a one-form on a tangent vector. -/
+theorem mpullback_apply_one (f : M → M') (ω : RoughForm I' M' F 1) (x : M)
+    (v : TangentSpace I x) :
+    mpullback I I' f ω x ![v] = ω (f x) ![mfderiv I I' f x v] := by
+  rw [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i
+  rfl
+
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]
 theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :
@@ -301,24 +314,37 @@ theorem _root_.Filter.EventuallyEq.mpullback_eq {f g : M → M'} {x : M} (h : f 
   rw [← mpullbackWithin_univ, ← mpullbackWithin_univ]
   exact (h.filter_mono nhdsWithin_le_nhds).mpullbackWithin_eq h.eq_of_nhds ω
 
+/-- Two forms that agree at `f x` have the same pullback along `f` at `x`. -/
+theorem mpullback_apply_congr {f : M → M'} {ω η : RoughForm I' M' F k} {x : M}
+    (h : ω (f x) = η (f x)) : mpullback I I' f ω x = mpullback I I' f η x := by
+  ext v
+  simp [mpullback_apply, h]
+
 /-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
 `x` exactly when they agree at `f x`. -/
 theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
     (hf : Function.Surjective (mfderiv I I' f x)) {ω η : RoughForm I' M' F k} :
     mpullback I I' f ω x = mpullback I I' f η x ↔ ω (f x) = η (f x) := by
-  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ ?_⟩
-  · choose w hw using fun i ↦ hf (v i)
-    have h₁ := DFunLike.congr_fun h w
-    simp only [mpullback_apply, hw] at h₁
-    exact h₁
-  · refine ContinuousAlternatingMap.ext fun v ↦ ?_
-    rw [mpullback_apply, mpullback_apply, h]
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, mpullback_apply_congr⟩
+  choose w hw using fun i ↦ hf (v i)
+  have h₁ := DFunLike.congr_fun h w
+  simp only [mpullback_apply, hw] at h₁
+  exact h₁
 
 /-- A pullback vanishes at every point where the form vanishes at the image point. -/
 theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M}
     (h : ω (f x) = 0) : mpullback I I' f ω x = 0 := by
   ext v
   simp [mpullback_apply, h]
+
+/-- The pullback of a form of positive degree along a constant map vanishes: the derivative of a
+constant map is zero, and a form of positive degree vanishes on zero vectors. -/
+@[simp]
+theorem mpullback_const (hk : k ≠ 0) (y : M') (ω : RoughForm I' M' F k) :
+    mpullback I I' (fun _ : M ↦ y) ω = 0 := by
+  ext x v
+  rw [mpullback_apply, mfderiv_const]
+  exact (ω y).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ (zero_apply _)
 
 /-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
 theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
@@ -362,6 +388,14 @@ theorem mpullback_sub [IsTopologicalAddGroup F] (f : M → M') (ω η : RoughFor
   ext v
   simp only [mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
 
+/-- Pullback commutes with finite sums. -/
+@[simp]
+theorem mpullback_sum [ContinuousAdd F] (f : M → M') {ι : Type*} (s : Finset ι)
+    (ω : ι → RoughForm I' M' F k) :
+    mpullback I I' f (∑ i ∈ s, ω i) = ∑ i ∈ s, mpullback I I' f (ω i) :=
+  map_sum (⟨⟨mpullback I I' f, mpullback_zero f⟩, mpullback_add f⟩ :
+    RoughForm I' M' F k →+ RoughForm I M F k) ω s
+
 /-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
 acting continuously on the coefficient space and commuting with the real action. -/
 @[simp]
@@ -390,6 +424,17 @@ theorem mpullback_fun_smul {S : Type*} [Monoid S] [DistribMulAction S F]
   funext x
   ext v
   simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply]
+
+/-- Pullback of a pointwise finite weighted sum of forms, whose finite index set may depend on the
+point, is the weighted sum of the pullbacks, with index set and weights read at the image point. -/
+theorem mpullback_sum_smul [ContinuousAdd F] [ContinuousConstSMul ℝ F] {ι : Type*} (f : M → M')
+    (S : M' → Finset ι) (c : ι → M' → ℝ) (φ : ι → RoughForm I' M' F k) :
+    mpullback I I' f (fun y ↦ ∑ i ∈ S y, c i y • φ i y) =
+      fun x ↦ ∑ i ∈ S (f x), c i (f x) • mpullback I I' f (φ i) x := by
+  funext x
+  ext v
+  simp only [mpullback_apply, ContinuousAlternatingMap.sum_apply,
+    ContinuousAlternatingMap.smul_apply]
 
 /-- Within-set pullback by the identity fixes forms wherever the derivative is unique. -/
 @[simp]
@@ -495,6 +540,19 @@ theorem mpullback_eq_flat (f : E → E') (ω : RoughForm 𝓘(ℝ, E') E' F k) :
   -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
   rfl
 
+/-- The within-set chain rule for precomposition by a map of normed spaces: the within-set
+pullback along `u ∘ L`, for a map `L` carrying `s` into `t` with derivative `A` within `s` at `y`,
+is the within-set pullback along `u` at `L y` precomposed with `A`. -/
+theorem mpullbackWithin_comp_apply_of_hasFDerivWithinAt {u : E' → M} {L : E'' → E'}
+    {A : E'' →L[ℝ] E'} {s : Set E''} {t : Set E'} {y : E''}
+    (hL : HasFDerivWithinAt L A s y) (hu : MDifferentiableWithinAt 𝓘(ℝ, E') I u t (L y))
+    (hst : MapsTo L s t) (hs : UniqueDiffWithinAt ℝ s y) (ω : RoughForm I M F k) :
+    mpullbackWithin 𝓘(ℝ, E'') I (u ∘ L) s ω y =
+      (mpullbackWithin 𝓘(ℝ, E') I u t ω (L y)).compContinuousLinearMap A := by
+  rw [mpullbackWithin_comp_at hL.differentiableWithinAt.mdifferentiableWithinAt hu hst
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 hs), mpullbackWithin_eq_flat]
+  exact congrArg _ (hL.fderivWithin hs)
+
 /-- The chain rule for precomposition by a map of normed spaces: the pullback along `u ∘ L`, for a
 map `L` with derivative `A` at `y`, is the pullback along `u` at `L y` precomposed with `A`. -/
 theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A : E'' →L[ℝ] E'}
@@ -504,6 +562,19 @@ theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A :
       (mpullback 𝓘(ℝ, E') I u ω (L y)).compContinuousLinearMap A := by
   rw [mpullback_comp_at hL.differentiableAt.mdifferentiableAt hu, mpullback_eq_flat]
   exact congrArg _ hL.fderiv
+
+/-- **Translation.** The pullback along a translate `w ↦ u (w + c)` of a map of a normed space is
+the pullback along `u` at the translated point. -/
+theorem mpullback_comp_add_right {u : E' → M} {c y : E'}
+    (hu : MDifferentiableAt 𝓘(ℝ, E') I u (y + c)) (ω : RoughForm I M F k) :
+    mpullback 𝓘(ℝ, E') I (fun w ↦ u (w + c)) ω y = mpullback 𝓘(ℝ, E') I u ω (y + c) := by
+  -- The translation has derivative the identity.
+  have hL : HasFDerivAt (fun w : E' ↦ w + c) (ContinuousLinearMap.id ℝ E') y :=
+    (hasFDerivAt_id y).add_const c
+  rw [← Function.comp_def u (· + c), mpullback_comp_apply_of_hasFDerivAt hL hu]
+  -- Precomposing with the identity of `E'` changes nothing; the tangent spaces of `E'` are `E'`
+  -- itself, but indexed by the point, so this is not a rewrite with a precomposition lemma.
+  exact ContinuousAlternatingMap.ext fun v ↦ rfl
 
 /-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P` of normed spaces,
 vanishes on every family of vectors one of which lies in the kernel of `P`. -/

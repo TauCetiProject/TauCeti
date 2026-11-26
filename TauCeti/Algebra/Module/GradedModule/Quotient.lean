@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Gradings of homogeneous submodules and of their quotients
@@ -30,7 +31,7 @@ The submodule may be over a larger semiring `S` than the semiring `R` of the gra
 for rings, the quotient by it then inherit gradings by `R`-submodules through scalar restriction.
 
 The kernel of a homogeneous linear map is homogeneous
-(`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker`), so it inherits a grading in the same way.
+(`LinearMap.IsHomogeneous.isHomogeneous_ker`), so it inherits a grading in the same way.
 The map may be linear over a larger ring `S` than the ring `R` of the grading, as for a
 differential over a polynomial ring whose variables move the degree; the kernel is then an
 `S`-module graded by `R`-submodules.
@@ -52,6 +53,8 @@ differential over a polynomial ring whose variables move the degree; the kernel 
 * `TauCeti.InternalGrading.isHomogeneous_rangeRestrict`: the corestriction of a homogeneous map
   to its image keeps its degree.
 * `TauCeti.InternalGrading.isHomogeneous_mkQ`: the quotient map has degree zero.
+* `TauCeti.InternalGrading.isHomogeneous_mapQ`: the endomorphism induced on the quotient by a
+  homogeneous endomorphism preserving the submodule keeps its degree.
 -/
 
 public section
@@ -60,7 +63,7 @@ open DirectSum
 
 namespace TauCeti.InternalGrading
 
-variable {R M : Type*} {ι : Type} [DecidableEq ι]
+variable {R M : Type*} {ι : Type*} [DecidableEq ι]
 
 section Span
 
@@ -103,7 +106,7 @@ noncomputable def submodule : InternalGrading R U ι where
   piece p := (G.piece p).comap (U.subtype.restrictScalars R)
   isInternal := DirectSum.isInternal_comap G.piece _ (U.subtype.restrictScalars R)
     Subtype.val_injective
-    (fun _ _ ↦ Iff.rfl) fun p x ↦ ⟨⟨_, hU p x.2⟩, rfl⟩
+    (fun _ _ ↦ Iff.rfl) fun p x ↦ ⟨⟨_, hU p x.property⟩, rfl⟩
 
 @[simp]
 theorem submodule_piece (p : ι) :
@@ -168,6 +171,11 @@ theorem coe_decompose_ker (p : ι) (z : _root_.LinearMap.ker f) :
       decompose G.piece (z : M) p :=
   G.coe_decompose_submodule (_root_.LinearMap.ker f) hf.isHomogeneous_ker p z
 
+/-- The grading of the kernel of `f` vanishes in every degree in which the grading of `M` does. -/
+theorem ker_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.ker hf).piece p = ⊥ :=
+  (Submodule.eq_bot_iff _).mpr fun _ hz ↦ Subtype.ext <|
+    (Submodule.eq_bot_iff _).mp hp _ ((G.mem_ker_piece hf).1 hz)
+
 end Ker
 
 section Quotient
@@ -211,11 +219,25 @@ theorem mk_mem_quotient_piece {p : ι} {x : M} (hx : x ∈ G.piece p) :
     (Submodule.Quotient.mk x : M ⧸ U) ∈ (G.quotient U hU).piece p :=
   (G.mem_quotient_piece_iff U hU).2 ⟨x, hx, rfl⟩
 
+/-- The grading of the quotient vanishes in every degree in which the grading of `M` does. -/
+theorem quotient_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.quotient U hU).piece p = ⊥ := by
+  rw [quotient_piece, hp, Submodule.map_bot]
+
 /-- The quotient map by a homogeneous submodule has degree zero. -/
 theorem isHomogeneous_mkQ [AddMonoid ι] :
     LinearMap.IsHomogeneous U.mkQ G.piece (G.quotient U hU).piece 0 :=
   LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
     simpa using G.mk_mem_quotient_piece U hU hx
+
+/-- The endomorphism of `M ⧸ U` induced by a homogeneous `d` preserving `U` is homogeneous of the
+same degree for the quotient grading. -/
+theorem isHomogeneous_mapQ [AddMonoid ι] {d : M →ₗ[S] M} {r : ι}
+    (hd : LinearMap.IsHomogeneous d G.piece G.piece r) (hdU : U ≤ U.comap d) :
+    LinearMap.IsHomogeneous (U.mapQ U d hdU) (G.quotient U hU).piece (G.quotient U hU).piece r :=
+  LinearMap.isHomogeneous_def.2 fun _ y hy ↦ by
+    obtain ⟨x, hx, rfl⟩ := (G.mem_quotient_piece_iff U hU).1 hy
+    rw [Submodule.mapQ_apply]
+    exact G.mk_mem_quotient_piece U hU (hd.map_mem hx)
 
 /-- Homogeneous projection commutes with the quotient map. -/
 @[simp]
