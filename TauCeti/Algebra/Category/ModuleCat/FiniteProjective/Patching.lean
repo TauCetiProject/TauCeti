@@ -48,6 +48,9 @@ any module.
 
 ## Main results
 
+* `RingHom.finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_eq_commSqEquiv`: for every
+  commuting square, the isomorphism `RingHom.finiteProjectiveModulesExtendScalarsCompIso` is the
+  gluing isomorphism `TauCeti.BalancedExtension.commSqEquiv` on underlying modules.
 * `RingHom.faithful_patchingFunctor`, `RingHom.full_patchingFunctor`: the patching functor is
   faithful and full.
 
@@ -68,6 +71,24 @@ open CategoryTheory Limits TauCeti BalancedExtension
 namespace RingHom
 
 universe u
+
+section Square
+
+variable {A B C D : Type u} [Ring A] [Ring B] [Ring C] [Ring D] (f₁ : A →+* B) (g₁ : B →+* D)
+  (f₂ : A →+* C) (g₂ : C →+* D) (h : g₁.comp f₁ = g₂.comp f₂)
+
+/-- For every commuting square `g₁ ∘ f₁ = g₂ ∘ f₂`, the component at `P` of
+`RingHom.finiteProjectiveModulesExtendScalarsCompIso` is, on underlying modules, the gluing
+isomorphism `TauCeti.BalancedExtension.commSqEquiv h P : D ⊗_B (B ⊗_A P) ≃ D ⊗_C (C ⊗_A P)`. -/
+theorem finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_eq_commSqEquiv
+    (P : (finiteProjectiveModules A).FullSubcategory) :
+    ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).hom.app P).hom.hom =
+      (commSqEquiv h P.obj).toLinearMap :=
+  LinearMap.ext fun x ↦
+    (finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_apply f₁ g₁ f₂ g₂ h P x).trans <|
+      (LinearEquiv.symm_apply_eq _).2 (cancelBaseChange_commSqEquiv h x).symm
+
+end Square
 
 variable {A₁ A₂ Q : Type u} [Ring A₁] [Ring A₂] [Ring Q] (π₁ : A₁ →+* Q) (π₂ : A₂ →+* Q)
 
@@ -93,16 +114,37 @@ def patchingFunctor : FiniteProjectiveRight (π₁.pullback π₂) ⥤ π₁.Pat
       snd := (RingHom.op (π₁.pullbackSnd π₂)).finiteProjectiveModulesExtendScalars
       iso := finiteProjectiveModulesExtendScalarsCompIso _ _ _ _ (op_pullback_comm_sq π₁ π₂) }
 
-/-- The gluing isomorphism `α_P` of the patching triple of `P` is
-`TauCeti.BalancedExtension.commSqEquiv` over the square of opposite rings. -/
-private theorem commSqEquiv_eq_compIso_hom_app (P : FiniteProjectiveRight (π₁.pullback π₂))
-    (x : BalancedExtension (RingHom.op π₁)
-      (BalancedExtension (RingHom.op (π₁.pullbackFst π₂)) P.obj)) :
-    commSqEquiv (op_pullback_comm_sq π₁ π₂) P.obj x =
-      ((finiteProjectiveModulesExtendScalarsCompIso _ _ _ _
-        (op_pullback_comm_sq π₁ π₂)).hom.app P).hom x := by
-  rw [finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_apply, LinearEquiv.eq_symm_apply,
-    cancelBaseChange_commSqEquiv]
+/-- The first component of the image of a map `f` under the patching functor is, on underlying
+modules, the extension `TauCeti.BalancedExtension.map` of `f` along the first projection. -/
+private theorem patchingFunctor_map_fst_hom_hom {P P' : FiniteProjectiveRight (π₁.pullback π₂)}
+    (f : P ⟶ P') :
+    ((patchingFunctor π₁ π₂).map f).fst.hom.hom = map (RingHom.op (π₁.pullbackFst π₂)) f.hom.hom :=
+  -- The `eqToHom`s of `finiteProjectiveModulesExtendScalars_map_hom` are identities.
+  congr($(patchingFunctor_map_fst π₁ π₂ f).hom.hom).trans
+    congr($(finiteProjectiveModulesExtendScalars_map_hom _ f).hom)
+
+/-- The second component of the image of a map `f` under the patching functor is, on underlying
+modules, the extension `TauCeti.BalancedExtension.map` of `f` along the second projection. -/
+private theorem patchingFunctor_map_snd_hom_hom {P P' : FiniteProjectiveRight (π₁.pullback π₂)}
+    (f : P ⟶ P') :
+    ((patchingFunctor π₁ π₂).map f).snd.hom.hom = map (RingHom.op (π₁.pullbackSnd π₂)) f.hom.hom :=
+  -- The `eqToHom`s of `finiteProjectiveModulesExtendScalars_map_hom` are identities.
+  congr($(patchingFunctor_map_snd π₁ π₂ f).hom.hom).trans
+    congr($(finiteProjectiveModulesExtendScalars_map_hom _ f).hom)
+
+/-- A map `P → P'` of finitely generated projective right modules over `A₁ ×_Q A₂` is determined
+by a compatible pair of maps of their extensions to `A₁` and `A₂`. -/
+private theorem existsUnique_patchingFunctor {P P' : FiniteProjectiveRight (π₁.pullback π₂)}
+    (g₁ : BalancedExtension (RingHom.op (π₁.pullbackFst π₂)) P.obj →ₗ[A₁ᵐᵒᵖ]
+      BalancedExtension (RingHom.op (π₁.pullbackFst π₂)) P'.obj)
+    (g₂ : BalancedExtension (RingHom.op (π₁.pullbackSnd π₂)) P.obj →ₗ[A₂ᵐᵒᵖ]
+      BalancedExtension (RingHom.op (π₁.pullbackSnd π₂)) P'.obj)
+    (hg : ∀ x, commSqEquiv (op_pullback_comm_sq π₁ π₂) P'.obj (map (RingHom.op π₁) g₁ x) =
+      map (RingHom.op π₂) g₂ (commSqEquiv (op_pullback_comm_sq π₁ π₂) P.obj x)) :
+    ∃! g : P.obj →ₗ[(π₁.pullback π₂)ᵐᵒᵖ] P'.obj,
+      map (RingHom.op (π₁.pullbackFst π₂)) g = g₁ ∧ map (RingHom.op (π₁.pullbackSnd π₂)) g = g₂ :=
+  existsUnique_map_eq_and_map_eq (op_pullback_comm_sq π₁ π₂)
+    (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂) g₁ g₂ hg
 
 /-- The extensions to `Q` of the two components of a morphism of patching triples between images
 of the patching functor are intertwined by the gluing isomorphisms `commSqEquiv`. -/
@@ -114,30 +156,35 @@ private theorem commSqEquiv_map_hom_fst {P P' : FiniteProjectiveRight (π₁.pul
       map (RingHom.op π₂) φ.snd.hom.hom (commSqEquiv (op_pullback_comm_sq π₁ π₂) P.obj x) :=
   -- The components of `φ.w` are these maps up to the definitional identification of the extended
   -- modules with balanced extensions.
-  (commSqEquiv_eq_compIso_hom_app π₁ π₂ P' _).trans
-    ((congr($(φ.w).hom x)).trans (congrArg _ (commSqEquiv_eq_compIso_hom_app π₁ π₂ P x).symm))
+  (LinearMap.congr_fun (finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_eq_commSqEquiv
+      _ _ _ _ (op_pullback_comm_sq π₁ π₂) P') _).symm.trans
+    ((congr($(φ.w).hom x)).trans (congrArg _ (LinearMap.congr_fun
+      (finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_eq_commSqEquiv
+        _ _ _ _ (op_pullback_comm_sq π₁ π₂) P) x)))
 
 /-- **The patching functor is faithful**: a map of finitely generated projective right modules over
 `A₁ ×_Q A₂` is determined by its extensions to `A₁` and `A₂`. -/
 instance faithful_patchingFunctor : (patchingFunctor π₁ π₂).Faithful where
-  map_injective {_ _} φ _ hφψ :=
+  map_injective {_ _} φ ψ hφψ :=
     ObjectProperty.hom_ext _ <| ModuleCat.hom_ext <|
-      (existsUnique_map_eq_and_map_eq (op_pullback_comm_sq π₁ π₂)
-        (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂) _ _
-        (commSqEquiv_map _ φ.hom.hom)).unique ⟨rfl, rfl⟩
-        ⟨congr($(congrArg CategoricalPullback.Hom.fst hφψ).hom.hom).symm,
-          congr($(congrArg CategoricalPullback.Hom.snd hφψ).hom.hom).symm⟩
+      (existsUnique_patchingFunctor π₁ π₂ _ _ (commSqEquiv_map _ φ.hom.hom)).unique ⟨rfl, rfl⟩
+        ⟨(patchingFunctor_map_fst_hom_hom π₁ π₂ ψ).symm.trans
+            (congr($(congrArg CategoricalPullback.Hom.fst hφψ).hom.hom).symm.trans
+              (patchingFunctor_map_fst_hom_hom π₁ π₂ φ)),
+          (patchingFunctor_map_snd_hom_hom π₁ π₂ ψ).symm.trans
+            (congr($(congrArg CategoricalPullback.Hom.snd hφψ).hom.hom).symm.trans
+              (patchingFunctor_map_snd_hom_hom π₁ π₂ φ))⟩
 
 /-- **The patching functor is full**: a morphism of patching triples between the images of
 finitely generated projective right modules `P` and `P'` over `A₁ ×_Q A₂` is the image of a map
 `P → P'`. -/
 instance full_patchingFunctor : (patchingFunctor π₁ π₂).Full where
   map_surjective {P P'} φ := by
-    obtain ⟨g, hg, -⟩ := existsUnique_map_eq_and_map_eq (op_pullback_comm_sq π₁ π₂)
-      (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂) _ _
-      (commSqEquiv_map_hom_fst π₁ π₂ φ)
+    obtain ⟨g, hg, -⟩ := existsUnique_patchingFunctor π₁ π₂ _ _ (commSqEquiv_map_hom_fst π₁ π₂ φ)
     exact ⟨ObjectProperty.homMk (ModuleCat.ofHom g), CategoricalPullback.hom_ext
-      (ObjectProperty.hom_ext _ (ModuleCat.hom_ext hg.1))
-      (ObjectProperty.hom_ext _ (ModuleCat.hom_ext hg.2))⟩
+      (ObjectProperty.hom_ext _ (ModuleCat.hom_ext
+        ((patchingFunctor_map_fst_hom_hom π₁ π₂ _).trans hg.1)))
+      (ObjectProperty.hom_ext _ (ModuleCat.hom_ext
+        ((patchingFunctor_map_snd_hom_hom π₁ π₂ _).trans hg.2)))⟩
 
 end RingHom
