@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Algebra.GroupWithZero.Action.End
 import Mathlib.Algebra.Group.Subgroup.Actions
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Conjugation of subgroups
@@ -50,6 +51,9 @@ subgroup is the conjugate by `g` of the stabilizer of `a`.
   normalizes `Γ`.
 * `Subgroup.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer`: left multiplication of `g` by an
   element of the normalizer of `Γ₁` conjugates `(gΓ₂g⁻¹).subgroupOf Γ₁`.
+* `Subgroup.mem_normalizer_iSup_of_conjAct_smul_eq`,
+  `Subgroup.mem_normalizer_biSup_of_conjAct_smul_eq`: an element fixing each participating subgroup
+  under conjugation normalizes their join.
 * `TauCeti.MulAction.orbitRel_smul_smul_iff_of_conjAct_smul_eq`: `g • x` and `g • y` lie in the
   same orbit of `g H g⁻¹` exactly when `x` and `y` lie in the same orbit of `H`.
 * `TauCeti.MulAction.orbit_smul_of_conjAct_smul_eq`: the orbit of `g • x` under `g H g⁻¹` is the
@@ -188,6 +192,21 @@ theorem subgroupOf_conjAct_smul_mul_left_of_mem_normalizer {G : Type*} [Group G]
   -- bracketing: `(hg)⁻¹x(hg)` versus `g⁻¹(h⁻¹xh)g`. Reassociating proves that identity; the
   -- `iff` is then congruence along it, so no rewriting has to find a redex.
   exact iff_of_eq (congrArg (· ∈ Γ₂) (by simp only [mul_inv_rev, mul_assoc]))
+
+/-- An element normalizes a join of subgroups when conjugation by it fixes each joined subgroup. -/
+theorem mem_normalizer_iSup_of_conjAct_smul_eq {G : Type*} [Group G] {ι : Sort*}
+    {B : ι → Subgroup G} {g : G} (h : ∀ i, ConjAct.toConjAct g • B i = B i) :
+    g ∈ normalizer ((⨆ i, B i : Subgroup G) : Set G) := by
+  rw [← conjAct_pointwise_smul_iff, smul_iSup]
+  exact iSup_congr h
+
+/-- An element normalizes a bounded join of subgroups when conjugation by it fixes each
+participating subgroup. -/
+theorem mem_normalizer_biSup_of_conjAct_smul_eq {G : Type*} [Group G] {ι : Sort*} {p : ι → Prop}
+    {B : ι → Subgroup G} {g : G} (h : ∀ i, p i → ConjAct.toConjAct g • B i = B i) :
+    g ∈ normalizer ((⨆ (i) (_ : p i), B i : Subgroup G) : Set G) :=
+  mem_normalizer_iSup_of_conjAct_smul_eq fun i ↦
+    conjAct_pointwise_smul_eq_self (mem_normalizer_iSup_of_conjAct_smul_eq (h i))
 
 end Subgroup
 

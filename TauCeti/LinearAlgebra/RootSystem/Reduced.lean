@@ -35,6 +35,8 @@ symmetric form of a simply-laced Cartan matrix.
   coroots and `2 ≠ 0`, inclusion of coroot kernels forces the indices to agree up to root negation.
 * `RootPairing.root_add_root_notMem_range_root_and_ne_zero_of_root_eq_add_of_root_eq_add`:
   if `γ = α + β` and `δ = α + γ` are roots, then `β + δ` is neither a root nor zero.
+* `RootPairing.not_linearIndependent_root_iff`: two roots of a finite crystallographic pairing fail
+  to be linearly independent iff they are equal, opposite, or one is `±2` times the other.
 -/
 
 public section
@@ -155,5 +157,54 @@ theorem eq_or_eq_reflectionPerm_self_of_ker_coroot'_le [P.flip.IsReduced] {α β
     simp only [flip_root] at hneg
     rw [coroot_reflectionPerm, coreflection_apply_self]
     exact neg_eq_iff_eq_neg.mp hneg.symm
+
+omit [IsDomain R] [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+private theorem not_linearIndependent_of_root_eq_smul [Nontrivial R] {i j : ι} {c : R}
+    (h : P.root i = c • P.root j) : ¬ LinearIndependent R ![P.root i, P.root j] := fun hli ↦
+  one_ne_zero ((LinearIndependent.pair_iff.mp hli 1 (-c) (by simp [h])).1)
+
+omit [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- In a finite crystallographic root pairing over a domain of characteristic zero, two roots fail
+to be linearly independent if and only if they are equal, opposite, or one is `±2` times the other
+(Bourbaki, Ch. VI, §1, no. 3, Proposition 8). -/
+theorem not_linearIndependent_root_iff [Finite ι] [CharZero R] [P.IsCrystallographic] {i j : ι} :
+    ¬ LinearIndependent R ![P.root i, P.root j] ↔
+      i = j ∨ P.root i = -P.root j ∨ P.root j = (2 : R) • P.root i ∨
+        P.root i = (2 : R) • P.root j ∨ P.root j = (-2 : R) • P.root i ∨
+        P.root i = (-2 : R) • P.root j := by
+  have := Module.IsReflexive.of_isPerfPair P.toLinearMap
+  have := Module.IsReflexive.of_isPerfPair P.flip.toLinearMap
+  refine ⟨fun hdep ↦ ?_, fun h ↦ ?_⟩
+  · set a := P.pairingIn ℤ i j; set b := P.pairingIn ℤ j i
+    have h4 : a * b = 4 := (P.coxeterWeightIn_eq_four_iff_not_linearIndependent ℤ).mpr hdep
+    have hab : -4 ≤ a ∧ a ≤ 4 := by
+      rcases lt_trichotomy b 0 with hb | hb | hb
+      · have ha : a < 0 := by_contra fun ha ↦ by
+          have := Int.mul_nonpos_of_nonneg_of_nonpos (not_lt.mp ha) hb.le; omega
+        have hle := Int.mul_le_mul_of_nonneg_left (a := 1) (b := -b) (c := -a) (by omega) (by omega)
+        rw [neg_mul_neg, h4] at hle; omega
+      · simp [hb] at h4
+      · have ha : 0 < a := by_contra fun ha ↦ by
+          have := Int.mul_nonpos_of_nonpos_of_nonneg (not_lt.mp ha) hb.le; omega
+        have hle := Int.mul_le_mul_of_nonneg_left (a := 1) (b := b) (c := a) hb (by omega)
+        rw [h4] at hle; omega
+    have hc : (a = 2 ∧ b = 2) ∨ (a = -2 ∧ b = -2) ∨ (a = 1 ∧ b = 4) ∨ (a = 4 ∧ b = 1) ∨
+        (a = -1 ∧ b = -4) ∨ (a = -4 ∧ b = -1) := by
+      rcases (by omega : a = -4 ∨ a = -3 ∨ a = -2 ∨ a = -1 ∨ a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨
+        a = 4) with ha | ha | ha | ha | ha | ha | ha | ha | ha <;> (rw [ha] at h4; omega)
+    rcases hc with h | h | h | h | h | h
+    exacts [.inl ((P.pairingIn_two_two_iff ℤ i j).mp h),
+      .inr (.inl ((P.pairingIn_neg_two_neg_two_iff ℤ i j).mp h)),
+      .inr (.inr (.inl ((P.pairingIn_one_four_iff ℤ i j).mp h))),
+      .inr (.inr (.inr (.inl ((P.pairingIn_one_four_iff ℤ j i).mp h.symm)))),
+      .inr (.inr (.inr (.inr (.inl ((P.pairingIn_neg_one_neg_four_iff ℤ i j).mp h))))),
+      .inr (.inr (.inr (.inr (.inr ((P.pairingIn_neg_one_neg_four_iff ℤ j i).mp h.symm)))))]
+  · rcases h with rfl | h | h | h | h | h
+    exacts [P.not_linearIndependent_of_root_eq_smul (one_smul R _).symm,
+      P.not_linearIndependent_of_root_eq_smul (h.trans (neg_one_smul R _).symm),
+      mt LinearIndependent.pair_symm_iff.mp (P.not_linearIndependent_of_root_eq_smul h),
+      P.not_linearIndependent_of_root_eq_smul h,
+      mt LinearIndependent.pair_symm_iff.mp (P.not_linearIndependent_of_root_eq_smul h),
+      P.not_linearIndependent_of_root_eq_smul h]
 
 end RootPairing

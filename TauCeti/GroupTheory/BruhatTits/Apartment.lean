@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
-public import TauCeti.GroupTheory.BruhatTits.Valuation
+public import TauCeti.GroupTheory.BruhatTits.Valuation.Basic
 
 /-!
 # The apartment of a valued root datum

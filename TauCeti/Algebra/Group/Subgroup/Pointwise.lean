@@ -40,6 +40,8 @@ form of that computation: every element of `H ⊔ K` is a product `x * t` with `
   a product of an element of `H` followed by an element of `K`.
 * `Subgroup.mem_smul_set_iff_exists_smul_mem`: a point lies in the translate `H • t` of a set by a
   subgroup exactly when some element of `H` moves it into `t`.
+* `Subgroup.smul_iSup`: pointwise scalar multiplication of subgroups distributes over arbitrary
+  joins.
 -/
 
 public section
@@ -102,5 +104,10 @@ theorem mem_smul_set_iff_exists_smul_mem {α : Type*} [MulAction G α] {t : Set 
     exact ⟨g⁻¹, H.inv_mem hg, by rwa [inv_smul_smul]⟩
   · rintro ⟨g, hg, hx⟩
     exact ⟨g⁻¹, H.inv_mem hg, g • x, hx, inv_smul_smul g x⟩
+
+/-- Pointwise scalar multiplication of subgroups distributes over arbitrary joins. -/
+theorem smul_iSup {α : Type*} [Monoid α] [MulDistribMulAction α G] {ι : Sort*}
+    (a : α) (S : ι → Subgroup G) : a • (⨆ i, S i) = ⨆ i, a • S i :=
+  map_iSup _ _
 
 end Subgroup

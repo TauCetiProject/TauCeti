@@ -9,6 +9,7 @@ public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+import TauCeti.LinearAlgebra.RootSystem.Basic
 
 /-!
 # Permutation actions of Weyl groups
@@ -62,15 +63,17 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   action of `P.weylGroupRootRep` with scalar multiplication and record its faithfulness.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
-  span.
+  span; `RootPairing.weylGroupToPerm_injective_of_isAnisotropic` deduces faithfulness of
+  `weylGroupToPerm`.
 * `RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj` says that conjugating a simple
   reflection by a Weyl-group element gives the reflection in the image root index.
 * `RootPairing.reflection_weylGroupToPerm_smul` says the reflection in the image `w β` of a root
   index sends `w x` to `w (s_β x)`.
 * `RootPairing.weylGroup.commute_ofIdx_of_isOrthogonal` says orthogonal roots have
   commuting reflections.
-* `RootPairing.weylGroup.ofIdx_reflectionPerm_self` and `RootPairing.weylGroup.ofIdx_neg` say
-  negating a root index does not change the associated Weyl-group reflection.
+* `RootPairing.weylGroup.ofIdx_reflectionPerm_self`, `RootPairing.weylGroup.ofIdx_neg`, and
+  `RootPairing.weylGroup.ofIdx_eq_of_root_eq_smul` say negating or scaling a root does not change
+  the associated Weyl-group reflection.
 * `RootPairing.exists_flip_weylGroup_smul_eq_coweightEquiv` realizes each coweight action of the
   Weyl group as a weight action of the flipped Weyl group.
 * `RootPairing.mem_corootSpan_of_mem_closure_range_coreflection` and
@@ -83,7 +86,9 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   preserves the pairing of roots and coroots.
 * `RootPairing.finite_aut` proves that the automorphism group of a finite root system is
   finite, and `RootPairing.finite_subgroup_aut` deduces the same for every subgroup of it.
-* `RootPairing.finite_weylGroup` is the resulting finiteness theorem for the Weyl group.
+* `RootPairing.finite_weylGroup` and `RootPairing.finite_weylGroup_of_isAnisotropic` prove
+  finiteness of the Weyl group of a finite root system and of a finite anisotropic root pairing
+  over a domain.
 -/
 
 public section
@@ -375,6 +380,14 @@ theorem weylGroup.eq_one_of_forall_smul_root_eq [Fintype ι] [IsDomain R] [P.IsA
     (Submodule.disjoint_def.1 P.disjoint_rootSpan_ker_rootForm _
       (weylGroup.smul_sub_mem_rootSpan w x) hker)
 
+/-- The action of the Weyl group on root indices is faithful for any finite anisotropic root pairing
+over a domain, without requiring the roots to span the weight space. -/
+theorem weylGroupToPerm_injective_of_isAnisotropic [Fintype ι] [IsDomain R] [P.IsAnisotropic] :
+    Function.Injective P.weylGroupToPerm :=
+  fun _ _ h ↦ inv_mul_eq_one.mp <| weylGroup.eq_one_of_forall_smul_root_eq fun i ↦ by
+    rw [P.weylGroup_apply_root, map_mul, map_inv, _root_.Equiv.Perm.mul_apply,
+      _root_.Equiv.Perm.inv_def, h, _root_.Equiv.symm_apply_apply]
+
 variable {P} in
 /-- Two Weyl-group elements agreeing on the weight space are equal. -/
 @[ext]
@@ -457,6 +470,15 @@ theorem weylGroup.ofIdx_neg (i : ι) :
     weylGroup.ofIdx P (-i) = weylGroup.ofIdx P i := by
   let := P.indexNeg
   simp [indexNeg_neg]
+
+variable {P} in
+/-- Proportional roots define the same reflection generator in `P.weylGroup`. -/
+theorem weylGroup.ofIdx_eq_of_root_eq_smul [Finite ι] [CharZero R] [IsDomain R]
+    {i j : ι} {t : R} (h : P.root j = t • P.root i) :
+    weylGroup.ofIdx P j = weylGroup.ofIdx P i :=
+  weylGroup.ext fun x ↦ by
+    rw [weylGroup.ofIdx_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, Equiv.reflection_smul,
+      P.reflection_eq_of_root_eq_smul h]
 
 /-- Every coweight action of `P.weylGroup` is realized as a weight action of `P.flip.weylGroup`. -/
 theorem exists_flip_weylGroup_smul_eq_coweightEquiv (w : P.weylGroup) :
@@ -633,6 +655,13 @@ theorem finite_weylGroup_of_span_eq_top
 /-- The Weyl group of a finite root system is finite. -/
 theorem finite_weylGroup [P.IsRootSystem] : Finite P.weylGroup :=
   finite_subgroup_aut P P.weylGroup
+
+omit [Finite ι] in
+/-- The Weyl group of a finite anisotropic root pairing over a domain is finite, without requiring
+the roots to span the weight space. -/
+theorem finite_weylGroup_of_isAnisotropic [Fintype ι] [IsDomain R] [P.IsAnisotropic] :
+    Finite P.weylGroup :=
+  Finite.of_injective P.weylGroupToPerm P.weylGroupToPerm_injective_of_isAnisotropic
 
 /-- If the roots span, the order of the Weyl group is at most the factorial of the number of
 roots. -/

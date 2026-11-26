@@ -12,7 +12,9 @@ public import Mathlib.GroupTheory.GroupAction.Defs
 public import TauCeti.Algebra.Order.AddGroupWithTop
 public import TauCeti.GroupTheory.BruhatTits.RootDatum
 public import TauCeti.GroupTheory.GroupAction.ConjAct
+public import TauCeti.LinearAlgebra.RootSystem.Indivisible
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 
 /-!
 # Valuations of a root datum
@@ -33,7 +35,9 @@ a reductive group over a valued field into an apartment: the filtrations `U (a, 
 root-group parts of the parahoric subgroups, and the affine roots are affine functions
 `x ↦ a x + k` whose constants `k` are values of `φ a`. Two valuations are *equipollent* if they
 differ by the shift `(φ + v) a = φ a + a v` by a vector `v` of the coroot space; the valuations
-equipollent to `φ` form the reduced apartment. A valuation is *compatible* with a map `ν : T → N`
+equipollent to `φ` form the reduced apartment. A valuation is *discrete* if each value set meets
+every bounded interval in a finite set, a property preserved by shifts and equipollence. A
+valuation is *compatible* with a map `ν : T → N`
 if conjugation by `z ∈ T` lowers each `φ a` by `a (ν z)`; for the torus valuation map of a
 reductive group, normalized by `⟨χ, ν z⟩ = -ω (χ z)`, this is the compatibility with the
 valuation `ω` of the field, and it says that `z` acts on the apartment by the translation `ν z`.
@@ -43,6 +47,7 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 * `TauCeti.BruhatTits.Valuation`: a valuation of a root datum.
 * `TauCeti.BruhatTits.Valuation.filtration`: the filtration subgroups `U (a, k)`.
 * `TauCeti.BruhatTits.Valuation.valueSet`: the set `Γ a = φ a (U a ∖ {1}) ⊆ ℝ`.
+* `TauCeti.BruhatTits.Valuation.IsDiscrete`: finiteness of each `Γ a ∩ [r, s]`.
 * `TauCeti.BruhatTits.Valuation.shift`: the valuation `φ + v` for `v` in the coroot space; it
   defines an additive action of the coroot space on the valuations.
 * `TauCeti.BruhatTits.Valuation.Equipollent`: valuations differing by a shift, the orbit relation
@@ -51,11 +56,16 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 
 ## Main results
 
+* `TauCeti.BruhatTits.Valuation.ext_of_isIndivisible`: a valuation of a finite crystallographic
+  root datum is determined by its values on the indivisible root subgroups.
+* `TauCeti.BruhatTits.Valuation.ext_filtration`: a valuation is determined by its filtrations.
 * `TauCeti.BruhatTits.Valuation.filtration_antitone`: `U (a, l) ≤ U (a, k)` for `k ≤ l`.
 * `TauCeti.BruhatTits.Valuation.commutator_filtration_le`: the axiom (V3) for subgroups.
 * `TauCeti.BruhatTits.Valuation.apply_reflectionPerm_right_eq_neg_of_mul_mul_mem_reflectionCoset`:
   the value form of (V5) for the right factor.
 * `TauCeti.BruhatTits.Valuation.valueSet_neg`: `Γ (-a) = -Γ a`.
+* `TauCeti.BruhatTits.Valuation.shift_eq_shift_iff_of_mem_corootSpan`: shifts by vectors in the
+  coroot span determine the vector.
 * `TauCeti.BruhatTits.Valuation.equivalence_equipollent`: equipollence is an equivalence relation.
 * `TauCeti.BruhatTits.Valuation.isCompatible_iff_filtration`: `φ` is compatible with `ν` if and
   only if each `z ∈ T` conjugates `U (a, k)` onto `U (a, k - a (ν z))`.
@@ -136,6 +146,16 @@ theorem ext {φ ψ : Valuation D} (h : ∀ i u, φ i u = ψ i u) : φ = ψ := by
   congr
   exact funext fun i ↦ funext (h i)
 
+/-- Two valuations of a finite crystallographic root datum are equal as soon as they agree on the
+root subgroups of all indivisible roots, since every divisible root is twice an indivisible root and
+its valuation is determined by (V4). -/
+theorem ext_of_isIndivisible [CharZero R] [Finite ι] [P.IsCrystallographic] {φ ψ : Valuation D}
+    (h : ∀ i : ι, P.IsIndivisible i → ∀ u : D.U i, φ i u = ψ i u) : φ = ψ := by
+  ext j u
+  rcases P.isIndivisible_or_exists_root_eq_two_smul j with hj | ⟨i, hi, hij⟩
+  · exact h j hj u
+  · rw [φ.apply_eq_two_smul i j hij u, ψ.apply_eq_two_smul i j hij u, h i hi]
+
 variable (φ : Valuation D) {i : ι}
 
 /-! ### Values -/
@@ -156,6 +176,13 @@ theorem apply_inv (u : D.U i) : φ i u⁻¹ = φ i u :=
 /-- A nontrivial element of a root subgroup has a real value. -/
 theorem exists_apply_eq_coe {u : D.U i} (hu : u ≠ 1) : ∃ k : ℝ, φ i u = k :=
   WithTop.ne_top_iff_exists.mp ((φ.apply_ne_top_iff).mpr hu) |>.imp fun _ h ↦ h.symm
+
+/-- Applying `φ` to elements of equal root subgroups with the same ambient carrier element gives
+the same value. -/
+theorem apply_congr {j : ι} (hij : i = j) {u : D.U i} {v : D.U j} (huv : (u : G) = v) :
+    φ i u = φ j v := by
+  subst hij
+  exact congrArg (φ i) (Subtype.ext huv)
 
 /-! ### Filtration subgroups -/
 
@@ -180,6 +207,14 @@ theorem mem_filtration_iff {k : ℝ} {g : G} :
 theorem coe_mem_filtration_iff {k : ℝ} (u : D.U i) :
     (u : G) ∈ φ.filtration i k ↔ (k : WithTop ℝ) ≤ φ i u :=
   ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨u.property, h⟩⟩
+
+variable {φ} in
+/-- Two valuations with the same filtration subgroups at every root and real threshold are
+equal. -/
+theorem ext_filtration {ψ : Valuation D}
+    (h : ∀ i k, φ.filtration i k = ψ.filtration i k) : φ = ψ :=
+  ext fun i u ↦ WithTop.eq_of_forall_coe_le_iff fun k ↦ by
+    rw [← φ.coe_mem_filtration_iff, h i k, ψ.coe_mem_filtration_iff]
 
 theorem filtration_le_U (i : ι) (k : ℝ) : φ.filtration i k ≤ D.U i :=
   fun _ ⟨h, _⟩ ↦ h
@@ -254,6 +289,28 @@ theorem valueSet_nontrivial (i : ι) : (φ.valueSet i).Nontrivial := by
   have : (φ.valueSet i).encard + 1 ≤ 1 + 1 := by gcongr
   exact absurd (h3.trans this) (by decide)
 
+/-- Every root subgroup contains an element at which `φ` takes a real value. -/
+theorem exists_apply_eq_coe_of_index (i : ι) : ∃ (k : ℝ) (u : D.U i), φ i u = k :=
+  let ⟨k, hk⟩ := (φ.valueSet_nontrivial i).nonempty
+  ⟨k, φ.mem_valueSet_iff.mp hk⟩
+
+/-- A valuation is *discrete* if each value set `Γ a` meets every bounded closed interval in a
+finite set (Bruhat–Tits I, 6.2.21). -/
+def IsDiscrete : Prop :=
+  ∀ (i : ι) (r s : ℝ), (φ.valueSet i ∩ Set.Icc r s).Finite
+
+/-- Unfolding characterization of `Valuation.IsDiscrete`. -/
+theorem isDiscrete_iff :
+    φ.IsDiscrete ↔ ∀ (i : ι) (r s : ℝ), (φ.valueSet i ∩ Set.Icc r s).Finite :=
+  Iff.rfl
+
+variable {φ} in
+/-- Each bounded closed interval meets `φ.valueSet i` in finitely many values when `φ` is
+discrete. -/
+theorem IsDiscrete.finite_inter_Icc (h : φ.IsDiscrete) (i : ι) (r s : ℝ) :
+    (φ.valueSet i ∩ Set.Icc r s).Finite :=
+  h i r s
+
 section Ordered
 
 variable [IsStrictOrderedRing R]
@@ -325,6 +382,11 @@ instance : Unique (Valuation D) where
       apply_eq_two_smul := isEmptyElim
       apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset := isEmptyElim }
   uniq _ := ext isEmptyElim
+
+/-- Every valuation on a rank-zero root datum is vacuously discrete. -/
+@[simp]
+theorem isDiscrete_of_isEmpty : φ.IsDiscrete :=
+  isEmptyElim
 
 end RankZero
 
@@ -431,6 +493,35 @@ theorem shift_eq_self_iff {v : N} : φ.shift v = φ ↔ ∀ i, P.root' i v = 0 :
   rw [hu] at e
   exact_mod_cast add_eq_left.mp (by exact_mod_cast e : k + P.root' i v = k)
 
+/-- Shifts by vectors in the coroot span determine the vector: `φ + v = φ + w` iff `v = w` when
+`v, w ∈ P.corootSpan ℝ`. -/
+theorem shift_eq_shift_iff_of_mem_corootSpan [Finite ι] {v w : N}
+    (hv : v ∈ P.corootSpan ℝ) (hw : w ∈ P.corootSpan ℝ) :
+    φ.shift v = φ.shift w ↔ v = w := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have := Fintype.ofFinite ι
+  have h0 : ∀ i, P.root' i (v - w) = 0 := by
+    rw [← (φ.shift w).shift_eq_self_iff, shift_shift, add_sub_cancel, h]
+  have hker : v - w ∈ LinearMap.ker P.toDualRootSpan := by
+    rw [LinearMap.mem_ker]
+    ext ⟨x, hx⟩
+    rw [RootPairing.toDualRootSpan_apply, LinearMap.zero_apply]
+    refine Submodule.span_induction (fun _ hy ↦ ?_) (by simp)
+      (fun _ _ _ _ ih₁ ih₂ ↦ by simp [ih₁, ih₂]) (fun _ _ _ ih ↦ by simp [ih]) hx
+    obtain ⟨i, rfl⟩ := hy
+    simpa [RootPairing.root'] using h0 i
+  exact sub_eq_zero.mp
+    (Submodule.disjoint_def.mp P.disjoint_corootSpan_ker_toDualRootSpan _ (sub_mem hv hw) hker)
+
+/-- Discreteness of a valuation is invariant under shifts. -/
+@[simp]
+theorem isDiscrete_shift_iff (v : N) : (φ.shift v).IsDiscrete ↔ φ.IsDiscrete := by
+  have hshift {ψ : Valuation D} (h : ψ.IsDiscrete) (w : N) : (ψ.shift w).IsDiscrete :=
+    fun i r s ↦ ((h i (r - P.root' i w) (s - P.root' i w)).image (· + P.root' i w)).subset
+      fun x ⟨hx, hrx, hxs⟩ ↦ let ⟨y, hy, hxy⟩ := (ψ.valueSet_shift w) ▸ hx
+        ⟨y, ⟨hy, by linarith, by linarith⟩, hxy⟩
+  exact ⟨fun h ↦ by simpa using hshift h (-v), fun h ↦ hshift h v⟩
+
 /-- The coroot space acts on the valuations by shifts: `v +ᵥ φ = φ + v`. -/
 instance : AddAction N (Valuation D) where
   vadd v φ := φ.shift v
@@ -476,6 +567,12 @@ variable (D) in
 /-- Equipollence is an equivalence relation on the valuations of a root datum. -/
 theorem equivalence_equipollent : Equivalence (Equipollent (D := D)) :=
   ⟨Equipollent.refl, Equipollent.symm, Equipollent.trans⟩
+
+/-- Equipollent valuations are simultaneously discrete. -/
+theorem Equipollent.isDiscrete_iff {ψ : Valuation D} (h : φ.Equipollent ψ) :
+    φ.IsDiscrete ↔ ψ.IsDiscrete := by
+  obtain ⟨v, rfl⟩ := h
+  exact (φ.isDiscrete_shift_iff v).symm
 
 /-! ### Compatibility with a map from the torus -/
 

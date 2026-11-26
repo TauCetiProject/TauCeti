@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.RingTheory.Valuation.Basic
-public import TauCeti.GroupTheory.BruhatTits.Valuation
+public import TauCeti.GroupTheory.BruhatTits.Valuation.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup

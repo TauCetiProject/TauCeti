@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import Mathlib.LinearAlgebra.RootSystem.IsValuedIn
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
@@ -91,6 +92,8 @@ This is what makes the affine Weyl group `Q∨ ⋊ W` act freely on the alcoves.
   with finitely many roots is free.
 * `RootPairing.disjoint_corootSpan_ker_toDualRootSpan`: with finitely many roots, the restriction
   map is injective on the coroot lattice.
+* `RootPairing.bijective_toDualRootSpan_corootSpan`: over a field, for an anisotropic pairing with
+  finitely many roots, the restriction of `toDualRootSpan` to the coroot span is bijective.
 * `RootPairing.finite_quotient_corootSpan_map_of_finite`: for a root datum with finitely many roots,
   the coroot lattice has finite index in the coweight lattice, without spanning hypotheses.
 * `RootPairing.toDualRootSpan_bijective`: if the roots span, the restriction map is bijective.
@@ -259,6 +262,20 @@ theorem disjoint_corootSpan_ker_toDualRootSpan [Fintype ι] [IsDomain R] [P.IsAn
   have hroot (i : ι) : P.root' i y = 0 := by
     simpa using congr($(LinearMap.mem_ker.1 hy0) (P.rootSpanMem R i))
   exact LinearMap.mem_ker.2 <| LinearMap.ext fun z ↦ by simp [P.corootForm_apply_apply, hroot]
+
+/-- Over a field, for an anisotropic root pairing with finitely many roots, restricting
+`P.toDualRootSpan` to the coroot span is bijective onto `Dual K (P.rootSpan K)`. -/
+theorem bijective_toDualRootSpan_corootSpan {K M' N' : Type*} [Field K]
+    [AddCommGroup M'] [Module K M'] [AddCommGroup N'] [Module K N'] [Fintype ι]
+    (P : RootPairing ι K M' N') [P.IsAnisotropic] :
+    Function.Bijective (P.toDualRootSpan ∘ₗ (P.corootSpan K).subtype) := by
+  have := Module.Finite.span_of_finite K (Set.finite_range P.root)
+  have := Module.Finite.span_of_finite K (Set.finite_range P.coroot)
+  have hinj : Function.Injective (P.toDualRootSpan ∘ₗ (P.corootSpan K).subtype) := by
+    rw [← LinearMap.ker_eq_bot, LinearMap.ker_comp, ← Submodule.disjoint_iff_comap_eq_bot]
+    exact P.disjoint_corootSpan_ker_toDualRootSpan
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (by rw [P.finrank_corootSpan_eq', Subspace.dual_finrank_eq])).mp hinj⟩
 
 /-- **The coroot lattice has finite index in the coweight lattice of a root datum with finitely
 many roots**, with no spanning hypothesis: the image of `Q∨` in the free `ℤ`-module
