@@ -389,7 +389,7 @@ theorem exists_norm_littlewoodPaleyBlockLp_mFourierCoeff_le :
 
 /-- `ψⱼ` vanishes at the lattice points `n` with `2^j max 1 φ.rOut < ‖n‖`, for the supremum norm
 of `n : ℤᵈ`, which is at most the Euclidean norm of `n`. -/
-private theorem inhomogeneousLittlewoodPaley_latticePoint_eq_zero {j : ℕ} {n : d → ℤ}
+theorem inhomogeneousLittlewoodPaley_latticePoint_eq_zero {j : ℕ} {n : d → ℤ}
     (hn : 2 ^ j * max 1 φ.rOut < ‖n‖) :
     φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 := by
   refine φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_
