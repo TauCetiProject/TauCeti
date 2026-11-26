@@ -81,7 +81,7 @@ theorem restrictGaloisGroupS_surjective (S : Set (HeightOneSpectrum (𝓞 K))) :
 `restrictGaloisGroupS`. -/
 @[ext]
 theorem ext_restrictGaloisGroupS {S : Set (HeightOneSpectrum (𝓞 K))}
-    {H : Type*} [Group H] [TopologicalSpace H] {ψ₁ ψ₂ : galoisGroupS K Ω S →ₜ* H}
+    {H : Type*} [Monoid H] [TopologicalSpace H] {ψ₁ ψ₂ : galoisGroupS K Ω S →ₜ* H}
     (h : ψ₁.comp (restrictGaloisGroupS K Ω S) = ψ₂.comp (restrictGaloisGroupS K Ω S)) :
     ψ₁ = ψ₂ := by
   ext y
