@@ -27,6 +27,7 @@ eigenspace `{u | ∀ t, U_t u = exp(2πiat) u}`.
   `P_a e_n = 0` for `a ≠ n`.
 * `twistedAverage_fourierLp_natCast_eq_zero`: for integers `m ≠ n`, `A_N^m e_n = 0` at every
   natural `N`.
+* `inner_mode_circleFlow_mode`: the correlation `⟪e_n, U_t e_n⟫ = exp(2πint)`.
 * `inner_koopmanGroup_fourierLp_eq_charFun`: the spectral measure of `e_n` is `δ_{2πn}`.
 
 For the unit mode `e₁`: `U₁ e₁ = e₁`, so the discrete time-one averages of `e₁` are `e₁`, but
@@ -149,12 +150,18 @@ theorem twistedAverage_fourierLp_natCast_eq_zero {n m : ℤ} (h : m ≠ n) (N : 
     ((n - m) * N : ℤ) * (2 * π * I) by push_cast; ring, exp_int_mul_two_pi_mul_I]
   simp
 
+/-- The correlation of a mode: `⟪e_n, U_t e_n⟫ = exp(2πint)`. -/
+theorem inner_mode_circleFlow_mode (n : ℤ) (t : ℝ) :
+    ⟪mode n, circleFlow t (mode n)⟫_ℂ = exp (2 * π * I * n * t) := by
+  rw [circleFlow_mode, inner_smul_right, inner_self_eq_norm_sq_to_K,
+    (orthonormal_fourier (T := 1)).1 n]
+  simp
+
 /-- **The spectral measure of a mode** is `δ_{2πn}`:
 `⟪e_n, U_t e_n⟫ = exp(2πint) = charFun δ_{2πn} t`. -/
 theorem inner_koopmanGroup_fourierLp_eq_charFun (n : ℤ) (t : ℝ) :
     ⟪mode n, circleFlow t (mode n)⟫_ℂ = charFun (Measure.dirac (2 * π * n : ℝ)) t := by
-  rw [circleFlow_mode, inner_smul_right, inner_self_eq_norm_sq_to_K,
-    (orthonormal_fourier (T := 1)).1 n, charFun_apply_real, integral_dirac]
+  rw [inner_mode_circleFlow_mode, charFun_apply_real, integral_dirac]
   push_cast
   ring_nf
 
@@ -207,11 +214,9 @@ example :
 
 /-- The correlation of `e₁` at time `1/4` is `i`: `⟪e₁, U_{1/4} e₁⟫ = i`. -/
 example : ⟪mode 1, circleFlow (1 / 4) (mode 1)⟫_ℂ = I := by
-  rw [circleFlow_mode, inner_smul_right, inner_self_eq_norm_sq_to_K,
-    (orthonormal_fourier (T := 1)).1 1]
-  rw [show 2 * π * I * ((1 : ℤ) : ℂ) * ((1 / 4 : ℝ) : ℂ) = π / 2 * I by push_cast; ring,
+  rw [inner_mode_circleFlow_mode,
+    show 2 * π * I * ((1 : ℤ) : ℂ) * ((1 / 4 : ℝ) : ℂ) = π / 2 * I by push_cast; ring,
     exp_pi_div_two_mul_I]
-  simp
 
 /-- The opposite twist `a = −1` has limit `0`: `A_T^{−1} e₁ → 0`. -/
 example :
