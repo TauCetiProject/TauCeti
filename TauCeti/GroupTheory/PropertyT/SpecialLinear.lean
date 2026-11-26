@@ -85,8 +85,8 @@ Let `P` be the spectral projection-valued measure of `ρ|_{ℤ²}` on the compac
   `SL(2, ℤ)` in arbitrary group and Hilbert-space universes.
 * `Subgroup.relativePropertyT_inl_of_not_hasFoelnerSets`,
   `Subgroup.relativePropertyT_inl_iff_not_hasFoelnerSets`,
-  `TauCeti.relativePropertyT_inl_of_not_amenable`, and
-  `TauCeti.relativePropertyT_inl_iff_not_amenable`: Burger's theorem and the exact Følner-set and
+  `Subgroup.relativePropertyT_inl_of_not_amenable`, and
+  `Subgroup.relativePropertyT_inl_iff_not_amenable`: Burger's theorem and the exact Følner-set and
   amenability characterizations for subgroups `G ≤ SL(2, ℤ)`.
 * `TauCeti.relativePropertyT_inl_slTwo`: the Kazhdan–Margulis theorem for `(ℤ² ⋊ SL(2, ℤ), ℤ²)`.
 * `TauCeti.not_hasHaagerupProperty_semidirectProduct_of_not_amenable` and
@@ -723,7 +723,7 @@ theorem not_relativePropertyT_inl_of_injective_of_hasFoelnerSets.{u, v}
   let eG : G ≃* ι.range := MonoidHom.ofInjective hι
   let e₀ : Γ ≃* Γ₀ := SemidirectProduct.congr (MulEquiv.refl _) eG fun g ↦ by
     ext v
-    rfl
+    simp [eG, MonoidHom.ofInjective_apply]
   -- `Γ₀` (in `Type 0`) is amenable as a semidirect product of `ℤ²` by `ι.range`, hence has Følner
   -- sets.
   have hF_range : HasFoelnerSets ι.range := eG.symm.hasFoelnerSets_iff.mpr hG
@@ -798,7 +798,7 @@ theorem _root_.Subgroup.relativePropertyT_inl_iff_not_hasFoelnerSets.{u} (G : Su
 
 /-- **Burger's theorem** for subgroups `G ≤ SL(2, ℤ)`: if `G` is not amenable, then the pair
 `(ℤ² ⋊ G, ℤ²)` has relative property (T) in every Hilbert-space universe `u`. -/
-theorem relativePropertyT_inl_of_not_amenable.{u}
+theorem _root_.Subgroup.relativePropertyT_inl_of_not_amenable.{u}
     (G : Subgroup SL(2, ℤ)) (hG : ¬ Amenable G) :
     (SemidirectProduct.inl (G := G)
       (φ := slTwoAction.comp G.subtype)).range.RelativePropertyT.{u} :=
@@ -807,7 +807,7 @@ theorem relativePropertyT_inl_of_not_amenable.{u}
 /-- **Amenability characterization of relative property (T) for `(ℤ² ⋊ G, ℤ²)`**: for any subgroup
 `G ≤ SL(2, ℤ)`, the pair `(ℤ² ⋊ G, ℤ²)` has relative property (T) in universe `u` if and only if
 `G` is not amenable. -/
-theorem relativePropertyT_inl_iff_not_amenable.{u} (G : Subgroup SL(2, ℤ)) :
+theorem _root_.Subgroup.relativePropertyT_inl_iff_not_amenable.{u} (G : Subgroup SL(2, ℤ)) :
     (SemidirectProduct.inl (G := G)
         (φ := slTwoAction.comp G.subtype)).range.RelativePropertyT.{u} ↔
       ¬ Amenable G :=
@@ -829,7 +829,7 @@ theorem not_hasHaagerupProperty_semidirectProduct_of_not_amenable
   have : Infinite (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp G.subtype)).range :=
     SemidirectProduct.infinite_range_inl
   exact not_hasHaagerupProperty_of_relativePropertyT.{0, 0}
-    (relativePropertyT_inl_of_not_amenable.{0} G hG)
+    (G.relativePropertyT_inl_of_not_amenable.{0} hG)
 
 /-- The semidirect product `ℤ² ⋊ SL(2, ℤ)` does not have the Haagerup property. -/
 theorem not_hasHaagerupProperty_semidirectProduct_slTwo :
@@ -858,7 +858,7 @@ theorem not_relativePropertyT_inl_range_transvectionHom.{u} {i j : Fin 2} (hij :
         (φ := slTwoAction.comp
           (Matrix.SpecialLinearGroup.transvectionHom
             (A := ℤ) hij).range.subtype)).range.RelativePropertyT.{u} := by
-  rw [relativePropertyT_inl_iff_not_amenable, not_not]
+  rw [Subgroup.relativePropertyT_inl_iff_not_amenable, not_not]
   exact .of_denseRange
     ⟨(Matrix.SpecialLinearGroup.transvectionHom (A := ℤ) hij).rangeRestrict,
       continuous_of_discreteTopology⟩
