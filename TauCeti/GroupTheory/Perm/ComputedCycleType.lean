@@ -153,6 +153,11 @@ theorem cycleMin_eq_self_iff {σ : Perm α} {i : α} :
       intro j hj
       exact hi j (mem_orbitFinset_singleton_iff_sameCycle.mp hj)
 
+/-- A cycle minimum in the cycle of `i` is the canonical representative of `i`. -/
+theorem cycleMin_eq_of_sameCycle_of_isCycleMin {σ : Perm α} {i j : α} (hij : σ.SameCycle i j)
+    (hj : σ.IsCycleMin j) : σ.cycleMin i = j :=
+  (cycleMin_eq_cycleMin_iff.mpr hij).trans (cycleMin_eq_self_iff.mpr hj)
+
 /-- Taking the cycle minimum is idempotent. -/
 @[simp]
 theorem cycleMin_cycleMin (σ : Perm α) (i : α) :

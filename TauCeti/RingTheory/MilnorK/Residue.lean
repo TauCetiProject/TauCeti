@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MilnorK.SerreAlgebra
 public import TauCeti.RingTheory.Valuation.Discrete.TameSymbol
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.Algebra.Ring.Units
 
 /-!
@@ -32,6 +33,13 @@ In degree one `∂_v{f} = ord_v f`, and in degree two `∂_v{f, g}` is the tame 
 `Valuation.tameSymbol`, with no inversion (`Valuation.milnorResidue_ofUnit_mul_ofUnit`). Both maps
 are onto in every degree.
 
+Replacing `t` by another element `t' = c t` of order one composes Serre's map with the
+automorphism `Π ↦ Π - {γ}` of `L(k)`, where `γ ∈ kˣ` is the residue of `c`. Hence the residue
+does not depend on `t`, while the specialization changes as `λ_{t'}(x) = λ_t(x) - ∂_v(x) {γ}`;
+in particular the `ρ`-part `ρ_t(x) = λ_t(x) + ∂_v(x) {-1}` of Serre's map is `λ_{-t}`. Since `d_t`
+is multiplicative, the residue satisfies the product formula
+`∂_v(x y) = λ_t(x) ∂_v(y) + (-1) ^ j ∂_v(x) ρ_t(y)` for `y ∈ K_jᴹ(F)`.
+
 Weibel reads the residue off with `Π` on the left, normalized by `{t, u₂, …, uₙ} ↦ {ū₂, …, ūₙ}`;
 since `Π y = (-1) ^ (n - 1) y Π` for `y ∈ K_{n-1}ᴹ(k)`, his residue is `(-1) ^ (n - 1) ∂_v` on
 `K_nᴹ(F)`.
@@ -56,11 +64,22 @@ since `Π y = (-1) ^ (n - 1) y Π` for `y ∈ K_{n-1}ᴹ(k)`, his residue is `(-
   preserves degrees and `∂_v` lowers them by one.
 * `Valuation.milnorSpecialization_surjOn_degree`, `Valuation.milnorResidue_surjOn_degree`: both maps
   are onto in every degree.
+* `Valuation.serreMap_eq_shift`: Serre's map under a change of the element of order one.
+* `Valuation.milnorResidue_eq_milnorResidue`: the residue does not depend on the uniformizer.
+* `Valuation.milnorSpecialization_eq_sub_milnorResidue_mul`: `λ_{t'}(x) = λ_t(x) - ∂_v(x) {γ}`
+  for `t' = c t` with `γ` the residue of `c`; the specialization does depend on the uniformizer.
+* `Valuation.rho_serreMap`: the `ρ`-part of Serre's map is the specialization `λ_{-t}`.
+* `Valuation.milnorResidue_mul`, `Valuation.milnorResidue_mul_of_mem_degree`: the product formula.
+* `Valuation.C_milnorSpecialization_add_X_mul_C_neg_one_pow_mul_milnorResidue`,
+  `Valuation.milnorResidue_symbol_cons`: comparison with Weibel's normalization of the residue.
 
 ## References
 
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
-  Mathematics 145 (2013), Theorem III.7.3 and its proof.
+  Mathematics 145 (2013), Theorem III.7.3 and its proof, Exercises III.7.1 and III.7.10.
+* C. A. Weibel, *Corrections to The K-book*, errata list for the published version, entry for
+  p. 280, Exercise III.7.1: the residue is independent of the uniformizer, the specialization is
+  not.
 * J. Milnor, *Algebraic K-theory and quadratic forms*, Invent. Math. 9 (1970), 318–344, Lemma 2.1,
   where the construction is attributed to Serre.
 -/
@@ -283,6 +302,127 @@ theorem milnorResidue_mem_degree {n : ℕ} {x : MilnorK F} (hx : x ∈ MilnorK.d
 theorem milnorResidue_of_mem_degree_zero {x : MilnorK F} (hx : x ∈ MilnorK.degree F 0) :
     v.milnorResidue t ht x = 0 :=
   (SerreAlgebra.mem_degree_zero.1 (v.serreMap_mem_degree t ht hx)).2
+
+/-! ### Change of the element of order one -/
+
+section ChangeOfUniformizer
+
+variable (t' : Fˣ) (ht' : v.ord (t' : F) = 1)
+
+/-- **Serre's map under a change of uniformizer**: if `t' = c t` with `c` a unit of the valuation
+ring, then `d_{t'} = σ_γ ∘ d_t`, where `σ_γ` is the automorphism `Π ↦ Π - {γ}` of Serre's
+algebra and `γ`, the residue of `c`, is the reduced unit part of `t'` relative to `t`. -/
+theorem serreMap_eq_shift (x : MilnorK F) :
+    v.serreMap t' ht' x = SerreAlgebra.shift (v.unitPartResidue t ht t') (v.serreMap t ht x) := by
+  have : v.serreMap t' ht' =
+      (SerreAlgebra.shift (v.unitPartResidue t ht t')).toRingHom.comp (v.serreMap t ht) :=
+    MilnorK.ringHom_ext fun f ↦ by
+      ext <;> simp [v.unitPartResidue_eq_mul_zpow t ht t' ht', ofUnit_mul, ofUnit_zpow,
+        sub_eq_add_neg]
+  exact RingHom.congr_fun this x
+
+/-- **The residue does not depend on the uniformizer**: `∂_v` computed with `t'` equals `∂_v`
+computed with `t`. -/
+theorem milnorResidue_eq_milnorResidue : v.milnorResidue t' ht' = v.milnorResidue t ht := by
+  ext x
+  simp [milnorResidue_apply, v.serreMap_eq_shift t ht t' ht']
+
+/-- **The specialization depends on the uniformizer**: if `t' = c t` with `c` a unit of the
+valuation ring, then `λ_{t'}(x) = λ_t(x) - ∂_v(x) {γ}`, where `γ`, the residue of `c`, is the
+reduced unit part of `t'` relative to `t`. As printed, Weibel's Exercise III.7.1 asserts that
+the specialization does not depend on the uniformizer; Weibel's errata to the K-book correct this
+to the statement that only the residue is independent of it. For instance, over `ℚ` at `5`,
+`λ_5{5} = {1} = 0` but `λ_{10}{5} = {2⁻¹} = {3} ≠ 0` in `K_1ᴹ(𝔽₅)`. -/
+theorem milnorSpecialization_eq_sub_milnorResidue_mul (x : MilnorK F) :
+    v.milnorSpecialization t' ht' x =
+      v.milnorSpecialization t ht x -
+        v.milnorResidue t ht x * ofUnit (v.unitPartResidue t ht t') := by
+  simp [milnorSpecialization_apply, milnorResidue_apply, v.serreMap_eq_shift t ht t' ht']
+
+/-- The specialization is unchanged by a uniformizer `t' = c t` whose residue `γ` of `c` is `1`. -/
+theorem milnorSpecialization_eq_of_unitPartResidue_eq_one (h : v.unitPartResidue t ht t' = 1) :
+    v.milnorSpecialization t' ht' = v.milnorSpecialization t ht := by
+  ext x
+  simp [v.milnorSpecialization_eq_sub_milnorResidue_mul t ht t' ht', h]
+
+end ChangeOfUniformizer
+
+/-! ### The `ρ`-part and the product formula -/
+
+/-- The `ρ`-part of Serre's map, `ρ_t(x) = λ_t(x) + ∂_v(x) {-1}`, is the specialization for the
+uniformizer `-t`; on degree one it sends `{u tᵐ}` to `{(-1)ᵐ ū}`. -/
+theorem rho_serreMap (x : MilnorK F) :
+    SerreAlgebra.rho (v.serreMap t ht x) =
+      v.milnorSpecialization (-t) (by simpa using ht) x := by
+  rw [v.milnorSpecialization_eq_sub_milnorResidue_mul t ht]
+  simp [SerreAlgebra.rho_apply, milnorSpecialization_apply, milnorResidue_apply,
+    unitPartResidue_neg, sub_eq_add_neg, ← mul_neg, neg_ofUnit_neg_one]
+
+/-- **The product formula for the residue**:
+`∂_v(x y) = λ_t(x) ∂_v(y) + ∂_v(x) σ(ρ_t(y))`, where `σ` is the grade involution and
+`ρ_t = λ_{-t}` is the `ρ`-part of Serre's map (`Valuation.rho_serreMap`). -/
+theorem milnorResidue_mul (x y : MilnorK F) :
+    v.milnorResidue t ht (x * y) = v.milnorSpecialization t ht x * v.milnorResidue t ht y +
+      v.milnorResidue t ht x *
+        involute (v.milnorSpecialization (-t) (by simpa using ht) y) := by
+  rw [← v.rho_serreMap t ht]
+  simp only [milnorResidue_apply, milnorSpecialization_apply, map_mul, SerreAlgebra.snd_mul,
+    SerreAlgebra.rho_apply, map_add, involute_ofUnit, neg_ofUnit_neg_one, mul_add, mul_assoc,
+    add_assoc]
+
+/-- **The product formula for the residue** on homogeneous elements: for `y ∈ K_jᴹ(F)`,
+`∂_v(x y) = λ_t(x) ∂_v(y) + (-1) ^ j ∂_v(x) ρ_t(y)`, where `ρ_t = λ_{-t}` is the `ρ`-part of
+Serre's map (`Valuation.rho_serreMap`), characterized by `ρ_t{u tᵐ} = {(-1)ᵐ ū}`. -/
+theorem milnorResidue_mul_of_mem_degree (x : MilnorK F) {j : ℕ} {y : MilnorK F}
+    (hy : y ∈ MilnorK.degree F j) :
+    v.milnorResidue t ht (x * y) = v.milnorSpecialization t ht x * v.milnorResidue t ht y +
+      (-1) ^ j * v.milnorResidue t ht x *
+        v.milnorSpecialization (-t) (by simpa using ht) y := by
+  rw [milnorResidue_mul, involute_of_mem_degree (milnorSpecialization_mem_degree _ _ _ hy),
+    mul_neg_one_pow_mul, mul_assoc]
+
+/-- The residue is linear over symbols of units of the valuation ring:
+`∂_v({u₁, …, uₙ} y) = {ū₁, …, ūₙ} ∂_v(y)`. -/
+theorem milnorResidue_symbol_mul {l : List Fˣ} (hl : ∀ f ∈ l, v.ord (f : F) = 0)
+    (y : MilnorK F) :
+    v.milnorResidue t ht (symbol l * y) =
+      symbol (l.map (v.unitPartResidue t ht)) * v.milnorResidue t ht y := by
+  rw [milnorResidue_mul, v.milnorResidue_symbol_of_forall_ord_eq_zero t ht hl, zero_mul, add_zero,
+    milnorSpecialization_symbol]
+
+/-! ### Weibel's normalization of the residue -/
+
+/-- Serre's map with `Π` on the left: `d_t(x) = λ_t(x) + Π σ(∂_v(x))`, where `σ` is the grade
+involution. Thus the residue read off with `Π` on the left, as in Weibel's Theorem III.7.3, is
+`σ ∘ ∂_v`. -/
+theorem C_milnorSpecialization_add_X_mul_C_involute_milnorResidue (x : MilnorK F) :
+    SerreAlgebra.C (v.milnorSpecialization t ht x) +
+      SerreAlgebra.X * SerreAlgebra.C (involute (v.milnorResidue t ht x)) = v.serreMap t ht x := by
+  rw [SerreAlgebra.X_mul_C, involute_involute, C_milnorSpecialization_add_C_milnorResidue_mul_X]
+
+/-- **Residue convention dictionary**: for `x ∈ K_{n+1}ᴹ(F)`,
+`d_t(x) = λ_t(x) + Π ((-1) ^ n ∂_v(x))`. So the residue read off with `Π` on the left, as in
+Weibel's Theorem III.7.3, is `(-1) ^ n ∂_v` on `K_{n+1}ᴹ(F)`. -/
+theorem C_milnorSpecialization_add_X_mul_C_neg_one_pow_mul_milnorResidue {n : ℕ} {x : MilnorK F}
+    (hx : x ∈ MilnorK.degree F (n + 1)) :
+    SerreAlgebra.C (v.milnorSpecialization t ht x) +
+      SerreAlgebra.X * SerreAlgebra.C ((-1) ^ n * v.milnorResidue t ht x) = v.serreMap t ht x := by
+  rw [← involute_of_mem_degree (v.milnorResidue_mem_degree t ht hx),
+    C_milnorSpecialization_add_X_mul_C_involute_milnorResidue]
+
+/-- The residue of a symbol with the uniformizer first:
+`∂_v{t, u₁, …, uₙ} = (-1) ^ n {ū₁, …, ūₙ}` for units `uᵢ` of the valuation ring. In Weibel's
+normalization, with `Π` on the left, this symbol has residue `{ū₁, …, ūₙ}`. -/
+theorem milnorResidue_symbol_cons {l : List Fˣ} (hl : ∀ f ∈ l, v.ord (f : F) = 0) :
+    v.milnorResidue t ht (symbol (t :: l)) =
+      (-1) ^ l.length * symbol (l.map (v.unitPartResidue t ht)) := by
+  have hmap : l.map (v.unitPartResidue (-t) (by simpa using ht)) =
+      l.map (v.unitPartResidue t ht) :=
+    List.map_congr_left fun f hf ↦ by
+      rw [unitPartResidue_of_ord_eq_zero _ _ _ (hl f hf),
+        unitPartResidue_of_ord_eq_zero _ _ _ (hl f hf)]
+  rw [symbol_cons, milnorResidue_mul, v.milnorResidue_symbol_of_forall_ord_eq_zero t ht hl]
+  simp [milnorResidue_ofUnit, ht, milnorSpecialization_symbol, hmap, involute_symbol]
 
 /-! ### Surjectivity -/
 

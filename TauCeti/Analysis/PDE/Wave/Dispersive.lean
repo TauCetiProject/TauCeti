@@ -17,7 +17,7 @@ import TauCeti.Analysis.Fourier.NonstationaryPhase.Quadratic
 import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
-import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 
 /-!
 # The dispersive estimate for frequency-localized half-wave propagators
