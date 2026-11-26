@@ -8,12 +8,10 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.CongruenceSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Group
 public import TauCeti.Topology.Instances.Matrix
 
 import TauCeti.Algebra.AlgebraicGroup.CongruenceSubgroup.Topology
-import TauCeti.Topology.Algebra.PointTopology.HopfIdeal
 
 /-!
 # The point topology on `GL_n` is the topology of the unit group
@@ -29,10 +27,7 @@ topology is induced by the entries of `g` and of `g⁻¹`.
 
 When the units of `R` are open with continuous inversion, for instance when `R` is a Hausdorff
 topological field such as a nonarchimedean local field `E`, the points of `GL_n` are an open
-subspace of `M_n(R)` (`TauCeti.GeneralLinear.isOpenEmbedding_coe_pointsMulEquiv`). When the points
-of `R` are closed, the matrices cut out by a Hopf ideal, the points of a closed subgroup scheme of
-`GL_n`, form a closed subgroup of `GL (Fin n) R`
-(`TauCeti.GeneralLinear.isClosed_hopfIdealPointsSubgroup`).
+subspace of `M_n(R)` (`TauCeti.GeneralLinear.isOpenEmbedding_coe_pointsMulEquiv`).
 
 ## Main declarations
 
@@ -42,8 +37,6 @@ of `R` are closed, the matrices cut out by a Hopf ideal, the points of a closed 
   points of `GL_n` form an open subspace of the matrices.
 * `TauCeti.GeneralLinear.isOpen_ker_map_quotientMk`: the kernel of reduction modulo an open
   ideal is open in `GL_n`.
-* `TauCeti.GeneralLinear.isClosed_hopfIdealPointsSubgroup`: over a T1 topological ring, the
-  points of a closed subgroup scheme of `GL_n` form a closed subgroup of `GL (Fin n) R`.
 
 ## References
 
@@ -152,22 +145,6 @@ theorem isOpen_ker_map_quotientMk {I : Ideal R} (hI : IsOpen (I : Set R)) :
       Set (Matrix.GeneralLinearGroup (Fin n) R)) := by
   rw [← map_congruenceSubgroup (R := ℤ), ← coe_pointsContinuousMulEquiv, Subgroup.coe_map]
   exact (pointsContinuousMulEquiv (k := ℤ) n).isOpenMap _ (HopfAlgebra.isOpen_congruenceSubgroup hI)
-
-/-- **The points of a closed subgroup scheme of `GL_n` form a closed subgroup.** Over a T1
-topological ring `R`, the invertible matrices cut out by a Hopf ideal `I` of the coordinate Hopf
-algebra are a closed subset of `GL (Fin n) R`: under the homeomorphism `pointsContinuousMulEquiv`
-they are the points vanishing on `I`, an intersection of zero sets of continuous evaluations. -/
-theorem isClosed_hopfIdealPointsSubgroup [T1Space R] (I : HopfIdeal k (coordinateHopfAlgebra k n)) :
-    IsClosed (hopfIdealPointsSubgroup n I R : Set (Matrix.GeneralLinearGroup (Fin n) R)) := by
-  have h : (hopfIdealPointsSubgroup n I R : Set (Matrix.GeneralLinearGroup (Fin n) R)) =
-      (pointsContinuousMulEquiv (k := k) n).symm ⁻¹'
-        (CommHopfAlgCat.quotientPointsSubgroup _ I (CommAlgCat.of k R)) := by
-    ext g
-    rw [Set.mem_preimage, pointsContinuousMulEquiv_symm_apply, SetLike.mem_coe, SetLike.mem_coe,
-      mem_hopfIdealPointsSubgroup_iff, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  rw [h]
-  exact (isClosed_quotientPointsSubgroup R _ I).preimage
-    (pointsContinuousMulEquiv (k := k) n).symm.continuous
 
 end PointTopology
 
