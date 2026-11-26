@@ -38,6 +38,8 @@ ring has positive characteristic.
   subgroup.
 * `TauCeti.integralDividedPower_zsmul`: integer rescaling of restricted divided-power operators.
 * `TauCeti.mul_integralDividedPower`: multiplication formula for restricted divided powers.
+* `TauCeti.integralDividedPower_one_pow`: the `k`-th power of the first restricted divided power
+  equals `k!` times the `k`-th restricted divided power.
 * `TauCeti.baseChange_integralDividedPower_eq_zero_of_le`: a restricted divided power
   vanishes on base change above the nilpotency index.
 * `TauCeti.baseChangeExp`: the finite divided-power exponential on `R ⊗[ℤ] M` for an element of `A`.
@@ -127,6 +129,23 @@ theorem mul_integralDividedPower (x : A) (M : S)
   rw [mul_apply_eq_comp]
   dsimp [integralDividedPower]
   rw [smul_smul, Associative.mul_dividedPower, smul_assoc]
+
+/-- The `k`-th power of the first restricted divided power equals `k!` times the `k`-th restricted
+divided power. -/
+theorem integralDividedPower_one_pow (x : A) (M : S)
+    (hdiv : ∀ k : ℕ, ∀ v ∈ M, Associative.dividedPower k x • v ∈ M) (k : ℕ) :
+    integralDividedPower x M 1 (hdiv 1) ^ k =
+      k.factorial • integralDividedPower x M k (hdiv k) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', ih, mul_smul_comm,
+      mul_integralDividedPower x M 1 k (hdiv 1) (hdiv k) (hdiv (1 + k)), smul_smul]
+    have hchoose : k.factorial * Nat.choose (1 + k) 1 = (k + 1).factorial := by
+      rw [Nat.add_comm 1 k, Nat.choose_one_right, Nat.factorial_succ, mul_comm]
+    rw [hchoose]
+    congr 2
+    omega
 
 /-- The restricted divided power vanishes for degrees greater than or equal to a nilpotency
 bound. -/

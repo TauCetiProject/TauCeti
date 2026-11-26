@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Scheme
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 
 /-!
@@ -180,6 +181,16 @@ theorem mono_rootProduct_of_injective (l : List (Fin t.numRoots))
   have hu : u.left = a := Over.homMk_left
     (U := (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ))) (V := S) a _
   simpa only [Over.comp_left, hu] using! congrArg (fun z => z.left) h
+
+/-- Ordered multiplication of distinct root schemes on which an additive rational weight functional
+`degree` is strictly positive is a monomorphism into `D.groupScheme`. The test schemes need not be
+affine or reduced. -/
+theorem mono_rootProduct_of_degree_pos (degree : (Fin t.rank → ℤ) →+ ℚ)
+    (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hdeg : ∀ γ ∈ l, 0 < degree ((t.simplyConnectedRootDatum ht).root γ)) :
+    Mono (D.rootProduct l) :=
+  D.mono_rootProduct_of_injective l fun A _ _ _ h =>
+    (D.list_prod_map_rootSubgroupPoints_inj_of_degree_pos A degree hl hdeg).mp h
 
 end ChevalleyDatum
 

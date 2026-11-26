@@ -36,7 +36,7 @@ is the one used for the root subgroups of a Kostant lattice in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.G2`, here
 read off the relators of the presentation. The injectivity combines it with uniqueness of ordered
 positive-root products in `G_sc(t)`,
-`TauCeti.DynkinType.list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj`.
+`TauCeti.DynkinType.ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj_of_posRoots`.
 
 All statements hold over every commutative ring. In Steinberg's proof that the relations present
 the simply connected Chevalley group over a field, `Û ≅ U` is the first step: identities between
@@ -399,8 +399,8 @@ theorem injOn_steinbergLift_steinbergPositiveSubgroup :
     refine List.map_congr_left fun γ _ => ?_
     simp only [Function.comp_apply, steinbergRootSubgroup_apply, toAdd_ofAdd]
     exact (t.scChevalleyDatum ht).steinbergLift_of A γ (w γ)
-  rw [hlift, hlift, list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj t ht A S.nodup_toList
-    (fun γ hγ => (hlpos γ).mp hγ)] at hgg'
+  rw [hlift, hlift, (t.scChevalleyDatum ht).list_prod_map_rootSubgroupPoints_inj_of_posRoots A
+    S.nodup_toList (fun γ hγ => (hlpos γ).mp hγ)] at hgg'
   exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [hgg' γ hγ])
 
 variable (t ht A) in

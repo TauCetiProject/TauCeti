@@ -22,7 +22,7 @@ full-weight parametrization. These are the opposite-intersection inputs to uniqu
 Bruhat and big-cell factorizations. No existence of those factorizations or generation of
 all scheme points is asserted. `negativePoints` realizes the negative subgroup inside the
 datum's point group. It specializes `ChevalleyDatum.subsystemPoints` from
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem` to negative roots, with negative-root
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem.Basic` to negative roots, with negative-root
 generation and ring-map lemmas below.
 
 The negative subgroup uses the same named root vectors and enumeration as the positive one.

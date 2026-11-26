@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
@@ -20,9 +20,9 @@ The proof uses the height degree on integral weights and the generic ordered-wei
 construction. Every positive root has strictly positive degree, so the whole subgroup embeds
 in an upper-unitriangular group. This supplies the nilpotent positive part used in constructing
 Borel subgroups. `positivePoints` specializes `ChevalleyDatum.subsystemPoints` from
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem`, with positive-root generation and ring-map
-lemmas below. Neither a unique ordered-product expression nor a scheme-theoretic unipotent radical
-is asserted here.
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem.Basic`, with positive-root generation and
+ring-map lemmas below. Neither a unique ordered-product expression nor a scheme-theoretic unipotent
+radical is asserted here.
 
 The ordered-basis argument specializes the generic Kostant subsystem theory, as does the
 simple-root-only argument in `DynkinType.isNilpotent_geckPositiveSubgroup`.

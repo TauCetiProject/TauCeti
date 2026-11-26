@@ -25,8 +25,9 @@ by positive simple root groups nor uniqueness of the factors is asserted.
 
 Outside G₂, positive normalization follows from the commutator height bound in
 `Root.Collection.NotG2`: commutator factors have height greater than one, so cannot be the
-omitted simple root. This includes F₄ by `instIsNotG2RationalRootSystemF4`; positive-root
-collection there is supplied by `mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod`.
+omitted simple root. This includes F₄ by `instIsNotG2RationalRootSystemF4`; ordered-product
+collection across all valid types is supplied by
+`mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_prod` in `Root.Collection.Basic`.
 In G₂, the native table-index bound in `commutator_range_chevalleyRootSubgroup_g2_le`
 from `Root.Collection.G2` keeps commutator factors away from the omitted simple root.
 Rank-one normalization and factorization then use

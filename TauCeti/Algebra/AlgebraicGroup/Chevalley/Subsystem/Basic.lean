@@ -22,7 +22,7 @@ shared by the positive and negative subgroups used in Borel and big-cell factori
 `subsystemSubgroup` specializes `kostantSubsystemSubgroup`, and `subsystemPoints`
 transports its elements into `D.points A` in the weight basis.
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic` and
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite` specialize both constructions to positive
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite.Basic` specialize both constructions to positive
 and negative roots.
 
 An additive degree positive on the chosen roots makes either realization nilpotent.

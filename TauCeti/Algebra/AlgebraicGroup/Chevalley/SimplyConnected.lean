@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Elementary
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.RootSubgroup
 
 /-!
 # The full-weight Chevalley datum and the simply connected Chevalley group scheme
@@ -58,8 +57,6 @@ point of `G_sc(t)` (`TauCeti.DynkinType.kostantTorusMatrix_mem_chevalleyGroup`).
 * `TauCeti.DynkinType.scChevalleyDatum_coordinateWeight`: the coordinate weights are `scWeight`.
 * `TauCeti.DynkinType.scChevalleyDatum_coordinateRoot`: the coordinate roots are the roots, so
   the torus acts on the root subgroup of `γ` through the character `γ`.
-* `TauCeti.DynkinType.scChevalleyDatum_rootSubgroupPoints_injective`: every root subgroup of the
-  full-weight datum is injective, over every commutative ring.
 * `TauCeti.DynkinType.chevalleyGroupScheme`: the simply connected Chevalley group scheme
   `G_sc(t)` over `ℤ`.
 * `TauCeti.DynkinType.chevalleyGroup`: its points with values in a commutative ring, as a
@@ -180,17 +177,6 @@ theorem scChevalleyDatum_coordinateRoot (γ : Fin t.numRoots) :
   ext i
   have h := congrFun ((t.scChevalleyDatum ht).sum_coordinateRoot_smul γ) i
   simpa [Pi.single_apply] using h
-
-/-- **Every root subgroup of the full-weight datum is injective**, over every commutative ring,
-including nonreduced rings and rings of small characteristic. -/
-theorem scChevalleyDatum_rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v)
-    [CommRing A] :
-    Function.Injective ((t.scChevalleyDatum ht).rootSubgroupPoints γ A) := by
-  -- At a positive simple root the fundamental summand of that node detects the parameter.
-  refine (t.scChevalleyDatum ht).rootSubgroupPoints_injective_of_simple A (fun i => ?_) γ
-  refine ((t.scChevalleyDatum ht).rootSubgroupPoints_injective_iff _ A).2 ?_
-  rw [chevalleyRootSubgroup_simpleIndex]
-  exact t.kostantRootSubgroupParam_scLattice_injective ht A (.inl i)
 
 /-! ## The simply connected Chevalley group scheme -/
 

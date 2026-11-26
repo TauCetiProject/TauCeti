@@ -20,6 +20,8 @@ this height is positive.
 
 ## Main results
 
+* `TauCeti.DynkinType.height_g2SimplyConnectedBase`: the heights of the roots in fundamental-weight
+  coordinates.
 * `TauCeti.DynkinType.height_flip_g2SimplyConnectedBase`: the heights of the coroots.
 * `TauCeti.DynkinType.mem_posRoots_g2_iff`: the positive roots are the first six table entries.
 * `TauCeti.DynkinType.posRootsFinset_g2`: the positive roots of the pinned `G₂` datum.
@@ -36,6 +38,20 @@ namespace TauCeti
 open RootPairing
 
 namespace DynkinType
+
+/-- The height of a root of the pinned `G₂` datum in fundamental-weight coordinates is
+`3 * g2Root k 0 + 5 * g2Root k 1`. -/
+@[simp] theorem height_g2SimplyConnectedBase (k : Fin 12) :
+    g2SimplyConnectedBase.height k = 3 * g2Root k 0 + 5 * g2Root k 1 := by
+  -- The functional `3 x₀ + 5 x₁` takes value `1` on both simple roots `![2, -1]` and `![-3, 2]`.
+  have h := apply_root_eq_height_zsmul g2SimplyConnectedRootDatum g2SimplyConnectedBase
+    (3 • Pi.evalAddMonoidHom (fun _ : Fin 2 ↦ ℤ) 0 +
+      5 • Pi.evalAddMonoidHom (fun _ : Fin 2 ↦ ℤ) 1)
+    (c := 1) ?_ k
+  · simpa [nsmul_eq_mul] using h.symm
+  · intro j hj
+    rw [g2SimplyConnectedBase_support, Finset.mem_insert, Finset.mem_singleton] at hj
+    rcases hj with rfl | rfl <;> simp [g2Root_apply]
 
 /-- **The height of a coroot of the pinned `G₂` datum**, against the simple coroots, is the sum
 of its coordinates. -/
