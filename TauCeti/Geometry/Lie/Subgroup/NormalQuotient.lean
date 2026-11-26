@@ -312,10 +312,7 @@ theorem ker_groupLieAlgebraMap_mk' [N.Normal] (hN : IsClosed (N : Set G))
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let _ := d.chartedSpace
   let _ := d.lieGroup
-  -- The model of an embedded Lie subgroup is finite-dimensional, as `dι` is injective.
-  have : FiniteDimensional ℝ E' := Module.Finite.of_injective
-    (mfderiv 𝓘(ℝ, E') I (fun x : N ↦ (x : G)) 1 : E' →L[ℝ] E).toLinearMap
-    (d.injective_mfderiv_subtypeVal 1)
+  have := d.finiteDimensional
   let e := leftInvariantDerivationLieEquivGroupLieAlgebra
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
   let e' := leftInvariantDerivationLieEquivGroupLieAlgebra
