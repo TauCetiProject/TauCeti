@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
+public import TauCeti.Geometry.Lie.Adjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Geometry.Lie.Subgroup.Symplectic
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 
@@ -35,6 +37,12 @@ The topology of this operator norm agrees with the entrywise topology.
   symplectic matrix Lie algebra.
 * `TauCeti.Lie.restrictScalarsIncl_symplecticGroupLieAlgebraEquiv_apply` identifies the
   equivalence with the differential of the inclusion in matrix coordinates.
+* `TauCeti.Lie.contMDiff_val_symplecticGroup`: the inclusion into the matrices is smooth.
+* `TauCeti.Lie.instContMDiffSMulSymplecticGroup`: the symplectic group acts smoothly on the
+  column vectors `l ⊕ l → 𝕜` by matrix multiplication.
+* `TauCeti.Lie.mvfderiv_val_symplecticGroup_adjointContinuousLinearMap`: read through the
+  differential `dι` at `1` of the inclusion into the matrices, the adjoint action is conjugation,
+  `dι(Ad_g ξ) = g dι(ξ) g⁻¹`.
 
 ## References
 
@@ -261,5 +269,63 @@ theorem restrictScalarsIncl_symplecticGroupLieAlgebraEquiv_apply
     EmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup_apply,
     EmbeddedLieSubgroupData.lieMapSubtypeVal_apply, symplecticNativeToCarrierLieEquiv_apply,
     symplecticGroupToGLSmoothHom, lieMap_comp, LieHom.comp_apply]
+
+variable (l 𝕜) in
+/-- The inclusion of the symplectic group into the matrices is smooth. -/
+theorem contMDiff_val_symplecticGroup :
+    ContMDiff 𝓘(ℝ, SymplecticGroupModel l 𝕜) 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜) ∞
+      (fun g : Matrix.symplecticGroup l 𝕜 ↦ (g : Matrix (l ⊕ l) (l ⊕ l) 𝕜)) := by
+  refine (Units.contMDiff_val.comp (symplecticGroupToGLSmoothHom l 𝕜).contMDiff_toFun).congr
+    fun g ↦ ?_
+  -- The underlying function of the smooth homomorphism into `GL` is `ofSymplecticGroup`.
+  exact ((congrArg Units.val (symplecticGroupToGLSmoothHom_apply l 𝕜 g)).trans
+    (GLSymplectic.coe_ofSymplecticGroup l 𝕜 g)).symm
+
+/-- The symplectic group acts smoothly on the column vectors `l ⊕ l → 𝕜` by matrix
+multiplication, `g • v = g *ᵥ v`. -/
+instance instContMDiffSMulSymplecticGroup :
+    ContMDiffSMul 𝓘(ℝ, SymplecticGroupModel l 𝕜) 𝓘(ℝ, l ⊕ l → 𝕜) ∞
+      (Matrix.symplecticGroup l 𝕜) (l ⊕ l → 𝕜) where
+  contMDiff_smul := by
+    -- The action is the real bilinear map `(A, v) ↦ A *ᵥ v` after the inclusion of `g`.
+    have hB : ContMDiff (𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜).prod 𝓘(ℝ, l ⊕ l → 𝕜))
+        𝓘(ℝ, l ⊕ l → 𝕜) ∞
+        (fun p : Matrix (l ⊕ l) (l ⊕ l) 𝕜 × (l ⊕ l → 𝕜) ↦ p.1 *ᵥ p.2) := by
+      rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
+      exact (Matrix.mulVecBilin ℝ ℝ : Matrix (l ⊕ l) (l ⊕ l) 𝕜 →ₗ[ℝ] _ →ₗ[ℝ] _)
+        |>.toContinuousBilinearMap.isBoundedBilinearMap.contDiff.contMDiff
+    exact hB.comp ((contMDiff_val_symplecticGroup l 𝕜).prodMap contMDiff_id)
+
+/-- **The adjoint action of the symplectic group is conjugation.** For the differential `dι` at
+`1` of the inclusion `ι` of the symplectic group into the matrices, `dι(Ad_g ξ) = g dι(ξ) g⁻¹`. -/
+theorem mvfderiv_val_symplecticGroup_adjointContinuousLinearMap (g : Matrix.symplecticGroup l 𝕜)
+    (ξ : GroupLieAlgebra 𝓘(ℝ, SymplecticGroupModel l 𝕜) (Matrix.symplecticGroup l 𝕜)) :
+    mvfderiv 𝓘(ℝ, SymplecticGroupModel l 𝕜)
+        (fun g : Matrix.symplecticGroup l 𝕜 ↦ (g : Matrix (l ⊕ l) (l ⊕ l) 𝕜)) 1
+        (adjointContinuousLinearMap (I := 𝓘(ℝ, SymplecticGroupModel l 𝕜)) g ξ) =
+      (g : Matrix (l ⊕ l) (l ⊕ l) 𝕜) *
+        mvfderiv 𝓘(ℝ, SymplecticGroupModel l 𝕜)
+          (fun g : Matrix.symplecticGroup l 𝕜 ↦ (g : Matrix (l ⊕ l) (l ⊕ l) 𝕜)) 1 ξ *
+        ((g⁻¹ : Matrix.symplecticGroup l 𝕜) : Matrix (l ⊕ l) (l ⊕ l) 𝕜) := by
+  let ι := fun g : Matrix.symplecticGroup l 𝕜 ↦ (g : Matrix (l ⊕ l) (l ⊕ l) 𝕜)
+  have hι := (contMDiff_val_symplecticGroup l 𝕜).mdifferentiableAt (x := 1) (by simp)
+  -- Conjugation by `g` followed by `ι` is `ι` followed by the real linear map `A ↦ g A g⁻¹`.
+  let L : Matrix (l ⊕ l) (l ⊕ l) 𝕜 →L[ℝ] Matrix (l ⊕ l) (l ⊕ l) 𝕜 :=
+    LinearMap.toContinuousLinearMap
+      ((LinearMap.mulLeft 𝕜 (g : Matrix (l ⊕ l) (l ⊕ l) 𝕜) ∘ₗ
+        LinearMap.mulRight 𝕜 ((g⁻¹ : Matrix.symplecticGroup l 𝕜) :
+          Matrix (l ⊕ l) (l ⊕ l) 𝕜)).restrictScalars ℝ)
+  have hconj : ι ∘ conjDiffeomorph (I := 𝓘(ℝ, SymplecticGroupModel l 𝕜)) (n := 1) g =
+      L ∘ ι := by
+    funext h
+    simp [ι, L, Matrix.mul_assoc]
+  -- The chain rule for `ι ∘ conj_g` at `1`, whose image is `1`. The tangent spaces at `1` and at
+  -- `conj_g 1` differ as types, so the two sides are chained as terms rather than rewritten.
+  rw [adjointContinuousLinearMap_apply]
+  refine (mvfderiv_comp_apply_of_eq (g := ι) (y := 1) (1 : Matrix.symplecticGroup l 𝕜) hι
+    ((conjDiffeomorph g).mdifferentiable one_ne_zero 1) (by simp) ξ).symm.trans ?_
+  rw [hconj, L.mvfderiv_comp_apply hι]
+  -- `L A` unfolds to `g * (A * g⁻¹)`.
+  exact (Matrix.mul_assoc _ _ _).symm
 
 end TauCeti.Lie
