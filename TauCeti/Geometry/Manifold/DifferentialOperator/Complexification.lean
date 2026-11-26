@@ -89,9 +89,7 @@ theorem re_comp_restrictScalars_comp_ofReal_mem_differentialOperators {m : ℕ}
       C^r⟮I, N; 𝓘(ℝ, ℂ), ℂ⟯ m) :
     ContMDiffMap.re ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
       differentialOperators ℝ C^r⟮I, N; ℝ⟯ C^r⟮I, N; ℝ⟯ C^r⟮I, N; ℝ⟯ m :=
-  comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ fun b y ↦ by
-    ext x
-    simp [ContMDiffMap.re_apply]
+  comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ ContMDiffMap.re_ofReal_mul
 
 /-- **The imaginary part of a complex differential operator.** If `Q` is a complex-linear
 differential operator of order at most `m` on the complex-valued smooth functions, for commutators
@@ -103,7 +101,5 @@ theorem im_comp_restrictScalars_comp_ofReal_mem_differentialOperators {m : ℕ}
       C^r⟮I, N; 𝓘(ℝ, ℂ), ℂ⟯ m) :
     ContMDiffMap.im ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
       differentialOperators ℝ C^r⟮I, N; ℝ⟯ C^r⟮I, N; ℝ⟯ C^r⟮I, N; ℝ⟯ m :=
-  comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ fun b y ↦ by
-    ext x
-    simp [ContMDiffMap.im_apply]
+  comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ ContMDiffMap.im_ofReal_mul
 end TauCeti

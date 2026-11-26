@@ -545,6 +545,16 @@ theorem smulCommutator_restrictScalars (a : A) (D : M →ₗ[S] N) :
   ext x
   simp
 
+/-- The iterated form of `TauCeti.smulCommutator_restrictScalars`. -/
+@[simp]
+theorem smulCommutator_pow_restrictScalars (a : A) (D : M →ₗ[S] N) (k : ℕ) :
+    (smulCommutator R a ^ k) (D.restrictScalars R) =
+      ((smulCommutator S a ^ k) D).restrictScalars R := by
+  induction k with
+  | zero => rfl
+  | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, smulCommutator_restrictScalars, pow_succ',
+      mul_apply_eq_comp]
+
 /-- **Restriction of scalars preserves the order.** For a tower `R → S → A`, an `S`-linear
 differential operator of order at most `m` over `A` is also one when viewed as an `R`-linear map.
 For instance a complex-linear differential operator between spaces of sections of complex vector

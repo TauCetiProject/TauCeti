@@ -369,13 +369,8 @@ private theorem sectionEntry_intertwine (b : C^∞⟮𝓘(ℝ, CoordinateSpace n
     (∀ f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ (b • f) =
         b • (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ f) ∧
-      ∀ h, t'.cutoffFrameCoeff χ hχ ℓ (b • h) = b • t'.cutoffFrameCoeff χ hχ ℓ h := by
-  refine ⟨fun f ↦ by simp [mul_smul], fun h ↦ ?_⟩
-  ext x
-  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
-    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
-    Pi.mul_apply, Complex.real_smul]
-  ring
+      ∀ h, t'.cutoffFrameCoeff χ hχ ℓ (b • h) = b • t'.cutoffFrameCoeff χ hχ ℓ h :=
+  ⟨fun f ↦ by simp [mul_smul], fun h ↦ t'.cutoffFrameCoeff_smul_of_normedAlgebra χ hχ ℓ b h⟩
 
 /-- **The entries of a differential operator are differential operators.** If `P : Γ(E) → Γ(F)` is
 a differential operator of order at most `m` in Grothendieck's sense, for commutators with
