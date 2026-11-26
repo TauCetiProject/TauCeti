@@ -23,8 +23,8 @@ derived categories; the following comparisons identify iterated restrictions wit
 
 * `Scheme.Hom.derivedRestrictComp f g h w`: for open immersions with `w : f ≫ g = h`, the
   comparison `(K|_Y)|_X ≅ K|_X` induced by `Scheme.Modules.restrictFunctorComp` and
-  `Scheme.Modules.restrictFunctorCongr`, with its values on complexes and on sheaves placed in one
-  degree.
+  `Scheme.Modules.restrictFunctorCongr`, with its values on complexes, on complexes in the
+  homotopy category, and on sheaves placed in one degree.
 * `Scheme.derivedRestrictId X`: derived restriction along the identity of `X` is the identity.
 * `Scheme.Hom.derivedRestrictComp_associativity`: for three composable open immersions the two
   comparisons of the threefold restriction with the restriction along the composite agree;
@@ -78,6 +78,19 @@ noncomputable def derivedRestrictComp (f : X ⟶ Y) (g : Y ⟶ Z) (h : X ⟶ Z) 
   Functor.mapDerivedCategoryCompIso _ _ ≪≫
     NatIso.mapDerivedCategory ((restrictFunctorComp f g).symm ≪≫ restrictFunctorCongr w)
 
+omit [HasDerivedCategory X.Modules] [HasDerivedCategory Y.Modules] [HasDerivedCategory Z.Modules]
+  [HasDerivedCategory T.Modules] in
+private lemma Qh_map_mapHomotopyCategoryFactors_inv_app {A B : Scheme.{u}}
+    [HasDerivedCategory.{w₁} A.Modules] (e : A ⟶ B) [IsOpenImmersion e]
+    (L : CochainComplex B.Modules ℤ) :
+    Qh.map (((Modules.restrictFunctor e).mapHomotopyCategoryFactors (.up ℤ)).inv.app L) =
+      𝟙 _ := by
+  have : ((Modules.restrictFunctor e).mapHomotopyCategoryFactors (.up ℤ)).inv.app L = 𝟙 _ := by
+    rw [← cancel_epi (((Modules.restrictFunctor e).mapHomotopyCategoryFactors (.up ℤ)).hom.app L),
+      Iso.hom_inv_id_app, Functor.mapHomotopyCategoryFactors_hom_app, Category.comp_id]
+  rw [this]
+  exact Qh.map_id _
+
 section
 
 variable (f : X ⟶ Y) (g : Y ⟶ Z) (h : X ⟶ Z) (w : f ≫ g = h)
@@ -130,6 +143,37 @@ lemma derivedRestrictComp_hom_app_singleFunctor_obj (M : Z.Modules) (n : ℤ) :
   rw [derivedRestrictComp_hom, NatTrans.comp_app, NatTrans.mapDerivedCategory_app_singleFunctor_obj,
     Functor.mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategorySingleFunctor_hom_app_assoc,
     NatTrans.comp_app]
+
+/-- On the image of a complex `K` in the homotopy category, the comparison `derivedRestrictComp` is
+the localization of the termwise comparison of restrictions of module sheaves, up to the
+identifications `Functor.mapDerivedCategoryFactorsh` of derived restriction on the homotopy
+category. -/
+@[reassoc]
+lemma derivedRestrictComp_hom_app_Qh_obj (K : CochainComplex Z.Modules ℤ) :
+    (derivedRestrictComp f g h w).hom.app (Qh.obj ((HomotopyCategory.quotient _ _).obj K)) ≫
+      (Modules.restrictFunctor h).mapDerivedCategoryFactorsh.hom.app
+        ((HomotopyCategory.quotient _ _).obj K) =
+    f.derivedRestrict.map ((Modules.restrictFunctor g).mapDerivedCategoryFactorsh.hom.app
+        ((HomotopyCategory.quotient _ _).obj K)) ≫
+      (Modules.restrictFunctor f).mapDerivedCategoryFactorsh.hom.app
+        ((HomotopyCategory.quotient _ _).obj
+          (((Modules.restrictFunctor g).mapHomologicalComplex _).obj K)) ≫
+        Qh.map ((HomotopyCategory.quotient _ _).map ((NatTrans.mapHomologicalComplex
+          ((restrictFunctorComp f g).inv ≫ (restrictFunctorCongr w).hom) _).app K)) := by
+  have h₁ := (derivedRestrictComp f g h w).hom.naturality
+    ((quotientCompQhIso Z.Modules).hom.app K)
+  have h₂ := (quotientCompQhIso X.Modules).inv.naturality ((NatTrans.mapHomologicalComplex
+    ((restrictFunctorComp f g).inv ≫ (restrictFunctorCongr w).hom) _).app K)
+  dsimp only [Functor.comp_obj, Functor.comp_map] at h₁ h₂
+  simp only [Functor.mapDerivedCategoryFactorsh_hom_app, Qh_map_mapHomotopyCategoryFactors_inv_app]
+  rw [← reassoc_of% h₁, derivedRestrictComp_hom_app_Q_obj]
+  simp only [Category.assoc, Iso.inv_hom_id_app_assoc, Functor.map_comp]
+  -- The objects `((restrictFunctor g ⋙ restrictFunctor f).mapHomologicalComplex _).obj K` and
+  -- `((restrictFunctor f).mapHomologicalComplex _).obj (((restrictFunctor g).mapHomologicalComplex
+  -- _).obj K)` agree by definition, hence `erw` and the final `rfl`.
+  erw [reassoc_of% h₂]
+  simp
+  rfl
 
 /-- The comparison `derivedRestrictComp` commutes with the shifts of derived categories. -/
 instance : NatTrans.CommShift (derivedRestrictComp f g h w).hom ℤ := by
