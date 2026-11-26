@@ -40,12 +40,11 @@ construction and its loop and reconnection evaluations:
 2. **Transitivity and prescribed-arc witnesses.** Every Brauer diagram `D` on `k` strands has `k`
    arcs (`TauCeti.BrauerDiagram.card_isLowerEnd`), so sending the `k` bottom points to the lower
    ends of `D` and the `k` top points to their partners constructs a canonical framing
-   `TauCeti.BrauerDiagram.framing` (`TauCeti.BrauerDiagram.isFraming_framing`,
-   `TauCeti.BrauerDiagram.exists_congr_permToBrauer_one`). Refining that witness places any one arc
-   (`TauCeti.BrauerDiagram.exists_congr_permToBrauer_one_of_val_eq`) or any two disjoint arcs
-   (`TauCeti.BrauerDiagram.exists_congr_permToBrauer_one_of_val_eq_of_val_eq`) onto dedicated
-   strands with prescribed endpoint orientations, isolating the arcs that close a loop or reconnect
-   under a cap-cup generator.
+   `TauCeti.BrauerDiagram.framing` (`TauCeti.BrauerDiagram.isFraming_framing`). Refining that
+   witness places any one arc (`TauCeti.BrauerDiagram.exists_congr_permToBrauer_one_of_val_eq`) or
+   any two disjoint arcs (`TauCeti.BrauerDiagram.exists_congr_permToBrauer_one_of_val_eq_of_val_eq`)
+   onto dedicated strands with prescribed endpoint orientations, isolating the arcs that close a
+   loop or reconnect under a cap-cup generator.
 3. **Stabilizer of the identity diagram.** A boundary permutation fixes `permToBrauer 1` under
    `PerfectMatching.congr` precisely when it commutes with `Sum.swap`, so any two boundary
    permutations transporting `permToBrauer 1` to the same diagram differ on the right by a
@@ -61,8 +60,8 @@ construction and its loop and reconnection evaluations:
 ## Main results
 
 * `TauCeti.BrauerDiagram.isFraming_iff`: pointwise characterization of an arc framing.
-* `TauCeti.BrauerDiagram.isFraming_framing`, `TauCeti.BrauerDiagram.exists_congr_permToBrauer_one`:
-  every Brauer diagram is a boundary transport of `permToBrauer 1`.
+* `TauCeti.BrauerDiagram.isFraming_framing`: every Brauer diagram is framed by
+  `TauCeti.BrauerDiagram.framing`.
 * `TauCeti.BrauerDiagram.exists_mul_sumCongr_mul_of_congr_permToBrauer_one_eq`: two boundary
   permutations transporting `permToBrauer 1` to the same diagram differ by a strand permutation and
   endpoint swaps.
@@ -87,6 +86,7 @@ variable {k : ℕ}
 /-- An **arc framing** of a Brauer diagram `D` on `k` strands is a permutation `π` of the boundary
 points `Fin k ⊕ Fin k` carrying the identity diagram `permToBrauer 1` to `D`, so that the `k`
 ordered pairs `(π (Sum.inl r), π (Sum.inr r))` list the `k` arcs of `D`. -/
+@[expose]
 def IsFraming (D : BrauerDiagram k) (π : Equiv.Perm (Fin k ⊕ Fin k)) : Prop :=
   PerfectMatching.congr π (permToBrauer 1) = D
 
@@ -170,13 +170,6 @@ theorem isFraming_framing (D : BrauerDiagram k) : D.IsFraming D.framing := by
   rw [PerfectMatching.congr_val_apply_apply, permToBrauer_one_val_apply]
   rcases x with i | i <;> simp [framing, D.apply_apply]
 
-/-- **Every Brauer diagram is a transport of the identity diagram** along a permutation of the
-boundary points: sending the `k` bottom points to the lower ends of `D` and the `k` top points to
-their partners matches each strand of `permToBrauer 1` with an arc of `D`. -/
-theorem exists_congr_permToBrauer_one (D : BrauerDiagram k) :
-    ∃ φ : Equiv.Perm (Fin k ⊕ Fin k), PerfectMatching.congr φ (permToBrauer 1) = D :=
-  ⟨D.framing, D.isFraming_framing⟩
-
 /-- **Two boundary permutations transport `permToBrauer 1` to the same diagram** only when they
 differ on the right by a simultaneous permutation of the strands followed by swaps of strand
 endpoints. -/
@@ -233,8 +226,7 @@ theorem exists_congr_permToBrauer_one_of_val_eq (D : BrauerDiagram k) {x y : Fin
     ∃ (φ : Equiv.Perm (Fin k ⊕ Fin k)) (i₀ : Fin k),
       PerfectMatching.congr φ (permToBrauer 1) = D ∧
         φ (Sum.inl i₀) = x ∧ φ (Sum.inr i₀) = y := by
-  obtain ⟨φ₀, hφ₀⟩ := D.exists_congr_permToBrauer_one
-  obtain ⟨φ, i₀, hφ, -, hx, hy, -⟩ := exists_congr_permToBrauer_one_orient_arc hφ₀ h
+  obtain ⟨φ, i₀, hφ, -, hx, hy, -⟩ := exists_congr_permToBrauer_one_orient_arc D.isFraming_framing h
   exact ⟨φ, i₀, hφ, hx, hy⟩
 
 /-- **Transporting `permToBrauer 1` to `D` with two prescribed disjoint oriented arcs.** -/

@@ -34,7 +34,8 @@ monomial basis cannot simply test constancy on arcs as in the orthogonal case
 
 Instead, every Brauer diagram `D` on `k` strands is obtained from the identity diagram
 `permToBrauer 1` by transporting its boundary along a permutation `φ : Equiv.Perm (Fin k ⊕ Fin k)`
-(`TauCeti.BrauerDiagram.exists_congr_permToBrauer_one`). Weighting `φ` by `sign φ` times the
+(`TauCeti.BrauerDiagram.framing`, `TauCeti.BrauerDiagram.isFraming_framing`). Weighting `φ` by
+`sign φ` times the
 product over the `k` strands of the antisymmetric boundary kernel
 `TauCeti.BrauerDiagram.symplecticArcMatrix` — `Matrix.J` on caps and cups, `1` on upward through
 strands, and `-1` on downward through strands — gives a scalar independent of the choice of `φ`:
@@ -243,13 +244,13 @@ theorem symplecticActionMatrix_eq_skewArcProd {R : Type u} [CommRing R] {ι : Ty
 `TauCeti.BrauerDiagram.symplecticArcMatrix` evaluated on the boundary labelling `Sum.elim u v`. -/
 theorem symplecticActionMatrix_apply_of_congr {R : Type u} [CommRing R] {ι : Type*}
     [DecidableEq ι] {D : BrauerDiagram k} {φ : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hφ : PerfectMatching.congr φ (permToBrauer 1) = D) (v u : Fin k → ι ⊕ ι) :
+    (hφ : D.IsFraming φ) (v u : Fin k → ι ⊕ ι) :
     D.symplecticActionMatrix R ι v u =
       ((Equiv.Perm.sign φ : ℤ) : R) *
         ∏ i : Fin k, symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
           (Sum.elim u v (φ (Sum.inl i))) (Sum.elim u v (φ (Sum.inr i))) := by
   rw [symplecticActionMatrix_eq_skewArcProd,
-    skewArcProd_eq_of_isFraming D (symplecticArcWeight_swap R u v) ((D.isFraming_def φ).mpr hφ)]
+    skewArcProd_eq_of_isFraming D (symplecticArcWeight_swap R u v) hφ]
   rfl
 
 /-- **Entries of the matrix of a permutation diagram**: `(permToBrauer σ).symplecticActionMatrix`
@@ -338,27 +339,25 @@ theorem reindex_symplecticActionMatrix {ι₁ ι₂ : Type*} [DecidableEq ι₁]
         (Equiv.piCongrRight fun _ : Fin k => Equiv.sumCongr e e)
         (D.symplecticActionMatrix R ι₁) =
       D.symplecticActionMatrix R ι₂ := by
-  obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
   let eSum : ι₁ ⊕ ι₁ ≃ ι₂ ⊕ ι₂ := Equiv.sumCongr e e
   let eFun : (Fin k → ι₁ ⊕ ι₁) ≃ (Fin k → ι₂ ⊕ ι₂) := Equiv.piCongrRight fun _ => eSum
-  have harc (x y : Fin k ⊕ Fin k) (a b : ι₂ ⊕ ι₂) :
-      symplecticArcMatrix R ι₁ x y (eSum.symm a) (eSum.symm b) =
-        symplecticArcMatrix R ι₂ x y a b := by
-    cases x <;> cases y
-    · simpa only [symplecticArcMatrix_inl_inl, Matrix.reindex_apply, Matrix.submatrix_apply] using
-        congrFun (congrFun (Matrix.reindex_sumCongr_J R e) a) b
-    · simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
-    · simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
-    · simpa only [symplecticArcMatrix_inr_inr, Matrix.reindex_apply, Matrix.submatrix_apply] using
-        congrFun (congrFun (Matrix.reindex_sumCongr_J R e) a) b
-  have helim (v u : Fin k → ι₂ ⊕ ι₂) (z : Fin k ⊕ Fin k) :
-      Sum.elim (eFun.symm u) (eFun.symm v) z = eSum.symm (Sum.elim u v z) := by
-    cases z <;> rfl
+  have hJ : (Matrix.J ι₁ R).submatrix eSum.symm eSum.symm = Matrix.J ι₂ R := by
+    simpa only [Matrix.reindex_apply] using Matrix.reindex_sumCongr_J R e
+  have h1 : (1 : Matrix (ι₁ ⊕ ι₁) (ι₁ ⊕ ι₁) R).submatrix eSum.symm eSum.symm = 1 := by
+    ext a b
+    simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
+  have hneg1 : (-1 : Matrix (ι₁ ⊕ ι₁) (ι₁ ⊕ ι₁) R).submatrix eSum.symm eSum.symm = -1 := by
+    ext a b
+    simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
+  have hcomp (f : Fin k → ι₂ ⊕ ι₂) : eFun.symm f = eSum.symm ∘ f := rfl
+  have hweight (u v : Fin k → ι₂ ⊕ ι₂) :
+      symplecticArcWeight R (eFun.symm u) (eFun.symm v) = symplecticArcWeight R u v := by
+    simp only [symplecticArcWeight_eq_fromBlocks, hcomp, ← Matrix.submatrix_submatrix, hJ,
+      h1, hneg1]
   ext v u
-  rw [Matrix.reindex_apply, Matrix.submatrix_apply, symplecticActionMatrix_apply_of_congr hφ,
-    symplecticActionMatrix_apply_of_congr hφ]
-  exact congrArg (((Equiv.Perm.sign φ : ℤ) : R) * ·)
-    (Finset.prod_congr rfl fun _ _ => by rw [helim, helim, harc])
+  rw [Matrix.reindex_apply, Matrix.submatrix_apply, symplecticActionMatrix_eq_skewArcProd,
+    symplecticActionMatrix_eq_skewArcProd]
+  exact congrArg D.skewArcProd (hweight u v)
 
 /-- **Reflecting a diagram upside down transposes its symplectic matrix**: exchanging the bottom
 (input) and top (output) boundaries of `D` exchanges the column and row labellings of
@@ -366,11 +365,11 @@ theorem reindex_symplecticActionMatrix {ι₁ ι₂ : Type*} [DecidableEq ι₁]
 @[simp]
 theorem transpose_symplecticActionMatrix (D : BrauerDiagram k) :
     (D.symplecticActionMatrix R ι)ᵀ = D.flip.symplecticActionMatrix R ι := by
-  obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
-  have hflip : PerfectMatching.congr (Equiv.sumComm (Fin k) (Fin k) * φ) (permToBrauer 1) =
-      D.flip := by
-    rw [flip_def, ← isFraming_def]
-    exact ((D.isFraming_def φ).mpr hφ).congr (Equiv.sumComm (Fin k) (Fin k))
+  let φ := D.framing
+  have hφ : D.IsFraming φ := D.isFraming_framing
+  have hflip : D.flip.IsFraming (Equiv.sumComm (Fin k) (Fin k) * φ) := by
+    rw [flip_def]
+    exact hφ.congr (Equiv.sumComm (Fin k) (Fin k))
   let sgn : Fin k ⊕ Fin k → R := Sum.elim (fun _ => -1) (fun _ => 1)
   have harc (x y : Fin k ⊕ Fin k) (a b : ι ⊕ ι) :
       symplecticArcMatrix R ι x.swap y.swap a b =
@@ -624,9 +623,8 @@ private theorem symplecticActionMatrix_reconnect_inr_of_congr_two {a b i₁ i₂
   have hqb : q ≠ Sum.inr b := D.apply_ne (Sum.inr b)
   have hqp : q ≠ p := fun h => hab (Sum.inr_injective (D.val.injective h).symm)
   let φ' : Equiv.Perm (Fin k ⊕ Fin k) := Equiv.swap p (Sum.inr b) * φ
-  have hφ' : PerfectMatching.congr φ' (permToBrauer 1) = D.reconnect (Sum.inr a) (Sum.inr b) :=
-    (BrauerDiagram.isFraming_def _ _).mp
-      (((D.isFraming_def φ).mpr hφ).reconnect (Sum.inr a) (Sum.inr b))
+  have hφ' : BrauerDiagram.IsFraming (D.reconnect (Sum.inr a) (Sum.inr b)) φ' :=
+    BrauerDiagram.IsFraming.reconnect hφ (Sum.inr a) (Sum.inr b)
   have hsign : ((Equiv.Perm.sign φ' : ℤ) : R) = -((Equiv.Perm.sign φ : ℤ) : R) := by
     simp [φ', Equiv.Perm.sign_swap hncup]
   have hrest : ∏ i ∈ (Finset.univ.erase i₁).erase i₂,
