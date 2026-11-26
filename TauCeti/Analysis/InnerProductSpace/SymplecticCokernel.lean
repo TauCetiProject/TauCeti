@@ -40,8 +40,8 @@ differing from `x ↦ [J x]` by an automorphism of `ker f` of positive determina
 (`TauCeti.det_pos_kerEquivQuotientRangeOfInnerApplyEq_symm_comp`,
 `TauCeti.bijective_of_forall_pos_kerQuotientRangePairing`). So both identify the determinant line
 of `f` with `det (ker f) ⊗ (det (ker f))^*` compatibly with orientations. For the return map of a
-periodic linear Hamiltonian equation, the endpoint map of variation of constants gives such a map
-(`TauCeti.kerQuotientRangePairing_kerTwistedLinearOperatorToQuotientRange`).
+periodic linear Hamiltonian equation, `ε` times the endpoint map of variation of constants gives
+such a map (`TauCeti.kerQuotientRangePairing_smul_kerTwistedLinearOperatorToQuotientRange_pos`).
 
 ## Main definitions
 

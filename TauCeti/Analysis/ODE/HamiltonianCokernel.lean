@@ -122,13 +122,22 @@ def kerTwistedLinearOperatorToQuotientRange (hM : Continuous M) (hper : Function
       map_add' _ _ := by ext; simp
       map_smul' _ _ := by ext; simp }
 
+/-- The class `[J w]` of the pointwise image of a twisted solution `w` of `w' = M w`. -/
+@[simp]
+theorem kerTwistedLinearOperatorToQuotientRange_apply (hM : Continuous M)
+    (hper : Function.Periodic M d) (w : LinearMap.ker (twistedLinearOperator hM hper ε)) :
+    kerTwistedLinearOperatorToQuotientRange J hM hper ε w =
+      Submodule.Quotient.mk ⟨fun t => J ((w.val : ℝ → X) t), mem_twistedContinuous.2
+        ⟨J.continuous.comp (mem_twistedContDiff.1 w.val.property).1.continuous,
+          fun t => by simp [(mem_twistedContDiff.1 w.val.property).2 t]⟩⟩ :=
+  (rfl)
+
 section Complete
 
 variable [CompleteSpace X]
 
 /-- Read through the endpoint identification of the cokernel of `L`, the class of `J w` is the
 class of the endpoint `E (J w) = Ψ(d) ∫₀ᵈ Ψ(s)⁻¹ (J (w s)) ds`. -/
-@[simp]
 theorem quotientRangeTwistedLinearOperatorEquiv_kerTwistedLinearOperatorToQuotientRange
     (hM : Continuous M) (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0)
     (w : LinearMap.ker (twistedLinearOperator hM hper ε)) :
@@ -136,7 +145,7 @@ theorem quotientRangeTwistedLinearOperatorEquiv_kerTwistedLinearOperatorToQuotie
         (kerTwistedLinearOperatorToQuotientRange J hM hper ε w) =
       Submodule.Quotient.mk
         (dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (J ((w.val : ℝ → X) s)))) := by
-  simp [kerTwistedLinearOperatorToQuotientRange]
+  simp
 
 /-- **The endpoint of `J Ψ(·) x` against `y`.** For `x` and `y` in the `ε`-eigenspace of the
 return map `Ψ(d)` of a linear Hamiltonian equation, with `ε ^ 2 = 1`, the pairing of `y` with the
@@ -154,11 +163,8 @@ theorem kerQuotientRangePairing_kerTwistedLinearOperatorToQuotientRange (hM : Co
             ((kerTwistedLinearOperatorEquiv hM hper ε).symm x))) =
       ε * ∫ s in 0..d, ⟪J (dysonSeriesLeft M s y), J (dysonSeriesLeft M s x)⟫ := by
   -- `y` is an `ε`-eigenvector of the return map.
-  have hy : dysonSeriesLeft M d y = ε • (y : X) := by
-    have h := y.property
-    rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self,
-      ContinuousLinearMap.coe_coe, sub_eq_zero] at h
-    exact h.symm
+  have hy : ε • (y : X) = dysonSeriesLeft M d y := by
+    simpa [sub_eq_zero, -LinearMap.map_coe_ker] using LinearMap.map_coe_ker _ y
   -- The integrand of the endpoint is continuous.
   have hcont : Continuous fun s => dysonSeries (-M) s (J (dysonSeriesLeft M s x)) :=
     (continuous_dysonSeries hM.neg).clm_apply
@@ -166,7 +172,7 @@ theorem kerQuotientRangePairing_kerTwistedLinearOperatorToQuotientRange (hM : Co
   -- Since `Ψ(d)` preserves `⟪J ·, ·⟫` and fixes `y` up to `ε`, `⟪J y, Ψ(d) z⟫ = ε ⟪J y, z⟫`.
   have hret (z : X) : ⟪J y, dysonSeriesLeft M d z⟫ = ε * ⟪J y, z⟫ := by
     have h := inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply_of_skew hM hskew d y z
-    rw [hy, map_smul, real_inner_smul_left] at h
+    rw [← hy, map_smul, real_inner_smul_left] at h
     rw [← h, ← mul_assoc, ← sq, hε, one_mul]
   simp only [quotientRangeTwistedLinearOperatorEquiv_kerTwistedLinearOperatorToQuotientRange,
     kerTwistedLinearOperatorEquiv_symm_apply, kerQuotientRangePairing_mk,
