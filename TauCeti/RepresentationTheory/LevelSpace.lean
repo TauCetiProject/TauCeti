@@ -9,6 +9,8 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.GroupTheory.DoubleCoset.Basic
 
 /-!
 # Level spaces and Hecke operators of a representation
@@ -101,6 +103,11 @@ Haar measure with `vol K = 1`. For the indicator of `K g K` it is the double cos
 noncomputable def heckeOperator (f : G → A) : Module.End A W :=
   ∑ᶠ q : G ⧸ K, f q.out • ρ q.out
 
+variable (ρ K) in
+theorem heckeOperator_def (f : G → A) :
+    ρ.heckeOperator K f = ∑ᶠ q : G ⧸ K, f q.out • ρ q.out :=
+  (rfl)
+
 variable {f : G → A} {v : W}
 
 /-- On a `K`-invariant vector, the Hecke operator of a right `K`-invariant `f` supported on finitely
@@ -116,11 +123,12 @@ theorem heckeOperator_apply_eq_sum (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
     exact Finset.mem_image.2 ⟨i, hi, by rw [h, QuotientGroup.out_eq']⟩
   -- the chosen representative of `g K` is some `g k`, and `k` does not change `f g • ρ g v`
   have h_term (g : G) : f (g : G ⧸ K).out • ρ (g : G ⧸ K).out v = f g • ρ g v := by
-    obtain ⟨k, hk⟩ := QuotientGroup.mk_out_eq_mul K g
-    rw [hk, hf g k k.property, map_mul, mul_apply_eq_comp, hv k, MonoidHom.one_apply, one_smul]
+    rw [QuotientGroup.apply_out_mk hf g, QuotientGroup.apply_out_mk (f := fun g ↦ ρ g v)
+      (fun g k hk ↦ by rw [map_mul, mul_apply_eq_comp, hv ⟨k, hk⟩, MonoidHom.one_apply,
+        one_smul]) g]
   have h_support : support (fun q : G ⧸ K ↦ f q.out • ρ q.out) ⊆
       ↑(s.image fun i ↦ (r i : G ⧸ K)) := fun q hq ↦ h_supp q (left_ne_zero_of_smul hq)
-  rw [heckeOperator, finsum_eq_sum_of_support_subset _ h_support, LinearMap.sum_apply,
+  rw [heckeOperator_def, finsum_eq_sum_of_support_subset _ h_support, LinearMap.sum_apply,
     Finset.sum_image hr]
   simp [h_term]
 
@@ -131,9 +139,7 @@ theorem heckeOperator_apply_comp_inv_mul (hf : ∀ g, ∀ k ∈ K, f (g * k) = f
     ρ.heckeOperator K (fun g ↦ f (x⁻¹ * g)) v = ρ x (ρ.heckeOperator K f v) := by
   -- Both are finite sums over the cosets in the support of `f`, translated by `x`.
   classical
-  have h_out (g : G) : f (g : G ⧸ K).out = f g := by
-    obtain ⟨k, hk⟩ := QuotientGroup.mk_out_eq_mul K g
-    rw [hk, hf g k k.property]
+  have h_out (g : G) : f (g : G ⧸ K).out = f g := QuotientGroup.apply_out_mk hf g
   have hcov (g : G) (hg : f g ≠ 0) : ∃ q ∈ hf_fin.toFinset, (q.out : G ⧸ K) = g :=
     ⟨g, by simpa [h_out] using hg, QuotientGroup.out_eq' _⟩
   have hinj : InjOn (fun q : G ⧸ K ↦ (q.out : G ⧸ K)) hf_fin.toFinset := fun q _ q' _ h ↦ by
@@ -164,7 +170,7 @@ theorem heckeOperator_sum {ι : Type*} (T : Finset ι) (c : ι → A) (F : ι �
     (hF i hi).subset fun q hq ↦ by
       simp only [mem_support] at hq ⊢
       exact fun h ↦ hq (by rw [h, zero_smul, smul_zero])
-  simp only [heckeOperator, Finset.sum_smul, mul_smul]
+  simp only [heckeOperator_def, Finset.sum_smul, mul_smul]
   rw [finsum_sum_comm T _ hF']
   exact Finset.sum_congr rfl fun i hi ↦
     (smul_finsum' (c i) ((hF i hi).subset fun q hq ↦ left_ne_zero_of_smul hq)).symm
@@ -175,8 +181,7 @@ theorem finite_support_comp_inv_mul (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
     (hf_fin : (support fun q : G ⧸ K ↦ f q.out).Finite) (x : G) :
     (support fun q : G ⧸ K ↦ f (x⁻¹ * q.out)).Finite := by
   have h_value (q : G ⧸ K) : f (x⁻¹ * q.out) = f (x⁻¹ • q).out := by
-    obtain ⟨k, hk⟩ := QuotientGroup.mk_out_eq_mul K (x⁻¹ * q.out)
-    rw [← MulAction.Quotient.mk_smul_out, smul_eq_mul, hk, hf _ k k.property]
+    rw [← MulAction.Quotient.mk_smul_out, smul_eq_mul, QuotientGroup.apply_out_mk hf]
   refine (hf_fin.preimage (MulAction.injective x⁻¹).injOn).subset fun q hq ↦ ?_
   simpa [h_value] using hq
 
@@ -207,7 +212,7 @@ theorem heckeOperator_apply_mem_levelSpace {K' : Subgroup G} {χ' : K' →* A}
   have h_translate (g : G) : f ((k : G)⁻¹ * g) = χ' k * f g := by
     simpa using (hf_left k ((k : G)⁻¹ * g)).symm
   have h_scale : ρ.heckeOperator K (fun g ↦ f ((k : G)⁻¹ * g)) = χ' k • ρ.heckeOperator K f := by
-    simp only [heckeOperator, h_translate, mul_smul]
+    simp only [heckeOperator_def, h_translate, mul_smul]
     exact (smul_finsum' _ (hf_fin.subset fun q hq ↦ left_ne_zero_of_smul hq)).symm
   rw [← heckeOperator_apply_comp_inv_mul hf hf_fin hv, h_scale, LinearMap.smul_apply]
 
@@ -230,6 +235,11 @@ of `ρ(h)` over the chosen representatives `h` of the cosets `h K` making up `K 
 noncomputable def doubleCosetOperator (g : G) : Module.End A W :=
   ρ.heckeOperator K ((DoubleCoset.doubleCoset g K K).indicator 1)
 
+variable (ρ K) in
+theorem doubleCosetOperator_def (g : G) :
+    ρ.doubleCosetOperator K g = ρ.heckeOperator K ((DoubleCoset.doubleCoset g K K).indicator 1) :=
+  (rfl)
+
 /-- For a compact open subgroup `K`, the double coset operator `[K g K]` preserves `W^K`. -/
 theorem doubleCosetOperator_apply_mem_levelSpace [TopologicalSpace G] [IsTopologicalGroup G]
     (hK_open : IsOpen (K : Set G)) (hK : IsCompact (K : Set G)) (g : G)
@@ -238,28 +248,14 @@ theorem doubleCosetOperator_apply_mem_levelSpace [TopologicalSpace G] [IsTopolog
   have h_right (x : G) (k : G) (hk : k ∈ K) :
       (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) (x * k) =
         (DoubleCoset.doubleCoset g K K).indicator 1 x := by
-    have : x * k ∈ DoubleCoset.doubleCoset g (K : Set G) K ↔
-        x ∈ DoubleCoset.doubleCoset g (K : Set G) K := by
-      simp only [DoubleCoset.mem_doubleCoset, SetLike.mem_coe]
-      refine ⟨fun ⟨a, ha, b, hb, h⟩ ↦ ⟨a, ha, b * k⁻¹, K.mul_mem hb (K.inv_mem hk), ?_⟩,
-        fun ⟨a, ha, b, hb, h⟩ ↦ ⟨a, ha, b * k, K.mul_mem hb hk, by rw [h, mul_assoc]⟩⟩
-      rw [← mul_assoc, ← h, mul_inv_cancel_right]
-    by_cases hx : x ∈ DoubleCoset.doubleCoset g (K : Set G) K
-    · rw [Set.indicator_of_mem (this.2 hx), Set.indicator_of_mem hx, Pi.one_apply, Pi.one_apply]
-    · rw [Set.indicator_of_notMem (mt this.1 hx), Set.indicator_of_notMem hx]
+    classical
+    simp only [Set.indicator_apply, Pi.one_apply, DoubleCoset.mul_mem_doubleCoset_iff_right hk]
   have h_left (k : K) (x : G) :
       (1 : K →* A) k * (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) (k * x) =
         (DoubleCoset.doubleCoset g K K).indicator 1 x := by
-    have : (k : G) * x ∈ DoubleCoset.doubleCoset g (K : Set G) K ↔
-        x ∈ DoubleCoset.doubleCoset g (K : Set G) K := by
-      simp only [DoubleCoset.mem_doubleCoset, SetLike.mem_coe]
-      refine ⟨fun ⟨a, ha, b, hb, h⟩ ↦ ⟨(k : G)⁻¹ * a, K.mul_mem (K.inv_mem k.property) ha, b, hb,
-        by rw [mul_assoc, mul_assoc, ← mul_assoc a, ← h, inv_mul_cancel_left]⟩,
-        fun ⟨a, ha, b, hb, h⟩ ↦ ⟨k * a, K.mul_mem k.property ha, b, hb, by simp [h, mul_assoc]⟩⟩
     rw [MonoidHom.one_apply, one_mul]
-    by_cases hx : x ∈ DoubleCoset.doubleCoset g (K : Set G) K
-    · rw [Set.indicator_of_mem (this.2 hx), Set.indicator_of_mem hx, Pi.one_apply, Pi.one_apply]
-    · rw [Set.indicator_of_notMem (mt this.1 hx), Set.indicator_of_notMem hx]
+    classical
+    simp only [Set.indicator_apply, Pi.one_apply, DoubleCoset.mul_mem_doubleCoset_iff k.property]
   exact heckeOperator_apply_mem_levelSpace h_right
     (finite_support_indicator_doubleCoset hK_open hK g) h_left hv
 

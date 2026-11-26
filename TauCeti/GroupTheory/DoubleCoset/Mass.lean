@@ -215,23 +215,21 @@ theorem orbitSum_comp_map_of_le {W : Type*} [AddCommGroup W] [Module ℚ W] {V U
   -- Orbit by orbit this is `finsum_mem_inv_cardStabilizerOnOrbit_preimage`. The `V`-orbits in the
   -- support are the orbits lying over the `U`-orbits in the support, finitely many above each, so
   -- when there are infinitely many of either kind both sums are `0`.
-  rw [orbitSum_def, orbitSum_def]
   set π := Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (X := α) hle)
+  simp only [orbitSum_def, Function.comp_apply]
   set fV : orbitRel.Quotient V α → W := fun q ↦ (cardStabilizerOnOrbit q : ℚ)⁻¹ • F (π q)
   set fU : orbitRel.Quotient U α → W := fun p ↦ (cardStabilizerOnOrbit p : ℚ)⁻¹ • F p
   -- a `V`-orbit has finite stabiliser exactly when the `U`-orbit below it has
   have hsupp : Function.support fV = π ⁻¹' Function.support fU := by
     ext q
     induction q using Quotient.inductionOn' with | h x => ?_
-    simp only [Function.mem_support, Set.mem_preimage, fV, fU]
-    rw [show π (Quotient.mk'' x) = Quotient.mk'' x from rfl]
-    simp only [cardStabilizerOnOrbit_mk, ne_eq, smul_eq_zero, inv_eq_zero, Nat.cast_eq_zero, not_or]
+    simp only [Function.mem_support, Set.mem_preimage, fV, fU, π, TauCeti.Setoid.map_of_le_mk,
+      cardStabilizerOnOrbit_mk, ne_eq, smul_eq_zero, inv_eq_zero, Nat.cast_eq_zero, not_or]
     exact and_congr_left' (natCard_stabilizer_ne_zero_iff_of_le hle x)
   have hπ : Function.Surjective π := fun p ↦ by
     induction p using Quotient.inductionOn' with | h x => exact ⟨Quotient.mk'' x, rfl⟩
   have hfib (p : orbitRel.Quotient U α) : (π ⁻¹' {p}).Finite :=
     Set.finite_coe_iff.mp (finite_fiber_orbitRel_map_of_isFiniteRelIndex (X := α) hle p)
-  change ∑ᶠ q, fV q = V.relIndex U • ∑ᶠ p, fU p
   by_cases hfin : (Function.support fU).Finite
   · rw [← finsum_mem_support fV, ← finsum_mem_support fU, hsupp,
       ← Set.biUnion_preimage_singleton,

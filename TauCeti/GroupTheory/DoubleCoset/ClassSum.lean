@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Rat
-public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.DoubleCoset.Mass
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Weighted class sums and class integrals
@@ -30,7 +30,7 @@ are the orbits of `Γ_g` on `K / a⁻¹ K' a`, and the orbit-stabiliser count gi
 the index formula `TauCeti.orbitSum_comp_map_of_le` transported along conjugation by `a`.
 
 For a topological group, the pair `(Γ, K)` has **finite type**
-(`TauCeti.HasFiniteClassSet Γ K`) if `K` is compact and open, `Γ \ G / K` is finite and every `Γ_g`
+(`TauCeti.HasFiniteType Γ K`) if `K` is compact and open, `Γ \ G / K` is finite and every `Γ_g`
 is finite. For `f` left `Γ`-invariant and fixed on the right by an open subgroup, the **class
 integral** `I_{Γ,K}(f) = [K : J]⁻¹ S_{Γ,J}(f)` (`TauCeti.classIntegral`), computed at any open
 `J ⊂ K` fixing `f` (`TauCeti.classIntegral_eq_inv_relIndex_smul_classSum`), is the integral of `f`
@@ -41,7 +41,7 @@ the values, and is invariant under right translation (`TauCeti.classIntegral_com
 
 * `TauCeti.classSum Γ K f`: the weighted class sum `∑_{Γ g K} f(g) / #(Γ ∩ g K g⁻¹)`.
 * `TauCeti.rightStabilizer f`: the subgroup of `k` with `f (g * k) = f g` for all `g`.
-* `TauCeti.HasFiniteClassSet Γ K`: `(Γ, K)` has finite type.
+* `TauCeti.HasFiniteType Γ K`: `(Γ, K)` has finite type.
 * `TauCeti.classIntegral Γ K f`: the class integral `[K : J]⁻¹ S_{Γ,J}(f)`,
   `J = K ∩ rightStabilizer f`.
 
@@ -58,8 +58,9 @@ are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copy
 Anthropic PBC), `src/Lib/Adelic/Hecke/Basic.lean` (`New.classSum`, `New.classAut`,
 `New.classSum_eq_finsum_of_rep`) and `src/Lib/Adelic/Hecke/ClassSums.lean` (`New.rightStabilizer`,
 `New.HasFiniteType`, `New.classIntegral`, `New.classSum_eq_relIndex_smul`,
-`New.classIntegral_eq_classSum_mul`, `New.classIntegral_sum`); the proofs here go through the
-weighted orbit sums of `TauCeti/GroupTheory/DoubleCoset/Mass.lean`.
+`New.classIntegral_eq_classSum_mul`, `New.classIntegral_sum`, `New.classIntegral_add`,
+`New.classIntegral_map_mul_right`); the proofs here go through the weighted orbit sums of
+`TauCeti/GroupTheory/DoubleCoset/Mass.lean`.
 -/
 
 public section
@@ -91,20 +92,30 @@ theorem classSum_def (f : G → W) :
 
 variable {Γ K}
 
+/-- **Weighted sums over representatives are weighted orbit sums.** If `F` is a function on the
+orbits of `K` on `G ⧸ Γ` with `F (K g⁻¹ Γ) = f g` for every `g`, and `c q` represents the double
+coset `q`, then `∑_q f(c q) / #Γ_{c q} = ∑_x c(x)⁻¹ F(x)`. -/
+theorem finsum_inv_natCard_mackeySubgroup_smul_eq_orbitSum {f : G → W}
+    (F : orbitRel.Quotient K (G ⧸ Γ) → W)
+    (hF : ∀ g : G, F (Quotient.mk'' ((g⁻¹ : G) : G ⧸ Γ)) = f g)
+    (c : DoubleCoset.Quotient (Γ : Set G) K → G) (hc : ∀ q, DoubleCoset.mk Γ K (c q) = q) :
+    ∑ᶠ q, (Nat.card (mackeySubgroup (c q) K Γ) : ℚ)⁻¹ • f (c q) = orbitSum K (G ⧸ Γ) F := by
+  rw [orbitSum_def, ← finsum_comp_equiv (doubleCosetQuotientEquivOrbitRelQuotient Γ K)]
+  refine finsum_congr fun q ↦ ?_
+  conv_rhs => rw [← hc q]
+  rw [cardStabilizerOnOrbit_doubleCosetQuotientEquivOrbitRelQuotient_mk,
+    natCard_mackeySubgroup_inv_subgroupOf, doubleCosetQuotientEquivOrbitRelQuotient_mk, hF]
+
 /-- **The class sum as a weighted orbit sum.** If `F` is a function on the orbits of `K` on
 `G ⧸ Γ` with `F (K g⁻¹ Γ) = f g` for every `g`, then `S_{Γ,K}(f) = ∑_x c(x)⁻¹ F(x)`. -/
 theorem classSum_eq_orbitSum {f : G → W} (F : orbitRel.Quotient K (G ⧸ Γ) → W)
     (hF : ∀ g : G, F (Quotient.mk'' ((g⁻¹ : G) : G ⧸ Γ)) = f g) :
-    classSum Γ K f = orbitSum K (G ⧸ Γ) F := by
-  rw [orbitSum_def, ← finsum_comp_equiv (doubleCosetQuotientEquivOrbitRelQuotient Γ K)]
-  refine finsum_congr fun q ↦ ?_
-  conv_rhs => rw [← DoubleCoset.out_eq' q]
-  rw [cardStabilizerOnOrbit_doubleCosetQuotientEquivOrbitRelQuotient_mk,
-    natCard_mackeySubgroup_inv_subgroupOf, doubleCosetQuotientEquivOrbitRelQuotient_mk, hF]
+    classSum Γ K f = orbitSum K (G ⧸ Γ) F :=
+  finsum_inv_natCard_mackeySubgroup_smul_eq_orbitSum F hF (fun q ↦ q.out) DoubleCoset.out_eq'
 
 /-- A function that is left invariant under `Γ` and right invariant under `K` induces a function
 on the orbits of `K` on `G ⧸ Γ`, with value `f g` at the orbit of `g⁻¹ Γ`. -/
-theorem exists_orbitRel_quotient_apply_eq {X : Type*} {f : G → X}
+theorem exists_orbitRelQuotient_apply_eq {X : Type*} {f : G → X}
     (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g)
     (hr : ∀ k ∈ K, ∀ g, f (g * k) = f g) :
     ∃ F : orbitRel.Quotient K (G ⧸ Γ) → X,
@@ -122,13 +133,8 @@ theorem classSum_eq_finsum {f : G → W} (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) 
     (hc : ∀ q, DoubleCoset.mk Γ K (c q) = q) :
     classSum Γ K f =
       ∑ᶠ q, (Nat.card (mackeySubgroup (c q) K Γ) : ℚ)⁻¹ • f (c q) := by
-  obtain ⟨F, hF⟩ := exists_orbitRel_quotient_apply_eq hl hr
-  rw [classSum_eq_orbitSum F hF, orbitSum_def,
-    ← finsum_comp_equiv (doubleCosetQuotientEquivOrbitRelQuotient Γ K)]
-  refine finsum_congr fun q ↦ ?_
-  conv_lhs => rw [← hc q]
-  rw [cardStabilizerOnOrbit_doubleCosetQuotientEquivOrbitRelQuotient_mk,
-    natCard_mackeySubgroup_inv_subgroupOf, doubleCosetQuotientEquivOrbitRelQuotient_mk, hF]
+  obtain ⟨F, hF⟩ := exists_orbitRelQuotient_apply_eq hl hr
+  rw [classSum_eq_orbitSum F hF, finsum_inv_natCard_mackeySubgroup_smul_eq_orbitSum F hF c hc]
 
 /-- The class sum of the constant `1` is the mass of the class set. -/
 theorem classSum_one : classSum Γ K (fun _ ↦ (1 : ℚ)) = orbitMass K (G ⧸ Γ) := by
@@ -145,7 +151,7 @@ theorem classSum_comp_mul_right {K' : Subgroup G} {f : G → W} (hl : ∀ γ ∈
   -- Pull the induced function on `K \ (G ⧸ Γ)` back to `L = a⁻¹ K' a`, where the index formula
   -- applies, and transport it to `K'` along conjugation by `a` and left translation by `a⁻¹`.
   set L := MulAut.conj a⁻¹ • K'
-  obtain ⟨F, hF⟩ := exists_orbitRel_quotient_apply_eq hl hr
+  obtain ⟨F, hF⟩ := exists_orbitRelQuotient_apply_eq hl hr
   let π := Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := G ⧸ Γ) hle)
   let e : G ⧸ Γ ≃ G ⧸ Γ := MulAction.toPerm a⁻¹
   have he (k : K') (x : G ⧸ Γ) : e (k • x) = Subgroup.equivSMul (MulAut.conj a⁻¹) K' k • e x := by
@@ -189,7 +195,7 @@ variable [TopologicalSpace G]
 stabiliser `Γ ∩ g K g⁻¹` is finite. For `G` the finite adelic points of a reductive group compact at
 infinity, `Γ` its rational points and `K` a compact open subgroup, this holds by reduction
 theory. -/
-structure HasFiniteClassSet (Γ K : Subgroup G) : Prop where
+structure HasFiniteType (Γ K : Subgroup G) : Prop where
   /-- `K` is open. -/
   isOpen : IsOpen (K : Set G)
   /-- `K` is compact. -/
@@ -201,13 +207,8 @@ structure HasFiniteClassSet (Γ K : Subgroup G) : Prop where
 
 variable {Γ K J : Subgroup G}
 
-/-- An open subgroup has finite index in a compact subgroup. -/
-theorem isFiniteRelIndex_of_isCompact_of_isOpen [SeparatelyContinuousMul G]
-    (hK : IsCompact (K : Set G)) (hJ : IsOpen (J : Set G)) : J.IsFiniteRelIndex K :=
-  ⟨Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact hJ hK⟩
-
 /-- The mass of a class set of finite type is positive. -/
-theorem HasFiniteClassSet.orbitMass_pos (h : HasFiniteClassSet Γ K) : 0 < orbitMass K (G ⧸ Γ) := by
+theorem HasFiniteType.orbitMass_pos (h : HasFiniteType Γ K) : 0 < orbitMass K (G ⧸ Γ) := by
   have := h.finite_doubleCoset
   have := Fintype.ofFinite (DoubleCoset.Quotient (Γ : Set G) K)
   rw [orbitMass_eq_finsum_doubleCoset (fun q ↦ q.out) DoubleCoset.out_eq',
@@ -261,6 +262,11 @@ For `(Γ, K)` of finite type and `f` left `Γ`-invariant with open stabiliser it
 noncomputable def classIntegral (f : G → W) : W :=
   ((rightStabilizer f ⊓ K).relIndex K : ℚ)⁻¹ • classSum Γ (rightStabilizer f ⊓ K) f
 
+theorem classIntegral_def (f : G → W) :
+    classIntegral Γ K f =
+      ((rightStabilizer f ⊓ K).relIndex K : ℚ)⁻¹ • classSum Γ (rightStabilizer f ⊓ K) f :=
+  (rfl)
+
 variable {Γ K}
 
 /-- **The class integral at any level.** For `f` left invariant under `Γ` and `J ⊂ K` of finite
@@ -279,19 +285,19 @@ theorem classIntegral_eq_inv_relIndex_smul_classSum {f : G → W}
   have h_sum : classSum Γ J f = J.relIndex S • classSum Γ S f :=
     classSum_eq_relIndex_smul_of_le hl (fun k hk g ↦ (Subgroup.mem_inf.1 hk).1 g) hJS
   have h_ne : (J.relIndex S : ℚ) ≠ 0 := Nat.cast_ne_zero.2 (Subgroup.relIndex_ne_zero)
-  rw [h_sum, classIntegral, ← Subgroup.relIndex_mul_relIndex J S K hJS hSK, Nat.cast_mul,
+  rw [h_sum, classIntegral_def, ← Subgroup.relIndex_mul_relIndex J S K hJS hSK, Nat.cast_mul,
     mul_inv_rev, mul_smul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ h_ne]
 
 /-- If `K` fixes `f`, the class integral is the class sum. -/
 theorem classIntegral_eq_classSum {f : G → W} (hK : K ≤ rightStabilizer f) :
     classIntegral Γ K f = classSum Γ K f := by
-  simp [classIntegral, inf_eq_right.2 hK]
+  simp [classIntegral_def, inf_eq_right.2 hK]
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- **The class integral is additive** on left `Γ`-invariant functions with open stabilisers, for
 `(Γ, K)` of finite type. -/
-theorem classIntegral_add (hK : HasFiniteClassSet Γ K) {f f' : G → W}
+theorem classIntegral_add (hK : HasFiniteType Γ K) {f f' : G → W}
     (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) (hl' : ∀ γ ∈ Γ, ∀ g, f' (γ * g) = f' g)
     (hf : IsOpen (rightStabilizer f : Set G)) (hf' : IsOpen (rightStabilizer f' : Set G)) :
     classIntegral Γ K (f + f') = classIntegral Γ K f + classIntegral Γ K f' := by
@@ -301,7 +307,8 @@ theorem classIntegral_add (hK : HasFiniteClassSet Γ K) {f f' : G → W}
   have hJf : J ≤ rightStabilizer f := inf_le_left.trans inf_le_left
   have hJf' : J ≤ rightStabilizer f' := inf_le_left.trans inf_le_right
   have : J.IsFiniteRelIndex K :=
-    isFiniteRelIndex_of_isCompact_of_isOpen hK.isCompact ((hf.inter hf').inter hK.isOpen)
+    Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact ((hf.inter hf').inter hK.isOpen)
+      hK.isCompact
   have := hK.finite_doubleCoset
   have := finite_doubleCoset_of_le (Γ := Γ) hJK
   rw [classIntegral_eq_inv_relIndex_smul_classSum (fun γ hγ g ↦ by simp [hl γ hγ, hl' γ hγ])
@@ -311,33 +318,23 @@ theorem classIntegral_add (hK : HasFiniteClassSet Γ K) {f f' : G → W}
 
 /-- **Additive maps commute with the class integral**, for `(Γ, K)` of finite type and `f` with open
 stabiliser. -/
-theorem map_classIntegral (hK : HasFiniteClassSet Γ K) (φ : W →+ W') {f : G → W}
+theorem map_classIntegral (hK : HasFiniteType Γ K) (φ : W →+ W') {f : G → W}
     (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) (hf : IsOpen (rightStabilizer f : Set G)) :
     φ (classIntegral Γ K f) = classIntegral Γ K (φ ∘ f) := by
   have : (rightStabilizer f ⊓ K).IsFiniteRelIndex K :=
-    isFiniteRelIndex_of_isCompact_of_isOpen hK.isCompact (hf.inter hK.isOpen)
+    Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact (hf.inter hK.isOpen) hK.isCompact
   have := hK.finite_doubleCoset
   have := finite_doubleCoset_of_le (Γ := Γ) (inf_le_right : rightStabilizer f ⊓ K ≤ K)
   rw [classIntegral_eq_inv_relIndex_smul_classSum (f := φ ∘ f) (J := rightStabilizer f ⊓ K)
       (fun γ hγ g ↦ by simp [hl γ hγ]) inf_le_right
       (fun k hk g ↦ by simp [mem_rightStabilizer.1 (Subgroup.mem_inf.1 hk).1 g]),
-    classIntegral, map_rat_smul, map_classSum]
-
-/-- Conjugation keeps an open subgroup open. -/
-private theorem isOpen_conj_smul (a : G) {J : Subgroup G} (hJ : IsOpen (J : Set G)) :
-    IsOpen ((MulAut.conj a • J : Subgroup G) : Set G) := by
-  have h : ((MulAut.conj a • J : Subgroup G) : Set G) = (fun x ↦ a⁻¹ * x * a) ⁻¹' J := by
-    ext x
-    rw [Subgroup.coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem]
-    simp [MulAut.smul_def, mul_assoc]
-  rw [h]
-  exact hJ.preimage (by fun_prop)
+    classIntegral_def, map_rat_smul, map_classSum]
 
 omit [IsTopologicalGroup G] in
 /-- For `(Γ, K)` of finite type and `M ⊂ K` with `b⁻¹ M b ⊂ K`, both of finite index,
 `[K : M] = [K : b⁻¹ M b]`: both indices are `S_{Γ,M}(1) / S_{Γ,K}(1)`, the class set of `K` having
 positive mass. -/
-private theorem relIndex_eq_relIndex_conj (hK : HasFiniteClassSet Γ K) {M : Subgroup G} (b : G)
+private theorem relIndex_eq_relIndex_conj (hK : HasFiniteType Γ K) {M : Subgroup G} (b : G)
     (hMK : M ≤ K) (hbM : MulAut.conj b⁻¹ • M ≤ K) [M.IsFiniteRelIndex K]
     [(MulAut.conj b⁻¹ • M).IsFiniteRelIndex K] :
     M.relIndex K = (MulAut.conj b⁻¹ • M).relIndex K := by
@@ -349,7 +346,7 @@ private theorem relIndex_eq_relIndex_conj (hK : HasFiniteClassSet Γ K) {M : Sub
 
 /-- **The class integral is invariant under right translation**: for `(Γ, K)` of finite type and
 `f` left `Γ`-invariant with open stabiliser, `I_{Γ,K}(g ↦ f (g b)) = I_{Γ,K}(f)`. -/
-theorem classIntegral_comp_mul_right (hK : HasFiniteClassSet Γ K) {f : G → W}
+theorem classIntegral_comp_mul_right (hK : HasFiniteType Γ K) {f : G → W}
     (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) (hf : IsOpen (rightStabilizer f : Set G)) (b : G) :
     classIntegral Γ K (fun g ↦ f (g * b)) = classIntegral Γ K f := by
   -- Compute at `J = Stab f ∩ K` and at `M = K ∩ b J b⁻¹`, which fixes `f (· b)`, with
@@ -358,7 +355,10 @@ theorem classIntegral_comp_mul_right (hK : HasFiniteClassSet Γ K) {f : G → W}
   have hJK : J ≤ K := inf_le_right
   have hJ_open : IsOpen (J : Set G) := hf.inter hK.isOpen
   set M := K ⊓ MulAut.conj b • J
-  have hM_open : IsOpen (M : Set G) := hK.isOpen.inter (isOpen_conj_smul b hJ_open)
+  have hM_open : IsOpen (M : Set G) :=
+    hK.isOpen.inter ((Subgroup.isOpen_map_conj_iff b).2 hJ_open)
+  have hbM_open : IsOpen ((MulAut.conj b⁻¹ • M : Subgroup G) : Set G) :=
+    (Subgroup.isOpen_map_conj_iff b⁻¹).2 hM_open
   have hbM : MulAut.conj b⁻¹ • M ≤ J := fun x hx ↦ by
     rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem] at hx
     have := (Subgroup.mem_inf.1 hx).2
@@ -366,12 +366,14 @@ theorem classIntegral_comp_mul_right (hK : HasFiniteClassSet Γ K) {f : G → W}
     simpa [MulAut.smul_def, mul_assoc] using this
   have hJ_cpt : IsCompact (J : Set G) :=
     hK.isCompact.of_isClosed_subset (Subgroup.isClosed_of_isOpen _ hJ_open) hJK
-  have : M.IsFiniteRelIndex K := isFiniteRelIndex_of_isCompact_of_isOpen hK.isCompact hM_open
-  have : J.IsFiniteRelIndex K := isFiniteRelIndex_of_isCompact_of_isOpen hK.isCompact hJ_open
+  have : M.IsFiniteRelIndex K :=
+    Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact hM_open hK.isCompact
+  have : J.IsFiniteRelIndex K :=
+    Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact hJ_open hK.isCompact
   have : (MulAut.conj b⁻¹ • M).IsFiniteRelIndex J :=
-    isFiniteRelIndex_of_isCompact_of_isOpen hJ_cpt (isOpen_conj_smul b⁻¹ hM_open)
+    Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact hbM_open hJ_cpt
   have : (MulAut.conj b⁻¹ • M).IsFiniteRelIndex K :=
-    isFiniteRelIndex_of_isCompact_of_isOpen hK.isCompact (isOpen_conj_smul b⁻¹ hM_open)
+    Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact hbM_open hK.isCompact
   have h_index := relIndex_eq_relIndex_conj hK b inf_le_left (hbM.trans hJK)
   rw [← Subgroup.relIndex_mul_relIndex _ J K hbM hJK] at h_index
   have hMf : M ≤ rightStabilizer fun g ↦ f (g * b) := fun k hk g ↦ by
@@ -388,39 +390,5 @@ theorem classIntegral_comp_mul_right (hK : HasFiniteClassSet Γ K) {f : G → W}
     mul_inv_rev, mul_smul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ h_ne]
 
 end ClassIntegral
-
-/-! ### Volumes of open subgroups of a compact level -/
-
-section Measure
-
-open MeasureTheory
-
-variable [TopologicalSpace G] [IsTopologicalGroup G] {H K : Subgroup G}
-  [MeasurableSpace G] [BorelSpace G]
-
-/-- For `K` compact, `H` open and `μ` left invariant, `[K : H ∩ K] · μ(H ∩ K) = μ(K)`. -/
-theorem _root_.Subgroup.relIndex_mul_measure_inf (hK : IsCompact (K : Set G))
-    (hH : IsOpen (H : Set G)) [T2Space G] (μ : Measure G) [μ.IsMulLeftInvariant] :
-    H.relIndex K * μ (H ⊓ K : Subgroup G) = μ K := by
-  -- Pull `μ` back to `K`, where `H ⊓ K` is a measurable subgroup of finite index whose cosets, all
-  -- of the same measure, partition `K`.
-  have h_emb : MeasurableEmbedding K.subtype := .subtypeVal hK.isClosed.measurableSet
-  have : (H.subgroupOf K).FiniteIndex := ⟨Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact hH hK⟩
-  have : (μ.comap K.subtype).IsMulLeftInvariant := .comap _ h_emb
-  have h_index := (H.subgroupOf K).index_mul_measure
-    (h_emb.measurable hH.measurableSet) (μ.comap K.subtype)
-  have h_image : K.subtype '' (H.subgroupOf K) = (H ⊓ K : Subgroup G) := by
-    rw [← Subgroup.coe_map, Subgroup.subgroupOf_map_subtype]
-  rwa [h_emb.comap_apply, h_emb.comap_apply, h_image, Set.image_univ, Subgroup.coe_subtype,
-    Subtype.range_coe] at h_index
-
-/-- For `K` compact with `μ(K) = 1`, `H` open and `μ` left invariant, `μ(H ∩ K) = [K : H ∩ K]⁻¹`. -/
-theorem _root_.Subgroup.measure_inf_eq_inv_relIndex (hK : IsCompact (K : Set G))
-    (hH : IsOpen (H : Set G)) [T2Space G] (μ : Measure G) [μ.IsMulLeftInvariant] (hμ : μ K = 1) :
-    μ (H ⊓ K : Subgroup G) = (H.relIndex K : ENNReal)⁻¹ := by
-  have h := (Subgroup.relIndex_mul_measure_inf hK hH μ).trans hμ
-  exact ENNReal.eq_inv_of_mul_eq_one_left (by rwa [mul_comm])
-
-end Measure
 
 end TauCeti

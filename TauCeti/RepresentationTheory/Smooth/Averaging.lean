@@ -48,8 +48,8 @@ Bernstein's notes onto `V^U`.
 * `Representation.IntertwiningMap.map_smoothAverage`: `e_K` commutes with intertwining maps.
 * `Representation.map_smoothAverage_of_forall_apply_eq`: a linear map constant on orbits does not
   see the average.
-* `Representation.smoothAverage_adjoint`: `e_K` is self-adjoint for every `σ`-invariant
-  sesquilinear form.
+* `Representation.isSelfAdjoint_smoothAverage`: `e_K` is self-adjoint
+  (`LinearMap.IsSelfAdjoint`) for every `σ`-invariant sesquilinear form.
 * `Representation.smoothAverage_smoothAverage_subgroup`,
   `Representation.smoothAverage_subgroup_smoothAverage`,
   `Representation.smoothAverage_comp_smoothAverage_subgroup`,
@@ -62,6 +62,11 @@ Bernstein's notes onto `V^U`.
 
 * J. Bernstein, *Representations of p-adic groups*, Harvard lectures 1992, written by
   K. Rumelhart, Chapter I, §2.1, p. 11, and Proposition 6(1), p. 14.
+
+`Representation.map_smoothAverage_of_forall_apply_eq` and
+`Representation.isSelfAdjoint_smoothAverage` are adapted from grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC),
+`src/Lib/Adelic/Hecke/ClassSums.lean` (`New.IsUnitary.compactMean_adjoint`).
 -/
 
 public section
@@ -266,10 +271,13 @@ theorem map_smoothAverage_of_forall_apply_eq (φ : V →ₗ[A] W) (hφ : ∀ k v
   exact h
 
 /-- **The average is self-adjoint** for every `σ`-invariant sesquilinear form `B`:
-`B (e_K x) y = B x (e_K y)`. No positivity of `B` is needed. -/
-theorem smoothAverage_adjoint [StarRing A] (B : V →ₗ⋆[A] V →ₗ[A] A)
-    (hB : ∀ k x y, B (σ k x) (σ k y) = B x y) (x y : V) :
-    B (σ.smoothAverage hK x) y = B x (σ.smoothAverage hK y) := by
+`B (e_K x) y = B x (e_K y)` for all `x y`, stated with `LinearMap.IsSelfAdjoint` for `B.flip`,
+which is linear in its first argument. No positivity of `B` is needed. -/
+theorem isSelfAdjoint_smoothAverage [StarRing A] (B : V →ₗ⋆[A] V →ₗ[A] A)
+    (hB : ∀ k x y, B (σ k x) (σ k y) = B x y) : B.flip.IsSelfAdjoint (σ.smoothAverage hK) := by
+  intro y x
+  rw [LinearMap.flip_apply, LinearMap.flip_apply]
+  symm
   -- Both sides are `B (e_K x) (e_K y)`: in each variable `B` against an invariant vector is
   -- constant on orbits. In the first variable pass to the linear map `x ↦ star (B x (e_K y))`.
   have h_right : B (σ.smoothAverage hK x) (σ.smoothAverage hK y) = B (σ.smoothAverage hK x) y :=
@@ -277,7 +285,7 @@ theorem smoothAverage_adjoint [StarRing A] (B : V →ₗ⋆[A] V →ₗ[A] A)
       conv_lhs => rw [← σ.apply_smoothAverage_apply hK k x]
       exact hB k _ z) y
   let ψ : V →ₗ[A] A := (starLinearEquiv A).toLinearMap ∘ₛₗ B.flip (σ.smoothAverage hK y)
-  have hψ (z : V) : ψ z = star (B z (σ.smoothAverage hK y)) := rfl
+  have hψ (z : V) : ψ z = star (B z (σ.smoothAverage hK y)) := by simp [ψ]
   have h_left := σ.map_smoothAverage_of_forall_apply_eq hK ψ (fun k z ↦ by
     rw [hψ, hψ]
     conv_lhs => rw [← σ.apply_smoothAverage_apply hK k y]
