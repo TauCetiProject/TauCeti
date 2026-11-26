@@ -32,7 +32,9 @@ vector space target `(V, ω)`, uniformly in `R`, on the pair of pants and on the
 plane, where the signed longitudinal coordinate in the translated coordinate is at least `2`.
 Compactness over
 compact windows of parameters is in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped`.
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped`, and the same compactness at
+the long-neck end for a closed manifold target, with no condition on where the solutions take their
+values, is in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck.Closed`.
 
 * **The pair of pants.** On the truncation `S_T` of the pair of pants, every signed longitudinal
   coordinate is at most `T`, so once `T ≤ L + 2 = R + 1` the data of the family are the
