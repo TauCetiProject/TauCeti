@@ -106,8 +106,8 @@ variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E
 `x ↦ s (φ x)`. -/
 def trivialPullback (φ : C^n⟮I, M; J, N⟯) :
     Cₛ^n⟮J; F, Bundle.Trivial N F⟯ →ₗ[𝕜] Cₛ^n⟮I; F, Bundle.Trivial M F⟯ :=
-  ⟨⟨fun s ↦ trivialEquiv.symm ((trivialEquiv (𝕜 := 𝕜) s).comp φ), fun _ _ ↦ (rfl)⟩,
-    fun _ _ ↦ (rfl)⟩
+  ⟨⟨fun s ↦ trivialEquiv.symm ((trivialEquiv (𝕜 := 𝕜) s).comp φ), fun _ _ ↦ by ext x; simp⟩,
+    fun _ _ ↦ by ext x; simp⟩
 
 @[simp] theorem trivialPullback_apply (φ : C^n⟮I, M; J, N⟯) (s : Cₛ^n⟮J; F, Bundle.Trivial N F⟯)
     (x : M) : trivialPullback φ s x = s (φ x) := (rfl)
