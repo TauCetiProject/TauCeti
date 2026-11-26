@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
+public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.RingTheory.Ideal.Maximal
 -- `ContinuousMap.isUltrametricDist`: the supremum norm on `C(X, k)` is ultrametric.
@@ -22,16 +23,16 @@ Let `X` be a compact topological space and `k` a normed field whose metric is ul
 (`IsUltrametricDist k`). Neither completeness of `k`, nontriviality of the norm on `k`,
 Hausdorffness of `X`, nor nonemptiness of `X` is required.
 
-For a `k`-submodule `N` of `C(X, k)`, its **multiplier subalgebra**
-`ContinuousMap.multiplierSubalgebra N` consists of all `u : C(X, k)` such that `u * d ∈ N` for
-every `d ∈ N`. The localization form of the ultrametric Stone–Weierstrass theorem (Kaplansky–Prolla)
-states that a continuous map `φ : C(X, k)` lies in the uniform closure `N.topologicalClosure`
-whenever, for every `a : X`, there exists `d ∈ N` agreeing with `φ` on the fiber
-`{x : X | ∀ u ∈ multiplierSubalgebra N, u x = u a}`
+For a `k`-submodule `N` of `C(X, k)`, its **multiplier subalgebra** `N.leftOrder` consists of
+all `u : C(X, k)` such that `u * d ∈ N` for every `d ∈ N`. The localization form of the ultrametric
+Stone–Weierstrass theorem (Kaplansky–Prolla) states that a continuous map `φ : C(X, k)` lies in the
+uniform closure `N.topologicalClosure` whenever, for every `a : X`, there exists `d ∈ N` agreeing
+with `φ` on the fiber
+`{x : X | ∀ u ∈ N.leftOrder, u x = u a}`
 (`ContinuousMap.mem_topologicalClosure_of_eq_on_multiplier_fibers`).
 
 As immediate corollaries we obtain:
-* the submodule density theorem when `multiplierSubalgebra N` separates points and `N` vanishes
+* the submodule density theorem when `N.leftOrder` separates points and `N` vanishes
   nowhere (`ContinuousMap.submodule_topologicalClosure_eq_top_of_separatesPoints`), and
 * Kaplansky's ultrametric Stone–Weierstrass theorem for subalgebras: every point-separating
   subalgebra `A : Subalgebra k C(X, k)` is dense in `C(X, k)`
@@ -62,52 +63,23 @@ open Filter Metric Set Topology
 
 namespace ContinuousMap
 
-section MultiplierSubalgebra
-
-variable {X k : Type*} [TopologicalSpace X] [CommSemiring k] [TopologicalSpace k]
-  [IsTopologicalSemiring k]
-
-/-- The **multiplier subalgebra** of a `k`-submodule `N` of `C(X, k)`: the subalgebra of
-continuous functions `u : C(X, k)` stabilizing `N` under pointwise multiplication. -/
-def multiplierSubalgebra (N : Submodule k C(X, k)) : Subalgebra k C(X, k) where
-  carrier := {u | ∀ d ∈ N, u * d ∈ N}
-  mul_mem' {u v} hu hv d hd := by
-    rw [mul_assoc]
-    exact hu _ (hv d hd)
-  one_mem' d hd := by simpa using hd
-  add_mem' {u v} hu hv d hd := by
-    rw [add_mul]
-    exact N.add_mem (hu d hd) (hv d hd)
-  zero_mem' d _ := by simp
-  algebraMap_mem' c d hd := by
-    rw [Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul]
-    exact N.smul_mem c hd
-
-/-- Membership in `multiplierSubalgebra N` means stabilizing `N` under multiplication. -/
-@[simp]
-theorem mem_multiplierSubalgebra {N : Submodule k C(X, k)} {u : C(X, k)} :
-    u ∈ multiplierSubalgebra N ↔ ∀ d ∈ N, u * d ∈ N :=
-  Iff.rfl
-
-end MultiplierSubalgebra
-
 section UltrametricStoneWeierstrass
 
 variable {X k : Type*} [TopologicalSpace X] [CompactSpace X] [NormedField k] [IsUltrametricDist k]
 
 /-- The subring of multipliers of `N` with supremum norm at most `1`. -/
 private def boundedMultipliers (N : Submodule k C(X, k)) : Subring C(X, k) where
-  carrier := {u | u ∈ multiplierSubalgebra N ∧ ‖u‖ ≤ 1}
+  carrier := {u | u ∈ N.leftOrder ∧ ‖u‖ ≤ 1}
   mul_mem' {u v} hu hv :=
-    ⟨(multiplierSubalgebra N).mul_mem hu.1 hv.1,
+    ⟨N.leftOrder.mul_mem hu.1 hv.1,
       (norm_mul_le u v).trans ((mul_le_of_le_one_left (norm_nonneg v) hu.2).trans hv.2)⟩
   one_mem' :=
-    ⟨(multiplierSubalgebra N).one_mem, (ContinuousMap.norm_le _ zero_le_one).2 fun _ ↦ by simp⟩
+    ⟨N.leftOrder.one_mem, (ContinuousMap.norm_le _ zero_le_one).2 fun _ ↦ by simp⟩
   add_mem' {u v} hu hv :=
-    ⟨(multiplierSubalgebra N).add_mem hu.1 hv.1,
+    ⟨N.leftOrder.add_mem hu.1 hv.1,
       (IsUltrametricDist.norm_add_le_max u v).trans (max_le hu.2 hv.2)⟩
-  zero_mem' := ⟨(multiplierSubalgebra N).zero_mem, by simp⟩
-  neg_mem' {u} hu := ⟨(multiplierSubalgebra N).neg_mem hu.1, by simpa using hu.2⟩
+  zero_mem' := ⟨N.leftOrder.zero_mem, by simp⟩
+  neg_mem' {u} hu := ⟨N.leftOrder.neg_mem hu.1, by simpa using hu.2⟩
 
 private lemma exists_maximal_ideal_of_far (N : Submodule k C(X, k)) (φ : C(X, k)) {ε : ℝ}
     (hε : 0 < ε) (h_far : ∀ g ∈ N, ε < ‖φ - g‖) :
@@ -115,7 +87,8 @@ private lemma exists_maximal_ideal_of_far (N : Submodule k C(X, k)) (φ : C(X, k
       ∀ w : boundedMultipliers N, ∀ g ∈ N, ‖(w : C(X, k)) * φ - g‖ ≤ ε → w ∈ m := by
   let B := boundedMultipliers N
   let N' : Submodule B C(X, k) :=
-    { N.toAddSubmonoid with smul_mem' := fun c _ hd ↦ c.property.1 _ hd }
+    { N.toAddSubmonoid with
+      smul_mem' := fun c d hd ↦ Submodule.mem_leftOrder_iff.1 c.property.1 d hd }
   let ball : Submodule B C(X, k) :=
     { carrier := {f | ‖f‖ ≤ ε}
       add_mem' := fun {f g} hf hg ↦ (IsUltrametricDist.norm_add_le_max f g).trans (max_le hf hg)
@@ -177,7 +150,7 @@ private lemma exists_mul_norm_le_of_le_on_zeroSet {N : Submodule k C(X, k)}
 
 private lemma eq_on_zeroSet_of_mem_multiplier {N : Submodule k C(X, k)}
     {m : Ideal (boundedMultipliers N)} [m.IsMaximal] {u : C(X, k)}
-    (hu : u ∈ multiplierSubalgebra N) {x a : X}
+    (hu : u ∈ N.leftOrder) {x a : X}
     (hx : ∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) x‖)
     (ha : ∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) a‖) :
     u x = u a := by
@@ -193,17 +166,15 @@ private lemma eq_on_zeroSet_of_mem_multiplier {N : Submodule k C(X, k)}
   obtain ⟨y, hy, h_max⟩ := hZ_closed.isCompact.exists_isMaxOn ⟨x, hx⟩ v.continuous.norm.continuousOn
   refine eq_of_norm_sub_le_zero ((h_max hx).trans (not_lt.1 fun h_pos ↦ ?_))
   obtain ⟨f, hf⟩ := exists_mul_norm_le_of_le_on_zeroSet (m := m) v h_pos h_max
-  have hv_mult : v ∈ multiplierSubalgebra N :=
-    (multiplierSubalgebra N).sub_mem hu ((multiplierSubalgebra N).algebraMap_mem (u a))
+  have hv_mult : v ∈ N.leftOrder :=
+    N.leftOrder.sub_mem hu (N.leftOrder.algebraMap_mem (u a))
   have hw_norm : ‖(v y)⁻¹ • ((f : C(X, k)) * v)‖ ≤ 1 := by
     rw [norm_smul, norm_inv]
     exact (mul_le_mul_of_nonneg_left hf (inv_nonneg.2 (norm_nonneg _))).trans
       (by rw [inv_mul_cancel₀ h_pos.ne'])
   let w : boundedMultipliers N :=
     ⟨(v y)⁻¹ • ((f : C(X, k)) * v),
-      (multiplierSubalgebra N).smul_mem ((multiplierSubalgebra N).mul_mem f.val.property.1 hv_mult)
-        _,
-      hw_norm⟩
+      N.leftOrder.smul_mem (N.leftOrder.mul_mem f.val.property.1 hv_mult) _, hw_norm⟩
   have hw_mem : w ∈ m := by
     by_contra hw
     have h1 := ha ⟨w, hw⟩
@@ -226,7 +197,7 @@ for every `a : X` there exists `d ∈ N` agreeing with `φ` on the fiber where a
 take the same value as at `a`, then `φ` can be approximated arbitrarily closely in supremum norm by
 elements of `N`. -/
 theorem exists_mem_norm_sub_le_of_eq_on_multiplier_fibers (N : Submodule k C(X, k)) (φ : C(X, k))
-    (h_fiber : ∀ a : X, ∃ d ∈ N, ∀ x : X, (∀ u ∈ multiplierSubalgebra N, u x = u a) → φ x = d x)
+    (h_fiber : ∀ a : X, ∃ d ∈ N, ∀ x : X, (∀ u ∈ N.leftOrder, u x = u a) → φ x = d x)
     {ε : ℝ} (hε : 0 < ε) :
     ∃ g ∈ N, ‖φ - g‖ ≤ ε := by
   by_contra! h_far
@@ -247,12 +218,13 @@ theorem exists_mem_norm_sub_le_of_eq_on_multiplier_fibers (N : Submodule k C(X, 
   obtain ⟨d, hd, h_bound⟩ := hd_exists
   obtain ⟨f, hf⟩ := exists_mul_norm_le_of_le_on_zeroSet (m := m) (φ - d) hε h_bound
   have h_near_f : ‖(f : C(X, k)) * φ - (f : C(X, k)) * d‖ ≤ ε := by rwa [← mul_sub]
-  exact f.property (h_near f.val ((f : C(X, k)) * d) (f.val.property.1 d hd) h_near_f)
+  exact f.property (h_near f.val ((f : C(X, k)) * d)
+    (Submodule.mem_leftOrder_iff.1 f.val.property.1 d hd) h_near_f)
 
 /-- **Ultrametric Stone–Weierstrass theorem for modules (closure form).** If `φ : C(X, k)` agrees
 with some element of `N` on every multiplier fiber of `N`, then `φ ∈ N.topologicalClosure`. -/
 theorem mem_topologicalClosure_of_eq_on_multiplier_fibers (N : Submodule k C(X, k)) (φ : C(X, k))
-    (h_fiber : ∀ a : X, ∃ d ∈ N, ∀ x : X, (∀ u ∈ multiplierSubalgebra N, u x = u a) → φ x = d x) :
+    (h_fiber : ∀ a : X, ∃ d ∈ N, ∀ x : X, (∀ u ∈ N.leftOrder, u x = u a) → φ x = d x) :
     φ ∈ N.topologicalClosure := by
   change φ ∈ closure (N : Set C(X, k))
   rw [Metric.mem_closure_iff]
@@ -272,12 +244,12 @@ theorem mem_topologicalClosure_of_eq_on_subalgebra_fibers (N : Submodule k C(X, 
     φ ∈ N.topologicalClosure :=
   mem_topologicalClosure_of_eq_on_multiplier_fibers N φ fun a ↦
     let ⟨d, hd, hφd⟩ := h_fiber a
-    ⟨d, hd, fun x hx ↦ hφd x fun u hu ↦ hx u (hAN u hu)⟩
+    ⟨d, hd, fun x hx ↦ hφd x fun u hu ↦ hx u (Submodule.mem_leftOrder_iff.2 (hAN u hu))⟩
 
-/-- **Density of a submodule whose multipliers separate points.** If `multiplierSubalgebra N`
+/-- **Density of a submodule whose multipliers separate points.** If `N.leftOrder`
 separates points of `X` and `N` vanishes nowhere on `X`, then `N` is dense in `C(X, k)`. -/
 theorem submodule_topologicalClosure_eq_top_of_separatesPoints (N : Submodule k C(X, k))
-    (hsep : (multiplierSubalgebra N).SeparatesPoints) (hvan : ∀ a : X, ∃ d ∈ N, d a ≠ 0) :
+    (hsep : N.leftOrder.SeparatesPoints) (hvan : ∀ a : X, ∃ d ∈ N, d a ≠ 0) :
     N.topologicalClosure = ⊤ := by
   rw [eq_top_iff]
   intro φ _
