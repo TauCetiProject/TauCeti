@@ -168,8 +168,8 @@ theorem mk_mem_classicalCharacteristicSet_pushforwardOperator_iff {N : Type*} [T
   -- The differential `dΦ_x` is invertible, so `ξ ∘ dΦ_x` vanishes only for `ξ = 0`.
   obtain ⟨L, hL⟩ := Φ.isInvertible_mfderiv (x := x) (by simp)
   have hξ : ξ.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) Φ x) = 0 ↔ ξ = 0 := by
-    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ by simp [h]⟩
-    simpa [← hL] using DFunLike.congr_fun h (L.symm v)
+    rw [← hL]
+    exact ξ.comp_continuousLinearEquiv_eq_zero_iff L
   simp only [mem_classicalCharacteristicSet_iff, classicalPrincipalSymbol_pushforwardOperator,
     ne_eq, hξ]
 
