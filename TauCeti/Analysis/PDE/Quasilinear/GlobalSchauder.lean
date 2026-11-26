@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Quasilinear.GlobalHolder
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Global
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Holder.LipschitzDomain
-import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Quasilinear.Regularity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
@@ -48,8 +47,9 @@ interior form of the theorem is
 
 A weak solution `u` solves the linear equation with the frozen coefficient `a(x) = A(x, u(x))`.
 
-* **De Giorgi up to the boundary.** A `C^{1,α}` boundary is Lipschitz, and the frozen coefficient
-  is measurable and uniformly elliptic, so the global Hölder estimate for quasilinear equations
+* **De Giorgi up to the boundary.** A `C^{1,α}` boundary is Lipschitz
+  (`TauCeti.isLipschitzDomain_of_contDiffAt`), and the frozen coefficient is measurable and
+  uniformly elliptic, so the global Hölder estimate for quasilinear equations
   (`Set.IsLipschitzDomain.exists_ae_eq_and_holderOnWith_quasilinear`) makes `u` agree almost
   everywhere with a function `v₁` which is `γ₀`-Hölder on `closure Ω`, for some `γ₀ > 0`.
 * **Schauder.** Then `x ↦ A(x, v₁(x))` is Hölder on `closure Ω` with exponent `min γ₀ β`, and the
@@ -66,8 +66,8 @@ A weak solution `u` solves the linear equation with the frozen coefficient `a(x)
 The global Schauder estimate takes a single Hölder exponent for the coefficient and for the
 derivatives of the boundary graphs. Each pass lowers the exponent of the graphs, after cutting
 them off outside the chart: a graph `γ` with `α`-Hölder derivative agrees near the chart centre
-with `χ γ`, for a smooth bump `χ`, whose derivative is Hölder with every exponent `β ≤ min α 1`
-on the whole space, being Hölder and compactly supported.
+with a graph whose derivative is `β`-Hölder on the whole space for every `β ≤ min α 1`
+(`ContDiff.exists_eqOn_ball_holderWith_fderiv`).
 
 ## References
 
@@ -92,66 +92,6 @@ variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-! ### Boundary charts -/
 
-/-- A `C¹` function on a finite-dimensional inner product space whose derivative is `α`-Hölder
-agrees on the ball `B(0, r)` with a `C¹` function whose derivative is `β`-Hölder on the whole
-space, for every `β ≤ min α 1`. The new function is `χ γ` for a smooth bump `χ` equal to one on
-`B(0, r)` and supported in `B(0, 2r)`. -/
-private theorem exists_contDiff_eqOn_ball_holderWith_fderiv [FiniteDimensional ℝ E] {γ : E → ℝ}
-    (hγ : ContDiff ℝ 1 γ) {Kγ α β : ℝ≥0} (hγK : HolderWith Kγ α (fderiv ℝ γ)) (hβα : β ≤ α)
-    (hβ1 : β ≤ 1) {r : ℝ} (hr : 0 < r) :
-    ∃ (γ' : E → ℝ) (K : ℝ≥0), ContDiff ℝ 1 γ' ∧ EqOn γ' γ (ball 0 r) ∧
-      HolderWith K β (fderiv ℝ γ') := by
-  let χ : ContDiffBump (0 : E) := ⟨r, 2 * r, hr, by linarith⟩
-  have hχ : ContDiff ℝ 2 χ := χ.contDiff
-  have hχc : HasCompactSupport χ := χ.hasCompactSupport
-  have hχ1 : ContDiff ℝ 1 χ := hχ.of_le one_le_two
-  set S : Set E := closedBall 0 (2 * r)
-  have hS : IsCompact S := isCompact_closedBall _ _
-  have hSχ : ∀ x ∉ S, χ x = 0 := fun x hx => Function.notMem_support.1 fun h =>
-    hx (ball_subset_closedBall (by simpa [χ.support_eq] using h))
-  have hSDχ : ∀ x ∉ S, fderiv ℝ χ x = 0 := fun x hx => Function.notMem_support.1 fun h =>
-    hx (show x ∈ closedBall 0 χ.rOut from χ.tsupport_eq ▸ support_fderiv_subset ℝ h)
-  obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ S, ∀ y ∈ S, edist x y ≤ D :=
-    ⟨(Metric.ediam S).toNNReal, fun x hx y hy => by
-      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 hS.isBounded)]
-      exact Metric.edist_le_ediam_of_mem hx hy⟩
-  obtain ⟨Mγ, hMγ⟩ := hS.exists_bound_of_continuousOn hγ.continuous.continuousOn
-  obtain ⟨MDγ, hMDγ⟩ := hS.exists_bound_of_continuousOn
-    (hγ.continuous_fderiv one_ne_zero).continuousOn
-  obtain ⟨MDχ, hMDχ⟩ := (hχc.fderiv ℝ).exists_bound_of_continuous
-    (hχ.continuous_fderiv (by norm_num))
-  -- `χ` and `Dχ` are Lipschitz, being `C¹` with compact support, and bounded, so `β`-Hölder.
-  obtain ⟨Lχ, hLχ⟩ := ContDiff.lipschitzWith_of_hasCompactSupport hχc hχ1 one_ne_zero
-  obtain ⟨LDχ, hLDχ⟩ := ContDiff.lipschitzWith_of_hasCompactSupport (hχc.fderiv ℝ)
-    (hχ.fderiv_right (m := 1) (by norm_num)) one_ne_zero
-  have hχH : HolderWith (Lχ + 2 * 1) β χ := holderOnWith_univ.1
-    ((hLχ.lipschitzOnWith (s := univ)).holderOnWith_of_norm_le
-      (fun x _ => by simpa [abs_of_nonneg (χ.nonneg (x := x))] using χ.le_one) hβ1)
-  have hDχH : HolderWith (LDχ + 2 * MDχ.toNNReal) β (fderiv ℝ χ) := holderOnWith_univ.1
-    ((hLDχ.lipschitzOnWith (s := univ)).holderOnWith_of_norm_le
-      (fun x _ => (hMDχ x).trans (Real.le_coe_toNNReal _)) hβ1)
-  -- On the compact set `S`, `Dγ` is `β`-Hölder and `γ` is locally Lipschitz, hence `β`-Hölder.
-  have hDγS : HolderOnWith (Kγ * D ^ ((α : ℝ) - β)) β (fderiv ℝ γ) S :=
-    (hγK.holderOnWith S).of_le hD hβα
-  obtain ⟨Cγ, hγS⟩ :=
-    hγ.locallyLipschitz.locallyLipschitzOn.exists_holderOnWith_of_isCompact hβ1 hS (subset_univ S)
-  have h₁ := HolderWith.smul_of_eq_zero hχH hDγS (Mc := 1)
-    (fun x => by simpa [abs_of_nonneg (χ.nonneg (x := x))] using χ.le_one)
-    (fun x hx => (hMDγ x hx).trans (Real.le_coe_toNNReal _)) hSχ
-  have h₂ := (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] (E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] ℝ)
-    |>.holderWith_comp₂_of_eq_zero hγS hDχH (Mf := Mγ.toNNReal) (Mg := MDχ.toNNReal)
-    (fun x hx => (hMγ x hx).trans (Real.le_coe_toNNReal _))
-    (fun x _ => (hMDχ x).trans (Real.le_coe_toNNReal _)) hSDχ
-  have hfd : fderiv ℝ (fun y => χ y * γ y) = (fun y => χ y • fderiv ℝ γ y) +
-      fun y => ContinuousLinearMap.lsmul ℝ ℝ (γ y) (fderiv ℝ χ y) := by
-    funext y
-    rw [show (fun y => χ y * γ y) = (χ : E → ℝ) * γ from rfl,
-      (((hχ1.differentiable one_ne_zero) y).hasFDerivAt.mul
-        ((hγ.differentiable one_ne_zero) y).hasFDerivAt).fderiv]
-    simp
-  refine ⟨fun y => χ y * γ y, _, hχ1.mul hγ, fun y hy => ?_, hfd ▸ h₁.add h₂⟩
-  simp [χ.one_of_mem_closedBall (ball_subset_closedBall hy)]
-
 variable {Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))} {α : ℝ≥0}
 
 /-- The boundary charts of a set with `C^{1,α}` boundary can be replaced by charts, with the same
@@ -175,25 +115,10 @@ private theorem forall_frontier_chart_of_le {β : ℝ≥0} (hβα : β ≤ α) (
   have : FiniteDimensional ℝ E := Module.Finite.of_surjective
     ((LinearMap.snd ℝ ℝ E).comp (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap)
     fun y => ⟨WithLp.toLp 2 (0, y), by simp⟩
-  obtain ⟨γ', K, hγ', heq, hK⟩ := exists_contDiff_eqOn_ball_holderWith_fderiv hγ hγK hβα hβ1 hr₀
+  obtain ⟨γ', K, hγ', heq, hK⟩ := hγ.exists_eqOn_ball_holderWith_fderiv hγK hβα hβ1 0 hr₀
   refine ⟨e, γ', h₀, r₀, K, hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hγ0], hγ', hK,
     fun z hz => ?_⟩
   rw [hgraph z hz, heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]
-
-/-- A set with `C^{1,α}` boundary is a Lipschitz domain: near the centre of each chart the graph is
-Lipschitz, with any constant above the norm of its derivative there. -/
-private theorem isLipschitzDomain_of_forall_chart
-    (hbdry : ∀ x ∈ frontier Ω,
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-          HolderWith Kγ α (fderiv ℝ γ) ∧
-          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst)) :
-    Ω.IsLipschitzDomain E := by
-  refine isLipschitzDomain_iff_exists_mem_normalCylinder.2 fun x hx => ?_
-  obtain ⟨e, γ, h₀, r₀, -, hex, hh₀, hr₀, hγ0, hγ, -, hgraph⟩ := hbdry x hx
-  obtain ⟨ψ, b', hb', -, -, hchart⟩ := exists_isLipschitzChartWith_of_contDiffAt
-    (L := ‖fderiv ℝ γ 0‖₊ + 1) hh₀ hr₀ hγ0 hγ.contDiffAt (lt_add_one _) hgraph
-  exact ⟨e, ψ, _, h₀, b', hchart.toIsLipschitzChart, hex ▸ zero_mem_normalCylinder hh₀ hb'⟩
 
 /-! ### The bootstrap -/
 
@@ -384,7 +309,10 @@ theorem exists_holderOnWith_gradient_closure_of_forall_energyFormH1_quasilinear_
   have hΩm := Ω.isOpen.measurableSet
   have hqn := natCast_add_one_lt_of_le_one_sub_div hβ (zero_lt_two.trans_le hq2).ne' hβq
   -- **De Giorgi up to the boundary**: `u` agrees with a function `v₁`, Hölder on `closure Ω`.
-  have hLip := isLipschitzDomain_of_forall_chart hbdry
+  have hLip : (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))).IsLipschitzDomain E :=
+    isLipschitzDomain_of_contDiffAt fun x hx => by
+      obtain ⟨e, γ, h₀, r₀, -, hex, hh₀, hr₀, hγ0, hγ, -, hgraph⟩ := hbdry x hx
+      exact ⟨e, γ, h₀, r₀, hex, hh₀, hr₀, hγ0, hγ.contDiffAt, hgraph⟩
   obtain ⟨γ₀, C₀, v₁, hγ₀, huv₁, hv₁⟩ :=
     exists_holderOnWith_value_closure hΩ hLip hα hA hAx hAs hG hq2 hqn hf hu
   -- **Schauder**: `∇u` agrees with a function `g₁`, Hölder and bounded on `closure Ω`.
