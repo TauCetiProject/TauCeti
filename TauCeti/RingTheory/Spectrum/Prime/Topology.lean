@@ -35,10 +35,6 @@ An idempotent has empty basic open set exactly when it is zero
 prime ideal is nilpotent. This is the prime-spectrum counterpart of
 `MaximalSpectrum.basicOpen_eq_bot_iff_of_isIdempotentElem`.
 
-Under the correspondence between idempotents and clopen subsets, the preimage of a clopen set
-along `Spec f` corresponds to the image of its idempotent under `f`
-(`PrimeSpectrum.isIdempotentElemEquivClopens_symm_preimage`).
-
 When there are finitely many minimal primes, every dense open contains them all and remains
 nonempty after any nontrivial localization.
 
@@ -229,21 +225,5 @@ theorem zeroLocus_subset_iff_eq_top_of_le_jacobson_bot {S : Type*} [CommRing S] 
     exact hI.trans (Ideal.jacobson_bot.trans_le (Ring.jacobson_le_of_isMaximal m))
   · rw [hU, TopologicalSpace.Opens.coe_top]
     exact Set.subset_univ _
-
-/-- **Idempotents of preimages.** For a ring homomorphism `f : R →+* S` and a clopen subset `U` of
-`Spec R` with idempotent `e_U`, the idempotent of the clopen preimage of `U` under
-`Spec f : Spec S → Spec R` is `f e_U`. -/
-theorem isIdempotentElemEquivClopens_symm_preimage {R S : Type*} [CommRing R] [CommRing S]
-    (f : R →+* S) (U : Clopens (PrimeSpectrum R)) :
-    isIdempotentElemEquivClopens.symm
-        ⟨comap f ⁻¹' U, U.isClopen.preimage (continuous_comap f)⟩ =
-      ⟨f (isIdempotentElemEquivClopens.symm U).val,
-        (isIdempotentElemEquivClopens.symm U).prop.map f⟩ := by
-  rw [OrderIso.symm_apply_eq]
-  -- Both sets are the preimage of the basic open set of `e_U`, which is `U`.
-  ext x
-  rw [coe_isIdempotentElemEquivClopens_apply, ← comap_basicOpen,
-    basicOpen_isIdempotentElemEquivClopens_symm]
-  simp
 
 end PrimeSpectrum

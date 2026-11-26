@@ -42,8 +42,6 @@ idempotents, for instance the rank section of projective `K₀`.
 * `LocallyConstant.addMonoidHom_ext_charFn`, `LocallyConstant.ringHom_ext_charFn`: on a compact
   space, homomorphisms out of `LocallyConstant X ℤ` agreeing on characteristic functions of clopen
   sets are equal.
-* `LocallyConstant.comap_charFn`: the pullback of the characteristic function of a clopen set
-  along a continuous map is the characteristic function of its preimage.
 * `LocallyConstant.ringHomOfClopens_apply`, `LocallyConstant.ringHomOfClopens_charFn`: the
   induced ring homomorphism sends `f` to `∑ n • c (f⁻¹{n})`, and `χ_U` to `c U`.
 -/
@@ -84,15 +82,6 @@ theorem ringHom_ext_charFn [CompactSpace X] {A : Type*} [NonAssocRing A]
     {φ ψ : LocallyConstant X ℤ →+* A}
     (h : ∀ U : Clopens X, φ (charFn ℤ U.isClopen) = ψ (charFn ℤ U.isClopen)) : φ = ψ :=
   RingHom.toAddMonoidHom_injective (addMonoidHom_ext_charFn h)
-
-/-- Pulling back the characteristic function of a clopen set along a continuous map gives the
-characteristic function of its preimage. -/
-@[simp]
-theorem comap_charFn {Y : Type*} [TopologicalSpace Y] (R : Type*) [MulZeroOneClass R]
-    (f : C(X, Y)) {U : Set Y} (hU : IsClopen U) :
-    (charFn R hU).comap f = charFn R (hU.preimage f.continuous) := by
-  ext x
-  by_cases hx : f x ∈ U <;> simp [coe_charFn, hx]
 
 section RingHomOfClopens
 

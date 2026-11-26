@@ -15,7 +15,8 @@ public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.Topology.LocallyConstant.ClopenRingHom
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
-import TauCeti.RingTheory.Spectrum.Prime.Topology
+import TauCeti.RingTheory.Spectrum.Prime.Idempotent
+import TauCeti.Topology.LocallyConstant.CharFn
 
 /-!
 # The locally constant rank on projective `K₀` and its section
