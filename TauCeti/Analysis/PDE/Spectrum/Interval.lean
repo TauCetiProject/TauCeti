@@ -20,6 +20,8 @@ import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
+import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.Analysis.Sobolev.W1p.Hilbert
 
 /-!
@@ -68,6 +70,15 @@ restrictions of the Dirichlet modes of the doubled interval `(a, 2b - a)`, symme
 Completeness of the cosines (`TauCeti.ae_eq_zero_of_forall_integral_mul_cos_eq_zero`) and of the
 quarter-wave sines (`TauCeti.ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero`)
 excludes every other eigenvalue.
+
+The weak Neumann eigenvalue problem can also be tested against all of `H¹(a, b)`, with no
+boundary condition on the test functions, which imposes the natural boundary condition
+`u'(a) = u'(b) = 0`. Its eigenvalues are the same numbers `(k π / (b - a))²`, `k ≥ 0`, with the
+cosine modes as eigenfunctions, and the least one is `0`, with the constants as eigenfunctions.
+Here a cosine mode `w` is a weak eigenfunction by integration by parts against the absolutely
+continuous representative of `v ∈ H¹(a, b)` (`TauCeti.W1p.intervalRepresentativeL`): the
+boundary terms vanish because `w'` vanishes at `a` and `b`, whatever the values of `v` there.
+This form does not need `H¹_∅(a, b) = H¹(a, b)`.
 
 The sine modes, normalized in `L²(a, b)`, form an orthonormal basis `(eₖ)` of `L²(a, b)`: they are
 orthonormal because the energy form is symmetric and the eigenvalues distinct, and complete by
@@ -119,6 +130,12 @@ two Parseval identities expresses the Dirichlet energy in sine coefficients, and
   `W^{1,p}(a, b) → Lᵖ(a, b)`.
 * `TauCeti.PDE.spectrum_mixedOperator_laplacian_empty_intervalDomain`: the spectrum of the
   Neumann Laplacian `-Δ_∅` on `(a, b)` is `{(k π / (b - a))² | k ≥ 0}`.
+* `TauCeti.PDE.exists_value_ae_eq_cos_and_energyFormH1_eq`: the cosine modes are weak Neumann
+  eigenfunctions tested on all of `H¹(a, b)`.
+* `TauCeti.PDE.exists_ne_zero_forall_energyFormH1_eq_iff_intervalDomain`: the weak Neumann
+  spectrum of `-Δ` on `(a, b)`, tested on `H¹(a, b)`, is `{(k π / (b - a))² | k ≥ 0}`.
+* `TauCeti.PDE.isLeast_setOf_exists_ne_zero_forall_energyFormH1_eq_intervalDomain`: its least
+  element is `0`.
 * `TauCeti.PDE.sineHilbertBasis`: the normalized sine modes form an orthonormal basis of
   `L²(a, b)` (`TauCeti.PDE.sineHilbertBasis_ae_eq`), each the value of a weak Dirichlet
   eigenfunction (`TauCeti.PDE.exists_value_eq_sineHilbertBasis`).
@@ -130,8 +147,8 @@ two Parseval identities expresses the Dirichlet energy in sine coefficients, and
 ## References
 
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Section 8.6
-  (the Sturm--Liouville problem), §8.4, Example 5 (a boundary condition at one endpoint), and
-  Section 9.8.
+  (the Sturm--Liouville problem), §8.4, Example 5 (a boundary condition at one endpoint),
+  Section 9.8 and Problem 47 (the Neumann problem).
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 6.5.1.
 -/
 
@@ -158,21 +175,28 @@ private theorem contDiff_sineMode (k : ℕ) : ContDiff ℝ ⊤ (sineMode a b k) 
   unfold sineMode
   fun_prop
 
+/-- The `k`-th Neumann mode `t ↦ cos (k π (t - a) / (b - a))` of the interval `(a, b)`. -/
+private abbrev cosineMode (a b : ℝ) (k : ℕ) (t : ℝ) : ℝ :=
+  Real.cos (k * π * (t - a) / (b - a))
+
+private theorem hasDerivAt_sineMode (k : ℕ) (t : ℝ) :
+    HasDerivAt (sineMode a b k) (k * π / (b - a) * cosineMode a b k t) t := by
+  have := (((hasDerivAt_id' t).sub_const a).const_mul (k * π)).div_const (b - a)
+  convert this.sin using 1
+  ring
+
+private theorem hasDerivAt_cosineMode (k : ℕ) (t : ℝ) :
+    HasDerivAt (cosineMode a b k) (-(k * π / (b - a) * sineMode a b k t)) t := by
+  have := (((hasDerivAt_id' t).sub_const a).const_mul (k * π)).div_const (b - a)
+  convert this.cos using 1
+  ring
+
 private theorem laplacian_sineMode (k : ℕ) (t : ℝ) :
     Δ (sineMode a b k) t = -(k * π / (b - a)) ^ 2 * sineMode a b k t := by
-  have hd : ∀ s, HasDerivAt (sineMode a b k)
-      (Real.cos (k * π * (s - a) / (b - a)) * (k * π / (b - a))) s := fun s => by
-    have := (((hasDerivAt_id' s).sub_const a).const_mul (k * π)).div_const (b - a)
-    convert this.sin using 1
-    ring
-  have hd2 : HasDerivAt (fun s => Real.cos (k * π * (s - a) / (b - a)) * (k * π / (b - a)))
-      (-(k * π / (b - a)) ^ 2 * sineMode a b k t) t := by
-    have := ((((hasDerivAt_id' t).sub_const a).const_mul (k * π)).div_const (b - a)).cos
-    convert this.mul_const (k * π / (b - a)) using 1
-    simp only [sineMode]
-    ring
   rw [laplacian_eq_iteratedDeriv_real, iteratedDeriv_succ, iteratedDeriv_one,
-    funext fun s => (hd s).deriv, hd2.deriv]
+    funext fun s => (hasDerivAt_sineMode (a := a) (b := b) k s).deriv,
+    ((hasDerivAt_cosineMode k t).const_mul (k * π / (b - a))).deriv]
+  ring
 
 private theorem sineMode_left (k : ℕ) : sineMode a b k a = 0 := by
   simp [sineMode]
@@ -379,29 +403,19 @@ private theorem eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete {ι : Type
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ i, ∫ x in intervalDomain a b, f x * F i (x 0) = 0) :
     f = 0 := by
-  have hmp := measurePreserving_lineEquiv
-  have hmpΩ : MeasurePreserving lineEquiv (volume.restrict (Ioo a b))
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))) := by
-    have := hmp.restrict_preimage (intervalDomain a b).isOpen.measurableSet
-    rwa [preimage_lineEquiv_intervalDomain] at this
-  have hmpΩ' : MeasurePreserving lineEquiv.symm
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))
-      (volume.restrict (Ioo a b)) := by
-    have := measurePreserving_lineEquiv_symm.restrict_preimage
-      (measurableSet_Ioo (a := a) (b := b))
-    rwa [← coe_intervalDomain_eq_preimage] at this
   -- Read `f` on the real line, where the system is complete.
   have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioc a b)) := by
     rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-    exact (Lp.memLp f).comp_measurePreserving hmpΩ
+    exact (Lp.memLp f).comp_measurePreserving measurePreserving_lineEquiv_restrict
   have hg0 := hF _ (hg.integrable one_le_two) fun i => by
     rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h i,
       ← setIntegral_intervalDomain]
     simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
   rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hg0
   refine Lp.ext ?_
-  filter_upwards [hmpΩ'.quasiMeasurePreserving.ae_eq_comp hg0, Lp.coeFn_zero ℝ 2
-    (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
+  filter_upwards [measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae_eq_comp hg0,
+    Lp.coeFn_zero ℝ 2
+      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
   rw [h2]
   simpa using h1
 
@@ -873,6 +887,129 @@ theorem spectrum_mixedOperator_laplacian_empty_intervalDomain (hab : a < b) :
   exact exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty hab
 
 end Mixed
+
+/-! ### The Neumann spectrum tested on `H¹(a, b)` -/
+
+/-- On the real interval, the Neumann mode tested against the derivative of any `v ∈ H¹(a, b)`:
+`∫ w' v' = (k π / (b - a))² ∫ w v` for `w = cos (k π (· - a) / (b - a))`. The boundary terms of
+the integration by parts vanish since `w'` vanishes at `a` and `b`; no condition on `v` is
+needed. -/
+private theorem setIntegral_deriv_cosineMode_mul_gradient (hab : a < b) (k : ℕ)
+    (v : W1p volume (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) 2) :
+    ∫ t in Ioo a b, -(k * π / (b - a) * sineMode a b k t) * W1p.gradient v t =
+      (k * π / (b - a)) ^ 2 * ∫ t in Ioo a b, cosineMode a b k t * W1p.value v t := by
+  set c : ℝ := k * π / (b - a)
+  have hf : AbsolutelyContinuousOnInterval (fun t ↦ -(c * sineMode a b k t)) a b :=
+    ContDiffOn.absolutelyContinuousOnInterval (by unfold sineMode; fun_prop)
+  have hff' : ∀ᵐ t, t ∈ uIoc a b →
+      HasDerivAt (fun t ↦ -(c * sineMode a b k t)) (-(c * (c * cosineMode a b k t))) t :=
+    ae_of_all _ fun t _ ↦ ((hasDerivAt_sineMode k t).const_mul c).neg
+  have hibp := AbsolutelyContinuousOnInterval.integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt hf
+    (W1p.absolutelyContinuousOnInterval_intervalRepresentativeL hab v) hff'
+    (W1p.ae_hasDerivAt_intervalRepresentativeL hab v)
+  simp only [sineMode_left, sineMode_right hab, mul_zero, neg_zero, zero_mul, sub_zero,
+    neg_mul, intervalIntegral.integral_neg, sub_neg_eq_add, zero_add] at hibp
+  rw [intervalIntegral.integral_of_le hab.le, intervalIntegral.integral_of_le hab.le,
+    integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo] at hibp
+  simp_rw [neg_mul]
+  rw [integral_neg, hibp, ← integral_const_mul]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_ae_eq_intervalRepresentativeL hab v] with t ht
+  rw [ht]
+  ring
+
+/-- **The cosine modes are weak Neumann eigenfunctions of `-Δ` on an interval, tested on
+`H¹(a, b)`.** For every `k : ℕ`, the function `x ↦ cos (k π (x - a) / (b - a))` is the value of
+some `u ∈ H¹(a, b)` with
+
+`∫ ∇u · ∇v = (k π / (b - a))² ∫ u v` for every `v ∈ H¹(a, b)`.
+
+The test space is all of `H¹(a, b)`, with no boundary condition: this is the weak form of
+`-u'' = κ u` with the natural boundary condition `u'(a) = u'(b) = 0`. Compare
+`TauCeti.PDE.exists_value_ae_eq_cos_and_inner_gradient_eq`, tested on `H¹_∅(a, b)`. -/
+theorem exists_value_ae_eq_cos_and_energyFormH1_eq (hab : a < b) (k : ℕ) :
+    ∃ u : W1p volume (intervalDomain a b) 2,
+      W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        (fun x => Real.cos (k * π * (x 0 - a) / (b - a))) ∧
+      ∀ v : W1p volume (intervalDomain a b) 2,
+        energyFormH1 (fun _ => 1) 0 0 u v =
+          (k * π / (b - a)) ^ 2 * ⟪W1p.value u, W1p.value v⟫_ℝ := by
+  set c : ℝ := k * π / (b - a)
+  -- The mode as an element of `H¹` of the real interval, with its classical derivative.
+  have hac : AbsolutelyContinuousOnInterval (cosineMode a b k) a b :=
+    ContDiffOn.absolutelyContinuousOnInterval (by unfold cosineMode; fun_prop)
+  have hderiv : deriv (cosineMode a b k) = fun t ↦ -(c * sineMode a b k t) :=
+    funext fun t ↦ (hasDerivAt_cosineMode k t).deriv
+  have hmem : MemLp (deriv (cosineMode a b k)) 2 (volume.restrict (Ioo a b)) := by
+    rw [hderiv]
+    have hc : Continuous fun t ↦ -(c * sineMode a b k t) := by unfold sineMode; fun_prop
+    exact hc.continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
+      Ioo_subset_Icc_self 2
+  obtain ⟨w, hwv, hwg⟩ := hac.exists_w1p_value_gradient_ae_eq hmem
+  refine ⟨(intervalDomainEquivL a b 2).symm w, ?_, fun v ↦ ?_⟩
+  · filter_upwards [value_intervalDomainEquivL_symm_ae w,
+      measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae_eq_comp hwv] with x h1 h2
+    rw [h1]
+    simpa [lineEquiv_symm_apply] using h2
+  · set v' := intervalDomainEquivL a b 2 v
+    have hval : ∫ t in Ioo a b, W1p.value w t * W1p.value v' t =
+        ∫ t in Ioo a b, cosineMode a b k t * W1p.value v' t :=
+      integral_congr_ae (by filter_upwards [hwv] with t ht; rw [ht])
+    rw [energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL,
+      inner_value_eq_setIntegral_intervalDomainEquivL, ContinuousLinearEquiv.apply_symm_apply,
+      hval, ← setIntegral_deriv_cosineMode_mul_gradient hab k v']
+    refine integral_congr_ae ?_
+    filter_upwards [hwg] with t hg
+    rw [hg, hderiv, mul_comm]
+
+/-- **The Neumann spectrum of `-Δ` on an interval, tested on `H¹(a, b)`.** The weak Neumann
+eigenvalues of `-Δ` on `(a, b)` are exactly the numbers `(k π / (b - a))²` with `k ≥ 0`: the
+problem `-u'' = κ u` in `(a, b)` with the natural boundary condition `u'(a) = u'(b) = 0`, in the
+weak form
+
+`∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹(a, b)`,
+
+has a nonzero solution `u ∈ H¹(a, b)` exactly for these `κ`. Compared with the Dirichlet
+spectrum (`TauCeti.PDE.isDirichletEigenvalue_laplacian_intervalDomain_iff`), the eigenvalue `0` is
+added. Eigenfunctions for these `κ`, the cosine modes `x ↦ cos (k π (x - a) / (b - a))`, are
+supplied by `TauCeti.PDE.exists_value_ae_eq_cos_and_energyFormH1_eq`. The same numbers are the
+eigenvalues tested on `H¹_∅(a, b)`
+(`TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty`). -/
+theorem exists_ne_zero_forall_energyFormH1_eq_iff_intervalDomain (hab : a < b) {kappa : ℝ} :
+    (∃ u : W1p volume (intervalDomain a b) 2, u ≠ 0 ∧ ∀ v : W1p volume (intervalDomain a b) 2,
+        energyFormH1 (fun _ => 1) 0 0 u v = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ) ↔
+      ∃ k : ℕ, kappa = (k * π / (b - a)) ^ 2 := by
+  refine ⟨fun ⟨u, hu0, hu⟩ => ?_, fun ⟨k, hkappa⟩ => ?_⟩
+  · by_contra hne
+    push Not at hne
+    refine hu0 (W1p.ext_value ?_)
+    rw [W1p.value_zero]
+    -- `u` is orthogonal to every cosine mode, since `κ` differs from each of their eigenvalues.
+    refine eq_zero_of_forall_setIntegral_mul_cos_eq_zero hab _ fun k => ?_
+    obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_cos_and_energyFormH1_eq hab k
+    have hint := W1p.inner_value_eq_zero_of_energyFormH1_eq_of_ne
+      (ae_of_all _ fun _ => Matrix.isSymm_one) (hne k) (hu s) (hseq u)
+    rw [W1p.inner_value_eq_setIntegral] at hint
+    refine (integral_congr_ae ?_).trans hint
+    filter_upwards [hs] with x hx
+    rw [hx]
+  · obtain ⟨u, hu, heq⟩ := exists_value_ae_eq_cos_and_energyFormH1_eq hab k
+    -- The cosine mode equals `1` at `a`.
+    refine ⟨u, fun h0 => value_ne_zero_of_value_ae_eq hab
+      (F := fun t => Real.cos (k * π * (t - a) / (b - a))) (by fun_prop)
+      (left_mem_Icc.2 hab.le) (by simp) hu (by rw [h0, W1p.value_zero]), hkappa ▸ heq⟩
+
+/-- The first Neumann eigenvalue of `-Δ` on `(a, b)`, tested on `H¹(a, b)`, is `0`, the least
+element of the Neumann spectrum. An eigenfunction for it, a constant, is supplied by
+`TauCeti.PDE.exists_value_ae_eq_cos_and_energyFormH1_eq` with `k = 0`. -/
+theorem isLeast_setOf_exists_ne_zero_forall_energyFormH1_eq_intervalDomain (hab : a < b) :
+    IsLeast {kappa | ∃ u : W1p volume (intervalDomain a b) 2, u ≠ 0 ∧
+      ∀ v : W1p volume (intervalDomain a b) 2,
+        energyFormH1 (fun _ => 1) 0 0 u v = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ} 0 := by
+  refine ⟨(exists_ne_zero_forall_energyFormH1_eq_iff_intervalDomain hab).2 ⟨0, by simp⟩,
+    fun kappa hkappa => ?_⟩
+  obtain ⟨k, rfl⟩ := (exists_ne_zero_forall_energyFormH1_eq_iff_intervalDomain hab).1 hkappa
+  positivity
 
 section SineBasis
 

@@ -79,6 +79,9 @@ sesquilinear forms gives convergence of their Gram matrices in any pair of finit
 (`Matrix.eventually_det_ne_zero_of_tendsto_one`). The matrices with nonnegative diagonal form a
 closed set (`Matrix.isClosed_setOfPred_nonneg_diag`).
 
+The matrices whose entries all lie in a dense set are dense (`Dense.matrix`), the dense
+counterpart of Mathlib's `IsOpen.matrix`.
+
 `Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
 Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α` is a
 homeomorphism for the entrywise product topologies (`TauCeti.piMatrixHomeomorph`), matching
@@ -454,3 +457,10 @@ theorem tendsto_toMatrix₂ {R M₁ M₂ N₂ n m α : Type*} [CommSemiring R] [
     simpa only [toMatrix₂_apply] using hB (b₁ i) (b₂ j)
 
 end LinearMap
+
+/-- The matrices whose entries all lie in a dense set `S` form a dense set. -/
+theorem Dense.matrix {m n R : Type*} [TopologicalSpace R] {S : Set R} (hS : Dense S) :
+    Dense (S.matrix : Set (Matrix m n R)) := by
+  rw [Set.matrix_eq_pi]
+  exact (dense_pi Set.univ fun _ _ ↦ dense_pi Set.univ fun _ _ ↦ hS).preimage
+    Matrix.ofHomeomorph.symm.isOpenMap
