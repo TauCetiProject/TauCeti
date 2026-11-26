@@ -30,8 +30,9 @@ one on an open convex cone `Γ` reads `g(μ) ≤ Dg(λ) μ` for `λ, μ ∈ Γ` 
   `geomMean_le_fderiv_geomMean`).
 * Differentiability at `λ` is needed: `g = min(x, y)` is concave and positively homogeneous on the
   open quadrant (`concaveOn_minFun`, `minFun_smul`), but it is not differentiable at `(1, 1)`
-  (`not_differentiableAt_minFun`), where its total derivative is therefore `0`, and the
-  inequality at `λ = μ = (1, 1)` would read `1 ≤ 0` (`not_minFun_le_fderiv_minFun`). At the point
+  (`not_differentiableAt_minFun`), so `fderiv` takes its default value `0` there, and this is
+  why the `fderiv` form of the inequality at `λ = μ = (1, 1)` reads `1 ≤ 0`
+  (`not_minFun_le_fderiv_minFun`). At the point
   of differentiability `λ = (1, 2)`, where `∇g = (1, 0)`, it reads `g(2, 1) = 1 ≤ 2`
   (`hasFDerivAt_minFun`, `minFun_le_fderiv_minFun`).
 -/
@@ -126,9 +127,9 @@ theorem geomMean_eq (μ : Fin 2 → ℝ) : geomMean μ = (μ 0 * μ 1) ^ (2⁻¹
   simp [geomMean, Fin.prod_univ_two]
 
 /-- `(4 : ℝ) ^ (1/2) = 2`. -/
-theorem four_rpow_inv_two : (4 : ℝ) ^ (2⁻¹ : ℝ) = 2 := by
-  rw [show (4 : ℝ) = 2 ^ (2 : ℕ) by norm_num, ← Nat.cast_ofNat (R := ℝ) (n := 2),
-    Real.pow_rpow_inv_natCast (by norm_num) (by norm_num)]
+private theorem four_rpow_inv_two : (4 : ℝ) ^ (2⁻¹ : ℝ) = 2 := by
+  rw [show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_mul (by norm_num)]
+  norm_num
 
 /-- `σ₂(4, 1)^{1/2} = 2`. -/
 theorem geomMean_four_one : geomMean ![4, 1] = 2 := by
@@ -177,9 +178,14 @@ theorem geomMean_le_fderiv_geomMean :
 def minFun (μ : Fin 2 → ℝ) : ℝ := min (μ 0) (μ 1)
 
 /-- `min(x, y)` is concave, as the minimum of two linear functions. -/
-theorem concaveOn_minFun : ConcaveOn ℝ quadrant minFun :=
-  ((LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 0).concaveOn convex_quadrant).inf
-    ((LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 1).concaveOn convex_quadrant)
+theorem concaveOn_minFun : ConcaveOn ℝ quadrant minFun := by
+  have h : minFun = ⇑(LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 0) ⊓
+      ⇑(LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 1) := by
+    ext μ
+    simp [minFun]
+  rw [h]
+  exact ((LinearMap.proj 0).concaveOn convex_quadrant).inf
+    ((LinearMap.proj 1).concaveOn convex_quadrant)
 
 /-- `min(x, y)` is positively homogeneous of degree one. -/
 theorem minFun_smul {t : ℝ} (ht : 0 ≤ t) (μ : Fin 2 → ℝ) : minFun (t • μ) = t * minFun μ := by
@@ -196,8 +202,9 @@ theorem not_differentiableAt_minFun : ¬ DifferentiableAt ℝ minFun ![1, 1] := 
   have := congrArg (fun L ↦ L (Pi.single 0 1)) (h0.symm.trans h1)
   simp at this
 
-/-- **Without differentiability the tangent inequality fails**: at `λ = μ = (1, 1)` the total
-derivative of `min(x, y)` is `0` (Mathlib's value at a point of non-differentiability), and the
+/-- **The differentiability hypothesis cannot be dropped from the `fderiv` form of the tangent
+inequality**: `min(x, y)` is not differentiable at `(1, 1)`, so `fderiv` takes its default value
+`0` there (Mathlib's value at a point of non-differentiability), and at `λ = μ = (1, 1)` the
 inequality would read `1 ≤ 0`. -/
 theorem not_minFun_le_fderiv_minFun : ¬ minFun ![1, 1] ≤ fderiv ℝ minFun ![1, 1] ![1, 1] := by
   rw [fderiv_zero_of_not_differentiableAt not_differentiableAt_minFun]
