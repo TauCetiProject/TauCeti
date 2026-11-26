@@ -58,7 +58,8 @@ variable {X 𝕜 E E' : Type*} [TopologicalSpace X] [MeasurableSpace X] [R1Space
 
 /-- A uniformly bounded, strongly continuous operator field acts pointwise on `Lᵖ`,
 for `0 < p < ∞`. Strong continuity requires continuity after evaluation at each vector. -/
-theorem memLp_mulStrong (F : X → E →L[𝕜] E') (hF : ∀ v, Continuous fun x ↦ F x v)
+theorem memLp_apply_of_continuous_apply (F : X → E →L[𝕜] E')
+    (hF : ∀ v, Continuous fun x ↦ F x v)
     {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) (hp₀ : p ≠ 0) (hp : p ≠ ∞) (f : Lp E p μ) :
     MemLp (fun x ↦ F x (f x)) p μ :=
   (Lp.memLp f).of_le_mul (c := C)
@@ -82,7 +83,7 @@ def mulStrong (hp : p ≠ ∞) (F : X → E →L[𝕜] E') (hF : ∀ v, Continuo
     (hB : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) : Lp E p μ →L[𝕜] Lp E' p μ :=
   let mem (f : Lp E p μ) : MemLp (fun x ↦ F x (f x)) p μ := by
     obtain ⟨C, hC⟩ := hB
-    exact memLp_mulStrong μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f
+    exact memLp_apply_of_continuous_apply μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f
   LinearMap.mkContinuousOfExistsBound
     { toFun f := (mem f).toLp _
       map_add' f g := by
@@ -105,7 +106,8 @@ theorem coeFn_mulStrong [Fact (1 ≤ p)] (hp : p ≠ ∞) (F : X → E →L[𝕜
     (hF : ∀ v, Continuous fun x ↦ F x v) (hB : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) (f : Lp E p μ) :
     mulStrong μ hp F hF hB f =ᵐ[μ] fun x ↦ F x (f x) := by
   obtain ⟨C, hC⟩ := hB
-  exact (memLp_mulStrong μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f).coeFn_toLp
+  exact
+    (memLp_apply_of_continuous_apply μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f).coeFn_toLp
 
 /-- The operator norm of multiplication is bounded by any nonnegative uniform bound on
 the field. -/
@@ -114,7 +116,7 @@ theorem norm_mulStrong_le [Fact (1 ≤ p)] (hp : p ≠ ∞) (F : X → E →L[�
     {C : ℝ} (hC₀ : 0 ≤ C) (hC : ∀ x, ‖F x‖ ≤ C) :
     ‖mulStrong μ hp F hF hB‖ ≤ C :=
   ContinuousLinearMap.opNorm_le_bound _ hC₀ fun f ↦ norm_toLp_mulStrong_le μ F
-    (memLp_mulStrong μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f) hC
+    (memLp_apply_of_continuous_apply μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f) hC
 
 section Algebra
 
