@@ -7,10 +7,14 @@ module
 
 public import TauCeti.Analysis.Matrix.Cartan.Basic
 public import TauCeti.Analysis.Matrix.Polar.Deformation
-public import TauCeti.Geometry.Manifold.Instances.PositiveDefiniteMatrix
+public import TauCeti.Geometry.Manifold.Instances.PositiveDefiniteMatrix.DetOne
+public import TauCeti.Geometry.Manifold.Instances.SpecialLinearGroup
+public import TauCeti.Geometry.Manifold.Instances.Unitary.Special
+import TauCeti.Geometry.Lie.SpecialLinear.RealEmbedding
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
-# Polar coordinates on the general linear group
+# Polar coordinates on the general and special linear groups
 
 Over `𝕜 = ℝ` or `ℂ`, every invertible matrix factors uniquely as `A = P U` with `P = √(A Aᴴ)`
 positive definite and `U` unitary (orthogonal when `𝕜 = ℝ`)
@@ -50,10 +54,20 @@ of `V A W` are `(V U W, Wᴴ Q W)`
 `Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_mul_toUnits_snd`).
 
 They also restrict to determinant one: `det A = 1` exactly when `det P = 1` and `det U = 1`, because
-`det P = ‖det A‖` is positive. Hence the polar coordinates restrict to a homeomorphism
-`Matrix.SpecialLinearGroup.polarHomeomorph n 𝕜` from `SL(n, 𝕜)` onto the product of the
-positive-definite matrices of determinant one with the special unitary group `SU(n)` (`SO(n)` when
-`𝕜 = ℝ`).
+`det P = ‖det A‖` is positive, and likewise `det √(Aᴴ A) = ‖det A‖` (`Matrix.det_sqrt_star_mul`).
+Hence both polar coordinates restrict to global real smooth diffeomorphisms
+
+`Matrix.SpecialLinearGroup.polarDiffeomorph n 𝕜 : SL(n, 𝕜) ≃ₘ PosDefDetOne n 𝕜 × SU(n)`,
+`Matrix.SpecialLinearGroup.rightPolarDiffeomorph n 𝕜 : SL(n, 𝕜) ≃ₘ SU(n) × PosDefDetOne n 𝕜`
+
+onto the products of the positive-definite matrices of determinant one
+(`Matrix.PosDefDetOne n 𝕜`, with its regular-level structure) with the special unitary group
+`SU(n)` (`SO(n)` when `𝕜 = ℝ`, with its native Lie-group structure). The special linear group
+carries the real structure of its native analytic atlas. Its inclusion into `GL(n, 𝕜)` is an
+injective continuous homomorphism of real Lie groups, hence a smooth immersion, so the matrix
+inclusion of `SL(n, 𝕜)` is a real smooth embedding
+(`Matrix.SpecialLinearGroup.isSmoothEmbedding_subtypeVal_real`), and the inverse maps
+`(P, U) ↦ P U` and `(U, Q) ↦ U Q` are smooth because their matrix products are.
 
 To state or use the smooth structures, `open scoped Matrix.Norms.L2Operator` and enable
 `attribute [local instance] Matrix.l2OpNormedAlgebraReal`.
@@ -74,7 +88,9 @@ To state or use the smooth structures, `open scoped Matrix.Norms.L2Operator` and
   the right polar coordinates.
 * `Matrix.GeneralLinearGroup.det_eq_one_iff_polarDiffeomorph`: the determinant-one condition in
   polar coordinates.
-* `Matrix.SpecialLinearGroup.polarHomeomorph`: the restricted polar coordinates on `SL(n, 𝕜)`.
+* `Matrix.SpecialLinearGroup.polarDiffeomorph`, `Matrix.SpecialLinearGroup.rightPolarDiffeomorph`:
+  the polar and right polar coordinates on `SL(n, 𝕜)`, with `polarDiffeomorph_eq_iff` and
+  `rightPolarDiffeomorph_eq_iff` characterizing them as the unique factorizations.
 
 ## References
 
@@ -312,60 +328,175 @@ attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
 variable (n 𝕜) in
 /-- **Polar coordinates on `SL(n, 𝕜)`** for `𝕜 = ℝ` or `ℂ`: the restriction of the polar
-diffeomorphism `Matrix.GeneralLinearGroup.polarDiffeomorph` is a homeomorphism `A ↦ (√(A Aᴴ), U)`
-from the special linear group onto the product of the positive-definite matrices of determinant
-one with the special unitary group (the special orthogonal group when `𝕜 = ℝ`). Its inverse is
-`(P, U) ↦ P U`. -/
-def polarHomeomorph : SpecialLinearGroup n 𝕜 ≃ₜ
-    {P : posDefOpens n 𝕜 // ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1} ×
-      specialUnitaryGroup n 𝕜 where
+diffeomorphism `Matrix.GeneralLinearGroup.polarDiffeomorph` is a global real smooth
+diffeomorphism `A ↦ (√(A Aᴴ), U)` from the special linear group onto the product of the
+positive-definite matrices of determinant one with the special unitary group (the special
+orthogonal group when `𝕜 = ℝ`). Its inverse is `(P, U) ↦ P U`.
+
+The special linear group carries the real structure of its native analytic atlas, the
+positive-definite matrices of determinant one their regular-level structure
+(`Matrix.PosDefDetOne.instChartedSpace`), and the special unitary group its native Lie-group
+structure (`Matrix.specialUnitaryGroup.instChartedSpace`). To use this diffeomorphism, open the
+`Matrix.Norms.L2Operator` scope and enable `Matrix.l2OpNormedAlgebraReal` as a local instance. -/
+def polarDiffeomorph : SpecialLinearGroup n 𝕜 ≃ₘ^∞⟮𝓘(ℝ, Model n 𝕜),
+    𝓘(ℝ, PosDefDetOne.Model n 𝕜).prod (specialUnitaryGroup.model n 𝕜)⟯
+    PosDefDetOne n 𝕜 × specialUnitaryGroup n 𝕜 where
   toFun g :=
     have h := (det_eq_one_iff_polarDiffeomorph (toGL g)).1 g.property
-    (⟨(polarDiffeomorph n 𝕜 (toGL g)).1, h.1⟩,
-      ⟨(polarDiffeomorph n 𝕜 (toGL g)).2,
-        mem_specialUnitaryGroup_iff.2 ⟨(polarDiffeomorph n 𝕜 (toGL g)).2.property, h.2⟩⟩)
+    (⟨(GeneralLinearGroup.polarDiffeomorph n 𝕜 (toGL g)).1, h.1⟩,
+      ⟨(GeneralLinearGroup.polarDiffeomorph n 𝕜 (toGL g)).2,
+        mem_specialUnitaryGroup_iff.2
+          ⟨(GeneralLinearGroup.polarDiffeomorph n 𝕜 (toGL g)).2.property, h.2⟩⟩)
   invFun p := ⟨((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) * (p.2 : Matrix n n 𝕜), by
     rw [det_mul, p.1.property, (mem_specialUnitaryGroup_iff.1 p.2.property).2, mul_one]⟩
   left_inv g := Subtype.ext (Units.sqrt_mul_star_mul_polarUnitary (toGL g))
   right_inv := by
     rintro ⟨⟨P, hP⟩, U, hU⟩
-    have h := (polarDiffeomorph_eq_iff (toGL ⟨((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) *
-      (U : Matrix n n 𝕜),
-      by rw [det_mul, hP, (mem_specialUnitaryGroup_iff.1 hU).2, mul_one]⟩)
+    have h := (GeneralLinearGroup.polarDiffeomorph_eq_iff
+      (toGL ⟨((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) * (U : Matrix n n 𝕜),
+        by rw [det_mul, hP, (mem_specialUnitaryGroup_iff.1 hU).2, mul_one]⟩)
       (P, ⟨U, (mem_specialUnitaryGroup_iff.1 hU).1⟩)).2 rfl
     exact Prod.ext (Subtype.ext (congrArg Prod.fst h))
       (Subtype.ext (congrArg (fun q ↦ (q.2 : Matrix n n 𝕜)) h))
-  continuous_toFun := by
-    have h := (polarDiffeomorph n 𝕜).continuous.comp continuous_toGL
-    exact ((continuous_fst.comp h).subtype_mk _).prodMk
-      (((continuous_subtypeVal.comp (continuous_snd.comp h))).subtype_mk _)
-  continuous_invFun := by
-    have hP : Continuous fun p : {P : posDefOpens n 𝕜 //
-        ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1} × specialUnitaryGroup n 𝕜 ↦
-        ((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :=
-      continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_fst)
-    exact ((continuous_subtypeVal.comp hP).mul
-      (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
+  contMDiff_toFun := by
+    have h := (GeneralLinearGroup.polarDiffeomorph n 𝕜).contMDiff.comp contMDiff_toGL_real
+    refine ContMDiff.prodMk ?_ ?_
+    · exact PosDefDetOne.contMDiff_subtypeVal_comp_iff.1 (contMDiff_fst.comp h)
+    · exact specialUnitaryGroup.contMDiff_iff.2
+        (Unitary.contMDiff_val.comp (contMDiff_snd.comp h))
+  contMDiff_invFun := by
+    refine isSmoothEmbedding_subtypeVal_real.contMDiff_iff_comp.2 ?_
+    have hP : ContMDiff (𝓘(ℝ, PosDefDetOne.Model n 𝕜).prod (specialUnitaryGroup.model n 𝕜))
+        𝓘(ℝ, Matrix n n 𝕜) ∞ (fun p : PosDefDetOne n 𝕜 × specialUnitaryGroup n 𝕜 ↦
+          ((p.1.val : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜)) :=
+      PosDefDetOne.contMDiff_coe.comp contMDiff_fst
+    have hU : ContMDiff (𝓘(ℝ, PosDefDetOne.Model n 𝕜).prod (specialUnitaryGroup.model n 𝕜))
+        𝓘(ℝ, Matrix n n 𝕜) ∞ (fun p : PosDefDetOne n 𝕜 × specialUnitaryGroup n 𝕜 ↦
+          ((p.2 : specialUnitaryGroup n 𝕜) : Matrix n n 𝕜)) :=
+      specialUnitaryGroup.contMDiff_val.comp contMDiff_snd
+    exact (contDiff_mul.comp_contMDiff (hP.prodMk_space hU)).congr fun _ ↦ rfl
 
 /-- The positive-definite coordinate of the polar coordinates on `SL(n, 𝕜)` is `√(A Aᴴ)`. -/
 @[simp]
-theorem coe_polarHomeomorph_apply_fst (g : SpecialLinearGroup n 𝕜) :
-    ((((polarHomeomorph n 𝕜 g).1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :
+theorem coe_polarDiffeomorph_apply_fst (g : SpecialLinearGroup n 𝕜) :
+    ((((polarDiffeomorph n 𝕜 g).1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :
         Matrix n n 𝕜) = CFC.sqrt ((g : Matrix n n 𝕜) * star (g : Matrix n n 𝕜)) := (rfl)
 
 /-- The special unitary coordinate of the polar coordinates on `SL(n, 𝕜)` is the unitary polar
 factor. -/
 @[simp]
-theorem coe_polarHomeomorph_apply_snd (g : SpecialLinearGroup n 𝕜) :
-    ((polarHomeomorph n 𝕜 g).2 : Matrix n n 𝕜) = (toGL g).polarUnitary := (rfl)
+theorem coe_polarDiffeomorph_apply_snd (g : SpecialLinearGroup n 𝕜) :
+    ((polarDiffeomorph n 𝕜 g).2 : Matrix n n 𝕜) = (toGL g).polarUnitary := (rfl)
 
 /-- The inverse polar coordinates on `SL(n, 𝕜)` multiply the two coordinates. -/
 @[simp]
-theorem coe_polarHomeomorph_symm_apply
-    (p : {P : posDefOpens n 𝕜 // ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1} ×
-      specialUnitaryGroup n 𝕜) :
-    ((polarHomeomorph n 𝕜).symm p : Matrix n n 𝕜) =
+theorem coe_polarDiffeomorph_symm_apply (p : PosDefDetOne n 𝕜 × specialUnitaryGroup n 𝕜) :
+    ((polarDiffeomorph n 𝕜).symm p : Matrix n n 𝕜) =
       (((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) *
         (p.2 : Matrix n n 𝕜) := (rfl)
+
+/-- The polar coordinates on `SL(n, 𝕜)` are the unique factorization of `g` as a
+positive-definite matrix of determinant one times a special unitary matrix. -/
+theorem polarDiffeomorph_eq_iff (g : SpecialLinearGroup n 𝕜)
+    (p : PosDefDetOne n 𝕜 × specialUnitaryGroup n 𝕜) :
+    polarDiffeomorph n 𝕜 g = p ↔
+      (((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) *
+        (p.2 : Matrix n n 𝕜) = g := by
+  rw [← coe_polarDiffeomorph_symm_apply]
+  constructor
+  · rintro rfl
+    rw [Diffeomorph.symm_apply_apply]
+  · intro h
+    rw [← Subtype.ext h, Diffeomorph.apply_symm_apply]
+
+/-! ### The right polar coordinates on `SL(n, 𝕜)` -/
+
+variable (n 𝕜) in
+/-- **Right polar coordinates on `SL(n, 𝕜)`** for `𝕜 = ℝ` or `ℂ`: the restriction of the right
+polar diffeomorphism `Matrix.GeneralLinearGroup.rightPolarDiffeomorph` is a global real smooth
+diffeomorphism `A ↦ (U, √(Aᴴ A))` from the special linear group onto the product of the special
+unitary group (the special orthogonal group when `𝕜 = ℝ`) with the positive-definite matrices of
+determinant one. Its inverse is `(U, Q) ↦ U Q`, and its special unitary coordinate `U` is that of
+`Matrix.SpecialLinearGroup.polarDiffeomorph`.
+
+To use this diffeomorphism, open the `Matrix.Norms.L2Operator` scope and enable
+`Matrix.l2OpNormedAlgebraReal` as a local instance. -/
+def rightPolarDiffeomorph : SpecialLinearGroup n 𝕜 ≃ₘ^∞⟮𝓘(ℝ, Model n 𝕜),
+    (specialUnitaryGroup.model n 𝕜).prod 𝓘(ℝ, PosDefDetOne.Model n 𝕜)⟯
+    specialUnitaryGroup n 𝕜 × PosDefDetOne n 𝕜 where
+  toFun g :=
+    (⟨(GeneralLinearGroup.rightPolarDiffeomorph n 𝕜 (toGL g)).1, mem_specialUnitaryGroup_iff.2
+        ⟨(GeneralLinearGroup.rightPolarDiffeomorph n 𝕜 (toGL g)).1.property, by
+          rw [GeneralLinearGroup.rightPolarDiffeomorph_apply_fst]
+          exact det_polarUnitary_of_det_eq_one (toGL g) g.property⟩⟩,
+      ⟨(GeneralLinearGroup.rightPolarDiffeomorph n 𝕜 (toGL g)).2, by
+        rw [GeneralLinearGroup.coe_rightPolarDiffeomorph_apply_snd]
+        exact (det_sqrt_star_mul (g : Matrix n n 𝕜)).trans (by
+          rw [g.property, norm_one, RCLike.ofReal_one])⟩)
+  invFun p := ⟨(p.1 : Matrix n n 𝕜) * ((p.2 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)), by
+    rw [det_mul, p.2.property, (mem_specialUnitaryGroup_iff.1 p.1.property).2, mul_one]⟩
+  left_inv g := Subtype.ext ((GeneralLinearGroup.coe_rightPolarDiffeomorph_symm_apply _).symm.trans
+    (congrArg Units.val ((GeneralLinearGroup.rightPolarDiffeomorph n 𝕜).symm_apply_apply (toGL g))))
+  right_inv := by
+    rintro ⟨⟨U, hU⟩, ⟨Q, hQ⟩⟩
+    have h := (GeneralLinearGroup.rightPolarDiffeomorph_eq_iff
+      (toGL ⟨(U : Matrix n n 𝕜) * ((Q : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜),
+        by rw [det_mul, hQ, (mem_specialUnitaryGroup_iff.1 hU).2, mul_one]⟩)
+      (⟨U, (mem_specialUnitaryGroup_iff.1 hU).1⟩, Q)).2 rfl
+    exact Prod.ext (Subtype.ext (congrArg (fun q ↦ (q.1 : Matrix n n 𝕜)) h))
+      (Subtype.ext (congrArg Prod.snd h))
+  contMDiff_toFun := by
+    have h := (GeneralLinearGroup.rightPolarDiffeomorph n 𝕜).contMDiff.comp contMDiff_toGL_real
+    refine ContMDiff.prodMk ?_ ?_
+    · exact specialUnitaryGroup.contMDiff_iff.2
+        (Unitary.contMDiff_val.comp (contMDiff_fst.comp h))
+    · exact PosDefDetOne.contMDiff_subtypeVal_comp_iff.1 (contMDiff_snd.comp h)
+  contMDiff_invFun := by
+    refine isSmoothEmbedding_subtypeVal_real.contMDiff_iff_comp.2 ?_
+    have hU : ContMDiff ((specialUnitaryGroup.model n 𝕜).prod 𝓘(ℝ, PosDefDetOne.Model n 𝕜))
+        𝓘(ℝ, Matrix n n 𝕜) ∞ (fun p : specialUnitaryGroup n 𝕜 × PosDefDetOne n 𝕜 ↦
+          ((p.1 : specialUnitaryGroup n 𝕜) : Matrix n n 𝕜)) :=
+      specialUnitaryGroup.contMDiff_val.comp contMDiff_fst
+    have hQ : ContMDiff ((specialUnitaryGroup.model n 𝕜).prod 𝓘(ℝ, PosDefDetOne.Model n 𝕜))
+        𝓘(ℝ, Matrix n n 𝕜) ∞ (fun p : specialUnitaryGroup n 𝕜 × PosDefDetOne n 𝕜 ↦
+          ((p.2.val : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜)) :=
+      PosDefDetOne.contMDiff_coe.comp contMDiff_snd
+    exact (contDiff_mul.comp_contMDiff (hU.prodMk_space hQ)).congr fun _ ↦ rfl
+
+/-- The special unitary coordinate of the right polar coordinates on `SL(n, 𝕜)` is the unitary
+polar factor. -/
+@[simp]
+theorem coe_rightPolarDiffeomorph_apply_fst (g : SpecialLinearGroup n 𝕜) :
+    ((rightPolarDiffeomorph n 𝕜 g).1 : Matrix n n 𝕜) = (toGL g).polarUnitary :=
+  congrArg Subtype.val (GeneralLinearGroup.rightPolarDiffeomorph_apply_fst (toGL g))
+
+/-- The positive-definite coordinate of the right polar coordinates on `SL(n, 𝕜)` is the right
+positive factor `√(Aᴴ A)`. -/
+@[simp]
+theorem coe_rightPolarDiffeomorph_apply_snd (g : SpecialLinearGroup n 𝕜) :
+    ((((rightPolarDiffeomorph n 𝕜 g).2 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :
+        Matrix n n 𝕜) = CFC.sqrt (star (g : Matrix n n 𝕜) * g) :=
+  GeneralLinearGroup.coe_rightPolarDiffeomorph_apply_snd (toGL g)
+
+/-- The inverse right polar coordinates on `SL(n, 𝕜)` multiply the two coordinates. -/
+@[simp]
+theorem coe_rightPolarDiffeomorph_symm_apply (p : specialUnitaryGroup n 𝕜 × PosDefDetOne n 𝕜) :
+    ((rightPolarDiffeomorph n 𝕜).symm p : Matrix n n 𝕜) =
+      (p.1 : Matrix n n 𝕜) * (((p.2 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :
+        Matrix n n 𝕜) := (rfl)
+
+/-- The right polar coordinates on `SL(n, 𝕜)` are the unique factorization of `g` as a special
+unitary matrix times a positive-definite matrix of determinant one. -/
+theorem rightPolarDiffeomorph_eq_iff (g : SpecialLinearGroup n 𝕜)
+    (p : specialUnitaryGroup n 𝕜 × PosDefDetOne n 𝕜) :
+    rightPolarDiffeomorph n 𝕜 g = p ↔
+      (p.1 : Matrix n n 𝕜) * (((p.2 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :
+        Matrix n n 𝕜) = g := by
+  rw [← coe_rightPolarDiffeomorph_symm_apply]
+  constructor
+  · rintro rfl
+    rw [Diffeomorph.symm_apply_apply]
+  · intro h
+    rw [← Subtype.ext h, Diffeomorph.apply_symm_apply]
 
 end Matrix.SpecialLinearGroup
