@@ -32,7 +32,8 @@ the measurable finite labels.
 
 ## References
 
-* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Problem 4.8, p. 130.
+* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, §§4.1–4.3, pp. 103–108; Problems 4.8–4.9,
+  p. 130. Entropies there are in base 2; here they use natural logarithms.
 -/
 
 public section
@@ -142,7 +143,7 @@ theorem abs_toReal_partitionEntropyRate_sub_le [IsZeroOrProbabilityMeasure μ] [
 
 /-- **The finite-partition formula.** For a measure-preserving map of a probability space (or the
 zero measure), the Kolmogorov–Sinai entropy is the supremum of the entropy rates of the
-measurable finite labels `a : X → Fin n`, the value `∞` included. -/
+measurable finite labels `a : X → Fin n`, the value `∞` included (Sarig 2023, Problem 4.9). -/
 theorem measureEntropy_eq_iSup_fin [IsZeroOrProbabilityMeasure μ]
     (hT : MeasurePreserving T μ μ) :
     measureEntropy μ T =
