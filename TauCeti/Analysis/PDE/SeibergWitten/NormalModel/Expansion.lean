@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.FlatWeitzenbock
 public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Basic
+import TauCeti.Analysis.Calculus.Deriv.Mul
 
 /-!
 # The exact quadratic expansion of the flat limiting Seiberg–Witten equations
@@ -104,12 +105,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 -- The dimension `Fact` makes the oriented four-space finite-dimensional.
 attribute [local instance] finiteDimensional_of_finrank_four
-
-/-- A quadratic polynomial `t ↦ u + t • v + t ^ 2 • w` has derivative `v` at `0`. -/
-private theorem hasDerivAt_add_smul_add_sq_smul {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (u v w : E) : HasDerivAt (fun t : ℝ ↦ u + t • v + t ^ 2 • w) v 0 := by
-  convert ((hasDerivAt_const (0 : ℝ) u).add ((hasDerivAt_id (0 : ℝ)).smul_const v)).add
-    (((hasDerivAt_id (0 : ℝ)).pow 2).smul_const w) using 1 <;> simp [Pi.add_def]
 
 variable [Fact (finrank ℝ V = 4)] {ψ ζ : V → positiveHalfSpinors o ρ}
 
@@ -274,6 +269,7 @@ theorem flatCurvature_eq_iff (ω : ⋀[ℝ]^2 V) :
   rw [flatCurvature_def, eq_sub_iff_add_eq]
 
 /-- The curvature side of the flat limiting curvature equation is self-dual. -/
+@[simp]
 theorem hodgeStar_flatCurvature (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → positiveHalfSpinors o ρ)
     (x : V) : o.hodgeStar hkl (flatCurvature o ρ hkl b ψ x) = flatCurvature o ρ hkl b ψ x := by
   rw [flatCurvature_def, map_add, map_add, map_smul,
