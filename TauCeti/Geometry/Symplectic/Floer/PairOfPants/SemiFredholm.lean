@@ -122,7 +122,8 @@ theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V
     (hξS : tsupport ξ ⊆ thricePuncturedSphereReal) (q : Puncture) (a : ℝ) :
     IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart q)) (Ioi a ×ˢ Icc 0 1) := by
   -- Beyond some `N` in the end chart, `ξ` vanishes identically.
-  obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc hξS q
+  obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc fun z hz ↦
+    Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hξS hz)) q
   exact integrableOn_sobolevDensity_of_eventuallyEq_zero
     (continuous_sobolevDensity (hξ.comp (contDiff_positiveEndChart q 1))) hzero a
 
@@ -167,7 +168,8 @@ theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart
     IntegrableOn (sobolevDensity (covectorPullback (positiveEndChart q) J u η))
       (Ioi a ×ˢ Icc 0 1) := by
   -- Beyond some `N` in the end chart, `η` vanishes identically.
-  obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc hηS q
+  obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc fun z hz ↦
+    Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hηS hz)) q
   refine integrableOn_sobolevDensity_of_eventuallyEq_zero
     (continuous_sobolevDensity_covectorPullback_positiveEndChart hJ hu hη hηS q)
     (N := N) (fun ζ hζN ↦ ?_) a
