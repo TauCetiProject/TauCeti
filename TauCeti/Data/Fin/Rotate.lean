@@ -52,6 +52,7 @@ theorem finRotate_finProdFinEquiv_last {r k : ℕ} (a : Fin r) :
 
 /-- If each block is extended by the head of the next block, the entry after any position
 in that block is the entry of the original tuple at the cyclic successor of that position. -/
+@[simp↓]
 theorem snoc_finProdFinEquiv_succ {α : Type*} {r k : ℕ}
     (u : Fin (r * (k + 1)) → α) (a : Fin r) (t : Fin (k + 1)) :
     snoc (α := fun _ ↦ α) (fun j ↦ u (finProdFinEquiv (a, j)))

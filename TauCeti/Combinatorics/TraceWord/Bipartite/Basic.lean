@@ -254,6 +254,17 @@ theorem bipartitePath_odd (u : Fin (k + 1) → α) (v : Fin k → β)
       (finSumFinInterleaveEquiv k (.inr t)).castSucc := by ext; simp
   simp [bipartitePath, h]
 
+/-- A vertex of a bipartite path lies on the row side exactly at an even position. -/
+@[simp]
+theorem bipartitePath_isLeft (u : Fin (k + 1) → α) (v : Fin k → β)
+    (t : Fin (2 * k + 1)) : (bipartitePath u v t).isLeft = decide ((t : ℕ) % 2 = 0) := by
+  induction t using Fin.lastCases with
+  | last => simp
+  | cast t =>
+    obtain ⟨a | b, rfl⟩ := (finSumFinInterleaveEquiv k).surjective t
+    · simp [bipartitePath]
+    · simp [bipartitePath]
+
 /-- A bipartite path determines both of its tuples of vertices. -/
 theorem bipartitePath_injective :
     Function.Injective (fun uv : (Fin (k + 1) → α) × (Fin k → β) ↦
@@ -276,13 +287,8 @@ theorem exists_eq_bipartitePath_iff (w : Fin (2 * k + 1) → α ⊕ β) :
     (∃ (u : Fin (k + 1) → α) (v : Fin k → β), bipartitePath u v = w) ↔
       ∀ t, (w t).isLeft = decide ((t : ℕ) % 2 = 0) := by
   constructor
-  · rintro ⟨u, v, rfl⟩ t
-    induction t using Fin.lastCases with
-    | last => simp
-    | cast t =>
-      obtain ⟨a | b, rfl⟩ := (finSumFinInterleaveEquiv k).surjective t
-      · simp [bipartitePath]
-      · simp [bipartitePath]
+  · rintro ⟨u, v, rfl⟩
+    exact bipartitePath_isLeft u v
   · intro h
     let u (t : Fin (k + 1)) := (w ⟨2 * t, by omega⟩).getLeft (by
       rw [h]
