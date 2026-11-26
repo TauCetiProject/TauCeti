@@ -163,4 +163,29 @@ theorem relNorm_comp_extendedHom :
   ext c
   rw [MonoidHom.comp_apply, powMonoidHom_apply, relNorm_extendedHom]
 
+section Localization
+
+variable {Rₘ Sₘ : Type*} [CommRing Rₘ] [CommRing Sₘ]
+  [IsDedekindDomain Rₘ] [IsDedekindDomain Sₘ]
+  [Algebra R Rₘ] [Algebra S Sₘ] [Algebra Rₘ Sₘ] [Algebra R Sₘ]
+  [IsScalarTower R Rₘ Sₘ] [IsScalarTower R S Sₘ]
+  [Module.IsTorsionFree R Rₘ] [Module.IsTorsionFree S Sₘ] [Module.IsTorsionFree Rₘ Sₘ]
+  [Module.Finite Rₘ Sₘ]
+
+/-- The class-group norm commutes with extension of ideals to a localization when the upper
+ring is localized at the image of the same denominators as the base ring. -/
+theorem relNorm_extendedHom_of_isLocalization (M : Submonoid R) [IsLocalization M Rₘ]
+    [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ] (c : ClassGroup S) :
+    relNorm Rₘ (extendedHom S Sₘ c) = extendedHom R Rₘ (relNorm R c) := by
+  have hM : M ≤ R⁰ := fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
+    (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
+  obtain ⟨I, rfl⟩ := mk0_surjective c
+  rw [extendedHom_mk0, relNorm_mk0, relNorm_mk0, extendedHom_mk0]
+  apply congrArg mk0
+  apply Subtype.ext
+  simpa only [Ideal.coe_relNorm0, ← Ideal.spanNorm_eq] using
+    Ideal.spanIntNorm_localization R (I : Ideal S) M hM Sₘ
+
+end Localization
+
 end ClassGroup
