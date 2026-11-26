@@ -26,6 +26,8 @@ Since `K` is discriminated by the free group `F₂`, the free product `H ∗ K` 
 * `TauCeti.LimitGroup.isDiscriminatedBy_inl_coprod`: for a nonabelian CSA group `H` with the big
   powers property and a fully residually free group `K`, the free product `H ∗ K` is
   discriminated by `H` over `H`.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.coprod`: the free product of a nonabelian fully
+  residually free group and a fully residually free group is fully residually free.
 
 ## References
 
@@ -51,5 +53,13 @@ theorem isDiscriminatedBy_inl_coprod {H K : Type*} [Group H] [Group K] (hBP : Is
     IsDiscriminatedBy (inl : H →* H ∗ K) (MonoidHom.id H) :=
   ((isFullyResiduallyFree_iff_isDiscriminatedBy.1 hK).coprod_inl H).trans
     (GX.isDiscriminatedBy hBP hCSA hH)
+
+/-- **Free products of fully residually free groups.** The free product `H ∗ K` of a nonabelian
+fully residually free group `H` and a fully residually free group `K` is fully residually free,
+being discriminated by `H`. -/
+theorem IsFullyResiduallyFree.coprod {H K : Type*} [Group H] [Group K]
+    (hH : IsFullyResiduallyFree H) (hHc : ¬IsMulCommutative H) (hK : IsFullyResiduallyFree K) :
+    IsFullyResiduallyFree (H ∗ K) :=
+  hH.of_isDiscriminatedBy (isDiscriminatedBy_inl_coprod hH.isBP hH.isCSA hHc hK)
 
 end TauCeti.LimitGroup

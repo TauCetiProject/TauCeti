@@ -26,7 +26,9 @@ the angle from `a` to `b`: `√(1 - ⟪a, b⟫²) = |ω(a, b)|`, so `⟪a, b⟫ 
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
 basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`, and
 every real two-form on `ℂ` is a multiple of it
-(`ContinuousAlternatingMap.apply_eq_apply_one_I_mul_im`).
+(`ContinuousAlternatingMap.apply_eq_apply_one_I_mul_im`). So multiplying both vectors by `c`
+scales it by `|c|²` (`ContinuousAlternatingMap.apply_mul_mul`); in particular it is invariant under
+multiplication by `I` (`ContinuousAlternatingMap.apply_I_mul_I_mul`).
 
 An orthonormal basis `b` of a Euclidean plane identifies the plane with `ℂ` by
 `Complex.isometryOfOrthonormal b`, and the complex coordinate so defined carries the orientation of
@@ -158,5 +160,26 @@ theorem apply_eq_apply_one_I_mul_im (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin
   rw [h]
   simp only [mul_im, conj_re, conj_im]
   ring
+
+/-- Multiplying both vectors by `c` scales a real two-form on `ℂ` by `|c|²`:
+`α(c u, c v) = |c|² α(u, v)`. -/
+theorem apply_mul_mul (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (c u v : ℂ) :
+    α ![c * u, c * v] = ‖c‖ ^ 2 * α ![u, v] := by
+  rw [apply_eq_apply_one_I_mul_im, apply_eq_apply_one_I_mul_im α ![u, v], ← normSq_eq_norm_sq,
+    normSq_apply]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, mul_im, mul_re, conj_re, conj_im]
+  ring
+
+/-- Every real two-form on `ℂ` is invariant under multiplication by `I`:
+`α(I u, I v) = α(u, v)`. -/
+@[simp]
+theorem apply_I_mul_I_mul (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (u v : ℂ) :
+    α ![I * u, I * v] = α ![u, v] := by
+  rw [apply_mul_mul, norm_I, one_pow, one_mul]
+
+/-- A real two-form on `ℂ` takes the value `α(1, I) |u|²` on the pair `(u, I u)`. -/
+theorem apply_I_mul_eq_apply_one_I_mul_norm_sq (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (u : ℂ) :
+    α ![u, I * u] = α ![1, I] * ‖u‖ ^ 2 := by
+  rw [mul_comm I, mul_comm (α _), ← apply_mul_mul, mul_one]
 
 end ContinuousAlternatingMap

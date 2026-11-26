@@ -72,17 +72,7 @@ lemma δ_app_pullbackSections_μ (N : X.Modules) (x : Γ(M, U)) (y : Γ(N, U)) :
           (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N (x ⊗ₜ y))) =
       Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor (g ⁻¹ᵁ U)) _ _
         (pullbackSections g M U x ⊗ₜ pullbackSections g N U y) := by
-  -- The unit of the adjunction is monoidal; the tensor map of sections is natural, and that of
-  -- pushforward is the identity on pure tensors of sections over the inverse image.
-  have h := congr($((pullbackPushforwardAdjunction g).unit_app_tensor_comp_map_δ M N).app U
-    (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N (x ⊗ₜ y)))
-  have hn := congr($(Functor.LaxMonoidal.μ_natural (Scheme.Modules.sectionsFunctor U)
-    ((pullbackPushforwardAdjunction g).unit.app M)
-    ((pullbackPushforwardAdjunction g).unit.app N)) (x ⊗ₜ y))
-  have hp := SheafOfModules.pushforward_μ_app_tmul.{u} g.toRingCatSheafHom
-    ((pullback g).obj M) ((pullback g).obj N) (op U) (pullbackSections g M U x)
-      (pullbackSections g N U y)
-  exact h.trans ((congrArg _ hn.symm).trans hp)
+  exact SheafOfModules.pullback_δ_app_unit_tmul g.toRingCatSheafHom M N (op U) x y
 /-- The identification `g^* 𝒪_X ≅ 𝒪_Y` sends the pullback of a function `r` on `U` to the
 function `g^♯ r` on `g⁻¹ U`. -/
 lemma pullbackObjUnitIso_hom_app_pullbackSections_ε (r : Γ(X, U)) :
@@ -153,6 +143,11 @@ lemma presheaf_map_pullbackSectionsLE {V' : Y.Opens} (i : V' ⟶ V) (s : Γ(M, U
 @[simp] lemma pullbackSectionsLE_self (s : Γ(M, U)) :
     pullbackSectionsLE g M U (g ⁻¹ᵁ U) le_rfl s = Scheme.Hom.pullbackSections g M U s := by
   simp [pullbackSectionsLE]
+/-- Pulling a global section back to the whole source agrees with the canonical section
+pullback, the inverse image of the whole target being the whole source. -/
+@[simp] lemma pullbackSectionsLE_top (s : Γ(M, ⊤)) :
+    pullbackSectionsLE g M ⊤ ⊤ g.preimage_top.ge s = Scheme.Hom.pullbackSections g M ⊤ s :=
+  pullbackSectionsLE_self g M ⊤ s
 /-- Pullback to a smaller open is natural in the coefficient sheaf. -/
 lemma pullbackSectionsLE_naturality {N : X.Modules} (φ : M ⟶ N) (s : Γ(M, U)) :
     ((pullback g).map φ).app V (pullbackSectionsLE g M U V hV s) =
@@ -344,5 +339,19 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.pullbackComp_inv_comp_app_pullback
   -- `((f ≫ g) ⁻¹ᵁ W)` is definitionally `f ⁻¹ᵁ (g ⁻¹ᵁ W)`.
   exact congrArg (β.app (f ⁻¹ᵁ (g ⁻¹ᵁ W)))
     (Scheme.Hom.pullbackSections_naturality f _ (g ⁻¹ᵁ W) α (g.pullbackSections M W s))
+
+/-- Around a commutative square `t ≫ r = l ≫ b`, the comparison `t^* r^* ≅ l^* b^*` sends the
+iterated pullback of a section along `r` and `t` to its iterated pullback along `b` and `l`, on
+any open of the corner contained in both inverse images. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.pullbackCompIsoOfCommSq_hom_app_pullbackSectionsLE
+    {X Y Z W : Scheme.{u}} {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z} (sq : CommSq t l r b)
+    (M : Z.Modules) (U : Z.Opens) (V : Y.Opens) (hV : V ≤ r ⁻¹ᵁ U) (V' : W.Opens)
+    (hV' : V' ≤ b ⁻¹ᵁ U) (O : X.Opens) (hO : O ≤ t ⁻¹ᵁ V) (hO' : O ≤ l ⁻¹ᵁ V') (s : Γ(M, U)) :
+    ((pullbackCompIsoOfCommSq sq).hom.app M).app O
+        (t.pullbackSectionsLE _ V O hO (r.pullbackSectionsLE M U V hV s)) =
+      l.pullbackSectionsLE _ V' O hO' (b.pullbackSectionsLE M U V' hV' s) := by
+  simp only [pullbackCompIsoOfCommSq_hom_app, Modules.Hom.comp_app, ConcreteCategory.comp_apply]
+  rw [pullbackSectionsLE_comp_hom, pullbackSectionsLE_congr,
+    pullbackSectionsLE_comp b M U l V' hV' hO']
 
 end AlgebraicGeometry.Scheme.Hom

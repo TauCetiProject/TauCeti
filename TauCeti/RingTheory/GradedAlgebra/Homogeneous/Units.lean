@@ -70,8 +70,9 @@ variable {ι A σ : Type*} [DecidableEq ι] [AddGroup ι] [Semiring A] [SetLike 
 homogeneous of degree `-d`. -/
 theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
     ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (-d) :=
-  TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hu u.isRegular.left
-    (by rw [Units.mul_inv, add_neg_cancel]; exact SetLike.one_mem_graded 𝒜)
+  TauCeti.GradedAlgebra.mem_of_mul_mul_eq_self 𝒜 (add_neg_cancel d) hu
+    (by rw [Units.mul_inv]; exact SetLike.one_mem_graded 𝒜)
+    (by rw [Units.inv_mul]; exact SetLike.one_mem_graded 𝒜) (by rw [Units.inv_mul, one_mul])
 
 end Inverse
 

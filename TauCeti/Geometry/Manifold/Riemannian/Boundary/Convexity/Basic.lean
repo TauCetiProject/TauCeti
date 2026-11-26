@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Isometry
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # Convexity of the boundary of a Riemannian manifold
@@ -32,7 +33,9 @@ Let `M` be a Riemannian manifold with boundary modelled on the half-space `𝓡�
   concavity at a point exclude each other.
 * `TauCeti.isStrictlyConvexAt_of_eq_zero`, `TauCeti.isStrictlyConcaveAt_of_eq_zero`: in dimension
   one (`n = 0`), `T_q∂M = 0` and the boundary is both strictly convex and strictly concave at every
-  point, so the exclusion needs `n ≥ 1`.
+  point, so the exclusion needs `n ≥ 1`. Likewise the uniform bound `II_q(u, u) ≥ c h_q(u, u)`
+  holds for every `c` there
+  (`TauCeti.mul_boundaryInducedForm_le_boundarySecondFundamentalForm_of_eq_zero`).
 * `TauCeti.RiemannianIsometry.isStrictlyConvexAt_iff`, `isConvexAt_iff`,
   `isStrictlyConcaveAt_iff`, `isStrictlyConvexOn_iff` and `isStrictlyConvexBoundary_iff`: the
   predicates are invariant under isometries of Riemannian manifolds with boundary, since
@@ -149,24 +152,27 @@ theorem IsStrictlyConvexAt.not_isStrictlyConcaveAt [NeZero n] {q : (𝓡∂ (n +
   obtain ⟨u, hu⟩ := exists_ne (0 : EuclideanSpace ℝ (Fin n))
   exact (isStrictlyConvexAt_iff.1 h u hu).not_gt (isStrictlyConcaveAt_iff.1 h' u hu)
 
-/-- In dimension one (`n = 0`) every tangent vector of the boundary vanishes: `T_q∂M` is the type
-`EuclideanSpace ℝ (Fin 0)`, a subsingleton, under the name `TangentSpace`. -/
-private theorem eq_zero_of_eq_zero (hn : n = 0) {q : (𝓡∂ (n + 1)).boundary M}
-    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) : u = 0 := by
-  subst hn
-  exact Subsingleton.elim (α := EuclideanSpace ℝ (Fin 0)) u 0
-
 /-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the boundary is
 strictly convex at every point. -/
 theorem isStrictlyConvexAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
-    IsStrictlyConvexAt q :=
-  isStrictlyConvexAt_iff.2 fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
+    IsStrictlyConvexAt q := by
+  subst hn
+  exact isStrictlyConvexAt_iff.2 fun u hu ↦ (hu (Subsingleton.elim u 0)).elim
 
 /-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the boundary is
 strictly concave at every point. -/
 theorem isStrictlyConcaveAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
-    IsStrictlyConcaveAt q :=
-  isStrictlyConcaveAt_iff.2 fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
+    IsStrictlyConcaveAt q := by
+  subst hn
+  exact isStrictlyConcaveAt_iff.2 fun u hu ↦ (hu (Subsingleton.elim u 0)).elim
+
+/-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the uniform bound
+`II_q(u, u) ≥ c h_q(u, u)` holds for every constant `c`. -/
+theorem mul_boundaryInducedForm_le_boundarySecondFundamentalForm_of_eq_zero (hn : n = 0) (c : ℝ)
+    (q : (𝓡∂ (n + 1)).boundary M) (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    c * boundaryInducedForm q u u ≤ boundarySecondFundamentalForm q u u := by
+  subst hn
+  rw [Subsingleton.elim u 0, map_zero, map_zero, mul_zero]
 
 /-! ### Invariance under isometries -/
 

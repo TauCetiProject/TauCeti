@@ -441,6 +441,14 @@ theorem denseRange_ofInter [CompleteSpace X₀] [CompleteSpace X₁] (θ : ℝ) 
   rintro _ ⟨g, hg, rfl⟩
   exact Set.mem_range.2 (by simpa [ContinuousLinearMap.coe_coe] using hle hg)
 
+/-- Continuous linear maps out of `[X₀, X₁]_θ` that agree on the dense subspace `X₀ ∩ X₁` are
+equal. -/
+theorem ext_ofInter [CompleteSpace X₀] [CompleteSpace X₁] {θ : ℝ} {E : Type*}
+    [AddCommMonoid E] [Module ℂ E] [TopologicalSpace E] [T2Space E]
+    {f g : C.ComplexMethodSpace θ →L[ℂ] E} (h : ∀ x : C.inter, f (ofInter θ x) = g (ofInter θ x)) :
+    f = g :=
+  DFunLike.coe_injective <| (denseRange_ofInter θ).equalizer f.continuous g.continuous (funext h)
+
 /-! ### Maps of interpolation spaces from elementary traces -/
 
 section ElementaryMap

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Leibniz
@@ -96,6 +97,9 @@ and tangential parts.
   lies in `W^{2,2}(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_halfSpace` and
   `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace`: the case of a half-space.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_mapsTo` and its half-space
+  case `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_halfSpace`: every first
+  derivative of the solution lies in `H¹(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_of_mapsTo` and its half-space case
   `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_of_halfSpace`: for Lipschitz
   coefficients, a tangential derivative of the solution lies in `H¹₀(Ω)`.
@@ -392,8 +396,7 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
   set D : ℝ := Lam * M + K * ‖W1p.gradient U‖
   have hν' : (‖e‖ ^ 2)⁻¹ • e = e := by simp [he]
   have hb : ∀ i, ‖b i‖ = 1 := fun i => b.orthonormal.1 i
-  have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := fun z =>
-    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ z)
+  have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := inner_starProjection_orthogonal_singleton_eq_zero ℝ e
   have hPb : ∀ i, ‖P (b i)‖ ≤ 1 := fun i =>
     (Submodule.norm_starProjection_apply_le _ (b i)).trans_eq (hb i)
   have hgK : 0 ≤ (K : ℝ) * ‖W1p.gradient U‖ := by positivity
@@ -468,11 +471,10 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tange
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G e := by
   set Py := (ℝ ∙ e)ᗮ.starProjection y
   have hdec : y = ⟪y, e⟫_ℝ • e + Py := by
-    rw [real_inner_comm, ← Submodule.starProjection_unit_singleton ℝ he,
-      Submodule.starProjection_add_starProjection_orthogonal]
+    rw [real_inner_comm]
+    exact (inner_smul_add_starProjection_eq ℝ he y).symm
   -- `∂_e ∂_y u = ⟪y, e⟫ ∂_e ∂_e u + ∂_{P y} ∂_e u`, where weak derivatives commute.
-  have hPy : ⟪Py, e⟫_ℝ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ y)
+  have hPy : ⟪Py, e⟫_ℝ = 0 := inner_starProjection_orthogonal_singleton_eq_zero ℝ e y
   have hPyn : ‖Py‖ ≤ ‖y‖ := Submodule.norm_starProjection_apply_le _ y
   obtain ⟨G₁, hG₁n, hG₁⟩ := htan e Py hPy
   have hsplit : ∀ x, ⟪y, e⟫_ℝ * ⟪W1p.gradient U x, e⟫_ℝ + ⟪W1p.gradient U x, Py⟫_ℝ =
@@ -506,12 +508,11 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_normal_of_ta
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G w := by
   set Pw := (ℝ ∙ e)ᗮ.starProjection w
   have hdec : ⟪w, e⟫_ℝ • e + Pw = w := by
-    rw [real_inner_comm, ← Submodule.starProjection_unit_singleton ℝ he,
-      Submodule.starProjection_add_starProjection_orthogonal]
+    rw [real_inner_comm]
+    exact inner_smul_add_starProjection_eq ℝ he w
   obtain ⟨G₁, hG₁n, hG₁⟩ :=
     exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tangential he hM hGeen hGee htan y
-  have hPw : ⟪Pw, e⟫_ℝ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ w)
+  have hPw : ⟪Pw, e⟫_ℝ = 0 := inner_starProjection_orthogonal_singleton_eq_zero ℝ e w
   have hPwn : ‖Pw‖ ≤ ‖w‖ := Submodule.norm_starProjection_apply_le _ w
   obtain ⟨G₂, hG₂n, hG₂⟩ := htan y Pw hPw
   -- `∂_w = ⟪w, e⟫ ∂_e + ∂_{P w}`.
@@ -750,9 +751,10 @@ private theorem exists_forall_energyFormH1_ofTestFunctionₗ_eq_of_hasWeakLineDe
     (fun i j => (hsmooth i j).of_le (by simp)) hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
   exact integral_congr_ae (hF.coeFn_toLp.mono fun x hx => congrArg (· * φ x) hx.symm)
 
-/-- Under the hypotheses of `UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`, every first weak
-derivative of the solution `u ∈ H¹₀(Ω)` lies in `H¹(Ω)`, since `u ∈ H²(Ω)`. -/
-private theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_mapsTo (hν : ν ≠ 0)
+/-- **First derivatives lie in `H¹(Ω)`.** Under the hypotheses of
+`UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`, for every direction `v` the weak derivative
+`∂ᵥu` of the solution `u ∈ H¹₀(Ω)` exists and lies in `H¹(Ω)`, since `u ∈ H²(Ω)`. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_mapsTo (hν : ν ≠ 0)
     (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
@@ -764,6 +766,23 @@ private theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_mapsTo (hν
   obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U v
   rw [Wkp.value_succ, hU, Wkp.value_one, Wkp.value_one (u : W1p mu Omega 2)] at hd
   exact ⟨d, hd⟩
+
+/-- **First derivatives lie in `H¹` up to the boundary of a half-space.** Let
+`Ω = {x | c < ⟪x, ν⟫}` with `ν ≠ 0`, let `a` be uniformly elliptic and bounded on `Ω`, with
+`x ↦ a(x)` Lipschitz on `Ω` as a bilinear form, and let `u ∈ H¹₀(Ω)` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ L²(Ω)`. Then for every direction `v`, normal ones included, the weak
+derivative `∂ᵥu` exists and lies in `H¹(Ω)`. This is the half-space case of
+`TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_mapsTo`. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_halfSpace (hν : ν ≠ 0)
+    (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) (v : EuclideanSpace ℝ ι) :
+    ∃ d : W1p mu Omega 2,
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) v :=
+  ha.exists_hasWeakLineDerivOn_w1p_of_mapsTo hν
+    (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK hu v
 
 /-- **Tangential derivatives have zero boundary values.** Let `ν ≠ 0` and let `Ω` be convex and
 mapped into itself by every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a
@@ -946,7 +965,7 @@ private theorem exists_nonneg_forall_exists_norm_le_hasWeakLineDerivOn_inner_gra
   -- `P` is the orthogonal projection onto `(ℝ ∙ e)ᗮ`.
   set P := (ℝ ∙ e)ᗮ.starProjection
   choose G hG using fun i k => htan (b i) (P (b k))
-    (Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ _))
+    (inner_starProjection_orthogonal_singleton_eq_zero ℝ e (b k))
   refine ⟨∑ i, ∑ k, ‖G i k‖, by positivity, fun y τ hτ => ?_⟩
   -- `τ = ∑ₖ ⟪τ, bₖ⟫ P bₖ` and `⟪∇u, y⟫ = ∑ᵢ ⟪y, bᵢ⟫ ⟪∇u, bᵢ⟫`.
   have hτP : ∑ k, ⟪τ, b k⟫_ℝ • P (b k) = τ := by

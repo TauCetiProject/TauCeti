@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.EssentiallySmall
+public import TauCeti.CategoryTheory.Preadditive.UnipotentCommutator
 
 import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
@@ -38,6 +39,19 @@ universal property and its two structure maps: the difference map
 Grothendieck group of `C`, and the maps `TauCeti.RelativeK0.map` induced by commuting squares of
 functors.
 
+The presentation uses only direct sums, but when `D` is preadditive with binary biproducts it
+already satisfies the relation for split short exact sequences of triples
+(`TauCeti.RelativeK0.of_eq_add_of_inl_comp_eq_of_comp_snd_eq`): if
+`γ : T (P₁ ⊞ P₂) ≅ T (Q₁ ⊞ Q₂)` is triangular, restricting to `α₁` on the first summand and
+inducing `α₂` on the second, then `(P₁ ⊞ P₂, γ, Q₁ ⊞ Q₂) = (P₁, α₁, Q₁) + (P₂, α₂, Q₂)`, whatever
+its off-diagonal block. That block need not come from a morphism of `C`: the unipotent
+automorphism it defines becomes a commutator after adding a summand
+(`CategoryTheory.Biprod.unipotentLower_biprod_eq_commutatorElement`), and commutators have trivial
+class because the automorphisms of a fixed `T P` contribute additively
+(`TauCeti.RelativeK0.of_trans_commutatorElement_trans`). This is the additivity that Weibel's
+presentation of `K₀(T)` imposes along short exact sequences of triples, for those sequences which
+split, as all short exact sequences of finitely generated projective modules do.
+
 ## Main definitions
 
 * `TauCeti.RelativeK0.tripleBiprod x y`: the direct sum of two triples.
@@ -58,6 +72,11 @@ functors.
   `TauCeti.RelativeK0.of_symm` (`(Q, α⁻¹, P) = -(P, α, Q)`) and `TauCeti.RelativeK0.of_mapIso`
   (`(P, T γ, Q) = 0` for every isomorphism `γ : P ≅ Q`).
 * `TauCeti.RelativeK0.exists_eq_of`: every element of `K₀(T)` is the class of a single triple.
+* `TauCeti.RelativeK0.of_trans_commutatorElement_trans`: commutators of automorphisms have
+  trivial class.
+* `TauCeti.RelativeK0.of_eq_add_of_inl_comp_eq_of_comp_snd_eq`: the relation for triangular
+  isomorphisms, with the unipotent case
+  `TauCeti.RelativeK0.of_eq_zero_of_inl_comp_eq_of_comp_snd_eq`.
 * `TauCeti.RelativeK0.liftEquiv`: the universal property.
 * `TauCeti.RelativeK0.splitK0Map_comp_toSplitK0_eq_zero`: the composite `K₀(T) → K₀(C) → K₀(D)`
   vanishes.
@@ -72,6 +91,8 @@ functors.
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II,
   Definition 2.10 (the relative group `K₀(f)` of a ring map and `K₀(R, I)`) and Exercise 2.17
   (the group `K₀(T)` of a cofinal functor and its exact sequence).
+* Charles A. Weibel, *The K-book*, Chapter III, Lemma 1.3.2 (the commutator identity for
+  elementary matrices behind the triangular relation).
 -/
 
 public section
@@ -451,6 +472,93 @@ end ZeroTarget
 end RelativeK0
 
 end Triples
+
+section Triangular
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  {D : Type u'} [Category.{v'} D] {T : C ⥤ D}
+
+namespace RelativeK0
+
+section Commutator
+
+variable [HasZeroMorphisms D] [T.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T]
+  [EssentiallySmall.{w} C] [LocallySmall.{w} D]
+
+open scoped commutatorElement in
+/-- The class of a commutator of automorphisms of an object of `D` vanishes, once the object is
+identified with an image `T P`: the automorphisms of a fixed `T P` contribute additively. -/
+theorem of_trans_commutatorElement_trans {P : C} {W : D} (e : T.obj P ≅ W) (a b : Aut W) :
+    (of ⟨P, P, e ≪≫ (⁅a, b⁆ : Aut W).asIso ≪≫ e.symm⟩ : RelativeK0 T) = 0 := by
+  have h (x : Aut W) : (of ⟨P, P, e ≪≫ x⁻¹.asIso ≪≫ e.symm⟩ : RelativeK0 T) =
+      -of ⟨P, P, e ≪≫ x.asIso ≪≫ e.symm⟩ := by
+    rw [← of_symm, show e ≪≫ x⁻¹.asIso ≪≫ e.symm = (e ≪≫ x.asIso ≪≫ e.symm).symm by ext; simp]
+  have h' (x y : Aut W) : (of ⟨P, P, e ≪≫ (x * y).asIso ≪≫ e.symm⟩ : RelativeK0 T) =
+      of ⟨P, P, e ≪≫ x.asIso ≪≫ e.symm⟩ + of ⟨P, P, e ≪≫ y.asIso ≪≫ e.symm⟩ := by
+    rw [add_comm, ← of_trans, show e ≪≫ (x * y).asIso ≪≫ e.symm =
+      (e ≪≫ y.asIso ≪≫ e.symm) ≪≫ (e ≪≫ x.asIso ≪≫ e.symm) by ext; simp]
+  rw [commutatorElement_def, h', h', h', h, h]
+  abel
+
+end Commutator
+
+variable [Preadditive D] [HasBinaryBiproducts D] [T.PreservesZeroMorphisms]
+  [PreservesBiproductsOfShape WalkingPair T] [EssentiallySmall.{w} C] [LocallySmall.{w} D]
+
+open scoped commutatorElement in
+/-- An automorphism of `T (Q₁ ⊞ Q₂)` which fixes `T` of the first inclusion and induces the
+identity along `T` of the second projection has trivial class, whatever its off-diagonal block:
+after adding the identity triple on `Q₂` it becomes a commutator. -/
+theorem of_eq_zero_of_inl_comp_eq_of_comp_snd_eq {Q₁ Q₂ : C}
+    {u : T.obj (Q₁ ⊞ Q₂) ≅ T.obj (Q₁ ⊞ Q₂)}
+    (h₁ : T.map biprod.inl ≫ u.hom = T.map biprod.inl)
+    (h₂ : u.hom ≫ T.map biprod.snd = T.map biprod.snd) :
+    (of ⟨Q₁ ⊞ Q₂, Q₁ ⊞ Q₂, u⟩ : RelativeK0 T) = 0 := by
+  have := preservesBinaryBiproducts_of_preservesBiproducts T
+  set M := T.mapBiprod Q₁ Q₂
+  -- Add the identity triple on `Q₂` and identify `T ((Q₁ ⊞ Q₂) ⊞ Q₂)` with
+  -- `(T Q₁ ⊞ T Q₂) ⊞ T Q₂`, where `u ⊞ 𝟙` becomes a commutator.
+  set E : T.obj ((Q₁ ⊞ Q₂) ⊞ Q₂) ≅ (T.obj Q₁ ⊞ T.obj Q₂) ⊞ T.obj Q₂ :=
+    T.mapBiprod (Q₁ ⊞ Q₂) Q₂ ≪≫ biprod.mapIso M (Iso.refl _)
+  have h : T.mapBiprod (Q₁ ⊞ Q₂) Q₂ ≪≫ biprod.mapIso u (Iso.refl _) ≪≫
+      (T.mapBiprod (Q₁ ⊞ Q₂) Q₂).symm =
+      E ≪≫ (Aut.of (biprod.mapIso (M.symm ≪≫ u ≪≫ M) (Iso.refl _))).asIso ≪≫ E.symm := by
+    have hu : biprod.mapIso u (Iso.refl (T.obj Q₂)) = biprod.mapIso M (Iso.refl _) ≪≫
+        biprod.mapIso (M.symm ≪≫ u ≪≫ M) (Iso.refl _) ≪≫ (biprod.mapIso M (Iso.refl _)).symm := by
+      ext <;> simp
+    rw [hu]
+    simp only [E, Iso.trans_symm, Iso.trans_assoc]
+  have h' : (of ⟨(Q₁ ⊞ Q₂) ⊞ Q₂, (Q₁ ⊞ Q₂) ⊞ Q₂, T.mapBiprod (Q₁ ⊞ Q₂) Q₂ ≪≫
+      biprod.mapIso u (Iso.refl _) ≪≫ (T.mapBiprod (Q₁ ⊞ Q₂) Q₂).symm⟩ : RelativeK0 T) =
+      of ⟨Q₁ ⊞ Q₂, Q₁ ⊞ Q₂, u⟩ + of ⟨Q₂, Q₂, Iso.refl _⟩ :=
+    of_tripleBiprod ⟨Q₁ ⊞ Q₂, Q₁ ⊞ Q₂, u⟩ ⟨Q₂, Q₂, Iso.refl _⟩
+  rw [of_refl, add_zero, h, T.mapBiprod_symm_trans_trans_eq_unipotentLower u h₁ h₂,
+    Biprod.unipotentLower_biprod_eq_commutatorElement, of_trans_commutatorElement_trans] at h'
+  exact h'.symm
+
+/-- The relation for triangular isomorphisms: if `γ : T (P₁ ⊞ P₂) ≅ T (Q₁ ⊞ Q₂)` restricts to
+`α₁` along `T` of the first inclusions and induces `α₂` along `T` of the second projections, then
+`(P₁ ⊞ P₂, γ, Q₁ ⊞ Q₂) = (P₁, α₁, Q₁) + (P₂, α₂, Q₂)`, whatever its off-diagonal block
+`T P₂ ⟶ T Q₁`. This is the relation imposed by a split short exact sequence of triples. -/
+theorem of_eq_add_of_inl_comp_eq_of_comp_snd_eq {P₁ P₂ Q₁ Q₂ : C} {α₁ : T.obj P₁ ≅ T.obj Q₁}
+    {α₂ : T.obj P₂ ≅ T.obj Q₂} {γ : T.obj (P₁ ⊞ P₂) ≅ T.obj (Q₁ ⊞ Q₂)}
+    (h₁ : T.map biprod.inl ≫ γ.hom = α₁.hom ≫ T.map biprod.inl)
+    (h₂ : γ.hom ≫ T.map biprod.snd = T.map biprod.snd ≫ α₂.hom) :
+    (of ⟨P₁ ⊞ P₂, Q₁ ⊞ Q₂, γ⟩ : RelativeK0 T) = of ⟨P₁, Q₁, α₁⟩ + of ⟨P₂, Q₂, α₂⟩ := by
+  have := preservesBinaryBiproducts_of_preservesBiproducts T
+  set δ := T.mapBiprod P₁ P₂ ≪≫ biprod.mapIso α₁ α₂ ≪≫ (T.mapBiprod Q₁ Q₂).symm
+  have hδ : (of ⟨P₁ ⊞ P₂, Q₁ ⊞ Q₂, δ⟩ : RelativeK0 T) = of ⟨P₁, Q₁, α₁⟩ + of ⟨P₂, Q₂, α₂⟩ :=
+    of_tripleBiprod ⟨P₁, Q₁, α₁⟩ ⟨P₂, Q₂, α₂⟩
+  have hδ₁ : T.map biprod.inl ≫ δ.inv = α₁.inv ≫ T.map biprod.inl := by simp [δ]
+  have hδ₂ : δ.inv ≫ T.map biprod.snd = T.map biprod.snd ≫ α₂.inv := by simp [δ]
+  have hγ : γ = δ ≪≫ (δ.symm ≪≫ γ) := by simp
+  rw [hγ, of_trans, hδ, of_eq_zero_of_inl_comp_eq_of_comp_snd_eq (u := δ.symm ≪≫ γ), add_zero]
+  · simp [reassoc_of% hδ₁, h₁]
+  · simp [h₂, reassoc_of% hδ₂]
+
+end RelativeK0
+
+end Triangular
 
 section TripleMap
 

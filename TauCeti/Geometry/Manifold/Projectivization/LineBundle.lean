@@ -199,6 +199,11 @@ theorem twistCore_localTriv_baseSet (k : ℤ) (i : Fin (n + 1)) :
     ((twistCore (𝕜 := 𝕜) k).localTriv i).baseSet = affineOpen i :=
   (rfl)
 
+/-- The preferred chart of `𝒪(k)` at `x` is the affine open chosen by `exists_mem_affineOpen x`. -/
+theorem twistCore_indexAt (k : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    (twistCore k).indexAt x = (exists_mem_affineOpen x).choose :=
+  (rfl)
+
 /-- The preferred chart of `𝒪(k)` at `x` is the chart of the manifold structure at `x`. -/
 theorem chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt (k : ℤ)
     (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
