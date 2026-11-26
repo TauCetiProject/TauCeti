@@ -104,9 +104,9 @@ All in the namespace `TauCeti.Vortex`:
 * `exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFixedOperator` and
   `exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq`:
   the global weighted estimates for `η` and `L_x* η` in terms of `L_x L_x* η`.
-* `exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le`: weighted coercivity
-  `δ ∫ V² |η|² ≤ ∫ V² ⟪L_x L_x* η, η⟫` for the smooth weight `V = exp(c Φ)` centred on the zeros,
-  with `b`, `δ` depending only on the degree `m` and `c`.
+* `exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le_gaugeFixedOperator`:
+  weighted coercivity `δ ∫ V² |η|² ≤ ∫ V² ⟪L_x L_x* η, η⟫` for the smooth weight `V = exp(c Φ)`
+  centred on the zeros, with `b`, `δ` depending only on the degree `m` and `c`.
 * `exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixedOperator` and
   `exists_integral_exp_mul_infDist_sq_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral`: the same
   estimates with weights `exp(c d_D)` centred on the zeros, with constants depending only on `m`
@@ -631,24 +631,6 @@ private theorem card_toFinset_le_of_tendsto {m : ℕ} {D : Multiset ℂ}
     (hD : IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z)) : D.toFinset.card ≤ m :=
   (Multiset.toFinset_card_le D).trans (hD.card_eq_of_tendsto_mul_inv_pow hframe).le
 
-/-- An angle cutoff `θ₀` with gradient at most `ε` that equals `π / 2` near every `t` with
-`R₂ < |t|`, composed with `Φ - s₀` for a differentiable `Φ` with gradient at most one, has
-gradient at most `ε` and equals `π / 2` near every `z` with `R₂ < Φ z - s₀`. -/
-private theorem norm_fderiv_comp_sub_le_and_eventuallyEq {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {θ₀ : ℝ → ℝ} {Φ : E → ℝ} {ε R₂ : ℝ} (s₀ : ℝ) (hθ₀ : Differentiable ℝ θ₀)
-    (hΦ : Differentiable ℝ Φ) (hθ₀out : ∀ t, R₂ < ‖t‖ → θ₀ =ᶠ[𝓝 t] fun _ ↦ π / 2)
-    (hθ₀d : ∀ t, ‖fderiv ℝ θ₀ t‖ ≤ ε) (hΦd : ∀ z, ‖fderiv ℝ Φ z‖ ≤ 1) :
-    (∀ z, ‖fderiv ℝ (fun t ↦ θ₀ (Φ t - s₀)) z‖ ≤ ε) ∧
-      ∀ z, R₂ < Φ z - s₀ → (fun t ↦ θ₀ (Φ t - s₀)) =ᶠ[𝓝 z] fun _ ↦ π / 2 := by
-  refine ⟨fun z ↦ ?_, fun z hz ↦ ?_⟩
-  · have hd : HasFDerivAt (fun t ↦ θ₀ (Φ t - s₀))
-        ((fderiv ℝ θ₀ (Φ z - s₀)).comp (fderiv ℝ Φ z)) z :=
-      (hθ₀ _).hasFDerivAt.comp z ((hΦ z).hasFDerivAt.sub_const s₀)
-    rw [hd.fderiv]
-    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-    simpa using mul_le_mul (hθ₀d _) (hΦd z) (norm_nonneg _) ((norm_nonneg _).trans (hθ₀d 0))
-  · exact ((hΦ z).sub_const s₀).continuousAt.eventually (hθ₀out _ (hz.trans_le (le_abs_self _)))
-
 /-- At a vortex with the degree-`m` end framing and zero divisor `D`, let `16 m < C`, `a < 1 / 4`
 and `ρ = √(m C / (1 - 4a))`. Wherever the soft distance to the zeros differs from `√b + ρ` by more
 than `ρ + log m`, every zero is at distance at least `ρ` and the mass `|α|² / 4` is at least `a`. -/
@@ -676,8 +658,8 @@ and `|c| < 1/2` there are `b > 0` and `δ > 0` such that every smooth vortex `x`
 degree-`m` end framing and zero divisor `D` satisfies `δ ∫ V² |η|² ≤ ∫ V² ⟪L_x L_x* η, η⟫` for
 every test field `η`, where `V = exp (c Φ)` and `Φ = softMinDist b D.toFinset` is the smooth
 distance to the zeros. The constants do not depend on the vortex. -/
-theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le (m : ℕ)
-    {c : ℝ} (hc : |c| < 1 / 2) :
+theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le_gaugeFixedOperator
+    (m : ℕ) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ b > 0, ∃ δ > 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ),
       ContDiff ℝ ∞ x → (∀ z, equation x z = 0) →
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
@@ -762,7 +744,8 @@ theorem exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixe
         K * ∫ z, Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ)) ^ 2 *
           ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ := by
   obtain ⟨b, hb, δ, hδ, hW⟩ :=
-    exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le (μ := μ) m hc
+    exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le_gaugeFixedOperator
+      (μ := μ) m hc
   set E : ℝ := Real.exp (|c| * (√b + Real.log m)) ^ 2
   refine ⟨E * E / δ ^ 2, by positivity, fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
   have hx₁ : ContDiff ℝ 1 x := hx.of_le (by simp)
