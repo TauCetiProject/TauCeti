@@ -455,8 +455,10 @@ theorem lower_pow_basis_zero (j : Fin (m + 1)) :
     have hidx : (⟨((i.castSucc : Fin (m + 1)) : ℕ) + 1, by simp⟩ : Fin (m + 1)) = i.succ := by
       ext; simp
     rw [Fin.val_succ, pow_succ', mul_apply_eq_comp, ← Fin.val_castSucc, ih, map_smul,
-      lower_basis _ i.isLt, hidx, smul_smul, Nat.factorial_succ, Nat.cast_mul, Nat.cast_succ,
-      mul_comm]
+      lower_basis _ i.isLt, hidx, smul_smul]
+    congr 1
+    push_cast [Nat.factorial_succ]
+    ring
 
 /-- The Cartan operator on the ladder basis: `H v_j = (m - 2j) v_j`. -/
 theorem diag_basis (j : Fin (m + 1)) :
