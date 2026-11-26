@@ -44,6 +44,12 @@ the lift of a smooth function. The case `k = 0` is **Nikol'skii's inequality**
 `‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`, the gain of integrability of a trigonometric polynomial
 (`TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm`).
 
+These are the periodic counterparts of the whole-space inequalities
+`TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`: a block of a
+periodic Littlewood–Paley decomposition with frequencies of size `2 ^ j` behaves like a function at
+the single scale `2 ^ (-j)`, so that each derivative costs a factor `2 ^ j` and passing from `Lᵖ`
+to `L^q` costs `2 ^ (j d (1/p - 1/q))`.
+
 Conversely, on an annulus the derivatives control the function. The **reverse Bernstein
 inequality** says that there is `C`, depending only on `d` and `θ`, such that for `1 ≤ p ≤ ∞`
 every integrable `f` with Fourier coefficients vanishing outside the annulus `R ≤ ‖n‖ ≤ θ R`,
@@ -52,13 +58,8 @@ every integrable `f` with Fourier coefficients vanishing outside the annulus `R 
 `‖f‖_p ≤ C R⁻¹ ∑ᵢ ‖∂ᵢ f‖_p`
 
 (`TauCeti.UnitAddTorus.exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq`), where `∂ᵢ f`
-is any integrable function with Fourier coefficients `2πi nᵢ f̂(n)`.
-
-These are the periodic counterparts of the whole-space inequalities
-`TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`: a block of a
-periodic Littlewood–Paley decomposition with frequencies of size `2 ^ j` behaves like a function at
-the single scale `2 ^ (-j)`, so that each derivative costs a factor `2 ^ j` and passing from `Lᵖ`
-to `L^q` costs `2 ^ (j d (1/p - 1/q))`.
+is any integrable function with Fourier coefficients `2πi nᵢ f̂(n)`. Its whole-space
+counterpart is `OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`.
 
 ## The argument
 
