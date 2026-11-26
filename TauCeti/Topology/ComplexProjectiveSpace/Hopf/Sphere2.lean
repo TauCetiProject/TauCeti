@@ -42,6 +42,8 @@ vanishes.
   `π_k(S³) → π_k(S²)` for `k ≥ 3`.
 * `TauCeti.hopfSphere2HomotopyGroupMulEquiv`: the induced isomorphism of homotopy groups.
 * `TauCeti.nonempty_addEquiv_int_homotopyGroup_three_sphere2`: `π₃(S²) ≅ ℤ`.
+* `TauCeti.hopfSphere2Hom_mem_serreFibrations`: the Hopf map `S³ → S²` is a Serre fibration.
+* `TauCeti.hopfSphere2FiberHomeomorph`: its fibres are circles.
 
 ## References
 
@@ -107,5 +109,36 @@ theorem nonempty_addEquiv_int_homotopyGroup_three_sphere2 (x : Sphere2) :
   exact ⟨((hopfSphere2HomotopyGroupMulEquiv (by simp) v).symm.trans
     (HomotopyGroup.homeomorphMulEquiv e v)).toAdditive.trans
       (homotopyGroupSphereAddEquiv (n := 1) (EuclideanSpace.basisFun (Fin 4) ℝ) (e v))⟩
+
+/-! ### The Hopf map as a fibration -/
+
+/-- The Hopf map `S³ → S²` (`TauCeti.hopfSphere2`), as a morphism of topological spaces. -/
+abbrev hopfSphere2Hom : TopCat.of (sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) ⟶ TopCat.of Sphere2 :=
+  TopCat.ofHom hopfSphere2
+
+open CategoryTheory in
+/-- **The Hopf map `S³ → S²` is a Serre fibration**: it is the Hopf fibration `S³ → CP¹` followed
+by the homeomorphism `CP¹ ≃ₜ S²`. -/
+theorem hopfSphere2Hom_mem_serreFibrations : TopCat.serreFibrations hopfSphere2Hom := by
+  have : hopfHom 1 ≫ (TopCat.isoOfHomeo homeomorphSphere2).hom = hopfSphere2Hom := by
+    ext v : 1
+    exact homeomorphSphere2_mk v
+  rw [← this]
+  exact MorphismProperty.RespectsIso.postcomp _ _ _ (mk_mem_serreFibrations 1)
+
+/-- **The fibres of the Hopf map `S³ → S²` are circles**: the fibre over `x` is homeomorphic to the
+unit circle, through the orbit map `u ↦ u • v` of a point `v` of the fibre. It is the fibre of the
+Hopf fibration `S³ → CP¹` (`TauCeti.ComplexProjectiveSpace.hopfFiberHomeomorph`), carried along
+`CP¹ ≃ₜ S²`. -/
+def hopfSphere2FiberHomeomorph (x : Sphere2) :
+    sphere (0 : ℂ) 1 ≃ₜ (hopfSphere2 ⁻¹' {x} : Set _) :=
+  (hopfFiberHomeomorph (hopfSphere2_surjective x).choose).trans
+    ((Homeomorph.refl _).subtype fun w ↦ by
+      have hv := (hopfSphere2_surjective x).choose_spec
+      generalize (hopfSphere2_surjective x).choose = v at hv ⊢
+      subst hv
+      rw [Homeomorph.refl_apply, id_eq, Set.mem_preimage, Set.mem_singleton_iff,
+        Set.mem_preimage, Set.mem_singleton_iff, ← homeomorphSphere2_mk, ← homeomorphSphere2_mk,
+        homeomorphSphere2.injective.eq_iff])
 
 end TauCeti
