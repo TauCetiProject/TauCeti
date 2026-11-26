@@ -19,6 +19,8 @@ data attached to `x`.
 
 ## Main results
 
+* `contDiffAt_iteratedFDeriv_snd`: the iterated derivative `(x, w) ↦ D^i (f x) w` in the second
+  variable is jointly `C^m`.
 * `ContDiffAt.iteratedFDeriv`: the parametric iterated derivative is `C^m`.
 -/
 
@@ -33,7 +35,7 @@ variable {𝕜 X E F : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The iterated derivative in the second variable of a jointly `C^n` map is jointly `C^m`, when
 `m + i ≤ n`. -/
-private theorem contDiffAt_iteratedFDeriv_snd {f : X → E → F} {p : X × E}
+theorem contDiffAt_iteratedFDeriv_snd {f : X → E → F} {p : X × E}
     (hf : ContDiffAt 𝕜 n (uncurry f) p) {i : ℕ} (hmn : m + i ≤ n) :
     ContDiffAt 𝕜 m (fun q : X × E ↦ iteratedFDeriv 𝕜 i (f q.1) q.2) p := by
   induction i generalizing m with
