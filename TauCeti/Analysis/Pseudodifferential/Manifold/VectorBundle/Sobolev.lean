@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle
 # Sobolev estimates for pseudodifferential operators between vector bundles
 
 Let `M` be a manifold modelled on `ℝⁿ`, let `E`, `F` be smooth complex vector bundles over `M`
-with finite-dimensional model fibres `V` and `W`, and let `P : Γ(E) → Γ(F)` be a classical
+with model fibres `V` (finite-dimensional) and `W`, and let `P : Γ(E) → Γ(F)` be a classical
 pseudodifferential operator of order `m` (`TauCeti.sectionClassicalPseudodifferentialOperators`).
 A smooth section `u` of `E` is read in a chart `e'` of the maximal atlas, a trivialization `t` of
 `E` and a cutoff `ψ` in the chart target through its frame coefficients: for a basis `(b_k)` of
@@ -70,8 +70,10 @@ bounds the reading of each term through `φ` in `e` in `H^{s - m}` by the readin
   of `u` for a partition.
 * `exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`:
   the Sobolev estimate `‖P u‖_{H^{s - m}} ≤ C ‖u‖_{H^s}` in these norms. Its left side is such a
-  Sobolev norm of `P u` when the `φⱼ ∘ eⱼ` add up to `1` and each `χⱼ` equals `1` on
-  `eⱼ⁻¹(supp φⱼ)`; for other `χⱼ` it bounds the readings of `P u` cut off by `χⱼ`.
+  Sobolev norm of `P u` when the `φⱼ ∘ eⱼ` add up to `1`, each `χⱼ` equals `1` on
+  `eⱼ⁻¹(supp φⱼ)` and the `ℓₗ` are the coordinate functionals of a basis of `W` (so `W` is
+  finite-dimensional). For other data it bounds the readings `φⱼ · (χⱼ ℓₗ(t'ⱼ (P u)) ∘ eⱼ⁻¹)`
+  of `P u`, without being a norm of `P u` (for an empty family of `ℓₗ` it is `0`).
 
 ## References
 
