@@ -73,8 +73,8 @@ theorem trace_eq_zero_of_apply_eq_neg [IsGalois K L] {τ : Gal(L/K)} (hτ : τ �
     (hττ : τ * τ = 1) {x : L} (hx : τ x = -x) : trace K L x = 0 := by
   by_cases hfin : FiniteDimensional K L
   swap
-  · rw [trace_eq_zero_of_not_exists_basis K fun ⟨_, ⟨b⟩⟩ ↦ hfin (Module.Finite.of_basis b)]
-    rfl
+  · rw [trace_eq_zero_of_not_exists_basis K fun ⟨_, ⟨b⟩⟩ ↦ hfin (Module.Finite.of_basis b),
+      LinearMap.zero_apply]
   refine FaithfulSMul.algebraMap_injective K L ?_
   rw [trace_eq_sum_automorphisms, map_zero]
   refine Finset.sum_involution (fun g _ ↦ g * τ) (fun g _ ↦ ?_) (fun g _ _ ↦ ?_)

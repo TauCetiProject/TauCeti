@@ -30,7 +30,8 @@ form on `V` (`TauCeti.SignedHermitianSpace.traceForm`), preserved by the unitary
 merely skew-symmetric; if moreover the pairing `(a, b) ↦ t (a b)` on `K` is nondegenerate, so is
 `t ∘ h`. Thus the unitary group of a skew-hermitian space lies in the symplectic group of its trace
 form. For the trace of a finite Galois extension of fields and an automorphism `τ ≠ 1`, both
-conditions hold (`TauCeti.SignedHermitianSpace.nondegenerate_traceForm_trace`).
+conditions hold (`TauCeti.SignedHermitianSpace.isAlt_traceForm_trace`,
+`TauCeti.SignedHermitianSpace.nondegenerate_traceForm_trace`).
 
 ## Main definitions
 
@@ -42,6 +43,8 @@ conditions hold (`TauCeti.SignedHermitianSpace.nondegenerate_traceForm_trace`).
 
 ## Main statements
 
+* `TauCeti.SignedHermitianSpace.unitsSMul_unitsSMul`: rescaling by `c` and then by `d` is
+  rescaling by `d c`.
 * `TauCeti.SignedHermitianSpace.equivalent_unitsSMul_iff`,
   `TauCeti.SignedHermitianSpace.unitsSMul_prod`,
   `TauCeti.SignedHermitianSpace.isometryGroup_unitsSMul`: rescaling preserves isometry classes,
@@ -52,6 +55,10 @@ conditions hold (`TauCeti.SignedHermitianSpace.nondegenerate_traceForm_trace`).
   of `K` is.
 * `TauCeti.SignedHermitianSpace.restrictScalars_mem_isometryGroup_traceForm`: the unitary group
   preserves the trace form.
+* `TauCeti.SignedHermitianSpace.isAlt_traceForm_trace`,
+  `TauCeti.SignedHermitianSpace.nondegenerate_traceForm_trace`: for a Galois extension of fields
+  and `τ ≠ 1`, the trace form of a skew-hermitian form is alternating; for a finite separable
+  extension it is nondegenerate, for any automorphism and sign.
 
 ## References
 
@@ -75,10 +82,15 @@ variable {K V V₁ V₂ : Type*} [CommRing K] {σ : K →+* K} {ε ε' : ℤˣ}
 theorem map_units_inv_eq_smul {c : Kˣ} (hc : σ c = (ε' * ε) • (c : K)) :
     σ ↑c⁻¹ = (ε * ε') • (↑c⁻¹ : K) := by
   rw [mul_comm ε]
-  calc σ ↑c⁻¹ = σ ↑c⁻¹ * (σ c * ((ε' * ε) • (↑c⁻¹ : K))) := by
-        rw [hc, smul_mul_smul_comm, Int.units_mul_self, one_smul, Units.mul_inv, mul_one]
-    _ = (ε' * ε) • (↑c⁻¹ : K) := by
-        rw [← mul_assoc, ← map_mul, Units.inv_mul, map_one, one_mul]
+  refine left_inv_eq_right_inv (a := σ c) ?_ ?_
+  · simp [← map_mul]
+  · simp [hc, smul_mul_smul_comm]
+
+/-- If `σ c = ε' ε c` and `σ d = ε'' ε' d` for units `c` and `d`, then `σ (d c) = ε'' ε (d c)`. -/
+theorem map_units_mul_eq_smul {ε'' : ℤˣ} {c d : Kˣ} (hc : σ c = (ε' * ε) • (c : K))
+    (hd : σ d = (ε'' * ε') • (d : K)) : σ ↑(d * c) = (ε'' * ε) • (↑(d * c) : K) := by
+  rcases Int.units_eq_one_or ε with rfl | rfl <;> rcases Int.units_eq_one_or ε' with rfl | rfl <;>
+    rcases Int.units_eq_one_or ε'' with rfl | rfl <;> simp_all
 
 /-- **Rescaling** an `ε`-hermitian form `h` by a unit `c` with `σ c = ε' ε c`: the form `c h` is
 `ε'`-hermitian. For `σ δ = -δ`, rescaling by `δ⁻¹` turns skew-hermitian forms into hermitian
@@ -98,8 +110,23 @@ theorem unitsSMul_form_apply (H : SignedHermitianSpace K V σ ε) (c : Kˣ)
     (H.unitsSMul c hc).form x y = c * H.form x y :=
   (rfl)
 
-/-- Rescaling by `c` and then by `c⁻¹` returns the original form. -/
+/-- Rescaling by `1` does nothing. -/
 @[simp]
+theorem unitsSMul_one (H : SignedHermitianSpace K V σ ε)
+    (h : σ ((1 : Kˣ) : K) = (ε * ε) • ((1 : Kˣ) : K)) : H.unitsSMul 1 h = H := by
+  ext x y
+  simp
+
+/-- Rescaling by `c` and then by `d` is rescaling by `d c`. In particular, replacing the
+trace-zero unit `δ` by `a δ` multiplies the rescaled form `δ⁻¹ w` by `a⁻¹`. -/
+@[simp]
+theorem unitsSMul_unitsSMul {ε'' : ℤˣ} (H : SignedHermitianSpace K V σ ε) (c d : Kˣ)
+    (hc : σ c = (ε' * ε) • (c : K)) (hd : σ d = (ε'' * ε') • (d : K)) :
+    (H.unitsSMul c hc).unitsSMul d hd = H.unitsSMul (d * c) (map_units_mul_eq_smul hc hd) := by
+  ext x y
+  simp [mul_assoc]
+
+/-- Rescaling by `c` and then by `c⁻¹` returns the original form. -/
 theorem unitsSMul_unitsSMul_inv (H : SignedHermitianSpace K V σ ε) (c : Kˣ)
     (hc : σ c = (ε' * ε) • (c : K)) :
     (H.unitsSMul c hc).unitsSMul c⁻¹ (map_units_inv_eq_smul hc) = H := by
@@ -107,7 +134,6 @@ theorem unitsSMul_unitsSMul_inv (H : SignedHermitianSpace K V σ ε) (c : Kˣ)
   simp
 
 /-- Rescaling by `c⁻¹` and then by `c` returns the original form. -/
-@[simp]
 theorem unitsSMul_inv_unitsSMul (H : SignedHermitianSpace K V σ ε') (c : Kˣ)
     (hc : σ c = (ε' * ε) • (c : K)) :
     (H.unitsSMul c⁻¹ (map_units_inv_eq_smul hc)).unitsSMul c hc = H := by
@@ -127,6 +153,12 @@ def unitsSMulEquiv (c : Kˣ) (hc : σ c = (ε' * ε) • (c : K)) :
 @[simp]
 theorem unitsSMulEquiv_apply (c : Kˣ) (hc : σ c = (ε' * ε) • (c : K))
     (H : SignedHermitianSpace K V σ ε) : unitsSMulEquiv V c hc H = H.unitsSMul c hc :=
+  (rfl)
+
+@[simp]
+theorem unitsSMulEquiv_symm_apply (c : Kˣ) (hc : σ c = (ε' * ε) • (c : K))
+    (H : SignedHermitianSpace K V σ ε') :
+    (unitsSMulEquiv V c hc).symm H = H.unitsSMul c⁻¹ (map_units_inv_eq_smul hc) :=
   (rfl)
 
 /-- An isometric equivalence stays one after both forms are rescaled by the same unit. -/
@@ -165,27 +197,6 @@ theorem isometryGroup_unitsSMul (H : SignedHermitianSpace K V σ ε) (c : Kˣ)
   ext e
   simp
 
-/-! ### The involution on a nonzero space -/
-
-/-- On a nonzero signed hermitian space over a domain, the involution squares to the identity:
-`σ σ` fixes every value of the form, in particular `a h v w` for a nonzero value `h v w`. -/
-theorem map_map_eq_of_nontrivial [IsDomain K] (H : SignedHermitianSpace K V σ ε) [Nontrivial V]
-    (a : K) :
-    σ (σ a) = a := by
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  obtain ⟨w, hw⟩ : ∃ w, H.form v w ≠ 0 := by
-    by_contra! h
-    exact hv (H.separatingLeft v h)
-  have h2 (x y : V) : σ (σ (H.form x y)) = H.form x y := by
-    symm
-    calc H.form x y = ε • σ (H.form y x) := H.form_swap y x
-      _ = ε • σ (ε • σ (H.form x y)) := by rw [H.form_swap x y]
-      _ = σ (σ (H.form x y)) := by
-        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
-  have := h2 v (a • w)
-  rw [map_smul, smul_eq_mul, map_mul, map_mul, h2] at this
-  exact mul_right_cancel₀ hw this
-
 /-! ### Trace forms -/
 
 section Trace
@@ -202,10 +213,10 @@ def traceForm (H : SignedHermitianSpace K V σ ε) (t : K →ₗ[F] F)
   LinearMap.mk₂ F (fun x y ↦ t (H.form x y))
     (fun x x' y ↦ by simp)
     (fun a x y ↦ by
-      rw [← algebraMap_smul K a x, map_smulₛₗ, LinearMap.smul_apply, hσ, algebraMap_smul,
-        map_smul])
+      simpa [hσ, -smul_eq_mul] using
+        congrArg t (LinearMap.congr_fun (H.form.map_smulₛₗ (algebraMap F K a) x) y))
     (fun x y y' ↦ by simp)
-    (fun a x y ↦ by rw [← algebraMap_smul K a y, map_smul, algebraMap_smul, map_smul])
+    (fun a x y ↦ by simp)
 
 variable (H : SignedHermitianSpace K V σ ε) (t : K →ₗ[F] F)
   (hσ : ∀ a : F, σ (algebraMap F K a) = algebraMap F K a)
@@ -219,6 +230,10 @@ elements negated by `σ`. In characteristic two this is stronger than skew-symme
 theorem isAlt_traceForm (H : SignedHermitianSpace K V σ (-1)) (ht : ∀ b, σ b = -b → t b = 0) :
     (H.traceForm t hσ).IsAlt := fun x ↦ ht _ <| by
   rw [H.apply_form_self, Units.neg_smul, one_smul]
+
+/-- The trace form of a signed hermitian form is reflexive when `t` is invariant under `σ`. -/
+theorem isRefl_traceForm (ht : ∀ b, t (σ b) = t b) : (H.traceForm t hσ).IsRefl := fun x y hxy ↦ by
+  simpa [H.form_swap x y, ht] using congrArg (ε • ·) hxy
 
 /-- The trace form separates on the left when the pairing `(a, b) ↦ t (a b)` on `K` does. -/
 theorem separatingLeft_traceForm (hnd : ∀ b, (∀ a, t (a * b) = 0) → b = 0) :
@@ -245,27 +260,31 @@ end Trace
 
 section GaloisTrace
 
-variable {F K V : Type*} [Field F] [Field K] [Algebra F K] [FiniteDimensional F K] [IsGalois F K]
+variable {F K V : Type*} [Field F] [Field K] [Algebra F K]
   [AddCommGroup V] [Module K V] [Module F V] [IsScalarTower F K V]
 
-/-- For a finite Galois extension of fields `K/F` and an automorphism `τ ≠ 1`, the trace form
-`Tr_{K/F} ∘ w` of a skew-hermitian form `w` for `τ` is alternating and nondegenerate. On a nonzero
-space `τ` has order two (`TauCeti.SignedHermitianSpace.map_map_eq_of_nontrivial`). -/
-theorem nondegenerate_traceForm_trace {τ : Gal(K/F)} (hτ : τ ≠ 1)
+/-- For a Galois extension of fields `K/F` and an automorphism `τ ≠ 1`, the trace form
+`Tr_{K/F} ∘ w` of a skew-hermitian form `w` for `τ` is alternating. On a nonzero space `τ` has
+order two (`TauCeti.SignedHermitianSpace.map_map_eq_of_nontrivial`), so the trace vanishes on the
+elements negated by `τ`. -/
+theorem isAlt_traceForm_trace [IsGalois F K] {τ : Gal(K/F)} (hτ : τ ≠ 1)
     (H : SignedHermitianSpace K V (τ : K →+* K) (-1)) :
-    (H.traceForm (Algebra.trace F K) fun a ↦ τ.commutes a).IsAlt ∧
-      (H.traceForm (Algebra.trace F K) fun a ↦ τ.commutes a).Nondegenerate := by
+    (H.traceForm (Algebra.trace F K) fun a ↦ τ.commutes a).IsAlt := by
   cases subsingleton_or_nontrivial V with
-  | inl _ =>
-    exact ⟨fun x ↦ by simp [Subsingleton.elim x 0],
-      ⟨fun x _ ↦ Subsingleton.elim x 0, fun x _ ↦ Subsingleton.elim x 0⟩⟩
+  | inl _ => exact fun x ↦ by simp [Subsingleton.elim x 0]
   | inr _ =>
-    have hττ : τ * τ = 1 := AlgEquiv.ext fun a ↦ H.map_map_eq_of_nontrivial a
-    have ht (b : K) (hb : (τ : K →+* K) b = -b) : Algebra.trace F K b = 0 :=
-      Algebra.trace_eq_zero_of_apply_eq_neg hτ hττ hb
-    have hnd (b : K) (hb : ∀ a, Algebra.trace F K (a * b) = 0) : b = 0 :=
+    exact H.isAlt_traceForm _ _ fun _ ↦ Algebra.trace_eq_zero_of_apply_eq_neg hτ
+      (AlgEquiv.ext H.map_map_eq_of_nontrivial)
+
+/-- For a finite separable extension of fields `K/F` and any automorphism `τ`, the trace form
+`Tr_{K/F} ∘ h` of a signed hermitian form `h` for `τ` is nondegenerate: it is reflexive since the
+trace is invariant under `τ`, and separating since the trace pairing of `K/F` is. -/
+theorem nondegenerate_traceForm_trace [FiniteDimensional F K] [Algebra.IsSeparable F K]
+    {τ : Gal(K/F)} (H : SignedHermitianSpace K V (τ : K →+* K) ε) :
+    (H.traceForm (Algebra.trace F K) fun a ↦ τ.commutes a).Nondegenerate :=
+  (H.isRefl_traceForm _ _ (Algebra.trace_eq_of_algEquiv τ)).nondegenerate_iff_separatingLeft.2 <|
+    H.separatingLeft_traceForm _ _ fun b hb ↦
       (traceForm_nondegenerate F K).2 b fun a ↦ by simpa using hb a
-    exact ⟨H.isAlt_traceForm _ _ ht, H.nondegenerate_traceForm _ _ ht hnd⟩
 
 end GaloisTrace
 

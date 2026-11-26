@@ -37,7 +37,9 @@ hermitian spaces can be read off from it on their orthogonal sum.
   the adjoint of `a`;
 * `TauCeti.signedHermitianAdjoint_id`, `TauCeti.signedHermitianAdjoint_comp`: the adjoint of the
   identity is the identity, and `(a ∘ b)* = b* ∘ a*`;
-* `TauCeti.signedHermitianAdjoint_involutive`: `a** = a`.
+* `TauCeti.signedHermitianAdjoint_involutive`: `a** = a`;
+* `TauCeti.SignedHermitianSpace.map_map_eq_of_nontrivial`: on a nonzero signed hermitian space
+  over a domain, `σ σ = id`.
 
 ## References
 
@@ -99,6 +101,21 @@ theorem nondegenerate : H.form.Nondegenerate :=
 `LinearMap.IsSymm`. -/
 theorem isSymm (H : SignedHermitianSpace K V σ 1) : H.form.IsSymm :=
   ⟨fun v w ↦ by rw [H.form_swap v w, one_smul]⟩
+
+/-- On a nonzero signed hermitian space over a domain, the involution squares to the identity:
+`σ σ` fixes every value of the form, in particular `a h v w` for a nonzero value `h v w`. -/
+theorem map_map_eq_of_nontrivial [IsDomain K] (H : SignedHermitianSpace K V σ ε) [Nontrivial V]
+    (a : K) : σ (σ a) = a := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  obtain ⟨w, hw⟩ : ∃ w, H.form v w ≠ 0 := by
+    by_contra! h
+    exact hv (H.separatingLeft v h)
+  have h2 (x y : V) : σ (σ (H.form x y)) = H.form x y := by
+    conv_rhs => rw [H.form_swap y x, H.form_swap x y]
+    rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+  have := h2 v (a • w)
+  simp only [map_smul, smul_eq_mul, map_mul, h2] at this
+  exact mul_right_cancel₀ hw this
 
 end SignedHermitianSpace
 
