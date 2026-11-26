@@ -47,8 +47,6 @@ Wittenberg's refined lifting through `P_(r,s)` for `n = r + s + 1`.
 
 ## Main declarations
 
-* `TauCeti.UpperUnitriangularGroup.transvection_mem_twoBoundarySubgroup`: the transvections at
-  the two-boundary positions lie in `P_(r,s)`.
 * `TauCeti.UpperUnitriangularGroup.twoBoundaryRetraction`: the homomorphism
   `ρ_(u,v) : P_(r,s) → R` for `r + s < n`.
 * `TauCeti.UpperUnitriangularGroup.forall_mem_center_twoBoundaryRetraction_iff`: `ρ_(u,v)` is the
@@ -58,8 +56,8 @@ Wittenberg's refined lifting through `P_(r,s)` for `n = r + s + 1`.
 * `TauCeti.UpperUnitriangularGroup.exists_twoBoundaryRetraction_eq`: over `ℤ/m` every retraction
   of `P_(r,s)` onto `Z` is `ρ_(u,v)` for a normalized pair.
 * `TauCeti.UpperUnitriangularGroup.twoBoundaryStabilizer` and
-  `TauCeti.UpperUnitriangularGroup.mem_twoBoundaryStabilizer_iff`: the stabilizer `S` of
-  `ρ_(u,v)` and its description by two support conditions.
+  `TauCeti.UpperUnitriangularGroup.mem_twoBoundaryStabilizer_iff_vecMul_sub_one_and_sub_one_mulVec`:
+  the stabilizer `S` of `ρ_(u,v)` and its description by two support conditions.
 * `TauCeti.UpperUnitriangularGroup.twoBoundaryStabilizerRetraction`: the homomorphism
   `ρ' : S → R` for `n ≤ r + s + 1`.
 * `TauCeti.UpperUnitriangularGroup.exists_lift_of_range_le_map_twoBoundaryStabilizer`: a
@@ -104,29 +102,6 @@ private theorem dotProduct_sub_one_mulVec_of_mem_center (hn : 0 < n)
   conv_lhs => rw [(isUpperUnitriangular M).eq_one_add_single_zero_last hn (mem_center_iff.1 hM)]
   rw [add_sub_cancel_left, single_mulVec]
   simp [dotProduct, Function.update_apply, mul_assoc]
-
-/-- The corner transvection `e₀ₙ(t)` is central in `Uₙ₊₁(R)`. -/
-private theorem transvection_zero_last_mem_center (h0 : (0 : Fin (n + 1)) < Fin.last n) (t : R) :
-    transvection h0 t ∈ Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R) := by
-  rw [mem_center_iff]
-  intro i j hij hc
-  rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
-    Matrix.one_apply_ne hij.ne, single_apply_of_ne _ _ _ _ _ fun h ↦ hc ⟨h.1.symm, h.2.symm⟩,
-    add_zero]
-
-/-- A transvection `e_ij(t)` lies in the two-boundary subgroup `P_(r,s)` when `(i, j)` is a
-two-boundary position: in row `0` at a column `j ≥ n - s`, or in column `n` at a row `i ≤ r`. -/
-theorem transvection_mem_twoBoundarySubgroup {i j : Fin (n + 1)} (hij : i < j)
-    (hP : (i = 0 ∧ n ≤ (j : ℕ) + s) ∨ (j = Fin.last n ∧ (i : ℕ) ≤ r)) (t : R) :
-    transvection hij t ∈ twoBoundarySubgroup (R := R) n r s := by
-  rw [mem_twoBoundarySubgroup_iff, isTwoBoundary_iff]
-  intro a b hab
-  rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
-    add_ne_left] at hab
-  obtain ⟨rfl, rfl⟩ : i = a ∧ j = b := by
-    by_contra hne
-    exact hab (single_apply_of_ne _ _ _ _ _ hne)
-  exact ⟨hij, hP⟩
 
 /-- For `s < n`, a column `j ≥ n - s` comes after the column `0`. -/
 private theorem zero_lt_of_le_add (hs : s < n) {j : Fin (n + 1)} (hj : n ≤ (j : ℕ) + s) :
@@ -181,6 +156,17 @@ private theorem forall_dotProduct_eq_iff (hr : r < n) (hs : s < n) {u v u' v' : 
     · rw [hcol j hj, hu, hu']
     · rw [hrow i hi, hcol (Fin.last n) (by simp only [Fin.val_last]; omega)]
 
+/-- `M N - 1 = (M - 1) + (N - 1) + (M - 1) (N - 1)` for `M, N ∈ Uₙ₊₁(R)`. -/
+private theorem coe_mul_sub_one (M N : upperUnitriangularGroup (Fin (n + 1)) R) :
+    (((M * N : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
+        Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1 =
+      ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1 +
+        (((N : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) +
+        (((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *
+          (((N : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) := by
+  rw [coe_mul]
+  noncomm_ring
+
 /-! ### The boundary retractions `ρ_(u,v)` -/
 
 /-- **The boundary retraction** `ρ_(u,v)(Q) = u (Q - 1) v` of Harpaz and Wittenberg, for a row
@@ -201,11 +187,7 @@ def twoBoundaryRetraction (h : r + s < n) (u v : Fin (n + 1) → R) :
     have hAB : (A - 1) * (B - 1) = 0 :=
       (mem_twoBoundarySubgroup_iff.1 Q.property).sub_one_mul_sub_one_eq_zero h
         (mem_twoBoundarySubgroup_iff.1 Q'.property)
-    calc (((Q * Q' : twoBoundarySubgroup (R := R) n r s) : GL (Fin (n + 1)) R) :
-          Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1 = A - 1 + (B - 1) + (A - 1) * (B - 1) := by
-          rw [Subgroup.coe_mul, Subgroup.coe_mul, Units.val_mul]
-          noncomm_ring
-      _ = A - 1 + (B - 1) := by rw [hAB, add_zero]
+    rw [Subgroup.coe_mul, coe_mul_sub_one, hAB, add_zero]
 
 variable (h : r + s < n) (u v : Fin (n + 1) → R)
 
@@ -278,97 +260,13 @@ theorem forall_mem_center_twoBoundaryRetraction_iff :
     have := hQ ⟨_, transvection_mem_twoBoundarySubgroup h0 hP 1⟩
       (transvection_zero_last_mem_center h0 1)
     rw [twoBoundaryRetraction_transvection h u v h0 hP, toAdd_ofAdd, mul_one] at this
-    rw [this, coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
-      Matrix.one_apply_ne h0.ne, single_apply_same, zero_add]
+    rw [this, coe_transvection_apply_same]
   · intro huv Q hQ
     rw [toAdd_twoBoundaryRetraction_of_mem_center h u v hQ, mul_right_comm, huv, one_mul]
 
 end CommRing
 
 /-! ### Every retraction over `ℤ/m` is a boundary retraction -/
-
-/-- A coordinate vector `(c, a, b)` is the product of the vectors with a single nonzero
-coordinate. -/
-private theorem eq_ofAdd_mul_prod_mul_prod [AddCommMonoid R]
-    (x : Multiplicative (R × (Fin s → R) × (Fin r → R))) :
-    x = Multiplicative.ofAdd (x.toAdd.1, 0, 0) *
-      (∏ k, Multiplicative.ofAdd (0, Pi.single k (x.toAdd.2.1 k), 0)) *
-        ∏ k, Multiplicative.ofAdd (0, 0, Pi.single k (x.toAdd.2.2 k)) := by
-  refine Multiplicative.toAdd.injective ?_
-  simp only [toAdd_mul, toAdd_prod, toAdd_ofAdd]
-  refine Prod.ext ?_ (Prod.ext ?_ ?_) <;>
-    simp [Prod.fst_sum, Prod.snd_sum, Finset.univ_sum_single]
-
-section HomExt
-
-variable [Ring R] (h : r + s < n)
-
-/-- The coordinates of the corner transvection `e₀ₙ(t)` are `(t, 0, 0)`. -/
-private theorem twoBoundaryEquiv_transvection_corner (t : R) :
-    Multiplicative.ofAdd (t, 0, 0) = twoBoundaryEquiv h ⟨_,
-      transvection_mem_twoBoundarySubgroup (lt_last_of_le (i := 0) (r := r) (by omega)
-        (by simp)) (Or.inr ⟨rfl, by simp⟩) t⟩ := by
-  refine Multiplicative.toAdd.injective ?_
-  rw [toAdd_twoBoundaryEquiv_apply]
-  refine Prod.ext ?_ (Prod.ext (funext fun k ↦ ?_) (funext fun k ↦ ?_)) <;>
-    simp only [toAdd_ofAdd, coe_transvection, coe_transvectionUnit_eq_one_add_single,
-      Matrix.add_apply, Matrix.one_apply, Matrix.single_apply, Pi.zero_apply,
-      Fin.ext_iff, Fin.val_zero, Fin.val_last] <;>
-    split_ifs <;> first | (exfalso; omega) | simp_all
-
-/-- The coordinates of the first-row transvection `e₀,ₙ₋ₛ₊ₖ(t)` are `(0, tδₖ, 0)`. -/
-private theorem twoBoundaryEquiv_transvection_row (k : Fin s) (t : R) :
-    Multiplicative.ofAdd (0, Pi.single k t, 0) = twoBoundaryEquiv h ⟨_,
-      transvection_mem_twoBoundarySubgroup (zero_lt_of_le_add (j := ⟨n - s + k, by omega⟩)
-        (by omega) (by simp only; omega)) (Or.inl ⟨rfl, by simp only; omega⟩) t⟩ := by
-  refine Multiplicative.toAdd.injective ?_
-  rw [toAdd_twoBoundaryEquiv_apply]
-  refine Prod.ext ?_ (Prod.ext (funext fun k' ↦ ?_) (funext fun k' ↦ ?_)) <;>
-    simp only [toAdd_ofAdd, coe_transvection, coe_transvectionUnit_eq_one_add_single,
-      Matrix.add_apply, Matrix.one_apply, Matrix.single_apply, Pi.single_apply, Pi.zero_apply,
-      Fin.ext_iff, Fin.val_zero, Fin.val_last] <;>
-    split_ifs <;> first | (exfalso; omega) | simp_all
-
-/-- The coordinates of the last-column transvection `eₖ₊₁,ₙ(t)` are `(0, 0, tδₖ)`. -/
-private theorem twoBoundaryEquiv_transvection_col (k : Fin r) (t : R) :
-    Multiplicative.ofAdd (0, 0, Pi.single k t) = twoBoundaryEquiv h ⟨_,
-      transvection_mem_twoBoundarySubgroup (lt_last_of_le (i := ⟨k + 1, by omega⟩) (r := r)
-        (by omega) (by simp only; omega)) (Or.inr ⟨rfl, by simp only; omega⟩) t⟩ := by
-  refine Multiplicative.toAdd.injective ?_
-  rw [toAdd_twoBoundaryEquiv_apply]
-  refine Prod.ext ?_ (Prod.ext (funext fun k' ↦ ?_) (funext fun k' ↦ ?_)) <;>
-    simp only [toAdd_ofAdd, coe_transvection, coe_transvectionUnit_eq_one_add_single,
-      Matrix.add_apply, Matrix.one_apply, Matrix.single_apply, Pi.single_apply, Pi.zero_apply,
-      Fin.ext_iff, Fin.val_zero, Fin.val_last] <;>
-    split_ifs <;> first | (exfalso; omega) | simp_all
-
-/-- For `r + s < n`, an element of `P_(r,s)` with coordinates `(c, a, b)` is the product of the
-transvections `e₀ₙ(c)`, `e₀,ₙ₋ₛ₊ₖ(a k)` and `eₖ₊₁,ₙ(b k)`. Hence two homomorphisms from `P_(r,s)` to
-a commutative monoid that agree on the transvections at the two-boundary positions are equal. -/
-private theorem twoBoundary_hom_ext {M : Type*} [CommMonoid M] (h : r + s < n)
-    {f₁ f₂ : twoBoundarySubgroup (R := R) n r s →* M}
-    (hf : ∀ (i j : Fin (n + 1)) (hij : i < j)
-      (hP : (i = 0 ∧ n ≤ (j : ℕ) + s) ∨ (j = Fin.last n ∧ (i : ℕ) ≤ r)) (t : R),
-      f₁ ⟨_, transvection_mem_twoBoundarySubgroup hij hP t⟩ =
-        f₂ ⟨_, transvection_mem_twoBoundarySubgroup hij hP t⟩) : f₁ = f₂ := by
-  have hg : f₁.comp (twoBoundaryEquiv h).symm.toMonoidHom =
-      f₂.comp (twoBoundaryEquiv h).symm.toMonoidHom := by
-    refine MonoidHom.ext fun x ↦ ?_
-    rw [eq_ofAdd_mul_prod_mul_prod x, map_mul, map_mul, map_mul, map_mul, map_prod, map_prod,
-      map_prod, map_prod]
-    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-      twoBoundaryEquiv_transvection_corner h, twoBoundaryEquiv_transvection_row h,
-      twoBoundaryEquiv_transvection_col h, MulEquiv.symm_apply_apply]
-    refine congrArg₂ (· * ·) (congrArg₂ (· * ·) (hf _ _ _ ?_ _)
-      (Finset.prod_congr rfl fun k _ ↦ hf _ _ _ ?_ _))
-      (Finset.prod_congr rfl fun k _ ↦ hf _ _ _ ?_ _)
-    · exact Or.inr ⟨rfl, by simp⟩
-    · exact Or.inl ⟨rfl, by simp only; omega⟩
-    · exact Or.inr ⟨rfl, by simp only; omega⟩
-  ext Q
-  simpa using congrArg (· (twoBoundaryEquiv h Q)) hg
-
-end HomExt
 
 section ZMod
 
@@ -415,7 +313,7 @@ theorem exists_twoBoundaryRetraction_eq (h : r + s < n)
     else 1
   have hu : u 0 = 1 := by simp [u]
   have hv : v (Fin.last n) = 1 := by simp [v]
-  refine ⟨u, v, hu, hv, twoBoundary_hom_ext h fun i j hij hP t ↦ ?_⟩
+  refine ⟨u, v, hu, hv, twoBoundarySubgroup_hom_ext h fun i j hij hP t ↦ ?_⟩
   refine Multiplicative.toAdd.injective ?_
   rw [twoBoundaryRetraction_transvection h u v hij hP, toAdd_ofAdd,
     toAdd_apply_transvection f hij hP t]
@@ -424,8 +322,7 @@ theorem exists_twoBoundaryRetraction_eq (h : r + s < n)
     obtain ⟨rfl, rfl⟩ := hc
     have h1 := hf ⟨_, transvection_mem_twoBoundarySubgroup hij (Or.inr ⟨rfl, by simp⟩) 1⟩
       (transvection_zero_last_mem_center (R := ZMod m) hij 1)
-    rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
-      Matrix.one_apply_ne hij.ne, single_apply_same, zero_add] at h1
+    rw [coe_transvection_apply_same] at h1
     rw [hu, hv, h1, one_mul, mul_one]
   rcases hP with ⟨rfl, hj⟩ | ⟨rfl, hi⟩
   · have hj' : (j : ℕ) < n ∧ n ≤ (j : ℕ) + s :=
@@ -462,7 +359,7 @@ def twoBoundaryStabilizer : Subgroup (upperUnitriangularGroup (Fin (n + 1)) R) w
     rw [← hM _ hQ', show M * (M⁻¹ * Q * M⁻¹⁻¹) * M⁻¹ = Q by group]
 
 /-- Membership in the stabilizer of `ρ_(u,v)`. -/
-theorem mem_twoBoundaryStabilizer {M : upperUnitriangularGroup (Fin (n + 1)) R} :
+theorem mem_twoBoundaryStabilizer_iff {M : upperUnitriangularGroup (Fin (n + 1)) R} :
     M ∈ twoBoundaryStabilizer (r := r) (s := s) u v ↔ ∀ Q ∈ twoBoundarySubgroup (R := R) n r s,
       u ⬝ᵥ (((((M * Q * M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
         Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) =
@@ -496,52 +393,18 @@ private theorem dotProduct_conj_sub_one_mulVec (M Q : upperUnitriangularGroup (F
   set B := (((M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
     Matrix (Fin (n + 1)) (Fin (n + 1)) R)
   set X := ((Q : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-  have hAB : A * B = 1 := by
-    simp only [A, B, ← Units.val_mul, ← Subgroup.coe_mul, mul_inv_cancel, OneMemClass.coe_one,
-      Units.val_one]
+  have hAB : A * B = 1 := coe_mul_coe_inv M
   have hconj : (((M * Q * M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
       Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1 = A * ((X - 1) * B) := by
     rw [Subgroup.coe_mul, Subgroup.coe_mul, Units.val_mul, Units.val_mul, sub_mul, one_mul,
       mul_sub, ← hAB, ← mul_assoc]
   rw [hconj, ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec]
 
-/-- The column `0` and the row `n` of `M - 1` vanish for `M ∈ Uₙ₊₁(R)`, so `(u M) 0 = u 0` and
-`(M v) n = v n`. -/
-private theorem vecMul_apply_zero (M : upperUnitriangularGroup (Fin (n + 1)) R) :
-    (u ᵥ* ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)) 0 = u 0 := by
-  conv_rhs => rw [← vecMul_one u]
-  simp only [vecMul, dotProduct]
-  refine Finset.sum_congr rfl fun i _ ↦ congrArg (u i * ·) ?_
-  rcases eq_or_ne i 0 with rfl | hi
-  · rw [apply_diag, Matrix.one_apply_eq]
-  · rw [isUpperTriangular M (Fin.pos_iff_ne_zero.2 hi), Matrix.one_apply_ne hi]
-
-private theorem mulVec_apply_last (M : upperUnitriangularGroup (Fin (n + 1)) R) :
-    (((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *ᵥ v) (Fin.last n) =
-      v (Fin.last n) := by
-  conv_rhs => rw [← one_mulVec v]
-  simp only [mulVec, dotProduct]
-  refine Finset.sum_congr rfl fun j _ ↦ congrArg (· * v j) ?_
-  rcases eq_or_ne j (Fin.last n) with rfl | hj
-  · rw [apply_diag, Matrix.one_apply_eq]
-  · exact (isUpperTriangular M (Fin.lt_last_iff_ne_last.2 hj)).trans
-      (Matrix.one_apply_ne hj.symm).symm
-
-/-- An upper triangular matrix preserves the column vectors vanishing at the indices `≥ n - s`. -/
-private theorem mulVec_apply_eq_zero {T : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
-    (hT : T.IsUpperTriangular) {w : Fin (n + 1) → R}
-    (hw : ∀ k : Fin (n + 1), n ≤ (k : ℕ) + s → w k = 0)
-    {j : Fin (n + 1)} (hj : n ≤ (j : ℕ) + s) : (T *ᵥ w) j = 0 := by
-  simp only [mulVec, dotProduct]
-  refine Finset.sum_eq_zero fun k _ ↦ ?_
-  rcases lt_or_ge k j with hkj | hjk
-  · rw [hT hkj, zero_mul]
-  · rw [hw k (by rw [Fin.le_def] at hjk; omega), mul_zero]
-
 /-- **The stabilizer of a boundary retraction**, for `r, s < n` and a normalized pair
 `u 0 = v n = 1`: `M ∈ Uₙ₊₁(R)` stabilizes `ρ_(u,v)` exactly when the row `u (M - 1)` vanishes at the
 indices `≤ r` and the column `(M - 1) v` vanishes at the indices `≥ n - s`. -/
-theorem mem_twoBoundaryStabilizer_iff (hr : r < n) (hs : s < n) (hu : u 0 = 1)
+theorem mem_twoBoundaryStabilizer_iff_vecMul_sub_one_and_sub_one_mulVec (hr : r < n) (hs : s < n)
+    (hu : u 0 = 1)
     (hv : v (Fin.last n) = 1) {M : upperUnitriangularGroup (Fin (n + 1)) R} :
     M ∈ twoBoundaryStabilizer (r := r) (s := s) u v ↔
       (∀ i : Fin (n + 1), (i : ℕ) ≤ r →
@@ -551,30 +414,28 @@ theorem mem_twoBoundaryStabilizer_iff (hr : r < n) (hs : s < n) (hu : u 0 = 1)
   set A := ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
   set B := (((M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
     Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-  have hBA : B * A = 1 := by
-    simp only [A, B, ← Units.val_mul, ← Subgroup.coe_mul, inv_mul_cancel, OneMemClass.coe_one,
-      Units.val_one]
-  have hAB : A * B = 1 := by
-    simp only [A, B, ← Units.val_mul, ← Subgroup.coe_mul, mul_inv_cancel, OneMemClass.coe_one,
-      Units.val_one]
-  rw [mem_twoBoundaryStabilizer]
+  have hBA : B * A = 1 := coe_inv_mul_coe M
+  have hAB : A * B = 1 := coe_mul_coe_inv M
+  rw [mem_twoBoundaryStabilizer_iff]
   simp_rw [dotProduct_conj_sub_one_mulVec]
-  rw [forall_dotProduct_eq_iff hr hs (by rw [vecMul_apply_zero, hu]) (by rw [mulVec_apply_last, hv])
-    hu hv]
+  rw [forall_dotProduct_eq_iff hr hs
+    (by rw [vecMul_coe_apply_of_isBot M u fun _ ↦ Fin.zero_le _, hu])
+    (by rw [coe_mulVec_apply_of_isTop M⁻¹ v fun _ ↦ Fin.le_last _, hv]) hu hv]
   refine and_congr (forall₂_congr fun i _ ↦ ?_) ⟨fun h j hj ↦ ?_, fun h j hj ↦ ?_⟩
   · rw [vecMul_sub, vecMul_one, Pi.sub_apply, sub_eq_zero]
   · -- `(A - 1) v = -A ((B - 1) v)`, and `(B - 1) v` vanishes at the indices `≥ n - s`.
     have hw : (A - 1) *ᵥ v = -(A *ᵥ ((B - 1) *ᵥ v)) := by
       rw [mulVec_mulVec, mul_sub, hAB, mul_one, ← neg_mulVec, neg_sub]
-    rw [hw, Pi.neg_apply, mulVec_apply_eq_zero (isUpperTriangular M) (fun k hk ↦ ?_) hj, neg_zero]
-    rw [sub_mulVec, one_mulVec, Pi.sub_apply, h k hk, sub_self]
+    rw [hw, Pi.neg_apply,
+      (isUpperTriangular M).mulVec_apply_eq_zero fun k hk ↦ ?_, neg_zero]
+    rw [sub_mulVec, one_mulVec, Pi.sub_apply, h k (by rw [Fin.le_def] at hk; omega), sub_self]
   · -- `(B - 1) v = -B ((A - 1) v)`, and `(A - 1) v` vanishes at the indices `≥ n - s`.
     have hw : (B - 1) *ᵥ v = -(B *ᵥ ((A - 1) *ᵥ v)) := by
       rw [mulVec_mulVec, mul_sub, hBA, mul_one, ← neg_mulVec, neg_sub]
     have hB : (B *ᵥ v) j - v j = ((B - 1) *ᵥ v) j := by
       rw [sub_mulVec, one_mulVec, Pi.sub_apply]
-    rw [← sub_eq_zero, hB, hw, Pi.neg_apply, mulVec_apply_eq_zero (isUpperTriangular M⁻¹) h hj,
-      neg_zero]
+    rw [← sub_eq_zero, hB, hw, Pi.neg_apply, (isUpperTriangular M⁻¹).mulVec_apply_eq_zero
+      fun k hk ↦ h k (by rw [Fin.le_def] at hk; omega), neg_zero]
 
 end Stabilizer
 
@@ -600,19 +461,18 @@ def twoBoundaryStabilizerRetraction :
     rw [← ofAdd_add, ← dotProduct_add, ← add_mulVec]
     set A := ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     set B := ((N : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    have hM := (mem_twoBoundaryStabilizer_iff u v hr hs hu hv).1 M.property
-    have hN := (mem_twoBoundaryStabilizer_iff u v hr hs hu hv).1 N.property
+    have hM := (mem_twoBoundaryStabilizer_iff_vecMul_sub_one_and_sub_one_mulVec u v hr hs hu hv).1
+      M.property
+    have hN := (mem_twoBoundaryStabilizer_iff_vecMul_sub_one_and_sub_one_mulVec u v hr hs hu hv).1
+      N.property
     have hAB : u ⬝ᵥ (((A - 1) * (B - 1)) *ᵥ v) = 0 := by
       rw [← mulVec_mulVec, dotProduct_mulVec]
       refine Finset.sum_eq_zero fun k _ ↦ ?_
       by_cases hk : (k : ℕ) ≤ r
       · rw [hM.1 k hk, zero_mul]
       · rw [hN.2 k (by omega), mul_zero]
-    have hmul : (((M * N : twoBoundaryStabilizer (r := r) (s := s) u v) : GL (Fin (n + 1)) R) :
-        Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1 = A - 1 + (B - 1) + (A - 1) * (B - 1) := by
-      rw [Subgroup.coe_mul, Subgroup.coe_mul, Units.val_mul]
-      noncomm_ring
-    rw [hmul, add_mulVec _ ((A - 1) * (B - 1)), dotProduct_add, hAB, add_zero]
+    rw [Subgroup.coe_mul, coe_mul_sub_one, add_mulVec _ ((A - 1) * (B - 1)), dotProduct_add, hAB,
+      add_zero]
 
 /-- The value of `ρ'` at `M` is `u (M - 1) v`. -/
 @[simp]
@@ -628,7 +488,8 @@ theorem twoBoundaryStabilizerRetraction_apply_of_mem (h : r + s < n)
     twoBoundaryStabilizerRetraction hr hs hrs hu hv
         ⟨Q, twoBoundarySubgroup_le_twoBoundaryStabilizer u v h Q.property⟩ =
       twoBoundaryRetraction h u v Q :=
-  (rfl)
+  Multiplicative.toAdd.injective <| by
+    rw [toAdd_twoBoundaryStabilizerRetraction_apply, toAdd_twoBoundaryRetraction_apply]
 
 /-- `ρ'` is the corner coordinate on the centre: it retracts the stabilizer onto the centre. -/
 theorem toAdd_twoBoundaryStabilizerRetraction_of_mem_center
@@ -693,8 +554,7 @@ theorem exists_lift_of_range_le_map_twoBoundaryStabilizer {G : Type*} [Group G]
     have hzS := center_le_twoBoundaryStabilizer (r := r) (s := s) u v hz
     have hρz := toAdd_twoBoundaryStabilizerRetraction_of_mem_center hr hs hrs hu hv
       (M := ⟨_, hzS⟩) hz
-    rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
-      Matrix.one_apply_ne h0.ne, single_apply_same, zero_add] at hρz
+    rw [coe_transvection_apply_same] at hρz
     refine ⟨⟨M * transvection h0 (-c), Subgroup.mem_map.2 ⟨⟨M, hM⟩ * ⟨_, hzS⟩, ?_, rfl⟩⟩, ?_⟩
     · rw [MonoidHom.mem_ker, map_mul]
       refine Multiplicative.toAdd.injective ?_
