@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
+import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 
 /-!
 # Power-law asymptotics
@@ -78,6 +79,11 @@ exponent dominates every constant multiple of a larger one.
 For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
 power `r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
 proof of the Gelfond–Schneider theorem.
+
+## Exponential limits of rescaled powers
+
+For all reals `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `Real.exp (a * b)` as the real
+number `x` tends to infinity (`Real.tendsto_one_add_div_rpow_mul_exp`).
 -/
 
 public section
@@ -454,5 +460,20 @@ theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
     Tendsto (fun q : ℝ => B ^ q⁻¹) atTop (𝓝 1) := by
   simpa only [Function.comp_def, rpow_zero] using
     (continuousAt_const_rpow hB).tendsto.comp tendsto_inv_atTop_zero
+
+/-- For any real numbers `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `exp (a * b)` as the
+real number `x` tends to infinity. -/
+theorem tendsto_one_add_div_rpow_mul_exp (a b : ℝ) :
+    Tendsto (fun x : ℝ ↦ (1 + a / x) ^ (b * x)) atTop (𝓝 (exp (a * b))) := by
+  have h1 : Tendsto (fun x : ℝ ↦ ((1 + a / x) ^ x) ^ b) atTop (𝓝 (exp a ^ b)) :=
+    (tendsto_one_add_div_rpow_exp a).rpow_const (Or.inl (exp_pos _).ne')
+  rw [← exp_mul] at h1
+  have hpos : ∀ᶠ x : ℝ in atTop, 0 ≤ 1 + a / x := by
+    have h0 : Tendsto (fun x : ℝ ↦ 1 + a / x) atTop (𝓝 1) := by
+      simpa using tendsto_const_nhds.add (tendsto_const_nhds.div_atTop (tendsto_id (α := ℝ)))
+    exact (h0.eventually (lt_mem_nhds zero_lt_one)).mono fun _ h ↦ h.le
+  refine h1.congr' ?_
+  filter_upwards [hpos] with x hbase
+  rw [← rpow_mul hbase, mul_comm x b]
 
 end Real
