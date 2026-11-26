@@ -6,33 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
-public import TauCeti.Analysis.CStarAlgebra.MaxTensorNorm
+public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Norm
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
 
 /-!
-# The maximal C*-tensor product `A ⊗max B`
+# The maximal C*-tensor product
 
 Let `A` and `B` be (possibly non-unital) C*-algebras. The algebraic tensor product
 `A ⊗[ℂ] B` with the maximal C*-norm `TauCeti.maxTensorNorm` is a normed star algebra satisfying
 the C*-identity (`TauCeti.MaxTensorAlgebra A B`, a type synonym of `A ⊗[ℂ] B`). Its completion is
-the **maximal tensor product** `A ⊗max B` (`TauCeti.MaxTensorProduct A B`), a C*-algebra, with
-the star homomorphism `TauCeti.MaxTensorProduct.of : A ⊗[ℂ] B → A ⊗max B`, which is injective,
+the **maximal tensor product** `TauCeti.MaxTensorProduct A B` (written A ⊗max B in the
+literature; this file declares no notation for it), a C*-algebra, with the star homomorphism
+`TauCeti.MaxTensorProduct.of : A ⊗[ℂ] B → TauCeti.MaxTensorProduct A B`, which is injective,
 isometric for the maximal norm and has dense range.
 
 **Universal property.** Commuting star homomorphisms `φ : A → C` and `ψ : B → C` into a
 C*-algebra `C` in the universe `max u v` integrate to a star homomorphism `a ⊗ b ↦ φ a * ψ b` on
 `A ⊗[ℂ] B` bounded by the maximal norm (`TauCeti.norm_liftNonUnitalStarAlgHom_le_maxTensorNorm`),
-which extends uniquely to `A ⊗max B` (`TauCeti.MaxTensorProduct.lift`, with
+which extends uniquely to `TauCeti.MaxTensorProduct A B` (`TauCeti.MaxTensorProduct.lift`, with
 `TauCeti.MaxTensorProduct.lift_of_tmul` and the uniqueness
 `TauCeti.MaxTensorProduct.starAlgHom_ext`).
 In particular every commuting pair of representations of `A` and `B` integrates to a
-representation of `A ⊗max B` (`TauCeti.CommutingRepresentationPair.maxTensorHom`).
+representation of `TauCeti.MaxTensorProduct A B`
+(`TauCeti.CommutingRepresentationPair.maxTensorHom`).
 
 ## Main declarations
 
 * `TauCeti.MaxTensorAlgebra A B`: `A ⊗[ℂ] B` with the maximal norm.
-* `TauCeti.MaxTensorProduct A B`: its completion `A ⊗max B`, a C*-algebra.
+* `TauCeti.MaxTensorProduct A B`: its completion, a C*-algebra.
 * `TauCeti.MaxTensorProduct.of`, `TauCeti.MaxTensorProduct.norm_of`,
   `TauCeti.MaxTensorProduct.of_injective`, `TauCeti.MaxTensorProduct.denseRange_of`.
 * `TauCeti.MaxTensorProduct.lift`: the universal property.
@@ -75,6 +77,14 @@ def ofMax : MaxTensorAlgebra A B ≃ A ⊗[ℂ] B :=
   Equiv.refl _
 
 @[simp]
+theorem toMax_symm : (toMax (A := A) (B := B)).symm = ofMax :=
+  (rfl)
+
+@[simp]
+theorem ofMax_symm : (ofMax (A := A) (B := B)).symm = toMax :=
+  (rfl)
+
+@[simp]
 theorem ofMax_toMax (x : A ⊗[ℂ] B) : ofMax (toMax x) = x :=
   (rfl)
 
@@ -99,6 +109,50 @@ instance : StarRing (MaxTensorAlgebra A B) :=
 
 instance : StarModule ℂ (MaxTensorAlgebra A B) :=
   inferInstanceAs (StarModule ℂ (A ⊗[ℂ] B))
+
+@[simp]
+theorem toMax_zero : toMax (0 : A ⊗[ℂ] B) = 0 :=
+  (rfl)
+
+@[simp]
+theorem toMax_add (x y : A ⊗[ℂ] B) : toMax (x + y) = toMax x + toMax y :=
+  (rfl)
+
+@[simp]
+theorem toMax_neg (x : A ⊗[ℂ] B) : toMax (-x) = -toMax x :=
+  (rfl)
+
+@[simp]
+theorem toMax_sub (x y : A ⊗[ℂ] B) : toMax (x - y) = toMax x - toMax y :=
+  (rfl)
+
+@[simp]
+theorem toMax_mul (x y : A ⊗[ℂ] B) : toMax (x * y) = toMax x * toMax y :=
+  (rfl)
+
+@[simp]
+theorem toMax_smul (c : ℂ) (x : A ⊗[ℂ] B) : toMax (c • x) = c • toMax x :=
+  (rfl)
+
+@[simp]
+theorem toMax_star (x : A ⊗[ℂ] B) : toMax (star x) = star (toMax x) :=
+  (rfl)
+
+@[simp]
+theorem ofMax_zero : ofMax (0 : MaxTensorAlgebra A B) = 0 :=
+  (rfl)
+
+@[simp]
+theorem ofMax_add (x y : MaxTensorAlgebra A B) : ofMax (x + y) = ofMax x + ofMax y :=
+  (rfl)
+
+@[simp]
+theorem ofMax_neg (x : MaxTensorAlgebra A B) : ofMax (-x) = -ofMax x :=
+  (rfl)
+
+@[simp]
+theorem ofMax_sub (x y : MaxTensorAlgebra A B) : ofMax (x - y) = ofMax x - ofMax y :=
+  (rfl)
 
 @[simp]
 theorem ofMax_smul (c : ℂ) (x : MaxTensorAlgebra A B) : ofMax (c • x) = c • ofMax x :=
@@ -182,7 +236,7 @@ end MaxTensorAlgebra
 
 open MaxTensorAlgebra
 
-/-- The **maximal tensor product** `A ⊗max B` of C*-algebras `A` and `B`: the completion of the
+/-- The **maximal tensor product** of C*-algebras `A` and `B`: the completion of the
 algebraic tensor product `A ⊗[ℂ] B` in the maximal C*-norm. It is a C*-algebra, and the
 canonical map `TauCeti.MaxTensorProduct.of` from `A ⊗[ℂ] B` is injective and isometric with
 dense range. -/
@@ -199,7 +253,7 @@ instance : NonUnitalCStarAlgebra (Completion (MaxTensorAlgebra A B)) where
 instance : NonUnitalCStarAlgebra (MaxTensorProduct A B) :=
   inferInstanceAs (NonUnitalCStarAlgebra (Completion (MaxTensorAlgebra A B)))
 
-/-- The canonical star homomorphism `A ⊗[ℂ] B → A ⊗max B`. -/
+/-- The canonical star homomorphism `A ⊗[ℂ] B → MaxTensorProduct A B`. -/
 def of : A ⊗[ℂ] B →⋆ₙₐ[ℂ] MaxTensorProduct A B where
   toFun x := (toMaxStarAlgEquiv A B x : Completion (MaxTensorAlgebra A B))
   map_smul' c x := by
@@ -226,34 +280,36 @@ theorem coe_toMax_eq_of (x : A ⊗[ℂ] B) :
     ((toMax x : Completion (MaxTensorAlgebra A B)) : MaxTensorProduct A B) = of A B x :=
   (rfl)
 
-/-- The norm of the image of `x` in `A ⊗max B` is its maximal norm. -/
+/-- The norm of the image of `x` in `MaxTensorProduct A B` is its maximal norm. -/
 @[simp]
 theorem norm_of (x : A ⊗[ℂ] B) : ‖of A B x‖ = maxTensorNorm A B x :=
   Completion.norm_coe (toMax x)
 
-/-- `‖a ⊗ b‖ = ‖a‖ ‖b‖` in `A ⊗max B`. -/
+/-- `‖a ⊗ b‖ = ‖a‖ ‖b‖` in `MaxTensorProduct A B`. -/
 theorem norm_of_tmul (a : A) (b : B) : ‖of A B (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
   rw [norm_of, maxTensorNorm_tmul]
 
-/-- The canonical map `A ⊗[ℂ] B → A ⊗max B` is injective. -/
+/-- The canonical map `A ⊗[ℂ] B → MaxTensorProduct A B` is injective. -/
 theorem of_injective : Function.Injective (of A B) :=
   (injective_iff_map_eq_zero (of A B)).2 fun x hx ↦
     maxTensorNorm_eq_zero_iff.1 (by rw [← norm_of, hx, norm_zero])
 
-/-- `A ⊗[ℂ] B` is dense in `A ⊗max B`. -/
+/-- `A ⊗[ℂ] B` is dense in `MaxTensorProduct A B`. -/
 theorem denseRange_of : DenseRange (of A B) :=
   Completion.denseRange_coe.comp toMax.surjective.denseRange (Completion.continuous_coe _)
 
-/-- To prove a closed property of every element of `A ⊗max B`, it suffices to prove it on
-`A ⊗[ℂ] B`. -/
+/-- To prove a closed property of every element of `MaxTensorProduct A B`, it suffices to prove
+it on `A ⊗[ℂ] B`. -/
 @[elab_as_elim]
 theorem induction_on {p : MaxTensorProduct A B → Prop} (x : MaxTensorProduct A B)
     (hp : IsClosed {x | p x}) (ih : ∀ x, p (of A B x)) : p x :=
-  Completion.induction_on (p := p) x hp fun x ↦ coe_toMax_eq_of (ofMax x) ▸ ih (ofMax x)
+  Completion.induction_on (p := p) x hp fun y ↦ by
+    have h := ih (ofMax y)
+    rwa [← coe_toMax_eq_of, toMax_ofMax] at h
 
 open scoped _root_.CStarAlgebra in
-/-- Star homomorphisms from `A ⊗max B` into a C*-algebra are determined by their values on the
-elementary tensors `a ⊗ b`. -/
+/-- Star homomorphisms from `MaxTensorProduct A B` into a C*-algebra are determined by their
+values on the elementary tensors `a ⊗ b`. -/
 @[ext]
 theorem starAlgHom_ext {C : Type*} [NonUnitalCStarAlgebra C]
     {φ ψ : MaxTensorProduct A B →⋆ₙₐ[ℂ] C} (h : ∀ a b, φ (of A B (a ⊗ₜ b)) = ψ (of A B (a ⊗ₜ b))) :
@@ -267,10 +323,11 @@ theorem starAlgHom_ext {C : Type*} [NonUnitalCStarAlgebra C]
 variable {C : Type (max u v)} [NonUnitalCStarAlgebra C] (φ : A →⋆ₙₐ[ℂ] C) (ψ : B →⋆ₙₐ[ℂ] C)
   (h : ∀ a b, Commute (φ a) (ψ b))
 
-/-- **The universal property of `A ⊗max B`.** Commuting star homomorphisms `φ : A → C` and
-`ψ : B → C` into a C*-algebra `C` in the universe `max u v` extend to the star homomorphism
-`A ⊗max B → C` sending `a ⊗ b` to `φ a * ψ b` (`TauCeti.MaxTensorProduct.lift_of_tmul`); it is
-unique by `TauCeti.MaxTensorProduct.starAlgHom_ext`. -/
+/-- **The universal property of `MaxTensorProduct A B`.** Commuting star homomorphisms
+`φ : A → C` and `ψ : B → C` into a C*-algebra `C` in the universe `max u v` extend to the star
+homomorphism `MaxTensorProduct A B → C` sending `a ⊗ b` to `φ a * ψ b`
+(`TauCeti.MaxTensorProduct.lift_of_tmul`); it is unique by
+`TauCeti.MaxTensorProduct.starAlgHom_ext`. -/
 def lift : MaxTensorProduct A B →⋆ₙₐ[ℂ] C :=
   ((Algebra.TensorProduct.liftNonUnitalStarAlgHom φ ψ h).comp
     (toMaxStarAlgEquiv A B).symm.toNonUnitalStarAlgHom).fromCompletion <|
@@ -282,6 +339,7 @@ def lift : MaxTensorProduct A B →⋆ₙₐ[ℂ] C :=
 theorem lift_of (x : A ⊗[ℂ] B) :
     lift φ ψ h (of A B x) = Algebra.TensorProduct.liftNonUnitalStarAlgHom φ ψ h x := by
   rw [← coe_toMax_eq_of]
+  -- `lift φ ψ h` is by definition the extension from the completion of `MaxTensorAlgebra A B`.
   exact (NonUnitalStarAlgHom.fromCompletion_apply_coe _ _ (toMax x)).trans (by simp)
 
 /-- The extension sends `a ⊗ b` to `φ a * ψ b`. -/
@@ -302,13 +360,14 @@ open MaxTensorProduct
 
 variable {A B}
 
-/-- The representation of `A ⊗max B` integrating a commuting pair of representations of `A` and
-`B`, `a ⊗ b ↦ π a * ρ b`. -/
+/-- The representation of `MaxTensorProduct A B` integrating a commuting pair of representations
+of `A` and `B`, `a ⊗ b ↦ π a * ρ b`. -/
 def maxTensorHom (p : CommutingRepresentationPair A B) :
     MaxTensorProduct A B →⋆ₙₐ[ℂ] (p.H →L[ℂ] p.H) :=
   lift p.left p.right p.commute
 
-/-- On `A ⊗[ℂ] B`, the representation of `A ⊗max B` is the integrated form of the pair. -/
+/-- On `A ⊗[ℂ] B`, the representation of `MaxTensorProduct A B` is the integrated form of the
+pair. -/
 @[simp]
 theorem maxTensorHom_of (p : CommutingRepresentationPair A B) (x : A ⊗[ℂ] B) :
     p.maxTensorHom (of A B x) = p.tensorHom x := by
