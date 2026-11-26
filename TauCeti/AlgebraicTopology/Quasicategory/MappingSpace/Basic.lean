@@ -142,6 +142,20 @@ lemma whiskerRight_δ_zero_uncurry_ι :
     stdSimplex.δ 0 ▷ _ ≫ uncurry (X.mappingSpace x y).ι = const y :=
   ((range_le_mappingSpace_iff _).1 (Subfunctor.range_ι _).le).2
 
+/-- A family `g : Z ⟶ Hom_X(x, y)` of edges, uncurried to `Δ[1] ⊗ Z ⟶ X`, is constant at `x` on
+`{0} × Z`. -/
+@[reassoc (attr := simp)]
+lemma whiskerRight_δ_one_uncurry_comp_ι {Z : SSet.{u}} (g : Z ⟶ (X.mappingSpace x y : SSet.{u})) :
+    stdSimplex.δ 1 ▷ Z ≫ uncurry (g ≫ (X.mappingSpace x y).ι) = const x := by
+  rw [uncurry_natural_left, ← whisker_exchange_assoc, whiskerRight_δ_one_uncurry_ι, comp_const]
+
+/-- A family `g : Z ⟶ Hom_X(x, y)` of edges, uncurried to `Δ[1] ⊗ Z ⟶ X`, is constant at `y` on
+`{1} × Z`. -/
+@[reassoc (attr := simp)]
+lemma whiskerRight_δ_zero_uncurry_comp_ι {Z : SSet.{u}} (g : Z ⟶ (X.mappingSpace x y : SSet.{u})) :
+    stdSimplex.δ 0 ▷ Z ≫ uncurry (g ≫ (X.mappingSpace x y).ι) = const y := by
+  rw [uncurry_natural_left, ← whisker_exchange_assoc, whiskerRight_δ_zero_uncurry_ι, comp_const]
+
 /-- The mapping spaces of a quasicategory are quasicategories: `Hom_X(x, y)` is a fibre of the
 restriction `Fun(Δ[1], X) ⟶ Fun(∂Δ[1], X)`, which is an inner fibration. -/
 instance quasicategory [X.Quasicategory] : (X.mappingSpace x y : SSet.{u}).Quasicategory :=
@@ -190,6 +204,18 @@ lemma obj₀Equiv_apply_edge (σ : (X.mappingSpace x y : SSet.{u}) _⦋0⦌) :
 lemma obj₀Equiv_symm_apply_coe (e : Edge x y) :
     (obj₀Equiv.symm e).val = (ihomObj₀Equiv _ X).symm (yonedaEquiv.symm e.edge) :=
   (rfl)
+
+/-- The family of identity edges at `x`, uncurried to `Δ[1] ⊗ Z ⟶ X`, is constant at `x`. -/
+lemma uncurry_const_obj₀Equiv_symm_id_comp_ι {Z : SSet.{u}} :
+    uncurry ((const (obj₀Equiv.symm (Edge.id x)) : Z ⟶ (X.mappingSpace x x : SSet.{u})) ≫
+      (X.mappingSpace x x).ι) = const x := by
+  have h : (const (obj₀Equiv.symm (Edge.id x)) : Z ⟶ (X.mappingSpace x x : SSet.{u})) ≫
+      (X.mappingSpace x x).ι =
+        const ((ihomObj₀Equiv _ X).symm (yonedaEquiv.symm (Edge.id x).edge)) := by
+    rw [const_comp]
+    exact congrArg const (obj₀Equiv_symm_apply_coe _)
+  rw [h, const_ihomObj₀Equiv_symm, uncurry_curry, ← yonedaEquiv_const_one, Equiv.symm_apply_apply,
+    comp_const]
 
 /-! ### Functoriality -/
 
