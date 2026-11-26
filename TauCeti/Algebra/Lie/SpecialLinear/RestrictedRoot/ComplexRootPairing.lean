@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Lie.SpecialLinear.Diagonal
 public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
-import TauCeti.LinearAlgebra.RootSystem.ConsecutiveDifferenceBase
+import TauCeti.LinearAlgebra.RootSystem.TypeAPairing
 
 /-!
 # The restricted root system of `𝔰𝔩_n(ℂ)` viewed as real has type `A`
@@ -30,7 +30,7 @@ root pairing `LieEquiv.IsCartanInvolution.restrictedRootPairing` of this example
   base whose Cartan matrix is `CartanMatrix.A r`: the restricted root system has Cartan type
   `A_r`, in particular `A₂` for `𝔰𝔩₃(ℂ)`;
 * every restricted root has multiplicity `2`
-  (`TauCeti.finrank_restrictedRootSpace_slComplexRestrictedRoot`).
+  (`TauCeti.finrank_restrictedRootSpace_slComplexRealDiagonal`).
 
 So `𝔰𝔩_{r+1}(ℂ)` viewed as real and its split real form `𝔰𝔩_{r+1}(ℝ)`
 (`TauCeti.hasCartanType_specialLinearRestrictedRootPairing`) have the same restricted root system,
@@ -46,6 +46,8 @@ with multiplicities `2` and `1`.
 * `TauCeti.slComplexRestrictedRootPairing_coroot`: the coroot of `e_i - e_j` is `E_ii - E_jj`.
 * `TauCeti.hasCartanType_slComplexRestrictedRootPairing`: the restricted root system of
   `𝔰𝔩_{r+1}(ℂ)` viewed as real has Cartan type `A_r`.
+* `TauCeti.finrank_restrictedRootSpace_slComplexRealDiagonal`: every restricted root of
+  `𝔰𝔩_n(ℂ)` viewed as real has multiplicity `2`.
 
 ## References
 
@@ -63,16 +65,6 @@ namespace TauCeti
 section General
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- `-(e_i - e_j) = e_j - e_i`. -/
-theorem neg_slComplexRestrictedRoot (i j : n) :
-    -slComplexRestrictedRoot n i j = slComplexRestrictedRoot n j i :=
-  LinearMap.ext fun H ↦ by simp
-
-/-- `(e_i - e_k) - (e_j - e_k) = e_i - e_j`. -/
-theorem slComplexRestrictedRoot_sub_slComplexRestrictedRoot (i j k : n) :
-    slComplexRestrictedRoot n i k - slComplexRestrictedRoot n j k = slComplexRestrictedRoot n i j :=
-  LinearMap.ext fun H ↦ by simp
 
 variable (n) in
 /-- **The restricted root pairing of `𝔰𝔩_n(ℂ)` viewed as real**, for the Cartan involution
@@ -143,11 +135,11 @@ theorem slComplexRestrictedRootPairing_coroot {i j : n} (hij : i ≠ j) :
   simp only [Matrix.smul_apply, Matrix.sub_apply, Matrix.single_apply, hij, hij.symm, and_self,
     ite_true, ite_false, smul_eq_mul, mul_one, sub_zero, zero_sub, mul_neg,
     Complex.neg_re] at h2
-  have hc : c = 1 := Complex.ext (by simp; linarith) (by simpa using him)
-  rw [LieEquiv.IsCartanInvolution.restrictedRootPairing_coroot]
-  refine Subtype.ext (Subtype.ext ?_)
-  change (((H : slComplexRealDiagonal n) : slComplexReal n) : Matrix n n ℂ) = _
-  rw [hH, hc, one_smul, coe_slComplexRealDiagonalSingleSubSingle]
+  have hc : c = 1 :=
+    Complex.ext (by rw [Complex.one_re]; linarith) (by rw [Complex.one_im]; exact him)
+  rw [LieEquiv.IsCartanInvolution.restrictedRootPairing_coroot, coe_slComplexRestrictedRootIndex]
+  exact Subtype.ext (Subtype.ext (hH.trans (by
+    rw [hc, one_smul, coe_slComplexRealDiagonalSingleSubSingle])))
 
 /-- The pairing of `e_i - e_j` with the coroot of `e_k - e_l` is `δ_ik - δ_il - δ_jk + δ_jl`. -/
 theorem slComplexRestrictedRootPairing_pairing {i j k l : n} (hij : i ≠ j) (hkl : k ≠ l) :
@@ -170,16 +162,9 @@ instance finite_restrictedRoots_slComplexRealDiagonal :
 restricted root space has dimension `2`, the only restricted roots proportional to `α` are
 `±α`. -/
 instance isReduced_slComplexRestrictedRootPairing :
-    (slComplexRestrictedRootPairing n).IsReduced := by
-  refine ⟨fun μ ν h ↦ ?_⟩
-  rw [← RootPairing.coxeterWeight_eq_four_iff_not_linearIndependent,
-    RootPairing.coxeterWeight] at h
-  obtain ⟨i, j, hij, rfl⟩ := exists_eq_slComplexRestrictedRootIndex μ
-  obtain ⟨k, l, hkl, rfl⟩ := exists_eq_slComplexRestrictedRootIndex ν
-  rw [slComplexRestrictedRootPairing_pairing, slComplexRestrictedRootPairing_pairing] at h
-  simp only [LieEquiv.IsCartanInvolution.restrictedRootPairing_root,
-    coe_slComplexRestrictedRootIndex, neg_slComplexRestrictedRoot]
-  split_ifs at h <;> subst_vars <;> simp_all
+    (slComplexRestrictedRootPairing n).IsReduced :=
+  RootPairing.isReduced_of_pairing_eq_delta exists_eq_slComplexRestrictedRootIndex
+    fun _ _ _ _ ↦ slComplexRestrictedRootPairing_pairing
 
 end General
 
@@ -217,6 +202,21 @@ noncomputable def slComplexRealDiagonalEquiv :
   map_add' _ _ := Subtype.ext (Subtype.ext (Matrix.ext fun _ _ ↦ by simp))
   map_smul' _ _ := Subtype.ext (Subtype.ext (Matrix.ext fun _ _ ↦ by simp))
 
+/-- `TauCeti.slComplexRealDiagonalEquiv` takes the real parts of the entries. -/
+@[simp]
+theorem coe_slComplexRealDiagonalEquiv_apply (H : slComplexRealDiagonal (Fin (r + 1))) :
+    ((slComplexRealDiagonalEquiv r H : sl (Fin (r + 1)) ℝ) : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ) =
+      (H : Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ).map Complex.re :=
+  (rfl)
+
+/-- The inverse of `TauCeti.slComplexRealDiagonalEquiv` includes the real entries into `ℂ`. -/
+@[simp]
+theorem coe_slComplexRealDiagonalEquiv_symm_apply (X : specialLinearDiagonal r ℝ) :
+    (((slComplexRealDiagonalEquiv r).symm X : slComplexReal (Fin (r + 1))) :
+        Matrix (Fin (r + 1)) (Fin (r + 1)) ℂ) =
+      (X : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ).map Complex.ofReal :=
+  (rfl)
+
 /-- `𝔞` has dimension `r` in `𝔰𝔩_{r+1}(ℂ)` viewed as real. -/
 theorem finrank_slComplexRealDiagonal :
     finrank ℝ (slComplexRealDiagonal (Fin (r + 1))) = r := by
@@ -236,72 +236,52 @@ theorem slComplexSimpleRestrictedRootIndex_def (k : Fin r) :
 
 /-- Distinct indices give distinct simple restricted roots. -/
 theorem slComplexSimpleRestrictedRootIndex_injective :
-    Function.Injective (slComplexSimpleRestrictedRootIndex r) := fun k l h ↦ by
-  have h' := congrArg (fun μ : (slComplexRealDiagonal (Fin (r + 1))).restrictedRoots ↦
-    (μ : Dual ℝ (slComplexRealDiagonal (Fin (r + 1))))) h
-  simp only [slComplexSimpleRestrictedRootIndex_def, coe_slComplexRestrictedRootIndex] at h'
-  exact Fin.castSucc_injective _ ((slComplexRestrictedRoot_inj Fin.castSucc_lt_succ.ne).mp h').1
+    Function.Injective (slComplexSimpleRestrictedRootIndex r) :=
+  RootPairing.injective_of_pairing_eq_delta (P := slComplexRestrictedRootPairing (Fin (r + 1)))
+    (fun _ _ _ _ ↦ slComplexRestrictedRootPairing_pairing) slComplexSimpleRestrictedRootIndex_def
 
-/-- Every restricted root is a sum of simple roots or the negative of one. -/
-private theorem root_mem_or_neg_mem_closure
-    (μ : (slComplexRealDiagonal (Fin (r + 1))).restrictedRoots) :
-    (slComplexRestrictedRootPairing (Fin (r + 1))).root μ ∈
-        AddSubmonoid.closure ((slComplexRestrictedRootPairing (Fin (r + 1))).root ''
-          range (slComplexSimpleRestrictedRootIndex r)) ∨
-      -(slComplexRestrictedRootPairing (Fin (r + 1))).root μ ∈
-        AddSubmonoid.closure ((slComplexRestrictedRootPairing (Fin (r + 1))).root ''
-          range (slComplexSimpleRestrictedRootIndex r)) := by
-  have hroot (i j : Fin (r + 1)) (hij : i ≠ j) :
-      (slComplexRestrictedRootPairing (Fin (r + 1))).root
-          (slComplexRestrictedRootIndex (Fin (r + 1)) i j hij) =
-        slComplexRestrictedRoot (Fin (r + 1)) i 0 - slComplexRestrictedRoot (Fin (r + 1)) j 0 := by
-    rw [LieEquiv.IsCartanInvolution.restrictedRootPairing_root,
-      coe_slComplexRestrictedRootIndex, slComplexRestrictedRoot_sub_slComplexRestrictedRoot]
-  refine RootPairing.root_mem_or_neg_mem_closure_of_forall_exists_eq_sub
-    (fun a ↦ slComplexRestrictedRoot (Fin (r + 1)) a 0) (fun k ↦ hroot _ _ _) (fun ν ↦ ?_) μ
-  obtain ⟨i, j, hij, rfl⟩ := exists_eq_slComplexRestrictedRootIndex ν
-  exact ⟨i, j, hroot i j hij⟩
+/-- `e_i - e_j = (e_i - e_0) - (e_j - e_0)`. -/
+private theorem slComplexRestrictedRootPairing_root_eq_sub (i j : Fin (r + 1)) (hij : i ≠ j) :
+    (slComplexRestrictedRootPairing (Fin (r + 1))).root
+        (slComplexRestrictedRootIndex (Fin (r + 1)) i j hij) =
+      slComplexRestrictedRoot (Fin (r + 1)) i 0 - slComplexRestrictedRoot (Fin (r + 1)) j 0 := by
+  rw [LieEquiv.IsCartanInvolution.restrictedRootPairing_root, coe_slComplexRestrictedRootIndex,
+    slComplexRestrictedRoot_sub_slComplexRestrictedRoot]
 
 variable (r) in
 /-- **The base of simple restricted roots** `e_k - e_{k+1}`, `k < r`, of `𝔰𝔩_{r+1}(ℂ)` viewed as
 real. -/
 noncomputable def slComplexRestrictedRootBase :
     (slComplexRestrictedRootPairing (Fin (r + 1))).Base :=
-  RootPairing.Base.mk' _ (range (slComplexSimpleRestrictedRootIndex r))
-    (RootPairing.linearIndepOn_root_range_of_root_mem_or_neg_mem_closure
-      slComplexSimpleRestrictedRootIndex_injective root_mem_or_neg_mem_closure <| by
-        rw [Subspace.dual_finrank_eq, finrank_slComplexRealDiagonal])
-    root_mem_or_neg_mem_closure
+  RootPairing.typeABase (fun a ↦ slComplexRestrictedRoot (Fin (r + 1)) a 0)
+    exists_eq_slComplexRestrictedRootIndex (fun _ _ _ _ ↦ slComplexRestrictedRootPairing_pairing)
+    slComplexRestrictedRootPairing_root_eq_sub slComplexSimpleRestrictedRootIndex_def
+    (by rw [Subspace.dual_finrank_eq, finrank_slComplexRealDiagonal])
 
 /-- The simple roots of `TauCeti.slComplexRestrictedRootBase` are the `e_k - e_{k+1}`. -/
 theorem slComplexRestrictedRootBase_support :
     (slComplexRestrictedRootBase r).support =
-      simpleSupport (slComplexSimpleRestrictedRootIndex_injective (r := r)) := by
-  ext μ
-  simp [slComplexRestrictedRootBase, RootPairing.Base.mk']
+      simpleSupport (slComplexSimpleRestrictedRootIndex_injective (r := r)) :=
+  RootPairing.typeABase_support ..
 
 /-- The pairing of the simple roots `e_a - e_{a+1}` and `e_b - e_{b+1}` is the `(a, b)` entry of
 the Cartan matrix of type `A_r`. -/
 theorem slComplexRestrictedRootPairing_pairing_simple (a b : Fin r) :
     (slComplexRestrictedRootPairing (Fin (r + 1))).pairing
         (slComplexSimpleRestrictedRootIndex r a) (slComplexSimpleRestrictedRootIndex r b) =
-      (CartanMatrix.A r a b : ℝ) := by
-  rw [slComplexSimpleRestrictedRootIndex_def, slComplexSimpleRestrictedRootIndex_def,
-    slComplexRestrictedRootPairing_pairing]
-  simp only [CartanMatrix.A, Matrix.of_apply, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]
-  split_ifs <;> norm_num <;> omega
+      (CartanMatrix.A r a b : ℝ) :=
+  RootPairing.pairing_eq_cartanMatrix_A_of_pairing_eq_delta
+    (fun _ _ _ _ ↦ slComplexRestrictedRootPairing_pairing) slComplexSimpleRestrictedRootIndex_def
+    a b
 
 /-- **The restricted root system of `𝔰𝔩_{r+1}(ℂ)` viewed as real has Cartan type `A_r`**: relative
 to the base of simple roots `e_k - e_{k+1}` its Cartan matrix is `CartanMatrix.A r`. In particular
-the restricted root system of `𝔰𝔩₃(ℂ)` viewed as real has type `A₂`, with every restricted root of
-multiplicity `2` (`TauCeti.finrank_restrictedRootSpace_slComplexRestrictedRoot`). -/
+the restricted root system of `𝔰𝔩₃(ℂ)` viewed as real has type `A₂`. Its restricted roots all have
+multiplicity `2` (`TauCeti.finrank_restrictedRootSpace_slComplexRealDiagonal`). -/
 theorem hasCartanType_slComplexRestrictedRootPairing :
     HasCartanType (slComplexRestrictedRootPairing (Fin (r + 1))) (slComplexRestrictedRootBase r)
       (.A r) :=
-  hasCartanType_of_pairing_eq (t := .A r)
-    (slComplexSimpleRestrictedRootIndex_injective (r := r))
-    slComplexRestrictedRootBase_support fun a b ↦
-      (slComplexRestrictedRootPairing_pairing_simple (r := r) a b).trans (by simp)
+  RootPairing.hasCartanType_typeABase ..
 
 /-- **Every restricted root of `𝔰𝔩_n(ℂ)` viewed as real has multiplicity `2`.** -/
 theorem finrank_restrictedRootSpace_slComplexRealDiagonal {n : Type*} [Fintype n] [DecidableEq n]
