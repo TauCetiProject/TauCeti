@@ -8,9 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Elliptic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.FocusFocus
-import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.Morse.NormSq
+import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Nondegenerate
 
 /-!
@@ -168,30 +168,6 @@ private noncomputable abbrev horizontalReflection :
     EuclideanSpace ℝ (Fin 3) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 3) :=
   (ℝ ∙ EuclideanSpace.single (2 : Fin 3) (1 : ℝ))ᗮ.reflection
 
-private theorem horizontalReflection_apply (v : EuclideanSpace ℝ (Fin 3)) :
-    horizontalReflection v = v - (2 * v 2) • EuclideanSpace.single 2 1 := by
-  rw [Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply]
-  have hn : ‖EuclideanSpace.single (2 : Fin 3) (1 : ℝ)‖ = 1 := by
-    simp [EuclideanSpace.single, PiLp.norm_single]
-  simp only [EuclideanSpace.inner_single_left, hn, map_one, one_mul]
-  module
-
-@[simp]
-private theorem horizontalReflection_apply_zero (v : EuclideanSpace ℝ (Fin 3)) :
-    horizontalReflection v 0 = v 0 := by
-  simp [horizontalReflection_apply]
-
-@[simp]
-private theorem horizontalReflection_apply_one (v : EuclideanSpace ℝ (Fin 3)) :
-    horizontalReflection v 1 = v 1 := by
-  simp [horizontalReflection_apply]
-
-@[simp]
-private theorem horizontalReflection_apply_two (v : EuclideanSpace ℝ (Fin 3)) :
-    horizontalReflection v 2 = -v 2 := by
-  simp [horizontalReflection_apply]
-  ring
-
 /-- The reflection `(q, p) ↦ (σ q, σ p)` of `ℝ³ × ℝ³`. -/
 private noncomputable abbrev horizontalReflectionPair :
     (EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) →L[ℝ]
@@ -288,14 +264,33 @@ theorem sphericalPendulumEnergyMomentum_sphericalPendulumLowerParam :
     ring
   · simp
 
+/-- The energy–momentum maps read in the two canonical charts differ by
+`(2 √(1 - ‖x‖²), 0)`. -/
+theorem sphericalPendulumEnergyMomentum_comp_sphericalPendulumLowerParam :
+    sphericalPendulumEnergyMomentum ∘ sphericalPendulumLowerParam =
+      sphericalPendulumEnergyMomentum ∘ sphericalPendulumUpperParam -
+        fun z ↦ (2 * √(1 - ‖z.1‖ ^ 2), 0) :=
+  funext sphericalPendulumEnergyMomentum_sphericalPendulumLowerParam
+
+/-- The energies read in the two canonical charts differ by twice the height `√(1 - ‖x‖²)` of the
+hemispheres. -/
+theorem sphericalPendulumHamiltonian_comp_sphericalPendulumLowerParam :
+    sphericalPendulumHamiltonian ∘ sphericalPendulumLowerParam =
+      sphericalPendulumHamiltonian ∘ sphericalPendulumUpperParam -
+        fun z ↦ 2 * √(1 - ‖z.1‖ ^ 2) := by
+  funext z
+  simpa only [Function.comp_apply, Pi.sub_apply, fst_sphericalPendulumEnergyMomentum,
+    Prod.fst_sub] using
+    congrArg Prod.fst (sphericalPendulumEnergyMomentum_sphericalPendulumLowerParam z)
+
 /-- The energy in the canonical coordinates over the closed unit disc:
 `H = (‖ξ‖² - ⟪ξ, x⟫²) / 2 - √(1 - ‖x‖²)`. -/
 theorem sphericalPendulumHamiltonian_sphericalPendulumLowerParam {z} (hz : ‖z.1‖ ≤ 1) :
     sphericalPendulumHamiltonian (sphericalPendulumLowerParam z) =
       (‖z.2‖ ^ 2 - ⟪z.2, z.1⟫_ℝ ^ 2) / 2 - √(1 - ‖z.1‖ ^ 2) := by
-  have h := congrArg Prod.fst (sphericalPendulumEnergyMomentum_sphericalPendulumLowerParam z)
-  simp only [fst_sphericalPendulumEnergyMomentum, Prod.fst_sub] at h
-  rw [h, sphericalPendulumHamiltonian_sphericalPendulumUpperParam hz]
+  rw [← Function.comp_apply (f := sphericalPendulumHamiltonian),
+    sphericalPendulumHamiltonian_comp_sphericalPendulumLowerParam, Pi.sub_apply,
+    Function.comp_apply, sphericalPendulumHamiltonian_sphericalPendulumUpperParam hz]
   ring
 
 /-- The vertical angular momentum in the canonical coordinates: `J = x₁ ξ₂ - x₂ ξ₁`. -/
@@ -332,12 +327,7 @@ theorem fderiv_sphericalPendulumEnergyMomentum_comp_sphericalPendulumLowerParam_
     · rw [map_zero, smul_zero, ContinuousLinearMap.zero_comp]
   have hg := (hs.const_mul 2).prodMk
     (hasFDerivAt_const (𝕜 := ℝ) (0 : ℝ) (0 : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)))
-  have h : sphericalPendulumEnergyMomentum ∘ sphericalPendulumLowerParam =
-      (sphericalPendulumEnergyMomentum ∘ sphericalPendulumUpperParam) -
-        fun z ↦ ((2 * √(1 - ‖z.1‖ ^ 2), 0) : ℝ × ℝ) := by
-    funext z
-    exact sphericalPendulumEnergyMomentum_sphericalPendulumLowerParam z
-  rw [h, (hF.sub hg).fderiv]
+  rw [sphericalPendulumEnergyMomentum_comp_sphericalPendulumLowerParam, (hF.sub hg).fderiv]
   ext <;> simp
 
 /-! ### The Hessians at the south pole -/
@@ -352,14 +342,6 @@ theorem hessianQuadraticForm_sphericalPendulumHamiltonian_comp_sphericalPendulum
   -- `√(1 - ‖x‖²)`, read on the first factor.
   let φ : EuclideanSpace ℝ (Fin 2) → ℝ := fun x ↦ √(1 - ‖x‖ ^ 2)
   let L := ContinuousLinearMap.fst ℝ (EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin 2))
-  have h : sphericalPendulumHamiltonian ∘ sphericalPendulumLowerParam =
-      sphericalPendulumHamiltonian ∘ sphericalPendulumUpperParam + (-2 : ℝ) • (φ ∘ L) := by
-    funext z
-    have := congrArg Prod.fst (sphericalPendulumEnergyMomentum_sphericalPendulumLowerParam z)
-    simp only [fst_sphericalPendulumEnergyMomentum, Prod.fst_sub] at this
-    simp only [Function.comp_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, this, φ, L,
-      ContinuousLinearMap.coe_fst']
-    ring
   have hφ : ContDiffAt ℝ 2 φ (L 0) :=
     (contDiffAt_const.sub (contDiff_norm_sq ℝ).contDiffAt).sqrt (by simp [L])
   have hH : ContDiffAt ℝ 2 (sphericalPendulumHamiltonian ∘ sphericalPendulumUpperParam) 0 := by
@@ -367,11 +349,13 @@ theorem hessianQuadraticForm_sphericalPendulumHamiltonian_comp_sphericalPendulum
       simpa only [fst_sphericalPendulumEnergyMomentum] using
         contDiff_sphericalPendulumEnergyMomentum.fst
     exact this.contDiffAt.comp 0 (contDiffAt_sphericalPendulumUpperParam (by simp))
-  have hφL : ContDiffAt ℝ 2 ((-2 : ℝ) • (φ ∘ L)) 0 :=
-    (hφ.comp 0 L.contDiff.contDiffAt).const_smul (-2 : ℝ)
-  rw [h, hessianQuadraticForm_add hH hφL,
-    hessianQuadraticForm_smul, L.hessianQuadraticForm_comp hφ]
-  simp only [add_apply, smul_apply, QuadraticMap.comp_apply,
+  have hφL : ContDiffAt ℝ 2 (-((2 : ℝ) • (φ ∘ L))) 0 :=
+    ((hφ.comp 0 L.contDiff.contDiffAt).const_smul (2 : ℝ)).neg
+  rw [sphericalPendulumHamiltonian_comp_sphericalPendulumLowerParam,
+    show (fun z ↦ 2 * √(1 - ‖z.1‖ ^ 2)) = (2 : ℝ) • (φ ∘ L) from rfl, sub_eq_add_neg,
+    hessianQuadraticForm_add hH hφL, hessianQuadraticForm_neg, hessianQuadraticForm_smul,
+    L.hessianQuadraticForm_comp hφ]
+  simp only [add_apply, neg_apply, smul_apply, QuadraticMap.comp_apply,
     hessianQuadraticForm_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_zero,
     ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_fst', smul_eq_mul, L, φ, Prod.fst_zero,
     hessianQuadraticForm_sqrt_sub_norm_sq_zero one_pos, Real.sqrt_one, div_one]
@@ -451,10 +435,10 @@ theorem exists_isDarbouxBasis_span_hessian_sphericalPendulumLowerParam_eq_span_e
       hessianQuadraticForm_angularMomentum_comp_sphericalPendulumLowerParam_zero,
       EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
     fin_cases k <;>
-    simp [ellipticDarbouxVectors, stdSymplecticForm_apply, EuclideanSpace.inner_single_left] <;>
-    ring_nf <;>
-    simp only [inv_sqrt_two_sq] <;>
-    ring
+    simp [ellipticDarbouxVectors, stdSymplecticForm_apply, EuclideanSpace.inner_single_left]
+    -- The left side is `(√2)⁻¹ ^ 2 / 2 = 1 / 4` times a sum of squares equal to the right side.
+    · linear_combination ((z.1 0 - z.2 1) ^ 2 + (z.2 0 + z.1 1) ^ 2) / 2 * inv_sqrt_two_sq
+    · linear_combination ((z.1 0 + z.2 1) ^ 2 + (z.2 0 - z.1 1) ^ 2) / 2 * inv_sqrt_two_sq
   have he₀ := he 0
   have he₁ := he 1
   simp only [Fin.isValue, ↓reduceIte, Fin.one_eq_zero_iff, OfNat.ofNat_ne_one] at he₀ he₁
