@@ -36,6 +36,9 @@ are the versions, for compact sets, of the results for an inducing restriction i
 
 A nonempty compact set totally ordered by specialization contains a point specializing all of its
 points (`IsCompact.exists_forall_specializes`).
+
+If two functions agree off a compact set, compactness of a closed sublevel passes from one to the
+other (`IsCompact.setOf_le_of_eqOn_compl`).
 -/
 
 public section
@@ -400,6 +403,19 @@ theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
         fun _ h y ↦ h _ (Set.mem_range_self y)
 
 end TubeLemma
+
+/-- **Compact sublevels survive modification on a compact set.** If `g` agrees with `f` off a
+compact set `K`, the sublevel of `f` at `c` is compact and the sublevel of `g` at `c` is closed,
+then the sublevel of `g` at `c` is compact: it lies in the union of the sublevel of `f` and `K`. -/
+theorem _root_.IsCompact.setOf_le_of_eqOn_compl {α : Type*} [LE α] {f g : X → α} {K : Set X}
+    {c : α} (hf : IsCompact {x | f x ≤ c}) (hK : IsCompact K) (hfg : EqOn f g Kᶜ)
+    (hg : IsClosed {x | g x ≤ c}) : IsCompact {x | g x ≤ c} := by
+  refine (hf.union hK).of_isClosed_subset hg fun x hx ↦ ?_
+  by_cases hxK : x ∈ K
+  · exact Or.inr hxK
+  · refine Or.inl ?_
+    rw [mem_ofPred_eq, hfg hxK]
+    exact hx
 
 end TauCeti
 

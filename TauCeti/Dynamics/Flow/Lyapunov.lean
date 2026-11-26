@@ -33,7 +33,10 @@ point with trivial stable set, and a strict minimum is a fixed point with trivia
 * `Flow.exists_tendsto_atTop_of_antitone` and `Flow.exists_tendsto_atBot_of_antitone`: an orbit
   converges forward, and backward, in time to a point of `C`.
 * `Flow.le_of_mem_stableSet_of_antitone` and `Flow.le_of_mem_unstableSet_of_antitone`: the value
-  at the limit bounds the values along the orbit.
+  at the limit bounds the values along the orbit;
+  `Flow.le_of_mem_closure_stableSet_of_antitone` and
+  `Flow.le_of_mem_closure_unstableSet_of_antitone`: the same bounds on the closures, for a
+  continuous function.
 * `Flow.fixed_of_antitone_of_strictMax` and `Flow.fixed_of_antitone_of_strictMin`: a strict
   maximum or minimum of a function antitone along orbits is a fixed point.
 * `Flow.stableSet_eq_singleton_of_antitone` and `Flow.unstableSet_eq_singleton_of_antitone`:
@@ -68,6 +71,22 @@ continuous at `x` takes at `y` a value at most its value at `x`. -/
 theorem le_of_mem_unstableSet_of_antitone (hy : y ∈ φ.unstableSet x) (hg : ContinuousAt g x)
     (hanti : Antitone fun t ↦ g (φ t y)) : g y ≤ g x := by
   simpa only [map_zero_apply] using hanti.ge_of_tendsto (hg.tendsto.comp (mem_unstableSet.1 hy)) 0
+
+/-- A continuous function antitone along the orbits of the stable set of `x` takes at every point
+of the closure of that set a value at least its value at `x`. -/
+theorem le_of_mem_closure_stableSet_of_antitone (hg : Continuous g)
+    (hanti : ∀ z ∈ φ.stableSet x, Antitone fun t ↦ g (φ t z))
+    (hy : y ∈ closure (φ.stableSet x)) : g x ≤ g y :=
+  ((isClosed_le continuous_const hg).closure_subset_iff.2 fun z hz ↦
+    le_of_mem_stableSet_of_antitone hz hg.continuousAt (hanti z hz)) hy
+
+/-- A continuous function antitone along the orbits of the unstable set of `x` takes at every
+point of the closure of that set a value at most its value at `x`. -/
+theorem le_of_mem_closure_unstableSet_of_antitone (hg : Continuous g)
+    (hanti : ∀ z ∈ φ.unstableSet x, Antitone fun t ↦ g (φ t z))
+    (hy : y ∈ closure (φ.unstableSet x)) : g y ≤ g x :=
+  ((isClosed_le hg continuous_const).closure_subset_iff.2 fun z hz ↦
+    le_of_mem_unstableSet_of_antitone hz hg.continuousAt (hanti z hz)) hy
 
 /-- **A strict maximum is a fixed point.** A strict global maximum of a function antitone along
 its orbit is fixed by the flow. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Dynamics.Flow.OfLipschitz
+public import TauCeti.Dynamics.Flow.Stable
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Dynamics.Flow.Variational
@@ -57,7 +58,12 @@ Lyapunov descent along every orbit.
   coordinates on a time set containing the interval from zero to the chosen time.
 * `TauCeti.negativeGradientFlow_congr`: it does not depend on the chosen Lipschitz bound.
 * `TauCeti.negativeGradientFlow_apply_eq_of_gradient_eq`: negative-gradient flows agree at time `t`
-  on `y` when the gradients agree along the orbit segment from `0` to `t`.
+  on `y` when the gradients agree along the orbit segment from `0` to `t`;
+  `TauCeti.negativeGradientFlow_apply_eq_of_forall_nonneg_gradient_eq` and
+  `TauCeti.negativeGradientFlow_apply_eq_of_forall_nonpos_gradient_eq` for forward and backward
+  half-orbits, and `TauCeti.mem_stableSet_negativeGradientFlow_iff_of_gradient_eq`,
+  `TauCeti.mem_unstableSet_negativeGradientFlow_iff_of_gradient_eq`: then `y` lies in the stable
+  (resp. unstable) set of any given point for one flow exactly when it does for the other.
 * `TauCeti.forall_negativeGradientFlow_eq_self_iff`: its rest points are the zeros of `∇ f`.
 * `TauCeti.gradient_negativeGradientFlow_eq_zero_iff`: an orbit meets a zero of `∇ f` only if it
   starts at one.
@@ -197,6 +203,56 @@ theorem negativeGradientFlow_apply_eq_of_gradient_eq {g : E → ℝ} {K' : ℝ�
     negativeGradientFlow g hg t y = negativeGradientFlow f hf t y := by
   rw [negativeGradientFlow, negativeGradientFlow]
   exact flowOfLipschitz_apply_eq_of_eqOn hg.neg hf.neg fun τ hτ ↦ congrArg Neg.neg (hfg τ hτ)
+
+/-- If the gradients of `g` and `f` coincide along the forward orbit of `y` under the
+negative-gradient flow of `f`, then the two flows agree on `y` at every time `t ≥ 0`. -/
+theorem negativeGradientFlow_apply_eq_of_forall_nonneg_gradient_eq {g : E → ℝ} {K' : ℝ≥0}
+    (hg : LipschitzWith K' (∇ g)) (hf : LipschitzWith K (∇ f)) {y : E}
+    (hfg : ∀ τ, 0 ≤ τ →
+      ∇ g (negativeGradientFlow f hf τ y) = ∇ f (negativeGradientFlow f hf τ y))
+    {t : ℝ} (ht : 0 ≤ t) :
+    negativeGradientFlow g hg t y = negativeGradientFlow f hf t y :=
+  negativeGradientFlow_apply_eq_of_gradient_eq hg hf fun τ hτ ↦
+    hfg τ (by rw [uIcc_of_le ht] at hτ; exact hτ.1)
+
+/-- If the gradients of `g` and `f` coincide along the backward orbit of `y` under the
+negative-gradient flow of `f`, then the two flows agree on `y` at every time `t ≤ 0`. -/
+theorem negativeGradientFlow_apply_eq_of_forall_nonpos_gradient_eq {g : E → ℝ} {K' : ℝ≥0}
+    (hg : LipschitzWith K' (∇ g)) (hf : LipschitzWith K (∇ f)) {y : E}
+    (hfg : ∀ τ, τ ≤ 0 →
+      ∇ g (negativeGradientFlow f hf τ y) = ∇ f (negativeGradientFlow f hf τ y))
+    {t : ℝ} (ht : t ≤ 0) :
+    negativeGradientFlow g hg t y = negativeGradientFlow f hf t y :=
+  negativeGradientFlow_apply_eq_of_gradient_eq hg hf fun τ hτ ↦
+    hfg τ (by rw [uIcc_of_ge ht] at hτ; exact hτ.2)
+
+/-- If the gradients of `g` and `f` coincide along the forward orbit of `y` under the
+negative-gradient flow of `f`, then `y` lies in the stable set of `q` for the flow of `g` if and
+only if it does for the flow of `f`. -/
+theorem mem_stableSet_negativeGradientFlow_iff_of_gradient_eq {g : E → ℝ} {K' : ℝ≥0}
+    (hg : LipschitzWith K' (∇ g)) (hf : LipschitzWith K (∇ f)) {y q : E}
+    (hfg : ∀ τ, 0 ≤ τ →
+      ∇ g (negativeGradientFlow f hf τ y) = ∇ f (negativeGradientFlow f hf τ y)) :
+    y ∈ Flow.stableSet (negativeGradientFlow g hg) q ↔
+      y ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
+  rw [Flow.mem_stableSet]
+  exact Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn (b := 0) fun t ht ↦ by
+    simpa only [sub_zero] using
+      negativeGradientFlow_apply_eq_of_forall_nonneg_gradient_eq hg hf hfg ht
+
+/-- If the gradients of `g` and `f` coincide along the backward orbit of `y` under the
+negative-gradient flow of `f`, then `y` lies in the unstable set of `p` for the flow of `g` if and
+only if it does for the flow of `f`. -/
+theorem mem_unstableSet_negativeGradientFlow_iff_of_gradient_eq {g : E → ℝ} {K' : ℝ≥0}
+    (hg : LipschitzWith K' (∇ g)) (hf : LipschitzWith K (∇ f)) {y p : E}
+    (hfg : ∀ τ, τ ≤ 0 →
+      ∇ g (negativeGradientFlow f hf τ y) = ∇ f (negativeGradientFlow f hf τ y)) :
+    y ∈ Flow.unstableSet (negativeGradientFlow g hg) p ↔
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p := by
+  rw [Flow.mem_unstableSet]
+  exact Flow.tendsto_atBot_iff_mem_unstableSet_of_eqOn (a := 0) fun t ht ↦ by
+    simpa only [sub_zero] using
+      negativeGradientFlow_apply_eq_of_forall_nonpos_gradient_eq hg hf hfg ht
 
 /-- Translating the negative-gradient field to displacement coordinates preserves its Lipschitz
 constant. -/
