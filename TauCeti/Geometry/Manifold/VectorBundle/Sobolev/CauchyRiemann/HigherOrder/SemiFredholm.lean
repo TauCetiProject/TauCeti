@@ -103,13 +103,11 @@ private theorem exists_compact_estimate_sobolevSuccL (hq : 1 < q) :
       IsCompactOperator K ∧ ∀ w, ‖w‖ ≤ C * ‖hD.sobolevSuccL A hDs volume q (k + 1) w‖ + ‖K w‖ := by
   obtain ⟨C, hC⟩ := hD.exists_norm_le_norm_sobolevSuccL_add_norm A hDs (p := (q : ℝ≥0∞))
     (by exact_mod_cast hq) ENNReal.coe_ne_top (k + 1)
-  have hK : IsCompactOperator (A.sectionChartData.lowerToZeroL volume q (k + 1 + 1)) :=
-    SobolevSection.isCompactOperator_lowerToZeroL (E := ℂ) (M := M) (F := F) (V := V) A volume q
-      (k + 1)
-  refine ⟨|C|, |C| • A.sectionChartData.lowerToZeroL volume q (k + 1 + 1), hK.smul |C|,
-    fun w ↦ ?_⟩
-  simp only [smul_apply, norm_smul, Real.norm_eq_abs, abs_abs, ← mul_add]
-  exact (hC w).trans (by gcongr; exact le_abs_self C)
+  exact ContinuousLinearMap.exists_compact_estimate_of_norm_le_mul_add_norm (𝕜 := ℝ)
+    (E := SobolevSection A volume q (k + 1 + 1)) (F := zeroOneSobolevSections A volume q (k + 1))
+    (G := SobolevSection A volume q 0) (C := C) (T := hD.sobolevSuccL A hDs volume q (k + 1))
+    (K := A.sectionChartData.lowerToZeroL volume q (k + 1 + 1))
+    (SobolevSection.isCompactOperator_lowerToZeroL A volume q (k + 1)) hC
 
 include hD hDs in
 /-- The elliptic estimate for `D₀ + α` at order `k + 2` with a compact error term: the estimate

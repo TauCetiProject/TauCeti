@@ -44,6 +44,9 @@ closed complement, and the bound is witnessed by a continuous projection `P` ont
 weak derivative of a Sobolev space with compact lower-order inclusion, it says that the quotient
 norm modulo the kernel of the top derivative is equivalent to the top seminorm.
 
+An estimate `‖x‖ ≤ C * (‖T x‖ + ‖K x‖)`, the usual shape of an elliptic estimate, has this form
+after rescaling `K` (`ContinuousLinearMap.exists_compact_estimate_of_norm_le_mul_add_norm`).
+
 Two consequences adapt such an estimate to a changed operator or a changed error term. A compact
 perturbation `S` of `T` satisfies an estimate of the same form
 (`ContinuousLinearMap.exists_compact_estimate_of_isCompactOperator_sub`), so the semi-Fredholm
@@ -131,6 +134,22 @@ theorem exists_compact_estimate_of_isCompactOperator_sub [NormedAddCommGroup F] 
           gcongr
           exacts [le_abs_self C, hT.trans (by gcongr)]
       _ ≤ |C| * ‖S x‖ + ‖a‖ * N := by nlinarith
+
+/-- An estimate `‖x‖ ≤ C * (‖T x‖ + ‖K x‖)` with `K` compact has the compact-error form
+`‖x‖ ≤ C' * ‖T x‖ + ‖K' x‖`. The new compact error is `x ↦ a • K x` for a scalar `a` of large
+enough norm. -/
+theorem exists_compact_estimate_of_norm_le_mul_add_norm [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {T : E →L[𝕜] F} {K : E →L[𝕜] G} (hK : IsCompactOperator K)
+    (hbound : ∀ x, ‖x‖ ≤ C * (‖T x‖ + ‖K x‖)) :
+    ∃ (C' : ℝ) (K' : E →L[𝕜] G), IsCompactOperator K' ∧ ∀ x, ‖x‖ ≤ C' * ‖T x‖ + ‖K' x‖ := by
+  obtain ⟨a, ha⟩ := NormedField.exists_lt_norm 𝕜 |C|
+  refine ⟨|C|, a • K, hK.smul a, fun x ↦ ?_⟩
+  rw [smul_apply, norm_smul]
+  calc ‖x‖ ≤ C * (‖T x‖ + ‖K x‖) := hbound x
+    _ ≤ |C| * (‖T x‖ + ‖K x‖) := by gcongr; exact le_abs_self C
+    _ ≤ |C| * ‖T x‖ + ‖a‖ * ‖K x‖ := by
+        rw [mul_add]
+        exact add_le_add_right (mul_le_mul_of_nonneg_right ha.le (norm_nonneg (K x))) _
 
 /-- A compact operator bounded below, `‖x‖ ≤ C * ‖K x‖`, has finite-dimensional domain. -/
 theorem _root_.IsCompactOperator.finiteDimensional_of_norm_le_mul_norm [CompleteSpace 𝕜]
