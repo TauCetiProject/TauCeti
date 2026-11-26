@@ -13,8 +13,7 @@ import Mathlib.Tactic.Ring
 /-!
 # Affine maps and line maps
 
-Affine-map uniqueness, computations, affine-subspace avoidance for `AffineMap.lineMap`, and
-pullback of coplanar commutation along affine images.
+Affine-map uniqueness, computations and affine-subspace avoidance for `AffineMap.lineMap`.
 
 ## Main results
 
@@ -103,23 +102,3 @@ theorem lineMap_not_mem_of_not_mem_affineSpan_insert (S : AffineSubspace k P)
   · exact S.lineMap_not_mem_of_not_mem_affineSpan_insert_of_ne_zero hz ht
 
 end AffineSubspace
-
-namespace TauCeti
-
-/-- Coplanar commutation pulls back along an affine map `f : P →ᵃ[k] Q` and a reindexing
-`r : ι → ι'` matching wall sets (`W' (r i) = f '' W i`) and labels (`label' (r i) = label i`). -/
-theorem commute_of_affineSpan_eq_of_image {k V₁ V₂ P Q ι ι' G : Type*} [Ring k]
-    [AddCommGroup V₁] [Module k V₁] [AddTorsor V₁ P]
-    [AddCommGroup V₂] [Module k V₂] [AddTorsor V₂ Q] [Mul G]
-    {W : ι → Set P} {W' : ι' → Set Q} {label : ι → G} {label' : ι' → G}
-    {f : P →ᵃ[k] Q} {r : ι → ι'} (hW : ∀ i, W' (r i) = f '' W i)
-    (hlabel : ∀ i, label' (r i) = label i)
-    (hcomm' : ∀ i' j', affineSpan k (W' i') = affineSpan k (W' j') →
-      Commute (label' i') (label' j'))
-    (i j : ι) (hij : affineSpan k (W i) = affineSpan k (W j)) :
-    Commute (label i) (label j) := by
-  rw [← hlabel i, ← hlabel j]
-  refine hcomm' (r i) (r j) ?_
-  rw [hW i, hW j, ← AffineSubspace.map_span f, ← AffineSubspace.map_span f, hij]
-
-end TauCeti

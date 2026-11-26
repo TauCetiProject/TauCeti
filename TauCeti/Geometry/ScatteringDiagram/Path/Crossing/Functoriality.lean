@@ -52,11 +52,6 @@ namespace TauCeti.FinitePolyhedralComplex
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
 
-/-- An allowed endpoint for a finite polyhedral complex `C`: an ambient point lying on no wall of
-`C`. -/
-abbrev WallComplement (C : FinitePolyhedralComplex h) : Type _ :=
-  TauCeti.WallComplement (fun P : C.walls => (P : Set V))
-
 /-! ### Wall coorientations -/
 
 /-- A family of wall coorientations on `C` assigns to each wall `w ∈ C.walls` a nonzero real linear
