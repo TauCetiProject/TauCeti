@@ -49,7 +49,8 @@ terms of differential operators.
   between sections are local.
 * `TauCeti.tsupport_apply_subset_of_local`: local operators do not enlarge the closed supports of
   sections; in particular differential operators do not
-  (`TauCeti.tsupport_differentialOperators_section_apply_subset`).
+  (`TauCeti.tsupport_differentialOperators_section_apply_subset`). Composites and sums of local
+  operators are local (`TauCeti.apply_eq_zero_of_local_comp`, `TauCeti.apply_eq_zero_of_local_add`).
 * `TauCeti.tsupport_smulCommutator_section_apply_subset`: commutators with multiplication by
   smooth functions preserve the property of not enlarging supports.
 * `TauCeti.mem_differentialOperators_section_iff_forall_apply_eq_zero`: a linear map between
@@ -115,6 +116,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
   [FiberBundle F' W] [VectorBundle ℝ F' W]
+  {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace ℝ F'']
+  {U : M → Type*} [TopologicalSpace (TotalSpace F'' U)]
+  [∀ x, AddCommGroup (U x)] [∀ x, Module ℝ (U x)] [∀ x, TopologicalSpace (U x)]
+  [FiberBundle F'' U] [VectorBundle ℝ F'' U]
 
 /-- **Differential operators between sections are local.** If `P : Γ(V) → Γ(W)` is a differential
 operator of order `r` in Grothendieck's sense and `s` vanishes near `x`, then `(P s) x = 0`. -/
@@ -143,6 +148,25 @@ theorem tsupport_differentialOperators_section_apply_subset
     (s : Cₛ^∞⟮I; F, V⟯) : (P s).tsupport ⊆ s.tsupport :=
   tsupport_apply_subset_of_local
     (fun _ _ hs ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP hs) s
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+/-- A composite of local operators is local: if `Q s` and `P s` vanish at `x` whenever `s`
+vanishes near `x`, then so does `(Q ∘ₗ P) s`. -/
+theorem apply_eq_zero_of_local_comp {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
+    {Q : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F'', U⟯}
+    (hQ : ∀ (s : Cₛ^∞⟮I; F', W⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → Q s x = 0)
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
+    (s : Cₛ^∞⟮I; F, V⟯) (x : M) (hs : ∀ᶠ y in 𝓝 x, s y = 0) : (Q ∘ₗ P) s x = 0 :=
+  hQ _ x (hs.eventually_nhds.mono fun y hy ↦ hP s y hy)
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+/-- A sum of local operators is local: if `P s` and `P' s` vanish at `x` whenever `s` vanishes
+near `x`, then so does `(P + P') s`. -/
+theorem apply_eq_zero_of_local_add {P P' : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
+    (hP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P' s x = 0)
+    (s : Cₛ^∞⟮I; F, V⟯) (x : M) (hs : ∀ᶠ y in 𝓝 x, s y = 0) : (P + P') s x = 0 := by
+  simp [hP s x hs, hP' s x hs]
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
 /-- If a linear map `Q : Γ(V) → Γ(W)` does not enlarge supports, neither does its commutator

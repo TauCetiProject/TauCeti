@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
 import TauCeti.Geometry.Manifold.DifferentialOperator.Peetre.Continuity
+import TauCeti.Topology.Algebra.Module.Spaces.CompactConvergenceCLM
 
 /-!
 # Local operators on bundle tests and their transposes
@@ -120,7 +122,7 @@ theorem localOperatorCLM_comp [FiniteDimensional ℝ F'] {Q : Cₛ^∞⟮I; F', 
     (hQ : ∀ (s : Cₛ^∞⟮I; F', W⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → Q s x = 0)
     (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     (hQP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → (Q ∘ₗ P) s x = 0 :=
-      fun s x hs ↦ hQ _ x (hs.eventually_nhds.mono fun y hy ↦ hP s y hy)) :
+      apply_eq_zero_of_local_comp hQ hP) :
     localOperatorCLM (Q ∘ₗ P) hQP = (localOperatorCLM Q hQ).comp (localOperatorCLM P hP) := by
   ext; simp [localOperatorCLM, LinearMap.restrict_apply]
 
@@ -129,7 +131,7 @@ theorem localOperatorCLM_add
     (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     (hP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P' s x = 0)
     (hPP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → (P + P') s x = 0 :=
-      fun s x hs ↦ (congrArg₂ (· + ·) (hP s x hs) (hP' s x hs)).trans (add_zero 0)) :
+      apply_eq_zero_of_local_add hP hP') :
     localOperatorCLM (P + P') hPP' = localOperatorCLM P hP + localOperatorCLM P' hP' := by
   ext; simp [localOperatorCLM, LinearMap.restrict_apply]
 
@@ -152,7 +154,7 @@ theorem localOperatorDualCLM_apply
     (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     (T : BundleTest I F' W →L_c[ℝ] G) (s : BundleTest I F V) :
     localOperatorDualCLM P hP T s = T (localOperatorCLM P hP s) :=
-  (rfl)
+  ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply _ _ _
 
 @[simp]
 theorem localOperatorDualCLM_id
@@ -169,7 +171,7 @@ theorem localOperatorDualCLM_comp [FiniteDimensional ℝ F']
     (hQ : ∀ (s : Cₛ^∞⟮I; F', W⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → Q s x = 0)
     (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     (hQP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → (Q ∘ₗ P) s x = 0 :=
-      fun s x hs ↦ hQ _ x (hs.eventually_nhds.mono fun y hy ↦ hP s y hy)) :
+      apply_eq_zero_of_local_comp hQ hP) :
     localOperatorDualCLM (G := G) (Q ∘ₗ P) hQP =
       (localOperatorDualCLM P hP).comp (localOperatorDualCLM Q hQ) := by
   ext; simp [localOperatorCLM_comp hQ hP]
@@ -179,7 +181,7 @@ theorem localOperatorDualCLM_add
     (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     (hP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P' s x = 0)
     (hPP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → (P + P') s x = 0 :=
-      fun s x hs ↦ (congrArg₂ (· + ·) (hP s x hs) (hP' s x hs)).trans (add_zero 0)) :
+      apply_eq_zero_of_local_add hP hP') :
     localOperatorDualCLM (G := G) (P + P') hPP' =
       localOperatorDualCLM P hP + localOperatorDualCLM P' hP' := by
   ext; simp [localOperatorCLM_add hP hP']
