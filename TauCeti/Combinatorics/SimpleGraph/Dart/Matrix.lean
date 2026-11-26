@@ -149,6 +149,22 @@ theorem dartSymmMatrix_map {F : Type*} [FunLike F R S] [ZeroHomClass F R S] [One
   ext a b
   simp [apply_ite f]
 
+omit [DecidableEq V] in
+/-- The adjacency matrix is preserved by any map sending `0` to `0` and `1` to `1`. -/
+@[simp]
+theorem adjMatrix_map {F : Type*} [FunLike F R S] [ZeroHomClass F R S] [OneHomClass F R S]
+    [DecidableRel G.Adj] (f : F) : (G.adjMatrix R).map f = G.adjMatrix S := by
+  ext v w
+  simp [apply_ite f]
+
+/-- The degree matrix is preserved by any additive map sending `1` to `1`. -/
+@[simp]
+theorem degMatrix_map {R S F : Type*} [AddMonoidWithOne R] [AddMonoidWithOne S] [FunLike F R S]
+    [AddMonoidHomClass F R S] [OneHomClass F R S] [Fintype V] [DecidableRel G.Adj] (f : F) :
+    (G.degMatrix R).map f = G.degMatrix S := by
+  ext v w
+  simp [degMatrix, diagonal_apply, apply_ite f, map_natCast' f (map_one f)]
+
 end Map
 
 section Products
