@@ -32,14 +32,14 @@ declarations below are in the namespace `TauCeti.SymplecticForm`.
   need not be a solution for either family.
 * **Fredholm property and index.** In a unitary trivialization, where `V = F` is a complex inner
   product space with `ω = Im ⟪·, ·⟫` and `J = i`, the linearized operator of a jointly `C²` family
-  along `(s, t) ↦ γ(s)` with `‖dX_{H_s}(γ(s))‖ < 2π` has the index of its zero-mode Morse operator
-  (`index_floerSobolevOperator_eq_index_trajectoryOperator`). For a `C²` slope `c` this operator
-  is the trajectory operator of `A - c` with `A(s) = -i dX_{H_s}(γ(s))`, the trajectory operator on
-  the spaces of weight `e^{κ(s)}`. Suppose `H_s` equals `H₋` near `-∞` and `H₊` near `+∞`, `γ`
-  converges to `p±` at `±∞`, `c` tends to `δ±` at `±∞`, and `‖dX_{H_s}(γ(s))‖ + |c(s)| < 2π`. If
-  `δ±` is not an eigenvalue of the asymptotic operator `A(p±) = -i dX_{H±}(p±)`, the negative of
-  the Hessian of `H±` at `p±`, then `D - c` is Fredholm
-  (`isFredholm_floerWeightedSobolevOperator_comp_fst`) of index
+  along `(s, t) ↦ γ(s)` with `‖dX_{H_s}(γ(s))‖ ≤ a < 2π` for every `s` has the index of its
+  zero-mode Morse operator (`index_floerSobolevOperator_eq_index_trajectoryOperator`). For a `C²`
+  slope `c` this operator is the trajectory operator of `A - c` with `A(s) = -i dX_{H_s}(γ(s))`,
+  the trajectory operator on the spaces of weight `e^{κ(s)}`. Suppose `H_s` equals `H₋` near `-∞`
+  and `H₊` near `+∞`, `γ` converges to `p±` at `±∞`, `c` tends to `δ±` at `±∞`, and
+  `‖dX_{H_s}(γ(s))‖ + |c(s)| ≤ a < 2π` for every `s`. If `δ±` is not an eigenvalue of the
+  asymptotic operator `A(p±) = -i dX_{H±}(p±)`, the negative of the Hessian of `H±` at `p±`, then
+  `D - c` is Fredholm (`isFredholm_floerWeightedSobolevOperator_comp_fst`) of index
   `n_{< δ₋}(A(p₋)) - n_{< δ₊}(A(p₊))`, where `n_{< δ}(B)` is the number of eigenvalues of `B`
   below `δ`, counted with multiplicity
   (`index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank`). The points
