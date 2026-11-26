@@ -38,8 +38,7 @@ compact, so the induction applies. Its hypotheses are the following.
   (`TauCeti.bijective_deRhamHom_of_sup_eq_top`). That step is stated for a cover of the whole
   manifold, so it is applied to the manifold `U ⊔ V`, whose open subsets lying over `U`, `V` and
   `U ⊓ V` are diffeomorphic to them (`Diffeomorph.nestedOpen`); bijectivity of the de Rham
-  homomorphism is invariant under diffeomorphisms
-  (`Diffeomorph.bijective_deRhamHom_iff`).
+  homomorphism is invariant under diffeomorphisms, by its naturality `TauCeti.deRhamHom_map`.
 * **Countable disjoint unions**: both cohomologies of a disjoint union of open sets are the
   products of those of the pieces (`TauCeti.bijective_deRhamHom_iSup`).
 
@@ -95,6 +94,36 @@ private theorem bijective_deRhamHom_of_eq_inter_preimage_extChartAt {x : M} {C :
   exact (hC.inter I.convex_range).starConvex (himg ▸ mem_image_of_mem _ hc)
 
 variable [SigmaCompactSpace M]
+
+variable {I M} in
+/-- Bijectivity of the de Rham homomorphism is invariant under diffeomorphisms: for a
+diffeomorphism `Φ : M ≃ N`, the de Rham homomorphism of `M` is bijective in degree `k` exactly when
+that of `N` is. By the naturality `TauCeti.deRhamHom_map`, pulling back along `Φ` intertwines them,
+and pullback along `Φ` is bijective on both de Rham and singular cohomology. -/
+private theorem _root_.Diffeomorph.bijective_deRhamHom_iff {E' H' : Type}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N] [ChartedSpace H' N]
+    [T2Space N] [SigmaCompactSpace N] [IsManifold J ∞ N] (Φ : M ≃ₘ⟮I, J⟯ N) (k : ℕ) :
+    Function.Bijective (deRhamHom I M k) ↔ Function.Bijective (deRhamHom J N k) := by
+  have : CategoryTheory.IsIso (TopCat.ofHom ⟨Φ, Φ.continuous⟩ : TopCat.of M ⟶ TopCat.of N) :=
+    TopCat.isIso_of_bijective_of_isClosedMap _ Φ.toHomeomorph.bijective
+      Φ.toHomeomorph.isClosedMap
+  -- The singular cohomology functor sends `Φ` to `TopCat.singularCohomologyMap Φ k` by
+  -- definition, so this map is an isomorphism.
+  have : CategoryTheory.IsIso (TopCat.singularCohomologyMap (R := ModuleCat.of ℝ ℝ) (k := ℝ)
+      (M := ModuleCat.of ℝ ℝ) (TopCat.ofHom ⟨Φ, Φ.continuous⟩) k) :=
+    CategoryTheory.Functor.map_isIso
+      (singularCohomologyFunctor (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ) k)
+      (TopCat.ofHom ⟨Φ, Φ.continuous⟩).op
+  have h : deRhamHom I M k ∘ deRhamCohomology.equivOfDiffeomorph Φ k =
+      TopCat.singularCohomologyMap (TopCat.ofHom ⟨Φ, Φ.continuous⟩) k ∘ deRhamHom J N k :=
+    funext fun c ↦ by
+      rw [Function.comp_apply, deRhamCohomology.equivOfDiffeomorph_apply, deRhamHom_map]
+      -- `deRhamHom_map` applies `ConcreteCategory.hom` where the goal applies the coercion of
+      -- `ModuleCat.Hom.hom`; the two coercions of a morphism of modules agree by definition.
+      rfl
+  rw [← Function.Bijective.of_comp_iff _ (deRhamCohomology.equivOfDiffeomorph Φ k).bijective, h,
+    Function.Bijective.of_comp_iff' (CategoryTheory.ConcreteCategory.bijective_of_isIso _)]
 
 /-- **The Mayer–Vietoris step of the de Rham theorem for open subsets**: if the de Rham
 homomorphism is bijective in every degree on open subsets `U`, `V` and `U ⊓ V` of `M`, it is
@@ -174,5 +203,18 @@ theorem deRhamEquiv_apply (k : ℕ) (c : deRhamCohomology I M k) :
 theorem coe_deRhamEquiv (k : ℕ) :
     (deRhamEquiv I M k : deRhamCohomology I M k →ₗ[ℝ] _) = deRhamHom I M k :=
   (rfl)
+
+/-- The de Rham homomorphism inverts the inverse of the de Rham isomorphism. -/
+@[simp]
+theorem deRhamHom_deRhamEquiv_symm_apply (k : ℕ)
+    (c : (TopCat.of M).singularCohomology (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ) k) :
+    deRhamHom I M k ((deRhamEquiv I M k).symm c) = c :=
+  (deRhamEquiv I M k).apply_symm_apply c
+
+/-- The inverse of the de Rham isomorphism inverts the de Rham homomorphism. -/
+@[simp]
+theorem deRhamEquiv_symm_deRhamHom_apply (k : ℕ) (c : deRhamCohomology I M k) :
+    (deRhamEquiv I M k).symm (deRhamHom I M k c) = c :=
+  (deRhamEquiv I M k).symm_apply_apply c
 
 end TauCeti
