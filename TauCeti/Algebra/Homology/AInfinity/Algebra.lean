@@ -237,6 +237,11 @@ theorem m_eq_desuspension (𝒜 : AInfinityAlgebra R A) :
     𝒜.m = AInfinity.desuspension 𝒜.grading 𝒜.taylor :=
   𝒜.taylor_isSuspension.eq_desuspension 𝒜.m_zero
 
+/-- `A∞` algebras are determined by their grading and Taylor map. -/
+theorem ext_of_taylor {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.grading)
+    (h : 𝒜.taylor = 𝒜'.taylor) : 𝒜 = 𝒜' :=
+  ext hG (by rw [m_eq_desuspension, m_eq_desuspension, hG, h])
+
 /-- Every `A∞` algebra is built from its own Taylor map. -/
 @[simp]
 theorem ofTaylor_self (𝒜 : AInfinityAlgebra R A) :
