@@ -28,7 +28,8 @@ interpolation cones it to `vertex N a` at the fresh index.
   `weight_tailTruncationHomotopy`, `label_tailTruncationHomotopy`,
   `exists_one_half_lt_partialWeightSum_of_isCompact_range`.
 * `ContinuousMap.nullhomotopic_to_milnorTotalSpace_of_isCompact_range`,
-  `ContinuousMap.nullhomotopic_to_milnorTotalSpace`, `HomotopyGroup.subsingleton_milnorTotalSpace`,
+  `ContinuousMap.nullhomotopic_to_milnorTotalSpace`,
+  `TauCeti.instSubsingletonHomotopyGroupMilnorTotalSpace`,
   `ContinuousMap.exists_extension_closedBall_milnorTotalSpace`,
   `ContinuousMap.homotopicRel_const_singleton_sphere_milnorTotalSpace`.
 
@@ -83,10 +84,9 @@ theorem partialWeightSum_le_one (N : ℕ) (p : MilnorTotalSpace G) :
 
 theorem exists_partialWeightSum_eq_one (p : MilnorTotalSpace G) :
     ∃ N, partialWeightSum G N p = 1 :=
-  let supp := (finite_support_weight p).toFinset
-  ⟨supp.sup id + 1, sum_weight_of_support_subset fun _ hi ↦
-    weight_eq_zero_of_notMem fun hmem ↦
-      hi (Finset.mem_range.mpr (Nat.lt_succ_of_le (supp.le_sup (f := id) hmem)))⟩
+  let ⟨N, hN⟩ := exists_forall_le_weight_eq_zero p
+  ⟨N, sum_weight_of_support_subset fun _ hi ↦
+    hN _ (not_lt.mp (Finset.mem_range.not.mp hi))⟩
 
 /-- Every point of `MilnorTotalSpace G` has some cutoff `N` with
 `1 / 2 < partialWeightSum G N p`. -/
@@ -304,16 +304,8 @@ instance instSimplyConnectedSpaceMilnorTotalSpace [Nonempty G] :
     SimplyConnectedSpace (MilnorTotalSpace G) :=
   simplyConnectedSpace_of_compact_nullhomotopic fun f ↦ f.nullhomotopic_to_milnorTotalSpace
 
-end ConnectivityAndHomotopyGroups
-
-end TauCeti
-
-namespace HomotopyGroup
-
-open TauCeti
-
 /-- **Weak contractibility of `MilnorTotalSpace G`:** all homotopy groups and `π₀` vanish. -/
-instance subsingleton_milnorTotalSpace
+instance instSubsingletonHomotopyGroupMilnorTotalSpace
     {G : Type u} [TopologicalSpace G] (N : Type*) (x : MilnorTotalSpace G) :
     Subsingleton (HomotopyGroup N (MilnorTotalSpace G) x) := by
   classical
@@ -328,7 +320,9 @@ instance subsingleton_milnorTotalSpace
         fun f ↦ f.nullhomotopic_to_milnorTotalSpace
   · have : Infinite N := not_finite_iff_infinite.mp hfin; infer_instance
 
-end HomotopyGroup
+end ConnectivityAndHomotopyGroups
+
+end TauCeti
 
 namespace ContinuousMap
 

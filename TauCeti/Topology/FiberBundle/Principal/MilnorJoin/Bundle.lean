@@ -72,12 +72,20 @@ abbrev MilnorClassifyingSpace : Type u :=
 def milnorClassifyingSpaceProj : MilnorTotalSpace G → MilnorClassifyingSpace G :=
   Quotient.mk''
 
+/-- `milnorClassifyingSpaceProj G` is the orbit quotient map `Quotient.mk''`. -/
+theorem milnorClassifyingSpaceProj_def {G : Type u} [Group G] (p : MilnorTotalSpace G) :
+    milnorClassifyingSpaceProj G p = Quotient.mk'' p :=
+  (rfl)
+
 /-- The distinguished base point of `MilnorClassifyingSpace G`. -/
 def milnorClassifyingSpaceBasepoint : MilnorClassifyingSpace G :=
-  Quotient.mk'' (MilnorTotalSpace.basepoint G)
+  milnorClassifyingSpaceProj G (MilnorTotalSpace.basepoint G)
 
-theorem milnorClassifyingSpaceBasepoint_eq :
-    milnorClassifyingSpaceBasepoint G = Quotient.mk'' (MilnorTotalSpace.basepoint G) :=
+/-- The base point of `MilnorClassifyingSpace G` is the orbit of
+`MilnorTotalSpace.basepoint G`. -/
+@[simp] theorem milnorClassifyingSpaceProj_basepoint :
+    milnorClassifyingSpaceProj G (MilnorTotalSpace.basepoint G) =
+      milnorClassifyingSpaceBasepoint G :=
   (rfl)
 
 instance instInhabitedMilnorClassifyingSpace : Inhabited (MilnorClassifyingSpace G) :=
@@ -88,12 +96,41 @@ theorem isOpenQuotientMap_milnorClassifyingSpaceProj [TopologicalSpace G] [Conti
     IsOpenQuotientMap (milnorClassifyingSpaceProj G) :=
   MulAction.isOpenQuotientMap_quotientMk
 
+/-- The orbit projection `milnorClassifyingSpaceProj G` is a quotient map. -/
+theorem isQuotientMap_milnorClassifyingSpaceProj [TopologicalSpace G] :
+    IsQuotientMap (milnorClassifyingSpaceProj G) :=
+  isQuotientMap_quotient_mk'
+
+/-- The orbit projection `milnorClassifyingSpaceProj G` is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_milnorClassifyingSpaceProj [TopologicalSpace G] :
+    Continuous (milnorClassifyingSpaceProj G) :=
+  (isQuotientMap_milnorClassifyingSpaceProj G).continuous
+
+/-- Every point of `MilnorClassifyingSpace G` is the orbit of a point of `MilnorTotalSpace G`. -/
+theorem milnorClassifyingSpaceProj_surjective :
+    Function.Surjective (milnorClassifyingSpaceProj G) :=
+  Quotient.mk_surjective
+
+/-- Two points of `MilnorTotalSpace G` have the same image in `MilnorClassifyingSpace G` iff they
+lie in the same `Gᵐᵒᵖ`-orbit. -/
+theorem milnorClassifyingSpaceProj_eq_iff {G : Type u} [Group G] {p q : MilnorTotalSpace G} :
+    milnorClassifyingSpaceProj G p = milnorClassifyingSpaceProj G q ↔
+      p ∈ MulAction.orbit Gᵐᵒᵖ q :=
+  Quotient.eq''.trans MulAction.orbitRel_apply
+
+/-- Right translation does not change the image in `MilnorClassifyingSpace G`. -/
+@[simp] theorem milnorClassifyingSpaceProj_smul {G : Type u} [Group G] (g : Gᵐᵒᵖ)
+    (p : MilnorTotalSpace G) :
+    milnorClassifyingSpaceProj G (g • p) = milnorClassifyingSpaceProj G p :=
+  milnorClassifyingSpaceProj_eq_iff.mpr (MulAction.mem_orbit p g)
+
 /-- `MilnorClassifyingSpace G` is path-connected as the quotient of the path-connected space
 `MilnorTotalSpace G`. -/
 instance instPathConnectedSpaceMilnorClassifyingSpace [TopologicalSpace G] :
     PathConnectedSpace (MilnorClassifyingSpace G) :=
-  letI := MulAction.orbitRel Gᵐᵒᵖ (MilnorTotalSpace G)
-  Quotient.mk_surjective.pathConnectedSpace continuous_quotient_mk'
+  (milnorClassifyingSpaceProj_surjective G).pathConnectedSpace
+    (continuous_milnorClassifyingSpaceProj G)
 
 end OrbitQuotient
 
@@ -112,8 +149,8 @@ def baseWeight (i : ℕ) : C(MilnorClassifyingSpace G, ℝ) where
   continuous_toFun :=
     continuous_orbitRelQuotientLift_iff.mpr (MilnorTotalSpace.continuous_weight i)
 
-@[simp] theorem baseWeight_mk' (i : ℕ) (p : MilnorTotalSpace G) :
-    baseWeight G i (Quotient.mk'' p) = MilnorTotalSpace.weight i p :=
+@[simp] theorem baseWeight_proj (i : ℕ) (p : MilnorTotalSpace G) :
+    baseWeight G i (milnorClassifyingSpaceProj G p) = MilnorTotalSpace.weight i p :=
   MulAction.orbitRelQuotientLift_mk p
 
 /-- The `i`-th coordinate open set `V_i = {b | 0 < t_i(b)}` in `MilnorClassifyingSpace G`. -/
@@ -123,38 +160,35 @@ variable {G}
 
 @[simp] theorem mem_baseCoordSet_iff {i : ℕ} {b : MilnorClassifyingSpace G} :
     b ∈ baseCoordSet G i ↔ 0 < baseWeight G i b := Iff.rfl
-theorem mk'_mem_baseCoordSet_iff {i : ℕ} {p : MilnorTotalSpace G} :
-    (Quotient.mk'' p : MilnorClassifyingSpace G) ∈ baseCoordSet G i ↔
-      p ∈ MilnorTotalSpace.coordSet G i := by
+theorem proj_mem_baseCoordSet_iff {i : ℕ} {p : MilnorTotalSpace G} :
+    milnorClassifyingSpaceProj G p ∈ baseCoordSet G i ↔ p ∈ MilnorTotalSpace.coordSet G i := by
   simp [mem_baseCoordSet_iff]
 @[simp] theorem preimage_baseCoordSet (G : Type u) [Group G] [TopologicalSpace G] (i : ℕ) :
-    (Quotient.mk'' : MilnorTotalSpace G → MilnorClassifyingSpace G) ⁻¹' baseCoordSet G i =
-      MilnorTotalSpace.coordSet G i := by
+    milnorClassifyingSpaceProj G ⁻¹' baseCoordSet G i = MilnorTotalSpace.coordSet G i := by
   ext; simp
 theorem image_coordSet_eq_baseCoordSet (G : Type u) [Group G] [TopologicalSpace G] (i : ℕ) :
-    (Quotient.mk'' : MilnorTotalSpace G → MilnorClassifyingSpace G) ''
-      MilnorTotalSpace.coordSet G i = baseCoordSet G i := by
-  rw [← preimage_baseCoordSet, Quotient.mk_surjective.image_preimage]
+    milnorClassifyingSpaceProj G '' MilnorTotalSpace.coordSet G i = baseCoordSet G i := by
+  rw [← preimage_baseCoordSet, (milnorClassifyingSpaceProj_surjective G).image_preimage]
 theorem isOpen_baseCoordSet (G : Type u) [Group G] [TopologicalSpace G] (i : ℕ) :
     IsOpen (baseCoordSet G i) := isOpen_lt continuous_const (baseWeight G i).continuous
 
 theorem baseWeight_nonneg (i : ℕ) (b : MilnorClassifyingSpace G) : 0 ≤ baseWeight G i b := by
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective b
+  obtain ⟨p, rfl⟩ := milnorClassifyingSpaceProj_surjective G b
   simpa using MilnorTotalSpace.weight_nonneg i p
 theorem baseWeight_le_one (i : ℕ) (b : MilnorClassifyingSpace G) : baseWeight G i b ≤ 1 := by
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective b
+  obtain ⟨p, rfl⟩ := milnorClassifyingSpaceProj_surjective G b
   simpa using MilnorTotalSpace.weight_le_one i p
 theorem finite_support_baseWeight (b : MilnorClassifyingSpace G) :
     (support fun i ↦ baseWeight G i b).Finite := by
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective b
+  obtain ⟨p, rfl⟩ := milnorClassifyingSpaceProj_surjective G b
   simpa using MilnorTotalSpace.finite_support_weight p
 theorem hasSum_baseWeight (b : MilnorClassifyingSpace G) : HasSum (fun i ↦ baseWeight G i b) 1 := by
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective b
+  obtain ⟨p, rfl⟩ := milnorClassifyingSpaceProj_surjective G b
   simpa using MilnorTotalSpace.hasSum_weight p
 @[simp] theorem tsum_baseWeight (b : MilnorClassifyingSpace G) : ∑' i, baseWeight G i b = 1 :=
   (hasSum_baseWeight b).tsum_eq
 theorem exists_mem_baseCoordSet (b : MilnorClassifyingSpace G) : ∃ i, b ∈ baseCoordSet G i := by
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective b
+  obtain ⟨p, rfl⟩ := milnorClassifyingSpaceProj_surjective G b
   simpa [mem_baseCoordSet_iff] using MilnorTotalSpace.exists_weight_pos p
 @[simp] theorem iUnion_baseCoordSet (G : Type u) [Group G] [TopologicalSpace G] :
     ⋃ i, baseCoordSet G i = univ :=
@@ -257,33 +291,33 @@ private def localSectionAux (G : Type u) [Group G] (i : ℕ) :
     MilnorClassifyingSpace G → MilnorTotalSpace G :=
   MulAction.orbitRelQuotientLift (normalize G i) (normalize_smul i)
 
-private theorem localSectionAux_mk' {G : Type u} [Group G] (i : ℕ) (p : MilnorTotalSpace G) :
-    localSectionAux G i (Quotient.mk'' p) = normalize G i p :=
+private theorem localSectionAux_proj {G : Type u} [Group G] (i : ℕ) (p : MilnorTotalSpace G) :
+    localSectionAux G i (milnorClassifyingSpaceProj G p) = normalize G i p :=
   MulAction.orbitRelQuotientLift_mk p
 
 variable {G : Type u} [Group G] [TopologicalSpace G]
 
-private theorem mk'_localSectionAux {i : ℕ} {b : MilnorClassifyingSpace G}
+private theorem proj_localSectionAux {i : ℕ} {b : MilnorClassifyingSpace G}
     (hb : b ∈ baseCoordSet G i) :
-    (Quotient.mk'' (localSectionAux G i b) : MilnorClassifyingSpace G) = b := by
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective b
-  rw [localSectionAux_mk', normalize_of_mem (mk'_mem_baseCoordSet_iff.mp hb)]
-  exact MulAction.orbitRel.Quotient.quotient_smul_eq
+    milnorClassifyingSpaceProj G (localSectionAux G i b) = b := by
+  obtain ⟨p, rfl⟩ := milnorClassifyingSpaceProj_surjective G b
+  rw [localSectionAux_proj, normalize_of_mem (proj_mem_baseCoordSet_iff.mp hb)]
+  exact milnorClassifyingSpaceProj_smul _ p
 
 private theorem localSectionAux_mem_coordSet {i : ℕ} {b : MilnorClassifyingSpace G}
     (hb : b ∈ baseCoordSet G i) : localSectionAux G i b ∈ MilnorTotalSpace.coordSet G i := by
-  rwa [← mk'_mem_baseCoordSet_iff, mk'_localSectionAux hb]
+  rwa [← proj_mem_baseCoordSet_iff, proj_localSectionAux hb]
 
 private theorem weight_localSectionAux (j : ℕ) {i : ℕ} {b : MilnorClassifyingSpace G}
     (hb : b ∈ baseCoordSet G i) :
     MilnorTotalSpace.weight j (localSectionAux G i b) = baseWeight G j b := by
-  rw [← baseWeight_mk' G j, mk'_localSectionAux hb]
+  rw [← baseWeight_proj G j, proj_localSectionAux hb]
 
 private theorem label_localSectionAux {i : ℕ} {b : MilnorClassifyingSpace G}
     (hb : b ∈ baseCoordSet G i) : MilnorTotalSpace.label i (localSectionAux G i b) = 1 := by
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective b
-  rw [localSectionAux_mk']
-  exact label_normalize (mk'_mem_baseCoordSet_iff.mp hb)
+  obtain ⟨p, rfl⟩ := milnorClassifyingSpaceProj_surjective G b
+  rw [localSectionAux_proj]
+  exact label_normalize (proj_mem_baseCoordSet_iff.mp hb)
 
 private theorem continuousOn_localSectionAux (G : Type u) [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] (i : ℕ) :
@@ -292,13 +326,13 @@ private theorem continuousOn_localSectionAux (G : Type u) [Group G] [Topological
     ((isOpenQuotientMap_milnorClassifyingSpaceProj G).restrictPreimage
       (baseCoordSet G i)).isQuotientMap.continuous_iff]
   have hnorm : ContinuousOn (normalize G i)
-      ((Quotient.mk'' : MilnorTotalSpace G → MilnorClassifyingSpace G) ⁻¹' baseCoordSet G i) := by
+      (milnorClassifyingSpaceProj G ⁻¹' baseCoordSet G i) := by
     rw [preimage_baseCoordSet]
     exact (((continuous_op.comp continuous_inv).continuousOn.comp
       (MilnorTotalSpace.continuousOn_label i) (mapsTo_univ _ _)).smul continuousOn_id).congr
       fun _ hp ↦ normalize_of_mem hp
   exact (continuousOn_iff_continuous_domRestrict.mp hnorm).congr fun p ↦
-    (localSectionAux_mk' i p.val).symm
+    (localSectionAux_proj i p.val).symm
 
 /-- Local section `s_i : V_i → MilnorTotalSpace G` normalized by `label i (s_i b) = 1`. -/
 def localSection (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] (i : ℕ) :
@@ -306,9 +340,9 @@ def localSection (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup
   ⟨(baseCoordSet G i).domRestrict (localSectionAux G i),
     continuousOn_iff_continuous_domRestrict.mp (continuousOn_localSectionAux G i)⟩
 
-@[simp] theorem mk'_localSection [IsTopologicalGroup G] (i : ℕ) (b : baseCoordSet G i) :
-    (Quotient.mk'' (localSection G i b) : MilnorClassifyingSpace G) = b.val :=
-  mk'_localSectionAux b.property
+@[simp] theorem proj_localSection [IsTopologicalGroup G] (i : ℕ) (b : baseCoordSet G i) :
+    milnorClassifyingSpaceProj G (localSection G i b) = b.val :=
+  proj_localSectionAux b.property
 theorem localSection_mem_coordSet [IsTopologicalGroup G] (i : ℕ) (b : baseCoordSet G i) :
     localSection G i b ∈ MilnorTotalSpace.coordSet G i := localSectionAux_mem_coordSet b.property
 @[simp] theorem weight_localSection [IsTopologicalGroup G] (j i : ℕ) (b : baseCoordSet G i) :
@@ -316,16 +350,16 @@ theorem localSection_mem_coordSet [IsTopologicalGroup G] (i : ℕ) (b : baseCoor
   weight_localSectionAux j b.property
 @[simp] theorem label_localSection [IsTopologicalGroup G] (i : ℕ) (b : baseCoordSet G i) :
     MilnorTotalSpace.label i (localSection G i b) = 1 := label_localSectionAux b.property
-@[simp] theorem localSection_mk' [IsTopologicalGroup G] {i : ℕ} {p : MilnorTotalSpace G}
+@[simp] theorem localSection_proj [IsTopologicalGroup G] {i : ℕ} {p : MilnorTotalSpace G}
     (hp : p ∈ MilnorTotalSpace.coordSet G i) :
-    localSection G i ⟨Quotient.mk'' p, mk'_mem_baseCoordSet_iff.mpr hp⟩ =
+    localSection G i ⟨milnorClassifyingSpaceProj G p, proj_mem_baseCoordSet_iff.mpr hp⟩ =
       op (MilnorTotalSpace.label i p)⁻¹ • p := by
-  simpa [localSection, localSectionAux_mk'] using normalize_of_mem hp
-theorem smul_localSection_mk' [IsTopologicalGroup G] {i : ℕ} {p : MilnorTotalSpace G}
+  simpa [localSection, localSectionAux_proj] using normalize_of_mem hp
+theorem smul_localSection_proj [IsTopologicalGroup G] {i : ℕ} {p : MilnorTotalSpace G}
     (hp : p ∈ MilnorTotalSpace.coordSet G i) :
     op (MilnorTotalSpace.label i p) •
-      localSection G i ⟨Quotient.mk'' p, mk'_mem_baseCoordSet_iff.mpr hp⟩ = p := by
-  simpa [localSection, localSectionAux_mk'] using smul_normalize hp
+      localSection G i ⟨milnorClassifyingSpaceProj G p, proj_mem_baseCoordSet_iff.mpr hp⟩ = p := by
+  simpa [localSection, localSectionAux_proj] using smul_normalize hp
 
 end LocalSections
 
@@ -343,9 +377,9 @@ instance instT2SpaceMilnorClassifyingSpace (G : Type u) [Group G] [TopologicalSp
         rwa [MilnorClassifyingSpace.mem_baseCoordSet_iff, ← hw i]
       have hs_ne : MilnorClassifyingSpace.localSectionAux G i b₁ ≠
           MilnorClassifyingSpace.localSectionAux G i b₂ := fun h ↦ hb <| by
-        rw [← MilnorClassifyingSpace.mk'_localSectionAux hb₁i,
-          ← MilnorClassifyingSpace.mk'_localSectionAux hb₂i]
-        exact congrArg (Quotient.mk'' : MilnorTotalSpace G → MilnorClassifyingSpace G) h
+        rw [← MilnorClassifyingSpace.proj_localSectionAux hb₁i,
+          ← MilnorClassifyingSpace.proj_localSectionAux hb₂i]
+        exact congrArg (milnorClassifyingSpaceProj G) h
       exact ((MilnorClassifyingSpace.continuousOn_localSectionAux G i).continuousAt
         ((MilnorClassifyingSpace.isOpen_baseCoordSet G i).mem_nhds hb₁i)).tendsto.disjoint
         (disjoint_nhds_nhds.mpr hs_ne)
@@ -380,9 +414,11 @@ instance instNonempty (b : MilnorClassifyingSpace G) : Nonempty (MilnorBundleFib
 def totalSpaceEquiv (G : Type u) [Group G] :
     TotalSpace G (MilnorBundleFiber G) ≃ MilnorTotalSpace G where
   toFun x := x.snd.val
-  invFun p := ⟨Quotient.mk'' p, ⟨p, MulAction.orbitRel.Quotient.mem_orbit.mpr rfl⟩⟩
+  invFun p := ⟨milnorClassifyingSpaceProj G p,
+    ⟨p, MulAction.orbitRel.Quotient.mem_orbit.mpr (milnorClassifyingSpaceProj_def p).symm⟩⟩
   left_inv := fun ⟨b, ⟨p, hp⟩⟩ ↦ by
-    obtain rfl : Quotient.mk'' p = b := MulAction.orbitRel.Quotient.mem_orbit.mp hp
+    obtain rfl : milnorClassifyingSpaceProj G p = b :=
+      (milnorClassifyingSpaceProj_def p).trans (MulAction.orbitRel.Quotient.mem_orbit.mp hp)
     rfl
   right_inv _ := rfl
 
@@ -390,13 +426,14 @@ def totalSpaceEquiv (G : Type u) [Group G] :
     totalSpaceEquiv G x = x.snd.val := (rfl)
 @[simp] theorem totalSpaceEquiv_symm_apply (p : MilnorTotalSpace G) :
     (totalSpaceEquiv G).symm p =
-      ⟨Quotient.mk'' p, ⟨p, MulAction.orbitRel.Quotient.mem_orbit.mpr rfl⟩⟩ :=
+      ⟨milnorClassifyingSpaceProj G p,
+        ⟨p, MulAction.orbitRel.Quotient.mem_orbit.mpr (milnorClassifyingSpaceProj_def p).symm⟩⟩ :=
   (rfl)
 @[simp] theorem snd_val_totalSpaceEquiv_symm (p : MilnorTotalSpace G) :
     ((totalSpaceEquiv G).symm p).snd.val = p := (rfl)
-theorem mk'_totalSpaceEquiv_apply (x : TotalSpace G (MilnorBundleFiber G)) :
-    (Quotient.mk'' (totalSpaceEquiv G x) : MilnorClassifyingSpace G) = x.proj :=
-  MulAction.orbitRel.Quotient.mem_orbit.mp x.snd.property
+theorem proj_totalSpaceEquiv_apply (x : TotalSpace G (MilnorBundleFiber G)) :
+    milnorClassifyingSpaceProj G (totalSpaceEquiv G x) = x.proj :=
+  (milnorClassifyingSpaceProj_def _).trans (MulAction.orbitRel.Quotient.mem_orbit.mp x.snd.property)
 
 end Group
 
@@ -419,19 +456,18 @@ def totalSpaceHomeomorph : TotalSpace G (MilnorBundleFiber G) ≃ₜ MilnorTotal
     ⇑(totalSpaceHomeomorph G).symm = (totalSpaceEquiv G).symm := (rfl)
 
 /-- Under `totalSpaceHomeomorph G`, the bundle projection `π G (MilnorBundleFiber G)` is the
-strong-coordinate orbit quotient `Quotient.mk''`, and hence is continuous. -/
+strong-coordinate orbit quotient `milnorClassifyingSpaceProj G`, and hence is continuous. -/
 theorem continuous_proj : Continuous (π G (MilnorBundleFiber G)) := by
-  have heq : π G (MilnorBundleFiber G) = Quotient.mk'' ∘ totalSpaceHomeomorph G :=
-    funext fun x ↦ (mk'_totalSpaceEquiv_apply x).symm
-  exact heq ▸ (continuous_quotient_mk' (s := MulAction.orbitRel Gᵐᵒᵖ (MilnorTotalSpace G))).comp
-    (totalSpaceHomeomorph G).continuous
+  have heq : π G (MilnorBundleFiber G) = milnorClassifyingSpaceProj G ∘ totalSpaceHomeomorph G :=
+    funext fun x ↦ (proj_totalSpaceEquiv_apply x).symm
+  exact heq ▸ (continuous_milnorClassifyingSpaceProj G).comp (totalSpaceHomeomorph G).continuous
 
 /-- A point in the fibre over `b` lies in the `i`-th total-space coordinate open set iff `b`
 lies in `baseCoordSet G i`. -/
 theorem val_mem_coordSet_iff {G : Type u} [Group G] [TopologicalSpace G]
     {b : MilnorClassifyingSpace G} (p : MilnorBundleFiber G b) {i : ℕ} :
     p.val ∈ MilnorTotalSpace.coordSet G i ↔ b ∈ MilnorClassifyingSpace.baseCoordSet G i := by
-  rw [← MilnorClassifyingSpace.mk'_mem_baseCoordSet_iff,
+  rw [← MilnorClassifyingSpace.proj_mem_baseCoordSet_iff, milnorClassifyingSpaceProj_def,
     MulAction.orbitRel.Quotient.mem_orbit.mp p.property]
 
 end Topology
@@ -446,10 +482,9 @@ private theorem proj_totalSpaceEquiv_symm_smul_localSectionAux {i : ℕ}
     {b : MilnorClassifyingSpace G} (hb : b ∈ MilnorClassifyingSpace.baseCoordSet G i) (g : G) :
     ((MilnorBundleFiber.totalSpaceEquiv G).symm
         (op g • MilnorClassifyingSpace.localSectionAux G i b)).proj = b := by
-  rw [← MilnorBundleFiber.mk'_totalSpaceEquiv_apply, Equiv.apply_symm_apply]
-  exact (MulAction.orbitRel.Quotient.quotient_smul_eq (g := op g)
-    (a := MilnorClassifyingSpace.localSectionAux G i b)).trans
-    (MilnorClassifyingSpace.mk'_localSectionAux hb)
+  rw [← MilnorBundleFiber.proj_totalSpaceEquiv_apply, Equiv.apply_symm_apply,
+    milnorClassifyingSpaceProj_smul]
+  exact MilnorClassifyingSpace.proj_localSectionAux hb
 
 variable [IsTopologicalGroup G]
 
@@ -470,8 +505,8 @@ def milnorTrivialization (i : ℕ) : Trivialization G (π G (MilnorBundleFiber G
     have hsec : MilnorClassifyingSpace.localSectionAux G i p.proj =
         MilnorClassifyingSpace.normalize G i p.snd.val :=
       (congrArg (MilnorClassifyingSpace.localSectionAux G i)
-        (MilnorBundleFiber.mk'_totalSpaceEquiv_apply p)).symm.trans <| by
-        rw [MilnorBundleFiber.totalSpaceEquiv_apply, MilnorClassifyingSpace.localSectionAux_mk']
+        (MilnorBundleFiber.proj_totalSpaceEquiv_apply p)).symm.trans <| by
+        rw [MilnorBundleFiber.totalSpaceEquiv_apply, MilnorClassifyingSpace.localSectionAux_proj]
     dsimp only
     rw [Equiv.apply_symm_apply, hsec, MilnorClassifyingSpace.smul_normalize hq,
       MilnorBundleFiber.totalSpaceEquiv_apply]
@@ -522,17 +557,15 @@ instance isEquivariant_milnorTrivialization (i : ℕ) :
 theorem coordChange_milnorTrivialization {i j : ℕ} {p : MilnorTotalSpace G}
     (hpi : p ∈ MilnorTotalSpace.coordSet G i) (hpj : p ∈ MilnorTotalSpace.coordSet G j) (g : G) :
     (milnorTrivialization G i).coordChange (milnorTrivialization G j)
-      (Quotient.mk'' p) g =
+      (milnorClassifyingSpaceProj G p) g =
       MilnorTotalSpace.label j p * (MilnorTotalSpace.label i p)⁻¹ * g := by
-  have hbi : (Quotient.mk'' p : MilnorClassifyingSpace G) ∈ (milnorTrivialization G i).baseSet :=
-    MilnorClassifyingSpace.mk'_mem_baseCoordSet_iff.mpr hpi
-  have hbj : (Quotient.mk'' p : MilnorClassifyingSpace G) ∈ (milnorTrivialization G j).baseSet :=
-    MilnorClassifyingSpace.mk'_mem_baseCoordSet_iff.mpr hpj
-  rw [(milnorTrivialization G i).coordChange_eq_mul (milnorTrivialization G j) hbi hbj g,
-    Trivialization.coordChange, milnorTrivialization_symm_apply hbi,
-    milnorTrivialization_apply, MilnorBundleFiber.snd_val_totalSpaceEquiv_symm,
-    MilnorClassifyingSpace.localSection_mk' hpi, op_one, one_smul,
-    MilnorTotalSpace.label_op_smul _ hpj]
+  have hbi : milnorClassifyingSpaceProj G p ∈ (milnorTrivialization G i).baseSet :=
+    MilnorClassifyingSpace.proj_mem_baseCoordSet_iff.mpr hpi
+  have hbj : milnorClassifyingSpaceProj G p ∈ (milnorTrivialization G j).baseSet :=
+    MilnorClassifyingSpace.proj_mem_baseCoordSet_iff.mpr hpj
+  rw [(milnorTrivialization G i).coordChange_eq_mul (milnorTrivialization G j) hbi hbj g]
+  simp [-op_inv, Trivialization.coordChange, milnorTrivialization_symm_apply hbi,
+    MilnorClassifyingSpace.localSection_proj hpi, hpj]
 
 /-- Coordinate-chart `FiberBundle` instance on `MilnorBundleFiber G` whose atlas is generated by
 `milnorTrivialization G i` over the cover `MilnorClassifyingSpace.baseCoordSet G`. -/
@@ -597,22 +630,23 @@ def milnorClassifyingSpaceMap (φ : G →ₜ* H) :
     C(MilnorClassifyingSpace G, MilnorClassifyingSpace H) where
   toFun := φ.milnorTotalSpaceMulActionHom.orbitRelQuotientMap
   continuous_toFun := by
-    have hq : IsQuotientMap (Quotient.mk (MulAction.orbitRel Gᵐᵒᵖ (MilnorTotalSpace G))) :=
-      isQuotientMap_quot_mk
-    rw [hq.continuous_iff, MulActionHom.orbitRelQuotientMap_comp_mk]
-    exact continuous_quot_mk.comp (MilnorTotalSpace.map (φ : C(G, H))).continuous
+    rw [(isQuotientMap_milnorClassifyingSpaceProj G).continuous_iff]
+    have hcomp : φ.milnorTotalSpaceMulActionHom.orbitRelQuotientMap ∘ milnorClassifyingSpaceProj G =
+        milnorClassifyingSpaceProj H ∘ MilnorTotalSpace.map (φ : C(G, H)) :=
+      funext fun p ↦ φ.milnorTotalSpaceMulActionHom.orbitRelQuotientMap_mk p
+    exact hcomp ▸ (continuous_milnorClassifyingSpaceProj H).comp
+      (MilnorTotalSpace.map (φ : C(G, H))).continuous
 
-@[simp] theorem milnorClassifyingSpaceMap_mk' (φ : G →ₜ* H) (p : MilnorTotalSpace G) :
-    φ.milnorClassifyingSpaceMap (Quotient.mk'' p) =
-      Quotient.mk'' (MilnorTotalSpace.map (φ : C(G, H)) p) :=
+@[simp] theorem milnorClassifyingSpaceMap_proj (φ : G →ₜ* H) (p : MilnorTotalSpace G) :
+    φ.milnorClassifyingSpaceMap (milnorClassifyingSpaceProj G p) =
+      milnorClassifyingSpaceProj H (MilnorTotalSpace.map (φ : C(G, H)) p) :=
   φ.milnorTotalSpaceMulActionHom.orbitRelQuotientMap_mk p
 
 @[simp] theorem milnorClassifyingSpaceMap_basepoint (φ : G →ₜ* H) :
     φ.milnorClassifyingSpaceMap (milnorClassifyingSpaceBasepoint G) =
       milnorClassifyingSpaceBasepoint H := by
-  rw [milnorClassifyingSpaceBasepoint, milnorClassifyingSpaceMap_mk',
-    MilnorTotalSpace.map_basepoint]
-  rfl
+  rw [← milnorClassifyingSpaceProj_basepoint, milnorClassifyingSpaceMap_proj,
+    MilnorTotalSpace.map_basepoint, milnorClassifyingSpaceProj_basepoint]
 
 @[simp] theorem milnorClassifyingSpaceMap_id :
     (ContinuousMonoidHom.id G).milnorClassifyingSpaceMap =

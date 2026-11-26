@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Action
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 public import Mathlib.Topology.Homotopy.Path
 import Mathlib.Topology.Algebra.InfiniteSum.Order
+import TauCeti.Topology.PartitionOfUnity.Shrink
 
 /-!
 # The strong-coordinate Milnor join of a topological space or group
@@ -27,11 +28,11 @@ with the weak simplicial topology and left group action on `universalGSpace G`.
   `instPathConnectedSpaceMilnorTotalSpace`, `instT2Space`: strong-topology join,
   coordinates `(t_i, g_i)`, finite-support coordinate constructor, universal continuity criterion,
   fresh-index cone homotopy, path-connectedness, and Hausdorffness.
-* `TauCeti.MilnorTotalSpace.instContinuousSMul`, `instIsCancelSMulOp`, `invEquiv`,
+* `TauCeti.MilnorTotalSpace.instContinuousSMul`, `instIsCancelSMulOp`,
   `TauCeti.weakToMilnorTotalSpace`, `MilnorTotalSpace.map_basepoint`,
   `MilnorTotalSpace.map_op_smul`, `ContinuousMonoidHom.map_comp_weakToMilnorTotalSpace`: joint
   continuity and freeness of the right `Gᵐᵒᵖ`-action, label-inversion dictionary
-  (`g⁻¹ • x ↦ (invEquiv x) · g`), and homomorphism naturality.
+  (`g⁻¹ • x ↦ weakToMilnorTotalSpace G x · g`), and homomorphism naturality.
 
 ## References
 
@@ -183,9 +184,8 @@ theorem hasSum_weight (p : MilnorTotalSpace G) : HasSum (fun i ↦ weight i p) 1
 theorem weight_le_one (i : ℕ) (p : MilnorTotalSpace G) : weight i p ≤ 1 :=
   le_hasSum (hasSum_weight p) i fun j _ ↦ weight_nonneg j p
 
-theorem exists_weight_pos (p : MilnorTotalSpace G) : ∃ i, 0 < weight i p := by
-  by_contra! h
-  simpa [fun i ↦ le_antisymm (h i) (weight_nonneg i p)] using tsum_weight p
+theorem exists_weight_pos (p : MilnorTotalSpace G) : ∃ i, 0 < weight i p :=
+  exists_pos_of_hasSum_pos (fun i ↦ weight_nonneg i p) zero_lt_one (hasSum_weight p)
 
 @[simp] theorem iUnion_coordSet (G : Type u) : ⋃ i, coordSet G i = univ :=
   eq_univ_of_forall fun p ↦ mem_iUnion.mpr (exists_weight_pos p)
@@ -298,8 +298,7 @@ private def ofFinsetCoordVal (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G
 
 private theorem ofFinsetCoordVal_apply_self (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G) (i : ℕ) :
     ofFinsetCoordVal S w ℓ ⟨i, ℓ i⟩ = if i ∈ S then w i else 0 := by
-  rw [ofFinsetCoordVal, ← labelEmbedding_apply ℓ i, Finsupp.embDomain_apply_self,
-    Finsupp.indicator_apply, dite_eq_ite]
+  simp [ofFinsetCoordVal, ← labelEmbedding_apply ℓ i, Finsupp.indicator_apply]
 
 /-- Construct a point of `MilnorTotalSpace G` from a finite index set `S : Finset ℕ`, nonnegative
 weights `w` summing to `1` over `S`, and vertex labels `ℓ`. -/
@@ -336,7 +335,7 @@ otherwise. -/
   have hval : (ofFinsetCoord S w ℓ hw_nonneg hw_sum).val =
       (Finsupp.indicator S fun i _ ↦ w i).embDomain (labelEmbedding ℓ) :=
     val_ofRealization _
-  rw [weight_def, hval, Finsupp.embDomain_eq_mapDomain, ← Finsupp.mapDomain_comp,
+  simp only [weight_def, hval, Finsupp.embDomain_eq_mapDomain, ← Finsupp.mapDomain_comp,
     fst_comp_labelEmbedding, Finsupp.mapDomain_id, Finsupp.indicator_apply, dite_eq_ite]
 
 /-- When `i ∈ S` and `0 < w i`, the `i`-th label of `ofFinsetCoord S w ℓ` is `ℓ i`. -/
@@ -352,6 +351,16 @@ otherwise. -/
 theorem weight_eq_zero_of_notMem {p : MilnorTotalSpace G} {i : ℕ}
     (hi : i ∉ (finite_support_weight p).toFinset) : weight i p = 0 :=
   not_not.mp fun hne ↦ hi ((finite_support_weight p).mem_toFinset.mpr hne)
+
+/-- Every point of `MilnorTotalSpace G` has all barycentric weights `0` from some index
+onwards. -/
+theorem exists_forall_le_weight_eq_zero (p : MilnorTotalSpace G) :
+    ∃ N : ℕ, ∀ i, N ≤ i → weight i p = 0 := by
+  classical
+  refine ⟨(finite_support_weight p).toFinset.sup _root_.id + 1, fun i hi ↦
+    weight_eq_zero_of_notMem fun hm ↦ ?_⟩
+  exact Nat.not_succ_le_self _
+    (hi.trans ((finite_support_weight p).toFinset.le_sup (f := _root_.id) hm))
 
 /-- The barycentric weights of `p` sum to `1` over any finite set `S` outside which all weights
 vanish. -/
@@ -444,11 +453,16 @@ private def conePt (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
       unfold coneWeight; split_ifs
       exacts [z.1.property.1, mul_nonneg (sub_nonneg.mpr z.1.property.2) (weight_nonneg i (g z.2))])
     (by
-      unfold coneWeight
-      rw [Finset.sum_insert hN, ite_eq_left rfl,
-        Finset.sum_congr rfl fun _ hi ↦ ite_eq_right (ne_of_mem_of_not_mem hi hN),
-        ← Finset.mul_sum, sum_weight_of_support_subset fun _ ↦ weight_eq_zero_of_notMem,
-        mul_one, add_sub_cancel])
+      rw [Finset.sum_insert hN]
+      have hS : ∑ i ∈ S, coneWeight N g z i = 1 - (z.1 : ℝ) := by
+        calc ∑ i ∈ S, coneWeight N g z i
+            = ∑ i ∈ S, (1 - (z.1 : ℝ)) * weight i (g z.2) :=
+              Finset.sum_congr rfl fun _ hi ↦ by simp [coneWeight, ne_of_mem_of_not_mem hi hN]
+          _ = (1 - (z.1 : ℝ)) * ∑ i ∈ S, weight i (g z.2) := by rw [← Finset.mul_sum]
+          _ = 1 - (z.1 : ℝ) := by
+              rw [sum_weight_of_support_subset fun _ ↦ weight_eq_zero_of_notMem, mul_one]
+      rw [hS]
+      simp [coneWeight])
 
 private theorem weight_conePt (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
     (hg : ∀ x, weight N (g x) = 0) (z : I × X) (i : ℕ) :
@@ -547,16 +561,12 @@ instance instPathConnectedSpaceMilnorTotalSpace [Nonempty G] :
     PathConnectedSpace (MilnorTotalSpace G) where
   nonempty := inferInstance
   joined p q := by
-    classical
     obtain ⟨a⟩ := ‹Nonempty G›
-    let S := (finite_support_weight p).toFinset ∪ (finite_support_weight q).toFinset
-    let N := S.sup _root_.id + 1
-    have hN_not_mem (r : MilnorTotalSpace G)
-        (hr : (finite_support_weight r).toFinset ⊆ S) :
-        N ∉ (finite_support_weight r).toFinset :=
-      fun hm ↦ Nat.not_succ_le_self (S.sup _root_.id) (S.le_sup (f := _root_.id) (hr hm))
-    have hp : weight N p = 0 := weight_eq_zero_of_notMem (hN_not_mem p Finset.subset_union_left)
-    have hq : weight N q = 0 := weight_eq_zero_of_notMem (hN_not_mem q Finset.subset_union_right)
+    obtain ⟨N₁, hN₁⟩ := exists_forall_le_weight_eq_zero p
+    obtain ⟨N₂, hN₂⟩ := exists_forall_le_weight_eq_zero q
+    let N := max N₁ N₂
+    have hp : weight N p = 0 := hN₁ N (le_max_left N₁ N₂)
+    have hq : weight N q = 0 := hN₂ N (le_max_right N₁ N₂)
     exact ⟨((coneAtFreshIndexHomotopy N a (ContinuousMap.const Unit p) fun _ ↦ hp).evalAt ()).trans
       ((coneAtFreshIndexHomotopy N a (ContinuousMap.const Unit q) fun _ ↦ hq).evalAt ()).symm⟩
 
@@ -740,35 +750,6 @@ private theorem ofRealization_invRealizationHomeomorph (x : universalGSpace G) :
   exact congrArg ofRealization
     (PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply _ _ _ _ x)
 
-/-- Equivalence `universalGSpace G ≃ MilnorTotalSpace G` inverting every vertex label. -/
-def invEquiv (G : Type u) [Group G] : universalGSpace G ≃ MilnorTotalSpace G :=
-  (invRealizationHomeomorph G).toEquiv.trans (equivRealization G).symm
-
-/-- Applying `invEquiv G` agrees pointwise with relabelling by `Inv.inv`. -/
-theorem invEquiv_apply (x : universalGSpace G) :
-    invEquiv G x = relabel Inv.inv (ofRealization x) := by
-  rw [invEquiv, Equiv.trans_apply, Homeomorph.coe_toEquiv, equivRealization_symm_apply]
-  exact ofRealization_invRealizationHomeomorph x
-
-theorem val_invEquiv (x : universalGSpace G) :
-    (invEquiv G x).val =
-      Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2⁻¹⟩ : Σ _ : ℕ, G)) x.val := by
-  rw [invEquiv_apply]
-  exact val_relabel Inv.inv (ofRealization x)
-
-@[simp] theorem invEquiv_basepoint : invEquiv G (universalGSpaceBasepoint G) = basepoint G :=
-  ext_val (by
-    rw [val_invEquiv, universalGSpaceBasepoint_val, val_basepoint, Finsupp.mapDomain_single,
-      inv_one])
-
-/-- Label inversion carries left multiplication by `g` to right multiplication by `g⁻¹`. -/
-@[simp] theorem invEquiv_smul (g : G) (x : universalGSpace G) :
-    invEquiv G (g • x) = op g⁻¹ • invEquiv G x := by
-  apply ext_val
-  rw [val_invEquiv, universalGSpace_smul_val, val_op_smul, val_invEquiv,
-    ← Finsupp.mapDomain_comp, ← Finsupp.mapDomain_comp]
-  congr 1; funext ⟨_, a⟩; simp [mul_inv_rev]
-
 end Group
 
 end RightAction
@@ -804,24 +785,34 @@ def weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
 /-- Pointwise formula for the comparison map `weakToMilnorTotalSpace G`. -/
 theorem weakToMilnorTotalSpace_apply (G : Type u) [Group G] [TopologicalSpace G]
     (x : universalGSpace G) :
-    weakToMilnorTotalSpace G x = MilnorTotalSpace.invEquiv G x := by
-  rw [weakToMilnorTotalSpace, ContinuousMap.comp_apply]
-  exact (MilnorTotalSpace.ofRealization_invRealizationHomeomorph x).trans
-    (MilnorTotalSpace.invEquiv_apply x).symm
+    weakToMilnorTotalSpace G x =
+      MilnorTotalSpace.relabel Inv.inv (MilnorTotalSpace.ofRealization x) :=
+  MilnorTotalSpace.ofRealization_invRealizationHomeomorph x
 
-theorem coe_weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
-    (weakToMilnorTotalSpace G : universalGSpace G → MilnorTotalSpace G) =
-      MilnorTotalSpace.invEquiv G :=
-  funext (weakToMilnorTotalSpace_apply G)
+/-- Coordinate vector of `weakToMilnorTotalSpace G x`, obtained by inverting every vertex
+label. -/
+theorem val_weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G]
+    (x : universalGSpace G) :
+    (weakToMilnorTotalSpace G x).val =
+      Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2⁻¹⟩ : Σ _ : ℕ, G)) x.val := by
+  rw [weakToMilnorTotalSpace_apply]
+  exact MilnorTotalSpace.val_relabel Inv.inv (MilnorTotalSpace.ofRealization x)
 
+/-- `weakToMilnorTotalSpace G` preserves the distinguished base point. -/
 @[simp] theorem weakToMilnorTotalSpace_basepoint (G : Type u) [Group G] [TopologicalSpace G] :
-    weakToMilnorTotalSpace G (universalGSpaceBasepoint G) = MilnorTotalSpace.basepoint G := by
-  rw [weakToMilnorTotalSpace_apply, MilnorTotalSpace.invEquiv_basepoint]
+    weakToMilnorTotalSpace G (universalGSpaceBasepoint G) = MilnorTotalSpace.basepoint G :=
+  MilnorTotalSpace.ext_val (by
+    rw [val_weakToMilnorTotalSpace, universalGSpaceBasepoint_val, MilnorTotalSpace.val_basepoint,
+      Finsupp.mapDomain_single, inv_one])
 
+/-- Label inversion carries left multiplication by `g` to right multiplication by `g⁻¹`. -/
 @[simp] theorem weakToMilnorTotalSpace_smul {G : Type u} [Group G] [TopologicalSpace G]
     (g : G) (x : universalGSpace G) :
     weakToMilnorTotalSpace G (g • x) = op g⁻¹ • weakToMilnorTotalSpace G x := by
-  simp only [weakToMilnorTotalSpace_apply, MilnorTotalSpace.invEquiv_smul]
+  apply MilnorTotalSpace.ext_val
+  rw [val_weakToMilnorTotalSpace, universalGSpace_smul_val, MilnorTotalSpace.val_op_smul,
+    val_weakToMilnorTotalSpace, ← Finsupp.mapDomain_comp, ← Finsupp.mapDomain_comp]
+  congr 1; funext ⟨_, a⟩; simp [mul_inv_rev]
 
 end TauCeti
 
@@ -837,9 +828,8 @@ theorem map_comp_weakToMilnorTotalSpace (φ : G →ₜ* H) :
       (weakToMilnorTotalSpace H).comp φ.toMonoidHom.universalGSpaceMap := by
   ext1 x
   apply MilnorTotalSpace.ext_val
-  simp only [ContinuousMap.comp_apply, weakToMilnorTotalSpace_apply,
-    MilnorTotalSpace.val_map, MilnorTotalSpace.val_invEquiv,
-    MonoidHom.universalGSpaceMap_val, ← Finsupp.mapDomain_comp]
+  simp only [ContinuousMap.comp_apply, val_weakToMilnorTotalSpace,
+    MilnorTotalSpace.val_map, MonoidHom.universalGSpaceMap_val, ← Finsupp.mapDomain_comp]
   congr 1
   funext ⟨_, _⟩
   simp

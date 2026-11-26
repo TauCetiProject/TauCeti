@@ -162,6 +162,14 @@ end HalfThresholdTrunc
 
 section HasSumOne
 
+/-- A family of nonnegative real numbers with a positive infinite sum has at least one positive
+term. -/
+theorem exists_pos_of_hasSum_pos {ι : Type*} {f : ι → ℝ} {a : ℝ} (hnn : ∀ i, 0 ≤ f i)
+    (ha : 0 < a) (hsum : HasSum f a) : ∃ i, 0 < f i := by
+  by_contra! h
+  have h0 : f = 0 := funext fun i ↦ le_antisymm (h i) (hnn i)
+  exact ha.ne' (hsum.unique (h0 ▸ hasSum_zero))
+
 private theorem bddAbove_range_of_hasSum_one (f : ι → C(X, ℝ)) (hnn : ∀ i x, 0 ≤ f i x)
     (hsum : ∀ x, HasSum (fun i ↦ f i x) 1) (x : X) : BddAbove (range fun i ↦ f i x) :=
   ⟨1, forall_mem_range.2 fun j ↦ le_hasSum (hsum x) j fun k _ ↦ hnn k x⟩
@@ -172,11 +180,7 @@ private theorem eventually_tail_lt_and_half_lt_finSup_of_hasSum_one (f : ι → 
       ∀ x ∈ W, (∀ j ∉ I, f j x < (⨆ i, f i x₀) / 4) ∧
         (⨆ i, f i x₀) / 2 < ⨆ i : I, f i x := by
   classical
-  have hpos : ∃ i₀, 0 < f i₀ x₀ := by
-    by_contra! h
-    have h0 : ∀ i, f i x₀ = 0 := fun i ↦ le_antisymm (h i) (hnn i x₀)
-    exact one_ne_zero (α := ℝ) (by simpa [h0] using (hsum x₀).tsum_eq.symm)
-  obtain ⟨i₀, hi₀⟩ := hpos
+  obtain ⟨i₀, hi₀⟩ := exists_pos_of_hasSum_pos (fun i ↦ hnn i x₀) zero_lt_one (hsum x₀)
   have : Nonempty ι := ⟨i₀⟩
   let m₀ : ℝ := ⨆ i, f i x₀
   have hm₀ : 0 < m₀ := hi₀.trans_le (le_ciSup (bddAbove_range_of_hasSum_one f hnn hsum x₀) i₀)

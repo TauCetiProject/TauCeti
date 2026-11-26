@@ -20,7 +20,7 @@ and base-point formulas, and establishes naturality under continuous group homom
 
 * `TauCeti.weakToMilnorClassifyingSpace`: continuous map comparing the weak-topology classifying
   space to the strong-topology `MilnorClassifyingSpace G`.
-* `TauCeti.weakToMilnorClassifyingSpace_mk'`, `TauCeti.weakToMilnorClassifyingSpace_basepoint`:
+* `TauCeti.weakToMilnorClassifyingSpace_proj`, `TauCeti.weakToMilnorClassifyingSpace_basepoint`:
   compatibility with the orbit projection and base point.
 * `ContinuousMonoidHom.milnorClassifyingSpaceMap_comp_weakToMilnorClassifyingSpace`: naturality
   square with `MonoidHom.classifyingSpaceMap`.
@@ -46,26 +46,26 @@ namespace TauCeti
 def weakToMilnorClassifyingSpace (G : Type u) [Group G] [TopologicalSpace G] :
     C(classifyingSpace G, MilnorClassifyingSpace G) :=
   classifyingSpaceLift
-    ⟨Quotient.mk'' ∘ weakToMilnorTotalSpace G,
-      continuous_quotient_mk'.comp (weakToMilnorTotalSpace G).continuous⟩
+    ⟨milnorClassifyingSpaceProj G ∘ weakToMilnorTotalSpace G,
+      (continuous_milnorClassifyingSpaceProj G).comp (weakToMilnorTotalSpace G).continuous⟩
     fun g x ↦ by
       rw [ContinuousMap.coe_mk, Function.comp_apply, weakToMilnorTotalSpace_smul]
-      exact MulAction.orbitRel.Quotient.quotient_smul_eq
+      exact milnorClassifyingSpaceProj_smul _ _
 
 /-- Applying `weakToMilnorClassifyingSpace G` on a weak orbit representative equals the strong
 orbit of `weakToMilnorTotalSpace G x`. -/
-@[simp] theorem weakToMilnorClassifyingSpace_mk' {G : Type u} [Group G] [TopologicalSpace G]
+@[simp] theorem weakToMilnorClassifyingSpace_proj {G : Type u} [Group G] [TopologicalSpace G]
     (x : universalGSpace G) :
     weakToMilnorClassifyingSpace G (classifyingSpaceProj G x) =
-      Quotient.mk'' (weakToMilnorTotalSpace G x) :=
+      milnorClassifyingSpaceProj G (weakToMilnorTotalSpace G x) :=
   classifyingSpaceLift_apply _ _ x
 
 /-- `weakToMilnorClassifyingSpace G` preserves the distinguished base point. -/
 @[simp] theorem weakToMilnorClassifyingSpace_basepoint (G : Type u) [Group G] [TopologicalSpace G] :
     weakToMilnorClassifyingSpace G (classifyingSpaceBasepoint G) =
       milnorClassifyingSpaceBasepoint G := by
-  rw [← classifyingSpaceProj_universalGSpaceBasepoint, weakToMilnorClassifyingSpace_mk',
-    weakToMilnorTotalSpace_basepoint, milnorClassifyingSpaceBasepoint_eq]
+  rw [← classifyingSpaceProj_universalGSpaceBasepoint, weakToMilnorClassifyingSpace_proj,
+    weakToMilnorTotalSpace_basepoint, milnorClassifyingSpaceProj_basepoint]
 
 end TauCeti
 
@@ -83,8 +83,9 @@ theorem milnorClassifyingSpaceMap_comp_weakToMilnorClassifyingSpace (φ : G →�
   apply ContinuousMap.ext
   intro b
   obtain ⟨x, rfl⟩ := classifyingSpaceProj_surjective G b
-  simp only [ContinuousMap.comp_apply, weakToMilnorClassifyingSpace_mk',
-    milnorClassifyingSpaceMap_mk', MonoidHom.classifyingSpaceMap_proj]
-  exact congrArg Quotient.mk'' (congrArg (· x) φ.map_comp_weakToMilnorTotalSpace)
+  simp only [ContinuousMap.comp_apply, weakToMilnorClassifyingSpace_proj,
+    milnorClassifyingSpaceMap_proj, MonoidHom.classifyingSpaceMap_proj]
+  exact congrArg (milnorClassifyingSpaceProj H)
+    (congrArg (· x) φ.map_comp_weakToMilnorTotalSpace)
 
 end ContinuousMonoidHom
