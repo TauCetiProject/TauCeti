@@ -49,12 +49,7 @@ point uses `IsCompact.exists_pos_forall_mul_norm_sq_le` on the finite-dimensiona
   coercive on a compact set.
 * `Bundle.ContinuousRiemannianMetric.exists_inner_le_mul_inner`: `g ≤ Λ g₀` over a compact set.
 * `Bundle.ContinuousRiemannianMetric.exists_mul_inner_le_inner_and_inner_le_mul_inner`:
-  `λ g₀ ≤ g ≤ Λ g₀` over a compact set, or globally on a compact base in the `_of_compactSpace`
-  variant.
-* `IsCompact.exists_pos_mul_norm_sq_le_bilin_self_and_le` and
-  `Bundle.ContinuousRiemannianMetric.exists_pos_mul_norm_sq_le_inner_self_and_le_of_isCompact`:
-  positive two-sided diagonal bounds against the squared fibre norm, for a positive bilinear
-  field on a finite-rank bundle or a continuous Riemannian metric in arbitrary rank.
+  `λ g₀ ≤ g ≤ Λ g₀` over a compact set.
 -/
 
 public section
@@ -244,56 +239,4 @@ theorem exists_mul_inner_le_inner_and_inner_le_mul_inner (g g₀ : ContinuousRie
   rw [inv_mul_le_iff₀ hD]
   exact hg₀g x hx v
 
-/-- On a compact base, two continuous Riemannian metrics have global positive two-sided
-comparison constants. -/
-theorem exists_mul_inner_le_inner_and_inner_le_mul_inner_of_compactSpace [CompactSpace B]
-    (g g₀ : ContinuousRiemannianMetric F E) :
-    ∃ c > 0, ∃ C > 0, ∀ x, ∀ v : E x,
-      c * g₀.inner x v v ≤ g.inner x v v ∧ g.inner x v v ≤ C * g₀.inner x v v := by
-  simpa only [mem_univ, forall_const] using
-    g.exists_mul_inner_le_inner_and_inner_le_mul_inner g₀ isCompact_univ
-
 end Bundle.ContinuousRiemannianMetric
-
-section NormedReference
-
-variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
-  [FiberBundle F E] [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E]
-
-/-- On a continuous Riemannian bundle with finite-dimensional model fibre, a bilinear field
-continuous and positive on a compact set has positive uniform two-sided bounds against the
-squared fibre norm. Neither symmetry nor positivity outside the compact set is required. -/
-theorem IsCompact.exists_pos_mul_norm_sq_le_bilin_self_and_le [FiniteDimensional ℝ F]
-    {K : Set B} (hK : IsCompact K) {b : ∀ x, E x →L[ℝ] E x →L[ℝ] ℝ}
-    (hb : ContinuousOn (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (b x)) K)
-    (hpos : ∀ x ∈ K, ∀ v : E x, v ≠ 0 → 0 < b x v v) :
-    ∃ c > 0, ∃ C > 0, ∀ x ∈ K, ∀ v : E x,
-      c * ‖v‖ ^ 2 ≤ b x v v ∧ b x v v ≤ C * ‖v‖ ^ 2 := by
-  obtain ⟨c, hc, hlower⟩ := hK.exists_pos_forall_mul_norm_sq_le_bundle (b := id) (φ := b) hb hpos
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn_bilinear_bundle (b := id) (φ := b) hb
-  refine ⟨c, hc, max C 1, by positivity, fun x hx v ↦ ⟨hlower x hx v, ?_⟩⟩
-  calc b x v v ≤ ‖b x v v‖ := Real.le_norm_self _
-    _ ≤ ‖b x‖ * ‖v‖ * ‖v‖ := le_opNorm₂ _ _ _
-    _ ≤ max C 1 * ‖v‖ * ‖v‖ := by gcongr; exact (hC x hx).trans (le_max_left _ _)
-    _ = max C 1 * ‖v‖ ^ 2 := by rw [mul_assoc, ← sq]
-
-/-- On a compact set, a continuous metric has positive uniform lower and upper bounds against
-the squared fibre norm of a continuous Riemannian bundle, with no finite-rank assumption. -/
-theorem Bundle.ContinuousRiemannianMetric.exists_pos_mul_norm_sq_le_inner_self_and_le_of_isCompact
-    (g : ContinuousRiemannianMetric F E) {K : Set B} (hK : IsCompact K) :
-    ∃ c > 0, ∃ C > 0, ∀ x ∈ K, ∀ v : E x,
-      c * ‖v‖ ^ 2 ≤ g.inner x v v ∧ g.inner x v v ≤ C * ‖v‖ ^ 2 := by
-  obtain ⟨b, hb, hinner⟩ := IsContinuousRiemannianBundle.exists_continuous (F := F) (E := E)
-  let g₀ : ContinuousRiemannianMetric F E :=
-    { inner := b
-      symm := fun x v w ↦ by simpa only [← hinner] using (real_inner_comm v w).symm
-      pos := fun x v hv ↦ by simpa only [← hinner] using (real_inner_self_pos.mpr hv)
-      isVonNBounded := fun x ↦ (NormedSpace.isVonNBounded_iff' ℝ).mpr ⟨1, fun v hv ↦ by
-        have : ‖v‖ ^ 2 < 1 := by
-          simpa only [mem_ofPred_eq, ← hinner, real_inner_self_eq_norm_sq] using hv
-        nlinarith [norm_nonneg v]⟩
-      continuous := hb }
-  simpa only [g₀, ← hinner, real_inner_self_eq_norm_sq] using
-    g.exists_mul_inner_le_inner_and_inner_le_mul_inner g₀ hK
-
-end NormedReference
