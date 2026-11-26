@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer.Orthogonality
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Archimedean.Duality
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Module.ZMod.Annihilator

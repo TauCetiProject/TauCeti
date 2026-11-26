@@ -37,6 +37,8 @@ tightening (`𝓕_T`, the zero condition at `T`), Rubin's `𝓕^Σ` and `𝓕_Σ
 
 ## Main definitions
 
+* `TauCeti.ContCohomology.SelmerStructure.withLocalConditions`: replace the local conditions
+  without changing the localisation data.
 * `TauCeti.ContCohomology.SelmerStructure.localConditionComparison`: localisation of
   `𝓖.selmerGroup` modulo `𝓕.localCondition`, at a specified set of indices.
 * `TauCeti.ContCohomology.SelmerStructure.relaxedAt`,
@@ -48,9 +50,8 @@ tightening (`𝓕_T`, the zero condition at `T`), Rubin's `𝓕^Σ` and `𝓕_Σ
 * `TauCeti.ContCohomology.SelmerStructure.mem_selmerGroup_relaxedAt_iff`,
   `TauCeti.ContCohomology.SelmerStructure.mem_selmerGroup_strictAt_iff`: membership in the relaxed
   and strict Selmer groups.
-* `TauCeti.ContCohomology.SelmerStructure.exact_inclusion_localConditionComparison` and
-  `TauCeti.ContCohomology.SelmerStructure.exact_inclusion_localConditionComparison_relaxedAt`:
-  exactness of the change-of-local-conditions and relaxation sequences.
+* `TauCeti.ContCohomology.SelmerStructure.exact_inclusion_localConditionComparison`: exactness
+  of the change-of-local-conditions sequence.
 * `TauCeti.ContCohomology.SelmerStructure.relIndex_selmerGroup_eq_card_range`: the relative
   Selmer index is the order of the localisation image.
 * `TauCeti.ContCohomology.SelmerStructure.relIndex_selmerGroup_dvd_prod`: divisibility of the
@@ -353,14 +354,5 @@ theorem relIndex_selmerGroup_dvd_prod (T : Finset ι)
       (Finset.prod_subtype T (p := fun i ↦ i ∈ (T : Set ι)) (fun _ ↦ Iff.rfl)
         (fun i ↦ (𝓕.localCondition i).relIndex (𝓖.localCondition i))).symm
   rwa [hcard] at h
-
-/-- The inclusion of `𝓕.selmerGroup` into `(𝓕.relaxedAt S).selmerGroup` followed by localisation
-at `S` modulo `𝓕.localCondition` is exact. -/
-theorem exact_inclusion_localConditionComparison_relaxedAt :
-    Function.Exact (AddSubgroup.inclusion (𝓕.selmerGroup_le_selmerGroup_relaxedAt S))
-      (𝓕.localConditionComparison (𝓕.relaxedAt S) S) :=
-  𝓕.exact_inclusion_localConditionComparison (𝓕.relaxedAt S) S (fun _ ↦ by simp)
-    (fun i hi ↦ by simp [hi])
-    fun i ↦ by by_cases hi : i ∈ S <;> simp [hi]
 
 end TauCeti.ContCohomology.SelmerStructure

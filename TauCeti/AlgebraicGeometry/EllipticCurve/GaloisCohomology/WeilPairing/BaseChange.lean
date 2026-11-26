@@ -5,29 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.BaseChange.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.BaseChange
 
-import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer.Orthogonality
-
 /-!
-# Localization of the Brauer-valued Weil cup product
+# Localization of the Weil cup product
 
-Composing the Weil cup products on `H¹(K, E[m])` and on `H¹(K, E₁[φ]) × H¹(K, E₂[φ̂])` with
-`H²(K, μ_n) → Br K` gives bilinear Brauer-valued pairings whose base change along any extension
-`L/K` agrees with the native pairing over `L` on the restricted classes. In particular, their local
-invariants can be computed using the torsion, isogeny kernels, and Weil pairings over each
-completion, without choosing rational torsion bases or roots of unity in the ground field.
+The cup product on `H¹(K, E[m])` along the Weil pairing commutes with extension of fields.
+Composing with `H²(K, μ_m) → Br K` gives a bilinear Brauer-valued pairing, whose base change
+is the same pairing on the restricted classes. In particular, its local invariants can be
+computed using the torsion and Weil pairing of the curve over each completion, without choosing
+a rational torsion basis or roots of unity in the ground field.
+
+The same holds for an isogeny `φ : E₁ → E₂` of degree `n` invertible in `K` and the cup product
+`H¹(K, E₁[φ]) × H¹(K, E₂[φ̂]) → H²(K, μ_n)` along the isogeny Weil pairing. Here the second
+factor is restricted into the kernel of the dual of the base change `φ_L` of `φ`
+(`TauCeti.Isogeny.dualKerRes`): the dual of `φ_L` is the base change of `φ̂`, but only
+propositionally, and the local Tate pairing of `φ_L` is stated on the kernel of the dual of
+`φ_L`. Since the degrees of `φ` and `φ_L` also agree only propositionally, the comparison is
+stated for the Brauer-valued pairings, in which the level of the roots of unity does not appear.
 
 ## Main results
 
-* `WeierstrassCurve.brBaseChange_torsionWeilBrauerPairing`: localization of the Brauer class of
-  the `[m]`-torsion Weil cup product.
-* `TauCeti.Isogeny.brBaseChange_kerWeilBrauerPairing`: localization of the Brauer class of the
-  isogeny Weil cup product to the base change `φ_L` on the restricted classes.
-* `TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`: vanishing after restriction
-  of classes in the Selmer local-condition kernels.
+* `WeierstrassCurve.brBaseChange_torsionWeilBrauerPairing`: the Brauer class of the Weil cup
+  product on `H¹(K, E[m])` localizes to the Weil cup product of the restricted classes.
+* `TauCeti.Isogeny.brBaseChange_kerWeilBrauerPairing`: the Brauer class of the isogeny Weil cup
+  product localizes to the isogeny Weil cup product of `φ_L` on the restricted classes.
 
 ## References
 
@@ -50,6 +54,34 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 variable {L : Type*} [Field L] [Algebra K L]
   (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
+/-- Restriction to a field extension commutes with the Weil cup product.
+The embedding of separable closures is arbitrary. -/
+theorem torsionH1WeilPairing_torsionRes
+    (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    (W⁄L).torsionH1WeilPairing m (by simpa using hm.map (algebraMap K L))
+        (W.torsionRes τ m a) (W.torsionRes τ m b) =
+      explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K m) (AbsoluteGaloisGroup L)
+        (KummerCoeff L m) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange m τ)
+        continuous_of_discreteTopology (kummerCoeffBaseChange_smul m τ)
+        (W.torsionH1WeilPairing m hm a b) := by
+  simp only [torsionH1WeilPairing_eq_explicitCup11, torsionRes_eq_explicitMap1]
+  exact (explicitMap2_explicitCup11
+    (G := AbsoluteGaloisGroup K) (M := W.TorsionCoeff m) (N := W.TorsionCoeff m)
+    (P := KummerCoeff K m) (μ := W.torsionCoeffWeilPairing m hm)
+    (hμ := continuous_of_discreteTopology) (hequiv := W.torsionCoeffWeilPairing_smul m hm)
+    (H := AbsoluteGaloisGroup L) (M' := (W⁄L).TorsionCoeff m)
+    (N' := (W⁄L).TorsionCoeff m) (P' := KummerCoeff L m)
+    (μ' := (W⁄L).torsionCoeffWeilPairing m (by simpa using hm.map (algebraMap K L)))
+    (hμ' := continuous_of_discreteTopology)
+    (hequiv' := (W⁄L).torsionCoeffWeilPairing_smul m _)
+    (φ := absoluteGaloisGroupMap τ) (fM := W.torsionCoeffBaseChange τ m)
+    (fN := W.torsionCoeffBaseChange τ m) (fP := kummerCoeffBaseChange m τ)
+    (hcM := continuous_of_discreteTopology) (hcN := continuous_of_discreteTopology)
+    (hcP := continuous_of_discreteTopology) (hfM := W.torsionCoeffBaseChange_smul τ m)
+    (hfN := W.torsionCoeffBaseChange_smul τ m) (hfP := kummerCoeffBaseChange_smul m τ)
+    (hpair := fun P Q ↦ (W.torsionCoeffWeilPairing_torsionCoeffBaseChange hm τ P Q).symm)
+    a b).symm
+
 /-- The Brauer class of a Weil cup product localizes to the Weil cup product of the restricted
 classes. This applies to every extension, including archimedean and nonarchimedean completions. -/
 theorem brBaseChange_torsionWeilBrauerPairing
@@ -68,11 +100,11 @@ open WeierstrassCurve TauCeti.ContCohomology TauCeti.ClassFieldTheory Hom
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
+  {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
-section
+/-! ### Localization of the isogeny Weil cup product -/
 
-variable {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-  (hn : IsUnit (φ.degree : K))
+variable (hn : IsUnit (φ.degree : K))
 
 /-- The isogeny Weil pairing with values in the units of the separable closure. -/
 private def kerCoeffUnitsPairing :
@@ -152,26 +184,5 @@ theorem brBaseChange_kerWeilBrauerPairing (hnL : IsUnit ((φ.baseChange L).degre
     continuous_of_discreteTopology continuous_of_discreteTopology continuous_of_discreteTopology
     (φ.kerCoeffBaseChange_smul τ) (φ.dualKerCoeffBaseChange_smul τ)
     (unitsCoeffBaseChange_smul τ) (φ.unitsCoeffBaseChange_kerCoeffUnitsPairing τ hn hnL) a b
-
-end
-
-/-- **The Selmer local conditions are orthogonal after restriction.** Let `L/K` be any extension
-in which the degree of `φ` is invertible. If the images of `a ∈ H¹(K, E₁[φ])` and
-`b ∈ H¹(K, E₂[φ̂])` in `H¹(L, E₁)` and `H¹(L, E₂)` are trivial, then the Brauer-valued isogeny
-Weil cup of their restrictions, for the base change of `φ` and its dual, vanishes. -/
-theorem kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero
-    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
-    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-    (hnL : IsUnit ((φ.baseChange L).degree : L))
-    (ha : W₁.pointRes τ
-      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
-    (hb : W₂.pointRes τ
-      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
-    (φ.baseChange L).kerWeilBrauerPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) = 0 := by
-  refine ((φ.baseChange L).kerWeilBrauerPairing_eq_zero_iff hnL _ _).2
-    ((φ.baseChange L).kerH1WeilPairing_eq_zero_of_mem_localKummerCondition hnL ?_ ?_)
-  · rw [mem_localKummerCondition_iff, ← pointRes_kerCoeffIncl, ha]
-  · rw [mem_localKummerCondition_iff, ← pointRes_dualKerCoeffIncl, hb]
 
 end TauCeti.Isogeny

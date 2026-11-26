@@ -44,10 +44,8 @@ extensions, such as an algebraic closure of an imperfect field.
 
 ## Main results
 
-* `TauCeti.Isogeny.degree_map` and `TauCeti.Isogeny.degree_baseChange`: `deg (φ.map f) = deg φ`
-  and `deg (φ.baseChange K) = deg φ`.
-* `TauCeti.Isogeny.isUnit_degree_map_of_isUnit`: invertibility of `deg φ` persists under any
-  field homomorphism `f : F →+* K`.
+* `TauCeti.Isogeny.degree_map`: `deg (φ.map f) = deg φ`, and `TauCeti.Isogeny.degree_baseChange`
+  for the base change `φ.baseChange K`.
 
 ## References
 
@@ -221,13 +219,6 @@ which are not syntactically the curves of `φ.map (algebraMap F K)`. -/
 theorem degree_baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F}
     (φ : Isogeny W₁.toAffine W₂.toAffine) : (φ.baseChange K).degree = φ.degree :=
   degree_map φ _
-
-/-- If `deg φ` is invertible in `F`, then `deg (φ.map f)` is invertible in `K` for every
-homomorphism of fields `f : F →+* K`. -/
-theorem isUnit_degree_map_of_isUnit (φ : Isogeny W₁ W₂) (f : F →+* K)
-    (hn : IsUnit (φ.degree : F)) : IsUnit ((φ.map f).degree : K) := by
-  rw [φ.degree_map f]
-  simpa using hn.map f
 
 end TauCeti.Isogeny
 

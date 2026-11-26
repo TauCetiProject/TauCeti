@@ -251,33 +251,6 @@ theorem selmerModule_strict_univ :
 theorem relax_empty : D.relax ∅ = D := by
   simp [relax, withLocalConditions]
 
-/-- Relaxing on `A` and then on `B` is relaxing on `A ∪ B`. -/
-@[simp]
-theorem relax_relax (A B : Set ι) : (D.relax A).relax B = D.relax (A ∪ B) := by
-  ext1
-  · rfl
-  · funext v
-    by_cases hvA : v ∈ A <;> by_cases hvB : v ∈ B <;> simp [relax, withLocalConditions, hvA, hvB]
-
-/-- Membership in the `B`-relaxed local condition at `v` holds unconditionally for `v ∈ B` and
-reduces to `D.localCondition v` outside `B`. -/
-@[simp]
-theorem mem_relax_localCondition_iff {B : Set ι} {v : ι} {x : Hloc v} :
-    x ∈ (D.relax B).localCondition v ↔ v ∉ B → x ∈ D.localCondition v := by
-  by_cases hv : v ∈ B <;> simp [hv]
-
-/-- Membership in the `B`-relaxed Selmer module is satisfaction of the local conditions outside
-`B`. -/
-theorem mem_selmerModule_relax_iff {B : Set ι} {c : H} :
-    c ∈ (D.relax B).selmerModule ↔ ∀ v ∉ B, D.localization v c ∈ D.localCondition v := by
-  simp only [mem_selmerModule_iff, relax_localization, mem_relax_localCondition_iff]
-
-/-- Enlarging the set of relaxed places enlarges the relaxed Selmer module. -/
-theorem selmerModule_relax_mono {A B : Set ι} (h : A ⊆ B) :
-    (D.relax A).selmerModule ≤ (D.relax B).selmerModule :=
-  fun _ hc ↦ (D.mem_selmerModule_relax_iff).2 fun v hvB ↦
-    (D.mem_selmerModule_relax_iff).1 hc v fun hvA ↦ hvB (h hvA)
-
 /-- Imposing strict conditions on no places changes nothing. -/
 @[simp]
 theorem strict_empty : D.strict ∅ = D := by

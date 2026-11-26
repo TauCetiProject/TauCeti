@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Archimedean
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.BaseChange.Brauer
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
@@ -14,17 +14,15 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
 /-!
 # Global reciprocity for the Weil cup product
 
-For a number field `K`, two global classes in `H¹(K, E[m])`, or a pair of global classes in
-`H¹(K, E₁[φ])` and `H¹(K, E₂[φ̂])` for an isogeny `φ : E₁ → E₂`, give local classes at every
-place. The finite-place terms are their local Tate pairings embedded in `ℚ/ℤ` by `k ↦ k/m`
-(respectively `k ↦ k/deg φ`); the archimedean terms are the archimedean Brauer invariants of
-their Weil cup product (and for `[m]`-torsion, equivalently the archimedean local Tate pairings
-embedded in `ℚ/ℤ` by `k ↦ k/m`). The sum of these terms is zero, both in `ℚ/ℤ` and for
-`[m]`-torsion directly in `ZMod m`
+For a number field `K`, two global classes in `H¹(K, E[m])` give local classes at every place.
+The finite-place terms are their local Tate pairings embedded in `ℚ/ℤ` by `k ↦ k/m`;
+the archimedean terms are the archimedean local Tate pairings embedded in `ℚ/ℤ` by `k ↦ k/m`
+(equivalently, the archimedean Brauer invariants of their Weil cup product).
+The sum of these terms is zero, both in `ℚ/ℤ` and directly in `ZMod m`
 (`WeierstrassCurve.finsum_localTateWeilPairing_add_sum_infiniteTateWeilPairing_eq_zero`).
-The finite-place pairings vanish at all but finitely many places, so the finite sum over all
-finite places is an honest sum rather than the junk value of `finsum` on an infinitely supported
-function. The archimedean terms vanish at complex places but need not vanish at real places.
+The finite-place pairings have finite support, so the finite sum over all finite places is an
+honest sum, not the junk value of `finsum` on an infinitely supported function. The archimedean
+terms vanish at complex places but need not vanish at real places.
 
 The same holds for an isogeny `φ : E₁ → E₂` over `K` of degree `n` and its dual `φ̂`: for
 `a ∈ H¹(K, E₁[φ])` and `b ∈ H¹(K, E₂[φ̂])`, the local Tate pairings
@@ -34,12 +32,11 @@ by `k ↦ k/n`, sum to zero (in the namespace `TauCeti.Isogeny`,
 Here `b` is restricted into the kernel of the dual of the base change of `φ`
 (`TauCeti.Isogeny.dualKerRes`), on which the local pairings of the base change are defined. The
 degree of the base change of `φ` to `K_v` equals `n` only propositionally, so the all-places
-reciprocity is stated in `ℚ/ℤ`. At a place where both classes satisfy the Selmer local
-conditions, their local pairing vanishes
-(`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`, in
-`WeilPairing/BaseChange/Brauer`). So if `a` and `b` satisfy them at every infinite place and at
-every finite place outside a finite set `S`, the pairings at the places of `S` sum to zero in `ℚ/ℤ`
-(`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`) and also in `ℤ/(deg φ)ℤ`
+reciprocity is stated in `ℚ/ℤ`. At a place where both classes satisfy the Selmer local conditions,
+their local pairing vanishes (`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`, in
+`WeilPairing/Orthogonality`). So if `a` and `b` satisfy them at every infinite place and at every
+finite place outside a finite set `S`, the pairings at the places of `S` sum to zero in `ℚ/ℤ`
+(`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`) and in `ℤ/(deg φ)ℤ`
 (`TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`).
 
 This is the reciprocity input for comparing global Selmer conditions with their orthogonals; in
@@ -50,17 +47,12 @@ applying the Brauer sum formula
 
 ## Main results
 
-* `WeierstrassCurve.finiteInvAt_torsionWeilBrauerPairing`,
-  `WeierstrassCurve.infiniteInvAt_torsionWeilBrauerPairing`,
-  `WeierstrassCurve.hasFiniteSupport_localTateWeilPairing_torsionRes`,
-  `WeierstrassCurve.finsum_toRatAddCircle_localTateWeilPairing_add_sum_infiniteInvMap_eq_zero`,
+* `WeierstrassCurve.finsum_toRatAddCircle_localTateWeilPairing_add_sum_infiniteInvMap_eq_zero`
   and `WeierstrassCurve.finsum_localTateWeilPairing_add_sum_infiniteTateWeilPairing_eq_zero`:
   global reciprocity for the Weil cup product on `H¹(K, E[m])`.
 * `TauCeti.Isogeny.finiteInvAt_kerWeilBrauerPairing` and
   `TauCeti.Isogeny.infiniteInvAt_kerWeilBrauerPairing`: the local invariants of the Brauer class of
   the isogeny Weil cup product are the local Tate pairings of the restricted classes.
-* `TauCeti.Isogeny.hasFiniteSupport_localTateKerWeilPairing_kerRes`: finite support of the
-  finite-place pairings.
 * `finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`,
   in the namespace `TauCeti.Isogeny`: global reciprocity for the isogeny Weil cup product.
 * `TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero` and
@@ -79,11 +71,10 @@ public section
 
 noncomputable section
 
-open IsDedekindDomain NumberField
-
 namespace WeierstrassCurve
 
 open TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory
+open IsDedekindDomain NumberField
 
 variable {K : Type} [Field K] [NumberField K] (W : WeierstrassCurve K) [W.IsElliptic]
   (m : ℕ) (hm : IsUnit (m : K))
@@ -184,15 +175,11 @@ end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 
-open WeierstrassCurve TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory Hom
+open WeierstrassCurve TauCeti.ContCohomology TauCeti.ClassFieldTheory Hom
 open IsDedekindDomain _root_.NumberField
 
 variable {K : Type} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
-
-section
-
-variable
   (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
   (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff)
 
@@ -303,9 +290,10 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
         map_zero]] at h
 
 /-- **Orthogonality of global classes satisfying the Selmer local conditions outside `S` in
-`ℤ/(deg φ)ℤ`.** Under the same hypotheses as `sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`,
-the finite sum over `v ∈ S` of the local Tate pairings, transported from
-`ZMod (deg (φ.baseChange K_v))` to `ZMod (deg φ)` along `φ.degree_baseChange`, is zero. -/
+`ℤ/(deg φ)ℤ`.** Under the same hypotheses as
+`sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`, the finite sum over `v ∈ S` of the local
+Tate pairings, transported from `ZMod (deg (φ.baseChange K_v))` to `ZMod (deg φ)` along
+`φ.degree_baseChange`, is zero. -/
 theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
@@ -329,8 +317,5 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
   simp_rw [ZMod.toRatAddCircle_ringEquivCongr]
   exact φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero a b τ τ' S ha hb ha' hb'
 
-end
-
 end TauCeti.Isogeny
 
-end

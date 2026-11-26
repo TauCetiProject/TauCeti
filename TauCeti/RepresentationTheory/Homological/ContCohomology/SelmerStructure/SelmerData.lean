@@ -28,9 +28,8 @@ without a second discrete carrier.
 
 * `TauCeti.ContCohomology.SelmerStructure.selmerModule_toSelmerData`: its Selmer module is the
   Selmer group.
-* `TauCeti.ContCohomology.SelmerStructure.toSelmerData_withLocalConditions` and
-  `TauCeti.ContCohomology.SelmerStructure.toSelmerData_relaxedAt`: compatibility with replacing
-  and relaxing the local conditions.
+* `TauCeti.ContCohomology.SelmerStructure.toSelmerData_withLocalConditions`: compatibility with
+  replacing the local conditions.
 
 ## References
 
@@ -90,15 +89,5 @@ theorem toSelmerData_withLocalConditions (A : ∀ i, AddSubgroup (H1 (H i) (N i)
     simp
   · funext i
     simp
-
-/-- Relaxing the local conditions of a Selmer structure commutes with passing to its Selmer
-data. -/
-@[simp]
-theorem toSelmerData_relaxedAt (S : Set ι) :
-    (𝓕.relaxedAt S).toSelmerData = 𝓕.toSelmerData.relax S := by
-  ext1
-  · funext i; simp
-  · funext i
-    by_cases hi : i ∈ S <;> simp [hi]
 
 end TauCeti.ContCohomology.SelmerStructure
