@@ -645,9 +645,15 @@ theorem mapRingHom_ρ_apply (φ : R →+* R') (L : RankOneLocalSystem B b R) (γ
   (rfl)
 
 /-- The character of the extension of coefficients is the character followed by `φ`. -/
+@[simp]
+theorem mapRingHom_character (φ : R →+* R') (L : RankOneLocalSystem B b R) :
+    (mapRingHom φ L).character = (φ : R →* R').comp L.character :=
+  MonoidHom.ext fun _ ↦ by simp
+
+/-- The character of the extension of coefficients is the character followed by `φ`, pointwise. -/
 theorem mapRingHom_character_apply (φ : R →+* R') (L : RankOneLocalSystem B b R)
     (γ : MooreLoopSpace B b) : (mapRingHom φ L).character γ = φ (L.character γ) := by
-  simp
+  rw [mapRingHom_character, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
 
 /-- Extension of coefficients along the identity is the identity. -/
 @[simp]
@@ -698,9 +704,8 @@ theorem mapRingHom_twist_character (φ : R →+* R') (L : RankOneLocalSystem B b
     NormalizedCubicalChain.mapRingHom _ φ n (NormalizedCubicalChain.twist L.character n y) =
       NormalizedCubicalChain.twist (mapRingHom φ L).character n
         (NormalizedCubicalChain.mapRingHom _ φ n y) := by
-  have h : φ ∘ L.character = (mapRingHom φ L).character :=
-    funext fun γ ↦ (mapRingHom_character_apply φ L γ).symm
-  rw [NormalizedCubicalChain.mapRingHom_twist, h]
+  rw [NormalizedCubicalChain.mapRingHom_twist, mapRingHom_character, MonoidHom.coe_comp,
+    MonoidHom.coe_ofClass]
 
 end MapRingHom
 
