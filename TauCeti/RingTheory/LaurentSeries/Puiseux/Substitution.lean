@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Continuity
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
-import TauCeti.GroupTheory.Divisible
+import TauCeti.GroupTheory.Divisible.Basic
 import TauCeti.RingTheory.LaurentSeries.Colimit
 import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
 import TauCeti.RingTheory.LaurentSeries.Puiseux.Root

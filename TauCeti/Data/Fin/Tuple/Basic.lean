@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Order.Interval.Set.Defs
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
+import Mathlib.Order.Interval.Set.Fin
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Insertions and appends in tuples
@@ -21,7 +25,8 @@ send the last position to the last position. The image of an initial segment und
 is obtained by inserting the first entry into the corresponding image for the tail.
 A tuple of length three is determined by its three entries. A tuple in a sum type that starts on
 the left, ends on the right and never steps from right to left steps from left to right exactly
-once.
+once. Finally, a tuple can be built by finite dependent choice, each entry chosen relative to the
+set of the earlier ones.
 
 ## Main results
 
@@ -35,8 +40,13 @@ once.
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
   appending.
+* `Fin.cons_comp_swap_succ`: exchanging two entries other than the first one commutes with
+  prepending.
+* `Fin.tail_tail_comp_swap_zero_one`: exchanging the first two entries leaves
+  `Fin.tail (Fin.tail a)` unchanged.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
+* `Fin.init_comp_rev`: dropping the last entry of the reversed tuple is reversing the tail.
 * `Fin.snoc_self_zero_succ`: in `q 0, …, q n, q 0`, the entry after the `i`-th is `q (i + 1)`.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
   equality pattern exactly when the old patterns agree and the new entries repeat the same
@@ -61,11 +71,18 @@ once.
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one`,
+  `Fin.contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one`: multiplying two
+  adjacent entries one of which is `1` deletes that entry.
 * `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
 * `Fin.contractNth_castSucc_insertNth_castSucc`: inserting an entry before entry `j` and
   contracting the two overwrites entry `j` by the contraction.
+* `Fin.contractNth_castSucc_window_apply`: contracting two adjacent entries inside a window of
+  consecutive entries is contracting them in the whole tuple.
 * `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
   from the first (last) position keeps the first (last) entry.
+* `Fin.insertNth_apply_of_ne_fin_two`: in a pair, inserting at one position puts the single entry
+  of the tuple at the other one.
 * `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
   meet at an inserted vertex.
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
@@ -81,6 +98,10 @@ once.
 * `Fin.comp_succ_succAbove_comp_predAbove`: when adjacent entries at `p.castSucc` and `p.succ`
   agree, deleting `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers the
   tuple.
+* `Fin.insertNth_comp_succAbove_eq_comp_swap`: inserting `f i.castSucc` at `i.succ.succ` and
+  deleting `i.castSucc.castSucc` swaps the entries of `f` at `i.castSucc` and `i.succ`.
+* `Fin.exists_tuple_forall_image_Iio`: finite dependent choice, building a tuple each of whose
+  entries is chosen relative to the set of the earlier entries.
 -/
 
 public section
@@ -135,6 +156,24 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
   · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
     simp
 
+/-- Exchanging the entries `j.succ` and `k.succ` of `Fin.cons z c` is prepending `z` to `c` with
+the entries `j` and `k` exchanged. -/
+theorem cons_comp_swap_succ {n : ℕ} (z : α) (c : Fin n → α) (j k : Fin n) :
+    cons z c ∘ Equiv.swap j.succ k.succ = cons z (c ∘ Equiv.swap j k) := by
+  funext i
+  refine cases ?_ (fun i ↦ ?_) i
+  · simp [Equiv.swap_apply_of_ne_of_ne, (succ_ne_zero j).symm, (succ_ne_zero k).symm]
+  · rw [Function.comp_apply, ← (succ_injective n).map_swap j k i]
+    simp
+
+/-- Swapping the first two entries of a tuple of length at least two leaves `Fin.tail (Fin.tail a)`
+unchanged. -/
+@[simp]
+theorem tail_tail_comp_swap_zero_one {n : ℕ} (a : Fin (n + 2) → α) :
+    tail (tail (a ∘ Equiv.swap 0 1)) = tail (tail a) :=
+  funext fun r => by
+    simp [tail, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) (succ_succ_ne_one r)]
+
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
     tail (snoc a x : Fin (n + 2) → α) = snoc (tail a) x := by
@@ -144,6 +183,12 @@ theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
 theorem snoc_tail_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
     snoc (tail a ∘ rev) (a 0) = a ∘ rev := by
   rw [← cons_comp_rev, cons_self_tail]
+
+/-- Reversing `a` and dropping the last entry is reversing the tail of `a`. -/
+theorem init_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
+    init (a ∘ rev) = tail a ∘ rev := by
+  funext i
+  simp [init, tail, rev_castSucc]
 
 /-- Closing a tuple up with its first entry: the entry of `q 0, …, q n, q 0` after the `i`-th is
 `q (i + 1)`, with `q n` followed by `q 0`. -/
@@ -327,6 +372,25 @@ theorem contractNth_castSucc_insertNth_castSucc (j : Fin n) (x : α) (a : Fin n 
   · rw [contractNth_apply_of_ne _ _ _ _ (val_ne_of_ne h).symm, insertNth_apply_succAbove,
       Function.update_of_ne h]
 
+/-- Contracting two adjacent entries inside a window `a x, …, a (x + c)` of consecutive entries
+of a tuple is contracting them in the whole tuple. -/
+theorem contractNth_castSucc_window_apply {m c : ℕ} (a : Fin (m + 1) → α) {x : ℕ}
+    (hxc : x + c ≤ m) (j l : Fin c) :
+    contractNth j.castSucc op (fun l : Fin (c + 1) => a ⟨x + l, by have := l.isLt; omega⟩) l =
+      contractNth (⟨x + j, by have := j.isLt; omega⟩ : Fin m).castSucc op a
+        ⟨x + l, by have := l.isLt; omega⟩ := by
+  rcases lt_trichotomy (l : ℕ) j with hl | hl | hl
+  · rw [contractNth_apply_of_lt _ _ _ _ (by simpa using hl),
+      contractNth_apply_of_lt _ _ _ _ (by simp; omega)]
+    exact congrArg a (Fin.ext (by simp))
+  · rw [contractNth_apply_of_eq _ _ _ _ (by simpa using hl),
+      contractNth_apply_of_eq _ _ _ _ (by simp; omega)]
+    simp only [val_castSucc, val_succ]
+    exact congrArg₂ op (congrArg a (Fin.ext rfl)) (congrArg a (Fin.ext (by simp; omega)))
+  · rw [contractNth_apply_of_gt _ _ _ _ (by simpa using hl),
+      contractNth_apply_of_gt _ _ _ _ (by simp; omega)]
+    exact congrArg a (Fin.ext (by simp; omega))
+
 end ContractNth
 
 /-- Deleting entry `j + 1` and then overwriting entry `j` by the deleted entry is deleting
@@ -344,6 +408,20 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
 
+/-- If entry `j + 1` is `1`, multiplying the entries `j` and `j + 1` is deleting entry `j + 1`. -/
+theorem contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one {M : Type*} [MulOneClass M]
+    {n : ℕ} {j : Fin (n + 1)} {a : Fin (n + 2) → M} (ha : a j.succ = 1) :
+    contractNth j.castSucc (· * ·) a = removeNth j.succ a := by
+  rw [contractNth_castSucc_eq_update_removeNth_succ, ha, mul_one, Function.update_eq_self_iff,
+    removeNth_apply, succAbove_succ_self]
+
+/-- If entry `j` is `1`, multiplying the entries `j` and `j + 1` is deleting entry `j`. -/
+theorem contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one {M : Type*}
+    [MulOneClass M] {n : ℕ} {j : Fin (n + 1)} {a : Fin (n + 2) → M} (ha : a j.castSucc = 1) :
+    contractNth j.castSucc (· * ·) a = removeNth j.castSucc a := by
+  rw [contractNth_castSucc_eq_update_removeNth_succ, ha, one_mul,
+    update_removeNth_succ_eq_removeNth_castSucc]
+
 /-- Inserting at a position other than the first keeps the first entry. -/
 @[simp]
 theorem insertNth_apply_zero_of_ne_zero {β : Type*} {n : ℕ} {p : Fin (n + 2)} (hp : p ≠ 0)
@@ -356,6 +434,12 @@ theorem insertNth_apply_last_of_ne_last {β : Type*} {n : ℕ} {p : Fin (n + 2)}
     (hp : p ≠ last (n + 1)) (v : β) (x : Fin (n + 1) → β) :
     insertNth (α := fun _ => β) p v x (last (n + 1)) = x (last n) := by
   rw [← succAbove_ne_last_last hp, insertNth_apply_succAbove]
+
+/-- In a pair, inserting at one position puts the single entry of the tuple at the other one. -/
+theorem insertNth_apply_of_ne_fin_two {β : Type*} {i j : Fin 2} (h : i ≠ j) (v : β)
+    (x : Fin 1 → β) : insertNth (α := fun _ => β) i v x j = x 0 := by
+  obtain ⟨k, rfl⟩ := exists_succAbove_eq h.symm
+  rw [insertNth_apply_succAbove, Subsingleton.elim k 0]
 
 /-- **Contracting along a path with an inserted vertex.** Let `f k` be a function of the two
 endpoints of the `k`-th step of a path. Along the path obtained from `x` by inserting `v` after
@@ -513,5 +597,47 @@ theorem comp_succ_succAbove_comp_predAbove {α : Type*} {n : ℕ} {f : Fin (n + 
   · subst hi
     simp [hf]
   · simp [Function.comp_apply, Fin.succ_succAbove_predAbove hi]
+
+/-- Inserting `f i.castSucc` at position `i.succ.succ` into a tuple `f : Fin (n + 2) → α` and then
+deleting position `i.castSucc.castSucc` swaps the entries at `i.castSucc` and `i.succ`. -/
+theorem insertNth_comp_succAbove_eq_comp_swap {n : ℕ} (i : Fin (n + 1)) (f : Fin (n + 2) → α) :
+    i.succ.succ.insertNth (α := fun _ ↦ α) (f i.castSucc) f ∘ i.castSucc.castSucc.succAbove =
+      f ∘ Equiv.swap i.castSucc i.succ := by
+  funext j
+  simp only [Function.comp_apply]
+  by_cases hj : j = i.succ
+  · subst hj
+    have h : i.castSucc.castSucc.succAbove i.succ = i.succ.succ :=
+      Fin.ext (by simp [val_succAbove])
+    rw [h, insertNth_apply_same, Equiv.swap_apply_right]
+  · have h : i.castSucc.castSucc.succAbove j =
+        i.succ.succ.succAbove (Equiv.swap i.castSucc i.succ j) := by
+      refine Fin.ext ?_
+      by_cases hj' : j = i.castSucc
+      · subst hj'
+        simp
+      · rw [Equiv.swap_apply_of_ne_of_ne hj' hj]
+        simp only [val_succAbove, Fin.ext_iff, val_castSucc, val_succ] at hj hj' ⊢
+        split_ifs <;> omega
+    rw [h, insertNth_apply_succAbove]
+
+/-- Finite dependent choice along `Fin N`: if for every tuple `p` of length less than `N` some `a`
+satisfies `Q (range p) a`, then there is a tuple `p : Fin N → α` each of whose entries `p j`
+satisfies `Q` relative to the set of the earlier entries. -/
+theorem exists_tuple_forall_image_Iio {α : Type*} {Q : Set α → α → Prop} {N : ℕ}
+    (h : ∀ m < N, ∀ p : Fin m → α, ∃ a, Q (Set.range p) a) :
+    ∃ p : Fin N → α, ∀ j, Q (p '' Set.Iio j) (p j) := by
+  induction N with
+  | zero => exact ⟨finZeroElim, finZeroElim⟩
+  | succ N ih =>
+    obtain ⟨p, hp⟩ := ih fun m hm ↦ h m (hm.trans N.lt_succ_self)
+    obtain ⟨a, ha⟩ := h N N.lt_succ_self p
+    refine ⟨snoc p a, lastCases ?_ fun i ↦ ?_⟩
+    · have hIio : Set.Iio (last N) = Set.range castSucc := by
+        ext i
+        simp [lt_def]
+      rwa [hIio, ← Set.range_comp, snoc_comp_castSucc, snoc_last]
+    · rw [← image_castSucc_Iio, ← Set.image_comp, snoc_comp_castSucc, snoc_castSucc]
+      exact hp i
 
 end Fin

@@ -8,7 +8,9 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.SplitPrime
+import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.Splitting
+import TauCeti.NumberTheory.RamificationInertia.Inert
 
 /-!
 # The quadratic character of a quadratic field decides how primes decompose
@@ -30,6 +32,9 @@ unramified `D = d ≡ 1 (mod 4)`, so the splitting law at `2`
 (`NumberField.ncard_primesOver_two_of_mod_four_eq_one`) applies. The ramified
 primes are those dividing `D`, where `χ_D` vanishes.
 
+In ideal-theoretic form, `χ_D(p) = 1` makes `p 𝓞 K` the product of two distinct primes and
+`χ_D(p) = -1` makes `p 𝓞 K` itself prime, since `p` is then unramified.
+
 These values determine the local factors in the factorization `ζ_K(s) = ζ(s) L(s, χ_D)` of the
 Dedekind zeta function of `K`.
 
@@ -37,12 +42,20 @@ Dedekind zeta function of `K`.
 
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_zero_iff`: `χ_D(p) = 0` iff `p`
   ramifies.
+* `TauCeti.Multiquadratic.isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero`: `p` is
+  unramified, as `Algebra.IsUnramifiedIn`, iff `χ_D(p) ≠ 0`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_one_iff`: `χ_D(p) = 1` iff `p`
   splits.
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_neg_one_iff`: `χ_D(p) = -1` iff
   `p` is inert.
+* `TauCeti.Multiquadratic.exists_span_natCast_eq_mul_of_fundamentalDiscriminantChar_discr_eq_one`:
+  if `χ_D(p) = 1`, then `p 𝓞 K = 𝔭 𝔮` for distinct primes `𝔭 ≠ 𝔮`.
+* `TauCeti.Multiquadratic.isPrime_span_natCast_of_fundamentalDiscriminantChar_discr_eq_neg_one`:
+  if `χ_D(p) = -1`, then `p 𝓞 K` is prime.
 * `TauCeti.Multiquadratic.ringHomComp_fundamentalDiscriminantChar_discr_ne_one`: the complex
   character `χ_D` is nontrivial.
+* `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_apply_eq_of_algEquiv`: isomorphic
+  quadratic fields have the same character `χ_D`.
 
 ## References
 
@@ -135,15 +148,74 @@ theorem fundamentalDiscriminantChar_discr_eq_neg_one_iff (hK : finrank ℚ K = 2
   · rcases fundamentalDiscriminantChar_discr_of_notMem_ramifiedPrimes hK p hram with
       ⟨h, hn⟩ | ⟨h, hn⟩ <;> simp [h, hn, hram]
 
+/-- **`p` is unramified exactly when `χ_D(p) ≠ 0`.** For a quadratic field `K` with discriminant
+`D`, a prime `p` is unramified in `K`, in the sense of `Algebra.IsUnramifiedIn`, iff
+`χ_D(p) ≠ 0`. -/
+theorem isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero
+    (hK : finrank ℚ K = 2) (p : ℕ) [hp : Fact p.Prime] :
+    Algebra.IsUnramifiedIn (𝓞 K) (span {(p : ℤ)}) ↔
+      fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p ≠ 0 := by
+  rw [ne_eq, fundamentalDiscriminantChar_discr_eq_zero_iff hK p, NumberField.mem_ramifiedPrimes_iff,
+    not_and, not_not]
+  exact ⟨fun h _ => h, fun h => h hp.out⟩
+
+/-- **A split prime is the product of two distinct primes.** For a quadratic field `K` with
+discriminant `D`, if `χ_D(p) = 1`, then `p 𝓞 K = 𝔭 𝔮` for two distinct prime ideals `𝔭` and `𝔮`
+of `𝓞 K`. -/
+theorem exists_span_natCast_eq_mul_of_fundamentalDiscriminantChar_discr_eq_one
+    (hK : finrank ℚ K = 2) (p : ℕ) [hp : Fact p.Prime]
+    (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = 1) :
+    ∃ 𝔭 𝔮 : Ideal (𝓞 K), 𝔭.IsPrime ∧ 𝔮.IsPrime ∧ 𝔭 ≠ 𝔮 ∧ span {(p : 𝓞 K)} = 𝔭 * 𝔮 := by
+  classical
+  have hun := (isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero hK p).mpr
+    (by rw [h]; exact one_ne_zero)
+  obtain ⟨𝔭, 𝔮, hne, hT⟩ := Set.ncard_eq_two.mp
+    ((fundamentalDiscriminantChar_discr_eq_one_iff hK p).mp h)
+  have h𝔭 : 𝔭 ∈ (span {(p : ℤ)}).primesOver (𝓞 K) := hT ▸ Set.mem_insert _ _
+  have h𝔮 : 𝔮 ∈ (span {(p : ℤ)}).primesOver (𝓞 K) := hT ▸ by simp
+  have := h𝔭.1; have := h𝔭.2; have := h𝔮.1; have := h𝔮.2
+  have he𝔭 := Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hun h𝔭.2
+  have he𝔮 := Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hun h𝔮.2
+  refine ⟨𝔭, 𝔮, h𝔭.1, h𝔮.1, hne, ?_⟩
+  have hmap : (span {(p : ℤ)}).map (algebraMap ℤ (𝓞 K)) = span {(p : 𝓞 K)} := by
+    simp [Ideal.map_span]
+  rw [← hmap, Ideal.map_algebraMap_eq_finsetProd_pow (by simp [hp.out.ne_zero]),
+    Set.toFinset_congr hT]
+  simp [Finset.prod_pair hne, he𝔭, he𝔮]
+
+/-- **An inert prime stays prime.** For a quadratic field `K` with discriminant `D`, if
+`χ_D(p) = -1`, then `p 𝓞 K` is a prime ideal of `𝓞 K`. -/
+theorem isPrime_span_natCast_of_fundamentalDiscriminantChar_discr_eq_neg_one
+    (hK : finrank ℚ K = 2) (p : ℕ) [Fact p.Prime]
+    (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = -1) :
+    (span {(p : 𝓞 K)}).IsPrime := by
+  have hun := (isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero hK p).mpr
+    (by rw [h]; exact neg_ne_zero.mpr one_ne_zero)
+  have hone := ((fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h).2
+  obtain ⟨𝔭, h𝔭⟩ := Set.ncard_eq_one.mp hone
+  have hmem : 𝔭 ∈ (span {(p : ℤ)}).primesOver (𝓞 K) := h𝔭 ▸ Set.mem_singleton 𝔭
+  have := hmem.1; have := hmem.2
+  have hmap := TauCeti.RamificationInertia.map_eq_of_ncard_primesOver_eq_one (span {(p : ℤ)}) 𝔭
+    hone (Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hun hmem.2)
+  simp only [Ideal.map_span, Set.image_singleton, map_natCast] at hmap
+  exact hmap ▸ hmem.1
+
 /-- The complex quadratic character `χ_D` of a quadratic field is nontrivial: the discriminant of
 a quadratic field is not `1`. -/
 theorem ringHomComp_fundamentalDiscriminantChar_discr_ne_one (hK : finrank ℚ K = 2) :
     (fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)).ringHomComp
-      (Int.castRingHom ℂ) ≠ 1 := by
-  refine (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
-    (fundamentalDiscriminantChar_ne_one _ fun h ↦ ?_)
-  have := NumberField.abs_discr_gt_two (K := K) (by omega)
-  rw [h] at this
-  norm_num at this
+      (Int.castRingHom ℂ) ≠ 1 :=
+  (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
+    (fundamentalDiscriminantChar_ne_one _ (NumberField.discr_ne_one (by omega)))
+
+/-- **`χ_D` is invariant under field isomorphism.** Isomorphic quadratic fields have the same
+discriminant (`NumberField.discr_eq_discr_of_algEquiv`), so their characters `χ_D` agree at every
+integer. -/
+theorem fundamentalDiscriminantChar_discr_apply_eq_of_algEquiv {L : Type*} [Field L]
+    [NumberField L] (hK : finrank ℚ K = 2) (σ : K ≃ₐ[ℚ] L) (n : ℤ) :
+    fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) n =
+      fundamentalDiscriminantChar (NumberField.discr L)
+        (isFundamentalDiscr_discr (σ.toLinearEquiv.finrank_eq.symm.trans hK)) n := by
+  simp only [fundamentalDiscriminantChar_intCast, NumberField.discr_eq_discr_of_algEquiv K σ]
 
 end TauCeti.Multiquadratic

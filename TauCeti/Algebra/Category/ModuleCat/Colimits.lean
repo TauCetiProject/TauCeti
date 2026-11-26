@@ -46,6 +46,8 @@ the homology of a space exhausted by subspaces whose successive relative homolog
 
 * `TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit`: the ranges of the legs of a colimit cocone
   span its point.
+* `TauCeti.ModuleCat.colimit_linearMap_ext`: two linear maps out of a colimit of modules agree as
+  soon as they agree on the image of every member of the diagram.
 * `TauCeti.ModuleCat.finite_coproduct_of_finite_support`: a coproduct of finite modules is finite if
   only finitely many summands are nonzero.
 * `TauCeti.ModuleCat.isIso_of_isIso_app_self`: a natural transformation between
@@ -96,6 +98,20 @@ theorem iSup_range_eq_top_of_isColimit {J : Type*} [Category* J] {F : J ⥤ Modu
       Submodule.mem_iSup_of_mem j (LinearMap.mem_range_self (c.ι.app j).hom x)
   rw [← Submodule.ker_mkQ T, show T.mkQ = 0 from congr_arg Hom.hom h, LinearMap.ker_zero]
 
+/-- **Linear maps out of a colimit of modules are determined on the legs.** Two linear maps out of
+the colimit of a diagram of modules are equal as soon as they agree on the image of every member of
+the diagram. -/
+theorem colimit_linearMap_ext {J : Type*} [Category* J] {F : J ⥤ ModuleCat.{v} R} [HasColimit F]
+    {Q : Type v} [AddCommGroup Q] [Module R Q] {φ ψ : ↑(colimit F) →ₗ[R] Q}
+    (h : ∀ (j : J) (y : F.obj j), φ ((colimit.ι F j).hom y) = ψ ((colimit.ι F j).hom y)) :
+    φ = ψ := by
+  have hφψ : (_root_.ModuleCat.ofHom φ : colimit F ⟶ _root_.ModuleCat.of R Q) =
+      _root_.ModuleCat.ofHom ψ :=
+    colimit.hom_ext fun j ↦ _root_.ModuleCat.hom_ext (LinearMap.ext fun y ↦ by
+      simpa only [_root_.ModuleCat.hom_comp, _root_.ModuleCat.hom_ofHom, LinearMap.comp_apply]
+        using h j y)
+  simpa only [_root_.ModuleCat.hom_ofHom] using congrArg _root_.ModuleCat.Hom.hom hφψ
+
 /-- A natural transformation between colimit-preserving functors out of `ModuleCat R` is an
 isomorphism as soon as its component at `R` is. -/
 theorem isIso_of_isIso_app_self {F G : ModuleCat.{u} R ⥤ D}
@@ -125,9 +141,8 @@ theorem isIso_of_isIso_app_self {F G : ModuleCat.{u} R ⥤ D}
     have hgf : g.hom ∘ₗ f.hom = 0 := linearMap_ext R fun k ↦ LinearMap.ext_ring (by
       rw [LinearMap.comp_apply, LinearMap.comp_apply, hf]
       exact k.property)
-    have hfg : Function.Exact f.hom g.hom := fun y ↦ ⟨fun hy ↦ ⟨_, hf ⟨y, hy⟩⟩, by
-      rintro ⟨x, rfl⟩
-      exact LinearMap.congr_fun hgf x⟩
+    have hfg : Function.Exact f.hom g.hom :=
+      LinearMap.exact_of_comp_eq_zero_of_ker_le_range hgf fun y hy ↦ ⟨_, hf ⟨y, hy⟩⟩
     have hc := isColimitCokernelCofork f g hfg fun m ↦ ⟨_, hg m⟩
     have (j : WalkingParallelPair) :
         IsIso ((Functor.whiskerLeft (parallelPair f 0) α).app j) := by
@@ -142,25 +157,15 @@ theorem finite_coproduct_of_finite_support {ι : Type*} (M : ι → ModuleCat.{v
     [HasCoproduct M] [∀ i, Module.Finite R (M i)]
     (hM : {i | ¬ IsZero (M i)}.Finite) : Module.Finite R (∐ M : ModuleCat.{v} R) := by
   have : Finite {i | ¬ IsZero (M i)} := hM
-  have hrange :
-      (⨆ i, LinearMap.range (Sigma.ι M i).hom) =
-        ⨆ i : {i | ¬ IsZero (M i)}, LinearMap.range (Sigma.ι M i.val).hom := by
-    apply le_antisymm
-    · refine iSup_le fun i ↦ ?_
-      by_cases hi : IsZero (M i)
-      · have hz : Sigma.ι M i = 0 := hi.eq_of_src _ _
-        simp [hz]
-      · exact le_iSup_of_le ⟨i, hi⟩ le_rfl
-    · exact iSup_le fun i ↦
-        le_iSup (fun j ↦ LinearMap.range (Sigma.ι M j).hom) i.val
-  have htop : (⨆ i, LinearMap.range (Sigma.ι M i).hom) = ⊤ := by
-    have h := TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit
-      (colimit.isColimit (Discrete.functor M))
-    have hsurj : Function.Surjective (Discrete.mk : ι → Discrete ι) :=
-      fun ⟨i⟩ ↦ ⟨i, rfl⟩
-    exact (hsurj.iSup_comp _).trans h
+  -- The inclusions of the nonzero summands already span the coproduct: the others vanish.
+  have htop : ⊤ ≤ ⨆ i : {i | ¬ IsZero (M i)}, LinearMap.range (Sigma.ι M i.val).hom := by
+    refine (iSup_range_eq_top_of_isColimit (colimit.isColimit (Discrete.functor M))).ge.trans
+      (iSup_le fun ⟨i⟩ ↦ ?_)
+    by_cases hi : IsZero (M i)
+    · simp [hi.eq_of_src (Sigma.ι M i) 0]
+    · exact le_iSup_of_le ⟨i, hi⟩ le_rfl
   apply Module.Finite.of_fg_top
-  rw [← htop, hrange]
+  rw [← top_le_iff.1 htop]
   exact Submodule.fg_iSup _ fun i ↦ Submodule.fg_range _
 
 /-- A module isomorphic to a coproduct of copies of `R` indexed by a nonempty type receives an
@@ -335,10 +340,8 @@ theorem injective_ι_app_of_isColimit {c : Cocone F} (hc : IsColimit c)
     | succ m hm ih =>
       exact ih (hinj m (by rw [← hsucc m hm, h, map_zero]))
   classical
-  refine hzero (n + (a.support.sup id + 1)) (by lia) (DFinsupp.notMem_support_iff.1 fun h ↦ ?_)
-  have := Finset.le_sup (f := id) h
-  simp only [id] at this
-  lia
+  obtain ⟨m, hm⟩ := a.support.exists_nat_subset_range
+  exact hzero (n + m) (by lia) (DFinsupp.notMem_support_iff.1 fun h ↦ by simpa using hm h)
 
 /-- **A sequential colimit of injections with free cokernels is free.** Let `F₀ → F₁ → F₂ → ⋯` be
 a sequence of modules with `F₀` free, whose transition maps `φₙ : Fₙ → Fₙ₊₁` are injective with

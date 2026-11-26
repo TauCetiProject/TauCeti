@@ -10,7 +10,9 @@ public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
@@ -71,6 +73,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   integral, obtained by substituting `u = y ^ 2`;
 * `TauCeti.integral_rpow_div_add` and `TauCeti.integrableOn_rpow_div_add` — the Mellin
   transform and integrability of `x ^ (s - 1) / (x + a)` for `0 < s < 1` and `0 < a`;
+* `TauCeti.integral_rpow_neg_div_add` and `TauCeti.integrableOn_rpow_neg_div_add` — the same
+  integral indexed by the exponent of the Stieltjes kernel,
+  `∫ x in Ioi 0, x ^ (-s) / (x + a) = π / sin (π s) * a ^ (-s)`;
 * `TauCeti.integral_rpow_div_one_add_sq` and `TauCeti.integral_rpow_div_sq_add_sq` — the Mellin
   transform `∫ y in Ioi 0, y ^ (s - 1) / (y ^ 2 + t ^ 2) = |t| ^ (s - 2) * π / (2 sin (π s / 2))`
   for `0 < s < 2`, by Euler's reflection formula, with
@@ -85,8 +90,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `TauCeti.integral_mul_inv_add_sub_inv_add_div_one_add_sq` — the Mellin integrals of the rational
   sine-compensated Laplace transform `(x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2)`, with a power formula
   for `0 < α < 2`, `α ≠ 1`, and the logarithmic value `a * log a` at exponent one;
-* `TauCeti.abs_deriv_smul_one_add_rpow` — the change-of-variables identity relating the first and
-  second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
+* `TauCeti.inv_sq_smul_rpow_mul_one_add_rpow` — the change-of-variables identity relating the first
+  and second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
 * `TauCeti.integrable_one_add_sq_rpow`, `TauCeti.integral_one_add_sq_rpow`,
   `TauCeti.integrable_one_add_sq_div_rpow`, and `TauCeti.integral_one_add_sq_div_rpow` — the
   Cauchy-type kernel `(1 + x ^ 2 / ν) ^ (-s)` is integrable on the line for `0 < ν` and
@@ -94,8 +99,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
-* `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
-  `Β(a, 1) = Β(1, a) = 1 / a`;
+* `ProbabilityTheory.beta_one_right_of_forall_ne`, `ProbabilityTheory.beta_one_left_of_forall_ne`
+  — the values `Β(a, 1) = Β(1, a) = 1 / a` for `a` not a negative integer, with the simp forms
+  `ProbabilityTheory.beta_one_right` and `ProbabilityTheory.beta_one_left` for `0 ≤ a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`,
   and `ProbabilityTheory.beta_add_one_right`, the same step in the second parameter;
 * `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
@@ -103,7 +109,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `Β(a + 2, b - 2) / Β(a, b) = a (a + 1) / ((b - 1) (b - 2))`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 * `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
-  for `s > 1`.
+  for `s > 1`;
+* `ProbabilityTheory.natCast_mul_beta_natCast_inv_eq_choose` — the binomial coefficient
+  `(m * Β(m, n))⁻¹ = (n + m - 1).choose m` at natural parameters with `m > 0`.
 
 ## Implementation notes
 
@@ -119,11 +127,12 @@ descend from `Complex.betaIntegral` by taking real parts.
 The substitution `u = t ^ p` carries the open unit interval onto itself and is run through
 `MeasureTheory.integral_image_eq_integral_abs_deriv_smul`, like the changes of variables below.
 
-Both changes of variables for the second integral are one-dimensional, run through
-`MeasureTheory.integral_image_eq_integral_abs_deriv_smul` and its integrability companion. The
-chart `u ↦ u / (1 - u)` carries `(0, 1)` onto `(0, ∞)` and turns the first integrand into the
-second; the chart `t ↦ √t` carries `(0, ∞)` onto itself and turns `(1 + x ^ 2) ^ (-s)` into the
-second integrand with first parameter `1 / 2`. Full-line integrability is an instance of Mathlib's
+The chart `u ↦ u / (1 - u)` carries `(0, 1)` onto `(0, ∞)` and turns the first integrand into
+the second; its substitution and integrability formulas come from `Analysis.Calculus.RealCharts`.
+The chart `t ↦ √t` carries `(0, ∞)` onto itself and turns `(1 + x ^ 2) ^ (-s)` into the
+second integrand with first parameter `1 / 2`, using
+`MeasureTheory.integral_image_eq_integral_abs_deriv_smul`.
+Full-line integrability is an instance of Mathlib's
 `integrable_rpow_neg_one_add_norm_sq`, and the integral value folds the two halves of the line
 together with `MeasureTheory.integral_comp_abs`.
 
@@ -432,11 +441,11 @@ variable {s : ℝ}
 
 /-- Under the chart `u ↦ u / (1 - u)` the integrand of Euler's second beta integral becomes the
 integrand of Euler's first one, for every `u < 1`. -/
-lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
-    |((1 - u) ^ 2)⁻¹| • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
+lemma inv_sq_smul_rpow_mul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
+    ((1 - u) ^ 2)⁻¹ • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
       u ^ (a - 1) * (1 - u) ^ (b - 1) := by
   have h1u : (0 : ℝ) < 1 - u := by linarith
-  have hbase : (1 : ℝ) + u / (1 - u) = (1 - u)⁻¹ := by field_simp; ring
+  have hbase := one_add_div_one_sub h1u.ne'
   have e1 : ((1 - u) ^ (2 : ℕ))⁻¹ = (1 - u) ^ (-2 : ℝ) := by
     have hneg : (-2 : ℝ) = -(2 : ℕ) := by norm_num
     rw [hneg, Real.rpow_neg h1u.le, Real.rpow_natCast]
@@ -447,7 +456,7 @@ lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
     rw [← Real.rpow_neg h1u.le, ← Real.rpow_add h1u, ← Real.rpow_add h1u]
     congr 1
     ring
-  rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
+  rw [smul_eq_mul, hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
     e1, e2, div_eq_mul_inv]
   calc (1 - u) ^ (-2 : ℝ) * (u ^ (a - 1) * ((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))
       = u ^ (a - 1) *
@@ -463,14 +472,12 @@ theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
     exact (intervalIntegrable_iff_integrableOn_Ioc_of_le (zero_le_one : (0 : ℝ) ≤ 1)).mp
       (intervalIntegrable_rpow_mul_one_sub_rpow ha hb ⟨le_rfl, zero_le_one⟩
         ⟨zero_le_one, le_rfl⟩)
-  have hchart : (fun u : ℝ => u / (1 - u)) '' Ioo (0 : ℝ) 1 = Ioi (0 : ℝ) := by
-    rw [image_div_one_sub_Ioo (u0 := 0) zero_lt_one]
-    norm_num
-  rw [← hchart,
-    integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
-      (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self)]
-  exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu.2).symm) measurableSet_Ioo
+  have hchart := (integrableOn_Ioi_iff_integrableOn_div_one_sub
+    (fun x : ℝ => x ^ (a - 1) * (1 + x) ^ (-(a + b))) (ρ := 0) zero_lt_one).2
+  simp only [zero_div] at hchart
+  apply hchart
+  refine hIoo.congr_fun (fun u hu => ?_) measurableSet_Ioo
+  exact (inv_sq_smul_rpow_mul_one_add_rpow a b hu.2).symm
 
 private lemma eventually_const_mul_rpow_le_rpow_mul_one_add_rpow (hab : 0 < a + b) :
     ∀ᶠ x in atTop,
@@ -566,17 +573,14 @@ theorem integrableOn_rpow_mul_one_add_rpow_iff (ha : 0 < a) :
 `x ^ (a - 1) * (1 + x) ^ (-(a + b))` over the positive half-line is `Β(a, b)`. -/
 theorem integral_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
     ∫ x in Ioi (0 : ℝ), x ^ (a - 1) * (1 + x) ^ (-(a + b)) = beta a b := by
-  have hchart : (fun u : ℝ => u / (1 - u)) '' Ioo (0 : ℝ) 1 = Ioi (0 : ℝ) := by
-    rw [image_div_one_sub_Ioo (u0 := 0) zero_lt_one]
-    norm_num
-  rw [← hchart,
-    integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
-      (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self),
-    setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu.2),
+  have hchart := integral_Ioi_eq_integral_div_one_sub
+    (fun x : ℝ => x ^ (a - 1) * (1 + x) ^ (-(a + b))) (ρ := 0) zero_lt_one
+  simp only [zero_div] at hchart
+  rw [hchart, setIntegral_congr_fun measurableSet_Ioo (fun u hu => ?_),
     ← integral_rpow_mul_one_sub_rpow ha hb,
     intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
-  exact setIntegral_congr_set Ioo_ae_eq_Ioc
+  · exact setIntegral_congr_set Ioo_ae_eq_Ioc
+  · exact inv_sq_smul_rpow_mul_one_add_rpow a b hu.2
 
 /-! ### The Cauchy-type kernel `(1 + x ^ 2) ^ (-s)` -/
 
@@ -700,6 +704,52 @@ theorem integrableOn_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0
   have : 0 < Real.sin (Real.pi * s) :=
     Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])
   positivity
+
+/-- The real Stieltjes transform of `x ^ (-s)`: for `0 < s < 1` and `0 < a`,
+`∫ x in Ioi 0, x ^ (-s) / (x + a) = π / sin (π s) * a ^ (-s)`. This is
+`TauCeti.integral_rpow_div_add` at the exponent `1 - s`. -/
+theorem integral_rpow_neg_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0 < a) :
+    ∫ x in Ioi (0 : ℝ), x ^ (-s) / (x + a) =
+      Real.pi / Real.sin (Real.pi * s) * a ^ (-s) := by
+  have h := integral_rpow_div_add (1 - s) a (by linarith) (by linarith) ha
+  rwa [sub_sub_cancel_left, show Real.pi * (1 - s) = Real.pi - Real.pi * s by ring,
+    Real.sin_pi_sub, mul_comm] at h
+
+/-- Integrability of `x ↦ x ^ (-s) / (x + a)` on `(0, ∞)`, for `0 < s < 1` and `0 < a`. -/
+theorem integrableOn_rpow_neg_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0 < a) :
+    IntegrableOn (fun x : ℝ ↦ x ^ (-s) / (x + a)) (Ioi 0) := by
+  simpa only [sub_sub_cancel_left] using
+    integrableOn_rpow_div_add (1 - s) a (by linarith) (by linarith) ha
+
+/-- **The Mellin transform of `x / (1 + t x)` in `t`.** For `0 < s < 1` and `x ≥ 0`,
+`∫ t in Ioi 0, t ^ (-s) * (x / (1 + t x)) = π / sin (π s) * x ^ s`. For `x > 0` this is
+`TauCeti.integral_rpow_neg_div_add` at the point `x⁻¹`, since
+`x / (1 + t x) = 1 / (t + x⁻¹)`; unlike that form, the integrand is continuous in `x` up to `x = 0`,
+where both sides vanish. -/
+theorem integral_rpow_neg_mul_div_one_add_mul (s x : ℝ) (hs : 0 < s) (hs1 : s < 1) (hx : 0 ≤ x) :
+    ∫ t in Ioi (0 : ℝ), t ^ (-s) * (x / (1 + t * x)) =
+      Real.pi / Real.sin (Real.pi * s) * x ^ s := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp [Real.zero_rpow hs.ne']
+  calc
+    _ = ∫ t in Ioi (0 : ℝ), t ^ (-s) / (t + x⁻¹) := by
+      refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+      field_simp
+      ring
+    _ = _ := by
+      rw [integral_rpow_neg_div_add s x⁻¹ hs hs1 (inv_pos.2 hx), Real.inv_rpow hx.le,
+        Real.rpow_neg hx.le, inv_inv]
+
+/-- Integrability of `t ↦ t ^ (-s) * (x / (1 + t x))` on `(0, ∞)`, for `0 < s < 1` and
+`x ≥ 0`. -/
+theorem integrableOn_rpow_neg_mul_div_one_add_mul (s x : ℝ) (hs : 0 < s) (hs1 : s < 1)
+    (hx : 0 ≤ x) : IntegrableOn (fun t : ℝ ↦ t ^ (-s) * (x / (1 + t * x))) (Ioi 0) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  refine (integrableOn_rpow_neg_div_add s x⁻¹ hs hs1 (inv_pos.2 hx)).congr_fun
+    (fun t (ht : 0 < t) ↦ ?_) measurableSet_Ioi
+  field_simp
+  ring
 
 /-- **The Mellin transform of `1 / (1 + y ^ 2)`.** For `0 < s < 2`,
 `∫ y in Ioi 0, y ^ (s - 1) / (1 + y ^ 2) = π / (2 * sin (π * s / 2))`. This is the radial
@@ -1108,15 +1158,34 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self :
     rw [← mul_div_assoc, div_eq_div_iff hΓh hΓ₂]
     linear_combination Real.Gamma a * hdup'
 
-/-- Euler's beta function at second parameter `1`. -/
-@[simp]
-theorem beta_one_right (ha : 0 < a) : beta a 1 = 1 / a := by
-  rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha.ne']
+/-- Euler's beta function at second parameter `1`, for `a` not a negative integer. At `a = 0`
+both sides are `0`, through `Γ(0) = 0` and `1 / 0 = 0`; at a negative integer `a` the left side
+is `0` (both Gamma values in it are `0`) while `1 / a` is not. See `beta_one_right` for the
+simp form under `0 ≤ a`. -/
+theorem beta_one_right_of_forall_ne (ha : ∀ n : ℕ, a ≠ -n - 1) : beta a 1 = 1 / a := by
+  rcases eq_or_ne a 0 with rfl | ha0
+  · simp [ProbabilityTheory.beta]
+  have hΓ : Real.Gamma a ≠ 0 := Real.Gamma_ne_zero fun n h => by
+    rcases n with _ | n
+    · exact ha0 (by simpa using h)
+    · exact ha n (by push_cast at h; linarith)
+  rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha0]
   field_simp
 
-/-- Euler's beta function at first parameter `1`. -/
+/-- Euler's beta function at first parameter `1`, for `a` not a negative integer. -/
+theorem beta_one_left_of_forall_ne (ha : ∀ n : ℕ, a ≠ -n - 1) : beta 1 a = 1 / a := by
+  rw [beta_comm, beta_one_right_of_forall_ne ha]
+
+/-- Euler's beta function at second parameter `1`, for `0 ≤ a` (at `a = 0` both sides are `0`).
+For the statement off the negative integers, see `beta_one_right_of_forall_ne`. -/
 @[simp]
-theorem beta_one_left (ha : 0 < a) : beta 1 a = 1 / a := by
+theorem beta_one_right (ha : 0 ≤ a) : beta a 1 = 1 / a :=
+  beta_one_right_of_forall_ne fun n h => by linarith [n.cast_nonneg (α := ℝ)]
+
+/-- Euler's beta function at first parameter `1`, for `0 ≤ a` (at `a = 0` both sides are `0`).
+For the statement off the negative integers, see `beta_one_left_of_forall_ne`. -/
+@[simp]
+theorem beta_one_left (ha : 0 ≤ a) : beta 1 a = 1 / a := by
   rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/
@@ -1191,6 +1260,25 @@ theorem tendsto_natCast_mul_beta_atTop {s : ℝ} (hs : 1 < s) :
   filter_upwards [eventually_ne_atTop 0] with n hn
   rw [beta, Real.Gamma_add_one (Nat.cast_ne_zero.mpr hn)]
   ring
+
+/-- At natural parameters `m > 0` and `n`, the reciprocal of `m * Β(m, n)` is a binomial
+coefficient: `(m * Β(m, n))⁻¹ = (n + m - 1).choose m`. At `n = 0` both sides are `0`. -/
+theorem natCast_mul_beta_natCast_inv_eq_choose {m : ℕ} (hm : 0 < m) (n : ℕ) :
+    ((m : ℝ) * beta m n)⁻¹ = ((n + m - 1).choose m : ℝ) := by
+  obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega⟩
+  rcases n with _ | k
+  · simp [ProbabilityTheory.beta]
+  -- The Gamma arguments are successors of naturals, so `Γ` evaluates to factorials.
+  have hsum : ((j + 1 : ℕ) : ℝ) + ((k + 1 : ℕ) : ℝ) = ((j + 1 + k : ℕ) : ℝ) + 1 := by
+    push_cast; ring
+  -- The binomial index `n + m - 1` of the statement, in the form of `Nat.cast_add_choose`.
+  have hidx : k + 1 + (j + 1) - 1 = j + 1 + k := by omega
+  have hΓ (i : ℕ) : Real.Gamma ((i + 1 : ℕ) : ℝ) = i.factorial := by
+    rw [Nat.cast_succ, Real.Gamma_nat_eq_factorial]
+  rw [ProbabilityTheory.beta, hsum, hΓ j, hΓ k, Real.Gamma_nat_eq_factorial, hidx,
+    Nat.cast_add_choose, Nat.factorial_succ j]
+  push_cast
+  field_simp
 
 /-- The reciprocal of the beta function is continuous in the two positive shape parameters. -/
 theorem continuous_one_div_beta :

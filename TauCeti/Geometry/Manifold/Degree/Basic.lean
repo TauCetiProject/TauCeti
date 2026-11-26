@@ -46,6 +46,9 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
   `1` and a constant map into a manifold of positive dimension has degree `0`.
 * `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with a bijection that preserves
   orientation on the fibre does not change the degree.
+* `TauCeti.degreeAtRegularValue_eq_add_of_isCompl_range`: over a finite fibre, the degree is
+  additive when the source is split into the images of two orientation-preserving injective local
+  diffeomorphisms.
 * `TauCeti.degreeAtRegularValue_comp_left`: postcomposing with a map that is
   orientation-preserving at a value and has no other preimage of its image there does not change
   the degree at that value.
@@ -55,6 +58,8 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
   the number of preimages.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
   and a constant map into a manifold of positive dimension has degree `0`.
+* `TauCeti.degree_eq_zero_of_forall_eq`: a map all of whose values coincide, into a manifold of
+  positive dimension, has degree `0`.
 * `TauCeti.degree_of_isEmpty`: a map to an empty manifold has degree `0`.
 * `TauCeti.degree_eq_zero_of_not_exists`: a map with no regular value has degree `0`.
 * `Diffeomorph.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt`,
@@ -173,6 +178,44 @@ theorem degreeAtRegularValue_comp_of_bijective {e : M₀ → M} (he : Bijective 
   rw [orientationSign_comp (hf x hx)
     (mdifferentiableAt_of_isInvertible_mfderiv (hpres x hx).isInvertible_mfderiv),
     orientationSign_of_isOrientationPreservingAt (hpres x hx), mul_one]
+
+variable {E₁ H₁ M₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
+  [TopologicalSpace H₁] {I₁ : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace M₁]
+  [ChartedSpace H₁ M₁] [IsManifold I₁ 1 M₁] in
+/-- **Additivity of the signed count.** Let `M` be the disjoint union of the images of injective
+`C^m` local diffeomorphisms `j₀ : M₀ → M` and `j₁ : M₁ → M` (`m ≠ 0`) preserving the orientations.
+Over a value `y` with finite fibre, the signed count of `g : M → N` is the sum of those of
+`g ∘ j₀` and `g ∘ j₁`. -/
+theorem degreeAtRegularValue_eq_add_of_isCompl_range (o : Manifold.Orientation I M ι)
+    (o₀ : Manifold.Orientation I₀ M₀ ι) (o₁ : Manifold.Orientation I₁ M₁ ι)
+    (oN : Manifold.Orientation J N ι) {m : ℕ∞ω} {j₀ : M₀ → M} {j₁ : M₁ → M}
+    (hj₀ : IsLocalDiffeomorph I₀ I m j₀) (hj₁ : IsLocalDiffeomorph I₁ I m j₁) (hm : m ≠ 0)
+    (hi₀ : Injective j₀) (hi₁ : Injective j₁) (hc : IsCompl (range j₀) (range j₁))
+    (ho₀ : ∀ x, IsOrientationPreservingAt o₀ o j₀ x)
+    (ho₁ : ∀ x, IsOrientationPreservingAt o₁ o j₁ x) {g : M → N} {y : N}
+    (hfin : (g ⁻¹' {y}).Finite) :
+    degreeAtRegularValue o oN g y =
+      degreeAtRegularValue o₀ oN (g ∘ j₀) y + degreeAtRegularValue o₁ oN (g ∘ j₁) y := by
+  -- The fibre of `g` is the disjoint union of the images of the fibres of `g ∘ j₀` and `g ∘ j₁`.
+  have hsplit : g ⁻¹' {y} = j₀ '' ((g ∘ j₀) ⁻¹' {y}) ∪ j₁ '' ((g ∘ j₁) ⁻¹' {y}) := by
+    rw [preimage_comp, preimage_comp, image_preimage_eq_inter_range,
+      image_preimage_eq_inter_range, ← inter_union_distrib_left, hc.sup_eq_top, top_eq_univ,
+      inter_univ]
+  have hdisj : Disjoint (j₀ '' ((g ∘ j₀) ⁻¹' {y})) (j₁ '' ((g ∘ j₁) ⁻¹' {y})) :=
+    hc.disjoint.mono (image_subset_range _ _) (image_subset_range _ _)
+  rw [degreeAtRegularValue_def, hsplit,
+    finsum_mem_union hdisj (hfin.subset (hsplit ▸ subset_union_left))
+      (hfin.subset (hsplit ▸ subset_union_right)),
+    finsum_mem_image hi₀.injOn, finsum_mem_image hi₁.injOn, degreeAtRegularValue_def,
+    degreeAtRegularValue_def]
+  -- Each local diffeomorphism contributes the sign `1`.
+  congr 1
+  · refine finsum_mem_congr rfl fun x _ ↦ ?_
+    rw [(hj₀ x).orientationSign_comp hm o₀ o oN g,
+      orientationSign_of_isOrientationPreservingAt (ho₀ x), mul_one]
+  · refine finsum_mem_congr rfl fun x _ ↦ ?_
+    rw [(hj₁ x).orientationSign_comp hm o₁ o oN g,
+      orientationSign_of_isOrientationPreservingAt (ho₁ x), mul_one]
 
 variable {E₁ H₁ N₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
   [TopologicalSpace H₁] {J₁ : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace N₁]
@@ -298,6 +341,17 @@ theorem degree_const (hpos : 0 < Module.finrank ℝ E') (y₀ : N) :
   split_ifs
   · exact degreeAtRegularValue_const hpos y₀ _
   · rfl
+
+/-- A map all of whose values coincide, into a manifold of positive dimension, has degree `0`. -/
+theorem degree_eq_zero_of_forall_eq (hpos : 0 < Module.finrank ℝ E') (hc : ∀ x x', f x = f x') :
+    degree o o' f = 0 := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · rcases isEmpty_or_nonempty N with hN | ⟨⟨y₀⟩⟩
+    · exact degree_of_isEmpty
+    · rw [show f = fun _ ↦ y₀ from funext hM.elim]
+      exact degree_const hpos y₀
+  · rw [show f = fun _ ↦ f x₀ from funext fun x ↦ hc x x₀]
+    exact degree_const hpos (f x₀)
 
 end TauCeti
 

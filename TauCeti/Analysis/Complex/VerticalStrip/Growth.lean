@@ -5,7 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Order.Filter.Defs
+public import Mathlib.Topology.Defs.Filter
+import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -20,8 +25,15 @@ The property is stable under addition, finite sums, multiplication and affine pu
 `s ↦ a * s + b` with a real dilation `a : ℝ` (whereas a non-real dilation rotates vertical strips
 into horizontal ones, so `exp (-I * s)` fails to have vertical-strip growth). Every function
 bounded on each closed vertical strip has it, as does the identity function. Bounds extend to
-degenerate strips, and real exponential functions provide nonconstant examples. These facts allow
+degenerate strips, and real exponential functions provide nonconstant examples. Any function with
+vertical-strip growth decays faster than `exp (r * |Im s|)` for every `r > 0` uniformly on closed
+strips (`TauCeti.HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im`), and this uniform
+exponential decay is preserved by Schwarz conjugation
+(`TauCeti.tendsto_conj_comp_conj_mul_exp_neg_mul_abs_im`). These facts allow
 growth estimates for completed and pole-cleared L-functions to be assembled from their factors.
+
+A function with vertical-strip growth that is continuous on a closed strip is bounded there by a
+power of `1 + |Im s|` at every height, not only at large height.
 -/
 
 public section
@@ -151,6 +163,28 @@ theorem sum {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ}
     simp only [Finset.sum_insert hi]
     exact (h i (Finset.mem_insert_self i t)).add
       (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
+/-- **Growth bounds at every height.** If `f` has vertical-strip growth and is continuous on the
+closed strip `a ≤ re s ≤ b`, then `‖f s‖ ≤ C * (1 + |Im s|) ^ A` on the whole strip, for some
+`C > 0` and `A ≥ 0`. -/
+theorem exists_bound_of_continuousOn (hf : HasVerticalStripGrowth f) {a b : ℝ}
+    (hc : ContinuousOn f {s : ℂ | s.re ∈ Set.Icc a b}) :
+    ∃ C : ℝ, 0 < C ∧ ∃ A : ℝ, 0 ≤ A ∧ ∀ s : ℂ, s.re ∈ Set.Icc a b →
+      ‖f s‖ ≤ C * (1 + |s.im|) ^ A := by
+  rcases lt_or_ge b a with hba | hab
+  · exact ⟨1, one_pos, 0, le_rfl, fun s hs ↦ absurd (hs.1.trans hs.2) (not_le.2 hba)⟩
+  obtain ⟨C, hC, A, hA, T, -, hbound⟩ := hf.exists_bound hab
+  obtain ⟨K, hK⟩ := (isCompact_Icc.reProdIm (isCompact_Icc (a := -T) (b := T)))
+    |>.exists_bound_of_continuousOn (hc.mono fun s hs ↦ (Complex.mem_reProdIm.1 hs).1)
+  have hKC : 0 < max K 0 + C := add_pos_of_nonneg_of_pos (le_max_right _ _) hC
+  refine ⟨max K 0 + C, hKC, A, hA, fun s hs ↦ ?_⟩
+  have hx : 1 ≤ (1 + |s.im|) ^ A := Real.one_le_rpow (by linarith [abs_nonneg s.im]) hA
+  rcases le_or_gt |s.im| T with ht | ht
+  · calc ‖f s‖ ≤ K := hK s (Complex.mem_reProdIm.2 ⟨hs, abs_le.1 ht⟩)
+      _ ≤ (max K 0 + C) * 1 := by linarith [le_max_left K 0]
+      _ ≤ (max K 0 + C) * (1 + |s.im|) ^ A := mul_le_mul_of_nonneg_left hx hKC.le
+  · exact (hbound s hs ht.le).trans
+      (mul_le_mul_of_nonneg_right (by linarith [le_max_right K 0]) (by positivity))
 
 end HasVerticalStripGrowth
 
@@ -283,5 +317,97 @@ theorem not_hasVerticalStripGrowth_cexp_neg_I_mul :
   simp only [Complex.mul_im, Complex.I_re, Complex.ofReal_im, mul_zero, Complex.I_im,
     Complex.ofReal_re, one_mul, zero_add, abs_of_pos ht0] at hs
   linarith
+
+open Filter in
+open scoped Topology in
+/-- Any function bounded eventually for large `|Im z|` on `verticalClosedStrip a b` by
+`C * (1 + |z.im|) ^ p * exp (c * |z.im|)` with `c < r` satisfies
+`f z * exp (-(r * |z.im|)) → 0` as `|z.im| → ∞` uniformly in the strip. -/
+theorem tendsto_mul_exp_neg_mul_abs_im_of_norm_le {f : ℂ → ℂ} {a b C p c r : ℝ}
+    (hc : c < r)
+    (hbound : ∀ᶠ z in comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b),
+      ‖f z‖ ≤ C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) :
+    Tendsto (fun z => f z * Real.exp (-(r * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) := by
+  have hd : 0 < r - c := sub_pos.mpr hc
+  have hdec : Tendsto (fun t : ℝ => |C| * (t ^ p * Real.exp (-(r - c) * t))) atTop (𝓝 0) := by
+    simpa using (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero p (r - c) hd).const_mul |C|
+  have hmaj : Tendsto (fun z : ℂ =>
+      |C| * ((1 + |z.im|) ^ p * Real.exp (-(r - c) * (1 + |z.im|))) * Real.exp (r - c))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) := by
+    simpa [Function.comp_def] using
+      (((hdec.comp (tendsto_atTop_add_const_left atTop 1 tendsto_id)).mul_const
+        (Real.exp (r - c))).comp (tendsto_comap.mono_left inf_le_left))
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr (squeeze_zero'
+    (Eventually.of_forall fun _ => norm_nonneg _) ?_ hmaj)
+  filter_upwards [hbound] with z hz
+  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
+  have hexp : Real.exp (c * |z.im|) * Real.exp (-(r * |z.im|)) =
+      Real.exp (-(r - c) * (1 + |z.im|)) * Real.exp (r - c) := by
+    rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring
+  calc
+    ‖f z‖ * Real.exp (-(r * |z.im|))
+      ≤ (C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) * Real.exp (-(r * |z.im|)) := by
+        gcongr
+    _ ≤ (|C| * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) * Real.exp (-(r * |z.im|)) := by
+        gcongr; exact le_abs_self C
+    _ = |C| * ((1 + |z.im|) ^ p * Real.exp (-(r - c) * (1 + |z.im|))) *
+          Real.exp (r - c) := by
+        linear_combination |C| * (1 + |z.im|) ^ p * hexp
+
+open Filter in
+open scoped Topology in
+/-- Any function with `HasVerticalStripGrowth` decays faster than `exp (r * |Im z|)` for any
+positive rate `r > 0`, uniformly on every closed vertical strip `verticalClosedStrip a b`. -/
+theorem HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im {f : ℂ → ℂ}
+    (hf : HasVerticalStripGrowth f) {r : ℝ} (hr : 0 < r) (a b : ℝ) :
+    Tendsto (fun z : ℂ => f z * Real.exp (-(r * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) := by
+  rcases le_or_gt a b with hab | hab
+  · obtain ⟨C, _, p, _, T₀, _, hbound⟩ := hf.exists_bound hab
+    refine tendsto_mul_exp_neg_mul_abs_im_of_norm_le (C := C) (p := p) hr ?_
+    rw [eventually_inf_principal, eventually_comap, eventually_atTop]
+    refine ⟨T₀, fun t ht z hzt hz => ?_⟩
+    simpa only [zero_mul, Real.exp_zero, mul_one] using hbound z hz (hzt ▸ ht)
+  · have hemp : Complex.HadamardThreeLines.verticalClosedStrip a b = ∅ := by
+      ext z
+      simp only [Complex.HadamardThreeLines.verticalClosedStrip, Set.mem_preimage, Set.mem_Icc,
+        Set.mem_empty_iff_false, iff_false, not_and, not_le]
+      intro h; linarith
+    simp [hemp]
+
+open Filter in
+open scoped ComplexConjugate Topology in
+/-- Conjugating input and output preserves uniform exponential decay along closed vertical strips:
+if `f z * exp (-(r * |z.im|)) → 0` as `|z.im| → ∞` uniformly on `verticalClosedStrip a b`, then
+the same holds for `fun z => conj (f (conj z))`. -/
+theorem tendsto_conj_comp_conj_mul_exp_neg_mul_abs_im {f : ℂ → ℂ} {a b r : ℝ}
+    (hgrowth : Tendsto (fun z : ℂ => f z * Real.exp (-(r * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0)) :
+    Tendsto (fun z : ℂ => conj (f (conj z)) * Real.exp (-(r * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) := by
+  have hmap : Tendsto (starRingEnd ℂ)
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) := by
+    refine tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩
+    · rw [tendsto_comap_iff]
+      have heq : ((fun z : ℂ => |z.im|) ∘ starRingEnd ℂ) = fun z : ℂ => |z.im| := by
+        ext z; simp
+      rw [heq]
+      exact tendsto_comap.mono_left inf_le_left
+    · filter_upwards [mem_inf_of_right (mem_principal_self _)] with z hz
+      simpa [Complex.HadamardThreeLines.verticalClosedStrip] using hz
+  have h1 := (Complex.continuous_conj.tendsto 0).comp (hgrowth.comp hmap)
+  simp only [map_zero] at h1
+  refine h1.congr fun z => ?_
+  simp only [Function.comp_apply, map_mul, Complex.conj_ofReal, Complex.conj_im, abs_neg]
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Basic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Picard
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.Topology.KrullDimension.Basic
 
 /-!
@@ -87,9 +87,8 @@ theorem exists_isEffective_restrict_eq {V : X.Opens} [Nonempty V] (b : Γ(X, V))
     exact f.ne_zero (by rw [← hf, hb0, map_zero])
   have : Nonempty (X.basicOpen b) := ⟨⟨_, hb⟩⟩
   -- The zero locus `V ∖ D(b)` is closed in `X`, so its complement `W` is open.
-  have hdim : topologicalKrullDim X ≤ 1 := by
-    rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
-    exact iSup_le fun x ↦ by exact_mod_cast hX x
+  have hdim : topologicalKrullDim X ≤ 1 :=
+    TauCeti.topologicalKrullDim_le_of_forall_coheight_le hX
   have hZ : IsClosed ((V : Set X) \ X.basicOpen b) :=
     Scheme.isClosed_of_isLocallyClosed_of_genericPoint_notMem hdim
       ⟨V, (X.basicOpen b)ᶜ, V.isOpen, (X.basicOpen b).isOpen.isClosed_compl, Set.sdiff_eq _ _⟩

@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Perm.KoszulSign
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 import Mathlib.GroupTheory.GroupAction.Ring
-import TauCeti.Algebra.CharP.Invertible
-import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Basic
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Generators
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Permutation
 
 /-!
 # Supercommutativity of the signed symmetric algebra
@@ -24,9 +26,13 @@ identities to elements of pure parity across multiple integer degrees: even-pari
 the center of `SignedSym G` over any commutative ring, and every element of odd parity has square
 zero when `2` is invertible in the coefficient ring. These identities allow the signed symmetric
 algebra to serve as a receiving supercommutative algebra in universal properties and tensor
-comparisons, for both integer and parity (`ZMod 2`) gradings.
+comparisons, for both integer and parity (`ZMod 2`) gradings. Permuting the factors of a product
+of homogeneous elements multiplies it by the Koszul sign `Equiv.Perm.koszulSign` of their degrees
+(`TauCeti.SignedSym.list_prod_ofFn_comp_perm`), or of their parities for factors of pure parity
+(`TauCeti.SignedSym.list_prod_ofFn_comp_perm_of_mem_parityGrading`).
 
-The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
+The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous` from
+`TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Generators`.
 The construction follows the supercommutative algebra of J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1).
 -/
@@ -45,37 +51,20 @@ section General
 variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
 variable (G : InternalGrading R V ι)
 
-private theorem generator_mul_eq_uzpow_smul_mul {p q : ι} {x : V} (hx : x ∈ G.piece p)
-    {b : SignedSym G} (hb : b ∈ signedSymPiece G q) :
-    generator G x * b = ((-1 : ℤˣ) ^ (p * q)) • (b * generator G x) := by
-  refine homogeneous_induction G (P := fun q b =>
-    generator G x * b = ((-1 : ℤˣ) ^ (p * q)) • (b * generator G x))
-    (by simp)
-    (fun _ _ hy => generator_mul_generator G hx hy)
-    (fun _ _ _ _ hb hc => by
-      rw [← mul_assoc, hb, smul_mul_assoc, mul_assoc, hc, mul_smul_comm, smul_smul,
-        ← mul_assoc, ← uzpow_add, ← mul_add])
-    (by simp [Units.smul_def])
-    (fun _ _ _ hb hc => by simp only [mul_add, add_mul, hb, hc, Units.smul_def, zsmul_add])
-    (fun _ r _ hb => by rw [mul_smul_comm, hb, smul_mul_assoc, smul_comm r])
-    hb
-
 /-- Homogeneous elements supercommute with the sign determined by their total input degrees.
 No assumption on the characteristic of the coefficient ring is needed. -/
 theorem mul_eq_uzpow_smul_mul {p q : ι} {a b : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q) :
-    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a) := by
-  refine homogeneous_induction G (P := fun p a =>
-    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
-    (by simp)
-    (fun _ _ hx => generator_mul_eq_uzpow_smul_mul G hx hb)
-    (fun p r _ _ ha hc => by
-      rw [mul_assoc, hc, mul_smul_comm, ← mul_assoc, ha, smul_mul_assoc, smul_smul,
-        mul_comm ((-1 : ℤˣ) ^ (r * q)), ← uzpow_add, ← add_mul, mul_assoc])
-    (by simp [Units.smul_def])
-    (fun _ _ _ ha hc => by simp only [add_mul, mul_add, ha, hc, Units.smul_def, zsmul_add])
-    (fun _ r _ ha => by rw [smul_mul_assoc, ha, mul_smul_comm, smul_comm r])
-    ha
+    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a) :=
+  mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous (𝒜 := signedSymPiece G)
+    (s := fun p q => (-1 : ℤˣ) ^ (p * q))
+    (fun _ => by simp)
+    (fun _ _ _ => by rw [mul_add, uzpow_add])
+    (fun _ => by simp)
+    (fun i₁ _ j => by rw [add_mul, add_comm (i₁ * j), uzpow_add])
+    (adjoin_range_generator G) G.isInternal.submodule_iSup_eq_top
+    (isHomogeneous_signedSymGenerator G)
+    (fun hx hy => generator_mul_generator G hx hy) ha hb
 
 /-- Every homogeneous element whose degree has Koszul sign `1` commutes with all of
 `SignedSym G`. -/
@@ -137,6 +126,14 @@ theorem sq_eq_zero_of_mem_one [Invertible (2 : R)] {a : SignedSym G}
     (ha : a ∈ signedSymPiece G 1) : a ^ 2 = 0 :=
   sq_eq_zero G ha (uzpow_one (-1))
 
+/-- Listing homogeneous elements `a i` of degrees `d i` in the order of a permutation `σ` multiplies
+their product by the Koszul sign `σ.koszulSign d`. In particular this reorders monomials in the
+generators. -/
+theorem list_prod_ofFn_comp_perm {n : ℕ} {d : Fin n → ι} {a : Fin n → SignedSym G}
+    (ha : ∀ i, a i ∈ signedSymPiece G (d i)) (σ : Equiv.Perm (Fin n)) :
+    (List.ofFn (a ∘ σ)).prod = σ.koszulSign d • (List.ofFn a).prod :=
+  list_prod_ofFn_comp_perm_of_mul_eq_uzpow_smul_mul (mul_eq_uzpow_smul_mul G) ha σ
+
 end General
 
 section Int
@@ -149,6 +146,16 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedS
     (ha : a ∈ parityGrading (signedSymPiece G) i) (hb : b ∈ parityGrading (signedSymPiece G) j) :
     a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) :=
   TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading (mul_eq_uzpow_smul_mul G) ha hb
+
+/-- Listing elements `a i` of pure parities `d i` in the order of a permutation `σ` multiplies
+their product by the Koszul sign `σ.koszulSign d` of the parities, even when the factors combine
+multiple integer degrees. -/
+theorem list_prod_ofFn_comp_perm_of_mem_parityGrading {n : ℕ} {d : Fin n → ZMod 2}
+    {a : Fin n → SignedSym G} (ha : ∀ i, a i ∈ parityGrading (signedSymPiece G) (d i))
+    (σ : Equiv.Perm (Fin n)) :
+    (List.ofFn (a ∘ σ)).prod = σ.koszulSign d • (List.ofFn a).prod :=
+  list_prod_ofFn_comp_perm_of_mul_eq_uzpow_smul_mul
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha σ
 
 /-- Every element of even parity commutes with all of `SignedSym G`. -/
 theorem commute_of_mem_parityGrading_zero {a : SignedSym G}

@@ -37,8 +37,8 @@ itself lives over a semiring.
 
 The motivating instance is a degree-`2` field extension `E/F`, where this embeds `Eˣ` in
 `GL (Fin 2) F` as the **non-split torus**; see
-`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NonSplitTorus.lean`. Compare `TauCeti.diagGL`,
-which embeds the *split* torus.
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NonSplitTorus/Basic.lean`. Compare
+`TauCeti.diagGL`, which embeds the *split* torus.
 
 ## Main definitions
 

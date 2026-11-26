@@ -15,7 +15,9 @@ public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Geometry.Manifold.IsManifold.Pi
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.OfCompLeft
 
 /-!
 # The circle `AddCircle p` as a smooth manifold
@@ -64,7 +66,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   lifts and the inverses of the extended charts have derivative the identity of `ℝ`.
 * `AddCircle.coe_extChartAt_apply`, `AddCircle.coe_extChartAt_self`,
   `AddCircle.extChartAt_symm_apply`: the extended charts are local lifts, and their inverses are
-  the quotient map on their targets.
+  the quotient map on their targets. On a torus `∀ i, AddCircle (p i)`, the inverses of the
+  extended charts are the coordinatewise quotient map (`AddCircle.extChartAt_pi_symm_apply`).
 * `AddCircle.contDiffAt_chartAt_comp_coe`, `AddCircle.hasFDerivAt_chartAt_comp_coe`: a map out of
   `AddCircle p`, lifted to `ℝ` and read in a chart of its target, keeps its smoothness and its
   derivative.
@@ -88,6 +91,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`.
 * `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
   of `f`.
+* `AddCircle.hasDerivAt_of_hasMFDerivAt_coe_comp`: conversely, a continuous lift `Θ` of a curve
+  `s ↦ [Θ s]` has the derivative given by its velocity.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
 * `AddCircle.mfderiv_diffeomorphAddCircle`: the rescaling from period `p` to period `q` has
   derivative multiplication by `p⁻¹ * q`.
@@ -466,6 +471,22 @@ theorem hasMFDerivAt_add_coe_comp {f : ℝ → ℝ} {f' t : ℝ} (hf : HasDerivA
     (hf.const_add a).hasFDerivAt.hasMFDerivAt).congr_mfderiv (ContinuousLinearMap.id_comp _)
 
 variable {p} in
+/-- **The derivative of a continuous lift.** If `Θ : ℝ → ℝ` is continuous at `s` and the curve
+`u ↦ [Θ u]` of `AddCircle p` has velocity `w` at `s`, read in the tangent line of `AddCircle p`,
+then `Θ` has derivative `w` at `s`. -/
+theorem hasDerivAt_of_hasMFDerivAt_coe_comp {Θ : ℝ → ℝ} {s w : ℝ} (hΘ : ContinuousAt Θ s)
+    (h : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun u ↦ (Θ u : AddCircle p)) s
+      ((1 : ℝ →L[ℝ] ℝ).smulRight w)) :
+    HasDerivAt Θ w s := by
+  -- The quotient map has derivative the identity, which is its own left inverse.
+  have h' := HasMFDerivWithinAt.of_comp_of_leftInverse (L := ContinuousLinearMap.id ℝ ℝ)
+    (hasMFDerivAt_coe p (Θ s)) hΘ.continuousWithinAt (s := univ) h.hasMFDerivWithinAt
+    fun _ ↦ rfl
+  rw [hasMFDerivWithinAt_univ] at h'
+  exact hasDerivAt_iff_hasFDerivAt.2
+    (hasMFDerivAt_iff_hasFDerivAt.1 (h'.congr_mfderiv (ContinuousLinearMap.id_comp _)))
+
+variable {p} in
 /-- At the image of `t`, a map out of `AddCircle p` has the derivative of its
 periodic lift at `t`. -/
 theorem mfderiv_comp_coe {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -532,6 +553,17 @@ theorem extChartAt_symm_apply (x : AddCircle p) {z : ℝ} (hz : z ∈ (extChartA
     (extChartAt 𝓘(ℝ) x).symm z = (z : AddCircle p) := by
   simpa using symm_apply_of_coe_apply
     (fun y hy ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ x) hy) (by simpa using hz)
+
+/-- On its target, the inverse of an extended chart of a torus `∀ i, AddCircle (p i)` is the
+coordinatewise quotient map. -/
+theorem extChartAt_pi_symm_apply {ι : Type*} [Fintype ι] {p : ι → ℝ} [∀ i, Fact (0 < p i)]
+    (x : ∀ i, AddCircle (p i)) {y : ι → ℝ}
+    (hy : y ∈ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).target) :
+    (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm y =
+      fun i ↦ (y i : AddCircle (p i)) := by
+  rw [extChartAt_pi] at hy ⊢
+  rw [PartialEquiv.pi_symm_apply]
+  exact funext fun i ↦ extChartAt_symm_apply (x i) (hy i (Set.mem_univ i))
 
 variable {p} in
 /-- At each point of its target, the inverse of an extended chart of `AddCircle p` has derivative

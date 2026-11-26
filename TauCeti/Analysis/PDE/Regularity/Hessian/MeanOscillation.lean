@@ -10,11 +10,11 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Matrix.Contraction
-import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -68,7 +68,9 @@ solves the divergence-form equation `-div(A ∇(∂ₖu)) = -div(f eₖ)` weakly
 `φ`, moving `∂ₖ` and then the remaining derivative onto `φ` gives
 `∫ ⟨A ∇(∂ₖu), ∇φ⟩ = ∫ f ∂ₖφ`
 (`TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn` and
-`TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn`). The
+`TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn`; for any
+`u ∈ W^{2,2}(Ω)`, with `f = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`, this is
+`TauCeti.PDE.exists_gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq`). The
 comparison with the frozen problem for divergence-form equations with `L²` data
 (`TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq`)
 then bounds the square mean oscillation of `∇(∂ₖu)`, which is the column `D²u eₖ` of the Hessian
@@ -123,7 +125,8 @@ private theorem energyFormH1_eq_setIntegral_inner_smul_single
       (W1p.value (D j)) (EuclideanSpace.basisFun (Fin (n + 1)) ℝ j) := by
     simpa only [EuclideanSpace.basisFun_apply] using hD
   -- Move `∂ₖ` from `∂ₖu` onto the test function; the coefficients are constant.
-  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn hA (hD k) φ,
+  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
+      (fun i j => (hA i j).of_le (by simp)) (hD k) φ,
     energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn hA hD']
   simp only [fderiv_fun_const, Pi.zero_apply, zero_apply, zero_mul, zero_add,
     EuclideanSpace.basisFun_apply]
@@ -186,16 +189,41 @@ private theorem ae_gradient_eq_iteratedGradient_apply
   simp only [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
   rw [h1 i, h2 i]
 
-/-- The square mean oscillation of the gradient of `∂ₖu` over a ball in `Ω` is that of the
-`k`-th column of the Hessian. -/
+/-- **The differentiated equation for constant coefficients.** Let `u ∈ W^{2,2}(Ω)`, `Ω ⊆ ℝ^{n+1}`
+open. Its weak first derivatives are elements `Dₖ = ∂ₖu` of `H¹(Ω)` whose gradients are the columns
+`D²u eₖ` of the weak Hessian almost everywhere, and which solve, for every constant matrix `A`, the
+equation `-div(A ∇Dₖ) = -div(g eₖ)` weakly in `Ω`, with `g = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`: for every test
+function `φ`, `∫_Ω ⟨A ∇Dₖ, ∇φ⟩ = ∫_Ω g ∂ₖφ`. No equation for `u` is assumed. -/
+theorem exists_gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2) :
+    ∃ D : Fin (n + 1) → W1p volume Omega 2,
+      (∀ k, (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+          =ᵐ[volume.restrict Omega]
+        fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1)) ∧
+      ∀ (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (k : Fin (n + 1)) (φ : 𝓓(Omega, ℝ)),
+        energyFormH1 (fun _ => A) 0 0 (D k) (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+          ∫ x in Omega, ⟪(∑ i, ∑ j, A i j * ⟪Wkp.iteratedGradient 1 u x
+            (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ) • EuclideanSpace.single k 1,
+              ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
+  choose D hD₀ hDg using fun j : Fin (n + 1) =>
+    Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u (EuclideanSpace.single j 1)
+  have hD : ∀ j, HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u))
+      (W1p.value (D j)) (EuclideanSpace.single j 1) := fun j => by
+    simpa only [Wkp.value_succ 1 u, Wkp.value_one] using hD₀ j
+  exact ⟨D, ae_gradient_eq_iteratedGradient_apply u fun i j => hDg j _, fun A k =>
+    energyFormH1_eq_setIntegral_inner_smul_single u (A := A) (ae_of_all _ fun _ => rfl) hD
+      (fun i j => hDg j _) k⟩
+
+/-- The square mean oscillation over a ball in `Ω` of the gradient of `D ∈ H¹(Ω)`, when that
+gradient is the `k`-th column of the Hessian of `u`, is that of the column. -/
 private theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_eq
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
-    {D : Fin (n + 1) → W1p volume Omega 2} (k : Fin (n + 1))
-    (hcol : (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) →
+    {D : W1p volume Omega 2} (k : Fin (n + 1))
+    (hcol : (W1p.gradient D : EuclideanSpace ℝ (Fin (n + 1)) →
       EuclideanSpace ℝ (Fin (n + 1))) =ᵐ[volume.restrict Omega]
         fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1))
     {t : ℝ} (ht : ball x₀ t ⊆ Omega) :
-    ∫ x in ball x₀ t, ‖W1p.gradient (D k) x - ⨍ y in ball x₀ t, W1p.gradient (D k) y‖ ^ 2 =
+    ∫ x in ball x₀ t, ‖W1p.gradient D x - ⨍ y in ball x₀ t, W1p.gradient D y‖ ^ 2 =
       ∫ x in ball x₀ t, ‖(Wkp.iteratedGradient 1 u x -
         ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2 := by
   have hct := ae_restrict_of_ae_restrict_of_subset ht hcol
@@ -260,20 +288,21 @@ private theorem setIntegral_ball_norm_column_sub_setAverage_sq_le_aux
       (Measure.restrict_mono hball le_rfl)
     filter_upwards [heq] with x hx
     rw [Function.comp_apply, Matrix.contraction_apply, hx]
-  -- The first derivatives `∂ₖu ∈ H¹(Ω)` solve `-div(A ∇(∂ₖu)) = -div(f eₖ)`, and their
-  -- gradients are the columns of the Hessian.
-  choose D hD₀ hDg using fun j =>
-    Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u (e j)
-  have hD : ∀ j, HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u))
-      (W1p.value (D j)) (e j) := fun j => by
-    simpa only [Wkp.value_succ 1 u, Wkp.value_one] using hD₀ j
-  have hcol := ae_gradient_eq_iteratedGradient_apply u (fun i j => hDg j (e i))
+  -- The first derivative `∂ₖu ∈ H¹(Ω)` solves `-div(A ∇(∂ₖu)) = -div(f eₖ)`, and its gradient
+  -- is the `k`-th column of the Hessian.
+  obtain ⟨D, hcol, hDeq⟩ := exists_gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq u
+  have hDf : ∀ φ : 𝓓(Omega, ℝ),
+      energyFormH1 (fun _ => A) 0 0 (D k) (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+        ∫ x in Omega, ⟪f x • e k, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := fun φ => by
+    rw [hDeq A k φ]
+    refine integral_congr_ae ?_
+    filter_upwards [heq] with x hx
+    rw [hx]
   have hGc : MemLp (fun x => f x • e k - 0) 2 (volume.restrict (ball x₀ r)) := by
     simpa only [sub_zero, Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply] using
       (ContinuousLinearMap.toSpanSingleton ℝ (e k)).comp_memLp' hf
   have h := setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq
-    hA (energyFormH1_eq_setIntegral_inner_smul_single u heq hD (fun i j => hDg j (e i)) k) hball
-    hGc hρ hρr
+    hA hDf hball hGc hρ hρr
   rw [setIntegral_ball_norm_gradient_sub_setAverage_sq_eq u k (hcol k) hρΩ,
     setIntegral_ball_norm_gradient_sub_setAverage_sq_eq u k (hcol k) hball, ← hK₁, ← hK₂] at h
   have hfe : ∫ x in ball x₀ r, ‖f x • e k - 0‖ ^ 2 = ∫ x in ball x₀ r, f x ^ 2 := by
@@ -571,8 +600,6 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matri
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
     fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
   have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hK : 0 ≤ K := (norm_nonneg (matrixBilinearForm (a x₀) - matrixBilinearForm A)).trans
-    (haK x₀ (mem_ball_self hr))
   have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K :=
     (ae_restrict_mem measurableSet_ball).mono fun x hx =>
@@ -581,7 +608,6 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matri
   have hΘ := integral_sq_mul_norm_sq_le_of_ae_le hq hθm hθ hHq
   set Iθ := ∫ x in ball x₀ r, θ x
   set Ig := ∫ x in ball x₀ r, ‖H x‖ ^ (2 * q)
-  have hIg : 0 ≤ Ig := integral_nonneg fun x => by positivity
   have key :=
     setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le
       hA ha haK u hball heq hρ hρr
@@ -600,9 +626,8 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matri
     havg r θ, havg r (fun x => ‖H x‖ ^ (2 * q)), hVρ]
   have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
       V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
-    rw [mul_left_comm]
+    rw [mul_left_comm (K ^ (2 * q' - 1)) V⁻¹ Iθ]
     exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hV.le)
-      (mul_nonneg (Real.rpow_nonneg hK _) (integral_nonneg_of_ae (hθ.mono fun x hx => hx.1))) hIg
       hq.symm.inv_add_inv_eq_one
   rw [hsplit]
   have hs : 0 < ρ / r := div_pos hρ hr

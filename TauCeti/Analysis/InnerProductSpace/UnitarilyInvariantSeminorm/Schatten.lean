@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Gauge
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
 
@@ -41,6 +41,10 @@ rectangular factors `C`. Its endpoints are the nuclear seminorm (`p = 1`), the F
   `TauCeti.UnitarilyInvariantSeminorm.schatten_comp_comp_le`: the ideal inequalities.
 * `TauCeti.UnitarilyInvariantSeminorm.schatten_one`, `schatten_two`, `schatten_top`: the
   nuclear, Frobenius and operator-norm endpoints.
+* `LinearMap.norm_toContinuousLinearMap_le_frobenius`,
+  `LinearMap.frobenius_le_sqrt_finrank_mul_norm_toContinuousLinearMap`:
+  `‖A‖ ≤ ‖A‖_F ≤ √(dim E) ‖A‖`, with `LinearMap.norm_toContinuousLinearMap_lt_frobenius`:
+  `‖A‖ < ‖A‖_F` when `σ₁(A) > 0`.
 
 ## References
 
@@ -122,6 +126,44 @@ theorem schatten_two : schatten 𝕜 E F 2 = frobenius 𝕜 E F := by
     frobenius_apply_eq_sqrt_sum_sq_singularValues, Real.sqrt_eq_rpow]
   simp
 
+/-- The operator norm is at most the Frobenius norm: `‖A‖ ≤ ‖A‖_F`. -/
+theorem _root_.LinearMap.norm_toContinuousLinearMap_le_frobenius (A : E →ₗ[𝕜] F) :
+    ‖LinearMap.toContinuousLinearMap A‖ ≤ frobenius 𝕜 E F A := by
+  simpa [opNorm_apply] using opNorm_apply_le_schatten_apply 2 A
+
+/-- The operator norm is strictly below the Frobenius norm once the second singular value is
+positive: `‖A‖ = σ₀ < (σ₀² + σ₁² + ⋯)^{1/2} = ‖A‖_F` when `σ₁ > 0`. -/
+theorem _root_.LinearMap.norm_toContinuousLinearMap_lt_frobenius {A : E →ₗ[𝕜] F}
+    (h : 0 < A.singularValues 1) :
+    ‖LinearMap.toContinuousLinearMap A‖ < frobenius 𝕜 E F A := by
+  have hn : 2 ≤ finrank 𝕜 E := by
+    by_contra hn
+    rw [A.singularValues_of_finrank_le (by omega)] at h
+    exact h.false
+  rw [A.norm_toContinuousLinearMap_eq_singularValues_zero,
+    A.frobenius_apply_eq_sqrt_sum_range_sq_singularValues,
+    ← Real.sqrt_sq (A.singularValues_nonneg 0)]
+  refine Real.sqrt_lt_sqrt (sq_nonneg _) ?_
+  obtain ⟨m, hm⟩ : ∃ m, finrank 𝕜 E = m + 2 := ⟨finrank 𝕜 E - 2, by omega⟩
+  rw [hm, Finset.sum_range_succ', Finset.sum_range_succ']
+  have := Finset.sum_nonneg fun i (_ : i ∈ Finset.range m) ↦ sq_nonneg (A.singularValues (i + 2))
+  simp only [zero_add] at this ⊢
+  nlinarith [pow_pos h 2]
+
+/-- The Frobenius norm is at most `√(dim E)` times the operator norm: `‖A‖_F ≤ √(dim E) ‖A‖`. -/
+theorem _root_.LinearMap.frobenius_le_sqrt_finrank_mul_norm_toContinuousLinearMap
+    (A : E →ₗ[𝕜] F) :
+    frobenius 𝕜 E F A ≤ √(finrank 𝕜 E : ℝ) * ‖LinearMap.toContinuousLinearMap A‖ := by
+  rw [A.frobenius_apply_eq_sqrt_sum_range_sq_singularValues,
+    A.norm_toContinuousLinearMap_eq_singularValues_zero,
+    ← Real.sqrt_sq (A.singularValues_nonneg 0), ← Real.sqrt_mul (Nat.cast_nonneg _)]
+  refine Real.sqrt_le_sqrt ?_
+  calc ∑ i ∈ Finset.range (finrank 𝕜 E), A.singularValues i ^ 2
+      ≤ ∑ _i ∈ Finset.range (finrank 𝕜 E), A.singularValues 0 ^ 2 :=
+        Finset.sum_le_sum fun i _ ↦ pow_le_pow_left₀ (A.singularValues_nonneg i)
+          (A.singularValues_antitone (Nat.zero_le i)) 2
+    _ = _ := by simp
+
 /-- At `p = ∞`, the Schatten seminorm is the operator norm `σ₀(A)`. -/
 @[simp]
 theorem schatten_top : schatten 𝕜 E F ∞ = opNorm 𝕜 E F := by
@@ -152,6 +194,13 @@ theorem compAdjoint_schatten : (schatten 𝕜 E F p).compAdjoint = schatten 𝕜
 theorem schatten_apply_adjoint (A : E →ₗ[𝕜] F) :
     schatten 𝕜 F E p (LinearMap.adjoint A) = schatten 𝕜 E F p A := by
   rw [← compAdjoint_apply, compAdjoint_schatten]
+
+/-- The Schatten seminorm of a rectangular map `A : E →ₗ[𝕜] F` is that of its modulus
+`|A| = √(A† A)`, an endomorphism of the source: `‖|A|‖_p = ‖A‖_p`. -/
+@[simp]
+theorem schatten_apply_operatorAbs (A : E →ₗ[𝕜] F) :
+    schatten 𝕜 E E p A.operatorAbs = schatten 𝕜 E F p A := by
+  rw [schatten_apply, schatten_apply, LinearMap.singularValues_operatorAbs]
 
 /-- **Ideal inequality, left factor.** If `‖C y‖ ≤ c * ‖y‖` for every `y` (for `c ≥ 0`: if `C` has
 operator norm at most `c`), then `‖C A‖_p ≤ c * ‖A‖_p`. The factor `C : F →ₗ[𝕜] G` may change the

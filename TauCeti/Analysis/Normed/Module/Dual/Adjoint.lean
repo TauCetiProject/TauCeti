@@ -179,7 +179,7 @@ theorem mem_closure_image_closedBall_of_norm_le_norm_comp
     have hconv : Convex ℝ (S '' closedBall (0 : E) r) :=
       (convex_closedBall 0 r).linear_image ((S : E →ₗ[𝕜] F).restrictScalars ℝ)
     exact RCLike.geometric_hahn_banach_closed_point hconv.closure isClosed_closure hy
-  have hfS := StrongDual.re_apply_add_mul_norm_le (f := f.comp S) (x := 0) hr fun x hx ↦
+  have hfS := (StrongDual.re_apply_add_mul_norm_le_iff (f := f.comp S) (x := 0) hr).2 fun x hx ↦
     (hfK _ (subset_closure ⟨x, hx, rfl⟩)).le
   rw [map_zero, map_zero, zero_add] at hfS
   have hfy' := (RCLike.re_le_norm (f y)).trans (f.le_opNorm y)

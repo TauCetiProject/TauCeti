@@ -48,6 +48,7 @@ scalar `a ≠ 1` only when `n ≠ 0`.
 
 * `AlgHom.algebraMap_toAlgebra_apply`: `algebraMap A B z = f z` for the algebra structure
   `f.toRingHom.toAlgebra` induced by `f : A →ₐ[R] B`.
+* `Algebra.coe_ofId`: `Algebra.ofId R A` is `algebraMap R A` as a function.
 * `RingHom.toIntAlgHom_id`, `RingHom.toIntAlgHom_comp`: `RingHom.toIntAlgHom` is functorial.
 * `RingHom.toIntAlgHom_toRingHom`, `AlgHom.toRingHom_toIntAlgHom`: it is inverse to
   `AlgHom.toRingHom` in both directions.
@@ -55,10 +56,10 @@ scalar `a ≠ 1` only when `n ≠ 0`.
   the base ring to the image of the same unit.
 * `AlgHom.ker_isMaximal`: the kernel of an augmentation `H →ₐ[k] k` to a field is a maximal
   ideal, for any (not necessarily commutative) `k`-algebra `H`.
-* `AlgHom.algEquivOfFinrankEq`: an algebra homomorphism from a finite-dimensional division algebra
-  to an algebra of the same finrank is an algebra equivalence. It is the algebra analogue of
-  Mathlib's `LinearMap.linearEquivOfInjective`, with injectivity supplied by the division-ring
-  source.
+* `AlgHom.bijective_of_finrank_eq`, `AlgHom.algEquivOfFinrankEq`: an algebra homomorphism from a
+  finite-dimensional simple algebra, such as a division algebra, to an algebra of the same finrank
+  is bijective, hence an algebra equivalence. It is the algebra analogue of Mathlib's
+  `LinearMap.linearEquivOfInjective`, with injectivity supplied by the simple source.
 * `AlgHom.range_comp_left_of_injective`, `AlgHom.range_comp_left_eq_of_adjoin_eq_top` and
   `AlgHom.range_comp_right_of_surjective`: ranges of composition maps on algebra homomorphisms,
   characterized by lifting values and by vanishing on a kernel.
@@ -108,6 +109,14 @@ theorem AlgHom.algebraMap_toAlgebra_apply {R A B : Type*} [CommSemiring R] [Comm
     [CommSemiring B] [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) (z : A) :
     @algebraMap A B _ _ f.toRingHom.toAlgebra z = f z := by
   rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+
+/-- **`Algebra.ofId R A` is `algebraMap R A`** as a function. Mathlib's `Algebra.ofId_apply` is
+the pointwise form; this unapplied form rewrites the function itself, for instance inside
+`Matrix.map M ⇑(Algebra.ofId R A)` as produced by `AlgHom.mapMatrix_apply`. -/
+@[simp]
+theorem Algebra.coe_ofId (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A] :
+    ⇑(Algebra.ofId R A) = algebraMap R A :=
+  funext (Algebra.ofId_apply A)
 
 /-! ### Functoriality of `RingHom.toIntAlgHom` -/
 
@@ -173,21 +182,27 @@ instance AlgHom.ker_isMaximal {k H : Type*} [Field k] [Ring H] [Algebra k H]
 
 section FinrankEq
 
-variable {K L M : Type*} [Field K] [DivisionRing L] [Semiring M] [Algebra K L] [Algebra K M]
-  [FiniteDimensional K L]
+variable {K L M : Type*} [Field K] [Ring L] [IsSimpleRing L] [Semiring M] [Algebra K L]
+  [Algebra K M] [FiniteDimensional K L]
 
-/-- An algebra homomorphism from a finite-dimensional division algebra to an algebra of the same
-finrank promotes to an algebra equivalence. The equality of finranks forces the target to be
-finite-dimensional, so that is not assumed. This is the algebra analogue of
-Mathlib's `LinearMap.linearEquivOfInjective`. -/
-noncomputable def AlgHom.algEquivOfFinrankEq (f : L →ₐ[K] M)
-    (hfin : Module.finrank K L = Module.finrank K M) : L ≃ₐ[K] M :=
+/-- An algebra homomorphism from a finite-dimensional simple algebra, for instance a division
+algebra, to an algebra of the same finrank is bijective: it is injective since its source is
+simple, and the equality of finranks forces the target to be finite-dimensional, so that is not
+assumed. -/
+theorem AlgHom.bijective_of_finrank_eq (f : L →ₐ[K] M)
+    (hfin : Module.finrank K L = Module.finrank K M) : Function.Bijective f :=
   letI := Algebra.semiringToRing (A := M) K
   haveI : Nontrivial M := Module.nontrivial_of_finrank_pos (R := K) (hfin ▸ Module.finrank_pos)
   haveI : Module.Finite K M := Module.finite_of_finrank_pos (hfin ▸ Module.finrank_pos)
-  AlgEquiv.ofBijective f
-    ⟨f.injective, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin
-      (f := f.toLinearMap)).mp f.injective⟩
+  ⟨f.toRingHom.injective, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin
+    (f := f.toLinearMap)).mp f.toRingHom.injective⟩
+
+/-- An algebra homomorphism from a finite-dimensional simple algebra to an algebra of the same
+finrank promotes to an algebra equivalence (`AlgHom.bijective_of_finrank_eq`). This is the
+algebra analogue of Mathlib's `LinearMap.linearEquivOfInjective`. -/
+noncomputable def AlgHom.algEquivOfFinrankEq (f : L →ₐ[K] M)
+    (hfin : Module.finrank K L = Module.finrank K M) : L ≃ₐ[K] M :=
+  AlgEquiv.ofBijective f (f.bijective_of_finrank_eq hfin)
 
 /-- The algebra equivalence `AlgHom.algEquivOfFinrankEq` acts as the homomorphism it promotes. -/
 @[simp]

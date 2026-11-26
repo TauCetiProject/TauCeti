@@ -10,9 +10,8 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import TauCeti.Topology.Algebra.InfiniteSum.LinearRecurrence
 import TauCeti.Algebra.Ring.Commute
-import TauCeti.Algebra.Algebra.PowMulRecurrence
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # The Fredholm resolvent of a row-compact operator
@@ -305,13 +304,13 @@ theorem IsRowCompact.ringOpNorm_resolventCoeff_le {u : C₀(I, R) →L[R] C₀(I
     ⟨a, mem_insert_self _ _⟩ ⟨b, mem_insert_of_mem (mem_insert_self _ _)⟩
 
 /-- **Uniform tail bound for the Fredholm resolvent.** Suppose `u` is row compact and `r i`
-bounds the `i`-th row of its matrix, and let `ρ > 0`, `0 ≤ q`, `1 ≤ B`, and `T` a finite
+bounds the `i`-th row of its matrix, and let `0 ≤ ρ`, `0 ≤ q`, `1 ≤ B`, and `T` a finite
 set of indices with `ρ * r i ≤ q` off `T` and `ρ * r i ≤ B` everywhere. Then
 `‖u.resolventCoeff m‖ * ρ ^ m ≤ B ^ #T * q ^ (m - #T)`, with truncated subtraction in the
 exponent. The bound depends on `u` only through `r`. -/
 theorem IsRowCompact.ringOpNorm_resolventCoeff_mul_pow_le {u : C₀(I, R) →L[R] C₀(I, R)}
     (hu : u.IsRowCompact) {r : I → ℝ} (hr : ∀ i j, ‖u.matrixCoeff i j‖ ≤ r i)
-    {ρ q B : ℝ} (hρ : 0 < ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset I)
+    {ρ q B : ℝ} (hρ : 0 ≤ ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset I)
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) (m : ℕ) :
     ‖u.resolventCoeff m‖ * ρ ^ m ≤ B ^ T.card * q ^ (m - T.card) :=
   TauCeti.mul_pow_le_of_forall_prod_le (fun i ↦ (norm_nonneg _).trans (hr i i))
@@ -482,11 +481,11 @@ theorem IsRowCompact.one_sub_smul_mul_resolventAt {u : C₀(I, R) →L[R] C₀(I
   -- The sum `∑ₘ aᵐ • Vₘ x` satisfies a first-order recurrence in `C₀(I, R)`, with `a • u` acting
   -- by evaluation and inhomogeneous terms `(cₘ aᵐ) • x` summing to `H_u(a) • x`.
   refine ContinuousLinearMap.ext fun x ↦ ?_
-  have h := (hasSum_apply (hu.hasSum_resolventAt a) x).sub_smul_eq_of_linearRec₁ (D := a • u)
+  have h := (hasSum_apply (hu.hasSum_resolventAt a) x).eq_smul_add_of_linearRec₁ (D := a • u)
     ((hu.isEntire_charPowerSeries.hasSum_evalAt a).smul_const x)
     (by simp)
     fun m ↦ by simpa using congr($(pow_succ_smul_resolventCoeff_succ u a m) x)
-  simpa using h
+  simpa using sub_eq_of_eq_add' h
 
 /-- **The evaluated resolvent identity** `V(a) (1 - a • u) = H_u(a) • 1` for a row-compact `u`. -/
 theorem IsRowCompact.resolventAt_mul_one_sub_smul {u : C₀(I, R) →L[R] C₀(I, R)}
@@ -547,7 +546,7 @@ theorem IsRowCompact.one_sub_smul_mul_resolventHasseDerivAt_succ
   have hW (j : ℕ) := (hu.isEntire_resolventSeries.hasseDeriv j).hasSum_evalScalar a
   have hb := ((hu.isEntire_charPowerSeries.hasseDeriv (k + 1)).hasSum_evalAt a).smul_const x
     |>.add ((hasSum_apply (hW k) x).mapL u)
-  have h := (hasSum_apply (hW (k + 1)) x).sub_smul_eq_of_linearRec₁ (D := a • u) hb
+  have h := (hasSum_apply (hW (k + 1)) x).eq_smul_add_of_linearRec₁ (D := a • u) hb
     (by simpa using congr($(u.coeff_zero_hasseDeriv_succ_resolventSeries k) x))
     fun m ↦ by
       have hm := congr(a ^ (m + 1) • $(u.coeff_succ_hasseDeriv_succ_resolventSeries k m) x)
@@ -557,7 +556,7 @@ theorem IsRowCompact.one_sub_smul_mul_resolventHasseDerivAt_succ
         coeff_resolventSeries, mul_apply_eq_comp, natCast_apply_eq_smul, map_smul_of_tower,
         Matrix.coeff_charPowerSeries, ContinuousLinearMap.smul_def, smul_eq_mul]
       module
-  simpa [resolventHasseDerivAt_eq_evalScalar] using h
+  simpa [resolventHasseDerivAt_eq_evalScalar] using sub_eq_of_eq_add' h
 
 /-- **The differentiated resolvent identity** `Δᵏ⁺¹V(a) (1 - a • u) = Δᵏ⁺¹H_u(a) • 1 + u ΔᵏV(a)`
 for a row-compact `u`. -/
@@ -579,13 +578,13 @@ theorem IsRowCompact.one_sub_smul_pow_succ_mul_resolventHasseDerivAt
     (hH : ∀ j < h, (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a = 0) :
     (1 - a • u) ^ (h + 1) * u.resolventHasseDerivAt h a =
       (PowerSeries.hasseDeriv h u.matrixCoeff.charPowerSeries).evalAt a • (1 - a • u) ^ h :=
-  Commute.pow_succ_mul_eq_smul_pow_of_mul_eq (A := C₀(I, R) →L[R] C₀(I, R))
+  (Commute.pow_succ_mul_eq_pow_mul_of_mul_eq (A := C₀(I, R) →L[R] C₀(I, R))
     (W := fun j ↦ u.resolventHasseDerivAt j a)
-    (c := fun j ↦ (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a)
-    (Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_right u)
-      ((Commute.refl u).smul_right a))
+    (d := fun j ↦ (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a • 1)
+    ((Commute.refl u).one_sub_smul_right a)
     (by simpa [PowerSeries.hasseDeriv_zero] using hu.one_sub_smul_mul_resolventAt a)
-    (hu.one_sub_smul_mul_resolventHasseDerivAt_succ · a) hH
+    (fun k _ ↦ hu.one_sub_smul_mul_resolventHasseDerivAt_succ k a)
+    fun j hj ↦ by ext; simp [hH j hj]).trans (mul_smul_one _ _)
 
 /-- **The Riesz identity at a good zero.** Let `u` be row compact, put `C = 1 - a • u`, and
 suppose `ΔʲH_u(a) = 0` for `j < h` while `c = ΔʰH_u(a)` is a unit, so that `a` is a good zero

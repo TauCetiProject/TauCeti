@@ -16,6 +16,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Inner products of square-integrable functions
@@ -27,21 +29,38 @@ hypotheses on random vectors are usually stated, together with the special case 
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
 squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
 integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`), and the squared norm `‖u‖²` of an
-element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`). The `Lᵖ` seminorm of
-the pairing `x ↦ ⟪f x, c⟫` of a function with a constant vector is at most `‖c‖ₑ` times that of
-`f` (`MeasureTheory.eLpNorm_inner_const_le`).
+element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`). The `L²` seminorm of
+`V • g` is the square root of `∫⁻ V² ‖g‖²` (`TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow`),
+so a bound `∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²` gives `‖V • g‖₂ ≤ √K ‖g‖₂`
+(`MeasureTheory.MemLp.eLpNorm_two_smul_le_of_lintegral_le`). The `Lᵖ` seminorm of the pairing
+`x ↦ ⟪f x, c⟫` of a function with a constant vector is at most `‖c‖ₑ` times that of `f`
+(`MeasureTheory.eLpNorm_inner_const_le`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
-function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
+in the other order for an L² function given by an almost-everywhere representative
+(`MeasureTheory.L2.toLp_inner_of_ae_eq`). On a finite measure space the pairing of a constant
+class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`). The zero class pairs to
+zero with every function
+(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`), and composition with a measure-preserving map
+preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
+An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
+almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
-`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
+`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`. A weak equation
+`∫ ⟪y, p⟫ = ∫ ⟪g, η⟫` whose left side differs pointwise from `⟪y, p₀⟫` by `⟪w, η⟫` becomes
+`∫ ⟪y, p₀⟫ = ∫ ⟪g - w, η⟫` (`TauCeti.integral_inner_eq_integral_inner_sub_of_inner_eq_add`).
+If `‖b‖ ≤ w`, then `|⟪b, g⟫ f| ≤ w ‖g‖ |f|` (`TauCeti.norm_inner_mul_le_of_norm_le`), and
+integrating, `-∫ ⟪b, g⟫ f ≤ ∫ w ‖g‖ |f|` (`TauCeti.neg_integral_inner_mul_le`); this bounds the
+drift term of the weak form of an elliptic operator.
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
-`integral_inner` with the integrand in the left slot, and the integral of the Hilbert space
+`integral_inner` with the integrand in the left slot, the pairing `∫ ⟪f, g⟫` is conjugate
+symmetric (`integral_inner_conj_symm`), and the integral of the Hilbert space
 adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
 (`ContinuousLinearMap.integral_adjoint`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
@@ -77,6 +96,13 @@ namespace MeasureTheory
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- An a.e. strongly measurable function is square integrable if its totalized squared-norm
+integral is nonzero. -/
+theorem AEStronglyMeasurable.memLp_two_of_integral_norm_sq_ne_zero
+    {F : Type*} [NormedAddCommGroup F] {f : α → F} (hf : AEStronglyMeasurable f μ)
+    (h : ∫ x, ‖f x‖ ^ 2 ∂μ ≠ 0) : MemLp f 2 μ :=
+  (memLp_two_iff_integrable_sq_norm hf).2 (Integrable.of_integral_ne_zero h)
 
 /-- The pointwise inner product of two square-integrable functions is integrable. -/
 theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
@@ -115,6 +141,33 @@ theorem eLpNorm_inner_const_le (f : α → E) (c : E) (p : ℝ≥0∞) :
 theorem Lp.integrable_sq_norm {F : Type*} [NormedAddCommGroup F] (u : Lp F 2 μ) :
     Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
   (Lp.memLp u).norm.integrable_sq
+
+/-- The `L²` seminorm of `V • g` for a real weight `V` is the square root of
+`∫⁻ V² ‖g‖²`. -/
+theorem _root_.TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {V : α → ℝ} {g : α → F}
+    (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) :
+    eLpNorm (fun x ↦ V x • g x) 2 μ =
+      (∫⁻ x, ENNReal.ofReal (V x ^ 2 * ‖g x‖ ^ 2) ∂μ) ^ (1 / 2 : ℝ) := by
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hVg,
+    ENNReal.toReal_ofNat]
+  congr 1
+  refine lintegral_congr fun x ↦ ?_
+  rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two, norm_smul,
+    Real.norm_eq_abs, Real.rpow_two, mul_pow, sq_abs]
+
+/-- **A weighted `L²` bound from a weighted integral bound.** If `g ∈ L²` and
+`∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²`, then `‖V • g‖₂ ≤ √K ‖g‖₂`. -/
+theorem MemLp.eLpNorm_two_smul_le_of_lintegral_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {g : α → F} (hg : MemLp g 2 μ) {V : α → ℝ}
+    (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) {K : ℝ} (hK : 0 ≤ K)
+    (h : ∫⁻ x, ENNReal.ofReal (V x ^ 2 * ‖g x‖ ^ 2) ∂μ ≤ ENNReal.ofReal (K * ∫ x, ‖g x‖ ^ 2 ∂μ)) :
+    eLpNorm (fun x ↦ V x • g x) 2 μ ≤ ENNReal.ofReal √K * eLpNorm g 2 μ := by
+  rw [TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow hVg]
+  refine (ENNReal.rpow_le_rpow h (by norm_num)).trans_eq ?_
+  rw [hg.eLpNorm_two_eq_ofReal_sqrt_integral,
+    ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← Real.sqrt_eq_rpow,
+    Real.sqrt_mul hK, ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
@@ -249,6 +302,57 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
 
+/-- The L² inner product of the class of a square-integrable function `g` with an L² function `f`
+that is almost everywhere equal to `w` is the integral of `⟪g x, w x⟫`. -/
+theorem L2.toLp_inner_of_ae_eq {g : α → E} (hg : MemLp g 2 μ) {f : Lp E 2 μ} {w : α → E}
+    (hfw : f =ᵐ[μ] w) : ⟪hg.toLp g, f⟫_𝕜 = ∫ x, ⟪g x, w x⟫_𝕜 ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hg.coeFn_toLp, hfw] with x hx hx'
+  rw [hx, hx']
+
+/-- On a finite measure space, the L² inner product of the constant class `c` with an L² function
+`f` is the inner product of `c` with `∫ f`. -/
+@[simp]
+theorem L2.inner_const_left [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace ℝ E] (c : E)
+    (f : Lp E 2 μ) : ⟪Lp.const 2 μ c, f⟫_𝕜 = ⟪c, ∫ x, f x ∂μ⟫_𝕜 := by
+  rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_eq_inner_setIntegral, setIntegral_univ]
+
+/-- The pointwise inner product of the zero class of `Lᵖ` with any function integrates to zero. -/
+theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
+    ∫ x, ⟪(0 : Lp E p μ) x, g x⟫_𝕜 ∂μ = 0 := by
+  rw [integral_congr_ae ((Lp.coeFn_zero E p μ).mono fun x hx ↦ by
+    rw [hx, Pi.zero_apply, inner_zero_left]), integral_zero]
+
+/-- Composition with a measure-preserving map preserves the `L²` inner product. -/
+@[simp]
+theorem Lp.inner_compMeasurePreserving {β : Type*} [MeasurableSpace β] {ν : Measure β}
+    {f : α → β} (hf : MeasurePreserving f μ ν) (u v : Lp E 2 ν) :
+    ⟪Lp.compMeasurePreserving f hf u, Lp.compMeasurePreserving f hf v⟫_𝕜 = ⟪u, v⟫_𝕜 := by
+  simpa only [Lp.compMeasurePreservingₗᵢ_apply] using
+    (Lp.compMeasurePreservingₗᵢ 𝕜 f hf).inner_map_map u v
+
+/-- An L² function orthogonal to every L² function vanishing outside a measurable set `A`
+vanishes almost everywhere on `A`: it is orthogonal to its own restriction to `A`. -/
+theorem L2.ae_restrict_eq_zero_of_forall_inner_eq_zero {A : Set α} (hA : MeasurableSet A)
+    (f : Lp E 2 μ) (h : ∀ φ : Lp E 2 μ, (∀ᵐ x ∂μ, x ∉ A → φ x = 0) → ⟪φ, f⟫_𝕜 = 0) :
+    f =ᵐ[μ.restrict A] 0 := by
+  have hmem : MemLp (A.indicator f) 2 μ := (Lp.memLp f).indicator hA.nullMeasurableSet
+  have hφ : ∀ᵐ x ∂μ, x ∉ A → hmem.toLp (A.indicator f) x = 0 := by
+    filter_upwards [hmem.coeFn_toLp] with x hx hxA
+    rw [hx, Set.indicator_of_notMem hxA]
+  -- The restriction of `f` to `A` is orthogonal to `f`, hence to itself.
+  have hself : ⟪hmem.toLp (A.indicator f), hmem.toLp (A.indicator f)⟫_𝕜 = 0 := by
+    rw [← h _ hφ, L2.inner_def, L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [hmem.coeFn_toLp] with x hx
+    rw [hx]
+    by_cases hxA : x ∈ A <;> simp [hxA]
+  have h0 := hmem.coeFn_toLp.symm.trans (Lp.eq_zero_iff_ae_eq_zero.1 (inner_self_eq_zero.1 hself))
+  rw [Filter.EventuallyEq, ae_restrict_iff' hA]
+  filter_upwards [h0] with x hx hxA
+  rwa [Set.indicator_of_mem hxA] at hx
+
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map
 `g ↦ ‖g⁺‖²` has derivative `k ↦ 2 ⟪f⁺, k⟫` at `f`. -/
@@ -323,6 +427,46 @@ theorem integral_sq_sum_of_pairwise_integral_mul_eq_zero
       (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
       (by simpa only [Real.inner_apply] using horth)
 
+/-- **Moving a term of a weak equation to the right-hand side.** If the pairings of `y` with `p`
+and with `p₀` differ pointwise by `⟪w, η⟫`, then `∫ ⟪y, p⟫ = ∫ ⟪g, η⟫` gives
+`∫ ⟪y, p₀⟫ = ∫ ⟪g - w, η⟫`, as soon as `⟪y, p₀⟫`, `⟪g, η⟫` and `⟪w, η⟫` are integrable. In a weak
+formulation `p` and `p₀` are the formal adjoints of two operators applied to a test function `η`,
+and `w` is the difference of the operators applied to the weak solution `y`. -/
+theorem integral_inner_eq_integral_inner_sub_of_inner_eq_add
+    {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {y p p₀ g w η : α → E}
+    (hp : ∀ x, ⟪y x, p x⟫_𝕜 = ⟪y x, p₀ x⟫_𝕜 + ⟪w x, η x⟫_𝕜)
+    (hp₀ : Integrable (fun x ↦ ⟪y x, p₀ x⟫_𝕜) μ) (hg : Integrable (fun x ↦ ⟪g x, η x⟫_𝕜) μ)
+    (hw : Integrable (fun x ↦ ⟪w x, η x⟫_𝕜) μ)
+    (hweak : ∫ x, ⟪y x, p x⟫_𝕜 ∂μ = ∫ x, ⟪g x, η x⟫_𝕜 ∂μ) :
+    ∫ x, ⟪y x, p₀ x⟫_𝕜 ∂μ = ∫ x, ⟪g x - w x, η x⟫_𝕜 ∂μ := by
+  simp_rw [inner_sub_left]
+  rw [integral_sub hg hw, ← hweak]
+  simp_rw [hp]
+  rw [integral_add hp₀ hw]
+  ring
+
+/-- **Bounding a weighted inner product pointwise.** If `‖b‖ ≤ w`, then
+`|⟪b, g⟫ f| ≤ w ‖g‖ |f|`. -/
+theorem norm_inner_mul_le_of_norm_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {b : E} {w : ℝ} (hb : ‖b‖ ≤ w) (g : E) (f : ℝ) :
+    ‖⟪b, g⟫_ℝ * f‖ ≤ w * (‖g‖ * ‖f‖) := by
+  rw [norm_mul, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right ((norm_inner_le_norm _ _).trans
+    (mul_le_mul_of_nonneg_right hb (norm_nonneg _))) (norm_nonneg _)
+
+/-- **Bounding an integrated inner product.** If `‖b‖ ≤ w` almost everywhere, then minus the
+pairing `∫ ⟪b, g⟫ f` of vector fields `b` and `g` weighted by a function `f` is at most
+`∫ w ‖g‖ |f|`. In a weak formulation, `b` is a drift and this bounds the drift term. -/
+theorem neg_integral_inner_mul_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] {b g : α → E} {f w : α → ℝ}
+    (hint : Integrable (fun x ↦ w x * (‖g x‖ * ‖f x‖)) μ) (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ w x) :
+    -∫ x, ⟪b x, g x⟫_ℝ * f x ∂μ ≤ ∫ x, w x * (‖g x‖ * ‖f x‖) ∂μ := by
+  refine (neg_le_abs _).trans ?_
+  rw [← Real.norm_eq_abs]
+  exact norm_integral_le_of_norm_le hint
+    (hb.mono fun x hx ↦ norm_inner_mul_le_of_norm_le hx (g x) (f x))
+
 end TauCeti
 
 section IntegralInner
@@ -336,6 +480,14 @@ theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
     ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
   simpa only [innerSLFlip_apply_apply] using
     (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+omit [CompleteSpace E] [NormedSpace ℝ E] in
+/-- Conjugate symmetry of the pairing `∫ ⟪f, g⟫` of two functions:
+`conj (∫ ⟪g, f⟫) = ∫ ⟪f, g⟫`. No integrability is needed, since conjugation commutes with the
+integral (`integral_conj`). -/
+theorem integral_inner_conj_symm (f g : α → E) :
+    conj (∫ x, ⟪g x, f x⟫_𝕜 ∂μ) = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ := by
+  simp_rw [← integral_conj, inner_conj_symm]
 
 /-- The Hilbert space adjoint commutes with the integral of an operator-valued function:
 `∫ (f x)† = (∫ f)†`, the counterpart of Mathlib's `integral_conj`. No integrability is needed,

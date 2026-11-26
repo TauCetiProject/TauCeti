@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Complex.Pompeiu.Newtonian
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
@@ -37,6 +38,12 @@ has a uniformly small gradient. In particular, if `u i → v` uniformly on `ℂ`
 solutions of a semilinear equation `Δu = F(z, u)` with bounded right-hand sides is upgraded to
 uniform convergence of their first derivatives.
 
+Applied to the components `y ↦ Dⁿu(y)(v₁, …, vₙ)`, whose Laplacians are the components of
+`Dⁿ(Δu)` because the Laplacian commutes with iterated derivatives
+(`ContDiff.laplacian_iteratedFDeriv`), the estimate bounds `Dⁿ⁺¹u(x)` by `Dⁿu` and `Dⁿ(Δu)`
+(`TauCeti.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`). For a semilinear
+equation `Δu = F(u)` this bounds every derivative of a solution, by induction on the order.
+
 The proof splits `u` into a Newtonian potential and a harmonic function. Choose a smooth cutoff
 `χ`, equal to one on `B(x, 2ρ)` and supported in `B(x, 3ρ)`, and let `p = G ⋆ (χ Δu)` be the
 Newtonian potential of `χ Δu`, with `G = TauCeti.planarNewtonianKernel`. Then `Δp = -χ Δu`
@@ -48,11 +55,18 @@ estimate for harmonic functions
 (`InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le`) bounds `‖Dh(x)‖` by `8 / ρ` times
 this, and `Du(x) = Dh(x) - Dp(x)`.
 
-The classical Poisson equation for `p` needs `χ Δu` to be `C²`, so `u` is assumed `C⁴`.
+The classical Poisson equation for `p` needs `χ Δu` to be `C²`, so `u` is assumed `C⁴` near the
+closed disc of radius `3ρ` about `x`. Since the estimate only sees `u` on that disc, it is first
+proved for globally `C⁴` functions and then applied to a globally `C⁴` function agreeing with `u`
+near the disc (`IsCompact.exists_contDiff_eventuallyEq`). This allows `u` to be singular away
+from the disc, as `log |α|²` is at the zeros of a section `α`.
 
 ## Main results
 
 * `TauCeti.norm_fderiv_le_of_abs_le_of_abs_laplacian_le`: the interior gradient estimate.
+* `TauCeti.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`: the same estimate
+  for the derivatives, `‖Dⁿ⁺¹u(x)‖ ≤ 8 ε / ρ + 340 K ρ` when `‖Dⁿu‖ ≤ ε` on `B(x, 2ρ)` and
+  `‖Dⁿ(Δu)‖ ≤ K` on `B(x, 3ρ)`.
 * `TendstoUniformly.fderiv_of_abs_laplacian_sub_le`: uniform convergence of the derivatives of
   uniformly converging functions whose Laplacians stay within a fixed distance.
 
@@ -115,11 +129,10 @@ private theorem exists_harmonicOnNhd_add_and_norm_fderiv_le {u : ℂ → ℝ} (h
     rw [RCLike.I_to_complex, Real.norm_eq_abs, Real.norm_eq_abs] at hL
     linarith
 
-/-- **Interior gradient estimate for Poisson's equation in the plane.** If `u` is `C⁴`, with
-`|u| ≤ ε` on `B(x, 2ρ)` and `|Δu| ≤ K` on `B(x, 3ρ)`, then `‖Du(x)‖ ≤ 8 ε / ρ + 340 K ρ`. -/
-theorem norm_fderiv_le_of_abs_le_of_abs_laplacian_le {u : ℂ → ℝ} (hu : ContDiff ℝ 4 u) {x : ℂ}
-    {ρ ε K : ℝ} (hρ : 0 < ρ) (hε : ∀ y ∈ ball x (2 * ρ), |u y| ≤ ε)
-    (hK : ∀ y ∈ ball x (3 * ρ), |Δ u y| ≤ K) :
+/-- The interior gradient estimate for a globally `C⁴` function. -/
+private theorem norm_fderiv_le_of_abs_le_of_abs_laplacian_le_of_contDiff {u : ℂ → ℝ}
+    (hu : ContDiff ℝ 4 u) {x : ℂ} {ρ ε K : ℝ} (hρ : 0 < ρ)
+    (hε : ∀ y ∈ ball x (2 * ρ), |u y| ≤ ε) (hK : ∀ y ∈ ball x (3 * ρ), |Δ u y| ≤ K) :
     ‖fderiv ℝ u x‖ ≤ 8 * ε / ρ + 340 * K * ρ := by
   obtain ⟨p, hp, hharm, hDp⟩ := exists_harmonicOnNhd_add_and_norm_fderiv_le hu hρ hK
   -- The oscillation of `p` on `B(x, 2ρ)` is at most `40 K ρ²`.
@@ -150,6 +163,80 @@ theorem norm_fderiv_le_of_abs_le_of_abs_laplacian_le {u : ℂ → ℝ} (hu : Con
         add_le_add (by exact_mod_cast hDh) (hDp x (mem_closedBall_self (by positivity)))
     _ = 8 * ε / ρ + 340 * K * ρ := by field_simp; ring
 
+/-- **Interior gradient estimate for Poisson's equation in the plane.** If `u` is `C⁴` near every
+point of the closed disc of radius `3ρ` about `x`, with `|u| ≤ ε` on `B(x, 2ρ)` and `|Δu| ≤ K` on
+`B(x, 3ρ)`, then `‖Du(x)‖ ≤ 8 ε / ρ + 340 K ρ`. Nothing is assumed about `u` outside that disc. -/
+theorem norm_fderiv_le_of_abs_le_of_abs_laplacian_le {u : ℂ → ℝ} {x : ℂ} {ρ ε K : ℝ}
+    (hu : ∀ y ∈ closedBall x (3 * ρ), ContDiffAt ℝ 4 u y) (hρ : 0 < ρ)
+    (hε : ∀ y ∈ ball x (2 * ρ), |u y| ≤ ε) (hK : ∀ y ∈ ball x (3 * ρ), |Δ u y| ≤ K) :
+    ‖fderiv ℝ u x‖ ≤ 8 * ε / ρ + 340 * K * ρ := by
+  -- A globally `C⁴` function `v` agreeing with `u` near the closed disc.
+  obtain ⟨v, hv, -, hvu⟩ := (isCompact_closedBall x (3 * ρ)).exists_contDiff_eventuallyEq 4 hu
+  have hvu' (y : ℂ) (hy : y ∈ ball x (3 * ρ)) : v =ᶠ[𝓝 y] u :=
+    hvu y (ball_subset_closedBall hy)
+  rw [← (hvu x (mem_closedBall_self (by positivity))).fderiv_eq]
+  refine norm_fderiv_le_of_abs_le_of_abs_laplacian_le_of_contDiff hv hρ (fun y hy ↦ ?_)
+    fun y hy ↦ ?_
+  · have hy' : y ∈ ball x (3 * ρ) := ball_subset_ball (by linarith) hy
+    rw [(hvu' y hy').self_of_nhds]
+    exact hε y hy
+  · rw [(laplacian_congr_nhds (hvu' y hy)).self_of_nhds]
+    exact hK y hy
+
+/-- **Interior estimate for the derivatives of a solution of Poisson's equation in the plane.** If
+`u` is `C^(n + 4)` near every point of the closed disc of radius `3ρ` about `x`, with `‖Dⁿu‖ ≤ ε`
+on `B(x, 2ρ)` and `‖Dⁿ(Δu)‖ ≤ K` on `B(x, 3ρ)`, then `‖Dⁿ⁺¹u(x)‖ ≤ 8 ε / ρ + 340 K ρ`. For
+`n = 0` this is `TauCeti.norm_fderiv_le_of_abs_le_of_abs_laplacian_le`. Iterated, it bounds every
+derivative of a solution of a semilinear equation `Δu = F(u)` by its lower derivatives. -/
+theorem norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le {u : ℂ → ℝ} {x : ℂ}
+    {ρ ε K : ℝ} {n : ℕ} (hu : ∀ y ∈ closedBall x (3 * ρ), ContDiffAt ℝ (n + 4) u y) (hρ : 0 < ρ)
+    (hε : ∀ y ∈ ball x (2 * ρ), ‖iteratedFDeriv ℝ n u y‖ ≤ ε)
+    (hK : ∀ y ∈ ball x (3 * ρ), ‖iteratedFDeriv ℝ n (Δ u) y‖ ≤ K) :
+    ‖iteratedFDeriv ℝ (n + 1) u x‖ ≤ 8 * ε / ρ + 340 * K * ρ := by
+  -- A globally `C^(n + 4)` function `v` agreeing with `u` near the closed disc.
+  obtain ⟨v, hv, -, hvu⟩ :=
+    (isCompact_closedBall x (3 * ρ)).exists_contDiff_eventuallyEq (n + 4) hu
+  have hvu' (y : ℂ) (hy : y ∈ ball x (3 * ρ)) : v =ᶠ[𝓝 y] u :=
+    hvu y (ball_subset_closedBall hy)
+  have hε₀ : 0 ≤ ε := (norm_nonneg _).trans (hε x (mem_ball_self (by positivity)))
+  have hK₀ : 0 ≤ K := (norm_nonneg _).trans (hK x (mem_ball_self (by positivity)))
+  have hDv : ContDiff ℝ 4 (iteratedFDeriv ℝ n v) := hv.iteratedFDeriv_right (by norm_cast; omega)
+  -- On `B(x, 3ρ)` the derivatives of `v` and of `Δ v` are those of `u` and of `Δ u`.
+  have hDvu (y : ℂ) (hy : y ∈ ball x (3 * ρ)) : iteratedFDeriv ℝ n v y = iteratedFDeriv ℝ n u y :=
+    ((hvu' y hy).iteratedFDeriv ℝ n).self_of_nhds
+  have hΔvu (y : ℂ) (hy : y ∈ ball x (3 * ρ)) :
+      Δ (iteratedFDeriv ℝ n v) y = iteratedFDeriv ℝ n (Δ u) y := by
+    rw [(hv.of_le (by norm_cast; omega)).laplacian_iteratedFDeriv]
+    refine (Filter.EventuallyEq.iteratedFDeriv ℝ ?_ n).self_of_nhds
+    filter_upwards [(hvu' y hy).eventually_nhds] with y' hy' using
+      (laplacian_congr_nhds hy').self_of_nhds
+  rw [← ((hvu x (mem_closedBall_self (by positivity))).iteratedFDeriv ℝ (n + 1)).self_of_nhds]
+  refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ ?_
+  -- The component `g = Dⁿv(·)(m₁, …, mₙ)` and the gradient estimate for it.
+  set P : ℝ := ∏ i, ‖Fin.tail m i‖
+  have hP : 0 ≤ P := by positivity
+  set l := ContinuousMultilinearMap.apply ℝ (fun _ : Fin n ↦ ℂ) ℝ (Fin.tail m)
+  have hg : ContDiff ℝ 4 (l ∘ iteratedFDeriv ℝ n v) := l.contDiff.comp hDv
+  have hgx := norm_fderiv_le_of_abs_le_of_abs_laplacian_le (u := l ∘ iteratedFDeriv ℝ n v) (x := x)
+    (ε := ε * P) (K := K * P) (fun y _ ↦ hg.contDiffAt) hρ (fun y hy ↦ ?_) (fun y hy ↦ ?_)
+  · rw [iteratedFDeriv_succ_apply_left, ← fderiv_continuousMultilinear_apply_const_apply
+      ((hDv.differentiable (by norm_num)) x), Fin.prod_univ_succ]
+    have hl : (fun y ↦ iteratedFDeriv ℝ n v y (Fin.tail m)) = l ∘ iteratedFDeriv ℝ n v :=
+      funext fun y ↦ (ContinuousMultilinearMap.apply_apply ..).symm
+    rw [hl]
+    calc ‖fderiv ℝ (l ∘ iteratedFDeriv ℝ n v) x (m 0)‖
+        ≤ ‖fderiv ℝ (l ∘ iteratedFDeriv ℝ n v) x‖ * ‖m 0‖ := ContinuousLinearMap.le_opNorm _ _
+      _ ≤ (8 * (ε * P) / ρ + 340 * (K * P) * ρ) * ‖m 0‖ :=
+        mul_le_mul_of_nonneg_right hgx (norm_nonneg _)
+      _ = (8 * ε / ρ + 340 * K * ρ) * (‖m 0‖ * P) := by ring
+  · have hy' : y ∈ ball x (3 * ρ) := ball_subset_ball (by linarith) hy
+    rw [← Real.norm_eq_abs, Function.comp_apply, ContinuousMultilinearMap.apply_apply, hDvu y hy']
+    exact ((iteratedFDeriv ℝ n u y).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hε y hy) hP)
+  · rw [← Real.norm_eq_abs, (hDv.contDiffAt.of_le (by norm_num)).laplacian_CLM_comp_left,
+      Function.comp_apply, ContinuousMultilinearMap.apply_apply, hΔvu y hy]
+    exact ((iteratedFDeriv ℝ n (Δ u) y).le_opNorm _).trans
+      (mul_le_mul_of_nonneg_right (hK y hy) hP)
+
 end TauCeti
 
 open TauCeti InnerProductSpace Laplacian Metric in
@@ -174,7 +261,7 @@ theorem TendstoUniformly.fderiv_of_abs_laplacian_sub_le {ι : Type*} {l : Filter
   filter_upwards [h (ε * ρ / 16) (by positivity), hu, hK] with i hi hui hKi z
   -- Apply the interior gradient estimate to `u i - v`.
   have hd := norm_fderiv_le_of_abs_le_of_abs_laplacian_le (u := u i - v) (x := z) (ρ := ρ)
-    (ε := ε * ρ / 16) (K := K₀) (hui.sub hv) hρ
+    (ε := ε * ρ / 16) (K := K₀) (fun y _ ↦ (hui.sub hv).contDiffAt) hρ
     (fun y _ ↦ by rw [Pi.sub_apply, abs_sub_comm, ← Real.dist_eq]; exact (hi y).le)
     (fun y _ ↦ by
       rw [ContDiffAt.laplacian_sub (hui.of_le (by norm_num)).contDiffAt

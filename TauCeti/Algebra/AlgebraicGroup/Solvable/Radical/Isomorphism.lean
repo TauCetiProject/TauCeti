@@ -107,11 +107,7 @@ theorem comapOfSurjective_solvableRadicalDefiningIdeal (e : H ≅ K) :
     intro x hx
     have hx' := hle (HopfIdeal.mem_comapOfSurjective.mp hx)
     have hx'' := HopfIdeal.mem_comapOfSurjective.mp hx'
-    have hcancel : (toBialgHom e.inv) ((toBialgHom e.hom) x) = x := by
-      have h := congrArg (fun f : H ⟶ H => toBialgHom f x) e.hom_inv_id
-      simpa only [toBialgHom_comp, BialgHom.comp_apply, toBialgHom_id,
-        BialgHom.coe_id, id_eq] using h
-    rwa [hcancel] at hx''
+    rwa [toBialgHom_inv_hom_apply] at hx''
   · exact solvableRadicalDefiningIdeal_le H pulled hpulled
 
 /-- An isomorphism of finite-type commutative Hopf algebras induces an isomorphism of their

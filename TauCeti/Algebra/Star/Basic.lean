@@ -21,7 +21,8 @@ and `IsScalarTower R A A`, applying `star` shows that scalars commute with left 
 In a star ring whose star is proper (`IsProperStar`: `star x * x = 0` forces `x = 0`), such as a
 C⋆-algebra, an element killed by every two-sided multiplication `star d * X * c` vanishes. This is
 how entrywise identities are read off from sesquilinear forms with coefficients in the ring, for
-instance for matrices over a C⋆-algebra.
+instance for matrices over a C⋆-algebra. Properness itself follows from a positive functional:
+an involution with `t (x x*) > 0` for every `x ≠ 0`, for an additive `t`, is proper.
 
 In particular, a ring with proper star has zero left and right annihilators. These are recorded
 as the instances `FaithfulSMul Rᵐᵒᵖ R` and `FaithfulSMul R R` for the actions of `R` on itself by
@@ -41,6 +42,8 @@ equivalence of complex vector spaces is real-linear.
 * `TauCeti.exists_left_identity_iff` and `TauCeti.exists_right_identity_iff`: in a magma with an
   antimultiplicative involution, a left (respectively, right) identity exists if and only if a
   two-sided identity exists.
+* `TauCeti.isProperStar_of_forall_pos_mul_star`: an involution with a positive functional
+  `t (x x*) > 0` is proper.
 * `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
   `d`, then `X = 0`.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
@@ -51,6 +54,10 @@ equivalence of complex vector spaces is real-linear.
   there.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
+* `Units.star_neg`: in a star ring, `star (-u) = -star u` for a unit `u`; in particular `star`
+  fixes the unit `-1`.
+* `RingHom.star_comp_right`: conjugating a ring homomorphism into a star ring commutes with
+  precomposition.
 -/
 
 public section
@@ -93,6 +100,17 @@ theorem exists_right_identity_iff {A : Type*} [Mul A] [StarMul A] :
   exact ⟨e'.unop, fun b ↦
     ⟨by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).2,
       by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).1⟩⟩
+
+/-- An involution with `t (x x*) > 0` for every `x ≠ 0`, for some additive map `t` to a preorder,
+is proper. -/
+theorem isProperStar_of_forall_pos_mul_star {R M : Type*} [NonUnitalSemiring R] [StarRing R]
+    [AddMonoid M] [Preorder M] (t : R →+ M) (h : ∀ x : R, x ≠ 0 → 0 < t (x * star x)) :
+    IsProperStar R where
+  eq_zero_of_star_mul_self_eq_zero {x} hx := by
+    by_contra hx0
+    have := h (star x) (star_ne_zero.mpr hx0)
+    rw [star_star, hx, map_zero] at this
+    exact lt_irrefl _ this
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] [IsProperStar R]
 
@@ -175,3 +193,25 @@ theorem restrictScalarsₛₗ_symm (f : V ≃ₗ⋆[S] W) :
   (rfl)
 
 end LinearEquiv
+
+namespace Units
+
+variable {R : Type*} [Ring R] [StarRing R]
+
+/-- The star of the negation of a unit of a star ring is the negation of its star. -/
+@[simp]
+theorem star_neg (u : Rˣ) : star (-u) = -star u :=
+  Units.ext (_root_.star_neg (u : R))
+
+end Units
+
+namespace RingHom
+
+variable {R S T : Type*} [CommSemiring R] [StarRing R] [NonAssocSemiring S] [NonAssocSemiring T]
+
+/-- Conjugating a ring homomorphism precomposed with `f` is precomposing its conjugate with `f`:
+`conj ∘ (ψ ∘ f) = (conj ∘ ψ) ∘ f`. -/
+theorem star_comp_right (ψ : S →+* R) (f : T →+* S) : star (ψ.comp f) = (star ψ).comp f :=
+  (rfl)
+
+end RingHom

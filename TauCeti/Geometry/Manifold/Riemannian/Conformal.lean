@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
 # First-order quantities under a conformal change of metric
@@ -48,6 +49,10 @@ For the Yamabe problem, `f = u ^ (4 / (n - 2))` with `u` positive, so that
   metric is `f⁻¹` times the gradient for `g`.
 * `TauCeti.WithMetric.inner_mgradient_rescale`: the corresponding identity for the pointwise
   Dirichlet energy density.
+* `Bundle.ContMDiffRiemannianMetric.mgradient_rescale` and
+  `Bundle.ContMDiffRiemannianMetric.norm_mgradient_rescale`: the same gradient law for the metric
+  installed as the `RiemannianBundle` instance of `M` itself, `grad_{f g} u = f⁻¹ grad_g u`, and
+  `|grad_{f g} u|_{f g} = f^{-1/2} |grad_g u|_g`.
 * `TauCeti.WithMetric.chartGramMatrix_rescale` and
   `TauCeti.WithMetric.chartInvGramMatrix_rescale`: the chart Gram matrix scales by `f`, and its
   inverse by `f⁻¹`.
@@ -208,3 +213,50 @@ theorem chartVolumeDensity_rescale (α x : M) :
     Real.sqrt_pow_eq_rpow (hf_pos x).le]
 
 end TauCeti.WithMetric
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+/-! ### The gradient for the installed metric -/
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- Multiplying a metric by a positive function `f` divides the gradient of every function at `x`
+by `f x`. -/
+theorem mgradient_rescale [IsManifold I 1 M] {k : ℕ∞ω}
+    (g : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x) (u : M → ℝ) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      TauCeti.Manifold.mgradient I u x) =
+    (f x)⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      TauCeti.Manifold.mgradient I u x) := by
+  have hg (v : TangentSpace I x) :
+      g.inner x (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I u x) v = mvfderiv I u x v := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    exact TauCeti.Manifold.inner_mgradient v
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  refine (TauCeti.Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
+  rw [inner_riemannianBundle, rescale_inner, map_smul, smul_apply, hg, smul_eq_mul,
+    ← mul_assoc, mul_inv_cancel₀ (hf_pos x).ne', one_mul]
+
+/-- Multiplying a metric by a positive function `f` divides the length of the gradient of every
+function at `x` by `√(f x)`. -/
+theorem norm_mgradient_rescale [IsManifold I 1 M] {k : ℕ∞ω}
+    (g : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x) (u : M → ℝ) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      ‖TauCeti.Manifold.mgradient I u x‖) =
+    (√(f x))⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.toRiemannianMetric⟩;
+      ‖TauCeti.Manifold.mgradient I u x‖) := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  rw [g.mgradient_rescale hf hf_pos, norm_smul, g.norm_rescale f hf hf_pos, Real.norm_eq_abs,
+    abs_of_pos (inv_pos.2 (hf_pos x)), ← mul_assoc, inv_mul_eq_div, Real.sqrt_div_self]
+
+end Bundle.ContMDiffRiemannianMetric

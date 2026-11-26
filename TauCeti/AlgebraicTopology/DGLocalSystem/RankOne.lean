@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.Homology
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Cohomology
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Twist
+public import TauCeti.Algebra.Ring.Int.Units
 public import TauCeti.Algebra.Homology.DG.Twisted.Map
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
@@ -53,11 +54,16 @@ cohomological degree `p = -q`.
 Rank-one local systems form a commutative group under the tensor product, on which loops act by
 the product of the units. Twisting turns products into composites, `Φ^{L L'} = Φ^L ∘ Φ^{L'}`
 (`TauCeti.RankOneLocalSystem.twist_mul`), so `𝓕 ⊗ (L L') ≅ (𝓕 ⊗ L) ⊗ L'`
-(`TauCeti.RankOneLocalSystem.tensorMulIso`) and `m^{L L'} = (m^{L'})^L`. The monodromy is an
+(`TauCeti.RankOneLocalSystem.tensorMulIso`) and `m^{L L'} = (m^{L'})^L`, and tensoring with `L` is
+an autoequivalence of DG local systems with inverse tensoring with `L⁻¹`
+(`TauCeti.RankOneLocalSystem.tensorEquivalence`). The monodromy is an
 isomorphism of groups onto the characters `π₁(B, b) →* Rˣ`
 (`TauCeti.RankOneLocalSystem.monodromyEquiv`), with inverse
 `TauCeti.RankOneLocalSystem.ofMonodromy`, so a rank-one local system is a classical local system of
-rank one.
+rank one. A character with values in `ℤˣ = {±1}`, read in `Rˣ`, gives a rank-one local system which
+is its own inverse (`TauCeti.RankOneLocalSystem.inv_ofMonodromy_unitsMap_comp`) and which is
+trivial exactly when the character is trivial or `2 = 0` in `R`
+(`TauCeti.RankOneLocalSystem.ofMonodromy_unitsMap_comp_eq_one_iff`).
 
 Along a based map `f : (B, b) → (B', b')`, rank-one local systems pull back by letting a loop act
 through its image (`TauCeti.RankOneLocalSystem.pullback`), a group homomorphism, functorial in `f`,
@@ -70,6 +76,15 @@ systems commutes with tensoring, `f^*(𝓕 ⊗ L) ≅ f^* 𝓕 ⊗ f^* L`
 the orientation local system of a manifold, pulled back along the evaluation of free loops, are
 combined.
 
+Along a ring homomorphism `φ : R →+* R'`, rank-one local systems extend their coefficients by
+letting a loop act through the image of its unit (`TauCeti.RankOneLocalSystem.mapRingHom`), a group
+homomorphism, functorial in `φ` and commuting with pullback, whose monodromy is the monodromy
+followed by `φ`. A local system whose monodromy takes values in `ℤˣ = {±1}` is defined over `ℤ`:
+its extension along `φ` is the same character read in `R'ˣ`
+(`TauCeti.RankOneLocalSystem.mapRingHom_ofMonodromy_unitsMap_comp`). On chains, extending the
+coefficients carries `Φ^L` to `Φ^{φ_* L}`
+(`TauCeti.RankOneLocalSystem.mapRingHom_twist_character`).
+
 ## Main definitions
 
 * `TauCeti.RankOneLocalSystem B b R`: rank-one local systems on `(B, b)`.
@@ -80,8 +95,11 @@ combined.
 * `TauCeti.RankOneLocalSystem.monodromyEquiv`: rank-one local systems are the characters of
   `π₁(B, b)`, with inverse `TauCeti.RankOneLocalSystem.ofMonodromy`.
 * `TauCeti.RankOneLocalSystem.pullback f hf`: the pullback along a based map.
+* `TauCeti.RankOneLocalSystem.mapRingHom φ`: the extension of coefficients along a ring
+  homomorphism `φ : R →+* R'`.
 * `TauCeti.RankOneLocalSystem.tensorOneIso`, `TauCeti.RankOneLocalSystem.tensorMulIso`:
   `𝓕 ⊗ 1 ≅ 𝓕` and `𝓕 ⊗ (L L') ≅ (𝓕 ⊗ L) ⊗ L'`.
+* `TauCeti.RankOneLocalSystem.tensorEquivalence L`: the autoequivalence `𝓕 ↦ 𝓕 ⊗ L`.
 * `TauCeti.RankOneLocalSystem.tensorPullbackIso`: `f^*(𝓕 ⊗ L) ≅ f^* 𝓕 ⊗ f^* L`.
 * `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivTprod`: `H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L`.
 * `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivCharTwist`: the same, with `L` absorbed
@@ -96,6 +114,9 @@ combined.
 * `TauCeti.RankOneLocalSystem.twist_comp_twist_inv`: `Φ^L` is invertible.
 * `TauCeti.RankOneLocalSystem.twist_mul`: `Φ^{L L'} = Φ^L ∘ Φ^{L'}`.
 * `TauCeti.RankOneLocalSystem.loopChainMap_comp_twist_pullback`: twisting is natural in the space.
+* `TauCeti.RankOneLocalSystem.mapRingHom_ofMonodromy_unitsMap_comp`,
+  `TauCeti.RankOneLocalSystem.mapRingHom_twist_character`: a local system with `ℤˣ`-valued
+  monodromy is defined over `ℤ`, and twisting commutes with extension of coefficients.
 * `TauCeti.RankOneLocalSystem.twistCocycle_mul`,
   `TauCeti.RankOneLocalSystem.twistCocycle_map_loopChainMap`: `m^{L L'} = (m^{L'})^L`, and
   twisting commutes with pushing cocycles forward.
@@ -316,6 +337,64 @@ theorem tensorMulIso_inv_app (L L' : RankOneLocalSystem B b R) (𝓕 : DGLocalSy
         eqToHom (by rw [tensor, twist_mul]) := by
   simp [tensorMulIso, ← Iso.app_inv, DGRightModuleCat.restrictScalarsComp_app]
 
+/-- **Tensoring with `L` is an autoequivalence** of DG local systems, with inverse tensoring with
+`L⁻¹`. This is restriction of scalars along the automorphism `Φ^L`
+(`TauCeti.DGRightModuleCat.restrictScalarsEquivalence`). -/
+@[expose]
+def tensorEquivalence : DGLocalSystem.{uM} B b R ≌ DGLocalSystem.{uM} B b R :=
+  DGRightModuleCat.restrictScalarsEquivalence L.twist L⁻¹.twist (twist_comp_twist_inv L)
+    (twist_inv_comp_twist L)
+
+@[simp]
+theorem tensorEquivalence_functor : L.tensorEquivalence.{uM}.functor = L.tensor :=
+  (rfl)
+
+@[simp]
+theorem tensorEquivalence_inverse : L.tensorEquivalence.{uM}.inverse = L⁻¹.tensor :=
+  (rfl)
+
+/-- The component of the unit of `tensorEquivalence` at `𝓕`: `𝓕 ≅ 𝓕 ⊗ 1 = 𝓕 ⊗ (L L⁻¹) ≅
+(𝓕 ⊗ L) ⊗ L⁻¹`. -/
+@[simp]
+theorem tensorEquivalence_unitIso_hom_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.unitIso.hom.app 𝓕 =
+      tensorOneIso.inv.app 𝓕 ≫ eqToHom (by rw [mul_inv_cancel]) ≫
+        (tensorMulIso L L⁻¹).hom.app 𝓕 := by
+  simp [tensorEquivalence]
+  -- The two remaining `eqToHom`s have definitionally equal endpoints.
+  rfl
+
+/-- The component of the inverse of the unit of `tensorEquivalence` at `𝓕`. -/
+@[simp]
+theorem tensorEquivalence_unitIso_inv_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.unitIso.inv.app 𝓕 =
+      (tensorMulIso L L⁻¹).inv.app 𝓕 ≫ eqToHom (by rw [mul_inv_cancel]) ≫
+        tensorOneIso.hom.app 𝓕 := by
+  simp [tensorEquivalence]
+  -- The two remaining `eqToHom`s have definitionally equal endpoints.
+  rfl
+
+/-- The component of the counit of `tensorEquivalence` at `𝓕`: `(𝓕 ⊗ L⁻¹) ⊗ L ≅
+𝓕 ⊗ (L⁻¹ L) = 𝓕 ⊗ 1 ≅ 𝓕`. -/
+@[simp]
+theorem tensorEquivalence_counitIso_hom_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.counitIso.hom.app 𝓕 =
+      (tensorMulIso L⁻¹ L).inv.app 𝓕 ≫ eqToHom (by rw [inv_mul_cancel]) ≫
+        tensorOneIso.hom.app 𝓕 := by
+  simp [tensorEquivalence]
+  -- The two remaining `eqToHom`s have definitionally equal endpoints.
+  rfl
+
+/-- The component of the inverse of the counit of `tensorEquivalence` at `𝓕`. -/
+@[simp]
+theorem tensorEquivalence_counitIso_inv_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.counitIso.inv.app 𝓕 =
+      tensorOneIso.inv.app 𝓕 ≫ eqToHom (by rw [inv_mul_cancel]) ≫
+        (tensorMulIso L⁻¹ L).hom.app 𝓕 := by
+  simp [tensorEquivalence]
+  -- The two remaining `eqToHom`s have definitionally equal endpoints.
+  rfl
+
 /-- Moore loops with the same class in the fundamental group act by the same unit. -/
 theorem ρ_eq_of_fundamentalGroupHom_eq {γ δ : MooreLoopSpace B b}
     (h : MooreLoopSpace.fundamentalGroupHom b γ = MooreLoopSpace.fundamentalGroupHom b δ) :
@@ -422,6 +501,36 @@ theorem monodromy_inv : L⁻¹.monodromy = L.monodromy⁻¹ :=
 theorem monodromy_injective : Function.Injective (monodromy : RankOneLocalSystem B b R → _) :=
   monodromyEquiv.injective
 
+/-! ### Characters with values in `ℤˣ` -/
+
+/-- A Moore loop acts on the rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`,
+read in `Rˣ`, by the value of `χ` on its class: the inverse in `ofMonodromy` disappears, since `χ`
+takes only the values `±1`. -/
+theorem ofMonodromy_unitsMap_comp_ρ_apply (χ : FundamentalGroup B b →* ℤˣ)
+    (γ : MooreLoopSpace B b) :
+    (ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ)).ρ γ =
+      Units.map (Int.castRingHom R).toMonoidHom (χ (MooreLoopSpace.fundamentalGroupHom b γ)) := by
+  rw [ofMonodromy_ρ_apply, MonoidHom.comp_apply, ← map_inv, Int.units_inv_eq_self]
+
+/-- The rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`, read in `Rˣ`, is
+trivial exactly when `χ` is trivial or `2 = 0` in `R`. -/
+theorem ofMonodromy_unitsMap_comp_eq_one_iff (χ : FundamentalGroup B b →* ℤˣ) :
+    ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ) = 1 ↔
+      χ = 1 ∨ (2 : R) = 0 := by
+  rw [← monodromy_injective.eq_iff, monodromy_ofMonodromy, monodromy_one, MonoidHom.ext_iff,
+    MonoidHom.ext_iff]
+  simp only [MonoidHom.comp_apply, MonoidHom.one_apply, Int.unitsMap_castRingHom_eq_one_iff,
+    forall_or_right]
+
+/-- The rank-one local system whose monodromy is a `ℤˣ`-valued character, read in `Rˣ`, is its own
+inverse, since the character takes only the values `±1`. -/
+theorem inv_ofMonodromy_unitsMap_comp (χ : FundamentalGroup B b →* ℤˣ) :
+    (ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ))⁻¹ =
+      ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ) :=
+  monodromy_injective <| MonoidHom.ext fun γ ↦ by
+    rw [monodromy_inv, MonoidHom.inv_apply, monodromy_ofMonodromy, MonoidHom.comp_apply, ← map_inv,
+      Int.units_inv_eq_self]
+
 /-! ### Pullback along based maps -/
 
 section Pullback
@@ -509,6 +618,96 @@ theorem tensorPullbackIso_inv_app (f : C(B, B')) (hf : f b = b') (L : RankOneLoc
   simp [tensorPullbackIso, ← Iso.app_hom, ← Iso.app_inv, DGRightModuleCat.restrictScalarsComp_app]
 
 end Pullback
+
+/-! ### Extension of coefficients -/
+
+section MapRingHom
+
+variable {R' R'' : Type*} [CommRing R'] [CommRing R'']
+
+/-- **Extension of coefficients** of rank-one local systems along a ring homomorphism
+`φ : R →+* R'`, as a group homomorphism: a loop acts on `R'` by the image under `φ` of the unit by
+which it acts on `R`. -/
+def mapRingHom (φ : R →+* R') : RankOneLocalSystem B b R →* RankOneLocalSystem B b R' where
+  toFun L :=
+    { ρ := (Units.map (φ : R →* R')).comp L.ρ
+      eq_of_joined := fun _ _ h ↦ by
+        rw [MonoidHom.comp_apply, MonoidHom.comp_apply, L.eq_of_joined h] }
+  map_one' := RankOneLocalSystem.ext <| MonoidHom.ext fun _ ↦ map_one (Units.map (φ : R →* R'))
+  map_mul' L L' := RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦
+    map_mul (Units.map (φ : R →* R')) (L.ρ γ) (L'.ρ γ)
+
+/-- A loop acts on the extension of coefficients by the image under `φ` of the unit by which it
+acts on `L`. -/
+@[simp]
+theorem mapRingHom_ρ_apply (φ : R →+* R') (L : RankOneLocalSystem B b R) (γ : MooreLoopSpace B b) :
+    (mapRingHom φ L).ρ γ = Units.map (φ : R →* R') (L.ρ γ) :=
+  (rfl)
+
+/-- The character of the extension of coefficients is the character followed by `φ`. -/
+@[simp]
+theorem mapRingHom_character (φ : R →+* R') (L : RankOneLocalSystem B b R) :
+    (mapRingHom φ L).character = (φ : R →* R').comp L.character :=
+  MonoidHom.ext fun _ ↦ by simp
+
+/-- The character of the extension of coefficients is the character followed by `φ`, pointwise. -/
+theorem mapRingHom_character_apply (φ : R →+* R') (L : RankOneLocalSystem B b R)
+    (γ : MooreLoopSpace B b) : (mapRingHom φ L).character γ = φ (L.character γ) := by
+  rw [mapRingHom_character, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
+
+/-- Extension of coefficients along the identity is the identity. -/
+@[simp]
+theorem mapRingHom_id : mapRingHom (B := B) (b := b) (RingHom.id R) = MonoidHom.id _ :=
+  MonoidHom.ext fun _ ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun _ ↦ by simp
+
+/-- Extension of coefficients along a composite is the composite of the extensions. -/
+theorem mapRingHom_comp (ψ : R' →+* R'') (φ : R →+* R') :
+    mapRingHom (B := B) (b := b) (ψ.comp φ) = (mapRingHom ψ).comp (mapRingHom φ) :=
+  MonoidHom.ext fun _ ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun _ ↦ Units.ext (by simp)
+
+/-- The monodromy of the extension of coefficients is the monodromy followed by `φ`. -/
+@[simp]
+theorem monodromy_mapRingHom (φ : R →+* R') (L : RankOneLocalSystem B b R) :
+    (mapRingHom φ L).monodromy = (Units.map (φ : R →* R')).comp L.monodromy :=
+  MooreLoopSpace.fundamentalGroup_hom_ext fun γ ↦ by
+    rw [monodromy_fundamentalGroupHom, mapRingHom_ρ_apply, MonoidHom.comp_apply,
+      monodromy_fundamentalGroupHom, map_inv]
+
+/-- The extension of coefficients of the rank-one local system with monodromy `χ` is the rank-one
+local system with monodromy `χ` followed by `φ`. -/
+theorem mapRingHom_ofMonodromy (φ : R →+* R') (χ : FundamentalGroup B b →* Rˣ) :
+    mapRingHom φ (ofMonodromy χ) = ofMonodromy ((Units.map (φ : R →* R')).comp χ) :=
+  monodromy_injective <| by rw [monodromy_mapRingHom, monodromy_ofMonodromy, monodromy_ofMonodromy]
+
+/-- **A rank-one local system with `ℤˣ`-valued monodromy is defined over `ℤ`**: read in `Rˣ`, its
+extension of coefficients along any `φ : R →+* R'` is the same character read in `R'ˣ`. -/
+@[simp]
+theorem mapRingHom_ofMonodromy_unitsMap_comp (φ : R →+* R') (χ : FundamentalGroup B b →* ℤˣ) :
+    mapRingHom φ (ofMonodromy ((Units.map (Int.castRingHom R : ℤ →* R)).comp χ)) =
+      ofMonodromy ((Units.map (Int.castRingHom R' : ℤ →* R')).comp χ) := by
+  rw [mapRingHom_ofMonodromy]
+  refine congrArg ofMonodromy (MonoidHom.ext fun g ↦ Units.ext ?_)
+  simp
+
+/-- **Extension of coefficients commutes with pullback** along a based map. -/
+@[simp]
+theorem mapRingHom_pullback {B' : Type*} [TopologicalSpace B'] {b' : B'} (φ : R →+* R')
+    (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R) :
+    mapRingHom φ (pullback f hf L) = pullback f hf (mapRingHom φ L) :=
+  (rfl)
+
+/-- **The twist commutes with extension of coefficients**: in each degree, extending the
+coefficients of the chains on the Moore loops along `φ` carries the twist `Φ^L` to the twist
+`Φ^{φ_* L}` of the extended local system, `φ_* ∘ Φ^L = Φ^{φ_* L} ∘ φ_*`. -/
+theorem mapRingHom_twist_character (φ : R →+* R') (L : RankOneLocalSystem B b R) {n : ℕ}
+    (y : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
+    NormalizedCubicalChain.mapRingHom _ φ n (NormalizedCubicalChain.twist L.character n y) =
+      NormalizedCubicalChain.twist (mapRingHom φ L).character n
+        (NormalizedCubicalChain.mapRingHom _ φ n y) := by
+  rw [NormalizedCubicalChain.mapRingHom_twist, mapRingHom_character, MonoidHom.coe_comp,
+    MonoidHom.coe_ofClass]
+
+end MapRingHom
 
 end RankOneLocalSystem
 
@@ -611,7 +810,8 @@ private theorem cohomologyMap_twist_groupAlgebraToLoopChainCohomology (γ : Moor
     ← Ideal.Quotient.mkₐ_eq_mk R, ← map_smul]
   congr 1
   apply Subtype.ext
-  rw [DGAlgHom.cyclesMap_apply_coe, twist_lof_ofCube, SingularCube.point_apply, SetLike.val_smul]
+  simp only [DGAlgHom.cyclesMap_apply_coe, SetLike.val_smul, cubicalChainPoint_def,
+    twist_lof_ofCube, SingularCube.point_apply]
 
 /-- The class of `Φ^L` applied to the point chain of `γ` acts as `ρ γ` times the point chain. -/
 private theorem cohomologyAction_cohomologyMap_twist

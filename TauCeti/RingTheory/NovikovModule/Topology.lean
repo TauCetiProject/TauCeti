@@ -70,6 +70,8 @@ between them can be checked on their coefficients at single generators.
   summable exactly when only finitely many members are nonzero above each potential cutoff.
 * `TauCeti.NovikovModule.addHom_ext`, `TauCeti.NovikovModule.lhom_ext`: continuous additive or
   linear maps agreeing on single generators are equal.
+* `TauCeti.NovikovModule.smul_mem_potentialFiltration_sub`: a Novikov series supported in periods
+  at least `D` maps `U_C` into `U_(C - D)`.
 * `TauCeti.NovikovModule.continuousSMul_module`: the Novikov scalar action is continuous.
 * `TauCeti.NovikovModule.continuous_kernelMap`: kernel maps are continuous.
 * `TauCeti.NovikovModule.kernelMap_toKernel`,
@@ -267,9 +269,7 @@ theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → NovikovModule 
 
 instance : T2Space (NovikovModule R F) :=
   IsTopologicalAddGroup.t2Space_of_zero_sep fun a ha => by
-    obtain ⟨s, hs⟩ : ∃ s, a.val s ≠ 0 := by
-      by_contra! h
-      exact ha (Subtype.ext (funext h))
+    obtain ⟨s, hs⟩ := ne_zero_iff.1 ha
     exact ⟨_, potentialFiltration_mem_nhds_zero (F s - 1), fun ha' =>
       hs (ha' s (sub_one_lt _))⟩
 
@@ -401,6 +401,23 @@ theorem mem_potentialFiltration_iff_coordinates {C : ℝ} {a : NovikovModule R F
       ∀ i, coordinates hF r a i ∈ NovikovSeries.periodFiltration R N (F ⟨i, r i⟩ - C) := by
   simp only [mem_potentialFiltration, NovikovSeries.mem_periodFiltration]
   exact (coordinates_coeff_eq_zero_iff hF r a C).symm
+
+omit r in
+/-- **Filtered scalar action.** A Novikov series whose coefficients vanish below the period `D`
+maps the completed combinations vanishing above the potential `C` to those vanishing above
+`C - D`. -/
+theorem smul_mem_potentialFiltration_sub {b : NovikovSeries R H N} {a : NovikovModule R F}
+    {C D : ℝ} (hb : b ∈ NovikovSeries.periodFiltration R N D)
+    (ha : a ∈ potentialFiltration R F C) :
+    letI := module (R := R) hF
+    b • a ∈ potentialFiltration R F (C - D) := by
+  let := module (R := R) hF
+  let r : ∀ i, P i := fun i => Classical.arbitrary (P i)
+  rw [mem_potentialFiltration_iff_coordinates hF r] at ha ⊢
+  intro i
+  rw [coordinates_smul, Pi.smul_apply, smul_eq_mul]
+  have := NovikovSeries.mul_mem_periodFiltration hb (ha i)
+  rwa [show D + (F ⟨i, r i⟩ - C) = F ⟨i, r i⟩ - (C - D) by ring] at this
 
 /-- Coordinates in any chosen lifts are continuous for the potential-cutoff topology. -/
 @[fun_prop]

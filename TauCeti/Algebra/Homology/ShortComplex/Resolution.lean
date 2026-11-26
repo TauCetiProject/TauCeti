@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Double
+public import TauCeti.Algebra.Homology.Single.Basic
 
 /-!
 # Two-term presentation complexes
 
 A short complex `S : S.X₁ ⟶ S.X₂ ⟶ S.X₃` determines the chain complex
 `⋯ ⟶ 0 ⟶ S.X₁ ⟶ S.X₂`, augmented to `S.X₃`. This file constructs the complex, its augmentation,
-and the chain maps induced by morphisms of short complexes in any category with zero morphisms
-and a zero object.
+a constructor for chain maps out of the complex, and the chain maps induced by morphisms of short
+complexes in any category with zero morphisms and a zero object.
 
 For a short exact presentation by projective objects in an abelian category, this is the complex
 of the projective resolution used to compute left derived functors in
@@ -44,9 +45,10 @@ whose only nonzero differential is `S.f`. In an abelian category, when `S` is sh
 `S.X₁`, `S.X₂` are projective, it underlies the projective resolution of `S.X₃`.
 
 This model has definitionally specified objects and differential in degrees `0` and `1`, so the
-kernel formulas for derived functors involve `F.map S.f` directly. Mathlib's `double` instead uses
-classical equality tests on degrees. The comparison `resolutionComplexIsoDouble` identifies the
-two models, and the maps below use Mathlib's constructor through this comparison. -/
+kernel formulas for derived functors involve `F.map S.f` directly. In these degrees the chain map
+`resolutionComplexMap φ` has components `φ.τ₂` and `φ.τ₁` (`resolutionComplexMap_f_zero`,
+`resolutionComplexMap_f_one`). Mathlib's `double` instead uses classical equality tests on degrees;
+the comparison `resolutionComplexIsoDouble` identifies the two models. -/
 @[expose]
 def resolutionComplex (S : ShortComplex C) : ChainComplex C ℕ where
   X n := match n with | 0 => S.X₂ | 1 => S.X₁ | _ + 2 => 0
@@ -78,6 +80,56 @@ lemma isZero_resolutionComplex_X_add_two (S : ShortComplex C) (n : ℕ) :
     IsZero (S.resolutionComplex.X (n + 2)) :=
   isZero_zero C
 
+/-- The differentials of `S.resolutionComplex` out of degrees at least `2` vanish. -/
+@[simp]
+lemma resolutionComplex_d_add_two (S : ShortComplex C) (n j : ℕ) :
+    S.resolutionComplex.d (n + 2) j = 0 :=
+  (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+
+/-- Every chain map out of `S.resolutionComplex` vanishes in degrees at least `2`, since the
+complex does. -/
+@[simp]
+lemma _root_.HomologicalComplex.Hom.from_resolutionComplex_f_add_two {K : ChainComplex C ℕ}
+    (f : S.resolutionComplex ⟶ K) (n : ℕ) : f.f (n + 2) = 0 :=
+  (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+
+/-- Two chain maps out of `S.resolutionComplex` agree as soon as they agree in degrees `0` and `1`,
+since the complex vanishes in higher degrees. This is the analogue for this model of Mathlib's
+`HomologicalComplex.from_double_hom_ext` for the two-term complex `HomologicalComplex.double`. -/
+@[ext]
+lemma from_resolutionComplex_hom_ext {K : ChainComplex C ℕ} {f g : S.resolutionComplex ⟶ K}
+    (h₀ : f.f 0 = g.f 0) (h₁ : f.f 1 = g.f 1) : f = g := by
+  ext (_ | _ | n)
+  · exact h₀
+  · exact h₁
+  · exact (f.from_resolutionComplex_f_add_two n).trans (g.from_resolutionComplex_f_add_two n).symm
+
+section mkHomFromResolutionComplex
+
+variable (S) {K : ChainComplex C ℕ} (φ₀ : S.X₂ ⟶ K.X 0) (φ₁ : S.X₁ ⟶ K.X 1)
+  (comm : φ₁ ≫ K.d 1 0 = S.f ≫ φ₀)
+
+/-- The chain map out of `S.resolutionComplex` with components `φ₀` in degree `0` and `φ₁` in
+degree `1`, given their compatibility `comm` with `S.f` and the differential of `K`. This is the
+analogue for this model of Mathlib's `HomologicalComplex.mkHomFromDouble`. -/
+def mkHomFromResolutionComplex : S.resolutionComplex ⟶ K :=
+  ChainComplex.mkHom S.resolutionComplex K φ₀ φ₁ comm fun n _ =>
+    ⟨0, (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _⟩
+
+/-- In degree `0`, `S.mkHomFromResolutionComplex φ₀ φ₁ comm` is `φ₀`. -/
+@[simp]
+lemma mkHomFromResolutionComplex_f_zero :
+    (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f 0 = φ₀ :=
+  ChainComplex.mkHom_f_0 ..
+
+/-- In degree `1`, `S.mkHomFromResolutionComplex φ₀ φ₁ comm` is `φ₁`. -/
+@[simp]
+lemma mkHomFromResolutionComplex_f_one :
+    (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f 1 = φ₁ :=
+  ChainComplex.mkHom_f_1 ..
+
+end mkHomFromResolutionComplex
+
 /-- The normalized presentation complex is Mathlib's two-term complex on `S.f`. -/
 def resolutionComplexIsoDouble (S : ShortComplex C) :
     S.resolutionComplex ≅ HomologicalComplex.double S.f (c := ComplexShape.down ℕ)
@@ -88,7 +140,7 @@ def resolutionComplexIsoDouble (S : ShortComplex C) :
     | n + 2 => (S.isZero_resolutionComplex_X_add_two n).iso
         (HomologicalComplex.isZero_double_X S.f rfl (n + 2) (by omega) (by omega))) (by
     rintro i j hij
-    obtain rfl : j + 1 = i := hij
+    obtain rfl : j + 1 = i := by simpa only [ComplexShape.down_Rel] using hij
     obtain _ | j := j
     · -- `rw` cannot match through the component-family match. Reduce its degree-one branch
       -- and `Iso.symm_hom` to expose the inverse of `doubleXIso₀` before rewriting `double_d`.
@@ -129,79 +181,67 @@ lemma resolutionComplexIsoDouble_inv_f_one (S : ShortComplex C) :
   rfl
 
 /-- The augmentation `S.g : S.X₂ ⟶ S.X₃` of `S.resolutionComplex`, as a chain map to the single
-complex on `S.X₃`. -/
+complex on `S.X₃`. Its component in degree `0` is `S.g` (`resolutionπ_f_zero`); in positive
+degrees it vanishes, as does every chain map into a single complex
+(`HomologicalComplex.Hom.to_single_f_eq_zero`). -/
 def resolutionπ (S : ShortComplex C) :
     S.resolutionComplex ⟶ (ChainComplex.single₀ C).obj S.X₃ :=
-  S.resolutionComplexIsoDouble.hom ≫
-    HomologicalComplex.mkHomFromDouble (c := ComplexShape.down ℕ) (i₀ := 1) (i₁ := 0)
-      rfl (by decide) 0 S.g
-      (zero_comp.trans S.zero.symm) (by rintro k hk; simp at hk)
+  (ChainComplex.toSingle₀Equiv _ _).symm ⟨S.g, S.zero⟩
 
 /-- In degree `0`, the augmentation of `S.resolutionComplex` is `S.g`. -/
 @[simp]
-lemma resolutionπ_f_zero (S : ShortComplex C) : S.resolutionπ.f 0 = S.g := by
-  dsimp only [resolutionπ, HomologicalComplex.comp_f, resolutionComplexIsoDouble,
-    HomologicalComplex.Hom.isoOfComponents_hom_f, Iso.symm_hom]
-  -- `erw` reduces the normalized degree-zero objects in Mathlib's component formula.
-  erw [HomologicalComplex.mkHomFromDouble_f₁]
-  exact Iso.inv_hom_id_assoc _ _
+lemma resolutionπ_f_zero (S : ShortComplex C) : S.resolutionπ.f 0 = S.g :=
+  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
 
 /-- A morphism of short complexes induces the chain map of the associated complexes given by its
 first two components. -/
 def resolutionComplexMap (φ : S ⟶ S') : S.resolutionComplex ⟶ S'.resolutionComplex :=
-  S.resolutionComplexIsoDouble.hom ≫
-    HomologicalComplex.mkHomFromDouble (c := ComplexShape.down ℕ) (i₀ := 1) (i₁ := 0)
-      rfl (by decide) φ.τ₁ φ.τ₂
-      φ.comm₁₂ (by rintro k hk; simp at hk)
+  S.mkHomFromResolutionComplex φ.τ₂ φ.τ₁ φ.comm₁₂
 
 /-- In degree `0`, the chain map induced by `φ` is `φ.τ₂`. -/
 @[simp]
-lemma resolutionComplexMap_f_zero (φ : S ⟶ S') : (resolutionComplexMap φ).f 0 = φ.τ₂ := by
-  dsimp only [resolutionComplexMap, HomologicalComplex.comp_f, resolutionComplexIsoDouble,
-    HomologicalComplex.Hom.isoOfComponents_hom_f, Iso.symm_hom]
-  erw [HomologicalComplex.mkHomFromDouble_f₁]
-  exact Iso.inv_hom_id_assoc _ _
+lemma resolutionComplexMap_f_zero (φ : S ⟶ S') : (resolutionComplexMap φ).f 0 = φ.τ₂ :=
+  S.mkHomFromResolutionComplex_f_zero (K := S'.resolutionComplex) φ.τ₂ φ.τ₁ φ.comm₁₂
 
 /-- In degree `1`, the chain map induced by `φ` is `φ.τ₁`. -/
 @[simp]
-lemma resolutionComplexMap_f_one (φ : S ⟶ S') : (resolutionComplexMap φ).f 1 = φ.τ₁ := by
-  dsimp only [resolutionComplexMap, HomologicalComplex.comp_f, resolutionComplexIsoDouble,
-    HomologicalComplex.Hom.isoOfComponents_hom_f, Iso.symm_hom]
-  erw [HomologicalComplex.mkHomFromDouble_f₀]
-  exact Iso.inv_hom_id_assoc _ _
+lemma resolutionComplexMap_f_one (φ : S ⟶ S') : (resolutionComplexMap φ).f 1 = φ.τ₁ :=
+  S.mkHomFromResolutionComplex_f_one (K := S'.resolutionComplex) φ.τ₂ φ.τ₁ φ.comm₁₂
 
 /-- The induced map of the identity short-complex morphism is the identity chain map. -/
 @[simp]
 lemma resolutionComplexMap_id (S : ShortComplex C) :
     resolutionComplexMap (𝟙 S) = 𝟙 S.resolutionComplex := by
-  ext n
-  obtain _ | _ | n := n
-  · simp; rfl
-  · simp; rfl
-  · exact (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+  -- The component lemmas leave `𝟙 S.X₂ = 𝟙 (S.resolutionComplex.X 0)` and its degree-one
+  -- analogue. The objects agree by definition (`resolutionComplex_X_zero`, `_X_one`), and an
+  -- equation of objects cannot be rewritten inside `𝟙`, so `rfl` closes the goals.
+  apply from_resolutionComplex_hom_ext <;>
+    simp only [resolutionComplexMap_f_zero, resolutionComplexMap_f_one, id_τ₁, id_τ₂,
+      HomologicalComplex.id_f] <;>
+    rfl
 
 /-- The induced chain maps preserve composition of short-complex morphisms. -/
 @[simp]
 lemma resolutionComplexMap_comp {S'' : ShortComplex C} (φ : S ⟶ S') (ψ : S' ⟶ S'') :
     resolutionComplexMap (φ ≫ ψ) = resolutionComplexMap φ ≫ resolutionComplexMap ψ := by
-  ext n
-  obtain _ | _ | n := n
-  · simp; rfl
-  · simp; rfl
-  · exact (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+  -- As in `resolutionComplexMap_id`, both sides become `φ.τ₂ ≫ ψ.τ₂` (resp. `φ.τ₁ ≫ ψ.τ₁`),
+  -- composed through `S'.X₂` on one side and the definitionally equal
+  -- `S'.resolutionComplex.X 0` on the other, so `rfl` closes the goals.
+  apply from_resolutionComplex_hom_ext <;>
+    simp only [resolutionComplexMap_f_zero, resolutionComplexMap_f_one, comp_τ₁, comp_τ₂,
+      HomologicalComplex.comp_f] <;>
+    rfl
 
 /-- The chain map induced by `φ` lies over `φ.τ₃`. -/
 @[reassoc (attr := simp)]
 lemma resolutionComplexMap_comp_resolutionπ (φ : S ⟶ S') :
     resolutionComplexMap φ ≫ S'.resolutionπ =
       S.resolutionπ ≫ (ChainComplex.single₀ C).map φ.τ₃ := by
-  apply (cancel_epi S.resolutionComplexIsoDouble.inv).1
-  apply HomologicalComplex.from_double_hom_ext
-  · exact (HomologicalComplex.isZero_single_obj_X (ComplexShape.down ℕ) 0 S'.X₃ 1
-      (by decide)).eq_of_tgt _ _
-  · simp only [HomologicalComplex.comp_f, resolutionComplexMap_f_zero, resolutionπ_f_zero,
-      ChainComplex.single₀_map_f_zero]
-    exact congrArg (S.resolutionComplexIsoDouble.inv.f 0 ≫ ·) φ.comm₂₃
+  -- Chain maps to a single complex are determined in degree `0`, where this is `φ.comm₂₃`.
+  apply HomologicalComplex.to_single_hom_ext
+  simp only [HomologicalComplex.comp_f, resolutionComplexMap_f_zero, resolutionπ_f_zero,
+    ChainComplex.single₀_map_f_zero]
+  exact φ.comm₂₃
 
 end ShortComplex
 

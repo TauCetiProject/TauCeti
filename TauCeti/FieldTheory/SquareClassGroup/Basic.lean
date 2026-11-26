@@ -26,7 +26,8 @@ square. So linear independence of the classes is the **Finset form** of square-c
 * `TauCeti.SquareClassGroup`: the square-class group `Kˣ ⧸ (Kˣ)²`, an `𝔽₂`-vector space.
 * `TauCeti.squareClass`: the additive class of a unit, with `squareClass_eq_zero_iff`
   characterising the trivial class as the squares, and `squareClass_mul`, `squareClass_prod`,
-  `squareClass_pow`, `squareClass_zpow` computing it on products and powers.
+  `squareClass_pow`, `squareClass_zpow` computing it on products and powers, and
+  `squareClass_sq_mul` saying that a square factor does not change it.
 * The multiplicative quotient map `TauCeti.squareClassHom` is developed in
   `TauCeti.FieldTheory.SquareClassGroup.Multiplicative`.
 * `TauCeti.squareClass_eq_iff_isSquare_mul`: equality of square classes read as a square product.
@@ -106,6 +107,10 @@ theorem squareClass_zpow (u : Kˣ) (n : ℤ) : squareClass (u ^ n) = n • squar
 @[simp]
 theorem squareClass_pow (u : Kˣ) (n : ℕ) : squareClass (u ^ n) = n • squareClass u := by
   simpa using squareClass_zpow (u := u) (n := (n : ℤ))
+
+/-- Multiplying a unit by a square does not change its square class. -/
+theorem squareClass_sq_mul (w u : Kˣ) : squareClass (w ^ 2 * u) = squareClass u :=
+  (squareClass_eq_iff_isSquare_mul _ _).mpr ⟨w * u, by rw [sq]; ac_rfl⟩
 
 private theorem zmod_two_eq_zero_or_one : ∀ t : ZMod 2, t = 0 ∨ t = 1 := by decide
 

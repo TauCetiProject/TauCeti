@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Bernoulli
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Basic
+public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.Probability.GeneratingFunction
 
@@ -21,12 +22,15 @@ This file computes the elementary moments and transforms of the real-valued Bern
 
 ## Main results
 
+* `bernoulliMeasure_singleton_left_ne_zero` and `bernoulliMeasure_singleton_right_ne_zero`:
+  `Ber(x, y, p)` charges `x` when `0 < p` and `y` when `p < 1`;
 * `integral_id_bernoulliMeasure` and `variance_id_bernoulliMeasure` give the mean and variance;
 * `integral_of_hasLaw_bernoulliMeasure` and `variance_of_hasLaw_bernoulliMeasure` give the
   corresponding random-variable statements;
 * `hasLaw_natCast_bernoulliMeasure` and `hasLaw_cast_eval_bernoulliMeasure` relate native
   Bernoulli variables to their real casts;
 * `pgf_bernoulliMeasure` computes the probability-generating function on the native carrier;
+* `integrableExpSet_bernoulliMeasure` identifies the exact exponential-integrability domain;
 * `mgf_id_bernoulliMeasure` and `cgf_id_bernoulliMeasure` compute the moment- and
   cumulant-generating functions;
 * `charFun_bernoulliMeasure` computes the characteristic function.
@@ -52,6 +56,26 @@ theorem bernoulliMeasure_singleton_zero_lt_one {α : Type*} [MeasurableSpace α]
   rw [bernoulliMeasure_apply_of_notMem_of_mem p (measurableSet_singleton 0)
     (by simpa using ha) rfl]
   exact_mod_cast sub_lt_self (1 : ℝ) hp
+
+/-- The Bernoulli law `Ber(x, y, p)` gives positive mass to `x` when `0 < p`. -/
+theorem bernoulliMeasure_singleton_left_ne_zero {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] {x y : α} {p : I} (hp : 0 < (p : ℝ)) :
+    Ber(x, y, p) {x} ≠ 0 := by
+  by_cases h : x = y
+  · simp [h]
+  · rw [bernoulliMeasure_apply_of_mem_of_notMem p (measurableSet_singleton x) rfl
+      (by simpa [eq_comm] using h)]
+    simpa [← NNReal.coe_eq_zero] using hp.ne'
+
+/-- The Bernoulli law `Ber(x, y, p)` gives positive mass to `y` when `p < 1`. -/
+theorem bernoulliMeasure_singleton_right_ne_zero {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] {x y : α} {p : I} (hp : (p : ℝ) < 1) :
+    Ber(x, y, p) {y} ≠ 0 := by
+  by_cases h : y = x
+  · simp [h]
+  · rw [bernoulliMeasure_apply_of_notMem_of_mem p (measurableSet_singleton y)
+      (by simpa [eq_comm] using h) rfl]
+    simpa [← NNReal.coe_eq_zero, sub_eq_zero] using hp.ne'
 
 /-- The probability-generating function of a Bernoulli distribution. -/
 @[simp]
@@ -103,6 +127,13 @@ theorem variance_of_hasLaw_bernoulliMeasure {Ω : Type*} [MeasurableSpace Ω] {P
     {X : Ω → ℝ} {p : I} (hX : HasLaw X Ber((1 : ℝ), 0, p) P) :
     Var[X; P] = (p : ℝ) * (1 - p) := by
   rw [hX.variance_eq, variance_id_bernoulliMeasure]
+
+/-- Every real observable of a Bernoulli law has full exponential-integrability domain. -/
+@[simp]
+theorem integrableExpSet_bernoulliMeasure {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] (X : α → ℝ) (a b : α) (p : I) :
+    integrableExpSet X Ber(a, b, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_bernoulliMeasure a b p _
 
 /-- The moment-generating function of the real-valued Bernoulli law. -/
 @[simp]

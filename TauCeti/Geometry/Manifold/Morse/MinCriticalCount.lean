@@ -68,7 +68,9 @@ The minimum is additive over a finite cover by pairwise disjoint open sets
 (`TauCeti.minCriticalCount_eq_sum`), in particular over the connected components of a locally
 connected manifold with finitely many components
 (`TauCeti.minCriticalCount_eq_sum_connectedComponents`): a smooth function restricts to smooth
-functions on the pieces, and smooth functions on the pieces glue to a smooth function. On a compact
+functions on the pieces, and smooth functions on the pieces glue to a smooth function. For the same
+reason it is additive over disjoint unions `M ⊕ M'` (`TauCeti.minCriticalCount_sum`); two disjoint
+spheres have `c = 2 + 2 = 4` (`TauCeti.minCriticalCount_sum_sphere`). On a compact
 boundaryless manifold of positive dimension every component is a compact manifold with at least two
 points, so every continuous function has at least twice as many critical points as there are
 components (`TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount`), hence so does `c(M)`
@@ -94,6 +96,8 @@ components (`TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount`), h
 * `TauCeti.minCriticalCount_projectivization_real_fin_three`: `c(ℝP²) = 3`.
 * `TauCeti.minCriticalCount_eq_sum` and `TauCeti.minCriticalCount_eq_sum_connectedComponents`:
   the minimum is additive over finite disjoint open covers and over connected components.
+* `TauCeti.minCriticalCount_sum` and `TauCeti.minCriticalCount_sum_sphere`: the minimum is
+  additive over disjoint unions `M ⊕ M'`, so two disjoint spheres have `c = 4`.
 * `TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`: each component of a compact
   boundaryless manifold of positive dimension contributes at least two to `c(M)`.
 * `TauCeti.card_add_one_le_totalCriticalCount_torus` and
@@ -193,6 +197,23 @@ theorem minCriticalCount_eq_sum_connectedComponents [LocallyConnectedSpace M]
   minCriticalCount_eq_sum _ ConnectedComponents.pairwise_disjoint_opens
     ConnectedComponents.iSup_opens
 
+/-- **`c(M)` of a disjoint union.** The minimal number of critical points of a smooth function on
+`M ⊕ M'` is the sum of those of `M` and `M'`: a smooth function on `M ⊕ M'` is a pair of smooth
+functions on the summands, and its critical points are theirs. -/
+@[simp]
+theorem minCriticalCount_sum {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M'] :
+    minCriticalCount I (M ⊕ M') = minCriticalCount I M + minCriticalCount I M' := by
+  refine le_antisymm ?_ (le_minCriticalCount_iff.2 fun F hF ↦ ?_)
+  · obtain ⟨f, hf, hfc⟩ := exists_totalCriticalCount_eq_minCriticalCount (I := I) (M := M)
+    obtain ⟨g, hg, hgc⟩ := exists_totalCriticalCount_eq_minCriticalCount (I := I) (M := M')
+    calc minCriticalCount I (M ⊕ M') ≤ totalCriticalCount I (Sum.elim f g) :=
+          minCriticalCount_le (hf.sumElim hg)
+      _ = minCriticalCount I M + minCriticalCount I M' := by
+        rw [totalCriticalCount_sumElim, hfc, hgc]
+  · rw [← Sum.elim_comp_inl_inr F, totalCriticalCount_sumElim]
+    exact add_le_add (minCriticalCount_le (hF.comp ContMDiff.inl))
+      (minCriticalCount_le (hF.comp ContMDiff.inr))
+
 section Boundaryless
 
 variable [I.Boundaryless] [CompactSpace M]
@@ -290,10 +311,17 @@ theorem minCriticalCount_sphere : minCriticalCount (𝓡 n) (sphere (0 : E) 1) =
     nontrivial_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = n + 1)]; lia)
   obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   have : Nontrivial (sphere (0 : E) 1) := ⟨⟨v, -v, ne_neg_of_mem_unit_sphere ℝ v⟩⟩
-  refine le_antisymm ((minCriticalCount_le (contMDiff_sphereHeight v)).trans_eq ?_)
-    two_le_minCriticalCount
-  rw [totalCriticalCount_def, criticalPoints_sphereHeight,
-    encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
+  exact le_antisymm ((minCriticalCount_le (contMDiff_sphereHeight v)).trans_eq
+    (totalCriticalCount_sphereHeight v)) two_le_minCriticalCount
+
+/-- **The minimal number of critical points of two disjoint spheres is `4`.** It is `2 + 2`, one
+pair of poles of a height function on each sphere, a value that a count for connected manifolds
+only, such as Takens' `F(M)`, does not define. -/
+theorem minCriticalCount_sum_sphere {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E']
+    [Fact (finrank ℝ E' = n + 1)] :
+    minCriticalCount (𝓡 n) (sphere (0 : E) 1 ⊕ sphere (0 : E') 1) = 4 := by
+  rw [minCriticalCount_sum, minCriticalCount_sphere, minCriticalCount_sphere]
+  norm_num
 
 end Sphere
 

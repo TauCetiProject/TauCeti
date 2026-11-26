@@ -125,6 +125,10 @@ theorem bddAbove_image_support (a : NovikovModule R F) :
   · exact (hm ⟨s, ⟨hs, h⟩, rfl⟩).trans (le_max_left _ _)
   · exact h.trans (le_max_right _ _)
 
+/-- A completed combination is nonzero exactly when one of its coefficients is. -/
+theorem ne_zero_iff {a : NovikovModule R F} : a ≠ 0 ↔ ∃ s, a.val s ≠ 0 :=
+  Subtype.coe_ne_coe.symm.trans Function.ne_iff
+
 variable (F) in
 /-- Finite combinations, viewed as completed combinations with the same coefficients. -/
 def ofFinsupp : (S →₀ R) →ₗ[R] NovikovModule R F where
@@ -135,6 +139,12 @@ def ofFinsupp : (S →₀ R) →ₗ[R] NovikovModule R F where
 @[simp]
 theorem ofFinsupp_apply_val (a : S →₀ R) (s : S) : (ofFinsupp F a).val s = a s :=
   (rfl)
+
+/-- A finite combination with a single nonzero coefficient is the point mass at its generator. -/
+@[simp]
+theorem ofFinsupp_single [DecidableEq S] (s : S) (r : R) :
+    ofFinsupp F (Finsupp.single s r) = single s r :=
+  Subtype.ext (Finsupp.single_eq_pi_single s r)
 
 theorem ofFinsupp_injective : Function.Injective (ofFinsupp (R := R) F) :=
   fun _ _ h => DFunLike.coe_injective (congrArg Subtype.val h)
@@ -315,6 +325,16 @@ theorem coordinates_apply_eq_mul_single (r r' : ∀ i, P i) (a : NovikovModule R
   ext h
   simp only [NovikovSeries.coeff_mul_single, mul_one, coordinates_coeff, sub_eq_add_neg,
     neg_vsub_eq_vsub_rev, add_vadd, vsub_vadd]
+
+/-- **Change of reference lifts.** Moving the reference lifts to `g i +ᵥ r i` and multiplying each
+coordinate on the right by the monomial `e^(-g i)` gives the same completed combination. -/
+theorem coordinates_symm_vadd_mul_single (r : ∀ i, P i) (b : ι → NovikovSeries R H N)
+    (g : ι → H) :
+    (coordinates hF fun i => g i +ᵥ r i).symm (fun i => b i * NovikovSeries.single (-g i) 1) =
+      (coordinates hF r).symm b := by
+  refine Subtype.ext (funext fun ⟨i, p⟩ => ?_)
+  rw [coordinates_symm_apply, coordinates_symm_apply, NovikovSeries.coeff_mul_single, mul_one,
+    sub_neg_eq_add, ← vsub_add_vsub_cancel p (g i +ᵥ r i) (r i), vadd_vsub]
 
 /-- The Novikov module structure, transported using arbitrary orbit lifts. Install it with
 `letI := NovikovModule.module (R := R) hF`. Every choice of lifts is linear for this one

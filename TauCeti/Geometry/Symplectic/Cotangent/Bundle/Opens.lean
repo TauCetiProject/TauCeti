@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Opens
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
+import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 
 /-!
 # Canonical cotangent forms on open restrictions
@@ -44,6 +46,19 @@ and dilations of `T*U` by restricted data with those of `T*M`
 (`TauCeti.CotangentBundle.openInclusion_vectorBundleTranslateDiffeomorph`,
 `TauCeti.CotangentBundle.openInclusion_vectorBundleScalarDiffeomorph`).
 
+Canonical transformations defined only between the cotangent bundles of open subsets `U ⊆ M` and
+`V ⊆ N` are canonical transformations of the ambient cotangent bundles: conjugating by
+`CotangentBundle.restrictOpen` and reading the result in `T*M` and `T*N` gives a partial
+diffeomorphism which preserves the canonical symplectic forms and agrees with the original one
+through the cotangent inclusions
+(`TauCeti.CotangentBundle.exists_partialDiffeomorph_openInclusion_eq`). This lets a construction
+which needs Hausdorff base manifolds, such as a bump-function extension, be carried out over
+chart domains. Exact Liouville primitives transfer the same way. Write `ι` for the cotangent
+inclusions, and let `Φ : T*U → T*V` and `Ψ : T*M → T*N`, differentiable at `a` and `ι a`, satisfy
+`Ψ ∘ ι = ι ∘ Φ` near `a`. If `f` is an exact primitive of `Φ` at `a`, then any function `g` on
+`T*M`, differentiable at `ι a`, with `g ∘ ι = f` near `a` is an exact primitive of `Ψ` at `ι a`
+(`TauCeti.CotangentBundle.liouvilleForm_sub_mpullback_apply_openInclusion`).
+
 ## References
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Section 2.
@@ -54,7 +69,7 @@ public section
 noncomputable section
 
 open Bundle TopologicalSpace
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti.CotangentBundle
 
@@ -375,5 +390,127 @@ theorem mpullback_overOpenScalarDiffeomorph_symplecticForm (U : Opens M) {c : �
       (map_smul _ _ _).trans (congrArg (c • ·) (mpullback_restrictOpen_symm_symplecticForm U))
 
 end FiberwiseSymplectic
+
+/-! ### Canonical transformations between open subsets -/
+
+section Transport
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I ∞ M] [IsManifold J ∞ N]
+
+/-- **Canonical transformations between open subsets, read in the ambient cotangent bundles.** Let
+`Φ : T*U → T*V` be a partial diffeomorphism between the cotangent bundles of open subsets `U ⊆ M`
+and `V ⊆ N`, with `U` nonempty, which preserves the canonical symplectic forms on its source.
+Through the cotangent inclusions it is a partial diffeomorphism `Ψ : T*M → T*N` with the same
+property: the source of `Ψ` is the image of the source of `Φ`, and `Ψ (ι z) = ι (Φ z)` there. -/
+theorem exists_partialDiffeomorph_openInclusion_eq {U : Opens M} {V : Opens N} [Nonempty U]
+    (Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ))
+      (CotangentBundle I U) (CotangentBundle J V) ∞)
+    (hΦ : ∀ z ∈ Φ.source, mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ
+      (symplecticForm J V).val z = (symplecticForm I U).val z) :
+    ∃ Ψ : PartialDiffeomorph (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ))
+        (CotangentBundle I M) (CotangentBundle J N) ∞,
+      Ψ.source = openInclusion U '' Φ.source ∧
+      (∀ z ∈ Φ.source, Ψ (openInclusion U z) = openInclusion V (Φ z)) ∧
+      ∀ z ∈ Ψ.source, mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Ψ
+        (symplecticForm J N).val z = (symplecticForm I M).val z := by
+  obtain ⟨x⟩ := ‹Nonempty U›
+  have hA : Nonempty (overOpen (I := I) U) :=
+    ⟨restrictOpen U (TotalSpace.mk' (E →L[ℝ] ℝ) x 0)⟩
+  have hB : Nonempty (overOpen (I := J) V) :=
+    ⟨restrictOpen V (Φ (TotalSpace.mk' (E →L[ℝ] ℝ) x 0))⟩
+  -- Conjugate `Φ` by the identifications `T*U ≃ π⁻¹(U)` and `T*V ≃ π⁻¹(V)`, then lift it.
+  let r := restrictOpen (I := I) U
+  let r' := restrictOpen (I := J) V
+  let Φ' := r.symm.toPartialDiffeomorph.trans (Φ.trans r'.toPartialDiffeomorph)
+  let Ψ := Φ'.liftOpens hA hB
+  have hΦ' : (Φ' : overOpen (I := I) U → overOpen (I := J) V) = r' ∘ Φ ∘ r.symm := by
+    funext a
+    simp [Φ', Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
+  have hsrc (a : overOpen (I := I) U) : a ∈ Φ'.source ↔ r.symm a ∈ Φ.source := by
+    simp [Φ', Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
+  have hΨsrc : Ψ.source = openInclusion U '' Φ.source := by
+    rw [Φ'.liftOpens_source]
+    ext w
+    constructor
+    · rintro ⟨a, ha, rfl⟩
+      exact ⟨r.symm a, (hsrc a).1 ha,
+        (coe_restrictOpen U _).symm.trans (congrArg Subtype.val (r.apply_symm_apply a))⟩
+    · rintro ⟨z, hz, rfl⟩
+      exact ⟨r z, (hsrc _).2 (by rwa [r.symm_apply_apply]), coe_restrictOpen U z⟩
+  refine ⟨Ψ, hΨsrc, fun z _ ↦ ?_, fun z hz ↦ ?_⟩
+  · have h := Φ'.liftOpens_apply_coe hA hB (r z)
+    rw [hΦ', Function.comp_apply, Function.comp_apply, r.symm_apply_apply] at h
+    rw [← coe_restrictOpen, ← coe_restrictOpen]
+    exact h
+  -- The symplectic forms: pull back along the inclusion of `π⁻¹(U)`, where `Ψ` is `r' ∘ Φ ∘ r⁻¹`.
+  rw [Φ'.liftOpens_source] at hz
+  obtain ⟨a, ha, rfl⟩ := hz
+  have haΦ := (hsrc a).1 ha
+  have hrU := congrArg Subtype.val (SmoothForm.mpullback_symm_eq_of_mpullback_eq
+    (mpullback_restrictOpen_symplecticForm (I := I) U))
+  have hrV := congrArg Subtype.val (mpullback_restrictOpen_symplecticForm (I := J) V)
+  simp only [SmoothForm.coe_mpullback] at hrU hrV
+  have hΦa := Φ.mdifferentiableAt (by simp) haΦ
+  rw [mpullback_liftOpens_apply_coe Φ' (by simp) hA hB _ ha, hΦ', ← Function.comp_assoc,
+    mpullback_comp_at (r.symm.mdifferentiable (by simp) _)
+      ((r'.mdifferentiable (by simp) _).comp _ hΦa),
+    mpullback_apply_congr (η := mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ
+      (symplecticForm J V).val)
+      (by rw [mpullback_comp_at hΦa (r'.mdifferentiable (by simp) _), hrV]),
+    mpullback_apply_congr (hΦ _ haΦ), hrU]
+  exact mpullback_subtype_val_apply _ a
+
+end Transport
+
+section Primitive
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I 2 M] [IsManifold J 2 N]
+
+/-- **Exact primitives through the cotangent inclusions.** Let `U ⊆ M` and `V ⊆ N` be open, and let
+`Φ : T*U → T*V` and `Ψ : T*M → T*N`, differentiable at `a ∈ T*U` and at `ι a` respectively,
+satisfy `Ψ ∘ ι = ι ∘ Φ` near `a`, for the cotangent inclusions `ι`. If `f` is an exact primitive
+of `Φ` at `a`, that is `λ_U - Φ^* λ_V = df` there, and `g` is a function on `T*M`, differentiable
+at `ι a`, with `g ∘ ι = f` near `a`, then `g` is an exact primitive of `Ψ` at `ι a`:
+`λ_M - Ψ^* λ_N = dg` there. -/
+theorem liouvilleForm_sub_mpullback_apply_openInclusion {U : Opens M} {V : Opens N}
+    {Φ : CotangentBundle I U → CotangentBundle J V}
+    {Ψ : CotangentBundle I M → CotangentBundle J N} {f : CotangentBundle I U → ℝ}
+    {g : CotangentBundle I M → ℝ} {a : CotangentBundle I U}
+    (hΦ : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ a)
+    (hΨ : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Ψ
+      (openInclusion U a))
+    (hΨΦ : Ψ ∘ openInclusion U =ᶠ[𝓝 a] openInclusion V ∘ Φ)
+    (hg : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) g (openInclusion U a))
+    (hgf : g ∘ openInclusion U =ᶠ[𝓝 a] f)
+    (hf : (liouvilleForm I U).val a -
+        mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ (liouvilleForm J V).val a =
+      mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) f) a) :
+    (liouvilleForm I M).val (openInclusion U a) -
+        mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Ψ (liouvilleForm J N).val
+          (openInclusion U a) =
+      mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) g) (openInclusion U a) := by
+  have hι := (contMDiff_openInclusion (I := I) U).mdifferentiableAt (x := a) (by simp)
+  have hι' := (contMDiff_openInclusion (I := J) V).mdifferentiableAt (x := Φ a) (by simp)
+  -- Compare both sides after pulling back along `ι`, whose differential is surjective.
+  rw [← Pi.sub_apply,
+    ← mpullback_apply_eq_mpullback_apply_iff (mfderiv_openInclusion_surjective U a), mpullback_sub,
+    Pi.sub_apply, mpullback_mextDeriv_ofFunction_apply hι hg]
+  -- On the right, `g ∘ ι` has the differential of `f`, which is `λ_U - Φ^* λ_V`.
+  rw [mextDeriv_ofFunction, hgf.mvfderiv_eq, ← mextDeriv_ofFunction, ← hf]
+  -- On the left, `Ψ ∘ ι = ι ∘ Φ` near `a`.
+  rw [← mpullback_comp_at hι hΨ, hΨΦ.mpullback_eq, mpullback_comp_at hΦ hι']
+  -- The cotangent inclusions pull the Liouville forms back to the Liouville forms.
+  have hU := congrArg (fun α : SmoothForm _ _ ℝ 1 ↦ α.val a)
+    (mpullback_openInclusion_liouvilleForm (I := I) U)
+  have hV := congrArg (fun α : SmoothForm _ _ ℝ 1 ↦ α.val (Φ a))
+    (mpullback_openInclusion_liouvilleForm (I := J) V)
+  simp only [SmoothForm.coe_mpullback] at hU hV
+  rw [hU, mpullback_apply_congr hV]
+
+end Primitive
 
 end TauCeti.CotangentBundle

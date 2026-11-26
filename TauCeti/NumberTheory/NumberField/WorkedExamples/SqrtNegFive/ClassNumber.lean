@@ -14,6 +14,7 @@ import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.Quadratic.ClassNumber
 import TauCeti.NumberTheory.NumberField.Quadratic.PrimeDecomposition
 import TauCeti.NumberTheory.NumberField.WorkedExamples.SqrtNegFive.Norm
+import TauCeti.RingTheory.DedekindDomain.Basic
 
 /-!
 # The class group of `ℚ(√-5)` and the failure of unique factorization in `ℤ[√-5]`
@@ -37,7 +38,9 @@ This file specializes the class-number interfaces of the model `QuadraticAlgebra
 ## Main results
 
 * `TauCeti.NumberField.SqrtNegFive.classNumber_eq_two`: the class number of `ℚ(√-5)` is `2`.
+* `TauCeti.NumberField.SqrtNegFive.isDedekindDomain`: `ℤ[√-5]` is a Dedekind domain.
 * `TauCeti.NumberField.SqrtNegFive.natCard_classGroup_eq_two`: `ℤ[√-5]` has two ideal classes.
+* `TauCeti.NumberField.SqrtNegFive.finite_classGroup`: the class group of `ℤ[√-5]` is finite.
 * `TauCeti.NumberField.SqrtNegFive.not_isPrincipal_span_two_omega_sub_one`,
   `TauCeti.NumberField.SqrtNegFive.not_isPrincipal_span_two_integralSqrt_sub_one`: the prime
   above `2` is not principal, in `ℤ[√-5]` and in the ring of integers.
@@ -77,6 +80,10 @@ private theorem squarefree_neg_five : Squarefree (-5 : ℤ) :=
 
 private theorem neg_five_emod_four : (-5 : ℤ) % 4 = 3 := by decide
 
+/-- `ℤ[√-5]` is a Dedekind domain, being isomorphic to the ring of integers of `ℚ(√-5)`. -/
+instance isDedekindDomain : IsDedekindDomain (QuadraticAlgebra ℤ (-5) 0) :=
+  .of_ringEquiv (ringOfIntegersEquiv squarefree_neg_five (by decide)).toRingEquiv
+
 /-! ### Class number two -/
 
 /-- **The class number of `ℚ(√-5)` is `2`**, by the Minkowski computation for the presentation of
@@ -89,6 +96,11 @@ theorem classNumber_eq_two : classNumber (QuadraticAlgebra ℚ ((-5 : ℤ) : ℚ
 theorem natCard_classGroup_eq_two : Nat.card (ClassGroup (QuadraticAlgebra ℤ (-5) 0)) = 2 :=
   (natCard_classGroup_eq_classNumber_of_mod_four_ne_one squarefree_neg_five (by decide)).trans
     classNumber_eq_two
+
+/-- `ℤ[√-5]` has finitely many ideal classes, namely two
+(`TauCeti.NumberField.SqrtNegFive.natCard_classGroup_eq_two`). -/
+instance finite_classGroup : Finite (ClassGroup (QuadraticAlgebra ℤ (-5) 0)) :=
+  Nat.finite_of_card_ne_zero (by simp [natCard_classGroup_eq_two])
 
 /-- **The prime of `ℤ[√-5]` above `2` is not principal**: the maximal ideal `(2, √-5 - 1)` has no
 single generator. -/

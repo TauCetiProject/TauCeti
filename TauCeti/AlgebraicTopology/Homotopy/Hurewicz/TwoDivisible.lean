@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.TwoDivisible
 public import Mathlib.Algebra.Module.ULift
-import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
+import TauCeti.AlgebraicTopology.Singular.Coefficients.PrimeField
 
 /-!
 # Mod-two vanishing and the first possible homotopy group
@@ -25,8 +25,10 @@ bijective. Both adjacent vanishing hypotheses matter: the lower one gives surjec
 and the higher one rules out two-torsion.
 
 The hypotheses can be stated with coefficients in the integer module `ℤ/2`
-(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two`) or in the field `𝔽₂`
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two`) or in the field `𝔽₂`, given
+as any ring isomorphic to `ZMod 2`
 (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two`).
+The space lies in an arbitrary universe `u`, with the coefficients lifted to it.
 
 ## References
 
@@ -38,52 +40,38 @@ public noncomputable section
 
 open CategoryTheory AlgebraicTopology
 
+universe u
+
 namespace TauCeti
 
-variable {X : Type} [TopologicalSpace X] {x : X} {n : ℕ}
+variable {X : Type u} [TopologicalSpace X] {x : X} {n : ℕ}
 
 /-- If all lower homotopy groups vanish, vanishing of mod-two homology in two adjacent
 higher degrees makes the first possible nonzero homotopy group uniquely two-divisible.
 The group is written additively to use its canonical integer action. -/
 theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two
     (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
-    (hn : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
-      (ModuleCat.of ℤ (ZMod 2))).obj (TopCat.of X)))
-    (hn' : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 3)).obj
-      (ModuleCat.of ℤ (ZMod 2))).obj (TopCat.of X))) :
-    IsUniquelyTwoDivisible (Additive (HomotopyGroup (Fin (n + 2)) X x)) := by
-  -- The coefficient exact sequence uses lifted coefficients; transport the two zero objects.
-  have liftZero (k : ℕ)
-      (hk : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
-        (ModuleCat.of ℤ (ZMod 2))).obj (TopCat.of X))) :
-      Limits.IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
-        (ModuleCat.of ℤ (ULift.{0} (ZMod 2)))).obj (TopCat.of X)) :=
-    hk.of_iso (((singularHomologyFunctor (ModuleCat.{0} ℤ) k).mapIso
-      (ULift.moduleEquiv : ULift.{0} (ZMod 2) ≃ₗ[ℤ] ZMod 2).toModuleIso).app (TopCat.of X))
-  have h := (TopCat.of X).isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two
-    (n + 2) (liftZero _ hn) (liftZero _ hn')
-  let e : (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
-      (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of X)) ≃+
-      ((singularChains ℤ).obj (TopCat.of X)).homology (n + 2) :=
-    (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).mapIso
-      (ULift.moduleEquiv : ULift ℤ ≃ₗ[ℤ] ℤ).toModuleIso).app
-        (TopCat.of X)).toLinearEquiv.toAddEquiv
-  exact (h.of_addEquiv e).of_addEquiv
-    (HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv hX).symm
+    (hn : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (n + 2)).obj
+      (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj (TopCat.of X)))
+    (hn' : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (n + 3)).obj
+      (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj (TopCat.of X))) :
+    IsUniquelyTwoDivisible (Additive (HomotopyGroup (Fin (n + 2)) X x)) :=
+  ((TopCat.of X).isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two (n + 2) hn
+    hn').of_addEquiv (HomotopyGroup.cubicalHurewiczSingularHomologyUliftAddEquiv hX).symm
 
-/-- If all lower homotopy groups vanish, vanishing of homology with coefficients in the field `𝔽₂`
-in two adjacent higher degrees makes the first possible nonzero homotopy group uniquely
-two-divisible. -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two
-    (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
-    (hn : Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (n + 2)))
-    (hn' : Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (n + 3))) :
+/-- If all lower homotopy groups vanish, vanishing of homology with coefficients in the field `𝔽₂`,
+or in any ring `k` isomorphic to it, in two adjacent higher degrees makes the first possible
+nonzero homotopy group uniquely two-divisible. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two {k : Type u} [CommRing k]
+    (e : k ≃+* ZMod 2) (hX : ∀ j < n + 2, Subsingleton (HomotopyGroup (Fin j) X x))
+    (hn : Subsingleton (((singularChains k).obj (TopCat.of X)).homology (n + 2)))
+    (hn' : Subsingleton (((singularChains k).obj (TopCat.of X)).homology (n + 3))) :
     IsUniquelyTwoDivisible (Additive (HomotopyGroup (Fin (n + 2)) X x)) := by
   rw [← singularHomologyFunctor_obj_obj] at hn hn'
   exact isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two hX
-    (((TopCat.of X).isZero_singularHomology_modTwo_iff' _).2
+    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e _).2
       (ModuleCat.isZero_iff_subsingleton.2 hn))
-    (((TopCat.of X).isZero_singularHomology_modTwo_iff' _).2
+    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e _).2
       (ModuleCat.isZero_iff_subsingleton.2 hn'))
 
 end TauCeti

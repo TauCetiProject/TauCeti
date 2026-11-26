@@ -50,26 +50,22 @@ theorem det_sumElim_eq_det_mul (e : m ⊕ n ≃ ι) {x : m → ι → R} {y w : 
     (Matrix.of fun a b ↦ Sum.elim x z a (e b)).det =
       (Matrix.of y * (Matrix.of z).transpose).det *
         (Matrix.of fun a b ↦ Sum.elim x w a (e b)).det := by
-  -- Write `z j = ∑ i, B j i • x i + ∑ k, A j k • w k`, with `A j k = y k ⬝ᵥ z j`.
-  set A : Matrix n n R := Matrix.of fun j k ↦ y k ⬝ᵥ z j with hA
-  have hu : ∀ j, z j - ∑ k, A j k • w k ∈ Submodule.span R (Set.range x) := fun j ↦ hx <| by
+  -- Write `z j = ∑ i, B j i • x i + ∑ k, A k j • w k`, with `A k j = y k ⬝ᵥ z j`.
+  set A := Matrix.of y * (Matrix.of z)ᵀ with hA
+  have hu : ∀ j, z j - ∑ k, A k j • w k ∈ Submodule.span R (Set.range x) := fun j ↦ hx <| by
     rw [LinearMap.mem_ker, Matrix.mulVecLin_apply, Matrix.mulVec_sub, Matrix.mulVec_sum]
     simp_rw [Matrix.mulVec_smul, hw]
     ext k
-    simp [hA, Matrix.mulVec, Pi.single_apply]
+    simp [hA, Matrix.mul_apply, Matrix.mulVec, dotProduct, Pi.single_apply]
   choose B hB using fun j ↦ (Submodule.mem_span_range_iff_exists_fun R).1 (hu j)
-  have hz : ∀ j, z j = ∑ i, B j i • x i + ∑ k, A j k • w k := fun j ↦ by
-    rw [hB j, sub_add_cancel]
+  -- So the matrix of `x` followed by `z` is a block lower triangular matrix, of determinant
+  -- `det Aᵀ = det A`, times the matrix of `x` followed by `w`.
   have hM : (Matrix.of fun a b ↦ Sum.elim x z a (e b)) =
-      Matrix.fromBlocks 1 0 (Matrix.of B) A * Matrix.of fun a b ↦ Sum.elim x w a (e b) := by
-    ext a b
-    rcases a with i | j
+      Matrix.fromBlocks 1 0 (Matrix.of B) Aᵀ * Matrix.of fun a b ↦ Sum.elim x w a (e b) := by
+    ext (i | j) b
     · simp [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply]
-    · simp [Matrix.mul_apply, Fintype.sum_sum_type, hz j, Finset.sum_apply]
-  have hAt : Aᵀ = Matrix.of y * (Matrix.of z)ᵀ := by
-    ext k j
-    simp [hA, Matrix.mul_apply, dotProduct]
-  rw [hM, Matrix.det_mul, Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, one_mul, ← hAt,
-    Matrix.det_transpose]
+    · simp [Matrix.mul_apply, Fintype.sum_sum_type, eq_add_of_sub_eq (hB j).symm,
+        Finset.sum_apply]
+  simp [hM]
 
 end TauCeti.Matrix
