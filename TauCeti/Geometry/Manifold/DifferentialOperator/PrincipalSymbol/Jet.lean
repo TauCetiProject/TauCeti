@@ -138,17 +138,6 @@ theorem jetSymbol_comp_perm (x : M) (ξ : Fin r → TangentSpace I x →L[ℝ] �
   rw [jetSymbol_def]
   exact sectionCommutatorSymbol_comp_perm _ _ ξ σ
 
-omit [I.Boundaryless] [FiniteDimensional ℝ F] in
-/-- Covectors at `x` and a vector of `V_x` are the differentials at `x` of smooth functions
-vanishing at `x` and the value at `x` of a smooth section. -/
-private theorem exists_mvfderiv_eq {m : ℕ} (x : M) (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ)
-    (v : V x) :
-    ∃ (f : Fin m → C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯), (∀ i, f i x = 0) ∧
-      (fun i ↦ mvfderiv I (f i) x) = ξ ∧ s x = v := by
-  choose f hf0 hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
-  obtain ⟨s, hs⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
-  exact ⟨f, s, hf0, funext hf, (ContMDiffSection.evalLinearMap_apply ..).symm.trans hs⟩
-
 /-! ### Jets of top order -/
 
 /-- **The symbol takes values in the jets of top order.** The values of the symbol of the
@@ -158,7 +147,7 @@ theorem truncate_jetSymbol {k : ℕ} (x : M) (ξ : Fin (k + 1) → TangentSpace 
     (v : V x) :
     truncate (I := I) (F := F) (V := V) (Nat.le_add_right k 1) x
       (jetSymbol I F V (k + 1) x ξ v) = 0 := by
-  obtain ⟨f, s, hf, rfl, rfl⟩ := exists_mvfderiv_eq (F := F) x ξ v
+  obtain ⟨f, s, hf, rfl, rfl⟩ := exists_mvfderiv_eq_and_apply_eq (F := F) x ξ v
   rw [jetSymbol_mvfderiv hf, truncate_jet]
   exact jet_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top
     ((Ideal.pow_smul_eq_span_prod_smul _ _ _).ge (Submodule.subset_span
@@ -219,7 +208,7 @@ theorem _root_.LinearMap.jetFactorOfMemDifferentialOperators_jetSymbol
     (ξ : Fin r → TangentSpace I x →L[ℝ] ℝ) (v : V x) :
     P.jetFactorOfMemDifferentialOperators hP x (jetSymbol I F V r x ξ v) =
       sectionCommutatorSymbol I BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ ξ v := by
-  obtain ⟨f, s, hf, rfl, rfl⟩ := exists_mvfderiv_eq (F := F) x ξ v
+  obtain ⟨f, s, hf, rfl, rfl⟩ := exists_mvfderiv_eq_and_apply_eq (F := F) x ξ v
   rw [jetSymbol_mvfderiv hf, LinearMap.jetFactorOfMemDifferentialOperators_jet,
     sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero _ _ hf]
 
