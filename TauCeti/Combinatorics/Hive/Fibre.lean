@@ -697,23 +697,50 @@ theorem finite_support_hiveCount_productBoundary {n : ℕ} (lam μ : DominantWei
     exact fun j => ⟨(last_le_of_productBoundary hb).trans (γ.property (Fin.le_last j)),
       (γ.property (Fin.zero_le j)).trans (first_le_of_productBoundary hb)⟩
 
+/-- Any vertex with `z = 0` lies on side `0` (`A → B`) at index `p.y`. -/
+private theorem eq_edgePoint_zero_of_z_eq_zero {n : ℕ} {p : Vertex n} (hz : p.z = 0) :
+    p = Vertex.edgePoint n 0 ⟨p.y, by have := p.sum_eq; omega⟩ := by
+  have := p.sum_eq
+  ext <;> simp [hz]
+  omega
+
+/-- Any vertex with `x = 0` lies on side `1` (`B → C`) at index `p.z`. -/
+private theorem eq_edgePoint_one_of_x_eq_zero {n : ℕ} {p : Vertex n} (hx : p.x = 0) :
+    p = Vertex.edgePoint n 1 ⟨p.z, by have := p.sum_eq; omega⟩ := by
+  have := p.sum_eq
+  ext <;> simp [hx]
+  omega
+
+/-- Any vertex with `y = 0` lies on side `2` (`C → A`) at index `p.x`. -/
+private theorem eq_edgePoint_two_of_y_eq_zero {n : ℕ} {p : Vertex n} (hy : p.y = 0) :
+    p = Vertex.edgePoint n 2 ⟨p.x, by have := p.sum_eq; omega⟩ := by
+  have := p.sum_eq
+  ext <;> simp [hy]
+  omega
+
+/-- Any rank-`3` vertex with all three coordinates nonzero is the unique interior vertex
+`(1, 1, 1)`. -/
+private theorem vertex_three_eq_center_of_ne_zero {p : Vertex 3}
+    (hx : p.x ≠ 0) (hy : p.y ≠ 0) (hz : p.z ≠ 0) : p = ⟨1, 1, 1, rfl⟩ := by
+  have := p.sum_eq
+  ext <;> simp <;> omega
+
 /-- A rank-`3` hive with fixed boundary `B` is uniquely determined by its value at the single
 interior vertex `(1, 1, 1)`. -/
 theorem fixedIntegerHive_three_ext {B : Fin 3 → Fin 3 → ℤ}
     (k₁ k₂ : FixedIntegerHive B)
     (hmid : k₁.val ⟨1, 1, 1, rfl⟩ = k₂.val ⟨1, 1, 1, rfl⟩) : k₁ = k₂ := by
   refine Subtype.ext <| ext fun p => ?_
-  have := p.sum_eq
   by_cases hz : p.z = 0
-  · rw [show p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ by ext <;> simp [hz]; omega,
-      k₁.val.apply_edgePoint_zero, k₂.val.apply_edgePoint_zero, k₁.property, k₂.property]
+  · rw [eq_edgePoint_zero_of_z_eq_zero hz, k₁.val.apply_edgePoint_zero,
+      k₂.val.apply_edgePoint_zero, k₁.property, k₂.property]
   · by_cases hx : p.x = 0
-    · rw [show p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ by ext <;> simp [hx]; omega,
-        k₁.val.apply_edgePoint_one, k₂.val.apply_edgePoint_one, k₁.property, k₂.property]
+    · rw [eq_edgePoint_one_of_x_eq_zero hx, k₁.val.apply_edgePoint_one,
+        k₂.val.apply_edgePoint_one, k₁.property, k₂.property]
     · by_cases hy : p.y = 0
-      · rw [show p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ by ext <;> simp [hy]; omega,
-          k₁.val.apply_edgePoint_two, k₂.val.apply_edgePoint_two, k₁.property, k₂.property]
-      · rw [show p = ⟨1, 1, 1, rfl⟩ by ext <;> simp <;> omega, hmid]
+      · rw [eq_edgePoint_two_of_y_eq_zero hy, k₁.val.apply_edgePoint_two,
+          k₂.val.apply_edgePoint_two, k₁.property, k₂.property]
+      · rw [vertex_three_eq_center_of_ne_zero hx hy hz, hmid]
 
 end IntegerFibre
 
@@ -827,6 +854,8 @@ private def ofChartThree {lam μ γ : DominantWeight 3} (c : ℕ → ℕ → ℤ
   ⟨⟨fun p => c p.z (3 - p.x), by simpa using hc0,
     fun hr => (isRhombusConcave_def _).mp (isRhombusConcave_of_chartThree c hH hC hV) hr⟩,
     by
+      have hrev (k : Fin 3) : c k.val k.val - c (k.val + 1) (k.val + 1) = -γ.val k := by
+        rw [← neg_sub, hb2 k]
       ext s k
       fin_cases s <;> fin_cases k
       · simpa [boundary_apply, productBoundary_zero, hc0] using hb0 0
@@ -835,12 +864,9 @@ private def ofChartThree {lam μ γ : DominantWeight 3} (c : ℕ → ℕ → ℤ
       · simpa [boundary_apply, productBoundary_one] using hb1 0
       · simpa [boundary_apply, productBoundary_one] using hb1 1
       · simpa [boundary_apply, productBoundary_one] using hb1 2
-      · have h : c 3 3 - c 2 2 = γ.val 2 := hb2 2
-        simpa [boundary_apply, productBoundary_two] using show c 2 2 - c 3 3 = -γ.val 2 by omega
-      · have h : c 2 2 - c 1 1 = γ.val 1 := hb2 1
-        simpa [boundary_apply, productBoundary_two] using show c 1 1 - c 2 2 = -γ.val 1 by omega
-      · have h : c 1 1 - c 0 0 = γ.val 0 := hb2 0
-        simpa [boundary_apply, productBoundary_two] using show c 0 0 - c 1 1 = -γ.val 0 by omega⟩
+      · simpa [boundary_apply, productBoundary_two] using hrev 2
+      · simpa [boundary_apply, productBoundary_two] using hrev 1
+      · simpa [boundary_apply, productBoundary_two] using hrev 0⟩
 
 private theorem ofChartThree_val_apply {lam μ γ : DominantWeight 3} (c : ℕ → ℕ → ℤ)
     (hc0 : c 0 0 = 0)
