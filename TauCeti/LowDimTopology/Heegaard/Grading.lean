@@ -67,9 +67,9 @@ minus, infinity and plus differentials have degree `-1`
 
 The maps of the short exact sequences relating the flavors
 (`TauCeti.LowDimTopology.Heegaard.FlavorExactSequence`) are homogeneous: the inclusion of `CF⁻`
-into `CF^∞` (`mapRange_toLaurent_mem_infinityGradedPiece`), the quotient map onto `CF⁺`
+into `CF^∞` (`isHomogeneous_mapRange_toLaurent`), the quotient map onto `CF⁺`
 (`TauCeti.InternalGrading.isHomogeneous_mkQ`) and setting `U = 0`
-(`mapRange_constantCoeff_mem_hatGradedPiece`) have degree `0`, and the inclusion of `CF̂` into
+(`isHomogeneous_mapRange_constantCoeff`) have degree `0`, and the inclusion of `CF̂` into
 `CF⁺` has degree `2` (`isHomogeneous_hatToPlus`), since it sends `x` to the class of `U⁻¹ x`. Our
 `CF⁻` is spanned by the `U ^ k x` with `k ≥ 0` rather than `k > 0`, which is why this map, of degree
 `0` in the conventions of Ozsváth and Szabó, has degree `2` here.
@@ -148,6 +148,16 @@ private theorem maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_forall
   rw [hself x E hE, sub_self]
   exact zero_mem _
 
+/-- If every domain `E` from a generator to itself has `μ(E) = 2 ∑ᵢ n_{zᵢ}(E)`, every periodic
+domain has Maslov index zero at every generator. -/
+private theorem maslovIndex_eq_zero_of_mem_periodicDomains_of_forall
+    (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
+      H.maslovIndex χ x x E = 2 * ∑ z, (E (H.basepoint z) : ℚ))
+    {P : Region → ℤ} (hP : P ∈ H.periodicDomains) (x : H.Generator) :
+    H.maslovIndex χ x x P = 0 := by
+  obtain ⟨hxx, hz⟩ := (isDomainBetween_self_iff (x := x)).mpr hP
+  simp [hself x P hxx, hz]
+
 namespace IsMaslovGrading
 
 /-- Shifting a Maslov grading by a constant gives a Maslov grading. -/
@@ -187,9 +197,8 @@ theorem maslovIndex_self (h : H.IsMaslovGrading χ gr) (hE : H.IsDomainBetween x
 generator. -/
 theorem maslovIndex_eq_zero_of_mem_periodicDomains (h : H.IsMaslovGrading χ gr)
     {P : Region → ℤ} (hP : P ∈ H.periodicDomains) (x : H.Generator) :
-    H.maslovIndex χ x x P = 0 := by
-  obtain ⟨hxx, hz⟩ := (isDomainBetween_self_iff (x := x)).mpr hP
-  simp [h.maslovIndex_self hxx, hz]
+    H.maslovIndex χ x x P = 0 :=
+  maslovIndex_eq_zero_of_mem_periodicDomains_of_forall (fun _ _ => h.maslovIndex_self) hP x
 
 /-- In the presence of a Maslov grading, the periodic Maslov indices vanish at every generator, so
 the relative grading is well defined in `ℚ` rather than only modulo them. -/
@@ -234,9 +243,7 @@ theorem exists_isMaslovGrading_iff :
   -- The hypotheses of the lemmas on the relative grading.
   have hself' := maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_forall hself
   have hP : ∀ x : H.Generator, ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0 :=
-    fun x P hP => by
-      obtain ⟨hxx, hz⟩ := (isDomainBetween_self_iff (x := x)).mpr hP
-      simp [hself x P hxx, hz]
+    fun x _ hP => maslovIndex_eq_zero_of_mem_periodicDomains_of_forall hself hP x
   -- Being joined by a domain is an equivalence relation on generators.
   let s : Setoid H.Generator :=
     { r := fun x y => ∃ D, H.IsDomainBetween x y D
@@ -258,12 +265,10 @@ torsion. -/
 theorem exists_isMaslovGrading_iff_forall_periodicMaslovIndices_eq_bot
     (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
       H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x) :
-    (∃ gr, H.IsMaslovGrading χ gr) ↔ ∀ x : H.Generator, H.periodicMaslovIndices χ x = ⊥ := by
-  rw [exists_isMaslovGrading_iff]
-  refine ⟨fun h x => periodicMaslovIndices_eq_bot_iff.mpr fun P hP => ?_, fun h x E hE =>
-    hE.maslovIndex_self_eq_two_mul_sum hself (periodicMaslovIndices_eq_bot_iff.mp (h x))⟩
-  obtain ⟨hxx, hz⟩ := (isDomainBetween_self_iff (x := x)).mpr hP
-  simp [h x P hxx, hz]
+    (∃ gr, H.IsMaslovGrading χ gr) ↔ ∀ x : H.Generator, H.periodicMaslovIndices χ x = ⊥ :=
+  ⟨fun ⟨_, h⟩ x => h.periodicMaslovIndices_eq_bot x, fun h => exists_isMaslovGrading_iff.mpr
+    fun x _ hE => hE.maslovIndex_self_eq_two_mul_sum hself
+      (periodicMaslovIndices_eq_bot_iff.mp (h x))⟩
 
 end MaslovGrading
 
@@ -416,38 +421,53 @@ theorem X_smul_mem_infinityGradedPiece {q : ℚ} {c : H.Generator →₀ (ZMod 2
     simp only [Finsupp.smul_apply, X_smul_eq_T_one_mul, smul_eq_mul]
   simpa [hX] using T_smul_mem_infinityGradedPiece hc 1
 
+/-- **The inclusion of `CF⁻` into `CF^∞` has degree `0`.** -/
+theorem isHomogeneous_mapRange_toLaurent :
+    LinearMap.IsHomogeneous
+      (Finsupp.mapRange.linearMap (Algebra.linearMap (ZMod 2)[X] (ZMod 2)[T;T⁻¹]))
+      (H.minusGradedPiece gr) (H.infinityGradedPiece gr) 0 := by
+  -- Check the degree on the basis `U ^ k x` of `CF⁻`, which spans its pieces.
+  refine LinearMap.isHomogeneous_span_iff.2 ?_
+  rintro p _ ⟨⟨x, k⟩, hi, rfl⟩
+  have hb : Finsupp.mapRange.linearMap (Algebra.linearMap (ZMod 2)[X] (ZMod 2)[T;T⁻¹])
+      (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) ⟨x, k⟩) =
+      Finsupp.single x (T k) := by
+    simp [LaurentPolynomial.algebraMap_eq_toLaurent, Polynomial.toLaurent_C_mul_T]
+  rw [hb, add_zero, ← hi]
+  exact single_T_mem_infinityGradedPiece x k
+
 /-- **The inclusion of `CF⁻` into `CF^∞` preserves the degree.** -/
 theorem mapRange_toLaurent_mem_infinityGradedPiece {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]}
     (hc : c ∈ H.minusGradedPiece gr q) :
     Finsupp.mapRange toLaurent (map_zero _) c ∈ H.infinityGradedPiece gr q := by
-  -- Check the degree on the basis `U ^ k x` of `CF⁻`, which spans its pieces.
-  have hhom : LinearMap.IsHomogeneous
-      (Finsupp.mapRange.linearMap (Algebra.linearMap (ZMod 2)[X] (ZMod 2)[T;T⁻¹]))
-      (H.minusGradedPiece gr) (H.infinityGradedPiece gr) 0 := by
-    refine LinearMap.isHomogeneous_span_iff.2 ?_
-    rintro p _ ⟨⟨x, k⟩, hi, rfl⟩
-    have hb : Finsupp.mapRange.linearMap (Algebra.linearMap (ZMod 2)[X] (ZMod 2)[T;T⁻¹])
-        (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) ⟨x, k⟩) =
-        Finsupp.single x (T k) := by
-      simp [LaurentPolynomial.algebraMap_eq_toLaurent, Polynomial.toLaurent_C_mul_T]
-    rw [hb, add_zero, ← hi]
-    exact single_T_mem_infinityGradedPiece x k
   have heq : Finsupp.mapRange toLaurent (map_zero _) c =
       Finsupp.mapRange.linearMap (Algebra.linearMap (ZMod 2)[X] (ZMod 2)[T;T⁻¹]) c := by
     ext x
     simp [LaurentPolynomial.algebraMap_eq_toLaurent]
-  simpa [heq] using hhom.map_mem hc
+  simpa [heq] using isHomogeneous_mapRange_toLaurent.map_mem hc
+
+/-- **Setting `U = 0` has degree `0`**: taking constant coefficients maps the degree-`q` piece of
+`CF⁻` to the degree-`q` piece of `CF̂`. -/
+theorem isHomogeneous_mapRange_constantCoeff :
+    LinearMap.IsHomogeneous (Finsupp.mapRange.linearMap (lcoeff (ZMod 2) 0))
+      (H.minusGradedPiece gr) (H.hatGradedPiece gr) 0 := by
+  refine LinearMap.isHomogeneous_def.2 fun q c hc => ?_
+  rw [mem_minusGradedPiece_iff] at hc
+  rw [add_zero, mem_hatGradedPiece_iff]
+  intro x hx
+  rw [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply, lcoeff_apply] at hx
+  simpa using hc x 0 hx
 
 /-- **Setting `U = 0` preserves the degree**: it maps the degree-`q` piece of `CF⁻` to the
 degree-`q` piece of `CF̂`. -/
 theorem mapRange_constantCoeff_mem_hatGradedPiece {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]}
     (hc : c ∈ H.minusGradedPiece gr q) :
     Finsupp.mapRange constantCoeff (map_zero _) c ∈ H.hatGradedPiece gr q := by
-  rw [mem_minusGradedPiece_iff] at hc
-  rw [mem_hatGradedPiece_iff]
-  intro x hx
-  rw [Finsupp.mapRange_apply, constantCoeff_apply] at hx
-  simpa using hc x 0 hx
+  have heq : Finsupp.mapRange constantCoeff (map_zero _) c =
+      Finsupp.mapRange.linearMap (lcoeff (ZMod 2) 0) c := by
+    ext x
+    simp [coeff_zero_eq_eval_zero, constantCoeff_apply]
+  simpa [heq] using isHomogeneous_mapRange_constantCoeff.map_mem hc
 
 /-- The chains of `CF^∞` with polynomial coefficients are spanned by the chains `U ^ k x` with
 `k ≥ 0`. -/
@@ -485,6 +505,7 @@ noncomputable def plusGrading :
   (H.infinityGrading gr).quotient H.minusLattice (isHomogeneous_minusLattice H gr)
 
 /-- The degree-`q` piece of `CF⁺` is the image of the degree-`q` piece of `CF^∞`. -/
+@[simp]
 theorem plusGrading_piece (q : ℚ) :
     (H.plusGrading gr).piece q =
       (H.infinityGradedPiece gr q).map (H.minusLattice.mkQ.restrictScalars (ZMod 2)) :=
