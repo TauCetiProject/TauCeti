@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Complement
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.Doubling.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Basic
 
@@ -92,8 +93,8 @@ diagonal: `(x, -x) ↦ (a x, -a x)` and `(y, y) ↦ (d y, d y)`. It is the block
 def siegelLeviHom : (M ≃ₗ[R] M) × (M ≃ₗ[R] M) →* (M × M) ≃ₗ[R] M × M :=
   (MulAut.conj (antidiagDiagEquiv R M)).toMonoidHom.comp
     { toFun := fun p ↦ p.1.prodCongr p.2
-      map_one' := rfl
-      map_mul' := fun _ _ ↦ rfl }
+      map_one' := LinearEquiv.ext fun _ ↦ rfl
+      map_mul' := fun _ _ ↦ LinearEquiv.ext fun _ ↦ rfl }
 
 /-- The unipotent automorphism `n(X)` of `M × M` fixing the diagonal pointwise and sending
 `(x, -x)` to `(x, -x) + (X x, X x)`. It is the shear `(u, v) ↦ (u, v + X u)` read in the
@@ -118,12 +119,6 @@ theorem siegelUnipotentHom_def (X : M →ₗ[R] M) :
     siegelUnipotentHom R M (.ofAdd X) = MulAut.conj (antidiagDiagEquiv R M)
       ((LinearEquiv.refl R M).skewProd (LinearEquiv.refl R M) X) := (rfl)
 
-private theorem conj_antidiagDiagEquiv_apply (g : (M × M) ≃ₗ[R] M × M) (p : M × M) :
-    MulAut.conj (antidiagDiagEquiv R M) g (antidiagDiagEquiv R M p) =
-      antidiagDiagEquiv R M (g p) := by
-  rw [MulAut.conj_apply, mul_apply_eq_comp, mul_apply_eq_comp, LinearEquiv.coe_inv,
-    LinearEquiv.symm_apply_apply]
-
 private theorem antidiag_eq (x : M) : ((x, -x) : M × M) = antidiagDiagEquiv R M (x, 0) := by
   simp
 
@@ -134,28 +129,28 @@ private theorem diag_eq (y : M) : ((y, y) : M × M) = antidiagDiagEquiv R M (0, 
 @[simp]
 theorem siegelLeviHom_apply_antidiag (a d : M ≃ₗ[R] M) (x : M) :
     siegelLeviHom R M (a, d) (x, -x) = (a x, -a x) := by
-  rw [antidiag_eq (R := R), siegelLeviHom_def, conj_antidiagDiagEquiv_apply]
+  rw [antidiag_eq (R := R), siegelLeviHom_def, LinearEquiv.mulAut_conj_apply_apply]
   simp
 
 /-- `m(a, d)` acts by `d` on the diagonal. -/
 @[simp]
 theorem siegelLeviHom_apply_diag (a d : M ≃ₗ[R] M) (y : M) :
     siegelLeviHom R M (a, d) (y, y) = (d y, d y) := by
-  rw [diag_eq (R := R), siegelLeviHom_def, conj_antidiagDiagEquiv_apply]
+  rw [diag_eq (R := R), siegelLeviHom_def, LinearEquiv.mulAut_conj_apply_apply]
   simp
 
 /-- `n(X)` sends `(x, -x)` to `(x, -x) + (X x, X x)`. -/
 @[simp]
 theorem siegelUnipotentHom_apply_antidiag (X : M →ₗ[R] M) (x : M) :
     siegelUnipotentHom R M (.ofAdd X) (x, -x) = (x + X x, -x + X x) := by
-  rw [antidiag_eq (R := R), siegelUnipotentHom_def, conj_antidiagDiagEquiv_apply]
+  rw [antidiag_eq (R := R), siegelUnipotentHom_def, LinearEquiv.mulAut_conj_apply_apply]
   simp [LinearEquiv.skewProd_apply, sub_eq_neg_add]
 
 /-- `n(X)` fixes the diagonal pointwise. -/
 @[simp]
 theorem siegelUnipotentHom_apply_diag (X : M →ₗ[R] M) (y : M) :
     siegelUnipotentHom R M (.ofAdd X) (y, y) = (y, y) := by
-  rw [diag_eq (R := R), siegelUnipotentHom_def, conj_antidiagDiagEquiv_apply]
+  rw [diag_eq (R := R), siegelUnipotentHom_def, LinearEquiv.mulAut_conj_apply_apply]
   simp [LinearEquiv.skewProd_apply]
 
 /-- The block-diagonal map `m(a, d)` determines `a` and `d`. -/
@@ -308,7 +303,7 @@ def siegelDiagHom : B.siegelParabolic S →* M ≃ₗ[R] M where
         dsimp only
         rw [apply_diag_eq (map_symm_graph_id (mem_siegelParabolic_iff.1 p.property).2),
           LinearEquiv.apply_symm_apply] }
-  map_one' := rfl
+  map_one' := LinearEquiv.ext fun _ ↦ rfl
   map_mul' p q := LinearEquiv.ext fun y ↦ by
     simp only [Subgroup.coe_mul, Prod.fst_mul, mul_apply_eq_comp, LinearEquiv.coe_mk,
       LinearMap.coe_mk, AddHom.coe_mk]
@@ -339,13 +334,13 @@ private theorem conj_mem_similitudeGroup_doubled_iff (g : (M × M) ≃ₗ[R] M �
   rw [mem_similitudeGroup_iff]
   refine ⟨fun h p q ↦ (isUnit_of_invertible (2 : R)).smul_left_cancel.1 ?_, fun h u v ↦ ?_⟩
   · have := h (antidiagDiagEquiv R M p) (antidiagDiagEquiv R M q)
-    rw [conj_antidiagDiagEquiv_apply, conj_antidiagDiagEquiv_apply, doubled_antidiagDiagEquiv,
-      doubled_antidiagDiagEquiv] at this
+    rw [LinearEquiv.mulAut_conj_apply_apply, LinearEquiv.mulAut_conj_apply_apply,
+      doubled_antidiagDiagEquiv, doubled_antidiagDiagEquiv] at this
     simpa only [two_nsmul, smul_add, two_smul] using this
   · obtain ⟨p, rfl⟩ := (antidiagDiagEquiv R M).surjective u
     obtain ⟨q, rfl⟩ := (antidiagDiagEquiv R M).surjective v
-    rw [conj_antidiagDiagEquiv_apply, conj_antidiagDiagEquiv_apply, doubled_antidiagDiagEquiv,
-      doubled_antidiagDiagEquiv, h]
+    rw [LinearEquiv.mulAut_conj_apply_apply, LinearEquiv.mulAut_conj_apply_apply,
+      doubled_antidiagDiagEquiv, doubled_antidiagDiagEquiv, h]
     simp only [two_nsmul, smul_add]
 
 /-- The block-diagonal map `m(a, d)` with multiplier `c` is a similitude of `B ⊕ (-B)` exactly
@@ -375,20 +370,12 @@ theorem siegelUnipotentHom_mem_similitudeGroup_iff (X : M →ₗ[R] M) :
       h, one_smul]
     abel
 
-private theorem map_map_conj (g : (M × M) ≃ₗ[R] M × M) (p : Submodule R (M × M)) :
-    (p.map (antidiagDiagEquiv R M : (M × M) →ₗ[R] M × M)).map
-        (MulAut.conj (antidiagDiagEquiv R M) g : (M × M) →ₗ[R] M × M) =
-      (p.map (g : (M × M) →ₗ[R] M × M)).map (antidiagDiagEquiv R M : (M × M) →ₗ[R] M × M) := by
-  rw [← Submodule.map_comp, ← Submodule.map_comp]
-  congr 1
-  exact LinearMap.ext fun v ↦ conj_antidiagDiagEquiv_apply g v
-
 private theorem map_graph_id_conj_eq_iff (g : (M × M) ≃ₗ[R] M × M) :
     (LinearMap.id : M →ₗ[R] M).graph.map
         (MulAut.conj (antidiagDiagEquiv R M) g : (M × M) →ₗ[R] M × M) =
       (LinearMap.id : M →ₗ[R] M).graph ↔
       (range (inr R M M)).map (g : (M × M) →ₗ[R] M × M) = range (inr R M M) := by
-  rw [← map_antidiagDiagEquiv_range_inr, map_map_conj]
+  rw [← map_antidiagDiagEquiv_range_inr, LinearEquiv.map_map_mulAut_conj]
   exact (Submodule.map_injective_of_injective (antidiagDiagEquiv R M).injective).eq_iff
 
 private theorem map_graph_neg_id_conj_eq_iff (g : (M × M) ≃ₗ[R] M × M) :
@@ -396,7 +383,7 @@ private theorem map_graph_neg_id_conj_eq_iff (g : (M × M) ≃ₗ[R] M × M) :
         (MulAut.conj (antidiagDiagEquiv R M) g : (M × M) →ₗ[R] M × M) =
       (-LinearMap.id : M →ₗ[R] M).graph ↔
       (range (inl R M M)).map (g : (M × M) →ₗ[R] M × M) = range (inl R M M) := by
-  rw [← map_antidiagDiagEquiv_range_inl, map_map_conj]
+  rw [← map_antidiagDiagEquiv_range_inl, LinearEquiv.map_map_mulAut_conj]
   exact (Submodule.map_injective_of_injective (antidiagDiagEquiv R M).injective).eq_iff
 
 variable {B S}
@@ -443,7 +430,7 @@ theorem mem_siegelRadical_iff_exists_siegelUnipotentHom {g : ((M × M) ≃ₗ[R]
   refine ⟨fun ⟨hsim, hc, hfix, hD⟩ ↦ ⟨hc, ?_⟩, ?_⟩
   · obtain ⟨g', hg'⟩ := (MulAut.conj (antidiagDiagEquiv R M)).surjective g.1
     have hφ (p : M × M) : g.1 (antidiagDiagEquiv R M p) = antidiagDiagEquiv R M (g' p) := by
-      rw [← hg', conj_antidiagDiagEquiv_apply]
+      rw [← hg', LinearEquiv.mulAut_conj_apply_apply]
     -- `g'` fixes `0 × M` pointwise and acts trivially modulo it.
     have h₀ (y : M) : g' (0, y) = (0, y) :=
       (antidiagDiagEquiv R M).injective (by rw [← hφ]; simpa using hfix y)
@@ -472,7 +459,7 @@ theorem mem_siegelRadical_iff_exists_siegelUnipotentHom {g : ((M × M) ≃ₗ[R]
     rw [hg, ← hc] at hsim
     refine ⟨hsim, hc, fun y ↦ by rw [← hg, siegelUnipotentHom_apply_diag], fun v ↦ ?_⟩
     obtain ⟨p, rfl⟩ := (antidiagDiagEquiv R M).surjective v
-    rw [← hg, siegelUnipotentHom_def, conj_antidiagDiagEquiv_apply, ← map_sub]
+    rw [← hg, siegelUnipotentHom_def, LinearEquiv.mulAut_conj_apply_apply, ← map_sub]
     simp [LinearEquiv.skewProd_apply]
 
 /-- **The Siegel parabolic in coordinates.** Every element of the Siegel parabolic is

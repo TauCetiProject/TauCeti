@@ -192,19 +192,17 @@ theorem exists_prodCongr_eq_iff {g : (M₁ × M₂) ≃ₗ[R] M₁ × M₂} :
 theorem map_range_inl_prodCongr (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) :
     (LinearMap.range (LinearMap.inl R M₁ M₂)).map (e₁.prodCongr e₂ : (M₁ × M₂) →ₗ[R] M₁ × M₂) =
       LinearMap.range (LinearMap.inl R M₁ M₂) := by
-  ext ⟨u, w⟩
-  simp only [Submodule.mem_map, LinearMap.mem_range, LinearMap.inl_apply, exists_exists_eq_and,
-    coe_coe, prodCongr_apply, map_zero, Prod.mk.injEq]
-  exact ⟨fun ⟨x, hx, hw⟩ ↦ ⟨e₁ x, hx, hw⟩, fun ⟨x, hx, hw⟩ ↦ ⟨e₁.symm x, by simp [hx], hw⟩⟩
+  rw [← LinearMap.range_comp, show (e₁.prodCongr e₂ : (M₁ × M₂) →ₗ[R] M₁ × M₂) ∘ₗ
+    LinearMap.inl R M₁ M₂ = LinearMap.inl R M₁ M₂ ∘ₗ (e₁ : M₁ →ₗ[R] M₁) by ext <;> simp]
+  exact range_comp e₁ _
 
 /-- A product `e₁.prodCongr e₂` of automorphisms maps `0 × M₂` onto itself. -/
 theorem map_range_inr_prodCongr (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) :
     (LinearMap.range (LinearMap.inr R M₁ M₂)).map (e₁.prodCongr e₂ : (M₁ × M₂) →ₗ[R] M₁ × M₂) =
       LinearMap.range (LinearMap.inr R M₁ M₂) := by
-  ext ⟨u, w⟩
-  simp only [Submodule.mem_map, LinearMap.mem_range, LinearMap.inr_apply, exists_exists_eq_and,
-    coe_coe, prodCongr_apply, map_zero, Prod.mk.injEq]
-  exact ⟨fun ⟨x, hu, hx⟩ ↦ ⟨e₂ x, hu, hx⟩, fun ⟨x, hu, hx⟩ ↦ ⟨e₂.symm x, hu, by simp [hx]⟩⟩
+  rw [← LinearMap.range_comp, show (e₁.prodCongr e₂ : (M₁ × M₂) →ₗ[R] M₁ × M₂) ∘ₗ
+    LinearMap.inr R M₁ M₂ = LinearMap.inr R M₁ M₂ ∘ₗ (e₂ : M₂ →ₗ[R] M₂) by ext <;> simp]
+  exact range_comp e₂ _
 
 /-- A linear automorphism of `M₁ × M₂` is block lower triangular,
 `e₁.skewProd e₂ f : (x, y) ↦ (e₁ x, e₂ y + f x)` for automorphisms `e₁`, `e₂` of the factors,
