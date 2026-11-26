@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Analysis.Matrix.LDL
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
 
@@ -25,6 +26,9 @@ determinant of the pencil `1 - c • B`, which are read off the scalars `1 - c *
 and the traces of natural powers of `B`, which are sums of powers of the eigenvalues. The
 pencil is diagonal in the eigenbasis for any scalar `c`; only its positive definiteness asks
 for a real one.
+The real parts of the determinant and trace are the product and sum of the eigenvalues, and a
+Hermitian matrix with all eigenvalues equal to `c` is `c • 1`
+(`Matrix.IsHermitian.eq_smul_one_of_eigenvalues_eq`).
 
 These are the spectral facts behind the moment-generating function of a Gaussian quadratic form,
 whose exponential-integrability domain is a positive-definiteness condition on such a pencil and
@@ -91,7 +95,10 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`;
 * `Matrix.IsSymm.exists_orthogonal_diagonal` — a real symmetric matrix is `O * diagonal d * O⁻¹`
   for an invertible `O` with `O⁻¹ = Oᵀ`;
-* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq` and
+* `Matrix.PosDef.exists_simultaneous_diagonal_real` — a real positive-definite matrix `A` and
+  Hermitian matrix `C` admit `P : GL ι ℝ` with `Pᵀ * A * P = 1` and `Pᵀ * C * P = diagonal lam`;
+* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq`,
+  `Matrix.IsHermitian.eigenvalues₀_equivOfCardEq_symm` and
   `Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq` — the canonical equivalence
   `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
   matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
@@ -527,6 +534,13 @@ theorem eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
       hA.eigenvalues₀ i := by
   simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
 
+/-- The sorted eigenvalue at the index the canonical finite equivalence sends to `i` is the
+matrix-indexed eigenvalue at `i`. -/
+theorem eigenvalues₀_equivOfCardEq_symm (hA : A.IsHermitian) (i : ι) :
+    hA.eigenvalues₀ ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm i) =
+      hA.eigenvalues i := by
+  rw [← eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
+
 /-- A product of a function over the matrix-indexed eigenvalues of a Hermitian matrix is its
 product over the sorted eigenvalues. -/
 @[to_additive /-- A sum of a function over the matrix-indexed eigenvalues of a Hermitian matrix is
@@ -546,6 +560,25 @@ theorem eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
   intro k hk
   have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
   simpa [e, IsHermitian.eigenvalues] using hi _ hk'
+
+/-- A Hermitian matrix whose eigenvalues are all equal to `c` is `c • 1`. -/
+theorem eq_smul_one_of_eigenvalues_eq (hA : A.IsHermitian) {c : ℝ}
+    (hc : ∀ i, hA.eigenvalues i = c) : A = c • (1 : Matrix ι ι 𝕜) := by
+  have hdiag : diagonal (RCLike.ofReal ∘ hA.eigenvalues) = algebraMap 𝕜 (Matrix ι ι 𝕜) c := by
+    ext i j
+    simp [hc, diagonal_apply, algebraMap_matrix_apply]
+  rw [hA.spectral_theorem, hdiag, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one,
+    ← RCLike.real_smul_eq_coe_smul]
+
+/-- The real part of the determinant of a Hermitian matrix is the product of its eigenvalues. -/
+theorem re_det_eq_prod_eigenvalues (hA : A.IsHermitian) :
+    RCLike.re A.det = ∏ i, hA.eigenvalues i := by
+  rw [hA.det_eq_prod_eigenvalues, ← RCLike.ofReal_prod, RCLike.ofReal_re]
+
+/-- The real part of the trace of a Hermitian matrix is the sum of its eigenvalues. -/
+theorem re_trace_eq_sum_eigenvalues (hA : A.IsHermitian) :
+    RCLike.re A.trace = ∑ i, hA.eigenvalues i := by
+  rw [hA.trace_eq_sum_eigenvalues, ← RCLike.ofReal_sum, RCLike.ofReal_re]
 
 /-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
 matrix-indexed eigenvalues does not vanish. -/
@@ -567,3 +600,45 @@ theorem det_scalar_eigenvalues₀_sub_eq_zero (hA : A.IsHermitian)
   rw [← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1 hroot).eq_zero]
 
 end Matrix.IsHermitian
+
+namespace Matrix.PosDef
+
+/-- Simultaneous diagonalization of a real positive-definite matrix `A` and a real Hermitian
+(symmetric) matrix `C`: there exist an invertible matrix `P : GL ι ℝ` and a vector `lam` (the
+generalized eigenvalues of `C` relative to `A`) such that `Pᵀ * A * P = 1` and
+`Pᵀ * C * P = Matrix.diagonal lam`. -/
+theorem exists_simultaneous_diagonal_real {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {A C : Matrix ι ι ℝ} (hA : A.PosDef) (hC : C.IsHermitian) :
+    ∃ (P : GL ι ℝ) (lam : ι → ℝ),
+      (P : Matrix ι ι ℝ)ᵀ * A * (P : Matrix ι ι ℝ) = 1 ∧
+      (P : Matrix ι ι ℝ)ᵀ * C * (P : Matrix ι ι ℝ) = Matrix.diagonal lam := by
+  let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  let lo : LinearOrder ι := LinearOrder.lift' e.symm e.symm.injective
+  obtain ⟨P₁, -, hP₁_lo⟩ := letI := lo; hA.exists_isUpperTriangular_conjTranspose_mul_mul_eq_one
+  rw [Matrix.conjTranspose_eq_transpose_of_trivial] at hP₁_lo
+  -- The LDL lemma's `1` uses the `DecidableEq ι` derived from `lo`, not the ambient instance;
+  -- the two instances agree since `DecidableEq ι` is a subsingleton.
+  have hP₁ : P₁ᵀ * A * P₁ = 1 := by convert hP₁_lo
+  let uP₁ : GL ι ℝ := ⟨P₁, P₁ᵀ * A, mul_eq_one_comm.mp hP₁, hP₁⟩
+  set M := P₁ᵀ * C * P₁
+  have hM : M.IsHermitian := by
+    simpa [M, Matrix.conjTranspose_eq_transpose_of_trivial] using
+      Matrix.isHermitian_conjTranspose_mul_mul P₁ hC
+  have hMS : M.IsSymm := by
+    rw [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] at hM
+    exact hM
+  obtain ⟨O, lam, hO_inv, hM_diag⟩ := hMS.exists_orthogonal_diagonal
+  have hOL : (O : Matrix ι ι ℝ)ᵀ * (O : Matrix ι ι ℝ) = 1 := by
+    rw [← hO_inv, ← Units.val_mul, inv_mul_cancel, Units.val_one]
+  have hOL_mul (X : Matrix ι ι ℝ) : (O : Matrix ι ι ℝ)ᵀ * ((O : Matrix ι ι ℝ) * X) = X := by
+    rw [← Matrix.mul_assoc, hOL, Matrix.one_mul]
+  have hP₁_mul (X : Matrix ι ι ℝ) : P₁ᵀ * (A * (P₁ * X)) = X := by
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hP₁, Matrix.one_mul]
+  have hM_mul (X : Matrix ι ι ℝ) : P₁ᵀ * (C * (P₁ * X)) = M * X := by
+    simp only [M, Matrix.mul_assoc]
+  refine ⟨uP₁ * O, lam, ?_, ?_⟩
+  · simp [Units.val_mul, uP₁, Matrix.transpose_mul, Matrix.mul_assoc, hP₁_mul, hOL]
+  · simp [Units.val_mul, uP₁, Matrix.transpose_mul, Matrix.mul_assoc, hM_mul, hM_diag, hO_inv,
+      hOL_mul, hOL]
+
+end Matrix.PosDef

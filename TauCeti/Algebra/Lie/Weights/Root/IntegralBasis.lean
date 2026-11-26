@@ -23,6 +23,8 @@ and simple-coroot coordinates remain named after scalar extension.
 
 * `TauCeti.IsSl2System.rootSimpleCorootBasis`: the corresponding basis of the root--coroot
   lattice, indexed by `H.root ⊕ b.support`.
+* `TauCeti.IsSl2System.rootSimpleCorootFieldBasis`: the same vectors, as a basis of `L` over the
+  ground field.
 * `TauCeti.IsChevalleySystem.rootSimpleCorootBasis`: the transported basis of the Chevalley Lie
   lattice.
 
@@ -110,6 +112,21 @@ private theorem linearIndependent_rootSimpleCorootFamily_ambient :
   linearIndependent_of_top_le_span_of_card_eq_finrank
     (by rw [hx.span_rootSimpleCorootFamily_eq_top b])
     (card_root_sum_support_eq_finrank H b)
+
+/-- The root vectors and the simple coroots of `b`, as a basis of `L` over the ground field. -/
+noncomputable def rootSimpleCorootFieldBasis : Basis (H.root ⊕ b.support) K L :=
+  Basis.mk (hx.linearIndependent_rootSimpleCorootFamily_ambient b)
+    (hx.span_rootSimpleCorootFamily_eq_top b).ge
+
+@[simp] theorem rootSimpleCorootFieldBasis_inl (alpha : H.root) :
+    hx.rootSimpleCorootFieldBasis b (Sum.inl alpha) = x alpha := by
+  rw [rootSimpleCorootFieldBasis, Basis.mk_apply]
+  exact coe_rootSimpleCorootFamily_inl (x := x) b alpha
+
+@[simp] theorem rootSimpleCorootFieldBasis_inr (i : b.support) :
+    hx.rootSimpleCorootFieldBasis b (Sum.inr i) = (coroot (i : Weight K H L) : L) := by
+  rw [rootSimpleCorootFieldBasis, Basis.mk_apply]
+  exact coe_rootSimpleCorootFamily_inr (x := x) b i
 
 omit hx in
 /-- Every coroot lies in the image in `L` of the integral span of the root vectors and simple
@@ -214,6 +231,12 @@ noncomputable def rootSimpleCorootBasis :
   rw [rootSimpleCorootBasis, Basis.map_apply]
   rw [LinearEquiv.coe_ofEq_apply]
   exact hx.toIsSl2System.coe_rootSimpleCorootBasis_inr b i
+
+/-- The integral basis of the Chevalley Lie lattice consists of the vectors of the field basis
+`TauCeti.IsSl2System.rootSimpleCorootFieldBasis`. -/
+theorem coe_rootSimpleCorootBasis (k : H.root ⊕ b.support) :
+    (hx.rootSimpleCorootBasis b k : L) = hx.toIsSl2System.rootSimpleCorootFieldBasis b k := by
+  cases k <;> simp
 
 end IsChevalleySystem
 

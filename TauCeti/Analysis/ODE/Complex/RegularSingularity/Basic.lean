@@ -17,6 +17,7 @@ import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Complex.RegularSingularity.Primary
+import TauCeti.Analysis.ODE.Complex.RegularSingularPoint
 import TauCeti.Analysis.ODE.Complex.SecondOrder
 import TauCeti.Analysis.ODE.SecondOrder.Operator
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -33,7 +34,7 @@ punctured disc `TauCeti.regularSingularSlitDisc z₀ r`
 * For a non-resonant root `ρ` of `Q` (`Q(ρ + s) ≠ 0` for `s ≥ 1`), the canonical series
   `TauCeti.regularSingularSolution` (`TauCeti.regularSingularSolution_eq`) satisfies
   `TauCeti.regularSingularCoeff_solution` (via `TauCeti.regularSingular_solution` from
-  `TauCeti.Analysis.ODE.Complex.RegularSingularity.Primary`, returning series convergence and
+  `TauCeti.Analysis.ODE.Complex.RegularSingularPoint`, returning series convergence and
   `IsSolution` for `TauCeti.regularSingularEquation`), with normalized uniqueness
   `TauCeti.eq_regularSingularCoeff_of_solution`.
 * The shifted logarithmic forcing coefficients `TauCeti.regularSingularLogForcing` sum to the
@@ -186,8 +187,10 @@ theorem regularSingularCoeff_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → �
     (hres : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) ≠ 0) :
     (∀ z, ‖z - z₀‖ < r → Summable fun s => regularSingularCoeff fs gs ρ s * (z - z₀) ^ s) ∧
       (regularSingularEquation hf hg).IsSolution (regularSingularSolution fs gs z₀ ρ) := by
-  obtain ⟨hsum, hdiff, hsol⟩ := regularSingular_solution hf hg hρ hres
-    (fun s hs => indicialPoly_mul_regularSingularCoeff hs (hres s hs))
+  obtain ⟨hsum, hdiff, hsol⟩ := regularSingular_solution hf hg
+    (by simpa [indicialPoly_def] using hρ)
+    (fun s hs => by
+      simpa [indicialPoly_def] using indicialPoly_mul_regularSingularCoeff hs (hres s hs))
     (regularSingularSolution_eq fs gs z₀ ρ)
   exact ⟨hsum, (isSolution_regularSingularEquation_iff hf hg _).mpr
     ⟨hdiff, fun z hz => hsol z hz.1 hz.2⟩⟩
@@ -444,11 +447,14 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
         simpa using (hg (w + z₀) (by simpa using hw0)
           (by simpa using (eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).summable
       have hEr := FormalMultilinearSeries.le_radius_ofScalars_of_summable
-        (fun s => -c * regularSingularLogForcing fs a α₂ N s) fun w _ hwr => by
+        (fun s => c * regularSingularLogForcing fs a α₂ N s) fun w _ hwr => by
           simpa [mul_assoc] using
-            ((hlog_sum w ((eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).mul_left (-c)).summable
-      have hbr := le_radius_ofScalars_of_perturbed_regularSingular (σ := α₂) (d := b) (s₁ := 0)
-        hfr hgr hEr fun s _ => by linear_combination regularSingularSecondCoeff_rec hfact s
+            ((hlog_sum w ((eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).mul_left c).summable
+      have hbr := le_radius_ofScalars_of_regularSingular (ρ := α₂) (a := b) (s₀ := 0)
+        hfr hgr hEr fun s _ => by
+          have hrec := regularSingularSecondCoeff_rec hfact s
+          simp only [indicialPoly_def] at hrec
+          exact hrec
       exact fun z hz => (FormalMultilinearSeries.summable_norm_mul_pow_of_lt_radius b
         ((eNorm_lt_ofReal_iff.mpr hz).trans_le hbr)).of_norm
     · exact fun z hz => False.elim (hr ((norm_nonneg _).trans_lt hz))

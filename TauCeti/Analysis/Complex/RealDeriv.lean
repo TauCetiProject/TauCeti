@@ -19,7 +19,9 @@ complex derivative, `fderiv ℝ f z w = w • deriv f z`
 `‖deriv f z‖ ^ 2` (`DifferentiableAt.det_complexToReal_fderiv`). For `deriv f z = a + b i`, a
 real-linear map `D` precomposed with it satisfies the Cauchy–Riemann combination identity
 `D (f' 1) + A D (f' i) = a (D 1 + A D i) + b (D i - A D 1)`
-(`DifferentiableAt.comp_fderiv_apply_one_add_apply_I`).
+(`DifferentiableAt.comp_fderiv_apply_one_add_apply_I`). For `F` with complex derivative `F'` at
+`z`, the real derivatives of `Re F` and `Im F` send `v` to `Re (F' v)` and `Im (F' v)`
+(`HasDerivAt.fderiv_re_apply`, `HasDerivAt.fderiv_im_apply`).
 
 Complex conjugation is real differentiable (Mathlib's `Complex.differentiable_conj`), but its real
 derivative `conjCLE` is not complex linear: it sends `1` to `1` and `I` to `-I`. Hence conjugation,
@@ -54,6 +56,28 @@ theorem comp_fderiv_apply_one_add_apply_I {F : Type*} [AddCommGroup F] [Module �
   simp [hf.fderiv_restrictScalars_eq_smul_deriv ℝ, mul_comm]
 
 end DifferentiableAt
+
+namespace HasDerivAt
+
+variable {F : ℂ → ℂ} {F' z : ℂ}
+
+/-- The real derivative of the real part of a function with complex derivative `F'` sends `v` to
+`Re (F' v)`. -/
+theorem fderiv_re_apply (h : HasDerivAt F F' z) (v : ℂ) :
+    fderiv ℝ (fun w => (F w).re) z v = (F' * v).re := by
+  have hd := Complex.reCLM.hasFDerivAt.comp z (h.hasFDerivAt.restrictScalars ℝ)
+  simp only [Function.comp_def, Complex.reCLM_apply] at hd
+  simp [hd.fderiv, mul_comm]
+
+/-- The real derivative of the imaginary part of a function with complex derivative `F'` sends
+`v` to `Im (F' v)`. -/
+theorem fderiv_im_apply (h : HasDerivAt F F' z) (v : ℂ) :
+    fderiv ℝ (fun w => (F w).im) z v = (F' * v).im := by
+  have hd := Complex.imCLM.hasFDerivAt.comp z (h.hasFDerivAt.restrictScalars ℝ)
+  simp only [Function.comp_def, Complex.imCLM_apply] at hd
+  simp [hd.fderiv, mul_comm]
+
+end HasDerivAt
 
 namespace Complex
 

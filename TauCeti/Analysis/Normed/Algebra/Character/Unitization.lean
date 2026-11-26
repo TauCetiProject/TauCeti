@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Algebra.Unitization
 public import TauCeti.Analysis.Normed.Algebra.Character.Basic
 public import TauCeti.Topology.Compactification.OnePoint.ComplSingleton
 
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Topology.Algebra.Module.Spaces.CharacterSpace
 import TauCeti.Topology.Compactness.Compact
 
@@ -89,19 +90,13 @@ theorem toAlgHom_augmentation :
   ext
   rfl
 
-/-- An element of `Unitization 𝕜 A` killed by `augmentation 𝕜 A` equals the image of its `A`
-component under `Unitization.inr`. -/
-theorem inr_snd_of_augmentation_eq_zero {u : Unitization 𝕜 A}
-    (hu : augmentation 𝕜 A u = 0) : (u.snd : Unitization 𝕜 A) = u := by
-  have hfst : u.fst = 0 := hu
-  simpa [hfst] using inl_fst_add_inr_snd_eq u
-
 /-- The image of `A` in `Unitization 𝕜 A` is the kernel of the augmentation character. -/
 theorem range_inr_eq_ker_augmentation :
     Set.range (inr : A → Unitization 𝕜 A) =
       (RingHom.ker (augmentation 𝕜 A) : Set (Unitization 𝕜 A)) := by
   ext u
-  exact ⟨by rintro ⟨a, rfl⟩; simp, fun hu ↦ ⟨u.snd, inr_snd_of_augmentation_eq_zero hu⟩⟩
+  exact ⟨by rintro ⟨a, rfl⟩; simp, fun hu ↦ ⟨u.snd, inr_snd_of_fst_eq_zero <| by
+    rwa [SetLike.mem_coe, RingHom.mem_ker, augmentation_apply] at hu⟩⟩
 
 /-- A character of `Unitization 𝕜 A` equals the augmentation character if and only if it vanishes on
 `A`. -/

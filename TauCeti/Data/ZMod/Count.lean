@@ -14,6 +14,7 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Data.ZMod.FinEquiv
+import TauCeti.Data.ZMod.LocalRing
 import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
@@ -44,6 +45,8 @@ of the representatives sum to the harmonic number `H_{n-1}`.
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
 * `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_val_filter_castHom_eq_sum_range`: summing a function of the representatives over a
+  fibre of the reduction `ZMod (k * m) → ZMod m`.
 * `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`.
 * `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
 * `ZMod.sum_Ico_mul`: splitting an integer interval into complete residue blocks.
@@ -55,6 +58,8 @@ of the representatives sum to the harmonic number `H_{n-1}`.
   none modulo any multiple of `m`.
 * `ZMod.card_filter_not_self_dvd_val`: the residues whose representative the modulus does not
   divide, the base case of such a count.
+* `ZMod.card_filter_not_isUnit_prime_pow`: modulo a positive prime power `p ^ k`, exactly
+  `p ^ (k - 1)` residues are not units, namely those reducing to zero modulo `p`.
 -/
 
 public section
@@ -96,6 +101,32 @@ theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ �
     ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
   rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
   simp
+
+/-- **Summing over a fibre of the reduction.** The residues modulo `k * m` that reduce to
+`x : ZMod m` have the representatives `x.val + m * j` for `j < k`, so a function of the
+representative summed over them is its sum over these. -/
+theorem sum_val_filter_castHom_eq_sum_range {M : Type*} [AddCommMonoid M] {k : ℕ} [NeZero k]
+    [NeZero m] (x : ZMod m) (f : ℕ → M) :
+    ∑ y : ZMod (k * m) with castHom (dvd_mul_left m k) (ZMod m) y = x, f y.val =
+      ∑ j ∈ range k, f (x.val + m * j) := by
+  have hm : 0 < m := NeZero.pos m
+  have hcast (y : ZMod (k * m)) :
+      castHom (dvd_mul_left m k) (ZMod m) y = x ↔ y.val % m = x.val := by
+    rw [castHom_apply, cast_eq_val, ← (val_injective m).eq_iff, val_natCast]
+  simp_rw [hcast]
+  rw [sum_filter, sum_val_eq_sum_range (fun i ↦ if i % m = x.val then f i else 0), ← sum_filter]
+  -- `i ↦ i / m` is a bijection from the representatives `i ≡ x.val` below `k m` onto `range k`.
+  refine sum_nbij' (· / m) (x.val + m * ·) (fun i hi ↦ ?_) (fun j hj ↦ ?_) (fun i hi ↦ ?_)
+    (fun j _ ↦ ?_) (fun i hi ↦ ?_)
+  · simp only [mem_filter, mem_range] at hi
+    simpa only [mem_range] using Nat.div_lt_of_lt_mul (by linarith [hi.1])
+  · simp only [mem_range] at hj
+    simp only [mem_filter, mem_range, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt x.val_lt,
+      and_true]
+    nlinarith [x.val_lt]
+  · rw [← (mem_filter.1 hi).2, Nat.mod_add_div]
+  · rw [Nat.add_mul_div_left _ _ hm, Nat.div_eq_of_lt x.val_lt, zero_add]
+  · rw [← (mem_filter.1 hi).2, Nat.mod_add_div]
 
 /-- **Summing the reciprocals of the representatives.** The reciprocals of the least nonnegative
 representatives of the residues modulo `n` sum to the harmonic number `H_{n-1}`; the residue `0`
@@ -179,6 +210,22 @@ theorem card_filter_not_self_dvd_val [NeZero m] : #{z : ZMod m | ¬m ∣ z.val} 
   -- the modulus divides a representative exactly when the residue vanishes
   simp only [← natCast_eq_zero_iff, natCast_zmod_val]
   rw [filter_ne', card_erase_of_mem (mem_univ 0), card_univ, ZMod.card]
+
+/-- **Counting the nonunits modulo a prime power.** Modulo a positive power `p ^ k` of a prime,
+the nonunits are the residues reducing to zero modulo `p`, so there are `p ^ (k - 1)` of them. -/
+theorem card_filter_not_isUnit_prime_pow (p k : ℕ) [Fact p.Prime] (hk : k ≠ 0) :
+    #{x : ZMod (p ^ k) | ¬IsUnit x} = p ^ (k - 1) := by
+  have hp := (Fact.out : p.Prime).pos
+  have h := mul_card_filter_natCast_val (m := p) (n := p ^ k) (dvd_pow_self p hk) (· = 0)
+  simp only [filter_eq', mem_univ, ↓reduceIte, card_singleton, mul_one] at h
+  have hfilter : #{x : ZMod (p ^ k) | ¬IsUnit x} = #{x : ZMod (p ^ k) | (x.val : ZMod p) = 0} := by
+    congr 1
+    ext x
+    rw [mem_filter, mem_filter, isUnit_prime_pow_iff_castHom_ne_zero p k hk, castHom_apply,
+      cast_eq_val, not_not]
+  rw [hfilter]
+  refine Nat.eq_of_mul_eq_mul_left hp ?_
+  rw [h, ← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hk)]
 
 /-- **Counting independent conditions on coprime factors.** If the moduli `a i` are pairwise
 coprime, the residues modulo `∏ i, a i` whose reduction modulo each `a i` satisfies `Q i` are

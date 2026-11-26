@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
+import TauCeti.Analysis.Normed.Group.Basic
 
 import Mathlib.Analysis.Analytic.Uniqueness
-import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Data.Nat.Factorial.NatCast
 
 /-!
@@ -36,8 +36,9 @@ derivative equals `n! * c n` (`FormalMultilinearSeries.iteratedDeriv_ofScalarsSu
 recovering `c n` when `(n.factorial : 𝕜) ≠ 0`. Correspondingly, a real series summable on
 `[0, R)` remains summable inside `R` when multiplied by the index `n`
 (`TauCeti.summable_nat_mul_of_forall_lt`). Termwise differentiation of a scalar series represents
-the derivative on the same ball (`HasFPowerSeriesOnBall.deriv_ofScalars`), and gives the Euler
-operators `y * f' y = ∑ n * c n * y ^ n` (`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`) and
+the derivative on the same ball (`HasFPowerSeriesOnBall.deriv_ofScalars`), and, besides
+`f y = ∑ c n * y ^ n` (`HasFPowerSeriesOnBall.hasSum_ofScalars`), gives the Euler operators
+`y * f' y = ∑ n * c n * y ^ n` (`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`) and
 `y ^ 2 * f'' y = ∑ n * (n - 1) * c n * y ^ n`
 (`HasFPowerSeriesOnBall.hasSum_sq_mul_deriv_deriv_ofScalars`).
 
@@ -54,7 +55,8 @@ convergence radius below (`FormalMultilinearSeries.le_radius_ofScalars_of_summab
 `HasFPowerSeriesOnBall` representation without assuming completeness
 (`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_summable`), together with
 translated punctured-disc variants
-(`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt`,
+(`TauCeti.le_radius_ofScalars_of_summable_sub`,
+`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.analyticOnNhd_of_hasSum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.summable_norm_mul_pow_of_norm_sub_lt`,
@@ -72,7 +74,10 @@ multilinear series is `ofScalars` of its `coeff` sequence
 `FormalMultilinearSeries.ofScalars 𝕜 c` agrees with `TauCeti.mkPiRingSeries 𝕜 c`
 (`TauCeti.mkPiRingSeries_eq_ofScalars`). Shifting a scalar power series around a base point `z₀`
 in a complete normed algebra yields a `HasFPowerSeriesOnBall` expansion around `z₀` whenever the
-convergence radius is positive (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`), and yields
+convergence radius is positive (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`); in
+particular the scalar sum `∑ cₙ zⁿ` has its series as power series on every disc about the origin
+of positive radius at most the radius of convergence
+(`TauCeti.hasFPowerSeriesOnBall_tsum_mul_pow`). Shifting also yields
 analyticity on the shifted open ball of convergence unconditionally, even when that ball is empty
 (`TauCeti.analyticOnNhd_ofScalarsSum_sub`).
 -/
@@ -402,6 +407,13 @@ theorem _root_.HasFPowerSeriesOnBall.deriv_ofScalars {𝕂 : Type*} [Nontriviall
       ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
       ContinuousLinearMap.apply_apply]
 
+/-- If `f` is the sum of the scalar power series `∑ c n * z ^ n` on the ball of radius `r` about
+`0`, then for `y` in that ball, `f y = ∑ c n * y ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂]
+    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r)
+    {y : 𝕂} (hy : ‖y‖ₑ < r) : HasSum (fun n : ℕ ↦ c n * y ^ n) (f y) := by
+  simpa [ofScalars_apply_eq, mul_comm] using hf.hasSum (mem_eball_zero_iff.mpr hy)
+
 /-- **The second Euler operator on a scalar power series.** If `f` is the sum of the scalar power
 series `∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
 `y ^ 2 * f'' y = ∑ n * (n - 1) * c n * y ^ n`. -/
@@ -610,6 +622,15 @@ namespace TauCeti
 
 open scoped NNReal Ring
 
+/-- Over a densely normed field, a series in powers of `z - z₀` that converges on the punctured
+disc `0 < ‖z - z₀‖ < r` has radius of convergence at least `r`. -/
+theorem le_radius_ofScalars_of_summable_sub {𝕜 : Type*} [DenselyNormedField 𝕜] {z₀ : 𝕜} {r : ℝ}
+    (a : ℕ → 𝕜)
+    (h : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun n : ℕ ↦ a n * (z - z₀) ^ n) :
+    ENNReal.ofReal r ≤ (FormalMultilinearSeries.ofScalars 𝕜 a).radius :=
+  FormalMultilinearSeries.le_radius_ofScalars_of_summable a fun z hz0 hz ↦ by
+    simpa using h (z + z₀) (by simpa using hz0) (by simpa using eNorm_lt_ofReal_iff.1 hz)
+
 /-- The scalar multilinear series `∑ₙ C(n + k, k) xⁿ` in any normed `𝕜`-algebra `A` has radius of
 convergence at least `1`. -/
 theorem one_le_ofScalars_choose_radius (𝕜 A : Type*) [NontriviallyNormedField 𝕜]
@@ -678,6 +699,17 @@ theorem hasFPowerSeriesOnBall_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNor
       (FormalMultilinearSeries.ofScalars E c).radius := by
   simpa only [FormalMultilinearSeries.ofScalarsSum, zero_add] using
     ((FormalMultilinearSeries.ofScalars E c).hasFPowerSeriesOnBall hr).comp_sub z₀
+
+/-- Over a complete nontrivially normed field, the sum `∑ cₙ zⁿ` of a scalar series has that
+series as power series on every disc about the origin of positive radius at most the radius of
+convergence. -/
+theorem hasFPowerSeriesOnBall_tsum_mul_pow {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] (c : ℕ → 𝕜) {r : ℝ≥0∞} (hr : 0 < r)
+    (hc : r ≤ (FormalMultilinearSeries.ofScalars 𝕜 c).radius) :
+    HasFPowerSeriesOnBall (fun z ↦ ∑' n, c n * z ^ n)
+      (FormalMultilinearSeries.ofScalars 𝕜 c) 0 r := by
+  simpa [FormalMultilinearSeries.ofScalars_sum_eq] using
+    (hasFPowerSeriesOnBall_ofScalarsSum_sub c (0 : 𝕜) (hr.trans_le hc)).mono hr hc
 
 /-- A shifted scalar power series `z ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀)` is analytic
 on its open ball of convergence around `z₀`. -/

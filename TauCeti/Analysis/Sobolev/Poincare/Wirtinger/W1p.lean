@@ -128,11 +128,8 @@ private theorem norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le (hp : p
     rw [W1p.value_ofTestFunctionₗ]
     exact (testFunctionLp_apply_ae (mu := mu) p phi).filter_mono
       (ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.2 hU) le_rfl))
-  have hgradU : W1p.gradient w =ᵐ[mu.restrict (U : Set E)] fun x ↦ ∇ (phi : E → ℝ) x := by
-    refine (W1p.gradient_restrictL_ae hU _).trans ?_
-    rw [W1p.gradient_ofTestFunctionₗ]
-    exact (gradientTestFunctionLp_apply_ae (mu := mu) p phi).filter_mono
-      (ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.2 hU) le_rfl))
+  have hgradU : W1p.gradient w =ᵐ[mu.restrict (U : Set E)] fun x ↦ ∇ (phi : E → ℝ) x :=
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae hU phi
   have havg : (⨍ y in S, W1p.value w y ∂mu) = ⨍ y in S, phi y ∂mu :=
     average_congr (haeU.filter_mono (ae_mono (Measure.restrict_mono hSU le_rfl)))
   have hmain := eLpNorm_sub_setAverage_le_of_convex (μ := mu) (u := fun x ↦ (phi : E → ℝ) x)
