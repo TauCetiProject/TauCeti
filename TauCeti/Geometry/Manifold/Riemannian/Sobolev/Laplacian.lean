@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormOperator
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenspace
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
+public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Resolvent
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
@@ -30,7 +31,10 @@ graph exactly when
 that is, when `Δ⁺ f = g` weakly (`TauCeti.Manifold.SobolevH1.mem_graph_negLaplacian_iff`). It
 is the operator of the form `D` (`IsCoercive.formOperator`): the `H¹` inner product is the shifted
 form `D + ⟪J ·, J ·⟫_{L²}`, which is coercive, so `Δ⁺ + 1` is the inverse of its Lax–Milgram
-solution operator.
+solution operator. More generally, for `t > 0` the value of the resolvent
+`(Δ⁺ + t)⁻¹ : L²(M) → H¹(M)` (`TauCeti.Manifold.SobolevH1.resolvent`) inverts `Δ⁺ + t` on both
+sides: `Δ⁺ f = g` exactly when `f` is the value of `(Δ⁺ + t)⁻¹ (g + t f)`
+(`TauCeti.Manifold.SobolevH1.mem_graph_negLaplacian_iff_toLp_resolvent`).
 
 * `Δ⁺` is self-adjoint (`TauCeti.Manifold.SobolevH1.isSelfAdjoint_negLaplacian`) and
   nonnegative (`TauCeti.Manifold.SobolevH1.inner_negLaplacian_self_nonneg`), since `D` is
@@ -57,7 +61,8 @@ solution operator.
   preserves the domain and commutes with `Δ⁺`
   (`TauCeti.Manifold.SobolevH1.negLaplacian_compMeasurePreserving`). In particular a group
   acting by isometries acts on `L²(M)` by unitaries preserving the domain of `Δ⁺` and commuting
-  with it.
+  with it, and an isometry fixing an element of the domain fixes its Laplacian
+  (`TauCeti.Manifold.SobolevH1.compMeasurePreserving_negLaplacian_eq_self`).
 
 The domain is the maximal weak domain `{J w | v ↦ D(w, v) is L²-bounded}`
 (`TauCeti.Manifold.SobolevH1.mem_domain_negLaplacian_iff`). For a smooth metric, elliptic
@@ -121,6 +126,47 @@ theorem mem_domain_negLaplacian_iff {f : Lp ℝ 2 (riemannianVolume I M)} :
     f ∈ (negLaplacian I M).domain ↔
       ∃ w : SobolevH1 I M, toLp w = f ∧ ∃ C : ℝ, ∀ v, |dirichletForm w v| ≤ C * ‖toLp v‖ :=
   isCoercive_innerSL.mem_domain_formOperator_iff denseRange_toLp inner_eq_dirichletForm_add
+
+/-- **The graph of the Laplacian through its resolvent.** For `t > 0`, `(f, g)` lies on the graph
+of `Δ⁺` exactly when `f` is the value of `(Δ⁺ + t)⁻¹ (g + t f)`, that is, when
+`(Δ⁺ + t) f = g + t f`. -/
+theorem mem_graph_negLaplacian_iff_toLp_resolvent {t : ℝ} (ht : 0 < t)
+    {f g : Lp ℝ 2 (riemannianVolume I M)} :
+    (f, g) ∈ (negLaplacian I M).graph ↔ toLp (resolvent I M ht (g + t • f)) = f := by
+  rw [mem_graph_negLaplacian_iff]
+  refine ⟨fun ⟨w, hw, hD⟩ ↦ ?_, fun h ↦ ⟨_, h, fun v ↦ ?_⟩⟩
+  · subst hw
+    rw [← eq_resolvent ht fun v ↦ by rw [hD, inner_add_left, real_inner_smul_left]]
+  · have hR := dirichletForm_resolvent_add ht (g + t • f) v
+    rw [h, inner_add_left, real_inner_smul_left] at hR
+    linarith
+
+/-- **The resolvent maps into the domain.** For `t > 0` and `h ∈ L²(M)`, the value of
+`(Δ⁺ + t)⁻¹ h` lies on the graph of `Δ⁺`, with `Δ⁺ (Δ⁺ + t)⁻¹ h = h - t (Δ⁺ + t)⁻¹ h`. -/
+theorem mem_graph_negLaplacian_toLp_resolvent {t : ℝ} (ht : 0 < t)
+    (h : Lp ℝ 2 (riemannianVolume I M)) :
+    (toLp (resolvent I M ht h), h - t • toLp (resolvent I M ht h)) ∈ (negLaplacian I M).graph :=
+  (mem_graph_negLaplacian_iff_toLp_resolvent ht).2 (by rw [sub_add_cancel])
+
+/-- For `t > 0`, the value of `(Δ⁺ + t)⁻¹ h` lies in the domain of `Δ⁺`. -/
+theorem toLp_resolvent_mem_domain_negLaplacian {t : ℝ} (ht : 0 < t)
+    (h : Lp ℝ 2 (riemannianVolume I M)) :
+    toLp (resolvent I M ht h) ∈ (negLaplacian I M).domain :=
+  LinearPMap.mem_domain_of_mem_graph (mem_graph_negLaplacian_toLp_resolvent ht h)
+
+/-- **`(Δ⁺ + t) (Δ⁺ + t)⁻¹ = 1`.** For `t > 0` and `h ∈ L²(M)`,
+`Δ⁺ (Δ⁺ + t)⁻¹ h = h - t (Δ⁺ + t)⁻¹ h`. -/
+theorem negLaplacian_toLp_resolvent {t : ℝ} (ht : 0 < t) (h : Lp ℝ 2 (riemannianVolume I M)) :
+    negLaplacian I M ⟨toLp (resolvent I M ht h), toLp_resolvent_mem_domain_negLaplacian ht h⟩ =
+      h - t • toLp (resolvent I M ht h) :=
+  (negLaplacian I M).mem_graph_snd_inj (LinearPMap.mem_graph _ _)
+    (mem_graph_negLaplacian_toLp_resolvent ht h) rfl
+
+/-- **`(Δ⁺ + t)⁻¹ (Δ⁺ + t) = 1`.** For `t > 0` and `f` in the domain of `Δ⁺`, the value of
+`(Δ⁺ + t)⁻¹ (Δ⁺ f + t f)` is `f`. -/
+theorem toLp_resolvent_negLaplacian_add {t : ℝ} (ht : 0 < t) (f : (negLaplacian I M).domain) :
+    toLp (resolvent I M ht (negLaplacian I M f + t • (f : Lp ℝ 2 (riemannianVolume I M)))) = f :=
+  (mem_graph_negLaplacian_iff_toLp_resolvent ht).1 ((negLaplacian I M).mem_graph f)
 
 /-- Every element `f` of the domain is the value of some `w ∈ H¹(M)` with
 `D(w, v) = ⟪Δ⁺ f, J v⟫_{L²}` for every `v ∈ H¹(M)`. -/
@@ -310,6 +356,18 @@ theorem negLaplacian_compMeasurePreserving (Φ : RiemannianIsometry I I' M N)
         (negLaplacian I' N f) :=
   (negLaplacian I M).mem_graph_snd_inj (LinearPMap.mem_graph _ _)
     (mem_graph_negLaplacian_compMeasurePreserving Φ ((negLaplacian I' N).mem_graph f)) rfl
+
+/-- **Isometries fixing an element fix its Laplacian.** If a Riemannian isometry `Φ` of `M`
+fixes `f` in the domain of `Δ⁺`, that is `f ∘ Φ = f`, then it fixes `Δ⁺ f`:
+`(Δ⁺ f) ∘ Φ = Δ⁺ f`. -/
+theorem compMeasurePreserving_negLaplacian_eq_self (Φ : RiemannianIsometry I I M M)
+    {f : (negLaplacian I M).domain}
+    (hf : Lp.compMeasurePreserving Φ Φ.measurePreserving_riemannianVolume
+      (f : Lp ℝ 2 (riemannianVolume I M)) = f) :
+    Lp.compMeasurePreserving Φ Φ.measurePreserving_riemannianVolume (negLaplacian I M f) =
+      negLaplacian I M f := by
+  rw [← negLaplacian_compMeasurePreserving Φ f]
+  exact congrArg (negLaplacian I M) (Subtype.ext hf)
 
 end Isometry
 
