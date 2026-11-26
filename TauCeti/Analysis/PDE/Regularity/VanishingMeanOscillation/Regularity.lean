@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.VanishingMeanOscillation.Basic
+public import TauCeti.Analysis.Sobolev.D1p0.Basic
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Matrix.EuclideanLin.Measurable
 import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.DirichletProblem.ContinuousDependence
+import TauCeti.Analysis.PDE.DirichletProblem.HomogeneousSobolev
 import TauCeti.Analysis.PDE.EnergyForm.Poincare
 import TauCeti.Analysis.PDE.Ellipticity.Integral
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
+import TauCeti.Analysis.Sobolev.D1p0.Restriction
 import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Sarason
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
@@ -40,6 +43,12 @@ where `C` and `δ` depend only on `n`, `p`, `λ` and `Λ`
 (`TauCeti.PDE.exists_memLp_gradient_ball_and_eLpNorm_le_of_vmoModulus_le`). For coefficients of
 vanishing mean oscillation the threshold is reached below some radius, so `∇u ∈ Lᵖ_loc(Ω)` whenever
 `G ∈ Lᵖ_loc(Ω)` (`TauCeti.PDE.exists_memLp_gradient_ball_and_eLpNorm_le_of_memVMO`).
+
+On the whole space, coefficients whose BMO seminorm is at most `δ` satisfy the hypothesis at every
+scale. For a finite-energy solution `u ∈ D^{1,2}(ℝ^{n+1})` (`TauCeti.D1p0`) and `G ∈ Lᵖ`, the
+interior estimate on `B(0, R)` passes to the whole space as `R → ∞`, since `p > 2` and `∇u ∈ L²`
+make the last term vanish, and Fatou's lemma gives `∇u ∈ Lᵖ` with `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`
+(`TauCeti.PDE.exists_memLp_gradient_and_eLpNorm_le_of_bmoSeminorm_le`).
 
 The interior estimate `TauCeti.PDE.exists_eLpNorm_gradient_ball_le_eLpNorm_two_of_setAverage_le`
 is an a priori estimate: it assumes `u, ∇u ∈ Lᵖ(B(x₀, R))` and bounds the norm. Here only
@@ -76,6 +85,8 @@ what a duality argument for exponents `1 < p < 2` needs: there the adjoint probl
   regularity, `2 < p < ∞`, for coefficients of small mean oscillation below a radius.
 * `TauCeti.PDE.exists_memLp_gradient_ball_and_eLpNorm_le_of_memVMO`: the same for coefficients of
   vanishing mean oscillation, below a radius depending on the coefficients.
+* `TauCeti.PDE.exists_memLp_gradient_and_eLpNorm_le_of_bmoSeminorm_le`: whole-space `W^{1,p}`
+  regularity, `2 < p < ∞`, for finite-energy solutions and coefficients of small BMO seminorm.
 
 ## References
 
@@ -766,6 +777,129 @@ theorem exists_memLp_gradient_ball_and_eLpNorm_le_of_memVMO {p : ℝ≥0∞} (hp
     hbmo.locallyIntegrable.aestronglyMeasurable) hell hη hR le_rfl hball u G hu hG
 
 end Main
+
+section WholeSpace
+
+/-- Fatou's lemma along the balls `B(0, R)`: an `L²` field whose `Lᵖ` norm on `B(0, R/2)` is at
+most `C (X + |B(0, R)|^(1/p - 1/2) ‖g‖_{L²})` for every `R > 0`, with `p > 2`, has `Lᵖ` norm at
+most `C X`, since the second term tends to `0` as `R → ∞`. -/
+private theorem eLpNorm_le_of_forall_eLpNorm_restrict_ball_le
+    {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {p : ℝ≥0∞} (hp : 2 < p)
+    (hp_top : p ≠ ⊤) (hg2 : MemLp g 2 volume) {C : ℝ≥0} {X : ℝ≥0∞}
+    (hloc : ∀ R : ℝ, 0 < R → eLpNorm g p (volume.restrict (ball 0 (R / 2))) ≤
+      C * (X + volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) R) ^ (p.toReal⁻¹ - 2⁻¹) *
+        eLpNorm g 2 volume)) :
+    eLpNorm g p volume ≤ C * X := by
+  -- The term with `‖g‖_{L²}` vanishes as `R → ∞`, since `p > 2`.
+  have he : p.toReal⁻¹ - 2⁻¹ < 0 := by
+    have hp2 : 2 < p.toReal := by
+      simpa using (ENNReal.toReal_lt_toReal ENNReal.ofNat_ne_top hp_top).2 hp
+    exact sub_neg.2 (inv_strictAnti₀ two_pos hp2)
+  have hball : Tendsto (fun k : ℕ => volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) (k + 1)))
+      atTop (𝓝 (∞ : ℝ≥0∞)) := by
+    have h := tendsto_measure_iUnion_atTop (μ := volume)
+      (s := fun k : ℕ => ball (0 : EuclideanSpace ℝ (Fin (n + 1))) (k + 1))
+      fun i j hij => ball_subset_ball (by
+        have : (i : ℝ) ≤ j := by exact_mod_cast hij
+        linarith)
+    rwa [iUnion_ball_nat_succ, measure_univ_of_isAddLeftInvariant] at h
+  have hbound : Tendsto (fun k : ℕ => (C : ℝ≥0∞) * (X +
+      volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) (k + 1)) ^ (p.toReal⁻¹ - 2⁻¹) *
+        eLpNorm g 2 volume)) atTop (𝓝 (C * X)) := by
+    have hpow := (ENNReal.continuous_rpow_const (y := p.toReal⁻¹ - 2⁻¹)).tendsto (∞ : ℝ≥0∞)
+      |>.comp hball
+    rw [ENNReal.top_rpow_of_neg he] at hpow
+    have hmul := ENNReal.Tendsto.mul_const hpow (Or.inr hg2.eLpNorm_ne_top)
+    rw [zero_mul] at hmul
+    simpa using ENNReal.Tendsto.const_mul (tendsto_const_nhds.add hmul) (Or.inr ENNReal.coe_ne_top)
+  -- Fatou's lemma along the balls `B(0, (k + 1) / 2)`.
+  refine (Lp.eLpNorm_lim_le_liminf_eLpNorm (μ := volume) (p := p)
+    (f := fun k : ℕ => (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) ((k + 1) / 2)).indicator g)
+    (fun k => hg2.aestronglyMeasurable.indicator
+      (measurableSet_ball (x := (0 : EuclideanSpace ℝ (Fin (n + 1)))))) g
+    hg2.aestronglyMeasurable (ae_of_all _ fun x => ?_)).trans ?_
+  · refine tendsto_const_nhds.congr' ?_
+    obtain ⟨k, hk⟩ := exists_nat_gt (2 * ‖x‖)
+    filter_upwards [eventually_ge_atTop k] with j hj
+    have hx : x ∈ ball (0 : EuclideanSpace ℝ (Fin (n + 1))) ((j + 1) / 2) := by
+      rw [mem_ball_zero_iff]
+      have : (k : ℝ) ≤ j := by exact_mod_cast hj
+      linarith
+    rw [indicator_of_mem hx]
+  · rw [← hbound.liminf_eq]
+    refine liminf_le_liminf (Eventually.of_forall fun k => ?_)
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict
+      (measurableSet_ball (x := (0 : EuclideanSpace ℝ (Fin (n + 1))))).nullMeasurableSet]
+    exact hloc (k + 1) (by positivity)
+
+/-- **Whole-space `W^{1,p}` regularity for coefficients of small BMO norm, `2 < p < ∞`.** Let
+`2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`, `λ`
+and `Λ`, with the following property. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}`,
+uniformly elliptic with constants `λ, Λ`, whose field of operators `a(x)` has BMO seminorm at most
+`δ`. Let `u` be an element of the homogeneous Sobolev space `D^{1,2}_0(ℝ^{n+1})`
+(`TauCeti.D1p0`), recorded by its gradient field, which solves `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly,
+that is `∫ ⟨a ∇u, ∇φ⟩ = ∫ ⟨G, ∇φ⟩` for every test function `φ`, with `G ∈ Lᵖ`. Then `∇u ∈ Lᵖ` and
+
+`‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`.
+
+Unlike the a priori estimate
+`TauCeti.PDE.exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le`, nothing
+is assumed about the integrability of `∇u` beyond `L²`. The coefficients need not be symmetric or
+continuous. -/
+theorem exists_memLp_gradient_and_eLpNorm_le_of_bmoSeminorm_le
+    {p : ℝ≥0∞} (hp : 2 < p) (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
+      ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
+        AEStronglyMeasurable a volume → UniformlyEllipticOn univ a lam Lam →
+        bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume ≤ ENNReal.ofReal δ →
+        ∀ (u : D1p0 volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2)
+          (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))),
+          (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
+            ∫ x, matrixBilinearForm (a x) (∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)
+                ((u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+                  Set (EuclideanSpace ℝ (Fin (n + 1)))))) x) =
+              ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) →
+          MemLp G p volume →
+          MemLp (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+                  Set (EuclideanSpace ℝ (Fin (n + 1)))))) p volume ∧
+            eLpNorm (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+                  Set (EuclideanSpace ℝ (Fin (n + 1)))))) p volume ≤
+              C * eLpNorm G p volume := by
+  obtain ⟨C, δ, hδ, hreg⟩ :=
+    exists_memLp_gradient_ball_and_eLpNorm_le_of_vmoModulus_le (n := n) hp hp_top lam Lam
+  refine ⟨C, δ, hδ, fun {a} ha hell hbmo u G hu hG => ?_⟩
+  set g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) :=
+    ⇑(u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+      (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+        Set (EuclideanSpace ℝ (Fin (n + 1))))))
+  have hg2 : MemLp g 2 volume := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      Lp.memLp (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+        (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+          Set (EuclideanSpace ℝ (Fin (n + 1))))))
+  -- On the ball `B(0, R)`, `u` is the gradient of an `H¹` function solving the equation there,
+  -- and the interior regularity theorem applies at the scale `4R`.
+  have hlim : eLpNorm g p volume ≤ C * eLpNorm G p volume := by
+    refine eLpNorm_le_of_forall_eLpNorm_restrict_ball_le hp hp_top hg2 fun R hR => ?_
+    set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball 0 R, isOpen_ball⟩
+    obtain ⟨v, hv⟩ := D1p0.exists_w1p_gradient_ae_eq (le_top : B ≤ ⊤) (convex_ball 0 R)
+      isBounded_ball u
+    have hvB := energyFormH1_ofTestFunctionₗ_eq_integral_inner_of_gradient_ae_eq (le_top : B ≤ ⊤)
+      (fun ψ => by simpa only [Opens.coe_top, Measure.restrict_univ] using hu ψ) hv
+    obtain ⟨-, hle⟩ := hreg ha hell ((vmoModulus_le_bmoSeminorm _ _ (4 * R)).trans hbmo)
+      (Ω := B) (x₀ := 0) hR le_rfl subset_rfl v G hvB (hG.restrict _)
+    have hvg : W1p.gradient v =ᵐ[volume.restrict (ball 0 R)] g := hv
+    rw [eLpNorm_congr_ae (ae_restrict_of_ae_restrict_of_subset
+      (ball_subset_ball (half_le_self hR.le)) hvg.symm)]
+    refine hle.trans ?_
+    rw [eLpNorm_congr_ae hvg]
+    gcongr <;> exact Measure.restrict_le_self
+  exact ⟨hlim.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hG.eLpNorm_lt_top), hlim⟩
+
+end WholeSpace
 
 end PDE
 
