@@ -168,22 +168,10 @@ theorem brownModel_cubicalChainModuleDifferential_baseChain_sub_mem_cubicalChain
 
 /-! ### The cellular comparison -/
 
-variable (C) in
-/-- The characteristic cube of an `n`-cell, with values in the `n`-skeleton. -/
-private def skeletonCellCube (n : ℕ) (j : cell C n) : SingularCube (skeletonPair C n).fst n :=
-  ⟨fun d ↦ ⟨cellCube C n j d, by
-    rw [cellCube_apply]
-    exact map_mem_skeletonLT_succ j
-      (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall (Fin n) d).property)⟩,
-    by fun_prop⟩
-
-private lemma skeletonCellCube_apply (n : ℕ) (j : cell C n) (d : Fin n → unitInterval) :
-    (skeletonCellCube C n j d).val = map n j (cubeHomeomorphClosedBall (Fin n) d) :=
-  cellCube_apply n j d
-
-private lemma subtypeVal_comp_skeletonCellCube (n : ℕ) (j : cell C n) :
-    (ContinuousMap.subtypeVal _).comp (skeletonCellCube C n j) = cellCube C n j :=
-  ContinuousMap.ext fun _ ↦ rfl
+/-- Read on `B`, the characteristic cube of a cell in the skeleton is its characteristic cube. -/
+private lemma subtypeVal_comp_characteristicCube (n : ℕ) (j : cell C n) :
+    (ContinuousMap.subtypeVal _).comp (characteristicCube C n j) = cellCube C n j :=
+  ContinuousMap.ext fun d ↦ (coe_characteristicCube_apply n j d).trans (cellCube_apply n j d).symm
 
 variable (H R) in
 /-- The `n`-cells in the row of an `(n + 1)`-cell `x` of Brown's cocycle. -/
@@ -256,10 +244,10 @@ private lemma exists_boundary_cellCube_add_sub_eq (n : ℕ) (x : cell C (n + 1))
 
 /-- Read on `B`, the boundary of the characteristic cube of an `(n + 1)`-cell, as a chain of the
 `n`-skeleton, is the boundary of the characteristic cube of the cell. -/
-private lemma map_cubicalBoundaryChainOfCube_skeletonCellCube (n : ℕ) (x : cell C (n + 1)) :
+private lemma map_cubicalBoundaryChainOfCube_characteristicCube (n : ℕ) (x : cell C (n + 1)) :
     NormalizedCubicalChain.map R (ContinuousMap.subtypeVal _ : C((skeletonPair C n).fst, B)) n
-        (TopPair.cubicalBoundaryChainOfCube R (skeletonCellCube C (n + 1) x)
-          (mapsTo_boundary_of_characteristicCube (skeletonCellCube_apply (n + 1) x))) =
+        (TopPair.cubicalBoundaryChainOfCube R (characteristicCube C (n + 1) x)
+          (mapsTo_characteristicCube_boundary (n + 1) x)) =
       NormalizedCubicalChain.boundary B R n
         (NormalizedCubicalChain.ofCube B R (cellCube C (n + 1) x)) := by
   let ι₂ : C((skeletonPair C (n + 1)).fst, B) := ContinuousMap.subtypeVal _
@@ -267,17 +255,17 @@ private lemma map_cubicalBoundaryChainOfCube_skeletonCellCube (n : ℕ) (x : cel
     ContinuousMap.ext fun _ ↦ rfl
   calc _ = NormalizedCubicalChain.map R ι₂ n (NormalizedCubicalChain.map R
         (skeletonPair C (n + 1)).map.hom n (TopPair.cubicalBoundaryChainOfCube R
-          (skeletonCellCube C (n + 1) x)
-            (mapsTo_boundary_of_characteristicCube (skeletonCellCube_apply (n + 1) x)))) := by
+          (characteristicCube C (n + 1) x)
+            (mapsTo_characteristicCube_boundary (n + 1) x))) := by
         rw [← hι₂]; exact LinearMap.congr_fun (NormalizedCubicalChain.map_comp R _ _ n) _
     _ = NormalizedCubicalChain.boundary B R n (NormalizedCubicalChain.map R ι₂ (n + 1)
-        (NormalizedCubicalChain.ofCube _ R (skeletonCellCube C (n + 1) x))) := by
+        (NormalizedCubicalChain.ofCube _ R (characteristicCube C (n + 1) x))) := by
         rw [TopPair.map_cubicalBoundaryChainOfCube]
         exact LinearMap.congr_fun (NormalizedCubicalChain.map_boundary R ι₂ n)
-          (NormalizedCubicalChain.ofCube _ R (skeletonCellCube C (n + 1) x))
+          (NormalizedCubicalChain.ofCube _ R (characteristicCube C (n + 1) x))
     _ = _ := by
         rw [NormalizedCubicalChain.map_ofCube]
-        exact congrArg _ (congrArg _ (subtypeVal_comp_skeletonCellCube (n + 1) x))
+        exact congrArg _ (congrArg _ (subtypeVal_comp_characteristicCube (n + 1) x))
 
 /-- **The cellular boundary of a characteristic cube, in cubical homology.** For an `(n + 1)`-cell
 `x`, the connecting morphism of the skeletal pair `(Xⁿ⁺¹, Xⁿ)` followed by the map to the relative
@@ -287,10 +275,10 @@ coefficients. -/
 private lemma homologyMap_cubicalHomologyδ_eq_sum (n : ℕ) (x : cell C (n + 1))
     {μx : ((skeletonPair C (n + 1)).cubicalChainComplex R).homology (n + 1)}
     (hμx : (skeletonPair C (n + 1)).IsCubicalRepresentative R
-      (NormalizedCubicalChain.ofCube _ R (skeletonCellCube C (n + 1) x)) μx)
+      (NormalizedCubicalChain.ofCube _ R (characteristicCube C (n + 1) x)) μx)
     (μ : cell C n → ((skeletonPair C n).cubicalChainComplex R).homology n)
     (hμ : ∀ y, (skeletonPair C n).IsCubicalRepresentative R
-      (NormalizedCubicalChain.ofCube _ R (skeletonCellCube C n y)) (μ y)) :
+      (NormalizedCubicalChain.ofCube _ R (characteristicCube C n y)) (μ y)) :
     HomologicalComplex.homologyMap
         (cokernel.π ((normalizedCubicalChainComplex R).map (skeletonPair C n).map)) n
         ((skeletonPair C (n + 1)).cubicalHomologyδ R (n + 1) n rfl μx) =
@@ -298,8 +286,8 @@ private lemma homologyMap_cubicalHomologyδ_eq_sum (n : ℕ) (x : cell C (n + 1)
         loopChainAugmentation B b R ((brownModel H R τ hC).cocycle.m ⟨n + 1, x⟩ ⟨n, y⟩) • μ y := by
   set ε := fun y : cell C n ↦
     loopChainAugmentation B b R ((brownModel H R τ hC).cocycle.m ⟨n + 1, x⟩ ⟨n, y⟩)
-  have hbd := mapsTo_boundary_of_characteristicCube (skeletonCellCube_apply (n + 1) x)
-  let w := TopPair.cubicalBoundaryCycleOfCube R (skeletonCellCube C (n + 1) x) hbd
+  have hbd := mapsTo_characteristicCube_boundary (n + 1) x
+  let w := TopPair.cubicalBoundaryCycleOfCube R (characteristicCube C (n + 1) x) hbd
   rw [hμx.cubicalHomologyδ_eq w (by
     rw [TopPair.iCycles_cubicalBoundaryCycleOfCube, TopPair.map_cubicalBoundaryChainOfCube])]
   let ι : C((skeletonPair C n).fst, B) := ContinuousMap.subtypeVal _
@@ -319,14 +307,14 @@ private lemma homologyMap_cubicalHomologyδ_eq_sum (n : ℕ) (x : cell C (n + 1)
   -- Read on `B`, through the inclusion of the `n`-skeleton, this is the equation `hvu`. Here `bc`
   -- is the boundary of the cube of `x`, as a chain of the `n`-skeleton.
   let bc : NormalizedCubicalChain (skeletonPair C n).fst R n :=
-    TopPair.cubicalBoundaryChainOfCube R (skeletonCellCube C (n + 1) x) hbd
+    TopPair.cubicalBoundaryChainOfCube R (characteristicCube C (n + 1) x) hbd
   have hbc : NormalizedCubicalChain.map R ι n bc = _ :=
-    map_cubicalBoundaryChainOfCube_skeletonCellCube n x
+    map_cubicalBoundaryChainOfCube_characteristicCube n x
   have hy (y : cell C n) : NormalizedCubicalChain.map R ι n
-      (NormalizedCubicalChain.ofCube _ R (skeletonCellCube C n y)) =
+      (NormalizedCubicalChain.ofCube _ R (characteristicCube C n y)) =
         NormalizedCubicalChain.ofCube B R (cellCube C n y) :=
     (NormalizedCubicalChain.map_ofCube R ι _).trans
-      (congrArg _ (subtypeVal_comp_skeletonCellCube n y))
+      (congrArg _ (subtypeVal_comp_characteristicCube n y))
   have hv : NormalizedCubicalChain.map R ι n
       (NormalizedCubicalChain.boundary (skeletonPair C n).fst R n v) =
       NormalizedCubicalChain.boundary B R n (NormalizedCubicalChain.map R ι (n + 1) v) :=
@@ -344,7 +332,7 @@ private lemma homologyMap_cubicalHomologyδ_eq_sum (n : ℕ) (x : cell C (n + 1)
   rw [hu, ← hvu, hw, hd]
   -- Restate the chain as a normalized chain, rather than an element of the chain complex.
   change _ = NormalizedCubicalChain.map R ι n (bc - (∑ y ∈ rowCells H R τ hC n x,
-    ε y • NormalizedCubicalChain.ofCube (skeletonPair C n).fst R (skeletonCellCube C n y) -
+    ε y • NormalizedCubicalChain.ofCube (skeletonPair C n).fst R (characteristicCube C n y) -
       NormalizedCubicalChain.boundary (skeletonPair C n).fst R n v))
   rw [map_sub, map_sub, map_sum, hbc, hv]
   simp_rw [map_smul, hy]
@@ -361,9 +349,9 @@ theorem brownModel_loopChainAugmentation_cocycle_m_eq_neg_one_pow_mul_cellularIn
   set ε := fun y : cell C n ↦
     loopChainAugmentation B b R ((brownModel H R τ hC).cocycle.m ⟨n + 1, x⟩ ⟨n, y⟩)
   obtain ⟨μx, hμx⟩ :=
-    exists_isCubicalRepresentative_characteristicCube R (skeletonCellCube_apply (n + 1) x)
+    exists_isCubicalRepresentative_characteristicCube R (n + 1) x
   choose μ hμ using fun y : cell C n ↦
-    exists_isCubicalRepresentative_characteristicCube R (skeletonCellCube_apply n y)
+    exists_isCubicalRepresentative_characteristicCube R n y
   -- The cellular differential is the cubical connecting morphism, read in singular homology.
   have h₁ := ConcreteCategory.congr_hom
     (TopPair.singularCubicalHomologyIso_inv_singularHomologyδ R (skeletonPair C (n + 1)) (n + 1) n)
@@ -380,10 +368,9 @@ theorem brownModel_loopChainAugmentation_cocycle_m_eq_neg_one_pow_mul_cellularIn
     rw [cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ]
     exact (congrArg (skeletonPairπ C (ModuleCat.of R R) n).hom h₁).trans h₂.symm
   rw [homologyMap_cubicalHomologyδ_eq_sum (H := H) τ hC n x hμx μ hμ, map_sum,
-    singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_cellularChainBasis R
-      (skeletonCellCube_apply (n + 1) x) hμx] at hd
+    singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_cellularChainBasis R hμx] at hd
   simp_rw [map_smul, singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_cellularChainBasis R
-    (skeletonCellCube_apply n _) (hμ _)] at hd
+    (hμ _)] at hd
   -- Read the coordinate of `y` in the cellular basis.
   have h := congrArg (fun z ↦ (cellularChainBasis C R n).repr z y) hd
   simp only [map_smul, map_sum, Finsupp.smul_apply, Finset.sum_apply',
