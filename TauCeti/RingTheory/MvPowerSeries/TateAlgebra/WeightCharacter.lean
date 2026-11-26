@@ -94,8 +94,10 @@ section Sigma0
 variable {O : Type*} [CommRing O]
 
 /-- The monoid **`Σ₀(I)`** of `2 × 2` matrices `!![a, b; c, d]` over `O` with `c ∈ I` and `d` a
-unit, for an ideal `I` in the Jacobson radical of `O`. For `O = 𝒪_v` and `I = 𝔭_vᵗ` these are the
-matrices whose Möbius transformations preserve `𝒪_v` with unit denominator `c z + d`. -/
+unit, for an ideal `I` in the Jacobson radical of `O`. For `O = 𝒪_v` and `I = 𝔭_v` these are
+exactly the matrices over `𝒪_v` whose denominator `c z + d` is a unit for every `z ∈ 𝒪_v`, so that
+their Möbius transformations preserve `𝒪_v`; for `I = 𝔭_vᵗ` one additionally has
+`c ≡ 0 mod 𝔭_vᵗ`. -/
 def sigma0Submonoid (I : Ideal O) (hI : I ≤ Ring.jacobson O) :
     Submonoid (Matrix (Fin 2) (Fin 2) O) where
   carrier := {γ | γ 1 0 ∈ I ∧ IsUnit (γ 1 1)}
@@ -272,6 +274,8 @@ theorem restrictedAnalyticSubst_expansion_add_add_mul (hr : ∀ i, r i ≤ 1) {�
       coe_restrictedAnalyticSubst_eq_subst _ _ (hasSubst_of_constantCoeff_zero fun i ↦ by simp),
       coe_restrictedAnalyticSubst_eq_subst _ _ (hasSubst_of_constantCoeff_zero fun i ↦ by simp),
       coe_restrictedAnalyticSubst_eq_subst _ _ (hasSubst_of_constantCoeff_zero fun i ↦ by simp)]
+    -- unfold the subring coercions of `+`, `*` and of the variables `leftX`, `rightX`
+    simp only [Subring.coe_add, Subring.coe_mul, leftX, rightX]
     exact κ.subst_expansion_add_add_mul
   -- substitute `(x, x') ↦ (a, b)`
   have hab' (j : Fin (k + k)) : ‖Fin.append a b j‖ ≤ Fin.append r r j :=
