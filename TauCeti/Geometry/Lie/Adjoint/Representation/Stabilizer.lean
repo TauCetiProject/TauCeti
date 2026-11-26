@@ -123,12 +123,7 @@ theorem lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation
   rw [mem_lieSubalgebraOfSubgroup (isClosed_stabilizer_continuousAdjointRepresentation Y),
     mem_lieAnnihilator]
   simp only [mem_stabilizer_continuousAdjointRepresentation_iff]
-  refine ⟨fun h ↦ ?_, fun h t ↦ Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero h t⟩
-  -- The curve `t ↦ Ad_(exp (t X)) Y` is constant, and its derivative at `0` is `⁅X, Y⁆`.
-  have hderiv := hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) X Y
-  rw [show (fun s : ℝ ↦ Ad (I := I) (lieExp (I := I) (s • X)) Y) = fun _ ↦ Y from funext h]
-    at hderiv
-  exact hderiv.unique (hasDerivAt_const 0 Y)
+  exact Ad_lieExp_smul_apply_eq_self_iff
 
 /-! ### The adjoint stabilizer on the tangent Lie algebra -/
 

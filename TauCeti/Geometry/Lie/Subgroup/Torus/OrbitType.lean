@@ -32,8 +32,9 @@ stabilizer `Z_G(X) = {g | Ad_g X = X}` of `X ∈ t` from the roots that vanish a
   (`toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation`). A nonzero
   vector of a root plane lies in it exactly when its root vanishes at `X`
   (`IsRootPlane.mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff`), and
-  the adjoint orbit through `X` has the dimension `dim (𝔤 ⧸ Lie Z_G(X)) = ∑ {dim E_i | α_i(X) ≠ 0}`
-  of the remaining planes
+  the codimension of `Lie Z_G(X)` in `𝔤` is the total dimension
+  `dim (𝔤 ⧸ Lie Z_G(X)) = ∑ {dim E_i | α_i(X) ≠ 0}` of the remaining planes, which is the
+  dimension of the orbit `G/Z_G(X)` once that is identified as a manifold
   (`finrank_quotient_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation`).
 * **Comparing stabilizers.** When every plane is nonzero, `Lie Z_G(X) ≤ Lie Z_G(Y)` exactly when
   every root vanishing at `X` vanishes at `Y`
@@ -67,7 +68,7 @@ starting with `IsRootPlane.` are in the namespace `TauCeti`.
 * `toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation`: the Lie
   algebra of `Z_G(X)` is `t` plus the root planes with `α_i(X) = 0`.
 * `finrank_quotient_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation`: the
-  dimension of the adjoint orbit through `X`.
+  codimension of the Lie algebra of `Z_G(X)` in `𝔤`.
 * `lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_le_iff`,
   `stabilizer_continuousAdjointRepresentation_le_iff`,
   `stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff`: the stabilizers of `X, Y ∈ t`
@@ -160,9 +161,10 @@ theorem toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresen
     ← lieAnnihilator_bilinForm_apply_eq_of_lieInvariant hB hsep, hD.lieAnnihilator_eq hB hsep X]
 
 omit [Finite ι] in
-/-- **The dimension of an adjoint orbit through a torus element.** For a separating invariant form
-and `X ∈ t`, the quotient of `𝔤` by the Lie algebra of `Z_G(X)`, the tangent space of the adjoint
-orbit through `X`, has dimension `∑ {dim E_i | α_i(X) ≠ 0}`. -/
+/-- **The codimension of the Lie algebra of the stabilizer of a torus element.** For a separating
+invariant form and `X ∈ t`, the quotient of `𝔤` by the Lie algebra of `Z_G(X)` has dimension
+`∑ {dim E_i | α_i(X) ≠ 0}`. This is the dimension of the orbit `G/Z_G(X)` once that is identified
+as a manifold, which is not done here. -/
 theorem finrank_quotient_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation
     [Fintype ι] (hD : IsRootPlaneDecomposition B t α V J)
     (hB : B.lieInvariant (LeftInvariantDerivation I G)) (hsep : B.SeparatingLeft) (X : t) :
