@@ -16,10 +16,9 @@ The determinant-one subgroup scheme of the group preserving a matrix `C` is cut 
 commutative ring and permits degenerate forms. The matrix condition on points uses the row
 convention of `TauCeti.ConstantForm`.
 
-The coordinate Hopf algebra follows `TauCeti.SpecialOrthogonal.definingHopfIdeal`, with the
-identity matrix replaced by the coefficient matrix of the form. The base-change argument
-applies to both the identity and antidiagonal forms. Congruence of forms induces conjugation
-on the matrix groups, through the constant-form congruence theorem for the defining ideals.
+The identity and antidiagonal forms give the standard and antidiagonal special orthogonal
+groups. Congruence of forms induces conjugation on the matrix groups, through the constant-form
+congruence theorem for the defining ideals.
 -/
 
 public section
@@ -51,6 +50,19 @@ theorem definingHopfIdeal_toIdeal :
           GeneralLinear.coordinateHopfAlgebra R n) - 1}) := by
   rw [definingHopfIdeal_def, HopfIdeal.sup_toIdeal, ConstantForm.definingHopfIdeal_toIdeal,
     SpecialLinear.definingHopfIdeal_toIdeal, Ideal.span_union]
+
+/-- A coordinate morphism kills the defining ideal exactly when its generic matrix preserves
+the scalar image of the form and its generic determinant maps to one. -/
+@[simp↓]
+theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
+    (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
+    (definingHopfIdeal R n C).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
+      (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
+          ((GeneralLinear.genericMatrix R n).map phi)ᵀ = C.map (algebraMap R T) ∧
+        phi (GeneralLinear.determinantGroupLike R n) = 1 := by
+  rw [definingHopfIdeal_def, HopfIdeal.sup_toIdeal, sup_le_iff,
+    ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff]
+  exact Iff.rfl.and (SpecialLinear.definingHopfIdeal_toIdeal_le_ker_iff R n (phi : _ →+* T))
 
 /-- The coordinate Hopf algebra of the determinant-one subgroup scheme preserving `C`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=

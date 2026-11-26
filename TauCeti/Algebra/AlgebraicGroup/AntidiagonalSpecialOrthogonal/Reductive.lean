@@ -45,7 +45,7 @@ containing `1/2` and a square root `i` of `-1`. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal (hi : i * i = -1) :
     finiteTypeCoordinateHopfAlgebra R l ≅ SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra R l :=
   ObjectProperty.isoMk _
-    (eqToIso (ConstantForm.Special.finiteTypeCoordinateHopfAlgebra_obj R l (formMatrix R l)) ≪≫
+    (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R l) ≪≫
     coordinateHopfAlgebraIsoSpecialOrthogonal l hi ≪≫
     eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R l).symm)
 
@@ -54,7 +54,7 @@ Hopf algebras as its underlying isomorphism. -/
 theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1) :
     finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal l hi =
       ObjectProperty.isoMk _
-        (eqToIso (ConstantForm.Special.finiteTypeCoordinateHopfAlgebra_obj R l (formMatrix R l)) ≪≫
+        (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R l) ≪≫
         coordinateHopfAlgebraIsoSpecialOrthogonal l hi ≪≫
         eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R l).symm) :=
   (rfl)
@@ -63,8 +63,9 @@ theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1
 not that field contains a square root of `-1`. -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra (k : Type u) [Field k]
     [NeZero (2 : k)] (l : ℕ) :
-    reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k l) :=
-  ConstantForm.Special.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
+    reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k l) := by
+  rw [finiteTypeCoordinateHopfAlgebra_eq_special]
+  exact ConstantForm.Special.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
     (transpose_formMatrix k l) isUnit_det_formMatrix.ne_zero
 
 end TauCeti.AntidiagonalSpecialOrthogonal
