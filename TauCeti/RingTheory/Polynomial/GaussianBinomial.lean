@@ -348,11 +348,11 @@ theorem prod_one_add_pow_mul_eq_sum_gaussianBinomial {R : Type*} [CommSemiring R
       sum_congr rfl fun k _ ↦ hterm k, sum_add_distrib, hzero]
     ring
 
-/-- The column recursion `[e+j+1 j+1]_t = ∑_{i ≤ e} t^i [i+j j]_t`, obtained by iterating the
-mirrored successor recursion `TauCeti.gaussianBinomial_succ_succ'`. -/
+/-- The column recursion `[e+j+1 j+1]_t = ∑_{i ≤ e} t^i [i+j j]_t`. -/
 theorem gaussianBinomial_add_succ_eq_sum {R : Type*} [Semiring R] (t : R) (e j : ℕ) :
     gaussianBinomial t (e + j + 1) (j + 1) =
       ∑ i ∈ range (e + 1), t ^ i * gaussianBinomial t (i + j) j := by
+  -- Iterate the mirrored successor recursion `TauCeti.gaussianBinomial_succ_succ'`.
   induction e with
   | zero => simp [gaussianBinomial_self]
   | succ e ih =>
@@ -361,10 +361,10 @@ theorem gaussianBinomial_add_succ_eq_sum {R : Type*} [Semiring R] (t : R) (e j :
 
 section Bounds
 
-/-- For a nonzero natural number `q`, `[e+j j]_q ≤ (e+1)^j q^(ej)`: each of the at most
-`(e+1)^j` terms of the iterated column recursion is at most `q^(ej)`. -/
+/-- For a nonzero natural number `q`, `[e+j j]_q ≤ (e+1)^j q^(ej)`. -/
 theorem gaussianBinomial_add_le_succ_pow_mul_pow {q : ℕ} (hq : q ≠ 0) (e j : ℕ) :
     gaussianBinomial q (e + j) j ≤ (e + 1) ^ j * q ^ (e * j) := by
+  -- Each of the at most `(e+1)^j` terms of the iterated column recursion is at most `q^(ej)`.
   induction j generalizing e with
   | zero => simp [gaussianBinomial_zero_right]
   | succ j ih =>
@@ -382,11 +382,12 @@ theorem gaussianBinomial_add_le_succ_pow_mul_pow {q : ℕ} (hq : q ≠ 0) (e j :
       _ = (e + 1) ^ (j + 1) * q ^ (e * (j + 1)) := by
         rw [sum_const, card_range, smul_eq_mul, pow_succ', mul_assoc]
 
-/-- For a natural number `q ≥ 2`, `[e+j j]_q ≤ q^(e(j+1))`. By symmetry `[e+j j]_q = [e+j e]_q`,
-and in the product formula `[e+j e]_q ∏_{i<e} (q^e - q^i) = ∏_{i<e} (q^(e+j) - q^i)` each factor
-on the right is at most `q^(j+1)` times the corresponding factor on the left. -/
+/-- For a natural number `q ≥ 2`, `[e+j j]_q ≤ q^(e(j+1))`. -/
 theorem gaussianBinomial_add_le_pow {q : ℕ} (hq : 2 ≤ q) (e j : ℕ) :
     gaussianBinomial q (e + j) j ≤ q ^ (e * (j + 1)) := by
+  -- By symmetry `[e+j j]_q = [e+j e]_q`, and in the product formula
+  -- `[e+j e]_q ∏_{i<e} (q^e - q^i) = ∏_{i<e} (q^(e+j) - q^i)` each factor on the right is at
+  -- most `q^(j+1)` times the corresponding factor on the left.
   rw [← gaussianBinomial_symm _ (Nat.le_add_left j e), Nat.add_sub_cancel]
   have hfactor (i : ℕ) (hi : i < e) :
       (q : ℤ) ^ (e + j) - q ^ i ≤ q ^ (j + 1) * (q ^ e - q ^ i) := by

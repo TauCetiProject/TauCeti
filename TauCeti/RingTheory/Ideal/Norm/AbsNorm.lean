@@ -40,11 +40,15 @@ nonzero `s`, so the index `Submodule.cardQuot` is multiplicative along this chai
 * `Submodule.cardQuot_eq_relIndex_map_subtype`: for a submodule `N` of a submodule `p`,
   `#(p ⧸ N)` is the index of the image of `N` in `p`.
 * `Submodule.cardQuot_ne_zero`: a submodule with finite quotient has nonzero index.
+* `Submodule.finite_quotient_of_cardQuot_ne_zero`: conversely, a submodule with nonzero index has
+  finite quotient.
 * `Submodule.cardQuot_map_of_injective`: for an injective linear map `f`,
   `#(N ⧸ f P) = #(M ⧸ P) * #(N ⧸ range f)`.
 * `Submodule.cardQuot_comap_of_surjective`: preimages under a surjective linear map keep the
   index.
-* `Submodule.subtypeCardQuotEquiv`: a linear equivalence matches the submodules of a given index.
+* `Submodule.subtypeCardQuotEquiv`: a linear equivalence matches the submodules of a given index,
+  by images (`Submodule.coe_subtypeCardQuotEquiv_apply`) and preimages
+  (`Submodule.coe_subtypeCardQuotEquiv_symm_apply`).
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
@@ -87,6 +91,11 @@ theorem cardQuot_ne_zero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
   rw [cardQuot_apply]
   exact Nat.card_pos.ne'
 
+/-- A submodule with nonzero index has finite quotient. -/
+theorem finite_quotient_of_cardQuot_ne_zero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    {S : Submodule R M} (hS : S.cardQuot ≠ 0) : Finite (M ⧸ S) :=
+  Nat.finite_of_card_ne_zero (by rwa [← cardQuot_apply])
+
 /-- **The index of an injective image**: for an injective linear map `f : M → N`, the index of
 `f P` in `N` is the index of `P` in `M` times the index of the range of `f`. Both sides are `0`
 when an index is infinite. -/
@@ -112,6 +121,22 @@ noncomputable def subtypeCardQuotEquiv {R M N : Type*} [Ring R] [AddCommGroup M]
   (orderIsoMapComap e).toEquiv.subtypeEquiv fun P ↦ by
     rw [RelIso.coe_fn_toEquiv, orderIsoMapComap_apply, cardQuot_map_of_injective e.injective,
       LinearEquiv.range, cardQuot_top, mul_one]
+
+@[simp]
+theorem coe_subtypeCardQuotEquiv_apply {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (n : ℕ)
+    (P : {P : Submodule R M // P.cardQuot = n}) :
+    (subtypeCardQuotEquiv e n P : Submodule R N) = P.val.map (e : M →ₗ[R] N) :=
+  by
+  simp [subtypeCardQuotEquiv]
+
+@[simp]
+theorem coe_subtypeCardQuotEquiv_symm_apply {R M N : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (n : ℕ)
+    (P : {P : Submodule R N // P.cardQuot = n}) :
+    ((subtypeCardQuotEquiv e n).symm P : Submodule R M) = P.val.comap (e : M →ₗ[R] N) :=
+  by
+  simp [subtypeCardQuotEquiv]
 
 end Submodule
 

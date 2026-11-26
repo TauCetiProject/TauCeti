@@ -11,7 +11,8 @@ public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.Length
 public import TauCeti.RingTheory.Polynomial.GaussianBinomial
 import Mathlib.LinearAlgebra.Pi
-import TauCeti.LinearAlgebra.Submodule.ProdIndex
+import TauCeti.LinearAlgebra.Submodule.Prod.Index
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Length
 
@@ -23,8 +24,7 @@ Let `O` be a discrete valuation ring whose residue field has `q` elements, and `
 `q ^ e`, is the Gaussian binomial coefficient `[e + j, j]_q`
 (`IsDiscreteValuationRing.card_submodule_length_quotient_eq_gaussianBinomial`). In the notation
 of a rank `j ≥ 1` this is `[e + j - 1, j - 1]_q`. It is at most `q ^ (e (j + 1))` and at most
-`(e + 1) ^ j q ^ (e j)`; in rank `j` the second bound reads `(e + 1) ^ (j - 1) q ^ (e (j - 1))`,
-which improves `(e + 1) ^ j q ^ (e (j - 1))` by a factor `e + 1`.
+`(e + 1) ^ j q ^ (e j)`; in rank `j` the second bound reads `(e + 1) ^ (j - 1) q ^ (e (j - 1))`.
 
 The count is by induction on the rank. In `O × N`, a submodule `L` of index `q ^ e` has a
 projection `ϖ^c O` to `O`, of index `q ^ c`, and an intersection `K` with `N`, of index
@@ -74,16 +74,14 @@ variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] {ϖ :
 ideal `ϖ^c O` has index `q ^ c`. -/
 theorem cardQuot_span_pow (hϖ : Irreducible ϖ) (c : ℕ) :
     (Ideal.span {ϖ ^ c}).cardQuot = Nat.card (ResidueField O) ^ c := by
-  rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, cardQuot_pow_of_prime (not_a_field O),
-    cardQuot_apply]
-  rfl
+  rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, cardQuot_apply,
+    TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
 
 /-- An ideal of finite index in a discrete valuation ring with uniformizer `ϖ` is `ϖ^c O` for
 some `c`. -/
 theorem exists_eq_span_pow_of_cardQuot_ne_zero (hϖ : Irreducible ϖ) {I : Ideal O}
-    (hI : I.cardQuot ≠ 0) : ∃ c : ℕ, I = Ideal.span {ϖ ^ c} := by
-  have : Infinite O := not_finite_iff_infinite.1 fun _ ↦ not_isField O (Finite.isField_of_domain O)
-  exact ideal_eq_span_pow_irreducible (fun h ↦ hI (by rw [h, cardQuot_bot])) hϖ
+    (hI : I.cardQuot ≠ 0) : ∃ c : ℕ, I = Ideal.span {ϖ ^ c} :=
+  ideal_eq_span_pow_irreducible (fun h ↦ hI (by rw [h, cardQuot_bot])) hϖ
 
 variable [Finite (ResidueField O)]
 
@@ -101,16 +99,11 @@ section Prod
 
 variable {N : Type*} [AddCommGroup N] [Module O N]
 
-/-- A submodule of index `q ^ k` has a finite quotient. -/
-theorem finite_quotient_of_cardQuot_eq_pow {K : Submodule O N} {k : ℕ}
-    (hK : K.cardQuot = Nat.card (ResidueField O) ^ k) : Finite (N ⧸ K) :=
-  Nat.finite_of_card_ne_zero (by rw [← cardQuot_apply, hK]; exact (pow_pos Nat.card_pos _).ne')
-
 /-- A submodule of `O × N` of index `q ^ e` projects onto `ϖ^(e - k) O` and meets `N` in a
 submodule of index `q ^ k`, for some `k ≤ e`. -/
 theorem exists_map_fst_eq_span_pow_of_cardQuot_eq (hϖ : Irreducible ϖ) {e : ℕ}
     {L : Submodule O (O × N)} (hL : L.cardQuot = Nat.card (ResidueField O) ^ e) :
-    ∃ k : Fin (e + 1), L.map (LinearMap.fst O O N) = Ideal.span {ϖ ^ (e - k)} ∧
+    ∃ k : Fin (e + 1), L.map (LinearMap.fst O O N) = O ∙ ϖ ^ (e - k) ∧
       (L.comap (LinearMap.inr O O N)).cardQuot = Nat.card (ResidueField O) ^ (k : ℕ) := by
   have hq : 1 < Nat.card (ResidueField O) := Finite.one_lt_card
   rw [cardQuot_eq_cardQuot_map_fst_mul_cardQuot_comap_inr] at hL
@@ -118,7 +111,7 @@ theorem exists_map_fst_eq_span_pow_of_cardQuot_eq (hϖ : Irreducible ϖ) {e : �
     (left_ne_zero_of_mul (hL.trans_ne (by positivity)))
   rw [hc, cardQuot_span_pow hϖ] at hL
   have hce : c ≤ e := (Nat.pow_dvd_pow_iff_le_right hq).1 (Dvd.intro _ hL)
-  refine ⟨⟨e - c, by omega⟩, by rwa [Nat.sub_sub_self hce], ?_⟩
+  refine ⟨⟨e - c, by omega⟩, by rwa [Nat.sub_sub_self hce, Ideal.submodule_span_eq], ?_⟩
   rw [← Nat.add_sub_of_le hce, pow_add] at hL
   exact Nat.eq_of_mul_eq_mul_left (by positivity) hL
 
@@ -135,21 +128,23 @@ private theorem colengthData_eq_iff (hϖ : Irreducible ϖ) {e : ℕ}
     (L : {L : Submodule O (O × N) // L.cardQuot = Nat.card (ResidueField O) ^ e})
     (b : Σ k : Fin (e + 1),
       {K : Submodule O N // K.cardQuot = Nat.card (ResidueField O) ^ (k : ℕ)}) :
-    colengthData hϖ e L = b ↔ L.val.map (LinearMap.fst O O N) = Ideal.span {ϖ ^ (e - b.fst)} ∧
+    colengthData hϖ e L = b ↔ L.val.map (LinearMap.fst O O N) = O ∙ ϖ ^ (e - b.fst) ∧
       L.val.comap (LinearMap.inr O O N) = b.snd.val := by
-  have hspec := (exists_map_fst_eq_span_pow_of_cardQuot_eq hϖ L.property).choose_spec
+  -- The first component of `colengthData hϖ e L` is by definition the chosen witness.
+  have hspec : L.val.map (LinearMap.fst O O N) = O ∙ ϖ ^ (e - (colengthData hϖ e L).fst) :=
+    (exists_map_fst_eq_span_pow_of_cardQuot_eq hϖ L.property).choose_spec.left
   constructor
   · rintro rfl
-    exact ⟨hspec.left, rfl⟩
+    exact ⟨hspec, rfl⟩
   · rintro ⟨hfst, hinr⟩
     refine Sigma.subtype_ext (Fin.ext ?_) hinr
     have hq : 1 < Nat.card (ResidueField O) := Finite.one_lt_card
-    have h := congrArg Submodule.cardQuot (hspec.left.symm.trans hfst)
-    rw [cardQuot_span_pow hϖ, cardQuot_span_pow hϖ] at h
+    have h := congrArg Submodule.cardQuot (hspec.symm.trans hfst)
+    rw [Ideal.submodule_span_eq, Ideal.submodule_span_eq, cardQuot_span_pow hϖ,
+      cardQuot_span_pow hϖ] at h
     have h₁ := Nat.pow_right_injective hq h
-    have h₂ := (exists_map_fst_eq_span_pow_of_cardQuot_eq hϖ L.property).choose.isLt
+    have h₂ := (colengthData hϖ e L).fst.isLt
     have h₃ := b.fst.isLt
-    change ((exists_map_fst_eq_span_pow_of_cardQuot_eq hϖ L.property).choose : ℕ) = b.fst
     omega
 
 /-- The submodules of `O × N` of index `q ^ e` with colength data `⟨k, K⟩` are those that
@@ -164,7 +159,7 @@ private noncomputable def fiberEquiv (hϖ : Irreducible ϖ) (e : ℕ)
   invFun L := by
     refine ⟨⟨L.val, ?_⟩, (colengthData_eq_iff hϖ _ b).2 L.property⟩
     rw [cardQuot_eq_cardQuot_map_fst_mul_cardQuot_comap_inr, L.property.left, L.property.right,
-      b.snd.property, ← Ideal.span, cardQuot_span_pow hϖ, ← pow_add,
+      b.snd.property, Ideal.submodule_span_eq, cardQuot_span_pow hϖ, ← pow_add,
       Nat.sub_add_cancel (Nat.lt_succ_iff.1 b.fst.isLt)]
   left_inv _ := rfl
   right_inv _ := rfl
@@ -188,7 +183,7 @@ theorem finite_submodule_prod_cardQuot_eq
   have (b : Σ k : Fin (e + 1),
       {K : Submodule O N // K.cardQuot = Nat.card (ResidueField O) ^ (k : ℕ)}) :
       Finite (N ⧸ b.snd.val) :=
-    finite_quotient_of_cardQuot_eq_pow b.snd.property
+    finite_quotient_of_cardQuot_ne_zero (b.snd.property.trans_ne (pow_pos Nat.card_pos _).ne')
   exact Finite.of_equiv _ (prodEquiv hϖ e).symm
 
 variable (O N) in
@@ -207,7 +202,7 @@ theorem card_submodule_prod_cardQuot_eq_sum
   have (b : Σ k : Fin (e + 1),
       {K : Submodule O N // K.cardQuot = Nat.card (ResidueField O) ^ (k : ℕ)}) :
       Finite (N ⧸ b.snd.val) :=
-    finite_quotient_of_cardQuot_eq_pow b.snd.property
+    finite_quotient_of_cardQuot_ne_zero (b.snd.property.trans_ne (pow_pos Nat.card_pos _).ne')
   rw [Nat.card_congr (prodEquiv hϖ e), Nat.card_sigma, Fintype.sum_sigma,
     ← Fin.sum_univ_eq_sum_range]
   refine Finset.sum_congr rfl fun k _ ↦ ?_

@@ -30,7 +30,8 @@ valuation ring.
 * `Submodule.cardQuot_eq_cardQuot_map_fst_mul_cardQuot_comap_inr`: the index of a submodule of a
   product.
 * `Submodule.prodFiberEquivQuotient`: the submodules of `R × N` with projection `R ∙ g` and
-  intersection `K` with `N` correspond to the classes of `N ⧸ K`.
+  intersection `K` with `N` correspond to the classes of `N ⧸ K`; it is characterised by
+  `Submodule.prodFiberEquivQuotient_eq_mk_iff` and `Submodule.coe_prodFiberEquivQuotient_symm_mk`.
 
 ## Attribution
 
@@ -162,6 +163,32 @@ noncomputable def prodFiberEquivQuotient :
     refine ((Submodule.Quotient.eq K).2
       (sub_mem_of_mk_mem_span_singleton_sup_map_inr hg K hx)).trans ?_
     exact Submodule.Quotient.mk_out z
+
+/-- For a non-zero-divisor `g`, the class attached by `Submodule.prodFiberEquivQuotient` to `L` is
+the class of `x` exactly when `(g, x) ∈ L`. -/
+theorem prodFiberEquivQuotient_eq_mk_iff
+    (L : {L : Submodule R (R × N) //
+        L.map (LinearMap.fst R R N) = R ∙ g ∧ L.comap (LinearMap.inr R R N) = K}) (x : N) :
+    prodFiberEquivQuotient hg K L = Submodule.Quotient.mk x ↔ (g, x) ∈ L.val := by
+  obtain ⟨L, hfst, hinr⟩ := L
+  have hc := (exists_mk_mem_of_mem_map_fst (hfst.ge (mem_span_singleton_self g))).choose_spec
+  set c := (exists_mk_mem_of_mem_map_fst (hfst.ge (mem_span_singleton_self g))).choose
+  -- Both sides say `x - c ∈ K`, for the chosen `(g, c) ∈ L`.
+  have hmem : (g, x) ∈ L ↔ x - c ∈ K := by
+    rw [← hinr, mem_comap, LinearMap.inr_apply]
+    exact ⟨fun h ↦ by simpa using L.sub_mem h hc, fun h ↦ by simpa using L.add_mem hc h⟩
+  simp only [prodFiberEquivQuotient, Equiv.coe_fn_mk, mkQ_apply]
+  rw [eq_comm, Submodule.Quotient.eq, hmem]
+
+/-- For a non-zero-divisor `g`, the submodule attached by `Submodule.prodFiberEquivQuotient` to the
+class of `x` is the one spanned by `(g, x)` and `K`. -/
+@[simp]
+theorem coe_prodFiberEquivQuotient_symm_mk (x : N) :
+    ((prodFiberEquivQuotient hg K).symm (Submodule.Quotient.mk x) : Submodule R (R × N)) =
+      (R ∙ (g, x)) ⊔ K.map (LinearMap.inr R R N) := by
+  have h := (prodFiberEquivQuotient_eq_mk_iff hg K ⟨_, map_fst_span_singleton_sup_map_inr g K x,
+    comap_inr_span_singleton_sup_map_inr hg K x⟩ x).2 (mem_sup_left (mem_span_singleton_self _))
+  rw [(prodFiberEquivQuotient hg K).symm_apply_eq.2 h.symm]
 
 end NonZeroDivisor
 
