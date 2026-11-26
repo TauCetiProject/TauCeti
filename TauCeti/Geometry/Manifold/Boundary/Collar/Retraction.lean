@@ -42,6 +42,10 @@ closed in `M`. That is where compactness of `N` and the Hausdorff property of `M
 
 ## Main results
 
+* `TauCeti.IsCollar.apply_mem_range_iff`: a point of the collar lies on `f(N)` exactly when its
+  depth is `0`.
+* `TauCeti.IsCollar.isCompact_image_le`: if `N` is compact, the part of the collar of depth at most
+  `t < 1` is compact.
 * `TauCeti.IsCollar.coe_complHomotopyEquiv`: the homotopy equivalence `M \ f(N) ≃ₕ M` is the
   inclusion.
 * `TauCeti.IsCollar.coe_complHomotopyEquiv_symm_apply`: its homotopy inverse sends `c (x, t)` to
@@ -207,21 +211,23 @@ private theorem push_of_notMem_image (s : I) {x : M}
     rw [hc.push_apply, pushCoord_of_le s (le_of_lt (not_le.1 fun h ↦ hx ⟨p, h, rfl⟩))]
   · exact push_of_notMem_range s hxc
 
-/-- The part `c(N × [0, 1/2])` of a collar of a compact space in a Hausdorff space is closed. -/
-private theorem isClosed_image_le [CompactSpace N] [T2Space M] :
-    IsClosed (c '' {p | (p.2 : ℝ) ≤ 1 / 2}) := by
-  have hS : IsCompact {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} := by
-    rw [Subtype.isCompact_iff]
-    convert isCompact_Icc (a := (0 : ℝ)) (b := 1 / 2) using 1
-    ext t
-    refine ⟨fun ⟨u, hu, hut⟩ ↦ hut ▸ ⟨u.property.1, hu⟩, fun ht ↦ ⟨⟨t, ht.1, ?_⟩, ht.2, rfl⟩⟩
-    linarith [ht.2]
-  have h : {p : N × Ico (0 : ℝ) 1 | (p.2 : ℝ) ≤ 1 / 2} =
-      univ ×ˢ {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} := by
-    ext p
-    simp
-  rw [h]
-  exact ((isCompact_univ.prod hS).image hc.isOpenEmbedding.continuous).isClosed
+/-- A point `c p` of the collar lies on the boundary `f(N)` exactly when its depth is `0`. -/
+theorem apply_mem_range_iff {p : N × Ico (0 : ℝ) 1} : c p ∈ range f ↔ (p.2 : ℝ) = 0 :=
+  -- `c p ∈ range f` is `p ∈ c ⁻¹' range f` by definition of the preimage.
+  (Set.ext_iff.1 hc.preimage_range p).trans ⟨fun h ↦ congrArg Subtype.val h.2,
+    fun h ↦ ⟨trivial, Subtype.ext h⟩⟩
+
+/-- **The collar of depth at most `t < 1` is compact** when the boundary parameter space is. -/
+theorem isCompact_image_le [CompactSpace N] {t : ℝ} (ht : t < 1) :
+    IsCompact (c '' {p | (p.2 : ℝ) ≤ t}) := by
+  have hI : IsCompact (((↑) : Ico (0 : ℝ) 1 → ℝ) ⁻¹' Icc 0 t) :=
+    IsInducing.subtypeVal.isCompact_preimage' isCompact_Icc fun s hs ↦
+      ⟨⟨s, hs.1, hs.2.trans_lt ht⟩, rfl⟩
+  have : {p : N × Ico (0 : ℝ) 1 | (p.2 : ℝ) ≤ t} =
+      univ ×ˢ (((↑) : Ico (0 : ℝ) 1 → ℝ) ⁻¹' Icc 0 t) :=
+    ext fun p ↦ by simp [p.2.property.1]
+  rw [this]
+  exact (isCompact_univ.prod hI).image hc.isOpenEmbedding.continuous
 
 /-- The push is continuous: on the open image of the collar it is the push of collar coordinates,
 and on the open complement of `c(N × [0, 1/2])` it is the identity. -/
@@ -237,14 +243,10 @@ private theorem continuous_push [CompactSpace N] [T2Space M] : Continuous (push 
     rw [h]
     exact (hc.isOpenEmbedding.continuous.comp continuous_pushCoord).continuousAt
   · have hU : (univ ×ˢ (c '' {p | (p.2 : ℝ) ≤ 1 / 2})ᶜ : Set (I × M)) ∈ 𝓝 (s, x) :=
-      prod_mem_nhds Filter.univ_mem (hc.isClosed_image_le.isOpen_compl.mem_nhds hx)
+      prod_mem_nhds Filter.univ_mem
+        ((hc.isCompact_image_le (by norm_num)).isClosed.isOpen_compl.mem_nhds hx)
     refine continuousAt_snd.congr (Filter.mem_of_superset hU fun q hq ↦ ?_)
     exact (hc.push_of_notMem_image q.1 hq.2).symm
-
-/-- A point of the collar on the boundary `f(N)` has depth `0`. -/
-private theorem coe_snd_eq_zero_of_apply_mem_range {p : N × Ico (0 : ℝ) 1}
-    (hp : c p ∈ range f) : (p.2 : ℝ) = 0 :=
-  congrArg Subtype.val (hc.preimage_range.subset hp).2
 
 /-- A point outside the collar is not on the boundary `f(N)`. -/
 private theorem notMem_range_of_notMem_range_collar {x : M} (hx : x ∉ range c) : x ∉ range f :=
@@ -258,7 +260,7 @@ private theorem push_notMem_range (s : I) {x : M} (hx : x ∉ range f) :
     rw [hc.push_apply]
     intro hmem
     have hp : (p.2 : ℝ) = 0 := le_antisymm
-      ((le_pushCoord s p).trans (hc.coe_snd_eq_zero_of_apply_mem_range hmem).le) p.2.property.1
+      ((le_pushCoord s p).trans ((hc.apply_mem_range_iff).1 hmem).le) p.2.property.1
     refine hx ⟨p.1, ?_⟩
     rw [← hc.apply_zero]
     exact congrArg c (Prod.ext rfl (Subtype.ext hp.symm))
@@ -270,7 +272,7 @@ private theorem push_one_notMem_range (x : M) : push c (1, x) ∉ range f := by
   by_cases hxc : x ∈ range c
   · obtain ⟨p, rfl⟩ := hxc
     rw [hc.push_apply]
-    exact fun hmem ↦ (pos_pushCoord_one p).ne' (hc.coe_snd_eq_zero_of_apply_mem_range hmem)
+    exact fun hmem ↦ (pos_pushCoord_one p).ne' ((hc.apply_mem_range_iff).1 hmem)
   · rw [push_of_notMem_range 1 hxc]
     exact hc.notMem_range_of_notMem_range_collar hxc
 
