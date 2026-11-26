@@ -102,30 +102,31 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
 
 namespace IsRealCauchyRiemannOperator
 
-/-- **The realizations commute with lowering the exponent.** For `p ≤ p'`, the realization of `D`
-at exponent `p` of the `W^{1,p}` copy of a `W^{1,p'}` section `w` is the `Lᵖ` copy of the
-realization of `D` at exponent `p'` of `w`. -/
-theorem sobolevL_ofExponentLEL (hpp' : p ≤ p') (w : SobolevSection A volume p' 1) :
-    hD.sobolevL A hDs volume p (A.sectionChartData.ofExponentLEL volume 1 hpp' w) =
-      zeroOneOfExponentLEL A volume 0 hpp' (hD.sobolevL A hDs volume p' w) := by
+/-- **The realizations commute with lowering the exponent.** For `p ≤ p'` and any additive Haar
+measure `μ` on the charts, the realization of `D` at exponent `p` of the `W^{1,p}` copy of a
+`W^{1,p'}` section `w` is the `Lᵖ` copy of the realization of `D` at exponent `p'` of `w`. -/
+theorem sobolevL_ofExponentLEL (μ : Measure ℂ) [μ.IsAddHaarMeasure] (hpp' : p ≤ p')
+    (w : SobolevSection A μ p' 1) :
+    hD.sobolevL A hDs μ p (A.sectionChartData.ofExponentLEL μ 1 hpp' w) =
+      zeroOneOfExponentLEL A μ 0 hpp' (hD.sobolevL A hDs μ p' w) := by
   refine Subtype.ext (SectionChartData.eq_of_chartValueL_ae_eq fun (i : Fin A.n) ↦ ?_)
-  refine (ae_image_tangentHom_iff A volume i).2 ?_
+  refine (ae_image_tangentHom_iff A μ i).2 ?_
   -- Lowering the exponent keeps the chart data, as functions.
-  have hw : (A.sectionChartData.chartValueL volume p 1 i
-      (A.sectionChartData.ofExponentLEL volume 1 hpp' w) : ℂ → F) =
-        A.sectionChartData.chartValueL volume p' 1 i w :=
+  have hw : (A.sectionChartData.chartValueL μ p 1 i
+      (A.sectionChartData.ofExponentLEL μ 1 hpp' w) : ℂ → F) =
+        A.sectionChartData.chartValueL μ p' 1 i w :=
     SectionChartData.coeFn_chartValueL_ofExponentLEL (C := A.sectionChartData) hpp' w i
-  have hDw : (A.tangentHom.sectionChartData.chartValueL volume p 0 i
-      (A.tangentHom.sectionChartData.ofExponentLEL volume 0 hpp'
-        (hD.sobolevL A hDs volume p' w)) : ℂ → ℂ →L[ℝ] F) =
-        A.tangentHom.sectionChartData.chartValueL volume p' 0 i
-          (hD.sobolevL A hDs volume p' w : SobolevSection A.tangentHom volume p' 0) :=
+  have hDw : (A.tangentHom.sectionChartData.chartValueL μ p 0 i
+      (A.tangentHom.sectionChartData.ofExponentLEL μ 0 hpp'
+        (hD.sobolevL A hDs μ p' w)) : ℂ → ℂ →L[ℝ] F) =
+        A.tangentHom.sectionChartData.chartValueL μ p' 0 i
+          (hD.sobolevL A hDs μ p' w : SobolevSection A.tangentHom μ p' 0) :=
     SectionChartData.coeFn_chartValueL_ofExponentLEL (C := A.tangentHom.sectionChartData) hpp'
       _ i
-  have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL volume p' i w
+  have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL μ p' i w
   rw [coe_zeroOneOfExponentLEL, hDw]
-  filter_upwards [chartValueL_sobolevL_ae A hD hDs volume p _ (hw ▸ hDu),
-    chartValueL_sobolevL_ae A hD hDs volume p' w hDu] with y h₁ h₂
+  filter_upwards [chartValueL_sobolevL_ae A hD hDs μ p _ (hw ▸ hDu),
+    chartValueL_sobolevL_ae A hD hDs μ p' w hDu] with y h₁ h₂
   rw [h₁, h₂, hw]
 
 /-! ### Annihilators of the range are bounded in `L¹` -/
@@ -377,7 +378,7 @@ smooth real Cauchy–Riemann operator to the cokernel of its realization
 def cokerSobolevLEquiv (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp' : p ≤ p') :
     (zeroOneSobolevSections A volume p' 0 ⧸ (hD.sobolevL A hDs volume p').range) ≃ₗ[ℝ]
       zeroOneSobolevSections A volume p 0 ⧸ (hD.sobolevL A hDs volume p).range :=
-  LinearMap.cokerEquivOfRegularity (sobolevL_ofExponentLEL A hD hDs hpp')
+  LinearMap.cokerEquivOfRegularity (sobolevL_ofExponentLEL A hD hDs volume hpp')
     (zeroOneOfExponentLEL_injective hpp')
     (fun _ _ ↦ exists_ofExponentLEL_eq_of_sobolevL_eq A hD hDs hp hp'_top hpp')
     ((isFredholm_sobolevL A hD hDs hp (ne_top_of_le_ne_top hp'_top hpp')).range_sup_range_eq_top
@@ -405,7 +406,7 @@ include hD hDs in
 private theorem index_sobolevL_eq_of_le (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp' : p ≤ p') :
     (hD.sobolevL A hDs volume p').index = (hD.sobolevL A hDs volume p).index :=
   (isFredholm_sobolevL A hD hDs hp (ne_top_of_le_ne_top hp'_top hpp')).index_eq_of_regularity
-    (sobolevL_ofExponentLEL A hD hDs hpp')
+    (sobolevL_ofExponentLEL A hD hDs volume hpp')
     (SectionChartData.ofExponentLEL_injective hpp') (zeroOneOfExponentLEL_injective hpp')
     (denseRange_zeroOneOfExponentLEL A volume 0 hpp')
     (fun _ _ ↦ exists_ofExponentLEL_eq_of_sobolevL_eq A hD hDs hp hp'_top hpp')
