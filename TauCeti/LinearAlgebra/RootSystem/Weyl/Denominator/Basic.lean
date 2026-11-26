@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.MonoidAlgebra.Defs
 public import TauCeti.LinearAlgebra.RootSystem.Positive
+import Mathlib.Algebra.Regular.Pow
+import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 
 /-!
 # The Weyl denominator
@@ -40,6 +42,9 @@ whose Weyl-group combinatorics is a much later dependency.
   `TauCeti.posRootCone`; and
 * `TauCeti.coeff_weylDenominator_zero`: the constant term of `Δ` is `1`, the empty set being the
   only set of positive roots summing to `0`.
+* `TauCeti.isRegular_weylDenominator`: `Δ` is a regular element of `ℤ[M]`, each factor
+  `1 - e^{-α}` being regular because a root has infinite additive order. So a character identity
+  `f · Δ = g · Δ` can be cancelled to `f = g`.
 
 ## References
 
@@ -129,5 +134,26 @@ theorem neg_mem_posRootCone_of_coeff_weylDenominator_ne_zero {x : M}
   rw [hxT, neg_neg]
   exact sum_mem fun i hi ↦
     root_mem_posRootCone_of_mem_posRoots P b ((mem_posRootsFinset P b i).mp (hT hi))
+
+omit [Finite ι] in
+/-- A root has infinite additive order: `n α = 0` pairs with `α^∨` to `2 n = 0`. -/
+private theorem not_isOfFinAddOrder_neg_root (i : ι) : ¬IsOfFinAddOrder (-P.root i) := by
+  rw [isOfFinAddOrder_neg_iff, isOfFinAddOrder_iff_nsmul_eq_zero]
+  rintro ⟨n, hn, hnα⟩
+  have h := congrArg (P.coroot' i) hnα
+  simp only [map_nsmul, RootPairing.root_coroot'_eq_pairing, RootPairing.pairing_same,
+    map_zero, nsmul_eq_mul] at h
+  have h' : ((n * 2 : ℕ) : R) = 0 := by exact_mod_cast h
+  rw [Nat.cast_eq_zero] at h'
+  omega
+
+/-- **The Weyl denominator is regular**: multiplication by `Δ = ∏_{α>0} (1 - e^{-α})` is
+injective on `ℤ[M]`, each factor being regular because a root has infinite additive order. -/
+theorem isRegular_weylDenominator : IsRegular (weylDenominator P b) := by
+  rw [weylDenominator_def]
+  refine IsRegular.prod fun i _ ↦ ?_
+  have h := (isUnit_one.neg.isRegular).mul
+    (isRegular_single_sub_one_of_not_isOfFinAddOrder (R := ℤ) (not_isOfFinAddOrder_neg_root P i))
+  rwa [neg_one_mul, neg_sub] at h
 
 end TauCeti

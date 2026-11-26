@@ -8,9 +8,12 @@ module
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Module.Defs
+public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Basic
+import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Ring
 
 /-!
 # Summation by parts against a geometric sequence
@@ -22,8 +25,12 @@ and `m` plus the sum weighted by the forward differences `f(j) - f(j + 1)`, prov
 step behind summation-by-parts bounds and asymptotic expansions for oscillatory and alternating
 partial sums.
 
+The file also telescopes the centred geometric sum `∑_{j=-n}^{n} z^j` over a symmetric integer
+interval, the form in which a root string `∑_{j=-n}^{n} e^{j α}` is evaluated at a character.
+
 ## Main results
 
+* `TauCeti.one_sub_mul_sum_Icc_zpow`: `(1 - z) ∑_{j=-n}^{n} z^j = z^{-n} - z^{n+1}` for `z ≠ 0`.
 * `TauCeti.sum_Ico_smul_pow_eq`: for `z ≠ 1` and `m ≤ n`,
   `∑ j ∈ Ico m n, f j • z ^ j = f n • (z ^ n / (z - 1)) - f m • (z ^ m / (z - 1))
     + ∑ j ∈ Ico m n, (f j - f (j + 1)) • (z ^ (j + 1) / (z - 1))`.
@@ -63,5 +70,21 @@ theorem sum_Ico_smul_pow_eq {R 𝕜 : Type*} [Ring R] [DivisionRing 𝕜] [Modul
       abel
     rw [sum_Ico_succ_top hmk, sum_Ico_succ_top hmk, ih, hterm]
     abel
+
+/-- **The centred geometric sum telescopes**: for `z ≠ 0` in a field,
+`(1 - z) ∑_{j=-n}^{n} z^j = z^{-n} - z^{n+1}`. -/
+theorem one_sub_mul_sum_Icc_zpow {𝕜 : Type*} [Field 𝕜] {z : 𝕜} (hz : z ≠ 0) (n : ℕ) :
+    (1 - z) * ∑ j ∈ Icc (-(n : ℤ)) n, z ^ j = z ^ (-(n : ℤ)) - z ^ (n + 1) := by
+  -- Reindex `j = -n + k` with `k = 0, …, 2 n`.
+  have hsum : ∑ j ∈ Icc (-(n : ℤ)) n, z ^ j = z ^ (-(n : ℤ)) * ∑ k ∈ range (2 * n + 1), z ^ k := by
+    rw [Int.Icc_eq_finset_map, sum_map, show ((n : ℤ) + 1 - -(n : ℤ)).toNat = 2 * n + 1 by omega,
+      Finset.mul_sum]
+    refine sum_congr rfl fun k _ ↦ ?_
+    simp [zpow_add₀ hz]
+  rw [hsum, mul_left_comm, mul_neg_geom_sum, mul_sub, mul_one, ← zpow_natCast z (2 * n + 1),
+    ← zpow_add₀ hz, ← zpow_natCast]
+  congr 2
+  push_cast
+  ring
 
 end TauCeti
