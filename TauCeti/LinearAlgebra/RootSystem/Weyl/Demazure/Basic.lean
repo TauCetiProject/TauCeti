@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Invariant
-import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 import TauCeti.Algebra.MonoidAlgebra.Telescope
-import TauCeti.LinearAlgebra.RootSystem.Basic
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
 
 /-!
 # The integral Demazure operator of a root
@@ -165,14 +164,8 @@ theorem one_sub_single_neg_root_mul_demazureOperator (f : AddMonoidAlgebra ℤ M
 
 /-- Multiplication by `1 - e^{-αᵢ}` is injective on `ℤ[M]`, since `-αᵢ` has infinite order. -/
 theorem isLeftRegular_one_sub_single_neg_root :
-    IsLeftRegular (1 - single (-P.root i) 1 : AddMonoidAlgebra ℤ M) := by
-  intro f g h
-  beta_reduce at h
-  have hα : ¬IsOfFinAddOrder (-P.root i) :=
-    isOfFinAddOrder_neg_iff.not.mpr (P.not_isOfFinAddOrder_root i)
-  rw [← sub_eq_zero]
-  refine TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder hα ?_
-  linear_combination -h
+    IsLeftRegular (1 - single (-P.root i) 1 : AddMonoidAlgebra ℤ M) :=
+  (P.isRegular_one_sub_single_neg_root i).left
 
 /-- The localization identity characterizes the Demazure operator: `Dᵢ f` is the unique `g` with
 `(1 - e^{-αᵢ}) g = f - e^{-αᵢ} sᵢ(f)`. -/
