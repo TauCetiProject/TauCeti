@@ -40,7 +40,7 @@ the small Nisnevich site a long exact Mayer–Vietoris sequence.
 ## References
 
 * F. Morel and V. Voevodsky, *𝔸¹-homotopy theory of schemes*, Publ. Math. IHÉS 90 (1999),
-  §3.1, Lemma 1.6.
+  §3.1, Proposition 1.4 and Lemma 1.6.
 -/
 
 public section
@@ -83,6 +83,7 @@ noncomputable abbrev etaleP : Q.etaleV ⟶ W :=
 /-- The projection `U ×_W V ⟶ U`, as a morphism of the small étale site. -/
 noncomputable abbrev etaleFst : Q.etaleUV ⟶ Q.etaleU :=
   MorphismProperty.Over.homMk (Limits.pullback.fst Q.j Q.p)
+    -- The structure morphisms of `Etale.mk` objects are their defining composites.
     (show _ ≫ Q.j ≫ W.hom = _ ≫ Q.p ≫ W.hom from Limits.pullback.condition_assoc _)
 
 /-- The projection `U ×_W V ⟶ V`, as a morphism of the small étale site. -/
@@ -105,6 +106,7 @@ noncomputable def etaleSquare : Square X.Etale where
   f₁₃ := Q.etaleSnd
   f₂₄ := Q.etaleJ
   f₃₄ := Q.etaleP
+  -- The underlying scheme morphisms of `homMk` arrows are the given ones.
   fac := Etale.hom_ext (show _ ≫ Q.j = _ ≫ Q.p from Limits.pullback.condition)
 
 instance mono_etaleSnd : Mono Q.etaleSnd where
@@ -131,35 +133,20 @@ theorem ofArrows_mem_smallNisnevichTopology :
   · exact ⟨false, x, hx, hiso⟩
   · exact ⟨true, x, hx, hiso⟩
 
-instance isOpenImmersion_diagonalArrows (c : Bool) : IsOpenImmersion (Q.diagonalArrows c) := by
-  cases c <;> dsimp <;> infer_instance
-
 /-- For a morphism `g : T ⟶ V ×_W V` from an étale `X`-scheme, the pullback along `g` of the
 diagonal (`true`) or of the part of `V ×_W V` over `U` (`false`), as an étale `X`-scheme. -/
-noncomputable abbrev diagonalCoverObj {T : X.Etale}
+private noncomputable abbrev diagonalCoverObj {T : X.Etale}
     (g : T.left ⟶ Limits.pullback Q.p Q.p) (c : Bool) : X.Etale :=
   AlgebraicGeometry.Scheme.Etale.mk (Limits.pullback.fst g (Q.diagonalArrows c) ≫ T.hom)
 
 /-- The open immersion of `diagonalCoverObj g c` into `T`. -/
-noncomputable abbrev diagonalCoverHom {T : X.Etale}
+private noncomputable abbrev diagonalCoverHom {T : X.Etale}
     (g : T.left ⟶ Limits.pullback Q.p Q.p) (c : Bool) : Q.diagonalCoverObj g c ⟶ T :=
   MorphismProperty.Over.homMk (Limits.pullback.fst g (Q.diagonalArrows c))
 
-@[simp] lemma diagonalCoverHom_left {T : X.Etale} (g : T.left ⟶ Limits.pullback Q.p Q.p)
-    (c : Bool) :
-    (Q.diagonalCoverHom g c).left = Limits.pullback.fst g (Q.diagonalArrows c) := (rfl)
-
-/-- The two projections `V ×_W V ⟶ V` agree on the diagonal. -/
-theorem diagonalArrows_true_fst_eq_snd {E : AlgebraicGeometry.Scheme.{u}}
-    (e : E ⟶ Q.V) :
-    e ≫ Q.diagonalArrows true ≫ Limits.pullback.fst Q.p Q.p =
-      e ≫ Q.diagonalArrows true ≫ Limits.pullback.snd Q.p Q.p := by
-  change e ≫ Limits.pullback.diagonal Q.p ≫ _ = e ≫ Limits.pullback.diagonal Q.p ≫ _
-  simp
-
 /-- The pullbacks along `g : T ⟶ V ×_W V` of the diagonal and of the part over `U` cover `T` in
 the small Nisnevich topology. -/
-theorem ofArrows_diagonalCoverHom_mem {T : X.Etale} (g : T.left ⟶ Limits.pullback Q.p Q.p) :
+private theorem ofArrows_diagonalCoverHom_mem {T : X.Etale} (g : T.left ⟶ Limits.pullback Q.p Q.p) :
     Sieve.ofArrows _ (Q.diagonalCoverHom g) ∈ X.smallNisnevichTopology T := by
   rw [AlgebraicGeometry.Scheme.ofArrows_mem_smallNisnevichTopology_iff]
   exact Q.isNisnevichCovering_diagonal.pullback g
@@ -198,7 +185,7 @@ theorem ext_of_isSheaf_small {s t : F.obj (op W)}
 
 /-- A section `b` over `V` of a sheaf on the small Nisnevich site that agrees on `U ×_W V` with a
 section over `U` has equal pullbacks along any two morphisms `T ⟶ V` that agree over `W`. -/
-theorem map_eq_map_of_isSheaf_small {a : F.obj (op Q.etaleU)} {b : F.obj (op Q.etaleV)}
+private theorem map_eq_map_of_isSheaf_small {a : F.obj (op Q.etaleU)} {b : F.obj (op Q.etaleV)}
     (hab : F.map Q.etaleFst.op a = F.map Q.etaleSnd.op b) {T : X.Etale} (b₁ b₂ : T ⟶ Q.etaleV)
     (h : b₁ ≫ Q.etaleP = b₂ ≫ Q.etaleP) : F.map b₁.op b = F.map b₂.op b := by
   have hw : b₁.left ≫ Q.p = b₂.left ≫ Q.p := by simpa using congrArg (fun f ↦ f.left) h
@@ -207,17 +194,12 @@ theorem map_eq_map_of_isSheaf_small {a : F.obj (op Q.etaleU)} {b : F.obj (op Q.e
     (hF _ (Q.ofArrows_diagonalCoverHom_mem g))).isSeparatedFor.ext ?_
   rintro _ _ ⟨c⟩
   simp only [← Functor.map_comp_apply, ← op_comp]
-  -- On the pullback of the diagonal or of the part over `U`, `b₁` and `b₂` are the projections.
-  have hg (c : Bool) : (Q.diagonalCoverHom g c).left ≫ b₁.left =
-      Limits.pullback.snd g (Q.diagonalArrows c) ≫ Q.diagonalArrows c ≫
-        Limits.pullback.fst Q.p Q.p :=
-    (congrArg (Limits.pullback.fst g (Q.diagonalArrows c) ≫ ·)
-      (Limits.pullback.lift_fst _ _ hw)).symm.trans (Limits.pullback.condition_assoc _)
-  have hg₂ (c : Bool) : (Q.diagonalCoverHom g c).left ≫ b₂.left =
-      Limits.pullback.snd g (Q.diagonalArrows c) ≫ Q.diagonalArrows c ≫
-        Limits.pullback.snd Q.p Q.p :=
-    (congrArg (Limits.pullback.fst g (Q.diagonalArrows c) ≫ ·)
-      (Limits.pullback.lift_snd _ _ hw)).symm.trans (Limits.pullback.condition_assoc _)
+  -- On the pullback of `Q.diagonalArrows c`, `b₁` and `b₂` restrict to the two projections.
+  have hg (c : Bool) {bπ : T ⟶ Q.etaleV} {π : Limits.pullback Q.p Q.p ⟶ Q.V}
+      (hπ : g ≫ π = bπ.left) : (Q.diagonalCoverHom g c).left ≫ bπ.left =
+        Limits.pullback.snd g (Q.diagonalArrows c) ≫ Q.diagonalArrows c ≫ π :=
+    (congrArg (Limits.pullback.fst g (Q.diagonalArrows c) ≫ ·) hπ).symm.trans
+      (Limits.pullback.condition_assoc _)
   have hb₁ : b₁.left ≫ Q.p ≫ W.hom = T.hom := MorphismProperty.Over.w b₁
   cases c
   · -- Over `U`, both composites agree with a section pulled back from `U`.
@@ -228,30 +210,32 @@ theorem map_eq_map_of_isSheaf_small {a : F.obj (op Q.etaleU)} {b : F.obj (op Q.e
           Q.diagonalArrows false ≫ Limits.pullback.fst Q.p Q.p ≫ Q.p := by
         simp only [m, Category.assoc]
         rw [← Limits.pullback.condition (f := Limits.pullback.fst Q.p Q.p ≫ Q.p) (g := Q.j)]
-      refine h₁.trans ?_
-      have h₂ := congrArg (· ≫ Q.p) (hg false)
-      exact h₂.symm.trans (Category.assoc _ _ _)
+      exact h₁.trans ((hg false (Limits.pullback.lift_fst _ _ hw) =≫ Q.p).symm.trans
+        (Category.assoc _ _ _))
+    -- `simp` and `rw` do not see through the `X.Etale` comma structure here, so the remaining
+    -- equalities of scheme morphisms are assembled from `hm`, `hb₁` and `hπ` by reassociation.
     have hmw : m ≫ Q.j ≫ W.hom = (Q.diagonalCoverObj g false).hom :=
-      (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ W.hom) hm).trans
-        ((Category.assoc _ _ _).trans (congrArg ((Q.diagonalCoverHom g false).left ≫ ·)
+      (Category.assoc _ _ _).symm.trans ((hm =≫ W.hom).trans
+        ((Category.assoc _ _ _).trans ((Q.diagonalCoverHom g false).left ≫=
           ((Category.assoc _ _ _).trans hb₁))))
     set n : Q.diagonalCoverObj g false ⟶ Q.etaleU := MorphismProperty.Over.homMk m hmw
     have e (π : T ⟶ Q.etaleV) (hπ : π.left ≫ Q.p = b₁.left ≫ Q.p) :
-        F.map (Q.diagonalCoverHom g false ≫ π).op b =
-          F.map n.op a :=
+        F.map (Q.diagonalCoverHom g false ≫ π).op b = F.map n.op a :=
       (Q.map_eq_map_of_comp_eq hab _ _ (Etale.hom_ext (hm.trans
-        ((congrArg ((Q.diagonalCoverHom g false).left ≫ ·) hπ.symm).trans
-          (Category.assoc _ _ _).symm)))).symm
+        (((Q.diagonalCoverHom g false).left ≫= hπ.symm).trans (Category.assoc _ _ _).symm)))).symm
     rw [e b₁ rfl, e b₂ hw.symm]
-  · -- On the diagonal, both composites agree.
+  · -- On the diagonal, both composites agree: `Q.diagonalArrows true` is the diagonal of `p`.
     have : Q.diagonalCoverHom g true ≫ b₁ = Q.diagonalCoverHom g true ≫ b₂ :=
-      Etale.hom_ext ((hg true).trans ((Q.diagonalArrows_true_fst_eq_snd _).trans (hg₂ true).symm))
+      Etale.hom_ext ((hg true (Limits.pullback.lift_fst _ _ hw)).trans
+        ((Limits.pullback.snd g (Q.diagonalArrows true) ≫= (Limits.pullback.diagonal_fst Q.p).trans
+          (Limits.pullback.diagonal_snd Q.p).symm).trans
+            (hg true (Limits.pullback.lift_snd _ _ hw)).symm))
     rw [this]
 
 /-- **Small Nisnevich sheaves on elementary distinguished squares** (Morel–Voevodsky, §3.1,
-Lemma 1.6): a sheaf of sets on the small Nisnevich site of `X` sends an elementary distinguished
-square over an étale `X`-scheme `W` to a pullback square, so `F(W) → F(U) ×_{F(U ×_W V)} F(V)` is
-bijective. -/
+the only-if direction of Proposition 1.4): a sheaf of sets on the small Nisnevich site of `X`
+sends an elementary distinguished square over an étale `X`-scheme `W` to a pullback square, so
+`F(W) → F(U) ×_{F(U ×_W V)} F(V)` is bijective. -/
 theorem isPullback_of_isSheaf_small :
     IsPullback (F.map Q.etaleJ.op) (F.map Q.etaleP.op) (F.map Q.etaleFst.op)
       (F.map Q.etaleSnd.op) := by
@@ -281,9 +265,10 @@ sheaves of sets, so every abelian sheaf on the small Nisnevich site has a long e
 Mayer–Vietoris sequence for it. -/
 @[expose, simps! toSquare]
 noncomputable def mayerVietorisSquare : X.smallNisnevichTopology.MayerVietorisSquare :=
-  GrothendieckTopology.MayerVietorisSquare.mk' Q.etaleSquare fun F ↦ by
-    have := Q.isPullback_of_isSheaf_small ((isSheaf_iff_isSheaf_of_type _ _).1 F.property)
-    exact this
+  -- `(Q.etaleSquare.op.map F.obj).IsPullback` unfolds, through the projections of
+  -- `etaleSquare`, to the statement of `isPullback_of_isSheaf_small`.
+  GrothendieckTopology.MayerVietorisSquare.mk' Q.etaleSquare fun F ↦
+    Q.isPullback_of_isSheaf_small ((isSheaf_iff_isSheaf_of_type _ _).1 F.property)
 
 end ElementaryDistinguishedSquare
 
