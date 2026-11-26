@@ -209,7 +209,7 @@ theorem percolationProb_one_right (hd : d ≠ 0) : percolationProb d 1 = 1 := by
   have hsupp : ((latticeGraph d).connectedComponentMk 0).supp = Set.univ := by
     ext x
     simp [ConnectedComponent.mem_supp_iff, ConnectedComponent.eq,
-      latticeGraph_connected.preconnected x 0]
+      connected_latticeGraph.preconnected x 0]
   simp [percolationProb, hsupp, Set.infinite_univ]
 
 /-- `ℤ^0` is a single point, so no cluster is infinite and `θ` vanishes identically. -/

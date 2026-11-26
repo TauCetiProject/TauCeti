@@ -29,7 +29,7 @@ finite and `2d`-regular, and it is connected, since every unit vector is a singl
 
 * `TauCeti.latticeGraph_adj_iff_exists` — `y` is a neighbour of `x` iff `y = x ± eᵢ` for some `i`;
 * `TauCeti.latticeGraph_degree` — every point has exactly `2d` neighbours;
-* `TauCeti.latticeGraph_connected` — the lattice is connected;
+* `TauCeti.connected_latticeGraph` — the lattice is connected;
 * `TauCeti.latticeGraph_zero` — `ℤ^0` is a single point and its lattice has no edge.
 
 ## References
@@ -110,7 +110,7 @@ private theorem latticeGraph_reachable_add_single (x : Fin d → ℤ) (i : Fin d
     rw [Pi.single_sub, add_sub_assoc]
 
 /-- The lattice `ℤ^d` is connected. -/
-theorem latticeGraph_connected : (latticeGraph d).Connected := by
+theorem connected_latticeGraph : (latticeGraph d).Connected := by
   rw [connected_iff_exists_forall_reachable]
   refine ⟨0, fun y => ?_⟩
   have key (s : Finset (Fin d)) : (latticeGraph d).Reachable 0 (∑ i ∈ s, Pi.single i (y i)) := by
