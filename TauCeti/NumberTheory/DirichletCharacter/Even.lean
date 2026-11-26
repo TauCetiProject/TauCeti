@@ -209,11 +209,11 @@ theorem sum_even_eq_totient_div_two_mul (hn : 2 < n) {f : DirichletCharacter R n
   rw [h, ← mul_assoc, h2]
 
 open scoped Classical in
-/-- Above level two exactly half of the Dirichlet characters of level `n` are even: this is the
-count of pairs of even product parity at the levels `n` and `1`, whose only character is
-trivial. -/
+/-- Above level two exactly half of the `φ(n)` Dirichlet characters of level `n` are even. -/
 theorem two_mul_card_even (hn : 2 < n) :
     2 * #{χ : DirichletCharacter R n | χ.Even} = n.totient := by
+  -- Count the pairs of even product parity at the levels `n` and `1`, whose only character is
+  -- trivial.
   have : NeZero n := ⟨by omega⟩
   have := subsingleton_of_le_two (R := R) (n := 1) one_le_two
   have : Unique (DirichletCharacter R 1) := uniqueOfSubsingleton 1
