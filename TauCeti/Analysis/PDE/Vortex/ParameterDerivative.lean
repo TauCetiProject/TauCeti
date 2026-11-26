@@ -1091,6 +1091,60 @@ theorem exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_
   calc K₁ * (‖w‖ + _) ≤ K₁ * (‖w‖ + qc * (4 * ‖w‖)) := by gcongr
     _ = K₁ * (1 + 4 * qc) * ‖w‖ := by ring
 
+/-- **The weighted Sobolev estimate for the orthogonal kernel projection, uniformly over a window
+of divisors.** For every degree `m`, radius `R₀`, bound `B`, rate `|c| < 1/2` and order `k` there
+is a constant `K` with the following property, where `ρ(z) = √(1 + |z|²)`. Let `x` be a smooth
+plane vortex with the degree-`m` end framing whose zeros lie in the closed disc of radius `R₀` and
+whose coordinates have bounded derivatives of every order, bounded by `B` through order `k`, let
+`a` be its `L∞` class and `π` the projection onto the kernel of `L_a` along its `L²`-orthogonal
+complement. If `exp(c ρ) e` is square integrable, then the coordinates of `exp(c ρ) π e` are given
+by some `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖exp(c ρ) e‖₂`. That is,
+
+`‖exp(c ρ) π e‖_(H^(k+1)) ≤ K ‖exp(c ρ) e‖₂`,
+
+with `K` depending only on `m`, `R₀`, `B`, `c` and `k`. The weighted `L²` estimate is
+`exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le`. -/
+theorem exists_forall_norm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le
+    (m : ℕ) (R₀ B : ℝ) {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
+    ∃ K ≥ 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
+      (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤, a =ᵐ[μ⊤] x →
+      ∀ e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2,
+      MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 volume →
+      ∃ u : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
+        (∀ i, ⇑(inclusionLp (by positivity) (u i)) =ᵐ[volume]
+          fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
+            (orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator a) e) z) i :
+              ℂ)) ∧
+        ‖u‖ ≤ K * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+          sobolevFieldValues e z) 2 volume).toReal := by
+  obtain ⟨kπ, hkπ⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ hc
+  obtain ⟨K₁, hK₁, hK₁b⟩ :=
+    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
+  refine ⟨K₁ * kπ, by positivity, ?_⟩
+  intro x D hx hbound hxb hsol hframe hD hD₀ a hax e he
+  obtain ⟨hT, -⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
+  have := hT.finite_ker
+  have hπ0 : sobolevGaugeFixedOperator a (orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator a) e) = 0 :=
+    (isOrthogonalKerProjection_orthogonalKerProjection sobolevFieldValues_injective _).mem_ker e
+  -- `π e` is a weak solution of `L_x Y = 0` with weighted `L²` norm at most `kπ ‖exp(c ρ) e‖₂`.
+  obtain ⟨hπm, hπn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul (by positivity)
+    (hkπ x D hx hbound hsol hframe hD hD₀ a hax e)
+    (ENNReal.ofReal_toReal he.eLpNorm_lt_top.ne).ge
+  obtain ⟨u, hu, hun⟩ := hK₁b x hx hxb (0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) _
+    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge)
+    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
+      rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax _ hη hηc,
+        hπ0]) hπm 0 fun i ↦ .of_forall fun z ↦ by simp
+  rw [norm_zero, zero_add] at hun
+  exact ⟨u, hu, hun.trans (by rw [mul_assoc]; gcongr)⟩
+
 /-- **The weighted Sobolev estimate for the parameter derivative of the orthogonal right
 inverses, uniformly over a window of divisors.** For every degree `m`, radius `R₀`, bound `B`,
 rate `|c| < 1/2` and order `k` there is a constant `K` with the following property, where
@@ -1205,34 +1259,24 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_for
                 (sobolevGaugeFixedOperator (a p))) p₀ v e) z) i : ℂ)) ∧
           ‖u‖ ≤ K * M * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
             sobolevFieldValues e z) 2 volume).toReal := by
-  obtain ⟨kπ, hkπ⟩ :=
-    exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ hc
+  obtain ⟨K₀, hK₀, hK₀b⟩ :=
+    exists_forall_norm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ B hc k
   obtain ⟨K₂, hK₂⟩ :=
     exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀
       hc
-  obtain ⟨K₁, hK₁, hK₁b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
   obtain ⟨K₃, hK₃, hK₃b⟩ :=
     exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOperator_eq_neg_sum k 1 B c
-  refine ⟨K₃ * (K₁ * kπ + 2 * K₂), by positivity, ?_⟩
+  refine ⟨K₃ * (K₀ + 2 * K₂), by positivity, ?_⟩
   intro x D hx hbound hxb hsol hframe hD hD₀ X _ _ a p₀ hax ha v β M hb hβ hβb e he
-  obtain ⟨hT, hsurj, hd, hπ⟩ :=
+  obtain ⟨hT, hsurj, hd, -⟩ :=
     isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
   set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
   set N := (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2
     volume).toReal
   obtain ⟨hM, hb2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq_of_forall_norm_iteratedFDeriv_le hb hβb
   have he' := (ENNReal.ofReal_toReal he.eLpNorm_lt_top.ne).ge
-  -- `π e` is a weak solution of `L_x Y = 0` with weighted `L²` norm at most `kπ N`, so
-  -- `exp(c ρ) π e` has coordinates `u₀` in `H^(k+1)`.
-  obtain ⟨hπm, hπn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul (by positivity)
-    (hkπ x D hx hbound hsol hframe hD hD₀ (a p₀) hax e) he'
-  have hπ0 : sobolevGaugeFixedOperator (a p₀) (π e) = 0 := hπ.mem_ker e
-  obtain ⟨u₀, hu₀, hu₀n⟩ := hK₁b x hx hxb (0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) _
-    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge)
-    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
-      rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax (π e) hη hηc,
-        hπ0]) hπm 0 fun i ↦ .of_forall fun z ↦ by simp
+  -- `exp(c ρ) π e` has coordinates `u₀` in `H^(k+1)` with `‖u₀‖ ≤ K₀ N`.
+  obtain ⟨u₀, hu₀, hu₀n⟩ := hK₀b x D hx hbound hxb hsol hframe hD hD₀ (a p₀) hax e he
   -- The derivative `y = π' e` solves `L_x y = -Z(b, π e)`, with weighted `L²` norm at most
   -- `K₂ ‖b‖∞ N`, where `‖b‖∞ ≤ 2 M`.
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
@@ -1247,13 +1291,10 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_for
     _ hym hyn
   simp only [Fin.sum_univ_one, Matrix.cons_val_zero] at hun
   refine ⟨u, hu, hun.trans ?_⟩
-  rw [norm_zero, zero_add] at hu₀n
   push_cast
   calc K₃ * (M * ‖u₀‖ + K₂ * ‖fderiv ℝ a p₀ v‖ * N) ≤
-        K₃ * (M * (K₁ * (kπ * N)) + K₂ * (2 * M) * N) := by
-        gcongr
-        exact hu₀n.trans (by gcongr)
-    _ = K₃ * (K₁ * kπ + 2 * K₂) * M * N := by ring
+        K₃ * (M * (K₀ * N) + K₂ * (2 * M) * N) := by gcongr
+    _ = K₃ * (K₀ + 2 * K₂) * M * N := by ring
 
 /-! ### The adjoints of the right inverses -/
 
