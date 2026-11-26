@@ -290,15 +290,20 @@ theorem domain_subset_sqIntegrable (hτ : IsTrace τ) : (domain τ : Set B) ⊆ 
 /-! ### The linear extension -/
 
 omit [StarOrderedRing B] in
+/-- The real-valued trace `x ↦ τ(x)` is additive on `𝔪_τ⁺`. -/
+theorem toReal_map_add (hτ : IsTrace τ) {p q : B} (hp : p ∈ finitePart τ)
+    (hq : q ∈ finitePart τ) : (τ (p + q)).toReal = (τ p).toReal + (τ q).toReal := by
+  rw [mem_finitePart] at hp hq
+  rw [hτ.map_add_of_nonneg hp.1 hq.1, ENNReal.toReal_add hp.2.ne hq.2.ne]
+
+omit [StarOrderedRing B] in
 /-- Differences in `𝔪_τ⁺` determine differences of traces: `p - q = p' - q'` gives
 `τ(p) - τ(q) = τ(p') - τ(q')`. -/
 theorem toReal_sub_eq_of_sub_eq (hτ : IsTrace τ) {p q p' q' : B} (hp : p ∈ finitePart τ)
     (hq : q ∈ finitePart τ) (hp' : p' ∈ finitePart τ) (hq' : q' ∈ finitePart τ)
     (h : p - q = p' - q') : (τ p).toReal - (τ q).toReal = (τ p').toReal - (τ q').toReal := by
-  rw [mem_finitePart] at hp hq hp' hq'
   have h' := congrArg (fun x ↦ (τ x).toReal) (sub_eq_sub_iff_add_eq_add.1 h)
-  simp only [hτ.map_add_of_nonneg hp.1 hq'.1, hτ.map_add_of_nonneg hp'.1 hq.1,
-    ENNReal.toReal_add hp.2.ne hq'.2.ne, ENNReal.toReal_add hp'.2.ne hq.2.ne] at h'
+  simp only [hτ.toReal_map_add hp hq', hτ.toReal_map_add hp' hq] at h'
   linarith
 
 end IsTrace
@@ -374,9 +379,7 @@ theorem selfAdjointTrace_smul_add_smul (hτ : IsTrace τ) (s t : ℝ) {a b : B}
   rw [h₁, h₂, show p₁ - q₁ + (p₂ - q₂) = (p₁ + p₂) - (q₁ + q₂) by abel,
     hτ.selfAdjointTrace_sub (hτ.add_mem_finitePart hp₁ hp₂) (hτ.add_mem_finitePart hq₁ hq₂),
     hτ.selfAdjointTrace_sub hp hq, hτ.selfAdjointTrace_sub hp' hq']
-  rw [mem_finitePart] at hp₁ hq₁ hp₂ hq₂
-  rw [hτ.map_add_of_nonneg hp₁.1 hp₂.1, hτ.map_add_of_nonneg hq₁.1 hq₂.1,
-    ENNReal.toReal_add hp₁.2.ne hp₂.2.ne, ENNReal.toReal_add hq₁.2.ne hq₂.2.ne]
+  rw [hτ.toReal_map_add hp₁ hp₂, hτ.toReal_map_add hq₁ hq₂]
   linarith
 
 /-- The real part of an element of `𝔪_τ` lies in `𝔪_τ`. -/
@@ -534,10 +537,10 @@ theorem linearMap_toTrace (ω : PositiveTracialFunctional B) (z : domain ω.toTr
   have hψ : ∀ x (hx : x ∈ finitePart ω.toTrace),
       ψ ⟨x, finitePart_subset_domain hx⟩ = (ω.toTrace x).toReal := by
     intro x hx
-    obtain ⟨hre, him⟩ := Complex.nonneg_iff.mp (map_nonneg ω (mem_finitePart.1 hx).1)
+    have hω := map_nonneg ω (mem_finitePart.1 hx).1
     simp only [ψ, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-      LinearMap.coe_ofClass, toTrace_apply, ENNReal.toReal_ofReal hre]
-    exact Complex.ext (Complex.ofReal_re _) (by simpa using him.symm)
+      LinearMap.coe_ofClass, toTrace_apply, ENNReal.toReal_ofReal (Complex.nonneg_iff.mp hω).1]
+    exact Complex.eq_re_of_ofReal_le hω
   simp [← ω.isTrace_toTrace.eq_linearMap hψ, ψ]
 
 end PositiveTracialFunctional
