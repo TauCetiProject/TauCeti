@@ -20,11 +20,14 @@ contraction evaluates all those slots and pairs the remaining vector with that d
 These operations turn derivative fields into the directional expressions used in Taylor
 polynomials, without choosing coordinates.
 
-Both operations are continuous linear in the field. Partial contraction of `i` slots is
-homogeneous of degree `i` in the direction and has norm at most `‖h‖ ^ i`; full contraction of
-`IteratedGradient E j` has degree `j + 1`, has norm at most `‖h‖ ^ (j + 1)`, depends smoothly on
-the direction (`TauCeti.IteratedGradient.contDiff_fullContractL`), and on a Hilbert space evaluates
-`TauCeti.iteratedGradientChain` to repeated directional derivatives
+Both operations are continuous linear in the field and continuous in the direction. Partial
+contraction of `i` slots is homogeneous of degree `i` in the direction and has norm at most
+`‖h‖ ^ i`; full contraction of `IteratedGradient E j` has degree `j + 1`, has norm at most
+`‖h‖ ^ (j + 1)`, and depends smoothly on the direction
+(`TauCeti.IteratedGradient.contDiff_fullContractL`). On a Hilbert space, full contraction of
+`TauCeti.iteratedGradientChain f k x` along `h` recovers `iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ h)`
+without any differentiability hypothesis (`TauCeti.fullContractL_iteratedGradientChain`), and agrees
+with `iteratedFDerivAlong ℝ (List.replicate (k + 1) h) f x` when `f` is `C^{k+1}` at `x`
 (`TauCeti.IteratedGradient.fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong`).
 -/
 
@@ -88,6 +91,16 @@ theorem contractL_smul_direction (j i : ℕ) (a : ℝ) (h : E) :
   | succ i ih =>
       ext G
       simp [ih, smul_smul, pow_succ, mul_comm]
+
+/-- Partial contraction of `i` outer slots is continuous in the direction vector. -/
+@[fun_prop]
+theorem continuous_contractL (j i : ℕ) : Continuous (contractL (E := E) j i) := by
+  induction i with
+  | zero => exact continuous_const.congr fun h ↦ (contractL_zero j h).symm
+  | succ i ih =>
+      exact (ih.clm_comp
+        (ContinuousLinearMap.id ℝ (E →L[ℝ] IteratedGradient E (j + i))).flip.continuous).congr
+        fun h ↦ (contractL_succ j i h).symm
 
 end NormedSpace
 
@@ -174,6 +187,11 @@ theorem contDiff_fullContractL {n : ℕ∞ω} : ∀ j : ℕ, ContDiff ℝ n (ful
         ((E →L[ℝ] IteratedGradient E j) →L[ℝ] IteratedGradient E j) _ _ _ _ _ n
         (ContinuousLinearMap.apply ℝ (E' := E) (IteratedGradient E j))
 
+/-- Full contraction of `IteratedGradient E j` is continuous in the direction vector. -/
+@[fun_prop]
+theorem continuous_fullContractL (j : ℕ) : Continuous (fullContractL (E := E) j) :=
+  (contDiff_fullContractL (n := 0) j).continuous
+
 /-- On any Hilbert space, full contraction of `iteratedGradientChain f j x` along `h` agrees with
 `iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x` whenever `f` is `C^{j+1}` at `x`. -/
 theorem fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong [CompleteSpace E] :
@@ -218,3 +236,54 @@ example : fullContractL 1 (6 : ℝ) ((2 : ℝ) • ContinuousLinearMap.id ℝ �
   norm_num [RCLike.inner_apply]
 
 end TauCeti.IteratedGradient
+
+namespace TauCeti
+
+section ContractionBridge
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- Contracting all `k + 1` slots of the `i`th multilinear derivative of `iteratedGradientChain f k`
+along a constant tuple `(h, …, h)` recovers the `(k + 1 + i)`th multilinear derivative of `f` on
+`(h, …, h)`. No differentiability assumption on `f` is needed. -/
+theorem fullContractL_iteratedFDeriv_iteratedGradientChain_const (f : E → ℝ) (i k : ℕ)
+    (x h : E) :
+    IteratedGradient.fullContractL k h
+        (iteratedFDeriv ℝ i (iteratedGradientChain f k) x (fun _ ↦ h)) =
+      iteratedFDeriv ℝ (k + 1 + i) f x (fun _ ↦ h) := by
+  induction k generalizing i with
+  | zero =>
+      rw [iteratedGradientChain_zero, IteratedGradient.fullContractL_zero]
+      have hgrad : gradient f =
+          ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f :=
+        funext fun _ ↦ by simp [gradient]
+      rw [hgrad, ContinuousLinearEquiv.iteratedFDeriv_comp_left,
+        ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+        ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+        innerSL_apply_apply, real_inner_comm, InnerProductSpace.toDual_symm_apply]
+      exact (iteratedFDeriv_succ_apply_right (𝕜 := ℝ) (f := f) (x := x)
+        (fun _ : Fin (i + 1) ↦ h)).symm.trans
+        (congrArg (fun n ↦ iteratedFDeriv ℝ n f x (fun _ ↦ h)) (by omega))
+  | succ k ih =>
+      rw [iteratedGradientChain_succ, IteratedGradient.fullContractL_succ,
+        ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply]
+      have hstep :
+          iteratedFDeriv ℝ i (fderiv ℝ (iteratedGradientChain f k)) x (fun _ ↦ h) h =
+            iteratedFDeriv ℝ (i + 1) (iteratedGradientChain f k) x (fun _ ↦ h) :=
+        (iteratedFDeriv_succ_apply_right (𝕜 := ℝ) (f := iteratedGradientChain f k) (x := x)
+          (fun _ : Fin (i + 1) ↦ h)).symm
+      rw [hstep, ih (i + 1)]
+      exact congrArg (fun n ↦ iteratedFDeriv ℝ n f x (fun _ ↦ h)) (by omega)
+
+/-- Full contraction of `iteratedGradientChain f k x` in direction `h` agrees unconditionally with
+the `(k + 1)`st multilinear Fréchet derivative of `f` at `x` evaluated on the constant tuple `h`. -/
+@[simp]
+theorem fullContractL_iteratedGradientChain (f : E → ℝ) (k : ℕ) (x h : E) :
+    IteratedGradient.fullContractL k h (iteratedGradientChain f k x) =
+      iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ h) := by
+  simpa only [iteratedFDeriv_zero_apply] using
+    fullContractL_iteratedFDeriv_iteratedGradientChain_const f 0 k x h
+
+end ContractionBridge
+
+end TauCeti
