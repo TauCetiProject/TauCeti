@@ -57,6 +57,6 @@ theorem isSMulRegular_natCast_iff_forall_mem_primeFactors {R : Type*} [Semiring 
 natural number `n` is. -/
 theorem isSMulRegular_natCast_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     {n : ℕ} : IsSMulRegular M (n : R) ↔ IsSMulRegular M n :=
-  Iff.of_eq (congrArg Function.Injective (funext fun m ↦ Nat.cast_smul_eq_nsmul R n m))
+  (Equiv.refl M).isSMulRegular_congr fun m ↦ Nat.cast_smul_eq_nsmul R n m
 
 end TauCeti
