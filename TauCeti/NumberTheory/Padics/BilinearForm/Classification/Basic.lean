@@ -193,7 +193,7 @@ private theorem exists_matching_succ_of_even
   · by_cases heven_next : ∀ v ∈ Nk (k + 1), 2 * 2 ^ (k + 1) ∣ B v v
     · have hcomp := compartmentOddity_eq_of_match_below hk h' hB hB' le_rfl hmatch
         (hinv_k heven_next)
-      simp only [compartmentOddity, Finset.Icc_self, Finset.sum_singleton,
+      simp only [compartmentOddity_def, Finset.Icc_self, Finset.sum_singleton,
         Nat.add_sub_cancel_left, odd_one, true_and, htk, ht'k, zero_add,
         IsJordanSplitting.constituentSignBool_eq_true_iff] at hcomp
       have hsk : hk.constituentSign k = h'.constituentSign k := by
@@ -210,7 +210,7 @@ private theorem exists_matching_succ_of_even
         have hs1k := TauCeti.eq_of_eq_neg_of_ne_of_eq_one_or_neg_one
           (hk.constituentSign_eq_one_or_neg_one k) (h'.constituentSign_eq_one_or_neg_one k)
           (hk.constituentSign_eq_neg_of_isSquare_five h1 hdk) hsk
-        have heven1 := (hk.forall_two_mul_pow_dvd_iff_two h1 k).mp heven_k
+        have heven1 := (hk.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h1 k).mp heven_k
         exact exists_matching_succ_of_eq hk h' hB hB' hmatch h1
           (fun i hi ↦ hagree1 i (by omega) (by omega))
           ⟨hs1k, (h1.constituentOddity_of_even hB heven1).trans ht'k.symm⟩
@@ -325,14 +325,14 @@ private theorem exists_isJordanSplitting_matching_below
   | zero => exact ⟨N, h, fun i hi ↦ absurd hi (Nat.not_lt_zero i)⟩
   | succ k ih =>
     obtain ⟨Nk, hk, hmatch⟩ := ih
-    have hrank_k (i) := (hk.finrank_eq_two h i).trans (hrank i)
-    have hpar_k (i) := (hk.forall_two_mul_pow_dvd_iff_two h i).trans (hpar i)
+    have hrank_k (i) := (hk.finrank_eq_of_isJordanSplitting_two h i).trans (hrank i)
+    have hpar_k (i) := (hk.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h i).trans (hpar i)
     have hbot_iff (i) : Nk i = ⊥ ↔ N' i = ⊥ := by
       have := hk.finite i; have := h'.finite i
       rw [← Submodule.finrank_eq_zero, ← Submodule.finrank_eq_zero, hrank_k i]
     have hinv_k (j) (hj : ∀ v ∈ Nk (j + 1), 2 * 2 ^ (j + 1) ∣ B v v) :
         hk.partialOddity hB j = h'.partialOddity hB' j :=
-      have hjN := (hk.forall_two_mul_pow_dvd_iff_two h (j + 1)).mp hj
+      have hjN := (hk.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h (j + 1)).mp hj
       (h.partialOddity_eq_of_isJordanSplitting hk hB hjN).symm.trans (hinv j hjN)
     by_cases heven_k : ∀ v ∈ Nk k, 2 * 2 ^ k ∣ B v v
     · exact exists_matching_succ_of_even hk h' hB hB' hmatch (hbot_iff k) (hpar_k k)
@@ -343,9 +343,9 @@ private theorem exists_isJordanSplitting_matching_below
         (hodd_block d (Finset.mem_Icc.mpr ⟨hkd, le_rfl⟩)) heven_d1
       obtain ⟨N2, h2, hagree2, hmatch2⟩ :=
         h1.exists_constituentSign_and_oddity_eq_on_Icc h' hB hB'
-          (fun i _ ↦ (h1.finrank_eq_two hk i).trans (hrank_k i))
+          (fun i _ ↦ (h1.finrank_eq_of_isJordanSplitting_two hk i).trans (hrank_k i))
           (fun i hi ↦ by
-            rw [h1.forall_two_mul_pow_dvd_iff_two hk i]
+            rw [h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two hk i]
             exact hodd_block i hi)
           (fun i hi ↦ by rw [← hpar_k i]; exact hodd_block i hi)
           (by simpa only [compartmentOddity_constituentSignBool] using hT1) hS1
@@ -378,7 +378,7 @@ theorem IsJordanSplitting.exists_constituentSign_and_oddity_eq
   · have hbotN : N i = ⊥ := by by_contra hne; have := hb hne; omega
     have := h''.finite i; have := h'.finite i
     have hbotN'' : N'' i = ⊥ := Submodule.finrank_eq_zero.mp
-      (by rw [h''.finrank_eq_two h i, hbotN, finrank_bot])
+      (by rw [h''.finrank_eq_of_isJordanSplitting_two h i, hbotN, finrank_bot])
     have hbotN' : N' i = ⊥ :=
       Submodule.finrank_eq_zero.mp (by rw [← hrank i, hbotN, finrank_bot])
     exact ⟨(h''.constituentSign_of_eq_bot hbotN'').trans
@@ -425,7 +425,7 @@ theorem IsJordanSplitting.equivalent_iff_partialOddity_eq
   have := h''.free i; have := h''.finite i; have := h'.free i; have := h'.finite i
   have hcard : Fintype.card (Fin (finrank ℤ_[2] (N'' i))) =
       Fintype.card (Fin (finrank ℤ_[2] (N' i))) := by
-    simp [h''.finrank_eq_two h i, hrank i]
+    simp [h''.finrank_eq_of_isJordanSplitting_two h i, hrank i]
   rw [h''.equivalent_restrict_iff h' hB hB'
     (h''.two_pow_smul_constituentForm i) (h'.two_pow_smul_constituentForm i)
     (Module.finBasis ℤ_[2] (N'' i)) (Module.finBasis ℤ_[2] (N' i)) hcard
@@ -439,7 +439,8 @@ theorem IsJordanSplitting.equivalent_iff_partialOddity_eq
       (h''.isCharacteristic_constituentCharVec hB i),
     h'.constituentOddity_eq hB' (h'.two_pow_smul_constituentForm i)
       (h'.isCharacteristic_constituentCharVec hB' i)] at hodd_i
-  exact ⟨(h''.forall_two_mul_pow_dvd_iff_two h i).trans (hpar i), hsign_i, hodd_i⟩
+  exact ⟨(h''.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h i).trans (hpar i),
+    hsign_i, hodd_i⟩
 
 /-- **Classification of symmetric bilinear forms over `ℤ_[2]` via Jordan splittings (Gauss-sum
 form).** Obtained from `IsJordanSplitting.equivalent_iff_partialOddity_eq` by applying the standard

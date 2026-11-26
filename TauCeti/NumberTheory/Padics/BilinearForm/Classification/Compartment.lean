@@ -313,8 +313,9 @@ private theorem compartmentOddity_and_compS_eq_of_outside_two {s s' : ℕ → Bo
     (hS : (if s' a then (4 : ZMod (2 ^ 3)) else 0) + (if s' b then 4 else 0) =
       (if s a then 4 else 0) + (if s b then 4 else 0)) :
     compartmentOddity s' t' c d = compartmentOddity s t c d ∧ compS s' c d = compS s c d :=
-  ⟨Finset.sum_eq_of_eq_outside_two ha hb hab
-    (fun i _ h1 h2 ↦ by rw [(hout i h1 h2).1, (hout i h1 h2).2]) hT,
+  ⟨by rw [compartmentOddity_def, compartmentOddity_def]
+      exact Finset.sum_eq_of_eq_outside_two ha hb hab
+        (fun i _ h1 h2 ↦ by rw [(hout i h1 h2).1, (hout i h1 h2).2]) hT,
    Finset.sum_eq_of_eq_outside_two ha hb hab (fun i _ h1 h2 ↦ by rw [(hout i h1 h2).1]) hS⟩
 
 private theorem pairInv_eq_of_compartmentOddity_compS {s s' : ℕ → Bool}
@@ -327,7 +328,7 @@ private theorem pairInv_eq_of_compartmentOddity_compS {s s' : ℕ → Bool}
   have hd0 : c + 1 + 1 - c = 2 := by omega
   have hd1 : c + 1 + 1 - (c + 1) = 1 := by omega
   have hnotOdd2 : ¬Odd 2 := by decide
-  simp only [compartmentOddity, compS, Finset.Icc_self_add_one, Finset.sum_pair hne, hd0, hd1,
+  simp only [compartmentOddity_def, compS, Finset.Icc_self_add_one, Finset.sum_pair hne, hd0, hd1,
     hnotOdd2, odd_one, false_and, true_and, ↓reduceIte, add_zero] at hT hS
   refine Prod.ext (by simpa [pairInv, add_assoc] using hT) ?_
   exact (by decide : ∀ a b e f : Bool,
@@ -522,8 +523,8 @@ private theorem exists_isJordanSplitting_of_pairValidPath (hB : B.IsSymm) {k : �
     intro N h hodd0 hodd1 hp
     simp only [pairValidPath, pairCanStep, Bool.and_eq_true] at hp
     obtain ⟨N1, h1, hagree1, hu1⟩ := exists_move_odd_odd h hB hodd0 hodd1 s.1 s.2 hp.1.1 hp.1.2
-    have hrank (i) := h1.finrank_eq_two h i
-    have hpar (i) := h1.forall_two_mul_pow_dvd_iff_two h i
+    have hrank (i) := h1.finrank_eq_of_isJordanSplitting_two h i
+    have hpar (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h i
     obtain ⟨N2, h2, hagree2, hu2⟩ := ih h1 (by rwa [hpar k]) (by rwa [hpar (k + 1)])
       (by rw [hrank k, hrank (k + 1), hu1]; exact hp.2)
     exact ⟨N2, h2, fun i h1' h2' ↦ (hagree2 i h1' h2').trans (hagree1 i h1' h2'), hu2⟩
@@ -572,8 +573,8 @@ private theorem exists_match_stateJ_at_left (hB : B.IsSymm) {N : ℕ → Submodu
     exact ⟨N1, h1, hagree1, hf1.trans hJ1, hT1, hS1⟩
   · obtain ⟨N1, h1, hagree1, hf1, hT1, hS1⟩ :=
       exists_move_stateJ_step h hB (d := d) (by omega) a1 hodd0 hodd1 ha1
-    have hrank1 := h1.finrank_eq_two h c
-    have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_two h i
+    have hrank1 := h1.finrank_eq_of_isJordanSplitting_two h c
+    have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h i
     have hodd0' : ¬∀ x ∈ N1 c, 2 * 2 ^ c ∣ B x x := by rwa [hpar1 c]
     obtain ⟨N2, h2, hagree2, hf2, hT2, hS2⟩ :=
       exists_move_stateJ_step h1 hB (d := d) (by omega) a2 hodd0' (by rwa [hpar1 (c + 1)])
@@ -632,7 +633,7 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
   | 0, c, N, h, _, _, hT, hS => by
     refine ⟨N, h, fun _ _ ↦ rfl, fun i hi ↦ ?_⟩
     obtain rfl : i = c := by simp only [add_zero, Finset.mem_Icc] at hi; omega
-    simp only [compS, compartmentOddity, add_zero, Finset.Icc_self, Finset.sum_singleton,
+    simp only [compS, compartmentOddity_def, add_zero, Finset.Icc_self, Finset.sum_singleton,
       Nat.add_sub_cancel_left, odd_one, true_and] at hS hT
     have hs : h.constituentSignBool i = s' i := (by decide : ∀ a b : Bool,
       (if a then (4 : ZMod (2 ^ 3)) else 0) = (if b then 4 else 0) → a = b) _ _ hS
@@ -665,7 +666,7 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
       exists_match_stateJ_at_left hB h (c := c) (d := d) (by omega)
         (hodd c (by simp [d])) (hodd (c + 1) (by simp [d])) (hvalid' c (by simp [d]))
     -- Step 2: if `(s c, t c) ≠ (s' c, t' c)`, flip `(c, c + 2)` by a distance-2 sign walk.
-    have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_two h i
+    have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h i
     obtain ⟨N2, h2, hagree2, hsc2, htc2, hT2, hS2⟩ :=
       exists_match_state_at_left_of_stateJ_eq hB h1 (c := c) (d := d) (by omega)
         (by rw [hpar1 c]; exact hodd c (by simp [d]))
@@ -680,14 +681,14 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
     obtain ⟨N3, h3, hagree3, hmatch3⟩ := exists_isJordanSplitting_matching_compartment hB s' t'
       (len + 1) (c + 1) N2 h2
       (fun i hi ↦ by
-        rw [h2.forall_two_mul_pow_dvd_iff_two h i]
+        rw [h2.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h i]
         exact hodd i (hIcc_split ▸ Finset.mem_insert_of_mem hi))
       (fun i hi ↦ by
-        rw [h2.finrank_eq_two h i]
+        rw [h2.finrank_eq_of_isJordanSplitting_two h i]
         exact hvalid' i (hIcc_split ▸ Finset.mem_insert_of_mem hi))
       (by
         have hT2' := hT2.trans (hT1.trans hT)
-        unfold compartmentOddity at hT2' ⊢
+        simp only [compartmentOddity_def] at hT2' ⊢
         rw [hIcc_split, Finset.sum_insert hc_notMem, Finset.sum_insert hc_notMem, hsc2, htc2]
           at hT2'
         simpa only [hd] using add_left_cancel hT2')

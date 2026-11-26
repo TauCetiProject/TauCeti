@@ -44,7 +44,8 @@ with respect to `2`, each constituent `N i` has a unique unimodular rescaling `C
   `eq_constituentForm_iff`, `isPerfPair_constituentForm`, `isSymm_constituentForm`,
   `constituentCharVec`, `isCharacteristic_constituentCharVec`: canonical unimodular rescaling and
   characteristic vector for each Jordan constituent.
-* `LinearMap.BilinForm.IsJordanSplitting.finrank_eq_two`, `forall_two_mul_pow_dvd_iff_two`:
+* `LinearMap.BilinForm.IsJordanSplitting.finrank_eq_of_isJordanSplitting_two`,
+  `forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two`:
   rank and parity-type invariance across dyadic Jordan splittings of `B`.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign`, `constituentOddity`,
   `constituentSignBool`, `constituentSign_eq`, `constituentOddity_eq`: definition and independence
@@ -118,13 +119,13 @@ private theorem transport_constituentForm {N' : ℕ → Submodule ℤ_[2] M}
     (LinearEquiv.ofEq _ _ hEq x) (LinearEquiv.ofEq _ _ hEq y)
 
 /-- Two dyadic Jordan splittings of `B` have the same constituent ranks. -/
-theorem IsJordanSplitting.finrank_eq_two [Module.Finite ℤ_[2] M]
+theorem IsJordanSplitting.finrank_eq_of_isJordanSplitting_two [Module.Finite ℤ_[2] M]
     {N' : ℕ → Submodule ℤ_[2] M} (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N')
     (j : ℕ) : finrank ℤ_[2] (N j) = finrank ℤ_[2] (N' j) :=
   h.finrank_eq h' two_ne_zero PadicInt.not_isUnit_two j
 
 /-- Two dyadic Jordan splittings of `B` have the same constituent parity type at every scale. -/
-theorem IsJordanSplitting.forall_two_mul_pow_dvd_iff_two
+theorem IsJordanSplitting.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two
     {N' : ℕ → Submodule ℤ_[2] M} (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N')
     (j : ℕ) :
     (∀ w ∈ N j, 2 * 2 ^ j ∣ B w w) ↔ ∀ w ∈ N' j, 2 * 2 ^ j ∣ B w w :=
@@ -298,7 +299,7 @@ theorem IsJordanSplitting.constituentSign_eq_mul_of_isSquare_det {N' : ℕ → S
       IsSquare (c * ((B.restrict (N k)).toMatrix d).det * ((B.restrict (N' k)).toMatrix d').det)) :
     h'.constituentSign k = χ₈ (PadicInt.toZModPow 3 c) * h.constituentSign k := by
   have := h.free k; have := h.finite k; have := h'.free k; have := h'.finite k
-  have hrank := h.finrank_eq_two h' k
+  have hrank := h.finrank_eq_of_isJordanSplitting_two h' k
   let d := Module.finBasis ℤ_[2] (N k)
   let d' := (Module.finBasis ℤ_[2] (N' k)).reindex (finCongr hrank.symm)
   have hC := h.two_pow_smul_constituentForm k
@@ -415,14 +416,14 @@ end FreeFinite
 
 /-- The weighted oddity-sign sum modulo `8` on a closed interval `Finset.Icc c d`, given boolean
 signs `s` (`true` for `-1`) and oddities `t : ℕ → ZMod 8`. -/
-@[expose] def compartmentOddity (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) : ZMod (2 ^ 3) :=
+def compartmentOddity (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) : ZMod (2 ^ 3) :=
   ∑ i ∈ Finset.Icc c d, (t i + if Odd (d + 1 - i) ∧ s i then 4 else 0)
 
 /-- Expansion of `LinearMap.BilinForm.compartmentOddity` as a sum over `Finset.Icc c d`. -/
 theorem compartmentOddity_def (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) :
     compartmentOddity s t c d =
       ∑ i ∈ Finset.Icc c d, (t i + if Odd (d + 1 - i) ∧ s i then 4 else 0) :=
-  rfl
+  (rfl)
 
 /-- Evaluating `compartmentOddity` at `(h.constituentSignBool, h.constituentOddity hB)` recovers
 the weighted oddity-sign sum over `Finset.Icc c d` in terms of `h.constituentSign`. -/
