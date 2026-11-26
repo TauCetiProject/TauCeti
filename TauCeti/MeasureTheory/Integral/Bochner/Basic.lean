@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Algebra.Polynomial.Roots
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -35,6 +35,12 @@ for set and probability integrals.
 
 * `MeasureTheory.norm_integral_smul_le_of_support_subset`: a multiplier `g` bounded by `K` on a
   set containing the support of an integrable `f` gives `‖∫ g • f‖ ≤ K ∫ ‖f‖`.
+* `TauCeti.integral_norm_pow_add_two_le`: under a probability measure, a function bounded by `K`
+  in norm with `∫ ‖Y‖ ^ 2 ≤ v` has `∫ ‖Y‖ ^ (m + 2) ≤ K ^ m * min v (K ^ 2)`: the factor
+  `‖Y‖ ^ m` acts as a multiplier bounded by `K ^ m`. No measurability of `Y` is assumed.
+* `TauCeti.integral_norm_smul_sq_le`: a scalar factor of norm at most one almost everywhere does
+  not increase the squared `L²` norm, `∫ ‖f • ξ‖² ≤ ∫ ‖ξ‖²`. Applied to a restricted measure, this
+  bounds the squared `L²` norm of a cut-off function `χ ξ` on a set by that of `ξ`.
 
 ## Differences of integrals
 
@@ -101,6 +107,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `TauCeti.integral_norm_sq_le_of_ae_bound`: on a finite measure space, an a.e. norm bound
+  `C` bounds the second moment by `C²` times the total mass, without a measurability assumption.
 * `TauCeti.setIntegral_Icc_update_add_setIntegral_Icc_update` splits a Bochner set integral over
   `Set.Icc a b` in `ι → ℝ` along a coordinate cut `t ∈ Set.Icc (a k) (b k)`.
 * `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
@@ -164,8 +172,10 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose
 * `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a compactly supported weight,
   continuous on its support, pass to limits of maps, eventually continuous on the support of the
   weight, that converge uniformly on that support.
-* `norm_integral_smul_sub_integral_smul_le` bounds the change of such an integral when the weight
-  is perturbed uniformly on a set of finite measure.
+* `TendstoUniformlyOn.tendsto_setIntegral_of_continuousOn`: integrals over a compact measurable
+  set pass to uniform limits of maps eventually continuous on that set.
+* `norm_integral_smul_sub_integral_smul_le` and `norm_integral_smul_sub_le` bound the change of
+  such an integral when the weight is perturbed uniformly on a finite-measure or compact set.
 
 ## Integrals against measures of small mass
 
@@ -280,6 +290,17 @@ end Multiset
 
 namespace TauCeti
 
+/-- On a finite measure space, an a.e. norm bound bounds the second moment by the squared
+bound times the total mass. No measurability assumption is needed for this upper bound. -/
+theorem integral_norm_sq_le_of_ae_bound {Ω E : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsFiniteMeasure μ] [SeminormedAddGroup E] {f : Ω → E} {C : ℝ}
+    (hb : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C) : ∫ ω, ‖f ω‖ ^ 2 ∂μ ≤ C ^ 2 * μ.real Set.univ := by
+  calc
+    _ ≤ ‖∫ ω, ‖f ω‖ ^ 2 ∂μ‖ := Real.le_norm_self _
+    _ ≤ _ := norm_integral_le_of_norm_le_const (hb.mono fun ω hω ↦ by
+      rw [Real.norm_of_nonneg (sq_nonneg _)]
+      exact pow_le_pow_left₀ (norm_nonneg _) hω 2)
+
 /-- A family bounded in norm almost everywhere by a common real function, with uniformly bounded
 `L¹` deviations from given centers, has uniformly bounded centers under any nonzero measure.
 Only the norms of the deviations need to be integrable, and no measurability or integrability of
@@ -341,6 +362,48 @@ theorem setIntegral_Icc_update_add_setIntegral_Icc_update {ι E : Type*} [Fintyp
     hf.mono_set (hunion ▸ Set.subset_union_right)
   rw [← setIntegral_union₀ (aeDisjoint_Icc_update a b k t)
     measurableSet_Icc.nullMeasurableSet hf₁ hf₂, hunion]
+
+/-- On a probability space, a variable bounded by `K` almost everywhere, with second absolute
+moment at most `v`, has absolute moment of order `m + 2` at most `K ^ m * min v (K ^ 2)`. -/
+theorem integral_norm_pow_add_two_le {Ω E : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] [NormedAddCommGroup E] {Y : Ω → E} {K v : ℝ}
+    (hK : ∀ᵐ ω ∂μ, ‖Y ω‖ ≤ K) (hv : ∫ ω, ‖Y ω‖ ^ 2 ∂μ ≤ v) (m : ℕ) :
+    ∫ ω, ‖Y ω‖ ^ (m + 2) ∂μ ≤ K ^ m * min v (K ^ 2) := by
+  have hK₀ : 0 ≤ K := hK.exists.elim fun _ h ↦ (norm_nonneg _).trans h
+  have hv₀ : 0 ≤ v := (integral_nonneg fun _ ↦ by positivity).trans hv
+  by_cases hm : Integrable (fun ω ↦ ‖Y ω‖ ^ (m + 2)) μ
+  swap
+  · rw [integral_undef hm]
+    positivity
+  -- The norm of `Y` is measurable, as the `(m + 2)`-th root of an integrable function.
+  have hY : AEStronglyMeasurable (fun ω ↦ ‖Y ω‖) μ := by
+    refine ((hm.aemeasurable.pow_const ((m + 2 : ℕ) : ℝ)⁻¹).congr
+      (.of_forall fun ω ↦ ?_)).aestronglyMeasurable
+    exact_mod_cast Real.pow_rpow_inv_natCast (norm_nonneg (Y ω)) (by omega : m + 2 ≠ 0)
+  have h2 : Integrable (fun ω ↦ ‖Y ω‖ ^ 2) μ := by
+    simpa only [norm_norm] using (MemLp.of_bound (p := (2 : ℕ)) hY K
+      (by simpa only [norm_norm] using hK)).integrable_norm_pow two_ne_zero
+  have hK2 : ∫ ω, ‖Y ω‖ ^ 2 ∂μ ≤ K ^ 2 := (Real.le_norm_self _).trans (by
+    simpa using norm_integral_le_of_norm_le_const (f := fun ω ↦ ‖Y ω‖ ^ 2)
+      (hK.mono fun ω hω ↦ by simpa using pow_le_pow_left₀ (norm_nonneg _) hω 2))
+  calc _ ≤ ∫ ω, K ^ m * ‖Y ω‖ ^ 2 ∂μ :=
+        integral_mono_ae hm (h2.const_mul _) (hK.mono fun ω hω ↦ by
+          dsimp only
+          rw [pow_add]
+          exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) hω m)
+            (sq_nonneg _))
+    _ = K ^ m * ∫ ω, ‖Y ω‖ ^ 2 ∂μ := integral_const_mul _ _
+    _ ≤ _ := mul_le_mul_of_nonneg_left (le_min hv hK2) (pow_nonneg hK₀ m)
+
+/-- A scalar factor of norm at most one almost everywhere does not increase the squared `L²`
+norm: `∫ ‖f • ξ‖² ≤ ∫ ‖ξ‖²` whenever `‖ξ‖²` is integrable. -/
+theorem integral_norm_smul_sq_le {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : α → 𝕜} {ξ : α → E}
+    (hf : ∀ᵐ x ∂μ, ‖f x‖ ≤ 1) (hξ : Integrable (fun x ↦ ‖ξ x‖ ^ 2) μ) :
+    ∫ x, ‖f x • ξ x‖ ^ 2 ∂μ ≤ ∫ x, ‖ξ x‖ ^ 2 ∂μ :=
+  integral_mono_of_nonneg (.of_forall fun _ ↦ sq_nonneg _) hξ (hf.mono fun x hx ↦ by
+    simp only [norm_smul, mul_pow]
+    exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ (norm_nonneg _) hx))
 
 namespace MeasureTheory
 
@@ -917,6 +980,24 @@ theorem tendsto_integral_smul_of_tendstoUniformlyOn {X F ι : Type*} [Topologica
     (hf.mono fun i hi ↦ hint hi) (hint (hlim.continuousOn hf.frequently)).aestronglyMeasurable
     (hlim.tendsto_setLIntegral_enorm_sub hac.measure_lt_top.ne)
 
+/-- **Set integrals of uniformly convergent continuous functions converge.** If maps `f i`,
+eventually continuous on a compact measurable set `s`, converge uniformly on `s` to `g`, then their
+integrals over `s` converge to the integral of `g` over `s`, for any measure finite on compact
+sets. This is the set-integral analogue of Mathlib's
+`TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn`. -/
+theorem _root_.TendstoUniformlyOn.tendsto_setIntegral_of_continuousOn {X F ι : Type*}
+    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {l : Filter ι}
+    {f : ι → X → F} {g : X → F} {s : Set X} (hs : IsCompact s) (hs' : MeasurableSet s)
+    (hf : ∀ᶠ i in l, ContinuousOn (f i) s) (hlim : TendstoUniformlyOn f g l s) :
+    Tendsto (fun i ↦ ∫ x in s, f i x ∂μ) l (𝓝 (∫ x in s, g x ∂μ)) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · exact tendsto_bot
+  exact tendsto_integral_of_L1 (μ := μ.restrict s) g
+    ((hlim.continuousOn hf.frequently).integrableOn_compact' hs hs').aestronglyMeasurable
+    (hf.mono fun i hi ↦ hi.integrableOn_compact' hs hs')
+    (hlim.tendsto_setLIntegral_enorm_sub hs.measure_lt_top.ne)
+
 /-- If functions `fᵢ` with values in a space `𝕜` acting boundedly on the codomain `G` of `w`
 converge uniformly to `f` along any filter, then `∫ fᵢ w → ∫ f w` for every integrable `w` such
 that `f w` is integrable and `fun x => fᵢ x • w x` is eventually almost everywhere strongly
@@ -966,6 +1047,35 @@ theorem norm_integral_smul_sub_integral_smul_le {X F : Type*} [MeasurableSpace X
   filter_upwards [hab, hB] with x hx hxB hxK
   rw [← sub_smul, norm_smul, Real.norm_eq_abs, abs_sub_comm]
   exact mul_le_mul (hx hxK) (hxB hxK) (norm_nonneg _) ((abs_nonneg _).trans (hx hxK))
+
+/-- Uniformly close multipliers continuous on their topological supports inside a compact set `K`
+have close Bochner integrals against a map integrable on `K`. -/
+theorem norm_integral_smul_sub_le {X 𝕜 F : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [NormedRing 𝕜] [NormedAddCommGroup F] [Module 𝕜 F]
+    [IsBoundedSMul 𝕜 F] [NormedSpace ℝ F] {μ : Measure X} {w : X → F} {K : Set X}
+    (hK : IsCompact K) (hw : IntegrableOn w K μ) {f g : X → 𝕜}
+    (hf : ContinuousOn f (tsupport f)) (hg : ContinuousOn g (tsupport g))
+    (hfK : tsupport f ⊆ K) (hgK : tsupport g ⊆ K) {ε : ℝ} (hfg : ∀ x ∈ K, dist (f x) (g x) ≤ ε) :
+    ‖(∫ x, f x • w x ∂μ) - ∫ x, g x • w x ∂μ‖ ≤ ε * ∫ x in K, ‖w x‖ ∂μ := by
+  rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  · have hf0 : ∀ x, f x = 0 := fun x => image_eq_zero_of_notMem_tsupport (hfK ·)
+    have hg0 : ∀ x, g x = 0 := fun x => image_eq_zero_of_notMem_tsupport (hgK ·)
+    simp [hf0, hg0]
+  have hε : 0 ≤ ε := dist_nonneg.trans (hfg x₀ hx₀)
+  have hint : ∀ {a : X → 𝕜}, ContinuousOn a (tsupport a) → tsupport a ⊆ K →
+      Integrable (fun x => a x • w x) μ := fun ha haK =>
+    hw.locallyIntegrableOn.integrable_smul_left_of_hasCompactSupport ha
+      (hK.of_isClosed_subset (isClosed_tsupport _) haK) haK
+  have hvan : ∀ x ∉ K, (f x - g x) • w x = 0 := fun x hx => by
+    simp [image_eq_zero_of_notMem_tsupport (hx <| hfK ·),
+      image_eq_zero_of_notMem_tsupport (hx <| hgK ·)]
+  rw [← integral_sub (hint hf hfK) (hint hg hgK), funext fun x => (sub_smul (f x) (g x) (w x)).symm,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, ← integral_const_mul]
+  refine norm_integral_le_of_norm_le (hw.norm.const_mul ε) (ae_of_all _ fun x => ?_)
+  by_cases hxK : x ∈ K
+  · exact (norm_smul_le (f x - g x) (w x)).trans
+      (mul_le_mul_of_nonneg_right (by simpa only [dist_eq_norm] using hfg x hxK) (norm_nonneg _))
+  · rw [hvan x hxK, norm_zero]; positivity
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone

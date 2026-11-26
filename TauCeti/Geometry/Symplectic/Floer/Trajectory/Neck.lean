@@ -55,8 +55,8 @@ this is the step that separates levels. Assembling the levels themselves is not 
   `[b', b] ⊆ [b, b']`, bounds them below, so the loops of actions near `b` and `b'` stay a bounded
   distance apart.
 
-As in `TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`, the uniform bound on the derivatives
-excludes bubbling; it is assumed, not proved. The almost complex structures `J_k` may vary with
+As in `TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`, the uniform bound on the derivatives,
+which excludes bubbling, is a hypothesis. The almost complex structures `J_k` may vary with
 `k`, and no convergence of the derivatives of the trajectories is used.
 
 ## References

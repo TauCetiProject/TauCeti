@@ -320,6 +320,25 @@ theorem mass_comp_cutoffPullbackCLM_le [NormedAddCommGroup V] [NormedSpace ℝ V
       _ = L ^ k := by ring
   · simp [image_eq_zero_of_notMem_tsupport hx]
 
+/-- **The mass of a pushforward, bounded on the support**: if `|χ| ≤ 1` and `‖DΦ‖ ≤ L` at the
+points of the support of `T`, then `M(T ∘ (χ Φ^*)) ≤ L ^ k M(T)`. -/
+theorem mass_comp_cutoffPullbackCLM_le_of_forall_mem_dsupport
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ} (hT : HasLocallyFiniteMass T)
+    (hχ : ∀ x ∈ dsupport T, |χ x| ≤ 1) {L : ℝ≥0}
+    (hL : ∀ x ∈ dsupport T, ‖fderiv ℝ Φ x‖ ≤ L) :
+    mass (T ∘L (cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ≤
+      L ^ k * mass T := by
+  borelize E
+  refine mass_le_iff.2 fun ω hω ↦ ?_
+  rw [ContinuousLinearMap.comp_apply]
+  refine enorm_apply_le_mul_mass_of_forall_mem_dsupport hT fun x hx ↦ ?_
+  have hreal : |χ x| * (‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k) ≤ (L : ℝ) ^ k :=
+    calc |χ x| * (‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k) ≤ 1 * (1 * (L : ℝ) ^ k) := by
+          gcongr
+          exacts [hχ x hx, hω _, hL x hx]
+      _ = L ^ k := by ring
+  exact_mod_cast (norm_cutoffPullbackCLM_apply_le ω x).trans hreal
+
 section Homotopy
 
 variable [CompleteSpace F] {H : E × ℝ → E'}

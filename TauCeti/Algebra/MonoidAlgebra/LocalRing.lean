@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.MonoidAlgebra.Basic
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.Algebra.CharP.LocalRing
 import Mathlib.RingTheory.Ideal.GoingUp
@@ -47,6 +47,8 @@ the cyclic subgroup it generates, which is neither a unit nor one minus a unit.
 
 * `TauCeti.MonoidAlgebra.bijective_of_forall_exists_mapRingHom_residue_eq`: an `R[G]`-linear
   endomorphism of `R[G]^ι` that is onto modulo the maximal ideal is bijective.
+* `TauCeti.MonoidAlgebra.isLocalHom_mapRingHom_residue`: for a finite monoid `G`, an element of
+  `R[G]` whose image in `k[G]` is a unit is a unit.
 * `TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup`: for a commutative `p`-group `Q`
   the augmentation `R[Q] → R` is a local homomorphism.
 * `TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup`: `R[Q]` is a local ring.
@@ -88,6 +90,25 @@ theorem bijective_of_forall_exists_mapRingHom_residue_eq
     (Submodule.le_of_le_smul_of_le_jacobson Module.Finite.fg_top (ringJacobson_eq_maximalIdeal R).ge
       hle))
   exact ⟨OrzechProperty.injective_of_surjective_endomorphism (θ.restrictScalars R) hsurj, hsurj⟩
+
+/-- **Units of `R[G]` are detected modulo the maximal ideal.** For a finite monoid `G` and a local
+ring `R` with residue field `k`, an element of `R[G]` whose image in `k[G]` is a unit is a unit. -/
+instance isLocalHom_mapRingHom_residue : IsLocalHom (mapRingHom G (residue R)) := by
+  have hsurj : Function.Surjective (mapRingHom G (residue R)) := by
+    rw [coe_mapRingHom]
+    exact map_surjective (residue R).toAddMonoidHom residue_surjective
+  -- Right multiplication by an element whose image is a unit is onto modulo the maximal ideal,
+  -- hence bijective by Nakayama's lemma.
+  refine ⟨fun x hx ↦ IsUnit.isUnit_iff_mulRight_bijective.mpr ?_⟩
+  let θ : (Unit → MonoidAlgebra R G) →ₗ[MonoidAlgebra R G] (Unit → MonoidAlgebra R G) :=
+    LinearMap.pi fun _ ↦ (LinearMap.toSpanSingleton _ _ x).comp (LinearMap.proj ())
+  have hθ := bijective_of_forall_exists_mapRingHom_residue_eq θ fun y ↦ by
+    obtain ⟨z, hz⟩ := hsurj (mapRingHom G (residue R) (y ()) * ↑hx.unit⁻¹)
+    exact ⟨fun _ ↦ z, fun _ ↦ by simp [θ, hz, mul_assoc]⟩
+  let e := Equiv.funUnique Unit (MonoidAlgebra R G)
+  convert e.bijective.comp (hθ.comp e.symm.bijective) using 1
+  ext y
+  simp [θ, e]
 
 section PGroup
 
@@ -132,14 +153,11 @@ theorem isLocalHom_lift_one_of_isPGroup (hp : ¬IsUnit (p : R)) (hQ : IsPGroup p
     rw [ker_augmentation_eq_span, Ideal.span_le]
     rintro _ ⟨q, rfl⟩
     exact single_sub_one_mem_of_isMaximal hp hQ 𝔐 q
-  have haug : (MonoidAlgebra.lift R R Q 1 : MonoidAlgebra R Q →+* R) = augmentation R Q :=
-    MonoidAlgebra.ringHom_ext (fun _ ↦ by simp [MonoidAlgebra.lift_single]) fun _ ↦ by
-      simp [MonoidAlgebra.lift_single]
   -- `x` differs from the constant `algebraMap (augmentation x)` by an element of `𝔐`.
   have hdiff : ∀ y : MonoidAlgebra R Q,
       algebraMap R (MonoidAlgebra R Q) (MonoidAlgebra.lift R R Q 1 y) - y ∈ 𝔐 := fun y ↦
     hker <| by
-      rw [RingHom.mem_ker, map_sub, ← RingHom.coe_coe (MonoidAlgebra.lift R R Q 1), haug]
+      rw [RingHom.mem_ker, map_sub, MonoidAlgebra.lift_one_apply]
       simp
   have hmem := 𝔐.add_mem (hdiff x) hx𝔐
   rw [sub_add_cancel] at hmem
@@ -213,27 +231,14 @@ theorem isLocalHom_augmentation_of_isPGroup (hp : ¬IsUnit (p : R)) (hG : IsPGro
   have : CharP (ResidueField R) p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr <| by
     rw [← map_natCast (residue R), residue_eq_zero_iff]
     exact hp
-  -- A lift `u` of a left inverse of the reduction of `x` modulo the maximal ideal.
+  -- The reduction of `x` has a left inverse in the finite-dimensional algebra `k[G]`, so it is a
+  -- unit there, and units of `R[G]` are detected modulo the maximal ideal.
+  have := IsArtinianRing.of_finite (ResidueField R) (MonoidAlgebra (ResidueField R) G)
   obtain ⟨ū, hū⟩ := exists_mul_eq_one_of_augmentation_ne_zero hG
     (x := mapRingHom G (residue R) x) (by
       rw [augmentation_mapRingHom]
       exact (hx.map (residue R)).ne_zero)
-  obtain ⟨u, rfl⟩ : ∃ u, mapRingHom G (residue R) u = ū := by
-    rw [coe_mapRingHom]
-    exact MonoidAlgebra.map_surjective _ residue_surjective ū
-  -- Right multiplication by `x` is onto modulo the maximal ideal, so it is bijective.
-  let θ : (Unit → MonoidAlgebra R G) →ₗ[MonoidAlgebra R G] (Unit → MonoidAlgebra R G) :=
-    LinearMap.pi fun i ↦ (LinearMap.toSpanSingleton _ _ x).comp (LinearMap.proj i)
-  have hθ (z : Unit → MonoidAlgebra R G) (i : Unit) : θ z i = z i * x := by simp [θ]
-  obtain ⟨hinj, hsurj⟩ := bijective_of_forall_exists_mapRingHom_residue_eq θ fun y ↦
-    ⟨fun i ↦ y i * u, fun i ↦ by
-      rw [hθ, map_mul, map_mul, mul_assoc, hū, mul_one]⟩
-  obtain ⟨z, hz⟩ := hsurj 1
-  have hzx : z () * x = 1 := by simpa [hθ] using congrFun hz ()
-  have hxz : x * z () = 1 := by
-    simpa using congrFun (hinj (a₁ := fun _ ↦ x * z ()) (a₂ := 1)
-      (funext fun i ↦ by rw [hθ, hθ, mul_assoc, hzx, Pi.one_apply, one_mul, mul_one])) ()
-  exact ⟨⟨x, z (), hxz, hzx⟩, rfl⟩
+  exact (isUnit_map_iff (mapRingHom G (residue R)) x).mp (isUnit_iff_exists_inv'.mpr ⟨ū, hū⟩)
 
 omit [IsLocalRing R] in
 /-- **A finite group with local group algebra is a `p`-group.** If `R` is a local ring in which

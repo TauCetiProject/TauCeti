@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction.Lift
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 
 /-!
@@ -43,12 +43,20 @@ As for the positively oriented frames
 frame trivializes the unitary frames, through the construction shared by such reductions
 (`TauCeti.OrthonormalFrameBundle.exists_trivialization_of_continuousOn_smul_mem`).
 
+For `V = ℝ⁴` the unitary frames are then a lift of the orthonormal frame bundle along
+`U(2) = U(ℝ⁴, J₀) ⊆ SO(4)` (`TauCeti.OrthonormalFrameBundle.unitaryFrameLift`), the reduction to
+`U(2)` given by `J`. With the canonical lift `U(2) → Spinᶜ(4)` this is the input of the canonical
+`Spinᶜ` structure of an almost Hermitian four-manifold
+(`TauCeti.OrthonormalFrameLift.extendSpinC`).
+
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameBundle.unitaryFrames F J J₀`: the orthonormal frames carrying `J₀` to
   `J`.
 * The instance `TauCeti.OrthonormalFrameBundle.SMulMemIff (Subgroup.centralizer {J₀})
   (unitaryFrames F J J₀)`, giving the right action of the centralizer on the unitary frames.
+* `TauCeti.OrthonormalFrameBundle.unitaryFrameLift`: the unitary frames of a rank-four bundle with
+  a continuous fibrewise orthogonal complex structure, as a lift along `U(2) ⊆ SO(4)`.
 
 ## Main results
 
@@ -71,6 +79,8 @@ noncomputable section
 
 open Bundle Set Module MulOpposite
 open scoped Topology RealInnerProductSpace
+
+universe w
 
 namespace TauCeti.OrthonormalFrameBundle
 
@@ -228,9 +238,11 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
     (hV : finrank ℝ V = 4) (hF : finrank ℝ F = 4) (x : B) :
     ∃ t : Trivialization (Subgroup.centralizer {J₀})
         (fun p : unitaryFrames F J J₀ ↦ (p : OrthonormalFrameBundle ℝ F E V).proj),
-      x ∈ t.baseSet ∧ ∀ (g : Subgroup.centralizer {J₀}) (p : unitaryFrames F J J₀),
+      x ∈ t.baseSet ∧ ∀ (g : Subgroup.centralizer {J₀}) (p : unitaryFrames F J J₀)
+        (hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈
+          unitaryFrames F J J₀),
         (p : OrthonormalFrameBundle ℝ F E V).proj ∈ t.baseSet →
-          t (op g • p) = ((t p).1, (t p).2 * g) := by
+          t ⟨_, hgp⟩ = ((t p).1, (t p).2 * g) := by
   have : Fact (finrank ℝ V = 4) := ⟨hV⟩
   have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (by omega)
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
@@ -238,11 +250,13 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
   let J₀' : AlmostComplexStructure V :=
     ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
   -- `J₀'` is built from `(J₀ : V →L[ℝ] V).toLinearMap`, so `J₀' v` unfolds to `J₀ v`: this lets
-  -- `Unitary.inner_map_map J₀` say that `J₀'` is orthogonal, and `hβ₁`, `hβ₃` (about `J₀'`) serve
-  -- below as statements about `J₀ : V →L[ℝ] V`.
-  obtain ⟨β, -, hβ₁, hβ₃⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one
-    (J := J₀') (Unitary.inner_map_map J₀)
-    ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by omega⟩)
+  -- `Unitary.norm_map J₀` say that `J₀'` preserves norms, and lets `hβ₁`, `hβ₃` state the frame
+  -- relations directly for `(J₀ : V →L[ℝ] V)`.
+  obtain ⟨β₀, hβ₀⟩ := J₀'.exists_adapted_orthonormalBasis (Unitary.norm_map J₀) 2
+    (hV.trans (by norm_num))
+  let β : OrthonormalBasis (Fin 4) ℝ V := β₀.reindex (finCongr (by norm_num))
+  have hβ₁ : β 1 = (J₀ : V →L[ℝ] V) (β 0) := by simpa [β, J₀'] using hβ₀ 0
+  have hβ₃ : β 3 = (J₀ : V →L[ℝ] V) (β 2) := by simpa [β, J₀'] using hβ₀ 1
   let e := trivializationAt F E x
   let cF := Module.finBasisOfFinrankEq ℝ F hF
   -- Some vector of `β` lies outside the complex line of `β 0` for `J` read at `x`.
@@ -255,10 +269,52 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
   obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem
     (H := Subgroup.centralizer {J₀}) (U := goodSet J e cF β (β j))
     (fun _ hy ↦ (e.baseSet_orthonormalFrameBundle cF β).symm ▸ hy.1)
-    (fun _ hy ↦ smul_symm_apply_one_mem_unitaryFrames hJ₂ hJ₀ hβ₁.symm hβ₃.symm hy)
+    (fun _ hy ↦ smul_symm_apply_one_mem_unitaryFrames hJ₂ hJ₀ hβ₁ hβ₃ hy)
     (isOpen_goodSet e cF β (β j) hJ)
     (continuousOn_unitaryToAdaptedFourBasis_localStructure hJ₂ hJ)
     hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
+  exact ⟨t, ht ▸ hx, fun g p hgp hp ↦ hteq g p hgp (ht ▸ hp)⟩
+
+section Lift
+
+variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : X → Type w} [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [ContinuousFiberNorm F E] {J : ∀ x, E x ≃ₗᵢ[ℝ] E x}
+  {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))}
+
+/-- **The unitary frame bundle** of a rank-four bundle with a continuous fibrewise orthogonal
+complex structure `J`, as a lift of the orthonormal frame bundle along
+`U(2) = U(ℝ⁴, J₀) ⊆ SO(4)`: the reduction of the structure group to `U(2)` given by `J`. -/
+@[expose] def unitaryFrameLift
+    (hJ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, J v.proj v.snd⟩ : TotalSpace F E))
+    (hJ₂ : ∀ x v, J x (J x v) = -v)
+    (hJ₀ : ∀ v, (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+      ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) v) = -v)
+    (hF : finrank ℝ F = 4) :
+    OrthonormalFrameLift F E 4 (Subgroup.centralizer {J₀})
+      ((euclideanLinearEquivHom ℝ (Fin 4)).comp (Subgroup.centralizer {J₀}).subtype) :=
+  reductionLift <| isLocallyTrivialReduction_iff.2 <|
+    exists_trivialization_unitaryFrames hJ hJ₂ hJ₀ finrank_euclideanSpace_fin hF
+
+variable (hJ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, J v.proj v.snd⟩ : TotalSpace F E))
+  (hJ₂ : ∀ x v, J x (J x v) = -v)
+  (hJ₀ : ∀ v, (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+    ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) v) = -v)
+  (hF : finrank ℝ F = 4)
+
+@[simp]
+theorem unitaryFrameLift_P :
+    (unitaryFrameLift hJ hJ₂ hJ₀ hF).P = ReductionFiber (unitaryFrames F J J₀) :=
+  (rfl)
+
+/-- The frame of a point of the unitary frame bundle is that unitary frame itself. -/
+@[simp]
+theorem unitaryFrameLift_toFrame
+    (p : TotalSpace (Subgroup.centralizer {J₀}) (ReductionFiber (unitaryFrames F J J₀))) :
+    (unitaryFrameLift hJ hJ₂ hJ₀ hF).toFrame p = ⟨p.proj, p.snd.val.frame⟩ :=
+  (rfl)
+
+end Lift
 
 end TauCeti.OrthonormalFrameBundle

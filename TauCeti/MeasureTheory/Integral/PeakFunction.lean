@@ -48,6 +48,8 @@ its limit at `x₀` provides.
 * `TauCeti.norm_integral_smul_sub_le`: the approximate-identity estimate
   `‖∫ x, f x • φ x ∂μ - y‖ ≤ ε * ‖f‖` when `∫ f = 1`, `f` vanishes off `U`, and `φ` stays within `ε`
   of `y` almost everywhere on `U`.
+* `TauCeti.exists_mem_nhds_forall_norm_integral_smul_sub_lt`: quantitative neighbourhood form of
+  the peak-function estimate for a function tending to `a` at `x₀`.
 * `TauCeti.tendsto_integral_smul_of_tendsto`: a net of `L¹` peak functions concentrating at
   `x₀` integrates `φ` to its limit at `x₀`.
 * `TauCeti.exists_nonneg_integral_eq_one_norm_eq_one`,
@@ -103,6 +105,25 @@ theorem norm_integral_smul_sub_le {f : α →₁[μ] 𝕜} (hf : ∫ x, f x ∂�
     mul_comm, ← integral_mul_const]
   exact norm_integral_le_of_norm_le (hfi.norm.mul_const ε) hbound
 
+/-- **Quantitative peak-function neighbourhood estimate.** If `φ : α → E` tends to `a` at `x₀`,
+then for every bound `C : ℝ` and `ε > 0`, there is a neighbourhood `U` of `x₀` such that for any
+`L¹` weight `f` of unit integral and norm at most `C` vanishing almost everywhere outside `U`
+whose product `f • φ` is almost everywhere strongly measurable, `‖(∫ x, f x • φ x ∂μ) - a‖ < ε`. -/
+theorem exists_mem_nhds_forall_norm_integral_smul_sub_lt [TopologicalSpace α]
+    {φ : α → E} {x₀ : α} {a : E} (hφa : Tendsto φ (𝓝 x₀) (𝓝 a)) (C : ℝ) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∃ U ∈ 𝓝 x₀, ∀ f : α →₁[μ] 𝕜, ‖f‖ ≤ C → ∫ x, f x ∂μ = 1 →
+      (∀ᵐ x ∂μ, x ∉ U → f x = 0) → AEStronglyMeasurable (fun x ↦ f x • φ x) μ →
+      ‖(∫ x, f x • φ x ∂μ) - a‖ < ε := by
+  -- Ask `φ` to stay within `δ` of `a`, where `C * δ < ε`.
+  obtain ⟨δ, hδpos, hδC⟩ := exists_pos_mul_lt hε C
+  refine ⟨_, hφa (closedBall_mem_nhds a hδpos), fun f hfC hf1 hfU hfφ ↦ ?_⟩
+  calc ‖(∫ x, f x • φ x ∂μ) - a‖ ≤ δ * ‖f‖ :=
+        norm_integral_smul_sub_le hf1 hfU hfφ <| .of_forall fun x hx ↦ by
+          simpa [dist_eq_norm] using hx
+    _ ≤ C * δ := (mul_le_mul_of_nonneg_left hfC hδpos.le).trans_eq (mul_comm _ _)
+    _ < ε := hδC
+
 /-- **`L¹` peak functions integrate a function to its limit at the peak.** Let `f i` be `L¹`
 classes which eventually have unit integral and `L¹` norm at most `C`, and which concentrate at
 `x₀`: for every neighbourhood `U` of `x₀`, eventually `f i` vanishes almost everywhere outside `U`.
@@ -115,15 +136,11 @@ theorem tendsto_integral_smul_of_tendsto {ι : Type*} {l : Filter ι} {f : ι �
     (hφa : Tendsto φ (𝓝 x₀) (𝓝 a)) :
     Tendsto (fun i ↦ ∫ x, f i x • φ x ∂μ) l (𝓝 a) := by
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  -- Ask `φ` to stay within `δ` of `a`, where `C * δ < ε`.
-  obtain ⟨δ, hδpos, hδC⟩ := exists_pos_mul_lt hε C
-  filter_upwards [hf, hfC, hfx₀ _ (hφa (closedBall_mem_nhds a hδpos)), hφ] with i hi hiC hiU hiφ
+  obtain ⟨U, hU, hbound⟩ :=
+    exists_mem_nhds_forall_norm_integral_smul_sub_lt (μ := μ) (𝕜 := 𝕜) hφa C hε
+  filter_upwards [hf, hfC, hfx₀ U hU, hφ] with i hi hiC hiU hiφ
   rw [dist_eq_norm]
-  calc ‖(∫ x, f i x • φ x ∂μ) - a‖ ≤ δ * ‖f i‖ :=
-        norm_integral_smul_sub_le hi hiU hiφ <| .of_forall fun x hx ↦ by
-          simpa [dist_eq_norm] using hx
-    _ ≤ C * δ := (mul_le_mul_of_nonneg_left hiC hδpos.le).trans_eq (mul_comm _ _)
-    _ < ε := hδC
+  exact hbound (f i) hiC hi hiU hiφ
 
 variable (μ) in
 /-- **Nonnegative `L¹` peak functions exist.** For a measure positive on nonempty open sets and

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.LinearAlgebra.Finsupp.Supported
 public import TauCeti.LowDimTopology.Heegaard.Admissibility
 public import TauCeti.LowDimTopology.Heegaard.Nice
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
@@ -287,12 +288,8 @@ on `s`, when no nonzero coefficient leads out of `s`. -/
 theorem hatDifferential_mem_supported {s : Set H.Generator}
     (hs : ∀ x ∈ s, ∀ y, H.hatCoefficient χ x y ≠ 0 → y ∈ s) {c : H.Generator →₀ ZMod 2}
     (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s) :
-    H.hatDifferential χ c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s := by
-  rw [Finsupp.mem_supported']
-  intro y hy
-  rw [hatDifferential_apply, Finsupp.sum]
-  refine Finset.sum_eq_zero fun x hx => ?_
-  rw [not_ne_iff.mp (mt (hs x ((Finsupp.mem_supported _ _).mp hc hx) y) hy), mul_zero]
+    H.hatDifferential χ c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s :=
+  Finsupp.mem_supported_of_apply_eq_sum hatDifferential_apply hs hc
 
 end Differential
 

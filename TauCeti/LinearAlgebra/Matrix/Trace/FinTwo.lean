@@ -38,6 +38,12 @@ trace of a commutator differs from `2` by minus the determinant of the additive 
 `tr ⁅A, B⁆ - 2 = -det (A B - B A)`, since `⁅A, B⁆ - 1 = (A B - B A) A⁻¹ B⁻¹` and
 `det (M - 1) = 2 - tr M` for `M ∈ SL(2, R)`.
 
+For an invertible `2 × 2` matrix `g` over a commutative ring, `det g • g⁻¹` is the adjugate
+`tr g • 1 - g`, so multiplying by `h` and taking traces gives the rank-two trace identity
+`det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0` in `GL₂(A)`. Together with `tr 1 = 2`,
+`tr (g h) = tr (h g)` and multiplicativity of `det`, it is what the pair
+`(tr ∘ ρ, det ∘ ρ)` of a representation `ρ : Γ →* GL₂(A)` satisfies.
+
 These are the matrix inputs for reading off the order of an element of `SL(2, R)` or `PSL(2, R)`
 from its trace, and for recognizing a commutator as hyperbolic. The real elliptic case, where the
 trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic`.
@@ -77,6 +83,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two`: the trace of a commutator
   through the determinant of the additive commutator.
+* `Matrix.GeneralLinearGroup.det_mul_trace_inv_mul_sub_trace_mul_trace_add_trace_mul_fin_two`:
+  `det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0` in `GL₂(A)`.
 
 ## References
 
@@ -84,6 +92,7 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   Press, 1992, §2.1 (the classification of elements of `PSL(2, ℝ)` by their trace).
 * William M. Goldman, *Trace coordinates on Fricke spaces of some simple hyperbolic surfaces*,
   in *Handbook of Teichmüller theory, Vol. II*, EMS, 2009, §2 (the trace of a commutator).
+* G. Chenevier, arXiv:0809.0415v2, Lemma 1.9, p. 11 (the rank-two trace identity).
 -/
 
 public section
@@ -361,5 +370,18 @@ theorem SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two {R : Type*} [
       Fin.sum_univ_two, of_apply,
     cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
   linear_combination 2 * (A 0 0 * A 1 1 - A 0 1 * A 1 0) * hB + 2 * hA
+
+/-- **The rank-two trace identity.** For `g h ∈ GL₂(A)`,
+`det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0`. -/
+theorem GeneralLinearGroup.det_mul_trace_inv_mul_sub_trace_mul_trace_add_trace_mul_fin_two
+    {A : Type*} [CommRing A] (g h : GL (Fin 2) A) :
+    (g : Matrix (Fin 2) (Fin 2) A).det * ((g⁻¹ : GL (Fin 2) A) * h : Matrix (Fin 2) (Fin 2) A).trace
+      - (g : Matrix (Fin 2) (Fin 2) A).trace * (h : Matrix (Fin 2) (Fin 2) A).trace
+      + ((g : Matrix (Fin 2) (Fin 2) A) * h).trace = 0 := by
+  have key := trace_adjugate_mul_fin_two (g : Matrix (Fin 2) (Fin 2) A) h
+  -- `adj g = det g • g⁻¹`.
+  rw [adjugate_eq_det_smul_of_mul_eq_one (Units.mul_inv g), smul_mul_assoc, trace_smul,
+    smul_eq_mul] at key
+  linear_combination key
 
 end Matrix

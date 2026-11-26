@@ -54,13 +54,15 @@ ambient covariant derivative.
 * `CovariantDerivative.alongCurveWithin_const`: along a constant curve the candidate is the
   ordinary derivative of the field, with `CovariantDerivative.alongCurve_const` its unrestricted
   case; `CovariantDerivative.alongCurveWithin_const_of_hasDerivWithinAt` and
-  `CovariantDerivative.alongCurve_const_of_hasDerivAt` read off a known derivative.
+  `CovariantDerivative.alongCurve_const_of_hasDerivAt` read off a known derivative, and
+  `CovariantDerivative.alongCurve_const_const` is the case of a constant field.
 * `CovariantDerivative.alongCurveWithin_inter`, `CovariantDerivative.alongCurveWithin_of_mem_nhds`,
   `CovariantDerivative.alongCurveWithin_subset`, `CovariantDerivative.alongCurveWithin_congr`, and
   `CovariantDerivative.alongCurveWithin_comp`: parameter-set and field locality and
   reparametrization, with
   `CovariantDerivative.alongCurve_congr` and `CovariantDerivative.alongCurve_comp` their
-  unrestricted cases.
+  unrestricted cases, and `CovariantDerivative.alongCurveWithin_congr_covariantDerivative` and
+  `CovariantDerivative.alongCurve_congr_covariantDerivative` for congruence in the connection.
 
 ## References
 
@@ -393,6 +395,13 @@ theorem alongCurve_const_of_hasDerivAt (x : M) {W : 𝕜 → TangentSpace I x} {
   -- `HasDerivAtFilter W W' t (𝓝 t)`, the definition of `HasDerivAt W W' t`.
   rwa [HasDerivWithinAt, nhdsWithin_univ]
 
+/-- Along a constant curve at `x`, a constant field has vanishing covariant derivative. -/
+@[simp]
+theorem alongCurve_const_const (x : M) (w : TangentSpace I x) (t : 𝕜) :
+    alongCurve cov (fun _ ↦ x) (fun _ ↦ w) t = 0 :=
+  -- Read the constant field in the model space `E = T_x M`, where its derivative vanishes.
+  (alongCurve_const cov x (fun _ ↦ w) t).trans (deriv_const (F := E) t w)
+
 /-! ### Locality and reparametrization -/
 
 /-- Intersecting the parameter set with a neighbourhood of `t` does not change the moving-chart
@@ -563,3 +572,40 @@ theorem alongCurve_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSp
     alongCurveWithin_sum cov γ A W (s := Set.univ) fun i hi ↦ (hW i hi).differentiableWithinAt
 
 end CovariantDerivative
+
+section ConnectionCongr
+
+open TauCeti.Manifold
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+
+namespace CovariantDerivative
+
+/-- Along-curve covariant differentiation at `t` depends on the connection only through its action
+on vector fields differentiable at `γ t`. -/
+theorem alongCurveWithin_congr_covariantDerivative
+    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set 𝕜} {t : 𝕜}
+    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
+    alongCurveWithin cov₁ γ V s t = alongCurveWithin cov₂ γ V s t := by
+  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply,
+    alongCurveWithin_apply, alongCurveInChartWithin_apply,
+    christoffelMap_congr (Module.finBasis 𝕜 E) _ _ fun _ _ hY ↦ h hY]
+
+/-- Unrestricted along-curve covariant differentiation at `t` depends on the connection only
+through its action on vector fields differentiable at `γ t`. -/
+theorem alongCurve_congr_covariantDerivative
+    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {t : 𝕜}
+    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
+    alongCurve cov₁ γ V t = alongCurve cov₂ γ V t := by
+  simpa only [← alongCurveWithin_univ] using alongCurveWithin_congr_covariantDerivative h
+
+end CovariantDerivative
+
+end ConnectionCongr

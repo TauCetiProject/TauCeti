@@ -10,6 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Probability.Moments.SubGaussian
+import TauCeti.Analysis.Bochner.CharFun.Basic
 import TauCeti.Probability.Moments.Basic
 
 /-!
@@ -42,6 +43,8 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
   directional
   functional of a multivariate Gaussian.
 * `TauCeti.Probability.map_inner_multivariateGaussian` identifies scalar linear projections.
+* `ProbabilityTheory.HasLaw.inner_multivariateGaussian` gives the corresponding `HasLaw` statement
+  for an inner-product projection of a multivariate Gaussian random vector.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
 * `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real logarithm, the quadratic
   polynomial determined by the directional mean and variance.
@@ -229,16 +232,8 @@ the real part of its characteristic function. -/
 theorem integral_cos_gaussianReal (μ : ℝ) (v : ℝ≥0) (t : ℝ) :
     ∫ y, Real.cos (t * y) ∂gaussianReal μ v =
       Real.exp (-(v * t ^ 2) / 2) * Real.cos (t * μ) := by
-  have hint : Integrable (fun y : ℝ => Complex.exp (t * y * Complex.I)) (gaussianReal μ v) :=
-    .of_bound (by fun_prop) 1 (.of_forall fun y => by simp [Complex.norm_exp])
-  calc
-    _ = (∫ y, Complex.exp (t * y * Complex.I) ∂gaussianReal μ v).re := by
-      rw [← RCLike.re_to_complex, ← integral_re hint]
-      congr with y
-      simp [Complex.exp_re]
-    _ = _ := by
-      rw [← charFun_apply_real, charFun_gaussianReal, Complex.exp_re]
-      simp [← Complex.ofReal_pow, neg_div]
+  rw [TauCeti.integral_cos_mul_eq_re_charFun, charFun_gaussianReal, Complex.exp_re]
+  simp [← Complex.ofReal_pow, neg_div]
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -300,3 +295,16 @@ theorem cgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
   rw [cgf, mgf_inner_multivariateGaussian m θ hS t, Real.log_exp]
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+/-- A directional inner-product projection of a multivariate Gaussian random vector has the
+corresponding scalar Gaussian law. -/
+theorem HasLaw.inner_multivariateGaussian {Ω ι : Type*} [MeasurableSpace Ω]
+    [Fintype ι] [DecidableEq ι] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ ι}
+    {m : EuclideanSpace ℝ ι} {S : Matrix ι ι ℝ}
+    (hX : HasLaw X (multivariateGaussian m S) P) (hS : S.PosSemidef) (q : EuclideanSpace ℝ ι) :
+    HasLaw (fun ω ↦ ⟪q, X ω⟫) (gaussianReal ⟪q, m⟫ (⟪q, S.toEuclideanLin q⟫).toNNReal) P :=
+  (HasLaw.mk (by fun_prop) (TauCeti.Probability.map_inner_multivariateGaussian m q hS)).fun_comp hX
+
+end ProbabilityTheory

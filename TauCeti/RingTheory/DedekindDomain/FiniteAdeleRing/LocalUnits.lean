@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
+import TauCeti.RingTheory.Valuation.Integers
 
 /-!
 # The finite ideles at a single place
@@ -48,6 +49,8 @@ everywhere-integral units.
 * `IsDedekindDomain.FiniteAdeleRing.isClosedEmbedding_unitsOfAdicCompletion` and
   `IsDedekindDomain.FiniteAdeleRing.mem_range_unitsOfAdicCompletion_iff`: the single-place
   embedding is a closed embedding onto the finite ideles that are `1` away from `v`.
+* `IsDedekindDomain.FiniteAdeleRing.eventually_smul_adicCompletionIntegers`: a finite idele `a`
+  satisfies `a_v • 𝒪_v = 𝒪_v` at all but finitely many places.
 * `IsDedekindDomain.FiniteAdeleRing.image_unitsProj_integralUnits`: the everywhere-integral units
   project onto the local integral units.
 * `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits_eq_iSup_range_sup_integralUnits`: the
@@ -98,6 +101,16 @@ theorem unitsProj_unitEmbedding (v : HeightOneSpectrum R) (x : Kˣ) :
       Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
   Units.ext (algebraMap_apply R K (x : K) v)
 
+open scoped Pointwise in
+/-- At all but finitely many places a finite idele `a` and its inverse are integral, so that
+`a_v • 𝒪_v = 𝒪_v`. -/
+theorem eventually_smul_adicCompletionIntegers (a : 𝔸ᶠ[R, K]ˣ) :
+    ∀ᶠ v : HeightOneSpectrum R in Filter.cofinite,
+      (a : 𝔸ᶠ[R, K]) v • (v.adicCompletionIntegers K : Set (v.adicCompletion K)) =
+        v.adicCompletionIntegers K := by
+  filter_upwards [eventually_valued_coe_units_apply_eq_one a] with v hv
+  exact Valued.v.units_smul_integer (u := Units.mk0 _ (coe_units_apply_ne_zero a v)) hv
+
 /-! ### The finite ideles concentrated at one place -/
 
 variable (K) in
@@ -117,18 +130,14 @@ theorem coe_unitsOfAdicCompletion_apply (v : HeightOneSpectrum R) (u : (v.adicCo
 @[simp]
 theorem unitsProj_unitsOfAdicCompletion (v : HeightOneSpectrum R) (u : (v.adicCompletion K)ˣ) :
     unitsProj K v (unitsOfAdicCompletion K v u) = u :=
-  Units.ext <| by
-    classical
-    exact (ofAdicCompletion_apply_coe K v u v).trans (Pi.mulSingle_eq_same _ _)
+  Units.ext (ofAdicCompletion_apply_self K v u)
 
 /-- The finite idele concentrated at `v` has coordinate `1` at every other place. -/
 @[simp]
 theorem unitsProj_unitsOfAdicCompletion_of_ne {v w : HeightOneSpectrum R} (h : w ≠ v)
     (u : (v.adicCompletion K)ˣ) :
     unitsProj K w (unitsOfAdicCompletion K v u) = 1 :=
-  Units.ext <| by
-    classical
-    exact (ofAdicCompletion_apply_coe K v u w).trans (Pi.mulSingle_eq_of_ne h _)
+  Units.ext (ofAdicCompletion_apply_of_ne K h u)
 
 /-- The coordinates of a product of finite ideles, one concentrated at each place of a finite set
 `S`: the prescribed unit at a place of `S`, and `1` elsewhere. -/

@@ -97,8 +97,6 @@ perturbation every degenerate critical point satisfies all the conditions of a b
 * `TauCeti.ae_forall_fderiv_fderiv_fderiv_sub_cubicPerturbation_apply_ne_zero`: for almost every
   `p`, the third derivative of `f t - cubicPerturbation p` does not vanish on the nonzero kernel
   vectors of the Hessian at its critical points.
-* `TauCeti.exists_norm_lt_forall_surjective_and_fderiv_fderiv_fderiv_sub_cubicPerturbation_ne_zero`:
-  both conditions hold together after an arbitrarily small perturbation.
 
 ## References
 
@@ -398,31 +396,6 @@ theorem ae_forall_fderiv_fderiv_fderiv_sub_cubicPerturbation_apply_ne_zero
         fderiv ℝ (fderiv ℝ (fderiv ℝ (fun y ↦ f z.1 y - cubicPerturbation p y))) z.2 v v v ≠ 0 :=
   ae_forall_fderiv_fderiv_fderiv_sub_apply_ne_zero_of_forall_exists_fderiv_eq ν hf
     contDiff_cubicPerturbation fun z _ _ hv ↦ exists_cubicPerturbation_fderiv_eq z.2 hv
-
-/-- **After an arbitrarily small polynomial perturbation of degree at most three, the family is
-transverse with nonvanishing cubic term at all of its critical points.** Let `f t` be a family of
-functions on a finite-dimensional real normed space `E`, jointly `C⁴` at every point of a set
-`W ⊆ ℝ × E`. For every `ε > 0` there are coefficients `p` of norm less than `ε` such that at every
-critical point `(t, x) ∈ W` of `f t - cubicPerturbation p` the family is transverse, and the third
-derivative of `f t - cubicPerturbation p` at `x` does not vanish at `(v, v, v)` for any nonzero
-`v` in the kernel of the Hessian. -/
-theorem exists_norm_lt_forall_surjective_and_fderiv_fderiv_fderiv_sub_cubicPerturbation_ne_zero
-    {W : Set (ℝ × E)} (hf : ∀ z ∈ W, ContDiffAt ℝ 4 (uncurry f) z) {ε : ℝ} (hε : 0 < ε) :
-    ∃ p : CubicCoefficients E, ‖p‖ < ε ∧ ∀ z ∈ W,
-      fderiv ℝ (fun y ↦ f z.1 y - cubicPerturbation p y) z.2 = 0 →
-        Surjective (fderiv ℝ
-          (fun w : ℝ × E ↦ fderiv ℝ (fun y ↦ f w.1 y - cubicPerturbation p y) w.2) z) ∧
-        ∀ v ≠ 0, fderiv ℝ (fderiv ℝ (fun y ↦ f z.1 y - cubicPerturbation p y)) z.2 v = 0 →
-          fderiv ℝ (fderiv ℝ (fderiv ℝ (fun y ↦ f z.1 y - cubicPerturbation p y))) z.2 v v v ≠
-            0 := by
-  borelize (CubicCoefficients E)
-  have hae := (ae_forall_surjective_fderiv_fderiv_sub_cubicPerturbation
-    (addHaar : Measure (CubicCoefficients E)) fun z hz ↦ (hf z hz).of_le (by norm_num)).and
-    (ae_forall_fderiv_fderiv_fderiv_sub_cubicPerturbation_apply_ne_zero addHaar hf)
-  obtain ⟨p, hp, hball⟩ := (dense_of_ae hae).exists_mem_open Metric.isOpen_ball
-    ⟨0, Metric.mem_ball_self hε⟩
-  exact ⟨p, by simpa [Metric.mem_ball, dist_zero_right] using hball,
-    fun z hz hz0 ↦ ⟨hp.1 z hz hz0, hp.2 z hz hz0⟩⟩
 
 end Cubic
 

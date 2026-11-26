@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -37,6 +38,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.inner_mgradient`: its characteristic property
   `⟪grad f x, v⟫ = df_x v`, and `TauCeti.Manifold.eq_mgradient_iff`, which identifies the
   gradient from it.
+* `TauCeti.Manifold.toLinearMap_mvfderiv_eq_innerₗ_mgradient`: the same property for the bundled
+  linear form, `df_x = ⟪grad f x, ·⟫`.
 * `TauCeti.Manifold.exists_contMDiffMap_mgradient_eq`: every tangent vector is the gradient of a
   smooth function.
 * `IsMIntegralCurve.comp_neg_neg_mgradient`: reversing time turns a negative gradient
@@ -56,8 +59,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.mdifferentiableAt_mgradient` and
   `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` germ or function has a differentiable
   Riemannian gradient section.
-* `TauCeti.Manifold.mgradient_add_eventuallyEq`: the gradient is additive near a point where
-  both functions are `C¹`.
+* `TauCeti.Manifold.mgradient_add_eventuallyEq`: the gradient is additive near a point near which
+  both functions are differentiable.
 * `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient, and
   `TauCeti.Manifold.contMDiff_neg_mgradient_one` states its `C¹` case for a `C²` function.
 * `TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`: for a
@@ -108,6 +111,14 @@ theorem inner_mgradient_right (v : TangentSpace I x) :
     inner ℝ v (mgradient I f x) = mvfderiv I f x v := by
   rw [real_inner_comm, inner_mgradient]
 
+/-- The differential of `f` at `x`, as a linear form, is the metric lowering `⟪grad f x, ·⟫` of
+the gradient. -/
+theorem toLinearMap_mvfderiv_eq_innerₗ_mgradient :
+    ((mvfderiv I f x : TangentSpace I x →L[ℝ] ℝ) : TangentSpace I x →ₗ[ℝ] ℝ) =
+      innerₗ (TangentSpace I x) (mgradient I f x) :=
+  LinearMap.ext fun v ↦ by
+    rw [ContinuousLinearMap.coe_coe, innerₗ_apply_apply, inner_mgradient]
+
 /-- A tangent vector is the gradient exactly when its inner product with every vector `v` is
 `df_x v`. -/
 theorem eq_mgradient_iff {w : TangentSpace I x} :
@@ -121,18 +132,29 @@ theorem mvfderiv_apply_mgradient :
       inner ℝ (mgradient I f x) (mgradient I f x) :=
   (inner_mgradient _).symm
 
+/-- The differential of `f` in the direction of its negative gradient is minus the squared norm of
+the gradient. -/
+theorem mvfderiv_apply_neg_mgradient :
+    mvfderiv I f x (-mgradient I f x) = -‖mgradient I f x‖ ^ 2 := by
+  rw [map_neg, mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq]
+
 /-- The gradient vanishes exactly where the differential does. -/
 @[simp]
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
+
+/-- The gradient vanishes outside the topological support of the function. -/
+theorem mgradient_eq_zero_of_notMem_tsupport (hx : x ∉ tsupport f) :
+    mgradient I f x = 0 :=
+  mgradient_eq_zero_iff.2
+    ((notMem_tsupport_iff_eventuallyEq.1 hx).mvfderiv_eq.trans mvfderiv_zero)
 
 variable (I) in
 /-- The gradient of a compactly supported function is compactly supported, since it vanishes off
 the support of the function. -/
 protected theorem _root_.HasCompactSupport.mgradient (hf : HasCompactSupport f) :
     HasCompactSupport (β := E) (mgradient I f) :=
-  hf.mono' fun _ hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
-    (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
+  hf.mono' fun _ hx ↦ by_contra fun h ↦ hx (mgradient_eq_zero_of_notMem_tsupport h)
 
 /-- Pairing the gradient of a compactly supported function with any vector field gives a
 compactly supported scalar function. No differentiability assumption is needed. -/
@@ -161,28 +183,33 @@ theorem mgradient_add {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
   funext x
   simp [mgradient, mvfderiv_add (hf x) (hg x)]
 
-/-- The gradient is additive near a point where both functions are `C¹`. -/
+/-- The gradient is additive near a point where both functions are differentiable nearby. -/
 theorem mgradient_add_eventuallyEq {g : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hg : ContMDiffAt I 𝓘(ℝ) 1 g x) :
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in 𝓝 x, MDifferentiableAt I 𝓘(ℝ) g y) :
     ∀ᶠ y in 𝓝 x, mgradient I (f + g) y = (mgradient I f + mgradient I g) y := by
-  filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf,
-    (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg] with y hfy hgy
+  filter_upwards [hf, hg] with y hfy hgy
   apply ext_inner_right ℝ
   intro v
   rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
-    mvfderiv_add (hfy.mdifferentiableAt (by simp)) (hgy.mdifferentiableAt (by simp)),
-    add_apply]
+    mvfderiv_add hfy hgy, add_apply]
+
+/-- The gradient satisfies the scalar product rule at a point where both factors are
+differentiable. -/
+theorem mgradient_mul_apply {g : M → ℝ} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    mgradient I (f * g) x = f x • mgradient I g x + g x • mgradient I f x := by
+  apply ext_inner_right ℝ
+  intro v
+  rw [inner_mgradient, mvfderiv_mul hf hg]
+  simp only [inner_add_left, real_inner_smul_left, inner_mgradient, add_apply, smul_apply,
+    smul_eq_mul]
 
 /-- The gradient satisfies the scalar product rule for differentiable functions. -/
 theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
     (hg : MDifferentiable I 𝓘(ℝ) g) :
-    mgradient I (f * g) = fun x ↦ f x • mgradient I g x + g x • mgradient I f x := by
-  funext x
-  apply ext_inner_right ℝ
-  intro v
-  rw [inner_mgradient, mvfderiv_mul (hf x) (hg x)]
-  simp only [inner_add_left, real_inner_smul_left, inner_mgradient]
-  simp only [add_apply, smul_apply, smul_eq_mul]
+    mgradient I (f * g) = fun x ↦ f x • mgradient I g x + g x • mgradient I f x :=
+  funext fun x ↦ mgradient_mul_apply (hf x) (hg x)
 
 /-- The gradient commutes with multiplication by a real constant. -/
 @[simp]
@@ -214,11 +241,9 @@ then `t ↦ γ (-t)` is an integral curve of `-grad (-f)`. -/
 theorem _root_.IsMIntegralCurve.comp_neg_neg_mgradient {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ (-mgradient I f)) :
     IsMIntegralCurve (fun t ↦ γ (-t)) (-mgradient I (-f)) := by
-  convert hγ.comp_mul (-1) using 1
-  · funext t
-    simp only [Function.comp_apply, mul_neg_one]
-  · funext y
-    simp only [Pi.neg_apply, Pi.smul_apply, mgradient_neg, neg_neg, neg_smul, one_smul]
+  convert hγ.comp_neg using 1
+  funext y
+  simp only [Pi.neg_apply, mgradient_neg, neg_neg]
 
 variable {s : Set M}
 

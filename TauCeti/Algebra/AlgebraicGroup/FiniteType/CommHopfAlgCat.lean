@@ -133,6 +133,21 @@ lemma toBialgHom_comp {H K L : FiniteTypeCommHopfAlgCat.{u, v} R}
     toBialgHom (φ ≫ ψ) = (toBialgHom ψ).comp (toBialgHom φ) :=
   rfl
 
+/-- The inverse of an isomorphism of finite-type commutative Hopf algebras undoes it on
+elements. This is Mathlib's `Iso.hom_inv_id_apply`, restated with `toBialgHom` so that it
+rewrites terms written with `toBialgHom`, which the `ConcreteCategory.hom` form does not match
+syntactically. -/
+@[simp]
+lemma toBialgHom_inv_hom_apply {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ K)
+    (x : H.obj) : toBialgHom e.inv (toBialgHom e.hom x) = x :=
+  e.hom_inv_id_apply x
+
+/-- An isomorphism of finite-type commutative Hopf algebras undoes its inverse on elements. -/
+@[simp]
+lemma toBialgHom_hom_inv_apply {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ K)
+    (x : K.obj) : toBialgHom e.hom (toBialgHom e.inv x) = x :=
+  e.inv_hom_id_apply x
+
 @[simp]
 lemma ofHom_toBialgHom {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     ofHom (toBialgHom φ) = φ :=
@@ -143,6 +158,13 @@ lemma toBialgHom_ofHom {H K : Type v} [CommRing H] [CommRing K]
     [_root_.HopfAlgebra R H] [_root_.HopfAlgebra R K]
     [Algebra.FiniteType R H] [Algebra.FiniteType R K] (φ : H →ₐc[R] K) :
     toBialgHom (ofHom (R := R) φ) = φ :=
+  rfl
+
+/-- The bialgebra equivalence `CommHopfAlgCat.ofIso` of an isomorphism `e` of finite-type
+commutative Hopf algebras has underlying bialgebra morphism `toBialgHom e.hom`. -/
+lemma toBialgHom_ofIso_ι_mapIso {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ K) :
+    (_root_.CommHopfAlgCat.ofIso ((ObjectProperty.ι _).mapIso e)).toBialgHom =
+      toBialgHom e.hom :=
   rfl
 
 @[simp]

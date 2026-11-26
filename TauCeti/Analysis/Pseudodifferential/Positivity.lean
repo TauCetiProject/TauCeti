@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.StrictPositivity
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.Pseudodifferential.Recovery
 public import TauCeti.Analysis.Pseudodifferential.StrictlyPositive
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 
 /-!
@@ -34,8 +34,11 @@ If `Op(a)` is positive on the compactly supported Schwartz functions supported i
 these limits are nonnegative for every amplitude supported in `U`. Concentrating the amplitude
 near a point shows that the principal symbol is a positive operator on the fibre at every
 position of `U` and every frequency
-(`TauCeti.ClassicalSymbol.isPositive_coefficient_principal`). Where the principal symbol is
-moreover invertible, it is strictly positive
+(`TauCeti.ClassicalSymbol.isPositive_coefficient_principal`). The same holds for the pairing
+`∫ w(x) ⟪Op(a) u (x), u (x)⟫ dx` weighted by a function `w` that is continuous on `U`, at the
+points where `w` is positive; `w` can be the density of a measure read in a chart
+(`TauCeti.ClassicalSymbol.isPositive_coefficient_principal_of_weight`). Where the principal symbol
+is moreover invertible, it is strictly positive
 (`TauCeti.ClassicalSymbol.isStrictlyPositive_coefficient_principal`); for an elliptic `a` this
 holds at every nonzero frequency
 (`TauCeti.ClassicalSymbol.IsElliptic.isStrictlyPositive_coefficient_principal`). When `Op(a)` is
@@ -68,16 +71,19 @@ section Inner
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-/-- **A positive operator has a positive principal symbol.** Let `a` be a classical symbol of
-order `m` with values in the endomorphisms of a complex Hilbert space `H`, and `U` an open set of
-positions. If `Op(a)` is positive on the compactly supported Schwartz functions supported in `U`,
-`0 ≤ ∫ ⟪Op(a) u (x), u (x)⟫ dx` (a real nonnegative number), then its principal symbol
-`σ(a)(x, ξ)` is a positive operator on `H` at every `x ∈ U` and every frequency `ξ`. -/
-theorem isPositive_coefficient_principal (a : ClassicalSymbol n H H m)
-    {U : Set (CoordinateSpace n)} (hU : IsOpen U)
+/-- **A positive operator has a positive principal symbol, for a weighted pairing.** Let `a` be a
+classical symbol of order `m` with values in the endomorphisms of a complex Hilbert space `H`,
+`U` an open set of positions and `w` a weight that is continuous on `U`, such as the density of a
+measure. If `Op(a)` is positive on the compactly supported Schwartz functions supported in `U` for
+the weighted pairing, `0 ≤ ∫ w(x) ⟪Op(a) u (x), u (x)⟫ dx` (a real nonnegative number), then its
+principal symbol `σ(a)(x, ξ)` is a positive operator on `H` at every `x ∈ U` where `w` is positive,
+and every frequency `ξ`. -/
+theorem isPositive_coefficient_principal_of_weight (a : ClassicalSymbol n H H m)
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U) {w : CoordinateSpace n → ℝ}
+    (hw : ContinuousOn w U)
     (ha : ∀ u : 𝓢(CoordinateSpace n, H), HasCompactSupport u → tsupport u ⊆ U →
-      0 ≤ ∫ x, ⟪quantizeSchwartzValue a.toSymbol.coefficient u x, u x⟫_ℂ)
-    {x : CoordinateSpace n} (hx : x ∈ U) (ξ : CoordinateSpace n) :
+      0 ≤ ∫ x, w x • ⟪quantizeSchwartzValue a.toSymbol.coefficient u x, u x⟫_ℂ)
+    {x : CoordinateSpace n} (hx : x ∈ U) (hwx : 0 < w x) (ξ : CoordinateSpace n) :
     (a.principal.coefficient (x, ξ)).IsPositive := by
   rcases eq_or_ne ξ 0 with rfl | hξ
   · rw [a.principal.zero_covector]
@@ -88,24 +94,47 @@ theorem isPositive_coefficient_principal (a : ClassicalSymbol n H H m)
   have hσ : Continuous fun y ↦ a.principal.coefficient (y, ξ) :=
     a.principal.contDiffOn_coefficient.continuousOn.comp_continuous
       (continuous_id.prodMk continuous_const) fun _ ↦ hξ
-  refine nonneg_of_forall_integral_sq_smul_nonneg (μ := volume) hU
-    ((hσ.clm_apply continuous_const).inner continuous_const).continuousOn (fun ψ hψ hψc hψU ↦ ?_) hx
-  -- Test on wave packets with the amplitude `ψ`, viewed as a complex Schwartz function.
-  have hφ : HasCompactSupport (fun y ↦ (ψ y : ℂ)) := hψc.comp_left Complex.ofReal_zero
-  set φ : 𝓢(CoordinateSpace n, ℂ) := hφ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp hψ)
-  have hφφ : ⇑φ = fun y ↦ (ψ y : ℂ) := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  have hφc : HasCompactSupport φ := hφφ ▸ hφ
-  have hφU : tsupport φ ⊆ U := hφφ ▸ (tsupport_comp_subset Complex.ofReal_zero ψ).trans hψU
-  have hlim := a.tendsto_integral_inner_quantizeSchwartzValue_cutoffExponential hξ hφc v
-  have hφψ : ∀ y, ‖φ y‖ ^ 2 = ψ y ^ 2 := fun y ↦ by simp [hφφ, sq_abs]
-  simp_rw [hφψ] at hlim
-  refine ge_of_tendsto hlim ((eventually_gt_atTop 0).mono fun t ht ↦ ?_)
-  -- The wave packet `y ↦ exp(i ⟪y, t ξ⟫) φ(y) v` is supported where `φ` is.
-  have hsupp : Function.support (φ.cutoffExponential 1 (t • ξ) v) ⊆ Function.support φ :=
-    fun y hy h0 ↦ hy (by simp [SchwartzMap.cutoffExponential_apply φ one_ne_zero, h0])
-  rw [Complex.real_smul]
-  exact mul_nonneg (Complex.zero_le_real.2 (Real.rpow_pos_of_pos ht _).le)
-    (ha _ (hφc.mono hsupp) ((closure_mono hsupp).trans hφU))
+  -- The weighted pairing `w ⟪σ(a) v, v⟫` is nonnegative on `U`, and `w` is positive there.
+  have hwσ : 0 ≤ w x • ⟪a.principal.coefficient (x, ξ) v, v⟫_ℂ := by
+    refine nonneg_of_forall_integral_sq_smul_nonneg (μ := volume) hU
+      (hw.smul ((hσ.clm_apply continuous_const).inner continuous_const).continuousOn)
+      (fun ψ hψ hψc hψU ↦ ?_) hx
+    -- Test on wave packets with the amplitude `ψ`, viewed as a complex Schwartz function.
+    have hφ : HasCompactSupport (fun y ↦ (ψ y : ℂ)) := hψc.comp_left Complex.ofReal_zero
+    set φ : 𝓢(CoordinateSpace n, ℂ) := hφ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp hψ)
+    have hφφ : ⇑φ = fun y ↦ (ψ y : ℂ) := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+    have hφc : HasCompactSupport φ := hφφ ▸ hφ
+    have hφU : tsupport φ ⊆ U := hφφ ▸ (tsupport_comp_subset Complex.ofReal_zero ψ).trans hψU
+    have hlim := a.tendsto_integral_smul_inner_quantizeSchwartzValue_cutoffExponential hξ hφc hU
+      hw hφU v
+    have hφψ : ∀ y, (w y * ‖φ y‖ ^ 2) • ⟪a.principal.coefficient (y, ξ) v, v⟫_ℂ =
+        ψ y ^ 2 • w y • ⟪a.principal.coefficient (y, ξ) v, v⟫_ℂ := fun y ↦ by
+      simp only [hφφ, Complex.norm_real, Real.norm_eq_abs, sq_abs, Complex.real_smul,
+        Complex.ofReal_mul, Complex.ofReal_pow]
+      ring
+    simp_rw [hφψ] at hlim
+    refine ge_of_tendsto hlim ((eventually_gt_atTop 0).mono fun t ht ↦ ?_)
+    -- The wave packet `y ↦ exp(i ⟪y, t ξ⟫) φ(y) v` is supported where `φ` is.
+    have hsupp : Function.support (φ.cutoffExponential 1 (t • ξ) v) ⊆ Function.support φ :=
+      fun y hy h0 ↦ hy (by simp [SchwartzMap.cutoffExponential_apply φ one_ne_zero, h0])
+    rw [Complex.real_smul]
+    exact mul_nonneg (Complex.zero_le_real.2 (Real.rpow_pos_of_pos ht _).le)
+      (ha _ (hφc.mono hsupp) ((closure_mono hsupp).trans hφU))
+  exact nonneg_of_smul_nonneg_of_pos_left hwσ hwx
+
+/-- **A positive operator has a positive principal symbol.** Let `a` be a classical symbol of
+order `m` with values in the endomorphisms of a complex Hilbert space `H`, and `U` an open set of
+positions. If `Op(a)` is positive on the compactly supported Schwartz functions supported in `U`,
+`0 ≤ ∫ ⟪Op(a) u (x), u (x)⟫ dx` (a real nonnegative number), then its principal symbol
+`σ(a)(x, ξ)` is a positive operator on `H` at every `x ∈ U` and every frequency `ξ`. -/
+theorem isPositive_coefficient_principal (a : ClassicalSymbol n H H m)
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U)
+    (ha : ∀ u : 𝓢(CoordinateSpace n, H), HasCompactSupport u → tsupport u ⊆ U →
+      0 ≤ ∫ x, ⟪quantizeSchwartzValue a.toSymbol.coefficient u x, u x⟫_ℂ)
+    {x : CoordinateSpace n} (hx : x ∈ U) (ξ : CoordinateSpace n) :
+    (a.principal.coefficient (x, ξ)).IsPositive :=
+  a.isPositive_coefficient_principal_of_weight hU continuousOn_const
+    (fun u hu huU ↦ by simpa using ha u hu huU) hx one_pos ξ
 
 /-- **A positive operator has a strictly positive principal symbol where it is invertible.** Let
 `a` be a classical symbol of order `m` with values in the endomorphisms of a complex Hilbert space

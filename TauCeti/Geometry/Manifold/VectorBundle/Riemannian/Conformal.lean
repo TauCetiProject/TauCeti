@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Geometry.Manifold.ContMDiff.RPow
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
@@ -67,7 +68,7 @@ conformal Laplacian of `g` applied to `u`.
 public section
 
 open Bundle Bornology
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff ENNReal
 
 noncomputable section
 
@@ -114,6 +115,35 @@ theorem rescale_inner (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
     (g.rescale f hf hf_pos).inner b v w = f b * g.inner b v w :=
   (rfl)
 
+/-- Rescaling a metric by a positive function `f` multiplies the norm of each vector over `b`
+by `√(f b)`. -/
+theorem norm_rescale [∀ b, IsTopologicalAddGroup (E b)]
+    (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
+    (hf : ContMDiff IB 𝓘(ℝ) n f) (hf_pos : ∀ b, 0 < f b) (b : B) (v : E b) :
+    (letI : RiemannianBundle E := ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩; ‖v‖) =
+      √(f b) * (letI : RiemannianBundle E := ⟨g.toRiemannianMetric⟩; ‖v‖) := by
+  let g' := g.rescale f hf hf_pos
+  let _ : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
+  have hv := norm_nonneg v
+  have hsq := (g'.norm_sq b v).trans
+    ((g.rescale_inner f hf hf_pos b v v).trans (congrArg (f b * ·) (g.norm_sq b v).symm))
+  let _ : RiemannianBundle E := ⟨g'.toRiemannianMetric⟩
+  rw [← Real.sqrt_sq (norm_nonneg v), hsq, Real.sqrt_mul (hf_pos b).le, Real.sqrt_sq hv]
+
+/-- Rescaling a metric by a positive function `f` multiplies the extended norm of each vector
+over `b` by `√(f b)`. -/
+theorem enorm_rescale [∀ b, IsTopologicalAddGroup (E b)]
+    (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
+    (hf : ContMDiff IB 𝓘(ℝ) n f) (hf_pos : ∀ b, 0 < f b) (b : B) (v : E b) :
+    (letI : RiemannianBundle E := ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩; ‖v‖ₑ) =
+      ENNReal.ofReal √(f b) * (letI : RiemannianBundle E := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) := by
+  let g' := g.rescale f hf hf_pos
+  let _ : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
+  have hv := ofReal_norm v
+  let _ : RiemannianBundle E := ⟨g'.toRiemannianMetric⟩
+  rw [← ofReal_norm v, ← hv, g.norm_rescale f hf hf_pos b v,
+    ENNReal.ofReal_mul (Real.sqrt_nonneg (f b))]
+
 /-- Dividing an orthonormal basis of the fibre over `x` for `g` by `√(f x)` gives an orthonormal
 basis of that fibre for the rescaled metric `f g`. -/
 theorem exists_orthonormalBasis_rescale [∀ b, IsTopologicalAddGroup (E b)]
@@ -154,6 +184,15 @@ variable (g : ContMDiffRiemannianMetric IB n F E)
 theorem rescale_one : g.rescale (fun _ ↦ 1) contMDiff_const (fun _ ↦ one_pos) = g := by
   ext b v w
   simp
+
+/-- Rescaling by the square of the positive square root is rescaling by the original constant. -/
+@[simp]
+theorem rescale_const_sqrt_sq {c : ℝ} (hc : 0 < c) :
+    g.rescale (fun _ ↦ Real.sqrt c ^ 2) contMDiff_const
+        (fun _ ↦ sq_pos_of_pos (Real.sqrt_pos.mpr hc)) =
+      g.rescale (fun _ ↦ c) contMDiff_const (fun _ ↦ hc) := by
+  congr 1
+  exact funext fun _ ↦ Real.sq_sqrt hc.le
 
 /-- Rescaling `f g` by `h` is rescaling `g` by the product `h f`. -/
 @[simp]

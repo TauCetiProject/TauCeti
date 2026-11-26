@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.SquareRoot
+public import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
 public import TauCeti.FieldTheory.GaloisCohomology.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2.Character

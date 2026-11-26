@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 -- Private: the endpoint-ratio identity of winding numbers, the injectivity of integer
 -- multiples of `2πi` and the base points of path components are used only inside proofs.
 import TauCeti.Analysis.Complex.WindingNormalization
-import TauCeti.Analysis.Contour.Winding.EndpointRatio
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Topology.Connected.PathConnected
 
 /-!
@@ -132,8 +132,9 @@ theorem exp_pathIntegral_mlogDeriv {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, �
   have hcont : ContinuousOn (u ∘ γ) (uIcc a b) := hc.continuous.continuousOn
   have hii := Contour.intervalIntegrable_inv_sub_mul_deriv hcont hu₀
     (hc.continuous_deriv_one.intervalIntegrable a b)
-  have he := Contour.exp_two_pi_I_mul_windingNumber_of_avoidance countable_empty hcont
-    (fun t _ ↦ hc.differentiable one_ne_zero t) hu₀ hii
+  have hac : AbsolutelyContinuousOnInterval (u ∘ γ) a b :=
+    (hc.contDiffOn (s := uIcc a b)).absolutelyContinuousOnInterval
+  have he := hac.exp_two_pi_I_mul_windingNumber (z := 0) fun ⟨t, ht, h⟩ ↦ hu₀ t ht h
   rw [Contour.windingNumber_eq_integral_of_avoidance hcont hu₀ hii, ← mul_assoc,
     mul_inv_cancel₀ two_pi_I_ne_zero, one_mul] at he
   rw [hint, he, sub_zero, sub_zero, Function.comp_apply, Function.comp_apply]

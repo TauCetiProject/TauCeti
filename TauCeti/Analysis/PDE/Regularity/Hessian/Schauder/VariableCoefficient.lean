@@ -8,9 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
 public import Mathlib.Topology.MetricSpace.HolderNorm
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Holder.Coefficient
 import TauCeti.Analysis.Holder.Lp
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
-import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -67,24 +66,10 @@ private theorem holderOnWith_frozen_hessian_error {α ε L J B : ℝ≥0} {s : S
     HolderOnWith (((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) α
       (fun x => ∑ i, ∑ j, (A i j - a x i j) *
         H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
-  have hterm (i j : Fin (n + 1)) : HolderOnWith (ε * J + B * L) α (fun x => (A i j - a x i j) *
-      H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
-    have hc : HolderOnWith L α (fun x => A i j - a x i j) s := fun x hx y hy => by
-      simpa only [edist_sub_left] using hL i j x hx y hy
-    have hh : HolderOnWith J α (fun x => H x
-        ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
-      simpa using hJ.apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) i j
-    have hp := (ContinuousLinearMap.mul ℝ ℝ).holderOnWith_comp₂ hc hh
-      (Mf := ε) (Mg := B)
-      (fun x hx => by simpa [Real.norm_eq_abs, abs_sub_comm] using ha x hx i j)
-      (fun x hx => by
-        simpa using ((H x).norm_apply_orthonormalBasis_le (EuclideanSpace.basisFun _ ℝ) i j).trans
-          (hB x hx))
-    simpa only [ContinuousLinearMap.opNNNorm_mul, one_mul,
-      ContinuousLinearMap.mul_apply'] using hp
-  -- Sum the entries as Hölder functions on the subtype `s`.
-  refine HolderWith.restrict_iff.1 ((HolderWith.sum fun i _ => HolderWith.sum fun j _ =>
-    (hterm i j).holderWith).mono (le_of_eq (by simp [Finset.card_univ]; ring)))
+  simpa only [Matrix.sub_apply, Fintype.card_fin, Nat.cast_add, Nat.cast_one] using
+    holderOnWith_sum_sum_mul_apply_single (a := fun x => A - a x) (fun i j x hx y hy => by
+        simpa only [Matrix.sub_apply, edist_sub_left] using hL i j x hx y hy)
+      (fun x hx i j => by simpa [Matrix.sub_apply, abs_sub_comm] using ha x hx i j) hJ hB
 
 /-- **Freezing the coefficients on a set.** The frozen operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` is `α`-Hölder on a
 set `s` when the operator with coefficients `a`, within `ε` of `A` and `L`-Hölder on `s`, is

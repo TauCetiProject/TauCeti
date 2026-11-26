@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.CategoryTheory.Subobject.Basic
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # Subobjects in a full subcategory closed under subobjects

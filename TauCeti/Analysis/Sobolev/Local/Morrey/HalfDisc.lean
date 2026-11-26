@@ -56,6 +56,8 @@ the open half-disc for every `p` (`TauCeti.memWkpLoc_sqrt_im_ball_inter_im_pos`)
 * `TauCeti.halfPlanePreciseRepresentative`: the representative up to the real axis.
 * `TauCeti.MemWkpLoc.continuousOn_halfPlanePreciseRepresentative` and
   `TauCeti.MemWkpLoc.ae_eq_halfPlanePreciseRepresentative`: it is a continuous representative.
+* `TauCeti.MemWkpLoc.memWkpLoc_top_inter_setOf_im_nonneg`: for `p > 2`, `W^{k+1,p}` up to the
+  axis embeds in `W^{k,∞}` up to the axis.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_halfPlanePreciseRepresentative_of_isCompact`: Hölder
   continuity with exponent `1 - 2 / p` on compact subsets of `Ω ∩ {0 ≤ im}`; the endpoint `p = ∞`
   is `TauCeti.MemWkpLoc.exists_lipschitzOnWith_halfPlanePreciseRepresentative_of_isCompact`.
@@ -143,6 +145,29 @@ theorem MemWkpLoc.continuousOn_halfPlanePreciseRepresentative (hp : 2 < p)
   ((hu.planarReflection_higherReflectionCoeff_reflectionCore (one_le_two.trans hp.le))
     |>.continuousOn_preciseRepresentative hp).mono Ω.inter_setOf_im_nonneg_subset_reflectionCore
 
+/-- **`W^{1,p}` is locally bounded up to the real axis.** For `2 < p`, a map in
+`MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is locally `L^∞` on `Ω ∩ {0 ≤ im}`, including near the axis: it
+agrees almost everywhere with the continuous representative
+`TauCeti.halfPlanePreciseRepresentative u`. -/
+theorem MemWkpLoc.memLpLoc_top_inter_setOf_im_nonneg (hp : 2 < p)
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) :
+    MemLpLoc ⊤ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) u :=
+  (hu.continuousOn_halfPlanePreciseRepresentative hp).memLpLoc.congr_ae
+    (hu.ae_eq_halfPlanePreciseRepresentative (one_le_two.trans hp.le)).symm
+
+/-- **Sobolev embedding into `W^{k,∞}` up to the real axis.** For `2 < p`, a map in
+`MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` is in `MemWkpLoc ∞ (Ω ∩ {0 ≤ im}) k`: each weak derivative
+of order at most `k` is in `W^{1,p}` up to the axis, hence locally bounded there. -/
+theorem MemWkpLoc.memWkpLoc_top_inter_setOf_im_nonneg {k : ℕ} (hp : 2 < p)
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u) :
+    MemWkpLoc ⊤ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u := by
+  induction k generalizing F with
+  | zero => exact memWkpLoc_zero_iff.2 (hu.memLpLoc_top_inter_setOf_im_nonneg hp)
+  | succ k ih =>
+    obtain ⟨-, D, hD, hDk⟩ := memWkpLoc_succ_iff.1 hu
+    exact memWkpLoc_succ_iff.2 ⟨(hu.of_le (by omega)).memLpLoc_top_inter_setOf_im_nonneg hp,
+      D, hD, ih hDk⟩
+
 /-- **Morrey's embedding up to the real axis.** For `2 < p ≤ ∞`, the representative
 `TauCeti.halfPlanePreciseRepresentative u` of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is Hölder
 continuous with exponent `1 - 2 / p` on every compact subset of `Ω ∩ {0 ≤ im}`, including compact
@@ -195,8 +220,7 @@ theorem MemWkpLoc.exists_dist_halfPlanePreciseRepresentative_le (hp : 2 < p) :
   set S : Set ℂ := ball x ρ ∪ ball (conj x) ρ
   set H : Set ℂ := {z | 0 ≤ z.im}
   set Dr := planarReflectionFDeriv (higherReflectionCoeff 1) D with hDr_def
-  have hconj : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin 1, imDilation (higherReflectionNode j) z ∈ Ω :=
-    fun z hz _ j => by rw [imDilation_higherReflectionNode_fin_one]; exact hΩ z hz
+  have hconj := imDilation_higherReflectionNode_fin_one_mem fun z hz _ => hΩ z hz
   have hDp := hu.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg hD
   have hext := hu.planarReflection_higherReflectionCoeff hp1 hconj
   have hDr : HasWeakFDerivOn volume Ω (TauCeti.planarReflection (higherReflectionCoeff 1) u)

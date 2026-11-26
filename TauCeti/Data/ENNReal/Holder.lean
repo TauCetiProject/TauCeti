@@ -16,20 +16,29 @@ Elementary facts about Hölder exponents: the missing exponent `r` of a triple w
 exponents below by `1` and the conjugate exponent of `p` above by `q`; the conjugate exponent
 is antitone, finite for `p > 1` and greater than `1` for finite `p`; and the exponent
 conjugate to `p > 2` is less than `2`, as for the supercritical exponents of planar Sobolev and
-Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2`.
+Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2`. An exponent
+`p > 2` satisfies `1/p + 1/p < 1`. In `ℝ≥0`, the only exponent conjugate to `2` is `2`.
 
 ## Main declarations
 
 * `ENNReal.HolderTriple.of_le`: for `q ≤ p`, the triple `(p, (q⁻¹ - p⁻¹)⁻¹, q)`.
+* `ENNReal.HolderTriple.exists_le_of_inv_add_inv_le`: for `1/p + 1/q ≤ 1/r`, a triple
+  `(p, q', r)` with `q' ≤ q`.
 * `ENNReal.one_le_left_of_inv_add_inv_le_one`, `ENNReal.one_le_right_of_inv_add_inv_le_one`:
   `1/p + 1/q ≤ 1` forces `1 ≤ p` and `1 ≤ q`.
 * `ENNReal.conjExponent_le_of_inv_add_inv_le_one`: `1/p + 1/q ≤ 1` forces `p' ≤ q` for the
   conjugate exponent `p'` of `p`.
+* `ENNReal.inv_add_inv_lt_one_of_two_lt`: an exponent `p > 2` satisfies `1/p + 1/p < 1`.
 * `ENNReal.one_lt_conjExponent`, `ENNReal.conjExponent_ne_top`, `ENNReal.inv_toReal_conjExponent`,
   `ENNReal.conjExponent_le_conjExponent`: the conjugate exponent `p'` of a finite `p` exceeds `1`,
   is finite with `1/p' = 1 - 1/p` when `p > 1`, and decreases as `p` increases.
 * `ENNReal.HolderConjugate.lt_two`: the conjugate of an exponent `p > 2` is less than `2`.
 * `ENNReal.HolderConjugate.le_two`: the conjugate of an exponent `p ≥ 2` is at most `2`.
+* `ENNReal.HolderConjugate.le_inv_one_sub_inv`,
+  `ENNReal.HolderConjugate.inv_toReal_sub_inv_toReal_inv_one_sub_inv`: for `1 ≤ p ≤ q`, the
+  conjugate `q'` of `q` is at most the conjugate `p' = (1 - 1/p)⁻¹` of `p`, and
+  `1/q' - 1/p' = 1/p - 1/q`.
+* `NNReal.HolderConjugate.eq_two`: an exponent in `ℝ≥0` conjugate to `2` is `2`.
 -/
 
 public section
@@ -41,6 +50,17 @@ namespace ENNReal.HolderTriple
 /-- For `q ≤ p`, the exponent `r = (q⁻¹ - p⁻¹)⁻¹` satisfies `1/p + 1/r = 1/q`. -/
 theorem of_le {p q : ℝ≥0∞} (hqp : q ≤ p) : HolderTriple p (q⁻¹ - p⁻¹)⁻¹ q :=
   ⟨by rw [inv_inv, add_tsub_cancel_of_le (ENNReal.inv_le_inv.2 hqp)]⟩
+
+/-- If `1/p + 1/q ≤ 1/r`, there is an exponent `q' ≤ q` with `1/p + 1/q' = 1/r`. -/
+theorem exists_le_of_inv_add_inv_le {p q r : ℝ≥0∞} (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) :
+    ∃ q', HolderTriple p q' r ∧ q' ≤ q := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · obtain rfl : r = 0 := ENNReal.inv_eq_top.1 (top_le_iff.1 (by simpa using hpqr))
+    exact ⟨0, inferInstance, zero_le⟩
+  refine ⟨(r⁻¹ - p⁻¹)⁻¹, of_le (ENNReal.inv_le_inv.1 (le_self_add.trans hpqr)),
+    ENNReal.inv_le_inv.1 ?_⟩
+  rw [inv_inv]
+  exact ENNReal.le_sub_of_add_le_left (ENNReal.inv_ne_top.2 hp) hpqr
 
 end ENNReal.HolderTriple
 
@@ -88,6 +108,11 @@ theorem conjExponent_le_conjExponent (hpq : p ≤ q) : q.conjExponent ≤ p.conj
   rw [ENNReal.conjExponent, ENNReal.conjExponent]
   gcongr
 
+/-- An exponent `p > 2` satisfies the strict Hölder condition `1/p + 1/p < 1` with itself. -/
+theorem inv_add_inv_lt_one_of_two_lt (hp : 2 < p) : p⁻¹ + p⁻¹ < 1 := by
+  rw [← ENNReal.inv_two_add_inv_two]
+  exact ENNReal.add_lt_add (ENNReal.inv_lt_inv.2 hp) (ENNReal.inv_lt_inv.2 hp)
+
 end ENNReal
 
 namespace ENNReal.HolderConjugate
@@ -108,4 +133,31 @@ theorem le_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : 2 ≤ p) : q ≤ 2
   rw [inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
   exact lt_irrefl _ h
 
+/-- For `p ≤ q`, the exponent `q'` conjugate to `q` is at most the exponent `(1 - 1/p)⁻¹`
+conjugate to `p`. -/
+theorem le_inv_one_sub_inv {p q q' : ℝ≥0∞} [q'.HolderConjugate q] (hpq : p ≤ q) :
+    q' ≤ (1 - p⁻¹)⁻¹ := by
+  rw [← ENNReal.inv_le_inv, inv_inv, ← one_sub_inv q q']
+  exact tsub_le_tsub_left (ENNReal.inv_le_inv.2 hpq) 1
+
+/-- For `1 ≤ p`, the exponent `q'` conjugate to `q` and the exponent `(1 - 1/p)⁻¹` conjugate to `p`
+have the same reciprocal gap as `p` and `q`: `1/q' - (1 - 1/p) = 1/p - 1/q`. -/
+theorem inv_toReal_sub_inv_toReal_inv_one_sub_inv {p q q' : ℝ≥0∞} [q'.HolderConjugate q]
+    (hp : 1 ≤ p) : q'.toReal⁻¹ - ((1 - p⁻¹)⁻¹).toReal⁻¹ = (p⁻¹).toReal - (q⁻¹).toReal := by
+  rw [← ENNReal.toReal_inv, ← ENNReal.toReal_inv, inv_inv, ← one_sub_inv q q',
+    ENNReal.toReal_sub_of_le (ENNReal.inv_le_one.2 (one_le q q')) ENNReal.one_ne_top,
+    ENNReal.toReal_sub_of_le (ENNReal.inv_le_one.2 hp) ENNReal.one_ne_top,
+    _root_.sub_sub_sub_cancel_left]
+
 end ENNReal.HolderConjugate
+
+namespace NNReal.HolderConjugate
+
+open scoped NNReal
+
+/-- The only exponent in `ℝ≥0` conjugate to `2` is `2`. -/
+theorem eq_two {p : ℝ≥0} (h : p.HolderConjugate 2) : p = 2 := by
+  have : (2 : ℝ≥0∞).HolderConjugate p := by simpa using h.symm.coe_ennreal
+  exact_mod_cast ENNReal.HolderConjugate.unique (p := 2) (q := p) 2
+
+end NNReal.HolderConjugate
