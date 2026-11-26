@@ -84,4 +84,11 @@ theorem coe_sigma0LowerRightUnit (γ : sigma0Submonoid I hI) :
 theorem sigma0LowerRightUnit_one : sigma0LowerRightUnit (1 : sigma0Submonoid I hI) = 1 :=
   Units.ext (by simp)
 
+/-- The lower right entry of a product `γ δ` in `Σ₀(I)` is `c b' + d d'`. -/
+theorem coe_sigma0LowerRightUnit_mul (γ δ : sigma0Submonoid I hI) :
+    (sigma0LowerRightUnit (γ * δ) : O) =
+      (γ : Matrix (Fin 2) (Fin 2) O) 1 0 * (δ : Matrix (Fin 2) (Fin 2) O) 0 1 +
+        (γ : Matrix (Fin 2) (Fin 2) O) 1 1 * (δ : Matrix (Fin 2) (Fin 2) O) 1 1 := by
+  simp [Matrix.mul_apply, Fin.sum_univ_two]
+
 end TauCeti.Matrix

@@ -101,7 +101,7 @@ variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [
 
 /-- A ring homomorphism into the closed unit ball of `R` mapping `I` into the open unit ball maps
 `Σ₀(I)` into the monoid of matrices acting on the closed unit disc by Möbius transformations. -/
-theorem map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ : O →+* R) (hσ : ∀ x, ‖σ x‖ ≤ 1)
+theorem mapMatrix_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ : O →+* R) (hσ : ∀ x, ‖σ x‖ ≤ 1)
     (hσI : ∀ y ∈ I, ‖σ y‖ < 1) (hγ : γ ∈ sigma0Submonoid I hI) :
     σ.mapMatrix γ ∈ moebiusSubmonoid R := by
   obtain ⟨hc, u, hu⟩ := mem_sigma0Submonoid_iff.mp hγ
@@ -121,7 +121,7 @@ noncomputable def sigma0ToMoebius (σ : Fin k → O →+* R) (hσ : ∀ i x, ‖
     (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ < 1) :
     sigma0Submonoid I hI →* (Fin k → moebiusSubmonoid R) where
   toFun γ i := ⟨(σ i).mapMatrix (γ : Matrix (Fin 2) (Fin 2) O),
-    map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ i) (hσ i) (hσI i) γ.property⟩
+    mapMatrix_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ i) (hσ i) (hσI i) γ.property⟩
   map_one' := funext fun i ↦ Subtype.ext (map_one (σ i).mapMatrix)
   map_mul' γ δ := funext fun i ↦ Subtype.ext
     (map_mul (σ i).mapMatrix (γ : Matrix (Fin 2) (Fin 2) O) δ)
@@ -139,7 +139,7 @@ theorem mapMatrix_mem_moebiusSubmonoid {r : Fin k → ℝ} (σ : Fin k → O →
     (hσ : ∀ i x, ‖σ i x‖ ≤ 1) (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i) (hr : ∀ i, r i < 1)
     (γ : sigma0Submonoid I hI) (i : Fin k) :
     (σ i).mapMatrix (γ : Matrix (Fin 2) (Fin 2) O) ∈ moebiusSubmonoid R :=
-  map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ i) (hσ i)
+  mapMatrix_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ i) (hσ i)
     (fun y hy ↦ (hσI i y hy).trans_lt (hr i)) γ.property
 
 end Sigma0
@@ -370,12 +370,6 @@ private theorem crossTerm_mem (γ δ : sigma0Submonoid I hI) : crossTerm γ δ �
   I.mul_mem_right _ (I.mul_mem_right _
     (I.mul_mem_right _ (lowerLeft_mem_of_mem_sigma0Submonoid γ.property)))
 
-private theorem lowerRight_mul (γ δ : sigma0Submonoid I hI) :
-    ((γ * δ : sigma0Submonoid I hI) : Matrix (Fin 2) (Fin 2) O) 1 1 =
-      (γ : Matrix (Fin 2) (Fin 2) O) 1 0 * (δ : Matrix (Fin 2) (Fin 2) O) 0 1 +
-        (γ : Matrix (Fin 2) (Fin 2) O) 1 1 * (δ : Matrix (Fin 2) (Fin 2) O) 1 1 := by
-  simp [Matrix.mul_apply, Fin.sum_univ_two]
-
 omit [NormOneClass R] [∀ i, Fact (0 < r i)] in
 /-- The constant part of the cocycle law: `n(d'') = n(d) n(d') N(σ y₀)`, since
 `d'' = d d' (1 + y₀)`. -/
@@ -392,7 +386,7 @@ private theorem char_sigma0LowerRightUnit_mul (hσI : ∀ i, ∀ y ∈ I, ‖σ 
       rw [← coe_sigma0LowerRightUnit, Units.inv_mul]
     have e2 : (↑D'⁻¹ : O) * (δ : Matrix (Fin 2) (Fin 2) O) 1 1 = 1 := by
       rw [← coe_sigma0LowerRightUnit, Units.inv_mul]
-    rw [Units.val_mul, Units.val_mul, coe_sigma0LowerRightUnit, lowerRight_mul, crossTerm]
+    rw [Units.val_mul, Units.val_mul, coe_sigma0LowerRightUnit_mul, crossTerm]
     linear_combination (↑D'⁻¹ * (δ : Matrix (Fin 2) (Fin 2) O) 1 1 : O) * e1 + e2
   rw [← κ.char_eq_restrictedEval₂ _ _ _ hu, ← map_mul, ← map_mul]
   congr 1
@@ -422,7 +416,8 @@ private theorem factorArg_add_add_mul (γ δ : sigma0Submonoid I hI)
   set g : Matrix (Fin 2) (Fin 2) O := ↑γ
   set h : Matrix (Fin 2) (Fin 2) O := ↑δ
   set gh : Matrix (Fin 2) (Fin 2) O := ↑(γ * δ)
-  have hgh : gh 1 1 = g 1 0 * h 0 1 + g 1 1 * h 1 1 := lowerRight_mul γ δ
+  have hgh : gh 1 1 = g 1 0 * h 0 1 + g 1 1 * h 1 1 :=
+    (coe_sigma0LowerRightUnit (γ * δ)).symm.trans (coe_sigma0LowerRightUnit_mul γ δ)
   have := add_add_mul_eq_of_denom (P := φ (g 1 0)) (Q := φ (g 1 1))
     (E := φ ↑(sigma0LowerRightUnit γ)⁻¹) (P' := φ (h 1 0)) (Q' := φ (h 1 1))
     (E' := φ ↑(sigma0LowerRightUnit δ)⁻¹) (B' := φ (h 0 1)) (C'' := φ (gh 1 0))
