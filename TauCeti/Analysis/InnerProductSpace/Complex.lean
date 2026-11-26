@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
 
 /-!
@@ -17,7 +18,9 @@ identity on `(E, +, ‖·‖)`, polarization forces `⟪x, y⟫_ℝ = RCLike.re 
 simultaneously to `InnerProductSpace.rclikeToReal` (and `InnerProductSpace.complexToReal`) and to
 spaces such as `EuclideanSpace ℂ ι` whose coordinatewise real inner product is only propositionally
 equal to `Re ⟪·, ·⟫_ℂ`. In particular, on any such space scalar multiplication by `ζ : 𝕜` scales
-the real inner product by `‖ζ‖ ^ 2` (`TauCeti.real_inner_smul_smul`).
+the real inner product by `‖ζ‖ ^ 2` (`TauCeti.real_inner_smul_smul`). On a complex inner product
+space, multiplying both vectors by a unit complex number does not change their complex inner
+product (`TauCeti.inner_smul_smul_circle`).
 
 On any complex inner product space, Hermitian symmetry gives `Im ⟪x, x⟫_ℂ = 0`, so pairwise
 vanishing of `Im ⟪·, ·⟫_ℂ` on a generating set `s` extends by `ℝ`-bilinearity to all pairs in
@@ -32,6 +35,7 @@ ambient real dimension.
   (for `[RCLike 𝕜]`) and a real inner product share the same seminormed group structure.
 * `TauCeti.real_inner_smul_smul`: `⟪ζ • x, ζ • y⟫_ℝ = ‖ζ‖ ^ 2 * ⟪x, y⟫_ℝ` for `ζ : 𝕜` on such a
   space.
+* `TauCeti.inner_smul_smul_circle`: `⟪u • x, u • y⟫_ℂ = ⟪x, y⟫_ℂ` for `u` on the unit circle.
 * `Set.Pairwise.im_inner_eq_zero_of_mem_span`: if `Im ⟪x, y⟫_ℂ` vanishes for distinct elements of
   `s`, then `Im ⟪x, y⟫_ℂ = 0` for all `x, y ∈ Submodule.span ℝ s`.
 -/
@@ -58,6 +62,13 @@ theorem real_inner_smul_smul {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGr
     ⟪ζ • x, ζ • y⟫_ℝ = ‖ζ‖ ^ 2 * ⟪x, y⟫_ℝ := by
   rw [inner_real_eq_re_inner 𝕜, inner_real_eq_re_inner 𝕜, inner_smul_left, inner_smul_right,
     ← mul_assoc, RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.re_ofReal_mul]
+
+/-- On a complex inner product space, multiplying both vectors by a unit complex number `u` does
+not change their complex inner product: `⟪u x, u y⟫_ℂ = ⟪x, y⟫_ℂ`. -/
+theorem inner_smul_smul_circle {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℂ E]
+    (u : Circle) (x y : E) : ⟪(u : ℂ) • x, (u : ℂ) • y⟫_ℂ = ⟪x, y⟫_ℂ := by
+  rw [inner_smul_left, inner_smul_right, ← mul_assoc, Complex.conj_mul', Circle.norm_coe]
+  simp
 
 end TauCeti
 

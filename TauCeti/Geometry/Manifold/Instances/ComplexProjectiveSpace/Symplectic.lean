@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
 public import TauCeti.Geometry.Symplectic.Manifold.Rescale
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 
@@ -208,7 +209,7 @@ theorem mpullback_smul_mpullback_coe_sphere (c : Circle) :
     refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
     rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
       SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, L.fderiv]
-    simpa [L] using EuclideanSpace.im_inner_smul_smul_circle c _ _
+    simpa [L] using congrArg Complex.im (inner_smul_smul_circle c _ _)
   rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_coe_sphere L.contMDiff
     (funext fun z ↦ Circle.coe_smul_sphere c z), hL]
 

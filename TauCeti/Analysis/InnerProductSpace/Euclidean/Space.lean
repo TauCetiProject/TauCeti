@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.RingTheory.AlgebraTower
@@ -33,8 +32,7 @@ closed disks in which characteristic maps of CW complexes are defined onto compl
 disks. The real inner product of `ℂⁱ`, the one for which its unit sphere is a manifold, is the real
 part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`), and the imaginary part
 of the complex inner product `⟪x, y⟫_ℂ` is the real inner product of `i x` with `y`
-(`EuclideanSpace.im_inner_eq_real_inner_I_smul`). That imaginary part is unchanged when both vectors
-are multiplied by the same unit complex number (`EuclideanSpace.im_inner_smul_smul_circle`).
+(`EuclideanSpace.im_inner_eq_real_inner_I_smul`).
 -/
 
 public section
@@ -52,13 +50,6 @@ inner product of `i x` with `y`. -/
 theorem EuclideanSpace.im_inner_eq_real_inner_I_smul {ι : Type*} [Fintype ι]
     (x y : EuclideanSpace ℂ ι) : (⟪x, y⟫_ℂ).im = ⟪Complex.I • x, y⟫_ℝ := by
   rw [EuclideanSpace.real_inner_eq_re_inner, inner_smul_left]
-  simp
-
-/-- On `EuclideanSpace ℂ ι`, multiplying both vectors by a unit complex number `u` does not change
-the imaginary part of their complex inner product: `Im ⟪u x, u y⟫_ℂ = Im ⟪x, y⟫_ℂ`. -/
-theorem EuclideanSpace.im_inner_smul_smul_circle {ι : Type*} [Fintype ι] (u : Circle)
-    (x y : EuclideanSpace ℂ ι) : (⟪(u : ℂ) • x, (u : ℂ) • y⟫_ℂ).im = (⟪x, y⟫_ℂ).im := by
-  rw [inner_smul_left, inner_smul_right, ← mul_assoc, Complex.conj_mul', Circle.norm_coe]
   simp
 
 namespace TauCeti
