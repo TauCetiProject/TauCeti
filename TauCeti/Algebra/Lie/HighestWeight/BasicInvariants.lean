@@ -107,7 +107,8 @@ theorem exists_bijective_aeval_lieInvariants_of_weylGroupCorootRep {κ : Type*}
         Function.Bijective (MvPolynomial.aeval (R := K) g) := by
   -- `S(H)^W` is the invariant algebra of the coroot representation.
   let e := Subalgebra.equivOfEq _ _ (linearInvariants_eq_symmetricAlgebraInvariants (H := H)).symm
-  exact H.exists_bijective_aeval_lieInvariants_of_linearInvariants (f := e ∘ f) hf
+  exact H.exists_bijective_aeval_lieInvariants_of_linearInvariants (f := e ∘ f)
+    (fun k ↦ by simpa only [Function.comp_apply, e, Subalgebra.equivOfEq_apply] using hf k)
     ((MvPolynomial.bijective_aeval_algEquiv_comp_iff e).mpr hbij)
 
 /-- **A system of basic invariants of the root system gives one of `L` with the same degrees.**
