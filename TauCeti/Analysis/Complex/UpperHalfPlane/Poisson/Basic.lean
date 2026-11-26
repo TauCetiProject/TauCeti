@@ -476,6 +476,11 @@ theorem IsPoissonFinite.smul_measure {ν : Measure ℝ} (hν : IsPoissonFinite �
     (hc : c ≠ ∞) : IsPoissonFinite (c • ν) :=
   (isPoissonFinite_iff _).2 (((isPoissonFinite_iff ν).1 hν).smul_measure hc)
 
+/-- A measure below a Poisson-finite measure is Poisson-finite. -/
+theorem IsPoissonFinite.mono {μ ν : Measure ℝ} (hν : IsPoissonFinite ν) (h : μ ≤ ν) :
+    IsPoissonFinite μ :=
+  (isPoissonFinite_iff _).2 (((isPoissonFinite_iff ν).1 hν).mono_measure h)
+
 /-- A Poisson-finite measure gives finite mass to every interval `[-R, R]`. -/
 theorem IsPoissonFinite.measure_Icc_lt_top {ν : Measure ℝ} (hν : IsPoissonFinite ν) (R : ℝ) :
     ν (Icc (-R) R) < ∞ := by

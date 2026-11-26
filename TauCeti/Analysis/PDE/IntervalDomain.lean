@@ -27,6 +27,7 @@ endpoint values.
 * `TauCeti.PDE.intervalDomain`: the interval `(a, b)` as an open subset of the Euclidean line.
 * `TauCeti.PDE.lineEquiv`: the isometry `t ↦ t e₀` of `ℝ` onto the Euclidean line.
 * `TauCeti.PDE.isBounded_intervalDomain`: the interval domain is bounded, so it has finite volume.
+* `TauCeti.PDE.coe_intervalDomain_eq_ball`: the interval domain is a ball of the line.
 * `TauCeti.PDE.setIntegral_intervalDomain`: integrals over the interval domain are integrals over
   the real interval.
 * `TauCeti.PDE.intervalDomainEquivL`: `W^{1,p}` of the interval domain is `W^{1,p}` of the real
@@ -124,6 +125,16 @@ theorem isBounded_intervalDomain :
     IsBounded (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) := by
   rw [coe_intervalDomain_eq_preimage]
   exact lineEquiv.symm.antilipschitzWith.isBounded_preimage (Metric.isBounded_Ioo a b)
+
+/-- The interval domain `(a, b)` is the ball of radius `(b - a) / 2` about the midpoint. -/
+theorem coe_intervalDomain_eq_ball :
+    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) =
+      Metric.ball (lineEquiv ((a + b) / 2)) ((b - a) / 2) := by
+  ext x
+  rw [Metric.mem_ball, ← lineEquiv.symm.dist_map]
+  simp only [LinearIsometryEquiv.symm_apply_apply, Real.dist_eq, abs_sub_lt_iff, SetLike.mem_coe,
+    mem_intervalDomain, mem_Ioo, lineEquiv_symm_apply]
+  constructor <;> intro h <;> constructor <;> linarith [h.1, h.2]
 
 /-- The interval domain `(a, b)` has finite volume. -/
 instance instIsFiniteMeasureRestrictIntervalDomain :

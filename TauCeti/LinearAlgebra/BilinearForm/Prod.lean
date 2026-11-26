@@ -48,6 +48,9 @@ flipping is componentwise. For a single form `B` on `M` it gives the orthogonal-
 * `LinearMap.BilinForm.pi`: the orthogonal sum of a finite family of forms on a product module.
 * `LinearMap.BilinForm.pi_apply_single_left`, `LinearMap.BilinForm.pi_apply_single_right`: a
   vector supported in one factor pairs through the form of that factor.
+* `LinearMap.BilinForm.pi_injective`, `LinearMap.BilinForm.pi_smul`,
+  `LinearMap.BilinForm.compl₁₂_pi_piMap`: the orthogonal sum determines the family, commutes with
+  scalar multiplication, and precomposing it with block-diagonal maps precomposes each member.
 * `LinearMap.BilinForm.pi_matrix_smul_left_eq_transpose_smul_right`: for the orthogonal-sum form
   of a single form, the action of a matrix `u` on `ι → M` is adjoint to the action of `uᵀ`.
 * `LinearMap.BilinForm.toQuadraticMap_pi`: the quadratic map of the orthogonal sum is the
@@ -189,6 +192,35 @@ theorem pi_apply_single_left [DecidableEq ι] (B : ∀ i, LinearMap.BilinForm R 
 theorem pi_apply_single_right [DecidableEq ι] (B : ∀ i, LinearMap.BilinForm R (Mᵢ i))
     (x : ∀ i, Mᵢ i) (i : ι) (y : Mᵢ i) : pi B x (Pi.single i y) = B i (x i) y := by
   rw [pi_apply, Fintype.sum_eq_single i fun j hj ↦ by simp [Pi.single_eq_of_ne hj]]
+  simp
+
+/-- The orthogonal sum of a family of bilinear forms determines the family. -/
+theorem pi_injective :
+    Function.Injective (pi : (∀ i, LinearMap.BilinForm R (Mᵢ i)) → LinearMap.BilinForm R _) := by
+  classical
+  intro B C h
+  ext i x y
+  simpa only [pi_apply_single_left, Pi.single_eq_same] using
+    congr($h (Pi.single i x) (Pi.single i y))
+
+@[simp]
+theorem pi_inj {B C : ∀ i, LinearMap.BilinForm R (Mᵢ i)} : pi B = pi C ↔ B = C :=
+  pi_injective.eq_iff
+
+/-- Scaling every member of a family scales its orthogonal sum. -/
+@[simp]
+theorem pi_smul (c : R) (B : ∀ i, LinearMap.BilinForm R (Mᵢ i)) : pi (c • B) = c • pi B := by
+  ext x y
+  simp [Finset.mul_sum]
+
+/-- Precomposing the orthogonal sum with block-diagonal maps precomposes each member with its
+blocks. -/
+@[simp]
+theorem compl₁₂_pi_piMap {Nᵢ : ι → Type*} [∀ i, AddCommMonoid (Nᵢ i)] [∀ i, Module R (Nᵢ i)]
+    (B : ∀ i, LinearMap.BilinForm R (Mᵢ i)) (g h : ∀ i, Nᵢ i →ₗ[R] Mᵢ i) :
+    (pi B).compl₁₂ (LinearMap.piMap g) (LinearMap.piMap h) =
+      pi fun i ↦ (B i).compl₁₂ (g i) (h i) := by
+  ext x y
   simp
 
 open scoped Matrix Matrix.Module in

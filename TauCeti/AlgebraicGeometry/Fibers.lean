@@ -348,15 +348,7 @@ lemma isPullback_genericFiberTower :
   · simp
   · simp
   · simp
-  · have hMap :
-        Spec.map (CommRingCat.ofHom (algebraMap K L)) ≫
-            Spec.map (CommRingCat.ofHom (algebraMap R K)) =
-          Spec.map (CommRingCat.ofHom (algebraMap R L)) := by
-      rw [← Spec.map_comp]
-      congr 1
-      ext r
-      exact (IsScalarTower.algebraMap_apply R K L r).symm
-    simpa using hMap
+  · simp
 
 /-- Iterated scalar extension is canonically isomorphic to direct scalar extension. -/
 noncomputable def genericFiberTowerIso :

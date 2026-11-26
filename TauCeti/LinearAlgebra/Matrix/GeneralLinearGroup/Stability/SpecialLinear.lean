@@ -36,6 +36,8 @@ for every finite index type. In sizes `0` and `1` both groups are trivial.
   semilocal rings, in particular for commutative local rings.
 * `TauCeti.AlgebraicK1.map_algebraMap_injective`: for a commutative semilocal ring `R` and an
   `R`-algebra `B` with injective structure map, `K₁(R) → K₁(B)` is injective.
+* `TauCeti.specialAlgebraicK1_zmod_eq_bot`: `SK₁(ℤ ⧸ n) = 1` for every `n`, the ring `ℤ ⧸ n`
+  being finite, hence semilocal, for `n ≠ 0`, and `ℤ` for `n = 0`.
 
 ## References
 
@@ -116,5 +118,13 @@ theorem elementarySubgroup_eq_ker_det_of_finite_maximalSpectrum [Finite (Maximal
     elementarySubgroup n R = GeneralLinearGroup.det.ker :=
   elementarySubgroup_eq_ker_det_of_hasStableRangeLE_one
     (hasStableRangeLE_one_of_finite_maximalSpectrum R) n
+
+/-- **`SK₁(ℤ ⧸ n)` vanishes**, so the determinant is an isomorphism `K₁(ℤ ⧸ n) ≃* (ℤ ⧸ n)ˣ`: for
+`n ≠ 0` the ring `ℤ ⧸ n` is finite, hence semilocal, and `ZMod 0` is the Euclidean domain `ℤ`. -/
+theorem specialAlgebraicK1_zmod_eq_bot (n : ℕ) : specialAlgebraicK1 (ZMod n) = ⊥ := by
+  rcases n with _ | n
+  · -- `ZMod 0` is `ℤ` by definition.
+    exact specialAlgebraicK1_eq_bot_of_euclideanDomain ℤ
+  · exact specialAlgebraicK1_eq_bot_of_finite_maximalSpectrum
 
 end TauCeti
