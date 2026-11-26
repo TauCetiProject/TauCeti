@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Charpoly.Degree
 public import TauCeti.LinearAlgebra.Charpoly.Quotient
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Zeta
 public import TauCeti.LinearAlgebra.Trace.Exact
+import TauCeti.Algebra.Polynomial.Reverse
 
 /-!
 # The Hopf trace formula and its determinant form
@@ -309,10 +310,8 @@ theorem prod_reverse_charpoly_f_mul_prod_reverse_charpoly_homologyMap {n : ℕ}
         ∏ i ∈ Finset.range (n + 1) with Odd i, (homologyMap φ i).hom.charpoly.reverse =
       (∏ i ∈ Finset.range (n + 1) with Odd i, (φ.f i).hom.charpoly.reverse) *
         ∏ i ∈ Finset.range (n + 1) with Even i, (homologyMap φ i).hom.charpoly.reverse := by
-  -- Over the domain `k[X]`, reversal is multiplicative.
-  let r : k[X] →* k[X] := ⟨⟨reverse, by rw [← C_1, reverse_C]⟩, reverse_mul_of_domain⟩
-  simpa only [map_mul, map_prod, r, MonoidHom.coe_mk, OneHom.coe_mk] using
-    congrArg r (prod_charpoly_f_mul_prod_charpoly_homologyMap φ hn)
+  simpa only [reverse_mul_of_domain, reverse_prod_of_domain] using
+    congrArg reverse (prod_charpoly_f_mul_prod_charpoly_homologyMap φ hn)
 
 open PowerSeries in
 /-- **The homological zeta function from the chains.** Let the terms of `K` be finite-dimensional
