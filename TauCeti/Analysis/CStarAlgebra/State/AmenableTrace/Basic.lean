@@ -335,21 +335,6 @@ section Convex
 
 open CompletelyPositiveMap
 
-/-- An approximant may be taken into a nonzero matrix algebra: a map into `M_0` is replaced by the
-zero map into `M_1`, which has the same normalized trace `0` and multiplicativity defect `0`. -/
-private theorem exists_pos_approximant {k : ℕ} (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ)
-    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) : ∃ (l : ℕ) (ψ : A →CP CStarMatrix (Fin l) (Fin l) ℂ), 0 < l ∧
-      (∀ a, ‖ψ a‖ ≤ ‖a‖) ∧
-      (∀ a, CStarMatrix.normalizedTrace (ψ a) = CStarMatrix.normalizedTrace (φ a)) ∧
-      (∀ a b, CStarMatrix.normalizedTwoNorm (ψ (a * b) - ψ a * ψ b) ≤
-        CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b)) ∧
-      ∀ a b, ‖ψ (a * b) - ψ a * ψ b‖ ≤ ‖φ (a * b) - φ a * φ b‖ := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · exact ⟨1, 0, one_pos, fun _ => by simp,
-      fun _ => by simp [CStarMatrix.normalizedTrace_of_isEmpty], fun _ _ => by simp,
-      fun _ _ => by simp⟩
-  · exact ⟨k, φ, hk, hφ, fun _ => rfl, fun _ _ => le_rfl, fun _ _ => le_rfl⟩
-
 /-- The normalized trace of the block-diagonal sum of `m₁` copies of `φ₁ : A → M_{k₁}` and `m₂`
 copies of `φ₂ : A → M_{k₂}` weights `tr ∘ φ₁` by `m₁ k₁ / (m₁ k₁ + m₂ k₂)` and `tr ∘ φ₂` by
 `m₂ k₂ / (m₁ k₁ + m₂ k₂)`. -/
@@ -455,8 +440,8 @@ private theorem exists_approximant_of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ} {
       ∀ a, ‖CStarMatrix.normalizedTrace (Φ a) - τ a‖ ≤
         max ‖CStarMatrix.normalizedTrace (φ₁ a) - τ₁ a‖
           ‖CStarMatrix.normalizedTrace (φ₂ a) - τ₂ a‖ + η * (‖τ₁ a‖ + ‖τ₂ a‖) := by
-  obtain ⟨l₁, ψ₁, hl₁, hψ₁, tr₁, d₁, n₁⟩ := exists_pos_approximant φ₁ h₁
-  obtain ⟨l₂, ψ₂, hl₂, hψ₂, tr₂, d₂, n₂⟩ := exists_pos_approximant φ₂ h₂
+  obtain ⟨l₁, ψ₁, hl₁, hψ₁, tr₁, d₁, n₁⟩ := exists_pos_matrix_approximant φ₁ h₁
+  obtain ⟨l₂, ψ₂, hl₂, hψ₂, tr₂, d₂, n₂⟩ := exists_pos_matrix_approximant φ₂ h₂
   -- The weight `w = ⌊θ N⌋ / N` is within `1 / N < η` of `θ`.
   obtain ⟨N, hN⟩ := exists_nat_gt η⁻¹
   have hN0 : (0 : ℝ) < N := (inv_pos.2 hη).trans hN
@@ -474,8 +459,8 @@ private theorem exists_approximant_of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ} {
     refine le_of_lt (lt_of_le_of_lt ?_ hNη)
     rw [sub_le_iff_le_add, ← add_div, le_div_iff₀ hN0]
     linarith
-  refine ⟨K, Φ, hΦ, fun a b => (hd a b).trans (max_le_max (d₁ a b) (d₂ a b)),
-    fun a b => (hn a b).trans (max_le_max (n₁ a b) (n₂ a b)), fun a => ?_⟩
+  refine ⟨K, Φ, hΦ, fun a b => (hd a b).trans (max_le_max (d₁ a b).le (d₂ a b).le),
+    fun a b => (hn a b).trans (max_le_max (n₁ a b).le (n₂ a b).le), fun a => ?_⟩
   set t₁ := CStarMatrix.normalizedTrace (φ₁ a)
   set t₂ := CStarMatrix.normalizedTrace (φ₂ a)
   have hsplit : CStarMatrix.normalizedTrace (Φ a) - τ a = (w : ℂ) * (t₁ - τ₁ a) +

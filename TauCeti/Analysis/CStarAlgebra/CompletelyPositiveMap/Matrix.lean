@@ -22,6 +22,8 @@ approximation arguments for traces on C⋆-algebras, and the Choi–Effros facto
 completely positive map from a nonzero unital C⋆-algebra into a matrix algebra, or more generally
 into a unital C⋆-algebra in which `φ 1` has finite spectrum.
 
+* `CompletelyPositiveMap.exists_pos_matrix_approximant`: replace a matrix contraction by one
+  into a positive-size matrix algebra, preserving its normalized trace and both defect norms.
 * `CompletelyPositiveMap.blockDiagonal`: the block-diagonal sum `a ↦ diag(φ_i(a))` of completely
   positive maps into matrix algebras over a C⋆-algebra, built from the corner embeddings
   `CStarMatrix.blockDiagonalSingle`, with the trace formula
@@ -69,6 +71,29 @@ open scoped CStarAlgebra InnerProductSpace ComplexOrder Matrix
 open CStarMatrix (ofMatrix)
 
 namespace CompletelyPositiveMap
+
+section PositiveMatrixSize
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- An approximant may be taken into a nonzero matrix algebra: a map into `M_0` is replaced by the
+zero map into `M_1`, which has the same normalized trace `0` and multiplicativity defect `0`. -/
+theorem exists_pos_matrix_approximant {k : ℕ} (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ)
+    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) : ∃ (l : ℕ) (ψ : A →CP CStarMatrix (Fin l) (Fin l) ℂ), 0 < l ∧
+      (∀ a, ‖ψ a‖ ≤ ‖a‖) ∧
+      (∀ a, CStarMatrix.normalizedTrace (ψ a) = CStarMatrix.normalizedTrace (φ a)) ∧
+      (∀ a b, CStarMatrix.normalizedTwoNorm (ψ (a * b) - ψ a * ψ b) =
+        CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b)) ∧
+      ∀ a b, ‖ψ (a * b) - ψ a * ψ b‖ = ‖φ (a * b) - φ a * φ b‖ := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · exact ⟨1, 0, one_pos, fun _ => by simp,
+      fun _ => by simp [CStarMatrix.normalizedTrace_of_isEmpty], fun _ _ => by simp,
+      fun a b => by
+        rw [show φ (a * b) - φ a * φ b = 0 by ext i; exact Fin.elim0 i]
+        simp⟩
+  · exact ⟨k, φ, hk, hφ, fun _ => rfl, fun _ _ => rfl, fun _ _ => rfl⟩
+
+end PositiveMatrixSize
 
 section BlockDiagonal
 

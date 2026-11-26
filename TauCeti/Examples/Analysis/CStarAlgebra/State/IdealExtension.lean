@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.State.IdealExtension
-public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace
+public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace.Basic
 public import TauCeti.Analysis.CStarAlgebra.Matrix.VectorState
 
 /-!
