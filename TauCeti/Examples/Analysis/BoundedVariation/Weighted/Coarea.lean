@@ -12,7 +12,7 @@ import TauCeti.Geometry.Euclidean.Volume.Sphere
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.MeasureTheory.Integral.Gamma
 
 /-!
 # Checks for the weighted coarea formula
@@ -35,7 +35,7 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
   (`weightedVariation_gaussianWeight_id`).
 -/
 
-open MeasureTheory ProbabilityTheory Set TopologicalSpace Metric Filter Topology
+open MeasureTheory ProbabilityTheory Set TopologicalSpace Metric
 open scoped ENNReal RealInnerProductSpace
 
 public noncomputable section
@@ -119,37 +119,11 @@ theorem setLIntegral_norm_preimage_gaussianWeight {t : ℝ} (ht : 0 < t) :
     (fun x hx => by rw [exp_neg_gaussianWeight_of_norm_eq (by simpa using hx)]),
     setLIntegral_const, euclideanHausdorffMeasure_sphere_eq_mul_sphere_zero_one _ _ ht,
     euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal]
-  simp only [finrank_euclideanSpace, Fintype.card_fin]
-  have h₁ : (-(2 : ℕ) : ℝ) / 2 = -1 := by norm_num
-  have h₂ : ((2 : ℕ) : ℝ) / 2 = 1 := by norm_num
-  rw [h₁, h₂, Real.rpow_neg_one, Real.rpow_one, Real.Gamma_one, div_one, pow_one,
-    ← ENNReal.ofReal_mul ht.le, ← ENNReal.ofReal_mul (by positivity)]
+  simp only [finrank_euclideanSpace, Fintype.card_fin, Nat.add_one_sub_one, pow_one]
+  rw [← ENNReal.ofReal_mul ht.le, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
+  norm_num [Real.rpow_neg_one, Real.Gamma_one]
   field_simp
-
-/-- `t e^{−t²/2}` is integrable on `(0, ∞)`. -/
-theorem integrableOn_mul_exp_neg_sq_div_two :
-    IntegrableOn (fun t : ℝ => t * Real.exp (-(t ^ 2 / 2))) (Ioi 0) := by
-  refine (integrableOn_rpow_mul_exp_neg_mul_sq (b := 1 / 2) (by norm_num) (s := 1)
-    (by norm_num)).congr_fun (fun t _ => ?_) measurableSet_Ioi
-  simp only [Real.rpow_one]
-  ring_nf
-
-/-- `∫_0^∞ t e^{−t²/2} dt = 1`, since `−e^{−t²/2}` is a primitive. -/
-theorem integral_mul_exp_neg_sq_div_two :
-    ∫ t in Ioi (0 : ℝ), t * Real.exp (-(t ^ 2 / 2)) = 1 := by
-  have hderiv : ∀ t ∈ Ici (0 : ℝ), HasDerivAt (fun t => -Real.exp (-(t ^ 2 / 2)))
-      (t * Real.exp (-(t ^ 2 / 2))) t := fun t _ => by
-    convert ((hasDerivAt_pow 2 t).div_const 2).neg.exp.neg using 1
-    simp only [Pi.neg_apply]
-    push_cast
-    ring_nf
-  have hlim : Tendsto (fun t : ℝ => -Real.exp (-(t ^ 2 / 2))) atTop (𝓝 0) := by
-    have : Tendsto (fun t : ℝ => -(t ^ 2 / 2)) atTop atBot :=
-      tendsto_neg_atTop_atBot.comp ((tendsto_pow_atTop two_ne_zero).atTop_div_const two_pos)
-    simpa using (Real.tendsto_exp_atBot.comp this).neg
-  rw [integral_Ioi_of_hasDerivAt_of_tendsto' hderiv integrableOn_mul_exp_neg_sq_div_two hlim]
-  simp
 
 /-- **The right side for `‖x‖` on the Gaussian plane**:
 `∫_ℝ ∫_{‖x‖ = t} e^{−W} dμHE[1] dt = ∫_0^∞ (2π)^{−1} e^{−t²/2} 2πt dt = 1`. -/
@@ -157,11 +131,13 @@ theorem lintegral_setLIntegral_norm_preimage_gaussianWeight :
     ∫⁻ t, ∫⁻ x in (fun x : EuclideanSpace ℝ (Fin 2) => ‖x‖) ⁻¹' {t},
         ENNReal.ofReal (Real.exp (-gaussianWeight (EuclideanSpace ℝ (Fin 2)) x))
       ∂μHE[Module.finrank ℝ (EuclideanSpace ℝ (Fin 2)) - 1] = 1 := by
-  -- The level sets are empty for `t < 0`, and `t = 0` is a null set of levels.
+  -- The level sets are empty for `t < 0`, and `t = 0` is a null set of levels. On `t > 0` the
+  -- fibre integral is `t e^{−t²/2}`, written in the form of Mathlib's Gamma-function integral.
   have hae : (fun t => ∫⁻ x in (fun x : EuclideanSpace ℝ (Fin 2) => ‖x‖) ⁻¹' {t},
       ENNReal.ofReal (Real.exp (-gaussianWeight (EuclideanSpace ℝ (Fin 2)) x))
         ∂μHE[Module.finrank ℝ (EuclideanSpace ℝ (Fin 2)) - 1]) =ᵐ[volume]
-      (Ioi 0).indicator fun t => ENNReal.ofReal (t * Real.exp (-(t ^ 2 / 2))) := by
+      (Ioi 0).indicator fun t =>
+        ENNReal.ofReal (t ^ (1 : ℝ) * Real.exp (-(1 / 2) * t ^ (2 : ℝ))) := by
     filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : ℝ))] with t ht
     rcases lt_trichotomy t 0 with h | h | h
     · have : (fun x : EuclideanSpace ℝ (Fin 2) => ‖x‖) ⁻¹' {t} = ∅ :=
@@ -171,28 +147,31 @@ theorem lintegral_setLIntegral_norm_preimage_gaussianWeight :
       rw [this, Measure.restrict_empty, lintegral_zero_measure,
         indicator_of_notMem (by simpa using h.le)]
     · exact absurd h ht
-    · rw [setLIntegral_norm_preimage_gaussianWeight h, indicator_of_mem (by simpa using h)]
+    · rw [setLIntegral_norm_preimage_gaussianWeight h, indicator_of_mem (by simpa using h),
+        Real.rpow_one, Real.rpow_two]
+      ring_nf
+  have hint := integrableOn_rpow_mul_exp_neg_mul_rpow (s := 1) (by norm_num) two_pos
+    (b := 1 / 2) (by norm_num)
   rw [lintegral_congr_ae hae, lintegral_indicator measurableSet_Ioi,
-    ← ofReal_integral_eq_lintegral_ofReal integrableOn_mul_exp_neg_sq_div_two,
-    integral_mul_exp_neg_sq_div_two, ENNReal.ofReal_one]
+    ← ofReal_integral_eq_lintegral_ofReal hint,
+    integral_rpow_mul_exp_neg_mul_rpow two_pos (by norm_num) (by norm_num)]
+  · norm_num [Real.Gamma_one]
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  exact mul_nonneg (le_of_lt ht) (Real.exp_pos _).le
+  exact mul_nonneg (Real.rpow_nonneg (le_of_lt ht) _) (Real.exp_pos _).le
 
 /-- **The left side for `‖x‖` on the Gaussian plane**: `∫ ‖∇‖x‖‖ dγ = 1`, since the gradient of
 the norm has norm `1` off the origin, a Gaussian-null set. -/
 theorem lintegral_enorm_fderiv_norm_gaussianWeight :
     ∫⁻ x, ‖fderiv ℝ (fun x : EuclideanSpace ℝ (Fin 2) => ‖x‖) x‖ₑ
       ∂weightedMeasure (gaussianWeight (EuclideanSpace ℝ (Fin 2))) = 1 := by
-  rw [weightedMeasure_def, withDensity_exp_neg_gaussianWeight]
-  have hae : ∀ᵐ x ∂stdGaussian (EuclideanSpace ℝ (Fin 2)),
+  -- Off the origin, a `volume`-null set, the gradient of the norm has norm `1`.
+  have hae : ∀ᵐ x ∂weightedMeasure (gaussianWeight (EuclideanSpace ℝ (Fin 2))),
       ‖fderiv ℝ (fun x : EuclideanSpace ℝ (Fin 2) => ‖x‖) x‖ₑ = 1 := by
-    rw [← withDensity_exp_neg_gaussianWeight]
-    refine withDensity_absolutelyContinuous _ _ ?_
-    refine measure_mono_null (fun x hx => ?_) (measure_singleton 0)
-    by_contra h
-    refine hx ?_
-    change ‖fderiv ℝ (fun x : EuclideanSpace ℝ (Fin 2) => ‖x‖) x‖ₑ = 1
-    rw [← ofReal_norm, norm_fderiv_norm (differentiableAt_id.norm ℝ h), ENNReal.ofReal_one]
-  rw [lintegral_congr_ae hae, lintegral_one, measure_univ]
+    refine weightedMeasure_absolutelyContinuous.ae_le ?_
+    filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : EuclideanSpace ℝ (Fin 2)))]
+      with x hx
+    rw [← ofReal_norm, norm_fderiv_norm (differentiableAt_id.norm ℝ hx), ENNReal.ofReal_one]
+  rw [lintegral_congr_ae hae, lintegral_one, weightedMeasure_def,
+    withDensity_exp_neg_gaussianWeight, measure_univ]
 
 end TauCeti.Examples.WeightedCoarea
