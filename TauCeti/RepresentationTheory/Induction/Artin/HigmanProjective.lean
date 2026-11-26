@@ -52,6 +52,9 @@ criterion, because the stabilizers in `Δ` of the cosets have order `|C| |D|`, p
   Theorem 2.8, for the same use of modular Artin induction on Euler characteristics.
 * D. G. Higman, *Modules with a group of operators*, Duke Math. J. 21 (1954), 369–376, for the
   criterion.
+* The formal proof of the generalized Riemann hypothesis at <https://github.com/lsernau/grh-lean>,
+  file `grh/src/Lib/General/Algebra/CartanMap.lean`, for this form of the statement, there for
+  discrete modules over a compact group and proved by a dévissage through permutation modules.
 -/
 
 public section
