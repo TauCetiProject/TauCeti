@@ -413,6 +413,20 @@ theorem ext_eval₂_iff {φ ψ : SmoothBundleForm I F V 2} :
     φ = ψ ↔ ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w :=
   ⟨fun h ↦ by subst h; intros; rfl, ext_eval₂⟩
 
+/-- Two smooth bundle-valued one-forms are equal when they agree on every tangent vector. -/
+theorem ext_eval₁ {φ ψ : SmoothBundleForm I F V 1}
+    (h : ∀ x (v : TangentSpace I x), φ.val x ![v] = ψ.val x ![v]) : φ = ψ :=
+  Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
+    have hv : v = ![v 0] := (FinVec.etaExpand_eq v).symm
+    rw [hv]
+    exact h x (v 0)
+
+/-- Two smooth bundle-valued one-forms are equal exactly when they agree on every tangent
+vector. -/
+theorem ext_eval₁_iff {φ ψ : SmoothBundleForm I F V 1} :
+    φ = ψ ↔ ∀ x (v : TangentSpace I x), φ.val x ![v] = ψ.val x ![v] :=
+  ⟨fun h ↦ by subst h; intros; rfl, ext_eval₁⟩
+
 section Evaluation
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']

@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Symplectic.AtiyahBott.TrivialBundle
 Let `M` be a closed oriented surface, let `𝔄` be a complete normed real algebra, and let
 `P = M × 𝔄ˣ` be the trivial principal bundle. Its connections `d + A` form the affine space
 `Ω¹(M; 𝔄)`, on which the gauge group `C^∞⟮I, M; 𝓘(ℝ, 𝔄), 𝔄ˣ⟯` acts by
-`g · A = g A g⁻¹ - (dg) g⁻¹` (`TauCeti.gaugeAction`). The Atiyah–Bott form
+`g · A = g A g⁻¹ - (dg) g⁻¹` (`TauCeti.SmoothForm.gaugeAction`). The Atiyah–Bott form
 `Ω(a, b) = ∫_M B(a ∧ b)` (`TauCeti.atiyahBottFormWith`) and the curvature moment map
 `⟨μ(A), ξ⟩ = ∫_M B(F_A, ξ)` (`TauCeti.atiyahBottMomentWith`) of
 `TauCeti.Geometry.Symplectic.AtiyahBott.TrivialBundle` are taken here for the commutator bracket
@@ -22,11 +22,14 @@ of `𝔄` and a bilinear form `B` on `𝔄` invariant under conjugation by the v
 `B(k u k⁻¹, k v k⁻¹) = B(u, v)`. A trace form `B(u, v) = -tr(u v)` on real matrices is invariant
 under all of `𝔄ˣ`, and the inner product `B(u, v) = Re tr(u v*)` on complex matrices is invariant
 under the unitary group, so the hypothesis holds for gauge transformations with values in `U(n)`.
+The connections and the arguments of the moment map stay `𝔄`-valued even then: the setup with
+values in the Lie algebra `𝔲(n)` is not developed here.
 
 * **The symplectic form is gauge invariant.** The gauge action is affine over the conjugation
-  `b ↦ g b g⁻¹` of tangent vectors (`TauCeti.gaugeAction_add`), and this conjugation preserves
-  `Ω` (`TauCeti.atiyahBottFormWith_gaugeConj`). So every gauge transformation is a
-  symplectomorphism of the affine space of connections.
+  `b ↦ g b g⁻¹` of tangent vectors (`TauCeti.SmoothForm.gaugeAction_add`), and this conjugation
+  preserves `Ω` when `B` is invariant under conjugation by the values of `g`
+  (`TauCeti.atiyahBottFormWith_gaugeConj`). So every gauge transformation whose values preserve
+  `B` is a symplectomorphism of the affine space of connections.
 * **The moment map is equivariant.** Since the curvature transforms by
   `F_(g · A) = g F_A g⁻¹` (`TauCeti.gaugeCurvature_gaugeAction`), the invariance of `B` gives
   `⟨μ(g · A), ξ⟩ = ⟨μ(A), g⁻¹ ξ g⟩`, that is, `μ(g · A) = Ad*_g μ(A)` for the coadjoint action of
@@ -68,7 +71,8 @@ variable {E H M 𝔄 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Finite
 
 /-- **The Atiyah–Bott form is gauge invariant.** If `B` is invariant under conjugation by the
 values of a gauge transformation `g`, the conjugation `b ↦ g b g⁻¹`, which is the differential of
-the gauge action of `g` (`TauCeti.gaugeAction_add`), preserves `Ω(a, b) = ∫_M B(a ∧ b)`. -/
+the gauge action of `g` (`TauCeti.SmoothForm.gaugeAction_add`), preserves
+`Ω(a, b) = ∫_M B(a ∧ b)`. -/
 theorem atiyahBottFormWith_gaugeConj
     (hB : ∀ x u v, B ((g x).val * u * ((g x)⁻¹ : 𝔄ˣ).val) ((g x).val * v * ((g x)⁻¹ : 𝔄ˣ).val) =
       B u v)
@@ -91,7 +95,7 @@ theorem atiyahBottMomentWith_gaugeAction {β : 𝔄 →L[ℝ] 𝔄 →L[ℝ] �
     (hB : ∀ x u v, B ((g x).val * u * ((g x)⁻¹ : 𝔄ˣ).val) ((g x).val * v * ((g x)⁻¹ : 𝔄ˣ).val) =
       B u v)
     (A : SmoothForm I M 𝔄 1) :
-    atiyahBottMomentWith β B o (gaugeAction g A) =
+    atiyahBottMomentWith β B o (SmoothForm.gaugeAction g A) =
       atiyahBottMomentWith β B o A ∘ₗ gaugeConj g⁻¹ := by
   refine LinearMap.ext fun ξ ↦ ?_
   rw [LinearMap.comp_apply, atiyahBottMomentWith_apply, atiyahBottMomentWith_apply,
@@ -110,10 +114,11 @@ theorem atiyahBottMomentWith_gaugeAction_eq_zero_iff {β : 𝔄 →L[ℝ] 𝔄 �
     (hB : ∀ x u v, B ((g x).val * u * ((g x)⁻¹ : 𝔄ˣ).val) ((g x).val * v * ((g x)⁻¹ : 𝔄ˣ).val) =
       B u v)
     (A : SmoothForm I M 𝔄 1) :
-    atiyahBottMomentWith β B o (gaugeAction g A) = 0 ↔ atiyahBottMomentWith β B o A = 0 := by
+    atiyahBottMomentWith β B o (SmoothForm.gaugeAction g A) = 0 ↔
+      atiyahBottMomentWith β B o A = 0 := by
   rw [atiyahBottMomentWith_gaugeAction B o hβ hB]
   refine ⟨fun h ↦ LinearMap.ext fun ξ ↦ ?_, fun h ↦ by rw [h, LinearMap.zero_comp]⟩
   have h' := LinearMap.congr_fun h (gaugeConj g ξ)
-  rwa [LinearMap.comp_apply, ← gaugeConj_mul, inv_mul_cancel, gaugeConj_one] at h'
+  rwa [LinearMap.comp_apply, gaugeConj_inv_gaugeConj] at h'
 
 end TauCeti

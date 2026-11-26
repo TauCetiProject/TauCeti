@@ -67,7 +67,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
 * `TauCeti.mvfderiv_units_inv_apply`: the derivative of the pointwise inverse of a map into the
-  units of a normed algebra is `-u⁻¹ (du) u⁻¹`.
+  units of a normed algebra is `-u⁻¹ (du) u⁻¹`; the manifold counterpart of
+  `TauCeti.rightMaurerCartan_ringInverse` on a normed space.
 * `TauCeti.mvfderiv_smul_left`: for a group acting on a normed space by continuous linear maps,
   the derivative of `k • ·` is `k • ·`.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
@@ -450,7 +451,10 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
 
 /-- The derivative of the pointwise inverse of a map into the units of a normed algebra, read in
-the algebra: `d(u⁻¹) = -u⁻¹ (du) u⁻¹`. The algebra need not be commutative. -/
+the algebra: `d(u⁻¹) = -u⁻¹ (du) u⁻¹`. The algebra need not be commutative. This is the
+counterpart on a manifold of `TauCeti.rightMaurerCartan_ringInverse`, the rule
+`(O⁻¹);x = -Ad(O⁻¹)(O;x)` for maps on a normed space, built on Mathlib's
+`HasFDerivAt.ringInverse`. -/
 theorem mvfderiv_units_inv_apply {𝔄 : Type*} [NormedRing 𝔄] [NormedAlgebra 𝕜 𝔄] {u : M → 𝔄ˣ}
     {x : M} (hu : MDifferentiableAt I 𝓘(𝕜, 𝔄) (fun y ↦ (u y).val) x)
     (hu' : MDifferentiableAt I 𝓘(𝕜, 𝔄) (fun y ↦ ((u y)⁻¹ : 𝔄ˣ).val) x) (v : TangentSpace I x) :
