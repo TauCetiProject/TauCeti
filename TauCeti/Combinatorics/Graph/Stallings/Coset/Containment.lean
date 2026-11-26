@@ -77,12 +77,18 @@ noncomputable def subgroupGraphFunctor : Subgroup (FreeGroup α) ⥤ StallingsGr
 theorem subgroupGraphFunctor_obj : (subgroupGraphFunctor α).obj H = H.subgroupGraph :=
   (rfl)
 
+/-- Between two graphs in the image of `subgroupGraphFunctor` there is at most one morphism, so
+every morphism between them is the image of the subgroup inclusion. -/
+instance : Subsingleton ((subgroupGraphFunctor α).obj H ⟶ (subgroupGraphFunctor α).obj K) := by
+  rw [subgroupGraphFunctor_obj, subgroupGraphFunctor_obj]
+  infer_instance
+
 variable (α) in
 /-- **Subgroups of a free group are a full subcategory of based labelled graphs**: every based
 labelled morphism `Γ(H) → Γ(K)` comes from the inclusion `H ≤ K`. -/
 noncomputable def subgroupGraphFunctorFullyFaithful : (subgroupGraphFunctor α).FullyFaithful where
   preimage {H K} f := homOfLE ((H.nonempty_hom_subgroupGraph_iff K).mp ⟨f⟩)
-  map_preimage {H K} _ := Subsingleton.elim (α := H.subgroupGraph ⟶ K.subgroupGraph) _ _
+  map_preimage _ := Subsingleton.elim _ _
   preimage_map _ := Subsingleton.elim _ _
 
 instance : (subgroupGraphFunctor α).Full :=
