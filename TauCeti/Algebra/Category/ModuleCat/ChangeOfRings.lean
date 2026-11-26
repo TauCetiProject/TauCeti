@@ -381,6 +381,16 @@ instance faithfullyFlat_extendScalars {R S : Type*} [CommRing R] [CommRing S] (f
   letI := f.toAlgebra
   inferInstanceAs (Module.FaithfullyFlat S (S ⊗[R] M))
 
+/-- Extension of scalars along a ring map out of an `IsField` ring preserves finite limits. -/
+theorem preservesFiniteLimits_extendScalars_of_isField {K S : Type u} [CommRing K] [CommRing S]
+    (hK : IsField K) (f : K →+* S) : Limits.PreservesFiniteLimits (extendScalars.{u, u, u} f) :=
+  preservesFiniteLimits_extendScalars_of_flat (RingHom.Flat.of_isField hK f)
+
+/-- Extension of scalars along a ring map out of a field preserves finite limits. -/
+instance preservesFiniteLimits_extendScalars_of_field {K S : Type u} [Field K] [CommRing S]
+    (f : K →+* S) : Limits.PreservesFiniteLimits (extendScalars.{u, u, u} f) :=
+  preservesFiniteLimits_extendScalars_of_isField (Field.toIsField K) f
+
 end Flat
 
 section BaseChange
@@ -426,6 +436,20 @@ theorem isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange
 
 end BaseChange
 
+section ExtendScalars
+
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] (f : R →+* S)
+
+/-- A commuting square `(extendScalars f).map φ ≫ iQ = iP ≫ ψ` intertwines pure tensors. -/
+theorem ExtendScalars.apply_tmul_of_comm {P Q : ModuleCat.{w} R} {P' Q' : ModuleCat.{max v w} S}
+    {iP : (extendScalars f).obj P ⟶ P'} {iQ : (extendScalars f).obj Q ⟶ Q'} {φ : P ⟶ Q}
+    {ψ : P' ⟶ Q'} (hcomm : (extendScalars f).map φ ≫ iQ = iP ≫ ψ) (s : S) (x : P) :
+    ψ (iP (s ⊗ₜ[R, f] x)) = iQ (s ⊗ₜ[R, f] φ x) :=
+  ((comp_apply iP ψ _).symm.trans (ConcreteCategory.congr_hom hcomm.symm _)).trans
+    ((comp_apply _ iQ _).trans (congrArg iQ (ExtendScalars.map_tmul f φ s x)))
+
+end ExtendScalars
+
 section Cyclic
 
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] (f : R →+* S)
@@ -441,28 +465,7 @@ theorem ExtendScalars.span_singleton_one_tmul_eq_top
   obtain ⟨s, rfl⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top h x
   exact ⟨s, key s⟩
 
-/-- A commuting square `(extendScalars f).map φ ≫ iQ = iP ≫ ψ` intertwines pure tensors. -/
-theorem ExtendScalars.apply_tmul_of_comm {P Q : ModuleCat.{w} R} {P' Q' : ModuleCat.{max v w} S}
-    {iP : (extendScalars f).obj P ⟶ P'} {iQ : (extendScalars f).obj Q ⟶ Q'} {φ : P ⟶ Q}
-    {ψ : P' ⟶ Q'} (hcomm : (extendScalars f).map φ ≫ iQ = iP ≫ ψ) (s : S) (x : P) :
-    ψ (iP (s ⊗ₜ[R, f] x)) = iQ (s ⊗ₜ[R, f] φ x) :=
-  ((comp_apply iP ψ _).symm.trans (ConcreteCategory.congr_hom hcomm.symm _)).trans
-    ((comp_apply _ iQ _).trans (congrArg iQ (ExtendScalars.map_tmul f φ s x)))
 end Cyclic
-
-section Flat
-
-/-- Extension of scalars along a ring map out of an `IsField` ring preserves finite limits. -/
-theorem preservesFiniteLimits_extendScalars_of_isField {K S : Type u} [CommRing K] [CommRing S]
-    (hK : IsField K) (f : K →+* S) : Limits.PreservesFiniteLimits (extendScalars.{u, u, u} f) :=
-  preservesFiniteLimits_extendScalars_of_flat (RingHom.Flat.of_isField hK f)
-
-/-- Extension of scalars along a ring map out of a field preserves finite limits. -/
-instance preservesFiniteLimits_extendScalars_of_field {K S : Type u} [Field K] [CommRing S]
-    (f : K →+* S) : Limits.PreservesFiniteLimits (extendScalars.{u, u, u} f) :=
-  preservesFiniteLimits_extendScalars_of_isField (Field.toIsField K) f
-
-end Flat
 
 section Semilinear
 

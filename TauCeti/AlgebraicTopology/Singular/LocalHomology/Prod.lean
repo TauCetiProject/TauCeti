@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology

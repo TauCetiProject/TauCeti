@@ -260,9 +260,8 @@ theorem IsFundamentalClass.exists_linearEquiv_isUnit [T2Space M] [CompactSpace M
     (hμ : IsFundamentalClass μ) :
     ∃ e : ((TopCat.toSSet.obj (TopCat.of M)).homology R n : ModuleCat.{w} k) ≃ₗ[k] k,
       IsUnit (e μ) := by
-  let E' := ULift.{w} (Fin (finrank ℝ E)) → ℝ
-  let _ : ChartedSpace E' M := ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [E'])
-  have hE' : finrank ℝ E' = n := by simpa [E'] using hn
+  let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M := ChartedSpace.uliftFin M hn
+  have hE' : finrank ℝ (ULift.{w} (Fin n) → ℝ) = n := by simp
   obtain ⟨x⟩ : Nonempty M := ConnectedSpace.toNonempty
   have hsurj : Function.Surjective (singularHomologyToLocalHomology R x n) := by
     rw [← LinearMap.range_eq_top, eq_top_iff, ← (isFundamentalClass_iff μ).1 hμ x,

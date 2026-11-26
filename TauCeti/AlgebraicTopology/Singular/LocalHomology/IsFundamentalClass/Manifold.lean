@@ -13,73 +13,37 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Noncompact
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Section
 
 /-!
-# Fundamental classes with coefficients in a ring
+# Fundamental classes on manifolds and integral comparisons
 
-Let `M` be a space, `R` a ring and `N` an `R`-module. A class `μ` of the singular homology
-`Hₙ(M; N)` is a *fundamental class* (`TauCeti.IsFundamentalClass`) when, for every point `x` of
-`M`, its image in the local homology `Hₙ(M, M ∖ {x}; N)` generates that `R`-module. The image is
-`TauCeti.singularHomologyToLocalHomology`, the quotient map `Hₙ(M; N) ⟶ Hₙ(M, M ∖ M; N)` followed
-by restriction to `{x}`. With `N = R` this is the notion of an `R`-fundamental class of Hatcher,
-p.236: for a topological `n`-manifold the local homology at each point is a copy of `R`, and the
-image of `μ` must be a generator there.
+This module develops manifold consequences of `TauCeti.IsFundamentalClass` (defined in
+`TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Basic`), together with
+uniqueness of local generators over rings whose only unit is `1` and comparisons with integral and
+rational fundamental classes (`HomologicalOrientation`).
 
-The predicate needs no orientation datum, which is what closed-manifold duality over an arbitrary
-commutative ring consumes. The integral fundamental class `o.fundamentalClass hn` of an oriented
-compact manifold, and its rational normalization `o.rationalFundamentalClass hn` on a connected
-one, are fundamental classes in this sense.
+On a connected `n`-manifold with coefficients in a Dedekind-finite ring `K`, every top-dimensional
+class is a unique multiple of a fundamental class
+(`TauCeti.IsFundamentalClass.existsUnique_eq_smul`);
+for the image of a fundamental class under a map this multiple is the degree of the map with
+coefficients in `K`. Over a Dedekind-finite ring `K` with `[Subsingleton Kˣ]` (such as `ZMod 2`),
+the local homology `Hₙ(M, M ∖ {x}; K) ≅ K` has a unique generator
+(`TauCeti.eq_of_span_localHomology_eq_top`), which path transport preserves
+(`TauCeti.localHomologyTransport_eq_of_span_eq_top`); the corresponding global uniqueness theorem
+`TauCeti.existsUnique_isFundamentalClass_of_subsingleton_units` lives in
+`TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Module.FundamentalClass`.
 
-With coefficients in a commutative ring `K` whose only unit is `1`, such as `ZMod 2`, or more
-generally a Dedekind-finite ring with this property, every compact manifold has exactly one
-fundamental class, oriented or not and connected or not
-(`TauCeti.existsUnique_isFundamentalClass_of_subsingleton_units`; Hatcher, Theorem 3.26). The local
-homology `Hₙ(M, M ∖ {x}; K) ≅ K` then has a single generator, so transport along paths, being an
-isomorphism, preserves the generators (`TauCeti.localHomologyTransport_eq_of_span_eq_top`), and
-this parallel family of generators glues to a global class. On a connected manifold every
-top-dimensional class with coefficients in a commutative ring, or more generally a Dedekind-finite
-ring, is a unique multiple of a fundamental class
-(`TauCeti.IsFundamentalClass.existsUnique_eq_smul`); for the image of a fundamental class under a
-map this multiple is the degree of the map with coefficients in `K`, the mod `2` degree for
-`K = ZMod 2`.
-
-## Main definitions
-
-* `TauCeti.IsFundamentalClass`: the image of `μ ∈ Hₙ(M; N)` in the local homology at every point
-  generates it.
+The integral fundamental class `o.fundamentalClass hn` of an oriented compact manifold, and its
+rational normalization `o.rationalFundamentalClass hn` on a connected one, are fundamental classes
+in this sense.
 
 ## Main results
 
-* `TauCeti.isFundamentalClass_smul_iff_of_isUnit`: multiplying by a unit preserves fundamental
-  classes.
-* `TauCeti.IsFundamentalClass.of_smul`: a class with a fundamental multiple is fundamental.
-* `TauCeti.isFundamentalClass_iff_isUnit_of_linearEquiv`: for local homology identified with the
-  coefficient ring `R` at every point, `μ` is a fundamental class exactly when each of its local
-  coordinates is a unit of `R`.
-* `TauCeti.isFundamentalClass_of_subsingleton`: over the zero ring every class is fundamental.
-* `TauCeti.IsFundamentalClass.singularHomologyToLocalHomology_ne_zero`: on an `n`-manifold with
-  nontrivial coefficients, a fundamental class has a nonzero image in every local homology group.
-* `TauCeti.isFundamentalClass_singularHomologyFunctor_map_app_iff`: changing the coefficients along
-  an isomorphism `N ≅ N'` preserves and reflects fundamental classes.
-* `TauCeti.not_isFundamentalClass_zero`: on a nonempty `n`-manifold with nontrivial coefficients,
-  the zero class of `Hₙ(M; N)` is not fundamental.
-* `TauCeti.IsFundamentalClass.isFundamentalClass_smul_iff`: on a nonempty `n`-manifold with
-  faithful coefficients over a commutative ring, `r • μ` is fundamental for a fundamental class
-  `μ` exactly when `r` is a unit.
-* `TauCeti.isFundamentalClass_iff_ne_zero`: over a division ring, on a compact connected manifold,
-  the fundamental classes are exactly the nonzero top-dimensional classes.
-* `TauCeti.IsFundamentalClass.exists_linearEquiv_isUnit`: on a compact connected manifold, with
-  coefficients free of rank one over a Dedekind-finite ring `k`, the top homology carrying a
-  fundamental class `μ` is a copy of `k` in which `μ` is a unit.
 * `TauCeti.IsFundamentalClass.existsUnique_eq_smul`: on a connected manifold, with
   coefficients in a Dedekind-finite ring `K`, every top-dimensional class is `c • μ` for a unique
   `c : K`.
+* `TauCeti.eq_of_span_localHomology_eq_top`: when `1` is the only unit of the coefficients, the
+  local homology at each point has a unique generator.
 * `TauCeti.localHomologyTransport_eq_of_span_eq_top`: when `1` is the only unit of the
   coefficients, transport of local homology sends the generator to the generator.
-* `TauCeti.existsUnique_isFundamentalClass_of_subsingleton_units`: when `1` is the only unit of the
-  coefficients, for instance over `ZMod 2`, a compact manifold has exactly one fundamental class.
-* `TauCeti.IsFundamentalClass.eq_of_subsingleton_units`: so any two such fundamental classes are
-  equal.
-* `TauCeti.IsFundamentalClass.map_homeomorph`: homeomorphisms carry fundamental classes to
-  fundamental classes.
 * `TauCeti.isFundamentalClass_iff_forall_isLocalOrientation`: with integral coefficients, `μ` is a
   fundamental class exactly when its image at each point is a local orientation.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_fundamentalClass`: the integral fundamental
@@ -180,36 +144,6 @@ theorem localHomologyTransport_eq_of_span_eq_top {x y : FundamentalGroupoid M} (
     localHomologyTransport (ModuleCat.of K K) M E n f a = b := by
   let e := (asIso ((localHomologySystem (ModuleCat.of K K) M E n).map f)).toLinearEquiv
   exact eq_of_span_localHomology_eq_top K hn (e.span_singleton_apply_eq_top_iff.2 ha) hb
-
-include hn in
-/-- **Every compact manifold has a unique fundamental class when `1` is the only unit of the
-coefficients.** On a compact `n`-manifold, with coefficients in a Dedekind-finite ring `K` (for
-instance a commutative ring) whose only unit is `1`, such as `ZMod 2`, there is exactly one
-fundamental class in `Hₙ(M; K)`. No orientation
-and no connectedness is needed: the generators of the local homology groups
-`Hₙ(M, M ∖ {x}; K) ≅ K` form a family invariant under transport
-(`TauCeti.localHomologyTransport_eq_of_span_eq_top`), which glues to a single class. For
-`K = ZMod 2` this is the mod `2` fundamental class of Hatcher, Theorem 3.26. -/
-theorem existsUnique_isFundamentalClass_of_subsingleton_units [CompactSpace M] :
-    ∃! μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of K K) n : ModuleCat.{w} K),
-      IsFundamentalClass μ := by
-  let e (x : M) := localHomologySingletonLinearEquiv (ModuleCat.of K K) hn (LinearEquiv.refl K K) x
-  have hg (x : M) : Submodule.span K {(e x).symm 1} = ⊤ :=
-    (e x).symm.span_singleton_apply_eq_top_iff.2 (Ideal.span_singleton_one)
-  obtain ⟨μ, hμ, huniq⟩ := existsUnique_singularHomology_localHomologyRestriction_eq_of_invariant
-    (ModuleCat.of K K) hn (fun x ↦ (e x).symm 1)
-    fun f ↦ localHomologyTransport_eq_of_span_eq_top K hn f (hg _) (hg _)
-  exact ⟨μ, (isFundamentalClass_iff _).2 fun x ↦ (hμ x).symm ▸ hg x, fun ν hν ↦
-    huniq ν fun x ↦ eq_of_span_localHomology_eq_top K hn ((isFundamentalClass_iff _).1 hν x) (hg x)⟩
-
-variable {K} in
-include hn in
-/-- On a compact `n`-manifold, with coefficients in a Dedekind-finite ring whose only unit is `1`,
-any two fundamental classes are equal. -/
-theorem IsFundamentalClass.eq_of_subsingleton_units [CompactSpace M]
-    {μ ν : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of K K) n : ModuleCat.{w} K)}
-    (hμ : IsFundamentalClass μ) (hν : IsFundamentalClass ν) : μ = ν :=
-  (existsUnique_isFundamentalClass_of_subsingleton_units K hn).unique hμ hν
 
 end SubsingletonUnits
 

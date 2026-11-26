@@ -945,12 +945,12 @@ theorem map_localHomologyTransport_comp_of_restriction {B : Type*} [Category* B]
           FundamentalGroupoid.mk a ⟶ FundamentalGroupoid.mk b) := by
     have ha := γ.source ▸ hγ 0; have hb := γ.target ▸ hγ 1
     have := P.isIso_localHomologyRestriction R ha k
+    have hαa := (congrArg (· ≫ (P.iso R' ha k).inv) (hα (P.singleton_subset_closedImage ha))).trans
+      (by rw [Category.assoc, ← P.iso_hom R' ha, Iso.hom_inv_id, Category.comp_id])
     rw [P.localHomologyTransport_mk R γ hγ k, P.localHomologyTransport_mk R' γ hγ k,
-      ← cancel_epi (F.map (localHomologyRestriction R (P.singleton_subset_closedImage ha) k)),
-      ← F.map_comp_assoc, ← P.iso_hom R ha, Iso.hom_inv_id_assoc, P.iso_hom R hb,
-      hα (P.singleton_subset_closedImage hb), ← Category.assoc, P.iso_hom R ha,
-      hα (P.singleton_subset_closedImage ha), Category.assoc, ← P.iso_hom R' ha,
-      Iso.hom_inv_id_assoc, P.iso_hom R' hb]
+      ← cancel_epi (F.map (P.iso R ha k).hom), ← F.map_comp_assoc, Iso.hom_inv_id_assoc,
+      P.iso_hom R hb, hα (P.singleton_subset_closedImage hb), P.iso_hom R ha, reassoc_of% hαa,
+      P.iso_hom R' hb]
   let S : Subgroupoid (FundamentalGroupoid M) :=
     { arrows c d := {g | F.map (localHomologyTransport R M E k g) ≫ α {d.as} =
         α {c.as} ≫ localHomologyTransport R' M E k g}

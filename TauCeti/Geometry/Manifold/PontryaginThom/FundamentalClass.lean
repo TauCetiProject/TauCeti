@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Pair
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
 public import TauCeti.Geometry.Manifold.PontryaginThom.Cap
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.Cross

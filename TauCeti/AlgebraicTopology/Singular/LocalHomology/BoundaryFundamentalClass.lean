@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding

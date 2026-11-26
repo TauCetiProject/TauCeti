@@ -111,11 +111,11 @@ homology isomorphism directly, without requiring Poincaré duality.
 
 ## Implementation notes
 
-The manifold lives in `Type`. The gluing results this file rests on
-(`TauCeti.existsUnique_localHomologyRestriction_eq_of_invariant` and the top homology of a compact
-manifold) take coefficients in `ModuleCat.{w} Λ` for a ring `Λ : Type w` in the universe of `M`,
-as Mathlib's exactness of filtered colimits of modules is stated in that generality; the integral
-coefficients `ModuleCat.of ℤ (ULift ℤ)` of local orientations meet this condition in `Type`.
+The manifold lives in `Type`. This file specializes the general module-orientation fundamental
+class API in `TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Module.FundamentalClass`
+to `HomologicalOrientation` via `ModuleOrientation.equivHomologicalOrientation` with integral
+coefficients `ModuleCat.of ℤ (ULift ℤ)` (which lie in `Type`, matching the universe of `M`
+required by the underlying gluing theorems in `LocalHomology.Section`).
 
 ## References
 
@@ -196,9 +196,9 @@ theorem fundamentalClassOn_singleton (x : M) (hx : IsCompact ({x} : Set M)) :
 @[simp]
 theorem fundamentalClassOn_neg :
     (-o).fundamentalClassOn hn hA = -o.fundamentalClassOn hn hA := by
-  rw [fundamentalClassOn, ModuleOrientation.equivHomologicalOrientation_symm_neg,
+  rw [fundamentalClassOn, fundamentalClassOn,
+    ModuleOrientation.equivHomologicalOrientation_symm_neg,
     ModuleOrientation.fundamentalClassOn_neg]
-  rfl
 
 end Compact
 

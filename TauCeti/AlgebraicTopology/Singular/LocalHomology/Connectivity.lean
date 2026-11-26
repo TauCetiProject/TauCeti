@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
 public import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 public import TauCeti.Geometry.Manifold.ModelTransport.Interior
 

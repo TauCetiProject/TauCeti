@@ -224,13 +224,12 @@ lemma localHomologyExtendScalarsIso_inv (A : Set M) (k : ℕ) :
         (localHomologyExtendScalarsIso f A k).hom =
       (f.singularHomologyExtendScalarsIso M k).hom ≫
         (ofSubset (Aᶜ : Set (TopCat.of M))).singularHomologyπ (of S S) k := by
-  let ε : (extendScalars.{w} f).obj (of R R) ≅ of S S := (εIso _).symm
-  rw [localHomologyExtendScalarsIso_hom, f.singularHomologyExtendScalarsIso_hom]
-  refine ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _)
-    (map_singularHomologyπ_comp_localHomologyObjIso_hom _ (of R R) A k))).trans ?_
-  refine ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ?_)).trans (Category.assoc _ _ _).symm
-  rw [localHomologyIsoOfCoefficientsIso_hom, SSet.homologyIsoOfCoefficientsIso_hom]
-  exact (homologyNatTransOfCoefficients_app_comp_singularHomologyπ ε.hom A k).symm
+  rw [localHomologyExtendScalarsIso_hom, f.singularHomologyExtendScalarsIso_hom,
+    map_singularHomologyπ_comp_localHomologyObjIso_hom_assoc, localHomologyIsoOfCoefficientsIso_hom,
+    SSet.homologyIsoOfCoefficientsIso_hom]
+  exact (Category.assoc _ _ _).trans
+    ((congrArg (_ ≫ ·) (homologyNatTransOfCoefficients_app_comp_singularHomologyπ
+      (εIso (extendScalars.{w} f)).symm.hom A k).symm).trans (Category.assoc _ _ _).symm)
 lemma singularHomologyToLocalHomology_singularHomologyExtendScalarsIso_hom_tmul (x : M) (k : ℕ)
     (s : S) (μ : ↑((toSSet.obj (TopCat.of M)).homology (of R R) k)) :
     singularHomologyToLocalHomology (of S S) x k

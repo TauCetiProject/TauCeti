@@ -7,8 +7,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
-import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
-import Mathlib.CategoryTheory.Preadditive.Biproducts
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 /-!
 # Coefficient change for relative simplicial homology
 
@@ -17,8 +16,8 @@ Adapts `SSet.chainComplexFunctorObjCompMapIso` and `SimplicialSet.Homology.Coeff
 degreewise `IsSplitMono` instance from `SimplicialSet.Homology.Relative.Basic` (Hatcher, §3.A):
 * `SSetPair.homologyNatTransOfCoefficients` and `homologyNatIsoOfCoefficientsIso`:
   coefficient-change naturality on relative simplicial homology.
-* `CokernelCofork.isColimitMapOfIsSplitMono` / `SSetPair.isColimitMapCokernelCofork`: additive
-  preservation of the split cokernel cofork via `isBilimitBinaryBiconeOfIsSplitMonoOfCokernel`.
+* `SSetPair.isColimitMapCokernelCofork`: additive preservation of the split cokernel cofork via
+  `CokernelCofork.isColimitMapOfIsSplitMono`.
 * `SSetPair.chainComplexObjMapIso`, `chainComplexFunctorObjCompMapIso`, `homologyFunctorObjCompIso`:
   `F (C(P; R)) ≅ C(P; F R)` and `F (Hₙ(P; R)) ≅ Hₙ(P; F R)` for exact coproduct-preserving `F`.
 Feeds relative singular/local homology coefficient change and scalar extension of orientations.
@@ -27,16 +26,6 @@ public noncomputable section
 open CategoryTheory Limits
 open scoped Simplicial
 universe w v v' u u'
-namespace CategoryTheory.Limits.CokernelCofork
-/-- An additive functor preserves any colimit cokernel cofork of a split monomorphism. -/
-def isColimitMapOfIsSplitMono {C : Type u} {D : Type u'} [Category.{v} C] [Category.{v'} D]
-    [Preadditive C] [Preadditive D] (F : C ⥤ D) [F.Additive] {X Y : C} {f : X ⟶ Y}
-    [IsSplitMono f] {c : CokernelCofork f} (hc : IsColimit c) : IsColimit (c.map F) := by
-  haveI : PreservesBinaryBiproducts F := preservesBinaryBiproducts_of_preservesBinaryProducts F
-  have hb := isBinaryBilimitOfPreserves F (isBilimitBinaryBiconeOfIsSplitMonoOfCokernel hc)
-  exact IsColimit.ofIsoColimit (BinaryBicone.isColimitInlCokernelCofork hb.isColimit)
-    (Cofork.ext (Iso.refl _) ((Category.comp_id _).trans (CokernelCofork.map_π c F).symm))
-end CategoryTheory.Limits.CokernelCofork
 namespace SSetPair
 open CategoryTheory.Functor (whiskerRight isoWhiskerLeft isoWhiskerRight)
 open HomologicalComplex (homologyMap)
@@ -150,12 +139,12 @@ lemma homologyFunctorObjCompIso_inv_app (n : ℕ) (P : SSetPair.{w}) :
 @[reassoc] lemma map_homologyπ_comp_homologyFunctorObjCompIso_hom_app (n : ℕ) (P : SSetPair.{w}) :
     F.map (P.homologyπ R n) ≫ (homologyFunctorObjCompIso F R n).hom.app P =
       (SSet.homologyObjIso F R P.right n).hom ≫ P.homologyπ (F.obj R) n := by
-  have h := (F.mapHomologicalComplexCompHomologyFunctorIso _ n).inv.naturality (P.chainComplexπ R)
-  have hcomm := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
-    (congrArg (homologyMap · n) (map_chainComplexπ_comp_chainComplexObjMapIso_hom F R P)).trans
-      (HomologicalComplex.homologyMap_comp _ _ n)
-  rw [homologyFunctorObjCompIso_hom_app, SSet.homologyObjIso_hom,
+  have hnat := (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).inv.naturality
+    (P.chainComplexπ R)
+  simp only [Functor.comp_map, HomologicalComplex.homologyFunctor_map] at hnat
+  have hh := congrArg (homologyMap · n) (map_chainComplexπ_comp_chainComplexObjMapIso_hom F R P)
+  simp only [HomologicalComplex.homologyMap_comp] at hh
+  simp only [homologyFunctorObjCompIso_hom_app, SSet.homologyObjIso_hom,
     SSet.homologyFunctorObjCompIso_hom_app]
-  exact ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) h)).trans
-    (((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) hcomm)).trans (Category.assoc _ _ _).symm)
+  exact ((reassoc_of% hnat) _).trans <| (congrArg (_ ≫ ·) hh).trans (Category.assoc _ _ _).symm
 end SSetPair

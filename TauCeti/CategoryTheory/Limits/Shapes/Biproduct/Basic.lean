@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.CommSq
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.CombinedProducts
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
@@ -22,6 +23,8 @@ through the maps obtained by changing one summand at a time, and the squares obt
 an identity summand are pushouts or pullbacks. The biproduct of two cokernels is the cokernel of
 the biproduct of the two morphisms (`CategoryTheory.Limits.CokernelCofork.isColimitBiprod`); this
 is the biproduct analogue of Mathlib's `CategoryTheory.Limits.CokernelCofork.isColimitTensor`.
+An additive functor preserves any colimit cokernel cofork of a split monomorphism
+(`CategoryTheory.Limits.CokernelCofork.isColimitMapOfIsSplitMono`).
 For functors preserving zero morphisms, biproduct preservation is stable under composition
 and follows from preservation of products and coproducts of the same shape. The short complex
 of a mapped commutative square agrees with the mapped short complex through the canonical
@@ -775,6 +778,15 @@ noncomputable def isColimitBiprod (hc₁ : IsColimit c₁) (hc₂ : IsColimit c�
       ext
       · exact Cofork.IsColimit.hom_ext hc₁ (by simp)
       · exact Cofork.IsColimit.hom_ext hc₂ (by simp))
+
+/-- An additive functor preserves any colimit cokernel cofork of a split monomorphism. -/
+noncomputable def isColimitMapOfIsSplitMono {C : Type*} {D : Type*} [Category* C] [Category* D]
+    [Preadditive C] [Preadditive D] (F : C ⥤ D) [F.Additive] {X Y : C} {f : X ⟶ Y}
+    [IsSplitMono f] {c : CokernelCofork f} (hc : IsColimit c) : IsColimit (c.map F) := by
+  haveI : PreservesBinaryBiproducts F := preservesBinaryBiproducts_of_preservesBinaryProducts F
+  have hb := isBinaryBilimitOfPreserves F (isBilimitBinaryBiconeOfIsSplitMonoOfCokernel hc)
+  exact IsColimit.ofIsoColimit (BinaryBicone.isColimitInlCokernelCofork hb.isColimit)
+    (Cofork.ext (Iso.refl _) ((Category.comp_id _).trans (CokernelCofork.map_π c F).symm))
 
 end CategoryTheory.Limits.CokernelCofork
 

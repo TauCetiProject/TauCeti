@@ -26,8 +26,8 @@ Poincaré duality over arbitrary rings); for `N = R`, `d = finrank ℝ E`, this 
 * `[IsDedekindFiniteMonoid R]`: local `N`-orientations in a fibre `≃ₗ[R] R` match `Rˣ`
   (`equivUnits`); `Rˣ` acts pretransitively (transitive when `R`-orientable) on `R`-orientations of
   a connected `n`-manifold (`exists_units_smul_eq`).
-* `[CommRing R]`, `[FaithfulSMul R N]`: `Rˣ` acts freely on nonempty `n`-manifolds
-  (`units_smul_injective`).
+* `[CommRing R]`, `[FaithfulSMul R N]`: `Rˣ` acts freely on `N`-orientations of nonempty
+  `n`-manifolds (`units_smul_injective`).
 * Dedekind-finite `K`, `[Subsingleton Kˣ]`: unique `K`-orientation (`uniqueOfSubsingletonUnits`).
 * `[CommRing R]`, `(2 : R) = 0`: exact scalar extension (`extendScalars`, via `extendScalarsObj`)
   along `ZMod.castULiftHom` from `ULift (ZMod 2)` yields `ofTwoEqZero`.
@@ -146,33 +146,31 @@ variable {M : Type w} {E : Type v} [TopologicalSpace M] [T1Space M]
 /-- Every point of a `T₁` `n`-manifold has a local `R`-orientation in degree `n`. -/
 theorem nonempty_of_finrank_eq {R : Type w} [Ring R] (x : M) {n : ℕ} (hn : finrank ℝ E = n) :
     Nonempty (ModuleLocalOrientation (of R R) M x n) :=
-  let E' := ULift.{w} (Fin (finrank ℝ E)) → ℝ
-  let _ : ChartedSpace E' M := ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [E'])
-  ⟨moduleLocalOrientationOfChart (chartAt E' x) (mem_chart_source E' x) (by simpa [E'] using hn)⟩
-/-- At a point of an `n`-manifold (`[CommRing R]`, faithful `N`), `Rˣ` acts freely. -/
+  let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M := ChartedSpace.uliftFin M hn
+  ⟨moduleLocalOrientationOfChart (chartAt (ULift.{w} (Fin n) → ℝ) x) (mem_chart_source _ x)
+    (by simp)⟩
+/-- For `[CommRing R]` and faithful `N`, `Rˣ` acts freely on local `N`-orientations at `x`. -/
 theorem units_smul_injective {R : Type u} [CommRing R] {N : ModuleCat.{w} R} [FaithfulSMul R N]
     {x : M} {n : ℕ} (hn : finrank ℝ E = n) (z : ModuleLocalOrientation N M x n) :
     Function.Injective fun u : Rˣ ↦ u • z := by
-  let E' := ULift.{w} (Fin (finrank ℝ E)) → ℝ
-  let _ : ChartedSpace E' M := ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [E'])
-  have hE' : finrank ℝ E' = n := by simpa [E'] using hn
-  subst hE'; intro u v huv
+  let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M := ChartedSpace.uliftFin M hn
+  have hE' : finrank ℝ (ULift.{w} (Fin n) → ℝ) = n := by simp
+  intro u v huv
   have hfix : ((u⁻¹ * v : Rˣ) : R) • z.val = z.val := (mul_smul _ _ _).trans
     ((congrArg ((u⁻¹ : Rˣ) • ·) (congrArg Subtype.val huv).symm).trans (inv_smul_smul u z.val))
-  exact inv_mul_eq_one.1 <| Units.ext <| (singularHomologyComplSingletonFinrankIso N (chartAt E' x)
-    (mem_chart_source E' x)).toLinearEquiv.eq_one_of_smul_eq_self_of_span_singleton_eq_top
-      z.property hfix
+  exact inv_mul_eq_one.1 <| Units.ext <| (hE' ▸ singularHomologyComplSingletonFinrankIso N
+    (chartAt (ULift.{w} (Fin n) → ℝ) x)
+    (mem_chart_source _ x) : localHomology N ({x} : Set M) n ≅ N).toLinearEquiv
+      |>.eq_one_of_smul_eq_self_of_span_singleton_eq_top z.property hfix
 /-- Unique local `K`-orientation at `x` for Dedekind-finite `K` with `[Subsingleton Kˣ]`. -/
 @[instance_reducible] def uniqueOfSubsingletonUnits {K : Type w} [Ring K] [IsDedekindFiniteMonoid K]
     [Subsingleton Kˣ] (x : M) {n : ℕ} (hn : finrank ℝ E = n) :
     Unique (ModuleLocalOrientation (of K K) M x n) :=
-  let E' := ULift.{w} (Fin (finrank ℝ E)) → ℝ
-  letI : ChartedSpace E' M := ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [E'])
-  have hE' : finrank ℝ E' = n := by simpa [E'] using hn
-  ⟨⟨moduleLocalOrientationOfChart (chartAt E' x) (mem_chart_source E' x) hE'⟩, fun z ↦ by
-    subst hE'
-    exact (equivUnits (singularHomologyComplSingletonFinrankIso (of K K) (chartAt E' x)
-      (mem_chart_source E' x)).toLinearEquiv).injective (Subsingleton.elim _ _)⟩
+  letI : ChartedSpace (ULift.{w} (Fin n) → ℝ) M := ChartedSpace.uliftFin M hn
+  have hE' : finrank ℝ (ULift.{w} (Fin n) → ℝ) = n := by simp
+  ⟨⟨moduleLocalOrientationOfChart (chartAt _ x) (mem_chart_source _ x) hE'⟩, fun z ↦
+    (equivUnits (localHomologySingletonLinearEquiv (of K K) hE'
+      (LinearEquiv.refl K K) x)).injective (Subsingleton.elim _ _)⟩
 end ModuleLocalOrientation
 end BaseRing
 section Transport
@@ -393,7 +391,8 @@ theorem eq_of_apply_eq [ConnectedSpace M] {o o' : ModuleOrientation N M E d} {x 
     (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y) :
       FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y)) h
   rwa [moduleLocalOrientationTransport_apply, moduleLocalOrientationTransport_apply] at hf
-/-- Over a Dedekind-finite ring `R`, `Rˣ` acts pretransitively on connected `n`-manifolds. -/
+/-- Over a Dedekind-finite ring `R`, `Rˣ` acts pretransitively on `R`-orientations of a connected
+`n`-manifold. -/
 theorem exists_units_smul_eq {R : Type w} [Ring R] [IsDedekindFiniteMonoid R] [ConnectedSpace M]
     (hd : finrank ℝ E = d) (o o' : ModuleOrientation (of R R) M E d) : ∃ u : Rˣ, u • o = o' := by
   subst hd; obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := M)
@@ -401,7 +400,8 @@ theorem exists_units_smul_eq {R : Type w} [Ring R] [IsDedekindFiniteMonoid R] [C
     (mem_chart_source E x)).toLinearEquiv.exists_units_smul_eq_of_span_singleton_eq_top
       (o x).property (o' x).property
   exact ⟨u, eq_of_apply_eq (x := x) (Subtype.ext hu)⟩
-/-- On a nonempty `n`-manifold (`[CommRing R]`, faithful `N`), `Rˣ` acts freely. -/
+/-- For `[CommRing R]` and faithful `N`, `Rˣ` acts freely on `N`-orientations of a nonempty
+`n`-manifold. -/
 theorem units_smul_injective {R : Type u} [CommRing R] {N : ModuleCat.{w} R} [FaithfulSMul R N]
     [Nonempty M] (hd : finrank ℝ E = d) (o : ModuleOrientation N M E d) :
     Function.Injective fun u : Rˣ ↦ u • o :=
@@ -431,7 +431,8 @@ theorem ofLocalOrientationTransport_apply (x : M) (z : ModuleLocalOrientation N 
     (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
       moduleLocalOrientationTransport N M E d f z = moduleLocalOrientationTransport N M E d g z) :
     ofLocalOrientationTransport (E := E) x z h x = z := by
-  rw [ofLocalOrientationTransport_apply x z h x (𝟙 _), moduleLocalOrientationTransport_id]; rfl
+  rw [ofLocalOrientationTransport_apply x z h x (𝟙 _), moduleLocalOrientationTransport_id,
+    Equiv.refl_apply]
 end Transport
 section SimplyConnected
 variable [SimplyConnectedSpace M]
@@ -496,13 +497,15 @@ lemma comap_congr (o : ModuleOrientation N M' E d) {j' : M → M'} (hj : IsOpenE
 @[simp] lemma comap_id (o : ModuleOrientation N M E d) : o.comap IsOpenEmbedding.id = o :=
   ext fun x ↦ (IsOpenEmbedding.id.moduleLocalOrientationEquiv N x d).injective <| by
     rw [moduleLocalOrientationEquiv_comap_apply, IsOpenEmbedding.moduleLocalOrientationEquiv_id,
-      Equiv.refl_apply]; rfl
+      Equiv.refl_apply]
+    simp only [id_eq]
 lemma comap_comap (o : ModuleOrientation N M'' E d) {j' : M' → M''} (hj' : IsOpenEmbedding j')
     (hj : IsOpenEmbedding j) : (o.comap hj').comap hj = o.comap (hj'.comp hj) :=
   ext fun x ↦ ((hj'.comp hj).moduleLocalOrientationEquiv N x d).injective <| by
     rw [moduleLocalOrientationEquiv_comap_apply, ← IsOpenEmbedding.moduleLocalOrientationEquiv_trans
       hj hj', Equiv.trans_apply, moduleLocalOrientationEquiv_comap_apply,
-      moduleLocalOrientationEquiv_comap_apply]; rfl
+      moduleLocalOrientationEquiv_comap_apply]
+    simp only [Function.comp_apply]
 @[simp] lemma comap_symm_comap (o : ModuleOrientation N M' E d) (e : M ≃ₜ M') :
     (o.comap e.isOpenEmbedding).comap e.symm.isOpenEmbedding = o := by
   rw [comap_comap, o.comap_congr _ IsOpenEmbedding.id (funext e.apply_symm_apply), comap_id]
@@ -609,7 +612,9 @@ def ofTwoEqZero : ModuleOrientation (of R R) M E n := letI : Fact (Nat.Prime 2) 
 theorem ofTwoEqZero_def [PreservesFiniteLimits (ModuleCat.extendScalars.{w}
     (ZMod.castULiftHom.{w} (n := 2) R (by simpa using h2)))] : ofTwoEqZero (M := M) (E := E) hn h2 =
       (ofSubsingletonUnits (M := M) (E := E) (K := ULift.{w} (ZMod 2)) hn).extendScalars
-        (ZMod.castULiftHom.{w} (n := 2) R (by simpa using h2)) := by unfold ofTwoEqZero; rfl
+        (ZMod.castULiftHom.{w} (n := 2) R (by simpa using h2)) := by
+  -- `PreservesFiniteLimits` is a `Prop`-valued class, so unfolding `ofTwoEqZero` yields defeq.
+  unfold ofTwoEqZero; rfl
 theorem ofTwoEqZero_eq_extendScalars (f : ULift.{w} (ZMod 2) →+* R)
     [PreservesFiniteLimits (ModuleCat.extendScalars.{w} f)] : ofTwoEqZero (M := M) (E := E) hn h2 =
       (ofSubsingletonUnits (M := M) (E := E) (K := ULift.{w} (ZMod 2)) hn).extendScalars f := by
