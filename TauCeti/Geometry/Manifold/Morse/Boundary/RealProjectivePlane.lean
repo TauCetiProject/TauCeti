@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedCochainComplex
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.Signs
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.LinearAlgebra.Finsupp.LSum
 
 /-!
 # The Morse complex of the real projective plane

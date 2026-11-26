@@ -24,8 +24,6 @@ coefficients are integers cast into `R`.
 
 * `Finsupp.map_single_int`: an additive map on `S →₀ ℤ` sends `single q k` to `k` times its value
   at `single q 1`.
-* `Finsupp.lhom_ext_of_forall_eq`: on the free module on a type with a single point `q`, two
-  linear maps agreeing at `single q 1` are equal.
 * `Finsupp.intLinearMapEquiv`: additive maps on `S →₀ ℤ` are `R`-linear maps on `S →₀ R`.
 * `Finsupp.intLinearMapEquiv_apply_single`, `Finsupp.intLinearMapEquiv_apply_mapRange`: its values
   on the points of `S`, and on the chains with integer coefficients.
@@ -50,12 +48,6 @@ theorem map_single_int {M F : Type*} [AddCommGroup M] [FunLike F (S →₀ ℤ) 
     [AddMonoidHomClass F (S →₀ ℤ) M] (a : F) (q : S) (k : ℤ) :
     a (single q k) = k • a (single q 1) := by
   rw [← map_zsmul, smul_single_one]
-
-/-- On the free module on a type whose only point is `q`, two linear maps that agree at
-`single q 1` are equal. -/
-theorem lhom_ext_of_forall_eq {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {q : S}
-    (hq : ∀ r, r = q) {a b : (S →₀ R) →ₗ[R] M} (h : a (single q 1) = b (single q 1)) : a = b :=
-  lhom_ext' fun r ↦ LinearMap.ext_ring (by rw [hq r]; exact h)
 
 variable (S) (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
 
