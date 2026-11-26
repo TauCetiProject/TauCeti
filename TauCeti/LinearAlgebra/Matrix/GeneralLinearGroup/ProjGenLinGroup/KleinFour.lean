@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.SpecificGroups.KleinFour
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InvariantLine
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.ProjectiveImage
+import TauCeti.GroupTheory.SpecificGroups.KleinFour
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroTrace
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
@@ -41,7 +42,8 @@ upper unitriangular matrices over `𝔽₄` have Klein four projective image and
 * `Matrix.ProjGenLinGroup.mul_eq_neg_mul_of_mk_sq_eq_one`: lifts of the nontrivial elements of a
   Klein four subgroup of `PGL(2, K)` anticommute.
 * `MonoidHom.not_hasInvariantLine_of_mk_sq_eq_one`,
-  `MonoidHom.not_hasInvariantLine_of_isKleinFour`: a representation whose projective image
+  `MonoidHom.not_hasInvariantLine_of_isKleinFour`,
+  `MonoidHom.not_hasInvariantLine_of_mulEquiv`: a representation whose projective image
   contains, or is, a Klein four group has no invariant line when `2 ≠ 0`.
 
 ## References
@@ -170,5 +172,13 @@ theorem not_hasInvariantLine_of_isKleinFour (h2 : (2 : K) ≠ 0) [IsKleinFour ρ
     exact hne (by simp [y])
   · rw [hgh]
     exact hne (by simp only [x, y, map_mul, MulEquiv.apply_symm_apply]; decide)
+
+/-- A representation whose projective image is isomorphic to `(ℤ/2)²` has no invariant line when
+`2 ≠ 0`. This is the form of `not_hasInvariantLine_of_isKleinFour` for a projective image given
+with an explicit isomorphism, as in the exceptional branch of Caraiani–Newton, Lemma 5.6.5. -/
+theorem not_hasInvariantLine_of_mulEquiv (h2 : (2 : K) ≠ 0)
+    (e : ρ.projectiveImage ≃* Multiplicative (ZMod 2 × ZMod 2)) : ¬ ρ.HasInvariantLine :=
+  have := e.symm.isKleinFour
+  not_hasInvariantLine_of_isKleinFour h2
 
 end MonoidHom
