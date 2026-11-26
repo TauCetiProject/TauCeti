@@ -48,8 +48,8 @@ Measure preservation is not part of the definition of mixing; the theorems that 
   along every finer filter, and mixing along the image of a filter under a reparameterization of
   the action is mixing of the reparameterized action.
 
-Every definition and theorem has an additive version (`TauCeti.AddMixingAlong`,
-`TauCeti.WeakMixingVAdd`), for instance for flows.
+Every definition and theorem except `TauCeti.mixingAlong_iterateMulAct_iff` has an additive
+version (`TauCeti.AddMixingAlong`, `TauCeti.WeakMixingVAdd`), for instance for flows.
 
 ## References
 
@@ -154,7 +154,8 @@ theorem MixingAlong.ergodicSMul [l.NeBot] [IsProbabilityMeasure μ] [SMulInvaria
     rw [eventuallyEmptyOrUniv_iff', ae_eq_empty, ae_eq_univ, prob_compl_eq_zero_iff hs]
     rcases h.measureReal_eq_zero_or_one hs hinv with h1 | h1
     · exact .inl ((measureReal_eq_zero_iff).1 h1)
-    · exact .inr ((ENNReal.toReal_eq_one_iff _).1 h1)
+    · rw [measureReal_def] at h1
+      exact .inr ((ENNReal.toReal_eq_one_iff _).1 h1)
 
 /-- **Weak mixing implies ergodicity.** A weakly mixing measurable action on a probability space is
 ergodic. -/
@@ -285,8 +286,9 @@ variable [SMul M X] [SMul M Y] [MeasurableConstSMul M X] [MeasurableConstSMul M 
 
 /-- **Mixing of products.** If two actions preserving probability measures are mixing along the
 same filter, so is the diagonal action on the product. -/
-@[to_additive AddMixingAlong.prod /-- **Mixing of products.** If two additive actions are mixing
-along the same filter, so is the diagonal action on the product. -/]
+@[to_additive AddMixingAlong.prod /-- **Mixing of products.** If two additive actions preserving
+probability measures are mixing along the same filter, so is the diagonal action on the
+product. -/]
 theorem MixingAlong.prod (hX : MixingAlong M X μ l) (hY : MixingAlong M Y ν l) :
     MixingAlong M (X × Y) (μ.prod ν) l := by
   refine .of_isPiSystem generateFrom_prod.symm isPiSystem_prod ?_
@@ -328,14 +330,6 @@ variable {M X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] [SMul M X] [SMu
   [MeasurableConstSMul M X] [MeasurableConstSMul M Y] {μ : Measure X} {ν : Measure Y}
   {e : X ≃ᵐ Y}
 
-omit [MeasurableConstSMul M X] [MeasurableConstSMul M Y] in
-/-- The inverse of an equivariant measure-preserving measurable equivalence is a factor map. -/
-@[to_additive]
-private theorem isFactorMapSMul_symm (he : MeasurePreserving e μ ν)
-    (h : ∀ (m : M) (x : X), e (m • x) = m • e x) : IsFactorMapSMul M e.symm ν μ :=
-  .of_map_smul he.symm fun m y ↦ by
-    rw [← e.symm_apply_apply (m • e.symm y), h, e.apply_symm_apply]
-
 /-- **Mixing is invariant under isomorphism.** Along an equivariant measure-preserving measurable
 equivalence, the target action is mixing along `l` exactly when the source action is. -/
 @[to_additive addMixingAlong_iff /-- **Mixing is invariant under isomorphism.** Along an equivariant
@@ -343,7 +337,8 @@ measure-preserving measurable equivalence, the target additive action is mixing 
 when the source action is. -/]
 theorem mixingAlong_iff (he : MeasurePreserving e μ ν) (h : ∀ (m : M) (x : X), e (m • x) = m • e x)
     {l : Filter M} : MixingAlong M Y ν l ↔ MixingAlong M X μ l :=
-  ⟨(he.isFactorMapSMul_symm h).mixingAlong, (IsFactorMapSMul.of_map_smul he h).mixingAlong⟩
+  ⟨(IsFactorMapSMul.of_measurableEquiv_symm he h).mixingAlong,
+    (IsFactorMapSMul.of_map_smul he h).mixingAlong⟩
 
 /-- **Weak mixing is invariant under isomorphism.** Along an equivariant measure-preserving
 measurable equivalence of s-finite measure spaces, the target action is weakly mixing exactly when
@@ -353,6 +348,7 @@ measure-preserving measurable equivalence of s-finite measure spaces, the target
 weakly mixing exactly when the source action is. -/]
 theorem weakMixingSMul_iff [SFinite μ] [SFinite ν] (he : MeasurePreserving e μ ν)
     (h : ∀ (m : M) (x : X), e (m • x) = m • e x) : WeakMixingSMul M Y ν ↔ WeakMixingSMul M X μ :=
-  ⟨(he.isFactorMapSMul_symm h).weakMixingSMul, (IsFactorMapSMul.of_map_smul he h).weakMixingSMul⟩
+  ⟨(IsFactorMapSMul.of_measurableEquiv_symm he h).weakMixingSMul,
+    (IsFactorMapSMul.of_map_smul he h).weakMixingSMul⟩
 
 end MeasureTheory.MeasurePreserving
