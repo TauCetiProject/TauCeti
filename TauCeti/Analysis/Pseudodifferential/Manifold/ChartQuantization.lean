@@ -101,6 +101,7 @@ def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
 omit [T2Space M] in
 /-- The Schwartz function `e.cutoffPushforwardSchwartz he ψ u` takes the value `ψ y • u (e⁻¹ y)` at
 `y`. -/
+@[simp]
 theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
     e.cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
@@ -144,7 +145,7 @@ def chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (a : Cl
         (a.toSymbol.continuous_coefficient_slice x).aestronglyMeasurable hC]
     congr 1
     ext y
-    simp [cutoffPushforwardSchwartz_apply, smul_add]
+    simp [smul_add]
   map_smul' c u := by
     rw [RingHom.id_apply, ← map_smul]
     congr 1
@@ -153,7 +154,7 @@ def chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (a : Cl
       ← smul_eq_mul, ← quantizeSchwartzValue_smul_right]
     congr 1
     ext y
-    simp [cutoffPushforwardSchwartz_apply, ContMDiffMap.complex_smul_apply]
+    simp [ContMDiffMap.complex_smul_apply]
     ring
 
 /-- On the chart source, the chart quantization of `a` is `φ · Op(a) v` read through the chart,

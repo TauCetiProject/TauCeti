@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
+import TauCeti.Geometry.Manifold.Measure.ChartIntegral
 
 /-!
 # Operators of order `-∞` on a compact manifold have smooth kernels
@@ -51,8 +52,6 @@ compact base.
 
 ## Main results
 
-* `TauCeti.integral_mul_eq_setIntegral_target`: integrating a kernel read in a chart against a
-  measure with a density in that chart.
 * `TauCeti.exists_contMDiff_forall_mul_apply_mul_eq_integral`: an operator of order `-∞`,
   localized by two cutoffs in one chart, is an integral operator with a smooth compactly supported
   kernel.
@@ -127,33 +126,6 @@ private theorem mul_apply_mul_eq_integral_quantizationKernel {φ ψ φ₁ ψ₁ 
     simpa using (quantizationKernel r.coefficient (e x) w).map_smul (U w) 1, hU, Complex.real_smul]
   push_cast
   ring
-
-omit [ChartedSpace (CoordinateSpace n) M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
-/-- **A kernel read in a chart.** Let `μ` have the density `ρ` in the chart `e`, and let `K` be a
-continuous function on `M × M` equal to `F (e x, e y)` on the product of the chart sources and to
-`0` elsewhere, where `F (z, w)` vanishes for `w` outside a compact subset of the chart target. Then
-`∫ K(x, y) u(y) dμ(y) = ∫_{e.target} ρ(w) F(e x, w) u(e⁻¹ w) dw` at points `x` of the chart
-source. -/
-theorem integral_mul_eq_setIntegral_target {ρ : CoordinateSpace n → ℝ}
-    (hint : ∀ f : M → ℂ, Continuous f → HasCompactSupport f → tsupport f ⊆ e.source →
-      ∫ x, f x ∂μ = ∫ y in e.target, (ρ y : ℂ) * f (e.symm y))
-    {K : M × M → ℂ} (hK : Continuous K) {F : CoordinateSpace n × CoordinateSpace n → ℂ}
-    (hKF : ∀ p ∈ e.source ×ˢ e.source, K p = F (e p.1, e p.2))
-    (hK0 : ∀ p ∉ e.source ×ˢ e.source, K p = 0) {B : Set (CoordinateSpace n)} (hB : IsCompact B)
-    (hBt : B ⊆ e.target) (hFB : ∀ z, ∀ w ∉ B, F (z, w) = 0) {u : M → ℂ} (hu : Continuous u)
-    {x : M} (hx : x ∈ e.source) :
-    ∫ y, K (x, y) * u y ∂μ = ∫ w in e.target, (ρ w : ℂ) * F (e x, w) * u (e.symm w) := by
-  -- The integrand vanishes off the compact set `e⁻¹(B)` inside the chart source.
-  have hB' : IsCompact (e.symm '' B) := hB.image_of_continuousOn (e.continuousOn_symm.mono hBt)
-  have hfB : ∀ y ∉ e.symm '' B, K (x, y) * u y = 0 := fun y hy ↦ by
-    by_cases hys : y ∈ e.source
-    · rw [hKF (x, y) ⟨hx, hys⟩, hFB _ _ fun h ↦ hy ⟨_, h, e.left_inv hys⟩, zero_mul]
-    · rw [hK0 (x, y) fun h ↦ hys h.2, zero_mul]
-  rw [hint (fun y ↦ K (x, y) * u y) ((hK.comp (continuous_const.prodMk continuous_id)).mul hu)
-    (HasCompactSupport.intro hB' hfB) ((closure_minimal (Function.support_subset_iff'.2 hfB)
-      hB'.isClosed).trans (image_subset_iff.2 fun w hw ↦ e.map_target (hBt hw)))]
-  refine setIntegral_congr_fun e.open_target.measurableSet fun w hw ↦ ?_
-  simp only [hKF (x, e.symm w) ⟨hx, e.map_target hw⟩, e.right_inv hw, mul_assoc]
 
 /-- **An operator of order `-∞` has a smooth kernel in a chart.** Let `μ` have a density `ρ` in a
 chart `e` of the maximal atlas, smooth and nonzero on the chart target:

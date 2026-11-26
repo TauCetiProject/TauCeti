@@ -739,10 +739,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- **Splitting operators into chart pieces.** On a nonempty compact manifold modelled on a
 nontrivial finite-dimensional space there are finitely many charts `e'ᵢⱼ` of the maximal atlas, with
 cutoffs `φᵢⱼ` and `ψᵢⱼ` in their targets, such that every complex-linear operator `P` on the smooth
-functions is `P = ∑ᵢⱼ φᵢⱼ P ψᵢⱼ`, the cutoffs being read on `M` through the charts. The `φᵢⱼ` come
-from a partition of unity `ρᵢ` subordinate to charts, and for each `i` the `ψᵢⱼ` from a partition
-of unity `σᵢⱼ` with `ρᵢ` and `σᵢⱼ` both supported in the source of `e'ᵢⱼ`
-(`IsCompact.exists_smoothPartition_mem_maximalAtlas_eqOn_symm`). -/
+functions is `P = ∑ᵢⱼ φᵢⱼ P ψᵢⱼ`, the cutoffs being read on `M` through the charts. -/
 theorem exists_forall_apply_eq_sum_complexCutoffPullback_mul_apply_mul [CompactSpace M]
     [Nonempty M] :
     ∃ (ι : Type u) (_ : Fintype ι) (κ : ι → Type u) (_ : ∀ i, Fintype (κ i))
