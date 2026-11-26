@@ -14,6 +14,8 @@ public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Topology.Algebra.Module.AutomaticContinuity
+import TauCeti.Topology.Algebra.Module.Finite
 
 /-!
 # Compact modules over a compact ring
@@ -69,6 +71,8 @@ witness that a compact totally disconnected topological ring is a compact module
   `TauCeti.IsCompactModule.existsUnique_forall_mkQ_eq`, `TauCeti.IsCompactModule.quotient`,
   `TauCeti.IsCompactModule.self`: the same statements for the predicate, its stability under
   quotients by closed submodules, and the self-module witness.
+* `TauCeti.IsCompactModule.of_finite`: a finitely generated Hausdorff topological module over a
+  compact totally disconnected ring is a compact module.
 
 ## References
 
@@ -305,6 +309,21 @@ namespace IsCompactModule
 theorem self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R] :
     IsCompactModule R R :=
   ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
+
+/-- **Finitely generated modules are compact modules.** A finitely generated Hausdorff topological
+module over a compact totally disconnected ring is a compact module. For example, every finitely
+generated Hausdorff topological `ℤ_p`-module is a compact module. -/
+theorem of_finite [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R]
+    [Module.Finite R M] [ContinuousAdd M] [ContinuousSMul R M] [T2Space M] :
+    IsCompactModule R M := by
+  -- The topology of `M` is the module topology, which is nonarchimedean because the topology of
+  -- the ring is, and a nonarchimedean Hausdorff group is totally disconnected.
+  have := isModuleTopology_of_finite_of_compactSpace (R := R) (M := M)
+  have := IsModuleTopology.isTopologicalAddGroup R M
+  have : NonarchimedeanAddGroup M :=
+    (eq_moduleTopology R M).symm ▸ nonarchimedeanAddGroup_moduleTopology (A := R)
+  refine ⟨inferInstance, inferInstance, ⟨?_⟩, inferInstance⟩
+  simpa using (Module.Finite.fg_top (R := R) (M := M)).isCompact
 
 variable (hM : IsCompactModule R M)
 include hM

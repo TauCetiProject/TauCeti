@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
@@ -23,7 +24,8 @@ transformation of the underlying vector.
 
 The rank of a matrix is the rank of the linear map it induces, in both the `ℕ`-valued and the
 `Cardinal`-valued sense; this is what lets a matrix-rank statement be read off an operator-rank
-one.
+one. The kernel of the map of the conjugate transpose is the orthogonal complement of the span of
+the columns.
 
 Normal square matrices induce normal operators on Euclidean space.
 The instance `Matrix.isStarNormal_toEuclideanLin` supplies this normality automatically
@@ -54,17 +56,22 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 * `TauCeti.inner_self_toEuclideanLin_diagonal_apply` — the quadratic form `⟪x, diag(w) x⟫` of
   `diag(w)` is `∑ᵢ |xᵢ|² wᵢ`; for real weights the real part of `⟪diag(w) x, x⟫` is the same sum
   (`Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
-* `Matrix.dotProduct_mulVec_eq_inner_toEuclideanLin` — over the reals, the coordinate quadratic
-  form `xᵀ A x` is `⟪x, A x⟫`;
 * `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
   form of `A` on an orthonormal basis are the diagonal entries of a unitary conjugate `U A Uᴴ`;
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
   rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
   continuous linear map;
+* `Matrix.toEuclideanLin_conjTranspose_mul`, `Matrix.toEuclideanLin_mul_conjTranspose` —
+  adjoint-composition bridges for `toEuclideanLin`;
+* `Matrix.trace_adjoint_comp_toEuclideanLin` — operator trace of
+  `A.toEuclideanLin† ∘ₗ B.toEuclideanLin` equals `(Aᴴ * B).trace`;
+* `Matrix.ker_toEuclideanLin_conjTranspose` — the kernel of the map of `Aᴴ` is the orthogonal
+  complement of the span of the columns of `A`;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
-* `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`: the adjoint and the determinant
-  of the induced continuous linear map are those of the conjugate transpose and of the matrix;
+* `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`, `Matrix.trace_toEuclideanCLM`:
+  the adjoint, the determinant and the trace of the induced continuous linear map are those of
+  the conjugate transpose and of the matrix;
 * `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
   at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
 * `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group isomorphism from the unitary group to
@@ -115,6 +122,13 @@ theorem toEuclideanCLM_symm_eq_toMatrix {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype
   apply Matrix.toEuclideanLin.injective
   rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, StarAlgEquiv.apply_symm_apply,
     Matrix.toEuclideanLin_eq_toLin_orthonormal, Matrix.toLin_toMatrix]
+
+/-- The matrix of a continuous linear map has entries given by its action on coordinate units. -/
+@[simp] theorem toEuclideanCLM_symm_apply_single {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype ι]
+    [DecidableEq ι] (T : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (i j : ι) :
+    (Matrix.toEuclideanCLM (𝕜 := 𝕜)).symm T i j = T (EuclideanSpace.single j 1) i := by
+  rw [toEuclideanCLM_symm_eq_toMatrix, LinearMap.toMatrix_apply]
+  simp
 
 end ContinuousLinearMap
 
@@ -167,12 +181,6 @@ theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : Euclid
   simp only [TauCeti.inner_self_toEuclideanLin_diagonal_apply, ← RCLike.ofReal_pow,
     ← RCLike.ofReal_mul, ← RCLike.ofReal_sum, RCLike.ofReal_re]
 
-/-- Over the reals, the coordinate quadratic form `xᵀ A x` is the inner product `⟪x, A x⟫` on
-Euclidean space. -/
-theorem dotProduct_mulVec_eq_inner_toEuclideanLin (A : Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) :
-    WithLp.ofLp x ⬝ᵥ (A *ᵥ WithLp.ofLp x) = ⟪x, toEuclideanLin A x⟫_ℝ := by
-  simp [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm]
-
 /-- An orthonormal basis `e` of `EuclideanSpace 𝕜 ι` gives a unitary matrix `U`, whose rows are
 the conjugates of the vectors `e k`, such that the diagonal entries of `U A Uᴴ` are the values
 `⟪e k, A (e k)⟫` of the quadratic form of `A` on the basis vectors. -/
@@ -203,6 +211,20 @@ theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
   rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq,
     Matrix.finrank_range_mulVecLin]
 
+omit [Fintype ι] [DecidableEq ι] in
+/-- The kernel of the map of the conjugate transpose of a matrix is the orthogonal complement of
+the span of the columns of the matrix. -/
+theorem ker_toEuclideanLin_conjTranspose (A : Matrix κ ι 𝕜) :
+    LinearMap.ker (toEuclideanLin Aᴴ) =
+      (Submodule.span 𝕜 (Set.range fun j ↦ WithLp.toLp 2 fun i ↦ A i j))ᗮ := by
+  ext x
+  -- A vector is orthogonal to a span exactly when it is orthogonal to each spanning column.
+  rw [LinearMap.mem_ker, ← Submodule.span_singleton_le_iff_mem, ← Submodule.isOrtho_iff_le,
+    Submodule.isOrtho_comm, Submodule.isOrtho_span]
+  simp only [Set.forall_mem_range, Set.mem_singleton_iff, forall_eq]
+  simp [WithLp.ext_iff, funext_iff, EuclideanSpace.inner_eq_star_dotProduct, mulVec, dotProduct,
+    mul_comm]
+
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
 theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
@@ -211,6 +233,37 @@ theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
       A.rank := by
   rw [LinearMap.rank, coe_toEuclideanCLM_eq_toEuclideanLin, ← Module.finrank_eq_rank,
     rank_eq_finrank_range_toEuclideanLin]
+
+section MultiplicationAndTrace
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- Multiplying on the left by `Aᴴ` corresponds under `Matrix.toEuclideanLin` to composing with
+`LinearMap.adjoint A.toEuclideanLin`. -/
+theorem toEuclideanLin_conjTranspose_mul {m n p : Type*} [Fintype m] [Fintype n] [Fintype p]
+    [DecidableEq n] [DecidableEq p] (A : Matrix m n 𝕜) (B : Matrix m p 𝕜) :
+    (Aᴴ * B).toEuclideanLin = LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin := by
+  classical
+  rw [toLpLin_mul_same, toEuclideanLin_conjTranspose_eq_adjoint]
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- Multiplying on the right by `Bᴴ` corresponds under `Matrix.toEuclideanLin` to composing with
+`LinearMap.adjoint B.toEuclideanLin` on the right. -/
+theorem toEuclideanLin_mul_conjTranspose {m n p : Type*} [Fintype n] [Fintype p]
+    [DecidableEq n] [DecidableEq p] (A : Matrix m n 𝕜) (B : Matrix p n 𝕜) :
+    (A * Bᴴ).toEuclideanLin = A.toEuclideanLin ∘ₗ LinearMap.adjoint B.toEuclideanLin := by
+  classical
+  rw [toLpLin_mul_same, toEuclideanLin_conjTranspose_eq_adjoint]
+
+omit [DecidableEq κ] in
+/-- The Hilbert–Schmidt operator trace pairing `tr (A† B)` of `A.toEuclideanLin` and
+`B.toEuclideanLin` equals the matrix trace `(Aᴴ * B).trace`. -/
+theorem trace_adjoint_comp_toEuclideanLin (A B : Matrix κ ι 𝕜) :
+    LinearMap.trace 𝕜 (EuclideanSpace 𝕜 ι)
+        (LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin) =
+      (Aᴴ * B).trace := by
+  rw [← toEuclideanLin_conjTranspose_mul, toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
+
+end MultiplicationAndTrace
 
 /-- The continuous linear map of a matrix acts as its Euclidean linear map. -/
 @[simp]
@@ -222,6 +275,13 @@ theorem toEuclideanCLM_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι
 theorem toEuclideanCLM_apply_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι) (i : ι) :
     toEuclideanCLM (𝕜 := 𝕜) A x i = ∑ j, A i j * x j := by
   simp [mulVec, dotProduct]
+
+/-- A matrix operator sends a coordinate unit vector to the corresponding column. -/
+theorem toEuclideanCLM_apply_single (A : Matrix ι ι 𝕜) (j : ι) :
+    toEuclideanCLM (𝕜 := 𝕜) A (EuclideanSpace.single j 1) =
+      WithLp.toLp 2 (fun i => A i j) := by
+  rw [toEuclideanCLM_apply, toLpLin_apply, PiLp.ofLp_single,
+    Matrix.mulVec_single_one, Matrix.col_apply']
 
 /-- The continuous linear map of a matrix depends continuously on the matrix. -/
 theorem continuous_toEuclideanCLM :
@@ -486,6 +546,12 @@ theorem det_toEuclideanCLM (A : Matrix ι ι 𝕜) : (toEuclideanCLM (𝕜 := �
 theorem det_toEuclideanCLM_diagonal (d : ι → 𝕜) :
     (toEuclideanCLM (𝕜 := 𝕜) (diagonal d)).det = ∏ i, d i := by
   rw [det_toEuclideanCLM, det_diagonal]
+
+/-- The trace of the continuous linear map of a square matrix is the trace of the matrix. -/
+@[simp]
+theorem trace_toEuclideanCLM (A : Matrix ι ι 𝕜) :
+    LinearMap.trace 𝕜 _ (toEuclideanCLM (𝕜 := 𝕜) A).toLinearMap = A.trace := by
+  rw [coe_toEuclideanCLM_eq_toEuclideanLin, toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
 
 section Invertible
 

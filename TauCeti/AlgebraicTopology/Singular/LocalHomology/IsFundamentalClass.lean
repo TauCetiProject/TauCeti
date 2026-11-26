@@ -49,6 +49,7 @@ map this multiple is the degree of the map with coefficients in `K`, the mod `2`
 
 * `TauCeti.isFundamentalClass_smul_iff_of_isUnit`: multiplying by a unit preserves fundamental
   classes.
+* `TauCeti.IsFundamentalClass.of_smul`: a class with a fundamental multiple is fundamental.
 * `TauCeti.isFundamentalClass_iff_isUnit_of_linearEquiv`: for local homology identified with the
   coefficient ring `R` at every point, `μ` is a fundamental class exactly when each of its local
   coordinates is a unit of `R`.
@@ -134,6 +135,17 @@ theorem isFundamentalClass_smul_iff_of_isUnit {r : R} (hr : IsUnit r)
     {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)} :
     IsFundamentalClass (r • μ) ↔ IsFundamentalClass μ := by
   simp only [isFundamentalClass_iff, map_smul, Submodule.span_singleton_smul_eq hr]
+
+/-- A class with a fundamental multiple is fundamental: the image of `r • μ` in each local
+homology module is a multiple of that of `μ`. -/
+theorem IsFundamentalClass.of_smul {r : R}
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)}
+    (h : IsFundamentalClass (r • μ)) : IsFundamentalClass μ :=
+  (isFundamentalClass_iff _).2 fun x ↦ by
+    have hx := (isFundamentalClass_iff _).1 h x
+    rw [map_smul] at hx
+    exact eq_top_iff.2 (hx.symm.le.trans (Submodule.span_le.2 (Set.singleton_subset_iff.2
+      (Submodule.smul_mem _ r (Submodule.mem_span_singleton_self _)))))
 
 /-- A class is fundamental exactly when its negative is. -/
 @[simp]
@@ -440,10 +452,7 @@ theorem isFundamentalClass_iff_forall_isLocalOrientation
       ModuleCat.{w} ℤ)) :
     IsFundamentalClass μ ↔ ∀ x : M, IsLocalOrientation x n
       (singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{w} ℤ)) x n μ) :=
-  forall_congr' fun x ↦ by
-    rw [Submodule.span_singleton_eq_top_iff, isLocalOrientation_iff]
-    exact forall_congr' fun _ ↦ exists_congr fun c ↦
-      iff_of_eq (congrArg (· = _) (int_smul_eq_zsmul _ c _))
+  forall_congr' fun _ ↦ (isLocalOrientation_iff_span_eq_top _ _ _).symm
 
 end Integral
 

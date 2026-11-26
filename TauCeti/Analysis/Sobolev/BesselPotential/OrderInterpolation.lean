@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Density
 public import TauCeti.Analysis.Sobolev.BesselPotential.AnalyticFamily
 public import TauCeti.Analysis.Sobolev.BesselPotential.ExponentInterpolation
+import TauCeti.Algebra.Order.Floor.Abs
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
+import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Data.ENNReal.InterpolatedExponent
 
@@ -61,6 +63,12 @@ equivalent, not equal.
 * `TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodContinuousLinearEquiv`: the
   isomorphism `[H^{s₀,p₀}, H^{s₁,p₁}]_θ ≃L[ℂ] H^{s_θ,p_θ}`, with
   `TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceComplexMethodContinuousLinearEquiv_apply`.
+* `TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`: a continuous linear map of
+  tempered distributions that maps `H^{s₀,p₀}` into `H^{t₀,p₀}` and `H^{s₁,p₁}` into `H^{t₁,p₁}`
+  maps `H^{s_θ,p_θ}` into `H^{t_θ,p_θ}`.
+* `TemperedDistribution.MemSobolev.map_of_forall_intCast`: a continuous linear map of tempered
+  distributions that preserves `H^{k,p}` for every integer `k` with `|k| ≤ ⌈|s|⌉` preserves
+  `H^{s,p}`.
 
 ## References
 
@@ -633,3 +641,77 @@ end Identification
 end CompatibleCouple
 
 end TauCeti
+
+namespace TemperedDistribution
+
+open TauCeti TauCeti.CompatibleCouple
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
+  {s₀ s₁ t₀ t₁ θ : ℝ} {p₀ p₁ p : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ p)]
+
+/-- **Interpolation of Bessel-potential regularity.** Let `1 < p₀, p₁ < ∞`, `0 < θ < 1`,
+`s_θ = (1 - θ) s₀ + θ s₁`, `t_θ = (1 - θ) t₀ + θ t₁` and `1 / p = (1 - θ) / p₀ + θ / p₁`. A
+continuous linear map `A` of tempered distributions that maps `H^{s₀,p₀}` into `H^{t₀,p₀}` and
+`H^{s₁,p₁}` into `H^{t₁,p₁}` also maps `H^{s_θ,p}` into `H^{t_θ,p}`. The orders may shift, as for
+a differential operator of order `m` with `tⱼ = sⱼ - m`. -/
+theorem MemSobolev.map_of_memSobolev_of_memSobolev (hp₀ : 1 < p₀) (hp₀_top : p₀ ≠ ∞)
+    (hp₁ : 1 < p₁) (hp₁_top : p₁ ≠ ∞) (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
+    (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G)) (h₀ : ∀ u, MemSobolev s₀ p₀ u → MemSobolev t₀ p₀ (A u))
+    (h₁ : ∀ u, MemSobolev s₁ p₁ u → MemSobolev t₁ p₁ (A u)) {u : 𝓢'(E, F)}
+    (hu : MemSobolev ((1 - θ) * s₀ + θ * s₁) p u) :
+    MemSobolev ((1 - θ) * t₀ + θ * t₁) p (A u) := by
+  set C := besselPotentialSpace E F s₀ p₀ s₁ p₁
+  set D := besselPotentialSpace E G t₀ p₀ t₁ p₁
+  -- `A` restricts to the two endpoint spaces, compatibly on their intersection.
+  set T₀ := BesselPotentialSpace.mapCLM A fun v : H^{s₀, p₀}(E, F) ↦ h₀ _ v.memSobolev_toDistr
+  set T₁ := BesselPotentialSpace.mapCLM A fun v : H^{s₁, p₁}(E, F) ↦ h₁ _ v.memSobolev_toDistr
+  have hT (x : C.inter) : D.fstToSum (T₀ (C.interFst x)) = D.sndToSum (T₁ (C.interSnd x)) :=
+    D.sumSpaceEmbed_injective (by simpa [T₀, T₁, C, D] using congr_arg A (C.embed₀_interFst x))
+  set eC := besselPotentialSpaceComplexMethodContinuousLinearEquiv E F s₀ s₁ p₀ p₁ hp₀ hp₀_top
+    hp₁ hp₁_top hθ hp
+  set eD := besselPotentialSpaceComplexMethodContinuousLinearEquiv E G t₀ t₁ p₀ p₁ hp₀ hp₀_top
+    hp₁ hp₁_top hθ hp
+  -- The interpolated map sends `u` to `A u`: split `u = x₀ + x₁` with `xⱼ ∈ H^{sⱼ,pⱼ}`.
+  have h := (eD (ComplexMethodSpace.map θ T₀ T₁ hT (eC.symm hu.toBesselPotentialSpace)))
+    |>.memSobolev_toDistr
+  have hu' := sumSpaceEmbed_toSum_besselPotentialSpaceComplexMethodContinuousLinearEquiv_symm_apply
+    hp₀ hp₀_top hp₁ hp₁_top hθ hp hu.toBesselPotentialSpace
+  rw [toDistr_besselPotentialSpaceComplexMethodContinuousLinearEquiv_apply,
+    ComplexMethodSpace.toSum_map] at h
+  rw [MemSobolev.toBesselPotentialSpace_toDistr] at hu'
+  obtain ⟨x₀, x₁, hx⟩ := C.exists_fstToSum_add_sndToSum_eq
+    (ComplexMethodSpace.toSum (eC.symm hu.toBesselPotentialSpace))
+  rw [← hx, map_add, C.sumLift_fstToSum (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) hT,
+    C.sumLift_sndToSum (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) hT] at h
+  rw [← hx] at hu'
+  simpa [← hu', T₀, T₁, C, D] using h
+
+/-- **Real orders from integer orders.** Let `1 < p < ∞`. A continuous linear map `A` of tempered
+distributions that preserves `H^{k,p}` for every integer `k` with `|k| ≤ ⌈|s|⌉` also preserves
+`H^{s,p}`. For non-integer `s`, interpolate between the integer orders `⌊s⌋` and `⌊s⌋ + 1`. -/
+theorem MemSobolev.map_of_forall_intCast (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ}
+    (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G))
+    (hA : ∀ k : ℤ, k.natAbs ≤ ⌈|s|⌉₊ → ∀ u, MemSobolev k p u → MemSobolev k p (A u))
+    {u : 𝓢'(E, F)} (hu : MemSobolev s p u) : MemSobolev s p (A u) := by
+  have h₀ := Int.natAbs_floor_le_natCeil_abs s
+  rcases eq_or_ne (Int.fract s) 0 with hs | hs
+  · -- An integer order `s = ⌊s⌋`.
+    have hk : (⌊s⌋ : ℝ) = s := (sub_eq_zero.1 ((Int.self_sub_floor s).trans hs)).symm
+    rw [← hk] at hu ⊢
+    exact hA _ h₀ _ hu
+  have hθ : s = (1 - Int.fract s) * ((⌊s⌋ : ℤ) : ℝ) + Int.fract s * ((⌊s⌋ + 1 : ℤ) : ℝ) := by
+    rw [← Int.self_sub_floor]
+    push_cast
+    ring
+  have hθ' : Int.fract s ∈ Ioo (0 : ℝ) 1 :=
+    ⟨(Int.fract_nonneg s).lt_of_ne' hs, Int.fract_lt_one s⟩
+  have hp' :
+      p⁻¹ = ENNReal.ofReal (1 - Int.fract s) * p⁻¹ + ENNReal.ofReal (Int.fract s) * p⁻¹ := by
+    rw [← add_mul, ← ENNReal.ofReal_add (by linarith [hθ'.2]) hθ'.1.le, sub_add_cancel,
+      ENNReal.ofReal_one, one_mul]
+  rw [hθ] at hu ⊢
+  exact map_of_memSobolev_of_memSobolev hp hp_top hp hp_top hθ' hp' A (hA _ h₀)
+    (hA _ (Int.natAbs_floor_add_one_le_natCeil_abs hs)) hu
+
+end TemperedDistribution

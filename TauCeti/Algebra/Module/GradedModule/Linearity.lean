@@ -28,8 +28,9 @@ numerical invariants of minimal resolutions detect linearity.
 
 * `TauCeti.GradedProjectiveResolution.isLinear_iff_piece_le_positive_smul_top`: the bounded-below
   criterion.
-* `TauCeti.GradedProjectiveResolution.isLinear_iff_piece_le_positive_smul_top_of_finite`: the
-  finite-term criterion.
+* `TauCeti.GradedProjectiveResolution.isLinear_iff_piece_le_positive_smul_top_of_finite` and
+  `TauCeti.GradedProjectiveResolution.isLinear_iff_piece_le_positive_smul_top_of_moduleFinite`:
+  the criteria for terms finite over `k` or finitely generated over `A`.
 * `TauCeti.GradedProjectiveResolution.IsMinimal.piece_eq_bot_of_lt`: the terms of a minimal
   resolution start in their homological degree.
 
@@ -83,6 +84,23 @@ theorem isLinear_iff_piece_le_positive_smul_top_of_finite
       𝒜 h𝒜 n).mp (h n)
   · intro h n
     exact (InternalGrading.isGeneratedInDegree_iff_piece_le_positive_smul_top_of_finite
+      𝒜 h𝒜 n).mpr (h n)
+
+/-- For a resolution whose terms are finitely generated over `A`, linearity is equivalent to
+concentration of each term modulo `A₊` in its homological degree, using automatic lower-boundedness
+over a nonnegatively graded algebra. -/
+theorem isLinear_iff_piece_le_positive_smul_top_of_moduleFinite
+    [∀ n, Module.Finite A (r.X n)] (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
+    r.IsLinear ↔ ∀ (n : ℕ) (p : ℤ), p ≠ n →
+      (r.grading n).piece p ≤
+        (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.X n)) := by
+  rw [isLinear_iff]
+  constructor
+  · intro h n
+    exact (InternalGrading.isGeneratedInDegree_iff_piece_le_positive_smul_top_of_moduleFinite
+      𝒜 h𝒜 n).mp (h n)
+  · intro h n
+    exact (InternalGrading.isGeneratedInDegree_iff_piece_le_positive_smul_top_of_moduleFinite
       𝒜 h𝒜 n).mpr (h n)
 
 omit [GradedAlgebra 𝒜] in

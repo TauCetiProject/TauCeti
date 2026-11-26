@@ -41,7 +41,9 @@ isomorphism, and on a spectrum they are the inverse of the tilde equivalence (St
 
 The file also identifies the global sections of a free module on `Spec R` with a direct sum of
 copies of `R`, and records the base-ring action on affine global sections and extensionality of
-sections by restriction to basic opens. For `Spec R` over `Spec k`, the `k`-algebra structure
+sections by restriction to basic opens. On an affine scheme, a map of abelian presheaves into a
+sheaf of modules that is linear over global functions is linear over all functions
+(`Scheme.Modules.app_smul_of_isAffine`). For `Spec R` over `Spec k`, the `k`-algebra structure
 `Scheme.algebraOfOver` on sections factors through `R` (`Scheme.algebraMap_spec_eq`) and acts
 pointwise on the localizations of `R` (`Scheme.spec_sections_smul_apply`).
 -/
@@ -318,6 +320,51 @@ theorem sectionsCokernelEquiv_π_app {M N : X.Modules} (g : M ⟶ N) [M.IsQuasic
       (ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U).map g)).hom).trans
       (ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom ((sectionsFunctor U).map g))) s
 
+/-- **Linearity over an affine scheme.** On an affine scheme `Y`, a morphism of underlying
+abelian presheaves from a presheaf of modules to a sheaf of modules is linear as soon as it is
+linear over the restrictions of global functions: every function on a basic open is a global
+function divided by a power of the defining function. -/
+theorem app_smul_of_isAffine {Y : Scheme.{u}} [IsAffine Y] {P : Y.PresheafOfModules}
+    {N : Y.Modules} (φ : P.presheaf ⟶ N.presheaf)
+    (hφ : ∀ (U : Y.Opens) (r : Γ(Y, ⊤)) (x : P.obj (.op U)),
+      φ.app (.op U) ((show Y.ringCatSheaf.obj.obj (.op U) from Y.presheaf.map U.leTop.op r) • x) =
+        (show Γ(Y, U) from Y.presheaf.map U.leTop.op r) •
+          (show Γ(N, U) from φ.app (.op U) x))
+    (U : Y.Opens) (r : Y.ringCatSheaf.obj.obj (.op U)) (x : P.obj (.op U)) :
+    φ.app (.op U) (r • x) = (show Γ(Y, U) from r) • (show Γ(N, U) from φ.app (.op U) x) := by
+  refine TopCat.Presheaf.IsSheaf.section_ext N.isSheaf fun p hp ↦ ?_
+  obtain ⟨s, hsU, hps⟩ := (isAffineOpen_top Y).exists_basicOpen_le ⟨p, hp⟩ trivial
+  refine ⟨Y.basicOpen s, hsU, hps, ?_⟩
+  -- Restrict to the basic open `D(s)`, where every function is `a / sⁿ` with `a` global.
+  have key (r' : Y.ringCatSheaf.obj.obj (.op (Y.basicOpen s)))
+      (x' : P.obj (.op (Y.basicOpen s))) :
+      φ.app _ (r' • x') = (show Γ(Y, Y.basicOpen s) from r') •
+        (show Γ(N, Y.basicOpen s) from φ.app _ x') := by
+    obtain ⟨⟨a, _, n, rfl⟩, ha⟩ := IsLocalization.surj (Submonoid.powers s)
+      (show Γ(Y, Y.basicOpen s) from r')
+    have hu : IsUnit (algebraMap Γ(Y, ⊤) Γ(Y, Y.basicOpen s) (s ^ n)) :=
+      IsLocalization.map_units _ (⟨s ^ n, n, rfl⟩ : Submonoid.powers s)
+    rw [← hu.smul_left_cancel]
+    -- The algebra structure of `Γ(Y, D(s))` over `Γ(Y, ⊤)` is given by restriction
+    -- (`Scheme.algebra_section_section_basicOpen`), the form in which `hφ` is stated.
+    change Y.presheaf.map (Y.basicOpen s).leTop.op (s ^ n) • _ = _
+    let u : Γ(Y, Y.basicOpen s) := Y.presheaf.map (Y.basicOpen s).leTop.op (s ^ n)
+    let a' : Γ(Y, Y.basicOpen s) := Y.presheaf.map (Y.basicOpen s).leTop.op a
+    have ha' : u * (show Γ(Y, Y.basicOpen s) from r') = a' := (mul_comm _ _).trans ha
+    have h₁ : (show Y.ringCatSheaf.obj.obj (.op (Y.basicOpen s)) from u) • r' • x' =
+        (show Y.ringCatSheaf.obj.obj (.op (Y.basicOpen s)) from a') • x' :=
+      (mul_smul _ _ _).symm.trans (congrArg (· • x') ha')
+    have h₂ : u • (show Γ(Y, Y.basicOpen s) from r') •
+        (show Γ(N, Y.basicOpen s) from φ.app _ x') = a' • φ.app _ x' :=
+      (mul_smul _ _ _).symm.trans (congrArg (· • _) ha')
+    exact (hφ _ (s ^ n) (r' • x')).symm.trans ((congrArg (φ.app _) h₁).trans
+      ((hφ _ a x').trans h₂.symm))
+  have hr := P.map_smul (homOfLE hsU).op r x
+  have hn := N.val.map_smul (homOfLE hsU).op r (φ.app _ x)
+  have hnat := ConcreteCategory.congr_hom (φ.naturality (homOfLE hsU).op)
+  exact (hnat (r • x)).symm.trans ((congrArg (φ.app _) hr).trans ((key _ _).trans
+    ((congrArg _ (hnat x)).trans hn.symm)))
+
 end
 
 end AlgebraicGeometry.Scheme.Modules
@@ -354,3 +401,37 @@ theorem spec_sections_smul_apply (V : (Spec R).Opens) (c : k) (s : Γ(Spec R, V)
 end SectionsAlgebra
 
 end AlgebraicGeometry.Scheme
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open Scheme.Modules
+
+/-- The structure map `Γ(B, V) ⟶ Γ(U, T)` of an open subscheme `U` of `Z` over the affine open `V`
+of `B`, for the algebra structure through `baseRingToStructurePresheaf`, is `k.appLE` followed by
+restriction to `T`. -/
+lemma algebraMap_baseRingToStructurePresheaf_eq_appLE {Z B : Scheme.{u}} (k : Z ⟶ B)
+    {V : B.Opens} (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens)
+    (r : Γ(B, V)) :
+    letI : U.toScheme.Over (Spec (.of Γ(B, V))) := ⟨k.resLE V U e ≫ hV.isoSpec.hom⟩
+    letI : Algebra Γ(B, V) Γ(U.toScheme, T) :=
+      ((U.toScheme.baseRingToStructurePresheaf Γ(B, V)).app (op T)).hom.toAlgebra
+    algebraMap Γ(B, V) Γ(U.toScheme, T) r =
+      (U.ι.appLE U T (by simp)).hom ((k.appLE V U e).hom r) := by
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
+  exact congrArg (fun φ ↦ φ.hom r) (Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE k hV U e T)
+
+/-- Through `f'⁻¹ V ⟶ V ≅ Spec Γ(Y', V)`, a function `a` on an affine open `V` acts on the open
+subscheme `f'⁻¹ V` as `f'^* a`. -/
+lemma baseRingToGlobalSections_preimage {X' Y' : Scheme.{u}} (f' : X' ⟶ Y') {V : Y'.Opens}
+    (hV : IsAffineOpen V) (a : Γ(Y', V)) :
+    letI : (f' ⁻¹ᵁ V).toScheme.Over (Spec (.of Γ(Y', V))) :=
+      ⟨f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom⟩
+    baseRingToGlobalSections Γ(Y', V) (f' ⁻¹ᵁ V) a = (f' ⁻¹ᵁ V).topIso.inv (f'.app V a) := by
+  let : (f' ⁻¹ᵁ V).toScheme.Over (Spec (.of Γ(Y', V))) :=
+    ⟨f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom⟩
+  have h := f'.algebraMap_baseRingToStructurePresheaf_eq_appLE hV (f' ⁻¹ᵁ V) le_rfl ⊤ a
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_top,
+    CommRingCat.hom_ofHom, Scheme.Hom.appLE_eq_app, Scheme.Opens.ι_appLE] at h
+  exact h
+
+end AlgebraicGeometry.Scheme.Hom

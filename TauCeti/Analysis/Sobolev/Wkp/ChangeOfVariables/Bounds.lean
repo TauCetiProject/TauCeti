@@ -15,8 +15,9 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 This file collects consequences of the change-of-variables theory of
 `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables` used to straighten a curved boundary: restricting
 a pair of mutually inverse changes of variables to the two sides of a boundary, `Lᵖ` bounds for
-precomposition with a change of variables, and the resulting bounds for the value, weak gradient
-and weak Hessian of `u ∘ Φ`.
+precomposition with a change of variables, the resulting bounds for the value, weak gradient
+and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity of `u ∘ Φ` back to
+`u`.
 
 ## Main declarations
 
@@ -33,9 +34,16 @@ and weak Hessian of `u ∘ Φ`.
   `TauCeti.Wkp.IsChangeOfVariables.lpNorm_le_of_ae_le_mul_comp` the resulting bound for a function
   dominated pointwise by such a composition.
 * `TauCeti.Wkp.norm_value_compL_le` and `TauCeti.Wkp.norm_gradient_firstOrder_compL_le`: the
-  `Lᵖ` bounds for the value and the weak gradient of `u ∘ Φ`.
+  `Lᵖ` bounds for the value and the weak gradient of `u ∘ Φ`, and
+  `TauCeti.Wkp.IsChangeOfVariables.memLp_value_compL` and
+  `TauCeti.Wkp.IsChangeOfVariables.memLp_gradient_firstOrder_compL` their `L^q` membership for any
+  exponent `q`.
 * `TauCeti.Wkp.norm_iteratedGradient_compL_le_ae`: the pointwise bound
   `‖D²(u ∘ Φ)‖ ≤ L² ‖D²u(Φ ·)‖ + L ‖∇u(Φ ·)‖` for the weak Hessian.
+* `TauCeti.Wkp.exists_value_eq_value_restrictL_of_w1pCompL`: if `u ∘ Φ` is `W^{k,p}` near a
+  point, then so is `u` near its image.
+* `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL`: zero boundary values
+  of `u ∈ W^{2,p}(Ω)` on a boundary portion carry over to `u ∘ Φ`.
 -/
 
 public section
@@ -43,7 +51,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace
-open scoped InnerProductSpace ENNReal
+open scoped InnerProductSpace ENNReal ContDiff
 
 namespace TauCeti.Wkp
 
@@ -191,6 +199,28 @@ theorem norm_gradient_firstOrder_compL_le (h : IsChangeOfVariables (k + 1) U V �
   exact h.lpNorm_le_of_ae_le_mul_comp hU subset_rfl h.mapsTo hL (Lp.aestronglyMeasurable _)
     (Lp.memLp _) hgr
 
+/-- If the value of `u ∈ W^{k,p}(V)` lies in `L^q(V)`, so does the value of `compL h u` in
+`L^q(U)`, for any exponent `q`. -/
+theorem IsChangeOfVariables.memLp_value_compL (h : IsChangeOfVariables k U V Φ L c)
+    (u : Wkp mu V p k) {q : ℝ≥0∞} (hu : MemLp (value k u) q (mu.restrict V)) :
+    MemLp (value k (compL h u)) q (mu.restrict U) :=
+  (h.memLp_comp U.isOpen.measurableSet subset_rfl h.mapsTo hu).ae_eq (value_compL_ae h u).symm
+
+/-- If the weak gradient of the first-order part of `u ∈ W^{k+1,p}(V)` lies in `L^q(V)`, so does
+that of `compL h u` in `L^q(U)`, for any exponent `q`. -/
+theorem IsChangeOfVariables.memLp_gradient_firstOrder_compL
+    (h : IsChangeOfVariables (k + 1) U V Φ L c) (u : Wkp mu V p (k + 1)) {q : ℝ≥0∞}
+    (hu : MemLp (W1p.gradient (firstOrder k u)) q (mu.restrict V)) :
+    MemLp (W1p.gradient (firstOrder k (compL h u))) q (mu.restrict U) := by
+  have hU : MeasurableSet (U : Set E) := U.isOpen.measurableSet
+  refine (h.memLp_comp hU subset_rfl h.mapsTo hu).of_le_mul (c := L)
+    (Lp.aestronglyMeasurable _) ?_
+  filter_upwards [gradient_firstOrder_compL_ae h u, ae_restrict_mem hU] with x h1 hx
+  rw [h1]
+  refine ((fderiv ℝ Φ x).adjoint.le_opNorm _).trans ?_
+  rw [LinearIsometryEquiv.norm_map]
+  exact mul_le_mul_of_nonneg_right (h.norm_fderiv_le x hx) (norm_nonneg _)
+
 /-- **The Hessian under a change of variables.** Let `Φ` be a change of variables of order two
 from `U` into `V` with constant `L`, and `1 ≤ p < ∞`. For `u ∈ W^{2,p}(V)`, the weak Hessian of
 `u ∘ Φ` satisfies `‖D²(u ∘ Φ)(x)‖ ≤ L² ‖D²u(Φ x)‖ + L ‖∇u(Φ x)‖` for almost every `x ∈ U`. -/
@@ -224,5 +254,57 @@ theorem norm_iteratedGradient_compL_le_ae (h : IsChangeOfVariables 2 U V Φ L c)
         exact h.norm_fderiv_fderiv_le (k := 0) x hxU
       _ = L * ‖G‖ := mul_comm _ _
   linarith
+
+/-- **Pushing `W^{k,p}` forward along a change of variables.** Let `Φ` be a change of variables
+from `Ω'` into `D ⊆ Ω`, and `Ψ` one of order `k` from `Ω ∩ V ⊆ D` into `Ω' ∩ V''` with
+`Φ ∘ Ψ = id` on `Ω ∩ V`. If `u ∘ Φ` is the value of an element of `W^{k,p}(Ω' ∩ V'')`, then `u` is
+the value of an element of `W^{k,p}(Ω ∩ V)`. -/
+theorem exists_value_eq_value_restrictL_of_w1pCompL {Omega D V Ω' V'' : Opens E} {Ψ : E → E}
+    {L' c' : ℝ} (hp : p ≠ ⊤) (hD : D ≤ Omega) (hVD : Omega ⊓ V ≤ D)
+    (hΦ : IsChangeOfVariables 1 Ω' D Φ L c)
+    (hΨ : IsChangeOfVariables k (Omega ⊓ V) (Ω' ⊓ V'') Ψ L' c')
+    (hΦΨ : RightInvOn Ψ Φ (Omega ⊓ V : Opens E)) {u : W1p mu Omega p}
+    {w : Wkp mu (Ω' ⊓ V'') p k}
+    (hw : value k w =
+      W1p.value (W1p.restrictL inf_le_left (hΦ.w1pCompL hp (W1p.restrictL hD u)))) :
+    ∃ w' : Wkp mu (Omega ⊓ V) p k, value k w' = W1p.value (W1p.restrictL inf_le_left u) := by
+  refine ⟨compL hΨ w, Lp.ext ?_⟩
+  have hΩ'V : ((Ω' ⊓ V'' : Opens E) : Set E) ⊆ Ω' := fun x hx => hx.1
+  filter_upwards [value_compL_ae hΨ w,
+    hΨ.ae_comp (W1p.value_restrictL_ae (mu := mu) (p := p) inf_le_left _),
+    hΨ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩ'V
+      (hΦ.value_w1pCompL_ae hp (W1p.restrictL hD u))),
+    ae_restrict_of_ae_restrict_of_subset hVD (W1p.value_restrictL_ae hD u),
+    W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
+    ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 h5 hx
+  rw [h1, hw, h2, h3, hΦΨ hx, h4, h5]
+
+/-- **Zero boundary values along a straightening chart.** Let `Φ` be a change of variables of order
+two from `Ω'` into `Ω ∩ O`, with continuous left inverse `Ψ` mapping `Ω ∩ O` into `Ω'`, and let
+`Φ` be continuous on an open `U''` that it maps into `O`. If `χ u ∈ W₀^{1,p}(Ω)` for every smooth
+`χ` compactly supported in `O`, then `ψ (u ∘ Φ) ∈ W₀^{1,p}(Ω')` for every smooth `ψ` compactly
+supported in `U''`. This is
+`TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL` for the first-order
+part of `u ∈ W^{2,p}(Ω)`. -/
+theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω' U'' : Opens E}
+    {Ψ : E → E} (hΦ : IsChangeOfVariables 2 Ω' (Omega ⊓ O) Φ L c) (hp : p ≠ ⊤)
+    (hΦc : ContinuousOn Φ U'') (hΦU'' : MapsTo Φ U'' O) (hΨc : ContinuousOn Ψ (Omega ⊓ O : Opens E))
+    (hΨmaps : MapsTo Ψ (Omega ⊓ O : Opens E) Ω') (hΨΦ : LeftInvOn Ψ Φ Ω') {u : Wkp mu Omega p 2}
+    (hu0 : ∀ χ : E → ℝ, ContDiff ℝ ∞ χ → HasCompactSupport χ → tsupport χ ⊆ O →
+      ∃ w : W1p0 mu Omega p,
+        W1p.value (w : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun x => χ x * value 2 u x)
+    (ψ : E → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ U'') :
+    ∃ w : W1p0 mu Ω' p, W1p.value (w : W1p mu Ω' p) =ᵐ[mu.restrict Ω']
+      fun x => ψ x * value 2 (compL hΦ (restrictL inf_le_left 2 u)) x := by
+  have hΦ1 : IsChangeOfVariables 1 Ω' (Omega ⊓ O) Φ L c := hΦ.mono one_le_two
+  obtain ⟨w, hw⟩ := hΦ1.exists_w1p0_value_ae_eq_mul_value_w1pCompL hp hΦc hΨc hΨmaps hΨΦ hΦU''
+    (u := lowerOrder 1 u) (fun χ hχ hχc hχs => by
+      simpa only [value_lowerOrder_one] using hu0 χ hχ hχc hχs) ψ hψ hψc hψs
+  refine ⟨w, hw.trans ?_⟩
+  filter_upwards [hΦ1.value_w1pCompL_ae hp (W1p.restrictL inf_le_left (lowerOrder 1 u)),
+    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (lowerOrder 1 u)),
+    value_compL_ae hΦ (restrictL inf_le_left 2 u),
+    hΦ.ae_comp (value_restrictL_ae inf_le_left 2 u)] with x h1 h2 h3 h4
+  rw [h1, h2, h3, h4, value_lowerOrder_one]
 
 end TauCeti.Wkp

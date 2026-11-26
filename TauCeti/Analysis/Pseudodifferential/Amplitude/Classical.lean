@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Amplitude.Comp
 public import TauCeti.Analysis.Pseudodifferential.Amplitude.Expansion
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!

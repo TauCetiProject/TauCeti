@@ -17,7 +17,9 @@ The jet of a section `ξ : ℝ × ℝ → V` of a trivial bundle over a domain o
 A first-order operator with coefficient field `M : ℝ × ℝ → L(V × V × V, W)` acts on jets
 pointwise, `f ↦ (z ↦ M z (f z))`. For a measure `μ` on the plane and `M` essentially bounded for
 `μ`, this is a bounded operator `L²(μ, V × V × V) → L²(μ, W)` (`TauCeti.jetOperator`), the
-operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`. It depends
+operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`. It is additive
+in `M` (`TauCeti.jetOperator_add`), and multiplying `M` by an essentially bounded scalar function
+multiplies its values pointwise (`TauCeti.coeFn_jetOperator_smul`). It depends
 Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
 along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`).
 
@@ -25,8 +27,9 @@ The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linea
 have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.firstOrderJetCoeff`),
 whose norm is at most `1 + ‖A‖ + ‖C‖` (`TauCeti.norm_firstOrderJetCoeff_le`) and at least `‖A‖`
 and `‖C‖` (`TauCeti.norm_le_norm_firstOrderJetCoeff_left`,
-`TauCeti.norm_le_norm_firstOrderJetCoeff_right`), and which depends
-continuously on `A` and `C` (`TauCeti.continuousAt_firstOrderJetCoeff`).
+`TauCeti.norm_le_norm_firstOrderJetCoeff_right`), which changes by at most `‖C - C'‖` when `C`
+is replaced by `C'` (`TauCeti.norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le`), and which
+depends continuously on `A` and `C` (`TauCeti.continuousAt_firstOrderJetCoeff`).
 
 The Sobolev spaces on the cylinder (with the strip measure) and on conformally weighted domains
 of the plane (with Lebesgue measure restricted to the domain) both realize first-order operators
@@ -91,6 +94,16 @@ theorem jetOperator_add {μ : Measure (ℝ × ℝ)} {M N : ℝ × ℝ → V × V
     with z h h₁ h₂ h₃
   rw [add_apply, h₃, Pi.add_apply, h, h₁, h₂, Pi.add_apply, add_apply]
 
+/-- Multiplying the coefficient field by an essentially bounded scalar function `b` multiplies the
+values of the first-order operator by `b`. -/
+theorem coeFn_jetOperator_smul {μ : Measure (ℝ × ℝ)} {b : ℝ × ℝ → ℝ}
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hb : MemLp b ∞ μ) (hM : MemLp M ∞ μ)
+    (f : Lp (V × V × V) 2 μ) :
+    jetOperator μ (fun z ↦ b z • M z) f =ᵐ[μ] fun z ↦ b z • jetOperator μ M f z := by
+  filter_upwards [coeFn_jetOperator (M := fun z ↦ b z • M z) (hb.smul hM) f,
+    coeFn_jetOperator hM f] with z h₁ h₂
+  rw [h₁, h₂, smul_apply]
+
 /-- An almost everywhere bound `‖M z‖ ≤ C` on the coefficient field bounds the first-order
 operator by `C`. -/
 theorem norm_jetOperator_apply_le {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
@@ -152,6 +165,17 @@ theorem norm_firstOrderJetCoeff_le (A C : V →L[ℝ] V) :
       (norm_snd_le ℝ V V)).trans (norm_snd_le ℝ V (V × V)))
   · exact (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
       (norm_fst_le ℝ V (V × V)))
+
+/-- The coefficient fields of two operators `∂s + A ∂t + C` and `∂s + A ∂t + C'` with the same
+principal part differ by at most `‖C - C'‖`. -/
+theorem norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le (A C C' : V →L[ℝ] V) :
+    ‖firstOrderJetCoeff A C - firstOrderJetCoeff A C'‖ ≤ ‖C - C'‖ := by
+  have h : firstOrderJetCoeff A C - firstOrderJetCoeff A C' =
+      (C - C').comp (ContinuousLinearMap.fst ℝ V (V × V)) :=
+    ContinuousLinearMap.ext fun v ↦ by simp
+  rw [h]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ V (V × V)))
 
 /-- The leading coefficient `A` of `∂s + A ∂t + C` is a component of its coefficient field on
 jets: `A v` is the value of the field on `(0, 0, v)`. -/

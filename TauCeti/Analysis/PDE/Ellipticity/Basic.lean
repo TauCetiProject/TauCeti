@@ -18,6 +18,7 @@ public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
@@ -45,6 +46,8 @@ constants are parameters, not hidden existential data.
 
 * `TauCeti.PDE.UniformlyEllipticOn`: uniform lower and upper ellipticity bounds on a set.
 * `TauCeti.PDE.uniformlyEllipticOn_const_one`: the identity matrix is uniformly elliptic.
+* `TauCeti.PDE.le_of_mul_norm_sq_le_toQuadraticForm'_le`: two-sided bounds
+  `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` force `λ ≤ Λ`.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_constants`: weakening constants preserves the
   predicate.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_set`: restriction to a smaller domain preserves the
@@ -504,6 +507,13 @@ lemma toQuadraticForm'_one (ξ : EuclideanSpace ℝ n) :
     (1 : Matrix n n ℝ).toQuadraticForm' ξ = ‖ξ‖ ^ 2 := by
   rw [Matrix.toQuadraticForm'_apply, one_mulVec]
   simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
+
+/-- Two-sided bounds `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` on the quadratic form of a square matrix over a
+nonempty index type force `λ ≤ Λ`. -/
+theorem le_of_mul_norm_sq_le_toQuadraticForm'_le [Nonempty n] {A : Matrix n n ℝ} {lam Lam : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : EuclideanSpace ℝ n, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) : lam ≤ Lam := by
+  simpa using (hA (EuclideanSpace.single (Classical.arbitrary n) 1)).trans (hA' _)
 
 /-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
 lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :
@@ -1215,15 +1225,25 @@ theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
 
+/-- On a set `s`, `Cᵏ` matrix entries and `Cᵏ` vector fields give a `Cᵏ` scalar pairing
+`x ↦ η(x)ᵀ a(x) ξ(x)`. -/
+theorem contDiffOn_matrixBilinearForm_apply {k : WithTop ℕ∞} {s : Set (EuclideanSpace ℝ n)}
+    {a : EuclideanSpace ℝ n → Matrix n n ℝ} (ha : ∀ i j, ContDiffOn ℝ k (fun x => a x i j) s)
+    {η ξ : EuclideanSpace ℝ n → EuclideanSpace ℝ n}
+    (hη : ContDiffOn ℝ k η s) (hξ : ContDiffOn ℝ k ξ s) :
+    ContDiffOn ℝ k (fun x => matrixBilinearForm (a x) (η x) (ξ x)) s := by
+  simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec]
+  exact ContDiffOn.sum fun i _ => ((contDiffOn_piLp 2).1 hη i).mul
+    (ContDiffOn.sum fun j _ => (ha i j).mul ((contDiffOn_piLp 2).1 hξ j))
+
 /-- **`Cᵏ` coefficient fields give `Cᵏ` bilinear forms.** If the entries of `a` are `Cᵏ`, then
 `x ↦ η(x)ᵀ a(x) ξ(x)` is `Cᵏ` for `Cᵏ` vector fields `η` and `ξ`. -/
 theorem contDiff_matrixBilinearForm_apply {k : WithTop ℕ∞}
     {a : EuclideanSpace ℝ n → Matrix n n ℝ} (ha : ∀ i j, ContDiff ℝ k fun x => a x i j)
     {η ξ : EuclideanSpace ℝ n → EuclideanSpace ℝ n} (hη : ContDiff ℝ k η) (hξ : ContDiff ℝ k ξ) :
-    ContDiff ℝ k fun x => matrixBilinearForm (a x) (η x) (ξ x) := by
-  simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec]
-  exact ContDiff.sum fun i _ => (contDiff_euclidean.1 hη i).mul
-    (ContDiff.sum fun j _ => (ha i j).mul (contDiff_euclidean.1 hξ j))
+    ContDiff ℝ k fun x => matrixBilinearForm (a x) (η x) (ξ x) :=
+  contDiffOn_univ.1 (contDiffOn_matrixBilinearForm_apply
+    (fun i j ↦ (ha i j).contDiffOn) hη.contDiffOn hξ.contDiffOn)
 
 /-- **`C¹` coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
 continuously differentiable on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz

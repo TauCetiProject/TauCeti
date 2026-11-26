@@ -87,8 +87,8 @@ noncomputable abbrev indexSpectralSequence :=
 /-- The step `p` of `indexFiltrationFunctor` is the subcomplex `F_p`. -/
 noncomputable def indexFiltrationFunctorObjIso (p : ℤ) :
     (m.indexFiltrationFunctor hM hm).obj p ≅ m.indexCochainComplex hM hm p :=
-  CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (m.indexCochainComplexι hM hm)
-    (m.indexSubobject_eq_mk hM hm) p
+  CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (m.indexCochainComplexι hM hm p)
+    (m.indexSubobject_eq_mk hM hm p)
 
 /-- The identification of a step of `indexFiltrationFunctor` with `F_p` is compatible with the
 inclusions into the coefficient complex. -/
@@ -97,8 +97,8 @@ theorem indexFiltrationFunctorObjIso_hom_comp_ι (p : ℤ) :
     (m.indexFiltrationFunctorObjIso hM hm p).hom ≫ m.indexCochainComplexι hM hm p =
       (CochainComplex.filtrationFunctorObjIso _ _ p).hom ≫
         (CochainComplex.filtrationEInt (m.indexSubobject hM hm) p).arrow :=
-  CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp _ _ (m.indexCochainComplexι hM hm)
-    (m.indexSubobject_eq_mk hM hm) p
+  CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp _ _ (m.indexCochainComplexι hM hm p)
+    (m.indexSubobject_eq_mk hM hm p)
 
 /-- The transition map `F_p ⟶ F_{p+1}` of `indexFiltrationFunctor` is the inclusion of
 subcomplexes `indexCochainComplexMap`. -/

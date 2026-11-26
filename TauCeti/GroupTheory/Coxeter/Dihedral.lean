@@ -87,12 +87,16 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
 * `CoxeterSystem.exists_mem_parabolic_pair_mul_of_isLeftDescent_pair`: the rank-two parabolic
   factor of an element with two left descents inherits both descents.
 * `CoxeterSystem.exists_wordProd_alternatingWord_mul_of_isLeftDescent_pair`: **Tits' lemma.**
+* `CoxeterSystem.parabolic_pair_induction`: **Tits' induction** on the length, which reduces a
+  property of all pairs `(w, i)` with `i` not a right descent of `w` to the rank-two parabolic
+  subgroups.
 
 ## References
 
 * A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*, Springer GTM 231 (2005),
   Sections 2.2 and 3.3.
-* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Sections 1.9 and 5.12.
+* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Sections 1.9 and 5.12, and
+  Section 5.4 (the proof of Theorem 5.4, for Tits' induction).
 -/
 
 public section
@@ -381,5 +385,39 @@ theorem exists_wordProd_alternatingWord_mul_of_isLeftDescent_pair {i i' : B}
     omega
   rw [cs.length_eq_orderOf_of_isLeftDescent_pair hx hdx hdx'] at h h' hpos hlen
   exact ⟨v, hpos, by rw [h], by rw [h'], hlen⟩
+
+/-! ### Tits' induction -/
+
+/-- **Tits' induction** (Humphreys, Section 5.4). To prove `P w i` whenever `i` is not a right
+descent of `w`, it suffices to prove `P 1 i` for every `i`, and to deduce `P (u * v) i` from `P u i`
+and `P u i'` whenever `v` lies in `cs.parabolic {i, i'}` and has no right descent at `i`. -/
+theorem parabolic_pair_induction {P : W → B → Prop} (one : ∀ i, P 1 i)
+    (mul : ∀ {u v : W} {i i' : B}, v ∈ cs.parabolic {i, i'} → ¬cs.IsRightDescent v i →
+      P u i → P u i' → P (u * v) i)
+    {w : W} {i : B} (h : ¬cs.IsRightDescent w i) : P w i := by
+  induction hn : ℓ w using Nat.strong_induction_on generalizing w i with
+  | _ n ih =>
+    rcases eq_or_ne w 1 with rfl | hw
+    · exact one i
+    -- a right descent `i'` of `w` factors `w = u * v` along the standard parabolic subgroup on
+    -- `{i, i'}`, where lengths add and `u` is strictly shorter than `w`, which sets up the
+    -- induction
+    obtain ⟨i', hi'⟩ := cs.exists_rightDescent_of_ne_one hw
+    obtain ⟨⟨u, v⟩, ⟨hu, hv, huv⟩, -⟩ := cs.existsUnique_isMinimalCosetRep_mul {i, i'} w
+    dsimp only at hu hv huv
+    subst huv
+    have hu' := cs.isMinimalCosetRep_iff.mp hu
+    have hlen := cs.length_mul_of_isMinimalCosetRep hu hv
+    have hv₁ : v ≠ 1 := by
+      rintro rfl
+      exact hu' i' (by simp) (by simpa using hi')
+    have hvpos : 0 < ℓ v := Nat.pos_of_ne_zero (mt cs.length_eq_zero_iff.mp hv₁)
+    have hvi : ¬cs.IsRightDescent v i := fun hd ↦ h <| by
+      rw [IsRightDescent] at hd ⊢
+      rw [mul_assoc, cs.length_mul_of_isMinimalCosetRep hu
+        (mul_mem hv (cs.simple_mem_parabolic (by simp))), hlen]
+      omega
+    exact mul hv hvi (ih _ (by omega) (hu' i (by simp)) rfl)
+      (ih _ (by omega) (hu' i' (by simp)) rfl)
 
 end CoxeterSystem

@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
+public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
@@ -20,6 +21,8 @@ import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Tactic.Module
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Normed.Operator.Prod
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
+import TauCeti.Topology.Compactness.Normed
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
@@ -32,11 +35,16 @@ over the strip: the Sobolev space with boundary conditions in
 fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
 
 * `TauCeti.StripSobolev.stripMeasure` is Lebesgue measure on `ℝ × [0, 1]`; it is the product of
-  Lebesgue measure on `ℝ` and on `[0, 1]` (`TauCeti.StripSobolev.stripMeasure_eq_prod`). A
-  section that is bounded on a box `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ`
+  Lebesgue measure on `ℝ` and on `[0, 1]` (`TauCeti.StripSobolev.stripMeasure_eq_prod`), and
+  Lebesgue measure on the bands `ℝ × [0, 1)` and `ℝ × (0, 1)`
+  (`TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico`,
+  `TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ioo`).
+  A section that is bounded on a box `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ`
   of the strip (`TauCeti.StripSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a
   continuous section vanishing for `|s|` large
-  (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`).
+  (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`); so does `z ↦ Y (t, u z) (δ z)` for
+  `δ` in `Lᵖ`, `u` continuous and `Y (t, x)` a continuous field vanishing for `x` outside a compact
+  set (`TauCeti.StripSobolev.memLp_apply_of_eventually_eq_zero`).
 * The **jet** of a section is `TauCeti.StripSobolev.jet ξ = (ξ, ∂s ξ, ∂t ξ)`. It is continuous for
   `C¹` maps, linear on differentiable maps, vanishes where the section vanishes near a point,
   bounds each of its components (`TauCeti.StripSobolev.norm_le_norm_jet`,
@@ -46,7 +54,10 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
   section vanishing for `s ∉ (a, b)`, a function vanishing wherever the jet does has the same
   integral over the strip and over `[a, b] × [0, 1]`
   (`TauCeti.StripSobolev.integral_strip_eq_setIntegral_Icc_of_jet_eq_zero`), and is integrable
-  on the strip when it is continuous (`TauCeti.StripSobolev.integrable_of_jet_eq_zero`). It also
+  on the strip when it is continuous (`TauCeti.StripSobolev.integrable_of_jet_eq_zero`). For a
+  compactly supported `C¹` map, the pairing `⟪g, M (jet ξ)⟫` of a locally integrable function
+  with a continuous coefficient field applied to the jet is integrable on the plane
+  (`TauCeti.StripSobolev.integrable_inner_apply_jet`). The jet also
   bounds the whole derivative (`TauCeti.StripSobolev.norm_fderiv_le_two_mul_norm_jet`), so a `C¹`
   cutoff supported in a set `P` multiplies a section into a map whose derivative is bounded in
   `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`).
@@ -92,6 +103,22 @@ theorem stripMeasure_eq_prod :
     stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
   unfold stripMeasure
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
+
+/-- The strip measure is Lebesgue measure on the band `ℝ × [0, 1)`: the two differ by the null
+line `ℝ × {1}`. -/
+theorem stripMeasure_eq_restrict_univ_prod_Ico :
+    stripMeasure = volume.restrict ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1) := by
+  rw [stripMeasure_eq_prod, Measure.restrict_congr_set (μ := volume (α := ℝ))
+    (Ico_ae_eq_Icc (a := (0 : ℝ)) (b := 1)).symm, Measure.volume_eq_prod,
+    ← Measure.prod_restrict, Measure.restrict_univ]
+
+/-- The strip measure is Lebesgue measure on the open band `ℝ × (0, 1)`: the two differ by the
+null lines `ℝ × {0}` and `ℝ × {1}`. -/
+theorem stripMeasure_eq_restrict_univ_prod_Ioo :
+    stripMeasure = volume.restrict ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) := by
+  rw [stripMeasure_eq_prod, Measure.restrict_congr_set (μ := volume (α := ℝ))
+    (Ioo_ae_eq_Icc (a := (0 : ℝ)) (b := 1)).symm, Measure.volume_eq_prod,
+    ← Measure.prod_restrict, Measure.restrict_univ]
 
 /-- The jet `(ξ, ∂s ξ, ∂t ξ)` of a map `ξ : ℝ × ℝ → V`. -/
 def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
@@ -224,6 +251,23 @@ theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous
   obtain ⟨C, -, hC⟩ := exists_forall_mem_strip_norm_le hu hR
   exact memLp_stripMeasure_of_bound_of_eq_zero hu.aestronglyMeasurable
     (fun z hz ↦ hC z ⟨mem_univ _, hz.2⟩) hR p
+
+omit [NormedSpace ℝ V] in
+/-- The variation `z ↦ Y (t, u z) (δ z)` of a continuous field `Y (t, x)` vanishing for `x` outside
+a compact set lies in `Lᵖ` of the strip when `δ` does. -/
+theorem memLp_apply_of_eventually_eq_zero {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] {Y : ℝ × V → W →L[ℝ] W} (hY : Continuous Y)
+    (hYc : ∀ᶠ p in comap Prod.snd (cocompact V), Y p = 0) {u : ℝ × ℝ → V} (hu : Continuous u)
+    {δ : ℝ × ℝ → W} {p : ℝ≥0∞} (hδ : MemLp δ p stripMeasure) :
+    MemLp (fun z ↦ Y (z.2, u z) (δ z)) p stripMeasure := by
+  obtain ⟨C, hC⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_forall_norm_le_of_eventually_eq_zero
+      hY.continuousOn hYc
+  have hYu : Continuous fun z : ℝ × ℝ ↦ Y (z.2, u z) := hY.comp (continuous_snd.prodMk hu)
+  refine hδ.of_le_mul (c := C) ((continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable₂
+    (g := fun (L : W →L[ℝ] W) v ↦ L v) hYu.aestronglyMeasurable hδ.aestronglyMeasurable) ?_
+  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
+  exact (Y (z.2, u z)).le_of_opNorm_le (hC z.2 hz.2 (u z)) (δ z)
 
 /-- For a section vanishing for `|s| ≥ R`, a continuous function vanishing wherever the jet of the
 section vanishes is integrable on the strip. -/
@@ -383,6 +427,15 @@ theorem jet_smul_fst_eq_cutoffCoeff {β : ℝ → ℝ} {ξ : ℝ × ℝ → V} {
   simp only [jet_apply, cutoffCoeff_apply, h]
   simp [add_comm]
 
+/-- The coefficient of multiplication by `β(s)` has norm at most `|β(s)| + |β'(s)|`. -/
+theorem norm_cutoffCoeff_le (β : ℝ → ℝ) (z : ℝ × ℝ) :
+    ‖cutoffCoeff V β z‖ ≤ |β z.1| + |deriv β z.1| := by
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
+  · exact mul_le_of_le_one_right (abs_nonneg _) ContinuousLinearMap.norm_id_le
+  · refine mul_le_of_le_one_right (abs_nonneg _) ?_
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
+    simp [Prod.norm_def]
+
 /-- For a `C¹` function `β` with `β` and `β'` bounded, the coefficient field of multiplication by
 `β(s)` is essentially bounded. -/
 theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
@@ -390,12 +443,8 @@ theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {B : ℝ}
   have hc : Continuous (cutoffCoeff V β) :=
     ((hβ.continuous.comp continuous_fst).smul continuous_const).add
       (((hβ.continuous_deriv le_rfl).comp continuous_fst).smul continuous_const)
-  refine memLp_top_of_bound hc.aestronglyMeasurable (B + B) (ae_of_all _ fun z ↦ ?_)
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
-  · exact (mul_le_of_le_one_right (abs_nonneg _) (ContinuousLinearMap.norm_id_le)).trans (hβB _)
-  · refine (mul_le_of_le_one_right (abs_nonneg _) ?_).trans (hβ'B _)
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
-    simp [Prod.norm_def]
+  exact memLp_top_of_bound hc.aestronglyMeasurable (B + B) (ae_of_all _ fun z ↦
+    (norm_cutoffCoeff_le β z).trans (add_le_add (hβB _) (hβ'B _)))
 
 end Cutoff
 
@@ -475,6 +524,27 @@ theorem hasCompactSupport_jet (hξ : HasCompactSupport ξ) : HasCompactSupport (
   by_contra h
   exact hz (by simp [jet_apply, image_eq_zero_of_notMem_tsupport h,
     fderiv_of_notMem_tsupport ℝ h])
+
+open scoped InnerProductSpace in
+/-- For a locally integrable function `g`, a continuous coefficient field `M` and a compactly
+supported `C¹` map `ξ`, the function `z ↦ ⟪g z, M z (jet ξ z)⟫` is integrable on the plane: it
+vanishes off the support of `ξ`. -/
+theorem integrable_inner_apply_jet {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hMc : Continuous M) {g : ℝ × ℝ → W}
+    (hg : LocallyIntegrable g) (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ) :
+    Integrable fun z ↦ ⟪g z, M z (jet ξ z)⟫_ℝ := by
+  set K := tsupport ξ
+  have hK : IsCompact K := hξc
+  have hMj : Continuous fun z ↦ M z (jet ξ z) := hMc.clm_apply (continuous_jet hξ)
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hMj.continuousOn
+  refine IntegrableOn.integrable_of_forall_notMem_eq_zero (s := K) ?_ fun z hz ↦ ?_
+  · refine ((hg.integrableOn_isCompact hK).norm.const_mul C).mono'
+      (hg.aestronglyMeasurable.restrict.inner hMj.aestronglyMeasurable) ?_
+    filter_upwards [ae_restrict_mem hK.measurableSet] with z hz
+    rw [Real.norm_eq_abs, mul_comm]
+    exact (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left (hC z hz) (norm_nonneg _))
+  · have h0 : ξ =ᶠ[𝓝 z] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 hz
+    simp [jet_apply, h0.fderiv_eq, h0.eq_of_nhds, Prod.mk_zero_zero]
 
 /-- The jet of the translate of a map is the translate of its jet. -/
 theorem jet_comp_add_right (ξ : ℝ × ℝ → V) (c : ℝ × ℝ) :

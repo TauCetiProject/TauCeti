@@ -41,6 +41,9 @@ the two Lorentzians is `TauCeti.HaagerupZsido.integral_weight_mul_mul_inv_sub_in
   for `|x| ≥ 1`;
 * `TauCeti.HaagerupZsido.integral_realKernel_mul_sin_mul_div`: its rescaled form
   `∫ r(t) sin (a t / δ) dt = δ / a` for `0 < δ ≤ |a|`;
+* `TauCeti.HaagerupZsido.sum_sum_inv_sub_mul_eq_inv_mul_integral_realKernel_mul`: finite
+  combinations of reciprocals `(αᵢ - βⱼ)⁻¹` with gaps at least `δ` as kernel integrals of
+  `sin ((αᵢ - βⱼ) t / δ)`;
 * `TauCeti.HaagerupZsido.fourier_reciprocalKernel`: the same identity in Mathlib's normalisation of
   the Fourier transform, `𝓕 k ξ = -1 / (2 π ξ)` for `2 π |ξ| ≥ 1`.
 
@@ -178,6 +181,39 @@ theorem integral_realKernel_mul_sin_mul_div {a δ : ℝ} (hδ : 0 < δ) (ha : δ
   calc _ = ∫ t, realKernel t * Real.sin (a / δ * t) :=
         integral_congr_ae (.of_forall fun t ↦ by ring_nf)
     _ = δ * a⁻¹ := by rw [integral_realKernel_mul_sin h1, inv_div, div_eq_mul_inv]
+
+/-- **The integral representation of reciprocal gaps.** If `0 < δ ≤ |αᵢ - βⱼ|` for all `i ∈ s`
+and `j ∈ t`, then every finite combination of the reciprocals `(αᵢ - βⱼ)⁻¹` with coefficients
+`cᵢⱼ` in `𝕜` is `δ⁻¹` times the integral, against the real Haagerup–Zsidó kernel, of the same
+combination of `sin ((αᵢ - βⱼ) t / δ)`:
+
+`∑ᵢ ∑ⱼ (αᵢ - βⱼ)⁻¹ cᵢⱼ = δ⁻¹ ∫ r(t) ∑ᵢ ∑ⱼ sin ((αᵢ - βⱼ) t / δ) cᵢⱼ dt`.
+
+This is the step that turns a solution of a Sylvester equation into an integral of phase-twisted
+coefficients. -/
+theorem sum_sum_inv_sub_mul_eq_inv_mul_integral_realKernel_mul {𝕜 ι κ : Type*} [RCLike 𝕜]
+    {s : Finset ι} {t : Finset κ} {α : ι → ℝ} {β : κ → ℝ} {δ : ℝ} (hδ : 0 < δ)
+    (h : ∀ i ∈ s, ∀ j ∈ t, δ ≤ |α i - β j|) (c : ι → κ → 𝕜) :
+    ∑ i ∈ s, ∑ j ∈ t, ((α i - β j)⁻¹ : ℝ) * c i j = (δ⁻¹ : 𝕜) * ∫ τ, (realKernel τ : 𝕜) *
+      ∑ i ∈ s, ∑ j ∈ t, (Real.sin ((α i - β j) * (τ / δ)) : 𝕜) * c i j := by
+  have hint (i j) : Integrable fun τ ↦
+      (realKernel τ : 𝕜) * ((Real.sin ((α i - β j) * (τ / δ)) : 𝕜) * c i j) :=
+    ((integrable_realKernel_mul_sin ((α i - β j) / δ)).ofReal (𝕜 := 𝕜)).mul_const (c i j)
+      |>.congr (.of_forall fun τ ↦ by
+        beta_reduce
+        rw [show (α i - β j) / δ * τ = (α i - β j) * (τ / δ) by ring]
+        push_cast
+        ring)
+  have hδ' : (δ : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr hδ.ne'
+  simp only [Finset.mul_sum]
+  rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint i j, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [integral_finsetSum _ fun j _ ↦ hint i j, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  simp only [← mul_assoc, ← RCLike.ofReal_mul]
+  rw [integral_mul_const, integral_ofReal, integral_realKernel_mul_sin_mul_div hδ (h i hi j hj)]
+  push_cast
+  field_simp
 
 /-- **The exterior reciprocal identity in Mathlib's Fourier normalisation.** With
 `𝓕 f ξ = ∫ e^{-2πitξ} f(t) dt`, the Haagerup–Zsidó kernel satisfies `𝓕 k ξ = -1 / (2 π ξ)` whenever

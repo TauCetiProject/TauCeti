@@ -42,13 +42,18 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 
 * `MvPolynomial.aeval_blockLinearForm_eq_linearSubst`, `MvPolynomial.blockSubst_eq_linearSubst`:
   substituting square block-linear forms is a block-diagonal `MvPolynomial.linearSubst`, and in
-  particular `blockSubst A` is `linearSubst (1 ⊗ₖ A)`.
+  particular `blockSubst A` is `linearSubst (1 ⊗ₖ A)`; conversely, by
+  `MvPolynomial.linearSubst_eq_aeval_blockLinearForm_of_block`, a block-diagonal `linearSubst` is
+  the substitution of the block-linear forms given by its diagonal blocks.
 * `MvPolynomial.blockSubst_mul`: block substitution is a right action of the matrix monoid, and
   `MvPolynomial.blockSubst_inv_blockSubst`, `MvPolynomial.blockSubst_blockSubst_inv`: an
   invertible matrix gives an automorphism.
 * `MvPolynomial.eval_blockSubst`: evaluating `blockSubst A P` at `y` evaluates `P` at the point
   whose block `h` is `A` applied to block `h` of `y`.
 * `MvPolynomial.IsMultiHomogeneous.blockSubst`: block substitution preserves the multidegree.
+* `MvPolynomial.IsMultiHomogeneous.aeval_blockLinearForm`,
+  `MvPolynomial.IsMultiHomogeneous.linearSubst_of_block`: so do block-varying linear forms and
+  block-diagonal linear substitutions.
 * `MvPolynomial.hasseDeriv_blockSubst`: the chain rule for a block substitution.
 * `MvPolynomial.blockSubst_inv_hasseDeriv`: a Hasse derivative of `P`, written in the coordinates
   of the rows of `A`, is a combination of the derivatives of `blockSubst A⁻¹ P` of the same block
@@ -133,12 +138,43 @@ theorem blockSubst_mul_apply (A B : Matrix ι ι R) (P : MvPolynomial (κ × ι)
     blockSubst (A * B) P = blockSubst B (blockSubst A P) := by
   rw [blockSubst_mul, AlgHom.comp_apply]
 
+omit [Fintype ι] in
+/-- Substituting block-linear forms preserves multihomogeneity and the multidegree. -/
+theorem IsMultiHomogeneous.aeval_blockLinearForm [DecidableEq κ] {τ : Type*} [Fintype τ]
+    {d : κ → ℕ} {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) (A : κ → ι → τ → R) :
+    IsMultiHomogeneous d (aeval (blockLinearForm A) P) :=
+  isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
+    (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
+
 /-- Block substitution preserves multihomogeneity and the multidegree. -/
 theorem IsMultiHomogeneous.blockSubst [DecidableEq κ] {d : κ → ℕ} {P : MvPolynomial (κ × ι) R}
     (hP : IsMultiHomogeneous d P) (A : Matrix ι ι R) :
     IsMultiHomogeneous d (MvPolynomial.blockSubst A P) :=
-  isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
-    (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
+  hP.aeval_blockLinearForm _
+
+/-- A linear substitution whose matrix is block diagonal, `M x y = 0` whenever `x` and `y` lie in
+different blocks, is the substitution of the block-linear forms `MvPolynomial.blockLinearForm`
+given by the diagonal blocks of `M`. -/
+theorem linearSubst_eq_aeval_blockLinearForm_of_block [Fintype κ]
+    {M : Matrix (κ × ι) (κ × ι) R} (hM : ∀ x y, x.1 ≠ y.1 → M x y = 0) :
+    linearSubst M = aeval (blockLinearForm fun h p q ↦ M (h, p) (h, q)) := by
+  classical
+  rw [aeval_blockLinearForm_eq_linearSubst]
+  congr 1
+  ext ⟨h, p⟩ ⟨h', q⟩
+  by_cases hh : h = h'
+  · subst hh
+    simp
+  · simp [hh, hM (h, p) (h', q) hh]
+
+/-- A linear substitution whose matrix is block diagonal, `M x y = 0` whenever `x` and `y` lie in
+different blocks, preserves multihomogeneity and the multidegree. -/
+theorem IsMultiHomogeneous.linearSubst_of_block [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
+    {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) {M : Matrix (κ × ι) (κ × ι) R}
+    (hM : ∀ x y, x.1 ≠ y.1 → M x y = 0) :
+    IsMultiHomogeneous d (linearSubst M P) := by
+  rw [linearSubst_eq_aeval_blockLinearForm_of_block hM]
+  exact hP.aeval_blockLinearForm _
 
 variable [Fintype κ] [DecidableEq κ] [DecidableEq ι]
 
