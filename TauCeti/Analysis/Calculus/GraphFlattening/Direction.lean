@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.SecondDerivative
+import Mathlib.LinearAlgebra.Transvection.Basic
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Normed.Operator.Holder
@@ -28,7 +31,9 @@ splitting `E = ℝ × ν^⊥` used by `TauCeti.graphFlattening`.
 
 This file records the calculus of this shear. It is `C^m` when `γ` is
 (`TauCeti.contDiff_shearAlong`), its derivative is `id + Dγ(y) ν`
-(`TauCeti.hasFDerivAt_shearAlong`), of norm at most `1 + ‖Dγ(y)‖` when `‖ν‖ ≤ 1`, and its second
+(`TauCeti.hasFDerivAt_shearAlong`), of norm at most `1 + ‖Dγ(y)‖` when `‖ν‖ ≤ 1`. When `γ` is
+invariant along `ν`, so that `Dγ(y) ν = 0`, this derivative is a transvection, of Jacobian
+determinant one (`TauCeti.det_fderiv_shearAlong`). Its second
 derivative is `D²γ(h, k) ν`. The second-order chain rule through it
 (`TauCeti.fderiv_fderiv_comp_shearAlong_apply`) reads
 
@@ -172,6 +177,26 @@ theorem contDiff_shearAlong {m : WithTop ℕ∞} (hγ : ContDiff ℝ m γ) :
 theorem hasFDerivAt_shearAlong {y : E} (hγ : DifferentiableAt ℝ γ y) :
     HasFDerivAt (shearAlong γ ν) (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν) y :=
   (hasFDerivAt_id y).add (hγ.hasFDerivAt.smul_const ν)
+
+/-- The shear `shearAlong γ ν` is differentiable when `γ` is. -/
+theorem differentiable_shearAlong (hγ : Differentiable ℝ γ) : Differentiable ℝ (shearAlong γ ν) :=
+  fun y => (hasFDerivAt_shearAlong (hγ y)).differentiableAt
+
+/-- The derivative of the shear `shearAlong γ ν` is `id + Dγ(y) ν`. -/
+theorem fderiv_shearAlong {y : E} (hγ : DifferentiableAt ℝ γ y) :
+    fderiv ℝ (shearAlong γ ν) y = ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν :=
+  (hasFDerivAt_shearAlong hγ).fderiv
+
+/-- For `γ` invariant along `ν`, the shear `shearAlong γ ν` has Jacobian determinant one: its
+derivative `id + Dγ(y) ν` is a transvection, `Dγ(y) ν = 0`. -/
+theorem det_fderiv_shearAlong [FiniteDimensional ℝ E] (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
+    {y : E} (hγ : DifferentiableAt ℝ γ y) : (fderiv ℝ (shearAlong γ ν) y).det = 1 := by
+  have h : ((fderiv ℝ (shearAlong γ ν) y : E →L[ℝ] E) : E →ₗ[ℝ] E) =
+      LinearMap.transvection (fderiv ℝ γ y : E →ₗ[ℝ] ℝ) ν := by
+    ext h
+    simp [fderiv_shearAlong hγ, LinearMap.transvection.apply]
+  rw [ContinuousLinearMap.det, h, LinearMap.transvection.det, ContinuousLinearMap.coe_coe,
+    fderiv_apply_eq_zero_of_forall_periodic_smul (fun t x => hγν x t), add_zero]
 
 /-- The second derivative of the shear `shearAlong γ ν` is `D²γ (h, k) ν`. -/
 theorem fderiv_fderiv_shearAlong_apply {y : E} (hγ : ContDiffAt ℝ 2 γ y) (h k : E) :
