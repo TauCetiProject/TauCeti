@@ -44,7 +44,9 @@ weak derivative in `L²(Ω)` along a direction `τ` parallel to the hyperplane, 
 `∂_τ u` again has zero boundary values and solves a Dirichlet problem with forcing in `L²(Ω)`, so
 the `H²` result applies to it: the third derivatives of `u` with at least one tangential direction
 lie in `L²(Ω)`. If moreover `f ∈ H¹(Ω)`, the equation supplies the remaining purely normal third
-derivative, and `u ∈ H³(Ω)`.
+derivative, and `u ∈ H³(Ω)`. The induction on the order, `H^{m+2}` regularity for data in
+`H^m(Ω)` and coefficients of class `C^{m+1}` with bounded derivatives, is in
+`TauCeti.Analysis.PDE.Regularity.HalfSpace.HigherOrder`.
 
 ## The argument
 
