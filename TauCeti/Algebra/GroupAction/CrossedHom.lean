@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.GroupTheory.CrossedCocycle.Basic
 import Mathlib.Tactic.Group
 
 /-!
@@ -19,7 +20,13 @@ For a multiplicative type `G` acting by scalars on a multiplicative type `M`, a 
 
 for all `g, h : G`. This extends Mathlib's `groupCohomology.IsMulCocycle₁` (which assumes
 `CommGroup M`) to possibly non-commutative coefficient groups `M`, keeping the right-to-left factor
-order induced by left complement decompositions `g = n * d`. In contrast to
+order induced by left complement decompositions `g = n * d`. When a monoid `G` acts on a group `M`
+through `α : G →* MulAut M` (`α g m = g • m`), pointwise inversion `f ↦ (g ↦ (f g)⁻¹)` identifies
+`TauCeti.IsMulCrossedHom` with `TauCeti.CrossedCocycle α` (`c (g * h) = c g * α g (c h)`;
+`TauCeti.mulCrossedHomEquivCrossedCocycle`, `TauCeti.isMulCrossedHom_iff_exists_crossedCocycle`).
+Keeping `TauCeti.IsMulCrossedHom` unbundled in the right-to-left order matches normalized
+complement projections (`c n = n`) and Mathlib's `IsMulCocycle₁`/`IsCocycle₁`, while also covering
+right-cancellative `MulOneClass` targets and non-distributive `MulAction`s. In contrast to
 `TauCeti.IsCrossedHom`, which twists an additive target semiring `R` by a unit-valued map
 `H → Rˣ`, both domain and target here are multiplicative and no ring structure enters.
 
@@ -244,5 +251,82 @@ theorem IsMulCrossedHom.map_subtype_oneLocus_conj [IsRightCancelMul M] {c : H �
     · rw [Subgroup.equivSMul_apply_coe, hzx, smul_inv_smul]
 
 end Conj
+
+section CrossedCocycle
+
+variable {G M : Type*} [Monoid G] [Group M] [SMul G M] {α : G →* MulAut M}
+  (hα : ∀ g m, α g m = g • m)
+
+/-- Pointwise inversion turns a multiplicative crossed homomorphism `f : G → M`
+(`f (g * h) = g • f h * f g`) into a crossed cocycle `TauCeti.CrossedCocycle α`
+(`c (g * h) = c g * α g (c h)`), for any action `α : G →* MulAut M` agreeing with `•`. -/
+def IsMulCrossedHom.toInvCrossedCocycle {f : G → M} (hf : IsMulCrossedHom f) :
+    CrossedCocycle α where
+  toFun g := (f g)⁻¹
+  map_mul' g h := by rw [hf.map_mul, ← hα, mul_inv_rev, _root_.map_inv]
+
+/-- Evaluating `hf.toInvCrossedCocycle hα` at `g` gives `(f g)⁻¹`. -/
+@[simp]
+theorem IsMulCrossedHom.toInvCrossedCocycle_apply {f : G → M} (hf : IsMulCrossedHom f) (g : G) :
+    hf.toInvCrossedCocycle hα g = (f g)⁻¹ :=
+  (rfl)
+
+/-- Two multiplicative crossed homomorphisms with the same inverted `CrossedCocycle` are equal. -/
+theorem IsMulCrossedHom.toInvCrossedCocycle_injective {f f' : G → M} (hf : IsMulCrossedHom f)
+    (hf' : IsMulCrossedHom f')
+    (h : hf.toInvCrossedCocycle hα = hf'.toInvCrossedCocycle hα) : f = f' :=
+  funext fun g => inv_injective (DFunLike.congr_fun h g)
+
+/-- The inverted `CrossedCocycle` of the constant map `1` is `1`. -/
+@[simp]
+theorem IsMulCrossedHom.toInvCrossedCocycle_const_one {G M : Type*} [Monoid G] [Group M]
+    [MulDistribMulAction G M] {α : G →* MulAut M} (hα : ∀ g m, α g m = g • m) :
+    (isMulCrossedHom_const_one (G := G) (M := M)).toInvCrossedCocycle hα = 1 :=
+  CrossedCocycle.ext fun _ => inv_one
+
+/-- Pointwise inversion of a `TauCeti.CrossedCocycle α` is a multiplicative crossed homomorphism,
+for any scalar multiplication `•` agreeing with `α`. -/
+theorem CrossedCocycle.isMulCrossedHom_inv (hα : ∀ g m, α g m = g • m) (c : CrossedCocycle α) :
+    IsMulCrossedHom (fun g => (c g)⁻¹) :=
+  isMulCrossedHom_iff.mpr fun g h => by
+    rw [c.apply_mul, mul_inv_rev, ← _root_.map_inv, hα]
+
+/-- Applying `toInvCrossedCocycle` to the pointwise inverse of `c` recovers `c`. -/
+@[simp]
+theorem CrossedCocycle.toInvCrossedCocycle_isMulCrossedHom_inv (c : CrossedCocycle α) :
+    (c.isMulCrossedHom_inv hα).toInvCrossedCocycle hα = c :=
+  CrossedCocycle.ext fun g => inv_inv (c g)
+
+/-- Multiplicative crossed homomorphisms `G → M` correspond bijectively to crossed cocycles
+`TauCeti.CrossedCocycle α` via pointwise inversion `f ↦ (g ↦ (f g)⁻¹)`. -/
+def mulCrossedHomEquivCrossedCocycle :
+    {f : G → M // IsMulCrossedHom f} ≃ CrossedCocycle α where
+  toFun f := f.property.toInvCrossedCocycle hα
+  invFun c := ⟨fun g => (c g)⁻¹, c.isMulCrossedHom_inv hα⟩
+  left_inv f := Subtype.ext (funext fun g => inv_inv (f.val g))
+  right_inv := CrossedCocycle.toInvCrossedCocycle_isMulCrossedHom_inv hα
+
+/-- `mulCrossedHomEquivCrossedCocycle` acts by pointwise inversion. -/
+@[simp]
+theorem mulCrossedHomEquivCrossedCocycle_apply (f : {f : G → M // IsMulCrossedHom f}) (g : G) :
+    mulCrossedHomEquivCrossedCocycle hα f g = (f.val g)⁻¹ :=
+  (rfl)
+
+/-- `mulCrossedHomEquivCrossedCocycle.symm` acts by pointwise inversion. -/
+@[simp]
+theorem coe_mulCrossedHomEquivCrossedCocycle_symm_apply (c : CrossedCocycle α) (g : G) :
+    ((mulCrossedHomEquivCrossedCocycle hα).symm c).val g = (c g)⁻¹ :=
+  (rfl)
+
+/-- A map `f : G → M` is a multiplicative crossed homomorphism if and only if it is the pointwise
+inverse of a `TauCeti.CrossedCocycle α`, for an action `α : G →* MulAut M` agreeing with `•`. -/
+theorem isMulCrossedHom_iff_exists_crossedCocycle (hα : ∀ g m, α g m = g • m) {f : G → M} :
+    IsMulCrossedHom f ↔ ∃ c : CrossedCocycle α, ∀ g, f g = (c g)⁻¹ :=
+  ⟨fun hf => ⟨hf.toInvCrossedCocycle hα, fun g => (inv_inv (f g)).symm⟩,
+    fun ⟨c, hc⟩ => by
+      have hfun : f = fun g => (c g)⁻¹ := funext hc
+      exact hfun ▸ c.isMulCrossedHom_inv hα⟩
+
+end CrossedCocycle
 
 end TauCeti
