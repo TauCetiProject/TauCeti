@@ -136,9 +136,8 @@ private theorem exists_krullDimLE_one_injective_isLocalHom_comp_of_ne_zero {V : 
   let W' := Localization.AtPrime r
   have : Ring.KrullDimLE 1 W' := Ring.KrullDimLE.mk₁' fun I hI0 hI => by
     have hJ : (I.comap (algebraMap (W ⧸ q) W')).IsPrime := Ideal.comap_isPrime _ I
-    have hJr : I.comap (algebraMap (W ⧸ q) W') ≤ r := fun x hx => of_not_not fun hxr =>
-      hI.ne_top (I.eq_top_of_isUnit_mem hx
-        ((IsLocalization.AtPrime.isUnit_to_map_iff W' r x).mpr hxr))
+    have hJr : I.comap (algebraMap (W ⧸ q) W') ≤ r := Set.disjoint_compl_left_iff_subset.mp
+      ((IsLocalization.isPrime_iff_isPrime_disjoint r.primeCompl W' I).mp hI).2
     have hJ0 : I.comap (algebraMap (W ⧸ q) W') ≠ ⊥ := fun h => hI0 <| by
       rw [← IsLocalization.map_under r.primeCompl W' I, Ideal.under, h, Ideal.map_bot]
     rw [← IsLocalization.map_under r.primeCompl W' I, Ideal.under, le_antisymm hJr (hr_le _ hJ hJ0),

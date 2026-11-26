@@ -325,7 +325,7 @@ theorem isVCover_iff_exists_isPrime_le_of_valuationRing [IsDomain A] [ValuationR
     obtain ⟨W, _, _, _, e, ψ, he, _, hψ⟩ := hf A (RingHom.id A)
     rw [RingHom.comp_id] at hψ
     refine ⟨RingHom.ker ψ, (maximalIdeal W).comap ψ, RingHom.ker_isPrime ψ, inferInstance,
-      Ideal.comap_mono bot_le, ?_, ?_⟩
+      Ideal.ker_le_comap ψ, ?_, ?_⟩
     · rw [RingHom.comap_ker, hψ, (RingHom.injective_iff_ker_eq_bot e).mp he]
     · rw [Ideal.comap_comap, hψ, maximalIdeal_comap]
   · -- A valuation domain `W` dominating the pair of primes makes `A →+* B →+* W` an extension.
