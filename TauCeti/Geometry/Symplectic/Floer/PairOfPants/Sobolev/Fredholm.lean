@@ -21,8 +21,9 @@ Let `F` be a finite-dimensional complex inner product space whose symplectic for
 converge to nondegenerate one-periodic orbits of the end Hamiltonians, for Floer data that are the
 pair-of-pants data far out on the ends. The realization `D_u : W^{1,2}_0(S, F) → L²(S, F)` of the
 linearized Floer operator for the cylindrical metric
-(`TauCeti.SymplecticForm.floerConformalSobolevOperator`) has finite-dimensional kernel and closed
-range (`TauCeti.SymplecticForm.finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants`).
+(`TauCeti.SymplecticForm.floerConformalSobolevOperator`) has finite-dimensional kernel
+(`TauCeti.SymplecticForm.finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants`) and
+closed range (`TauCeti.SymplecticForm.isClosed_range_floerConformalSobolevOperator_pairOfPants`).
 This file proves that its cokernel is finite too, so that `D_u` is Fredholm
 (`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_pairOfPants`). The finiteness of
 the cokernel comes from a right parametrix spliced from local inverses.
@@ -42,8 +43,8 @@ the cokernel comes from a right parametrix spliced from local inverses.
   `b`. Far enough out, an inverse of the end model
   carries such a cutoff up to a compact operator and an operator of norm at most `1 / 4`
   (`exists_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer`, in
-  the namespace `TauCeti.SymplecticForm`). The three end cutoffs sum to one outside a compact
-  annular region of `S`.
+  the namespace `TauCeti.SymplecticForm`). The three end cutoffs sum to one outside the compact
+  truncation `S_{T+1}` of `S` (`TauCeti.ThricePuncturedSphere.truncation`).
 * **The core.** The leftover `1 - ∑ β_q` is supported in that compact region. A finite partition
   of unity (`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`) splits it into cutoffs
   supported in small neighbourhoods `U` of points `z₀`, on which `D_u` is close to a frozen model
@@ -390,42 +391,10 @@ private theorem endCutoff_bound {L : ℝ} (hL : ∀ x, ‖deriv smoothTransition
 
 /-! ### The compact core -/
 
-/-- The closed region `m ≤ |w|²`, `m ≤ |w - 1|²`, `|w|² ≤ M` of the plane: for `m > 0`, a compact
-subset of `S`. -/
-private def annularRegion (m M : ℝ) : Set (ℝ × ℝ) :=
-  {z | m ≤ ‖Complex.equivRealProdCLM.symm z‖ ^ 2 ∧ m ≤ ‖Complex.equivRealProdCLM.symm z - 1‖ ^ 2 ∧
-    ‖Complex.equivRealProdCLM.symm z‖ ^ 2 ≤ M}
-
-private theorem isCompact_annularRegion (m M : ℝ) : IsCompact (annularRegion m M) := by
-  refine Metric.isCompact_of_isClosed_isBounded ?_ ?_
-  · simp only [annularRegion, ofPred_and]
-    exact (isClosed_le continuous_const (by fun_prop)).inter
-      ((isClosed_le continuous_const (by fun_prop)).inter
-        (isClosed_le (by fun_prop) continuous_const))
-  · refine (Metric.isBounded_closedBall (x := 0)
-      (r := ‖(Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)‖ * √M)).subset fun z hz ↦ ?_
-    rw [Metric.mem_closedBall, dist_zero_right]
-    have hw : ‖Complex.equivRealProdCLM.symm z‖ ≤ √M :=
-      Real.le_sqrt_of_sq_le hz.2.2
-    calc ‖z‖ = ‖(Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ) (Complex.equivRealProdCLM.symm z)‖ := by
-          simp
-      _ ≤ _ := ((Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ).le_opNorm _).trans (by gcongr)
-
-private theorem annularRegion_subset {m : ℝ} (hm : 0 < m) (M : ℝ) :
-    annularRegion m M ⊆ thricePuncturedSphereReal := by
-  intro z hz
-  refine mem_thricePuncturedSphereReal_iff.2 ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have := hz.1
-    rw [h, norm_zero] at this
-    linarith [pow_two_nonneg (0 : ℝ)]
-  · have := hz.2.1
-    rw [h, sub_self, norm_zero] at this
-    linarith [pow_two_nonneg (0 : ℝ)]
-
-/-- Outside the core region `annularRegion (exp (-4πT) / 4) (9 exp (4πT))`, one end cutoff is one
-and the others vanish, so the end cutoffs sum to one. -/
+/-- Outside the truncation `S_{T+1}`, one end cutoff at the height `T ≥ 1` is one and the others
+vanish, so the end cutoffs sum to one. -/
 private theorem sum_endCutoff_eq_one {T : ℝ} (hT : 1 ≤ T) {z : ℝ × ℝ}
-    (hz : z ∉ annularRegion (exp (-(4 * π * T)) / 4) (9 * exp (4 * π * T))) :
+    (hz : z ∉ Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1)) :
     ∑ q, endCutoff q T z = 1 := by
   set w := Complex.equivRealProdCLM.symm z
   set X := exp (-(4 * π * T))
@@ -439,24 +408,39 @@ private theorem sum_endCutoff_eq_one {T : ℝ} (hT : 1 ≤ T) {z : ℝ × ℝ}
   have ht₁ : ‖w‖ - 1 ≤ ‖w - 1‖ := by simpa using norm_sub_norm_le w 1
   have ht₂ : 1 - ‖w‖ ≤ ‖w - 1‖ := by
     simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w
+  -- The squared radii of the truncation `S_{T+1}`, against `exp (∓4πT)`.
+  have ha : exp (-(2 * π * (T + 1))) ^ 2 ≤ X := by
+    rw [← Real.exp_natCast_mul]
+    exact Real.exp_le_exp.2 (by push_cast; nlinarith [Real.pi_pos])
+  have hb : 2 * E ≤ exp (2 * π * (T + 1)) ^ 2 := by
+    rw [← Real.exp_natCast_mul, show ((2 : ℕ) : ℝ) * (2 * π * (T + 1)) = 4 * π * T + 4 * π by
+      push_cast; ring, Real.exp_add]
+    nlinarith [Real.exp_pos (4 * π * T), two_lt_exp_four_pi]
+  have ha₀ := Real.exp_pos (-(2 * π * (T + 1)))
+  have hb₀ := Real.exp_pos (2 * π * (T + 1))
   rw [Puncture.sum_univ]
   simp only [endCutoff, endA, endB, reduceCtorEq, ite_false, ite_true, endCenter_zero,
     endCenter_one, endCenter_inf, sub_zero]
-  simp only [annularRegion, mem_ofPred_eq, not_and_or, not_le] at hz
-  rcases hz with h | h | h
+  rw [mem_preimage, truncation_eq] at hz
+  simp only [mem_inter_iff, mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right, not_and_or,
+    not_le] at hz
+  rcases hz with (h | h) | h
   · -- Near `0`: the cutoff of the end at `0` is one.
+    have h : ‖w‖ ^ 2 < X / 4 := by nlinarith
     have hw : ‖w‖ < 1 / 2 := by nlinarith
     rw [smoothTransition.one_of_one_le (by nlinarith),
       smoothTransition.zero_of_nonpos (by nlinarith),
       smoothTransition.zero_of_nonpos (by nlinarith)]
     norm_num
   · -- Near `1`: the cutoff of the end at `1` is one.
+    have h : ‖w - 1‖ ^ 2 < X / 4 := by nlinarith
     have hw : ‖w - 1‖ < 1 / 2 := by nlinarith
     rw [smoothTransition.zero_of_nonpos (by nlinarith),
       smoothTransition.one_of_one_le (by nlinarith),
       smoothTransition.zero_of_nonpos (by nlinarith)]
     norm_num
   · -- Far out: the cutoff of the end at `∞` is one.
+    have h : 8 * E < ‖w‖ ^ 2 := by nlinarith
     have hw : 3 < ‖w‖ := by nlinarith
     rw [smoothTransition.zero_of_nonpos (by nlinarith),
       smoothTransition.zero_of_nonpos (by nlinarith),
@@ -464,61 +448,56 @@ private theorem sum_endCutoff_eq_one {T : ℝ} (hT : 1 ≤ T) {z : ℝ × ℝ}
     norm_num
 
 /-- The function `1 - ∑_q β_q` left over by the end cutoffs at the height `T ≥ 1` is supported in
-the core region. -/
+the truncation `S_{T+1}`. -/
 private theorem tsupport_one_sub_sum_endCutoff_subset {T : ℝ} (hT : 1 ≤ T) :
     tsupport (fun z ↦ 1 - ∑ q, endCutoff q T z) ⊆
-      annularRegion (exp (-(4 * π * T)) / 4) (9 * exp (4 * π * T)) :=
+      Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1) :=
   closure_minimal (fun z hz ↦ by_contra fun h ↦ hz (by simp [sum_endCutoff_eq_one hT h]))
-    (isCompact_annularRegion _ _).isClosed
+    (isCompact_preimage_truncation _).isClosed
 
-/-- The core region `annularRegion (exp (-4πT) / 4) (9 exp (4πT))` has an open neighbourhood
-inside the compact region `annularRegion (exp (-4πT) / 16) (36 exp (4πT))`. -/
-private theorem exists_isOpen_annularRegion_subset (T : ℝ) :
-    ∃ O, IsOpen O ∧ annularRegion (exp (-(4 * π * T)) / 4) (9 * exp (4 * π * T)) ⊆ O ∧
-      O ⊆ annularRegion (exp (-(4 * π * T)) / 16) (36 * exp (4 * π * T)) := by
-  have hX : 0 < exp (-(4 * π * T)) := Real.exp_pos _
-  have hE : 0 < exp (4 * π * T) := Real.exp_pos _
-  refine ⟨{z | exp (-(4 * π * T)) / 16 < ‖Complex.equivRealProdCLM.symm z‖ ^ 2 ∧
-    exp (-(4 * π * T)) / 16 < ‖Complex.equivRealProdCLM.symm z - 1‖ ^ 2 ∧
-      ‖Complex.equivRealProdCLM.symm z‖ ^ 2 < 36 * exp (4 * π * T)}, ?_, fun z hz ↦ ?_,
-    fun z hz ↦ ⟨hz.1.le, hz.2.1.le, hz.2.2.le⟩⟩
-  · simp only [ofPred_and]
-    exact (isOpen_lt continuous_const (by fun_prop)).inter
-      ((isOpen_lt continuous_const (by fun_prop)).inter (isOpen_lt (by fun_prop) continuous_const))
-  · obtain ⟨h₁, h₂, h₃⟩ := hz
-    exact ⟨by linarith, by linarith, by linarith⟩
+/-- The truncation `S_{T+1}` has an open neighbourhood inside the truncation `S_{T+2}`: the points
+of `S` below the height `T + 2` on every end. -/
+private theorem exists_isOpen_preimage_truncation_subset (T : ℝ) :
+    ∃ O, IsOpen O ∧ Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1) ⊆ O ∧
+      O ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 2) := by
+  refine ⟨⋂ q, thricePuncturedSphereReal ∩
+      (fun z : ℝ × ℝ ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) ⁻¹'
+        Iio (T + 2), isOpen_iInter_of_finite fun q ↦ isOpen_endSign_mul_re_endCoord_lt q _,
+    fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · rw [mem_preimage_truncation_iff] at hz
+    exact mem_iInter.2 fun q ↦ ⟨hz.1, by
+      rw [mem_preimage, mem_Iio, ← fst_positiveEndCoord]
+      linarith [hz.2 q]⟩
+  · have hz := mem_iInter.1 hz
+    refine mem_preimage_truncation_iff.2 ⟨(hz zero).1, fun q ↦ ?_⟩
+    have hq := (hz q).2
+    rw [mem_preimage, mem_Iio, ← fst_positiveEndCoord] at hq
+    exact hq.le
 
-/-- Read in the positive end chart of the end at `0`, the region
-`annularRegion (exp (-4πT) / 16) (36 exp (4πT))` lies over the heights `-T - 3 < s < T + 1`. -/
-private theorem positiveEndChart_zero_notMem_annularRegion {T : ℝ} {ζ : ℝ × ℝ}
-    (h : ζ.1 ≤ -T - 3 ∨ T + 1 ≤ ζ.1) :
-    positiveEndChart zero ζ ∉ annularRegion (exp (-(4 * π * T)) / 16) (36 * exp (4 * π * T)) := by
-  have hn := norm_equivRealProdCLM_symm_positiveEndChart_sub_endCenter zero ζ
-  simp only [endCenter_zero, sub_zero, endSign_zero, endScale_zero, one_mul] at hn
-  rw [show ‖(1 / 2 : ℂ)‖ = 1 / 2 by norm_num] at hn
-  have hsq : ‖Complex.equivRealProdCLM.symm (positiveEndChart zero ζ)‖ ^ 2 =
-      exp (-(4 * π * ζ.1)) / 4 := by
-    rw [hn, mul_pow, sq (exp _), ← Real.exp_add]
-    ring_nf
-  simp only [annularRegion, mem_ofPred_eq, hsq, not_and_or, not_le]
-  have hπ := Real.two_le_pi
+/-- Read in the positive end chart of the end at `0`, the truncation `S_{T+2}` lies over the
+heights `-T - 3 < s < T + 3`. -/
+private theorem positiveEndChart_zero_notMem_preimage_truncation {T : ℝ} {ζ : ℝ × ℝ}
+    (h : ζ.1 ≤ -T - 3 ∨ T + 3 ≤ ζ.1) :
+    positiveEndChart zero ζ ∉ Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 2) := by
+  rw [mem_preimage_truncation_iff, not_and_or, not_forall]
+  right
   rcases h with h | h
-  · -- Far below, the point lies beyond `|w|² = 36 exp (4πT)`.
-    right; right
-    have h12 : 313 ≤ exp (12 * π) := by
-      nlinarith [Real.quadratic_le_exp_of_nonneg (x := 12 * π) (by positivity)]
-    have : exp (4 * π * T) * exp (12 * π) ≤ exp (-(4 * π * ζ.1)) := by
+  · -- Far below on the end at `0`, the point lies beyond the height `T + 2` of the output end.
+    have hn := norm_equivRealProdCLM_symm_positiveEndChart_sub_endCenter zero ζ
+    simp only [endCenter_zero, sub_zero, endSign_zero, endScale_zero, one_mul] at hn
+    rw [show ‖(1 / 2 : ℂ)‖ = 1 / 2 by norm_num] at hn
+    have hw : Complex.equivRealProdCLM.symm (positiveEndChart zero ζ) ≠ 0 := by
+      rw [← norm_ne_zero_iff, hn]
+      positivity
+    refine ⟨inf, not_le.2 ((lt_fst_positiveEndCoord_inf_iff hw).2 ?_)⟩
+    rw [hn]
+    have h2π : 4 < exp (2 * π) := by nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
+    have : exp (2 * π * (T + 2)) * exp (2 * π) ≤ exp (-(2 * π * ζ.1)) := by
       rw [← Real.exp_add]
-      exact Real.exp_le_exp.2 (by nlinarith)
-    nlinarith [Real.exp_pos (4 * π * T)]
-  · -- Far above, the point lies within `|w|² = exp (-4πT) / 16` of `0`.
-    left
-    have h4 : 41 ≤ exp (4 * π) := by
-      nlinarith [Real.quadratic_le_exp_of_nonneg (x := 4 * π) (by positivity)]
-    have : exp (-(4 * π * ζ.1)) * exp (4 * π) ≤ exp (-(4 * π * T)) := by
-      rw [← Real.exp_add]
-      exact Real.exp_le_exp.2 (by nlinarith)
-    nlinarith [Real.exp_pos (-(4 * π * ζ.1)), Real.exp_pos (-(4 * π * T))]
+      exact Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
+    nlinarith [Real.exp_pos (2 * π * (T + 2))]
+  · -- Far above on the end at `0`, the point lies beyond the height `T + 2` of that end.
+    exact ⟨zero, not_le.2 (by rw [fst_positiveEndCoord_positiveEndChart]; linarith)⟩
 
 /-- A `C¹` function supported in a compact subset of `S` satisfies the bounds required by the
 transfer along every end chart. -/
@@ -729,20 +708,18 @@ private theorem exists_core_pieces (ω : SymplecticForm F)
             (endTransfer zero (γ i) (Q i h))) : ℝ × ℝ → F) =ᵐ[stripMeasure]
         fun ζ ↦ γ i (positiveEndChart zero ζ) • h ζ + K i h ζ := by
   classical
-  set X := exp (-(4 * π * T))
-  set E := exp (4 * π * T)
-  -- The leftover `κ = 1 - ∑ β_q` lives in the core region, inside an open set `O` whose closure
-  -- is a compact part of `S`.
+  -- The leftover `κ = 1 - ∑ β_q` lives in the truncation `S_{T+1}`, inside an open set `O`
+  -- contained in the compact truncation `S_{T+2}` of `S`.
   set κ : ℝ × ℝ → ℝ := fun z ↦ 1 - ∑ q, endCutoff q T z
   have hκ : ContDiff ℝ 2 κ := contDiff_const.sub (ContDiff.sum fun q _ ↦ contDiff_endCutoff q T)
   have hκK := tsupport_one_sub_sum_endCutoff_subset hT
-  obtain ⟨O, hO, hKO, hOK⟩ := exists_isOpen_annularRegion_subset T
+  obtain ⟨O, hO, hKO, hOK⟩ := exists_isOpen_preimage_truncation_subset T
   have hCO : tsupport κ ⊆ O := hκK.trans hKO
-  have hKS := annularRegion_subset (by positivity : 0 < X / 16) (36 * E)
+  have hKS := preimage_truncation_subset_thricePuncturedSphereReal (T + 2)
   -- A finite partition of unity on the support of `κ`, subordinate to the frozen pieces.
   choose U hU Q hQ using exists_frozen_piece ω hω hX hH hHp hx hxp hnd hJ hc hM
   obtain ⟨s, χ, hχ, -, -, hχ1⟩ :=
-    ((isCompact_annularRegion _ _).of_isClosed_subset (isClosed_tsupport κ) hκK
+    ((isCompact_preimage_truncation _).of_isClosed_subset (isClosed_tsupport κ) hκK
       ).exists_contDiff_tsupport_subset_finset_sum_eq_one
       (U := fun z : tsupport κ ↦ interior (U z) ∩ O) (fun _ ↦ isOpen_interior.inter hO)
       fun z hz ↦ mem_iUnion.2 ⟨⟨z, hz⟩, mem_interior_iff_mem_nhds.2 (hU z), hCO hz⟩
@@ -750,16 +727,17 @@ private theorem exists_core_pieces (ω : SymplecticForm F)
   have hγ (i : s) : ContDiff ℝ 2 (γ i) := hκ.mul ((hχ i).1.of_le (by norm_cast))
   have hγO (i : s) : tsupport (γ i) ⊆ interior (U i) ∩ O :=
     tsupport_mul_subset_right.trans (hχ i).2.2
-  have hγK (i : s) : tsupport (γ i) ⊆ annularRegion (X / 16) (36 * E) :=
+  have hγK (i : s) : tsupport (γ i) ⊆
+      Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 2) :=
     fun z hz ↦ hOK (hγO i hz).2
   have hγB (i : s) := exists_bound_of_tsupport_subset ((hγ i).of_le (by norm_num))
-    (isCompact_annularRegion _ _) hKS (hγK i) zero.endCenter
-  -- Read in the end chart of `0`, the cutoffs live over the heights `-T - 3 < s < T + 1`.
-  have hγ0 (i : s) {ζ : ℝ × ℝ} (h : ζ.1 ≤ -T - 3 ∨ T + 1 ≤ ζ.1) :
+    (isCompact_preimage_truncation _) hKS (hγK i) zero.endCenter
+  -- Read in the end chart of `0`, the cutoffs live over the heights `-T - 3 < s < T + 3`.
+  have hγ0 (i : s) {ζ : ℝ × ℝ} (h : ζ.1 ≤ -T - 3 ∨ T + 3 ≤ ζ.1) :
       positiveEndChart zero ζ ∉ tsupport (γ i) := fun hz ↦
-    positiveEndChart_zero_notMem_annularRegion h (hγK i hz)
+    positiveEndChart_zero_notMem_preimage_truncation h (hγK i hz)
   have hpiece (i : s) := hQ i (hKS (hOK (hCO i.val.property))) (β := γ i) (T₀ := -T - 3)
-    (T₁ := T + 1) ((hγ i).of_le (by norm_num)) (fun z hz _ ↦ hKS (hγK i hz)) (hγB i).choose_spec
+    (T₁ := T + 3) ((hγ i).of_le (by norm_num)) (fun z hz _ ↦ hKS (hγK i hz)) (hγB i).choose_spec
     (fun z hz ↦ interior_subset (hγO i hz).1)
     (fun ζ h ↦ image_eq_zero_of_notMem_tsupport (hγ0 i h))
     (fun ζ h ↦ fderiv_of_notMem_tsupport ℝ (hγ0 i h))
