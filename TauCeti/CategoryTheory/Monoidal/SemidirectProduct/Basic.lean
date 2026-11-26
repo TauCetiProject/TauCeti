@@ -140,10 +140,25 @@ theorem toMulAutHom_apply {X : C} (g : X ⟶ G) (n : X ⟶ N) :
     A.toMulAutHom X g n = A.act g n :=
   by rfl
 
+/-- The actions on generalized points are compatible with precomposition, in the form required by
+the semidirect product of the generalized-point presheaves. -/
+private theorem yonedaGrpObj_map_toMulAutHom ⦃X Y : Cᵒᵖ⦄ (f : X ⟶ Y) (g : unop X ⟶ G)
+    (n : unop X ⟶ N) :
+    (yonedaGrpObj N).map f (A.toMulAutHom (unop X) g n) =
+      A.toMulAutHom (unop Y) ((yonedaGrpObj G).map f g) ((yonedaGrpObj N).map f n) :=
+  A.comp_act f.unop g n
+
 /-- The presheaf of ordinary semidirect products induced by an internal group action. -/
 private def pointSemidirectProduct : Cᵒᵖ ⥤ GrpCat.{v} :=
   GrpCat.semidirectProductFunctor (yonedaGrpObj N) (yonedaGrpObj G)
-    (fun X ↦ A.toMulAutHom (unop X)) (fun _ _ f g n ↦ A.comp_act f.unop g n)
+    (fun X ↦ A.toMulAutHom (unop X)) A.yonedaGrpObj_map_toMulAutHom
+
+/-- A morphism `f` acts on the pointwise semidirect product by precomposition on both factors. -/
+private theorem pointSemidirectProduct_map_apply {X Y : Cᵒᵖ} (f : X ⟶ Y)
+    (x : (unop X ⟶ N) ⋊[A.toMulAutHom (unop X)] (unop X ⟶ G)) :
+    A.pointSemidirectProduct.map f x = ⟨f.unop ≫ x.left, f.unop ≫ x.right⟩ :=
+  GrpCat.semidirectProductFunctor_map_apply (yonedaGrpObj N) (yonedaGrpObj G) _
+    A.yonedaGrpObj_map_toMulAutHom f x
 
 /-- The pointwise semidirect-product presheaf is represented by the product object `N ⊗ G`. -/
 private def pointSemidirectProductRepresentableBy :
@@ -154,14 +169,12 @@ private def pointSemidirectProductRepresentableBy :
       left_inv := fun f ↦ by simp
       right_inv := fun f ↦ SemidirectProduct.ext (lift_fst _ _) (lift_snd _ _) }
   homEquiv_comp f g := by
-    -- The forgetful/Yoneda coercions hide the pair; expose it to use the generic map law.
+    -- The forgetful/Yoneda coercions hide the pair; expose it to use the map law.
     change (⟨(f ≫ g) ≫ fst N G, (f ≫ g) ≫ snd N G⟩ :
       (_ ⟶ N) ⋊[A.toMulAutHom _] (_ ⟶ G)) =
         (A.pointSemidirectProduct.map f.op) ⟨g ≫ fst N G, g ≫ snd N G⟩
-    have h := GrpCat.semidirectProductFunctor_map_apply (yonedaGrpObj N) (yonedaGrpObj G)
-      (fun X ↦ A.toMulAutHom (unop X)) (fun _ _ f g n ↦ A.comp_act f.unop g n)
-      f.op ⟨g ≫ fst N G, g ≫ snd N G⟩
-    exact (SemidirectProduct.ext (Category.assoc _ _ _) (Category.assoc _ _ _)).trans h.symm
+    exact (SemidirectProduct.ext (Category.assoc _ _ _) (Category.assoc _ _ _)).trans
+      (A.pointSemidirectProduct_map_apply f.op _).symm
 
 /-- The group-object structure on `N ⊗ G` representing the pointwise semidirect product. -/
 @[instance_reducible]
@@ -229,31 +242,38 @@ theorem pointMulEquiv_symm_apply {X : C}
 private def inlNatTrans : (yonedaGrp (C := C)).obj (Grp.mk N) ⟶
     A.pointSemidirectProduct :=
   GrpCat.semidirectProductInl (yonedaGrpObj N) (yonedaGrpObj G)
-    (fun X ↦ A.toMulAutHom (unop X)) (fun _ _ f g n ↦ A.comp_act f.unop g n)
+    (fun X ↦ A.toMulAutHom (unop X)) A.yonedaGrpObj_map_toMulAutHom
+
+/-- The natural inclusion of the normal factor sends `n` to `(n, 1)`. -/
+private theorem inlNatTrans_app_apply (X : Cᵒᵖ) (n : unop X ⟶ N) :
+    A.inlNatTrans.app X n = SemidirectProduct.inl n :=
+  GrpCat.semidirectProductInl_app_apply (yonedaGrpObj N) (yonedaGrpObj G) _
+    A.yonedaGrpObj_map_toMulAutHom X n
 
 /-- The natural inclusion of the acting factor into the pointwise semidirect product. -/
 private def inrNatTrans : (yonedaGrp (C := C)).obj (Grp.mk G) ⟶
-    A.pointSemidirectProduct where
-  -- The group structures of the generic objects of `A.pointSemidirectProduct` are found only after
-  -- unfolding them, so the component is elaborated against explicitly named groups.
-  app X := by
-    exact GrpCat.ofHom (X := unop X ⟶ G)
-      (Y := (unop X ⟶ N) ⋊[A.toMulAutHom (unop X)] (unop X ⟶ G))
-      SemidirectProduct.inr
-  naturality _ _ f := GrpCat.ext fun g ↦ (SemidirectProduct.map_inr _ _
-    (fun g ↦ MonoidHom.ext fun n ↦ A.comp_act f.unop g n) g).symm
+    A.pointSemidirectProduct :=
+  GrpCat.semidirectProductInr (yonedaGrpObj N) (yonedaGrpObj G)
+    (fun X ↦ A.toMulAutHom (unop X)) A.yonedaGrpObj_map_toMulAutHom
+
+/-- The natural inclusion of the acting factor sends `g` to `(1, g)`. -/
+private theorem inrNatTrans_app_apply (X : Cᵒᵖ) (g : unop X ⟶ G) :
+    A.inrNatTrans.app X g = SemidirectProduct.inr g :=
+  GrpCat.semidirectProductInr_app_apply (yonedaGrpObj N) (yonedaGrpObj G) _
+    A.yonedaGrpObj_map_toMulAutHom X g
 
 /-- The natural projection from the pointwise semidirect product to the acting factor. -/
 private def rightHomNatTrans : A.pointSemidirectProduct ⟶
-    (yonedaGrp (C := C)).obj (Grp.mk G) where
-  -- The group structures of the generic objects of `A.pointSemidirectProduct` are found only after
-  -- unfolding them, so the component is elaborated against explicitly named groups.
-  app X := by
-    exact GrpCat.ofHom
-      (X := (unop X ⟶ N) ⋊[A.toMulAutHom (unop X)] (unop X ⟶ G))
-      (Y := unop X ⟶ G) SemidirectProduct.rightHom
-  naturality _ _ f := GrpCat.ext fun x ↦ DFunLike.congr_fun (SemidirectProduct.rightHom_comp_map _ _
-    (fun g ↦ MonoidHom.ext fun n ↦ A.comp_act f.unop g n)) x
+    (yonedaGrp (C := C)).obj (Grp.mk G) :=
+  GrpCat.semidirectProductRightHom (yonedaGrpObj N) (yonedaGrpObj G)
+    (fun X ↦ A.toMulAutHom (unop X)) A.yonedaGrpObj_map_toMulAutHom
+
+/-- The natural projection to the acting factor sends `(n, g)` to `g`. -/
+private theorem rightHomNatTrans_app_apply (X : Cᵒᵖ)
+    (x : (unop X ⟶ N) ⋊[A.toMulAutHom (unop X)] (unop X ⟶ G)) :
+    A.rightHomNatTrans.app X x = SemidirectProduct.rightHom x :=
+  GrpCat.semidirectProductRightHom_app_apply (yonedaGrpObj N) (yonedaGrpObj G) _
+    A.yonedaGrpObj_map_toMulAutHom X x
 
 /-- The canonical inclusion `N ⟶ N ⋊ G` of internal groups. -/
 noncomputable def inl : Grp.mk N ⟶ A.semidirectProduct :=
@@ -278,8 +298,7 @@ theorem pointMulEquiv_comp_inl {X : C} (n : X ⟶ N) :
     (yonedaGrpFullyFaithful.map_preimage (A.inlNatTrans ≫ A.pointIso.inv))
   -- Read the fully-faithful preimage equation as an equality of generalized points.
   change n ≫ A.inl.hom.hom = A.pointIso.inv.app (op X) (A.inlNatTrans.app (op X) n) at h
-  rw [h, show A.inlNatTrans.app (op X) n = SemidirectProduct.inl n from
-    GrpCat.semidirectProductInl_app_apply (yonedaGrpObj N) (yonedaGrpObj G) _ _ (op X) n]
+  rw [h, inlNatTrans_app_apply]
   exact A.pointIso.inv_hom_id_app_apply (op X) (SemidirectProduct.inl n)
 
 /-- On generalized points, the second canonical inclusion is `SemidirectProduct.inr`. -/
@@ -292,9 +311,8 @@ theorem pointMulEquiv_comp_inr {X : C} (g : X ⟶ G) :
   have h := congrArg (fun F ↦ F.app (op X) g)
     (yonedaGrpFullyFaithful.map_preimage (A.inrNatTrans ≫ A.pointIso.inv))
   -- Read the fully-faithful preimage equation as an equality of generalized points.
-  change g ≫ A.inr.hom.hom =
-    A.pointIso.inv.app (op X) (SemidirectProduct.inr g) at h
-  rw [h]
+  change g ≫ A.inr.hom.hom = A.pointIso.inv.app (op X) (A.inrNatTrans.app (op X) g) at h
+  rw [h, inrNatTrans_app_apply]
   exact A.pointIso.inv_hom_id_app_apply (op X) (SemidirectProduct.inr g)
 
 /-- The first projection of the canonical inclusion of the normal factor is the identity. -/
@@ -344,7 +362,7 @@ theorem comp_rightHom {X : C} (x : X ⟶ N ⊗ G) :
     x ≫ A.rightHom.hom.hom = SemidirectProduct.rightHom (A.pointMulEquiv X x) := by
   have h := congrArg (fun F ↦ F.app (op X) x)
     (yonedaGrpFullyFaithful.map_preimage (A.pointIso.hom ≫ A.rightHomNatTrans))
-  exact h
+  exact h.trans (A.rightHomNatTrans_app_apply (op X) _)
 
 end Action
 

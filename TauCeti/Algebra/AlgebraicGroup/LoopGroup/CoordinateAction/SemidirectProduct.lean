@@ -31,10 +31,7 @@ built by `TauCeti.GrpCat.semidirectProductFunctor` from the group functors
 `TauCeti.FormalCoordinate.groupFunctor` along `forget₂ (CommAlgCat k) CommRingCat`. Since the
 inclusion `L⁺G → LG` is equivariant it extends, by `TauCeti.GrpCat.semidirectProductMap`, to an
 injective natural homomorphism `L⁺G ⋊ Aut(O) → LG ⋊ Aut(O)`. The loop groups embed as the normal
-factors `(g, 1)` through `TauCeti.GrpCat.semidirectProductInl`. The projections to `Aut(O)` and
-their sections `φ ↦ (1, φ)` are the natural transformations
-`TauCeti.GrpCat.semidirectProductRightHom` and `TauCeti.GrpCat.semidirectProductInr`, for `Aut(O)`
-lifted to the universe of the semidirect products.
+factors `(g, 1)` through `TauCeti.GrpCat.semidirectProductInl`.
 
 The loop factor `R⸨t⸩` carries its coefficientwise `k`-algebra structure `HahnSeries.instAlgebra`,
 as in `TauCeti.HopfAlgebra.loopGroup`. Statements about the elements of `LG ⋊ Aut(O)` select it
@@ -205,12 +202,6 @@ theorem positiveLoopToSemidirectProduct_comp_positiveLoopSemidirectProductToLoop
         positiveLoopSemidirectProductToLoopSemidirectProduct k H =
       positiveLoopToLoop k H ≫ loopToSemidirectProduct k H :=
   GrpCat.semidirectProductInl_comp_map _ _ _
-
-/-- The coordinate changes split off `LG ⋊ Aut(O)` naturally: the natural sections
-`φ ↦ (1, φ)` of the natural projections to `Aut(O)` compose to the identity. -/
-example : (GrpCat.semidirectProductInr _ _ _ _ : _ ⟶ loopSemidirectProduct.{u, v, w} k H) ≫
-    GrpCat.semidirectProductRightHom _ _ _ _ = 𝟙 _ :=
-  GrpCat.semidirectProductInr_comp_rightHom _ _ _ _
 
 /-- For the trivial group, `LG ⋊ Aut(O)` is the group of coordinate changes: the projection to
 the second factor is an isomorphism. -/
