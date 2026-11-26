@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -377,11 +376,6 @@ theorem isFredholm_floerSobolevOperator_of_cylindrical (ω : SymplecticForm F)
         Ks Kt u).IsFredholm := by
   -- This is the weighted theorem with slope `c = 0`: an orbit is `C¹`, and at a nondegenerate
   -- orbit the unshifted field has a nondegenerate return map.
-  have hC₁ {H : ℝ → F → ℝ} (hH : ContDiff ℝ 3 (uncurry H)) {x : ℝ → F}
-      (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x :=
-    contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
-        (by simpa using hH.of_le (by norm_num))).continuous hx
   have hdet {H : ℝ → F → ℝ} {K : ℝ≥0}
       (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
       (hH : ContDiff ℝ 3 (uncurry H)) {x : ℝ → F}
@@ -396,8 +390,11 @@ theorem isFredholm_floerSobolevOperator_of_cylindrical (ω : SymplecticForm F)
         hx hnd
   rw [← floerWeightedSobolevOperator_zero]
   exact ω.isFredholm_floerWeightedSobolevOperator_of_cylindrical hω hcyl hu continuous_const
-    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm hHmper (hC₁ hHm hxm) hxmper (hdet hXm hHm hxm hndm) huxm
-    hHp hHpper (hC₁ hHp hxp) hxpper (hdet hXp hHp hxp hndp) huxp
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm hHmper
+    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hHm.of_le (by norm_num)) hxm) hxmper
+    (hdet hXm hHm hxm hndm) huxm hHp hHpper
+    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hHp.of_le (by norm_num)) hxp) hxpper
+    (hdet hXp hHp hxp hndp) huxp
 
 /-- **The linearized Floer operator along a Floer trajectory is Fredholm in a unitary
 trivialization.** Let `F` be a finite-dimensional complex inner product space whose symplectic

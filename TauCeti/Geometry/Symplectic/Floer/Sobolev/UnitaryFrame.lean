@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.Circle.LinearODE.DeterminantLine
 import TauCeti.Geometry.Symplectic.AlmostComplex.Frame
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -133,11 +132,8 @@ private theorem exists_loop_eq_trivializedCoeff
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
   have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
   have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by norm_num)
-  have hxc : ContDiff ℝ 1 x :=
-    contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
-        (by simpa using hH.of_le (by norm_num))).continuous hx
-  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp hxc hxp
+  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp
+    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx) hxp
   have hSv : (fun t : ℝ ↦ S t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
     funext hS
   have hSvp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 := fun t ↦ by
