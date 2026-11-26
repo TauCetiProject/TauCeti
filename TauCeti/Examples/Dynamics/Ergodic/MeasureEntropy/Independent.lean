@@ -30,8 +30,7 @@ namespace TauCeti.MeasureEntropyExamples
 theorem partitionEntropyRate_not_id : partitionEntropyRate fairBit not id = 0 :=
   nonpos_iff_eq_zero.mp <|
     (partitionEntropyRate_le_measureEntropy_of_finite not measurable_id).trans
-    (measureEntropy_eq_zero_of_iterate_eq_id measurePreserving_not_fairBit two_pos
-      (funext fun b ↦ by cases b <;> rfl)).le
+      measureEntropy_not_fairBit.le
 
 /-- **Check.** For the swap the rate of the partition into points is strictly below its entropy
 `log 2`. -/

@@ -133,7 +133,7 @@ theorem measurePreserving_not_fairBit : MeasurePreserving not fairBit fairBit :=
   cases b <;> simp [Set.preimage]
 
 /-- The two-point flip has entropy `0`: it squares to the identity. -/
-example : measureEntropy fairBit not = 0 :=
+theorem measureEntropy_not_fairBit : measureEntropy fairBit not = 0 :=
   measureEntropy_eq_zero_of_iterate_eq_id measurePreserving_not_fairBit two_pos
     (funext fun b ↦ by cases b <;> rfl)
 
