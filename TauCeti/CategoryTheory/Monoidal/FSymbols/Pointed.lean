@@ -598,7 +598,9 @@ open GradedObject (TwistingCocycle)
 variable {R : Type v} [CommSemiring R]
 
 /-- The pointed F-symbols on `Multiplicative (ZMod 2)` with `F^{111}_1 = u` (`u * u = 1`) and `1`
-on all other nonempty blocks. -/
+on all other nonempty blocks. Its body is exposed so `RSymbols (FSymbols.zmod2 u hu)` is
+definitionally `RSymbols (FSymbols.ofTwistingCocycle _)`. -/
+@[expose]
 def zmod2 (u : Rˣ) (hu : u * u = 1) : FSymbols R (FusionRules.ofMul (Multiplicative (ZMod 2))) :=
   ofTwistingCocycle
     ((TwistingCocycle.zmod2 u hu).comap
@@ -687,19 +689,17 @@ variable {K : Type v} [CommSemiring K]
 /-- Construct R-symbols on `FSymbols.zmod2 u hu` from a square root `r : Kˣ` of `u` (`r * r = u`),
 giving `R^{11}_0 = r` and `1` on all unit blocks. -/
 def zmod2 {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) : RSymbols (FSymbols.zmod2 u hu) :=
-  (ofPointedBraiding
+  ofPointedBraiding
     ((PointedBraiding.zmod2 hu r hr).comap
       (AddEquiv.additiveMultiplicative (ZMod 2) :
-        Additive (Multiplicative (ZMod 2)) →+ ZMod 2))).cast
-    (FSymbols.zmod2_eq_ofTwistingCocycle u hu).symm
+        Additive (Multiplicative (ZMod 2)) →+ ZMod 2))
 
-theorem zmod2_eq_cast_ofPointedBraiding {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
+theorem zmod2_eq_ofPointedBraiding {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
     zmod2 hu r hr =
-      (ofPointedBraiding
+      ofPointedBraiding
         ((PointedBraiding.zmod2 hu r hr).comap
           (AddEquiv.additiveMultiplicative (ZMod 2) :
-            Additive (Multiplicative (ZMod 2)) →+ ZMod 2))).cast
-        (FSymbols.zmod2_eq_ofTwistingCocycle u hu).symm :=
+            Additive (Multiplicative (ZMod 2)) →+ ZMod 2)) :=
   (rfl)
 
 @[simp]
@@ -708,7 +708,7 @@ theorem zmod2_R_apply {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u)
     (i : Fin ((FusionRules.ofMul (Multiplicative (ZMod 2))).N a b c))
     (j : Fin ((FusionRules.ofMul (Multiplicative (ZMod 2))).N b a c)) :
     (zmod2 hu r hr).R a b c i j = if a.toAdd = 1 ∧ b.toAdd = 1 then (r : K) else 1 := by
-  rw [zmod2_eq_cast_ofPointedBraiding, cast_R, ofPointedBraiding_R_apply]
+  rw [zmod2_eq_ofPointedBraiding, ofPointedBraiding_R_apply]
   simp only [PointedBraiding.comap_r, AddMonoidHom.coe_ofClass,
     AddEquiv.additiveMultiplicative_apply, toMul_ofMul, PointedBraiding.zmod2_r]
   split_ifs <;> simp
@@ -720,7 +720,7 @@ theorem zmod2_Rinv_apply {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u)
     (i : Fin ((FusionRules.ofMul (Multiplicative (ZMod 2))).N a b c)) :
     (zmod2 hu r hr).Rinv a b c j i =
       if a.toAdd = 1 ∧ b.toAdd = 1 then ((r⁻¹ : Kˣ) : K) else 1 := by
-  rw [zmod2_eq_cast_ofPointedBraiding, cast_Rinv, ofPointedBraiding_Rinv_apply]
+  rw [zmod2_eq_ofPointedBraiding, ofPointedBraiding_Rinv_apply]
   simp only [PointedBraiding.comap_r, AddMonoidHom.coe_ofClass,
     AddEquiv.additiveMultiplicative_apply, toMul_ofMul, PointedBraiding.zmod2_r]
   split_ifs <;> simp
@@ -730,30 +730,23 @@ nontrivial braiding entry `R^{11}_0 = r`, witnessing `(R^{11}_0)^2 = F^{111}_1`,
 `RSymbols.zmod2`. -/
 def zmod2Equiv (u : Kˣ) (hu : u * u = 1) :
     RSymbols (FSymbols.zmod2 u hu) ≃ { r : Kˣ // r * r = u } :=
-  (Equiv.cast (congrArg RSymbols (FSymbols.zmod2_eq_ofTwistingCocycle u hu))).trans
-    ((pointedBraidingEquiv _).trans
-      ((PointedBraiding.comapEquiv (AddEquiv.additiveMultiplicative (ZMod 2))
-        (TwistingCocycle.zmod2 u hu)).trans (PointedBraiding.zmod2Equiv u hu)))
+  (pointedBraidingEquiv _).trans
+    ((PointedBraiding.comapEquiv (AddEquiv.additiveMultiplicative (ZMod 2))
+      (TwistingCocycle.zmod2 u hu)).trans (PointedBraiding.zmod2Equiv u hu))
 
 @[simp]
 theorem val_zmod2Equiv_apply (u : Kˣ) (hu : u * u = 1) (Q : RSymbols (FSymbols.zmod2 u hu)) :
     (((zmod2Equiv u hu Q).val : Kˣ) : K) =
       Q.R (.ofAdd 1) (.ofAdd 1) 1 (ofMulIdx (by decide)) (ofMulIdx (by decide)) := by
-  have hcast {P₁ P₂ : FSymbols K (FusionRules.ofMul (Multiplicative (ZMod 2)))} (h : P₁ = P₂)
-      (Q' : RSymbols P₁) : _root_.cast (congrArg RSymbols h) Q' = Q'.cast h := by
-    cases h; simp
-  have h := R_eq_toPointedBraiding_r (Q.cast (FSymbols.zmod2_eq_ofTwistingCocycle u hu))
-    (.ofAdd 1) (.ofAdd 1) 1 (ofMulIdx (by decide)) (ofMulIdx (by decide))
-  simpa [zmod2Equiv, hcast (FSymbols.zmod2_eq_ofTwistingCocycle u hu)] using h.symm
+  unfold zmod2Equiv FSymbols.zmod2 at *
+  simpa using (R_eq_toPointedBraiding_r Q
+    (.ofAdd 1) (.ofAdd 1) 1 (ofMulIdx (by decide)) (ofMulIdx (by decide))).symm
 
 @[simp]
 theorem zmod2Equiv_symm_apply (u : Kˣ) (hu : u * u = 1) (r : { r : Kˣ // r * r = u }) :
     (zmod2Equiv u hu).symm r = zmod2 hu r.val r.property := by
-  have hcast {P₁ P₂ : FSymbols K (FusionRules.ofMul (Multiplicative (ZMod 2)))} (h : P₁ = P₂)
-      (Q' : RSymbols P₂) : (Equiv.cast (congrArg RSymbols h)).symm Q' = Q'.cast h.symm := by
-    cases h; simp
-  simpa [zmod2Equiv, zmod2_eq_cast_ofPointedBraiding] using
-    hcast (FSymbols.zmod2_eq_ofTwistingCocycle u hu) _
+  unfold zmod2Equiv zmod2 FSymbols.zmod2
+  simp
 
 @[simp]
 theorem zmod2Equiv_zmod2 {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
