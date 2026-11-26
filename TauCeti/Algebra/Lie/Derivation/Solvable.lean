@@ -46,6 +46,10 @@ does.
   derivation.
 * `LieIdeal.restrict_nilradical`: the nilradical of an ideal `I` is the nilradical of `L` read
   inside `I`.
+* `LieIdeal.map_incl_nilradical`: the nilradical of an ideal `I`, read inside `L`, is
+  `I ⊓ nilradical K L`.
+* `LieIdeal.map_incl_nilradical_of_le` and `TauCeti.LieAlgebra.map_incl_nilradical_radical`: the
+  nilradical of an ideal containing the nilradical, such as the radical, is the nilradical of `L`.
 
 ## References
 
@@ -231,5 +235,33 @@ theorem _root_.LieIdeal.restrict_nilradical (I : LieIdeal K L) :
   exact LieIdeal.le_nilradical K I _
     ((LieAlgebra.nilradical K L).isNilpotent_comap_of_injective I.incl I.incl_injective)
     (LieIdeal.mem_comap.mpr (LieIdeal.mem_restrict.mp hz))
+
+/-- **The nilradical of an ideal**: over a field of characteristic zero, the nilradical of an ideal
+`I` of a finite-dimensional Lie algebra `L`, read inside `L`, is the part of the nilradical of `L`
+lying in `I`. -/
+@[simp]
+theorem _root_.LieIdeal.map_incl_nilradical (I : LieIdeal K L) :
+    (LieAlgebra.nilradical K I).map I.incl = I ⊓ LieAlgebra.nilradical K L := by
+  have hcomap : I.restrict (LieAlgebra.nilradical K L) =
+      LieIdeal.comap I.incl (LieAlgebra.nilradical K L) := by
+    ext x
+    rw [LieIdeal.mem_restrict, LieIdeal.mem_comap, LieIdeal.incl_apply]
+  rw [← I.restrict_nilradical, hcomap, LieIdeal.map_comap_incl]
+
+/-- **The nilradical of an ideal containing the nilradical**: over a field of characteristic zero,
+if an ideal `I` of a finite-dimensional Lie algebra `L` contains the nilradical of `L`, then the
+nilradical of `I`, read inside `L`, is the nilradical of `L`. -/
+theorem _root_.LieIdeal.map_incl_nilradical_of_le {I : LieIdeal K L}
+    (h : LieAlgebra.nilradical K L ≤ I) :
+    (LieAlgebra.nilradical K I).map I.incl = LieAlgebra.nilradical K L := by
+  rw [I.map_incl_nilradical, inf_eq_right.mpr h]
+
+variable (K L) in
+/-- **The nilradical of the radical is the nilradical**: over a field of characteristic zero, the
+nilradical of the solvable radical of a finite-dimensional Lie algebra `L`, read inside `L`, is the
+nilradical of `L`. -/
+theorem LieAlgebra.map_incl_nilradical_radical :
+    (LieAlgebra.nilradical K (radical K L)).map (radical K L).incl = LieAlgebra.nilradical K L :=
+  LieIdeal.map_incl_nilradical_of_le (LieAlgebra.nilradical_le_radical K L)
 
 end TauCeti

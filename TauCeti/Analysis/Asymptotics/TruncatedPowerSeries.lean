@@ -20,7 +20,8 @@ Let `w` tend to `0` along a filter `l`. A function `F` has the expansion `P : Po
 order `N` along `w` when `F - (trunc N P).eval ∘ w = O(w ^ N)`. Such expansions are needed when
 a function is only known to finitely many orders, so that `Asymptotics.HasAsymptoticExpansion`
 with the scale `wⁿ` does not apply. This file shows that they are compatible with polynomials,
-sums and products.
+sums and products, and that finite power expansions at `0` are unique: a polynomial with vector
+coefficients that is `O(hᵐ)` as `h → 0` has no terms of degree below `m`.
 
 ## Main results
 
@@ -32,6 +33,8 @@ sums and products.
 * `PowerSeries.isBigO_one_of_isBigO_sub_eval_trunc`: a function with an expansion is bounded.
 * `PowerSeries.isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow`: an expansion
   `F = ∑_{q < K} f_q x^{-q} + O(x^{-K})` in inverse powers of `x` is an expansion along `w = x⁻¹`.
+* `TauCeti.eq_zero_of_isBigO_sum_pow_smul`: a polynomial `∑_{k < m} hᵏ bₖ` that is `O(hᵐ)` as
+  `h → 0` has zero coefficients.
 * `TauCeti.isBigO_one_add_mul_cpow_sub_eval_trunc`: `(1 + j w)^c` has the binomial series
   `∑ C(c, m) jᵐ Xᵐ` as expansion to every order along `w → 0`.
 -/
@@ -143,5 +146,35 @@ theorem isBigO_one_add_mul_cpow_sub_eval_trunc {w : α → ℂ} (hw : Tendsto w 
     fun i ↦ ?_
   simp only [Function.comp_apply, PowerSeries.eval_trunc, PowerSeries.coeff_mk, sub_right_inj]
   exact sum_congr rfl fun _ _ ↦ by ring
+
+/-- **Uniqueness of finite power expansions.** If the polynomial `∑_{k < m} hᵏ bₖ` is `O(hᵐ)` as
+`h → 0`, `h ≠ 0`, then all its coefficients vanish. -/
+theorem eq_zero_of_isBigO_sum_pow_smul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {m : ℕ} {b : ℕ → E}
+    (hb : (fun h : 𝕜 ↦ ∑ k ∈ range m, h ^ k • b k) =O[𝓝[≠] 0] fun h ↦ h ^ m) :
+    ∀ k < m, b k = 0 := by
+  induction m generalizing b with
+  | zero => exact fun k hk ↦ absurd hk (Nat.not_lt_zero k)
+  | succ m ih =>
+    -- The constant coefficient is the value at `0` of a continuous function tending to `0`.
+    have hb0 : b 0 = 0 := by
+      have hcont : Continuous fun h : 𝕜 ↦ ∑ k ∈ range (m + 1), h ^ k • b k := by fun_prop
+      have hpow : Tendsto (fun h : 𝕜 ↦ h ^ (m + 1)) (𝓝[≠] 0) (𝓝 0) := by
+        simpa using ((continuous_pow (m + 1)).tendsto (0 : 𝕜)).mono_left nhdsWithin_le_nhds
+      have := tendsto_nhds_unique ((hcont.tendsto 0).mono_left nhdsWithin_le_nhds)
+        (hb.trans_tendsto hpow)
+      simpa [sum_range_succ'] using this
+    -- Dividing by `h` lowers the order of the remaining coefficients by one.
+    have hshift (h : 𝕜) :
+        ∑ k ∈ range (m + 1), h ^ k • b k = h • ∑ k ∈ range m, h ^ k • b (k + 1) := by
+      simp [sum_range_succ', hb0, smul_sum, pow_succ', mul_smul]
+    have htail : (fun h : 𝕜 ↦ ∑ k ∈ range m, h ^ k • b (k + 1)) =O[𝓝[≠] 0] fun h ↦ h ^ m := by
+      refine ((isBigO_refl (fun h : 𝕜 ↦ h⁻¹) (𝓝[≠] 0)).smul hb).congr' ?_ ?_ <;>
+        filter_upwards [self_mem_nhdsWithin] with h (hh : h ≠ 0)
+      · rw [hshift, smul_smul, inv_mul_cancel₀ hh, one_smul]
+      · rw [smul_eq_mul, pow_succ', ← mul_assoc, inv_mul_cancel₀ hh, one_mul]
+    rintro (_ | k) hk
+    · exact hb0
+    · exact ih htail k (Nat.succ_lt_succ_iff.1 hk)
 
 end TauCeti

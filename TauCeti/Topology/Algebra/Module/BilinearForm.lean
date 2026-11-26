@@ -48,6 +48,10 @@ use.
   the dual is symmetric if and only if the map takes symmetric values.
 * `ContinuousLinearMap.ker_toBilinForm`: the kernel of the bilinear form of a continuous linear
   map into the dual is the kernel of the map.
+* `ContinuousLinearMap.apply_eq_zero_of_ker_eq_span_singleton`: a vector spanning the kernel of a
+  continuous linear map is killed by it; and
+  `ContinuousLinearMap.eq_zero_of_forall_apply_eq_zero_of_ker_eq_span_singleton`: a symmetric form
+  with kernel `𝕜 ∙ v` is nondegenerate on the kernel of a functional `ℓ` with `ℓ v = 1`.
 * `ContinuousLinearMap.exists_apply_self_eq_sum_mul_sq`: a weighted sum of squares of finitely
   many continuous linear functionals is the diagonal `x ↦ Q x x` of a continuous bilinear form.
 * `ContinuousLinearMap.isInvertible_of_injective` and
@@ -151,6 +155,29 @@ the map takes symmetric values. -/
 theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
     L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
   LinearMap.BilinForm.isSymm_def
+
+/-- A vector spanning the kernel of a continuous linear map is killed by it. -/
+theorem _root_.ContinuousLinearMap.apply_eq_zero_of_ker_eq_span_singleton {F : Type*}
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] {H : E →L[𝕜] F} {v : E}
+    (hker : H.ker = 𝕜 ∙ v) : H v = 0 :=
+  LinearMap.mem_ker.1 (hker.ge (Submodule.mem_span_singleton_self v))
+
+/-- A symmetric continuous bilinear form `H` whose kernel is the line `𝕜 ∙ v` is nondegenerate on
+the kernel of a functional `ℓ` with `ℓ v = 1`: a vector `w` with `ℓ w = 0` that is `H`-orthogonal
+to the kernel of `ℓ` is `0`. -/
+theorem _root_.ContinuousLinearMap.eq_zero_of_forall_apply_eq_zero_of_ker_eq_span_singleton
+    {H : E →L[𝕜] E →L[𝕜] 𝕜} {v : E} {ℓ : E →L[𝕜] 𝕜} (hsymm : ∀ u w, H u w = H w u)
+    (hker : H.ker = 𝕜 ∙ v) (hℓ : ℓ v = 1) {w : E} (hw : ℓ w = 0)
+    (hH : ∀ u, ℓ u = 0 → H w u = 0) : w = 0 := by
+  have hv : H v = 0 := H.apply_eq_zero_of_ker_eq_span_singleton hker
+  have hHw : H w = 0 := by
+    ext y
+    have hy : y = ℓ y • v + (y - ℓ y • v) := by abel
+    rw [hy, map_add, map_smul, hsymm w v, hv, hH _ (by simp [hℓ])]
+    simp
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 (hker.le (LinearMap.mem_ker.2 hHw))
+  rw [map_smul, hℓ, smul_eq_mul, mul_one] at hw
+  simp [hw]
 
 /-- A weighted sum of squares `∑ⱼ c j (ℓ j x)²` of finitely many continuous linear functionals
 `ℓ j` is the diagonal `x ↦ Q x x` of a continuous bilinear form `Q`, namely

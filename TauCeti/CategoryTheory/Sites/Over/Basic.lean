@@ -51,6 +51,9 @@ presheaves on the category of all schemes.
 * `CategoryTheory.GrothendieckTopology.coversTop_over_mk_iff`: the objects `Over.mk (f i)` cover
   `J.over S` if and only if the morphisms `f i` generate a covering sieve of `S`.
 * `CategoryTheory.GrothendieckTopology.over_mono`: for `J ≤ K`, `J.over X ≤ K.over X`.
+* `CategoryTheory.Sheaf.overIsoRestrict`: an isomorphism between the restrictions of two
+  sheaves to `Over Y` restricts along `V ⟶ Y` to an isomorphism between their restrictions to
+  `Over V`.
 
 ## References
 
@@ -276,18 +279,9 @@ morphisms `f i : u i ⟶ S` generates a covering sieve of `S` for `J`. -/
 theorem coversTop_over_mk_iff {C : Type*} [Category* C] (J : GrothendieckTopology C) {S : C}
     {I : Type*} {u : I → C} (f : ∀ i, u i ⟶ S) :
     (J.over S).CoversTop (fun i ↦ Over.mk (f i)) ↔ Sieve.ofArrows u f ∈ J S := by
-  have : Sieve.overEquiv (Over.mk (𝟙 S)) (Sieve.ofObjects (fun i ↦ Over.mk (f i)) _) =
-      Sieve.ofArrows u f := by
-    ext Z g
-    rw [Sieve.overEquiv_iff]
-    constructor
-    · rintro ⟨i, ⟨a⟩⟩
-      exact ⟨u i, a.left, f i, ⟨i⟩, by simpa using Over.w a⟩
-    · rintro ⟨W, a, _, ⟨i⟩, rfl⟩
-      exact ⟨i, ⟨Over.homMk a⟩⟩
-  rw [coversTop_iff_of_isTerminal _ _ Over.mkIdTerminal, mem_over_iff, this]
-  -- `(Over.mk (𝟙 S)).left` is `S` by definition.
-  exact Iff.rfl
+  rw [coversTop_iff_of_isTerminal _ _ Over.mkIdTerminal,
+    ← Sieve.ofArrows_eq_ofObjects Over.mkIdTerminal _ (fun i ↦ Over.homMk (f i))]
+  exact J.ofArrows_mem_over_iff _ _
 
 /-- For topologies `J ≤ K` on `C`, the induced topologies on the slice category `Over X` satisfy
 `J.over X ≤ K.over X`. -/
@@ -296,3 +290,39 @@ theorem over_mono {C : Type u} [Category.{v} C] {J K : GrothendieckTopology C} (
   fun _ _ hS ↦ h _ hS
 
 end CategoryTheory.GrothendieckTopology
+
+namespace CategoryTheory.Sheaf
+
+variable {C : Type*} [Category* C] {J : GrothendieckTopology C} {A : Type*} [Category* A]
+
+/-- An isomorphism between the restrictions of two sheaves to `Over Y` restricts, along
+`f : V ⟶ Y`, to an isomorphism between their restrictions to `Over V`. -/
+noncomputable def overIsoRestrict {F F' : Sheaf J A} {Y V : C} (e : F.over Y ≅ F'.over Y)
+    (f : V ⟶ Y) : F.over V ≅ F'.over V :=
+  (F.pushforwardOverMapIso f).symm ≪≫
+    ((Over.map f).sheafPushforwardContinuous A (J.over V) (J.over Y)).mapIso e ≪≫
+      F'.pushforwardOverMapIso f
+
+@[simp]
+lemma overIsoRestrict_hom_hom_app {F F' : Sheaf J A} {Y V : C} (e : F.over Y ≅ F'.over Y)
+    (f : V ⟶ Y) (W : (Over V)ᵒᵖ) :
+    (overIsoRestrict e f).hom.hom.app W = e.hom.hom.app (op ((Over.map f).obj W.unop)) := by
+  simp only [overIsoRestrict, Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom,
+    ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    Sheaf.pushforwardOverMapIso_inv_hom_app, Sheaf.pushforwardOverMapIso_hom_hom_app]
+  -- The identities live on `F.obj.obj (op W.unop.left)`, which is the object
+  -- `(F.over Y).obj.obj (op ((Over.map f).obj W.unop))` only after unfolding `Over.map`, so
+  -- `Category.id_comp` applies up to that unfolding.
+  exact (Category.id_comp _).trans (Category.comp_id _)
+
+@[simp]
+lemma overIsoRestrict_inv_hom_app {F F' : Sheaf J A} {Y V : C} (e : F.over Y ≅ F'.over Y)
+    (f : V ⟶ Y) (W : (Over V)ᵒᵖ) :
+    (overIsoRestrict e f).inv.hom.app W = e.inv.hom.app (op ((Over.map f).obj W.unop)) := by
+  simp only [overIsoRestrict, Iso.trans_inv, Iso.symm_inv, Functor.mapIso_inv,
+    ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    Sheaf.pushforwardOverMapIso_inv_hom_app, Sheaf.pushforwardOverMapIso_hom_hom_app]
+  -- As in `overIsoRestrict_hom_hom_app`, the identities only match up to unfolding `Over.map`.
+  exact (Category.comp_id _).trans (Category.id_comp _)
+
+end CategoryTheory.Sheaf

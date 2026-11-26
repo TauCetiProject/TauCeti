@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.DifferentialTransport
 public import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 public import TauCeti.CategoryTheory.Sites.Over.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.FirstDifferential
@@ -41,6 +42,11 @@ As for a covering of a site, the spectral sequence is formed in the opposite cat
 groups, and each of its objects is the opposite of the expected group.
 
 ## References
+
+* Split 13 of the proof plan on
+  [lookahead/SchemeAndStackFoundations/leray-spectral-sequence](https://github.com/roed-math/TauCeti-w2-fresh/blob/877ee6253118ae038b46aca137f48841db354fe9/LOOKAHEAD.md)
+  supplied the localized-site construction and cohomology comparison. This implementation uses
+  the Čech double complex and spectral sequence already in Tau Ceti.
 
 * [Stacks: Tag 03AV](https://stacks.math.columbia.edu/tag/03AV), Section 21.10 on Čech
   cohomology and cohomology, Lemma 21.10.6 (tag 03AZ) for the spectral sequence.
@@ -133,23 +139,11 @@ theorem cechToCohomologyOverSpectralSequence_page_two_d (p k : ℕ) :
       (cechToCohomologyOverFirstPageXIso f R p k).hom =
     ((-1 : ℤ) ^ k) • (((cechComplexFunctor (fun i ↦ Over.mk (f i))).obj
       ((Over.forget V).op ⋙ F.cohomologyPresheaf k)).d p (p + 1)).op := by
-  have h := cechToCohomologySpectralSequence_page_two_d (fun i ↦ Over.mk (f i))
-    ((J.overPullback AddCommGrpCat.{v} V).mapInjectiveResolution R) p k
-  -- The comparison of cohomology presheaves commutes with the Čech differentials.
-  have hd := ((cechComplexFunctor (fun i ↦ Over.mk (f i))).map
-    ((J.cohomologyPresheafFunctorOverIso V k).hom.app F)).comm p (p + 1)
-  rw [cechToCohomologyOverFirstPageXIso, cechToCohomologyOverFirstPageXIso, Iso.trans_inv,
-    Iso.trans_hom, Category.assoc, reassoc_of% h, Preadditive.zsmul_comp,
-    Preadditive.comp_zsmul, Iso.op_inv, Iso.op_hom, ← op_comp, ← op_comp]
-  congr 2
-  have hid : ((cechComplexFunctor (fun i ↦ Over.mk (f i))).map
-      ((J.cohomologyPresheafFunctorOverIso V k).hom.app F)).f (p + 1) ≫
-        ((cechComplexFunctor (fun i ↦ Over.mk (f i))).map
-          ((J.cohomologyPresheafFunctorOverIso V k).inv.app F)).f (p + 1) = 𝟙 _ := by
-    rw [← HomologicalComplex.comp_f, ← Functor.map_comp, Iso.hom_inv_id_app,
-      CategoryTheory.Functor.map_id, HomologicalComplex.id_f]
-  -- The components of `Functor.mapIso` for `cechComplexFunctor ⋙ eval` are those of the maps of
-  -- Čech complexes, so the goal is `hd` followed by `hid`.
-  exact (hd =≫ _).trans ((Category.assoc _ _ _).trans ((_ ≫= hid).trans (Category.comp_id _)))
+  exact HomologicalComplex.transport_op_d
+    ((cechComplexFunctor (fun i ↦ Over.mk (f i))).mapIso
+      ((J.cohomologyPresheafFunctorOverIso V k).app F)) p (p + 1)
+    (cechToCohomologyFirstPageXIso (fun i ↦ Over.mk (f i)) _ (p + 1) k)
+    (cechToCohomologyFirstPageXIso (fun i ↦ Over.mk (f i)) _ p k) _ _
+    (cechToCohomologySpectralSequence_page_two_d (fun i ↦ Over.mk (f i)) _ p k)
 
 end TauCeti.CategoryTheory
