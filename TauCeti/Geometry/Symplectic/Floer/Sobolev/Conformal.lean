@@ -249,13 +249,14 @@ field on conformal jets, and it is `0` by convention when this field is not
 essentially bounded on `U`. -/
 def floerConformalSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) : H1 V U ρ →L[ℝ] Lp V 2 (volume.restrict U) :=
-  (jetOperator (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp (H1 V U ρ).subtypeL
+  (jetOperator 2 (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
+    (H1 V U ρ).subtypeL
 
 /-- The definition of the conformal Sobolev realization of the linearized Floer operator. -/
 theorem floerConformalSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
     ω.floerConformalSobolevOperator U ρ J Ks Kt u =
-      (jetOperator (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
+      (jetOperator 2 (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
         (H1 V U ρ).subtypeL :=
   (rfl)
 
@@ -270,7 +271,7 @@ theorem coeFn_floerConformalSobolevOperator (ω : SymplecticForm V)
     ω.floerConformalSobolevOperator U ρ J Ks Kt u x =ᵐ[volume.restrict U]
       fun z ↦ ω.floerConformalJetCoeff ρ J Ks Kt u z
         ((x : Lp (V × V × V) 2 (volume.restrict U)) z) :=
-  coeFn_jetOperator hM x
+  coeFn_jetOperator (p := 2) hM x
 
 /-- On the jet of a test section `ξ`, the conformal Sobolev realization of the linearized Floer
 operator is `D_u ξ`, when the coefficient field on conformal jets is essentially bounded on `U`. -/
