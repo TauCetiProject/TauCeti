@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 import TauCeti.Analysis.Fredholm.CompactPerturbation
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
 # Fredholm operators on the cylinder with invertible models at the ends
@@ -146,6 +146,49 @@ theorem norm_cutoffL_apply_le {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : 
     (x : Lp (V × V × V) 2 stripMeasure)
   rw [← Submodule.norm_coe, coe_cutoffL, ← Submodule.norm_coe x]
   exact h
+
+/-- Two cutoff operators on `H1 V` with `γ₁ + γ₂ = 1` add up to the identity. -/
+theorem cutoffL_add_cutoffL {γ₁ γ₂ : ℝ → ℝ} {B₁ B₂ : ℝ} (hγ₁ : ContDiff ℝ 2 γ₁)
+    (hγ₁B : ∀ s, |γ₁ s| ≤ B₁) (hγ₁'B : ∀ s, |deriv γ₁ s| ≤ B₁) (hγ₂ : ContDiff ℝ 2 γ₂)
+    (hγ₂B : ∀ s, |γ₂ s| ≤ B₂) (hγ₂'B : ∀ s, |deriv γ₂ s| ≤ B₂) (h : γ₁ + γ₂ = 1) (x : H1 V) :
+    cutoffL hγ₁ hγ₁B hγ₁'B x + cutoffL hγ₂ hγ₂B hγ₂'B x = x := by
+  refine Subtype.ext (Lp.ext ?_)
+  rw [Submodule.coe_add, coe_cutoffL, coe_cutoffL]
+  filter_upwards [Lp.coeFn_add
+      (jetOperator stripMeasure (cutoffCoeff V γ₁) (x : Lp (V × V × V) 2 stripMeasure))
+      (jetOperator stripMeasure (cutoffCoeff V γ₂) (x : Lp (V × V × V) 2 stripMeasure)),
+    coeFn_jetOperator (memLp_cutoffCoeff (hγ₁.of_le one_le_two) hγ₁B hγ₁'B)
+      (x : Lp (V × V × V) 2 stripMeasure),
+    coeFn_jetOperator (memLp_cutoffCoeff (hγ₂.of_le one_le_two) hγ₂B hγ₂'B)
+      (x : Lp (V × V × V) 2 stripMeasure)]
+    with z h₁ h₂ h₃
+  rw [h₁, Pi.add_apply, h₂, h₃, ← add_apply, cutoffCoeff_add_cutoffCoeff
+    (hγ₁.differentiable (by norm_num) _) (hγ₂.differentiable (by norm_num) _), h, cutoffCoeff_one,
+    ContinuousLinearMap.id_apply]
+
+/-- Multiplying by a cutoff `β(s)` that is locally constant, equal to `b`, on the first
+coordinates of a measurable set `A` is multiplication by `b` on `A`. -/
+theorem multiplicationOperator_linftyIndicator_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β)
+    {B : ℝ} (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) {A : Set (ℝ × ℝ)}
+    (hA : MeasurableSet A) {b : ℝ} (h : ∀ z ∈ A, β =ᶠ[𝓝 z.1] fun _ ↦ b) (x : H1 V) :
+    Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
+        (cutoffL hβ hβB hβ'B x : Lp (V × V × V) 2 stripMeasure) =
+      b • Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
+        (x : Lp (V × V × V) 2 stripMeasure) := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.multiplicationOperator_linftyIndicator_ae hA
+      (cutoffL hβ hβB hβ'B x : Lp (V × V × V) 2 stripMeasure),
+    Lp.coeFn_smul b (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
+      (x : Lp (V × V × V) 2 stripMeasure)),
+    Lp.multiplicationOperator_linftyIndicator_ae hA (x : Lp (V × V × V) 2 stripMeasure),
+    coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβB hβ'B)
+      (x : Lp (V × V × V) 2 stripMeasure)] with z h₁ h₂ h₃ h₄
+  rw [h₁, h₂, Pi.smul_apply, h₃]
+  by_cases hz : z ∈ A
+  · rw [indicator_of_mem hz, indicator_of_mem hz, coe_cutoffL, h₄,
+      cutoffCoeff_of_eventuallyEq (h z hz), smul_apply,
+      ContinuousLinearMap.id_apply]
+  · rw [indicator_of_notMem hz, indicator_of_notMem hz, smul_zero]
 
 end Cutoff
 
@@ -481,25 +524,6 @@ private theorem cutoffL_cutoffL (hβ : ContDiff ℝ 2 β) (hβB : ∀ s, |β s| 
     with z h₁ h₂
   rw [h₁, h₂, ← ContinuousLinearMap.comp_apply, cutoffCoeff_comp_cutoffCoeff
     (hβ.differentiable (by norm_num) _) (hγ.differentiable (by norm_num) _), h]
-
-/-- Two cutoff operators on `H1 V` with `γ₁ + γ₂ = 1` add up to the identity. -/
-private theorem cutoffL_add_cutoffL {γ₁ γ₂ : ℝ → ℝ} (hγ₁ : ContDiff ℝ 2 γ₁) (hγ₁B : ∀ s, |γ₁ s| ≤ B)
-    (hγ₁'B : ∀ s, |deriv γ₁ s| ≤ B) (hγ₂ : ContDiff ℝ 2 γ₂) (hγ₂B : ∀ s, |γ₂ s| ≤ B)
-    (hγ₂'B : ∀ s, |deriv γ₂ s| ≤ B) (h : γ₁ + γ₂ = 1) (x : H1 V) :
-    cutoffL hγ₁ hγ₁B hγ₁'B x + cutoffL hγ₂ hγ₂B hγ₂'B x = x := by
-  refine Subtype.ext (Lp.ext ?_)
-  rw [Submodule.coe_add, coe_cutoffL, coe_cutoffL]
-  filter_upwards [Lp.coeFn_add
-      (jetOperator stripMeasure (cutoffCoeff V γ₁) (x : Lp (V × V × V) 2 stripMeasure))
-      (jetOperator stripMeasure (cutoffCoeff V γ₂) (x : Lp (V × V × V) 2 stripMeasure)),
-    coeFn_jetOperator (memLp_cutoffCoeff (hγ₁.of_le one_le_two) hγ₁B hγ₁'B)
-      (x : Lp (V × V × V) 2 stripMeasure),
-    coeFn_jetOperator (memLp_cutoffCoeff (hγ₂.of_le one_le_two) hγ₂B hγ₂'B)
-      (x : Lp (V × V × V) 2 stripMeasure)]
-    with z h₁ h₂ h₃
-  rw [h₁, Pi.add_apply, h₂, h₃, ← add_apply, cutoffCoeff_add_cutoffCoeff
-    (hγ₁.differentiable (by norm_num) _) (hγ₂.differentiable (by norm_num) _), h, cutoffCoeff_one,
-    ContinuousLinearMap.id_apply]
 
 /-- `γ D x = D' (γ x) + errCoeff x` as elements of `L²`. -/
 private theorem mulL_jetOperator (hM : MemLp M ∞ stripMeasure) (hM' : MemLp M' ∞ stripMeasure)
