@@ -43,6 +43,8 @@ with `b` on `U ×_X V`.
 public section
 
 open CategoryTheory Limits AlgebraicGeometry Opposite
+open AlgebraicGeometry.Scheme.IdealSheafData
+  (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff)
 
 universe v u
 
@@ -75,8 +77,7 @@ theorem isNisnevichCovering_diagonal : IsNisnevichCovering Q.diagonalArrows := b
     exact ⟨false, w', hw'⟩
   · refine ⟨true, ?_⟩
     have hz : (Limits.pullback.fst Q.p Q.p ≫ Q.p) w ∈ Set.range I.subschemeι :=
-      (AlgebraicGeometry.Scheme.IdealSheafData.mem_range_subschemeι_vanishingIdeal_compl_iff _
-        _).2 (by simpa using hw)
+      (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff _ _).2 hw
     obtain ⟨z, hz⟩ := hz
     obtain ⟨w', hw', -⟩ := AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback w z hz.symm
     have hd := Limits.pullback.fst_eq_comp_diagonal_of_isIso_snd Q.p I.subschemeι
