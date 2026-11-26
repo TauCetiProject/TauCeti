@@ -42,9 +42,6 @@ measured by length, so it also serves over a discrete valuation ring with infini
 * `Submodule.lengthIndex_mono_left`, `Submodule.lengthIndex_anti_right`: the index increases in its
   first argument and decreases in its second.
 * `Submodule.lengthIndex_map`: an injective linear map preserves the index.
-* `Submodule.comap_restrictScalars_units_smul`: pulling back along a `K`-linear map commutes with
-  homotheties; `Submodule.isFullLattice_map_of_det_ne_zero`: `gA` is a full lattice if
-  `det g ≠ 0`.
 * `Submodule.lengthIndex_map_right_self_eq_log_ordFrac_det`: `idx(A, gA) = v(det g)`.
 * `Submodule.lengthIndex_smul_right_self`: `idx(A, aA) = v(a) · dim V` for `a ∈ Kˣ`.
 * `Submodule.lengthIndex_inv_smul_inf`: `idx(t⁻¹B ⊓ W, B ⊓ W) = v(t) · dim W` for a subspace `W`.
@@ -124,42 +121,6 @@ section Lattice
 
 variable {O : Type*} (K : Type*) {V : Type*} [CommRing O] [Field K] [Algebra O K]
   [IsFractionRing O K] [AddCommGroup V] [Module K V] [Module O V] [IsScalarTower O K V]
-
-omit [IsFractionRing O K] in
-/-- Pulling back along a `K`-linear map commutes with homotheties: `f⁻¹(tS) = t · f⁻¹(S)` for an
-`O`-submodule `S` and `t ∈ Kˣ`. -/
-theorem comap_restrictScalars_units_smul {V' : Type*} [AddCommGroup V'] [Module K V']
-    [Module O V'] [IsScalarTower O K V'] (f : V' →ₗ[K] V) (t : Kˣ) (S : Submodule O V) :
-    (t • S).comap (f.restrictScalars O) = t • S.comap (f.restrictScalars O) := by
-  ext x
-  simp only [mem_comap, LinearMap.restrictScalars_apply]
-  constructor
-  · rintro ⟨s, hs, hsx⟩
-    refine ⟨t⁻¹ • x, ?_, smul_inv_smul t x⟩
-    rwa [SetLike.mem_coe, mem_comap, LinearMap.restrictScalars_apply, f.map_smul_of_tower, ← hsx,
-      DistribSMul.toLinearMap_apply, ← Units.smul_def, inv_smul_smul]
-  · rintro ⟨y, hy, rfl⟩
-    refine ⟨f y, hy, ?_⟩
-    rw [DistribSMul.toLinearMap_apply, DistribSMul.toLinearMap_apply, ← Units.smul_def,
-      ← Units.smul_def, f.map_smul_of_tower]
-
-omit [IsFractionRing O K] in
-/-- A `K`-linear `g` with nonzero determinant maps a full lattice `L` to a full lattice. -/
-theorem isFullLattice_map_of_det_ne_zero (L : Submodule O V) [L.IsFullLattice K]
-    {g : V →ₗ[K] V} (hg : LinearMap.det g ≠ 0) :
-    (L.map (g.restrictScalars O)).IsFullLattice K := by
-  have : Module.Finite K V := Module.Finite.of_isFullLattice L
-  obtain ⟨hi, hs⟩ := (Module.End.isUnit_iff g).1 ((LinearMap.isUnit_iff_isUnit_det g).2 hg.isUnit)
-  refine { fg := (IsLattice.fg K L).map _, linearIndepOn := fun s hsL hli ↦ ?_, span_eq_top := ?_ }
-  · -- Write `s = g(s')` with `s' ⊆ L`; independence over `O`, then over `K`, moves along `g`.
-    rw [← Set.image_preimage_eq s hs] at hli ⊢
-    have hs' : g ⁻¹' s ⊆ L := fun x hx ↦ by
-      obtain ⟨y, hy, hyx⟩ := hsL hx
-      exact hi hyx ▸ hy
-    have h := IsLattice.linearIndepOn (A := K) (g ⁻¹' s) hs'
-      (((linearIndepOn_iff_image hi.injOn).2 hli).of_comp (g.restrictScalars O))
-    exact LinearIndepOn.id_image (h.map' g (LinearMap.ker_eq_bot_of_injective hi))
-  · simp [map_coe, span_image, IsFullLattice.span_eq_top, LinearMap.range_eq_top.mpr hs]
 
 variable [IsNoetherianRing O] [Ring.KrullDimLE 1 O]
 

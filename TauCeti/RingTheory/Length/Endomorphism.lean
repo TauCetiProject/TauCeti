@@ -29,10 +29,6 @@ bounds on the colength of submodules containing `aM`. The two properties are:
 These two properties are read off the length of a quotient of `M` along two filtrations. An
 injective `φ` maps `M` isomorphically onto `φ(M)`, carrying any submodule `N` to `φ(N)`, so that
 `φ(M) ⧸ φ(N) ≃ M ⧸ N` (`TauCeti.length_quotient_comap_subtype_range_map`).
-For submodules `P, N` of `M` and an injective linear map `f`, the same identifies
-`N ⧸ (N ⊓ P)` with `f(N) ⧸ (f(N) ⊓ f(P))` (`TauCeti.length_quotient_comap_subtype_map`), and
-for `P ≤ Q ≤ N` the quotient `N ⧸ P` is filtered by `Q ⧸ P` and `N ⧸ Q`
-(`TauCeti.length_quotient_comap_subtype_eq_add`).
 
 For endomorphisms that need not be injective, the cokernel length is subadditive:
 `length (M ⧸ φψ(M)) ≤ length (M ⧸ φ(M)) + length (M ⧸ ψ(M))`
@@ -76,29 +72,6 @@ theorem length_quotient_range_comp {φ : M →ₗ[A] M} (hφ : Function.Injectiv
       Module.length A (M ⧸ LinearMap.range φ) + Module.length A (M ⧸ LinearMap.range ψ) := by
   rw [LinearMap.range_comp, length_quotient_eq_length_quotient_comap_subtype_add
     (LinearMap.map_le_range (f := φ)), length_quotient_comap_subtype_range_map hφ, add_comm]
-
-/-- An injective linear map `f` identifies `N ⧸ (N ⊓ P)` with `f(N) ⧸ (f(N) ⊓ f(P))`, so these
-have the same length. -/
-theorem length_quotient_comap_subtype_map {M' : Type*} [AddCommGroup M'] [Module A M']
-    {f : M →ₗ[A] M'} (hf : Function.Injective f) (N P : Submodule A M) :
-    Module.length A (↥(N.map f) ⧸ (P.map f).comap (N.map f).subtype) =
-      Module.length A (↥N ⧸ P.comap N.subtype) := by
-  have hr : LinearMap.range (f ∘ₗ N.subtype) = N.map f := by
-    rw [LinearMap.range_comp, Submodule.range_subtype]
-  have hc : ((P.comap N.subtype).map (f ∘ₗ N.subtype)).comap (N.map f).subtype =
-      (P.map f).comap (N.map f).subtype := by
-    rw [Submodule.map_comp, Submodule.map_comap_subtype, Submodule.map_inf f hf,
-      Submodule.comap_inf, Submodule.comap_subtype_self, top_inf_eq]
-  have hφ : Function.Injective (f ∘ₗ N.subtype) := hf.comp N.injective_subtype
-  rw [← length_quotient_comap_subtype_range_map hφ, hr, hc]
-
-/-- For submodules `P ≤ Q ≤ N`, the quotient `N ⧸ P` is filtered by `Q ⧸ P` and `N ⧸ Q`. -/
-theorem length_quotient_comap_subtype_eq_add {P Q N : Submodule A M} (hPQ : P ≤ Q) (hQN : Q ≤ N) :
-    Module.length A (↥N ⧸ P.comap N.subtype) =
-      Module.length A (↥Q ⧸ P.comap Q.subtype) + Module.length A (↥N ⧸ Q.comap N.subtype) := by
-  rw [length_quotient_eq_length_quotient_comap_subtype_add (Submodule.comap_mono hPQ),
-    ← length_quotient_comap_subtype_map N.injective_subtype, Submodule.map_comap_subtype,
-    Submodule.map_comap_subtype, inf_eq_right.2 hQN, inf_eq_right.2 (hPQ.trans hQN)]
 
 /-- **Subadditivity of colength in a submodule.** For a submodule `N` of `M` and endomorphisms
 `φ, ψ` of `M`, the colength of `N ⊓ φψ(N)` in `N` is at most the sum of those of `N ⊓ φ(N)` and

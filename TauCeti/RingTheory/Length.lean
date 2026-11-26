@@ -68,6 +68,10 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.surjective_of_injective_of_length_eq` and
   `TauCeti.injective_of_surjective_of_length_eq`: an injective map between modules of the same
   finite length is surjective, and a surjective one is injective.
+* `TauCeti.length_quotient_comap_subtype_map`: an injective `f` identifies `N ⧸ (N ⊓ P)` with
+  `f(N) ⧸ (f(N) ⊓ f(P))`.
+* `TauCeti.length_quotient_comap_subtype_eq_add`: for `P ≤ Q ≤ N`, `N ⧸ P` is filtered by `Q ⧸ P`
+  and `N ⧸ Q`.
 * `TauCeti.map_lsmul_eq_smul` and `TauCeti.range_lsmul_eq_smul_top`: `aN` and `aM` as Mathlib's
   pointwise `a • N` and `a • ⊤`.
 * `TauCeti.comap_subtype_map_lsmul`: `aN` computed inside `N` agrees with `aN` computed in the
@@ -233,6 +237,29 @@ theorem injective_of_surjective_of_length_eq {N : Type*} [AddCommGroup N] [Modul
   rw [← LinearMap.ker_eq_bot, ← Submodule.subsingleton_iff_eq_bot,
     ← Module.length_eq_zero_iff (R := A)]
   exact WithTop.add_right_cancel hN (hlen.symm.trans (zero_add _).symm)
+
+/-- An injective linear map `f` identifies `N ⧸ (N ⊓ P)` with `f(N) ⧸ (f(N) ⊓ f(P))`, so these
+have the same length. -/
+theorem length_quotient_comap_subtype_map {M' : Type*} [AddCommGroup M'] [Module A M']
+    {f : M →ₗ[A] M'} (hf : Function.Injective f) (N P : Submodule A M) :
+    Module.length A (↥(N.map f) ⧸ (P.map f).comap (N.map f).subtype) =
+      Module.length A (↥N ⧸ P.comap N.subtype) := by
+  have hr : LinearMap.range (f ∘ₗ N.subtype) = N.map f := by
+    rw [LinearMap.range_comp, Submodule.range_subtype]
+  have hc : ((P.comap N.subtype).map (f ∘ₗ N.subtype)).comap (N.map f).subtype =
+      (P.map f).comap (N.map f).subtype := by
+    rw [Submodule.map_comp, Submodule.map_comap_subtype, Submodule.map_inf f hf,
+      Submodule.comap_inf, Submodule.comap_subtype_self, top_inf_eq]
+  have hφ : Function.Injective (f ∘ₗ N.subtype) := hf.comp N.injective_subtype
+  rw [← length_quotient_comap_subtype_range_map hφ, hr, hc]
+
+/-- For submodules `P ≤ Q ≤ N`, the quotient `N ⧸ P` is filtered by `Q ⧸ P` and `N ⧸ Q`. -/
+theorem length_quotient_comap_subtype_eq_add {P Q N : Submodule A M} (hPQ : P ≤ Q) (hQN : Q ≤ N) :
+    Module.length A (↥N ⧸ P.comap N.subtype) =
+      Module.length A (↥Q ⧸ P.comap Q.subtype) + Module.length A (↥N ⧸ Q.comap N.subtype) := by
+  rw [length_quotient_eq_length_quotient_comap_subtype_add (Submodule.comap_mono hPQ),
+    ← length_quotient_comap_subtype_map N.injective_subtype, Submodule.map_comap_subtype,
+    Submodule.map_comap_subtype, inf_eq_right.2 hQN, inf_eq_right.2 (hPQ.trans hQN)]
 
 end Ring
 
