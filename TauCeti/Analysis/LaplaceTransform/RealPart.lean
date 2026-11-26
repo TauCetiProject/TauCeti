@@ -40,7 +40,7 @@ theorem HasLaplace.ofReal_re {f : ℝ → ℂ} {s z w : ℂ} {μ : Measure ℝ}
 /-- Taking a finitely supported real-weighted sum of real parts of functions commutes with
 taking the conjugate-paired average of their Laplace transforms. Only indices in the support
 need to have convergent transforms. -/
-theorem hasLaplace_finsupp_sum_ofReal_re {ι : Type*} (w : ι →₀ ℝ) {f : ι → ℝ → ℂ}
+theorem _root_.Finsupp.hasLaplace_sum_ofReal_re {ι : Type*} (w : ι →₀ ℝ) {f : ι → ℝ → ℂ}
     {s : ℂ} {z v : ι → ℂ} {μ : Measure ℝ}
     (hs : ∀ i ∈ w.support, HasLaplace (f i) s (z i) μ)
     (hc : ∀ i ∈ w.support, HasLaplace (f i) (conj s) (v i) μ) :
