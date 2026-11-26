@@ -71,8 +71,8 @@ theorem under_smul (g : G) (w : AbsoluteValue F S) : (g • w).under R = w.under
 
 @[simp]
 theorem liesOver_smul_iff {g : G} {w : AbsoluteValue F S} {v : AbsoluteValue R S} :
-    (g • w).LiesOver v ↔ w.LiesOver v :=
-  ⟨fun ⟨h⟩ ↦ ⟨by rwa [under_smul] at h⟩, fun ⟨h⟩ ↦ ⟨by rwa [under_smul]⟩⟩
+    (g • w).LiesOver v ↔ w.LiesOver v := by
+  simp only [liesOver_iff, under_smul]
 
 instance (g : G) (w : AbsoluteValue F S) (v : AbsoluteValue R S) [w.LiesOver v] :
     (g • w).LiesOver v :=
