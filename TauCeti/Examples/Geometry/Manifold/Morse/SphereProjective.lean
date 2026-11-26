@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
-import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
 import TauCeti.Geometry.Manifold.Morse.Projectivization
 import TauCeti.Geometry.Manifold.Morse.Reeb
 import TauCeti.Geometry.Manifold.Morse.Sphere.Degenerate
