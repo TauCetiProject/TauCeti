@@ -28,12 +28,13 @@ is a *relative gerbe* for `J` (`StrongTrans.IsRelativeGerbe`) if
   isomorphisms of `η`. In other words, the maps that `η` induces on the presheaves of
   isomorphisms are locally surjective.
 
-Local essential surjectivity alone does not suffice: on a category with the trivial topology `⊥`,
-in which only maximal sieves cover, a relative gerbe is a transformation whose components are
-essentially surjective and surjective on isomorphisms (`StrongTrans.isRelativeGerbe_bot_iff`), and
-for the inclusion of a proper subgroup `H < G` the induced transformation of constant
-pseudofunctors with fibres the one-object groupoids of `H` and of `G` is locally essentially
-surjective but no relative gerbe (`TauCeti.not_isRelativeGerbe_bot_constSingleObjMap_subtype`).
+Local essential surjectivity alone does not suffice: on a nonempty category with the trivial
+topology `⊥`, in which only maximal sieves cover, a relative gerbe is a transformation whose
+components are essentially surjective and surjective on isomorphisms
+(`StrongTrans.isRelativeGerbe_bot_iff`), and for the inclusion of a proper subgroup `H < G` the
+induced transformation of constant pseudofunctors with fibres the one-object groupoids of `H` and
+of `G` is locally essentially surjective but no relative gerbe
+(`TauCeti.not_isRelativeGerbe_bot_constSingleObjMap_subtype`).
 Every transformation whose components are equivalences, in particular every identity, is a
 relative gerbe.
 
