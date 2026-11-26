@@ -28,7 +28,7 @@ sphere `S²ⁿ⁺¹` by the circle, as a smooth manifold and as a symplectic man
   (`TauCeti.Toric.simplexHomogeneousCoord`), and dividing by `√(2a)` identifies the level `Z` with
   `S²ⁿ⁺¹` (`TauCeti.Toric.simplexLevelDiffeomorph`). These coordinates carry the standard symplectic
   form `Σ dq_o ∧ dp_o` to `Im ⟪·, ·⟫_ℂ`
-  (`TauCeti.Toric.imInnerSymplecticForm_simplexHomogeneousCoord`).
+  (`TauCeti.Toric.isSymplectomorphism_simplexHomogeneousCoord`).
 * **The quotient.** Two points of `Z` have the same class in `M_Δ` exactly when their images in
   `S²ⁿ⁺¹` differ by a unit complex scalar
   (`TauCeti.Toric.DelzantQuotient.mk_eq_mk_iff_complexProjectiveSpaceMk_eq`). As the projections
@@ -118,17 +118,19 @@ theorem norm_simplexHomogeneousCoord_of_mem_delzantLevel
 
 /-- **The homogeneous coordinates are symplectic**: they carry the standard symplectic form
 `Σ dq_o ∧ dp_o` of `ℂ^(Option (Fin n))` to the symplectic form `Im ⟪·, ·⟫_ℂ` of `ℂⁿ⁺¹`. -/
-theorem imInnerSymplecticForm_simplexHomogeneousCoord
-    (u w : EuclideanSpace ℝ (Option (Fin n)) × EuclideanSpace ℝ (Option (Fin n))) :
-    imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1))) (simplexHomogeneousCoord n u)
-        (simplexHomogeneousCoord n w) = stdSymplecticForm u w := by
-  rw [← isSymplectomorphism_complexEuclideanEquivRealProd_symm.apply u w]
+theorem isSymplectomorphism_simplexHomogeneousCoord :
+    SymplecticForm.IsSymplectomorphism stdSymplecticForm
+      (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1))))
+      (simplexHomogeneousCoord n).toLinearEquiv := by
+  refine SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ ?_
+  rw [← isSymplectomorphism_complexEuclideanEquivRealProd_symm.apply u w,
+    ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_toLinearEquiv]
   rw [imInnerSymplecticForm_apply, imInnerSymplecticForm_apply, PiLp.inner_apply,
     PiLp.inner_apply]
   -- Relabelling the homogeneous coordinates along `finSuccEquiv` does not change the sum.
   refine congrArg Complex.im (Fintype.sum_equiv (finSuccEquiv n) _ _ fun k ↦ ?_)
   rw [simplexHomogeneousCoord_apply, simplexHomogeneousCoord_apply]
-  simp only [ContinuousLinearEquiv.coe_toLinearEquiv, complexEuclideanEquivRealProd_symm_apply]
+  simp only [complexEuclideanEquivRealProd_symm_apply]
 
 variable (n) in
 /-- The homogeneous coordinates divided by `√(2a)`, as a real-linear map. -/
@@ -161,9 +163,10 @@ private theorem mpullback_scaledHomogeneousCoord_imInnerSymplecticForm (ha : 0 <
   have key (v w : EuclideanSpace ℝ (Option (Fin n)) × EuclideanSpace ℝ (Option (Fin n))) :
       imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1))) (scaledHomogeneousCoord n a v)
           (scaledHomogeneousCoord n a w) = (2 * a)⁻¹ * stdSymplecticForm v w := by
-    have h := imInnerSymplecticForm_simplexHomogeneousCoord v w
+    have h := isSymplectomorphism_simplexHomogeneousCoord.apply v w
     rw [scaledHomogeneousCoord_apply, scaledHomogeneousCoord_apply]
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at h ⊢
+    simp only [ContinuousLinearEquiv.coe_toLinearEquiv, map_smul, LinearMap.smul_apply,
+      smul_eq_mul] at h ⊢
     rw [h, ← mul_assoc, ← mul_inv, ← sq, Real.sq_sqrt (by positivity)]
   exact key v w
 
