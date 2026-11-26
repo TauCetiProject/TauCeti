@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ACL.Algebra
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -21,7 +22,7 @@ because they do not change which line functions are differentiable:
   sides vanish);
 * negation: `(-u)' = -u'` (`TauCeti.formalDeriv_neg`);
 * composition with a continuous linear equivalence `L : F ≃L[ℝ] F'`: `(L ∘ u)' = L ∘ u'`
-  (`TauCeti.formalDeriv_continuousLinearEquiv_comp`);
+  (`ContinuousLinearEquiv.comp_formalDeriv`);
 * constant maps have formal derivative `0` (`TauCeti.formalDeriv_const`).
 
 Hence these operations preserve the class `ACL^p` (`TauCeti.isACLpOn_const`,
@@ -29,10 +30,13 @@ Hence these operations preserve the class `ACL^p` (`TauCeti.isACLpOn_const`,
 `ContinuousLinearEquiv.comp_isACLpOn`), the `ACL` part being `TauCeti.IsACLOn.const_smul`,
 `TauCeti.IsACLOn.neg` and `ContinuousLinearMap.comp_isACLOn`.
 
-Sums and compositions with continuous linear maps that are not injective do not commute with the
-formal derivative pointwise: a sum may have a partial derivative where neither summand has one.
-For them the closure of `ACL^p` (QuasiregularMaps §5.1) needs the almost-everywhere existence of
-the partial derivatives of an `ACL` map into a finite-dimensional space.
+The partial derivatives of `c • u`, `-u` and `L ∘ u` are computed by `TauCeti.lineDeriv_const_smul`,
+`TauCeti.lineDeriv_neg_left` and `ContinuousLinearEquiv.comp_lineDeriv`.
+
+Sums and compositions with continuous linear maps that are not equivalences do not commute with
+the formal derivative pointwise: a sum may have a partial derivative where neither summand has one.
+For them the closure of `ACL^p` needs the almost-everywhere existence of the partial derivatives of
+an `ACL` map into a finite-dimensional space.
 -/
 
 public section
@@ -47,32 +51,6 @@ variable {n : ℕ} {F F' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup F'] [NormedSpace ℝ F']
   {u : EuclideanSpace ℝ (Fin n) → F} {Ω : Set (EuclideanSpace ℝ (Fin n))} {p : ENNReal}
 
-/-! ### Line derivatives -/
-
-/-- The line derivative of `c • u` is `c` times that of `u`, for every real `c`, whether or not
-the line derivative of `u` exists. -/
-theorem lineDeriv_const_smul (c : ℝ) (u : EuclideanSpace ℝ (Fin n) → F)
-    (x v : EuclideanSpace ℝ (Fin n)) : lineDeriv ℝ (c • u) x v = c • lineDeriv ℝ u x v := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp [lineDeriv]
-  · let := invertibleOfNonzero hc
-    simp only [lineDeriv, deriv]
-    rw [show (fun t : ℝ ↦ (c • u) (x + t • v)) = c • fun t ↦ u (x + t • v) from rfl,
-      fderiv_const_smul_of_invertible]
-    rfl
-
-/-- The line derivative of `-u` is minus that of `u`, whether or not the latter exists. -/
-theorem lineDeriv_neg_left (u : EuclideanSpace ℝ (Fin n) → F) (x v : EuclideanSpace ℝ (Fin n)) :
-    lineDeriv ℝ (-u) x v = -lineDeriv ℝ u x v := by
-  simpa using lineDeriv_const_smul (-1) u x v
-
-/-- The line derivative of `L ∘ u`, for a continuous linear equivalence `L`, is `L` applied to
-that of `u`, whether or not the latter exists. -/
-theorem lineDeriv_continuousLinearEquiv_comp (L : F ≃L[ℝ] F') (u : EuclideanSpace ℝ (Fin n) → F)
-    (x v : EuclideanSpace ℝ (Fin n)) : lineDeriv ℝ (L ∘ u) x v = L (lineDeriv ℝ u x v) := by
-  simp only [lineDeriv, deriv]
-  exact congrArg (fun A : ℝ →L[ℝ] F' ↦ A 1) (L.comp_fderiv (f := fun t : ℝ ↦ u (x + t • v)))
-
 /-! ### Formal derivatives -/
 
 /-- The formal derivative of a constant map is `0`. -/
@@ -82,23 +60,26 @@ theorem formalDeriv_const (c : F) (x : EuclideanSpace ℝ (Fin n)) :
   EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by simp [lineDeriv]
 
 /-- The formal derivative of `c • u` is `c • u'`, for every real `c`. -/
+@[to_fun (attr := simp) formalDeriv_fun_const_smul]
 theorem formalDeriv_const_smul (c : ℝ) (u : EuclideanSpace ℝ (Fin n) → F)
     (x : EuclideanSpace ℝ (Fin n)) : formalDeriv (c • u) x = c • formalDeriv u x :=
   EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
-    simp [lineDeriv_const_smul]
+    simp
 
 /-- The formal derivative of `-u` is `-u'`. -/
+@[to_fun (attr := simp) formalDeriv_fun_neg]
 theorem formalDeriv_neg (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n)) :
     formalDeriv (-u) x = -formalDeriv u x :=
   EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
-    simp [lineDeriv_neg_left]
+    simp
 
 /-- The formal derivative of `L ∘ u`, for a continuous linear equivalence `L`, is `L ∘ u'`. -/
-theorem formalDeriv_continuousLinearEquiv_comp (L : F ≃L[ℝ] F')
+@[simp]
+theorem _root_.ContinuousLinearEquiv.comp_formalDeriv (L : F ≃L[ℝ] F')
     (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n)) :
     formalDeriv (L ∘ u) x = (L : F →L[ℝ] F').comp (formalDeriv u x) :=
   EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
-    simp [lineDeriv_continuousLinearEquiv_comp]
+    simp
 
 /-! ### `ACL^p` maps -/
 
@@ -133,6 +114,6 @@ theorem _root_.ContinuousLinearEquiv.comp_isACLpOn (L : F ≃L[ℝ] F') (hu : Is
       (L : F →L[ℝ] F')).comp_memLp' (hu.memLp_formalDeriv K hKΩ hK)
     convert h using 1
     funext x
-    exact formalDeriv_continuousLinearEquiv_comp L u x
+    rw [Function.comp_apply, ContinuousLinearMap.compL_apply, L.comp_formalDeriv]
 
 end TauCeti
