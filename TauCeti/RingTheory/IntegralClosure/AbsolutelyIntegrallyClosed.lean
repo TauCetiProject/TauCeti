@@ -228,6 +228,20 @@ theorem isAbsolutelyIntegrallyClosed_iff_isIntegrallyClosed_and_isAlgClosed :
 
 end FractionRing
 
+/-- The integral closure of a commutative ring `R` in an algebraically closed field `K` is
+absolutely integrally closed: a root in `K` of a monic polynomial over the integral closure is
+integral over it, hence over `R`. -/
+instance IsAbsolutelyIntegrallyClosed.integralClosure {R K : Type*} [CommRing R] [Field K]
+    [Algebra R K] [IsAlgClosed K] : IsAbsolutelyIntegrallyClosed (_root_.integralClosure R K) where
+  exists_root p hp hdeg := by
+    let O := _root_.integralClosure R K
+    obtain ⟨x, hx⟩ := IsAlgClosed.exists_root (p.map (algebraMap O K))
+      (natDegree_pos_iff_degree_pos.mp ((hp.natDegree_map (algebraMap O K)).symm ▸ hdeg)).ne'
+    rw [IsRoot, eval_map] at hx
+    refine ⟨⟨x, isIntegral_trans x ⟨p, hp, hx⟩⟩, Subtype.val_injective ?_⟩
+    change algebraMap O K (p.eval _) = algebraMap O K 0
+    rwa [← eval₂_at_apply, map_zero]
+
 /-- `ℚ` is not absolutely integrally closed: the monic polynomial `X ^ 2 - 2` has no rational
 root. -/
 theorem not_isAbsolutelyIntegrallyClosed_rat : ¬ IsAbsolutelyIntegrallyClosed ℚ := by
