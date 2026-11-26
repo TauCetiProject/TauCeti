@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Data.PNat.Basic
 
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+import TauCeti.Topology.Algebra.InfiniteSum.PNat
 
 /-!
 # Gaussian theta series with bounded coefficients
@@ -23,8 +23,7 @@ rescaled weights against coefficients indexed by the positive integers, and mult
 square root of the scale to form the normalized theta series. A single geometric majorant
 gives absolute convergence and the bound `3 * exp (-u) / √u` for positive scales `u`.
 
-The Mellin transform of the Gaussian weight and the joint tail of the theta series and its
-Möbius twist are used to bound zeros of quadratic twists of Dirichlet L-functions.
+The Mellin transform of the Gaussian weight is evaluated using the Gamma function.
 
 ## Provenance
 
@@ -34,8 +33,7 @@ PBC), commit `72fead102f663d5c7a407964a13dc0cf9d977207`. The file
 `New.thetaSeries` and `New.gaussianMellin`. The geometric comparison follows
 `New.norm_gaussianMonomial_le` and `New.summable_and_norm_gaussianTheta_le` from that file.
 Here the weight bound uses the absolute value of the argument, and the coefficient bound
-is imposed only at positive indices. The joint tail is adapted from `New.thetaTailIntegral`
-in `grh/src/Lib/Analytic/QuadraticTwist.lean`.
+is imposed only at positive indices.
 -/
 
 public section
@@ -43,7 +41,6 @@ public section
 noncomputable section
 
 open MeasureTheory Real Set
-open scoped ArithmeticFunction.Moebius
 
 namespace TauCeti
 
@@ -87,29 +84,42 @@ theorem gaussianMellin_def (j : Fin 2) :
   unfold gaussianMellin
   rfl
 
-/-- The joint theta tail used in quadratic-twist nonvanishing arguments. It integrates the
-norms of the normalized theta series of `c` and its Möbius twist against `du / u` above `1 / T`. -/
-def quadraticTwistGaussianThetaTailIntegral (j : Fin 2) (c : ℕ → ℂ) (T : ℝ) : ℝ :=
-  ∫ u in Ioi T⁻¹, (‖gaussianThetaSeries j c u‖ +
-    ‖gaussianThetaSeries j (fun n ↦ c n * μ n) u‖) / u
-
-/-- Expand the joint quadratic-twist tail as a set integral. -/
-theorem quadraticTwistGaussianThetaTailIntegral_def (j : Fin 2) (c : ℕ → ℂ) (T : ℝ) :
-    quadraticTwistGaussianThetaTailIntegral j c T =
-      ∫ u in Ioi T⁻¹, (‖gaussianThetaSeries j c u‖ +
-        ‖gaussianThetaSeries j (fun n ↦ c n * μ n) u‖) / u := by
-  unfold quadraticTwistGaussianThetaTailIntegral
-  rfl
-
 variable {j : Fin 2} {c : ℕ → ℂ}
 
+/-- The Mellin transform of the parity-`j` Gaussian in its half-plane of convergence. -/
+theorem gaussianMellin_eq {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
+    gaussianMellin j s =
+      (1 / 2 : ℂ) * (π : ℂ) ^ (-(s + j.val) / 2) * Complex.Gamma ((s + j.val) / 2) := by
+  let f : ℝ → ℂ := fun x ↦ (exp (-(π * x)) : ℂ)
+  let a : ℂ := (s + j.val) / 2
+  have ha : 0 < a.re := by
+    dsimp [a]
+    rw [Complex.div_ofNat_re, Complex.add_re, Complex.natCast_re]
+    linarith
+  calc
+    gaussianMellin j s = mellin (fun x : ℝ ↦ (x : ℂ) ^ (j.val : ℂ) • f (x ^ (2 : ℝ))) s := by
+      rw [gaussianMellin_def]
+      congr 1
+      funext x
+      simp [gaussianMonomial, f, Complex.cpow_natCast, neg_mul, smul_eq_mul]
+    _ = (1 / 2 : ℂ) * mellin f a := by
+      rw [mellin_cpow_smul, mellin_comp_rpow]
+      norm_num [a, smul_eq_mul, Complex.real_smul, one_div]
+    _ = _ := by
+      have h := Complex.integral_cpow_mul_exp_neg_mul_Ioi ha pi_pos
+      rw [show mellin f a = (1 / (π : ℂ)) ^ a * Complex.Gamma a by
+        simpa only [mellin, f, smul_eq_mul, Complex.ofReal_exp, Complex.ofReal_neg,
+          Complex.ofReal_mul] using h]
+      simp only [one_div, Complex.inv_cpow_ofReal_nonneg pi_nonneg, ← Complex.cpow_neg,
+        a, neg_div, mul_assoc]
+
 /-- The unnormalized Gaussian theta series is measurable in the scale. -/
-theorem measurable_gaussianTheta : Measurable (gaussianTheta j c) := by
+@[fun_prop] theorem measurable_gaussianTheta : Measurable (gaussianTheta j c) := by
   rw [funext (gaussianTheta_def j c)]
   fun_prop [gaussianMonomial]
 
 /-- The square-root-normalized Gaussian theta series is measurable in the scale. -/
-theorem measurable_gaussianThetaSeries : Measurable (gaussianThetaSeries j c) := by
+@[fun_prop] theorem measurable_gaussianThetaSeries : Measurable (gaussianThetaSeries j c) := by
   rw [funext (gaussianThetaSeries_def j c)]
   exact (Complex.measurable_ofReal.comp continuous_sqrt.measurable).mul measurable_gaussianTheta
 
@@ -151,10 +161,9 @@ private theorem norm_gaussianTheta_term_le (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) 
 
 private theorem hasSum_gaussianTheta_majorant {u : ℝ} (hu : 0 < u) :
     HasSum (fun n : ℕ+ ↦ 3 * (exp (-u) ^ 2) ^ (n : ℕ))
-      (3 * (1 - exp (-u) ^ 2)⁻¹ - 3) := by
+      (3 * (exp (-u) ^ 2 / (1 - exp (-u) ^ 2))) := by
   have hr : |exp (-u) ^ 2| < 1 := by simpa using hu
-  refine (hasSum_pnat_iff_hasSum_succ (f := fun n : ℕ ↦ 3 * (exp (-u) ^ 2) ^ n)).2 ?_
-  simpa using (hasSum_nat_add_iff' 1).2 ((hasSum_geometric_of_abs_lt_one hr).mul_left 3)
+  exact (hasSum_geometric_pnat hr).mul_left 3
 
 /-- The Gaussian theta sum converges absolutely at positive scales for unit-bounded
 coefficients. -/
@@ -171,10 +180,8 @@ theorem norm_gaussianTheta_le (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) {u : ℝ} (hu
   have hdenom : u * exp (-u) ≤ 1 - r := by
     nlinarith [add_one_le_exp u, exp_pos (-u), exp_le_one_iff.2 (neg_nonpos.2 hu.le),
       show exp u * exp (-u) = 1 by simp [← Real.exp_add]]
-  have hsum : 3 * (1 - r)⁻¹ - 3 ≤ 3 * exp (-u) / u := by
-    have hpos : 0 < 1 - r := (mul_pos hu (exp_pos _)).trans_le hdenom
-    calc 3 * (1 - r)⁻¹ - 3 = 3 * r / (1 - r) := by field
-      _ ≤ 3 * r / (u * exp (-u)) := by gcongr
+  have hsum : 3 * (r / (1 - r)) ≤ 3 * exp (-u) / u := by
+    calc 3 * (r / (1 - r)) ≤ 3 * (r / (u * exp (-u))) := by gcongr
       _ = 3 * exp (-u) / u := by simp [r, field]
   rw [gaussianTheta_def]
   refine (tsum_of_norm_bounded (hasSum_gaussianTheta_majorant hu) fun n ↦ ?_).trans hsum
@@ -205,32 +212,5 @@ theorem integrableOn_norm_gaussianThetaSeries_div (hc : ∀ n : ℕ+, ‖c n‖ 
   have hu0 : 0 < u := hr.trans_le hrle
   grw [norm_of_nonneg (by positivity), norm_gaussianThetaSeries_le hc]
   gcongr
-
-/-- The full quadratic-twist theta tail integrand is integrable for positive `T` and
-unit-bounded coefficients. -/
-theorem integrableOn_quadraticTwistGaussianThetaTailIntegrand (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1)
-    {T : ℝ} (hT : 0 < T) :
-    IntegrableOn (fun u ↦ (‖gaussianThetaSeries j c u‖ +
-      ‖gaussianThetaSeries j (fun n ↦ c n * μ n) u‖) / u) (Ioi T⁻¹) := by
-  have hμ (n : ℕ+) : ‖c n * (μ n : ℂ)‖ ≤ 1 := by
-    rw [norm_mul]
-    have hnorm : ‖(μ n : ℂ)‖ ≤ 1 := by
-      exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
-    calc ‖c n‖ * ‖(μ n : ℂ)‖ ≤ ‖c n‖ := mul_le_of_le_one_right (norm_nonneg _) hnorm
-      _ ≤ 1 := hc n
-  have h := (integrableOn_norm_gaussianThetaSeries_div (j := j) hc (inv_pos.mpr hT)).add
-    (integrableOn_norm_gaussianThetaSeries_div (j := j) (c := fun n ↦ c n * μ n)
-      hμ (inv_pos.mpr hT))
-  refine h.congr_fun (fun u _ ↦ ?_) measurableSet_Ioi
-  exact (add_div ..).symm
-
-/-- The quadratic-twist theta tail integral is nonnegative. -/
-theorem quadraticTwistGaussianThetaTailIntegral_nonneg (T : ℝ) :
-    0 ≤ quadraticTwistGaussianThetaTailIntegral j c T := by
-  rw [quadraticTwistGaussianThetaTailIntegral_def]
-  refine integral_nonneg fun u ↦ ?_
-  obtain hu | hu := le_or_gt u 0
-  · simp [gaussianThetaSeries_def, sqrt_eq_zero_of_nonpos hu]
-  · positivity
 
 end TauCeti
