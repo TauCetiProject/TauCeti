@@ -41,10 +41,12 @@ for the minimum.
 A nonpositive real power is antitone on `ℝ≥0∞`. Because `0 ^ z = ∞` for `z < 0`, no positivity
 hypothesis is needed, unlike its `ℝ≥0` counterpart `NNReal.rpow_le_rpow_of_nonpos`; this is what
 makes `ℝ≥0∞`-valued bounds on weakly singular integrands such as `|x - c| ^ (-1/2)` hold
-everywhere, the pole included. In the same spirit, the inverse square root of a real `x` is at
-most `‖x‖ₑ ^ (-1/2)`, with equality for `x > 0`. Two bounds on kernels `1 / √d` with `d` a
-product of three linear factors follow: at infinity the kernel decays like `y ^ (-3/2)`, and near
-three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
+everywhere, the pole included. A power `x ^ z` with `z ≤ 1` of a base `x ≥ 1` is at most `x`;
+this bounds dimensional constants `(κ ^ d) ^ (1 / p)` of `Lᵖ` estimates by `κ ^ d`. In the same
+spirit as the antitonicity above, the inverse square root of a real `x` is at most
+`‖x‖ₑ ^ (-1/2)`, with equality for `x > 0`. Two bounds on kernels `1 / √d` with `d` a product
+of three linear factors follow: at infinity the kernel decays like `y ^ (-3/2)`, and near three
+distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
 Writing `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` turns into
@@ -109,6 +111,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.ofReal_rpow_le`: `ofReal (x ^ p) ≤ ofReal x ^ p` for `0 ≤ x` and any real `p`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
+* `ENNReal.rpow_le_self_of_one_le`: `x ^ z ≤ x` for `1 ≤ x` and `z ≤ 1`.
 * `ENNReal.rpow_le_rpow_sub_mul_rpow`: `a ^ (p - q) ≤ b ^ (p - q)` gives
   `a ^ p ≤ b ^ (p - q) * a ^ q` for `a ≠ ∞` and `0 < p`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
@@ -293,6 +296,11 @@ theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz 
   obtain ⟨w, hw, rfl⟩ : ∃ w, 0 ≤ w ∧ z = -w := ⟨-z, neg_nonneg.mpr hz, (neg_neg z).symm⟩
   rw [rpow_neg, rpow_neg]
   exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
+
+/-- A real power at most `1` of an extended real `x ≥ 1` is at most `x`: the `ℝ≥0∞` counterpart of
+`Real.rpow_le_self_of_one_le`. No sign condition on the exponent is needed. -/
+theorem rpow_le_self_of_one_le {x : ℝ≥0∞} {z : ℝ} (hx : 1 ≤ x) (hz : z ≤ 1) : x ^ z ≤ x :=
+  (rpow_le_rpow_of_exponent_le hx hz).trans_eq (rpow_one x)
 
 /-- Since `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` gives
 `a ^ p ≤ b ^ (p - q) * a ^ q`, trading the power `p` of `a` for the power `q`. For `0 < p` the
