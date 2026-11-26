@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
 import Mathlib.LinearAlgebra.Basis.Prod
-import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
@@ -31,8 +30,9 @@ Consequently, for fields of forms `B₁` on `E` and `B₂` on `F`, the Gram dens
 block-diagonal field `(B₁ x).prod (B₂ y)` on `E × F`, integrated over a product set, is the product
 of the integrals of the two Gram densities
 (`Module.Basis.setLIntegral_ofReal_sqrt_det_toMatrix_prod`): in a product basis the Gram matrix is
-block diagonal and the Haar measure is the product of the Haar measures. This is the computation
-behind the Riemannian volume of a product of Riemannian manifolds.
+block diagonal and the Haar measure is the product of the Haar measures
+(`Module.Basis.setLIntegral_prod_of_addHaar_withDensity_eq`). This is the computation behind the
+Riemannian volume of a product of Riemannian manifolds.
 
 Both results follow their top-form versions for the density `|ω(b)|` of a top-degree form,
 `Module.Basis.addHaar_withDensity_ofReal_abs_apply_eq` and
@@ -94,21 +94,12 @@ theorem setLIntegral_ofReal_sqrt_det_toMatrix_prod [MeasurableSpace F] [BorelSpa
           ∂b₀.addHaar =
       (∫⁻ x in A₁, ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b₁ (B₁ x)).det ∂b₁.addHaar) *
         ∫⁻ y in A₂, ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b₂ (B₂ y)).det ∂b₂.addHaar := by
-  have : FiniteDimensional ℝ F := b₂.finiteDimensional_of_finite
-  obtain rfl : mEF = Prod.instMeasurableSpace :=
-    BorelSpace.measurable_eq.trans (Prod.borelSpace (α := E) (β := F)).measurable_eq.symm
   -- Compute in the product basis, reindexed along the index type of `b₀`.
-  set b := (b₁.prod b₂).reindex ((b₁.prod b₂).indexEquiv b₀)
-  have hprod : ∀ z ∈ A₁ ×ˢ A₂,
-      ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b ((B₁ z.1).prod (B₂ z.2))).det =
-        ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b₁ (B₁ z.1)).det *
-          ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b₂ (B₂ z.2)).det := fun z hz ↦ by
-    rw [LinearMap.BilinForm.det_toMatrix_reindex, LinearMap.BilinForm.toMatrix_prod,
-      Matrix.det_fromBlocks_zero₂₁, Real.sqrt_mul (hB₁ _ hz.1),
-      ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
-  rw [← withDensity_apply _ (hA₁.prod hA₂),
-    addHaar_withDensity_ofReal_sqrt_det_toMatrix_eq b b₀ (fun z ↦ (B₁ z.1).prod (B₂ z.2)),
-    withDensity_apply _ (hA₁.prod hA₂), setLIntegral_congr_fun (hA₁.prod hA₂) hprod,
-    addHaar_reindex, prod_addHaar, ← Measure.prod_restrict, lintegral_prod_mul hf hg]
+  refine setLIntegral_prod_of_addHaar_withDensity_eq ((b₁.prod b₂).indexEquiv b₀) b₀ b₁ b₂ hA₁ hA₂
+    (addHaar_withDensity_ofReal_sqrt_det_toMatrix_eq _ b₀ fun z ↦ (B₁ z.1).prod (B₂ z.2)) hf hg
+    fun z hz ↦ ?_
+  rw [LinearMap.BilinForm.det_toMatrix_reindex, LinearMap.BilinForm.toMatrix_prod,
+    Matrix.det_fromBlocks_zero₂₁, Real.sqrt_mul (hB₁ _ hz.1),
+    ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
 
 end Module.Basis
