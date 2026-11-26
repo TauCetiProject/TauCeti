@@ -247,11 +247,8 @@ def ofMeasurableEquiv (e : X ≃ᵐ Y) (he : MeasurePreserving e μ ν) (h : Sem
   toFun_comp x _ := h x
 
 /-- The forward map of an isomorphism mod 0 is a factor map. -/
-theorem isFactorMap (e : IsomorphismModNull T μ S ν) : IsFactorMap e.toFun T S μ ν where
-  measurePreserving := e.measurePreserving_toFun
-  comp_ae_eq := by
-    filter_upwards [mem_ae_iff.mpr e.measure_compl_source] with x hx
-    exact e.toFun_comp x hx
+theorem isFactorMap (e : IsomorphismModNull T μ S ν) : IsFactorMap e.toFun T S μ ν :=
+  .of_measure_compl_eq_zero e.measurePreserving_toFun e.measure_compl_source e.toFun_comp
 
 /-- The inverse map of an isomorphism mod 0 is a factor map. -/
 theorem isFactorMap_invFun (e : IsomorphismModNull T μ S ν) : IsFactorMap e.invFun S T ν μ :=

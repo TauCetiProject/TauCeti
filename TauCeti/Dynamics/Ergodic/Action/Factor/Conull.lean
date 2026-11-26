@@ -47,12 +47,12 @@ section Action
 variable [Monoid M] [MulAction M X] [MeasurableConstSMul M X]
 
 /-- **Invariant conull realization.** A factor map of actions of a countable monoid acting by
-quasi-measure-preserving maps intertwines every parameter exactly on a measurable conull set that
-is forward invariant under the action. -/
+measurable quasi-measure-preserving maps intertwines every parameter exactly on a measurable
+conull set that is forward invariant under the action. -/
 @[to_additive /-- **Invariant conull realization.** A factor map of additive actions of a
-countable additive monoid acting by quasi-measure-preserving maps intertwines every parameter
-exactly on a measurable conull set that is forward invariant under the action. -/]
-theorem IsFactorMapSMul.exists_measurableSet_mapsTo_smul [MulAction M Y] [Countable M]
+countable additive monoid acting by measurable quasi-measure-preserving maps intertwines every
+parameter exactly on a measurable conull set that is forward invariant under the action. -/]
+theorem IsFactorMapSMul.exists_measurableSet_mapsTo_smul [SMul M Y] [Countable M]
     (h : IsFactorMapSMul M π μ ν) (hM : ∀ m : M, QuasiMeasurePreserving (m • ·) μ μ) :
     ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ (∀ m : M, MapsTo (m • ·) X₀ X₀) ∧
       ∀ m : M, ∀ x ∈ X₀, π (m • x) = m • π x := by
@@ -71,14 +71,14 @@ theorem IsFactorMapSMul.of_measure_compl_eq_zero [SMul M X] [SMul M Y]
     (h : ∀ m : M, ∀ x ∈ X₀, π (m • x) = m • π x) : IsFactorMapSMul M π μ ν :=
   ⟨hπ, fun m ↦ by filter_upwards [mem_ae_iff.mpr h0] with x hx using h m x hx⟩
 
-/-- For a countable monoid acting by quasi-measure-preserving maps, a measure-preserving map is a
-factor map of the actions exactly when it intertwines every parameter on a measurable conull set
-that is forward invariant under the action. -/
-@[to_additive /-- For a countable additive monoid acting by quasi-measure-preserving maps, a
-measure-preserving map is a factor map of the additive actions exactly when it intertwines every
-parameter on a measurable conull set that is forward invariant under the action. -/]
+/-- For a countable monoid acting by measurable quasi-measure-preserving maps, a
+measure-preserving map is a factor map of the actions exactly when it intertwines every parameter
+on a measurable conull set that is forward invariant under the action. -/
+@[to_additive /-- For a countable additive monoid acting by measurable quasi-measure-preserving
+maps, a measure-preserving map is a factor map of the additive actions exactly when it intertwines
+every parameter on a measurable conull set that is forward invariant under the action. -/]
 theorem isFactorMapSMul_iff_exists_measurableSet [Monoid M] [MulAction M X]
-    [MeasurableConstSMul M X] [MulAction M Y] [Countable M]
+    [MeasurableConstSMul M X] [SMul M Y] [Countable M]
     (hM : ∀ m : M, QuasiMeasurePreserving (m • ·) μ μ)
     (hπ : MeasurePreserving π μ ν) :
     IsFactorMapSMul M π μ ν ↔ ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧
