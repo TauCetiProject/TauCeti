@@ -283,6 +283,7 @@ theorem bipartitePath_inj {u u' : Fin (k + 1) → α} {v v' : Fin k → β} :
 
 /-- A word is a bipartite path exactly when it has row vertices at the even positions and
 column vertices at the odd positions. -/
+@[simp]
 theorem exists_eq_bipartitePath_iff (w : Fin (2 * k + 1) → α ⊕ β) :
     (∃ (u : Fin (k + 1) → α) (v : Fin k → β), bipartitePath u v = w) ↔
       ∀ t, (w t).isLeft = decide ((t : ℕ) % 2 = 0) := by
@@ -309,6 +310,7 @@ theorem exists_eq_bipartitePath_iff (w : Fin (2 * k + 1) → α ⊕ β) :
 
 /-- A bipartite path has no immediate reversals exactly when adjacent row vertices differ
 and adjacent column vertices differ. -/
+@[simp]
 theorem bipartitePath_nonbacktracking_iff (u : Fin (k + 1) → α)
     (v : Fin k → β) :
     (∀ s t : Fin (2 * k + 1), (s : ℕ) + 2 = t → bipartitePath u v s ≠ bipartitePath u v t) ↔

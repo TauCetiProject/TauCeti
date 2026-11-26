@@ -86,7 +86,7 @@ theorem toBlocks₁₁_nonbacktrackingPow_apply (A : Matrix p n R) (B : Matrix n
         uv.1 0 = i ∧ uv.1 (Fin.last k) = j ∧
           (∀ t : Fin k, uv.1 t.castSucc ≠ uv.1 t.succ) ∧
           (∀ s t : Fin k, (s : ℕ) + 1 = t → uv.2 s ≠ uv.2 t) := by
-    simp [W, bipartitePath_nonbacktracking_iff]
+    simp [W]
   symm
   refine Finset.sum_nbij (fun uv ↦ bipartitePath uv.1 uv.2) (fun uv h ↦ (hmem uv).2 ?_)
     bipartitePath_injective.injOn ?_
