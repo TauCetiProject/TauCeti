@@ -27,7 +27,9 @@ boundary point there is exactly one tangent vector `u` of the sublevel or the ba
 `dι u = grad f`, and one with `dι u = -grad f`. The first points out of the sublevel and out of the
 band at its upper level, and the second points out of the band at its lower level. Indeed
 `df(grad f) = ⟪grad f, grad f⟫` is positive wherever `df` does not vanish
-(`TauCeti.Manifold.mvfderiv_apply_mgradient_pos_iff`), in particular at a point of a regular level.
+(`TauCeti.Manifold.mvfderiv_apply_mgradient_pos_iff`), in particular at a point of a regular level,
+so `f ∘ ι` increases along a vector over `grad f` and decreases along one over `-grad f`
+(`TauCeti.Manifold.mvfderiv_comp_apply_pos_of_mfderiv_eq_mgradient` and its negative form).
 
 ## Main results
 
@@ -71,13 +73,9 @@ theorem isOutwardPointing_scalarRegularSublevel_of_mfderiv_subtypeVal_eq_mgradie
   let := scalarRegularSublevelChartedSpace hf hreg hn
   rw [isOutwardPointing_scalarRegularSublevel_iff hf hn hreg hx]
   -- The restriction of `f` to the sublevel is `f ∘ Subtype.val` by definition.
-  refine lt_of_lt_of_eq ?_ (mvfderiv_comp_apply (g := f) (f := Subtype.val) x
-    ((hf _).mdifferentiableAt one_ne_zero)
+  exact mvfderiv_comp_apply_pos_of_mfderiv_eq_mgradient ((hf _).mdifferentiableAt one_ne_zero)
     ((contMDiff_subtypeVal_scalarRegularSublevel hreg hn le_rfl hf x).mdifferentiableAt
-      one_ne_zero) u).symm
-  rw [hu]
-  exact mvfderiv_apply_mgradient_pos_iff.2
-    (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 hreg _ hx))
+      one_ne_zero) hu (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 hreg _ hx))
 
 section Band
 
@@ -96,13 +94,9 @@ theorem isOutwardPointing_scalarRegularBand_of_mfderiv_subtypeVal_eq_neg_mgradie
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   rw [isOutwardPointing_scalarRegularBand_iff_of_eq_left hf hn ha hb hab hx]
   -- The restriction of `f` to the band is `f ∘ Subtype.val` by definition.
-  refine lt_of_eq_of_lt (mvfderiv_comp_apply (g := f) (f := Subtype.val) x
-    ((hf _).mdifferentiableAt one_ne_zero)
+  exact mvfderiv_comp_apply_neg_of_mfderiv_eq_neg_mgradient ((hf _).mdifferentiableAt one_ne_zero)
     ((contMDiff_subtypeVal_scalarRegularBand hn ha hb le_rfl hf hab x).mdifferentiableAt
-      one_ne_zero) u) ?_
-  rw [hu, map_neg, neg_lt_zero]
-  exact mvfderiv_apply_mgradient_pos_iff.2
-    (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 ha _ hx))
+      one_ne_zero) hu (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 ha _ hx))
 
 /-- **The gradient points out of a band at its upper level.** At a point `x` of the upper level
 `f⁻¹(b)` of a band `f⁻¹([a, b])` between regular values, for any Riemannian metric on `M`, the
@@ -117,13 +111,9 @@ theorem isOutwardPointing_scalarRegularBand_of_mfderiv_subtypeVal_eq_mgradient_o
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   rw [isOutwardPointing_scalarRegularBand_iff_of_eq_right hf hn ha hb hab hx]
   -- The restriction of `f` to the band is `f ∘ Subtype.val` by definition.
-  refine lt_of_lt_of_eq ?_ (mvfderiv_comp_apply (g := f) (f := Subtype.val) x
-    ((hf _).mdifferentiableAt one_ne_zero)
+  exact mvfderiv_comp_apply_pos_of_mfderiv_eq_mgradient ((hf _).mdifferentiableAt one_ne_zero)
     ((contMDiff_subtypeVal_scalarRegularBand hn ha hb le_rfl hf hab x).mdifferentiableAt
-      one_ne_zero) u).symm
-  rw [hu]
-  exact mvfderiv_apply_mgradient_pos_iff.2
-    (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 hb _ hx))
+      one_ne_zero) hu (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 hb _ hx))
 
 end Band
 
