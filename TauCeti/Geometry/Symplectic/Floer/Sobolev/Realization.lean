@@ -86,8 +86,13 @@ field of `D_u - c(s)` (`TauCeti.SymplecticForm.coeFn_floerWeightedSobolevOperato
 are bounded whenever those of `D_u` are and the slope is bounded
 (`TauCeti.SymplecticForm.memLp_floerJetCoeff_sub_smul_fst`), and the operator depends
 Lipschitz-continuously on the slope in operator norm
-(`TauCeti.SymplecticForm.norm_floerWeightedSobolevOperator_sub_le`). The weights need not be
-small: for data cylindrical near the ends, with `c` constant beyond `±R`, if the fields
+(`TauCeti.SymplecticForm.norm_floerWeightedSobolevOperator_sub_le`). A weight slope is a quadratic
+Hamiltonian: if the inner product is the metric `ω(·, J ·)` of a constant structure `J`, then
+`D_u - c(s)` for the data `(J, 0, H dt)` is the unweighted operator of the Hamiltonians
+`H_z + (c(s) / 2) ‖·‖²` along `u`
+(`floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq`, on coefficients
+`TauCeti.SymplecticForm.floerJetCoeff_add_div_two_mul_norm_sq`). The weights need not be small:
+for data cylindrical near the ends, with `c` constant beyond `±R`, if the fields
 `dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` have nondegenerate return maps (for one-periodic `H±`, `J±`
 and `x±`, if `δ±` are not eigenvalues of the asymptotic operators at `x±`), the weighted operator
 has finite-dimensional kernel
@@ -135,7 +140,7 @@ public section
 noncomputable section
 
 open Filter Set Function MeasureTheory Topology ContinuousLinearMap
-open scoped NNReal ENNReal Manifold
+open scoped NNReal ENNReal Manifold RealInnerProductSpace
 
 namespace TauCeti.SymplecticForm
 
@@ -513,6 +518,53 @@ theorem floerWeightedSobolevOperator_zero (ω : SymplecticForm V) (J : ℝ × �
     ω.floerWeightedSobolevOperator J Ks Kt u 0 = ω.floerSobolevOperator 2 J Ks Kt u := by
   simp only [floerWeightedSobolevOperator_def, floerSobolevOperator_def, Pi.zero_apply, zero_smul,
     sub_zero]
+
+section Quadratic
+
+/-! ### A weight slope as a quadratic Hamiltonian -/
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {ω : SymplecticForm E} {J : AlmostComplexStructure E} {H : ℝ × ℝ → E → ℝ}
+
+
+/-- **A weight slope is a quadratic Hamiltonian, on coefficients.** If the inner product of `E` is
+the metric `ω(·, J ·)`, then for the constant structure `J`, the perturbation `K = H dt` of
+Hamiltonians `H_z` and any map `u`, the coefficient field at `z = (s, t)` of `D_u - c(s)` on jets
+is that of the linearized operator of the Hamiltonians `H_z + (c(s) / 2) ‖·‖²`, as soon as `H_z`
+is differentiable and `X_{H_z}` is differentiable at `u z`. -/
+theorem floerJetCoeff_add_div_two_mul_norm_sq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    {u : ℝ × ℝ → E} {z : ℝ × ℝ} (hH : Differentiable ℝ (H z))
+    (hX : DifferentiableAt ℝ (ω.hamiltonianVectorField (H z)) (u z)) (c : ℝ → ℝ) :
+    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u z =
+      ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) H u z -
+        c z.1 • fst ℝ E (E × E) := by
+  rw [floerJetCoeff_const_eq, floerJetCoeff_const_eq,
+    neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg hH hX (c z.1)]
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp [sub_eq_add_neg, add_assoc]
+
+/-- **A weight slope is a quadratic Hamiltonian.** If the inner product of `E` is the metric
+`ω(·, J ·)`, the Hamiltonians `H_z` are differentiable and their Hamiltonian vector fields are
+differentiable along a map `u`, then the linearized Floer operator of the data `(J, 0, H dt)` along
+`u`, conjugated by the exponential weight `e^{κ(s)}` of slope `c = κ'`, is the linearized operator
+of the Hamiltonians `H_z + (c(s) / 2) ‖·‖²` along `u`, on `W^{1,2}(ℝ × S¹, E)`. -/
+theorem floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ∀ z, Differentiable ℝ (H z)) {u : ℝ × ℝ → E}
+    (hX : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (H z)) (u z)) (c : ℝ → ℝ) :
+    ω.floerWeightedSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        H u c =
+      ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u := by
+  have hcoeff : (fun z ↦ ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) H u z - c z.1 • fst ℝ E (E × E)) =
+      ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u := by
+    funext z
+    exact (floerJetCoeff_add_div_two_mul_norm_sq hg (hH z) (hX z) c).symm
+  rw [floerWeightedSobolevOperator_def, floerSobolevOperator_def, hcoeff]
+
+end Quadratic
 
 /-- The weighted operator acts pointwise by the coefficient field of `D_u - c(s)` on jets, when
 these coefficients are essentially bounded on the cylinder. -/
