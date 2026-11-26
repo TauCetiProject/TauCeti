@@ -30,6 +30,11 @@ almost-everywhere agreement and identify the classical derivative at every point
 domain. They apply to Banach-valued functions on finite-dimensional real normed spaces with
 additive Haar measure. No boundary regularity or global integrability assumption is needed.
 
+For second derivatives, `exists_contDiffOn_two_ae_eq_and_fderiv_fderiv_eq` takes weak derivatives
+`Dᵢ` of a real function along an orthonormal basis `(bᵢ)` whose weak gradients `Gᵢ` are
+continuous, and gives a `C²` representative `g` with `D²g(x) h k = ∑ᵢ ⟪Gᵢ x, h⟫ ⟪bᵢ, k⟫`. This is
+the form in which regularity theorems for elliptic equations deliver weak second derivatives.
+
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, Chapter 5, Sections 5.3 and 5.6.
@@ -140,5 +145,41 @@ theorem HasWeakFDerivOn.exists_contDiffOn_succ_ae_eq
       ∀ x ∈ Omega, HasFDerivAt g (U x) x := by
   obtain ⟨g, hg, hug, hdg⟩ := h.exists_contDiffOn_one_ae_eq hU.continuousOn
   exact ⟨g, (h.congr_ae hug).contDiffOn_succ hg.continuousOn hU, hug, hdg⟩
+
+section LineDeriv
+
+/-! ### Second derivatives from directional weak derivatives -/
+
+variable {H ι : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [FiniteDimensional ℝ H]
+  [MeasurableSpace H] [BorelSpace H] {μ : Measure H} [μ.IsAddHaarMeasure] {Ω : Opens H}
+  [Fintype ι] {b : OrthonormalBasis ι ℝ H} {v : H → ℝ} {D : ι → H → ℝ} {G : ι → H → H}
+
+/-- **A `C²` representative from continuous weak second derivatives.** Let `b` be an orthonormal
+basis. If `v` has weak derivatives `D i` along the vectors `b i` on an open domain, and each
+`D i` has a weak gradient `G i` continuous there, then `v` agrees almost everywhere with a function
+`g` that is `C²` on the domain, with second derivative
+`D²g(x) h k = ∑ᵢ ⟪G i x, h⟫ ⟪b i, k⟫` at every point `x` of the domain. -/
+theorem exists_contDiffOn_two_ae_eq_and_fderiv_fderiv_eq (hv : LocallyIntegrableOn v Ω μ)
+    (hD : ∀ i, HasWeakLineDerivOn μ Ω v (D i) (b i))
+    (hDG : ∀ i, HasWeakFDerivOn μ Ω (D i) fun x => innerSL ℝ (G i x))
+    (hG : ∀ i, ContinuousOn (G i) Ω) :
+    ∃ g : H → ℝ, ContDiffOn ℝ 2 g Ω ∧ v =ᵐ[μ.restrict Ω] g ∧ ∀ x ∈ Ω,
+      fderiv ℝ (fderiv ℝ g) x = ∑ i, (innerSL ℝ (G i x)).smulRight (innerSL ℝ (b i)) := by
+  -- Each directional derivative has a continuous weak gradient, hence a `C¹` representative.
+  have hfirst : ∀ i, ∃ g' : H → ℝ, ContDiffOn ℝ 1 g' Ω ∧ D i =ᵐ[μ.restrict Ω] g' ∧
+      ∀ x ∈ Ω, HasFDerivAt g' (innerSL ℝ (G i x)) x := fun i =>
+    (hDG i).exists_contDiffOn_one_ae_eq ((innerSL ℝ).continuous.comp_continuousOn (hG i))
+  choose g' hg' hDg' hdg' using hfirst
+  -- They assemble into a `C¹` weak derivative of `v`, which gives the `C²` representative.
+  obtain ⟨hC, hW⟩ := contDiffOn_sum_innerSL_and_hasWeakFDerivOn hg' hv
+    fun i => (hD i).congr_ae_deriv (hDg' i)
+  obtain ⟨g, hg, hvg, hdg⟩ := hW.exists_contDiffOn_succ_ae_eq (n := 1) hC
+  refine ⟨g, by exact_mod_cast hg, hvg, fun x hx => ?_⟩
+  have hfd : fderiv ℝ g =ᶠ[𝓝 x] fun y => ∑ i, g' i y • innerSL ℝ (b i) :=
+    eventually_of_mem (Ω.isOpen.mem_nhds hx) fun y hy => (hdg y hy).fderiv
+  rw [hfd.fderiv_eq]
+  exact (HasFDerivAt.fun_sum fun i _ => (hdg' i x hx).smul_const (innerSL ℝ (b i))).fderiv
+
+end LineDeriv
 
 end TauCeti
