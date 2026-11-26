@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Jet
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
-import TauCeti.Geometry.Manifold.MFDeriv.Localized
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
