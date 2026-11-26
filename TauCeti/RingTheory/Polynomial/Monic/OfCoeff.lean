@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Algebra.Star.Basic
+public import TauCeti.RingTheory.Polynomial.DegreeLT
 import Mathlib.Algebra.Star.BigOperators
 
 /-!
@@ -35,6 +36,8 @@ a *free* tuple rather than as the data of a polynomial subtype.
 * `TauCeti.Polynomial.coeff_monicOfCoeff` and `TauCeti.Polynomial.monicOfCoeff_coeff`: the
   coefficients are read back off, and every monic polynomial of degree `n` arises this way, so the
   two constructions are mutually inverse.
+* `TauCeti.Polynomial.sum_monicsOfDegree`: over a finite nontrivial semiring, a sum over the monic
+  polynomials of degree `n` is a sum over their lower coefficients.
 * `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
   the constant `t`.
 * `TauCeti.Polynomial.translateCoeff a c`: the lower coefficients of
@@ -91,6 +94,11 @@ theorem monic_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).Monic :=
 theorem coeff_monicOfCoeff (c : Fin n → R) (i : Fin n) : (monicOfCoeff c).coeff (i : ℕ) = c i := by
   have hne : (i : ℕ) ≠ n := i.isLt.ne
   simp [monicOfCoeff, coeff_X_pow, Finsupp.single_apply, hne, Fin.val_eq_val]
+
+/-- The monic polynomial of degree `0` is `1`. -/
+@[simp]
+theorem monicOfCoeff_fin_zero (c : Fin 0 → R) : monicOfCoeff c = 1 := by
+  simp [monicOfCoeff]
 
 /-- The coefficient of `X ^ n` in `TauCeti.Polynomial.monicOfCoeff c` is its leading coefficient
 `1`. -/
@@ -159,6 +167,20 @@ theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
   · rw [hk, coeff_monicOfCoeff_self, ← hdeg, hp.coeff_natDegree]
   · rw [coeff_eq_zero_of_natDegree_lt (by rwa [natDegree_monicOfCoeff]),
       coeff_eq_zero_of_natDegree_lt (by rwa [hdeg])]
+
+/-- A sum over the monic polynomials of degree `n` over a finite nontrivial semiring is a sum over
+their lower coefficients. -/
+theorem sum_monicsOfDegree {M : Type*} [AddCommMonoid M] [Fintype R]
+    (f : R[X] → M) (n : ℕ) :
+    ∑ g ∈ monicsOfDegree R n, f g = ∑ c : Fin n → R, f (monicOfCoeff c) := by
+  classical
+  rw [← Finset.sum_image fun c _ d _ h ↦ (monicOfCoeff_inj c d).1 h]
+  congr 1
+  ext g
+  simp only [Finset.mem_image, Finset.mem_univ, true_and, mem_monicsOfDegree]
+  refine ⟨fun ⟨hg, hd⟩ ↦ ⟨_, monicOfCoeff_coeff hg hd⟩, ?_⟩
+  rintro ⟨c, rfl⟩
+  exact ⟨monic_monicOfCoeff c, natDegree_monicOfCoeff c⟩
 
 end OfCoeff
 

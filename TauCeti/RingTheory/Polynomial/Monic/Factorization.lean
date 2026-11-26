@@ -33,6 +33,8 @@ monic, also over `ℚ` by Gauss's lemma.
   product of a finite set of monic irreducible polynomials.
 * `Polynomial.Monic.exists_finset_prod_eq_of_discr_ne_zero`: the same conclusion for a monic
   polynomial with nonzero discriminant.
+* `Polynomial.natDegree_eq_sum_mul_count_normalizedFactors`: the degree of a polynomial is
+  the sum of the degrees of its normalized factors, counted with multiplicity.
 -/
 
 public section
@@ -84,6 +86,21 @@ into distinct monic irreducible factors. -/
 theorem exists_finset_prod_eq_of_discr_ne_zero (hf : f.Monic) (hd : f.discr ≠ 0) :
     ∃ s : Finset R[X], (∀ g ∈ s, g.Monic ∧ Irreducible g) ∧ ∏ g ∈ s, g = f :=
   hf.exists_finset_prod_eq_of_squarefree (hf.squarefree_of_discr_ne_zero hd)
+
+/-- A polynomial `f` whose normalized factors lie in a finite set `S` has degree
+`∑ g ∈ S, deg g · m g`, where `m g` is the number of times that `g` occurs as a normalized
+factor. -/
+theorem _root_.Polynomial.natDegree_eq_sum_mul_count_normalizedFactors [DecidableEq R[X]]
+    {S : Finset R[X]} (hS : (normalizedFactors f).toFinset ⊆ S) :
+    f.natDegree = ∑ g ∈ S, g.natDegree * (normalizedFactors f).count g := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp
+  conv_lhs => rw [← natDegree_eq_of_degree_eq
+    (degree_eq_degree_of_associated (prod_normalizedFactors hf0)),
+    natDegree_multiset_prod _ (zero_notMem_normalizedFactors f), Finset.sum_multiset_map_count]
+  refine (Finset.sum_subset hS fun g _ hg ↦ ?_).trans (Finset.sum_congr rfl fun g _ ↦ ?_)
+  · rw [Multiset.count_eq_zero.2 fun h ↦ hg (Multiset.mem_toFinset.2 h), zero_smul]
+  · rw [smul_eq_mul, mul_comm]
 
 /-- The integral case: a monic integral polynomial with nonzero discriminant is the product of
 distinct monic irreducible integral polynomials. -/

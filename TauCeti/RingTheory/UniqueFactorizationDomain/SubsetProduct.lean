@@ -22,6 +22,13 @@ statement about subsets of the set of factors. The hypothesis on the units is wh
 conclusions equalities rather than statements up to associates; the motivating example is the
 multiplicative monoid of ideals of a Dedekind domain.
 
+For products of powers no hypothesis on the units is needed. The normalized factors of
+`∏ p ∈ S, p ^ e p`, for a finite set `S` of normalized irreducible elements, are the `p ∈ S`, each
+`e p` times (`TauCeti.normalizedFactors_finset_prod_pow`,
+`TauCeti.count_normalizedFactors_finset_prod_pow`). Conversely, a nonzero normalized element is the
+product of its normalized factors with their multiplicities, over any finite set that contains
+them (`TauCeti.finset_prod_pow_count_normalizedFactors`).
+
 Without the hypothesis on the units, the product of the prime factors of `a` satisfying an
 associate-invariant predicate `s` is divisible by exactly the primes dividing `a` that satisfy
 `s` (`prime_dvd_prod_filter_primeFactors_iff`). This is how one builds an element with
@@ -48,6 +55,53 @@ theorem normalizedFactors_finset_prod_of_prime (hS : ∀ p ∈ S, Prime p) :
   exact normalizedFactors_prod_of_prime hS
 
 end UniqueUnits
+
+section ProdPow
+
+variable {S : Finset α}
+
+/-- The normalized factors of `∏ p ∈ S, p ^ e p`, for a finite set `S` of normalized irreducible
+elements, are the `p ∈ S`, each `e p` times. -/
+theorem normalizedFactors_finset_prod_pow (hS : ∀ p ∈ S, normalize p = p ∧ Irreducible p)
+    (e : α → ℕ) : normalizedFactors (∏ p ∈ S, p ^ e p) = ∑ p ∈ S, e p • {p} := by
+  have hprod : ∏ p ∈ S, p ^ e p = (∑ p ∈ S, e p • {p} : Multiset α).prod := by
+    rw [Multiset.prod_sum]
+    exact Finset.prod_congr rfl fun p _ ↦ by rw [Multiset.prod_nsmul, Multiset.prod_singleton]
+  have hmem {q : α} (hq : q ∈ ∑ p ∈ S, e p • ({p} : Multiset α)) :
+      normalize q = q ∧ Irreducible q := by
+    obtain ⟨p, hp, hqp⟩ := Multiset.mem_sum.1 hq
+    rw [Multiset.mem_nsmul] at hqp
+    rw [Multiset.mem_singleton.1 hqp.2]
+    exact hS p hp
+  rw [hprod, normalizedFactors_prod_eq _ fun q hq ↦ (hmem hq).2,
+    Multiset.map_congr rfl fun q hq ↦ (hmem hq).1, Multiset.map_id']
+
+/-- In `∏ q ∈ S, q ^ e q`, for a finite set `S` of normalized irreducible elements, each `p ∈ S`
+occurs `e p` times as a normalized factor. -/
+theorem count_normalizedFactors_finset_prod_pow [DecidableEq α]
+    (hS : ∀ p ∈ S, normalize p = p ∧ Irreducible p) (e : α → ℕ) {p : α} (hp : p ∈ S) :
+    (normalizedFactors (∏ q ∈ S, q ^ e q)).count p = e p := by
+  rw [normalizedFactors_finset_prod_pow hS, Multiset.count_sum', Finset.sum_eq_single p]
+  · simp
+  · intro q _ hqp
+    simp [hqp.symm]
+  · exact fun h ↦ (h hp).elim
+
+end ProdPow
+
+section StrongNormalization
+
+variable {α : Type*} [CommMonoidWithZero α] [StrongNormalizationMonoid α]
+  [UniqueFactorizationMonoid α] [DecidableEq α]
+
+/-- A nonzero normalized element `a` whose normalized factors lie in a finite set `S` is
+`∏ p ∈ S, p ^ m p`, where `m p` is the number of times that `p` occurs as a normalized factor. -/
+theorem finset_prod_pow_count_normalizedFactors {a : α} (ha : a ≠ 0) (hna : normalize a = a)
+    {S : Finset α} (hS : (normalizedFactors a).toFinset ⊆ S) :
+    ∏ p ∈ S, p ^ (normalizedFactors a).count p = a := by
+  rw [← Finset.prod_multiset_count_of_subset _ _ hS, prod_normalizedFactors_eq ha, hna]
+
+end StrongNormalization
 
 section UniqueUnitsCancel
 

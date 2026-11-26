@@ -35,6 +35,8 @@ coefficients `map f` acts on the constant coefficient.
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
 * `PowerSeries.coeff_succ_mul_eq_add_sum`: the `Xⁿ⁺¹`-coefficient of `f * g` is
   `f₀ * gₙ₊₁ + Σ_{j ≤ n} fₙ₊₁₋ⱼ * gⱼ`.
+* `PowerSeries.eq_of_eq_add_C_mul_X_pow_mul`: for `d > 0`, the equation `D = B + a X ^ d D` has
+  at most one solution `D`.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
 -/
@@ -174,6 +176,19 @@ theorem coeff_succ_mul_eq_add_sum (f g : R⟦X⟧) (n : ℕ) :
   simp only [Prod.fst_swap, Prod.snd_swap]
   rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ coeff j f * coeff i g),
     Finset.sum_range_succ, Nat.sub_self, add_comm]
+
+/-- For `d > 0`, a power series `D` with `D = B + a X ^ d D` is determined by `B`, since the
+coefficient of `X ^ n` in `a X ^ d D` uses only the coefficients of `D` below `n`. -/
+theorem eq_of_eq_add_C_mul_X_pow_mul {B D₁ D₂ : R⟦X⟧} {a : R} {d : ℕ} (hd : 0 < d)
+    (h₁ : D₁ = B + C a * X ^ d * D₁) (h₂ : D₂ = B + C a * X ^ d * D₂) : D₁ = D₂ := by
+  ext n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    rw [h₁, h₂]
+    simp only [map_add, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
+    split_ifs with hdn
+    · rw [ih (n - d) (by omega)]
+    · rfl
 
 end Coeff
 
