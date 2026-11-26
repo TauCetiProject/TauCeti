@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 
 /-!
 # Change of variables for top-form integrals
@@ -412,9 +413,8 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
       mem_compl_iff]
     exact ⟨fun ⟨⟨hs, hw⟩, h⟩ ↦ ⟨hs, hw, fun j hj hj' ↦ h j hj ⟨hs, hj'⟩⟩,
       fun ⟨hs, hw, h⟩ ↦ ⟨⟨hs, hw⟩, fun j hj hj' ↦ h j hj hj'.2⟩⟩
-  have hs : IsChartMeasurable I (disjointed u i) := by
-    rw [disjointed_apply, Finset.sup_set_eq_biUnion]
-    exact (hu i).isChartMeasurable.diff (isOpen_biUnion fun j _ ↦ hu j).isChartMeasurable
+  have hs : IsChartMeasurable I (disjointed u i) :=
+    IsChartMeasurable.disjointed (fun j ↦ (hu j).isChartMeasurable) i
   have hβ : disjointed u i ⊆ (extChartAt I (e.symm (α i))).source :=
     (disjointed_subset u i).trans (hus i)
   rw [hdisj] at hs hβ ⊢
@@ -552,9 +552,8 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
   have hdisj : disjointed (fun j ↦ f ⁻¹' w j) i = f ⁻¹' disjointed w i := by
     simp only [disjointed_eq_inter_compl, preimage_inter, preimage_iInter, preimage_compl]
   have hs : IsChartMeasurable I (f ⁻¹' disjointed w i) := by
-    rw [disjointed_apply, preimage_sdiff, Finset.sup_set_eq_biUnion, preimage_iUnion₂]
-    exact ((hv _).preimage hf.continuous).isChartMeasurable.diff
-      (isOpen_biUnion fun j _ ↦ (hv _).preimage hf.continuous).isChartMeasurable
+    rw [← hdisj]
+    exact IsChartMeasurable.disjointed (fun j ↦ ((hv _).preimage hf.continuous).isChartMeasurable) i
   have h := φ.integral_signedInChartAt_mpullback_eq b C l l' hl hf.injective.injOn
     (fun x _ ↦ ho x) hs
     (fun x hx ↦ ⟨hu i (preimage_mono (disjointed_subset w i) hx),

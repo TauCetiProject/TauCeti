@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Topology.UniformSpace.HeineCantor
-public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Family
 public import TauCeti.Topology.Compactness.Compact
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
@@ -94,9 +94,12 @@ on a single compact set.
   has only nondegenerate zeros in `K`, in a bijection with those of `f` moving each by at most
   any prescribed `ε > 0`.
 * `IsCompact.exists_pos_forall_ncard_sep_eq_zero_eq`: hence it has as many zeros in `K` as `f`.
-* `IsCompact.eventually_ncard_sep_eq_zero_eq`: along a family of maps continuous together with
-  their derivatives, the number of zeros in `K` is locally constant near a member with only
-  nondegenerate zeros in `K`.
+* `IsCompact.eventually_exists_equiv_sep_eq_zero`: along a family of maps continuous together
+  with their derivatives, near a member with only nondegenerate zeros in `K` the zeros of the
+  nearby members are nondegenerate and in a bijection with those of that member moving each by at
+  most any prescribed `ε > 0`.
+* `IsCompact.eventually_ncard_sep_eq_zero_eq`: hence the number of zeros in `K` is locally
+  constant near such a member.
 * `IsCompact.ncard_sep_eq_zero_eq_of_isPreconnected`: it is constant over a preconnected set of
   parameters at which all zeros in `K` are nondegenerate.
 * `TauCeti.exists_tendsto_inter_preimage_singleton_eq_singleton_of_tendstoContDiffAt`: a
@@ -264,6 +267,40 @@ theorem exists_pos_forall_ncard_sep_eq_zero_eq (hK : IsCompact K) (hf : Continuo
 
 variable {P : Type*} [TopologicalSpace P] {u : P → E → F} {s : Set P}
 
+/-- **Nondegenerate zeros persist, in bijection, along a continuous family.** Let `u p` be
+differentiable on the compact set `K` for every parameter `p ∈ s`, with `u p x` and
+`fderiv 𝕜 (u p) x` continuous in `(p, x)` on `s ×ˢ K`. If every zero of `u p₀` in `K` is an
+interior point of `K` at which the derivative of `u p₀` is invertible, then for every `ε > 0` and
+every `p ∈ s` near `p₀` the zeros of `u p` in `K` are again interior points of `K` at which the
+derivative of `u p` is invertible, and there is a bijection between the zeros of `u p₀` and those
+of `u p` in `K` moving each zero by at most `ε`. -/
+theorem eventually_exists_equiv_sep_eq_zero (hK : IsCompact K)
+    (hd : ∀ p ∈ s, ∀ x ∈ K, DifferentiableAt 𝕜 (u p) x)
+    (hu : ContinuousOn (Function.uncurry u) (s ×ˢ K))
+    (hu' : ContinuousOn (fun q : P × E ↦ fderiv 𝕜 (u q.1) q.2) (s ×ˢ K)) {p₀ : P}
+    (hp₀ : p₀ ∈ s)
+    (hz : ∀ x ∈ K, u p₀ x = 0 → x ∈ interior K ∧ (fderiv 𝕜 (u p₀) x).IsInvertible)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ p in 𝓝[s] p₀, (∀ x ∈ K, u p x = 0 → x ∈ interior K ∧ (fderiv 𝕜 (u p) x).IsInvertible) ∧
+      ∃ e : {x ∈ K | u p₀ x = 0} ≃ {x ∈ K | u p x = 0}, ∀ x, dist (e x : E) x ≤ ε := by
+  have hslice : MapsTo (fun x ↦ (p₀, x)) K (s ×ˢ K) := fun x hx ↦ ⟨hp₀, hx⟩
+  have hc : ContinuousOn (fderiv 𝕜 (u p₀)) K :=
+    hu'.comp (continuousOn_const.prodMk continuousOn_id) hslice
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_exists_equiv_sep_eq_zero
+    (hu.comp (continuousOn_const.prodMk continuousOn_id) hslice) (fun x hx hx0 ↦
+      ⟨(hz x hx hx0).1, hc.continuousAt (mem_interior_iff_mem_nhds.1 (hz x hx hx0).1),
+        (hz x hx hx0).2⟩) hε
+  -- The pair `(u p x, fderiv 𝕜 (u p) x)` is uniformly close to its value at `p₀` over `K`.
+  obtain ⟨v, hv, hvK⟩ := hK.mem_uniformity_of_prod
+    (f := fun p x ↦ (u p x, fderiv 𝕜 (u p) x)) (hu.prodMk hu') hp₀ (dist_mem_uniformity hδ)
+  filter_upwards [hv, self_mem_nhdsWithin] with p hp hps
+  have hpx (x) (hx : x ∈ K) :
+      max ‖u p x - u p₀ x‖ ‖fderiv 𝕜 (u p) x - fderiv 𝕜 (u p₀) x‖ < δ := by
+    have hpx : dist (u p x, fderiv 𝕜 (u p) x) (u p₀ x, fderiv 𝕜 (u p₀) x) < δ := hvK p hp x hx
+    rwa [Prod.dist_eq, dist_eq_norm, dist_eq_norm] at hpx
+  exact h (u p) (hd p hps) (fun x hx ↦ (le_max_left _ _).trans (hpx x hx).le)
+    fun x hx ↦ (le_max_right _ _).trans (hpx x hx).le
+
 /-- **The number of nondegenerate zeros is locally constant along a continuous family.** Let
 `u p` be differentiable on the compact set `K` for every parameter `p ∈ s`, with `u p x` and
 `fderiv 𝕜 (u p) x` continuous in `(p, x)` on `s ×ˢ K`. If every zero of `u p₀` in `K` is an
@@ -275,24 +312,9 @@ theorem eventually_ncard_sep_eq_zero_eq (hK : IsCompact K)
     (hu' : ContinuousOn (fun q : P × E ↦ fderiv 𝕜 (u q.1) q.2) (s ×ˢ K)) {p₀ : P}
     (hp₀ : p₀ ∈ s)
     (hz : ∀ x ∈ K, u p₀ x = 0 → x ∈ interior K ∧ (fderiv 𝕜 (u p₀) x).IsInvertible) :
-    ∀ᶠ p in 𝓝[s] p₀, {x ∈ K | u p x = 0}.ncard = {x ∈ K | u p₀ x = 0}.ncard := by
-  have hslice : MapsTo (fun x ↦ (p₀, x)) K (s ×ˢ K) := fun x hx ↦ ⟨hp₀, hx⟩
-  have hc : ContinuousOn (fderiv 𝕜 (u p₀)) K :=
-    hu'.comp (continuousOn_const.prodMk continuousOn_id) hslice
-  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_ncard_sep_eq_zero_eq
-    (hu.comp (continuousOn_const.prodMk continuousOn_id) hslice) fun x hx hx0 ↦
-      ⟨(hz x hx hx0).1, hc.continuousAt (mem_interior_iff_mem_nhds.1 (hz x hx hx0).1),
-        (hz x hx hx0).2⟩
-  -- The pair `(u p x, fderiv 𝕜 (u p) x)` is uniformly close to its value at `p₀` over `K`.
-  obtain ⟨v, hv, hvK⟩ := hK.mem_uniformity_of_prod
-    (f := fun p x ↦ (u p x, fderiv 𝕜 (u p) x)) (hu.prodMk hu') hp₀ (dist_mem_uniformity hδ)
-  filter_upwards [hv, self_mem_nhdsWithin] with p hp hps
-  have hpx (x) (hx : x ∈ K) :
-      max ‖u p x - u p₀ x‖ ‖fderiv 𝕜 (u p) x - fderiv 𝕜 (u p₀) x‖ < δ := by
-    have hpx : dist (u p x, fderiv 𝕜 (u p) x) (u p₀ x, fderiv 𝕜 (u p₀) x) < δ := hvK p hp x hx
-    rwa [Prod.dist_eq, dist_eq_norm, dist_eq_norm] at hpx
-  exact h (u p) (hd p hps) (fun x hx ↦ (le_max_left _ _).trans (hpx x hx).le)
-    fun x hx ↦ (le_max_right _ _).trans (hpx x hx).le
+    ∀ᶠ p in 𝓝[s] p₀, {x ∈ K | u p x = 0}.ncard = {x ∈ K | u p₀ x = 0}.ncard :=
+  (hK.eventually_exists_equiv_sep_eq_zero hd hu hu' hp₀ hz one_pos).mono
+    fun _ ⟨_, e, _⟩ ↦ (Set.ncard_congr' e).symm
 
 /-- **The number of nondegenerate zeros is constant along a connected family.** Let `u p` be
 differentiable on the compact set `K` for every parameter `p` in a preconnected set `s`, with

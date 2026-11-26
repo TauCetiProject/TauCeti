@@ -11,9 +11,10 @@ public import Mathlib.LinearAlgebra.Finsupp.Supported
 /-!
 # Grading finitely supported functions by assigned degrees
 
-For an arbitrary assignment `g : I → ℤ`, `InternalGrading.finsupp A g` grades the free
-`A`-module on `I` by placing its `i`-th basis vector in degree `g i`. A homogeneous element
-has support in a single fibre of `g`. No finiteness or injectivity of `g` is required.
+For an arbitrary assignment `g : I → ι` of degrees in any type `ι`,
+`InternalGrading.finsupp A g` grades the free `A`-module on `I` by placing its `i`-th basis vector
+in degree `g i`. A homogeneous element has support in a single fibre of `g`. No finiteness or
+injectivity of `g` is required.
 
 The internal direct sum gives every finitely supported function a unique finite homogeneous
 decomposition, including when several basis vectors have the same degree. This construction
@@ -30,11 +31,11 @@ public section
 
 namespace TauCeti.InternalGrading
 
-variable (A : Type*) [Ring A] {I : Type*} (g : I → ℤ)
+variable (A : Type*) [Ring A] {I ι : Type*} [DecidableEq ι] (g : I → ι)
 
 /-- The internal grading of the free module on `I` assigning its `i`-th basis vector
 degree `g i`. The degree-`p` piece consists of functions supported in the fibre of `p`. -/
-noncomputable def finsupp : InternalGrading A (I →₀ A) ℤ where
+noncomputable def finsupp : InternalGrading A (I →₀ A) ι where
   piece p := Finsupp.supported A A {i | g i = p}
   isInternal := by
     classical
@@ -48,13 +49,13 @@ noncomputable def finsupp : InternalGrading A (I →₀ A) ℤ where
       intro i hi
       exact fun hip => hqp (hi.symm.trans hip)
     · rw [← Finsupp.supported_iUnion]
-      have hcover : (⋃ p : ℤ, {i | g i = p}) = Set.univ := by
+      have hcover : (⋃ p : ι, {i | g i = p}) = Set.univ := by
         ext i
         simp
       rw [hcover, Finsupp.supported_univ]
 
 /-- The homogeneous piece is the supported submodule on the corresponding degree fibre. -/
-theorem finsupp_piece (p : ℤ) :
+theorem finsupp_piece (p : ι) :
     (finsupp A g).piece p = Finsupp.supported A A {i | g i = p} := (rfl)
 
 variable {A g}
@@ -62,7 +63,7 @@ variable {A g}
 /-- A finitely supported function has degree `p` exactly when every nonzero coordinate
 has assigned degree `p`. -/
 @[simp]
-theorem mem_finsupp_piece_iff {p : ℤ} {c : I →₀ A} :
+theorem mem_finsupp_piece_iff {p : ι} {c : I →₀ A} :
     c ∈ (finsupp A g).piece p ↔ ∀ i, c i ≠ 0 → g i = p := by
   rw [finsupp_piece]
   simp [Finsupp.mem_supported, Set.subset_def]
@@ -75,7 +76,7 @@ theorem single_mem_finsupp_piece (i : I) (a : A) :
 
 /-- A single coordinate belongs to a homogeneous piece precisely when its coefficient
 vanishes or its assigned degree is that of the piece. -/
-theorem single_mem_finsupp_piece_iff (i : I) (a : A) (p : ℤ) :
+theorem single_mem_finsupp_piece_iff (i : I) (a : A) (p : ι) :
     Finsupp.single i a ∈ (finsupp A g).piece p ↔ a = 0 ∨ g i = p := by
   classical
   rw [mem_finsupp_piece_iff]
@@ -93,19 +94,19 @@ theorem single_mem_finsupp_piece_iff (i : I) (a : A) (p : ℤ) :
 variable (A g) in
 /-- The basis of the degree-`p` piece of `InternalGrading.finsupp A g` formed by the basis vectors
 `Finsupp.single i 1` of the indices `i` of degree `p`. -/
-noncomputable def finsuppPieceBasis (p : ℤ) :
+noncomputable def finsuppPieceBasis (p : ι) :
     Module.Basis {i // g i = p} A ((finsupp A g).piece p) :=
   .ofRepr (Finsupp.supportedEquivFinsupp {i | g i = p})
 
 /-- The basis vector of an index of degree `p` is its single coordinate. -/
 @[simp]
-theorem coe_finsuppPieceBasis {p : ℤ} (i : {i // g i = p}) :
+theorem coe_finsuppPieceBasis {p : ι} (i : {i // g i = p}) :
     (finsuppPieceBasis A g p i : I →₀ A) = Finsupp.single (i : I) 1 :=
   Finsupp.supportedEquivFinsupp_symm_single {i | g i = p} i 1
 
 /-- The coordinates of a homogeneous element in `finsuppPieceBasis` are its coefficients. -/
 @[simp]
-theorem finsuppPieceBasis_repr_apply {p : ℤ} (x : (finsupp A g).piece p) (i : {i // g i = p}) :
+theorem finsuppPieceBasis_repr_apply {p : ι} (x : (finsupp A g).piece p) (i : {i // g i = p}) :
     (finsuppPieceBasis A g p).repr x i = (x : I →₀ A) i :=
   (rfl)
 

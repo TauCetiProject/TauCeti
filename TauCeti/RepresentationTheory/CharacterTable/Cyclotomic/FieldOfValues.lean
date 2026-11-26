@@ -187,8 +187,7 @@ theorem fieldOfValues_eq_map_fixedField_stabilizer {G : Type*} [Group G] [Finite
         ((IsCyclotomicExtension.zeta_spec (Monoid.exponent G) ℚ K).cyclotomicPowerStabilizer
           dvd_rfl χ)).map (algebraMap K ℂ).toRatAlgHom := by
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {Monoid.exponent G} ℚ K
-  refine IsPrimitiveRoot.adjoin_range_eq_map_fixedField_cyclotomicPowerStabilizer _ _ ?_
-  rw [virtualCharacters_eq_closure_irreducibleCharacters]
-  exact AddSubgroup.subset_closure hχ
+  exact IsPrimitiveRoot.adjoin_range_eq_map_fixedField_cyclotomicPowerStabilizer _ _
+    (irreducibleCharacters_subset_virtualCharacters hχ)
 
 end TauCeti

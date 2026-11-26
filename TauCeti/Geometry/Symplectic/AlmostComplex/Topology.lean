@@ -38,6 +38,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
 * `TauCeti.AlmostComplexStructure.mul_opNorm_le_of_eq_smul_sub_smul`: if `B = (a - b J) A` with
   `a² + b² = r² > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, inverting `a - b J` through
   `(a + b J) (a - b J) = a² + b²`.
+* `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`: `a + b J` is invertible
+  whenever `a² + b² ≠ 0`, with inverse `(a² + b²)⁻¹ (a - b J)`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
 * `TauCeti.SymplecticForm.tames_of_mul_norm_sq_le`: a uniform lower bound `c ‖v‖² ≤ ω(v, J v)`
@@ -108,8 +110,7 @@ theorem mul_opNorm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
     r * ‖A‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) * ‖B‖ := by
   set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
   have hinv (v : V) : (a ^ 2 + b ^ 2) • A v = a • B v + b • J (B v) := by
-    rw [hAB v, map_sub, map_smul, map_smul, apply_apply]
-    module
+    rw [hAB v, J.smul_add_smul_apply_smul_sub_smul]
   have ha : |a| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg b]) hr.le
   have hb : |b| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg a]) hr.le
   -- Taking norms in `(a² + b²) A v = a B v + b J B v`: `r² ‖A v‖ ≤ r (1 + ‖J‖) ‖B‖ ‖v‖`.
@@ -133,6 +134,20 @@ theorem mul_opNorm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
   calc r * ‖A‖ ≤ r * ((1 + NJ) * ‖B‖ / r) := by gcongr
     _ = (1 + NJ) * ‖B‖ := by field_simp
 
+/-- For an almost complex structure `J`, `a + b J` is invertible whenever `a² + b² ≠ 0`, with
+inverse `(a² + b²)⁻¹ (a - b J)`, since `(a + b J) (a - b J) = (a - b J) (a + b J) = a² + b²`. -/
+theorem isInvertible_smul_id_add_smul (J : AlmostComplexStructure V) {a b : ℝ}
+    (h : a ^ 2 + b ^ 2 ≠ 0) :
+    (a • ContinuousLinearMap.id ℝ V + b • J.toLinearMap.toContinuousLinearMap).IsInvertible := by
+  refine .of_inverse (g := (a ^ 2 + b ^ 2)⁻¹ •
+      (a • ContinuousLinearMap.id ℝ V - b • J.toLinearMap.toContinuousLinearMap))
+    (ContinuousLinearMap.ext fun v ↦ ?_) (ContinuousLinearMap.ext fun v ↦ ?_) <;>
+    conv_rhs => rw [ContinuousLinearMap.id_apply, ← inv_smul_smul₀ h v]
+  all_goals
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, smul_apply, add_apply,
+      sub_apply, LinearMap.coe_toContinuousLinearMap', map_add, map_sub, map_smul, J.apply_apply]
+    module
+
 end AlmostComplexStructure
 
 namespace SymplecticForm
@@ -143,16 +158,11 @@ theorem Tames.eventually_of_continuousAt {X : Type*} [TopologicalSpace X] {ω : 
     {J : X → AlmostComplexStructure V} {x : X}
     (hJ : ContinuousAt (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) x)
     (h : ω.Tames (J x)) : ∀ᶠ y in 𝓝 x, ω.Tames (J y) := by
-  let ωc := ω.toBilinForm.toContinuousBilinearMap
-  -- The forms `ω(·, A ·)` depend continuously on the operator `A`, and positivity is open.
-  have hc : Continuous fun A : V →L[ℝ] V => (ContinuousLinearMap.compL ℝ V V ℝ).flip A ∘L ωc := by
-    fun_prop
-  have hA : ∀ᶠ A in 𝓝 (LinearMap.toContinuousLinearMap (J x).toLinearMap),
-      ∀ v, v ≠ 0 → 0 < ((ContinuousLinearMap.compL ℝ V V ℝ).flip A ∘L ωc) v v :=
-    hc.continuousAt.preimage_mem_nhds (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds
-      fun v hv => by simpa [ωc] using h v hv)
-  filter_upwards [hJ.eventually hA] with y hy v hv
-  simpa [ωc] using hy v hv
+  -- The endomorphisms tamed by the fixed form `ω` form an open set.
+  filter_upwards [hJ.eventually ((isOpen_setOf_forall_endomorphism_pos
+    ω.toBilinForm.toContinuousBilinearMap).mem_nhds fun v hv ↦ by simpa using h v hv)]
+    with y hy v hv
+  simpa using hy v hv
 
 omit [FiniteDimensional ℝ V] in
 /-- A uniform lower bound `c ‖v‖² ≤ ω(v, J v)` with `c > 0` makes `J` tame. Conversely, a family

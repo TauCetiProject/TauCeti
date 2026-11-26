@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
+import TauCeti.Topology.Algebra.Monoid
 
 /-!
 # The topology of a restricted product
@@ -15,7 +16,8 @@ topology over the principal stages `Πʳ i, [R i, A i]_[𝓟 S]`. A set is open 
 preimage in every principal stage is open: this is the `Prop`-valued form of Mathlib's universal
 property `RestrictedProduct.continuous_dom`. Inserting a single factor is continuous, the analogue
 of `continuous_mulSingle` (and, additively, `continuous_single`) for `Pi` types, and for Hausdorff
-factors it is a closed embedding. Over the cofinite filter, evaluation at an index is an open map.
+factors it is a closed embedding. Over the cofinite filter, factors from the reference sets inserted
+at single indices tend to `1`, and evaluation at an index is an open map.
 On a subspace lying in the reference sets at every index of some `T` with `𝓕 ≤ 𝓟 T` (over the
 cofinite filter: outside finitely many indices), the restricted-product topology agrees with the
 product topology.
@@ -23,6 +25,8 @@ A restricted product of nonempty clopen reference sets is weakly locally compact
 finitely many reference sets are compact
 (`eventually_isCompact_of_weaklyLocallyCompactSpace_restrictedProduct`), the converse of Mathlib's
 `RestrictedProduct.weaklyLocallyCompactSpace_of_cofinite`.
+The instance `TauCeti.fact_isOpen_coe_subtype_val` passes openness of the reference sets to the
+restriction of the family to a subtype of the index type.
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -152,6 +156,27 @@ theorem isClosedEmbedding_restrictedProduct_mulSingle [∀ i, T2Space (G i)] (i 
     (RestrictedProduct.mulSingle_eq_same B i) (RestrictedProduct.continuous_eval i)
     (continuous_restrictedProduct_mulSingle B i)
 
+/-- **Factors in the reference sets, inserted at single indices, tend to `1` along the cofinite
+filter.** For `x i ∈ B i`, the element `RestrictedProduct.mulSingle B i (x i)`, equal to `x i` at
+`i` and to `1` elsewhere, tends to `1` as `i` leaves every finite set. -/
+@[to_additive
+  /-- **Factors in the reference sets, inserted at single indices, tend to `0` along the cofinite
+  filter.** For `x i ∈ B i`, the element `RestrictedProduct.single B i (x i)`, equal to `x i` at
+  `i` and to `0` elsewhere, tends to `0` as `i` leaves every finite set. -/]
+theorem tendsto_restrictedProduct_mulSingle_cofinite {x : ∀ i, G i} (hx : ∀ i, x i ∈ B i) :
+    Tendsto (fun i ↦ RestrictedProduct.mulSingle B i (x i)) cofinite (𝓝 1) := by
+  -- the inclusion of `∏ i, B i` is continuous, and carries `Pi.mulSingle i (x i)` to the point
+  -- `RestrictedProduct.mulSingle B i (x i)`
+  have hc := (RestrictedProduct.isEmbedding_structureMap (R := G)
+    (A := fun i ↦ (B i : Set (G i))) (𝓕 := cofinite)).continuous
+  refine ((hc.tendsto 1).comp (tendsto_mulSingle_cofinite fun i ↦ (⟨x i, hx i⟩ : B i))).congr
+    fun i ↦ ?_
+  ext j
+  rcases eq_or_ne j i with rfl | hj
+  · simp [RestrictedProduct.structureMap_apply]
+  · simp [RestrictedProduct.structureMap_apply, Pi.mulSingle_eq_of_ne hj,
+      RestrictedProduct.mulSingle_eq_of_ne _ _ hj]
+
 end
 
 section Discrete
@@ -231,5 +256,13 @@ theorem not_isInducing_coe_bot [∀ i, DiscreteTopology (G i)]
   exact hg hmem
 
 end Discrete
+
+/-- Openness of a family of reference sets passes to its restriction to a subtype of the index
+type. -/
+instance fact_isOpen_coe_subtype_val {ι : Type*} {G : ι → Type*} {K : ι → Type*}
+    [∀ i, TopologicalSpace (G i)] [∀ i, SetLike (K i) (G i)] {B : ∀ i, K i}
+    [hB : Fact (∀ i, IsOpen (B i : Set (G i)))] (p : ι → Prop) :
+    Fact (∀ i : Subtype p, IsOpen (B i.val : Set (G i.val))) :=
+  ⟨fun i ↦ hB.out i.val⟩
 
 end TauCeti

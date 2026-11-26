@@ -40,6 +40,8 @@ file.
   functions to the coordinate ring.
 * `TauCeti.FiniteTypeCommHopfAlgCat.componentCoordinateMap`: the same map on the canonical
   constant-group coordinate ring.
+* `TauCeti.FiniteTypeCommHopfAlgCat.mem_range_componentCoordinateMap_of_isIdempotentElem`: every
+  idempotent lies in its image.
 * `TauCeti.FiniteTypeCommHopfAlgCat.eval_componentCoordinateMap`: evaluation of the coordinate map
   at a rational point is evaluation at its connected component.
 * `TauCeti.FiniteTypeCommHopfAlgCat.componentCoordinateBialgHom`: the coordinate bialgebra
@@ -261,6 +263,15 @@ theorem componentCoordinateMap_indicator (H : FiniteTypeCommHopfAlgCat.{u, u} k)
       · simp
 
 omit [IsAlgClosed k] in
+/-- Every idempotent function on the group lies in the image of the component coordinate map: it
+is pulled back from a function on the finite set of connected components. -/
+theorem mem_range_componentCoordinateMap_of_isIdempotentElem
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) {e : H} (he : IsIdempotentElem e) :
+    e ∈ (componentCoordinateMap H).range := by
+  obtain ⟨s, rfl⟩ := he.exists_eq_sum_connectedComponentsIdempotent
+  exact Subalgebra.sum_mem _ fun C _ ↦ ⟨_, componentCoordinateMap_indicator H C⟩
+
+omit [IsAlgClosed k] in
 /-- The component coordinate map is injective. -/
 theorem componentCoordinateMap_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     Function.Injective (componentCoordinateMap H) :=
@@ -327,10 +338,10 @@ private theorem algHom_comp_map_comp_comulAlgHom_componentCoordinateMap
     simp [q, h, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight]
   have htarget : f.comp (Bialgebra.comulAlgHom k H) = (g * h).ofConv := by
     apply WithConv.toConv_injective
-    rw [Bialgebra.toConv_comp_comulAlgHom]
+    rw [AlgHom.toConv_comp_comulAlgHom]
   rw [htarget, eval_componentCoordinateMap, map_mul]
   apply WithConv.toConv_injective
-  rw [Bialgebra.toConv_comp_comulAlgHom, hqleft, hqright,
+  rw [AlgHom.toConv_comp_comulAlgHom, hqleft, hqright,
     eval_componentCoordinateMap, eval_componentCoordinateMap]
   exact (ConstantGroup.eval_mul k C _ _).symm
 

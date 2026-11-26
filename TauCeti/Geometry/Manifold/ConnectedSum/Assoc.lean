@@ -144,11 +144,11 @@ private theorem range_leftIncl :
     mem_image, mem_ofPred_eq, mem_compl_singleton_iff]
   constructor
   · rintro (⟨x, rfl⟩ | ⟨y, hy, rfl⟩) h
-    · rw [inrBall_apply, inl_eq_inr_iff ha.injective hb.injective] at h
+    · rw [inrBall_apply, inl_eq_inr_iff ha.injective] at h
       obtain ⟨v, -, -, hv⟩ := h
       exact hbb' ⟨_, by simpa using hv⟩
     · rw [inrBall_apply] at h
-      have h' := congrArg Subtype.val (inr_injective ha.injective hb.injective h)
+      have h' := congrArg Subtype.val (inr_injective ha.injective h)
       exact (mem_puncture.1 hy) (by simpa using h')
   · intro hp
     obtain ⟨x | y, rfl⟩ := mk_surjective a b p
@@ -170,9 +170,9 @@ private theorem range_rightIncl :
   constructor
   · rintro (⟨x, hx, rfl⟩ | ⟨y, rfl⟩) h
     · rw [inlBall_apply] at h
-      have h' := congrArg Subtype.val (inl_injective hb'.injective hc.injective h)
+      have h' := congrArg Subtype.val (inl_injective hc.injective h)
       exact (mem_puncture.1 hx) (by simpa using h')
-    · rw [inlBall_apply, eq_comm, inl_eq_inr_iff hb'.injective hc.injective] at h
+    · rw [inlBall_apply, eq_comm, inl_eq_inr_iff hb'.injective] at h
       obtain ⟨v, -, hv, -⟩ := h
       exact hb'b ⟨_, by simpa using hv⟩
   · intro hp
@@ -256,7 +256,7 @@ private def leftMap :
     haveI := t1Space hb' hc
     ConnectedSum a (punctureBall b' b hbb') → ConnectedSum a (inlBall b' c b hbb') :=
   haveI := t1Space hb' hc
-  map id (inl b' c) injective_id (inl_injective hb'.injective hc.injective) (id_comp a)
+  map id (inl b' c) injective_id (inl_injective hc.injective) (id_comp a)
     (inl_comp_punctureBall b' c hbb')
 
 /-- `(N ∖ {b 0}) # P` maps to `(M # N) # P`, by the identity on `N ∖ {b 0, b' 0}` and on
@@ -265,7 +265,7 @@ private def rightMap :
     haveI := t1Space ha hb
     ConnectedSum (punctureBall b b' hb'b) c → ConnectedSum (inrBall a b b' hb'b) c :=
   haveI := t1Space ha hb
-  map (inr a b) id (inr_injective ha.injective hb.injective) injective_id
+  map (inr a b) id (inr_injective ha.injective) injective_id
     (inr_comp_punctureBall a b hb'b) (id_comp c)
 
 private theorem leftMap_inl (x : puncture a) :
@@ -278,7 +278,7 @@ private theorem leftMap_inr (y : puncture (punctureBall b' b hbb')) :
     haveI := t1Space hb' hc
     leftMap hbb' hb' hc (inr a _ y) =
       inr a (inlBall b' c b hbb') ⟨inl b' c y, by
-        rw [← coe_punctureMap (inl_injective hb'.injective hc.injective)
+        rw [← coe_punctureMap (inl_injective hc.injective)
           (congrFun (inl_comp_punctureBall b' c hbb') 0) y]
         exact Subtype.prop _⟩ := by
   have := t1Space hb' hc
@@ -289,7 +289,7 @@ private theorem rightMap_inl (x : puncture (punctureBall b b' hb'b)) :
     haveI := t1Space ha hb
     rightMap hb'b ha hb (inl _ c x) =
       inl (inrBall a b b' hb'b) c ⟨inr a b x, by
-        rw [← coe_punctureMap (inr_injective ha.injective hb.injective)
+        rw [← coe_punctureMap (inr_injective ha.injective)
           (congrFun (inr_comp_punctureBall a b hb'b) 0) x]
         exact Subtype.prop _⟩ := by
   have := t1Space ha hb
@@ -492,7 +492,7 @@ theorem assocHomeomorph_inl_inr (y : puncture b)
         (by rw [inrBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))⟩,
         mem_puncture.2 fun h ↦ mem_puncture.1 y.property (by
           simpa using congrArg Subtype.val
-            (inl_injective hb'.injective hc.injective (h.trans (inlBall_apply b' c hbb' 0))))⟩ := by
+            (inl_injective hc.injective (h.trans (inlBall_apply b' c hbb' 0))))⟩ := by
   have := t1Space ha hb
   have := t1Space hb' hc
   rw [coe_assocHomeomorph]
@@ -535,7 +535,7 @@ theorem assocHomeomorph_symm_inr_inl (x : puncture b')
         (by rw [inlBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))⟩,
         mem_puncture.2 fun h ↦ mem_puncture.1 x.property (by
           simpa using congrArg Subtype.val
-            (inr_injective ha.injective hb.injective (h.trans (inrBall_apply a b hb'b 0))))⟩ := by
+            (inr_injective ha.injective (h.trans (inrBall_apply a b hb'b 0))))⟩ := by
   have := t1Space ha hb
   have := t1Space hb' hc
   rw [Homeomorph.symm_apply_eq, assocHomeomorph_inl_inr]

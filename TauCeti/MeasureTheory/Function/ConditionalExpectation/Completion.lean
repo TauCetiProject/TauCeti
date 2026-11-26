@@ -45,6 +45,11 @@ namespace MeasureTheory.Measure
 
 variable {Ω : Type*} {m m₀ : MeasurableSpace Ω}
 
+/-- The completion of a finite measure is finite. -/
+instance completion.isFiniteMeasure (μ : Measure Ω) [IsFiniteMeasure μ] :
+    @IsFiniteMeasure (NullMeasurableSpace Ω μ) _ μ.completion :=
+  ⟨lt_of_eq_of_lt (μ.completion_apply Set.univ) (measure_lt_top μ Set.univ)⟩
+
 /-- Trimming the completed measure to an original sub-σ-algebra recovers the original trim. -/
 theorem trim_completion (μ : Measure Ω) (hm : m ≤ m₀) :
     @Measure.trim Ω m (eventuallyMeasurableSpace m₀ (ae μ)) μ.completion

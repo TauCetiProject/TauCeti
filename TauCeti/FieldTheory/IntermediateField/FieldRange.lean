@@ -28,6 +28,7 @@ different embeddings `f` induce different structures, so none can be registered 
 ## Main results
 
 * `AlgHom.finrank_fieldRange`: `[L : f.fieldRange] = [L : K]`.
+* `AlgHom.apply_equivFieldRange_symm_apply`: `f` inverts `f.equivFieldRange.symm`.
 * `AlgHom.finiteDimensional_of_fieldRange`, `AlgHom.isSeparable_of_fieldRange`, and
   `AlgHom.linearIndependent_fieldRange`: finiteness and separability over the range transfer to
   the source, and linear independence over the source transfers to the range.
@@ -42,6 +43,12 @@ public section
 namespace AlgHom
 
 variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
+
+/-- `f` undoes the inverse of its range restriction `f.equivFieldRange`. -/
+@[simp]
+theorem apply_equivFieldRange_symm_apply (f : K →ₐ[F] L) (z : f.fieldRange) :
+    f (f.equivFieldRange.symm z) = z := by
+  rw [← equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply]
 
 /-- **The degree above the range of a field embedding equals the degree above its source.**
 Stated for an arbitrary `K`-algebra structure on `L` whose structure map is `f`, rather than for
@@ -70,7 +77,7 @@ theorem finiteDimensional_of_fieldRange (f : K →ₐ[F] L) [Algebra K L]
     FiniteDimensional K L :=
   Module.Finite.of_equiv_equiv f.equivFieldRange.toRingEquiv.symm (RingEquiv.refl L) <| by
     ext z
-    simpa [h] using (AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
+    simp [h]
 
 /-- **The separable degree above the range of a field embedding equals the one above its
 source.** The `f.fieldRange` case of `Field.finSepDegree_eq_of_surjective`. -/
@@ -110,7 +117,7 @@ theorem isSeparable_of_fieldRange (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, 
     [Algebra.IsSeparable f.fieldRange L] : Algebra.IsSeparable K L :=
   Algebra.IsSeparable.of_equiv_equiv f.equivFieldRange.toRingEquiv.symm (RingEquiv.refl L) <| by
     ext z
-    simpa [h] using (AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
+    simp [h]
 
 /-- **Linear independence over the source of a field embedding transfers to its range.** -/
 theorem linearIndependent_fieldRange (f : K →ₐ[F] L) [Algebra K L]

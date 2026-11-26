@@ -9,7 +9,7 @@ public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Topology.Algebra.Module.ProdUnitsHomeomorph
 public import TauCeti.Topology.Compactification.OnePoint.Collapse
 public import TauCeti.Topology.Compactification.OnePoint.Sphere
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
@@ -54,6 +54,7 @@ of the tube to `s₀`.
 * `TauCeti.IsFramedTube f τ`: `τ : S × V → M` is an open embedding extending `f` along the zero
   section.
 * `TauCeti.pontryaginThomCollapse τ`: the Pontryagin–Thom collapse `M → OnePoint V`.
+* `TauCeti.IsFramedTube.isEmbedding`: the core of a framed tube is an embedding.
 * `TauCeti.isLocalHomeomorphOn_pontryaginThomCollapse_comp`: the collapse along a map
   is a local homeomorphism where the normal coordinate of the map is.
 * `TauCeti.pontryaginThomCollapseMap`: the collapse as a continuous map.
@@ -97,6 +98,11 @@ noncomputable def pontryaginThomCollapse (τ : S × V → M) : M → OnePoint V 
   onePointCollapse τ Prod.snd
 
 variable {τ : S × V → M}
+
+/-- The Pontryagin–Thom collapse is the collapse `TauCeti.onePointCollapse τ Prod.snd`. -/
+theorem pontryaginThomCollapse_eq_onePointCollapse :
+    pontryaginThomCollapse τ = onePointCollapse τ Prod.snd :=
+  (rfl)
 
 @[simp]
 theorem pontryaginThomCollapse_apply (hτ : Injective τ) (x : S) (v : V) :
@@ -157,6 +163,28 @@ when it lies on the core of the framed tube. -/
 theorem pontryaginThomCollapse_eq_zero_iff (h : IsFramedTube f τ) {m : M} :
     pontryaginThomCollapse τ m = (0 : V) ↔ m ∈ range f := by
   simp [pontryaginThomCollapse_eq_coe_iff h.isOpenEmbedding.injective, h.apply_zero, mem_range]
+
+/-- The core `f = τ ∘ (·, 0)` of a framed tube is an embedding. -/
+theorem isEmbedding (h : IsFramedTube f τ) : IsEmbedding f := by
+  have hf : f = τ ∘ fun x ↦ (x, (0 : V)) := funext fun x ↦ (h.apply_zero x).symm
+  exact hf ▸ h.isOpenEmbedding.isEmbedding.comp (isEmbedding_prodMkLeft 0)
+
+/-- The core of a framed tube is continuous: it is the tube along the zero section. -/
+theorem continuous (h : IsFramedTube f τ) : Continuous f :=
+  h.isEmbedding.continuous
+
+/-- The core of a framed tube around a compact space, in a Hausdorff space, is closed. -/
+theorem isClosed_range [CompactSpace S] [T2Space M] (h : IsFramedTube f τ) : IsClosed (range f) :=
+  (isCompact_range h.continuous).isClosed
+
+/-- A map of the ambient spaces carrying the tube `τ'` to the tube `τ` fibrewise carries the core
+of `τ'` into the core of `τ`. -/
+lemma mapsTo_range_of_apply_eq {B' S' : Type*} [TopologicalSpace B'] [TopologicalSpace S']
+    {f' : S' → B'} {τ' : S' × V → B'} (hτ : IsFramedTube f τ) (hτ' : IsFramedTube f' τ')
+    {s : B' → M} {φ : S' → S} (hs : ∀ x v, s (τ' (x, v)) = τ (φ x, v)) :
+    MapsTo s (range f') (range f) := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨φ x, by rw [← hτ.apply_zero, ← hs, hτ'.apply_zero]⟩
 
 end IsFramedTube
 

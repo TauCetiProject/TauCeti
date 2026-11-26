@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Topology.Algebra.Module.Determinant
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
@@ -28,15 +29,22 @@ not only in the base field.
 At a zero of a differentiable scalar factor, continuity of the vector factor suffices for
 Fréchet differentiability of their product, including scalars in a normed algebra.
 
+The dilation `x ↦ a • x` has derivative `a • id` at every point, hence derivative norm
+`‖a‖ ‖id‖` and Jacobian determinant `a ^ n`, where `n` is the dimension.
+
 ## Main results
 
 * `HasFDerivWithinAt.smul_of_eq_zero` and `HasFDerivAt.smul_of_eq_zero`: the scalar-multiplication
   rule at a zero of the scalar factor, with only continuity of the vector factor.
 * `TauCeti.fderiv_smul_apply`: the Leibniz rule for the derivative of a scalar multiple, applied to
   a direction.
+* `TauCeti.norm_fderiv_fun_smul_le`: the Leibniz estimate for the norm of the derivative of a
+  scalar multiple.
 * `TauCeti.cutoff_sq_mul_norm_fderiv_sq_le`: the two-direction cutoff derivative estimate.
 * `TauCeti.hasStrictFDerivAt_smul_of_isBigO_sub`: a product of two Lipschitz factors vanishing
   at a point is strictly differentiable there, with derivative zero.
+* `TauCeti.fderiv_const_smul_id`, `TauCeti.norm_fderiv_const_smul_id`,
+  `TauCeti.det_fderiv_const_smul_id`: the derivative of a dilation, its norm and its determinant.
 -/
 
 public section
@@ -80,7 +88,39 @@ theorem fderiv_smul_apply {c : E → 𝕜'} {f : E → F} {x : E} (hc : Differen
     fderiv 𝕜 (c • f) x e = c x • fderiv 𝕜 f x e + fderiv 𝕜 c x e • f x := by
   simp [fderiv_smul hc hf]
 
+/-- **The Leibniz estimate.** The derivative of a scalar multiple `c • f` at `x` is bounded by
+`‖c x‖ ‖Df(x)‖ + ‖Dc(x)‖ ‖f x‖`. -/
+theorem norm_fderiv_fun_smul_le {c : E → 𝕜} {f : E → F} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (hf : DifferentiableAt 𝕜 f x) :
+    ‖fderiv 𝕜 (fun y => c y • f y) x‖ ≤ ‖c x‖ * ‖fderiv 𝕜 f x‖ + ‖fderiv 𝕜 c x‖ * ‖f x‖ := by
+  rw [fderiv_fun_smul hc hf]
+  refine (norm_add_le _ _).trans_eq ?_
+  rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
+
 end Leibniz
+
+section Dilation
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+/-- The derivative of the dilation `x ↦ a • x` is `a • id` at every point. -/
+theorem fderiv_const_smul_id (a : 𝕜) (x : E) :
+    fderiv 𝕜 (fun x : E => a • x) x = a • ContinuousLinearMap.id 𝕜 E := by
+  simp only [fderiv_fun_const_smul differentiableAt_fun_id, fderiv_fun_id]
+
+/-- The derivative of the dilation `x ↦ a • x` has norm `‖a‖ ‖id‖` at every point. -/
+theorem norm_fderiv_const_smul_id (a : 𝕜) (x : E) :
+    ‖fderiv 𝕜 (fun x : E => a • x) x‖ = ‖a‖ * ‖ContinuousLinearMap.id 𝕜 E‖ := by
+  rw [fderiv_const_smul_id, norm_smul]
+
+/-- The Jacobian determinant of the dilation `x ↦ a • x` is `a ^ n` at every point, where `n` is
+the dimension. -/
+theorem det_fderiv_const_smul_id (a : 𝕜) (x : E) :
+    (fderiv 𝕜 (fun x : E => a • x) x).det = a ^ Module.finrank 𝕜 E := by
+  simp [fderiv_const_smul_id, ContinuousLinearMap.det, LinearMap.det_smul]
+
+end Dilation
 
 variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -110,6 +150,16 @@ section Strict
 
 open Asymptotics Filter Topology
 
+/-- The difference estimate `u y - u y' = O(y - y')` near `(x, x)` of a strictly differentiable
+map gives continuity at `x`: fixing `y' = x` leaves `dist (u y) (u x) = O(dist y x)`. -/
+private theorem continuousAt_of_isBigO_sub_sub {X Y : Type*} [SeminormedAddCommGroup X]
+    [SeminormedAddCommGroup Y] {u : X → Y} {x : X}
+    (hu : (fun p : X × X ↦ u p.1 - u p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2) :
+    ContinuousAt u x :=
+  continuousAt_of_isBigO_dist <| by
+    simpa only [dist_eq_norm_sub, Function.comp_apply, id] using
+      (hu.comp_tendsto (tendsto_id.prodMk_nhds tendsto_const_nhds)).norm_norm
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {R : Type*} [NormedRing R]
   [Module R F] [IsBoundedSMul R F]
@@ -128,12 +178,12 @@ theorem hasStrictFDerivAt_smul_of_isBigO_sub {c : E → R} {f : E → F} {x : E}
   -- term one factor tends to zero and the other is controlled by `y - y'`.
   have h₁ : (fun p : E × E ↦ c p.1 • (f p.1 - f p.2)) =o[𝓝 (x, x)] fun p ↦ p.1 - p.2 := by
     have hc₁ : Tendsto (fun p : E × E ↦ c p.1) (𝓝 (x, x)) (𝓝 0) := by
-      have h := (continuousAt_of_isBigO_sub hc).tendsto.comp (continuous_fst.tendsto (x, x))
+      have h := (continuousAt_of_isBigO_sub_sub hc).tendsto.comp (continuous_fst.tendsto (x, x))
       rwa [hcx] at h
     simpa using ((isLittleO_one_iff 𝕜).2 hc₁).smul_isBigO hf
   have h₂ : (fun p : E × E ↦ (c p.1 - c p.2) • f p.2) =o[𝓝 (x, x)] fun p ↦ p.1 - p.2 := by
     have hf₂ : Tendsto (fun p : E × E ↦ f p.2) (𝓝 (x, x)) (𝓝 0) := by
-      have h := (continuousAt_of_isBigO_sub hf).tendsto.comp (continuous_snd.tendsto (x, x))
+      have h := (continuousAt_of_isBigO_sub_sub hf).tendsto.comp (continuous_snd.tendsto (x, x))
       rwa [hfx] at h
     have h := hc.norm_right.smul_isLittleO ((isLittleO_one_iff ℝ).2 hf₂)
     simp only [smul_eq_mul, mul_one] at h

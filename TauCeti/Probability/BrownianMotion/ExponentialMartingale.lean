@@ -9,9 +9,11 @@ public import Mathlib.MeasureTheory.Measure.Tilted
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Martingale.Basic
 public import TauCeti.Probability.BrownianMotion.Filtered
+public import TauCeti.Probability.Process.Predictable.Basic
 import Mathlib.Probability.ConditionalExpectation
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Moments.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Probability.Distributions.Tilted
 
@@ -141,6 +143,21 @@ theorem stronglyAdapted_exponentialMartingale (hW : Adapted ℱ W) (θ : ℝ) :
 
 end MeasureTheory.Adapted
 
+namespace MeasureTheory.IsStronglyPredictable
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+
+/-- The exponential martingale formula preserves strong predictability, without any assumption
+on the law of the driving process. -/
+theorem exponentialMartingale (hW : IsStronglyPredictable ℱ W) (θ : ℝ) :
+    IsStronglyPredictable ℱ (TauCeti.Probability.exponentialMartingale θ W) := by
+  have ht := ℱ.measurable_fst_predictable.coe_nnreal_real
+  simpa only [IsStronglyPredictable, Function.uncurry_def,
+    TauCeti.Probability.exponentialMartingale_def, Pi.sub_apply] using
+    ((hW.measurable.const_mul θ).sub (ht.const_mul (θ ^ 2) |>.div_const 2)).exp.stronglyMeasurable
+
+end MeasureTheory.IsStronglyPredictable
+
 namespace ProbabilityTheory.IsPreBrownianReal
 
 open TauCeti.Probability
@@ -184,6 +201,21 @@ theorem memLp_exponentialMartingale (hB : IsPreBrownianReal B P) (θ : ℝ) (t :
     rpow_exponentialMartingale]
   exact (hB.integrable_exponentialMartingale _ t).const_mul _
 
+/-- Every real power of the Brownian exponential has the indicated lognormal moment. -/
+theorem integral_rpow_exponentialMartingale (hB : IsPreBrownianReal B P)
+    (θ q : ℝ) (t : ℝ≥0) :
+    ∫ ω, exponentialMartingale θ B t ω ^ q ∂P = exp (q * (q - 1) * θ ^ 2 * t / 2) := by
+  simp_rw [rpow_exponentialMartingale, integral_const_mul, hB.integral_exponentialMartingale,
+    mul_one]
+
+/-- The second moment of the Brownian exponential is `exp (θ² t)`. -/
+theorem integral_sq_exponentialMartingale (hB : IsPreBrownianReal B P) (θ : ℝ) (t : ℝ≥0) :
+    ∫ ω, exponentialMartingale θ B t ω ^ 2 ∂P = exp (θ ^ 2 * t) := by
+  convert hB.integral_rpow_exponentialMartingale θ 2 t using 1
+  · simp only [Real.rpow_two]
+  · congr 1
+    ring
+
 /-- Tilting `P` by `θ B_T` is the change of measure with density `exp (θ B_T - θ² T / 2)`. -/
 theorem tilted_mul_eval_eq_withDensity (hB : IsPreBrownianReal B P) (θ : ℝ) (T : ℝ≥0) :
     P.tilted (fun ω ↦ θ * B T ω) =
@@ -192,6 +224,17 @@ theorem tilted_mul_eval_eq_withDensity (hB : IsPreBrownianReal B P) (θ : ℝ) (
   rw [Measure.tilted, ← mgf, mgf_gaussianReal (hB.hasLaw_eval T)]
   congr with ω
   rw [exponentialMartingale_def, ← exp_sub]; ring_nf
+
+/-- Integrating under the terminal Brownian tilt amounts to weighting by the exponential
+martingale under the original measure. -/
+theorem integral_tilted_mul_eval (hB : IsPreBrownianReal B P) (θ : ℝ) (T : ℝ≥0)
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (f : Ω → E) :
+    ∫ ω, f ω ∂(P.tilted (fun ω ↦ θ * B T ω)) =
+      ∫ ω, exponentialMartingale θ B T ω • f ω ∂P := by
+  rw [hB.tilted_mul_eval_eq_withDensity]
+  exact TauCeti.MeasureTheory.integral_withDensity_ofReal
+    (hB.integrable_exponentialMartingale θ T).aemeasurable
+    (ae_of_all P fun ω ↦ (exponentialMartingale_pos θ B T ω).le) f
 
 /-- Integrating the exponential martingale `exp (θ B_t - θ² t / 2)` over `B_t ∈ s` gives the mass
 of `s` under the shifted Gaussian law `N(θ t, t)`, including at `t = 0`. -/

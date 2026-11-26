@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.ExternalProduct
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
+public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.Analysis.Pseudodifferential.FourierSchur
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Lifting a symbol to a product, cut off near an axis
@@ -37,18 +39,27 @@ The cutoff changes `p(P x, P ξ)` only where `‖ξ‖ > R` and `‖P ξ‖ < ε
 `O(ε ^ m ⟨ξ⟩ ^ m)`, uniformly in `ε` and `R`
 (`TauCeti.Symbol.exists_norm_mixedDeriv_sub_conicLift_le`). No frequency derivatives of the
 difference are controlled, and none are claimed: the difference is not a symbol uniformly in `ε`.
+These position bounds are what the weighted Fourier–Schur estimate needs, so after localization by
+a compactly supported cutoff `ψ` the two quantizations are `O(ε ^ m)` apart as operators
+`H^s → H^{s - m}`, for every real `s`
+(`TauCeti.Symbol.exists_eLpNorm_smul_fourier_smul_quantizeSchwartzValue_sub_conicLift_le`);
+for `m = 1` this is the bound `C ε` from `H¹` to `L²`.
 
 The full symbols of the external product of two elliptic operators on the factors of a product
 have entries of the form `p(P x, P ξ)`, singular along an axis; their lifts are symbols of order
-`m` (in `S^m_{1,0}`) on the product, close to the original entries in the sense above. The
-homogeneous counterpart of the construction, for principal symbols, is
-`TauCeti.HomogeneousSymbol.conicCutoffFst`.
+`m` (in `S^m_{1,0}`) on the product, close to the original entries in the sense above. The lift
+of a classical symbol is classical (`TauCeti.ClassicalSymbol.conicLift`, in
+`TauCeti.Analysis.Pseudodifferential.Symbol.Classical.ConicLift`), and its homogeneous terms are
+the homogeneous counterpart of the construction, `TauCeti.HomogeneousSymbol.conicLift`, with the
+same `P`, `χ` and `ε`. The product-specific variant `TauCeti.HomogeneousSymbol.conicCutoffFst`
+uses the ratio `‖ξ‖² / (‖ξ‖² + ‖η‖²)` instead.
 
 ## Main declarations
 
 * `TauCeti.conicLiftCutoff`: the cutoff `c`, with `TauCeti.contDiff_conicLiftCutoff`, its values
   `TauCeti.conicLiftCutoff_eq_one_of_norm_le`, `TauCeti.conicLiftCutoff_eq_one_of_le`,
-  `TauCeti.conicLiftCutoff_eventuallyEq_zero`, the range `TauCeti.conicLiftCutoff_nonneg`,
+  `TauCeti.conicLiftCutoff_eventuallyEq_zero`, its angular form at large frequencies
+  `TauCeti.conicLiftCutoff_eq_of_two_mul_le_norm`, the range `TauCeti.conicLiftCutoff_nonneg`,
   `TauCeti.conicLiftCutoff_le_one`, and the order-zero estimates
   `TauCeti.exists_norm_iteratedFDeriv_conicLiftCutoff_le`.
 * `TauCeti.Symbol.conicLift`: the lifted symbol `c(ξ) p(P x, P ξ)` of order `m` on `ℝᴺ`, equal
@@ -58,6 +69,9 @@ homogeneous counterpart of the construction, for principal symbols, is
   frequencies (`TauCeti.Symbol.coefficient_conicLift_eventuallyEq_zero`).
 * `TauCeti.Symbol.exists_norm_mixedDeriv_sub_conicLift_le`: the bound `C ε ^ m ⟨ξ⟩ ^ m` on the
   position derivatives of `p(P x, P ξ) - c(ξ) p(P x, P ξ)`, uniform in `ε` and `R ≥ max 1 ε⁻¹`.
+* `TauCeti.Symbol.exists_eLpNorm_smul_fourier_smul_quantizeSchwartzValue_sub_conicLift_le`:
+  the bound `‖ψ (Op(p ∘ P) u - Op(c p) u)‖_{H^{s - m}} ≤ C ε ^ m ‖u‖_{H^s}`, with the same
+  uniformity.
 
 ## References
 
@@ -122,6 +136,12 @@ theorem conicLiftCutoff_eq_one_of_le (hε : ε ≠ 0) {ξ : CoordinateSpace N}
   have hpos : 0 < ε ^ 2 * ‖ξ‖ ^ 2 := by positivity
   rw [conicLiftCutoff_def, χ.apply_eq_one_of_one_div_two_le (by rw [le_div_iff₀ hpos]; linarith),
     sub_self, mul_zero, sub_zero]
+
+/-- At frequencies `‖ξ‖ ≥ 2 R` the cutoff is the angular factor `χ(‖P ξ‖² / (ε² ‖ξ‖²))`, which is
+positively homogeneous of degree `0`. -/
+theorem conicLiftCutoff_eq_of_two_mul_le_norm (hR : 0 < R) {ξ : CoordinateSpace N}
+    (hξ : 2 * R ≤ ‖ξ‖) : conicLiftCutoff P χ φ ε R ξ = χ (‖P ξ‖ ^ 2 / (ε ^ 2 * ‖ξ‖ ^ 2)) := by
+  rw [conicLiftCutoff_def, φ.apply_inv_smul_eq_one hR hξ, one_mul, sub_sub_cancel]
 
 /-- The cutoff vanishes near every frequency with `‖ξ‖ > 2 R` and `‖P ξ‖² < ε² ‖ξ‖² / 4`. -/
 theorem conicLiftCutoff_eventuallyEq_zero (hε : ε ≠ 0) (hR : 0 < R) {ξ : CoordinateSpace N}
@@ -217,8 +237,9 @@ private theorem exists_norm_iteratedFDeriv_removed_le (hε : ε ≠ 0) (hR : 1 �
     refine (hA (k - i) (Nat.sub_le k i) ξ (norm_pos_iff.1 (one_pos.trans_le h1))).trans ?_
     rw [div_eq_mul_inv, mul_assoc]
     gcongr
-    have h := norm_rpow_le_one_add_norm_sq_rpow h1 (-((k - i : ℕ) : ℝ))
-    rwa [abs_neg, Nat.abs_cast, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast] at h
+    have h := Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖) (by rwa [abs_norm])
+      (-((k - i : ℕ) : ℝ))
+    rwa [abs_norm, abs_neg, Nat.abs_cast, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast] at h
   have hw : (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-((k - i : ℕ) : ℝ) / 2) =
       (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
     rw [← Real.rpow_add (by positivity), Nat.cast_sub hik]
@@ -511,6 +532,145 @@ theorem exists_norm_mixedDeriv_sub_conicLift_le (hm : 0 ≤ m) (p : Symbol n V W
         gcongr
         exact one_add_norm_sq_rpow_le_of_sq_lt P hm hε hεξ hPξ
     _ = D * 2 ^ (m / 2) * ε ^ m * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by ring
+
+/-! ### The Sobolev estimate of the cutoff error -/
+
+section Sobolev
+
+open MeasureTheory FourierTransform
+open scoped SchwartzMap
+
+/-- For `m ≥ 0` the slices `ξ ↦ p(P x, P ξ)` of the uncut lift are bounded by `C ⟨ξ⟩ ^ m`. -/
+private theorem exists_norm_coefficient_comp_prodMap_le (hm : 0 ≤ m) (p : Symbol n V W m)
+    (x : CoordinateSpace N) :
+    ∃ C, 0 ≤ C ∧ ∀ ξ, ‖p.coefficient (P x, P ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨D, hD0, hD⟩ :=
+    exists_bound_mixedDeriv_comp_prodMap_of_isCompact P p isCompact_singleton [] []
+  refine ⟨D * (1 + ‖P‖ ^ 2) ^ (m / 2), by positivity, fun ξ ↦ ?_⟩
+  calc ‖p.coefficient (P x, P ξ)‖ ≤ D * (1 + ‖P ξ‖ ^ 2) ^ (m / 2) := by
+        simpa using hD x rfl ξ
+    _ ≤ D * ((1 + ‖P‖ ^ 2) ^ (m / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+        gcongr
+        exact one_add_norm_sq_rpow_le_mul_of_norm_le_mul hm (P.le_opNorm ξ)
+    _ = D * (1 + ‖P‖ ^ 2) ^ (m / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by rw [mul_assoc]
+
+/-- The position slices of the cutoff error `p(P y, P ξ) - c(ξ) p(P y, P ξ)` are smooth. -/
+private theorem contDiff_coefficient_comp_sub_conicLift (p : Symbol n V W m) (χ : ConicCutoff)
+    (φ : FrequencyCutoff (CoordinateSpace N)) (hε : ε ≠ 0) (hR : 1 ≤ R) (ξ : CoordinateSpace N) :
+    ContDiff ℝ ∞ fun y ↦
+      p.coefficient (P y, P ξ) - (p.conicLift P χ φ hε hR).coefficient (y, ξ) :=
+  (p.contDiff_coefficient.comp (P.contDiff.prodMk contDiff_const)).sub
+    ((p.conicLift P χ φ hε hR).contDiff_coefficient.comp (contDiff_id.prodMk contDiff_const))
+
+/-- **Position derivatives of the localized cutoff error.** For `m ≥ 0`, a smooth compactly
+supported `ψ` and `L : ℕ` there is a constant `A` such that the position derivatives of order at
+most `L` of `ψ(x) (p(P x, P ξ) - c(ξ) p(P x, P ξ))` are at most `A ε ^ m ⟨ξ⟩ ^ m` on the support
+of `ψ`, uniformly in the cutoffs, `ε > 0` and `R ≥ max 1 ε⁻¹`. -/
+private theorem exists_norm_iteratedFDeriv_smul_sub_conicLift_le (hm : 0 ≤ m)
+    (p : Symbol n V W m) {ψ : CoordinateSpace N → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) (L : ℕ) :
+    ∃ A, 0 ≤ A ∧ ∀ (χ : ConicCutoff) (φ : FrequencyCutoff (CoordinateSpace N)) {ε R : ℝ}
+      (hε : 0 < ε) (hR₁ : 1 ≤ R), ε⁻¹ ≤ R → ∀ l ≤ L, ∀ x ∈ tsupport ψ, ∀ ξ,
+        ‖iteratedFDeriv ℝ l (fun y ↦ ψ y • (p.coefficient (P y, P ξ) -
+            (p.conicLift P χ φ hε.ne' hR₁).coefficient (y, ξ))) x‖ ≤
+          A * ε ^ m * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  -- Bounds for the derivatives of `ψ` and for the position derivatives of the cutoff error.
+  choose B hB using fun i : ℕ ↦ (hψ.continuous_iteratedFDeriv (m := i) (by exact_mod_cast le_top))
+    |>.bounded_above_of_compact_support (hψc.iteratedFDeriv i)
+  have hB0 (i : ℕ) : 0 ≤ B i := (norm_nonneg _).trans (hB i 0)
+  choose D hD0 hD using fun w : List (Fin N) ↦
+    exists_norm_mixedDeriv_sub_conicLift_le P hm p (hψc : IsCompact (tsupport ψ)) w
+  -- The Leibniz rule bounds the `l`-th derivative by `T l ε ^ m ⟨ξ⟩ ^ m`.
+  set T : ℕ → ℝ := fun l ↦ ∑ i ∈ Finset.range (l + 1),
+    (l.choose i : ℝ) * B i * ∑ w : Fin (l - i) → Fin N, D (List.ofFn w)
+  have hT0 (l : ℕ) : 0 ≤ T l :=
+    Finset.sum_nonneg fun i _ ↦ mul_nonneg (mul_nonneg (by positivity) (hB0 i))
+      (Finset.sum_nonneg fun w _ ↦ hD0 _)
+  refine ⟨∑ l ∈ Finset.range (L + 1), T l, Finset.sum_nonneg fun l _ ↦ hT0 l,
+    fun χ φ ε R hε hR₁ hR l hl x hx ξ ↦ ?_⟩
+  have hg := contDiff_coefficient_comp_sub_conicLift P p χ φ hε.ne' hR₁ ξ
+  refine (norm_iteratedFDeriv_smul_le hψ hg x (by exact_mod_cast le_top)).trans ?_
+  calc _ ≤ ∑ i ∈ Finset.range (l + 1), (l.choose i : ℝ) * B i *
+        ∑ w : Fin (l - i) → Fin N, D (List.ofFn w) * ε ^ m * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+        refine Finset.sum_le_sum fun i _ ↦ mul_le_mul
+          (mul_le_mul_of_nonneg_left (hB i x) (by positivity)) ?_ (norm_nonneg _)
+          (mul_nonneg (by positivity) (hB0 i))
+        -- The derivatives of the error along words are its mixed position derivatives.
+        refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1 hg _) x).trans
+          (Finset.sum_le_sum fun w _ ↦ ?_)
+        simpa only [mixedDeriv_def, coordinateDeriv_nil] using
+          hD (List.ofFn w) χ φ hε hR₁ hR x hx ξ
+    _ = T l * (ε ^ m * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+        simp only [T, Finset.sum_mul, mul_assoc]
+    _ ≤ (∑ l ∈ Finset.range (L + 1), T l) * (ε ^ m * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+        gcongr
+        exact Finset.single_le_sum (fun l _ ↦ hT0 l) (Finset.mem_range.2 (Nat.lt_succ_of_le hl))
+    _ = _ := by ring
+
+/-- **The Sobolev estimate of the cutoff error.** Let `p` be a symbol of order `m ≥ 0` on `ℝⁿ`,
+`P : ℝᴺ → ℝⁿ` linear and `ψ` a smooth compactly supported function on `ℝᴺ`. For every real `s`
+there is a constant `C` such that
+
+`‖ψ (Op(p ∘ P) u - Op(c p) u)‖_{H^{s - m}} ≤ C ε ^ m ‖u‖_{H^s}`
+
+for every Schwartz function `u`, every conic cutoff `χ`, every frequency cutoff `φ`, and all
+`ε > 0` and `R ≥ max 1 ε⁻¹`, where `p ∘ P` is the uncut lift `(x, ξ) ↦ p(P x, P ξ)` and `c p` is
+the lift `TauCeti.Symbol.conicLift` cut off near the axis `P ξ = 0`. The Sobolev norms are the
+weighted `L²` norms of the Fourier transforms. So, after localization in the position, the
+quantizations of the cut-off and the uncut lift are `O(ε ^ m)` apart in the operator norm
+`H^s → H^{s - m}`. For `m > 0` the first converges to the second as `ε → 0`, at the rate `ε ^ m`;
+for `m = 1` and `s = 1` this is the bound `C ε` from `H¹` to `L²`. -/
+theorem exists_eLpNorm_smul_fourier_smul_quantizeSchwartzValue_sub_conicLift_le (hm : 0 ≤ m)
+    (p : Symbol n V W m) {ψ : CoordinateSpace N → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) (s : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ (χ : ConicCutoff) (φ : FrequencyCutoff (CoordinateSpace N)) {ε R : ℝ}
+      (hε : 0 < ε) (hR₁ : 1 ≤ R), ε⁻¹ ≤ R → ∀ u : 𝓢(CoordinateSpace N, V),
+        eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ) •
+            𝓕 (fun x ↦ ψ x • (quantizeSchwartzValue (p.coefficient ∘ P.prodMap P) u x -
+              quantizeSchwartzValue (p.conicLift P χ φ hε.ne' hR₁).coefficient u x)) ξ)
+            2 volume ≤
+          ENNReal.ofReal (C * ε ^ m) *
+            eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) 2 volume := by
+  -- The position derivatives of the localized error are `O(ε ^ m ⟨ξ⟩ ^ m)`, and the weighted
+  -- Fourier–Schur estimate needs no frequency derivatives, which are not bounded uniformly in `ε`.
+  obtain ⟨C₀, hC₀, hFS⟩ :=
+    exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_norm_iteratedFDeriv_le
+      (V := V) (W := W) (hψc : IsCompact (tsupport ψ)) m s
+  obtain ⟨A, hA0, hA⟩ :=
+    exists_norm_iteratedFDeriv_smul_sub_conicLift_le P hm p hψ hψc (⌈|s - m|⌉₊ + N + 1)
+  refine ⟨C₀ * A, mul_nonneg hC₀ hA0, fun χ φ ε R hε hR₁ hR u ↦ ?_⟩
+  set d : CoordinateSpace N × CoordinateSpace N → V →L[ℂ] W := fun q ↦
+    ψ q.1 • (p.coefficient (P q.1, P q.2) - (p.conicLift P χ φ hε.ne' hR₁).coefficient q)
+  have hd : Continuous d :=
+    (hψ.continuous.comp continuous_fst).smul
+      ((p.contDiff_coefficient.continuous.comp (P.prodMap P).continuous).sub
+        (p.conicLift P χ φ hε.ne' hR₁).contDiff_coefficient.continuous)
+  have hdsmooth (ξ : CoordinateSpace N) : ContDiff ℝ (⌈|s - m|⌉₊ + N + 1 : ℕ) fun x ↦ d (x, ξ) :=
+    (hψ.smul (contDiff_coefficient_comp_sub_conicLift P p χ φ hε.ne' hR₁ ξ)).of_le
+      (by exact_mod_cast le_top)
+  have hdK (x : CoordinateSpace N) (hx : x ∉ tsupport ψ) (ξ : CoordinateSpace N) :
+      d (x, ξ) = 0 := by
+    simp [d, image_eq_zero_of_notMem_tsupport hx]
+  -- Localizing the cutoff error localizes the difference of the two quantizations.
+  have hOp : (fun x ↦ ψ x • (quantizeSchwartzValue (p.coefficient ∘ P.prodMap P) u x -
+      quantizeSchwartzValue (p.conicLift P χ φ hε.ne' hR₁).coefficient u x)) =
+        quantizeSchwartzValue d u := funext fun x ↦ by
+    obtain ⟨C₁, -, hC₁⟩ := exists_norm_coefficient_comp_prodMap_le P hm p x
+    obtain ⟨C₂, -, hC₂⟩ := (p.conicLift P χ φ hε.ne' hR₁).exists_bound_coefficient_slice x
+    rw [eq_comm, quantizeSchwartzValue_congr_left (a := d) (b := fun q ↦ (ψ q.1 : ℂ) •
+        (p.coefficient ∘ P.prodMap P - (p.conicLift P χ φ hε.ne' hR₁).coefficient) q)
+        (fun ξ ↦ by simp [d, Complex.coe_smul]),
+      quantizeSchwartzValue_comp_fst_smul_left (fun y ↦ (ψ y : ℂ)),
+      quantizeSchwartzValue_sub_left (a := p.coefficient ∘ P.prodMap P)
+        (p.contDiff_coefficient.continuous.comp
+          ((P.prodMap P).continuous.comp (Continuous.prodMk_right x))).aestronglyMeasurable hC₁
+        ((p.conicLift P χ φ hε.ne' hR₁).continuous_coefficient_slice x).aestronglyMeasurable hC₂,
+      Complex.coe_smul]
+  rw [hOp]
+  refine (hFS d (A * ε ^ m) hd hdsmooth hdK (hA χ φ hε hR₁ hR) u).trans_eq ?_
+  rw [mul_assoc]
+
+end Sobolev
 
 end Symbol
 

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.ODE.Regularity
 
 /-!
 # Variations of Hamiltonian vector fields
@@ -83,6 +84,13 @@ theorem continuous_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H
   have hF : ContDiff ℝ 1 (Function.uncurry fun t y ↦ ω.hamiltonianVectorField (H t) y) :=
     ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
   exact (hF.fderiv (contDiff_zero.2 hx) le_rfl).continuous
+
+/-- An orbit `x' = X_{H_t}(x)` of a jointly `C¹` time-dependent Hamiltonian `H` is `C¹`. -/
+theorem contDiff_one_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V)
+    {H : ℝ → V → ℝ} (hH : ContDiff ℝ 1 (Function.uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x :=
+  contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous hx
 
 /-- Differentiating a Hamiltonian vector field in a parameter direction gives the Hamiltonian
 vector field of the actual parameter derivative of the Hamiltonian. -/

@@ -87,10 +87,8 @@ theorem IsLeadingBipartiteWord.injective_bipartiteEdge_orientations {u : Fin k �
   have hw (a : Fin k ⊕ Fin k) : w (e a) = Sum.map u v a := by
     cases a <;> simp [w, e]
   have hword (i : Fin (2 * k)) :
-      ∃ j ≠ i, s(w j, w (finRotate (2 * k) j)) = s(w i, w (finRotate (2 * k) i)) := by
-    obtain ⟨a, rfl⟩ := e.surjective i
-    obtain ⟨b, hba, hb⟩ := (isLeadingBipartiteWord_iff.mp h).1 a
-    exact ⟨e b, e.injective.ne hba, by rw [sym2_bipartiteWord u v b, sym2_bipartiteWord u v a, hb]⟩
+      ∃ j ≠ i, s(w j, w (finRotate (2 * k) j)) = s(w i, w (finRotate (2 * k) i)) :=
+    bipartiteWord_no_singleton_edge (isLeadingBipartiteWord_iff.mp h).1 i
   have hd := TreeWalk.prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq hword
     (by rw [card_image_bipartiteWord]; exact (isLeadingBipartiteWord_iff.mp h).2)
   constructor

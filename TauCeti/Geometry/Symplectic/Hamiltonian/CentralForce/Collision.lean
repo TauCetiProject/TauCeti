@@ -32,10 +32,23 @@ collision set `q = 0`.
 * **Zero angular momentum means collision.** For an attractive potential, `U' > 0`, and zero
   angular momentum, the effective force `-U'(r)` never vanishes, so no such motion avoids
   collision at all times. Every global noncollision motion therefore has nonzero angular momentum
-  (`TauCeti.sq_sub_inner_sq_ne_zero_of_hasDerivAt`). As soon as `V ≠ 0` there are states
-  with zero angular momentum off the collision set, such as those at rest, so the Hamiltonian flow
-  on the punctured phase space `{(q, p) | q ≠ 0}` is not complete
+  (`TauCeti.sq_sub_inner_sq_ne_zero_of_hasDerivAt`).
+* **Zero angular momentum means motion on a ray.** If the conserved squared angular momentum
+  vanishes, the momentum is radial at every time, so the direction `q / ‖q‖` of the position is
+  constant: the motion stays on a fixed ray through the origin, with momentum along it
+  (`TauCeti.sameRay_fst_of_hasDerivAt`, `TauCeti.snd_eq_radialMomentum_smul_of_hasDerivAt`). This
+  holds for every central potential.
+* **Incompleteness.** For a non-repulsive potential, `U' ≥ 0`, a particle thrown straight at the
+  centre has zero angular momentum and nonzero radial momentum, so it is not on a circular orbit
+  and cannot avoid collision at all times. As soon as `V ≠ 0` such states exist, so the
+  Hamiltonian flow on the punctured phase space `{(q, p) | q ≠ 0}` is not complete
   (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace`).
+
+Central-force motions are reversible: `s ↦ (q(-s), -p(-s))` is again a motion
+(`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian`, in
+`TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce`). Its case `V = ℝ` with the effective
+potential is the reversibility of the radial motion
+(`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_effectivePotential`).
 
 The Kepler potential `-κ / r`, `κ > 0`, is attractive; its collision domain and collision orbits
 are treated in `TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Collision`.
@@ -121,13 +134,10 @@ theorem hasDerivAt_reverse_hamiltonianVectorField_effectivePotential {γ : ℝ �
     HasDerivAt (fun s ↦ ((γ (-s)).1, -(γ (-s)).2))
       ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
         (centralForceHamiltonian m (effectivePotential m ℓ U)) ((γ (-t)).1, -(γ (-t)).2)) t := by
-  have h₁ := (hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential hγ hr
-    hU).scomp t (hasDerivAt_neg t)
-  have h₂ := (hasDerivAt_snd_of_hasDerivAt_hamiltonianVectorField_effectivePotential hγ hr
-    hU).scomp t (hasDerivAt_neg t)
-  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
-    hU.hasDerivAt hr]
-  exact (h₁.prodMk h₂.neg).congr_deriv (by ext <;> simp [neg_div])
+  -- This is the time reversal of central-force motion on `V = ℝ` in the potential `U_ℓ`.
+  refine hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian hγ hr.ne' ?_
+  rw [Real.norm_of_nonneg hr.le]
+  exact (hasDerivAt_effectivePotential hU.hasDerivAt hr.ne').differentiableAt
 
 /-- **Radial motions avoiding collision in the past move inwards.** Let `m > 0`, and let
 `γ = (r, p_r)` be an integral curve of the reduced Hamiltonian vector field at all times `t ≤ a`,
@@ -224,13 +234,14 @@ theorem sq_sub_inner_sq_ne_zero_of_hasDerivAt (hm : 0 < m) {γ : ℝ → V × V}
   simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div] at h₀
   exact (hattr t).ne' h₀
 
-/-- **Attractive central-force flows are not complete.** Let `V ≠ 0`, `m > 0`, and let `U` be `C²`
-and attractive, `U' > 0`, on `(0, ∞)`. On the punctured phase space `{(q, p) | q ≠ 0}`, with the
-restriction of the standard symplectic form, the Hamiltonian vector field of
-`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` is not complete: no motion with zero angular momentum, such as
-one starting at rest, avoids the collision set at all times. -/
+/-- **Non-repulsive central-force flows are not complete.** Let `V ≠ 0`, `m > 0`, and let `U` be
+`C²` and non-repulsive, `U' ≥ 0`, on `(0, ∞)`. On the punctured phase space `{(q, p) | q ≠ 0}`,
+with the restriction of the standard symplectic form, the Hamiltonian vector field of
+`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` is not complete: a particle thrown straight at the centre, from a
+point `q ≠ 0` with momentum `-q`, has zero angular momentum and moves inwards, so it cannot avoid
+the collision set at all times. This includes the free particle `U = 0`. -/
 theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [Nontrivial V]
-    (hm : 0 < m) (hU : ContDiffOn ℝ 2 U (Ioi 0)) (hattr : ∀ r, 0 < r → 0 < deriv U r) :
+    (hm : 0 < m) (hU : ContDiffOn ℝ 2 U (Ioi 0)) (hU' : ∀ r, 0 < r → 0 ≤ deriv U r) :
     ¬ IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
       (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
         (stdSymplecticForm (V := V)).constSmooth)
@@ -242,14 +253,78 @@ theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [No
     contMDiff_centralForceHamiltonian_comp_subtypeVal fun _ hr ↦ hU.contDiffAt (Ioi_mem_nhds hr)
   obtain ⟨u, hu⟩ := exists_ne (0 : V)
   obtain ⟨γ, hγ₀, hγ⟩ := SymplecticForm.exists_forall_hasDerivAt_of_isCompleteVectorField _ hH
-    hcomplete (x := (u, 0)) (mem_puncturedPhaseSpace.2 hu)
+    hcomplete (x := (u, -u)) (mem_puncturedPhaseSpace.2 hu)
   have hq (t : ℝ) : (γ t).1 ≠ 0 := mem_puncturedPhaseSpace.1 (hγ t).1
-  -- The curve starts at rest, with zero angular momentum.
-  refine sq_sub_inner_sq_ne_zero_of_hasDerivAt hm (fun t ↦ (hγ t).2) hq
-    (fun t ↦ (hU.differentiableOn (by norm_num) _
-      (norm_pos_iff.2 (hq t))).differentiableAt (Ioi_mem_nhds (norm_pos_iff.2 (hq t))))
-    (fun t ↦ hattr _ (norm_pos_iff.2 (hq t))) 0 ?_
-  simp [hγ₀]
+  have hr (t : ℝ) : 0 < ‖(γ t).1‖ := norm_pos_iff.2 (hq t)
+  -- With zero angular momentum the global motion would have zero radial momentum.
+  have h := (radialMomentum_eq_zero_and_deriv_eq_of_forall_hasDerivAt hm (fun t ↦ (hγ t).2) hq
+    (fun t ↦ (hU.differentiableOn (by norm_num) _ (hr t)).differentiableAt (Ioi_mem_nhds (hr t)))
+    (ℓ := 0) (t₀ := 0)
+    (by rw [hγ₀]; simp only [inner_neg_right, norm_neg, real_inner_self_eq_norm_sq]; ring)
+    (fun t ↦ by simpa using hU' _ (hr t)) 0).1
+  -- But the particle thrown at the centre has radial momentum `-‖u‖ ≠ 0`.
+  rw [radialMomentum_eq_zero_iff, hγ₀] at h
+  simp [hu] at h
+
+/-- **Motions with zero angular momentum stay on a ray.** Let `γ = (q, p)` solve Hamilton's
+equations for `H(q, p) = ‖p‖² / (2m) + U(‖q‖)` on a preconnected set `s` of times, avoiding the
+collision set, with `U` differentiable along it. If its squared angular momentum
+`‖q‖² ‖p‖² - ⟪q, p⟫²` vanishes at one time `t₀ ∈ s`, then at every time `t ∈ s` the position lies
+on the ray through `q(t₀)`. -/
+theorem sameRay_fst_of_hasDerivAt {γ : ℝ → V × V} {s : Set ℝ} (hs : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivAt γ
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
+    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
+    (ht₀ : t₀ ∈ s) (hℓ : ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 = 0)
+    (ht : t ∈ s) :
+    SameRay ℝ (γ t₀).1 (γ t).1 := by
+  -- The direction `q / ‖q‖` has derivative `(‖q‖² p - ⟪q, p⟫ q) / (m ‖q‖³)`, which vanishes
+  -- since the momentum is radial, `p = p_r (q / ‖q‖)`.
+  have hd (u : ℝ) (hu : u ∈ s) :
+      HasDerivAt (fun v ↦ ‖(γ v).1‖⁻¹ • (γ v).1) 0 u := by
+    have hr : 0 < ‖(γ u).1‖ := norm_pos_iff.2 (hq u hu)
+    have hρ := hasDerivAt_radialProjection_comp hs hγ hq hU ht₀ (ℓ := 0) (by rw [hℓ]; ring) u hu
+    have h₁ := (hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential hρ
+      (by simpa [radialProjection_fst] using hr)
+      (by simpa [radialProjection_fst] using hU u hu)).inv
+      (by simpa [radialProjection_fst] using hr.ne')
+    have h₂ := hγ u hu
+    rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian (hU u hu).hasDerivAt
+      (hq u hu)] at h₂
+    have h := h₁.smul ((hasFDerivAt_fst (𝕜 := ℝ) (p := γ u)).comp_hasDerivAt u h₂)
+    have hp := (sq_sub_inner_sq_eq_zero_iff (hq u hu)).1
+      ((sq_sub_inner_sq_eq_of_hasDerivAt hs hγ ht₀ hu).trans hℓ)
+    simp only [Function.comp_def, radialProjection_fst, radialProjection_snd] at h
+    convert h using 1
+    rw [hp]
+    simp only [Pi.inv_apply, ContinuousLinearMap.coe_fst', smul_smul, ← add_smul]
+    convert (zero_smul ℝ (γ u).1).symm using 2
+    field_simp
+    ring
+  -- So the direction is constant on `s`.
+  have hsub := hs.ordConnected.uIcc_subset ht₀ ht
+  have h := (convex_uIcc t₀ t).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun v ↦ ‖(γ v).1‖⁻¹ • (γ v).1) (C := 0)
+    (fun v hv ↦ (hd v (hsub hv)).hasDerivWithinAt) (fun _ _ ↦ by simp) left_mem_uIcc
+    right_mem_uIcc
+  rw [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
+  exact (sameRay_iff_inv_norm_smul_eq_of_ne (hq t₀ ht₀) (hq t ht)).2 h.symm
+
+/-- **Motions with zero angular momentum have momentum along their ray.** Under the hypotheses of
+`TauCeti.sameRay_fst_of_hasDerivAt`, at every time `t ∈ s` the momentum is the radial momentum
+times the unit vector `q(t₀) / ‖q(t₀)‖`. -/
+theorem snd_eq_radialMomentum_smul_of_hasDerivAt {γ : ℝ → V × V} {s : Set ℝ}
+    (hs : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivAt γ
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
+    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
+    (ht₀ : t₀ ∈ s) (hℓ : ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 = 0)
+    (ht : t ∈ s) :
+    (γ t).2 = radialMomentum (γ t) • ‖(γ t₀).1‖⁻¹ • (γ t₀).1 := by
+  rw [(sameRay_iff_inv_norm_smul_eq_of_ne (hq t₀ ht₀) (hq t ht)).1
+    (sameRay_fst_of_hasDerivAt hs hγ hq hU ht₀ hℓ ht)]
+  exact (sq_sub_inner_sq_eq_zero_iff (hq t ht)).1
+    ((sq_sub_inner_sq_eq_of_hasDerivAt hs hγ ht₀ ht).trans hℓ)
 
 end CentralForce
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.LinearAlgebra.Projection.SplittingEquiv
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # The Reeb vector field of a contact form
@@ -33,9 +34,21 @@ kernel. For a nowhere vanishing function `f`, the **rescaling law**
 
 `R_(f α) = R_α / f + Y`,
 
-where `Y` is the unique vector field in `ξ` with `dα(Y, w) = df(w) / f²` for all `w ∈ ξ`. For a
-constant `c ≠ 0` this gives `R_(c α) = R_α / c`
-(`TauCeti.SmoothForm.IsContactForm.reebVectorField_smul`), and in particular `R_(-α) = -R_α`.
+where `Y` is the unique vector field in `ξ` with `dα(Y, w) = df(w) / f²` for all `w ∈ ξ`. Where
+`f ≠ 0` it takes the normalized form
+(`TauCeti.SmoothForm.IsContactForm.smul_reebVectorField_eq_add_iff`)
+
+`R_(f α) = (R_α + Z) / f`,
+
+where `Z = f Y = f R_(f α) - R_α` is the unique vector field in `ξ` with `dα(Z, w) = df(w) / f`
+for all `w ∈ ξ`
+(`TauCeti.SmoothForm.IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff`).
+Evaluating `α` on it gives `α(R_(f α)) = 1 / f`
+(`TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`), which is where the factor
+`f²` in the equation for `Y` comes from. For a constant `c` this gives `R_(c α) = R_α / c`
+(`TauCeti.SmoothForm.IsContactForm.reebVectorField_smul`), and in particular `R_(-α) = -R_α`; the
+same holds for a locally constant factor
+(`TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_of_isLocallyConstant`).
 
 The Reeb vector field is the characteristic vector field of the stable Hamiltonian structure
 `(α, dα)` (`TauCeti.SmoothForm.characteristicVectorField_mextDerivₗ`), so its basic equations are
@@ -46,6 +59,8 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 ## Main declarations
 
 * `TauCeti.SmoothForm.reebVectorField`: the Reeb vector field of a one-form.
+* `TauCeti.SmoothForm.reebVectorField_congr`: the Reeb vector at a point only depends on the values
+  of the form and of its exterior derivative there.
 * `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField`,
   `TauCeti.SmoothForm.IsContactForm.mextDeriv_reebVectorField_left`: the Reeb equations, with
   pointwise versions `TauCeti.SmoothForm.apply_reebVectorField_of_isContactFormAt` and
@@ -60,6 +75,13 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 * `TauCeti.SmoothForm.IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one`:
   existence of a function `g`, `C^n` at `x`, with `dg_x(R_α x) = 1`.
 * `TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_add_iff`: the rescaling law.
+* `TauCeti.SmoothForm.IsContactForm.smul_reebVectorField_eq_add_iff`: its normalized form
+  `f R_(f α) = R_α + Z`.
+* `TauCeti.SmoothForm.IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff`: the
+  correction `Z = f R_(f α) - R_α` is the unique such vector.
+* `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`: `α(R_(f α)) = 1 / f`.
+* `TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_of_isLocallyConstant`:
+  `R_(c α) = R_α / c` for a locally constant `c`.
 
 ## References
 
@@ -96,6 +118,20 @@ vector field of `α`. -/
 theorem characteristicVectorField_mextDerivₗ (α : SmoothForm I M ℝ 1) :
     α.characteristicVectorField (mextDerivₗ I 1 α) = α.reebVectorField :=
   (rfl)
+
+/-- The Reeb vector of a one-form at a point only depends on the values at that point of the form
+and of its exterior derivative. -/
+theorem reebVectorField_congr {α β : SmoothForm I M ℝ 1} {x : M} (h : α.val x = β.val x)
+    (hd : mextDeriv α.val x = mextDeriv β.val x) :
+    α.reebVectorField x = β.reebVectorField x := by
+  rw [reebVectorField, reebVectorField, characteristicVectorField_def,
+    characteristicVectorField_def]
+  congr 1
+  · ext v
+    rw [degreeOneEquiv_coe_apply, degreeOneEquiv_coe_apply, h]
+  · ext v w
+    rw [bilinFormAt_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
+      SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, mextDerivₗ_apply, hd]
 
 variable [FiniteDimensional ℝ E] {α : SmoothForm I M ℝ 1}
 
@@ -229,14 +265,21 @@ theorem IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one
     ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) n g x ∧ mvfderiv I g x (α.reebVectorField x) = 1 :=
   exists_contMDiffAt_mvfderiv_eq_one (hα.reebVectorField_ne_zero x) n
 
+/-- At a point where `α` is a contact form, removing its Reeb component `α(v) R_α` from a tangent
+vector `v` leaves a vector of `ker α_x`. -/
+theorem sub_smul_reebVectorField_mem_kerDistribution_of_isContactFormAt {x : M}
+    (h : IsContactFormAt α.val x) (v : TangentSpace I x) :
+    v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
+  simp [mem_kerDistribution, ContinuousAlternatingMap.vecCons_smul,
+    apply_reebVectorField_of_isContactFormAt h]
+
 /-- Removing its Reeb component `α(v) R_α` from a tangent vector `v` leaves a vector of the
 contact distribution. -/
 theorem IsContactForm.sub_smul_reebVectorField_mem_kerDistribution (hα : α.IsContactForm)
     {x : M} (v : TangentSpace I x) :
-    v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
-  rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
-  simp only [degreeOneEquiv_apply_apply_vec, hα.apply_reebVectorField, smul_eq_mul, mul_one,
-    sub_self]
+    v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x :=
+  sub_smul_reebVectorField_mem_kerDistribution_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x) v
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in
@@ -272,10 +315,68 @@ theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactFor
   simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt]
   simp only [ContinuousLinearMap.coe_coe]
 
+/-- **Normalized rescaling law for the Reeb vector field.** Let `α` be a contact form and
+`β = f α` for a function `f`, `C¹` at `x`, with `f(x) ≠ 0`. Then `f(x) R_β(x) = R_α(x) + z`, that
+is `R_β(x) = (R_α(x) + z) / f(x)`, exactly when `z` lies in `ξ_x = ker α_x` and
+`dα(z, w) = df(w) / f(x)` for all `w ∈ ξ_x`. In particular `f(x) R_β(x) - R_α(x)` is the unique
+such vector. -/
+theorem IsContactForm.smul_reebVectorField_eq_add_iff (hα : α.IsContactForm)
+    {β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x)
+    (hfx : f x ≠ 0) (hβ : ∀ y, β.val y = f y • α.val y) (z : TangentSpace I x) :
+    f x • β.reebVectorField x = α.reebVectorField x + z ↔
+      α.val x ![z] = 0 ∧ ∀ w : TangentSpace I x, α.val x ![w] = 0 →
+        mextDeriv α.val x ![z, w] = mvfderiv I f x w / f x := by
+  -- This is the rescaling law for the correction `y = z / f(x)`.
+  rw [← eq_inv_smul_iff₀ hfx, smul_add, hα.reebVectorField_eq_inv_smul_add_iff hf hβ,
+    ContinuousAlternatingMap.vecCons_smul, smul_eq_zero, or_iff_right (inv_ne_zero hfx)]
+  refine and_congr_right fun _ ↦ forall₂_congr fun w _ ↦ ?_
+  rw [ContinuousAlternatingMap.vecCons_smul, smul_eq_mul, inv_mul_eq_iff_eq_mul₀ hfx]
+  field_simp
+
+/-- **The correction term of the rescaled Reeb vector field.** Let `α` be a contact form and
+`β = f α` for a function `f`, `C¹` at `x` with `f(x) ≠ 0`. The vector `f(x) R_β(x) - R_α(x)` is the
+unique `z ∈ ξ_x = ker α_x` with `dα(z, w) = df(w) / f(x)` for all `w ∈ ξ_x`, so that
+`R_β(x) = (R_α(x) + z) / f(x)`. -/
+theorem IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff
+    (hα : α.IsContactForm) {β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x) (hfx : f x ≠ 0) (hβ : ∀ y, β.val y = f y • α.val y)
+    (z : TangentSpace I x) :
+    z = f x • β.reebVectorField x - α.reebVectorField x ↔
+      α.val x ![z] = 0 ∧ ∀ w : TangentSpace I x, α.val x ![w] = 0 →
+        mextDeriv α.val x ![z, w] = mvfderiv I f x w / f x := by
+  rw [← hα.smul_reebVectorField_eq_add_iff hf hfx hβ, eq_sub_iff_add_eq', eq_comm]
+
+/-- **The contact form on the rescaled Reeb vector field.** Let `α` be a contact form and
+`β = f α` for a function `f`, `C¹` at `x`. Then `α(R_β(x)) = 1 / f(x)`. For `f(x) = 0` both sides
+are `0`, by the junk value `0⁻¹ = 0`. -/
+theorem IsContactForm.apply_reebVectorField_of_eq_smul (hα : α.IsContactForm)
+    {β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x)
+    (hβ : ∀ y, β.val y = f y • α.val y) : α.val x ![β.reebVectorField x] = (f x)⁻¹ := by
+  -- By the rescaling law, `R_β(x) = R_α(x) / f(x) + y` with `y ∈ ξ_x`.
+  have hy := (hα.reebVectorField_eq_inv_smul_add_iff hf hβ _).1
+    (add_sub_cancel _ _).symm
+  rw [← add_sub_cancel ((f x)⁻¹ • α.reebVectorField x) (β.reebVectorField x),
+    ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
+    hα.apply_reebVectorField, hy.1, smul_eq_mul, mul_one, add_zero]
+
+/-- **Reeb vector field under a locally constant rescaling.** If `β = c α` for a locally constant
+function `c`, such as a constant on each connected component, then `R_β = R_α / c`. -/
+theorem IsContactForm.reebVectorField_eq_inv_smul_of_isLocallyConstant (hα : α.IsContactForm)
+    {β : SmoothForm I M ℝ 1} {c : M → ℝ} (hc : IsLocallyConstant c)
+    (hβ : ∀ y, β.val y = c y • α.val y) (x : M) :
+    β.reebVectorField x = (c x)⁻¹ • α.reebVectorField x := by
+  simpa using (hα.reebVectorField_eq_inv_smul_add_iff (hc.contMDiff x) hβ 0).2
+    ⟨(α.val x).map_coord_zero (m := ![0]) 0 rfl, fun w _ ↦ by
+      rw [hc.mvfderiv_eq_zero x, zero_apply, zero_div]
+      exact (mextDeriv α.val x).map_coord_zero (m := ![0, w]) 0 rfl⟩
+
 omit [FiniteDimensional ℝ E] in
-/-- Multiplying a contact form by a nonzero constant `c` divides its Reeb vector field by `c`. -/
-theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) {c : ℝ} (hc : c ≠ 0)
-    (x : M) : (c • α).reebVectorField x = c⁻¹ • α.reebVectorField x := by
+/-- Multiplying a contact form by a constant `c` divides its Reeb vector field by `c`. For `c = 0`
+both sides are `0`. Unlike the locally constant version
+`TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_of_isLocallyConstant`, this needs no
+finite-dimensionality. -/
+theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) (c : ℝ) (x : M) :
+    (c • α).reebVectorField x = c⁻¹ • α.reebVectorField x := by
   have ha : (degreeOneEquiv (c • α) x : TangentSpace I x →ₗ[ℝ] ℝ) =
       c • (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) := by
     ext v
@@ -286,14 +387,17 @@ theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) {c : ℝ} (h
     simp only [map_smul, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, LinearMap.smul_apply,
       Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
   rw [reebVectorField, reebVectorField, characteristicVectorField_def,
-    characteristicVectorField_def, ha, hB, Module.Dual.reebVector_smul_bilinForm hc,
-    (isContactForm_def.1 hα x).reebVector_smul hc]
+    characteristicVectorField_def, ha]
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- The zero covector has the junk Reeb vector `0`.
+    rw [zero_smul, Module.Dual.reebVector_zero, inv_zero, zero_smul]
+  · rw [hB, Module.Dual.reebVector_smul_bilinForm hc, (isContactForm_def.1 hα x).reebVector_smul hc]
 
 omit [FiniteDimensional ℝ E] in
 /-- The Reeb vector field of `-α` is `-R_α`. -/
 theorem IsContactForm.reebVectorField_neg (hα : α.IsContactForm) (x : M) :
     (-α).reebVectorField x = -α.reebVectorField x := by
-  rw [← neg_one_smul ℝ α, hα.reebVectorField_smul (by norm_num), inv_neg, inv_one, neg_one_smul]
+  rw [← neg_one_smul ℝ α, hα.reebVectorField_smul, inv_neg, inv_one, neg_one_smul]
 
 end SmoothForm
 

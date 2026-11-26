@@ -41,10 +41,12 @@ for the minimum.
 A nonpositive real power is antitone on `ℝ≥0∞`. Because `0 ^ z = ∞` for `z < 0`, no positivity
 hypothesis is needed, unlike its `ℝ≥0` counterpart `NNReal.rpow_le_rpow_of_nonpos`; this is what
 makes `ℝ≥0∞`-valued bounds on weakly singular integrands such as `|x - c| ^ (-1/2)` hold
-everywhere, the pole included. In the same spirit, the inverse square root of a real `x` is at
-most `‖x‖ₑ ^ (-1/2)`, with equality for `x > 0`. Two bounds on kernels `1 / √d` with `d` a
-product of three linear factors follow: at infinity the kernel decays like `y ^ (-3/2)`, and near
-three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
+everywhere, the pole included. A power `x ^ z` with `z ≤ 1` of a base `x ≥ 1` is at most `x`;
+this bounds dimensional constants `(κ ^ d) ^ (1 / p)` of `Lᵖ` estimates by `κ ^ d`. In the same
+spirit as the antitonicity above, the inverse square root of a real `x` is at most
+`‖x‖ₑ ^ (-1/2)`, with equality for `x > 0`. Two bounds on kernels `1 / √d` with `d` a product
+of three linear factors follow: at infinity the kernel decays like `y ^ (-3/2)`, and near three
+distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
 Writing `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` turns into
@@ -57,7 +59,9 @@ For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is anti
 set slightly thus changes its `d`-dimensional diameter sum by little, as in Hausdorff measure
 approximations by open covers. In the exponent, the roots `c ^ (1 / p)` of a finite nonzero `c`
 tend to `1` as `p → ∞`, which turns a lower or upper bound weighted by a power of a measure into
-the corresponding bound in the limit of the `Lᵖ` seminorms.
+the corresponding bound in the limit of the `Lᵖ` seminorms. This is a case of the continuity of
+`y ↦ a ^ y` in the real exponent for a finite nonzero base `a`; it also gives `c ^ ε → 1` as
+`ε → 0`, so that a constant factor does not change an exponential rate in large deviations.
 
 A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
@@ -107,12 +111,14 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.ofReal_rpow_le`: `ofReal (x ^ p) ≤ ofReal x ^ p` for `0 ≤ x` and any real `p`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
+* `ENNReal.rpow_le_self_of_one_le`: `x ^ z ≤ x` for `1 ≤ x` and `z ≤ 1`.
 * `ENNReal.rpow_le_rpow_sub_mul_rpow`: `a ^ (p - q) ≤ b ^ (p - q)` gives
   `a ^ p ≤ b ^ (p - q) * a ^ q` for `a ≠ ∞` and `0 < p`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
   near `x`.
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
   `x + η ≤ r` and `y ^ d ≤ x ^ d + ε` for `y ∈ [x, x + η]`.
+* `ENNReal.continuous_const_rpow`: `y ↦ a ^ y` is continuous for `a ∉ {0, ∞}`.
 * `ENNReal.tendsto_rpow_one_div_atTop`: `c ^ (1 / p) → 1` as `p → ∞` for `c ∉ {0, ∞}`.
 * `ENNReal.tendsto_const_mul_rpow_one_div_atTop`: `M * c ^ (1 / p) → M` as `p → ∞` for
   `c ∉ {0, ∞}` and any `M : ℝ≥0∞`.
@@ -291,6 +297,11 @@ theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz 
   rw [rpow_neg, rpow_neg]
   exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
 
+/-- A real power at most `1` of an extended real `x ≥ 1` is at most `x`: the `ℝ≥0∞` counterpart of
+`Real.rpow_le_self_of_one_le`. No sign condition on the exponent is needed. -/
+theorem rpow_le_self_of_one_le {x : ℝ≥0∞} {z : ℝ} (hx : 1 ≤ x) (hz : z ≤ 1) : x ^ z ≤ x :=
+  (rpow_le_rpow_of_exponent_le hx hz).trans_eq (rpow_one x)
+
 /-- Since `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` gives
 `a ^ p ≤ b ^ (p - q) * a ^ q`, trading the power `p` of `a` for the power `q`. For `0 < p` the
 case `a = 0` holds trivially, so only `a ≠ ∞` is assumed. -/
@@ -327,15 +338,21 @@ theorem exists_pos_forall_mem_Icc_rpow_le_add {x r ε : ℝ≥0∞} (hxr : x < r
     nhdsWithin_le_nhds |>.and self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ≥0))
   exact ⟨η, hη0, hηr.le, hηd⟩
 
+/-- For a finite nonzero base `a`, the power `y ↦ a ^ y` is continuous in the real exponent. -/
+theorem continuous_const_rpow (a : ℝ≥0∞) (h0 : a ≠ 0) (htop : a ≠ ∞) :
+    Continuous fun y : ℝ ↦ a ^ y := by
+  have ha : 0 < a.toReal := toReal_pos h0 htop
+  rw [← ofReal_toReal htop]
+  simp_rw [ofReal_rpow_of_pos ha]
+  exact continuous_ofReal.comp (Real.continuous_const_rpow ha.ne')
+
 /-- For a finite nonzero `c`, the roots `c ^ (1 / p)` tend to `1` as the real exponent `p` tends
 to infinity. -/
 theorem tendsto_rpow_one_div_atTop {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) :
     Filter.Tendsto (fun p : ℝ ↦ c ^ (1 / p)) Filter.atTop (𝓝 1) := by
-  lift c to ℝ≥0 using hc
-  have hc0 : c ≠ 0 := by simpa using hc0
-  have hexp : Filter.Tendsto (fun p : ℝ ↦ 1 / p) Filter.atTop (𝓝 0) :=
-    tendsto_const_nhds.div_atTop Filter.tendsto_id
-  simpa [coe_rpow_of_ne_zero hc0] using tendsto_coe.2 (tendsto_const_nhds.nnrpow hexp (.inl hc0))
+  simpa only [Function.comp_def, id, rpow_zero] using
+    ((continuous_const_rpow c hc0 hc).tendsto 0).comp
+      (tendsto_const_nhds.div_atTop Filter.tendsto_id)
 
 /-- For a finite nonzero `c` and any `M : ℝ≥0∞`, `M * c ^ (1 / p)` tends to `M` as the real
 exponent `p` tends to infinity. -/

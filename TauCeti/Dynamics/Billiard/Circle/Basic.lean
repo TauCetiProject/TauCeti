@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Euclidean.Circle
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 
 /-!
 # Billiard dynamics on a circle
@@ -519,10 +520,8 @@ has least period `3`. -/
 theorem minimalPeriod_circleBilliardQuotient_half {R : ℝ} (hR : R ≠ 0)
     (q : AddCircle (2 * Real.pi * R)) {hv : (1 / 2 : ℝ) ∈ Ioo (-1) 1} :
     minimalPeriod (circleBilliardQuotient R) (q, ⟨1 / 2, hv⟩) = 3 := by
-  have harc : Real.arccos (1 / 2) = Real.pi / 3 :=
-    Real.arccos_eq_of_eq_cos (by positivity) (by linarith [Real.pi_pos]) Real.cos_pi_div_three.symm
   refine minimalPeriod_circleBilliardQuotient hR (by decide) (k := 1) ?_ isCoprime_one_left
-  simp only [harc]
+  simp only [Real.arccos_one_half]
   push_cast
   ring
 

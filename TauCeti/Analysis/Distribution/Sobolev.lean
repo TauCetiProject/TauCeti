@@ -11,8 +11,9 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.MihlinHormander
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 
 /-!
 # Bessel-potential regularity from first derivatives
@@ -228,13 +229,7 @@ theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : 
     h.toBesselPotentialSpace = ∑ i ∈ t.attach, (hg i i.property).toBesselPotentialSpace :=
   BesselPotentialSpace.ext <| by
     rw [MemSobolev.toBesselPotentialSpace_toDistr, ← Finset.sum_attach t g]
-    clear h
-    generalize t.attach = u
-    induction u using Finset.cons_induction with
-    | empty => simp
-    | cons i t hi ih =>
-      rw [Finset.sum_cons, Finset.sum_cons, BesselPotentialSpace.toDistr_add, ← ih,
-        MemSobolev.toBesselPotentialSpace_toDistr]
+    simp only [BesselPotentialSpace.toDistr_sum, MemSobolev.toBesselPotentialSpace_toDistr]
 
 /-- The element of `H^{s,p}` defined by a finite linear combination of `Lᵠ` functions in
 `H^{s,p}` is the same linear combination of the elements defined by these functions. -/
@@ -414,7 +409,8 @@ theorem MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add
         (hC k ξ).trans (by gcongr; exact Real.le_norm_self _)
     _ ≤ _ := by
         gcongr
-        exact Real.one_add_sq_rpow_neg_le (norm_pos_iff.mpr hξ) k
+        simpa [add_comm, one_div] using
+          TauCeti.norm_sq_add_rpow_div_two_le zero_le_one hξ (neg_nonpos.2 (Nat.cast_nonneg k))
 
 /-- For `1 < p < ∞`, `H^{s,p}` is contained in `H^{s',p}` whenever `s' ≤ s`. For `p = 2` this is
 `MemSobolev.mono`. -/

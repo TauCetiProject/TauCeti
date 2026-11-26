@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Contour.PolarPart.Decomposition
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.PolarPart.CPV
 
 /-!
@@ -131,8 +132,8 @@ theorem hasCauchyPV_residue_sum {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ a b s * residue f s) := by
   have h := decomp.hasCauchyPV_analyticRemainder_add_residue_sum h_imm hab hclosed hγU
     h_interior h_flat h_B
-  rwa [decomp.intervalIntegral_deriv_smul_analyticRemainder_eq_zero hU h_imm.isPiecewiseC1On
-    hγU hclosed hnull, zero_add] at h
+  rwa [decomp.intervalIntegral_deriv_smul_analyticRemainder_eq_zero hU
+    h_imm.isPiecewiseC1On.absolutelyContinuousOnInterval hγU hclosed hnull, zero_add] at h
 
 end PolarPartDecomposition
 

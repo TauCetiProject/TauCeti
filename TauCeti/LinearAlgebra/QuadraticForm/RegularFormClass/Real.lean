@@ -5,27 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsRealClosed.Real
 public import TauCeti.FieldTheory.SquareClassGroup.Real
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Signature
 
 /-!
 # The discriminant of a regular real quadratic form
 
-Over `ℝ` the square class of a nonzero number is its sign, so the discriminant of a regular form
-only records the sign of the product of the weights of a diagonalization.  By Sylvester's law of
-inertia that sign is `(-1)^q`, where `q = sigNeg Q` is the negative index of inertia.  This is the
-determinant-sign formula `sign (det Q) = (-1)^q`, stated in the square-class group.
-
-In particular the discriminant of a regular real form is determined by its signature, and it is
-trivial exactly when the negative index is even.
+Over any ordered real closed field the discriminant of a regular form `Q` is `sigNeg Q • [-1]`,
+where `sigNeg Q` is its negative index of inertia (`QuadraticForm.discr_formClass_eq_sigNeg_nsmul`
+in `TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Signature`). Over `ℝ` the square class of
+`-1` has order `2`, so the discriminant of a regular real form is trivial precisely when `sigNeg Q`
+is even.
 
 ## Main results
 
-* `QuadraticForm.discr_formClass_eq_sigNeg_nsmul`: the discriminant of a regular real form is
-  `sigNeg Q • [-1]`.
-* `QuadraticForm.discr_formClass_eq_zero_iff_even_sigNeg`: it is trivial exactly when `sigNeg Q`
-  is even.
+* `QuadraticForm.discr_formClass_eq_zero_iff_even_sigNeg`: the discriminant of a regular real form
+  is trivial exactly when `sigNeg Q` is even.
 * `TauCeti.discr_formClass_realSignatureForm`: the normal form of signature `(p, q)` has
   discriminant `q • [-1]`.
 
@@ -41,14 +38,6 @@ open QuadraticMap QuadraticForm TauCeti
 variable {M : Type*} [AddCommGroup M] [Module ℝ M] [FiniteDimensional ℝ M]
 
 namespace QuadraticForm
-
-/-- **The determinant-sign formula.** The discriminant of a regular real quadratic form is the
-class of `(-1)^q`, where `q` is its negative index of inertia. -/
-theorem discr_formClass_eq_sigNeg_nsmul (Q : _root_.QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
-    RegularFormClass.discr (formClass Q hQ) = sigNeg Q • squareClass (-1 : ℝˣ) := by
-  obtain ⟨⟨n, w⟩, hp⟩ := exists_presentedForm_equivalent Q hQ
-  rw [discr_formClass Q hQ ⟨n, w⟩ hp, squareClass_prod, sum_squareClass_eq_ncard_nsmul,
-    sigNeg_of_equiv_weightedSumSquares (by rwa [← presentedForm_eq_weightedSumSquares_coe])]
 
 /-- The discriminant of a regular real quadratic form is trivial exactly when its negative index
 of inertia is even. -/

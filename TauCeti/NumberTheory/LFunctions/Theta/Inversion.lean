@@ -32,6 +32,11 @@ with one parameter per infinite place. It holds for every full lattice, not only
 lattices, because the transformation law of the Mellin kernel of a partial zeta function is
 stated for lattices whose dual is identified with an ideal lattice only afterwards.
 
+At a constant parameter `t` both statements specialize to the one-parameter Gaussian
+`mixedGaussian K t`, with `N(y)^(-1/2) = t ^ (-[K : ℚ] / 2)` (`mixedFourier_mixedGaussian` and
+`tsum_mixedGaussian_eq_tsum_mixedDual`). Over `ℚ` the latter is Jacobi's
+`θ(t) = t ^ (-1/2) θ(1/t)`.
+
 That identification moves a lattice by `traceToEuclidean K`, which multiplies the absolute value
 at `w` by `mult w`; on the theta series this multiplies the parameter by `(mult w ^ 2)_w`
 (`latticeTheta_map_traceToEuclidean`).
@@ -87,9 +92,6 @@ theorem mixedFourier_archGaussian (y : realSpace K) (hy : ∀ w, 0 < y w) (ξ : 
     ext w <;> simp [c, c', mixedSpaceOfRealSpace_apply, (Real.sqrt_pos.mpr (hy _)).ne']
   have hc : mixedEmbedding.norm c = √(archNorm y) :=
     norm_mixedSpaceOfRealSpace_sqrt fun w ↦ (hy w).le
-  have hc0 : mixedEmbedding.norm c ≠ 0 := by
-    rw [hc]
-    exact (Real.sqrt_pos.mpr (archNorm_pos hy)).ne'
   -- Substitute `x ↦ c * x`: the pairing becomes `mixedInner (c * x) (c' * ξ)` since `c * c' = 1`,
   -- and the Gaussian becomes the Gaussian at the parameter `1`.
   have hint (x : mixedSpace K) : 𝐞 (-mixedInner K x ξ) • archGaussian y x =
@@ -98,7 +100,7 @@ theorem mixedFourier_archGaussian (y : realSpace K) (hy : ∀ w, 0 < y w) (ξ : 
       ← archGaussian_one_archGaussianDilation y hy, archGaussianDilation_apply]
   rw [mixedFourier_apply]
   simp_rw [hint]
-  rw [integral_comp_mul_left (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • archGaussian 1 z) hc0,
+  rw [integral_comp_mul_left (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • archGaussian 1 z) c,
     ← mixedFourier_apply, mixedFourier_archGaussian_one, ← archGaussianDilation_apply y⁻¹ hy',
     archGaussian_one_archGaussianDilation, hc, Complex.real_smul]
 
@@ -134,5 +136,37 @@ theorem latticeTheta_map_traceToEuclidean (L : Submodule ℤ (mixedSpace K))
   simp only [archGaussian_apply, normAtPlace_traceToEuclidean, Pi.mul_apply]
   congr 4 with w
   ring
+
+/-- The factor `N(y)^(-1/2)` at the constant parameter `t > 0` is `t ^ (-[K : ℚ] / 2)`. -/
+private theorem ofReal_inv_sqrt_archNorm_const {t : ℝ} (ht : 0 < t) :
+    (((√(archNorm (fun _ ↦ t : realSpace K)))⁻¹ : ℝ) : ℂ) =
+      (t : ℂ) ^ (-(Module.finrank ℚ K : ℂ) / 2) := by
+  push_cast [archNorm_const, Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul ht.le,
+    ← Real.rpow_neg ht.le, Complex.ofReal_cpow ht.le]
+  congr 1
+  ring
+
+/-- **Self-duality of the one-parameter Gaussian**: for `t > 0`,
+`𝓕 (mixedGaussian K t) = t ^ (-[K : ℚ] / 2) • mixedGaussian K t⁻¹`. -/
+theorem mixedFourier_mixedGaussian {t : ℝ} (ht : 0 < t) (ξ : mixedSpace K) :
+    mixedFourier K (mixedGaussian K t) ξ =
+      (t : ℂ) ^ (-(Module.finrank ℚ K : ℂ) / 2) * mixedGaussian K t⁻¹ ξ := by
+  have h := mixedFourier_archGaussian (fun _ ↦ t) (fun _ ↦ ht) ξ
+  rw [ofReal_inv_sqrt_archNorm_const ht] at h
+  simpa only [funext (archGaussian_const (K := K) t), Pi.inv_def, archGaussian_const] using h
+
+open scoped Classical in
+/-- **The theta transformation with one parameter**, Neukirch VII (3.6) on the imaginary axis:
+for every full lattice `L` of the mixed space and `t > 0`,
+`∑_{x ∈ L} e^(-π t ⟨x, x⟩) = covol(L)⁻¹ t ^ (-[K : ℚ] / 2) ∑_{y ∈ L^∨} e^(-π t⁻¹ ⟨y, y⟩)`,
+the dual being the Euclidean dual `mixedDual`. -/
+theorem tsum_mixedGaussian_eq_tsum_mixedDual (L : Submodule ℤ (mixedSpace K))
+    [DiscreteTopology L] [IsZLattice ℝ L] {t : ℝ} (ht : 0 < t) :
+    ∑' x : L, mixedGaussian K t x = (ZLattice.covolume L : ℂ)⁻¹ *
+      (t : ℂ) ^ (-(Module.finrank ℚ K : ℂ) / 2) *
+        ∑' y : mixedDual K L, mixedGaussian K t⁻¹ y := by
+  have h := latticeTheta_inv L (fun _ ↦ t) fun _ ↦ ht
+  rw [ofReal_inv_sqrt_archNorm_const ht] at h
+  simpa only [latticeTheta_def, Pi.inv_def, archGaussian_const] using h
 
 end TauCeti.LFunctions

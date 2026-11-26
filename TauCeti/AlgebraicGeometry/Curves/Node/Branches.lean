@@ -58,8 +58,8 @@ local instance (priority := high) splitNodeSpecOverSpec :
   hom := Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R 0)))
 
 local instance : Flat (Spec (.of (NodeAlgebra R 0)) ↘ Spec (.of R)) := flat_spec 0
-local instance : LocallyOfFinitePresentation
-    (Spec (.of (NodeAlgebra R 0)) ↘ Spec (.of R)) := locallyOfFinitePresentation_spec 0
+local instance : LocallyOfFinitePresentation (Spec (.of (NodeAlgebra R 0)) ↘ Spec (.of R)) :=
+  locallyOfFinitePresentation_SpecMap_algebraMap R (NodeAlgebra R 0)
 local instance : TauCeti.AlgebraicGeometry.PureRelativeDimension 1
     (Spec (.of (NodeAlgebra R 0)) ↘ Spec (.of R)) := pureRelativeDimension_spec 0
 
