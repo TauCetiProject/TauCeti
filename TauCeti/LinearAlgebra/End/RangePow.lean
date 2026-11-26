@@ -23,7 +23,7 @@ the kernel stabilisation holds over an arbitrary semiring. When both chains have
 endomorphism restricts to a bijection on the stable range, giving the invertible part of the
 Fitting splitting without finite-length assumptions. Finally, linear maps intertwining two
 endomorphisms carry kernels and ranges of powers (and their unions and intersections) into those of
-the target and preserve kernels and ranges as invariant submodules.
+the target.
 -/
 
 public section
@@ -107,6 +107,15 @@ theorem disjoint_ker_pow_range_pow_of_ker_pow_succ_eq (h : ker (f ^ (n + 1)) = k
   rw [ker_pow_add_eq_of_ker_pow_succ_eq h] at hy
   exact mem_ker.mp hy
 
+/-- Conversely, for `1 ≤ n`, if `ker (f ^ n)` and `range (f ^ n)` are disjoint then the kernel chain
+has stabilized at `n`: `ker (f ^ (n + 1)) = ker (f ^ n)`. -/
+theorem ker_pow_succ_eq_of_disjoint (hn : 1 ≤ n) (hdisj : Disjoint (ker (f ^ n)) (range (f ^ n))) :
+    ker (f ^ (n + 1)) = ker (f ^ n) := by
+  refine le_antisymm (fun x hx ↦ ?_) (f.iterateKer.monotone (Nat.le_succ n))
+  rw [mem_ker, pow_succ', mul_apply_eq_comp] at hx
+  exact mem_ker.mpr (Submodule.disjoint_def.mp hdisj _
+    (f.iterateKer.monotone hn (by simpa using hx)) (mem_range_self (f ^ n) x))
+
 /-- If the range of `f ^ (n + 1)` equals that of `f ^ n`, the ranges of all higher powers of `f`
 equal it too. -/
 theorem range_pow_add_eq_of_range_pow_succ_eq (h : range (f ^ (n + 1)) = range (f ^ n)) (m : ℕ) :
@@ -126,14 +135,19 @@ theorem iInf_range_pow_eq_of_range_pow_succ_eq (h : range (f ^ (n + 1)) = range 
   · exact f.iterateRange.monotone hmn
   · rw [← Nat.add_sub_of_le hnm.le, range_pow_add_eq_of_range_pow_succ_eq h]
 
-/-- Bijectivity of the restriction of an endomorphism to an invariant submodule transfers across
-equality of submodules. -/
-theorem bijective_restrict_of_eq {p q : Submodule R M} (hEq : p = q)
-    {hp : ∀ x ∈ p, f x ∈ p} {hq : ∀ x ∈ q, f x ∈ q}
-    (hbij : Function.Bijective (f.restrict hp)) :
-    Function.Bijective (f.restrict hq) := by
-  subst hEq
-  exact hbij
+/-- For `1 ≤ n`, if `ker (f ^ n)` and `range (f ^ n)` span the module then the range chain has
+stabilized at `n`: `range (f ^ (n + 1)) = range (f ^ n)`. -/
+theorem range_pow_succ_eq_of_codisjoint (hn : 1 ≤ n)
+    (hcod : Codisjoint (ker (f ^ n)) (range (f ^ n))) :
+    range (f ^ (n + 1)) = range (f ^ n) := by
+  refine le_antisymm (f.iterateRange.monotone (Nat.le_succ n)) ?_
+  rintro _ ⟨x, rfl⟩
+  obtain ⟨u, _, hu, ⟨w, rfl⟩, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.mp hcod x
+  refine ⟨(f ^ (n - 1)) w, ?_⟩
+  rw [map_add, mem_ker.mp hu, zero_add, ← mul_apply_eq_comp, ← mul_apply_eq_comp,
+    ← pow_add, ← pow_add]
+  congr 2
+  omega
 
 /-- Restrictions of an endomorphism to equal invariant submodules have equivalent bijectivity. -/
 theorem bijective_restrict_iff_of_eq {p q : Submodule R M} (hEq : p = q)
@@ -235,20 +249,6 @@ theorem map_iInf_range_pow_le_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M 
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) :
     (⨅ k, LinearMap.range (T_M ^ k)).map f ≤ ⨅ k, LinearMap.range (T_N ^ k) :=
   le_iInf fun k ↦ (Submodule.map_mono (iInf_le _ k)).trans (map_range_pow_le_of_comp_eq hf k)
-
-/-- If `f ∘ₗ T_M = T_N ∘ₗ f`, the kernel of `f` is `T_M`-invariant. -/
-theorem mapsTo_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
-    (hf : f ∘ₗ T_M = T_N ∘ₗ f) :
-    ∀ x ∈ LinearMap.ker f, T_M x ∈ LinearMap.ker f := fun x hx ↦ by
-  rw [LinearMap.mem_ker, ← LinearMap.comp_apply, hf, LinearMap.comp_apply,
-    LinearMap.mem_ker.mp hx, map_zero]
-
-/-- If `f ∘ₗ T_M = T_N ∘ₗ f`, the range of `f` is `T_N`-invariant. -/
-theorem range_le_comap_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
-    (hf : f ∘ₗ T_M = T_N ∘ₗ f) :
-    LinearMap.range f ≤ (LinearMap.range f).comap T_N := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨T_M x, LinearMap.congr_fun hf x⟩
 
 end Module.End
 

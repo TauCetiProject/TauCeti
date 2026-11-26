@@ -7,7 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.End.Stable.Constructions
 public import TauCeti.LinearAlgebra.LinearMap.Comp
-import TauCeti.LinearAlgebra.Prod
+import TauCeti.Algebra.Module.Equiv.Basic
+import TauCeti.LinearAlgebra.End.Prod
 
 /-!
 # Stability of precomposition on Hom modules
@@ -76,17 +77,28 @@ theorem IsStableAt.kerPowLcompEquiv_apply {T : End R M} {c : ℕ} (h : T.IsStabl
     h.kerPowLcompEquiv S D φ x = φ.val x.val :=
   (rfl)
 
-private theorem range_lcomp_pow_eq_ker_lcomp_subtype {T : End R M} {c : ℕ} (h : T.IsStableAt c) :
+/-- The inverse of `IsStableAt.kerPowLcompEquiv` extends a linear map on `ker (T ^ c)` along the
+canonical projection `Submodule.projectionOnto` with kernel `range (T ^ c)`. -/
+@[simp]
+theorem IsStableAt.coe_kerPowLcompEquiv_symm_apply {T : End R M} {c : ℕ} (h : T.IsStableAt c)
+    (ψ : ↥(LinearMap.ker (T ^ c)) →ₗ[R] D) :
+    ((h.kerPowLcompEquiv S D).symm ψ : M →ₗ[R] D) =
+      ψ ∘ₗ (LinearMap.ker (T ^ c)).projectionOnto (LinearMap.range (T ^ c))
+        h.isCompl_ker_pow_range_pow :=
+  (rfl)
+
+/-- When `T : End R M` is stable at `c`, the range of `(LinearMap.lcomp S D T) ^ c` on `M →ₗ[R] D`
+is the submodule of `R`-linear maps vanishing on `LinearMap.ker (T ^ c)`. -/
+theorem IsStableAt.range_pow_lcomp_eq_ker_lcomp_subtype {T : End R M} {c : ℕ}
+    (h : T.IsStableAt c) :
     LinearMap.range ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c) =
       LinearMap.ker (LinearMap.lcomp S D (LinearMap.ker (T ^ c)).subtype) := by
   let hKI := h.isCompl_ker_pow_range_pow
   let pI := (LinearMap.range (T ^ c)).projectionOnto (LinearMap.ker (T ^ c)) hKI.symm
   let eI := LinearEquiv.ofBijective _ h.bijective_restrict_range_pow
   have heI_pow (y : ↥(LinearMap.range (T ^ c))) : ((eI ^ c) y).val = (T ^ c) y.val := by
-    have hcoe : (eI ^ c).toLinearMap =
-        T.restrict (fun _ hx ↦ T.mapsTo_range_pow c hx) ^ c :=
-      map_pow LinearEquiv.automorphismGroup.toLinearMapMonoidHom eI c
-    simpa [pow_restrict c] using congrArg Subtype.val (LinearMap.congr_fun hcoe y)
+    have hcoe := LinearEquiv.coe_ofBijective_pow h.bijective_restrict_range_pow c
+    simpa [eI, pow_restrict c] using congrArg Subtype.val (LinearMap.congr_fun hcoe y)
   refine le_antisymm ?_ fun φ hφ ↦ ?_
   · rintro _ ⟨θ, rfl⟩
     rw [LinearMap.mem_ker, LinearMap.lcomp_pow]
@@ -107,6 +119,14 @@ private theorem range_lcomp_pow_eq_ker_lcomp_subtype {T : End R M} {c : ℕ} (h 
       LinearMap.congr_fun (LinearMap.mem_ker.mp hφ) ⟨_, Submodule.projection_apply_mem hKI x⟩
     rw [map_add, hφK, zero_add, Submodule.coe_subtype, Submodule.coe_projectionOnto_apply]
 
+/-- When `T : End R M` is stable at `c`, a linear map `φ : M →ₗ[R] D` lies in the range of
+`(LinearMap.lcomp S D T) ^ c` if and only if its restriction to `LinearMap.ker (T ^ c)` vanishes. -/
+theorem IsStableAt.mem_range_pow_lcomp_iff {T : End R M} {c : ℕ} (h : T.IsStableAt c)
+    {φ : M →ₗ[R] D} :
+    φ ∈ LinearMap.range ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c) ↔
+      φ ∘ₗ (LinearMap.ker (T ^ c)).subtype = 0 := by
+  rw [h.range_pow_lcomp_eq_ker_lcomp_subtype S D, LinearMap.mem_ker, LinearMap.lcomp_apply']
+
 /-- If `T : End R M` is stable at `c`, the range of `(LinearMap.lcomp S D T) ^ c` on `M →ₗ[R] D`
 identifies `S`-linearly with `(LinearMap.range (T ^ c)) →ₗ[R] D` by restriction. -/
 noncomputable def IsStableAt.rangePowLcompEquiv {T : End R M} {c : ℕ} (h : T.IsStableAt c) :
@@ -118,16 +138,16 @@ noncomputable def IsStableAt.rangePowLcompEquiv {T : End R M} {c : ℕ} (h : T.I
     (LinearMap.lcomp S D (LinearMap.range (T ^ c)).subtype ∘ₗ
       (LinearMap.range ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c)).subtype)
     ((LinearMap.lcomp S D pI).codRestrict _ fun ψ ↦ by
-      rw [range_lcomp_pow_eq_ker_lcomp_subtype S D h, LinearMap.mem_ker]
+      rw [h.mem_range_pow_lcomp_iff S D]
       ext x
       simp [pI, Submodule.projectionOnto_apply_right])
     (LinearMap.ext fun ψ ↦ LinearMap.ext fun x ↦ by
       simp [pI, Submodule.projectionOnto_apply_left])
     (LinearMap.ext fun φ ↦ Subtype.ext <| LinearMap.ext fun x ↦ by
-      have hφ : φ.val ∈ LinearMap.ker (LinearMap.lcomp S D (LinearMap.ker (T ^ c)).subtype) :=
-        range_lcomp_pow_eq_ker_lcomp_subtype S D h ▸ φ.property
+      have hφ : φ.val ∘ₗ (LinearMap.ker (T ^ c)).subtype = 0 :=
+        (h.mem_range_pow_lcomp_iff S D).mp φ.property
       have hφK : φ.val ((LinearMap.ker (T ^ c)).projection _ hKI x) = 0 :=
-        LinearMap.congr_fun (LinearMap.mem_ker.mp hφ) ⟨_, Submodule.projection_apply_mem hKI x⟩
+        LinearMap.congr_fun hφ ⟨_, Submodule.projection_apply_mem hKI x⟩
       simp only [LinearMap.id_apply, LinearMap.comp_apply, LinearMap.codRestrict_apply,
         LinearMap.lcomp_apply, Submodule.coe_subtype, pI]
       conv_rhs => rw [← Submodule.projection_add_projection_eq_self hKI x]
@@ -141,6 +161,16 @@ theorem IsStableAt.rangePowLcompEquiv_apply {T : End R M} {c : ℕ} (h : T.IsSta
     h.rangePowLcompEquiv S D φ x = φ.val x.val :=
   (rfl)
 
+/-- The inverse of `IsStableAt.rangePowLcompEquiv` extends a linear map on `range (T ^ c)` along
+the canonical projection `Submodule.projectionOnto` with kernel `ker (T ^ c)`. -/
+@[simp]
+theorem IsStableAt.coe_rangePowLcompEquiv_symm_apply {T : End R M} {c : ℕ} (h : T.IsStableAt c)
+    (ψ : ↥(LinearMap.range (T ^ c)) →ₗ[R] D) :
+    ((h.rangePowLcompEquiv S D).symm ψ : M →ₗ[R] D) =
+      ψ ∘ₗ (LinearMap.range (T ^ c)).projectionOnto (LinearMap.ker (T ^ c))
+        h.isCompl_ker_pow_range_pow.symm :=
+  (rfl)
+
 /-- If `T : End R M` is stable at `c`, the kernel and range of `(LinearMap.lcomp S D T) ^ c` are
 complementary `S`-submodules of `M →ₗ[R] D`. -/
 theorem IsStableAt.isCompl_ker_pow_range_pow_lcomp {T : End R M} {c : ℕ} (h : T.IsStableAt c) :
@@ -152,8 +182,7 @@ theorem IsStableAt.isCompl_ker_pow_range_pow_lcomp {T : End R M} {c : ℕ} (h : 
   refine ⟨Submodule.disjoint_def.mpr fun φ hφK hφI ↦ LinearMap.ext fun x ↦ ?_,
     codisjoint_iff.mpr (eq_top_iff.mpr fun φ _ ↦ ?_)⟩
   · have hK0 : φ ((LinearMap.ker (T ^ c)).projection _ hKI x) = 0 :=
-      LinearMap.congr_fun
-        (LinearMap.mem_ker.mp (range_lcomp_pow_eq_ker_lcomp_subtype S D h ▸ hφI))
+      LinearMap.congr_fun ((h.mem_range_pow_lcomp_iff S D).mp hφI)
         ⟨_, Submodule.projection_apply_mem hKI x⟩
     obtain ⟨z, hz⟩ := Submodule.projection_apply_mem hKI.symm x
     have hI0 : φ ((LinearMap.range (T ^ c)).projection _ hKI.symm x) = 0 := by
@@ -171,7 +200,7 @@ theorem IsStableAt.isCompl_ker_pow_range_pow_lcomp {T : End R M} {c : ℕ} (h : 
       ext x
       simp [pK, Submodule.projectionOnto_apply_of_mem_right hKI
         (LinearMap.mem_range_self (T ^ c) x)]
-    · rw [range_lcomp_pow_eq_ker_lcomp_subtype S D h, LinearMap.mem_ker]
+    · rw [h.mem_range_pow_lcomp_iff S D]
       ext x
       simp [pI, Submodule.projectionOnto_apply_right]
     · conv_rhs => rw [← Submodule.projection_add_projection_eq_self hKI x]
@@ -229,9 +258,7 @@ def iInfRangePowLcompProdMapEquiv {T₁ : End R M₁} {T₂ : End R M₂}
       (Submodule.mem_iInf _).mpr fun n ↦ by
         let e₂ := LinearEquiv.ofBijective T₂ h₂
         have he₂ (y : M₂) : (e₂ ^ n) y = (T₂ ^ n) y := by
-          have hcoe : (e₂ ^ n).toLinearMap = T₂ ^ n :=
-            map_pow LinearEquiv.automorphismGroup.toLinearMapMonoidHom e₂ n
-          exact LinearMap.congr_fun hcoe y
+          simpa [e₂] using LinearMap.congr_fun (LinearEquiv.coe_ofBijective_pow h₂ n) y
         refine ⟨ψ ∘ₗ (e₂ ^ n).symm.toLinearMap ∘ₗ LinearMap.snd R M₁ M₂, ?_⟩
         rw [LinearMap.lcomp_pow, LinearMap.prodMap_pow]
         exact LinearMap.ext fun ⟨x₁, x₂⟩ ↦ by simp [← he₂ x₂])

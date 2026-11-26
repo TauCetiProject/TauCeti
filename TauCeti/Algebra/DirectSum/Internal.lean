@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Pi
+import TauCeti.Algebra.DirectSum.Exact
 import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
@@ -17,21 +18,26 @@ import TauCeti.LinearAlgebra.Submodule.Independent
 This file provides reusable infrastructure for direct sums of submodules.  The generic
 `DirectSum.piInclusion`, `DirectSum.piSubmodule`, `DirectSum.piSubmoduleEquiv`,
 `DirectSum.isCompl_piSubmodule_iff`, and `DirectSum.bijective_restrict_lmap_iff` declarations
-describe their componentwise inclusion, range, complementarity, and restricted summandwise maps
-(alongside `DirectSum.lmap_pow` and `DirectSum.bijective_lmap_iff`), while
-`DirectSum.isInternal_of_lof` gives a criterion for proving that a family of submodules is an
+describe their componentwise inclusion, range, complementarity, and restricted summandwise maps,
+while `DirectSum.isInternal_of_lof` gives a criterion for proving that a family of submodules is an
 internal direct sum by identifying its summands with the components of a linear equivalence.
 
 A second group of declarations concerns maps between decompositions.
 `DirectSum.decompose_map_eq_sum` computes a target component by summing source components
-over its degree fiber, with no injectivity or finite-fiber assumption on the degree map.
+over its degree fiber, with no injectivity or finite-fiber assumption on the degree map;
+applied to the identity map, `DirectSum.Decomposition.eq_zero_of_mem_of_forall_ne` shows that any
+summand of a second decomposition whose degree lies outside the image of the degree map is zero.
 This formula is adapted from `Mei/Algebra/DirectSum/Map.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
 commit `bac6f02d25746bc1c2ec808601d4e9284911c475` (Apache 2.0),
 by the Mei contributors (Authors: Codex).
 `DirectSum.map_decompose_shift` says that an additive map carrying each summand of one
 decomposition into a summand of another, along an injective reindexing of the degrees, commutes
-with the homogeneous projections, while `DirectSum.isInternal_comap` and
+with the homogeneous projections; applied to the identity map,
+`DirectSum.Decomposition.mem_iff_of_mem_shift`, `DirectSum.Decomposition.eq_of_subset_shift`, and
+`DirectSum.Decomposition.eq_of_subset` show that one-sided inclusion between internal
+decompositions along an injective reindexing (or on the same index type) implies componentwise
+equality. Meanwhile, `DirectSum.isInternal_comap` and
 `DirectSum.Decomposition.restrict` transport a decomposition backwards along an injective linear
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
@@ -296,6 +302,21 @@ theorem decompose_map_eq_sum {ι κ M N S T : Type*}
       exact map_sum (AddSubmonoidClass.subtype (𝓝 j)) _ _
     _ = _ := by simp_rw [hproj]; rw [Finset.sum_filter]
 
+open Classical in
+/-- If an internal decomposition `ℳ` maps into an internal decomposition `𝓝` of the same
+additive commutative monoid along a degree map `σ : ι → κ`, any element of a summand `𝓝 j`
+whose degree `j` lies outside the image of `σ` is zero. -/
+theorem Decomposition.eq_zero_of_mem_of_forall_ne {ι κ M S T : Type*}
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] [SetLike T M] [AddSubmonoidClass T M]
+    (ℳ : ι → S) [Decomposition ℳ] (𝓝 : κ → T) [Decomposition 𝓝]
+    {σ : ι → κ} (h : ∀ i ⦃x : M⦄, x ∈ ℳ i → x ∈ 𝓝 (σ i))
+    {j : κ} (hj : ∀ i, σ i ≠ j) {x : M} (hx : x ∈ 𝓝 j) : x = 0 := by
+  rw [← decompose_of_mem_same 𝓝 hx]
+  have hsum := decompose_map_eq_sum ℳ 𝓝 (AddMonoidHom.id M) σ (fun i _ hy ↦ h i hy) x j
+  simp only [AddMonoidHom.id_apply] at hsum
+  exact hsum.trans (Finset.sum_eq_zero fun i hi ↦ (hj i (Finset.mem_filter.mp hi).2).elim)
+
 /-- An additive map which carries the degree-`i` summand of one internal decomposition into the
 degree-`σ i` summand of another, along an injective reindexing `σ` of the degrees, commutes with
 the homogeneous projections. The summands may be any additive subobjects, including submodules
@@ -318,6 +339,40 @@ theorem map_decompose_shift {ι κ M N S T : Type*}
     · rw [decompose_of_mem_ne ℳ hxM (Ne.symm hij), map_zero,
         decompose_of_mem_ne 𝓝 hxN fun hc ↦ Ne.symm hij (hσ hc)]
   | add x y hx hy => simp [hx, hy]
+
+/-- If an internal decomposition `ℳ` maps into an internal decomposition `𝓝` of the same
+additive commutative monoid along an injective reindexing `σ` of the degrees, then each summand
+`ℳ i` has the same elements as `𝓝 (σ i)`. -/
+theorem Decomposition.mem_iff_of_mem_shift {ι κ M S T : Type*}
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] [SetLike T M] [AddSubmonoidClass T M]
+    (ℳ : ι → S) [Decomposition ℳ] (𝓝 : κ → T) [Decomposition 𝓝]
+    {σ : ι → κ} (hσ : Function.Injective σ)
+    (h : ∀ i ⦃x : M⦄, x ∈ ℳ i → x ∈ 𝓝 (σ i)) (i : ι) {x : M} :
+    x ∈ ℳ i ↔ x ∈ 𝓝 (σ i) := by
+  refine ⟨fun hx ↦ h i hx, fun hx ↦ ?_⟩
+  have hproj := map_decompose_shift ℳ 𝓝 (AddMonoidHom.id M) σ hσ (fun j _ hy ↦ h j hy) i x
+  simp only [AddMonoidHom.id_apply, decompose_of_mem_same 𝓝 hx] at hproj
+  exact hproj ▸ (decompose ℳ x i).property
+
+/-- If each summand of an internal decomposition `ℳ` is contained in the `σ`-shifted summand of
+an internal decomposition `𝓝` along an injective reindexing `σ`, then `ℳ i = 𝓝 (σ i)`. -/
+theorem Decomposition.eq_of_subset_shift {ι κ M S : Type*}
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M]
+    (ℳ : ι → S) [Decomposition ℳ] (𝓝 : κ → S) [Decomposition 𝓝]
+    {σ : ι → κ} (hσ : Function.Injective σ)
+    (h : ∀ i ⦃x : M⦄, x ∈ ℳ i → x ∈ 𝓝 (σ i)) (i : ι) :
+    ℳ i = 𝓝 (σ i) :=
+  SetLike.ext fun _ ↦ Decomposition.mem_iff_of_mem_shift ℳ 𝓝 hσ h i
+
+/-- Two internal decompositions of an additive commutative monoid indexed by the same type are
+equal as soon as each summand of the first is contained in the corresponding summand of the
+second. -/
+theorem Decomposition.eq_of_subset {ι M S : Type*} [DecidableEq ι] [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] (ℳ 𝓝 : ι → S) [Decomposition ℳ] [Decomposition 𝓝]
+    (h : ∀ i ⦃x : M⦄, x ∈ ℳ i → x ∈ 𝓝 i) : ℳ = 𝓝 :=
+  funext (Decomposition.eq_of_subset_shift ℳ 𝓝 Function.injective_id h)
 
 end DirectSum
 
@@ -684,34 +739,6 @@ theorem coe_decompose_summand (x : ⨁ i, M i) (i : ι) :
   | add x y hx hy => simp [hx, hy]
 
 end Module
-
-section Lmap
-
-variable {R ι : Type*} {M N : ι → Type*} [Semiring R]
-  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
-  [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
-
-/-- A power of a summandwise endomorphism `DirectSum.lmap T` is the summandwise map of the
-powers. -/
-@[simp]
-theorem lmap_pow (T : ∀ i, Module.End R (M i)) (n : ℕ) :
-    (lmap T : Module.End R (⨁ i, M i)) ^ n = lmap fun i ↦ (T i) ^ n := by
-  induction n with
-  | zero =>
-    rw [pow_zero, Module.End.one_eq_id, ← lmap_id]
-    simp only [pow_zero, Module.End.one_eq_id]
-  | succ n ih =>
-    rw [pow_succ, Module.End.mul_eq_comp, ih, ← lmap_comp]
-    simp only [pow_succ, Module.End.mul_eq_comp]
-
-/-- A summandwise linear map `DirectSum.lmap f` is bijective if and only if every summand map `f i`
-is bijective. -/
-@[simp]
-theorem bijective_lmap_iff {f : ∀ i, M i →ₗ[R] N i} :
-    Function.Bijective (lmap f) ↔ ∀ i, Function.Bijective (f i) := by
-  simp only [Function.Bijective, lmap_injective, lmap_surjective, forall_and]
-
-end Lmap
 
 end DirectSum
 

@@ -10,8 +10,8 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.LinearAlgebra.End.Stable.Constructions
 import Mathlib.Algebra.Polynomial.Coeff
-import TauCeti.Algebra.DirectSum.Internal
-import TauCeti.LinearAlgebra.Pi
+import TauCeti.Algebra.DirectSum.Exact
+import TauCeti.LinearAlgebra.Pi.Map
 
 /-!
 # Counterexamples for infinite products and direct sums of stable endomorphisms

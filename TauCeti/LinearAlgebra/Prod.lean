@@ -102,9 +102,6 @@ quadratic forms with the subgroup preserving both summands.
   and fixes the third basis vector.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   modules, read over the base of a scalar tower, is the product map of the two multiplications.
-* `LinearMap.prodMap_pow`, `LinearMap.bijective_prodMap_iff`,
-  `LinearMap.bijective_restrict_prodMap_iff`: componentwise powers, bijectivity, and restricted
-  bijectivity for product linear maps.
 -/
 
 public section
@@ -911,47 +908,3 @@ theorem lsmul_restrictScalars_prodMap (c : S) :
 end LinearMap
 
 end TauCeti
-
-namespace LinearMap
-
-/-- A componentwise product of linear maps is bijective if and only if both factors are. -/
-@[simp]
-theorem bijective_prodMap_iff {R M₁ M₂ N₁ N₂ : Type*} [Semiring R] [AddCommMonoid M₁]
-    [Module R M₁] [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid N₁] [Module R N₁]
-    [AddCommMonoid N₂] [Module R N₂] {f : M₁ →ₗ[R] N₁} {g : M₂ →ₗ[R] N₂} :
-    Function.Bijective (f.prodMap g) ↔ Function.Bijective f ∧ Function.Bijective g := by
-  refine ⟨fun ⟨hinj, hsurj⟩ ↦ ⟨⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩, ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩⟩,
-    fun ⟨hf, hg⟩ ↦ hf.prodMap hg⟩
-  · exact congrArg Prod.fst (@hinj (x, 0) (y, 0) (Prod.ext hxy rfl))
-  · obtain ⟨z, hz⟩ := hsurj (y, 0)
-    exact ⟨z.1, congrArg Prod.fst hz⟩
-  · exact congrArg Prod.snd (@hinj (0, x) (0, y) (Prod.ext rfl hxy))
-  · obtain ⟨z, hz⟩ := hsurj (0, y)
-    exact ⟨z.2, congrArg Prod.snd hz⟩
-
-/-- A power of a componentwise product of endomorphisms is the componentwise product of the
-powers. -/
-@[simp]
-theorem prodMap_pow {R M₁ M₂ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁]
-    [AddCommMonoid M₂] [Module R M₂] (f : Module.End R M₁) (g : Module.End R M₂) (n : ℕ) :
-    f.prodMap g ^ n = (f ^ n).prodMap (g ^ n) :=
-  (map_pow (LinearMap.prodMapRingHom R M₁ M₂) (f, g) n).symm
-
-/-- Restricting a componentwise product `f.prodMap g` to a product submodule `p.prod q` is
-bijective if and only if both component restrictions are bijective. -/
-theorem bijective_restrict_prodMap_iff {R M₁ M₂ : Type*} [Semiring R] [AddCommMonoid M₁]
-    [Module R M₁] [AddCommMonoid M₂] [Module R M₂] {f : Module.End R M₁} {g : Module.End R M₂}
-    {p : Submodule R M₁} {q : Submodule R M₂}
-    {hpq : ∀ x ∈ p.prod q, f.prodMap g x ∈ p.prod q}
-    {hp : ∀ x ∈ p, f x ∈ p} {hq : ∀ x ∈ q, g x ∈ q} :
-    Function.Bijective ((f.prodMap g).restrict hpq) ↔
-      Function.Bijective (f.restrict hp) ∧ Function.Bijective (g.restrict hq) := by
-  let e := p.prodEquiv q
-  have hcomp : ⇑e ∘ ⇑((f.prodMap g).restrict hpq) =
-      ⇑((f.restrict hp).prodMap (g.restrict hq)) ∘ ⇑e := by
-    funext x
-    ext <;> simp [e]
-  rw [← Function.Bijective.of_comp_iff' e.bijective, hcomp,
-    Function.Bijective.of_comp_iff _ e.bijective, bijective_prodMap_iff]
-
-end LinearMap

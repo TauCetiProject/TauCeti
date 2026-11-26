@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Ring
+import TauCeti.Algebra.Colimit.CommonStage
 
 /-!
 # Directed colimits of commutative rings
@@ -30,6 +31,9 @@ colimit that carries the `A`-algebra structure.
 * `TauCeti.Ring.DirectLimit.ringEquivOfEq`: the ring isomorphism between `Ring.DirectLimit G f`
   and the generic colimit `DirectLimit G F` when `F i j` agrees pointwise with `f i j`, with its
   values on stage elements in both directions (`ringEquivOfEq_of`, `ringEquivOfEq_symm_mk`).
+* `Ring.DirectLimit.ringEquivIntOfIsEmpty`: over an empty index set the colimit is `ℤ`.
+* `TauCeti.isDomain_of_directed`: a directed colimit of domains, possibly noncommutative,
+  described elementwise, is a domain.
 -/
 
 public section
@@ -101,3 +105,41 @@ theorem ringEquivOfEq_symm_mk (x : Σ i, G i) :
 end RingHomClass
 
 end TauCeti.Ring.DirectLimit
+
+/-- Over an empty index set, `Ring.DirectLimit G f` is `ℤ`. -/
+noncomputable def Ring.DirectLimit.ringEquivIntOfIsEmpty {ι : Type*} [Preorder ι] {G : ι → Type*}
+    [∀ i, CommRing (G i)] [IsEmpty ι]
+    (f : ∀ i j, i ≤ j → G i →+* G j) : ℤ ≃+* Ring.DirectLimit G fun i j h ↦ f i j h :=
+  RingEquiv.ofRingHom (Int.castRingHom _)
+    (Ring.DirectLimit.lift G _ ℤ (fun i ↦ isEmptyElim i) fun i ↦ isEmptyElim i)
+    (Ring.DirectLimit.hom_ext (h := fun i ↦ isEmptyElim i)) (RingHom.ext_int _ _)
+
+namespace TauCeti
+
+/-- **A directed colimit of domains is a domain.** Here `R` is the colimit of
+the `G i` along `φ`: every element of `R` comes from some `G i`, and an element of `G i` sent to
+`0` in `R` is sent to `0` in some `G j`. -/
+theorem isDomain_of_directed {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {G : ι → Type*}
+    [∀ i, Ring (G i)] {R : Type*} [Ring R] (f : ∀ i j, i ≤ j → G i →+* G j) (φ : ∀ i, G i →+* R)
+    (hf : ∀ i j h x, φ j (f i j h x) = φ i x) (hsurj : ∀ x : R, ∃ i y, φ i y = x)
+    (hker : ∀ i y, φ i y = 0 → ∃ j h, f i j h y = 0) [∀ i, IsDomain (G i)] :
+    IsDomain R := by
+  classical
+  -- `1 ≠ 0` in `R`: otherwise `1` would vanish in some domain `G j`.
+  have : Nontrivial R := by
+    refine ⟨0, 1, fun h ↦ ?_⟩
+    obtain ⟨i, -⟩ := hsurj 0
+    obtain ⟨j, hij, hj⟩ := hker i 1 (by rw [map_one, h])
+    exact one_ne_zero (by rwa [map_one] at hj)
+  have : NoZeroDivisors R := ⟨fun {a b} hab ↦ by
+    obtain ⟨i, g, hg⟩ := DirectLimit.exists_lift (t := fun i j h ↦ f i j h) (φ := fun i ↦ φ i)
+      hf hsurj {a, b}
+    obtain ⟨x, rfl⟩ : ∃ x, φ i x = a := ⟨g a, hg a (by simp)⟩
+    obtain ⟨y, rfl⟩ : ∃ y, φ i y = b := ⟨g b, hg b (by simp)⟩
+    obtain ⟨j, hij, h⟩ := hker i (x * y) (by rw [map_mul, hab])
+    rw [map_mul, mul_eq_zero] at h
+    rw [← hf i j hij x, ← hf i j hij y]
+    exact h.imp (fun h ↦ by rw [h, map_zero]) fun h ↦ by rw [h, map_zero]⟩
+  exact NoZeroDivisors.to_isDomain R
+
+end TauCeti

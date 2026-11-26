@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.LocalRing.Module
-public import TauCeti.LinearAlgebra.Submodule.Prod
+public import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.Projection
 

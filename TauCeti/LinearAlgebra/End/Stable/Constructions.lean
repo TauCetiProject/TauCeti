@@ -9,13 +9,15 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
 public import TauCeti.LinearAlgebra.End.Stable.Basic
+public import TauCeti.LinearAlgebra.LinearMap.Ker
+public import TauCeti.LinearAlgebra.LinearMap.Range
+import TauCeti.Algebra.DirectSum.Exact
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Module.Equiv.Basic
-import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.End.Prod
 import TauCeti.LinearAlgebra.Pi.Map
-import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.Projection
-import TauCeti.LinearAlgebra.Submodule.Prod
+import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 
 /-!
 # Algebraic constructions on stable module endomorphisms
@@ -287,14 +289,13 @@ theorem IsStable.comp_projection_iInf_range_pow {T_M : End R M} {T_N : End R N}
 intertwiner `f : M →ₗ[R] N` is also stable at `c`. -/
 theorem IsStableAt.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) {c : ℕ} (hM : T_M.IsStableAt c) (hN : T_N.IsStableAt c) :
-    IsStableAt (T_M.restrict (mapsTo_ker_of_comp_eq hf)) c := by
-  let TK := T_M.restrict (mapsTo_ker_of_comp_eq hf)
+    IsStableAt (T_M.restrict fun _ hx ↦ LinearMap.map_mem_ker_of_comp_eq T_M hf.symm hx) c := by
+  let TK := T_M.restrict fun _ hx ↦ LinearMap.map_mem_ker_of_comp_eq T_M hf.symm hx
   have hrange_ge : ∀ x : ↥(LinearMap.ker f), x.val ∈ LinearMap.range (T_M ^ c) →
       x ∈ LinearMap.range (TK ^ c) := by
     rintro x ⟨y, hy⟩
-    have hyM : y ∈ LinearMap.ker (T_M ^ c) ⊔ LinearMap.range (T_M ^ c) := by
-      rw [hM.isCompl_ker_pow_range_pow.codisjoint.eq_top]; exact Submodule.mem_top
-    obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp hyM
+    obtain ⟨u, v, hu, hv, rfl⟩ :=
+      Submodule.codisjoint_iff_exists_add_eq.mp hM.isCompl_ker_pow_range_pow.codisjoint y
     have hfv_ker : f v ∈ LinearMap.ker (T_N ^ c) := by
       rw [LinearMap.mem_ker, ← LinearMap.comp_apply,
         Module.End.commute_pow_left_of_commute hf.symm c, LinearMap.comp_apply]
@@ -316,9 +317,8 @@ theorem IsStableAt.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : 
       ⟨z.val, by simp [TK, pow_restrict c]⟩
     exact Subtype.ext (Submodule.disjoint_def.mp hM.isCompl_ker_pow_range_pow.disjoint _
       (LinearMap.mem_ker.mpr hxk') hzM)
-  · have hxM : x.val ∈ LinearMap.ker (T_M ^ c) ⊔ LinearMap.range (T_M ^ c) := by
-      rw [hM.isCompl_ker_pow_range_pow.codisjoint.eq_top]; exact Submodule.mem_top
-    obtain ⟨u, hu, v, hv, huv⟩ := Submodule.mem_sup.mp hxM
+  · obtain ⟨u, v, hu, hv, huv⟩ :=
+      Submodule.codisjoint_iff_exists_add_eq.mp hM.isCompl_ker_pow_range_pow.codisjoint x.val
     have hfu_eq : f u = -f v := eq_neg_of_add_eq_zero_left <| by
       rw [← map_add, huv, LinearMap.mem_ker.mp x.property]
     have hfu0 : f u = 0 := Submodule.disjoint_def.mp hN.isCompl_ker_pow_range_pow.disjoint _
@@ -334,7 +334,7 @@ theorem IsStableAt.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : 
 endomorphism is stable. -/
 theorem IsStable.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) (hM : T_M.IsStable) (hN : T_N.IsStable) :
-    IsStable (T_M.restrict (mapsTo_ker_of_comp_eq hf)) := by
+    IsStable (T_M.restrict fun _ hx ↦ LinearMap.map_mem_ker_of_comp_eq T_M hf.symm hx) := by
   rw [isStable_def] at hM hN ⊢
   obtain ⟨c₁, hc₁⟩ := hM
   obtain ⟨c₂, hc₂⟩ := hN
@@ -344,22 +344,22 @@ theorem IsStable.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M 
 private theorem ker_mapQ_range_pow_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) {c : ℕ} (hM : T_M.IsStableAt c) (hN : T_N.IsStableAt c) :
     LinearMap.ker
-        (((LinearMap.range f).mapQ (LinearMap.range f) T_N (range_le_comap_of_comp_eq hf)) ^ c) =
+        (((LinearMap.range f).mapQ (LinearMap.range f) T_N
+          (LinearMap.range_le_comap_range_of_comp_eq hf.symm)) ^ c) =
       (LinearMap.ker (T_N ^ c)).map (LinearMap.range f).mkQ := by
   set Rf := LinearMap.range f
-  set TQ := Rf.mapQ Rf T_N (range_le_comap_of_comp_eq hf)
+  set TQ := Rf.mapQ Rf T_N (LinearMap.range_le_comap_range_of_comp_eq hf.symm)
   have hpow : TQ ^ c = Rf.mapQ Rf (T_N ^ c)
-      (Rf.le_comap_pow_of_le_comap (range_le_comap_of_comp_eq hf) c) :=
-    (Rf.mapQ_pow (range_le_comap_of_comp_eq hf) c).symm
+      (Rf.le_comap_pow_of_le_comap (LinearMap.range_le_comap_range_of_comp_eq hf.symm) c) :=
+    (Rf.mapQ_pow (LinearMap.range_le_comap_range_of_comp_eq hf.symm) c).symm
   refine le_antisymm (fun z hz ↦ ?_) ?_
   · obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective Rf z
     have hy : (T_N ^ c) y ∈ Rf := by
       rw [← Submodule.ker_mkQ Rf, LinearMap.mem_ker]
       simpa [TQ, hpow] using LinearMap.mem_ker.mp hz
     obtain ⟨m, hm⟩ := hy
-    have hmM : m ∈ LinearMap.ker (T_M ^ c) ⊔ LinearMap.range (T_M ^ c) := by
-      rw [hM.isCompl_ker_pow_range_pow.codisjoint.eq_top]; exact Submodule.mem_top
-    obtain ⟨u, hu, _, ⟨w, rfl⟩, rfl⟩ := Submodule.mem_sup.mp hmM
+    obtain ⟨u, _, hu, ⟨w, rfl⟩, rfl⟩ :=
+      Submodule.codisjoint_iff_exists_add_eq.mp hM.isCompl_ker_pow_range_pow.codisjoint m
     have hyw : y - f w ∈ LinearMap.ker (T_N ^ (c + c)) := by
       have hfw : (T_N ^ c) (f w) = f ((T_M ^ c) w) :=
         LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf.symm c) w
@@ -378,11 +378,12 @@ private theorem ker_mapQ_range_pow_of_comp_eq {T_M : End R M} {T_N : End R N} {f
 theorem IsStableAt.mapQ_range_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) {c : ℕ} (hM : T_M.IsStableAt c) (hN : T_N.IsStableAt c) :
     IsStableAt
-      ((LinearMap.range f).mapQ (LinearMap.range f) T_N (range_le_comap_of_comp_eq hf)) c := by
+      ((LinearMap.range f).mapQ (LinearMap.range f) T_N
+        (LinearMap.range_le_comap_range_of_comp_eq hf.symm)) c := by
   set Rf := LinearMap.range f
-  set TQ := Rf.mapQ Rf T_N (range_le_comap_of_comp_eq hf)
+  set TQ := Rf.mapQ Rf T_N (LinearMap.range_le_comap_range_of_comp_eq hf.symm)
   have hrange : LinearMap.range (TQ ^ c) = (LinearMap.range (T_N ^ c)).map Rf.mkQ := by
-    rw [← Rf.mapQ_pow (range_le_comap_of_comp_eq hf) c, Submodule.range_mapQ]
+    rw [← Rf.mapQ_pow (LinearMap.range_le_comap_range_of_comp_eq hf.symm) c, Submodule.range_mapQ]
   rw [isStableAt_iff_isCompl_ker_pow_range_pow, ker_mapQ_range_pow_of_comp_eq hf hM hN, hrange]
   refine ⟨hM.one_le, Submodule.disjoint_def.mpr ?_, ?_⟩
   · rintro _ ⟨k, hk, rfl⟩ ⟨r, hr, hkr⟩
@@ -390,9 +391,8 @@ theorem IsStableAt.mapQ_range_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M 
       rw [← Submodule.ker_mkQ Rf, LinearMap.mem_ker, map_sub, sub_eq_zero]
       exact hkr.symm
     obtain ⟨m, hm⟩ := hsub
-    have hmM : m ∈ LinearMap.ker (T_M ^ c) ⊔ LinearMap.range (T_M ^ c) := by
-      rw [hM.isCompl_ker_pow_range_pow.codisjoint.eq_top]; exact Submodule.mem_top
-    obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp hmM
+    obtain ⟨u, v, hu, hv, rfl⟩ :=
+      Submodule.codisjoint_iff_exists_add_eq.mp hM.isCompl_ker_pow_range_pow.codisjoint m
     have hkfu : k - f u = r + f v := by
       have hk_eq : k = f (u + v) + r := sub_eq_iff_eq_add.mp hm.symm
       rw [hk_eq, map_add, add_assoc, add_sub_cancel_left, add_comm]
@@ -408,7 +408,8 @@ theorem IsStableAt.mapQ_range_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M 
 stable. -/
 theorem IsStable.mapQ_range_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) (hM : T_M.IsStable) (hN : T_N.IsStable) :
-    IsStable ((LinearMap.range f).mapQ (LinearMap.range f) T_N (range_le_comap_of_comp_eq hf)) := by
+    IsStable ((LinearMap.range f).mapQ (LinearMap.range f) T_N
+      (LinearMap.range_le_comap_range_of_comp_eq hf.symm)) := by
   rw [isStable_def] at hM hN ⊢
   obtain ⟨c₁, hc₁⟩ := hM
   obtain ⟨c₂, hc₂⟩ := hN

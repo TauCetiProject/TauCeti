@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
@@ -93,6 +94,9 @@ The basic structure of these groups is recorded here.
   `U(p) × U(q)` is the subgroup of elements with vanishing lower-left block.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`: over a field of
   characteristic zero, the centre of `U(p, q)` is the group of unit scalars.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_comap_center`: over a field of
+  characteristic zero, an element of `U(p, q)` is central in `U(p, q)` exactly when it is central
+  in the general linear group.
 
 ## References
 
@@ -548,6 +552,19 @@ theorem center_eq_range_scalarHom :
     rw [Unitary.mem_iff_star_mul_self]
     exact mul_right_cancel₀ (indefiniteDiagonal_apply_self_ne_zero i₀) (by linear_combination h)
   exact ⟨⟨_, hu⟩, unitaryGroupOf.ext <| by rw [unitaryGroupOf.val_scalarHom]; exact hMs.symm⟩
+
+/-- **The centre of `U(p, q)` is cut out by the centre of the general linear group.** Over a field
+of characteristic zero, an element of `U(p, q)` commutes with every element of `U(p, q)` exactly
+when it commutes with every invertible matrix: both say that it is a scalar matrix. -/
+theorem center_eq_comap_center :
+    Subgroup.center (indefiniteUnitaryGroup p q K) =
+      (Subgroup.center (GL (p ⊕ q) K)).comap (indefiniteUnitaryGroup p q K).subtype := by
+  refine le_antisymm (fun g hg => ?_) fun g hg => Subgroup.mem_center_iff.mpr fun h =>
+    Subtype.ext (Subgroup.mem_center_iff.mp hg h)
+  rw [center_eq_range_scalarHom] at hg
+  obtain ⟨u, rfl⟩ := hg
+  exact Subgroup.mem_comap.mpr <| GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.mpr
+    ⟨u, (unitaryGroupOf.val_scalarHom (A := indefiniteDiagonal p q K) u).symm⟩
 
 end indefiniteUnitaryGroup
 

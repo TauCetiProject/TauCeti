@@ -120,6 +120,16 @@ theorem continuous_scalarCurvature
     Continuous cov.scalarCurvature :=
   cov.contMDiff_scalarCurvature.continuous
 
+/-- On a compact manifold with a smooth metric, the scalar curvature of a smooth connection on the
+tangent bundle is bounded below: `-K ≤ scalarCurvature` for some `K ≥ 0`. -/
+theorem exists_nonneg_forall_neg_le_scalarCurvature [CompactSpace M]
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] :
+    ∃ K : ℝ, 0 ≤ K ∧ ∀ x, -K ≤ cov.scalarCurvature x := by
+  obtain ⟨C, hC⟩ :=
+    isCompact_univ.exists_bound_of_continuousOn cov.continuous_scalarCurvature.continuousOn
+  exact ⟨max C 0, le_max_right C 0, fun x ↦ neg_le_of_abs_le <|
+    (Real.norm_eq_abs _ ▸ hC x (Set.mem_univ x)).trans (le_max_left C 0)⟩
+
 /-- In an orthonormal basis, scalar curvature is the double contraction of the curvature
 tensor. The inner sum contracts the curvature output against its first argument; the outer sum
 contracts the two Ricci arguments. -/

@@ -118,10 +118,7 @@ theorem eq_range_pow_of_codisjoint_of_surjective {T : End R M} {c : ℕ} {I : Su
   · obtain ⟨z, _, rfl⟩ := hpow_surj c y hy
     exact LinearMap.mem_range_self (T ^ c) z
   · rintro _ ⟨x, rfl⟩
-    have hx : x ∈ LinearMap.ker (T ^ c) ⊔ I := by
-      rw [hcod.eq_top]
-      exact Submodule.mem_top
-    obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp hx
+    obtain ⟨u, v, hu, hv, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.mp hcod x
     rw [map_add, LinearMap.mem_ker.mp hu, zero_add]
     exact hmaps c v hv
 
@@ -199,7 +196,7 @@ theorem IsStableAt.isCompl_ker_pow_range_pow {T : End R M} {c : ℕ} (h : T.IsSt
 theorem IsStableAt.bijective_restrict_range_pow {T : End R M} {c : ℕ} (h : T.IsStableAt c) :
     Function.Bijective (T.restrict fun _ hx ↦ T.mapsTo_range_pow c hx) := by
   obtain ⟨_, I, hI, hcompl, hbij⟩ := h
-  exact LinearMap.bijective_restrict_of_eq (IsStableAt.eq_range_pow hI hcompl hbij) hbij
+  exact (LinearMap.bijective_restrict_iff_of_eq (IsStableAt.eq_range_pow hI hcompl hbij)).mp hbij
 
 /-- Over any semiring, `T` is stable at `c` if and only if `1 ≤ c`, `LinearMap.ker (T ^ c)` and
 `LinearMap.range (T ^ c)` are complementary submodules, and `T` restricts to a bijection on
@@ -215,26 +212,14 @@ theorem isStableAt_iff_isCompl_and_bijective_restrict_range_pow {T : End R M} {c
 /-- If `T` is stable at `c`, the iterate-kernel chain has stabilized at `c`:
 `LinearMap.ker (T ^ (c + 1)) = LinearMap.ker (T ^ c)`. -/
 theorem IsStableAt.ker_pow_succ_eq {T : End R M} {c : ℕ} (h : T.IsStableAt c) :
-    LinearMap.ker (T ^ (c + 1)) = LinearMap.ker (T ^ c) := by
-  refine le_antisymm (fun x hx ↦ ?_) (T.iterateKer.monotone (Nat.le_succ c))
-  rw [LinearMap.mem_ker, pow_succ', mul_apply_eq_comp] at hx
-  exact LinearMap.mem_ker.mpr
-    (Submodule.disjoint_def.mp h.isCompl_ker_pow_range_pow.disjoint _
-      (T.iterateKer.monotone h.one_le (by simpa using hx))
-      (LinearMap.mem_range_self (T ^ c) x))
+    LinearMap.ker (T ^ (c + 1)) = LinearMap.ker (T ^ c) :=
+  LinearMap.ker_pow_succ_eq_of_disjoint h.one_le h.isCompl_ker_pow_range_pow.disjoint
 
 /-- If `T` is stable at `c`, the iterate-range chain has stabilized at `c`:
 `LinearMap.range (T ^ (c + 1)) = LinearMap.range (T ^ c)`. -/
 theorem IsStableAt.range_pow_succ_eq {T : End R M} {c : ℕ} (h : T.IsStableAt c) :
-    LinearMap.range (T ^ (c + 1)) = LinearMap.range (T ^ c) := by
-  refine le_antisymm (T.iterateRange.monotone (Nat.le_succ c)) ?_
-  rintro y ⟨x, rfl⟩
-  obtain ⟨z, hz⟩ :=
-    h.bijective_restrict_range_pow.surjective ⟨(T ^ c) x, LinearMap.mem_range_self _ x⟩
-  obtain ⟨w, hw⟩ := z.property
-  refine ⟨w, ?_⟩
-  have hz' : T z.val = (T ^ c) x := congrArg Subtype.val hz
-  rw [pow_succ', mul_apply_eq_comp, hw, hz']
+    LinearMap.range (T ^ (c + 1)) = LinearMap.range (T ^ c) :=
+  LinearMap.range_pow_succ_eq_of_codisjoint h.one_le h.isCompl_ker_pow_range_pow.codisjoint
 
 /-- If `T` is stable at `c`, `LinearMap.ker (T ^ d) = LinearMap.ker (T ^ c)` for every `d ≥ c`. -/
 theorem IsStableAt.ker_pow_eq_of_le {T : End R M} {c d : ℕ} (h : T.IsStableAt c) (hcd : c ≤ d) :
@@ -254,7 +239,7 @@ theorem IsStableAt.mono {T : End R M} {c d : ℕ} (h : T.IsStableAt c) (hcd : c 
     ⟨h.one_le.trans hcd, by
       rw [h.ker_pow_eq_of_le hcd, h.range_pow_eq_of_le hcd]
       exact h.isCompl_ker_pow_range_pow,
-      LinearMap.bijective_restrict_of_eq (h.range_pow_eq_of_le hcd).symm
+      (LinearMap.bijective_restrict_iff_of_eq (h.range_pow_eq_of_le hcd).symm).mp
         h.bijective_restrict_range_pow⟩
 
 /-- If `T` is stable at `c`, the eventual kernel `⨆ n, LinearMap.ker (T ^ n)` equals
@@ -278,30 +263,12 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
 /-- Over a ring, `T` is stable at `c` if and only if `1 ≤ c` and `LinearMap.ker (T ^ c)` and
 `LinearMap.range (T ^ c)` are complementary submodules of `M`. -/
 theorem isStableAt_iff_isCompl_ker_pow_range_pow {T : End R M} {c : ℕ} :
-    T.IsStableAt c ↔ 1 ≤ c ∧ IsCompl (LinearMap.ker (T ^ c)) (LinearMap.range (T ^ c)) := by
-  constructor
-  · exact fun h ↦ ⟨h.one_le, h.isCompl_ker_pow_range_pow⟩
-  · rintro ⟨hc, hcompl⟩
-    refine ⟨hc, LinearMap.range (T ^ c), fun _ hx ↦ T.mapsTo_range_pow c hx, hcompl, ?_⟩
-    constructor
-    · rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-      intro y hy
-      have hTy : T y.val = 0 := congrArg Subtype.val (LinearMap.mem_ker.mp hy)
-      exact Subtype.ext
-        (Submodule.disjoint_def.mp hcompl.disjoint y.val
-          (T.iterateKer.monotone hc (by simpa using hTy)) y.property)
-    · intro y
-      obtain ⟨x, hy⟩ := y.property
-      have hx : x ∈ LinearMap.ker (T ^ c) ⊔ LinearMap.range (T ^ c) := by
-        rw [hcompl.codisjoint.eq_top]
-        exact Submodule.mem_top
-      obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp hx
-      obtain ⟨w, rfl⟩ := hv
-      refine ⟨⟨(T ^ c) ((T ^ (c - 1)) w), LinearMap.mem_range_self _ _⟩, Subtype.ext ?_⟩
-      simp only [LinearMap.coe_restrict_apply, ← hy, map_add, LinearMap.mem_ker.mp hu, zero_add,
-        ← mul_apply_eq_comp, ← pow_succ', ← pow_add]
-      congr 2
-      omega
+    T.IsStableAt c ↔ 1 ≤ c ∧ IsCompl (LinearMap.ker (T ^ c)) (LinearMap.range (T ^ c)) :=
+  ⟨fun h ↦ ⟨h.one_le, h.isCompl_ker_pow_range_pow⟩,
+    fun ⟨hc, hcompl⟩ ↦ ⟨hc, LinearMap.range (T ^ c), fun _ hx ↦ T.mapsTo_range_pow c hx, hcompl,
+      T.bijective_restrict_range_pow_of_stable c
+        (LinearMap.ker_pow_succ_eq_of_disjoint hc hcompl.disjoint)
+        (LinearMap.range_pow_succ_eq_of_codisjoint hc hcompl.codisjoint)⟩⟩
 
 /-- An endomorphism is stable if and only if both its iterate-kernel chain and its iterate-range
 chain stop at some stage `c` (not necessarily positive: if they stop at `0`, they also stop at
@@ -333,7 +300,8 @@ theorem isStable_iff_isCompl_and_isNilpotent_and_bijective {T : End R M} :
   constructor
   · rintro ⟨c, hc⟩
     refine ⟨?_, ?_,
-      LinearMap.bijective_restrict_of_eq hc.iInf_range_pow_eq.symm hc.bijective_restrict_range_pow⟩
+      (LinearMap.bijective_restrict_iff_of_eq hc.iInf_range_pow_eq.symm).mp
+        hc.bijective_restrict_range_pow⟩
     · rw [hc.iSup_ker_pow_eq, hc.iInf_range_pow_eq]
       exact hc.isCompl_ker_pow_range_pow
     · refine ⟨c, ?_⟩

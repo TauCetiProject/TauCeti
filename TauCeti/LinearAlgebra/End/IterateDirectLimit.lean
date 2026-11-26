@@ -35,6 +35,8 @@ limits via `Module.End.iterateDirectLimitMap`.
 * `Module.End.IterateDirectLimit`: the `R`-module direct limit of `M` along powers of `T`.
 * `Module.End.ofIterateDirectLimitStage` and `Module.End.toIterateDirectLimit`: the stage-`i` and
   stage-`0` canonical linear maps `M →ₗ[R] T.IterateDirectLimit`.
+* `Module.End.iterateDirectLimitLift`: the universal property building linear maps out of
+  `T.IterateDirectLimit` from a stagewise compatible family `g (i + 1) (T x) = g i x`.
 * `Module.End.iterateDirectLimitEquiv`: the canonical linear automorphism of `T.IterateDirectLimit`
   induced by `T`.
 * `Module.End.toIterateDirectLimitEquivOfBijective`: the canonical linear isomorphism
@@ -100,6 +102,35 @@ theorem toIterateDirectLimit_def (T : End R M) :
     T.toIterateDirectLimit = T.ofIterateDirectLimitStage 0 :=
   (rfl)
 
+/-- Two linear maps out of `T.IterateDirectLimit` are equal if they agree on every stage
+representative `T.ofIterateDirectLimitStage i x`. -/
+@[ext]
+theorem iterateDirectLimit_hom_ext {N : Type*} [AddCommMonoid N] [Module R N] {T : End R M}
+    {g₁ g₂ : T.IterateDirectLimit →ₗ[R] N}
+    (h : ∀ i x, g₁ (T.ofIterateDirectLimitStage i x) = g₂ (T.ofIterateDirectLimitStage i x)) :
+    g₁ = g₂ :=
+  Module.DirectLimit.hom_ext fun i ↦ LinearMap.ext (h i)
+
+/-- Universal property of `T.IterateDirectLimit`: a family of linear maps `g : ℕ → M →ₗ[R] N`
+satisfying `g (i + 1) (T x) = g i x` lifts to `T.IterateDirectLimit →ₗ[R] N`. -/
+noncomputable def iterateDirectLimitLift {N : Type*} [AddCommMonoid N] [Module R N] (T : End R M)
+    (g : ℕ → M →ₗ[R] N) (hg : ∀ i x, g (i + 1) (T x) = g i x) :
+    T.IterateDirectLimit →ₗ[R] N :=
+  Module.DirectLimit.lift R ℕ (fun _ ↦ M) T.iterateDirectSystem g fun i j hij x ↦ by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hij
+    rw [iterateDirectSystem_eq, Nat.add_sub_cancel_left]
+    clear hij
+    induction k with
+    | zero => simp
+    | succ k ih => rw [← add_assoc, pow_succ', mul_apply_eq_comp, hg (i + k), ih]
+
+/-- Evaluating `iterateDirectLimitLift` on a stage-`i` representative applies `g i`. -/
+@[simp]
+theorem iterateDirectLimitLift_ofIterateDirectLimitStage {N : Type*} [AddCommMonoid N] [Module R N]
+    (T : End R M) (g : ℕ → M →ₗ[R] N) (hg : ∀ i x, g (i + 1) (T x) = g i x) (i : ℕ) (x : M) :
+    T.iterateDirectLimitLift g hg (T.ofIterateDirectLimitStage i x) = g i x :=
+  Module.DirectLimit.lift_of _ _ _
+
 /-- Compatibility of `ofIterateDirectLimitStage` with the transition map `T ^ (j - i)`. -/
 @[simp]
 theorem ofIterateDirectLimitStage_pow_sub (T : End R M) {i j : ℕ} (hij : i ≤ j) (x : M) :
@@ -131,16 +162,34 @@ theorem exists_ofIterateDirectLimitStage (T : End R M) (z : T.IterateDirectLimit
     ∃ i x, T.ofIterateDirectLimitStage i x = z :=
   Module.DirectLimit.exists_of z
 
+/-- Stage representatives `T.ofIterateDirectLimitStage i x` and `T.ofIterateDirectLimitStage j y`
+are equal in `T.IterateDirectLimit` if and only if they agree after advancing to a common higher
+stage `i + j + k`. -/
+theorem ofIterateDirectLimitStage_eq_ofIterateDirectLimitStage_iff {T : End R M} {i j : ℕ}
+    {x y : M} :
+    T.ofIterateDirectLimitStage i x = T.ofIterateDirectLimitStage j y ↔
+      ∃ k, (T ^ (k + j)) x = (T ^ (k + i)) y := by
+  constructor
+  · intro h
+    have hcomm : T.ofIterateDirectLimitStage (i + j) ((T ^ j) x) =
+        T.ofIterateDirectLimitStage (i + j) ((T ^ i) y) := by
+      rw [T.ofIterateDirectLimitStage_add_pow i j x, h, add_comm,
+        T.ofIterateDirectLimitStage_add_pow j i y]
+    obtain ⟨m, _hm, hEq⟩ := Module.DirectLimit.exists_eq_of_of_eq hcomm
+    refine ⟨m - (i + j), ?_⟩
+    simpa only [iterateDirectSystem_eq, ← mul_apply_eq_comp, ← pow_add] using hEq
+  · rintro ⟨k, hk⟩
+    have hstage : i + (k + j) = j + (k + i) := by omega
+    rw [← T.ofIterateDirectLimitStage_add_pow i (k + j) x,
+      ← T.ofIterateDirectLimitStage_add_pow j (k + i) y, hk, hstage]
+
 /-- A stage representative vanishes in `T.IterateDirectLimit` if and only if some power of `T`
 annihilates it. -/
 theorem ofIterateDirectLimitStage_eq_zero_iff {T : End R M} {i : ℕ} {x : M} :
     T.ofIterateDirectLimitStage i x = 0 ↔ ∃ k, (T ^ k) x = 0 := by
-  constructor
-  · intro h
-    obtain ⟨j, _hij, hj⟩ := Module.DirectLimit.of.zero_exact h
-    exact ⟨j - i, by simpa only [iterateDirectSystem_eq] using hj⟩
-  · rintro ⟨k, hk⟩
-    rw [← T.ofIterateDirectLimitStage_add_pow i k x, hk, map_zero]
+  rw [← map_zero (T.ofIterateDirectLimitStage 0),
+    ofIterateDirectLimitStage_eq_ofIterateDirectLimitStage_iff]
+  simp
 
 /-- The kernel of every stage map into `T.IterateDirectLimit` is the ascending union of the kernels
 of the powers of `T`. -/
@@ -185,26 +234,36 @@ theorem iterateDirectLimitMap_toIterateDirectLimit {N : Type*} [AddCommMonoid N]
     iterateDirectLimitMap f hf (T_M.toIterateDirectLimit x) = T_N.toIterateDirectLimit (f x) :=
   iterateDirectLimitMap_ofIterateDirectLimitStage f hf 0 x
 
+/-- `iterateDirectLimitMap` carries the identity linear map to the identity on
+`T.IterateDirectLimit`. -/
+@[simp]
+theorem iterateDirectLimitMap_id {T : End R M} (hf : LinearMap.id ∘ₗ T = T ∘ₗ LinearMap.id) :
+    iterateDirectLimitMap (LinearMap.id : M →ₗ[R] M) hf = LinearMap.id := by
+  ext i x
+  simp
+
+/-- `iterateDirectLimitMap` respects composition of intertwining linear maps. -/
+theorem iterateDirectLimitMap_comp {N P : Type*} [AddCommMonoid N] [AddCommMonoid P]
+    [Module R N] [Module R P] {T_M : End R M} {T_N : End R N} {T_P : End R P}
+    (f : M →ₗ[R] N) (hf : f ∘ₗ T_M = T_N ∘ₗ f)
+    (g : N →ₗ[R] P) (hg : g ∘ₗ T_N = T_P ∘ₗ g)
+    (hgf : (g ∘ₗ f) ∘ₗ T_M = T_P ∘ₗ (g ∘ₗ f) := by
+      rw [LinearMap.comp_assoc, hf, ← LinearMap.comp_assoc, hg, LinearMap.comp_assoc]) :
+    iterateDirectLimitMap (g ∘ₗ f) hgf =
+      iterateDirectLimitMap g hg ∘ₗ iterateDirectLimitMap f hf := by
+  ext i x
+  simp
+
 /-- The canonical linear automorphism of `T.IterateDirectLimit` induced by `T`: it acts as `T` at
 each stage, with inverse shifting stage `i` to stage `i + 1`. -/
 noncomputable def iterateDirectLimitEquiv (T : End R M) :
     T.IterateDirectLimit ≃ₗ[R] T.IterateDirectLimit :=
   LinearEquiv.ofLinearMap
     (iterateDirectLimitMap T rfl)
-    (Module.DirectLimit.lift R ℕ (fun _ ↦ M) T.iterateDirectSystem
-      (fun i ↦ T.ofIterateDirectLimitStage (i + 1)) fun i j hij x ↦ by
-        have hsub : j - i = (j + 1) - (i + 1) := by omega
-        rw [iterateDirectSystem_eq, hsub]
-        exact T.ofIterateDirectLimitStage_pow_sub (Nat.add_le_add_right hij 1) x)
-    (Module.DirectLimit.hom_ext fun i ↦ LinearMap.ext fun x ↦ by
-      rw [LinearMap.id_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-        Module.DirectLimit.lift_of, iterateDirectLimitMap_ofIterateDirectLimitStage,
-        ofIterateDirectLimitStage_succ_apply, ofIterateDirectLimitStage_def])
-    (Module.DirectLimit.hom_ext fun i ↦ LinearMap.ext fun x ↦ by
-      rw [LinearMap.id_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-        ← ofIterateDirectLimitStage_def, iterateDirectLimitMap_ofIterateDirectLimitStage,
-        ofIterateDirectLimitStage_def, Module.DirectLimit.lift_of,
-        ofIterateDirectLimitStage_succ_apply, ofIterateDirectLimitStage_def])
+    (T.iterateDirectLimitLift (fun i ↦ T.ofIterateDirectLimitStage (i + 1))
+      fun i x ↦ T.ofIterateDirectLimitStage_succ_apply (i + 1) x)
+    (by ext i x; simp)
+    (by ext i x; simp)
 
 /-- `iterateDirectLimitEquiv` acts on stage `i` as `T`. -/
 @[simp]
@@ -226,7 +285,7 @@ theorem iterateDirectLimitEquiv_symm_ofIterateDirectLimitStage (T : End R M) (i 
     T.iterateDirectLimitEquiv.symm (T.ofIterateDirectLimitStage i x) =
       T.ofIterateDirectLimitStage (i + 1) x := by
   rw [iterateDirectLimitEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
-    ofIterateDirectLimitStage_def, Module.DirectLimit.lift_of]
+    iterateDirectLimitLift_ofIterateDirectLimitStage]
 
 /-- `T.IterateDirectLimit` is subsingleton if and only if every vector of `M` is annihilated by
 some power of `T`. -/
@@ -263,8 +322,9 @@ theorem injective_toIterateDirectLimit_iff {T : End R M} :
     rw [toIterateDirectLimit_def, ← T.ofIterateDirectLimitStage_succ_apply 0 x,
       ← T.ofIterateDirectLimitStage_succ_apply 0 y, hxy]
   · intro hinj x y hxy
-    obtain ⟨j, _, hj⟩ := Module.DirectLimit.exists_eq_of_of_eq hxy
-    exact hinj.iterate j (by simpa [iterateDirectSystem_eq, pow_apply_eq_iterate] using hj)
+    rw [toIterateDirectLimit_def, ofIterateDirectLimitStage_eq_ofIterateDirectLimitStage_iff] at hxy
+    obtain ⟨k, hk⟩ := hxy
+    exact hinj.iterate k (by simpa [pow_apply_eq_iterate] using hk)
 
 /-- The canonical map `M →ₗ[R] T.IterateDirectLimit` is bijective if and only if `T` is
 bijective. -/
