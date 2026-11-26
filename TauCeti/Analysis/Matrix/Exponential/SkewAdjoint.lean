@@ -128,9 +128,7 @@ theorem _root_.Matrix.UnitaryGroup.contDiff_conjStarAlgAut_expStrictUpper
   have hF : ContDiff ℝ k (fun x ↦ (U : Matrix (Fin n) (Fin n) 𝕜) *
       (expStrictUpper (a x) : Matrix (Fin n) (Fin n) 𝕜)) :=
     contDiff_const.mul (contDiff_expStrictUpper.comp ha)
-  have hS := (starL' ℝ : Matrix (Fin n) (Fin n) 𝕜 ≃L[ℝ] _).toContinuousLinearMap.contDiff.comp hF
-  simpa only [Unitary.conjStarAlgAut_apply, Submonoid.coe_mul, Function.comp_apply,
-    ContinuousLinearEquiv.coe_coe, starL'_apply] using (hF.mul hD).mul hS
+  simpa only [Unitary.conjStarAlgAut_apply, Submonoid.coe_mul] using hF.mul_mul_star hD
 
 /-- The underlying matrix of the relative frame is smooth in the target angle. -/
 theorem contDiff_relativeFrame (a : FinStrictUpper n → 𝕜) {k : WithTop ℕ∞} :

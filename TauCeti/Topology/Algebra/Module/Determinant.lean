@@ -72,12 +72,6 @@ theorem det_id : (ContinuousLinearMap.id R M).det = 1 :=
 theorem det_comp (f g : M →L[R] M) : (f ∘L g).det = f.det * g.det :=
   LinearMap.det_comp (f : M →ₗ[R] M) g
 
-/-- The determinant of an involutive continuous linear endomorphism squares to one. -/
-theorem det_sq_eq_one_of_involutive (f : M →L[R] M) (h : Function.Involutive f) :
-    f.det ^ 2 = 1 := by
-  have hcomp : f.comp f = ContinuousLinearMap.id R M := ContinuousLinearMap.ext h
-  rw [sq, ← det_comp, hcomp, det_id]
-
 /-- Multiplying a map by a scalar `c` multiplies its determinant by `c ^ finrank R M`. -/
 @[simp]
 theorem det_smul [ContinuousConstSMul R M] [Module.Free R M] (c : R) (f : M →L[R] M) :

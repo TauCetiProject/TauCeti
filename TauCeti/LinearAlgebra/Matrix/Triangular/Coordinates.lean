@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
-public import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.LinearAlgebra.Pi
 
@@ -27,59 +26,62 @@ namespace TauCeti
 
 open Matrix
 
+/-- A strict lower entry indexed by its transposed position. -/
+abbrev SchurLowerIndex (ι : Type*) [LT ι] := {ij : ι × ι // ij.1 < ij.2}
+
 /-- The upper triangular entries, including the diagonal, and the strict lower entries,
 with the latter indexed by their transposed positions. -/
-abbrev SchurCoordinates (n : ℕ) (R : Type*) :=
-  ({ij : Fin n × Fin n // ij.1 ≤ ij.2} → R) × (FinStrictUpper n → R)
+abbrev SchurCoordinates (ι : Type*) [LE ι] [LT ι] (R : Type*) :=
+  ({ij : ι × ι // ij.1 ≤ ij.2} → R) × (SchurLowerIndex ι → R)
 
-variable {n : ℕ} {R : Type*} [Semiring R]
+variable {ι : Type*} [LinearOrder ι] {R : Type*} [Semiring R]
 
 /-- Transpose a strict upper position to index the complementary strict lower entries. -/
-def schurLowerIndexEquiv (n : ℕ) :
-    FinStrictUpper n ≃ {ij : Fin n × Fin n // ¬ij.1 ≤ ij.2} :=
+def schurLowerIndexEquiv (ι : Type*) [LinearOrder ι] :
+    SchurLowerIndex ι ≃ {ij : ι × ι // ¬ij.1 ≤ ij.2} :=
   (Equiv.prodComm _ _).subtypeEquiv fun _ ↦ not_le.symm
 
 /-- The lower index has the transposed pair as its underlying value. -/
-@[simp] theorem schurLowerIndexEquiv_apply_val (ij : FinStrictUpper n) :
-    (schurLowerIndexEquiv n ij).val = (ij.val.2, ij.val.1) := (rfl)
+@[simp] theorem schurLowerIndexEquiv_apply_val (ij : SchurLowerIndex ι) :
+    (schurLowerIndexEquiv ι ij).val = (ij.val.2, ij.val.1) := (rfl)
 
 /-- Assemble a matrix from the two parts of its Schur coordinates. -/
-def schurMatrixEquiv : SchurCoordinates n R ≃ₗ[R] Matrix (Fin n) (Fin n) R :=
+def schurMatrixEquiv : SchurCoordinates ι R ≃ₗ[R] Matrix ι ι R :=
   ((Matrix.ofLinearEquiv R).symm.trans <|
-    (LinearEquiv.curry R R (Fin n) (Fin n)).symm.trans <|
-      (LinearEquiv.piEquivPiSubtypeProd R (fun ij : Fin n × Fin n ↦ ij.1 ≤ ij.2)
+    (LinearEquiv.curry R R ι ι).symm.trans <|
+      (LinearEquiv.piEquivPiSubtypeProd R (fun ij : ι × ι ↦ ij.1 ≤ ij.2)
         (fun _ ↦ R)).trans <|
         (LinearEquiv.refl R _).prodCongr
-          (LinearEquiv.funCongrLeft R R (schurLowerIndexEquiv n))).symm
+          (LinearEquiv.funCongrLeft R R (schurLowerIndexEquiv ι))).symm
 
 /-- The first coordinate reads the upper triangular entries. -/
-@[simp] theorem _root_.Matrix.schurMatrixEquiv_symm_fst (A : Matrix (Fin n) (Fin n) R)
-    (ij : {ij : Fin n × Fin n // ij.1 ≤ ij.2}) :
+@[simp] theorem _root_.Matrix.schurMatrixEquiv_symm_fst (A : Matrix ι ι R)
+    (ij : {ij : ι × ι // ij.1 ≤ ij.2}) :
     (schurMatrixEquiv.symm A).1 ij = A ij.val.1 ij.val.2 := by
   simp [schurMatrixEquiv, Function.uncurry]
 
 /-- The second coordinate reads the strict lower entries. -/
-@[simp] theorem _root_.Matrix.schurMatrixEquiv_symm_snd (A : Matrix (Fin n) (Fin n) R)
-    (ij : FinStrictUpper n) :
+@[simp] theorem _root_.Matrix.schurMatrixEquiv_symm_snd (A : Matrix ι ι R)
+    (ij : SchurLowerIndex ι) :
     (schurMatrixEquiv.symm A).2 ij = A ij.val.2 ij.val.1 := by
   simp [schurMatrixEquiv, Function.uncurry]
 
 /-- At an upper triangular position the assembled matrix reads the first coordinate. -/
-@[simp] theorem schurMatrixEquiv_apply_of_le (x : SchurCoordinates n R) {i j : Fin n}
+@[simp] theorem schurMatrixEquiv_apply_of_le (x : SchurCoordinates ι R) {i j : ι}
     (h : i ≤ j) : schurMatrixEquiv x i j = x.1 ⟨(i, j), h⟩ := by
   have he := schurMatrixEquiv_symm_fst (schurMatrixEquiv x) ⟨(i, j), h⟩
   rw [LinearEquiv.symm_apply_apply] at he
   exact he.symm
 
 /-- At a strict lower position the assembled matrix reads the second coordinate. -/
-@[simp] theorem schurMatrixEquiv_apply_of_gt (x : SchurCoordinates n R) {i j : Fin n}
+@[simp] theorem schurMatrixEquiv_apply_of_gt (x : SchurCoordinates ι R) {i j : ι}
     (h : j < i) : schurMatrixEquiv x i j = x.2 ⟨(j, i), h⟩ := by
   have he := schurMatrixEquiv_symm_snd (schurMatrixEquiv x) ⟨(j, i), h⟩
   rw [LinearEquiv.symm_apply_apply] at he
   exact he.symm
 
 /-- The assembled matrix is upper triangular exactly when its strict lower coordinates vanish. -/
-@[simp] theorem isUpperTriangular_schurMatrixEquiv_iff (x : SchurCoordinates n R) :
+@[simp] theorem isUpperTriangular_schurMatrixEquiv_iff (x : SchurCoordinates ι R) :
     (schurMatrixEquiv x).IsUpperTriangular ↔ x.2 = 0 := by
   constructor
   · intro hx
@@ -90,11 +92,11 @@ def schurMatrixEquiv : SchurCoordinates n R ≃ₗ[R] Matrix (Fin n) (Fin n) R :
     rw [schurMatrixEquiv_apply_of_gt x (by simpa only [id_eq] using h), hx]
     rfl
 
-private theorem schurMatrixEquiv_single (ij : FinStrictUpper n) :
+private theorem schurMatrixEquiv_single (ij : SchurLowerIndex ι) :
     schurMatrixEquiv (R := R) (0, Pi.single ij 1) = Matrix.single ij.val.2 ij.val.1 1 := by
   ext i j
   by_cases h : j < i
-  · have he : (⟨(j, i), h⟩ : FinStrictUpper n) = ij ↔
+  · have he : (⟨(j, i), h⟩ : SchurLowerIndex ι) = ij ↔
         ij.val.2 = i ∧ ij.val.1 = j := by
       rw [eq_comm, Subtype.ext_iff]
       exact Prod.ext_iff.trans and_comm
@@ -107,26 +109,28 @@ private theorem schurMatrixEquiv_single (ij : FinStrictUpper n) :
 
 section CommRing
 
-variable {S : Type*} [CommRing S]
+variable [Fintype ι] {S : Type*} [CommRing S]
 
-/-- Read the strict lower entries of the commutator with an upper triangular matrix.
-The input specifies the strict lower part of the first factor. -/
-def _root_.Matrix.schurLowerCommutator (T : Matrix (Fin n) (Fin n) S) :
-    (FinStrictUpper n → S) →ₗ[S] (FinStrictUpper n → S) :=
+/-- Fill the upper entries, including the diagonal, of `K` with zeros and read the strict lower
+entries of `K * T - T * K`. When `T` is upper triangular, the result is independent of the upper
+entries of `K` by `Matrix.IsUpperTriangular.schurLowerCommutator_eq`. -/
+def _root_.Matrix.schurLowerCommutator (T : Matrix ι ι S) :
+    (SchurLowerIndex ι → S) →ₗ[S] (SchurLowerIndex ι → S) :=
   let L := schurMatrixEquiv.toLinearMap.comp (LinearMap.inr S _ _)
   let P := (LinearMap.snd S _ _).comp schurMatrixEquiv.symm.toLinearMap
   P.comp (((LinearMap.mulRight S T).comp L) - ((LinearMap.mulLeft S T).comp L))
 
-private theorem schurLowerCommutator_apply (T : Matrix (Fin n) (Fin n) S)
-    (x : FinStrictUpper n → S) (ij : FinStrictUpper n) :
+/-- Evaluate the strict-lower commutator at the entry indexed by the transposed position `ij`. -/
+theorem _root_.Matrix.schurLowerCommutator_apply (T : Matrix ι ι S)
+    (x : SchurLowerIndex ι → S) (ij : SchurLowerIndex ι) :
     schurLowerCommutator T x ij =
       (schurMatrixEquiv (0, x) * T - T * schurMatrixEquiv (0, x)) ij.val.2 ij.val.1 := by
   simp only [schurLowerCommutator, LinearMap.comp_apply, LinearMap.snd_apply,
     LinearMap.sub_apply, LinearEquiv.coe_coe, LinearMap.inr_apply, LinearMap.mulRight_apply,
     LinearMap.mulLeft_apply, schurMatrixEquiv_symm_snd]
 
-private theorem toMatrix'_schurLowerCommutator (T : Matrix (Fin n) (Fin n) S)
-    (ij kl : FinStrictUpper n) :
+private theorem toMatrix'_schurLowerCommutator (T : Matrix ι ι S)
+    (ij kl : SchurLowerIndex ι) :
     LinearMap.toMatrix' (schurLowerCommutator T) ij kl =
       (if ij.val.2 = kl.val.2 then T kl.val.1 ij.val.1 else 0) -
         (if ij.val.1 = kl.val.1 then T ij.val.2 kl.val.2 else 0) := by
@@ -149,11 +153,11 @@ private theorem toMatrix'_schurLowerCommutator (T : Matrix (Fin n) (Fin n) S)
 /-- The determinant of the strict-lower commutator with an upper triangular matrix is
 the product of the differences of its diagonal entries. -/
 theorem _root_.Matrix.IsUpperTriangular.det_schurLowerCommutator
-    {T : Matrix (Fin n) (Fin n) S} (hT : T.IsUpperTriangular) :
-    (schurLowerCommutator T).det = ∏ ij : FinStrictUpper n,
+    {T : Matrix ι ι S} (hT : T.IsUpperTriangular) :
+    (schurLowerCommutator T).det = ∏ ij : SchurLowerIndex ι,
       (T ij.val.1 ij.val.1 - T ij.val.2 ij.val.2) := by
   -- Order lower positions by row and, within each row, by decreasing column.
-  let rank (ij : FinStrictUpper n) : Fin n ×ₗ (Fin n)ᵒᵈ :=
+  let rank (ij : SchurLowerIndex ι) : ι ×ₗ ιᵒᵈ :=
     toLex (ij.val.2, OrderDual.toDual ij.val.1)
   have hrank : Function.Injective rank := by
     intro ij kl h
@@ -176,7 +180,7 @@ theorem _root_.Matrix.IsUpperTriangular.det_schurLowerCommutator
 /-- The strict lower entries of the commutator with an upper triangular matrix depend
 only on the strict lower entries of its first factor. -/
 theorem _root_.Matrix.IsUpperTriangular.schurLowerCommutator_eq
-    {T K : Matrix (Fin n) (Fin n) S} (hT : T.IsUpperTriangular) (ij : FinStrictUpper n) :
+    {T K : Matrix ι ι S} (hT : T.IsUpperTriangular) (ij : SchurLowerIndex ι) :
     schurLowerCommutator T (schurMatrixEquiv.symm K).2 ij =
       (K * T - T * K) ij.val.2 ij.val.1 := by
   let S := schurMatrixEquiv (0, (schurMatrixEquiv.symm K).2)

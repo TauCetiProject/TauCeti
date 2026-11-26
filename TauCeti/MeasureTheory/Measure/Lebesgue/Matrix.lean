@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.MeasurableSpace
-public import TauCeti.LinearAlgebra.Matrix.Triangular.Coordinates
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 import TauCeti.MeasureTheory.Constructions.Pi
@@ -80,65 +79,34 @@ end TauCeti
 
 namespace TauCeti
 
-variable {n : ℕ} {R : Type*}
-
-/-- Assemble a matrix from its upper triangular and strict lower entries as a measurable
-equivalence. -/
-def schurMatrixMeasurableEquiv [MeasurableSpace R] :
-    SchurCoordinates n R ≃ᵐ Matrix (Fin n) (Fin n) R :=
-  ((Matrix.ofMeasurableEquiv (Fin n) (Fin n) R).symm.trans <|
-    (MeasurableEquiv.curry (Fin n) (Fin n) R).symm.trans <|
-      (MeasurableEquiv.piEquivPiSubtypeProd (fun _ ↦ R)
-        (fun ij : Fin n × Fin n ↦ ij.1 ≤ ij.2)).trans <|
-        (MeasurableEquiv.refl _).prodCongr
-          (MeasurableEquiv.piCongrLeft (fun _ ↦ R) (schurLowerIndexEquiv n)).symm).symm
-
-/-- Reading the entries with the measurable equivalence agrees with the linear split. -/
-private theorem schurMatrixMeasurableEquiv_symm_apply [Semiring R] [MeasurableSpace R]
-    (A : Matrix (Fin n) (Fin n) R) :
-    schurMatrixMeasurableEquiv.symm A = schurMatrixEquiv.symm A := by
-  apply Prod.ext <;> funext ij
-  · -- Curry and split read the entry indexed by the same upper position.
-    exact (Matrix.schurMatrixEquiv_symm_fst A ij).symm
-  · rw [Matrix.schurMatrixEquiv_symm_snd]
-    let e := MeasurableEquiv.piCongrLeft (fun _ ↦ R) (schurLowerIndexEquiv n)
-    let f : {ij : Fin n × Fin n // ¬ij.1 ≤ ij.2} → R := fun k ↦ A k.val.1 k.val.2
-    -- The lower projection alone applies the index permutation to the flattened entries.
-    change e.symm f ij = _
-    have h : e (e.symm f) (schurLowerIndexEquiv n ij) = e.symm f ij :=
-      MeasurableEquiv.piCongrLeft_apply_apply (β := fun _ ↦ R)
-        (schurLowerIndexEquiv n) (e.symm f) ij
-    rw [MeasurableEquiv.apply_symm_apply] at h
-    simpa only [f, schurLowerIndexEquiv_apply_val] using h.symm
-
-/-- The measurable and linear assembly maps agree pointwise. -/
-theorem schurMatrixMeasurableEquiv_apply [Semiring R] [MeasurableSpace R]
-    (x : SchurCoordinates n R) :
-    schurMatrixMeasurableEquiv x = schurMatrixEquiv x := by
-  apply schurMatrixMeasurableEquiv.symm.injective
-  rw [MeasurableEquiv.symm_apply_apply, schurMatrixMeasurableEquiv_symm_apply,
-    LinearEquiv.symm_apply_apply]
+variable {ι R : Type*} [Fintype ι] [LinearOrder ι]
 
 /-- Assembling a matrix from its upper and strict lower entries preserves product volume. -/
 theorem measurePreserving_schurMatrixMeasurableEquiv [MeasureSpace R]
     [SigmaFinite (volume : Measure R)] :
-    MeasurePreserving (schurMatrixMeasurableEquiv (n := n) (R := R)) volume volume := by
-  let p (ij : Fin n × Fin n) := ij.1 ≤ ij.2
-  have hread := (Matrix.volume_preserving_ofMeasurableEquiv (Fin n) (Fin n) R).symm
-    (Matrix.ofMeasurableEquiv (Fin n) (Fin n) R)
+    MeasurePreserving (schurMatrixMeasurableEquiv (ι := ι) (R := R)) volume volume := by
+  let p (ij : ι × ι) := ij.1 ≤ ij.2
+  have hread := (Matrix.volume_preserving_ofMeasurableEquiv (ι) (ι) R).symm
+    (Matrix.ofMeasurableEquiv (ι) (ι) R)
   have hflat := (measurePreserving_curry
-    (fun _ _ : Fin n ↦ (volume : Measure R))).symm (MeasurableEquiv.curry (Fin n) (Fin n) R)
-  have hsplit := volume_preserving_piEquivPiSubtypeProd (fun _ : Fin n × Fin n ↦ R) p
+    (fun _ _ : ι ↦ (volume : Measure R))).symm (MeasurableEquiv.curry (ι) (ι) R)
+  have hsplit := volume_preserving_piEquivPiSubtypeProd (fun _ : ι × ι ↦ R) p
   have hswap := (volume_measurePreserving_piCongrLeft (fun _ : {ij // ¬p ij} ↦ R)
-    (schurLowerIndexEquiv n)).symm (MeasurableEquiv.piCongrLeft _ (schurLowerIndexEquiv n))
-  exact (((MeasurePreserving.id (volume : Measure ({ij // p ij} → R))).prod hswap).comp
-    (hsplit.comp (hflat.comp hread))).symm schurMatrixMeasurableEquiv.symm
+    (schurLowerIndexEquiv ι)).symm (MeasurableEquiv.piCongrLeft _ (schurLowerIndexEquiv ι))
+  have hsplitVolume := ((MeasurePreserving.id (volume : Measure ({ij // p ij} → R))).prod
+    hswap).comp (hsplit.comp (hflat.comp hread))
+  refine (hsplitVolume.congr schurMatrixMeasurableEquiv.symm.measurable
+    (ae_of_all _ fun A ↦ ?_)).symm schurMatrixMeasurableEquiv.symm
+  apply Prod.ext <;> funext ij
+  · simp [Function.comp_apply, MeasurableEquiv.coe_curry_symm, Function.uncurry]
+  · simp [Function.comp_apply, MeasurableEquiv.piCongrLeft, MeasurableEquiv.coe_curry_symm,
+      Function.uncurry]
 
 /-- Linear assembly of a matrix from its upper and strict lower entries preserves product volume. -/
 theorem measurePreserving_schurMatrixEquiv [Semiring R] [MeasureSpace R]
     [SigmaFinite (volume : Measure R)] :
-    MeasurePreserving (schurMatrixEquiv (n := n) (R := R)) volume volume := by
-  have h : (⇑(schurMatrixMeasurableEquiv (n := n) (R := R))) = schurMatrixEquiv :=
+    MeasurePreserving (schurMatrixEquiv (ι := ι) (R := R)) volume volume := by
+  have h : (⇑(schurMatrixMeasurableEquiv (ι := ι) (R := R))) = schurMatrixEquiv :=
     funext schurMatrixMeasurableEquiv_apply
   rw [← h]
   exact measurePreserving_schurMatrixMeasurableEquiv
