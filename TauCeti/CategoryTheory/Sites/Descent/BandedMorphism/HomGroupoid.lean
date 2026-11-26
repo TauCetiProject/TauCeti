@@ -33,8 +33,8 @@ In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 * `HomCategory`: the full subcategory of band-preserving transformations, with `HomCategory.mk`,
   `HomCategory.homMk` and `hom_ext`.
 * `homIso`, `homIso_hom`, `homIso_inv_app`, `hom_homIso_inv`, `homIso_inv_hom`, `homIso_id`,
-  `homIso_comp`, `isGroupoid_homCategory`, `groupoid`, `groupoid_inv`, `groupoid_comp_inv`,
-  `groupoid_inv_comp`.
+  `homIso_comp`, `hom_isIso`, `isGroupoid_homCategory`, `groupoid`, `groupoid_inv`,
+  `groupoid_comp_inv`, `groupoid_inv_comp`.
 * `componentIso`, `componentIso_hom`, `componentIso_id`, `componentIso_comp`,
   `componentIso_homIso_inv`.
 
@@ -162,8 +162,12 @@ theorem homIso_comp {X Y Z : HomCategory bF bG} (m : X ⟶ Y) (n : Y ⟶ Z) :
     homIso (m ≫ n) = homIso m ≪≫ homIso n :=
   Iso.ext rfl
 
+/-- Every arrow of `HomCategory` is an isomorphism. -/
+theorem hom_isIso {X Y : HomCategory bF bG} (m : X ⟶ Y) : IsIso m :=
+  homIso_hom m ▸ (homIso m).isIso_hom
+
 instance isGroupoid_homCategory : IsGroupoid (HomCategory bF bG) where
-  all_isIso m := homIso_hom m ▸ (homIso m).isIso_hom
+  all_isIso := hom_isIso
 
 variable (bF bG) in
 /-- **The groupoid of band-preserving transformations.** -/
