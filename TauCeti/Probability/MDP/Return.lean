@@ -156,7 +156,7 @@ theorem abs_finitePathReturn_le (γ : ℝ≥0) (N : ℕ) {g : S → ℝ} {C : �
 variable [MeasurableSpace S] [MeasurableSpace A] [Countable S] [MeasurableSingletonClass S]
   [Countable A] [MeasurableSingletonClass A]
 
-/-- The discounted reward at time `n` is a measurable function of the path. -/
+/-- The reward at time `n` is a measurable function of the path. -/
 private theorem measurable_reward_eval (n : ℕ) :
     Measurable fun ω : ℕ → S × A ↦ M.reward (ω n).1 (ω n).2 :=
   (measurable_of_countable fun sa : S × A ↦ M.reward sa.1 sa.2).comp (measurable_pi_apply n)
