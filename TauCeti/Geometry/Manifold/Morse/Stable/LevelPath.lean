@@ -89,6 +89,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `continuous_morseLevelPoint`: for a fixed record, it depends continuously on the level.
 * `morseLevelPoint_eqOn_Icc`: records whose points agree on levels dense in an interval agree on
   its closure.
+* `mem_morseBrokenTrajectoryRecords_morseLevelPoint`, `morseLevelPoint_morseLevelPoint`: the
+  points of a recorded broken trajectory on other levels, avoiding the critical values, record the
+  same broken trajectory.
 * `morseLevelPath_apply`, `length_morseLevelPath`, `source_morseLevelPath`,
   `target_morseLevelPath`: the Moore path of a record.
 * `morseLevelPoint_concatLevelRecords_of_le`, `morseLevelPoint_concatLevelRecords_of_ge`: the
@@ -653,6 +656,48 @@ theorem morseLevelPoint_eqOn_Icc {ι' : Type*} {p' r' : M} {c' : ι' → ℝ} {w
   fun _ hx ↦ h.closure (hX.continuous_morseLevelPoint hf hdense hw)
     (hX.continuous_morseLevelPoint hf hdense' hw')
     (closure_minimal hs isClosed_closure (closure_Ioo hab.ne ▸ hx))
+
+/-- **Recording a broken trajectory on other levels.** Let `w` record a broken trajectory from `p`
+to `r` on levels of `c` dense between `f r` and `f p`. Its points on levels `c' i'` between `f r`
+and `f p` that are not the level of a critical point record the same broken trajectory on the
+levels of `c'`. -/
+theorem mem_morseBrokenTrajectoryRecords_morseLevelPoint {ι' : Type*} {c' : ι' → ℝ}
+    (hf : IsMorse 𝓘(ℝ, E) f) (hdense : Ioo (f r) (f p) ⊆ closure (range c))
+    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) (hc' : ∀ i', c' i' ∈ Icc (f r) (f p))
+    (hcrit : ∀ i' m, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f m = 0 → c' i' ≠ f m) :
+    (fun i' ↦ hX.morseLevelPoint p r c w (c' i')) ∈ hX.morseBrokenTrajectoryRecords p r c' := by
+  obtain ⟨k, x, z, hx0, hxk, hxc, hxne, hz, hrec⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
+  refine hX.mem_morseBrokenTrajectoryRecords.2 ⟨k, x, z, hx0, hxk, hxc, hxne, hz, fun i' ↦ ?_⟩
+  obtain ⟨m, hm, hfm⟩ := exists_onChain hz (a := c' i') (by rw [hx0, hxk]; exact hc' i')
+  rw [← hfm, hX.morseLevelPoint_eq hf hdense hx0 hxk hxc hxne hz hrec hm]
+  -- The point on the level `c' i'` is not a critical point of the chain, so it lies on an orbit.
+  refine ⟨rfl, ?_⟩
+  rcases hm with ⟨l, rfl⟩ | hm
+  · exact absurd hfm.symm (hcrit i' _ (hxc l))
+  · exact hm
+
+/-- **Recording on other levels keeps the broken trajectory**: when the levels of `c` and of `c'`
+are both dense between `f r` and `f p`, the broken trajectory recorded by `w` on the levels of `c`
+and the one it records on the levels of `c'`
+(`TauCeti.IsAdaptedPseudoGradient.mem_morseBrokenTrajectoryRecords_morseLevelPoint`) have the
+same point on every level. -/
+theorem morseLevelPoint_morseLevelPoint {ι' : Type*} {c' : ι' → ℝ} (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : Ioo (f r) (f p) ⊆ closure (range c))
+    (hdense' : Ioo (f r) (f p) ⊆ closure (range c'))
+    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) (hc' : ∀ i', c' i' ∈ Icc (f r) (f p))
+    (hcrit : ∀ i' m, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f m = 0 → c' i' ≠ f m) (a : ℝ) :
+    hX.morseLevelPoint p r c' (fun i' ↦ hX.morseLevelPoint p r c w (c' i')) a =
+      hX.morseLevelPoint p r c w a := by
+  have hw' := hX.mem_morseBrokenTrajectoryRecords_morseLevelPoint hf hdense hw hc' hcrit
+  by_cases hpa : f p ≤ a
+  · rw [morseLevelPoint_of_apply_le hpa, morseLevelPoint_of_apply_le hpa]
+  by_cases har : a ≤ f r
+  · rw [hX.morseLevelPoint_of_le_apply hw' har, hX.morseLevelPoint_of_le_apply hw har]
+  push Not at hpa har
+  -- Between the levels of the ends, both agree on the dense levels of `c'`, hence everywhere.
+  exact hX.morseLevelPoint_eqOn_Icc hf hdense' hdense hw' hw (har.trans hpa) hdense'
+    (by rintro _ ⟨i', rfl⟩; exact hX.morseLevelPoint_apply_level hf hdense' hw' i')
+    ⟨har.le, hpa.le⟩
 
 end LevelPoint
 
