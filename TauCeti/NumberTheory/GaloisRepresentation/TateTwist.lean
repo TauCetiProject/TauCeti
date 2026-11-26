@@ -24,14 +24,17 @@ raised to the power `n ∈ ℤ`. The **Tate twist** `M(n)` of a continuous repre
 
 The twists satisfy `M(0) = M`, `M(m)(n) = M(m + n)`, `det M(n) = det M · χ_ℓ ^ (n · rank M)` for
 `M` of constant rank, and commute with restriction to `G_{F'}` for a field extension `F'/F`, along
-which `ℤ_ℓ(1)` restricts to `ℤ_ℓ(1)`. Extending coefficients from `A` to an `A`-algebra `B` sends
-`χ_ℓ ^ n` with values in `Aˣ` to `χ_ℓ ^ n` with values in `Bˣ`, so it commutes with Tate twists.
+which `ℤ_ℓ(1)` restricts to `ℤ_ℓ(1)`. For `M` finite projective with the module topology the
+contragredient of `M(n)` is `M^∨(−n)`, and `ℤ_ℓ(1)^∨` is the line `ℤ_ℓ(−1)` of `χ_ℓ⁻¹`.
+Extending coefficients from `A` to an `A`-algebra `B` sends `χ_ℓ ^ n` with values in `Aˣ` to
+`χ_ℓ ^ n` with values in `Bˣ`, so it commutes with Tate twists.
 
 ## Main definitions
 
 * `TauCeti.cyclotomicPow ℓ F A n`: the character `χ_ℓ ^ n` of `G_F` with values in `Aˣ`.
 * `TauCeti.ContinuousRep.cyclotomicLine ℓ F`: the line `ℤ_ℓ(1)`, `ofCharacter χ_ℓ`.
 * `TauCeti.ContinuousRep.tateTwist ρ ℓ n`: the Tate twist `M(n) = M(χ_ℓ ^ n)`.
+* `TauCeti.ContinuousRep.dualCyclotomicLineIso ℓ F`: the isomorphism `ℤ_ℓ(1)^∨ ≅ ℤ_ℓ(−1)`.
 
 ## Main results
 
@@ -41,6 +44,7 @@ which `ℤ_ℓ(1)` restricts to `ℤ_ℓ(1)`. Extending coefficients from `A` to
   rank `d`.
 * `TauCeti.ContinuousRep.res_tateTwist`, `TauCeti.ContinuousRep.res_cyclotomicLine`: restriction to
   `G_{F'}` commutes with Tate twists and sends `ℤ_ℓ(1)` to `ℤ_ℓ(1)`.
+* `TauCeti.ContinuousRep.dual_tateTwist`: `M(n)^∨ = M^∨(−n)`.
 * `TauCeti.unitsMapCharacter_cyclotomicPow`, `TauCeti.ContinuousRep.baseChange_tateTwist`:
   extending coefficients from `A` to `B` sends `χ_ℓ ^ n` to `χ_ℓ ^ n`, so it commutes with Tate
   twists.
@@ -115,6 +119,11 @@ theorem cyclotomicPow_one_padicInt :
     cyclotomicPow ℓ F ℤ_[ℓ] 1 = continuousLocalCyclotomicCharacter ℓ F := by
   ext σ
   simp
+
+/-- Over `ℤ_ℓ` itself, the `(-1)`-st power is the inverse of the cyclotomic character. -/
+theorem cyclotomicPow_neg_one_padicInt :
+    cyclotomicPow ℓ F ℤ_[ℓ] (-1) = (continuousLocalCyclotomicCharacter ℓ F)⁻¹ := by
+  rw [cyclotomicPow_neg, cyclotomicPow_one_padicInt]
 
 /-- **Extending coefficients** from `A` to an `A`-algebra `B` sends `χ_ℓ ^ n` with values in `Aˣ`
 to `χ_ℓ ^ n` with values in `Bˣ`. -/
@@ -235,6 +244,13 @@ theorem tateTwist_cyclotomicLine (n : ℤ) :
     (cyclotomicLine ℓ F).tateTwist ℓ n = ofCharacter (cyclotomicPow ℓ F ℤ_[ℓ] (1 + n)) := by
   rw [← tateTwist_trivial_one, tateTwist_tateTwist, tateTwist_trivial]
 
+/-- **The line `ℤ_ℓ(−1)`**: the `(−1)`-st Tate twist of the trivial line is the line of
+`χ_ℓ⁻¹`. -/
+theorem tateTwist_trivial_neg_one :
+    (trivial (Field.absoluteGaloisGroup F) ℤ_[ℓ] ℤ_[ℓ]).tateTwist ℓ (-1) =
+      ofCharacter (continuousLocalCyclotomicCharacter ℓ F)⁻¹ := by
+  rw [tateTwist_trivial, cyclotomicPow_neg_one_padicInt]
+
 /-- **Restriction to `G_{F'}` commutes with Tate twists** along `G_{F'} → G_F`. -/
 @[simp]
 theorem res_tateTwist (F' : Type*) [Field F'] [Algebra F F']
@@ -265,6 +281,48 @@ theorem det_tateTwist {N : Type*} [AddCommGroup N] [Module A N] [TopologicalSpac
     (ρ.tateTwist ℓ n).det =
       ρ.det * (cyclotomicPow ℓ F A (n * d) : Field.absoluteGaloisGroup F →* Aˣ) := by
   rw [tateTwist_def, det_twist hd, coe_cyclotomicPow_pow]
+
+section Dual
+
+variable {N : Type*} [AddCommGroup N] [Module A N] [TopologicalSpace N] [IsModuleTopology A N]
+  [Module.Finite A N] [Module.Projective A N] [TopologicalSpace (Module.Dual A N)]
+  [IsModuleTopology A (Module.Dual A N)]
+
+/-- **Duality of Tate twists**: for `M` finite projective, `M(n)^∨ = M^∨(−n)`. -/
+@[simp]
+theorem dual_tateTwist (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A N) (n : ℤ) :
+    haveI := IsModuleTopology.toContinuousSMul A N
+    haveI := IsModuleTopology.toContinuousSMul A (Module.Dual A N)
+    (ρ.tateTwist ℓ n).dual = ρ.dual.tateTwist ℓ (-n) := by
+  have := IsModuleTopology.toContinuousSMul A N
+  have := IsModuleTopology.toContinuousSMul A (Module.Dual A N)
+  rw [tateTwist_def, tateTwist_def, dual_twist, cyclotomicPow_neg]
+
+end Dual
+
+section DualCyclotomicLine
+
+variable (ℓ F) [TopologicalSpace (Module.Dual ℤ_[ℓ] ℤ_[ℓ])]
+  [IsModuleTopology ℤ_[ℓ] (Module.Dual ℤ_[ℓ] ℤ_[ℓ])]
+
+/-- **The dual of `ℤ_ℓ(1)` is `ℤ_ℓ(−1)`**: evaluation at `1` is an isomorphism
+`ℤ_ℓ(1)^∨ ≅ ofCharacter χ_ℓ⁻¹`, the `(−1)`-st Tate twist of the trivial line
+(`TauCeti.ContinuousRep.tateTwist_trivial_neg_one`). -/
+noncomputable def dualCyclotomicLineIso :
+    Iso (cyclotomicLine ℓ F).dual (ofCharacter (continuousLocalCyclotomicCharacter ℓ F)⁻¹) :=
+  dualOfCharacterIso (continuousLocalCyclotomicCharacter ℓ F)
+
+@[simp]
+theorem dualCyclotomicLineIso_apply (ψ : Module.Dual ℤ_[ℓ] ℤ_[ℓ]) :
+    dualCyclotomicLineIso ℓ F ψ = ψ 1 :=
+  dualOfCharacterIso_apply _ ψ
+
+@[simp]
+theorem dualCyclotomicLineIso_symm_apply_apply (a x : ℤ_[ℓ]) :
+    (dualCyclotomicLineIso ℓ F).symm a x = x * a :=
+  dualOfCharacterIso_symm_apply_apply _ a x
+
+end DualCyclotomicLine
 
 end ContinuousRep
 
