@@ -256,10 +256,11 @@ variable {A K M V : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.
   [Field K] [Algebra A K] [IsFractionRing A K] [AddCommGroup M] [Module A M] [Module.Finite A M]
   [AddCommGroup V] [Module K V] [Module A V] [IsScalarTower A K V]
 
-/-- The order of an endomorphism `f` of `M`, computed on a localization `ι : M → V` of `M` at the
-non-zero-divisors, with `f` lying over the injective `φ` on `V`. The image `L` of `M` in `V` is a
-lattice stable under `φ`; the cokernel of `f` has the length of its kernel plus that of the
-cokernel of `φ` on `L`, and the latter is the order of `det φ`. -/
+/-- Let `A` be a Noetherian domain of dimension at most one with fraction field `K`, let
+`ι : M → V` be a localization of a finitely generated `A`-module `M` at the non-zero-divisors,
+and let `f` on `M` lie over an injective `K`-linear `φ` on `V`. Then
+`length (M ⧸ f(M)) = length (ker f) + n` for a natural number `n` with
+`ordFrac A (det φ) = ofAdd n`. -/
 theorem exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_eq_of_isLocalizedModule
     (ι : M →ₗ[A] V) [IsLocalizedModule (nonZeroDivisors A) ι]
     {f : M →ₗ[A] M} {φ : V →ₗ[K] V} (hφ : Function.Injective φ)
@@ -271,6 +272,8 @@ theorem exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_eq_of_isL
     rintro _ ⟨m, rfl⟩
     exact ⟨f m, (hφι m).symm⟩
   set g := (φ.restrictScalars A).restrict hφL
+  -- The image `L` of `M` in `V` is a lattice stable under `φ`: the cokernel of `f` has the length
+  -- of its kernel plus that of the cokernel of `φ` on `L`, and the latter is the order of `det φ`.
   -- `f` lies over the restriction `g` of `φ` to the image `L` of `M`.
   have hlen := TauCeti.length_quotient_range_eq_length_ker_add_of_comp_eq ι.surjective_rangeRestrict
     (g := g) (fun x y h ↦ Subtype.ext (hφ (congrArg Subtype.val h)))
