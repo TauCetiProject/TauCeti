@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Algebra.CharP.Invertible
 public import TauCeti.LinearAlgebra.Charpoly.Comp
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.HomAdjoint
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Isometry
 
 /-!
 # The symmetric representation of the unitary Friedberg–Jacquet pair and its contractions
@@ -31,9 +32,9 @@ contractions to the self-adjoint endomorphisms of `W₁` and of `W₂`.
   skew-adjoint endomorphism, the identity of `W` for instance, lies in its `(-1)`-eigenspace.
 * **The signed contractions.** `r₁(X) = -X X^τ` and `r₂(X) = -X^τ X` are self-adjoint
   endomorphisms of `W₁` and `W₂`; `r₁` is `U(W₁)`-equivariant and `U(W₂)`-invariant, `r₂` the
-  reverse, and `r₂(X) = r₁(X^τ)`. When `W₁` and `W₂` have the same dimension, `r₁(X)` and `r₂(X)`
-  have the same characteristic polynomial. Between standard hermitian spaces `r₁(A) = -A Aᴴ` and
-  `r₂(A) = -Aᴴ A`, with `Aᴴ` the conjugate transpose.
+  reverse, and `r₂(X) = r₁(X^τ)`. The characteristic polynomials of `r₁(X)` and `r₂(X)` agree up
+  to a power of `X`, and are equal when `W₁` and `W₂` have the same dimension. Between standard
+  hermitian spaces `r₁(A) = -A Aᴴ` and `r₂(A) = -Aᴴ A`, with `Aᴴ` the conjugate transpose.
 
 The sign of the contraction matters: for the standard rank-one hermitian forms and `X = 1`,
 `δ(X)² = -1` and `r₁(X) = -1`, whereas the unsigned Gram map `X ↦ X X^τ` would give `1`.
@@ -106,6 +107,17 @@ theorem blockInvolution_apply (T : Module.End K (V₁ × V₂)) (v : V₁ × V�
     blockInvolution K V₁ V₂ T v = ((T (v.1, -v.2)).1, -(T (v.1, -v.2)).2) := by
   simp [blockInvolution, LinearEquiv.conj_apply]
 
+/-- `θ` is an involution: `θ (θ T) = T`. -/
+@[simp]
+theorem blockInvolution_blockInvolution (T : Module.End K (V₁ × V₂)) :
+    blockInvolution K V₁ V₂ (blockInvolution K V₁ V₂ T) = T :=
+  LinearMap.ext fun v ↦ by simp
+
+/-- `θ` is its own inverse. -/
+@[simp]
+theorem blockInvolution_symm : (blockInvolution K V₁ V₂).symm = blockInvolution K V₁ V₂ :=
+  LinearEquiv.ext fun T ↦ by rw [LinearEquiv.symm_apply_eq, blockInvolution_blockInvolution]
+
 variable [FiniteDimensional K V₂]
 
 /-! ### The block embedding into the infinitesimal symmetric space -/
@@ -126,6 +138,25 @@ theorem offDiagonalBlock_apply (X : V₂ →ₗ[K] V₁) (v : V₁ × V₂) :
 theorem fst_comp_offDiagonalBlock_comp_inr (X : V₂ →ₗ[K] V₁) :
     LinearMap.fst K V₁ V₂ ∘ₗ offDiagonalBlock H₁ H₂ X ∘ₗ LinearMap.inr K V₁ V₂ = X := by
   ext; simp
+
+/-- `δ` is injective: `X` is the top-right block of `δ(X)`. -/
+theorem offDiagonalBlock_injective : Function.Injective (offDiagonalBlock H₁ H₂) :=
+  Function.LeftInverse.injective (g := fun T ↦ LinearMap.fst K V₁ V₂ ∘ₗ T ∘ₗ LinearMap.inr K V₁ V₂)
+    (fst_comp_offDiagonalBlock_comp_inr H₁ H₂)
+
+@[simp]
+theorem offDiagonalBlock_zero : offDiagonalBlock H₁ H₂ 0 = 0 := by
+  ext v <;> simp
+
+@[simp]
+theorem offDiagonalBlock_add (X Y : V₂ →ₗ[K] V₁) :
+    offDiagonalBlock H₁ H₂ (X + Y) = offDiagonalBlock H₁ H₂ X + offDiagonalBlock H₁ H₂ Y := by
+  ext v <;> simp [add_comm]
+
+@[simp]
+theorem offDiagonalBlock_neg (X : V₂ →ₗ[K] V₁) :
+    offDiagonalBlock H₁ H₂ (-X) = -offDiagonalBlock H₁ H₂ X := by
+  ext v <;> simp
 
 /-- `δ(X)` lies in the `(-1)`-eigenspace of `θ`. -/
 @[simp]
@@ -171,8 +202,6 @@ theorem rightContraction_zero : rightContraction H₁ H₂ 0 = 0 := by
 
 /-! ### The adjoint and the block embedding as equivariant maps -/
 
-variable [FiniteDimensional K V₁]
-
 /-- The adjoint transforms by `(g₁ X g₂⁻¹)^τ = g₂ X^τ g₁⁻¹`: taking adjoints intertwines the
 symmetric representations on `Hom(W₂, W₁)` and on `Hom(W₁, W₂)`, the latter with the factors of
 the group exchanged. -/
@@ -180,14 +209,16 @@ theorem signedHermitianHomAdjoint_homRepresentation
     (g : H₁.form.isometryGroup × H₂.form.isometryGroup) (X : V₂ →ₗ[K] V₁) :
     signedHermitianHomAdjoint H₂ H₁ (homRepresentation H₁ H₂ g X) =
       homRepresentation H₂ H₁ g.swap (signedHermitianHomAdjoint H₂ H₁ X) := by
-  have h₁ :=
-    (SignedHermitianSpace.mem_isometryGroup_iff_signedHermitianAdjoint_eq_symm H₁).1 g.1.property
-  have h₂ :=
-    (SignedHermitianSpace.mem_isometryGroup_iff_signedHermitianAdjoint_eq_symm H₂).1 g.2.property
-  rw [homRepresentation_apply, homRepresentation_apply, signedHermitianHomAdjoint_comp H₂ H₁ H₁,
-    signedHermitianHomAdjoint_comp H₂ H₂ H₁, signedHermitianHomAdjoint_self,
-    signedHermitianHomAdjoint_self, h₁, ← h₂, signedHermitianAdjoint_signedHermitianAdjoint]
-  simp only [Prod.fst_swap, Prod.snd_swap, LinearMap.comp_assoc]
+  obtain ⟨⟨g₁, hg₁⟩, ⟨g₂, hg₂⟩⟩ := g
+  refine signedHermitianHomAdjoint_unique H₂ H₁ fun v w ↦ ?_
+  -- Move `g₁` to the right and `g₂` to the left; both are isometries.
+  have h₁ := LinearMap.mem_isometryGroup_iff.1 hg₁ (X (g₂.symm v)) (g₁.symm w)
+  have h₂ := LinearMap.mem_isometryGroup_iff.1 hg₂ (g₂.symm v)
+    (signedHermitianHomAdjoint H₂ H₁ X (g₁.symm w))
+  simp only [LinearEquiv.apply_symm_apply] at h₁ h₂
+  simp [h₁, h₂]
+
+variable [FiniteDimensional K V₁]
 
 /-- `δ(X)` is skew-adjoint for the orthogonal sum `W₁ ⊥ W₂`: it lies in the Lie algebra `𝔲(W)`. -/
 @[simp]
@@ -228,12 +259,6 @@ theorem offDiagonalBlock_mem_infinitesimalSymmetricSpace
     offDiagonalBlock H₁ H₂ X ∈ infinitesimalSymmetricSpace H₁ H₂ hσ :=
   ⟨signedHermitianAdjoint_offDiagonalBlock H₁ H₂ X, blockInvolution_offDiagonalBlock H₁ H₂ X⟩
 
-/-- Away from characteristic `2`, a vector equal to its negative is zero. -/
-private theorem eq_zero_of_eq_neg {M : Type*} [AddCommGroup M] [Module K M] (h2 : (2 : K) ≠ 0)
-    {x : M} (h : x = -x) : x = 0 := by
-  rw [eq_neg_iff_add_eq_zero, ← two_smul K x] at h
-  exact (smul_eq_zero.1 h).resolve_left h2
-
 /-- Away from characteristic `2`, every element `T` of the infinitesimal symmetric space is the
 off-diagonal block of its top-right block. -/
 theorem offDiagonalBlock_fst_comp_comp_inr (h2 : (2 : K) ≠ 0)
@@ -245,11 +270,13 @@ theorem offDiagonalBlock_fst_comp_comp_inr (h2 : (2 : K) ≠ 0)
     have h := LinearMap.congr_fun hT.2 v
     simp only [blockInvolution_apply, LinearMap.neg_apply] at h
     exact ⟨congrArg Prod.fst h, neg_inj.1 (congrArg Prod.snd h)⟩
-  have h₁ (v : V₁) : (T (v, 0)).1 = 0 := eq_zero_of_eq_neg h2 (by simpa using (hθ (v, 0)).1)
+  have : Invertible (2 : K) := invertibleOfNonzero h2
+  have h₁ (v : V₁) : (T (v, 0)).1 = 0 :=
+    eq_zero_of_eq_neg_of_invertible_two (R := K) (by simpa using (hθ (v, 0)).1)
   have h₂ (v : V₂) : (T (0, v)).2 = 0 := by
     have h := (hθ (0, v)).2
     rw [show ((0 : V₁), -v) = -((0 : V₁), v) by simp, map_neg] at h
-    exact eq_zero_of_eq_neg h2 (by simpa using h.symm)
+    exact eq_zero_of_eq_neg_of_invertible_two (R := K) (by simpa using h.symm)
   -- `T* = -T` identifies the lower-left block with minus the adjoint of the upper-right one.
   have hadj : signedHermitianHomAdjoint H₂ H₁
       (LinearMap.fst K V₁ V₂ ∘ₗ T ∘ₗ LinearMap.inr K V₁ V₂) =
@@ -279,7 +306,7 @@ noncomputable def homEquivInfinitesimalSymmetricSpace (h2 : (2 : K) ≠ 0)
     (V₂ →ₗ[K] V₁) ≃ₗ[F] infinitesimalSymmetricSpace H₁ H₂ hσ where
   toFun X := ⟨offDiagonalBlock H₁ H₂ X, offDiagonalBlock_mem_infinitesimalSymmetricSpace H₁ H₂ hσ X⟩
   invFun T := LinearMap.fst K V₁ V₂ ∘ₗ (T : Module.End K (V₁ × V₂)) ∘ₗ LinearMap.inr K V₁ V₂
-  map_add' X Y := Subtype.ext <| LinearMap.ext fun v ↦ by simp [add_comm]
+  map_add' X Y := Subtype.ext <| offDiagonalBlock_add H₁ H₂ X Y
   map_smul' c X := Subtype.ext <| offDiagonalBlock_smul H₁ H₂ hσ c X
   left_inv X := fst_comp_offDiagonalBlock_comp_inr H₁ H₂ X
   right_inv T := Subtype.ext <| offDiagonalBlock_fst_comp_comp_inr H₁ H₂ h2 T.property
@@ -299,6 +326,7 @@ theorem homEquivInfinitesimalSymmetricSpace_symm_apply (h2 : (2 : K) ≠ 0)
       LinearMap.fst K V₁ V₂ ∘ₗ (T : Module.End K (V₁ × V₂)) ∘ₗ LinearMap.inr K V₁ V₂ :=
   (rfl)
 
+omit [FiniteDimensional K V₁] in
 /-- The block embedding intertwines the symmetric representation with conjugation by
 `diag(g₁, g₂)`: `δ(g₁ X g₂⁻¹) = diag(g₁, g₂) δ(X) diag(g₁, g₂)⁻¹`. -/
 theorem offDiagonalBlock_homRepresentation (g : H₁.form.isometryGroup × H₂.form.isometryGroup)
@@ -330,6 +358,7 @@ theorem signedHermitianAdjoint_rightContraction (X : V₂ →ₗ[K] V₁) :
     signedHermitianAdjoint H₂ (rightContraction H₁ H₂ X) = rightContraction H₁ H₂ X := by
   rw [rightContraction_eq_leftContraction, signedHermitianAdjoint_leftContraction]
 
+omit [FiniteDimensional K V₁] in
 /-- The first contraction is `U(W₁)`-equivariant and `U(W₂)`-invariant:
 `r₁(g₁ X g₂⁻¹) = g₁ r₁(X) g₁⁻¹`. -/
 theorem leftContraction_homRepresentation (g : H₁.form.isometryGroup × H₂.form.isometryGroup)
@@ -340,6 +369,7 @@ theorem leftContraction_homRepresentation (g : H₁.form.isometryGroup × H₂.f
   simp only [leftContraction_apply, signedHermitianHomAdjoint_homRepresentation]
   simp [LinearEquiv.conj_apply]
 
+omit [FiniteDimensional K V₁] in
 /-- The second contraction is `U(W₂)`-equivariant and `U(W₁)`-invariant:
 `r₂(g₁ X g₂⁻¹) = g₂ r₂(X) g₂⁻¹`. -/
 theorem rightContraction_homRepresentation (g : H₁.form.isometryGroup × H₂.form.isometryGroup)
@@ -350,9 +380,20 @@ theorem rightContraction_homRepresentation (g : H₁.form.isometryGroup × H₂.
   simp only [rightContraction_apply, signedHermitianHomAdjoint_homRepresentation]
   simp [LinearEquiv.conj_apply]
 
+/-- The characteristic polynomials of the two contractions `r₁(X) = -X X^τ` and `r₂(X) = -X^τ X`
+agree up to a power of `X` accounting for the dimensions of `W₁` and `W₂`:
+`X ^ dim W₂ * charpoly r₁(X) = X ^ dim W₁ * charpoly r₂(X)`. -/
+theorem X_pow_finrank_mul_charpoly_leftContraction_eq_X_pow_finrank_mul_charpoly_rightContraction
+    (X : V₂ →ₗ[K] V₁) :
+    Polynomial.X ^ finrank K V₂ * (leftContraction H₁ H₂ X).charpoly =
+      Polynomial.X ^ finrank K V₁ * (rightContraction H₁ H₂ X).charpoly := by
+  rw [leftContraction_def, rightContraction_def, ← LinearMap.neg_comp, ← LinearMap.comp_neg]
+  exact LinearMap.X_pow_finrank_mul_charpoly_comp_comm _ _
+
 /-- When `W₁` and `W₂` have the same dimension, the two contractions `r₁(X) = -X X^τ` and
 `r₂(X) = -X^τ X` have the same characteristic polynomial. -/
-theorem charpoly_leftContraction (h : finrank K V₁ = finrank K V₂) (X : V₂ →ₗ[K] V₁) :
+theorem charpoly_leftContraction_eq_charpoly_rightContraction (h : finrank K V₁ = finrank K V₂)
+    (X : V₂ →ₗ[K] V₁) :
     (leftContraction H₁ H₂ X).charpoly = (rightContraction H₁ H₂ X).charpoly := by
   rw [leftContraction_def, rightContraction_def, ← LinearMap.neg_comp, ← LinearMap.comp_neg]
   exact LinearMap.charpoly_comp_comm _ _ h
