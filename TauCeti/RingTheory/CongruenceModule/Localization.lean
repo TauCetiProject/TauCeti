@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CongruenceModule.Basic
-import TauCeti.Algebra.Module.LocalizedModule.Basic
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Algebra.Module.Torsion.Localization
+import TauCeti.RingTheory.Localization.AlgHom
 
 /-!
 # Localization of congruence modules
@@ -37,33 +37,6 @@ variable {O A B : Type*} [CommRing O] [CommRing A] [CommRing B] [Algebra O A]
   [Algebra O B] [Algebra A B] [IsScalarTower O A B]
   (φ : A →ₐ[O] O) (S : Submonoid A) [IsLocalization S B]
   (ψ : B →ₐ[O] O) (hψ : ψ.comp (IsScalarTower.toAlgHom O A B) = φ)
-
-include S hψ
-
-/-- The kernel of an augmentation extended to a localization is the extension of the
-original kernel. -/
-theorem ker_eq_map_of_localization :
-    RingHom.ker ψ = (RingHom.ker φ).map (algebraMap A B) := by
-  have hker : (RingHom.ker ψ).comap (algebraMap A B) = RingHom.ker φ := by
-    ext a
-    have ha := DFunLike.congr_fun hψ a
-    simpa only [Ideal.mem_comap, RingHom.mem_ker, AlgHom.comp_apply, IsScalarTower.toAlgHom_apply]
-      using iff_of_eq (congrArg (· = (0 : O)) ha)
-  rw [← IsLocalization.map_under S B (RingHom.ker ψ), Ideal.under, hker]
-
-private theorem isLocalizedModule_id_of_isTorsionBySet_ker {X : Type*} [AddCommGroup X]
-    [Module O X] [Module A X] [IsScalarTower O A X]
-    (hX : Module.IsTorsionBySet A X (RingHom.ker φ)) :
-    IsLocalizedModule S (LinearMap.id : X →ₗ[A] X) := by
-  apply TauCeti.isLocalizedModule_id_of_bijective_smul
-  intro s hs
-  have hφs : IsUnit (φ s) := by
-    simpa [← hψ] using (IsLocalization.map_units B ⟨s, hs⟩).map ψ
-  have hker : s - algebraMap O A (φ s) ∈ RingHom.ker φ := by simp
-  have heq (x : X) : s • x = φ s • x := by
-    have h := hX (x := x) (a := ⟨_, hker⟩)
-    rwa [sub_smul, algebraMap_smul, sub_eq_zero] at h
-  simpa only [heq] using (hφs.smul_bijective (β := X))
 
 variable {M N : Type*} [AddCommGroup M] [Module O M] [Module A M] [IsScalarTower O A M]
   [AddCommGroup N] [Module O N] [Module A N] [Module B N] [IsScalarTower O A N]
@@ -164,6 +137,7 @@ theorem congruenceModuleLocalizationEquiv_congruenceModuleMk
       ψ.congruenceModuleMk N (f x) := by
   simp [congruenceModuleLocalizationEquiv, congruenceModuleMk_apply]
 
+include S hψ in
 /-- The congruence ideal is unchanged under localization at denominators sent to units
 by the augmentation, provided its kernel is finitely generated. -/
 theorem congruenceIdeal_eq_of_localization (hfin : (RingHom.ker φ).FG) :

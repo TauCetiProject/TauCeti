@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.Algebra.Module.LocalizedModule.BaseChange
+import TauCeti.Algebra.Module.LocalizedModule.Basic
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
@@ -55,6 +56,8 @@ localization at every generator is zero. This identifies modules supported on th
   a torsion module is torsion.
 * `Submodule.localized'_torsionBySet_ideal`: localization commutes with taking the
   submodule killed by a finitely generated ideal.
+* `AlgHom.isLocalizedModule_id_of_isTorsionBySet_ker`: a module killed by an augmentation
+  kernel is already local at any submonoid whose elements the augmentation sends to units.
 * `Module.IsTorsion'.isUnit_addOrderOf`: in an abelian group which is `S`-torsion for a submonoid
   `S` of `ℤ`, the order of every element is a unit of every ring in which `S` becomes invertible,
   such as the localization of `ℤ` at `S`.
@@ -67,6 +70,26 @@ localization at every generator is zero. This identifies modules supported on th
 public section
 
 open TensorProduct
+
+/-- If an augmentation `φ` extends to the localization at `S`, the identity of any module
+killed by its kernel is a localization map at `S`. -/
+theorem AlgHom.isLocalizedModule_id_of_isTorsionBySet_ker
+    {O A B X : Type*} [CommRing O] [CommRing A] [CommRing B] [Algebra O A]
+    [Algebra O B] [Algebra A B] [IsScalarTower O A B]
+    (φ : A →ₐ[O] O) (S : Submonoid A) [IsLocalization S B]
+    (ψ : B →ₐ[O] O) (hψ : ψ.comp (IsScalarTower.toAlgHom O A B) = φ)
+    [AddCommGroup X] [Module O X] [Module A X] [IsScalarTower O A X]
+    (hX : Module.IsTorsionBySet A X (RingHom.ker φ)) :
+    IsLocalizedModule S (LinearMap.id : X →ₗ[A] X) := by
+  apply TauCeti.isLocalizedModule_id_of_bijective_smul
+  intro s hs
+  have hφs : IsUnit (φ s) := by
+    simpa [← hψ] using (IsLocalization.map_units B ⟨s, hs⟩).map ψ
+  have hker : s - algebraMap O A (φ s) ∈ RingHom.ker φ := by simp
+  have heq (x : X) : s • x = φ s • x := by
+    have h := hX (x := x) (a := ⟨_, hker⟩)
+    rwa [sub_smul, algebraMap_smul, sub_eq_zero] at h
+  simpa only [heq] using (hφs.smul_bijective (β := X))
 
 namespace Submonoid
 
