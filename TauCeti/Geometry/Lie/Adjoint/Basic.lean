@@ -158,6 +158,12 @@ theorem adjointContinuousLinearMap_adjointContinuousLinearMap_inv (g : G)
   rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, mul_inv_cancel,
     adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
 
+/-- The adjoint action of `g⁻¹` undoes that of `g`: `Ad_{g⁻¹} (Ad_g X) = X`. -/
+theorem adjointContinuousLinearMap_inv_adjointContinuousLinearMap (g : G)
+    (X : GroupLieAlgebra I G) :
+    adjointContinuousLinearMap (I := I) g⁻¹ (adjointContinuousLinearMap (I := I) g X) = X := by
+  simpa only [inv_inv] using adjointContinuousLinearMap_adjointContinuousLinearMap_inv g⁻¹ X
+
 /-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` intertwines the adjoint
 actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`, where `dφ` is the differential of `φ` at the identity
 (zero if `φ` is not differentiable there, in which case both sides vanish). -/
@@ -369,8 +375,7 @@ theorem mfderiv_inv_mul_mfderiv_inv (g : G) (v : TangentSpace I g) :
   obtain ⟨ξ, rfl⟩ := exists_mulInvariantVectorField_eq (I := I) (G := G) (g := g) v
   have h := mulInvariantVectorField_eq_mulRightInvariantVectorField_adjoint
     (adjointContinuousLinearMap (I := I) g ξ) g⁻¹
-  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
-    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at h
+  rw [adjointContinuousLinearMap_inv_adjointContinuousLinearMap] at h
   -- Computed with the left translation `(g⁻¹)⁻¹ * ·` back from `g⁻¹`, then `(g⁻¹)⁻¹ = g`.
   have key : mfderiv I I (g⁻¹⁻¹ * ·) g⁻¹ (mfderiv I I (fun h : G ↦ h⁻¹) g
       (mulInvariantVectorField ξ g)) =

@@ -226,8 +226,7 @@ theorem eval₂_symplecticForm_eq_neg_of_differential_eq_zero
   rw [← hz, momentMap_leftTrivialization]
   refine congrArg Neg.neg ((Module.Dual.kirillovForm_apply (L := GroupLieAlgebra I G) _ _ _).trans
     (Eq.trans ?_ (Lie.coadjointRepresentation_apply _ _ _).symm))
-  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
-    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+  rw [adjointContinuousLinearMap_inv_adjointContinuousLinearMap]
 
 end Level
 
