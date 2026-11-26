@@ -364,6 +364,7 @@ theorem conj_conj (g h : G) (x : BraidOrbitMonoid c) :
   exact PresentedMonoid.ext _ fun a ↦ by simp [mul_assoc]
 
 /-- Conjugating every entry of a tuple conjugates the element it represents. -/
+@[simp]
 theorem conj_ofTuple (g : G) (t : Fin r → c) :
     conj hc g (ofTuple t) = ofTuple fun i ↦ ⟨g * t i * g⁻¹, hc g _ (t i).property⟩ := by
   simp [ofTuple_def, map_list_prod, List.map_ofFn, Function.comp_def]
@@ -372,24 +373,21 @@ theorem conj_ofTuple (g : G) (t : Fin r → c) :
 @[simp]
 theorem product_conj (g : G) (x : BraidOrbitMonoid c) :
     product (conj hc g x) = g * product x * g⁻¹ := by
-  rw [← MonoidHom.comp_apply, ← MulAut.conj_apply, ← MulEquiv.coe_toMonoidHom,
-    ← MonoidHom.comp_apply]
-  congr 1
-  exact PresentedMonoid.ext _ fun a ↦ by simp
+  induction x using PresentedMonoid.induction_on_of with
+  | of a => simp
+  | one => simp
+  | mul x y hx hy => simp [hx, hy, mul_assoc]
 
 /-- Conjugation does not change the class multiplicities. -/
 @[simp]
 theorem classMultiset_conj (g : G) (x : BraidOrbitMonoid c) :
     classMultiset (conj hc g x) = classMultiset x := by
-  have hx : x ∈ Submonoid.closure (Set.range (PresentedMonoid.of (HurwitzRel c))) := by
-    simp [PresentedMonoid.closure_range_of]
-  induction hx using Submonoid.closure_induction with
-  | mem _ ha =>
-    obtain ⟨a, rfl⟩ := ha
+  induction x using PresentedMonoid.induction_on_of with
+  | of a =>
     rw [conj_of, classMultiset_of, classMultiset_of, ConjClasses.mk_eq_mk_iff_isConj.mpr]
     exact isConj_iff.mpr ⟨g⁻¹, by group⟩
   | one => simp
-  | mul _ _ _ _ hx hy => rw [map_mul, classMultiset_mul, classMultiset_mul, hx, hy]
+  | mul _ _ hx hy => rw [map_mul, classMultiset_mul, classMultiset_mul, hx, hy]
 
 @[simp]
 theorem length_conj (g : G) (x : BraidOrbitMonoid c) : length (conj hc g x) = length x := by
@@ -399,15 +397,12 @@ theorem length_conj (g : G) (x : BraidOrbitMonoid c) : length (conj hc g x) = le
 @[simp]
 theorem generated_conj (g : G) (x : BraidOrbitMonoid c) :
     generated (conj hc g x) = (generated x).map (MulAut.conj g).toMonoidHom := by
-  have hx : x ∈ Submonoid.closure (Set.range (PresentedMonoid.of (HurwitzRel c))) := by
-    simp [PresentedMonoid.closure_range_of]
-  induction hx using Submonoid.closure_induction with
-  | mem _ ha =>
-    obtain ⟨a, rfl⟩ := ha
+  induction x using PresentedMonoid.induction_on_of with
+  | of a =>
     rw [conj_of, generated_of, generated_of, MonoidHom.map_closure]
     simp
   | one => simp
-  | mul _ _ _ _ hx hy => rw [map_mul, generated_mul, generated_mul, hx, hy, Subgroup.map_sup]
+  | mul _ _ hx hy => rw [map_mul, generated_mul, generated_mul, hx, hy, Subgroup.map_sup]
 
 end Conj
 
@@ -419,31 +414,25 @@ its left conjugates it by the ordered product of `x`: `x [a] = [a'] x` for
 theorem mul_of_eq_of_mul (hc : ∀ g : G, ∀ x ∈ c, g * x * g⁻¹ ∈ c) (x : BraidOrbitMonoid c)
     {a a' : c} (h : (a' : G) = product x * a * (product x)⁻¹) :
     x * PresentedMonoid.of (HurwitzRel c) a = PresentedMonoid.of (HurwitzRel c) a' * x := by
-  have hx : x ∈ Submonoid.closure (Set.range (PresentedMonoid.of (HurwitzRel c))) := by
-    simp [PresentedMonoid.closure_range_of]
-  induction hx using Submonoid.closure_induction_left generalizing a a' with
+  induction x using PresentedMonoid.induction_on_of generalizing a a' with
+  | of b => exact of_mul_of b a a' (by simpa using h)
   | one =>
     obtain rfl : a' = a := Subtype.ext (by simpa using h)
     rw [one_mul, mul_one]
-  | mul_left _ hb x _ ih =>
-    obtain ⟨b, rfl⟩ := hb
-    -- First move `[a]` across `x`, then across `[b]`.
-    let a₁ : c := ⟨product x * a * (product x)⁻¹, hc _ _ a.property⟩
-    rw [mul_assoc, ih (a' := a₁) rfl, ← mul_assoc, of_mul_of b a₁ a' (by simp [h, a₁, mul_assoc]),
+  | mul x y hx hy =>
+    -- First move `[a]` across `y`, then across `x`.
+    let a₁ : c := ⟨product y * a * (product y)⁻¹, hc _ _ a.property⟩
+    rw [mul_assoc, hy (a' := a₁) rfl, ← mul_assoc, hx (a' := a') (by simp [h, a₁, mul_assoc]),
       mul_assoc]
 
 /-- For a conjugation-invariant `c`, moving an element `y` from the right of an element `x` to its
 left conjugates it by the ordered product of `x`. -/
 theorem mul_eq_conj_mul (hc : ∀ g : G, ∀ x ∈ c, g * x * g⁻¹ ∈ c)
     (x y : BraidOrbitMonoid c) : x * y = conj hc (product x) y * x := by
-  have hy : y ∈ Submonoid.closure (Set.range (PresentedMonoid.of (HurwitzRel c))) := by
-    simp [PresentedMonoid.closure_range_of]
-  induction hy using Submonoid.closure_induction with
-  | mem _ ha =>
-    obtain ⟨a, rfl⟩ := ha
-    exact mul_of_eq_of_mul hc x (by simp)
+  induction y using PresentedMonoid.induction_on_of with
+  | of a => exact mul_of_eq_of_mul hc x (by simp)
   | one => simp
-  | mul y z _ _ hy hz => rw [← mul_assoc, hy, mul_assoc, hz, map_mul, mul_assoc]
+  | mul y z hy hz => rw [← mul_assoc, hy, mul_assoc, hz, map_mul, mul_assoc]
 
 /-- For a conjugation-invariant `c`, moving an element `y` from the left of an element `x` to its
 right conjugates it by the inverse of the ordered product of `x`. -/
@@ -454,15 +443,8 @@ theorem mul_eq_mul_conj (hc : ∀ g : G, ∀ x ∈ c, g * x * g⁻¹ ∈ c)
 /-- For a conjugation-invariant `c`, an element of the braid-orbit monoid whose ordered product is
 one is central: a block of product one commutes with every braid orbit. -/
 theorem commute_of_product_eq_one (hc : ∀ g : G, ∀ x ∈ c, g * x * g⁻¹ ∈ c)
-    {x : BraidOrbitMonoid c} (hx : product x = 1) (y : BraidOrbitMonoid c) : Commute x y := by
-  have hy : y ∈ Submonoid.closure (Set.range (PresentedMonoid.of (HurwitzRel c))) := by
-    simp [PresentedMonoid.closure_range_of]
-  induction hy using Submonoid.closure_induction with
-  | mem _ ha =>
-    obtain ⟨a, rfl⟩ := ha
-    exact mul_of_eq_of_mul hc x (by simp [hx])
-  | one => exact Commute.one_right x
-  | mul _ _ _ _ hy hz => exact hy.mul_right hz
+    {x : BraidOrbitMonoid c} (hx : product x = 1) (y : BraidOrbitMonoid c) : Commute x y :=
+  (mul_eq_conj_mul hc x y).trans (by rw [hx, conj_one, MonoidHom.id_apply])
 
 /-! ### Braid orbits -/
 

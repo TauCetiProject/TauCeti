@@ -14,7 +14,8 @@ The class in `PresentedMonoid rels` of the word `FreeMonoid.ofList l` is the pro
 generators listed by `l` (`PresentedMonoid.mk_ofList`). A function on words that is constant on
 the classes of the congruence `conGen rels` descends to `PresentedMonoid rels`
 (`PresentedMonoid.liftOn`), and its value on the class of a word is its value on the word
-(`PresentedMonoid.liftOn_mk`).
+(`PresentedMonoid.liftOn_mk`). A property of elements can be proved by induction on the generators
+(`PresentedMonoid.induction_on_of`).
 -/
 
 public section
@@ -41,5 +42,20 @@ its value on the word. -/
 theorem liftOn_mk {β : Sort*} (w : FreeMonoid α) (f : FreeMonoid α → β)
     (h : ∀ w v, conGen rels w v → f w = f v) : (mk rels w).liftOn f h = f w :=
   Con.liftOn_coe (conGen rels) f h w
+
+/-- Induction on the generators of a presented monoid: a property that holds for every generator
+`of rels a` and for `1`, and that is preserved by multiplication, holds for every element. -/
+@[elab_as_elim]
+theorem induction_on_of {motive : PresentedMonoid rels → Prop} (x : PresentedMonoid rels)
+    (of : ∀ a, motive (PresentedMonoid.of rels a)) (one : motive 1)
+    (mul : ∀ x y, motive x → motive y → motive (x * y)) : motive x := by
+  have hx : x ∈ Submonoid.closure (Set.range (PresentedMonoid.of rels)) := by
+    simp [closure_range_of]
+  induction hx using Submonoid.closure_induction with
+  | mem _ ha =>
+    obtain ⟨a, rfl⟩ := ha
+    exact of a
+  | one => exact one
+  | mul _ _ _ _ hx hy => exact mul _ _ hx hy
 
 end PresentedMonoid
