@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
+import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
+import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Semialgebraic functions
@@ -17,20 +20,27 @@ useful before projection closure is available: semialgebraicity of a graph alone
 us recover its projection onto the input coordinates.
 
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
-piecewise-gluing laws and shows that polynomial maps, coordinatewise rational maps over a linearly
-ordered field (`TauCeti.isSemialgebraicOn_eval_div`, `TauCeti.isSemialgebraicMap_eval_div`), and
-more generally functions whose graph over a semialgebraic domain is cut out by polynomial equations
-(`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are semialgebraic.  It also proves the
-operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
-eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
-assembling a function from its coordinates (`TauCeti.IsSemialgebraicOn.pi`),
-precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise
-negation (`TauCeti.IsSemialgebraicOn.neg`), and bijective changes of the input or output
-coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
+piecewise-gluing laws and shows that polynomial maps, affine maps on finite-dimensional coordinate
+spaces (`AffineMap.isSemialgebraicOn`, `AffineMap.isSemialgebraicMap`,
+`TauCeti.IsSemialgebraic.preimage_affineMap`, `AffineMap.isSemialgebraic_pos`), coordinatewise
+rational maps over a linearly ordered field (`TauCeti.isSemialgebraicOn_eval_div`,
+`TauCeti.isSemialgebraicMap_eval_div`), and more generally functions whose graph over a
+semialgebraic domain is cut out by polynomial equations
+(`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are semialgebraic.  It also proves the operations
+whose graphs are inverse images of the given graphs, so that no coordinate has to be eliminated:
+pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`), assembling a
+function from its coordinates (`TauCeti.IsSemialgebraicOn.pi`), precomposition with a polynomial
+map (`TauCeti.IsSemialgebraicOn.comp_eval`), constant fibers and their complements
+(`TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq_const`,
+`TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_ne_const`), pointwise negation
+(`TauCeti.IsSemialgebraicOn.neg`), coordinatewise reciprocal over a field
+(`TauCeti.isSemialgebraicOn_inv`, `TauCeti.isSemialgebraicMap_inv`), and bijective changes of the
+input or output coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
 `TauCeti.isSemialgebraicOn_comp_equiv_iff`).  It deliberately does not assert closure under
 arbitrary composition, whose graph generally requires eliminating the intermediate coordinates;
-images, inverse images, composition, and pointwise sums, products, and differences are derived
-from projection closure in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
+images, inverse images, composition, and pointwise sums, products, differences, reciprocals, and
+quotients are derived from projection closure in
+`TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
 
 ## References
 
@@ -147,6 +157,11 @@ theorem IsSemialgebraicOn.congr {f g : (σ → R) → (τ → R)} {s : Set (σ �
   rw [← Set.graphOn_inj.2 h]
   exact hf.graph
 
+/-- Semialgebraicity of a map depends only on its pointwise values. -/
+theorem IsSemialgebraicMap.congr {f g : (σ → R) → (τ → R)} (hf : IsSemialgebraicMap f)
+    (h : ∀ x, f x = g x) : IsSemialgebraicMap g :=
+  funext h ▸ hf
+
 /-- Every function is semialgebraic on the empty set. -/
 @[simp]
 theorem isSemialgebraicOn_empty (f : (σ → R) → (τ → R)) :
@@ -260,6 +275,39 @@ theorem isSemialgebraicMap_id [Finite σ] :
 
 end PolynomialMap
 
+section AffineMap
+
+/-- An affine map between finite-dimensional coordinate spaces is semialgebraic on every
+semialgebraic domain. -/
+theorem _root_.AffineMap.isSemialgebraicOn [Finite σ] [Finite τ] (A : (σ → R) →ᵃ[R] (τ → R))
+    {s : Set (σ → R)} (hs : IsSemialgebraic s) : IsSemialgebraicOn A s := by
+  obtain ⟨p, hp⟩ := A.exists_mvPolynomial_eval_eq
+  exact (isSemialgebraicOn_eval p hs).congr fun x _ => (hp x).symm
+
+/-- An affine map between finite-dimensional coordinate spaces is semialgebraic. -/
+theorem _root_.AffineMap.isSemialgebraicMap [Finite σ] [Finite τ] (A : (σ → R) →ᵃ[R] (τ → R)) :
+    IsSemialgebraicMap A :=
+  isSemialgebraicOn_univ.1 (A.isSemialgebraicOn isSemialgebraic_univ)
+
+/-- The inverse image of a semialgebraic set under an affine map out of a finite-dimensional
+coordinate space is semialgebraic, without assuming projection closure. -/
+theorem IsSemialgebraic.preimage_affineMap [Finite σ] {s : Set (τ → R)}
+    (hs : IsSemialgebraic s) (A : (σ → R) →ᵃ[R] (τ → R)) :
+    IsSemialgebraic (A ⁻¹' s) := by
+  obtain ⟨p, hp⟩ := A.exists_mvPolynomial_eval_eq
+  have hfun : (A : (σ → R) → τ → R) = fun x i => eval x (p i) := funext hp
+  rw [hfun]
+  exact hs.preimage_eval p
+
+/-- Strict scalar affine positivity conditions on `σ → R` (`Finite σ`) cut out semialgebraic open
+half-spaces. -/
+theorem _root_.AffineMap.isSemialgebraic_pos [Finite σ] (f : (σ → R) →ᵃ[R] R) :
+    IsSemialgebraic {x : σ → R | 0 < f x} := by
+  simpa using (isSemialgebraic_eval_pos (X () : MvPolynomial Unit R)).preimage_affineMap
+    ((LinearEquiv.funUnique Unit R R).symm.toAffineEquiv.toAffineMap.comp f)
+
+end AffineMap
+
 section Operations
 
 variable {σ' τ' : Type*}
@@ -324,6 +372,28 @@ theorem IsSemialgebraicMap.comp_eval {f : (σ → R) → (τ → R)} (hf : IsSem
     (p : σ → MvPolynomial σ' R) : IsSemialgebraicMap (f ∘ fun x i => eval x (p i)) := by
   simpa using (isSemialgebraicOn_univ.2 hf).comp_eval p
 
+/-- The fiber of a semialgebraic function over a constant value `c` inside its domain is
+semialgebraic. No projection is needed: the fiber is the inverse image of the graph under the
+polynomial slice `x ↦ (x, c)`. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq_const {f : (σ → R) → (τ → R)}
+    {s : Set (σ → R)} (hf : IsSemialgebraicOn f s) (c : τ → R) :
+    IsSemialgebraic (s ∩ {x | f x = c}) := by
+  convert hf.graph.preimage_eval (Sum.elim X fun j ↦ C (c j)) using 1
+  ext x
+  rw [mem_inter_iff, mem_preimage, mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [Function.comp_def, Sum.elim_inl, Sum.elim_inr, eval_X, eval_C]
+  rfl
+
+/-- The complement of a constant fiber of a semialgebraic function inside its domain is
+semialgebraic. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_ne_const {f : (σ → R) → (τ → R)}
+    {s : Set (σ → R)} (hf : IsSemialgebraicOn f s) (c : τ → R) :
+    IsSemialgebraic (s ∩ {x | f x ≠ c}) := by
+  convert hf.isSemialgebraic.sdiff (hf.isSemialgebraic_inter_setOf_eq_const c) using 1
+  ext x
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_sdiff]
+  tauto
+
 /-- The pointwise negation of a semialgebraic function is semialgebraic.  No projection is needed:
 the new graph is the inverse image of the old one under negation of the output coordinates. -/
 theorem IsSemialgebraicOn.neg {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
@@ -376,5 +446,23 @@ theorem isSemialgebraicOn_comp_equiv_iff {f : (σ → R) → (τ → R)} {s : Se
   simpa [Function.comp_assoc] using h.comp_equiv e.symm
 
 end Operations
+
+section Reciprocal
+
+/-- Over a linearly ordered field, the coordinatewise reciprocal map `x ↦ x⁻¹` (with `0⁻¹ = 0`) is
+semialgebraic on every semialgebraic domain. No projection closure or nonvanishing hypothesis is
+needed: it is the coordinatewise rational map `x ↦ 1 / x`. -/
+theorem isSemialgebraicOn_inv {K : Type*} [Field K] [LinearOrder K] [Finite τ]
+    {s : Set (τ → K)} (hs : IsSemialgebraic s) :
+    IsSemialgebraicOn (Inv.inv : (τ → K) → (τ → K)) s :=
+  (isSemialgebraicOn_eval_div (fun _ ↦ 1) X hs).congr fun x _ ↦ by ext i; simp [one_div]
+
+/-- Over a linearly ordered field, the coordinatewise reciprocal map `x ↦ x⁻¹` (with `0⁻¹ = 0`) is
+a semialgebraic map. -/
+theorem isSemialgebraicMap_inv {K : Type*} [Field K] [LinearOrder K] [Finite τ] :
+    IsSemialgebraicMap (Inv.inv : (τ → K) → (τ → K)) :=
+  isSemialgebraicOn_univ.1 (isSemialgebraicOn_inv isSemialgebraic_univ)
+
+end Reciprocal
 
 end TauCeti

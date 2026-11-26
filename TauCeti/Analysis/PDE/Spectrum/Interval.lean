@@ -9,7 +9,9 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import TauCeti.Analysis.Fourier.SineSeries
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.PDE.ClassicalSolution
+public import TauCeti.Analysis.PDE.IntervalDomain
 public import TauCeti.Analysis.PDE.Spectrum.Basic
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # The Dirichlet spectrum of `-Δ` on an interval
@@ -34,9 +36,17 @@ sine mode, and it vanishes by completeness of the sine system
 
 ## Main declarations
 
-* `TauCeti.PDE.intervalDomain`: the interval `(a, b)` as an open subset of the Euclidean line.
 * `TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`: the sine modes are weak Dirichlet
   eigenfunctions.
+* `TauCeti.PDE.energyFormH1_eq_of_value_ae_eq_sin`, `TauCeti.PDE.norm_value_sq_of_value_ae_eq_sin`
+  and `TauCeti.PDE.energyFormH1_self_eq_of_value_ae_eq_sin`: every element of `H¹₀(a, b)` with a
+  sine mode as value is an eigenfunction, with `L²` norm `√((b - a) / 2)` and the corresponding
+  Dirichlet energy.
+* `TauCeti.PDE.exists_lt_sq_natCast_mul_pi_div` and
+  `TauCeti.PDE.exists_lt_and_energyFormH1_eq_intervalDomain`: the Dirichlet eigenvalues of `-Δ`
+  on `(a, b)` are unbounded.
+* `TauCeti.PDE.eq_zero_of_forall_setIntegral_mul_sin_eq_zero`: the sine modes are complete in
+  `L²(a, b)`.
 * `TauCeti.PDE.isDirichletEigenvalue_laplacian_intervalDomain_iff`: the Dirichlet spectrum of
   `-Δ` on `(a, b)` is `{(k π / (b - a))² | k ≥ 1}`.
 * `TauCeti.PDE.isLeast_isDirichletEigenvalue_laplacian_intervalDomain` and
@@ -63,54 +73,9 @@ namespace PDE
 open Bornology InnerProductSpace Laplacian MeasureTheory Set TopologicalSpace
 open scoped Real InnerProductSpace
 
-/-- The open interval `(a, b)`, as an open subset of the Euclidean line `EuclideanSpace ℝ (Fin 1)`.
--/
-def intervalDomain (a b : ℝ) : Opens (EuclideanSpace ℝ (Fin 1)) :=
-  ⟨{x | x 0 ∈ Ioo a b}, isOpen_Ioo.preimage (by fun_prop)⟩
-
-@[simp]
-theorem mem_intervalDomain {a b : ℝ} {x : EuclideanSpace ℝ (Fin 1)} :
-    x ∈ intervalDomain a b ↔ x 0 ∈ Ioo a b :=
-  Iff.rfl
-
-/-- As a set, the interval domain consists of the points of the line whose coordinate lies in
-`(a, b)`. -/
-theorem coe_intervalDomain (a b : ℝ) :
-    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = {x | x 0 ∈ Ioo a b} := by
-  ext x
-  exact mem_intervalDomain
-
 variable {a b : ℝ}
 
-/-- The Euclidean line is isometric to `ℝ`, with inverse `x ↦ x 0`. -/
-private def lineEquiv : ℝ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 1) :=
-  (OrthonormalBasis.singleton (Fin 1) ℝ).repr
-
-private theorem lineEquiv_symm_apply (x : EuclideanSpace ℝ (Fin 1)) : lineEquiv.symm x = x 0 := by
-  rw [LinearIsometryEquiv.symm_apply_eq]
-  ext i
-  fin_cases i
-  exact (OrthonormalBasis.singleton_repr (ι := Fin 1) (𝕜 := ℝ) (x 0) 0).symm
-
-private theorem measurePreserving_lineEquiv : MeasurePreserving lineEquiv volume volume :=
-  (OrthonormalBasis.singleton (Fin 1) ℝ).measurePreserving_repr
-
-private theorem measurePreserving_lineEquiv_symm :
-    MeasurePreserving lineEquiv.symm volume volume :=
-  (OrthonormalBasis.singleton (Fin 1) ℝ).measurePreserving_repr_symm
-
-private theorem lineEquiv_apply_zero (t : ℝ) : lineEquiv t 0 = t := by
-  rw [← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
-
-private theorem coe_intervalDomain_eq_preimage :
-    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = lineEquiv.symm ⁻¹' Ioo a b := by
-  ext x
-  simp [lineEquiv_symm_apply]
-
-private theorem preimage_lineEquiv_intervalDomain :
-    lineEquiv ⁻¹' (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = Ioo a b := by
-  rw [coe_intervalDomain_eq_preimage, ← preimage_comp]
-  simp
+attribute [local instance] W1p0.instNormedAddCommGroup
 
 /-- The `k`-th Dirichlet mode `t ↦ sin (k π (t - a) / (b - a))` of the interval `(a, b)`. -/
 private abbrev sineMode (a b : ℝ) (k : ℕ) (t : ℝ) : ℝ :=
@@ -143,11 +108,25 @@ private theorem sineMode_right (hab : a < b) (k : ℕ) : sineMode a b k b = 0 :=
   rw [sineMode, mul_div_assoc, div_self (sub_pos.2 hab).ne', mul_one]
   exact Real.sin_nat_mul_pi k
 
-/-- The interval domain `(a, b)` is bounded. -/
-theorem isBounded_intervalDomain :
-    IsBounded (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) := by
-  rw [coe_intervalDomain_eq_preimage]
-  exact lineEquiv.symm.antilipschitzWith.isBounded_preimage (Metric.isBounded_Ioo a b)
+/-- For `k ≥ 1`, the square of the `k`-th sine mode has integral `(b - a) / 2` over `(a, b)`. -/
+private theorem integral_sineMode_sq {k : ℕ} (hk : 0 < k) :
+    ∫ t in a..b, sineMode a b k t ^ 2 = (b - a) / 2 := by
+  rcases eq_or_ne b a with rfl | hba
+  · simp
+  have hba : b - a ≠ 0 := sub_ne_zero.2 hba
+  set c : ℝ := k * π / (b - a) with hc_def
+  have hc : c ≠ 0 := div_ne_zero (mul_ne_zero (Nat.cast_ne_zero.2 hk.ne') Real.pi_ne_zero) hba
+  have harg (t : ℝ) : sineMode a b k t ^ 2 = Real.sin (c * t - c * a) ^ 2 := by
+    rw [sineMode, hc_def]
+    congr 2
+    field_simp
+  simp_rw [harg]
+  -- Substituting `y = c t - c a`, the integral is `∫₀^{kπ} sin² y dy / c = kπ / (2c)`.
+  rw [intervalIntegral.integral_comp_mul_sub (fun y => Real.sin y ^ 2) hc, integral_sin_sq,
+    sub_self, show c * b - c * a = k * π by rw [hc_def]; field_simp, Real.sin_nat_mul_pi,
+    Real.sin_zero, smul_eq_mul, hc_def]
+  field_simp
+  ring
 
 private theorem frontier_intervalDomain_subset (hab : a < b) :
     frontier (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) ⊆ lineEquiv.symm ⁻¹' {a, b} := by
@@ -187,6 +166,93 @@ theorem exists_value_ae_eq_sin_and_energyFormH1_eq (hab : a < b) (k : ℕ) :
   funext x
   simp only [hw, Function.comp_apply, lineEquiv_symm_apply]
 
+/-- Every element of `H¹₀(a, b)` whose value is the sine mode `x ↦ sin (k π (x - a) / (b - a))`
+is a weak Dirichlet eigenfunction of `-Δ`:
+
+`∫ ∇u · ∇v = (k π / (b - a))² ∫ u v` for every `v ∈ H¹₀(a, b)`.
+
+An element of `H¹₀(a, b)` is determined by its value, so this is the element of
+`TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`. -/
+theorem energyFormH1_eq_of_value_ae_eq_sin (hab : a < b) (k : ℕ)
+    {u : W1p0 volume (intervalDomain a b) 2}
+    (hu : W1p.value (u : W1p volume (intervalDomain a b) 2)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        (fun x => Real.sin (k * π * (x 0 - a) / (b - a))))
+    (v : W1p0 volume (intervalDomain a b) 2) :
+    energyFormH1 (fun _ => 1) 0 0 (u : W1p volume (intervalDomain a b) 2)
+        (v : W1p volume (intervalDomain a b) 2) =
+      (k * π / (b - a)) ^ 2 * ⟪W1p0.valueL u, W1p0.valueL v⟫_ℝ := by
+  -- `Exists.elim` rather than `obtain`, whose dependent eliminator has to abstract this goal.
+  refine (exists_value_ae_eq_sin_and_energyFormH1_eq hab k).elim fun w hw => ?_
+  have : u = w := Subtype.ext (W1p.ext_value (Lp.ext (hu.trans hw.1.symm)))
+  rw [this, W1p0.valueL_apply, W1p0.valueL_apply]
+  exact hw.2 v
+
+/-- **The `L²` norm of a sine mode.** For `k ≥ 1`, an element of `H¹(a, b)` whose value is
+`x ↦ sin (k π (x - a) / (b - a))` has `‖u‖²_{L²(a, b)} = (b - a) / 2`. -/
+theorem norm_value_sq_of_value_ae_eq_sin (hab : a < b) {k : ℕ} (hk : 0 < k)
+    {u : W1p volume (intervalDomain a b) 2}
+    (hu : W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+      (fun x => Real.sin (k * π * (x 0 - a) / (b - a)))) :
+    ‖W1p.value u‖ ^ 2 = (b - a) / 2 := by
+  rw [← real_inner_self_eq_norm_sq, W1p.inner_value_eq_setIntegral,
+    integral_congr_ae (g := fun x => sineMode a b k (x 0) ^ 2) (by
+      filter_upwards [hu] with x hx
+      rw [hx, sq]),
+    setIntegral_intervalDomain (fun t => sineMode a b k t ^ 2), ← integral_Ioc_eq_integral_Ioo,
+    ← intervalIntegral.integral_of_le hab.le, integral_sineMode_sq hk]
+
+/-- **The Dirichlet energy of a sine mode.** For `k ≥ 1`, an element of `H¹₀(a, b)` whose value
+is `x ↦ sin (k π (x - a) / (b - a))` has `∫_a^b |u'|² = (k π / (b - a))² (b - a) / 2`. -/
+theorem energyFormH1_self_eq_of_value_ae_eq_sin (hab : a < b) {k : ℕ} (hk : 0 < k)
+    {u : W1p0 volume (intervalDomain a b) 2}
+    (hu : W1p.value (u : W1p volume (intervalDomain a b) 2)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        (fun x => Real.sin (k * π * (x 0 - a) / (b - a)))) :
+    energyFormH1 (fun _ => 1) 0 0 (u : W1p volume (intervalDomain a b) 2)
+        (u : W1p volume (intervalDomain a b) 2) =
+      (k * π / (b - a)) ^ 2 * ((b - a) / 2) := by
+  rw [energyFormH1_eq_of_value_ae_eq_sin hab k hu u, real_inner_self_eq_norm_sq,
+    W1p0.valueL_apply, norm_value_sq_of_value_ae_eq_sin hab hk hu]
+
+/-- The Dirichlet eigenvalues `(k π / (b - a))²`, `k ≥ 1`, of `-Δ` on `(a, b)` are unbounded:
+some of them exceed any given `C`. -/
+theorem exists_lt_sq_natCast_mul_pi_div (hab : a ≠ b) (C : ℝ) :
+    ∃ k : ℕ, 0 < k ∧ C < (k * π / (b - a)) ^ 2 := by
+  have hq : 0 < π ^ 2 / (b - a) ^ 2 := by
+    have := sub_ne_zero.2 hab.symm
+    positivity
+  obtain ⟨k, hk⟩ := exists_nat_gt (max 1 (C / (π ^ 2 / (b - a) ^ 2)))
+  have hk1 : (1 : ℝ) < k := (le_max_left _ _).trans_lt hk
+  have hkC : C / (π ^ 2 / (b - a) ^ 2) < k := (le_max_right _ _).trans_lt hk
+  refine ⟨k, Nat.cast_pos.1 (zero_lt_one.trans hk1), ?_⟩
+  rw [div_lt_iff₀ hq] at hkC
+  have hsq : (k * π / (b - a)) ^ 2 = π ^ 2 / (b - a) ^ 2 * k ^ 2 := by
+    rw [div_pow, mul_pow]
+    ring
+  rw [hsq]
+  have hkk : (k : ℝ) ≤ k ^ 2 := by nlinarith
+  nlinarith [mul_le_mul_of_nonneg_left hkk hq.le]
+
+/-- **The Dirichlet eigenvalues of `-Δ` on `(a, b)` are unbounded.** For every `C` there is a
+weak Dirichlet eigenfunction `s ∈ H¹₀(a, b)` of `-Δ`, `s ≠ 0` in `L²(a, b)`, whose eigenvalue
+`κ` exceeds `C`: a sine mode `x ↦ sin (k π (x - a) / (b - a))` with `(k π / (b - a))² > C`. -/
+theorem exists_lt_and_energyFormH1_eq_intervalDomain (hab : a < b) (C : ℝ) :
+    ∃ κ : ℝ, ∃ s : W1p0 volume (intervalDomain a b) 2, C < κ ∧ 0 < ‖W1p0.valueL s‖ ∧
+      ∀ v : W1p0 volume (intervalDomain a b) 2,
+        energyFormH1 (fun _ => 1) 0 0 (s : W1p volume (intervalDomain a b) 2)
+            (v : W1p volume (intervalDomain a b) 2) =
+          κ * ⟪W1p0.valueL s, W1p0.valueL v⟫_ℝ := by
+  -- `Exists.elim` rather than `obtain`, whose dependent eliminator has to abstract this goal.
+  refine (exists_lt_sq_natCast_mul_pi_div hab.ne C).elim fun k hk => ?_
+  refine (exists_value_ae_eq_sin_and_energyFormH1_eq hab k).elim fun s hs => ?_
+  have hnorm := norm_value_sq_of_value_ae_eq_sin hab hk.1 hs.1
+  refine ⟨_, s, hk.2, ?_, energyFormH1_eq_of_value_ae_eq_sin hab k hs.1⟩
+  rw [W1p0.valueL_apply]
+  refine (norm_nonneg _).lt_of_ne fun h => ?_
+  rw [← h] at hnorm
+  linarith
+
 /-- `(k π / (b - a))²` is a Dirichlet eigenvalue of `-Δ` on `(a, b)` for every `k ≥ 1`, with
 eigenfunction `x ↦ sin (k π (x - a) / (b - a))`. -/
 theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (hk : 0 < k) :
@@ -224,7 +290,7 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
 
 /-- The sine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal to every
 `x ↦ sin (k π (x - a) / (b - a))`, `k ≥ 1`, is zero. -/
-private theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, 0 < k → ∫ x in intervalDomain a b,
       f x * Real.sin (k * π * (x 0 - a) / (b - a)) = 0) :
@@ -247,9 +313,8 @@ private theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
   have hg0 := ae_eq_zero_of_forall_integral_mul_sin_eq_zero (hg.integrable one_le_two)
     fun k hk => by
     rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h k hk,
-      ← preimage_lineEquiv_intervalDomain, ← hmp.setIntegral_preimage_emb
-        lineEquiv.toHomeomorph.measurableEmbedding]
-    simp only [lineEquiv_apply_zero]
+      ← setIntegral_intervalDomain]
+    simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
   rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hg0
   refine Lp.ext ?_
   filter_upwards [hmpΩ'.quasiMeasurePreserving.ae_eq_comp hg0, Lp.coeFn_zero ℝ 2
@@ -303,14 +368,6 @@ theorem nonempty_intervalDomain_iff :
     LinearIsometryEquiv.symm_apply_apply]
   constructor <;> linarith
 
-/-- The energy form of `-Δ` is symmetric. -/
-private theorem energyFormH1_laplacian_comm (u v : W1p0 volume (intervalDomain a b) 2) :
-    energyFormH1 (fun _ => 1) 0 0 (u : W1p volume (intervalDomain a b) 2)
-        (v : W1p volume (intervalDomain a b) 2) =
-      energyFormH1 (fun _ => 1) 0 0 (v : W1p volume (intervalDomain a b) 2)
-        (u : W1p volume (intervalDomain a b) 2) :=
-  energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ => Matrix.isSymm_one) _ _
-
 /-- **The first Dirichlet eigenvalue of `-Δ` on an interval** `(a, b)` is `(π / (b - a))²`, for
 any choice of the boundedness and coercivity data defining it. -/
 theorem firstDirichletEigenvalue_laplacian_intervalDomain (hab : a < b)
@@ -325,7 +382,7 @@ theorem firstDirichletEigenvalue_laplacian_intervalDomain (hab : a < b)
       (isLeast_isDirichletEigenvalue_laplacian_intervalDomain hab).1)
     ((isLeast_isDirichletEigenvalue_laplacian_intervalDomain hab).2
       (isDirichletEigenvalue_first hcoeff hcoercive isBounded_intervalDomain
-        energyFormH1_laplacian_comm (nonempty_intervalDomain_iff.2 hab)))
+        (fun _ _ => energyFormH1_one_zero_zero_comm _ _) (nonempty_intervalDomain_iff.2 hab)))
 
 /-- **The sharp Poincaré inequality on an interval.** For every `u ∈ H¹₀(a, b)`,
 
@@ -342,7 +399,8 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
   obtain ⟨hcoeff, hcoercive⟩ := exists_isCoercive_laplacian_of_isBounded (n := 0)
     isBounded_intervalDomain
   rw [← firstDirichletEigenvalue_laplacian_intervalDomain hab hcoeff hcoercive]
-  exact isGreatest_firstDirichletEigenvalue hcoeff hcoercive energyFormH1_laplacian_comm
+  exact isGreatest_firstDirichletEigenvalue hcoeff hcoercive
+    (fun _ _ => energyFormH1_one_zero_zero_comm _ _)
     (nonempty_intervalDomain_iff.2 hab)
 
 end PDE

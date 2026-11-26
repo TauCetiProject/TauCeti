@@ -20,7 +20,7 @@ import TauCeti.RingTheory.Iwasawa.ReflexiveHull
 import TauCeti.RingTheory.Iwasawa.TorsionSplitting
 import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 
 /-!
 # The structure theorem up to pseudo-isomorphism

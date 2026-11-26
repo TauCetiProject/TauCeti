@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Alternating pullbacks and postcompositions
@@ -34,6 +35,10 @@ form a complex vector space, and these operations are complex-linear or conjugat
   vanishes exactly when it vanishes on every vector.
 * `ContinuousAlternatingMap.apply_vecCons_swap`: an alternating map of two vectors changes sign
   when they are exchanged.
+* `ContinuousAlternatingMap.apply_vecCons_add_right`,
+  `ContinuousAlternatingMap.apply_vecCons_smul_right` and
+  `ContinuousAlternatingMap.apply_vecCons_neg_right`: an alternating map of two vectors is linear in
+  the second vector.
 * `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr`,
   `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four`: a two-form in the coordinates of
   a basis, and its six-term form on a four-dimensional space.
@@ -41,6 +46,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
   `A` and then along `B` is pulling back along `A.comp B`.
 * `ContinuousAlternatingMap.compContinuousLinearMap_fst_add_snd_apply`: the two-form
   `pr₁^* ω₁ + pr₂^* ω₂` on a product evaluated on two vectors.
+* `ContinuousAlternatingMap.map_linearDependent`: an alternating map vanishes on linearly
+  dependent families.
 -/
 
 public section
@@ -95,6 +102,30 @@ theorem apply_vecCons_swap {R M N : Type*} [Semiring R]
     [AddCommGroup N] [Module R N] [TopologicalSpace N]
     (f : M [⋀^Fin 2]→L[R] N) (v w : M) : f ![w, v] = -f ![v, w] := by
   simpa using f.map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
+
+/-- A continuous alternating map of two vectors is additive in the second vector. -/
+theorem apply_vecCons_add_right {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (u v v' : M) : f ![u, v + v'] = f ![u, v] + f ![u, v'] := by
+  simpa using f.toContinuousMultilinearMap.toMultilinearMap.snoc_add ![u] v v'
+
+/-- A continuous alternating map of two vectors is homogeneous in the second vector. -/
+theorem apply_vecCons_smul_right {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (r : R) (u v : M) : f ![u, r • v] = r • f ![u, v] := by
+  simpa using f.toContinuousMultilinearMap.toMultilinearMap.snoc_smul ![u] r v
+
+/-- A continuous alternating map of two vectors is odd in the second vector. -/
+theorem apply_vecCons_neg_right {R M N : Type*} [Semiring R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (u v : M) : f ![u, -v] = -f ![u, v] := by
+  have h := f.apply_vecCons_add_right u (-v) v
+  have h0 : f ![u, 0] = 0 := by simpa using f.apply_vecCons_smul_right (0 : R) u v
+  rw [neg_add_cancel, h0] at h
+  exact eq_neg_of_add_eq_zero_left h.symm
 
 section Coordinates
 
@@ -181,11 +212,17 @@ theorem compContinuousLinearMap_fst_add_snd_apply (ω₁ : V [⋀^Fin 2]→L[R] 
     (ω₁.compContinuousLinearMap (ContinuousLinearMap.fst R V W) +
         ω₂.compContinuousLinearMap (ContinuousLinearMap.snd R V W)) ![p, q] =
       ω₁ ![p.1, q.1] + ω₂ ![p.2, q.2] := by
-  have h₁ : Prod.fst ∘ ![p, q] = ![p.1, q.1] := by ext i; fin_cases i <;> rfl
-  have h₂ : Prod.snd ∘ ![p, q] = ![p.2, q.2] := by ext i; fin_cases i <;> rfl
-  simp [h₁, h₂]
+  simp [Matrix.comp_vec2]
 
 end Prod
+
+/-- A continuous alternating map vanishes on a linearly dependent family. -/
+theorem map_linearDependent {R M N ι : Type*} [Ring R] [IsDomain R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    [Module.IsTorsionFree R N] (f : M [⋀^ι]→L[R] N) (v : ι → M) (h : ¬LinearIndependent R v) :
+    f v = 0 := by
+  rw [← coe_toAlternatingMap]
+  exact f.toAlternatingMap.map_linearDependent v h
 
 end ContinuousAlternatingMap
 

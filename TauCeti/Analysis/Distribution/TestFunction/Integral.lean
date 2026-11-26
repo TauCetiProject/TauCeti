@@ -10,12 +10,14 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
+public import TauCeti.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 
 /-!
 # Integrals of test functions against measures finite on compact sets
@@ -38,12 +40,21 @@ of a constant distribution, including on arbitrarily small overlap neighborhoods
 Against an additive Haar measure, the directional derivative of a test function has integral
 zero, by Mathlib's integration by parts against the constant function `1`.
 
+On a finite-dimensional space, against a locally finite measure positive on nonempty open sets, a
+function continuous on an open set is determined there by its integrals against smooth compactly
+supported functions, by Mathlib's fundamental lemma of the calculus of variations
+`IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero`. In particular a test function is determined
+by these integrals.
+
 ## Main definitions
 
 * `TestFunction.toCompactlySupportedContinuousMap`: the restriction of a test function on `Ω` to a
   compactly supported continuous function on the subspace `Ω`.
 
 ## Main results
+
+* `TestFunction.coe_extendZero_toCompactlySupportedContinuousMap`: extending this restriction by
+  zero (`CompactlySupportedContinuousMap.extendZero`) recovers the test function.
 
 * `TestFunction.exists_nonneg_integral_eq_one`: a nonnegative integral-one test supported in any
   nonempty open subset of the domain.
@@ -66,6 +77,12 @@ zero, by Mathlib's integration by parts against the constant function `1`.
   and bounded by `1` with `v` is at most the mass of `|v| m` on `U`.
 
 * `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
+
+* `IsOpen.eqOn_zero_of_integral_contDiff_smul_eq_zero`: a function continuous on an open set `U`
+  whose integrals against smooth functions compactly supported in `U` vanish is zero on `U`.
+
+* `TestFunction.ext_of_forall_integral_smul_eq`: a test function is determined by its integrals
+  against smooth compactly supported functions.
 -/
 
 public section
@@ -111,6 +128,24 @@ theorem toCompactlySupportedContinuousMap_smul {R : Type*} [Semiring R] [Module 
     [SMulCommClass ℝ R F] [ContinuousConstSMul R F] (c : R) (φ : 𝓓^{n}(Ω, F)) :
     (c • φ).toCompactlySupportedContinuousMap = c • φ.toCompactlySupportedContinuousMap :=
   (rfl)
+
+/-- The restriction of a test function to `Ω` is supported in the preimage of its support. -/
+theorem tsupport_toCompactlySupportedContinuousMap_subset (φ : 𝓓^{n}(Ω, F)) :
+    tsupport φ.toCompactlySupportedContinuousMap ⊆ ((↑) : Ω → E) ⁻¹' tsupport φ := by
+  have h : ⇑φ.toCompactlySupportedContinuousMap = fun x : Ω => φ x :=
+    funext (toCompactlySupportedContinuousMap_apply φ)
+  rw [h]
+  exact tsupport_comp_subset_preimage φ continuous_subtypeVal
+
+/-- Extending the restriction of a test function on `Ω` by zero recovers the test function. -/
+@[simp]
+theorem coe_extendZero_toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) :
+    ⇑(φ.toCompactlySupportedContinuousMap.extendZero Ω.isOpenEmbedding') = ⇑φ := by
+  ext x
+  by_cases h : x ∈ Ω
+  · exact CompactlySupportedContinuousMap.extendZero_apply _ _ (⟨x, h⟩ : Ω)
+  · rw [CompactlySupportedContinuousMap.extendZero_apply_of_notMem_range _ _ (by simpa using h)]
+    exact (φ.zero_on_compl h).symm
 
 variable [MeasurableSpace E]
 
@@ -257,5 +292,46 @@ theorem integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
     fun x _ ↦ (hd x).lineDifferentiableAt.hasLineDerivAt
 
 end LineDeriv
+
+section Determination
+
+open Set
+open scoped ContDiff
+
+variable [FiniteDimensional ℝ E] [BorelSpace E] [CompleteSpace F] {μ : Measure E}
+  [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+
+/-- **Fundamental lemma of the calculus of variations for continuous functions.** A function
+continuous on an open set `U` whose integrals against all smooth functions compactly supported in
+`U` vanish is zero on `U`. -/
+theorem _root_.IsOpen.eqOn_zero_of_integral_contDiff_smul_eq_zero {U : Set E} (hU : IsOpen U)
+    {d : E → F} (hd : ContinuousOn d U)
+    (h : ∀ g : E → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ U →
+      ∫ x, g x • d x ∂μ = 0) :
+    EqOn d 0 U :=
+  μ.eqOn_open_of_ae_eq ((ae_restrict_iff' hU.measurableSet).2
+    (hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero (hd.locallyIntegrableOn hU.measurableSet) h))
+    hU hd continuousOn_const
+
+/-- A test function on `Ω` is determined by its integrals against smooth functions compactly
+supported in `Ω`. -/
+theorem ext_of_forall_integral_smul_eq {φ ψ : 𝓓^{n}(Ω, F)}
+    (h : ∀ g : E → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ Ω →
+      ∫ x, g x • φ x ∂μ = ∫ x, g x • ψ x ∂μ) :
+    φ = ψ := by
+  have hint (χ : 𝓓^{n}(Ω, F)) {g : E → ℝ} (hg : Continuous g) :
+      Integrable (fun x ↦ g x • χ x) μ :=
+    (hg.smul χ.continuous).integrable_of_hasCompactSupport χ.hasCompactSupport.smul_left
+  have hEq := Ω.isOpen.eqOn_zero_of_integral_contDiff_smul_eq_zero (μ := μ) (d := ⇑φ - ⇑ψ)
+    (φ.continuous.sub ψ.continuous).continuousOn fun g hg hgc hgΩ ↦ by
+      simp_rw [Pi.sub_apply, smul_sub]
+      rw [integral_sub (hint φ hg.continuous) (hint ψ hg.continuous), h g hg hgc hgΩ, sub_self]
+  ext x
+  by_cases hx : x ∈ (Ω : Set E)
+  · simpa [sub_eq_zero] using hEq hx
+  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h),
+      image_eq_zero_of_notMem_tsupport fun h ↦ hx (ψ.tsupport_subset h)]
+
+end Determination
 
 end TestFunction

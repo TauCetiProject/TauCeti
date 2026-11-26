@@ -174,6 +174,10 @@ def betaEquiv (g : D.Generator) : Equiv.Perm (Fin n) := g.1
 theorem point_apply (g : D.Generator) (i : Fin n) : D.point g i = g.2 i := by
   simp [point]
 
+/-- The matching of a generator is the permutation it stores. -/
+theorem betaEquiv_eq_fst (g : D.Generator) : D.betaEquiv g = g.1 :=
+  (rfl)
+
 /-- The matching index is the `β`-label of the chosen point. -/
 @[simp]
 theorem betaEquiv_apply (g : D.Generator) (i : Fin n) :
@@ -229,6 +233,18 @@ theorem generatorChain_eq_sum_single [DecidableEq Point] (g : D.Generator) :
     have : q ≠ D.point g i := fun h => hi (by simp [h])
     exact Pi.single_eq_of_ne this 1
   · simp
+
+/-- A generator is determined by its `0`-chain: its point on each `α`-curve is the unique point of
+that curve where the chain is nonzero. -/
+theorem generatorChain_injective : Function.Injective D.generatorChain := by
+  classical
+  intro g g' h
+  refine D.point_injective (funext fun i => ?_)
+  have := congrFun h (g.2 i)
+  simp only [generatorChain_apply, point_apply, alpha_coe, ite_true] at this
+  split_ifs at this with h'
+  · simpa using h'.symm
+  · exact absurd this one_ne_zero
 
 /-- Pairing the `0`-chain of a generator with a function on intersection points sums the
 function over the points of the generator. Only the zero and one scalar laws are needed, so

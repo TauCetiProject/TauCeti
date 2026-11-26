@@ -295,13 +295,13 @@ theorem finiteUnitsMap_residueHom_eq_one_iff_forall_mem_unitFiltration {𝔪 �
     have hx_unit : v.valuation K ((x : Kˣ) : K) = 1 :=
       mem_primeToSubgroup.mp x.property v ((𝔫.mem_support_iff v).mp hv)
     by_cases hvI : v.asIdeal ∣ 𝔪.finitePart
-    · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) (x : Kˣ)).mpr
+    · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff_valuation (𝔪.exponent v) (x : Kˣ)).mpr
         ⟨hx_unit, hval v hvI⟩
     · rw [Modulus.exponent_eq_zero_of_notMem_support ((𝔪.mem_support_iff v).not.mpr hvI)]
       exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff (x : Kˣ)).mpr hx_unit
   · intro hmem v hvI
     have hv𝔫 : v ∈ 𝔫.support := (𝔫.mem_support_iff v).mpr (hvI.trans hdvd)
-    exact ((v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) (x : Kˣ)).mp
+    exact ((v.unitsMap_algebraMap_mem_unitFiltration_iff_valuation (𝔪.exponent v) (x : Kˣ)).mp
       (hmem v hv𝔫)).2
 
 end TauCeti.GlobalNumberFields

@@ -90,13 +90,11 @@ namespace TauCeti
 
 namespace NovikovSeries
 
-variable {R H K Γ : Type*}
-
 /-- A splitting of the period kernel of `N : H →+ ℝ`: an additive identification of `H` with
 `K × Γ`, where `Γ` is linearly ordered with a strictly monotone period map to `ℝ`, under which
 `N` is the period of the `Γ`-component. The group `K` is then the kernel of `N`. -/
-structure PeriodKernelSplitting [AddZeroClass H] (N : H →+ ℝ) (K Γ : Type*) [AddZeroClass K]
-    [AddZeroClass Γ] [LinearOrder Γ] where
+structure PeriodKernelSplitting {H : Type*} [AddZeroClass H] (N : H →+ ℝ) (K Γ : Type*)
+    [AddZeroClass K] [AddZeroClass Γ] [LinearOrder Γ] where
   /-- The identification of the exponents with pairs of a kernel element and a period class. -/
   equiv : H ≃+ K × Γ
   /-- The period of an element of `Γ`. -/
@@ -108,8 +106,10 @@ structure PeriodKernelSplitting [AddZeroClass H] (N : H →+ ℝ) (K Γ : Type*)
 
 namespace PeriodKernelSplitting
 
-variable [AddZeroClass H] {N : H →+ ℝ} [AddZeroClass K] [AddZeroClass Γ] [LinearOrder Γ]
-  (S : PeriodKernelSplitting N K Γ)
+section Basic
+
+variable {H K Γ : Type*} [AddZeroClass H] {N : H →+ ℝ} [AddZeroClass K] [AddZeroClass Γ]
+  [LinearOrder Γ] (S : PeriodKernelSplitting N K Γ)
 
 /-- The exponent corresponding to `(k, γ)` has period `S.period γ`. -/
 @[simp]
@@ -121,11 +121,11 @@ zero. -/
 theorem period_eq_zero_iff {h : H} : N h = 0 ↔ (S.equiv h).2 = 0 := by
   rw [← S.period_snd_equiv, ← map_zero S.period, S.strictMono_period.injective.eq_iff]
 
-end PeriodKernelSplitting
+end Basic
 
-namespace PeriodKernelSplitting
+section OfSection
 
-variable [AddCommGroup H] {N : H →+ ℝ}
+variable {H : Type*} [AddCommGroup H] {N : H →+ ℝ}
 
 /-- The splitting of the period kernel given by a section `σ` of `N` over its image: an exponent
 `h` corresponds to the pair of `h - σ (N h)`, in the kernel, and of its period `N h`. -/
@@ -164,12 +164,14 @@ theorem ofSection_period (σ : N.range →+ H) (hσ : ∀ γ, N (σ γ) = γ) :
     (ofSection σ hσ).period = N.range.subtype :=
   (rfl)
 
+end OfSection
+
 end PeriodKernelSplitting
 
 section Semiring
 
-variable [Semiring R] [AddMonoid H] {N : H →+ ℝ} [AddMonoid K] [AddCommMonoid Γ] [LinearOrder Γ]
-  (S : PeriodKernelSplitting N K Γ)
+variable {R H K Γ : Type*} [Semiring R] [AddMonoid H] {N : H →+ ℝ} [AddMonoid K] [AddCommMonoid Γ]
+  [LinearOrder Γ] (S : PeriodKernelSplitting N K Γ)
 
 /-- The coefficients of `a` at the exponents with `Γ`-component `γ`, as an element of `R[K]`.
 These exponents all have period `S.period γ`, so only finitely many coefficients are nonzero. -/
@@ -403,8 +405,8 @@ end Semiring
 
 section Ring
 
-variable [Ring R] [AddMonoid H] {N : H →+ ℝ} [AddMonoid K] [AddCommMonoid Γ] [LinearOrder Γ]
-  [IsOrderedCancelAddMonoid Γ] (S : PeriodKernelSplitting N K Γ)
+variable {R H K Γ : Type*} [Ring R] [AddMonoid H] {N : H →+ ℝ} [AddMonoid K] [AddCommMonoid Γ]
+  [LinearOrder Γ] [IsOrderedCancelAddMonoid Γ] (S : PeriodKernelSplitting N K Γ)
 
 /-- The period neighbourhood `U_C` consists of the Novikov series whose Hahn coefficients vanish
 below the period `C`. -/

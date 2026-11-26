@@ -10,7 +10,11 @@ public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.NoncommProd
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Nat.Choose.Basic
 public import TauCeti.Algebra.GroupWithZero.Indicator
+
+import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Data.Nat.Choose.Sum
 
 /-!
 # Splitting products and sums over the subsets of a finite set
@@ -35,12 +39,19 @@ which commutes pairwise everywhere.
   `TauCeti.sum_powerset_eq_add_sum_singleton_add_sum_filter_add`: the four-part splitting.
 * `Finset.prod_powersetCard_succ_insert`, `Finset.sum_powersetCard_succ_insert`: splitting over
   the `n + 1`-element subsets of `insert a s`.
+* `Finset.prod_powersetCard_prod`, `Finset.sum_powersetCard_sum`: double counting, each element
+  lying in `(#s - 1).choose (n - 1)` of the `n`-element subsets.
 * `Finset.sum_noncommProd_powersetCard_eq_indicator`: sums of noncommutative products over
   `n`-element subsets, rewritten with the family extended by zero.
 * `Finset.sum_noncommProd_powersetCard_succ_insert`: the recursion for the sum of the products
   over the `n + 1`-element subsets when an index is added to `s`, and
   `Finset.sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute`, the same recursion as
   sums over `powersetCard` for a family commuting pairwise everywhere.
+* `Finset.sum_powerset_filter_card`: a sum over the subsets of `s` with cardinality in a given set,
+  of a function of the cardinality, grouped by cardinality.
+* `TauCeti.exists_minimal_subprod_eq_one`, `TauCeti.exists_minimal_vanishing_subsum`: a trivial
+  product with a nontrivial factor has a minimal trivial subproduct with at least two factors, and
+  likewise for sums.
 -/
 
 public section
@@ -65,6 +76,23 @@ theorem prod_powersetCard_succ_insert [DecidableEq α] {s : Finset α} {a : α} 
   · exact insert_erase_invOn.2.injOn.mono fun t ht ↦
       notMem_mono (mem_powersetCard.1 ht).1 ha
   · aesop (add simp [disjoint_left, insert_subset_iff, mem_powersetCard])
+
+/-- **Double counting over the `n`-element subsets**: for `0 < n`, each element of `s` lies in
+`(#s - 1).choose (n - 1)` of the `n`-element subsets of `s`, so the product over these subsets of
+the products over their elements is `(∏ i ∈ s, f i) ^ (#s - 1).choose (n - 1)`. -/
+@[to_additive /-- **Double counting over the `n`-element subsets**: for `0 < n`, each element of
+`s` lies in `(#s - 1).choose (n - 1)` of the `n`-element subsets of `s`, so the sum over these
+subsets of the sums over their elements is `(#s - 1).choose (n - 1) • ∑ i ∈ s, f i`. -/]
+theorem prod_powersetCard_prod {n : ℕ} (hn : 0 < n) (s : Finset α) (f : α → β) :
+    ∏ t ∈ s.powersetCard n, ∏ i ∈ t, f i = (∏ i ∈ s, f i) ^ (#s - 1).choose (n - 1) := by
+  classical
+  rw [prod_comm' (t' := s) (s' := fun i ↦ (s.powersetCard n).filter ({i} ⊆ ·)), ← prod_pow]
+  · refine prod_congr rfl fun i hi ↦ ?_
+    rw [prod_const, card_filter_powersetCard_subset {i} s n (singleton_subset_iff.2 hi)
+      (by simpa using Nat.one_le_iff_ne_zero.2 hn.ne'), card_singleton]
+  · intro t i
+    simp only [mem_filter, mem_powersetCard, singleton_subset_iff]
+    exact ⟨fun h ↦ ⟨h, h.1.1 h.2⟩, fun h ↦ h.1⟩
 
 /-- For `u ⊆ s` and a family commuting pairwise on `s`, the sum of the products over the
 `n`-element subsets of `u` is the corresponding sum for the family extended by zero outside `s`. -/
@@ -111,11 +139,20 @@ theorem sum_noncommProd_powersetCard_succ_insert {ι R : Type*} [Semiring R] [De
   exact sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute ha _
     hc.pairwise_commute_indicator n
 
+/-- A sum over the subsets of `s` whose cardinality satisfies `p`, of a function of the
+cardinality, grouped by cardinality. -/
+theorem sum_powerset_filter_card {ι M : Type*} [AddCommMonoid M] (s : Finset ι) (p : ℕ → Prop)
+    [DecidablePred p] (g : ℕ → M) :
+    ∑ I ∈ s.powerset with p #I, g #I = ∑ m ∈ range (#s + 1) with p m, (#s).choose m • g m := by
+  rw [sum_filter, sum_powerset_apply_card fun m ↦ if p m then g m else 0, sum_filter]
+  simp_rw [smul_ite, nsmul_zero]
+
 end Finset
 
 namespace TauCeti
 
 open Finset
+open scoped Finset
 
 /-- **A product over the subsets of a finite set `s` with at least two elements splits into four
 parts**: the empty set, the singletons, the subsets with at least two elements other than `s`, and
@@ -145,5 +182,33 @@ theorem prod_powerset_eq_mul_prod_singleton_mul_prod_filter_mul {α M : Type*} [
     grind
   rw [hsing, hbig, prod_image fun _ _ _ _ h ↦ singleton_inj.1 h]
   ac_rfl
+
+/-- A product `∏ i ∈ s, fᵢ = 1` with a factor `fᵢ ≠ 1` has a minimal trivial subproduct with at
+least two factors: an index set `I ⊆ s` with `∏ i ∈ I, fᵢ = 1` such that no nonempty proper subset
+of `I` has trivial product. -/
+@[to_additive exists_minimal_vanishing_subsum /-- A sum `∑ i ∈ s, fᵢ = 0` with a nonzero term has a
+minimal vanishing subsum with at least two terms: an index set `I ⊆ s` with `∑ i ∈ I, fᵢ = 0` such
+that no nonempty proper subset of `I` has vanishing sum. Applied to a linear relation
+`∑ cᵢxᵢ = 0` among the unknowns of a unit equation, it yields a nondegenerate homogeneous solution
+on a subset `I` of at least two of the unknowns; dividing by one of its terms then gives a
+nondegenerate solution of an equation in `|I| - 1` unknowns. -/]
+theorem exists_minimal_subprod_eq_one {ι M : Type*} [CommMonoid M] {s : Finset ι} {f : ι → M}
+    (h : ∏ i ∈ s, f i = 1) (hf : ∃ i ∈ s, f i ≠ 1) :
+    ∃ I ⊆ s, 2 ≤ #I ∧ ∏ i ∈ I, f i = 1 ∧ ∀ J ⊂ I, J.Nonempty → ∏ i ∈ J, f i ≠ 1 := by
+  classical
+  -- Choose `I` of least cardinality among the nonempty trivial subproducts of nontrivial factors.
+  let t := s.filter (f · ≠ 1)
+  let F := t.powerset.filter fun J ↦ J.Nonempty ∧ ∏ i ∈ J, f i = 1
+  have htF : t ∈ F := by
+    obtain ⟨i, hi, hfi⟩ := hf
+    exact mem_filter.mpr ⟨mem_powerset_self t, ⟨i, mem_filter.mpr ⟨hi, hfi⟩⟩,
+      by rw [prod_filter_ne_one, h]⟩
+  obtain ⟨I, hIF, hImin⟩ := F.exists_min_image card ⟨t, htF⟩
+  obtain ⟨hIt, hIne, hI1⟩ : I ⊆ t ∧ I.Nonempty ∧ ∏ i ∈ I, f i = 1 := by simpa [F] using hIF
+  refine ⟨I, hIt.trans (filter_subset _ s), ?_, hI1, fun J hJI hJ hJ1 ↦ ?_⟩
+  · by_contra! hI
+    obtain ⟨i, rfl⟩ := card_eq_one.mp (le_antisymm (Nat.lt_succ_iff.mp hI) hIne.card_pos)
+    exact (mem_filter.mp (hIt (mem_singleton_self i))).2 (by simpa using hI1)
+  · exact (card_lt_card hJI).not_ge (hImin J (by simpa [F, hJ, hJ1] using hJI.subset.trans hIt))
 
 end TauCeti

@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Group.Integral
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.LinearAlgebra.Multilinear.Basis
 import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Measure.Comap
 
 /-!
 # Mollified discs
@@ -133,9 +134,6 @@ theorem contDiff_discMollification {n : ℕ∞} (hρ : ContDiff ℝ n ρ) (hσ :
     (s : Fin 2 → κ) : ContDiff ℝ n (discMollification b ρ σ z₀ r s) := by
   let D := closedBall z₀ r
   have : CompactSpace D := isCompact_iff_compactSpace.mp (isCompact_closedBall z₀ r)
-  have : IsFiniteMeasure (volume.comap ((↑) : D → ℂ)) :=
-    ⟨by rw [comap_subtypeVal_apply measurableSet_closedBall, image_univ, Subtype.range_coe]
-        exact measure_closedBall_lt_top⟩
   -- Integrate `ρ(y - p)` along `p = σ z` against the continuous weight of the coordinates.
   have hg := (continuous_repr_fderiv_mul (b := b) hσ s).comp
     (continuous_subtypeVal (p := (· ∈ D)))

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The Kac–Moody algebra of a realization, by generators and relations
@@ -50,9 +51,12 @@ relators, so that `TauCeti.KacMoody.cartanElement` is a linear map.
 
 ## Main results
 
-* `TauCeti.KacMoody.lift_cartanElement` and its companions, with `TauCeti.KacMoody.hom_ext`: the
-  universal property of the presentation.
+* `TauCeti.KacMoody.lift_cartanElement` and its companions, with `TauCeti.KacMoody.hom_ext` and
+  `TauCeti.KacMoody.equiv_ext`: the universal property of the presentation.
 * `TauCeti.KacMoody.lieSpan_generators_eq_top`: the generators generate the presented algebra.
+* `TauCeti.KacMoody.cartanElement_mem_center` and `TauCeti.KacMoody.cartanElement_mem_center_iff`:
+  vectors in `R.cartanCenter` map into the center of `𝔤`, and when `cartanElement R` is injective
+  these are the only central Cartan vectors.
 * `TauCeti.KacMoody.range_serreHom_sup_range_cartanElement`: `𝔤 = 𝔤' + H`, where `𝔤'` is the
   image of `Matrix.ToLieAlgebra K A`.
 * `TauCeti.KacMoody.range_serreHom_eq_derivedSeries`: that image is the derived algebra `⁅𝔤, 𝔤⁆`.
@@ -294,6 +298,23 @@ theorem SatisfiesRelations.map {φ : H →ₗ[K] L} {E F : I → L} (h : Satisfi
     simp only [Function.comp_apply, ← LieHom.map_lie, ← LieHom.map_ad_pow, h.serre_negative,
       map_zero]
 
+/-- Negating the Cartan map and exchanging the raising and lowering families with a sign preserves
+`TauCeti.KacMoody.SatisfiesRelations`. -/
+theorem SatisfiesRelations.neg_swap {φ : H →ₗ[K] L} {E F : I → L}
+    (h : SatisfiesRelations R φ E F) :
+    SatisfiesRelations R (-φ) (-F) (-E) where
+  lie_cartan_cartan x y := by simp [h.lie_cartan_cartan x y]
+  lie_cartan_positive x j := by simp [h.lie_cartan_negative x j]
+  lie_cartan_negative x j := by simp [h.lie_cartan_positive x j]
+  lie_positive_negative_self i := by
+    simp only [Pi.neg_apply, neg_lie, lie_neg, neg_neg, LinearMap.neg_apply]
+    rw [← lie_skew, h.lie_positive_negative_self i]
+  lie_positive_negative_of_ne i j hij := by
+    simp only [Pi.neg_apply, neg_lie, lie_neg, neg_neg]
+    rw [← lie_skew, h.lie_positive_negative_of_ne j i hij.symm, neg_zero]
+  serre_positive i j := by simpa using ad_neg_pow_apply_eq_zero (h.serre_negative i j)
+  serre_negative i j := by simpa using ad_neg_pow_apply_eq_zero (h.serre_positive i j)
+
 /-- The zero map satisfies the relations. -/
 theorem satisfiesRelations_zero : SatisfiesRelations R (0 : H →ₗ[K] L) 0 0 where
   lie_cartan_cartan _ _ := by simp
@@ -377,6 +398,15 @@ theorem hom_ext {g₁ g₂ : PresentedLieAlgebra R →ₗ⁅K⁆ L}
     | negative i => exact hF i
   exact DFunLike.congr_fun hcomp x
 
+/-- Two Lie equivalences out of `TauCeti.KacMoody.PresentedLieAlgebra R` agreeing on the
+generators are equal. -/
+@[ext]
+theorem equiv_ext {e₁ e₂ : PresentedLieAlgebra R ≃ₗ⁅K⁆ L}
+    (hH : ∀ x, e₁ (cartanElement R x) = e₂ (cartanElement R x))
+    (hE : ∀ i, e₁ (positiveGenerator R i) = e₂ (positiveGenerator R i))
+    (hF : ∀ i, e₁ (negativeGenerator R i) = e₂ (negativeGenerator R i)) : e₁ = e₂ :=
+  LieEquiv.ext fun x => DFunLike.congr_fun (hom_ext hH hE hF) x
+
 /-- `TauCeti.KacMoody.lift` is the unique homomorphism with the prescribed values on the
 generators. -/
 theorem eq_lift {h : SatisfiesRelations R φ E F} {g : PresentedLieAlgebra R →ₗ⁅K⁆ L}
@@ -426,6 +456,53 @@ theorem lieSpan_generators_eq_top :
   refine eq_top_iff.2 fun y _ => ?_
   obtain ⟨x, rfl⟩ := presentationMk_surjective R y
   exact hle (by rw [FreeLieAlgebra.lieSpan_range_of_eq_top]; trivial)
+
+/-- A Cartan vector annihilated by every simple root is central in the presented algebra. -/
+theorem cartanElement_mem_center {z : H} (hz : z ∈ R.cartanCenter) :
+    cartanElement R z ∈ center K (PresentedLieAlgebra R) := by
+  have hr := (R.mem_cartanCenter_iff z).mp hz
+  rw [LieModule.mem_maxTrivSubmodule]
+  have h := lieSpan_le_lieAnnihilator (R := K) (L := PresentedLieAlgebra R)
+    (M := PresentedLieAlgebra R)
+    (s := Set.range (cartanElement R) ∪ Set.range (positiveGenerator R) ∪
+      Set.range (negativeGenerator R)) (v := cartanElement R z) ?_
+  · rw [lieSpan_generators_eq_top] at h
+    exact fun x => (mem_lieAnnihilator K _).mp (h (LieSubalgebra.mem_top x))
+  rintro _ ((⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩) <;>
+    rw [← lie_skew] <;> simp [hr]
+
+section CartanInjective
+
+variable {R} (hinj : Function.Injective (cartanElement R))
+include hinj
+
+/-- Whenever `cartanElement R` is injective, every raising generator `eᵢ` is nonzero. -/
+theorem positiveGenerator_ne_zero_of_injective (i : I) : positiveGenerator R i ≠ 0 := fun h0 =>
+  R.coroot_linearIndependent.ne_zero i <| hinj <| by
+    simpa [h0] using (lie_positiveGenerator_negativeGenerator_self R i).symm
+
+/-- Whenever `cartanElement R` is injective, every lowering generator `fᵢ` is nonzero. -/
+theorem negativeGenerator_ne_zero_of_injective (i : I) : negativeGenerator R i ≠ 0 := fun h0 =>
+  R.coroot_linearIndependent.ne_zero i <| hinj <| by
+    simpa [h0] using (lie_positiveGenerator_negativeGenerator_self R i).symm
+
+/-- Whenever `cartanElement R` is injective, the images of the simple coroots in
+`TauCeti.KacMoody.PresentedLieAlgebra R` are linearly independent. -/
+theorem linearIndependent_cartanElement_coroot :
+    LinearIndependent K (fun i => cartanElement R (R.coroot i)) :=
+  R.coroot_linearIndependent.map' (cartanElement R) (LinearMap.ker_eq_bot.2 hinj)
+
+/-- Whenever `cartanElement R` is injective, `cartanElement R x` lies in the center of
+`TauCeti.KacMoody.PresentedLieAlgebra R` if and only if `x` lies in `R.cartanCenter`. -/
+theorem cartanElement_mem_center_iff {x : H} :
+    cartanElement R x ∈ center K (PresentedLieAlgebra R) ↔ x ∈ R.cartanCenter := by
+  refine ⟨fun hx => (R.mem_cartanCenter_iff x).2 fun i => ?_, cartanElement_mem_center R⟩
+  have h0 : ⁅cartanElement R x, positiveGenerator R i⁆ = 0 := by
+    rw [← lie_skew, (LieModule.mem_maxTrivSubmodule K _ _ _).1 hx (positiveGenerator R i), neg_zero]
+  rw [lie_cartanElement_positiveGenerator] at h0
+  exact (smul_eq_zero.1 h0).resolve_right (positiveGenerator_ne_zero_of_injective hinj i)
+
+end CartanInjective
 
 /-! ## The derived algebra and Serre's presentation
 

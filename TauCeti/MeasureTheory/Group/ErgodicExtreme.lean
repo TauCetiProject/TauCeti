@@ -113,6 +113,9 @@ variable {X : Type*} {m : MeasurableSpace X} {μ ν : Measure X}
 /-- **An almost invariant function under an ergodic action is almost everywhere constant.** The
 target may be any nonempty countably separated measurable space; the action-level analogue of
 `Ergodic.ae_eq_const_of_ae_eq_comp₀`. -/
+@[to_additive ae_eq_const_of_forall_ae_eq_comp_vadd₀ /-- **An almost invariant function under an
+ergodic additive action is almost everywhere constant.** The target may be any nonempty countably
+separated measurable space. -/]
 theorem ae_eq_const_of_forall_ae_eq_comp_smul₀ (G : Type*) [SMul G X]
     {β : Type*} [Nonempty β] [MeasurableSpace β] [MeasurableSpace.CountablySeparated β]
     [ErgodicSMul G X μ] {g : X → β} (hgm : NullMeasurable g μ)
@@ -203,10 +206,8 @@ theorem of_mem_extremePoints_measure_univ_eq {c : ℝ≥0∞} (hc : c ≠ ∞)
   refine TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2 fun t htm htinv => ?_
   have hmem {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (fun x => g • x) ⁻¹' u = u)
       (hu0 : μ u ≠ 0) : c • μ[|u] ∈ invariantMeasuresOfMeasureUnivEq G X c := by
-    have := SMulInvariantMeasure.restrict (G := G) (μ := μ) hum huinv
-    refine ⟨?_, ?_⟩
-    · -- `μ[|u]` is `(μ u)⁻¹ • μ.restrict u` by the definition of `ProbabilityTheory.cond`
-      rw [ProbabilityTheory.cond]; infer_instance
+    have := SMulInvariantMeasure.cond (G := G) (μ := μ) hum fun g => by rw [huinv g]
+    refine ⟨inferInstance, ?_⟩
     · rw [_root_.smul_apply, (cond_isProbabilityMeasure hu0).measure_univ, smul_eq_mul, mul_one]
   by_contra H
   obtain ⟨hs, hs'⟩ : μ t ≠ 0 ∧ μ tᶜ ≠ 0 := by

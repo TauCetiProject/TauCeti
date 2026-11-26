@@ -71,7 +71,7 @@ public section
 
 namespace Matrix.ShellLieAlgebra
 
-open LieAlgebra Module TensorProduct
+open LieAlgebra _root_.Module TensorProduct
 
 variable {I : Type*} [Fintype I] [LinearOrder I] {B : Matrix I I ℤ}
 
@@ -222,6 +222,7 @@ theorem isKilling (hB : B.PosDef) (hev : ∀ i, Even (B i i))
   -- A vector Killing orthogonal to everything has zero coefficient on each root vector `x_a`, by
   -- pairing with `x_(-a)`, and its Cartan part `H_h` then satisfies `κ(H_h, H_h) = 0`.
   have hsum := (cartan_add_sum_root_eq B x).symm
+  rw [Finsupp.sum_fintype _ _ fun a ↦ zero_smul ℤ (root B a)] at hsum
   set h := (equivProd B x).1
   have hroot (a : B.normTwoShell) : (equivProd B x).2 a = 0 := by
     let a' : B.normTwoShell := ⟨-a, neg_mem_normTwoShell.mpr a.property⟩

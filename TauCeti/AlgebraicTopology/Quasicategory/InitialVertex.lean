@@ -31,7 +31,8 @@ equivalence. Conversely, terminal vertices of `X` are the initial vertices of `X
 (`SSet.isInitialVertex_op_iff`). Since the nerve of `Cᵒᵖ` is the opposite of the nerve of `C`
 (`CategoryTheory.nerve.opIso`), a vertex of the nerve of a category is initial exactly when it is
 an initial object (`CategoryTheory.nerve.isInitialVertex_iff`), and the first vertex of `Δ[n]` is
-initial (`SSet.stdSimplex.isInitialVertex_zero`).
+initial (`SSet.stdSimplex.isInitialVertex_zero`). Every vertex of a terminal simplicial set, such
+as `Δ[0]`, is initial (`SSet.isInitialVertex_of_isTerminal`).
 
 ## References
 
@@ -129,6 +130,10 @@ end IsInitialVertex
 lemma isInitialVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
     Y.IsInitialVertex (e.hom.app _ x) ↔ X.IsInitialVertex x :=
   isTerminalVertex_iff_of_iso (opFunctor.mapIso e) _
+
+/-- Every vertex of a terminal simplicial set, such as `Δ[0]`, is initial. -/
+lemma isInitialVertex_of_isTerminal (hX : IsTerminal X) (x : X _⦋0⦌) : X.IsInitialVertex x :=
+  (isInitialVertex_iff x).2 fun _ _ _ ↦ ⟨hX.from _, hX.hom_ext _ _⟩
 
 end SSet
 

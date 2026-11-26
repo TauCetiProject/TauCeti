@@ -61,9 +61,9 @@ The point mass in dimension `d > 0` has `H^s` singular support `{x₀}` for `s �
 * `Distribution.isOpen_diff_sobolevSingularSupport`, `Distribution.sobolevSingularSupport_mono`,
   `Distribution.sobolevSingularSupport_subset_singularSupport`: the `H^s` singular support is
   closed in `Ω`, grows with `s`, and lies in the singular support.
-* `Distribution.IsLocallySobolevAt.add`, `Distribution.IsLocallySobolevAt.smulLeftCLM`,
-  `Distribution.isLocallySobolevAt_restrictCLM_iff`: being `H^s` near a point is preserved by
-  sums, smooth multiples and restriction.
+* `Distribution.IsLocallySobolevAt.add`, `Distribution.IsLocallySobolevAt.sum`,
+  `Distribution.IsLocallySobolevAt.smulLeftCLM`, `Distribution.isLocallySobolevAt_restrictCLM_iff`:
+  being `H^s` near a point is preserved by sums, finite sums, smooth multiples and restriction.
 * `Distribution.sobolevSingularSupport_restrictCLM`,
   `Distribution.sobolevSingularSupport_add_subset`,
   `Distribution.sobolevSingularSupport_smulLeftCLM_subset`: restriction, sums and smooth multiples.
@@ -223,6 +223,13 @@ theorem IsLocallySobolevAt.sub {s : ℝ} {S T : 𝓓'(Ω, ℂ)} {x : E}
   rw [sub_eq_add_neg]
   exact hS.add (isLocallySobolevAt_neg_iff.2 hT)
 
+/-- A finite sum of distributions `H^s` near a point `x ∈ Ω` is `H^s` near `x`. -/
+theorem IsLocallySobolevAt.sum {s : ℝ} {ι : Type*} {t : Finset ι} {T : ι → 𝓓'(Ω, ℂ)} {x : E}
+    (hx : x ∈ Ω) (h : ∀ i ∈ t, (T i).IsLocallySobolevAt s x) :
+    (∑ i ∈ t, T i).IsLocallySobolevAt s x :=
+  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsLocallySobolevAt s x) (fun _ _ ↦ .add)
+    (isLocallySobolevAt_zero_iff.2 hx) h
+
 /-- The complex conjugate of `T` is `H^s` near `x` exactly when `T` is. -/
 @[simp]
 theorem isLocallySobolevAt_conj_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E} :
@@ -234,6 +241,21 @@ theorem isLocallySobolevAt_conj_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E} :
     exact ⟨fun h ξ hξ ↦ by simpa using h (-ξ) (neg_ne_zero.2 hξ),
       fun h ξ hξ ↦ h (-ξ) (neg_ne_zero.2 hξ)⟩
   · exact iff_of_false (fun h ↦ hx h.mem) fun h ↦ hx h.mem
+
+/-- The real part of a distribution `H^s` near `x` is `H^s` near `x`. -/
+theorem IsLocallySobolevAt.re {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E}
+    (h : T.IsLocallySobolevAt s x) :
+    (mapCLM (ofRealCLM ∘L reCLM) T).IsLocallySobolevAt s x := by
+  -- The real part is the average of `T` and its complex conjugate.
+  have hre : mapCLM (ofRealCLM ∘L reCLM) T =
+      (2⁻¹ : ℂ) • (T + mapCLM conjCLE.toContinuousLinearMap T) := by
+    ext φ
+    simp only [mapCLM_apply, ContinuousLinearMap.comp_apply, reCLM_apply, ofRealCLM_apply,
+      FunLike.coe_smul, FunLike.coe_add, Pi.smul_apply, Pi.add_apply,
+      ContinuousLinearEquiv.coe_coe, conjCLE_apply, smul_eq_mul, re_eq_add_conj]
+    ring
+  rw [hre]
+  exact (h.add (isLocallySobolevAt_conj_iff.2 h)).smul _
 
 section SmulLeft
 
@@ -335,6 +357,12 @@ theorem sobolevSingularSupport_subset_singularSupport (s : ℝ) (T : 𝓓'(Ω, �
 theorem sobolevSingularSupport_subset_dsupport (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
     T.sobolevSingularSupport s ⊆ dsupport T :=
   (sobolevSingularSupport_subset_singularSupport s T).trans (singularSupport_subset_dsupport T)
+
+/-- A distribution is `H^s` near every point of `Ω` outside its support. -/
+theorem isLocallySobolevAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω)
+    (hxT : x ∉ dsupport T) (s : ℝ) : T.IsLocallySobolevAt s x :=
+  (notMem_sobolevSingularSupport_iff hx).1 fun h ↦
+    hxT (sobolevSingularSupport_subset_dsupport s T h)
 
 /-- A function smooth on `Ω` has empty `H^s` singular support. -/
 theorem sobolevSingularSupport_ofFun_eq_empty (s : ℝ) {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f Ω) :

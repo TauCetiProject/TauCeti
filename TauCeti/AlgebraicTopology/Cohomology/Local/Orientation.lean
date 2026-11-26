@@ -67,16 +67,7 @@ def cohomologyEquiv (N : ModuleCat.{w} ℤ) :
   let H := localHomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) (finrank ℝ E)
   let e₀ := singularHomologyComplSingletonFinrankIso
     (ModuleCat.of ℤ (ULift.{w} ℤ)) φ hx
-  have hinj : Function.Injective (LinearMap.toSpanSingleton ℤ H o.val) := by
-    apply (LinearMap.ker_eq_bot).mp
-    apply LinearMap.ker_eq_bot'.mpr
-    intro c hc
-    exact (o.property.zsmul_eq_zero_iff e₀).mp
-      ((int_smul_eq_zsmul _ c o.val).symm.trans hc)
-  let e : ℤ ≃ₗ[ℤ] H := LinearEquiv.ofBijective
-    (LinearMap.toSpanSingleton ℤ H o.val) ⟨hinj, fun y => by
-      obtain ⟨c, hc⟩ := (isLocalOrientation_iff _ _ _).mp o.property y
-      exact ⟨c, (int_smul_eq_zsmul _ c o.val).trans hc⟩⟩
+  let e : ℤ ≃ₗ[ℤ] H := o.property.linearEquiv e₀
   let P := TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))
   let L : P.singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ N (finrank ℝ E) →+ N :=
     { toFun α := (P.singularKronecker ℤ (finrank ℝ E) α).hom o.val
@@ -99,10 +90,7 @@ def cohomologyEquiv (N : ModuleCat.{w} ℤ) :
     let f : H →ₗ[ℤ] N := (LinearMap.toSpanSingleton ℤ N y).comp e.symm.toLinearMap
     obtain ⟨α, hα⟩ := hk.surjective (ModuleCat.ofHom f)
     refine ⟨α, ?_⟩
-    have he : e.symm o.val = 1 := by
-      apply e.injective
-      rw [e.apply_symm_apply]
-      exact (LinearMap.toSpanSingleton_apply_one ℤ H o.val).symm
+    have he : e.symm o.val = 1 := IsLocalOrientation.linearEquiv_symm_self _ _
     dsimp only [L, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
     rw [hα]
     exact (congrArg (fun g : H →ₗ[ℤ] N => g o.val) (ModuleCat.hom_ofHom f)).trans (by
@@ -229,7 +217,7 @@ private def dualClass [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = 
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) d := by
   subst hd
   exact o.cohomologyClass (OpenPartialHomeomorph.refl F)
-    (by rw [OpenPartialHomeomorph.refl_source]; exact Set.mem_univ _)
+    (OpenPartialHomeomorph.mem_refl_source _)
 
 private theorem eq_dualClass_iff [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = d)
     (o : LocalOrientation F 0 d)

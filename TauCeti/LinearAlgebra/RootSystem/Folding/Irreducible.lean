@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
-public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
+public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Rigidity
 import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.SimplyLaced
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
 /-!
 # Simple orbits of based automorphisms of irreducible root pairings
@@ -19,17 +20,18 @@ Let `P` be a finite reduced crystallographic irreducible root pairing over a cha
 domain `R`, let `b` be a base of `P`, and let `σ : P.Aut` be an automorphism permuting the simple
 roots of `b`. When `b.cartanMatrix` is not simply laced, `σ = 1` by
 `RootPairing.Base.eq_one_of_forall_mem_support_of_not_isSimplyLaced` in
-`TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Rigidity`. For the simply-laced case,
-transporting `σ` along the Cartan-Killing classification of `b` yields an element of
-`t.diagramSymmetry` for the unique valid `TauCeti.DynkinType` `t` of `b`. Combining this transport
+`TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Rigidity`, so its simple orbits are
+singletons. For the simply-laced case, transporting `σ` along the Cartan-Killing classification of
+`b` yields an element of `t.diagramSymmetry` for the unique valid `TauCeti.DynkinType` `t` of `b`
+(`TauCeti.DynkinType.mem_diagramSymmetry_of_mem_matrixSymmetryGroup`). Combining this transport
 with the classification and cycle orthogonality of `diagramSymmetry` in
 `TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.SimplyLaced` proves the irreducible dichotomy
 governing folding by diagram automorphisms:
 
-* **Simply-laced simple-orbit dichotomy** (`RootPairing.simpleOrbit_pairing_eq_zero_or_typeA_even`):
-  if `b.cartanMatrix` is simply laced, then either distinct roots in every simple `σ`-orbit are
-  orthogonal (`P.pairing i j = 0`), or `b` has Cartan type `A (2 * n)` (`1 ≤ n`) under a numbering
-  `e : b.support ≃ Fin (2 * n)` in which `σ` reverses the chain (`e j = (e i).rev`).
+* **Simple-orbit dichotomy** (`RootPairing.simpleOrbit_pairing_eq_zero_or_typeA_even`): either
+  distinct roots in every simple `σ`-orbit are orthogonal (`P.pairing i j = 0`), or `b` has Cartan
+  type `A (2 * n)` (`1 ≤ n`) under a numbering `e : b.support ≃ Fin (2 * n)` in which `σ` reverses
+  the chain (`e j = (e i).rev`).
 * **Uniqueness of the non-orthogonal middle orbit in type `A₂ₙ`**
   (`RootPairing.pairing_eq_zero_iff_of_typeA_even_rev`,
   `RootPairing.pairing_typeA_even_mid`,
@@ -49,33 +51,16 @@ namespace RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
-/-! ### Transport to the standard diagram symmetry group -/
+/-! ### The dichotomy and the even-`A` middle orbit -/
 
-/-- Under a Cartan-type labelling `e : b.support ≃ Fin t.rank`, the permutation of `b.support`
-induced by a based automorphism `σ` conjugates to a diagram symmetry of `t`. -/
-private theorem permCongr_subtypePerm_mem_diagramSymmetry {P : RootPairing ι R M N} [CharZero R]
-    [P.IsCrystallographic] {b : P.Base} {σ : P.Aut}
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) {t : TauCeti.DynkinType}
-    {e : b.support ≃ Fin t.rank}
-    (he : ∀ i j : b.support, b.cartanMatrix i j = t.cartanMatrix (e i) (e j)) :
-    e.permCongr (Equiv.Perm.subtypePerm σ.indexEquiv (b.mem_support_indexEquiv_iff hσ)) ∈
-      t.diagramSymmetry := by
-  refine TauCeti.DynkinType.mem_diagramSymmetry_iff.mpr fun u v ↦ ?_
-  conv_rhs => rw [← e.apply_symm_apply u, ← e.apply_symm_apply v]
-  simp only [_root_.Equiv.permCongr_apply, ← he, Base.cartanMatrix, Base.cartanMatrixIn_def,
-    _root_.Equiv.Perm.subtypePerm_apply]
-  exact σ.toHom.pairingIn_indexEquiv ℤ (e.symm u : ι) (e.symm v : ι)
-
-/-! ### The simply-laced dichotomy and the even-`A` middle orbit -/
-
-/-- **Simple-orbit dichotomy for irreducible simply-laced root pairings.** For a based automorphism
-`σ` of an irreducible simply-laced finite reduced crystallographic root pairing, either distinct
-roots in every simple `σ`-orbit have zero pairing, or the base has Cartan type `A (2 * n)` (`1 ≤ n`)
-under a Bourbaki numbering `e : b.support ≃ Fin (2 * n)` in which `σ` reverses the chain. -/
+/-- **Simple-orbit dichotomy for irreducible root pairings.** For a based automorphism `σ` of an
+irreducible finite reduced crystallographic root pairing over a characteristic-zero domain, either
+distinct roots in every simple `σ`-orbit have zero pairing, or the base has Cartan type `A (2 * n)`
+(`1 ≤ n`) under a Bourbaki numbering `e : b.support ≃ Fin (2 * n)` in which `σ` reverses the chain.
+No simple-lacing hypothesis is needed: otherwise `σ = 1` and its orbits are singletons. -/
 theorem simpleOrbit_pairing_eq_zero_or_typeA_even (P : RootPairing ι R M N) [Finite ι] [CharZero R]
     [IsDomain R] [P.IsReduced] [P.IsCrystallographic] [P.IsIrreducible]
-    (b : P.Base) (σ : P.Aut) (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced) :
+    (b : P.Base) (σ : P.Aut) (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) :
     (∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0) ∨
       ∃ n : ℕ, 1 ≤ n ∧ ∃ e : b.support ≃ Fin (2 * n),
         (∀ i j : b.support,
@@ -83,11 +68,19 @@ theorem simpleOrbit_pairing_eq_zero_or_typeA_even (P : RootPairing ι R M N) [Fi
         ∀ i j : b.support, σ.indexEquiv i = j → e j = (e i).rev := by
   rcases isEmpty_or_nonempty ι with _ | _
   · exact Or.inl fun i ↦ isEmptyElim i
+  by_cases hsimply : b.cartanMatrix.IsSimplyLaced
+  swap
+  · -- A non-simply-laced based automorphism fixes every root, so its orbits are singletons.
+    refine Or.inl fun i _ j hj hne ↦ absurd ?_ hne
+    exact (mem_orbitIndices.mp hj).eq_of_left
+      (b.indexEquiv_eq_self_of_forall_mem_support_of_not_isSimplyLaced σ hσ hsimply i)
   obtain ⟨t, ⟨ht, hct⟩, -⟩ := TauCeti.existsUnique_dynkinType b
   have hsl : t.IsSimplyLaced := (hct.isSimplyLaced_iff_of_valid ht).mp hsimply
   obtain ⟨e, he⟩ := (TauCeti.hasCartanType_iff b t).mp hct
   let τ := _root_.Equiv.Perm.subtypePerm σ.indexEquiv (b.mem_support_indexEquiv_iff hσ)
-  have hmem : e.permCongr τ ∈ t.diagramSymmetry := permCongr_subtypePerm_mem_diagramSymmetry hσ he
+  have hmem : e.permCongr τ ∈ t.diagramSymmetry :=
+    TauCeti.DynkinType.mem_diagramSymmetry_of_mem_matrixSymmetryGroup he
+      (b.subtypePerm_mem_matrixSymmetryGroup σ (b.mem_support_indexEquiv_iff hσ))
   rcases TauCeti.DynkinType.cartanMatrix_eq_zero_of_sameCycle_or_eq_A_even ht hsl hmem with
     horth | ⟨n, hn, rfl, hrev⟩
   · left

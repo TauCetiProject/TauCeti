@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
 import TauCeti.MeasureTheory.Integral.RpowLaplace
+import TauCeti.Topology.Algebra.Order.Field
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -19,7 +20,8 @@ This file extends Mathlib's improper-integral estimates with an asymptotic estim
 integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
 `(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
 closed forms `∫_A^∞ dy / y² = 1 / A` and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as
-Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` as a Bochner integral.
+Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` and `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)` as
+Bochner integrals.
 
 It also evaluates the power-weighted sine integral on the positive half-line for exponents between
 zero and one.
@@ -27,12 +29,17 @@ zero and one.
 ## Main declarations
 
 * `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
+* `TauCeti.one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq` and
+  `TauCeti.integrable_one_div_sqrt_mul_sqrt`: the inverse product of two quadratic square
+  roots is dominated by a Cauchy integrand and is integrable for positive radii.
 
 * `TauCeti.integrableOn_rpow_mul_sin` and `TauCeti.integral_Ioi_rpow_mul_sin`: integrability
   and the value of `∫ x in Ioi 0, x ^ (-(alpha + 1)) * sin x` for `0 < alpha < 1`.
 
 * `TauCeti.lintegral_Ioi_inv_sq`: `∫⁻ y in Ioi A, (1 / ‖y‖₊) ^ 2 = ofReal A⁻¹` for `0 < A`, the
   integrand being the density of the hyperbolic area measure.
+* `TauCeti.integral_Ioi_inv_pow_succ` and `TauCeti.integrableOn_Ioi_inv_pow_succ`:
+  `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)`, and integrability, for `k ≥ 1` and `0 < c`.
 * `TauCeti.lintegral_Iic_ofReal_exp_mul`, `TauCeti.lintegral_Ioi_ofReal_exp_neg_mul`:
   `∫⁻ s in Iic 0, ofReal (exp (a s)) = ∫⁻ s in Ioi 0, ofReal (exp (-a s)) = ofReal a⁻¹`
   for `0 < a`.
@@ -127,6 +134,41 @@ theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
     ring
   exact ((integrable_inv_one_add_sq.comp_div hc).const_mul (c ^ 2)⁻¹).congr
     (Eventually.of_forall hscale)
+
+/-- For positive radii, the inverse product of two quadratic square roots is bounded by the
+Cauchy integrand at their minimum radius. -/
+theorem one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
+    1 / (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) ≤
+      ((min a b) ^ 2 + t ^ 2)⁻¹ := by
+  have hd : 0 < min a b := lt_min ha hb
+  rw [one_div]
+  apply inv_anti₀ (add_pos_of_pos_of_nonneg (sq_pos_of_pos hd) (sq_nonneg t))
+  calc
+    (min a b) ^ 2 + t ^ 2 =
+        Real.sqrt ((min a b) ^ 2 + t ^ 2) * Real.sqrt ((min a b) ^ 2 + t ^ 2) :=
+      (Real.mul_self_sqrt (by positivity)).symm
+    _ ≤ _ := by
+      gcongr <;> nlinarith [min_le_left a b, min_le_right a b]
+
+/-- The inverse product of `sqrt (a² + t²)` and `sqrt (b² + t²)` is integrable on the whole
+real line when both radii are positive. -/
+theorem integrable_one_div_sqrt_mul_sqrt {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    Integrable (fun t : ℝ ↦ 1 /
+      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) := by
+  have hdcont : Continuous (fun t : ℝ ↦
+      Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) :=
+    (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2))).mul
+      (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2)))
+  have hcont : Continuous (fun t : ℝ ↦ 1 /
+      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) :=
+    continuous_const.div hdcont (fun t ↦ by
+      exact (mul_pos (Real.sqrt_pos.2 (by positivity))
+        (Real.sqrt_pos.2 (by positivity))).ne')
+  have hC : Integrable (fun t : ℝ ↦ ((min a b) ^ 2 + t ^ 2)⁻¹) := by
+    simpa only [add_comm] using TauCeti.integrable_inv_sq_add_sq (lt_min ha hb).ne'
+  refine hC.mono' hcont.aestronglyMeasurable (Eventually.of_forall fun t ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq ha hb t
 
 /-- A remainder `E` that is interval integrable on `[a, b]` with `0 < a` makes `t ^ (τ - 1) * E t`
 interval integrable on `[a, b]`. -/
@@ -280,10 +322,8 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
     (hlim.eventually (Metric.closedBall_mem_nhds L (half_pos hδ)))
   set T' := max T 1
   set K := ∫ t in Ioc 1 T', ‖g t - L‖
-  have hsmall : ∀ᶠ ε : ℝ in 𝓝[>] 0, ε * K < δ / 2 := by
-    have : Tendsto (fun ε : ℝ ↦ ε * K) (𝓝[>] 0) (𝓝 (0 * K)) :=
-      (tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).mul_const K
-    exact this.eventually_lt_const (by simpa using half_pos hδ)
+  have hsmall : ∀ᶠ ε : ℝ in 𝓝[>] 0, ε * K < δ / 2 :=
+    (tendsto_mul_const_nhdsGT_zero K).eventually_lt_const (half_pos hδ)
   filter_upwards [hsmall, self_mem_nhdsWithin] with ε hεK (hε : 0 < ε)
   obtain ⟨hint, hnorm⟩ :=
     integrableOn_and_norm_integral_rpow_smul_sub_le hε (half_pos hδ).le hg fun t ht ↦ by
@@ -337,6 +377,31 @@ theorem lintegral_Ioi_inv_sq {A : ℝ} (hA : 0 < A) :
   rw [← ENNReal.ofReal_coe_nnreal]
   congr 1
   simp [Real.rpow_neg hy.le, Real.nnNorm_of_nonneg hy.le]
+
+private theorem eqOn_rpow_neg_inv_pow (k : ℕ) {c : ℝ} (hc : 0 < c) :
+    EqOn (fun x : ℝ => x ^ (-(k + 1 : ℝ))) (fun x => (x ^ (k + 1))⁻¹) (Ioi c) :=
+  fun x (hx : c < x) => by
+    simp only
+    rw [Real.rpow_neg (hc.trans hx).le, ← Nat.cast_one, ← Nat.cast_add, Real.rpow_natCast]
+
+/-- **The improper integral of a natural inverse power**: `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)` for
+`k ≥ 1` and `0 < c`, from Mathlib's `integral_Ioi_rpow_of_lt`. -/
+theorem integral_Ioi_inv_pow_succ {k : ℕ} (hk : 1 ≤ k) {c : ℝ} (hc : 0 < c) :
+    ∫ x in Ioi c, (x ^ (k + 1))⁻¹ = (k * c ^ k)⁻¹ := by
+  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  have h := integral_Ioi_rpow_of_lt (a := -(k + 1 : ℝ)) (by linarith) hc
+  rw [show -(k + 1 : ℝ) + 1 = -(k : ℝ) by ring, Real.rpow_neg hc.le, Real.rpow_natCast,
+    setIntegral_congr_fun measurableSet_Ioi (eqOn_rpow_neg_inv_pow k hc)] at h
+  rw [h]
+  field_simp
+
+/-- For `k ≥ 1` and `0 < c`, the function `x ↦ 1 / x^(k+1)` is integrable on `(c, ∞)`, from
+Mathlib's `integrableOn_Ioi_rpow_of_lt`. -/
+theorem integrableOn_Ioi_inv_pow_succ {k : ℕ} (hk : 1 ≤ k) {c : ℝ} (hc : 0 < c) :
+    IntegrableOn (fun x : ℝ => (x ^ (k + 1))⁻¹) (Ioi c) := by
+  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  exact (integrableOn_Ioi_rpow_of_lt (by linarith) hc).congr_fun (eqOn_rpow_neg_inv_pow k hc)
+    measurableSet_Ioi
 
 /-- `∫_{-∞}^0 e^{a s} ds = 1 / a` for `0 < a`, as a Lebesgue integral. -/
 theorem lintegral_Iic_ofReal_exp_mul {a : ℝ} (ha : 0 < a) :

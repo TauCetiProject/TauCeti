@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Primitive
 
 import TauCeti.Algebra.Order.Floor.Ring
-import TauCeti.NumberTheory.Height.Primitive
+import TauCeti.NumberTheory.DiophantineApproximation.Subspace.AffineProd
 import TauCeti.NumberTheory.NumberField.Global.Places.Height
 import TauCeti.NumberTheory.NumberField.SUnits.AffineHeight
 
@@ -73,37 +73,29 @@ open _root_.NumberField
 
 /-- The values of a family of linear forms at a point whose local sup norms over the infinite
 places and `S₀` multiply to `H`: their product, weighted as in `approxProd`, is
-`approxProd univ S₀ id L x * H ^ card ι`. -/
+`approxProd univ S₀ id L x * H ^ card ι`. This is `affineProd_eq_approxProd_mul` for the height one
+primes of the places of `S₀`. -/
 private theorem prod_apply_eq_approxProd_mul (S₀ : Finset (FinitePlace K))
-    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) {x : ι → K} (hx : x ≠ 0) {H : ℝ}
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) {x : ι → K} {H : ℝ}
     (hH : H = (∏ v : InfinitePlace K, (⨆ j, v (x j)) ^ v.mult) * ∏ v ∈ S₀, ⨆ j, v (x j)) :
     (∏ v : InfinitePlace K, (∏ i, v.val (L v.val i x)) ^ v.mult) * ∏ v ∈ S₀, ∏ i, v.val
         (L v.val i x) =
       approxProd univ S₀ id L x * H ^ Fintype.card ι := by
-  obtain ⟨j₀, hj₀⟩ := Function.ne_iff.mp hx
-  -- at every absolute value, the local factor times the `card ι`-th power of the local sup norm
-  -- of the nonzero point `x` is the product of the values of the forms
-  have hloc (v : AbsoluteValue K ℝ) (l : ι → Dual K (ι → K)) :
-      (∏ i, v (l i x) / ⨆ j, v (x j)) * (⨆ j, v (x j)) ^ Fintype.card ι = ∏ i, v (l i x) := by
-    have hpos : 0 < ⨆ j, v (x j) := (v.pos hj₀).trans_le (Finite.le_ciSup (fun j ↦ v (x j)) j₀)
-    rw [prod_div_distrib, prod_const, card_univ, div_mul_cancel₀ _ (pow_ne_zero _ hpos.ne')]
-  simp only [approxProd_def, id_eq, Algebra.algebraMap_self, RingHom.id_apply,
-    InfinitePlace.coe_apply, FinitePlace.coe_apply] at hH ⊢
-  rw [hH, mul_pow, ← prod_pow, ← prod_pow, mul_mul_mul_comm, ← prod_mul_distrib,
-    ← prod_mul_distrib]
-  congr 1
-  · refine prod_congr rfl fun v _ ↦ ?_
-    rw [pow_right_comm, ← mul_pow]
-    exact congrArg (· ^ v.mult) (hloc v.val (L v.val)).symm
-  · exact prod_congr rfl fun v _ ↦ (hloc v.val (L v.val)).symm
+  classical
+  have h := affineProd_eq_approxProd_mul (S₀.image FinitePlace.maximalIdeal) id L x
+  rw [image_image, Function.comp_def] at h
+  simp only [FinitePlace.mk_maximalIdeal, image_id', affineProd_def,
+    prod_image FinitePlace.maximalIdeal_injective.injOn, id_eq,
+    Algebra.algebraMap_self, RingHom.id_apply] at h
+  rw [hH]
+  exact h
 
 /-- **The exact exponents of a solution.** Let `y` be a point whose local sup norms over the
 infinite places and `S₀` multiply to `H > 1`, and at which no form vanishes. The exponents
 `logb H |L v i y|_v` have weight at most `-ε` as soon as
 `approxProd univ S₀ id L y ≤ H ^ (-card ι - ε)`. -/
 private theorem approxWeight_logb_le (S₀ : Finset (FinitePlace K))
-    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) {y : ι → K} (hy : y ≠ 0) {H ε : ℝ}
-    (hH1 : 1 < H)
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) {y : ι → K} {H ε : ℝ} (hH1 : 1 < H)
     (hH : H = (∏ v : InfinitePlace K, (⨆ j, v (y j)) ^ v.mult) * ∏ v ∈ S₀, ⨆ j, v (y j))
     (hLinf : ∀ (v : InfinitePlace K) (i : ι), L v.val i y ≠ 0) (hLfin : ∀ v ∈ S₀, ∀ i,
         L v.val i y ≠ 0)
@@ -116,7 +108,7 @@ private theorem approxWeight_logb_le (S₀ : Finset (FinitePlace K))
   rw [← rpow_le_rpow_left_iff hH1, rpow_approxWeight S₀ _ hHpos,
     prod_congr rfl fun v _ ↦ congrArg (· ^ v.mult) (prod_congr rfl fun i _ ↦ hrpow (hLinf v i)),
     prod_congr rfl fun v hv ↦ prod_congr rfl fun i _ ↦ hrpow (hLfin v hv i),
-    prod_apply_eq_approxProd_mul S₀ L hy hH]
+    prod_apply_eq_approxProd_mul S₀ L hH]
   calc approxProd univ S₀ id L y * H ^ Fintype.card ι
       ≤ H ^ (-(Fintype.card ι : ℝ) - ε) * H ^ (Fintype.card ι : ℝ) := by
         rw [rpow_natCast]
@@ -196,7 +188,7 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
     rw [div_le_iff₀ hlogHpos]
     linarith [le_max_left C 1]
   have hwa : approxWeight S₀ a ≤ -ε := by
-    refine approxWeight_logb_le S₀ L hprim.ne_zero hH1 ?_ (fun v i ↦ hLy (hLinf v i))
+    refine approxWeight_logb_le S₀ L hH1 ?_ (fun v i ↦ hLy (hLinf v i))
       (fun v hv i ↦ hLy (hLfin v hv i)) ?_
     · rw [hHdef, ← mulHeight_smul_eq_mulHeight x hu0]
       exact mulHeight_eq_prod_of_isPrimitive_image_maximalIdeal S₀ (by rwa [hS])

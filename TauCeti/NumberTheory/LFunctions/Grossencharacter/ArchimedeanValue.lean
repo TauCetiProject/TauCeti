@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Inverse
+import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.UnitCompatibility
 
 /-!
 # The archimedean value of a presentation
@@ -23,10 +24,10 @@ On elements positive at the real places of `𝔪`, `χ.archimedeanValue` is the 
 `Grossencharacter.realParity_eq`, on all of `Kˣ` this product equals the algebraic monomial
 `∏_τ τ(x) ^ (n τ)` multiplied by the real sign twist `sgn(τ_w x) ^ (ε_w - n_w)` at each real
 place `w ∈ 𝔪.infinitePart`, where `ε_w` is the real parity of `χ.toHeckeCharacter`
-(`coe_archimedeanValue_eq`). On elements congruent to `1` modulo `𝔪`, positivity at
-`𝔪.infinitePart` kills the sign twists, reducing to the algebraic monomial
-(`coe_archimedeanValue_eq_of_isCongrOne`). For the presentation of a ray class character, only
-the real sign twists remain (`coe_archimedeanValue_ofRayClassCharacter`).
+(`coe_archimedeanValue_eq_embeddingCharacter_mul_sign`, `coe_archimedeanValue_eq`). On elements
+congruent to `1` modulo `𝔪`, positivity at `𝔪.infinitePart` kills the sign twists, reducing to
+the algebraic monomial (`coe_archimedeanValue_eq_of_isCongrOne`). For the presentation of a ray
+class character, only the real sign twists remain (`coe_archimedeanValue_ofRayClassCharacter`).
 
 ## Main definitions
 
@@ -37,8 +38,9 @@ the real sign twists remain (`coe_archimedeanValue_ofRayClassCharacter`).
 
 * `TauCeti.LFunctions.Grossencharacter.archimedeanValue_eq_embeddingCharacter`: on elements
   positive at the real places of `𝔪`, `χ.archimedeanValue` is the algebraic monomial.
-* `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_eq`: explicit monomial-times-sign-twist
-  formula for `χ.archimedeanValue` on `Kˣ`.
+* `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_sign` and
+  `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_eq`: explicit monomial-times-sign-twist
+  formulas for `χ.archimedeanValue` on `Kˣ`.
 * `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_eq_of_isCongrOne`: on elements
   congruent to `1` modulo `𝔪`, `χ.archimedeanValue` equals the algebraic monomial.
 * `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_ofRayClassCharacter`: explicit sign
@@ -89,6 +91,21 @@ theorem archimedeanValue_eq_embeddingCharacter (χ : Grossencharacter K 𝔪) {x
     χ.infinityType χ.agreesOnIdentityComponent x
     fun w hw ↦ hx w (not_imp_comm.mp (χ.realParity_eq w) hw)
 
+open scoped Classical in
+/-- **The archimedean value is the monomial of the infinity type times signs at the real places**:
+at each real place `w`, the sign of `x` there to the power `ε_w - n_w`, the difference between the
+sign parity of the Hecke character and the parity of the algebraic infinity type `n` at `w`. The
+factor is trivial at the real places outside `𝔪` (`realParity_eq`). -/
+theorem coe_archimedeanValue_eq_embeddingCharacter_mul_sign (χ : Grossencharacter K 𝔪) (x : Kˣ) :
+    (χ.archimedeanValue x : ℂ) = (χ.infinityType.embeddingCharacter x : ℂ) *
+      ∏ w : {w : InfinitePlace K // w.IsReal},
+        (SignType.sign (InfinitePlace.embedding_of_isReal w.property (x : K)) : ℂ) ^
+          (χ.toHeckeCharacter.infinityType.realParity w -
+            (AlgebraicInfinityType.toContinuous χ.infinityType).realParity w).val := by
+  rw [archimedeanValue_apply, Units.coe_prod]
+  exact χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign
+    χ.infinityType χ.agreesOnIdentityComponent x
+
 /-- Inversion of a presentation inverts its archimedean value. -/
 @[simp]
 theorem archimedeanValue_inverse (χ : Grossencharacter K 𝔪) :
@@ -113,6 +130,7 @@ theorem archimedeanValue_ofRayClassCharacter_one :
   ext x
   simp [archimedeanValue_apply]
 
+open scoped Classical in
 /-- **Explicit formula for the archimedean value.** On `x : Kˣ`, `χ.archimedeanValue x` equals
 the algebraic monomial `∏_τ τ(x) ^ (n τ)` multiplied, at each real place `w ∈ 𝔪.infinitePart`,
 by `sgn(τ_w x) ^ (ε_w - n_w)`, where `ε_w` is the real parity of `χ.toHeckeCharacter`. -/
@@ -123,12 +141,14 @@ theorem coe_archimedeanValue_eq (χ : Grossencharacter K 𝔪) (x : Kˣ) :
           (SignType.sign (InfinitePlace.embedding_of_isReal w.property (x : K)) : ℂ) ^
             (χ.toHeckeCharacter.infinityType.realParity w -
               (χ.infinityType w.val.embedding : ZMod 2)).val := by
-  rw [archimedeanValue_apply, Units.coe_prod,
-    χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign
-      χ.infinityType χ.agreesOnIdentityComponent 𝔪.infinitePart
-      (fun w hw ↦ not_imp_comm.mp (χ.realParity_eq w) hw) x,
+  rw [coe_archimedeanValue_eq_embeddingCharacter_mul_sign,
     AlgebraicInfinityType.coe_embeddingCharacter_apply]
-  simp [AlgebraicInfinityType.toContinuous_realParity]
+  congr 1
+  simp only [AlgebraicInfinityType.toContinuous_realParity]
+  refine (Finset.prod_subset (Finset.subset_univ 𝔪.infinitePart) fun w _ hw ↦ ?_).symm
+  have hpar := χ.realParity_eq w hw
+  rw [AlgebraicInfinityType.toContinuous_realParity] at hpar
+  simp [hpar]
 
 /-- On elements congruent to `1` modulo `𝔪`, the archimedean value reduces to the algebraic
 monomial because `x` is positive at every real place of `𝔪.infinitePart`. -/

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Maps.Strict.Module
-public import TauCeti.Analysis.Normed.Group.Submodule
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm
+public import TauCeti.Topology.MetricSpace.Algebra
 public import TauCeti.Topology.MetricSpace.Ultra.Prod
 import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.MetricSpace.Ultra.Pi

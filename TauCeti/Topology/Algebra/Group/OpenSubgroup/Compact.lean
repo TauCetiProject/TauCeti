@@ -45,6 +45,8 @@ compact open subgroup.
 * `NonarchimedeanGroup.nhds_hasBasis_isCompact_openSubgroup`,
   `NonarchimedeanGroup.isCoinitial_isCompact_openSubgroup`: left cosets of compact open subgroups
   form a basis at every point, and the compact open subgroups are coinitial among open subgroups.
+* `Subgroup.isOpen_iff_exists_isCompact_openSubgroup_le`: in such a group a subgroup is open
+  exactly when it contains a compact open subgroup.
 * `OpenSubgroup.directedOn_isCompact`: the compact open subgroups are directed under reverse
   inclusion.
 * `OpenSubgroup.nhds_one_hasBasis_isCompact_and_le`,
@@ -145,6 +147,16 @@ theorem isCoinitial_isCompact_openSubgroup :
   (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).mem_iff.1 W.mem_nhds_one
 
 end NonarchimedeanGroup
+
+/-- In a weakly locally compact nonarchimedean group, a subgroup is open exactly when it contains
+a compact open subgroup. -/
+@[to_additive /-- In a weakly locally compact nonarchimedean additive group, an additive subgroup
+is open exactly when it contains a compact open additive subgroup. -/]
+theorem Subgroup.isOpen_iff_exists_isCompact_openSubgroup_le [NonarchimedeanGroup G]
+    [WeaklyLocallyCompactSpace G] (H : Subgroup G) :
+    IsOpen (H : Set G) ↔ ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧ (U : Subgroup G) ≤ H :=
+  ⟨fun hH ↦ NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup.mem_iff.1
+    (hH.mem_nhds H.one_mem), fun ⟨_, _, hUH⟩ ↦ H.isOpen_of_openSubgroup hUH⟩
 
 namespace OpenSubgroup
 

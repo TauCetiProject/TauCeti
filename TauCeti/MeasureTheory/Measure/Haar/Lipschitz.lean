@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
-public import Mathlib.MeasureTheory.Measure.Hausdorff
+public import TauCeti.MeasureTheory.Measure.Hausdorff
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
-# Lipschitz images of Haar-null sets
+# Hausdorff measure and null-set transport under Lipschitz maps
 
 A map from a finite-dimensional real normed space to one of at least the same dimension that is
 Lipschitz on a set `s` sends `s` to a null set whenever `s` is null, for any additive Haar measures
@@ -20,7 +21,14 @@ measure, so every additive Haar measure is mutually absolutely continuous with i
 increase the Hausdorff `d`-measure by at most the factor `K ^ d`
 (`LipschitzOnWith.hausdorffMeasure_image_le`), and a set of zero Hausdorff `d`-measure has zero
 Hausdorff `d'`-measure for every `d' ≥ d`. The same factor `K ^ d` bounds the growth of the
-normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]`.
+normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]`, and on a
+separable extended metric space locally Lipschitz maps preserve `μHE[d]`-null subsets.
+Inverse-Lipschitz maps on a parameter set give the reverse measure bound. Together these
+bounds give null-set and almost-everywhere equivalences for bi-Lipschitz parametrizations,
+for normalized Hausdorff measure and for additive Haar measure on the source. The raw
+Hausdorff transport results are in `TauCeti.MeasureTheory.Measure.Hausdorff`.
+No measurability of the parameter set or its image is required. One-sided a.e. transport
+uses only Lipschitz control in the forward direction and inverse-Lipschitz control in reverse.
 
 ## Main statements
 
@@ -33,11 +41,20 @@ normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]
   parameters in a thin cone `{v | |ψ v| ≤ t ‖v‖}` within the ball of radius `c r`, divided by the
   volume of the ball of radius `r`, is at most `K ^ k c ^ k` times the share of the cone in the
   unit ball.
+* `AntilipschitzWith.le_euclideanHausdorffMeasure_image_of_domRestrict` — localized lower bound.
+* `LipschitzOnWith.euclideanHausdorffMeasure_image_eq_zero_iff` — bi-Lipschitz null-set transport.
+* `LipschitzOnWith.ae_euclideanHausdorffMeasure_image_iff` — bi-Lipschitz a.e. transport.
+* `LipschitzOnWith.euclideanHausdorffMeasure_image_eq_zero_iff_addHaar`,
+  `LipschitzOnWith.ae_euclideanHausdorffMeasure_exists_of_addHaar`, and
+  `LipschitzOnWith.ae_image_iff_addHaar` — the corresponding source Haar-measure transport and
+  equivalences.
+* `LocallyLipschitzOn.euclideanHausdorffMeasure_image_eq_zero_of_subset` — a map locally Lipschitz
+  on `s` sends every `μHE[d]`-null subset `t ⊆ s` to a `μHE[d]`-null set.
 -/
 
 public section
 
-open MeasureTheory MeasureTheory.Measure Module
+open MeasureTheory MeasureTheory.Measure Module Set
 open scoped NNReal ENNReal
 
 namespace LipschitzOnWith
@@ -123,3 +140,145 @@ theorem euclideanHausdorffMeasure_image_inter_cone_div_le {f : E → Y} {K : ℝ
           (ENNReal.ofReal_pos.mpr (by positivity)).ne' ENNReal.ofReal_ne_top
 
 end LipschitzOnWith
+
+namespace AntilipschitzWith
+
+variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  {L : ℝ≥0} {f : X → Y} {s : Set X}
+
+/-- Inverse-Lipschitz control on `s` bounds its normalized Hausdorff measure by its image. -/
+theorem le_euclideanHausdorffMeasure_image_of_domRestrict
+    (hi : AntilipschitzWith L (s.domRestrict f)) (d : ℕ) :
+    μHE[d] s ≤ (L : ℝ≥0∞) ^ d * μHE[d] (f '' s) := by
+  simp_rw [euclideanHausdorffMeasure_def, _root_.smul_apply, mul_smul_comm,
+    ← ENNReal.rpow_natCast]
+  gcongr
+  exact hi.le_hausdorffMeasure_image_of_domRestrict d.cast_nonneg
+
+/-- An inverse-Lipschitz map bounds the normalized Hausdorff measure of its source set
+by the measure of its image, with the inverse Lipschitz constant to the dimension. -/
+theorem le_euclideanHausdorffMeasure_image (hf : AntilipschitzWith L f) (d : ℕ) (s : Set X) :
+    μHE[d] s ≤ (L : ℝ≥0∞) ^ d * μHE[d] (f '' s) :=
+  (hf.domRestrict s).le_euclideanHausdorffMeasure_image_of_domRestrict d
+
+/-- Inverse-Lipschitz control pulls image-a.e. assertions back for normalized Hausdorff
+measure, with no Lipschitz hypothesis on the parametrization. -/
+theorem ae_euclideanHausdorffMeasure_of_image
+    (hi : AntilipschitzWith L (s.domRestrict f)) (d : ℕ) {p : Y → Prop}
+    (h : ∀ᵐ y ∂(μHE[d] : Measure Y), y ∈ f '' s → p y) :
+    ∀ᵐ x ∂(μHE[d] : Measure X), x ∈ s → p (f x) := by
+  simp only [ae_iff, euclideanHausdorffMeasure_def, _root_.smul_apply, ENNReal.smul_def,
+    smul_eq_mul, mul_eq_zero, ENNReal.coe_eq_zero,
+    addHaarScalarFactor_volume_hausdorffMeasure_ne_zero, false_or] at h ⊢
+  exact hi.ae_hausdorffMeasure_of_image d.cast_nonneg h
+
+end AntilipschitzWith
+
+namespace LipschitzOnWith
+
+variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  {K L : ℝ≥0} {f : X → Y} {s : Set X}
+
+/-- A bi-Lipschitz parametrization preserves and reflects normalized Hausdorff null sets.
+Neither the source set nor its image needs to be measurable. -/
+theorem euclideanHausdorffMeasure_image_eq_zero_iff
+    (hf : LipschitzOnWith K f s) (hi : AntilipschitzWith L (s.domRestrict f)) (d : ℕ) :
+    μHE[d] (f '' s) = 0 ↔ μHE[d] s = 0 := by
+  simpa only [euclideanHausdorffMeasure_def, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul,
+    ENNReal.coe_eq_zero, mul_eq_zero,
+    addHaarScalarFactor_volume_hausdorffMeasure_ne_zero, false_or] using
+    hf.hausdorffMeasure_image_eq_zero_iff hi d.cast_nonneg
+
+/-- Lipschitz maps send parameter-a.e. assertions to image-a.e. assertions for normalized
+Hausdorff measure, without an injectivity hypothesis. -/
+theorem ae_euclideanHausdorffMeasure_image (hf : LipschitzOnWith K f s) (d : ℕ)
+    {p : Y → Prop} (h : ∀ᵐ x ∂(μHE[d] : Measure X), x ∈ s → p (f x)) :
+    ∀ᵐ y ∂(μHE[d] : Measure Y), y ∈ f '' s → p y := by
+  simp only [ae_iff, euclideanHausdorffMeasure_def, _root_.smul_apply, ENNReal.smul_def,
+    smul_eq_mul, mul_eq_zero, ENNReal.coe_eq_zero,
+    addHaarScalarFactor_volume_hausdorffMeasure_ne_zero, false_or] at h ⊢
+  exact hf.ae_hausdorffMeasure_image d.cast_nonneg h
+
+/-- Almost-everywhere assertions on a bi-Lipschitz image are equivalent to their pullbacks
+for normalized Hausdorff measure, without measurability assumptions on the parameter set. -/
+theorem ae_euclideanHausdorffMeasure_image_iff (hf : LipschitzOnWith K f s)
+    (hi : AntilipschitzWith L (s.domRestrict f)) (d : ℕ) {p : Y → Prop} :
+    (∀ᵐ y ∂(μHE[d] : Measure Y), y ∈ f '' s → p y) ↔
+      ∀ᵐ x ∂(μHE[d] : Measure X), x ∈ s → p (f x) := by
+  exact ⟨hi.ae_euclideanHausdorffMeasure_of_image d, hf.ae_euclideanHausdorffMeasure_image d⟩
+
+/-- On a finite-dimensional real normed parameter space, the null-set correspondence for a
+bi-Lipschitz parametrization also holds for any additive Haar measure on the source. -/
+theorem euclideanHausdorffMeasure_image_eq_zero_iff_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {f : E → Y} {s : Set E}
+    (hf : LipschitzOnWith K f s) (hi : AntilipschitzWith L (s.domRestrict f))
+    (μ : Measure E) [μ.IsAddHaarMeasure] :
+    μHE[finrank ℝ E] (f '' s) = 0 ↔ μ s = 0 := by
+  rw [hf.euclideanHausdorffMeasure_image_eq_zero_iff hi]
+  exact ⟨fun h => Measure.absolutelyContinuous_isAddHaarMeasure μ μHE[finrank ℝ E] h,
+    fun h => Measure.absolutelyContinuous_isAddHaarMeasure μHE[finrank ℝ E] μ h⟩
+
+/-- A Lipschitz parametrization sends source-Haar-a.e. assertions to normalized
+Hausdorff-a.e. assertions on its image, without requiring injectivity. -/
+theorem ae_euclideanHausdorffMeasure_image_of_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {f : E → Y} {s : Set E}
+    (hf : LipschitzOnWith K f s) (μ : Measure E) [μ.IsAddHaarMeasure] {p : Y → Prop}
+    (h : ∀ᵐ x ∂μ, x ∈ s → p (f x)) :
+    ∀ᵐ y ∂(μHE[finrank ℝ E] : Measure Y), y ∈ f '' s → p y :=
+  hf.ae_euclideanHausdorffMeasure_image _
+    ((Measure.absolutelyContinuous_isAddHaarMeasure μHE[finrank ℝ E] μ).ae_le h)
+
+/-- A Lipschitz parametrization transports source-Haar-a.e. parameter assertions `p : E → Prop` to
+normalized Hausdorff-a.e. existence of a good preimage in `s`, without requiring injectivity. -/
+theorem ae_euclideanHausdorffMeasure_exists_of_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {f : E → Y} {s : Set E}
+    (hf : LipschitzOnWith K f s) (μ : Measure E) [μ.IsAddHaarMeasure] {p : E → Prop}
+    (h : ∀ᵐ x ∂μ, x ∈ s → p x) :
+    ∀ᵐ y ∂(μHE[finrank ℝ E] : Measure Y), y ∈ f '' s → ∃ x ∈ s, f x = y ∧ p x :=
+  hf.ae_euclideanHausdorffMeasure_image_of_addHaar μ
+    (h.mono fun x hx hxs => ⟨x, hxs, rfl, hx hxs⟩)
+
+/-- Inverse-Lipschitz control pulls normalized Hausdorff-a.e. assertions on the image
+back to any source Haar measure, without requiring Lipschitz regularity. -/
+theorem _root_.AntilipschitzWith.ae_addHaar_of_euclideanHausdorffMeasure_image
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {f : E → Y} {s : Set E}
+    (hi : AntilipschitzWith L (s.domRestrict f)) (μ : Measure E) [μ.IsAddHaarMeasure]
+    {p : Y → Prop} (h : ∀ᵐ y ∂(μHE[finrank ℝ E] : Measure Y), y ∈ f '' s → p y) :
+    ∀ᵐ x ∂μ, x ∈ s → p (f x) :=
+  (Measure.absolutelyContinuous_isAddHaarMeasure μ μHE[finrank ℝ E]).ae_le
+    (hi.ae_euclideanHausdorffMeasure_of_image _ h)
+
+/-- A.e. assertions on a bi-Lipschitz image for normalized Hausdorff measure are equivalent
+to their pullbacks for any additive Haar measure on a finite-dimensional parameter space. -/
+theorem ae_image_iff_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {f : E → Y} {s : Set E}
+    (hf : LipschitzOnWith K f s) (hi : AntilipschitzWith L (s.domRestrict f))
+    (μ : Measure E) [μ.IsAddHaarMeasure] {p : Y → Prop} :
+    (∀ᵐ y ∂(μHE[finrank ℝ E] : Measure Y), y ∈ f '' s → p y) ↔
+      ∀ᵐ x ∂μ, x ∈ s → p (f x) := by
+  exact ⟨hi.ae_addHaar_of_euclideanHausdorffMeasure_image μ,
+    hf.ae_euclideanHausdorffMeasure_image_of_addHaar μ⟩
+
+end LipschitzOnWith
+
+/-- A map locally Lipschitz on `s` maps every `μHE[d]`-null subset `t ⊆ s` to a `μHE[d]`-null
+set. -/
+theorem LocallyLipschitzOn.euclideanHausdorffMeasure_image_eq_zero_of_subset {X Y : Type*}
+    [EMetricSpace X] [TopologicalSpace.SeparableSpace X] [MeasurableSpace X] [BorelSpace X]
+    [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] {s t : Set X} {f : X → Y}
+    (hf : LocallyLipschitzOn s f) (hts : t ⊆ s) (d : ℕ) (ht0 : μHE[d] t = 0) :
+    μHE[d] (f '' t) = 0 := by
+  obtain ⟨U, _, _, hcov, hLip⟩ := hf.exists_open_cover_lipschitzOnWith (.of_separableSpace s)
+  have ht : t = ⋃ n, t ∩ U n := by
+    rw [← Set.inter_iUnion, Set.inter_eq_self_of_subset_left (hts.trans hcov)]
+  rw [ht, Set.image_iUnion]
+  refine measure_iUnion_null fun n => nonpos_iff_eq_zero.mp <|
+    (((hLip n).mono (Set.inter_subset_inter_left _ hts)).euclideanHausdorffMeasure_image_le d)
+      |>.trans_eq (by rw [measure_mono_null Set.inter_subset_left ht0, mul_zero])

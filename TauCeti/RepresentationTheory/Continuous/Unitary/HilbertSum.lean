@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Normed.Lp.MapCLM
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+public import TauCeti.RepresentationTheory.Continuous.WithLpProd
 
 /-!
 # Hilbert direct sums of unitary representations
@@ -17,6 +19,9 @@ A family of unitary continuous representations `π i` of a monoid `G` on inner p
 `lp H 2`, each operator being the direct sum `lp.mapCLM` of the uniformly bounded family
 `fun i ↦ π i g`. The result is again unitary, it sends coordinate vectors to coordinate vectors,
 and a vector of the sum is invariant under an element exactly when each of its coordinates is.
+
+The direct sum `ContRepresentation.withLpProd` of two unitary representations on the Hilbert
+direct sum `WithLp 2 (E × F)` is unitary as well (`ContRepresentation.IsUnitary.withLpProd`).
 
 Direct sums of this kind assemble a single representation out of a family of witnesses, which is
 how properties of representations stated with a quantifier over families (almost invariant vectors,
@@ -57,8 +62,7 @@ theorem hilbertSum_apply_apply (g : G) (x : lp H 2) (i : ι) :
 /-- The Hilbert direct sum of unitary representations is unitary. -/
 theorem isUnitary_hilbertSum : (hilbertSum π hπ).IsUnitary :=
   (isUnitary_iff_norm_map _).mpr fun g x ↦
-    le_antisymm (lp.norm_mono (by norm_num) fun i ↦ by simp [(hπ i).norm_map])
-      (lp.norm_mono (by norm_num) fun i ↦ by simp [(hπ i).norm_map])
+    lp.norm_eq_of_forall_norm_eq fun i ↦ by simp [(hπ i).norm_map]
 
 /-- The Hilbert direct sum of representations sends the coordinate vector `single i v` to the
 coordinate vector `single i (π i g v)`. -/
@@ -161,5 +165,14 @@ theorem injective_hilbertSum_iff_forall_ne_one :
     fun h g hg ↦ by by_contra hne; obtain ⟨i, hi⟩ := h g hne; exact hi (hg i)⟩
 
 end Group
+
+/-- The Hilbert direct sum of two unitary representations is unitary. -/
+theorem IsUnitary.withLpProd {𝕜 G E F : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F} (hπ : π.IsUnitary)
+    (hρ : ρ.IsUnitary) : (π.withLpProd 2 ρ).IsUnitary :=
+  (isUnitary_iff_norm_map _).2 fun g x ↦ by
+    simp only [withLpProd_apply, WithLp.prod_norm_eq_of_L2, WithLp.toLp_fst, WithLp.toLp_snd,
+      hπ.norm_map, hρ.norm_map]
 
 end ContRepresentation

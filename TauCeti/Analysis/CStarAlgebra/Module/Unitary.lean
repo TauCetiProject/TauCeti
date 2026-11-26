@@ -108,6 +108,17 @@ theorem isometry_of_adjoint_comp_self_eq_id {V : AdjointableMap A E F}
     Isometry V :=
   AddMonoidHomClass.isometry_of_norm V (norm_map_of_adjoint_comp_self_eq_id hV)
 
+/-- An adjointable isometry `V` (`V* ∘ V = id_E`) bundled as a complex-linear isometry
+`E →ₗᵢ[ℂ] F`. -/
+def toLinearIsometryOfAdjointCompSelfEqId {V : AdjointableMap A E F}
+    (hV : V.adjoint.comp V = .id A E) : E →ₗᵢ[ℂ] F where
+  toLinearMap := V.toContinuousLinearMap.toLinearMap
+  norm_map' := norm_map_of_adjoint_comp_self_eq_id hV
+
+@[simp] theorem toLinearIsometryOfAdjointCompSelfEqId_apply {V : AdjointableMap A E F}
+    (hV : V.adjoint.comp V = .id A E) (x : E) :
+    toLinearIsometryOfAdjointCompSelfEqId hV x = V x := (rfl)
+
 /-- If `V* ∘ V = id_E`, then `V ∘ V*` is an adjointable star projection on `F` (whose range is
 `Set.range V`; see `range_self_comp_adjoint_of_adjoint_comp_self_eq_id`). -/
 theorem isStarProjection_self_comp_adjoint_of_adjoint_comp_self_eq_id {V : AdjointableMap A E F}

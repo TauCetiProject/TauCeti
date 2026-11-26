@@ -116,8 +116,9 @@ theorem exists_primeToSubgroup_approx_localUnit {𝔪 : Modulus K} {v₀ : Heigh
       (TauCeti.unitFiltration (v₀.adicCompletion K) k).mul_mem
         (TauCeti.unitFiltration_antitone hk hxz_filt) hz
   exact ⟨⟨x, hx_mem⟩, hxz_filt,
-    fun v hv hne ↦ (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) x).mpr
-      ⟨mem_primeToSubgroup.mp hx_mem v ((𝔪.mem_support_iff v).mp hv), (hother v hv hne).le⟩,
+    fun v hv hne ↦
+      (v.unitsMap_algebraMap_mem_unitFiltration_iff_valuation (𝔪.exponent v) x).mpr
+        ⟨mem_primeToSubgroup.mp hx_mem v ((𝔪.mem_support_iff v).mp hv), (hother v hv hne).le⟩,
     hx_filt⟩
 
 end TauCeti.GlobalNumberFields

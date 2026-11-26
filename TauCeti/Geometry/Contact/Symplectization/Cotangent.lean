@@ -19,8 +19,11 @@ Let `α` be a one-form on a manifold `M`. The map
 `ι_α : ℝ × M → T*M`, `(t, x) ↦ eᵗ α_x`
 
 (`TauCeti.SmoothForm.symplectizationToCotangent α`) puts the symplectization `ℝ × M` of `α` into
-the cotangent bundle, over the identity of `M`. It pulls the Liouville form `λ` of `T*M` back to
-the symplectization form `θ = eᵗ α`
+the cotangent bundle, over the identity of `M`. It is the case `ι = (x ↦ α_x)` of the map
+`(t, y) ↦ eᵗ ι(y)` rescaling a smooth family `ι : N → T*M` of covectors
+(`TauCeti.CotangentBundle.expSMul`). Since `λ` is linear on fibres, that map pulls `λ` back to
+the symplectization form of `ι^* λ` (`TauCeti.CotangentBundle.mpullback_expSMul_liouvilleForm`).
+As `λ` is tautological, `ι_α` therefore pulls `λ` back to the symplectization form `θ = eᵗ α`
 (`TauCeti.SmoothForm.mpullback_symplectizationToCotangent_liouvilleForm`), so `θ` is the
 tautological form `θ_(t, x)(v) = eᵗ α_x (dπ v)` of the covectors in its image. Hence it pulls the
 canonical symplectic form `ω = -dλ` back to `-dθ`, and this is nondegenerate exactly when `α` is
@@ -52,10 +55,14 @@ these lifts preserve `θ`, including for coorientation-reversing contactomorphis
 
 ## Main definitions
 
+* `TauCeti.CotangentBundle.expSMul ι`: the map `(t, y) ↦ eᵗ ι(y)` into `T*M`.
 * `TauCeti.SmoothForm.symplectizationToCotangent α`: the map `(t, x) ↦ eᵗ α_x` into `T*M`.
 
 ## Main results
 
+* `TauCeti.CotangentBundle.mpullback_expSMul_liouvilleForm`,
+  `TauCeti.CotangentBundle.mpullback_expSMul_symplecticForm`: `(t, y) ↦ eᵗ ι(y)` pulls `λ` and
+  `ω` back to `eᵗ ι^* λ` and `d(eᵗ ι^* (-λ))`.
 * `TauCeti.SmoothForm.mpullback_symplectizationToCotangent_liouvilleForm`: `ι_α^* λ = eᵗ α`.
 * `TauCeti.SmoothForm.mpullback_symplectizationToCotangent_symplecticForm`: `ι_α^* ω = -d(eᵗ α)`.
 * `TauCeti.SmoothForm.isNondegenerate_mpullback_symplectizationToCotangent_iff`: `ι_α^* ω` is
@@ -84,6 +91,75 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
+/-! ### Radial rescaling of a family of covectors -/
+
+namespace CotangentBundle
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
+  {ι : N → CotangentBundle I M}
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` from `ℝ × N` to the cotangent bundle, rescaling a family `ι` of
+covectors by `eᵗ` without moving their base points. -/
+def expSMul (ι : N → CotangentBundle I M) (p : ℝ × N) : CotangentBundle I M :=
+  TotalSpace.mk' (E →L[ℝ] ℝ) (ι p.2).proj (Real.exp p.1 • (ι p.2).snd)
+
+omit [IsManifold I ∞ M] [TopologicalSpace N] [IsManifold J ∞ N] in
+/-- The covector `eᵗ ι(y)` is `eᵗ` times `ι(y)`, over the same base point. -/
+@[simp]
+theorem expSMul_apply (ι : N → CotangentBundle I M) (p : ℝ × N) :
+    expSMul ι p = TotalSpace.mk' (E →L[ℝ] ℝ) (ι p.2).proj (Real.exp p.1 • (ι p.2).snd) :=
+  (rfl)
+
+omit [IsManifold J ∞ N] in
+/-- The map `(t, y) ↦ eᵗ ι(y)` is smooth when `ι` is. -/
+theorem contMDiff_expSMul (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    ContMDiff (𝓘(ℝ).prod J) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ (expSMul ι) :=
+  (Real.contDiff_exp.contMDiff.comp contMDiff_fst).smul_totalSpace (hι.comp contMDiff_snd)
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` pulls the Liouville form back to the symplectization form of
+`ι^* λ`. -/
+theorem mpullback_expSMul_liouvilleForm (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (liouvilleForm I M) =
+      (SmoothForm.mpullback ι hι (liouvilleForm I M)).symplectization := by
+  apply Subtype.ext
+  funext p
+  -- `expSMul ι p` is `eᵗ` times the covector `ι p.2`, over the same base point.
+  rw [mpullback_liouvilleForm_apply_of_eq_smul (contMDiff_expSMul hι) (hι.comp contMDiff_snd)
+    (fun p : ℝ × N ↦ Real.exp p.1) (fun _ ↦ rfl) p, SmoothForm.coe_symplectization,
+    SmoothForm.mpullback_mpullback]
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `-λ` back to the symplectization form of `ι^* (-λ)`. -/
+theorem mpullback_expSMul_neg_liouvilleForm
+    (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (-liouvilleForm I M) =
+      (SmoothForm.mpullback ι hι (-liouvilleForm I M)).symplectization := by
+  rw [map_neg, map_neg, mpullback_expSMul_liouvilleForm, SmoothForm.symplectization_neg]
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `ω = -dλ` back to the exterior derivative of the
+symplectization form of `ι^* (-λ)`. -/
+theorem mpullback_expSMul_symplecticForm (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (symplecticForm I M) =
+      mextDerivₗ (𝓘(ℝ).prod J) 1
+        (SmoothForm.mpullback ι hι (-liouvilleForm I M)).symplectization := by
+  rw [symplecticForm_eq_neg_mextDerivₗ, ← map_neg, ← SmoothForm.mextDerivₗ_mpullback,
+    mpullback_expSMul_neg_liouvilleForm]
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `-ω = dλ` back to the exterior derivative of the
+symplectization form of `ι^* λ`. -/
+theorem mpullback_expSMul_neg_symplecticForm
+    (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (-symplecticForm I M) =
+      mextDerivₗ (𝓘(ℝ).prod J) 1
+        (SmoothForm.mpullback ι hι (liouvilleForm I M)).symplectization := by
+  rw [symplecticForm_eq_neg_mextDerivₗ, neg_neg, ← SmoothForm.mextDerivₗ_mpullback,
+    mpullback_expSMul_liouvilleForm]
+
+end CotangentBundle
+
 namespace SmoothForm
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -95,6 +171,12 @@ symplectization form `eᵗ α`
 (`TauCeti.SmoothForm.mpullback_symplectizationToCotangent_liouvilleForm`). -/
 def symplectizationToCotangent (α : SmoothForm I M ℝ 1) (p : ℝ × M) : CotangentBundle I M :=
   TotalSpace.mk' (E →L[ℝ] ℝ) p.2 (Real.exp p.1 • degreeOneEquiv α p.2)
+
+/-- The map `(t, x) ↦ eᵗ α_x` rescales the section `x ↦ α_x` of the cotangent bundle by `eᵗ`. -/
+theorem symplectizationToCotangent_eq_expSMul (α : SmoothForm I M ℝ 1) :
+    α.symplectizationToCotangent =
+      CotangentBundle.expSMul fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (degreeOneEquiv α x) :=
+  (rfl)
 
 /-- The covector `eᵗ α_x` lies over `x`. -/
 @[simp]
@@ -112,9 +194,9 @@ theorem symplectizationToCotangent_snd_apply (α : SmoothForm I M ℝ 1) (p : �
 
 /-- The map `(t, x) ↦ eᵗ α_x` is smooth. -/
 theorem contMDiff_symplectizationToCotangent (α : SmoothForm I M ℝ 1) :
-    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ α.symplectizationToCotangent :=
-  ContMDiff.smul_totalSpace (Real.contDiff_exp.contMDiff.comp contMDiff_fst)
-    ((degreeOneEquiv α).contMDiff.comp contMDiff_snd)
+    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ α.symplectizationToCotangent := by
+  rw [symplectizationToCotangent_eq_expSMul]
+  exact CotangentBundle.contMDiff_expSMul (degreeOneEquiv α).contMDiff
 
 /-- **The symplectization form is tautological.** The map `(t, x) ↦ eᵗ α_x` pulls the Liouville
 form of `T*M` back to the symplectization form `eᵗ α` of `α`. -/
@@ -123,20 +205,9 @@ theorem mpullback_symplectizationToCotangent_liouvilleForm (α : SmoothForm I M 
     mpullback α.symplectizationToCotangent α.contMDiff_symplectizationToCotangent
         (CotangentBundle.liouvilleForm I M) =
       α.symplectization := by
-  apply Subtype.ext
-  funext p
-  ext v
-  rw [coe_mpullback, CotangentBundle.mpullback_liouvilleForm_apply_of_proj_comp_eq
-      (g := Prod.snd) (fun _ ↦ rfl)
-      ((α.contMDiff_symplectizationToCotangent p).mdifferentiableAt (by simp)),
-    symplectizationToCotangent_snd_apply, coe_symplectization,
-    ContinuousAlternatingMap.smul_apply, mpullback_snd_apply, smul_eq_mul]
-  congr 2
-  ext i
-  fin_cases i
-  simp only [Fin.zero_eta, Fin.isValue, Matrix.cons_val_fin_one,
-    Manifold.tangentSpaceProdEquiv_apply]
-  exact mfderiv_snd_apply p (v 0)
+  -- `(t, x) ↦ eᵗ α_x` rescales the section of `α`, along which `λ` pulls back to `α`.
+  simp only [symplectizationToCotangent_eq_expSMul, CotangentBundle.mpullback_expSMul_liouvilleForm
+    (degreeOneEquiv α).contMDiff, CotangentBundle.mpullback_liouvilleForm]
 
 /-- The map `(t, x) ↦ eᵗ α_x` pulls the canonical symplectic form `ω = -dλ` of `T*M` back to
 `-d(eᵗ α)`. -/

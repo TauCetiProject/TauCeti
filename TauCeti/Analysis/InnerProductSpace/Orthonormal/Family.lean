@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.UnitaryGroup
-public import TauCeti.Analysis.InnerProductSpace.Frame
+public import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
@@ -28,6 +28,8 @@ when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrice
 identifies the changes of orthonormal frame with the unitary group
 (`Orthonormal.orthonormal_sum_smul_iff_mem_unitaryGroup`), and a unitary change of frame
 preserves and reflects orthonormality (`TauCeti.orthonormal_sum_smul_iff_of_mem_unitaryGroup`).
+In particular two real orthonormal frames of the same subspace differ by the orthogonal overlap
+matrix `(⟪τ i, τ' j⟫)`, of determinant `±1` (`Orthonormal.det_inner_eq_one_or_eq_neg_one`).
 -/
 
 public section
@@ -68,13 +70,11 @@ theorem synthesisMapIsometry_apply (hv : Orthonormal 𝕜 v)
   rw [← LinearIsometry.coe_toLinearMap, synthesisMapIsometry_toLinearMap,
     TauCeti.synthesisMap_apply]
 
-open Classical in
 /-- The coordinate isometry sends the single-coordinate vector supported at `i` with coefficient
 `c` to `c • v i`. -/
 @[simp high]
-theorem synthesisMapIsometry_single (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜) :
+theorem synthesisMapIsometry_single [DecidableEq ι] (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜) :
     hv.synthesisMapIsometry (EuclideanSpace.single i c) = c • v i := by
-  classical
   rw [synthesisMapIsometry_apply]
   simp
 
@@ -138,6 +138,39 @@ theorem toLinearMap_starProjection_eq_frameOperator (hv : Orthonormal 𝕜 v) {U
   ext x
   simp [hv.starProjection_apply_eq_sum hU]
 
+omit [Fintype ι] in
+/-- **Bessel's identity**: subtracting from `x` its components `⟪vᵢ, x⟫ vᵢ` along finitely many
+members of an orthonormal family removes their squared lengths `‖⟪vᵢ, x⟫‖²` from `‖x‖²`. This is
+the identity behind Mathlib's Bessel inequality `Orthonormal.sum_inner_products_le`, and the proof
+is the computation inside the proof of that lemma in
+`Mathlib/Analysis/InnerProductSpace/Orthonormal.lean`. -/
+theorem norm_sub_sum_inner_smul_sq (hv : Orthonormal 𝕜 v) (s : Finset ι) (x : E) :
+    ‖x - ∑ i ∈ s, ⟪v i, x⟫_𝕜 • v i‖ ^ 2 = ‖x‖ ^ 2 - ∑ i ∈ s, ‖⟪v i, x⟫_𝕜‖ ^ 2 := by
+  have h₂ : (∑ i ∈ s, ∑ j ∈ s, ⟪v i, x⟫_𝕜 * ⟪x, v j⟫_𝕜 * ⟪v j, v i⟫_𝕜) =
+      (∑ k ∈ s, ⟪v k, x⟫_𝕜 * ⟪x, v k⟫_𝕜 : 𝕜) :=
+    hv.inner_left_right_finset
+  have h₃ (z : 𝕜) : RCLike.re (z * (starRingEnd 𝕜) z) = ‖z‖ ^ 2 := by
+    simp only [RCLike.mul_conj]
+    norm_cast
+  rw [@norm_sub_sq 𝕜, sub_add]
+  simp only [@InnerProductSpace.norm_sq_eq_re_inner 𝕜 E, inner_sum, sum_inner]
+  simp only [inner_smul_right, two_mul, inner_smul_left, inner_conj_symm, ← mul_assoc, h₂,
+    add_sub_cancel_right, sub_right_inj]
+  simp only [map_sum, ← inner_conj_symm x, ← h₃]
+
+/-- Bessel's inequality against a unit vector: the squared lengths `‖⟪x, vᵢ⟫‖²` of the components
+of a unit vector `x` along an orthonormal family add up to at most `1`. -/
+theorem sum_sq_norm_inner_left_le_one (hv : Orthonormal 𝕜 v) {x : E} (hx : ‖x‖ = 1) :
+    ∑ i, ‖⟪x, v i⟫_𝕜‖ ^ 2 ≤ 1 := by
+  simpa [norm_inner_symm, hx] using hv.sum_inner_products_le (s := Finset.univ) (x := x)
+
+/-- The squared lengths `‖⟪bⱼ, vᵢ⟫‖²` of the coordinates of the members of an orthonormal family
+`v` in an orthonormal basis `b` add up to the number of members of `v`. -/
+theorem sum_sum_sq_norm_inner_eq_card {κ : Type*} [Fintype κ] (hv : Orthonormal 𝕜 v)
+    (b : OrthonormalBasis κ 𝕜 E) : ∑ j, ∑ i, ‖⟪b j, v i⟫_𝕜‖ ^ 2 = Fintype.card ι := by
+  rw [Finset.sum_comm]
+  simp [b.sum_sq_norm_inner_right, hv.1]
+
 /-- **Parseval's identity** on the span `U` of a finite orthonormal family: the orthogonal
 projection of `x` onto `U` has squared norm `∑ᵢ ‖⟪vᵢ, x⟫‖²`. -/
 theorem norm_starProjection_sq_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
@@ -165,6 +198,30 @@ theorem orthonormal_sum_smul_iff_mem_unitaryGroup [DecidableEq ι] (hv : Orthono
     (A : Matrix ι ι 𝕜) :
     Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ A ∈ Matrix.unitaryGroup ι 𝕜 := by
   rw [hv.orthonormal_sum_smul_iff, Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose]
+
+/-- A vector in the span of a finite orthonormal family is the sum of its coordinates against the
+family. -/
+theorem sum_inner_smul_eq_of_mem_span (hv : Orthonormal 𝕜 v) {x : E}
+    (hx : x ∈ Submodule.span 𝕜 (Set.range v)) : ∑ i, ⟪v i, x⟫_𝕜 • v i = x := by
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).1 hx
+  simp_rw [hv.inner_right_fintype]
+
+/-- The overlap matrix `(⟪τ i, τ' j⟫)` of two real orthonormal families with the same index, the
+second in the span of the first, is orthogonal, so its determinant is `±1`. -/
+theorem det_inner_eq_one_or_eq_neg_one {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [DecidableEq ι] {τ τ' : ι → F} (hτ : Orthonormal ℝ τ) (hτ' : Orthonormal ℝ τ')
+    (h : ∀ j, τ' j ∈ Submodule.span ℝ (Set.range τ)) :
+    (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ).det = 1 ∨ (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ).det = -1 := by
+  set A : Matrix ι ι ℝ := Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ
+  -- The rows of `A` are the coordinates of the orthonormal vectors `τ' j`.
+  have hA : A ∈ Matrix.unitaryGroup ι ℝ := (hτ.orthonormal_sum_smul_iff_mem_unitaryGroup A).1 <| by
+    convert hτ' using 1
+    funext j
+    exact hτ.sum_inner_smul_eq_of_mem_span (h j)
+  -- The determinant of `A` is unitary, and the unitary reals are `±1`.
+  have hdet := Unitary.star_mul_self_of_mem (Matrix.det_of_mem_unitary hA)
+  rw [star_trivial] at hdet
+  exact mul_self_eq_one_iff.1 hdet
 
 end Orthonormal
 

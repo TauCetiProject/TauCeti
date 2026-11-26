@@ -74,6 +74,8 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   some point of `closure U` — at a point of `frontier U`, if the value is not attained and `f` is
   continuous — so `closure (f '' U)` is the union of the cluster sets, and — for continuous `f` —
   is the image together with the *boundary* cluster values.
+* `ContinuousOn.continuousOn_extendFrom_closure` — a continuous map on `U` with a limit at every
+  point of `frontier U` extends continuously to `closure U` by Mathlib's `extendFrom`.
 * `TauCeti.exists_continuousOn_closure_eqOn` — **the extension criterion**: a continuous map into a
   compact set, with subsingleton boundary cluster sets, extends continuously to `closure U`;
   `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` is the proper-metric form, where the
@@ -87,8 +89,11 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   is a continuum** once the approach regions `U ∩ t` are preconnected along a neighbourhood basis
   of `w`; `TauCeti.isCompact_clusterSetOn_of_isBounded` and
   `TauCeti.isConnected_clusterSetOn_of_isBounded` are again the proper-metric forms.
-* `TauCeti.isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset` — the
-  metric-space criterion for preconnected approach regions.
+* `TauCeti.isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset`,
+  `TauCeti.isPreconnectedApproachAt_of_notMem_closure`,
+  `TauCeti.IsPreconnectedApproachAt.congr`, and
+  `TauCeti.isPreconnectedApproachAt_inter_of_mem_nhds` — metric-space, exterior, and set-germ
+  properties of preconnected approach regions.
 
 ## References
 
@@ -426,6 +431,25 @@ end CompleteSpace
 
 /-! ## The extension criterion -/
 
+section RegularExtension
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [RegularSpace Y] {U : Set X}
+  {f : X → Y}
+
+/-- A function continuous on `U` with a limit along `𝓝[U] w` at every point `w` of `frontier U`
+extends continuously to `closure U`: `extendFrom U f` is continuous on `closure U`. `U` need not
+be open: a point of `closure U` outside `U` lies in `frontier U`, and at a point of `U` continuity
+supplies the limit that Mathlib's `continuousOn_extendFrom` asks for. -/
+theorem _root_.ContinuousOn.continuousOn_extendFrom_closure (hfc : ContinuousOn f U)
+    (hlim : ∀ w ∈ frontier U, ∃ v, Tendsto f (𝓝[U] w) (𝓝 v)) :
+    ContinuousOn (extendFrom U f) (closure U) := by
+  refine continuousOn_extendFrom subset_rfl fun w hw => ?_
+  by_cases hwU : w ∈ U
+  · exact ⟨f w, hfc w hwU⟩
+  · exact hlim w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩
+
+end RegularExtension
+
 section Extension
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [T3Space Y] {U : Set X}
@@ -436,9 +460,9 @@ whose cluster set at each boundary point has at most one element, extends contin
 `closure U`. `U` need not be open: a point of `closure U` outside `U` lies in `frontier U`.
 
 The compactness is what `TauCeti.exists_tendsto_of_clusterSetOn_subsingleton` consumes to turn each
-subsingleton boundary cluster set into a limit; at a point of `U` continuity already supplies the
-limit. Having a limit at every point of `closure U`, the map extends by Mathlib's `extendFrom`,
-which is continuous on `closure U` by `continuousOn_extendFrom` and agrees with `f` on `U` by
+subsingleton boundary cluster set into a limit. Having a limit at every point of `frontier U`, the
+map extends by Mathlib's `extendFrom`, which is continuous on `closure U` by
+`ContinuousOn.continuousOn_extendFrom_closure` and agrees with `f` on `U` by
 `extendFrom_extends`. `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` is the common special
 case of a bounded-image map into a proper metric space.
 
@@ -455,13 +479,9 @@ theorem exists_continuousOn_closure_eqOn (hfc : ContinuousOn f U)
     (hK : IsCompact K) (hfK : MapsTo f U K)
     (hsub : ∀ w ∈ frontier U, (clusterSetOn f U w).Subsingleton) :
     ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U := by
-  have hall : ∀ w ∈ closure U, ∃ v, Tendsto f (𝓝[U] w) (𝓝 v) := by
-    intro w hw
-    by_cases hwU : w ∈ U
-    · exact ⟨f w, hfc w hwU⟩
-    · exact exists_tendsto_of_clusterSetOn_subsingleton hK hfK hw
-        (hsub w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩)
-  exact ⟨extendFrom U f, continuousOn_extendFrom subset_rfl hall, extendFrom_extends hfc⟩
+  exact ⟨extendFrom U f, hfc.continuousOn_extendFrom_closure fun w hw =>
+    exists_tendsto_of_clusterSetOn_subsingleton hK hfK (frontier_subset_closure hw) (hsub w hw),
+    extendFrom_extends hfc⟩
 
 end Extension
 
@@ -496,12 +516,9 @@ no compact set containing the values of `f` is needed. Neither theorem assumes `
 theorem exists_continuousOn_closure_eqOn_of_forall_exists (hfc : ContinuousOn f U)
     (h : ∀ w ∈ frontier U, ∀ ε > 0, ∃ δ > 0, ∀ x ∈ U ∩ Metric.ball w δ,
       ∀ y ∈ U ∩ Metric.ball w δ, dist (f x) (f y) ≤ ε) :
-    ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U := by
-  refine ⟨extendFrom U f, continuousOn_extendFrom subset_rfl fun w hw => ?_,
-    extendFrom_extends hfc⟩
-  by_cases hwU : w ∈ U
-  · exact ⟨f w, hfc w hwU⟩
-  · exact exists_tendsto_of_forall_exists (h w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩)
+    ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U :=
+  ⟨extendFrom U f, hfc.continuousOn_extendFrom_closure fun w hw =>
+    exists_tendsto_of_forall_exists (h w hw), extendFrom_extends hfc⟩
 
 end CompleteExtension
 
@@ -582,6 +599,47 @@ theorem IsPreconnectedApproachAt.image {Y : Type*} [TopologicalSpace Y] {U : Set
       exact ⟨mem_image_of_mem φ hx, by rwa [mem_preimage, hκφ hx], hts hxt⟩
   rw [heq]
   exact htU.image _ (hφU.mono inter_subset_left)
+
+/-- Off the closure of `U`, a neighbourhood disjoint from `U` witnesses preconnected approach
+regions trivially. -/
+theorem isPreconnectedApproachAt_of_notMem_closure {U : Set X} {a : X} (ha : a ∉ closure U) :
+    IsPreconnectedApproachAt U a := by
+  refine fun s hs =>
+    ⟨s ∩ (closure U)ᶜ, inter_mem hs (isClosed_closure.isOpen_compl.mem_nhds ha),
+      inter_subset_left, ?_⟩
+  have heq : U ∩ (s ∩ (closure U)ᶜ) = ∅ :=
+    eq_empty_iff_forall_notMem.mpr fun x ⟨hxU, _, hxc⟩ => hxc (subset_closure hxU)
+  rw [heq]
+  exact isPreconnected_empty
+
+/-- Preconnected approach regions depend only on the set germ at the approach point. -/
+theorem IsPreconnectedApproachAt.congr {U V : Set X} {a : X}
+    (h : IsPreconnectedApproachAt U a) (hUV : U =ᶠ[𝓝 a] V) :
+    IsPreconnectedApproachAt V a := by
+  have hW : {x | x ∈ U ↔ x ∈ V} ∈ 𝓝 a := eventuallyEqSet_iff.mp hUV
+  intro s hs
+  obtain ⟨t, ht, hts, htp⟩ := h (s ∩ {x | x ∈ U ↔ x ∈ V}) (inter_mem hs hW)
+  refine ⟨t, ht, hts.trans inter_subset_left, ?_⟩
+  have heq : V ∩ t = U ∩ t := by
+    ext x
+    exact ⟨fun ⟨hxV, hxt⟩ => ⟨(hts hxt).2.mpr hxV, hxt⟩,
+      fun ⟨hxU, hxt⟩ => ⟨(hts hxt).2.mp hxU, hxt⟩⟩
+  rwa [heq]
+
+/-- Germ-equivalent sets at `a` have the same preconnected-approach property at `a`. -/
+theorem isPreconnectedApproachAt_congr {U V : Set X} {a : X} (hUV : U =ᶠ[𝓝 a] V) :
+    IsPreconnectedApproachAt U a ↔ IsPreconnectedApproachAt V a :=
+  ⟨fun h => h.congr hUV, fun h => h.congr hUV.symm⟩
+
+/-- Cutting the set down by a neighbourhood of `a` leaves `IsPreconnectedApproachAt` unchanged,
+parallel to `TauCeti.clusterSetOn_inter_of_mem_nhds`. -/
+@[simp]
+theorem isPreconnectedApproachAt_inter_of_mem_nhds {U V : Set X} {a : X} (hV : V ∈ 𝓝 a) :
+    IsPreconnectedApproachAt (U ∩ V) a ↔ IsPreconnectedApproachAt U a :=
+  isPreconnectedApproachAt_congr <|
+    eventuallyEqSet_iff.mpr <| by
+      filter_upwards [hV] with x hxV
+      exact ⟨fun h => h.1, fun hxU => ⟨hxU, hxV⟩⟩
 
 end ApproachRegions
 

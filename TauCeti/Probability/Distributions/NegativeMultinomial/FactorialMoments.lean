@@ -67,7 +67,7 @@ theorem integrable_prod_descFactorial_negativeMultinomialMeasure (r p₀ : ℝ)
   · rw [negativeMultinomialMeasure_zero hp₀ hp]
     exact integrable_dirac (by simp)
   rw [negativeMultinomialMeasure_of_pos hr hp₀ hp]
-  refine (Measure.integrable_bind_iff (measurable_pi_poissonMeasure_mul_toNNReal p)
+  refine (Measure.integrable_bind_iff (measurable_pi_poissonMeasure_mul_toNNReal p).aemeasurable
     (.of_discrete)).2 ⟨?_, ?_⟩
   · exact Filter.Eventually.of_forall fun x =>
       integrable_prod_descFactorial_pi_poissonMeasure (fun i => p i * x.toNNReal) n

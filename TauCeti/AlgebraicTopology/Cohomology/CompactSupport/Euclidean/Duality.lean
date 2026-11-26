@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Euclidean
-public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality
+public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Basic
 public import TauCeti.Analysis.Convex.Topology
 
 /-!
@@ -17,11 +17,11 @@ group. For an open embedding `j : U → F` whose image is star-convex, the duali
 `D_U : Hᵖ_c(U; L) ⟶ H_q(U; L)`, `p + q = d` (`TauCeti.HomologicalOrientation.dualityMap`), of any
 homological orientation of `U` is bijective
 (`TauCeti.HomologicalOrientation.bijective_dualityMap_of_starConvex`). In particular the duality
-map of `F` itself is bijective (`TauCeti.HomologicalOrientation.bijective_dualityMap_self`), and so
-is the duality map of every open subset of `F` embedded with convex image
-(`TauCeti.HomologicalOrientation.bijective_dualityMap_of_convex`). These are the case `M = ℝⁿ` of
-Hatcher's proof of Poincaré duality for noncompact manifolds (Theorem 3.35) and the convex step of
-its induction (Lemma 3.36).
+map of `F` itself is bijective, and so is the duality map of every open subset of `F` embedded with
+convex image (`TauCeti.HomologicalOrientation.bijective_dualityMap_of_convex`). These are the case
+`M = ℝⁿ` of Hatcher's proof of Poincaré duality for noncompact manifolds (Theorem 3.35) and the
+convex step of its induction (Lemma 3.36), from which Poincaré duality for every oriented manifold
+follows (`TauCeti.HomologicalOrientation.bijective_dualityMap`).
 
 For empty `U` both groups vanish. Otherwise the image of `j` is star-convex about one of its
 points `y`, so `U` and `F` are contractible and `j_* : H_q(U; L) ⟶ H_q(F; L)` is bijective
@@ -41,8 +41,6 @@ cofinality criterion `TauCeti.HomologicalOrientation.bijective_dualityMap_of_cof
 
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_of_starConvex`: Poincaré duality for an
   open subset of a finite-dimensional real normed space, embedded with star-convex image.
-* `TauCeti.HomologicalOrientation.bijective_dualityMap_self`: Poincaré duality for a
-  finite-dimensional real normed space.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_of_convex`: Poincaré duality for an open
   subset embedded with convex image.
 
@@ -83,22 +81,17 @@ private theorem bijective_dualityMap_comap_of_starConvex (o : HomologicalOrienta
     Function.Bijective ((o.comap hj).dualityMap hd L p q h) := by
   let j' : C(U, F) := ⟨j, hj.continuous⟩
   refine (o.comap hj).bijective_dualityMap_of_cofinal hd L h fun K₀ ↦ ?_
-  -- The star hull about `y` of the image of `K₀` lies in the image of `j`, so its preimage is a
-  -- compact subset of `U` containing `K₀`, with star-convex image.
-  let S := Compacts.starHull (E := F) ℝ y (K₀.map (TopCat.ofHom j') j'.continuous)
-  have hS : (S : Set F) ⊆ range j := Compacts.starHull_subset hU hy (by
-    rintro _ ⟨u, -, rfl⟩
-    exact ⟨u, rfl⟩)
-  let K : Compacts (TopCat.of U) := ⟨j ⁻¹' S, hj.isInducing.isCompact_preimage' S.isCompact hS⟩
-  have hKS : ((K.map (TopCat.ofHom j') j'.continuous : Compacts F) : Set F) = S :=
-    image_preimage_eq_of_subset hS
-  refine ⟨K, fun u hu ↦ Compacts.le_starHull (E := F) ℝ y _ ⟨u, hu, rfl⟩, ?_⟩
+  -- `K₀` lies in a compact subset of `U` whose image is star-convex about `y`.
+  obtain ⟨K, hK₀K, hKy, hyK⟩ := hj.isInducing.exists_compacts_le_starConvex_image hU hy K₀
+  refine ⟨K, hK₀K, ?_⟩
   rw [o.bijective_capFundamentalClassOn_comap_iff hd L (j := j') hj h
     (ConcreteCategory.bijective_of_isIso _) K]
   refine (congrArg Function.Bijective (funext (o.capFundamentalClassOn_apply hd L _ p q h))).mpr ?_
+  -- The image of `K` under `j'` is `j '' K`.
+  have hjK : ((K.map (TopCat.ofHom j') j'.continuous : Compacts F) : Set F) = j '' K := by
+    simp only [Compacts.coe_map, ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk, j']
   exact o.bijective_singularCap_fundamentalClassOn_of_starConvex hd L _ (y := y)
-    (hKS ▸ Compacts.starConvex_starHull (E := F) ℝ y _)
-    (hKS ▸ Compacts.mem_starHull_self (E := F) ℝ y _) p q h
+    (hjK ▸ hKy) (hjK ▸ hyK) p q h
 
 /-- **Poincaré duality for a star-convex open subset**: for an open embedding `j : U → F` whose
 image is star-convex, the duality map `Hᵖ_c(U; L) ⟶ H_q(U; L)` of any homological orientation of
@@ -117,18 +110,6 @@ theorem bijective_dualityMap_of_starConvex (oU : HomologicalOrientation U F d) {
   · exact bijective_dualityMap_comap_of_starConvex hd L h o hj hU hy
   · rw [dualityMap_neg]
     exact neg_bijective.comp (bijective_dualityMap_comap_of_starConvex hd L h o hj hU hy)
-
-/-- **Poincaré duality for a finite-dimensional real normed space**: the duality map
-`Hᵖ_c(F; L) ⟶ H_q(F; L)`, `p + q = d`, of a homological orientation of `F` is bijective. -/
-theorem bijective_dualityMap_self (o : HomologicalOrientation F F d) :
-    Function.Bijective (o.dualityMap hd L p q h) :=
-  o.bijective_dualityMap_of_starConvex hd L h IsOpenEmbedding.id (y := 0)
-    (range_id ▸ starConvex_univ 0)
-
-/-- **Poincaré duality for a finite-dimensional real normed space**, as an isomorphism. -/
-instance isIso_dualityMap_self (o : HomologicalOrientation F F d) :
-    IsIso (o.dualityMap hd L p q h) :=
-  (ConcreteCategory.isIso_iff_bijective _).2 (o.bijective_dualityMap_self hd L h)
 
 /-- **Poincaré duality for a convex open subset**: for an open embedding `j : U → F` whose image
 is convex, the duality map `Hᵖ_c(U; L) ⟶ H_q(U; L)` of any homological orientation of `U` is

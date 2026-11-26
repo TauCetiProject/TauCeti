@@ -156,17 +156,24 @@ theorem timeDerivL_restrictL (f : ParabolicC2HolderSpace α E F hab)
 
 variable (ha hb hab') in
 /-- Restriction to a smaller slab does not increase the norm. -/
-theorem norm_restrictL_le :
+theorem norm_restrictL_le_one :
     ‖restrictL (α := α) (E := E) (F := F) (hab := hab) ha hb hab'‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb hab' f
 
-/-- The restriction of a map to a smaller slab has at most its norm. -/
-theorem norm_restrictL_apply_le (f : ParabolicC2HolderSpace α E F hab) :
+variable (ha hb hab') in
+/-- Restriction to a smaller slab does not increase the norm, applied form. -/
+theorem norm_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
     ‖restrictL ha hb hab' f‖ ≤ ‖f‖ := by
   rw [restrictL_eq_restrict]
   exact norm_restrict_le ha hb hab' f
+
+/-- Restriction to a smaller slab does not increase the supremum norm of the value. -/
+theorem norm_valueL_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueL (restrictL ha hb hab' f)‖ ≤ ‖valueL f‖ :=
+  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+    simpa using (valueL f).norm_coe_le_norm _
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
@@ -404,10 +411,17 @@ theorem spatialFDerivL_restrictL (f : ParabolicC1HolderSpace α E F a b)
 
 variable (ha hb) in
 /-- Restriction to a smaller slab does not increase the norm. -/
-theorem norm_restrictL_le : ‖restrictL (α := α) (E := E) (F := F) ha hb‖ ≤ 1 :=
+theorem norm_restrictL_le_one : ‖restrictL (α := α) (E := E) (F := F) ha hb‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb f
+
+variable (ha hb) in
+/-- Restriction to a smaller slab does not increase the norm, applied form. -/
+theorem norm_restrictL_le (f : ParabolicC1HolderSpace α E F a b) :
+    ‖restrictL ha hb f‖ ≤ ‖f‖ := by
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb f
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]

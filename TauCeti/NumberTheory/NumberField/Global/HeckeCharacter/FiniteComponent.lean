@@ -455,25 +455,6 @@ theorem eq_one_of_finiteConductor_dvd_finitePart (χ : HeckeCharacter K) {𝔫 :
   simp only [hw, map_one, Finset.prod_const_one, one_mul] at hsplit
   rwa [hsplit] at hfinite
 
-/-- Congruence to `1` modulo the finite conductor trivializes the local finite components at the
-conductor primes: the local component of `χ` at such a prime takes value `1` on `x`. -/
-theorem finiteComponent_unitsMap_eq_one_of_isCongrOne
-    (χ : HeckeCharacter K) (x : Kˣ)
-    (hx : IsCongrOne ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ x)
-    (v : HeightOneSpectrum (𝓞 K))
-    (hv : v ∈ (⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ : Modulus K).support) :
-    χ.finiteComponent v (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x) = 1 := by
-  classical
-  let 𝔣 : Modulus K := ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩
-  refine χ.finiteComponent_eq_one_of_mem_unitFiltration ?_
-  have hdvd : v.asIdeal ∣ 𝔣.finitePart := (𝔣.mem_support_iff v).mp hv
-  have he : χ.conductorExponent v = 𝔣.exponent v := by
-    rw [Modulus.exponent_def]
-    exact (χ.count_finiteConductor v).symm
-  rw [he]
-  exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔣.exponent v) x).mpr
-    ⟨hx.valuation_eq_one hdvd, hx.valuation_sub_one_le hdvd⟩
-
 /-! ### Agreement with the conductor of a finite-order character -/
 
 /-- **A modulus from which `χ` comes bounds its conductor exponents**: if `χ` is the pullback of a

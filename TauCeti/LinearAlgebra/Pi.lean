@@ -11,15 +11,21 @@ public import TauCeti.Algebra.Group.Pi.Finset
 public import TauCeti.LinearAlgebra.Matrix.Block
 public import TauCeti.Logic.Equiv.Pi
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Logic.Equiv.Set
 
 /-!
 # Supports, splittings, determinants and coordinate separation for dependent products
 
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `∀ i, M i` consists of the families
 vanishing outside `s`, the `Pi` analogue of `Finsupp.supported`; such submodules for disjoint
-supports meet in `⊥`. This file also records the linear splitting of a dependent product along a
-predicate on the indices, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
-segment and its last coordinate and of a `Fin (m + n)`-indexed product into its two blocks, and the
+supports meet in `⊥`, the families vanishing on `s` and those vanishing off `s` are complementary,
+a submodule of `ι → R` containing the standard basis vector at each coordinate where it does not
+vanish is complemented by the families vanishing there, and over a finite index type these
+coordinate subspaces are compatible with base change along a ring map. This file also records the
+linear splitting of a dependent product along a predicate on the indices, the extension of a linear
+automorphism of `κ → M` to `ι → M` along an injective map `κ → ι`, the linear splittings of a
+`Fin (n + 1)`-indexed product into its initial segment and its last coordinate and of a
+`Fin (m + n)`-indexed product into its two blocks, and the
 determinant of a coordinatewise endomorphism of a finite dependent product, which is used in
 finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
 product.
@@ -35,6 +41,13 @@ weights.
 
 * `Submodule.disjoint_pi_compl_bot_of_disjoint`: disjoint index sets give disjoint submodules of
   families vanishing outside them.
+* `Submodule.isCompl_pi_bot_compl`: the families vanishing on `s` and those vanishing off `s`
+  are complementary.
+* `Submodule.span_image_map_pi_bot`: over a finite index type, the families vanishing on `J` with
+  coefficients in `S` are spanned by the coordinatewise images under a ring map `R →+* S` of
+  those with coefficients in `R`.
+* `Submodule.isCompl_pi_bot_of_single_mem`: a submodule of `ι → R` containing `Pi.single i 1` at
+  every coordinate `i` where it does not vanish is complemented by the families vanishing there.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
   coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
   the image coordinate.
@@ -50,10 +63,18 @@ weights.
   with coefficients `x` and `y`.
 * `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
   one-point family `Pi.single` at the last index.
+* `LinearEquiv.piExtendOfInjective`: a linear automorphism of `κ → M` extended along an injective
+  map `κ → ι` to `ι → M`, fixing the coordinates outside the range.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
   disjoint finite sets `s` and `t` into a family on `s ∪ t`.
+* `LinearEquiv.conj_lsmul_eq_piMap`: conjugating by an `A`-linear equivalence onto a product
+  turns the action of `a : A` into the coordinatewise action of `a` on the factors.
+* `LinearMap.compLeft_single`: applying a linear map coordinatewise to the one-point family
+  `Pi.single i x` gives the one-point family `Pi.single i (f x)`.
+* `LinearMap.map_single_one_one_eq_sub`: a linear map on `Fin 2 → K` takes `Pi.single 1 1` to
+  the difference of its values at `1` and at `Pi.single 0 1`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -100,6 +121,64 @@ public theorem disjoint_pi_compl_bot_of_disjoint {R ι : Type*} {M : ι → Type
     by_cases hi : i ∈ s
     · exact ht i (Set.disjoint_left.mp h hi)
     · exact hs i hi
+
+/-- The families vanishing on `s` and those vanishing off `s` are complementary submodules: every
+family is uniquely the sum of its restrictions by zero to `sᶜ` and to `s`. -/
+public theorem isCompl_pi_bot_compl {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (s : Set ι) :
+    IsCompl (pi s fun i ↦ (⊥ : Submodule R (M i))) (pi sᶜ fun _ ↦ ⊥) := by
+  classical
+  refine ⟨by simpa using disjoint_pi_compl_bot_of_disjoint (R := R) (M := M) disjoint_compl_left,
+    codisjoint_iff.2 (eq_top_iff.2 fun v _ ↦
+      mem_sup.2 ⟨sᶜ.piecewise v 0, mem_pi.2 fun i hi ↦ ?_, s.piecewise v 0, mem_pi.2 fun i hi ↦ ?_,
+        ?_⟩)⟩
+  · simp [Set.piecewise_eq_of_notMem _ _ _ (Set.notMem_compl_iff.2 hi)]
+  · simp [Set.piecewise_eq_of_notMem _ _ _ hi]
+  · ext i
+    by_cases hi : i ∈ s <;> simp [hi]
+
+/-- **Base change of a coordinate subspace.** For a ring map `f : R →+* S` and a finite index
+type, the families in `ι → S` vanishing on `J` are the `S`-span of the coordinatewise images
+under `f` of the families in `ι → R` vanishing on `J`: both are spanned by the `Pi.single i 1`
+with `i ∉ J`. -/
+public theorem span_image_map_pi_bot {R S ι : Type*} [Semiring R] [Semiring S] [Finite ι]
+    (f : R →+* S) (J : Set ι) :
+    span S ((fun (v : ι → R) i ↦ f (v i)) '' (pi J fun _ ↦ ⊥ : Submodule R (ι → R))) =
+      pi J fun _ ↦ ⊥ := by
+  classical
+  have := Fintype.ofFinite ι
+  refine le_antisymm (span_le.2 ?_) fun w hw ↦ ?_
+  · rintro _ ⟨v, hv, rfl⟩
+    exact mem_pi.2 fun i hi ↦ by simp [(mem_bot _).1 ((mem_pi.1 hv) i hi)]
+  · rw [pi_eq_sum_univ' w]
+    refine sum_mem fun i _ ↦ ?_
+    by_cases hi : i ∈ J
+    · simp [(mem_bot _).1 ((mem_pi.1 hw) i hi)]
+    · refine smul_mem _ _ (subset_span ⟨Pi.single i 1, mem_pi.2 fun j hj ↦ ?_, ?_⟩)
+      · rw [mem_bot, Pi.single_eq_of_ne (by rintro rfl; exact hi hj)]
+      · ext j
+        by_cases hj : j = i
+        · subst hj; simp
+        · simp [hj]
+
+/-- **A coordinate complement.** If a submodule `W` of `ι → R` contains the standard basis vector
+`Pi.single i 1` at every coordinate `i` on which some vector of `W` does not vanish, then `W` is
+complemented by the families vanishing at all those coordinates. -/
+public theorem isCompl_pi_bot_of_single_mem {R ι : Type*} [Semiring R] [Finite ι] [DecidableEq ι]
+    {W : Submodule R (ι → R)} (hW : ∀ i, (∃ w ∈ W, w i ≠ 0) → Pi.single i 1 ∈ W) :
+    IsCompl W (pi {i | ∃ w ∈ W, w i ≠ 0} fun _ ↦ ⊥) := by
+  have := Fintype.ofFinite ι
+  refine ⟨disjoint_def.mpr fun v hv hv' ↦ funext fun i ↦ by_contra fun h ↦
+    h ((mem_bot R).mp (mem_pi.mp hv' i ⟨v, hv, h⟩)), ?_⟩
+  rw [codisjoint_iff, eq_top_iff']
+  intro v
+  rw [← Finset.univ_sum_single v]
+  refine sum_mem fun i _ ↦ ?_
+  by_cases hi : ∃ w ∈ W, w i ≠ 0
+  · rw [← mul_one (v i), ← smul_eq_mul, Pi.single_smul']
+    exact mem_sup_left (W.smul_mem _ (hW i hi))
+  · exact mem_sup_right <| mem_pi.mpr fun j hj ↦
+      (mem_bot R).mpr (Pi.single_eq_of_ne (by rintro rfl; exact hi hj) _)
 
 /-- **Infinitely many submodules.** For an infinite index type, `ι → R` has infinitely many
 submodules over a nontrivial semiring `R`: the lines spanned by the coordinate vectors are
@@ -237,6 +316,49 @@ public theorem coprod_linearCombination_comp_piFinAppend (x : Fin m → M) (y : 
 
 end FinAppend
 
+section ExtendOfInjective
+
+variable {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {f : κ → ι}
+
+/-- Extends a linear automorphism `e` of `κ → M` along an injective map `f : κ → ι` to a linear
+automorphism of `ι → M`, acting by `e` on the coordinates in the range of `f`
+(`piExtendOfInjective_apply_apply`) and fixing the others (`piExtendOfInjective_apply_of_notMem`).
+It splits `ι → M` as `(κ → M) × ((Set.range f)ᶜ → M)` along `Equiv.ofInjectiveSumCompl` and
+applies `e` to the first factor. -/
+public noncomputable def piExtendOfInjective (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective) :
+    (ι → M) ≃ₗ[R] (ι → M) :=
+  let L := funCongrLeft R M (Equiv.ofInjectiveSumCompl f hf) ≪≫ₗ sumArrowLequivProdArrow _ _ R M
+  L ≪≫ₗ e.prodCongr (.refl R _) ≪≫ₗ L.symm
+
+/-- The extension of `e` along `f` acts by `e` on the coordinates in the range of `f`. -/
+@[simp]
+public theorem piExtendOfInjective_apply_apply (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective)
+    (x : ι → M) (k : κ) :
+    e.piExtendOfInjective hf x (f k) = e (x ∘ f) k := by
+  -- The first factor of the split of `x` is `x ∘ f`.
+  have h : (sumArrowLequivProdArrow κ _ R M
+      (LinearMap.funLeft R M (Equiv.ofInjectiveSumCompl f hf) x)).1 = x ∘ f := by
+    ext k'
+    simp [LinearMap.funLeft_apply]
+  simp [piExtendOfInjective, funCongrLeft_apply, LinearMap.funLeft_apply, h]
+
+/-- The extension of `e` along `f` fixes the coordinates outside the range of `f`. -/
+@[simp]
+public theorem piExtendOfInjective_apply_of_notMem (e : (κ → M) ≃ₗ[R] (κ → M))
+    (hf : f.Injective) (x : ι → M) {i : ι} (hi : i ∉ Set.range f) :
+    e.piExtendOfInjective hf x i = x i := by
+  lift i to ↥(Set.range f)ᶜ using hi
+  simp [piExtendOfInjective, funCongrLeft_apply, LinearMap.funLeft_apply]
+
+/-- The inverse of the extension of `e` along `f` is the extension of `e.symm`. -/
+@[simp]
+public theorem piExtendOfInjective_symm (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective) :
+    (e.piExtendOfInjective hf).symm = e.symm.piExtendOfInjective hf := by
+  simp only [piExtendOfInjective, trans_symm, prodCongr_symm, symm_symm, refl_symm]
+  exact (trans_assoc _ _ _).symm
+
+end ExtendOfInjective
+
 variable (R : Type*) {ι : Type*} [Semiring R] (p : ι → Prop) [DecidablePred p] (M : ι → Type*)
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 
@@ -283,9 +405,29 @@ public theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
 
 end FinsetUnion
 
+/-- **An equivalence onto a product diagonalizes the action of scalars.** Conjugating by an
+`A`-linear equivalence `e : M ≃ₗ[A] ∀ i, N i`, viewed over `R`, turns the action of `a : A` on `M`
+into the coordinatewise action `LinearMap.piMap` of `a` on the factors. -/
+public theorem conj_lsmul_eq_piMap {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {ι : Type*} {N : ι → Type*}
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] [∀ i, Module A (N i)]
+    [∀ i, IsScalarTower R A (N i)] (e : M ≃ₗ[A] ∀ i, N i) (a : A) :
+    (e.restrictScalars R).conj (Algebra.lsmul R R M a) =
+      LinearMap.piMap fun i => Algebra.lsmul R R (N i) a := by
+  refine LinearMap.ext fun y => funext fun x => ?_
+  simp [LinearEquiv.conj_apply]
+
 end LinearEquiv
 
 namespace LinearMap
+
+/-- Applying a linear map coordinatewise to the one-point family `Pi.single i x` gives the
+one-point family `Pi.single i (f x)`. -/
+@[simp]
+public theorem compLeft_single {R M M₂ ι : Type*} [Semiring R] [AddCommMonoid M]
+    [AddCommMonoid M₂] [Module R M] [Module R M₂] [DecidableEq ι] (f : M →ₗ[R] M₂) (i : ι)
+    (x : M) : f.compLeft ι (Pi.single i x) = Pi.single i (f x) :=
+  funext (Pi.apply_single (fun _ ↦ f) (fun _ ↦ map_zero f) i x)
 
 /-- In the product bases `Pi.basis b` and `Pi.basis c`, the coordinatewise linear map
 `LinearMap.piMap f` has the block-diagonal matrix whose blocks are the matrices of the `f i`.
@@ -341,6 +483,14 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   have := finite_of_surjective_pi Φ hΦ
   rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
   exact finrank_range_add_finrank_ker Φ
+
+/-- For a linear map `A` on `Fin 2 → K`, the value at `Pi.single 1 1` is the difference of the
+values at `1` and at `Pi.single 0 1`, since `1 = Pi.single 0 1 + Pi.single 1 1`. -/
+public theorem map_single_one_one_eq_sub {K V : Type*} [Semiring K] [AddCommGroup V] [Module K V]
+    (A : (Fin 2 → K) →ₗ[K] V) : A (Pi.single 1 1) = A 1 - A (Pi.single 0 1) := by
+  rw [eq_sub_iff_add_eq, ← map_add, add_comm]
+  congr 1
+  simpa [Fin.sum_univ_two] using Finset.univ_sum_single (1 : Fin 2 → K)
 
 end LinearMap
 

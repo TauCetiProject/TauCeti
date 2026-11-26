@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
+public import TauCeti.Geometry.Manifold.Morse.Bott.Flow
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # The flow of an adapted pseudo-gradient
@@ -25,7 +27,8 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 ## Main declarations
 
 * `TauCeti.IsAdaptedPseudoGradient.flow`: the flow of an adapted pseudo-gradient on a compact
-  manifold.
+  manifold, which is its flow as a pseudo-gradient adapted in the Morse–Bott sense
+  (`TauCeti.IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient_flow`).
 * `TauCeti.IsAdaptedPseudoGradient.contMDiff_flow_uncurry` and
   `TauCeti.IsAdaptedPseudoGradient.flowDiffeomorph`: the flow is smooth in time and space, and its
   time-`t` map is a diffeomorphism.
@@ -34,23 +37,42 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.hasDerivAt_comp_flow`: the derivative of `f` along an orbit is
   `df(X)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
+* `TauCeti.IsAdaptedPseudoGradient.mfderiv_flow_ne_zero`: so the orbit of a regular point consists
+  of regular points.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_eq_of_isMIntegralCurve`: every integral curve is an
-  orbit.
+  orbit, and `TauCeti.IsAdaptedPseudoGradient.eqOn_flow_of_isMIntegralCurveOn`: so is every
+  integral curve on an open interval, on that interval;
+  `TauCeti.IsAdaptedPseudoGradient.eqOn_flow_of_isMIntegralCurveOn_Iio` and
+  `TauCeti.IsAdaptedPseudoGradient.eqOn_flow_of_isMIntegralCurveOn_Ioi` are the versions for
+  open half-lines.
+* `TauCeti.IsAdaptedPseudoGradient.isMIntegralCurve_flow_mul` and
+  `TauCeti.IsAdaptedPseudoGradient.flow_mul_eq_of_isMIntegralCurve`: the integral curves of a
+  constant multiple `a • X` are the orbits of `X` run at speed `a`.
 * `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_inter_stableSet_of_isMIntegralCurve`: an
   integral curve from `p` to `q` is the orbit of a point of `W^u(p) ∩ W^s(q)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
   `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot`: every orbit converges to a critical point
   forward, respectively backward, in time.
+* `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt`: a point
+  of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p` to a
+  critical point below `c`.
 * `TauCeti.IsAdaptedPseudoGradient.mem_stableSet_of_forall_mem` and
   `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_of_forall_mem`: an orbit trapped in a closed set
   whose only critical point is `x` converges to `x`.
 * `TauCeti.IsAdaptedPseudoGradient.eq_of_mem_unstableSet_inter_stableSet`: an orbit converging to
   the same point in both directions of time is that point.
+* `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet` and
+  `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet`: a point
+  of `W^u(p)` other than `p` lies on a trajectory from `p`, and a point of `W^s(r)` other than `r`
+  on a trajectory to `r`.
 * `TauCeti.IsAdaptedPseudoGradient.iUnion_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.iUnion_unstableSet`: the stable sets of the critical points
   cover the manifold, and so do their unstable sets. Together with
   `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`, these are the
   partitions `M = ⊔ₓ W^s(x) = ⊔ₓ W^u(x)` over the critical points.
+* `TauCeti.IsAdaptedPseudoGradient.exists_mem_stableSet` and
+  `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet`: every point lies on the stable set of a
+  critical point, and on the unstable set of one.
 * `TauCeti.IsAdaptedPseudoGradient.stableSet_eq_singleton_of_lt` and
   `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_singleton_of_lt`: the stable set of a strict
   maximum, and the unstable set of a strict minimum, is a point.
@@ -83,7 +105,7 @@ omit [FiniteDimensional ℝ E] in
 /-- An adapted pseudo-gradient on a compact boundaryless manifold is complete. -/
 theorem isCompleteVectorField (hX : IsAdaptedPseudoGradient f X) :
     IsCompleteVectorField X :=
-  isCompleteVectorField_of_compactSpace (hX.contMDiff.of_le (by simp))
+  hX.isBottAdaptedPseudoGradient.isCompleteVectorField
 
 /-- The flow of an adapted pseudo-gradient on a compact boundaryless manifold. -/
 noncomputable def flow (hX : IsAdaptedPseudoGradient f X) : Flow ℝ M :=
@@ -95,9 +117,16 @@ variable (hX : IsAdaptedPseudoGradient f X)
 theorem flow_apply (t : ℝ) (y : M) : hX.flow t y = maximalIntegralCurve X y t := by
   rw [flow, globalFlow_apply]
 
+/-- The flow of a pseudo-gradient adapted to a Morse function is its flow as a pseudo-gradient
+adapted in the Morse–Bott sense. -/
+@[simp]
+theorem isBottAdaptedPseudoGradient_flow : hX.isBottAdaptedPseudoGradient.flow = hX.flow := by
+  ext t y
+  rw [hX.flow_apply, IsBottAdaptedPseudoGradient.flow_apply]
+
 /-- The orbits of the flow are integral curves of the pseudo-gradient. -/
 theorem isMIntegralCurve_flow (y : M) : IsMIntegralCurve (fun t ↦ hX.flow t y) X :=
-  isMIntegralCurve_globalFlow _ hX.isCompleteVectorField y
+  hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.isMIntegralCurve_flow y
 
 /-- The flow of an adapted pseudo-gradient is smooth in time and space. -/
 theorem contMDiff_flow_uncurry :
@@ -141,19 +170,72 @@ theorem hasDerivAt_comp_flow (y : M) (t : ℝ) :
 
 /-- `f` is antitone along every orbit of the flow. -/
 theorem antitone_flow (y : M) : Antitone fun t ↦ f (hX.flow t y) :=
-  hX.antitone_comp (hX.isMIntegralCurve_flow y)
+  hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.antitone_flow y
 
 /-- Critical points of `f` are rest points of the flow. -/
 theorem flow_apply_of_mfderiv_eq_zero {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (t : ℝ) :
     hX.flow t x = x :=
-  globalFlow_eq_of_isMIntegralCurve _ hX.isCompleteVectorField
-    (isMIntegralCurve_const (hX.eq_zero_of_mfderiv_eq_zero hx)) t
+  hX.isBottAdaptedPseudoGradient_flow ▸
+    hX.isBottAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero hx t
+
+/-- The orbit of a regular point consists of regular points: critical points are rest points. -/
+theorem mfderiv_flow_ne_zero {y : M} (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0) (t : ℝ) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t y) ≠ 0 := fun h ↦ hy <| by
+  have := hX.flow_apply_of_mfderiv_eq_zero h (-t)
+  rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at this
+  rwa [this]
 
 /-- **Integral curves are orbits.** Every integral curve of an adapted pseudo-gradient on a compact
 boundaryless manifold is the orbit of its value at time `0`. -/
 theorem flow_apply_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ X) (t : ℝ) :
     hX.flow t (γ 0) = γ t :=
   globalFlow_eq_of_isMIntegralCurve _ hX.isCompleteVectorField hγ t
+
+/-- **Integral curves on an open interval are orbits.** An integral curve of an adapted
+pseudo-gradient on an open interval is, on that interval, the orbit of its value at any time
+`t₀` of the interval, shifted by `t₀`. -/
+theorem eqOn_flow_of_isMIntegralCurveOn {γ : ℝ → M} {a b t₀ : ℝ}
+    (hγ : IsMIntegralCurveOn γ X (Ioo a b)) (ht₀ : t₀ ∈ Ioo a b) :
+    EqOn γ (fun t ↦ hX.flow (t - t₀) (γ t₀)) (Ioo a b) :=
+  isMIntegralCurveOn_Ioo_eqOn_of_contMDiff_boundaryless ht₀ (hX.contMDiff.of_le (by simp)) hγ
+    ((((hX.isMIntegralCurve_flow (γ t₀)).comp_add (-t₀)).isMIntegralCurveOn _).congr fun t _ ↦ by
+      simp [sub_eq_add_neg]) (by simp)
+
+/-- **Integral curves on a left half-line are orbits up to any earlier time.** An integral curve of
+an adapted pseudo-gradient on `(-∞, b)` is, up to any time `a < b`, the orbit of its value at `a`,
+shifted by `a`. -/
+theorem eqOn_flow_of_isMIntegralCurveOn_Iio {γ : ℝ → M} {a b : ℝ}
+    (hγ : IsMIntegralCurveOn γ X (Iio b)) (hab : a < b) :
+    EqOn γ (fun t ↦ hX.flow (t - a) (γ a)) (Iic a) := fun t (ht : t ≤ a) ↦
+  hX.eqOn_flow_of_isMIntegralCurveOn (hγ.mono Ioo_subset_Iio_self) (a := t - 1)
+    ⟨(sub_one_lt t).trans_le ht, hab⟩ ⟨sub_one_lt t, ht.trans_lt hab⟩
+
+/-- **Integral curves on a right half-line are orbits from any later time on.** An integral curve
+of an adapted pseudo-gradient on `(a, ∞)` is, from any time `b > a` on, the orbit of its value at
+`b`, shifted by `b`. -/
+theorem eqOn_flow_of_isMIntegralCurveOn_Ioi {γ : ℝ → M} {a b : ℝ}
+    (hγ : IsMIntegralCurveOn γ X (Ioi a)) (hab : a < b) :
+    EqOn γ (fun t ↦ hX.flow (t - b) (γ b)) (Ici b) := fun t (ht : b ≤ t) ↦
+  hX.eqOn_flow_of_isMIntegralCurveOn (hγ.mono Ioo_subset_Ioi_self) (b := t + 1)
+    ⟨hab, ht.trans_lt (lt_add_one t)⟩ ⟨hab.trans_le ht, lt_add_one t⟩
+
+/-- **Rescaling time rescales the field.** For every `a : ℝ`, the orbit `t ↦ φ_{a t}(y)` run at
+speed `a` is an integral curve of `a • X`. -/
+theorem isMIntegralCurve_flow_mul (a : ℝ) (y : M) :
+    IsMIntegralCurve (fun t ↦ hX.flow (a * t) y) (a • X) := by
+  simpa only [Function.comp_def, mul_comm] using (hX.isMIntegralCurve_flow y).comp_mul a
+
+/-- **Integral curves of a rescaled field are orbits run at the rescaled speed.** Every integral
+curve `γ` of `a • X` satisfies `γ t = φ_{a t}(γ 0)`, where `φ` is the flow of `X`. For `a = 0`
+both sides are constant. -/
+theorem flow_mul_eq_of_isMIntegralCurve {a : ℝ} {γ : ℝ → M} (hγ : IsMIntegralCurve γ (a • X))
+    (t : ℝ) : hX.flow (a * t) (γ 0) = γ t := by
+  have hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1
+      (fun x ↦ (⟨x, (a • X) x⟩ : TangentBundle 𝓘(ℝ, E) M)) :=
+    (ContMDiff.const_smul_section (a := a) hX.contMDiff).of_le (by simp)
+  have h := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0) hv
+    (hX.isMIntegralCurve_flow_mul a (γ 0)) hγ (by simp [hX.flow_apply])
+  exact congrFun h t
 
 /-- An integral curve of an adapted pseudo-gradient from `p` to `q` is the orbit of a point of
 `W^u(p) ∩ W^s(q)`. -/
@@ -167,12 +249,10 @@ theorem mem_unstableSet_inter_stableSet_of_isMIntegralCurve {γ : ℝ → M} {p 
 
 /-- A point along whose orbit `f` is constant is a critical point of `f`. -/
 theorem mfderiv_eq_zero_of_forall_eq {z : M}
-    (hz : ∀ t, f (hX.flow t z) = f z) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 := by
-  by_contra hcrit
-  have hd := hX.hasDerivAt_comp_flow z 0
-  have horbit : (fun s ↦ f (hX.flow s z)) = fun _ ↦ f z := funext hz
-  rw [horbit, Flow.map_zero_apply] at hd
-  exact (hX.mvfderiv_apply_lt_zero z hcrit).ne (hd.unique (hasDerivAt_const _ _))
+    (hz : ∀ t, f (hX.flow t z) = f z) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 :=
+  hX.isBottAdaptedPseudoGradient.mfderiv_eq_zero_of_forall_eq fun t ↦ by
+    rw [hX.isBottAdaptedPseudoGradient_flow]
+    exact hz t
 
 /-- A point with a nonempty stable set is a critical point of `f`: it is fixed by the flow. -/
 theorem mfderiv_eq_zero_of_mem_stableSet {a y : M} (hy : y ∈ hX.flow.stableSet a) :
@@ -184,47 +264,48 @@ theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hy : y ∈ hX.flow.unstabl
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 := by
   exact hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by rw [Flow.fixed_of_mem_unstableSet hy t]
 
-/-- **Every orbit converges forward in time to a critical point.** -/
-theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
+/-- **Every orbit converges forward in time to a critical point**, a special case of
+`TauCeti.IsBottAdaptedPseudoGradient.exists_tendsto_atTop`. -/
+theorem exists_tendsto_atTop (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 x) :=
-  Flow.exists_tendsto_atTop_of_antitone hX.flow hf.contMDiff.continuous hX.antitone_flow
-    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
-    (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz) y
+  hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.exists_tendsto_atTop y
 
-/-- **Every orbit converges backward in time to a critical point.** -/
-theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
-    ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 x) := by
-  obtain ⟨x, hx, htend⟩ := Flow.exists_tendsto_atTop_of_antitone hX.flow.reverse
-    hf.contMDiff.continuous.neg
-    (fun y ↦ fun s t hst ↦ by
-      simp only [Flow.reverse_apply, Pi.neg_apply]
-      exact neg_le_neg (hX.antitone_flow y (neg_le_neg hst)))
-    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
-    (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by
-      have := hz (-t)
-      simp only [Flow.reverse_apply, neg_neg, Pi.neg_apply] at this
-      exact neg_inj.1 this) y
-  refine ⟨x, hx, ?_⟩
-  have := htend.comp tendsto_neg_atBot_atTop
-  simpa [comp_def, Flow.reverse_apply] using this
+/-- **Every orbit converges backward in time to a critical point**, a special case of
+`TauCeti.IsBottAdaptedPseudoGradient.exists_tendsto_atBot`. -/
+theorem exists_tendsto_atBot (y : M) :
+    ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 x) :=
+  hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.exists_tendsto_atBot y
+
+/-- A point of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p`
+to a critical point `b ≠ p` below `c`. -/
+theorem exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt {p w : M}
+    (hw : w ∈ hX.flow.unstableSet p) {t c : ℝ} (ht : f (hX.flow t w) < c)
+    (hcp : c ≤ f p) :
+    ∃ b, p ≠ b ∧ w ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet b ∧ f b < c := by
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop w
+  have hb : w ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
+  have hfb : f b ≤ f (hX.flow t w) :=
+    Flow.le_of_mem_stableSet_of_antitone ((Flow.apply_mem_stableSet_iff _ t).2 hb)
+      hX.mdifferentiable.continuous.continuousAt (hX.antitone_flow _)
+  exact ⟨b, by rintro rfl; linarith, ⟨hw, hb⟩, hfb.trans_lt ht⟩
 
 /-- **An orbit trapped near a critical point converges to it.** If the forward orbit of `w` stays
-in a closed set `K` whose only critical point of the Morse function `f` is `x`, then the orbit
+in a closed set `K` whose only critical point of `f` is `x`, then the orbit
 converges to `x`. -/
-theorem mem_stableSet_of_forall_mem (hf : IsMorse 𝓘(ℝ, E) f) {x : M} {K : Set M} (hK : IsClosed K)
+theorem mem_stableSet_of_forall_mem {x : M} {K : Set M} (hK : IsClosed K)
     (hKx : ∀ z ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x) {w : M}
     (hw : ∀ t, 0 ≤ t → hX.flow t w ∈ K) : w ∈ hX.flow.stableSet x := by
-  obtain ⟨z, hz, hlim⟩ := hX.exists_tendsto_atTop hf w
+  obtain ⟨z, hz, hlim⟩ := hX.exists_tendsto_atTop w
   rw [hKx z (hK.mem_of_tendsto hlim (eventually_atTop.2 ⟨0, hw⟩)) hz] at hlim
   exact Flow.mem_stableSet.2 hlim
 
 /-- **An orbit trapped near a critical point in backward time converges to it.** If the backward
-orbit of `w` stays in a closed set `K` whose only critical point of the Morse function `f` is `x`,
+orbit of `w` stays in a closed set `K` whose only critical point of `f` is `x`,
 then the orbit converges to `x` in backward time. -/
-theorem mem_unstableSet_of_forall_mem (hf : IsMorse 𝓘(ℝ, E) f) {x : M} {K : Set M} (hK : IsClosed K)
+theorem mem_unstableSet_of_forall_mem {x : M} {K : Set M} (hK : IsClosed K)
     (hKx : ∀ z ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x) {w : M}
     (hw : ∀ t, t ≤ 0 → hX.flow t w ∈ K) : w ∈ hX.flow.unstableSet x := by
-  obtain ⟨z, hz, hlim⟩ := hX.exists_tendsto_atBot hf w
+  obtain ⟨z, hz, hlim⟩ := hX.exists_tendsto_atBot w
   rw [hKx z (hK.mem_of_tendsto hlim (eventually_atBot.2 ⟨0, hw⟩)) hz] at hlim
   exact Flow.mem_unstableSet.2 hlim
 
@@ -245,6 +326,25 @@ theorem eq_of_mem_unstableSet_inter_stableSet {x y : M}
   simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
   exact tendsto_nhds_unique tendsto_const_nhds hlim
 
+/-- A point of `W^u(p)` other than `p` lies on a trajectory from `p` to a critical point
+`a ≠ p`. -/
+theorem exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet {p x : M}
+    (hx : x ∈ hX.flow.unstableSet p) (hxp : x ≠ p) :
+    ∃ a, p ≠ a ∧ x ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet a := by
+  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atTop x
+  refine ⟨a, ?_, hx, Flow.mem_stableSet.2 ha⟩
+  rintro rfl
+  exact hxp (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hx, Flow.mem_stableSet.2 ha⟩)
+
+/-- A point of `W^s(r)` other than `r` lies on a trajectory from a critical point `b ≠ r` to `r`. -/
+theorem exists_mem_unstableSet_inter_stableSet_of_mem_stableSet {r x : M}
+    (hx : x ∈ hX.flow.stableSet r) (hxr : x ≠ r) :
+    ∃ b, b ≠ r ∧ x ∈ hX.flow.unstableSet b ∩ hX.flow.stableSet r := by
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atBot x
+  refine ⟨b, ?_, Flow.mem_unstableSet.2 hb, hx⟩
+  rintro rfl
+  exact hxr (hX.eq_of_mem_unstableSet_inter_stableSet ⟨Flow.mem_unstableSet.2 hb, hx⟩)
+
 /-- **A critical point is a constant trajectory from itself to itself**: it lies in its own unstable
 and stable sets, since it is a rest point of the flow. -/
 theorem mem_unstableSet_inter_stableSet_self {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
@@ -252,19 +352,48 @@ theorem mem_unstableSet_inter_stableSet_self {x : M} (hx : mfderiv 𝓘(ℝ, E) 
   ⟨Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx),
     Flow.self_mem_stableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)⟩
 
+/-- **A critical point lies only on its own unstable manifold.** If `x` is a critical point of `f`
+and `x ∈ W^u(p)`, then `x = p`: the flow fixes `x`, so `x ∈ W^u(x)`, and unstable sets of distinct
+points are disjoint. -/
+theorem eq_of_mem_unstableSet_of_mfderiv_eq_zero {x p : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (h : x ∈ hX.flow.unstableSet p) : x = p := by
+  by_contra hxp
+  exact disjoint_left.1 (Flow.disjoint_unstableSet hxp)
+    (hX.mem_unstableSet_inter_stableSet_self hx).1 h
+
+/-- A critical point lies in its own unstable set. -/
+theorem mem_unstableSet_self {x : M} (hx : x ∈ criticalPoints 𝓘(ℝ, E) f) :
+    x ∈ hX.flow.unstableSet x :=
+  (hX.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx)).1
+
+/-- A critical point lies in its own stable set. -/
+theorem mem_stableSet_self {x : M} (hx : x ∈ criticalPoints 𝓘(ℝ, E) f) :
+    x ∈ hX.flow.stableSet x :=
+  (hX.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx)).2
+
 /-- **The stable sets of the critical points cover the manifold.** -/
-theorem iUnion_stableSet (hf : IsMorse 𝓘(ℝ, E) f) :
+theorem iUnion_stableSet :
     ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x = univ := by
   refine eq_univ_of_forall fun y ↦ ?_
-  obtain ⟨x, hx, htend⟩ := hX.exists_tendsto_atTop hf y
+  obtain ⟨x, hx, htend⟩ := hX.exists_tendsto_atTop y
   exact mem_iUnion₂.2 ⟨x, hx, Flow.mem_stableSet.2 htend⟩
 
 /-- **The unstable sets of the critical points cover the manifold.** -/
-theorem iUnion_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) :
+theorem iUnion_unstableSet :
     ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.unstableSet x = univ := by
   refine eq_univ_of_forall fun y ↦ ?_
-  obtain ⟨x, hx, htend⟩ := hX.exists_tendsto_atBot hf y
+  obtain ⟨x, hx, htend⟩ := hX.exists_tendsto_atBot y
   exact mem_iUnion₂.2 ⟨x, hx, Flow.mem_unstableSet.2 htend⟩
+
+/-- **Every point lies on the stable set of a critical point.** -/
+theorem exists_mem_stableSet (y : M) :
+    ∃ c, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 ∧ y ∈ hX.flow.stableSet c :=
+  hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.exists_mem_stableSet y
+
+/-- **Every point lies on the unstable set of a critical point.** -/
+theorem exists_mem_unstableSet (y : M) :
+    ∃ c, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 ∧ y ∈ hX.flow.unstableSet c :=
+  hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.exists_mem_unstableSet y
 
 /-- **The stable set of a strict maximum is a point.** If `f` has a strict global maximum at `a`,
 then no other orbit of the flow converges to `a` in forward time. -/
@@ -280,10 +409,9 @@ theorem unstableSet_eq_singleton_of_lt {a : M}
   Flow.unstableSet_eq_singleton_of_antitone hX.mdifferentiable.continuous.continuousAt
     hX.antitone_flow hmin
 
-/-- **Two critical points.** If every critical point of a Morse function is one of two distinct
-points `a` and `b`, and the stable set of `a` is `{a}`, then the stable set of `b` is everything
-else. -/
-theorem stableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) {a b : M}
+/-- **Two critical points.** If every critical point of `f` is one of two distinct points `a` and
+`b`, and the stable set of `a` is `{a}`, then the stable set of `b` is everything else. -/
+theorem stableSet_eq_compl_of_critical_eq_or_eq {a b : M}
     (hcrit : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = a ∨ y = b) (hab : a ≠ b)
     (ha : hX.flow.stableSet a = {a}) : hX.flow.stableSet b = {a}ᶜ := by
   ext p
@@ -291,16 +419,14 @@ theorem stableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) {a
   · rw [mem_singleton_iff] at hpa
     subst hpa
     exact disjoint_left.1 (Flow.disjoint_stableSet hab) (ha ▸ rfl) hp
-  · obtain ⟨c, hc, hpc⟩ := mem_iUnion₂.1 ((hX.iUnion_stableSet hf).symm ▸ mem_univ p :
-      p ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x)
+  · obtain ⟨c, hc, hpc⟩ := hX.exists_mem_stableSet p
     rcases hcrit c hc with rfl | rfl
     · exact absurd (ha ▸ hpc) hpa
     · exact hpc
 
-/-- **Two critical points.** If every critical point of a Morse function is one of two distinct
-points `a` and `b`, and the unstable set of `b` is `{b}`, then the unstable set of `a` is everything
-else. -/
-theorem unstableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) {a b : M}
+/-- **Two critical points.** If every critical point of `f` is one of two distinct points `a` and
+`b`, and the unstable set of `b` is `{b}`, then the unstable set of `a` is everything else. -/
+theorem unstableSet_eq_compl_of_critical_eq_or_eq {a b : M}
     (hcrit : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = a ∨ y = b) (hab : a ≠ b)
     (hb : hX.flow.unstableSet b = {b}) : hX.flow.unstableSet a = {b}ᶜ := by
   ext p
@@ -308,8 +434,7 @@ theorem unstableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) 
   · rw [mem_singleton_iff] at hpb
     subst hpb
     exact disjoint_left.1 (Flow.disjoint_unstableSet hab) hp (hb ▸ rfl)
-  · obtain ⟨c, hc, hpc⟩ := mem_iUnion₂.1 ((hX.iUnion_unstableSet hf).symm ▸ mem_univ p :
-      p ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.unstableSet x)
+  · obtain ⟨c, hc, hpc⟩ := hX.exists_mem_unstableSet p
     rcases hcrit c hc with rfl | rfl
     · exact hpc
     · exact absurd (hb ▸ hpc) hpb
@@ -317,14 +442,9 @@ theorem unstableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) 
 /-- The flow of `-X` is the flow of `X` run backwards. -/
 theorem neg_flow (hf : IsMorse 𝓘(ℝ, E) f) :
     (hX.neg hf).flow = hX.flow.reverse := by
-  ext t y
-  have hγ : IsMIntegralCurve ((fun s ↦ hX.flow s y) ∘ (· * (-1 : ℝ))) (-X) := by
-    have := (hX.isMIntegralCurve_flow y).comp_mul (-1)
-    rwa [neg_one_smul] at this
-  have h := globalFlow_eq_of_isMIntegralCurve ((hX.neg hf).contMDiff.of_le (by simp))
-    (hX.neg hf).isCompleteVectorField hγ t
-  simp only [comp_apply, mul_neg_one, neg_zero, Flow.map_zero_apply] at h
-  rw [Flow.reverse_apply, ← h, (hX.neg hf).flow_apply, globalFlow_apply]
+  -- Both flows of `-X` are `globalFlow (-X)`.
+  rw [← (hX.neg hf).isBottAdaptedPseudoGradient_flow, ← hX.isBottAdaptedPseudoGradient_flow,
+    ← hX.isBottAdaptedPseudoGradient.neg_flow]
 
 /-- The unstable set of a critical point is its stable set for the reversed pseudo-gradient. -/
 theorem unstableSet_eq_stableSet_neg (hf : IsMorse 𝓘(ℝ, E) f) (x : M) :

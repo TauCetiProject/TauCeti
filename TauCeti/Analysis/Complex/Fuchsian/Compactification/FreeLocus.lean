@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
+public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.Compactness
-import TauCeti.Analysis.Complex.Fuchsian.ProperAction
+import TauCeti.Analysis.Complex.Fuchsian.Compactification.Manifold
+import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 
 /-!
 # The free locus inside the compactified quotient
@@ -15,7 +17,8 @@ import TauCeti.Analysis.Complex.Fuchsian.ProperAction
 Let `Γ ≤ PSL(2, ℝ)` be discrete. Deleting the elliptic orbits and the adjoined cusps from the
 compactified quotient `X(Γ)` leaves exactly the orbit space of the free locus of `Γ`, the
 points of `ℍ` with trivial stabilizer. When `X(Γ)` is compact, only finitely many points are
-deleted.
+deleted, so the free-locus quotient has finite CW type by the punctured complex-manifold theorem
+(`TauCeti.ComplexManifold.instFiniteCWTypeCompl`).
 
 ## Main results
 
@@ -27,6 +30,8 @@ deleted.
   homeomorphic to the compactified quotient punctured at its elliptic orbits and cusps.
 * `Subgroup.CompactifiedQuotient.finite_ellipticOrbits_union_cusps`: in a compact compactified
   quotient there are finitely many elliptic orbits and cusps.
+* `Subgroup.finiteCWType_orbitRel_quotient_freeLocus`: when `X(Γ)` is compact, the orbit space of
+  the free locus of `Γ` has finite CW type.
 -/
 
 public noncomputable section
@@ -117,5 +122,19 @@ theorem finite_ellipticOrbits_union_cusps [CompactSpace Γ.CompactifiedQuotient]
   (Γ.finite_ellipticOrbits.image _).union (finite_range _)
 
 end Subgroup.CompactifiedQuotient
+
+namespace Subgroup
+
+open CompactifiedQuotient in
+/-- **The free-locus quotient of a cofinite Fuchsian group has finite CW type.** When `X(Γ)` is
+compact, the orbit space of the free locus of `Γ` is homeomorphic to `X(Γ)` with the finitely many
+elliptic orbits and cusps deleted. -/
+instance finiteCWType_orbitRel_quotient_freeLocus {Γ : Subgroup PSL(2, ℝ)}
+    [DiscreteTopology Γ] [CompactSpace Γ.CompactifiedQuotient] :
+    FiniteCWType (orbitRel.Quotient Γ (freeLocus Γ ℍ)) :=
+  have := (finite_ellipticOrbits_union_cusps (Γ := Γ)).to_subtype
+  (freeLocusQuotientHomeomorph Γ).finiteCWType
+
+end Subgroup
 
 end

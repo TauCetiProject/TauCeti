@@ -163,8 +163,7 @@ private lemma radialNeighborhoodLT_subset_skeletonLT (n : ℕ) :
 /-- The radial projection of a point of the outer half of an `n`-cell lies in `skeletonLT C n`. -/
 private lemma map_inv_norm_smul_mem_skeletonLT {n : ℕ} (j : cell C n) {y : Fin n → ℝ}
     (hy : 2⁻¹ ≤ ‖y‖) : map n j (‖y‖⁻¹ • y) ∈ (skeletonLT C (n : ℕ∞) : Set X) :=
-  cellFrontier_subset_skeletonLT n j ⟨_, mem_sphere_zero_iff_norm.2
-    (norm_inv_norm_smul_of_half_le hy), rfl⟩
+  map_mem_skeletonLT_of_norm_eq_one j (norm_inv_norm_smul_of_half_le hy)
 
 /-- The radial neighborhood meets `skeletonLT C n` in its `n`-th stage. -/
 private lemma radialNeighborhood_inter_skeletonLT (n : ℕ) :
@@ -209,7 +208,7 @@ private lemma map_mem_radialNeighborhood_iff_of_norm_eq_one {n : ℕ} (j : cell 
     {y : Fin n → ℝ} (hy : ‖y‖ = 1) :
     map n j y ∈ A.radialNeighborhood ↔ map n j y ∈ radialNeighborhoodLT A n := by
   rw [← radialNeighborhood_inter_skeletonLT, mem_inter_iff, iff_self_and]
-  exact fun _ ↦ cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩
+  exact fun _ ↦ map_mem_skeletonLT_of_norm_eq_one j hy
 
 private lemma map_mem_radialNeighborhood_iff_of_norm_lt {n : ℕ} (j : cell C n) {y : Fin n → ℝ}
     (hy : ‖y‖ < 1) :

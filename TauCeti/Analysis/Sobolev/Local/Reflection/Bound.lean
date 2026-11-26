@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.Local.Reflection
+public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Sobolev.Local.Wkp
 import TauCeti.Analysis.Sobolev.WeakDeriv.ImDilation
+import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -35,13 +39,26 @@ With the Vandermonde weights the constant is `TauCeti.higherReflectionBound k p`
 `W^{k,p}` map on a half-disc to a `W^{k,p}` map on the disc with a bound
 (`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound`).
 
+For a native Sobolev representative on the upper half of an open set `V`, the reflection has a
+native Sobolev representative on all of `V.reflectionCore`, with the same coefficient constant
+at every derivative level. An arbitrary indexed family with local Sobolev bounds on upper halves
+has reflected representatives with one common bound on each relatively compact subset of the core.
+
 ## Main declarations
 
 * `TauCeti.weakDerivChainLe_planarReflection`: the all-order bound for the reflection with
   arbitrary weights.
-* `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_bound` and
-  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound`: the packaged extension
-  with its bound.
+* `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_bound`,
+  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound` and
+  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound`: the packaged
+  extension with its bound.
+* `TauCeti.eLpNormWkp_planarReflection_higherReflectionCoeff_le` and
+  `TauCeti.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le`: the
+  same bound for the `W^{k,p}` norms `TauCeti.eLpNormWkp`.
+* `TauCeti.Wkp.exists_planarReflection_higherReflectionCoeff_norm_le`: a native Sobolev
+  representative of the reflection with an explicit norm bound.
+* `TauCeti.exists_uniform_wkp_planarReflection_norm_le`: a uniform native Sobolev bound for
+  the reflected members of a locally bounded family.
 
 ## References
 
@@ -65,11 +82,8 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 /-- The node dilations are contractions. -/
 private theorem norm_imDilation_higherReflectionNode_le {k : ℕ} (j : Fin k) :
     ‖imDilation (higherReflectionNode j)‖ ≤ 1 := by
-  have hn : |higherReflectionNode j| ≤ 1 := by
-    rw [higherReflectionNode_eq, abs_neg, abs_inv, abs_of_pos (by positivity)]
-    exact inv_le_one_of_one_le₀ (by simp)
   exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun w => by
-    simpa using norm_imDilation_le hn w
+    simpa using norm_imDilation_le (abs_higherReflectionNode_le_one j) w
 
 variable {k : ℕ} {d : Fin k → ℝ}
 
@@ -108,7 +122,7 @@ private theorem IsContractedReflection.eLpNorm_le {p : ℝ≥0∞} (hp : 1 ≤ p
   have hlo' := (ae_restrict_iff'
     (Ω.isOpen.measurableSet.inter (measurableSet_lt measurable_im measurable_const))).1 hlo
   have hax : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ {z : ℂ | z.im = 0} :=
-    measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+    Complex.ae_im_ne_zero
   -- Pointwise, `‖f‖` is dominated by the reflection of `‖g‖` with the weights `|d j|`.
   have hle : ∀ᵐ z ∂volume.restrict Ω,
       ‖f z‖ ≤ ‖planarReflection (fun j => |d j|) (fun w => ‖g w‖) z‖ := by
@@ -245,5 +259,145 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound {p : ℝ≥0
         (higherReflectionBound k p) k (TauCeti.planarReflection (higherReflectionCoeff k) u) u :=
   MemWkpLoc.planarReflection_higherReflectionCoeff_bound (Ω := ⟨_, Metric.isOpen_ball⟩) hp
     (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) hu
+
+/-- **Extension to the reflection core, with a bound.** A map `u` in
+`W^{k,p}_loc(Ω ∩ {0 ≤ im})` extends by the order-`k` higher reflection to a map in `W^{k,p}_loc` of
+the reflection core `Ω.reflectionCore`, whose iterated weak derivatives of order at most `k` are
+bounded in `Lᵖ` of the core by `higherReflectionBound k p` times the `Lᵖ(Ω ∩ {0 ≤ im})` norms of
+those of `u`. No symmetry of `Ω` is assumed. -/
+theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound {p : ℝ≥0∞}
+    (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
+    MemWkpLoc p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) ∧
+      WeakDerivChainLe p Ω.reflectionCore ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})
+        (higherReflectionBound k p) k (TauCeti.planarReflection (higherReflectionCoeff k) u) u := by
+  simpa only [Opens.coe_reflectionCore_inter_setOf_im_nonneg] using
+    MemWkpLoc.planarReflection_higherReflectionCoeff_bound (Ω := Ω.reflectionCore) hp
+      Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg
+      (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
+
+/-- **The `W^{k,p}` norm of the reflection.** If the node dilations map the lower part of `Ω` into
+`Ω`, then for every `u` the `W^{k,p}(Ω)` norm of its order-`k` higher
+reflection is at most `higherReflectionBound k p` times the `W^{k,p}(Ω ∩ {0 ≤ im})` norm of `u`.
+No membership of `u` is assumed: the bound is trivial when the right side is infinite. -/
+theorem eLpNormWkp_planarReflection_higherReflectionCoeff_le {p : ℝ≥0∞} (hp : 1 ≤ p)
+    {Ω : Opens ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
+    (u : ℂ → F) :
+    eLpNormWkp p Ω k (TauCeti.planarReflection (higherReflectionCoeff k) u) ≤
+      higherReflectionBound k p * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u := by
+  have hC0 : higherReflectionBound k p ≠ 0 := by
+    rw [higherReflectionBound_eq]
+    exact (zero_lt_one.trans_le le_self_add).ne'
+  -- An infinite right side bounds everything; a finite one places `u` in the half-disc class.
+  by_cases hu : eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u = ∞
+  · rw [hu, ENNReal.mul_top hC0]
+    exact le_top
+  have hu := memWkpLoc_of_eLpNormWkp_ne_top hu
+  obtain ⟨hR, hchain⟩ := hu.planarReflection_higherReflectionCoeff_bound hp hΩ
+  exact hchain.eLpNormWkp_le (higherReflectionBound_ne_top _ _) hC0 hR
+
+/-- **The `W^{k,p}` norm of the reflection on the reflection core.** For every
+`u`, the `W^{k,p}` norm of its order-`k` higher reflection on the
+reflection core of `Ω` is at most `higherReflectionBound k p` times the `W^{k,p}(Ω ∩ {0 ≤ im})` norm
+of `u`. No symmetry of `Ω` is assumed. -/
+theorem eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le
+    {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens ℂ} (u : ℂ → F) :
+    eLpNormWkp p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) ≤
+      higherReflectionBound k p * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u := by
+  simpa only [Opens.coe_reflectionCore_inter_setOf_im_nonneg] using
+    eLpNormWkp_planarReflection_higherReflectionCoeff_le (Ω := Ω.reflectionCore) hp
+      Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg u
+
+/-! ### Native Sobolev representatives with quantitative bounds -/
+
+variable {p : ℝ≥0∞} {k : ℕ} [Fact (1 ≤ p)]
+
+/-- **The reflection of one Sobolev function is bounded on the reflection core.** If `u` is
+represented by `v` in `W^{k+1,p}` on the upper half of `V`, then its order-`k + 1` higher
+reflection is represented by an element of `W^{k+1,p}` on the whole reflection core of `V`,
+with norm at most
+`(k + 2) * higherReflectionBound (k + 1) p * ‖v‖`. -/
+theorem Wkp.exists_planarReflection_higherReflectionCoeff_norm_le {V : Opens ℂ} {u : ℂ → ℝ}
+    (v : Wkp volume V.upperHalf p (k + 1))
+    (hv : Wkp.value (k + 1) v =ᵐ[volume.restrict (V.upperHalf : Set ℂ)] u) :
+    ∃ w : Wkp volume V.reflectionCore p (k + 1), ENNReal.ofReal ‖w‖ ≤
+        ((k : ℝ≥0∞) + 2) * (higherReflectionBound (k + 1) p * ENNReal.ofReal ‖v‖) ∧
+      Wkp.value (k + 1) w =ᵐ[volume.restrict V.reflectionCore]
+        planarReflection (higherReflectionCoeff (k + 1)) u := by
+  have hp : 1 ≤ p := Fact.out
+  set C := higherReflectionBound (k + 1) p
+  set H := V.reflectionCore
+  set T : Set ℂ := (V : Set ℂ) ∩ {z | 0 ≤ z.im}
+  obtain ⟨G, h0, hG, -, hGn, -⟩ := Wkp.exists_iteratedGradient_chain k v
+  -- Up to the real axis, which is null, `V ∩ {0 ≤ im}` is the upper half of `V`.
+  have hint := Opens.interior_inter_setOf_im_nonneg_eq_upperHalf V
+  have hVae := inter_setOf_im_nonneg_ae_eq_interior V
+  rw [hint] at hVae
+  have hT : MemWkpLoc p T (k + 1) u := by
+    refine (Wkp.memWkpLoc_value_of_ae_le hint hVae.subset v).congr_ae ?_
+    rw [Measure.restrict_congr_set hVae]
+    exact hv
+  -- Reflect, and compare the iterated gradients of the reflection with those of `v`.
+  obtain ⟨hrefl, hchain⟩ := hT.planarReflection_higherReflectionCoeff_reflectionCore_bound hp
+  obtain ⟨-, Gf, hf0, hfG, -⟩ := (memWkpLoc_succ_iff_exists_iteratedGradient k).1 hrefl
+  have hbd : ∀ i ≤ k, eLpNorm (Gf i) p (volume.restrict H) ≤
+      C * eLpNorm (G i) p (volume.restrict T) := fun i hi =>
+    hchain.eLpNorm_iteratedGradient_le (by rw [Opens.interior_coe]; exact hf0)
+      (by rw [hint]; exact h0.congr_ae hv) (fun i hi => by rw [Opens.interior_coe]; exact hfG i hi)
+      (fun i hi => by rw [hint]; exact hG i hi) hi
+  have hTV : volume.restrict T ≤ volume.restrict (V.upperHalf : Set ℂ) :=
+    (Measure.restrict_congr_set hVae).le
+  have hGT : ∀ i ≤ k, eLpNorm (G i) p (volume.restrict T) ≤ ENNReal.ofReal ‖v‖ := fun i hi =>
+    (eLpNorm_mono_measure _ hTV).trans (hGn i hi)
+  have huT : eLpNorm u p (volume.restrict T) ≤ ENNReal.ofReal ‖v‖ := by
+    refine (eLpNorm_mono_measure _ hTV).trans ?_
+    rw [← eLpNorm_congr_ae hv, ← Lp.eNorm_def, ← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal (Wkp.norm_value_le _ v)
+  have h1 : eLpNorm (planarReflection (higherReflectionCoeff (k + 1)) u) p
+      (volume.restrict H) ≤ C * ENNReal.ofReal ‖v‖ :=
+    hchain.eLpNorm_le.trans (by gcongr)
+  have h2 : ∀ i ≤ k, eLpNorm (Gf i) p (volume.restrict H) ≤ C * ENNReal.ofReal ‖v‖ :=
+    fun i hi => (hbd i hi).trans (by gcongr; exact hGT i hi)
+  have hC : C * ENNReal.ofReal ‖v‖ < ⊤ :=
+    ENNReal.mul_lt_top (lt_top_iff_ne_top.2 (higherReflectionBound_ne_top _ _))
+      ENNReal.ofReal_lt_top
+  obtain ⟨w, hw, -, hwn⟩ := Wkp.exists_value_iteratedGradient_ae_eq_of_chain (Omega := H) k
+    (h1.trans_lt hC) hf0 hfG (fun i hi => (h2 i hi).trans_lt hC)
+  refine ⟨w, hwn.trans ?_, hw⟩
+  calc _ ≤ C * ENNReal.ofReal ‖v‖ + ∑ _ ∈ Finset.range (k + 1), C * ENNReal.ofReal ‖v‖ :=
+        add_le_add h1 (Finset.sum_le_sum fun i hi => h2 i (Finset.mem_range_succ_iff.1 hi))
+    _ = ((k : ℝ≥0∞) + 2) * (C * ENNReal.ofReal ‖v‖) := by
+        rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+        push_cast
+        ring
+
+/-- **A reflected family is bounded on the reflection core.** If the `u m` are bounded in
+`W^{k+1,p}` on the upper half of every relatively compact open subset of `Ω`, then their order
+`k + 1` higher reflections are bounded in `W^{k+1,p}` on every relatively compact open subset of the
+reflection core of `Ω`. -/
+theorem exists_uniform_wkp_planarReflection_norm_le {ι : Type*} {Ω : Opens ℂ} {u : ι → ℂ → ℝ}
+    (hu : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ R : ℝ, ∀ m, ∃ v : Wkp volume W.upperHalf p (k + 1),
+        ‖v‖ ≤ R ∧ Wkp.value (k + 1) v =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] u m)
+    {W : Opens ℂ} (hWc : IsCompact (closure (W : Set ℂ)))
+    (hWΩ : closure (W : Set ℂ) ⊆ Ω.reflectionCore) :
+    ∃ R : ℝ, ∀ m, ∃ v : Wkp volume W p (k + 1), ‖v‖ ≤ R ∧
+      Wkp.value (k + 1) v =ᵐ[volume.restrict W]
+        planarReflection (higherReflectionCoeff (k + 1)) (u m) := by
+  obtain ⟨V, hVc, hVΩ, hWV⟩ := Opens.exists_subset_reflectionCore_and_isCompact_closure hWc hWΩ
+  obtain ⟨R, hR⟩ := hu V hVc hVΩ
+  have hne : ((k : ℝ≥0∞) + 2) * (higherReflectionBound (k + 1) p * ENNReal.ofReal R) ≠ ⊤ :=
+    ENNReal.mul_ne_top (by simp) (ENNReal.mul_ne_top (higherReflectionBound_ne_top _ _)
+      ENNReal.ofReal_ne_top)
+  refine ⟨(((k : ℝ≥0∞) + 2) * (higherReflectionBound (k + 1) p * ENNReal.ofReal R)).toReal,
+    fun m => ?_⟩
+  obtain ⟨v, hvR, hv⟩ := hR m
+  obtain ⟨w, hwn, hw⟩ := Wkp.exists_planarReflection_higherReflectionCoeff_norm_le v hv
+  have hWV' : W ≤ V.reflectionCore := SetLike.coe_subset_coe.1 (subset_closure.trans hWV)
+  refine ⟨Wkp.restrictL hWV' (k + 1) w, (ENNReal.ofReal_le_iff_le_toReal hne).1
+    ((ENNReal.ofReal_le_ofReal (Wkp.norm_restrictL_le _ _ _)).trans
+      (hwn.trans (by gcongr))), ?_⟩
+  exact (Wkp.value_restrictL_ae hWV' (k + 1) w).trans
+    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hWV') hw)
 
 end TauCeti

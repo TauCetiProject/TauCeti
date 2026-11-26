@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Loop
+public import TauCeti.Geometry.Symplectic.Floer.Cap.PairOfPants
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
+public import TauCeti.Topology.PathSpace.CollaredTrans
 import TauCeti.Algebra.Order.ToIntervalMod
+import TauCeti.Geometry.Manifold.Instances.Icc
 import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -20,7 +23,8 @@ of `γ` (`TauCeti.Floer.RawCap γ`) are homotopy classes of continuous discs bou
 form a torsor under `π₂(M, x)` (`TauCeti.Floer.RawCap.instAddTorsor`). The integral of `φ` over
 the classes of `π₂(M, x)` is the homomorphism `TauCeti.sphereIntegralHom`. This file defines the
 integral of `φ` over a raw cap and proves that it obeys the recapping law for this homomorphism,
-and that gluing a smooth cylinder of loops to a raw cap adds the integral of `φ` over the cylinder.
+and that gluing a smooth cylinder of loops, or a smooth pair of pants, to raw caps adds the
+integral of `φ` over the cylinder or the pair of pants.
 
 A **smooth based cap** of `γ` (`TauCeti.Floer.IsSmoothBasedCap`) is a smooth map
 `u : ℝ × ℝ → M`, `1`-periodic in `t`, with `u (0, t) = γ t`, `u (1, t) = x` and `u (s, 0) = x` for
@@ -62,6 +66,31 @@ space.
   the area `∫ w^* ω` as its topological term; when the cylinder is a smooth based homotopy, this
   law rewrites that term as the difference `area (w ≫ D) - area D` of the areas of raw caps of its
   two ends, the form in which actions of capped orbits enter capped Floer theory.
+* **The gluing law for pairs of pants.** The concatenation `γ₁ ⬝ γ₂` of two loops is not smooth
+  where they meet, so a smooth pair of pants with inputs `γ₁`, `γ₂` and output `γ₀` is taken to
+  be a smooth based homotopy `w` from `γ₀` to their collared concatenation `γ₁.collaredTrans γ₂`
+  (`Path.collaredTrans`, in `TauCeti.Topology.PathSpace.CollaredTrans`), the concatenation
+  reparametrized to rest near its ends and its junction.
+  Its class as a pair of pants `γ₀ ⟶ γ₁ ⬝ γ₂` is `w.homotopyClass` followed by the inverse of the
+  reparametrization class `Path.collaredTransHom γ₁ γ₂`. Smooth based caps `u₁`, `u₂` of `γ₁`,
+  `γ₂` placed side by side (`TauCeti.loopwiseTrans`) form a smooth based cap of
+  `γ₁.collaredTrans γ₂` (`TauCeti.Floer.IsSmoothBasedCap.loopwiseTrans`), whose raw cap is the
+  product of the raw caps of `u₁` and `u₂` in the H-space `Ω M x`, conjugated by
+  `Path.collaredTransHom` (`TauCeti.Floer.IsSmoothBasedCap.homotopyClass_loopwiseTrans`), and
+  whose integral is the sum of theirs
+  (`TauCeti.Floer.IsSmoothBasedHomotopy.rectangleIntegral_loopwiseTrans`). Hence gluing raw caps
+  `D₁`, `D₂` to the pair of pants with `TauCeti.Floer.RawCap.pantsGlue` adds the integral of `φ`
+  over `w` to the sum of their areas,
+  `area (pantsGlue P D₁ D₂) = ∫ w^* φ + area D₁ + area D₂` (`TauCeti.Floer.RawCap.area_pantsGlue`).
+  For a smooth based pair of pants, this is the form the area term `∫ w^* ω` takes in terms of
+  the areas of caps of its three ends.
+* **The area of a cap class.** Let `ω` and `c` be homomorphisms on `H₂(M; ℤ)` defining the period
+  group `Γ = SphericalPeriodGroup ω c`, and suppose that `ω` of the Hurewicz class of every sphere
+  `a` is `∫_a σ`, for a closed `C¹` real two-form `σ`. Then the area of raw caps descends to the cap
+  classes `TauCeti.Floer.SphericalCapClass ω c γ` (`TauCeti.Floer.SphericalCapClass.area`).
+  Recapping by `B ∈ Γ` adds the area of `B` (`TauCeti.Floer.SphericalCapClass.area_vadd`), and
+  gluing a smooth cylinder or a smooth pair of pants to cap classes adds its integral
+  (`TauCeti.Floer.SphericalCapClass.area_glue`, `TauCeti.Floer.SphericalCapClass.area_pantsGlue`).
 
 The recapping law is the hypothesis of `TauCeti.Floer.CapClass.lift`, with the area homomorphism
 `TauCeti.sphereIntegralHom` on the group `π₂(M, x)` of spheres. The area is measured with the cap
@@ -79,11 +108,14 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
   loop space; for a smooth based cap, its raw cap.
 * `TauCeti.Floer.RawCap.area φ h D`: the integral of `φ` over a raw cap `D` of a loop with a
   smooth based cap (`h`).
+* `TauCeti.Floer.SphericalCapClass.area`: the area of a loop with a cap class.
 
 ## Main results
 
 * `TauCeti.Floer.IsSmoothBasedCap.homotopyClass_vsub_homotopyClass_toMul`: two smooth based caps
   differ by the sphere represented by their concatenation.
+* `TauCeti.Floer.IsSmoothBasedCap.exists_genLoop_homotopyClass_vsub_homotopyClass`: a
+  generalized loop representing the sphere bounded by two smooth based caps.
 * `TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_homotopyClass_vsub_homotopyClass`: two smooth
   based caps differ by a sphere whose integral is the difference of their integrals.
 * `TauCeti.Floer.RawCap.area_homotopyClass`: the area of the raw cap of a smooth based cap is its
@@ -97,6 +129,19 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
 * `TauCeti.Floer.RawCap.area_homotopyClass_comp`,
   `TauCeti.Floer.RawCap.area_inv_homotopyClass_comp`: gluing a smooth based homotopy to a raw cap
   adds its integral to the area, and cutting it off subtracts it.
+* `TauCeti.Floer.IsSmoothBasedHomotopy.loopwiseTrans`,
+  `TauCeti.Floer.IsSmoothBasedHomotopy.homotopyClass_loopwiseTrans`: two smooth based homotopies
+  placed side by side form a smooth based homotopy between collared concatenations, whose class is
+  the product of theirs in the H-space `Ω M x`, conjugated by `Path.collaredTransHom`;
+  `TauCeti.Floer.IsSmoothBasedCap.loopwiseTrans` and
+  `TauCeti.Floer.IsSmoothBasedCap.homotopyClass_loopwiseTrans` for caps.
+* `TauCeti.Floer.IsSmoothBasedHomotopy.rectangleIntegral_loopwiseTrans`: the integral over smooth
+  based homotopies placed side by side is the sum of their integrals.
+* `TauCeti.Floer.RawCap.area_pantsGlue`: gluing raw caps to a smooth pair of pants adds its integral
+  to the sum of their areas.
+* `TauCeti.Floer.SphericalCapClass.area_vadd`, `TauCeti.Floer.SphericalCapClass.area_sub_area`,
+  `TauCeti.Floer.SphericalCapClass.area_glue`, `TauCeti.Floer.SphericalCapClass.area_pantsGlue`:
+  the recapping and gluing laws of the area of cap classes.
 
 ## References
 
@@ -104,6 +149,9 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
   volume*, Progr. Math. 133 (1995), 483–524, on the action of capped loops and its recapping law.
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS, 2012,
   Section 11.1 (the symplectic area of spherical classes and capped loops).
+* S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
+  cohomology*, in *Contact and symplectic geometry*, Publ. Newton Inst. 8 (1996), 171–200, on
+  the classes and energy of pairs of pants relative to caps of their boundary orbits.
 -/
 
 public section
@@ -111,9 +159,11 @@ public section
 noncomputable section
 
 open Set CategoryTheory HomotopyGroup
-open scoped Manifold ContDiff Topology Topology.Homotopy
+open scoped Manifold Topology Topology.Homotopy
 
 namespace TauCeti.Floer
+
+open scoped ContDiff
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -121,59 +171,19 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 
 /-- The reparametrization of the unit interval under which the concatenation of the paths in the
 loop space of two smooth based homotopies becomes the path of their concatenation
-`TauCeti.rectangleTrans`. -/
-private def concatReparam (s : ℝ) : ℝ :=
-  if s ≤ 1 / 2 then Real.smoothTransition (3 * s) / 2
-  else (1 + Real.smoothTransition (3 * s - 2)) / 2
-
-private theorem concatReparam_of_le {s : ℝ} (hs : s ≤ 1 / 2) :
-    concatReparam s = Real.smoothTransition (3 * s) / 2 := by
-  simp only [concatReparam, hs, ↓reduceIte]
-
-private theorem concatReparam_of_lt {s : ℝ} (hs : 1 / 2 < s) :
-    concatReparam s = (1 + Real.smoothTransition (3 * s - 2)) / 2 := by
-  simp only [concatReparam, hs.not_ge, ↓reduceIte]
-
-private theorem continuous_concatReparam : Continuous concatReparam := by
-  refine Continuous.if_le (by fun_prop (disch := exact Real.smoothTransition.continuous))
-    (by fun_prop (disch := exact Real.smoothTransition.continuous)) continuous_id
-    continuous_const fun s hs ↦ ?_
-  rw [hs, Real.smoothTransition.one_of_one_le (by norm_num),
-    Real.smoothTransition.zero_of_nonpos (by norm_num)]
-  norm_num
-
-private theorem concatReparam_mem (s : ℝ) : concatReparam s ∈ unitInterval := by
-  have h₀ := Real.smoothTransition.nonneg (3 * s)
-  have h₁ := Real.smoothTransition.le_one (3 * s)
-  have h₂ := Real.smoothTransition.nonneg (3 * s - 2)
-  have h₃ := Real.smoothTransition.le_one (3 * s - 2)
-  rcases le_or_gt s (1 / 2) with hs | hs
-  · rw [concatReparam_of_le hs]
-    constructor <;> linarith
-  · rw [concatReparam_of_lt hs]
-    constructor <;> linarith
-
-/-- The reparametrization of the unit interval as a map of the unit interval. -/
-private def concatReparamI (s : unitInterval) : unitInterval :=
-  ⟨concatReparam s, concatReparam_mem s⟩
-
-private theorem coe_concatReparamI (s : unitInterval) :
-    (concatReparamI s : ℝ) = concatReparam s :=
-  (rfl)
+`TauCeti.rectangleTrans`: `Path.transReparam id id`, which is `s ↦ β (3 s) / 2` on `[0, 1/2]` and
+`s ↦ (1 + β (3 s - 2)) / 2` on `(1/2, 1]`, where `β = Real.smoothTransition`. -/
+private def concatReparamI : unitInterval → unitInterval :=
+  Path.transReparam id id
 
 private theorem continuous_concatReparamI : Continuous concatReparamI :=
-  (continuous_concatReparam.comp continuous_subtypeVal).subtype_mk _
+  Path.continuous_transReparam continuous_id continuous_id (fun _ h ↦ h) fun _ h ↦ h
 
 private theorem concatReparamI_zero : concatReparamI 0 = 0 :=
-  Subtype.ext <| by
-    rw [coe_concatReparamI, Icc.coe_zero, concatReparam_of_le (by norm_num), mul_zero,
-      Real.smoothTransition.zero, zero_div]
+  Path.transReparam_zero le_rfl
 
 private theorem concatReparamI_one : concatReparamI 1 = 1 :=
-  Subtype.ext <| by
-    rw [coe_concatReparamI, Icc.coe_one, concatReparam_of_lt (by norm_num),
-      Real.smoothTransition.one_of_one_le (by norm_num)]
-    norm_num
+  Path.transReparam_one le_rfl
 
 /-! ### Smooth based homotopies of loops -/
 
@@ -281,10 +291,10 @@ private theorem trans_reparam_apply (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
   rcases le_or_gt (s : ℝ) (1 / 2) with hs | hs
   · -- First half: `w`.
     have hc : (concatReparamI s : ℝ) ≤ 1 / 2 := by
-      rw [coe_concatReparamI, concatReparam_of_le hs]
+      rw [concatReparamI, Path.coe_transReparam_of_le hs, id]
       linarith
     rw [dite_eq_left hc, rectangleTrans_eq_left h (by simp only; linarith)]
-    simp only [toPath_apply, coe_concatReparamI, concatReparam_of_le hs, Function.comp_apply,
+    simp only [toPath_apply, concatReparamI, Path.coe_transReparam_of_le hs, Function.comp_apply,
       Prod.map_apply, id_eq]
     congr 2
     ring
@@ -292,12 +302,12 @@ private theorem trans_reparam_apply (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
     simp only [Function.comp_apply, Prod.map_apply, id_eq]
     split_ifs with hc
     · -- Second half, while the path rests at `γ₂`.
-      rw [coe_concatReparamI, concatReparam_of_lt hs] at hc
+      rw [concatReparamI, Path.coe_transReparam_of_lt hs, id] at hc
       have hz : Real.smoothTransition (3 * (s : ℝ) - 2) = 0 := by linarith
-      simp only [toPath_apply, coe_concatReparamI, concatReparam_of_lt hs, hz]
+      simp only [toPath_apply, concatReparamI, Path.coe_transReparam_of_lt hs, id_eq, hz]
       norm_num [h]
     · -- Second half: `v`.
-      simp only [toPath_apply, coe_concatReparamI, concatReparam_of_lt hs]
+      simp only [toPath_apply, concatReparamI, Path.coe_transReparam_of_lt hs, id_eq]
       congr 2
       ring
 
@@ -314,10 +324,12 @@ theorem rectangleTrans (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
   apply_one t := by rw [rectangleTrans_apply_one, hv.apply_one]
   apply_seam s := by
     rcases lt_or_ge (s : ℝ) (2 / 3) with hs | hs
-    · rw [rectangleTrans_eq_left (hw.apply_one_eq_apply_zero hv) hs]
-      exact hw.apply_seam ⟨_, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
-    · rw [rectangleTrans_eq_right (hw.apply_one_eq_apply_zero hv) (by simp only; linarith)]
-      exact hv.apply_seam ⟨_, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+    · rw [rectangleTrans_eq_left (hw.apply_one_eq_apply_zero hv) hs, Function.comp_apply,
+        Prod.map_apply, ← unitInterval.coe_smoothTransition]
+      exact hw.apply_seam _
+    · rw [rectangleTrans_eq_right (hw.apply_one_eq_apply_zero hv) (by simp only; linarith),
+        Function.comp_apply, Prod.map_apply, ← unitInterval.coe_smoothTransition]
+      exact hv.apply_seam _
 
 /-- **The homotopy class of a glued homotopy.** The homotopy class of the concatenation of two
 smooth based homotopies is the composite of their homotopy classes. -/
@@ -407,6 +419,17 @@ theorem homotopyClass_vsub_homotopyClass_toMul (hu : IsSmoothBasedCap I γ u)
   exact congrArg _ <| GenLoop.ext _ _ fun y ↦
     (fromDoubleLoop_trans_reparam_apply hu hu' y).trans (hp y).symm
 
+/-- For smooth based caps `u` and `u'` of the same loop, some generalized loop restricts their
+concatenation `rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'` to the unit square, and it
+represents the sphere by which their raw caps differ. -/
+theorem exists_genLoop_homotopyClass_vsub_homotopyClass (hu : IsSmoothBasedCap I γ u)
+    (hu' : IsSmoothBasedCap I γ u') :
+    ∃ p : Ω^ (Fin 2) M x,
+      (∀ y, p y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ))) ∧
+        hu'.homotopyClass -ᵥ hu.homotopyClass = Additive.ofMul ⟦p⟧ :=
+  ⟨_, fromDoubleLoop_trans_reparam_apply hu hu',
+    hu.homotopyClass_vsub_homotopyClass_toMul hu' (fromDoubleLoop_trans_reparam_apply hu hu')⟩
+
 /-- **Two smooth caps differ by the sphere they bound.** For smooth based caps `u` and `u'` of the
 same loop, the integral of a closed `C¹` two-form over the sphere by which their raw caps differ
 is the difference of their integrals over the unit square. -/
@@ -439,6 +462,205 @@ theorem exists_isSmoothBasedCap (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
   ⟨_, hw.rectangleTrans hu⟩
 
 end IsSmoothBasedHomotopy
+
+/-! ### Placing smooth based homotopies side by side -/
+
+namespace IsSmoothBasedHomotopy
+
+variable {γ₁ γ₁' γ₂ γ₂' γ γ' γ'' : Ω M x} {w w₁ w₂ : ℝ × ℝ → M}
+
+/-- Reading a smooth based homotopy along `Real.smoothTransition` in its first coordinate, it stays
+at the base point along the whole line `t = 0`. -/
+private theorem apply_smoothTransition_seam (hw : IsSmoothBasedHomotopy I γ γ' w) (s : ℝ) :
+    (w ∘ Prod.map Real.smoothTransition id) (s, 0) = x := by
+  rw [Function.comp_apply, Prod.map_apply, id_eq, ← unitInterval.coe_smoothTransition]
+  exact hw.apply_seam _
+
+/-- Reading a smooth based homotopy along `Real.smoothTransition` in its first coordinate, it stays
+at the base point along the whole line `t = 1`. -/
+private theorem apply_smoothTransition_seam_one (hw : IsSmoothBasedHomotopy I γ γ' w) (s : ℝ) :
+    (w ∘ Prod.map Real.smoothTransition id) (s, 1) = x := by
+  rw [Function.comp_apply, Prod.map_apply, id_eq, ← unitInterval.coe_smoothTransition]
+  exact hw.apply_seam_one _
+
+/-- A smooth based homotopy read along `Real.smoothTransition` in its first coordinate is smooth. -/
+private theorem contMDiff_comp_smoothTransition (hw : IsSmoothBasedHomotopy I γ γ' w) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ (w ∘ Prod.map Real.smoothTransition id) :=
+  hw.contMDiff.comp (Real.smoothTransition.contDiff.prodMap contDiff_id).contMDiff
+
+/-- Two smooth based homotopies read along `Real.smoothTransition` in their first coordinate
+agree along the seams where they are placed side by side. -/
+private theorem loopwiseTrans_seam (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
+    (hw₂ : IsSmoothBasedHomotopy I γ₂ γ₂' w₂) (s : ℝ) :
+    (w₁ ∘ Prod.map Real.smoothTransition id) (s, 1) =
+      (w₂ ∘ Prod.map Real.smoothTransition id) (s, 0) :=
+  (apply_smoothTransition_seam_one hw₁ s).trans (apply_smoothTransition_seam hw₂ s).symm
+
+/-- The loopwise concatenation of two smooth based homotopies, read along
+`Real.smoothTransition` in the first coordinate, runs at each `s` along the collared concatenation
+of their loops. -/
+private theorem loopwiseTrans_apply (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
+    (hw₂ : IsSmoothBasedHomotopy I γ₂ γ₂' w₂) (s : ℝ) (t : unitInterval) :
+    TauCeti.loopwiseTrans (w₁ ∘ Prod.map Real.smoothTransition id)
+        (w₂ ∘ Prod.map Real.smoothTransition id) (s, t) =
+      (hw₁.toPath (unitInterval.smoothTransition s)).collaredTrans
+        (hw₂.toPath (unitInterval.smoothTransition s)) t := by
+  rcases le_or_gt (t : ℝ) (1 / 2) with ht | ht
+  · rw [loopwiseTrans_of_le _ _ t.property.1 ht, Path.collaredTrans_apply_of_le _ _ ht,
+      Path.extend_apply _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩,
+      toPath_apply, Function.comp_apply, Prod.map_apply, id_eq, unitInterval.coe_smoothTransition]
+  rcases lt_or_eq_of_le t.property.2 with ht₁ | ht₁
+  · rw [loopwiseTrans_of_lt _ _ ht ht₁, Path.collaredTrans_apply_of_lt _ _ ht,
+      Path.extend_apply _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩,
+      toPath_apply, Function.comp_apply, Prod.map_apply, id_eq, unitInterval.coe_smoothTransition]
+  · -- At `t = 1` both rest at the base point.
+    have h := loopwiseTrans_apply_add_one (w₁ ∘ Prod.map Real.smoothTransition id)
+      (w₂ ∘ Prod.map Real.smoothTransition id) s 0
+    simp only [zero_add] at h
+    rw [ht₁, h, loopwiseTrans_of_le _ _ le_rfl (by norm_num), mul_zero, zero_sub,
+      Real.smoothTransition.zero_of_nonpos (by norm_num), apply_smoothTransition_seam hw₁,
+      show t = 1 from Subtype.ext ht₁, Path.target]
+
+/-- **Placing smooth based homotopies side by side.** For smooth based homotopies `w₁` from `γ₁`
+to `γ₁'` and `w₂` from `γ₂` to `γ₂'`, their loopwise concatenation, read along
+`Real.smoothTransition` in the first coordinate, is a smooth based homotopy from the collared
+concatenation of `γ₁` and `γ₂` to that of `γ₁'` and `γ₂'`. -/
+theorem loopwiseTrans (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
+    (hw₂ : IsSmoothBasedHomotopy I γ₂ γ₂' w₂) :
+    IsSmoothBasedHomotopy I (γ₁.collaredTrans γ₂) (γ₁'.collaredTrans γ₂')
+      (TauCeti.loopwiseTrans (w₁ ∘ Prod.map Real.smoothTransition id)
+        (w₂ ∘ Prod.map Real.smoothTransition id)) where
+  contMDiff := contMDiff_loopwiseTrans (contMDiff_comp_smoothTransition hw₁)
+    (contMDiff_comp_smoothTransition hw₂) (loopwiseTrans_seam hw₁ hw₂) (loopwiseTrans_seam hw₂ hw₁)
+  apply_add_one z := loopwiseTrans_apply_add_one _ _ z.1 z.2
+  apply_zero t := by
+    rw [loopwiseTrans_apply hw₁ hw₂, unitInterval.smoothTransition_zero, Path.source, Path.source]
+  apply_one t := by
+    rw [loopwiseTrans_apply hw₁ hw₂, unitInterval.smoothTransition_one, Path.target, Path.target]
+  apply_seam s := by
+    rw [loopwiseTrans_of_le _ _ le_rfl (by norm_num), mul_zero, zero_sub,
+      Real.smoothTransition.zero_of_nonpos (by norm_num)]
+    exact apply_smoothTransition_seam hw₁ s
+
+/-- The path in the loop space of collared concatenations of the loops of two smooth based
+homotopies at equal times: the pointwise concatenation of their paths, followed by
+reparametrization of each loop by `Path.collaredTransReparam`. -/
+private def collaredTransPath (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
+    (hw₂ : IsSmoothBasedHomotopy I γ₂ γ₂' w₂) :
+    Path (γ₁.collaredTrans γ₂) (γ₁'.collaredTrans γ₂') :=
+  ((hw₁.toPath.prod hw₂.toPath).map (HSpace.hmul (X := Ω M x)).continuous).map
+    (Path.continuous_reparam Path.continuous_collaredTransReparam Path.collaredTransReparam_zero
+      Path.collaredTransReparam_one)
+
+private theorem collaredTransPath_apply (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
+    (hw₂ : IsSmoothBasedHomotopy I γ₂ γ₂' w₂) (s : unitInterval) :
+    collaredTransPath hw₁ hw₂ s = (hw₁.toPath s).collaredTrans (hw₂.toPath s) :=
+  (rfl)
+
+/-- The path in the loop space of the loopwise concatenation of two smooth based homotopies is the
+path of collared concatenations of their loops, read along `Real.smoothTransition`. -/
+private theorem toPath_loopwiseTrans (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
+    (hw₂ : IsSmoothBasedHomotopy I γ₂ γ₂' w₂) :
+    (hw₁.loopwiseTrans hw₂).toPath =
+      (collaredTransPath hw₁ hw₂).reparam (fun s ↦ unitInterval.smoothTransition s)
+        (unitInterval.continuous_smoothTransition.comp continuous_subtypeVal)
+        unitInterval.smoothTransition_zero unitInterval.smoothTransition_one :=
+  Path.ext <| funext fun s ↦ Path.ext <| funext fun t ↦ by
+    rw [toPath_apply, loopwiseTrans_apply hw₁ hw₂, Path.coe_reparam, Function.comp_apply,
+      collaredTransPath_apply]
+
+/-- **The homotopy class of smooth based homotopies placed side by side.** The homotopy class of
+the loopwise concatenation of two smooth based homotopies is the product of their homotopy
+classes in the H-space `Ω M x`, conjugated by the classes joining concatenations to collared
+concatenations. -/
+theorem homotopyClass_loopwiseTrans (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
+    (hw₂ : IsSmoothBasedHomotopy I γ₂ γ₂' w₂) :
+    (hw₁.loopwiseTrans hw₂).homotopyClass =
+      inv (Path.collaredTransHom γ₁ γ₂) ≫ HSpace.pathHmul hw₁.homotopyClass hw₂.homotopyClass ≫
+        Path.collaredTransHom γ₁' γ₂' := by
+  set R : (⟨γ₁.collaredTrans γ₂⟩ : FundamentalGroupoid (Ω M x)) ⟶ ⟨γ₁'.collaredTrans γ₂'⟩ :=
+    Path.Homotopic.Quotient.mk (collaredTransPath hw₁ hw₂) with hR
+  -- Reparametrizing the path does not change its class.
+  have hrep : (hw₁.loopwiseTrans hw₂).homotopyClass = R := by
+    rw [homotopyClass_def, toPath_loopwiseTrans hw₁ hw₂]
+    exact Quotient.sound ⟨(Path.Homotopy.reparam _ _ _ _ _).symm⟩
+  -- Naturality of the straight-line reparametrization along the path of pointwise concatenations.
+  have hnat : HSpace.pathHmul hw₁.homotopyClass hw₂.homotopyClass ≫
+      Path.collaredTransHom γ₁' γ₂' = Path.collaredTransHom γ₁ γ₂ ≫ R := by
+    rw [homotopyClass_def, homotopyClass_def, HSpace.pathHmul_mk, Path.collaredTransHom_def,
+      Path.collaredTransHom_def, hR, collaredTransPath]
+    have h := Path.Homotopic.map_trans_evalAt (Path.reparamHomotopy Path.collaredTransReparam
+      Path.continuous_collaredTransReparam Path.collaredTransReparam_zero
+      Path.collaredTransReparam_one) ((hw₁.toPath.prod hw₂.toPath).map
+        (HSpace.hmul (X := Ω M x)).continuous)
+    simp only [ContinuousMap.coe_id, Path.map_id] at h
+    -- Composition of classes is the class of the concatenation (`FundamentalGroupoid.comp_eq`,
+    -- `Path.Homotopic.Quotient.mk_trans`). The middle objects `HSpace.hmul (γ₁', γ₂')` and
+    -- `γ₁'.trans γ₂'` agree only by `Path.hmul_eq_trans`, so `exact` applies these two equations
+    -- where `rw` cannot.
+    exact Path.Homotopic.Quotient.eq.2 h
+  rw [hrep, hnat, IsIso.inv_hom_id_assoc]
+
+/-- **The integral over smooth based homotopies placed side by side.** The integral of a continuous
+two-form over the loopwise concatenation of two smooth based homotopies, read along
+`Real.smoothTransition` in the first coordinate, is the sum of their integrals. -/
+theorem rectangleIntegral_loopwiseTrans [IsManifold I 1 M] {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
+    (hw₂ : IsSmoothBasedHomotopy I γ₂ γ₂' w₂) :
+    rectangleIntegral φ (TauCeti.loopwiseTrans (w₁ ∘ Prod.map Real.smoothTransition id)
+        (w₂ ∘ Prod.map Real.smoothTransition id)) (0, 0) (1, 1) =
+      rectangleIntegral φ w₁ (0, 0) (1, 1) + rectangleIntegral φ w₂ (0, 0) (1, 1) := by
+  have hβ : ContDiff ℝ 1 Real.smoothTransition := Real.smoothTransition.contDiff
+  rw [TauCeti.rectangleIntegral_loopwiseTrans hφ
+      ((contMDiff_comp_smoothTransition hw₁).of_le (by simp))
+      ((contMDiff_comp_smoothTransition hw₂).of_le (by simp))
+      (loopwiseTrans_seam hw₁ hw₂)
+      (loopwiseTrans_seam hw₂ hw₁),
+    rectangleIntegral_comp_prodMap_of_contDiff hφ (hw₁.contMDiff.of_le (by simp)) hβ,
+    rectangleIntegral_comp_prodMap_of_contDiff hφ (hw₂.contMDiff.of_le (by simp)) hβ,
+    Real.smoothTransition.zero, Real.smoothTransition.one]
+
+/-- Changing the end loop of a smooth based homotopy along an equality of loops. -/
+private theorem of_eq_target (hw : IsSmoothBasedHomotopy I γ γ' w) (h : γ' = γ'') :
+    IsSmoothBasedHomotopy I γ γ'' w :=
+  h ▸ hw
+
+private theorem homotopyClass_of_eq_target (hw : IsSmoothBasedHomotopy I γ γ' w) (h : γ' = γ'') :
+    (hw.of_eq_target h).homotopyClass = hw.homotopyClass ≫ eqToHom (congrArg _ h) := by
+  subst h
+  rw [eqToHom_refl, Category.comp_id]
+
+end IsSmoothBasedHomotopy
+
+namespace IsSmoothBasedCap
+
+variable {γ₁ γ₂ : Ω M x} {u₁ u₂ : ℝ × ℝ → M}
+
+/-- **Placing smooth caps side by side.** For smooth based caps `u₁` of `γ₁` and `u₂` of `γ₂`,
+their loopwise concatenation, read along `Real.smoothTransition` in the first coordinate, is a
+smooth based cap of the collared concatenation of `γ₁` and `γ₂`. -/
+theorem loopwiseTrans (hu₁ : IsSmoothBasedCap I γ₁ u₁) (hu₂ : IsSmoothBasedCap I γ₂ u₂) :
+    IsSmoothBasedCap I (γ₁.collaredTrans γ₂)
+      (TauCeti.loopwiseTrans (u₁ ∘ Prod.map Real.smoothTransition id)
+        (u₂ ∘ Prod.map Real.smoothTransition id)) :=
+  IsSmoothBasedHomotopy.of_eq_target (IsSmoothBasedHomotopy.loopwiseTrans hu₁ hu₂)
+    (Path.collaredTrans_refl x)
+
+/-- **The raw cap of smooth caps placed side by side.** The raw cap of the loopwise concatenation
+of smooth based caps `u₁` and `u₂` is obtained from the product of their raw caps in the H-space
+`Ω M x` through the class joining the concatenation of `γ₁` and `γ₂` to their collared
+concatenation. -/
+theorem homotopyClass_loopwiseTrans (hu₁ : IsSmoothBasedCap I γ₁ u₁)
+    (hu₂ : IsSmoothBasedCap I γ₂ u₂) :
+    (hu₁.loopwiseTrans hu₂).homotopyClass =
+      inv (Path.collaredTransHom γ₁ γ₂) ≫ HSpace.pathHmul hu₁.homotopyClass hu₂.homotopyClass ≫
+        eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) := by
+  refine (IsSmoothBasedHomotopy.homotopyClass_of_eq_target
+    (IsSmoothBasedHomotopy.loopwiseTrans hu₁ hu₂) (Path.collaredTrans_refl x)).trans ?_
+  rw [IsSmoothBasedHomotopy.homotopyClass_loopwiseTrans hu₁ hu₂, Path.collaredTransHom_refl]
+  simp only [Category.assoc, eqToHom_trans]
+
+end IsSmoothBasedCap
 
 /-! ### The area of a raw cap -/
 
@@ -534,6 +756,120 @@ theorem IsSmoothBasedCap.cappedLoopAction_comp_prodMap_one_sub {σ : RoughForm I
   rw [cappedLoopAction_def, rectangleIntegral_comp_prodMap_one_sub (hσ.of_le (by simp))
     (hu.contMDiff.of_le (by simp)), RawCap.area_homotopyClass hσ hdσ hu]
 
+/-- **Gluing a pair of pants to caps adds its area.** Let `w` be a smooth based homotopy from `γ₀`
+to the collared concatenation of `γ₁` and `γ₂`: a smooth pair of pants with output `γ₀` and
+inputs `γ₁`, `γ₂`, whose seam `t = 0` stays at the base point. Its class as a pair of pants
+`γ₀ ⟶ γ₁ ⬝ γ₂` is `w.homotopyClass ≫ inv (Path.collaredTransHom γ₁ γ₂)`. If `γ₀`, `γ₁` and `γ₂`
+have smooth based caps, then gluing raw caps `D₁` of `γ₁` and `D₂` of `γ₂` to this pair of pants
+gives a raw cap of `γ₀` whose area, for a closed `C¹` two-form, is the integral of the form over
+`w` plus the areas of `D₁` and `D₂`. The first cap (`h₀`) exists whenever the other two do. -/
+theorem RawCap.area_pantsGlue (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
+    {γ₀ γ₁ γ₂ : Ω M x} {w : ℝ × ℝ → M} (hw : IsSmoothBasedHomotopy I γ₀ (γ₁.collaredTrans γ₂) w)
+    (h₀ : ∃ u, IsSmoothBasedCap I γ₀ u) (h₁ : ∃ u, IsSmoothBasedCap I γ₁ u)
+    (h₂ : ∃ u, IsSmoothBasedCap I γ₂ u) (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) :
+    RawCap.area φ h₀ (RawCap.pantsGlue (hw.homotopyClass ≫ inv (Path.collaredTransHom γ₁ γ₂))
+        D₁ D₂) =
+      rectangleIntegral φ w (0, 0) (1, 1) + RawCap.area φ h₁ D₁ + RawCap.area φ h₂ D₂ := by
+  obtain ⟨u₁, hu₁⟩ := h₁
+  obtain ⟨u₂, hu₂⟩ := h₂
+  have : Nonempty (RawCap γ₁) := ⟨D₁⟩
+  have : Nonempty (RawCap γ₂) := ⟨D₂⟩
+  -- Reduce to the raw caps of `u₁` and `u₂`, by the equivariance of gluing.
+  rw [← vsub_vadd D₁ hu₁.homotopyClass, ← vsub_vadd D₂ hu₂.homotopyClass,
+    RawCap.pantsGlue_vadd_left, RawCap.pantsGlue_vadd_right, RawCap.area_vadd hφ hdφ,
+    RawCap.area_vadd hφ hdφ, RawCap.area_vadd hφ hdφ, RawCap.area_vadd hφ hdφ]
+  -- The caps `u₁` and `u₂` glue to `w` as the smooth cap `v` of the collared concatenation.
+  set hv := hu₁.loopwiseTrans hu₂
+  have hglue : RawCap.pantsGlue (hw.homotopyClass ≫ inv (Path.collaredTransHom γ₁ γ₂))
+      hu₁.homotopyClass hu₂.homotopyClass = hw.homotopyClass ≫ hv.homotopyClass := by
+    rw [RawCap.pantsGlue_def, IsSmoothBasedCap.homotopyClass_loopwiseTrans hu₁ hu₂]
+    simp only [Category.assoc]
+  rw [hglue, RawCap.area_homotopyClass_comp hφ hdφ hw h₀ ⟨_, hv⟩,
+    RawCap.area_homotopyClass hφ hdφ hv, RawCap.area_homotopyClass hφ hdφ hu₁,
+    RawCap.area_homotopyClass hφ hdφ hu₂,
+    IsSmoothBasedHomotopy.rectangleIntegral_loopwiseTrans (hφ.of_le (by simp)) hu₁ hu₂]
+  abel
+
 end Area
 
 end TauCeti.Floer
+
+/-! ### The area of a cap class -/
+
+namespace TauCeti.Floer.SphericalCapClass
+
+open AlgebraicTopology
+
+-- `ω` names the area homomorphism here, so the `ContDiff` scope, whose notation includes `ω`, is
+-- not opened, and smoothness `∞` is written out.
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E] [I.Boundaryless]
+  {M : Type} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ((⊤ : ℕ∞) : WithTop ℕ∞) M] [CompactSpace M] [T2Space M] {x : M} {γ : Ω M x}
+  {σ : RoughForm I M ℝ 2} {hσ : IsSmoothForm I 1 σ} {hdσ : mextDeriv σ = 0}
+  {ω : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+    (TopCat.of M) →+ ℝ}
+  {c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+    (TopCat.of M) →+ ℤ}
+
+/-- The **area** of a loop `γ` with a cap class, for a closed `C¹` two-form `σ` and a homomorphism
+`ω` on `H₂(M; ℤ)` that agrees with the integral of `σ` on the Hurewicz classes of spheres (`hω`):
+the area `TauCeti.Floer.RawCap.area` of any raw cap in the class. It is well defined because raw
+caps in the same class differ by a sphere whose Hurewicz class has zero `ω`, hence zero integral.
+The cap is oriented from `γ` to its centre. -/
+def area (hσ : IsSmoothForm I 1 σ) (hdσ : mextDeriv σ = 0)
+    (hω : ∀ a, ω (hurewiczIntHom M x 1 a) = sphereIntegralHom x hσ hdσ a)
+    (h : ∃ u, IsSmoothBasedCap I γ u) : SphericalCapClass ω c γ → ℝ :=
+  lift (PeriodGroup.area _ _) (RawCap.area σ h) fun a D ↦ by
+    rw [RawCap.area_vadd hσ hdσ, SphericalPeriodGroup.area_ofHomotopyGroup, hω]
+
+variable (hω : ∀ a, ω (hurewiczIntHom M x 1 a) = sphereIntegralHom x hσ hdσ a)
+  (h : ∃ u, IsSmoothBasedCap I γ u)
+
+/-- The area of the cap class of a raw cap is the area of the raw cap. -/
+@[simp]
+theorem area_mk (D : RawCap γ) : area hσ hdσ hω h (mk ω c D) = RawCap.area σ h D :=
+  lift_mk _ _ _ D
+
+/-- **Two cap classes differ by a class of the period group.** The areas of two cap classes of `γ`
+differ by the area of the class by which they differ. -/
+theorem area_sub_area (q' q : SphericalCapClass ω c γ) :
+    area hσ hdσ hω h q' - area hσ hdσ hω h q = PeriodGroup.area _ _ (q' -ᵥ q) := by
+  induction q' using induction_on with | h D' =>
+  induction q using induction_on with
+  | h D => rw [area_mk, area_mk, mk_vsub_mk, SphericalPeriodGroup.area_ofHomotopyGroup, hω,
+      RawCap.area_sub_area hσ hdσ]
+
+/-- **Gluing a smooth cylinder to a cap class adds its area.** Gluing a smooth based homotopy `w`
+from `γ₀` to `γ` to a cap class of `γ` adds the integral of `σ` over `w` to its area. -/
+theorem area_glue {γ₀ : Ω M x} {w : ℝ × ℝ → M} (hw : IsSmoothBasedHomotopy I γ₀ γ w)
+    (h₀ : ∃ u, IsSmoothBasedCap I γ₀ u) (q : SphericalCapClass ω c γ) :
+    area hσ hdσ hω h₀ (glue hw.homotopyClass q) =
+      rectangleIntegral σ w (0, 0) (1, 1) + area hσ hdσ hω h q := by
+  induction q using induction_on with
+  | h D => rw [glue_mk, area_mk, area_mk, RawCap.area_homotopyClass_comp hσ hdσ hw h₀ h]
+
+/-- **Gluing cap classes to a smooth pair of pants adds its area.** Let `w` be a smooth based
+homotopy from `γ₀` to the collared concatenation of `γ₁` and `γ₂`, a smooth pair of pants with
+output `γ₀` and inputs `γ₁`, `γ₂`. Gluing cap classes `q₁` of `γ₁` and `q₂` of `γ₂` to it gives a
+cap class of `γ₀` whose area is the integral of `σ` over `w` plus the areas of `q₁` and `q₂`. -/
+theorem area_pantsGlue {γ₀ γ₁ γ₂ : Ω M x} {w : ℝ × ℝ → M}
+    (hw : IsSmoothBasedHomotopy I γ₀ (γ₁.collaredTrans γ₂) w) (h₀ : ∃ u, IsSmoothBasedCap I γ₀ u)
+    (h₁ : ∃ u, IsSmoothBasedCap I γ₁ u) (h₂ : ∃ u, IsSmoothBasedCap I γ₂ u)
+    (q₁ : SphericalCapClass ω c γ₁) (q₂ : SphericalCapClass ω c γ₂) :
+    area hσ hdσ hω h₀ (pantsGlue (hw.homotopyClass ≫ inv (Path.collaredTransHom γ₁ γ₂)) q₁ q₂) =
+      rectangleIntegral σ w (0, 0) (1, 1) + area hσ hdσ hω h₁ q₁ + area hσ hdσ hω h₂ q₂ := by
+  induction q₁ using induction_on with | h D₁ =>
+  induction q₂ using induction_on with
+  | h D₂ => rw [pantsGlue_mk, area_mk, area_mk, area_mk, RawCap.area_pantsGlue hσ hdσ hw h₀ h₁ h₂]
+
+variable [PathConnectedSpace M]
+
+/-- **The recapping law of the area.** Recapping a cap class by a class `B` of the period group adds
+the area of `B`. -/
+@[simp]
+theorem area_vadd (B : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
+    area hσ hdσ hω h (B +ᵥ q) = PeriodGroup.area _ _ B + area hσ hdσ hω h q :=
+  lift_vadd _ _ _ B q
+
+end TauCeti.Floer.SphericalCapClass

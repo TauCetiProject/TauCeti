@@ -47,6 +47,8 @@ Forster, Theorem 17.3.
 * `principalPartsSequence_shortExact`: the short exact sequence of sheaves.
 * `exact_globalSections_principalParts`, `exact_principalParts_connecting`,
   `exact_principalPartsConnecting_cohomologyMap`: exactness of the six-term sequence.
+* `principalPartsSequenceMap`: the morphism of principal-parts sequences induced by `D ≤ D'` and
+  `E ≤ E'`, and the naturality of the connecting maps `principalPartsConnecting_naturality`.
 
 ## References
 
@@ -320,6 +322,16 @@ def principalPartsTopEquiv :
   left_inv _ := rfl
   right_inv _ := rfl
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
+@[simp]
+theorem principalPartsTopEquiv_apply (s : ∀ x : (⊤ : Opens X), boundedBy D E x.val) (x : X) :
+    principalPartsTopEquiv D E s x = s ⟨x, trivial⟩ := (rfl)
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+@[simp]
+theorem principalPartsTopEquiv_symm_apply (μ : ∀ x : X, boundedBy D E x) (x : (⊤ : Opens X)) :
+    (principalPartsTopEquiv D E).symm μ x = μ x.val := (rfl)
+
 variable (D E) in
 /-- The principal parts relative to `D` of a global section of `𝒪_E`. -/
 def globalPrincipalParts : (divisorSheaf E).obj.obj (op ⊤) →ₗ[ℂ] ∀ x : X, boundedBy D E x :=
@@ -350,6 +362,72 @@ theorem exact_globalSections_principalParts (h : D ≤ E) :
 
 end LocalLifting
 
+section Functoriality
+
+variable {D' E' : WeilDivisor X}
+
+/-- The map of sections over `U` underlying `principalPartsSheafMap`. -/
+private def principalPartsSheafMapApp (hD : D ≤ D') (hE : E ≤ E') (U : Opens X) :
+    (principalPartsSheaf D E).obj.obj (op U) →ₗ[ℂ] (principalPartsSheaf D' E').obj.obj (op U) :=
+  (principalPartsSheafSectionsEquiv D' E' U).symm.toLinearMap ∘ₗ
+    LinearMap.piMap (fun x : U ↦ boundedByMapOfLE hD (hE x.val)) ∘ₗ
+      (principalPartsSheafSectionsEquiv D E U).toLinearMap
+
+/-- The morphism of principal-parts sheaves `𝒫_{D,E} ⟶ 𝒫_{D',E'}` for `D ≤ D'` and `E ≤ E'`,
+projecting each local principal part from `D` to `D'`. -/
+def principalPartsSheafMap (hD : D ≤ D') (hE : E ≤ E') :
+    principalPartsSheaf D E ⟶ principalPartsSheaf D' E' where
+  hom.app U := ModuleCat.ofHom (principalPartsSheafMapApp hD hE U.unop)
+  hom.naturality {U V} h := by
+    ext s
+    rfl
+
+@[simp]
+theorem principalPartsSheafMap_app_apply (hD : D ≤ D') (hE : E ≤ E') (U : Opens X)
+    (s : (principalPartsSheaf D E).obj.obj (op U)) (x : U) :
+    (principalPartsSheafSectionsEquiv D' E' U ((principalPartsSheafMap hD hE).hom.app (op U) s) x :
+        LocalPrincipalPart D' x.val) =
+      LocalPrincipalPart.mapOfLE hD x.val (principalPartsSheafSectionsEquiv D E U s x) :=
+  coe_boundedByMapOfLE_apply hD (hE x.val) (principalPartsSheafSectionsEquiv D E U s x)
+
+/-- The principal parts of a section of `𝒪_E`, projected to `D'`, are the principal parts of its
+image in `𝒪_{E'}`. -/
+@[reassoc]
+theorem principalPartsMap_comp_principalPartsSheafMap (hD : D ≤ D') (hE : E ≤ E') :
+    principalPartsMap D E ≫ principalPartsSheafMap hD hE =
+      divisorSheafMapOfLE hE ≫ principalPartsMap D' E' := by
+  apply CategoryTheory.Sheaf.hom_ext
+  ext ⟨U⟩ f
+  apply (principalPartsSheafSectionsEquiv D' E' U).injective
+  funext x
+  apply Subtype.ext
+  exact (principalPartsSheafMap_app_apply hD hE U _ x).trans <| (mapOfLE_mk hD x.val _).trans <|
+    congrArg Submodule.Quotient.mk (divisorSections.toChartGerm_mapOfLE hE f x).symm
+
+/-- The **morphism of principal-parts sequences** induced by `D ≤ D'` and `E ≤ E'`: the divisor
+inclusions on `𝒪_D` and `𝒪_E`, and the projection of principal parts. -/
+def principalPartsSequenceMap (hDE : D ≤ E) (hDE' : D' ≤ E') (hD : D ≤ D') (hE : E ≤ E') :
+    principalPartsSequence hDE ⟶ principalPartsSequence hDE' where
+  τ₁ := divisorSheafMapOfLE hD
+  τ₂ := divisorSheafMapOfLE hE
+  τ₃ := principalPartsSheafMap hD hE
+  comm₁₂ := (divisorSheafMapOfLE_comp hD hDE').trans (divisorSheafMapOfLE_comp hDE hE).symm
+  comm₂₃ := (principalPartsMap_comp_principalPartsSheafMap hD hE).symm
+
+@[simp]
+theorem principalPartsSequenceMap_τ₁ (hDE : D ≤ E) (hDE' : D' ≤ E') (hD : D ≤ D') (hE : E ≤ E') :
+    (principalPartsSequenceMap hDE hDE' hD hE).τ₁ = divisorSheafMapOfLE hD := (rfl)
+
+@[simp]
+theorem principalPartsSequenceMap_τ₂ (hDE : D ≤ E) (hDE' : D' ≤ E') (hD : D ≤ D') (hE : E ≤ E') :
+    (principalPartsSequenceMap hDE hDE' hD hE).τ₂ = divisorSheafMapOfLE hE := (rfl)
+
+@[simp]
+theorem principalPartsSequenceMap_τ₃ (hDE : D ≤ E) (hDE' : D' ≤ E') (hD : D ≤ D') (hE : E ≤ E') :
+    (principalPartsSequenceMap hDE hDE' hD hE).τ₃ = principalPartsSheafMap hD hE := (rfl)
+
+end Functoriality
+
 end Sheaf
 
 section Cohomology
@@ -365,6 +443,45 @@ def principalPartsCechIso : ModuleCat.of ℂ (∀ x : X, boundedBy D E x) ≅
     (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 0).obj (principalPartsSheaf D E).obj :=
   (principalPartsTopEquiv D E).symm.toModuleIso ≪≫
     cechCohomologyZeroIso (principalPartsSheaf D E)
+
+/-- The identification of families of principal parts with degree-zero cohomology is the
+identification of global sections with degree-zero cohomology. -/
+theorem principalPartsCechIso_hom_apply (c : ∀ x : X, boundedBy D E x)
+    (s : (principalPartsSheaf D E).obj.obj (op ⊤))
+    (hs : ∀ x : X, principalPartsSheafSectionsEquiv D E ⊤ s ⟨x, trivial⟩ = c x) :
+    (principalPartsCechIso D E).hom.hom c =
+      (cechCohomologyZeroIso (principalPartsSheaf D E)).hom.hom s := by
+  obtain rfl : c = fun x ↦ principalPartsSheafSectionsEquiv D E ⊤ s ⟨x, trivial⟩ :=
+    funext fun x ↦ (hs x).symm
+  rfl
+
+variable (D E) in
+/-- The identification of families of principal parts with degree-zero cohomology passes through
+the global sections of the principal-parts sheaf. -/
+theorem principalPartsCechIso_def :
+    principalPartsCechIso D E =
+      ((principalPartsSheafSectionsEquiv D E ⊤).trans
+          (principalPartsTopEquiv D E)).symm.toModuleIso ≪≫
+        cechCohomologyZeroIso (principalPartsSheaf D E) := (rfl)
+
+variable {D' E' : WeilDivisor X}
+
+/-- The identification of families of principal parts with degree-zero cohomology is natural in
+`D ≤ D'` and `E ≤ E'`. -/
+private theorem principalPartsCechIso_naturality (hD : D ≤ D') (hE : E ≤ E')
+    (c : ∀ x : X, boundedBy D E x) :
+    ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 0).map
+        (principalPartsSheafMap hD hE).hom).hom ((principalPartsCechIso D E).hom.hom c) =
+      (principalPartsCechIso D' E').hom.hom (PrincipalParts.boundedFamilyMap hD hE c) := by
+  obtain ⟨s, hs⟩ := (principalPartsSheafSectionsEquiv D E ⊤).surjective
+    ((principalPartsTopEquiv D E).symm c)
+  rw [principalPartsCechIso_hom_apply c s fun x ↦ by rw [hs, principalPartsTopEquiv_symm_apply],
+    principalPartsCechIso_hom_apply _ ((principalPartsSheafMap hD hE).hom.app (op ⊤) s)
+      fun x ↦ Subtype.ext (by
+        rw [principalPartsSheafMap_app_apply, hs, principalPartsTopEquiv_symm_apply,
+          PrincipalParts.coe_boundedFamilyMap_apply])]
+  exact (congrArg (fun g ↦ g.hom s) (cechCohomologyZeroIso_hom_naturality _
+    (principalPartsSheafMap hD hE))).symm
 
 variable [IsManifold 𝓘(ℂ) 1 X]
 
@@ -416,6 +533,26 @@ theorem exact_principalPartsConnecting_cohomologyMap (h : D ≤ E) :
   rw [divisorCechCohomologyMapOfLE_def]
   exact (LinearEquiv.precomp_exact_iff_exact (N := divisorCechCohomology D 1)
     (e := (principalPartsCechIso D E).toLinearEquiv)).mpr he
+
+/-- **Naturality of the principal-parts connecting maps** in `D ≤ D'` and `E ≤ E'`. -/
+theorem principalPartsConnecting_naturality (hDE : D ≤ E) (hDE' : D' ≤ E') (hD : D ≤ D')
+    (hE : E ≤ E') (c : ∀ x : X, boundedBy D E x) :
+    principalPartsConnecting hDE' (PrincipalParts.boundedFamilyMap hD hE c) =
+      divisorCechCohomologyMapOfLE hD 1 (principalPartsConnecting hDE c) := by
+  have h := congrArg (fun g ↦ g.hom ((principalPartsCechIso D E).hom.hom c))
+    ((principalPartsSequence_shortExact hDE).cechCohomologyδ_naturality
+      (principalPartsSequence_shortExact hDE') (principalPartsSequenceMap hDE hDE' hD hE) 0)
+  rw [principalPartsConnecting_def, principalPartsConnecting_def, divisorCechCohomologyMapOfLE_def]
+  exact (congrArg ((principalPartsSequence_shortExact hDE').cechCohomologyδ 0).hom
+    (principalPartsCechIso_naturality hD hE c).symm).trans h.symm
+
+/-- The finite-level connecting map does not depend on the bounding divisor. -/
+theorem principalPartsConnecting_boundedFamilyMap_refl (hDE : D ≤ E) (hEE' : E ≤ E')
+    (c : ∀ x : X, boundedBy D E x) :
+    principalPartsConnecting (hDE.trans hEE') (PrincipalParts.boundedFamilyMap le_rfl hEE' c) =
+      principalPartsConnecting hDE c := by
+  rw [principalPartsConnecting_naturality hDE (hDE.trans hEE') le_rfl hEE',
+    divisorCechCohomologyMapOfLE_refl, LinearMap.id_apply]
 
 omit [IsManifold 𝓘(ℂ) 1 X] [T2Space X] in
 /-- The principal-parts sheaf has no first Čech cohomology, so the sequence ends with the

@@ -28,12 +28,13 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
   `SL(2, ℤ)` lies in that range (`Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R`).
 * The image of `H ≤ SL(2, ℤ)` has index `[SL(2, ℤ) : ±H]` in the level-one group
   (`Subgroup.relIndex_map_sl2zToPSL2R`). When `H` is normal, its image is normalized by the image
-  of `SL(2, ℤ)` (`Subgroup.conjAct_sl2zToPSL2R_smul_map`).
+  of `SL(2, ℤ)` (`Subgroup.conjAct_sl2zToPSL2R_smul_map`), so it is a normal subgroup of the
+  level-one group (`Subgroup.normal_subgroupOf_map_sl2zToPSL2R`).
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
-* `TauCeti.pslS : PSL(2, ℝ)` — the image of `ModularGroup.S`, squaring to the identity
-  (`pslS_mul_self`, `pslS_inv`).
+* `TauCeti.pslS : PSL(2, ℝ)` — the image of `ModularGroup.S` (`pslS_eq_mk`), squaring to the
+  identity (`pslS_mul_self`, `pslS_inv`).
 
 The actions of these groups on the upper half-plane, and the compatibility of these maps
 with them, are in `TauCeti/Analysis/Complex/UpperHalfPlane/PSL/Action.lean`.
@@ -191,6 +192,13 @@ theorem conjAct_sl2zToPSL2R_smul_map [H.Normal] (γ : SL(2, ℤ)) :
   conjAct_pointwise_smul_eq_self (le_normalizer_map sl2zToPSL2R
     (mem_map_of_mem _ (by rw [normalizer_eq_top]; trivial)))
 
+/-- The image in `PSL(2, ℝ)` of a normal subgroup of `SL(2, ℤ)` is normal in the level-one
+group, which is the range of `sl2zToPSL2R` (`Subgroup.normal_subgroupOf_map_range`). -/
+instance normal_subgroupOf_map_sl2zToPSL2R [H.Normal] :
+    ((H.map sl2zToPSL2R).subgroupOf psl2zToPSL2R.range).Normal := by
+  rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
+  infer_instance
+
 /-- A finite-index subgroup of `SL(2, ℤ)` has finite-index image in the level-one group. -/
 instance isFiniteRelIndex_map_sl2zToPSL2R [H.FiniteIndex] :
     (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
@@ -224,6 +232,12 @@ noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PS
 -- equation (e.g. `PSL/Action.lean`'s `pslS_smul`) rather than unfolding the definition.
 /-- `pslS` is the image of `ModularGroup.S` under `psl2zToPSL2R`. -/
 theorem pslS_def : pslS = psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := by rfl
+
+/-- `pslS` is the class in `PSL(2, ℝ)` of the real matrix of `ModularGroup.S`. -/
+theorem pslS_eq_mk :
+    pslS = ((Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) _root_.ModularGroup.S :
+      SL(2, ℝ)) : PSL(2, ℝ)) := by
+  rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply]
 
 /-- `pslS` squares to the identity of `PSL(2, ℝ)`. -/
 @[simp]

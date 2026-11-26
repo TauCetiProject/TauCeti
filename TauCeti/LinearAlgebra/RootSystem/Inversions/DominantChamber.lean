@@ -16,6 +16,11 @@ dominant chamber sends no positive root to a negative root, so its inversion set
 element with an empty inversion set is the identity, such an element is the identity: the Weyl
 group acts freely on the interior of the dominant chamber.
 
+For a weight `x` in the closed dominant chamber, the sign of the pairing of a positive root `β`
+with `w x` is controlled by whether `β` is an inversion of `w⁻¹`, since `⟨w x, β^∨⟩` is the pairing
+of `x` with the coroot of `w⁻¹ β`: a negative pairing forces an inversion, and an inversion forces a
+nonpositive pairing.
+
 ## Main results
 
 * `TauCeti.mapsTo_posRoots_of_smul_mem_dominantChamber`: such an element maps positive roots to
@@ -25,6 +30,10 @@ group acts freely on the interior of the dominant chamber.
 * `TauCeti.eq_one_of_smul_mem_dominantChamber`: such an element is the identity.
 * `TauCeti.eq_one_of_smul_eq_self_of_mem_openDominantChamber`: the Weyl group acts freely on the
   interior of the dominant chamber.
+* `TauCeti.mem_inversions_inv_of_coroot'_smul_neg` and
+  `TauCeti.coroot'_smul_nonpos_of_mem_inversions_inv`: for a dominant weight `x`, a positive root
+  pairing negatively with `w x` is an inversion of `w⁻¹`, and every inversion of `w⁻¹` pairs
+  nonpositively with `w x`.
 
 ## References
 
@@ -94,5 +103,23 @@ theorem eq_one_of_smul_mem_dominantChamber (w : P.weylGroup)
 theorem eq_one_of_smul_eq_self_of_mem_openDominantChamber (w : P.weylGroup)
     (hx : x ∈ openDominantChamber P b) (hw : w • x = x) : w = 1 :=
   eq_one_of_inversions_eq_empty (inversions_eq_empty_of_smul_eq_self P b w hx hw)
+
+/-- **A positive root pairing negatively with a moved dominant weight is an inversion of the
+inverse.** If `x` is dominant and `⟨w x, β^∨⟩ < 0` for a positive root `β`, then `w⁻¹` sends `β`
+to a root pairing negatively with `x`, hence to a negative root. -/
+theorem mem_inversions_inv_of_coroot'_smul_neg (hx : x ∈ dominantChamber P b)
+    {w : P.weylGroup} {i : ι} (hi : b.IsPos i) (hneg : P.coroot' i (w • x) < 0) :
+    i ∈ inversions P b w⁻¹ := by
+  refine (mem_inversions P b w⁻¹ i).mpr ⟨hi, fun hpos ↦ hneg.not_ge ?_⟩
+  rw [← RootPairing.coroot'_weylGroupToPerm_smul P w⁻¹ i (w • x), inv_smul_smul]
+  exact coroot'_nonneg_of_mem_posRoots P b hx ((mem_posRoots P b _).mpr hpos)
+
+/-- **An inversion of the inverse pairs nonpositively with a moved dominant weight.** If `x` is
+dominant and `w⁻¹` sends the positive root `β` to a negative root, then `⟨w x, β^∨⟩ ≤ 0`. -/
+theorem coroot'_smul_nonpos_of_mem_inversions_inv (hx : x ∈ dominantChamber P b)
+    {w : P.weylGroup} {i : ι} (hi : i ∈ inversions P b w⁻¹) : P.coroot' i (w • x) ≤ 0 := by
+  rw [← RootPairing.coroot'_weylGroupToPerm_smul P w⁻¹ i (w • x), inv_smul_smul]
+  exact coroot'_nonpos_of_mem_negRoots P b hx
+    ((mem_negRoots P b _).mpr ((mem_inversions P b w⁻¹ i).mp hi).2)
 
 end TauCeti

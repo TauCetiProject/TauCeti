@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
-import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Analysis.Normed.Field.AtInfinity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!

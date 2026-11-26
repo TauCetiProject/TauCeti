@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Existence
-public import TauCeti.Analysis.PDE.Vortex.Flux
+public import TauCeti.Analysis.PDE.Vortex.Flux.Basic
+public import TauCeti.Analysis.PDE.Vortex.ModulusBound
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Topology.Algebra.Module.Cardinality
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Plane vortices with split divisors
@@ -57,6 +59,24 @@ clusters are far apart the overlap is small, and `|α_x|²` is close in `L¹` to
 zero as `a → ∞`
 (`TauCeti.Vortex.tendsto_integral_abs_sq_norm_sectionValue_sub_mul`).
 
+**Uniform separation estimates.** The overlap is in fact exponentially small in the separation,
+uniformly over all divisors of given degrees. A smooth framed vortex of degree `m` satisfies
+`1 - |α(z)|² ≤ K exp (-c ρ)` wherever every zero is at distance at least `ρ` from `z`, with `K`
+depending only on `m` and the rate `0 ≤ c < 1 / 2`
+(`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub`). By the triangle
+inequality the two defects then overlap by `exp (-(c δ))` times radial exponentials about the
+zeros of `D₁`, whenever every zero of `D₁` is at distance at least `δ` from every zero of `D₂`
+(`TauCeti.integral_mul_le_mul_exp_of_forall_le_norm_sub`). Hence, for every rate `0 ≤ c < 1 / 2`,
+
+`∫ (1 - s₁) (1 - s₂) ≤ K exp (-(c δ))`,  `∫ |s_x - s₁ s₂| ≤ K exp (-(c δ))`,
+
+with `K` depending only on the degrees of `D₁` and `D₂` and on `c`, not on the vortices or on
+the positions of the clusters
+(`TauCeti.Vortex.exists_integral_one_sub_sq_norm_sectionValue_mul_one_sub_le_mul_exp`,
+`TauCeti.Vortex.exists_integral_abs_sq_norm_sectionValue_sub_mul_le_mul_exp`). These estimates
+apply in the noncompact regime where the clusters move apart, possibly while each cluster also
+moves or changes shape, which no compact window of divisors covers.
+
 ## Main definitions
 
 * `TauCeti.Vortex.mulField x y`: the tensor product field, with connection `a_x + a_y` and section
@@ -85,6 +105,10 @@ zero as `a → ∞`
   `∫ |s_x - s₁ s₂| = ∫ (1 - s₁) (1 - s₂)`.
 * `TauCeti.Vortex.tendsto_integral_abs_sq_norm_sectionValue_sub_mul`: the `L¹` distance between
   `|α_x|²` and `|α_{y₁}|² |α_{y₂}|²` tends to zero as the two clusters separate.
+* `TauCeti.Vortex.exists_integral_one_sub_sq_norm_sectionValue_mul_one_sub_le_mul_exp`,
+  `TauCeti.Vortex.exists_integral_abs_sq_norm_sectionValue_sub_mul_le_mul_exp`: the overlap and the
+  `L¹` distance are at most `K exp (-(c δ))` for clusters at distance at least `δ`, uniformly over
+  all divisors of given degrees.
 
 ## References
 
@@ -99,6 +123,7 @@ public section
 noncomputable section
 
 open Complex Filter Topology InnerProductSpace Laplacian MeasureTheory
+open scoped ContDiff
 
 namespace TauCeti.Vortex
 
@@ -254,15 +279,10 @@ private theorem differentiable_apply {u : ℂ → EuclideanSpace ℝ (Fin 4)} (h
     (i : Fin 4) : Differentiable ℝ fun w ↦ u w i :=
   (contDiff_apply hu i).differentiable two_ne_zero
 
-/-- The section `α` of a `C²` field is continuous. -/
-private theorem continuous_sectionValue {u : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hu : ContDiff ℝ 2 u) : Continuous (sectionValue u) :=
-  (contDiff_sectionValue (contDiff_apply hu 2) (contDiff_apply hu 3)).continuous
-
 /-- The squared modulus `|α|²` of a `C²` field is continuous. -/
 private theorem continuous_sq_norm_sectionValue {u : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hu : ContDiff ℝ 2 u) : Continuous fun z ↦ ‖sectionValue u z‖ ^ 2 :=
-  (continuous_sectionValue hu).norm.pow 2
+  (continuous_sectionValue hu.continuous).norm.pow 2
 
 /-- The logarithm of `|α|² = 4 (p² + q²)` is `C²` where the section does not vanish. -/
 private theorem contDiffAt_log_normSq {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ 2 u)
@@ -301,8 +321,8 @@ private theorem laplacian_log_norm_sq_eq_of_mul {h : ℂ → ℂ} {z : ℂ}
   have hev : (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =ᶠ[𝓝 z]
       ((fun w ↦ Real.log (‖h w‖ ^ 2)) + fun w ↦ Real.log (4 * (y₁ w 2 ^ 2 + y₁ w 3 ^ 2))) +
         fun w ↦ Real.log (4 * (y₂ w 2 ^ 2 + y₂ w 3 ^ 2)) := by
-    filter_upwards [(continuous_sectionValue hy₁).continuousAt.eventually_ne hz₁,
-      (continuous_sectionValue hy₂).continuousAt.eventually_ne hz₂] with w hw₁ hw₂
+    filter_upwards [(continuous_sectionValue hy₁.continuous).continuousAt.eventually_ne hz₁,
+      (continuous_sectionValue hy₂.continuous).continuousAt.eventually_ne hz₂] with w hw₁ hw₂
     have hn (c : ℂ) (hc : c ≠ 0) : ‖c‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hc)
     simp only [Pi.add_apply, ← sq_norm_sectionValue, hα w, norm_mul, mul_pow]
     rw [Real.log_mul (hn _ (hh₀ w)) (mul_ne_zero (hn _ hw₁) (hn _ hw₂)),
@@ -315,14 +335,6 @@ private theorem laplacian_log_norm_sq_eq_of_mul {h : ℂ → ℂ} {z : ℂ}
     hw.laplacian_add (contDiffAt_log_normSq hy₁ hz₁), laplacian_log_normSq_eq hx hxsol hzx,
     laplacian_log_normSq_eq hy₁ hy₁sol hz₁, laplacian_log_normSq_eq hy₂ hy₂sol hz₂] at hΔ
   linarith
-
-/-- A vortex with `|α| → 1` at infinity has `|α|² ≤ 1`. -/
-private theorem norm_sectionValue_sq_le_one {u : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hu : ContDiff ℝ 2 u) (hsol : ∀ z, equation u z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z : ℂ) :
-    ‖sectionValue u z‖ ^ 2 ≤ 1 := by
-  rw [sq_norm_sectionValue]
-  exact normSq_le_one_of_tendsto (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim z
 
 /-- **The maximum principle for the ratio.** If `α_x = h α_{y₁} α_{y₂}` for vortices `x`, `y₁`, `y₂`
 with `|α| → 1` at infinity and a nowhere-vanishing `C²` factor `h`, and the zeros of
@@ -356,8 +368,8 @@ private theorem norm_le_one_of_sectionValue_eq_mul {h : ℂ → ℂ}
   have hpos (z : ℂ) (hz : 0 < Real.log (‖h z‖ ^ 2)) : 0 ≤ Δ (fun z ↦ Real.log (‖h z‖ ^ 2)) z := by
     have h₁ : 1 < ‖h z‖ ^ 2 := by
       rwa [Real.log_pos_iff (by positivity)] at hz
-    have hs₁ := norm_sectionValue_sq_le_one hy₁ hy₁sol hy₁lim z
-    have hs₂ := norm_sectionValue_sq_le_one hy₂ hy₂sol hy₂lim z
+    have hs₁ := sq_norm_sectionValue_le_one hy₁ hy₁sol hy₁lim z
+    have hs₂ := sq_norm_sectionValue_le_one hy₂ hy₂sol hy₂lim z
     have hs : 0 ≤ ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ z‖ ^ 2 := by positivity
     rw [hΔ]
     nlinarith [mul_nonneg (sub_nonneg.2 hs₁) (sub_nonneg.2 hs₂)]
@@ -464,7 +476,7 @@ theorem norm_sectionValue_le_of_add {y : ℂ → EuclideanSpace ℝ (Fin 4)} {D�
   have hy₂' : ContDiff ℝ 2 y₂ := hy₂.of_le (by simp)
   have h₂ : ‖sectionValue y₂ z‖ ≤ 1 :=
     (pow_le_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
-      (norm_sectionValue_sq_le_one hy₂' hy₂sol hy₂lim z)
+      (sq_norm_sectionValue_le_one hy₂' hy₂sol hy₂lim z)
   calc ‖sectionValue x z‖ ≤ ‖sectionValue y z‖ * ‖sectionValue y₂ z‖ :=
         norm_sectionValue_le_mul_of_add hx hy hy₂' hxsol hysol hy₂sol hxlim hylim hy₂lim hD hD₁
           hD₂ z
@@ -478,24 +490,6 @@ section Overlap
 
 variable {x y₁ y₂ : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The flux identity `∫ (1 - |α|²) = 16 π deg D` in terms of `|α|`. -/
-private theorem integral_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {D : Multiset ℂ} (hu : ContDiff ℝ 2 u) (hsol : ∀ z, equation u z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hD : IsZeroMultiplicity (sectionValue u) (Multiset.count · D)) :
-    ∫ z, (1 - ‖sectionValue u z‖ ^ 2) = 16 * Real.pi * Multiset.card D := by
-  simpa only [sq_norm_sectionValue] using integral_one_sub_normSq_eq_mul_card
-    (contDiff_apply hu 0) (contDiff_apply hu 1) (contDiff_apply hu 2) (contDiff_apply hu 3) hsol
-    hlim hD
-
-/-- The defect `1 - |α|²` of a vortex with `|α| → 1` at infinity is integrable. -/
-private theorem integrable_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hu : ContDiff ℝ 2 u) (hsol : ∀ z, equation u z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    Integrable fun z ↦ 1 - ‖sectionValue u z‖ ^ 2 := by
-  simpa only [sq_norm_sectionValue] using integrable_one_sub_normSq (μ := volume)
-    (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim
-
 /-- The overlap `(1 - |α_{y₁}|²) (1 - |α_{y₂}|²)` of the defects of two vortices with `|α| → 1` at
 infinity is integrable. -/
 theorem integrable_one_sub_sq_norm_sectionValue_mul_one_sub (hy₁ : ContDiff ℝ 2 y₁)
@@ -504,10 +498,10 @@ theorem integrable_one_sub_sq_norm_sectionValue_mul_one_sub (hy₁ : ContDiff �
     (hy₁lim : Tendsto (fun z ↦ 4 * (y₁ z 2 ^ 2 + y₁ z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable fun z ↦ (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ z‖ ^ 2) := by
-  refine (integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim).mul_bdd (c := 1)
+  refine (integrable_one_sub_sq_norm_sectionValue hy₁ hy₁sol hy₁lim).mul_bdd (c := 1)
     (continuous_const.sub (continuous_sq_norm_sectionValue hy₂)).aestronglyMeasurable
     (.of_forall fun z ↦ ?_)
-  have h₂ := norm_sectionValue_sq_le_one hy₂ hy₂sol hy₂lim z
+  have h₂ := sq_norm_sectionValue_le_one hy₂ hy₂sol hy₂lim z
   rw [Real.norm_eq_abs, abs_le]
   constructor <;> nlinarith [sq_nonneg ‖sectionValue y₂ z‖]
 
@@ -522,9 +516,9 @@ theorem integrable_sq_norm_sectionValue_sub_mul
     (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable fun z ↦
       ‖sectionValue x z‖ ^ 2 - ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ z‖ ^ 2 := by
-  refine ((((integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim).add
-    (integrable_one_sub_norm_sectionValue_sq hy₂ hy₂sol hy₂lim)).sub
-    (integrable_one_sub_norm_sectionValue_sq hx hxsol hxlim)).sub
+  refine ((((integrable_one_sub_sq_norm_sectionValue hy₁ hy₁sol hy₁lim).add
+    (integrable_one_sub_sq_norm_sectionValue hy₂ hy₂sol hy₂lim)).sub
+    (integrable_one_sub_sq_norm_sectionValue hx hxsol hxlim)).sub
     (integrable_one_sub_sq_norm_sectionValue_mul_one_sub hy₁ hy₂ hy₁sol hy₂sol hy₁lim
       hy₂lim)).congr (.of_forall fun z ↦ ?_)
   simp only [Pi.add_apply, Pi.sub_apply]
@@ -559,9 +553,9 @@ theorem integral_abs_sq_norm_sectionValue_sub_mul_eq {D₁ D₂ : Multiset ℂ}
     rw [mul_pow] at hle
     rw [abs_of_nonpos (sub_nonpos.2 hle)]
     ring
-  have hix := integrable_one_sub_norm_sectionValue_sq hx hxsol hxlim
-  have hi₁ := integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim
-  have hi₂ := integrable_one_sub_norm_sectionValue_sq hy₂ hy₂sol hy₂lim
+  have hix := integrable_one_sub_sq_norm_sectionValue (μ := volume) hx hxsol hxlim
+  have hi₁ := integrable_one_sub_sq_norm_sectionValue (μ := volume) hy₁ hy₁sol hy₁lim
+  have hi₂ := integrable_one_sub_sq_norm_sectionValue (μ := volume) hy₂ hy₂sol hy₂lim
   have hi₃ : Integrable fun z ↦
       (1 - ‖sectionValue x z‖ ^ 2) - (1 - ‖sectionValue y₁ z‖ ^ 2) -
         (1 - ‖sectionValue y₂ z‖ ^ 2) :=
@@ -571,9 +565,9 @@ theorem integral_abs_sq_norm_sectionValue_sub_mul_eq {D₁ D₂ : Multiset ℂ}
   rw [funext hpt, integral_add hi₃
       (integrable_one_sub_sq_norm_sectionValue_mul_one_sub hy₁ hy₂ hy₁sol hy₂sol hy₁lim hy₂lim),
     integral_sub hi₄ hi₂, integral_sub hix hi₁,
-    integral_one_sub_norm_sectionValue_sq hx hxsol hxlim hD,
-    integral_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim hD₁,
-    integral_one_sub_norm_sectionValue_sq hy₂ hy₂sol hy₂lim hD₂, Multiset.card_add]
+    integral_one_sub_sq_norm_sectionValue_eq_mul_card hx hxsol hxlim hD,
+    integral_one_sub_sq_norm_sectionValue_eq_mul_card hy₁ hy₁sol hy₁lim hD₁,
+    integral_one_sub_sq_norm_sectionValue_eq_mul_card hy₂ hy₂sol hy₂lim hD₂, Multiset.card_add]
   push_cast
   ring
 
@@ -595,10 +589,10 @@ private theorem tendsto_integral_one_sub_mul_one_sub_comp_add (hy₁ : ContDiff 
     simpa only [sq_norm_sectionValue] using hy₂lim
   have hbound (a z : ℂ) : ‖(1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2)‖ ≤
       1 - ‖sectionValue y₁ z‖ ^ 2 := by
-    have h₁ := norm_sectionValue_sq_le_one hy₁ hy₁sol hy₁lim z
-    have h₂ := norm_sectionValue_sq_le_one hy₂ hy₂sol hy₂lim (z + a)
-    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (sub_nonneg.2 h₁) (sub_nonneg.2 h₂))]
-    exact mul_le_of_le_one_right (sub_nonneg.2 h₁)
+    have h₁ := one_sub_sq_norm_sectionValue_nonneg hy₁ hy₁sol hy₁lim z
+    have h₂ := one_sub_sq_norm_sectionValue_nonneg hy₂ hy₂sol hy₂lim (z + a)
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg h₁ h₂)]
+    exact mul_le_of_le_one_right h₁
       (by nlinarith [sq_nonneg ‖sectionValue y₂ (z + a)‖])
   have hpt (z : ℂ) : Tendsto (fun a ↦
       (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2)) (cocompact ℂ) (𝓝 0) := by
@@ -612,7 +606,7 @@ private theorem tendsto_integral_one_sub_mul_one_sub_comp_add (hy₁ : ContDiff 
     (.of_forall fun a ↦ ((continuous_const.sub hc₁).mul
       (continuous_const.sub (hc₂.comp (continuous_id.add continuous_const)))).aestronglyMeasurable)
     (.of_forall fun a ↦ .of_forall (hbound a))
-    (integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim) (.of_forall hpt)
+    (integrable_one_sub_sq_norm_sectionValue hy₁ hy₁sol hy₁lim) (.of_forall hpt)
 
 /-- **Separated clusters.** Let `y₁` and `y₂` be `C²` vortices on the plane with `|α| → 1` at
 infinity and zero divisors `D₁` and `D₂`, and for each `a ∈ ℂ` let `x a` be a `C²` vortex with
@@ -647,6 +641,82 @@ theorem tendsto_integral_abs_sq_norm_sectionValue_sub_mul {D₁ D₂ : Multiset 
         (hD a) hD₁ (isZeroMultiplicity_sectionValue_translateField hD₂ a)
   simp_rw [hover]
   exact tendsto_integral_one_sub_mul_one_sub_comp_add hy₁ hy₂ hy₁sol hy₂sol hy₁lim hy₂lim
+
+/-- **Uniform overlap of separated clusters.** For all degrees `m₁` and `m₂`, every rate
+`0 ≤ c < 1 / 2` and every additive Haar measure `μ` on the plane there is a constant `K` with the
+following property. Let `y₁` and `y₂` be smooth plane vortices with the degree-`m₁` and degree-`m₂`
+end framings and zero divisors `D₁` and `D₂`, and suppose every zero of `D₁` is at distance at
+least `δ` from every zero of `D₂`. Then
+
+`∫ (1 - |α_{y₁}|²) (1 - |α_{y₂}|²) dμ ≤ K exp (-(c δ))`.
+
+The constant depends only on `m₁`, `m₂`, `c` and `μ`, not on the vortices or on the positions of
+their zeros. -/
+theorem exists_integral_one_sub_sq_norm_sectionValue_mul_one_sub_le_mul_exp (μ : Measure ℂ)
+    [μ.IsAddHaarMeasure] (m₁ m₂ : ℕ) {c : ℝ} (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
+    ∃ K, ∀ (y₁ y₂ : ℂ → EuclideanSpace ℝ (Fin 4)) (D₁ D₂ : Multiset ℂ),
+      ContDiff ℝ ∞ y₁ → ContDiff ℝ ∞ y₂ → (∀ z, equation y₁ z = 0) → (∀ z, equation y₂ z = 0) →
+      Tendsto (fun z ↦ sectionValue y₁ z * ((z / (‖z‖ : ℂ)) ^ m₁)⁻¹) (cocompact ℂ) (𝓝 1) →
+      Tendsto (fun z ↦ sectionValue y₂ z * ((z / (‖z‖ : ℂ)) ^ m₂)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue y₁) (Multiset.count · D₁) →
+      IsZeroMultiplicity (sectionValue y₂) (Multiset.count · D₂) →
+      ∀ δ, (∀ a ∈ D₁, ∀ a' ∈ D₂, δ ≤ ‖a - a'‖) →
+        ∫ z, (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ z‖ ^ 2) ∂μ ≤
+          K * Real.exp (-(c * δ)) := by
+  -- Both defects decay at the faster rate `b`; the excess `b - c` pays for the integral in `z`.
+  set b : ℝ := (2 * c + 1) / 4
+  have hcb : c < b := by simp only [b]; linarith
+  obtain ⟨K₁, -, hK₁⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m₁
+    (hc₀.trans hcb.le) (by simp only [b]; linarith)
+  obtain ⟨K₂, -, hK₂⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m₂
+    (hc₀.trans hcb.le) (by simp only [b]; linarith)
+  refine ⟨K₁ * K₂ * (m₁ * ∫ z, Real.exp (-((b - c) * ‖z‖)) ∂μ),
+    fun y₁ y₂ D₁ D₂ hy₁ hy₂ hy₁sol hy₂sol hframe₁ hframe₂ hD₁ hD₂ δ hδ ↦ ?_⟩
+  have hlim₁ := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁
+  have hlim₂ := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₂
+  have h := integral_mul_le_mul_exp_of_forall_le_norm_sub μ hc₀ hcb
+    (f := fun z ↦ 1 - ‖sectionValue y₁ z‖ ^ 2) (g := fun z ↦ 1 - ‖sectionValue y₂ z‖ ^ 2)
+    (one_sub_sq_norm_sectionValue_nonneg (hy₁.of_le (by simp)) hy₁sol hlim₁)
+    (one_sub_sq_norm_sectionValue_nonneg (hy₂.of_le (by simp)) hy₂sol hlim₂)
+    (fun z ρ hρ ↦ by
+      simpa only [sq_norm_sectionValue] using hK₁ y₁ D₁ hy₁ hy₁sol hframe₁ hD₁ z ρ hρ)
+    (fun z ρ hρ ↦ by
+      simpa only [sq_norm_sectionValue] using hK₂ y₂ D₂ hy₂ hy₂sol hframe₂ hD₂ z ρ hρ) hδ
+  rwa [hD₁.card_eq_of_tendsto_mul_inv_pow hframe₁] at h
+
+/-- **Uniform `L¹` comparison of a vortex with its separated clusters.** For all degrees `m₁` and
+`m₂` and every rate `0 ≤ c < 1 / 2` there is a constant `K` with the following property. Let `y₁`
+and `y₂` be smooth plane vortices with the degree-`m₁` and degree-`m₂` end framings and zero
+divisors `D₁` and `D₂`, let `x` be a `C²` vortex with `|α| → 1` at infinity and zero divisor
+`D₁ + D₂`, and suppose every zero of `D₁` is at distance at least `δ` from every zero of `D₂`.
+Then
+
+`∫ | |α_x|² - |α_{y₁}|² |α_{y₂}|² | ≤ K exp (-(c δ))`.
+
+The constant depends only on `m₁`, `m₂` and `c`, not on the vortices or on the positions of
+their zeros. -/
+theorem exists_integral_abs_sq_norm_sectionValue_sub_mul_le_mul_exp (m₁ m₂ : ℕ) {c : ℝ}
+    (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
+    ∃ K, ∀ (x y₁ y₂ : ℂ → EuclideanSpace ℝ (Fin 4)) (D₁ D₂ : Multiset ℂ),
+      ContDiff ℝ 2 x → ContDiff ℝ ∞ y₁ → ContDiff ℝ ∞ y₂ → (∀ z, equation x z = 0) →
+      (∀ z, equation y₁ z = 0) → (∀ z, equation y₂ z = 0) →
+      Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) →
+      Tendsto (fun z ↦ sectionValue y₁ z * ((z / (‖z‖ : ℂ)) ^ m₁)⁻¹) (cocompact ℂ) (𝓝 1) →
+      Tendsto (fun z ↦ sectionValue y₂ z * ((z / (‖z‖ : ℂ)) ^ m₂)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (Multiset.count · (D₁ + D₂)) →
+      IsZeroMultiplicity (sectionValue y₁) (Multiset.count · D₁) →
+      IsZeroMultiplicity (sectionValue y₂) (Multiset.count · D₂) →
+      ∀ δ, (∀ a ∈ D₁, ∀ a' ∈ D₂, δ ≤ ‖a - a'‖) →
+        ∫ z, |‖sectionValue x z‖ ^ 2 - ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ z‖ ^ 2| ≤
+          K * Real.exp (-(c * δ)) := by
+  obtain ⟨K, hK⟩ :=
+    exists_integral_one_sub_sq_norm_sectionValue_mul_one_sub_le_mul_exp volume m₁ m₂ hc₀ hc
+  refine ⟨K, fun x y₁ y₂ D₁ D₂ hx hy₁ hy₂ hxsol hy₁sol hy₂sol hxlim hframe₁ hframe₂ hD hD₁ hD₂ δ
+    hδ ↦ ?_⟩
+  rw [integral_abs_sq_norm_sectionValue_sub_mul_eq hx (hy₁.of_le (by simp)) (hy₂.of_le (by simp))
+    hxsol hy₁sol hy₂sol hxlim (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁)
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₂) hD hD₁ hD₂]
+  exact hK y₁ y₂ D₁ D₂ hy₁ hy₂ hy₁sol hy₂sol hframe₁ hframe₂ hD₁ hD₂ δ hδ
 
 end Overlap
 

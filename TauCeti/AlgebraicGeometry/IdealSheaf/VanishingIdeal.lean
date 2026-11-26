@@ -32,6 +32,10 @@ discrete valuation ring.
   is integral.
 * `Scheme.IdealSheafData.subschemeι_genericPoint_vanishingIdeal_closure_singleton`: the generic
   point of the reduced closure of `η` maps to `η`.
+* `Scheme.IdealSheafData.mem_range_subschemeι_vanishingIdeal_compl_iff`: the reduced closed
+  complement of an open `V` consists of the points outside `V`.
+* `Scheme.IdealSheafData.mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff`: the reduced
+  closed complement of the range of an open immersion consists of the points outside that range.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
@@ -54,7 +58,7 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {X : Scheme.{u}}
+variable {U X : Scheme.{u}}
 
 /-- The reduced induced closed subscheme structure on a closed subset is reduced. -/
 instance isReduced_subscheme_vanishingIdeal (Z : Closeds X) :
@@ -97,6 +101,20 @@ theorem subschemeι_genericPoint_vanishingIdeal_closure_singleton (η : X) :
   rw [Set.image_univ, range_subschemeι, coe_support_vanishingIdeal, Closeds.coe_mk,
     closure_closure] at h
   exact h.eq isGenericPoint_closure
+
+/-- A point of `X` lies in the reduced closed complement of an open `V` if and only if it lies
+outside `V`. -/
+theorem mem_range_subschemeι_vanishingIdeal_compl_iff (V : X.Opens) (x : X) :
+    x ∈ Set.range (vanishingIdeal V.compl).subschemeι ↔ x ∉ V := by
+  rw [range_subschemeι, coe_support_vanishingIdeal]
+  simp
+
+/-- A point of `X` lies in the reduced closed complement of the range of an open immersion `j` if
+and only if it lies outside the range of `j`. -/
+theorem mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff {Y : Scheme.{u}} (j : Y ⟶ X)
+    [IsOpenImmersion j] (x : X) :
+    x ∈ Set.range (vanishingIdeal j.opensRange.compl).subschemeι ↔ x ∉ Set.range j := by
+  rw [mem_range_subschemeι_vanishingIdeal_compl_iff, Scheme.Hom.mem_opensRange, Set.mem_range]
 
 /-- A morphism `f` from a reduced scheme whose image lies in a closed subset `Z` kills the
 vanishing ideal of `Z`, so it factors through the reduced induced closed subscheme on `Z`
@@ -196,5 +214,20 @@ theorem comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range {U : Schem
   simp only [Closeds.coe_mk, Set.mem_preimage]
   rw [j.isOpenEmbedding.isInducing.closure_eq_preimage_closure_image, Set.image_singleton,
     Set.mem_preimage]
+
+/-- Along an open immersion `j : U ⟶ X`, the vanishing ideal sheaf of `closure {j u}` pulls back to
+the vanishing ideal sheaf of `closure {u}`. -/
+theorem comap_vanishingIdeal_closure_singleton_of_isOpenImmersion (j : U ⟶ X) [IsOpenImmersion j]
+    (u : U) :
+    (vanishingIdeal ⟨closure {j u}, isClosed_closure⟩).comap j =
+      vanishingIdeal ⟨closure {u}, isClosed_closure⟩ := by
+  rw [comap_vanishingIdeal_of_isOpenImmersion]
+  congr 1
+  ext1
+  simp only [Closeds.coe_mk]
+  rw [j.isOpenEmbedding.isOpenMap.preimage_closure_eq_closure_preimage j.continuous]
+  congr 1
+  ext w
+  simp [j.isOpenEmbedding.injective.eq_iff]
 
 end AlgebraicGeometry.Scheme.IdealSheafData

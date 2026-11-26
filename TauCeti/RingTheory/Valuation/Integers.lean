@@ -25,14 +25,19 @@ A ring is its own ring of integers for any valuation that is at most `1` everywh
 a domain for its trivial valuation. So constructions taking a ring of integers, such as the Gauss
 valuations on Witt vectors, apply to a perfect field with its trivial valuation.
 
+Multiplication by a unit of valuation one maps the ring of integers `v.integer` onto itself; on a
+local field this says that the units of `𝒪[K]` preserve additive Haar measure.
+
 ## Main results
 
 * `Valuation.Integers.isDomain`: the ring of integers of a domain is a domain.
+* `Valuation.Integers.equivInteger`: a ring of integers is isomorphic to the integer subring.
 * `Valuation.Integers.perfectRing`: the ring of integers of a perfect ring is perfect.
 * `Valuation.Integers.isNontrivial_of_ne_zero_of_not_isUnit`: if the ring of integers of a
   valuation on a field contains a nonzero nonunit, the valuation is nontrivial.
 * `Valuation.integers_self_iff`: a ring is the ring of integers of a valuation on it iff the
   valuation is at most `1` everywhere.
+* `Valuation.units_smul_integer`: a unit of valuation one maps the ring of integers onto itself.
 -/
 
 public section
@@ -45,6 +50,29 @@ variable {R Γ₀ O : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀]
 /-- **The ring of integers of a domain is a domain**, as it embeds into it. -/
 theorem isDomain [IsDomain R] (hv : v.Integers O) : IsDomain O :=
   Function.Injective.isDomain _ hv.hom_inj
+
+/-- A ring of integers for a valuation is isomorphic to its integer subring. -/
+noncomputable def equivInteger (hv : v.Integers O) : O ≃+* v.integer := by
+  let j := (algebraMap O R).codRestrict v.integer fun x ↦
+    (v.mem_integer_iff _).mpr (hv.map_le_one x)
+  refine RingEquiv.ofBijective j ⟨RingHom.injective_codRestrict.mpr hv.hom_inj, ?_⟩
+  intro y
+  obtain ⟨x, hx⟩ := hv.exists_of_le_one y.property
+  exact ⟨x, Subtype.ext hx⟩
+
+/-- The integer-subring equivalence induces the structural map into the valued ring. -/
+@[simp]
+theorem coe_equivInteger_apply (hv : v.Integers O) (x : O) :
+    (hv.equivInteger x : R) = algebraMap O R x := by
+  unfold equivInteger
+  exact (congrArg Subtype.val (RingEquiv.ofBijective_apply _ _ x)).trans
+    (RingHom.codRestrict_apply _ _ _ x)
+
+/-- The inverse integer-subring equivalence recovers the underlying element in the valued ring. -/
+@[simp]
+theorem algebraMap_equivInteger_symm_apply (hv : v.Integers O) (y : v.integer) :
+    algebraMap O R (hv.equivInteger.symm y) = (y : R) := by
+  rw [← hv.coe_equivInteger_apply, RingEquiv.apply_symm_apply]
 
 /-- **The ring of integers of a perfect ring is perfect.** If `O` is a ring of integers for a
 valuation on a ring `R` that is perfect for the exponent `p`, then `O` is perfect for `p`. -/
@@ -86,5 +114,12 @@ variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀] {
 (`Valuation.one_apply_le_one`). -/
 theorem integers_self_iff : v.Integers R ↔ ∀ x, v x ≤ 1 :=
   ⟨fun hv ↦ hv.map_le_one, fun h ↦ ⟨Function.injective_id, h, fun r _ ↦ ⟨r, rfl⟩⟩⟩
+
+open scoped Pointwise in
+/-- **A unit of valuation one maps the ring of integers onto itself.** -/
+theorem units_smul_integer {u : Rˣ} (hu : v u = 1) : u • (v.integer : Set R) = v.integer := by
+  ext y
+  rw [Set.mem_smul_set_iff_inv_smul_mem]
+  simp [Units.smul_def, Valuation.mem_integer_iff, hu]
 
 end Valuation

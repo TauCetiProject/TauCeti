@@ -17,8 +17,8 @@ A spanning tree of `Γ` is a reversal-closed set of darts whose subgraph is a tr
 Serre graph has one, and every acyclic reversal-closed set of darts extends to one, by Zorn's
 lemma: a maximal acyclic set of darts reaches every vertex, since a dart leaving the vertices it
 reaches could be added without creating a reduced closed path. Loops and parallel darts are
-allowed throughout, and no finiteness is assumed. A rose has exactly one spanning tree, with no
-darts.
+allowed throughout, and no finiteness is assumed. A tree is a spanning tree of itself, with all
+of its darts, and a rose has exactly one spanning tree, with no darts.
 
 Any two vertices are joined by a unique reduced path whose darts lie in a spanning tree `T`, the
 tree path `T.path a b`. Dart weights that agree on `T` agree along tree paths, so a weight that is
@@ -34,6 +34,7 @@ outside `T`; the basis consists of the loops `T.path v (src e) · e · T.path (t
 
 * `TauCeti.SerreGraph.SpanningTree`: a spanning tree of a Serre graph.
 * `TauCeti.SerreGraph.SpanningTree.path`: the reduced path between two vertices in a spanning tree.
+* `TauCeti.SerreGraph.IsTree.spanningTree`: a tree as a spanning tree of itself.
 * `TauCeti.SerreGraph.SpanningTree.restrict`: a spanning tree contained in a subgraph, as a
   spanning tree of the subgraph.
 
@@ -446,6 +447,25 @@ theorem weight_path_tgt {G : Type*} [Group G] {wt : Γ.E → G} (a : Γ.V) {e : 
 
 end SpanningTree
 
+variable {Γ} in
+/-- A tree is a spanning tree of itself: all of its darts form a spanning tree. -/
+def IsTree.spanningTree (h : Γ.IsTree) : Γ.SpanningTree where
+  darts := Set.univ
+  rev_mem _ _ := Set.mem_univ _
+  isTree := by
+    have hΓ := Γ.connected_iff.mp (IsTree.connected _ h)
+    refine (isTree_iff _).mpr ⟨(connected_iff _).mpr ⟨hΓ.1, (preconnected_iff _).mpr fun a b => ?_⟩,
+      (Γ.isAcyclic_restrict_iff _ _).mpr fun _ p hp _ => h.eq_nil_of_isReduced _ p hp⟩
+    -- Every path of the tree lies in the subgraph of all darts.
+    obtain ⟨p⟩ := Γ.preconnected_iff.mp hΓ.2 a b
+    obtain ⟨q, -⟩ := Γ.exists_restrict_path Set.univ (fun _ _ => Set.mem_univ _) p
+      fun _ _ => Set.mem_univ _
+    exact ⟨q⟩
+
+variable {Γ} in
+@[simp] theorem IsTree.spanningTree_darts (h : Γ.IsTree) : h.spanningTree.darts = Set.univ :=
+  (rfl)
+
 /-- The spanning tree of a rose, with no darts. -/
 def roseTree (α : Type*) : (rose α).SpanningTree where
   darts := ∅
@@ -457,6 +477,19 @@ def roseTree (α : Type*) : (rose α).SpanningTree where
       exact ⟨.nil⟩⟩, (rose α).isAcyclic_restrict_empty⟩
 
 @[simp] theorem roseTree_darts (α : Type*) : (roseTree α).darts = ∅ := (rfl)
+
+/-- Every spanning tree of the segment contains both of its darts: the tree path between the two
+vertices crosses the edge. -/
+@[simp] theorem segment_spanningTree_darts (T : segment.SpanningTree) : T.darts = Set.univ := by
+  obtain ⟨e, he⟩ : ∃ e, e ∈ Path.darts _ (T.path false true) := by
+    generalize T.path false true = q
+    cases q with
+    | cons q e => exact ⟨e.val, (Path.darts_cons _ q e).symm ▸
+        List.mem_append_right _ (List.mem_singleton_self _)⟩
+  refine Set.eq_univ_of_forall fun b => ?_
+  rcases Bool.eq_or_eq_not b e with rfl | rfl
+  · exact T.mem_of_mem_darts_path he
+  · exact T.rev_mem _ (T.mem_of_mem_darts_path he)
 
 /-- A rose has exactly one spanning tree, the one with no darts. -/
 instance (α : Type*) : Unique (rose α).SpanningTree where
