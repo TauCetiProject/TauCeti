@@ -395,6 +395,9 @@ theorem torusFamilyLogGauge_eq_baseChange_comp_logTwist :
     torusFamilyLogGauge P l (Quotient.mk _ (z, e)) =
       Quotient.mk _ (rootsOfUnityBall.powMap m r z,
         e - (log (z : ℂ) / (2 * π * I)) • P (rootsOfUnityBall.powMap m r z) l) := by
+  -- Unfold `torusFamilyLogGauge` and apply `∘`; rewriting by
+  -- `torusFamilyLogGauge_eq_baseChange_comp_logTwist` and `Function.comp_apply` fails at
+  -- `implicit` transparency since `powPullbackPeriod` is not reducible (`periodAddAction`).
   change torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r)
       (torusFamilyLogTwistMap Subtype.val (powPullbackPeriod m r P) (-l) (Quotient.mk _ (z, e))) = _
   rw [torusFamilyLogTwistMap_mk]
@@ -419,6 +422,9 @@ theorem torusFamilyLogGauge_mk_of_exp_eq {z : rootsOfUnityBall m r} {L : ℂ}
     torusFamilyLogGauge P l (Quotient.mk _ (z, e)) =
       Quotient.mk _ (rootsOfUnityBall.powMap m r z,
         e - (L / (2 * π * I)) • P (rootsOfUnityBall.powMap m r z) l) := by
+  -- Unfold `torusFamilyLogGauge` and apply `∘`; rewriting by
+  -- `torusFamilyLogGauge_eq_baseChange_comp_logTwist` and `Function.comp_apply` fails at
+  -- `implicit` transparency since `powPullbackPeriod` is not reducible (`periodAddAction`).
   change torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r)
       (torusFamilyLogTwistMap Subtype.val (powPullbackPeriod m r P) (-l) (Quotient.mk _ (z, e))) = _
   rw [torusFamilyLogTwistMap_mk_of_exp_eq Subtype.val (powPullbackPeriod m r P) (-l) hL e]

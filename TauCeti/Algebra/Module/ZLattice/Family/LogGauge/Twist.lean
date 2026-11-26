@@ -158,7 +158,7 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
   apply Diffeomorph.toEquiv_injective
   simp only [torusFamilyLogTwistDiffeomorph_toEquiv, Diffeomorph.refl_toEquiv,
     torusFamilyLogTwistEquiv_zero]
-  rfl
+  exact Equiv.ext fun _ ↦ rfl
 
 /-- Composing logarithmic twist diffeomorphisms adds their period parameters. -/
 @[simp] theorem torusFamilyLogTwistDiffeomorph_trans (μ₁ μ₂ : Λ) :

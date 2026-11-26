@@ -529,36 +529,34 @@ noncomputable def logTranslationQuotientAddNsmulDiffeomorph (l μ : Λ)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
       (letI := logTranslationMulAction P l;
         orbitRel.Quotient (rootsOfUnity m ℂ)
-          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) n := by
-  let _ := periodAddAction (powPullbackPeriod m r P)
-  let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) n :=
+  letI := periodAddAction (powPullbackPeriod m r P)
+  letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
     (fun l' ↦ (contMDiff_powPullbackPeriod P (hP l')).continuous)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-  let _ : ChartedSpace (ModelProd ℂ E)
+  letI : ChartedSpace (ModelProd ℂ E)
       (letI := logTranslationMulAction P (l + m • μ);
         orbitRel.Quotient (rootsOfUnity m ℂ)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
     logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) (l + m • μ)
       (isCancelSMul_logTranslationMulAction_add_nsmul P l μ hfree)
-  let _ : ChartedSpace (ModelProd ℂ E)
+  letI : ChartedSpace (ModelProd ℂ E)
       (letI := logTranslationMulAction P l;
         orbitRel.Quotient (rootsOfUnity m ℂ)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
     logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
-  have hmk₁ := isLocalDiffeomorph_logTranslationQuotient_mk P hP hinj (l + m • μ)
-    (isCancelSMul_logTranslationMulAction_add_nsmul P l μ hfree)
-  have hmk₂ := isLocalDiffeomorph_logTranslationQuotient_mk P hP hinj l hfree
-  exact diffeomorphOfForallIsLocalDiffeomorphEquiv (J := Unit)
+  diffeomorphOfForallIsLocalDiffeomorphEquiv (J := Unit)
     (φ := fun _ ↦ (letI := logTranslationMulAction P l; Quotient.mk _))
     (fun q ↦ ⟨(), Quotient.mk_surjective q⟩)
     (logTranslationQuotientAddNsmulEquiv P l μ)
-    (fun _ ↦ hmk₂)
+    (fun _ ↦ isLocalDiffeomorph_logTranslationQuotient_mk P hP hinj l hfree)
     (fun _ ↦ by
       rw [show (⇑(logTranslationQuotientAddNsmulEquiv P l μ).symm ∘
           (letI := logTranslationMulAction P l; Quotient.mk _)) =
           (letI := logTranslationMulAction P (l + m • μ); Quotient.mk _) from
         funext (logTranslationQuotientAddNsmulEquiv_symm_mk P l μ)]
-      exact hmk₁)
+      exact isLocalDiffeomorph_logTranslationQuotient_mk P hP hinj (l + m • μ)
+        (isCancelSMul_logTranslationMulAction_add_nsmul P l μ hfree))
 
 /-- The underlying equivalence of `logTranslationQuotientAddNsmulDiffeomorph` is
 `logTranslationQuotientAddNsmulEquiv`. -/
@@ -576,26 +574,24 @@ noncomputable def logTranslationQuotientAddNsmulDiffeomorph (l μ : Λ)
             (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
       logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     (logTranslationQuotientAddNsmulDiffeomorph P hP hinj l μ hfree).toEquiv =
-      logTranslationQuotientAddNsmulEquiv P l μ := by
-  let _ := periodAddAction (powPullbackPeriod m r P)
-  let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      logTranslationQuotientAddNsmulEquiv P l μ :=
+  letI := periodAddAction (powPullbackPeriod m r P)
+  letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
     (fun l' ↦ (contMDiff_powPullbackPeriod P (hP l')).continuous)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-  let _ : ChartedSpace (ModelProd ℂ E)
+  letI : ChartedSpace (ModelProd ℂ E)
       (letI := logTranslationMulAction P (l + m • μ);
         orbitRel.Quotient (rootsOfUnity m ℂ)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
     logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) (l + m • μ)
       (isCancelSMul_logTranslationMulAction_add_nsmul P l μ hfree)
-  let _ : ChartedSpace (ModelProd ℂ E)
+  letI : ChartedSpace (ModelProd ℂ E)
       (letI := logTranslationMulAction P l;
         orbitRel.Quotient (rootsOfUnity m ℂ)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
     logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
-  unfold logTranslationQuotientAddNsmulDiffeomorph
-  dsimp only
-  rw [diffeomorphOfForallIsLocalDiffeomorphEquiv_toEquiv (J := Unit)
-    (e := logTranslationQuotientAddNsmulEquiv P l μ)]
+  diffeomorphOfForallIsLocalDiffeomorphEquiv_toEquiv (J := Unit)
+    (e := logTranslationQuotientAddNsmulEquiv P l μ) _ _ _
 
 end
 
