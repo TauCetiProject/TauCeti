@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
+public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.HornFilling
 public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Extension
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.UnionProd
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 
@@ -23,12 +23,11 @@ given over a simplicial subset of the parameter space.
 By Mathlib's description of the trivial fibrations as the maps lifting against boundary
 inclusions (`SSet.rlp_monomorphisms`), it suffices to treat the families parametrized by `Δ[n]`
 with given filling over `∂Δ[n]`, that is extensions along
-`(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n]) ⟶ Δ[m + 2] ⊗ Δ[n]`. Mathlib's regular pairing of Moss
-for this inclusion attaches inner horns and horns `Λ[d + 1, 0]` whose initial edge is a vertical
-edge `(0, t) ⟶ (1, t)` of the prism, which lies in the domain of the extension problem
-(`SSet.prodStdSimplex.pairingCore.Type₁.map_edge_of_index_eq_zero`). The extension along a regular
-pairing (`SSet.Subcomplex.PairingCore.exists_ext_of_hornFilling`) thus reduces the problem to
-inner horn filling and Joyal's theorem (`SSet.Quasicategory.exists_fill_of_ne_last`).
+`(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n]) ⟶ Δ[m + 2] ⊗ Δ[n]`. This is the case over a point of
+lifting along such prisms when the vertical edges `(0, t) ⟶ (1, t)` are coCartesian
+(`SSet.prodStdSimplex.exists_lift_unionProd_horn_zero`, proved through Mathlib's regular pairing
+of Moss), since the edges of a quasicategory which are coCartesian over a point are its
+equivalences (`SSet.Edge.isEquivalence_iff_isCoCartesian`).
 
 ## Main results
 
@@ -73,29 +72,11 @@ theorem exists_ext_unionProd_horn_zero [Quasicategory C] {m n : ℕ}
       (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp),
         stdSimplex.const n t _)))).IsEquivalence) :
     ∃ b : Δ[m + 2] ⊗ Δ[n] ⟶ C, (unionProd Λ[m + 2, 0] ∂Δ[n]).ι ≫ b = a := by
-  refine (pairingCore (0 : Fin (m + 2)) n).exists_ext_of_hornFilling a
-    fun s B hB g hg σ₀ hσ₀ ↦ ?_
-  suffices h0 : s.index.castSucc = 0 → ∀ H, (Edge.mk' ((σ₀ ≫ g).app _
-      (horn.edge (s.d + 1) s.index.castSucc 0 1 (Fin.zero_le _) H))).IsEquivalence by
-    obtain ⟨σ, hσ⟩ := Quasicategory.exists_fill_of_ne_last (Fin.castSucc_lt_last s.index).ne
-      (σ₀ ≫ g) h0
-    exact ⟨σ, hσ.symm⟩
-  intro hs H
-  replace hs : s.index = 0 := Fin.castSucc_eq_zero_iff.1 hs
-  -- The initial edge of the horn is the vertical edge at the first vertex of the simplex,
-  -- which lies in `Λ[m + 2, 0] ⊗ Δ[n]`, where `g` is `a`.
-  have he : σ₀.app _ (horn.edge (s.d + 1) _ 0 1 (Fin.zero_le _) H) =
-      (Subcomplex.homOfLE hB).app _ ((unionProd.ι₂ _ _).app _
-        (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp),
-          stdSimplex.const n ((s.x.cast s.hd).simplex.2 0) _)) := by
-    apply Subtype.ext
-    exact (congrArg (fun f ↦ f.app _ (horn.edge (s.d + 1) _ 0 1 (Fin.zero_le _) H)) hσ₀).trans
-      (s.map_edge_of_index_eq_zero hs)
-  have hg' := congrArg (fun f ↦ f.app _ ((unionProd.ι₂ _ _).app _
-    (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp),
-      stdSimplex.const n ((s.x.cast s.hd).simplex.2 0) _))) hg
-  exact (Edge.isEquivalence_iff_of_edge_eq (e := Edge.mk' _) (e' := Edge.mk' _)
-    ((congrArg (g.app _) he).trans hg')).2 (ha _)
+  -- Over a point, the equivalences of `C` are its coCartesian edges.
+  obtain ⟨b, hb, -⟩ := exists_lift_unionProd_horn_zero (terminal.from C) a (terminal.from _)
+    (terminal.hom_ext _ _)
+    fun t ↦ (Edge.isEquivalence_iff_isCoCartesian _ _ terminalIsTerminal).1 (ha t)
+  exact ⟨b, hb⟩
 
 end prodStdSimplex
 
