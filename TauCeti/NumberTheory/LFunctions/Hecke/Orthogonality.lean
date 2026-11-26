@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.PartialZeta
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.PartialZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 import Mathlib.NumberTheory.LSeries.Linearity
