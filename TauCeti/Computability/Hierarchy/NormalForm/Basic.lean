@@ -534,8 +534,7 @@ theorem exists_primrec_totality_iff_isValid :
       obtain ⟨b, hb⟩ := h [x] rfl
       exact ((hmem x (encode b)).1 hb).1
 
-/-- Relative totality reduces one-one to normal-form validity, uniformly for every oracle `Z`
-via `exists_primrec_totality_iff_isValid`. -/
+/-- Totality relative to `Z` one-one reduces to `NormalFormCode.IsValid Z`. -/
 theorem oneOneReducible_totality_isValid {Z : Set ℕ} :
     OneOneReducible (· ∈ totality Z) (NormalFormCode.IsValid Z) := by
   obtain ⟨f, hf, hinj, hiff⟩ := exists_primrec_totality_iff_isValid

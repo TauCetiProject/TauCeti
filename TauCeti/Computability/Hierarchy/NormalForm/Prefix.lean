@@ -920,13 +920,19 @@ theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primco
       | zero => simp at hlt
       | sigma m => exact h.of_le hlt.le
       | pi m =>
-        have hnm : n + 2 ≤ m + 1 := hlt
+        have hnm : n + 2 ≤ m + 1 := by
+          have := lt_iff.1 hlt
+          simp at this
+          omega
         exact h.pi_succ.of_le hnm
     | pi n =>
       cases q with
       | zero => simp at hlt
       | sigma m =>
-        have hnm : n + 2 ≤ m + 1 := hlt
+        have hnm : n + 2 ≤ m + 1 := by
+          have := lt_iff.1 hlt
+          simp at this
+          omega
         exact h.sigma_succ.of_le hnm
       | pi m => exact h.of_le hlt.le
 

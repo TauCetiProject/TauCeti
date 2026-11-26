@@ -148,29 +148,43 @@ example (Z : Set ℕ) (p q : QuantifierPrefix) {α : Type*} [Primcodable α] {P 
     (p.dual < q.dual ↔ p < q) ∧
     p.IsClass Z (fun x => P x ∧ Q x) ∧
     p.IsClass Z (fun x => P x ∨ Q x) ∧
-    nf₁.and nf₂ = some ⟨nf₁.quantifiers, nf₁.arity,
-      Code.boolAnd
-        (Code.comp nf₁.matrix
-          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
-        (Code.comp nf₂.matrix
-          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth))⟩ ∧
-    nf₁.or nf₂ = some ⟨nf₁.quantifiers, nf₁.arity,
-      Code.boolOr
-        (Code.comp nf₁.matrix
-          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
-        (Code.comp nf₂.matrix
-          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth))⟩ ∧
-    nfAnd.matrix =
-      Code.boolAnd
-        (Code.comp nf₁.matrix
-          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
-        (Code.comp nf₂.matrix
-          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth)) ∧
-    nfOr.matrix =
-      Code.boolOr
-        (Code.comp nf₁.matrix
-          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
-        (Code.comp nf₂.matrix
-          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth)) :=
-  ⟨by simp, hP.and hQ, hP.or hQ, and_eq_some hq ha, or_eq_some hq ha, matrix_and hand,
-    matrix_or hor⟩
+    (∃ c₁ c₂ : Code,
+      nf₁.and nf₂ = some ⟨nf₁.quantifiers, nf₁.arity,
+        Code.boolAnd (Code.comp nf₁.matrix c₁) (Code.comp nf₂.matrix c₂)⟩ ∧
+      ∀ (O : ℕ →. ℕ) (l : List ℕ),
+        Code.eval O c₁ (encode l) = Part.some (encode
+          ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+            l.drop nf₁.quantifiers.depth)) ∧
+        Code.eval O c₂ (encode l) = Part.some (encode
+          ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+            l.drop nf₁.quantifiers.depth))) ∧
+    (∃ c₁ c₂ : Code,
+      nf₁.or nf₂ = some ⟨nf₁.quantifiers, nf₁.arity,
+        Code.boolOr (Code.comp nf₁.matrix c₁) (Code.comp nf₂.matrix c₂)⟩ ∧
+      ∀ (O : ℕ →. ℕ) (l : List ℕ),
+        Code.eval O c₁ (encode l) = Part.some (encode
+          ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+            l.drop nf₁.quantifiers.depth)) ∧
+        Code.eval O c₂ (encode l) = Part.some (encode
+          ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+            l.drop nf₁.quantifiers.depth))) ∧
+    (∃ c₁ c₂ : Code,
+      nfAnd.matrix = Code.boolAnd (Code.comp nf₁.matrix c₁) (Code.comp nf₂.matrix c₂) ∧
+      ∀ (O : ℕ →. ℕ) (l : List ℕ),
+        Code.eval O c₁ (encode l) = Part.some (encode
+          ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+            l.drop nf₁.quantifiers.depth)) ∧
+        Code.eval O c₂ (encode l) = Part.some (encode
+          ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+            l.drop nf₁.quantifiers.depth))) ∧
+    (∃ c₁ c₂ : Code,
+      nfOr.matrix = Code.boolOr (Code.comp nf₁.matrix c₁) (Code.comp nf₂.matrix c₂) ∧
+      ∀ (O : ℕ →. ℕ) (l : List ℕ),
+        Code.eval O c₁ (encode l) = Part.some (encode
+          ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+            l.drop nf₁.quantifiers.depth)) ∧
+        Code.eval O c₂ (encode l) = Part.some (encode
+          ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+            l.drop nf₁.quantifiers.depth))) :=
+  ⟨by simp, hP.and hQ, hP.or hQ, exists_and_eq_some hq ha, exists_or_eq_some hq ha,
+    exists_matrix_and hand, exists_matrix_or hor⟩
