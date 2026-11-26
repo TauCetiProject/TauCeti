@@ -109,6 +109,7 @@ theorem inChart_def (z : E) :
   unfold inChart
   ext v
   rw [almostComplexCoordinates_apply]
+  -- `inCoordinates` is by definition the same composite `continuousLinearMapAt ∘ J ∘ symmL`.
   rfl
 
 /-- On a chart source, a structure read in the chart at the centre is the structure conjugated by
@@ -467,6 +468,7 @@ theorem chartEquiv_ofChart (A : E → E →L[ℝ] E)
     (chartEquiv (I := I) (n := n) x (ofChart x A hA hAA)).val z = A (I z.val) := by
   unfold ofChart
   rw [Equiv.apply_symm_apply]
+  -- The field fed to `chartEquiv.symm` is by definition `z ↦ A (I z.val)`.
   rfl
 
 /-- The chart equivalence evaluates the coordinate field at the forward chart value. -/
@@ -636,6 +638,7 @@ theorem inChart_extChartAt_apply_eq_mfderiv {y : M} (hy : y ∈ (extChartAt I x)
   rw [inChart_def, (extChartAt I x).left_inv hy, ContinuousLinearMap.inCoordinates,
     TangentBundle.continuousLinearMapAt_trivializationAt hy',
     TangentBundle.symmL_trivializationAt hy']
+  -- The trivialization at `x` acts on fibres over its base set by the chart derivatives.
   rfl
 
 /-- Read in the extended chart `φ` at `x`, a relation `du(a) = J du(b)` between derivatives at `w`

@@ -39,7 +39,8 @@ theorem isBoundaryPoint_extend_symm_iff (φ : OpenPartialHomeomorph X ClosedUppe
     {z : ℂ} (hz : z ∈ (φ.extend closedUpperHalfPlaneModel).target) :
     closedUpperHalfPlaneModel.IsBoundaryPoint ((φ.extend closedUpperHalfPlaneModel).symm z) ↔
       z.im = 0 := by
-  rw [extend_target, range_closedUpperHalfPlaneModel] at hz
+  rw [extend_target, range_closedUpperHalfPlaneModel, mem_inter_iff, mem_preimage,
+    mem_ofPred_eq (p := fun z : ℂ ↦ 0 ≤ z.im)] at hz
   have h := φ.isBoundaryPoint_iff closedUpperHalfPlaneModel closedUpperHalfPlaneModel rfl
     (φ.map_target hz.1)
   simpa [φ.right_inv hz.1, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz.2] using h
@@ -53,12 +54,22 @@ theorem isOpen_extend_target_inter_preimage_of_subset_compl
     IsOpen ((φ.extend closedUpperHalfPlaneModel).target ∩
       (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' t) := by
   obtain ⟨Ω, hΩ, hD⟩ := φ.exists_isOpen_extend_target_inter_preimage ht
-  rw [show _ ∩ _ = Ω ∩ {z : ℂ | 0 < z.im} from ?_]
-  · exact hΩ.inter (isOpen_lt continuous_const Complex.continuous_im)
-  rw [hD]
-  refine Set.ext fun z ↦ ⟨fun hz ↦ ⟨hz.1, show 0 < z.im from lt_of_le_of_ne hz.2 fun h0 ↦ ?_⟩,
-    fun hz ↦ ⟨hz.1, show 0 ≤ z.im from le_of_lt hz.2⟩⟩
-  have hzD := hD ▸ hz
-  exact htb hzD.2 ((φ.isBoundaryPoint_extend_symm_iff hzD.1).2 h0.symm)
+  -- The coordinate domain over `t` is `Ω ∩ {0 ≤ im}` and has no real points, since a real point
+  -- of the extended target reads a boundary point of `X`; so it is `Ω ∩ {0 < im}`.
+  have hset : (φ.extend closedUpperHalfPlaneModel).target ∩
+      (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' t = Ω ∩ {z : ℂ | 0 < z.im} := by
+    refine Set.ext fun z ↦ ⟨fun hz ↦ ?_, fun hz ↦ ?_⟩
+    · have hzD := hz
+      rw [mem_inter_iff, mem_preimage] at hzD
+      rw [hD, mem_inter_iff, mem_ofPred_eq (p := fun z : ℂ ↦ 0 ≤ z.im)] at hz
+      rw [mem_inter_iff, mem_ofPred_eq (p := fun z : ℂ ↦ 0 < z.im)]
+      refine ⟨hz.1, lt_of_le_of_ne hz.2 fun h0 ↦ ?_⟩
+      -- `closedUpperHalfPlaneModel.boundary X` is by definition the set of boundary points.
+      exact htb hzD.2 ((φ.isBoundaryPoint_extend_symm_iff hzD.1).2 h0.symm)
+    · rw [mem_inter_iff, mem_ofPred_eq (p := fun z : ℂ ↦ 0 < z.im)] at hz
+      rw [hD, mem_inter_iff, mem_ofPred_eq (p := fun z : ℂ ↦ 0 ≤ z.im)]
+      exact ⟨hz.1, hz.2.le⟩
+  rw [hset]
+  exact hΩ.inter (isOpen_lt continuous_const Complex.continuous_im)
 
 end OpenPartialHomeomorph

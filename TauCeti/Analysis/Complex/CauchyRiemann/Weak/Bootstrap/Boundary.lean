@@ -232,8 +232,9 @@ theorem memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod (hp : 2 < p) (hp' : p 
       (LinearIsometryEquiv.neg ℝ)
   have hT : ContDiff ℝ ⊤ (Prod.map id T.symm : ℂ × WithLp 2 (G × G) → ℂ × (F × F)) :=
     contDiff_id.prodMap T.symm.contDiff
+  -- `Prod.map id T.symm` fixes the first coordinate.
   have hmaps : MapsTo (Prod.map id T.symm) (Prod.map id T.symm ⁻¹' W' ∩ {x | 0 ≤ x.1.im})
-      (W' ∩ {x | 0 ≤ x.1.im}) := fun x hx => hx
+      (W' ∩ {x | 0 ≤ x.1.im}) := fun x hx => ⟨mem_preimage.1 hx.1, by simpa using hx.2⟩
   have hconj := T.conjContinuousAlgEquiv.toContinuousLinearEquiv.contDiff (n := ℓ)
   have key := memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane (W := Prod.map id T.symm ⁻¹' W')
     (J := fun z y => (T : F × F →L[ℝ] WithLp 2 (G × G)) ∘L J' z (T.symm y) ∘L

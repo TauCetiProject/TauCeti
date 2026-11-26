@@ -170,10 +170,12 @@ theorem memWkpLocMapOnBordered_of_memWkpLoc_chart (hp : 2 < p) (hp' : p ≠ ⊤)
         (χ.extend I ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm)) :
     MemWkpLocMapOnBordered I p k u t := by
   refine (memWkpLocMapOnBordered_iff_of_subset_maximalAtlas_of_two_lt hp hp' ht (A := {φ})
-    (singleton_subset_iff.2 hφ) (fun x hx ↦ ⟨φ, rfl, htφ hx⟩) (B := {χ})
-    (singleton_subset_iff.2 hχ) fun x hx ↦ ⟨χ, rfl, htχ hx⟩).2 ⟨hu, ?_⟩
-  rintro _ rfl _ rfl
-  rwa [inter_eq_left.2 fun x hx ↦ htχ hx]
+    (singleton_subset_iff.2 hφ) (fun x hx ↦ ⟨φ, mem_singleton φ, htφ hx⟩) (B := {χ})
+    (singleton_subset_iff.2 hχ) fun x hx ↦ ⟨χ, mem_singleton χ, htχ hx⟩).2 ⟨hu, ?_⟩
+  intro φ' hφ' χ' hχ'
+  rw [mem_singleton_iff] at hφ' hχ'
+  subst hφ' hχ'
+  rwa [inter_eq_left.2 (mapsTo_iff_subset_preimage.1 htχ)]
 
 variable [HasGroupoid X borderedHolomorphicGroupoid] [IsManifold I ∞ M]
 

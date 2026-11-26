@@ -135,9 +135,10 @@ private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_
     ((hs.inter φ.open_source).inter
       (closedUpperHalfPlaneModel.isClosed_boundary_of_finiteDimensional X).isOpen_compl)
     χ.open_source
-  have hx₀t : x₀ ∈ t := ⟨⟨⟨hx₀, mem_chart_source _ x₀⟩, hb⟩, mem_chart_source H (u x₀)⟩
+  have hx₀t : x₀ ∈ t :=
+    ⟨⟨⟨hx₀, mem_chart_source _ x₀⟩, mem_compl hb⟩, mem_preimage.2 (mem_chart_source H (u x₀))⟩
   refine ⟨t, mem_nhdsWithin_of_mem_nhds (ht.mem_nhds hx₀t), ?_⟩
-  have htχ : MapsTo u t χ.source := fun x hx ↦ hx.2
+  have htχ : MapsTo u t χ.source := fun x hx ↦ mem_preimage.1 hx.2
   -- The coordinate domain avoids the real axis, so it is open.
   set D := (φ.extend closedUpperHalfPlaneModel).target ∩
     (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' t
@@ -153,8 +154,8 @@ private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_
   have hreg := memWkpLoc_of_isWeakCauchyRiemannOn (Ω := ⟨D, hDo⟩) (W := univ ×ˢ χ'.target)
     (ℓ := m) hp hp' (isOpen_univ.prod χ'.open_target)
     (((J₀.contDiffOn_chartPushforward hχ'1 hχ's le_top).of_le (by exact_mod_cast hm)).comp
-      contDiffOn_snd fun x (hx : x ∈ univ ×ˢ χ'.target) ↦ hx.2)
-    contDiffOn_const (fun z hz ↦ ⟨trivial, hwt z hz⟩)
+      contDiffOn_snd fun x (hx : x ∈ univ ×ˢ χ'.target) ↦ (mem_prod.1 hx).2)
+    contDiffOn_const (fun z hz ↦ mem_prod.2 ⟨mem_univ _, hwt z hz⟩)
     (ae_restrict_of_forall_mem hDo.measurableSet fun z hz ↦
       J₀.chartPushforward_mul_self_of_contMDiffOn χ' hχ'1 hχ's (by simp) (hwt z hz))
     hw
@@ -184,24 +185,34 @@ private theorem memWkpLoc_of_isAdaptedChart {S : Set M} {ψ : OpenPartialHomeomo
     MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (m + 1) w := by
   have hℓ1 : (1 : ℕ∞ω) ≤ ℓ := by exact_mod_cast hℓ
   have hℓ0 : (ℓ : ℕ∞ω) ≠ 0 := (zero_lt_one.trans_le hℓ1).ne'
+  -- The source of the transition `Θ = ψ ∘ χ⁻¹` is `χ.target ∩ χ⁻¹ ⁻¹' ψ.source`.
+  have hwΘ' : MapsTo w ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (χ.target ∩ χ.symm ⁻¹' ψ.source) :=
+    fun z hz ↦ by
+      have h := hwΘ hz
+      rwa [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at h
+  -- The target of `Θ` is `ψ.target ∩ ψ⁻¹ ⁻¹' χ.source`.
+  have hΘt : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, χ.symm.trans ψ (w z) ∈ ψ.target := fun z hz ↦ by
+    have h := (χ.symm.trans ψ).map_source (hwΘ hz)
+    rw [OpenPartialHomeomorph.trans_target, mem_inter_iff] at h
+    exact h.1
+  have hreal : ∀ s : ℝ, (s : ℂ) ∈ Ω → (s : ℂ) ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
+    fun s hs ↦ ⟨hs, by simp⟩
+  -- Along the real axis `Θ ∘ w` lies on the zero section, where `ψ_* J₀` is standard.
+  have hzero : ∀ s : ℝ, (s : ℂ) ∈ Ω → (χ.symm.trans ψ (w s)).2 = 0 := fun s hs ↦ by
+    have h := (hψ.isImage (mem_preimage.1 (hwΘ' (hreal s hs)).2)).2 (hS s hs)
+    rw [mem_ofPred_eq] at h
+    rwa [OpenPartialHomeomorph.coe_trans, Function.comp_apply]
   set Θ := χ.symm.trans ψ
   obtain ⟨-, hΘs⟩ := OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn hχ hχs
     hψ.contMDiffOn hψ.contMDiffOn_symm
   have hw := h.chartPushforward_symm_trans_comp (hχ.of_le hℓ1) (hχs.of_le hℓ1)
     (hψ.contMDiffOn.of_le hℓ1) (hψ.contMDiffOn_symm.of_le hℓ1) hwΘ
-  have hΘt : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, Θ (w z) ∈ ψ.target :=
-    fun z hz ↦ (Θ.map_source (hwΘ hz)).1
-  have hreal : ∀ s : ℝ, (s : ℂ) ∈ Ω → (s : ℂ) ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
-    fun s hs ↦ ⟨hs, by simp⟩
-  -- Along the real axis `Θ ∘ w` lies on the zero section, where `ψ_* J₀` is standard.
-  have hzero : ∀ s : ℝ, (s : ℂ) ∈ Ω → (Θ (w s)).2 = 0 := fun s hs ↦
-    (hψ.isImage (hwΘ (hreal s hs)).2).2 (hS s hs)
   have hreg := memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod (W' := univ ×ˢ ψ.target)
     (ℓ := m) hp hp' (isOpen_univ.prod ψ.open_target)
     ((hψ.contDiffOn_chartPushforward.of_le ?_).comp contDiffOn_snd
       fun (x : ℂ × (F × F)) (hx : x ∈ univ ×ˢ ψ.target ∩ {x : ℂ × (F × F) | 0 ≤ x.1.im}) ↦
-        hx.1.2)
-    contDiffOn_const (fun z hz ↦ ⟨trivial, hΘt z hz⟩)
+        (mem_prod.1 hx.1).2)
+    contDiffOn_const (fun z hz ↦ mem_prod.2 ⟨mem_univ _, hΘt z hz⟩)
     (ae_restrict_of_forall_mem (Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const
       Complex.measurable_im)) fun z hz ↦ J₀.chartPushforward_mul_self_of_contMDiffOn ψ
         hψ.contMDiffOn hψ.contMDiffOn_symm hℓ0 (hΘt z hz))
@@ -262,15 +273,19 @@ private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_
   refine memWkpLoc_of_isAdaptedChart (Ω := ⟨Ω, hΩ⟩) hψ
     ((χ.contMDiffOn_extendTrans hχ contDiff_id).of_le (by exact_mod_cast le_top))
     ((χ.contMDiffOn_extendTrans_symm hχ contDiff_id).of_le (by exact_mod_cast le_top)) hℓ hp hp'
-    hm hw (fun z hz ↦ ⟨χ'.map_source (by simpa [χ'] using htχ (hD ▸ hz).2), ?_⟩) fun s' hs' ↦ ?_
-  · -- The second condition for `Θ.source` is membership of `χ'⁻¹ (w z)` in `ψ.source`.
-    change χ'.symm ((χ' ∘ u ∘ _) z) ∈ ψ.source
-    rw [hleft z hz]
-    exact (hD ▸ hz).2.2
+    hm hw (fun z hz ↦ ?_) fun s' hs' ↦ ?_
+  · -- Membership in the source of the transition `ψ ∘ χ'⁻¹`, by `trans_source`.
+    rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
+      mem_preimage, hleft z hz]
+    have hz' := hD ▸ hz
+    rw [mem_inter_iff, mem_preimage] at hz'
+    exact ⟨χ'.map_source (by simpa [χ'] using htχ hz'.2), mem_preimage.1 hz'.2.2⟩
   · -- A real point of the coordinate domain reads a boundary point of `X`.
     have hz : (s' : ℂ) ∈ Ω ∩ {z | 0 ≤ z.im} := ⟨hs', by simp⟩
     rw [hleft _ hz]
     have hz' := hD ▸ hz
+    rw [mem_inter_iff, mem_preimage] at hz'
+    -- `closedUpperHalfPlaneModel.boundary X` is by definition the set of boundary points.
     exact hb ⟨hz'.2.1.1, (φ.isBoundaryPoint_extend_symm_iff hz'.1).2 (Complex.ofReal_im s')⟩
 
 /-- **Regularity up to a totally real boundary** (McDuff–Salamon, Theorem B.4.1). Let `2 < p < ∞`,
