@@ -40,25 +40,27 @@ variable {X X' Y Z : Type*} {mX : MeasurableSpace X} [MeasurableSpace X'] [Measu
 /-- **Conjugacy invariance.** Pulling both labels back along a measure-preserving map does not
 change the conditional entropy. -/
 theorem conditionalLabelEntropy_comp_of_measurePreserving {μ' : Measure X'} [IsFiniteMeasure μ']
-    {φ : X' → X} (hφ : MeasurePreserving φ μ' μ) {a : X → Y} {b : X → Z} (ha : Measurable a)
-    (hb : Measurable b) :
+    {φ : X' → X} (hφ : MeasurePreserving φ μ' μ) {a : X → Y} {b : X → Z}
+    (ha : AEMeasurable a μ) (hb : AEMeasurable b μ) :
     conditionalLabelEntropy μ' (a ∘ φ) (b ∘ φ) = conditionalLabelEntropy μ a b := by
   have hμ := hφ.map_eq
   subst hμ
-  rw [conditionalLabelEntropy_eq_of_ae_eq (hb.comp hφ.measurable).aemeasurable
-      (condDistrib_map hb.aemeasurable ha.aemeasurable hφ.aemeasurable),
-    conditionalLabelEntropy_def, lintegral_map _ hφ.measurable]
+  rw [conditionalLabelEntropy_eq_of_ae_eq (hb.comp_measurable hφ.measurable)
+      (condDistrib_map hb ha hφ.aemeasurable),
+    conditionalLabelEntropy_def, lintegral_map' _ hφ.aemeasurable]
   · rfl
-  · simpa only [Kernel.comap_apply, Function.comp_def] using measurable_atomInformation.comp
-      (((condDistrib a b (μ'.map φ)).comap b hb).measurable_apply_singleton ha)
+  · simpa only [Kernel.comap_apply, Function.comp_def] using (measurable_atomInformation.comp
+      (((condDistrib a b (μ'.map φ)).comap Prod.fst measurable_fst).measurable_apply_singleton
+        measurable_snd)).comp_aemeasurable (hb.prodMk ha)
 
 /-- **The inverse formula.** For a measure-preserving measurable equivalence `s` of `(X, μ)`, the
 conditional entropy of the translated label `a ∘ s⁻¹` given `a` equals that of `a` given
 `a ∘ s`. -/
 theorem conditionalLabelEntropy_comp_symm (s : X ≃ᵐ X) (hs : MeasurePreserving s μ μ)
-    {a : X → Y} (ha : Measurable a) :
+    {a : X → Y} (ha : AEMeasurable a μ) :
     conditionalLabelEntropy μ (a ∘ s.symm) a = conditionalLabelEntropy μ a (a ∘ s) := by
-  rw [← conditionalLabelEntropy_comp_of_measurePreserving hs (ha.comp s.symm.measurable) ha]
+  rw [← conditionalLabelEntropy_comp_of_measurePreserving hs
+    (ha.comp_quasiMeasurePreserving (hs.symm s).quasiMeasurePreserving) ha]
   congr 1
   ext x
   simp
