@@ -113,28 +113,37 @@ variable (R G M) in
 noncomputable def smulRingHom (n : ℕ) :
     R →+* AddMonoid.End (continuousCohomology n (ofDiscreteModule ℤ G M)) where
   toFun r := AddMonoidHom.ofClass (coeffMap (ofDiscreteModuleSMulMap G M r) n).hom
+  -- Each field reduces to a statement about a morphism of `TopModuleCat`, then closes pointwise
+  -- with `AddMonoidHom.ext` and the matching evaluation lemma (`id_apply`, `comp_apply`,
+  -- `hom_zero_apply`, `hom_add`). These are applied with `exact` rather than `rw`/`simp`: the
+  -- goal mixes the carrier of `continuousCohomology n _` with that of its `toModuleCat`, so a
+  -- rewrite produces a goal that is not type-correct at reducible transparency.
   map_one' := by
     have h : ofDiscreteModuleSMulMap G M (1 : R) = 𝟙 _ :=
       TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ one_smul R (m : M))
     rw [h, coeffMap_id]
-    rfl
+    exact AddMonoidHom.ext fun x ↦ ConcreteCategory.id_apply x
   map_mul' r s := by
     have h : ofDiscreteModuleSMulMap G M (r * s) =
         ofDiscreteModuleSMulMap G M s ≫ ofDiscreteModuleSMulMap G M r :=
       TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ mul_smul r s (m : M))
     rw [h, coeffMap_comp]
-    rfl
+    exact AddMonoidHom.ext fun x ↦ ConcreteCategory.comp_apply
+      (coeffMap (ofDiscreteModuleSMulMap G M s) n) (coeffMap (ofDiscreteModuleSMulMap G M r) n) x
   map_zero' := by
     have h : ofDiscreteModuleSMulMap G M (0 : R) = 0 :=
       TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ zero_smul R (m : M))
     rw [h, ← continuousCohomologyFunctor_map, Functor.map_zero]
-    rfl
+    exact AddMonoidHom.ext fun x ↦ TopModuleCat.hom_zero_apply (m := x)
   map_add' r s := by
     have h : ofDiscreteModuleSMulMap G M (r + s) =
         ofDiscreteModuleSMulMap G M r + ofDiscreteModuleSMulMap G M s :=
       TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ add_smul r s (m : M))
     rw [h, ← continuousCohomologyFunctor_map, Functor.map_add]
-    rfl
+    exact AddMonoidHom.ext fun x ↦ (DFunLike.congr_fun (TopModuleCat.hom_add
+      (φ₁ := (continuousCohomologyFunctor ℤ G n).map (ofDiscreteModuleSMulMap G M r))
+      (φ₂ := (continuousCohomologyFunctor ℤ G n).map (ofDiscreteModuleSMulMap G M s))) x).trans
+      (add_apply _ _ x)
 
 /-- **`Hⁿ(G, M)` is an `R`-module** when the discrete coefficient module `M` is one and the action
 of `G` commutes with the scalars: `r` acts by the coefficient map of `r • ·`. -/
