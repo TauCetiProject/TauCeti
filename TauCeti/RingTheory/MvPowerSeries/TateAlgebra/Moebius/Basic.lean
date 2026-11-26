@@ -202,6 +202,36 @@ theorem moebius_def (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
     moebius i g = moebiusNum i g * Ring.inverse (moebiusDenom i g) :=
   (rfl)
 
+/-- The affine series `x Xᵢ + y` as a sum of two monomials. -/
+private theorem coe_smul_X_add_algebraMap (i : Fin k) (x y : R) :
+    ((x • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ + algebraMap R _ y :
+        IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ)) : _root_.MvPowerSeries (Fin k) R) =
+      monomial (Finsupp.single i 1) x + monomial 0 y := by
+  rw [Subring.coe_add, coe_smul_isRestrictedSubring, coe_algebraMap_isRestrictedSubring,
+    ← monomial_zero_eq_C_apply]
+  congr 1
+  dsimp only
+  rw [X_def, ← map_smul, smul_eq_mul, mul_one]
+
+/-- The numerator `a Xᵢ + b` as a sum of two monomials. -/
+theorem coe_moebiusNum (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
+    (moebiusNum i g : _root_.MvPowerSeries (Fin k) R) =
+      monomial (Finsupp.single i 1) (g 0 0) + monomial 0 (g 0 1) := by
+  rw [moebiusNum_def, coe_smul_X_add_algebraMap]
+
+/-- The denominator `c Xᵢ + d` as a sum of two monomials. -/
+theorem coe_moebiusDenom (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
+    (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R) =
+      monomial (Finsupp.single i 1) (g 1 0) + monomial 0 (g 1 1) := by
+  rw [moebiusDenom_def, coe_smul_X_add_algebraMap]
+
+/-- The constant term of the denominator `c Xᵢ + d` is `d`. -/
+@[simp]
+theorem constantCoeff_moebiusDenom (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
+    constantCoeff (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R) = g 1 1 := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coe_moebiusDenom, map_add]
+  simp [coeff_monomial, (Finsupp.single_ne_zero.mpr one_ne_zero).symm]
+
 @[simp]
 theorem moebiusNum_one (i : Fin k) :
     moebiusNum i (1 : Matrix (Fin 2) (Fin 2) R) =
