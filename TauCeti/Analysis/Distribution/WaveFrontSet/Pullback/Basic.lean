@@ -67,8 +67,16 @@ opposite wave front covectors over a common point is defined (Hörmander I, Theo
   functions, built as `TestFunction.tensorBump`.
 * `Distribution.pullbackInl_ofFun`: for a continuous function satisfying the hypothesis it is the
   restriction to `E × {0}`.
+* `TauCeti.pullbackInlCone Γ`: the cone `ιᵀ Γ = {(x, ξ) | ∃ η, ((x, 0), (ξ, η)) ∈ Γ}`, monotone in
+  `Γ` (`TauCeti.pullbackInlCone_mono`).
 * `Distribution.isMicrolocallySmoothAt_pullbackInl`, `Distribution.waveFrontSet_pullbackInl_subset`:
-  the wave front set of the pullback lies in the image of that of `T` under `ιᵀ`.
+  the wave front set of the pullback lies in the image `ιᵀ WF(T)` of that of `T` under `ιᵀ`.
+* `Distribution.waveFrontSet_pullbackInl_subset_pullbackInlCone`: so it lies in `ιᵀ Γ` when the
+  wave front set of `T` lies in `Γ`.
+* `Distribution.localFourier_pullbackInl_eq_tsum`: the localized Fourier transform of the pullback
+  as a lattice series of localized Fourier transforms of `T`, for a cutoff `χ` equal to one near
+  the support of the cutoff of the pullback, as supplied by
+  `TestFunction.exists_cutoff_eq_one_prod_closedBall`.
 * `Distribution.pullbackInl_add`, `Distribution.pullbackInl_smul`,
   `Distribution.pullbackInl_smul_of_ne_zero`, `Distribution.pullbackInl_zero`,
   `Distribution.pullbackInl_neg`, `Distribution.pullbackInl_sub`: linearity in `T`.
@@ -175,7 +183,59 @@ theorem tensorBump_apply [MeasurableSpace D] [BorelSpace D] (ψ : 𝓓(U, ℝ))
     tensorBump ψ σ hW p = ψ p.fst * σ.normed volume p.snd :=
   (rfl)
 
+variable [FiniteDimensional ℝ E] in
+/-- Around `K × {0}`, for a compact set `K` with `K × {0} ⊆ G ∩ W`, there is a cutoff `χ` supported
+in `G`, equal to one on `K × closedBall 0 δ` for some `δ > 0`. -/
+theorem exists_cutoff_eq_one_prod_closedBall {K : Set E} (hK : IsCompact K)
+    {G : Set (WithLp 2 (E × D))} (hG : IsOpen G) (hKG : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G ∩ W) :
+    ∃ δ > 0, ∃ χ : 𝓓(W, ℂ), (∀ x ∈ K, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1) ∧
+      tsupport χ ⊆ G := by
+  obtain ⟨δ, hδ, htube⟩ := hK.exists_pos_forall_toLp_mem (hG.inter W.isOpen) hKG
+  -- A real cutoff equal to one near `K × closedBall 0 (δ / 2)`, supported in `G ∩ W`.
+  set B : Set (WithLp 2 (E × D)) := toLp 2 '' (K ×ˢ closedBall (0 : D) (δ / 2))
+  have hB : IsCompact B := (hK.prod (isCompact_closedBall _ _)).image (prod_continuous_toLp 2 E D)
+  have hBG : B ⊆ G ∩ W := by
+    rintro _ ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩
+    refine htube x hx x y (by simpa using hδ) ?_
+    rw [mem_closedBall, dist_zero_right] at hy
+    linarith
+  obtain ⟨χ, -, hχ1, hχG⟩ := exists_cutoff_tsupport_subset (Ω := W) (n := ⊤) hB
+    (hG.inter W.isOpen) hBG inter_subset_right
+  refine ⟨δ / 2, half_pos hδ, postcompCLM (𝕜 := ℝ) ofRealCLM χ, fun x hx y hy ↦ ?_, ?_⟩
+  · have h1 : χ (toLp 2 (x, y)) = 1 :=
+      hχ1.self_of_nhdsSet _ ⟨(x, y), ⟨hx, by simpa using hy⟩, rfl⟩
+    simp [h1]
+  · rw [postcompCLM_apply]
+    exact (tsupport_comp_subset (map_zero ofRealCLM) χ).trans (hχG.trans inter_subset_left)
+
 end TestFunction
+
+namespace TauCeti
+
+section Cone
+
+variable {E D : Type*} [Zero D]
+
+/-- The cone `ιᵀ Γ = {(x, ξ) | ∃ η, ((x, 0), (ξ, η)) ∈ Γ}`: the part of `Γ` over `E × {0}`, moved
+by the transpose `(ξ, η) ↦ ξ` of the inclusion `ι : x ↦ (x, 0)`. The wave front set of the
+pullback along `ι` of a distribution with wave front set in `Γ` lies in it. -/
+def pullbackInlCone (Γ : Set (WithLp 2 (E × D) × WithLp 2 (E × D))) : Set (E × E) :=
+  {p | ∃ η : D, (toLp 2 (p.1, (0 : D)), toLp 2 (p.2, η)) ∈ Γ}
+
+@[simp]
+theorem mem_pullbackInlCone {Γ : Set (WithLp 2 (E × D) × WithLp 2 (E × D))} {p : E × E} :
+    p ∈ pullbackInlCone Γ ↔ ∃ η : D, (toLp 2 (p.1, (0 : D)), toLp 2 (p.2, η)) ∈ Γ :=
+  Iff.rfl
+
+/-- The cone `ιᵀ Γ` is monotone in `Γ`. -/
+@[gcongr]
+theorem pullbackInlCone_mono {Γ Γ' : Set (WithLp 2 (E × D) × WithLp 2 (E × D))} (h : Γ ⊆ Γ') :
+    pullbackInlCone Γ ⊆ pullbackInlCone Γ' :=
+  fun _ ⟨η, hη⟩ ↦ ⟨η, h hη⟩
+
+end Cone
+
+end TauCeti
 
 namespace Distribution
 
@@ -197,30 +257,6 @@ private theorem exists_pos_forall_norm_fst_lt_imp_mem {Γ : Set (WithLp 2 (E × 
       (fun t ht q hq ↦ by simpa using hcone t ht _ hq) hD
   refine ⟨c, hc, fun ζ hζ ↦ ?_⟩
   simpa using hcΓ (a := ofLp ζ) (by simpa using hζ)
-
-/-- Around `K × {0}`, for a compact set `K` with `K × {0} ⊆ G ∩ W`, there is a cutoff `χ` supported
-in `G`, equal to one on `K × closedBall 0 δ` for some `δ > 0`. -/
-private theorem exists_cutoff {K : Set E} (hK : IsCompact K) {G : Set (WithLp 2 (E × D))}
-    (hG : IsOpen G) (hKG : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G ∩ W) :
-    ∃ δ > 0, ∃ χ : 𝓓(W, ℂ), (∀ x ∈ K, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1) ∧
-      tsupport χ ⊆ G := by
-  obtain ⟨δ, hδ, htube⟩ := hK.exists_pos_forall_toLp_mem (hG.inter W.isOpen) hKG
-  -- A real cutoff equal to one near `K × closedBall 0 (δ / 2)`, supported in `G ∩ W`.
-  set B : Set (WithLp 2 (E × D)) := toLp 2 '' (K ×ˢ closedBall (0 : D) (δ / 2))
-  have hB : IsCompact B := (hK.prod (isCompact_closedBall _ _)).image (prod_continuous_toLp 2 E D)
-  have hBG : B ⊆ G ∩ W := by
-    rintro _ ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩
-    refine htube x hx x y (by simpa using hδ) ?_
-    rw [mem_closedBall, dist_zero_right] at hy
-    linarith
-  obtain ⟨χ, -, hχ1, hχG⟩ := exists_cutoff_tsupport_subset (Ω := W) (n := ⊤) hB
-    (hG.inter W.isOpen) hBG inter_subset_right
-  refine ⟨δ / 2, half_pos hδ, postcompCLM (𝕜 := ℝ) ofRealCLM χ, fun x hx y hy ↦ ?_, ?_⟩
-  · have h1 : χ (toLp 2 (x, y)) = 1 :=
-      hχ1.self_of_nhdsSet _ ⟨(x, y), ⟨hx, by simpa using hy⟩, rfl⟩
-    simp [h1]
-  · rw [postcompCLM_apply]
-    exact (tsupport_comp_subset (map_zero ofRealCLM) χ).trans (hχG.trans inter_subset_left)
 
 /-! ### The limit of `T (ψ ⊗ ρ)` as `ρ` concentrates at `0` -/
 
@@ -354,7 +390,8 @@ private theorem exists_cutoff_decay (T : 𝓓'(W, ℂ)) {K : Set E} (hK : IsComp
         exact isMicrolocallySmoothAt_of_fst_eq_zero T (hKW x hx) (h x hx) hζ0 hζ)
   obtain ⟨c, hc, hcΓ⟩ := exists_pos_forall_norm_fst_lt_imp_mem hΓ hcone fun b hb ↦
     hVΓ _ (by simp) fun h0 ↦ hb (by simpa using congrArg WithLp.snd h0)
-  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff hK hG fun x hx ↦ ⟨hKG ⟨x, hx, rfl⟩, hKW x hx⟩
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ :=
+    exists_cutoff_eq_one_prod_closedBall hK hG fun x hx ↦ ⟨hKG ⟨x, hx, rfl⟩, hKW x hx⟩
   exact ⟨δ, hδ, χ, hχ1, c, hc, fun N ↦ (hdecay χ (hχG.trans subset_union_left) N).imp
     fun _ hC ζ hζ ↦ hC ζ (hcΓ ζ hζ)⟩
 
@@ -765,9 +802,13 @@ private theorem complexPairing_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpa
   simp only [hF, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
-/-- The localized Fourier transform of the pullback with cutoff `φ` as a lattice series: the
-pullback evaluated at the modulated cutoff `φ e_ξ`, whose Fourier transform is `𝓕 φ (· + ξ)`. -/
-private theorem localFourier_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
+/-- **The localized Fourier transform of the pullback as a lattice series.** Let `χ` be equal to
+one on `tsupport φ × closedBall 0 δ`, let the translates of `tsupport χ` by the lattice `L` meet it
+only for the translation `0`, and let the localized Fourier transform of `T` with cutoff `χ` decay
+rapidly on the cone `‖ζ.fst‖ < c ‖ζ.snd‖`. Then
+
+`ι^* T (φ e_ξ) = ∑ m ∈ L*, (covolume L)⁻¹ 𝓕 φ (ξ + m.fst) T (χ e_(-m))`. -/
+theorem localFourier_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
     [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
@@ -893,8 +934,9 @@ theorem isMicrolocallySmoothAt_pullbackInl (T : 𝓓'(W, ℂ))
     fun x hx ↦ by
       rw [mem_singleton_iff.1 hx]
       exact ⟨hp₀G (mem_singleton _), hU hx₀⟩
-  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff (isCompact_closedBall x₀ (r / 2)) hG fun x hx ↦
-    htube x₀ rfl x 0 ((mem_closedBall.1 hx).trans_lt (half_lt_self hr)) (by simpa using hr)
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ :=
+    exists_cutoff_eq_one_prod_closedBall (isCompact_closedBall x₀ (r / 2)) hG fun x hx ↦
+      htube x₀ rfl x 0 ((mem_closedBall.1 hx).trans_lt (half_lt_self hr)) (by simpa using hr)
   obtain ⟨φ, -, hφ1, hφ⟩ := exists_cutoff_tsupport_subset (Ω := U) (n := ⊤)
     (isCompact_singleton (x := x₀)) (isOpen_ball.inter U.isOpen)
     (singleton_subset_iff.2 ⟨mem_ball_self (half_pos hr), hx₀⟩) inter_subset_right
@@ -916,8 +958,7 @@ theorem waveFrontSet_pullbackInl_subset (T : 𝓓'(W, ℂ))
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) :
-    (T.pullbackInl hU h).waveFrontSet ⊆
-      {p : E × E | ∃ η : D, (toLp 2 (p.1, (0 : D)), toLp 2 (p.2, η)) ∈ T.waveFrontSet} := by
+    (T.pullbackInl hU h).waveFrontSet ⊆ TauCeti.pullbackInlCone T.waveFrontSet := by
   rintro ⟨x, ξ⟩ hxξ
   obtain ⟨hx, hξ, hns⟩ := mem_waveFrontSet_iff.1 hxξ
   by_contra hmem
@@ -925,5 +966,15 @@ theorem waveFrontSet_pullbackInl_subset (T : 𝓓'(W, ℂ))
   by_contra hns'
   refine hmem ⟨η, mem_waveFrontSet_iff.2 ⟨hU hx, fun h0 ↦ hξ ?_, hns'⟩⟩
   simpa using congrArg WithLp.fst h0
+
+/-- The wave front set of the pullback to `E × {0}` of a distribution with wave front set in `Γ`
+lies in the cone `ιᵀ Γ`. -/
+theorem waveFrontSet_pullbackInl_subset_pullbackInlCone
+    {Γ : Set (WithLp 2 (E × D) × WithLp 2 (E × D))}
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W) {T : 𝓓'(W, ℂ)}
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
+    (hT : T.waveFrontSet ⊆ Γ) : (T.pullbackInl hU h).waveFrontSet ⊆ TauCeti.pullbackInlCone Γ :=
+  (waveFrontSet_pullbackInl_subset T hU h).trans (TauCeti.pullbackInlCone_mono hT)
 
 end Distribution
