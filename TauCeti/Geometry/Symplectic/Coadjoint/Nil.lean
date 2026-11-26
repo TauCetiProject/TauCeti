@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Heisenberg.Orbit
 public import TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
 public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
+public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Symplectic.StandardCompatible
 
 /-!
 # Adjoint and coadjoint orbits of the Lie group Nil
@@ -30,15 +32,20 @@ Heisenberg Lie algebra of strictly upper triangular `3 × 3` matrices
 `p` (`TauCeti.Nil.lieAlgebraEquiv_adjointRepresentation`). The orbit computations of
 `TauCeti.Algebra.Lie.Heisenberg.Orbit` then transfer to the Lie group `Nil`.
 
-Write `Z = ∂_z` for the central generator and `r = ν Z` for a functional `ν ∈ 𝔫*`; `r` is constant
-on coadjoint orbits.
+Write `X = ∂_x`, `Y = ∂_y`, `Z = ∂_z` for the coordinate generators and
+`(p, q, r) = (ν X, ν Y, ν Z)` for a functional `ν ∈ 𝔫*`. The coadjoint action of `g = (x, y, z)` is
+`Ad*_g (p, q, r) = (p + r y, q - r x, r)`
+(`TauCeti.Nil.coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX`,
+`TauCeti.Nil.coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergY`); in particular `r` is
+constant on coadjoint orbits.
 
 * The adjoint orbit of `(a, b, c)` is the affine line `{(a, b, c') | c' ∈ ℝ}` when
   `(a, b) ≠ (0, 0)` (`TauCeti.Nil.range_adjointRepresentation_apply_of_ne_zero`) and a point
   otherwise. The nontrivial adjoint orbits are odd-dimensional.
 * The coadjoint orbit of `ν` is the plane `{μ | μ Z = r}` when `r ≠ 0`
   (`TauCeti.Nil.range_coadjointRepresentation_apply_of_ne_zero`) and the point `{ν}` when `r = 0`
-  (`TauCeti.Nil.range_coadjointRepresentation_apply_of_eq_zero`). For `r ≠ 0` the coadjoint
+  (`TauCeti.Nil.range_coadjointRepresentation_apply_of_eq_zero`), fixed by all of `Nil`
+  (`TauCeti.Nil.stabilizer_coadjointRepresentation_of_eq_zero`). For `r ≠ 0` the coadjoint
   stabilizer is the centre of `Nil` (`TauCeti.Nil.stabilizer_coadjointRepresentation_of_ne_zero`),
   and the orbit manifold `Nil ⧸ Nil_ν` is two-dimensional
   (`TauCeti.Nil.finrank_quotientModelSpace_stabilizer_coadjointRepresentation_of_ne_zero`).
@@ -49,9 +56,26 @@ on coadjoint orbits.
   (`TauCeti.Nil.eval₂_coadjointOrbitForm_fundamentalVectorField`). On the plane `r = r₀ ≠ 0` the
   KKS form is therefore `dp ∧ dq / r₀` in the coordinates `p = μ X`, `q = μ Y`.
 
+**The orbit as a symplectic plane.** For `r = ν Z ≠ 0` the coordinates `(p, q) = (μ X, μ Y)` of
+the orbit map are a diffeomorphism `Nil ⧸ Nil_ν ≃ ℝ × ℝ`
+(`TauCeti.Nil.coadjointOrbitPlaneDiffeomorph`), sending the coset of `g = (x, y, z)` to
+`(ν X + r y, ν Y - r x)` (`TauCeti.Nil.coadjointOrbitPlaneDiffeomorph_mk`), with inverse
+`(p, q) ↦ [((ν Y - q) / r, (p - ν X) / r, 0)]`. So the coset space, with its homogeneous smooth
+structure, is identified with the plane `r = r₀` of `𝔫*`, and not only as a set. In these
+coordinates the KKS form is the constant form `dp ∧ dq / r₀`: the diffeomorphism pulls
+`r⁻¹ (dp ∧ dq)` back to the KKS form
+(`TauCeti.Nil.mpullback_coadjointOrbitPlaneDiffeomorph_stdSymplecticForm`), and its inverse pulls
+the KKS form back to `r⁻¹ (dp ∧ dq)`
+(`TauCeti.Nil.mpullback_coadjointOrbitPlaneDiffeomorph_symm_coadjointOrbitForm`). Here `dp ∧ dq` is
+the standard symplectic form `TauCeti.stdSymplecticForm` of `ℝ × ℝ`, as a constant two-form. Since
+the generators span every tangent space of the orbit, both forms are determined by their values on
+generators, which the formula `(t r, -s r)` for the generators compares.
+
 ## Main definitions
 
 * `TauCeti.Nil.lieAlgebraEquiv`: the Lie algebra of `Nil` is the Heisenberg Lie algebra.
+* `TauCeti.Nil.coadjointOrbitPlaneDiffeomorph`: for `ν Z ≠ 0`, the coordinates `(μ X, μ Y)` as a
+  diffeomorphism of the coadjoint orbit `Nil ⧸ Nil_ν` onto the plane.
 
 ## Main results
 
@@ -62,6 +86,9 @@ on coadjoint orbits.
 * `TauCeti.Nil.range_coadjointRepresentation_apply_of_ne_zero`,
   `TauCeti.Nil.range_coadjointRepresentation_apply_of_eq_zero`: the coadjoint orbits.
 * `TauCeti.Nil.eval₂_coadjointOrbitForm_fundamentalVectorField`: the KKS form on generators.
+* `TauCeti.Nil.mpullback_coadjointOrbitPlaneDiffeomorph_stdSymplecticForm`,
+  `TauCeti.Nil.mpullback_coadjointOrbitPlaneDiffeomorph_symm_coadjointOrbitForm`: in the coordinates
+  `(p, q)` the KKS form of the orbit through `ν` with `ν Z = r₀ ≠ 0` is `dp ∧ dq / r₀`.
 
 ## References
 
@@ -210,6 +237,24 @@ theorem tangentSpaceCastModel_lieAlgebraEquiv_symm (A : heisenberg ℝ) :
         (A : Matrix (Fin 3) (Fin 3) ℝ) 0 2) :=
   ContinuousLinearEquiv.apply_symm_apply _ _
 
+@[simp]
+theorem lieAlgebraEquiv_apply_zero_one (v : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    (lieAlgebraEquiv v : Matrix (Fin 3) (Fin 3) ℝ) 0 1 =
+      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1 := by
+  simp [lieAlgebraEquiv_apply]
+
+@[simp]
+theorem lieAlgebraEquiv_apply_one_two (v : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    (lieAlgebraEquiv v : Matrix (Fin 3) (Fin 3) ℝ) 1 2 =
+      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.1 := by
+  simp [lieAlgebraEquiv_apply]
+
+@[simp]
+theorem lieAlgebraEquiv_apply_zero_two (v : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    (lieAlgebraEquiv v : Matrix (Fin 3) (Fin 3) ℝ) 0 2 =
+      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.2 := by
+  simp [lieAlgebraEquiv_apply]
+
 /-- **Every bracket in the Lie algebra of Nil is central**: `⁅(a, b, c), (a', b', c')⁆` is
 `a b' - b a'` times the central generator `Z = lieAlgebraEquiv.symm (heisenbergZ ℝ)`. -/
 theorem lie_eq_smul_lieAlgebraEquiv_symm_heisenbergZ (ξ ξ' : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
@@ -327,6 +372,28 @@ theorem coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ (p : Nil)
     rw [← comp_lieAlgebraEquiv_symm_comp ν, coadjointRepresentation_comp_lieAlgebraEquiv]
   simp
 
+/-- The first coordinate `p = ν X` of a functional transforms under the coadjoint action of Nil as
+`p ↦ p + r y`, where `r = ν Z`. -/
+theorem coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX (p : Nil)
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)) :
+    Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil p ν (lieAlgebraEquiv.symm (heisenbergX ℝ)) =
+      ν (lieAlgebraEquiv.symm (heisenbergX ℝ)) +
+        p.y * ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) := by
+  conv_lhs =>
+    rw [← comp_lieAlgebraEquiv_symm_comp ν, coadjointRepresentation_comp_lieAlgebraEquiv]
+  simp [HeisenbergGroup.coadjointRepresentation_apply_heisenbergX]
+
+/-- The second coordinate `q = ν Y` of a functional transforms under the coadjoint action of Nil
+as `q ↦ q - r x`, where `r = ν Z`. -/
+theorem coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergY (p : Nil)
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)) :
+    Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil p ν (lieAlgebraEquiv.symm (heisenbergY ℝ)) =
+      ν (lieAlgebraEquiv.symm (heisenbergY ℝ)) -
+        p.x * ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) := by
+  conv_lhs =>
+    rw [← comp_lieAlgebraEquiv_symm_comp ν, coadjointRepresentation_comp_lieAlgebraEquiv]
+  simp [HeisenbergGroup.coadjointRepresentation_apply_heisenbergY]
+
 /-- **The coadjoint orbit of Nil through a functional `ν` with `ν Z ≠ 0` is the plane
 `{μ | μ Z = ν Z}`**, where `Z = ∂_z` is the central generator. -/
 theorem range_coadjointRepresentation_apply_of_ne_zero
@@ -370,6 +437,15 @@ theorem stabilizer_coadjointRepresentation_of_ne_zero
       (mem_nonZeroDivisors_of_ne_zero (by simpa using hν)), HeisenbergGroup.mem_zAxis_iff]
   simp
 
+/-- **A functional vanishing on the central generator is fixed by all of Nil.** -/
+theorem stabilizer_coadjointRepresentation_of_eq_zero
+    {ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)}
+    (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) = 0) :
+    (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν = ⊤ := by
+  refine eq_top_iff.mpr fun g _ ↦ Representation.mem_stabilizer.mpr ?_
+  have h := range_coadjointRepresentation_apply_of_eq_zero hν
+  exact Set.mem_singleton_iff.mp (h ▸ Set.mem_range_self g)
+
 /-- **The coadjoint orbits of Nil through functionals with `ν Z ≠ 0` are two-dimensional**: the
 model space of the orbit manifold `Nil ⧸ Nil_ν` has dimension `2`. -/
 theorem finrank_quotientModelSpace_stabilizer_coadjointRepresentation_of_ne_zero
@@ -403,7 +479,8 @@ theorem orbitMap_coadjointRepresentation_apply_lie (ν : Dual ℝ (GroupLieAlgeb
 /-- **The Kirillov–Kostant–Souriau form of a coadjoint orbit of Nil.** At every point of the
 orbit `Nil ⧸ Nil_ν`, the KKS form pairs the generators of `ξ = (s, t, u)` and `ξ' = (s', t', u')`
 to `r (s t' - t s')`, where `r = ν Z` is the constant value of the orbit on the central generator.
-So on the plane `r = r₀ ≠ 0` it is `dp ∧ dq / r₀` in the coordinates `p = μ X`, `q = μ Y`. -/
+So on the plane `r = r₀ ≠ 0` it is `dp ∧ dq / r₀` in the coordinates `p = μ X`, `q = μ Y`
+(`TauCeti.Nil.mpullback_coadjointOrbitPlaneDiffeomorph_stdSymplecticForm`). -/
 theorem eval₂_coadjointOrbitForm_fundamentalVectorField
     (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil))
     (x : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)
@@ -441,5 +518,136 @@ theorem mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).1) := by
   rw [Dual.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
     orbitMap_coadjointRepresentation_apply_lie]
+
+/-! ### The coadjoint orbit as a symplectic plane -/
+
+variable {ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)}
+
+/-- When `ν Z ≠ 0`, the coset of `g` in the coadjoint orbit `Nil ⧸ Nil_ν` is the coset of the
+point `(g.x, g.y, 0)`, since the stabilizer is the centre, the `z`-axis. -/
+private theorem coe_toProd_symm_x_y_zero (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) ≠ 0)
+    (g : Nil) :
+    (toProd.symm (g.x, g.y, 0) : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν) =
+      (g : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν) := by
+  rw [QuotientGroup.eq, stabilizer_coadjointRepresentation_of_ne_zero hν, mem_center_iff]
+  simp
+
+/-- **The coadjoint orbit of Nil is a plane.** For a functional `ν` with `r = ν Z ≠ 0`, the
+coordinates `(p, q) = (μ X, μ Y)` of the orbit map `[g] ↦ μ = Ad*_g ν` are a diffeomorphism of the
+coadjoint orbit `Nil ⧸ Nil_ν`, with its homogeneous smooth structure, onto `ℝ × ℝ`. Its inverse
+sends `(p, q)` to the coset of `((ν Y - q) / r, (p - ν X) / r, 0)`. -/
+def coadjointOrbitPlaneDiffeomorph (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) ≠ 0) :
+    (Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν) ≃ₘ⟮𝓘(ℝ,
+      Subgroup.QuotientModelSpace 𝓘(ℝ, R3)
+        ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)), 𝓘(ℝ, ℝ × ℝ)⟯ ℝ × ℝ where
+  toFun x := ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν x
+      (lieAlgebraEquiv.symm (heisenbergX ℝ)),
+    (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν x
+      (lieAlgebraEquiv.symm (heisenbergY ℝ)))
+  invFun c := (toProd.symm ((ν (lieAlgebraEquiv.symm (heisenbergY ℝ)) - c.2) /
+      ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)),
+    (c.1 - ν (lieAlgebraEquiv.symm (heisenbergX ℝ))) /
+      ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)), 0) : Nil)
+  left_inv x := by
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+    simp only [Representation.orbitMap_mk,
+      coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX,
+      coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergY]
+    rw [← coe_toProd_symm_x_y_zero hν g]
+    congr 2
+    simp [hν]
+  right_inv c := by
+    simp only [Representation.orbitMap_mk,
+      coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX,
+      coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergY, x_toProd_symm,
+      y_toProd_symm]
+    ext <;> field_simp <;> ring
+  contMDiff_toFun := (ν.contMDiff_orbitMap_coadjointRepresentation_apply _).prodMk_space
+    (ν.contMDiff_orbitMap_coadjointRepresentation_apply _)
+  contMDiff_invFun := ν.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff.comp
+    (contMDiff_toProd_symm.comp (ContDiff.contMDiff (f := fun c : ℝ × ℝ ↦
+      ((ν (lieAlgebraEquiv.symm (heisenbergY ℝ)) - c.2) / ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)),
+        (c.1 - ν (lieAlgebraEquiv.symm (heisenbergX ℝ))) /
+          ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)), (0 : ℝ))) (by fun_prop)))
+
+/-- The diffeomorphism of the coadjoint orbit onto the plane reads the coordinates
+`(μ X, μ Y)` of the orbit map. -/
+@[simp]
+theorem coadjointOrbitPlaneDiffeomorph_apply (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) ≠ 0)
+    (x : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν) :
+    coadjointOrbitPlaneDiffeomorph hν x =
+      ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν x
+          (lieAlgebraEquiv.symm (heisenbergX ℝ)),
+        (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν x
+          (lieAlgebraEquiv.symm (heisenbergY ℝ))) :=
+  (rfl)
+
+/-- The inverse of the diffeomorphism of the coadjoint orbit onto the plane sends `(p, q)` to the
+coset of `((ν Y - q) / r, (p - ν X) / r, 0)`, where `r = ν Z`. -/
+@[simp]
+theorem coadjointOrbitPlaneDiffeomorph_symm_apply
+    (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) ≠ 0) (c : ℝ × ℝ) :
+    (coadjointOrbitPlaneDiffeomorph hν).symm c =
+      ((toProd.symm ((ν (lieAlgebraEquiv.symm (heisenbergY ℝ)) - c.2) /
+          ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)),
+        (c.1 - ν (lieAlgebraEquiv.symm (heisenbergX ℝ))) /
+          ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)), 0) : Nil) :
+        Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν) :=
+  (rfl)
+
+/-- The diffeomorphism of the coadjoint orbit onto the plane sends the coset of `g = (x, y, z)` to
+`(ν X + r y, ν Y - r x)`, where `r = ν Z`. -/
+theorem coadjointOrbitPlaneDiffeomorph_mk (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) ≠ 0)
+    (g : Nil) :
+    coadjointOrbitPlaneDiffeomorph hν g =
+      (ν (lieAlgebraEquiv.symm (heisenbergX ℝ)) + g.y * ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)),
+        ν (lieAlgebraEquiv.symm (heisenbergY ℝ)) -
+          g.x * ν (lieAlgebraEquiv.symm (heisenbergZ ℝ))) := by
+  simp only [coadjointOrbitPlaneDiffeomorph_apply, Representation.orbitMap_mk,
+    coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX,
+    coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergY]
+
+/-- **The KKS form of a coadjoint orbit of Nil is `dp ∧ dq / r`.** For a functional `ν` with
+`r = ν Z ≠ 0`, the diffeomorphism `[g] ↦ (μ X, μ Y)` of the coadjoint orbit `Nil ⧸ Nil_ν` onto the
+plane pulls the constant form `r⁻¹ (dp ∧ dq)` back to the Kirillov–Kostant–Souriau form, where
+`dp ∧ dq` is the standard symplectic form of `ℝ × ℝ`. -/
+theorem mpullback_coadjointOrbitPlaneDiffeomorph_stdSymplecticForm
+    (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) ≠ 0) :
+    SmoothForm.mpullback (coadjointOrbitPlaneDiffeomorph hν)
+        (coadjointOrbitPlaneDiffeomorph hν).contMDiff
+        ((ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)))⁻¹ •
+          (stdSymplecticForm (V := ℝ)).constSmooth) =
+      ν.coadjointOrbitForm := by
+  -- Both forms are determined by their values on generators, which span the tangent spaces.
+  refine SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_
+  obtain ⟨ξ, rfl⟩ := Subgroup.surjective_fundamentalVectorField
+    (Lie.isClosed_stabilizer_coadjointRepresentation 𝓘(ℝ, R3) ν) x v
+  obtain ⟨η, rfl⟩ := Subgroup.surjective_fundamentalVectorField
+    (Lie.isClosed_stabilizer_coadjointRepresentation 𝓘(ℝ, R3) ν) x w
+  have hX := (ν.contMDiff_orbitMap_coadjointRepresentation_apply
+    (lieAlgebraEquiv.symm (heisenbergX ℝ))).mdifferentiableAt (x := x) (by simp)
+  have hY := (ν.contMDiff_orbitMap_coadjointRepresentation_apply
+    (lieAlgebraEquiv.symm (heisenbergY ℝ))).mdifferentiableAt (x := x) (by simp)
+  -- In the coordinates `(p, q)` the generator of `(s, t, u)` is `(t r, -s r)`.
+  rw [map_smul, SmoothForm.eval₂_smul, SmoothForm.eval₂_mpullback,
+    SymplecticForm.eval₂_constSmooth_mfderiv_eq, funext (coadjointOrbitPlaneDiffeomorph_apply hν)]
+  simp only [hX.mvfderiv_prodMk_apply hY,
+    mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
+    eval₂_coadjointOrbitForm_fundamentalVectorField, stdSymplecticForm_apply]
+  simp [tangentSpaceCastModel_lieAlgebraEquiv_symm]
+  field_simp
+  ring
+
+/-- **The KKS form of a coadjoint orbit of Nil in the coordinates `(p, q)`.** For a functional `ν`
+with `r = ν Z ≠ 0`, the inverse of the diffeomorphism `[g] ↦ (μ X, μ Y)` pulls the
+Kirillov–Kostant–Souriau form back to the constant form `r⁻¹ (dp ∧ dq)` on the plane. -/
+theorem mpullback_coadjointOrbitPlaneDiffeomorph_symm_coadjointOrbitForm
+    (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) ≠ 0) :
+    SmoothForm.mpullback (coadjointOrbitPlaneDiffeomorph hν).symm
+        (coadjointOrbitPlaneDiffeomorph hν).symm.contMDiff ν.coadjointOrbitForm =
+      (ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)))⁻¹ •
+        (stdSymplecticForm (V := ℝ)).constSmooth :=
+  SmoothForm.mpullback_symm_eq_of_mpullback_eq
+    (mpullback_coadjointOrbitPlaneDiffeomorph_stdSymplecticForm hν)
 
 end TauCeti.Nil

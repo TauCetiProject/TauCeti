@@ -19,7 +19,9 @@ parameter space `X` and finite index type `ι`, there are constants `a, b > 0` s
 The same constants work across all parameters and vectors, including in dimension zero.
 These uniform ellipticity bounds are used for segment-averaged inverse matrices.
 
-For a single matrix, `Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the explicit upper bound
+For a single matrix, `Matrix.toQuadraticForm'_eq_mul_norm_sq` identifies `A.toQuadraticForm' ξ` on
+a one-dimensional index type with `A default default * ‖ξ‖²`, while
+`Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the general explicit upper bound
 `A.toQuadraticForm' ξ ≤ (∑ᵢⱼ |Aᵢⱼ|) ‖ξ‖²`, so a bound on the entries of a coefficient field is an
 upper ellipticity bound (`Matrix.toQuadraticForm'_le_of_forall_abs_le`).
 
@@ -31,6 +33,15 @@ public section
 
 open Set Metric
 open scoped Matrix
+
+/-- Over a unique index type, the quadratic form of a real `1 × 1` matrix is its unique entry times
+`‖ξ‖²`. -/
+theorem Matrix.toQuadraticForm'_eq_mul_norm_sq {ι : Type*} [Unique ι] [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι ℝ) (ξ : EuclideanSpace ℝ ι) :
+    A.toQuadraticForm' ξ = A default default * ‖ξ‖ ^ 2 := by
+  simp only [Matrix.toQuadraticForm'_apply, dotProduct, Matrix.mulVec, Finset.univ_unique,
+    Finset.sum_singleton, EuclideanSpace.real_norm_sq_eq]
+  ring
 
 /-- The quadratic form of a real matrix is bounded above by the sum of the absolute values of its
 entries times `‖ξ‖²`. -/
