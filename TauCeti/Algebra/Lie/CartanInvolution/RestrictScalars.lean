@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
 public import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
 public import TauCeti.Algebra.Lie.Symplectic.Basic
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Radical
 import TauCeti.Algebra.Lie.Orthogonal.Killing
 import TauCeti.Algebra.Lie.Symplectic.Killing

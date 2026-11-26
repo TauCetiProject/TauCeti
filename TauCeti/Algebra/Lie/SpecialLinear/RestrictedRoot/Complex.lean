@@ -221,9 +221,7 @@ theorem mem_restrictedRootSpace_zero_inf_fixedSubalgebra_slComplexRealDiagonal_i
         rw [trace_smul, mem_slComplexReal_iff.mp X.property, smul_zero]
     refine ⟨⟨_, hmem⟩, ⟨hdiag.smul _, fun k ↦ ?_⟩, ?_⟩
     · have hre : ((X : Matrix n n ℂ) k k).re = 0 := by
-        have := congrArg Complex.re (congrFun (congrFun hskew k) k)
-        simp at this
-        linarith
+        simpa [CharZero.eq_neg_self_iff] using congrArg Complex.re (congrFun (congrFun hskew k) k)
       simp [hre]
     · rw [smul_smul]
       simp
