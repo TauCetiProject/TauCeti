@@ -58,6 +58,8 @@ that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_
 * `TauCeti.SmoothForm.IsOfType.apply_eq_of_conjCoeff_eq`,
   `TauCeti.SmoothForm.IsOfType.ext_conjCoeff`: `(0,k)`-forms are determined by their
   coefficients.
+* `TauCeti.SmoothForm.conjCoeffForm`: the alternating map `∑_J a_J d(conj z)_J` with prescribed
+  coefficients, the pointwise value of a `(0,k)`-form.
 * `TauCeti.SmoothForm.exists_isOfType_conjCoeff_eq`: `(0,k)`-forms with prescribed smooth
   coefficients.
 
@@ -328,6 +330,64 @@ theorem IsOfType.ext_conjCoeff {φ ψ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι →
     (h : ∀ J, #J = k → φ.conjCoeff J = ψ.conjCoeff J) : φ = ψ :=
   Subtype.ext <| funext fun z ↦ hφ.apply_eq_of_conjCoeff_eq hψ fun J hJ ↦ congrFun (h J hJ) z
 
+/-- The alternating map `∑_J a_J d(conj z)_J` on `ι → ℂ`, summed over the sets `J` with `k`
+elements, with coefficients `a_J ∈ F`; the entries of `a` at other sets are ignored. It has type
+`(0,k)` (`SmoothForm.isOfType_conjCoeffForm`) and takes the value `a_J` on the coordinate vectors
+indexed by `J` (`SmoothForm.conjCoeffForm_apply_orderEmbOfFin`). -/
+def conjCoeffForm (k : ℕ) (a : Finset ι → F) : (ι → ℂ) [⋀^Fin k]→L[ℝ] F :=
+  ∑ J, if h : #J = k then ((ContinuousLinearMap.lsmul ℝ ℂ).flip (a J)).compContinuousAlternatingMap
+    (ContinuousAlternatingMap.conjCoordForm (J.orderEmbOfFin h)) else 0
+
+/-- The alternating map `∑_J a_J d(conj z)_J` has type `(0,k)`. -/
+theorem isOfType_conjCoeffForm (a : Finset ι → F) :
+    (conjCoeffForm k a).IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 0 k := by
+  refine ContinuousAlternatingMap.IsOfType.sum (zero_add k) fun J _ ↦ ?_
+  by_cases h : #J = k
+  · simp only [h, ↓reduceDIte]
+    exact (ContinuousAlternatingMap.isOfType_conjCoordForm _).compContinuousAlternatingMap
+      fun c x ↦ by simp [smul_smul]
+  · simp only [h, ↓reduceDIte]
+    exact ContinuousAlternatingMap.isOfType_zero_iff.2 (zero_add k)
+
+/-- The alternating map `∑_J a_J d(conj z)_J` takes the value `a_J` on the coordinate vectors
+indexed by a set `J` with `k` elements, in increasing order. -/
+@[simp]
+theorem conjCoeffForm_apply_orderEmbOfFin (a : Finset ι → F) {J : Finset ι} (hJ : #J = k) :
+    conjCoeffForm k a (fun i ↦ Pi.single (J.orderEmbOfFin hJ i) 1) = a J := by
+  classical
+  rw [conjCoeffForm, ContinuousAlternatingMap.sum_apply, Finset.sum_eq_single J]
+  · simp [hJ, ContinuousAlternatingMap.conjCoordForm_apply_single_self
+      (J.orderEmbOfFin hJ).injective]
+  · intro K _ hKJ
+    by_cases hK : #K = k
+    · -- Some element of `J` lies outside `K`, so `d(conj z)_K` vanishes on the coordinate
+      -- vectors indexed by `J`.
+      obtain ⟨x, hxJ, hxK⟩ := Finset.not_subset.1 fun hJK ↦
+        hKJ (Finset.eq_of_subset_of_card_le hJK (hK.trans hJ.symm).le).symm
+      obtain ⟨b, rfl⟩ : x ∈ Set.range (J.orderEmbOfFin hJ) := by
+        rwa [Finset.range_orderEmbOfFin]
+      have h₀ := ContinuousAlternatingMap.conjCoordForm_apply_single_eq_zero
+        (K.orderEmbOfFin hK) (f := J.orderEmbOfFin hJ) (a := b)
+        (by rwa [Finset.range_orderEmbOfFin])
+      simp [hK, h₀]
+    · simp [hK]
+  · simp
+
+/-- Assembling coefficients `u_J` that are `C^n` on a set into `∑_J u_J d(conj z)_J` gives a
+field of alternating maps that is `C^n` there. -/
+theorem contDiffOn_conjCoeffForm {n : WithTop ℕ∞} {u : Finset ι → (ι → ℂ) → F}
+    {s : Set (ι → ℂ)} (hu : ∀ J, #J = k → ContDiffOn ℝ n (u J) s) :
+    ContDiffOn ℝ n (fun z ↦ conjCoeffForm k fun J ↦ u J z) s := by
+  simp only [conjCoeffForm]
+  refine ContDiffOn.sum fun J _ ↦ ?_
+  by_cases h : #J = k
+  · simp only [h, ↓reduceDIte]
+    exact ((ContinuousLinearMap.compContinuousAlternatingMapCLM ℝ (ι → ℂ) ℂ F (Fin k) ∘L
+      (ContinuousLinearMap.lsmul ℝ ℂ).flip).contDiff.comp_contDiffOn (hu J h)).clm_apply
+        contDiffOn_const
+  · simp only [h, ↓reduceDIte]
+    exact contDiffOn_const
+
 /-- **Forms with prescribed coefficients.** Smooth functions `u_J`, indexed by the sets `J` with
 `k` elements, are the coefficients of a smooth form of type `(0,k)` on `ι → ℂ`, namely of
 `∑_J u_J d(conj z)_J`. -/
@@ -335,52 +395,16 @@ theorem exists_isOfType_conjCoeff_eq {u : Finset ι → (ι → ℂ) → F}
     (hu : ∀ J, #J = k → ContDiff ℝ ∞ (u J)) :
     ∃ φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k,
       φ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k ∧ ∀ J, #J = k → φ.conjCoeff J = u J := by
-  classical
-  -- `β J f` is the form `f d(conj z)_J` when `J` has `k` elements, and `0` otherwise.
-  let L : F →L[ℝ] ℂ →L[ℝ] F := (ContinuousLinearMap.lsmul ℝ ℂ).flip
-  let β (J : Finset ι) (f : F) : (ι → ℂ) [⋀^Fin k]→L[ℝ] F :=
-    if h : #J = k then (L f).compContinuousAlternatingMap
-      (ContinuousAlternatingMap.conjCoordForm (J.orderEmbOfFin h)) else 0
-  let Φ : (ι → ℂ) → (ι → ℂ) [⋀^Fin k]→L[ℝ] F := fun z ↦ ∑ J, β J (u J z)
-  have hΦ : ContDiff ℝ ∞ Φ := by
-    refine ContDiff.sum fun J _ ↦ ?_
-    by_cases h : #J = k
-    · simp only [β, h, ↓reduceDIte]
-      exact ((ContinuousLinearMap.compContinuousAlternatingMapCLM ℝ (ι → ℂ) ℂ F (Fin k) ∘L
-        L).contDiff.comp (hu J h)).clm_apply contDiff_const
-    · simp only [β, h, ↓reduceDIte]
-      exact contDiff_const
+  have hΦ : ContDiff ℝ ∞ fun z ↦ conjCoeffForm k fun J ↦ u J z :=
+    contDiffOn_univ.1 (contDiffOn_conjCoeffForm fun J hJ ↦ (hu J hJ).contDiffOn)
   let φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k :=
-    ⟨Φ, (isSmoothForm_modelSpace_iff.mpr hΦ).mem_smoothBundleForms⟩
+    ⟨_, (isSmoothForm_modelSpace_iff.mpr hΦ).mem_smoothBundleForms⟩
   refine ⟨φ, isOfType_iff_forall.2 ⟨zero_add k, fun z ↦ ?_⟩, fun J hJ ↦ funext fun z ↦ ?_⟩
   · rw [toEndomorphism_ofComplexManifold]
-    refine ContinuousAlternatingMap.IsOfType.sum (zero_add k) fun J _ ↦ ?_
-    by_cases h : #J = k
-    · simp only [β, h, ↓reduceDIte]
-      exact (ContinuousAlternatingMap.isOfType_conjCoordForm _).compContinuousAlternatingMap
-        fun c x ↦ by simp [L, smul_smul]
-    · simp only [β, h, ↓reduceDIte]
-      exact ContinuousAlternatingMap.isOfType_zero_iff.2 (zero_add k)
+    exact isOfType_conjCoeffForm _
   · rw [conjCoeff_of_card_eq _ hJ]
-    -- The value of `φ` at `z` is `Φ z`, a form with coefficients in `F` on the model space.
-    change (∑ K, β K (u K z)) (fun a ↦ Pi.single (J.orderEmbOfFin hJ a) 1) = u J z
-    rw [ContinuousAlternatingMap.sum_apply, Finset.sum_eq_single J]
-    · simp [β, hJ, L, ContinuousAlternatingMap.conjCoordForm_apply_single_self
-        (J.orderEmbOfFin hJ).injective]
-    · intro K _ hKJ
-      by_cases hK : #K = k
-      · -- Some element of `J` lies outside `K`, so `d(conj z)_K` vanishes on the coordinate
-        -- vectors indexed by `J`.
-        obtain ⟨x, hxJ, hxK⟩ := Finset.not_subset.1 fun hJK ↦
-          hKJ (Finset.eq_of_subset_of_card_le hJK (hK.trans hJ.symm).le).symm
-        obtain ⟨a, rfl⟩ : x ∈ Set.range (J.orderEmbOfFin hJ) := by
-          rwa [Finset.range_orderEmbOfFin]
-        have h₀ := ContinuousAlternatingMap.conjCoordForm_apply_single_eq_zero
-          (K.orderEmbOfFin hK) (f := J.orderEmbOfFin hJ) (a := a)
-          (by rwa [Finset.range_orderEmbOfFin])
-        simp [β, hK, L, h₀]
-      · simp [β, hK]
-    · simp
+    -- The value of `φ` at `z` is the assembled alternating map, read in the model fibres.
+    exact conjCoeffForm_apply_orderEmbOfFin _ hJ
 
 end Coefficients
 
