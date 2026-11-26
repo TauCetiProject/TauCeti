@@ -23,8 +23,9 @@ frames form the subspace `TauCeti.finiteOrthonormalFrame 𝕜 r N` of `Fin r →
 closed and bounded, hence compact.
 
 Every orthonormal frame is a frame (`TauCeti.finiteOrthonormalFrame.toFullRankFrame`), so its
-vectors are nonzero, and the two vectors of an orthonormal two-frame of `𝕜³` have nonzero cross
-product (`TauCeti.finiteOrthonormalFrame.crossProduct_ne_zero`). In the
+vectors are nonzero, the two vectors of an orthonormal two-frame are linearly independent
+(`TauCeti.finiteOrthonormalFrame.linearIndependent_val_pair`), and those of an orthonormal two-frame
+of `𝕜³` have nonzero cross product (`TauCeti.finiteOrthonormalFrame.crossProduct_ne_zero`). In the
 other direction, Mathlib's normalized Gram-Schmidt process `InnerProductSpace.gramSchmidtNormed`
 turns a frame into an orthonormal frame with the same span
 (`TauCeti.finiteFullRankFrame.orthonormalize`). It is continuous and fixes orthonormal frames,
@@ -101,14 +102,19 @@ theorem isEmbedding_toFullRankFrame :
 theorem val_ne_zero (f : finiteOrthonormalFrame 𝕜 r N) (i : Fin r) : f.val i ≠ 0 :=
   f.toFullRankFrame.property.ne_zero i
 
+/-- The two vectors of an orthonormal two-frame are linearly independent. -/
+theorem linearIndependent_val_pair (f : finiteOrthonormalFrame 𝕜 2 N) :
+    LinearIndependent 𝕜 ![f.val 0, f.val 1] := by
+  have h : ![f.val 0, f.val 1] = f.toFullRankFrame := by
+    ext i : 1
+    fin_cases i <;> simp
+  exact h ▸ f.toFullRankFrame.property
+
 open Matrix in
 /-- **The two vectors of an orthonormal two-frame of `𝕜³` have a nonzero cross product**, since
 they are linearly independent. -/
-theorem crossProduct_ne_zero (f : finiteOrthonormalFrame 𝕜 2 3) : f.val 0 ⨯₃ f.val 1 ≠ 0 := by
-  rw [crossProduct_ne_zero_iff_linearIndependent]
-  convert f.toFullRankFrame.property using 1
-  ext i : 1
-  fin_cases i <;> rfl
+theorem crossProduct_ne_zero (f : finiteOrthonormalFrame 𝕜 2 3) : f.val 0 ⨯₃ f.val 1 ≠ 0 :=
+  crossProduct_ne_zero_iff_linearIndependent.2 f.linearIndependent_val_pair
 
 /-- The orthonormal frames form a compact subset of `Fin r → Fin N → 𝕜`: they are cut out by the
 continuous equations `⟪f i, f j⟫ = if i = j then 1 else 0`, and every coordinate of a unit vector

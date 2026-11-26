@@ -29,10 +29,12 @@ for the line `{[v] | w ⬝ᵥ v = 0}` of the bilinear dot product (`Projectiviza
 
 * **The dual point of a line.** The line of `f` lies in the plane spanned by `f₀` and `f₁`, which
   is the plane `{v | (f₀ × f₁) ⬝ᵥ v = 0}`: the dual point of `f` is `[f₀ × f₁]`
-  (`TauCeti.ComplexProjectiveSpace.dualPoint`). A point `[v]` of `CP²` lies on `σ_f` exactly when
-  `v ⬝ᵥ (f₀ × f₁) = 0` (`TauCeti.ComplexProjectiveSpace.mem_range_lineSphereFamily_iff`): a vector
-  orthogonal to `f₀ × f₁` is a combination `a f₀ + b f₁`, and if it has norm one then so does
-  `(a, b)`, since the frame is orthonormal.
+  (`TauCeti.ComplexProjectiveSpace.dualPoint`), Mathlib's cross product `[f₀] × [f₁]` of
+  projective points (`TauCeti.ComplexProjectiveSpace.dualPoint_eq_cross`).
+  A point `[v]` of `CP²` lies on `σ_f` exactly when `v ⬝ᵥ (f₀ × f₁) = 0`
+  (`TauCeti.ComplexProjectiveSpace.mem_range_lineSphereFamily_iff`): a vector orthogonal to
+  `f₀ × f₁` is a combination `a f₀ + b f₁`, and if it has norm one then so does `(a, b)`, since
+  the frame is orthonormal.
 * **Lines and dual points.** Two frames have the same line exactly when they have the same dual
   point (`TauCeti.ComplexProjectiveSpace.range_lineSphereFamily_eq_iff`): the distinct points `[f₀]`
   and `[f₁]` lie on both lines, and two distinct points lie on at most one line of the projective
@@ -87,10 +89,6 @@ namespace ComplexProjectiveSpace
 
 section DualPoint
 
-private theorem linearIndependent_val_pair (f : finiteOrthonormalFrame ℂ 2 3) :
-    LinearIndependent ℂ ![f.val 0, f.val 1] :=
-  crossProduct_ne_zero_iff_linearIndependent.1 f.crossProduct_ne_zero
-
 /-- **The dual point of the line of a frame**: the point `[f₀ × f₁]` of the dual projective plane
 `ℙ ℂ (Fin 3 → ℂ)`, whose points `[w]` stand for the lines `{[v] | w ⬝ᵥ v = 0}` of `CP²`. -/
 def dualPoint (f : finiteOrthonormalFrame ℂ 2 3) : ℙ ℂ (Fin 3 → ℂ) :=
@@ -108,18 +106,26 @@ private theorem homeomorphProjectivization_mk_toSphere (f : finiteOrthonormalFra
       Projectivization.mk ℂ (f.val i) (f.val_ne_zero i) := by
   simp
 
-private theorem orthogonal_dualPoint (f : finiteOrthonormalFrame ℂ 2 3) (i : Fin 2) :
-    (Projectivization.mk ℂ (f.val i) (f.val_ne_zero i)).orthogonal (dualPoint f) := by
-  rw [dualPoint_def, orthogonal_mk]
-  fin_cases i
-  · exact dot_self_cross _ _
-  · exact dot_cross_self _ _
-
 private theorem mk_val_zero_ne_mk_val_one (f : finiteOrthonormalFrame ℂ 2 3) :
     Projectivization.mk ℂ (f.val 0) (f.val_ne_zero 0) ≠
       Projectivization.mk ℂ (f.val 1) (f.val_ne_zero 1) := by
   rw [Ne, mk_eq_mk_iff_crossProduct_eq_zero]
   exact f.crossProduct_ne_zero
+
+/-- The dual point of `f` is the cross product `[f₀] × [f₁]` of the points `[f₀]` and `[f₁]` of the
+projective plane, the line through them in `Configuration.ofField`. -/
+theorem dualPoint_eq_cross [DecidableEq ℂ] (f : finiteOrthonormalFrame ℂ 2 3) :
+    dualPoint f = cross (Projectivization.mk ℂ (f.val 0) (f.val_ne_zero 0))
+      (Projectivization.mk ℂ (f.val 1) (f.val_ne_zero 1)) :=
+  (cross_mk_of_ne _ _ (mk_val_zero_ne_mk_val_one f)).symm
+
+private theorem orthogonal_dualPoint (f : finiteOrthonormalFrame ℂ 2 3) (i : Fin 2) :
+    (Projectivization.mk ℂ (f.val i) (f.val_ne_zero i)).orthogonal (dualPoint f) := by
+  classical
+  rw [dualPoint_eq_cross]
+  fin_cases i
+  · exact orthogonal_cross_left (mk_val_zero_ne_mk_val_one f)
+  · exact orthogonal_cross_right (mk_val_zero_ne_mk_val_one f)
 
 /-- The dual point of `f` is the only point of the dual plane orthogonal to both `[f₀]` and
 `[f₁]`: these are distinct points, and two distinct points lie on at most one line. -/
@@ -138,12 +144,10 @@ private theorem mem_span_range_iff_orthogonal (g : finiteOrthonormalFrame ℂ 2 
     v ∈ Submodule.span ℂ (range g.val) ↔
       (Projectivization.mk ℂ v hv).orthogonal (dualPoint g) := by
   have hg : range g.val = {g.val 0, g.val 1} := by
-    rw [← range_cons_cons_empty (g.val 0) (g.val 1) ![]]
-    congr 1
-    ext i : 1
-    fin_cases i <;> rfl
+    ext v
+    simp [Fin.exists_fin_two, eq_comm]
   rw [dualPoint_def, orthogonal_mk,
-    triple_product_eq_zero_iff_mem_span_pair (linearIndependent_val_pair g), hg]
+    triple_product_eq_zero_iff_mem_span_pair g.linearIndependent_val_pair, hg]
 
 /-- A point `[y]` of `CP²` lies on the two-sphere `σ_f` exactly when `y` lies in the plane spanned
 by `f₀` and `f₁`. -/
@@ -188,20 +192,27 @@ theorem mem_range_lineSphereFamily_iff (f : finiteOrthonormalFrame ℂ 2 3)
       (homeomorphProjectivization 2 p).orthogonal (dualPoint f) := by
   induction p using ComplexProjectiveSpace.inductionOn with | h y => ?_
   rw [homeomorphProjectivization_mk, dualPoint_def, orthogonal_mk,
-    triple_product_eq_zero_iff_mem_span_pair (linearIndependent_val_pair f),
+    triple_product_eq_zero_iff_mem_span_pair f.linearIndependent_val_pair,
     mk_mem_range_lineSphereFamily_iff]
+
+/-- If every point of the standard line of `f` is orthogonal to `w`, then `w` is the dual point
+of `f`: the line contains the distinct points `[f₀]` and `[f₁]`. -/
+private theorem dualPoint_eq_of_range_subset {f : finiteOrthonormalFrame ℂ 2 3}
+    {w : ℙ ℂ (Fin 3 → ℂ)}
+    (h : range (lineSphereFamily 2 f) ⊆ {p | (homeomorphProjectivization 2 p).orthogonal w}) :
+    dualPoint f = w := by
+  have hmem (i : Fin 2) : (Projectivization.mk ℂ (f.val i) (f.val_ne_zero i)).orthogonal w := by
+    rw [← homeomorphProjectivization_mk_toSphere]
+    refine h ((mem_range_lineSphereFamily_iff f _).2 ?_)
+    rw [homeomorphProjectivization_mk_toSphere]
+    exact orthogonal_dualPoint f i
+  exact dualPoint_eq_of_orthogonal (hmem 0) (hmem 1)
 
 /-- **Two standard lines coincide exactly when their dual points do.** -/
 theorem range_lineSphereFamily_eq_iff {f g : finiteOrthonormalFrame ℂ 2 3} :
     range (lineSphereFamily 2 f) = range (lineSphereFamily 2 g) ↔ dualPoint f = dualPoint g := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · -- The points `[f₀]` and `[f₁]` are distinct, and both lie on the two lines.
-    have hmem (i : Fin 2) : (Projectivization.mk ℂ (f.val i) (f.val_ne_zero i)).orthogonal
-        (dualPoint g) := by
-      rw [← homeomorphProjectivization_mk_toSphere, ← mem_range_lineSphereFamily_iff, ← h,
-        mem_range_lineSphereFamily_iff, homeomorphProjectivization_mk_toSphere]
-      exact orthogonal_dualPoint f i
-    exact dualPoint_eq_of_orthogonal (hmem 0) (hmem 1)
+  refine ⟨fun h ↦ dualPoint_eq_of_range_subset fun p hp ↦ ?_, fun h ↦ ?_⟩
+  · exact (mem_range_lineSphereFamily_iff g p).1 (h ▸ hp)
   · ext p
     rw [mem_range_lineSphereFamily_iff, mem_range_lineSphereFamily_iff, h]
 
@@ -340,17 +351,11 @@ instance : SetLike LineModuli (ComplexProjectiveSpace 2) where
     intro L L' h
     simp only at h
     obtain ⟨f, rfl⟩ := mk_surjective L
-    -- The points `[f₀]` and `[f₁]` of the line of `f` also lie on `L'`.
-    have hmem (i : Fin 2) : (Projectivization.mk ℂ (f.val i) (f.val_ne_zero i)).orthogonal
-        (dualHomeomorph L') := by
-      have hi : ComplexProjectiveSpace.mk 2 (f.toSphere i) ∈
-          {p | (homeomorphProjectivization 2 p).orthogonal (dualHomeomorph (mk f))} := by
-        rw [mem_ofPred_eq, homeomorphProjectivization_mk_toSphere, dualHomeomorph_mk]
-        exact orthogonal_dualPoint f i
-      rw [h, mem_ofPred_eq, homeomorphProjectivization_mk_toSphere] at hi
-      exact hi
-    exact dualHomeomorph.injective
-      ((dualHomeomorph_mk f).trans (dualPoint_eq_of_orthogonal (hmem 0) (hmem 1)))
+    -- The points of the line of `f` also lie on `L'`.
+    refine dualHomeomorph.injective ((dualHomeomorph_mk f).trans
+      (dualPoint_eq_of_range_subset fun p hp ↦ ?_))
+    rw [← h, mem_ofPred_eq, dualHomeomorph_mk]
+    exact (mem_range_lineSphereFamily_iff f p).1 hp
 
 /-- **Point-line incidence in `CP²`**: a point `p` lies on a standard line `L` exactly when `p` is
 orthogonal to the dual point of `L` for the bilinear dot product. -/
