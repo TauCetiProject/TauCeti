@@ -100,11 +100,16 @@ theorem exists_relIndex_ne_zero_forall_add_eq [PreconnectedSpace V]
   have hSfin : S.Finite :=
     Finite.of_finite_image (hfin.subset (image_subset_iff.2 fun f hf ↦ hf.2 x₀))
       fun f₁ hf₁ f₂ hf₂ h ↦ hE.eq_of_forall_prodMk_mem hf₁.1 hf₂.1 hf₁.2 hf₂.2 h
-  -- `V` acts on `V → Y` by translation through `DomAddAct`; `hψ` states this action,
-  -- by `DomAddAct.vadd_apply`.
-  let ψ : V →+ DomAddAct Vᵃᵒᵖ := ⟨⟨fun ω ↦ .mk (.op ω), rfl⟩, fun _ _ ↦ rfl⟩
-  have hψ (ω : V) (f : V → Y) : ψ ω +ᵥ f = fun x ↦ f (x + ω) :=
-    funext fun x ↦ DomAddAct.vadd_apply (ψ ω) f x
+  -- `V` acts on `V → Y` by translation through `DomAddAct`: the two order reversals of
+  -- `AddOpposite.op` and `DomAddAct.mk` cancel, and `hψ` states the resulting action.
+  let ψ : V →+ DomAddAct Vᵃᵒᵖ :=
+    { toFun := fun ω ↦ .mk (.op ω)
+      map_zero' := by rw [AddOpposite.op_zero, DomAddAct.mk_zero]
+      map_add' := fun a b ↦ by rw [AddOpposite.op_add, DomAddAct.mk_add] }
+  have hψ (ω : V) (f : V → Y) : ψ ω +ᵥ f = fun x ↦ f (x + ω) := by
+    funext x
+    simp only [ψ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, DomAddAct.vadd_apply,
+      Equiv.symm_apply_apply, op_vadd_eq_add]
   -- The periods of `g` in `Λ` form its stabilizer. By orbit–stabilizer, its index is the number
   -- of distinct translates of `g` by `Λ`, which are sections, so there are finitely many.
   refine ⟨(AddAction.stabilizer _ g).comap ψ ⊓ Λ, inf_le_right, ?_,
