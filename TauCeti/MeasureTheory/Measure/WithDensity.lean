@@ -33,6 +33,7 @@ weight. The substitution `x = t ^ 2` on the positive half-line is the case a squ
 
 A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite measure finite.
 A weight equal to one on a measurable set leaves the mass of that set unchanged.
+A measure restricted to a measurable set and then weighted still lives on that set.
 
 The topological support of a weighted measure is also computed: an almost-everywhere nonzero
 density preserves it, and, when the reference measure is positive on nonempty open sets, a density
@@ -79,6 +80,10 @@ measure that is positive on nonempty open sets are equal.
   sets are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
+* `MeasureTheory.Measure.restrict_withDensity_restrict`: restricting a weighted restriction
+  to the same set leaves it unchanged.
+* `MeasureTheory.withDensity_restrict_apply_compl`: a measure restricted to a measurable set and
+  then weighted gives no mass to the complement of the set.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
@@ -127,16 +132,24 @@ open Set
 
 /-- **The folded density.** If `μ` has density `f` with respect to Lebesgue measure, then the
 folded law has density `f x + f (-x)` on the positive half-line and `0` elsewhere. -/
-theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) :
     (volume.withDensity f).map (|·|) =
       volume.withDensity ((Ioi 0).indicator fun x => f x + f (-x)) := by
-  have hneg : (volume.withDensity f).neg = volume.withDensity fun x => f (-x) := by
-    simpa [Measure.neg_def] using MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
-  rw [(volume.withDensity f).map_abs_eq_restrict_add_restrict, hneg,
+  obtain ⟨g, hg, hfg⟩ := hf
+  have hfg' : (fun x => f (-x)) =ᵐ[volume] fun x => g (-x) :=
+    (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving.ae_eq_comp hfg
+  have hind : (Ioi (0 : ℝ)).indicator (fun x => f x + f (-x)) =ᵐ[volume]
+      (Ioi 0).indicator fun x => g x + g (-x) := by
+    filter_upwards [hfg, hfg'] with x h h'
+    simp only [Set.indicator, h, h']
+  rw [withDensity_congr_ae hfg, withDensity_congr_ae hind]
+  have hneg : (volume.withDensity g).neg = volume.withDensity fun x => g (-x) := by
+    simpa [Measure.neg_def] using MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume g
+  rw [(volume.withDensity g).map_abs_eq_restrict_add_restrict, hneg,
     restrict_withDensity measurableSet_Ici,
     restrict_withDensity measurableSet_Ioi, Measure.restrict_congr_set Ioi_ae_eq_Ici.symm,
     ← withDensity_indicator measurableSet_Ioi, ← withDensity_indicator measurableSet_Ioi,
-    ← withDensity_add_left (hf.indicator measurableSet_Ioi)]
+    ← withDensity_add_left (hg.indicator measurableSet_Ioi)]
   congr 1
   ext x
   by_cases hx : x ∈ Ioi 0 <;> simp [hx]
@@ -198,24 +211,18 @@ theorem support_withDensity_ofReal {X : Type*} [TopologicalSpace X] [MeasurableS
   simp only [Function.mem_support, ne_eq, ENNReal.ofReal_eq_zero]
   exact not_congr ⟨fun h ↦ le_antisymm h (hf0 x), fun h ↦ h.le⟩
 
-/-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
-which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to
-the two regions `f` maps onto each other. If a weight `h` upstairs factors almost everywhere as
-`jac` times a weight `g` downstairs, then `f` carries `μ.withDensity h` to `ν.withDensity g`: the
-change of variables for measures upgrades to one for densities.
-
-This is the step that turns a pointwise density computation into an identity of measures, so the
-work in an application is the factorization hypothesis alone. -/
-theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : α → β}
-    {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : Measurable f) (hjac : Measurable jac)
-    (hg : Measurable g) (hmap : (μ.withDensity jac).map f = ν)
+/-- The measurable case of `map_withDensity_eq_withDensity`. -/
+private theorem map_withDensity_eq_withDensity_of_measurable {μ : Measure α} {ν : Measure β}
+    {f : α → β} {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : Measurable f)
+    (hjac : AEMeasurable jac μ) (hg : Measurable g) (hmap : (μ.withDensity jac).map f = ν)
     (hh : ∀ᵐ z ∂μ, jac z * g (f z) = h z) :
     (μ.withDensity h).map f = ν.withDensity g := by
   ext q hq
   have hcomp : Measurable fun z => q.indicator g (f z) := (hg.indicator hq).comp hf
   rw [Measure.map_apply hf hq, withDensity_apply _ (hf hq), withDensity_apply _ hq,
     ← lintegral_indicator (hf hq), ← lintegral_indicator hq, ← hmap,
-    lintegral_map (hg.indicator hq) hf, lintegral_withDensity_eq_lintegral_mul _ hjac hcomp]
+    lintegral_map (hg.indicator hq) hf,
+    lintegral_withDensity_eq_lintegral_mul₀ hjac hcomp.aemeasurable]
   refine lintegral_congr_ae ?_
   filter_upwards [hh] with z hz
   by_cases hzq : f z ∈ q
@@ -224,12 +231,43 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
   · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
       Set.indicator_of_notMem hzq, mul_zero]
 
-/-- **A pulled-back weight is pushed forward.** The image under a measurable `f` of `μ` weighted by
+/-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
+which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to
+the two regions `f` maps onto each other. If a weight `h` upstairs factors almost everywhere as
+`jac` times a weight `g` downstairs, then `f` carries `μ.withDensity h` to `ν.withDensity g`: the
+change of variables for measures upgrades to one for densities.
+
+This is the step that turns a pointwise density computation into an identity of measures, so the
+work in an application is the factorization hypothesis alone. The map `f` is only required to be
+`μ`-almost everywhere measurable and the weight `g` almost everywhere measurable for the image
+measure `ν`. -/
+theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : α → β}
+    {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : AEMeasurable f μ)
+    (hjac : AEMeasurable jac μ) (hg : AEMeasurable g ν) (hmap : (μ.withDensity jac).map f = ν)
+    (hh : ∀ᵐ z ∂μ, jac z * g (f z) = h z) :
+    (μ.withDensity h).map f = ν.withDensity g := by
+  obtain ⟨f', hf', hff'⟩ := hf
+  obtain ⟨g', hg', hgg'⟩ := hg
+  have hmap' : (μ.withDensity jac).map f' = ν :=
+    (Measure.map_congr ((withDensity_absolutelyContinuous μ jac).ae_eq hff')).symm.trans hmap
+  have hgf : ∀ᵐ z ∂μ, jac z ≠ 0 → g (f' z) = g' (f' z) :=
+    (ae_withDensity_iff' hjac).1 (ae_of_ae_map hf'.aemeasurable (hmap' ▸ hgg'))
+  rw [Measure.map_congr ((withDensity_absolutelyContinuous μ h).ae_eq hff'),
+    withDensity_congr_ae hgg']
+  refine map_withDensity_eq_withDensity_of_measurable hf' hjac hg' hmap' ?_
+  filter_upwards [hh, hgf, hff'] with z hz hz' hz''
+  by_cases hj : jac z = 0
+  · rw [hj, zero_mul, ← hz, hj, zero_mul]
+  · rw [← hz, hz'', hz' hj]
+
+/-- **A pulled-back weight is pushed forward.** If `f` is `μ`-almost everywhere measurable and `g`
+is almost everywhere measurable with respect to `μ.map f`, the image under `f` of `μ` weighted by
 `g ∘ f` is the image of `μ` weighted by `g`. This is the case of
 `map_withDensity_eq_withDensity` with trivial Jacobian. -/
-theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞} (hf : Measurable f)
-    (hg : Measurable g) : (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
-  map_withDensity_eq_withDensity (jac := fun _ => 1) hf measurable_const hg (by simp) (by simp)
+theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g (μ.map f)) :
+    (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
+  map_withDensity_eq_withDensity (jac := fun _ => 1) hf aemeasurable_const hg (by simp) (by simp)
 
 /-- **Translating a weighted invariant measure translates its weight.** If `μ` is invariant under
 right translation, then pushing `μ.withDensity f` forward along `x ↦ x + y` gives `μ` weighted by
@@ -348,6 +386,27 @@ theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α]
     (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
   rw [lintegral_const]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
+
+/-- Weighting a measure restricted to `s` and restricting it again to `s` leaves the weighted
+measure unchanged. -/
+@[simp]
+theorem Measure.restrict_withDensity_restrict {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    (s : Set α) (f : α → ℝ≥0∞) :
+    ((μ.restrict s).withDensity f).restrict s = (μ.restrict s).withDensity f := by
+  refine le_antisymm Measure.restrict_le_self (Measure.le_iff.2 fun t ht ↦ ?_)
+  rw [Measure.restrict_apply ht, withDensity_apply _ ht]
+  calc
+    (∫⁻ x in t, f x ∂μ.restrict s) = ∫⁻ x in t ∩ s, f x ∂μ.restrict s := by
+      rw [Measure.restrict_restrict ht, Measure.restrict_restrict_of_subset Set.inter_subset_right]
+    _ ≤ (μ.restrict s).withDensity f (t ∩ s) := withDensity_apply_le _ _
+
+/-- A measure restricted to a measurable set `s` and then weighted gives no mass to the complement
+of `s`. The weight `f` is arbitrary; no measurability of it is required. -/
+theorem withDensity_restrict_apply_compl {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {s : Set α} (hs : MeasurableSet s) (f : α → ℝ≥0∞) :
+    (μ.restrict s).withDensity f sᶜ = 0 :=
+  withDensity_absolutelyContinuous _ _ <| by
+    rw [Measure.restrict_apply hs.compl, Set.compl_inter_self, measure_empty]
 
 end MeasureTheory
 

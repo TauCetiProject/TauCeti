@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Equivalence
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Equivalence
 
@@ -28,14 +29,20 @@ of composite pseudofunctors, which `simp` and `rw` do not see through. The same 
 handles identity and composite transport cells. The file also evaluates the naturality cell
 of a composite strong transformation on objects, with the Cat endpoints made explicit, and
 packages the components of a naturality isomorphism at an object
-(`Pseudofunctor.StrongTrans.naturalityObjIso`).
+(`Pseudofunctor.StrongTrans.naturalityObjIso`). It also conjugates pullbacks of morphisms by
+the naturality isomorphisms of a strong transformation. When the values of the target
+pseudofunctor are groupoids, every modification between strong transformations into it is
+invertible (`Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`).
 
 A strong transformation into `Cat` is an equivalence whenever its component functors are
 equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equivalenceMk` to
 the chosen component quasi-inverses, units, and counits gives
 `StrongTrans.equivalenceOfIsEquivalence`. Its inverse naturality satisfies compatibility with
 those counits; the component equations allow callers to use the equivalence without unfolding
-its construction.
+its construction. Conversely, the components of an equivalence in the bicategory of
+pseudofunctors into `Cat` form equivalences of categories (`Bicategory.Equivalence.appEquivalence`),
+so its component functors and those of its inverse are equivalences of categories
+(`Bicategory.Equivalence.isEquivalence_hom_app`, `Bicategory.Equivalence.isEquivalence_inv_app`).
 -/
 
 public section
@@ -172,6 +179,27 @@ lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
   (rfl)
 
+/-- Conjugating by the naturality isomorphism of a strong transformation `η` into `Cat` at `f`
+turns the image under `η.app b` of the pullback of a morphism `φ` into the pullback of the image
+of `φ` under `η.app a`. -/
+@[reassoc]
+lemma naturality_naturality_1 {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : F ⟶ G) {a b : B} (f : a ⟶ b) {X Y : F.obj a} (φ : X ⟶ Y) :
+    (η.naturality f).inv.toNatTrans.app X ≫
+        (η.app b).toFunctor.map ((F.map f).toFunctor.map φ) ≫
+          (η.naturality f).hom.toNatTrans.app Y =
+      (G.map f).toFunctor.map ((η.app a).toFunctor.map φ) :=
+  NatIso.naturality_1 (Cat.Hom.toNatIso (η.naturality f)) φ
+
+/-- If the values of `G` are groupoids, every modification between strong transformations
+`F ⟶ G` is invertible, so strong transformations `F ⟶ G` and their modifications form a
+groupoid. This applies when `G` is a gerbe. -/
+instance isGroupoid_of_isGroupoid {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} [∀ b, IsGroupoid (G.obj b)] : IsGroupoid (F ⟶ G) where
+  all_isIso Γ := by
+    have (a : B) : IsIso (Γ.as.app a) := Cat.Hom₂.isIso_of_isIso_app _
+    exact isIso_of_isIso_app Γ
+
 end Pseudofunctor.StrongTrans
 
 end CategoryTheory
@@ -260,3 +288,34 @@ lemma map_equivalenceOfIsEquivalence_inv_naturality_hom_app_comp
   exact hc.trans (Category.comp_id _)
 
 end CategoryTheory.Pseudofunctor.StrongTrans
+
+namespace CategoryTheory.Bicategory.Equivalence
+
+open Pseudofunctor.StrongTrans
+
+variable {B : Type u₁} [Bicategory.{w₁, v₁} B] {F G : B ⥤ᵖ Cat.{v, w}}
+
+/-- The component at `a` of an equivalence of pseudofunctors into `Cat`, as an equivalence of
+categories. Its counit is the component of `e.counit`; its unit is the adjointification of the
+component of `e.unit` against that counit (`CategoryTheory.Equivalence.mk`). -/
+-- Exposed so that its functor, inverse and counit are definitionally the components of `e.hom`,
+-- `e.inv` and `e.counit`, as its projection lemmas state.
+@[expose, simps! functor inverse counitIso]
+noncomputable def appEquivalence (e : Bicategory.Equivalence F G) (a : B) :
+    (F.obj a : Type w) ≌ G.obj a :=
+  CategoryTheory.Equivalence.mk (e.hom.app a).toFunctor (e.inv.app a).toFunctor
+    (Cat.Hom.toNatIso (isoApp e.unit a)) (Cat.Hom.toNatIso (isoApp e.counit a))
+
+/-- The component functors of an equivalence of pseudofunctors into `Cat` are equivalences of
+categories, with quasi-inverses the components of the inverse transformation. -/
+lemma isEquivalence_hom_app (e : Bicategory.Equivalence F G) (a : B) :
+    (e.hom.app a).toFunctor.IsEquivalence :=
+  (e.appEquivalence a).isEquivalence_functor
+
+/-- The component functors of the inverse of an equivalence of pseudofunctors into `Cat` are
+equivalences of categories. -/
+lemma isEquivalence_inv_app (e : Bicategory.Equivalence F G) (a : B) :
+    (e.inv.app a).toFunctor.IsEquivalence :=
+  (e.appEquivalence a).isEquivalence_inverse
+
+end CategoryTheory.Bicategory.Equivalence

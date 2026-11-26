@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # Skew-symmetric maps and orthogonal hyperplane frames on real inner product spaces
@@ -15,7 +16,9 @@ vector `x` into its orthogonal complement `(ℝ ∙ x)ᗮ`. When `f` also satisf
 preserves inner products and norms, and any two anticommuting skew-symmetric maps take orthogonal
 values at every vector `x`. Evaluating a family of `card ι` pairwise anticommuting skew-symmetric
 maps squaring to `-1` at a unit vector `x` therefore produces an orthonormal family in `(ℝ ∙ x)ᗮ`,
-which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = card ι + 1`.
+which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = card ι + 1`. In odd
+finite dimension a skew-symmetric linear map `f` has a nonzero kernel vector, since otherwise
+`x, y ↦ ⟪f x, y⟫` would be a nondegenerate alternating form, forcing even dimension.
 
 ## Main definitions and results
 
@@ -32,6 +35,8 @@ which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = 
   and in `(ℝ ∙ x)ᗮ`.
 * `TauCeti.orthonormalBasisOrthogonalOfSkewFamily`: when `finrank ℝ E = card ι + 1`, this family
   is an `OrthonormalBasis ι ℝ (ℝ ∙ x)ᗮ`.
+* `TauCeti.exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank`: a skew-symmetric linear map of an
+  odd-dimensional space has a nonzero kernel vector.
 
 ## References
 
@@ -87,6 +92,23 @@ theorem norm_apply_of_skew_of_sq_neg_id {f : E → E}
     ‖f x‖ = ‖x‖ := by
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
     inner_apply_apply_of_skew_of_sq_neg_id hf hsq]
+
+/-- A skew-symmetric linear map of a real inner product space of odd finite dimension has a
+nonzero kernel vector. -/
+theorem exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank [FiniteDimensional ℝ E]
+    {f : E →ₗ[ℝ] E} (hf : ∀ x y, ⟪f x, y⟫_ℝ = -⟪x, f y⟫_ℝ) (hodd : Odd (finrank ℝ E)) :
+    ∃ x, x ≠ 0 ∧ f x = 0 := by
+  by_contra! hker
+  have hinj (x : E) (hx : f x = 0) : x = 0 := by_contra fun h ↦ hker x h hx
+  -- The form `x, y ↦ ⟪f x, y⟫` is alternating, and nondegenerate since `f` is injective, so
+  -- the dimension would be even.
+  let B : LinearMap.BilinForm ℝ E := (innerₗ E).comp f
+  have hB : B.IsAlt := inner_apply_self_eq_zero_of_skew hf
+  have hnd : B.Nondegenerate := by
+    refine ⟨fun x hx ↦ hinj x ?_, fun y hy ↦ hinj y ?_⟩
+    · simpa [B] using hx (f x)
+    · simpa [B, hf] using hy (f y)
+  exact Nat.not_even_iff_odd.mpr hodd (hB.even_finrank hnd)
 
 /-- Two anticommuting skew-symmetric maps on a real inner product space take orthogonal values at
 every vector `x`. -/

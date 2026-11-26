@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Basic
 
 -- the coprime-level generation and `Γ(N) ≤ Γ₀(N)` are used only inside proofs here
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceSplit
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Congruence.Split
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
@@ -111,9 +111,7 @@ private lemma dvd_and_gcd_of_Gamma_mul (τ A : Matrix (Fin 2) (Fin 2) ℤ)
     (hAN : (N : ℤ) ∣ A 1 0) (hA11 : Int.gcd (A 1 1) N = 1) :
     (N : ℤ) ∣ (τ * A) 1 0 ∧ Int.gcd ((τ * A) 1 1) N = 1 := by
   refine ⟨?_, ?_⟩
-  · have h : (τ * A) 1 0 = τ 1 0 * A 0 0 + τ 1 1 * A 1 0 := by
-      simp [Matrix.mul_apply, Fin.sum_univ_two]
-    exact h ▸ dvd_add (dvd_mul_of_dvd_left hτ10 _) (dvd_mul_of_dvd_right hAN _)
+  · exact dvd_mul_apply_one_zero hτ10 hAN
   · rw [← Int.isCoprime_iff_gcd_eq_one]
     have hmod : (N : ℤ) ∣ ((τ * A) 1 1 - A 1 1) := by
       have h : (τ * A) 1 1 - A 1 1 = τ 1 0 * A 0 1 + (τ 1 1 - 1) * A 1 1 := by

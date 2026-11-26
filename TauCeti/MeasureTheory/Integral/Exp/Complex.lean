@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
@@ -30,6 +31,8 @@ the complex exponential kernel `t ↦ Complex.exp (-s * t)`.
   `t ↦ exp (-s * t) • g t` on `(a, ∞)` implies `IntervalIntegrable g μ a b` for all `b ≥ a`.
 * `TauCeti.intervalIntegral_const_mul_cexp_neg_mul`:
   `∫ r in a..b, s * exp (-s * r) = exp (-s * a) - exp (-s * b)` for all `s : ℂ`, including `s = 0`.
+* `TauCeti.intervalIntegral_ofReal_cpow_neg_sub_one`: substitution `x = exp t` identifying
+  `∫ x in u..v, x ^ (-z - 1)` with `∫ t in log u..log v, exp (-z * t)` for `0 < u, v`.
 -/
 
 public section
@@ -63,7 +66,7 @@ theorem integrable_cexp_neg_mul_smul_of_re_le {E : Type*} [NormedAddCommGroup E]
   refine hf.bdd_smul 1 (Continuous.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [hμ] with t ht
   rw [Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re]
-  exact Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (by linarith) ht)
+  simpa using exp_neg_sub_mul_le_of_le hs ht
 
 private theorem norm_cexp_neg_mul_ofReal_pow_le {s₀ s : ℂ} (hs : s₀.re < s.re) {t : ℝ}
     (ht : 0 ≤ t) (k : ℕ) :
@@ -131,5 +134,26 @@ theorem intervalIntegral_const_mul_cexp_neg_mul (s : ℂ) (a b : ℝ) :
   · rw [intervalIntegral.integral_const_mul, integral_exp_mul_complex (neg_ne_zero.mpr hs)]
     field_simp [hs]
     ring
+
+/-- **Substitution `x = exp t`.** For `0 < u` and `0 < v`, the integral of `x ^ (-z - 1)` over
+`[u, v]` is the truncated Laplace transform `∫ t in log u..log v, exp (-z t)` of the constant
+function `1`. -/
+theorem intervalIntegral_ofReal_cpow_neg_sub_one {u v : ℝ} (hu : 0 < u) (hv : 0 < v) (z : ℂ) :
+    ∫ x in u..v, (x : ℂ) ^ (-z - 1) =
+      ∫ t in Real.log u..Real.log v, Complex.exp (-z * t) := by
+  have hg : ContinuousOn (fun x : ℝ ↦ (x : ℂ) ^ (-z - 1))
+      (Real.exp '' [[Real.log u, Real.log v]]) := by
+    rintro _ ⟨t, -, rfl⟩
+    exact (Complex.continuousAt_ofReal_cpow_const _ _
+      (Or.inr (Real.exp_pos t).ne')).continuousWithinAt
+  have h := intervalIntegral.integral_deriv_smul_comp' (fun t _ ↦ Real.hasDerivAt_exp t)
+    Real.continuous_exp.continuousOn hg
+  rw [Real.exp_log hu, Real.exp_log hv] at h
+  rw [← h]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  rw [Function.comp_apply, Complex.real_smul, Complex.cpow_def_of_ne_zero
+    (Complex.ofReal_ne_zero.mpr (Real.exp_pos t).ne'), ← Complex.ofReal_log (Real.exp_pos t).le,
+    Real.log_exp, Complex.ofReal_exp, ← Complex.exp_add]
+  ring_nf
 
 end TauCeti

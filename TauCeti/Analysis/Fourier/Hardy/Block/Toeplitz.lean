@@ -111,6 +111,16 @@ theorem blockToeplitz_apply_apply {r : ℕ} (A : BlockSymbol r) (f : BlockHardyS
     blockToeplitz r A f i = ∑ j : Fin r, toeplitz (blockSymbolEntry r i j A) (f j) := by
   simp [apply_eq_sum_piLpEntry (blockToeplitz r A) f i]
 
+/-- If all off-diagonal entries in a symbol row vanish, that row acts by its scalar diagonal. -/
+theorem blockToeplitz_apply_of_row_offDiagonal_eq_zero {r : ℕ} (A : BlockSymbol r)
+    (f : BlockHardySpace r) (i : Fin r) (h : ∀ j, j ≠ i → blockSymbolEntry r i j A = 0) :
+    blockToeplitz r A f i = toeplitz (blockSymbolEntry r i i A) (f i) := by
+  rw [blockToeplitz_apply_apply]
+  apply Finset.sum_eq_single i
+  · intro j _ hji
+    simp [h j hji]
+  · simp
+
 /-- **Block matrix Fourier-entry formula (operator form).** -/
 theorem inner_blockHardyBasis_blockToeplitz_blockHardyBasis {r : ℕ} (A : BlockSymbol r)
     (m n : ℕ) (i j : Fin r) :

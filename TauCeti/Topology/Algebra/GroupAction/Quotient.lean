@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Topology.Compactness.LocallyCompact
+import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
 # Continuous maps from group quotients and compact orbit spaces
@@ -26,6 +27,8 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 
 ## Main results
 
+* `Topology.IsQuotientMap.orbitRelQuotientHomeomorph`: a quotient map whose fibres are the
+  orbits identifies the orbit space with its target.
 * `TauCeti.continuous_ofQuotientStabilizer` proves continuity of the orbit map descended to a
   stabilizer quotient when the corresponding orbit map is continuous.
 * `TauCeti.continuous_orbitRelQuotientLift_iff`: the descent of a `G`-invariant map to the orbit
@@ -259,3 +262,42 @@ theorem continuous_ofQuotientStabilizer (b : X) (hb : Continuous fun g : G => g 
   exact hb.quotient_liftOn' _
 
 end TauCeti
+
+namespace Topology.IsQuotientMap
+
+variable {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X]
+  [Group G] [MulAction G E] {q : E → X}
+
+/-- A quotient map whose fibres are the orbits identifies the orbit space with its target. -/
+@[to_additive addOrbitRelQuotientHomeomorph
+  /-- A quotient map whose fibres are the additive orbits identifies the additive orbit space
+  with its target. -/]
+noncomputable def orbitRelQuotientHomeomorph (hq : IsQuotientMap q)
+    (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') :
+    MulAction.orbitRel.Quotient G E ≃ₜ X :=
+  (Homeomorph.Quotient.congrRight
+    (r' := Setoid.ker q)
+    (fun e e' ↦ MulAction.orbitRel_apply.trans (h e e').symm)).trans
+    (hq.homeomorph (f := ⟨q, hq.continuous⟩))
+
+/-- The orbit quotient homeomorphism sends a representative to its image in the target. -/
+@[to_additive (attr := simp) addOrbitRelQuotientHomeomorph_mk
+  /-- The additive orbit quotient homeomorphism sends a representative to its image in the
+  target. -/]
+theorem orbitRelQuotientHomeomorph_mk (hq : IsQuotientMap q)
+    (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') (e : E) :
+    hq.orbitRelQuotientHomeomorph h (Quotient.mk _ e) = q e := by
+  simp only [orbitRelQuotientHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.Quotient.congrRight_mk, homeomorph_apply (f := ⟨q, hq.continuous⟩),
+    ContinuousMap.coe_mk, Setoid.kerLift_mk]
+
+/-- The inverse homeomorphism sends the image of a representative to its orbit. -/
+@[to_additive (attr := simp) addOrbitRelQuotientHomeomorph_symm_apply
+  /-- The inverse homeomorphism sends the image of a representative to its additive orbit. -/]
+theorem orbitRelQuotientHomeomorph_symm_apply (hq : IsQuotientMap q)
+    (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') (e : E) :
+    (hq.orbitRelQuotientHomeomorph h).symm (q e) = Quotient.mk _ e :=
+  (hq.orbitRelQuotientHomeomorph h).symm_apply_eq.2
+    (hq.orbitRelQuotientHomeomorph_mk h e).symm
+
+end Topology.IsQuotientMap

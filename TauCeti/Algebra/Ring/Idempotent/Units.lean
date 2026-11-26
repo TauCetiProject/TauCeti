@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Conj
 public import Mathlib.Algebra.Group.Units.Equiv
 public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Tactic.LinearCombination
@@ -42,6 +43,7 @@ second edition, Proposition 4.6.2.
 
 ## Main results
 
+* `TauCeti.isConj_of_mul_eq`: if `e * p = p` and `p * e = e`, then `p` and `e` are conjugate.
 * `IsIdempotentElem.mul_unitsInvPart`, `IsIdempotentElem.one_sub_mul_unitsInvPart`: the two
   components of `unitsInvPart u` are `e u⁻¹` and `(1 - e) u`.
 * `IsIdempotentElem.unitsInvPart_symm`: `unitsInvPart` is an involution.
@@ -60,12 +62,14 @@ the automorphism `u ↦ e u⁻¹ + (1 - e) u` of `Rˣ`. Under `R ≅ e R × (1 -
 component and fixes the second. It is its own inverse (`unitsInvPart_symm`). -/
 def unitsInvPart (he : IsIdempotentElem e) : Rˣ ≃* Rˣ :=
   have hinv : Function.Involutive fun u : Rˣ ↦ (⟨e * ↑u⁻¹ + (1 - e) * u, e * u + (1 - e) * ↑u⁻¹,
-      by rw [he.mul_add_one_sub_mul]; simp, by rw [he.mul_add_one_sub_mul]; simp⟩ : Rˣ) :=
+      by rw [he.mul_add_one_sub_mul (.all _ _) (.all _ _)]; simp,
+      by rw [he.mul_add_one_sub_mul (.all _ _) (.all _ _)]; simp⟩ : Rˣ) :=
     fun u ↦ Units.ext <| by
       simp only [Units.inv_mk]
       linear_combination 2 * (↑u - ↑u⁻¹ : R) * he.eq
   .mk' (hinv.toPerm _) fun u v ↦ Units.ext <| by
-    simp only [Function.Involutive.coe_toPerm, Units.val_mul, mul_inv_rev, he.mul_add_one_sub_mul]
+    simp only [Function.Involutive.coe_toPerm, Units.val_mul, mul_inv_rev,
+      he.mul_add_one_sub_mul (.all _ _) (.all _ _)]
     ring
 
 /-- The value of `unitsInvPart` at a unit `u` is `e u⁻¹ + (1 - e) u`. -/
@@ -151,5 +155,14 @@ theorem idempotentConjUnit_mul_mul_inv (e p : R) (hep : e * p = p) (hpe : p * e 
       _ = e := by rw [← mul_assoc, hep, hpe]
   rw [coe_idempotentConjUnit, coe_inv_idempotentConjUnit]
   noncomm_ring [hee, hep, hpe]
+
+/-- **Similar idempotents**: elements `p` and `e` of a ring with `e * p = p` and `p * e = e` are
+conjugate, by the inverse of `TauCeti.idempotentConjUnit e p`. -/
+theorem isConj_of_mul_eq {p e : R} (hep : e * p = p) (hpe : p * e = e) : IsConj p e := by
+  obtain ⟨u, hu⟩ : ∃ u : Rˣ, (u : R) * e * ↑u⁻¹ = p :=
+    ⟨_, idempotentConjUnit_mul_mul_inv e p hep hpe⟩
+  refine ⟨u⁻¹, ?_⟩
+  rw [SemiconjBy, ← hu]
+  simp only [mul_assoc, Units.inv_mul_cancel_left]
 
 end TauCeti

@@ -31,9 +31,14 @@ manifold by almost-conjugate subgroups.
 
 The proof is local on `N`. Near any point, `q⁻¹ D` of a small set `D` is the disjoint union of
 the `|G|` translates of one sheet, and on each sheet `q` is an injective local isometry, hence
-preserves volume (`TauCeti.riemannianVolume_image_of_inner_mfderiv`). Only the tangent maps of
-`q` are required to preserve the inner products; no separate hypothesis that `G` acts by
+preserves volume (`TauCeti.riemannianVolume_image_of_inner_mfderiv`). Only the tangent
+maps of `q` are required to preserve the inner products; no separate hypothesis that `G` acts by
 isometries, or that `q` is differentiable, is needed.
+
+The deck group `G` preserves the volume of `M`, by the same comparison on sheets. An invariant
+element of `Lᵖ(M)` descends to a strongly measurable function on `N`
+(`IsQuotientCoveringMap.exists_stronglyMeasurable_ae_eq_comp_iff`), which lies in `Lᵖ(N)` because
+pullback along `q` multiplies `Lᵖ` norms by `|G| ^ (1/p)`.
 
 ## Main results
 
@@ -42,7 +47,8 @@ isometries, or that `q` is differentiable, is needed.
 * `IsQuotientCoveringMap.lintegral_comp_riemannianVolume`,
   `IsQuotientCoveringMap.integral_comp_riemannianVolume`: `∫ f ∘ q = |G| ∫ f`.
 * `IsQuotientCoveringMap.eLpNorm_comp_riemannianVolume`: `‖f ∘ q‖_p = |G| ^ (1/p) ‖f‖_p`.
-* `IsQuotientCoveringMap.measurePreserving_smul_riemannianVolume`: the translations by `G` preserve
+* `IsQuotientCoveringMap.measurePreserving_smul_riemannianVolume`,
+  `IsQuotientCoveringMap.smulInvariantMeasure_riemannianVolume`: the translations by `G` preserve
   the Riemannian volume of `M`.
 * `IsQuotientCoveringMap.normalizedPullbackLp`: the normalized pullback `|G| ^ (-1/p) q^*` as a
   linear isometry `Lᵖ(N) →ₗᵢ[𝕜] Lᵖ(M)`, with `IsQuotientCoveringMap.coeFn_normalizedPullbackLp`.
@@ -117,7 +123,7 @@ private theorem riemannianVolume_preimage_of_subset_image (hq : IsQuotientCoveri
       rw [image_inter_preimage, inter_eq_right.2 hDV]
     conv_rhs => rw [← himage]
     exact (riemannianVolume_image_of_inner_mfderiv (hsmul g)
-      (hq.injOn_smul (hV.mono inter_subset_left) g) fun x _ ↦ hinner x).symm
+      (hq.injOn_smul (hV.mono inter_subset_left) g) (fun x _ ↦ hinner x) rfl).symm
   rw [hunion, measure_iUnion hdisj hsmul, tsum_congr hpiece, ENNReal.tsum_const,
     ENat.card_eq_coe_natCard, ENat.toENNReal_coe]
 
@@ -207,7 +213,7 @@ theorem measurePreserving_smul_riemannianVolume (hq : IsQuotientCoveringMap q G)
   -- On a measurable set where `q` is injective, its volume is that of its image under `q`.
   have hvol {S : Set M} (hS : MeasurableSet S) (hSinj : InjOn q S) :
       riemannianVolume I M S = riemannianVolume I' N (q '' S) :=
-    (riemannianVolume_image_of_inner_mfderiv hS hSinj fun x _ ↦ hinner x).symm
+    (riemannianVolume_image_of_inner_mfderiv hS hSinj (fun x _ ↦ hinner x) rfl).symm
   obtain ⟨T, hTc, hcover⟩ := LindelofSpace.elim_nhds_subcover (fun x ↦ interior (U x))
     fun x ↦ interior_mem_nhds.2 (hU x)
   refine Measure.ext_of_biUnion_eq_univ (s := fun x ↦ interior (U x)) hTc hcover fun x _ ↦ ?_
@@ -221,6 +227,16 @@ theorem measurePreserving_smul_riemannianVolume (hq : IsQuotientCoveringMap q G)
     preimage_smul, hvol hA' ((hq.injOn_smul (hinj x) g⁻¹).mono (smul_set_mono hsub)),
     hvol hA ((hinj x).mono hsub), ← image_smul, image_image]
   simp only [hq.map_smul]
+
+omit [Finite G] in
+/-- The Riemannian volume of the total space of a quotient covering map which is a local isometry
+is invariant under the deck group. -/
+theorem smulInvariantMeasure_riemannianVolume (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+    SMulInvariantMeasure G M (riemannianVolume I M) :=
+  ⟨fun g _ hA ↦ (hq.measurePreserving_smul_riemannianVolume hinner g).measure_preimage
+    hA.nullMeasurableSet⟩
 
 /-! ### The normalized pullback on `Lᵖ` -/
 
