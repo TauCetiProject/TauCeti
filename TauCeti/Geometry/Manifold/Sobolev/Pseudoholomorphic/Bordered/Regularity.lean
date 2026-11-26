@@ -61,9 +61,9 @@ pushed-forward structure is only `C^(ℓ-1)`. Moving back along the inverse tran
 ## Implementation notes
 
 The structure is independent of the domain point and the inhomogeneous term vanishes, as in
-McDuff–Salamon, Theorem B.4.1. Domain-dependent structures and inhomogeneous terms need the joint
-regularity of the structure and the term read in bordered charts, and a structure that is standard
-along the zero section of one adapted chart at every boundary point, which are not treated here.
+McDuff–Salamon, Theorem B.4.1. Domain-dependent structures and inhomogeneous terms would need the
+joint regularity up to the boundary of the structure and the term read in bordered charts, and
+adapted charts depending on the domain point; neither is treated here.
 
 ## References
 
@@ -190,7 +190,7 @@ private theorem memWkpLocMapOnBordered_of_memWkpLoc_chart (hp : 2 < p)
   rwa [inter_eq_left.2 fun x hx ↦ htχ hx]
 
 omit [FiniteDimensional ℝ E] in
-/-- In a bordered holomorphic chart `φ` and a chart `χ` of `M`, over an open set `t ⊆ s` mapped
+/-- In a bordered holomorphic chart `φ` and a chart `χ` of `M`, over a set `t ⊆ s` mapped
 into the source of `χ`, the coordinate expression of a weak pseudoholomorphic map for a structure
 `J₀` independent of the domain point and the zero term solves `∂ₛw + χ_* J₀(w) ∂ₜw = 0`. -/
 private theorem IsWeakPseudoholomorphicOnBordered.isWeakCauchyRiemannOn_chart_const
@@ -208,9 +208,28 @@ private theorem IsWeakPseudoholomorphicOnBordered.isWeakCauchyRiemannOn_chart_co
     InhomogeneousTerm.chartTermExtend_zero] at hw
   exact hw.mono (inter_subset_inter_right _ (preimage_mono fun x hx ↦ ⟨hts hx, htχ hx⟩))
 
-/-- **Regularity near an interior point.** For `2 < p < ∞` and `k ≤ ℓ`, near a point of `s` that
+omit [HasGroupoid X borderedHolomorphicGroupoid] in
+/-- Over an open set `t` of `X` without boundary points, the coordinate domain of a chart `φ` of
+`X` is open in `ℂ`: it is relatively open in the closed upper half-plane and avoids the real
+axis. -/
+private theorem isOpen_extend_target_inter_preimage_of_subset_compl
+    (φ : OpenPartialHomeomorph X ClosedUpperHalfPlane) {t : Set X} (ht : IsOpen t)
+    (htb : t ⊆ (closedUpperHalfPlaneModel.boundary X)ᶜ) :
+    IsOpen ((φ.extend closedUpperHalfPlaneModel).target ∩
+      (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' t) := by
+  obtain ⟨Ω, hΩ, hD⟩ := φ.exists_isOpen_extend_target_inter_preimage ht
+  have hpos : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const Complex.continuous_im
+  rw [show _ ∩ _ = Ω ∩ {z : ℂ | 0 < z.im} from ?_]
+  · exact hΩ.inter hpos
+  rw [hD]
+  refine Set.ext fun z ↦ ⟨fun hz ↦ ⟨hz.1, show 0 < z.im from lt_of_le_of_ne hz.2 fun h0 ↦ ?_⟩,
+    fun hz ↦ ⟨hz.1, show 0 ≤ z.im from le_of_lt hz.2⟩⟩
+  have hzD := hD ▸ hz
+  exact htb hzD.2 (isBoundaryPoint_extend_symm hzD.1 h0.symm)
+
+/-- **Regularity near an interior point.** For `2 < p < ∞` and `m ≤ ℓ`, near a point of `s` that
 is not a boundary point of `X`, a weak pseudoholomorphic map for a `C^ℓ` structure independent of
-the domain point and the zero term is in `W^{k+1,p}_loc`. -/
+the domain point and the zero term is in `W^{m+1,p}_loc`. -/
 private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_of_not_mem
     (h : IsWeakPseudoholomorphicOnBordered (ContMDiffAlmostComplexStructureFamily.const J₀) 0 p u
       s)
@@ -234,17 +253,10 @@ private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_
   refine ⟨t, mem_nhdsWithin_of_mem_nhds (ht.mem_nhds hx₀t), ?_⟩
   have htχ : MapsTo u t χ.source := fun x hx ↦ hx.2
   -- The coordinate domain avoids the real axis, so it is open.
-  obtain ⟨Ω, hΩ, hD⟩ := φ.exists_isOpen_extend_target_inter_preimage ht
   set D := (φ.extend closedUpperHalfPlaneModel).target ∩
     (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' t
-  have hpos : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const Complex.continuous_im
-  have hDo : IsOpen D := by
-    convert hΩ.inter hpos using 1
-    rw [hD]
-    refine Set.ext fun z ↦ ⟨fun hz ↦ ⟨hz.1, show 0 < z.im from lt_of_le_of_ne hz.2 fun h0 ↦ ?_⟩,
-      fun hz ↦ ⟨hz.1, show 0 ≤ z.im from le_of_lt hz.2⟩⟩
-    have hzD : z ∈ D := hD ▸ hz
-    exact hzD.2.1.2 (isBoundaryPoint_extend_symm hzD.1 h0.symm)
+  have hDo : IsOpen D :=
+    isOpen_extend_target_inter_preimage_of_subset_compl φ ht fun x hx ↦ hx.1.2
   have hχ'1 : ContMDiffOn I 𝓘(ℝ, E) ∞ χ' χ'.source :=
     χ.contMDiffOn_extendTrans hχ contDiff_id
   have hχ's : ContMDiffOn 𝓘(ℝ, E) I ∞ χ'.symm χ'.target :=
@@ -266,12 +278,63 @@ private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_
   rw [← χ.coe_extendTrans_refl I]
   exact hreg
 
+omit [I.Boundaryless] in
+/-- **Regularity in an adapted chart.** Let `ψ` be an adapted chart of `M` for a subset `S` and a
+`C^ℓ` structure `J₀` (`TauCeti.IsAdaptedChart`), and `χ` a chart of `M` into `E` that is `C^ℓ` with
+`C^ℓ` inverse, with `1 ≤ ℓ`. For `2 < p < ∞` and `m + 1 ≤ ℓ`, let `w` solve
+`∂ₛw + χ_* J₀(w) ∂ₜw = 0` weakly on `H = Ω ∩ {0 ≤ im}`, with values in the source of the transition
+`Θ = ψ ∘ χ⁻¹`, and with `χ⁻¹ (w s) ∈ S` for real `s ∈ Ω`. Then `w ∈ W^{m+1,p}_loc(H)`: the
+expression `Θ ∘ w` solves the equation for `ψ_* J₀`, which is `C^(ℓ-1)` and standard on the zero
+section where `Θ ∘ w` takes its boundary values, and `Θ⁻¹` is `C^ℓ`. -/
+private theorem memWkpLoc_of_isAdaptedChart {S : Set M} {ψ : OpenPartialHomeomorph M (F × F)}
+    (hψ : IsAdaptedChart J₀ S ψ) {χ : OpenPartialHomeomorph M E}
+    (hχ : ContMDiffOn I 𝓘(ℝ, E) ℓ χ χ.source) (hχs : ContMDiffOn 𝓘(ℝ, E) I ℓ χ.symm χ.target)
+    (hℓ : 1 ≤ ℓ) (hp : 2 < p) (hp' : p ≠ ⊤) {m : ℕ} (hm : ((m + 1 : ℕ) : ℕ∞) ≤ ℓ)
+    {Ω : Opens ℂ} {w : ℂ → E}
+    (h : IsWeakCauchyRiemannOn p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})
+      (fun _ v ↦ J₀.chartPushforward χ v) (fun _ _ ↦ 0) w)
+    (hwΘ : MapsTo w ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (χ.symm.trans ψ).source)
+    (hS : ∀ s : ℝ, (s : ℂ) ∈ Ω → χ.symm (w s) ∈ S) :
+    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (m + 1) w := by
+  have hℓ1 : (1 : ℕ∞ω) ≤ ℓ := by exact_mod_cast hℓ
+  set Θ := χ.symm.trans ψ
+  obtain ⟨-, hΘs⟩ := OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn hχ hχs
+    hψ.contMDiffOn hψ.contMDiffOn_symm
+  have hw := h.chartPushforward_symm_trans_comp (hχ.of_le hℓ1) (hχs.of_le hℓ1)
+    (hψ.contMDiffOn.of_le hℓ1) (hψ.contMDiffOn_symm.of_le hℓ1) hwΘ
+  have hΘt : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, Θ (w z) ∈ ψ.target :=
+    fun z hz ↦ (Θ.map_source (hwΘ hz)).1
+  have hreal : ∀ s : ℝ, (s : ℂ) ∈ Ω → (s : ℂ) ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
+    fun s hs ↦ ⟨hs, by simp⟩
+  -- Along the real axis `Θ ∘ w` lies on the zero section, where `ψ_* J₀` is standard.
+  have hzero : ∀ s : ℝ, (s : ℂ) ∈ Ω → (Θ (w s)).2 = 0 := fun s hs ↦
+    (hψ.isImage (hwΘ (hreal s hs)).2).2 (hS s hs)
+  have hreg := memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod (W' := univ ×ˢ ψ.target)
+    (ℓ := m) hp hp' (isOpen_univ.prod ψ.open_target)
+    ((hψ.contDiffOn_chartPushforward.of_le ?_).comp contDiffOn_snd
+      fun (x : ℂ × (F × F)) (hx : x ∈ univ ×ˢ ψ.target ∩ {x : ℂ × (F × F) | 0 ≤ x.1.im}) ↦
+        hx.1.2)
+    contDiffOn_const (fun z hz ↦ ⟨trivial, hΘt z hz⟩)
+    (ae_restrict_of_forall_mem (Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const
+      Complex.measurable_im)) fun z hz ↦ J₀.chartPushforward_mul_self
+        (hψ.contMDiffOn.of_le hℓ1) (hψ.contMDiffOn_symm.of_le hℓ1) (hΘt z hz))
+    hzero (fun s hs ↦ hψ.chartPushforward_of_snd_eq_zero _ (hΘt _ (hreal s hs)) (hzero s hs)) hw
+  · -- Move back along the inverse transition, which is `C^ℓ`.
+    lift p to ℝ≥0 using hp'
+    exact (MemWkpLoc.contDiffOn_comp_succ_halfPlane (g := Θ.symm) (by exact_mod_cast hp) hreg
+      hw.continuousOn Θ.open_target (hΘs.of_le (by exact_mod_cast hm))
+      fun z hz ↦ Θ.map_source (hwΘ hz)).congr fun z hz ↦ (Θ.left_inv (hwΘ hz)).symm
+  · -- The pushed-forward structure is `C^(ℓ-1)` and `m + 1 ≤ ℓ`.
+    have hm' : (m : ℕ∞) ≤ ℓ - 1 :=
+      ENat.le_sub_of_add_le_right ENat.one_ne_top (by exact_mod_cast hm)
+    exact_mod_cast hm'
+
 /-- **Regularity near a point mapped into a totally real submanifold.** For `2 < p < ∞` and
-`k + 1 ≤ ℓ`, near a point `x₀ ∈ s` with `u x₀ ∈ ι (N)`, a weak pseudoholomorphic map for a `C^ℓ`
+`m + 1 ≤ ℓ`, near a point `x₀ ∈ s` with `u x₀ ∈ ι (N)`, a weak pseudoholomorphic map for a `C^ℓ`
 structure `J₀` independent of the domain point and the zero term, mapping the boundary points of
-`s` into the image of a totally real embedding `ι` for `J₀`, is in `W^{k+1,p}_loc` up to the
-boundary. The coordinate expression is moved into an adapted chart at `u x₀`, where the planar
-boundary bootstrap applies. -/
+`s` into the image of a totally real embedding `ι` for `J₀`, is in `W^{m+1,p}_loc` up to the
+boundary. Its coordinate expression in the chart at `u x₀` is regular by
+`memWkpLoc_of_isAdaptedChart`, for an adapted chart at `u x₀`. -/
 private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_of_mem_range
     [IsManifold I' k N]
     (h : IsWeakPseudoholomorphicOnBordered (ContMDiffAlmostComplexStructureFamily.const J₀) 0 p u
@@ -299,74 +362,28 @@ private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_
   have htχ : MapsTo u t χ.source := fun x hx ↦ by
     simpa [χ, extChartAt_source] using hψχ hx.2
   obtain ⟨Ω, hΩ, hD⟩ := φ.exists_isOpen_extend_target_inter_preimage ht
-  set D := (φ.extend closedUpperHalfPlaneModel).target ∩
-    (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' t
-  set w := χ' ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm
-  set Θ := χ'.symm.trans ψ
-  -- The charts and the transition are `C^ℓ`.
-  have hχ'1 : ContMDiffOn I 𝓘(ℝ, E) ℓ χ' χ'.source :=
-    (χ.contMDiffOn_extendTrans hχ contDiff_id).of_le (by exact_mod_cast le_top)
-  have hχ's : ContMDiffOn 𝓘(ℝ, E) I ℓ χ'.symm χ'.target :=
-    (χ.contMDiffOn_extendTrans_symm hχ contDiff_id).of_le (by exact_mod_cast le_top)
-  have hℓ1 : (1 : ℕ∞ω) ≤ ℓ := by exact_mod_cast hℓ
-  obtain ⟨-, hΘs⟩ := OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn hχ'1
-    hχ's hψ.contMDiffOn hψ.contMDiffOn_symm
-  have hwΘ : MapsTo w D Θ.source := fun z hz ↦ by
-    have hu : u ((φ.extend closedUpperHalfPlaneModel).symm z) ∈ χ'.source := by
-      simpa [χ'] using htχ hz.2
-    refine ⟨χ'.map_source hu, ?_⟩
-    change χ'.symm (χ' (u _)) ∈ ψ.source
-    rw [χ'.left_inv hu]
-    exact hz.2.2
-  -- In the adapted chart, the equation is the homogeneous one for `ψ_* J₀`.
-  have hw := (h.isWeakCauchyRiemannOn_chart_const hts hφ hχ
-    htχ).chartPushforward_symm_trans_comp (hχ'1.of_le hℓ1) (hχ's.of_le hℓ1)
-    (hψ.contMDiffOn.of_le hℓ1) (hψ.contMDiffOn_symm.of_le hℓ1) hwΘ
-  have hΘt : ∀ z ∈ D, Θ (w z) ∈ ψ.target := fun z hz ↦ (Θ.map_source (hwΘ hz)).1
-  have hΘw : ∀ z ∈ D, Θ (w z) = ψ (u ((φ.extend closedUpperHalfPlaneModel).symm z)) :=
-    fun z hz ↦ by
-      have hu : u ((φ.extend closedUpperHalfPlaneModel).symm z) ∈ χ'.source := by
-        simpa [χ'] using htχ hz.2
-      change ψ (χ'.symm (χ' (u _))) = _
-      rw [χ'.left_inv hu]
-  -- Along the real axis the adapted expression lies on the zero section.
-  have hzero : ∀ s' : ℝ, (s' : ℂ) ∈ Ω → (Θ (w s')).2 = 0 := fun s' hs' ↦ by
-    have hz : (s' : ℂ) ∈ D := hD ▸ ⟨hs', by simp⟩
-    have hbd := isBoundaryPoint_extend_symm hz.1 (Complex.ofReal_im s')
-    rw [hΘw _ hz]
-    exact (hψ.isImage hz.2.2).2 (hb ⟨hz.2.1.1, hbd⟩)
-  have hwD : IsWeakCauchyRiemannOn p (Ω ∩ {z | 0 ≤ z.im}) (fun _ v ↦ J₀.chartPushforward ψ v)
-      (fun _ _ ↦ 0) (fun z ↦ Θ (w z)) := by
-    rw [← hD]
-    exact hw
-  have hreg := memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod (Ω := ⟨Ω, hΩ⟩)
-    (W' := univ ×ˢ ψ.target) (ℓ := m) hp hp' (isOpen_univ.prod ψ.open_target)
-    ((hψ.contDiffOn_chartPushforward.of_le ?_).comp contDiffOn_snd
-      fun (x : ℂ × (F × F)) (hx : x ∈ univ ×ˢ ψ.target ∩ {x : ℂ × (F × F) | 0 ≤ x.1.im}) ↦
-        hx.1.2)
-    contDiffOn_const (fun z hz ↦ ⟨trivial, hΘt z (hD ▸ hz)⟩)
-    (ae_restrict_of_forall_mem (hΩ.measurableSet.inter (measurableSet_le measurable_const
-      Complex.measurable_im)) fun z hz ↦ J₀.chartPushforward_mul_self
-        (hψ.contMDiffOn.of_le hℓ1) (hψ.contMDiffOn_symm.of_le hℓ1) (hΘt z (hD ▸ hz)))
-    hzero (fun s' hs' ↦ hψ.chartPushforward_of_snd_eq_zero _
-      (hΘt _ (hD ▸ ⟨hs', by simp⟩)) (hzero s' hs'))
-    hwD
-  · -- Move back along the inverse transition, which is `C^ℓ`.
-    lift p to ℝ≥0 using hp'
-    have hback := MemWkpLoc.contDiffOn_comp_succ_halfPlane (Ω := ⟨Ω, hΩ⟩) (g := Θ.symm)
-      (by exact_mod_cast hp) hreg hwD.continuousOn
-      Θ.open_target (hΘs.of_le (by exact_mod_cast hm)) fun z hz ↦ Θ.map_source (hwΘ (hD ▸ hz))
-    have htφ : t ⊆ φ.source := fun x hx ↦ hx.1.2
-    refine memWkpLocMapOnBordered_of_memWkpLoc_chart (by exact_mod_cast hp) ENNReal.coe_ne_top
-      ht hφ htφ hχ htχ (h.continuousOn.mono hts) ?_
-    rw [← χ.coe_extendTrans_refl I]
-    change MemWkpLoc _ D _ _
-    rw [hD]
-    exact hback.congr fun z hz ↦ (Θ.left_inv (hwΘ (hD ▸ hz))).symm
-  · -- The pushed-forward structure is `C^(ℓ-1)` and `m + 1 ≤ ℓ`.
-    have hm' : (m : ℕ∞) ≤ ℓ - 1 :=
-      ENat.le_sub_of_add_le_right ENat.one_ne_top (by exact_mod_cast hm)
-    exact_mod_cast hm'
+  have hleft : ∀ z ∈ (φ.extend closedUpperHalfPlaneModel).target ∩
+      (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' t,
+      χ'.symm ((χ' ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm) z) =
+        u ((φ.extend closedUpperHalfPlaneModel).symm z) :=
+    fun z hz ↦ χ'.left_inv (by simpa [χ'] using htχ hz.2)
+  have hw := h.isWeakCauchyRiemannOn_chart_const hts hφ hχ htχ
+  rw [hD] at hw hleft
+  refine memWkpLocMapOnBordered_of_memWkpLoc_chart hp hp' ht hφ (fun x hx ↦ hx.1.2) hχ htχ
+    (h.continuousOn.mono hts) ?_
+  rw [← χ.coe_extendTrans_refl I, hD]
+  refine memWkpLoc_of_isAdaptedChart (Ω := ⟨Ω, hΩ⟩) hψ
+    ((χ.contMDiffOn_extendTrans hχ contDiff_id).of_le (by exact_mod_cast le_top))
+    ((χ.contMDiffOn_extendTrans_symm hχ contDiff_id).of_le (by exact_mod_cast le_top)) hℓ hp hp'
+    hm hw (fun z hz ↦ ⟨χ'.map_source (by simpa [χ'] using htχ (hD ▸ hz).2), ?_⟩) fun s' hs' ↦ ?_
+  · change χ'.symm ((χ' ∘ u ∘ _) z) ∈ ψ.source
+    rw [hleft z hz]
+    exact (hD ▸ hz).2.2
+  · -- A real point of the coordinate domain reads a boundary point of `X`.
+    have hz : (s' : ℂ) ∈ Ω ∩ {z | 0 ≤ z.im} := ⟨hs', by simp⟩
+    rw [hleft _ hz]
+    have hz' := hD ▸ hz
+    exact hb ⟨hz'.2.1.1, isBoundaryPoint_extend_symm hz'.1 (Complex.ofReal_im s')⟩
 
 /-- **Regularity up to a totally real boundary** (McDuff–Salamon, Theorem B.4.1). Let `2 < p < ∞`,
 let `J₀` be an almost complex structure on `M` of class `C^ℓ`, regarded as a family independent of
