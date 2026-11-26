@@ -82,8 +82,8 @@ theorem ker_restrictionS :
 /-- An automorphism of `Ω` restricts to the identity of `K_S` exactly when it fixes `K_S`. -/
 theorem restrictionS_eq_one_iff {σ : Gal(Ω/K)} :
     restrictionS K Ω S σ = 1 ↔ σ ∈ (maxUnramifiedOutside K Ω S).fixingSubgroup := by
-  rw [← ker_restrictionS]
-  rfl
+  rw [← ker_restrictionS, MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom,
+    MonoidHom.coe_ofClass]
 
 /-- **Restriction to `G_{K,S}` is an open map.** -/
 theorem isOpenMap_restrictionS : IsOpenMap (restrictionS K Ω S) := by
