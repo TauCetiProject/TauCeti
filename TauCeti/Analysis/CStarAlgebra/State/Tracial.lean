@@ -51,8 +51,7 @@ it with the set of β-KMS states of the trivial dynamics for every `β`.
 * `PositiveContinuousLinearMap.isTracialState_unitization_iff`: the extension `τ⁺¹` of a positive
   functional to the unitization (`PositiveContinuousLinearMap.unitization`) is a tracial state
   exactly when `τ` is.
-* `PositiveContinuousLinearMap.not_isTracialState_of_mul_star_add_mul_star_le_one` and
-  `PositiveContinuousLinearMap.not_isTracialState_of_mul_star_add_mul_star_eq_one`: a unital
+* `PositiveContinuousLinearMap.not_isTracialState_of_mul_star_add_mul_star_le_one`: a unital
   C⋆-algebra containing two isometries `s, t` with `s * star s + t * star t ≤ 1` has no tracial
   state (`TauCeti.tracialStates_eq_empty_of_mul_star_add_mul_star_le_one`).
 
@@ -77,7 +76,7 @@ closed: on `c₀` the point evaluations are tracial states converging weak-* to 
 public section
 
 open Filter Set WeakDual
-open scoped ComplexOrder Topology
+open scoped CStarAlgebra ComplexOrder Topology
 
 namespace LinearMap
 
@@ -138,12 +137,8 @@ theorem IsTracialState.ne_zero (hτ : τ.IsTracialState) : τ ≠ 0 := by
   simpa using hτ.norm_eq_one
 
 /-- A C⋆-algebra admitting a tracial state is nontrivial. -/
-theorem IsTracialState.nontrivial (hτ : τ.IsTracialState) : Nontrivial A := by
-  by_contra h
-  rw [not_nontrivial_iff_subsingleton] at h
-  apply hτ.ne_zero
-  ext x
-  simp [Subsingleton.elim x 0]
+theorem IsTracialState.nontrivial (hτ : τ.IsTracialState) : Nontrivial A :=
+  TauCeti.nontrivial_of_mem_stateSpace (τ.toWeakDual_mem_stateSpace_iff.mpr hτ.norm_eq_one)
 
 /-- A tracial state satisfies `τ (a * b) = τ (b * a)`. -/
 theorem IsTracialState.map_mul_comm (hτ : τ.IsTracialState) (a b : A) :
@@ -222,7 +217,9 @@ theorem IsTracialState.domRestrict_of_norm_eq_one (hτ : τ.IsTracialState)
     (S : NonUnitalStarSubalgebra ℂ A) [IsClosed (S : Set A)]
     (hnorm : ‖(τ.domRestrict S : S →L[ℂ] ℂ)‖ = 1) :
     (τ.domRestrict S).IsTracialState := by
-  simp [isTracialState_iff, hnorm, hτ.map_mul_comm]
+  rw [← comp_ofClass_eq_domRestrict τ (NonUnitalStarSubalgebraClass.subtype S) (fun _ => rfl)]
+    at hnorm ⊢
+  exact hτ.comp_of_norm_eq_one (NonUnitalStarSubalgebraClass.subtype S) hnorm
 
 end NonUnital
 
@@ -276,16 +273,6 @@ theorem not_isTracialState_of_mul_star_add_mul_star_le_one {s t : A} (hs : star 
   have hre := (Complex.le_def.mp hle).left
   norm_num at hre
 
-/-- **No trace in the presence of two complementary isometries.** If a unital C⋆-algebra
-contains isometries `s, t` (`star s * s = 1 = star t * t`) whose range projections add up to
-the identity, `s * star s + t * star t = 1`, then it has no tracial state, since
-`τ 1 = τ (s * star s) + τ (t * star t) = τ (star s * s) + τ (star t * t) = 2 τ 1`. Such
-isometries exist, for example, among the bounded operators on an infinite-dimensional Hilbert
-space. -/
-theorem not_isTracialState_of_mul_star_add_mul_star_eq_one {s t : A} (hs : star s * s = 1)
-    (ht : star t * t = 1) (hst : s * star s + t * star t = 1) : ¬ τ.IsTracialState :=
-  not_isTracialState_of_mul_star_add_mul_star_le_one hs ht hst.le
-
 /-- Pulling a tracial state back along a star homomorphism between unital C⋆-algebras that maps `1`
 to `1` yields a tracial state. -/
 theorem IsTracialState.comp_of_map_one {B F : Type*}
@@ -313,8 +300,8 @@ end PullbackUnital
 of `S` without any norm hypothesis. -/
 theorem IsTracialState.domRestrict (hτ : τ.IsTracialState) (S : StarSubalgebra ℂ A)
     [IsClosed (S : Set A)] :
-    (τ.domRestrict S).IsTracialState := by
-  simp [isTracialState_iff_map_one, hτ.map_one, hτ.map_mul_comm]
+    (τ.domRestrict S).IsTracialState :=
+  comp_ofClass_eq_domRestrict τ S.subtype (fun _ => rfl) ▸ hτ.comp S.subtype
 
 end Unital
 
@@ -414,11 +401,9 @@ theorem isClosed_preimage_toWeakDual_tracialStates :
 
 /-- On a subsingleton (zero) C⋆-algebra, the tracial state space is empty. -/
 @[simp]
-theorem tracialStates_eq_empty [Subsingleton A] : tracialStates A = ∅ := by
-  rw [eq_empty_iff_forall_notMem]
-  intro φ hφ
-  obtain ⟨τ, hτ, -⟩ := mem_tracialStates_iff_exists.mp hφ
-  exact not_nontrivial A hτ.nontrivial
+theorem tracialStates_eq_empty [Subsingleton A] : tracialStates A = ∅ :=
+  eq_empty_iff_forall_notMem.mpr fun _ hφ =>
+    not_nontrivial A (nontrivial_of_mem_stateSpace (tracialStates_subset_stateSpace hφ))
 
 /-- On a commutative C⋆-algebra every state is tracial: `T(A) = S(A)`. -/
 @[simp]

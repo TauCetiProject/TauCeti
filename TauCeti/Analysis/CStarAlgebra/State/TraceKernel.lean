@@ -60,8 +60,7 @@ tracial states whenever `τ` is a tracial state.
   on a C⋆-algebra whose only closed two-sided ideals are `⊥` and `⊤`, every tracial state is
   faithful (`PositiveContinuousLinearMap.isFaithfulTrace_of_forall_isClosed_eq_bot_or_eq_top`
   for nonzero tracial positive functionals).
-* `PositiveContinuousLinearMap.IsFaithfulTrace.comp`,
-  `PositiveContinuousLinearMap.IsFaithfulTrace.domRestrict_nonUnital`, and
+* `PositiveContinuousLinearMap.IsFaithfulTrace.comp` and
   `PositiveContinuousLinearMap.IsFaithfulTrace.domRestrict`: faithfulness pulls back along
   injective star homomorphisms and restricts to closed star subalgebras.
 * `PositiveContinuousLinearMap.gnsRangeTrace` and `PositiveContinuousLinearMap.quotientTrace`:
@@ -257,13 +256,6 @@ theorem isFaithfulTrace_iff_map_pos :
   · by_contra hne
     exact (h a (ha.lt_of_ne' hne)).ne' hτa
 
-/-- A faithful positive functional has an injective GNS representation, without assuming
-traciality or a unit. -/
-theorem IsFaithfulTrace.gnsNonUnitalStarAlgHom_injective (h : τ.IsFaithfulTrace) :
-    Function.Injective (τ : A →ₚ[ℂ] ℂ).gnsNonUnitalStarAlgHom :=
-  (τ : A →ₚ[ℂ] ℂ).gnsNonUnitalStarAlgHom_injective fun _ =>
-    h.eq_zero_of_map_star_mul_self_eq_zero
-
 /-- A tracial positive functional is faithful exactly when its trace kernel is zero. -/
 theorem isFaithfulTrace_iff_traceKernel_eq_bot (hτ : ∀ a b, τ (a * b) = τ (b * a)) :
     τ.IsFaithfulTrace ↔ τ.traceKernel hτ = ⊥ := by
@@ -310,11 +302,12 @@ theorem IsFaithfulTrace.comp (hσ : σ.IsFaithfulTrace) (f : F) (hf : Function.I
 end Pullback
 
 omit [StarOrderedRing A] in
-/-- Restricting a faithful positive functional to a closed nonunital star subalgebra preserves
+/-- Restricting a faithful positive functional to a closed star subalgebra preserves
 faithfulness. -/
-theorem IsFaithfulTrace.domRestrict_nonUnital (hτ : τ.IsFaithfulTrace)
-    (S : NonUnitalStarSubalgebra ℂ A) [IsClosed (S : Set A)] :
-    (τ.domRestrict S).IsFaithfulTrace :=
+theorem IsFaithfulTrace.domRestrict {M : Type*} [SetLike M A] [NonUnitalSubringClass M A]
+    [SMulMemClass M ℂ A] [StarMemClass M A] (hτ : τ.IsFaithfulTrace) (s : M)
+    [IsClosed (s : Set A)] :
+    (τ.domRestrict s).IsFaithfulTrace :=
   isFaithfulTrace_iff.mpr fun _ ha =>
     Subtype.ext (hτ.eq_zero_of_map_star_mul_self_eq_zero (by simpa using ha))
 
@@ -323,17 +316,7 @@ end General
 section Unital
 
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {τ : A →P[ℂ] ℂ}
-
-omit [StarOrderedRing A] in
-/-- Restricting a faithful positive functional to a closed unital star subalgebra preserves
-faithfulness. -/
-theorem IsFaithfulTrace.domRestrict (hτ : τ.IsFaithfulTrace) (S : StarSubalgebra ℂ A)
-    [IsClosed (S : Set A)] :
-    (τ.domRestrict S).IsFaithfulTrace :=
-  isFaithfulTrace_iff.mpr fun _ ha =>
-    Subtype.ext (hτ.eq_zero_of_map_star_mul_self_eq_zero (by simpa using ha))
-
-variable (hτ : ∀ a b, τ (a * b) = τ (b * a))
+  (hτ : ∀ a b, τ (a * b) = τ (b * a))
 
 /-- On a unital C⋆-algebra the trace kernel is the algebraic trace radical
 `{x | ∀ y, τ (x * y) = 0}` of `τ`. -/
