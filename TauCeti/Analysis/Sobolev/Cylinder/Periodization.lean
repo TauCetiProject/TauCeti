@@ -196,8 +196,8 @@ theorem integral_inner_jet_eq_zero_of_forall_inner_jetOperator_eq_zero
   simp only [hunf, ← hsum]
   rw [← stripMeasure_eq_restrict_univ_prod_Ico, ← h0]
   refine integral_congr_ae ?_
-  filter_upwards [hgη, coeFn_jetOperator hM (jetLp (testSection V) ⟨P, hP⟩),
-    coeFn_jetLp (S := testSection V) ⟨P, hP⟩] with z hgz hMz hjz
+  filter_upwards [hgη, coeFn_jetOperator hM (jetLp 2 (testSection V) ⟨P, hP⟩),
+    coeFn_jetLp 2 (S := testSection V) ⟨P, hP⟩] with z hgz hMz hjz
   rw [hgz, hMz, hjz]
 
 end Annihilator
