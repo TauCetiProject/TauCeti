@@ -32,6 +32,8 @@ Lemma 8.11.8 (tag 0CJY).
 
 * `GerbeAutTransport.isomCoverTransport_eq_conjugateCoverAut`: any cover and local isomorphisms.
 * `GerbeAutTransport.isomCoverTransport_of_iso`: conjugation along a global isomorphism.
+* `GerbeAutTransport.isomCoverTransport_self`, `GerbeAutTransport.isomCoverTransport_comp`: the
+  identity and composition laws.
 * `GerbeAutTransport.isomCoverTransport_naturality`, `GerbeAutTransport.mapAut_isomCoverTransport`
   (base change) and `GerbeAutTransport.isomCoverTransport_mapAut_comp` (across the composite
   pullback isomorphism `(g ≫ f)^* ≅ g^* f^*`).
@@ -93,6 +95,29 @@ theorem isomCoverTransport_of_iso {V : C} {x y : F.obj (.mk (op V))} (d : x ≅ 
   rw [isomCoverTransport_apply]
   exact conjugateCoverAut_of_iso hF _ _ d a
 
+/-- Transport from `x` to itself is the identity. -/
+@[simp]
+theorem isomCoverTransport_self {V : C} (x : F.obj (.mk (op V))) (a : Aut x) :
+    isomCoverTransport J hF x x a = a := by
+  rw [isomCoverTransport_apply]
+  exact conjugateCoverAut_self hF _ _ a
+
+/-- **Composition of transports.** Transport from `x` to `y` followed by transport from `y` to `z`
+is transport from `x` to `z`. -/
+@[simp]
+theorem isomCoverTransport_comp {V : C} (x y z : F.obj (.mk (op V))) (a : Aut x) :
+    isomCoverTransport J hF y z (isomCoverTransport J hF x y a) =
+      isomCoverTransport J hF x z a := by
+  have hR := J.intersection_covering (isomCover_mem (J := J) x y) (isomCover_mem (J := J) y z)
+  let e : LocalIsos (isomCover F x y ⊓ isomCover F y z) x y :=
+    fun i ↦ isomCoverIsos x y ⟨i.obj, i.property.1⟩
+  let d : LocalIsos (isomCover F x y ⊓ isomCover F y z) y z :=
+    fun i ↦ isomCoverIsos y z ⟨i.obj, i.property.2⟩
+  rw [isomCoverTransport_eq_conjugateCoverAut J hF hR e,
+    isomCoverTransport_eq_conjugateCoverAut J hF hR d,
+    isomCoverTransport_eq_conjugateCoverAut J hF hR fun i ↦ e i ≪≫ d i]
+  exact conjugateCoverAut_comp hF hR e d _ a
+
 /-- **Naturality of transport.** For `c : x₁ ≅ x₂`, `d : y₁ ≅ y₂` and automorphisms `a₁`, `a₂`
 related by `c`, the transports are related by `d`. -/
 theorem isomCoverTransport_naturality {V : C} {x₁ x₂ y₁ y₂ : F.obj (.mk (op V))} (c : x₁ ≅ x₂)
@@ -123,11 +148,21 @@ theorem isomCoverTransport_mapAut_comp {U V W : C} (f : V ⟶ U) (g : W ⟶ V)
         ((F.map g.op.toLoc).toFunctor.mapAut _ ((F.map f.op.toLoc).toFunctor.mapAut x a)) := by
   have hfg : f.op.toLoc ≫ g.op.toLoc = (g ≫ f).op.toLoc := by
     rw [← Quiver.Hom.comp_toLoc, ← op_comp]
+  -- The component at `x` of the composition isomorphism of `F`; its codomain
+  -- `(F.map f ≫ F.map g).toFunctor.obj x` is `g^* (f^* x)` by definition of composition in `Cat`.
+  let c : (F.map (g ≫ f).op.toLoc).toFunctor.obj x ≅
+      (F.map g.op.toLoc).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj x) :=
+    (Cat.Hom.toNatIso (F.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc hfg)).app x
+  -- `c` relates `(g ≫ f)^* a` and `g^* (f^* a)`: this is the naturality of `F.mapComp'` at `a`.
+  have ha : ((F.map (g ≫ f).op.toLoc).toFunctor.mapAut x a).asIso.hom ≫ c.hom =
+      c.hom ≫ ((F.map g.op.toLoc).toFunctor.mapAut _
+        ((F.map f.op.toLoc).toFunctor.mapAut x a)).asIso.hom := by
+    simp only [c, Functor.mapAut_apply_asIso, Functor.mapIso_hom, Iso.app_hom,
+      Cat.Hom.toNatIso_hom]
+    exact F.mapComp'_hom_naturality f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc hfg a.asIso.hom
   refine Aut.ext (Iso.ext ?_)
-  simpa using isomCoverTransport_naturality J hF
-    ((Cat.Hom.toNatIso (F.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc hfg)).app x)
-    (Iso.refl y) _ _ (F.mapComp'_hom_naturality f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc hfg
-      a.asIso.hom)
+  simpa only [Iso.refl_hom, Category.comp_id, Category.id_comp] using
+    isomCoverTransport_naturality J hF c (Iso.refl y) _ _ ha
 
 end GerbeAutTransport
 

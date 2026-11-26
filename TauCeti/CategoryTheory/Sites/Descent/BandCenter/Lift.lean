@@ -38,7 +38,9 @@ of the Stacks Project, Lemma 8.11.8 (tag 0CJY), with the varying-base verificati
   `IntrinsicBandSections.evaluation_lift_of_iso` for a global isomorphism `f^* x ≅ y`.
 * `IntrinsicBandSections.evaluation_lift_id`, `IntrinsicBandSections.lift_evaluation_id`: the
   two inverse laws; `IntrinsicBandSections.lift_injective`, `IntrinsicBandSections.lift_surjective`.
-* `IntrinsicBandSections.restrict_lift`, `IntrinsicBandSections.evaluation_surjective`.
+* `IntrinsicBandSections.restrict_lift`, `IntrinsicBandSections.lift_autMulEquivOfIso`: the lift
+  commutes with pullback and with isomorphisms of objects.
+* `IntrinsicBandSections.evaluation_surjective`.
 
 ## References
 
@@ -143,6 +145,13 @@ theorem lift_injective (x : F.obj (.mk (op U))) : Function.Injective (lift J hF 
 /-- The lift is surjective: every central section is the lift of its evaluation at `(𝟙, x)`. -/
 theorem lift_surjective (x : F.obj (.mk (op U))) : Function.Surjective (lift J hF x) :=
   Function.LeftInverse.surjective (lift_evaluation_id J hF x)
+
+/-- **Invariance of the lift under isomorphisms**: for `e : x ≅ x'`, `L_x'(e a e⁻¹) = L_x(a)`. -/
+@[simp]
+theorem lift_autMulEquivOfIso {x x' : F.obj (.mk (op U))} (e : x ≅ x') (a : Aut x) :
+    lift J hF x' (Aut.autMulEquivOfIso e a) = lift J hF x a :=
+  evaluation_injective (J := J) x' (by
+    rw [evaluation_lift_id, ← autMulEquivOfIso_evaluation (𝟙 U) e, evaluation_lift_id])
 
 /-- **Restriction of the lift**: `r_f(L_x(a)) = L_(f^* x)(f^* a)`. -/
 theorem restrict_lift (x : F.obj (.mk (op U))) (a : Aut x) {V : C} (f : V ⟶ U) :
