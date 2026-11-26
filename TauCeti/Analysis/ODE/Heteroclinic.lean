@@ -94,7 +94,7 @@ theorem exists_isIntegralCurve_tendsto_of_pos {K : ℝ≥0} (hab : a < b)
   have hWV : ∀ x ∈ Icc a b, W x = V x := fun x hx ↦ by simp [hWdef, projIcc_of_mem _ hx]
   have hc : (a + b) / 2 ∈ Ioo a b := ⟨by linarith, by linarith⟩
   set c := (a + b) / 2
-  set γ := ODE.globalSolution W hW c
+  set γ := ODE.globalSolution W hW c with hγdef
   have hγd : ∀ t, HasDerivAt γ (W (γ t)) t := ODE.hasDerivAt_globalSolution W hW c
   have hγc : Continuous γ := ODE.continuous_globalSolution_apply W hW c
   -- `γ` never reaches an equilibrium `e` of `W`: from there it would stay at `e`, but `γ 0 = c`.
@@ -104,7 +104,7 @@ theorem exists_isIntegralCurve_tendsto_of_pos {K : ℝ≥0} (hab : a < b)
       ODE.eq_globalSolution W hW fun _ ↦ by simpa [he] using hasDerivAt_const _ e
     have h0 := ODE.globalSolution_add W hW c t (-t)
     rw [add_neg_cancel, ODE.globalSolution_zero] at h0
-    rw [show ODE.globalSolution W hW c t = e from ht, ← hconst] at h0
+    rw [← hγdef, ht, ← hconst] at h0
     exact hec h0.symm
   -- Hence `γ` stays in `(a, b)`, by the intermediate value theorem.
   have hWa : W a = 0 := by rw [hWV a (left_mem_Icc.2 hab.le), ha]

@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.Calculus.Morse.OneDimensional
 -- Private: used only inside proofs.
 import Mathlib.Analysis.Convex.Deriv
-import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Convex.Deriv
+import TauCeti.Analysis.Convex.StrictTangent
 
 /-!
 # The trajectory joining the two critical points born at a birth
@@ -36,9 +37,8 @@ exactly one unparametrized negative gradient trajectory of `g s`
 
 This is the local trajectory statement at a birth for an arbitrary family, not only for the
 model `TauCeti.birthDeathPotential`, in which it is
-`TauCeti.exists_eq_birthDeathOrbit_comp_add`. With the transverse quadratic directions of the
-splitting lemma added, the trajectories of the product follow from it as in
-`TauCeti.exists_eq_birthDeathOrbit_separatedSum`.
+`TauCeti.exists_eq_birthDeathOrbit_comp_add`. The trajectories of the full family in the
+splitting chart, with the transverse quadratic directions added, are not treated here.
 
 ## Main results
 
@@ -59,92 +59,6 @@ open Filter Function Set
 open scoped Topology Gradient
 
 namespace TauCeti
-
-/-! ### A strictly convex function with two zeros -/
-
-section Convex
-
-variable {φ : ℝ → ℝ} {l u x y : ℝ}
-
-/-- A strictly convex function vanishing to first order at `x` is positive at every other point. -/
-private theorem pos_of_strictConvexOn (hφ : StrictConvexOn ℝ (Icc l u) φ) (hx : x ∈ Icc l u)
-    (hy : y ∈ Icc l u) (hxy : x ≠ y) (hd : HasDerivAt φ 0 x) (h0 : φ x = 0) : 0 < φ y := by
-  obtain ⟨m, hmdef⟩ : ∃ m, m = (x + y) / 2 := ⟨_, rfl⟩
-  have hm : m ∈ openSegment ℝ x y := by
-    rcases lt_or_gt_of_ne hxy with h | h
-    · rw [openSegment_eq_Ioo h]
-      constructor <;> linarith
-    · rw [openSegment_symm, openSegment_eq_Ioo h]
-      constructor <;> linarith
-  have hmI : m ∈ Icc l u := (convex_Icc l u).openSegment_subset hx hy hm
-  -- The tangent line at `x` is the zero line, so `φ m ≥ 0`.
-  have hm0 : 0 ≤ φ m := by
-    rcases lt_or_gt_of_ne hxy with h | h
-    · have hxm : x < m := by linarith
-      have := hφ.convexOn.le_slope_of_hasDerivAt hx hmI hxm hd
-      rw [slope_def_field, h0, sub_zero, le_div_iff₀ (sub_pos.2 hxm), zero_mul] at this
-      exact this
-    · have hmx : m < x := by linarith
-      have := hφ.convexOn.slope_le_of_hasDerivAt hmI hx hmx hd
-      rw [slope_def_field, h0, zero_sub, div_le_iff₀ (sub_pos.2 hmx), zero_mul] at this
-      linarith
-  -- By strict convexity, `φ m < max (φ x) (φ y) = max 0 (φ y)`.
-  have hlt := hφ.lt_on_openSegment hx hy hxy hm
-  rw [h0] at hlt
-  rcases lt_max_iff.1 (hm0.trans_lt hlt) with h | h
-  · exact absurd h (lt_irrefl 0)
-  · exact h
-
-/-- A strictly convex function, differentiable on `[l, u]`, positive at `l` and `u` and negative
-at `x ∈ (l, u)`, has exactly two zeros `p < x < q` in `(l, u)`. It is negative between them, with
-negative derivative at `p` and positive derivative at `q`. -/
-private theorem exists_setOf_eq_zero_eq_pair_of_strictConvexOn (hφ : StrictConvexOn ℝ (Icc l u) φ)
-    (hd : ∀ y ∈ Icc l u, DifferentiableAt ℝ φ y) (hl : 0 < φ l) (hu : 0 < φ u)
-    (hx : x ∈ Ioo l u) (hφx : φ x < 0) :
-    ∃ p ∈ Ioo l x, ∃ q ∈ Ioo x u, {y ∈ Ioo l u | φ y = 0} = {p, q} ∧
-      (∀ y ∈ Ioo p q, φ y < 0) ∧ deriv φ p < 0 ∧ 0 < deriv φ q := by
-  have hc : ContinuousOn φ (Icc l u) := fun y hy ↦ (hd y hy).continuousAt.continuousWithinAt
-  -- A zero on each side of `x`, by the intermediate value theorem.
-  obtain ⟨p, hp, hp0⟩ := intermediate_value_Ioo' hx.1.le
-    (hc.mono (Icc_subset_Icc_right hx.2.le)) ⟨hφx, hl⟩
-  obtain ⟨q, hq, hq0⟩ := intermediate_value_Ioo hx.2.le
-    (hc.mono (Icc_subset_Icc_left hx.1.le)) ⟨hφx, hu⟩
-  have hpI : p ∈ Icc l u := ⟨hp.1.le, hp.2.le.trans hx.2.le⟩
-  have hqI : q ∈ Icc l u := ⟨hx.1.le.trans hq.1.le, hq.2.le⟩
-  have hxI : x ∈ Icc l u := Ioo_subset_Icc_self hx
-  have hpq : p < q := hp.2.trans hq.1
-  -- By strict convexity `φ` is below the chord on a segment whose ends are not positive.
-  have hneg : ∀ {a b z : ℝ}, a ∈ Icc l u → b ∈ Icc l u → a < z → z < b → φ a ≤ 0 →
-      φ b ≤ 0 → φ z < 0 := by
-    intro a b z ha hb haz hzb ha0 hb0
-    have hz : z ∈ openSegment ℝ a b := by
-      rw [openSegment_eq_Ioo (haz.trans hzb)]
-      exact ⟨haz, hzb⟩
-    exact (hφ.lt_on_openSegment ha hb (haz.trans hzb).ne hz).trans_le (max_le ha0 hb0)
-  have hbetween : ∀ y ∈ Ioo p q, φ y < 0 := fun y hy ↦
-    hneg hpI hqI hy.1 hy.2 hp0.le hq0.le
-  refine ⟨p, hp, q, hq, Set.ext fun y ↦ ⟨fun ⟨hy, hy0⟩ ↦ ?_, ?_⟩, hbetween, ?_, ?_⟩
-  · -- A third zero would make `φ` negative at `p`, at `q` or at itself.
-    have hyI : y ∈ Icc l u := Ioo_subset_Icc_self hy
-    rcases lt_trichotomy y p with h | rfl | h
-    · exact absurd hp0 (hneg hyI hxI h hp.2 hy0.le hφx.le).ne
-    · exact .inl rfl
-    rcases lt_trichotomy y q with h' | rfl | h'
-    · exact absurd hy0 (hbetween y ⟨h, h'⟩).ne
-    · exact .inr rfl
-    · exact absurd hq0 (hneg hxI hyI hq.1 h' hφx.le hy0.le).ne
-  · rintro (rfl | rfl)
-    exacts [⟨⟨hp.1, hp.2.trans hx.2⟩, hp0⟩, ⟨⟨hx.1.trans hq.1, hq.2⟩, hq0⟩]
-  · -- The derivative at `p` is at most the slope of the chord from `p` to `x`, which is negative.
-    have := hφ.convexOn.deriv_le_slope hpI hxI hp.2 (hd p hpI)
-    rw [slope_def_field, hp0, sub_zero] at this
-    exact this.trans_lt (div_neg_of_neg_of_pos hφx (sub_pos.2 hp.2))
-  · -- The derivative at `q` is at least the slope of the chord from `x` to `q`, which is positive.
-    have := hφ.convexOn.slope_le_deriv hxI hqI hq.1 (hd q hqI)
-    rw [slope_def_field, hq0, zero_sub] at this
-    exact (div_pos (neg_pos.2 hφx) (sub_pos.2 hq.1)).trans_le this
-
-end Convex
 
 /-! ### The pair born at a birth -/
 
@@ -188,7 +102,9 @@ private theorem exists_pos_eventually_strictConvexOn_deriv
     have hcont : ContinuousAt (fun s ↦ uncurry (fun s ↦ deriv (g s)) (s, y)) t :=
       ((hbox (hρI t ht y hy)).1.contDiffAt_deriv_snd (m := 0) (by norm_num)).continuousAt.comp
         (f := fun s ↦ (s, y)) (by fun_prop)
-    exact hcont.eventually (lt_mem_nhds (pos_of_strictConvexOn (hconv t ht) hxI hy hyx.symm hd h1))
+    have h := (hconv t ht).mul_sub_lt_sub_of_hasDerivWithinAt hxI hy hyx.symm hd.hasDerivWithinAt
+    rw [zero_mul, h1, sub_zero] at h
+    exact hcont.eventually (lt_mem_nhds h)
   have hts : ∀ᶠ s in 𝓝 t, |s - t| < ρ := by
     filter_upwards [Metric.ball_mem_nhds t hρ] with s hs
     rwa [Metric.mem_ball, Real.dist_eq] at hs
@@ -222,17 +138,14 @@ theorem exists_pos_eventually_setOf_deriv_eq_zero_eq_pair_and_isIntegralCurve
   refine ⟨r, hr, ?_⟩
   filter_upwards [hev] with s ⟨hC, hconv, hl, hu⟩ hneg
   -- The two zeros of the strictly convex function `(g s)'`, and the trajectory joining them.
-  obtain ⟨p, hp, q, hq, hset, hbetween, hdp, hdq⟩ := exists_setOf_eq_zero_eq_pair_of_strictConvexOn
-    hconv (fun y hy ↦ ((hC y hy).derivWithin (m := 2) (by norm_num)).differentiableAt
-      (by norm_num)) hl hu ⟨by linarith, by linarith⟩ hneg
-  have hp0 := (hset.symm.subset (Or.inl rfl : p ∈ ({p, q} : Set ℝ))).2
-  have hq0 := (hset.symm.subset (Or.inr rfl : q ∈ ({p, q} : Set ℝ))).2
+  obtain ⟨p, hp, q, hq, hset, hp0, hq0, hbetween, hdp, hdq⟩ := hconv.exists_setOf_eq_zero_eq_pair
+    (fun y hy ↦ ((hC y hy).derivWithin (m := 2) (by norm_num)).differentiableAt (by norm_num))
+    hl hu ⟨by linarith, by linarith⟩ hneg
   obtain ⟨γ, hγ, -, hmem, hbot, htop, huniq⟩ := exists_isIntegralCurve_neg_gradient_of_deriv_neg
     (hp.2.trans hq.1) (fun y hy ↦ (hC y ⟨by linarith [hy.1, hp.1], by linarith [hy.2, hq.2]⟩).of_le
       (by norm_num)) hp0 hq0 hbetween
   exact ⟨p, q, hp, hq, hset, hdp, hdq, hbetween, γ, hγ, hmem, hbot, htop, huniq⟩
 
 end Birth
-
 
 end TauCeti
