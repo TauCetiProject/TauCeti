@@ -222,7 +222,7 @@ instance relativeDimensionLE_toBase {d : ℕ} (M : Model R K C toK)
 
 /-- Over an affine open `U` of the total space of a model of relative dimension at most one, the
 special fibre `Γ(U) ⧸ π Γ(U)` has Krull dimension at most one. -/
-lemma krullDimLE_sections_quotient {M : Model R K C toK}
+lemma krullDimLE_sections_quotient (M : Model R K C toK)
     [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase] {U : M.total.Opens} (hU : IsAffineOpen U)
     {π : R} (hπ : Irreducible π) :
     letI := M.toBase.sectionsAlgebra U
@@ -244,7 +244,7 @@ lemma krullDimLE_sections_quotient {M : Model R K C toK}
 
 /-- Over an affine open `U` of a model, a nonzero element of `R` is a nonzerodivisor on the
 sections, which are flat over `R`. -/
-lemma algebraMap_mem_nonZeroDivisors_sections {M : Model R K C toK} {U : M.total.Opens}
+lemma algebraMap_mem_nonZeroDivisors_sections (M : Model R K C toK) {U : M.total.Opens}
     (hU : IsAffineOpen U) {π : R} (hπ : π ≠ 0) :
     letI := M.toBase.sectionsAlgebra U
     algebraMap R Γ(M.total, U) π ∈ nonZeroDivisors Γ(M.total, U) := by
@@ -258,7 +258,7 @@ lemma algebraMap_mem_nonZeroDivisors_sections {M : Model R K C toK} {U : M.total
 
 /-- Over an affine open `U` of a model, the special fibre `Γ(U) ⧸ π Γ(U)` is of finite type over
 the residue field of `R`, hence a Nagata ring. -/
-lemma isNagata_sections_quotient {M : Model R K C toK} {U : M.total.Opens}
+lemma isNagata_sections_quotient (M : Model R K C toK) {U : M.total.Opens}
     (hU : IsAffineOpen U) {π : R} (hπ : Irreducible π) :
     letI := M.toBase.sectionsAlgebra U
     Ring.IsNagata (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by

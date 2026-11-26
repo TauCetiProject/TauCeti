@@ -8,11 +8,10 @@ module
 public import TauCeti.RingTheory.Nagata
 public import TauCeti.RingTheory.RegularLocalRing.Locus
 
-import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Flat.Localization
-import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 import Mathlib.RingTheory.Localization.LocalizationLocalization
 import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
+import TauCeti.RingTheory.Ideal.Height
 import TauCeti.RingTheory.Ideal.RegularPrincipal
 import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Localization.Ideal
@@ -143,13 +142,7 @@ private lemma finite_zeroLocus_sdiff_regularLocus_of_mem_minimalPrimes (hπ : π
     (hreg : IsRegularLocalRing (Localization.AtPrime q)) :
     (PrimeSpectrum.zeroLocus (q : Set A) \ regularLocus A).Finite := by
   have hle : Ideal.span {π} ≤ q := hq.1.2
-  -- `q` has height one: at most one by Krull's principal ideal theorem, and it is not a minimal
-  -- prime of `A` since it contains the nonzerodivisor `π`.
-  have hheight : q.height = 1 := by
-    refine le_antisymm (Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ q hq)
-      (Order.one_le_iff_pos.mpr (pos_iff_ne_zero.mpr fun h0 ↦ ?_))
-    exact Set.disjoint_left.mp (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes
-      (Ideal.height_eq_zero_iff.mp h0)) (hle (Ideal.mem_span_singleton_self π)) hπ
+  have hheight : q.height = 1 := Ideal.height_eq_one_of_mem_minimalPrimes_span_singleton hπ hq
   -- `A ⧸ q` is a Nagata domain of dimension at most one, regular on some `D(b)`.
   have : Ring.IsNagata (A ⧸ q) := (DoubleQuot.quotQuotEquivQuotOfLE hle).isNagata
   have : Ring.KrullDimLE 1 (A ⧸ q) := Ring.krullDimLE_iff.mpr <|

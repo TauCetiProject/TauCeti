@@ -88,11 +88,11 @@ private lemma finite_compl_regularLocus_inter [IsNormalScheme M.total] [IsRegula
   let := M.toBase.sectionsAlgebra U
   have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
   have : IsNoetherianRing Γ(M.total, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-  have := isNagata_sections_quotient hU hπ
-  have := krullDimLE_sections_quotient (M := M) hU hπ
+  have := M.isNagata_sections_quotient hU hπ
+  have := M.krullDimLE_sections_quotient hU hπ
   -- On `Spec Γ(U)`, only finitely many primes containing `π` are not regular.
   have hfin := Excellence.finite_zeroLocus_sdiff_regularLocus
-    (algebraMap_mem_nonZeroDivisors_sections hU hπ.ne_zero)
+    (M.algebraMap_mem_nonZeroDivisors_sections hU hπ.ne_zero)
     hU.mem_regularLocus_of_mem_minimalPrimes
   refine (hfin.image hU.fromSpec).subset ?_
   rintro x ⟨hx, hxU⟩
