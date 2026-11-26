@@ -95,6 +95,8 @@ series of a profinite group.
   compact.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
+* `Subgroup.topologicalClosure_commutator_topologicalClosure`: the closure of the commutator of
+  the closures of two subgroups is the closure of their commutator.
 * `DenseRange.topologicalClosure_map_commutator`: a homomorphism with dense range maps the
   commutator subgroup onto a dense subgroup of the closed commutator subgroup.
 * `Subgroup.topologicalClosure_commutator_le_of_forall_commutatorElement_mem`: a closed normal
@@ -477,6 +479,20 @@ theorem commutator_topologicalClosure_right_le {A B N : Subgroup G} (hN : IsClos
     fun_prop
   rw [← SetLike.mem_coe, topologicalClosure_coe] at hb
   exact closure_minimal (fun y hy ↦ h a ha y hy) (hN.preimage hcont) hb
+
+/-- **Closing up the factors of a commutator does not change its closure**:
+`closure ⁅closure A, closure B⁆ = closure ⁅A, B⁆`. -/
+theorem topologicalClosure_commutator_topologicalClosure (A B : Subgroup G) :
+    ⁅A.topologicalClosure, B.topologicalClosure⁆.topologicalClosure =
+      ⁅A, B⁆.topologicalClosure := by
+  refine le_antisymm (topologicalClosure_minimal _ ?_ (isClosed_topologicalClosure _))
+    (topologicalClosure_mono (commutator_mono (le_topologicalClosure A) (le_topologicalClosure B)))
+  -- Close up one factor at a time, swapping the factors in between.
+  refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+  rw [commutator_comm]
+  refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+  rw [commutator_comm]
+  exact le_topologicalClosure _
 
 /-- **Commutators of a dense image are dense in the commutators.** If `f : M →* H` has dense
 range, the image of the commutator subgroup of `M` is dense in the closed commutator subgroup of
