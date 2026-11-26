@@ -370,6 +370,27 @@ theorem exists_lt_and_energyFormH1_eq_intervalDomain (hab : a < b) (C : ℝ) :
   rw [← h] at hnorm
   linarith
 
+/-- A class whose value is `x ↦ F (x 0)`, for a continuous `F` that does not vanish at some point
+of `[a, b]`, has nonzero value. -/
+private theorem value_ne_zero_of_value_ae_eq (hab : a < b) {F : ℝ → ℝ} (hF : Continuous F)
+    {t : ℝ} (ht : t ∈ Icc a b) (hFt : F t ≠ 0) {u : W1p volume (intervalDomain a b) 2}
+    (hu : W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+      fun x => F (x 0)) :
+    W1p.value u ≠ 0 := by
+  intro h0
+  have hzero : EqOn (fun x : EuclideanSpace ℝ (Fin 1) => F (x 0)) 0 (intervalDomain a b) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (intervalDomain a b).isOpen
+      (hF.comp (contDiff_piLp_apply 2 (𝕜 := ℝ) (n := 0)).continuous).continuousOn
+      continuousOn_const
+    filter_upwards [hu, Lp.coeFn_zero ℝ 2
+      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
+    rw [← h1, h0, h2]
+  have hIoo : EqOn F 0 (Ioo a b) := fun s hs => by
+    have := hzero (show lineEquiv s ∈ intervalDomain a b by
+      rwa [mem_intervalDomain, lineEquiv_apply_zero])
+    simpa [lineEquiv_apply_zero] using this
+  exact hFt (hIoo.closure hF continuous_const (by rwa [closure_Ioo hab.ne]))
+
 /-- `(k π / (b - a))²` is a Dirichlet eigenvalue of `-Δ` on `(a, b)` for every `k ≥ 1`, with
 eigenfunction `x ↦ sin (k π (x - a) / (b - a))`. -/
 theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (hk : 0 < k) :
@@ -378,32 +399,20 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
   obtain ⟨u, hu, heq⟩ := exists_value_ae_eq_sin_and_energyFormH1_eq hab k
   refine (isDirichletEigenvalue_iff_setIntegral _).2
     ⟨u, fun h0 => ?_, fun v => by rw [heq v, W1p.inner_value_eq_setIntegral]⟩
-  have hval : W1p.value (u : W1p volume (intervalDomain a b) 2) = 0 := by
-    rw [← W1p0.valueL_apply, h0, map_zero]
-  -- The sine mode would vanish on `(a, b)`, but it equals `1` at `a + (b - a) / (2k)`.
-  have hzero : EqOn (fun x : EuclideanSpace ℝ (Fin 1) => Real.sin (k * π * (x 0 - a) / (b - a)))
-      0 (intervalDomain a b) := by
-    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (intervalDomain a b).isOpen
-      (Continuous.continuousOn (by fun_prop)) continuousOn_const
-    filter_upwards [hu, Lp.coeFn_zero ℝ 2
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
-    rw [← h1, hval, h2]
   have hba : 0 < b - a := sub_pos.2 hab
-  have hmem : lineEquiv (a + (b - a) / (2 * k)) ∈ intervalDomain a b := by
-    rw [mem_intervalDomain, ← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
-    constructor
-    · have : 0 < (b - a) / (2 * k) := by positivity
-      linarith
-    · have hk1 : (1 : ℝ) ≤ k := Nat.one_le_cast.2 hk
-      have : (b - a) / (2 * k) ≤ (b - a) / 2 :=
-        div_le_div_of_nonneg_left hba.le two_pos (by linarith)
-      linarith
-  have h1 := hzero hmem
-  simp only [Pi.zero_apply] at h1
-  rw [← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply,
-    show k * π * (a + (b - a) / (2 * k) - a) / (b - a) = π / 2 by field_simp; ring,
-    Real.sin_pi_div_two] at h1
-  exact one_ne_zero h1
+  -- The sine mode equals `1` at `a + (b - a) / (2k)`.
+  refine value_ne_zero_of_value_ae_eq hab
+    (F := fun t => Real.sin (k * π * (t - a) / (b - a))) (by fun_prop)
+    (t := a + (b - a) / (2 * k)) ⟨?_, ?_⟩ ?_ hu (by rw [← W1p0.valueL_apply, h0, map_zero])
+  · have : 0 ≤ (b - a) / (2 * k) := by positivity
+    linarith
+  · have hk1 : (1 : ℝ) ≤ k := Nat.one_le_cast.2 hk
+    have : (b - a) / (2 * k) ≤ (b - a) / 2 :=
+      div_le_div_of_nonneg_left hba.le two_pos (by linarith)
+    linarith
+  · rw [show k * π * (a + (b - a) / (2 * k) - a) / (b - a) = π / 2 by field_simp; ring,
+      Real.sin_pi_div_two]
+    exact one_ne_zero
 
 /-- An element of `L²(a, b)` whose integrals against every `F i (x 0)` vanish is zero, when the
 functions `F i` form a complete system among the integrable functions on `(a, b]`. -/
@@ -574,27 +583,6 @@ private theorem gradient_comp_apply_zero (g : ℝ → ℝ) (x : EuclideanSpace �
     simp [lineEquiv_symm_apply]
   rw [h, gradient_comp_linearIsometryEquiv_right, LinearIsometryEquiv.symm_symm,
     gradient_eq_deriv', lineEquiv_symm_apply]
-
-/-- A class whose value is `x ↦ F (x 0)`, for a continuous `F` that does not vanish at some point
-of `[a, b]`, has nonzero value. -/
-private theorem value_ne_zero_of_value_ae_eq (hab : a < b) {F : ℝ → ℝ} (hF : Continuous F)
-    {t : ℝ} (ht : t ∈ Icc a b) (hFt : F t ≠ 0) {u : W1p volume (intervalDomain a b) 2}
-    (hu : W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-      fun x => F (x 0)) :
-    W1p.value u ≠ 0 := by
-  intro h0
-  have hzero : EqOn (fun x : EuclideanSpace ℝ (Fin 1) => F (x 0)) 0 (intervalDomain a b) := by
-    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (intervalDomain a b).isOpen
-      (hF.comp (contDiff_piLp_apply 2 (𝕜 := ℝ) (n := 0)).continuous).continuousOn
-      continuousOn_const
-    filter_upwards [hu, Lp.coeFn_zero ℝ 2
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
-    rw [← h1, h0, h2]
-  have hIoo : EqOn F 0 (Ioo a b) := fun s hs => by
-    have := hzero (show lineEquiv s ∈ intervalDomain a b by
-      rwa [mem_intervalDomain, lineEquiv_apply_zero])
-    simpa [lineEquiv_apply_zero] using this
-  exact hFt (hIoo.closure hF continuous_const (by rwa [closure_Ioo hab.ne]))
 
 /-- **Integration by parts against a mode.** Let `g` satisfy `g'' = -κ g` on the line and let
 `u ∈ H¹(a, b)` have value `x ↦ g (x 0)`. For a test function `φ` on the line, restricted to
