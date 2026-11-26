@@ -335,9 +335,8 @@ private theorem exists_diffeomorph_quotientMk_eq_inv_proj :
     have h₁ := h.finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator hreg hn d
       isSymplectic_symplecticForm.isNondegenerate ⟨z₀, h.mem_levelSubMulAction.2 hz₀⟩
     have h₂ := c.finrank_quotientModelSpace_add_finrank_lieAnnihilator
-    -- The Lie algebra `GroupLieAlgebra I G` is by definition the tangent space `E` at `1`.
-    have hG : finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E := rfl
-    rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, hG] at h₁
+    rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq,
+      finrank_tangentSpace (I := I) (1 : G)] at h₁
     omega
 
 variable (h) in
