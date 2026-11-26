@@ -38,8 +38,7 @@ This file develops the purely arithmetic consequences of these relations:
 * if the exceptional root lattice `⨁_{m ∣ n} A_{m-1} ^ (a m)` has rank at most `21`, as it must
   inside the Picard lattice of the resolution, then `n ∈ {1, 2, 3, 4, 5, 6, 7, 8, 11, 14, 15}`;
 * for `n = 11, 14, 15` the orbit counts are forced, the root lattices are `2 A₁₀`,
-  `A₁₃ ⊕ A₆ ⊕ A₁` and `A₁₄ ⊕ A₄ ⊕ A₂`, and they have rank `20`; in particular a rank bound of `19`,
-  as in characteristic zero, leaves `n ≤ 8`.
+  `A₁₃ ⊕ A₆ ⊕ A₁` and `A₁₄ ⊕ A₄ ⊕ A₂`, and they have rank `20`.
 
 The relations are inverted along the divisor lattice using Jordan's totient function `J₂`,
 through `gcd (m, d) ^ 2 = ∑_{e ∣ gcd (m, d)} J₂ e` and `J₂ e * ε e = 24 * φ e`, the latter
@@ -62,7 +61,6 @@ from `J₂ = ψ * φ`.
   `21`.
 * `TauCeti.IsK3CyclicOrbitData.cyclicRootRank_eq_twenty`: the root rank is `20` for orders
   `11`, `14` and `15`.
-* `TauCeti.IsK3CyclicOrbitData.le_eight`: under the rank bound `19`, `n ≤ 8`.
 
 ## References
 
@@ -539,18 +537,6 @@ theorem IsK3CyclicOrbitData.cyclicRootRank_eq_twenty {n : ℕ} {a : ℕ → ℕ}
   · obtain ⟨h3, h5, h15⟩ := h.orbitCounts_fifteen
     simp only [cyclicRootRank_def, Nat.divisors_ofNat]
     simp [h3, h5, h15]
-
-/-- Under the rank bound `19` on the exceptional root lattice, as in characteristic zero, where the
-Picard rank is at most `20`, the order of a symplectic cyclic action is at most `8`. -/
-theorem IsK3CyclicOrbitData.le_eight {n : ℕ} {a : ℕ → ℕ} (h : IsK3CyclicOrbitData n a)
-    (hn : n ≠ 0) (hrank : cyclicRootRank n a ≤ 19) : n ≤ 8 := by
-  have hmem := h.mem_candidates hn (by omega)
-  simp only [Finset.mem_insert, Finset.mem_singleton] at hmem
-  rcases hmem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | h11 | h14 | h15
-  any_goals norm_num
-  all_goals
-    have := h.cyclicRootRank_eq_twenty (by omega)
-    omega
 
 /-! ### Examples -/
 
