@@ -51,7 +51,7 @@ This file tests the definition on the two simplest Morse functions.
   sublevel across a critical-free band
   (`TauCeti.exists_flow_apply_eq_sub_of_mvfderiv_lt_zero`). It is the normalized negative
   gradient `-grad f / ‖grad f‖²` of the standard metric
-  (`TauCeti.inv_norm_mgradient_sq_smul_neg_mgradient_sq_real`), the field along which
+  (`TauCeti.inv_norm_mgradient_sq_real_sq_smul_neg_mgradient_sq_real`), the field along which
   `TauCeti.exists_sublevelDeformation_neg_mgradient` deforms sublevels.
   Its trajectory from `x = 2` is `t ↦ √(4 - t)` (`TauCeti.isMIntegralCurveOn_sqrt_four_sub`),
   which reaches `x = 1` at the time `3 = f(2) - 1`.
@@ -196,6 +196,29 @@ open WithMetric
 
 variable {a : ℝ} (ha : 0 < a)
 
+/-- Read on `ℝ` through the identity `toWithMetric`, the negative gradient of `x ↦ x²` for the
+metric `a dx²` is the field `x ↦ -2 x / a`. -/
+private theorem mpullback_toWithMetric_neg_mgradient_sq_scaledLineMetric_apply (y : ℝ) :
+    VectorField.mpullback 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (toWithMetric (scaledLineMetric ha))
+        (-mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) y =
+      (-(2 / a * y) : ℝ) := by
+  have h := (diffeomorph (I := 𝓘(ℝ, ℝ)) (scaledLineMetric ha) ∞).symm.mfderiv_apply_mpullback
+    (by simp) (-mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) y
+  rwa [coe_diffeomorph_symm, mfderiv_toWithMetric_apply, neg_mgradient_sq_scaledLineMetric_apply,
+    ofWithMetric_toWithMetric] at h
+
+/-- Pushed forward along the identity `toWithMetric`, the field `x ↦ -2 x / a` of `ℝ` is the
+negative gradient of `x ↦ x²` for the metric `a dx²`. -/
+private theorem mpullback_ofWithMetric_neg_mul_eq_neg_mgradient_sq_scaledLineMetric :
+    VectorField.mpullback 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (ofWithMetric (g := scaledLineMetric ha))
+        (fun x : ℝ ↦ (-(2 / a * x) : ℝ)) =
+      -mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2 := by
+  funext y
+  have h := (diffeomorph (I := 𝓘(ℝ, ℝ)) (scaledLineMetric ha) ∞).mfderiv_apply_mpullback
+    (by simp) (fun x : ℝ ↦ (-(2 / a * x) : ℝ)) y
+  rw [coe_diffeomorph, mfderiv_ofWithMetric_apply] at h
+  rw [h, neg_mgradient_sq_scaledLineMetric_apply]
+
 /-- **The negative gradient of the quadratic well is adapted exactly for the metric `2 dx²`.** For
 the metric `a dx²` on `ℝ` (`TauCeti.scaledLineMetric`, on the copy
 `WithMetric (scaledLineMetric ha)` of `ℝ`), the negative gradient of `x ↦ x²` is `x ↦ -2 x / a`
@@ -209,51 +232,25 @@ theorem isAdaptedPseudoGradient_neg_mgradient_sq_scaledLineMetric_iff :
         (-mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) ↔
       a = 2 := by
   let σ := WithMetric.diffeomorph (I := 𝓘(ℝ, ℝ)) (scaledLineMetric ha) ∞
-  have hσ : ⇑σ = ofWithMetric := coe_diffeomorph _
-  have hσ' : ⇑σ.symm = toWithMetric (scaledLineMetric ha) := coe_diffeomorph_symm _
   constructor
   · intro hX
     -- Pull the field back to `ℝ` along the identity `toWithMetric`, where it is `x ↦ -2 x / a`.
-    have hf : (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) ∘ σ.symm =
-        fun x : ℝ ↦ x ^ 2 := by
-      funext x
-      simp [σ]
-    have hpull (y : ℝ) : VectorField.mpullback 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) σ.symm
-        (-mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) y =
-          (-(2 / a * y) : ℝ) := by
-      have h := σ.symm.mfderiv_apply_mpullback (by simp)
-        (-mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) y
-      rw [hσ'] at h ⊢
-      rw [mfderiv_toWithMetric_apply, Pi.neg_apply, mgradient_sq_scaledLineMetric ha,
-        ofWithMetric_toWithMetric] at h
-      exact h
     have h := hX.mpullback σ.symm
-    rw [hf] at h
+    rw [coe_diffeomorph_symm] at h
     -- Near `0` the pulled-back field is `x ↦ -x`; compare at a point `y ≠ 0`.
     obtain ⟨y, hy, hy0⟩ := ((h.eventually_eq_neg_sq_real.filter_mono nhdsWithin_le_nhds).and
       self_mem_nhdsWithin).exists (f := 𝓝[≠] (0 : ℝ))
-    rw [hpull] at hy
+    rw [mpullback_toWithMetric_neg_mgradient_sq_scaledLineMetric_apply] at hy
     have h2 : 2 / a = 1 := mul_right_cancel₀ (show y ≠ 0 from hy0) (by linarith)
-    rw [div_eq_one_iff_eq ha.ne'] at h2
-    exact h2.symm
+    exact ((div_eq_one_iff_eq ha.ne').1 h2).symm
   · rintro rfl
     -- Push the adapted field `x ↦ -x` of `ℝ` forward along the identity `ofWithMetric`.
-    have hf : (fun x : ℝ ↦ x ^ 2) ∘ σ =
-        fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2 := by
-      funext y
-      simp [σ]
-    have hpull : VectorField.mpullback 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) σ (fun x : ℝ ↦ (-x : ℝ)) =
-        -mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2 := by
-      funext y
-      have h := σ.mfderiv_apply_mpullback (by simp) (fun x : ℝ ↦ (-x : ℝ)) y
-      rw [hσ] at h ⊢
-      rw [mfderiv_ofWithMetric_apply] at h
-      rw [h, Pi.neg_apply, mgradient_sq_scaledLineMetric ha]
-      norm_num
-      -- Both sides are the real number `-x`, read in `ℝ` and in a tangent space of the copy.
-      rfl
     have h := isAdaptedPseudoGradient_sq_real_neg.mpullback σ
-    rwa [hf, hpull] at h
+    rw [coe_diffeomorph] at h
+    have hX : (fun x : ℝ ↦ (-x : ℝ)) = fun x ↦ (-(2 / 2 * x) : ℝ) := by
+      rw [div_self two_ne_zero]
+      simp only [one_mul]
+    rwa [hX, mpullback_ofWithMetric_neg_mul_eq_neg_mgradient_sq_scaledLineMetric] at h
 
 end ScaledMetric
 
@@ -322,7 +319,7 @@ theorem mvfderiv_sq_real_apply_neg_inv {x : ℝ} (hx : x ≠ 0) :
 /-- **The normalized negative gradient of the quadratic well.** For the standard metric on `ℝ`,
 the normalized negative gradient `-grad f / ‖grad f‖²` of `f(x) = x²` is `x ↦ -1 / (2 x)`. At the
 critical point `0` both sides vanish, by the convention `0⁻¹ = 0`. -/
-theorem inv_norm_mgradient_sq_smul_neg_mgradient_sq_real (x : ℝ) :
+theorem inv_norm_mgradient_sq_real_sq_smul_neg_mgradient_sq_real (x : ℝ) :
     (‖mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x‖ ^ 2)⁻¹ •
         -mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x = (-(2 * x)⁻¹ : ℝ) := by
   have h := neg_mgradient_sq_real_apply x
