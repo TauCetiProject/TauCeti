@@ -324,18 +324,9 @@ private theorem contMDiffAt_tangentCoordChange_coordLine {x₀ : ℙ 𝕜 (Fin 2
     ContMDiffAt 𝓘(𝕜, Fin 1 → 𝕜) 𝓘(𝕜, (Fin (m + 1) → 𝕜) →L[𝕜] Fin (m + 1) → 𝕜) ω
       (fun x ↦ tangentCoordChange 𝓘(𝕜, Fin (m + 1) → 𝕜) (coordLine m x₀) (coordLineCenter a)
         (coordLine m x))
-      x₀ := by
-  have hcore : ContMDiffOn 𝓘(𝕜, Fin (m + 1) → 𝕜) 𝓘(𝕜, (Fin (m + 1) → 𝕜) →L[𝕜] Fin (m + 1) → 𝕜) ω
-      (tangentCoordChange 𝓘(𝕜, Fin (m + 1) → 𝕜) (coordLine m x₀) (coordLineCenter a))
-      ((chartAt (Fin (m + 1) → 𝕜) (coordLine (𝕜 := 𝕜) m x₀)).source ∩
-        (chartAt (Fin (m + 1) → 𝕜) (coordLineCenter (𝕜 := 𝕜) (m := m) a)).source) :=
-    (tangentBundleCore.isContMDiff (I := 𝓘(𝕜, Fin (m + 1) → 𝕜))
-      (M := ℙ 𝕜 (Fin (m + 2) → 𝕜)) (n := ω)).contMDiffOn_coordChange _ _
-  have hmem : coordLine m x₀ ∈ (chartAt (Fin (m + 1) → 𝕜) (coordLine (𝕜 := 𝕜) m x₀)).source ∩
-      (chartAt (Fin (m + 1) → 𝕜) (coordLineCenter (𝕜 := 𝕜) (m := m) a)).source :=
-    ⟨mem_chart_source _ _, coordLine_mem_chartAt_coordLineCenter_source ha⟩
-  exact (hcore.contMDiffAt (((chartAt _ _).open_source.inter
-    (chartAt _ _).open_source).mem_nhds hmem)).comp x₀
+      x₀ :=
+  (TauCeti.Manifold.contMDiffAt_tangentCoordChange (by
+    rw [extChartAt_source]; exact coordLine_mem_chartAt_coordLineCenter_source ha)).comp x₀
     (contMDiff_coordLine m ω x₀)
 
 /-- **The isomorphism `ℓ* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` is analytic.** The map of total spaces given by the
