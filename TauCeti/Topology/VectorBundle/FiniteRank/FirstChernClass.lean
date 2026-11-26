@@ -19,9 +19,10 @@ first Chern class `c₁ ∈ H²(B; ℤ)` of its determinant line.
 Isomorphic cores have the same first Chern class (`firstChernClass_eq_of_iso`): the fibre maps of
 an isomorphism of cores form a fibrewise complex-linear isomorphism of the reconstructed bundles,
 continuous on total spaces. The ranks of isomorphic cores agree over a nonempty base, and over the
-empty base every first Chern class vanishes. The first Chern class of a trivial core vanishes
-(`firstChernClass_trivial`), and that of the core presenting an actual complex vector bundle is
-the first Chern class of the bundle (`firstChernClass_ofBundle`).
+empty base every first Chern class vanishes (`TauCeti.firstChernClass_eq_zero_of_isEmpty`). The
+first Chern class of a trivial core vanishes (`firstChernClass_trivial`), and that of the core
+presenting an actual complex vector bundle is the first Chern class of the bundle
+(`firstChernClass_ofBundle`).
 -/
 
 public section
@@ -64,17 +65,12 @@ theorem firstChernClass_ofBundle (n : ℕ) (E : B → Type) [∀ b, AddCommGroup
     ((pointIndexedCoreHomeomorph ℂ (Fin n → ℂ) E).continuous.congr
       (pointIndexedCoreHomeomorph_apply ℂ (Fin n → ℂ) E))
 
-/-- Over the empty base every first Chern class vanishes. -/
-theorem firstChernClass_eq_zero_of_isEmpty [IsEmpty B] (C : FiniteRankBundleCore ℂ B) :
-    C.firstChernClass = 0 :=
-  _root_.TauCeti.firstChernClass_eq_zero_of_linearIndependent (s := fun _ ↦ isEmptyElim)
-    (fun _ ↦ continuous_of_discreteTopology) isEmptyElim
-
 /-- **Isomorphic cores have the same first Chern class.** -/
 theorem firstChernClass_eq_of_iso {C C' : FiniteRankBundleCore ℂ B} (e : C ≅ C') :
     C.firstChernClass = C'.firstChernClass := by
   cases isEmpty_or_nonempty B
-  · rw [firstChernClass_eq_zero_of_isEmpty, firstChernClass_eq_zero_of_isEmpty]
+  · rw [firstChernClass_def, firstChernClass_def, _root_.TauCeti.firstChernClass_eq_zero_of_isEmpty,
+      _root_.TauCeti.firstChernClass_eq_zero_of_isEmpty]
   obtain ⟨r', core', h'⟩ := C'
   obtain rfl : C.rank = r' := rank_eq_of_iso e
   let φ (b : B) : C.core.Fiber b ≃L[ℂ] core'.Fiber b :=
