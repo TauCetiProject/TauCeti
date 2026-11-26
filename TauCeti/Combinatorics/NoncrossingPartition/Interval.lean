@@ -79,6 +79,11 @@ theorem restrict_mono {σ τ : NoncrossingPartition s} {B : Finset α} (hB : B �
 theorem restrict_top {B : Finset α} (hB : B ≤ s) : (⊤ : NoncrossingPartition s).restrict hB = ⊤ :=
   Subtype.ext (Finpartition.restrict_top hB)
 
+/-- The restriction of the partition into singletons is the partition into singletons. -/
+@[simp]
+theorem restrict_bot {B : Finset α} (hB : B ≤ s) : (⊥ : NoncrossingPartition s).restrict hB = ⊥ :=
+  Subtype.ext (Finpartition.restrict_bot hB)
+
 /-- The restriction of a noncrossing partition to one of its parts is the partition of that part
 into one part. -/
 @[simp]

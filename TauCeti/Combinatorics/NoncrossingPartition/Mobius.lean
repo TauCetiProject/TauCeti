@@ -80,43 +80,37 @@ section CommRing
 
 variable [CommRing 𝕜]
 
+/-- *Multiplicativity of the Möbius function* of `NC(s)`: for `σ ≤ π`, `μ(σ, π)` is the product
+over the parts `B` of `π` of the values `μ(σ|_B, 1̂)` on the lattices `NC(B)`. This reflects the
+factorisation `[σ, π] ≅ ∏_{B ∈ π} [σ|_B, 1_B]` (`TauCeti.NoncrossingPartition.iccOrderIso`). -/
+theorem mu_eq_prod_mu_restrict {σ π : NoncrossingPartition s} (h : σ ≤ π) :
+    mu 𝕜 σ π = ∏ B : π.val.parts, mu 𝕜 (σ.restrict (π.val.le B.property)) ⊤ := by
+  induction σ using WellFoundedGT.induction with
+  | _ σ ih =>
+  rcases h.eq_or_lt with rfl | hlt
+  · rw [mu_self, eq_comm]
+    exact prod_eq_one fun B _ => by rw [restrict_of_mem_parts _ B.property, mu_self]
+  -- Some part `B` of `π` has `σ|_B ≠ 1_B`, since the restrictions determine `σ ≤ π`.
+  obtain ⟨B, hB⟩ : ∃ B : π.val.parts, σ.restrict (π.val.le B.property) ≠ ⊤ := by
+    by_contra! H
+    refine hlt.ne (congrArg Subtype.val (π.iicOrderIso.injective (a₁ := ⟨σ, h⟩)
+      (a₂ := ⟨π, Set.self_mem_Iic⟩) (funext fun B => ?_)))
+    rw [iicOrderIso_apply, iicOrderIso_apply, H B, restrict_of_mem_parts _ B.property]
+  -- Summing the right-hand side over `[σ, π]` gives `∏_B ∑_{ρ ≥ σ|_B} μ(ρ, 1̂) = 0`.
+  have hsum :=
+    sum_Icc_prod_restrict_eq_prod_sum h fun B ρ => mu 𝕜 ρ (⊤ : NoncrossingPartition B.val)
+  rw [prod_eq_zero (mem_univ B) (by rw [Ici_eq_Icc, sum_Icc_mu_left, ite_eq_right hB]),
+    Icc_eq_cons_Ioc h, sum_cons, add_eq_zero_iff_eq_neg] at hsum
+  rw [hsum, mu_eq_neg_sum_Ioc_of_ne hlt.ne]
+  exact congrArg _ (sum_congr rfl fun τ hτ => ih τ (mem_Ioc.1 hτ).1 (mem_Ioc.1 hτ).2)
+
 /-- *Multiplicativity of the Möbius function* of `NC(s)` on lower intervals: `μ(0̂, π)` is the
 product over the parts `B` of `π` of the values `μ(0̂, 1̂)` on the lattices `NC(B)`. -/
 theorem mu_bot_eq_prod_mu (π : NoncrossingPartition s) :
     mu 𝕜 ⊥ π = ∏ B ∈ π.val.parts, mu 𝕜 (⊥ : NoncrossingPartition B) ⊤ := by
-  induction hn : #s using Nat.strong_induction_on generalizing s with
-  | _ n ih =>
-  subst hn
-  induction π using WellFoundedLT.induction with
-  | _ π ihπ =>
-  by_cases hbot : π = ⊥
-  · subst hbot
-    rw [mu_self, eq_comm]
-    refine prod_eq_one fun B hB => ?_
-    obtain ⟨i, -, rfl⟩ := Finpartition.mem_bot_iff.1 hB
-    rw [Subsingleton.elim (⊥ : NoncrossingPartition {i}) ⊤, mu_self]
-  by_cases htop : π = ⊤
-  · subst htop
-    have hs : s ≠ ∅ := fun hs => hbot (eq_bot_of_eq_empty hs _)
-    rw [coe_top, Finpartition.parts_top hs, prod_singleton]
-  -- Each part of `π` has fewer positions than `s`, and some part has at least two.
-  have hlt : ∀ B ∈ π.val.parts, #B < #s := fun B hB => card_lt_card <|
-    (π.val.le hB).ssubset_of_ne fun h =>
-      htop (Subtype.ext (Finpartition.eq_top_of_mem_parts (h ▸ hB)))
-  obtain ⟨B, hB, hB1⟩ : ∃ B ∈ π.val.parts, 1 < #B := by
-    by_contra! h
-    exact hbot (Subtype.ext (Finpartition.eq_bot_iff_forall_card_eq_one.2 fun B hB =>
-      le_antisymm (h B hB) (π.val.nonempty_of_mem_parts hB).card_pos))
-  have hsum : ∑ σ ∈ Iic π, ∏ C ∈ σ.val.parts, mu 𝕜 (⊥ : NoncrossingPartition C) ⊤ = 0 := by
-    rw [sum_Iic_prod_parts_eq_prod_sum]
-    refine prod_eq_zero hB ?_
-    rw [sum_congr rfl fun τ _ => (ih #B (hlt B hB) τ rfl).symm, ← Icc_bot_top,
-      sum_Icc_mu_right, ite_eq_right (bot_ne_top_of_one_lt_card hB1)]
-  rw [Iic_eq_cons_Iio, sum_cons, add_eq_zero_iff_eq_neg] at hsum
-  rw [hsum, mu_eq_neg_sum_Ico_of_ne (Ne.symm hbot), Ico_bot]
-  exact congrArg _ (sum_congr rfl fun σ hσ => ihπ σ (mem_Iio.1 hσ))
-
-
+  rw [mu_eq_prod_mu_restrict bot_le]
+  simp only [restrict_bot]
+  exact prod_coe_sort _ fun B => mu 𝕜 (⊥ : NoncrossingPartition B) ⊤
 
 section Recurrence
 
@@ -332,30 +326,6 @@ theorem mu_top_eq_prod_kreweras [CommRing 𝕜] (π : NoncrossingPartition s) :
   rw [mu_top_eq_mu_bot_kreweras, mu_bot_eq_prod]
 
 /-! ### General intervals -/
-
-/-- *Multiplicativity of the Möbius function* of `NC(s)`: for `σ ≤ π`, `μ(σ, π)` is the product
-over the parts `B` of `π` of the values `μ(σ|_B, 1̂)` on the lattices `NC(B)`. This reflects the
-factorisation `[σ, π] ≅ ∏_{B ∈ π} [σ|_B, 1_B]` (`TauCeti.NoncrossingPartition.iccOrderIso`). -/
-theorem mu_eq_prod_mu_restrict [CommRing 𝕜] {σ π : NoncrossingPartition s} (h : σ ≤ π) :
-    mu 𝕜 σ π = ∏ B : π.val.parts, mu 𝕜 (σ.restrict (π.val.le B.property)) ⊤ := by
-  induction σ using WellFoundedGT.induction with
-  | _ σ ih =>
-  rcases h.eq_or_lt with rfl | hlt
-  · rw [mu_self, eq_comm]
-    exact prod_eq_one fun B _ => by rw [restrict_of_mem_parts _ B.property, mu_self]
-  -- Some part `B` of `π` has `σ|_B ≠ 1_B`, since the restrictions determine `σ ≤ π`.
-  obtain ⟨B, hB⟩ : ∃ B : π.val.parts, σ.restrict (π.val.le B.property) ≠ ⊤ := by
-    by_contra! H
-    refine hlt.ne (congrArg Subtype.val (π.iicOrderIso.injective (a₁ := ⟨σ, h⟩)
-      (a₂ := ⟨π, Set.self_mem_Iic⟩) (funext fun B => ?_)))
-    rw [iicOrderIso_apply, iicOrderIso_apply, H B, restrict_of_mem_parts _ B.property]
-  -- Summing the right-hand side over `[σ, π]` gives `∏_B ∑_{ρ ≥ σ|_B} μ(ρ, 1̂) = 0`.
-  have hsum :=
-    sum_Icc_prod_restrict_eq_prod_sum h fun B ρ => mu 𝕜 ρ (⊤ : NoncrossingPartition B.val)
-  rw [prod_eq_zero (mem_univ B) (by rw [Ici_eq_Icc, sum_Icc_mu_left, ite_eq_right hB]),
-    Icc_eq_cons_Ioc h, sum_cons, add_eq_zero_iff_eq_neg] at hsum
-  rw [hsum, mu_eq_neg_sum_Ioc_of_ne hlt.ne]
-  exact congrArg _ (sum_congr rfl fun τ hτ => ih τ (mem_Ioc.1 hτ).1 (mem_Ioc.1 hτ).2)
 
 /-- The blockwise formula for the Möbius function of `NC(s)` on all intervals: for `σ ≤ π`,
 `μ(σ, π) = ∏_{B ∈ π} ∏_{C ∈ K_B(σ|_B)} (-1)^(|C|-1) C_(|C|-1)`, where `K_B` is the Kreweras

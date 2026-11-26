@@ -738,6 +738,12 @@ theorem restrict_of_mem_parts {B : Finset α} (hB : B ∈ P.parts) : P.restrict 
   ext_of_part fun a ha => by
     rw [part_restrict _ _ ha, P.part_eq_of_mem hB ha, inter_self, part_top ha]
 
+/-- Restricting the partition into singletons gives the partition into singletons. -/
+@[simp]
+theorem restrict_bot {t : Finset α} (hts : t ≤ s) : (⊥ : Finpartition s).restrict hts = ⊥ :=
+  ext_of_part fun a ha => by
+    rw [part_restrict _ _ ha, part_bot (hts ha), part_bot ha, singleton_inter_of_mem ha]
+
 /-- Restricting a finite partition with the singleton part `{i}` to `s.erase i` deletes that
 part. -/
 theorem parts_restrict_erase_of_singleton_mem {i : α} (hi : {i} ∈ P.parts) :

@@ -689,7 +689,6 @@ theorem kreweras_krewerasOrderIso_symm_apply (σ : (NoncrossingPartition s)ᵒ�
 
 /-- On `NC(n)` the inverse of `krewerasOrderIso` sends `σ` to the rotation of its Kreweras
 complement. -/
-@[simp]
 theorem krewerasOrderIso_symm_apply {n : ℕ}
     (σ : (NoncrossingPartition (univ : Finset (Fin n)))ᵒᵈ) :
     (krewerasOrderIso _).symm σ = rotate n (kreweras (OrderDual.ofDual σ)) := by
