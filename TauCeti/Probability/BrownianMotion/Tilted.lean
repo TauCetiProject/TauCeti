@@ -150,7 +150,7 @@ theorem integral_exponentialMartingale_mul_mul_sub (hW : IsFilteredPreBrownianRe
     _ = _ := by
       rw [integral_trim (μ := Q) (ℱ.le s) hξ, htrim, ← integral_trim (μ := Qs) (ℱ.le s) hξ,
         hW.integral_tilted_mul_eval θ s, mul_comm]
-      rfl
+      simp only [smul_eq_mul]
 
 /-- On a past event, the terminal exponential pairs with an increment by multiplying the past
 density integral by the tilted mean `θ (t-s)`. -/

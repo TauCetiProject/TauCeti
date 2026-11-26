@@ -106,11 +106,10 @@ private theorem inner_exponential_rectangle
       (hW.memLp_exponentialMartingale θ T (by norm_num : (2 : ℝ≥0∞) ≠ ∞)).coeFn_toLp)
   simp only [Pi.mul_apply] at heq
   rw [heq]
-  have h := hW.integral_exponentialMartingale_mul_mul_sub θ hst ht
-    (stronglyMeasurable_const.indicator hA : StronglyMeasurable[ℱ s] (A.indicator fun _ ↦ (1 : ℝ)))
-  simp_rw [← indicator_mul_right A (exponentialMartingale θ W s) (fun _ ↦ (1 : ℝ)),
-    mul_one, integral_indicator (ℱ.le s A hA)] at h
-  simpa only [mul_comm (_ * _) (exponentialMartingale θ W T _)] using h
+  simp_rw [← indicator_mul_left A (fun _ ↦ (1 : ℝ)) (fun ω ↦ W t ω - W s ω), one_mul,
+    ← indicator_mul_left A (fun ω ↦ W t ω - W s ω), integral_indicator (ℱ.le s A hA),
+    mul_comm (_ - _) (exponentialMartingale θ W T _)]
+  exact hW.setIntegral_exponentialMartingale_mul_sub θ hst ht hA
 
 private theorem inner_exponential_l2Integral
     (hW : IsFilteredPreBrownianReal ℱ W P) (hpred : IsStronglyPredictable ℱ W)
