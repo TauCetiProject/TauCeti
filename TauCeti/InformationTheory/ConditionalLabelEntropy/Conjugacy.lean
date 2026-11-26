@@ -49,7 +49,7 @@ theorem conditionalLabelEntropy_comp_of_measurePreserving {μ' : Measure X'} [Is
       (condDistrib_map hb.aemeasurable ha.aemeasurable hφ.aemeasurable),
     conditionalLabelEntropy_def, lintegral_map _ hφ.measurable]
   · rfl
-  · exact measurable_atomInformation.comp
+  · simpa only [Kernel.comap_apply, Function.comp_def] using measurable_atomInformation.comp
       (((condDistrib a b (μ'.map φ)).comap b hb).measurable_apply_singleton ha)
 
 /-- **The inverse formula.** For a measure-preserving measurable equivalence `s` of `(X, μ)`, the
