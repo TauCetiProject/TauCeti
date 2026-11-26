@@ -202,17 +202,12 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimension
 /-- **Elliptic bootstrapping at a totally real boundary, in adapted coordinates.** Let
 `2 < p < ∞` and `ℓ : ℕ`, and let `F` be a finite-dimensional real normed space. On `F × F` the
 zero section `F × {0}` plays the role of `ℝⁿ ⊆ ℂⁿ` and `(v, w) ↦ (-w, v)` that of multiplication
-by `i`. Let `J` and `η` be of class `C^ℓ` jointly in `(z, x)` on `W ∩ {0 ≤ z.im}`, for an open set
-`W` containing the graph of `u` over `H = Ω ∩ {0 ≤ t}`, with `J(z, u z)² = -1` for almost every
-`z ∈ H`. Suppose that, for real `s ∈ Ω`, `u(s)` lies on the zero section and `J(s, u s)` is the
-standard structure. A weak solution `u` on `H` of `∂ₛu + J(z, u) ∂ₜu = η(z, u)` then lies in
-`W^{ℓ+1,p}_loc(H)`.
-
-These are the coordinates of the adapted charts of a totally real submanifold
-(`TauCeti.IsAdaptedChart`). The proof reads `F × F` in the Euclidean model `G × G` with the `L²`
-product norm, where `(a, b) ↦ (a, -b)` is an isometric involution fixing the zero section and
-anticommuting with the standard structure, and applies
-`TauCeti.memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane`. -/
+by `i`. Let `J'` and `η'` be of class `C^ℓ` jointly in `(z, x)` on `W' ∩ {0 ≤ z.im}`, for an open
+set `W'` containing the graph of `w` over `H = Ω ∩ {0 ≤ t}`, with `J'(z, w z)² = -1` for almost
+every `z ∈ H`. Suppose that, for real `s ∈ Ω`, `w(s)` lies on the zero section and `J'(s, w s)` is
+the standard structure. A weak solution `w` on `H` of `∂ₛw + J'(z, w) ∂ₜw = η'(z, w)` then lies in
+`W^{ℓ+1,p}_loc(H)`. These are the coordinates of the adapted charts of a totally real submanifold
+(`TauCeti.IsAdaptedChart`). -/
 theorem memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod (hp : 2 < p) (hp' : p ≠ ⊤) {ℓ : ℕ}
     (hW : IsOpen W')
     (hJ : ContDiffOn ℝ ℓ (fun x : ℂ × (F × F) => J' x.1 x.2) (W' ∩ {x | 0 ≤ x.1.im}))
@@ -225,6 +220,9 @@ theorem memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod (hp : 2 < p) (hp' : p 
       J' s (w s) = (-ContinuousLinearMap.snd ℝ F F).prod (ContinuousLinearMap.fst ℝ F F))
     (h : IsWeakCauchyRiemannOn p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) J' η' w) :
     MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (ℓ + 1) w := by
+  -- Read `F × F` in the Euclidean model `G × G` with the `L²` product norm. There
+  -- `R (a, b) = (a, -b)` is an isometric involution that fixes the zero section and anticommutes
+  -- with the standard structure, so the boundary bootstrap for `R` applies.
   let G := EuclideanSpace ℝ (Fin (Module.finrank ℝ F))
   let T : (F × F) ≃L[ℝ] WithLp 2 (G × G) :=
     ((toEuclidean (E := F)).prodCongr (toEuclidean (E := F))).trans
