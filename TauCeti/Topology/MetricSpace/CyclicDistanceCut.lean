@@ -349,6 +349,20 @@ theorem cyclicDistanceCutRepeatFirst_cyclicDistanceCutRepeatFirstIterate {k : �
   · rw [Fin.cons_succ, coe_cyclicDistanceCutRepeatFirstIterate_apply]
     exact congrArg q.val (Fin.ext (by simp))
 
+/-- Repeating the first vertex `k` more times and then no more times is repeating it `k` more
+times. -/
+theorem coe_cyclicDistanceCutRepeatFirstIterate_zero_cyclicDistanceCutRepeatFirstIterate {k : ℕ}
+    {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} {δ'' : Fin (n + k + 0 + 1) → ℝ}
+    (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (h₀ : ∀ j : Fin (n + k + 0 + 1), δ' ⟨j - 0, by omega⟩ ≤ δ'' j)
+    (h' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ'' j) (q : cyclicDistanceCut (X := X) δ) :
+    (cyclicDistanceCutRepeatFirstIterate 0 h₀ (cyclicDistanceCutRepeatFirstIterate k h q) :
+      Fin (n + k + 1) → X) = cyclicDistanceCutRepeatFirstIterate k h' q := by
+  funext j
+  rw [coe_cyclicDistanceCutRepeatFirstIterate_apply, coe_cyclicDistanceCutRepeatFirstIterate_apply,
+    coe_cyclicDistanceCutRepeatFirstIterate_apply]
+  exact congrArg q.val (Fin.ext (by simp))
+
 /-! ### Based distance cuts -/
 
 /-- **The based distance cut** at `x`: the tuples of the distance cut with cut-offs `δ` whose

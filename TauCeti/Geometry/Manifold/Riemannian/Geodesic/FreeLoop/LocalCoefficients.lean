@@ -96,6 +96,16 @@ section TimeMap
 
 variable {m : ℕ} {δ : Fin (m + 1) → ℝ} (hδ : ∀ i, δ i < r) (q : cyclicDistanceCut (X := M) δ)
 
+include hδ in
+/-- Consecutive vertices of `q` are less than `r` apart. -/
+private theorem dist_val_sub_one_lt (i : Fin (m + 1)) : dist (q.val i) (q.val (i - 1)) < r :=
+  (mem_cyclicDistanceCut.1 q.property i).trans_lt (hδ i)
+
+include hδ in
+/-- Consecutive vertices of `q` are less than `r` apart, read forwards. -/
+private theorem dist_val_add_one_lt (i : Fin (m + 1)) : dist (q.val i) (q.val (i + 1)) < r :=
+  dist_add_one_lt_of_forall_dist_sub_one_lt (dist_val_sub_one_lt hδ q) i
+
 /-- The time `d(q 0, q 1) + ⋯ + d(q (j - 1), q j)` at which the closed broken geodesic through `q`
 passes through its `j`-th vertex, the last one being `q 0` again at the length of the loop. -/
 private def vertexTime (j : Fin (m + 2)) : ℝ :=
@@ -263,8 +273,7 @@ private theorem extend_vertexTime_succ (i : Fin (m + 1)) :
     cyclicDistanceCutBrokenGeodesic_apply, brokenGeodesicLoop_apply_partialSum_add hr m q.val _ i
       le_rfl]
   have h := target_geodesicSegment hr
-    ⟨(q.val i, q.val (i + 1)), dist_add_one_lt_of_forall_dist_sub_one_lt
-      (fun j ↦ (mem_cyclicDistanceCut.1 q.property j).trans_lt (hδ j)) i⟩
+    ⟨(q.val i, q.val (i + 1)), dist_val_add_one_lt hδ q i⟩
   rwa [MoorePath.target_def, length_geodesicSegment] at h
 
 /-- The closed sampled vertices of the reparametrization of `γ` by the vertex time map are the
@@ -466,8 +475,7 @@ private theorem brokenPathDurationHomotopy_reparam_vertexTimeMap
   rw [durationPath, map_brokenMoorePath _ (isPathInterpolation_geodesicInterpolation hr) _ _ _ _ _
     (fun i ↦ ⟨by
       rw [Set.mem_ofPred_eq, extend_vertexTime_castSucc hr hδ q, extend_vertexTime_succ hr hδ q]
-      exact dist_add_one_lt_of_forall_dist_sub_one_lt
-        (fun j ↦ (mem_cyclicDistanceCut.1 q.property j).trans_lt (hδ j)) i, fun h0 ↦ by
+      exact dist_val_add_one_lt hδ q i, fun h0 ↦ by
       rw [extend_vertexTime_castSucc hr hδ q, extend_vertexTime_succ hr hδ q]
       exact nndist_eq_zero.1 (nndist_eq_zero_of_durationTime_eq_zero hr hδ q h0)⟩) hF]
   exact brokenMoorePath_congr _ _ _ (funext hc) (funext hdur)
@@ -526,8 +534,8 @@ private theorem sample_reparam_slideTimeMapPath (u : unitInterval) (j : Fin (m +
 /-- The closed broken geodesic through `q` is `1`-Lipschitz, also read on `ℝ`. -/
 private theorem lipschitzWith_extend_cyclicDistanceCutBrokenGeodesic :
     LipschitzWith 1 (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.extend := by
-  have h := (lipschitzWith_brokenGeodesicLoop hr m q.val fun i ↦
-    (mem_cyclicDistanceCut.1 q.property i).trans_lt (hδ i)).comp Real.lipschitzWith_toNNReal
+  have h := (lipschitzWith_brokenGeodesicLoop hr m q.val (dist_val_sub_one_lt hδ q)).comp
+    Real.lipschitzWith_toNNReal
   rw [one_mul, ← cyclicDistanceCutBrokenGeodesic_apply hr hδ q] at h
   have he : ⇑(cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.extend =
       (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath ∘ Real.toNNReal :=
@@ -550,8 +558,7 @@ private theorem reparam_slideTimeMapPath_mem_arcsWithin
   set i' : Fin (m + 1) := ⟨i, hi⟩
   set d : ℝ := (nndist (q.val i') (q.val (i' + 1)) : ℝ)
   set L : ℝ := ((cyclicDistanceCutBrokenGeodesic hr hδ q).length : ℝ)
-  have hd : d < r := dist_add_one_lt_of_forall_dist_sub_one_lt
-    (fun j ↦ (mem_cyclicDistanceCut.1 q.property j).trans_lt (hδ j)) i'
+  have hd : d < r := dist_val_add_one_lt hδ q i'
   have hℓ : L / (m + 1) < r := (div_lt_iff₀ (by positivity)).2 (by linarith)
   have hval : ∀ b : unitInterval, (slideTimeMapPath hr hδ q u : C(unitInterval, ℝ))
       (unitInterval.arcPoint (m + 1) i b) =
@@ -649,19 +656,10 @@ private theorem evalAt_sampleBrokenGeodesicLoopHomotopy_reparam_vertexTimeMap
           (MooreFreeLoopSpace.reparam_mulTimeMap _).symm)) := by
   set hA := reparam_vertexTimeMap_mem_arcsWithin hr hδ q hL
   refine Path.ext (funext fun t ↦ ?_)
-  -- Evaluating the path of a homotopy at `t` is evaluating the homotopy at `t`, and evaluating a
-  -- mapped and recast path is evaluating its image; both hold by definition.
-  have e₁ : ((sampleBrokenGeodesicLoopHomotopy hr m).evalAt ⟨_, hA⟩) t =
-      sampleBrokenGeodesicLoopHomotopy hr m (t, ⟨_, hA⟩) := rfl
-  have e₂ : ((((straightenTimeMapPath hr hδ q).trans (durationTimeMapPath hr hδ q)).map
-      (cyclicDistanceCutBrokenGeodesic hr hδ q).reparam.continuous).cast rfl
-      ((sampleBrokenGeodesicLoop_reparam_vertexTimeMap hr hδ q hL).trans
-        (MooreFreeLoopSpace.reparam_mulTimeMap _).symm)) t =
-      (cyclicDistanceCutBrokenGeodesic hr hδ q).reparam
-        (((straightenTimeMapPath hr hδ q).trans (durationTimeMapPath hr hδ q)) t) := rfl
-  refine e₁.trans (Eq.trans ?_ e₂.symm)
-  rw [sampleBrokenGeodesicLoopHomotopy_eq_trans, ContinuousMap.Homotopy.trans_apply,
-    Path.trans_apply]
+  refine ((ContinuousMap.Homotopy.evalAt_apply _ _ t).trans ?_).trans
+    (congrFun ((Path.cast_coe _ _ _).trans (Path.map_coe _ _)) t).symm
+  rw [Function.comp_apply, sampleBrokenGeodesicLoopHomotopy_eq_trans,
+    ContinuousMap.Homotopy.trans_apply, Path.trans_apply]
   split_ifs
   · rw [MooreFreeLoopSpace.arcStraightening_apply, arcStraighteningMap_reparam_vertexTimeMap,
       straightenTimeMapPath_apply]
@@ -730,18 +728,16 @@ theorem homotopic_map_evalAt_cyclicDistanceCutSampleBrokenGeodesicHomotopy
           exact coe_cyclicDistanceCutSampleBrokenGeodesic_apply hr hδ _ hm q)) := by
   have hL := length_lt_of_sum_le hr hδ q hδ' hm
   -- The slide, read through the broken geodesics, is the path of broken geodesics through the
-  -- samples of the reparametrized loops along the slide time map; evaluating the mapped paths is
-  -- evaluating their images, by definition.
+  -- samples of the reparametrized loops along the slide time map.
   refine Path.Homotopic.of_coe_eq
     (p' := ((slideLoopPath hr hδ q hL hγ).map (map_continuous (sampleBrokenGeodesicLoop hr m))).cast
       (sampleBrokenGeodesicLoop_reparam_vertexTimeMap hr hδ q hL).symm rfl)
-    (q' := (sampleBrokenGeodesicLoopHomotopy hr m).evalAt ⟨_, hγ⟩) (funext fun u ↦ ?_) rfl
+    (q' := (sampleBrokenGeodesicLoopHomotopy hr m).evalAt ⟨_, hγ⟩) (funext fun u ↦ ?_)
+    (Path.cast_coe _ _ _)
     (homotopic_evalAt_sampleBrokenGeodesicLoopHomotopy_map_slideLoopPath hr hδ q hL hγ).symm
-  -- Evaluating the mapped paths is evaluating their images, by definition.
-  refine (?_ : cyclicDistanceCutBrokenGeodesic hr hδ'
-      (cyclicDistanceCutSampleBrokenGeodesicHomotopy hr (k := 0) hδ hδδ' hm (u, q)) =
-      sampleBrokenGeodesicLoop hr m (slideLoopPath hr hδ q hL hγ u))
-  rw [cyclicDistanceCutBrokenGeodesic_apply, sampleBrokenGeodesicLoop_apply hr m _
+  rw [Path.map_coe, Function.comp_apply, ContinuousMap.Homotopy.evalAt_apply, Path.cast_coe,
+    Path.map_coe, Function.comp_apply, cyclicDistanceCutBrokenGeodesic_apply,
+    sampleBrokenGeodesicLoop_apply hr m _
     (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin
       (reparam_slideTimeMapPath_mem_arcsWithin hr hδ q hL u))]
   refine brokenGeodesicLoop_eq_of_eq hr _ _ (funext fun j ↦ ?_)
@@ -764,20 +760,6 @@ private theorem sum_repeatCutoff_le (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {
   calc ∑ l : Fin (j + k + 1), δ j ⟨l - k, by omega⟩ ≤ ∑ _l : Fin (j + k + 1), δ (j + k) i :=
         Finset.sum_le_sum fun _ _ ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) _ _
     _ = _ := by rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-
-/-- Repeating the first vertex `k` more times and then `0` more times is repeating it `k` more
-times. -/
-private theorem coe_cyclicDistanceCutRepeatFirstIterate_zero_apply {j k : ℕ}
-    {δ₀ : Fin (j + 1) → ℝ} {δ₁ : Fin (j + k + 1) → ℝ} {δ₂ : Fin (j + k + 0 + 1) → ℝ}
-    (h₁ : ∀ i : Fin (j + k + 1), δ₀ ⟨i - k, by omega⟩ ≤ δ₁ i)
-    (h₀ : ∀ i : Fin (j + k + 0 + 1), δ₁ ⟨i - 0, by omega⟩ ≤ δ₂ i)
-    (h₂ : ∀ i : Fin (j + k + 1), δ₀ ⟨i - k, by omega⟩ ≤ δ₂ i) (x : cyclicDistanceCut (X := M) δ₀) :
-    (cyclicDistanceCutRepeatFirstIterate 0 h₀ (cyclicDistanceCutRepeatFirstIterate k h₁ x) :
-      Fin (j + k + 1) → M) = cyclicDistanceCutRepeatFirstIterate k h₂ x := by
-  funext i
-  rw [coe_cyclicDistanceCutRepeatFirstIterate_apply, coe_cyclicDistanceCutRepeatFirstIterate_apply,
-    coe_cyclicDistanceCutRepeatFirstIterate_apply]
-  exact congrArg x.val (Fin.ext (by simp))
 
 include hr in
 /-- **The two homotopies of the approximation by broken geodesics are coherent.** For a compact
@@ -844,13 +826,16 @@ private theorem cyclicDistanceCutCocone_coherent (hpos : 0 < δ 0 0) (hlt : ∀ 
     -- tuple.
     refine Subtype.ext ?_
     rw [ContinuousMap.comp_apply, coe_cyclicDistanceCutSampleBrokenGeodesic_apply, hgeo]
-    rfl
+    -- The local map `e` samples a loop by its definition.
+    exact congrArg (fun γ : MooreFreeLoopSpace M ↦ γ.toMoorePath.sample _)
+      (MapsTo.val_restrict_apply hKK' x).symm
   · -- Repeating the first vertex `N + 1` times and then `0` times is the map of the sequence.
-    refine Subtype.ext ((coe_cyclicDistanceCutRepeatFirstIterate_zero_apply _ hδ''δ
+    refine Subtype.ext
+      ((coe_cyclicDistanceCutRepeatFirstIterate_zero_cyclicDistanceCutRepeatFirstIterate _ hδ''δ
       (cutoff_sub_le_of_forall_le_succ hδ j (N + 1)) x.val).trans ?_)
     rw [cyclicDistanceCutFunctor_map_homOfLE M hpos.le hδ j (N + 1)
-      (cutoff_sub_le_of_forall_le_succ hδ j (N + 1))]
-    rfl
+      (cutoff_sub_le_of_forall_le_succ hδ j (N + 1)), ContinuousMap.comp_apply,
+      ContinuousMap.subtypeVal_apply]
   · -- The coherence is that of the slide and the straightening at the stage `m`.
     have hγ : cyclicDistanceCutBrokenGeodesic hr hδ'' (ρ x) ∈
         MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (j + (N + 1) + 1) :=
@@ -860,8 +845,25 @@ private theorem cyclicDistanceCutCocone_coherent (hpos : 0 < δ 0 0) (hlt : ∀ 
         (ρ x)).map (cyclicDistanceCutBrokenGeodesic hr (hlt _)).continuous).symm) ?_ ?_
       (homotopic_map_evalAt_cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ'' (ρ x)
         (hlt _) hδ''δ hm hγ).symm₂
-    · rfl
+    -- The end points of these paths are objects of `TopCat`, equal to the free loop space only by
+    -- unfolding, so `rw` cannot reach under `Path.map`, `Path.cast` and `Path.symm`; their apply
+    -- lemmas are applied as terms instead.
     · funext t
+      refine ((congrFun (Path.map_coe _ _) t).trans ?_).trans
+        ((Path.symm_apply _ t).trans (congrFun (Path.map_coe _ _) _)).symm
+      simp only [Function.comp_apply, ContinuousMap.Homotopy.evalAt_apply,
+        ContinuousMap.Homotopy.cast_apply, ContinuousMap.Homotopy.symm_apply,
+        ContinuousMap.Homotopy.compContinuousMap_apply, cyclicDistanceCutCocone_ι_app_hom]
+      exact congrArg _ (ContinuousMap.Homotopy.evalAt_apply ..).symm
+    · funext t
+      refine ((congrFun (Path.cast_coe _ _ _) t).trans ?_).trans
+        ((Path.symm_apply _ t).trans (congrFun (Path.cast_coe _ _ _) _)).symm
+      refine (ContinuousMap.Homotopy.evalAt_apply ..).trans <|
+        ((ContinuousMap.Homotopy.cast_apply ..).trans <|
+          (ContinuousMap.Homotopy.symm_apply ..).trans <|
+            (ContinuousMap.Homotopy.compContinuousMap_apply ..).trans ?_).trans
+          (ContinuousMap.Homotopy.evalAt_apply ..).symm
+      -- The loop `geoʲ x` with its short arcs is the broken geodesic of the repeated tuple.
       exact congrArg (fun y ↦ sampleBrokenGeodesicLoopHomotopy hr (j + (N + 1))
         (unitInterval.symm t, y)) (Subtype.ext (hgeo x).symm)
 
