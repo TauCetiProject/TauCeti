@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 
@@ -25,6 +26,7 @@ number field (`1 < Module.finrank ℚ K`) has `|discr K| > 2` by Hermite–Minko
 * `NumberField.instNeZeroNatAbsDiscr`: `(discr K).natAbs ≠ 0`, as a `NeZero` instance.
 * `NumberField.abs_discr_pos` and `NumberField.abs_cast_discr_pos`: `0 < |discr K|` in `ℤ` and in
   any strict ordered ring.
+* `NumberField.sqrt_abs_cast_discr_pos`: `0 < √|(discr K : ℝ)|`.
 * `NumberField.discr_ne_one`: `discr K ≠ 1` whenever `1 < Module.finrank ℚ K`.
 -/
 
@@ -53,6 +55,11 @@ theorem abs_cast_discr_pos (K : Type*) [Field K] [NumberField K]
     {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R] :
     0 < |(discr K : R)| :=
   abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K))
+
+/-- The square root of the absolute value of a number field discriminant is strictly positive. -/
+theorem sqrt_abs_cast_discr_pos (K : Type*) [Field K] [NumberField K] :
+    0 < √|(discr K : ℝ)| :=
+  Real.sqrt_pos.mpr (abs_cast_discr_pos K)
 
 /-- The discriminant of a nontrivial number field (`1 < [K : ℚ]`) is not `1`. -/
 theorem discr_ne_one (hK : 1 < Module.finrank ℚ K) : discr K ≠ 1 := by

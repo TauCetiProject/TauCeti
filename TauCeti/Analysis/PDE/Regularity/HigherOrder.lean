@@ -95,6 +95,10 @@ injective (`ContinuousLinearMap.exists_norm_le_of_range_le_range`).
   moves from the solution to the test function across the constant-coefficient energy form.
 * `TauCeti.PDE.energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn`: a weak derivative of a weak
   solution of a constant-coefficient equation solves the differentiated equation.
+* `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_sub_setIntegral`: for `C¹`
+  coefficients, a weak derivative `∂ₑu` of a weak solution, on any open `V ⊆ Ω`, solves the
+  equation differentiated along `e`, with the derivative of the coefficients kept in divergence
+  form; no compactness of `V` in `Ω` is needed.
 * `UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_sub_of_contDiffOn`:
   for `C¹` coefficients and `L²` data, each first derivative of a weak solution lies in `H¹` on
   compactly contained open sets and solves the equation differentiated in the sense of
@@ -194,7 +198,7 @@ theorem energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn {f g : Lp ℝ 2 (mu.re
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, where the entries of `a` are `C¹` on `Ω`, let `V ≤ Ω` and let `d ∈ H¹(V)`
 be the weak derivative of `u` in a direction `e` on `V`. Then
 `a(d, φ) = -∫_V f ∂ₑφ - ∫_V ⟨∇φ, (∂ₑa) ∇u⟩` for every test function `φ` on `V`. -/
-private theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_sub_setIntegral
+theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_sub_setIntegral
     {V : Opens (EuclideanSpace ℝ ι)} (hVΩ : V ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) Omega) {f : EuclideanSpace ℝ ι → ℝ}
     {u : W1p mu Omega 2}

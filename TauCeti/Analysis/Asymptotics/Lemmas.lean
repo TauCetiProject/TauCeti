@@ -39,7 +39,8 @@ are used, not differentiability or any additive structure.
 
 In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
-remainder of one order be read as a remainder of a smaller order.
+remainder of one order be read as a remainder of a smaller order. In particular a map within
+`O(‖x‖ ^ k)`, `k ≥ 1`, of the identity is itself `O(‖x‖)` at the origin.
 
 A bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` outside a ball about any centre `c` of a normed division ring
 gives `g = O(x⁻¹ ^ n)` at infinity: the decay rate of an inverse power does not depend on the
@@ -54,6 +55,11 @@ partial sums of a sequence enters an integral against the partial-sum step funct
 Finitely many power bounds `O(t ^ e k)` as `t → 0+` hold with one constant on one interval
 `(0, b]`, and `(c / x) ^ n = O(x ^ (-β))` as `x → +∞` for `β ≤ n`. These are the bookkeeping steps
 of an asymptotic expansion obtained by repeated integration by parts.
+
+On a set where a real function `g` is nonnegative, `f = O(g)` uniformly on the set means
+`‖f x‖ ≤ c * g x` there for a constant `c`, with no norm on `g`. This is the form in which a big-O
+hypothesis on a weight enters a pointwise estimate, such as the bound of a solution of a Volterra
+integral equation by a multiple of its weight.
 
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` of a linear order as
 soon as it holds uniformly on every interval `[a, b]`. This is how an asymptotic estimate becomes
@@ -89,6 +95,8 @@ resolvent-type functions, which are `O(1 / y)` there.
   `f(σ) = O((σ - a)⁻¹)` along it.
 * `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
   whenever `n ≤ m`.
+* `Asymptotics.isBigO_norm_of_isBigO_sub_norm_pow`: `w x - x = O(‖x‖ ^ k)` at the origin with
+  `k ≥ 1` implies `w x = O(‖x‖)` there.
 * `Asymptotics.isBigO_inv_pow_cobounded_of_norm_le`: a bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` for
   `‖x - c‖ > R` gives `g = O(x⁻¹ ^ n)` at infinity.
 * `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
@@ -100,6 +108,8 @@ resolvent-type functions, which are `O(1 / y)` there.
   satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at `c`, then `ψ • c = o(ψ)` if and only if `c = 0`.
 * `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
   vector `c` with `‖r • c‖ ≤ ‖r‖ * ‖c‖` for every scalar `r`.
+* `Asymptotics.isBigO_principal_iff_of_nonneg`: for `g ≥ 0` on `s`, `f = O(g)` on `s` if and
+  only if `‖f x‖ ≤ c * g x` on `s` for some `c`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc`: `f = O(g)` at `atTop` and
   on every `[a, b]` gives `f = O(g)` on `[a, ∞)`.
 * `Asymptotics.isBigO_inv_norm_smul_apply`: evaluating continuous linear maps `L a` at `x a` and
@@ -181,6 +191,15 @@ theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddGroup
   simp only [one_mul, norm_pow, Real.norm_of_nonneg (norm_nonneg x)]
   exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
 
+/-- **A map within `O(‖x‖ ^ k)` of the identity is `O(‖x‖)` at the origin.** If
+`w x - x = O(‖x‖ ^ k)` near `0` for some `k ≥ 1`, then `w x = O(‖x‖)` near `0`. -/
+theorem isBigO_norm_of_isBigO_sub_norm_pow {E : Type*} [SeminormedAddCommGroup E] {w : E → E}
+    {k : ℕ} (hk : 1 ≤ k) (hw : (fun x ↦ w x - x) =O[𝓝 0] fun x ↦ ‖x‖ ^ k) :
+    w =O[𝓝 0] fun x ↦ ‖x‖ := by
+  have hk1 : (fun x : E ↦ ‖x‖ ^ k) =O[𝓝 0] fun x ↦ ‖x‖ := by
+    simpa using isBigO_norm_pow_norm_pow_nhds_zero_of_le (E := E) hk
+  simpa using (hw.trans hk1).add (isBigO_norm_right.2 (isBigO_refl (fun x : E ↦ x) (𝓝 0)))
+
 /-- **An inverse-power bound about any centre is a decay bound at infinity.** If
 `‖g x‖ ≤ A / ‖x - c‖ ^ n` whenever `R < ‖x - c‖`, then `g = O(x⁻¹ ^ n)` along `cobounded 𝕜`. -/
 theorem isBigO_inv_pow_cobounded_of_norm_le {𝕜 E : Type*} [NormedDivisionRing 𝕜] [Norm E]
@@ -222,6 +241,14 @@ theorem IsBigO.comp_natFloor_rpow {E : Type*} [Norm E] {u : ℕ → E} {r : ℝ}
   exact (hu.comp_tendsto tendsto_nat_floor_atTop).trans <|
     (hequiv.rpow fun _ ↦ le_max_right _ _).isBigO.congr' EventuallyEq.rfl
       (hmax.fun_comp fun t ↦ t ^ r)
+
+/-- **A big-O bound on a set by a nonnegative real function.** If `g ≥ 0` on `s`, then
+`f = O(g)` on `s` exactly when `‖f x‖ ≤ c * g x` on `s` for some constant `c`. -/
+theorem isBigO_principal_iff_of_nonneg {α E : Type*} [Norm E] {f : α → E} {g : α → ℝ}
+    {s : Set α} (hg : ∀ x ∈ s, 0 ≤ g x) :
+    f =O[𝓟 s] g ↔ ∃ c, ∀ x ∈ s, ‖f x‖ ≤ c * g x :=
+  isBigO_principal.trans <| exists_congr fun _ ↦ forall₂_congr fun x hx ↦ by
+    rw [Real.norm_of_nonneg (hg x hx)]
 
 /-- **An eventual big-O bound holds on a whole half-line once it holds on its intervals.** If
 `f = O(g)` at `atTop` and `f = O(g)` uniformly on every interval `[a, b]`, then `f = O(g)`

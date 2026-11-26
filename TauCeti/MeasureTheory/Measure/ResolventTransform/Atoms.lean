@@ -17,7 +17,8 @@ import Mathlib.Tactic.Linarith
 
 For a finite measure on the real line, multiplying the imaginary part of its resolvent
 transform by `η` and approaching `a` vertically from above recovers the mass of `{a}`.
-This detects atoms, including atoms at endpoints when using Stieltjes inversion.
+This detects atoms, including atoms at endpoints when using Stieltjes inversion. The same
+rescaled transform also bounds the mass of a closed ball around `a`.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`. No moment assumptions are needed.
@@ -32,7 +33,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter Complex
+open MeasureTheory Filter Complex Metric Set
 open scoped Topology
 
 namespace Real
@@ -85,6 +86,30 @@ theorem mul_im_resolventTransform {a η : ℝ} :
   congr 1
   ext x
   simp [sq, mul_div_assoc]
+
+/-- For a finite measure, the mass in a closed ball of radius `η > 0` is bounded by twice `η`
+times the imaginary transform at height `η` over the center. -/
+theorem measureReal_closedBall_le_two_mul_mul_im_resolventTransform
+    (x : ℝ) {η : ℝ} (hη : 0 < η) :
+    μ.real (closedBall x η) ≤ 2 * η * (resolventTransform μ (x + η * I)).im := by
+  let k := fun t : ℝ ↦ η ^ 2 / ((t - x) ^ 2 + η ^ 2)
+  have hnonneg (t : ℝ) : 0 ≤ k t := by
+    dsimp only [k]
+    positivity
+  have hcont : Continuous k := continuous_const.div (by fun_prop) fun _ ↦ by positivity
+  have hint : Integrable k μ := Integrable.of_bound hcont.aestronglyMeasurable 1
+    (ae_of_all _ fun t ↦ by
+      rw [Real.norm_of_nonneg (hnonneg t)]
+      exact (div_le_one (by positivity)).2 (le_add_of_nonneg_left (sq_nonneg _)))
+  have hsub : closedBall x η ⊆ {t | 1 / 2 ≤ k t} := by
+    intro t ht
+    have ht' : |t - x| ≤ η := by simpa [Real.dist_eq] using ht
+    simp only [mem_ofPred_eq, k]
+    rw [le_div_iff₀ (by positivity)]
+    nlinarith [sq_abs (t - x), pow_le_pow_left₀ (abs_nonneg _) ht' 2]
+  have hmarkov := mul_meas_ge_le_integral_of_nonneg (ae_of_all _ hnonneg) hint (1 / 2)
+  rw [← mul_im_resolventTransform] at hmarkov
+  linarith [measureReal_mono (μ := μ) hsub]
 
 /-- **Atom recovery for the Stieltjes transform.** Approaching `a` vertically from the upper
 half-plane, `η Im m(a + iη)` tends to the mass of `{a}`. The mass is real-valued since `μ`

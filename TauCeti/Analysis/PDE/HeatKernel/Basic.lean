@@ -114,6 +114,11 @@ theorem heatKernel_le {t : ℝ} (ht : 0 < t) (x : E) :
 theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x := by
   simp [heatKernel_apply]
 
+/-- The heat kernel is radial: it takes the same value at points of equal norm. -/
+theorem heatKernel_eq_of_norm_eq (t : ℝ) {x y : E} (h : ‖x‖ = ‖y‖) :
+    heatKernel t x = heatKernel t y := by
+  rw [heatKernel_apply, heatKernel_apply, h]
+
 /-- At a positive time the heat kernel is radially nonincreasing: it is no larger at the point
 farther from the origin. -/
 theorem heatKernel_le_heatKernel_of_norm_le {t : ℝ} (ht : 0 < t) {x y : E} (h : ‖x‖ ≤ ‖y‖) :
