@@ -84,6 +84,15 @@ theorem notMem_ramifiedSupport_of_forall_ramificationIdx_eq_one {v : HeightOneSp
   rintro ⟨P, hP⟩
   exact hP.ne' (h P)
 
+/-- A prime `v` lies outside the ramified support whenever `𝓞 L` is unramified over `𝓞 K` at
+`v`. -/
+theorem notMem_ramifiedSupport_of_isUnramifiedIn {v : HeightOneSpectrum (𝓞 K)}
+    (h : Algebra.IsUnramifiedIn (𝓞 L) v.asIdeal) :
+    v ∉ ramifiedSupport K L :=
+  notMem_ramifiedSupport_of_forall_ramificationIdx_eq_one fun P ↦
+    have := P.property.1
+    h.ramificationIdx_eq_one P.property.2
+
 variable (K) in
 /-- **Nothing ramifies in the identity extension**: the ramified support of `K / K` is empty. -/
 @[simp]

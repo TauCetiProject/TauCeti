@@ -164,9 +164,7 @@ theorem absoluteGaloisGroupMap_mem_fixingSubgroup_maxUnramifiedOutside
   obtain ⟨E, hxE, hEfin, hEunr⟩ := mem_maxUnramifiedOutside_iff.1 hx
   have : NumberField E := NumberField.of_module_finite K E
   have hvE : v ∉ TauCeti.NumberField.ramifiedSupport K E :=
-    TauCeti.NumberField.notMem_ramifiedSupport_of_forall_ramificationIdx_eq_one fun P ↦
-      have := P.property.1
-      (hEunr v hv).ramificationIdx_eq_one P.property.2
+    TauCeti.NumberField.notMem_ramifiedSupport_of_isUnramifiedIn (hEunr v hv)
   exact E.absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport v hvE τ hg ⟨x, hxE⟩
 
 /-- **Local inertia outside `S` vanishes in `G_{K,S}`.** For `v ∉ S`, the decomposition map
@@ -241,10 +239,9 @@ theorem fixingSubgroup_maxUnramifiedOutside_eq_inertiaOutsideSubgroup
   refine le_antisymm ?_ ?_
   · rw [← fixingSubgroup_fixedField (isClosed_inertiaOutsideSubgroup K S)]
     refine fixingSubgroup_antitone fun x hx ↦ mem_maxUnramifiedOutside_iff.2 ?_
-    refine ⟨adjoin K {x}, mem_adjoin_simple_self K x,
-      adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x), fun v hv ↦ ?_⟩
-    have : FiniteDimensional K (adjoin K {x}) :=
+    have hfin : FiniteDimensional K (adjoin K {x}) :=
       adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
+    refine ⟨adjoin K {x}, mem_adjoin_simple_self K x, hfin, fun v hv ↦ ?_⟩
     have : NumberField (adjoin K {x}) := NumberField.of_module_finite K _
     have hle : inertiaOutsideSubgroup K S ≤ (adjoin K {x}).fixingSubgroup := by
       rw [← le_fixedField_iff_le_fixingSubgroup, adjoin_simple_le_iff]

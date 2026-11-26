@@ -99,13 +99,11 @@ def galoisGroupSMap {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
         ((⇑(IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)).restrictNormalHom) ∘
           restrictGaloisGroupS K Ω T) = restrictGaloisGroupS K Ω S := by
       funext σ
-      have hval : (maxUnramifiedOutside K Ω T).val.comp
-          (IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)) =
-          (maxUnramifiedOutside K Ω S).val := rfl
-      rw [Function.comp_apply, restrictGaloisGroupS_eq_restrictNormalHom,
-        restrictGaloisGroupS_eq_restrictNormalHom,
-        ← IntermediateField.restrictNormalHom_val (maxUnramifiedOutside K Ω T),
-        AlgHom.restrictNormalHom_restrictNormalHom, hval, IntermediateField.restrictNormalHom_val]
+      ext x
+      rw [Function.comp_apply, restrictGaloisGroupS_apply]
+      exact (congrArg Subtype.val
+        ((IntermediateField.inclusion (maxUnramifiedOutside_mono h)).restrictNormalHom_commutes
+          (restrictGaloisGroupS K Ω T σ) x)).trans (restrictGaloisGroupS_apply K Ω T σ _)
     -- `ContinuousMonoidHom` evaluates through `toMonoidHom.toFun`.
     change Continuous
       ((⇑(IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)).restrictNormalHom) ∘
