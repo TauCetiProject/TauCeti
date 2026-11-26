@@ -46,13 +46,8 @@ theorem euclideanHausdorffMeasure_graph_id_image {s : Set (EuclideanSpace ℝ (F
         (fderiv ℝ (id : EuclideanSpace ℝ (Fin 2) → _) x :
           EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)))) = 2 := by
     intro x
-    have h2 : (1 + LinearMap.id : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) =
-        (2 : ℝ) • 1 := by
-      rw [two_smul]
-      rfl
-    simp only [fderiv_id, ContinuousLinearMap.coe_id, LinearMap.adjoint_id, LinearMap.id_comp, h2,
-      LinearMap.det_smul, map_one, finrank_euclideanSpace_fin, mul_one]
-    exact Real.sqrt_sq zero_le_two
+    rw [fderiv_id, ← ContinuousLinearMap.normDet_graphL,
+      ContinuousLinearMap.normDet_graphL_id_of_finrank_eq_two (finrank_euclideanSpace_fin)]
   simp only [hdet, setLIntegral_const, ENNReal.ofReal_ofNat]
 
 /-- The codimension-one factor `√(1 + ‖A‖²)` with the operator norm gives `√2` for the identity of
