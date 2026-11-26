@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
+public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.VectorField.Related
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -27,6 +30,12 @@ hyperplane field is a contact structure when its Levi form is nondegenerate. The
 for which, when `D = ker α`, the isomorphism `T_x M ⧸ D x ≃ 𝕜` induced by `α` carries the Levi form
 to the restriction of `dα` to `D`.
 
+The Levi form is natural: a `C²` local diffeomorphism whose differential carries `D` onto a `C¹`
+distribution `D'` near `x` carries the Levi form of `D` at `x` to that of `D'`, since it relates
+extensions of tangent vectors of `D` to extensions of their images, and the Lie bracket of related
+vector fields is related. This is what makes the Levi form, and the conformal symplectic normal
+spaces of isotropic submanifolds built from it, invariants of contactomorphisms.
+
 ## Main definitions
 
 * `TauCeti.distributionLeviForm D x`: the Levi form of `D` at `x`, computed from a `C¹` local frame
@@ -44,6 +53,10 @@ to the restriction of `dα` to `D`.
 * `TauCeti.IsDistributionFrameOn.distributionLeviForm_apply_eq_zero_iff` and
   `TauCeti.distributionLeviForm_apply_eq_zero_iff`: the Levi form vanishes on two values exactly
   when the Lie bracket of their extensions is tangent to `D`.
+* `TauCeti.distributionLeviForm_mfderivRestrictEquiv`: the Levi form is natural under local
+  diffeomorphisms: if `f` pulls a `C¹` distribution `D'` back to `D` near `x`, then `df_x` carries
+  the Levi form of `D` at `x` to that of `D'` at `f x`, through the isomorphism of normal spaces
+  `T_x M ⧸ D x ≃ T_(f x) N ⧸ D' (f x)` it induces (`IsLocalDiffeomorphAt.mfderivQuotientEquiv`).
 * `TauCeti.distributionLeviForm_swap` and `TauCeti.distributionLeviForm_self`: the Levi form is
   antisymmetric and alternating.
 * `TauCeti.distributionLeviForm_eq_zero_iff`: vanishing at a point can be tested on local
@@ -341,6 +354,82 @@ theorem isInvolutiveDistribution_iff_distributionLeviForm_eq_zero
   refine (distributionLeviForm_apply_eq_zero_iff hD hn (hV.mdifferentiableAt hUx)
     (hW.mdifferentiableAt hUx) (eventually_of_mem hUx hVD) (eventually_of_mem hUx hWD)).mp ?_
   rw [h x, LinearMap.zero_apply, LinearMap.zero_apply]
+
+/-! ### Naturality under local diffeomorphisms -/
+
+section Naturality
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]
+  {D' : Π y : N, Submodule 𝕜 (TangentSpace J y)} {f : M → N} {m : ℕ∞ω}
+
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace F] in
+/-- Every vector `u` of `D x` extends to a vector field `V` tangent to `D` near `x` and
+differentiable at `x`, which is `f`-related near `x` to a vector field `V'` tangent to `D'` near
+`f x` and differentiable at `f x`. -/
+private theorem exists_related_extension (hD' : IsContMDiffDistribution J n k D') (hn : 1 ≤ n)
+    (hf : IsLocalDiffeomorphAt I J m f x) (hm : 2 ≤ m)
+    (hDf : ∀ᶠ z in 𝓝 x, D z = (D' (f z)).comap (mfderiv I J f z).toLinearMap) (u : D x) :
+    ∃ (V : Π y : M, TangentSpace I y) (V' : Π y : N, TangentSpace J y),
+      MDiffAt (T% V) x ∧ MDiffAt (T% V') (f x) ∧ (∀ᶠ z in 𝓝 x, V z ∈ D z) ∧
+        (∀ᶠ z in 𝓝 (f x), V' z ∈ D' z) ∧
+        (∀ᶠ z in 𝓝 x, mfderiv I J f z (V z) = V' (f z)) ∧ V x = u := by
+  have hm0 : m ≠ 0 := (zero_lt_two.trans_le hm).ne'
+  have hfu : mfderiv I J f x u ∈ D' (f x) := Submodule.mem_comap.1 (hDf.self_of_nhds.le u.property)
+  obtain ⟨U', hU', hxU', V', hV', hV'D, hV'x⟩ := hD'.exists_contMDiffOn_apply_eq ⟨_, hfu⟩
+  have hV'd : MDiffAt (T% V') (f x) :=
+    ((hV'.contMDiffAt (hU'.mem_nhds hxU')).mdifferentiableAt (zero_lt_one.trans_le hn).ne')
+  have hinv : ∀ᶠ z in 𝓝 x, (mfderiv I J f z).IsInvertible :=
+    hf.eventually.mono fun z hz ↦ hz.isInvertible_mfderiv hm0
+  -- The pullback of `V'` is `f`-related to `V'` wherever the differential is invertible.
+  have hrel : ∀ᶠ z in 𝓝 x, mfderiv I J f z (mpullback I J f V' z) = V' (f z) :=
+    hinv.mono fun z hz ↦ by rw [mpullback_apply, hz.self_apply_inverse]
+  refine ⟨mpullback I J f V', V', hV'd.mpullback_vectorField hf.contMDiffAt hinv.self_of_nhds hm,
+    hV'd, ?_, eventually_of_mem (hU'.mem_nhds hxU') hV'D, hrel, ?_⟩
+  · filter_upwards [hDf, hrel, hf.contMDiffAt.continuousAt.preimage_mem_nhds
+      (hU'.mem_nhds hxU')] with z hz hzrel hzU
+    rw [hz, Submodule.mem_comap, ContinuousLinearMap.coe_coe, hzrel]
+    exact hV'D _ hzU
+  · apply hinv.self_of_nhds.injective
+    rw [hrel.self_of_nhds, hV'x]
+
+/-- **The Levi form is natural under local diffeomorphisms.** Let `f : M → N` be a `C²` local
+diffeomorphism at `x` and let `D'` be a `C¹` distribution on `N` whose preimage under the
+differential of `f` is `D` near `x`. Then `df_x` carries the Levi form of `D` at `x` to the Levi
+form of `D'` at `f x`: for `u, v ∈ D x`, `L_D' (df u, df v)` is the image of `L_D (u, v)` under the
+isomorphism `T_x M ⧸ D x ≃ T_(f x) N ⧸ D' (f x)` induced by `df_x`. -/
+theorem distributionLeviForm_mfderivRestrictEquiv (hD' : IsContMDiffDistribution J n k D')
+    (hn : 1 ≤ n) (hf : IsLocalDiffeomorphAt I J m f x) (hm : 2 ≤ m)
+    (hDf : ∀ᶠ z in 𝓝 x, D z = (D' (f z)).comap (mfderiv I J f z).toLinearMap) (u v : D x) :
+    distributionLeviForm D' (f x)
+        (hf.mfderivRestrictEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds u)
+        (hf.mfderivRestrictEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds v) =
+      hf.mfderivQuotientEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds
+        (distributionLeviForm D x u v) := by
+  have : IsManifold I (minSmoothness 𝕜 2) M := by
+    rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+  have : IsManifold J (minSmoothness 𝕜 2) N := by
+    rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+  obtain ⟨U, hU, X, hX⟩ := (hD'.of_le hn).exists_isDistributionFrameOn_of_eventually_eq_comap hf
+    (by simpa [one_add_one_eq_two] using hm) hDf
+  obtain ⟨V, V', hV, hV', hVD, hV'D, hVV', hVx⟩ := exists_related_extension hD' hn hf hm hDf u
+  obtain ⟨W, W', hW, hW', hWD, hW'D, hWW', hWx⟩ := exists_related_extension hD' hn hf hm hDf v
+  obtain rfl : u = ⟨V x, hVD.self_of_nhds⟩ := Subtype.ext hVx.symm
+  obtain rfl : v = ⟨W x, hWD.self_of_nhds⟩ := Subtype.ext hWx.symm
+  -- Read both Levi forms on these extensions and compare the brackets by naturality.
+  have hres (Y : Π y : M, TangentSpace I y) (Y' : Π y : N, TangentSpace J y)
+      (hYY' : ∀ᶠ z in 𝓝 x, mfderiv I J f z (Y z) = Y' (f z)) (hY : Y x ∈ D x) :
+      hf.mfderivRestrictEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds ⟨Y x, hY⟩ =
+        ⟨Y' (f x), hYY'.self_of_nhds ▸ hDf.self_of_nhds.le hY⟩ :=
+    Subtype.ext <| (hf.coe_mfderivRestrictEquiv_apply _ _ _).trans hYY'.self_of_nhds
+  rw [hres V V' hVV', hres W W' hWW', hX.distributionLeviForm_apply le_rfl hU hV hW hVD hWD,
+    distributionLeviForm_apply hD' hn hV' hW' hV'D hW'D,
+    ← mfderiv_mlieBracket_of_eventually_related hf.contMDiffAt
+      (by rwa [minSmoothness_of_isRCLikeNormedField]) hV hW hV' hW' hVV' hWW']
+  simp
+
+end Naturality
 
 /-- The Levi form of the standard contact distribution `ker (dz - x dy)` on `ℝ³` is nonzero at
 every point: it sends the values of the tangent fields `(1, 0, 0)` and `(0, 1, x)` to the class of

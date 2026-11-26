@@ -35,6 +35,18 @@ applies to contact structures which are not the kernel of any global one-form.
   is Legendrian exactly when all its conformal symplectic normal spaces vanish
   (`TauCeti.isLegendrianImmersion_iff_forall_subsingleton_conformalSymplecticNormal`).
 
+The spaces are invariants of local contactomorphisms. Let `Φ : M → M₂` be a `C²` local
+diffeomorphism at `f y` whose differential carries `ξ` onto a `C¹` distribution `ξ₂` near `f y`.
+Then `dΦ` induces a linear equivalence `[u] ↦ [dΦ u]` from the conformal symplectic normal space of
+`f` at `y` onto that of `Φ ∘ f` (`TauCeti.conformalSymplecticNormalCongr`), which carries the
+line-valued form of `ξ` to that of `ξ₂` up to the isomorphism
+`T_(f y) M ⧸ ξ_(f y) ≃ T_(Φ (f y)) M₂ ⧸ ξ₂_(Φ (f y))` of contact lines induced by `dΦ`
+(`IsLocalDiffeomorphAt.mfderivQuotientEquiv`,
+`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalCongr`). Both isomorphisms are
+compatible with composition (`TauCeti.conformalSymplecticNormalCongr_trans`,
+`IsLocalDiffeomorphAt.mfderivQuotientEquiv_trans`). This rests on the naturality of the Levi form
+(`TauCeti.distributionLeviForm_mfderivRestrictEquiv`).
+
 A local defining form `α` of `ξ` at `f y`, with `ker α_(f y) = ξ_(f y)`, identifies the contact
 line with `ℝ` and turns the line-valued form into a linear symplectic form
 (`TauCeti.IsContactDistribution.normalSymplecticForm`). If `α` is differentiable at `f y` and
@@ -51,6 +63,9 @@ forms, together with the contact line in which it takes values.
 * H. Geiges, *An Introduction to Contact Topology*, Cambridge Studies in Advanced Mathematics 109
   (2008), Section 2.5 (the conformal symplectic normal bundle and the isotropic neighbourhood
   theorem).
+* S. Courte and S. Guillermou, *Introduction to symplectic and contact geometry*, course notes,
+  Université Grenoble Alpes (2018), Proposition 3.5, p. 35 (the conformal symplectic normal bundle
+  with values in the contact line).
 -/
 
 public section
@@ -103,6 +118,120 @@ theorem conformalSymplecticNormalForm_mk
 /-- The form on the conformal symplectic normal space is alternating. -/
 theorem isAlt_conformalSymplecticNormalForm : (conformalSymplecticNormalForm J D f y).IsAlt :=
   isAlt_distributionLeviForm.isAlt_symplecticNormalForm
+
+/-! ### Naturality under local diffeomorphisms preserving the distributions -/
+
+section Naturality
+
+variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [CompleteSpace E₂]
+  [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂]
+  [ChartedSpace H₂ M₂] [IsManifold I₂ 2 M₂] {D₂ : Π x : M₂, Submodule ℝ (TangentSpace I₂ x)}
+  {Φ : M → M₂} {n m : ℕ∞ω} {k : ℕ} {x : M}
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₂] [IsManifold I₂ 2 M₂] in
+/-- The restricted differential carries the part `df_y(T_y N) ∩ D_(f y)` of the tangent image of
+`f` onto that of `Φ ∘ f`. -/
+private theorem map_mfderivRestrictEquiv (hΦ : IsLocalDiffeomorphAt I I₂ m Φ (f y)) (hm : m ≠ 0)
+    (hD : D (f y) = (D₂ (Φ (f y))).comap (mfderiv I I₂ Φ (f y)).toLinearMap)
+    (hf : MDifferentiableAt J I f y) :
+    ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).map
+        (hΦ.mfderivRestrictEquiv hm hD : D (f y) →ₗ[ℝ] D₂ (Φ (f y))) =
+      (LinearMap.range (mfderiv J I₂ (Φ ∘ f) y).toLinearMap).comap (D₂ ((Φ ∘ f) y)).subtype := by
+  ext w
+  obtain ⟨u, rfl⟩ := (hΦ.mfderivRestrictEquiv hm hD).surjective w
+  simp only [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, Submodule.mem_comap,
+    Submodule.subtype_apply, LinearMap.mem_range, ContinuousLinearMap.coe_coe,
+    mfderiv_comp y (hΦ.mdifferentiableAt hm) hf, ContinuousLinearMap.comp_apply,
+    IsLocalDiffeomorphAt.coe_mfderivRestrictEquiv_apply]
+  exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, by rw [ha]⟩,
+    fun ⟨a, ha⟩ ↦ ⟨a, (hΦ.isInvertible_mfderiv hm).injective ha⟩⟩
+
+variable (J) in
+/-- **The conformal symplectic normal map of a local contactomorphism.** Let `Φ : M → M₂` be a
+`C²` local diffeomorphism at `f y` whose differential carries `D` onto the `C¹` distribution `D₂`
+near `f y`, and let `f` be differentiable at `y`. Then `dΦ` induces a linear equivalence
+`[u] ↦ [dΦ u]` from the conformal symplectic normal space of `f` at `y` for `D` onto that of
+`Φ ∘ f` for `D₂` (`TauCeti.conformalSymplecticNormalCongr_mk`). It carries the line-valued form on
+the first to the form on the second, up to the isomorphism `T_(f y) M ⧸ D ≃ T_(Φ (f y)) M₂ ⧸ D₂`
+of contact lines induced by `dΦ` (`IsLocalDiffeomorphAt.mfderivQuotientEquiv`,
+`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalCongr`), and it is compatible with
+composition (`TauCeti.conformalSymplecticNormalCongr_trans`). -/
+def conformalSymplecticNormalCongr (hD₂ : IsContMDiffDistribution I₂ n k D₂) (hn : 1 ≤ n)
+    (hΦ : IsLocalDiffeomorphAt I I₂ m Φ (f y)) (hm : 2 ≤ m)
+    (hDΦ : ∀ᶠ z in 𝓝 (f y), D z = (D₂ (Φ z)).comap (mfderiv I I₂ Φ z).toLinearMap)
+    (hf : MDifferentiableAt J I f y) :
+    ConformalSymplecticNormal J D f y ≃ₗ[ℝ] ConformalSymplecticNormal J D₂ (Φ ∘ f) y :=
+  have hm0 : m ≠ 0 := (zero_lt_two.trans_le hm).ne'
+  LinearMap.symplecticNormalCongr _ _ (hΦ.mfderivRestrictEquiv hm0 hDΦ.self_of_nhds)
+    (map_mfderivRestrictEquiv hΦ hm0 hDΦ.self_of_nhds hf) <| by
+      rw [← map_mfderivRestrictEquiv hΦ hm0 hDΦ.self_of_nhds hf]
+      exact (hΦ.mfderivRestrictEquiv hm0 hDΦ.self_of_nhds).map_orthogonalBilin
+        (hΦ.mfderivQuotientEquiv hm0 hDΦ.self_of_nhds).injective
+        (distributionLeviForm_mfderivRestrictEquiv hD₂ hn hΦ hm hDΦ) _
+
+/-- The conformal symplectic normal map of `Φ` sends the class of `u` to the class of `dΦ u`. -/
+theorem conformalSymplecticNormalCongr_mk (hD₂ : IsContMDiffDistribution I₂ n k D₂) (hn : 1 ≤ n)
+    (hΦ : IsLocalDiffeomorphAt I I₂ m Φ (f y)) (hm : 2 ≤ m)
+    (hDΦ : ∀ᶠ z in 𝓝 (f y), D z = (D₂ (Φ z)).comap (mfderiv I I₂ Φ z).toLinearMap)
+    (hf : MDifferentiableAt J I f y)
+    (u : ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+      (distributionLeviForm D (f y)))
+    (v : ((LinearMap.range (mfderiv J I₂ (Φ ∘ f) y).toLinearMap).comap
+      (D₂ ((Φ ∘ f) y)).subtype).orthogonalBilin (distributionLeviForm D₂ ((Φ ∘ f) y)))
+    (huv : ((v : D₂ ((Φ ∘ f) y)) : TangentSpace I₂ ((Φ ∘ f) y)) =
+      mfderiv I I₂ Φ (f y) (u : D (f y))) :
+    conformalSymplecticNormalCongr J hD₂ hn hΦ hm hDΦ hf (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk v := by
+  rw [conformalSymplecticNormalCongr, LinearMap.symplecticNormalCongr_mk]
+  congr 1
+  ext
+  rw [IsLocalDiffeomorphAt.coe_mfderivRestrictEquiv_apply, huv]
+
+/-- **The conformal symplectic normal map is conformally symplectic.** It carries the line-valued
+form on the conformal symplectic normal space of `f` for `D` to the form on that of `Φ ∘ f` for
+`D₂`, up to the isomorphism `T_(f y) M ⧸ D ≃ T_(Φ (f y)) M₂ ⧸ D₂` of contact lines induced by
+`dΦ`. -/
+theorem conformalSymplecticNormalForm_conformalSymplecticNormalCongr
+    (hD₂ : IsContMDiffDistribution I₂ n k D₂) (hn : 1 ≤ n)
+    (hΦ : IsLocalDiffeomorphAt I I₂ m Φ (f y)) (hm : 2 ≤ m)
+    (hDΦ : ∀ᶠ z in 𝓝 (f y), D z = (D₂ (Φ z)).comap (mfderiv I I₂ Φ z).toLinearMap)
+    (hf : MDifferentiableAt J I f y) (a b : ConformalSymplecticNormal J D f y) :
+    conformalSymplecticNormalForm J D₂ (Φ ∘ f) y
+        (conformalSymplecticNormalCongr J hD₂ hn hΦ hm hDΦ hf a)
+        (conformalSymplecticNormalCongr J hD₂ hn hΦ hm hDΦ hf b) =
+      hΦ.mfderivQuotientEquiv (zero_lt_two.trans_le hm).ne' hDΦ.self_of_nhds
+        (conformalSymplecticNormalForm J D f y a b) :=
+  LinearMap.IsRefl.symplecticNormalForm_symplecticNormalCongr _ _
+    (eQ := (hΦ.mfderivQuotientEquiv _ hDΦ.self_of_nhds).toLinearMap)
+    (distributionLeviForm_mfderivRestrictEquiv hD₂ hn hΦ hm hDΦ) _ _ a b
+
+/-- **The conformal symplectic normal maps compose.** For local diffeomorphisms `Φ : M → M₂` at
+`f y` and `Φ' : M₂ → M₃` at `Φ (f y)`, carrying `D` to `D₂` and `D₂` to `D₃`, the map of the
+composite `Φ' ∘ Φ` is the composite of the maps of `Φ` and of `Φ'`, the latter for the map
+`Φ ∘ f`. -/
+theorem conformalSymplecticNormalCongr_trans {E₃ H₃ M₃ : Type*} [NormedAddCommGroup E₃]
+    [NormedSpace ℝ E₃] [CompleteSpace E₃] [TopologicalSpace H₃] {I₃ : ModelWithCorners ℝ E₃ H₃}
+    [TopologicalSpace M₃] [ChartedSpace H₃ M₃] [IsManifold I₃ 2 M₃]
+    {D₃ : Π x : M₃, Submodule ℝ (TangentSpace I₃ x)} {Φ' : M₂ → M₃} {k₃ : ℕ}
+    (hD₂ : IsContMDiffDistribution I₂ n k D₂) (hD₃ : IsContMDiffDistribution I₃ n k₃ D₃)
+    (hn : 1 ≤ n) (hΦ : IsLocalDiffeomorphAt I I₂ m Φ (f y))
+    (hΦ' : IsLocalDiffeomorphAt I₂ I₃ m Φ' ((Φ ∘ f) y)) (hm : 2 ≤ m)
+    (hDΦ : ∀ᶠ z in 𝓝 (f y), D z = (D₂ (Φ z)).comap (mfderiv I I₂ Φ z).toLinearMap)
+    (hDΦ' : ∀ᶠ z in 𝓝 ((Φ ∘ f) y), D₂ z = (D₃ (Φ' z)).comap (mfderiv I₂ I₃ Φ' z).toLinearMap)
+    (hf : MDifferentiableAt J I f y) :
+    conformalSymplecticNormalCongr J hD₃ hn (hΦ.comp (hg := hΦ')) hm
+        (hΦ.eventually_eq_comap_mfderiv_comp hΦ' (zero_lt_two.trans_le hm).ne' hDΦ hDΦ') hf =
+      (conformalSymplecticNormalCongr J hD₂ hn hΦ hm hDΦ hf).trans
+        (conformalSymplecticNormalCongr J hD₃ hn hΦ' hm hDΦ'
+          ((hΦ.mdifferentiableAt (zero_lt_two.trans_le hm).ne').comp y hf)) := by
+  ext a
+  induction a using Submodule.Quotient.induction_on with
+  | H u =>
+    simp only [conformalSymplecticNormalCongr, LinearEquiv.trans_apply,
+      LinearMap.symplecticNormalCongr_mk, hΦ.mfderivRestrictEquiv_trans hΦ'
+        (zero_lt_two.trans_le hm).ne' hDΦ.self_of_nhds hDΦ'.self_of_nhds]
+
+end Naturality
 
 variable [FiniteDimensional ℝ E] {n : ℕ∞ω}
 
