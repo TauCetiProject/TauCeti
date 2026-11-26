@@ -99,6 +99,24 @@ def opFunctorCompUliftFunctorIso :
     opFunctor.{u} ⋙ uliftFunctor.{v} ≅ uliftFunctor.{v} ⋙ opFunctor :=
   Iso.refl _
 
+/-- On simplices, `SSet.opFunctorCompUliftFunctorIso.hom` moves the `ULift` wrapper inside the
+opposite, keeping the underlying simplex. -/
+@[simp]
+lemma opFunctorCompUliftFunctorIso_hom_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v}.obj X.op).obj m) :
+    dsimp% ((opFunctorCompUliftFunctorIso.{u, v}.hom.app X).app m) x =
+      opObjEquiv.symm (ULift.up (opObjEquiv x.down)) :=
+  (rfl)
+
+/-- On simplices, `SSet.opFunctorCompUliftFunctorIso.inv` moves the `ULift` wrapper outside the
+opposite, keeping the underlying simplex. -/
+@[simp]
+lemma opFunctorCompUliftFunctorIso_inv_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v}.obj X).op.obj m) :
+    dsimp% ((opFunctorCompUliftFunctorIso.{u, v}.inv.app X).app m) x =
+      ULift.up (opObjEquiv.symm (opObjEquiv x).down) :=
+  (rfl)
+
 /-- Iterating `SSet.uliftFunctor` is naturally isomorphic to a single universe lift. -/
 def uliftFunctorCompIso :
     uliftFunctor.{v, u} ⋙ uliftFunctor.{w, max u v} ≅ uliftFunctor.{max v w, u} :=
