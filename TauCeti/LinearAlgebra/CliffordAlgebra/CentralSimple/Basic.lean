@@ -6,22 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 -- Imported publicly: exactly the modules defining what occurs in the exported statements, namely
--- `CliffordAlgebra`, `Algebra.IsCentral`, `IsSimpleRing`, `QuadraticMap.Nondegenerate` and
--- `FiniteDimensional` / `Module.finrank`.
+-- `CliffordAlgebra`, `CliffordAlgebra.liftBaseChange`, `Algebra.IsCentral`, `IsSimpleRing`,
+-- `QuadraticMap.Nondegenerate` and `FiniteDimensional` / `Module.finrank`.
 public import Mathlib.Algebra.Central.Defs
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.RingTheory.SimpleRing.Defs
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 -- Non-public: the polarized structure theorem the proofs descend from, the separable closure,
--- Mathlib's base-change equivalence of Clifford algebras, the transport of simplicity along a ring
--- equivalence, the two descent lemmas for centrality and simplicity, and the base change of
--- nondegeneracy are used only inside proofs.
+-- the transport of simplicity along a ring equivalence, and the two descent lemmas for centrality
+-- and simplicity are used only inside proofs.
 import Mathlib.FieldTheory.SeparableClosure
-import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 import Mathlib.RingTheory.SimpleRing.Congr
 import TauCeti.Algebra.CentralSimple.BaseChange
-import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 import TauCeti.RepresentationTheory.Spin.Structure
 
 /-!
@@ -34,6 +31,12 @@ Quadratic Forms over Fields*, V.2.4; Chevalley, *The Algebraic Theory of Spinors
 finite-dimensional by `CliffordAlgebra.instFinite`, so its Brauer class is defined: this is the even
 half of the Clifford invariant of a regular quadratic form.
 
+As an immediate representation-theoretic consequence, for any field extension `L / K` and
+`L`-vector space `W` of dimension `2 ^ m` when `finrank K V = 2 * m`, the extended Clifford action
+`CliffordAlgebra.liftBaseChange L Q ρ` of any `K`-algebra map `ρ : CliffordAlgebra Q →ₐ[K] End_L W`
+is bijective (`CliffordAlgebra.liftBaseChange_bijective_of_finrank_eq`): simplicity of the
+extended Clifford algebra forces injectivity, and matching dimensions force surjectivity.
+
 Both hypotheses matter. In odd dimension the Clifford algebra is classically not central, its
 centre being spanned by `1` and the volume element, and the central simple algebra attached to the
 form is its even subalgebra instead (Lam V.2.5); that case is not treated here. For the zero form on
@@ -44,6 +47,8 @@ a nonzero space the Clifford algebra is the exterior algebra, which is not simpl
 * `CliffordAlgebra.isCentral_of_even_finrank`: the Clifford algebra of a nondegenerate form in even
   dimension is central over `K`.
 * `CliffordAlgebra.isSimpleRing_of_even_finrank`: it is a simple ring.
+* `CliffordAlgebra.liftBaseChange_bijective_of_finrank_eq`: fullness of `liftBaseChange L Q ρ` onto
+  `Module.End L W` in even dimension `2 * m` at spinor rank `2 ^ m`.
 
 ## References
 
@@ -92,6 +97,8 @@ private theorem even_finrank_baseChange_sepClosure (heven : Even (finrank K V)) 
     Even (finrank (SeparableClosure K) (SeparableClosure K ⊗[K] V)) := by
   rwa [Module.finrank_baseChange]
 
+section NeZero
+
 variable [NeZero (2 : K)]
 
 -- Both public theorems are proved by descent from a separable closure `Kˢ` of `K`. Over `Kˢ` the
@@ -132,5 +139,31 @@ theorem isSimpleRing_of_even_finrank (hQ : Q.Nondegenerate) (heven : Even (finra
   have : IsSimpleRing (SeparableClosure K ⊗[K] CliffordAlgebra Q) :=
     IsSimpleRing.of_ringEquiv (equivBaseChange (SeparableClosure K) Q).toRingEquiv h
   exact IsSimpleRing.of_baseChange (K := K) (L := SeparableClosure K)
+
+end NeZero
+
+/-- **Fullness of spinor actions in even dimension.** Over a field extension `L / K` in
+characteristic different from `2`, when `Q` is nondegenerate on a `K`-space of dimension `2 * m`
+and `W` has `L`-dimension `2 ^ m`, the scalar-extended Clifford action `liftBaseChange L Q ρ` is
+bijective onto `Module.End L W`. -/
+theorem liftBaseChange_bijective_of_finrank_eq
+    {L : Type*} [Field L] [Algebra K L] [Invertible (2 : K)]
+    {W : Type*} [AddCommGroup W] [Module K W] [Module L W] [IsScalarTower K L W]
+    [FiniteDimensional L W]
+    (ρ : CliffordAlgebra Q →ₐ[K] Module.End L W) (hQnd : Q.Nondegenerate) {m : ℕ}
+    (hV : finrank K V = 2 * m) (hW : finrank L W = 2 ^ m) :
+    Function.Bijective (liftBaseChange L Q ρ) := by
+  let : Invertible (2 : L) := (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  have : NeZero (2 : L) := ⟨(isUnit_of_invertible (2 : L)).ne_zero⟩
+  have : Nontrivial W := Module.nontrivial_of_finrank_pos (by rw [hW]; positivity)
+  have hsimple : IsSimpleRing (CliffordAlgebra (Q.baseChange L)) :=
+    isSimpleRing_of_even_finrank (QuadraticForm.Nondegenerate.baseChange (A := L) hQnd)
+      ⟨m, by rw [Module.finrank_baseChange, hV]; ring⟩
+  have hinj : Function.Injective (liftBaseChange L Q ρ) :=
+    (liftBaseChange L Q ρ).toRingHom.injective
+  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (f := (liftBaseChange L Q ρ).toLinearMap) ?_).mp hinj⟩
+  rw [finrank_eq_two_pow, Module.finrank_baseChange, hV, Module.finrank_linearMap, hW, pow_mul']
+  ring
 
 end CliffordAlgebra

@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OrthonormalBasis
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 import TauCeti.LinearAlgebra.Determinant.Basic
 
@@ -19,7 +17,8 @@ Let `V` be a real inner product space with `n`-element orthonormal bases, and `Q
 `realCliffordForm n 0` (`OrthonormalBasis.isometryEquivRealCliffordFormZero`), and hence the Spin
 group of `Q` with the compact Spin group `Spin(n)` through
 `QuadraticMap.IsometryEquiv.spinGroupEquiv`. This file computes how that frame identification
-depends on the basis.
+depends on the basis, together with the induced negative-metric `Spin(n)` and `Spinᶜ(n)` frame
+comparisons (`OrthonormalBasis.realSpinGroupEquiv` and `OrthonormalBasis.realSpinCGroupHom`).
 
 Two frames `b` and `b'` differ by the orthogonal coordinate transition
 `x ↦ b'.repr (∑ i, x i • b i)`. If a Spin element `s` of `Spin(n)` acts on coordinates by this
@@ -43,6 +42,10 @@ element.
   action of a Spin element exactly when the two frames have the same orientation.
 * `OrthonormalBasis.exists_spinGroupEquiv_isometryEquivRealCliffordFormZero_eq_conj`: the frame
   identifications along two equally oriented frames differ by an inner automorphism of `Spin(n)`.
+* `OrthonormalBasis.exists_realSpinGroupEquiv_eq_conj` and
+  `OrthonormalBasis.exists_realSpinCGroupHom_eq_conj`: for `Q v = -‖v‖²`, the negative-metric
+  `Spin(n)` and `Spinᶜ(n)` frame comparisons along equally oriented frames differ by conjugation
+  by a compact Spin element.
 
 ## References
 
@@ -56,6 +59,8 @@ noncomputable section
 open CliffordAlgebra TauCeti
 
 namespace OrthonormalBasis
+
+section PosDef
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   {n : ℕ} (b b' : OrthonormalBasis (Fin n) ℝ V) (hQ : ∀ v, Q v = ‖v‖ ^ 2)
@@ -111,5 +116,53 @@ theorem exists_spinGroupEquiv_isometryEquivRealCliffordFormZero_eq_conj
         s * (b.isometryEquivRealCliffordFormZero hQ).spinGroupEquiv x * s⁻¹ := by
   obtain ⟨s, hs⟩ := (b.exists_spinVectorAction_eq_iff_orientation_eq b' hQ).mpr h
   exact ⟨s, b.spinGroupEquiv_isometryEquivRealCliffordFormZero_eq_conj b' hQ s hs⟩
+
+end PosDef
+
+section NegDef
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
+  {n : ℕ} (c c' : OrthonormalBasis (Fin n) ℝ V) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+
+/-- For two equally oriented orthonormal frames `c` and `c'`, the negative-metric Spin frame
+comparisons `c.realSpinGroupEquiv hQ` and `c'.realSpinGroupEquiv hQ` differ by conjugation in
+compact `Spin(n)`. -/
+theorem exists_realSpinGroupEquiv_eq_conj (hc : c.toBasis.orientation = c'.toBasis.orientation) :
+    ∃ s₀ : spinGroup (realCliffordForm n 0), ∀ s : spinGroup (realCliffordForm n 0),
+      c'.realSpinGroupEquiv hQ s = c.realSpinGroupEquiv hQ (s₀ * s * s₀⁻¹) := by
+  have hQneg : ∀ v, (-Q) v = ‖v‖ ^ 2 := fun v ↦ by simp [hQ]
+  obtain ⟨s₀, hs₀⟩ := (c'.exists_spinVectorAction_eq_iff_orientation_eq c hQneg).mpr hc.symm
+  have hact (x : Fin (n + 0) → ℝ) :
+      spinVectorAction Q (c.realSpinGroupEquiv hQ s₀)
+        (c.negRealCliffordFormIsometryEquiv hQ x) =
+        c'.negRealCliffordFormIsometryEquiv hQ x := by
+    have hx := hs₀ (c'.negRealCliffordFormIsometryEquiv hQ x)
+    rw [c'.isometryEquivRealCliffordFormZero_eq_negRealCliffordFormIsometryEquiv_symm hQ hQneg,
+      QuadraticMap.IsometryEquiv.symm_apply_apply,
+      c.isometryEquivRealCliffordFormZero_eq_negRealCliffordFormIsometryEquiv_symm hQ hQneg] at hx
+    rw [c.spinVectorAction_realSpinGroupEquiv hQ s₀ x, hx,
+      QuadraticMap.IsometryEquiv.apply_symm_apply]
+  refine ⟨s₀, fun s ↦ ?_⟩
+  rw [congrFun (c'.coe_realSpinGroupEquiv hQ) s, Function.comp_apply,
+    (c.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv_apply_eq_conj _
+      (c.realSpinGroupEquiv hQ s₀) hact,
+    ← Function.comp_apply (f := (c.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv),
+    ← congrFun (c.coe_realSpinGroupEquiv hQ) s, ← map_inv, ← map_mul, ← map_mul]
+
+/-- For two equally oriented orthonormal frames `c` and `c'`, the descended `Spinᶜ(n)` frame
+comparisons `c.realSpinCGroupHom` and `c'.realSpinCGroupHom` differ by conjugation by a compact
+Spin element. -/
+theorem exists_realSpinCGroupHom_eq_conj (hc : c.toBasis.orientation = c'.toBasis.orientation)
+    (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0) :
+    ∃ s₀ : spinGroup (realCliffordForm n 0), ∀ x : spinCGroup (realCliffordForm n 0) hpos,
+      c'.realSpinCGroupHom hQ hpos hQ₀ x =
+        c.realSpinCGroupHom hQ hpos hQ₀
+          (spinCGroup.ofSpin _ hpos s₀ * x * (spinCGroup.ofSpin _ hpos s₀)⁻¹) := by
+  obtain ⟨s₀, hs₀⟩ := exists_realSpinGroupEquiv_eq_conj c c' hQ hc
+  refine ⟨s₀, fun x ↦ ?_⟩
+  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective _ hpos x
+  simp [spinCGroup.ofSpin_apply, ← map_inv, ← map_mul, hs₀ s]
+
+end NegDef
 
 end OrthonormalBasis

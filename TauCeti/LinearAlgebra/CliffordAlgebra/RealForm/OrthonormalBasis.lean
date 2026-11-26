@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 
 /-!
 # Orthonormal bases as isometries with the compact coordinate form
@@ -41,12 +42,22 @@ compact Spin group `Spin(n)`. This is the frame identification of the Spin group
   to `b i`.
 * `OrthonormalBasis.negRealCliffordFormIsometryEquiv_symm_apply`: its inverse takes coordinates in
   `b`.
+* `OrthonormalBasis.negRealCliffordFormIsometryEquiv_map` and
+  `OrthonormalBasis.toIsometry_negRealCliffordFormIsometryEquiv_map`: naturality of
+  `negRealCliffordFormIsometryEquiv` under `b.map f`.
 * `OrthonormalBasis.coe_realEvenCliffordEquiv_apply`: the even frame comparison is
   `evenEquivEvenNeg` followed by the map induced by the coordinates of `b`.
 * `OrthonormalBasis.realEvenCliffordEquiv_ι`: the even frame comparison sends a bivector `eᵢ eⱼ` to
   `-c(bᵢ) c(bⱼ)`.
+* `OrthonormalBasis.realEvenCliffordEquiv_reverseEven`: the even frame comparison commutes with
+  Clifford reversal on the even subalgebra.
+* `OrthonormalBasis.realEvenCliffordEquiv_map`: naturality of `realEvenCliffordEquiv` under
+  `b.map f`.
 * `OrthonormalBasis.isometryEquivRealCliffordFormZero_apply_self`: the positive coordinate isometry
   sends `b i` to the `i`-th coordinate vector.
+* `OrthonormalBasis.isometryEquivRealCliffordFormZero_eq_negRealCliffordFormIsometryEquiv_symm`: for
+  `Q v = -‖v‖²` and `Q' v = ‖v‖²`, `b.isometryEquivRealCliffordFormZero hQ'` agrees pointwise with
+  `(b.negRealCliffordFormIsometryEquiv hQ).symm`.
 
 ## References
 
@@ -99,6 +110,25 @@ theorem negRealCliffordFormIsometryEquiv_symm_apply (v : V) (i : Fin n) :
     (b.negRealCliffordFormIsometryEquiv hQ).symm v i = b.repr v i :=
   (congrFun (b.toBasis.equivFun_apply v) i).trans (b.coe_toBasis_repr_apply v i)
 
+/-- Mapping the orthonormal basis `b` by a linear isometry `f : V ≃ₗᵢ[ℝ] V'` composes
+`negRealCliffordFormIsometryEquiv` on the left with `f`. -/
+theorem negRealCliffordFormIsometryEquiv_map {V' : Type*} [NormedAddCommGroup V']
+    [InnerProductSpace ℝ V'] {Q' : QuadraticForm ℝ V'} (hQ' : ∀ v, Q' v = -‖v‖ ^ 2)
+    (f : V ≃ₗᵢ[ℝ] V') (x : Fin (n + 0) → ℝ) :
+    (b.map f).negRealCliffordFormIsometryEquiv hQ' x =
+      f (b.negRealCliffordFormIsometryEquiv hQ x) := by
+  simp [negRealCliffordFormIsometryEquiv_apply, map_sum, map_smul]
+
+/-- As a `QuadraticMap.Isometry`, `negRealCliffordFormIsometryEquiv` for `b.map f` factors through
+any quadratic isometry `e : Q →qᵢ Q'` agreeing pointwise with `f`. -/
+theorem toIsometry_negRealCliffordFormIsometryEquiv_map {V' : Type*} [NormedAddCommGroup V']
+    [InnerProductSpace ℝ V'] {Q' : QuadraticForm ℝ V'} (hQ' : ∀ v, Q' v = -‖v‖ ^ 2)
+    (f : V ≃ₗᵢ[ℝ] V') (e : Q →qᵢ Q') (he : ∀ v, e v = f v) :
+    ((b.map f).negRealCliffordFormIsometryEquiv hQ').toIsometry =
+      e.comp (b.negRealCliffordFormIsometryEquiv hQ).toIsometry := by
+  ext x
+  simp [QuadraticMap.Isometry.comp_apply, b.negRealCliffordFormIsometryEquiv_map hQ hQ' f, he]
+
 open CliffordAlgebra
 
 /-- The comparison of the even Clifford algebras of the positive-definite coordinate form and of
@@ -126,6 +156,28 @@ theorem realEvenCliffordEquiv_ι (x y : Fin (n + 0) → ℝ) :
         (b.negRealCliffordFormIsometryEquiv hQ y) := by
   rw [realEvenCliffordEquiv, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι, map_neg,
     evenEquivOfIsometry_ι]
+
+/-- `OrthonormalBasis.realEvenCliffordEquiv` commutes with Clifford reversal on the even
+subalgebra. -/
+theorem realEvenCliffordEquiv_reverseEven (x : even (realCliffordForm n 0)) :
+    b.realEvenCliffordEquiv hQ (reverseEven (realCliffordForm n 0) x) =
+      reverseEven Q (b.realEvenCliffordEquiv hQ x) := by
+  rw [realEvenCliffordEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+    evenEquivEvenNeg_reverseEven, evenEquivOfIsometry_reverseEven]
+
+/-- Mapping the orthonormal basis `b` by a linear isometry `f : V ≃ₗᵢ[ℝ] V'` composes
+`realEvenCliffordEquiv` with the even Clifford map of any quadratic isometry `e : Q →qᵢ Q'`
+agreeing pointwise with `f`. -/
+theorem realEvenCliffordEquiv_map {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V']
+    {Q' : QuadraticForm ℝ V'} (hQ' : ∀ v, Q' v = -‖v‖ ^ 2) (f : V ≃ₗᵢ[ℝ] V')
+    (e : Q →qᵢ Q') (he : ∀ v, e v = f v) (x : even (realCliffordForm n 0)) :
+    (b.map f).realEvenCliffordEquiv hQ' x =
+      ⟨CliffordAlgebra.map e (b.realEvenCliffordEquiv hQ x),
+        map_mem_even e (b.realEvenCliffordEquiv hQ x).property⟩ := by
+  apply Subtype.ext
+  rw [(b.map f).coe_realEvenCliffordEquiv_apply hQ',
+    b.toIsometry_negRealCliffordFormIsometryEquiv_map hQ hQ' f e he,
+    ← CliffordAlgebra.map_comp_map, AlgHom.comp_apply, ← b.coe_realEvenCliffordEquiv_apply hQ]
 
 section Positive
 
@@ -183,5 +235,15 @@ theorem isometryEquivRealCliffordFormZero_symm_single (i : Fin n) :
     QuadraticMap.IsometryEquiv.symm_apply_apply]
 
 end Positive
+
+/-- For `Q v = -‖v‖²` and `Q' v = ‖v‖²`, the positive coordinate isometry of `Q'` agrees pointwise
+with `(b.negRealCliffordFormIsometryEquiv hQ).symm`. -/
+theorem isometryEquivRealCliffordFormZero_eq_negRealCliffordFormIsometryEquiv_symm
+    {Q' : QuadraticForm ℝ V} (hQ' : ∀ v, Q' v = ‖v‖ ^ 2) (v : V) :
+    b.isometryEquivRealCliffordFormZero hQ' v =
+      (b.negRealCliffordFormIsometryEquiv hQ).symm v := by
+  ext i
+  rw [b.isometryEquivRealCliffordFormZero_apply hQ',
+    b.negRealCliffordFormIsometryEquiv_symm_apply hQ]
 
 end OrthonormalBasis

@@ -46,7 +46,8 @@ the scalar extension of the grading of `Cℓ(M, Q)`.
 * `CliffordAlgebra.liftBaseChangeEquiv`: `R`-algebra maps `Cℓ(M, Q) → B` into an `A`-algebra `B`
   correspond to `A`-algebra maps `Cℓ(A ⊗ M, Q_A) → B`; `CliffordAlgebra.eq_liftBaseChange_iff`
   characterizes the extension `CliffordAlgebra.liftBaseChange` by its restriction along
-  `CliffordAlgebra.ofBaseChangeAux`.
+  `CliffordAlgebra.ofBaseChangeAux`, and `CliffordAlgebra.commute_liftBaseChange_of_forall_ι`
+  extends commutation on generators `ι Q v` to `Cℓ(A ⊗ M, Q_A)`.
 * `CliffordAlgebra.ofBaseChange_map_map` and `CliffordAlgebra.toBaseChange_map`: under
   `CliffordAlgebra.ofBaseChange` and `CliffordAlgebra.toBaseChange`, the algebra map induced by
   the extension `f.baseChange A` of a quadratic isometry `f` corresponds to the scalar extension
@@ -459,6 +460,23 @@ theorem eq_liftBaseChange_iff (Q : QuadraticForm R M) (f : CliffordAlgebra Q →
     g = liftBaseChange A Q f ↔ ∀ x, g (ofBaseChangeAux A Q x) = f x := by
   rw [liftBaseChange, ← Equiv.symm_apply_eq, AlgHom.ext_iff]
   simp only [liftBaseChangeEquiv_symm_apply]
+
+/-- If `b : B` commutes with `f (ι Q v)` for every `v : M`, then it commutes with
+`liftBaseChange A Q f x` for every `x` in `CliffordAlgebra (Q.baseChange A)`. -/
+theorem commute_liftBaseChange_of_forall_ι {Q : QuadraticForm R M}
+    {f : CliffordAlgebra Q →ₐ[R] B} {b : B}
+    (hb : ∀ v, Commute b (f (ι Q v))) (x : CliffordAlgebra (Q.baseChange A)) :
+    Commute b (liftBaseChange A Q f x) := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap a => rw [AlgHom.commutes]; exact (Algebra.commutes a b).symm
+  | ι w =>
+    induction w using TensorProduct.inductionOn with
+    | tmul a v =>
+      rw [liftBaseChange_ι_tmul]
+      exact (hb v).smul_right a
+    | add x y hx hy => simpa only [map_add] using hx.add_right hy
+  | mul x y hx hy => simpa only [map_mul] using hx.mul_right hy
+  | add x y hx hy => simpa only [map_add] using hx.add_right hy
 
 end LiftBaseChange
 

@@ -18,6 +18,7 @@ import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import Mathlib.Analysis.InnerProductSpace.Orientation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Geometry.Symplectic.Complex.Module.Hom
@@ -92,6 +93,9 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   coordinates (`OrthonormalBasis.complexCoords_centralizerToUnitaryGroup_apply`,
   `OrthonormalBasis.coe_centralizerToUnitaryGroup_apply`,
   `OrthonormalBasis.continuous_centralizerToUnitaryGroup`).
+* `Orientation.exists_almostComplexStructure_orthonormalBasis`: every oriented four-dimensional
+  real inner product space admits an orthogonal almost complex structure `J` and a positively
+  oriented orthonormal frame `b` with `J (b 0) = b 1` and `J (b 2) = b 3`.
 * `ContinuousLinearMap.orthonormal_adaptedFourFrame`, `ContinuousLinearMap.adaptedFourBasis`: for
   an orthogonal complex structure `K`, a unit vector `a` and a vector `c` with nonzero residual
   `ContinuousLinearMap.complexLineResidual`, the vectors `(a, K a, u, K u)`, with `u` the
@@ -792,6 +796,36 @@ theorem continuousOn_unitaryToAdaptedFourBasis :
 end UnitaryToAdaptedFourBasis
 
 end OrthonormalBasis
+
+namespace Orientation
+
+open Module
+open scoped RealInnerProductSpace
+
+/-- Every oriented four-dimensional real inner product space `(V, o)` admits an orthogonal almost
+complex structure `J` together with a positively oriented orthonormal basis `b` satisfying
+`J (b 0) = b 1` and `J (b 2) = b 3`. -/
+theorem exists_almostComplexStructure_orthonormalBasis {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)] (o : Orientation ℝ V (Fin 4)) :
+    ∃ (J : TauCeti.AlmostComplexStructure V) (b : OrthonormalBasis (Fin 4) ℝ V),
+      b.toBasis.orientation = o ∧ J (b 0) = b 1 ∧ J (b 2) = b 3 ∧
+        ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫ := by
+  let b := o.finOrthonormalBasis (by omega) Fact.out
+  obtain ⟨J, hb₀, hb₂⟩ := b.exists_almostComplexStructure_finFour
+  have hb₁ : J (b 1) = -b 0 := by rw [← hb₀, J.apply_apply]
+  have hb₃ : J (b 3) = -b 2 := by rw [← hb₂, J.apply_apply]
+  have horth (i j : Fin 4) : ⟪J (b i), J (b j)⟫ = ⟪b i, b j⟫ := by
+    fin_cases i <;> fin_cases j <;>
+      simp [hb₀, hb₁, hb₂, hb₃, orthonormal_iff_ite.mp b.orthonormal]
+  have hv (u : V) : J u = ∑ i, b.repr u i • J (b i) := by
+    conv_lhs => rw [← b.sum_repr u]
+    simp [map_sum, map_smul]
+  refine ⟨J, b, o.finOrthonormalBasis_orientation (by omega) Fact.out, hb₀, hb₂, fun v w ↦ ?_⟩
+  conv_rhs => rw [← b.sum_repr v, ← b.sum_repr w]
+  rw [hv v, hv w]
+  simp [inner_sum, sum_inner, real_inner_smul_left, real_inner_smul_right, horth]
+
+end Orientation
 
 namespace TauCeti.AlmostComplexStructure
 

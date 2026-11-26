@@ -41,7 +41,8 @@ contrast the hyperbolic space `H ⟂ H`, whose centre is also split
   coordinates.
 * `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_symm_neg_one_one` identifies the element
   with coordinates `(-1, 1)` as `-(e₀ e₁)(e₂ e₃)`.
-* `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_reverseEven` identifies reversal with
+* `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_reverseEven` and
+  `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_symm_reverseEven` identify reversal with
   componentwise quaternion conjugation.
 * `TauCeti.realCliffordFourZeroCenterEvenEquivProd` identifies the centre of `Cl⁺(4,0)` with
   `ℝ × ℝ`.
@@ -260,6 +261,17 @@ theorem realCliffordFourZeroEvenEquivQuaternionProd_reverseEven
     CliffordAlgebra.evenEquivOfIsometry_reverseEven,
     CliffordAlgebra.equivEven_symm_reverseEven,
     realCliffordZeroThreeEquivQuaternionProd_star]
+
+/-- Inverse-direction form of `realCliffordFourZeroEvenEquivQuaternionProd_reverseEven`: Clifford
+reversal commutes with `realCliffordFourZeroEvenEquivQuaternionProd.symm`. -/
+@[simp]
+theorem realCliffordFourZeroEvenEquivQuaternionProd_symm_reverseEven (x : ℍ[ℝ] × ℍ[ℝ]) :
+    CliffordAlgebra.reverseEven (realCliffordForm 4 0)
+        (realCliffordFourZeroEvenEquivQuaternionProd.symm x) =
+      realCliffordFourZeroEvenEquivQuaternionProd.symm (star x) :=
+  realCliffordFourZeroEvenEquivQuaternionProd.injective <| by
+    rw [realCliffordFourZeroEvenEquivQuaternionProd_reverseEven,
+      AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
 
 /-- The reverse norm in `Cl⁺(4,0)` becomes the pair of quaternion norm-squares. -/
 theorem realCliffordFourZeroEvenEquivQuaternionProd_map_reverseEven_mul_self_eq_normSq

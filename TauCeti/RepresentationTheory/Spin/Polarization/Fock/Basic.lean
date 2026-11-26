@@ -10,8 +10,8 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.ComplexStructure
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.DegreeScaling
--- Private: the parity of the real dimension and the structure theorem are used only in the proof
--- of bijectivity.
+-- Private: the exterior-algebra dimension, the parity of the real dimension, and the structure
+-- theorem are used only in the proofs of `finrank_fock` and `fockAction_bijective`.
 import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.RepresentationTheory.Spin.Structure
 -- Private: the symmetry of the polar form is used only in the proof of the vacuum formula.
@@ -44,6 +44,8 @@ together with the formula for `c(v)`.
 
 ## Main results
 
+* `TauCeti.AlmostComplexStructure.finrank_fock`: the Fock spinor module `⋀ W` has complex dimension
+  `2 ^ (Module.finrank ℝ V / 2)`.
 * `TauCeti.AlmostComplexStructure.spinAction_ι_one_tmul`: the native action of a real vector.
 * `TauCeti.AlmostComplexStructure.degreeScaling_comp_spinAction_eq_fockAction_comp`: the degree
   scaling by `√2` intertwines the native action with the normalized one.
@@ -80,6 +82,13 @@ universe u
 variable {V : Type u} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure V)
   {Q : QuadraticForm ℝ V} [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
   (hQ : Q.Nondegenerate)
+
+/-- The Fock spinor module `⋀ W` of a `Q`-preserving complex structure `J` has complex dimension
+`2 ^ (Module.finrank ℝ V / 2)`. -/
+theorem finrank_fock :
+    Module.finrank ℂ (ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) =
+      2 ^ (Module.finrank ℝ V / 2) := by
+  rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, J.finrank_spinPolarizationData_W hQJ hQ]
 
 /-- The rescaled action of a real vector splits into its holomorphic creation part and
 antiholomorphic contraction part. -/

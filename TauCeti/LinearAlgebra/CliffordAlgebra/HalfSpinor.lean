@@ -13,12 +13,16 @@ public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
--- Private: the orthogonal vector, two-vector commutator, even relation, conjugation and adjugate
--- facts are proof-only.
+public import TauCeti.LinearAlgebra.Dimension.FactFinrank
+-- Private: the orthogonal vector, two-vector commutator, even relation, conjugation, adjugate,
+-- nondegeneracy, and central-simple fullness facts are proof-only.
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 import TauCeti.LinearAlgebra.End.Adjugate
 
 /-!
@@ -79,8 +83,12 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
 * `Orientation.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`:
   `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ` for a positive half-spinor `ψ` and a self-dual `β`, where
   `v ⌟ β` is `TauCeti.twoVectorContraction β v`.
-* `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
-  dimension.
+* `CliffordAlgebra.finrank_eigenspace_chirality_neg`,
+  `CliffordAlgebra.isCompl_eigenspace_chirality`,
+  `CliffordAlgebra.finrank_eq_two_mul_finrank_positiveHalfSpinors`, and
+  `CliffordAlgebra.liftBaseChange_bijective_of_finrank_positiveHalfSpinors_eq_two`: the `±1`
+  eigenspaces are complementary of equal dimension, so `dim_ℂ W = 2 * dim_ℂ W⁺`, and `dim_ℂ W⁺ = 2`
+  forces bijectivity of `liftBaseChange ℂ Q ρ`.
 * `CliffordAlgebra.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
   `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` in a two-dimensional `ε`-eigenspace and `χ` in
   the opposite eigenspace, then `χ = 0`.
@@ -99,13 +107,10 @@ noncomputable section
 namespace CliffordAlgebra
 
 open Module Module.End
-open scoped InnerProductSpace
+open scoped InnerProductSpace TauCeti.FactFinrank
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4))
-
-/-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
 /-- The chirality element acts self-adjointly on a Hermitian Clifford module: `Γ* = Γ`. -/
 theorem isSelfAdjoint_map_chirality {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W]
@@ -414,7 +419,38 @@ theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
   · obtain ⟨v, hv⟩ := not_forall.1 hQ₀
     exact (halfSpinCliffordMulEquiv o ρ ε hv).finrank_eq.symm
 
+variable (ρ) in
+omit hQ in
+/-- **The chirality decomposition on a real Clifford module**: when `Q v = -‖v‖²`, every complex
+Clifford module `W` splits as the direct sum of `positiveHalfSpinors o ρ` and the `-1`-eigenspace
+of `Γ`. -/
+theorem isCompl_eigenspace_chirality (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
+    IsCompl (positiveHalfSpinors o ρ) (eigenspace (ρ (chirality Q o)) (-1)) := by
+  rw [positiveHalfSpinors_eq_eigenspace]
+  exact TauCeti.isCompl_eigenspace_one_neg_one (two_ne_zero : (2 : ℂ) ≠ 0).isUnit fun w ↦ by
+    rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_self o hQ, map_one, one_apply_eq_self]
+
 variable [FiniteDimensional ℂ W]
+
+variable (ρ) in
+omit hQ in
+/-- **Total spinor dimension is twice the positive half-spinor dimension.** -/
+theorem finrank_eq_two_mul_finrank_positiveHalfSpinors (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
+    finrank ℂ W = 2 * finrank ℂ (positiveHalfSpinors o ρ) := by
+  have hsum := (Submodule.finrank_add_eq_of_isCompl (isCompl_eigenspace_chirality o ρ hQ)).symm
+  rw [hsum, positiveHalfSpinors_eq_eigenspace, finrank_eigenspace_chirality_neg o ρ 1, two_mul]
+
+variable (ρ) in
+omit hQ in
+/-- **Half-spin rank two forces fullness of the complexified Clifford action** in dimension four. -/
+theorem liftBaseChange_bijective_of_finrank_positiveHalfSpinors_eq_two
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
+    Function.Bijective (liftBaseChange ℂ Q ρ) := by
+  refine liftBaseChange_bijective_of_finrank_eq ρ
+    (QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ) (m := 2)
+    (Fact.out : finrank ℝ V = 4) ?_
+  rw [finrank_eq_two_mul_finrank_positiveHalfSpinors o ρ hQ, h₂]
+  norm_num
 
 /-- **Clifford multiplication by a nonzero spinor is a real isomorphism.** For a nonzero `ψ` in
 the `ε`-eigenspace of `Γ`, when that eigenspace has complex dimension two, the real-linear map
