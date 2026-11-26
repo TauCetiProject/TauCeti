@@ -10,14 +10,16 @@ import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 
 /-!
-# Power bounds in ordered commutative monoids
+# Scalar and power bounds in ordered monoids
 
-This file contains exponent bookkeeping for elements bounded by a power of an element at most `1`
-in an ordered commutative monoid. It turns valuation estimates for exponential and logarithm
+This file contains monotonicity and exponent bookkeeping for natural scalar multiples and powers
+in ordered monoids. The power bound turns valuation estimates for exponential and logarithm
 coefficients into geometric decay on deep ideals.
 
 ## Main results
 
+* `TauCeti.nsmul_strictMono_of_pos`: natural scalar multiplication by a positive element is
+  strictly monotone.
 * `TauCeti.pow_mul_pow_le_of_le`: bounds a product of powers using a bound `t ≤ γ ^ i` and
   inequalities between the exponents.
 -/
@@ -25,6 +27,16 @@ coefficients into geometric decay on deep ideals.
 public section
 
 namespace TauCeti
+
+/-- In a preordered additive group with monotone left addition, natural scalar multiplication by
+a positive element is strictly monotone. -/
+theorem nsmul_strictMono_of_pos {A : Type*} [AddGroup A] [Preorder A] [AddLeftMono A] {a : A}
+    (ha : 0 < a) : StrictMono fun n : ℕ ↦ n • a :=
+  strictMono_nat_of_lt_succ fun n ↦ by
+    rw [succ_nsmul]
+    apply lt_of_le_not_ge (le_add_of_nonneg_right ha.le)
+    intro h
+    exact not_le_of_gt ha (by simpa using h)
 
 /-- If `γ ≤ 1`, `t ≤ γ ^ i`, `e ≤ d * i` and `d * q < m`, then
 `t ^ (m * d) * γ ^ (d * i - e) ≤ t ^ d * (γ ^ (d * i - e)) ^ m * γ ^ (d * (e * q))`. -/

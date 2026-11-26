@@ -143,6 +143,18 @@ theorem localFourier_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (�
     (c • T).localFourier φ η = c * T.localFourier φ η :=
   complexPairing_smul c T _
 
+/-- The localized Fourier transform of the negative of a distribution is the negative. -/
+@[simp]
+theorem localFourier_neg (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (-T).localFourier φ η = -T.localFourier φ η := by
+  rw [← neg_one_smul ℂ T, localFourier_smul, neg_one_mul]
+
+/-- The localized Fourier transform of a difference of distributions is the difference. -/
+@[simp]
+theorem localFourier_sub (T S : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (T - S).localFourier φ η = T.localFourier φ η - S.localFourier φ η := by
+  rw [sub_eq_add_neg, localFourier_add, localFourier_neg, ← sub_eq_add_neg]
+
 /-- The localized Fourier transform of the zero distribution vanishes. -/
 @[simp]
 theorem localFourier_zero (φ : 𝓓(Ω, ℂ)) (η : E) : (0 : 𝓓'(Ω, ℂ)).localFourier φ η = 0 := by
@@ -787,7 +799,7 @@ theorem localFourier_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : M
     (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(V, ℂ)) (η : E) :
     (compCLMOfContinuousLinearEquiv e hVO T).localFourier φ η =
       (|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) *
-        T.localFourier (e.transportTestFunction hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
+        T.localFourier (e.transportTestFunction ℝ hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
   rw [localFourier, complexPairing_compCLMOfContinuousLinearEquiv]
   congr 1
   refine (localFourier_eq _ _ fun y => ?_).symm
@@ -803,7 +815,7 @@ theorem IsMicrolocallySmoothAt.compCLMOfContinuousLinearEquiv {T : 𝓓'(Ω, ℂ
   obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hdecay⟩ := h
   set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
   -- The cutoff `φ ∘ e` and the cone `A⁻¹ Γ` carry the decay of `T` over to its pullback.
-  refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
+  refine ⟨e.symm.transportTestFunction ℝ hOV φ, by simpa using hφ, A ⁻¹' Γ,
     hΓ.preimage A.continuous, hξ, fun t ht η hη => ?_, fun N => ?_⟩
   · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
   obtain ⟨C, hC⟩ := hdecay N

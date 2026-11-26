@@ -53,9 +53,9 @@ namespace SchwartzMap
 
 variable {E F G K : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-  [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
-  [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
-  [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+  [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
+  [NormedAddCommGroup K] [NormedSpace ℂ K] [CompleteSpace K]
 
 /-- A continuous linear map `A` of Schwartz spaces extends to a bounded operator `H^s → H^r`: some
 continuous linear map `T : H^s(E, F) →L[ℂ] H^r(E, G)` agrees with `A` on Schwartz functions. -/
