@@ -18,7 +18,7 @@ public import TauCeti.RingTheory.AdjoinRoot.Basic
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.Algebra.Bialgebra.Primitive
-import TauCeti.Algebra.Bialgebra.Quotient
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Truncated primitive Hopf algebras and slash-homology projectivity detection
@@ -35,16 +35,20 @@ tensor products and left `H`-module algebras. This file axiomatizes truncated pr
 **Khovanov–Qi's slash-homology detection theorem**
 (`TauCeti.slashHomology_subsingleton_iff_projective`) for arbitrary (not necessarily
 finite-dimensional) `H`-modules over a field `k`, and computes the slash homology of the trivial
-module and all cyclic quotients `H ⧸ (d ^ r)` over any nontrivial commutative ring `k`.
+module and the slash-homology ranks of the cyclic quotients `H ⧸ (d ^ r)` for `r < p` over any
+nontrivial commutative ring `k`.
 
 ## Main definitions and results
 
 * `TauCeti.TruncatedPrimitive`, `natCast_choose_eq_zero`, `natCast_eq_zero`, `isEmpty_of_charZero`,
   `charP`, `adjoinRootAlgEquiv`, `bialgEquivTruncatedPrimitiveAlg`.
-* `TauCeti.TruncatedPrimitiveAlg` (equipped with `HopfAlgebra` structure whenever `0 < n` and all
-  intermediate binomial coefficients vanish) and `TruncatedPrimitiveAlg.mkTruncatedPrimitive`.
+* `TauCeti.TruncatedPrimitiveAlg` (equipped automatically with `HopfAlgebra` structure in prime
+  characteristic `p` for `n = p` and `n = p ^ r`, and via
+  `TauCeti.SymmetricAlgebra.isHopfIdeal_span_pow_of_choose_eq_zero` whenever `0 < n` and all
+  intermediate binomial coefficients vanish), `TruncatedPrimitiveAlg.algHom_ext`, and
+  `TruncatedPrimitiveAlg.mkTruncatedPrimitive`.
 * `TauCeti.TruncatedPrimitive.moduleDifferential`, `moduleDifferential_tmul`, `action_d_mul`,
-  `slashHomologyMap`, `slashHomologyEquiv`, `isPHomotopic_id_zero_of_projective`.
+  `isPHomotopic_id_zero_of_projective`.
 * `TauCeti.slashHomology_subsingleton_iff_projective` and `slashHomology_subsingleton_iff_free`.
 * `TauCeti.TruncatedPrimitive.slashHomologyZeroTrivialEquiv`, `not_projective_trivial`,
   `finrank_slashHomology_quotient_span_pow`, `not_projective_quotient_span_pow`.
@@ -223,17 +227,9 @@ noncomputable def adjoinRootAlgEquiv (P : TruncatedPrimitive (k := k) H p) :
     AdjoinRoot (X ^ p : k[X]) ≃ₐ[k] H := by
   let φ : AdjoinRoot (X ^ p : k[X]) →ₐ[k] H :=
     (AdjoinRoot.algHomEquiv H (X ^ p : k[X])).symm ⟨P.d, by simp [P.pow_d]⟩
-  have hroot : φ (AdjoinRoot.root (X ^ p : k[X])) = P.d :=
-    AdjoinRoot.algHomEquiv_symm_apply_root _
-  let b₀ := AdjoinRoot.powBasis k p
-  have hφ_eq : φ.toLinearMap = (b₀.equiv P.basis (Equiv.refl _)).toLinearMap := by
-    apply b₀.ext; intro i
-    rw [AlgHom.toLinearMap_apply, LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply,
-      Equiv.refl_apply, P.basis_apply]
-    simp [b₀, hroot]
-  refine AlgEquiv.ofBijective φ ?_
-  rw [← AlgHom.coe_toLinearMap, hφ_eq]
-  exact (b₀.equiv P.basis (Equiv.refl _)).bijective
+  refine AlgEquiv.ofBijective φ
+    ((AdjoinRoot.xPowBasis k p).bijective_of_map_basis P.basis φ fun i ↦ ?_)
+  rw [AdjoinRoot.xPowBasis_apply, P.basis_apply, map_pow, AdjoinRoot.algHomEquiv_symm_apply_root]
 
 /-- `adjoinRootAlgEquiv` sends the class of `X` to `P.d`. -/
 @[simp]
@@ -306,11 +302,26 @@ theorem algEquivAdjoinRoot_symm_root :
 
 /-- Monomial `R`-basis `1, d, …, d ^ (n - 1)` of `TruncatedPrimitiveAlg R n`. -/
 noncomputable def basis : Module.Basis (Fin n) R (TruncatedPrimitiveAlg R n) :=
-  (AdjoinRoot.powBasis R n).map (algEquivAdjoinRoot R n).symm.toLinearEquiv
+  (AdjoinRoot.xPowBasis R n).map (algEquivAdjoinRoot R n).symm.toLinearEquiv
 
 /-- The `i`-th element of `TruncatedPrimitiveAlg.basis R n` is `d ^ i`. -/
 @[simp]
 theorem basis_apply (i : Fin n) : basis R n i = (d R n) ^ (i : ℕ) := by simp [basis]
+
+variable {R n} in
+/-- Two `R`-algebra homomorphisms out of `TruncatedPrimitiveAlg R n` into any `R`-algebra agree if
+they agree on `d R n`. -/
+@[ext]
+theorem algHom_ext {B : Type*} [Semiring B] [Algebra R B]
+    {f g : TruncatedPrimitiveAlg R n →ₐ[R] B} (h : f (d R n) = g (d R n)) : f = g := by
+  apply Ideal.Quotient.algHom_ext R
+  suffices (f.comp (Ideal.Quotient.mkₐ R _)).comp
+        (SymmetricAlgebra.equivPolynomial (R := R)).symm.toAlgHom =
+      (g.comp (Ideal.Quotient.mkₐ R _)).comp
+        (SymmetricAlgebra.equivPolynomial (R := R)).symm.toAlgHom from
+    AlgHom.ext fun z ↦ by
+      simpa using AlgHom.congr_fun this (SymmetricAlgebra.equivPolynomial z)
+  exact Polynomial.algHom_ext (by simpa [d_def] using h)
 
 /-- Build a `TruncatedPrimitive` structure on `TruncatedPrimitiveAlg R n` whenever `(ι 1 ^ n)` is
 a coideal (for instance, from `Ideal.IsHopfIdeal`). -/
@@ -358,34 +369,29 @@ noncomputable def bialgEquivTruncatedPrimitiveAlg (P : TruncatedPrimitive (k := 
     [((Ideal.span {(SymmetricAlgebra.ι k k 1 : SymmetricAlgebra k k) ^ p}).restrictScalars
       k).IsCoideal] :
     H ≃ₐc[k] TruncatedPrimitiveAlg k p := by
-  letI : CommSemiring H := { (inferInstance : Semiring H) with mul_comm := P.mul_comm }
-  let fAlg : SymmetricAlgebra k k →ₐ[k] H :=
-    SymmetricAlgebra.lift (LinearMap.toSpanSingleton k H P.d)
-  have hcounit : (Bialgebra.counitAlgHom k H).comp fAlg =
-      Bialgebra.counitAlgHom k (SymmetricAlgebra k k) :=
-    SymmetricAlgebra.algHom_ext <| LinearMap.ext_ring <| by
-      simp [fAlg, SymmetricAlgebra.algebraMapInv_ι]
+  let eAlg : TruncatedPrimitiveAlg k p ≃ₐ[k] H :=
+    (TruncatedPrimitiveAlg.algEquivAdjoinRoot k p).trans P.adjoinRootAlgEquiv
+  have hcounit : (Bialgebra.counitAlgHom k H).comp eAlg.toAlgHom =
+      Bialgebra.counitAlgHom k (TruncatedPrimitiveAlg k p) :=
+    TruncatedPrimitiveAlg.algHom_ext <| by
+      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, eAlg, AlgEquiv.trans_apply,
+        TruncatedPrimitiveAlg.algEquivAdjoinRoot_d, P.adjoinRootAlgEquiv_root,
+        Bialgebra.counitAlgHom_apply, P.counit_d]
+      rw [TruncatedPrimitiveAlg.d_def, ← Bialgebra.Quotient.mkBialgHom_apply (R := k),
+        CoalgHomClass.counit_comp_apply, SymmetricAlgebra.counit_ι]
   have hcomul :
-      (Algebra.TensorProduct.map fAlg fAlg).comp (Bialgebra.comulAlgHom k _) =
-        (Bialgebra.comulAlgHom k H).comp fAlg :=
-    SymmetricAlgebra.algHom_ext <| LinearMap.ext_ring <| by simp [fAlg]
-  let fSym : SymmetricAlgebra k k →ₐc[k] H := BialgHom.ofAlgHom fAlg hcounit hcomul
-  have hker : Ideal.span {(SymmetricAlgebra.ι k k 1 : SymmetricAlgebra k k) ^ p} ≤
-      RingHom.ker fSym.toAlgHom.toRingHom := by
-    rw [Ideal.span_le]; rintro _ rfl; simp [fSym, fAlg, P.pow_d]
-  let φ := Bialgebra.Quotient.liftBialgHom
-    (Ideal.span {(SymmetricAlgebra.ι k k 1 : SymmetricAlgebra k k) ^ p}) fSym hker
-  have hφ_d : φ (TruncatedPrimitiveAlg.d k p) = P.d := by
-    simp [φ, TruncatedPrimitiveAlg.d_def, fSym, fAlg]
-  have hφ_lin : φ.toAlgHom.toLinearMap =
-      ((TruncatedPrimitiveAlg.basis k p).equiv P.basis (Equiv.refl _)).toLinearMap := by
-    apply (TruncatedPrimitiveAlg.basis k p).ext; intro i
-    rw [AlgHom.toLinearMap_apply, LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply,
-      Equiv.refl_apply, TruncatedPrimitiveAlg.basis_apply, P.basis_apply, map_pow]
-    exact congrArg (· ^ (i : ℕ)) hφ_d
-  refine (BialgEquiv.ofBijective φ ?_).symm
-  rw [← BialgHom.coe_toAlgHom, ← AlgHom.coe_toLinearMap, hφ_lin, LinearEquiv.coe_toLinearMap]
-  exact ((TruncatedPrimitiveAlg.basis k p).equiv P.basis (Equiv.refl _)).bijective
+      (Algebra.TensorProduct.map eAlg.toAlgHom eAlg.toAlgHom).comp
+          (Bialgebra.comulAlgHom k _) =
+        (Bialgebra.comulAlgHom k H).comp eAlg.toAlgHom :=
+    TruncatedPrimitiveAlg.algHom_ext <| by
+      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, eAlg, AlgEquiv.trans_apply,
+        TruncatedPrimitiveAlg.algEquivAdjoinRoot_d, P.adjoinRootAlgEquiv_root,
+        Bialgebra.comulAlgHom_apply, P.comul_d]
+      rw [TruncatedPrimitiveAlg.d_def, ← Bialgebra.Quotient.mkBialgHom_apply (R := k),
+        ← CoalgHomClass.map_comp_comul_apply, SymmetricAlgebra.comul_ι]
+      simp
+  exact (BialgEquiv.ofBijective (BialgHom.ofAlgHom eAlg.toAlgHom hcounit hcomul)
+    eAlg.bijective).symm
 
 /-- The inverse of `bialgEquivTruncatedPrimitiveAlg` sends `TruncatedPrimitiveAlg.d k p` to
 `P.d`. -/
@@ -394,8 +400,9 @@ theorem bialgEquivTruncatedPrimitiveAlg_symm_d (P : TruncatedPrimitive (k := k) 
     [((Ideal.span {(SymmetricAlgebra.ι k k 1 : SymmetricAlgebra k k) ^ p}).restrictScalars
       k).IsCoideal] :
     P.bialgEquivTruncatedPrimitiveAlg.symm (TruncatedPrimitiveAlg.d k p) = P.d := by
-  rw [← BialgEquiv.coe_toEquiv, BialgEquiv.toEquiv_symm]
-  simp [bialgEquivTruncatedPrimitiveAlg, TruncatedPrimitiveAlg.d_def]
+  rw [← BialgEquiv.coe_toEquiv, BialgEquiv.toEquiv_symm, bialgEquivTruncatedPrimitiveAlg,
+    BialgEquiv.toEquiv_symm, Equiv.symm_symm, BialgEquiv.coe_toEquiv]
+  exact (congrFun (BialgEquiv.coe_ofBijective _ _) _).trans (by simp)
 
 /-- `bialgEquivTruncatedPrimitiveAlg` sends `P.d` to `TruncatedPrimitiveAlg.d k p`. -/
 @[simp]
@@ -407,7 +414,7 @@ theorem bialgEquivTruncatedPrimitiveAlg_d (P : TruncatedPrimitive (k := k) H p)
 
 end BialgUniqueness
 
-/-! ### The `p`-differential on left `H`-modules, unsigned Leibniz rules, and functoriality -/
+/-! ### The `p`-differential on left `H`-modules, unsigned Leibniz rules, and contractibility -/
 
 section ModuleDifferential
 
@@ -511,79 +518,10 @@ private theorem nullHomotopicMap_finsupp (P : TruncatedPrimitive (k := k) H p) (
 
 end ModuleDifferential
 
-section FunctorialityAndContractibility
+section Contractibility
 
 variable {k : Type u} {H : Type v} [CommRing k] [Semiring H] [Bialgebra k H] {p : ℕ}
-variable {M N Q : Type*} [AddCommGroup M] [Module k M] [Module H M] [IsScalarTower k H M]
-  [AddCommGroup N] [Module k N] [Module H N] [IsScalarTower k H N]
-  [AddCommGroup Q] [Module k Q] [Module H Q] [IsScalarTower k H Q]
-
-/-- An `H`-linear map `f : M →ₗ[H] N` induces a `k`-linear map on every slash homology group. -/
-noncomputable def slashHomologyMap (P : TruncatedPrimitive (k := k) H p)
-    (f : M →ₗ[H] N) (j : ℕ) :
-    SlashHomology p (P.moduleDifferential (M := M)) j →ₗ[k]
-      SlashHomology p (P.moduleDifferential (M := N)) j :=
-  SlashHomology.map p (f.restrictScalars k) (P.comp_moduleDifferential f) j
-
-/-- Definitional characterization of `slashHomologyMap`. -/
-theorem slashHomologyMap_def (P : TruncatedPrimitive (k := k) H p) (f : M →ₗ[H] N) (j : ℕ) :
-    P.slashHomologyMap f j =
-      SlashHomology.map p (f.restrictScalars k) (P.comp_moduleDifferential f) j := (rfl)
-
-/-- `slashHomologyMap` sends the class of a cycle `z` to the class of `f z`. -/
-@[simp]
-theorem slashHomologyMap_mk (P : TruncatedPrimitive (k := k) H p) (f : M →ₗ[H] N) (j : ℕ)
-    (z : LinearMap.ker ((P.moduleDifferential (M := M)) ^ (j + 1))) :
-    P.slashHomologyMap f j (Submodule.Quotient.mk z) =
-      Submodule.Quotient.mk ⟨f z, LinearMap.map_mem_ker_of_comp_eq (f.restrictScalars k)
-        (Module.End.commute_pow_left_of_commute (P.comp_moduleDifferential f).symm (j + 1)).symm
-        z.property⟩ :=
-  SlashHomology.map_mk p (f.restrictScalars k) (P.comp_moduleDifferential f) j z
-
-/-- The identity `H`-linear map induces the identity on slash homology. -/
-@[simp]
-theorem slashHomologyMap_id (P : TruncatedPrimitive (k := k) H p) (j : ℕ) :
-    P.slashHomologyMap (LinearMap.id : M →ₗ[H] M) j = LinearMap.id := by ext z; simp
-
-/-- The zero `H`-linear map induces the zero map on slash homology. -/
-@[simp]
-theorem slashHomologyMap_zero (P : TruncatedPrimitive (k := k) H p) (j : ℕ) :
-    P.slashHomologyMap (0 : M →ₗ[H] N) j = 0 := by ext z; simp
-
-/-- `slashHomologyMap` preserves composition of `H`-linear maps. -/
-theorem slashHomologyMap_comp (P : TruncatedPrimitive (k := k) H p)
-    (g : N →ₗ[H] Q) (f : M →ₗ[H] N) (j : ℕ) :
-    P.slashHomologyMap (g ∘ₗ f) j = P.slashHomologyMap g j ∘ₗ P.slashHomologyMap f j := by
-  ext z; simp
-
-/-- Simp-oriented composition law for `slashHomologyMap`. -/
-@[simp]
-theorem slashHomologyMap_comp_slashHomologyMap (P : TruncatedPrimitive (k := k) H p)
-    (g : N →ₗ[H] Q) (f : M →ₗ[H] N) (j : ℕ) :
-    P.slashHomologyMap g j ∘ₗ P.slashHomologyMap f j = P.slashHomologyMap (g ∘ₗ f) j :=
-  (P.slashHomologyMap_comp g f j).symm
-
-/-- An `H`-linear equivalence `f : M ≃ₗ[H] N` induces a `k`-linear equivalence on every slash
-homology group. -/
-noncomputable def slashHomologyEquiv (P : TruncatedPrimitive (k := k) H p)
-    (f : M ≃ₗ[H] N) (j : ℕ) :
-    SlashHomology p (P.moduleDifferential (M := M)) j ≃ₗ[k]
-      SlashHomology p (P.moduleDifferential (M := N)) j :=
-  SlashHomology.equiv p (f.restrictScalars k) (P.comp_moduleDifferential f.toLinearMap) j
-
-/-- Definitional characterization of `slashHomologyEquiv`. -/
-theorem slashHomologyEquiv_def (P : TruncatedPrimitive (k := k) H p) (f : M ≃ₗ[H] N) (j : ℕ) :
-    P.slashHomologyEquiv f j =
-      SlashHomology.equiv p (f.restrictScalars k) (P.comp_moduleDifferential f.toLinearMap) j :=
-  (rfl)
-
-/-- `slashHomologyEquiv` acts on cycle classes via `slashHomologyMap`. -/
-@[simp]
-theorem slashHomologyEquiv_mk (P : TruncatedPrimitive (k := k) H p) (f : M ≃ₗ[H] N) (j : ℕ)
-    (z : LinearMap.ker ((P.moduleDifferential (M := M)) ^ (j + 1))) :
-    P.slashHomologyEquiv f j (Submodule.Quotient.mk z) =
-      P.slashHomologyMap f.toLinearMap j (Submodule.Quotient.mk z) :=
-  SlashHomology.equiv_mk p (f.restrictScalars k) (P.comp_moduleDifferential f.toLinearMap) j z
+variable {M : Type*} [AddCommGroup M] [Module k M] [Module H M] [IsScalarTower k H M]
 
 /-- **Contractibility of `H` over itself.** As a `p`-complex over `k`, `id_H` is `p`-homotopic
 to `0`. -/
@@ -624,7 +562,7 @@ theorem slashHomology_subsingleton_of_projective (P : TruncatedPrimitive (k := k
     have hy : y = 0 := by simpa using LinearMap.congr_fun hMap y
     rw [hx, hy]⟩
 
-end FunctorialityAndContractibility
+end Contractibility
 
 end TruncatedPrimitive
 
@@ -648,14 +586,10 @@ theorem TruncatedPrimitive.free_of_slashHomology_subsingleton
   let Φ : (ι →₀ H) →ₗ[H] M := Finsupp.linearCombination H v
   let bFree : Module.Basis (ι × Fin p) k (ι →₀ H) :=
     (Finsupp.basis fun _ : ι ↦ P.basis).reindex (Equiv.sigmaEquivProd ι (Fin p))
-  have hΦ_eq : Φ.restrictScalars k = (bFree.equiv b (Equiv.refl _)).toLinearMap := by
-    apply bFree.ext; rintro ⟨i, r⟩
-    rw [LinearMap.restrictScalars_apply, LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply,
-      Equiv.refl_apply, hb i r]
-    simp [bFree, Φ, Equiv.sigmaEquivProd]
   have hbij : Function.Bijective Φ := by
-    rw [← LinearMap.coe_restrictScalars k, hΦ_eq]
-    exact (bFree.equiv b (Equiv.refl _)).bijective
+    rw [← LinearMap.coe_restrictScalars k]
+    exact bFree.bijective_of_map_basis b (Φ.restrictScalars k) fun ⟨i, r⟩ ↦ by
+      simp [bFree, Φ, hb i r, Equiv.sigmaEquivProd]
   exact Module.Free.of_basis (Module.Basis.ofRepr (LinearEquiv.ofBijective Φ hbij).symm)
 
 /-- **Khovanov–Qi's slash-homology detection theorem** (Khovanov–Qi 2015, §2). Over a field `k`, a
@@ -731,32 +665,25 @@ variable {k : Type u} {H : Type v} [CommRing k] [Ring H] [Bialgebra k H] {p : �
 
 private noncomputable def quotientSpanPowLinearEquiv (P : TruncatedPrimitive (k := k) H p)
     {r : ℕ} (hr : r ≤ p) :
-    (H ⧸ Ideal.span {P.d ^ r}) ≃ₗ[k] AdjoinRoot (X ^ r : k[X]) := by
-  letI : CommRing H := { (inferInstance : Ring H) with mul_comm := P.mul_comm }
-  let e : (H ⧸ Ideal.span {P.d ^ r}) ≃ₐ[k] AdjoinRoot (X ^ r : k[X]) :=
-    (Ideal.quotientEquivAlg (Ideal.span {P.d ^ r})
-      (Ideal.span {AdjoinRoot.root (X ^ p : k[X]) ^ r}) P.adjoinRootAlgEquiv.symm
-      (by simp [Ideal.map_span])).trans (AdjoinRoot.quotientSpanRootXPowAlgEquiv hr)
-  exact
-    { toFun := e, invFun := e.symm, left_inv := e.left_inv, right_inv := e.right_inv,
-      map_add' := e.map_add,
-      map_smul' := fun c q ↦ by
-        obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-        change e (Ideal.Quotient.mk _ (c • x)) = c • e (Ideal.Quotient.mk _ x)
-        rw [Algebra.smul_def, map_mul, map_mul]
-        change e (algebraMap k (H ⧸ Ideal.span {P.d ^ r}) c) * _ = _
-        rw [e.commutes, ← Algebra.smul_def] }
+    (H ⧸ Ideal.span {P.d ^ r}) ≃ₗ[k] AdjoinRoot (X ^ r : k[X]) :=
+  (Submodule.Quotient.restrictScalarsEquiv k (Ideal.span {P.d ^ r})).symm.trans <|
+    (Submodule.Quotient.equiv _ _ P.adjoinRootAlgEquiv.symm.toLinearEquiv (by
+      ext y
+      simp only [Submodule.mem_map, Submodule.restrictScalars_mem, Ideal.mem_span_singleton',
+        AlgEquiv.toLinearEquiv_toLinearMap, AlgEquiv.toLinearMap_apply]
+      exact ⟨fun ⟨_, ⟨a, rfl⟩, hy⟩ ↦ ⟨P.adjoinRootAlgEquiv.symm a, by
+          rw [← hy, map_mul, map_pow, P.adjoinRootAlgEquiv_symm_d]⟩,
+        fun ⟨b, hb⟩ ↦ ⟨P.adjoinRootAlgEquiv b * P.d ^ r, ⟨P.adjoinRootAlgEquiv b, rfl⟩, by
+          simpa [map_mul, map_pow] using hb⟩⟩)).trans <|
+      (Submodule.Quotient.restrictScalarsEquiv k _).trans
+        (AdjoinRoot.quotientSpanRootXPowAlgEquiv hr).toLinearEquiv
 
 private theorem quotientSpanPowLinearEquiv_mk (P : TruncatedPrimitive (k := k) H p)
     {r : ℕ} (hr : r ≤ p) (x : H) :
     P.quotientSpanPowLinearEquiv hr (Submodule.Quotient.mk (p := Ideal.span {P.d ^ r}) x) =
       AdjoinRoot.quotientSpanRootXPowAlgEquiv hr
         (Ideal.Quotient.mk _ (P.adjoinRootAlgEquiv.symm x)) := by
-  let : CommRing H := { (inferInstance : Ring H) with mul_comm := P.mul_comm }
-  change (AdjoinRoot.quotientSpanRootXPowAlgEquiv hr)
-    (Ideal.quotientEquivAlg _ _ P.adjoinRootAlgEquiv.symm (by simp [Ideal.map_span])
-      (Ideal.Quotient.mk _ x)) = _
-  rw [Ideal.quotientEquivAlg_mk]
+  simp [quotientSpanPowLinearEquiv]
 
 private theorem quotientSpanPowLinearEquiv_comp_moduleDifferential
     (P : TruncatedPrimitive (k := k) H p) {r : ℕ} (hr : r ≤ p) :
@@ -765,16 +692,17 @@ private theorem quotientSpanPowLinearEquiv_comp_moduleDifferential
       Algebra.lsmul k k (AdjoinRoot (X ^ r : k[X])) (AdjoinRoot.root (X ^ r : k[X])) ∘ₗ
         (P.quotientSpanPowLinearEquiv hr).toLinearMap := by
   ext q; obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-  change P.quotientSpanPowLinearEquiv hr (Submodule.Quotient.mk (P.d * x)) =
-    AdjoinRoot.root (X ^ r : k[X]) * P.quotientSpanPowLinearEquiv hr (Submodule.Quotient.mk x)
-  rw [P.quotientSpanPowLinearEquiv_mk hr, P.quotientSpanPowLinearEquiv_mk hr, map_mul,
-    P.adjoinRootAlgEquiv_symm_d, map_mul, map_mul, AdjoinRoot.quotientSpanRootXPowAlgEquiv_mk_root]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [moduleDifferential_apply, ← Submodule.Quotient.mk_smul, smul_eq_mul,
+    P.quotientSpanPowLinearEquiv_mk hr, P.quotientSpanPowLinearEquiv_mk hr, map_mul,
+    P.adjoinRootAlgEquiv_symm_d, Algebra.lsmul_apply, smul_eq_mul, map_mul, map_mul,
+    AdjoinRoot.quotientSpanRootXPowAlgEquiv_mk_root]
 
 /-- **Monomial `k`-basis of cyclic quotients `H ⧸ (d ^ r)`.** For `r ≤ p`, the classes
 `1, [d], …, [d ^ (r - 1)]` form a `k`-basis of `H ⧸ Ideal.span {P.d ^ r}`. -/
 noncomputable def quotientSpanPowBasis (P : TruncatedPrimitive (k := k) H p) {r : ℕ}
     (hr : r ≤ p) : Module.Basis (Fin r) k (H ⧸ Ideal.span {P.d ^ r}) :=
-  (AdjoinRoot.powBasis k r).map (P.quotientSpanPowLinearEquiv hr).symm
+  (AdjoinRoot.xPowBasis k r).map (P.quotientSpanPowLinearEquiv hr).symm
 
 /-- The `i`-th basis vector of `P.quotientSpanPowBasis hr` is the class of `P.d ^ i`. -/
 @[simp]
@@ -792,80 +720,6 @@ theorem finrank_quotient_span_pow [Nontrivial k] (P : TruncatedPrimitive (k := k
     ← (AdjoinRoot.quotientSpanRootXPowAlgEquiv hr).toLinearEquiv.finrank_eq,
     AdjoinRoot.finrank_quotient_span_root_X_pow_pow hr]
 
-private noncomputable def slashHomologyAdjoinRootEquiv {r j : ℕ} (hr : r < p) (hjr : j < r) :
-    SlashHomology p
-      (Algebra.lsmul k k (AdjoinRoot (X ^ r : k[X])) (AdjoinRoot.root (X ^ r : k[X]))) j ≃ₗ[k]
-      k := by
-  let A_r := AdjoinRoot (X ^ r : k[X])
-  let x : A_r := AdjoinRoot.root (X ^ r : k[X])
-  let D : A_r →ₗ[k] A_r := Algebra.lsmul k k A_r x
-  let b := AdjoinRoot.powBasis k r
-  let idx : Fin r := ⟨r - (j + 1), by omega⟩
-  have hx_pow : x ^ r = 0 := by
-    dsimp only [x]; rw [← AdjoinRoot.mk_X, ← map_pow, AdjoinRoot.mk_self]
-  have hD_pow (m : ℕ) (c : A_r) : (D ^ m) c = x ^ m * c := by
-    change ((Algebra.lsmul k k A_r x) ^ m) c = x ^ m * c
-    rw [← map_pow, Algebra.lsmul_apply, smul_eq_mul]
-  have hrange_le : LinearMap.range (D ^ (p - j - 1)) ≤ LinearMap.ker (D ^ j) := by
-    rintro _ ⟨c, rfl⟩
-    rw [LinearMap.mem_ker, hD_pow, hD_pow, ← mul_assoc, ← pow_add,
-      pow_eq_zero_of_le (by omega : r ≤ j + (p - j - 1)) hx_pow, zero_mul]
-  have hcoord_ker : ∀ u ∈ LinearMap.ker (D ^ j), b.coord idx u = 0 := by
-    intro u hu
-    obtain ⟨w, rfl⟩ := (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff u).mp
-      (by simpa [hD_pow] using LinearMap.mem_ker.mp hu)
-    rw [← b.linearCombination_repr w, Finsupp.linearCombination_apply, Finsupp.sum,
-      Finset.mul_sum, map_sum]
-    refine Finset.sum_eq_zero fun t _ ↦ ?_
-    rw [mul_smul_comm, map_smul, AdjoinRoot.powBasis_apply, ← pow_add]
-    rcases lt_or_ge (r - j + (t : ℕ)) r with hlt | hge
-    · have hne : (⟨r - j + t, hlt⟩ : Fin r) ≠ idx := fun heq ↦ by
-        have := congrArg Fin.val heq; dsimp [idx] at this; omega
-      rw [show x ^ (r - j + (t : ℕ)) = b ⟨r - j + t, hlt⟩ from
-        (AdjoinRoot.powBasis_apply r ⟨r - j + t, hlt⟩).symm]
-      simp [hne.symm]
-    · rw [show AdjoinRoot.root (X ^ r : k[X]) ^ (r - j + (t : ℕ)) = 0 from
-        pow_eq_zero_of_le hge hx_pow]
-      simp
-  have hmem_idx : b idx ∈ LinearMap.ker (D ^ (j + 1)) := by
-    rw [LinearMap.mem_ker, hD_pow, AdjoinRoot.powBasis_apply, ← pow_add,
-      show j + 1 + (r - (j + 1)) = r by omega, hx_pow]
-  let φ : SlashHomology p D j →ₗ[k] k :=
-    Submodule.liftQ (SlashHomology.boundaries p D j)
-      ((b.coord idx).comp (LinearMap.ker (D ^ (j + 1))).subtype) fun z hz ↦ by
-      rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.coe_subtype]
-      have hz' := SlashHomology.mem_boundaries.mp hz
-      rw [sup_of_le_right hrange_le] at hz'
-      exact hcoord_ker z hz'
-  let ψ : k →ₗ[k] SlashHomology p D j :=
-    LinearMap.toSpanSingleton k (SlashHomology p D j) (Submodule.Quotient.mk ⟨b idx, hmem_idx⟩)
-  refine LinearEquiv.ofLinearMap φ ψ (LinearMap.ext_ring <| by simp [φ, ψ]) ?_
-  ext z
-  have hz_ker : x ^ (j + 1) * (z : A_r) = 0 := by
-    have h := LinearMap.mem_ker.mp z.property; rwa [hD_pow] at h
-  obtain ⟨w, hw⟩ := (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff (n := r) (i := j + 1) (z : A_r)).mp
-    hz_ker
-  obtain ⟨f, rfl⟩ := AdjoinRoot.mk_surjective w
-  have hf : AdjoinRoot.mk (X ^ r : k[X]) f =
-      f.coeff 0 • (1 : A_r) + x * AdjoinRoot.mk (X ^ r : k[X]) f.divX := by
-    conv_lhs => rw [← Polynomial.X_mul_divX_add f]
-    rw [map_add, map_mul, AdjoinRoot.mk_X, AdjoinRoot.mk_C, ← AdjoinRoot.algebraMap_eq,
-      Algebra.smul_def, mul_one, add_comm]
-  have hdiff : (z : A_r) - f.coeff 0 • b idx ∈ LinearMap.ker (D ^ j) := by
-    have hz : (z : A_r) =
-        f.coeff 0 • b idx + x ^ (r - j) * AdjoinRoot.mk (X ^ r : k[X]) f.divX := by
-      rw [hw, hf, mul_add, mul_smul_comm, mul_one, ← mul_assoc, ← pow_succ,
-        show r - (j + 1) + 1 = r - j by omega]
-      simp [b, idx, x]
-    rw [hz, add_sub_cancel_left, LinearMap.mem_ker, hD_pow]
-    exact (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff _).mpr ⟨_, rfl⟩
-  have hcoord_eq : b.coord idx z = f.coeff 0 := by
-    have h0 := hcoord_ker _ hdiff; rw [map_sub, map_smul] at h0; simpa [sub_eq_zero] using h0
-  simp only [LinearMap.comp_apply, Submodule.mkQ_apply, LinearMap.id_apply, φ, ψ,
-    Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply, Submodule.coe_subtype, hcoord_eq]
-  rw [← Submodule.Quotient.mk_smul, eq_comm, Submodule.Quotient.eq]
-  exact SlashHomology.mem_boundaries.mpr (Submodule.mem_sup_right hdiff)
-
 /-- **Slash-homology ranks of cyclic quotients `H ⧸ (d ^ r)`.** Over any nontrivial commutative
 ring `k`, for `r < p` and any `j : ℕ`, `SlashHomology p P.moduleDifferential j` on
 `H ⧸ Ideal.span {P.d ^ r}` has `k`-rank `1` when `j < r` and `0` when `r ≤ j`. -/
@@ -874,20 +728,9 @@ theorem finrank_slashHomology_quotient_span_pow [Nontrivial k]
     Module.finrank k
         (SlashHomology p (P.moduleDifferential (M := H ⧸ Ideal.span {P.d ^ r})) j) =
       if j < r then 1 else 0 := by
-  let e := SlashHomology.equiv p (P.quotientSpanPowLinearEquiv hr.le)
-    (P.quotientSpanPowLinearEquiv_comp_moduleDifferential hr.le) j
-  rw [e.finrank_eq]
-  split_ifs with hjr
-  · rw [(slashHomologyAdjoinRootEquiv (k := k) hr hjr).finrank_eq, Module.finrank_self]
-  · have : Subsingleton (SlashHomology p
-        (Algebra.lsmul k k (AdjoinRoot (X ^ r : k[X])) (AdjoinRoot.root (X ^ r : k[X]))) j) := by
-      rw [SlashHomology.subsingleton_iff]
-      intro c _
-      refine Submodule.mem_sup_right ?_
-      rw [LinearMap.mem_ker, ← map_pow, Algebra.lsmul_apply, smul_eq_mul,
-        AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff, Nat.sub_eq_zero_of_le (by omega), pow_zero]
-      exact one_dvd c
-    exact Module.finrank_zero_of_subsingleton
+  rw [(SlashHomology.equiv p (P.quotientSpanPowLinearEquiv hr.le)
+    (P.quotientSpanPowLinearEquiv_comp_moduleDifferential hr.le) j).finrank_eq,
+    SlashHomology.finrank_adjoinRoot_X_pow hr]
 
 /-- **No nontrivial proper cyclic quotient `H ⧸ (d ^ r)` (`1 ≤ r < p`) is projective over `H`.** -/
 theorem not_projective_quotient_span_pow [Nontrivial k] (P : TruncatedPrimitive (k := k) H p)

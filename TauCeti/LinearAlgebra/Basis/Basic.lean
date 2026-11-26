@@ -28,6 +28,7 @@ vectors indexed by `ι`.
 
 * `Module.Basis.eq_smul_of_repr_support_subset_singleton`: a vector supported on one coordinate is
   that coordinate times the corresponding basis vector.
+* `Module.Basis.bijective_of_map_basis`: a linear map carrying one basis to another is bijective.
 * `Module.Basis.sum_repr_mul_repr'`: expanding a vector in a finite basis `b'` and reading a
   coordinate in a basis `b`, in the multiplication order valid over a noncommutative semiring.
 * `Module.Basis.intertwines_of_apply`: a linear map that intertwines two endomorphisms on a basis
@@ -98,6 +99,18 @@ theorem repr_map_eq_of_map_basis
     exact (congrArg c.repr (hf i)).trans
       ((c.repr_self i).trans (b.repr_self i).symm)
   exact DFunLike.congr_fun h x
+
+/-- A linear map carrying one basis to another is bijective. -/
+theorem bijective_of_map_basis
+    {R M N ι F : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [FunLike F M N] [LinearMapClass F R M N]
+    (b : Module.Basis ι R M) (c : Module.Basis ι R N) (f : F)
+    (hf : ∀ i, f (b i) = c i) : Function.Bijective f := by
+  have heq : (LinearMap.ofClass f : M →ₗ[R] N) = (b.equiv c (Equiv.refl ι)).toLinearMap :=
+    b.ext fun i ↦ by simp [hf i]
+  have hfn : (f : M → N) = b.equiv c (Equiv.refl ι) :=
+    funext fun x ↦ DFunLike.congr_fun heq x
+  exact hfn ▸ (b.equiv c (Equiv.refl ι)).bijective
 
 /-- A coefficient of a composite is the sum of products of coefficients through a finite
 intermediate basis. The multiplication order also applies over noncommutative semirings. -/

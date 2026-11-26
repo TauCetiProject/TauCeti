@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Finrank
-public import TauCeti.LinearAlgebra.End.NilpotentCentralizer
+public import TauCeti.LinearAlgebra.End.Nilpotent.Centralizer
 
 /-!
 # Dimensions of nilpotent orbits in `sl n`

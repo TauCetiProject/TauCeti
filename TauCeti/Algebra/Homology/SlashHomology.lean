@@ -8,7 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.Homology.SquareZero
-import TauCeti.LinearAlgebra.End.Nilpotent
+public import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.LinearAlgebra.End.Nilpotent.Basic
 
 /-!
 # Slash homology of `p`-differential modules
@@ -29,7 +30,10 @@ homology groups produces a monomial basis `(i, r) ↦ d ^ r (v i)` of `M` withou
 dimensionality (`SlashHomology.exists_basis_pow_of_forall_subsingleton`). Independently, for any
 finite-dimensional `p`-complex (`d ^ p = 0`) over a division ring, Khovanov–Qi's dimension
 decomposition gives `dim M = p · dim(im(d ^ (p - 1))) + ∑_{j = 0}^{p - 2} dim H^{/j}(M)`
-(`SlashHomology.finrank_eq_mul_finrank_range_pow_add_sum`).
+(`SlashHomology.finrank_eq_mul_finrank_range_pow_add_sum`). Over any commutative ring `R`, the
+slash homology of the truncated polynomial `p`-complex `R[X]/(X ^ r)` (`r < p`) under
+multiplication by the root is `R` for `j < r` (`SlashHomology.adjoinRootXPowEquiv`) and vanishes
+for `r ≤ j` (`SlashHomology.subsingleton_adjoinRoot_X_pow_of_le`).
 
 ## Main definitions and results
 
@@ -39,6 +43,8 @@ decomposition gives `dim M = p · dim(im(d ^ (p - 1))) + ∑_{j = 0}^{p - 2} dim
   `map_eq_of_isPHomotopic`: `p`-chain homotopy invariance of slash homology.
 * `TauCeti.SlashHomology.forall_subsingleton_iff_ker_pow_eq_range_pow`,
   `exists_basis_pow_of_forall_subsingleton`, `finrank_eq_mul_finrank_range_pow_add_sum`.
+* `TauCeti.SlashHomology.adjoinRootXPowEquiv`, `subsingleton_adjoinRoot_X_pow_of_le`,
+  `finrank_adjoinRoot_X_pow`.
 
 ## References
 
@@ -132,9 +138,8 @@ theorem nullHomotopicMap_comp_of_comp_eq (p : ℕ) {c : P →ₗ[R] P} {d : M �
   ext m
   simp only [LinearMap.comp_apply, nullHomotopicMap_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [show (d ^ (p - 1 - i)) (f m) = f ((c ^ (p - 1 - i)) m) from
-    (LinearMap.congr_fun
-      (Module.End.commute_pow_left_of_commute hf.symm (p - 1 - i)).symm m).symm]
+  exact congrArg (fun x ↦ (e ^ i) (h x))
+    (LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf.symm (p - 1 - i)) m)
 
 /-- When `d ^ p = 0` and `e ^ p = 0`, every `nullHomotopicMap p d e h` intertwines `d` and `e`. -/
 theorem nullHomotopicMap_comm {p : ℕ} {d : M →ₗ[R] M} {e : N →ₗ[R] N}
@@ -476,7 +481,8 @@ theorem map_eq_of_isPHomotopic {p : ℕ} {d : M →ₗ[R] M} {e : N →ₗ[R] N}
   rw [← sub_eq_zero, ← map_sub p f g hf hg j]
   have hcongr :
       map p (f - g) (by rw [LinearMap.sub_comp, LinearMap.comp_sub, hf, hg]) j =
-        map p (nullHomotopicMap p d e h) (nullHomotopicMap_comm hd he h) j := by congr! 1
+        map p (nullHomotopicMap p d e h) (nullHomotopicMap_comm hd he h) j := by
+    ext z; simp [hh]
   rw [hcongr, map_nullHomotopicMap hd he h j]
 
 /-! ### Zero differential -/
@@ -666,16 +672,134 @@ theorem finrank_eq_mul_finrank_range_pow_add_sum [FiniteDimensional k M]
       omega
   have hp1 := htel (p - 1) le_rfl
   have hrn := LinearMap.finrank_range_add_finrank_ker (d ^ (p - 1))
-  have hmul :
-      Module.finrank k (LinearMap.range (d ^ (p - 1))) +
-          (p - 1) * Module.finrank k (LinearMap.range (d ^ (p - 1))) =
-        p * Module.finrank k (LinearMap.range (d ^ (p - 1))) := by
-    simpa [one_mul, add_comm] using
-      (Nat.add_mul 1 (p - 1) (Module.finrank k (LinearMap.range (d ^ (p - 1))))).symm.trans
-        (by rw [show 1 + (p - 1) = p by omega])
+  have hmul := Nat.sub_one_mul p (Module.finrank k (LinearMap.range (d ^ (p - 1))))
+  have hle := Nat.le_mul_of_pos_left (Module.finrank k (LinearMap.range (d ^ (p - 1)))) hp
   omega
 
 end DivisionRing
+
+/-! ### Slash homology of truncated polynomial algebras `R[X]/(X ^ r)` -/
+
+section AdjoinRootXPow
+
+open Polynomial
+
+variable {R : Type*} [CommRing R]
+
+private theorem lsmul_root_X_pow_pow_apply (r m : ℕ) (c : AdjoinRoot (X ^ r : R[X])) :
+    ((Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X]))
+      (AdjoinRoot.root (X ^ r : R[X]))) ^ m) c =
+      AdjoinRoot.root (X ^ r : R[X]) ^ m * c := by
+  rw [← map_pow, Algebra.lsmul_apply, smul_eq_mul]
+
+/-- **Slash homology of `R[X]/(X ^ r)` in degrees `j < r < p`.** Under left multiplication by the
+root `x`, the `j`-th slash homology of `R[X]/(X ^ r)` is canonically `R`-linearly isomorphic to
+`R`, reading off the `(r - j - 1)`-st coordinate in `AdjoinRoot.xPowBasis` and sending `1 ∈ R` to
+the class of `x ^ (r - j - 1)`. -/
+noncomputable def adjoinRootXPowEquiv {p r j : ℕ} (hr : r < p) (hjr : j < r) :
+    SlashHomology p
+      (Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X])) (AdjoinRoot.root (X ^ r : R[X]))) j ≃ₗ[R]
+      R := by
+  let idx : Fin r := ⟨r - (j + 1), by omega⟩
+  -- Since `r ≤ j + (p - j - 1)`, `im(D ^ (p - j - 1))` already lies in `ker(D ^ j)`, so the
+  -- `(r - j - 1)`-st `xPowBasis` coordinate vanishes on all slash boundaries.
+  have hrange_le :
+      LinearMap.range ((Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X]))
+          (AdjoinRoot.root (X ^ r : R[X]))) ^ (p - j - 1)) ≤
+        LinearMap.ker ((Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X]))
+          (AdjoinRoot.root (X ^ r : R[X]))) ^ j) := by
+    rintro _ ⟨c, rfl⟩
+    rw [LinearMap.mem_ker, lsmul_root_X_pow_pow_apply, lsmul_root_X_pow_pow_apply, ← mul_assoc,
+      ← pow_add, AdjoinRoot.root_X_pow_pow_eq_zero_of_le (R := R) (by omega : r ≤ j + (p - j - 1)),
+      zero_mul]
+  have hmem_idx : AdjoinRoot.xPowBasis R r idx ∈
+      LinearMap.ker ((Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X]))
+        (AdjoinRoot.root (X ^ r : R[X]))) ^ (j + 1)) := by
+    rw [LinearMap.mem_ker, lsmul_root_X_pow_pow_apply, AdjoinRoot.xPowBasis_apply, ← pow_add,
+      show j + 1 + (r - (j + 1)) = r by omega, AdjoinRoot.root_X_pow_pow_eq_zero]
+  let φ := Submodule.liftQ
+    (boundaries p (Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X]))
+      (AdjoinRoot.root (X ^ r : R[X]))) j)
+    (((AdjoinRoot.xPowBasis R r).coord idx).comp (LinearMap.ker _).subtype) fun z hz ↦ by
+    have hz' := mem_boundaries.mp hz
+    rw [sup_of_le_right hrange_le, LinearMap.mem_ker, lsmul_root_X_pow_pow_apply] at hz'
+    simpa using AdjoinRoot.xPowBasis_repr_eq_zero_of_root_pow_mul_eq_zero hz' idx
+      (by dsimp [idx]; omega)
+  let ψ := LinearMap.toSpanSingleton R
+    (SlashHomology p
+      (Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X])) (AdjoinRoot.root (X ^ r : R[X]))) j)
+    (Submodule.Quotient.mk ⟨AdjoinRoot.xPowBasis R r idx, hmem_idx⟩)
+  -- `φ` and `ψ` are mutually inverse: subtracting the `idx`-coordinate multiple of `x ^ idx`
+  -- from any cycle in `ker(D ^ (j + 1))` lands in `ker(D ^ j)`.
+  refine LinearEquiv.ofLinearMap φ ψ
+    (LinearMap.ext_ring <| by simp [φ, ψ, -AdjoinRoot.xPowBasis_apply]) ?_
+  ext z
+  have hz_ker :
+      AdjoinRoot.root (X ^ r : R[X]) ^ (j + 1) * (z : AdjoinRoot (X ^ r : R[X])) = 0 := by
+    rw [← lsmul_root_X_pow_pow_apply]; exact LinearMap.mem_ker.mp z.property
+  have hdiff : (z : AdjoinRoot (X ^ r : R[X])) -
+      (AdjoinRoot.xPowBasis R r).repr z idx • AdjoinRoot.xPowBasis R r idx ∈
+        LinearMap.ker ((Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X]))
+          (AdjoinRoot.root (X ^ r : R[X]))) ^ j) := by
+    rw [LinearMap.mem_ker, lsmul_root_X_pow_pow_apply]
+    exact AdjoinRoot.root_X_pow_pow_mul_sub_repr_smul_eq_zero hjr hz_ker
+  simp only [LinearMap.comp_apply, Submodule.mkQ_apply, LinearMap.id_apply, φ, ψ,
+    Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply, Submodule.coe_subtype,
+    Module.Basis.coord_apply]
+  rw [← Submodule.Quotient.mk_smul, eq_comm, Submodule.Quotient.eq]
+  exact mem_boundaries.mpr (Submodule.mem_sup_right hdiff)
+
+/-- `adjoinRootXPowEquiv` sends a cycle class `[z]` to the `(r - j - 1)`-st coordinate of `z` in
+`AdjoinRoot.xPowBasis`. -/
+@[simp]
+theorem adjoinRootXPowEquiv_mk {p r j : ℕ} (hr : r < p) (hjr : j < r)
+    (z : LinearMap.ker ((Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X]))
+      (AdjoinRoot.root (X ^ r : R[X]))) ^ (j + 1))) :
+    adjoinRootXPowEquiv hr hjr (Submodule.Quotient.mk z) =
+      (AdjoinRoot.xPowBasis R r).repr z.val ⟨r - (j + 1), by omega⟩ := by
+  simp [adjoinRootXPowEquiv]
+
+/-- The inverse of `adjoinRootXPowEquiv` sends `c : R` to `c` times the slash-homology class of
+`root (X ^ r) ^ (r - j - 1)`. -/
+@[simp]
+theorem adjoinRootXPowEquiv_symm_apply {p r j : ℕ} (hr : r < p) (hjr : j < r) (c : R) :
+    (adjoinRootXPowEquiv (R := R) hr hjr).symm c =
+      c • Submodule.Quotient.mk ⟨AdjoinRoot.root (X ^ r : R[X]) ^ (r - (j + 1)), by
+        rw [LinearMap.mem_ker, lsmul_root_X_pow_pow_apply, ← pow_add,
+          show j + 1 + (r - (j + 1)) = r by omega, AdjoinRoot.root_X_pow_pow_eq_zero]⟩ := by
+  apply (adjoinRootXPowEquiv (R := R) hr hjr).injective
+  rw [LinearEquiv.apply_symm_apply, map_smul, adjoinRootXPowEquiv_mk]
+  dsimp only
+  rw [← AdjoinRoot.xPowBasis_apply (R := R) r ⟨r - (j + 1), by omega⟩]
+  simp [-AdjoinRoot.xPowBasis_apply]
+
+/-- **Vanishing of slash homology of `R[X]/(X ^ r)` in degrees `r ≤ j`.** Once `r ≤ j`,
+`x ^ j = 0` in `R[X]/(X ^ r)`, so `ker(D ^ j) = ⊤` and the `j`-th slash homology vanishes for every
+`p`. -/
+theorem subsingleton_adjoinRoot_X_pow_of_le (p : ℕ) {r j : ℕ} (hrj : r ≤ j) :
+    Subsingleton (SlashHomology p
+      (Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X])) (AdjoinRoot.root (X ^ r : R[X]))) j) := by
+  rw [subsingleton_iff]
+  intro c _
+  refine Submodule.mem_sup_right ?_
+  rw [LinearMap.mem_ker, lsmul_root_X_pow_pow_apply,
+    AdjoinRoot.root_X_pow_pow_eq_zero_of_le (R := R) hrj, zero_mul]
+
+/-- Over a nontrivial commutative ring `R`, for `r < p`, the `j`-th slash homology of
+`R[X]/(X ^ r)` under multiplication by the root has `R`-rank `1` when `j < r` and `0` when
+`r ≤ j`. -/
+theorem finrank_adjoinRoot_X_pow [Nontrivial R] {p r j : ℕ} (hr : r < p) :
+    Module.finrank R
+        (SlashHomology p
+          (Algebra.lsmul R R (AdjoinRoot (X ^ r : R[X]))
+            (AdjoinRoot.root (X ^ r : R[X]))) j) =
+      if j < r then 1 else 0 := by
+  split_ifs with hjr
+  · rw [(adjoinRootXPowEquiv (R := R) hr hjr).finrank_eq, Module.finrank_self]
+  · have := subsingleton_adjoinRoot_X_pow_of_le (R := R) p (by omega : r ≤ j)
+    exact Module.finrank_zero_of_subsingleton
+
+end AdjoinRootXPow
 
 end SlashHomology
 
