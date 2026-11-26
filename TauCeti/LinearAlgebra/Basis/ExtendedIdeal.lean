@@ -46,6 +46,8 @@ determinant of an `A`-valued matrix coordinatewise.
 * `Module.Basis.quotient_repr_mk`: the coordinates of a class are the classes of the coordinates.
 * `LinearMap.toMatrix_quotient`: the coefficient matrix of a reduction of `φ` is the entrywise
   reduction of the coefficient matrix of `φ`.
+* `Algebra.leftMulMatrix_quotient_mk`: in particular, the matrix of multiplication by a class is
+  the entrywise reduction of the matrix of multiplication by a representative.
 
 ## References
 
@@ -126,3 +128,19 @@ theorem toMatrix_quotient {J : Ideal R} {V' : Type*} [AddCommMonoid V'] [Module 
   rw [toMatrix_apply, h, Basis.quotient_repr_mk, map_apply, toMatrix_apply]
 
 end LinearMap
+
+namespace Algebra
+
+variable [CommRing R] [CommRing A] [Algebra R A] [Fintype ι] [DecidableEq ι]
+
+/-- **Reduction of the matrix of multiplication.** In the basis `b.quotient J` of `A ⧸ J A`, the
+matrix of multiplication by the class of `x` is the entrywise reduction modulo `J` of the matrix of
+multiplication by `x` in `b`. -/
+theorem leftMulMatrix_quotient_mk (b : Basis ι R A) (J : Ideal R) (x : A) :
+    leftMulMatrix (b.quotient J) (Ideal.Quotient.mk _ x) =
+      (leftMulMatrix b x).map (Ideal.Quotient.mk J) := by
+  ext i j
+  rw [Matrix.map_apply, leftMulMatrix_eq_repr_mul, leftMulMatrix_eq_repr_mul,
+    Basis.quotient_apply, ← map_mul, Basis.quotient_repr_mk]
+
+end Algebra
