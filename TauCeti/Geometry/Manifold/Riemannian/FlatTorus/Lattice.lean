@@ -55,28 +55,28 @@ private theorem compatible_inner (x x' : E) (v w : TangentSpace 𝓘E x) (v' w' 
   exact congrArg₂ (fun a b : E ↦ ⟪a, b⟫_ℝ) hv hw
 
 /-- The Euclidean metric descended to the quotient by translations in a discrete subgroup. -/
-def quotientMetric : ContMDiffRiemannianMetric 𝓘E ∞ E (fun x : Q ↦ TangentSpace 𝓘E x) :=
+def orbitRelQuotientMetric : ContMDiffRiemannianMetric 𝓘E ∞ E (fun x : Q ↦ TangentSpace 𝓘E x) :=
   sourceMetric.descend (f := q) TauCeti.isLocalDiffeomorph_addQuotientMk
     _root_.Quotient.mk_surjective (compatible_inner L)
 
 /-- In the quotient charts the descended metric is the Euclidean inner product. -/
 @[simp]
-theorem quotientMetric_inner_mk (x v w : E) :
-    (quotientMetric L).inner (q x) v w = ⟪v, w⟫_ℝ := by
+theorem orbitRelQuotientMetric_inner_mk (x v w : E) :
+    (orbitRelQuotientMetric L).inner (q x) v w = ⟪v, w⟫_ℝ := by
   have h := sourceMetric.descend_inner_mfderiv (f := q) TauCeti.isLocalDiffeomorph_addQuotientMk
     _root_.Quotient.mk_surjective (compatible_inner L) x v w
   rw [L.mfderiv_orbitRelQuotient_mk] at h
   exact h.trans (sourceMetric_inner x v w)
 
 /-- The quotient by a discrete subgroup equipped with its descended Euclidean metric. -/
-abbrev FlatQuotient := WithMetric (quotientMetric L)
+abbrev FlatQuotient := WithMetric (orbitRelQuotientMetric L)
 
 /-- The projection from the Euclidean space to its flat quotient. -/
 def flatQuotientMk (x : E) : FlatQuotient L := WithMetric.toWithMetric _ (q x)
 
 /-- The flat projection is the orbit projection followed by the metric-copy inclusion. -/
 theorem flatQuotientMk_eq_comp :
-    flatQuotientMk L = WithMetric.toWithMetric (quotientMetric L) ∘ q :=
+    flatQuotientMk L = WithMetric.toWithMetric (orbitRelQuotientMetric L) ∘ q :=
   (rfl)
 
 /-- Forgetting the chosen metric recovers the native orbit projection. -/
@@ -88,23 +88,23 @@ theorem ofWithMetric_flatQuotientMk (x : E) :
 /-- The native orbit projection is a local Riemannian isometry for the descended metric. -/
 theorem isLocalRiemannianIsometry_orbitRelQuotient_mk :
     let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
-      ⟨(quotientMetric L).toRiemannianMetric⟩
+      ⟨(orbitRelQuotientMetric L).toRiemannianMetric⟩
     IsLocalRiemannianIsometry 𝓘E 𝓘E q := by
   let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
-    ⟨(quotientMetric L).toRiemannianMetric⟩
+    ⟨(orbitRelQuotientMetric L).toRiemannianMetric⟩
   have hd : IsLocalDiffeomorph 𝓘E 𝓘E ∞ q := TauCeti.isLocalDiffeomorph_addQuotientMk
   refine ⟨hd.contMDiff, hd.isInvertible_mfderiv (by simp), fun x v w ↦ ?_⟩
   rw [L.mfderiv_orbitRelQuotient_mk]
-  exact quotientMetric_inner_mk L x v w
+  exact orbitRelQuotientMetric_inner_mk L x v w
 
 /-- The projection to a flat quotient preserves the metric locally. -/
 theorem isLocalRiemannianIsometry_flatQuotientMk :
     IsLocalRiemannianIsometry 𝓘E 𝓘E (flatQuotientMk L) := by
   let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
-    ⟨(quotientMetric L).toRiemannianMetric⟩
+    ⟨(orbitRelQuotientMetric L).toRiemannianMetric⟩
   rw [flatQuotientMk_eq_comp]
   simpa only [WithMetric.coe_riemannianIsometry_symm] using
-    (WithMetric.riemannianIsometry (quotientMetric L)).symm.isLocalRiemannianIsometry.comp
+    (WithMetric.riemannianIsometry (orbitRelQuotientMetric L)).symm.isLocalRiemannianIsometry.comp
       (isLocalRiemannianIsometry_orbitRelQuotient_mk L)
 
 /-- The flat quotient projection is smooth of every order. -/
@@ -121,7 +121,7 @@ theorem hasMFDerivAt_flatQuotientMk (x : E) :
     HasMFDerivAt 𝓘E 𝓘E (flatQuotientMk L) x (ContinuousLinearMap.id ℝ E) := by
   rw [flatQuotientMk_eq_comp]
   -- Both tangent spaces are the model space; composing their identity maps computes to `id`.
-  convert (WithMetric.hasMFDerivAt_toWithMetric (g := quotientMetric L) (q x)).comp x
+  convert (WithMetric.hasMFDerivAt_toWithMetric (g := orbitRelQuotientMetric L) (q x)).comp x
     (L.hasMFDerivAt_orbitRelQuotient_mk x) using 1
   rfl
 
@@ -134,10 +134,10 @@ theorem mfderiv_flatQuotientMk (x : E) :
 /-- The flat quotient projection is a local diffeomorphism of every order. -/
 theorem isLocalDiffeomorph_flatQuotientMk {k : ℕ∞ω} :
     IsLocalDiffeomorph 𝓘E 𝓘E k (flatQuotientMk L) := by
-  rw [flatQuotientMk_eq_comp, ← WithMetric.coe_diffeomorph_symm (g := quotientMetric L) k]
+  rw [flatQuotientMk_eq_comp, ← WithMetric.coe_diffeomorph_symm (g := orbitRelQuotientMetric L) k]
   intro x
   exact (TauCeti.isLocalDiffeomorph_addQuotientMk x).comp 𝓘E (FlatQuotient L)
-    ((WithMetric.diffeomorph (quotientMetric L) k).symm.isLocalDiffeomorph _)
+    ((WithMetric.diffeomorph (orbitRelQuotientMetric L) k).symm.isLocalDiffeomorph _)
 
 /-- Every point of the flat quotient has a Euclidean representative. -/
 theorem flatQuotientMk_surjective : Surjective (flatQuotientMk L) := by

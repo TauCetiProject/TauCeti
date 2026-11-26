@@ -149,7 +149,12 @@ private abbrev proj (n : ℕ) : (ℝ^n) → 𝕋 n :=
 projection. -/
 def flatMetric (n : ℕ) :
     ContMDiffRiemannianMetric 𝓘(ℝ, ℝ^n) ∞ (ℝ^n) (fun x : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) x) :=
-  Submodule.quotientMetric (lattice n)
+  Submodule.orbitRelQuotientMetric (lattice n)
+
+/-- The standard flat metric is the descended metric of the integer-lattice orbit space. -/
+theorem flatMetric_eq (n : ℕ) :
+    flatMetric n = Submodule.orbitRelQuotientMetric (lattice n) :=
+  (rfl)
 
 /-! ### The flat torus as a Riemannian manifold -/
 
@@ -211,8 +216,9 @@ def mk : (ℝ^n) → FlatTorus n :=
 coordinates. -/
 @[simp]
 theorem flatMetric_inner_mk (x v w : ℝ^n) :
-    (flatMetric n).inner (mk x) v w = ⟪v, w⟫_ℝ :=
-  Submodule.quotientMetric_inner_mk (lattice n) x v w
+    (flatMetric n).inner (mk x) v w = ⟪v, w⟫_ℝ := by
+  rw [flatMetric_eq, mk]
+  exact Submodule.orbitRelQuotientMetric_inner_mk (lattice n) x v w
 
 theorem mk_surjective : Surjective (mk : (ℝ^n) → FlatTorus n) :=
   Quotient.mk_surjective
@@ -297,13 +303,19 @@ theorem norm_tangentSpace_mk (x v : ℝ^n) :
 
 /-- **The projection is a local Riemannian isometry.** -/
 theorem isLocalRiemannianIsometry_mk :
-    IsLocalRiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) :=
-  (lattice n).isLocalRiemannianIsometry_orbitRelQuotient_mk
+    IsLocalRiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) := by
+  -- FlatTorus has the orbit-space charts; its bundle is the same metric bundle as the
+  -- local instance in the general theorem, after identifying the two metrics.
+  unfold mk instRiemannianBundle
+  rw [flatMetric_eq]
+  exact (lattice n).isLocalRiemannianIsometry_orbitRelQuotient_mk
 
 /-- The standard flat torus is Riemannian isometric to the general flat lattice quotient. -/
 def riemannianIsometryFlatQuotient (n : ℕ) :
     RiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n)
       (FlatTorus n) (Submodule.FlatQuotient (lattice n)) :=
+  -- FlatTorus is the orbit space with its inherited charts. Its RiemannianBundle is
+  -- exactly this local instance; flatMetric_eq identifies the metric on the target copy.
   letI : RiemannianBundle (fun x : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) x) :=
     ⟨(flatMetric n).toRiemannianMetric⟩
   (WithMetric.riemannianIsometry (flatMetric n)).symm
@@ -315,7 +327,10 @@ theorem riemannianIsometryFlatQuotient_mk (x : ℝ^n) :
   let : RiemannianBundle (fun y : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) y) :=
     ⟨(flatMetric n).toRiemannianMetric⟩
   rw [riemannianIsometryFlatQuotient, mk, Submodule.flatQuotientMk_eq_comp, comp_apply]
-  exact congrFun (WithMetric.coe_riemannianIsometry_symm (flatMetric n)) (proj n x)
+  unfold Submodule.FlatQuotient flatMetric
+  exact congrFun
+    (WithMetric.coe_riemannianIsometry_symm (Submodule.orbitRelQuotientMetric (lattice n)))
+    (proj n x)
 
 /-- The standard flat torus has unit Riemannian volume in every dimension. -/
 @[simp]
