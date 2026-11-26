@@ -144,6 +144,13 @@ theorem add (hN : IsAltMod I N) (hN' : IsAltMod I N') : IsAltMod I (N + N') :=
       rw [Matrix.add_apply, Matrix.add_apply, add_add_add_comm]
       exact add_mem (hN.add_transpose_mem i j) (hN'.add_transpose_mem i j)
 
+/-- A multiple `c • N` of a matrix alternating modulo `I` is alternating modulo `I`. -/
+theorem smul (hN : IsAltMod I N) (c : S) : IsAltMod I (c • N) :=
+  of_mem (fun i => by simpa using I.mul_mem_left c (hN.diag_mem i))
+    fun i j => by
+      rw [Matrix.smul_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul, ← mul_add]
+      exact I.mul_mem_left c (hN.add_transpose_mem i j)
+
 /-- Being alternating modulo an ideal is inherited by every larger ideal. -/
 theorem mono (hIJ : I ≤ J) (hN : IsAltMod I N) : IsAltMod J N :=
   of_mem (fun i => hIJ (hN.diag_mem i)) fun i j => hIJ (hN.add_transpose_mem i j)

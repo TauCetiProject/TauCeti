@@ -135,6 +135,10 @@ multiplier coordinate. -/
 noncomputable def multiplierCoord : ambientHopfAlgebra R n :=
   (inr R n).hom (LaurentPolynomial.T 1)
 
+/-- The multiplier coordinate is the image of `T` under the right tensor inclusion. -/
+theorem multiplierCoord_def : multiplierCoord R n = (inr R n).hom (LaurentPolynomial.T 1) := by
+  rw [multiplierCoord]
+
 /-! ### The defining relation matrix -/
 
 variable (C : Matrix (Fin n) (Fin n) R)
@@ -178,7 +182,7 @@ theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
 /-! ### The three Hopf-ideal closure conditions -/
 
 /-- The counit sends the generic matrix of the product to the identity matrix. -/
-private theorem map_counit_matrixCoord :
+theorem map_counit_matrixCoord :
     (matrixCoord R n).map (Bialgebra.counitAlgHom R (ambientHopfAlgebra R n)) = 1 := by
   rw [matrixCoord, Matrix.map_map, ← GeneralLinear.map_counit_genericMatrix R n]
   congr 1
@@ -186,7 +190,7 @@ private theorem map_counit_matrixCoord :
   exact CoalgHomClass.counit_comp_apply (inl R n).hom x
 
 /-- The counit sends the multiplier coordinate to `1`. -/
-private theorem counit_multiplierCoord :
+theorem counit_multiplierCoord :
     Bialgebra.counitAlgHom R (ambientHopfAlgebra R n) (multiplierCoord R n) = 1 := by
   rw [multiplierCoord, Bialgebra.counitAlgHom_apply, CoalgHomClass.counit_comp_apply,
     LaurentPolynomial.counit_T]
@@ -201,18 +205,18 @@ private theorem counit_relationMatrix (i j : Fin n) :
   simp
 
 /-- The left tensor inclusion of the ambient coordinate algebra into its tensor square. -/
-private noncomputable abbrev leftCopy :
+noncomputable abbrev leftCopy :
     ambientHopfAlgebra R n →ₐ[R] ambientHopfAlgebra R n ⊗[R] ambientHopfAlgebra R n :=
   Algebra.TensorProduct.includeLeft
 
 /-- The right tensor inclusion of the ambient coordinate algebra into its tensor square. -/
-private noncomputable abbrev rightCopy :
+noncomputable abbrev rightCopy :
     ambientHopfAlgebra R n →ₐ[R] ambientHopfAlgebra R n ⊗[R] ambientHopfAlgebra R n :=
   Algebra.TensorProduct.includeRight
 
 /-- The comultiplication sends the generic matrix of the product to the product of its two
 tensor copies. -/
-private theorem map_comul_matrixCoord :
+theorem map_comul_matrixCoord :
     (matrixCoord R n).map (Bialgebra.comulAlgHom R (ambientHopfAlgebra R n)) =
       (matrixCoord R n).map (leftCopy R n) * (matrixCoord R n).map (rightCopy R n) := by
   have h := GeneralLinear.map_comul_genericMatrix R n
@@ -229,7 +233,7 @@ private theorem map_comul_matrixCoord :
 
 /-- The comultiplication sends the multiplier coordinate to the product of its two tensor
 copies: the multiplier coordinate is group-like. -/
-private theorem comul_multiplierCoord :
+theorem comul_multiplierCoord :
     Bialgebra.comulAlgHom R (ambientHopfAlgebra R n) (multiplierCoord R n) =
       leftCopy R n (multiplierCoord R n) * rightCopy R n (multiplierCoord R n) := by
   rw [Bialgebra.comulAlgHom_apply, multiplierCoord, ← CoalgHomClass.map_comp_comul_apply,
@@ -268,7 +272,7 @@ private theorem comul_relationMatrix_mem (i j : Fin n) :
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
 
 /-- The antipode of the generic matrix of the product is a left inverse of it. -/
-private theorem map_antipode_matrixCoord_mul :
+theorem map_antipode_matrixCoord_mul :
     (matrixCoord R n).map
         (HopfAlgebra.antipodeAlgHom (R := R) (A := ambientHopfAlgebra R n)) *
       matrixCoord R n = 1 := by
@@ -284,7 +288,7 @@ private theorem map_antipode_matrixCoord_mul :
     Matrix.map_one _ (map_zero _) (map_one _)]
 
 /-- The antipode of the multiplier coordinate is its inverse. -/
-private theorem antipode_multiplierCoord_mul :
+theorem antipode_multiplierCoord_mul :
     HopfAlgebra.antipodeAlgHom (R := R) (A := ambientHopfAlgebra R n) (multiplierCoord R n) *
       multiplierCoord R n = 1 := by
   rw [HopfAlgebra.antipodeAlgHom_apply, multiplierCoord, ← BialgHomClass.map_antipode,
