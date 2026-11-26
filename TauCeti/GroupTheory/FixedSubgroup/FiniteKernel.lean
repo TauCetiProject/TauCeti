@@ -25,12 +25,12 @@ open TauCeti
 
 variable {G H : Type*} [Group G] [Group H]
 
-/-- A fixed point has a unique fixed lift through an equivariant surjection with finite kernel
-whose only fixed point is the identity. -/
+/-- A fixed point in the image of an equivariant homomorphism has a unique fixed lift if the
+kernel is finite and its only fixed point is the identity. -/
 theorem existsUnique_fixed_lift_of_finite_ker (ψ : G →* H) {F : G →* G} {F' : H →* H}
     [Finite ψ.ker]
-    (hψ : ψ.comp F = F'.comp ψ) (hsurj : Function.Surjective ψ)
-    (hker : Disjoint ψ.ker (fixedSubgroup F)) {y : H} (hy : F' y = y) :
+    (hψ : ψ.comp F = F'.comp ψ) (hker : Disjoint ψ.ker (fixedSubgroup F))
+    {y : H} (hy_range : y ∈ Set.range ψ) (hy : F' y = y) :
     ∃! x : G, F x = x ∧ ψ x = y := by
   have heq (x : G) : ψ (F x) = F' (ψ x) := DFunLike.congr_fun hψ x
   let f : ψ.ker →* ψ.ker := (F.domRestrict ψ.ker).codRestrict ψ.ker fun k ↦ by
@@ -43,8 +43,8 @@ theorem existsUnique_fixed_lift_of_finite_ker (ψ : G →* H) {F : G →* G} {F'
     exact Subgroup.disjoint_def.mp hker k.property
       (TauCeti.mem_fixedSubgroup.mpr (congrArg Subtype.val hk))
   obtain ⟨x, hfixed, himage⟩ := ψ.exists_fixed_lift_of_surjective_commutatorMap
-    ψ.ker.subtype ψ.ker.range_subtype f F F' heq (fun _ ↦ rfl) hsurj
-    hf.commutatorMap_surjective hy
+    ψ.ker.subtype (mulExact_iff.mpr ψ.ker.range_subtype.symm) f F F' heq (fun _ ↦ rfl)
+    hf.commutatorMap_surjective hy_range hy
   refine ⟨x, ⟨hfixed, himage⟩, ?_⟩
   rintro z ⟨hz, hzy⟩
   apply div_eq_one.mp
@@ -66,10 +66,10 @@ noncomputable def fixedSubgroupCongrOfFiniteKer (ψ : G →* H) {F : G →* G} {
   constructor
   · intro x z hxz
     apply Subtype.ext
-    exact (ψ.existsUnique_fixed_lift_of_finite_ker hψ hsurj hker (f x).property).unique
+    exact (ψ.existsUnique_fixed_lift_of_finite_ker hψ hker ⟨x, rfl⟩ (f x).property).unique
       ⟨x.property, rfl⟩ ⟨z.property, (congrArg Subtype.val hxz).symm⟩
   · intro y
-    obtain ⟨x, hx, -⟩ := ψ.existsUnique_fixed_lift_of_finite_ker hψ hsurj hker y.property
+    obtain ⟨x, hx, -⟩ := ψ.existsUnique_fixed_lift_of_finite_ker hψ hker (hsurj y) y.property
     exact ⟨⟨x, hx.1⟩, Subtype.ext hx.2⟩
 
 @[simp]

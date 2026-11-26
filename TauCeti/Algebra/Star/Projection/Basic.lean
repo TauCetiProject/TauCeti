@@ -97,7 +97,7 @@ equals the `inr` image of its `.snd` component. -/
 theorem inr_snd_conj (u : Unitization R M) (x : M) :
     ((u * (x : Unitization R M) * star u).snd : Unitization R M) =
       u * (x : Unitization R M) * star u :=
-  inr_snd_eq_of_fst_eq_zero (by simp [fst_mul, fst_inr])
+  inr_snd_of_fst_eq_zero (by simp [fst_mul, fst_inr])
 
 /-- Conjugating an `inr`-embedded star projection `x` by a unitary `u` in `Unitization R M`
 yields a star projection in `M` at `.snd`. -/

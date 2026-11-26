@@ -495,14 +495,26 @@ theorem complexCutoffPullback_one_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
   · simp [complexCutoffPullback_apply_of_mem he _ _ hx, cutoffPullback_apply_of_mem he _ _ hx]
   · simp [complexCutoffPullback_apply_of_notMem he _ _ hx, cutoffPullback_apply_of_notMem he _ _ hx]
 
+/-- The complex pullback `(ψ f) ∘ e` is supported in the image under the inverse of the chart of
+the common support of `ψ` and `f`, a compact subset of the chart target. -/
+theorem tsupport_complexCutoffPullback_subset_inter (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+    tsupport (e.complexCutoffPullback he ψ f) ⊆ e.symm '' (tsupport ψ ∩ tsupport f) := by
+  have hK : IsCompact (tsupport ψ ∩ tsupport f) :=
+    ψ.hasCompactSupport.isCompact.inter_right (isClosed_tsupport f)
+  refine closure_minimal (fun x hx ↦ ?_) (hK.image_of_continuousOn
+    (e.continuousOn_symm.mono (inter_subset_left.trans ψ.tsupport_subset))).isClosed
+  have hxs : x ∈ e.source := by_contra fun h ↦ hx (complexCutoffPullback_apply_of_notMem he _ _ h)
+  rw [Function.mem_support, complexCutoffPullback_apply_of_mem he _ _ hxs] at hx
+  exact ⟨e x, ⟨subset_tsupport _ (left_ne_zero_of_smul hx),
+    subset_tsupport _ (right_ne_zero_of_smul hx)⟩, e.left_inv hxs⟩
+
 /-- The complex pullback `(ψ f) ∘ e` is supported in the image of the support of `ψ` under the
 inverse of the chart. -/
 theorem tsupport_complexCutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
     tsupport (e.complexCutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
-  e.tsupport_subset_symm_image_tsupport ψ
-    (fun x hx h ↦ by rw [complexCutoffPullback_apply_of_mem he _ _ hx, h, zero_smul])
-    fun _ hx ↦ complexCutoffPullback_apply_of_notMem he _ _ hx
+  (tsupport_complexCutoffPullback_subset_inter he ψ f).trans (image_mono inter_subset_left)
 
 /-- If a cutoff `χ` in a chart `e` is `1` near the support of a cutoff `ρ`, then on `M` the
 supports of `ρ` and of `1 - χ`, read through the chart, are disjoint. -/

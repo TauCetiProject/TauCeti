@@ -11,7 +11,7 @@ public import TauCeti.Probability.Finance.WeightedLogSpot
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Probability.Finance.LogSpot
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The weighted log-spot pricing operator on parabolic Hölder spaces

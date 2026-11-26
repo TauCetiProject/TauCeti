@@ -349,7 +349,7 @@ theorem murrayVonNeumannEquiv_of_unitization_unitary_conj {R : Type*}
   let M := CStarMatrix n n A
   let v : M := (u * (p : Unitization R M)).snd
   have hv_coe : (v : Unitization R M) = u * (p : Unitization R M) :=
-    Unitization.inr_snd_eq_of_fst_eq_zero (by simp [Unitization.fst_mul, Unitization.fst_inr])
+    Unitization.inr_snd_of_fst_eq_zero (by simp [Unitization.fst_mul, Unitization.fst_inr])
   have hp_coe : IsStarProjection (p : Unitization R M) := hp.inr
   have hq : IsStarProjection q := by
     have hq_snd := Unitization.isStarProjection_snd_conj hp hu

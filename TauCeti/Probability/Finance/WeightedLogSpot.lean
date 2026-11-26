@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 import TauCeti.Probability.Finance.LogSpot
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Prices reconstructed from bounded weighted log-spot maps

@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.PEquiv
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import Mathlib.Analysis.CStarAlgebra.Hom
 import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
+import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 
 /-!
 # Rectangular norms, reindexing, and permutation matrices on `CStarMatrix`
@@ -37,6 +38,8 @@ develops that rectangular calculus:
 * `CStarMatrix.reindexₗᵢ`: rectangular row-and-column reindexing as a linear isometry equivalence.
 * `CStarMatrix.permMatrix`: rectangular `0`-`1` matrices attached to `e : m ≃ n`, implementing
   `reindexₗ` by `(permMatrix A e₁).conjTranspose * M * permMatrix A e₂ = reindexₗ R A e₁ e₂ M`.
+* `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
+  a rectangular matrix is supported on its initial projection.
 
 ## References
 
@@ -165,6 +168,90 @@ theorem reindexₗ_conjTranspose [Semiring R] [AddCommMonoid A] [Module R A] [St
 @[simp] theorem reindexₗ_eq_reindexₐ [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A]
     [Module R A] [Star A] (e : m ≃ n) (M : CStarMatrix m m A) :
     reindexₗ R A e e M = reindexₐ R A e M := (rfl)
+
+/-- If `v.conjTranspose * v = p` and `v * p = v`, then `p * v.conjTranspose = v.conjTranspose`. -/
+lemma mul_conjTranspose_eq_self_of_mul_eq {p : CStarMatrix m m A} {v : CStarMatrix n m A}
+    [Fintype m] [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    (hvp : v.conjTranspose * v = p) (hv : v * p = v) :
+    p * v.conjTranspose = v.conjTranspose := by
+  have hp_sa : p.conjTranspose = p := by rw [← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
+  simpa [hp_sa] using congrArg conjTranspose hv
+
+/-- If `v.conjTranspose * v = p`, `v * v.conjTranspose = q`, and `v * p = v`, then `q * v = v`. -/
+lemma mul_self_eq_self_of_mul_eq [Fintype m] [Fintype n] [NonUnitalSemiring A]
+    [StarRing A] {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
+    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) (hv : v * p = v) :
+    q * v = v := by
+  rw [← hvq, mul_assoc_rectangular, hvp, hv]
+
+/-- If `v.conjTranspose * v = p`, `v * v.conjTranspose = q`, and `v * p = v`, then
+`v.conjTranspose * q = v.conjTranspose`. -/
+lemma conjTranspose_mul_eq_self_of_mul_eq [Fintype m] [Fintype n]
+    [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A} {q : CStarMatrix n n A}
+    {v : CStarMatrix n m A} (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q)
+    (hv : v * p = v) : v.conjTranspose * q = v.conjTranspose := by
+  have hq_sa : q.conjTranspose = q := by rw [← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
+  simpa [hq_sa] using congrArg conjTranspose (mul_self_eq_self_of_mul_eq hvp hvq hv)
+
+/-- If `v.conjTranspose * v = p`, `v * v.conjTranspose = q`, and `v * p = v`, then `q` is
+idempotent. -/
+lemma isIdempotentElem_of_mul_conjTranspose_eq [Fintype m] [Fintype n]
+    [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A} {q : CStarMatrix n n A}
+    {v : CStarMatrix n m A} (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q)
+    (hv : v * p = v) : IsIdempotentElem q := by
+  rw [IsIdempotentElem, ← hvq, mul_assoc_rectangular, hvq,
+    conjTranspose_mul_eq_self_of_mul_eq hvp hvq hv, hvq]
+
+/-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
+an idempotent `p` is supported on `p`. -/
+lemma mul_eq_self_of_conjTranspose_mul_eq [Fintype m] [Fintype n] [NonUnitalRing A]
+    [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A] {p : CStarMatrix m m A}
+    (v : CStarMatrix n m A) (hp : IsIdempotentElem p) (hv : v.conjTranspose * v = p) :
+    v * p = v := by
+  have hp' : IsIdempotentElem (v.conjTranspose * v) := by
+    rw [hv]
+    exact hp
+  have hpM := congrArg ofMatrix.symm hp'.eq
+  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at hpM
+  have h := Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem (ofMatrix.symm v) hpM
+  rw [← hv]
+  apply ofMatrix.symm.injective
+  simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
+
+/-- Over a star-ordered ring with proper star, if `v.conjTranspose * v = p` is idempotent, then
+`p * v.conjTranspose = v.conjTranspose`. -/
+lemma mul_conjTranspose_eq_self_of_conjTranspose_mul_self [Fintype m] [Fintype n]
+    [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+    {p : CStarMatrix m m A} {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
+    (hvp : v.conjTranspose * v = p) : p * v.conjTranspose = v.conjTranspose :=
+  mul_conjTranspose_eq_self_of_mul_eq hvp (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
+
+/-- Over a star-ordered ring with proper star, if `v.conjTranspose * v = p` is idempotent and
+`v * v.conjTranspose = q`, then `q * v = v`. -/
+lemma mul_self_eq_self_of_self_mul_conjTranspose [Fintype m] [Fintype n]
+    [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+    {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
+    (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    q * v = v :=
+  mul_self_eq_self_of_mul_eq hvp hvq (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
+
+/-- Over a star-ordered ring with proper star, if `v.conjTranspose * v = p` is idempotent and
+`v * v.conjTranspose = q`, then `v.conjTranspose * q = v.conjTranspose`. -/
+lemma conjTranspose_mul_eq_self_of_self_mul_conjTranspose [Fintype m] [Fintype n]
+    [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+    {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
+    (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    v.conjTranspose * q = v.conjTranspose :=
+  conjTranspose_mul_eq_self_of_mul_eq hvp hvq (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
+
+/-- Over a star-ordered ring with proper star, if `v.conjTranspose * v = p` is idempotent and
+`v * v.conjTranspose = q`, then `q` is idempotent. -/
+lemma isIdempotentElem_of_conjTranspose_mul_self [Fintype m] [Fintype n]
+    [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+    {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
+    (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    IsIdempotentElem q :=
+  isIdempotentElem_of_mul_conjTranspose_eq hvp hvq (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
 
 end RectangularAlgebraic
 

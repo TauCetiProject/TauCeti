@@ -18,9 +18,9 @@ This file collects facts used to compare power series to a finite order `m`:
 * two power series have equal `m`-truncations if and only if their coefficients agree below `m`,
   and they are equal once they agree modulo every power of `X`; a series is congruent to its
   `m`-truncation modulo `X ^ m`, and truncation commutes with the Euler operator `X * d⁄dX`,
-* the `m`-truncations of `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`, integer powers `u ^ k`,
-  and products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a finite truncation of the
-  input,
+* the `m`-truncations of products, finite products, powers, `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`,
+  integer powers `u ^ k`, and products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a
+  finite truncation of the input,
 * the coefficients of a finite expansion `∑_{i < m} aᵢ Xⁱ` are the `aᵢ`, read as zero from degree
   `m` on,
 * the coefficients of a polynomial times a power series expand along the polynomial monomials,
@@ -34,6 +34,9 @@ This file collects facts used to compare power series to a finite order `m`:
 * `PowerSeries.trunc_eq_trunc_iff`: `trunc m φ = trunc m ψ ↔ ∀ n < m, coeff n φ = coeff n ψ`.
 * `PowerSeries.coe_trunc_eq_self_of_coeff_eq_zero`: a series vanishing from degree `m` on is its
   `m`-truncation.
+* `PowerSeries.trunc_mul_eq_of_trunc_eq`, `PowerSeries.trunc_pow_eq_of_trunc_eq`,
+  `PowerSeries.trunc_prod_eq_of_trunc_eq`: the `m`-th truncation of a product, power, or finite
+  product depends only on `trunc m` of the factors.
 * `PowerSeries.trunc_inv_aux_eq_of_trunc_eq`, `PowerSeries.trunc_invOfUnit_eq_of_trunc_eq`,
   `PowerSeries.trunc_inv_eq_of_trunc_eq`, `PowerSeries.trunc_val_inv_eq_of_trunc_eq`: the `m`-th
   truncation of an inverse power series depends only on `trunc m`.
@@ -242,6 +245,18 @@ end Ring
 section CommSemiring
 
 variable {R : Type*} [CommSemiring R]
+
+/-- The `m`-truncation of a finite product depends only on the `m`-truncations of the factors. -/
+theorem trunc_prod_eq_of_trunc_eq {ι : Type*} (s : Finset ι) {m : ℕ} {f g : ι → R⟦X⟧}
+    (h : ∀ i ∈ s, trunc m (f i) = trunc m (g i)) :
+    trunc m (∏ i ∈ s, f i) = trunc m (∏ i ∈ s, g i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => rfl
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.prod_insert hi]
+    exact trunc_mul_eq_of_trunc_eq (h i (Finset.mem_insert_self i s))
+      (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
 
 /-- The value of the truncation below degree `n` at an element `x` of an `R`-algebra is the
 partial sum `∑_{i < n} cᵢ • xⁱ` of the series. -/
