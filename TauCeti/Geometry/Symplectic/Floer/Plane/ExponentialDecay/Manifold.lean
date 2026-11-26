@@ -210,7 +210,8 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
     hω.tames_of_mem_image φ hφ (hJJ' t) hBφ (hJt t)
   -- The coordinate map is `C³` on the end, with the energy of `u` there.
   have hu' : ContDiffOn ℝ 3 (φ ∘ u) U :=
-    φ.contDiffOn_comp_of_contMDiffOn hu fun z hz ↦ hBφ (huB z hz)
+    φ.contDiffOn_comp_of_contMDiffOn (WithTop.coe_le_coe.2 le_top) hu fun z hz ↦
+      hBφ (huB z hz)
   have hE' : ∫⁻ z in U, ENNReal.ofReal (ω₀.floerEnergyDensity
       (fun z x ↦ p.perturbation H' (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H' (Complex.equivRealProdCLM.symm z) x Complex.I)

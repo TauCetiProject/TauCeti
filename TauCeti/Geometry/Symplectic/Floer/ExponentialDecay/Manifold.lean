@@ -196,7 +196,8 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp (hω : 
   obtain ⟨κ, hκ, C, hdecay⟩ :=
     TauCeti.SymplecticForm.exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
       (ω := ω₀) (u := φ ∘ u) (J := J') hH' hH'per
-      (φ.contDiffOn_comp_of_contMDiffOn hu fun z hz ↦ hBφ (huB z.1 hz.1 z.2))
+      (φ.contDiffOn_comp_of_contMDiffOn (WithTop.coe_le_coe.2 le_top) hu fun z hz ↦
+        hBφ (huB z.1 hz.1 z.2))
     (fun s hs t ↦ congrArg φ (hper s hs t)) hc hJc hJM
     (fun z hz ↦ (hchart z hz.1).2 (hJJ' z hz) (hfloer z hz))
     (setLIntegral_floerEnergyDensity_comp_ne_top hω φ (by simp) hφ hHH' hH'1 hBφ hu huB hE)
@@ -239,7 +240,8 @@ theorem exists_pos_eventually_norm_sub_le_exp (hω : ω.IsNondegenerate)
   have hH'1 : ContDiff ℝ 1 (uncurry H') := hH'.of_le (by norm_num)
   exact TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp
     (ω := ω₀) (u := φ ∘ u) (J := J') hH' hH'per
-    (φ.contDiffOn_comp_of_contMDiffOn hu fun z hz ↦ hBφ (huB z.1 hz.1 z.2))
+    (φ.contDiffOn_comp_of_contMDiffOn (WithTop.coe_le_coe.2 le_top) hu fun z hz ↦
+      hBφ (huB z.1 hz.1 z.2))
     (fun s hs t ↦ congrArg φ (hper s hs t)) hc hJc hJM
     (fun z hz ↦ (floerEnergyDensity_comp_and_isComplexLinearMap (n := 2) hω φ (by simp) hφ hHH'
       hH'1 hBφ hu huB hz.1).2 (hJJ' z hz) (hfloer z hz))
@@ -304,7 +306,8 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp
   exact TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp
     (ω := ω₀) (u := φ ∘ u) hH' hH'per hW hJ' hJ'per
     (hB.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hBφ)) hBW hJ't
-    (φ.contDiffOn_comp_of_contMDiffOn hu fun z hz ↦ hBφ (huB z.1 hz.1 z.2))
+    (φ.contDiffOn_comp_of_contMDiffOn (WithTop.coe_le_coe.2 le_top) hu fun z hz ↦
+      hBφ (huB z.1 hz.1 z.2))
     (fun s hs t ↦ congrArg φ (hper s hs t))
     (fun s hs t ↦ ⟨u (s, t), huB s hs t, rfl⟩)
     (fun z hz ↦ (floerEnergyDensity_comp_and_isComplexLinearMap (n := 3) hω φ (by simp) hφ hHH'

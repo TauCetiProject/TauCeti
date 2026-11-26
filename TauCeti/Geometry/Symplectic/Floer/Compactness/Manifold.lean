@@ -750,7 +750,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     setIntegral_congr_fun hS fun y hy ↦ (hpt k (hSΩ hy)).1
   obtain ⟨ψ, p₀, Z, w, hψ, hp₀, hplim, hZΩ, hcard, hconc, hbd, hwc, hwK, hlim⟩ :=
     hconv (u := fun k ↦ φ ∘ u k) hΩ hΩD hpC
-      (fun k ↦ φ.contDiffOn_comp_of_contMDiffOn (hu k) ((huK k).mono_right hKφ))
+      (fun k ↦ φ.contDiffOn_comp_of_contMDiffOn (WithTop.coe_le_coe.2 le_top) (hu k)
+        ((huK k).mono_right hKφ))
     (fun k z hz ↦ (hpt k hz).2) (fun k z hz ↦ ⟨u k z, huK k hz, rfl⟩)
     (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hpt k hy).1).symm) hΩ.measurableSet)
     (fun k ↦ (hint_eq k hΩ.measurableSet subset_rfl).trans_le (hA k))
