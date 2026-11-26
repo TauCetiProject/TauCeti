@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.FinitePlace
 public import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Basic
+public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.FieldTheory.Kummer.Degree
 import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Tame
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
@@ -40,22 +41,11 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type} [Field K] [NumberField K] {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n]
 
-/-- The algebra map identifies the `n`-th roots of unity of `K` with those of its completion. -/
-private def finitePlaceRootsEquiv (v : HeightOneSpectrum (𝓞 K)) :
-    rootsOfUnity n K ≃* rootsOfUnity n (v.adicCompletion K) :=
-  rootsOfUnityEquivOfPrimitiveRoots (algebraMap K (v.adicCompletion K)).injective
-    (HasEnoughRootsOfUnity.primitiveRoots_nonempty K n)
-
-/-- A primitive root of unity in a number field remains primitive in a finite completion. -/
-instance hasEnoughRootsOfUnity_adicCompletion (v : HeightOneSpectrum (𝓞 K)) :
-    HasEnoughRootsOfUnity (v.adicCompletion K) n :=
-  (finitePlaceRootsEquiv (n := n) v).hasEnoughRootsOfUnity
-
 /-- The degree-`n` norm-residue symbol at the finite place `v`, with values in the roots of unity
 of the number field. The first argument acts through the local Artin map. -/
 def normResidueSymbolAtFinitePlace (v : HeightOneSpectrum (𝓞 K)) (n : ℕ) [NeZero n]
     [HasEnoughRootsOfUnity K n] (a b : Kˣ) : rootsOfUnity n K :=
-  (finitePlaceRootsEquiv v).symm (normResidueSymbol (v.adicCompletion K) n
+  v.adicCompletionRootsOfUnityEquiv.symm (normResidueSymbol (v.adicCompletion K) n
     (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom a)
     (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom b))
 
@@ -70,10 +60,8 @@ theorem restrictRootsOfUnity_normResidueSymbolAtFinitePlace (a b : Kˣ) :
       normResidueSymbol (v.adicCompletion K) n
         (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom a)
         (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom b) := by
-  apply Subtype.ext
-  apply Units.ext
-  rw [restrictRootsOfUnity_coe_apply, normResidueSymbolAtFinitePlace, finitePlaceRootsEquiv,
-    rootsOfUnityEquivOfPrimitiveRoots_symm_apply]
+  rw [normResidueSymbolAtFinitePlace,
+    restrictRootsOfUnity_adicCompletionRootsOfUnityEquiv_symm_apply]
 
 /-- The finite-place symbol is trivial when the Artin argument is `1`. -/
 @[simp]
