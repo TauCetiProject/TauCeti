@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.Cuntz.Subequivalence
 
 /-!
@@ -29,10 +29,9 @@ open scoped CStarAlgebra ComplexOrder
 
 namespace TauCeti.CuntzMatrixCheck
 
-/-- The rank-one projection `diag(1, 0) = e₁₁⋆ e₁₁` in `M₂(ℂ)`, as a positive element. -/
+/-- The rank-one projection `diag(1, 0) = e₁₁` in `M₂(ℂ)`, as a positive element. -/
 noncomputable def diagOneZero : {a : CStarMatrix (Fin 2) (Fin 2) ℂ // 0 ≤ a} :=
-  ⟨star (CStarMatrix.ofMatrix (Matrix.single 0 0 1)) * CStarMatrix.ofMatrix (Matrix.single 0 0 1),
-    star_mul_self_nonneg _⟩
+  ⟨CStarMatrix.matrixUnit 0 0, (CStarMatrix.isStarProjection_matrixUnit 0).nonneg⟩
 
 /-- The identity of `M₂(ℂ)`, as a positive element. -/
 noncomputable def oneMatrix : {a : CStarMatrix (Fin 2) (Fin 2) ℂ // 0 ≤ a} :=
@@ -44,22 +43,16 @@ theorem not_cuntzLE_one_diag : ¬ CuntzLE oneMatrix diagOneZero := by
   rw [cuntzLE_iff_exists_tendsto]
   rintro ⟨x, hx⟩
   -- Every `xₙ⋆ diag(1, 0) xₙ` has determinant `0`, the determinant is continuous, and `det 1 = 1`.
-  let det : CStarMatrix (Fin 2) (Fin 2) ℂ → ℂ := fun M ↦
-    (CStarMatrix.ofMatrixStarAlgEquiv.symm M).det
-  -- The star algebra equivalence and the continuous linear equivalence have the same inverse.
-  have hsymm : (CStarMatrix.ofMatrixStarAlgEquiv.symm : CStarMatrix (Fin 2) (Fin 2) ℂ → _) =
-      CStarMatrix.ofMatrixL.symm := funext fun M ↦ CStarMatrix.ofMatrixL.injective <| by
-    rw [ContinuousLinearEquiv.apply_symm_apply, ← CStarMatrix.ofMatrix_eq_ofMatrixL,
-      CStarMatrix.ofMatrix_eq_ofMatrixStarAlgEquiv, StarAlgEquiv.apply_symm_apply]
-  have hdet : Continuous det := by
-    simpa only [det, hsymm] using CStarMatrix.ofMatrixL.symm.continuous.matrix_det
+  let det : CStarMatrix (Fin 2) (Fin 2) ℂ → ℂ := fun M ↦ (CStarMatrix.ofMatrix.symm M).det
+  -- `ofMatrix.symm` is the identity on the underlying matrices, as is `ofMatrixL.symm`.
+  have hdet : Continuous det := CStarMatrix.ofMatrixL.symm.continuous.matrix_det
   have h0 (n : ℕ) : det (star (x n) * (diagOneZero : CStarMatrix (Fin 2) (Fin 2) ℂ) * x n) = 0 := by
-    simp only [det, diagOneZero, CStarMatrix.ofMatrix_eq_ofMatrixStarAlgEquiv, map_mul,
-      map_star, StarAlgEquiv.symm_apply_apply, Matrix.det_mul]
+    simp only [det, diagOneZero, CStarMatrix.ofMatrix_symm_mul, CStarMatrix.ofMatrix_symm_star,
+      CStarMatrix.ofMatrix_symm_matrixUnit, Matrix.det_mul]
     simp [Matrix.det_fin_two]
   have hlim := (hdet.tendsto _).comp hx
   simp only [Function.comp_def, h0, oneMatrix] at hlim
   have : det 1 = 0 := tendsto_nhds_unique hlim tendsto_const_nhds
-  simp [det] at this
+  simp [det, CStarMatrix.ofMatrix_symm_one] at this
 
 end TauCeti.CuntzMatrixCheck
