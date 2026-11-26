@@ -40,6 +40,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
+* `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg_of_mul_nonneg`: with a mass term `c`, the
+  same for a weak supersolution and a shift `δ` with `c δ ≥ 0`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg_mass`: with a mass term, the restriction
   of a nonnegative weak supersolution shifted by `δ > 0` is a weak supersolution of the equation
   with the modified mass coefficient `c u⁺ / (u⁺ + δ)`, still bounded by `|c|`.
@@ -311,6 +313,29 @@ theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → M
     0 ≤ energyFormH1 a b 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
   rw [energyFormH1_add_const_left]
   exact energyFormH1_restrictL_nonneg hU hu v hv
+
+/-- **Shifted weak supersolutions with a mass term.** Let `u ∈ H¹(Ω)` satisfy `a(u, v) ≥ 0` for
+every nonnegative `v ∈ H¹₀(Ω)`, for an energy form with drift `b` and mass coefficient `c`, and let
+`U ⊆ Ω` be open of finite measure, with an essentially bounded energy density for `a` and `b` and a
+bounded `c` on `U`. Then for every constant `δ` with `c δ ≥ 0` almost everywhere on `U`, the
+shifted restriction `u|_U + δ ∈ H¹(U)` satisfies `a(u|_U + δ, v) ≥ 0` for every nonnegative
+`v ∈ H¹₀(U)`, since `a(u|_U + δ, v) = a(u|_U, v) + ∫_U c δ v`. Without a mass term this is
+`TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`, for every `δ`. -/
+theorem energyFormH1_restrictL_add_const_nonneg_of_mul_nonneg
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega) [IsFiniteMeasure (mu.restrict U)]
+    (hab : MemLp (fun x => energyIntegrand (a x) (b x) 0) ⊤ (mu.restrict U))
+    (hc : MemLp c ⊤ (mu.restrict U)) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2))
+    {δ : ℝ} (hcδ : ∀ᵐ x ∂mu.restrict U, 0 ≤ c x * δ) (v : W1p0 mu U 2)
+    (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
+    0 ≤ energyFormH1 a b c (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
+  rw [energyFormH1_add_const_left_eq_add_setIntegral hab hc]
+  refine add_nonneg (energyFormH1_restrictL_nonneg hU hu v hv) (integral_nonneg_of_ae ?_)
+  filter_upwards [hcδ, hv] with x hxc hx
+  exact mul_nonneg hxc hx
 
 /-- **Shifted nonnegative supersolutions with a mass coefficient.** Let `u` be a weak
 supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` on `Ω`, let `U ⊆ Ω` be open of finite measure
