@@ -42,6 +42,10 @@ submonoid `S`:
 We also record that localization commutes with dividing by an element:
 
 * `TauCeti.localizedQuotSMulTopEquiv`: localizing `M ⧸ a M` gives `M_S ⧸ a M_S`.
+* `AlgHom.bijective_localizedModuleMap_iff`,
+  `AlgHom.bijective_localizedModuleMap_powers_iff`: localizing an `R`-algebra homomorphism
+  `g : A →ₐ[R] B` at `S` is bijective if and only if a compatible ring map between localizations of
+  `A` and `B` at the images of `S` is bijective.
 -/
 
 public section
@@ -270,3 +274,53 @@ theorem localizedQuotSMulTopEquiv_mk (a : R) (S : Submonoid R) (m : M) (s : S) :
     ← Submodule.Quotient.mk_smul, hs]
 
 end TauCeti
+
+namespace AlgHom
+
+/-- Let `g : A →ₐ[R] B` be a homomorphism of `R`-algebras, `S : Submonoid R`, and `Aₛ`, `Bₛ`
+localizations of `A`, `B` at the images of `S`. If a ring homomorphism `φ : Aₛ →+* Bₛ` commutes
+with `g` and the localization maps, then localizing `g` at `S` is bijective if and only if `φ` is
+bijective. -/
+theorem bijective_localizedModuleMap_iff {R A B Aₛ Bₛ : Type*}
+    [CommSemiring R] [CommSemiring A] [CommSemiring B] [CommSemiring Aₛ] [CommSemiring Bₛ]
+    [Algebra R A] [Algebra R B] [Algebra A Aₛ] [Algebra B Bₛ]
+    (g : A →ₐ[R] B) (S : Submonoid R)
+    [IsLocalization (Algebra.algebraMapSubmonoid A S) Aₛ]
+    [IsLocalization (Algebra.algebraMapSubmonoid B S) Bₛ]
+    (φ : Aₛ →+* Bₛ) (hφ : ∀ a : A, φ (algebraMap A Aₛ a) = algebraMap B Bₛ (g a)) :
+    Function.Bijective (LocalizedModule.map S g.toLinearMap) ↔ Function.Bijective φ := by
+  let _ : Algebra R Aₛ := ((algebraMap A Aₛ).comp (algebraMap R A)).toAlgebra
+  let _ : Algebra R Bₛ := ((algebraMap B Bₛ).comp (algebraMap R B)).toAlgebra
+  have : IsScalarTower R A Aₛ := IsScalarTower.of_algebraMap_eq' rfl
+  have : IsScalarTower R B Bₛ := IsScalarTower.of_algebraMap_eq' rfl
+  let lA := (Algebra.linearMap A Aₛ).restrictScalars R
+  let lB := (Algebra.linearMap B Bₛ).restrictScalars R
+  have : IsLocalizedModule S lA := IsLocalizedModule.restrictScalars S _
+  have : IsLocalizedModule S lB := IsLocalizedModule.restrictScalars S _
+  let φ_alg : Aₛ →ₐ[R] Bₛ :=
+    { toRingHom := φ
+      commutes' r := by simp [RingHom.algebraMap_toAlgebra, hφ] }
+  have hmap : IsLocalizedModule.map S lA lB g.toLinearMap = φ_alg.toLinearMap := by
+    apply IsLocalizedModule.linearMap_ext S lA lB
+    rw [IsLocalizedModule.map_comp]
+    ext a
+    simp [lA, lB, φ_alg, hφ]
+  rw [← IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective lA lB, hmap]
+  simp [φ_alg]
+
+/-- Principal-localization specialization of `AlgHom.bijective_localizedModuleMap_iff`: if `Aₛ`,
+`Bₛ` are localizations of `A`, `B` away from the images of `s : R` and `φ : Aₛ →+* Bₛ` commutes
+with `g : A →ₐ[R] B` and the localization maps, then localizing `g` at the powers of `s` is
+bijective if and only if `φ` is bijective. -/
+theorem bijective_localizedModuleMap_powers_iff {R A B Aₛ Bₛ : Type*}
+    [CommSemiring R] [CommSemiring A] [CommSemiring B] [CommSemiring Aₛ] [CommSemiring Bₛ]
+    [Algebra R A] [Algebra R B] [Algebra A Aₛ] [Algebra B Bₛ]
+    (g : A →ₐ[R] B) (s : R)
+    [hA : IsLocalization.Away (algebraMap R A s) Aₛ]
+    [hB : IsLocalization.Away (algebraMap R B s) Bₛ]
+    (φ : Aₛ →+* Bₛ) (hφ : ∀ a : A, φ (algebraMap A Aₛ a) = algebraMap B Bₛ (g a)) :
+    Function.Bijective (LocalizedModule.map (.powers s) g.toLinearMap) ↔ Function.Bijective φ := by
+  rw [IsLocalization.Away, ← Algebra.algebraMapSubmonoid_powers] at hA hB
+  exact g.bijective_localizedModuleMap_iff (.powers s) φ hφ
+
+end AlgHom

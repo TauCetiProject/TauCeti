@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.LocalRing
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Extension
+public import TauCeti.RingTheory.AdicCompletion.LocalRing
 public import TauCeti.RingTheory.Depth.Flat
 public import TauCeti.RingTheory.LocalRing.Quotient
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
-import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Completion
 import TauCeti.CategoryTheory.Comma.Over
 import TauCeti.RingTheory.Etale.FiniteDescent
@@ -130,10 +130,7 @@ theorem extends_iff_extends_pullback_of_bijective_quotientMap
   obtain ⟨Y₀, hY₀_fin, eY', eV, _⟩ :=
     finite_extend_of_bijective_quotientMap hfg hquot V.obj Y'.obj
       ((finiteEtaleSchemeProperty (puncturedSpectrum A').toScheme).ι.mapIso e')
-  have : IsLocalHom (algebraMap A A') := isLocalHom_of_bijective_quotientMap hquot
-  have : Module.FaithfullyFlat A A' := .of_flat_of_isLocalHom
-  have : Flat f := Flat.SpecMap_iff.mpr (RingHom.flat_algebraMap_iff.mpr ‹Module.Flat A A'›)
-  have : Surjective f := ⟨PrimeSpectrum.comap_surjective_of_faithfullyFlat⟩
+  obtain ⟨_, _⟩ := flat_and_surjective_SpecMap_of_bijective_quotientMap hquot
   have hw : eY'.hom.left ≫ Y'.obj.hom = pullback.snd Y₀.hom f := Over.w eY'.hom
   have het_snd : Etale (pullback.snd Y₀.hom f) := by
     rw [← hw]
@@ -168,14 +165,9 @@ theorem extends_iff_completion_extends [IsNoetherianRing A]
     (∃ Y : FiniteEtaleScheme (Spec (.of A)), Nonempty ((restrictPunctured A).obj Y ≅ V)) ↔
       ∃ Y : FiniteEtaleScheme (Spec (.of (AdicCompletion (maximalIdeal A) A))),
         Nonempty ((restrictPunctured (AdicCompletion (maximalIdeal A) A)).obj Y ≅
-          (pullbackPunctured (A' := AdicCompletion (maximalIdeal A) A) (by
-            rw [← AdicCompletion.maximalIdeal_eq_map]
-            exact (maximalIdeal.isMaximal _).isPrime.radical)).obj V) :=
+          (pullbackPunctured TauCeti.AdicCompletion.radical_map_maximalIdeal).obj V) :=
   extends_iff_extends_pullback_of_bijective_quotientMap (maximalIdeal A).fg_of_isNoetherianRing
-    ((bijective_quotientMap_iff_map_maximalIdeal_eq_and_bijective_residueFieldMap
-      (algebraMap A _)).mpr
-      ⟨AdicCompletion.maximalIdeal_eq_map.symm, AdicCompletion.residueField_map_bijective A⟩)
-    V
+    TauCeti.AdicCompletion.bijective_quotientMap_maximalIdeal V
 
 omit [CommRing A'] [IsLocalRing A'] [Algebra A A'] [Module.Flat A A'] in
 /-- **Purity descends from the completion.** For a Noetherian local ring `A`, if purity holds for

@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.RingTheory.Flat.Localization
 import TauCeti.RingTheory.Flat.Tower
+import TauCeti.RingTheory.LocalRing.Quotient
 
 /-!
 # Flat morphisms: restrictions, stalkwise descent and generic points
@@ -44,6 +45,9 @@ the generic fibre.
   then `f` is flat.
 * `AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_flat`: a flat morphism between irreducible
   schemes sends the generic point to the generic point.
+* `TauCeti.IsLocalRing.flat_and_surjective_SpecMap_of_bijective_quotientMap`: if a flat map
+  `R → S` of local rings induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S`, then `Spec S ⟶ Spec R` is flat
+  and surjective.
 
 ## References
 
@@ -150,3 +154,21 @@ theorem Flat.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) [
     exact g.flat_stalkMap_of_comp f x' (Flat.stalkMap g x') (Flat.stalkMap (g ≫ f) x')
 
 end AlgebraicGeometry
+
+namespace TauCeti.IsLocalRing
+
+universe u
+
+/-- If a flat homomorphism `R → S` of local rings induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S`, then
+the induced morphism `Spec S ⟶ Spec R` is flat and surjective. -/
+theorem flat_and_surjective_SpecMap_of_bijective_quotientMap {R S : Type u}
+    [CommRing R] [IsLocalRing R] [CommRing S] [IsLocalRing S] [Algebra R S] [Module.Flat R S]
+    (h : Function.Bijective (Ideal.quotientMap ((IsLocalRing.maximalIdeal R).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map)) :
+    Flat (Spec.map (CommRingCat.ofHom (algebraMap R S))) ∧
+      Surjective (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
+  have := faithfullyFlat_of_bijective_quotientMap h
+  exact (flat_and_surjective_SpecMap_iff (CommRingCat.ofHom (algebraMap R S))).mpr
+    (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
+
+end TauCeti.IsLocalRing

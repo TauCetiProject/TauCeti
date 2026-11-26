@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Restricting local properties of scheme morphisms
@@ -37,6 +38,8 @@ global functions of the base change.
   `coprod.desc f g` when it holds for `f` and for `g`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_le_opensRange`: an open immersion
   restricts to an isomorphism over every open contained in its range.
+* `AlgebraicGeometry.Scheme.Hom.isIso_appLE_of_isIso_morphismRestrict`: if `f ∣_ U` is an
+  isomorphism and `V = f ⁻¹ᵁ U`, then `f.appLE U V h.le` is an isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.bijective_localizedModuleMap_of_isIso_morphismRestrict`: on qcqs
   schemes, if `f` restricts to an isomorphism over `Y.basicOpen (algebraMap R Γ(Y, ⊤) s)`, the
   induced `R`-algebra map on global sections becomes bijective after inverting `s`;
@@ -109,6 +112,15 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_le_opensRange [IsOpenImmersion f] {
   exact ⟨⟨z, (Scheme.Hom.mem_preimage _).mpr (hz ▸ y.property)⟩,
     Subtype.ext ((morphismRestrict_base_coe _ _ _).trans hz)⟩
 
+/-- If `f ∣_ U` is an isomorphism over an open `U` of `Y` and `V = f ⁻¹ᵁ U`, then
+`f.appLE U V h.le : Γ(Y, U) ⟶ Γ(X, V)` is an isomorphism. -/
+theorem Scheme.Hom.isIso_appLE_of_isIso_morphismRestrict {U : Y.Opens} {V : X.Opens}
+    (h : V = f ⁻¹ᵁ U) [IsIso (f ∣_ U)] : IsIso (f.appLE U V h.le) := by
+  have h1 : IsIso ((f ∣_ U).app ⊤) := inferInstance
+  rw [morphismRestrict_app'] at h1
+  exact (f.appLE_congr _ U.ι_image_top ((f ⁻¹ᵁ U).ι_image_top.trans h.symm)
+    fun φ ↦ IsIso φ).mp h1
+
 /-- On quasi-compact quasi-separated schemes `X` and `Y` with `R`-algebra structures on their
 global sections, if `f : X ⟶ Y` induces `g : Γ(Y, ⊤) →ₐ[R] Γ(X, ⊤)` and restricts to an
 isomorphism over `Y.basicOpen (algebraMap R Γ(Y, ⊤) s)`, then `g` becomes bijective after
@@ -126,46 +138,24 @@ theorem Scheme.Hom.bijective_localizedModuleMap_of_isIso_morphismRestrict {R : T
     dsimp only [UX, UY]
     rw [← g.commutes s, ← hgx]
     exact (Scheme.preimage_basicOpen_top f _).symm
+  -- Sections over `UY` and `UX` are principal localizations of global sections.
   let resY : Γ(Y, ⊤) ⟶ Γ(Y, UY) := Y.presheaf.map (homOfLE le_top).op
   let resX : Γ(X, ⊤) ⟶ Γ(X, UX) := X.presheaf.map (homOfLE le_top).op
-  algebraize [resY.hom, resX.hom, (resY.hom.comp (algebraMap R Γ(Y, ⊤))),
-    (resX.hom.comp (algebraMap R Γ(X, ⊤)))]
-  have : IsScalarTower R Γ(Y, ⊤) Γ(Y, UY) := IsScalarTower.of_algebraMap_eq' rfl
-  have : IsScalarTower R Γ(X, ⊤) Γ(X, UX) := IsScalarTower.of_algebraMap_eq' rfl
   have : IsLocalization.Away (algebraMap R Γ(Y, ⊤) s) Γ(Y, UY) :=
     isLocalization_basicOpen_of_qcqs isCompact_univ isQuasiSeparated_univ _
   have : IsLocalization.Away (algebraMap R Γ(X, ⊤) s) Γ(X, UX) :=
     isLocalization_basicOpen_of_qcqs isCompact_univ isQuasiSeparated_univ _
-  let lY := (Algebra.linearMap Γ(Y, ⊤) Γ(Y, UY)).restrictScalars R
-  let lX := (Algebra.linearMap Γ(X, ⊤) Γ(X, UX)).restrictScalars R
-  have : IsLocalizedModule (.powers s) lY := IsLocalizedModule.restrictScalars_powers s _
-  have : IsLocalizedModule (.powers s) lX := IsLocalizedModule.restrictScalars_powers s _
-  let fLE := f.appLE UY UX hUX.le
-  have hfLE_iso : IsIso fLE := by
-    have h1 : IsIso ((f ∣_ UY).app ⊤) := inferInstance
-    rw [morphismRestrict_app'] at h1
-    exact (f.appLE_congr _ UY.ι_image_top ((f ⁻¹ᵁ UY).ι_image_top.trans hUX.symm)
-      fun φ ↦ IsIso φ).mp h1
-  have hcomm : resY ≫ fLE = f.appTop ≫ resX := by
-    dsimp only [resY, resX, fLE]
-    rw [Scheme.Hom.map_appLE]
-    rfl
-  let fLE_alg : Γ(Y, UY) →ₐ[R] Γ(X, UX) :=
-    { toRingHom := fLE.hom
-      commutes' r := by
-        simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
-        exact (congr($hcomm (algebraMap R Γ(Y, ⊤) r))).trans (by rw [CommRingCat.comp_apply,
-          hgx, g.commutes]) }
-  have hmap : IsLocalizedModule.map (.powers s) lY lX g.toLinearMap = fLE_alg.toLinearMap := by
-    apply IsLocalizedModule.linearMap_ext (.powers s) lY lX
-    rw [IsLocalizedModule.map_comp]
-    ext y
-    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, lY, lX,
-      LinearMap.coe_restrictScalars, Algebra.linearMap_apply, RingHom.algebraMap_toAlgebra, fLE_alg,
-      AlgHom.coe_mk]
-    exact (congrArg resX (hgx y).symm).trans (congr($hcomm y)).symm
-  rw [← IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective lY lX, hmap]
-  exact (ConcreteCategory.isIso_iff_bijective fLE).mp hfLE_iso
+  -- Identify the localized map with the isomorphism `f.appLE UY UX hUX.le`.
+  have hfLE_iso : IsIso (f.appLE UY UX hUX.le) := f.isIso_appLE_of_isIso_morphismRestrict hUX
+  refine (g.bijective_localizedModuleMap_powers_iff s (f.appLE UY UX hUX.le).hom fun y ↦ ?_).mpr
+    ((ConcreteCategory.isIso_iff_bijective _).mp hfLE_iso)
+  -- `f.appLE_eq_app` identifies `f.appLE ⊤ ⊤ le_top` with `f.appTop` (since `f ⁻¹ᵁ ⊤ = ⊤`
+  -- definitionally).
+  have happ : f.appLE ⊤ ⊤ le_top = f.appTop := f.appLE_eq_app
+  have hcomm : resY ≫ f.appLE UY UX hUX.le = f.appTop ≫ resX := by
+    dsimp only [resY, resX]
+    rw [Scheme.Hom.map_appLE, ← f.appLE_map (le_top : ⊤ ≤ f ⁻¹ᵁ ⊤) (homOfLE le_top).op, happ]
+  simpa only [RingHom.algebraMap_toAlgebra, CommRingCat.comp_apply, hgx] using congr($hcomm y)
 
 /-- On quasi-compact quasi-separated schemes `X` and `Y` with `R`-algebra structures on their
 global sections, if `f : X ⟶ Y` is an open immersion inducing `g : Γ(Y, ⊤) →ₐ[R] Γ(X, ⊤)` and

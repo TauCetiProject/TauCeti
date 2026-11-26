@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import Mathlib.RingTheory.AdicCompletion.LocalRing
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
 public import TauCeti.CategoryTheory.Comma.Over.Pullback
+public import TauCeti.RingTheory.AdicCompletion.LocalRing
 public import TauCeti.RingTheory.LocalRing.Quotient
 import Mathlib.AlgebraicGeometry.Morphisms.FlatDescent
-import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 import Mathlib.RingTheory.Finiteness.Descent
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.AlgebraicGeometry.Scheme.SectionsBaseChange
@@ -51,8 +52,6 @@ The proof passes to global sections and applies subalgebra formal gluing
 
 ## Main declarations
 
-* `TauCeti.IsLocalRing.overRestrictPuncturedCompPullbackIso`: restriction of schemes over `Spec A`
-  to the punctured spectrum commutes with pullback along `Spec A' ⟶ Spec A`.
 * `TauCeti.IsLocalRing.isPushout_appTop_pullback_puncturedSpectrum_of_flat`: flat base change for
   global sections of a qcqs morphism over the punctured spectrum.
 * `TauCeti.IsLocalRing.finite_extend_of_bijective_quotientMap`: extending a finite morphism over
@@ -78,24 +77,6 @@ open scoped TensorProduct
 universe u
 
 namespace TauCeti.IsLocalRing
-
-section PullbackIso
-
-variable {A A' : Type u} [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A'] [Algebra A A']
-
-/-- Restriction of schemes over `Spec A` to the punctured spectrum commutes with pullback along
-`Spec A' ⟶ Spec A` whenever the closed point is the only point of `Spec A'` over the closed point
-of `Spec A`. -/
-abbrev overRestrictPuncturedCompPullbackIso
-    (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A') :
-    Over.pullback (puncturedSpectrum A).ι ⋙
-        Over.pullback ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
-          (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge) ≅
-      Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A'))) ⋙
-        Over.pullback (puncturedSpectrum A').ι :=
-  Over.pullbackPullbackIsoOfComm (Scheme.Hom.resLE_comp_ι _ (preimage_puncturedSpectrum h).ge)
-
-end PullbackIso
 
 section Extend
 
@@ -203,6 +184,63 @@ private theorem bijective_localizedModuleMap_pullback_puncturedSpectrum
     simpa using hw1
   exact j'.bijective_localizedModuleMap_of_basicOpen_le_opensRange g_alg hg s hrange
 
+/-- Packages `isPushout_appTop_pullback_puncturedSpectrum_of_flat` as an `A`-algebra homomorphism
+`f_alg : Γ(V, ⊤) →ₐ[A] Γ(V ×_U U', ⊤)` satisfying `IsBaseChange A' f_alg.toLinearMap`. -/
+private theorem exists_algHom_isBaseChange_pullback_puncturedSpectrum
+    (hfg : (maximalIdeal A).FG)
+    (hrad : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A')
+    (V : Over (puncturedSpectrum A).toScheme) [QuasiCompact V.hom] [QuasiSeparated V.hom]
+    [Algebra A Γ(V.left, ⊤)]
+    (haM : algebraMap A Γ(V.left, ⊤) =
+      ((Scheme.ΓSpecIso (.of A)).inv ≫ (V.hom ≫ (puncturedSpectrum A).ι).appTop).hom)
+    [Algebra A Γ(pullback V.hom ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+      (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum hrad).ge), ⊤)]
+    [Algebra A' Γ(pullback V.hom ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+      (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum hrad).ge), ⊤)]
+    [IsScalarTower A A' Γ(pullback V.hom ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+      (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum hrad).ge), ⊤)]
+    (haP : algebraMap A' Γ(pullback V.hom ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+      (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum hrad).ge), ⊤) =
+      ((Scheme.ΓSpecIso (.of A')).inv ≫
+        (pullback.snd V.hom ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+          (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum hrad).ge) ≫
+          (puncturedSpectrum A').ι).appTop).hom) :
+    ∃ f_alg : Γ(V.left, ⊤) →ₐ[A]
+        Γ(pullback V.hom ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+          (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum hrad).ge), ⊤),
+      f_alg.toRingHom =
+        (pullback.fst V.hom ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+          (puncturedSpectrum A) (puncturedSpectrum A')
+          (preimage_puncturedSpectrum hrad).ge)).appTop.hom ∧
+        IsBaseChange A' f_alg.toLinearMap := by
+  let r := (Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+    (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum hrad).ge
+  let V' := pullback V.hom r
+  have hpush_V := isPushout_appTop_pullback_puncturedSpectrum_of_flat hfg hrad V
+  let f_alg : Γ(V.left, ⊤) →ₐ[A] Γ(V', ⊤) :=
+    { toRingHom := (pullback.fst V.hom r).appTop.hom
+      commutes' a := by
+        have hw := congrArg (fun φ ↦ φ.hom a) hpush_V.w
+        simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply] at hw
+        rw [haM, IsScalarTower.algebraMap_apply A A' Γ(V', ⊤), haP]
+        exact hw }
+  refine ⟨f_alg, rfl, ?_⟩
+  let : Algebra Γ(V.left, ⊤) Γ(V', ⊤) := f_alg.toRingHom.toAlgebra
+  have : IsScalarTower A Γ(V.left, ⊤) Γ(V', ⊤) :=
+    .of_algebraMap_eq fun a ↦ (f_alg.commutes a).symm
+  have hpush_V' :
+      IsPushout (CommRingCat.ofHom (algebraMap A Γ(V.left, ⊤)))
+        (CommRingCat.ofHom (algebraMap A A')) (pullback.fst V.hom r).appTop
+        (CommRingCat.ofHom (algebraMap A' Γ(V', ⊤))) := by
+    rwa [haM, haP, CommRingCat.ofHom_hom, CommRingCat.ofHom_hom]
+  have hpush_alg : Algebra.IsPushout A Γ(V.left, ⊤) A' Γ(V', ⊤) :=
+    (CommRingCat.isPushout_iff_isPushout (R := A) (R' := Γ(V.left, ⊤))
+      (S := A') (S' := Γ(V', ⊤))).mp hpush_V'
+  have htoAlg : IsScalarTower.toAlgHom A Γ(V.left, ⊤) Γ(V', ⊤) = f_alg := by
+    ext x
+    rw [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, AlgHom.coe_mk]
+  exact htoAlg ▸ hpush_alg.symm.out
+
 /-- Global-sections reconstruction step for `finite_extend_of_bijective_quotientMap`: produces a
 module-finite `A`-algebra `B`, ring homomorphisms `b'Hom : B →+* Γ(Y'.left, ⊤)` and
 `ψ : B →+* Γ(V.left, ⊤)`, and a base-change isomorphism `Spec B ×_{Spec A} Spec A' ≅ Y'` over
@@ -238,46 +276,27 @@ private theorem exists_finite_algebra_of_bijective_quotientMap
     map_maximalIdeal_of_bijective_quotientMap hquot
   have hrad : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A' :=
     radical_map_maximalIdeal_of_bijective_quotientMap hquot
-  have : IsLocalHom (algebraMap A A') := isLocalHom_of_bijective_quotientMap hquot
-  have : Module.FaithfullyFlat A A' := .of_flat_of_isLocalHom
+  have : Module.FaithfullyFlat A A' := faithfullyFlat_of_bijective_quotientMap hquot
   let U := puncturedSpectrum A
   let U' := puncturedSpectrum A'
-  let f := Spec.map (CommRingCat.ofHom (algebraMap A A'))
-  let r := f.resLE U U' (preimage_puncturedSpectrum hrad).ge
+  let r := (Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE U U'
+    (preimage_puncturedSpectrum hrad).ge
   let V' := pullback V.hom r
   let π' : V' ⟶ U'.toScheme := pullback.snd V.hom r
   have : IsAffine Y'.left := isAffine_of_isAffineHom Y'.hom
-  -- Equip `Γ(V, ⊤)`, `Γ(V', ⊤)`, and `Γ(Y', ⊤)` with their canonical base-ring algebra structures.
-  let aMapM : A →+* Γ(V.left, ⊤) :=
-    ((Scheme.ΓSpecIso (.of A)).inv ≫ (V.hom ≫ U.ι).appTop).hom
-  let aMapP : A' →+* Γ(V', ⊤) :=
-    ((Scheme.ΓSpecIso (.of A')).inv ≫ (π' ≫ U'.ι).appTop).hom
-  let aMapB' : A' →+* Γ(Y'.left, ⊤) :=
-    ((Scheme.ΓSpecIso (.of A')).inv ≫ Y'.hom.appTop).hom
+  -- Step 1: Equip `Γ(V, ⊤)`, `Γ(V', ⊤)`, and `Γ(Y', ⊤)` with their base-ring algebra structures
+  -- and obtain the base-change map `f_alg : Γ(V, ⊤) →ₐ[A] Γ(V', ⊤)` from flat base change.
+  let aMapM : A →+* Γ(V.left, ⊤) := ((Scheme.ΓSpecIso (.of A)).inv ≫ (V.hom ≫ U.ι).appTop).hom
+  let aMapP : A' →+* Γ(V', ⊤) := ((Scheme.ΓSpecIso (.of A')).inv ≫ (π' ≫ U'.ι).appTop).hom
+  let aMapB' : A' →+* Γ(Y'.left, ⊤) := ((Scheme.ΓSpecIso (.of A')).inv ≫ Y'.hom.appTop).hom
   algebraize [aMapM, aMapP, aMapP.comp (algebraMap A A'), aMapB', aMapB'.comp (algebraMap A A')]
   have : IsScalarTower A A' Γ(V', ⊤) := IsScalarTower.of_algebraMap_eq' rfl
   have : IsScalarTower A A' Γ(Y'.left, ⊤) := IsScalarTower.of_algebraMap_eq' rfl
-  -- Flat base change identifies `Γ(V', ⊤)` with `A' ⊗[A] Γ(V, ⊤)`.
-  have hpush_V := isPushout_appTop_pullback_puncturedSpectrum_of_flat hfg hrad V
-  let f_alg : Γ(V.left, ⊤) →ₐ[A] Γ(V', ⊤) :=
-    { toRingHom := (pullback.fst V.hom r).appTop.hom
-      commutes' a := by
-        have hw := congrArg (fun φ ↦ φ.hom a) hpush_V.w
-        simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply] at hw
-        rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra]
-        exact hw }
-  have hf_bc : IsBaseChange A' f_alg.toLinearMap := by
-    let : Algebra Γ(V.left, ⊤) Γ(V', ⊤) := f_alg.toRingHom.toAlgebra
-    have : IsScalarTower A Γ(V.left, ⊤) Γ(V', ⊤) :=
-      .of_algebraMap_eq fun a ↦ (f_alg.commutes a).symm
-    have hpush_alg : Algebra.IsPushout A Γ(V.left, ⊤) A' Γ(V', ⊤) :=
-      (CommRingCat.isPushout_iff_isPushout (R := A) (R' := Γ(V.left, ⊤))
-        (S := A') (S' := Γ(V', ⊤))).mp hpush_V
-    have htoAlg : IsScalarTower.toAlgHom A Γ(V.left, ⊤) Γ(V', ⊤) = f_alg := by
-      ext x
-      rw [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, AlgHom.coe_mk]
-    exact htoAlg ▸ hpush_alg.symm.out
-  -- Construct `g_alg : Γ(Y'.left, ⊤) →ₐ[A'] Γ(V', ⊤)` from the open immersion `j' : V' ⟶ Y'`.
+  obtain ⟨f_alg, hf_alg, hf_bc⟩ :=
+    exists_algHom_isBaseChange_pullback_puncturedSpectrum hfg hrad V rfl rfl
+  -- Step 2: Build `g_alg : Γ(Y', ⊤) →ₐ[A'] Γ(V', ⊤)` from the open immersion `j' : V' ⟶ Y'`,
+  -- which becomes bijective after inverting the image of each generator in a finite spanning set
+  -- `G` of `𝔪_A`.
   let j' : V' ⟶ Y'.left := e'.inv.left ≫ pullback.fst Y'.hom U'.ι
   have hj'_comm : j' ≫ Y'.hom = π' ≫ U'.ι := by
     have hw := Over.w e'.inv
@@ -301,95 +320,115 @@ private theorem exists_finite_algebra_of_bijective_quotientMap
       Function.Bijective (LocalizedModule.map (.powers (algebraMap A A' x)) g_alg.toLinearMap) :=
     bijective_localizedModuleMap_pullback_puncturedSpectrum hfg hmap hrad V Y' e' rfl g_alg rfl
       (hmap ▸ Ideal.mem_map_of_mem _ (hG_span ▸ Ideal.subset_span hx))
-  -- Reconstruct the `A`-subalgebra `B ≤ Γ(Y', ⊤)` and descend finiteness from `Γ(Y', ⊤)` over `A'`.
+  -- Step 3: Reconstruct the `A`-subalgebra `B ≤ Γ(Y', ⊤)` by formal gluing, descend finiteness
+  -- along `A → A'`, and form the affine base-change isomorphism via `pullbackSpecIsoOfIsPushout`.
   obtain ⟨B, ψ, hpush, hcomp, _⟩ :=
     TauCeti.exists_subalgebra_isPushout_of_formalGlueing hG_quot f_alg hf_bc g_alg hg_loc
   have : Module.Finite A' Γ(Y'.left, ⊤) := Y'.hom.moduleFinite_appTop rfl
   have : Module.Finite A' (A' ⊗[A] B) :=
     Module.Finite.equiv (Algebra.IsPushout.equiv A A' B Γ(Y'.left, ⊤)).symm.toLinearEquiv
   have hB_fin : Module.Finite A B := Module.Finite.of_finite_tensorProduct_of_faithfullyFlat A'
-  obtain ⟨eSpec, heSpec_fst⟩ :=
-    TauCeti.AlgebraicGeometry.exists_pullbackSpecIso_of_isPushout A B A' Y' rfl
+  let eSpec := TauCeti.AlgebraicGeometry.pullbackSpecIsoOfIsPushout A B A' Y' rfl
   have hb' : algebraMap B Γ(Y'.left, ⊤) = B.val.toRingHom := by
     rw [B.algebraMap_eq, Algebra.algebraMap_self, RingHom.id_comp, AlgHom.toRingHom_eq_coe]
   have hcomp_ring : (pullback.fst V.hom r).appTop.hom.comp ψ.toRingHom =
       j'.appTop.hom.comp (algebraMap B Γ(Y'.left, ⊤)) := by
-    rw [hb']
+    rw [← hf_alg, hb']
     exact congrArg AlgHom.toRingHom hcomp
   exact ⟨B, inferInstance, inferInstance, hB_fin, algebraMap B Γ(Y'.left, ⊤), ψ.toRingHom, eSpec,
-    RingHom.ext ψ.commutes, hcomp_ring, heSpec_fst⟩
+    RingHom.ext ψ.commutes, hcomp_ring,
+    TauCeti.AlgebraicGeometry.pullbackSpecIsoOfIsPushout_inv_left_fst A B A' Y' rfl⟩
 
-omit [Module.Flat A A'] in
-/-- Over the punctured spectrum `U'` of `A'`, the base change of the comparison morphism
-`Φ : V ⟶ (Spec B) ×_{Spec A} U` agrees with the inverse of the given identification `e'`,
-transported along `eY'` and `overRestrictPuncturedCompPullbackIso`. -/
+omit [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A'] [Algebra A A']
+  [Module.Flat A A'] in
+/-- Projection to `Spec B` of the base change along `r : U' ⟶ U` of the comparison morphism
+`V ⟶ (Spec B) ×_S U` induced by `ψ : B →+* Γ(V, ⊤)`. -/
+private theorem overPullback_map_homMk_lift_fst_fst
+    {S U U' : Scheme.{u}} {i : U ⟶ S} {r : U' ⟶ U} {B : Type u} [CommRing B]
+    {q : Spec (.of B) ⟶ S} (V : Over U) (ψ : B →+* Γ(V.left, ⊤))
+    (hjV : (V.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom ψ)) ≫ q = V.hom ≫ i) :
+    (((Over.pullback r).map
+      (Over.homMk (pullback.lift (V.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom ψ)) V.hom hjV)
+        (pullback.lift_snd _ _ _) : V ⟶ (Over.pullback i).obj (Over.mk q))).left ≫
+      pullback.fst (pullback.snd q i) r) ≫ pullback.fst q i =
+    (pullback V.hom r).toSpecΓ ≫
+      Spec.map (CommRingCat.ofHom ((pullback.fst V.hom r).appTop.hom.comp ψ)) := by
+  simp only [Over.pullback_map_left, Over.pullback_obj_left, Over.pullback_obj_hom, Over.mk_hom,
+    Over.homMk_left, Category.assoc, pullback.lift_fst]
+  rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp, CommRingCat.ofHom_comp,
+    CommRingCat.ofHom_hom]
+
+omit [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A'] [Algebra A A']
+  [Module.Flat A A'] in
+/-- Projection to `Spec B` of `e'.inv` followed by `(Over.pullback i').map eY'.inv` and the
+inverse base-change symmetry `Over.pullbackPullbackIsoOfComm hcomm`. -/
+private theorem overPullback_pullbackPullbackIsoOfComm_inv_fst_fst
+    {S S' U U' : Scheme.{u}} {i : U ⟶ S} {i' : U' ⟶ S'} {f : S' ⟶ S} {r : U' ⟶ U}
+    (hcomm : r ≫ i = i' ≫ f) {B : Type u} [CommRing B] {q : Spec (.of B) ⟶ S}
+    (V : Over U) (Y' : Over S') (b'Hom : B →+* Γ(Y'.left, ⊤))
+    (e' : (Over.pullback i').obj Y' ≅ (Over.pullback r).obj V)
+    (eY' : (Over.pullback f).obj (Over.mk q) ≅ Y')
+    (heY'_fst : eY'.inv.left ≫ pullback.fst q f =
+      Y'.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom b'Hom)) :
+    ((e'.inv ≫ (Over.pullback i').map eY'.inv ≫
+        (Over.pullbackPullbackIsoOfComm hcomm).inv.app (Over.mk q)).left ≫
+      pullback.fst (pullback.snd q i) r) ≫ pullback.fst q i =
+    (pullback V.hom r).toSpecΓ ≫
+      Spec.map (CommRingCat.ofHom
+        ((e'.inv.left ≫ pullback.fst Y'.hom i').appTop.hom.comp b'Hom)) := by
+  have hfst := Over.pullbackPullbackIsoOfComm_inv_app_left_fst hcomm (Over.mk q)
+  dsimp only [Over.mk_hom] at hfst
+  simp only [Over.comp_left, Category.assoc, hfst, Over.pullback_map_left,
+    Over.pullback_obj_hom, Over.mk_hom, pullback.lift_fst_assoc, heY'_fst]
+  rw [← Category.assoc e'.inv.left, Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp,
+    CommRingCat.ofHom_comp, CommRingCat.ofHom_hom]
+  dsimp only [Over.pullback_obj_left]
+
+omit [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A'] [Algebra A A']
+  [Module.Flat A A'] in
+/-- Over `U'`, the base change of the comparison morphism `Φ : V ⟶ (Spec B) ×_S U` agrees with the
+inverse of `e'` transported along `eY'` and `Over.pullbackPullbackIsoOfComm hcomm`. -/
 private theorem overPullback_map_homMk_lift_eq
-    (hrad : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A')
-    {B : Type u} [CommRing B] [Algebra A B]
-    (V : Over (puncturedSpectrum A).toScheme)
-    (Y' : Over (Spec (.of A')))
-    (b'Hom : B →+* Γ(Y'.left, ⊤)) (ψ : B →+* Γ(V.left, ⊤)) :
-    let U := puncturedSpectrum A
-    let U' := puncturedSpectrum A'
-    let f := Spec.map (CommRingCat.ofHom (algebraMap A A'))
-    let r := f.resLE U U' (preimage_puncturedSpectrum hrad).ge
-    let q := Spec.algebraMap A B
-    let Y : Over (Spec (.of A)) := Over.mk q
-    let jV : V.left ⟶ Spec (.of B) := V.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom ψ)
-    ∀ (e' : (Over.pullback U'.ι).obj Y' ≅ (Over.pullback r).obj V)
-      (eY' : (Over.pullback f).obj Y ≅ Y')
-      (hjV : jV ≫ q = V.hom ≫ U.ι),
-      (pullback.fst V.hom r).appTop.hom.comp ψ =
-        (e'.inv.left ≫ pullback.fst Y'.hom U'.ι).appTop.hom.comp b'Hom →
-      eY'.inv.left ≫ pullback.fst q f = Y'.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom b'Hom) →
-      (Over.pullback r).map (Over.homMk (pullback.lift jV V.hom hjV) (pullback.lift_snd _ _ _) :
-        V ⟶ (Over.pullback U.ι).obj Y) =
-        e'.inv ≫ (Over.pullback U'.ι).map eY'.inv ≫
-          (overRestrictPuncturedCompPullbackIso hrad).inv.app Y := by
-  intro U U' f r q Y jV e' eY' hjV hcomp_ring heY'_fst
-  set Φ : V ⟶ (Over.pullback U.ι).obj Y :=
-    Over.homMk (pullback.lift jV V.hom hjV) (pullback.lift_snd _ _ _)
+    {S S' U U' : Scheme.{u}} {i : U ⟶ S} {i' : U' ⟶ S'} {f : S' ⟶ S} {r : U' ⟶ U}
+    (hcomm : r ≫ i = i' ≫ f) {B : Type u} [CommRing B] {q : Spec (.of B) ⟶ S}
+    (V : Over U) (Y' : Over S') (b'Hom : B →+* Γ(Y'.left, ⊤)) (ψ : B →+* Γ(V.left, ⊤))
+    (e' : (Over.pullback i').obj Y' ≅ (Over.pullback r).obj V)
+    (eY' : (Over.pullback f).obj (Over.mk q) ≅ Y')
+    (hjV : (V.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom ψ)) ≫ q = V.hom ≫ i)
+    (hcomp_ring : (pullback.fst V.hom r).appTop.hom.comp ψ =
+      (e'.inv.left ≫ pullback.fst Y'.hom i').appTop.hom.comp b'Hom)
+    (heY'_fst : eY'.inv.left ≫ pullback.fst q f =
+      Y'.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom b'Hom)) :
+    (Over.pullback r).map
+      (Over.homMk (pullback.lift (V.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom ψ)) V.hom hjV)
+        (pullback.lift_snd _ _ _) : V ⟶ (Over.pullback i).obj (Over.mk q)) =
+    e'.inv ≫ (Over.pullback i').map eY'.inv ≫
+      (Over.pullbackPullbackIsoOfComm hcomm).inv.app (Over.mk q) := by
+  set Φ : V ⟶ (Over.pullback i).obj (Over.mk q) :=
+    Over.homMk (pullback.lift (V.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom ψ)) V.hom hjV)
+      (pullback.lift_snd _ _ _)
   have hw1 := Over.w ((Over.pullback r).map Φ)
-  have hw2 := Over.w (e'.inv ≫ (Over.pullback U'.ι).map eY'.inv ≫
-    (overRestrictPuncturedCompPullbackIso hrad).inv.app Y)
-  dsimp only [Functor.comp_obj, Over.pullback_obj_hom, Over.mk_hom, Y] at hw1 hw2
+  have hw2 := Over.w (e'.inv ≫ (Over.pullback i').map eY'.inv ≫
+    (Over.pullbackPullbackIsoOfComm hcomm).inv.app (Over.mk q))
+  dsimp only [Functor.comp_obj, Over.pullback_obj_hom, Over.mk_hom] at hw1 hw2
+  -- Check equality in `Over U'` on the underlying morphisms into `(Spec B ×_S U) ×_U U'`,
+  -- splitting along the outer pullback projections (to `Spec B ×_S U` and to `U'`) and then
+  -- the inner pullback projections (to `Spec B` and to `U`).
   ext1
   apply pullback.hom_ext
   · apply pullback.hom_ext
-    · dsimp only [Over.pullback_obj_hom, Over.mk_hom, Y]
-      simp only [Category.assoc]
-      have hL : ((Over.pullback r).map Φ).left ≫
-          pullback.fst (pullback.snd q U.ι) r ≫ pullback.fst q U.ι =
-          (pullback V.hom r).toSpecΓ ≫
-            Spec.map (CommRingCat.ofHom ((pullback.fst V.hom r).appTop.hom.comp ψ)) := by
-        have hΦ_left : Φ.left = pullback.lift jV V.hom hjV := rfl
-        simp only [Over.pullback_map_left]
-        dsimp only [Over.pullback_obj_left, Over.pullback_obj_hom, Over.mk_hom, Y]
-        rw [pullback.lift_fst_assoc, Category.assoc, hΦ_left, pullback.lift_fst]
-        dsimp only [jV]
-        rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp, CommRingCat.ofHom_comp,
-          CommRingCat.ofHom_hom]
-      have hR_step : ((overRestrictPuncturedCompPullbackIso hrad).inv.app Y).left ≫
-          pullback.fst (pullback.snd q U.ι) r ≫ pullback.fst q U.ι =
-          pullback.fst (pullback.snd q f) U'.ι ≫ pullback.fst q f :=
-        Over.pullbackPullbackIsoOfComm_inv_app_left_fst _ Y
-      have hR : (e'.inv ≫ (Over.pullback U'.ι).map eY'.inv ≫
-          (overRestrictPuncturedCompPullbackIso hrad).inv.app Y).left ≫
-          pullback.fst (pullback.snd q U.ι) r ≫ pullback.fst q U.ι =
-          (pullback V.hom r).toSpecΓ ≫
-            Spec.map (CommRingCat.ofHom
-              ((e'.inv.left ≫ pullback.fst Y'.hom U'.ι).appTop.hom.comp b'Hom)) := by
-        simp only [Over.comp_left, Category.assoc, hR_step, Over.pullback_map_left]
-        dsimp only [Over.pullback_obj_hom, Over.mk_hom, Y, q, f]
-        rw [pullback.lift_fst_assoc, Category.assoc, heY'_fst, ← Category.assoc e'.inv.left,
-          Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp, CommRingCat.ofHom_comp,
-          CommRingCat.ofHom_hom]
-        dsimp only [Over.pullback_obj_left]
-      rw [hL, hR, hcomp_ring]
-    · dsimp only [Over.pullback_obj_hom, Over.mk_hom, Y]
+    · -- Projection to `Spec B`: both sides reduce to `(pullback V.hom r).toSpecΓ ≫ Spec.map _`
+      -- and agree by `hcomp_ring`.
+      dsimp only [Over.pullback_obj_hom, Over.mk_hom]
+      rw [overPullback_map_homMk_lift_fst_fst V ψ hjV,
+        overPullback_pullbackPullbackIsoOfComm_inv_fst_fst hcomm V Y' b'Hom e' eY' heY'_fst,
+        hcomp_ring]
+    · -- Projection to `U`: follows from the `Over U'` structure triangles `hw1` and `hw2`.
+      dsimp only [Over.pullback_obj_hom, Over.mk_hom]
       rw [Category.assoc, pullback.condition, ← Category.assoc, hw1,
         Category.assoc, pullback.condition, ← Category.assoc, hw2]
-  · exact hw1.trans hw2.symm
+  · -- Projection to `U'`: both sides equal the `Over U'` structure morphism of `V ×_U U'`.
+    exact hw1.trans hw2.symm
 
 /-- **Extending a finite morphism across the closed point along a flat homomorphism inducing
 `A ⧸ 𝔪_A ≅ A' ⧸ 𝔪_A A'`.** Let `A → A'` be a flat homomorphism of local rings, with `𝔪_A` finitely
@@ -412,8 +451,9 @@ theorem finite_extend_of_bijective_quotientMap
     ∃ (Y : Over (Spec (.of A))) (_ : IsFinite Y.hom)
       (eY' : (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A')))).obj Y ≅ Y')
       (eV : (Over.pullback (puncturedSpectrum A).ι).obj Y ≅ V),
-      (overRestrictPuncturedCompPullbackIso
-        (radical_map_maximalIdeal_of_bijective_quotientMap hquot)).hom.app Y ≫
+      (Over.pullbackPullbackIsoOfComm (Scheme.Hom.resLE_comp_ι _
+        (preimage_puncturedSpectrum
+          (radical_map_maximalIdeal_of_bijective_quotientMap hquot)).ge)).hom.app Y ≫
         (Over.pullback (puncturedSpectrum A').ι).map eY'.hom ≫ e'.hom =
       (Over.pullback ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
         (puncturedSpectrum A) (puncturedSpectrum A')
@@ -421,20 +461,20 @@ theorem finite_extend_of_bijective_quotientMap
           (radical_map_maximalIdeal_of_bijective_quotientMap hquot)).ge)).map eV.hom := by
   have hrad : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A' :=
     radical_map_maximalIdeal_of_bijective_quotientMap hquot
-  have : IsLocalHom (algebraMap A A') := isLocalHom_of_bijective_quotientMap hquot
-  have : Module.FaithfullyFlat A A' := .of_flat_of_isLocalHom
   let U := puncturedSpectrum A
   let U' := puncturedSpectrum A'
   let f := Spec.map (CommRingCat.ofHom (algebraMap A A'))
   let r := f.resLE U U' (preimage_puncturedSpectrum hrad).ge
   have hU : IsPullback r U'.ι U.ι f :=
     f.isPullback_resLE_of_eq U (preimage_puncturedSpectrum hrad).symm
+  -- Step 1: Reconstruct the finite `A`-algebra `B` and its base-change isomorphism `eY'` over `A'`.
   obtain ⟨B, _, _, _, b'Hom, ψ, eY', hψA, hcomp_ring, heY'_fst⟩ :=
     exists_finite_algebra_of_bijective_quotientMap hfg hquot V Y' e'
   let q : Spec (.of B) ⟶ Spec (.of A) := Spec.algebraMap A B
   have : IsFinite q := (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr inferInstance)
   let Y : Over (Spec (.of A)) := Over.mk q
-  -- Build the comparison morphism `Φ : V ⟶ Y ×_{Spec A} U` over `U`.
+  -- Step 2: Build the comparison morphism `Φ : V ⟶ Y ×_{Spec A} U` over `U` and identify its
+  -- pullback along `r : U' ⟶ U` with the inverse of `e'` composed with `eY'.inv`.
   let jV : V.left ⟶ Spec (.of B) := V.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom ψ)
   have hjV : jV ≫ q = V.hom ≫ U.ι := by
     dsimp only [jV, q, Spec.algebraMap]
@@ -442,12 +482,17 @@ theorem finite_extend_of_bijective_quotientMap
     exact (V.hom ≫ U.ι).toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop
   let Φ : V ⟶ (Over.pullback U.ι).obj Y :=
     Over.homMk (pullback.lift jV V.hom hjV) (pullback.lift_snd _ _ _)
-  have hΦ_pull := overPullback_map_homMk_lift_eq hrad V Y' b'Hom ψ e' eY' hjV hcomp_ring heY'_fst
-  -- Descend `IsIso` from `(Over.pullback r).map Φ` along the fpqc morphism `r`.
-  have : Flat f := Flat.SpecMap_iff.mpr (RingHom.flat_algebraMap_iff.mpr ‹Module.Flat A A'›)
-  have : Surjective f := ⟨PrimeSpectrum.comap_surjective_of_faithfullyFlat⟩
-  have : Surjective r := MorphismProperty.of_isPullback hU.flip ‹Surjective f›
-  have : Flat r := MorphismProperty.of_isPullback hU.flip ‹Flat f›
+  have hΦ_pull : (Over.pullback r).map Φ =
+      e'.inv ≫ (Over.pullback (puncturedSpectrum A').ι).map eY'.inv ≫
+        (Over.pullbackPullbackIsoOfComm (Scheme.Hom.resLE_comp_ι _
+          (preimage_puncturedSpectrum hrad).ge)).inv.app Y :=
+    overPullback_map_homMk_lift_eq
+      (Scheme.Hom.resLE_comp_ι _ (preimage_puncturedSpectrum hrad).ge)
+      V Y' b'Hom ψ e' eY' hjV hcomp_ring heY'_fst
+  -- Step 3: Descend `IsIso` from `(Over.pullback r).map Φ` along the fpqc morphism `r : U' ⟶ U`.
+  obtain ⟨hf_flat, hf_surj⟩ := flat_and_surjective_SpecMap_of_bijective_quotientMap hquot
+  have : Surjective r := MorphismProperty.of_isPullback hU.flip hf_surj
+  have : Flat r := MorphismProperty.of_isPullback hU.flip hf_flat
   have : QuasiCompact r := MorphismProperty.of_isPullback hU.flip inferInstance
   have : IsIso ((Over.pullback r).map Φ) := by
     rw [hΦ_pull]
@@ -460,11 +505,11 @@ theorem finite_extend_of_bijective_quotientMap
     (Over.isoMk (asIso Φ.left) (Over.w Φ)).symm
   have heV_inv : eV.inv = Φ := by
     ext1
-    rfl
+    simp [eV]
   refine ⟨Y, ‹IsFinite q›, eY', eV, ?_⟩
   rw [← cancel_mono ((Over.pullback r).map eV.inv), ← Functor.map_comp, eV.hom_inv_id,
     CategoryTheory.Functor.map_id, heV_inv, hΦ_pull]
-  simp [Y, q, U, ← Functor.map_comp_assoc]
+  simp [← Functor.map_comp_assoc]
 
 omit [CommRing A'] [IsLocalRing A'] [Algebra A A'] [Module.Flat A A'] in
 /-- **Extending a finite morphism from the completion across the closed point** (Stacks, Lemma
@@ -481,30 +526,25 @@ theorem finite_extend_of_completion [IsNoetherianRing A]
       (Over.pullback
         ((Spec.map (CommRingCat.ofHom (algebraMap A (AdicCompletion (maximalIdeal A) A)))).resLE
           (puncturedSpectrum A) (puncturedSpectrum (AdicCompletion (maximalIdeal A) A))
-          (preimage_puncturedSpectrum (by
-            rw [← AdicCompletion.maximalIdeal_eq_map]
-            exact (maximalIdeal.isMaximal _).isPrime.radical)).ge)).obj V) :
+          (preimage_puncturedSpectrum
+            TauCeti.AdicCompletion.radical_map_maximalIdeal).ge)).obj V) :
     ∃ (Y : Over (Spec (.of A))) (_ : IsFinite Y.hom)
       (eY' : (Over.pullback
         (Spec.map (CommRingCat.ofHom (algebraMap A (AdicCompletion (maximalIdeal A) A))))).obj Y ≅
           Y')
       (eV : (Over.pullback (puncturedSpectrum A).ι).obj Y ≅ V),
-      (overRestrictPuncturedCompPullbackIso (A' := AdicCompletion (maximalIdeal A) A) (by
-        rw [← AdicCompletion.maximalIdeal_eq_map]
-        exact (maximalIdeal.isMaximal _).isPrime.radical)).hom.app Y ≫
+      (Over.pullbackPullbackIsoOfComm (Scheme.Hom.resLE_comp_ι _
+        (preimage_puncturedSpectrum
+          TauCeti.AdicCompletion.radical_map_maximalIdeal).ge)).hom.app Y ≫
         (Over.pullback (puncturedSpectrum (AdicCompletion (maximalIdeal A) A)).ι).map eY'.hom ≫
           e'.hom =
       (Over.pullback
         ((Spec.map (CommRingCat.ofHom (algebraMap A (AdicCompletion (maximalIdeal A) A)))).resLE
           (puncturedSpectrum A) (puncturedSpectrum (AdicCompletion (maximalIdeal A) A))
-          (preimage_puncturedSpectrum (by
-            rw [← AdicCompletion.maximalIdeal_eq_map]
-            exact (maximalIdeal.isMaximal _).isPrime.radical)).ge)).map eV.hom :=
+          (preimage_puncturedSpectrum
+            TauCeti.AdicCompletion.radical_map_maximalIdeal).ge)).map eV.hom :=
   finite_extend_of_bijective_quotientMap (maximalIdeal A).fg_of_isNoetherianRing
-    ((bijective_quotientMap_iff_map_maximalIdeal_eq_and_bijective_residueFieldMap
-      (algebraMap A _)).mpr
-      ⟨AdicCompletion.maximalIdeal_eq_map.symm, AdicCompletion.residueField_map_bijective A⟩)
-    V Y' e'
+    TauCeti.AdicCompletion.bijective_quotientMap_maximalIdeal V Y' e'
 
 end Extend
 

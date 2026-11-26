@@ -64,6 +64,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
   `Spec Γ(X, U) ⟶ X`.
 * `AlgebraicGeometry.Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE`: on an open `U` of `X`, the
   morphism `U ⟶ Spec Γ(X, U)` induces restriction of functions on the sections over opens of `U`.
+* `AlgebraicGeometry.Scheme.Hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop`: any morphism
+  `p : X ⟶ Spec R` factors through `X.toSpecΓ` followed by `Spec.map` of
+  `(ΓSpecIso R).inv ≫ p.appTop`.
 * `AlgebraicGeometry.Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE`: the map `Γ(B, V) ⟶ Γ(U, T)`
   induced by the structure morphism of an open subscheme `U` of `Z` over an affine open `V` of `B`
   is `k.appLE` followed by restriction to `T`.
@@ -265,6 +268,15 @@ theorem Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE {X : Scheme.{u}} (U : X.O
     -- Both sides restrict along the equality `U.ι ''ᵁ ⊤ = U`; morphisms of opens are unique.
     rfl
   rw [h₁, h₂, Scheme.Opens.toSpecΓ_appTop, Iso.inv_hom_id_assoc]
+
+/-- Any morphism `p : X ⟶ Spec R` factors through `X.toSpecΓ` followed by `Spec.map` of the
+induced ring map `R ⟶ Γ(X, ⊤)`. -/
+@[reassoc]
+theorem Scheme.Hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop {R : CommRingCat.{u}} {X : Scheme.{u}}
+    (p : X ⟶ Spec R) :
+    X.toSpecΓ ≫ Spec.map ((Scheme.ΓSpecIso R).inv ≫ p.appTop) = p := by
+  rw [Spec.map_comp, ← Scheme.toSpecΓ_naturality_assoc, toSpecΓ_SpecMap_ΓSpecIso_inv,
+    Category.comp_id]
 
 /-- The map `Γ(B, V) ⟶ Γ(U, T)` induced by the structure morphism `U ⟶ Spec Γ(B, V)` of an open
 subscheme `U` of `Z` over the affine open `V` of `B` is `k.appLE` followed by restriction to `T`. -/

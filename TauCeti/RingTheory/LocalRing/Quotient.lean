@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.Ideal.Cotangent
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.LocalRing.Quotient
@@ -44,9 +45,10 @@ residue field extension, whose degree is then the rank of a finite free `S`.
   `IsLocalRing.finrank_quotient_map`.
 * `TauCeti.IsLocalRing.map_maximalIdeal_of_bijective_quotientMap`,
   `TauCeti.IsLocalRing.isLocalHom_of_bijective_quotientMap`,
+  `TauCeti.IsLocalRing.faithfullyFlat_of_bijective_quotientMap`,
   `TauCeti.IsLocalRing.radical_map_maximalIdeal_of_bijective_quotientMap`: if `f : R →+* S` between
-  local rings induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S`, then `𝔪_R S = 𝔪_S` (so `f` is local and
-  `𝔪_R S` has radical `𝔪_S`), without assuming `f` is local.
+  local rings induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S`, then `𝔪_R S = 𝔪_S` (so `f` is local,
+  faithfully flat when flat, and `𝔪_R S` has radical `𝔪_S`), without assuming `f` is local.
 * `TauCeti.IsLocalRing.bijective_quotientMap_iff_map_maximalIdeal_eq_and_bijective_residueFieldMap`:
   for a local homomorphism `f : R →+* S`, `R ⧸ 𝔪_R → S ⧸ 𝔪_R S` is bijective if and only if
   `𝔪_R S = 𝔪_S` and `ResidueField.map f` is bijective.
@@ -244,6 +246,15 @@ theorem isLocalHom_of_bijective_quotientMap {f : R →+* S}
     (h : Function.Bijective (Ideal.quotientMap ((maximalIdeal R).map f) f Ideal.le_comap_map)) :
     IsLocalHom f :=
   ((local_hom_tfae f).out 1 3).mpr (map_maximalIdeal_of_bijective_quotientMap h).le
+
+/-- A flat homomorphism of local rings `R → S` that induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S` is
+faithfully flat. -/
+theorem faithfullyFlat_of_bijective_quotientMap [Algebra R S] [Module.Flat R S]
+    (h : Function.Bijective (Ideal.quotientMap ((maximalIdeal R).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map)) :
+    Module.FaithfullyFlat R S := by
+  have := isLocalHom_of_bijective_quotientMap h
+  exact .of_flat_of_isLocalHom
 
 /-- If a homomorphism `f : R →+* S` of local rings induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S`, then
 the closed point of `Spec S` is the only point over the closed point of `Spec R`. -/
