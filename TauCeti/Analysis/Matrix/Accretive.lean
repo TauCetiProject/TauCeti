@@ -19,7 +19,7 @@ is invertible and is congruent to a diagonal matrix with entries in the open rig
 
 The definition, invertibility and congruence arguments adapt the formalization in grh-lean,
 `src/Lib/General/Analysis/GaussianIntegral.lean` (see
-`TauCeti.Analysis.SpecialFunctions.Gaussian.Accretive` for provenance).
+`TauCeti.Analysis.SpecialFunctions.Gaussian.Accretive.Basic` for provenance).
 -/
 
 public section
