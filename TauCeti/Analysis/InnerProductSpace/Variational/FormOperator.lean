@@ -194,10 +194,7 @@ theorem exists_formOperator_apply_eq_smul_iff (hB : IsCoercive B) (hJ : DenseRan
     (hμ : μ + c ≠ 0) {x : H} :
     (∃ hx : x ∈ (hB.formOperator J c).domain, hB.formOperator J c ⟨x, hx⟩ = μ • x) ↔
       hB.formSolutionOperator J x = (μ + c)⁻¹ • x := by
-  have hgraph : (∃ hx : x ∈ (hB.formOperator J c).domain,
-      hB.formOperator J c ⟨x, hx⟩ = μ • x) ↔ (x, μ • x) ∈ (hB.formOperator J c).graph := by
-    simp only [mem_graph_iff, Subtype.exists, exists_and_left, exists_eq_left]
-  rw [hgraph, hB.mem_graph_formOperator_iff_formSolutionOperator hJ]
+  rw [exists_apply_eq_iff_mem_graph, hB.mem_graph_formOperator_iff_formSolutionOperator hJ]
   simp only
   rw [← add_smul, _root_.map_smul]
   exact (eq_inv_smul_iff₀ hμ).symm
