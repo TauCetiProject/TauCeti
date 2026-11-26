@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Higher
 import TauCeti.Analysis.Sobolev.Local.Reflection.Tangential
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
@@ -303,7 +304,7 @@ theorem IsWeakCRSolution.memWkpLoc_succ_of_crReflection [FiniteDimensional ℝ V
     (hη : MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k η) :
     MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) ξ := by
   have hq : 1 < q := by
-    have : (1 : ℝ≥0∞) < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
+    have : (1 : ℝ≥0∞) < q := ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
     exact_mod_cast this
   have hDJ := hasWeakFDerivOn_of_crReflectionCoeff hc
   induction k generalizing S ξ η with

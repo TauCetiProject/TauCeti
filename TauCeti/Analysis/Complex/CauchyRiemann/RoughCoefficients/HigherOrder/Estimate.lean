@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Estimate
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.Data.ENNReal.Mul
 import TauCeti.Topology.Sets.Opens
 
@@ -209,7 +210,7 @@ theorem CRInteriorEstimate.succ [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 
       CRInteriorEstimate V p q k M Ω U)
     {Ω : Opens ℂ} {U : Set ℂ} (hUc : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) :
     CRInteriorEstimate V p q (k + 1) M Ω U := by
-  have hq1 : (1 : ℝ≥0∞) < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
+  have hq1 : (1 : ℝ≥0∞) < q := ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
   have hq : 1 < q := by exact_mod_cast hq1
   -- Nested open sets `U ⋐ W₂ ⋐ W₁ ⋐ W ⋐ Ω` and the constants of the estimates used on them.
   obtain ⟨W, hUW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hUc hUΩ
@@ -269,7 +270,7 @@ theorem crInteriorEstimate_zero [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 
     (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hqp : q ≤ p) {Ω : Opens ℂ} {U : Set ℂ}
     (hUc : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) :
     CRInteriorEstimate V p q 0 M Ω U := by
-  have hq1 : (1 : ℝ≥0∞) < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
+  have hq1 : (1 : ℝ≥0∞) < q := ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le (V := V)
     (by exact_mod_cast hp) hpq hq1
     ENNReal.coe_ne_top (by exact_mod_cast hqp) hUc hUΩ M

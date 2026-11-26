@@ -15,6 +15,7 @@ import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Bound
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Higher
 import TauCeti.Analysis.Sobolev.Local.Reflection
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.Data.ENNReal.Mul
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
@@ -48,7 +49,9 @@ estimate accompanies the qualitative regularity `TauCeti.IsWeakCRSolutionHalf.me
 
 The estimate is proved for the twisted reflection of `ξ` solving the reflected equation on `Ω`,
 by induction on `k`, following the qualitative induction
-`TauCeti.IsWeakCRSolution.memWkpLoc_succ_of_crReflection`. For the step from `k` to `k + 1`, take
+`TauCeti.IsWeakCRSolution.memWkpLoc_succ_of_crReflection`. The quantitative induction mirrors the
+interior estimate `TauCeti.CRInteriorEstimate` and its step `TauCeti.CRInteriorEstimate.succ`, with
+the half-disc product bounds in place of the interior ones. For the step from `k` to `k + 1`, take
 nested open sets `U ⋐ W₂ ⋐ W₁ ⋐ W ⋐ W' ⋐ Ω`, all but `W₂` invariant under conjugation
 (`TauCeti.exists_mapsTo_conj_between_and_isCompact_closure`).
 
@@ -97,7 +100,8 @@ variable (V) in
 whenever the twisted reflection of `ξ` solves the reflected equation on `Ω`, the reflected
 coefficients are Sobolev coefficients on `Ω`, `J² = -1` on `Ω⁺`, the reflection of `J` has
 `W^{1,p}(Ω)` norm at most `M`, `J` and `S` have `W^{k,p}(Ω⁺)` norms at most `M`, and
-`η ∈ W^{k,q}_loc(Ω⁺)`, then `‖ξ‖_{W^{k+1,q}(U⁺)} ≤ C (‖η‖_{W^{k,q}(Ω⁺)} + ‖ξ‖_{L^q(Ω⁺)})`. -/
+`η ∈ W^{k,q}_loc(Ω⁺)`, then `‖ξ‖_{W^{k+1,q}(U⁺)} ≤ C (‖η‖_{W^{k,q}(Ω⁺)} + ‖ξ‖_{L^q(Ω⁺)})`.
+This is the analogue up to the real axis of the interior `TauCeti.CRInteriorEstimate`. -/
 private def CRReflectedBound (R : V ≃ₗᵢ[ℝ] V) (p q : ℝ≥0∞) (k : ℕ) (M : ℝ≥0) (Ω : Opens ℂ)
     (U : Set ℂ) (C : ℝ≥0) : Prop :=
   ∀ (J S : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (ξ η : ℂ → V),
@@ -130,7 +134,7 @@ private theorem crReflectedEstimate_zero [FiniteDimensional ℝ V] {p q : ℝ≥
     (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hqp : q ≤ p) {Ω : Opens ℂ}
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {U : Set ℂ} (hUc : IsCompact (closure U))
     (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) : CRReflectedEstimate V R p q 0 M Ω U := by
-  have hq1 : (1 : ℝ≥0∞) < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
+  have hq1 : (1 : ℝ≥0∞) < q := ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
   have hp1 : (1 : ℝ≥0∞) ≤ p := hq1.le.trans (by exact_mod_cast hqp)
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le (V := V)
     (by exact_mod_cast hp) hpq hq1 ENNReal.coe_ne_top (by exact_mod_cast hqp) hUc hUΩ (2 * M)
@@ -210,8 +214,7 @@ private theorem crReflection_tangential_step [FiniteDimensional ℝ V] {p q : �
         (fun z => Dη z 1 - DJ z 1 (J z (S z (ξ z) - η z)) - DS z 1 (ξ z)) ∧
       ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}),
         Dξ z I = J z (Dξ z 1 + S z (ξ z) - η z) := by
-  have hq : 1 < q := by
-    exact_mod_cast (ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq) : (1 : ℝ≥0∞) < q)
+  have hq : 1 < q := by exact_mod_cast ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
   have hDJ := hasWeakFDerivOn_of_crReflectionCoeff hc
   have hw := memWkpLoc_one_twistedReflection hΩ hp hq hJ2 hpq hqp h hc hη.memLpLoc
   have hDJ1 := (hJk.memWkpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg hDJ).clm_comp
@@ -375,8 +378,7 @@ private theorem eLpNormWkp_succ_succ_le_of_crReflection [FiniteDimensional ℝ V
           (Cb * (1 + Cp * (CM * M * M) * (Cσ * M * Ca + 1) + Cp * M * Ca + Ca) +
             (Cσ * M * Ca + 1))))) := by
   intro J S DJ ξ η h hc hJ2 hJ1 hJM hSM hη
-  have hq : 1 < q := by
-    exact_mod_cast (ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq) : (1 : ℝ≥0∞) < q)
+  have hq : 1 < q := by exact_mod_cast ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
   have hH (X Y : Set ℂ) (hXY : X ⊆ Y) : X ∩ {z : ℂ | 0 ≤ z.im} ⊆ Y ∩ {z | 0 ≤ z.im} :=
     inter_subset_inter_left _ hXY
   have hW₁W' : W₁ ≤ W' := hW₁le.trans hWle
@@ -432,8 +434,7 @@ private theorem crReflectedEstimate_succ [FiniteDimensional ℝ V] {p q : ℝ≥
       IsCompact (closure U) → closure U ⊆ Ω → CRReflectedEstimate V R p q k M Ω U)
     {Ω : Opens ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {U : Set ℂ} (hUc : IsCompact (closure U))
     (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) : CRReflectedEstimate V R p q (k + 1) M Ω U := by
-  have hq : 1 < q := by
-    exact_mod_cast (ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq) : (1 : ℝ≥0∞) < q)
+  have hq : 1 < q := by exact_mod_cast ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
   -- Nested open sets `U ⋐ W₂ ⋐ W₁ ⋐ W ⋐ W' ⋐ Ω`, all but `W₂` invariant under conjugation.
   obtain ⟨W', hW'c, hUW', hW'Ω, hW'cc⟩ :=
     exists_mapsTo_conj_between_and_isCompact_closure hUc hΩ hUΩ

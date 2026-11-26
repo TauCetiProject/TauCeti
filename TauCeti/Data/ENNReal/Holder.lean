@@ -13,11 +13,12 @@ public import Mathlib.Basic.Real.ConjExponents
 
 Elementary facts about Hölder exponents: the missing exponent `r` of a triple with
 `1/p + 1/r = 1/q` exists once `q ≤ p`; the Hölder condition `1/p + 1/q ≤ 1` bounds both
-exponents below by `1` and the conjugate exponent of `p` above by `q`; the conjugate exponent
-is antitone, finite for `p > 1` and greater than `1` for finite `p`; and the exponent
-conjugate to `p > 2` is less than `2`, as for the supercritical exponents of planar Sobolev and
-Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2`. An exponent
-`p > 2` satisfies `1/p + 1/p < 1`. In `ℝ≥0`, the only exponent conjugate to `2` is `2`.
+exponents below by `1` and the conjugate exponent of `p` above by `q`, and the strict condition
+`1/p + 1/q < 1` gives `1 < q`; the conjugate exponent is antitone, finite for `p > 1` and
+greater than `1` for finite `p`; and the exponent conjugate to `p > 2` is less than `2`, as for the
+supercritical exponents of planar Sobolev and Cauchy-transform estimates, while the exponent
+conjugate to `p ≥ 2` is at most `2`. An exponent `p > 2` satisfies `1/p + 1/p < 1`. In `ℝ≥0`,
+the only exponent conjugate to `2` is `2`.
 
 ## Main declarations
 
@@ -26,6 +27,7 @@ Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most
   `(p, q', r)` with `q' ≤ q`.
 * `ENNReal.one_le_left_of_inv_add_inv_le_one`, `ENNReal.one_le_right_of_inv_add_inv_le_one`:
   `1/p + 1/q ≤ 1` forces `1 ≤ p` and `1 ≤ q`.
+* `ENNReal.one_lt_right_of_inv_add_inv_lt_one`: `1/p + 1/q < 1` forces `1 < q`.
 * `ENNReal.conjExponent_le_of_inv_add_inv_le_one`: `1/p + 1/q ≤ 1` forces `p' ≤ q` for the
   conjugate exponent `p'` of `p`.
 * `ENNReal.inv_add_inv_lt_one_of_two_lt`: an exponent `p > 2` satisfies `1/p + 1/p < 1`.
@@ -75,6 +77,10 @@ theorem one_le_left_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 ≤ 
 /-- The Hölder condition `1/p + 1/q ≤ 1` forces `1 ≤ q`. -/
 theorem one_le_right_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 ≤ q :=
   ENNReal.inv_le_one.1 (le_add_self.trans hpq)
+
+/-- The strict Hölder condition `1/p + 1/q < 1` forces `1 < q`. -/
+theorem one_lt_right_of_inv_add_inv_lt_one (hpq : p⁻¹ + q⁻¹ < 1) : 1 < q :=
+  ENNReal.inv_lt_one.1 (le_add_self.trans_lt hpq)
 
 /-- Under the Hölder condition `1/p + 1/q ≤ 1`, the conjugate exponent of `p` is at most `q`. -/
 theorem conjExponent_le_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : p.conjExponent ≤ q := by
