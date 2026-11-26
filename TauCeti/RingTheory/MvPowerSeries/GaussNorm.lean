@@ -102,6 +102,20 @@ theorem norm_coeff_pow_succ_mul_prod_le (hc : 0 ≤ c) {g : MvPowerSeries σ R}
     rw [pow_succ g, pow_succ ρ]
     exact norm_coeff_mul_mul_prod_le hc (fun m hm ↦ ih fun m' hm' ↦ hg m' (hm'.trans hm)) hg
 
+/-- If `r ≤ 1` and every coefficient of `g` through degree `B` has norm at most `r`, then every
+coefficient of `g ^ j` (`j ≠ 0`) through degree `B` has norm at most `r`. -/
+theorem norm_coeff_pow_le_of_degree_le {g : MvPowerSeries σ R} {r : ℝ}
+    (hr1 : r ≤ 1) {B : ℕ} (hg : ∀ d : σ →₀ ℕ, d.degree ≤ B → ‖coeff d g‖ ≤ r) {j : ℕ}
+    (hj : j ≠ 0) {d : σ →₀ ℕ} (hd : d.degree ≤ B) :
+    ‖coeff d (g ^ j)‖ ≤ r := by
+  have hr0 : 0 ≤ r := (norm_nonneg (coeff 0 g)).trans (hg 0 (by simp))
+  rcases Nat.exists_eq_succ_of_ne_zero hj with ⟨k, rfl⟩
+  have h1 := norm_coeff_pow_succ_mul_prod_le (c := fun _ : σ ↦ (1 : ℝ))
+    (fun _ ↦ zero_le_one) (g := g) (n := d) (ρ := r) (fun m hm ↦ by
+      simpa [Finsupp.prod] using hg m ((Finsupp.degree_mono hm).trans hd)) k
+  exact (by simpa [Finsupp.prod] using h1 : ‖coeff d (g ^ (k + 1))‖ ≤ r ^ (k + 1)).trans
+    (pow_le_of_le_one hr0 hr1 (Nat.succ_ne_zero k))
+
 /-- If the weighted coefficients `‖coeff m g‖ * ∏ᵢ cᵢ ^ mᵢ` of `g` are at most `ρ` for `m ≤ n`,
 then the weighted coefficient of `g ^ j` at `n` is at most `ρ ^ j`. -/
 theorem norm_coeff_pow_mul_prod_le [NormOneClass R] (hc : 0 ≤ c) {g : MvPowerSeries σ R}
