@@ -29,7 +29,8 @@ hermitian spaces can be read off from it on their orthogonal sum.
 * `TauCeti.signedHermitianAdjoint H`: the adjoint, as a `σ`-semilinear map on `Module.End K V`;
 * `TauCeti.SignedHermitianSpace.standard`: the standard hermitian form `∑ σ (v i) * w i` on
   `n → K`, whose adjoint is the conjugate transpose
-  (`TauCeti.signedHermitianAdjoint_standard_toLin'`).
+  (`TauCeti.signedHermitianAdjoint_standard_toLin'`, in
+  `TauCeti/LinearAlgebra/SesquilinearForm/SignedHermitianSpace/HomAdjoint.lean`).
 
 ## Main statements
 
@@ -238,20 +239,6 @@ theorem standard_form_apply (v w : n → K) :
   simp [standard, Matrix.toLinearMapₛₗ₂'_apply, Matrix.one_apply, mul_comm]
 
 end SignedHermitianSpace
-
-/-- In the standard hermitian space the adjoint of a matrix is its conjugate transpose: the
-transpose of the matrix with `σ` applied to each entry. For a star ring and `σ = starRingEnd K`
-this is `Matrix.conjTranspose`. -/
-theorem signedHermitianAdjoint_standard_toLin' [RingHomInvPair σ σ] {n : Type*} [Fintype n]
-    [DecidableEq n] (A : Matrix n n K) :
-    signedHermitianAdjoint (SignedHermitianSpace.standard σ n) (Matrix.toLin' A) =
-      Matrix.toLin' (A.map σ).transpose := by
-  refine signedHermitianAdjoint_unique _ fun v w ↦ ?_
-  simp only [SignedHermitianSpace.standard_form_apply, Matrix.toLin'_apply, Matrix.mulVec,
-    dotProduct, map_sum, map_mul, Matrix.transpose_apply, Matrix.map_apply, Finset.sum_mul,
-    Finset.mul_sum]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
 
 end Field
 
