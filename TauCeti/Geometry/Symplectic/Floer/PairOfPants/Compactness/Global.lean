@@ -90,8 +90,8 @@ on the energy densities near every point off their bubbling points; read on `S` 
 Jacobian of the end chart
 (`TauCeti.SmoothTwoForm.floerEnergyDensity_comp_positiveEndChart`), they pass through the diagonal
 argument (`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le`), so the energy
-densities are eventually bounded near every point of `S \ Z`. These bounds make the limit a
-`C¹` Floer solution on `S \ Z`, in
+densities are eventually bounded near every point of `S \ Z`. For smooth solutions of the
+pair-of-pants theorem, these bounds make the limit a `C¹` Floer solution on `S \ Z`, in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Regularity`.
 
 Energy that escapes along the ends is not seen by the limit: this is the breaking of Floer

@@ -167,8 +167,10 @@ theorem
       fun y hy ↦ hbd y (hLZ hy)
   -- Off the bubbling points, the limit is a `C¹` Floer solution.
   obtain ⟨hvC1, hdconv, hvfl⟩ := hω.contMDiffOn_and_isComplexLinearMap_of_tendstoLocallyUniformlyOn
-    hS isCompact_univ (fun α _ ↦ hJ α) (fun α _ ↦ hX 1 α) (fun α _ ↦ hX Complex.I α)
-    he.continuous.continuousOn he_inj.injOn hSZ sdiff_subset (fun z hz ↦ hJt z hz.1)
+    hSZ isCompact_univ (fun α _ ↦ (hJ α).mono (prod_mono sdiff_subset subset_rfl))
+    (fun α _ ↦ (hX 1 α).mono (prod_mono sdiff_subset subset_rfl))
+    (fun α _ ↦ (hX Complex.I α).mono (prod_mono sdiff_subset subset_rfl))
+    he.continuous.continuousOn he_inj.injOn (fun z hz ↦ hJt z hz.1)
     (fun n ↦ (hu (φ n)).mono sdiff_subset) (fun _ ↦ mapsTo_univ _ _)
     (fun n z hz ↦ hfl (φ n) z hz.1) hbd' hv (mapsTo_univ _ _) hconv hpt
   exact ⟨φ, Z, v, hφ, hZ, hcard, hconc, hbd', hvC1, hconv, hpt, fun α ↦ hdconv α (mem_univ α),

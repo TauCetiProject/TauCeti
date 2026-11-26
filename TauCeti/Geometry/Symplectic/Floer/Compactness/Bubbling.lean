@@ -612,10 +612,10 @@ private theorem IsNondegenerate.exists_ball_tendstoLocallyUniformlyOn_fderiv_ext
 omit [NormedSpace ℝ F] in
 /-- **Limits of Floer solutions with bounded energy densities are `C¹` Floer solutions.** Let `ω`
 be a nondegenerate two-form on a boundaryless manifold `M` with finite-dimensional model space,
-`K ⊆ M` compact and `U` an open set of the domain. Let the structures `J(z, x)` and the Hamiltonian
-vector fields of `K_s` and `K_t`, read in the chart at every point of `K`, be `C²` on `U` times the
+`K ⊆ M` compact and `S` an open set of the domain. Let the structures `J(z, x)` and the Hamiltonian
+vector fields of `K_s` and `K_t`, read in the chart at every point of `K`, be `C²` on `S` times the
 chart target. Let `e : M → F` be continuous and injective on `K`. Let `uₙ` be smooth solutions of
-the Floer equation `(du - X_{K_s} ds - X_{K_t} dt)^{0,1} = 0` on an open set `S ⊆ U` with values
+the Floer equation `(du - X_{K_s} ds - X_{K_t} dt)^{0,1} = 0` on `S` with values
 in `K`, for structures tamed by `ω` over `S`, whose
 energy densities are uniformly bounded on every compact subset of `S`, and which converge to a map
 `v : S → K`, continuous on `S`, locally uniformly through `e` and pointwise in `M`. Then
@@ -629,16 +629,16 @@ energy densities are uniformly bounded on every compact subset of `S`, and which
 This is the regularity statement behind
 `IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_of_mapsTo`,
 where the bounds on the energy densities hold off the bubbling points. The statement is local,
-so `S` need not lie in a compact part of `U`. -/
+so `S` need not lie in a compact window. -/
 theorem IsNondegenerate.contMDiffOn_and_isComplexLinearMap_of_tendstoLocallyUniformlyOn
-    (hω : ω.IsNondegenerate) (hU : IsOpen U) (hK : IsCompact K)
+    (hω : ω.IsNondegenerate) {S : Set (ℝ × ℝ)} (hS : IsOpen S) (hK : IsCompact K)
     (hJ : ∀ x ∈ K,
-      ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I x J) (U ×ˢ (extChartAt I x).target))
+      ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I x J) (S ×ˢ (extChartAt I x).target))
     (hXs : ∀ x ∈ K,
-      ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt x Ks) (U ×ˢ (extChartAt I x).target))
+      ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt x Ks) (S ×ˢ (extChartAt I x).target))
     (hXt : ∀ x ∈ K,
-      ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt x Kt) (U ×ˢ (extChartAt I x).target))
-    (he : ContinuousOn e K) (he_inj : InjOn e K) {S : Set (ℝ × ℝ)} (hS : IsOpen S) (hSU : S ⊆ U)
+      ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt x Kt) (S ×ˢ (extChartAt I x).target))
+    (he : ContinuousOn e K) (he_inj : InjOn e K)
     (hJt : ∀ z ∈ S, ∀ y, (hω.symplecticFormAt y).Tames (J z y))
     {u : ℕ → ℝ × ℝ → M} {v : ℝ × ℝ → M}
     (hu : ∀ n, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (u n) S) (huK : ∀ n, MapsTo (u n) S K)
@@ -672,8 +672,8 @@ theorem IsNondegenerate.contMDiffOn_and_isComplexLinearMap_of_tendstoLocallyUnif
     have hcl : closedBall y (ε / 2) ⊆ S :=
       (closedBall_subset_ball (half_lt_self hε)).trans hεS
     have hbS : ball y (ε / 2) ⊆ S := ball_subset_closedBall.trans hcl
-    obtain ⟨r, hr, hrb, h⟩ := hω.exists_ball_tendstoLocallyUniformlyOn_fderiv_extChartAt hU
-      (hcl.trans hSU) (isCompact_closedBall y (ε / 2)) hK (hJ α hα) (hXs α hα) (hXt α hα)
+    obtain ⟨r, hr, hrb, h⟩ := hω.exists_ball_tendstoLocallyUniformlyOn_fderiv_extChartAt hS
+      hcl (isCompact_closedBall y (ε / 2)) hK (hJ α hα) (hXs α hα) (hXt α hα)
       (fun z hz ↦ hJt z (hcl hz)) he he_inj isOpen_ball ball_subset_closedBall
       (fun n ↦ (hu n).mono hbS) (fun n ↦ (huK n).mono_left hbS) (fun n z hz ↦ hfl n z (hbS hz))
       (fun C hC hCb ↦ hbd C hC (hCb.trans hbS)) (hv.mono hbS) (hvK.mono_left hbS)
@@ -758,9 +758,12 @@ theorem
   obtain ⟨φ, hφ, Z, hZΩ, hcard, hconc, hbd, v, hv, hvK, hconv, hpt⟩ :=
     h0 hΩ hΩD (fun k ↦ (hu k).of_le (by norm_cast)) huK hfl hcont hint hA
   have hS : IsOpen (Ω \ (Z : Set (ℝ × ℝ))) := hΩ.sdiff Z.finite_toSet.isClosed
+  have hSU : Ω \ ↑Z ⊆ U := sdiff_subset.trans (hΩD.trans hDU)
   obtain ⟨hvC1, hdconv, hvfl⟩ := hω.contMDiffOn_and_isComplexLinearMap_of_tendstoLocallyUniformlyOn
-    hU hK hJ hXs hXt (fun x hx ↦ (he x hx).continuousAt.continuousWithinAt) he_inj hS
-    (sdiff_subset.trans (hΩD.trans hDU)) (fun z hz ↦ hJt z (hΩD hz.1))
+    hS hK (fun x hx ↦ (hJ x hx).mono (prod_mono hSU subset_rfl))
+    (fun x hx ↦ (hXs x hx).mono (prod_mono hSU subset_rfl))
+    (fun x hx ↦ (hXt x hx).mono (prod_mono hSU subset_rfl))
+    (fun x hx ↦ (he x hx).continuousAt.continuousWithinAt) he_inj (fun z hz ↦ hJt z (hΩD hz.1))
     (fun n ↦ (hu (φ n)).mono sdiff_subset)
     (fun n ↦ (huK (φ n)).mono_left sdiff_subset) (fun n z hz ↦ hfl (φ n) z hz.1) hbd hv hvK
     hconv hpt
