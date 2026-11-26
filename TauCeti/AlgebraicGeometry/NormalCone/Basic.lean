@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Pullback
-public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
+public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Pullback
 
@@ -74,6 +74,8 @@ quasi-coherent algebra on `X` directly, with its algebra structure transported f
   isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.isAffineHom_normalConeToBase`: the projection of the normal cone
   is affine.
+* `AlgebraicGeometry.Scheme.Hom.isEmpty_normalCone`: an immersion with empty source has empty
+  normal cone.
 * `AlgebraicGeometry.Scheme.Hom.isZero_conormal`: an open immersion, for instance an
   isomorphism, has zero conormal sheaf; more generally all positive-degree components of its
   normal cone algebra vanish (`isZero_normalConeAlgebra_obj_X`).
@@ -299,6 +301,10 @@ theorem normalConeToBase_eq_relativeSpecToBase :
 /-- The projection of the normal cone is affine. -/
 instance isAffineHom_normalConeToBase : IsAffineHom i.normalConeToBase :=
   inferInstanceAs (IsAffineHom i.normalConeOver.hom)
+
+/-- An immersion with empty source has empty normal cone, which lies over the source. -/
+instance isEmpty_normalCone [IsEmpty X] : IsEmpty i.normalCone :=
+  ⟨fun x ↦ isEmptyElim (i.normalConeToBase x)⟩
 
 end
 

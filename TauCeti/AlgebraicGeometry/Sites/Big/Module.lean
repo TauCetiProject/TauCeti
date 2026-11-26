@@ -312,6 +312,20 @@ lemma bigSectionsRestrict_pullbackSectionsLE {T T' : Over S} (f : T ⟶ T') (U :
   rw [bigSectionsRestrict_eq_bigSectionsRestrictLE]
   exact bigSectionsRestrictLE_pullbackSectionsLE F f.left (Over.w f) U ⊤ ⊤ hU _ hU' s
 
+/-- Restricting the section `(h'^* 𝒪_S ≅ 𝒪_{T'})⁻¹ 1` of the big site along `f : T ⟶ T'` gives
+the section `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1`. -/
+lemma bigSectionsRestrict_pullbackObjUnitIso_inv_one {T T' : Over S} (f : T ⟶ T') :
+    bigSectionsRestrict (𝟙_ S.Modules) f
+        ((pullbackObjUnitIso T'.hom).inv.app ⊤ (1 : Γ(T'.left, ⊤))) =
+      (pullbackObjUnitIso T.hom).inv.app ⊤ (1 : Γ(T.left, ⊤)) := by
+  -- Both sections are pullbacks of `1 : Γ(S, ⊤)`: this is `bigSectionsRestrict_pullbackSectionsLE`.
+  have e (X : Scheme.{u}) (g : X ⟶ S) :
+      g.pullbackSectionsLE (𝟙_ S.Modules) ⊤ ⊤ le_top (1 : Γ(S, ⊤)) =
+        (pullbackObjUnitIso g).inv.app ⊤ (1 : Γ(X, ⊤)) :=
+    (g.pullbackSectionsLE_self _ ⊤ _).trans (Hom.pullbackObjUnitIso_inv_app_one g).symm
+  rw [← e, ← e]
+  exact bigSectionsRestrict_pullbackSectionsLE _ f ⊤ le_top le_top _
+
 /-- The presheaf of modules `(T, h) ↦ Γ(T, h^* F)` over the big structure sheaf of `S`, with
 restriction maps `bigSectionsRestrict`. For quasi-coherent `F` it is the module `F^a` on the big
 site of `S`. -/

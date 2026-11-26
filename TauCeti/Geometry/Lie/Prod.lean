@@ -21,6 +21,10 @@ arbitrary models with corners and independent model and carrier universes.
 * `TauCeti.Lie.prodLieEquiv_apply`: its two components are the native Lie maps of the projections.
 * `TauCeti.Lie.lieMap_fst_prodLieEquiv_symm` and
   `TauCeti.Lie.lieMap_snd_prodLieEquiv_symm`: the projections recover the two input derivations.
+* `TauCeti.Lie.lieMap_inl_add_lieMap_inr`: a derivation of the product is the sum of the images of
+  its components under the inclusions of the factors.
+* `TauCeti.Lie.lieMap_noncommCoprod`: the Lie map of `(g, g') ↦ φ g * ψ g'` for commuting smooth
+  homomorphisms `φ` and `ψ` is the sum of their Lie maps on the two components.
 
 ## References
 
@@ -127,5 +131,63 @@ theorem lieMap_snd_prodLieEquiv_symm
   have h := congrArg Prod.snd
     ((prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).apply_symm_apply p)
   simpa only [prodLieEquiv_apply] using h
+
+/-- The first projection undoes the first inclusion on Lie algebras. -/
+@[simp]
+theorem lieMap_fst_lieMap_inl (X : LeftInvariantDerivation I G) :
+    lieMap (ContMDiffMonoidMorphism.fst (I := I) (I' := I') (G := G) (G' := G'))
+      (lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G := G) (G' := G')) X) = X := by
+  rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.fst_comp_inl, lieMap_id,
+    one_apply_eq_self]
+
+/-- The first projection kills the second inclusion on Lie algebras. -/
+@[simp]
+theorem lieMap_fst_lieMap_inr (Y : LeftInvariantDerivation I' G') :
+    lieMap (ContMDiffMonoidMorphism.fst (I := I) (I' := I') (G := G) (G' := G'))
+      (lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G) (G' := G')) Y) = 0 := by
+  rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.fst_comp_inr, lieMap_one,
+    zero_apply]
+
+/-- The second projection kills the first inclusion on Lie algebras. -/
+@[simp]
+theorem lieMap_snd_lieMap_inl (X : LeftInvariantDerivation I G) :
+    lieMap (ContMDiffMonoidMorphism.snd (I := I) (I' := I') (G := G) (G' := G'))
+      (lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G := G) (G' := G')) X) = 0 := by
+  rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.snd_comp_inl, lieMap_one,
+    zero_apply]
+
+/-- The second projection undoes the second inclusion on Lie algebras. -/
+@[simp]
+theorem lieMap_snd_lieMap_inr (Y : LeftInvariantDerivation I' G') :
+    lieMap (ContMDiffMonoidMorphism.snd (I := I) (I' := I') (G := G) (G' := G'))
+      (lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G) (G' := G')) Y) = Y := by
+  rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.snd_comp_inr, lieMap_id,
+    one_apply_eq_self]
+
+/-- A left-invariant derivation of a product is the sum of the images of its two components under
+the inclusions of the factors. -/
+theorem lieMap_inl_add_lieMap_inr (D : LeftInvariantDerivation (I.prod I') (G × G')) :
+    lieMap ContMDiffMonoidMorphism.inl (lieMap ContMDiffMonoidMorphism.fst D) +
+      lieMap ContMDiffMonoidMorphism.inr (lieMap ContMDiffMonoidMorphism.snd D) = D := by
+  refine EquivLike.injective (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')) ?_
+  simp
+
+/-- The Lie map of the product `(g, g') ↦ φ g * ψ g'` of two smooth homomorphisms with commuting
+images is the sum of their Lie maps on the two components. -/
+@[simp]
+theorem lieMap_noncommCoprod
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Group G''] [LieGroup I'' ∞ G'']
+    (φ : ContMDiffMonoidMorphism I I'' ∞ G G'') (ψ : ContMDiffMonoidMorphism I' I'' ∞ G' G'')
+    (h : ∀ g g', Commute (φ g) (ψ g')) (D : LeftInvariantDerivation (I.prod I') (G × G')) :
+    lieMap (φ.noncommCoprod ψ h) D =
+      lieMap φ (lieMap ContMDiffMonoidMorphism.fst D) +
+        lieMap ψ (lieMap ContMDiffMonoidMorphism.snd D) := by
+  conv_lhs => rw [← lieMap_inl_add_lieMap_inr D]
+  rw [map_add]
+  congr 1
+  · rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.noncommCoprod_comp_inl]
+  · rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.noncommCoprod_comp_inr]
 
 end TauCeti.Lie

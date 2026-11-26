@@ -58,7 +58,8 @@ Cycles are elements of the kernel of the outgoing differential
 (`HomologicalComplex.moduleCatKerHomologyClass`), surjective and compatible with chain maps
 (`HomologicalComplex.homologyMap_moduleCatKerHomologyClass`), and the image of the incoming
 differential, the kernel and the homology form an exact sequence
-(`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`).
+(`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`). So the homology vanishes where
+the outgoing differential is injective (`HomologicalComplex.isZero_homology_of_injective_d`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
 with its surjectivity and its kernel described by the coboundaries.  When the differential is a
@@ -344,6 +345,12 @@ lemma moduleCat_iCycles_cyclesMap_apply {L : HomologicalComplex (ModuleCat R) c}
     (z : K.cycles n) : L.iCycles n (cyclesMap φ n z) = φ.f n (K.iCycles n z) := by
   rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply]
 
+/-- A chain map of complexes of modules sends the boundary `K.toCycles m n y` to the boundary of
+the image of `y`, on elements: the element form of `HomologicalComplex.toCycles_cyclesMap`. -/
+lemma moduleCat_cyclesMap_toCycles_apply {L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L)
+    (m : ι) (y : K.X m) : cyclesMap φ n (K.toCycles m n y) = L.toCycles m n (φ.f m y) :=
+  ConcreteCategory.congr_hom (toCycles_cyclesMap φ m n) y
+
 variable {n} in
 /-- A degree-`n` cycle of a homological complex of modules has zero homology class exactly when it
 is a boundary, the image of an element of the term of degree `c.prev n`. -/
@@ -492,6 +499,19 @@ lemma moduleCatKerHomologyClass_surjective :
     Function.Surjective (K.moduleCatKerHomologyClass hm) := by
   rw [moduleCatKerHomologyClass]
   exact K.moduleCatHomologyClass_surjective hm _ _ fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩
+
+include hm in
+/-- If the outgoing differential `K.d n m` is injective, the homology in degree `n` vanishes: the
+only cycle is zero. -/
+theorem isZero_homology_of_injective_d (h : Function.Injective (K.d n m).hom) :
+    IsZero (K.homology n) := by
+  rw [ModuleCat.isZero_iff_subsingleton]
+  refine ⟨fun a b ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := K.moduleCatKerHomologyClass_surjective hm a
+  obtain ⟨b, rfl⟩ := K.moduleCatKerHomologyClass_surjective hm b
+  congr 1
+  exact Subtype.ext <| h <|
+    (LinearMap.mem_ker.1 a.property).trans (LinearMap.mem_ker.1 b.property).symm
 
 variable {K} in
 /-- A chain map `φ` sends the homology class of an element `z` of the kernel of `K.d n m` to the

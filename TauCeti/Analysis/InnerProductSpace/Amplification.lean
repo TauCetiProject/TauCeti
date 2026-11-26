@@ -19,8 +19,9 @@ import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 For a Hilbert space `H` over `ℝ` or `ℂ` and a finite index type `ι`, an operator `s` on `H`
 acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, as
 `s ⊕ ⋯ ⊕ s`. This diagonal amplification is a star algebra homomorphism,
-`PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
-`ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
+`PiLp.diagStarAlgHom`, defined as the block-diagonal operator `PiLp.piMap 2` with every block
+`s` (`PiLp.diagStarAlgHom_eq_piMap`). Conversely, every operator `T` on the Hilbert sum has matrix
+entries `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
 (`ContinuousLinearMap.apply_eq_sum_piLpEntry`), so it is determined by them
 (`ContinuousLinearMap.ext_piLpEntry`), and converges pointwise if and only if every matrix entry
 converges pointwise (`ContinuousLinearMap.forall_tendsto_apply_iff_forall_tendsto_piLpEntry_apply`).
@@ -398,9 +399,7 @@ variable (𝕜 H ι) in
 of `H` indexed by `ι`, as a star algebra homomorphism. -/
 noncomputable def diagStarAlgHom :
     (H →L[𝕜] H) →⋆ₐ[𝕜] (PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) where
-  toFun s := (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.toContinuousLinearMap ∘L
-    ContinuousLinearMap.piMap (fun _ => s) ∘L
-      (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).toContinuousLinearMap
+  toFun s := piMap 2 fun _ : ι => s
   map_one' := by ext; simp
   map_mul' s t := by ext; simp
   map_zero' := by ext; simp
@@ -415,6 +414,11 @@ noncomputable def diagStarAlgHom :
 @[simp]
 theorem diagStarAlgHom_apply (s : H →L[𝕜] H) (w : PiLp 2 (fun _ : ι => H)) (i : ι) :
     diagStarAlgHom 𝕜 H ι s w i = s (w i) :=
+  piMap_apply 2 (fun _ => s) w i
+
+/-- The diagonal amplification of `s` is the block-diagonal operator with every block `s`. -/
+theorem diagStarAlgHom_eq_piMap (s : H →L[𝕜] H) :
+    diagStarAlgHom 𝕜 H ι s = piMap 2 fun _ : ι => s :=
   (rfl)
 
 @[simp]

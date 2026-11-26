@@ -9,9 +9,9 @@ public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
 public import TauCeti.Analysis.PDE.Vortex.Fredholm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.Multiplier
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
-import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -60,7 +60,8 @@ then raises its regularity one step at a time up to `H^(k+1)`.
 * `gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq`,
   `integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq`: for `w = exp(c ρ)` the commutator is the
   multiplication of `w y` by the smooth matrix `expWeightCoeff c`, whose entries have bounded
-  derivatives of every order (`exists_norm_iteratedFDeriv_expWeightCoeff_le`).
+  derivatives of every order (`exists_norm_iteratedFDeriv_expWeightCoeff_le`), with one bound
+  for all entries (`exists_forall_norm_iteratedFDeriv_expWeightCoeff_le`).
 * `integral_inner_fun_smul_gaugeFixedOperator_eq`,
   `gaugeFixedAdjointSymbol_fderiv_exp_mul_sqrt_add_norm_sq`,
   `integral_inner_exp_mul_smul_gaugeFixedOperator_eq`: the same for weak solutions of
@@ -197,6 +198,14 @@ theorem exists_norm_iteratedFDeriv_expWeightCoeff_le (c : ℝ) (i j : Fin 4) (k 
     exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half
       (c • symbolDirection i j) le_rfl n
   ⟨M, (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hM).1, hM⟩
+
+/-- The coefficients of the commutator with the weight `exp(c ρ)` have derivatives through order
+`k` bounded by one constant, uniformly in the entry. -/
+theorem exists_forall_norm_iteratedFDeriv_expWeightCoeff_le (c : ℝ) (k : ℕ) :
+    ∃ M ≥ 0, ∀ i j, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (expWeightCoeff c i j) z‖ ≤ M := by
+  choose M hM hMb using fun i j ↦ exists_norm_iteratedFDeriv_expWeightCoeff_le c i j k
+  obtain ⟨N, hN⟩ := Finite.exists_le fun p : Fin 4 × Fin 4 ↦ M p.1 p.2
+  exact ⟨N, (hM 0 0).trans (hN (0, 0)), fun i j n hn z ↦ (hMb i j n hn z).trans (hN (i, j))⟩
 
 /-- The commutator of `L_x` with the weight `w = exp(c ρ)`: `σ(dw) v` is the multiplication of
 `w v` by the matrix `expWeightCoeff c`. -/
@@ -358,7 +367,7 @@ theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_forall_mem_framedField
   exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k
     (contDiff_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hc
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n) hc
     hweak horth hwf
 
 /-! ### The weighted `H¹` estimate -/
@@ -430,7 +439,8 @@ private theorem le_sqrt_mul_of_sq_le_mul_add {N C F S B A b K : ℝ} (hC : 0 ≤
   have hN2 : N ^ 2 ≤ C * ((1 + b * K) ^ 2 + 4 * K ^ 2) * A ^ 2 :=
     h.trans <| (mul_le_mul_of_nonneg_left (b := F ^ 2 + S)
       (c := ((1 + b * K) * A) ^ 2 + 4 * (K * A) ^ 2) (by linarith) hC).trans_eq (by ring)
-  exact Real.le_sqrt_mul_of_sq_le_mul hA hN2
+  exact (Real.le_sqrt_of_sq_le hN2).trans_eq
+    (by rw [Real.sqrt_mul_sq, abs_of_nonneg hA])
 
 /-- **The weighted `H¹` estimate for the right inverse.** Let `x` be a bounded `C¹` solution of the
 plane vortex equations with `|α| → 1` and `∇₁ α → 0` at infinity, let `ρ(z) = √(1 + |z|²)` and

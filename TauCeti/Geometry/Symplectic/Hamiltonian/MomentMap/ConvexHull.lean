@@ -100,7 +100,7 @@ theorem range_subset_convexHull_image_fixedPoints
     (h.contMDiff ξ).continuous.continuousOn
   refine ⟨y, ?_, hy (mem_univ x)⟩
   rw [← mem_ofPred_eq.mp hξ]
-  exact hy.mem_criticalPoints
+  exact hy.mem_criticalPoints BoundarylessManifold.isInteriorPoint
 
 /-- **The convex hull of a torus moment image is spanned by the fixed points.** For a moment map
 `μ` of a smooth action of a compact connected commutative Lie group `G` on a compact boundaryless
