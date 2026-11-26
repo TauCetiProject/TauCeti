@@ -61,6 +61,8 @@ symbol is its fibre map.
 
 * `TauCeti.sectionCommutatorSymbol_mvfderiv`, `TauCeti.sectionPrincipalSymbol_mvfderiv`: the values
   at differentials of functions are the iterated commutators.
+* `TauCeti.sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero`: for functions `fᵢ` vanishing
+  at `x`, the commutator symbol at their differentials is `s(x) ↦ (P (f₁ ⋯ fₘ • s))(x)`.
 * `TauCeti.eq_sectionCommutatorSymbol_iff`: the commutator symbol is the multilinear map with
   these values.
 * `TauCeti.sectionCommutatorSymbol_comp_perm`: the commutator symbol is symmetric.
@@ -267,6 +269,21 @@ theorem sectionCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
     (commutatorSymbol_covectorLift_sub_mem_smul_top hx P f s)
   rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
   rwa [sectionCommutatorSymbol_apply, smoothSectionFiberMap_apply]
+
+/-- For smooth functions `f₁, …, fₘ` vanishing at `x`, the commutator symbol at their differentials,
+evaluated on the value at `x` of a smooth section `s`, is the value at `x` of `P` applied to the
+product `f₁ ⋯ fₘ • s`: every other term of the expanded iterated commutator carries a factor
+`fᵢ(x) = 0`. -/
+theorem sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero (hx : I.IsInteriorPoint x)
+    {m : ℕ} (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
+    {f : Fin m → C^∞⟮I, M; ℝ⟯} (hf : ∀ i, f i x = 0) (s : Cₛ^∞⟮I; F, V⟯) :
+    sectionCommutatorSymbol I hx P (fun i ↦ mvfderiv I (f i) x) (s x) =
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ((∏ i, f i) • s) x := by
+  have h := apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
+    (commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top P
+      (fun i ↦ mem_smoothVanishingIdeal_iff.2 (hf i)) s)
+  rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
+  rw [sectionCommutatorSymbol_mvfderiv, h]
 
 /-- The commutator symbol at `x` in two covectors, evaluated on the differentials at `x` of smooth
 functions `f` and `g` and on the value at `x` of a smooth section `s`, is the value at `x` of the
