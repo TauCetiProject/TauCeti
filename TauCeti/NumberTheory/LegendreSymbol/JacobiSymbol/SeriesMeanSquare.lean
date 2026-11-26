@@ -65,9 +65,11 @@ theorem norm_sum_jacobiSym_neg_Icc_le {b : ℕ} (hb : Odd b) (X : ℕ) :
       refine MulChar.ext fun u ↦ ?_
       have hcop := (ZMod.val_coe_unit_coprime u).coprime_dvd_right
         ((dvd_pow_self a two_ne_zero).trans (dvd_mul_right (a ^ 2) s))
-      rw [show χ = jacobiChar ℂ (a ^ 2 * s) from rfl, jacobiChar_apply,
-        changeLevel_jacobiChar_apply_units, jacobiSym.mul_right, jacobiSym.pow_right,
-        jacobiSym.sq_one (by rwa [Int.gcd_natCast_natCast]), one_mul]
+      have hsqUnit : jacobiSym (u : ZMod (a ^ 2 * s)).val a ^ 2 = 1 :=
+        jacobiSym.sq_one (by rwa [Int.gcd_natCast_natCast])
+      dsimp only [χ]
+      simp only [jacobiChar_apply, changeLevel_jacobiChar_apply_units, jacobiSym.mul_right,
+        jacobiSym.pow_right, hsqUnit, one_mul]
     rw [ne_eq, hlift, DirichletCharacter.changeLevel_eq_one_iff]
     obtain ⟨v, _, hv, hval⟩ := exists_modEq_one_jacobiSym_eq_neg_one_of_squarefree
       (Nat.odd_mul.mp hb).2 hs₁ hsf (Nat.coprime_one_right s)
