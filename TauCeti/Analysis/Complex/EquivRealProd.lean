@@ -20,7 +20,9 @@ compact (`TauCeti.isCompact_setOf_norm_equivRealProdCLM_symm_le`). The Euclidean
 `‖w‖` of the point `w` with real coordinates `z` has `‖w‖² = z.1² + z.2²`
 (`TauCeti.sq_norm_equivRealProdCLM_symm`) and lies between the sup norm `‖z‖`
 (`TauCeti.norm_le_norm_equivRealProdCLM_symm`) and twice it
-(`TauCeti.norm_equivRealProdCLM_symm_le_two_mul`).
+(`TauCeti.norm_equivRealProdCLM_symm_le_two_mul`), so the disc `‖w‖ ≤ r` lies in the square
+`‖z‖ ≤ r` (`TauCeti.setOf_norm_equivRealProdCLM_symm_le_subset_closedBall`). The real coordinates
+of the nonzero points form an open set (`TauCeti.isOpen_setOf_equivRealProdCLM_symm_ne_zero`).
 -/
 
 public section
@@ -74,5 +76,16 @@ theorem norm_equivRealProdCLM_symm_le_two_mul (z : ℝ × ℝ) :
   have h₂ := norm_snd_le z
   rw [Real.norm_eq_abs] at h₁ h₂
   linarith
+
+/-- The disc `‖w‖ ≤ r` of the plane, read in the real coordinates, lies in the square
+`‖z‖ ≤ r` of the sup norm. -/
+theorem setOf_norm_equivRealProdCLM_symm_le_subset_closedBall (r : ℝ) :
+    {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ r} ⊆ Metric.closedBall 0 r :=
+  fun z (hz : _ ≤ r) ↦ mem_closedBall_zero_iff.2 ((norm_le_norm_equivRealProdCLM_symm z).trans hz)
+
+/-- The real coordinates of the nonzero points of `ℂ` form an open set. -/
+theorem isOpen_setOf_equivRealProdCLM_symm_ne_zero :
+    IsOpen {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0} :=
+  isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
 
 end TauCeti

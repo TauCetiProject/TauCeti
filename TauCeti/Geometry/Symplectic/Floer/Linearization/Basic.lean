@@ -55,7 +55,9 @@ over a compact set off which `dβ` vanishes (`exists_integral_norm_floerLineariz
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`), and `Cⁿ` where
-`J` and `u` are `Cⁿ⁺¹` and the Hamiltonians `Cⁿ⁺²` (`contDiffAt_floerLinearizationCoeff`); so two
+`J` and `u` are `Cⁿ⁺¹` and the Hamiltonians `Cⁿ⁺²` (`contDiffAt_floerLinearizationCoeff`), and
+which vanishes for a constant structure and the zero perturbation
+(`floerLinearizationCoeff_const_zero`); so two
 linearized operators differ pointwise by the differences of their coefficients
 (`norm_floerLinearization_sub_floerLinearization_le`). Translating the data and the direction
 translates the operator (`floerLinearization_comp_add_right`).
@@ -376,6 +378,14 @@ theorem floerLinearizationCoeff_apply (ω : SymplecticForm V)
         fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) v -
         J z (u z) (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z) v) :=
   (rfl)
+
+/-- For a constant structure `J₀` and the zero perturbation, the zeroth-order part of the
+linearized Floer operator vanishes, along any map. -/
+theorem floerLinearizationCoeff_const_zero (ω : SymplecticForm V) (J₀ : V →L[ℝ] V)
+    (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearizationCoeff (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z = 0 := by
+  ext v
+  simp [floerLinearizationCoeff_apply]
 
 /-- The linearized Floer operator is `∂s ξ + J(z, u z) ∂t ξ` plus its zeroth-order part
 `floerLinearizationCoeff`. -/

@@ -815,39 +815,6 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
 
 /-! ### The formal adjoint -/
 
-/-- A continuous function vanishing off a compact subset of `S`, times a weight `w` continuous on
-`S`, is integrable. -/
-private theorem integrable_mul_of_forall_notMem_eq_zero {w g : ℝ × ℝ → ℝ}
-    (hwc : ContinuousOn w thricePuncturedSphereReal) (hg : Continuous g)
-    {s : Set (ℝ × ℝ)} (hs : IsCompact s) (hsS : s ⊆ thricePuncturedSphereReal)
-    (hgs : ∀ z ∉ s, g z = 0) : Integrable fun z ↦ w z * g z := by
-  have hsupp : support (fun z ↦ w z * g z) ⊆ s := fun z hz ↦ by
-    by_contra h
-    exact hz (by simp [hgs z h])
-  exact (ContinuousOn.continuous_of_tsupport_subset (hwc.mul
-    hg.continuousOn) isOpen_thricePuncturedSphereReal
-    ((closure_minimal hsupp hs.isClosed).trans hsS)).integrable_of_hasCompactSupport
-    (HasCompactSupport.intro hs fun z hz ↦ by simp [hgs z hz])
-
-/-- For a `C¹` covector field `θ` supported in the support of a covector field `η` with compact
-support in `S`, and a weight `w` continuous on `S`, the `w`-weighted square norm of `D^* θ` is
-integrable. For `θ = η` and `w = ρ⁻¹`, the right side `∫ ρ⁻¹ ‖D^* η‖²` of the semi-Fredholm
-estimate of the formal adjoint is finite. -/
-theorem integrable_mul_norm_floerLinearizationAdjoint_sq
-    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {w : ℝ × ℝ → ℝ}
-    (hwc : ContinuousOn w thricePuncturedSphereReal) {η θ : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hθ : ContDiff ℝ 1 θ) (hθS : tsupport θ ⊆ tsupport η) (hηc : HasCompactSupport η)
-    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
-    Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u θ z‖ ^ 2 :=
-  integrable_mul_of_forall_notMem_eq_zero hwc
-    ((ω.continuous_floerLinearizationAdjoint_of_tsupport_subset
-    hJ hKs hKt hu hθ (hθS.trans hηS)).norm.pow 2) hηc hηS fun z hz ↦ by
-      simp [floerLinearizationAdjoint_of_notMem_tsupport fun h ↦ hz (hθS h)]
-
 /-- **The weighted `L²` norm of the formal adjoint on a cut-off covector field.** Let `f` be smooth
 on `S` with `|f| ≤ 1`, with derivative supported in a compact set `K ⊆ S` and bounded by `M`
 there, let `‖J‖ ≤ B` along `u` and let the weight `w ≥ 0`, continuous on `S`, satisfy `w ≤ Λ` on
@@ -875,10 +842,10 @@ private theorem integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
     hΛ₀ hΛ hη.continuous (fun z hzS _ _ hM' hB' ↦ ?_)
     (fun z hzS ↦ floerLinearizationAdjoint_of_notMem_tsupport fun h ↦
       hzS (hηS (tsupport_smul_subset_right _ _ h)))
-    (ω.integrable_mul_norm_floerLinearizationAdjoint_sq hJ hKs hKt hu hwc
-      (hη.of_le one_le_two) subset_rfl hηc hηS)
-    (ω.integrable_mul_norm_floerLinearizationAdjoint_sq hJ hKs hKt hu hwc
-      ((contDiff_smul_of_tsupport_subset hf hη hηS).of_le one_le_two)
+    (ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal hJ hKs hKt
+      hu hwc (hη.of_le one_le_two) subset_rfl hηc hηS)
+    (ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal hJ hKs hKt
+      hu hwc ((contDiff_smul_of_tsupport_subset hf hη hηS).of_le one_le_two)
       (tsupport_smul_subset_right _ _) hηc hηS)
   exact ω.norm_floerLinearizationAdjoint_fun_smul_sq_le (Ks := Ks) (Kt := Kt)
     ((hf z hzS).differentiableAt two_ne_zero) (hη.differentiable two_ne_zero z)
@@ -978,8 +945,8 @@ private theorem setIntegral_sobolevDensity_le_of_coreCutoff_adjoint (ω : Symple
   have hDc := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset hJ hKs hKt hu
     (hηc'.of_le one_le_two) (hηcS.trans hηS)
   have hI {g : ℝ × ℝ → ℝ} (hg : ContinuousOn g K) : IntegrableOn g K := hg.integrableOn_compact hK
-  have hW := ω.integrable_mul_norm_floerLinearizationAdjoint_sq hJ hKs hKt hu hwc
-    (hηc'.of_le one_le_two) hηcS hηc hηS
+  have hW := ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
+    hJ hKs hKt hu hwc (hηc'.of_le one_le_two) hηcS hηc hηS
   -- On `K`, where `w⁻¹ ≤ Λ`, the unweighted norm is at most `Λ` times the `w`-weighted one.
   have hDK : ∫ z in K, ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2 ≤
       Λ * ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2 := by
@@ -1224,7 +1191,7 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     (integral_nonneg fun z ↦ by positivity)).trans (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _))
   rw [← integral_const_mul]
   refine integral_mono_of_nonneg (.of_forall fun z ↦ by positivity)
-    ((ω.integrable_mul_norm_floerLinearizationAdjoint_sq
+    ((ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
       (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
       continuousOn_inv_cylindricalWeight (hη.of_le one_le_two) subset_rfl hηc hηS).const_mul 5)
     (.of_forall fun z ↦ ?_)

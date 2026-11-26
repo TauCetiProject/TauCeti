@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
+import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.Analysis.Normed.Module.Basic
@@ -31,7 +32,12 @@ conformal matrix of `f'` (`TauCeti.Complex.fderiv_comp_realChart_apply_one_zero`
 `TauCeti.Complex.fderiv_comp_realChart_apply_zero_one`), so the Jacobian times a weighted density
 `r ‖ξ‖² + ‖∂₁ξ‖² + ‖∂₂ξ‖²` at the image point is controlled by the `W^{1,2}` density of
 `ξ ∘ realChart f` (`TauCeti.Complex.det_fderiv_realChart_mul_le`). A map that is `C^n` over `ℂ`
-is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
+is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`), and likewise at a
+point (`TauCeti.Complex.contDiffAt_realChart`). The inversion `w ↦ w⁻¹` in real coordinates is an
+involution (`TauCeti.Complex.realChart_inv_involutive`) that inverts the Euclidean norm
+(`TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv`); away from `0` it is smooth
+(`TauCeti.Complex.contDiffAt_realChart_inv`) with Jacobian determinant `|w⁻¹|⁴`
+(`TauCeti.Complex.det_fderiv_realChart_inv`).
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and so is
 the real chart of a map injective on a set, on the corresponding set
 (`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
@@ -163,6 +169,36 @@ theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff
     ContDiff ℝ n (realChart f) :=
   Complex.equivRealProdCLM.contDiff.comp
     ((hf.restrict_scalars ℝ).comp Complex.equivRealProdCLM.symm.contDiff)
+
+/-- A map that is `C^n` over `ℂ` at a point is `C^n` over `ℝ` in real coordinates there. -/
+theorem contDiffAt_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} {w : ℝ × ℝ}
+    (hf : ContDiffAt ℂ n f (Complex.equivRealProdCLM.symm w)) :
+    ContDiffAt ℝ n (realChart f) w :=
+  Complex.equivRealProdCLM.contDiff.contDiffAt.comp w
+    ((hf.restrict_scalars ℝ).comp w Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
+
+/-- The inversion `w ↦ w⁻¹`, read in real coordinates, is an involution. -/
+theorem realChart_inv_involutive : Function.Involutive (realChart (·⁻¹)) := fun w ↦ by
+  rw [realChart_apply, equivRealProdCLM_symm_realChart, inv_inv,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The inversion inverts the Euclidean norm. -/
+theorem norm_equivRealProdCLM_symm_realChart_inv (w : ℝ × ℝ) :
+    ‖Complex.equivRealProdCLM.symm (realChart (·⁻¹) w)‖ = ‖Complex.equivRealProdCLM.symm w‖⁻¹ := by
+  rw [equivRealProdCLM_symm_realChart, norm_inv]
+
+/-- Away from `0`, the Jacobian determinant of the inversion at `w` is `|w|⁻⁴ = |w⁻¹|⁴`. -/
+theorem det_fderiv_realChart_inv {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm w ≠ 0) :
+    (fderiv ℝ (realChart (·⁻¹)) w).det =
+      ‖Complex.equivRealProdCLM.symm (realChart (·⁻¹) w)‖ ^ 4 := by
+  rw [det_fderiv_realChart (hasDerivAt_inv hw), norm_equivRealProdCLM_symm_realChart_inv,
+    Complex.normSq_eq_norm_sq, norm_neg, norm_inv, norm_pow]
+  ring
+
+/-- Away from `0`, the inversion is smooth in real coordinates. -/
+theorem contDiffAt_realChart_inv {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm w ≠ 0)
+    {n : WithTop ℕ∞} : ContDiffAt ℝ n (realChart (·⁻¹)) w :=
+  contDiffAt_realChart (contDiffAt_inv ℂ hw)
 
 /-- The real chart of an injective map is injective. -/
 theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :

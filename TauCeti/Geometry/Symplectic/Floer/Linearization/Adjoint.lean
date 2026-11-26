@@ -10,6 +10,7 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Topology.Compactness.Normed
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The formal adjoint of the linearized Floer operator
@@ -43,7 +44,9 @@ Integrating by parts against this pairing gives the **formal adjoint**
   equation on which unique continuation for cokernel elements acts. Written through `ω` as the
   vector field `ζ = ω♭⁻¹ ∘ η` (`fderiv_flatEquiv_symm_apply`), at a point where `J` preserves `ω`
   the adjoint is `-ω♭` of `∂s ζ - J ∂t ζ + Aᵀ ζ`, a Cauchy–Riemann operator for `-J`, with
-  `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`). From
+  `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`); for a
+  constant structure `J₀` and the zero perturbation, `A = 0`
+  (`floerLinearizationAdjoint_const_eq_neg_flatEquiv`). From
   the first form, two adjoints differ on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
   the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
@@ -53,8 +56,11 @@ Integrating by parts against this pairing gives the **formal adjoint**
   `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`
   (`norm_floerLinearizationAdjoint_fun_smul_le`), and for `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`,
   `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²`
-  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). In particular the weight `e^{δ s}` shifts
-  the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
+  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). For a cutoff `β` with values in `[0, 1]`
+  whose derivative vanishes off a compact set `K`, this gives one constant `c` with
+  `‖D^* (β η)‖² ≤ 2 ‖D^* η‖² + c ‖η‖²` on `K` and no error term off `K`
+  (`exists_forall_norm_floerLinearizationAdjoint_smul_sq_le`). In particular the weight `e^{δ s}`
+  shifts the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
   `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
   (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
   both conjugated operators are `D - δ` and its adjoint `D^* - δ`.
@@ -274,6 +280,20 @@ theorem floerLinearizationAdjoint_eq_neg_flatEquiv (ω : SymplecticForm V)
     LinearMap.coe_toContinuousLinearMap']
   ring
 
+/-- **The formal adjoint of constant data.** For a constant `ω`-invariant structure `J₀` and the
+zero perturbation, the formal adjoint along any map is `-ω♭ (∂s ζ - J₀ ∂t ζ)` for `ζ = ω♭⁻¹ ∘ η`:
+a Cauchy–Riemann operator for `-J₀`. -/
+theorem floerLinearizationAdjoint_const_eq_neg_flatEquiv (ω : SymplecticForm V)
+    {J₀ : AlmostComplexStructure V} (u : ℝ × ℝ → V) {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ}
+    (hη : DifferentiableAt ℝ η z) (h : ω.Invariant J₀) :
+    ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u η z =
+      -ω.flatEquiv (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal +
+        (-J₀) (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag)) := by
+  rw [ω.floerLinearizationAdjoint_eq_neg_flatEquiv (J := fun _ _ ↦ J₀) hη
+    (differentiableAt_const _) h, floerLinearizationCoeff_const_zero]
+  simp
+
 /-- **Comparing two formal adjoints.** At a point where `w ↦ J(w, u w)` and
 `w ↦ J₁(w, u₁ w)` are differentiable, the formal adjoints along two data sets differ on `η` by at
 most `‖J(z, u z) - J₁(z, u₁ z)‖ ‖∂t η‖ + ‖A(z) - A₁(z)‖ ‖η‖`, where `A = ∂t J - C` is the
@@ -371,6 +391,36 @@ theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
   rw [floerLinearizationAdjoint_fun_smul hf hη hJu, sub_eq_add_neg, sub_eq_add_neg]
   exact norm_smul_add_add_sq_le hf₁ ((norm_neg _).trans_le h₁) ((norm_neg _).trans_le h₂)
 
+/-- **The cost of a cutoff for the formal adjoint.** Let `β` be a `C¹` function with values in
+`[0, 1]` whose derivative vanishes off a compact set `K`, and let `J` be `C¹` along a `C¹` map `u`.
+Then there is `c` such that for every differentiable covector field `η`, pointwise,
+`‖D^* (β η)‖² ≤ 2 ‖D^* η‖² + c ‖η‖²` on `K` and `‖D^* (β η)‖² ≤ 2 ‖D^* η‖²` off `K`. This is the
+pointwise adjoint counterpart of `exists_integral_norm_floerLinearization_smul_sq_le`. -/
+theorem exists_forall_norm_floerLinearizationAdjoint_smul_sq_le
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z)) (hu : ContDiff ℝ 1 u)
+    {β : ℝ × ℝ → ℝ} (hβ : ContDiff ℝ 1 β) (hβ1 : ∀ z, β z ∈ Icc 0 1) {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) :
+    ∃ c, 0 ≤ c ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, Differentiable ℝ η → ∀ z,
+      ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ β w • η w) z‖ ^ 2 ≤
+        2 * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 +
+          c * K.indicator (fun z ↦ ‖η z‖ ^ 2) z := by
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuous_comp_prodMk_of_continuousAt
+    (fun z ↦ (hJ z).continuousAt) hu.continuous).continuousOn
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hβ.continuous_fderiv one_ne_zero).continuousOn
+  refine ⟨2 * (max M 0 * (1 + max B 0)) ^ 2, by positivity, fun η hη z ↦ ?_⟩
+  have hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z :=
+    ((hJ z).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
+      (differentiableAt_id.prodMk (hu.differentiable one_ne_zero z))
+  have hβd := hβ.differentiable one_ne_zero z
+  have hβz : |β z| ≤ 1 := abs_le.2 ⟨by linarith [(hβ1 z).1], (hβ1 z).2⟩
+  by_cases hz : z ∈ K
+  · rw [indicator_of_mem hz]
+    exact norm_floerLinearizationAdjoint_fun_smul_sq_le hβd (hη z) hJu hβz
+      ((hM z hz).trans (le_max_left _ _)) ((hB z hz).trans (le_max_left _ _))
+  · simpa [indicator_of_notMem hz] using
+      norm_floerLinearizationAdjoint_fun_smul_sq_le hβd (hη z) hJu hβz (M := 0)
+        (by simp [hβK z hz]) le_rfl
+
 /-- **Conjugating the formal adjoint by an exponential weight.** On covector fields of the form
 `e^{δ s} η`, the formal adjoint acts as `e^{δ s} (D^* - δ) η`. This is the dual of
 `floerLinearization_exp_smul`, where the weight `e^{-δ s}` turns `D` into `D - δ`. -/
@@ -445,6 +495,28 @@ theorem continuous_floerLinearizationAdjoint_of_tsupport_subset {U : Set (ℝ ×
       Filter.mem_of_superset ((isClosed_tsupport η).isOpen_compl.mem_nhds fun h ↦ hz (hηU h))
         fun w hw ↦ floerLinearizationAdjoint_of_notMem_tsupport hw
     exact continuousAt_const.congr h.symm
+
+/-- For a `C¹` covector field `θ` supported in the support of a covector field `η` with compact
+support in an open set `S`, data regular along `u` on `S`, and a weight `w` continuous on `S`, the
+`w`-weighted square norm of `D^* θ` is integrable. -/
+theorem integrable_mul_norm_floerLinearizationAdjoint_sq {S : Set (ℝ × ℝ)} (hS : IsOpen S)
+    (hJ : ∀ z ∈ S, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ S, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ S, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ S, ContDiffAt ℝ 1 u z) {w : ℝ × ℝ → ℝ} (hwc : ContinuousOn w S)
+    {θ : ℝ × ℝ → V →L[ℝ] ℝ} (hθ : ContDiff ℝ 1 θ) (hθS : tsupport θ ⊆ tsupport η)
+    (hηc : HasCompactSupport η) (hηS : tsupport η ⊆ S) :
+    Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u θ z‖ ^ 2 := by
+  have hsupp :
+      Function.support (fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u θ z‖ ^ 2) ⊆
+        tsupport η := fun z hz ↦ by
+    by_contra h
+    exact hz (by simp [floerLinearizationAdjoint_of_notMem_tsupport fun h' ↦ h (hθS h')])
+  exact (ContinuousOn.continuous_of_tsupport_subset (hwc.mul
+    ((continuous_floerLinearizationAdjoint_of_tsupport_subset hJ hKs hKt hu hθ
+      (hθS.trans hηS)).norm.pow 2).continuousOn) hS
+    ((closure_minimal hsupp (isClosed_tsupport η)).trans hηS)).integrable_of_hasCompactSupport
+    (hηc.mono' hsupp)
 
 /-- Off the common topological support of `η` and `ξ`, the pairings `η(D ξ)`, `(D^* η)(ξ)`,
 `η(ξ)` and `(η ∘ J)(ξ)` all vanish near the point. -/
