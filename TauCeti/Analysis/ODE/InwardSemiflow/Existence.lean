@@ -78,8 +78,10 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
   let S : Set C(Icc 0 b, E) :=
     {γ | ∀ t : Icc 0 b, γ t ∈ closedBall (x + (t : ℝ) • X x) (ε / 2 * (t : ℝ))}
   have hS_closed : IsClosed S := by
-    rw [show S = ⋂ t : Icc 0 b, (fun γ : C(Icc 0 b, E) ↦ γ t) ⁻¹'
-      closedBall (x + (t : ℝ) • X x) (ε / 2 * (t : ℝ)) by ext; simp [S]]
+    have hS_eq : S = ⋂ t : Icc 0 b, (fun γ : C(Icc 0 b, E) ↦ γ t) ⁻¹'
+        closedBall (x + (t : ℝ) • X x) (ε / 2 * (t : ℝ)) := by
+      ext; simp [S]
+    rw [hS_eq]
     exact isClosed_iInter fun t ↦ isClosed_closedBall.preimage (by fun_prop)
   have : CompleteSpace S := hS_closed.completeSpace_coe
   have : Nonempty S := ⟨⟨⟨fun t ↦ x + (t : ℝ) • X x, by fun_prop⟩,
@@ -97,7 +99,10 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
   have hr_pos : 0 < r := dist_nonneg.trans_lt hx.1
   let P : S → S := fun γ ↦ ⟨P₀ γ, fun t ↦ by
     simp only [P₀, ContinuousMap.coe_mk, mem_closedBall, dist_eq_norm]
-    rw [show x + (t : ℝ) • X x = x + ∫ _ in (0 : ℝ)..(t : ℝ), X x by simp, add_sub_add_left_eq_sub,
+    -- Express the affine center `x + t • X x` as an integral to combine with `P₀ γ t`.
+    have hcenter : x + (t : ℝ) • X x = x + ∫ _ in (0 : ℝ)..(t : ℝ), X x := by
+      rw [intervalIntegral.integral_const, sub_zero]
+    rw [hcenter, add_sub_add_left_eq_sub,
       ← intervalIntegral.integral_sub ((hf_cont γ).intervalIntegrable _ _) intervalIntegrable_const]
     refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := ε / 2) fun s _ ↦ ?_).trans
       (by rw [sub_zero, abs_of_nonneg t.property.1])
@@ -238,7 +243,8 @@ theorem Convex.exists_local_forwardSemiflow_continuousOn {C U : Set E} (hC : Con
   obtain ⟨K, V, hV, hKLipV⟩ := hX hx₀
   obtain ⟨rL, hrL, hballV⟩ := Metric.mem_nhdsWithin_iff.mp hV
   obtain ⟨ε, hε, δ, hδ, hev⟩ :=
-    hC.exists_uniform_ball_subset_of_continuousWithinAt hX_in (hX.continuousOn x₀ hx₀)
+    hC.exists_uniform_ball_subset_of_mem_strictInwardCone_of_continuousWithinAt hX_in
+      (hX.continuousOn x₀ hx₀)
   obtain ⟨rI, hrI, hballI⟩ := Metric.mem_nhdsWithin_iff.mp hev
   set r := min (min rU rL) rI / 3 with hr_def
   have hr : 0 < r := by positivity
@@ -285,17 +291,17 @@ private theorem continuousOn_forwardSemiflow_prod_inter_package {C U : Set E} (h
       ContinuousOn (uncurry (forwardSemiflow X (U ∩ C))) (forwardSemiflowDomain X (U ∩ C)) :=
   hX.forwardSemiflow_prod_inter_induction hU
     (Q := ContinuousWithinAt (uncurry (forwardSemiflow X (U ∩ C))))
-    (fun _ _ _ _ hsub h ↦ h.mono hsub) (fun _ h ↦ h)
-    (fun _ _ _ _ hmem h ↦ h.mono_of_mem_nhdsWithin hmem)
-    (fun {s _ τ B₁ B₂} hQ₁ hQ₂ hs0 _ hmaps hcocycle ↦ by
-      have hΦs : ContinuousOn (fun p : ℝ × E ↦ forwardSemiflow X (U ∩ C) s p.2)
-          (Icc s (s + τ) ×ˢ B₁) :=
-        ContinuousOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₁
-          (continuousOn_const.prodMk continuousOn_snd) fun _ hp ↦ ⟨⟨hs0, by linarith⟩, hp.2⟩
-      exact (ContinuousOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₂
-        ((continuousOn_fst.sub continuousOn_const).prodMk hΦs)
-        fun p hp ↦ ⟨⟨by dsimp; linarith [hp.1.1], by dsimp; linarith [hp.1.2]⟩,
-          hmaps p.2 hp.2⟩).congr hcocycle)
+    ⟨fun _ _ _ _ hsub h ↦ h.mono hsub, fun _ h ↦ h,
+      fun _ _ _ _ hmem h ↦ h.mono_of_mem_nhdsWithin hmem,
+      fun {s _ τ B₁ B₂} hQ₁ hQ₂ hs0 _ hmaps hcocycle ↦ by
+        have hΦs : ContinuousOn (fun p : ℝ × E ↦ forwardSemiflow X (U ∩ C) s p.2)
+            (Icc s (s + τ) ×ˢ B₁) :=
+          ContinuousOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₁
+            (continuousOn_const.prodMk continuousOn_snd) fun _ hp ↦ ⟨⟨hs0, by linarith⟩, hp.2⟩
+        exact (ContinuousOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₂
+          ((continuousOn_fst.sub continuousOn_const).prodMk hΦs)
+          fun p hp ↦ ⟨⟨by dsimp; linarith [hp.1.1], by dsimp; linarith [hp.1.2]⟩,
+            hmaps p.2 hp.2⟩).congr hcocycle⟩
     (fun x hx ↦ by
       obtain ⟨r, hr, τ, hτ, _, _, _, hsub, _, _, _, hcont⟩ :=
         hC.exists_local_forwardSemiflow_continuousOn hU hX hx (hX_in x hx)
@@ -405,8 +411,9 @@ theorem Convex.forwardSemiflowInterval_eq_Ici_of_isCompact {C : Set E} (hC : Con
 
 omit [CompleteSpace E] in
 /-- **Linear growth / Lyapunov bound along an inward forward semiflow.** If `f : E → ℝ` is
-continuous on `S ⊆ C` and differentiable on `S ∩ interior C` with `df y (X y) ≤ c`, then
-`f (forwardSemiflow X S T x) ≤ f x + c * T` for every `T ∈ forwardSemiflowInterval X S x`. -/
+continuous on `S ⊆ C` and has an ambient Fréchet derivative `df y` (via `HasFDerivAt`) at every
+point `y ∈ S ∩ interior C` with `df y (X y) ≤ c`, then `f (forwardSemiflow X S T x) ≤ f x + c * T`
+for every `T ∈ forwardSemiflowInterval X S x`. -/
 theorem Convex.apply_forwardSemiflow_le_add_mul {C S : Set E} (hC : Convex ℝ C) (hSC : S ⊆ C)
     {X : E → E} (hX : LocallyLipschitzOn S X)
     (hX_in : ∀ y ∈ S, X y ∈ strictInwardCone C y) {f : E → ℝ} {df : E → E →L[ℝ] ℝ} {c : ℝ}
@@ -442,9 +449,9 @@ theorem Convex.apply_forwardSemiflow_le_add_mul {C S : Set E} (hC : Convex ℝ C
 
 /-- **Global forward completeness via a proper Lyapunov / exhaustion function.** If `C` is convex,
 `U` is open, `f : E → ℝ` is continuous on `U ∩ C` with compact sublevel sets
-`{y ∈ U ∩ C | f y ≤ R}`, and `f` is differentiable on `U ∩ interior C` with `df y (X y) ≤ c`,
-then every forward trajectory of a locally Lipschitz strictly inward field `X` on `U ∩ C` is
-defined on all of `[0, ∞)`. -/
+`{y ∈ U ∩ C | f y ≤ R}`, and `f` has an ambient Fréchet derivative `df y` at every point of
+`U ∩ interior C` with `df y (X y) ≤ c`, then every forward trajectory of a locally Lipschitz
+strictly inward field `X` on `U ∩ C` is defined on all of `[0, ∞)`. -/
 theorem Convex.forwardSemiflowInterval_eq_Ici_of_isCompact_sublevel {C U : Set E} (hC : Convex ℝ C)
     (hU : IsOpen U) {X : E → E} (hX : LocallyLipschitzOn (U ∩ C) X)
     (hX_in : ∀ y ∈ U ∩ C, X y ∈ strictInwardCone C y) {f : E → ℝ} {df : E → E →L[ℝ] ℝ} {c : ℝ}

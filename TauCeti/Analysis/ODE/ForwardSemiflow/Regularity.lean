@@ -39,7 +39,7 @@ theorem contDiffOn_forwardSemiflow_time {m : ℕ∞} {S : Set E} {X : E → E}
   exact (contDiffOn_succ_of_hasDerivWithinAt_comp (uniqueDiffOn_Ico 0 b) hX
     (fun _ hs ↦ forwardSemiflow_mem (hsub hs))
     (fun _ hs ↦ hX_lip.hasDerivWithinAt_forwardSemiflow_Ico hsub hs) t
-    ⟨nonneg_of_mem_forwardSemiflowInterval ht, htb⟩).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
-      ⟨Iio b, isOpen_Iio, htb, fun _ hs ↦ ⟨nonneg_of_mem_forwardSemiflowInterval hs.2, hs.1⟩⟩
+    ⟨nonneg_of_mem_forwardSemiflowInterval ht, htb⟩).mono_of_mem_nhdsWithin
+    (Ico_mem_nhdsWithin_forwardSemiflowInterval htb)
 
 end LocallyLipschitzOn

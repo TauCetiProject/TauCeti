@@ -43,7 +43,7 @@ theorem Convex.forwardSemiflow_mem_interior (hC : Convex ℝ C) (hSC : S ⊆ C)
     forwardSemiflow X S t x ∈ interior C := by
   obtain ⟨_, _, _, htI, hγt, _, hS, hγ'⟩ := exists_integralCurve_apply_eq_forwardSemiflow ht
   rw [← hγt]
-  exact hC.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico (hS.mono_right hSC)
+  exact hC.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico_of_mem_strictInwardCone (hS.mono_right hSC)
     (fun _ hs ↦ hγ' _ (Ioo_subset_Ico_self hs))
     (fun _ hs ↦ hX_in _ (hS (Ioo_subset_Ico_self hs))) ⟨ht_pos, htI.2⟩
 

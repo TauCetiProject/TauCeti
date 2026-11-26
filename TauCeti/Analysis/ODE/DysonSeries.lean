@@ -745,8 +745,11 @@ theorem norm_sub_dysonSeriesLeft_apply_le_add_mul_integral {M : ℝ → E →L[�
     simpa using (intervalIntegral.integral_eq_sub_of_hasDerivAt
       (fun s _ ↦ hasDerivAt_dysonSeriesLeft_apply hM (δ 0) s) hIntA).symm
   have hw_eq : w t = ∫ s in (0 : ℝ)..t, (r s + M s (w s)) := by
-    rw [show w t = (δ t - δ 0) - (dysonSeriesLeft M t (δ 0) - δ 0) by dsimp [w]; abel,
-      hδ_int t ht, add_sub_cancel_left, hA_int, ← intervalIntegral.integral_sub hIntδ hIntA]
+    -- Cancel the common initial value `δ 0` before substituting the integral equations.
+    have hw_sub : w t = (δ t - δ 0) - (dysonSeriesLeft M t (δ 0) - δ 0) := by
+      dsimp [w]; abel
+    rw [hw_sub, hδ_int t ht, add_sub_cancel_left, hA_int,
+      ← intervalIntegral.integral_sub hIntδ hIntA]
     refine intervalIntegral.integral_congr fun s _ ↦ ?_
     simp only [w, map_sub]; abel
   have hw_int : IntervalIntegrable (fun s ↦ CD * ‖w s‖) MeasureTheory.volume 0 t :=
