@@ -34,9 +34,8 @@ in `TauCeti.Algebra.Category.FiniteIsocrystal.Dual`.
 
 * `TauCeti.FiniteIsocrystal.tensorObj`: the tensor product `D ⊗[L] D'` with Frobenius `Φ ⊗ Φ'`.
 * `TauCeti.FiniteIsocrystal.unit σ`: the unit isocrystal `L` with Frobenius `σ`.
-* `TauCeti.FiniteIsocrystal.braidingIso`: the symmetry `x ⊗ y ↦ y ⊗ x`, the braiding.
 * The `MonoidalCategory`, `SymmetricCategory` and `MonoidalLinear E` instances on finite
-  isocrystals.
+  isocrystals; the braiding is the symmetry `x ⊗ y ↦ y ⊗ x`.
 
 ## Main results
 
@@ -45,6 +44,14 @@ in `TauCeti.Algebra.Category.FiniteIsocrystal.Dual`.
   their companions: the underlying linear maps of the monoidal structure maps are those of
   `ModuleCat L`.
 * `TauCeti.FiniteIsocrystal.finrank_tensorObj`: the rank of `D ⊗ D'` is the product of the ranks.
+
+## Implementation notes
+
+The construction mirrors Mathlib's
+`Mathlib/LinearAlgebra/QuadraticForm/QuadraticModuleCat/Monoidal.lean`, which is itself modelled
+on `Mathlib/Algebra/Category/AlgCat/Monoidal.lean`: the monoidal structure is `Monoidal.induced`
+along the faithful forgetful functor to `ModuleCat L`, with structure maps built from those of
+`ModuleCat L`, and the braiding is transported the same way with `BraidedCategory.ofFaithful`.
 
 ## References
 
@@ -76,12 +83,9 @@ variable (D D' : FiniteIsocrystal.{u} σ)
 `x ⊗ y ↦ Φ x ⊗ Φ' y`, is bijective. -/
 theorem map_frobenius_bijective :
     Function.Bijective (TensorProduct.map D.frobenius D'.frobenius) := by
-  let : RingHomInvPair (σ : L →+* L) (σ.symm : L →+* L) :=
-    RingHomInvPair.of_ringEquiv σ.toRingEquiv
-  let : RingHomInvPair (σ.symm : L →+* L) (σ : L →+* L) :=
-    RingHomInvPair.of_ringEquiv_symm σ.toRingEquiv
-  exact (TensorProduct.congr (LinearEquiv.ofBijective _ D.frobenius_bijective)
-    (LinearEquiv.ofBijective _ D'.frobenius_bijective)).bijective
+  rw [← D.toLinearMap_frobeniusEquiv, ← D'.toLinearMap_frobeniusEquiv,
+    ← TensorProduct.toLinearMap_congr]
+  exact (TensorProduct.congr _ _).bijective
 
 /-- The tensor product of two finite isocrystals: `D ⊗[L] D'` with Frobenius `Φ ⊗ Φ'`. -/
 abbrev tensorObj : FiniteIsocrystal.{u} σ :=
@@ -207,35 +211,24 @@ instance : MonoidalCategory (FiniteIsocrystal.{u} σ) :=
 instance : (forget₂ (FiniteIsocrystal.{u} σ) (ModuleCat.{u} L)).Monoidal :=
   Monoidal.fromInducedMonoidal _ _
 
-/-- The symmetry isomorphism `D ⊗ D' ≅ D' ⊗ D` of finite isocrystals, `x ⊗ y ↦ y ⊗ x`. It is the
-braiding `β_ D D'` of the symmetric monoidal structure. -/
-def braidingIso (D D' : FiniteIsocrystal.{u} σ) : D ⊗ D' ≅ D' ⊗ D :=
-  isoMk (D := D ⊗ D') (D' := D' ⊗ D) (TensorProduct.comm L D D') fun x =>
-    (TensorProduct.map_comm _ _ x).symm
-
-private theorem hom_hom_braidingIso (D D' : FiniteIsocrystal.{u} σ) :
-    (braidingIso D D').hom.hom = (TensorProduct.comm L D D').toLinearMap :=
-  isoMk_hom_hom (D := D ⊗ D') (D' := D' ⊗ D) _ _
-
-private theorem hom_inv_braidingIso (D D' : FiniteIsocrystal.{u} σ) :
-    (braidingIso D D').inv.hom = (TensorProduct.comm L D D').symm.toLinearMap :=
-  isoMk_inv_hom (D := D ⊗ D') (D' := D' ⊗ D) _ _
-
+/-- The braiding of finite isocrystals is the symmetry `x ⊗ y ↦ y ⊗ x`. -/
 instance : BraidedCategory (FiniteIsocrystal.{u} σ) :=
-  .ofFaithful (forget₂ (FiniteIsocrystal σ) (ModuleCat L)) braidingIso fun D D' => by
+  .ofFaithful (forget₂ (FiniteIsocrystal σ) (ModuleCat L))
+    (fun D D' => isoMk (D := D ⊗ D') (D' := D' ⊗ D) (TensorProduct.comm L D D') fun x =>
+      (TensorProduct.map_comm _ _ x).symm) fun D D' => by
     ext1
-    rw [ModuleCat.hom_comp, ModuleCat.hom_comp, forget₂_map, hom_hom_braidingIso]
+    rw [ModuleCat.hom_comp, ModuleCat.hom_comp, forget₂_map, isoMk_hom_hom]
     exact TensorProduct.ext' fun _ _ => rfl
 
 @[simp]
 theorem hom_hom_braiding (D D' : FiniteIsocrystal.{u} σ) :
     (β_ D D').hom.hom = (TensorProduct.comm L D D').toLinearMap :=
-  hom_hom_braidingIso D D'
+  isoMk_hom_hom (D := D ⊗ D') (D' := D' ⊗ D) _ _
 
 @[simp]
 theorem hom_inv_braiding (D D' : FiniteIsocrystal.{u} σ) :
     (β_ D D').inv.hom = (TensorProduct.comm L D D').symm.toLinearMap :=
-  hom_inv_braidingIso D D'
+  isoMk_inv_hom (D := D ⊗ D') (D' := D' ⊗ D) _ _
 
 /-- The forgetful functor from finite isocrystals to `L`-vector spaces is braided. -/
 instance : (forget₂ (FiniteIsocrystal.{u} σ) (ModuleCat.{u} L)).Braided where

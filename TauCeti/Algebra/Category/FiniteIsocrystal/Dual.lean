@@ -36,11 +36,19 @@ vector bundles on the Fargues–Fontaine curve respects.
 
 ## Main results
 
+* `TauCeti.FiniteIsocrystal.dualFrobenius_apply`: `Φ^∨ ℓ x = σ (ℓ (Φ⁻¹ x))`.
 * `TauCeti.FiniteIsocrystal.dualFrobenius_apply_frobenius`: `Φ^∨ ℓ (Φ x) = σ (ℓ x)`.
 * `TauCeti.FiniteIsocrystal.dualFrobenius_bijective`: the dual Frobenius is bijective.
 * `TauCeti.FiniteIsocrystal.map_frobenius_dualFrobenius_coevaluation_one`: the Frobenius
   `Φ ⊗ Φ^∨` of `D ⊗ D^∨` fixes the canonical element `∑ eᵢ ⊗ eᵢ^∨`.
 * `TauCeti.FiniteIsocrystal.finrank_dual`: the dual has the same rank.
+
+## Implementation notes
+
+The evaluation, coevaluation, `ExactPairing` and rigid structure follow Mathlib's
+`Mathlib/Algebra/Category/FGModuleCat/Basic.lean` (`FGModuleCat.exactPairing`): they reuse
+Mathlib's `coevaluation` and `contractLeft`, and the triangle identities are
+`contractLeft_assoc_coevaluation` and `contractLeft_assoc_coevaluation'`.
 
 ## References
 
@@ -68,39 +76,25 @@ section DualFrobenius
 
 variable (D : FiniteIsocrystal.{u} σ)
 
-/-- The inverse of the Frobenius of a finite isocrystal, as a function. -/
-private noncomputable def frobeniusInv : D → D :=
-  (Equiv.ofBijective D.frobenius D.frobenius_bijective).symm
-
-private theorem frobenius_frobeniusInv (x : D) : D.frobenius (frobeniusInv D x) = x :=
-  (Equiv.ofBijective D.frobenius D.frobenius_bijective).apply_symm_apply x
-
-private theorem frobeniusInv_frobenius (x : D) : frobeniusInv D (D.frobenius x) = x :=
-  (Equiv.ofBijective D.frobenius D.frobenius_bijective).symm_apply_apply x
-
-private theorem frobeniusInv_add (x y : D) :
-    frobeniusInv D (x + y) = frobeniusInv D x + frobeniusInv D y :=
-  D.frobenius_injective (by simp [frobenius_frobeniusInv])
-
-private theorem frobeniusInv_smul (c : L) (x : D) :
-    frobeniusInv D (c • x) = σ.symm c • frobeniusInv D x :=
-  D.frobenius_injective (by simp [frobenius_frobeniusInv])
-
 /-- The Frobenius of the dual of a finite isocrystal: the `σ`-semilinear map
 `ℓ ↦ σ ∘ ℓ ∘ Φ⁻¹` on `Dual L D`. -/
 noncomputable def dualFrobenius : Module.Dual L D →ₛₗ[(σ : L →+* L)] Module.Dual L D where
   toFun ℓ :=
-    { toFun x := σ (ℓ (frobeniusInv D x))
-      map_add' x y := by simp [frobeniusInv_add]
-      map_smul' c x := by simp [frobeniusInv_smul] }
+    { toFun x := σ (ℓ (D.frobeniusEquiv.symm x))
+      map_add' x y := by simp
+      map_smul' c x := by rw [map_smulₛₗ, map_smul, smul_eq_mul, map_mul]; simp }
   map_add' ℓ ℓ' := by ext; simp
   map_smul' c ℓ := by ext; simp
+
+/-- The dual Frobenius is `ℓ ↦ σ ∘ ℓ ∘ Φ⁻¹`. -/
+theorem dualFrobenius_apply (ℓ : Module.Dual L D) (x : D) :
+    D.dualFrobenius ℓ x = σ (ℓ (D.frobeniusEquiv.symm x)) := (rfl)
 
 /-- The dual Frobenius is characterized by `Φ^∨ ℓ (Φ x) = σ (ℓ x)`. -/
 @[simp]
 theorem dualFrobenius_apply_frobenius (ℓ : Module.Dual L D) (x : D) :
     D.dualFrobenius ℓ (D.frobenius x) = σ (ℓ x) := by
-  simp [dualFrobenius, frobeniusInv_frobenius]
+  simp [dualFrobenius_apply]
 
 /-- The dual Frobenius is the unique map with `Φ^∨ ℓ (Φ x) = σ (ℓ x)`. -/
 theorem eq_dualFrobenius_iff (ℓ ℓ' : Module.Dual L D) :
@@ -180,8 +174,8 @@ noncomputable def coevaluation : 𝟙_ (FiniteIsocrystal.{u} σ) ⟶ D ⊗ D.dua
   ofHom (_root_.coevaluation L D) fun c => by
     have hc (a : L) : _root_.coevaluation L D a = a • _root_.coevaluation L D 1 := by
       rw [← map_smul, smul_eq_mul, mul_one]
-    rw [tensorUnit_frobenius_apply, tensorObj_frobenius, hc, hc c, map_smulₛₗ,
-      map_frobenius_dualFrobenius_coevaluation_one, RingHom.coe_coe]
+    rw [tensorObj_frobenius, hc, hc c, map_smulₛₗ, map_frobenius_dualFrobenius_coevaluation_one]
+    simp
 
 @[simp]
 theorem hom_coevaluation : (coevaluation D).hom = _root_.coevaluation L D := (rfl)
