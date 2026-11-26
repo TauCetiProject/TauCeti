@@ -1047,13 +1047,13 @@ theorem matrixBilinearForm_pullbackPrincipal_smul_add_const {ε : ℝ} (hε : 0 
   ext η ξ
   simp [ContinuousLinearMap.adjoint_id, mul_assoc]
 
-/-- Under the homothety `z ↦ ε z + c`, `ε > 0`, the transformed drift is the drift at the image
+/-- Under the homothety `z ↦ ε z + p`, `ε > 0`, the transformed drift is the drift at the image
 point, multiplied by `ε ^ card ι ε⁻¹`. -/
-theorem pullbackDrift_smul_add_const {ε : ℝ} (hε : 0 < ε) (c : EuclideanSpace ℝ ι)
+theorem pullbackDrift_smul_add_const {ε : ℝ} (hε : 0 < ε) (p : EuclideanSpace ℝ ι)
     (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (z : EuclideanSpace ℝ ι) :
-    pullbackDrift (fun z => ε • z + c) b z = (ε ^ Fintype.card ι * ε⁻¹) • b (ε • z + c) := by
+    pullbackDrift (fun z => ε • z + p) b z = (ε ^ Fintype.card ι * ε⁻¹) • b (ε • z + p) := by
   have hT : (ε⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)) ∘L
-      fderiv ℝ (fun z : EuclideanSpace ℝ ι => ε • z + c) z =
+      fderiv ℝ (fun z : EuclideanSpace ℝ ι => ε • z + p) z =
       ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι) := by
     rw [fderiv_smul_add_const, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul,
       ContinuousLinearMap.id_comp, smul_smul, inv_mul_cancel₀ hε.ne', one_smul]

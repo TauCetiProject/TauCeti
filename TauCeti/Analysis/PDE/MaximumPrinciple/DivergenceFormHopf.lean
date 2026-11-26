@@ -42,8 +42,8 @@ positive linear rate along the inward normal: with `ν = (x₀ - y) / R`,
 
 `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`.
 
-In particular an inward derivative of `g` at `x₀`, if it exists, is positive. In Rosales's
-notation the drift is the term `cⁱ Dᵢu`, here with `c` bounded.
+In particular an inward derivative of `g` at `x₀`, if it exists, is positive. In Rosales's sign
+convention the drift is the term `cⁱ Dᵢu` with `cⁱ = -bⁱ`, here bounded.
 
 The same conclusion holds with a zeroth-order term
 (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos`): for a weak
@@ -80,9 +80,10 @@ small by the global `C^{1,β}` estimate.
   the lower-order terms. Its `H¹` norm and the Hölder constant of `(a' - A) ∇Φ` are of order
   `‖a' - A‖ + [a']_α`. The global `C^{1,β}` estimate on the unit ball
   (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_isBounded`), whose boundary charts are
-  `TauCeti.exists_affineIsometryEquiv_symm_mem_ball_iff`, bounds `∇ψ` by the same order on the whole
-  ball, and gives `ψ` a representative that is Lipschitz with that constant on the closed ball and
-  vanishes on the unit sphere (`TauCeti.W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le`).
+  `TauCeti.exists_affineIsometryEquiv_unitSphereGraph_chart`, bounds `∇ψ` by the same order on the
+  whole ball, and gives `ψ` a representative that is Lipschitz with that constant on the closed
+  ball and vanishes on the unit sphere
+  (`TauCeti.W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le`).
 * **The lower-order terms.** After rescaling, the drift is at most `ε ‖b‖` and the mass coefficient
   at most `ε² M`. Since `Φ`, `∇Φ`, `ψ` and `∇ψ` are bounded, for `ε` small the terms
   `ε b ∘ T · ∇(Φ + ψ)` and `ε² c ∘ T (Φ + ψ)` are absorbed by the margin `λ κ e^{-κ}` of the
@@ -488,7 +489,7 @@ private theorem exists_correction {α : ℝ≥0} (hα : 0 < α) (hα1 : α ≤ 1
     (min_le_left _ _) (q := ⊤) le_top (by simp [hβ1.le]) (Ω := unitBall) isBounded_ball
     (fun x hx => by
       rw [coe_unitBall, frontier_ball 0 one_ne_zero, mem_sphere_zero_iff_norm] at hx
-      obtain ⟨e, hex, hiff⟩ := exists_affineIsometryEquiv_symm_mem_ball_iff he₀ hx
+      obtain ⟨e, hex, hiff⟩ := exists_affineIsometryEquiv_unitSphereGraph_chart he₀ hx
       exact ⟨e, unitSphereGraph, 1 / 4, 1 / 4, Kγ, hex, by norm_num, by norm_num,
         unitSphereGraph_zero, contDiff_unitSphereGraph, hγK, hiff⟩) lam Lam 1
   -- The volume factor in the `L²` bound of the correction field.
@@ -718,14 +719,10 @@ private theorem energyFormH1_add_mul_correction_nonpos
   have hD : MeasurableSet (unitAnnulus (n := n) : Set E) := unitAnnulus.isOpen.measurableSet
   have hm := aestronglyMeasurable_restrict_of_subset_closedBall unitAnnulus_subset_closedBall hbc
   have hbD := hb.mono_set unitAnnulus_subset_closedBall
-  have hcb := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    hbD.upper_nonneg hm aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => hbD.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  have hcb := hbD.memLp_energyIntegrand_zero_zero hm
   have hbB := hb.mono_set (ball_subset_closedBall : (unitBall (n := n) : Set E) ⊆ closedBall 0 1)
-  have hcbB := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    hbB.upper_nonneg (aestronglyMeasurable_restrict_of_subset_closedBall (Ω := unitBall)
-      ball_subset_closedBall hbc) aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => hbB.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  have hcbB := hbB.memLp_energyIntegrand_zero_zero
+    (aestronglyMeasurable_restrict_of_subset_closedBall (Ω := unitBall) ball_subset_closedBall hbc)
   have hβL : MemLp β ⊤ (volume.restrict (unitAnnulus (n := n) : Set E)) :=
     memLp_top_of_bound hβm δ ((ae_restrict_iff' hD).2 (ae_of_all _ hβδ))
   have hcL : MemLp c ⊤ (volume.restrict (unitAnnulus (n := n) : Set E)) :=
@@ -752,7 +749,7 @@ private theorem energyFormH1_add_mul_correction_nonpos
       W1p.value (w : W1p volume unitAnnulus 2) z :=
     integral_nonneg_of_ae hw
   rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner hcb hβL hcL,
-    energyFormH1_eq_energyFormH1_zero_add_setIntegral hcb hcL, hprin]
+    energyFormH1_eq_energyFormH1_zero_add_setIntegral (b := 0) hcb hcL, hprin]
   nlinarith [mul_le_mul_of_nonneg_left hΦ hθ, mul_le_mul_of_nonneg_right
     (mul_le_mul_of_nonneg_left hγ hθ) hint]
 

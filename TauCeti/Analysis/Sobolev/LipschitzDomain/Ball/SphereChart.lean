@@ -34,8 +34,8 @@ half-height and radius `1/4`, the unit ball is exactly the region above this gra
   `TauCeti.unitSphereChart_symm_apply` and `TauCeti.norm_unitSphereChart_symm_sq`.
 * `TauCeti.unitSphereChart_symm_mem_ball_iff`: near the chart centre the unit ball is the region
   above `TauCeti.unitSphereGraph`.
-* `TauCeti.exists_affineIsometryEquiv_symm_mem_ball_iff`: such charts at every point of the unit
-  sphere, all with values in one model space.
+* `TauCeti.exists_affineIsometryEquiv_unitSphereGraph_chart`: such charts at every point of the
+  unit sphere, all with values in one model space.
 -/
 
 public section
@@ -185,7 +185,8 @@ origin, in which the unit ball is the region above the cut-off sphere graph insi
 half-height and radius `1/4`: the coordinates `TauCeti.unitSphereChart e₀` after the reflection
 exchanging `x` and `e₀`. So the unit ball is a bounded open set with smooth boundary, in the form
 that the global estimates up to the boundary take as input, with charts sharing one model space. -/
-theorem exists_affineIsometryEquiv_symm_mem_ball_iff {e₀ x : E} (he₀ : ‖e₀‖ = 1) (hx : ‖x‖ = 1) :
+theorem exists_affineIsometryEquiv_unitSphereGraph_chart {e₀ x : E} (he₀ : ‖e₀‖ = 1)
+    (hx : ‖x‖ = 1) :
     ∃ e : E ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × (ℝ ∙ e₀)ᗮ), e x = 0 ∧
       ∀ z ∈ normalCylinder (1 / 4) (1 / 4),
         (e.symm z ∈ ball 0 1 ↔ unitSphereGraph z.snd < z.fst) := by
