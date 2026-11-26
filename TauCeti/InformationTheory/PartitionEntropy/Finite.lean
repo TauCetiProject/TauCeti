@@ -7,6 +7,8 @@ module
 
 public import TauCeti.InformationTheory.LabelEntropy
 public import TauCeti.InformationTheory.PartitionEntropy
+import Mathlib.MeasureTheory.Measure.Real
+import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Partition entropy of labels with finitely many values
@@ -22,7 +24,10 @@ finite-label entropies `TauCeti.labelEntropy` and `TauCeti.condLabelEntropy`, ma
 * `TauCeti.conditionalPartitionEntropy_eq_ofReal_condLabelEntropy`: for every measure,
   `conditionalPartitionEntropy μ a b = ENNReal.ofReal (condLabelEntropy μ a b)`.
 * `TauCeti.countablePartitionEntropy_ne_top` and `TauCeti.conditionalPartitionEntropy_ne_top`:
-  both are finite on finite alphabets, and their real parts are the finite-label entropies.
+  for every measure, both are finite on finite alphabets.
+* `TauCeti.toReal_countablePartitionEntropy` (under a probability or zero measure) and
+  `TauCeti.toReal_conditionalPartitionEntropy` (for every measure): their real parts are the
+  finite-label entropies.
 -/
 
 public section
@@ -38,15 +43,15 @@ variable {X ι κ : Type*} {mX : MeasurableSpace X} {μ : Measure X} [Fintype ι
 is its finite-label entropy. -/
 theorem countablePartitionEntropy_eq_ofReal_labelEntropy [IsZeroOrProbabilityMeasure μ]
     (a : X → ι) : countablePartitionEntropy μ a = ENNReal.ofReal (labelEntropy μ a) := by
-  rw [labelEntropy_def, countablePartitionEntropy_eq_ofReal_sum]
+  rw [labelEntropy_def, countablePartitionEntropy_def, tsum_fintype, ENNReal.ofReal_sum_of_nonneg]
+  exact fun _ _ ↦ negMulLog_nonneg measureReal_nonneg measureReal_le_one
 
-/-- On a finite alphabet, under a probability (or zero) measure, the partition entropy of a label
-is finite. -/
-theorem countablePartitionEntropy_ne_top {ι : Type*} [Finite ι] [IsZeroOrProbabilityMeasure μ]
-    (a : X → ι) : countablePartitionEntropy μ a ≠ ∞ := by
+/-- On a finite alphabet, for every measure, the partition entropy of a label is finite. -/
+theorem countablePartitionEntropy_ne_top {ι : Type*} [Finite ι] (μ : Measure X) (a : X → ι) :
+    countablePartitionEntropy μ a ≠ ∞ := by
   have := Fintype.ofFinite ι
-  rw [countablePartitionEntropy_eq_ofReal_labelEntropy]
-  exact ENNReal.ofReal_ne_top
+  rw [countablePartitionEntropy_def, tsum_fintype]
+  exact ENNReal.sum_ne_top.mpr fun _ _ ↦ ENNReal.ofReal_ne_top
 
 /-- On a finite alphabet, under a probability (or zero) measure, the real part of the partition
 entropy of a label is its finite-label entropy. -/

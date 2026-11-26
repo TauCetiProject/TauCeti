@@ -147,10 +147,11 @@ theorem condLabelEntropy_zero_measure (X : Ω → A) (Y : Ω → B) :
   simp [condLabelEntropy]
 
 /-- A cell term `μ.real (s ∩ t) * log (μ.real t / μ.real (s ∩ t))` of a conditional entropy is
-nonnegative, for every measure: if `t` has finite mass then `μ.real (s ∩ t) ≤ μ.real t`, and
-otherwise `μ.real t = 0` and the term vanishes through `log 0 = 0`. -/
+nonnegative, for every measure. -/
 theorem measureReal_inter_mul_log_div_nonneg (μ : Measure Ω) (s t : Set Ω) :
     0 ≤ μ.real (s ∩ t) * log (μ.real t / μ.real (s ∩ t)) := by
+  -- If `t` has infinite mass then `μ.real t = 0` and the term vanishes through `log 0 = 0`;
+  -- otherwise `μ.real (s ∩ t) ≤ μ.real t`.
   rcases eq_or_ne (μ t) ⊤ with h | h
   · simp [measureReal_def, h]
   rcases (measureReal_nonneg (μ := μ) (s := s ∩ t)).eq_or_lt with h0 | h0
