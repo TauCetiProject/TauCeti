@@ -37,8 +37,9 @@ the trace under conjugation by the two exponential weights in either order, whic
 commutative entries; the entrywise effect of conjugating by the exponential line of a real
 diagonal matrix; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
 Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`, and the
-criterion `det (exp K) = 1 ↔ trace K = 0`. Differentiating entrywise at `t = 0`, the entries of
-the exponential line `t ↦ exp (t • X)` determine those of `X`.
+criterion `det (exp K) = 1 ↔ trace K = 0`. The entries of the exponential line `t ↦ exp (t • X)`
+are real-analytic, with derivative the entries of `exp (t • X) * X`; differentiating at `t = 0`,
+they determine those of `X`.
 
 ## The argument
 
@@ -63,8 +64,9 @@ exponentials whenever all their powers agree at those entries.
 * `Matrix.IsUpperTriangular.exp_apply_diag_pos`: real diagonal entries exponentiate to positive
   real diagonal entries.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
-* `Matrix.hasDerivAt_exp_smul_apply`: an entry of `X` is the derivative at `0` of that entry of
-  the exponential line `t ↦ exp (t • X)`.
+* `Matrix.hasDerivAt_exp_smul_apply`: the derivative of an entry of the exponential line
+  `u ↦ exp (u • X)` at `t` is that entry of `exp (t • X) * X`; at `t = 0` it is the entry of `X`.
+* `Matrix.analyticAt_exp_smul_apply`: the entries of the exponential line are real-analytic.
 * `Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero`: an entry of `X` vanishes if that entry
   of `exp (t • X)` vanishes for every real `t`.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
@@ -214,24 +216,29 @@ section EntryDerivative
 
 variable {m 𝕜 : Type*} [Fintype m] [DecidableEq m] [RCLike 𝕜]
 
-/-- An entry of `X` is the derivative at `0` of that entry of the exponential line
-`t ↦ exp (t • X)`. -/
-theorem hasDerivAt_exp_smul_apply (X : Matrix m m 𝕜) (i j : m) :
-    HasDerivAt (fun t : ℝ ↦ exp (t • X) i j) (X i j) 0 := by
+/-- **Entries of the exponential line.** At every real `t`, the `(i, j)` entry of the exponential
+line `u ↦ exp (u • X)` has derivative the `(i, j)` entry of `exp (t • X) * X`. -/
+theorem hasDerivAt_exp_smul_apply (X : Matrix m m 𝕜) (i j : m) (t : ℝ) :
+    HasDerivAt (fun u : ℝ ↦ exp (u • X) i j) ((exp (t • X) * X) i j) t := by
   have h := (LinearMap.toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j)).hasFDerivAt.comp_hasDerivAt
-    0 (hasDerivAt_exp_smul_const X (0 : ℝ))
-  rw [zero_smul, exp_zero, one_mul] at h
-  -- `h` is about `entryLinearMap ℝ 𝕜 i j ∘ fun t ↦ exp (t • X)` with derivative
-  -- `entryLinearMap ℝ 𝕜 i j X`; both unfold definitionally to the `(i, j)` entry, so `exact`
-  -- closes the goal by that unfolding (`simpa [entryLinearMap_apply]` leaves the derivative
-  -- `toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j) X` unrewritten).
+    t (hasDerivAt_exp_smul_const X t)
+  -- `h` is about `entryLinearMap ℝ 𝕜 i j ∘ fun u ↦ exp (u • X)` with derivative
+  -- `entryLinearMap ℝ 𝕜 i j (exp (t • X) * X)`; both unfold definitionally to the `(i, j)` entry,
+  -- so `exact` closes the goal by that unfolding (`simpa [entryLinearMap_apply]` leaves the
+  -- derivative `toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j) (exp (t • X) * X)` unrewritten).
   exact h
+
+/-- The entries of the exponential line `u ↦ exp (u • X)` are real-analytic. -/
+theorem analyticAt_exp_smul_apply (X : Matrix m m 𝕜) (i j : m) (t : ℝ) :
+    AnalyticAt ℝ (fun u : ℝ ↦ exp (u • X) i j) t :=
+  (LinearMap.toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j)).analyticAt _ |>.comp <|
+    (exp_analytic (𝕂 := ℝ) _).comp (analyticAt_id.smul analyticAt_const)
 
 /-- An entry of `X` vanishes if that entry of `exp (t • X)` vanishes for every real `t`. -/
 theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {X : Matrix m m 𝕜} {i j : m}
     (h : ∀ t : ℝ, exp (t • X) i j = 0) : X i j = 0 := by
-  have hX := hasDerivAt_exp_smul_apply X i j
-  simp only [h] at hX
+  have hX := hasDerivAt_exp_smul_apply X i j 0
+  simp only [h, zero_smul, exp_zero, one_mul] at hX
   exact hX.unique (hasDerivAt_const 0 0)
 
 end EntryDerivative
