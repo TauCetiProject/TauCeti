@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Length
+public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 public import TauCeti.LinearAlgebra.Pi.Orthogonal
 
 /-!
@@ -80,15 +80,6 @@ omit [Fintype k] in
 theorem row_mem_rowLattice [DecidableEq k] (A : Matrix r k O) (a : O) (i : r) :
     A.row i ∈ A.rowLattice a :=
   subset_span ⟨.inl i, rfl⟩
-
-omit [Fintype k] in
-/-- The row indexed by `Sum.inr j` in `A.fromRows (a • 1)` is the scaled standard basis vector. -/
-@[simp]
-theorem row_fromRows_smul_one_inr {R : Type*} [MulZeroOneClass R] [DecidableEq k]
-    (A : Matrix r k R) (a : R) (j : k) :
-    (A.fromRows (a • (1 : Matrix k k R))).row (.inr j) = a • Pi.single j (1 : R) := by
-  ext i
-  simp [Matrix.one_apply, Pi.single_apply, eq_comm]
 
 omit [Fintype k] in
 /-- Every `a`-scaled standard basis vector lies in `A.rowLattice a`. -/
