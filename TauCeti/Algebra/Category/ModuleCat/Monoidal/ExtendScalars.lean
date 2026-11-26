@@ -50,7 +50,7 @@ instance : NatTrans.IsMonoidal (restrictScalarsComp'.{u} f₁₂ f₂₃ f₁₃
     simp only [restrictScalarsComp'_inv_app, Functor.comp_obj]
     -- `restrictScalars_η` is stated in `dsimp%` normal form, which `rw` cannot match here.
     erw [restrictScalars_η, restrictScalars_η, restrictScalars_η]
-    rfl
+    rw [RingHom.comp_apply]
   tensor M N := by
     refine MonoidalCategory.tensor_ext fun m n ↦ ?_
     subst h
@@ -84,17 +84,16 @@ variable {K : Type u} [CommRing K] {C : Type u₁} [Category.{v₁} C] [Monoidal
 /-- `scalarExtensionCompIso` is a monoidal natural isomorphism. -/
 instance (ω : C ⥤ ModuleCat.{u} K) [ω.LaxMonoidal] {R S : Type u} [CommRing R] [Algebra K R]
     [CommRing S] [Algebra K S] (f : R →ₐ[K] S) :
-    NatTrans.IsMonoidal (ω.scalarExtensionCompIso f).hom :=
-  inferInstanceAs (NatTrans.IsMonoidal ((Functor.associator _ _ _).hom ≫ whiskerLeft ω
-      (ModuleCat.extendScalarsComp' (algebraMap K R) (f : R →+* S) (algebraMap K S)
-        f.comp_algebraMap.symm).inv))
+    NatTrans.IsMonoidal (ω.scalarExtensionCompIso f).hom := by
+  rw [scalarExtensionCompIso_hom]
+  infer_instance
 
 /-- `scalarExtensionIsoOfIso` is a monoidal natural isomorphism. -/
 instance {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D] (F : C ⥤ D) [F.LaxMonoidal]
     {ω : C ⥤ ModuleCat.{u} K} [ω.LaxMonoidal] {ω' : D ⥤ ModuleCat.{u} K} [ω'.LaxMonoidal]
     (ι : F ⋙ ω' ≅ ω) [NatTrans.IsMonoidal ι.hom] (R : Type u) [CommRing R] [Algebra K R] :
-    NatTrans.IsMonoidal (scalarExtensionIsoOfIso F ι R).hom :=
-  inferInstanceAs (NatTrans.IsMonoidal ((Functor.associator _ _ _).inv ≫
-    whiskerRight ι.hom (ModuleCat.extendScalars (algebraMap K R))))
+    NatTrans.IsMonoidal (scalarExtensionIsoOfIso F ι R).hom := by
+  rw [scalarExtensionIsoOfIso_hom]
+  infer_instance
 
 end CategoryTheory.Functor

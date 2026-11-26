@@ -236,13 +236,20 @@ variable {R S : Type u} [CommRing R] [Algebra K R] [CommRing S] [Algebra K S]
 
 /-- Extending the scalars of `ω.scalarExtension R` along a morphism `f : R →ₐ[K] S` of
 `K`-algebras is `ω.scalarExtension S`. -/
--- Exposed so that its monoidality in `TauCeti.Algebra.Category.ModuleCat.Monoidal.ExtendScalars`
--- is inherited from that of its defining composite.
-@[expose] noncomputable def scalarExtensionCompIso (f : R →ₐ[K] S) :
+noncomputable def scalarExtensionCompIso (f : R →ₐ[K] S) :
     ω.scalarExtension R ⋙ ModuleCat.extendScalars (f : R →+* S) ≅ ω.scalarExtension S :=
   Functor.associator _ _ _ ≪≫ isoWhiskerLeft ω
     (ModuleCat.extendScalarsComp' (algebraMap K R) (f : R →+* S) (algebraMap K S)
       f.comp_algebraMap.symm).symm
+
+/-- `scalarExtensionCompIso` is the associator followed by the left whiskering of the inverse of
+the composition isomorphism of extension of scalars. -/
+-- Not `simp`: the component lemmas below are the simp normal form.
+theorem scalarExtensionCompIso_hom (f : R →ₐ[K] S) :
+    (ω.scalarExtensionCompIso f).hom = (Functor.associator _ _ _).hom ≫ whiskerLeft ω
+      (ModuleCat.extendScalarsComp' (algebraMap K R) (f : R →+* S) (algebraMap K S)
+        f.comp_algebraMap.symm).inv :=
+  (rfl)
 
 /-- The components of the inverse of `scalarExtensionCompIso` are those of the composition
 isomorphism of extension of scalars. -/
@@ -268,10 +275,17 @@ variable {D : Type u₂} [Category.{v₂} D] (F : C ⥤ D)
 variable {ω} {ω' : D ⥤ ModuleCat.{u} K} (ι : F ⋙ ω' ≅ ω)
 
 /-- The scalar extension of `ω'` precomposed with `F` is that of `ω`, through `ι`. -/
--- Exposed for the same reason as `scalarExtensionCompIso`.
-@[expose] noncomputable def scalarExtensionIsoOfIso (R : Type u) [CommRing R] [Algebra K R] :
+noncomputable def scalarExtensionIsoOfIso (R : Type u) [CommRing R] [Algebra K R] :
     F ⋙ ω'.scalarExtension R ≅ ω.scalarExtension R :=
   (Functor.associator _ _ _).symm ≪≫ isoWhiskerRight ι _
+
+/-- `scalarExtensionIsoOfIso` is the inverse associator followed by the extension of scalars of
+`ι`. -/
+-- Not `simp`: the component lemmas below are the simp normal form.
+theorem scalarExtensionIsoOfIso_hom (R : Type u) [CommRing R] [Algebra K R] :
+    (scalarExtensionIsoOfIso F ι R).hom = (Functor.associator _ _ _).inv ≫
+      whiskerRight ι.hom (ModuleCat.extendScalars (algebraMap K R)) :=
+  (rfl)
 
 /-- The components of `scalarExtensionIsoOfIso` are the scalar extensions of those of `ι`. -/
 @[simp]

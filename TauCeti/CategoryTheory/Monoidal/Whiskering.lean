@@ -77,13 +77,15 @@ def whiskerRightAut (F : C ⥤ D) [F.LaxMonoidal] (G : D ⥤ E) [G.LaxMonoidal] 
     (inferInstanceAs (NatTrans.IsMonoidal (Functor.whiskerRight (forgetAut F u).asIso.hom G))))
   map_one' := by
     ext X
-    simp [map_one]
+    simp only [map_one, Aut.one_asIso, Functor.isoWhiskerRight_refl, Iso.refl_hom, id_hom,
+      NatTrans.id_app]
     -- Normalize the bundling constructors across the `of` wrapper.
     dsimp only [isoMk, homMk, of]
     simp only [Iso.refl_hom, NatTrans.id_app]
   map_mul' u v := by
     ext X
-    simp [map_mul]
+    simp only [map_mul, Aut.mul_asIso, Functor.isoWhiskerRight_trans, Iso.trans_hom, comp_hom,
+      NatTrans.comp_app]
     dsimp only [isoMk, homMk, of]
     simp only [Iso.trans_hom, NatTrans.comp_app]
 

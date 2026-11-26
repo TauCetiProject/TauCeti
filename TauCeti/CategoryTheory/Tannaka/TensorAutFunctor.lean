@@ -85,30 +85,30 @@ noncomputable def tensorAutMapValue (f : R →ₐ[K] S) :
       (LaxMonoidalFunctor.whiskerRightAut _ _)
 
 /-- The components of the base change of a monoidal natural automorphism are the extended
-components, conjugated by `scalarExtensionCompIso`. -/
-theorem forgetAut_tensorAutMapValue_app (f : R →ₐ[K] S)
+components, conjugated by the composition isomorphism of extension of scalars. -/
+@[simp]
+theorem tensorAutMapValue_apply_asIso_hom_hom_app (f : R →ₐ[K] S)
     (η : Aut (LaxMonoidalFunctor.of (ω.scalarExtension R))) (X : C) :
-    (LaxMonoidalFunctor.forgetAut _ (ω.tensorAutMapValue f η)).asIso.hom.app X =
-      (ω.scalarExtensionCompIso f).inv.app X ≫
-        (ModuleCat.extendScalars (f : R →+* S)).map
-          ((LaxMonoidalFunctor.forgetAut _ η).asIso.hom.app X) ≫
-          (ω.scalarExtensionCompIso f).hom.app X := by
-  rw [LaxMonoidalFunctor.forgetAut_apply_asIso_hom, LaxMonoidalFunctor.forgetAut_apply_asIso_hom]
+    (ω.tensorAutMapValue f η).asIso.hom.hom.app X =
+      (ModuleCat.extendScalarsComp' (algebraMap K R) (f : R →+* S) (algebraMap K S)
+          f.comp_algebraMap.symm).hom.app (ω.obj X) ≫
+        (ModuleCat.extendScalars (f : R →+* S)).map (η.asIso.hom.hom.app X) ≫
+          (ModuleCat.extendScalarsComp' (algebraMap K R) (f : R →+* S) (algebraMap K S)
+            f.comp_algebraMap.symm).inv.app (ω.obj X) := by
   simp only [tensorAutMapValue, MonoidHom.coe_comp, Function.comp_apply,
     MulEquiv.coe_toMonoidHom, Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom,
     LaxMonoidalFunctor.comp_hom, NatTrans.comp_app]
   rw [LaxMonoidalFunctor.whiskerRightAut_apply_asIso_hom_hom_app]
   -- Normalize the bundling constructors across `LaxMonoidalFunctor.of`.
   dsimp only [LaxMonoidalFunctor.isoMk, LaxMonoidalFunctor.homMk, LaxMonoidalFunctor.of]
+  simp only [scalarExtensionCompIso_inv_app, scalarExtensionCompIso_hom_app]
 
 /-- Base change along the identity is the identity. -/
 @[simp]
 theorem tensorAutMapValue_id (η : Aut (LaxMonoidalFunctor.of (ω.scalarExtension R))) :
     ω.tensorAutMapValue (AlgHom.id K R) η = η := by
-  refine LaxMonoidalFunctor.forgetAut_injective _ ?_
-  ext X : 4
-  simp only [forgetAut_tensorAutMapValue_app, scalarExtensionCompIso_inv_app,
-    scalarExtensionCompIso_hom_app]
+  ext X : 5
+  rw [tensorAutMapValue_apply_asIso_hom_hom_app]
   exact ModuleCat.extendScalarsComp'_conj_id _ _
 
 /-- Base change along a composite is the composite of base changes. -/
@@ -116,10 +116,8 @@ theorem tensorAutMapValue_id (η : Aut (LaxMonoidalFunctor.of (ω.scalarExtensio
 theorem tensorAutMapValue_comp (f : R →ₐ[K] S) (g : S →ₐ[K] T)
     (η : Aut (LaxMonoidalFunctor.of (ω.scalarExtension R))) :
     ω.tensorAutMapValue (g.comp f) η = ω.tensorAutMapValue g (ω.tensorAutMapValue f η) := by
-  refine LaxMonoidalFunctor.forgetAut_injective _ ?_
-  ext X : 4
-  simp only [forgetAut_tensorAutMapValue_app, scalarExtensionCompIso_inv_app,
-    scalarExtensionCompIso_hom_app]
+  ext X : 5
+  simp only [tensorAutMapValue_apply_asIso_hom_hom_app]
   exact ModuleCat.extendScalarsComp'_conj_comp f g _ _
 
 /-- The tensor-automorphism group functor of `ω`: a commutative `K`-algebra `R` is sent to the
@@ -166,15 +164,13 @@ noncomputable def tensorAutEquivOfIso (R : Type u) [CommRing R] [Algebra K R] :
 
 /-- The components of a transported monoidal automorphism are the components at the image under
 `e.functor`, conjugated by the scalar extension of `ι`. -/
-theorem forgetAut_tensorAutEquivOfIso_app (R : Type u) [CommRing R] [Algebra K R]
+@[simp]
+theorem tensorAutEquivOfIso_apply_asIso_hom_hom_app (R : Type u) [CommRing R] [Algebra K R]
     (η : Aut (LaxMonoidalFunctor.of (ω'.scalarExtension R))) (X : C) :
-    (LaxMonoidalFunctor.forgetAut _ (tensorAutEquivOfIso e ι R η)).asIso.hom.app X =
-      (ModuleCat.extendScalars (algebraMap K R)).map
-          (ι.inv.app X) ≫
-        (LaxMonoidalFunctor.forgetAut _ η).asIso.hom.app (e.functor.obj X) ≫
-          (ModuleCat.extendScalars (algebraMap K R)).map
-            (ι.hom.app X) := by
-  rw [LaxMonoidalFunctor.forgetAut_apply_asIso_hom, LaxMonoidalFunctor.forgetAut_apply_asIso_hom]
+    (tensorAutEquivOfIso e ι R η).asIso.hom.hom.app X =
+      (ModuleCat.extendScalars (algebraMap K R)).map (ι.inv.app X) ≫
+        η.asIso.hom.hom.app (e.functor.obj X) ≫
+          (ModuleCat.extendScalars (algebraMap K R)).map (ι.hom.app X) := by
   simp only [tensorAutEquivOfIso, MulEquiv.trans_apply, Aut.autMulEquivOfIso_apply_asIso,
     Iso.trans_hom, Iso.symm_hom, LaxMonoidalFunctor.comp_hom, NatTrans.comp_app,
     LaxMonoidalFunctor.whiskerLeftAutEquiv_apply]
@@ -188,10 +184,9 @@ theorem tensorAutEquivOfIso_tensorAutMapValue (f : R →ₐ[K] S)
     (η : Aut (LaxMonoidalFunctor.of (ω'.scalarExtension R))) :
     tensorAutEquivOfIso e ι S (ω'.tensorAutMapValue f η) =
       ω.tensorAutMapValue f (tensorAutEquivOfIso e ι R η) := by
-  refine LaxMonoidalFunctor.forgetAut_injective _ ?_
-  ext X : 4
-  simp only [forgetAut_tensorAutEquivOfIso_app, forgetAut_tensorAutMapValue_app,
-    scalarExtensionCompIso_inv_app, scalarExtensionCompIso_hom_app]
+  ext X : 5
+  simp only [tensorAutEquivOfIso_apply_asIso_hom_hom_app,
+    tensorAutMapValue_apply_asIso_hom_hom_app]
   exact ModuleCat.extendScalarsComp'_conj_naturality f _ _ _
 
 /-- The tensor-automorphism functors of fibre functors that correspond under a monoidal
