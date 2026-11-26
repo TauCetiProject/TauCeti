@@ -57,6 +57,8 @@ orthogonal to every sine, so it vanishes by the one-dimensional theorem, and Fub
 * `TauCeti.ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero`: completeness of the
   quarter-wave sines `sin ((2k + 1) π (x - a) / (2 (b - a)))`, `k ≥ 0`, the eigenfunctions with a
   Dirichlet condition at `a` and a Neumann condition at `b`.
+* `TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero`: a system complete in one variable
+  passes its completeness to functions of two variables, coefficient by coefficient.
 * `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero`: completeness of the products of
   sines among the integrable functions on a box.
 
@@ -381,42 +383,50 @@ theorem ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero {g : ℝ �
     hzero, ae_restrict_mem measurableSet_Ioc] with x hx hxm
   simpa [hxm.2] using hx
 
-/-- Completeness of the sine system in the first variable of a product, with a parameter `y`:
-if for every `k ≥ 1` the coefficient `y ↦ ∫ G (t, y) sin (k π (t - a) / (b - a)) dt` vanishes for
-almost every `y`, then `G` vanishes almost everywhere. For almost every `y` the slice `G (·, y)`
-is orthogonal to every sine, so it vanishes by the one-dimensional theorem, and Tonelli concludes.
--/
-private theorem ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero {β : Type*}
-    [MeasurableSpace β] {ν : Measure β} [SFinite ν] {G : ℝ × β → ℝ}
-    (hG : Integrable G ((volume.restrict (Ioo a b)).prod ν))
-    (h : ∀ k : ℕ, 0 < k → (fun y => ∫ t, G (t, y) * Real.sin (k * π * (t - a) / (b - a))
-      ∂volume.restrict (Ioo a b)) =ᵐ[ν] 0) :
-    G =ᵐ[(volume.restrict (Ioo a b)).prod ν] 0 := by
-  have hslice : ∀ᵐ y ∂ν, (fun t => G (t, y)) =ᵐ[volume.restrict (Ioo a b)] 0 := by
-    have hall : ∀ᵐ y ∂ν, ∀ k : ℕ, 0 < k → ∫ t, G (t, y) *
-        Real.sin (k * π * (t - a) / (b - a)) ∂volume.restrict (Ioo a b) = 0 := by
-      rw [ae_all_iff]
-      intro k
-      by_cases hk : 0 < k
-      · filter_upwards [h k hk] with y hy _ using hy
-      · exact ae_of_all _ fun _ h => absurd h hk
-    filter_upwards [hall, hG.prod_left_ae] with y hy hyi
-    rcases le_or_gt a b with hab | hab
-    · have hIoc : volume.restrict (Ioo a b) = volume.restrict (Ioc a b) :=
-        Measure.restrict_congr_set Ioo_ae_eq_Ioc
-      have := ae_eq_zero_of_forall_integral_mul_sin_eq_zero (g := fun t => G (t, y))
-        (by simpa [IntegrableOn, hIoc] using hyi) fun k hk => by
-          rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo]
-          exact hy k hk
-      simpa [hIoc] using this
-    · simp [Ioo_eq_empty_of_le hab.le, Filter.EventuallyEq]
-  have hlin : ∫⁻ z, ‖G z‖ₑ ∂(volume.restrict (Ioo a b)).prod ν = 0 := by
+/-- **Completeness in the first variable of a product.** Let `s k`, `k` in a countable type, be
+functions such that every `μ`-integrable `g` with `∫ g (s k) dμ = 0` for every `k` vanishes
+`μ`-almost everywhere. If `G` is integrable on `α × β` and for every `k` the coefficient
+`y ↦ ∫ G (t, y) s k t dμ(t)` vanishes for `ν`-almost every `y`, then `G` vanishes almost
+everywhere: for almost every `y` the slice `G (·, y)` is orthogonal to every `s k`, so it vanishes,
+and Tonelli concludes. -/
+theorem ae_eq_zero_prod_of_forall_integral_mul_eq_zero {α β κ : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] [Countable κ] {μ : Measure α} {ν : Measure β} [SFinite μ] [SFinite ν]
+    {s : κ → α → ℝ}
+    (hs : ∀ g : α → ℝ, Integrable g μ → (∀ k, ∫ t, g t * s k t ∂μ = 0) → g =ᵐ[μ] 0)
+    {G : α × β → ℝ} (hG : Integrable G (μ.prod ν))
+    (h : ∀ k, (fun y => ∫ t, G (t, y) * s k t ∂μ) =ᵐ[ν] 0) :
+    G =ᵐ[μ.prod ν] 0 := by
+  have hslice : ∀ᵐ y ∂ν, (fun t => G (t, y)) =ᵐ[μ] 0 := by
+    filter_upwards [ae_all_iff.2 h, hG.prod_left_ae] with y hy hyi
+    exact hs _ hyi hy
+  have hlin : ∫⁻ z, ‖G z‖ₑ ∂μ.prod ν = 0 := by
     rw [lintegral_prod_symm _ hG.aestronglyMeasurable.eNorm]
     refine lintegral_eq_zero_of_ae_eq_zero ?_
     filter_upwards [hslice] with y hy
     exact lintegral_eq_zero_of_ae_eq_zero (by filter_upwards [hy] with t ht; simp [ht])
   filter_upwards [(lintegral_eq_zero_iff' hG.aestronglyMeasurable.eNorm).1 hlin] with z hz
   simpa using hz
+
+/-- Completeness of the sine system in the first variable of a product, with a parameter `y`:
+the case of `TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero` for the sines of `(a, b)`. -/
+private theorem ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero {β : Type*}
+    [MeasurableSpace β] {ν : Measure β} [SFinite ν] {G : ℝ × β → ℝ}
+    (hG : Integrable G ((volume.restrict (Ioo a b)).prod ν))
+    (h : ∀ k : ℕ, 0 < k → (fun y => ∫ t, G (t, y) * Real.sin (k * π * (t - a) / (b - a))
+      ∂volume.restrict (Ioo a b)) =ᵐ[ν] 0) :
+    G =ᵐ[(volume.restrict (Ioo a b)).prod ν] 0 := by
+  refine ae_eq_zero_prod_of_forall_integral_mul_eq_zero
+    (s := fun (k : {k : ℕ // 0 < k}) t => Real.sin (k * π * (t - a) / (b - a)))
+    (fun g hg hgs => ?_) hG fun k => h k k.property
+  rcases le_or_gt a b with hab | hab
+  · have hIoc : volume.restrict (Ioo a b) = volume.restrict (Ioc a b) :=
+      Measure.restrict_congr_set Ioo_ae_eq_Ioc
+    have := ae_eq_zero_of_forall_integral_mul_sin_eq_zero (g := g)
+      (by simpa [IntegrableOn, hIoc] using hg) fun k hk => by
+        rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo]
+        exact hgs ⟨k, hk⟩
+    simpa [hIoc] using this
+  · simp [Ioo_eq_empty_of_le hab.le, Filter.EventuallyEq]
 
 /-- The sine system on a box, in the coordinates `Fin n → ℝ` and with the product of the
 restricted measures, by induction on the dimension. -/
