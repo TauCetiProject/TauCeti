@@ -85,6 +85,7 @@ theorem ColengthDvd.length_quotient_le (hMN : ColengthDvd M N z) (hM : M.FG) (hz
     _ = Ring.ord O m.det := by
         rw [length_quotient_range_mulVecLin_eq_ord_det _ hdet, det_transpose]
     _ ≤ Ring.ord O z := Ring.ord_le_ord_of_dvd hm_det
+    _ = Module.length O (O ⧸ Ideal.span {z}) := by rw [Ring.ord]
 
 /-- Over a noetherian domain of dimension at most one, for instance a discrete valuation ring, let
 `M` be finitely generated, `p ≠ 0`, and let the endomorphism `y` be onto `M` modulo `p ^ n` up to

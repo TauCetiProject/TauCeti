@@ -28,7 +28,8 @@ embedding `U(1) × U(m) → U(m + 1)`.
 
 ## Main results
 
-* `Matrix.cornerBlockSucc_inj`: `diag(c, B)` determines `c` and `B`.
+* `Matrix.cornerBlockSucc_inj`: `diag(c, B)` determines `c` and `B`;
+  `Matrix.submatrix_succ_succ_cornerBlockSucc`: removing its first row and column leaves `B`.
 * `Matrix.cornerBlockSucc_mul_cornerBlockSucc`, `Matrix.cornerBlockSucc_one`,
   `Matrix.star_cornerBlockSucc`: `diag(c, B)` is multiplicative and unital, and commutes with the
   star operation, blockwise.
@@ -87,6 +88,13 @@ theorem cornerBlockSucc_inj {c c' : α} {B B' : Matrix (Fin m) (Fin m) α} :
   · simpa using congrFun (congrFun h 0) 0
   · simpa using congrFun (congrFun h i.succ) j.succ
 
+/-- Removing the row and the column indexed by `0` from `diag(c, B)` leaves `B`. -/
+@[simp]
+theorem submatrix_succ_succ_cornerBlockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
+    (cornerBlockSucc c B).submatrix Fin.succ Fin.succ = B := by
+  ext i j
+  simp
+
 end Zero
 
 /-- Block-diagonal matrices `diag(c, B)` multiply blockwise. -/
@@ -124,7 +132,6 @@ theorem cornerBlockSucc_diagonal [Zero α] (c : α) (d : Fin m → α) :
 theorem det_cornerBlockSucc [CommRing α] (c : α) (B : Matrix (Fin m) (Fin m) α) :
     (cornerBlockSucc c B).det = c * B.det := by
   rw [det_succ_row_zero, Fin.sum_univ_succ]
-  simp
-  rfl
+  simp [submatrix_succ_succ_cornerBlockSucc]
 
 end Matrix

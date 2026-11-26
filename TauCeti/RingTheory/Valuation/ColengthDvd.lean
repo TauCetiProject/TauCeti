@@ -10,8 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.LinearAlgebra.Matrix.Adjugate
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
+import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
 # Colength bounds over a valuation domain
@@ -58,9 +58,8 @@ theorem colengthDvd_inf_comap_span (M : Submodule O V) (f : V →ₗ[O] O) (a : 
   -- take a member `Φ p` whose value divides the others, subtract multiples of it from them to
   -- clear their values, and multiply it by `a`
   classical
-  obtain ⟨p, -, hp⟩ := exists_max_image univ (fun k ↦ Ideal.span {f (Φ k)}) ⟨⟨0, hn⟩, mem_univ _⟩
-  replace hp (k : Fin n) : f (Φ p) ∣ f (Φ k) :=
-    Ideal.span_singleton_le_span_singleton.1 (hp k (mem_univ k))
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  obtain ⟨p, hp⟩ := TauCeti.PreValuationRing.exists_forall_dvd fun k ↦ f (Φ k)
   choose c hc using hp
   let m : Matrix (Fin n) (Fin n) O := updateCol 1 p fun i ↦ if i = p then a else -c i
   have h_det : m.det = a := by simp [m, ← cramer_apply, cramer_one]

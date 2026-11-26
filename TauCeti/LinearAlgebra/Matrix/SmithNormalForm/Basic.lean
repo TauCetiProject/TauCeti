@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.LinearAlgebra.Matrix.CornerBlockSucc
+import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
 # Existence of Smith normal forms
@@ -41,13 +42,6 @@ public section
 namespace Matrix
 
 variable {R : Type*} [CommRing R]
-
-/-- Of the entries of a nonempty matrix over a valuation ring, one divides all the others. -/
-private theorem exists_dvd_apply [IsDomain R] [ValuationRing R] {m n : Type*} [Finite m] [Finite n]
-    [Nonempty m] [Nonempty n] (A : Matrix m n R) : ∃ i j, ∀ k l, A i j ∣ A k l := by
-  classical
-  obtain ⟨⟨i, j⟩, h⟩ := Finite.exists_max fun p : m × n ↦ Ideal.span {A p.1 p.2}
-  exact ⟨i, j, fun k l ↦ Ideal.span_singleton_le_span_singleton.1 (h (k, l))⟩
 
 /-- Permuting the rows and the columns of `A` does not change the existence of a Smith normal form:
 if `L * A.submatrix σ τ * Q = D`, then `L' * A * Q' = D` with the permuted matrices `L'` and `Q'`,
@@ -113,9 +107,10 @@ theorem exists_smith_normal_form_of_valuationRing [IsDomain R] [ValuationRing R]
   | 0, _ => ⟨1, 1, 0, by simp, by simp, fun i ↦ i.elim0, Subsingleton.elim _ _⟩
   | n + 1, A => by
     -- move an entry dividing all the others to the corner
-    obtain ⟨i, j, hij⟩ := exists_dvd_apply A
+    obtain ⟨⟨i, j⟩, hij⟩ :=
+      TauCeti.PreValuationRing.exists_forall_dvd fun p : Fin (n + 1) × Fin (n + 1) ↦ A p.1 p.2
     set A' := A.submatrix (Equiv.swap 0 i) (Equiv.swap 0 j) with hA'
-    have hdvd (k l : Fin (n + 1)) : A' 0 0 ∣ A' k l := by simpa [hA'] using hij _ _
+    have hdvd (k l : Fin (n + 1)) : A' 0 0 ∣ A' k l := by simpa [hA'] using hij (_, _)
     choose w hw using hdvd
     obtain ⟨L₁, Q₁, hL₁, hQ₁, h₁⟩ := exists_mul_mul_eq_cornerBlockSucc w hw
     -- a Smith normal form of the remaining block, scaled by the corner entry
