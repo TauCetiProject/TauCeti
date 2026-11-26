@@ -54,7 +54,8 @@ which carries the Jacobian `|det Dκ⁻¹|` (`TestFunction.pushforwardCLM`), giv
 ## Main declarations
 
 * `Bundle.Trivialization.chartComponent`: the component along `v` of the local representative of
-  `T` in a chart and a frame, as a complex distribution on the chart target.
+  `T` in a chart and a frame, as a complex distribution on the chart target. It is a real
+  distribution, fixed by complex conjugation (`Bundle.Trivialization.mapCLM_conj_chartComponent`).
 * `Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`: the change of chart and frame for the
   components.
 * `Bundle.Trivialization.contDiffOn_abs_det_fderiv_mul_coord_coordChangeL`: the smoothness of the
@@ -136,6 +137,15 @@ theorem chartComponent_neg (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
 theorem chartComponent_sub (T T' : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
     t.chartComponent c hc hct (T - T') v =
       t.chartComponent c hc hct T v - t.chartComponent c hc hct T' v := by
+  ext φ
+  simp
+
+/-- The components of a real functional are real distributions: complex conjugation fixes
+them. -/
+@[simp]
+theorem mapCLM_conj_chartComponent (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    mapCLM conjCLE.toContinuousLinearMap (t.chartComponent c hc hct T v) =
+      t.chartComponent c hc hct T v := by
   ext φ
   simp
 

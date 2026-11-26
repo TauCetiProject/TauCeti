@@ -75,6 +75,10 @@ notions of microlocal regularity on bundles (`TauCeti.BundleTest.isMicrolocallyA
   with its defining property `TauCeti.BundleTest.waveFrontSet_eq_microlocalSingularSet`, empty
   for `T = 0` on a manifold without boundary (`TauCeti.BundleTest.waveFrontSet_zero`).
 * `TauCeti.BundleTest.mk_smul_mem_waveFrontSet_iff`: the wave front set is conic.
+* `TauCeti.BundleTest.isMicrolocallySmoothAt_neg_iff`,
+  `TauCeti.BundleTest.mk_neg_mem_waveFrontSet_iff`: the wave front set of a real functional is
+  symmetric under `ξ ↦ -ξ`, since its components are real distributions and complex conjugation
+  reflects the wave front set of a distribution (`Distribution.waveFrontSet_conj`).
 * `TauCeti.BundleTest.waveFrontSet_add_subset`, `TauCeti.BundleTest.waveFrontSet_smul`: the wave
   front set of a sum lies in the union, and nonzero real multiples do not change it.
 * `TauCeti.BundleTest.singularSupport`: the singular support of `T`, the points near which `T` is
@@ -209,6 +213,22 @@ theorem mk_smul_mem_waveFrontSet_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {x :
     {ξ : TangentSpace I x →L[ℝ] ℝ} {r : ℝ} (hr : 0 < r) :
     TotalSpace.mk x (r • ξ) ∈ waveFrontSet I T ↔ TotalSpace.mk x ξ ∈ waveFrontSet I T :=
   mk_smul_mem_microlocalSingularSet_iff isInvariantMicrolocalRegularity_isMicrolocallySmoothAt hr
+
+/-- A real functional is microlocally smooth at `-ξ` exactly when it is microlocally smooth at `ξ`:
+its components are real distributions, and conjugation reflects microlocal smoothness in the
+frequency variable (`Distribution.isMicrolocallySmoothAt_conj_iff`). -/
+theorem isMicrolocallySmoothAt_neg_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    {ξ : TangentSpace I x →L[ℝ] ℝ} :
+    IsMicrolocallySmoothAt T x (-ξ) ↔ IsMicrolocallySmoothAt T x ξ :=
+  isMicrolocallyAt_neg_iff fun _ _ _ _ ↦ Distribution.isMicrolocallySmoothAt_conj_iff
+
+/-- **The wave front set is symmetric**: it contains `-ξ` exactly when it contains `ξ`. With
+`TauCeti.BundleTest.mk_smul_mem_waveFrontSet_iff`, it is invariant under every nonzero real scaling
+of the covectors. -/
+theorem mk_neg_mem_waveFrontSet_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    {ξ : TangentSpace I x →L[ℝ] ℝ} :
+    TotalSpace.mk x (-ξ) ∈ waveFrontSet I T ↔ TotalSpace.mk x ξ ∈ waveFrontSet I T :=
+  mk_neg_mem_microlocalSingularSet_iff fun _ _ _ _ ↦ Distribution.isMicrolocallySmoothAt_conj_iff
 
 /-- The sum of two functionals microlocally smooth at a covector is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.add {S T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}

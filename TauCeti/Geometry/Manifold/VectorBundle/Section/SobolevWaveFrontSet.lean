@@ -58,6 +58,8 @@ agrees with it where `f ≠ 0`.
   cotangent bundle, with its defining property
   `TauCeti.BundleTest.sobolevWaveFrontSet_eq_microlocalSingularSet`.
 * `TauCeti.BundleTest.mk_smul_mem_sobolevWaveFrontSet_iff`: the `H^s` wave front set is conic.
+* `TauCeti.BundleTest.isMicrolocallySobolevAt_neg_iff`,
+  `TauCeti.BundleTest.mk_neg_mem_sobolevWaveFrontSet_iff`: it is symmetric under `ξ ↦ -ξ`.
 * `TauCeti.BundleTest.isOpen_setOf_isMicrolocallySobolevAt`: microlocal `H^s` regularity is an
   open condition on the cotangent bundle, so the `H^s` wave front set is closed in the complement
   of the zero section (`TauCeti.BundleTest.isOpen_diff_sobolevWaveFrontSet`).
@@ -158,6 +160,14 @@ theorem isMicrolocallySobolevAt_smul_iff {s : ℝ} {T : BundleTest I F V →L_c[
     IsMicrolocallySobolevAt s T x (r • ξ) ↔ IsMicrolocallySobolevAt s T x ξ :=
   isMicrolocallyAt_smul_iff (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) hr
 
+/-- A real functional is microlocally `H^s` at `-ξ` exactly when it is microlocally `H^s` at `ξ`:
+its components are real distributions, and conjugation reflects microlocal `H^s` regularity in the
+frequency variable (`Distribution.isMicrolocallySobolevAt_conj_iff`). -/
+theorem isMicrolocallySobolevAt_neg_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    {ξ : TangentSpace I x →L[ℝ] ℝ} :
+    IsMicrolocallySobolevAt s T x (-ξ) ↔ IsMicrolocallySobolevAt s T x ξ :=
+  isMicrolocallyAt_neg_iff fun _ _ _ _ ↦ Distribution.isMicrolocallySobolevAt_conj_iff
+
 /-- The sum of two functionals microlocally `H^s` at a covector is microlocally `H^s` there. -/
 theorem IsMicrolocallySobolevAt.add {s : ℝ} {S T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     {ξ : TangentSpace I x →L[ℝ] ℝ} (hS : IsMicrolocallySobolevAt s S x ξ)
@@ -232,6 +242,14 @@ theorem mk_smul_mem_sobolevWaveFrontSet_iff {s : ℝ} {T : BundleTest I F V →L
       TotalSpace.mk x ξ ∈ sobolevWaveFrontSet I s T :=
   mk_smul_mem_microlocalSingularSet_iff (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s)
     hr
+
+/-- **The `H^s` wave front set is symmetric**: it contains `-ξ` exactly when it contains `ξ`. -/
+theorem mk_neg_mem_sobolevWaveFrontSet_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    {ξ : TangentSpace I x →L[ℝ] ℝ} :
+    TotalSpace.mk x (-ξ) ∈ sobolevWaveFrontSet I s T ↔
+      TotalSpace.mk x ξ ∈ sobolevWaveFrontSet I s T :=
+  mk_neg_mem_microlocalSingularSet_iff fun _ _ _ _ ↦
+    Distribution.isMicrolocallySobolevAt_conj_iff
 
 /-- **The `H^s` wave front set is closed** in the complement of the zero section of the cotangent
 bundle. -/
