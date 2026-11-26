@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
-import TauCeti.Algebra.Group.Subgroup.Conjugates
+public import TauCeti.Algebra.Group.Subgroup.Conjugates
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
 
 /-!
@@ -161,42 +161,75 @@ private def equivSubtype : TransitiveSubgroupClass α ≃
   toFun c := ⟨c.orbit, c.exists_isPretransitive⟩
   invFun c := ofOrbit c.val c.property
 
+/-- The conjugacy class of a subgroup contains a transitive subgroup exactly when the subgroup is
+transitive. -/
+theorem exists_isPretransitive_mk_iff (G : Subgroup (Perm α)) :
+    (∃ H : Subgroup (Perm α), Quotient.mk'' H = (Quotient.mk'' G :
+      orbitRel.Quotient (ConjAct (Perm α)) (Subgroup (Perm α))) ∧ IsPretransitive H α) ↔
+      IsPretransitive G α :=
+  ⟨fun hG ↦ isPretransitive_of_mk_eq (ofOrbit _ hG) rfl, fun hG ↦ ⟨G, rfl, hG⟩⟩
+
+/-- Transport along an equivalence `e : α ≃ β` sends exactly the conjugacy classes of subgroups of
+`Equiv.Perm α` that contain a transitive subgroup to those of `Equiv.Perm β` that contain one. -/
+theorem exists_isPretransitive_orbitRelQuotientSubgroupEquiv_iff (e : α ≃ β)
+    (c : orbitRel.Quotient (ConjAct (Perm α)) (Subgroup (Perm α))) :
+    (∃ H : Subgroup (Perm β),
+      Quotient.mk'' H = e.permCongrHom.orbitRelQuotientSubgroupEquiv c ∧ IsPretransitive H β) ↔
+      ∃ G : Subgroup (Perm α), Quotient.mk'' G = c ∧ IsPretransitive G α := by
+  induction c using Quotient.inductionOn' with
+  | h G =>
+    rw [MulEquiv.orbitRelQuotientSubgroupEquiv_mk, exists_isPretransitive_mk_iff,
+      exists_isPretransitive_mk_iff, ← MulEquiv.toMonoidHom_eq_coe,
+      isPretransitive_map_permCongrHom_iff]
+
 /-- **Transport of classes along an equivalence.** An equivalence `e : α ≃ β` identifies the
 conjugacy classes of transitive subgroups of `Equiv.Perm α` and of `Equiv.Perm β`, sending the
 class of `G` to the class of its transport along `e`. By
 `TauCeti.TransitiveSubgroupClass.congr_eq_congr` the identification does not depend on `e`. -/
 def congr (e : α ≃ β) : TransitiveSubgroupClass α ≃ TransitiveSubgroupClass β :=
-  equivSubtype.trans <| (e.permCongrHom.orbitRelQuotientSubgroupEquiv.subtypeEquiv fun c ↦ by
-    constructor
-    · rintro ⟨G, rfl, hG⟩
-      refine ⟨G.map e.permCongrHom.toMonoidHom, ?_,
-        (isPretransitive_map_permCongrHom_iff e G).mpr hG⟩
-      rw [MulEquiv.orbitRelQuotientSubgroupEquiv_mk, MulEquiv.toMonoidHom_eq_coe]
-    · rintro ⟨H, hHc, hH⟩
-      refine ⟨H.map e.symm.permCongrHom.toMonoidHom, ?_,
-        (isPretransitive_map_permCongrHom_iff e.symm H).mpr hH⟩
-      rw [← e.permCongrHom.orbitRelQuotientSubgroupEquiv.symm_apply_apply c, ← hHc,
-        MulEquiv.orbitRelQuotientSubgroupEquiv_symm_mk, Equiv.permCongrHom_symm,
-        MulEquiv.toMonoidHom_eq_coe]).trans equivSubtype.symm
+  equivSubtype.trans <| (e.permCongrHom.orbitRelQuotientSubgroupEquiv.subtypeEquiv fun c ↦
+    (exists_isPretransitive_orbitRelQuotientSubgroupEquiv_iff e c).symm).trans equivSubtype.symm
+
+/-- The orbit of the transport of a class is the transport of its orbit; this unfolds `congr`. -/
+@[simp]
+theorem orbit_congr (e : α ≃ β) (c : TransitiveSubgroupClass α) :
+    (congr e c).orbit = e.permCongrHom.orbitRelQuotientSubgroupEquiv c.orbit :=
+  (rfl)
 
 /-- The transport of the class of `G` along `e` is the class of the transport of `G`. -/
 @[simp]
 theorem congr_mk (e : α ≃ β) (G : Subgroup (Perm α)) (hG : IsPretransitive G α) :
-    congr e (mk G hG) =
-      mk (G.map e.permCongrHom.toMonoidHom) ((isPretransitive_map_permCongrHom_iff e G).mpr hG) :=
-  TransitiveSubgroupClass.ext <| (MulEquiv.orbitRelQuotientSubgroupEquiv_mk _ G).trans <| by
-    rw [orbit_mk, MulEquiv.toMonoidHom_eq_coe]
+    congr e (mk G hG) = mk (G.map e.permCongrHom.toMonoidHom)
+      ((isPretransitive_map_permCongrHom_iff e G).mpr hG) := by
+  ext1
+  rw [orbit_congr, orbit_mk, orbit_mk, MulEquiv.orbitRelQuotientSubgroupEquiv_mk,
+    MulEquiv.toMonoidHom_eq_coe]
 
-/-- The inverse of the transport along `e` is the transport along `e.symm`. -/
+/-- The transport along the identity is the identity. -/
 @[simp]
-theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm := by
-  refine Equiv.ext fun c ↦ (congr e).injective ?_
+theorem congr_refl : congr (Equiv.refl α) = Equiv.refl _ := by
+  refine Equiv.ext fun c ↦ ?_
+  induction c using ind with
+  | h G hG =>
+    rw [congr_mk, Equiv.refl_apply, mk_eq_mk_iff]
+    exact ⟨1, by ext; simp [← Perm.one_def]⟩
+
+/-- Transporting along `e` and then along `f` is transporting along `e.trans f`. -/
+@[simp]
+theorem congr_trans {γ : Type*} (e : α ≃ β) (f : β ≃ γ) :
+    (congr e).trans (congr f) = congr (e.trans f) := by
+  refine Equiv.ext fun c ↦ ?_
   induction c using ind with
   | h G hG =>
     ext1
-    rw [Equiv.apply_symm_apply, congr_mk, congr_mk, orbit_mk, orbit_mk,
-      ← Equiv.permCongrHom_symm, ← MulEquiv.coe_mapSubgroup, ← MulEquiv.coe_mapSubgroup,
-      ← MulEquiv.symm_mapSubgroup, OrderIso.apply_symm_apply]
+    rw [Equiv.trans_apply, congr_mk, congr_mk, congr_mk, orbit_mk, orbit_mk, Subgroup.map_map]
+    simp only [MulEquiv.toMonoidHom_eq_coe]
+    rw [← MulEquiv.toMonoidHom_trans, Equiv.permCongrHom_trans]
+
+/-- The inverse of the transport along `e` is the transport along `e.symm`. -/
+@[simp]
+theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
+  Equiv.symm_eq_iff_trans_eq_refl.mpr <| by rw [congr_trans, Equiv.self_trans_symm, congr_refl]
 
 /-- **The transport of classes does not depend on the equivalence.** Two equivalences
 `e e' : α ≃ β` differ by the permutation `e.symm.trans e'` of `β`, and conjugation by a
