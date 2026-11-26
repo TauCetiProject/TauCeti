@@ -352,7 +352,7 @@ def primitiveForms (D : ℤ) :
 
 /-- A form is primitive positive definite of discriminant `-n` exactly when it has discriminant
 `-n`, positive leading coefficient and coprime coefficients. -/
-@[simp] theorem mem_posDef_inf_primitiveForms (n : ℕ) [NeZero n] {f : BinaryQuadraticForm ℤ} :
+theorem mem_posDef_inf_primitiveForms (n : ℕ) [NeZero n] {f : BinaryQuadraticForm ℤ} :
     f ∈ posDef n ⊓ primitiveForms (-n) ↔ f.discrim = -n ∧ 0 < f.a ∧ f.IsPrimitive :=
   calc f ∈ posDef n ⊓ primitiveForms (-n) ↔ f ∈ posDef n ∧ f ∈ primitiveForms (-n) := Iff.rfl
     _ ↔ _ := by rw [mem_posDef, mem_primitiveForms]; tauto

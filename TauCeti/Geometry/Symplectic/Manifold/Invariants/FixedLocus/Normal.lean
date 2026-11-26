@@ -105,7 +105,7 @@ submanifold of fixed points, the symplectic representative of `k • ν` is the 
 theorem symplecticNormalRepresentative_fixedNormalRepresentation
     (h : hσ.HasSymplecticTangentImages I f)
     (x : M) (hn : n ≠ 0) (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x))
-    (k : K) (ν : f.NormalSpace x hn) :
+    (k : K) (ν : f.isImmersion.NormalSpace x hn) :
     f.symplecticNormalRepresentative h x hn (f.fixedNormalRepresentation hf x hn hd k ν) =
       mfderiv J J (fun y : N ↦ k • y) (f x) (f.symplecticNormalRepresentative h x hn ν) := by
   refine (f.symplecticNormalRepresentative_eq_iff h x hn _ _).2 ⟨?_, ?_⟩
@@ -124,7 +124,7 @@ normal symplectic form. -/
 theorem symplecticNormalForm_fixedNormalRepresentation
     (h : hσ.HasSymplecticTangentImages I f)
     (x : M) (hn : n ≠ 0) (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x))
-    (k : K) (ν μ : f.NormalSpace x hn) :
+    (k : K) (ν μ : f.isImmersion.NormalSpace x hn) :
     f.symplecticNormalForm h x hn (f.fixedNormalRepresentation hf x hn hd k ν)
         (f.fixedNormalRepresentation hf x hn hd k μ) =
       f.symplecticNormalForm h x hn ν μ := by
@@ -145,19 +145,20 @@ only normal vector at `x` fixed by every element of `K` is zero. -/
 theorem invariants_fixedNormalRepresentation_eq_bot
     (h : hσ.HasSymplecticTangentImages I f)
     (x : M) (hn : n ≠ 0) (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x))
-    (hfix : fixedTangentSubspace J K (f x) ≤ f.tangentRange x hn) :
+    (hfix : fixedTangentSubspace J K (f x) ≤ f.isImmersion.tangentRange x hn) :
     (f.fixedNormalRepresentation hf x hn hd).invariants = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun ν hν ↦ ?_
   set w := f.symplecticNormalRepresentative h x hn ν
   -- The representative `w` of a fixed class is a fixed tangent vector, hence tangent.
-  have hw : w ∈ f.tangentRange x hn := hfix <| mem_fixedTangentSubspace.2 fun k _ ↦ by
+  have hw : w ∈ f.isImmersion.tangentRange x hn := hfix <| mem_fixedTangentSubspace.2 fun k _ ↦ by
     rw [← f.symplecticNormalRepresentative_fixedNormalRepresentation hf hσK h x hn hd,
       hν k]
   -- It also lies in the symplectic complement of the tangent space, which meets it in zero.
   have hw0 : w = 0 := Submodule.disjoint_def.1 (SymplecticForm.isSymplectic_iff_disjoint.1
     (IsNondegenerate.hasSymplecticTangentImages_iff_forall.1 h x)) w hw
       (f.symplecticNormalRepresentative_mem_orthogonal h x hn ν)
-  have hνw : f.normalClass x hn w = ν := f.normalClass_symplecticNormalRepresentative h x hn ν
+  have hνw : f.isImmersion.normalClass x hn w = ν :=
+      f.normalClass_symplecticNormalRepresentative h x hn ν
   rw [← hνw, hw0, map_zero]
 
 end Symplectic
@@ -201,7 +202,7 @@ theorem IsNondegenerate.invariants_fixedNormalRepresentation_fixedPointsOfFinran
   refine SmoothEmbedding.invariants_fixedNormalRepresentation_eq_bot (hσ := hσ) _ _ hσK ?_ y _ _ ?_
   · simpa using hemb.hasSymplecticTangentImages
   · -- Replace the bundled embedding by its underlying inclusion, on which `hrange` is stated.
-    rw [SmoothEmbedding.tangentRange]
+    rw [Manifold.IsImmersion.tangentRange_def]
     generalize hG : ⇑(SmoothEmbedding.ofIsSmoothEmbedding (I := 𝓘(ℝ, L)) (J := 𝓘(ℝ, E))
       (n := ∞) _ hemb.isSmoothEmbedding) = G
     rw [SmoothEmbedding.coe_ofIsSmoothEmbedding] at hG

@@ -64,10 +64,8 @@ develops the algebraic, differential, variational, and direct-method properties 
   (`ContinuousLinearMap.forall_le_quadraticEnergy_add_iff`,
   `ContinuousLinearMap.isMinOn_quadraticEnergy_vadd_iff`,
   `ContinuousLinearMap.isMinOn_quadraticEnergy_iff`).
-* **Cauchy--Schwarz, coercive stability, and direct-method existence.** Nonnegative Hermitian forms
-  satisfy `‖a u v‖² ≤ re (a u u) re (a v v)` (`ContinuousLinearMap.norm_apply_sq_le_of_hermitian`)
-  and `re (a u u) = 0 ↔ a u = 0` (`ContinuousLinearMap.re_apply_self_eq_zero_iff`). Coercive forms
-  yield quadratic energy-gap bounds, norm convergence of near-minimizers, bounded sublevels
+* **Coercive stability and direct-method existence.** Coercive forms yield quadratic energy-gap
+  bounds, norm convergence of near-minimizers, bounded sublevels
   (`ContinuousLinearMap.hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive`), forcing stability
   (`ContinuousLinearMap.mul_norm_sub_le_norm_comp_subtypeL_of_coercive`,
   `ContinuousLinearMap.mul_norm_sub_le_norm_sub_of_coercive`), uniqueness, and—on reflexive normed
@@ -283,22 +281,6 @@ theorem isMinOn_quadraticEnergy_iff (ha : ∀ u v, a u v = star (a v u))
   simp only [Submodule.mem_top, forall_const] at h
   rw [ContinuousLinearMap.ext_iff, ← h, isMinOn_univ_iff]
   exact ⟨fun hmin w => hmin (u + w), fun hmin w => by simpa using hmin (w - u)⟩
-
-/-- **Cauchy--Schwarz inequality for a nonnegative Hermitian form**:
-`‖a u v‖² ≤ re (a u u) re (a v v)`. -/
-theorem norm_apply_sq_le_of_hermitian (ha : ∀ u v, a u v = star (a v u))
-    (hq : ∀ w, 0 ≤ re (a w w)) (u v : V) :
-    ‖a u v‖ ^ 2 ≤ re (a u u) * re (a v v) :=
-  a.toLinearMap₁₂.norm_apply_sq_le_re_apply_self_mul ha hq u v
-
-/-- **The kernel identity for a nonnegative Hermitian form**: `u` lies in the kernel
-(`a u v = 0` for all `v`) exactly when its energy vanishes. -/
-theorem re_apply_self_eq_zero_iff (ha : ∀ u v, a u v = star (a v u))
-    (hq : ∀ w, 0 ≤ re (a w w)) {u : V} :
-    re (a u u) = 0 ↔ a u = 0 := by
-  rw [ContinuousLinearMap.ext_iff]
-  simpa only [zero_apply, toLinearMap₁₂_apply_apply_apply] using
-    (a.toLinearMap₁₂.forall_apply_eq_zero_iff_re_apply_self_eq_zero ha hq (u := u)).symm
 
 /-- **Coercive energy gap.** If the energy of a Hermitian form dominates `c ‖w‖²` on `W` and `u`
 solves the weak equation on `W`, then `c ‖w - u‖² ≤ E(w) - E(u)` for every `w ∈ u + W`. -/

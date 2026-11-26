@@ -46,6 +46,7 @@ estimates follow in a basis of `F`.
 
 * `TauCeti.exists_eLpNorm_le_mul_eLpNormWkp_one`: the local Sobolev inequality
   `‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(W)}`.
+* `TauCeti.exists_eLpNorm_le_mul_eLpNormWkp_one_of_ne_top`: the same with exponents in `ℝ≥0∞`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_one`: the order-one `L^∞` bound for `q > 2`.
 * `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`, and
   `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top`, the same with exponents in `ℝ≥0∞`.
@@ -179,24 +180,20 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_one {q : ℝ≥0∞} (hq : 2 < q)
 `u ∈ W^{1,q}_loc(Ω, F)` is locally `L^s` on `Ω`. This includes the critical exponent
 `1/s = 1/q - 1/2` for `q < 2`. -/
 theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le (hu : MemWkpLoc q Ω 1 u) (hq : 1 ≤ q)
-    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 2⁻¹) : MemLpLoc s Ω u := by
-  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
-  obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
-  have hKc : closure K = K := hK.isClosed.closure_eq
-  obtain ⟨C, hC⟩ := exists_eLpNorm_le_mul_eLpNormWkp_one (F := F) (W := W) hq hqs hgap
-    (by rwa [hKc]) (by rwa [hKc])
-  exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
-    (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
+    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 2⁻¹) : MemLpLoc s Ω u :=
+  hu.memLpLoc_of_forall_exists_eLpNorm_le fun hVc hVW =>
+    exists_eLpNorm_le_mul_eLpNormWkp_one hq hqs hgap hVc hVW
 
-/-- The local Sobolev embedding `W^{1,r}_loc(Ω, F) ⊂ Lᵗ_loc(Ω, F)` for exponents in `ℝ≥0∞`: if
-`1 ≤ r ≤ t < ∞` and `1/r - 1/t ≤ 1/2`, every `u ∈ W^{1,r}_loc(Ω, F)` is locally `Lᵗ` on `Ω`. -/
-theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : MemWkpLoc r Ω 1 u)
-    (hr : 1 ≤ r) (ht : t ≠ ⊤) (hrt : r ≤ t) (hgap : r⁻¹ - t⁻¹ ≤ 2⁻¹) : MemLpLoc t Ω u := by
+/-- The local Sobolev inequality for exponents in `ℝ≥0∞`: if `1 ≤ r ≤ t < ∞` and
+`1/r - 1/t ≤ 1/2`, and `V` has compact closure inside the open set `W`, there is a constant `C`
+such that every `u : ℂ → F` satisfies `‖u‖_{Lᵗ(V)} ≤ C ‖u‖_{W^{1,r}(W)}`. -/
+theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_ne_top {r t : ℝ≥0∞} (hr : 1 ≤ r) (ht : t ≠ ⊤)
+    (hrt : r ≤ t) (hgap : r⁻¹ - t⁻¹ ≤ 2⁻¹) (hVc : IsCompact (closure V)) (hVW : closure V ⊆ W) :
+    ∃ C : ℝ≥0, ∀ u : ℂ → F, eLpNorm u t (volume.restrict V) ≤ C * eLpNormWkp r W 1 u := by
   have hr_top : r ≠ ⊤ := ne_top_of_le_ne_top ht hrt
   have ht0 : t ≠ 0 := (zero_lt_one.trans_le (hr.trans hrt)).ne'
-  rw [← ENNReal.coe_toNNReal hr_top] at hu
-  rw [← ENNReal.coe_toNNReal ht]
-  refine hu.memLpLoc_of_inv_sub_inv_le ?_ (ENNReal.toNNReal_mono ht hrt) ?_
+  rw [← ENNReal.coe_toNNReal hr_top, ← ENNReal.coe_toNNReal ht]
+  refine exists_eLpNorm_le_mul_eLpNormWkp_one ?_ (ENNReal.toNNReal_mono ht hrt) ?_ hVc hVW
   · rw [← ENNReal.coe_le_coe, ENNReal.coe_toNNReal hr_top]
     exact_mod_cast hr
   · have h := ENNReal.toReal_mono (by finiteness) (tsub_le_iff_right.1 hgap)
@@ -204,6 +201,13 @@ theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : 
       ENNReal.toReal_add, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at h
     simp only [ENNReal.coe_toNNReal_eq_toReal]
     linarith
+
+/-- The local Sobolev embedding `W^{1,r}_loc(Ω, F) ⊂ Lᵗ_loc(Ω, F)` for exponents in `ℝ≥0∞`: if
+`1 ≤ r ≤ t < ∞` and `1/r - 1/t ≤ 1/2`, every `u ∈ W^{1,r}_loc(Ω, F)` is locally `Lᵗ` on `Ω`. -/
+theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : MemWkpLoc r Ω 1 u)
+    (hr : 1 ≤ r) (ht : t ≠ ⊤) (hrt : r ≤ t) (hgap : r⁻¹ - t⁻¹ ≤ 2⁻¹) : MemLpLoc t Ω u :=
+  hu.memLpLoc_of_forall_exists_eLpNorm_le fun hVc hVW =>
+    exists_eLpNorm_le_mul_eLpNormWkp_one_of_ne_top hr ht hrt hgap hVc hVW
 
 /-- **Order lowering.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/2`, then
 `W^{k+1,q}_loc(Ω, F) ⊂ W^{k,s}_loc(Ω, F)`: the function and its weak derivatives through order `k`

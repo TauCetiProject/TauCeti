@@ -43,6 +43,10 @@ compatibility predicate `TauCeti.SymplecticForm.Compatible` uses the opposite si
 * `TauCeti.AlmostComplexStructure.IsRiemannForm`: `E` is a Riemann form for `J`.
 * `TauCeti.AlmostComplexStructure.IsRiemannForm.nondegenerate`: a Riemann form is nondegenerate
   when `V` is flat over `ℤ`.
+* `TauCeti.AlmostComplexStructure.IsRiemannForm.injective_neg`: on a flat integral module,
+  `x ↦ -E(x, ·)` is injective.
+* `TauCeti.AlmostComplexStructure.IsRiemannForm.not_neg`: the negative of a Riemann form is not
+  a Riemann form when the realification is nonzero.
 * `TauCeti.AlmostComplexStructure.IsRiemannForm.isPolarization`: **when `V` is flat over `ℤ`,
   a Riemann form polarizes the weight-one Hodge structure of `J`**.
 * `TauCeti.AlmostComplexStructure.isRiemannForm_of_isPolarization`: every form polarizing that
@@ -124,6 +128,21 @@ theorem nondegenerate [Module.Flat ℤ V] (h : IsRiemannForm J E) : E.Nondegener
       hx0 (Hodge.realificationMap_injective (by simpa using h0))
     exact (h.positive _ hne).ne' hpair
   exact (LinearMap.IsRefl.nondegenerate_iff_separatingLeft h.isAlt.isRefl).mpr hleft
+
+/-- The map `x ↦ -E(x, ·)` is injective for a Riemann form `E`, on a flat integral module. -/
+theorem injective_neg [Module.Flat ℤ V] (h : IsRiemannForm J E) : Function.Injective (-E) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_neg]
+  exact LinearMap.separatingLeft_iff_ker_eq_bot.mp h.nondegenerate.1
+
+/-- **The negative of a Riemann form is not a Riemann form** once the realification is nonzero:
+`(-E)_ℝ (J x) x = -E_ℝ (J x) x` is negative for every nonzero real `x`, so positivity fails. -/
+theorem not_neg [Nontrivial (Hodge.Realification V)] (h : IsRiemannForm J E) :
+    ¬ IsRiemannForm J (-E) := by
+  intro h'
+  obtain ⟨x, hx⟩ := exists_ne (0 : Hodge.Realification V)
+  have h₁ := h'.positive x hx
+  rw [LinearMap.BilinForm.baseChange_neg, LinearMap.neg_apply, LinearMap.neg_apply] at h₁
+  linarith [h.positive x hx]
 
 /-- **A Riemann form on a flat integral module polarizes the weight-one Hodge structure of its
 complex structure.** For the effective weight-one structure `J.latticeHodgeStructure hℂ`, whose
