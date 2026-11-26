@@ -46,4 +46,9 @@ theorem det_mulLeft_comp_mulRight (A B : Matrix n n R) :
   rw [← LinearMap.det_toMatrix (stdBasis R n n), toMatrix_stdBasis_mulLeft_comp_mulRight,
     det_kronecker, det_transpose]
 
+/-- Two-sided multiplication by inverse matrices has determinant one. -/
+theorem det_mulLeft_comp_mulRight_of_mul_eq_one (A B : Matrix n n R) (h : A * B = 1) :
+    LinearMap.det (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) = 1 := by
+  rw [det_mulLeft_comp_mulRight, ← mul_pow, ← det_mul, h, det_one, one_pow]
+
 end Matrix

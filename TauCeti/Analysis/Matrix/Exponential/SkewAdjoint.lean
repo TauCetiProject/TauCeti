@@ -117,6 +117,21 @@ theorem hasFDerivAt_expStrictUpper_zero :
   rw [ContinuousLinearMap.id_comp] at hh
   exact hh.congr_of_eventuallyEq (Filter.Eventually.of_forall coe_expStrictUpper)
 
+/-- Conjugating a smooth matrix family by a smooth family of transverse exponentials
+in a fixed unitary frame is smooth. -/
+theorem _root_.Matrix.UnitaryGroup.contDiff_conjStarAlgAut_expStrictUpper
+    {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {k : WithTop ℕ∞} (U : unitaryGroup (Fin n) 𝕜)
+    {D : E → Matrix (Fin n) (Fin n) 𝕜} {a : E → FinStrictUpper n → 𝕜}
+    (hD : ContDiff ℝ k D) (ha : ContDiff ℝ k a) :
+    ContDiff ℝ k (fun x ↦ Unitary.conjStarAlgAut ℝ _ (U * expStrictUpper (a x)) (D x)) := by
+  have hF : ContDiff ℝ k (fun x ↦ (U : Matrix (Fin n) (Fin n) 𝕜) *
+      (expStrictUpper (a x) : Matrix (Fin n) (Fin n) 𝕜)) :=
+    contDiff_const.mul (contDiff_expStrictUpper.comp ha)
+  have hS := (starL' ℝ : Matrix (Fin n) (Fin n) 𝕜 ≃L[ℝ] _).toContinuousLinearMap.contDiff.comp hF
+  simpa only [Unitary.conjStarAlgAut_apply, Submonoid.coe_mul, Function.comp_apply,
+    ContinuousLinearEquiv.coe_coe, starL'_apply] using (hF.mul hD).mul hS
+
 /-- The underlying matrix of the relative frame is smooth in the target angle. -/
 theorem contDiff_relativeFrame (a : FinStrictUpper n → 𝕜) {k : WithTop ℕ∞} :
     ContDiff ℝ k (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) := by

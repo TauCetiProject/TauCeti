@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Star
 
@@ -46,5 +47,19 @@ theorem star_fderiv_apply_eq_neg_of_mem_unitary {f : E → 𝔸} {x : E}
     simp only [hx, star_one] at hv
     simpa [eq_neg_iff_add_eq_zero, add_comm] using hv
   · simp [fderiv_zero_of_not_differentiableAt hf]
+
+/-- At the identity frame, the derivative of unitary conjugation is the derivative of the
+input plus its commutator with the derivative of the frame. -/
+theorem _root_.HasFDerivAt.unitary_conj_of_eq_one {F D : E → 𝔸} {F' D' : E →L[𝕜] 𝔸} {x : E}
+    (hF : HasFDerivAt F F' x) (hD : HasFDerivAt D D' x)
+    (hU : ∀ᶠ y in 𝓝 x, F y ∈ unitary 𝔸) (h1 : F x = 1) :
+    HasFDerivAt (fun y ↦ F y * D y * star (F y))
+      (D' + ((ContinuousLinearMap.mul 𝕜 𝔸).flip (D x) -
+        ContinuousLinearMap.mul 𝕜 𝔸 (D x)).comp F') x := by
+  refine ((hF.fun_mul' hD).fun_mul' hF.star).congr_fderiv (ContinuousLinearMap.ext fun v ↦ ?_)
+  have hstar : star (F' v) = -F' v := by
+    rw [← hF.fderiv]
+    exact star_fderiv_apply_eq_neg_of_mem_unitary hU h1 v
+  simp [h1, hstar, sub_eq_add_neg, add_comm, add_assoc]
 
 end TauCeti
