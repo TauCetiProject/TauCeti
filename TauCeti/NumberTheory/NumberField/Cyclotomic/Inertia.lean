@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
-import Mathlib.FieldTheory.Galois.IsGaloisGroup
+import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import Mathlib.NumberTheory.NumberField.Ideal.Basic
 import Mathlib.RingTheory.Ideal.Int
@@ -21,9 +21,16 @@ This description retains the entire inertia coset when `p` ramifies. In particul
 is the kernel of reduction to the units modulo `m`.
 
 The calculation uses the integral generator of the ring of integers: in characteristic `p`,
-agreement on its `p ^ k`-th power is enough to recover agreement on the generator.
-For the application to primitive characters, see Levent Alpöge's
-`UpperTheory.Comparison₂.prim_read`.
+agreement on its `p ^ k`-th power is enough to recover agreement on the generator. Passing to a
+normal subfield uses the general lifting of residue powers along restriction,
+`NumberField.image_restrictNormal_setOf_forall_quotient_mk_smul_eq_pow`.
+
+The identification of inertia and of the Frobenius cosets follows Levent Alpöge's formal proof
+`UpperTheory.Comparison₂.prim_read` in the Lean formalization of the Riemann hypothesis for
+Dirichlet L-functions, <https://github.com/leanprover-community/riemann-hypothesis> at commit
+`40e56bab026552e089d7afcfeff08d2defb9c005`, file
+`src/Development/AutomorphicArithmetic/PrimitiveCosets/PrimRead.lean`, which also applies it to
+primitive characters.
 -/
 
 public section
@@ -43,7 +50,7 @@ theorem forall_quotient_mk_smul_eq_pow_iff_galEquivZMod (hn : n = p ^ k * m)
     (hm : p.Coprime m) (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
     (σ : Gal(L/ℚ)) (i : ℕ) :
     (∀ x : 𝓞 L, Ideal.Quotient.mk Q (σ • x) = Ideal.Quotient.mk Q x ^ (p ^ i)) ↔
-      ZMod.unitsMap (show m ∣ n from hn ▸ dvd_mul_left m (p ^ k)) (galEquivZMod n L σ) =
+      ZMod.unitsMap (Dvd.intro_left _ hn.symm) (galEquivZMod n L σ) =
         ZMod.unitOfCoprime p hm ^ i := by
   have : NeZero m := ⟨by rintro rfl; exact NeZero.ne n (by simp [hn])⟩
   have hp : p.Prime := Fact.out
@@ -66,7 +73,7 @@ theorem forall_quotient_mk_smul_eq_pow_iff_galEquivZMod (hn : n = p ^ k * m)
     rw [← pow_inertiaDeg p]
     exact hm.pow_left _
   let f := (Ideal.Quotient.mkₐ ℤ Q).comp (MulSemiringAction.toAlgHom ℤ (𝓞 L) σ)
-  let g := ((iterateFrobenius (𝓞 L ⧸ Q) p i).toIntAlgHom).comp (Ideal.Quotient.mkₐ ℤ Q)
+  let g := ((iterateFrobenius (𝓞 L ⧸ Q) p i).comp (Ideal.Quotient.mk Q)).toIntAlgHom
   have hgen : (∀ x : 𝓞 L, f x = g x) ↔ f z = g z := by
     refine ⟨fun h ↦ h z, fun h ↦ DFunLike.congr_fun ?_⟩
     exact AlgHom.ext_of_adjoin_eq_top (adjoin_singleton_eq_top hζ)
@@ -75,8 +82,10 @@ theorem forall_quotient_mk_smul_eq_pow_iff_galEquivZMod (hn : n = p ^ k * m)
   have hf : f z = Ideal.Quotient.mk Q z ^ a := by
     simp only [f, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, MulSemiringAction.toAlgHom_apply]
     rw [galEquivZMod_smul_of_pow_eq n L σ hz.pow_eq_one, map_pow]
-  have hfx (x : 𝓞 L) : f x = Ideal.Quotient.mk Q (σ • x) := (rfl)
-  have hg (x : 𝓞 L) : g x = Ideal.Quotient.mk Q x ^ (p ^ i) := (rfl)
+  have hfx (x : 𝓞 L) : f x = Ideal.Quotient.mk Q (σ • x) := by
+    simp only [f, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, MulSemiringAction.toAlgHom_apply]
+  have hg (x : 𝓞 L) : g x = Ideal.Quotient.mk Q x ^ (p ^ i) := by
+    simp only [g, RingHom.toIntAlgHom_apply, RingHom.comp_apply, iterateFrobenius_def]
   calc
     _ ↔ f z = g z := by simpa only [hfx, hg] using hgen
     _ ↔ (Ideal.Quotient.mk Q z ^ (p ^ k)) ^ a =
@@ -87,7 +96,7 @@ theorem forall_quotient_mk_smul_eq_pow_iff_galEquivZMod (hn : n = p ^ k * m)
       rw [(hz'.isOfFinOrder (NeZero.ne m)).pow_eq_pow_iff_modEq, ← hz'.eq_orderOf,
         ← ZMod.natCast_eq_natCast_iff, Units.ext_iff]
       have hcast (u : (ZMod n)ˣ) :
-          ((ZMod.unitsMap (show m ∣ n from hn ▸ dvd_mul_left m (p ^ k)) u).val : ZMod m) =
+          ((ZMod.unitsMap (Dvd.intro_left _ hn.symm) u).val : ZMod m) =
             (u.val.val : ZMod m) := ZMod.cast_eq_val u.val
       simp only [a, hcast, Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Nat.cast_pow]
 
@@ -96,7 +105,7 @@ the prime-to-`p` part of the level. -/
 theorem galEquivZMod_map_inertia_eq_ker_unitsMap (hn : n = p ^ k * m)
     (hm : p.Coprime m) (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] :
     (galEquivZMod n L).mapSubgroup (Q.inertia Gal(L/ℚ)) =
-      (ZMod.unitsMap (show m ∣ n from hn ▸ dvd_mul_left m (p ^ k))).ker := by
+      (ZMod.unitsMap (Dvd.intro_left _ hn.symm)).ker := by
   refine (galEquivZMod n L).surjective.forall.mpr ?_ |> Subgroup.ext
   intro σ
   rw [MulEquiv.coe_mapSubgroup, Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply,
@@ -108,61 +117,28 @@ theorem galEquivZMod_map_inertia_eq_ker_unitsMap (hn : n = p ^ k * m)
 congruent to `p ^ i` modulo the prime-to-`p` part of the level is exactly the set of automorphisms
 of `E` inducing that power of arithmetic Frobenius at the contracted prime. In particular,
 this describes the whole coset at a ramified prime, not just one representative. -/
-theorem image_unitsMap_fiber_eq_frobeniusCoset (hn : n = p ^ k * m) (hm : p.Coprime m)
-    (E : IntermediateField ℚ L) [Normal ℚ E]
+theorem image_unitsMap_fiber_eq_setOf_forall_quotient_mk_smul_eq_pow (hn : n = p ^ k * m)
+    (hm : p.Coprime m) (E : IntermediateField ℚ L) [Normal ℚ E]
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] (i : ℕ) :
     (fun u ↦ ((galEquivZMod n L).symm u).restrictNormal E) ''
-        {u | ZMod.unitsMap (show m ∣ n from hn ▸ dvd_mul_left m (p ^ k)) u =
-          ZMod.unitOfCoprime p hm ^ i} =
+        {u | ZMod.unitsMap (Dvd.intro_left _ hn.symm) u = ZMod.unitOfCoprime p hm ^ i} =
       {τ : Gal(E/ℚ) | ∀ x : 𝓞 E,
         Ideal.Quotient.mk (Q.under (𝓞 E)) (τ • x) =
           Ideal.Quotient.mk (Q.under (𝓞 E)) x ^ (p ^ i)} := by
-  let P := Q.under (𝓞 E)
-  have hres (σ : Gal(L/ℚ)) (hσ : ∀ x : 𝓞 L,
-      Ideal.Quotient.mk Q (σ • x) = Ideal.Quotient.mk Q x ^ (p ^ i)) (x : 𝓞 E) :
-      Ideal.Quotient.mk P (σ.restrictNormal E • x) = Ideal.Quotient.mk P x ^ (p ^ i) := by
-    rw [← map_pow, Ideal.Quotient.eq, Ideal.mem_under, map_sub,
-      NumberField.algebraMap_restrictNormal_smul, map_pow, ← Ideal.Quotient.eq, map_pow]
-    exact hσ _
+  have : IsGalois ℚ L := IsCyclotomicExtension.isGalois {n} ℚ L
+  have hiff := forall_quotient_mk_smul_eq_pow_iff_galEquivZMod hn hm Q (i := i)
+  -- Some automorphism, the preimage of any unit in the fibre, induces the Frobenius power.
+  obtain ⟨u, hu⟩ := ZMod.unitsMap_surjective (Dvd.intro_left _ hn.symm)
+    (ZMod.unitOfCoprime p hm ^ i)
+  rw [← NumberField.image_restrictNormal_setOf_forall_quotient_mk_smul_eq_pow E Q
+    ⟨_, (hiff _).2 (by rwa [MulEquiv.apply_symm_apply])⟩]
+  -- The fibre corresponds to these automorphisms under `galEquivZMod`.
   ext τ
   constructor
   · rintro ⟨u, hu, rfl⟩
-    apply hres
-    exact (forall_quotient_mk_smul_eq_pow_iff_galEquivZMod hn hm Q _ i).2 (by simpa using hu)
-  · intro hτ
-    -- Start with any lift of the desired Frobenius power and correct it by inertia.
-    obtain ⟨u, hu⟩ := ZMod.unitsMap_surjective
-      (show m ∣ n from hn ▸ dvd_mul_left m (p ^ k)) (ZMod.unitOfCoprime p hm ^ i)
-    let σ := (galEquivZMod n L).symm u
-    have hσ := (forall_quotient_mk_smul_eq_pow_iff_galEquivZMod hn hm Q σ i).2
-      (by simpa only [σ, MulEquiv.apply_symm_apply] using hu)
-    let r := AlgEquiv.restrictNormalHom (F := ℚ) (K₁ := L) E
-    have hδ : τ * (r σ)⁻¹ ∈ P.inertia Gal(E/ℚ) := by
-      rw [Ideal.mem_inertia]
-      intro x
-      rw [← Ideal.Quotient.eq, mul_smul]
-      have hx := (hτ ((r σ)⁻¹ • x)).trans (hres σ hσ ((r σ)⁻¹ • x)).symm
-      have hr : σ.restrictNormal E = r σ := (rfl)
-      simpa only [hr, smul_inv_smul] using hx
-    have : IsGalois ℚ L := IsCyclotomicExtension.isGalois {n} ℚ L
-    have : IsGaloisGroup E.fixingSubgroup E L :=
-      IsGaloisGroup.intermediateField Gal(L/ℚ) ℚ L E
-    have : IsGaloisGroup E.fixingSubgroup (𝓞 E) (𝓞 L) :=
-      IsGaloisGroup.of_isFractionRing E.fixingSubgroup (𝓞 E) (𝓞 L) E L
-    have hmap : (Q.inertia Gal(L/ℚ)).map r = P.inertia Gal(E/ℚ) :=
-      Ideal.map_inertia_of_surjective r E.fixingSubgroup P Q
-        (AlgEquiv.restrictNormalHom_surjective L) E.restrictNormalHom_ker.ge
-        NumberField.algebraMap_restrictNormal_smul
-    rw [← hmap] at hδ
-    obtain ⟨δ, hδ, hδeq⟩ := hδ
-    refine ⟨galEquivZMod n L (δ * σ), ?_, ?_⟩
-    · apply (forall_quotient_mk_smul_eq_pow_iff_galEquivZMod hn hm Q (δ * σ) i).1
-      intro x
-      rw [mul_smul, Ideal.Quotient.eq.mpr (Ideal.mem_inertia.mp hδ (σ • x)), hσ x]
-    · simp only [MulEquiv.symm_apply_apply]
-      calc
-        (δ * σ).restrictNormal E = r (δ * σ) := (rfl)
-        _ = τ := by rw [map_mul, hδeq, inv_mul_cancel_right]
+    exact ⟨_, (hiff _).2 (by rwa [MulEquiv.apply_symm_apply]), rfl⟩
+  · rintro ⟨σ, hσ, rfl⟩
+    exact ⟨galEquivZMod n L σ, (hiff σ).1 hσ, by simp only [MulEquiv.symm_apply_apply]⟩
 
 /-- The inertia group in a cyclotomic subfield is the image of the kernel of reduction to the
 units modulo the prime-to-`p` part of the level. -/
@@ -170,9 +146,9 @@ theorem image_ker_unitsMap_eq_inertia (hn : n = p ^ k * m) (hm : p.Coprime m)
     (E : IntermediateField ℚ L) [Normal ℚ E]
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] :
     (fun u ↦ ((galEquivZMod n L).symm u).restrictNormal E) ''
-        ↑(ZMod.unitsMap (show m ∣ n from hn ▸ dvd_mul_left m (p ^ k))).ker =
+        ↑(ZMod.unitsMap (Dvd.intro_left _ hn.symm)).ker =
       ↑((Q.under (𝓞 E)).inertia Gal(E/ℚ)) := by
-  convert image_unitsMap_fiber_eq_frobeniusCoset hn hm E Q 0 using 1
+  convert image_unitsMap_fiber_eq_setOf_forall_quotient_mk_smul_eq_pow hn hm E Q 0 using 1
   · rw [MonoidHom.coe_ker, Set.preimage_singleton, pow_zero]
   · ext τ
     simp only [SetLike.mem_coe, Set.mem_ofPred_eq, Ideal.mem_inertia, pow_zero, pow_one,
