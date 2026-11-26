@@ -7,12 +7,10 @@ module
 
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.NumberField.ResidueDegree
-import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.ResidueDegree
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 
 /-!
 # An exponential bound for the Dedekind zeta function at `s ≥ 2`
@@ -26,18 +24,16 @@ The proof takes logarithms in the Euler product,
 (`TauCeti.log_dedekindZeta_re_eq_tsum_neg_log_one_sub`). Each local ratio `x = N(𝔭) ^ (-s)` is
 at most `1 / 4`, where `-log (1 - x) ≤ 2 x`, so `log ζ_K(s) ≤ 2 ∑_𝔭 N(𝔭) ^ (-2)`. At most `d`
 primes lie over each rational prime `p`, each of norm at least `p`, so
-`∑_𝔭 N(𝔭) ^ (-2) ≤ d ∑_{m ≥ 2} m ^ (-2)`, and the last sum is at most `1` (Mathlib's
-`sum_Ioo_inv_sq_le`).
+`∑_𝔭 N(𝔭) ^ (-2) ≤ d ∑_{m ≥ 2} m ^ (-2) ≤ d` (`TauCeti.sum_absNorm_rpow_neg_two_le`). The
+finite sums over integral ideals are then bounded through
+`TauCeti.sum_absNorm_rpow_neg_le_dedekindZeta_re`.
 
 ## Main results
 
-* `TauCeti.sum_inv_absNorm_sq_le_finrank`: `∑_{𝔭 ∈ F} N(𝔭) ^ (-2) ≤ [K : ℚ]` for every finite
-  set `F` of height-one primes.
 * `TauCeti.log_dedekindZeta_re_le_two_mul_finrank`: `log ζ_K(s) ≤ 2 [K : ℚ]` for real `s ≥ 2`.
 * `TauCeti.dedekindZeta_re_le_exp_two_mul_finrank`: `ζ_K(s) ≤ exp (2 [K : ℚ])` for real `s ≥ 2`.
-* `TauCeti.sum_absNorm_rpow_neg_le_dedekindZeta_re`: a finite sum of `N(𝔟) ^ (-s)` over integral
-  ideals is at most `ζ_K(s)`, for real `s > 1`.
-* `TauCeti.sum_absNorm_rpow_neg_le_exp_two_mul_finrank`: the combination, for real `s ≥ 2`.
+* `TauCeti.sum_absNorm_rpow_neg_le_exp_two_mul_finrank`: a finite sum of `N(𝔟) ^ (-s)` over
+  integral ideals is at most `exp (2 [K : ℚ])`, for real `s ≥ 2`.
 
 ## References
 
@@ -53,35 +49,11 @@ primes lie over each rational prime `p`, each of norm at least `p`, so
 public section
 
 open IsDedekindDomain NumberField
-open scoped NumberField nonZeroDivisors
+open scoped NumberField
 
 namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- **The prime sum at `s = 2` is at most the degree.** For every finite set `F` of height-one
-primes of `𝓞 K`, `∑_{𝔭 ∈ F} N(𝔭) ^ (-2) ≤ [K : ℚ]`: at most `[K : ℚ]` primes lie over each rational
-prime `p`, each has norm at least `p`, and `∑_{m ≥ 2} m ^ (-2) ≤ 1`. -/
-theorem sum_inv_absNorm_sq_le_finrank (F : Finset (HeightOneSpectrum (𝓞 K))) :
-    ∑ 𝔭 ∈ F, ((Ideal.absNorm 𝔭.asIdeal : ℝ) ^ 2)⁻¹ ≤ Module.finrank ℚ K := by
-  set N : ℕ := F.sup rationalPrimeBelow + 1
-  have hT (𝔭 : HeightOneSpectrum (𝓞 K)) (h𝔭 : 𝔭 ∈ F) : rationalPrimeBelow 𝔭 ∈ Finset.Ioo 1 N :=
-    Finset.mem_Ioo.2 ⟨(prime_rationalPrimeBelow 𝔭).one_lt, Nat.lt_succ_of_le (Finset.le_sup h𝔭)⟩
-  calc ∑ 𝔭 ∈ F, ((Ideal.absNorm 𝔭.asIdeal : ℝ) ^ 2)⁻¹
-      ≤ ∑ 𝔭 ∈ F, ((rationalPrimeBelow 𝔭 : ℝ) ^ 2)⁻¹ := by
-        refine Finset.sum_le_sum fun 𝔭 _ ↦ ?_
-        have hp : (0 : ℝ) < rationalPrimeBelow 𝔭 := mod_cast (prime_rationalPrimeBelow 𝔭).pos
-        have hpN : (rationalPrimeBelow 𝔭 : ℝ) ≤ Ideal.absNorm 𝔭.asIdeal := by
-          exact_mod_cast (pow_one (rationalPrimeBelow 𝔭)).symm.trans_le
-            (rationalPrimeBelow_pow_le_absNorm (𝔭.asIdeal.inertiaDeg_pos ℤ))
-        gcongr
-    _ ≤ Module.finrank ℚ K * ∑ m ∈ Finset.Ioo 1 N, ((m : ℝ) ^ 2)⁻¹ :=
-        sum_comp_rationalPrimeBelow_le (g := fun m : ℕ ↦ ((m : ℝ) ^ 2)⁻¹)
-          (fun _ _ ↦ by positivity) hT
-    _ ≤ Module.finrank ℚ K * 1 := by
-        gcongr
-        exact (sum_Ioo_inv_sq_le 1 N).trans_eq (by norm_num)
-    _ = Module.finrank ℚ K := mul_one _
 
 /-- **The logarithm of the Dedekind zeta function at `s ≥ 2` is at most twice the degree.** -/
 theorem log_dedekindZeta_re_le_two_mul_finrank {s : ℝ} (hs : 2 ≤ s) :
@@ -90,14 +62,12 @@ theorem log_dedekindZeta_re_le_two_mul_finrank {s : ℝ} (hs : 2 ≤ s) :
   -- Each local ratio `x = N(𝔭) ^ (-s)` satisfies `0 ≤ x ≤ N(𝔭) ^ (-2) ≤ 1 / 4`.
   have hx (𝔭 : HeightOneSpectrum (𝓞 K)) :
       0 ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ∧
-        (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤ ((Ideal.absNorm 𝔭.asIdeal : ℝ) ^ 2)⁻¹ ∧
-        ((Ideal.absNorm 𝔭.asIdeal : ℝ) ^ 2)⁻¹ ≤ 1 / 4 := by
+        (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) ∧
+        (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) ≤ 1 / 4 := by
     have h2 : (2 : ℝ) ≤ Ideal.absNorm 𝔭.asIdeal := two_le_absNorm_asIdeal_real 𝔭
-    refine ⟨by positivity, ?_, ?_⟩
-    · rw [← Real.rpow_two, ← Real.rpow_neg (by positivity)]
-      exact Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-    · rw [inv_le_comm₀ (by positivity) (by norm_num)]
-      nlinarith
+    refine ⟨by positivity, Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith), ?_⟩
+    rw [Real.rpow_neg (by positivity), Real.rpow_two, inv_le_comm₀ (by positivity) (by norm_num)]
+    nlinarith
   refine Real.tsum_le_of_sum_le (fun 𝔭 ↦ ?_) fun F ↦ ?_
   · rw [Pi.zero_apply]
     obtain ⟨h0, h1, h2⟩ := hx 𝔭
@@ -105,7 +75,7 @@ theorem log_dedekindZeta_re_le_two_mul_finrank {s : ℝ} (hs : 2 ≤ s) :
       Real.log_nonpos (by linarith) (by linarith)
     linarith
   calc ∑ 𝔭 ∈ F, -Real.log (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s))
-      ≤ ∑ 𝔭 ∈ F, 2 * ((Ideal.absNorm 𝔭.asIdeal : ℝ) ^ 2)⁻¹ := by
+      ≤ ∑ 𝔭 ∈ F, 2 * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) := by
         refine Finset.sum_le_sum fun 𝔭 _ ↦ ?_
         obtain ⟨h0, h1, h2⟩ := hx 𝔭
         -- On `[0, 1 / 2]`, `-log (1 - x) ≤ x + 2 x ^ 2 ≤ 2 x`.
@@ -114,47 +84,13 @@ theorem log_dedekindZeta_re_le_two_mul_finrank {s : ℝ} (hs : 2 ≤ s) :
     _ ≤ 2 * Module.finrank ℚ K := by
         rw [← Finset.mul_sum]
         gcongr
-        exact sum_inv_absNorm_sq_le_finrank F
+        exact sum_absNorm_rpow_neg_two_le F
 
 /-- **The Dedekind zeta function at `s ≥ 2` is at most `exp (2 [K : ℚ])`.** -/
 theorem dedekindZeta_re_le_exp_two_mul_finrank {s : ℝ} (hs : 2 ≤ s) :
     (dedekindZeta K s).re ≤ Real.exp (2 * Module.finrank ℚ K) :=
   (Real.log_le_iff_le_exp (dedekindZeta_re_pos (by linarith))).1
     (log_dedekindZeta_re_le_two_mul_finrank hs)
-
-/-- **A finite partial sum of the Dedekind zeta series is at most `ζ_K(s)`.** For real `s > 1`
-and every finite set `S` of integral ideals, `∑_{𝔟 ∈ S} N(𝔟) ^ (-s) ≤ ζ_K(s)`. The zero ideal, of
-norm `0`, contributes `0 ^ (-s) = 0`. -/
-theorem sum_absNorm_rpow_neg_le_dedekindZeta_re {s : ℝ} (hs : 1 < s)
-    (S : Finset (Ideal (𝓞 K))) :
-    ∑ 𝔟 ∈ S, (Ideal.absNorm 𝔟 : ℝ) ^ (-s) ≤ (dedekindZeta K s).re := by
-  classical
-  have hsum : Summable (idealTerm K (1 : IdealArithmeticFunction K) (s : ℂ)) :=
-    summable_idealTerm_one_iff.2 (by simpa using hs)
-  -- The terms of the ideal-indexed series are the real numbers `N(𝔟) ^ (-s)`.
-  have h_re (I : (Ideal (𝓞 K))⁰) :
-      (idealTerm K 1 (s : ℂ) I).re = (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s) := by
-    rw [idealTerm_def, Pi.one_apply, ← Complex.ofReal_natCast,
-      ← Complex.ofReal_cpow (Nat.cast_nonneg _), ← Complex.ofReal_one, ← Complex.ofReal_div,
-      Complex.ofReal_re, one_div, Real.rpow_neg (Nat.cast_nonneg _)]
-  have h_zeta : (dedekindZeta K s).re = ∑' I : (Ideal (𝓞 K))⁰, (Ideal.absNorm (I : Ideal (𝓞 K)) :
-      ℝ) ^ (-s) := by
-    rw [dedekindZeta_eq_LSeries_normCoeff_one, LSeries_normCoeff K hsum, Complex.re_tsum hsum]
-    exact tsum_congr h_re
-  have h_summable : Summable fun I : (Ideal (𝓞 K))⁰ ↦
-      (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s) :=
-    (Complex.hasSum_re hsum.hasSum).summable.congr h_re
-  -- Discard the zero ideal and compare with the full sum over the nonzero ideals.
-  calc ∑ 𝔟 ∈ S, (Ideal.absNorm 𝔟 : ℝ) ^ (-s)
-      = ∑ I ∈ S.subtype (· ∈ (Ideal (𝓞 K))⁰), (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s) := by
-        rw [Finset.sum_subtype_eq_sum_filter (f := fun 𝔟 ↦ (Ideal.absNorm 𝔟 : ℝ) ^ (-s)),
-          Finset.sum_filter_of_ne]
-        intro 𝔟 _ h𝔟
-        refine mem_nonZeroDivisors_of_ne_zero fun h ↦ h𝔟 ?_
-        simp [h, Real.zero_rpow (by linarith : -s ≠ 0)]
-    _ ≤ ∑' I : (Ideal (𝓞 K))⁰, (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s) :=
-        h_summable.sum_le_tsum _ fun _ _ ↦ by positivity
-    _ = (dedekindZeta K s).re := h_zeta.symm
 
 /-- **Finite sums of `N(𝔟) ^ (-s)` are at most `exp (2 [K : ℚ])`.** For real `s ≥ 2` and every
 finite set `S` of integral ideals of `𝓞 K`, `∑_{𝔟 ∈ S} N(𝔟) ^ (-s) ≤ exp (2 [K : ℚ])`. -/

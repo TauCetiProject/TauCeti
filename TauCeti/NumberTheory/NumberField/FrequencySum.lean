@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import TauCeti.RingTheory.Localization.DenIdeal
 import Mathlib.Algebra.Order.Floor.Ring
+import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.ExpBound
@@ -22,8 +23,8 @@ that for every finite set `X ⊆ E`,
 a bound exponential in `f` only.
 
 The numbers `ν` with a given denominator `𝔟` lie in `N(𝔟)` cosets of `𝓞 E`
-(`NumberField.exists_label_of_le_denIdeal`). Inside one coset, two distinct numbers differ by a
-nonzero algebraic integer, which has absolute value at least `1` at some infinite place. So the
+(`NumberField.exists_label_fin_absNorm_of_ne_bot`). Inside one coset, two distinct numbers differ
+by a nonzero algebraic integer, which has absolute value at least `1` at some infinite place. So the
 map sending `ν` to the squares of side `1 / 2` containing its images in `ℂ` at the infinite places
 is injective on the coset. On each such square, the weight `max (1, |z|) ^ (-6)` is at most `64`
 times its value at the lower left corner, and the corner weights over all squares add up to at
@@ -34,25 +35,25 @@ denominators leaves `∑ N(𝔟) ^ (-2) ≤ ζ_E(2) ≤ exp (2 [E : ℚ]) ≤ ex
 
 ## Main results
 
-* `NumberField.exists_label_of_le_denIdeal`: the numbers whose denominator ideal contains a nonzero
-  ideal `𝔟` fall into at most `N(𝔟)` classes modulo `𝓞 E`.
+* `NumberField.exists_label_fin_absNorm_of_ne_bot`: the numbers whose denominator ideal contains
+  a nonzero ideal `𝔟` fall into at most `N(𝔟)` classes modulo `𝓞 E`.
 * `NumberField.sum_prod_inv_max_one_pow_six_le_of_sub_mem`: the sum of
   `∏_v max (1, |ν|_v) ^ (-6)` over a finite set of numbers that pairwise differ by algebraic
   integers is at most `(64 · 38) ^ f`.
 * `NumberField.sum_prod_inv_max_one_pow_six_mul_inv_absNorm_denIdeal_pow_three_le`: the bound
-  above, Section 6.2(a) of the roadmap `RemainingAndMainTermsOfSecondMoments`.
+  above.
 
 ## Implementation notes
 
-The roadmap states the bound for a totally complex field, with `|Φ_v ν|` for a chosen complex
-embedding `Φ_v` at each infinite place `v`. Here `|Φ_v ν|` is written `v ν`, which does not depend
-on the choice. The field need not be totally complex: the infinite places of any number field
-satisfy `[E : ℚ] ≤ 2 f`, which is all that the last step uses.
+The absolute value `|Φ_v ν|` of `ν` under a complex embedding `Φ_v` at the infinite place `v` is
+written `v ν`; it does not depend on the choice of `Φ_v`. The bound holds for every number field:
+the last step only uses `[E : ℚ] ≤ 2 f`, which the infinite places of any number field satisfy.
 
 The constant `38` is reached here by an elementary comparison rather than by a packing argument:
 the corner weight at `(a / 2, b / 2)` is at most `h a · h b`, where `h a = 1` for `|a| ≤ 2` and
 `h a = 3 / |a| ^ 3` otherwise, and the sum of `h` over any finite set of integers is at most
-`23 / 4`, so the corner weights add up to at most `(23 / 4) ^ 2 < 38`.
+`215 / 36` (Mathlib's `sum_Ioo_inv_sq_le` bounds the tail), so the corner weights add up to at
+most `(215 / 36) ^ 2 < 38`.
 
 ## References
 
@@ -60,7 +61,8 @@ the corner weight at `(a / 2, b / 2)` is at most `h a · h b`, where `h a = 1` f
   hypothesis for Dirichlet `L`-functions (https://github.com/lsernau/grh-lean, Apache 2.0,
   Copyright 2026 Anthropic, PBC), file `src/New/Spanning/MainTerm/Frequencies.lean`: declarations
   `New.sum_height_inv_cube_le`, `New.sum_weight_filter_denominator_eq_le`,
-  `New.sum_coset_weight_le`, `New.exists_coset_label` and `New.weight_le_weight_corner`. The bound
+  `New.sum_coset_weight_le`, `New.exists_coset_label`, `New.weight_le_weight_corner`,
+  `New.squareIndex` and `New.squareCorner`. The bound
   on the corner weights there uses a packing bound for separated points.
 -/
 
@@ -79,10 +81,32 @@ noncomputable def squareIndex (z : ℂ) : ℤ × ℤ := (⌊2 * z.re⌋, ⌊2 * 
 /-- The lower left corner `a / 2 + (b / 2) i` of the square with index `(a, b)`. -/
 noncomputable def squareCorner (m : ℤ × ℤ) : ℂ := ⟨m.1 / 2, m.2 / 2⟩
 
+/-- The first coordinate of `squareIndex z` is `⌊2 Re z⌋`. -/
+@[simp]
+theorem squareIndex_fst (z : ℂ) : (squareIndex z).1 = ⌊2 * z.re⌋ := by
+  simp [squareIndex]
+
+/-- The second coordinate of `squareIndex z` is `⌊2 Im z⌋`. -/
+@[simp]
+theorem squareIndex_snd (z : ℂ) : (squareIndex z).2 = ⌊2 * z.im⌋ := by
+  simp [squareIndex]
+
+/-- The real part of `squareCorner (a, b)` is `a / 2`. -/
+@[simp]
+theorem squareCorner_re (m : ℤ × ℤ) : (squareCorner m).re = m.1 / 2 := by
+  simp [squareCorner]
+
+/-- The imaginary part of `squareCorner (a, b)` is `b / 2`. -/
+@[simp]
+theorem squareCorner_im (m : ℤ × ℤ) : (squareCorner m).im = m.2 / 2 := by
+  simp [squareCorner]
+
 /-- Numbers in the same half-open square of side `1 / 2` are at distance less than `1`. -/
 theorem norm_sub_lt_one_of_squareIndex_eq {z w : ℂ} (h : squareIndex z = squareIndex w) :
     ‖z - w‖ < 1 := by
   obtain ⟨h_re, h_im⟩ := Prod.ext_iff.1 h
+  rw [squareIndex_fst, squareIndex_fst] at h_re
+  rw [squareIndex_snd, squareIndex_snd] at h_im
   have h_half {a b : ℝ} (h_floor : ⌊2 * a⌋ = ⌊2 * b⌋) : |a - b| < 1 / 2 := by
     have := Int.abs_sub_lt_one_of_floor_eq_floor h_floor
     rw [← mul_sub, abs_mul, abs_two] at this
@@ -102,9 +126,9 @@ theorem norm_squareCorner_squareIndex_sub_lt_one (z : ℂ) :
   have h1 := h_floor z.re
   have h2 := h_floor z.im
   have hre : (squareCorner (squareIndex z) - z).re = (⌊2 * z.re⌋ : ℝ) / 2 - z.re := by
-    simp [squareCorner, squareIndex]
+    simp
   have him : (squareCorner (squareIndex z) - z).im = (⌊2 * z.im⌋ : ℝ) / 2 - z.im := by
-    simp [squareCorner, squareIndex]
+    simp
   have := Complex.norm_le_abs_re_add_abs_im (squareCorner (squareIndex z) - z)
   rw [hre, him] at this
   linarith
@@ -124,60 +148,49 @@ theorem inv_max_one_norm_pow_six_le (z : ℂ) :
 
 /-- The one-dimensional majorant of the corner weights: `1` on `|a| ≤ 2` and `3 / |a| ^ 3`
 beyond. -/
-noncomputable def cornerMajorant (a : ℤ) : ℝ := if |a| ≤ 2 then 1 else 3 / |(a : ℝ)| ^ 3
+private noncomputable def cornerMajorant (a : ℤ) : ℝ := if |a| ≤ 2 then 1 else 3 / |(a : ℝ)| ^ 3
 
 /-- The majorant `cornerMajorant` is nonnegative. -/
-theorem cornerMajorant_nonneg (a : ℤ) : 0 ≤ cornerMajorant a := by
+private theorem cornerMajorant_nonneg (a : ℤ) : 0 ≤ cornerMajorant a := by
   unfold cornerMajorant
   split_ifs <;> positivity
 
 /-- The majorant `cornerMajorant` is even. -/
-theorem cornerMajorant_neg (a : ℤ) : cornerMajorant (-a) = cornerMajorant a := by
+private theorem cornerMajorant_neg (a : ℤ) : cornerMajorant (-a) = cornerMajorant a := by
   simp [cornerMajorant]
 
-/-- Beyond `2`, the majorant `3 / n ^ 3` is at most `3 / 2 · ((n - 1) ^ (-2) - n ^ (-2))`, which
-telescopes. -/
-private theorem three_div_cube_le {n : ℝ} (hn : 3 ≤ n) :
-    3 / n ^ 3 ≤ 3 / 2 * (((n - 1) ^ 2)⁻¹ - (n ^ 2)⁻¹) := by
-  have h1 : n - 1 ≠ 0 := by linarith
-  have h0 : n ≠ 0 := by linarith
-  rw [show 3 / 2 * (((n - 1) ^ 2)⁻¹ - (n ^ 2)⁻¹) = 3 * (2 * n - 1) / (2 * (n - 1) ^ 2 * n ^ 2) by
-    field_simp; ring]
-  rw [div_le_div_iff₀ (by positivity) (by positivity)]
-  have h_key : 2 * (n - 1) ^ 2 ≤ (2 * n - 1) * n := by nlinarith
-  calc 3 * (2 * (n - 1) ^ 2 * n ^ 2) = 3 * n ^ 2 * (2 * (n - 1) ^ 2) := by ring
-    _ ≤ 3 * n ^ 2 * ((2 * n - 1) * n) := by gcongr
-    _ = 3 * (2 * n - 1) * n ^ 3 := by ring
-
-/-- The telescoped form of `sum_Ico_cornerMajorant_le`, by induction on `N`. -/
-private theorem sum_Ico_cornerMajorant_le_aux (N : ℕ) :
-    ∑ n ∈ Ico 1 (N + 3), cornerMajorant n ≤ 19 / 8 - 3 / 2 * (((N + 2 : ℕ) : ℝ) ^ 2)⁻¹ := by
-  induction N with
-  | zero => norm_num [Finset.sum_Ico_succ_top, cornerMajorant]
-  | succ N ih =>
-    rw [Finset.sum_Ico_succ_top (by omega)]
-    have h3 : (3 : ℝ) ≤ ((N + 3 : ℕ) : ℝ) := by norm_cast; omega
-    have h_maj : cornerMajorant ((N + 3 : ℕ) : ℤ) = 3 / ((N + 3 : ℕ) : ℝ) ^ 3 := by
-      have : ¬|((N + 3 : ℕ) : ℤ)| ≤ 2 := by rw [abs_of_nonneg (by positivity)]; omega
-      simp only [cornerMajorant, this, ↓reduceIte, Int.cast_natCast]
-      rw [abs_of_nonneg (by positivity)]
-    have h_tel := three_div_cube_le h3
-    rw [show ((N + 3 : ℕ) : ℝ) - 1 = ((N + 2 : ℕ) : ℝ) by push_cast; ring] at h_tel
-    rw [h_maj, show N + 1 + 2 = N + 3 by ring]
-    linarith
-
-/-- The majorant over `1, …, N - 1` adds up to at most `19 / 8`. -/
+/-- The majorant over `1, …, N - 1` adds up to at most `179 / 72`: `1 + 1 + 1 / 9` on `1, 2, 3`,
+and beyond `3`, `3 / n ^ 3 ≤ 3 / 4 · n ^ (-2)`, whose sum is bounded by `sum_Ioo_inv_sq_le`. -/
 private theorem sum_Ico_cornerMajorant_le (N : ℕ) :
-    ∑ n ∈ Ico 1 N, cornerMajorant n ≤ 19 / 8 := by
-  calc ∑ n ∈ Ico 1 N, cornerMajorant n ≤ ∑ n ∈ Ico 1 (N + 3), cornerMajorant n :=
+    ∑ n ∈ Ico 1 N, cornerMajorant n ≤ 179 / 72 := by
+  have h_tail (n : ℕ) (hn : n ∈ Ioo 3 (N + 4)) :
+      cornerMajorant n ≤ 3 / 4 * ((n : ℝ) ^ 2)⁻¹ := by
+    have h3 := (mem_Ioo.1 hn).1
+    have h4 : (4 : ℝ) ≤ n := by exact_mod_cast h3
+    have : ¬|(n : ℤ)| ≤ 2 := by rw [abs_of_nonneg (by positivity)]; omega
+    simp only [cornerMajorant, this, ↓reduceIte, Int.cast_natCast]
+    rw [abs_of_nonneg (by positivity)]
+    calc 3 / (n : ℝ) ^ 3 = 3 / (n * (n : ℝ) ^ 2) := by ring
+      _ ≤ 3 / (4 * (n : ℝ) ^ 2) := by gcongr
+      _ = 3 / 4 * ((n : ℝ) ^ 2)⁻¹ := by ring
+  calc ∑ n ∈ Ico 1 N, cornerMajorant n ≤ ∑ n ∈ Ico 1 (N + 4), cornerMajorant n :=
         sum_le_sum_of_subset_of_nonneg (Ico_subset_Ico_right (by omega))
           fun _ _ _ ↦ cornerMajorant_nonneg _
-    _ ≤ 19 / 8 - 3 / 2 * (((N + 2 : ℕ) : ℝ) ^ 2)⁻¹ := sum_Ico_cornerMajorant_le_aux N
-    _ ≤ 19 / 8 := by linarith [show (0 : ℝ) ≤ 3 / 2 * (((N + 2 : ℕ) : ℝ) ^ 2)⁻¹ by positivity]
+    _ = ∑ n ∈ Ico 1 (3 + 1), cornerMajorant (n : ℕ) + ∑ n ∈ Ioo 3 (N + 4), cornerMajorant n := by
+        rw [← Ico_add_one_left_eq_Ioo, sum_Ico_consecutive _ (by omega) (by omega)]
+    _ ≤ 19 / 9 + ∑ n ∈ Ioo 3 (N + 4), 3 / 4 * ((n : ℝ) ^ 2)⁻¹ := by
+        gcongr with n hn
+        · norm_num [sum_Ico_succ_top, cornerMajorant]
+        · exact h_tail n hn
+    _ ≤ 19 / 9 + 3 / 4 * (2 / (3 + 1)) := by
+        rw [← mul_sum]
+        gcongr
+        exact_mod_cast sum_Ioo_inv_sq_le 3 (N + 4)
+    _ = 179 / 72 := by norm_num
 
-/-- The majorant over a finite set of positive integers adds up to at most `19 / 8`. -/
+/-- The majorant over a finite set of positive integers adds up to at most `179 / 72`. -/
 private theorem sum_cornerMajorant_le_of_pos {t : Finset ℤ} (ht : ∀ a ∈ t, 0 < a) :
-    ∑ a ∈ t, cornerMajorant a ≤ 19 / 8 := by
+    ∑ a ∈ t, cornerMajorant a ≤ 179 / 72 := by
   have h_inj : Set.InjOn Int.toNat t := fun a ha b hb h ↦ by
     have := ht a ha; have := ht b hb; omega
   calc ∑ a ∈ t, cornerMajorant a = ∑ a ∈ t, cornerMajorant (a.toNat : ℤ) :=
@@ -191,11 +204,12 @@ private theorem sum_cornerMajorant_le_of_pos {t : Finset ℤ} (ht : ∀ a ∈ t,
         have := le_sup (f := Int.toNat) ha
         rw [mem_Ico]
         omega
-    _ ≤ 19 / 8 := sum_Ico_cornerMajorant_le _
+    _ ≤ 179 / 72 := sum_Ico_cornerMajorant_le _
 
-/-- The majorant over a finite set of integers adds up to at most `23 / 4`: `1` at `0`, and at
-most `19 / 8` on either side. -/
-theorem sum_cornerMajorant_le (t : Finset ℤ) : ∑ a ∈ t, cornerMajorant a ≤ 23 / 4 := by
+/-- The majorant over a finite set of integers adds up to at most `215 / 36`: `1` at `0`, and at
+most `179 / 72` on either side. -/
+private theorem sum_cornerMajorant_le (t : Finset ℤ) :
+    ∑ a ∈ t, cornerMajorant a ≤ 215 / 36 := by
   classical
   have h_split := sum_filter_add_sum_filter_not t (0 < ·) cornerMajorant
   have h_split' := sum_filter_add_sum_filter_not (t.filter fun a ↦ ¬0 < a) (· = 0) cornerMajorant
@@ -204,7 +218,7 @@ theorem sum_cornerMajorant_le (t : Finset ℤ) : ∑ a ∈ t, cornerMajorant a �
     refine (sum_le_sum_of_subset_of_nonneg (t := {0}) ?_
       fun _ _ _ ↦ cornerMajorant_nonneg _).trans (by simp [cornerMajorant])
     intro a; simp +contextual
-  have h_neg : ∑ a ∈ (t.filter fun a ↦ ¬0 < a).filter (¬· = 0), cornerMajorant a ≤ 19 / 8 := by
+  have h_neg : ∑ a ∈ (t.filter fun a ↦ ¬0 < a).filter (¬· = 0), cornerMajorant a ≤ 179 / 72 := by
     rw [← sum_congr rfl fun a _ ↦ cornerMajorant_neg a,
       ← sum_image (g := Neg.neg) (f := cornerMajorant) fun a _ b _ h ↦ neg_injective h]
     refine sum_cornerMajorant_le_of_pos fun b hb ↦ ?_
@@ -220,7 +234,7 @@ private theorem inv_max_one_norm_squareCorner_pow_six_le_of_pos {a b : ℤ}
     (max 1 ‖squareCorner (a, b)‖)⁻¹ ^ 6 ≤ 64 / ((a : ℝ) ^ 2 + (b : ℝ) ^ 2) ^ 3 := by
   have h_sq : ‖squareCorner (a, b)‖ ^ 2 = ((a : ℝ) ^ 2 + (b : ℝ) ^ 2) / 4 := by
     rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-    simp only [squareCorner]
+    rw [squareCorner_re, squareCorner_im]
     ring
   have h_pos : 0 < ‖squareCorner (a, b)‖ :=
     lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _)
@@ -233,8 +247,17 @@ private theorem inv_max_one_norm_squareCorner_pow_six_le_of_pos {a b : ℤ}
         field_simp
         ring
 
+/-- If `3 ≤ |c|` and `c ^ 2 ≤ x`, then `64 / x ^ 3 ≤ 3 / |c| ^ 3`. -/
+private theorem sixty_four_div_pow_three_le {x c : ℝ} (hc : 3 ≤ |c|) (hx : c ^ 2 ≤ x) :
+    64 / x ^ 3 ≤ 3 / |c| ^ 3 := by
+  have h_pos : 0 < x := by nlinarith [sq_abs c]
+  have h6 : (|c| ^ 2) ^ 3 ≤ x ^ 3 := pow_le_pow_left₀ (by positivity) (by rwa [sq_abs]) 3
+  have h27 : (27 : ℝ) ≤ |c| ^ 3 := by nlinarith
+  rw [div_le_div_iff₀ (pow_pos h_pos 3) (by positivity)]
+  nlinarith
+
 /-- The corner weight at `(a / 2, b / 2)` is at most `cornerMajorant a * cornerMajorant b`. -/
-theorem inv_max_one_norm_squareCorner_pow_six_le (m : ℤ × ℤ) :
+private theorem inv_max_one_norm_squareCorner_pow_six_le (m : ℤ × ℤ) :
     (max 1 ‖squareCorner m‖)⁻¹ ^ 6 ≤ cornerMajorant m.1 * cornerMajorant m.2 := by
   obtain ⟨a, b⟩ := m
   have h_one : (max 1 ‖squareCorner (a, b)‖)⁻¹ ^ 6 ≤ 1 :=
@@ -249,21 +272,11 @@ theorem inv_max_one_norm_squareCorner_pow_six_le (m : ℤ × ℤ) :
   · simpa using h_one
   · -- `|b| ≥ 3`: the weight is at most `64 / b ^ 6 ≤ 3 / |b| ^ 3`.
     have hb3 := h_three hb
-    have h_pos : 0 < (a : ℝ) ^ 2 + (b : ℝ) ^ 2 := by nlinarith
-    refine (h_far h_pos).trans ?_
-    have h6 : (|(b : ℝ)| ^ 2) ^ 3 ≤ ((a : ℝ) ^ 2 + (b : ℝ) ^ 2) ^ 3 :=
-      pow_le_pow_left₀ (by positivity) (by nlinarith) 3
-    have h27 : (27 : ℝ) ≤ |(b : ℝ)| ^ 3 := by nlinarith
-    rw [one_mul, div_le_div_iff₀ (pow_pos h_pos 3) (by positivity)]
-    nlinarith
+    rw [one_mul]
+    exact (h_far (by nlinarith)).trans (sixty_four_div_pow_three_le hb3 (by nlinarith))
   · have ha3 := h_three ha
-    have h_pos : 0 < (a : ℝ) ^ 2 + (b : ℝ) ^ 2 := by nlinarith
-    refine (h_far h_pos).trans ?_
-    have h6 : (|(a : ℝ)| ^ 2) ^ 3 ≤ ((a : ℝ) ^ 2 + (b : ℝ) ^ 2) ^ 3 :=
-      pow_le_pow_left₀ (by positivity) (by nlinarith) 3
-    have h27 : (27 : ℝ) ≤ |(a : ℝ)| ^ 3 := by nlinarith
-    rw [mul_one, div_le_div_iff₀ (pow_pos h_pos 3) (by positivity)]
-    nlinarith
+    rw [mul_one]
+    exact (h_far (by nlinarith)).trans (sixty_four_div_pow_three_le ha3 (by nlinarith))
   · have ha3 := h_three ha
     have hb3 := h_three hb
     have h_pos : 0 < (a : ℝ) ^ 2 + (b : ℝ) ^ 2 := by nlinarith
@@ -287,7 +300,7 @@ theorem sum_inv_max_one_norm_squareCorner_pow_six_le (s : Finset (ℤ × ℤ)) :
             fun m _ _ ↦ mul_nonneg (cornerMajorant_nonneg _) (cornerMajorant_nonneg _)
     _ = (∑ a ∈ s.image Prod.fst, cornerMajorant a) * ∑ b ∈ s.image Prod.snd, cornerMajorant b :=
         by rw [sum_product, sum_mul_sum]
-    _ ≤ 23 / 4 * (23 / 4) := by
+    _ ≤ 215 / 36 * (215 / 36) := by
         gcongr
         · exact sum_nonneg fun _ _ ↦ cornerMajorant_nonneg _
         · exact sum_cornerMajorant_le _
@@ -308,7 +321,7 @@ variable {E : Type*} [Field E] [NumberField E]
 ideal `𝔟` of `𝓞 E`, the numbers `ν` with `𝔟 ≤ 𝔡(ν)`, where `𝔡(ν) = Algebra.denIdeal E ν` is the
 ideal of the integers `a` with `a ν` integral, can be labelled by `Fin (N(𝔟))` so that numbers
 with the same label differ by an element of `𝓞 E`. -/
-theorem exists_label_of_le_denIdeal {𝔟 : Ideal (𝓞 E)} (h𝔟 : 𝔟 ≠ ⊥) :
+theorem exists_label_fin_absNorm_of_ne_bot {𝔟 : Ideal (𝓞 E)} (h𝔟 : 𝔟 ≠ ⊥) :
     ∃ label : E → Fin (Ideal.absNorm 𝔟), ∀ ν ν' : E, 𝔟 ≤ Algebra.denIdeal E ν →
       𝔟 ≤ Algebra.denIdeal E ν' → label ν = label ν' →
         ∃ t : 𝓞 E, algebraMap (𝓞 E) E t = ν - ν' := by
@@ -367,7 +380,7 @@ theorem sum_prod_inv_max_one_pow_six_le_of_sub_mem {X : Finset E}
     obtain ⟨t, ht⟩ := hX ν hν ν' hν'
     have ht0 : t ≠ 0 := by rintro rfl; exact h_ne (sub_eq_zero.1 (by simpa using ht.symm))
     have h_lt (v : InfinitePlace E) : v (t : E) < 1 := by
-      rw [← norm_embedding_eq, show (t : E) = ν - ν' from ht, map_sub]
+      rw [← norm_embedding_eq, RingOfIntegers.coe_eq_algebraMap, ht, map_sub]
       exact norm_sub_lt_one_of_squareIndex_eq (congrFun h_cell v)
     obtain ⟨v⟩ : Nonempty (InfinitePlace E) := inferInstance
     exact (one_le_of_lt_one ht0 fun z _ ↦ h_lt z).not_gt (h_lt v)
@@ -398,7 +411,7 @@ theorem sum_filter_denIdeal_eq_prod_inv_max_one_pow_six_le (X : Finset E) {𝔟 
     ∑ ν ∈ X with Algebra.denIdeal E ν = 𝔟, ∏ v : InfinitePlace E, (max 1 (v ν))⁻¹ ^ 6 ≤
       Ideal.absNorm 𝔟 * (64 * 38) ^ Fintype.card (InfinitePlace E) := by
   classical
-  obtain ⟨label, h_label⟩ := exists_label_of_le_denIdeal h𝔟
+  obtain ⟨label, h_label⟩ := exists_label_fin_absNorm_of_ne_bot h𝔟
   calc _ = ∑ k : Fin (Ideal.absNorm 𝔟), ∑ ν ∈ X with Algebra.denIdeal E ν = 𝔟 ∧ label ν = k,
           ∏ v : InfinitePlace E, (max 1 (v ν))⁻¹ ^ 6 := by
         rw [← sum_fiberwise (X.filter fun ν ↦ Algebra.denIdeal E ν = 𝔟) label]
