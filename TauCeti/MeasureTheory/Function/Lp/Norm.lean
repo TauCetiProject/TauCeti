@@ -66,6 +66,8 @@ bounds.
   for operators bounded by `c` applied to `f`.
 * `LipschitzWith.tendsto_integral_norm_sub_sq`: if `∫ ‖f i - g‖² → 0` with eventually integrable
   integrands, then the Bochner integrals `∫ ‖T (f i) - T g‖²` tend to `0` for Lipschitz `T`.
+* `MeasureTheory.Lp.dist_le_of_ae_dist_le_top`: an almost everywhere bound of the pointwise
+  distance of two `L∞` classes bounds their `L∞` distance.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
@@ -358,6 +360,16 @@ theorem Lp.norm_toLp_memLp_top_const_le {alpha F : Type*} [MeasurableSpace alpha
   refine Lp.norm_le_of_ae_bound_top (norm_nonneg c) ?_
   filter_upwards [(memLp_top_const (μ := m) c).coeFn_toLp] with x hx
   rw [hx]
+
+/-- The `L∞` distance of two classes is at most any almost everywhere bound of the pointwise
+distance. -/
+theorem Lp.dist_le_of_ae_dist_le_top {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} {f g : Lp F ∞ m} {δ : ℝ} (hδ : 0 ≤ δ)
+    (h : ∀ᵐ x ∂m, dist (f x) (g x) ≤ δ) : dist f g ≤ δ := by
+  rw [_root_.dist_eq_norm]
+  refine Lp.norm_le_of_ae_bound_top hδ ?_
+  filter_upwards [Lp.coeFn_sub f g, h] with x hx h
+  rwa [hx, Pi.sub_apply, ← _root_.dist_eq_norm]
 
 /-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
 `[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/

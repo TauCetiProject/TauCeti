@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Strichartz.TTStar
 public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!

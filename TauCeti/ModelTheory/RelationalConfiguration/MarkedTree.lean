@@ -8,15 +8,18 @@ module
 public import TauCeti.MeasureTheory.MeasurableSpace.SimpleGraph
 public import TauCeti.ModelTheory.RelationalConfiguration.OrderClass
 public import TauCeti.Order.RelCovBy
+public import TauCeti.ModelTheory.RelationalConfiguration.UnravelTree
+public import TauCeti.SetTheory.Descriptive.Tree.CoverGraph
 
 /-!
 # Marked trees and the cover graph of a coded order
 
 Trees are presented in two ways in the proof that trees are Borel complete: as partial orders
 (`TauCeti.RelationalConfiguration.treeClass`), and as connected acyclic graphs with one marked
-vertex, the root. This file sets up the second presentation, and defines the cover-graph map
-from coded orders to codes of marked graphs. That this map sends `treeClass` into
-`markedTreeClass` is not proved here.
+vertex, the root. This file sets up the second presentation, defines the cover-graph map
+from coded orders to codes of marked graphs, and shows that it is a Borel reduction of
+isomorphism on `treeClass` to isomorphism on `markedTreeClass`, so that the marked trees are
+Borel complete.
 
 The language `markedGraphLanguage` has a binary symbol `adj` and a unary symbol `mark`. A code
 `c` on a carrier `V` gives the relation `codeRel .adj c` and the predicate `IsMarked c`. The
@@ -31,6 +34,13 @@ other, and marks the least elements. Each of its coordinates is the indicator of
 codes (a cover relation is a countable intersection of conditions on finitely many coordinates),
 so the map is measurable. It commutes with relabelling, so it sends isomorphic codes to isomorphic
 codes.
+
+On `treeClass` the cover graph is a tree (`TauCeti.IsTreeOrder.isTree_fromRel_relCovBy`) with its
+least element as the only marked vertex, and the order is recovered from it as the relation of
+lying on the path from the marked vertex (`TauCeti.IsTreeOrder.mem_support_iff_rel`). So
+isomorphic cover graphs come from isomorphic coded trees (`TauCeti.IsTreeOrder.rel_iff_of_iso`),
+and with `borelComplete_treeClass` the marked trees are Borel complete. The map is Borel, not
+continuous, even on `treeClass`.
 
 ## Main definitions
 
@@ -51,6 +61,12 @@ codes.
 * `TauCeti.RelationalConfiguration.coverGraphCode_perm_smul`,
   `TauCeti.RelationalConfiguration.isoSetoid_coverGraphCode`: it commutes with relabelling and
   preserves isomorphism.
+* `TauCeti.RelationalConfiguration.coverGraphCode_mem_markedTreeClass`: it sends coded trees to
+  marked trees.
+* `TauCeti.RelationalConfiguration.isoSetoid_coverGraphCode_iff`: on coded trees it reflects
+  isomorphism.
+* `TauCeti.RelationalConfiguration.borelComplete_markedTreeClass`: the marked trees are Borel
+  complete.
 
 ## References
 
@@ -374,6 +390,82 @@ theorem isoSetoid_coverGraphCode {c d : RelationalConfiguration Language.order V
   obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
   rw [coverGraphCode_perm_smul]
   exact isoSetoid_perm_smul σ _
+
+/-! ### The cover graph of a coded tree -/
+
+/-- The graph of the cover-graph code of `c` is the cover graph of the relation of `c`. -/
+theorem markedGraph_coverGraphCode (c : RelationalConfiguration Language.order V) :
+    markedGraph (coverGraphCode c) = SimpleGraph.fromRel (RelCovBy (codeRel leSymb c)) := by
+  ext u v
+  rw [markedGraph_adj, SimpleGraph.fromRel_adj, codeRel_coverGraphCode, codeRel_coverGraphCode]
+  tauto
+
+/-- **The cover graph of a coded tree is a marked tree**: a tree with its least element as its
+only marked vertex. -/
+theorem coverGraphCode_mem_markedTreeClass {c : RelationalConfiguration Language.order V}
+    (hc : c ∈ treeClass) : coverGraphCode c ∈ markedTreeClass := by
+  rw [mem_treeClass] at hc
+  have := hc.isPartialOrder
+  obtain ⟨a, ha⟩ := hc.exists_forall
+  rw [mem_markedTreeClass]
+  refine ⟨fun u v huv => ?_, fun v hv => ?_, ?_, a, ?_, fun b hb => ?_⟩
+  · rw [codeRel_coverGraphCode] at huv ⊢
+    exact huv.symm
+  · rw [codeRel_coverGraphCode, or_self] at hv
+    exact hv.ne rfl
+  · rw [markedGraph_coverGraphCode]
+    exact hc.isTree_fromRel_relCovBy
+  · exact (isMarked_coverGraphCode c a).2 ha
+  · exact antisymm_of _ ((isMarked_coverGraphCode c b).1 hb a) (ha b)
+
+/-- **Isomorphic cover graphs come from isomorphic coded trees**: a relabelling carrying the cover
+graph of `c` to that of `d` maps the least element of `c` to that of `d`, so it is an
+isomorphism of the orders. -/
+theorem isoSetoid_of_isoSetoid_coverGraphCode {c d : RelationalConfiguration Language.order V}
+    (hc : c ∈ treeClass) (hd : d ∈ treeClass)
+    (h : isoSetoid markedGraphLanguage V (coverGraphCode c) (coverGraphCode d)) :
+    isoSetoid Language.order V c d := by
+  obtain ⟨σ, hσ⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
+  let e : SimpleGraph.fromRel (RelCovBy (codeRel leSymb c)) ≃g
+      SimpleGraph.fromRel (RelCovBy (codeRel leSymb d)) :=
+    { toEquiv := σ
+      map_rel_iff' := by
+        intro u v
+        rw [← markedGraph_coverGraphCode, ← markedGraph_coverGraphCode, ← hσ]
+        simp only [markedGraph_adj, codeRel_perm_smul, Equiv.symm_apply_apply, ne_eq,
+          EmbeddingLike.apply_eq_iff_eq] }
+  -- `e` is the structure literal above, so its underlying function is `σ` by construction.
+  have he (x : V) : e x = σ x := rfl
+  rw [mem_treeClass] at hc hd
+  obtain ⟨a, ha⟩ := hc.exists_forall
+  have hσa : ∀ x, codeRel leSymb d (e a) x := by
+    rw [he, ← isMarked_coverGraphCode, ← hσ, isMarked_perm_smul, Equiv.symm_apply_apply,
+      isMarked_coverGraphCode]
+    exact ha
+  have hrel (x y : V) : codeRel leSymb d (σ x) (σ y) ↔ codeRel leSymb c x y := by
+    rw [← he, ← he]
+    exact IsTreeOrder.rel_iff_of_iso hc hd e ha hσa x y
+  refine isoSetoid_iff_exists_perm_smul_eq.2 ⟨σ, ?_⟩
+  rw [← ofRel_codeRel (σ • c), ← ofRel_codeRel d]
+  congr 1
+  ext x y
+  rw [codeRel_perm_smul, ← hrel, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- **The cover-graph map reduces isomorphism of coded trees to isomorphism of marked trees**:
+two coded trees are isomorphic exactly when their cover graphs are. -/
+theorem isoSetoid_coverGraphCode_iff {c d : RelationalConfiguration Language.order V}
+    (hc : c ∈ treeClass) (hd : d ∈ treeClass) :
+    isoSetoid markedGraphLanguage V (coverGraphCode c) (coverGraphCode d) ↔
+      isoSetoid Language.order V c d :=
+  ⟨isoSetoid_of_isoSetoid_coverGraphCode hc hd, isoSetoid_coverGraphCode⟩
+
+/-- **Countable marked trees are Borel complete** (Friedman–Stanley): the measurable cover-graph
+map reduces isomorphism on `treeClass` to isomorphism on `markedTreeClass`. -/
+theorem borelComplete_markedTreeClass : BorelComplete (markedTreeClass (V := ℕ)) :=
+  borelComplete_treeClass.of_borelReducible <|
+    borelReducible_classIso_of_mapsTo measurable_coverGraphCode
+      (fun _ hc => coverGraphCode_mem_markedTreeClass hc) fun _ hc _ hd =>
+        (isoSetoid_coverGraphCode_iff hc hd).symm
 
 end RelationalConfiguration
 

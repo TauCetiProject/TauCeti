@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -47,72 +48,6 @@ namespace TauCeti
 
 open MeasureTheory TopologicalSpace
 open scoped ENNReal ContDiff
-
-section Classical
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-
-/-- Taking `i` further derivatives of the `k`th iterated-gradient field has the same norm as
-taking `i + k + 1` derivatives of the original scalar function. No smoothness is needed. -/
-theorem norm_iteratedFDeriv_iteratedGradientChain (f : E → ℝ) (i k : ℕ) (x : E) :
-    ‖iteratedFDeriv ℝ i (iteratedGradientChain f k) x‖ =
-      ‖iteratedFDeriv ℝ (i + k + 1) f x‖ := by
-  induction k generalizing i with
-  | zero =>
-      rw [iteratedGradientChain_zero]
-      -- The gradient is the inverse Riesz isometry applied to the Fréchet derivative.
-      exact ((InnerProductSpace.toDual ℝ E).symm.norm_iteratedFDeriv_comp_left
-        (fderiv ℝ f) x i).trans norm_iteratedFDeriv_fderiv
-  | succ k ih =>
-      rw [iteratedGradientChain_succ, norm_iteratedFDeriv_fderiv]
-      exact (ih (i + 1)).trans (congrArg
-        (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (by omega))
-
-/-- The nested iterated-gradient field has the same norm as the corresponding multilinear
-derivative of the scalar function. -/
-@[simp]
-theorem norm_iteratedGradientChain (f : E → ℝ) (k : ℕ) (x : E) :
-    ‖iteratedGradientChain f k x‖ = ‖iteratedFDeriv ℝ (k + 1) f x‖ :=
-  (norm_iteratedFDeriv_zero (f := iteratedGradientChain f k) (x := x)).symm.trans
-    ((norm_iteratedFDeriv_iteratedGradientChain f 0 k x).trans
-      (congrArg (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (Nat.zero_add k)))
-
-/-- Iterated-gradient fields through order `k + 1` preserve subtraction of scalar functions
-that are `C^{k+1}` at the point of evaluation. -/
-@[simp]
-theorem iteratedGradientChain_sub {f g : E → ℝ} {x : E}
-    (k : ℕ) (hf : ContDiffAt ℝ (k + 1) f x) (hg : ContDiffAt ℝ (k + 1) g x) :
-    iteratedGradientChain (f - g) k x =
-      iteratedGradientChain f k x - iteratedGradientChain g k x := by
-  induction k generalizing x with
-  | zero =>
-      simp only [iteratedGradientChain_zero, gradient,
-        fderiv_sub (hf.differentiableAt (by simp)) (hg.differentiableAt (by simp)), map_sub]
-  | succ k ih =>
-      simp only [iteratedGradientChain_succ]
-      have heq : iteratedGradientChain (f - g) k =ᶠ[nhds x]
-          iteratedGradientChain f k - iteratedGradientChain g k := by
-        filter_upwards [hf.eventually (by simp), hg.eventually (by simp)] with y hfy hgy
-        exact ih (hfy.of_le (by simp)) (hgy.of_le (by simp))
-      rw [heq.fderiv_eq]
-      have hfs := contDiffAt_iteratedGradientChain hf k (m := 1)
-        (by simp [add_comm, add_left_comm])
-      have hgs := contDiffAt_iteratedGradientChain hg k (m := 1)
-        (by simp [add_comm, add_left_comm])
-      exact fderiv_sub (hfs.differentiableAt (by simp)) (hgs.differentiableAt (by simp))
-
-/-- The order-`k + 1` iterated-gradient fields of two scalar functions that are `C^{k+1}` at
-a point have the same difference norm there as their multilinear derivatives. This identifies
-the error seminorms in smooth approximation. -/
-theorem norm_iteratedGradientChain_sub {f g : E → ℝ} {x : E}
-    (k : ℕ) (hf : ContDiffAt ℝ (k + 1) f x) (hg : ContDiffAt ℝ (k + 1) g x) :
-    ‖iteratedGradientChain f k x - iteratedGradientChain g k x‖ =
-      ‖iteratedFDeriv ℝ (k + 1) f x - iteratedFDeriv ℝ (k + 1) g x‖ := by
-  rw [← iteratedGradientChain_sub k hf hg, norm_iteratedGradientChain]
-  exact congrArg norm (fun_iteratedFDeriv_sub_apply
-    (hf.of_le (by simp)) (hg.of_le (by simp)))
-
-end Classical
 
 section Sobolev
 
