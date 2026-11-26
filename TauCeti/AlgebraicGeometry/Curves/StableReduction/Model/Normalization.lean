@@ -13,13 +13,13 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
-import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.Smooth.MinimalPrime
@@ -139,7 +139,7 @@ variable {M} {U : M.total.Opens}
 
 /-- Over an affine open `U` of the total space of a model of relative dimension at most one, the
 special fibre `Γ(U) ⧸ π Γ(U)` has Krull dimension at most one. -/
-private lemma krullDimLE_sections_quotient [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase]
+lemma krullDimLE_sections_quotient [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase]
     (hU : IsAffineOpen U) {π : R} (hπ : Irreducible π) :
     letI := M.toBase.sectionsAlgebra U
     Ring.KrullDimLE 1 (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
