@@ -22,10 +22,11 @@ algebra `C^□_*(Ω_{y₀} Y; R)`. For a DG local system `𝓕` on `(Y, y₀)`, 
 algebra, the **DG Morse complex** `𝓕 ⊗ ⟨Crit f⟩` is the twisted complex of this cocycle
 (`TauCeti.IsAdaptedPseudoGradient.dgMorseComplex`), with differential
 `D(α ⊗ x) = dα ⊗ x + (-1)^{|α|} Σ_y α · m(x, y) ⊗ y`. When `S` is a representing chain system
-of the fundamental classes rel boundary and `θ` is the collapse of a tree through the critical
-points, a map `M → M` homotopic to the identity, this is the complex whose cohomology, read in the
-homological grading `C_n = C^{-n}`, is the Morse homology `H_*(M; 𝓕)` with DG coefficients of
-Barraud, Damian, Humilière and Oancea.
+of the fundamental classes rel boundary, `Y = M` and `θ` is the composite of the collapse of an
+embedded tree through the critical points with a homotopy inverse of that collapse, a map
+homotopic to the identity, this is the complex whose cohomology, read in the homological grading
+`C_n = C^{-n}`, is the Morse homology `H_*(M; 𝓕)` with DG coefficients of Barraud, Damian,
+Humilière and Oancea.
 
 Homotopic chain systems give isomorphic DG Morse complexes, by an isomorphism specified by the
 homotopy. A homotopy `T` from `S` to `S'` (`TauCeti.TwistingChainSystem.Homotopy`) pushes forward
