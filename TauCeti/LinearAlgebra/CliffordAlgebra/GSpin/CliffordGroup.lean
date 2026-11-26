@@ -54,7 +54,7 @@ characteristic (`CliffordAlgebra.ι_injective_of_free`,
 These are the groups of points over `R` of the Clifford and general spin group functors of
 Conrad, App. C, §C.4. The comparisons with Mathlib's `lipschitzGroup` (over any commutative ring)
 and `spinGroup` (over a field of characteristic not two) are in
-`TauCeti.LinearAlgebra.CliffordAlgebra.GeneralSpin.Lipschitz`.
+`TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.Lipschitz`.
 
 ## Main declarations
 
