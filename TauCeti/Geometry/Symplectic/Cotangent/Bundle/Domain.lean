@@ -100,11 +100,7 @@ theorem isLiouvilleCompletion_codiscBundle [CompactSpace M] [T2Space M] :
     refine ⟨vectorBundleEulerField I, ?_, hc, fun z ↦ ⟨-‖z.snd‖, ?_⟩⟩
     · rw [NegMemClass.coe_neg, symplecticForm_interior_vectorBundleEulerField]
     -- The flow line of `z` is the fibre ray `t ↦ e^t z`.
-    have hflow := globalFlow_eq_of_isMIntegralCurve (contMDiff_vectorBundleEulerField (m := 1))
-      hc (isMIntegralCurve_vectorBundleEulerField z) (-‖z.snd‖)
-    simp only [Real.exp_zero, one_smul] at hflow
-    rw [flowOf_apply, ← globalFlow_apply (contMDiff_vectorBundleEulerField (m := 1)) hc, hflow,
-      mem_codiscBundle]
+    rw [flowOf_vectorBundleEulerField, mem_codiscBundle]
     -- This is `norm_smul`, supplied from the `NormedSpace` instance as in
     -- `TauCeti.CotangentBundle.mfderiv_norm_snd_vectorBundleEulerField`.
     rw [(NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul,
