@@ -102,8 +102,9 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 
 /-! ### Definitions -/
 
-/-- The square of the **rescaled Hilbert norm** `E_(r,s)` of a connection increment `b` and a
-normalized spinor increment `ζ`, at the scale `h = λ⁻¹ = (2 r)^(-1/2)`:
+/-- The square of the **rescaled norm** `E_(r,s)` of a connection increment `b` and a
+normalized spinor increment `ζ`, at the scale `h = λ⁻¹ = (2 r)^(-1/2)`, with the derivatives in
+the operator norm:
 `‖(b, ζ)‖_(E_(r,s))² = ∑_{j ≤ s} h^(2j) (h² ‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4)`. A derivative contributes
 `0` when it is not square integrable (`MeasureTheory.lpNorm_of_not_memLp`). -/
 noncomputable def rescaledFieldNormSq (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) : ℝ :=
@@ -293,29 +294,6 @@ theorem rpow_mul_le_mul_rescaledFieldNormSq (s : ℕ) {h : ℝ} (hh : 0 < h) (b 
 
 /-! ### Gauge, bundle and tube charts -/
 
-/-- A semiclassical bound `‖φ‖_{s,h} ≤ C ‖u‖_{s,h}` bounds the square sum
-`∑_{j ≤ s} (hʲ ‖Dʲ φ‖₂)²` by `(s + 1) C²` times that of `u`. -/
-private theorem sum_sq_le_of_semiclassicalSobolevNorm_le {G G' : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G'] {s : ℕ} {h C : ℝ} (hh : 0 < h)
-    {φ : V → G'} {u : V → G}
-    (hle : semiclassicalSobolevNorm s h φ ≤ C * semiclassicalSobolevNorm s h u) :
-    ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j φ) 2 volume) ^ 2 ≤
-      (s + 1) * C ^ 2 *
-        ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume) ^ 2 := by
-  have hsq : semiclassicalSobolevNorm s h φ ^ 2 ≤ C ^ 2 * semiclassicalSobolevNorm s h u ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (semiclassicalSobolevNorm_nonneg s hh.le φ) hle 2
-  have hn : 0 ≤ h ^ (finrank ℝ V : ℝ) := Real.rpow_nonneg hh.le _
-  have hu := rpow_mul_semiclassicalSobolevNorm_sq_le s hh u
-  calc _ ≤ h ^ (finrank ℝ V : ℝ) * semiclassicalSobolevNorm s h φ ^ 2 :=
-        sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq s hh φ
-    _ ≤ C ^ 2 * (h ^ (finrank ℝ V : ℝ) * semiclassicalSobolevNorm s h u ^ 2) := by
-        nlinarith [mul_le_mul_of_nonneg_left hsq hn]
-    _ ≤ C ^ 2 * ((s + 1) * ∑ j ∈ Finset.range (s + 1),
-          (h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume) ^ 2) :=
-        mul_le_mul_of_nonneg_left hu (sq_nonneg C)
-    _ = _ := by ring
-
 /-- If the square sums of `b'` and `ζ'` are at most `c₁` and `c₂` times those of `b` and `ζ`,
 then `‖(b', ζ')‖_(E_(r,s))² ≤ max c₁ c₂ ‖(b, ζ)‖_(E_(r,s))²`. -/
 private theorem rescaledFieldNormSq_le_max_mul {s : ℕ} {h c₁ c₂ : ℝ} {b : V → B} {ζ : V → S}
@@ -351,7 +329,7 @@ theorem rescaledFieldNormSq_smul_le {s : ℕ} {h M : ℝ} {g : V → 𝕜} {ζ :
     rescaledFieldNormSq s h b (fun y ↦ g y • ζ y) ≤
       max 1 ((s + 1) * ((s + 1) * 2 ^ s * M) ^ 2) * rescaledFieldNormSq s h b ζ :=
   rescaledFieldNormSq_le_max_mul (one_mul _).symm.le
-    (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+    (sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le s hh
       (semiclassicalSobolevNorm_smul_le_of_le_left hg hζ hζm hh hM).2)
 
 end Gauge
@@ -373,9 +351,9 @@ theorem rescaledFieldNormSq_clm_apply_le {s : ℕ} {h M M' : ℝ} {b : V → B} 
       max ((s + 1) * ((s + 1) * 2 ^ s * M) ^ 2) ((s + 1) * ((s + 1) * 2 ^ s * M') ^ 2) *
         rescaledFieldNormSq s h b ζ :=
   rescaledFieldNormSq_le_max_mul
-    (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+    (sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le s hh
       (semiclassicalSobolevNorm_clm_apply_le_of_le_left hA hb hbm hh hM).2)
-    (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+    (sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le s hh
       (semiclassicalSobolevNorm_clm_apply_le_of_le_left hA' hζ hζm hh hM').2)
 
 /-- **Changes of tube charts.** Let `Φ : V → V` be a chart at scale `h`: an injective map of class
@@ -395,16 +373,16 @@ theorem rescaledFieldNormSq_comp_le {s : ℕ} {h L c : ℝ} {b : V → B} {ζ : 
     rescaledFieldNormSq s h (b ∘ Φ) (ζ ∘ Φ) ≤
       (s + 1) * Wkp.compLBound 2 s L c ^ 2 * rescaledFieldNormSq s h b ζ := by
   have := rescaledFieldNormSq_le_max_mul (s := s) (h := h) (b := b) (ζ := ζ) (b' := b ∘ Φ)
-    (ζ' := ζ ∘ Φ) (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+    (ζ' := ζ ∘ Φ) (sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le s hh
       (semiclassicalSobolevNorm_comp_le hb hbm hΦ hΦd hinj hh hL hc hdet))
-    (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+    (sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le s hh
       (semiclassicalSobolevNorm_comp_le hζ hζm hΦ hΦd hinj hh hL hc hdet))
   rwa [max_self] at this
 
 /-! ### The target norm against the semiclassical norms -/
 
 /-- The target norm through order `k` is the square sum `∑_{j ≤ k} (hʲ ‖Dʲ y‖₂)²`. -/
-private theorem rescaledTargetNormSq_succ_eq_sum_sq (k : ℕ) (h : ℝ) (y : V → T) :
+theorem rescaledTargetNormSq_succ_eq_sum_sq (k : ℕ) (h : ℝ) (y : V → T) :
     rescaledTargetNormSq (k + 1) h y =
       ∑ j ∈ Finset.range (k + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j y) 2 volume) ^ 2 :=
   Finset.sum_congr rfl fun j _ ↦ by ring
@@ -436,21 +414,10 @@ theorem rescaledTargetNormSq_clm_apply_le {k : ℕ} {h M : ℝ} {y : V → T} {T
     rescaledTargetNormSq (k + 1) h (fun x ↦ A x (y x)) ≤
       (k + 1) * ((k + 1) * 2 ^ k * M) ^ 2 * rescaledTargetNormSq (k + 1) h y := by
   rw [rescaledTargetNormSq_succ_eq_sum_sq, rescaledTargetNormSq_succ_eq_sum_sq]
-  exact sum_sq_le_of_semiclassicalSobolevNorm_le hh
+  exact sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le k hh
     (semiclassicalSobolevNorm_clm_apply_le_of_le_left hA hy hym hh hM).2
 
 /-! ### The triangle inequality -/
-
-/-- **Minkowski's inequality for dominated square sums.** If `0 ≤ z i ≤ x i + y i` on `s`, then
-`√(∑ z²) ≤ √(∑ x²) + √(∑ y²)`. -/
-private theorem sqrt_sum_sq_le {ι : Type*} (s : Finset ι) {x y z : ι → ℝ}
-    (hz : ∀ i ∈ s, 0 ≤ z i)
-    (hzxy : ∀ i ∈ s, z i ≤ x i + y i) :
-    √(∑ i ∈ s, z i ^ 2) ≤ √(∑ i ∈ s, x i ^ 2) + √(∑ i ∈ s, y i ^ 2) := by
-  have hM := Real.Lp_add_le s x y (p := 2) one_le_two
-  simp only [Real.rpow_two, sq_abs, ← Real.sqrt_eq_rpow] at hM
-  refine (Real.sqrt_le_sqrt (Finset.sum_le_sum fun i hi ↦ ?_)).trans hM
-  exact pow_le_pow_left₀ (hz i hi) (hzxy i hi) 2
 
 /-- **The triangle inequality for the target norm.** For `y` and `y'` of class `C^(s-1)` with
 square-integrable derivatives through order `s - 1`, and `h ≥ 0`,
@@ -464,7 +431,13 @@ theorem sqrt_rescaledTargetNormSq_add_le {s : ℕ} {y y' : V → T}
       ∑ j ∈ Finset.range s, (h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume) ^ 2 := fun f ↦
     Finset.sum_congr rfl fun j _ ↦ by ring
   rw [key, key, key]
-  refine sqrt_sum_sq_le _ (fun j _ ↦ mul_nonneg (pow_nonneg hh j) lpNorm_nonneg) fun j hj ↦ ?_
+  -- Minkowski's inequality in `ℓ²`, after bounding each term by the triangle inequality in `L²`.
+  have hM := Real.Lp_add_le (Finset.range s)
+    (fun j ↦ h ^ j * lpNorm (iteratedFDeriv ℝ j y) 2 volume)
+    (fun j ↦ h ^ j * lpNorm (iteratedFDeriv ℝ j y') 2 volume) (p := 2) one_le_two
+  simp only [Real.rpow_two, sq_abs, ← Real.sqrt_eq_rpow] at hM
+  refine (Real.sqrt_le_sqrt (Finset.sum_le_sum fun j hj ↦ pow_le_pow_left₀
+    (mul_nonneg (pow_nonneg hh j) lpNorm_nonneg) ?_ 2)).trans hM
   have hjs : j < s := Finset.mem_range.1 hj
   have hjs' : j ≤ s - 1 := Nat.le_sub_one_of_lt hjs
   rw [iteratedFDeriv_add (hy.of_le (by exact_mod_cast hjs')) (hy'.of_le (by exact_mod_cast hjs')),
@@ -496,7 +469,12 @@ theorem sqrt_rescaledFieldNormSq_add_le {s : ℕ} {b b' : V → B} {ζ ζ' : V �
     · exact mul_nonneg (pow_nonneg hh _) lpNorm_nonneg
     · exact div_nonneg (mul_nonneg (pow_nonneg hh _) lpNorm_nonneg) zero_le_two
   rw [key, key, key]
-  refine sqrt_sum_sq_le _ (fun p _ ↦ hc _ _ p) fun p hp ↦ ?_
+  -- Minkowski's inequality in `ℓ²`, after bounding each term by the triangle inequality in `L²`.
+  have hM := Real.Lp_add_le (Finset.range (s + 1) ×ˢ Finset.univ) (c b ζ) (c b' ζ') (p := 2)
+    one_le_two
+  simp only [Real.rpow_two, sq_abs, ← Real.sqrt_eq_rpow] at hM
+  refine (Real.sqrt_le_sqrt (Finset.sum_le_sum fun p hp ↦
+    pow_le_pow_left₀ (hc _ _ p) ?_ 2)).trans hM
   have hjs : p.1 ≤ s := Nat.lt_succ_iff.1 (Finset.mem_range.1 (Finset.mem_product.1 hp).1)
   have hjs' : (p.1 : WithTop ℕ∞) ≤ s := by exact_mod_cast hjs
   simp only [c]

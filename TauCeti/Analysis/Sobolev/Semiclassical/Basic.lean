@@ -60,7 +60,17 @@ reversed, for a vector-valued `f` with these bounds and a square-integrable scal
 which each derivative is weighted by the power of `h` matching its order
 (`ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left`,
 `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right`). Unlike the algebra estimate they need
-no Sobolev embedding, so they hold for every order `k` and in every dimension.
+no Sobolev embedding, so they hold for every order `k` and in every dimension. The same bound holds
+for an operator-valued multiplier `A : E → F →L[ℝ] G`, such as a change of frame of a vector
+bundle, acting by `y ↦ A y (f y)` (`TauCeti.semiclassicalSobolevNorm_clm_apply_le_of_le_left`,
+from `ContDiff.pow_mul_norm_iteratedFDeriv_clm_apply_le_of_le_left`).
+
+**Square sums.** The norm is a sum of the scaled `L²` norms `hⁱ ‖Dⁱ f‖₂`; the Hilbert-type
+square sum `∑_{i ≤ k} (hⁱ ‖Dⁱ f‖₂)²` lies between `hⁿ ‖f‖_{k,h}² / (k + 1)` and `hⁿ ‖f‖_{k,h}²`
+(`TauCeti.sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq`,
+`TauCeti.rpow_mul_semiclassicalSobolevNorm_sq_le`), so every bound
+`‖φ‖_{k,h} ≤ C ‖u‖_{k,h}` gives one between square sums with the constant `(k + 1) C²`
+(`TauCeti.sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le`).
 
 The norms at different scales compare as follows. A derivative costs one factor of `h`:
 `h ‖Df‖_{k,h} ≤ ‖f‖_{k+1,h}` (`TauCeti.mul_semiclassicalSobolevNorm_fderiv_le`). For `0 < h ≤ 1`
@@ -86,6 +96,10 @@ the semiclassical and unscaled norms satisfy
   order `k`.
 * `TauCeti.semiclassicalSobolevNorm_smul_le_of_le_left`: multipliers with semiclassical `Cᵏ`
   bounds are bounded, uniformly in `h`.
+* `TauCeti.semiclassicalSobolevNorm_clm_apply_le_of_le_left`: the same for operator-valued
+  multipliers.
+* `TauCeti.sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq`,
+  `TauCeti.rpow_mul_semiclassicalSobolevNorm_sq_le`: comparison with the square sums.
 
 ## References
 
@@ -397,6 +411,27 @@ theorem rpow_mul_semiclassicalSobolevNorm_sq_le (k : ℕ) {h : ℝ} (hh : 0 < h)
   simpa using sq_sum_le_card_mul_sum_sq (s := Finset.range (k + 1))
     (f := fun i ↦ h ^ i * lpNorm (iteratedFDeriv ℝ i f) 2 volume)
 
+/-- **Square sums under a semiclassical bound.** If `‖φ‖_{k,h} ≤ C ‖u‖_{k,h}` and `h > 0`, then the
+square sum `∑_{j ≤ k} (hʲ ‖Dʲ φ‖₂)²` is at most `(k + 1) C²` times that of `u`. -/
+theorem sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (k : ℕ) {h C : ℝ} (hh : 0 < h) {φ : E → G} {u : E → F}
+    (hle : semiclassicalSobolevNorm k h φ ≤ C * semiclassicalSobolevNorm k h u) :
+    ∑ j ∈ Finset.range (k + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j φ) 2 volume) ^ 2 ≤
+      (k + 1) * C ^ 2 *
+        ∑ j ∈ Finset.range (k + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume) ^ 2 := by
+  have hsq : semiclassicalSobolevNorm k h φ ^ 2 ≤ C ^ 2 * semiclassicalSobolevNorm k h u ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (semiclassicalSobolevNorm_nonneg k hh.le φ) hle 2
+  have hn : 0 ≤ h ^ (finrank ℝ E : ℝ) := Real.rpow_nonneg hh.le _
+  calc _ ≤ h ^ (finrank ℝ E : ℝ) * semiclassicalSobolevNorm k h φ ^ 2 :=
+        sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq k hh φ
+    _ ≤ C ^ 2 * (h ^ (finrank ℝ E : ℝ) * semiclassicalSobolevNorm k h u ^ 2) := by
+        nlinarith [mul_le_mul_of_nonneg_left hsq hn]
+    _ ≤ C ^ 2 * ((k + 1) * ∑ j ∈ Finset.range (k + 1),
+          (h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume) ^ 2) :=
+        mul_le_mul_of_nonneg_left (rpow_mul_semiclassicalSobolevNorm_sq_le k hh u) (sq_nonneg C)
+    _ = _ := by ring
+
 /-! ### Multipliers with semiclassical `Cᵏ` bounds -/
 
 section Multiplier
@@ -492,14 +527,13 @@ theorem semiclassicalSobolevNorm_smul_le_of_le_right (hg : ContDiff ℝ k g) (hf
     (nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB 0)
     fun _n hn ↦ hg.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right hf hh.le hB hn
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- **The Leibniz rule in scaled units, with a bounded operator-valued factor.** If
-`A : E → F →L[ℝ] G` satisfies `hⁱ ‖Dⁱ A‖ ≤ B` everywhere for `i ≤ k`, then for `n ≤ k`, at every
+`A : X → F →L[ℝ] G` satisfies `hⁱ ‖Dⁱ A‖ ≤ B` everywhere for `i ≤ k`, then for `n ≤ k`, at every
 point, `hⁿ ‖Dⁿ (A f)‖ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖Dʲ f‖`, where `A f` is `y ↦ A y (f y)`. -/
-private theorem pow_mul_norm_iteratedFDeriv_clm_apply_le_of_le_left {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {A : E → F →L[ℝ] G} {f : E → F}
-    (hA : ContDiff ℝ k A) (hf : ContDiff ℝ k f) (hh : 0 ≤ h)
-    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i A x‖ ≤ B) {n : ℕ} (hn : n ≤ k) (x : E) :
+theorem _root_.ContDiff.pow_mul_norm_iteratedFDeriv_clm_apply_le_of_le_left {X G : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {A : X → F →L[ℝ] G} {f : X → F} (hA : ContDiff ℝ k A) (hf : ContDiff ℝ k f) (hh : 0 ≤ h)
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i A x‖ ≤ B) {n : ℕ} (hn : n ≤ k) (x : X) :
     h ^ n * ‖iteratedFDeriv ℝ n (fun y ↦ A y (f y)) x‖ ≤
       2 ^ k * B * ∑ j ∈ Finset.range (k + 1), h ^ j * ‖iteratedFDeriv ℝ j f x‖ := by
   have hB0 : 0 ≤ B := nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB x
@@ -548,7 +582,7 @@ theorem semiclassicalSobolevNorm_clm_apply_le_of_le_left {G : Type*} [NormedAddC
         (k + 1) * 2 ^ k * B * semiclassicalSobolevNorm k h f :=
   memLp_and_semiclassicalSobolevNorm_le_of_le (hA.clm_apply hf) hfm hh
     (nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB 0)
-    fun _n hn ↦ pow_mul_norm_iteratedFDeriv_clm_apply_le_of_le_left hA hf hh.le hB hn
+    fun _n hn ↦ hA.pow_mul_norm_iteratedFDeriv_clm_apply_le_of_le_left hf hh.le hB hn
 
 end Multiplier
 
