@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
-public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Calculus.MeanValue
+public import TauCeti.Analysis.Calculus.FDeriv.Remainder
 
 /-!
 # The quadratic mean value inequality
@@ -44,12 +44,14 @@ on `[0, 1]` gives an increment bounded by its integral
 `L max ‖x - z‖ ‖y - z‖` along the segment, with Mathlib's
 `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, would lose a factor up to `2`.
 
-For a `C²` map the hypothesis holds near every point: a map `f` that is `C²` at `z` satisfies
-the quadratic estimate with `φ = f' z` on some closed ball around `z`
+For a `C²` map the quadratic estimate holds near every point: a map `f` that is `C²` at `z`
+satisfies it with `φ = f' z` on some closed ball around `z`
 (`ContDiffAt.exists_forall_norm_image_sub_sub_le`). For a family `f p` of maps, jointly `C²` at
 `(p, z)` for every `p` in a compact set `K`, the radius and the constant can be chosen uniformly
-for `p ∈ K` (`IsCompact.exists_forall_norm_image_sub_sub_le`); this is how the constants of a
-gluing construction are made uniform over a compact family of approximate solutions.
+for `p ∈ K` (`IsCompact.exists_forall_norm_image_sub_sub_le`, a restatement of
+`IsCompact.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul`); this is how the constants of a
+gluing construction are made uniform over a compact family of approximate solutions. These two
+results are stated over `ℝ`, like the compactness results they rest on.
 
 ## Main results
 
@@ -179,82 +181,42 @@ end Convex
 
 section ContDiff
 
-variable {𝕜 E G P : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup P] [NormedSpace 𝕜 P]
-
-/-- The quadratic estimate on the ball `closedBall z δ` with constant `L`, for every map `f p`
-with `p ∈ T`. It only gets weaker as `δ` decreases and `L` increases. -/
-private def QuadraticEstimateOn (f : P → E → G) (z : E) (δ : ℝ) (L : ℝ≥0) (T : Set P) : Prop :=
-  ∀ p ∈ T, ∀ x ∈ closedBall z δ, ∀ y ∈ closedBall z δ,
-    ‖f p y - f p x - fderiv 𝕜 (f p) z (y - x)‖ ≤ L / 2 * (‖x - z‖ + ‖y - z‖) * ‖y - x‖
-
-omit [NormedAddCommGroup P] [NormedSpace 𝕜 P] in
-private lemma QuadraticEstimateOn.mono {f : P → E → G} {z : E} {δ δ' : ℝ}
-    {L L' : ℝ≥0} {T T' : Set P} (h : QuadraticEstimateOn (𝕜 := 𝕜) f z δ L T) (hδ : δ' ≤ δ)
-    (hL : L ≤ L') (hT : T' ⊆ T) : QuadraticEstimateOn (𝕜 := 𝕜) f z δ' L' T' := by
-  intro p hp x hx y hy
-  refine (h p (hT hp) x (closedBall_subset_closedBall hδ hx) y
-    (closedBall_subset_closedBall hδ hy)).trans ?_
-  gcongr
-
-/-- Near a parameter `p` at which `(q, w) ↦ f q w` is `C²` at `(p, z)`, the maps `f q` satisfy
-the quadratic estimate at `z` on a common ball with a common constant. -/
-private lemma exists_mem_nhds_quadraticEstimateOn {f : P → E → G} {p : P} {z : E}
-    (hf : ContDiffAt 𝕜 2 (uncurry f) (p, z)) :
-    ∃ U ∈ 𝓝 p, ∃ δ > 0, ∃ L : ℝ≥0, QuadraticEstimateOn (𝕜 := 𝕜) f z δ L U := by
-  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-  -- The partial derivative `(q, w) ↦ fderiv 𝕜 (f q) w` is `C¹` at `(p, z)`, hence Lipschitz
-  -- near `(p, z)`.
-  have hF : ContDiffAt 𝕜 1 (fun q : P × E ↦ fderiv 𝕜 (f q.1) q.2) (p, z) :=
-    ContDiffAt.fderiv (f := fun q : P × E ↦ f q.1) (g := Prod.snd) (m := 1) (n := 2)
-      (hf.comp ((p, z), z) (f := fun r : (P × E) × E ↦ (r.1.1, r.2)) (by fun_prop))
-      contDiffAt_snd (by norm_num)
-  obtain ⟨L, t, ht, hLip⟩ := hF.exists_lipschitzOnWith
-  have hev := hf.eventually (by simp)
-  obtain ⟨u, hu, v, hv, huv⟩ := mem_prod_iff.1 (nhds_prod_eq (x := p) (y := z) ▸
-    Filter.inter_mem ht hev)
-  obtain ⟨δ, hδ, hδv⟩ := nhds_basis_closedBall.mem_iff.1 hv
-  refine ⟨u, hu, δ, hδ, L, fun q hq x hx y hy ↦ ?_⟩
-  have hmem {w : E} (hw : w ∈ closedBall z δ) : (q, w) ∈ t ∩ {r | ContDiffAt 𝕜 2 (uncurry f) r} :=
-    huv ⟨hq, hδv hw⟩
-  have hdiff {w : E} (hw : w ∈ closedBall z δ) : DifferentiableAt 𝕜 (f q) w :=
-    ((hmem hw).2.comp w (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt two_ne_zero
-  refine (convex_closedBall z δ).norm_image_sub_sub_le_of_norm_fderiv_sub_le
-    (fun w hw ↦ hdiff hw) (fun w hw ↦ ?_) hx hy
-  have h := hLip.dist_le_mul (q, w) (hmem hw).1 (q, z) (hmem (mem_closedBall_self hδ.le)).1
-  rwa [dist_eq_norm, Prod.dist_eq, dist_self, dist_eq_norm, max_eq_right (norm_nonneg _)] at h
+variable {E G P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] [NormedAddCommGroup P] [NormedSpace ℝ P]
 
 /-- **The quadratic estimate, uniformly over a compact family.** Let `f p` be a family of maps
 such that `(p, w) ↦ f p w` is `C²` at `(p, z)` for every `p` in a compact set `K`. Then there are
 a radius `δ > 0` and a constant `L` such that for every `p ∈ K` and all `x, y` in the closed ball
 of radius `δ` around `z`,
-`‖f p y - f p x - fderiv 𝕜 (f p) z (y - x)‖ ≤ (L / 2) (‖x - z‖ + ‖y - z‖) ‖y - x‖`. -/
+`‖f p y - f p x - fderiv ℝ (f p) z (y - x)‖ ≤ (L / 2) (‖x - z‖ + ‖y - z‖) ‖y - x‖`.
+This is `IsCompact.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul` in the form of the quadratic
+estimate, using `max ‖x - z‖ ‖y - z‖ ≤ ‖x - z‖ + ‖y - z‖`. -/
 theorem IsCompact.exists_forall_norm_image_sub_sub_le {f : P → E → G} {K : Set P} {z : E}
-    (hK : IsCompact K) (hf : ∀ p ∈ K, ContDiffAt 𝕜 2 (uncurry f) (p, z)) :
+    (hK : IsCompact K) (hf : ∀ p ∈ K, ContDiffAt ℝ 2 (uncurry f) (p, z)) :
     ∃ δ > 0, ∃ L : ℝ≥0, ∀ p ∈ K, ∀ x ∈ closedBall z δ, ∀ y ∈ closedBall z δ,
-      ‖f p y - f p x - fderiv 𝕜 (f p) z (y - x)‖ ≤ L / 2 * (‖x - z‖ + ‖y - z‖) * ‖y - x‖ := by
-  refine hK.induction_on (p := fun T ↦ ∃ δ > 0, ∃ L : ℝ≥0, QuadraticEstimateOn (𝕜 := 𝕜) f z δ L T)
-    ⟨1, one_pos, 0, fun _ hp ↦ absurd hp (notMem_empty _)⟩ ?_ ?_ ?_
-  · rintro T T' hTT' ⟨δ, hδ, L, h⟩
-    exact ⟨δ, hδ, L, h.mono le_rfl le_rfl hTT'⟩
-  · rintro T T' ⟨δ, hδ, L, h⟩ ⟨δ', hδ', L', h'⟩
-    refine ⟨min δ δ', lt_min hδ hδ', max L L', fun p hp ↦ ?_⟩
-    rcases hp with hp | hp
-    · exact (h.mono (min_le_left _ _) (le_max_left _ _) subset_rfl) p hp
-    · exact (h'.mono (min_le_right _ _) (le_max_right _ _) subset_rfl) p hp
-  · intro p hp
-    obtain ⟨U, hU, h⟩ := exists_mem_nhds_quadraticEstimateOn (hf p hp)
-    exact ⟨U, mem_nhdsWithin_of_mem_nhds hU, h⟩
+      ‖f p y - f p x - fderiv ℝ (f p) z (y - x)‖ ≤ L / 2 * (‖x - z‖ + ‖y - z‖) * ‖y - x‖ := by
+  obtain ⟨δ, hδ, L, hL⟩ := hK.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul (F := f)
+    (x := fun _ ↦ z) hf continuousOn_const
+  refine ⟨δ, hδ, (2 * max L 0).toNNReal, fun p hp x hx y hy ↦ ?_⟩
+  rw [mem_closedBall, dist_eq_norm] at hx hy
+  have h := hL p hp (y - z) (x - z) hy hx
+  simp only [add_sub_cancel, sub_sub_sub_cancel_right] at h
+  refine h.trans ?_
+  rw [Real.coe_toNNReal _ (by positivity), mul_div_cancel_left₀ _ two_ne_zero,
+    max_comm ‖y - z‖]
+  gcongr
+  · exact le_max_left _ _
+  · exact max_le_add_of_nonneg (norm_nonneg _) (norm_nonneg _)
 
 /-- **The quadratic estimate for a `C²` map.** If `f` is `C²` at `z`, there are a radius `δ > 0`
 and a constant `L` such that for all `x, y` in the closed ball of radius `δ` around `z`,
-`‖f y - f x - fderiv 𝕜 f z (y - x)‖ ≤ (L / 2) (‖x - z‖ + ‖y - z‖) ‖y - x‖`. -/
+`‖f y - f x - fderiv ℝ f z (y - x)‖ ≤ (L / 2) (‖x - z‖ + ‖y - z‖) ‖y - x‖`. -/
 theorem ContDiffAt.exists_forall_norm_image_sub_sub_le {f : E → G} {z : E}
-    (hf : ContDiffAt 𝕜 2 f z) :
+    (hf : ContDiffAt ℝ 2 f z) :
     ∃ δ > 0, ∃ L : ℝ≥0, ∀ x ∈ closedBall z δ, ∀ y ∈ closedBall z δ,
-      ‖f y - f x - fderiv 𝕜 f z (y - x)‖ ≤ L / 2 * (‖x - z‖ + ‖y - z‖) * ‖y - x‖ := by
+      ‖f y - f x - fderiv ℝ f z (y - x)‖ ≤ L / 2 * (‖x - z‖ + ‖y - z‖) * ‖y - x‖ := by
   obtain ⟨δ, hδ, L, h⟩ := isCompact_singleton.exists_forall_norm_image_sub_sub_le
-    (f := fun (_ : 𝕜) ↦ f) (K := {0}) fun _ _ ↦ hf.comp _ contDiffAt_snd
-  exact ⟨δ, hδ, L, h 0 rfl⟩
+    (f := fun (_ : ℝ) ↦ f) (K := {0}) fun _ _ ↦ hf.comp _ contDiffAt_snd
+  exact ⟨δ, hδ, L, h 0 (mem_singleton 0)⟩
 
 end ContDiff

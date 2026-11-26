@@ -64,11 +64,13 @@ estimate `‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` on the ba
 `2 C ‖f 0‖ ≤ δ` and `2 C² L ‖f 0‖ < 1`, the map `f` has a zero `x` in the range of `Q` with
 `‖x‖ ≤ 2 C ‖f 0‖` (`TauCeti.exists_mem_range_norm_le_apply_eq_zero`), and two zeros of `f` in the
 range of `Q` of norm at most `r ≤ δ` coincide when `C L r < 1`
-(`TauCeti.eq_of_apply_eq_zero`). This is the Newton step of a gluing construction: the
-approximate solution is translated to the origin, `f` is the projected equation
-`P ∘ S` for a fixed projection `P` onto the target of the linearization, and the constant `L`
-comes from a bound on the second derivative, uniformly over compact families of approximate
-solutions (`IsCompact.exists_forall_norm_image_sub_sub_le`).
+(`TauCeti.eq_of_apply_eq_zero`). The quadratic estimate of `N` itself is
+`TauCeti.norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le`, so every theorem of
+`TauCeti.Analysis.Normed.Operator.QuadraticCorrection.Basic` applies to `f`. This is the Newton
+step of a gluing construction, with the approximate solution translated to the origin. For a
+family of maps that is jointly `C²`, a radius `δ` and a constant `L` for the quadratic estimate
+can be chosen uniformly over a compact set of parameters
+(`IsCompact.exists_forall_norm_image_sub_sub_le`).
 
 ## References
 
@@ -234,9 +236,13 @@ private lemma add_add_sub_sub_eq_zero_iff {x : E} :
     f 0 + f' 0 x + (f x - f 0 - f' 0 x) = 0 ↔ f x = 0 := by
   rw [show f 0 + f' 0 x + (f x - f 0 - f' 0 x) = f x by abel]
 
-/-- The remainder `N x = f x - f 0 - f' 0 x` satisfies the quadratic estimate on the closed ball
-of radius `δ` when `‖f' w - f' 0‖ ≤ L ‖w‖` there. -/
-private lemma norm_sub_sub_sub_le
+/-- **The quadratic estimate of the remainder of a map.** If `f` has derivative `f' w` within the
+closed ball of radius `δ` around `0` at every point `w` of the ball and `‖f' w - f' 0‖ ≤ L ‖w‖`
+there, then the remainder `N x = f x - f 0 - f' 0 x` satisfies the quadratic estimate
+`‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` on the ball. This is the hypothesis `hN` of the
+theorems of `TauCeti.Analysis.Normed.Operator.QuadraticCorrection.Basic` for `e = f 0` and
+`D = f' 0`. -/
+theorem norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le
     (hf : ∀ w ∈ closedBall (0 : E) δ, HasFDerivWithinAt f (f' w) (closedBall 0 δ) w)
     (hf' : ∀ w ∈ closedBall (0 : E) δ, ‖f' w - f' 0‖ ≤ L * ‖w‖) :
     ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
@@ -262,7 +268,8 @@ theorem exists_mem_range_norm_le_apply_eq_zero [CompleteSpace E]
     (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖) (hδ : 2 * C * ‖f 0‖ ≤ δ) (he : 2 * C ^ 2 * L * ‖f 0‖ < 1) :
     ∃ x ∈ range Q, ‖x‖ ≤ 2 * C * ‖f 0‖ ∧ f x = 0 := by
   obtain ⟨x, hxQ, hx, hxe⟩ := exists_mem_range_norm_le_add_add_eq_zero (D := f' 0)
-    (N := fun x ↦ f x - f 0 - f' 0 x) hDQ hQ (norm_sub_sub_sub_le hf hf') (by simp) hδ he
+    (N := fun x ↦ f x - f 0 - f' 0 x) hDQ hQ
+    (norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le hf hf') (by simp) hδ he
   exact ⟨x, hxQ, hx, add_add_sub_sub_eq_zero_iff.1 hxe⟩
 
 /-- **Uniqueness of the zero of a map near an approximate zero.** Let `f` have derivative `f' w`
@@ -276,8 +283,8 @@ theorem eq_of_apply_eq_zero
     (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxf : f x = 0) (hyQ : y ∈ range Q)
     (hyf : f y = 0) : x = y :=
   TauCeti.eq_of_add_add_eq_zero (D := f' 0) (N := fun x ↦ f x - f 0 - f' 0 x) hDQ hQ
-    (norm_sub_sub_sub_le hf hf') hrδ hr hx hy hxQ (add_add_sub_sub_eq_zero_iff.2 hxf) hyQ
-    (add_add_sub_sub_eq_zero_iff.2 hyf)
+    (norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le hf hf') hrδ hr hx hy hxQ
+    (add_add_sub_sub_eq_zero_iff.2 hxf) hyQ (add_add_sub_sub_eq_zero_iff.2 hyf)
 
 end Map
 
