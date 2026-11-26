@@ -11,7 +11,6 @@ public import TauCeti.Analysis.InnerProductSpace.NormPow
 public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Geometry.Euclidean.Volume.UnitBall
 
 /-!
 # The Newtonian kernel away from dimension two

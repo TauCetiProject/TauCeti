@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Geometry.MeasureTheory.ApproximateTangentSpace
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Geometry.Euclidean.Volume.Measure
-import TauCeti.Geometry.Euclidean.Volume.UnitBall
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Checks for approximate tangent spaces of measures
@@ -112,9 +111,8 @@ theorem tendsto_inv_sq_mul_euclideanHausdorffMeasure_restrict_xAxis_apply_ball
   filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
   have ha : ENNReal.ofReal r ≠ 0 := by simpa using hr
   rw [euclideanHausdorffMeasure_restrict_xAxis_apply_ball hx, ENNReal.ofReal_mul zero_le_two,
-    ENNReal.ofReal_ofNat, sq,
-    show ∀ a : ℝ≥0∞, a⁻¹ * a⁻¹ * (2 * a) = 2 * a⁻¹ * (a⁻¹ * a) from fun a ↦ by ring,
-    ENNReal.inv_mul_cancel ha ENNReal.ofReal_ne_top, mul_one]
+    ENNReal.ofReal_ofNat, sq, mul_mul_mul_comm, ENNReal.inv_mul_cancel ha ENNReal.ofReal_ne_top,
+    mul_one, mul_comm]
 
 /-- **Lebesgue measure on `ℝ²` has no approximate tangent line anywhere**: the masses `π λ²` of
 the discs of radius `λ`, divided by the lengths `2λ` of the segments, tend to `0`, while along an
@@ -163,10 +161,12 @@ theorem map_two_smul_euclideanHausdorffMeasure_restrict_xAxis :
     ext v
     refine ⟨fun ⟨w, hw, hv⟩ ↦ hv ▸ xAxis.smul_mem _ hw, fun hv ↦ ⟨(2 : ℝ) • v,
       xAxis.smul_mem _ hv, by simp [smul_smul]⟩⟩
+  have hs' : (2⁻¹ : ℝ) • s ∩ xAxis = (2⁻¹ : ℝ) • (s ∩ xAxis) := by
+    rw [smul_set_inter₀ (inv_ne_zero two_ne_zero), hL]
   rw [map_apply (continuous_const_smul _).measurable hs, Measure.restrict_apply
-    ((continuous_const_smul _).measurable hs), preimage_smul₀ two_ne_zero, smul_apply,
-    Measure.restrict_apply hs, ← hL, ← smul_set_inter₀ (inv_ne_zero two_ne_zero), hL,
-    euclideanHausdorffMeasure_smul₀ 1 (inv_ne_zero two_ne_zero)]
+    ((continuous_const_smul _).measurable hs), preimage_smul₀ two_ne_zero, hs',
+    euclideanHausdorffMeasure_smul₀ 1 (inv_ne_zero two_ne_zero), smul_apply,
+    Measure.restrict_apply hs]
   simp [ENNReal.smul_def]
 
 /-- The push-forward of `H¹⌞L` under `y ↦ 2y` has approximate tangent space `L` with multiplicity
