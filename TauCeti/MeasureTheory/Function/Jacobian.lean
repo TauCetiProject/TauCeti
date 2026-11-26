@@ -14,6 +14,7 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
 # Change of variables: pushforward bounds, `Lᵖ` bounds and affine invariance of set integrals
@@ -312,10 +313,7 @@ theorem memLp_restrict_of_forall_injOn [OpensMeasurableSpace E] {G : Type*}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hdet : ∀ x ∈ K, (fderiv ℝ f x).det ≠ 0)
     (hg : ∀ s ⊆ K, MeasurableSet s → InjOn f s → MemLp g p (μ.restrict s)) :
     MemLp g p (μ.restrict K) := by
-  refine hK.induction_on (p := fun s => MemLp g p (μ.restrict s)) (by simp)
-    (fun s t hst ht => ht.mono_measure (Measure.restrict_mono hst le_rfl))
-    (fun s t hs ht => (hs.add_measure ht).mono_measure (Measure.restrict_union_le s t))
-    fun x hx => ?_
+  refine hK.memLp_restrict_of_forall_nhdsWithin fun x hx => ?_
   obtain ⟨V, hV, hinj⟩ := (hf.contDiffAt (hΩ.mem_nhds (hKΩ hx))).exists_mem_nhds_injOn one_ne_zero
     ⟨_, ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ (hdet x hx)⟩
   obtain ⟨W, hWV, hW, hxW⟩ := mem_nhds_iff.1 hV
