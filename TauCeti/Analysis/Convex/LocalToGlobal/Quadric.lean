@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.LocalToGlobal
 import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Topology.Order.IntermediateValue
 
@@ -63,16 +64,11 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddComm
 
 /-! ### The fibres -/
 
-/-- A set closed under scaling by every `t ∈ [0, 1]` is preconnected: it is empty, or it contains
-the origin and is star-shaped about it. -/
-private theorem isPreconnected_of_forall_smul_mem {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {s : Set E} (hs : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, t • x ∈ s) :
-    IsPreconnected s := by
-  rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
-  · exact isPreconnected_empty
-  have h0 : (0 : E) ∈ s := by simpa using hs x hx 0 ⟨le_rfl, zero_le_one⟩
-  exact (StarConvex.isPathConnected (starConvex_zero_iff.2 fun y hy t ht₀ ht₁ ↦
-    hs y hy t ⟨ht₀, ht₁⟩) h0).isConnected.isPreconnected
+/-- Scaling by `t ∈ [0, 1]` does not increase the squared norm. -/
+private theorem norm_smul_sq_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (x : E)
+    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : ‖t • x‖ ^ 2 ≤ ‖x‖ ^ 2 := by
+  rw [norm_smul, Real.norm_of_nonneg ht.1, mul_pow]
+  exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ ht.1 ht.2)
 
 /-- The fibres of `‖b‖² - ‖a‖²` of positive value in the ball `‖a‖² + ‖b‖² < r` are preconnected
 when `W` does not have dimension one. -/
@@ -104,8 +100,8 @@ private theorem isPreconnected_setOf_norm_sq_sub_norm_sq_eq_of_pos (hW : Module.
   rw [← himage]
   -- `D` is closed under scaling by `t ∈ [0, 1]`.
   have hD : IsPreconnected D := isPreconnected_of_forall_smul_mem fun a ha t ht ↦ by
-    simp only [D, mem_ofPred_eq, norm_smul, Real.norm_of_nonneg ht.1, mul_pow] at ha ⊢
-    linarith [mul_le_of_le_one_left (sq_nonneg ‖a‖) (pow_le_one₀ (n := 2) ht.1 ht.2)]
+    simp only [D, mem_ofPred_eq] at ha ⊢
+    linarith [norm_smul_sq_le a ht]
   -- The unit sphere of `W` is preconnected, being empty in dimension zero.
   have hS : IsPreconnected (sphere (0 : W) 1) := by
     rcases hW.lt_or_gt with h | h
@@ -134,13 +130,9 @@ theorem isPreconnected_setOf_norm_sq_sub_norm_sq_eq (hV : Module.rank ℝ V ≠ 
     constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
   · -- The fibre of `0` is closed under scaling by `t ∈ [0, 1]`.
     refine isPreconnected_of_forall_smul_mem fun y hy t ht ↦ ?_
-    simp only [mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd, norm_smul, Real.norm_of_nonneg ht.1,
-      mul_pow] at hy ⊢
-    have ht2 : t ^ 2 ≤ 1 := pow_le_one₀ ht.1 ht.2
-    constructor
-    · linarith [mul_le_of_le_one_left (sq_nonneg ‖y.1‖) ht2,
-        mul_le_of_le_one_left (sq_nonneg ‖y.2‖) ht2]
-    · rw [← mul_sub, hy.2, mul_zero]
+    simp only [mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd] at hy ⊢
+    refine ⟨by linarith [norm_smul_sq_le y.1 ht, norm_smul_sq_le y.2 ht], ?_⟩
+    rw [norm_smul, norm_smul, mul_pow, mul_pow, ← mul_sub, hy.2, mul_zero]
   · exact isPreconnected_setOf_norm_sq_sub_norm_sq_eq_of_pos hW r hv
 
 /-! ### Openness onto the range -/
@@ -257,11 +249,8 @@ theorem isConvexChart_prod_setOf_norm_sq_add_norm_sq_lt {P : Type*} [Topological
   have hf : Continuous fun z : P × (V × W) ↦ c + (‖z.2.2‖ ^ 2 - ‖z.2.1‖ ^ 2) := by fun_prop
   -- The ball is closed under scaling by `t ∈ [0, 1]`.
   have hR : IsPreconnected R := isPreconnected_of_forall_smul_mem fun y hy t ht ↦ by
-    simp only [R, mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd, norm_smul, Real.norm_of_nonneg ht.1,
-      mul_pow] at hy ⊢
-    have ht2 : t ^ 2 ≤ 1 := pow_le_one₀ ht.1 ht.2
-    linarith [mul_le_of_le_one_left (sq_nonneg ‖y.1‖) ht2,
-      mul_le_of_le_one_left (sq_nonneg ‖y.2‖) ht2]
+    simp only [R, mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd] at hy ⊢
+    linarith [norm_smul_sq_le y.1 ht, norm_smul_sq_le y.2 ht]
   refine ⟨hBo.prod (isOpen_lt (by fun_prop) continuous_const), ?_, fun U _ hUo z hz ↦ ?_,
     fun v ↦ ?_⟩
   · -- The image of the preconnected chart is an interval.

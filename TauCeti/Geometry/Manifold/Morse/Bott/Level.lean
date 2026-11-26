@@ -66,18 +66,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-/-- The coordinates of `ℝᵐ` before `l ≤ m` span a Euclidean space of dimension `l`. -/
-private theorem finrank_euclideanSpace_val_lt {m l : ℕ} (hl : l ≤ m) :
-    Module.finrank ℝ (EuclideanSpace ℝ {j : Fin m // j.val < l}) = l := by
-  rw [finrank_euclideanSpace, Fintype.card_subtype, Fin.card_filter_val_lt, min_eq_right hl]
-
-/-- The coordinates of `ℝᵐ` from `l ≤ m` on span a Euclidean space of dimension `m - l`. -/
-private theorem finrank_euclideanSpace_not_val_lt {m l : ℕ} (hl : l ≤ m) :
-    Module.finrank ℝ (EuclideanSpace ℝ {j : Fin m // ¬ j.val < l}) = m - l := by
-  rw [finrank_euclideanSpace, Fintype.card_subtype_compl, Fintype.card_fin,
-    ← finrank_euclideanSpace (𝕜 := ℝ) (ι := {j : Fin m // j.val < l}),
-    finrank_euclideanSpace_val_lt hl]
-
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M]
@@ -123,7 +111,9 @@ private theorem exists_openPartialHomeomorph_eqOn (hi : i.IsNondegenerateCritica
       (by convert hf using 4; norm_num)
   -- The slice chart `φ` of `M` at `i s`, read in the coordinates `E' × F`, sends `i s` to `(a, 0)`.
   set φ := h.codChart.transHomeomorph (I.toHomeomorph.trans h.equiv.symm.toHomeomorph)
-  have hφ (x : M) : φ x = h.equiv.symm (h.codChart.extend I x) := rfl
+  have hφ (x : M) : φ x = h.equiv.symm (h.codChart.extend I x) := by
+    simp [φ, OpenPartialHomeomorph.transHomeomorph_apply]
+  have hφsrc : φ.source = h.codChart.source := OpenPartialHomeomorph.transHomeomorph_source _ _
   set a := h.domChart.extend J s
   have hsa : (h.codChart.extend I).symm (h.equiv (a, 0)) = i s := by
     rw [hsec a haU, (h.domChart.extend J).left_inv (by simpa using h.mem_domChart_source)]
@@ -131,12 +121,12 @@ private theorem exists_openPartialHomeomorph_eqOn (hi : i.IsNondegenerateCritica
     rw [hφ, ← hsa, (h.codChart.extend I).right_inv (hUVξ (mk_mem_prod haU h0V)),
       ContinuousLinearEquiv.symm_apply_apply]
   -- Follow `φ` by the Morse–Bott chart `ψ`, which fixes `(a, 0)`.
-  refine ⟨φ.trans ψ, ⟨h.mem_codChart_source, ?_⟩, ?_, fun x hx ↦ ?_⟩
-  · change φ (i s) ∈ ψ.source
-    rw [hφs, hsource]
-    exact mk_mem_prod haU h0V
+  refine ⟨φ.trans ψ, ?_, ?_, fun x hx ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.trans_source, hφsrc, mem_inter_iff, mem_preimage, hφs, hsource]
+    exact ⟨h.mem_codChart_source, mk_mem_prod haU h0V⟩
   · rw [OpenPartialHomeomorph.coe_trans, comp_apply, hφs, hψ0]
-  · obtain ⟨hx, hxψ⟩ : x ∈ h.codChart.source ∧ φ x ∈ ψ.source := hx
+  · rw [OpenPartialHomeomorph.trans_source, hφsrc, mem_inter_iff, mem_preimage] at hx
+    obtain ⟨hx, hxψ⟩ := hx
     have hxφ : (h.codChart.extend I).symm (h.equiv (φ x)) = x := by
       rw [hφ, ContinuousLinearEquiv.apply_symm_apply, h.codChart.extend_left_inv hx]
     have := hψg _ hxψ
@@ -164,14 +154,15 @@ theorem exists_isConvexChart (hi : i.IsNondegenerateCriticalSubmanifold f) (hn :
     (e := e.transHomeomorph ((Homeomorph.refl E').prodCongr (EuclideanSpace.sumComplEquivProd ℝ
       fun j : Fin _ ↦ j.val < manifoldMorseIndex I f (i s)).toHomeomorph))
     (c := f (i s)) (fun x hx ↦ by
-      rw [hfe hx]
-      dsimp only
-      rw [EuclideanSpace.sum_ite_neg_one_mul_sq_eq, neg_add_eq_sub]
-      rfl) hsrc ?_
+      simp only [hfe hx, comp_apply, OpenPartialHomeomorph.transHomeomorph_apply,
+        Homeomorph.coe_prodCongr, ContinuousLinearEquiv.coe_toHomeomorph, Prod.map_snd,
+        EuclideanSpace.sum_ite_neg_one_mul_sq_eq, neg_add_eq_sub]) hsrc ?_
   -- The two factors have dimensions the index `λ` and the coindex `m - λ`.
-  · rw [Ne, Module.rank_eq_one_iff_finrank_eq_one, finrank_euclideanSpace_val_lt (by omega)]
+  · rw [Ne, Module.rank_eq_one_iff_finrank_eq_one,
+      EuclideanSpace.finrank_subtype_val_lt ℝ (by omega)]
     exact hidx
-  · rw [Ne, Module.rank_eq_one_iff_finrank_eq_one, finrank_euclideanSpace_not_val_lt (by omega)]
+  · rw [Ne, Module.rank_eq_one_iff_finrank_eq_one,
+      EuclideanSpace.finrank_subtype_not_val_lt ℝ (by omega)]
     omega
   · simp [he]
 

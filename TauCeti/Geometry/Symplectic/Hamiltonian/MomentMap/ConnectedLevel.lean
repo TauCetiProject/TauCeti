@@ -82,6 +82,8 @@ theorem isPreconnected_setOf_apply_eq
   obtain ⟨C, -, hemb, hcrit, -⟩ :=
     h.exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace hσ
       (L := L) (by exact (mem_fixedPointsOfFinrank.1 hd).2)
+  -- The charted-space structure `C` on `M^{T_ξ}_d` (modelled on `L`) is only given by the
+  -- existential above, so instance search cannot find it: install it as a local instance.
   let := C
   have hix : SmoothEmbedding.ofIsSmoothEmbedding _ hemb ⟨x, hd⟩ = x := by
     rw [SmoothEmbedding.coe_ofIsSmoothEmbedding]

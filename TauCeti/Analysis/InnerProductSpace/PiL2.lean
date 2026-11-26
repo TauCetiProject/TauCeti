@@ -87,6 +87,8 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `EuclideanSpace.finrank_subtype_val_lt` and `EuclideanSpace.finrank_subtype_not_val_lt`: the two
+  factors of the splitting of `𝕜ⁿ` along `j < m` have dimensions `m` and `n - m`.
 * `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
   linear automorphism of `ι → 𝕜`.
 * `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
@@ -633,6 +635,20 @@ theorem adjoint_piLpExtendByZero_castLEEmb_apply (hm : m ≤ n) (x : EuclideanSp
     ← finCastLEEquiv_symm_fst_sumComplEquivProd, LinearIsometryEquiv.inner_map_eq_flip,
     LinearIsometryEquiv.symm_symm, inner_fst_sumComplEquivProd,
     sumComplEquivProd_symm_finCastLEEquiv]
+
+variable (𝕜) in
+/-- The first factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension `m`. -/
+theorem finrank_subtype_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // j.val < m}) = m :=
+  (finCastLEEquiv 𝕜 hm).toLinearEquiv.finrank_eq.symm.trans finrank_euclideanSpace_fin
+
+variable (𝕜) in
+/-- The second factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension
+`n - m`. -/
+theorem finrank_subtype_not_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // ¬ j.val < m}) = n - m := by
+  rw [finrank_euclideanSpace, Fintype.card_subtype_compl, Fintype.card_fin,
+    ← finrank_euclideanSpace (𝕜 := 𝕜), finrank_subtype_val_lt 𝕜 hm]
 
 end finCastLE
 
