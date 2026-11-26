@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Order.Interval.Set.Defs
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
+import Mathlib.Order.Interval.Set.Fin
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -23,7 +25,8 @@ send the last position to the last position. The image of an initial segment und
 is obtained by inserting the first entry into the corresponding image for the tail.
 A tuple of length three is determined by its three entries. A tuple in a sum type that starts on
 the left, ends on the right and never steps from right to left steps from left to right exactly
-once.
+once. Finally, a tuple can be built by finite dependent choice, each entry chosen relative to the
+set of the earlier ones.
 
 ## Main results
 
@@ -74,6 +77,8 @@ once.
   consecutive entries is contracting them in the whole tuple.
 * `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
   from the first (last) position keeps the first (last) entry.
+* `Fin.insertNth_apply_of_ne_fin_two`: in a pair, inserting at one position puts the single entry
+  of the tuple at the other one.
 * `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
   meet at an inserted vertex.
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
@@ -91,6 +96,8 @@ once.
   tuple.
 * `Fin.insertNth_comp_succAbove_eq_comp_swap`: inserting `f i.castSucc` at `i.succ.succ` and
   deleting `i.castSucc.castSucc` swaps the entries of `f` at `i.castSucc` and `i.succ`.
+* `Fin.exists_tuple_forall_image_Iio`: finite dependent choice, building a tuple each of whose
+  entries is chosen relative to the set of the earlier entries.
 -/
 
 public section
@@ -406,6 +413,12 @@ theorem insertNth_apply_last_of_ne_last {β : Type*} {n : ℕ} {p : Fin (n + 2)}
     insertNth (α := fun _ => β) p v x (last (n + 1)) = x (last n) := by
   rw [← succAbove_ne_last_last hp, insertNth_apply_succAbove]
 
+/-- In a pair, inserting at one position puts the single entry of the tuple at the other one. -/
+theorem insertNth_apply_of_ne_fin_two {β : Type*} {i j : Fin 2} (h : i ≠ j) (v : β)
+    (x : Fin 1 → β) : insertNth (α := fun _ => β) i v x j = x 0 := by
+  obtain ⟨k, rfl⟩ := exists_succAbove_eq h.symm
+  rw [insertNth_apply_succAbove, Subsingleton.elim k 0]
+
 /-- **Contracting along a path with an inserted vertex.** Let `f k` be a function of the two
 endpoints of the `k`-th step of a path. Along the path obtained from `x` by inserting `v` after
 `xₗ`, contracting the steps `l` and `l + 1` gives the entries `f ((l + 1).succAbove k)` read
@@ -585,5 +598,24 @@ theorem insertNth_comp_succAbove_eq_comp_swap {n : ℕ} (i : Fin (n + 1)) (f : F
         simp only [val_succAbove, Fin.ext_iff, val_castSucc, val_succ] at hj hj' ⊢
         split_ifs <;> omega
     rw [h, insertNth_apply_succAbove]
+
+/-- Finite dependent choice along `Fin N`: if for every tuple `p` of length less than `N` some `a`
+satisfies `Q (range p) a`, then there is a tuple `p : Fin N → α` each of whose entries `p j`
+satisfies `Q` relative to the set of the earlier entries. -/
+theorem exists_tuple_forall_image_Iio {α : Type*} {Q : Set α → α → Prop} {N : ℕ}
+    (h : ∀ m < N, ∀ p : Fin m → α, ∃ a, Q (Set.range p) a) :
+    ∃ p : Fin N → α, ∀ j, Q (p '' Set.Iio j) (p j) := by
+  induction N with
+  | zero => exact ⟨finZeroElim, finZeroElim⟩
+  | succ N ih =>
+    obtain ⟨p, hp⟩ := ih fun m hm ↦ h m (hm.trans N.lt_succ_self)
+    obtain ⟨a, ha⟩ := h N N.lt_succ_self p
+    refine ⟨snoc p a, lastCases ?_ fun i ↦ ?_⟩
+    · have hIio : Set.Iio (last N) = Set.range castSucc := by
+        ext i
+        simp [lt_def]
+      rwa [hIio, ← Set.range_comp, snoc_comp_castSucc, snoc_last]
+    · rw [← image_castSucc_Iio, ← Set.image_comp, snoc_comp_castSucc, snoc_castSucc]
+      exact hp i
 
 end Fin

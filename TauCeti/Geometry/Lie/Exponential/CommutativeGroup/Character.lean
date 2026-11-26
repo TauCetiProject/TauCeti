@@ -396,10 +396,9 @@ theorem exists_lieWeight_eq {α : Module.Dual ℝ (LeftInvariantDerivation I G)}
     ∃ χ : G →ₜ* Circle, lieWeight χ = α := by
   -- `X ↦ Circle.exp (α X)` kills the kernel of the exponential, so it factors through
   -- `𝔤 ⧸ ker(exp) ≃ G`.
-  let N := (lieExpAddMonoidHom (I := I) (G := G)).ker
   let φ : LeftInvariantDerivation I G →+ Additive Circle :=
     Circle.expHom.comp α.toAddMonoidHom
-  have hN : N ≤ φ.ker := by
+  have hN : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ φ.ker := by
     intro X hX
     obtain ⟨n, hn⟩ := hα _ (inv_two_pi_smul_mem_periodLattice_iff.2 hX)
     rw [map_smul, smul_eq_mul] at hn
@@ -408,25 +407,10 @@ theorem exists_lieWeight_eq {α : Module.Dual ℝ (LeftInvariantDerivation I G)}
       linarith
     rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, hαX]
     exact Circle.exp_int_mul_two_pi n
-  let ψ := QuotientAddGroup.lift N φ hN
-  have hψmk : ⇑ψ ∘ QuotientAddGroup.mk = Additive.ofMul ∘ Circle.exp ∘ α := by
-    funext X
-    simp only [ψ, φ, Function.comp_apply, QuotientAddGroup.lift_mk, AddMonoidHom.comp_apply,
-      Circle.expHom_apply, LinearMap.toAddMonoidHom_coe]
-  have hψ : Continuous ψ := by
-    rw [(QuotientAddGroup.isQuotientMap_mk N).continuous_iff, hψmk]
-    exact continuous_ofMul.comp (Circle.exp.continuous.comp α.continuous_of_finiteDimensional)
-  let e := lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)
-  let χ : G →ₜ* Circle :=
-    { toFun := fun g ↦ Additive.toMul (ψ (e.symm (Additive.ofMul g)))
-      map_one' := by rw [ofMul_one, map_zero, map_zero, toMul_zero]
-      map_mul' := fun g h ↦ by rw [ofMul_mul, map_add, map_add, toMul_add]
-      continuous_toFun := continuous_toMul.comp
-        (hψ.comp (e.symm.continuous.comp continuous_ofMul)) }
-  have hχ (g : G) : χ g = Additive.toMul (ψ (e.symm (Additive.ofMul g))) := rfl
-  refine ⟨χ, (eq_lieWeight fun X ↦ ?_).symm⟩
-  rw [hχ, lieExpQuotientKerContinuousAddEquiv_symm_apply, ← Function.comp_apply (f := ⇑ψ), hψmk,
-    Function.comp_apply, Function.comp_apply, toMul_ofMul]
+  have hφ : Continuous φ :=
+    continuous_ofMul.comp (Circle.exp.continuous.comp α.continuous_of_finiteDimensional)
+  refine ⟨lieExpLift φ hφ hN, (eq_lieWeight fun X ↦ ?_).symm⟩
+  simp [φ]
 
 /-- **The character lattice is dual to the period lattice.** On a connected commutative Lie group,
 the weights of continuous characters are exactly the real-linear functionals taking integer values

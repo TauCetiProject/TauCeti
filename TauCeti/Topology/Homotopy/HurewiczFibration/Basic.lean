@@ -40,6 +40,8 @@ change.
 * `Homeomorph.isHurewiczFibration`, `TauCeti.isHurewiczFibration_fst`,
   `TauCeti.isHurewiczFibration_of_subsingleton`: homeomorphisms, product projections and maps to a
   subsingleton are Hurewicz fibrations.
+* `TauCeti.not_isHurewiczFibration_const_unit`: the inclusion of a point is not a Hurewicz
+  fibration when a path leaves the point.
 
 ## References
 
@@ -138,5 +140,12 @@ theorem isHurewiczFibration_of_subsingleton [Subsingleton B] : IsHurewiczFibrati
 theorem isHurewiczFibration_fst (F : Type u') [TopologicalSpace F] :
     IsHurewiczFibration.{w} (Prod.fst : B × F → B) :=
   ⟨continuous_fst, fun A _ ↦ hasHomotopyLiftingProperty_fst F A⟩
+
+/-- **The inclusion of a point `x` is not a Hurewicz fibration** as soon as a path leaves `x`: a
+path from `x` to `y ≠ x` does not lift to the point. -/
+theorem not_isHurewiczFibration_const_unit {x y : B} (hxy : Joined x y) (hy : y ≠ x) :
+    ¬ IsHurewiczFibration.{w} (fun _ : Unit ↦ x) := fun h ↦ by
+  obtain ⟨⟨u, hu⟩, -⟩ := (h.hasHomotopyLiftingProperty PUnit).exists_joined_of_joined (y := ()) hxy
+  exact hy hu.symm
 
 end TauCeti

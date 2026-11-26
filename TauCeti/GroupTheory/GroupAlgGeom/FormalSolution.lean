@@ -143,11 +143,9 @@ theorem eval_eq_eval (h : IsFormalSolution S q) (ι : G →* H) {i : Fin k} {x x
 the universally quantified variables together with the values at `x` of the words of a formal
 solution solve the system. -/
 theorem sumElim_eval_mem_V (h : IsFormalSolution S q) (ι : G →* H) (x : Fin k → H) :
-    Sum.elim x (fun i => eval ι x (q i)) ∈ V ι S := by
-  refine mem_V.2 fun s hs => ?_
-  have hw : wordMap ι (Sum.elim (fun i => inr (of i)) q) x = Sum.elim x fun i => eval ι x (q i) :=
-    funext fun j => by cases j <;> simp
-  rw [← hw, ← eval_comp_eval, MonoidHom.comp_apply, h.eval_eq_one hs, _root_.map_one]
+    Sum.elim x (fun i => eval ι x (q i)) ∈ V ι S :=
+  mem_V.2 fun s hs => by
+    rw [← funext (wordMap_apply q x), eval_sumElim_wordMap, h.eval_eq_one hs, _root_.map_one]
 
 /-- A formal solution makes the sentence `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` true in
 every group `H` receiving the coefficients through a homomorphism `ι : G →* H`. -/
@@ -286,9 +284,7 @@ theorem exists_isFormalSolution_of_isEquationallyNoetherian [IsFreeGroup G]
   set w : GX G (Fin k) := eval inl (Sum.elim (fun i => inr (of i)) q) s
   have hw_eval (x : Fin k → G) : eval (.id G) x w = 1 := by
     have hx := mem_V.1 (hV ▸ hq.sumElim_eval_mem_V (.id G) x) s hs
-    have hwm : wordMap (.id G) (Sum.elim (fun i => inr (of i)) q) x =
-        Sum.elim x fun i => eval (.id G) x (q i) := funext fun j => by cases j <;> simp
-    simpa only [w, ← hwm, ← eval_comp_eval, MonoidHom.comp_apply] using hx
+    rwa [← funext (wordMap_apply q x), eval_sumElim_wordMap] at hx
   let w' : GX G (Fin k ⊕ Fin k) := Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) w
   have hw'_fa : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) {w'} :=
     forallExistsAlt_of_skolem (fun _ => 1) (fun _ _ _ _ => rfl) fun x =>

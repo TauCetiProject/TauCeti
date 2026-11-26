@@ -22,6 +22,21 @@ neighbourhood will do.
 A morphism of `S`-schemes from a scheme with quasi-compact structure map to one with
 quasi-separated structure map is quasi-compact
 (`AlgebraicGeometry.quasiCompact_left_of_quasiCompact_hom`).
+
+Quasi-compactness and quasi-separatedness are local on the target, as instances that instance
+search can use (`AlgebraicGeometry.isZariskiLocalAtTarget_quasiCompact`,
+`AlgebraicGeometry.isZariskiLocalAtTarget_quasiSeparated`). Mathlib proves this through instances
+`HasAffineProperty @QuasiCompact (fun X _ _ _ ↦ CompactSpace X)` and
+`HasAffineProperty @QuasiSeparated (fun X _ _ _ ↦ QuasiSeparatedSpace X)`, but instance search
+cannot use them: the affine property is stored as a lambda whose type is a dependent function
+type, not `AffineTargetMorphismProperty`, so it cannot be assigned to the out-parameter of
+`HasAffineProperty`. Restating the two affine properties as constants of type
+`AffineTargetMorphismProperty` (`AlgebraicGeometry.compactSpaceAffineTarget`,
+`AlgebraicGeometry.quasiSeparatedSpaceAffineTarget`) and registering the instances through them
+(`AlgebraicGeometry.hasAffineProperty_quasiCompact`,
+`AlgebraicGeometry.hasAffineProperty_quasiSeparated`) makes lemmas such as
+`IsZariskiLocalAtTarget.of_openCover` and `HasAffineProperty.of_iSup_eq_top` available for these
+properties.
 -/
 
 public section
@@ -77,5 +92,33 @@ theorem quasiCompact_left_of_quasiCompact_hom {S : Scheme.{u}} {T U : Over S} (f
     rw [Over.w f]
     infer_instance
   exact QuasiCompact.of_comp f.left U.hom
+
+/-- The affine target property of quasi-compact morphisms: the source is quasi-compact. -/
+abbrev compactSpaceAffineTarget : AffineTargetMorphismProperty.{u} :=
+  fun X _ _ _ ↦ CompactSpace X
+
+/-- The affine target property of quasi-separated morphisms: the source is quasi-separated. -/
+abbrev quasiSeparatedSpaceAffineTarget : AffineTargetMorphismProperty.{u} :=
+  fun X _ _ _ ↦ QuasiSeparatedSpace X
+
+/-- A morphism to an affine scheme is quasi-compact exactly when its source is, as an instance
+that instance search can use. -/
+instance hasAffineProperty_quasiCompact :
+    HasAffineProperty @QuasiCompact.{u} compactSpaceAffineTarget :=
+  instHasAffinePropertyQuasiCompactCompactSpaceCarrierCarrierCommRingCat
+
+/-- A morphism to an affine scheme is quasi-separated exactly when its source is, as an instance
+that instance search can use. -/
+instance hasAffineProperty_quasiSeparated :
+    HasAffineProperty @QuasiSeparated.{u} quasiSeparatedSpaceAffineTarget :=
+  instHasAffinePropertyQuasiSeparatedQuasiSeparatedSpaceCarrierCarrierCommRingCat
+
+/-- **Quasi-compactness is local on the target.** -/
+instance isZariskiLocalAtTarget_quasiCompact : IsZariskiLocalAtTarget @QuasiCompact.{u} :=
+  HasAffineProperty.instIsZariskiLocalAtTarget (Q := compactSpaceAffineTarget)
+
+/-- **Quasi-separatedness is local on the target.** -/
+instance isZariskiLocalAtTarget_quasiSeparated : IsZariskiLocalAtTarget @QuasiSeparated.{u} :=
+  HasAffineProperty.instIsZariskiLocalAtTarget (Q := quasiSeparatedSpaceAffineTarget)
 
 end AlgebraicGeometry

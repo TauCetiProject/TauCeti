@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeSide
+public import TauCeti.Combinatorics.SimpleGraph.Walk.MinimumWeight
 import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
@@ -30,6 +31,8 @@ This file develops what these properties give, independently of how such a tree 
   minimizes `f` among all sets separating two vertices, with value that minimum weight.
 * `IsFlowEquivalentTree.card_image_pairMinimumValue_le`: the minimum cut values between distinct
   vertices take at most `|V| - 1` distinct values, since each is a tree-edge weight.
+* `IsFlowEquivalentTree.minEdgeWeight_eq_pairMinimumValue`: the minimum edge weight on every
+  nontrivial tree path is its pair minimum-cut value.
 * `IsFlowEquivalentTree.exists_edge_iInf_pairMinimumValue_eq_weight`: after applying an order
   homomorphism into a complete lattice, the least pair minimum value over distinct vertices is a
   minimum tree-edge weight, provided the tree has at least two vertices.
@@ -78,12 +81,21 @@ namespace IsFlowEquivalentTree
 
 variable {f : Finset V → K} {T : SimpleGraph V} {w : Sym2 V → K}
 
+/-- In a flow-equivalent tree, the minimum edge weight on every path between distinct vertices is
+their minimum cut value. -/
+theorem minEdgeWeight_eq_pairMinimumValue (hT : IsFlowEquivalentTree f T w) {s t : V}
+    (hst : s ≠ t) {p : T.Walk s t} (hp : p.IsPath) :
+    p.minEdgeWeight w (p.not_nil_of_ne hst) = pairMinimumValue f s t := by
+  apply le_antisymm
+  · obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
+    exact (p.minEdgeWeight_le w (p.not_nil_of_ne hst) he).trans_eq hwe
+  · rw [p.le_minEdgeWeight_iff]
+    exact fun e he ↦ hT.le_weight hp he
+
 /-- The weight of a tree edge is the minimum cut value between its ends. -/
 theorem weight_eq (hT : IsFlowEquivalentTree f T w) {u v : V} (huv : T.Adj u v) :
     w s(u, v) = pairMinimumValue f u v := by
-  obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq huv.ne huv.isPath_toWalk
-  simp only [Walk.edges_cons, Walk.edges_nil, List.mem_singleton] at he
-  rwa [he] at hwe
+  simpa using hT.minEdgeWeight_eq_pairMinimumValue huv.ne huv.isPath_toWalk
 
 /-- **Threshold partition.** Deleting the tree edges of weight below `k` leaves two vertices
 connected exactly when they are equal or their minimum cut value is at least `k`. -/

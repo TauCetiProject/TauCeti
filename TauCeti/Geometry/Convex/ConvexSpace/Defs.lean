@@ -29,7 +29,9 @@ both composites of face maps, the two sides of the simplicial identity
 `SimplexCategory.δ_comp_δ`.
 
 The weight vectors of the standard simplex are the vectors with nonnegative coordinates summing to
-one (`StdSimplex.mem_range_toFun_comp_weights_iff`), and include the vertices `Pi.single x 1`. A
+one (`StdSimplex.mem_range_toFun_comp_weights_iff`), include the vertices `Pi.single x 1`, and form
+the empty set on an empty index type (`StdSimplex.range_toFun_comp_weights_of_isEmpty`) and a
+singleton on a one-element index type (`StdSimplex.range_toFun_comp_weights_of_unique`). A
 coordinate of a weight vector is less than one when another coordinate is positive, and a point
 with no weight away from `x` is the vertex `x`. A linear map carrying the standard simplex into a
 standard simplex preserves coordinate sums.
@@ -306,6 +308,28 @@ theorem pi_single_mem_range_toFun_comp_weights [Preorder R] [ZeroLEOneClass R] {
     [DecidableEq X] (x : X) :
     Pi.single x (1 : R) ∈ Set.range fun t : StdSimplex R X => ⇑t.weights :=
   ⟨⟨.single x 1, by simp, by simp⟩, Finsupp.single_eq_pi_single x 1⟩
+
+/-- When `1 ≠ 0`, the standard simplex on an empty index type is empty. -/
+@[simp]
+theorem range_toFun_comp_weights_of_isEmpty [LE R] [NeZero (1 : R)] {X : Type*} [IsEmpty X] :
+    (Set.range fun s : StdSimplex R X => ⇑s.weights) = ∅ := by
+  have := Fintype.ofFinite X
+  ext x
+  rw [mem_range_toFun_comp_weights_iff]
+  simp
+
+/-- On a one-element index type, when `0 ≤ 1`, the standard simplex consists of the single
+constant-one weight vector. -/
+@[simp]
+theorem range_toFun_comp_weights_of_unique [Preorder R] [ZeroLEOneClass R] {X : Type*} [Unique X] :
+    (Set.range fun s : StdSimplex R X => ⇑s.weights) = {fun _ => 1} := by
+  have := Fintype.ofFinite X
+  ext x
+  rw [mem_range_toFun_comp_weights_iff]
+  simp only [Fintype.sum_unique, Unique.forall_iff, Set.mem_singleton_iff, funext_iff,
+    and_iff_right_iff_imp]
+  intro h
+  simp [h]
 
 /-- A coordinate of a point of the standard simplex is less than one if some other coordinate
 is positive. -/

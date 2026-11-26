@@ -6,9 +6,9 @@ name: API docs
 # from the repository where the event happens: triggers, concurrency and the GITHUB_TOKEN
 # ceiling. Its job appears as `api-docs / build-docs`.
 #
-# The build runs on the TauCetiFleet runner group, which admits jobs by the file that defines
-# them: TauCetiTools' api-docs.yml must be listed there. Set vars.PICKER_GITHUB_FALLBACK='true'
-# to run it on ubuntu-24.04 instead.
+# The build runs on the protected Fleet docs slot (the TauCetiDocs runner group), which admits
+# jobs by the file that defines them: this file and TauCetiTools' api-docs.yml must be listed
+# there. Set vars.PICKER_GITHUB_FALLBACK='true' to run it on ubuntu-24.04 instead.
 
 on:
   push:

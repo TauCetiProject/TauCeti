@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Algebra.Group.Subgroup.Finsupp
 
 /-!
 # The transpose lattice of a linear map
@@ -20,17 +21,47 @@ This file shows that the lattice determines `L` up to a change of basis by `GL(�
 
 ## Main results
 
+* `Matrix.exists_generalLinearGroup_mulVec_eq_of_mulVec_eq`: if `L' = M L` and `L = N L'` for
+  integer matrices `M`, `N` and `L` is onto, then `M` is an element of `GL(κ, ℤ)`.
 * `ContinuousLinearMap.transposeLattice_le_iff`: `L₁ᵀ ℤ^κ₁ ⊆ L₂ᵀ ℤ^κ₂` exactly when
   `L₁ = N L₂` for an integer matrix `N`.
 * `ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq`: two linear
   maps, the first injective, with the same transpose lattice differ by an element of `GL(ι, ℤ)`.
 * `ContinuousLinearMap.transposeLattice_toLin'_comp`: conversely, composing with an element of
   `GL(κ, ℤ)` does not change the transpose lattice.
+* `ContinuousLinearMap.closure_range_proj_comp_le_iff`: for linear maps `L₁`, `L₂` to `ℝ^κ` and
+  `ℝ^κ'` on any space, the components of `L₁` lie in the subgroup spanned by those of `L₂` exactly
+  when `L₁ = N L₂` for an integer matrix `N`.
+* `ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_closure_range_proj_comp_eq`: two
+  linear maps to `ℝ^κ`, the first onto, whose components span the same subgroup of covectors differ
+  by an element of `GL(κ, ℤ)`.
 -/
 
 public section
 
 open Function Matrix
+
+namespace Matrix
+
+variable {κ : Type*} [Fintype κ] [DecidableEq κ]
+
+/-- **Mutually inverse integer changes of basis.** If `L' = M L` and `L = N L'` for integer
+matrices `M`, `N` and the map `L` is onto, then `N M = 1`, so `M` is an element of `GL(κ, ℤ)`. -/
+theorem exists_generalLinearGroup_mulVec_eq_of_mulVec_eq {F : Type*}
+    {L L' : F → κ → ℝ} (hL : Surjective L) {M N : Matrix κ κ ℤ}
+    (hM : ∀ w, L' w = M.map (↑) *ᵥ L w) (hN : ∀ w, L w = N.map (↑) *ᵥ L' w) :
+    ∃ M' : GL κ ℤ, ∀ w, L' w = (M' : Matrix κ κ ℤ).map (↑) *ᵥ L w := by
+  have hcast : (N * M).map ((↑) : ℤ → ℝ) = (1 : Matrix κ κ ℤ).map ((↑) : ℤ → ℝ) := by
+    rw [Matrix.map_one _ Int.cast_zero Int.cast_one]
+    refine Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_)
+    obtain ⟨w, rfl⟩ := hL u
+    have hmap : (N * M).map ((↑) : ℤ → ℝ) = N.map (↑) * M.map (↑) :=
+      Matrix.map_mul (f := Int.castRingHom ℝ)
+    simp only [Matrix.toLin'_apply, hmap, ← mulVec_mulVec, ← hM, ← hN, one_mulVec]
+  have hNM : N * M = 1 := Matrix.map_injective Int.cast_injective hcast
+  exact ⟨⟨M, N, mul_eq_one_comm.1 hNM, hNM⟩, hM⟩
+
+end Matrix
 
 namespace ContinuousLinearMap
 
@@ -95,18 +126,8 @@ theorem exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq [DecidableEq 
     ∃ M : GL ι ℤ, ∀ w, L' w = (M : Matrix ι ι ℤ).map (↑) *ᵥ L w := by
   obtain ⟨M, hM⟩ := transposeLattice_le_iff.1 h.ge
   obtain ⟨N, hN⟩ := transposeLattice_le_iff.1 h.le
-  -- `L = N M L` and `L` is onto, so `N M = 1`.
-  have hsurj : Surjective L :=
-    LinearMap.injective_iff_surjective (f := (L : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1 hL
-  have hcast : (N * M).map ((↑) : ℤ → ℝ) = (1 : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) := by
-    rw [Matrix.map_one _ Int.cast_zero Int.cast_one]
-    refine Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_)
-    obtain ⟨w, rfl⟩ := hsurj u
-    have hmap : (N * M).map ((↑) : ℤ → ℝ) = N.map (↑) * M.map (↑) :=
-      Matrix.map_mul (f := Int.castRingHom ℝ)
-    simp only [Matrix.toLin'_apply, hmap, ← mulVec_mulVec, ← hM, ← hN, one_mulVec]
-  have hNM : N * M = 1 := Matrix.map_injective Int.cast_injective hcast
-  exact ⟨⟨M, N, mul_eq_one_comm.1 hNM, hNM⟩, hM⟩
+  exact exists_generalLinearGroup_mulVec_eq_of_mulVec_eq
+    (LinearMap.injective_iff_surjective (f := (L : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1 hL) hM hN
 
 /-- **Changing the basis by `GL(κ, ℤ)` preserves the transpose lattice.** For an invertible integer
 matrix `M`, the maps `M L` and `L` have the same transpose lattice. -/
@@ -123,5 +144,40 @@ theorem transposeLattice_toLin'_comp [DecidableEq κ] (M : GL κ ℤ) (L : (ι �
   rw [comp_apply, LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, mulVec_mulVec,
     ← hmap, ← Units.val_mul, inv_mul_cancel, Units.val_one, Matrix.map_one _ Int.cast_zero
     Int.cast_one, one_mulVec]
+
+omit [Fintype κ] in
+/-- **Comparing the subgroups spanned by the components.** For linear maps `L₁ : F → ℝ^κ` and
+`L₂ : F → ℝ^κ'`, the components `(L₁)ᵢ` lie in the subgroup of covectors spanned by the components
+`(L₂)ₖ` exactly when `L₁ = N L₂` for an integer matrix `N`. -/
+theorem closure_range_proj_comp_le_iff {F : Type*} [TopologicalSpace F] [AddCommGroup F]
+    [Module ℝ F] {L₁ : F →L[ℝ] (κ → ℝ)} {L₂ : F →L[ℝ] (κ' → ℝ)} :
+    AddSubgroup.closure (Set.range fun i ↦ (proj i : (κ → ℝ) →L[ℝ] ℝ).comp L₁) ≤
+        AddSubgroup.closure (Set.range fun k ↦ (proj k : (κ' → ℝ) →L[ℝ] ℝ).comp L₂) ↔
+      ∃ N : Matrix κ κ' ℤ, ∀ w, L₁ w = N.map (↑) *ᵥ L₂ w := by
+  constructor
+  · intro h
+    choose n hn using fun i ↦ AddSubgroup.mem_closure_range_iff_of_fintype.1
+      (h (AddSubgroup.subset_closure ⟨i, rfl⟩))
+    refine ⟨Matrix.of n, fun w ↦ funext fun i ↦ ?_⟩
+    simpa [mulVec, dotProduct] using congrArg (fun α : F →L[ℝ] ℝ ↦ α w) (hn i)
+  · rintro ⟨N, hN⟩
+    refine (AddSubgroup.closure_le _).2 ?_
+    rintro _ ⟨i, rfl⟩
+    refine AddSubgroup.mem_closure_range_iff_of_fintype.2 ⟨N i, ext fun w ↦ ?_⟩
+    simp [hN, mulVec, dotProduct]
+
+omit [Fintype ι] in
+/-- **Two bases of one subgroup of covectors differ by an element of `GL(κ, ℤ)`.** If the linear
+maps `L, L' : F → ℝ^κ`, the first onto, have components spanning the same subgroup of covectors,
+then `L' = M L` for an invertible integer matrix `M`. -/
+theorem exists_generalLinearGroup_mulVec_eq_of_closure_range_proj_comp_eq [DecidableEq κ]
+    {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module ℝ F] {L L' : F →L[ℝ] (κ → ℝ)}
+    (hL : Surjective L)
+    (h : AddSubgroup.closure (Set.range fun i ↦ (proj i : (κ → ℝ) →L[ℝ] ℝ).comp L) =
+      AddSubgroup.closure (Set.range fun i ↦ (proj i : (κ → ℝ) →L[ℝ] ℝ).comp L')) :
+    ∃ M : GL κ ℤ, ∀ w, L' w = (M : Matrix κ κ ℤ).map (↑) *ᵥ L w := by
+  obtain ⟨M, hM⟩ := closure_range_proj_comp_le_iff.1 h.ge
+  obtain ⟨N, hN⟩ := closure_range_proj_comp_le_iff.1 h.le
+  exact exists_generalLinearGroup_mulVec_eq_of_mulVec_eq hL hM hN
 
 end ContinuousLinearMap

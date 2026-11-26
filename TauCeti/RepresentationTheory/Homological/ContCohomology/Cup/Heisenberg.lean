@@ -223,7 +223,7 @@ theorem apply_inv_of_smul_eq_self (g : G) :
     h g⁻¹ = -h g + μ ((a : G → M) g) ((b : G → A) g) := by
   have e := hh.apply_mul_of_smul_eq_self htrivA htrivP g g⁻¹
   have hb : (b : G → A) g⁻¹ = -(b : G → A) g := by
-    rw [eq_neg_iff_add_eq_zero, add_comm, ← map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.property,
+    rw [eq_neg_iff_add_eq_zero, add_comm, ← map_mul_of_smul_eq_self_of_mem_Z1 b.property (htrivA g),
       mul_inv_cancel, groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 b.property).2]
   rw [mul_inv_cancel, hh.apply_one, hb, map_neg] at e
   rw [eq_neg_add_iff_add_eq, ← sub_eq_zero, sub_eq_add_neg]
@@ -235,8 +235,10 @@ include hh htrivM htrivA htrivP in
 pairing, read on the commutator `g * g' * g⁻¹ * g'⁻¹`. -/
 theorem apply_commutatorElement_of_smul_eq_self (g g' : G) :
     h ⁅g, g'⁆ = μ ((a : G → M) g) ((b : G → A) g') - μ ((a : G → M) g') ((b : G → A) g) := by
-  have ha_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivM a.property
-  have hb_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.property
+  have ha_mul (x y : G) : (a : G → M) (x * y) = (a : G → M) x + (a : G → M) y :=
+    map_mul_of_smul_eq_self_of_mem_Z1 a.property (htrivM x) y
+  have hb_mul (x y : G) : (b : G → A) (x * y) = (b : G → A) x + (b : G → A) y :=
+    map_mul_of_smul_eq_self_of_mem_Z1 b.property (htrivA x) y
   have ha_inv : ∀ x : G, (a : G → M) x⁻¹ = -(a : G → M) x := fun x => by
     rw [eq_neg_iff_add_eq_zero, add_comm, ← ha_mul, mul_inv_cancel,
       groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 a.property).2]
@@ -255,12 +257,8 @@ include hh htrivA htrivP in
 `n.choose 2` pairs of factors. -/
 theorem apply_pow_of_smul_eq_self (g : G) (n : ℕ) :
     h (g ^ n) = n • h g + (n.choose 2) • μ ((a : G → M) g) ((b : G → A) g) := by
-  have hb_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.property
-  have hb_pow : ∀ n : ℕ, (b : G → A) (g ^ n) = n • (b : G → A) g := fun n => by
-    induction n with
-    | zero => rw [pow_zero, zero_smul, groupCohomology.map_one_of_isCocycle₁
-        (mem_Z1_iff.1 b.property).2]
-    | succ n ih => rw [pow_succ, hb_mul, ih, succ_nsmul]
+  have hb_pow (n : ℕ) : (b : G → A) (g ^ n) = n • (b : G → A) g :=
+    map_pow_of_smul_eq_self_of_mem_Z1 b.property (htrivA g) n
   induction n with
   | zero =>
     rw [pow_zero, hh.apply_one, zero_smul, Nat.choose_zero_succ, zero_smul, add_zero]

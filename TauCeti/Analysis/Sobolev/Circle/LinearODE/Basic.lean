@@ -392,6 +392,11 @@ theorem restrictScalars_complexLoopOperator (hS : ∀ t v, S t (I • v) = I •
     (complexLoopOperator T hS).restrictScalars ℝ = loopOperator T S :=
   (rfl)
 
+/-- For a loop of complex-linear maps, `L_S` commutes with multiplication by complex scalars. -/
+theorem loopOperator_smul (hS : ∀ t v, S t (I • v) = I • S t v) (c : ℂ) (a : CircleSobolev 1 E) :
+    loopOperator T S (c • a) = c • loopOperator T S a :=
+  map_smul (complexLoopOperator T hS) c a
+
 end ComplexLinear
 
 section Inner

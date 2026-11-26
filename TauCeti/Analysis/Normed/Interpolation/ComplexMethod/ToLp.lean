@@ -177,12 +177,8 @@ private theorem norm_conj_coeff_smul_le (w : E) (z : ℂ) :
 private theorem norm_coeff_le (hθ : θ ∈ Icc (0 : ℝ) 1) (a : ℝ) {z : ℂ}
     (hz : z ∈ verticalClosedStrip 0 1) :
     ‖coeff θ κ a z‖ ≤ Real.exp |κ * Real.log a| := by
-  rw [norm_coeff, mul_assoc]
-  refine Real.exp_le_exp.2 ((le_abs_self _).trans ?_)
-  rw [abs_mul]
-  refine mul_le_of_le_one_left (abs_nonneg _) (abs_le.2 ⟨?_, ?_⟩)
-  · linarith [hz.1, hθ.2]
-  · linarith [hz.2, hθ.1]
+  rw [coeff, mul_assoc, ← ofReal_mul]
+  exact Complex.HadamardThreeLines.norm_exp_sub_mul_le hθ _ hz
 
 /-- The scalar analytic family `Φ z = ∑_w ‖w‖ ^ ((z - θ) κ) ∫ ⟪g_w, F z⟫` over the fibres `g_w`
 of an integrable simple function `g`, for a family `F` in `L¹ + L^∞`. -/

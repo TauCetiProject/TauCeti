@@ -71,6 +71,10 @@ Each further order `r` first applies one Sobolev embedding and then the case `r 
   `W^{k+d+1,q}(V) → W^{k,p}(V)` is compact for `1 ≤ p ≤ q ≤ ∞`.
 * `TauCeti.SectionChartData.isCompactOperator_of_forall_apply`: a map into the Sobolev sections is
   a compact operator as soon as all its chart components are.
+* `TauCeti.SectionChartData.isCompactOperator_lowerOrdersL`,
+  `TauCeti.SectionChartData.exists_norm_lowerOrdersL_le`: for general chart data, Rellich for any
+  loss of derivatives and Ehrling's inequality follow from one-step compactness; they serve bases
+  with and without boundary.
 * `TauCeti.SobolevSection.isCompactOperator_lowerOrderL`: **Rellich's theorem** for Sobolev
   sections, `W^{k+1,p}(V) → W^{k,p}(V)` is compact.
 * `TauCeti.SobolevSection.isCompactOperator_lowerOrdersL`: `W^{k+d+1,p}(V) → W^{k,p}(V)` is compact.
@@ -81,6 +85,8 @@ Each further order `r` first applies one Sobolev embedding and then the case `r 
 * `TauCeti.SobolevSection.exists_isCompactOperator_of_inv_lt_inv_add`: **the Rellich–Kondrachov
   theorem** for Sobolev sections, `W^{k+r,p}(V) → W^{k,q}(V)` is compact for `1/p < 1/q + r/n`,
   `q < ∞`, in dimension `n ≥ 2`.
+* `TauCeti.SobolevSection.exists_isCompactOperator_of_finrank_le`: `W^{k+1,p}(V) → W^{k,q}(V)` is
+  compact for `p ≥ n` and every finite `q`.
 
 ## References
 
@@ -120,6 +126,28 @@ theorem SectionChartData.isCompactOperator_of_forall_apply (hC : C.AETransition 
     IsCompactOperator f :=
   (IsCompactOperator.pi fun i ↦ IsCompactOperator.pi fun m ↦ hf i m).codRestrict
     (fun x ↦ (f x).property) (isClosed_sobolevSections hC)
+
+/-- **Rellich for any loss of derivatives.** If the inclusion of order `k + d + 1` into order
+`k + d` is compact, so is the inclusion of order `k + d + 1` into order `k`. -/
+theorem SectionChartData.isCompactOperator_lowerOrdersL {d : ℕ}
+    (h : IsCompactOperator (C.lowerOrderL μ p (k + d))) :
+    IsCompactOperator (C.lowerOrdersL μ p k (d + 1)) := by
+  rw [lowerOrdersL_succ]
+  exact h.clm_comp _
+
+/-- **Ehrling's inequality for Sobolev sections.** If the inclusion `W^{k+d+1,p} → W^{k,p}` of the
+Sobolev sections of `C` is compact, then for every `ε > 0` there is `K ≥ 0` with
+
+`‖w‖_{W^{k,p}} ≤ ε ‖w‖_{W^{k+d+1,p}} + K ‖w‖_{Lᵖ}`
+
+for every `w ∈ W^{k+d+1,p}`, where `‖w‖_{Lᵖ}` is the norm of the chart data of `w`
+(`TauCeti.SectionChartData.chartValuesL`), which determine it. -/
+theorem SectionChartData.exists_norm_lowerOrdersL_le {d : ℕ}
+    (h : IsCompactOperator (C.lowerOrdersL μ p k (d + 1))) {ε : ℝ} (hε : 0 < ε) :
+    ∃ K, 0 ≤ K ∧ ∀ w : C.sobolevSections μ p (k + (d + 1)),
+      ‖C.lowerOrdersL μ p k (d + 1) w‖ ≤ ε * ‖w‖ + K * ‖C.chartValuesL μ p (k + (d + 1)) w‖ := by
+  obtain ⟨K, hK, hw⟩ := h.exists_norm_le_mul_norm_add_mul_norm (C.chartValuesL_injective μ p k) hε
+  exact ⟨K, hK, fun w ↦ by simpa using hw w⟩
 
 end Components
 
@@ -188,9 +216,8 @@ theorem isCompactOperator_lowerOrderL [T2Space M] :
 /-- **Rellich's theorem for Sobolev sections**, for any loss of derivatives: the inclusion
 `W^{k+d+1,p}(V) → W^{k,p}(V)` is a compact operator for `1 ≤ p ≤ ∞`. -/
 theorem isCompactOperator_lowerOrdersL [T2Space M] (d : ℕ) :
-    IsCompactOperator (A.sectionChartData.lowerOrdersL μ p k (d + 1)) := by
-  rw [SectionChartData.lowerOrdersL_succ]
-  exact (isCompactOperator_lowerOrderL A μ p (k + d)).clm_comp _
+    IsCompactOperator (A.sectionChartData.lowerOrdersL μ p k (d + 1)) :=
+  SectionChartData.isCompactOperator_lowerOrdersL (isCompactOperator_lowerOrderL A μ p (k + d))
 
 /-- **Rellich with exponent change.** The inclusion `W^{k+d+1,q} → W^{k,p}` is compact
 for `1 ≤ p ≤ q`; both exponents may be infinite. -/
@@ -211,11 +238,8 @@ for every `w ∈ W^{k+d+1,p}(V)`, where `‖w‖_{Lᵖ}` is the norm of the char
 theorem exists_norm_lowerOrdersL_le [T2Space M] (d : ℕ) {ε : ℝ} (hε : 0 < ε) :
     ∃ C, 0 ≤ C ∧ ∀ w : SobolevSection A μ p (k + (d + 1)),
       ‖A.sectionChartData.lowerOrdersL μ p k (d + 1) w‖ ≤
-        ε * ‖w‖ + C * ‖A.sectionChartData.chartValuesL μ p (k + (d + 1)) w‖ := by
-  obtain ⟨C, hC, h⟩ := (isCompactOperator_lowerOrdersL A μ p k d)
-    |>.exists_norm_le_mul_norm_add_mul_norm
-      (A.sectionChartData.chartValuesL_injective μ p k) hε
-  exact ⟨C, hC, fun w ↦ by simpa using h w⟩
+        ε * ‖w‖ + C * ‖A.sectionChartData.chartValuesL μ p (k + (d + 1)) w‖ :=
+  SectionChartData.exists_norm_lowerOrdersL_le (isCompactOperator_lowerOrdersL A μ p k d) hε
 
 /-! ### Compactness at other exponents -/
 
@@ -328,6 +352,20 @@ theorem exists_isCompactOperator_of_inv_lt_inv_add [T2Space M] (hn : 1 < finrank
       exact ENNReal.sub_lt_of_lt_add hνt.le htq)
     refine exists_isCompactOperator_of_ofExponentLE A μ k (ENNReal.inv_le_iff_inv_le.1 hpt)
       ⟨T.comp S, hT.comp_clm S, fun w i ↦ (hTc (S w) i).trans (hS w i)⟩
+
+/-- **Rellich–Kondrachov compactness above the dimension.** On a compact manifold without boundary
+of dimension `n ≥ 2`, given by a finite bundle atlas of a Hausdorff manifold, let `n ≤ p ≤ ∞`. Then
+for every order `k` and every finite `q ≥ 1` there is a compact operator `W^{k+1,p}(V) → W^{k,q}(V)`
+keeping the underlying section: `1/p ≤ 1/n < 1/q + 1/n`. On a surface this puts `W^{1,p}`, `p ≥ 2`,
+in every `L^q`, `q < ∞`. -/
+theorem exists_isCompactOperator_of_finrank_le [T2Space M] (hn : 1 < finrank ℝ E)
+    (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) (hq : q ≠ ⊤) :
+    ∃ T : SobolevSection A μ p (k + 1) →L[ℝ] SobolevSection A μ q k, IsCompactOperator T ∧
+      ∀ w i, A.sectionChartData.chartValueL μ q k i (T w) =ᵐ[μ.restrict (A.image i)]
+        A.sectionChartData.chartValueL μ p (k + 1) i w :=
+  exists_isCompactOperator_of_inv_lt_inv_add A μ k hn one_ne_zero hq (by
+    rw [Nat.cast_one, one_mul]
+    exact ENNReal.inv_lt_inv_add_inv_of_le hp (by exact_mod_cast (zero_lt_one.trans hn).ne') hq)
 
 end SobolevSection
 
