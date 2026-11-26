@@ -15,7 +15,8 @@ For a nonunital C⋆-algebra `A`, `K₁(A)` (`TauCeti.UnitizationKOne ℂ A`) is
 `π₀GL_∞(A⁺) → π₀GL_∞(ℂ)` induced by the scalar part of the unitization. This file gives its
 classical description by unitaries of `A⁺` whose scalar part is the identity (Blackadar 8.1.5):
 
-* every class of `K₁(A)` is the class of a unitary matrix over `A⁺` with scalar part `1`
+* every class of `π₀GL_∞(A⁺)`, which is all of `K₁(A)` (`TauCeti.UnitizationKOne.eq_top`), is the
+  class of a unitary matrix over `A⁺` with scalar part `1`
   (`TauCeti.UnitizationKOne.exists_mem_unitary_mk_eq`);
 * two unitary matrices over `A⁺` with scalar part `1` have the same class exactly when, after a
   common stabilization, they are joined by a path of unitary matrices with scalar part `1`
@@ -25,8 +26,9 @@ Both come from the unitary description of `π₀GL_∞(A⁺)` for the unital C�
 (`TauCeti.StableComponentGroup.exists_mem_unitary_mk_eq`,
 `TauCeti.StableComponentGroup.mk_eq_mk_iff_exists_path_unitary`) and the retraction
 `g ↦ g · s(g)⁻¹` onto the matrices with scalar part `1` (`TauCeti.unitizationGLRetract`), which
-preserves unitary matrices (`TauCeti.coe_unitizationGLRetract_mem_unitary`): the scalar part of a
-unitary matrix is a unitary scalar matrix.
+preserves classes (`TauCeti.UnitizationKOne.mk_unitizationGLRetract`) and unitary matrices
+(`TauCeti.coe_unitizationGLRetract_mem_unitary`): the scalar part of a unitary matrix is a unitary
+scalar matrix.
 
 ## References
 
@@ -44,22 +46,16 @@ variable {A : Type*} [NonUnitalCStarAlgebra A]
 
 namespace UnitizationKOne
 
-/-- **Unitary representatives of `K₁(A)`.** Every class of `K₁(A)` is the class of a unitary
-matrix over `A⁺` whose scalar part is the identity. -/
-theorem exists_mem_unitary_mk_eq {x : StableComponentGroup (Unitization ℂ A)}
-    (hx : x ∈ UnitizationKOne ℂ A) :
+/-- **Unitary representatives of `K₁(A)`.** Every class of `π₀GL_∞(A⁺)`, which is all of `K₁(A)`
+by `TauCeti.UnitizationKOne.eq_top`, is the class of a unitary matrix over `A⁺` whose scalar part is
+the identity. -/
+theorem exists_mem_unitary_mk_eq (x : StableComponentGroup (Unitization ℂ A)) :
     ∃ m, ∃ u ∈ unitizationGLFstOne ℂ A (Fin m),
       (u : Matrix (Fin m) (Fin m) (Unitization ℂ A)) ∈ unitary _ ∧
         StableComponentGroup.mk _ m u = x := by
   obtain ⟨m, g, hg, rfl⟩ := StableComponentGroup.exists_mem_unitary_mk_eq x
-  refine ⟨m, unitizationGLRetract ℂ A (Fin m) g, unitizationGLRetract_mem_unitizationGLFstOne g,
-    coe_unitizationGLRetract_mem_unitary hg, ?_⟩
-  have h₁ : StableComponentGroup.mk ℂ m (unitizationGLFst ℂ A (Fin m) g) = 1 :=
-    Subsingleton.elim _ _
-  have h₂ : StableComponentGroup.mk _ m
-      (unitizationGLInl ℂ A (Fin m) (unitizationGLFst ℂ A (Fin m) g)) = 1 := by
-    rw [← map_inlRingHom_mk, h₁, map_one]
-  rw [unitizationGLRetract_def, map_mul, map_inv, h₂, inv_one, mul_one]
+  exact ⟨m, unitizationGLRetract ℂ A (Fin m) g, unitizationGLRetract_mem_unitizationGLFstOne g,
+    coe_unitizationGLRetract_mem_unitary hg, mk_unitizationGLRetract (by rw [eq_top]; trivial)⟩
 
 /-- **The stable homotopy criterion for `K₁(A)` in unitary form.** Two unitary matrices over
 `A⁺` with scalar part `1` have the same class exactly when, after a common stabilization, they

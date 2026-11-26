@@ -55,6 +55,8 @@ star homomorphisms through `Unitization.starMap` (`TauCeti.UnitizationKOne.map`,
 * `TauCeti.continuous_unitizationGLFst`, `TauCeti.continuous_unitizationGLInl`,
   `TauCeti.continuous_unitizationGLRetract`: continuity of the scalar part, of the inclusion of
   scalar matrices and of the retraction onto `TauCeti.unitizationGLFstOne`.
+* `TauCeti.UnitizationKOne.mk_unitizationGLRetract`: the retraction onto the matrices with scalar
+  part `1` preserves classes of `K₁(A)`.
 * `TauCeti.UnitizationKOne.exists_mk_eq`, `TauCeti.UnitizationKOne.mk_eq_mk_iff`:
   representatives of `K₁(A)` with scalar part `1`, and homotopies within the scalar condition.
 * `TauCeti.UnitizationKOne.map_id`, `TauCeti.UnitizationKOne.map_comp`: functoriality.
@@ -164,20 +166,28 @@ theorem mk_mem {n : ℕ} {u : GL (Fin n) (Unitization 𝕜 A)}
     StableComponentGroup.mk _ n u ∈ UnitizationKOne 𝕜 A := by
   rw [mem_iff, map_mk, mem_unitizationGLFstOne_iff_unitizationGLFst.1 hu, map_one]
 
+/-- The retraction `g ↦ g · s(g)⁻¹` onto the matrices with scalar part `1` does not change the
+class of an invertible matrix whose class lies in `K₁(A)`. -/
+theorem mk_unitizationGLRetract {n : ℕ} {g : GL (Fin n) (Unitization 𝕜 A)}
+    (hg : StableComponentGroup.mk _ n g ∈ UnitizationKOne 𝕜 A) :
+    StableComponentGroup.mk _ n (unitizationGLRetract 𝕜 A (Fin n) g) =
+      StableComponentGroup.mk _ n g := by
+  have h₁ : StableComponentGroup.mk 𝕜 n (unitizationGLFst 𝕜 A (Fin n) g) = 1 := by
+    rw [← map_mk]
+    exact mem_iff.1 hg
+  have h₂ : StableComponentGroup.mk _ n
+      (unitizationGLInl 𝕜 A (Fin n) (unitizationGLFst 𝕜 A (Fin n) g)) = 1 := by
+    rw [← map_inlRingHom_mk, h₁, map_one]
+  rw [unitizationGLRetract_def, map_mul, map_inv, h₂, inv_one, mul_one]
+
 /-- **Representatives of `K₁(A)`.** Every class of `K₁(A)` is the class of an invertible matrix
 over `A⁺` whose scalar part is the identity. -/
 theorem exists_mk_eq {x : StableComponentGroup (Unitization 𝕜 A)}
     (hx : x ∈ UnitizationKOne 𝕜 A) :
     ∃ n, ∃ u ∈ unitizationGLFstOne 𝕜 A (Fin n), StableComponentGroup.mk _ n u = x := by
   obtain ⟨n, g, rfl⟩ := StableComponentGroup.exists_mk x
-  refine ⟨n, unitizationGLRetract 𝕜 A (Fin n) g, unitizationGLRetract_mem_unitizationGLFstOne g, ?_⟩
-  have h₁ : StableComponentGroup.mk 𝕜 n (unitizationGLFst 𝕜 A (Fin n) g) = 1 := by
-    rw [← map_mk]
-    exact mem_iff.1 hx
-  have h₂ : StableComponentGroup.mk _ n
-      (unitizationGLInl 𝕜 A (Fin n) (unitizationGLFst 𝕜 A (Fin n) g)) = 1 := by
-    rw [← map_inlRingHom_mk, h₁, map_one]
-  rw [unitizationGLRetract_def, map_mul, map_inv, h₂, inv_one, mul_one]
+  exact ⟨n, unitizationGLRetract 𝕜 A (Fin n) g, unitizationGLRetract_mem_unitizationGLFstOne g,
+    mk_unitizationGLRetract hx⟩
 
 /-- **Homotopies within the scalar condition.** Two invertible matrices over `A⁺` with scalar
 part `1` have the same class exactly when, after a common stabilization, they differ by an
