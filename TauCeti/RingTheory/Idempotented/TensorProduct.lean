@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Tower
-public import Mathlib.LinearAlgebra.Quotient.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
 public import TauCeti.RingTheory.Idempotented.Basic
 
 /-!
@@ -16,8 +15,10 @@ public import TauCeti.RingTheory.Idempotented.Basic
 Let `A` be a commutative ring, `H` a nonunital `A`-algebra and `M` a module over the unitization
 `A ⊕ H` (a left `H`-module) whose `A`-module structure is the restriction of scalars. The tensor
 product `H ⊗_H M` is the quotient of `H ⊗_A M` by the elements `h h' ⊗ m - h ⊗ h' m`
-(`TauCeti.TensorOverSelf A H M`); linear maps out of it are induced by balanced bilinear maps
-(`TauCeti.TensorOverSelf.lift`). The action of `H` on `M` induces the multiplication map
+(`TauCeti.TensorOverSelf A H M`). It is the tensor product `TauCeti.BalancedTensorProduct` balanced
+over the unitization, which acts on `H` on the right by multiplication, so the `A`-part of the
+relations holds already in `H ⊗_A M`. Linear maps out of it are induced by bilinear maps balanced
+over `H` (`TauCeti.TensorOverSelf.lift`). The action of `H` on `M` induces the multiplication map
 `TauCeti.TensorOverSelf.mulMap : H ⊗_H M → M`, `h ⊗ m ↦ h m`, whose range is the nondegenerate part
 `H M` (`TauCeti.TensorOverSelf.range_mulMap`).
 
@@ -59,94 +60,47 @@ namespace TauCeti
 variable (A H : Type*) [CommRing A] [NonUnitalRing H] [Module A H] [IsScalarTower A H H]
   [SMulCommClass A H H] (M : Type*) [AddCommGroup M] [Module (Unitization A H) M] [Module A M]
 
-/-- The relations `h h' ⊗ m - h ⊗ h' m` of `H ⊗_H M` inside `H ⊗_A M`. -/
-def tensorOverSelfRelations : Submodule A (H ⊗[A] M) :=
-  Submodule.span A {z | ∃ (h h' : H) (m : M),
-    z = (h * h') ⊗ₜ[A] m - h ⊗ₜ[A] ((h' : Unitization A H) • m)}
-
 /-- **The tensor product `H ⊗_H M`**: the quotient of `H ⊗_A M` by the elements
-`h h' ⊗ m - h ⊗ h' m`. -/
-abbrev TensorOverSelf := (H ⊗[A] M) ⧸ tensorOverSelfRelations A H M
+`h h' ⊗ m - h ⊗ h' m`, as the tensor product balanced over the unitization `A ⊕ H`, which acts on
+`H` on the right by multiplication (`Unitization.instModuleMulOpposite`). -/
+abbrev TensorOverSelf := BalancedTensorProduct A (Unitization A H) H M
 
 namespace TensorOverSelf
 
+open BalancedTensorProduct (tmul)
+
 variable {A H M}
 
-/-- The class of `h ⊗ m` in `H ⊗_H M`. -/
-abbrev mk (h : H) (m : M) : TensorOverSelf A H M :=
-  Submodule.Quotient.mk (h ⊗ₜ[A] m)
-
-theorem mk_mul (h h' : H) (m : M) :
-    (mk (h * h') m : TensorOverSelf A H M) = mk h ((h' : Unitization A H) • m) := by
-  rw [Submodule.Quotient.eq]
-  exact Submodule.subset_span ⟨h, h', m, rfl⟩
+/-- `h h' ⊗ m = h ⊗ h' m` in `H ⊗_H M`. -/
+theorem tmul_mul (h h' : H) (m : M) :
+    tmul A (Unitization A H) (h * h') m =
+      tmul A (Unitization A H) h ((h' : Unitization A H) • m) := by
+  rw [← Unitization.op_inr_smul (R := A), BalancedTensorProduct.balance]
 
 /-- If `g g₁ = g₁` and `g₁ x = x`, then `g₁ ⊗ x = g ⊗ x`. -/
-theorem mk_eq_mk_of_mul_eq {g g₁ : H} {x : M} (hg : g * g₁ = g₁)
-    (hx : (g₁ : Unitization A H) • x = x) : (mk g₁ x : TensorOverSelf A H M) = mk g x := by
-  conv_lhs => rw [← hg, mk_mul, hx]
+theorem tmul_eq_tmul_of_mul_eq {g g₁ : H} {x : M} (hg : g * g₁ = g₁)
+    (hx : (g₁ : Unitization A H) • x = x) :
+    tmul A (Unitization A H) g₁ x = tmul A (Unitization A H) g x := by
+  conv_lhs => rw [← hg, tmul_mul, hx]
 
-@[simp]
-theorem mk_add_left (h₁ h₂ : H) (m : M) :
-    (mk (h₁ + h₂) m : TensorOverSelf A H M) = mk h₁ m + mk h₂ m := by
-  rw [mk, TensorProduct.add_tmul, Submodule.Quotient.mk_add]
-
-@[simp]
-theorem mk_add_right (h : H) (m₁ m₂ : M) :
-    (mk h (m₁ + m₂) : TensorOverSelf A H M) = mk h m₁ + mk h m₂ := by
-  rw [mk, TensorProduct.tmul_add, Submodule.Quotient.mk_add]
-
-@[simp]
-theorem mk_smul_left (a : A) (h : H) (m : M) :
-    (mk (a • h) m : TensorOverSelf A H M) = a • mk h m := by
-  rw [mk, ← TensorProduct.smul_tmul', Submodule.Quotient.mk_smul]
-
-@[simp]
-theorem mk_smul_right (a : A) (h : H) (m : M) :
-    (mk h (a • m) : TensorOverSelf A H M) = a • mk h m := by
-  rw [mk, TensorProduct.tmul_smul, Submodule.Quotient.mk_smul]
-
-@[simp]
-theorem mk_zero_left (m : M) : (mk 0 m : TensorOverSelf A H M) = 0 := by
-  rw [mk, TensorProduct.zero_tmul, Submodule.Quotient.mk_zero]
-
-@[simp]
-theorem mk_zero_right (h : H) : (mk h 0 : TensorOverSelf A H M) = 0 := by
-  rw [mk, TensorProduct.tmul_zero, Submodule.Quotient.mk_zero]
-
-/-- Induction on `H ⊗_H M`: a property holding for every `h ⊗ m` and closed under addition holds
-everywhere. -/
-@[elab_as_elim]
-theorem induction_on {motive : TensorOverSelf A H M → Prop} (z : TensorOverSelf A H M)
-    (mk : ∀ (h : H) (m : M), motive (mk h m))
-    (add : ∀ x y, motive x → motive y → motive (x + y)) : motive z := by
-  obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ z
-  induction z using TensorProduct.inductionOn with
-  | tmul h m => exact mk h m
-  | add z₁ z₂ ih₁ ih₂ => exact add _ _ ih₁ ih₂
-
-/-- Two linear maps out of `H ⊗_H M` agreeing on every `h ⊗ m` are equal. -/
-@[ext]
-theorem ext {N : Type*} [AddCommGroup N] [Module A N] {f g : TensorOverSelf A H M →ₗ[A] N}
-    (hfg : ∀ (h : H) (m : M), f (mk h m) = g (mk h m)) : f = g :=
-  Submodule.linearMap_qext _ <| TensorProduct.ext' hfg
+variable [IsScalarTower A (Unitization A H) M]
 
 /-- **The universal property of `H ⊗_H M`**: a bilinear map `f : H → M → N` which is balanced,
 `f (h h') m = f h (h' m)`, induces a linear map `H ⊗_H M → N`, `h ⊗ m ↦ f h m`. -/
 def lift {N : Type*} [AddCommGroup N] [Module A N] (f : H →ₗ[A] M →ₗ[A] N)
     (hf : ∀ (h h' : H) (m : M), f (h * h') m = f h ((h' : Unitization A H) • m)) :
     TensorOverSelf A H M →ₗ[A] N :=
-  (tensorOverSelfRelations A H M).liftQ (TensorProduct.lift f) <| Submodule.span_le.2 <| by
-    rintro _ ⟨h, h', m, rfl⟩
-    simp [hf]
+  BalancedTensorProduct.lift f fun r h m ↦ by
+    -- `r = a + h'` with `a : A` and `h' : H`, and `A` acts on `M` by restriction of scalars
+    conv_rhs => rw [← r.inl_fst_add_inr_snd_eq, add_smul, ← Unitization.algebraMap_eq_inl,
+      algebraMap_smul]
+    simp [Unitization.op_smul_eq, hf]
 
 @[simp]
-theorem lift_mk {N : Type*} [AddCommGroup N] [Module A N] (f : H →ₗ[A] M →ₗ[A] N)
+theorem lift_tmul {N : Type*} [AddCommGroup N] [Module A N] (f : H →ₗ[A] M →ₗ[A] N)
     (hf : ∀ (h h' : H) (m : M), f (h * h') m = f h ((h' : Unitization A H) • m)) (h : H)
-    (m : M) : lift f hf (mk h m) = f h m :=
-  TensorProduct.lift.tmul _ _
-
-variable [IsScalarTower A (Unitization A H) M]
+    (m : M) : lift f hf (tmul A (Unitization A H) h m) = f h m :=
+  BalancedTensorProduct.lift_tmul _ _ _ _
 
 variable (A H M) in
 /-- **The multiplication map `H ⊗_H M → M`**, `h ⊗ m ↦ h m`. -/
@@ -155,8 +109,9 @@ def mulMap : TensorOverSelf A H M →ₗ[A] M :=
     simp [Unitization.inr_mul]
 
 @[simp]
-theorem mulMap_mk (h : H) (m : M) : mulMap A H M (mk h m) = (h : Unitization A H) • m :=
-  lift_mk _ _ h m
+theorem mulMap_tmul (h : H) (m : M) :
+    mulMap A H M (tmul A (Unitization A H) h m) = (h : Unitization A H) • m :=
+  lift_tmul _ _ h m
 
 /-- **The range of the multiplication map is the nondegenerate part `H M`.** -/
 theorem range_mulMap :
@@ -166,51 +121,52 @@ theorem range_mulMap :
     { LinearMap.range (mulMap A H M) with
       smul_mem' := by
         rintro r _ ⟨z, rfl⟩
-        induction z using induction_on with
-        | mk h m =>
-          exact ⟨mk (r.fst • h + r.snd * h) m, by
-            rw [mulMap_mk, mulMap_mk, smul_smul, Unitization.mul_inr]⟩
-        | add x y hx hy =>
+        induction z using BalancedTensorProduct.induction_on with
+        | ht h m =>
+          exact ⟨tmul A (Unitization A H) (r.fst • h + r.snd * h) m, by
+            rw [mulMap_tmul, mulMap_tmul, smul_smul, Unitization.mul_inr]⟩
+        | ha x y hx hy =>
           rw [map_add, smul_add]
           exact (LinearMap.range (mulMap A H M)).add_mem hx hy }
   refine le_antisymm ?_ fun x hx ↦ (nondegeneratePart_le_iff (N := N)).2
-    (fun h m ↦ ⟨mk h m, mulMap_mk h m⟩) hx
+    (fun h m ↦ ⟨tmul A (Unitization A H) h m, mulMap_tmul h m⟩) hx
   rintro _ ⟨z, rfl⟩
-  induction z using induction_on with
-  | mk h m => simp
-  | add x y hx hy => simpa only [map_add] using add_mem hx hy
+  induction z using BalancedTensorProduct.induction_on with
+  | ht h m => simp
+  | ha x y hx hy => simpa only [map_add] using add_mem hx hy
 
 variable [IsIdempotented H]
 
 /-- Every element of `H ⊗_H M` is `g ⊗ x`, for `x` its image in `M` and a suitable `g : H` with
 `g x = x`. -/
-theorem exists_eq_mk_mulMap (z : TensorOverSelf A H M) :
-    ∃ g : H, z = mk g (mulMap A H M z) ∧
+theorem exists_eq_tmul_mulMap (z : TensorOverSelf A H M) :
+    ∃ g : H, z = tmul A (Unitization A H) g (mulMap A H M z) ∧
       (g : Unitization A H) • mulMap A H M z = mulMap A H M z := by
   classical
-  induction z using induction_on with
-  | mk h m =>
+  induction z using BalancedTensorProduct.induction_on with
+  | ht h m =>
     obtain ⟨g, -, hg⟩ := IsIdempotented.exists_isIdempotentElem {h}
     have hgh := (hg h (by simp)).1
     refine ⟨g, ?_, ?_⟩
-    · rw [mulMap_mk, ← mk_mul, hgh]
-    · rw [mulMap_mk, smul_smul, ← Unitization.inr_mul, hgh]
-  | add z₁ z₂ ih₁ ih₂ =>
+    · rw [mulMap_tmul, ← tmul_mul, hgh]
+    · rw [mulMap_tmul, smul_smul, ← Unitization.inr_mul, hgh]
+  | ha z₁ z₂ ih₁ ih₂ =>
     obtain ⟨g₁, h₁, hg₁⟩ := ih₁
     obtain ⟨g₂, h₂, hg₂⟩ := ih₂
     obtain ⟨g, -, hg⟩ := IsIdempotented.exists_isIdempotentElem {g₁, g₂}
     have e₁ := (hg g₁ (by simp)).1
     have e₂ := (hg g₂ (by simp)).1
     refine ⟨g, ?_, ?_⟩
-    · conv_lhs => rw [h₁, h₂, mk_eq_mk_of_mul_eq e₁ hg₁, mk_eq_mk_of_mul_eq e₂ hg₂]
-      rw [map_add, mk_add_right]
+    · conv_lhs => rw [h₁, h₂, tmul_eq_tmul_of_mul_eq e₁ hg₁,
+        tmul_eq_tmul_of_mul_eq e₂ hg₂]
+      rw [map_add, BalancedTensorProduct.tmul_add]
     · rw [map_add, smul_add, inr_smul_eq_of_mul_eq hg₁ e₁, inr_smul_eq_of_mul_eq hg₂ e₂]
 
 /-- **The multiplication map `H ⊗_H M → M` is injective** for idempotented `H`. -/
 theorem mulMap_injective : Function.Injective (mulMap A H M) := by
   refine (injective_iff_map_eq_zero _).2 fun z hz ↦ ?_
-  obtain ⟨g, hg, -⟩ := exists_eq_mk_mulMap z
-  rw [hg, hz, mk_zero_right]
+  obtain ⟨g, hg, -⟩ := exists_eq_tmul_mulMap z
+  rw [hg, hz, BalancedTensorProduct.tmul_zero]
 
 /-- **`H ⊗_H M ≃ M` for nondegenerate `M`**: the multiplication map is bijective. -/
 theorem mulMap_bijective (hM : IsNondegenerate A H M) : Function.Bijective (mulMap A H M) :=
@@ -228,8 +184,9 @@ theorem mulLinearEquiv_apply (hM : IsNondegenerate A H M) (z : TensorOverSelf A 
 
 /-- **The inverse of `H ⊗_H M ≃ M` is `m ↦ e ⊗ m`** for any `e : H` with `e m = m`. -/
 theorem mulLinearEquiv_symm_apply (hM : IsNondegenerate A H M) {e : H} {m : M}
-    (he : (e : Unitization A H) • m = m) : (mulLinearEquiv hM).symm m = mk e m :=
-  (mulLinearEquiv hM).symm_apply_eq.2 (by rw [mulLinearEquiv_apply, mulMap_mk, he])
+    (he : (e : Unitization A H) • m = m) :
+    (mulLinearEquiv hM).symm m = tmul A (Unitization A H) e m :=
+  (mulLinearEquiv hM).symm_apply_eq.2 (by rw [mulLinearEquiv_apply, mulMap_tmul, he])
 
 end TensorOverSelf
 
