@@ -45,8 +45,9 @@ whose hypotheses are checked for the family as follows.
   this is at most its topological energy
   `∫ uₖ^*ω + ∑ i, ∫₀¹ H_i(t, xₖ i t) dt - ∫₀¹ Hout(t, xoutₖ t) dt` plus
   `∑ i, B i + Bout + 2 (BG + BG')`, for bounds `|H i| ≤ B i`, `|Hout| ≤ Bout`, `|G| ≤ BG` and
-  `|G'| ≤ BG'`, whatever `τ`. For solutions in a fixed class between fixed capped orbits the
-  topological energy is fixed.
+  `|G'| ≤ BG'`, whatever `τ`. When `ω` is closed (for instance symplectic), the topological
+  energy is fixed for solutions in a fixed class between fixed capped orbits; this file assumes
+  only that `ω` is nondegenerate.
 
 The almost complex structures `J_τ(z, x)` are any family tamed by `ω` on the sphere minus the
 punctures of the configuration at `τ` which, read in the charts of `M`, is `C²` jointly in
