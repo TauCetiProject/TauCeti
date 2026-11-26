@@ -797,15 +797,9 @@ theorem spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
 private theorem div_mul_norm_sq_le_energyFormH1_laplacian_sub {P kappa : ℝ}
     (hkappa : 0 ≤ kappa) {u : W1p mu Omega 2} (hu : ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
     (1 - kappa * P ^ 2) / (P ^ 2 + 1) * ‖u‖ ^ 2 ≤
-      energyFormH1 (fun _ ↦ 1) 0 0 u u + -kappa * ‖W1p.value u‖ ^ 2 := by
-  have hu2 : ‖W1p.value u‖ ^ 2 ≤ P ^ 2 * ‖W1p.gradient u‖ ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) hu 2
-  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
-    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq, div_mul_eq_mul_div,
-    div_le_iff₀ (by positivity)]
-  -- The difference of the two sides is `(1 + κ) (P² ‖∇u‖² - ‖u‖²) ≥ 0`.
-  nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ 1 + kappa) (sub_nonneg.2 hu2)]
+      energyFormH1 (fun _ ↦ 1) 0 0 u u + -kappa * ‖W1p.value u‖ ^ 2 :=
+  mul_norm_sq_le_of_gradient_sub_value_bound (A := 1) (B := kappa) (by linarith)
+    (by rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq]; linarith) hu
 
 /-- **A Poincaré–Friedrichs inequality keeps the spectrum of `-Δ_Γ` away from `0`.** If
 `‖u‖_{L²} ≤ P ‖∇u‖_{L²}` for every `u ∈ H¹_Γ(Ω)`, every `κ` with `κ P² < 1` is a resolvent point of
