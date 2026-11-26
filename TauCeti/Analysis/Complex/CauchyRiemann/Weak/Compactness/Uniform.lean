@@ -45,10 +45,11 @@ their weak derivatives are bounded in `Lᵖ(W)` on every open `W` with compact c
 * *Smooth data.* If the data are smooth and converge in `C^∞` on compact sets, a subsequence
   converges in `C^∞` on compact subsets of `Ω` to a smooth solution of the limiting equation
   (`TauCeti.exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`).
-* *Gradient bounds* (McDuff–Salamon, Theorem 4.1.1). In both compactness theorems, a bound on
-  `‖du n‖` on each compact subset of `Ω`, uniform in `n`, may replace the `Lᵖ` bound on the weak
-  derivatives (`exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn_of_norm_fderiv_le`
-  and, for smooth data converging in `C^∞`, in particular fixed smooth data,
+* *Gradient bounds* (McDuff–Salamon, Theorem 4.1.1). In the compactness theorem for `ℓ ≥ 1` and
+  data converging in `C^ℓ`, and in the one for smooth data converging in `C^∞` (in particular fixed
+  smooth data), a bound on `‖du n‖` on each compact subset of `Ω`, uniform in `n`, may replace the
+  `Lᵖ` bound on the weak derivatives
+  (`exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn_of_norm_fderiv_le` and
   `exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn_of_norm_fderiv_le`).
 
 ## The argument
@@ -564,18 +565,19 @@ theorem exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn 
 
 /-! ### Gradient bounds -/
 
+omit [FiniteDimensional ℝ V] in
 /-- **Gradient bounds bound the weak derivatives in `Lᵖ`.** If the maps `u n` are `C¹` on `Ω` and
 their classical derivatives are bounded on each compact subset of `Ω` uniformly in `n`, then on each
 open `W` with compact closure in `Ω` the `u n` have weak derivatives bounded in `Lᵖ(W)` uniformly
 in `n`, namely their classical derivatives. This is the derivative hypothesis of the compactness
 theorems above. -/
-theorem exists_forall_hasWeakFDerivOn_eLpNorm_le_of_norm_fderiv_le {p : ℝ≥0∞} {u : ℕ → ℂ → V}
+theorem exists_forall_hasWeakFDerivOn_eLpNorm_le_of_norm_fderiv_le [CompleteSpace V] {p : ℝ≥0∞}
+    {u : ℕ → ℂ → V}
     (hu : ∀ n, ContDiffOn ℝ 1 (u n) Ω)
     (hC : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C : ℝ, ∀ n, ∀ z ∈ K, ‖fderiv ℝ (u n) z‖ ≤ C)
     (W : Opens ℂ) (hWc : IsCompact (closure (W : Set ℂ))) (hWΩ : closure (W : Set ℂ) ⊆ Ω) :
     ∃ c : ℝ≥0, ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧
       eLpNorm D p (volume.restrict W) ≤ c := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   obtain ⟨C, hC⟩ := hC _ hWΩ hWc
   obtain ⟨c, hc⟩ := exists_eLpNorm_le_of_ae_norm_le (E := ℂ →L[ℝ] V) (p := p)
     ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne C
@@ -588,7 +590,7 @@ theorem exists_forall_hasWeakFDerivOn_eLpNorm_le_of_norm_fderiv_le {p : ℝ≥0�
 /-- **`C^ℓ` compactness under gradient bounds.** The compactness theorem
 `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn` for `ℓ ≥ 1` and data
 converging in `C^ℓ`, with the `Lᵖ` bound on the weak derivatives replaced by a bound on `‖du n‖` on
-each compact `K ⊆ Ω`, uniform in `n`: each `u n` is `C^ℓ`, in particular `C¹`, on `Ω`. -/
+each compact `K ⊆ Ω`, uniform in `n`. -/
 theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn_of_norm_fderiv_le
     {p : ℝ≥0∞} (hp : 2 < p) {ℓ : ℕ} (hℓ : 1 ≤ ℓ) {J : ℕ → ℂ → V → V →L[ℝ] V}
     {η : ℕ → ℂ → V → V} {J₀ : ℂ → V → V →L[ℝ] V} {η₀ : ℂ → V → V} {u : ℕ → ℂ → V}
@@ -606,9 +608,10 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn_of_norm
     (hC : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C : ℝ, ∀ n, ∀ z ∈ K, ‖fderiv ℝ (u n) z‖ ≤ C) :
     ∃ (φ : ℕ → ℕ) (v : ℂ → V), StrictMono φ ∧ ContDiffOn ℝ ℓ v Ω ∧
       IsWeakCauchyRiemannOn p Ω J₀ η₀ v ∧ ∀ i ≤ ℓ, TendstoLocallyUniformlyOn
-        (fun n => iteratedFDeriv ℝ i (u (φ n))) (iteratedFDeriv ℝ i v) atTop Ω :=
-  exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn hp hℓ hJ hη hJt hηt hJ2 hu hK
-    (exists_forall_hasWeakFDerivOn_eLpNorm_le_of_norm_fderiv_le (fun n =>
+        (fun n => iteratedFDeriv ℝ i (u (φ n))) (iteratedFDeriv ℝ i v) atTop Ω := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  exact exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn hp hℓ hJ hη hJt hηt hJ2
+    hu hK (exists_forall_hasWeakFDerivOn_eLpNorm_le_of_norm_fderiv_le (fun n =>
       (contDiffOn_of_isWeakCauchyRiemannOn hp (ℓ := ℓ) isOpen_univ (hJ n).contDiffOn
         (hη n).contDiffOn (fun _ _ => mem_univ _) (hJ2 n) (hu n)).of_le
         (by exact_mod_cast hℓ)) hC)
@@ -623,15 +626,10 @@ each compact `K ⊆ Ω` uniformly in `n`. Then a subsequence `u (φ n)` converge
 subsets of `Ω` to a map `v`, smooth on `Ω`, that solves the limiting equation
 `∂ₛv + J₀ (z, v) ∂ₜv = η₀ (z, v)`.
 
-Each `u n` is smooth on `Ω` by `TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`, so `fderiv ℝ (u n)`
-is its derivative and the gradient bound bounds it in `Lᵖ` on compact subsets
-(`TauCeti.exists_forall_hasWeakFDerivOn_eLpNorm_le_of_norm_fderiv_le`).
-
-Both bounds are needed, for `J = i` and `η = 0` on the unit disc
-(`TauCeti.Analysis.Complex.CauchyRiemann.Weak.Compactness.Checks`): the solutions `z ↦ m z`
-violate the gradient bound and have no convergent subsequence, while `z ↦ z / m` satisfy both
-bounds and converge to `0`; the constant solutions `m` satisfy the gradient bound but violate the
-image bound. -/
+The image bound is needed: for `J = i` and `η = 0` on the unit disc, the constant solutions `m`
+satisfy the gradient bound, but their images lie in no fixed compact set
+(`TauCeti.Analysis.Complex.CauchyRiemann.Weak.Compactness.Checks`). The maps `z ↦ z / m` satisfy
+both bounds and converge with every derivative to the solution `0`. -/
 theorem
     exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn_of_norm_fderiv_le
     {p : ℝ≥0∞} (hp : 2 < p) {J : ℕ → ℂ → V → V →L[ℝ] V} {η : ℕ → ℂ → V → V}
@@ -650,9 +648,10 @@ theorem
     (hC : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C : ℝ, ∀ n, ∀ z ∈ K, ‖fderiv ℝ (u n) z‖ ≤ C) :
     ∃ (φ : ℕ → ℕ) (v : ℂ → V), StrictMono φ ∧ ContDiffOn ℝ (⊤ : ℕ∞) v Ω ∧
       IsWeakCauchyRiemannOn p Ω J₀ η₀ v ∧ ∀ k : ℕ, TendstoLocallyUniformlyOn
-        (fun n => iteratedFDeriv ℝ k (u (φ n))) (iteratedFDeriv ℝ k v) atTop Ω :=
-  exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn hp hJ hη hJt hηt hJ2 hu
-    hK (exists_forall_hasWeakFDerivOn_eLpNorm_le_of_norm_fderiv_le (fun n =>
+        (fun n => iteratedFDeriv ℝ k (u (φ n))) (iteratedFDeriv ℝ k v) atTop Ω := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  exact exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn hp hJ hη hJt hηt
+    hJ2 hu hK (exists_forall_hasWeakFDerivOn_eLpNorm_le_of_norm_fderiv_le (fun n =>
       (contDiffOn_of_isWeakCauchyRiemannOn hp (ℓ := ⊤) isOpen_univ (hJ n).contDiffOn
         (hη n).contDiffOn (fun _ _ => mem_univ _) (hJ2 n) (hu n)).of_le
         (by exact_mod_cast le_top)) hC)
