@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.CircleMethod.TypeISum
 import Mathlib.Data.Nat.Dist
+import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 
 /-!
 # Type II sums for additive twists
@@ -105,21 +106,6 @@ private theorem sum_Ioc_dist_le {w : ℕ → ℝ} (hw : ∀ k, 0 ≤ w k) {n H :
       omega
   exact_mod_cast hcard.trans card_le_two
 
-/-- The symmetric weight step: for `w(n, n') = v(|n - n'|)` with `v ≥ 0`,
-`∑_{n, n'} x(n) x(n') w(n, n') ≤ ∑_n x(n)² ∑_{n'} w(n, n')`, from
-`x(n) x(n') ≤ (x(n)² + x(n')²) / 2`. -/
-private theorem sum_sum_mul_mul_dist_le (s : Finset ℕ) (x v : ℕ → ℝ) (hv : ∀ k, 0 ≤ v k) :
-    ∑ n ∈ s, ∑ n' ∈ s, x n * x n' * v (Nat.dist n n') ≤
-      ∑ n ∈ s, x n ^ 2 * ∑ n' ∈ s, v (Nat.dist n n') := by
-  have h : ∀ n n', x n * x n' * v (Nat.dist n n') ≤
-      (x n ^ 2 * v (Nat.dist n n') + x n' ^ 2 * v (Nat.dist n' n)) / 2 := fun n n' ↦ by
-    rw [Nat.dist_comm n' n]
-    nlinarith [mul_nonneg (sq_nonneg (x n - x n')) (hv (Nat.dist n n'))]
-  refine (sum_le_sum fun n _ ↦ sum_le_sum fun n' _ ↦ h n n').trans_eq ?_
-  simp only [← sum_div, sum_add_distrib, mul_sum]
-  rw [sum_comm (f := fun n n' ↦ x n' ^ 2 * v (Nat.dist n' n))]
-  ring
-
 /-- For `M ≤ m`, the inner sum over `n ≤ N / m` is the sum over `n ≤ N / M` cut off at
 `mn ≤ N`. -/
 private theorem sum_Ioc_div_eq_sum_ite (b : ℕ → ℂ) (α : ℝ) {M N m : ℕ} (hM : 0 < M)
@@ -188,7 +174,8 @@ private theorem sum_norm_sq_le_mul_sum_ite (M N : ℕ) (b : ℕ → ℂ) (α : �
         gcongr
         exact norm_sum_filter_Ioc_expTwoPiI_le M N (mem_Ioc.1 hn).1 (mem_Ioc.1 hn').1 α
     _ ≤ ∑ n ∈ Ioc 0 (N / M), ‖b n‖ ^ 2 * ∑ n' ∈ Ioc 0 (N / M), w (Nat.dist n n') :=
-        sum_sum_mul_mul_dist_le _ _ _ hw
+        sum_sum_mul_mul_le_of_symm _ _ _ (fun _ _ _ _ ↦ hw _)
+          fun n _ n' _ ↦ by rw [Nat.dist_comm]
     _ ≤ ∑ n ∈ Ioc 0 (N / M), ‖b n‖ ^ 2 * (2 * w 0 + 2 * ∑ k ∈ Icc 1 (N / M), w k) :=
         sum_le_sum fun n hn ↦ mul_le_mul_of_nonneg_left (sum_Ioc_dist_le hw hn) (sq_nonneg _)
     _ = (∑ n ∈ Ioc 0 (N / M), ‖b n‖ ^ 2) * (2 * M + 2 * ∑ k ∈ Icc 1 (N / M), w k) := by
