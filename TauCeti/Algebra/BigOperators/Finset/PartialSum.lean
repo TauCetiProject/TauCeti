@@ -215,6 +215,21 @@ theorem monotone_prefixSum [Preorder M] [IsOrderedAddMonoid M] {x : Fin n → M}
     (fun i hi ↦ by simp only [mem_filter, mem_univ, true_and] at hi ⊢; omega)
     (fun i _ _ ↦ hx i)
 
+/-- The prefix sums of an antitone tuple are concave in the length: the increment from `k + 1`
+to `k + 2` is at most the increment from `k` to `k + 1`. -/
+theorem prefixSum_add_prefixSum_add_two_le [Preorder M] [IsOrderedAddMonoid M] {x : Fin n → M}
+    (hx : Antitone x) {k : ℕ} (hk : k + 2 ≤ n) :
+    prefixSum k x + prefixSum (k + 2) x ≤ prefixSum (k + 1) x + prefixSum (k + 1) x := by
+  have h₁ := prefixSum_succ (k := k) (by omega) x
+  have h₂ : prefixSum (k + 2) x = prefixSum (k + 1) x + x ⟨k + 1, by omega⟩ :=
+    prefixSum_succ (by omega) x
+  calc prefixSum k x + prefixSum (k + 2) x
+      = prefixSum (k + 1) x + (prefixSum k x + x ⟨k + 1, by omega⟩) := by
+        rw [h₂, add_left_comm]
+    _ ≤ prefixSum (k + 1) x + (prefixSum k x + x ⟨k, by omega⟩) := by
+        gcongr; exact hx (Fin.mk_le_mk.mpr (by omega))
+    _ = prefixSum (k + 1) x + prefixSum (k + 1) x := by rw [← h₁]
+
 /-- If `y` has at least the total sum of `x` and lies below `x` from coordinate `k` on, then the
 prefix sum of length `k` of `x` is at most that of `y`. -/
 theorem prefixSum_le_of_sum_le [Preorder M] [IsOrderedCancelAddMonoid M] {k : ℕ}
