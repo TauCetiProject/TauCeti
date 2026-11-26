@@ -11,12 +11,15 @@ import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.Deriv.Pi
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Sobolev.SmoothCutoff
+import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Sobolev inequalities for smooth functions
 
-This file contains two inequalities bounding a smooth function by an integral of its derivatives.
+This file contains inequalities bounding a smooth function by integrals of its derivatives.
 
 ## The Gagliardo–Nirenberg–Sobolev inequality for integrable functions
 
@@ -49,6 +52,15 @@ coordinate: `|u x| ≤ ∫ |∂ᵢu|` along the line through `x` in the directio
 at infinity on that line. Iterating over the `n` coordinates bounds `|u x|` by the integral of
 `|∂ₙ ⋯ ∂₁u|` over all of `E`, and `|∂ₙ ⋯ ∂₁u y| ≤ ‖Dⁿu y‖` since the `eᵢ` are unit vectors.
 
+## Higher-order inequalities for `p < n`
+
+Iterating the Gagliardo–Nirenberg–Sobolev inequality bounds the `L^q` norm of a compactly supported
+function by the `Lᵖ` norms of its derivatives up to order `m` whenever `1 ≤ p < n`, `q ≥ p` is
+finite and `1 / q ≥ 1 / p - m / n`; this is the embedding `W^{m,p} ⊆ L^q` for test functions. The
+exponents between two steps of the iteration are reached by logarithmic convexity of the `Lᵖ`
+norms. It is stated for the derivative `Dʲ u` in terms of `D^{j + l} u`, `l ≤ m`
+(`TauCeti.exists_eLpNorm_iteratedFDeriv_le_sum_of_lt_finrank`).
+
 ## Main results
 
 * `TauCeti.eLpNormLESNormFDerivOneConst_pos`: the constant of the Gagliardo–Nirenberg–Sobolev
@@ -59,6 +71,8 @@ at infinity on that line. Iterating over the `n` coordinates bounds `|u x|` by t
   compactly supported `Cⁿ` functions on a space of dimension `n`.
 * `HasCompactSupport.eNorm_le_lmarginal_iteratedFDeriv`: its iterated form over a finite set of
   coordinates, along vectors of norm at most one.
+* `TauCeti.exists_eLpNorm_iteratedFDeriv_le_sum_of_lt_finrank`: for `1 ≤ p < n` and
+  `1 / q ≥ 1 / p - m / n`, `‖Dʲ u‖_q ≤ C ∑_{l ≤ m} ‖D^{j + l} u‖_p` for compactly supported `u`.
 
 ## References
 
@@ -193,3 +207,149 @@ theorem HasCompactSupport.eNorm_le_lintegral_iteratedFDeriv {E : Type*} [NormedA
     fun w ↦ ‖iteratedFDeriv ℝ (finrank ℝ E) u w‖ₑ)
 
 end Critical
+
+namespace TauCeti
+
+open MeasureTheory Module
+open scoped ENNReal NNReal
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- The Gagliardo–Nirenberg–Sobolev inequality for `Dʲ u`: if `1 ≤ r` and `1 / s = 1 / r - 1 / n`,
+then `‖Dʲ u‖_s ≤ C ‖D^{j + 1} u‖_r` for compactly supported `C^{j + 1}` functions `u`, since the
+derivative of `Dʲ u` has the pointwise norm of `D^{j + 1} u`. -/
+private theorem exists_eLpNorm_iteratedFDeriv_le_of_inv_eq (j : ℕ)
+    {r s : ℝ≥0} (hr : 1 ≤ r) (hn : 0 < finrank ℝ E)
+    (hrs : (s : ℝ)⁻¹ = (r : ℝ)⁻¹ - (finrank ℝ E : ℝ)⁻¹) :
+    ∃ C : ℝ≥0, ∀ u : E → F, ContDiff ℝ (j + 1) u → HasCompactSupport u →
+      eLpNorm (iteratedFDeriv ℝ j u) s μ ≤ C * eLpNorm (iteratedFDeriv ℝ (j + 1) u) r μ := by
+  refine ⟨SNormLESNormFDerivOfEqConst (ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ E) F) μ r,
+    fun u hu hc ↦ ?_⟩
+  have h := eLpNorm_le_eLpNorm_fderiv_of_eq μ (hu.iteratedFDeriv_right (add_comm _ _).le)
+    (hc.iteratedFDeriv j) hr hn hrs
+  rwa [eLpNorm_fderiv_iteratedFDeriv] at h
+
+/-- The first step of the Sobolev inequality, for `1 ≤ p < n` and `p ≤ q ≤ p⋆`, where
+`1 / p⋆ = 1 / p - 1 / n`: by logarithmic convexity of the `Lᵖ` norms and the
+Gagliardo–Nirenberg–Sobolev inequality, `‖Dʲ u‖_q ≤ C (‖Dʲ u‖_p + ‖D^{j + 1} u‖_p)`. -/
+private theorem exists_eLpNorm_iteratedFDeriv_le_add_of_lt_finrank {p : ℝ≥0} (hp : 1 ≤ p)
+    (hpn : (p : ℝ) < finrank ℝ E) (j : ℕ) {q : ℝ≥0} (hpq : p ≤ q)
+    (hq : (p : ℝ)⁻¹ - (finrank ℝ E : ℝ)⁻¹ ≤ (q : ℝ)⁻¹) :
+    ∃ C : ℝ≥0, ∀ u : E → F, ContDiff ℝ (j + 1) u → HasCompactSupport u →
+      eLpNorm (iteratedFDeriv ℝ j u) q μ ≤
+        C * (eLpNorm (iteratedFDeriv ℝ j u) p μ + eLpNorm (iteratedFDeriv ℝ (j + 1) u) p μ) := by
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp
+  have hn0 : (0 : ℝ) < finrank ℝ E := hp0.trans hpn
+  -- The Sobolev exponent `p⋆`.
+  set s : ℝ≥0 := ((p : ℝ)⁻¹ - (finrank ℝ E : ℝ)⁻¹)⁻¹.toNNReal
+  have hs0 : 0 < (p : ℝ)⁻¹ - (finrank ℝ E : ℝ)⁻¹ := sub_pos.2 ((inv_lt_inv₀ hn0 hp0).2 hpn)
+  have hs : (s : ℝ)⁻¹ = (p : ℝ)⁻¹ - (finrank ℝ E : ℝ)⁻¹ := by
+    rw [Real.coe_toNNReal _ (inv_pos.2 hs0).le, inv_inv]
+  have hqs : (q : ℝ≥0∞) ≤ s := by
+    have hs' : (0 : ℝ) < s := by rw [← inv_pos, hs]; exact hs0
+    have : (q : ℝ) ≤ s := by
+      rw [← inv_le_inv₀ hs' (hp0.trans_le (by exact_mod_cast hpq)), hs]
+      exact hq
+    exact_mod_cast this
+  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_le_of_inv_eq μ (F := F) j hp
+    (by exact_mod_cast hn0) hs
+  refine ⟨max 1 C, fun u hu hc ↦ ?_⟩
+  calc eLpNorm (iteratedFDeriv ℝ j u) q μ
+      ≤ max (eLpNorm (iteratedFDeriv ℝ j u) p μ) (eLpNorm (iteratedFDeriv ℝ j u) s μ) :=
+        eLpNorm_le_max_of_le_of_le (by simpa using hp0.ne') (by exact_mod_cast hpq) hqs
+    _ ≤ eLpNorm (iteratedFDeriv ℝ j u) p μ + C * eLpNorm (iteratedFDeriv ℝ (j + 1) u) p μ :=
+        max_le le_self_add ((hC u hu hc).trans le_add_self)
+    _ ≤ _ := by
+        rw [mul_add, ENNReal.coe_max, ENNReal.coe_one]
+        gcongr
+        exacts [le_mul_of_one_le_left' (le_max_left _ _), le_max_right _ _]
+
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
+/-- The exponent arithmetic of one step of the Sobolev inequality: if
+`1 / p - (m + 2) / n ≤ 1 / q < 1 / p - (m + 1) / n` with `p ≤ q`, then `r` with
+`1 / r = 1 / q + 1 / n` satisfies `p ≤ r` and `1 / r ≥ 1 / p - (m + 1) / n`. -/
+private theorem exists_le_and_inv_eq_add_inv {p q : ℝ≥0} {m : ℕ} (hp0 : (0 : ℝ) < p)
+    (hpq : p ≤ q) (hq : (p : ℝ)⁻¹ - ((m + 1 + 1 : ℕ) : ℝ) / finrank ℝ E ≤ (q : ℝ)⁻¹)
+    (hqm : (q : ℝ)⁻¹ < (p : ℝ)⁻¹ - ((m + 1 : ℕ) : ℝ) / finrank ℝ E) :
+    ∃ r : ℝ≥0, p ≤ r ∧ (r : ℝ)⁻¹ = (q : ℝ)⁻¹ + (finrank ℝ E : ℝ)⁻¹ ∧
+      (p : ℝ)⁻¹ - ((m + 1 : ℕ) : ℝ) / finrank ℝ E ≤ (r : ℝ)⁻¹ := by
+  have hq0 : (0 : ℝ) < q := hp0.trans_le (by exact_mod_cast hpq)
+  have hr : (((q : ℝ)⁻¹ + (finrank ℝ E : ℝ)⁻¹)⁻¹.toNNReal : ℝ)⁻¹ =
+      (q : ℝ)⁻¹ + (finrank ℝ E : ℝ)⁻¹ := by
+    rw [Real.coe_toNNReal _ (by positivity), inv_inv]
+  refine ⟨_, ?_, hr, ?_⟩
+  · rw [← NNReal.coe_le_coe, ← inv_le_inv₀ (by positivity) hp0, hr]
+    have : (0 : ℝ) ≤ m / finrank ℝ E := by positivity
+    push_cast at hqm
+    rw [add_div, div_eq_mul_inv 1, one_mul] at hqm
+    linarith
+  · rw [hr]
+    push_cast at hq ⊢
+    rw [add_div, add_div, div_eq_mul_inv 1, one_mul] at hq
+    rw [add_div, div_eq_mul_inv 1, one_mul]
+    linarith
+
+/-- **The Sobolev inequality of order `m` for compactly supported functions, `p < n`.** Let
+`1 ≤ p < n`, where `n` is the dimension of `E`, and let `q ≥ p` be finite with
+`1 / q ≥ 1 / p - m / n`. For every order `j` there is a constant `C` such that every compactly
+supported `C^{j + m}` function `u` with values in a finite-dimensional space satisfies
+
+`‖D^j u‖_{L^q} ≤ C ∑_{l ≤ m} ‖D^{j + l} u‖_{L^p}`.
+
+This is the embedding `W^{m,p} ⊆ L^q` applied to `D^j u`. The exponents `q` with
+`1 / q = 1 / p - l / n`, `l ≤ m`, are reached by applying the Gagliardo–Nirenberg–Sobolev
+inequality `MeasureTheory.eLpNorm_le_eLpNorm_fderiv_of_eq` `l` times, and those in between by
+logarithmic convexity of the `Lᵖ` norms. -/
+theorem exists_eLpNorm_iteratedFDeriv_le_sum_of_lt_finrank {p : ℝ≥0} (hp : 1 ≤ p)
+    (hpn : (p : ℝ) < finrank ℝ E) (j m : ℕ) {q : ℝ≥0} (hpq : p ≤ q)
+    (hq : (p : ℝ)⁻¹ - m / finrank ℝ E ≤ (q : ℝ)⁻¹) :
+    ∃ C : ℝ≥0, ∀ u : E → F, ContDiff ℝ (j + m) u → HasCompactSupport u →
+      eLpNorm (iteratedFDeriv ℝ j u) q μ ≤
+        C * ∑ l ∈ Finset.range (m + 1), eLpNorm (iteratedFDeriv ℝ (j + l) u) p μ := by
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp
+  induction m generalizing j q with
+  | zero =>
+    -- The exponent condition forces `q = p`.
+    have hqp : q = p := le_antisymm (by
+      rw [Nat.cast_zero, zero_div, sub_zero] at hq
+      exact_mod_cast (inv_le_inv₀ hp0 (hp0.trans_le (by exact_mod_cast hpq))).1 hq) hpq
+    exact ⟨1, fun u _ _ ↦ by simp [hqp]⟩
+  | succ m ih =>
+    by_cases hqm : (p : ℝ)⁻¹ - m / finrank ℝ E ≤ (q : ℝ)⁻¹
+    · -- The exponent is reached with one derivative less.
+      obtain ⟨C, hC⟩ := ih j hpq hqm
+      refine ⟨C, fun u hu hc ↦ (hC u (hu.of_le (by exact_mod_cast (by omega : j + m ≤ j + (m + 1))))
+        hc).trans ?_⟩
+      exact mul_le_mul_of_nonneg_left
+        (Finset.sum_le_sum_of_subset (Finset.range_subset_range.2 (Nat.le_succ _))) zero_le
+    rw [not_le] at hqm
+    rcases m with _ | m
+    · -- `p ≤ q ≤ p⋆`.
+      obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_le_add_of_lt_finrank μ (F := F) hp hpn j hpq
+        (by simpa using hq)
+      exact ⟨C, fun u hu hc ↦ (hC u hu hc).trans_eq (by simp [Finset.sum_range_succ])⟩
+    -- `1 / q < 1 / p - (m + 1) / n`: apply the Gagliardo–Nirenberg–Sobolev inequality from the
+    -- exponent `r` with `1 / r = 1 / q + 1 / n`, reached by `D^{j + 1} u` with one derivative less.
+    obtain ⟨r, hpr, hr, hrm⟩ := exists_le_and_inv_eq_add_inv hp0 hpq hq hqm
+    obtain ⟨C₁, hC₁⟩ := ih (j + 1) hpr hrm
+    obtain ⟨C₀, hC₀⟩ := exists_eLpNorm_iteratedFDeriv_le_of_inv_eq μ (F := F) j (hp.trans hpr)
+      (by exact_mod_cast hp0.trans hpn) (s := q) (by rw [hr]; ring)
+    refine ⟨C₀ * C₁, fun u hu hc ↦ ?_⟩
+    calc eLpNorm (iteratedFDeriv ℝ j u) q μ
+        ≤ C₀ * eLpNorm (iteratedFDeriv ℝ (j + 1) u) r μ :=
+          hC₀ u (hu.of_le (by exact_mod_cast (by omega : j + 1 ≤ j + (m + 1 + 1)))) hc
+      _ ≤ C₀ * (C₁ * ∑ l ∈ Finset.range (m + 1 + 1),
+            eLpNorm (iteratedFDeriv ℝ (j + 1 + l) u) p μ) := by
+          gcongr
+          exact hC₁ u (hu.of_le
+            (by exact_mod_cast (by omega : j + 1 + (m + 1) ≤ j + (m + 1 + 1)))) hc
+      _ ≤ (C₀ * C₁ : ℝ≥0) * ∑ l ∈ Finset.range (m + 1 + 1 + 1),
+            eLpNorm (iteratedFDeriv ℝ (j + l) u) p μ := by
+          rw [Finset.sum_range_succ' _ (m + 1 + 1), ENNReal.coe_mul, mul_assoc]
+          gcongr
+          refine le_trans (le_of_eq (Finset.sum_congr rfl fun l _ ↦ ?_)) le_self_add
+          rw [add_assoc, add_comm 1 l]
+
+end TauCeti
