@@ -466,11 +466,20 @@ namespace IsMonodromyFiltration
 
 variable {N} {c : ℤ}
 
+/-- `N` sends `F a` into `F b` whenever `a - 2 ≤ b`. -/
+private theorem apply_mem (hF : N.IsMonodromyFiltration c F) {a b : ℤ} (hb : a - 2 ≤ b) {x : V}
+    (hx : x ∈ F a) : N x ∈ F b :=
+  hF.monotone hb (hF.map_le a (mem_map_of_mem hx))
+
+/-- `N ^ k` sends `F a` into `F b` whenever `a - 2 k ≤ b`. -/
+private theorem pow_apply_mem (hF : N.IsMonodromyFiltration c F) (k : ℕ) {a b : ℤ}
+    (hb : a - 2 * k ≤ b) {x : V} (hx : x ∈ F a) : (N ^ k) x ∈ F b :=
+  hF.monotone hb (map_pow_le_of_forall_map_le N hF.map_le k a (mem_map_of_mem hx))
+
 /-- `F (a - 1)` lies in `F a` and is sent by `N` into `F (a - 3)`. -/
 private theorem le_inf_comap (hF : N.IsMonodromyFiltration c F) (a : ℤ) :
     F (a - 1) ≤ F a ⊓ (F (a - 3)).comap N :=
-  le_inf (hF.monotone (by omega))
-    (map_le_iff_le_comap.1 ((hF.map_le _).trans (hF.monotone (by omega))))
+  le_inf (hF.monotone (by omega)) fun _ hx => hF.apply_mem (by omega) hx
 
 /-- Above the centre of a monodromy filtration, `N` is injective on graded pieces: an element of
 `F a`, `c < a`, which `N` sends into `F (a - 3)` already lies in `F (a - 1)`. -/
@@ -485,8 +494,7 @@ theorem inf_comap_eq_of_lt (hF : N.IsMonodromyFiltration c F) {a : ℤ} (ha : c 
   rw [← hF.inf_comap_pow]
   refine mem_inf.2 ⟨hx, ?_⟩
   rw [mem_comap, pow_succ, _root_.mul_apply_eq_comp]
-  exact hF.monotone (by omega)
-    (map_pow_le_of_forall_map_le N hF.map_le k _ (mem_map_of_mem hNx))
+  exact hF.pow_apply_mem k (by omega) hNx
 
 /-- Pushing the image `N ^ (k + 1) z` of `z ∈ F (c + k)` down the filtration: if it lies in
 `F (c - k - 3 - t)`, then `z` is congruent modulo `F (c + k - 1)` to an element killed by
@@ -512,8 +520,7 @@ private theorem exists_sub_mem_and_pow_apply_eq_zero (hF : N.IsMonodromyFiltrati
       ring
     rw [← hF.map_pow_sup] at hNz'
     obtain ⟨_, ⟨w, hw, rfl⟩, u, hu, hwu⟩ := mem_sup.1 hNz'
-    have hw' : (N ^ (t + 2)) w ∈ F (c + k - 1) := hF.monotone (by omega)
-      (map_pow_le_of_forall_map_le N hF.map_le (t + 2) _ (mem_map_of_mem hw))
+    have hw' : (N ^ (t + 2)) w ∈ F (c + k - 1) := hF.pow_apply_mem (t + 2) (by omega) hw
     obtain ⟨z', hz', hNz'⟩ := ih (t + 1) (by omega) (z - (N ^ (t + 2)) w)
       (sub_mem hz (hF.monotone (by omega) hw')) (by
         rw [map_sub, ← _root_.mul_apply_eq_comp, ← pow_add,
@@ -546,8 +553,7 @@ theorem isStrict (hF : N.IsMonodromyFiltration c F) : N.IsStrict (fun a => F (a 
   obtain ⟨k, hk⟩ : ∃ k : ℕ, a + 3 = c - k := ⟨(c - a - 3).toNat, by omega⟩
   rw [hk, ← hF.map_pow_sup] at hy
   obtain ⟨_, ⟨z, hz, rfl⟩, y₁, hy₁, rfl⟩ := mem_sup.1 hy
-  have hNy₁ : N y₁ ∈ F (c - k - 3) :=
-    hF.monotone (by omega) (hF.map_le _ (mem_map_of_mem hy₁))
+  have hNy₁ : N y₁ ∈ F (c - k - 3) := hF.apply_mem (by omega) hy₁
   obtain ⟨z', hzz', hNz'⟩ := hF.exists_sub_mem_and_pow_apply_eq_zero k hz 0 (by
     rw [show (N ^ (k + 1)) z = N ((N ^ k) z + y₁) - N y₁ by
       rw [map_add, add_sub_cancel_right, pow_succ', _root_.mul_apply_eq_comp]]
@@ -556,9 +562,7 @@ theorem isStrict (hF : N.IsMonodromyFiltration c F) : N.IsStrict (fun a => F (a 
     rw [map_add, map_add, map_sub, map_sub, ← _root_.mul_apply_eq_comp N (N ^ k) z', ← pow_succ',
       hNz', sub_zero]
   rw [← key]
-  exact mem_map_of_mem (add_mem (hF.monotone (by omega)
-    (map_pow_le_of_forall_map_le N hF.map_le k _ (mem_map_of_mem hzz')))
-    (hF.monotone (by omega) hy₁))
+  exact mem_map_of_mem (add_mem (hF.pow_apply_mem k (by omega) hzz') (hF.monotone (by omega) hy₁))
 
 /-- The kernel of `N` and a monodromy filtration: an element of `F a` is sent by `N` into
 `F (a - 3)` exactly when it is congruent modulo `F (a - 1)` to an element of `ker N ⊓ F a`. This is
@@ -613,7 +617,7 @@ private theorem range_gradedPiece_map_id_eq_primitivePart (hF : N.IsMonodromyFil
     have hx := mem_comap.1 (mem_inf.1
       ((hF.ker_inf_sup_eq_inf_comap a).le (mem_sup_left x.property))).2
     rw [show (y : V) = x - (x - y) by abel, map_sub]
-    exact sub_mem hx (hF.monotone (by omega) (hF.map_le _ (mem_map_of_mem hw)))
+    exact sub_mem hx (hF.apply_mem (by omega) hw)
   · intro hNy
     obtain ⟨x, hx, w, hw, hxw⟩ :=
       mem_sup.1 ((hF.ker_inf_sup_eq_inf_comap a).ge ⟨y.property, hNy⟩)
