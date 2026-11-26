@@ -41,6 +41,8 @@ Section 3.3.
   `TopCat.singularCap_def` exhibiting it as a cap product of chains and cochains,
   `TopCat.singularCap_homologyπ` computing it on classes of cycles and cocycles and
   `TopCat.singularCap_naturality` its naturality.
+* `TopCat.singularCapAddHom`: capping with a fixed class `z ∈ Hₙ(X; T)`, as an additive map
+  `Hᵖ(X; R, M) →+ H_q(X; P)`, with `TopCat.singularCapAddHom_naturality` its naturality.
 * `TopCat.singularCapLinearMap`: capping with a fixed class `μ ∈ Hₙ(X; k)`, as a `k`-linear map
   `Hᵖ(X; k) → H_q(X; k)`, with `TopCat.singularCapLinearMap_naturality` its naturality.
 * `TopCat.singularCap_coefficient_naturality`: compatible changes of every coefficient object
@@ -220,6 +222,44 @@ end Coefficients
 
 end Homology
 
+section AddHom
+
+variable {R₀ : Type w} [CommRing R₀] (k : Type*) [Ring k] [Linear k (ModuleCat.{w} R₀)]
+  [MonoidalLinear k (ModuleCat.{w} R₀)] {R S T M P : ModuleCat.{w} R₀}
+  (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P)
+
+/-- **Capping with a homology class**: for `z ∈ Hₙ(X; T)` and `p + q = n`, the additive map
+`Hᵖ(X; R, M) →+ H_q(X; P)`, `α ↦ z ⌢ α`, for the cap product along the coefficient morphisms `u`
+and `μ` (`TopCat.singularCap`). -/
+def singularCapAddHom (X : TopCat.{w}) {p q n : ℕ} (h : p + q = n)
+    (z : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj X) :
+    X.singularCohomology R k M p →+
+      ((singularHomologyFunctor (ModuleCat.{w} R₀) q).obj P).obj X where
+  toFun α := (X.singularCap k u μ p q n h α).hom z
+  map_zero' := by simp
+  map_add' α β := by simp
+
+/-- `TopCat.singularCapAddHom k u μ X h z α` is the cap product `z ⌢ α`. -/
+theorem singularCapAddHom_apply (X : TopCat.{w}) {p q n : ℕ} (h : p + q = n)
+    (z : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj X)
+    (α : X.singularCohomology R k M p) :
+    X.singularCapAddHom k u μ h z α = (X.singularCap k u μ p q n h α).hom z :=
+  (rfl)
+
+/-- **Naturality of capping with a homology class**, `f_*(z ⌢ f^*α) = f_*z ⌢ α`, the projection
+formula `TopCat.singularCap_naturality` evaluated at `z`. -/
+theorem singularCapAddHom_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) {p q n : ℕ} (h : p + q = n)
+    (z : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj X)
+    (α : Y.singularCohomology R k M p) :
+    (((singularHomologyFunctor (ModuleCat.{w} R₀) q).obj P).map f).hom
+        (X.singularCapAddHom k u μ h z ((TopCat.singularCohomologyMap f p).hom α)) =
+      Y.singularCapAddHom k u μ h
+        ((((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).map f).hom z) α := by
+  rw [singularCapAddHom_apply, singularCapAddHom_apply, ← ModuleCat.comp_apply,
+    singularCap_naturality, ModuleCat.comp_apply]
+
+end AddHom
+
 section ModuleCat
 
 variable (X : TopCat.{w}) (k : Type w) [CommRing k]
@@ -246,6 +286,14 @@ theorem singularCapLinearMap_apply {p q n : ℕ} (h : p + q = n)
         p q n h α).hom μ :=
   (rfl)
 
+/-- `TopCat.singularCapLinearMap` is `TopCat.singularCapAddHom` along the unitors of
+`𝟙_ (ModuleCat k)`. -/
+theorem toAddMonoidHom_singularCapLinearMap {p q n : ℕ} (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+    (X.singularCapLinearMap k h μ).toAddMonoidHom =
+      X.singularCapAddHom k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom h μ :=
+  (rfl)
+
 /-- **Naturality of capping with a homology class**, `f_*(μ ⌢ f^*α) = f_*μ ⌢ α`: for a continuous
 map `f : X ⟶ Y`, capping `μ ∈ Hₙ(X; k)` with the pull-back of `α ∈ Hᵖ(Y; k)` and pushing forward
 is capping the push-forward of `μ` with `α`. -/
@@ -258,8 +306,9 @@ theorem singularCapLinearMap_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) {p q n 
       Y.singularCapLinearMap k h
         ((((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).map f).hom μ)
         α := by
-  rw [singularCapLinearMap_apply, singularCapLinearMap_apply, ← LinearMap.comp_apply,
-    ← ModuleCat.hom_comp, singularCap_naturality, ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [singularCapLinearMap_apply, singularCapLinearMap_apply, ← singularCapAddHom_apply,
+    ← singularCapAddHom_apply]
+  exact singularCapAddHom_naturality k _ _ f h μ α
 
 end ModuleCat
 
