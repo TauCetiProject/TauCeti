@@ -111,15 +111,11 @@ theorem apply_curveVelocity_of_isMIntegralCurve (h : IsLiouvilleCompletion ω α
   have hc : r (γ t) = r (γ t₀) :=
     h.liouvilleRadialCoordinate_eq_of_isMIntegralCurve hZ hR hF hφ hγ ht₀ t
   have hRt : R < r (γ t) := hc ▸ ht₀
-  have hv : (fun _ : Fin 1 ↦ Manifold.curveVelocity I γ t) =
-      ![ω.hamiltonianVectorField F (γ t)] := by
-    funext k
-    fin_cases k
-    exact (Manifold.isMIntegralCurve_iff_curveVelocity_eq.1 hγ t).2
   have hFr : F =ᶠ[𝓝 (γ t)] φ ∘ r := by
     filter_upwards [(isOpen_lt continuous_const
       (h.continuous_liouvilleRadialCoordinate hZ)).mem_nhds hRt] with y hy using hF y hy
-  rw [hv, h.apply_hamiltonianVectorField_of_eventuallyEq hZ
+  rw [(Manifold.isMIntegralCurve_iff_curveVelocity_eq.1 hγ t).2, ← Matrix.vec_single_eq_const,
+    h.apply_hamiltonianVectorField_of_eventuallyEq hZ
     ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hRt)) hFr
     (hφ.differentiableAt (Ioi_mem_nhds hRt))]
   exact congrArg (fun c ↦ -(c * deriv φ c)) hc
