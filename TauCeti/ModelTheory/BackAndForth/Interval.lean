@@ -85,6 +85,19 @@ theorem mem_cmpCell_snoc_elim0 {x z : M} {τ : Fin 1 → Ordering} :
   rw [mem_cmpCell_snoc, cmpCell_fin_zero]
   exact and_iff_right (Set.mem_univ z)
 
+/-- Cells pull back along strictly monotone maps: `f z` lies in the cell of `f ∘ a` for `σ`
+exactly when `z` lies in the cell of `a` for `σ`. -/
+theorem _root_.StrictMono.mem_cmpCell_comp {f : M → N} (hf : StrictMono f) {a : Fin n → M}
+    {σ : Fin n → Ordering} {z : M} : f z ∈ cmpCell (f ∘ a) σ ↔ z ∈ cmpCell a σ := by
+  simp only [mem_cmpCell, Function.comp_apply, hf.cmp_map_eq]
+
+/-- The cells of a single point pull back along strictly monotone maps. -/
+theorem _root_.StrictMono.mem_cmpCell_snoc_elim0 {f : M → N} (hf : StrictMono f) {x z : M}
+    {τ : Fin 1 → Ordering} :
+    f z ∈ cmpCell (snoc (Fin.elim0 : Fin 0 → N) (f x)) τ ↔
+      z ∈ cmpCell (snoc (Fin.elim0 : Fin 0 → M) x) τ := by
+  rw [← hf.mem_cmpCell_comp, comp_snoc, Subsingleton.elim (f ∘ Fin.elim0) Fin.elim0]
+
 /-- The cell of a single point `x` below it is `Set.Iio x`. -/
 theorem cmpCell_snoc_elim0_of_gt {x : M} {τ : Fin 1 → Ordering} (h : τ (last 0) = .gt) :
     cmpCell (snoc (Fin.elim0 : Fin 0 → M) x) τ = Set.Iio x := by
@@ -151,11 +164,11 @@ private def cmpCellSnocOrderIso (a : Fin n → M) (σ : Fin n → Ordering) (p :
       cmpCell (snoc a (p : M)) (snoc σ (τ (last 0))) where
   toFun z := ⟨z.val.val, mem_cmpCell_snoc.2 ⟨by rw [init_snoc]; exact z.val.property, by
     rw [snoc_last]
-    exact ((Subtype.strictMono_coe _).cmp_map_eq p z.val).trans
-      (mem_cmpCell_snoc_elim0.1 z.property)⟩⟩
+    exact mem_cmpCell_snoc_elim0.1
+      ((Subtype.strictMono_coe _).mem_cmpCell_snoc_elim0.2 z.property)⟩⟩
   invFun z := ⟨⟨z.val, by simpa using (mem_cmpCell_snoc.1 z.property).1⟩,
-    mem_cmpCell_snoc_elim0.2 <| ((Subtype.strictMono_coe _).cmp_map_eq p _).symm.trans
-      (by simpa using (mem_cmpCell_snoc.1 z.property).2)⟩
+    (Subtype.strictMono_coe _).mem_cmpCell_snoc_elim0.1 <|
+      mem_cmpCell_snoc_elim0.2 (by simpa using (mem_cmpCell_snoc.1 z.property).2)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_rel_iff' := Iff.rfl
@@ -282,10 +295,8 @@ private def cmpCellInlOrderIso (a : A) (τ : Fin 1 → Ordering) :
       cmpCell (snoc (Fin.elim0 : Fin 0 → A) a) τ ⊕ₗ {_b : B | Ordering.lt = τ (last 0)} :=
   let s := cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ
   OrderIso.subtypeSumLex.trans <| OrderIso.sumLexCongr
-    (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun x => by
-      rw [Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, mem_cmpCell_snoc_elim0,
-        ← StrictMono.cmp_map_eq (f := (toLex ∘ Sum.inl : A → A ⊕ₗ B)) Sum.Lex.inl_strictMono a x,
-        Function.comp_apply, Function.comp_apply])
+    (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun _ =>
+      Sum.Lex.inl_strictMono.mem_cmpCell_snoc_elim0 (x := a))
     (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun y => by
       simp only [s, Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr a y).cmp_eq_lt])
 
@@ -297,10 +308,8 @@ private def cmpCellInrOrderIso (b : B) (τ : Fin 1 → Ordering) :
   OrderIso.subtypeSumLex.trans <| OrderIso.sumLexCongr
     (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun x => by
       simp only [s, Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr x b).cmp_eq_gt])
-    (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun y => by
-      rw [Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, mem_cmpCell_snoc_elim0,
-        ← StrictMono.cmp_map_eq (f := (toLex ∘ Sum.inr : B → A ⊕ₗ B)) Sum.Lex.inr_strictMono b y,
-        Function.comp_apply, Function.comp_apply])
+    (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun _ =>
+      Sum.Lex.inr_strictMono.mem_cmpCell_snoc_elim0 (x := b))
 
 /-- Back-and-forth equivalence of ordered sums at the level `γ`, for linear orders in the given
 universes. -/

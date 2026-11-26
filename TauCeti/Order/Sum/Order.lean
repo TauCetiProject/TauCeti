@@ -31,6 +31,10 @@ def subtypeSumLex :
   map_rel_iff' {c c'} := by
     obtain ⟨c, h⟩ := c
     obtain ⟨c', h'⟩ := c'
+    -- `Equiv.subtypeSum` is defined by matching on the summand, so the map sends
+    -- `⟨toLex (inl a), h⟩` to `toLex (inl ⟨a, h⟩)` and `⟨toLex (inr b), h⟩` to
+    -- `toLex (inr ⟨b, h⟩)` by definition, and `≤` on a subtype is `≤` on the values. The `Sum.Lex`
+    -- lemmas below therefore apply to both sides of each goal up to this unfolding.
     obtain ⟨a | b, rfl⟩ := toLex.surjective c <;> obtain ⟨a' | b', rfl⟩ := toLex.surjective c'
     · exact Sum.Lex.inl_le_inl_iff.trans
         (Sum.Lex.inl_le_inl_iff (β := β) (a := a) (b := a')).symm
