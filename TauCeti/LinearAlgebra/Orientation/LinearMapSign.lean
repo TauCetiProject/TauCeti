@@ -23,6 +23,8 @@ carrying `o` to `o'`, `-1` when it is an isomorphism not carrying `o` to `o'` (t
   transported orientation.
 * `Orientation.linearMapSign_neg_left`, `Orientation.linearMapSign_neg_right`: reversing either
   orientation reverses the sign.
+* `Orientation.linearMapSign_units_smul_right`: scaling the target orientation by a unit sign
+  scales the sign.
 * `Orientation.linearMapSign_map_map`: the sign is unchanged when the map is conjugated by linear
   equivalences of the source and the target and the orientations are transported along them.
 * `Orientation.linearMapSign_smul_of_pos`: a positive multiple of a map has the same sign.
@@ -144,6 +146,17 @@ theorem linearMapSign_neg_right (hι : Fintype.card ι = finrank R W) :
   · rw [linearMapSign_of_bijective h, linearMapSign_of_bijective h]
     exact ite_eq_neg_eq_neg_ite hι
   · rw [linearMapSign_of_not_bijective h, linearMapSign_of_not_bijective h, neg_zero]
+
+/-- **Scaling the target orientation by a unit sign scales the sign**, when the index type has the
+dimension of the target. -/
+theorem linearMapSign_units_smul_right (hι : Fintype.card ι = finrank R W) (u : ℤˣ) :
+    linearMapSign o (Units.map (Int.castRingHom R).toMonoidHom u • o') L =
+      u * linearMapSign o o' L := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · rw [map_one, one_smul, Units.val_one, one_mul]
+  · rw [show Units.map (Int.castRingHom R).toMonoidHom (-1) = -1 from Units.ext (by simp),
+      Module.Ray.neg_units_smul, one_smul, linearMapSign_neg_right hι, Units.val_neg,
+      Units.val_one, neg_one_mul]
 
 omit [Fintype ι] in
 /-- **A positive multiple has the same sign**: a positive homothety of the target preserves every
