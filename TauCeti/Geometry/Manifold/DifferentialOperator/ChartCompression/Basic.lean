@@ -56,6 +56,9 @@ with no continuity assumed) and computes their principal symbols:
 * `OpenPartialHomeomorph.complexChartCompression_conj`: for a diffeomorphism `Φ : M → N`, the chart
   compression in a chart `e` of `M` of the transport `f ↦ (D (f ∘ Φ⁻¹)) ∘ Φ` of an operator `D` on
   `N` is the chart compression of `D` in the chart `e ∘ Φ⁻¹` of `N`, by the same cutoffs.
+* `OpenPartialHomeomorph.complexChartCompression_intrinsicConj`: the chart compression of the
+  conjugate `f ↦ conj (D (conj f))` of an operator is the conjugate of its chart compression,
+  since the cutoffs are real.
 
 ## Main definitions
 
@@ -530,6 +533,16 @@ theorem complexChartCompression_complexifyLinearMap (φ ψ : 𝓓(⟨e.target, e
       ContMDiffMap.complexifyLinearMap (e.chartCompression he φ ψ D) := by
   ext f y
   apply Complex.ext <;> simp
+
+/-- The chart compression commutes with complex conjugation of operators, `D ↦ conj ∘ D ∘ conj`:
+the cutoffs are real, so pulling back and pushing forward through them commutes with conjugation. -/
+theorem complexChartCompression_intrinsicConj (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ (ContMDiffMap.intrinsicConj D) =
+      ContMDiffMap.intrinsicConj (e.complexChartCompression he φ ψ D) := by
+  simp only [complexChartCompression, complexCutoffPushforward, complexCutoffPullback,
+    LinearMap.coe_mk, AddHom.coe_mk, ContMDiffMap.intrinsicConj_comp,
+    ContMDiffMap.intrinsicConj_complexifyLinearMap]
 
 section Diffeomorph
 
