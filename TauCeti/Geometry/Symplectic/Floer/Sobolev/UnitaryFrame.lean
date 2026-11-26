@@ -190,12 +190,12 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
     rw [h₁, h₂]
   -- `D_u (Φ ζ) = Φ (D_F ζ)` for every test section `ζ` of `F`.
   have hgen (ζ : testSection F) :
-      mult (DF ⟨jetLp (testSection F) ζ, jetLp_mem_jetClosure ζ⟩) ∈ Set.range D := by
+      mult (DF ⟨jetLp 2 (testSection F) ζ, jetLp_mem_jetClosure ζ⟩) ∈ Set.range D := by
     obtain ⟨hζ, hζp, R, hR⟩ := mem_testSection_iff.1 ζ.property
     have hξ : (fun w : ℝ × ℝ ↦ Φ w.2 ((ζ : ℝ × ℝ → F) w)) ∈ testSection V :=
       mem_testSection_iff.2 ⟨(hΦ.comp contDiff_snd).clm_apply hζ,
         fun s t ↦ by simp only [hΦp t, hζp s t], R, fun s t hs ↦ by simp only [hR s t hs, map_zero]⟩
-    refine ⟨⟨jetLp (testSection V) ⟨_, hξ⟩, jetLp_mem_jetClosure _⟩, Lp.ext ?_⟩
+    refine ⟨⟨jetLp 2 (testSection V) ⟨_, hξ⟩, jetLp_mem_jetClosure _⟩, Lp.ext ?_⟩
     filter_upwards [Floer.stationarySobolevOperator_jetLp_ae_eq hJc hSc ⟨_, hξ⟩, hmult _,
       Floer.stationarySobolevOperator_jetLp_ae_eq continuous_const hS'₁.continuous ζ]
       with z h₁ h₂ h₃
@@ -208,8 +208,10 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
   intro g
   obtain ⟨f, rfl⟩ := surjective_operatorMultiplication_comp_snd hΦd.continuous hΦi g
   obtain ⟨ξ, rfl⟩ := (Floer.bijective_stationarySobolevOperator_ofComplexModule hS'₁ hS'ω hdet).2 f
-  exact (StripSobolev.denseRange_codRestrict_jetLp (testSection F)).induction_on ξ
-    (hclosed.preimage (mult.continuous.comp DF.continuous)) hgen
+  refine StripSobolev.jetClosure_induction (hclosed.preimage (mult.continuous.comp DF.continuous))
+    (fun ζ ↦ ?_) ξ
+  rw [StripSobolev.toJetClosure_apply]
+  exact hgen ζ
 
 include hH hHp hx hxp hΦ hΦp hΦi hΦω hΦJ in
 /-- **The linearized Floer operator at a nondegenerate orbit is invertible.** Under the hypotheses

@@ -220,10 +220,7 @@ theorem contDiffOn_spectralFunction_iff
         exact hΩσ _ μ hμ
     exact (h.comp (LinearMap.toContinuousLinearMap Φ).contDiff.contDiffOn hmaps).congr
       fun μ _ ↦ ((congrArg f (hΦ μ)).trans (hf _ μ)).symm
-  · have hU : IsOpen
-        {B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) | B.property.isHermitian.eigenvalues₀ ∈ Ω} :=
-      hΩ.preimage continuous_eigenvalues₀_selfAdjoint
-    exact hU.contDiffOn_iff.2 fun B hB ↦
+  · exact (isOpen_setOf_eigenvalues₀_mem hΩ).contDiffOn_iff.2 fun B hB ↦
       contDiffAt_spectralFunction hf ((h _ hB).contDiffAt (hΩ.mem_nhds hB))
 
 end Matrix
