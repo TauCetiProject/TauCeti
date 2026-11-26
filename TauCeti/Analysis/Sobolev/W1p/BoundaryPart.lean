@@ -47,6 +47,8 @@ motions is in `TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
 * `TauCeti.w1p0Submodule_le_w1pVanishingOnSubmodule`: it contains `W^{1,p}_0(Ω)` when `Γ` misses
   `Ω`, and more generally `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`: restriction from a
   larger open set `U` maps `W^{1,p}_0(U)` into it when `Γ` misses `U`.
+* `TauCeti.W1pVanishingOn.denseRange_valueL_two`: when `Γ` misses `Ω`, the value map
+  `W^{1,2}_Γ(Ω) → L²(Ω)` has dense range.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients.
@@ -215,6 +217,15 @@ closure. In particular this holds for every `Γ ⊆ frontier Ω`. -/
 theorem w1p0Submodule_le_w1pVanishingOnSubmodule (hΓ : Disjoint Γ Omega) :
     w1p0Submodule mu Omega p ≤ w1pVanishingOnSubmodule mu Omega p Γ := fun u hu => by
   simpa only [W1p.restrictL_self] using W1p.restrictL_mem_w1pVanishingOnSubmodule le_rfl hΓ hu
+
+/-- **The value map `W^{1,2}_Γ(Ω) → L²(Ω)` has dense range when `Γ` misses `Ω`**: its range
+contains that of `W^{1,2}_0(Ω)`, which is dense by `TauCeti.W1p0.denseRange_valueL_two`. -/
+theorem W1pVanishingOn.denseRange_valueL_two (hΓ : Disjoint Γ Omega) :
+    DenseRange ((W1p.valueL (mu := mu) (Omega := Omega) (p := 2)).comp
+      (W1pVanishingOn mu Omega 2 Γ).subtypeL) := by
+  refine Dense.mono ?_ W1p0.denseRange_valueL_two
+  rintro _ ⟨u, rfl⟩
+  exact ⟨⟨u, w1p0Submodule_le_w1pVanishingOnSubmodule hΓ u.property⟩, by simp⟩
 
 /-- **At the whole frontier, `W^{1,p}_Γ(Ω)` is `W^{1,p}_0(Ω)`**, for every open `Ω` and every
 `1 ≤ p ≤ ∞`. A test function on the whole space whose support misses the frontier agrees on `Ω`

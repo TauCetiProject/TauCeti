@@ -47,7 +47,8 @@ form, a nonempty `Ω` and a compact value map `H¹_Γ(Ω) → L²(Ω)` (implied 
 `TauCeti.W1p0.isCompactOperator_valueL`), the
 abstract theorem `TauCeti.exists_hilbertBasis_nat_monotone_of_garding` applies with `V = H¹_Γ(Ω)`
 and `J` its value map. `J` has dense range because `H¹_Γ(Ω)` contains `H¹₀(Ω)` when `Γ` misses
-`Ω`. The result, `TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue`, is an orthonormal basis of
+`Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`). The result,
+`TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue`, is an orthonormal basis of
 `L²(Ω)` of values of eigenfunctions with eigenvalues `λ₀ ≤ λ₁ ≤ ⋯ → ∞`, and these are exactly the
 mixed eigenvalues (`TauCeti.PDE.isMixedEigenvalue_iff_exists_mixedEigenvalue_eq`); the infimum
 defining `λₖ` is attained (`TauCeti.PDE.isLeast_mixedEigenvalue`). Since `H¹_{Γ'}(Ω) ⊆ H¹_Γ(Ω)`
@@ -326,18 +327,12 @@ private theorem exists_hilbertBasis_mixedEigenvalue_properties :
             C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2} (mixedEigenvalue mu Omega Γ a b c k)) ∧
       ∀ kappa' : ℝ, IsMixedEigenvalue mu Omega Γ a b c kappa' ↔
         ∃ k, mixedEigenvalue mu Omega Γ a b c k = kappa' := by
-  -- The value map of `H¹_Γ(Ω)` has dense range since `H¹₀(Ω) ⊆ H¹_Γ(Ω)`.
-  have hJd : DenseRange
-      ((W1p.valueL (mu := mu) (Omega := Omega) (p := 2)).comp
-        (W1pVanishingOn mu Omega 2 Γ).subtypeL) := by
-    refine Dense.mono ?_ W1p0.denseRange_valueL_two
-    rintro _ ⟨u, rfl⟩
-    exact ⟨⟨u, w1p0Submodule_le_w1pVanishingOnSubmodule hΓ u.property⟩, by simp⟩
   have hH : ¬ FiniteDimensional ℝ (Lp ℝ 2 (mu.restrict Omega)) :=
     L2.not_finiteDimensional_restrict_of_isOpen mu Omega.isOpen hOmega
   obtain ⟨basis, kappa, u, hmono, htendsto, hvalue, heq, hiff⟩ :=
-    exists_hilbertBasis_nat_monotone_of_garding (Q := energyFormH1LVanishingOn hcoeff Γ) hJ hJd
-      hH (fun u v ↦ by simpa using hsymm u v) hC₀ (fun w ↦ by simpa using hgarding w)
+    exists_hilbertBasis_nat_monotone_of_garding (Q := energyFormH1LVanishingOn hcoeff Γ) hJ
+      (W1pVanishingOn.denseRange_valueL_two hΓ) hH (fun u v ↦ by simpa using hsymm u v) hC₀
+      (fun w ↦ by simpa using hgarding w)
   simp only [energyFormH1LVanishingOn_apply, ContinuousLinearMap.comp_apply,
     Submodule.subtypeL_apply, W1p.valueL_apply] at hvalue heq hiff
   have hlower (v : W1pVanishingOn mu Omega 2 Γ) :
