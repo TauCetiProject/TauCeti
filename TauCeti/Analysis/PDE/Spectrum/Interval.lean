@@ -41,8 +41,10 @@ sine mode, and it vanishes by completeness of the sine system
 The same explicit description holds for the other boundary conditions of the mixed problem, posed
 on the space `H¹_Γ(a, b)` of Sobolev functions vanishing on a boundary part `Γ`
 (`TauCeti.w1pVanishingOnSubmodule`), with the weak eigenvalue problem `∫ ∇u · ∇v = κ ∫ u v` for
-every `v ∈ H¹_Γ(a, b)` whose solutions are the eigenvectors of the mixed Laplacian `-Δ_Γ`
-(`TauCeti.PDE.spectrum_mixedOperator_laplacian`).
+every `v ∈ H¹_Γ(a, b)`. On a domain with the Rellich property, the `κ` for which this problem has
+a nonzero solution are the eigenvalues of the mixed Laplacian `-Δ_Γ`
+(`TauCeti.PDE.spectrum_mixedOperator_laplacian`); Rellich compactness for the interval is not
+proved here.
 
 * With no Dirichlet part, `Γ = ∅`, the Neumann eigenvalues are the numbers `(k π / (b - a))²`,
   `k ≥ 0`, with eigenfunctions `cos (k π (x - a) / (b - a))`; the constants are the case `k = 0`.
@@ -720,9 +722,7 @@ theorem exists_value_ae_eq_cos_and_inner_gradient_eq (hab : a < b) (k : ℕ) :
   have hval := (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := 2)
     (le_top : intervalDomain a b ≤ ⊤) φ).trans ((ae_restrict_iff'
       (intervalDomain a b).isOpen.measurableSet).2 (ae_of_all _ fun x hx => by
-        -- Unfold the coercion of the bundled test function `φ` to its defining product.
-        change Real.cos (c * (x 0 - a)) * χ x = Real.cos (c * (x 0 - a))
-        rw [hχ x hx, mul_one]))
+        rw [TestFunction.coe_mk, hχ x hx, mul_one]))
   refine ⟨⟨_, W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule (φ := φ) (by simp)⟩,
     hval.trans (Filter.EventuallyEq.of_eq (funext fun x => (hmode (x 0)).symm)), fun v => ?_⟩
   refine inner_gradient_eq_of_mem_w1pVanishingOnSubmodule hab.le (hasDerivAt_cos_mul_sub c)
@@ -788,11 +788,15 @@ theorem exists_value_ae_eq_sin_two_mul_add_one_and_inner_gradient_eq (hab : a < 
   simp
 
 /-- The spectrum of `-Δ` on `W^{1,2}_Γ(a, b)` is the set of eigenvalues of a family of weak
-eigenfunctions whose values are complete in `L²(a, b)`: any other `κ` would have its
-eigenfunctions orthogonal to the whole family, since the form `∫ ∇u · ∇v` is symmetric. -/
+eigenfunctions, with values `x ↦ F k (x 0)`, that is complete in `L²(a, b)`: any other `κ` would
+have its eigenfunctions orthogonal to the whole family, since the form `∫ ∇u · ∇v` is
+symmetric. -/
 private theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
-    {Γ : Set (EuclideanSpace ℝ (Fin 1))} {kappas : ℕ → ℝ}
+    {Γ : Set (EuclideanSpace ℝ (Fin 1))} {kappas : ℕ → ℝ} (F : ℕ → ℝ → ℝ)
     (w : ℕ → W1pVanishingOn volume (intervalDomain a b) 2 Γ)
+    (hwv : ∀ k, W1p.value (w k : W1p volume (intervalDomain a b) 2)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x => F k (x 0))
     (hw0 : ∀ k, W1p.value (w k : W1p volume (intervalDomain a b) 2) ≠ 0)
     (hw : ∀ k, ∀ v : W1pVanishingOn volume (intervalDomain a b) 2 Γ,
       ⟪W1p.gradient (w k : W1p volume (intervalDomain a b) 2),
@@ -800,7 +804,7 @@ private theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
         kappas k * ⟪W1p.value (w k : W1p volume (intervalDomain a b) 2),
           W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
     (hc : ∀ f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))),
-      (∀ k, ⟪f, W1p.value (w k : W1p volume (intervalDomain a b) 2)⟫_ℝ = 0) → f = 0)
+      (∀ k, ∫ x in intervalDomain a b, f x * F k (x 0) = 0) → f = 0)
     {kappa : ℝ} :
     (∃ u : W1pVanishingOn volume (intervalDomain a b) 2 Γ, u ≠ 0 ∧
       ∀ v : W1pVanishingOn volume (intervalDomain a b) 2 Γ,
@@ -822,7 +826,10 @@ private theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
     have h2 : (kappa - kappas k) * ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
         W1p.value (w k : W1p volume (intervalDomain a b) 2)⟫_ℝ = 0 := by
       linarith
-    exact (mul_eq_zero.1 h2).resolve_left (sub_ne_zero.2 (hne k))
+    rw [← (mul_eq_zero.1 h2).resolve_left (sub_ne_zero.2 (hne k)), L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [hwv k] with x hx
+    simp [hx, mul_comm]
   · rintro ⟨k, rfl⟩
     refine ⟨w k, fun h => hw0 k ?_, hw k⟩
     rw [← W1pVanishingOn.valueL_apply, h, map_zero]
@@ -843,14 +850,11 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : 
             W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ) ↔
       ∃ k : ℕ, kappa = (k * π / (b - a)) ^ 2 := by
   choose w hwv hw using exists_value_ae_eq_cos_and_inner_gradient_eq hab
-  refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete w (fun k => ?_) hw
-    fun f hf => eq_zero_of_forall_setIntegral_mul_cos_eq_zero hab f fun k => ?_
-  · exact value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (k * π * (t - a) / (b - a)))
-      (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) (hwv k)
-  · rw [← hf k, L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hwv k] with x hx
-    simp [hx, mul_comm]
+  refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
+    (fun k t => Real.cos (k * π * (t - a) / (b - a))) w hwv (fun k => ?_) hw
+    (eq_zero_of_forall_setIntegral_mul_cos_eq_zero hab)
+  exact value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (k * π * (t - a) / (b - a)))
+    (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) (hwv k)
 
 /-- **The mixed spectrum of `-Δ` on an interval with one Dirichlet endpoint.** With the
 Dirichlet part `Γ = {a}`, the weak mixed eigenvalues of `-Δ` on `(a, b)` are exactly the numbers
@@ -867,19 +871,16 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_left (hab : a
             W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ) ↔
       ∃ k : ℕ, kappa = ((2 * k + 1) * π / (2 * (b - a))) ^ 2 := by
   choose w hwv hw using exists_value_ae_eq_sin_two_mul_add_one_and_inner_gradient_eq hab
-  refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete w (fun k => ?_) hw
-    fun f hf => eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hab f fun k => ?_
-  · -- At `b` the mode is `sin (k π + π / 2) = ± 1`.
-    refine value_ne_zero_of_value_ae_eq hab
-      (F := fun t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a)))) (by fun_prop)
-      (right_mem_Icc.2 hab.le) ?_ (hwv k)
-    rw [show (2 * k + 1) * π * (b - a) / (2 * (b - a)) = k * π + π / 2 by
-      field_simp [(sub_pos.2 hab).ne'], Real.sin_add_pi_div_two, Real.cos_nat_mul_pi]
-    exact pow_ne_zero _ (by norm_num)
-  · rw [← hf k, L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hwv k] with x hx
-    simp [hx, mul_comm]
+  refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
+    (fun k t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a)))) w hwv (fun k => ?_) hw
+    (eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hab)
+  -- At `b` the mode is `sin (k π + π / 2) = ± 1`.
+  refine value_ne_zero_of_value_ae_eq hab
+    (F := fun t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a)))) (by fun_prop)
+    (right_mem_Icc.2 hab.le) ?_ (hwv k)
+  rw [show (2 * k + 1) * π * (b - a) / (2 * (b - a)) = k * π + π / 2 by
+    field_simp [(sub_pos.2 hab).ne'], Real.sin_add_pi_div_two, Real.cos_nat_mul_pi]
+  exact pow_ne_zero _ (by norm_num)
 
 /-- The least mixed eigenvalue of `-Δ` on `(a, b)` with the Dirichlet part `{a}` is
 `(π / (2 (b - a)))²`. It lies strictly between the least Neumann eigenvalue `0` and the least

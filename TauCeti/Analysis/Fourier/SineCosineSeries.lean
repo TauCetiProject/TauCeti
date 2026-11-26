@@ -176,27 +176,43 @@ private theorem integral_mul_reflectExtension (ε : ℂ) (hab : a ≤ b) {g : �
   congr 1 with y
   ring
 
-/-- The Fourier coefficients on `[2a - b, b]` of the odd extension of `g` about `a` are multiples
-of the integrals of `g` against `sin (n π (x - a) / (b - a))` over `[a, b]`; under orthogonality
-to all of these they vanish. -/
-private theorem fourierCoeffOn_oddExtension_eq_zero (hab : a < b) {g : ℝ → ℝ}
-    (hg : IntervalIntegrable (fun x => (g x : ℂ)) volume a b)
-    (hZ : ∀ n : ℤ, ∫ x in a..b, g x * Real.sin (n * π * (x - a) / (b - a)) = 0) (n : ℤ) :
-    fourierCoeffOn (by linarith : 2 * a - b < b) (reflectExtension (-1) a g) n = 0 := by
-  rw [fourierCoeffOn_eq_integral]
-  simp only [smul_eq_mul]
-  rw [integral_mul_reflectExtension (-1) hab.le hg
-    (F := fun x : ℝ => fourier (-n) (x : AddCircle (b - (2 * a - b))))
-    ((fourier (-n)).continuous.comp (AddCircle.continuous_mk' _))]
-  have hpt : ∀ y : ℝ, (fourier (-n) (y : AddCircle (b - (2 * a - b))) +
-      -1 * fourier (-n) ((2 * a - y : ℝ) : AddCircle (b - (2 * a - b)))) * (g y : ℂ) =
-        -2 * I * exp (-(π * I * n * a / (b - a))) *
-          ((g y * Real.sin (n * π * (y - a) / (b - a)) : ℝ) : ℂ) := fun y => by
-    rw [neg_one_mul, ← sub_eq_add_neg, fourier_sub_fourier_reflect hab n y, ofReal_mul]
-    ring
-  simp_rw [hpt]
-  rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_ofReal, hZ n]
-  simp
+/-- Let `t n`, `n ∈ ℤ`, be functions such that the Fourier monomial of frequency `-n` on
+`[2a - b, b]`, plus `ε` times its reflection about `a`, is a multiple of `t n`. Then the `n`-th
+Fourier coefficient on `[2a - b, b]` of the extension of `g` with sign `ε` is a multiple of
+`∫ x in a..b, g x * t n x`, so if `g` is orthogonal to every `t n` then all these coefficients
+vanish, and uniqueness of Fourier coefficients forces `g` to vanish almost everywhere on
+`(a, b]`. -/
+private theorem ae_eq_zero_of_forall_integral_mul_eq_zero_of_reflect (ε : ℂ) (hab : a < b)
+    {g : ℝ → ℝ} (hg : IntegrableOn g (Ioc a b)) (t : ℤ → ℝ → ℝ) (c : ℤ → ℂ)
+    (ht : ∀ n (y : ℝ), fourier (-n) (y : AddCircle (b - (2 * a - b))) +
+        ε * fourier (-n) ((2 * a - y : ℝ) : AddCircle (b - (2 * a - b))) = c n * (t n y : ℂ))
+    (hZ : ∀ n, ∫ x in a..b, g x * t n x = 0) :
+    g =ᵐ[volume.restrict (Ioc a b)] 0 := by
+  have hgi : IntervalIntegrable (fun x => (g x : ℂ)) volume a b :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2 hg.ofReal
+  have hcoeff (n : ℤ) :
+      fourierCoeffOn (by linarith : 2 * a - b < b) (reflectExtension ε a g) n = 0 := by
+    rw [fourierCoeffOn_eq_integral]
+    simp only [smul_eq_mul]
+    rw [integral_mul_reflectExtension ε hab.le hgi
+      (F := fun x : ℝ => fourier (-n) (x : AddCircle (b - (2 * a - b))))
+      ((fourier (-n)).continuous.comp (AddCircle.continuous_mk' _))]
+    have hpt : ∀ y : ℝ, (fourier (-n) (y : AddCircle (b - (2 * a - b))) +
+        ε * fourier (-n) ((2 * a - y : ℝ) : AddCircle (b - (2 * a - b)))) * (g y : ℂ) =
+          c n * ((g y * t n y : ℝ) : ℂ) := fun y => by
+      rw [ht n y, ofReal_mul]
+      ring
+    simp_rw [hpt]
+    rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_ofReal, hZ n]
+    simp
+  have hzero := ae_restrict_of_ae_restrict_of_subset
+    (Ioc_subset_Ioc_left (by linarith : 2 * a - b ≤ a))
+    (IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero _
+      ((intervalIntegrable_reflectExtension_left ε hab.le hgi).trans
+        (intervalIntegrable_reflectExtension_right ε hab.le hgi)).1 hcoeff)
+  filter_upwards [hzero, ae_restrict_mem measurableSet_Ioc] with x hx hxm
+  rw [Pi.zero_apply, reflectExtension_of_lt hxm.1] at hx
+  exact_mod_cast hx
 
 /-- **Completeness of the Fourier sine system.** A function `g` integrable on `(a, b]` with
 
@@ -211,17 +227,11 @@ theorem ae_eq_zero_of_forall_integral_mul_sin_eq_zero {g : ℝ → ℝ}
     (h : ∀ k : ℕ, 0 < k → ∫ x in a..b, g x * Real.sin (k * π * (x - a) / (b - a)) = 0) :
     g =ᵐ[volume.restrict (Ioc a b)] 0 := by
   by_cases hab : a < b
-  · have hgi : IntervalIntegrable (fun x => (g x : ℂ)) volume a b :=
-      (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2 hg.ofReal
-    have hzero := ae_restrict_of_ae_restrict_of_subset
-      (Ioc_subset_Ioc_left (by linarith : 2 * a - b ≤ a))
-      (IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero _
-        ((intervalIntegrable_reflectExtension_left (-1) hab.le hgi).trans
-          (intervalIntegrable_reflectExtension_right (-1) hab.le hgi)).1
-        (fourierCoeffOn_oddExtension_eq_zero hab hgi (integral_mul_sin_intCast_eq_zero h)))
-    filter_upwards [hzero, ae_restrict_mem measurableSet_Ioc] with x hx hxm
-    rw [Pi.zero_apply, reflectExtension_of_lt hxm.1] at hx
-    exact_mod_cast hx
+  · exact ae_eq_zero_of_forall_integral_mul_eq_zero_of_reflect (-1) hab hg
+      (fun n y => Real.sin (n * π * (y - a) / (b - a)))
+      (fun n => -2 * I * exp (-(π * I * n * a / (b - a))))
+      (fun n y => by rw [neg_one_mul, ← sub_eq_add_neg, fourier_sub_fourier_reflect hab n y])
+      (integral_mul_sin_intCast_eq_zero h)
   · simp [Ioc_eq_empty_of_le (le_of_not_gt hab), Filter.EventuallyEq]
 
 /-- The sum of a Fourier monomial on `[2a - b, b]` at `y` and at its reflection `2a - y` about `a`
@@ -256,28 +266,6 @@ private theorem integral_mul_cos_intCast_eq_zero {g : ℝ → ℝ}
     simp only [Int.cast_negSucc, neg_mul, neg_div, Real.cos_neg]
     simpa using hk
 
-/-- The Fourier coefficients on `[2a - b, b]` of the even extension of `g` about `a` are multiples
-of the integrals of `g` against `cos (n π (x - a) / (b - a))` over `[a, b]`; under orthogonality
-to all of these they vanish. -/
-private theorem fourierCoeffOn_evenExtension_eq_zero (hab : a < b) {g : ℝ → ℝ}
-    (hg : IntervalIntegrable (fun x => (g x : ℂ)) volume a b)
-    (hZ : ∀ n : ℤ, ∫ x in a..b, g x * Real.cos (n * π * (x - a) / (b - a)) = 0) (n : ℤ) :
-    fourierCoeffOn (by linarith : 2 * a - b < b) (reflectExtension 1 a g) n = 0 := by
-  rw [fourierCoeffOn_eq_integral]
-  simp only [smul_eq_mul]
-  rw [integral_mul_reflectExtension 1 hab.le hg
-    (F := fun x : ℝ => fourier (-n) (x : AddCircle (b - (2 * a - b))))
-    ((fourier (-n)).continuous.comp (AddCircle.continuous_mk' _))]
-  have hpt : ∀ y : ℝ, (fourier (-n) (y : AddCircle (b - (2 * a - b))) +
-      1 * fourier (-n) ((2 * a - y : ℝ) : AddCircle (b - (2 * a - b)))) * (g y : ℂ) =
-        2 * exp (-(π * I * n * a / (b - a))) *
-          ((g y * Real.cos (n * π * (y - a) / (b - a)) : ℝ) : ℂ) := fun y => by
-    rw [one_mul, fourier_add_fourier_reflect hab n y, ofReal_mul]
-    ring
-  simp_rw [hpt]
-  rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_ofReal, hZ n]
-  simp
-
 /-- **Completeness of the Fourier cosine system.** A function `g` integrable on `(a, b]` with
 
 `∫ x in a..b, g x * cos (k π (x - a) / (b - a)) = 0` for every `k ≥ 0`
@@ -291,17 +279,11 @@ theorem ae_eq_zero_of_forall_integral_mul_cos_eq_zero {g : ℝ → ℝ}
     (h : ∀ k : ℕ, ∫ x in a..b, g x * Real.cos (k * π * (x - a) / (b - a)) = 0) :
     g =ᵐ[volume.restrict (Ioc a b)] 0 := by
   by_cases hab : a < b
-  · have hgi : IntervalIntegrable (fun x => (g x : ℂ)) volume a b :=
-      (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2 hg.ofReal
-    have hzero := ae_restrict_of_ae_restrict_of_subset
-      (Ioc_subset_Ioc_left (by linarith : 2 * a - b ≤ a))
-      (IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero _
-        ((intervalIntegrable_reflectExtension_left 1 hab.le hgi).trans
-          (intervalIntegrable_reflectExtension_right 1 hab.le hgi)).1
-        (fourierCoeffOn_evenExtension_eq_zero hab hgi (integral_mul_cos_intCast_eq_zero h)))
-    filter_upwards [hzero, ae_restrict_mem measurableSet_Ioc] with x hx hxm
-    rw [Pi.zero_apply, reflectExtension_of_lt hxm.1] at hx
-    exact_mod_cast hx
+  · exact ae_eq_zero_of_forall_integral_mul_eq_zero_of_reflect 1 hab hg
+      (fun n y => Real.cos (n * π * (y - a) / (b - a)))
+      (fun n => 2 * exp (-(π * I * n * a / (b - a))))
+      (fun n y => by rw [one_mul, fourier_add_fourier_reflect hab n y])
+      (integral_mul_cos_intCast_eq_zero h)
   · simp [Ioc_eq_empty_of_le (le_of_not_gt hab), Filter.EventuallyEq]
 
 /-- The even reflection about `b` of a function integrable on `[a, b]` is integrable on
