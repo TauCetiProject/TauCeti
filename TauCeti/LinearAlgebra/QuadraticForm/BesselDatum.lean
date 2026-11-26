@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
@@ -41,6 +42,8 @@ the Gram matrix of Jiang–Zhang.
   independent.
 * `TauCeti.OrthogonalBesselDatum.isCompl_span_middleSpace`: `V` is the direct sum of the span of
   the `e±ᵢ` and the middle space `V_ℓ`.
+* `TauCeti.OrthogonalBesselDatum.nondegenerate_restrict_middleSpace`: in a regular quadratic
+  space, the middle space `V_ℓ` is regular.
 * `TauCeti.OrthogonalBesselDatum.finrank_flag`, `TauCeti.OrthogonalBesselDatum.finrank_middleSpace`:
   the flag subspaces have the expected dimensions, and `V_ℓ` has codimension `2ℓ`.
 * `TauCeti.OrthogonalBesselDatum.nonempty_iff`: over a field of characteristic not two, a regular
@@ -212,6 +215,14 @@ theorem isCompl_span_middleSpace :
   ext x
   simp [Submodule.mem_iInf, Sum.forall, and_comm]
 
+/-- The middle space of a Bessel datum in a regular quadratic space is regular. -/
+theorem nondegenerate_restrict_middleSpace (hQ : Q.Nondegenerate) :
+    (Q.restrict D.middleSpace).Nondegenerate := by
+  rw [← nondegenerate_associated_iff] at hQ ⊢
+  -- `associated (Q.restrict W)` is definitionally `(associated Q).restrict W`.
+  exact LinearMap.BilinForm.nondegenerate_restrict_orthogonal_of_isCompl
+    (QuadraticForm.associated_isSymm R Q).isRefl hQ D.isCompl_span_middleSpace
+
 /-! ### Transport along isometries -/
 
 /-- An isometry carries a Bessel datum of index `ℓ` to a Bessel datum of index `ℓ`. -/
@@ -281,6 +292,10 @@ theorem baseChange_f (i : Fin ℓ) : (D.baseChange A).f i = 1 ⊗ₜ D.f i := (r
 
 @[simp]
 theorem baseChange_w : (D.baseChange A).w = 1 ⊗ₜ D.w := (rfl)
+
+/-- The flag of the base-changed datum is the base change of the flag. -/
+theorem flag_baseChange (j : ℕ) : (D.baseChange A).flag j = (D.flag j).baseChange A := by
+  simp only [flag, Submodule.baseChange_span, Set.image_image, baseChange_e, TensorProduct.mk_apply]
 
 end BaseChange
 
