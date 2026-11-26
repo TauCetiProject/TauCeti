@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.MicrolocalRegularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
 public import TauCeti.Topology.VectorBundle.ZeroSection
@@ -559,23 +558,6 @@ end SmulLeft
 
 section Support
 
-/-- If a functional `T` on bundle tests vanishes on a set `U`, then its components in a chart `c`
-and a frame `t` vanish on the part `c.target ∩ c⁻¹ ⁻¹' U` of the chart target read from `U`. -/
-theorem _root_.Bundle.Trivialization.isVanishingOn_chartComponent (t : Trivialization F (π F V))
-    [MemTrivializationAtlas t] (c : OpenPartialHomeomorph M E)
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
-    {T : BundleTest I F V →L_c[ℝ] ℝ} {U : Set M} (hTU : IsVanishingOn ⇑T U) (v : F) :
-    Distribution.IsVanishingOn (t.chartComponent c hc hct T v) (c.target ∩ c.symm ⁻¹' U) := by
-  intro φ hφ
-  rw [chartComponent_apply, isVanishingOn_iff.1 hTU _ ?_, Complex.ofReal_zero]
-  have h := tsupport_chartTestSection (n := ⊤) t c hc hct
-    (TestFunction.postcompCLM (toSpanSingleton ℝ v) φ)
-  rw [ContMDiffSection.tsupport_def] at h
-  rw [coe_chartTestCLM, h]
-  rintro _ ⟨z, hz, rfl⟩
-  rw [TestFunction.postcompCLM_apply] at hz
-  exact (hφ (tsupport_comp_subset (map_zero _) φ hz)).2
-
 /-- **A functional is microlocally smooth off its support.** On a manifold without boundary, a
 functional `T` on bundle tests is microlocally smooth at every covector over a point outside its
 support. -/
@@ -588,19 +570,6 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport [I.Boundaryless]
     Distribution.isMicrolocallySmoothAt_of_notMem_dsupport (c.map_source hxc)
       ((Distribution.notMem_dsupport_iff _).2 ⟨_, isVanishingOn_chartComponent _ c hc hct hTU v,
         c.isOpen_inter_preimage_symm hU, c.map_source hxc, by simpa [c.left_inv hxc] using hxU⟩) _
-
-/-- If a component of `T` in a chart `c` has the point `z` of the chart target in its support, then
-`c⁻¹ z` lies in the support of `T`. -/
-theorem _root_.Bundle.Trivialization.symm_mem_dsupport_of_mem_dsupport_chartComponent
-    (t : Trivialization F (π F V))
-    [MemTrivializationAtlas t] (c : OpenPartialHomeomorph M E)
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
-    (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) {z : E} (hz : z ∈ c.target)
-    (h : z ∈ Distribution.dsupport (t.chartComponent c hc hct T v)) : c.symm z ∈ dsupport ⇑T := by
-  by_contra hzT
-  obtain ⟨U, hU, hzU, hTU⟩ := notMem_dsupport_iff.1 hzT
-  exact (Distribution.notMem_dsupport_iff _).2 ⟨_, isVanishingOn_chartComponent _ c hc hct hTU v,
-    c.isOpen_inter_preimage_symm hU, hz, hzU⟩ h
 
 end Support
 

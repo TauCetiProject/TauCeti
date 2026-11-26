@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
@@ -52,9 +51,6 @@ at `f x`.
 * `OpenPartialHomeomorph.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans`: dually, the
   differential of `ψ₁⁻¹` is the derivative of the transition `ψ₂ ∘ ψ₁⁻¹` followed by the
   differential of `ψ₂⁻¹`.
-* `OpenPartialHomeomorph.adjoint_fderiv_toDual_symm_comp_mfderiv_symm`: for a map `f` read in
-  open partial homeomorphisms `c`, `c'` into real Hilbert spaces, the transpose of the derivative of
-  `c' ∘ f ∘ c⁻¹` pulls a covector `η` read in `c'` back to `η ∘ df` read in `c`.
 * `PartialDiffeomorph.mfderivWithin_source`: the differential within the source is the differential.
 * `PartialDiffeomorph.mfderiv_symm_apply_mfderiv_apply`: the differential of the inverse undoes the
   differential.
@@ -246,51 +242,6 @@ theorem mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans {ψ₁ ψ₂ : OpenP
   -- The casts `tangentSpaceCast` and `NormedSpace.fromTangentSpace` inserted by the chain rule
   -- and by `mfderiv_eq_fderiv` act as the identity by definition.
   rfl
-
-section Adjoint
-
-open InnerProductSpace
-open scoped InnerProduct
-
-variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [InnerProductSpace ℝ W] [CompleteSpace W]
-  {IV : ModelWithCorners ℝ V H} {IW : ModelWithCorners ℝ W H'}
-
-/-- **Covectors along a map, read in charts.** For a map `f : M → N`, open partial homeomorphisms
-`c` at `x` and `c'` at `f x` into real Hilbert spaces, and a covector `η` at `f x`, the transpose of
-the derivative of the coordinate expression `Φ = c' ∘ f ∘ c⁻¹` of `f` sends `η` read in `c'` to the
-pulled back covector `η ∘ df_x` read in `c`, provided `f`, `c'`, and the inverses `c⁻¹`, `c'⁻¹`
-are differentiable at the corresponding points. -/
-theorem adjoint_fderiv_toDual_symm_comp_mfderiv_symm {c : OpenPartialHomeomorph M V}
-    {c' : OpenPartialHomeomorph N W} {f : M → N} {x : M} (hx : x ∈ c.source)
-    (hfx : f x ∈ c'.source) (hcs : MDifferentiableAt 𝓘(ℝ, V) IV c.symm (c x))
-    (hf : MDifferentiableAt IV IW f x) (hc' : MDifferentiableAt IW 𝓘(ℝ, W) c' (f x))
-    (hc's : MDifferentiableAt 𝓘(ℝ, W) IW c'.symm (c' (f x)))
-    (η : TangentSpace IW (f x) →L[ℝ] ℝ) :
-    ((fderiv ℝ (c' ∘ f ∘ c.symm) (c x))†)
-        ((toDual ℝ W).symm (η ∘L mfderiv 𝓘(ℝ, W) IW c'.symm (c' (f x)))) =
-      (toDual ℝ V).symm ((η ∘L mfderiv IV IW f x) ∘L mfderiv 𝓘(ℝ, V) IV c.symm (c x)) := by
-  -- The chain rule for `Φ = c' ∘ f ∘ c⁻¹` at `c x`.
-  have hf' : HasMFDerivAt IV IW f (c.symm (c x)) (mfderiv IV IW f x) := by
-    rw [c.left_inv hx]
-    exact hf.hasMFDerivAt
-  have hc'f : HasMFDerivAt IW 𝓘(ℝ, W) c' (f (c.symm (c x))) (mfderiv IW 𝓘(ℝ, W) c' (f x)) := by
-    rw [c.left_inv hx]
-    exact hc'.hasMFDerivAt
-  have hΦ : HasMFDerivAt 𝓘(ℝ, V) 𝓘(ℝ, W) (c' ∘ f ∘ c.symm) (c x)
-      ((mfderiv IW 𝓘(ℝ, W) c' (f x)).comp ((mfderiv IV IW f x).comp
-        (mfderiv 𝓘(ℝ, V) IV c.symm (c x)))) :=
-    hc'f.comp (c x) (hf'.comp (c x) hcs.hasMFDerivAt)
-  have key : fderiv ℝ (c' ∘ f ∘ c.symm) (c x) = (mfderiv IW 𝓘(ℝ, W) c' (f x)).comp
-      ((mfderiv IV IW f x).comp (mfderiv 𝓘(ℝ, V) IV c.symm (c x))) :=
-    HasFDerivAt.fderiv hΦ.hasFDerivAt
-  apply (toDual ℝ V).injective
-  ext w
-  rw [LinearIsometryEquiv.apply_symm_apply, toDual_apply_apply,
-    ContinuousLinearMap.adjoint_inner_left, toDual_symm_apply, key]
-  exact congrArg η (c'.mfderiv_symm_apply_mfderiv_apply hfx hc' hc's _)
-
-end Adjoint
 
 end OpenPartialHomeomorph
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pushforward
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Pushforward
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
