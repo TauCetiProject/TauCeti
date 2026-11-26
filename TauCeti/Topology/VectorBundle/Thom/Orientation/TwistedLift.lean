@@ -56,6 +56,9 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   cocycle is a Thom class, so is the class of its lift, read in the cochains of `(E', E'₀)`.
 * `quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap`: the equivariant cap product
   with the lift of a twisted cocycle whose lifted class is a Thom class is a quasi-isomorphism.
+* `exists_isSemiInvariantCocycle_isThomClass`: over every base and every commutative ring, `E'`
+  has a semi-invariant cocycle representing a Thom class, the lift of a cocycle representing the
+  Thom class with coefficients in the orientation system.
 
 ## References
 
@@ -197,6 +200,31 @@ theorem quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap
       (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R φ) (fun _ _ ↦ rfl)) :=
   quasiIso_singularChainsRepCap_thomPair _ _ _ _
     (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι R hφ)
+
+include hι in
+/-- **A semi-invariant Thom cocycle of the orientation cover.** Over an arbitrary base and for every
+commutative ring `R`, the Thom pair `(E', E'₀)` of the pull-back of `E` to its orientation double
+cover has a relative cocycle of degree `r` which is semi-invariant for the sign character of `ℤˣ`
+(acting through `ULift ℤˣ`) and whose class is a Thom class of `E'`: the lift of a cocycle
+representing the Thom class with coefficients in the orientation system
+(`TauCeti.twistedThomClass`). -/
+theorem exists_isSemiInvariantCocycle_isThomClass [FiniteDimensional ℝ F] :
+    ∃ φ : ((thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+        ).singularCochainComplex (ModuleCat.of R R) R (ModuleCat.of R R)).cycles (finrank ℝ F),
+      TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} R) φ ∧
+      IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+        ((TopPair.singularCochainComplex _ (ModuleCat.of R R) R (ModuleCat.of R R)).homologyπ
+          (finrank ℝ F) φ) := by
+  classical
+  -- An orientation of the model fibre normalizes the Thom class with coefficients in `o(E)`.
+  let ω : Orientation ℝ F ι :=
+    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation
+  obtain ⟨ψ, hψ⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ _
+    (twistedThomClass F E R hι ω)
+  refine ⟨_, isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R ψ,
+    isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι R ?_⟩
+  rw [hψ]
+  exact isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω
 
 end SemiInvariant
 
