@@ -24,7 +24,7 @@ for the vector field `U_j = Σ_i (∂_i g_ij - ∂_j g_ii)`, whose divergence is
 the derivative at the Euclidean metric `δ` of the coordinate expression of the scalar curvature,
 in the direction `g - δ`. By the divergence theorem on spherical shells
 (`TauCeti.integral_divergence_ball_sdiff_closedBall`), for `C²` coefficients the normalized flux
-at two radii `0 < r₁ ≤ r₂` differs by the integral of the linearized scalar curvature over the
+at two radii `0 ≤ r₁ ≤ r₂` differs by the integral of the linearized scalar curvature over the
 shell between them, divided by `2 (n - 1) |Sⁿ⁻¹|`
 (`TauCeti.normalizedCoordinateFlux_sub_eq_setIntegral_linearizedScalarCurvature`).
 
@@ -117,8 +117,8 @@ private def coordinateFluxField (g : EuclideanSpace ℝ (Fin n) → Fin n → Fi
 private lemma coordinateFluxField_apply (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ)
     (x : EuclideanSpace ℝ (Fin n)) (j : Fin n) :
     coordinateFluxField g x j = ∑ i, (fderiv ℝ (fun y ↦ g y i j) x (EuclideanSpace.single i 1) -
-      fderiv ℝ (fun y ↦ g y i i) x (EuclideanSpace.single j 1)) :=
-  rfl
+      fderiv ℝ (fun y ↦ g y i i) x (EuclideanSpace.single j 1)) := by
+  simp only [coordinateFluxField, PiLp.toLp_apply]
 
 /-- The flux density is the radial component of `coordinateFluxField`. -/
 private lemma coordinateFluxIntegrand_eq_inner_div_norm
@@ -165,11 +165,11 @@ private lemma trace_fderiv_coordinateFluxField
     rw [fderiv_fun_sub (hD i j i) (hD i i j), _root_.sub_apply]
 
 /-- **The flux identity.** For metric coefficients of class `C²` near the closed shell
-`r₁ ≤ ‖x‖ ≤ r₂`, `0 < r₁ ≤ r₂`, the normalized ADM flux at radius `r₂` minus that at radius `r₁`
+`r₁ ≤ ‖x‖ ≤ r₂`, `0 ≤ r₁ ≤ r₂`, the normalized ADM flux at radius `r₂` minus that at radius `r₁`
 is the integral of the linearized scalar curvature over the open shell between them, divided by
 `2 (n - 1) |Sⁿ⁻¹|`. -/
 theorem normalizedCoordinateFlux_sub_eq_setIntegral_linearizedScalarCurvature
-    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r₁ r₂ : ℝ} (hr₁ : 0 < r₁) (hr : r₁ ≤ r₂)
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁) (hr : r₁ ≤ r₂)
     (hg : ∀ x ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) r₂ \ ball 0 r₁, ∀ i j,
       ContDiffAt ℝ 2 (fun y ↦ g y i j) x) :
     normalizedCoordinateFlux g r₂ - normalizedCoordinateFlux g r₁ =
@@ -187,11 +187,11 @@ theorem normalizedCoordinateFlux_sub_eq_setIntegral_linearizedScalarCurvature
   simp only [coordinateFluxIntegrand_eq_inner_div_norm]
 
 /-- **Convergence of the flux.** If the metric coefficients are `C²` on the exterior `‖x‖ > R`
-and their linearized scalar curvature is integrable there, then for every radius `r > R`, `r > 0`,
+and their linearized scalar curvature is integrable there, then for every radius `r > R`, `r ≥ 0`,
 the normalized ADM flux converges as the radius tends to infinity, to its value at `r` plus the
 integral of the linearized scalar curvature over `‖x‖ > r` divided by `2 (n - 1) |Sⁿ⁻¹|`. -/
 theorem tendsto_normalizedCoordinateFlux_of_integrableOn
-    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {R r : ℝ} (hr : 0 < r) (hRr : R < r)
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {R r : ℝ} (hr : 0 ≤ r) (hRr : R < r)
     (hg : ∀ i j, ContDiffOn ℝ 2 (fun y ↦ g y i j) (closedBall 0 R)ᶜ)
     (hL : IntegrableOn (linearizedScalarCurvature g) (closedBall 0 R)ᶜ) :
     Tendsto (normalizedCoordinateFlux g) atTop
@@ -204,10 +204,11 @@ theorem tendsto_normalizedCoordinateFlux_of_integrableOn
         linearizedScalarCurvature g x) / (2 * ((n : ℝ) - 1) * roundSphereVolume (n - 1)))
         =ᶠ[atTop] normalizedCoordinateFlux g := by
     filter_upwards [eventually_ge_atTop r] with ρ hρ
-    rw [← normalizedCoordinateFlux_sub_eq_setIntegral_linearizedScalarCurvature hr hρ
-      fun x hx i j ↦ (hg i j).contDiffAt (isClosed_closedBall.isOpen_compl.mem_nhds ?_),
-      add_sub_cancel]
-    simpa using hRr.trans_le (by simpa using hx.2)
+    refine (eq_add_of_sub_eq'
+      (normalizedCoordinateFlux_sub_eq_setIntegral_linearizedScalarCurvature hr hρ
+        fun x hx i j ↦ (hg i j).contDiffAt (isClosed_closedBall.isOpen_compl.mem_nhds ?_))).symm
+    rw [mem_compl_iff, mem_closedBall_zero_iff, not_le]
+    exact hRr.trans_le (not_lt.mp (mt mem_ball_zero_iff.mpr hx.2))
   -- The shells exhaust the exterior `‖x‖ > r`.
   have hU : (⋃ ρ : ℝ, ball (0 : EuclideanSpace ℝ (Fin n)) ρ \ closedBall 0 r) =
       (closedBall 0 r)ᶜ := by

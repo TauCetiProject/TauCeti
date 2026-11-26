@@ -73,38 +73,61 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### The distributional derivative of the flux -/
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- For a function `ψ` supported in `(r, R)`, the radial function `x ↦ ψ ‖x‖` is supported in
+the open shell `ball 0 R \ closedBall 0 r`. -/
+private lemma tsupport_comp_norm_subset {r R : ℝ} {ψ : ℝ → ℝ} (hψs : tsupport ψ ⊆ Ioo r R) :
+    tsupport (fun x : E ↦ ψ ‖x‖) ⊆ ball (0 : E) R \ closedBall 0 r := fun x hx ↦ by
+  simpa [and_comm] using hψs (tsupport_comp_subset_preimage ψ continuous_norm hx)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- For a function `ψ` supported in `(r, R)`, the radial function `x ↦ ψ ‖x‖` has compact
+support. -/
+private lemma hasCompactSupport_comp_norm {r R : ℝ} {ψ : ℝ → ℝ} (hψs : tsupport ψ ⊆ Ioo r R) :
+    HasCompactSupport (fun x : E ↦ ψ ‖x‖) :=
+  isCompact_of_isClosed_isBounded (isClosed_tsupport _)
+    (isBounded_ball.subset ((tsupport_comp_norm_subset hψs).trans sdiff_subset))
+
+/-- For `0 ≤ r`, a field `V` that is `C¹` on the open shell `ball 0 R \ closedBall 0 r`, and a
+test function `ψ` on `(r, R)`, the derivative of the radial test function `χ x = ψ ‖x‖` applied
+to `V` is integrable. -/
+private lemma integrable_fderiv_comp_norm_apply {r R : ℝ} (hr : 0 ≤ r) {V : E → E}
+    (hV : ∀ x ∈ ball (0 : E) R \ closedBall 0 r, ContDiffAt ℝ 1 V x) {ψ : ℝ → ℝ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψs : tsupport ψ ⊆ Ioo r R) :
+    Integrable (fun x ↦ fderiv ℝ (fun y ↦ ψ ‖y‖) x (V x)) μ := by
+  have hχc := hasCompactSupport_comp_norm (E := E) hψs
+  have hVc : ContinuousOn V (tsupport fun x : E ↦ ψ ‖x‖) := fun x hx ↦
+    (hV x (tsupport_comp_norm_subset hψs hx)).continuousAt.continuousWithinAt
+  exact integrable_fderiv_apply_of_tsupport_subset (G := id)
+    ((hψ.comp_norm fun h ↦ hr.not_gt (hψs h).1).of_le (by simp)) hχc subset_rfl
+    aestronglyMeasurable_id ((integrable_indicator_iff (isClosed_tsupport _).measurableSet).mpr
+      (hVc.integrableOn_compact hχc))
+
+/-- For `0 ≤ r`, a field `V` that is `C¹` on the open shell `ball 0 R \ closedBall 0 r`, and a
+test function `ψ` on `(r, R)`, the product of the radial test function `χ x = ψ ‖x‖` with
+`tr (DV)` is integrable. -/
+private lemma integrable_comp_norm_mul_trace_fderiv {r R : ℝ} (hr : 0 ≤ r) {V : E → E}
+    (hV : ∀ x ∈ ball (0 : E) R \ closedBall 0 r, ContDiffAt ℝ 1 V x) {ψ : ℝ → ℝ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψs : tsupport ψ ⊆ Ioo r R) :
+    Integrable (fun x ↦ ψ ‖x‖ * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) μ :=
+  integrable_mul_trace_fderiv (isOpen_ball.sdiff isClosed_closedBall)
+    (hψ.comp_norm fun h ↦ hr.not_gt (hψs h).1).continuous (hasCompactSupport_comp_norm hψs)
+    (tsupport_comp_norm_subset hψs) hV
+
 /-- **The weak divergence identity against a radial test function.** For `0 ≤ r`, a field `V`
 that is `C¹` on the open shell `ball 0 R \ closedBall 0 r`, and a test function `ψ` on `(r, R)`,
-the radial test function `χ x = ψ ‖x‖` satisfies `∫ Dχ (V) = -∫ χ tr (DV)`, and both integrands
-are integrable. -/
-private lemma integrable_and_integral_fderiv_comp_norm_apply_eq_neg {r R : ℝ} (hr : 0 ≤ r)
-    {V : E → E} (hV : ∀ x ∈ ball (0 : E) R \ closedBall 0 r, ContDiffAt ℝ 1 V x) {ψ : ℝ → ℝ}
+the radial test function `χ x = ψ ‖x‖` satisfies `∫ Dχ (V) = -∫ χ tr (DV)`. -/
+private lemma integral_fderiv_comp_norm_apply_eq_neg {r R : ℝ} (hr : 0 ≤ r) {V : E → E}
+    (hV : ∀ x ∈ ball (0 : E) R \ closedBall 0 r, ContDiffAt ℝ 1 V x) {ψ : ℝ → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hψs : tsupport ψ ⊆ Ioo r R) :
-    Integrable (fun x ↦ fderiv ℝ (fun y ↦ ψ ‖y‖) x (V x)) μ ∧
-      Integrable (fun x ↦ ψ ‖x‖ * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) μ ∧
-      ∫ x, fderiv ℝ (fun y ↦ ψ ‖y‖) x (V x) ∂μ =
-        -∫ x, ψ ‖x‖ * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E) ∂μ := by
-  have hψ0 : 0 ∉ tsupport ψ := fun h ↦ hr.not_gt (hψs h).1
-  set χ : E → ℝ := fun x ↦ ψ ‖x‖
-  have hχ : ContDiff ℝ ∞ χ := hψ.comp_norm hψ0
-  -- The support of `χ` lies in the open shell `r < ‖x‖ < R`.
-  have hχs : tsupport χ ⊆ ball (0 : E) R \ closedBall 0 r := fun x hx ↦ by
-    simpa [and_comm] using hψs (tsupport_comp_subset_preimage ψ continuous_norm hx)
-  have hχc : HasCompactSupport χ :=
-    isCompact_of_isClosed_isBounded (isClosed_tsupport χ)
-      (isBounded_ball.subset (hχs.trans sdiff_subset))
-  have hΩ : IsOpen (ball (0 : E) R \ closedBall 0 r) := isOpen_ball.sdiff isClosed_closedBall
-  -- The weak divergence identity `∫ Dχ (V) = -∫ χ tr (DV)` for `V`, tested against `χ`.
-  have hparts := (ContDiffOn.hasWeakFDerivOn_fderiv (μ := μ) (Ω := ⟨_, hΩ⟩)
+    ∫ x, fderiv ℝ (fun y ↦ ψ ‖y‖) x (V x) ∂μ =
+      -∫ x, ψ ‖x‖ * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E) ∂μ := by
+  have hparts := (ContDiffOn.hasWeakFDerivOn_fderiv (μ := μ)
+    (Ω := ⟨_, isOpen_ball.sdiff isClosed_closedBall⟩)
     fun x hx ↦ (hV x hx).contDiffWithinAt).integral_inner_gradient_eq_neg_integral_smul_trace
-      ⟨χ, hχ, hχc, hχs⟩
-  simp only [TestFunction.coe_mk, inner_gradient_left, smul_eq_mul] at hparts
-  have hVc : ContinuousOn V (tsupport χ) := fun x hx ↦
-    (hV x (hχs hx)).continuousAt.continuousWithinAt
-  exact ⟨integrable_fderiv_apply_of_tsupport_subset (G := id) (hχ.of_le (by simp)) hχc subset_rfl
-      aestronglyMeasurable_id ((integrable_indicator_iff (isClosed_tsupport χ).measurableSet).mpr
-        (hVc.integrableOn_compact hχc)),
-    integrable_mul_trace_fderiv hΩ hχ.continuous hχc hχs hV, hparts⟩
+      ⟨fun x ↦ ψ ‖x‖, hψ.comp_norm fun h ↦ hr.not_gt (hψs h).1, hasCompactSupport_comp_norm hψs,
+        tsupport_comp_norm_subset hψs⟩
+  simpa only [TestFunction.coe_mk, inner_gradient_left, smul_eq_mul] using hparts
 
 /-- **The flux has distributional derivative `g`.** For `0 ≤ r`, a field `V` that is `C¹` on the
 open shell `ball 0 R \ closedBall 0 r`, and a test function `ψ` on `(r, R)`,
@@ -118,8 +141,6 @@ private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {r R : ℝ} (hr : 0 
         ∫ θ : sphere (0 : E) 1, ⟪V (s • (θ : E)), θ⟫ ∂μ.toSphere) =
       -∫ s, ψ s • (s ^ (finrank ℝ E - 1) • ∫ θ : sphere (0 : E) 1,
         LinearMap.trace ℝ E (fderiv ℝ V (s • (θ : E)) : E →ₗ[ℝ] E) ∂μ.toSphere) := by
-  obtain ⟨hint₂, hint₁, hparts⟩ :=
-    integrable_and_integral_fderiv_comp_norm_apply_eq_neg (μ := μ) hr hV hψ hψs
   have hψ0 : 0 ∉ tsupport ψ := fun h ↦ hr.not_gt (hψs h).1
   have hχd : ∀ x, fderiv ℝ (fun y : E ↦ ψ ‖y‖) x = (deriv ψ ‖x‖ / ‖x‖) • innerSL ℝ x := fun x ↦
     ((hψ.differentiable (by simp) ‖x‖).hasFDerivAt_comp_norm hψ0).fderiv
@@ -132,7 +153,8 @@ private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {r R : ℝ} (hr : 0 
   have h₁ : ∫ x, ψ ‖x‖ * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E) ∂μ =
       ∫ s, ψ s • (s ^ (finrank ℝ E - 1) • ∫ θ : sphere (0 : E) 1,
         LinearMap.trace ℝ E (fderiv ℝ V (s • (θ : E)) : E →ₗ[ℝ] E) ∂μ.toSphere) := by
-    refine (integral_eq_integral_Ioi_integral_toSphere _ hint₁).trans <| Eq.trans ?_
+    refine (integral_eq_integral_Ioi_integral_toSphere _
+      (integrable_comp_norm_mul_trace_fderiv hr hV hψ hψs)).trans <| Eq.trans ?_
       (setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioi 0) fun s hs ↦ by
         simp [(hψ_out s hs).1])
     refine setIntegral_congr_fun measurableSet_Ioi fun s hs ↦ ?_
@@ -141,7 +163,8 @@ private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {r R : ℝ} (hr : 0 
   -- `Dχ (V) = ψ' (‖x‖) ⟪x, V x⟫ / ‖x‖`.
   have h₂ : ∫ x, fderiv ℝ (fun y ↦ ψ ‖y‖) x (V x) ∂μ = ∫ s, deriv ψ s • (s ^ (finrank ℝ E - 1) •
       ∫ θ : sphere (0 : E) 1, ⟪V (s • (θ : E)), θ⟫ ∂μ.toSphere) := by
-    refine (integral_eq_integral_Ioi_integral_toSphere _ hint₂).trans <| Eq.trans ?_
+    refine (integral_eq_integral_Ioi_integral_toSphere _
+      (integrable_fderiv_comp_norm_apply hr hV hψ hψs)).trans <| Eq.trans ?_
       (setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioi 0) fun s hs ↦ by
         simp [(hψ_out s hs).2])
     refine setIntegral_congr_fun measurableSet_Ioi fun s hs ↦ ?_
@@ -153,7 +176,7 @@ private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {r R : ℝ} (hr : 0 
       field_simp
     simp only [hθ, smul_eq_mul, integral_const_mul]
     ring
-  rw [← h₁, ← h₂, hparts]
+  rw [← h₁, ← h₂, integral_fderiv_comp_norm_apply_eq_neg hr hV hψ hψs]
 
 /-! ### The divergence theorem -/
 
