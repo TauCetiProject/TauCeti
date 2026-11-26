@@ -151,8 +151,11 @@ theorem baseChangeEquiv_symm_inr (h : IsNaturallyComplete C (C ⊗[A] B)) (b : B
 /-- The canonical comparison is a homeomorphism for the natural module topology. -/
 theorem isHomeomorph_baseChangeEquiv (h : IsNaturallyComplete C (C ⊗[A] B)) :
     IsHomeomorph (baseChangeEquiv A C B h) := by
-  change @IsHomeomorph _ _ (moduleTopology C (C ⊗[A] B)) _ (toCompletion A C B)
-  rw [← tensorTopology_eq_moduleTopology_of_finite A C B]
+  have hfun : (baseChangeEquiv A C B h : C ⊗[A] B → CompletedTensor A C B) =
+      toCompletion A C B := funext (baseChangeEquiv_apply A C B h)
+  have htop : tensorModuleTopology A C B = tensorTopology A C B :=
+    (tensorTopology_eq_moduleTopology_of_finite A C B).symm
+  rw [hfun, htop]
   exact isHomeomorph_toCompletion_tensorTopology A C B h
 
 end CompletedTensor

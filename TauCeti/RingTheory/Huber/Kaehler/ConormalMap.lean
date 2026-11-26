@@ -107,8 +107,6 @@ theorem mapBaseChange_surjective_of_isOpenQuotientMap
     IsScalarTower.algebraMap_eq A B C ▸ (IsAdicHom.of_isOpenQuotientMap hBC).comp inferInstance
   have hBC_comp : (algebraMap B C).comp (algebraMap A B) = algebraMap A C := by
     ext a; exact (IsScalarTower.algebraMap_apply A B C a).symm
-  let F := CompletedTensor.map (RingHom.id A) (algebraMap B C) (algebraMap B C)
-    hBC_comp hBC_comp hBC.continuous hBC.continuous
   have hF := (CompletedTensor.isOpenQuotientMap_map hBC_comp hBC_comp hBC hBC).surjective
   intro ω
   obtain ⟨⟨y, hy⟩, rfl⟩ := fromIdeal_surjective A C ω
@@ -116,9 +114,12 @@ theorem mapBaseChange_surjective_of_isOpenQuotientMap
   let b := mulRingHom A B x
   have hb : algebraMap B C b = 0 := by
     rw [← CompletedTensor.mulRingHom_map (RingHom.id A) (algebraMap B C) hBC_comp hBC.continuous x,
-      show F x = y from hxF, mem_ideal_iff.mp hy]
+      hxF, mem_ideal_iff.mp hy]
   refine ⟨1 ⊗ₜ[B] fromIdeal A B ⟨x - inl A B B b, mem_ideal_iff.mpr (by simp [b])⟩, ?_⟩
   simp only [mapBaseChange_tmul, one_smul, mapSemilinear_fromIdeal]
-  congr 1; ext; change F (x - inl A B B b) = y; simp [F, hxF, hb]
+  have hval : CompletedTensor.map (RingHom.id A) (algebraMap B C) (algebraMap B C)
+      hBC_comp hBC_comp hBC.continuous hBC.continuous (x - inl A B B b) = y := by
+    rw [map_sub, CompletedTensor.map_inl, hb, map_zero, sub_zero, hxF]
+  exact congrArg (fromIdeal A C) (Subtype.ext hval)
 
 end TauCeti.Huber.ContinuousKaehlerDifferential

@@ -182,9 +182,11 @@ private noncomputable def conormalQuotientDerivation
   haveI : IsScalarTower C (B ⧸ J) Q := IsScalarTower.of_algebraMap_smul fun c q ↦ by
     simp only [hsmul_e, RingHom.algebraMap_toAlgebra, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
       AlgEquiv.coe_toRingEquiv, e.apply_symm_apply]
+  have halg (c : C) : algebraMap C (B ⧸ J) c = e.symm c := rfl
   refine ⟨dQ.compAlgebraMap C, fun b ↦ ?_⟩
-  change dQ (e.symm (f b)) = _
-  rw [Ideal.quotientKerAlgEquivOfSurjective_symm_apply (f := f) hsurj b]
+  have hfb : algebraMap B C b = f b := rfl
+  rw [Derivation.compAlgebraMap_apply, hfb, halg,
+    Ideal.quotientKerAlgEquivOfSurjective_symm_apply (f := f) hsurj b]
   exact Derivation.liftQuotient_mk J dB _ b
 
 /-- **Huber Proposition 1.6.3(ii) (Conormal exact sequence)**: when `A, B` are Huber with `B`

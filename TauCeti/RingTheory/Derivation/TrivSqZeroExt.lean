@@ -87,8 +87,9 @@ lemma liftTrivSqZeroExt_fst {R A B M : Type*} [CommSemiring R] [CommSemiring A] 
     (d : Derivation R A M) (ι : A →ₐ[R] B)
     (hsmul : ∀ (a : A) (m : M), ι a • m = a • m)
     (hop : ∀ (a : A) (m : M), MulOpposite.op (ι a) • m = a • m) (a : A) :
-    fst (d.liftTrivSqZeroExt ι hsmul hop a) = ι a :=
-  show fst (inl (ι a) + inr (d a)) = ι a by simp
+    fst (d.liftTrivSqZeroExt ι hsmul hop a) = ι a := by
+  rw [liftTrivSqZeroExt_apply]
+  simp
 
 /-- Second component of `Derivation.liftTrivSqZeroExt` agrees with the derivation `d`. -/
 @[simp]
@@ -99,8 +100,9 @@ lemma liftTrivSqZeroExt_snd {R A B M : Type*} [CommSemiring R] [CommSemiring A] 
     (d : Derivation R A M) (ι : A →ₐ[R] B)
     (hsmul : ∀ (a : A) (m : M), ι a • m = a • m)
     (hop : ∀ (a : A) (m : M), MulOpposite.op (ι a) • m = a • m) (a : A) :
-    snd (d.liftTrivSqZeroExt ι hsmul hop a) = d a :=
-  show snd (inl (ι a) + inr (d a)) = d a by simp
+    snd (d.liftTrivSqZeroExt ι hsmul hop a) = d a := by
+  rw [liftTrivSqZeroExt_apply]
+  simp
 
 end Derivation
 
