@@ -166,10 +166,7 @@ theorem h1_complete_fin_four_of_card_eq_two (hG : Nat.card G = 2) (ℓ : GroupNo
     intro g
     obtain h | h : e g = 1 ∨ e g = swap 0 1 := by generalize e g = σ; revert σ; decide
     · simp [e.map_eq_one_iff.mp h]
-    · rw [GroupNorm.smulOfPos_apply, h, movedNorm_apply, card_support_swap (by decide),
-        e.eq_symm_apply.mpr h]
-      push_cast
-      ring
+    · simp [movedNorm_apply, e.eq_symm_apply.mpr h]
   rw [h1_congr_mulEquiv _ e he, h1_smulOfPos, h1_complete_fin_four_movedNorm_fin_two]
 
 /-- On a swap `t`, the subgroup `{1, t}` with the restricted moved-point norm has coboundary
@@ -188,9 +185,6 @@ private theorem eq_one_or_eq_rotThree_or_eq_inv :
   decide
 
 private theorem card_support_rotThree : #(rotThree : Perm (Fin 3)).support = 3 := by decide
-
-private theorem card_support_rotThree_inv : #((rotThree⁻¹ : alternatingGroup (Fin 3)) :
-    Perm (Fin 3)).support = 3 := by decide
 
 /-- Every `A₃`-valued cochain on `complete (Fin 4)` has a gauge costing at most two thirds of its
 defect, for the restricted moved-point norm. -/
@@ -281,20 +275,15 @@ theorem h1_complete_fin_four_of_card_eq_three (hG : Nat.card G = 3) (ℓ : Group
     mulEquivOfPrimeCardEq hG (by rw [Nat.card_eq_fintype_card]; decide)
   have hr : 0 < ℓ (e.symm rotThree) / 3 :=
     div_pos (map_pos_of_ne_one ℓ (by simpa using (show rotThree ≠ 1 by decide))) three_pos
-  have he : ∀ g, ((movedNorm (Fin 3)).comp (alternatingGroup (Fin 3)).subtype_injective).smulOfPos
-      hr (e g) = ℓ g := by
+  set ℓ' := ((movedNorm (Fin 3)).comp (alternatingGroup (Fin 3)).subtype_injective).smulOfPos hr
+  have hrot : ∀ g, e g = rotThree → ℓ' (e g) = ℓ g := fun g h => by
+    simp [ℓ', movedNorm_apply, e.eq_symm_apply.mpr h, card_support_rotThree]
+  have he : ∀ g, ℓ' (e g) = ℓ g := by
     intro g
     rcases eq_one_or_eq_rotThree_or_eq_inv (e g) with h | h | h
     · simp [e.map_eq_one_iff.mp h]
-    · rw [GroupNorm.smulOfPos_apply, h, GroupNorm.comp_apply, Subgroup.coe_subtype,
-        movedNorm_apply, card_support_rotThree, e.eq_symm_apply.mpr h]
-      push_cast
-      ring
-    · rw [GroupNorm.smulOfPos_apply, h, GroupNorm.comp_apply, Subgroup.coe_subtype,
-        movedNorm_apply, card_support_rotThree_inv, e.eq_symm_apply.mpr h, map_inv,
-        map_inv_eq_map]
-      push_cast
-      ring
+    · exact hrot g h
+    · simpa using hrot g⁻¹ (by simp [h])
   rw [h1_congr_mulEquiv _ e he, h1_smulOfPos, h1_complete_fin_four_alternatingGroup]
 
 /-- Every subgroup `H` of `Perm (Fin 3)` other than `⊥` and `⊤`, with the restricted moved-point

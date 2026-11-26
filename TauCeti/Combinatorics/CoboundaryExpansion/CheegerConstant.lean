@@ -151,17 +151,11 @@ theorem exists_div_eq_h1 [Finite G] {X : TwoComplex V} {ℓ : GroupNorm G}
 other. -/
 theorem h1_congr_mulEquiv {H : Type*} [Group H] (X : TwoComplex V) {ℓ_G : GroupNorm G}
     {ℓ_H : GroupNorm H} (e : G ≃* H) (he : ∀ g, ℓ_H (e g) = ℓ_G g) : h1 X ℓ_G = h1 X ℓ_H := by
-  have he' : ∀ h, ℓ_G (e.symm h) = ℓ_H h := fun h => by simpa using (he (e.symm h)).symm
+  have hsurj : Function.Surjective (Cochain.map (X := X) (e : G →* H)) := fun β =>
+    ⟨β.map (e.symm : H →* G), by ext u v _; simp⟩
   rw [h1_def, h1_def]; congr 1; ext r
-  constructor
-  · rintro ⟨α, hα, rfl⟩
-    refine ⟨α.map (e : G →* H), ?_, ?_⟩ <;>
-      simp only [Cochain.gaugeDist_map_mulEquiv he, Cochain.defect_map_eq (φ := (e : G →* H)) he,
-        hα]
-  · rintro ⟨α, hα, rfl⟩
-    refine ⟨α.map (e.symm : H →* G), ?_, ?_⟩ <;>
-      simp only [Cochain.gaugeDist_map_mulEquiv (e := e.symm) he',
-        Cochain.defect_map_eq (φ := (e.symm : H →* G)) he', hα]
+  simp only [Set.mem_ofPred_eq, hsurj.exists, Cochain.gaugeDist_map_mulEquiv he,
+    Cochain.defect_map_eq (φ := (e : G →* H)) he]
 
 end FixedOrder
 
