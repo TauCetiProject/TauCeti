@@ -216,9 +216,8 @@ theorem norm_diagonalPMap_sqrt_sq (hB : IsCoercive B) (hsymm : ∀ v w, B v w = 
     (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V)
     (hw : J w ∈ (b.diagonalPMap fun i ↦ √(κ i)).domain) :
     ‖b.diagonalPMap (fun i ↦ √(κ i)) ⟨J w, hw⟩‖ ^ 2 = B w w := by
-  refine (b.hasSum_norm_inner_sq _).unique ?_
+  refine (b.hasSum_norm_diagonalPMap_apply_sq _ ⟨J w, hw⟩).unique ?_
   convert hasSum_mul_inner_sq hB hsymm hJ hJu heq w using 2 with i
-  rw [b.inner_diagonalPMap_apply, Real.norm_eq_abs, sq_abs, mul_pow,
-    Real.sq_sqrt (pos_of_hilbertBasis hB hJu heq i).le]
+  rw [Real.norm_eq_abs, sq_abs, mul_pow, Real.sq_sqrt (pos_of_hilbertBasis hB hJu heq i).le]
 
 end IsCoercive
