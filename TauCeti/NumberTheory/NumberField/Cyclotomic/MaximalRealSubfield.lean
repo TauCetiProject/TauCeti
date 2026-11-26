@@ -42,9 +42,11 @@ More generally, let `k` be a totally real field and `K = k(μₙ)`. For every pr
 of unity `ζ`, the maximal real subfield of `K` is `k(ζ + ζ⁻¹)`, and for `n > 2` the field `K` is a
 CM field, quadratic over `k(ζ + ζ⁻¹)`. The image of `k` and `ζ + ζ⁻¹` are real under every complex
 embedding, so `k(ζ + ζ⁻¹) ⊆ K⁺`. Since `ζ` is a root of `X² - (ζ + ζ⁻¹) X + 1` and generates `K`,
-the degree of `K` over `k(ζ + ζ⁻¹)` is at most `2`; if it is `2`, then `K⁺` is one of the two ends
-of this extension, and it is not `K`, because `ζ` is not real unless `ζ = ±1`. For `n > 2` the
-field `K` is totally complex, and Mathlib's `NumberField.IsCMField.ofCMExtension` applies.
+the degree of `K` over `k(ζ + ζ⁻¹)` is at most `2`, with equality for `n > 2` because `ζ` is not
+real unless `ζ = ±1`. For `n > 2` the field `K` is also totally complex, so Mathlib's
+`NumberField.CMExtension.eq_maximalRealSubfield` identifies `k(ζ + ζ⁻¹)` with `K⁺`, and
+`NumberField.IsCMField.ofCMExtension` shows that `K` is CM. For `n ≤ 2`, `ζ = ±1` and
+`k(ζ + ζ⁻¹) = K`.
 Consequently every root of unity of order `m > 2` in `K` generates `K` over `k(ζ + ζ⁻¹)`; in
 particular, so do the `ℓ`-th roots of unity for an odd prime `ℓ` dividing `n`.
 
@@ -320,42 +322,11 @@ private theorem finrank_adjoin_add_inv_eq_two_of_notMem [NeZero n] (hζ : IsPrim
   refine le_antisymm (TauCeti.IntermediateField.finrank_adjoin_add_inv_le_two hgen) ?_
   have : Module.Finite k⟮ζ + ζ⁻¹⟯ K := .of_restrictScalars_finite ℚ _ K
   have hpos : 0 < finrank k⟮ζ + ζ⁻¹⟯ K := finrank_pos
-  have hne : finrank k⟮ζ + ζ⁻¹⟯ K ≠ 1 := fun h1 ↦ h <| by
-    obtain ⟨y, hy⟩ := mem_bot.1
-      (bot_eq_top_iff_finrank_eq_one.2 h1 ▸ mem_top : ζ ∈ (⊥ : IntermediateField k⟮ζ + ζ⁻¹⟯ K))
-    have hmem : algebraMap _ K y ∈ k⟮ζ + ζ⁻¹⟯ := y.property
-    rwa [hy] at hmem
+  have hne : finrank k⟮ζ + ζ⁻¹⟯ K ≠ 1 := fun h1 ↦ h <| (restrictScalars_bot_eq_self _).le
+    (bot_eq_top_iff_finrank_eq_one.2 h1 ▸ mem_top : ζ ∈ (⊥ : IntermediateField k⟮ζ + ζ⁻¹⟯ K))
   omega
 
 variable [IsTotallyReal k]
-
-/-- **The maximal real subfield of `k(ζₙ)` is `k(ζ + ζ⁻¹)`** over a totally real base `k`, for
-every primitive `n`-th root of unity `ζ`. -/
-theorem toSubfield_adjoin_add_inv_eq_maximalRealSubfield [NeZero n] (hζ : IsPrimitiveRoot ζ n) :
-    k⟮ζ + ζ⁻¹⟯.toSubfield = maximalRealSubfield K := by
-  have hle := toSubfield_adjoin_add_inv_le_maximalRealSubfield (k := k) (NeZero.ne n)
-    hζ.pow_eq_one
-  refine le_antisymm hle ?_
-  by_cases h : ζ ∈ k⟮ζ + ζ⁻¹⟯
-  · rw [adjoin_add_inv_eq_top_of_mem hζ h, top_toSubfield]
-    exact le_top
-  -- Otherwise `K` is quadratic over `k(ζ + ζ⁻¹)`, so the real subfield between them is one of the
-  -- two ends; it is not `K`, since `ζ` would then be a real root of unity `±1`.
-  have := isSimpleOrder_of_finrank_prime k⟮ζ + ζ⁻¹⟯ K
-    (finrank_adjoin_add_inv_eq_two_of_notMem hζ h ▸ Nat.prime_two)
-  let R : IntermediateField k⟮ζ + ζ⁻¹⟯ K :=
-    (maximalRealSubfield K).toIntermediateField fun x ↦ hle x.property
-  obtain hR | hR := IsSimpleOrder.eq_bot_or_eq_top R
-  · intro x hx
-    have hxR : x ∈ R := hx
-    rw [hR] at hxR
-    obtain ⟨y, rfl⟩ := mem_bot.1 hxR
-    exact y.property
-  · have hζR : ζ ∈ maximalRealSubfield K := (hR ▸ mem_top : ζ ∈ R)
-    obtain rfl | rfl := eq_one_or_eq_neg_one_of_pow_eq_one_of_mem_maximalRealSubfield
-      (NeZero.ne n) hζ.pow_eq_one hζR
-    · exact absurd (one_mem _) h
-    · exact absurd (neg_mem (one_mem _)) h
 
 /-- **`k(ζₙ)` is quadratic over `k(ζ + ζ⁻¹)`** for `n > 2`, over a totally real base `k`. -/
 theorem finrank_adjoin_add_inv_eq_two (hn : 2 < n) (hζ : IsPrimitiveRoot ζ n) :
@@ -363,6 +334,35 @@ theorem finrank_adjoin_add_inv_eq_two (hn : 2 < n) (hζ : IsPrimitiveRoot ζ n) 
   have : NeZero n := ⟨by omega⟩
   exact finrank_adjoin_add_inv_eq_two_of_notMem hζ fun h ↦ hζ.notMem_maximalRealSubfield hn
     (toSubfield_adjoin_add_inv_le_maximalRealSubfield (NeZero.ne n) hζ.pow_eq_one h)
+
+/-- For `n > 2`, `K = k(ζₙ)` is a CM extension of `k(ζ + ζ⁻¹)`: `K` is totally complex, and
+`k(ζ + ζ⁻¹)` is a totally real subfield over which `K` is quadratic. -/
+private theorem isCMExtension_adjoin_add_inv (hn : 2 < n) (hζ : IsPrimitiveRoot ζ n) :
+    IsTotallyComplex K ∧ IsTotallyReal k⟮ζ + ζ⁻¹⟯.toSubfield ∧
+      Algebra.IsQuadraticExtension k⟮ζ + ζ⁻¹⟯.toSubfield K :=
+  ⟨nrRealPlaces_eq_zero_iff.1 (InfinitePlace.IsPrimitiveRoot.nrRealPlaces_eq_zero_of_two_lt hn hζ),
+    isTotallyReal_iff_le_maximalRealSubfield.2
+      (toSubfield_adjoin_add_inv_le_maximalRealSubfield (by omega) hζ.pow_eq_one),
+    ⟨finrank_adjoin_add_inv_eq_two hn hζ⟩⟩
+
+/-- **The maximal real subfield of `k(ζₙ)` is `k(ζ + ζ⁻¹)`** over a totally real base `k`, for
+every primitive `n`-th root of unity `ζ`. -/
+theorem toSubfield_adjoin_add_inv_eq_maximalRealSubfield [NeZero n] (hζ : IsPrimitiveRoot ζ n) :
+    k⟮ζ + ζ⁻¹⟯.toSubfield = maximalRealSubfield K := by
+  by_cases hn : 2 < n
+  · obtain ⟨_, _, _⟩ := isCMExtension_adjoin_add_inv (k := k) hn hζ
+    exact CMExtension.eq_maximalRealSubfield K _
+  -- For `n ≤ 2`, `ζ = ±1` lies in `k(ζ + ζ⁻¹)`, which is therefore all of `K`.
+  refine le_antisymm
+    (toSubfield_adjoin_add_inv_le_maximalRealSubfield (NeZero.ne n) hζ.pow_eq_one) ?_
+  rw [adjoin_add_inv_eq_top_of_mem hζ ?_, top_toSubfield]
+  · exact le_top
+  have := NeZero.pos n
+  interval_cases n
+  · rw [one_right_iff.1 hζ]
+    exact one_mem _
+  · rw [hζ.eq_neg_one_of_two_right]
+    exact neg_mem (one_mem _)
 
 variable (k K) in
 include k in
@@ -373,12 +373,8 @@ theorem _root_.IsCyclotomicExtension.isCMField (hn : 2 < n) : IsCMField K := by
   have : NeZero n := ⟨by omega⟩
   obtain ⟨ζ, hζ⟩ : ∃ ζ : K, IsPrimitiveRoot ζ n :=
     ⟨_, _root_.IsCyclotomicExtension.zeta_spec n k K⟩
-  have : IsTotallyComplex K := nrRealPlaces_eq_zero_iff.1
-    (InfinitePlace.IsPrimitiveRoot.nrRealPlaces_eq_zero_of_two_lt hn hζ)
-  have : IsTotallyReal k⟮ζ + ζ⁻¹⟯ := isTotallyReal_iff_le_maximalRealSubfield.2
-    (toSubfield_adjoin_add_inv_le_maximalRealSubfield (NeZero.ne n) hζ.pow_eq_one)
-  have : Algebra.IsQuadraticExtension k⟮ζ + ζ⁻¹⟯ K := ⟨finrank_adjoin_add_inv_eq_two hn hζ⟩
-  exact IsCMField.ofCMExtension k⟮ζ + ζ⁻¹⟯ K
+  obtain ⟨_, _, _⟩ := isCMExtension_adjoin_add_inv (k := k) hn hζ
+  exact IsCMField.ofCMExtension k⟮ζ + ζ⁻¹⟯.toSubfield K
 
 /-- **`k(ζ + ζ⁻¹)(η) = k(ζₙ)` for every root of unity `η` of order `m > 2`** in `k(ζₙ)`, over a
 totally real base `k`. For instance, for an odd prime `ℓ` dividing `n`, adjoining the `ℓ`-th roots
@@ -395,7 +391,6 @@ theorem adjoin_adjoin_add_inv_eq_top [NeZero n] (hζ : IsPrimitiveRoot ζ n) {m 
   have := isSimpleOrder_of_finrank_prime k⟮ζ + ζ⁻¹⟯ K
     (finrank_adjoin_add_inv_eq_two_of_notMem hζ hζ' ▸ Nat.prime_two)
   refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hη ?_
-  obtain ⟨y, hy⟩ := mem_bot.1 (hbot ▸ mem_adjoin_simple_self _ η)
-  exact hy ▸ y.property
+  exact (restrictScalars_bot_eq_self _).le (hbot ▸ mem_adjoin_simple_self _ η)
 
 end IsPrimitiveRoot
