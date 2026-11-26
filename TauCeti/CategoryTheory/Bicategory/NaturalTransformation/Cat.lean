@@ -29,10 +29,14 @@ of composite pseudofunctors, which `simp` and `rw` do not see through. The same 
 handles identity and composite transport cells. The file also evaluates the naturality cell
 of a composite strong transformation on objects, with the Cat endpoints made explicit, and
 packages the components of a naturality isomorphism at an object
-(`Pseudofunctor.StrongTrans.naturalityObjIso`). It also conjugates pullbacks of morphisms by
-the naturality isomorphisms of a strong transformation. When the values of the target
-pseudofunctor are groupoids, every modification between strong transformations into it is
-invertible (`Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`).
+(`Pseudofunctor.StrongTrans.naturalityObjIso`). On objects, it also evaluates the naturality
+cells of identity transformations (`Pseudofunctor.StrongTrans.id_naturality_hom_app`), the unit
+condition of a strong transformation at a `1`-morphism equal to an identity
+(`Pseudofunctor.StrongTrans.naturality_id'_hom_app_comp_mapId'_hom_app`) and the naturality
+condition of a modification (`Pseudofunctor.StrongTrans.Modification.naturality_app`). It also
+conjugates pullbacks of morphisms by the naturality isomorphisms of a strong transformation.
+When the values of the target pseudofunctor are groupoids, every modification between strong
+transformations into it is invertible (`Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`).
 
 A strong transformation into `Cat` is an equivalence whenever its component functors are
 equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equivalenceMk` to
@@ -157,6 +161,40 @@ lemma comp_naturality_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
     simp
   exact (congrArg (fun m => m.toNatTrans.app X)
     (categoryStruct_comp_naturality_hom η θ f)).trans h
+
+/-- The naturality cell of the identity strong transformation of a pseudofunctor into `Cat` has
+identity components. `simp` proves this, but the form here can be used by `rw` in hypotheses
+whose other terms are typed by the components of the identity transformation. -/
+lemma id_naturality_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B] {F : B ⥤ᵖ Cat.{v, w}}
+    {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    ((𝟙 F : F ⟶ F).naturality f).hom.toNatTrans.app X = 𝟙 _ :=
+  -- The naturality cell is `ρ_ (F.map f) ≪≫ (λ_ (F.map f)).symm`, whose components are
+  -- identities of `Cat`.
+  Category.comp_id (𝟙 ((F.map f).toFunctor.obj X))
+
+/-- The naturality condition of a modification `Γ : η ⟶ θ` between strong transformations into
+`Cat`, on objects: the components of `Γ` commute with the naturality cells of `η` and `θ`. -/
+@[reassoc]
+lemma Modification.naturality_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} {η θ : F ⟶ G} (Γ : Modification η θ) {a b : B} (f : a ⟶ b)
+    (X : F.obj a) :
+    (Γ.app b).toNatTrans.app ((F.map f).toFunctor.obj X) ≫
+        (θ.naturality f).hom.toNatTrans.app X =
+      (η.naturality f).hom.toNatTrans.app X ≫
+        (G.map f).toFunctor.map ((Γ.app a).toNatTrans.app X) :=
+  congrArg (fun m => m.toNatTrans.app X) (Γ.naturality f)
+
+/-- The unit condition of a strong transformation into `Cat` on objects, for a `1`-morphism `f`
+equal to an identity: the naturality cell at `f` followed by the unit comparison of the target
+is the image of the unit comparison of the source. -/
+@[reassoc]
+lemma naturality_id'_hom_app_comp_mapId'_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) (X : F.obj a) :
+    (η.naturality f).hom.toNatTrans.app X ≫
+        (G.mapId' f hf).hom.toNatTrans.app ((η.app a).toFunctor.obj X) =
+      (η.app a).toFunctor.map ((F.mapId' f hf).hom.toNatTrans.app X) := by
+  subst hf
+  simp [mapId'_eq_mapId, naturality_id_hom_app]
 
 /-- The component at an object `X` of the naturality isomorphism of a strong transformation
 `η : F ⟶ G` into `Cat` along `f : a ⟶ b`: the image under `η` of the transport of `X` along `f`
