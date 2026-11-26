@@ -47,6 +47,7 @@ form: `ι_T σ_v = 0` for every form `σ` on `M` preserved by `φ`.
   integral curves of `T`.
 * `TauCeti.SmoothMappingTorus.timeForm_timeVectorField`,
   `TauCeti.SmoothMappingTorus.mfderiv_proj_timeVectorField`: `dt(T) = 1` and `dp(T) = 1`.
+* `TauCeti.SmoothMappingTorus.timeVectorField_ne_zero`: `T` vanishes nowhere.
 * `TauCeti.SmoothMappingTorus.isCompl_span_timeVectorField_ker_mfderiv_proj`: the splitting
   `T Y_φ = ℝ T ⊕ ker dp`.
 * `TauCeti.SmoothMappingTorus.mfderiv_map_timeVectorField`: the map `[t, x] ↦ [t, g x]` induced
@@ -194,6 +195,14 @@ theorem mfderiv_proj_timeVectorField (y : SmoothMappingTorus φ) :
   rw [timeForm_timeVectorField] at h
   -- `![T y] 0` is `T y`.
   exact h.symm
+
+/-- The field `T` vanishes nowhere, since `dp(T) = 1`. -/
+theorem timeVectorField_ne_zero (y : SmoothMappingTorus φ) : timeVectorField φ y ≠ 0 := by
+  intro hT
+  refine one_ne_zero (α := ℝ) ?_
+  rw [← mfderiv_proj_timeVectorField φ y, hT, map_zero]
+  -- The zero of the tangent line `TangentSpace 𝓘(ℝ) _` is the real number `0`.
+  rfl
 
 /-- The splitting `T Y_φ = ℝ T ⊕ V` of the tangent space of the mapping torus into the line
 spanned by the field `T` and the vertical tangent space `V = ker dp`. -/

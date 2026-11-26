@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
-public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Vertical
-public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.ComplementarySubbundle
 
 /-!
@@ -21,13 +20,14 @@ and the vertical tangent space `V = ker dp`
 (`TauCeti.SmoothMappingTorus.isCompl_span_timeVectorField_ker_mfderiv_proj`). This file proves the
 splitting at the level of smooth vector bundles.
 
-* Since `dt(T) = 1`, the field `T` vanishes nowhere, so the lines `ℝ T` form a smooth distribution
-  of rank one with global frame `T`
-  (`TauCeti.SmoothMappingTorus.isContMDiffDistribution_span_timeVectorField`), a trivial line
-  bundle.
-* The vertical spaces `V` form a smooth distribution of rank `dim E`
-  (`TauCeti.SmoothMappingTorus.isContMDiffDistribution_ker_mfderiv_proj`), the vertical tangent
-  bundle.
+The two summands are already smooth distributions: the lines `ℝ T` form a smooth distribution
+of rank one with global frame `T`
+(`TauCeti.SmoothMappingTorus.isContMDiffDistribution_span_timeVectorField`, in
+`TauCeti.Geometry.Manifold.Instances.MappingTorus.Submersion`), a trivial line bundle, and the
+vertical spaces `V` form a smooth distribution of rank `dim E`
+(`TauCeti.SmoothMappingTorus.isContMDiffDistribution_ker_mfderiv_proj`), the vertical tangent
+bundle.
+
 * Adding the two components, `(y, a, v) ↦ (y, a + v)`, is a smooth diffeomorphism from the total
   space of the direct-sum bundle `ℝ T ×ᵇ V` onto the tangent bundle of `Y_φ`
   (`TauCeti.SmoothMappingTorus.exists_bundleDiffeomorph_prod_tangentBundle`): the tangent bundle
@@ -43,8 +43,6 @@ No compactness of `M` is needed.
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.isContMDiffDistribution_span_timeVectorField`: the line field
-  spanned by `T` is a smooth distribution of rank one.
 * `TauCeti.SmoothMappingTorus.exists_bundleDiffeomorph_prod_tangentBundle`: the splitting
   `T Y_φ = ℝ T ⊕ V` as a diffeomorphism of total spaces.
 * `TauCeti.SmoothMappingTorus.projection_ker_mfderiv_proj`,
@@ -71,20 +69,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
   (φ : M ≃ₘ⟮I, I⟯ M)
-
-/-- The suspension vector field `T` vanishes nowhere, since `dt(T) = 1`. -/
-theorem timeVectorField_ne_zero (y : SmoothMappingTorus φ) : timeVectorField φ y ≠ 0 := by
-  intro h
-  have hT := timeForm_timeVectorField φ y
-  rw [h, ← SmoothForm.degreeOneEquiv_apply_apply_vec, map_zero] at hT
-  exact zero_ne_one hT
-
-/-- The lines `ℝ T` spanned by the suspension vector field form a smooth distribution of rank one
-on the mapping torus, with global frame `T`. -/
-theorem isContMDiffDistribution_span_timeVectorField :
-    IsContMDiffDistribution (𝓘(ℝ).prod I) ∞ 1 fun y : SmoothMappingTorus φ ↦
-      ℝ ∙ timeVectorField φ y :=
-  isContMDiffDistribution_span_singleton (contMDiff_timeVectorField φ) (timeVectorField_ne_zero φ)
 
 /-- The projection of a tangent vector `w` of the mapping torus onto the vertical space `V = ker dp`
 along the suspension vector field `T` is `w - dt(w) T`. -/
