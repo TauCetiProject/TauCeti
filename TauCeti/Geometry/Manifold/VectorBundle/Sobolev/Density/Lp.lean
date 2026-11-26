@@ -39,8 +39,11 @@ They are `H^{t,p}` with respect to `A` for every `t`
 (`TauCeti.SquareChartPartition.memBesselPotential_reconstruction_schwartzMap`). Consequently, for
 `r ≤ s`, the inclusion `H^{s,p} ⊆ H^{r,p}` has dense range
 (`TauCeti.SquareChartPartition.denseRange_besselPotentialInclusion`). For `p = 2` these statements
-give the corresponding ones for the Sobolev spaces `H^s` of `A`
-(`TauCeti.SquareChartPartition.memSobolev_reconstruction`).
+give the corresponding ones for the Sobolev spaces `H^s` of `A`, through the isomorphism
+`H^{s,2} ≃ H^s` (`TauCeti.SquareChartPartition.besselPotentialSpaceTwoEquivSobolevSpace`): see
+`TauCeti.SquareChartPartition.memSobolev_reconstruction`,
+`TauCeti.SquareChartPartition.sobolevReconstruction` and
+`TauCeti.SquareChartPartition.denseRange_inclusion`.
 
 ## The argument
 
