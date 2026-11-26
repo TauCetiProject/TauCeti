@@ -32,6 +32,8 @@ space. The norm bounds for exponentials in a general normed algebra live in
 
 * `ContinuousLinearMap.exp_add_smul`, `ContinuousLinearMap.exp_add_smul_apply`: exponentials of
   scalar multiples of a bounded operator compose additively.
+* `ContinuousLinearMap.hasDerivAt_exp_smul_apply`, `ContinuousLinearMap.apply_exp_smul_apply`: the
+  orbit `t ↦ exp (t • A) z` has derivative `exp (t • A) (A z)`, and `A` commutes with `exp (t • A)`.
 * `ContinuousLinearMap.expEquiv`: the exponential of a bounded operator as a continuous linear
   automorphism with inverse `exp (-B)`, with `ContinuousLinearMap.coe_expEquiv` and
   `ContinuousLinearMap.coe_expEquiv_symm` identifying it and its inverse with `exp B` and
@@ -74,6 +76,19 @@ theorem exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
 theorem exp_add_smul_apply (A : X →L[𝕜] X) (s t : 𝕜) (x : X) :
     exp ((s + t) • A) x = exp (s • A) (exp (t • A) x) := by
   rw [ContinuousLinearMap.exp_add_smul, ContinuousLinearMap.comp_apply]
+
+/-- The orbit `t ↦ exp (t • A) z` of a bounded operator has derivative `exp (t • A) (A z)`. -/
+theorem hasDerivAt_exp_smul_apply (A : X →L[𝕜] X) (t : 𝕜) (z : X) :
+    HasDerivAt (fun s : 𝕜 ↦ exp (s • A) z) (exp (t • A) (A z)) t := by
+  simpa [mul_apply_eq_comp] using
+    (hasDerivAt_exp_smul_const A t).clm_apply (hasDerivAt_const t z)
+
+omit [CompleteSpace X] in
+/-- A bounded operator commutes with the exponentials of its scalar multiples:
+`A (exp (t • A) z) = exp (t • A) (A z)`. -/
+theorem apply_exp_smul_apply (A : X →L[𝕜] X) (t : 𝕜) (z : X) :
+    A (exp (t • A) z) = exp (t • A) (A z) := by
+  simpa [mul_apply_eq_comp] using congr($(((Commute.refl A).smul_right t).exp_right) z)
 
 /-- The exponential `exp B` of a continuous endomorphism of a Banach space, as a continuous linear
 automorphism with inverse `exp (-B)`. -/
