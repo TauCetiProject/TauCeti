@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Calculus.Deriv.Slope
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
-public import TauCeti.Topology.Order.Interval
+public import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The metric derivative of a curve

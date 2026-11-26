@@ -61,7 +61,10 @@ equivalent to a nonarchimedean absolute value.
   `nrComplexPlaces_eq_zero_of_zero_lt_discr` (degree less than `4`),
   `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`) and
   `NumberField.IsTotallyReal.of_zero_lt_discr` read the signature off the sign of the
-  discriminant in low degree.
+  discriminant in low degree, and `NumberField.IsTotallyComplex.of_discr_lt_zero` shows that a
+  quadratic field of negative discriminant is totally complex.
+* `NumberField.IsTotallyComplex.of_finrank_le_two_mul_nrComplexPlaces`: a field is totally complex
+  as soon as its complex places use up the degree.
 * `NumberField.IsTotallyReal.nontrivial_ringHom_real`: a totally real field of degree greater
   than one has two distinct real embeddings.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
@@ -250,6 +253,20 @@ theorem InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero (hd : discr K < 0)
 theorem IsTotallyReal.of_zero_lt_discr (hd : 0 < discr K) (hK : Module.finrank ℚ K < 4) :
     IsTotallyReal K :=
   nrComplexPlaces_eq_zero_iff.mp (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)
+
+/-- A number field whose complex places use up the degree, `[K : ℚ] ≤ 2 r₂`, is totally complex:
+the converse of Mathlib's `NumberField.IsTotallyComplex.finrank`. -/
+theorem IsTotallyComplex.of_finrank_le_two_mul_nrComplexPlaces
+    (h : Module.finrank ℚ K ≤ 2 * nrComplexPlaces K) : IsTotallyComplex K := by
+  have h' := card_add_two_mul_card_eq_rank K
+  exact nrRealPlaces_eq_zero_iff.mp (by omega)
+
+/-- A number field of degree `2` with negative discriminant, an imaginary quadratic field, is
+totally complex: its single complex place uses up the degree. -/
+theorem IsTotallyComplex.of_discr_lt_zero (hd : discr K < 0) (hK : Module.finrank ℚ K = 2) :
+    IsTotallyComplex K :=
+  .of_finrank_le_two_mul_nrComplexPlaces <| by
+    rw [hK, InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)]
 
 /-- A totally real number field of degree greater than one has two distinct real embeddings:
 each of its complex embeddings, of which there are as many as the degree, is real. -/

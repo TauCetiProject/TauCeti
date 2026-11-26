@@ -20,8 +20,6 @@ import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 
 The counit of restriction of scalars along a ring equivalence, and its inverse, act as the
 identity on the underlying elements.
-Restriction of scalars along an isomorphism of `R`-algebras keeps the endomorphism algebra of a
-module (`ModuleCat.moduleEndRestrictScalarsAlgEquiv`).
 
 It also records three facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
 
@@ -40,8 +38,13 @@ Along the structure map `algebraMap R S` of an `R`-algebra, extension of scalars
 product `S ⊗[R] M` taken with the algebra module structure of `S`
 (`ModuleCat.extendScalarsAlgebraMapIso`), naturally in `M`
 (`ModuleCat.extendScalarsAlgebraMapIso_inv_naturality`,
-`ModuleCat.extendScalarsAlgebraMapIso_hom_naturality`). Through it, extension of scalars along
-any ring homomorphism preserves finitely generated modules and projective modules
+`ModuleCat.extendScalarsAlgebraMapIso_hom_naturality`). In particular the extension of scalars
+of a free module `α →₀ R` is the free module `α →₀ S` (`ModuleCat.extendScalarsFinsuppIso`, with
+`ModuleCat.extendScalarsFinsuppIso_hom_tmul` and `ModuleCat.extendScalarsFinsuppIso_inv_single`),
+naturally for linear maps compatible with the change of coefficients
+(`ModuleCat.extendScalarsFinsuppIso_hom_naturality`). Through `extendScalarsAlgebraMapIso`,
+extension of scalars along any ring homomorphism preserves finitely generated modules and
+projective modules
 (`ModuleCat.finite_extendScalars_obj`, `ModuleCat.projective_extendScalars_obj`). When `S` is
 flat over `R`, this extension of scalars is exact and so preserves finite limits
 (`ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`). Along any ring map, extension of
@@ -89,59 +92,6 @@ theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply (e : R ≃
     (restrictScalarsEquivalenceOfRingEquiv e).counitIso.inv.app M x = x := (rfl)
 
 end RestrictScalars
-
-section ModuleEnd
-
-open scoped ModuleCat.Algebra
-
-variable (R : Type*) [CommSemiring R] {Γ Γ' : Type*} [Ring Γ] [Ring Γ'] [Algebra R Γ]
-  [Algebra R Γ'] (σ : Γ ≃ₐ[R] Γ') (W : Type v) [AddCommGroup W] [Module Γ' W] [Module R W]
-  [IsScalarTower R Γ' W]
-
-/-- **Endomorphisms after restriction of scalars along an isomorphism.** Restricting the scalars of
-a `Γ'`-module `W` along an isomorphism of `R`-algebras `σ : Γ ≃ Γ'` does not change its
-endomorphism algebra. -/
-noncomputable def moduleEndRestrictScalarsAlgEquiv :
-    Module.End Γ ((restrictScalarsEquivalenceOfRingEquiv σ.toRingEquiv).functor.obj
-      (ModuleCat.of Γ' W)) ≃ₐ[R] Module.End Γ' W where
-  -- The restricted module has carrier `W` and action `γ • w = σ γ • w`, by definition.
-  toFun φ :=
-    { toFun w := φ w
-      map_add' := φ.map_add
-      map_smul' γ w := by
-        obtain ⟨γ, rfl⟩ := σ.surjective γ
-        exact φ.map_smul γ w }
-  -- The same definitional carrier and action, read in the other direction.
-  invFun ψ :=
-    { toFun w := ψ w
-      map_add' := ψ.map_add
-      map_smul' γ w := ψ.map_smul (σ γ) w }
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  commutes' r := LinearMap.ext fun w ↦
-    -- `smul_def` unfolds the action on the restricted module, whose carrier is `W`.
-    (restrictScalars.smul_def (M := ModuleCat.of Γ' W) σ.toRingEquiv.toRingHom
-      (algebraMap R Γ r) w).trans <| by
-        rw [Module.algebraMap_end_apply, ← algebraMap_smul Γ' r w]
-        exact congrArg (· • w) (σ.commutes r)
-
-/-- `ModuleCat.moduleEndRestrictScalarsAlgEquiv` keeps the underlying function. -/
-@[simp]
-theorem moduleEndRestrictScalarsAlgEquiv_apply
-    (φ : Module.End Γ ((restrictScalarsEquivalenceOfRingEquiv σ.toRingEquiv).functor.obj
-      (ModuleCat.of Γ' W))) (w : W) :
-    moduleEndRestrictScalarsAlgEquiv R σ W φ w = φ w :=
-  (rfl)
-
-/-- The inverse of `ModuleCat.moduleEndRestrictScalarsAlgEquiv` keeps the underlying function. -/
-@[simp]
-theorem moduleEndRestrictScalarsAlgEquiv_symm_apply (ψ : Module.End Γ' W) (w : W) :
-    (moduleEndRestrictScalarsAlgEquiv R σ W).symm ψ w = ψ w :=
-  (rfl)
-
-end ModuleEnd
 
 section Additive
 
@@ -325,6 +275,71 @@ theorem extendScalarsAlgebraMapIso_hom_naturality {M N : ModuleCat.{w} R} (φ : 
     Category.comp_id]
 
 end AlgebraMap
+
+section Finsupp
+
+open scoped TensorProduct
+
+-- Mathlib's `extendScalars` raises the universe of the modules to that of `S`, so `R` and `S` share
+-- a universe for the extension of `α →₀ R` to be identified with `α →₀ S`.
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- **Extension of scalars of a free module.** Extending the scalars of the free `R`-module
+`α →₀ R` along `algebraMap R S` gives the free `S`-module `α →₀ S`: the class of `s ⊗ c` is `s`
+times `c` with its coefficients mapped to `S` (`ModuleCat.extendScalarsFinsuppIso_hom_tmul`). -/
+noncomputable def extendScalarsFinsuppIso (α : Type v) :
+    (extendScalars (algebraMap R S)).obj (of R (α →₀ R)) ≅ of S (α →₀ S) :=
+  letI := Classical.decEq α
+  extendScalarsAlgebraMapIso _ ≪≫ (TensorProduct.finsuppScalarRight R S S α).toModuleIso
+
+/-- `extendScalarsFinsuppIso` sends `s ⊗ c` to `s` times the image of `c` in `α →₀ S`. -/
+@[simp]
+theorem extendScalarsFinsuppIso_hom_tmul (α : Type v) (s : S) (c : α →₀ R) :
+    (extendScalarsFinsuppIso α).hom (s ⊗ₜ[R, algebraMap R S] c) =
+      s • Finsupp.mapRange (algebraMap R S) (map_zero _) c := by
+  let := Classical.decEq α
+  refine (congrArg (TensorProduct.finsuppScalarRight R S S α)
+    (extendScalarsAlgebraMapIso_hom_tmul (of R (α →₀ R)) s c)).trans ?_
+  ext i
+  simp [Algebra.smul_def, mul_comm]
+
+/-- The inverse of `extendScalarsFinsuppIso` sends the basis chain `single a s` to
+`s ⊗ single a 1`. -/
+@[simp]
+theorem extendScalarsFinsuppIso_inv_single (α : Type v) (a : α) (s : S) :
+    (extendScalarsFinsuppIso (R := R) α).inv (Finsupp.single a s) =
+      s ⊗ₜ[R, algebraMap R S] Finsupp.single a 1 := by
+  have h : Finsupp.single a s = (extendScalarsFinsuppIso α).hom
+      (s ⊗ₜ[R, algebraMap R S] Finsupp.single a (1 : R)) := by
+    rw [extendScalarsFinsuppIso_hom_tmul, Finsupp.mapRange_single, map_one,
+      Finsupp.smul_single_one]
+  exact (congrArg (extendScalarsFinsuppIso α).inv h).trans (Iso.hom_inv_id_apply _ _)
+
+/-- **Naturality of `extendScalarsFinsuppIso`.** An `R`-linear map `φ : (α →₀ R) → (β →₀ R)` and
+an `S`-linear map `ψ : (α →₀ S) → (β →₀ S)` which agree on the chains with coefficients in the
+image of `R` correspond under `extendScalarsFinsuppIso`: the extension of scalars of `φ` is `ψ`. -/
+@[reassoc]
+theorem extendScalarsFinsuppIso_hom_naturality {α β : Type v} (φ : (α →₀ R) →ₗ[R] (β →₀ R))
+    (ψ : (α →₀ S) →ₗ[S] (β →₀ S))
+    (h : ∀ c, Finsupp.mapRange (algebraMap R S) (map_zero _) (φ c) =
+      ψ (Finsupp.mapRange (algebraMap R S) (map_zero _) c)) :
+    (extendScalars (algebraMap R S)).map (ofHom φ) ≫ (extendScalarsFinsuppIso β).hom =
+      (extendScalarsFinsuppIso α).hom ≫ ofHom ψ :=
+  -- The composites are evaluated by `rfl`: `rw [CategoryTheory.comp_apply]` fails on elements of
+  -- an extension of scalars, whose carrier is a tensor product only up to unfolding.
+  ExtendScalars.hom_ext fun c ↦ calc
+    _ = (extendScalarsFinsuppIso β).hom ((1 : S) ⊗ₜ[R, algebraMap R S] φ c) := rfl
+    _ = Finsupp.mapRange (algebraMap R S) (map_zero _) (φ c) := by
+      rw [extendScalarsFinsuppIso_hom_tmul, one_smul]
+    _ = ψ (Finsupp.mapRange (algebraMap R S) (map_zero _) c) := h c
+    -- `rw` fails here: inside `ψ`, the tensor `1 ⊗ c` elaborates with a module instance that
+    -- does not match `extendScalarsFinsuppIso_hom_tmul` syntactically, so the step applies
+    -- `extendScalarsFinsuppIso_hom_tmul` and `one_smul` as in the second step.
+    _ = ψ ((extendScalarsFinsuppIso α).hom ((1 : S) ⊗ₜ[R, algebraMap R S] c)) :=
+      congrArg ψ ((extendScalarsFinsuppIso_hom_tmul α 1 c).trans (one_smul S _)).symm
+    _ = _ := rfl
+
+end Finsupp
 
 section FiniteProjective
 
