@@ -85,7 +85,7 @@ variable [MeasurableSpace G] [BorelSpace G] (μ : Measure G) [μ.IsMulLeftInvari
   [μ.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure μ]
 
 private def regularTwistOperator (s : G) : Lp H 2 μ →L[ℂ] Lp H 2 μ :=
-  Lp.mulStrong μ ENNReal.ofNat_ne_top
+  Lp.strongOperatorMultiplication μ ENNReal.ofNat_ne_top
     (fun r => ρ.multiplierExtension hρ (regularTwist α ω s r))
     (fun v => (continuous_regularTwist_apply α ω ρ hρ v).comp
       (continuous_const.prodMk continuous_id))
@@ -95,12 +95,12 @@ omit [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] in
 private theorem coeFn_regularTwistOperator (s : G) (ξ : Lp H 2 μ) :
     regularTwistOperator α ω ρ hρ μ s ξ =ᵐ[μ]
       fun r => ρ.multiplierExtension hρ (regularTwist α ω s r) (ξ r) :=
-  Lp.coeFn_mulStrong μ ENNReal.ofNat_ne_top _ _ _ ξ
+  Lp.strongOperatorMultiplication_ae μ ENNReal.ofNat_ne_top _ _ _ ξ
 
 omit [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] in
 private theorem regularTwistOperator_mem_unitary (s : G) :
     regularTwistOperator α ω ρ hρ μ s ∈ unitary (Lp H 2 μ →L[ℂ] Lp H 2 μ) :=
-  Lp.mulStrong_mem_unitary μ _ _ _ fun r =>
+  Lp.strongOperatorMultiplication_mem_unitary μ _ _ _ fun r =>
     Unitary.map_mem (ρ.multiplierExtension hρ) (regularTwist_mem_unitary α ω s r)
 
 /-- The projective unitary translation in the twisted regular pair. -/
@@ -179,7 +179,7 @@ private theorem continuous_regularUnitary_apply (ξ : Lp H 2 μ) :
     (T := fun s => regularTwistOperator α ω ρ hρ μ s)
     (C := 1)
   · intro η
-    exact Lp.continuous_mulStrong_apply μ ENNReal.ofNat_ne_top
+    exact Lp.continuous_strongOperatorMultiplication_apply μ ENNReal.ofNat_ne_top
       (fun s r => ρ.multiplierExtension hρ (regularTwist α ω s r))
       (continuous_regularTwist_apply α ω ρ hρ)
       (norm_regularTwist_apply_le α ω ρ hρ) η

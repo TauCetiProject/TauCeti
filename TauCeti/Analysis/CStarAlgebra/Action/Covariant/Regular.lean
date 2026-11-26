@@ -309,7 +309,8 @@ private theorem continuous_regularMultiplier_apply (m : 𝓜(ℂ, A)) (v : H) :
     (fun r => (StarAlgEquiv.norm_map (α.multiplier r⁻¹) m).le) v
 
 private def regularMultiplier (m : 𝓜(ℂ, A)) : Lp H 2 μ →L[ℂ] Lp H 2 μ :=
-  Lp.mulStrong μ ENNReal.ofNat_ne_top (fun r => ρ.multiplierExtension hρ (α.multiplier r⁻¹ m))
+  Lp.strongOperatorMultiplication μ ENNReal.ofNat_ne_top
+    (fun r => ρ.multiplierExtension hρ (α.multiplier r⁻¹ m))
     (continuous_regularMultiplier_apply α ρ hρ m)
     ⟨‖m‖, fun r => (NonUnitalStarAlgHom.norm_apply_le
       (ρ.multiplierExtension hρ).toNonUnitalStarAlgHom _).trans
@@ -319,7 +320,7 @@ omit [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] in
 private theorem coeFn_regularMultiplier (m : 𝓜(ℂ, A)) (ξ : Lp H 2 μ) :
     regularMultiplier α ρ μ hρ m ξ =ᵐ[μ]
       fun r => ρ.multiplierExtension hρ (α.multiplier r⁻¹ m) (ξ r) :=
-  Lp.coeFn_mulStrong μ ENNReal.ofNat_ne_top _ _ _ ξ
+  Lp.strongOperatorMultiplication_ae μ ENNReal.ofNat_ne_top _ _ _ ξ
 
 private theorem regularMultiplier_eq (m : 𝓜(ℂ, A)) :
     regularMultiplier α ρ μ hρ m =
