@@ -58,9 +58,10 @@ open scoped Topology
 
 namespace ProbabilityTheory
 
-/-- Above the grid point at level `j / K` with `j = ⌊K · cdf ν t⌋₊ + 1`, the discrepancy
-`cdf μ t - cdf ν t` exceeds the discrepancy at the grid point by at most `1 / K`. When no such
-grid point exists, `cdf ν t ≥ 1 - 1 / K` and the bound `cdf μ t ≤ 1` suffices. -/
+/-- Using the grid point at level `j / K` with `j = ⌊K · cdf ν t⌋₊ + 1`, which lies at or above
+`t`, the discrepancy `cdf μ t - cdf ν t` exceeds the discrepancy at the grid point by at most
+`1 / K`. When no such grid point exists, `cdf ν t ≥ 1 - 1 / K` and the bound `cdf μ t ≤ 1`
+suffices. -/
 private theorem cdf_sub_cdf_le_of_grid {μ ν : Measure ℝ} (hν : Continuous (cdf ν)) {K : ℕ}
     (hK : 0 < K) {δ : ℝ} (hδ : 0 ≤ δ)
     (h : ∀ j ∈ Finset.Ioo 0 K, |cdf μ (ν.quantile (j / K)) - cdf ν (ν.quantile (j / K))| ≤ δ)
@@ -98,9 +99,9 @@ private theorem cdf_sub_cdf_le_of_grid {μ ν : Measure ℝ} (hν : Continuous (
   have hgrid := (abs_le.1 (h j (Finset.mem_Ioo.2 ⟨by omega, hjK⟩))).2
   linarith
 
-/-- Below the grid point at level `j / K` with `j = ⌈K · cdf ν t⌉₊ - 1`, the discrepancy
-`cdf ν t - cdf μ t` exceeds the discrepancy at the grid point by at most `1 / K`. When no such
-grid point exists, `cdf ν t ≤ 1 / K` and the bound `cdf μ t ≥ 0` suffices. -/
+/-- Using the grid point at level `j / K` with `j = ⌈K · cdf ν t⌉₊ - 1`, which lies at or below
+`t`, the discrepancy `cdf ν t - cdf μ t` exceeds the discrepancy at the grid point by at most
+`1 / K`. When no such grid point exists, `cdf ν t ≤ 1 / K` and the bound `cdf μ t ≥ 0` suffices. -/
 private theorem cdf_sub_cdf_le_of_grid' {μ ν : Measure ℝ} (hν : Continuous (cdf ν)) {K : ℕ}
     (hK : 0 < K) {δ : ℝ} (hδ : 0 ≤ δ)
     (h : ∀ j ∈ Finset.Ioo 0 K, |cdf μ (ν.quantile (j / K)) - cdf ν (ν.quantile (j / K))| ≤ δ)
