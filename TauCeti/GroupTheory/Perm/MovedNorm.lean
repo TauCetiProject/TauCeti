@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.InformationTheory.Hamming
 public import TauCeti.Analysis.Normed.Group.ConjInvariant
 import TauCeti.Algebra.Group.Basic
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # The moved-point norm on finite permutation groups
@@ -86,7 +87,7 @@ theorem two_le_movedNorm_of_sign_eq_neg_one {σ : Perm α} (hσ : sign σ = -1) 
     2 ≤ movedNorm α σ := by
   apply two_le_movedNorm_of_ne_one
   rintro rfl
-  exact (by decide : (1 : ℤˣ) ≠ -1) (by simpa using hσ)
+  simp at hσ
 
 /-- Multiplying three `{1, τ}` indicators of a transposition `τ` gives moved-point norm `2` when an
 odd number of the three conditions hold, and `0` otherwise. -/
@@ -94,10 +95,7 @@ theorem movedNorm_mul_triple_ite_isSwap {τ : Perm α} (hτ : τ.IsSwap) (p q r 
     [Decidable q] [Decidable r] :
     movedNorm α ((if p then τ else 1) * (if q then τ else 1) * (if r then τ else 1)) =
       if Xor p (Xor q r) then 2 else 0 := by
-  have hτ₂ : τ * τ = 1 := by
-    rcases hτ with ⟨x, y, -, rfl⟩
-    exact Equiv.swap_mul_self x y
-  rw [TauCeti.ite_mul_ite_mul_ite_of_mul_self hτ₂]
+  rw [TauCeti.ite_mul_ite_mul_ite_of_mul_self hτ.mul_self_eq_one]
   split_ifs <;> simp [hτ.movedNorm]
 
 /-- Variant of `Equiv.Perm.movedNorm_mul_triple_ite_isSwap` with the third indicator inverted,
@@ -106,10 +104,7 @@ theorem movedNorm_mul_triple_ite_inv_isSwap {τ : Perm α} (hτ : τ.IsSwap) (p 
     [Decidable p] [Decidable q] [Decidable r] :
     movedNorm α ((if p then τ else 1) * (if q then τ else 1) * (if r then τ else 1)⁻¹) =
       if Xor p (Xor q r) then 2 else 0 := by
-  have hτ₂ : τ * τ = 1 := by
-    rcases hτ with ⟨x, y, -, rfl⟩
-    exact Equiv.swap_mul_self x y
-  rw [TauCeti.ite_inv_of_mul_self hτ₂, movedNorm_mul_triple_ite_isSwap hτ]
+  rw [TauCeti.ite_inv_of_mul_self hτ.mul_self_eq_one, movedNorm_mul_triple_ite_isSwap hτ]
 
 /-- For `{1, τ}`-valued endpoints `b₁` and `b₂`, gauge-conjugating a `{1, τ}` indicator gives
 moved-point norm `2` when `p` differs from `Xor (b₁ ≠ 1) (b₂ ≠ 1)`, and `0` otherwise. -/
@@ -117,9 +112,7 @@ theorem movedNorm_inv_mul_ite_mul_of_eq_one_or {τ : Perm α} (hτ : τ.IsSwap) 
     (hb₁ : b₁ = 1 ∨ b₁ = τ) (hb₂ : b₂ = 1 ∨ b₂ = τ) (p : Prop) [Decidable p] :
     movedNorm α (b₁⁻¹ * (if p then τ else 1) * b₂) =
       if Xor p (Xor (b₁ ≠ 1) (b₂ ≠ 1)) then 2 else 0 := by
-  have hτ₂ : τ * τ = 1 := by
-    rcases hτ with ⟨x, y, -, rfl⟩
-    exact Equiv.swap_mul_self x y
+  have hτ₂ := hτ.mul_self_eq_one
   have hτ_inv : τ⁻¹ = τ := inv_eq_of_mul_eq_one_right hτ₂
   have hτ_ne : τ ≠ 1 := by
     rintro rfl
