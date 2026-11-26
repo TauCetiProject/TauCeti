@@ -21,7 +21,9 @@ position inside that block. This file records the induced block permutations and
 of nested blocks with the finite-product indexing equivalence.
 It also concatenates two finite blocks with the second block read in reverse order, and splits
 the first pair off a doubly indexed family listed pair by pair through `finProdFinEquiv`, and
-splits `Fin n` as `Fin (n - r) ⊕ Fin r` with the initial block of `r` indices moved to the end.
+splits `Fin n` as `Fin (n - r) ⊕ Fin r` with the initial block of `r` indices moved to the end. The
+index `finProdFinEquiv (i, c)` of `Fin (l * n)` lies among the first `k * n` exactly when `i < k`,
+and is then the index `finProdFinEquiv (i, c)` of `Fin (k * n)`.
 
 It also concatenates two finite blocks with the second block read in reverse order. For two
 blocks of equal length, laid out as the bottom and the top row of a rectangle and read
@@ -109,6 +111,19 @@ theorem comp_finProdFinEquiv_symm_succ {α : Type*} {m : ℕ} (b : Fin (m + 1) �
   · simp only [Matrix.cons_val_succ]
     congr 1
     ext <;> simp [Fin.coe_divNat, Fin.coe_modNat] <;> omega
+
+/-- The index `c + n * i` of `Fin (l * n)` is among the first `k * n` exactly when `i < k`. -/
+theorem finProdFinEquiv_lt_mul_iff {k l n : ℕ} (i : Fin l) (c : Fin n) :
+    (finProdFinEquiv (i, c) : ℕ) < k * n ↔ (i : ℕ) < k := by
+  rw [← Nat.div_lt_iff_lt_mul c.pos, finProdFinEquiv_apply_val, Nat.add_mul_div_left _ _ c.pos,
+    Nat.div_eq_of_lt c.isLt, zero_add]
+
+/-- Reading the index `c + n * i` of `Fin (l * n)` with `i < k` in `Fin (k * n)` gives the index
+`finProdFinEquiv (i, c)` of `Fin (k * n)`. -/
+theorem mk_finProdFinEquiv {k l n : ℕ} {i : Fin l} (c : Fin n) (hi : (i : ℕ) < k) :
+    (⟨finProdFinEquiv (i, c), (finProdFinEquiv_lt_mul_iff i c).2 hi⟩ : Fin (k * n)) =
+      finProdFinEquiv (⟨i, hi⟩, c) :=
+  Fin.ext (by simp [finProdFinEquiv_apply_val])
 
 /-- For two blocks of equal length, exchanging the blocks reverses the concatenated order. -/
 theorem finSumFinRevEquiv_swap {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin k) :

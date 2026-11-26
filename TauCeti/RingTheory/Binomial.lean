@@ -827,7 +827,13 @@ theorem choose_add_one_succ_eq_div_mul_descPochhammer_eval {R : Type*} [Division
   have h := _root_.Ring.descPochhammer_eq_factorial_smul_choose (r + 1) (k + 1)
   rw [descPochhammer_smeval_eq_eval, descPochhammer_succ_eval_add_one,
     ← Nat.cast_smul_eq_nsmul R, smul_eq_mul] at h
-  rw [eq_comm, div_eq_mul_inv, mul_assoc, ← mul_right_inj' hfac, ← mul_assoc,
-    (Nat.cast_commute _ (r + 1)).eq, mul_assoc (r + 1), mul_inv_cancel_left₀ hfac, h]
+  have hcancel :
+      (r + 1) / ((k + 1).factorial : R) * ((k + 1).factorial : R) = r + 1 :=
+    div_mul_cancel₀ (r + 1) hfac
+  have hcomm :
+      ((k + 1).factorial : R) * ((r + 1) / ((k + 1).factorial : R)) = r + 1 :=
+    (Nat.cast_commute (k + 1).factorial ((r + 1) / (k + 1).factorial)).eq.trans hcancel
+  refine mul_left_cancel₀ hfac ?_
+  rw [← h, ← mul_assoc, hcomm]
 
 end TauCeti.Ring

@@ -78,6 +78,8 @@ subhomogeneous under factors `≥ 1`, and zero only at `0`.
   determined by the sign of `a`, including the zero-coefficient case.
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
   `a ≤ m`.
+* `TauCeti.add_le_of_le_affine_sub`: an affine quadratic interpolation bound above its initial
+  value forces the corresponding endpoint lower bound.
 * `TauCeti.nonpos_of_forall_pos_mul_sq_mul_le`: if `0 < a` and `a * r ^ 2 * t ≤ C` for every
   `r > 0`, then `t ≤ 0`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
@@ -170,6 +172,18 @@ theorem le_of_forall_mem_Ioc_mul_le {α : Type*} [Field α] [LinearOrder α]
     linarith
   · have hε := h δ₀ ⟨hδ₀, le_rfl⟩
     nlinarith
+
+/-- If a quadratic interpolation bound stays above its initial value `a`, its
+endpoint value `b` is at least `a + D`. -/
+theorem add_le_of_le_affine_sub {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b D : K}
+    (h : ∀ t ∈ Set.Ioo (0 : K) 1, a ≤ (1 - t) * a + t * b - t * (1 - t) * D) :
+    a + D ≤ b := by
+  apply le_of_forall_mem_Ioc_mul_le (C := D) (δ₀ := 1 / 2) (by positivity)
+  intro t ht
+  have hbound : a + (1 - t) * D ≤ b :=
+    le_of_mul_le_mul_left (by linarith [h t ⟨ht.1, by linarith [ht.2]⟩]) ht.1
+  linarith
 
 /-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/

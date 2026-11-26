@@ -6,20 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ZetaValues
+import Mathlib.Analysis.PSeries
+import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.NumberTheory.Bernoulli.Values
 
 /-!
-# Bernoulli polynomials and periodic bounds
+# Bernoulli polynomials and Bernoulli functions
 
 Mathlib's `bernoulliFun` is the real-variable Bernoulli polynomial, and
-`Mathlib.NumberTheory.ZetaValues` computes the Fourier cosine series of `bernoulliFun (2 * k)` on
-`[0, 1]` together with Euler's formula for `ζ(2 * k)`. This file records how `bernoulliFun` relates
-to the Bernoulli polynomial over `ℚ`, and how the even ones compare with their value at `0` on
-`[0, 1]`. Subtracting the cosine series from its value at `x = 0` expresses
-`(-1)^(k + 1) * (B_{2k} - B_{2k}(x))` as a series with nonnegative terms, strictly positive on
-`(0, 1)` for `k ≠ 0`. Together with the triangle inequality on the cosine series, this gives
-Lehmer's bound `|B_{2k}(x)| ≤ |B_{2k}|` on `[0, 1]` (DLMF 24.9.2) and its periodic versions
-evaluated at `Int.fract x`.
+`Mathlib.NumberTheory.ZetaValues` computes the Fourier series of `bernoulliFun` on `[0, 1]`
+together with Euler's formula for `ζ(2 * k)`. This file records how `bernoulliFun` relates to the
+Bernoulli polynomial over `ℚ`, uniform bounds on `[0, 1]`, and how the even ones compare with
+their value at `0` on `[0, 1]`.
 
 ## Main results
 
@@ -31,16 +29,36 @@ evaluated at `Int.fract x`.
   `(0, 1)` when `k ≠ 0`. This makes the remainder of the Euler–Maclaurin formula of even order a
   one-signed integral, so that for monotone derivatives the remainder is enclosed by the first
   neglected term.
+* `TauCeti.abs_bernoulliFun_le_mul_tsum`: for `2 ≤ k` and `x ∈ [0, 1]`,
+  `|B_k(x)| ≤ 2 · k! / (2π)^k · ∑_{n : ℕ} 1 / n^k`, the last sum being `ζ(k)`.
+* `TauCeti.abs_bernoulliFun_le_pi_sq_div_three_mul_factorial_div`: for every `k` and
+  `x ∈ [0, 1]`, `|B_k(x)| ≤ π² / 3 · k! / (2π)^k`; equality holds for `k = 2`, `x = 0`.
+* `TauCeti.abs_bernoulliFun_le_four_mul_factorial_div`: the weaker
+  `|B_k(x)| ≤ 4 · k! / (2π)^k`.
 * `TauCeti.hasSum_one_div_nat_pow_mul_one_sub_cos`: Fourier series of
   `bernoulli (2 * k) - bernoulliFun (2 * k) x` on `[0, 1]`.
 * `TauCeti.abs_bernoulliFun_le_abs_bernoulli`,
   `TauCeti.abs_bernoulliFun_fract_le_abs_bernoulli`, and
-  `TauCeti.abs_bernoulli_sub_bernoulliFun_fract_le`: `|B_{2k}(x)| ≤ |B_{2k}|` on `[0, 1]` and
+  `TauCeti.abs_bernoulli_sub_bernoulliFun_fract_le`: Lehmer's bound `|B_{2k}(x)| ≤ |B_{2k}|` on
+  `[0, 1]` and the periodic bounds `|B_{2k}({x})| ≤ |B_{2k}|` and
   `|B_{2k} - B_{2k}({x})| ≤ 2 |B_{2k}|` on `ℝ`.
+
+The sign and strict positivity follow from the Fourier cosine series
+`hasSum_one_div_nat_pow_mul_cos`: up to the positive factor `(2π)^(2k) / (2 (2k)!)`,
+`(-1)^(k+1) (B_{2k} - B_{2k}(x))` is `∑_{n ≥ 1} (1 - cos (2π n x)) / n^(2k) ≥ 0`.
+
+The uniform bounds follow from the Fourier series `hasSum_one_div_nat_pow_mul_fourier`:
+`-(2πi)^k / k! · B_k(x) = ∑_{n ≥ 1} n^(-k) (e(nx) + (-1)^k e(-nx))` for `k ≥ 2`, whose terms
+have norm at most `2 n^(-k)`, together with `ζ(k) ≤ ζ(2) = π² / 6` (and Euler's formula for
+`ζ(2k)` in the even case); the cases `k = 0, 1` are checked directly.
 
 ## References
 
-* NIST *Digital Library of Mathematical Functions*, §§24.8(i), 24.9(i), formulas 24.8.3 and 24.9.2.
+* The bound `|B_k(x)| ≤ 4 · k! / (2π)^k` on `[0, 1]` is the estimate used to bound generalized
+  Bernoulli numbers in the proof of `UpperTheory.V.Odd.PrimeBound` in
+  https://github.com/leanprover-community/riemann-hypothesis, the source of the statement.
+* NIST *Digital Library of Mathematical Functions*, §§24.8(i), 24.9(i), formulas 24.8.1–24.8.3
+  and 24.9.2.
 -/
 
 public section
@@ -78,6 +96,63 @@ theorem neg_one_pow_mul_bernoulli_sub_bernoulliFun_nonneg (k : ℕ) {x : ℝ}
     exact nonneg_of_mul_nonneg_right this hC
   · simp only [mul_zero, Real.cos_zero, mul_one]
     exact mul_le_of_le_one_right (by positivity) (Real.cos_le_one _)
+
+/-- For `2 ≤ k` and `x ∈ [0, 1]`, `|B_k(x)| ≤ 2 · k! / (2π)^k · ∑_{n : ℕ} 1 / n^k`, i.e.
+`|B_k(x)| ≤ 2 · k! · ζ(k) / (2π)^k`. Everything is in `ℝ`, and the `n = 0` term of the sum is
+`1 / 0 = 0`. -/
+theorem abs_bernoulliFun_le_mul_tsum {k : ℕ} (hk : 2 ≤ k) {x : ℝ} (hx : x ∈ Set.Icc (0 : ℝ) 1) :
+    |bernoulliFun k x| ≤ 2 * k ! / (2 * π) ^ k * ∑' n : ℕ, 1 / (n : ℝ) ^ k := by
+  have hS : HasSum (fun n : ℕ => 2 * (1 / (n : ℝ) ^ k)) (2 * ∑' n : ℕ, 1 / (n : ℝ) ^ k) :=
+    (Real.summable_one_div_nat_pow.mpr hk).hasSum.mul_left 2
+  have h := (hasSum_one_div_nat_pow_mul_fourier hk hx).norm_le_of_bounded hS fun n => by
+    rw [norm_mul, mul_comm]
+    have hn : ‖(1 : ℂ) / (n : ℂ) ^ k‖ = 1 / (n : ℝ) ^ k := by simp
+    rw [hn]
+    gcongr
+    refine (norm_add_le _ _).trans ?_
+    norm_num [Circle.norm_coe]
+  have hn : ‖-(2 * π * Complex.I) ^ k / k ! * (bernoulliFun k x : ℂ)‖ =
+      |bernoulliFun k x| * ((2 * π) ^ k / k !) := by
+    simp [abs_of_pos Real.pi_pos, mul_comm]
+  rw [hn, ← le_div_iff₀ (by positivity)] at h
+  exact h.trans_eq (by field_simp)
+
+/-- For every `k : ℕ` and `x ∈ [0, 1]`, `|B_k(x)| ≤ π² / 3 · k! / (2π)^k`, with `k!` cast to
+`ℝ`. For `2 ≤ k` this follows from `TauCeti.abs_bernoulliFun_le_mul_tsum` and
+`∑_{n : ℕ} 1 / n^k ≤ π² / 6`. The constant is attained at `k = 2`, `x = 0`, where both sides
+are `1 / 6`. -/
+theorem abs_bernoulliFun_le_pi_sq_div_three_mul_factorial_div (k : ℕ) {x : ℝ}
+    (hx : x ∈ Set.Icc (0 : ℝ) 1) : |bernoulliFun k x| ≤ π ^ 2 / 3 * k ! / (2 * π) ^ k := by
+  obtain _ | _ | k := k
+  · have : (3 : ℝ) ^ 2 ≤ π ^ 2 := by gcongr; exact Real.pi_gt_three.le
+    simp only [bernoulliFun_zero, abs_one, Nat.factorial_zero, Nat.cast_one, pow_zero]
+    linarith
+  · have h : 1 / 2 ≤ π ^ 2 / 3 * (1 : ℕ)! / (2 * π) ^ 1 := by
+      rw [le_div_iff₀ (by positivity)]
+      nlinarith [Real.pi_gt_three]
+    rw [bernoulliFun_one, abs_le]
+    constructor <;> linarith [hx.1, hx.2]
+  · have hle : ∑' n : ℕ, 1 / (n : ℝ) ^ (k + 2) ≤ π ^ 2 / 6 := by
+      refine hasSum_le (fun n => ?_) (Real.summable_one_div_nat_pow.mpr (by omega)).hasSum
+        hasSum_zeta_two
+      rcases n.eq_zero_or_pos with rfl | hn
+      · simp
+      · have : (1 : ℝ) ≤ n := by exact_mod_cast hn
+        gcongr
+        omega
+    refine (abs_bernoulliFun_le_mul_tsum (by omega) hx).trans ?_
+    calc 2 * (k + 2)! / (2 * π) ^ (k + 2) * ∑' n : ℕ, 1 / (n : ℝ) ^ (k + 2)
+        ≤ 2 * (k + 2)! / (2 * π) ^ (k + 2) * (π ^ 2 / 6) := by gcongr
+      _ = π ^ 2 / 3 * (k + 2)! / (2 * π) ^ (k + 2) := by ring
+
+/-- For every `k : ℕ` and `x ∈ [0, 1]`, `|B_k(x)| ≤ 4 · k! / (2π)^k`, with `k!` cast to `ℝ`:
+the bound `TauCeti.abs_bernoulliFun_le_pi_sq_div_three_mul_factorial_div` with `π² / 3 < 4`. -/
+theorem abs_bernoulliFun_le_four_mul_factorial_div (k : ℕ) {x : ℝ}
+    (hx : x ∈ Set.Icc (0 : ℝ) 1) : |bernoulliFun k x| ≤ 4 * k ! / (2 * π) ^ k := by
+  refine (abs_bernoulliFun_le_pi_sq_div_three_mul_factorial_div k hx).trans ?_
+  have : π ^ 2 < 3.15 ^ 2 := by gcongr; exact Real.pi_lt_d2
+  gcongr
+  linarith
 
 /-- Periodic form of `TauCeti.neg_one_pow_mul_bernoulli_sub_bernoulliFun_nonneg`: for every `k : ℕ`
 and `x : ℝ`, `(-1)^(k + 1) * (B_{2k} - B_{2k}({x})) ≥ 0`. -/
@@ -150,34 +225,14 @@ theorem abs_bernoulliFun_le_abs_bernoulli (k : ℕ) {x : ℝ}
     |bernoulliFun (2 * k) x| ≤ |(bernoulli (2 * k) : ℝ)| := by
   rcases eq_or_ne k 0 with rfl | hk
   · simp
-  have hcos := hasSum_one_div_nat_pow_mul_cos hk hx
-  rw [← bernoulliFun] at hcos
-  have hzeta := hasSum_zeta_nat hk
-  have hnorm : |(-1 : ℝ) ^ (k + 1) * (2 * π) ^ (2 * k) / 2 / (2 * k)! *
-        bernoulliFun (2 * k) x| ≤
-      (-1 : ℝ) ^ (k + 1) * (2 : ℝ) ^ (2 * k - 1) * π ^ (2 * k) *
-        bernoulli (2 * k) / (2 * k)! := by
-    rw [← hcos.tsum_eq, ← hzeta.tsum_eq, ← Real.norm_eq_abs]
-    refine (norm_tsum_le_tsum_norm hcos.summable.norm).trans ?_
-    exact Summable.tsum_le_tsum (fun n => by
-      have hpow : (0 : ℝ) ≤ 1 / (n : ℝ) ^ (2 * k) := by positivity
-      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hpow]
-      exact mul_le_of_le_one_right hpow (Real.abs_cos_le_one _))
-      hcos.summable.norm hzeta.summable
-  set c : ℝ := (2 * π) ^ (2 * k) / 2 / (2 * k)!
-  have hc : 0 < c := by positivity
   have habsB : |(bernoulli (2 * k) : ℝ)| = (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) := by
     exact_mod_cast abs_bernoulli_two_mul hk
-  have hlhs : |(-1 : ℝ) ^ (k + 1) * (2 * π) ^ (2 * k) / 2 / (2 * k)! *
-        bernoulliFun (2 * k) x| = c * |bernoulliFun (2 * k) x| := by
-    have hmul : (-1 : ℝ) ^ (k + 1) * (2 * π) ^ (2 * k) / 2 / (2 * k)! * bernoulliFun (2 * k) x =
-        (-1 : ℝ) ^ (k + 1) * (c * bernoulliFun (2 * k) x) := by dsimp [c]; ring
-    rw [hmul, abs_mul, abs_neg_one_pow, one_mul, abs_mul, abs_of_pos hc]
-  have hrhs : (-1 : ℝ) ^ (k + 1) * (2 : ℝ) ^ (2 * k - 1) * π ^ (2 * k) *
-        bernoulli (2 * k) / (2 * k)! = c * |(bernoulli (2 * k) : ℝ)| := by
-    rw [habsB]; dsimp [c]; rw [two_pi_pow_two_mul hk]; ring
-  rw [hlhs, hrhs] at hnorm
-  exact le_of_mul_le_mul_left hnorm hc
+  refine (abs_bernoulliFun_le_mul_tsum (by omega) hx).trans_eq ?_
+  rw [(hasSum_zeta_nat hk).tsum_eq, habsB, two_pi_pow_two_mul hk]
+  have hfac : ((2 * k)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+  have hpi : π ^ (2 * k) ≠ 0 := pow_ne_zero _ Real.pi_ne_zero
+  have htwo : (2 : ℝ) ^ (2 * k - 1) ≠ 0 := pow_ne_zero _ two_ne_zero
+  field_simp
 
 /-- Periodic form of `abs_bernoulliFun_le_abs_bernoulli`: `|B_{2k}({x})| ≤ |B_{2k}|` on `ℝ`. -/
 theorem abs_bernoulliFun_fract_le_abs_bernoulli (k : ℕ) (x : ℝ) :

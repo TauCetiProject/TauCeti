@@ -25,7 +25,8 @@ change of the domain, for instance a biholomorphism of a Riemann surface.
 Read in charts, both transports are the identity: if `φ'` is a chart of `Q` and `φ` a chart of `P`
 with `g ∘ φ'⁻¹ = φ⁻¹`, such as `φ' = g ≫ φ` for a diffeomorphism `g`, then `J ∘ g` read in `φ'`
 is `J` read in `φ`, and `g^* ν` read in `φ'` is `ν` read in `φ` wherever `φ'⁻¹` is
-differentiable.
+differentiable. The same holds in extended charts of domains with corners, with the derivatives of
+the inverse extended charts taken within the range of the model.
 
 ## Main declarations
 
@@ -34,6 +35,8 @@ differentiable.
   (`TauCeti.InhomogeneousTerm.comp_zero`, `comp_add`, `comp_smul`, `comp_neg`, `comp_sub`).
 * `TauCeti.InhomogeneousTerm.chartTerm_comp`: transport in charts; the family counterpart is
   `TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_comp`.
+* `TauCeti.InhomogeneousTerm.chartTermExtend_comp`: transport in extended charts of domains with
+  corners, such as Riemann surfaces with boundary.
 
 ## References
 
@@ -192,6 +195,54 @@ theorem chartTerm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     rintro x rfl w
     rfl
   rw [chartTerm_apply, chartTerm_apply, comp_val_tangentHom_apply, hd1, hν _ (congrFun hφ z)]
+
+end InhomogeneousTerm
+
+/-! ### Transport in extended charts -/
+
+namespace InhomogeneousTerm
+
+variable {HD X Y : Type*} [TopologicalSpace HD] {ID : ModelWithCorners ℝ ℂ HD}
+  [TopologicalSpace X] [ChartedSpace HD X] [IsManifold ID ∞ X]
+  [TopologicalSpace Y] [ChartedSpace HD Y] [IsManifold ID ∞ Y]
+  {jX : ContMDiffAlmostComplexStructure ID n X}
+  {JX : ContMDiffAlmostComplexStructureFamily I M ID X n}
+  (ν : InhomogeneousTerm jX JX) (jY : ContMDiffAlmostComplexStructure ID n Y)
+  (g : C^n⟮ID, Y; ID, X⟯) (hg : ContMDiff ID ID (n + 1) g)
+  (hgj : ∀ y v, mfderiv ID ID g y (jY y v) = jX (g y) (mfderiv ID ID g y v))
+
+/-- **Transport in extended charts.** Let `X` and `Y` be modelled on the same model `ID` with
+values in `ℂ`, possibly with corners, and let `φ'` be a chart of `Y` and `φ` a chart of `X` with
+`g ∘ (φ'.extend ID)⁻¹ = (φ.extend ID)⁻¹`. At a point `z` of the range of `ID` where
+`(φ'.extend ID)⁻¹` is differentiable within that range, the reparametrized term `g^* ν` read in
+`φ'` is `ν` read in `φ`. -/
+theorem chartTermExtend_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {φ' : OpenPartialHomeomorph Y HD} {φ : OpenPartialHomeomorph X HD}
+    (hφ : g ∘ (φ'.extend ID).symm = (φ.extend ID).symm) (ψ : OpenPartialHomeomorph M G) {z : ℂ}
+    (hz : MDifferentiableWithinAt 𝓘(ℝ, ℂ) ID (φ'.extend ID).symm (range ID) z)
+    (hzr : z ∈ range ID) :
+    (ν.comp jY g hg hgj).chartTermExtend φ' ψ z = ν.chartTermExtend φ ψ z := by
+  have hgd : MDifferentiableAt ID ID g ((φ'.extend ID).symm z) :=
+    (hg _).mdifferentiableAt (by simp)
+  funext v
+  have hd1 : mfderivWithin 𝓘(ℝ, ℂ) ID (φ.extend ID).symm (range ID) z (1 : ℂ) =
+      mfderiv ID ID g ((φ'.extend ID).symm z)
+        (mfderivWithin 𝓘(ℝ, ℂ) ID (φ'.extend ID).symm (range ID) z (1 : ℂ)) := by
+    rw [← hφ, mfderiv_comp_mfderivWithin z hgd hz
+      ((uniqueMDiffWithinAt_iff_uniqueDiffWithinAt).2 (ID.uniqueDiffOn z hzr))]
+    -- Evaluating a composite of linear maps; `rw [ContinuousLinearMap.comp_apply]` cannot see
+    -- through the tangent space synonym `TangentSpace 𝓘(ℝ, ℂ) z` of `ℂ`.
+    rfl
+  -- The tangent spaces at `g ((φ'.extend ID)⁻¹ z)` and at `(φ.extend ID)⁻¹ z` are both `ℂ`, so
+  -- `ν` may be evaluated at either point on the same vector.
+  have hν : ∀ x, g ((φ'.extend ID).symm z) = x →
+      ∀ w : TangentSpace ID (g ((φ'.extend ID).symm z)),
+        ν.val.tangentHom (g ((φ'.extend ID).symm z), ψ.symm v) w =
+          ν.val.tangentHom (x, ψ.symm v) w := by
+    rintro x rfl w
+    rfl
+  rw [chartTermExtend_apply, chartTermExtend_apply, comp_val_tangentHom_apply, hd1,
+    hν _ (congrFun hφ z)]
 
 end InhomogeneousTerm
 

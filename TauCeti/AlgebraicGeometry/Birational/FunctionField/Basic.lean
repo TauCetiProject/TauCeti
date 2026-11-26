@@ -36,6 +36,11 @@ dominant morphism in `TauCeti.AlgebraicGeometry.Morphisms.Dominant`:
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.RationalMap.isDominant_iff_fromFunctionField_closedPoint`: a rational
+  map of irreducible schemes is dominant exactly when it sends the closed point of `Spec K(X)` to
+  the generic point of `Y`, and
+  `AlgebraicGeometry.Scheme.RationalMap.isDominant_of_fromFunctionField_eq`: a rational map whose
+  restriction to `Spec K(X)` factors through `Spec K(Y)` is dominant.
 * `AlgebraicGeometry.Scheme.RationalMap.SpecMap_functionFieldMap_fromSpecStalk` and
   `AlgebraicGeometry.Scheme.RationalMap.eq_functionFieldMap_iff`: the characterization of `f^*`,
   and `AlgebraicGeometry.Scheme.RationalMap.eq_of_functionFieldMap_eq`: a dominant rational map
@@ -45,6 +50,8 @@ dominant morphism in `TauCeti.AlgebraicGeometry.Morphisms.Dominant`:
 * `AlgebraicGeometry.Scheme.RationalMap.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.RationalMap.functionFieldMap_comp`: functoriality, for dominant `f`
   and `g`.
+* `AlgebraicGeometry.Scheme.RationalMap.comp_eq_id_of_comp_eq_id`: a one-sided inverse of a
+  dominant rational map of integral schemes by a dominant rational map is two-sided.
 
 ## References
 
@@ -61,24 +68,39 @@ namespace AlgebraicGeometry.Scheme
 
 variable {X Y Z : Scheme.{u}}
 
+/-- A partial map `f` from an irreducible scheme sends the closed point of `Spec K(X)` to the
+image under `f.hom` of the generic point of `X`, which lies in the domain of `f`. -/
+theorem PartialMap.fromFunctionField_closedPoint_eq_hom [IrreducibleSpace X] (f : X.PartialMap Y) :
+    f.fromFunctionField (closedPoint _) = f.hom ⟨genericPoint X, f.genericPoint_mem_domain⟩ := by
+  have hp : f.domain.fromSpecStalkOfMem (genericPoint X) f.genericPoint_mem_domain
+      (closedPoint _) = ⟨genericPoint X, f.genericPoint_mem_domain⟩ := by
+    apply f.domain.ι.isOpenEmbedding.injective
+    -- evaluate `fromSpecStalkOfMem ≫ ι = fromSpecStalk` at the closed point
+    have h := congr($(Opens.fromSpecStalkOfMem_ι f.domain _ f.genericPoint_mem_domain)
+      (closedPoint _))
+    exact (Scheme.Hom.comp_apply _ _ _).symm.trans (h.trans fromSpecStalk_closedPoint)
+  exact (Scheme.Hom.comp_apply _ _ _).trans (congrArg f.hom hp)
+
 section Irreducible
 
 variable [IrreducibleSpace X] [IrreducibleSpace Y]
 
+/-- The underlying morphism of a partial map `f` of irreducible schemes is dominant exactly when it
+sends the generic point of `X`, which lies in the domain of `f`, to the generic point of `Y`. -/
+theorem PartialMap.isDominant_hom_iff_genericPoint_eq (f : X.PartialMap Y) :
+    IsDominant f.hom ↔ f.hom ⟨genericPoint X, f.genericPoint_mem_domain⟩ = genericPoint Y := by
+  have : Nonempty f.domain := f.dense_domain.nonempty.to_subtype
+  have : IrreducibleSpace f.domain := f.domain.ι.isOpenEmbedding.irreducibleSpace
+  -- the generic point of `X` is the generic point of the domain
+  have hη : (⟨genericPoint X, f.genericPoint_mem_domain⟩ : f.domain) = genericPoint f.domain :=
+    f.domain.ι.isOpenEmbedding.injective f.domain.ι.genericPoint_eq_of_isDominant.symm
+  rw [hη, isDominant_iff_genericPoint_eq]
+
 /-- A partial map of irreducible schemes whose underlying morphism is dominant sends the closed
 point of `Spec K(X)` to the generic point of `Y`. -/
 theorem PartialMap.fromFunctionField_closedPoint (f : X.PartialMap Y) [IsDominant f.hom] :
-    f.fromFunctionField (closedPoint _) = genericPoint Y := by
-  have : Nonempty f.domain := f.dense_domain.nonempty.to_subtype
-  have : IrreducibleSpace f.domain := f.domain.ι.isOpenEmbedding.irreducibleSpace
-  have hη := f.genericPoint_mem_domain
-  have hp : f.domain.fromSpecStalkOfMem (genericPoint X) hη (closedPoint _) =
-      genericPoint f.domain := f.domain.ι.isOpenEmbedding.injective <|
-    (Scheme.Hom.comp_apply _ _ _).symm.trans <|
-      congr($(Opens.fromSpecStalkOfMem_ι f.domain _ hη) _).trans <|
-        fromSpecStalk_closedPoint.trans f.domain.ι.genericPoint_eq_of_isDominant.symm
-  exact (Scheme.Hom.comp_apply _ _ _).trans
-    ((congrArg f.hom hp).trans f.hom.genericPoint_eq_of_isDominant)
+    f.fromFunctionField (closedPoint _) = genericPoint Y :=
+  f.fromFunctionField_closedPoint_eq_hom.trans (f.isDominant_hom_iff_genericPoint_eq.mp ‹_›)
 
 /-- A dominant rational map of irreducible schemes sends the closed point of `Spec K(X)` to the
 generic point of `Y`. -/
@@ -87,6 +109,25 @@ theorem RationalMap.fromFunctionField_closedPoint (f : X ⤏ Y) [f.IsDominant] :
   obtain ⟨g, rfl⟩ := f.exists_rep
   have : IsDominant g.hom := g.isDominant_toRationalMap_iff.mp ‹_›
   exact g.fromFunctionField_closedPoint
+
+/-- A rational map of irreducible schemes is dominant exactly when it sends the closed point of
+`Spec K(X)` to the generic point of `Y`. -/
+theorem RationalMap.isDominant_iff_fromFunctionField_closedPoint (f : X ⤏ Y) :
+    f.IsDominant ↔ f.fromFunctionField (closedPoint _) = genericPoint Y := by
+  refine ⟨fun _ ↦ f.fromFunctionField_closedPoint, fun h ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := f.exists_rep
+  rw [fromFunctionField_toRationalMap, g.fromFunctionField_closedPoint_eq_hom] at h
+  exact g.isDominant_toRationalMap_iff.mpr (g.isDominant_hom_iff_genericPoint_eq.mpr h)
+
+/-- **A rational map whose restriction to `Spec K(X)` factors through `Spec K(Y)` is dominant.**
+If `f.fromFunctionField = Spec φ ≫ (Spec K(Y) ⟶ Y)` for a ring map `φ : K(Y) ⟶ K(X)`, then `f`
+sends the closed point of `Spec K(X)` into the image of `Spec K(Y)`, whose only point is the
+generic point of `Y`. -/
+theorem RationalMap.isDominant_of_fromFunctionField_eq (f : X ⤏ Y)
+    (φ : Y.functionField ⟶ X.functionField)
+    (h : f.fromFunctionField = Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y)) : f.IsDominant := by
+  rw [isDominant_iff_fromFunctionField_closedPoint, h]
+  exact eq_genericPoint_of_mem_range_fromSpecStalk ⟨_, (Scheme.Hom.comp_apply _ _ _).symm⟩
 
 /-- The **pullback of rational functions** `f^* : K(Y) ⟶ K(X)` along a dominant rational map
 `f : X ⤏ Y` of irreducible schemes: the map of stalks of `f.fromFunctionField : Spec K(X) ⟶ Y`
@@ -124,6 +165,13 @@ theorem Hom.functionFieldMap_toRationalMap (g : X ⟶ Y) [IsDominant g] :
   refine ((RationalMap.eq_functionFieldMap_iff _ _).mpr ?_).symm
   simp only [SpecMap_functionFieldMap_fromSpecStalk, RationalMap.fromFunctionField_toRationalMap,
     PartialMap.fromFunctionField, PartialMap.fromSpecStalkOfMem_toPartialMap]
+
+/-- Equal dominant rational maps have equal pullbacks of rational functions, whatever the
+`IsDominant` instances: rewriting along `f = g` is blocked by the instance argument. -/
+theorem RationalMap.functionFieldMap_congr {f g : X ⤏ Y} [f.IsDominant] [g.IsDominant]
+    (h : f = g) : f.functionFieldMap = g.functionFieldMap := by
+  subst h
+  rfl
 
 /-- The pullback of rational functions along the identity rational map is the identity. -/
 theorem RationalMap.functionFieldMap_id : (RationalMap.id X).functionFieldMap = 𝟙 _ :=
@@ -186,5 +234,20 @@ theorem RationalMap.eq_of_functionFieldMap_eq [IsIntegral X] [IrreducibleSpace Y
     [f.IsDominant] [g.IsDominant] (h : f.functionFieldMap = g.functionFieldMap) : f = g :=
   eq_of_fromFunctionField_eq f g <| by
     rw [← SpecMap_functionFieldMap_fromSpecStalk, h, SpecMap_functionFieldMap_fromSpecStalk]
+
+/-- **One-sided inverses are two-sided.** If `g ∘ f = id` for dominant rational maps
+`f : X ⤏ Y` and `g : Y ⤏ X` of integral schemes, then `f ∘ g = id`: `f^*` is bijective with
+inverse `g^*`, and a dominant rational map is determined by its pullback. -/
+theorem RationalMap.comp_eq_id_of_comp_eq_id [IsIntegral X] [IsIntegral Y] (f : X ⤏ Y)
+    [f.IsDominant] (g : Y ⤏ X) [g.IsDominant] (h : f.comp g = RationalMap.id X) :
+    g.comp f = RationalMap.id Y := by
+  have hfg : f.functionFieldMap.hom.comp g.functionFieldMap.hom = RingHom.id _ := by
+    rw [← CommRingCat.hom_comp, ← functionFieldMap_comp, functionFieldMap_congr h,
+      functionFieldMap_id, CommRingCat.hom_id]
+  refine eq_of_functionFieldMap_eq ?_
+  rw [functionFieldMap_comp, functionFieldMap_id]
+  ext x
+  exact Function.LeftInverse.rightInverse_of_injective (f := f.functionFieldMap.hom)
+    (g := g.functionFieldMap.hom) (fun y => congr($hfg y)) f.functionFieldMap.hom.injective x
 
 end AlgebraicGeometry.Scheme

@@ -21,6 +21,7 @@ import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
+import TauCeti.Topology.Algebra.Order.Floor
 
 /-!
 # The Sobolev space `W^{1,2}` on the cylinder and Peetre's argument
@@ -40,8 +41,10 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   section vanishing for `|s|` large (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`)
   and a product section `φ(s) ψ(t)` with `φ` compactly supported
   (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`). A section depending continuously
-  on `t` alone is essentially bounded (`TauCeti.CylinderSobolev.memLp_top_comp_snd`), and
-  multiplication by a continuous family of invertible maps depending on `t` alone maps `Lᵖ` onto
+  on `t` alone is essentially bounded (`TauCeti.CylinderSobolev.memLp_top_comp_snd`,
+  `TauCeti.CylinderSobolev.memLp_top_of_eq_comp_snd`), and multiplication by a continuous family
+  of invertible maps depending on `t` alone is an isomorphism of `Lᵖ`
+  (`TauCeti.CylinderSobolev.isInvertible_operatorMultiplication_comp_snd`), in particular onto
   `Lᵖ` (`TauCeti.CylinderSobolev.surjective_operatorMultiplication_comp_snd`).
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
   `t` that vanish for `|s|` large.
@@ -83,6 +86,11 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   `TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`.
   The estimate is stated in the form proved for the linearized Floer operator in
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+* **Periodization.** A `C²` map with compact support in the open strip `ℝ × (0, 1)`, read through
+  the fractional part of `t`, is a test section
+  (`TauCeti.CylinderSobolev.comp_fract_mem_testSection`) that agrees with the map near every point
+  of the open strip (`TauCeti.apply_fract_snd_eventuallyEq_self`). The open strip carries the
+  strip measure (`TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ioo`).
 * **Translation in `s`.** Translation in `s` commutes with a first-order operator, the coefficient
   field being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so its right
   inverses on `W^{1,2}` translate with the same norm
@@ -133,6 +141,22 @@ theorem memLp_top_comp_snd {f : ℝ → V} (hf : Continuous f) :
     hf.continuousOn
   exact memLp_top_of_bound (hf.comp continuous_snd).aestronglyMeasurable C
     (ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ hC z.2 hz.2)
+
+omit [NormedSpace ℝ V] in
+/-- A section `f` that depends only on `t`, that is `f (s, t) = f (0, t)`, continuously in `t`, is
+essentially bounded on the strip. -/
+theorem memLp_top_of_eq_comp_snd {f : ℝ × ℝ → V} (hc : Continuous fun t ↦ f (0, t))
+    (hf : ∀ z, f z = f (0, z.2)) : MemLp f ∞ stripMeasure := by
+  rw [show f = fun z ↦ f (0, z.2) from funext hf]
+  exact memLp_top_comp_snd hc
+
+omit [NormedSpace ℝ V] in
+/-- A section `f` that depends only on `t`, continuously in `t`, has the same `L^∞` class as the
+section `(s, t) ↦ f (0, t)`. -/
+theorem toLp_eq_toLp_comp_snd {f : ℝ × ℝ → V} (hc : Continuous fun t ↦ f (0, t))
+    (hf : ∀ z, f z = f (0, z.2)) :
+    (memLp_top_of_eq_comp_snd hc hf).toLp f = (memLp_top_comp_snd hc).toLp _ :=
+  MemLp.toLp_congr _ _ (ae_of_all _ hf)
 
 /-- A product section `φ(s) ψ(t)`, with `φ` continuous of compact support and `ψ` continuous,
 lies in every `Lᵖ` of the strip. -/
@@ -196,6 +220,12 @@ theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure :
   obtain ⟨hξ2, -, R, hR⟩ := mem_testSection_iff.1 hξ
   exact memLp_jet_of_contDiff (hξ2.of_le (by norm_num)) hR
 
+/-- A test section is square integrable on the strip. -/
+theorem memLp_of_mem_testSection (hξ : ξ ∈ testSection V) : MemLp ξ 2 stripMeasure := by
+  obtain ⟨hξ2, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  exact memLp_stripMeasure_of_continuous hξ2.continuous
+    (fun z hz ↦ by simpa using hR z.1 z.2 hz.le) 2
+
 /-- The test sections are differentiable with square integrable jets. -/
 instance : HasL2Jets (testSection V) :=
   ⟨fun _ hξ ↦ (mem_testSection_iff.1 hξ).1.differentiable (by norm_num), fun _ ↦ memLp_jet⟩
@@ -209,6 +239,31 @@ theorem comp_add_right_mem_testSection (hξ : ξ ∈ testSection V) (a : ℝ) :
   have := abs_add_le (s + a) (-a)
   rw [add_neg_cancel_right, abs_neg] at this
   simpa using hR (s + a) t (by linarith)
+
+/-- **Periodizing a map supported in the open strip.** A `C²` map `ξ` with compact support in the
+open strip `ℝ × (0, 1)`, read through the fractional part `Int.fract` of `t`, is a test section.
+On the open strip it agrees with `ξ` near every point
+(`TauCeti.apply_fract_snd_eventuallyEq_self`). -/
+theorem comp_fract_mem_testSection (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
+    (hξS : tsupport ξ ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
+    (fun z : ℝ × ℝ ↦ ξ (z.1, Int.fract z.2)) ∈ testSection V := by
+  -- `ξ` vanishes within `δ` of the two boundary lines of the strip, for some `δ > 0`, so it is
+  -- periodic in `t` near `0`.
+  obtain ⟨δ, hδ, hδS⟩ := hξc.isCompact.exists_cthickening_subset_open
+    (isOpen_univ.prod isOpen_Ioo) hξS
+  have hper (s : ℝ) {t : ℝ} (ht₀ : -δ < t) (ht : t < 0) : ξ (s, t + 1) = ξ (s, t) := by
+    have h₁ : (s, t + 1) ∉ tsupport ξ := fun h ↦ lt_irrefl (1 : ℝ)
+      (hδS (mem_cthickening_of_dist_le (s, 1) (s, t + 1) δ _ h (by
+        simpa [Prod.dist_eq, Real.dist_eq, abs_of_neg ht] using ⟨hδ.le, by linarith⟩))).2.2
+    have h₂ : (s, t) ∉ tsupport ξ := fun h ↦ (hξS h).2.1.not_gt ht
+    rw [image_eq_zero_of_notMem_tsupport h₁, image_eq_zero_of_notMem_tsupport h₂]
+  obtain ⟨R, -, hR⟩ := hξc.exists_pos_le_norm
+  refine ⟨contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun s t ↦ by simp only [Int.fract_add_one], R,
+    fun s t hs ↦ hR _ ?_⟩
+  · exact (hξ.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const))).contDiffAt
+      |>.congr_of_eventuallyEq (apply_fract_snd_eventuallyEq hδ hper z)
+  · rw [Prod.norm_def, Real.norm_eq_abs]
+    exact hs.trans (le_max_left _ _)
 
 /-- The test sections are invariant under translation in the `s` direction. -/
 instance : IsTranslationInvariant (testSection V) :=
@@ -404,20 +459,42 @@ section Operator
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
+/-- Multiplication by a continuous family `Φ_t` of maps depending on `t` alone, followed by
+multiplication by a continuous family `Ψ_t` with `Ψ_t Φ_t = id`, is the identity of `Lᵖ` of the
+strip. -/
+theorem operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {Φ : ℝ → V →L[ℝ] W} {Ψ : ℝ → W →L[ℝ] V} (hΦ : Continuous Φ)
+    (hΨ : Continuous Ψ) (h : ∀ t, Ψ t ∘L Φ t = .id ℝ V) :
+    Lp.operatorMultiplication p ((memLp_top_comp_snd hΨ).toLp _) ∘L
+        Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _) =
+      .id ℝ (Lp V p stripMeasure) := by
+  refine ContinuousLinearMap.ext fun f ↦ Lp.ext ?_
+  filter_upwards [Lp.operatorMultiplication_ae ((memLp_top_comp_snd hΨ).toLp _)
+      (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _) f),
+    Lp.operatorMultiplication_ae ((memLp_top_comp_snd hΦ).toLp _) f,
+    (memLp_top_comp_snd hΦ).coeFn_toLp, (memLp_top_comp_snd hΨ).coeFn_toLp] with z h₁ h₂ h₃ h₄
+  rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, ← ContinuousLinearMap.comp_apply, h z.2,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
+
 /-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
-operator `f ↦ (z ↦ Φ_{z.2} (f z))`, maps `Lᵖ` of the strip onto `Lᵖ`: multiplication by the
-inverses `Φ_t⁻¹` is a right inverse. -/
+operator `f ↦ (z ↦ Φ_{z.2} (f z))`, is invertible on `Lᵖ` of the strip: multiplication by the
+inverses `Φ_t⁻¹` inverts it. -/
+theorem isInvertible_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {Φ : ℝ → V →L[ℝ] W} (hΦ : Continuous Φ) (hΦi : ∀ t, (Φ t).IsInvertible) :
+    (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)).IsInvertible := by
+  have hΦinv := ((contDiff_zero (𝕜 := ℝ).2 hΦ).clm_inverse hΦi).continuous
+  exact .of_inverse
+    (operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id hΦinv hΦ
+      fun t ↦ (hΦi t).self_comp_inverse)
+    (operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id hΦ hΦinv
+      fun t ↦ (hΦi t).inverse_comp_self)
+
+/-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
+operator `f ↦ (z ↦ Φ_{z.2} (f z))`, maps `Lᵖ` of the strip onto `Lᵖ`. -/
 theorem surjective_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {Φ : ℝ → V →L[ℝ] W} (hΦ : Continuous Φ) (hΦi : ∀ t, (Φ t).IsInvertible) :
-    Function.Surjective (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)) := by
-  have hΦinv := ((contDiff_zero (𝕜 := ℝ).2 hΦ).clm_inverse hΦi).continuous
-  set A := (memLp_top_comp_snd hΦ).toLp _
-  set B := (memLp_top_comp_snd hΦinv).toLp _
-  refine fun g ↦ ⟨Lp.operatorMultiplication p B g, Lp.ext ?_⟩
-  filter_upwards [Lp.operatorMultiplication_ae A (Lp.operatorMultiplication p B g),
-    Lp.operatorMultiplication_ae B g, (memLp_top_comp_snd hΦ).coeFn_toLp,
-    (memLp_top_comp_snd hΦinv).coeFn_toLp] with z h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, (hΦi z.2).self_apply_inverse]
+    Function.Surjective (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)) :=
+  (isInvertible_operatorMultiplication_comp_snd hΦ hΦi).surjective
 
 /-- The **semi-Fredholm estimate** with constants `C` and `T` for the first-order operator
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder: for every `C²` section `ξ` of period one in `t` that
