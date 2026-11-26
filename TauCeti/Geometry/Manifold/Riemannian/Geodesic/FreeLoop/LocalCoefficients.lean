@@ -239,12 +239,13 @@ private theorem geodesicInterpolation_extend_vertexTimeMap {i : ℕ} (hi : i < m
             (unitInterval.arcPoint (m + 1) i 0))
           ((vertexTimeMap hr hδ q : C(unitInterval, ℝ)) (unitInterval.arcPoint (m + 1) i a)) :
             C(unitInterval, ℝ)) := by
-  set i' : Fin (m + 1) := ⟨i, hi⟩
-  set P := Fin.partialSum (fun k ↦ nndist (q.val k) (q.val (k + 1))) i'.castSucc
+  set i' : Fin (m + 1) := ⟨i, hi⟩ with hi'
+  set P := Fin.partialSum (fun k ↦ nndist (q.val k) (q.val (k + 1))) i'.castSucc with hP
   set d := nndist (q.val i') (q.val (i' + 1))
   have h₀ : (vertexTimeMap hr hδ q : C(unitInterval, ℝ)) (unitInterval.arcPoint (m + 1) i 0) =
       ((P : ℝ≥0) : ℝ) := by
-    exact vertexTimeMap_arcPoint_zero hr hδ q i'.castSucc
+    have h := vertexTimeMap_arcPoint_zero hr hδ q i'.castSucc
+    rwa [Fin.val_castSucc, hi', Fin.val_mk, vertexTime, ← hP] at h
   have hval : ∀ b : unitInterval,
       ((P : ℝ) + b * d : ℝ) = ((P + d * unitInterval.toNNReal b : ℝ≥0) : ℝ) := fun b ↦ by
     rw [NNReal.coe_add, NNReal.coe_mul, unitInterval.coe_toNNReal, mul_comm]
@@ -322,10 +323,12 @@ private theorem coe_straightenedTimeMap_apply (t s : unitInterval) :
 private def straightenTimeMapPath : Path (vertexTimeMap hr hδ q) (vertexTimeMap hr hδ q) where
   toFun := straightenedTimeMap hr hδ q
   continuous_toFun := (straightenVertexTimeMap hr hδ q).curry.continuous.subtype_mk _
-  source' := Subtype.ext <| ContinuousMap.ext fun s ↦
-    straightenArcs_zero isPathInterpolation_segment m.succ_pos (fun _ _ _ ↦ trivial) s
-  target' := Subtype.ext <| ContinuousMap.ext fun s ↦
-    (straightenArcs_one _ _ _ s).trans (congrFun (brokenPath_vertexTimeMap hr hδ q) s)
+  source' := Subtype.ext <| ContinuousMap.ext fun s ↦ by
+    rw [coe_straightenedTimeMap_apply,
+      straightenArcs_zero isPathInterpolation_segment m.succ_pos (fun _ _ _ ↦ trivial) s]
+  target' := Subtype.ext <| ContinuousMap.ext fun s ↦ by
+    rw [coe_straightenedTimeMap_apply, straightenArcs_one,
+      congrFun (brokenPath_vertexTimeMap hr hδ q) s]
 
 private theorem straightenTimeMapPath_apply (t : unitInterval) :
     straightenTimeMapPath hr hδ q t = straightenedTimeMap hr hδ q t :=
