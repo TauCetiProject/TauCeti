@@ -19,8 +19,8 @@ let `α` be a real two-form that has type (1,1) at a point `x`. Then at `x`
 
 (`TauCeti.SmoothTwoForm.Compatible.nsmul_wedge_wedgePow_apply`), where `λ[α] = λ_κ[α](x)` is the
 eigenvalue vector of `α` relative to `κ` (`TauCeti.relEigenvalueFunction`), so that
-`∑ⱼ λⱼ[α] = tr_κ α`. This is the pointwise identity `n·α ∧ ω^{n−1} = (tr_ω α)·ω^n` of the
-complex Hessian equations roadmap, on a manifold whose metric varies from point to point.
+`∑ⱼ λⱼ[α] = tr_κ α`. This is the pointwise identity `n·α ∧ ω^{n−1} = (tr_ω α)·ω^n` on a
+manifold whose metric varies from point to point.
 
 The proof takes an `h_x`-orthonormal family `b` (it exists since `λ_κ[κ] = e`), in which the trace
 is `∑ⱼ α(bⱼ, i bⱼ)` (`TauCeti.SmoothTwoForm.Compatible.sum_relEigenvalueFunction_eq_sum_re`), and
@@ -56,7 +56,7 @@ a Hermitian metric `κ`, a real two-form `α` of type (1,1) at `x` satisfies
 theorem Compatible.nsmul_wedge_wedgePow_apply
     (hκ : κ.Compatible (SmoothAlmostComplexStructure.ofComplexManifold E X)) {m : ℕ}
     (hm : finrank ℂ E = m + 1) (hα : ∀ u v : E, α x ![I • u, I • v] = α x ![u, v]) :
-    ((m + 1 : ℕ) : ℝ) • RoughForm.wedge (SmoothForm.wedgePow κ m).val α x =
+    (m + 1) • RoughForm.wedge (SmoothForm.wedgePow κ m).val α x =
       (∑ j, relEigenvalueFunction E κ α 0 x j) • (SmoothForm.wedgePow κ (m + 1)).val x := by
   -- An `h_x`-orthonormal family, from `λ_κ[κ] = e`.
   obtain ⟨b, hb⟩ :=
