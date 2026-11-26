@@ -79,10 +79,8 @@ theorem not_hasCantorAntichainOn_of_forall_countable_image_sentenceTheory
   obtain ⟨θ, hθ⟩ := exists_sentenceTheory_apply_eq hf_cont.measurable hf_ne
   have huniv : (univ : Set (ℕ → Bool)).Countable :=
     (h θ).mono (by rintro x -; exact ⟨f x, hfC x, hθ x⟩)
-  have hcount : Countable (ℕ → Bool) := countable_univ_iff.1 huniv
-  have hcard : #(ℕ → Bool) = 𝔠 := by
-    rw [mk_arrow, mk_bool, mk_nat, lift_id, lift_id, two_power_aleph0]
-  exact (hcard.symm ▸ aleph0_lt_continuum).not_ge (mk_le_aleph0_iff.2 hcount)
+  exact (by simpa using aleph0_lt_continuum : ℵ₀ < #(ℕ → Bool)).not_ge
+    (mk_le_aleph0_iff.2 (countable_univ_iff.1 huniv))
 
 /-- If every countable sequence of `L_{ω₁ω}` sentences realizes only countably many truth sequences
 on `C`, then `C` is thin for isomorphism. No measurability or invariance of `C` is required. -/
@@ -143,24 +141,20 @@ theorem countable_image_sentenceTheory_of_splits_along [Countable ι]
         (classOf '' {c : C | c.val ∉ modelsOf φ}).Countable)
     (θ : ι → L.Sentenceω) :
     (sentenceTheory θ '' C).Countable := by
-  let R := range classOf
-  let rep : R → C := fun q => q.property.choose
-  have hrep (q : R) : classOf (rep q) = q.val := q.property.choose_spec
-  let P : ι → R → Prop := fun i q => (rep q).val ∈ modelsOf (θ i)
-  have hP_split (i : ι) : {q : R | P i q}.Countable ∨ {q : R | ¬ P i q}.Countable := by
-    rcases hsplit (θ i) with hpos | hneg
-    · refine .inl ((hpos.preimage Subtype.val_injective).mono fun q hq => ?_)
-      exact ⟨rep q, hq, hrep q⟩
-    · refine .inr ((hneg.preimage Subtype.val_injective).mono fun q hq => ?_)
-      exact ⟨rep q, hq, hrep q⟩
-  let g : R → ι → Bool := fun q => sentenceTheory θ (rep q).val
-  have hg_count : (range g).Countable :=
-    countable_range_of_splits g
-      (fun _ _ h => sentenceTheory_eq_iff.2 h) hP_split
-  refine hg_count.mono ?_
-  rintro _ ⟨c, hc, rfl⟩
-  let q : R := ⟨classOf ⟨c, hc⟩, mem_range_self (f := classOf) ⟨c, hc⟩⟩
-  exact mem_range.2 ⟨q, sentenceTheory_eq_iff.2 fun i => htruth (hrep q) (θ i)⟩
+  let f : C → ι → Bool := fun c => sentenceTheory θ c.val
+  have hfac : f.FactorsThrough (rangeFactorization classOf) := fun _ _ h =>
+    sentenceTheory_eq_iff.2 fun i => htruth (congrArg Subtype.val h) (θ i)
+  obtain ⟨g, hg⟩ := (Function.factorsThrough_iff f).1 hfac
+  have hg_count : (range g).Countable := by
+    refine countable_range_of_splits g (fun _ _ h => funext fun i => Bool.eq_iff_iff.2 (h i))
+      fun i => (hsplit (θ i)).imp ?_ ?_ <;>
+    · refine fun h => (h.preimage Subtype.val_injective).mono fun q hq => ?_
+      obtain ⟨c, rfl⟩ := rangeFactorization_surjective q
+      have hgc : g (rangeFactorization classOf c) = sentenceTheory θ c.val := (congrFun hg c).symm
+      exact ⟨c, by simpa [hgc] using hq, rfl⟩
+  rw [show sentenceTheory θ '' C = range f from Set.image_eq_range _ _, hg,
+    rangeFactorization_surjective.range_comp]
+  exact hg_count
 
 /-- **Thinness from single-sentence splits along a presentation.** In a countable relational
 vocabulary on a countable carrier, if `classOf : C → Q` determines `L_{ω₁ω}` truth on `C` and

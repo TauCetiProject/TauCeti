@@ -61,11 +61,10 @@ the ambient space and for any finer relation `R`.
 * `Setoid.countable_or_hasCantorAntichainOn_of_measurableSet`: the relative form, for a Borel
   equivalence relation `F` on a Borel subset `A` of a Polish space and any relation `R` on the
   ambient space refining `F`, countably many `F`-classes or a Cantor antichain on `A` for `R`.
-* `Setoid.IsThinOn.countable_quotient_of_measurableSet`,
-  `Setoid.IsThinOn.countable_quotient_comap_of_measurableSet`, and
+* `Setoid.IsThinOn.countable_quotient_of_measurableSet` and
   `Setoid.IsThinOn.countable_quotient_comap_of_isSmooth`: on a thin Borel subset of a Polish
-  space, any coarsening Borel relation — in particular the restriction of `R` when its graph is
-  measurable or smooth — has countably many classes.
+  space, any coarsening Borel relation — in particular the restriction of `R` when it is smooth —
+  has countably many classes.
 * `Setoid.borelReducible_bot_iff_not_countable_quotient`: the reducibility form, equality on
   Cantor space Borel reduces to a Borel equivalence relation on a standard Borel space exactly
   when the latter has uncountably many classes.
@@ -194,15 +193,6 @@ theorem IsThinOn.countable_quotient_of_measurableSet [TopologicalSpace X] [Polis
   (countable_or_hasCantorAntichainOn_of_measurableSet hA R F hRF hF).resolve_right
     (isThinOn_iff_not_hasCantorAntichainOn.1 hR)
 
-/-- **Thin Borel sets on which `R` has a Borel graph meet countably many classes.** If `A` is a
-Borel subset of a Polish space `X` that is thin for `R` and the restriction of `R` to `A` has a
-measurable graph, then `R` restricts to countably many classes on `A`. -/
-theorem IsThinOn.countable_quotient_comap_of_measurableSet [TopologicalSpace X] [PolishSpace X]
-    [MeasurableSpace X] [BorelSpace X] {R : Setoid X} {A : Set X} (hR : R.IsThinOn A)
-    (hA : MeasurableSet A) (hgraph : MeasurableSet {p : A × A | R p.1 p.2}) :
-    Countable (Quotient (R.comap (Subtype.val : A → X))) :=
-  hR.countable_quotient_of_measurableSet hA (R.comap Subtype.val) (fun _ _ h => h) hgraph
-
 /-- **Thin Borel sets with smooth restriction meet countably many classes.** If `A` is a Borel
 subset of a Polish space `X` that is thin for `R` and the restriction of `R` to `A` is smooth, then
 `R` restricts to countably many classes on `A`. -/
@@ -210,7 +200,8 @@ theorem IsThinOn.countable_quotient_comap_of_isSmooth [TopologicalSpace X] [Poli
     [MeasurableSpace X] [BorelSpace X] {R : Setoid X} {A : Set X} (hR : R.IsThinOn A)
     (hA : MeasurableSet A) (hsmooth : (R.comap (Subtype.val : A → X)).IsSmooth) :
     Countable (Quotient (R.comap (Subtype.val : A → X))) :=
-  hR.countable_quotient_comap_of_measurableSet hA hsmooth.measurableSet_setOf
+  hR.countable_quotient_of_measurableSet hA (R.comap Subtype.val) (fun _ _ h => h)
+    hsmooth.measurableSet_setOf
 
 /-- **Silver's theorem in reducibility form.** Equality on Cantor space is Borel reducible to a
 Borel equivalence relation on a standard Borel space exactly when the latter has uncountably many
