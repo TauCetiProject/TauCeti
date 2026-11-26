@@ -19,9 +19,8 @@ The proof has two steps:
 1. The kernel of `A` on `(O ⧸ Ideal.span {a}) ^ k` is the orthogonal of `A.rowLattice a`, hence
    isomorphic via `Submodule.orthogonalPiEquiv` to
    `Hom_O((k → O) ⧸ A.rowLattice a, O ⧸ Ideal.span {a})`. Since `(k → O) ⧸ A.rowLattice a` is
-   annihilated by `a ≠ 0`, `IsDiscreteValuationRing.quotientEquivTorsionBySet` identifies this Hom
-   module with `Hom_O((k → O) ⧸ A.rowLattice a, K/O)`, whose length equals the colength of
-   `A.rowLattice a` by Matlis duality (`length_linearMap_fractionRing_quotient`).
+   annihilated by `a ≠ 0`, `IsDiscreteValuationRing.length_linearMap_quotient_span_singleton_right`
+   shows this Hom module has the same length as `(k → O) ⧸ A.rowLattice a`.
 2. For any matrix `M : Matrix ι k O` with `Nonempty (k → ι)`, the quotient
    `(k → O) ⧸ Submodule.span O (Set.range M.row)` has length equal to the least valuation of a
    maximal minor `(M.submatrix f id).det` (`Matrix.isLeast_length_quotient_span_range_row`): every
@@ -78,24 +77,12 @@ over `A.rowLatticeMinors a`. -/
 theorem isLeast_length_ker (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* O) (ha : ev a ≠ 0) :
     IsLeast ((fun P : Λ ↦ addVal O (ev P)) '' A.rowLatticeMinors a)
       (length O ((A.map ev).ker (O ⧸ Ideal.span {ev a}))) := by
-  let Q := (k → O) ⧸ (A.map ev).rowLattice (ev a)
-  let K := FractionRing O
-  let KO := K ⧸ LinearMap.range (Algebra.linearMap O K)
-  have h_kill (x : Q) : ev a • x = 0 := by
+  have h_kill (x : (k → O) ⧸ (A.map ev).rowLattice (ev a)) : ev a • x = 0 := by
     obtain ⟨v, rfl⟩ := mkQ_surjective _ x
     rw [← map_smul, mkQ_apply, Submodule.Quotient.mk_eq_zero]
     exact (A.map ev).smul_mem_rowLattice (ev a) v
-  let e₁ := IsDiscreteValuationRing.quotientEquivTorsionBySet (K := K) ha
-  let eHom : (Q →ₗ[O] O ⧸ Ideal.span {ev a}) ≃ₗ[O] (Q →ₗ[O] KO) :=
-    (LinearEquiv.congrRight e₁).trans
-    (LinearEquiv.ofBijective (LinearMap.llcomp O Q _ KO (Submodule.subtype _))
-      ⟨fun φ ψ h ↦ (LinearMap.cancel_left (Submodule.subtype_injective _)).1 h,
-        fun ψ ↦ ⟨ψ.codRestrict _ (fun x ↦ by
-          rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff,
-            ← map_smul, h_kill, map_zero]),
-          by simp only [LinearMap.llcomp_apply', LinearMap.subtype_comp_codRestrict]⟩⟩)
-  rw [length_ker_eq_length_linearMap, eHom.length_eq,
-    IsDiscreteValuationRing.length_linearMap_fractionRing_quotient (K := K),
+  rw [length_ker_eq_length_linearMap,
+    length_linearMap_quotient_span_singleton_right ha h_kill,
     ← Set.image_image (addVal O) ev, image_rowLatticeMinors]
   exact (A.map ev).isLeast_length_quotient_rowLattice (ev a)
 
