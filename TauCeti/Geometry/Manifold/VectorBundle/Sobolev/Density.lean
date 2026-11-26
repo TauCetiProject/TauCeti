@@ -488,14 +488,17 @@ theorem denseRange_ofContMDiffSection (hp : p ≠ ⊤) : DenseRange (ofContMDiff
   (dense_ofContMDiffSection_contMDiff A μ p k hp).mono (by rintro _ ⟨s, -, rfl⟩; exact ⟨s, rfl⟩)
 
 variable (A μ k) in
-/-- **Lowering the exponent has dense range.** For `1 ≤ p ≤ q` and `p < ∞`, the inclusion
-`W^{k,q}(V) → W^{k,p}(V)` (`TauCeti.SectionChartData.ofExponentLEL`) has dense range: its range
-contains the `Cᵏ` sections, which are dense. -/
-theorem denseRange_ofExponentLEL {q : ℝ≥0∞} [Fact (1 ≤ q)] (hp : p ≠ ⊤) (hpq : p ≤ q) :
-    DenseRange (A.sectionChartData.ofExponentLEL μ k hpq) :=
-  (denseRange_ofContMDiffSection A μ p k hp).mono <| by
-    rintro _ ⟨s, rfl⟩
-    exact ⟨ofContMDiffSection A μ q k s, ofExponentLEL_ofContMDiffSection hpq s⟩
+/-- **Lowering the exponent has dense range.** For `1 ≤ p ≤ q`, the inclusion
+`W^{k,q}(V) → W^{k,p}(V)` (`TauCeti.SectionChartData.ofExponentLEL`) has dense range. For `p < ∞`
+its range contains the `Cᵏ` sections, which are dense; for `p = ∞` it is the identity. -/
+theorem denseRange_ofExponentLEL {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q) :
+    DenseRange (A.sectionChartData.ofExponentLEL μ k hpq) := by
+  rcases eq_or_ne p ⊤ with rfl | hp
+  · obtain rfl := top_le_iff.1 hpq
+    exact Function.Surjective.denseRange fun w ↦ ⟨w, SectionChartData.ofExponentLEL_self w⟩
+  refine (denseRange_ofContMDiffSection A μ p k hp).mono ?_
+  rintro _ ⟨s, rfl⟩
+  exact ⟨ofContMDiffSection A μ q k s, ofExponentLEL_ofContMDiffSection hpq s⟩
 
 end Unconditional
 

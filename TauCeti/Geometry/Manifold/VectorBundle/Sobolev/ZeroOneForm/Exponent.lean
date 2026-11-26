@@ -17,8 +17,8 @@ finite-dimensional model fibre `F` and a finite bundle atlas `A`. For `1 ≤ p �
 `W^{k,q} → W^{k,p}` of Sobolev sections (`TauCeti.SectionChartData.ofExponentLEL`) keeps the chart
 data, so it sends `(0,1)`-forms to `(0,1)`-forms. This file restricts it to the inclusion
 `W^{k,q}(Σ, Λ^{0,1} ⊗ V) → W^{k,p}(Σ, Λ^{0,1} ⊗ V)` (`TauCeti.zeroOneOfExponentLEL`), shows that
-it commutes with the `(0,1)`-projection, and that it has dense range for `p < ∞` when `V` is
-smooth: the `(0,1)`-projection is onto, and the smooth one-forms are dense.
+it commutes with the `(0,1)`-projection, and that it has dense range when `V` is smooth: the
+`(0,1)`-projection is onto, and lowering the exponent of one-forms has dense range.
 
 ## Main definitions
 
@@ -29,7 +29,7 @@ smooth: the `(0,1)`-projection is onto, and the smooth one-forms are dense.
 * `TauCeti.zeroOneOfExponentLEL_injective`: the inclusion is injective.
 * `TauCeti.zeroOnePartSobolevL_ofExponentLEL`: lowering the exponent commutes with the
   `(0,1)`-projection.
-* `TauCeti.denseRange_zeroOneOfExponentLEL`: the inclusion has dense range for `p < ∞`.
+* `TauCeti.denseRange_zeroOneOfExponentLEL`: the inclusion has dense range.
 -/
 
 public section
@@ -99,14 +99,14 @@ theorem zeroOnePartSobolevL_ofExponentLEL (hpq : p ≤ q) (w : SobolevSection A.
 variable [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
 
 variable (A μ k) in
-/-- **Dense range.** For `p ≤ q` and `p < ∞`, the `W^{k,q}` `(0,1)`-forms are dense in the
+/-- **Dense range.** For `p ≤ q`, the `W^{k,q}` `(0,1)`-forms are dense in the
 `W^{k,p}` `(0,1)`-forms: the `(0,1)`-projection is onto and commutes with lowering the exponent,
 and lowering the exponent of one-forms has dense range
 (`TauCeti.SobolevSection.denseRange_ofExponentLEL`). -/
-theorem denseRange_zeroOneOfExponentLEL (hp : p ≠ ⊤) (hpq : p ≤ q) :
+theorem denseRange_zeroOneOfExponentLEL (hpq : p ≤ q) :
     DenseRange (zeroOneOfExponentLEL A μ k hpq) := by
   have h := (zeroOnePartSobolevL_surjective (A := A) (μ := μ) (p := p) (k := k)).denseRange.comp
-    (SobolevSection.denseRange_ofExponentLEL A.tangentHom μ k hp hpq)
+    (SobolevSection.denseRange_ofExponentLEL A.tangentHom μ k hpq)
     (zeroOnePartSobolevL A μ p k).continuous
   refine h.mono ?_
   rintro _ ⟨w, rfl⟩

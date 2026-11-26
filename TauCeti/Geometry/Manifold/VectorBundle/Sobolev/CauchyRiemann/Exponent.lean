@@ -401,7 +401,7 @@ def cokerSobolevLEquiv (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp' : p ≤ p') :
   LinearMap.cokerEquivOfRegularity (sobolevL_ofExponentLEL_toLinearMap A hD hDs hpp')
     (zeroOneOfExponentLEL_injective hpp') (regularity_toLinearMap A hD hDs hp hp'_top hpp')
     ((isFredholm_sobolevL A hD hDs hp (ne_top_of_le_ne_top hp'_top hpp')).range_sup_range_eq_top
-      (denseRange_zeroOneOfExponentLEL A volume 0 (ne_top_of_le_ne_top hp'_top hpp') hpp'))
+      (denseRange_zeroOneOfExponentLEL A volume 0 hpp'))
 
 /-- The equivalence of cokernels sends the class of `w` to the class of its `Lᵖ` copy. -/
 @[simp]
@@ -427,7 +427,7 @@ private theorem index_sobolevL_eq_of_le (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp
   (isFredholm_sobolevL A hD hDs hp (ne_top_of_le_ne_top hp'_top hpp')).index_eq_of_regularity
     (sobolevL_ofExponentLEL_toLinearMap A hD hDs hpp')
     (SectionChartData.ofExponentLEL_injective hpp') (zeroOneOfExponentLEL_injective hpp')
-    (denseRange_zeroOneOfExponentLEL A volume 0 (ne_top_of_le_ne_top hp'_top hpp') hpp')
+    (denseRange_zeroOneOfExponentLEL A volume 0 hpp')
     (regularity_toLinearMap A hD hDs hp hp'_top hpp')
 
 include hD hDs in
