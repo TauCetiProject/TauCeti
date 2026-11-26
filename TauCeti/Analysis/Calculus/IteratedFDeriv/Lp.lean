@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
+public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
@@ -48,7 +49,9 @@ The iterated derivatives of order at most `k` of a compactly supported `C^k` fun
 `ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport`). For a continuous bilinear map `B`,
 the Leibniz rule and Hölder's inequality bound the `Lᵖ` norm of `D^k (B (u, v))` by a binomial sum
 of products of `Lᵠ` norms of `D^i u` and `Lʳ` norms of `D^(k-i) v`
-(`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`).
+(`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`). The derivative of the `k`-th
+derivative has the `Lᵖ` norm of the `(k + 1)`-th derivative, for any function and any measure
+(`TauCeti.lpNorm_fderiv_iteratedFDeriv`).
 -/
 
 public section
@@ -218,6 +221,28 @@ theorem ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport (hn : n ≤ N)
   (hu.continuous_iteratedFDeriv_apply hn v).memLp_of_hasCompactSupport (hc.iteratedFDeriv_apply v)
 
 end CompactSupport
+
+namespace TauCeti
+
+open MeasureTheory
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The derivative of the `n`-th derivative has the `Lᵖ` norm of the `(n + 1)`-th derivative:
+`‖D(Dⁿ f)‖_p = ‖Dⁿ⁺¹ f‖_p`, since the two differ by a linear isometry equivalence. -/
+theorem lpNorm_fderiv_iteratedFDeriv (f : E → F) (n : ℕ) (p : ENNReal) (μ : Measure E) :
+    lpNorm (fderiv 𝕜 (iteratedFDeriv 𝕜 n f)) p μ = lpNorm (iteratedFDeriv 𝕜 (n + 1) f) p μ := by
+  rw [iteratedFDeriv_succ_eq_comp_left]
+  set L := (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (n + 1) ↦ E) F).symm
+  set g := fderiv 𝕜 (iteratedFDeriv 𝕜 n f)
+  by_cases hm : AEStronglyMeasurable g μ
+  · rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_congr_norm_ae (g := L ∘ g) hm
+      (L.continuous.comp_aestronglyMeasurable hm) (.of_forall fun x ↦ (L.norm_map _).symm)]
+  · rw [lpNorm_of_not_aestronglyMeasurable hm, lpNorm_of_not_aestronglyMeasurable (f := L ∘ g)
+      fun hL ↦ hm ((L.isometry.isEmbedding.aestronglyMeasurable_comp_iff (f := g)).1 hL)]
+
+end TauCeti
 
 section Bilinear
 
