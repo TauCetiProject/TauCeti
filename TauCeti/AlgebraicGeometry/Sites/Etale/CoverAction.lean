@@ -36,6 +36,9 @@ into these automorphisms, such as `σ ↦ Spec σ` for a Galois group, this is a
   `p⁻¹ ⋙ a⁻¹ ≅ p⁻¹` of inverse images on small étale sheaves, for `ha : a ≫ p = p`.
 * `AlgebraicGeometry.Scheme.Hom.smallEtaleCoverAction p a ha F n`: the map
   `a^♮ : Hⁿ(Y, p⁻¹ F) →+ Hⁿ(Y, p⁻¹ F)`.
+* `AlgebraicGeometry.Scheme.Hom.smallEtalePullbackOverIso_eq_sheafPullbackComp'`,
+  `AlgebraicGeometry.Scheme.Hom.smallEtaleCoverAction_eq_coverAction`: the two definitions in
+  terms of `CategoryTheory.Functor.sheafPullbackComp'` and `CategoryTheory.Sheaf.H.coverAction`.
 * `AlgebraicGeometry.Scheme.Hom.smallEtaleCoverAction_comp`,
   `AlgebraicGeometry.Scheme.Hom.smallEtaleCoverAction_id`: `(a ≫ b)^♮ = a^♮ ∘ b^♮` and
   `(𝟙 Y)^♮ = id`.
@@ -71,6 +74,15 @@ def smallEtalePullbackOverIso (a : Y ⟶ Y) (ha : a ≫ p = p) (A : Type*) [Cate
     p.smallEtalePullback A ⋙ a.smallEtalePullback A ≅ p.smallEtalePullback A :=
   Functor.sheafPullbackComp' (smallEtaleBaseChangeComp a p p ha.symm).symm A _ _ _
 
+/-- `smallEtalePullbackOverIso` is the composition isomorphism of inverse images adjoint to the
+inverse of `smallEtaleBaseChangeComp a p p ha.symm`. -/
+lemma smallEtalePullbackOverIso_eq_sheafPullbackComp' (a : Y ⟶ Y) (ha : a ≫ p = p)
+    (A : Type*) [Category* A] [(p.smallEtalePushforward A).IsRightAdjoint]
+    [(a.smallEtalePushforward A).IsRightAdjoint] :
+    p.smallEtalePullbackOverIso a ha A =
+      Functor.sheafPullbackComp' (smallEtaleBaseChangeComp a p p ha.symm).symm A _ _ _ :=
+  (rfl)
+
 variable [HasExt.{w} (Sheaf (smallEtaleTopology Y) AddCommGrpCat.{u})]
 
 /-- **Automorphisms of a cover act on étale cohomology.** For a morphism of schemes `p : Y ⟶ X`,
@@ -87,6 +99,16 @@ def smallEtaleCoverAction (a : Y ⟶ Y) (ha : a ≫ p = p)
     (p.smallEtalePullbackConstantSheafIso AddCommGrpCat.{u} (AddCommGrpCat.of (ULift ℤ))).symm
     (a.smallEtalePullback AddCommGrpCat.{u}) (p.smallEtalePullbackOverIso a ha _) F n
 
+/-- `a^♮` is the general action `CategoryTheory.Sheaf.H.coverAction` of the pair
+`(a⁻¹, smallEtalePullbackOverIso p a ha)`. -/
+lemma smallEtaleCoverAction_eq_coverAction (a : Y ⟶ Y) (ha : a ≫ p = p)
+    (F : Sheaf (smallEtaleTopology X) AddCommGrpCat.{u}) (n : ℕ) :
+    p.smallEtaleCoverAction a ha F n =
+      Sheaf.H.coverAction (p.smallEtalePullback AddCommGrpCat.{u})
+        (p.smallEtalePullbackConstantSheafIso AddCommGrpCat.{u} (AddCommGrpCat.of (ULift ℤ))).symm
+        (a.smallEtalePullback AddCommGrpCat.{u}) (p.smallEtalePullbackOverIso a ha _) F n :=
+  (rfl)
+
 variable (F : Sheaf (smallEtaleTopology X) AddCommGrpCat.{u})
 
 /-- **The action reverses composition**: `(a ≫ b)^♮ = a^♮ ∘ b^♮`. Pulling back along `a ≫ b`
@@ -101,9 +123,11 @@ theorem smallEtaleCoverAction_comp (a b : Y ⟶ Y) (ha : a ≫ p = p) (hb : b �
     AddCommGrpCat.{u} (smallEtaleTopology X) (smallEtaleTopology Y) (smallEtaleTopology Y)
     (smallEtaleTopology Y) (smallEtaleBaseChangeComp_associativity a b p (a ≫ b) p p rfl hb.symm
       (by rw [Category.assoc, hb, ha]) ha.symm)
-  rw [AddMonoidHom.comp_apply, smallEtaleCoverAction, smallEtaleCoverAction,
-    smallEtaleCoverAction, smallEtalePullbackOverIso, smallEtalePullbackOverIso,
-    smallEtalePullbackOverIso, ← Sheaf.H.coverAction_comp_apply, ← hc,
+  rw [AddMonoidHom.comp_apply, smallEtaleCoverAction_eq_coverAction,
+    smallEtaleCoverAction_eq_coverAction, smallEtaleCoverAction_eq_coverAction,
+    smallEtalePullbackOverIso_eq_sheafPullbackComp',
+    smallEtalePullbackOverIso_eq_sheafPullbackComp',
+    smallEtalePullbackOverIso_eq_sheafPullbackComp', ← Sheaf.H.coverAction_comp_apply, ← hc,
     Sheaf.H.coverAction_congr]
 
 /-- The identity of `Y` acts by the identity. -/
@@ -114,8 +138,8 @@ theorem smallEtaleCoverAction_id (n : ℕ) :
     (smallEtaleBaseChangeComp (𝟙 Y) p p (Category.id_comp p).symm).symm
     (smallEtaleBaseChangeId Y) AddCommGrpCat.{u} (smallEtaleTopology X) (smallEtaleTopology Y)
     (smallEtaleBaseChangeComp_id_comp p (Category.id_comp p).symm)
-  rw [smallEtaleCoverAction, smallEtalePullbackOverIso, hc, Sheaf.H.coverAction_congr,
-    Sheaf.H.coverAction_id]
+  rw [smallEtaleCoverAction_eq_coverAction, smallEtalePullbackOverIso_eq_sheafPullbackComp', hc,
+    Sheaf.H.coverAction_congr, Sheaf.H.coverAction_id]
 
 /-- `(a ≫ b)^♮ x = a^♮ (b^♮ x)`. -/
 theorem smallEtaleCoverAction_comp_apply (a b : Y ⟶ Y) (ha : a ≫ p = p) (hb : b ≫ p = p)

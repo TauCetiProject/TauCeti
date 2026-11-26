@@ -27,7 +27,8 @@ constant sheaves.
 
 The map reverses composition: for a second pair `(B, d)`, the composite pair
 `(A ⋙ B, P ⋙ A ⋙ B ≅ P ⋙ B ≅ P)` acts by the action of `(B, d)` after that of `(A, c)`. For an
-endomorphism `a` this says `(a ∘ b)^♮ = b^♮ ∘ a^♮`, since `(a ∘ b)⁻¹ ≅ b⁻¹ ⋙ a⁻¹`.
+endomorphism `a` this says `(a ∘ b)^♮ = b^♮ ∘ a^♮`, since `(a ∘ b)⁻¹ ≅ a⁻¹ ⋙ b⁻¹`,
+i.e. take `A = a⁻¹` and `B = b⁻¹`.
 
 ## Main declarations
 
@@ -106,19 +107,8 @@ lemma coverAction_congr {A' : Sheaf K AddCommGrpCat.{w} ⥤ Sheaf K AddCommGrpCa
   have hκ : (ε.hom ≫ (Functor.isoWhiskerLeft P φ ≪≫ c').inv.app _ ≫ A.map ε.inv) ≫
       φ.hom.app _ = ε.hom ≫ c'.inv.app _ ≫ A'.map ε.inv := by
     simp
-  have key : (x.mapExactFunctor A).comp
-      ((Ext.mk₀ (φ.hom.app (P.obj G))).comp (Ext.mk₀ (c'.hom.app G)) (zero_add 0)) (add_zero n) =
-      (Ext.mk₀ (φ.hom.app _)).comp ((x.mapExactFunctor A').comp (Ext.mk₀ (c'.hom.app G))
-        (add_zero n)) (zero_add n) := by
-    rw [← Ext.comp_assoc_of_third_deg_zero, Ext.mapExactFunctor_comp_mk₀_natTransApp,
-      Ext.comp_assoc_of_third_deg_zero]
-  -- Both sides are `mk₀ κ ∘ A x ∘ mk₀ (c G)`-shaped Ext composites; `key` moves `φ` across
-  -- `A x`, and `hκ` absorbs it into the comparison map.
-  rw [coverAction_apply, coverAction_apply, pullback_apply, pullback_apply, H.map_apply,
-    H.map_apply, Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
-    Functor.whiskerLeft_app, ← Ext.mk₀_comp_mk₀ (φ.hom.app (P.obj G)),
-    Ext.comp_assoc_of_third_deg_zero, key,
-    ← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀, hκ, Ext.comp_assoc_of_third_deg_zero]
+  rw [coverAction_apply, coverAction_apply, Iso.trans_hom, NatTrans.comp_app,
+    Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, H.map_comp_apply, map_app_pullback, hκ]
 
 /-- The identity pair acts by the identity. -/
 @[simp]
