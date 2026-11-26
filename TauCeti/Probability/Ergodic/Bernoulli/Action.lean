@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Process.Tail.InfinitePi
 public import TauCeti.Probability.Process.Tail.ProperAction
 public import Mathlib.Dynamics.Ergodic.Action.Basic
-public import Mathlib.Dynamics.SymbolicDynamics.Basic
 import TauCeti.Probability.ProductMeasure
 
 /-!
@@ -33,11 +32,11 @@ is null or conull: the action is ergodic.
   an infinite group.
 * `TauCeti.Probability.ergodicSMul_arrowAction_self_infinitePi_const`: the Bernoulli action
   `(g • x) h = x (g⁻¹ * h)` of a countable infinite group `Γ` on `Γ → S` is ergodic. This action is
-  the shift by `g⁻¹` (`TauCeti.Probability.arrowAction_smul_eq_mulShift`).
+  the shift by `g⁻¹` (`SymbolicDynamics.FullShift.arrowAction_smul_eq_mulShift`).
 * `TauCeti.Probability.ergodicSMul_arrowAction_multiplicative_infinitePi_const`: for a countable
   infinite additive group `Λ`, the Bernoulli action of `Multiplicative Λ` on `Λ → S` is ergodic.
   This action is the shift by `-toAdd g`
-  (`TauCeti.Probability.arrowAction_multiplicative_smul_eq_shift`).
+  (`SymbolicDynamics.FullShift.arrowAction_multiplicative_smul_eq_shift`).
 
 For the finitely supported permutations of `ℕ` acting on `ℕ → α`, Hewitt–Savage gives the same
 conclusion: `TauCeti.Probability.ergodicSMul_infinitePi_const`.
@@ -112,14 +111,6 @@ theorem ergodicSMul_arrowAction_infinitePi_const_of_proper [Countable ι] [Infin
     ErgodicSMul Γ (ι → S) (Measure.infinitePi fun _ => ν) :=
   ergodicSMul_arrowAction_infinitePi_const (exists_forall_smul_notMem_of_proper hproper)
 
-omit [MeasurableSpace S] in
-/-- The Bernoulli action `(g • x) h = x (g⁻¹ * h)` of a group on `Γ → S` (Mathlib's
-`arrowAction`) is the shift by `g⁻¹`. -/
-theorem arrowAction_smul_eq_mulShift (g : Γ) (x : Γ → S) :
-    letI := arrowAction (G := Γ) (A := Γ) (B := S)
-    g • x = SymbolicDynamics.FullShift.mulShift g⁻¹ x :=
-  (rfl)
-
 /-- **The Bernoulli action of a countable infinite group is ergodic.** For a probability measure
 `ν` on `S`, the action `(g • x) h = x (g⁻¹ * h)` of a countable infinite group `Γ` on `Γ → S` is
 ergodic for the Bernoulli measure `ν^{⊗Γ}`. -/
@@ -141,15 +132,6 @@ theorem ergodicSMul_arrowAction_multiplicative_infinitePi_const {Λ : Type*} [Ad
   exact ergodicSMul_arrowAction_infinitePi_const_of_proper
     (finite_setOf_exists_smul_mem_of_injective fun i =>
       (add_left_injective i).comp Multiplicative.toAdd.injective)
-
-omit [MeasurableSpace S] in
-/-- The Bernoulli action of `Multiplicative Λ` on `Λ → S` (Mathlib's `arrowAction`, with `Λ` acting
-on itself by translation) is the shift by `-toAdd g`: `(g • x) n = x (-toAdd g + n)`. -/
-theorem arrowAction_multiplicative_smul_eq_shift {Λ : Type*} [AddGroup Λ] (g : Multiplicative Λ)
-    (x : Λ → S) :
-    letI := arrowAction (G := Multiplicative Λ) (A := Λ) (B := S)
-    g • x = SymbolicDynamics.FullShift.shift (-Multiplicative.toAdd g) x :=
-  (rfl)
 
 end Probability
 

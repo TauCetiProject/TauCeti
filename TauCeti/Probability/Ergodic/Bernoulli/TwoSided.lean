@@ -25,11 +25,11 @@ measure `p^{⊗ℤ}` (`Measure.infinitePi fun _ => p`). Its measure preservation
 The two-sided Bernoulli shift is ergodic
 (`MeasureTheory.Measure.ergodic_shift_one_infinitePi_const`): a set invariant under `shift 1` is
 invariant under every `shift k`, `k ∈ ℤ`
-(`SymbolicDynamics.FullShift.preimage_shift_eq_of_preimage_shift_one_eq`, in
+(`SymbolicDynamics.FullShift.preimage_shift_zsmul_eq_of_preimage_shift_eq`, in
 `TauCeti.Dynamics.SymbolicDynamics.Shift`). The shifts `shift k` form the Bernoulli
 action of `Multiplicative ℤ` on `ℤ → A`, with `ℤ` acting on itself by translation
-(`TauCeti.Probability.arrowAction_multiplicative_smul_eq_shift`), which is ergodic as the Bernoulli
-action of a countable infinite group
+(`SymbolicDynamics.FullShift.arrowAction_multiplicative_smul_eq_shift`), which is ergodic as the
+Bernoulli action of a countable infinite group
 (`TauCeti.Probability.ergodicSMul_arrowAction_multiplicative_infinitePi_const`).
 
 ## Main results
@@ -58,6 +58,8 @@ theorem ergodic_shift_one_infinitePi_const (p : Measure A) [IsProbabilityMeasure
     h.aeconst_of_forall_preimage_smul_ae_eq hs fun g ↦ ?_
   have hg : (fun x : ℤ → A ↦ g • x) = shift (-Multiplicative.toAdd g) :=
     funext (arrowAction_multiplicative_smul_eq_shift g)
-  rw [hg, preimage_shift_eq_of_preimage_shift_one_eq hinv]
+  have hk := preimage_shift_zsmul_eq_of_preimage_shift_eq hinv (-Multiplicative.toAdd g)
+  rw [smul_eq_mul, mul_one] at hk
+  rw [hg, hk]
 
 end MeasureTheory.Measure
