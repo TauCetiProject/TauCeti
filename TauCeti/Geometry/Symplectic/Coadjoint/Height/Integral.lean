@@ -36,7 +36,10 @@ Since the integral homology is free, hence projective, in every degree
 (`Module.Dual.projective_singularHomology_int_quotient_stabilizer_coadjointRepresentation`), the
 `Ext¹` terms of the universal coefficient sequence vanish, and the Kronecker map
 `TopCat.singularKroneckerEquivOfProjectiveHomology` identifies the cohomology `Hʲ(O; ℤ, M)` with
-`Hom(Hⱼ(O; ℤ), M)` for every abelian group `M`. So the same holds for cohomology:
+`Hom(Hⱼ(O; ℤ), M)` for every abelian group `M`. So the same holds for cohomology, by
+`TopCat.isZero_singularCohomology_of_projective_homology`,
+`TopCat.free_singularCohomology_of_projective_homology` and
+`TopCat.finite_singularCohomology_of_projective_homology`:
 
 * `Hʲ(O; ℤ, M)` vanishes in odd degrees, for every abelian group `M`
   (`Module.Dual.isZero_singularCohomology_int_quotient_stabilizer_coadjointRepresentation_of_odd`);
@@ -143,29 +146,15 @@ section Cohomology
 variable {G : Type} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   [CompactSpace G] (ν : Module.Dual ℝ (GroupLieAlgebra I G)) (M : Type) [AddCommGroup M]
 
-/-- The universal coefficient isomorphism `Hʲ(O; ℤ, M) ≃ Hom(Hⱼ(O; ℤ), M)` of a coadjoint orbit,
-with the homomorphisms read as linear maps. -/
-private noncomputable def kroneckerLinearEquiv (j : ℕ) :
-    (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)).singularCohomology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M) j ≃ₗ[ℤ]
-      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) j).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
-        (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν))) →ₗ[ℤ] M) :=
-  have := ν.projective_singularHomology_int_quotient_stabilizer_coadjointRepresentation
-  (TopCat.singularKroneckerEquivOfProjectiveHomology
-    (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν))
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ M) j).trans ModuleCat.homLinearEquiv
-
 /-- **Odd cohomology of coadjoint orbits vanishes.** For a coadjoint orbit `O` of a compact Lie
 group, `Hʲ(O; ℤ, M) = 0` for every odd `j` and every abelian group `M` of coefficients: by the
 universal coefficient theorem it is `Hom(Hⱼ(O; ℤ), M)`, and `Hⱼ(O; ℤ) = 0`. -/
 theorem isZero_singularCohomology_int_quotient_stabilizer_coadjointRepresentation_of_odd {j : ℕ}
     (hj : Odd j) :
     IsZero ((TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)).singularCohomology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M) j) := by
-  have := ModuleCat.subsingleton_of_isZero
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M) j) :=
+  TopCat.isZero_singularCohomology_of_projective_homology _ _ _
     (ν.isZero_singularHomology_int_quotient_stabilizer_coadjointRepresentation_of_odd hj)
-  have := (kroneckerLinearEquiv ν M j).injective.subsingleton
-  exact ModuleCat.isZero_of_subsingleton _
 
 /-- **The integral cohomology of a coadjoint orbit is free.** For a coadjoint orbit `O` of a
 compact Lie group and a free abelian group `M`, `Hʲ(O; ℤ, M)` is free in every degree: by the
@@ -174,10 +163,10 @@ universal coefficient theorem it is `Hom(Hⱼ(O; ℤ), M)`, with `Hⱼ(O; ℤ)` 
 theorem free_singularCohomology_int_quotient_stabilizer_coadjointRepresentation [Module.Free ℤ M]
     (j : ℕ) :
     Module.Free ℤ (TopCat.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M)
-      (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)) j) := by
+      (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)) j) :=
   have := ν.free_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
   have := ν.finite_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
-  exact Module.Free.of_equiv (kroneckerLinearEquiv ν M j).symm
+  TopCat.free_singularCohomology_of_projective_homology _ _ _ j
 
 /-- **The integral cohomology of a coadjoint orbit is finitely generated.** For a coadjoint orbit
 `O` of a compact Lie group and a finitely generated abelian group `M`, `Hʲ(O; ℤ, M)` is finitely
@@ -186,10 +175,9 @@ generated in every degree: by the universal coefficient theorem it is `Hom(Hⱼ(
 theorem finite_singularCohomology_int_quotient_stabilizer_coadjointRepresentation
     [Module.Finite ℤ M] (j : ℕ) :
     Module.Finite ℤ (TopCat.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M)
-      (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)) j) := by
-  have := ν.free_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
+      (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)) j) :=
   have := ν.finite_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
-  exact Module.Finite.equiv (kroneckerLinearEquiv ν M j).symm
+  TopCat.finite_singularCohomology_of_projective_homology _ _ _ j
 
 end Cohomology
 

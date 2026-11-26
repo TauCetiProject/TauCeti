@@ -289,8 +289,8 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 /-- **The Euler characteristic of a coadjoint orbit is `[W : W_μ]`** (Bott). Let `T` be a maximal
 torus of a compact Lie group `G`, with Weyl group `W`, and let `B` be an `Ad`-invariant inner
 product on `𝔤`. For `μ` in the Lie algebra `𝔱` of `T`, the Euler characteristic of the coadjoint
-orbit of `B (e μ)` is the index of the stabilizer `W_μ` of `μ` in `W`: the orbit has one cell for
-each point of the Weyl orbit `W μ`, all of even dimension. -/
+orbit of `B (e μ)` is the index of the stabilizer `W_μ` of `μ` in `W`: a regular Morse height on
+the orbit has only even indices and one critical point for each point of `W / W_μ`. -/
 theorem eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index (hT : IsMaximalTorus T)
     (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B) (hBs : B.IsSymm)
     (hpos : ∀ a, a ≠ 0 → 0 < B a a) (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule)

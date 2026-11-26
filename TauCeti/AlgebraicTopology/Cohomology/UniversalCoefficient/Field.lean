@@ -74,16 +74,14 @@ a class to the linear form underlying its Kronecker pairing
 def singularCohomologyDualEquiv (n : ℕ) :
     X.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n ≃ₗ[k]
       Dual k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).obj X) :=
-  X.singularKroneckerEquivOfProjectiveHomology _ _ n ≪≫ₗ ModuleCat.homLinearEquiv
+  X.singularKroneckerLinearEquivOfProjectiveHomology _ _ n
 
 /-- The equivalence `TopCat.singularCohomologyDualEquiv` is the Kronecker map. -/
 @[simp]
 lemma singularCohomologyDualEquiv_apply (n : ℕ)
     (α : X.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n) :
-    X.singularCohomologyDualEquiv n α = (X.singularKronecker k n α).hom := by
-  rw [singularCohomologyDualEquiv, LinearEquiv.trans_apply,
-    singularKroneckerEquivOfProjectiveHomology_apply]
-  exact ModuleCat.homLinearEquiv_apply _
+    X.singularCohomologyDualEquiv n α = (X.singularKronecker k n α).hom :=
+  X.singularKroneckerLinearEquivOfProjectiveHomology_apply _ _ n α
 
 /-- The inverse of `TopCat.singularCohomologyDualEquiv` sends a linear form `φ` to the class whose
 Kronecker pairing is `φ`. -/
