@@ -16,7 +16,8 @@ This file transfers orthogonality to every vector of a subspace from orthogonali
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
-A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
+A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and every nonzero vector
+has a nonzero inner product with at least one basis element (`HilbertBasis.exists_inner_ne_zero`).
 
 It also expands the value of a continuous semilinear map in a Hilbert basis: the series
 `∑ᵢ σ ⟪bᵢ, x⟫ • T bᵢ` converges to `T x` (`HilbertBasis.hasSum_inner_smul_apply`). A continuous
@@ -34,9 +35,12 @@ Hilbert bases, for a fixed `σ`, is determined by its matrix entries in those ba
 A continuous semilinear map out of `E` also sends every vector into any closed submodule containing
 the images of the basis vectors (`HilbertBasis.apply_mem_of_forall_apply_mem`).
 
-Finally, the orthogonal complement of the span of the basis vectors indexed by a set `s` is the
+The orthogonal complement of the span of the basis vectors indexed by a set `s` is the
 closed span of the basis vectors indexed by its complement (`HilbertBasis.orthogonal_span_image`).
 This computes the cokernels of isometries that send a Hilbert basis into another one.
+
+The coordinates `⟪default i, x⟫` of a vector `x` in the standard Hilbert basis of `ℓ²(ι, 𝕜)` are
+its entries `x i` (`HilbertBasis.inner_default_apply`).
 -/
 
 public section
@@ -50,6 +54,14 @@ variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductS
 /-- A space with a Hilbert basis is complete, being isometric to `ℓ²`. -/
 theorem completeSpace (b : HilbertBasis ι 𝕜 E) : CompleteSpace E :=
   b.repr.toIsometryEquiv.completeSpace
+
+/-- A nonzero vector has a nonzero inner product with at least one member of any Hilbert basis. -/
+theorem exists_inner_ne_zero (b : HilbertBasis ι 𝕜 E) {x : E} (hx : x ≠ 0) :
+    ∃ i, ⟪b i, x⟫_𝕜 ≠ 0 := by
+  by_contra! h
+  refine hx (b.repr.map_eq_zero_iff.1 ?_)
+  ext i
+  simp [b.repr_apply_apply, h i]
 
 /-- Two continuous semilinear maps from `E` to a module with a Hausdorff topology, with the same
 scalar homomorphism `σ`, agree when they agree on every vector of a Hilbert basis of `E`. -/
@@ -163,5 +175,12 @@ theorem orthogonal_span_image (b : HilbertBasis ι 𝕜 E) (s : Set ι) :
     rw [← Submodule.isOrtho_iff_le, Submodule.isOrtho_span]
     rintro _ ⟨j, hj, rfl⟩ _ ⟨i, hi, rfl⟩
     exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
+
+open scoped lp in
+/-- The coordinates of `x` in the standard Hilbert basis of `ℓ²(ι, 𝕜)` are its entries. -/
+@[simp]
+theorem inner_default_apply (x : ℓ²(ι, 𝕜)) (i : ι) :
+    ⟪(default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i, x⟫_𝕜 = x i :=
+  ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).repr_apply_apply x i).symm
 
 end HilbertBasis

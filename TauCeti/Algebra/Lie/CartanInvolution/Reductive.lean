@@ -130,18 +130,13 @@ theorem finiteDimensional_derivedSeries [IsStrictOrderedRing K]
 Cartan involution. -/
 theorem conj (hθ : θ.IsReductiveCartanInvolution) (e : L ≃ₗ⁅K⁆ M) :
     (e.symm.trans (θ.trans e)).IsReductiveCartanInvolution := by
-  refine ⟨?_, fun y ↦ by simp [hθ.involutive (e.symm y)], ?_⟩
-  · have hZ : (center K L).toSubmodule.map e.toLinearMap = (center K M).toSubmodule := by
-      rw [← LieIdeal.toLieSubalgebra_toSubmodule, ← LieSubalgebra.map_toSubmodule, e.map_center,
-        LieIdeal.toLieSubalgebra_toSubmodule]
-    have hD : (derivedSeries K L 1).toSubmodule.map e.toLinearMap =
-        (derivedSeries K M 1).toSubmodule := by
-      rw [← LieIdeal.toLieSubalgebra_toSubmodule, ← LieSubalgebra.map_toSubmodule,
-        e.map_derivedSeries 1, LieIdeal.toLieSubalgebra_toSubmodule]
-    rw [← LieSubmodule.isCompl_toSubmodule, ← hZ, ← hD]
-    exact (LieSubmodule.isCompl_toSubmodule.mpr hθ.isCompl_center_derivedSeries).map
-      (Submodule.orderIsoMapComap e.toLinearEquiv)
-  · simpa using hθ.isCartanInvolution_restrictDerivedSeries.conj (e.restrictDerivedSeries 1)
+  refine ⟨e.isCompl_center_derivedSeries_iff.mp hθ.isCompl_center_derivedSeries,
+    fun y ↦ by simp [hθ.involutive (e.symm y)], ?_⟩
+  have hconj : (e.symm.trans (θ.trans e)).restrictDerivedSeries 1 =
+      (e.restrictDerivedSeries 1).conj (θ.restrictDerivedSeries 1) :=
+    LieEquiv.ext fun d ↦ Subtype.ext (by simp)
+  rw [hconj]
+  exact hθ.isCartanInvolution_restrictDerivedSeries.conj (e.restrictDerivedSeries 1)
 
 /-- The derived ideal `[L, L]` of a Lie algebra admitting a reductive Cartan involution is
 semisimple. -/

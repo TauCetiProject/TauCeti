@@ -48,9 +48,9 @@ theorem toEuclideanCLM_symm_apply (Z : EuclideanSpace ℂ n →L[ℂ] EuclideanS
     toEuclideanCLM.symm Z = ofMatrix ((Matrix.toEuclideanCLM (n := n) (𝕜 := ℂ)).symm Z) :=
   (rfl)
 
-/-- The diagonal entries of a matrix are the diagonal matrix coefficients of its operator. -/
-theorem inner_single_toEuclideanCLM_single (x : CStarMatrix n n ℂ) (i : n) :
-    ⟪EuclideanSpace.single i 1, toEuclideanCLM x (EuclideanSpace.single i 1)⟫_ℂ = x i i := by
+/-- The entries of a matrix are the matrix coefficients of its operator in the standard basis. -/
+theorem inner_single_toEuclideanCLM_single (x : CStarMatrix n n ℂ) (i j : n) :
+    ⟪EuclideanSpace.single i 1, toEuclideanCLM x (EuclideanSpace.single j 1)⟫_ℂ = x i j := by
   simp [toEuclideanCLM_apply, EuclideanSpace.inner_single_left]
 
 /-- The trace of the operator of a matrix is the trace of the matrix. -/

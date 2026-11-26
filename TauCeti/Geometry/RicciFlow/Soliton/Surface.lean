@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.PureTrace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Norm
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
@@ -161,11 +162,8 @@ theorem mvfderiv_hamilton_of_surface_soliton (hn : Module.finrank ℝ E = 2)
     smul_apply, smul_eq_mul]
   have hG : MDiffAt (T% (mgradient I f)) x :=
     (contMDiff_mgradient (n := ∞) (by simpa using hf)).mdifferentiableAt (by simp)
-  have hm := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
-    (FiberBundle.extend E v) hG hG
-  simp only [FiberBundle.extend_apply_self, real_inner_self_eq_norm_sq] at hm
-  rw [real_inner_comm (mgradient I f x)] at hm
-  simp only [inner_mgradient] at hm
+  have hm := (isMetricCompatible_leviCivitaConnection I).mvfderiv_norm_sq hG v
+  simp only [inner_mgradient_right] at hm
   have hh := hessian_eq_of_surface_soliton hn (hsol x) v (mgradient I f x)
   simp only [I.hessian_eq_inner_leviCivitaConnection_mgradient, inner_mgradient_right] at hh
   rw [mvfderiv_scalarCurvature_of_surface_soliton hn hf hsol]

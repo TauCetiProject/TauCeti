@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import Mathlib.SetTheory.Cardinal.Finite
 
+import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -37,6 +41,9 @@ from `R`, so the Krull intersection theorem applies to its powers.
 
 * `Ideal.smul_top_eq_restrictScalars_map`: **the extended ideal is `I • ⊤`**, the identity
   `I • (⊤ : Submodule R A) = Submodule.restrictScalars R (I.map (algebraMap R A))`.
+* `Ideal.card_quotient_map_algebraMap` and `Ideal.finite_quotient_map_algebraMap`: the quotients
+  of `A` by the `R`-submodule `I • ⊤` and by the extended ideal have the same cardinality and are
+  finite together, through `Submodule.quotEquivOfEqRestrictScalars`.
 * `Ideal.instIsTwoSidedMapAlgebraMap`: the extended ideal is two-sided.
 * `Ideal.map_algebraMap_eq_top_iff`: in a nontrivial free `R`-algebra, the extension of `I` is the
   unit ideal exactly when `I` is.
@@ -176,6 +183,26 @@ theorem span_pow_smul_top_eq_restrictScalars_span_image_pow (s : Set R) (n : ℕ
   rw [pow_smul_top_eq_restrictScalars_map_pow, map_span]
 
 end Semiring
+
+section Ring
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (I : Ideal R)
+
+/-- The quotient of `A` by the extended ideal `I.map (algebraMap R A)` is finite when the
+quotient by `I • ⊤` is. -/
+instance finite_quotient_map_algebraMap [Finite (A ⧸ (I • ⊤ : Submodule R A))] :
+    Finite (A ⧸ I.map (algebraMap R A)) :=
+  .of_equiv _ ((I • ⊤ : Submodule R A).quotEquivOfEqRestrictScalars (I.map (algebraMap R A))
+    (smul_top_eq_restrictScalars_map I)).toEquiv
+
+/-- The quotients of `A` by the extended ideal `I.map (algebraMap R A)` and by `I • ⊤` have the
+same cardinality. -/
+theorem card_quotient_map_algebraMap :
+    Nat.card (A ⧸ I.map (algebraMap R A)) = Nat.card (A ⧸ (I • ⊤ : Submodule R A)) :=
+  (Nat.card_congr ((I • ⊤ : Submodule R A).quotEquivOfEqRestrictScalars
+    (I.map (algebraMap R A)) (smul_top_eq_restrictScalars_map I)).toEquiv).symm
+
+end Ring
 
 section IntRing
 

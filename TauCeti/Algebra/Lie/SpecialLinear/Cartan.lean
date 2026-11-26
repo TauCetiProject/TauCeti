@@ -7,13 +7,17 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Killing
+public import Mathlib.Basic.Real.Basic
+public import TauCeti.Algebra.Lie.CartanInvolution.Matrix
+public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
-import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
+public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
+public import TauCeti.Algebra.Lie.SpecialLinear.Diagonal
 import TauCeti.Algebra.Lie.SpecialLinear.Killing
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
-# Negative transpose and the Killing form on `sl n R`
+# Negative transpose and the Cartan involution on `sl n R`
 
 Restricting `TauCeti.negTransposeLieEquiv` to `LieAlgebra.SpecialLinear.sl n R` yields `X ↦ -Xᵀ`
 (`LieAlgebra.SpecialLinear.cartanInvolution`). Using `LieAlgebra.SpecialLinear.killingForm_apply`
@@ -22,10 +26,25 @@ Restricting `TauCeti.negTransposeLieEquiv` to `LieAlgebra.SpecialLinear.sl n R` 
 and `κ(X, θ X) < 0` for nonzero `X` over an ordered principal ideal domain
 (`LieAlgebra.SpecialLinear.killingForm_cartanInvolution_self_neg`).
 
+Over `ℝ`, `𝔰𝔩_{r+1}(ℝ)` is closed under transpose (which is conjugate transpose over `ℝ`) and has
+trivial radical, so `LieSubalgebra.isCartanInvolution_restrictNegConjTranspose` directly makes
+`TauCeti.specialLinearNegTranspose` a Cartan involution of `𝔰𝔩_{r+1}(ℝ)` acting by `-1` on the
+trace-zero diagonal matrices.
+
+## Main results
+
+* `LieAlgebra.SpecialLinear.cartanInvolution`,
+  `LieAlgebra.SpecialLinear.killingForm_cartanInvolution_apply`,
+  `LieAlgebra.SpecialLinear.killingForm_cartanInvolution_self_neg`: the involution `X ↦ -Xᵀ` of
+  `sl n R` and its twisted Killing form over an ordered PID.
+* `TauCeti.specialLinearNegTranspose`, `TauCeti.isCartanInvolution_specialLinearNegTranspose`,
+  `TauCeti.specialLinearNegTranspose_apply_of_mem_specialLinearDiagonal`: the Cartan involution
+  `X ↦ -Xᵀ` of `𝔰𝔩_{r+1}(ℝ)` and its action on `specialLinearDiagonal r ℝ`.
+
 ## References
 
 * A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Progress in Mathematics 140,
-  Birkhäuser, 2002, Chapter I and Chapter VI, §1.
+  Birkhäuser, 2002, Chapter I and Chapter VI, §§1–2 (Proposition 6.28).
 -/
 
 public section
@@ -116,3 +135,40 @@ theorem killingForm_cartanInvolution_self_neg {X : sl n R} (hX : X ≠ 0) :
 end OrderedPID
 
 end LieAlgebra.SpecialLinear
+
+namespace TauCeti
+
+open LieAlgebra.SpecialLinear Matrix
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable (r : ℕ)
+
+/-- The Cartan involution `X ↦ -Xᵀ` of `𝔰𝔩_{r+1}(ℝ)`. -/
+noncomputable def specialLinearNegTranspose : sl (Fin (r + 1)) ℝ ≃ₗ⁅ℝ⁆ sl (Fin (r + 1)) ℝ :=
+  (sl (Fin (r + 1)) ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_sl
+
+variable {r}
+
+/-- The Cartan involution `specialLinearNegTranspose` is `X ↦ -Xᵀ` on the underlying matrices. -/
+@[simp]
+theorem coe_specialLinearNegTranspose_apply (X : sl (Fin (r + 1)) ℝ) :
+    ((specialLinearNegTranspose r X : sl (Fin (r + 1)) ℝ) : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ) =
+      -(X : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ)ᵀ := by
+  rw [specialLinearNegTranspose, LieSubalgebra.coe_restrictNegConjTranspose_apply,
+    conjTranspose_eq_transpose_of_trivial]
+
+variable (r) in
+/-- `X ↦ -Xᵀ` is a Cartan involution of `𝔰𝔩_{r+1}(ℝ)`. -/
+theorem isCartanInvolution_specialLinearNegTranspose :
+    (specialLinearNegTranspose r).IsCartanInvolution :=
+  LieSubalgebra.isCartanInvolution_restrictNegConjTranspose _ _
+
+/-- The Cartan involution acts on the trace-zero diagonal matrices by `-1`. -/
+theorem specialLinearNegTranspose_apply_of_mem_specialLinearDiagonal {X : sl (Fin (r + 1)) ℝ}
+    (hX : X ∈ specialLinearDiagonal r ℝ) : specialLinearNegTranspose r X = -X := by
+  ext : 1
+  rw [coe_specialLinearNegTranspose_apply, ((mem_specialLinearDiagonal_iff r ℝ X).mp hX).isSymm.eq,
+    NegMemClass.coe_neg]
+
+end TauCeti

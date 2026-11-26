@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Map
-public import Mathlib.Algebra.Module.Submodule.Range
-public import Mathlib.Order.SupIndep
-public import Mathlib.LinearAlgebra.Span.Basic
+public import Mathlib.Algebra.Algebra.Operations
 
 /-!
 # Submodules under a linear map
@@ -28,7 +25,9 @@ restricted to `B` carries the trace `A.comap B.subtype` of `A` in `B` onto the t
 in `B.map f`. The subquotient identifications in `TauCeti/Algebra/Module/Submodule/Quotient.lean`
 use both. For a surjective semilinear map, inverse image identifies the target's submodules
 with the source's submodules containing the kernel, including when the scalar homomorphism
-is a surjection rather than an isomorphism.
+is a surjection rather than an isomorphism. For a scalar tower `k`-`A`-`M` and any `k`-submodule `I`
+of `A`, every `A`-linear map sends the scalar product `I • ⊤` into `I • ⊤`
+(`Submodule.map_mem_smul_top`).
 
 ## Main results
 
@@ -44,6 +43,8 @@ is a surjection rather than an isomorphism.
   inclusion.
 * `Submodule.map_equiv_eq_iff`: a semilinear equivalence carries `p` onto `q` exactly when it
   maps a vector into `q` precisely when the vector lies in `p`.
+* `Submodule.map_mem_smul_top`: every `A`-linear map sends `I • ⊤` into `I • ⊤` for any
+  `k`-submodule `I` of `A`.
 * `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
   carries the trace of `A` in `B` onto the trace of `A.map f` in `B.map f`.
 -/
@@ -90,6 +91,18 @@ theorem map_equiv_eq_iff {e : M ≃ₛₗ[τ₁₂] M₂} {p : Submodule R M} {q
   exact forall_congr' fun _ ↦ Iff.comm
 
 end Equiv
+
+/-- Every `A`-linear map sends `I • ⊤` into `I • ⊤` for any `k`-submodule `I` of `A`. -/
+theorem map_mem_smul_top {k : Type*} {A : Type*} [Semiring k] [Semiring A] [Module k A]
+    {M : Type*} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+    {N : Type*} [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
+    (I : Submodule k A) (g : M →ₗ[A] N) {x : M} (hx : x ∈ I • (⊤ : Submodule k M)) :
+    g x ∈ I • (⊤ : Submodule k N) := by
+  refine Submodule.smul_induction_on hx (fun a ha y _ ↦ ?_) (fun _ _ hx hy ↦ ?_)
+  · rw [g.map_smul]
+    exact Submodule.smul_mem_smul ha Submodule.mem_top
+  · rw [map_add]
+    exact add_mem hx hy
 
 end Submodule
 

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 import Mathlib.Algebra.Lie.Derivation.Killing
+import TauCeti.Algebra.Lie.CartanInvolution.Spectral
 import TauCeti.Algebra.Lie.Spectral
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.Analysis.Normed.Operator.Exponential
@@ -123,7 +124,10 @@ private theorem conj_rpow_eq {ι : Type*}
     norm_num
   have hlin : (θ₁ : L →ₗ[ℝ] L).comp (θ' : L →ₗ[ℝ] L) = (θ' : L →ₗ[ℝ] L).comp (θ₁ : L →ₗ[ℝ] L) :=
     b.ext hcomm_basis
-  exact (hθ.conj φ).eq_of_commute hθ' (LinearMap.congr_fun hlin)
+  have hθ₁_conj : φ.conj θ = θ₁ := LieEquiv.ext fun x ↦ by simp [θ₁]
+  refine hθ₁_conj.symm.trans ((hθ.conj φ).eq_of_commute hθ' fun x ↦ ?_)
+  simpa only [hθ₁_conj, LinearMap.comp_apply, LinearEquiv.coe_coe, coe_toLinearEquiv] using
+    LinearMap.congr_fun hlin x
 
 end Helpers
 

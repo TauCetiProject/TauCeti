@@ -261,6 +261,13 @@ theorem cappedComparisonAlmostComplex_def (R : ℝ) :
       h₀.cappedAlmostComplex J hJ (3 * R - 1) (Floer.comparisonNeckLength R) :=
   (rfl)
 
+/-- The structures of the comparison family are tamed by `σ` at every point. -/
+theorem tames_almostComplexStructureAt_cappedComparisonAlmostComplex (R : ℝ) (w : ℂ) (x : M) :
+    (h₀.isNondegenerate.symplecticFormAt x).Tames
+      ((h₀.cappedComparisonAlmostComplex J hJ R w).almostComplexStructureAt x) := by
+  rw [cappedComparisonAlmostComplex_def]
+  exact h₀.isNondegenerate.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ _ _ w) x
+
 /-- For `R ≤ 1/3`, in particular at the start `R = 0` of the family, the structure is the
 domain-independent base structure `J₀`. -/
 theorem cappedComparisonAlmostComplex_of_le (hR : R ≤ 1 / 3) (w : ℂ) :

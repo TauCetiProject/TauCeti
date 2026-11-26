@@ -10,14 +10,15 @@ public import Mathlib.Algebra.Lie.Abelian
 /-!
 # Lie algebra equivalences on centres and subalgebra–ideal identifications
 
-Every Lie algebra equivalence `e : L ≃ₗ⁅R⁆ M` carries `Z(L)` onto `Z(M)` (`LieEquiv.map_center`),
-inducing `LieEquiv.restrictCenter : center R L ≃ₗ⁅R⁆ center R M`. We also package the canonical
+Every Lie algebra equivalence `e : L ≃ₗ⁅R⁆ M` carries `Z(L)` onto `Z(M)`
+(`LieEquiv.map_center_toLieSubalgebra`), inducing
+`LieEquiv.restrictCenter : center R L ≃ₗ⁅R⁆ center R M`. We also package the canonical
 equivalence `LieEquiv.ofSubalgebraEqIdeal` between a Lie subalgebra `S` and a Lie ideal `I` with
 `I.toLieSubalgebra = S`.
 
 ## Main definitions and results
 
-* `LieEquiv.map_center`, `LieEquiv.restrictCenter`, `LieEquiv.restrictCenter_refl`,
+* `LieEquiv.map_center_toLieSubalgebra`, `LieEquiv.restrictCenter`, `LieEquiv.restrictCenter_refl`,
   `LieEquiv.restrictCenter_symm`, `LieEquiv.restrictCenter_trans`.
 * `LieEquiv.ofSubalgebraEqIdeal`, `LieEquiv.coe_ofSubalgebraEqIdeal`,
   `LieEquiv.coe_ofSubalgebraEqIdeal_symm`.
@@ -31,8 +32,8 @@ namespace LieEquiv
 
 variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing M] [LieAlgebra R M]
 
-/-- Every Lie algebra equivalence maps the centre onto the centre. -/
-theorem map_center (e : L ≃ₗ⁅R⁆ M) :
+/-- Every Lie algebra equivalence maps the centre onto the centre as Lie subalgebras. -/
+theorem map_center_toLieSubalgebra (e : L ≃ₗ⁅R⁆ M) :
     (center R L).toLieSubalgebra.map e.toLieHom = (center R M).toLieSubalgebra := by
   ext y
   simp only [LieSubalgebra.mem_map, LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
@@ -44,16 +45,17 @@ theorem map_center (e : L ≃ₗ⁅R⁆ M) :
 
 /-- Restriction of a Lie algebra equivalence to the centre. -/
 def restrictCenter (e : L ≃ₗ⁅R⁆ M) : center R L ≃ₗ⁅R⁆ center R M :=
-  e.ofSubalgebras (center R L).toLieSubalgebra (center R M).toLieSubalgebra e.map_center
+  e.ofSubalgebras (center R L).toLieSubalgebra (center R M).toLieSubalgebra
+    e.map_center_toLieSubalgebra
 
 @[simp, grind =]
 theorem coe_restrictCenter (e : L ≃ₗ⁅R⁆ M) (z : center R L) : (e.restrictCenter z : M) = e z :=
-  e.ofSubalgebras_apply _ _ e.map_center z
+  e.ofSubalgebras_apply _ _ e.map_center_toLieSubalgebra z
 
 @[simp, grind =]
 theorem coe_restrictCenter_symm (e : L ≃ₗ⁅R⁆ M) (z : center R M) :
     (e.restrictCenter.symm z : L) = e.symm z :=
-  e.ofSubalgebras_symm_apply _ _ e.map_center z
+  e.ofSubalgebras_symm_apply _ _ e.map_center_toLieSubalgebra z
 
 /-- Restricting the identity equivalence to the centre gives the identity equivalence. -/
 @[simp]
