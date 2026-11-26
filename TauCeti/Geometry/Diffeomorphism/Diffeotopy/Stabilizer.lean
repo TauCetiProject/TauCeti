@@ -87,37 +87,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-/-! ### Supports of diffeotopies -/
-
-namespace Diffeotopy
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {J : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
-  {Φ Ψ : Diffeotopy J n M} {K L : Set M}
-
-/-- If two diffeotopies are the identity outside `K` and outside `L` at every time, their
-pointwise composite is the identity outside `K ∪ L` at every time. -/
-theorem eqOn_id_trans (hΦ : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ)
-    (hΨ : ∀ t, EqOn (fun x ↦ Ψ (t, x)) id Lᶜ) (t : unitInterval) :
-    EqOn (fun x ↦ Φ.trans Ψ (t, x)) id (K ∪ L)ᶜ := fun x hx ↦ by
-  rw [compl_union] at hx
-  simp only [trans_apply, hΦ t hx.1, id_eq]
-  exact hΨ t hx.2
-
-/-- If a diffeotopy is the identity outside `K` at every time, so is its pointwise inverse. -/
-theorem eqOn_id_symm (hΦ : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) (t : unitInterval) :
-    EqOn (fun x ↦ Φ.symm (t, x)) id Kᶜ := fun _ hx ↦ (Φ.symm_apply_eq_self_iff).2 (hΦ t hx)
-
-/-- If a diffeotopy is the identity outside `K` at every time, its conjugate `f ∘ φ_t ∘ f⁻¹` by
-a diffeomorphism `f` is the identity outside `f '' K` at every time. -/
-theorem eqOn_id_transDiffeomorph {P : Type*} [TopologicalSpace P] [ChartedSpace H P]
-    (f : M ≃ₘ^n⟮J, J⟯ P) (hΦ : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) (t : unitInterval) :
-    EqOn (fun x ↦ Φ.transDiffeomorph f (t, x)) id (f '' K)ᶜ := fun x hx ↦ by
-  have hx' : f.symm x ∉ K := fun h ↦ hx ⟨_, h, f.apply_symm_apply x⟩
-  simp only [transDiffeomorph_apply, hΦ t hx', id_eq, Diffeomorph.apply_symm_apply]
-
-end Diffeotopy
-
 namespace SmoothForm
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
