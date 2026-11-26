@@ -70,10 +70,10 @@ theorem diagGL_mem_normalizer (t : ι → Rˣ) :
     diagGL t ∈ Subgroup.normalizer (upperUnitriangularGroup ι R : Set (GL ι R)) := by
   have hmem (t : ι → Rˣ) {u : GL ι R} (hu : u ∈ upperUnitriangularGroup ι R) :
       diagGL t * u * (diagGL t)⁻¹ ∈ upperUnitriangularGroup ι R := by
-    rw [mem_iff, isUpperUnitriangular_iff] at hu ⊢
-    refine ⟨fun i j hji => ?_, fun i => ?_⟩
-    · rw [diagGL_mul_mul_inv_apply, hu.1 hji, mul_zero, zero_mul]
-    · rw [diagGL_mul_mul_inv_apply, hu.2 i, mul_one, Units.mul_inv]
+    rw [mem_iff] at hu ⊢
+    simpa [Units.val_mul, diagGL_coe, ← map_inv] using
+      hu.diagonal_mul_mul_diagonal (d := fun i => (t i : R)) (e := fun i => ((t i)⁻¹ : Rˣ))
+        fun i => (t i).mul_inv
   refine Subgroup.mem_normalizer_iff.mpr fun u => ⟨hmem t, fun hu => ?_⟩
   have h := hmem t⁻¹ hu
   simpa only [map_inv, inv_inv, mul_assoc, inv_mul_cancel_left, inv_mul_cancel, mul_one] using h
