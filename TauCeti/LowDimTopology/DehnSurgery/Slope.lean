@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Compactification.OnePoint.Basic
+public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import TauCeti.Algebra.Module.Primitive
 
@@ -61,6 +62,9 @@ the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
 
 ## Main results
 
+* `TauCeti.smul_slopeValue` / `TauCeti.slopeEquivStd_congr`: slope values are equivariant for
+  `GL₂(ℤ)`, acting on classes `(p, q)` as on column vectors and on `ℚ ∪ {∞}` by Möbius
+  transformations.
 * `TauCeti.FramedBoundaryTorus.value_meridian` / `.value_longitude`: the meridian is `∞` and the
   longitude is `0`, fixing the meridian-longitude convention.
 * `TauCeti.FramedBoundaryTorus.slopeEquiv_symm_coe_ne_meridian`: a slope of finite value is not
@@ -76,7 +80,8 @@ the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
 `ℚ ∪ {∞}` is Mathlib's one-point extension `OnePoint ℚ` from
 `Mathlib/Topology/Compactification/OnePoint/Basic.lean`; the reduced-fraction bookkeeping reuses
 Mathlib's `Rat` normalisation (`Rat.num_div_den`, `Rat.num_div_eq_of_coprime`,
-`Rat.den_div_eq_of_coprime`).
+`Rat.den_div_eq_of_coprime`). The Möbius action of `GL (Fin 2) ℚ` on `OnePoint ℚ` is Mathlib's
+`OnePoint.instGLAction` from `Mathlib/Topology/Compactification/OnePoint/ProjectiveLine.lean`.
 -/
 
 public section
@@ -322,6 +327,62 @@ theorem slopeEquivStd_apply (s : Slope (ℤ × ℤ)) : slopeEquivStd s = Slope.v
 /-- The inverse of the standard slope parametrisation is `slopeOfValue`. -/
 @[simp]
 theorem slopeEquivStd_symm_apply (x : OnePoint ℚ) : slopeEquivStd.symm x = slopeOfValue x := (rfl)
+
+/-! ### Change of basis
+
+`GL₂(ℤ)` acts on the classes `(p, q)` of `ℤ × ℤ` as on column vectors, and through its image in
+`GL (Fin 2) ℚ` on `ℚ ∪ {∞}` by Möbius transformations. Slope values intertwine the two actions. -/
+
+/-- **Slope values under a change of basis.** For `g = [[a, b], [c, d]]` in `GL₂(ℤ)` and a nonzero
+class `(p, q)`, the Möbius transformation of `g` sends the value `p / q` to the value
+`(a p + b q) / (c p + d q)` of the class `(a p + b q, c p + d q)`. -/
+theorem smul_slopeValue (g : GL (Fin 2) ℤ) {v : ℤ × ℤ} (hv : v ≠ 0) :
+    Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) g • slopeValue v =
+      slopeValue (g 0 0 * v.1 + g 0 1 * v.2, g 1 0 * v.1 + g 1 1 * v.2) := by
+  obtain ⟨p, q⟩ := v
+  by_cases hq : q = 0
+  · subst hq
+    have hp : p ≠ 0 := by rintro rfl; exact hv rfl
+    rw [slopeValue_of_snd_eq_zero (v := (p, 0)) rfl, OnePoint.smul_infty_eq_ite]
+    dsimp only
+    simp only [mul_zero, add_zero, Matrix.GeneralLinearGroup.map_apply, eq_intCast,
+      Int.cast_eq_zero]
+    by_cases hc : g 1 0 = 0
+    · simp [hc]
+    · simp only [hc, ↓reduceIte]
+      rw [slopeValue_of_snd_ne_zero (mul_ne_zero hc hp)]
+      push_cast
+      congr 1
+      field_simp
+  · rw [slopeValue_of_snd_ne_zero (v := (p, q)) hq, OnePoint.smul_some_eq_ite]
+    dsimp only
+    simp only [Matrix.GeneralLinearGroup.map_apply, eq_intCast]
+    have hq' : (q : ℚ) ≠ 0 := by exact_mod_cast hq
+    have key : (g 1 0 : ℚ) * (p / q) + g 1 1 = ((g 1 0 * p + g 1 1 * q : ℤ) : ℚ) / q := by
+      push_cast; field_simp
+    simp only [key, div_eq_zero_iff, hq', or_false, Int.cast_eq_zero]
+    split_ifs with h
+    · exact (slopeValue_of_snd_eq_zero h).symm
+    · rw [slopeValue_of_snd_ne_zero h]
+      congr 1
+      have h' : ((g 1 0 * p + g 1 1 * q : ℤ) : ℚ) ≠ 0 := by exact_mod_cast h
+      push_cast at h' ⊢
+      field_simp
+
+/-- **The standard slope parametrisation is `GL₂(ℤ)`-equivariant.** Transporting a slope along a
+matrix `g : GL₂(ℤ)`, acting on classes `(p, q)` as on column vectors, moves its value by the
+Möbius transformation of the image of `g` in `GL (Fin 2) ℚ`. The pinned
+`TauCeti.FramedBoundaryTorus.value_shiftLongitude` is the case `g = [[1, -n], [0, 1]]`. -/
+theorem slopeEquivStd_congr (g : GL (Fin 2) ℤ) (s : Slope (ℤ × ℤ)) :
+    slopeEquivStd (Slope.congr ((LinearEquiv.finTwoArrow ℤ ℤ).symm ≪≫ₗ
+        LinearMap.GeneralLinearGroup.toLinearEquiv (Matrix.GeneralLinearGroup.toLin g) ≪≫ₗ
+        LinearEquiv.finTwoArrow ℤ ℤ) s) =
+      Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) g • slopeEquivStd s := by
+  induction s using Slope.induction_on with
+  | h v hv =>
+    rw [Slope.congr_mk, slopeEquivStd_apply, slopeEquivStd_apply, Slope.value_mk, Slope.value_mk,
+      smul_slopeValue g hv.ne_zero]
+    simp [Matrix.GeneralLinearGroup.toLin, LinearEquiv.finTwoArrow_apply]
 
 /-! ### Boundary tori and framings
 
