@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 
 /-!
 # Distance comparison and completeness for Riemannian metrics
@@ -21,6 +22,10 @@ Extended distances allow points in distinct connected components to be infinitel
 
 `riemannianEDist_toWithMetric_le_mul_toWithMetric` compares the intrinsic distances of two
 bundled metrics on the same manifold from a pointwise quadratic-form bound.
+
+The constant-rescaling law is adapted from the formalizations in
+[frenzymath/lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
+[frenzymath/PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 
 The carrier and tangent-norm comparison are provided by `TauCeti.WithMetric`.
 See M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 7, §3, Lemma 3.3.
@@ -147,5 +152,44 @@ theorem completeSpace_of_sq_norm_le_mul [CompleteSpace M] {C : ℝ≥0} (hC0 : C
 end Ambient
 
 end TauCeti.WithMetric
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+open TauCeti.WithMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
+
+/-- Multiplying a bundled metric by `c²`, for `c > 0`, multiplies its intrinsic extended
+distances by `c`, including infinite distances between components. -/
+theorem riemannianEDist_rescale_const_sq
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    {c : ℝ} (hc : 0 < c) (x y : M) :
+    riemannianEDist I
+        (toWithMetric (g.rescale (fun _ ↦ c ^ 2) contMDiff_const (fun _ ↦ sq_pos_of_pos hc)) x)
+        (toWithMetric (g.rescale (fun _ ↦ c ^ 2) contMDiff_const (fun _ ↦ sq_pos_of_pos hc)) y) =
+      ENNReal.ofReal c * riemannianEDist I (toWithMetric g x) (toWithMetric g y) := by
+  let _ : RiemannianBundle (TangentSpace I : M → Type _) := ⟨g.toRiemannianMetric⟩
+  let C : ℝ≥0 := NNReal.mk c hc.le
+  have hC : C ≠ 0 := by
+    apply NNReal.coe_ne_zero.mp
+    simpa only [C, NNReal.coe_mk] using hc.ne'
+  have hnew := riemannianEDist_toWithMetric_eq_mul
+    (g := g.rescale (fun _ ↦ c ^ 2) contMDiff_const (fun _ ↦ sq_pos_of_pos hc)) hC
+    (fun x v ↦ by
+      rw [ContMDiffRiemannianMetric.rescale_inner]
+      simp only [C, NNReal.coe_mk]
+      rw [← g.inner_riemannianBundle, real_inner_self_eq_norm_sq]) x y
+  have hold := riemannianEDist_toWithMetric_eq_mul (g := g) one_ne_zero
+    (fun x v ↦ by
+      rw [← g.inner_riemannianBundle, real_inner_self_eq_norm_sq, NNReal.coe_one,
+        one_pow, one_mul]) x y
+  rw [ENNReal.coe_one, one_mul] at hold
+  rw [hold, hnew]
+  dsimp only [C]
+  rw [ENNReal.ofReal_eq_coe_nnreal hc.le]
+
+end Bundle.ContMDiffRiemannianMetric
 
 end

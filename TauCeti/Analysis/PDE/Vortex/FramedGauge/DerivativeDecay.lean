@@ -8,8 +8,11 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
@@ -31,20 +34,35 @@ and the derivatives of `exp (ℓ / 2) - 1` inherit this decay by the Leibniz rul
 `(0, 1)` together with all its derivatives, at every rate `c < 1 / 2`. This upgrades the
 zeroth-order convergence `TauCeti.Vortex.exists_norm_sub_referenceField_le_mul_exp`.
 
-These are estimates for one smooth vortex; uniformity over compact families of divisors and decay
-of derivatives in the divisor parameters are not treated here.
+Since the end field is determined by `ℓ`, two vortices whose moduli exceed `2 c` outside a disc
+and whose logarithmic moduli are within `M` of each other on its boundary circle have end
+trivializations within `94 M exp (-c (|z| - (R + 3)))` of each other, by the comparison of their
+logarithmic moduli and their gradients
+(`TauCeti.Vortex.norm_gaugeTransform_inv_sub_gaugeTransform_inv_le_mul_exp`).
+
+These are estimates for one or two smooth vortices. Their uniform version over the vortices whose
+zeros lie in a fixed disc is `TauCeti.Analysis.PDE.Vortex.FramedGauge.UniformDerivativeDecay`, and
+the decay of the first derivatives in the coefficients (symmetric coordinates) is
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.CoefficientDecay`; higher and mixed derivatives in the
+coefficients are not treated.
 
 ## Main results
 
 * `TauCeti.Vortex.gaugeTransform_inv_apply_eq`: where the section is `|α|` times a gauge `u`
   and solves the holomorphicity rows, its gauge transformation by `u⁻¹` is
   `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, exp (ℓ / 2) / 2, 0)` for `ℓ = log |α|²`.
+* `TauCeti.Vortex.gaugeTransform_inv_apply_sub_vacuumField_eq`: the same gauge transformation
+  minus the vacuum is the end field `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)`.
 * `TauCeti.Vortex.exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField`: near
   infinity the end trivialization minus the vacuum agrees with a smooth field whose derivatives
   are all `O(exp (-c |z|))` for every rate `c < 1 / 2`.
 * `TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField`: every derivative of
   the end trivialization minus the vacuum, in particular the winding end trivialization, is
   `O(exp (-c |z|))` for every rate `c < 1 / 2`.
+* `TauCeti.Vortex.norm_gaugeTransform_inv_sub_gaugeTransform_inv_le_mul_exp`: the end
+  trivializations of two vortices with moduli above `2 c` outside the disc of radius `R`, whose
+  logarithmic moduli are within `M` of each other on its boundary, differ by at most
+  `94 M exp (-c (|z| - (R + 3)))` for `|z| ≥ R + 3`.
 
 ## References
 
@@ -116,8 +134,7 @@ theorem gaugeTransform_inv_apply_eq {u : ℂ → Circle} {w : ℂ}
   -- Since `|α|` is gauge invariant, `ℓ = log |α|²` for the section of `y` as well.
   have hℓy : ℓ =ᶠ[𝓝 w] fun v ↦ Real.log (4 * (y v 2 ^ 2 + y v 3 ^ 2)) := by
     filter_upwards [hℓ] with v hv
-    rw [hv, ← sq_norm_sectionValue, ← sq_norm_sectionValue, sectionValue_gaugeTransform,
-      norm_mul, Circle.norm_coe, one_mul]
+    rw [hv, gaugeTransform_apply_two_sq_add_apply_three_sq]
   have h1 := fderiv_log_normSq_apply_one hpy hqy hαy hrows.1 hrows.2
   have hI := fderiv_log_normSq_apply_I hpy hqy hαy hrows.1 hrows.2
   rw [← hℓy.fderiv_eq, hy3.fderiv_eq, fderiv_const_apply, hsec.self_of_nhds.2] at h1 hI
@@ -125,24 +142,51 @@ theorem gaugeTransform_inv_apply_eq {u : ℂ → Circle} {w : ℂ}
   ext i
   fin_cases i <;> simp [hsec.self_of_nhds.1, hsec.self_of_nhds.2] <;> linarith
 
+/-- **The end trivialization minus the vacuum in terms of `ℓ = log |α|²`.** Under the hypotheses
+of `TauCeti.Vortex.gaugeTransform_inv_apply_eq`, the gauge transformation of `x` by `u⁻¹` minus
+the vacuum `(0, 1)` is the end field `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)`
+at `w`. -/
+theorem gaugeTransform_inv_apply_sub_vacuumField_eq {u : ℂ → Circle} {w : ℂ}
+    (hp : DifferentiableAt ℝ (fun v ↦ x v 2) w) (hq : DifferentiableAt ℝ (fun v ↦ x v 3) w)
+    (hα : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0) (h₁ : equation x w 1 = 0) (h₂ : equation x w 2 = 0)
+    {ℓ : ℂ → ℝ} (hphase : ∀ᶠ v in 𝓝 w, sectionValue x v = ‖sectionValue x v‖ * u v)
+    (hℓ : ℓ =ᶠ[𝓝 w] fun v ↦ Real.log (4 * (x v 2 ^ 2 + x v 3 ^ 2))) :
+    gaugeTransform u⁻¹ x w - vacuumField w =
+      !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2, (Real.exp (ℓ w / 2) - 1) / 2, 0] := by
+  rw [gaugeTransform_inv_apply_eq hp hq hα h₁ h₂ hphase hℓ, vacuumField_apply]
+  ext i
+  fin_cases i
+  · simp
+  · simp
+  · simp only [Fin.reduceFinMk, PiLp.sub_apply, Matrix.cons_val]
+    ring
+  · simp
+
+/-- **The end field is linear in `Dℓ` and `exp (ℓ / 2) - 1`.** There are continuous linear maps
+`L₁` and `L₂`, independent of `ℓ`, such that for every function `ℓ` on the plane the end field
+`(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` of `ℓ` is
+`L₁ (Dℓ) + L₂ (exp (ℓ / 2) - 1)`. -/
+theorem exists_endField_eq_add :
+    ∃ (L₁ : (ℂ →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (L₂ : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 4)),
+      ∀ ℓ : ℂ → ℝ, (fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2,
+        (Real.exp (ℓ w / 2) - 1) / 2, 0]) =
+        fun w ↦ L₁ (fderiv ℝ ℓ w) + L₂ (Real.exp (ℓ w / 2) - 1) := by
+  refine ⟨(-(1 / 2 : ℝ)) • (ContinuousLinearMap.apply ℝ ℝ I).smulRight (EuclideanSpace.single 0 1) +
+      (1 / 2 : ℝ) • (ContinuousLinearMap.apply ℝ ℝ 1).smulRight (EuclideanSpace.single 1 1),
+    ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single 2 (1 / 2)), fun ℓ ↦ ?_⟩
+  ext w i
+  fin_cases i <;> simp <;> ring
+
 /-- Along a filter on which `ρ` is bounded, if every derivative of a smooth `ℓ` is `O(ρ)`, then so
 is every derivative of `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)`: its connection
-part is linear in `Dℓ` and its section part is linear in `exp (ℓ / 2) - 1`. -/
+part is linear in `Dℓ` and its section part is linear in `exp (ℓ / 2) - 1`
+(`TauCeti.Vortex.exists_endField_eq_add`). -/
 private theorem isBigO_iteratedFDeriv_endField {ℓ : ℂ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) {l : Filter ℂ}
     {ρ : ℂ → ℝ} (hρ : ρ =O[l] fun _ ↦ (1 : ℝ)) (hdec : ∀ j, iteratedFDeriv ℝ j ℓ =O[l] ρ)
     (n : ℕ) :
     iteratedFDeriv ℝ n (fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2,
       (Real.exp (ℓ w / 2) - 1) / 2, 0]) =O[l] ρ := by
-  set L₁ : (ℂ →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-    (-(1 / 2 : ℝ)) • (ContinuousLinearMap.apply ℝ ℝ I).smulRight (EuclideanSpace.single 0 1) +
-      (1 / 2 : ℝ) • (ContinuousLinearMap.apply ℝ ℝ 1).smulRight (EuclideanSpace.single 1 1)
-  set L₂ : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-    ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single 2 (1 / 2))
-  have hL : (fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2,
-      (Real.exp (ℓ w / 2) - 1) / 2, 0]) =
-      fun w ↦ L₁ (fderiv ℝ ℓ w) + L₂ (Real.exp (ℓ w / 2) - 1) := by
-    ext w i
-    fin_cases i <;> simp [L₁, L₂] <;> ring
+  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add
   -- The derivatives of `ℓ / 2` and hence of `exp (ℓ / 2) - 1` are `O(ρ)`.
   have hexp := ((hℓ.div_const 2).of_le (by simp)).isBigO_iteratedFDeriv_exp_sub_one (n := n) hρ
     fun j _ ↦ by simpa [div_eq_inv_mul] using ((2 : ℝ)⁻¹ • ContinuousLinearMap.id ℝ ℝ
@@ -150,7 +194,7 @@ private theorem isBigO_iteratedFDeriv_endField {ℓ : ℂ → ℝ} (hℓ : ContD
   have hD : ContDiff ℝ ∞ (fderiv ℝ ℓ) := hℓ.fderiv_right (by norm_cast)
   have hE : ContDiff ℝ ∞ (fun w ↦ Real.exp (ℓ w / 2) - 1) :=
     (Real.contDiff_exp.comp (hℓ.div_const 2)).sub contDiff_const
-  rw [hL]
+  rw [hL ℓ]
   exact ((L₁.isBigO_iteratedFDeriv_comp_left hD (n := n) (by simp)
     ((isBigO_of_le _ fun z ↦ norm_iteratedFDeriv_fderiv.le).trans (hdec (n + 1)))).add
     (L₂.isBigO_iteratedFDeriv_comp_left hE (by simp) hexp)).congr_left fun z ↦
@@ -208,18 +252,10 @@ theorem exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField {
   filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop R] with z hz
   filter_upwards [hopen.mem_nhds hz] with w (hw : R < ‖w‖)
   have hRw := hR hw.le
-  rw [gaugeTransform_inv_apply_eq (hp.differentiable (by simp) w)
+  exact gaugeTransform_inv_apply_sub_vacuumField_eq (hp.differentiable (by simp) w)
     (hq.differentiable (by simp) w) (fun h ↦ by linarith [hRw.2.2]) (by simp [hsol w])
     (by simp [hsol w])
-    (eventually_of_mem (hopen.mem_nhds hw) fun v (hv : R < ‖v‖) ↦ (hR hv.le).2.1) hRw.1,
-    vacuumField_apply]
-  ext i
-  fin_cases i
-  · simp
-  · simp
-  · simp only [Fin.reduceFinMk, PiLp.sub_apply, Matrix.cons_val]
-    ring
-  · simp
+    (eventually_of_mem (hopen.mem_nhds hw) fun v (hv : R < ‖v‖) ↦ (hR hv.le).2.1) hRw.1
 
 /-- **Exponential decay of all derivatives in an end trivialization.** Let `x` be a plane vortex
 with smooth section and `|α| → 1` at infinity whose section is `|α|` times a gauge `u` outside a
@@ -243,5 +279,94 @@ theorem isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField {u : ℂ → Ci
     exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
   exact (hdec c hc n).congr' (hg.mono fun z hz ↦ (hz.iteratedFDeriv ℝ n).eq_of_nhds.symm)
     EventuallyEq.rfl
+
+/-! ### Two vortices with nonvanishing sections outside a disc -/
+
+section TwoVortices
+
+variable {y : ℂ → EuclideanSpace ℝ (Fin 4)} {R c M : ℝ}
+
+/-- The end fields `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` of two functions
+`ℓx, ℓy ≤ 0` differ by at most `‖D (ℓx - ℓy)‖ + |ℓx - ℓy|`. -/
+private theorem norm_endField_sub_endField_le {ℓx ℓy : ℂ → ℝ} {z : ℂ}
+    (hdx : DifferentiableAt ℝ ℓx z) (hdy : DifferentiableAt ℝ ℓy z) (hx : ℓx z ≤ 0)
+    (hy : ℓy z ≤ 0) :
+    ‖!₂[-(fderiv ℝ ℓx z I / 2), fderiv ℝ ℓx z 1 / 2, (Real.exp (ℓx z / 2) - 1) / 2, 0] -
+      !₂[-(fderiv ℝ ℓy z I / 2), fderiv ℝ ℓy z 1 / 2, (Real.exp (ℓy z / 2) - 1) / 2, 0]‖ ≤
+      ‖fderiv ℝ (fun w ↦ ℓx w - ℓy w) z‖ + |ℓx z - ℓy z| := by
+  have hD : fderiv ℝ (fun w ↦ ℓx w - ℓy w) z = fderiv ℝ ℓx z - fderiv ℝ ℓy z := fderiv_sub hdx hdy
+  have h₀ : |fderiv ℝ ℓx z I - fderiv ℝ ℓy z I| ≤ ‖fderiv ℝ (fun w ↦ ℓx w - ℓy w) z‖ := by
+    rw [hD]
+    simpa [Real.norm_eq_abs] using (fderiv ℝ ℓx z - fderiv ℝ ℓy z).le_opNorm I
+  have h₁ : |fderiv ℝ ℓx z 1 - fderiv ℝ ℓy z 1| ≤ ‖fderiv ℝ (fun w ↦ ℓx w - ℓy w) z‖ := by
+    rw [hD]
+    simpa [Real.norm_eq_abs] using (fderiv ℝ ℓx z - fderiv ℝ ℓy z).le_opNorm 1
+  have h₂ : |Real.exp (ℓx z / 2) - Real.exp (ℓy z / 2)| ≤ |ℓx z - ℓy z| / 2 := by
+    refine (Real.abs_exp_sub_exp_le (div_nonpos_of_nonpos_of_nonneg hx zero_le_two)
+      (div_nonpos_of_nonpos_of_nonneg hy zero_le_two)).trans (le_of_eq ?_)
+    rw [Real.exp_zero, one_mul, ← sub_div, abs_div, abs_two]
+  have hvec : !₂[-(fderiv ℝ ℓx z I / 2), fderiv ℝ ℓx z 1 / 2, (Real.exp (ℓx z / 2) - 1) / 2, 0] -
+      !₂[-(fderiv ℝ ℓy z I / 2), fderiv ℝ ℓy z 1 / 2, (Real.exp (ℓy z / 2) - 1) / 2, 0] =
+      !₂[-((fderiv ℝ ℓx z I - fderiv ℝ ℓy z I) / 2), (fderiv ℝ ℓx z 1 - fderiv ℝ ℓy z 1) / 2,
+        (Real.exp (ℓx z / 2) - Real.exp (ℓy z / 2)) / 2, 0] := by
+    ext i
+    fin_cases i <;> simp <;> ring
+  rw [hvec]
+  refine (PiLp.norm_le_sum_norm _).trans ?_
+  simp [Fin.sum_univ_four, abs_div]
+  linarith [abs_nonneg (ℓx z - ℓy z)]
+
+/-- **The end trivializations of two vortices converge to each other outside a disc.** Under the
+hypotheses of `TauCeti.Vortex.norm_fderiv_log_normSq_sub_log_normSq_le_mul_exp`, let `u` be a gauge
+such that the sections of both `x` and `y` are `|α|` times `u` near a point `z` at distance at least
+`3` from the disc. Then the end trivializations `u⁻¹ · x` and `u⁻¹ · y` satisfy
+
+`‖(u⁻¹ · x)(z) - (u⁻¹ · y)(z)‖ ≤ 94 M exp (-c (|z| - (R + 3)))`. -/
+theorem norm_gaugeTransform_inv_sub_gaugeTransform_inv_le_mul_exp
+    (hxp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hxq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
+    (hxs : ∀ z, equation x z = 0) (hys : ∀ z, equation y z = 0)
+    (hxl : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hyl : Tendsto (fun z ↦ 4 * (y z 2 ^ 2 + y z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hR : 0 < R) (hc : 0 ≤ c)
+    (hxR : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2))
+    (hyR : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 < 4 * (y z 2 ^ 2 + y z 3 ^ 2))
+    (hbd : ∀ z, ‖z‖ = R → |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) -
+      Real.log (4 * (y z 2 ^ 2 + y z 3 ^ 2))| ≤ M) {u : ℂ → Circle} {z : ℂ} (hz : R + 3 ≤ ‖z‖)
+    (hux : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * u w)
+    (huy : ∀ᶠ w in 𝓝 z, sectionValue y w = ‖sectionValue y w‖ * u w) :
+    ‖gaugeTransform u⁻¹ x z - gaugeTransform u⁻¹ y z‖ ≤
+      94 * M * Real.exp (-(c * (‖z‖ - (R + 3)))) := by
+  have hzR : R ≤ ‖z‖ := by linarith
+  -- At `z` the sections do not vanish, and the logarithmic moduli are differentiable and `≤ 0`.
+  have hc₄ : (0 : ℝ) ≤ 4 * c ^ 2 := by positivity
+  have hαx := right_ne_zero_of_mul (hc₄.trans_lt (hxR z hzR)).ne'
+  have hαy := right_ne_zero_of_mul (hc₄.trans_lt (hyR z hzR)).ne'
+  have hdx := (contDiffAt_log_normSq_of_pos hxp hxq hxs
+    (hc₄.trans_lt (hxR z hzR))).differentiableAt (by simp)
+  have hdy := (contDiffAt_log_normSq_of_pos hyp hyq hys
+    (hc₄.trans_lt (hyR z hzR))).differentiableAt (by simp)
+  have hnx := log_normSq_nonpos hxp hxq hxs hxl z
+  have hny := log_normSq_nonpos hyp hyq hys hyl z
+  -- Near `z` the two end trivializations minus the vacuum are the end fields of the logarithmic
+  -- moduli.
+  have hex := gaugeTransform_inv_apply_sub_vacuumField_eq
+    ((hxp.differentiable (by simp)) z) ((hxq.differentiable (by simp)) z) hαx (by simp [hxs z])
+    (by simp [hxs z]) hux EventuallyEq.rfl
+  have hey := gaugeTransform_inv_apply_sub_vacuumField_eq
+    ((hyp.differentiable (by simp)) z) ((hyq.differentiable (by simp)) z) hαy (by simp [hys z])
+    (by simp [hys z]) huy EventuallyEq.rfl
+  rw [← sub_sub_sub_cancel_right _ _ (vacuumField z), hex, hey]
+  refine (norm_endField_sub_endField_le hdx hdy hnx hny).trans ?_
+  have hgrad := norm_fderiv_log_normSq_sub_log_normSq_le_mul_exp hxp hxq hyp hyq hxs hys hxl
+    hyl hR hc hxR hyR hbd hz
+  have hval := abs_log_normSq_sub_log_normSq_le_mul_exp hxp hxq hyp hyq hxs hys hxl hyl hR hc
+    hxR hyR hbd hzR
+  have hM := nonneg_of_forall_norm_eq_abs_le hR.le hbd
+  have hexp : Real.exp (-(c * (‖z‖ - R))) ≤ Real.exp (-(c * (‖z‖ - (R + 3)))) :=
+    Real.exp_le_exp.2 (by nlinarith)
+  nlinarith [mul_le_mul_of_nonneg_left hexp hM]
+
+end TwoVortices
 
 end TauCeti.Vortex

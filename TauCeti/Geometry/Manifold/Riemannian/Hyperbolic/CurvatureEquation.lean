@@ -129,7 +129,8 @@ theorem apply_le_of_scalarCurvature_rescale_eq [CompactSpace M] [I.Boundaryless]
       have := Real.log_le_log (hf_pos y) (hx₀ (Set.mem_univ y))
       dsimp only
       linarith
-  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax (contMDiff_half_log hf hf_pos).contMDiffAt hmax
+  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax (contMDiff_half_log hf hf_pos).contMDiffAt
+    BoundarylessManifold.isInteriorPoint hmax
   rw [laplaceBeltrami_half_log g hE hf hf_pos h x₀] at hΔ
   have hx : f x ≤ f x₀ := hx₀ (Set.mem_univ x)
   nlinarith [hC x₀]
@@ -150,7 +151,8 @@ theorem le_apply_of_scalarCurvature_rescale_eq [CompactSpace M] [I.Boundaryless]
       have := Real.log_le_log (hf_pos x₀) (hx₀ (Set.mem_univ y))
       dsimp only
       linarith
-  have hΔ := laplaceBeltrami_nonneg_of_isLocalMin (contMDiff_half_log hf hf_pos).contMDiffAt hmin
+  have hΔ := laplaceBeltrami_nonneg_of_isLocalMin (contMDiff_half_log hf hf_pos).contMDiffAt
+    BoundarylessManifold.isInteriorPoint hmin
   rw [laplaceBeltrami_half_log g hE hf hf_pos h x₀] at hΔ
   have hx : f x₀ ≤ f x := hx₀ (Set.mem_univ x)
   nlinarith [hC x₀]

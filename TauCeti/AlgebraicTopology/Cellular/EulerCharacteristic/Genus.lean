@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.RealProjective
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface.Basic
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Torus
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 
@@ -42,6 +42,8 @@ is not asserted here.
 * `TauCeti.RiemannSurface.eulerChar_eq_two_sub_two_mul_genus_iff`: `χ = 2 - 2 · genus` holds if
   and only if `χ ≤ 2` and `χ` is even.
 * `TauCeti.RiemannSurface.genus_eq_of_eulerChar_eq`: a space with `χ = 2 - 2g` has genus `g`.
+* `TauCeti.RiemannSurface.two_mul_genus_eq_sub_emod`: for `χ ≤ 2`, the identity with its
+  parity correction, `2g = 2 - χ - χ % 2`.
 * `ContinuousMap.HomotopyEquiv.genus_eq`: the genus is a homotopy invariant.
 * `TauCeti.HomologicalOrientation.genus_eq_surfaceGenus`: on a closed connected homologically
   oriented surface, `genus` agrees with `TauCeti.surfaceGenus`, half the first Betti number.
@@ -113,6 +115,13 @@ theorem eulerChar_eq_two_sub_two_mul_genus_iff :
 /-- A space of finite CW type with `χ(X) = 2 - 2g` has genus `g`. -/
 theorem genus_eq_of_eulerChar_eq {g : ℕ} (h : eulerChar X = 2 - 2 * g) : genus X = g := by
   rw [genus_def, h]
+  omega
+
+/-- If `χ(X) ≤ 2`, the Euler–genus identity has precisely the parity correction `χ(X) % 2`.
+This formula also applies when the Euler characteristic is odd. -/
+theorem two_mul_genus_eq_sub_emod (h : eulerChar X ≤ 2) :
+    2 * (genus X : ℤ) = 2 - eulerChar X - eulerChar X % 2 := by
+  rw [genus_def]
   omega
 
 /-- **Homotopy invariance of the genus.** Homotopy equivalent spaces of finite CW type have the

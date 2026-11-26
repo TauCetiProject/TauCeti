@@ -98,6 +98,17 @@ lemma globalSectionsSmul_app
     (globalSectionsSmul M r).app U = (M.smul (X.presheaf.map U.leTop.op r)).asHom := by
   rfl
 
+/-- On global sections, multiplication by a global function `r` is the scalar action of `r`. -/
+lemma globalSectionsSmul_app_top_apply (M : X.Modules) (r : Γ(X, ⊤)) (s : Γ(M, ⊤)) :
+    (M.globalSectionsSmul r).app ⊤ s = r • s := by
+  rw [globalSectionsSmul_app]
+  have h : X.presheaf.map (⊤ : X.Opens).leTop.op r = r := by
+    have hf : (⊤ : X.Opens).leTop.op = 𝟙 (Opposite.op (⊤ : X.Opens)) := Subsingleton.elim _ _
+    rw [hf]
+    exact ConcreteCategory.congr_hom (X.presheaf.map_id _) r
+  rw [h]
+  exact M.smul_apply r s
+
 -- In the next four proofs, sheaf-morphism extensionality leaves pointwise bundled-module goals.
 -- The wrappers have no pointwise equality lemmas, so each `change` records the corresponding
 -- public presheaf/module formulation before applying the ring and module laws.
@@ -240,6 +251,17 @@ lemma baseRingToGlobalSections_apply (r : R) :
     baseRingToGlobalSections R X r =
       (X ↘ Spec (.of R)).appTop ((Scheme.ΓSpecIso (.of R)).inv r) :=
   (rfl)
+
+/-- Through `f ≫ Y.toSpecΓ`, a global function `r` on `Y` acts on `X` as `f^* r`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.baseRingToGlobalSections_eq_appTop
+    {X Y : Scheme.{u}} (f : X ⟶ Y) (r : Γ(Y, ⊤)) :
+    letI : X.Over (Spec (.of Γ(Y, ⊤))) := ⟨f ≫ Y.toSpecΓ⟩
+    baseRingToGlobalSections Γ(Y, ⊤) X r = f.appTop r := by
+  rw [baseRingToGlobalSections_apply]
+  -- The structure morphism of the local `Over` instance is `f ≫ Y.toSpecΓ` by definition.
+  change (f ≫ Y.toSpecΓ).appTop ((Scheme.ΓSpecIso _).inv r) = _
+  simp only [Scheme.Hom.comp_appTop, Scheme.toSpecΓ_appTop, ConcreteCategory.comp_apply,
+    Iso.inv_hom_id_apply]
 
 end AlgebraicGeometry.Scheme.Modules
 

@@ -26,6 +26,8 @@ sides vanish when `f` is not differentiable at `x`.
 * `TauCeti.fderiv_ofReal_comp_apply`: the real derivative of `y ↦ (f y : ℂ)` is the
   complexification of the real derivative of `f`.
 * `TauCeti.fderiv_ofReal_im`: the imaginary part `w ↦ (w.im : ℂ)` is its own real derivative.
+* `HasDerivAt.hasFDerivAt_comp_im`: the chain rule for a function `w ↦ φ (Im w)` of the imaginary
+  part.
 * `DifferentiableAt.ofReal_comp`, `TauCeti.norm_fderiv_ofReal_comp_le`: `y ↦ (f y : ℂ)` is
   differentiable where `f` is, and its real derivative has norm at most `‖Df(x)‖`.
 * `ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply`: at a `C²` point of `f`, the complexified
@@ -63,6 +65,16 @@ theorem fderiv_ofReal_comp_apply (f : E → ℝ) (x v : E) :
 theorem fderiv_ofReal_im (z : ℂ) :
     fderiv ℝ (fun w : ℂ ↦ (w.im : ℂ)) z = ofRealCLM.comp imCLM :=
   (ofRealCLM.comp imCLM).hasFDerivAt.fderiv
+
+/-- **The chain rule for a function of the imaginary part.** If `φ` has derivative `φ'` at `Im w`,
+then `w ↦ φ (Im w)` has real derivative `v ↦ Im v • φ'` at `w`. -/
+theorem _root_.HasDerivAt.hasFDerivAt_comp_im {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {φ : ℝ → F} {φ' : F} {w : ℂ} (h : HasDerivAt φ φ' w.im) :
+    HasFDerivAt (fun w : ℂ ↦ φ w.im) (imCLM.smulRight φ') w := by
+  have h' : HasDerivAt φ φ' (imCLM w) := by rwa [imCLM_apply]
+  refine (h'.hasFDerivAt.comp w imCLM.hasFDerivAt).congr_fderiv ?_
+  ext v
+  simp
 
 /-- A real function differentiable at `x` stays differentiable at `x` after composing with the
 inclusion `ℝ → ℂ`. -/

@@ -21,10 +21,14 @@ are capped or otherwise changed.
 The constructions retain arrow identities, including parallel arrows and loops.  They therefore
 change only feasibility, never conservation, excess, or flow value.
 
+`Network.shift` bundles the translated bounds without changing the arrow family. A zero shift is
+the identity, and successive shifts compose by adding their reference assignments.
+
 ## Main definitions
 
 * `TauCeti.Network.replaceBounds` replaces both bound functions of a network.
 * `TauCeti.Network.replaceLower` and `TauCeti.Network.replaceUpper` replace one bound function.
+* `TauCeti.Network.shift` translates both bounds by a reference assignment.
 * `TauCeti.BoundedFlow.mono` regards a bounded terminal assignment as one with weaker bounds.
 * `TauCeti.Flow.mono` regards an ordinary flow as one with larger capacities.
 * `TauCeti.ExcessFlow.mono` regards a prescribed-excess assignment as one with weaker bounds.
@@ -48,7 +52,7 @@ variable [LE K] (N : Network K V)
 
 This definition is exposed because its arrow family must reduce when assignments on the resulting
 network are elaborated. -/
-@[expose]
+@[expose, reducible]
 def replaceBounds (lower upper : N.Assignment K)
     (lower_le_upper : ∀ {x y} (e : N.Hom x y), lower e ≤ upper e) : Network K V where
   Hom := N.Hom
@@ -77,18 +81,12 @@ theorem replaceBounds_upper (lower upper : N.Assignment K)
   (rfl)
 
 /-- Two replacements of a fixed network agree exactly when both of their bound functions agree. -/
-@[simp]
 theorem replaceBounds_inj {lower₁ upper₁ lower₂ upper₂ : N.Assignment K}
     {h₁ : ∀ {x y} (e : N.Hom x y), lower₁ e ≤ upper₁ e}
     {h₂ : ∀ {x y} (e : N.Hom x y), lower₂ e ≤ upper₂ e} :
     N.replaceBounds lower₁ upper₁ h₁ = N.replaceBounds lower₂ upper₂ h₂ ↔
       lower₁ = lower₂ ∧ upper₁ = upper₂ := by
-  constructor
-  · intro h
-    cases h
-    exact ⟨rfl, rfl⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
+  simp only [replaceBounds, mk.injEq, heq_eq_eq, true_and]
 
 /-- Replacing a network's bounds by its original bounds does nothing. -/
 @[simp]
@@ -105,6 +103,66 @@ theorem replaceBounds_replaceBounds (lower upper : N.Assignment K)
     (N.replaceBounds lower upper h).replaceBounds lower' upper' h' =
       N.replaceBounds lower' upper' h' :=
   (rfl)
+
+section Shift
+
+variable [AddGroup K] [AddRightMono K]
+
+/-- Translate both bounds of a network by subtracting a reference assignment. The arrow family
+is unchanged, and the translated bounds remain ordered. -/
+@[expose, reducible]
+def shift (N : Network K V) (h : N.Assignment K) : Network K V :=
+  N.replaceBounds (N.lower - h) (N.upper - h) fun e ↦
+    sub_le_sub_right (N.lower_le_upper e) (h e)
+
+/-- Shifting bounds does not change the arrow family. -/
+@[simp]
+theorem shift_Hom (N : Network K V) (h : N.Assignment K) :
+    (N.shift h).Hom = N.Hom :=
+  (rfl)
+
+/-- The lower bound of a shifted network is the original lower bound minus the reference. -/
+@[simp]
+theorem shift_lower (N : Network K V) (h : N.Assignment K) :
+    (N.shift h).lower = N.lower - h :=
+  (rfl)
+
+/-- The upper bound of a shifted network is the original upper bound minus the reference. -/
+@[simp]
+theorem shift_upper (N : Network K V) (h : N.Assignment K) :
+    (N.shift h).upper = N.upper - h :=
+  (rfl)
+
+/-- Shifting a network by the zero assignment leaves it unchanged. -/
+@[simp]
+theorem shift_zero (N : Network K V) : N.shift 0 = N := by
+  convert N.replaceBounds_self using 1
+  simp only [shift, sub_zero]
+
+/-- Subtracting a network's lower bound produces its associated zero-lower-bound network. -/
+theorem shift_lower_eq_ofCapacity (N : Network K V) :
+    N.shift N.lower =
+      ofCapacity N.Hom (N.upper - N.lower) fun e ↦ sub_nonneg.mpr (N.lower_le_upper e) := by
+  simp only [shift, replaceBounds, ofCapacity, mk.injEq, heq_eq_eq, true_and]
+  constructor
+  · funext x y e
+    exact sub_self _
+  · trivial
+
+end Shift
+
+section ShiftCommGroup
+
+variable [AddCommGroup K] [AddRightMono K]
+
+/-- Shifting successively by two reference assignments is shifting by their sum. -/
+@[simp]
+theorem shift_shift (N : Network K V) (h k : N.Assignment K) :
+    (N.shift h).shift k = N.shift (h + k) := by
+  simp only [shift, replaceBounds, mk.injEq, heq_eq_eq, true_and]
+  constructor <;> funext x y e <;> exact sub_sub _ _ _
+
+end ShiftCommGroup
 
 /-- Replace only the lower bounds of a network.
 

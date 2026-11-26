@@ -49,7 +49,8 @@ such a sum is contained in that of `T`
 * `Distribution.sum_mapCLM_toSpanSingleton_coord`: `T` is the sum of its frame components times the
   basis vectors.
 * `Distribution.fst_image_vectorWaveFrontSet`: for finite-dimensional `F`, its projection to the
-  positions is the singular support.
+  positions is the singular support, which is therefore the union of the singular supports of the
+  frame components (`Distribution.singularSupport_eq_iUnion_basis`).
 * `Distribution.vectorWaveFrontSet_mapCLM_subset`, `Distribution.vectorWaveFrontSet_mapCLM_equiv`:
   a complex-linear map of the values does not enlarge it, and an isomorphism preserves it.
 * `Distribution.vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_subset`: a sum `∑ᵢ Aᵢ (gᵢ T)` of
@@ -373,6 +374,15 @@ theorem fst_image_vectorWaveFrontSet [MeasurableSpace E] [BorelSpace E] (T : �
   conv_lhs => rw [← sum_mapCLM_toSpanSingleton_coord b T]
   exact (singularSupport_sum_subset _ _).trans (iUnion₂_subset fun i _ ↦
     (singularSupport_mapCLM_subset _ _).trans (subset_iUnion_of_subset i subset_rfl))
+
+/-- **Independence of the frame.** For every basis `b` of `F`, the singular support of `T` is the
+union of the singular supports of the frame components `bᵢ* ∘ T`. -/
+theorem singularSupport_eq_iUnion_basis [MeasurableSpace E] [BorelSpace E]
+    (b : Module.Basis ι ℂ F) (T : 𝓓'(Ω, F)) :
+    T.singularSupport =
+      ⋃ i, (mapCLM ((b.coord i).toContinuousLinearMap.restrictScalars ℝ) T).singularSupport := by
+  rw [← fst_image_vectorWaveFrontSet, vectorWaveFrontSet_eq_iUnion_basis b, image_iUnion]
+  simp_rw [fst_image_waveFrontSet]
 
 end Frame
 

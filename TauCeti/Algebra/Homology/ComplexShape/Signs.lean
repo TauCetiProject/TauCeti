@@ -38,6 +38,14 @@ Tensor signs on a complex shape `c` are also tensor signs on the opposite shape 
 same signs, and a `TotalComplexShapeSymmetry c c c` gives one for `c.symm` with the same signs
 `σ`. Bicomplexes with values in an opposite category have the opposite shapes, so these instances
 equip them with total complexes and their symmetries.
+
+The shape `ComplexShape.up ℕ` of cochain complexes indexed by `ℕ` is the opposite of
+`ComplexShape.down ℕ`, so the instances `HomologicalComplex₂.tensorSignsUpNat` and
+`HomologicalComplex₂.totalComplexShapeSymmetryUpNat` are those of `ComplexShape.down ℕ`
+transported to it: the sign `(-1)ⁿ` in degree `n` (`ComplexShape.ε_up_ℕ`) and the Koszul sign
+`(-1)^(p*q)` in bidegree `(p, q)` (`ComplexShape.σ_up_ℕ`). They give first-quadrant bicomplexes
+with cohomological differentials total complexes indexed by `ℕ`, and identify them with the total
+complexes of their flips.
 -/
 
 public section
@@ -173,9 +181,55 @@ theorem _root_.ComplexShape.σ_down_ℕ (p q : ℕ) :
       (-1 : ℤˣ) ^ (p * q) :=
   rfl
 
+/-- As an integer, the Koszul symmetry sign on `ComplexShape.down ℕ` in bidegree `(p, q)` is
+`(-1)^(p * q)`. -/
+theorem _root_.ComplexShape.val_σ_down_ℕ (p q : ℕ) :
+    (ComplexShape.σ (ComplexShape.down ℕ) (ComplexShape.down ℕ) (ComplexShape.down ℕ) p q : ℤ) =
+      (-1 : ℤ) ^ (p * q) := by
+  simp
+
 /-- The Koszul symmetry signs on `ComplexShape.down ℕ` are symmetric in the two factors. -/
 instance : TotalComplexShapeSymmetrySymmetry (ComplexShape.down ℕ) (ComplexShape.down ℕ)
     (ComplexShape.down ℕ) where
   σ_symm p q := by rw [ComplexShape.σ_down_ℕ, ComplexShape.σ_down_ℕ, Nat.mul_comm]
+
+/-- The tensor signs of cochain complexes indexed by `ℕ`: those of the opposite shape
+`ComplexShape.down ℕ`, the sign of degree `n` being `(-1)ⁿ` (`ComplexShape.ε_up_ℕ`). They make the
+total complex of a first-quadrant bicomplex with cohomological differentials a cochain complex
+indexed by `ℕ`. -/
+instance tensorSignsUpNat : (ComplexShape.up ℕ).TensorSigns :=
+  inferInstanceAs (ComplexShape.down ℕ).symm.TensorSigns
+
+/-- The sign of `ComplexShape.up ℕ` in degree `n` is `(-1)ⁿ`. -/
+@[simp]
+theorem _root_.ComplexShape.ε_up_ℕ (n : ℕ) : (ComplexShape.up ℕ).ε n = (-1 : ℤˣ) ^ n :=
+  rfl
+
+/-- The total complexes of a first-quadrant bicomplex with cohomological differentials and of its
+flip are identified by the Koszul sign `(-1)^(p*q)` on the term in bidegree `(p, q)`, as for the
+opposite shape `ComplexShape.down ℕ`. -/
+instance totalComplexShapeSymmetryUpNat :
+    TotalComplexShapeSymmetry (ComplexShape.up ℕ) (ComplexShape.up ℕ) (ComplexShape.up ℕ) :=
+  inferInstanceAs <| TotalComplexShapeSymmetry (ComplexShape.down ℕ).symm
+    (ComplexShape.down ℕ).symm (ComplexShape.down ℕ).symm
+
+/-- The Koszul symmetry sign on `ComplexShape.up ℕ` in bidegree `(p, q)` is `(-1)^(p q)`. -/
+@[simp]
+theorem _root_.ComplexShape.σ_up_ℕ (p q : ℕ) :
+    ComplexShape.σ (ComplexShape.up ℕ) (ComplexShape.up ℕ) (ComplexShape.up ℕ) p q =
+      (-1 : ℤˣ) ^ (p * q) :=
+  rfl
+
+/-- As an integer, the Koszul symmetry sign on `ComplexShape.up ℕ` in bidegree `(p, q)` is
+`(-1)^(p * q)`. -/
+theorem _root_.ComplexShape.val_σ_up_ℕ (p q : ℕ) :
+    (ComplexShape.σ (ComplexShape.up ℕ) (ComplexShape.up ℕ) (ComplexShape.up ℕ) p q : ℤ) =
+      (-1 : ℤ) ^ (p * q) := by
+  simp
+
+/-- The Koszul symmetry signs on `ComplexShape.up ℕ` are symmetric in the two factors. -/
+instance : TotalComplexShapeSymmetrySymmetry (ComplexShape.up ℕ) (ComplexShape.up ℕ)
+    (ComplexShape.up ℕ) where
+  σ_symm p q := by rw [ComplexShape.σ_up_ℕ, ComplexShape.σ_up_ℕ, Nat.mul_comm]
 
 end HomologicalComplex₂

@@ -149,4 +149,18 @@ theorem integralTopForm_add_of_compactSpace [CompactSpace M] (o : Manifold.Orien
     integralTopForm o (φ + ψ) = integralTopForm o φ + integralTopForm o ψ :=
   integralTopForm_add o hφ hψ (isClosed_tsupport _).isCompact (isClosed_tsupport _).isCompact
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- On a compact manifold, the oriented integral against a fixed `C^n` top form `φ` is additive in
+continuous functions: `∫_M (f + g)·φ = ∫_M f·φ + ∫_M g·φ`. -/
+theorem integralTopForm_add_smul_of_compactSpace [CompactSpace M]
+    (o : Manifold.Orientation I M (Fin k)) (hφ : IsSmoothForm I n φ) {f g : M → ℝ}
+    (hf : Continuous f) (hg : Continuous g) :
+    integralTopForm o (fun x ↦ (f x + g x) • φ x) =
+      integralTopForm o (fun x ↦ f x • φ x) + integralTopForm o (fun x ↦ g x • φ x) := by
+  rw [← integralTopForm_add_of_compactSpace o (hφ.fun_smul_of_continuous hf)
+    (hφ.fun_smul_of_continuous hg)]
+  congr 1
+  funext x
+  rw [Pi.add_apply, add_smul]
+
 end TauCeti

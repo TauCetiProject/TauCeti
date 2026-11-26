@@ -51,7 +51,9 @@ its coefficients (`Continuous.mem_of_hasDerivAt_clm_apply`). Finally `(ker Ï€)á—
 (`TauCeti.WeakDerivStep.squareIntegrableSolutions_neg_adjoint_eq_bot_of_surjective`,
 `TauCeti.eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker`).
 
-This adapts the proof of `TauCeti.range_trajectoryOperator_sup_span_metricVariations_eq_top` in
+This adapts the proofs of
+`TauCeti.eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_zero` and
+`TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG` in
 `TauCeti.Analysis.Calculus.Morse.MorseSmale.MetricVariation`, with vertical vector-field variations
 in place of metric variations. The two share the localization by a bump function along a
 once-visited point (`TauCeti.exists_contDiff_tsupport_subset_integral_comp_mul_pos`).

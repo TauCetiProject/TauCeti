@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Dual
-public import TauCeti.LinearAlgebra.Submodule.Prod
+public import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.Complement
 
 /-!

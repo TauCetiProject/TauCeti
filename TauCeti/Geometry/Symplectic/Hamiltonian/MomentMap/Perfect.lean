@@ -51,8 +51,11 @@ of `M` are those of a space with only even cells, one for each fixed point:
 
 These conclusions use the isolation of the fixed points: a trivial action on a symplectic surface
 of positive genus has one fixed component and nonzero first Betti number. The homology here is
-singular homology with coefficients in a division ring; freeness of the integral homology, which
-needs the even-cell structure itself, is not proved here.
+singular homology with coefficients in a division ring. Since every index of a Morse `μ^ξ` is
+even, the integral homology of `M` is also free and vanishes in odd degrees, by the general results
+`TauCeti.IsMorse.free_singularHomology_int` and `TauCeti.IsMorse.isZero_singularHomology_int_of_odd`
+in `TauCeti.Geometry.Manifold.Morse.IntegralHomology`; no cell structure beyond finiteness is
+needed.
 
 Closedness of `σ` and equivariance of `μ` are not used.
 
@@ -168,13 +171,8 @@ theorem bettiNumber_eq_ncard (hξ : Lie.closedOneParameterSubgroup ξ = ⊤)
     (j : ℕ) :
     bettiNumber k M j =
       {p ∈ MulAction.fixedPoints G M | manifoldMorseIndex I' (fun y ↦ μ y ξ) p = j}.ncard := by
-  have hM := h.isMorse_of_eq_top hσ hξ hiso
-  have hcrit := h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ
-  have hfin : (MulAction.fixedPoints G M).Finite := hcrit ▸ hM.finite_criticalPoints
-  have hc := (h.isPerfectMorse hσ hσG k hM).criticalCount_eq j
-  rw [criticalCount_def, hcrit, ← (hfin.subset (sep_subset _ _)).cast_ncard_eq] at hc
-  rw [bettiNumber_def]
-  exact_mod_cast hc.symm
+  rw [(h.isPerfectMorse hσ hσG k (h.isMorse_of_eq_top hσ hξ hiso)).bettiNumber_eq_ncard j,
+    h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
 
 section Torus
 
@@ -210,11 +208,8 @@ theorem sum_bettiNumber_eq_ncard_fixedPoints
     ∑ j ∈ Finset.range (finrank ℝ E' + 1), bettiNumber k M j =
       (MulAction.fixedPoints G M).ncard := by
   obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
-  have hs := (h.isPerfectMorse hσ hσG k (h.isMorse_of_eq_top hσ hξ hiso)
-    ).sum_bettiNumber_eq_totalCriticalCount
-  rw [totalCriticalCount_def, h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ,
-    ← (h.finite_fixedPoints hσ hiso).cast_ncard_eq] at hs
-  exact_mod_cast hs
+  rw [(h.isPerfectMorse hσ hσG k (h.isMorse_of_eq_top hσ hξ hiso)).sum_bettiNumber_eq_ncard,
+    h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
 
 /-- **Isolated fixed points force simple connectivity.** A compact connected manifold carrying a
 smooth symplectic torus action with a moment map and isolated fixed points is simply
