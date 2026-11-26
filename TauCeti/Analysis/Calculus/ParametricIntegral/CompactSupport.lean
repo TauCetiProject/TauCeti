@@ -252,14 +252,6 @@ section Product
 variable {Y : Type*} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {Φ : H × Y → E}
 
 omit [NormedSpace ℝ E] in
-/-- The slice `t ↦ Φ (t, y)` of a differentiable function on a product has derivative the
-derivative of `Φ` restricted to the first factor. -/
-private theorem hasFDerivAt_slice_left (hΦ : Differentiable 𝕜 Φ) (t : H) (y : Y) :
-    HasFDerivAt (fun t' ↦ Φ (t', y)) ((fderiv 𝕜 Φ (t, y)).comp (ContinuousLinearMap.inl 𝕜 H Y))
-      t :=
-  (hΦ (t, y)).hasFDerivAt.comp t (hasFDerivAt_prodMk_left t y)
-
-omit [NormedSpace ℝ E] in
 /-- The slices `t ↦ Φ (t, y)` vanish for `y` off the projection of the support of `Φ`. -/
 private theorem slice_eq_zero_of_notMem (t : H) {y : Y} (hy : y ∉ Prod.snd '' tsupport Φ) :
     Φ (t, y) = 0 :=
@@ -274,12 +266,12 @@ theorem integrable_fderiv_of_contDiff_of_hasCompactSupport (hΦ : ContDiff 𝕜 
     (hΦc : HasCompactSupport Φ) (t₀ : H) :
     Integrable (fun y ↦ fderiv 𝕜 (fun t ↦ Φ (t, y)) t₀) ν := by
   have hΦd := hΦ.differentiable one_ne_zero
-  rw [funext fun y ↦ (hasFDerivAt_slice_left hΦd t₀ y).fderiv]
+  rw [funext fun y ↦ (hΦd (t₀, y)).hasFDerivAt_slice_fst.fderiv]
   exact integrable_of_hasFDerivAt_of_compact_support (D := fun t y ↦ Φ (t, y)) univ_mem
     (hΦc.isCompact.image continuous_snd)
     (((hΦ.continuous_fderiv one_ne_zero).comp (Continuous.prodMk_right t₀)).clm_comp
       continuous_const)
-    (hasFDerivAt_slice_left hΦd t₀) fun t _ _ hy ↦ slice_eq_zero_of_notMem t hy
+    (fun y ↦ (hΦd (t₀, y)).hasFDerivAt_slice_fst) fun t _ _ hy ↦ slice_eq_zero_of_notMem t hy
 
 /-- **Differentiation under the integral sign for a compactly supported `C¹` function of two
 variables.** If `Φ : H × Y → E` is `C¹` with compact support, the integral
@@ -289,13 +281,13 @@ theorem hasFDerivAt_integral_of_contDiff_of_hasCompactSupport (hΦ : ContDiff �
     (hΦc : HasCompactSupport Φ) (t₀ : H) :
     HasFDerivAt (fun t ↦ ∫ y, Φ (t, y) ∂ν) (∫ y, fderiv 𝕜 (fun t ↦ Φ (t, y)) t₀ ∂ν) t₀ := by
   have hΦd := hΦ.differentiable one_ne_zero
-  rw [funext fun y ↦ (hasFDerivAt_slice_left hΦd t₀ y).fderiv]
+  rw [funext fun y ↦ (hΦd (t₀, y)).hasFDerivAt_slice_fst.fderiv]
   exact hasFDerivAt_integral_of_compact_support (D := fun t y ↦ Φ (t, y))
     (D₁ := fun t y ↦ (fderiv 𝕜 Φ (t, y)).comp (ContinuousLinearMap.inl 𝕜 H Y)) univ_mem
     (hΦc.isCompact.image continuous_snd)
     (fun t _ ↦ hΦ.continuous.comp (Continuous.prodMk_right t))
     ((hΦ.continuous_fderiv one_ne_zero).clm_comp continuous_const).continuousOn
-    (fun t _ ↦ hasFDerivAt_slice_left hΦd t) fun t _ _ hy ↦ slice_eq_zero_of_notMem t hy
+    (fun t _ y ↦ (hΦd (t, y)).hasFDerivAt_slice_fst) fun t _ _ hy ↦ slice_eq_zero_of_notMem t hy
 
 /-- **Differentiation under the integral sign for a compactly supported `C¹` function of two
 variables, in a direction.** If `Φ : H × Y → E` is `C¹` with compact support, the derivative of
@@ -325,7 +317,7 @@ theorem integrable_inner_fderiv_apply_of_contDiff_of_hasCompactSupport (hΦ : Co
     (hΦc : HasCompactSupport Φ) (hκ : Continuous κ) (t₀ v : P) :
     Integrable (fun y ↦ ⟪κ y, fderiv ℝ (fun t ↦ Φ (t, y)) t₀ v⟫) ν := by
   have hcont : Continuous fun y ↦ fderiv ℝ (fun t ↦ Φ (t, y)) t₀ v := by
-    simp only [(hasFDerivAt_slice_left (hΦ.differentiable one_ne_zero) t₀ _).fderiv]
+    simp only [fun y ↦ ((hΦ.differentiable one_ne_zero) (t₀, y)).hasFDerivAt_slice_fst.fderiv]
     exact ((hΦ.continuous_fderiv one_ne_zero).comp (Continuous.prodMk_right t₀)).clm_apply
       continuous_const
   refine (hκ.inner hcont).integrable_of_hasCompactSupport
@@ -347,7 +339,7 @@ theorem fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport (hΦ : Cont
   rw [fderiv_integral_apply_of_contDiff_of_hasCompactSupport (ν := ν) hΨ hΨc t₀ v]
   refine integral_congr_ae (.of_forall fun y ↦ ?_)
   simp only [fderiv_inner_apply ℝ (differentiableAt_const (κ y))
-    (hasFDerivAt_slice_left (hΦ.differentiable one_ne_zero) t₀ y).differentiableAt,
+    ((hΦ.differentiable one_ne_zero) (t₀, y)).hasFDerivAt_slice_fst.differentiableAt,
     fderiv_const_apply, zero_apply, inner_zero_left, add_zero]
 
 end ProductInner
