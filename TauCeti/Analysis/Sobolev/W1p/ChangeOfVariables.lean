@@ -438,12 +438,22 @@ variable [mu.IsAddHaarMeasure] (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hUV : (U : 
 /-- **Linear changes of variables in `W^{1,p}`.** Precomposition with a continuous linear
 automorphism `e` of `E`, as the operator `TauCeti.W1p.compL` from `W^{1,p}(V)` to `W^{1,p}(U)` for
 `U = e⁻¹(V)`, with the bounds `‖De‖ ≤ ‖e‖` and `|det e| ≤ |det De|`. -/
-@[expose]
 def W1p.compContinuousLinearEquivL : W1p mu V p →L[ℝ] W1p mu U p :=
   W1p.compL e hp (L := ‖(e : E →L[ℝ] E)‖) (c := |(e : E →L[ℝ] E).det|)
     e.differentiable.differentiableOn e.injective.injOn (hUV ▸ mapsTo_preimage e V)
     (fun x _ => by rw [e.fderiv]) (abs_pos.2 (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)
     (fun x _ => by rw [e.fderiv])
+
+/-- Precomposition with a linear automorphism `e` is the change of variables `W1p.compL` along
+`e`, with the bounds `‖De‖ ≤ ‖e‖` and `|det e| ≤ |det De|`. -/
+theorem W1p.compContinuousLinearEquivL_eq_compL :
+    W1p.compContinuousLinearEquivL (mu := mu) hp e hUV =
+      W1p.compL e hp (L := ‖(e : E →L[ℝ] E)‖) (c := |(e : E →L[ℝ] E).det|)
+        e.differentiable.differentiableOn e.injective.injOn (hUV ▸ mapsTo_preimage e V)
+        (fun x _ => by rw [e.fderiv])
+        (abs_pos.2 (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)
+        (fun x _ => by rw [e.fderiv]) := by
+  rw [W1p.compContinuousLinearEquivL]
 
 /-- The value of `W1p.compContinuousLinearEquivL hp e hUV u` is `u ∘ e`, almost everywhere on
 `U`. -/

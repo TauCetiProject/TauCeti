@@ -51,6 +51,8 @@ exact in both directions: the Poincaré–Friedrichs constant of `(c • Ω, c �
   changes of variables, for every exponent `1 ≤ p ≤ ∞`.
 * `TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`: rigid motions for every
   exponent `1 ≤ p ≤ ∞`.
+* `TauCeti.W1p.compContinuousLinearEquivL_mem_w1pVanishingOnSubmodule`: precomposition with a
+  linear automorphism `e` maps `W^{1,p}_Γ(V)` into `W^{1,p}_{e⁻¹(Γ)}(e⁻¹(V))`, for `p < ∞`.
 * `W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_continuousLinearEquiv`,
   in the namespace `TauCeti`: a Poincaré–Friedrichs inequality `‖u‖_p ≤ C ‖∇u‖_p` on
   `W^{1,p}_{e⁻¹(Γ)}(e⁻¹(V))` gives one with constant `‖e‖ C` on `W^{1,p}_Γ(V)`, for a linear
@@ -176,6 +178,16 @@ theorem W1p.compL_affine_mem_w1pVanishingOnSubmodule_iff {L c : ℝ} (hp : p ≠
 
 /-! ### Poincaré–Friedrichs constants under linear changes of variables and dilations -/
 
+/-- **Linear changes of variables preserve vanishing on a boundary part.** For `p < ∞`, a linear
+automorphism `e` of `E` and `U = e⁻¹(V)`, precomposition with `e` maps `W^{1,p}_Γ(V)` into
+`W^{1,p}_{e⁻¹(Γ)}(U)`. -/
+theorem W1p.compContinuousLinearEquivL_mem_w1pVanishingOnSubmodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
+    (hUV : (U : Set E) = e ⁻¹' V) {u : W1p mu V p} (hu : u ∈ w1pVanishingOnSubmodule mu V p Γ) :
+    W1p.compContinuousLinearEquivL hp e hUV u ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ) := by
+  rw [W1p.compContinuousLinearEquivL_eq_compL]
+  exact W1p.compL_mem_w1pVanishingOnSubmodule e hp _ _ _ _ _ _ e.contDiff
+    e.toHomeomorph.isProperMap hu
+
 /-- A bound `‖u‖_p ≤ b` with `b ≤ 0` forces `u = 0`, so `u` satisfies every bound of
 Poincaré type. -/
 private theorem W1p.norm_value_le_mul_norm_gradient_of_norm_value_le_of_nonpos {u : W1p mu V p}
@@ -198,10 +210,7 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_co
   -- With `w = u ∘ e` and `K = |det e| ^ (-1/p)`: `‖w‖ = K ‖u‖` and `‖∇w‖ ≤ ‖e‖ K ‖∇u‖`.
   set w := W1p.compContinuousLinearEquivL (mu := mu) hp e hUV u
   have hgrad := W1p.norm_gradient_compContinuousLinearEquivL_le hp e hUV u
-  have hw : w ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ) :=
-    W1p.compL_mem_w1pVanishingOnSubmodule e hp _ _ _ _ _ _ e.contDiff e.toHomeomorph.isProperMap
-      hu
-  have h := hC w hw
+  have h := hC w (W1p.compContinuousLinearEquivL_mem_w1pVanishingOnSubmodule hp e hUV hu)
   rw [W1p.norm_value_compContinuousLinearEquivL hp e hUV u] at h
   set K := |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal
   have hK : 0 < K := Real.rpow_pos_of_pos
