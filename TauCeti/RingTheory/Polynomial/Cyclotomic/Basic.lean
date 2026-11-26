@@ -39,11 +39,10 @@ Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
 `Φ_n(X + 1)` is monic of degree `φ(n)`, and `Polynomial.cyclotomic_comp_X_add_one_dvd` shows that
 `Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. The first two are used for the shifted
 prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`. Over a
-commutative `ℚ`-algebra, `Polynomial.isCoprime_cyclotomic` and
-`Polynomial.isCoprime_cyclotomic_comp_X_add_one` show that `Φ_m` and `Φ_n` (and hence `Φ_m(X + 1)`
-and `Φ_n(X + 1)`) are coprime for `m ≠ n`, so over a characteristic-zero domain no nonunit
-polynomial can divide both (`Polynomial.not_dvd_cyclotomic_of_dvd`,
-`Polynomial.not_dvd_cyclotomic_comp_X_add_one_of_dvd`). For a prime `p`,
+commutative `ℚ`-algebra, `Polynomial.isCoprime_cyclotomic` shows that `Φ_m` and `Φ_n` are coprime
+for `m ≠ n`, so over a characteristic-zero domain no nonunit polynomial can divide both `Φ_m` and
+`Φ_n` (`Polynomial.not_dvd_cyclotomic_of_dvd`), nor both `Φ_m(X + 1)` and `Φ_n(X + 1)`
+(`Polynomial.not_dvd_cyclotomic_comp_X_add_one_of_dvd`). For a prime `p`,
 `Polynomial.coeff_cyclotomic_prime_comp_X_add_one` gives the coefficients of `Φ_p(X + 1)` as the
 binomial coefficients `p choose (n + 1)`; this is the explicit form behind the Eisenstein property
 of `Φ_p(X + 1)` at `p`, and it computes the Newton polygon of `Φ_p(X + 1)` over a `p`-adic field.
@@ -145,12 +144,6 @@ end Ring
 theorem isCoprime_cyclotomic {R : Type*} [CommRing R] [Algebra ℚ R] {m n : ℕ} (h : m ≠ n) :
     IsCoprime (cyclotomic m R) (cyclotomic n R) := by
   simpa using (cyclotomic.isCoprime_rat h).map (mapRingHom (algebraMap ℚ R))
-
-/-- Over a commutative `ℚ`-algebra, the shifted cyclotomic polynomials `Φ_m(X + 1)` and
-`Φ_n(X + 1)` are coprime for `m ≠ n`. -/
-theorem isCoprime_cyclotomic_comp_X_add_one {R : Type*} [CommRing R] [Algebra ℚ R] {m n : ℕ}
-    (h : m ≠ n) : IsCoprime ((cyclotomic m R).comp (X + 1)) ((cyclotomic n R).comp (X + 1)) := by
-  simpa using (isCoprime_cyclotomic h).map (compRingHom (X + 1 : R[X]))
 
 /-- Over a characteristic-zero integral domain, a nonunit polynomial dividing `Φ_n` divides no
 `Φ_m` with `m ≠ n`. -/

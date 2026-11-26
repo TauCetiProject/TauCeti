@@ -95,13 +95,6 @@ open scoped Pointwise Polynomial PowerSeries
 
 namespace TauCeti.Iwasawa
 
-/-- The supremum of the kernels `M[ν_{0,m}]` is `deltaSubmodule p O M`. -/
-theorem iSup_torsionBy_growthTransition_zero (p : ℕ) [Fact p.Prime] (O M : Type*) [CommRing O]
-    [AddCommGroup M] [Module O⟦X⟧ M] :
-    (⨆ m, torsionBy O⟦X⟧ M (growthTransition p O 0 m : O⟦X⟧)) = deltaSubmodule p O M := by
-  simp_rw [growthTransition_zero_left, Polynomial.coe_sub, Polynomial.coe_pow,
-    Polynomial.coe_add, Polynomial.coe_one, Polynomial.coe_X, deltaSubmodule_def]
-
 section Blocks
 
 variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O] [IsDomain O]
@@ -118,9 +111,7 @@ private theorem smul_deltaSubmodule_quotient_span_pow_eq_bot {F : O[X]}
   rw [eq_bot_iff]
   rintro _ ⟨x, hx, rfl⟩
   obtain ⟨m, hm⟩ := (mem_deltaSubmodule p O _ x).mp hx
-  have hω (l : ℕ) : ((growthTransition p O 0 l : O[X]) : O⟦X⟧) = (1 + X) ^ p ^ l - 1 := by
-    simp [growthTransition_zero_left]
-  rw [← hω m] at hm
+  rw [← coe_growthTransition_zero_left (p := p)] at hm
   let k := max m n₀
   obtain ⟨q, hq⟩ := _root_.map_dvd Polynomial.coeToPowerSeries.ringHom
     (growthTransition_dvd_growthTransition (p := p) (O := O) 0 (le_max_left m n₀))
@@ -137,9 +128,9 @@ private theorem smul_deltaSubmodule_quotient_span_pow_eq_bot {F : O[X]}
   have hmem : ((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) • x ∈
       torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)})
         (growthTransition p O n₀ k : O⟦X⟧) := by
-    rw [mem_torsionBy_iff, smul_smul, mul_comm, ← Polynomial.coe_mul,
-      prod_range_mul_growthTransition (le_trans (le_max_right m n₀) (Nat.le_succ k)),
-      ← growthTransition_zero_left (p := p) (O := O) k, hxk]
+    rw [mem_torsionBy_iff, smul_smul, mul_comm,
+      coe_prod_range_mul_growthTransition (le_trans (le_max_right m n₀) (Nat.le_succ k)),
+      ← coe_growthTransition_zero_left (p := p), hxk]
   rwa [hbot, mem_bot] at hmem
 
 /-- On a horizontal block `O⟦X⟧ ⧸ (F ^ n)` (`n ≠ 0`) in characteristic zero, if `F ∣ ξ_{j₀}` for
@@ -174,18 +165,24 @@ private theorem infinite_smul_deltaSubmodule_quotient_span_pow_of_dvd [CharZero 
   have hψ_inj : Function.Injective ψ :=
     (Ideal.mulQuot_injective _ (mem_nonZeroDivisors_of_ne_zero hFm_ne)).comp
       ((isSMulRegular_iff_torsionBy_eq_bot _ _).mpr hQtor)
-  obtain ⟨u, hu⟩ : F ∣ (1 + Polynomial.X) ^ p ^ j₀ - 1 := by
-    rw [← growthTransition_zero_left (p := p) (O := O) j₀, growthTransition_def]
+  obtain ⟨u, hu⟩ : F ∣ growthTransition p O 0 j₀ := by
+    rw [growthTransition_def]
     exact hdvd.trans (Finset.dvd_prod_of_mem _ (Finset.mem_Icc.mpr ⟨Nat.zero_le _, le_rfl⟩))
   have hcoe : ((1 + X) ^ p ^ j₀ - 1 : O⟦X⟧) = (F : O⟦X⟧) * (u : O⟦X⟧) := by
-    simpa using congrArg (Polynomial.coeToPowerSeries.ringHom (R := O)) hu
+    rw [← coe_growthTransition_zero_left (p := p), hu, Polynomial.coe_mul]
   have hι_delta (q : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) : ι q ∈ deltaSubmodule p O _ := by
     obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective q
     refine (mem_deltaSubmodule p O _ _).mpr ⟨j₀, ?_⟩
-    -- `Ideal.mulQuot` in Mathlib has no `@[simp]` evaluation lemma, and reduces to `Quotient.mk`
-    -- by definition (`Submodule.mapQ_apply`).
+    -- `Ideal.mulQuot` in Mathlib has no `@[simp]` evaluation lemma; unfold it to `Submodule.mapQ`
+    -- and evaluate via `Submodule.mapQ_apply`.
     have hι_mk : ι (Ideal.Quotient.mk (Ideal.span {(F : O⟦X⟧)}) s) =
-        Ideal.Quotient.mk (((F : O⟦X⟧) ^ m) • Ideal.span {(F : O⟦X⟧)}) (((F : O⟦X⟧) ^ m) * s) := rfl
+        Ideal.Quotient.mk (((F : O⟦X⟧) ^ m) • Ideal.span {(F : O⟦X⟧)}) (((F : O⟦X⟧) ^ m) * s) := by
+      dsimp only [ι, Ideal.mulQuot]
+      rw [← Ideal.Quotient.mk_eq_mk, ← Ideal.Quotient.mk_eq_mk]
+      exact (Submodule.mapQ_apply (p := Ideal.span {(F : O⟦X⟧)})
+        (q := ((F : O⟦X⟧) ^ m) • Ideal.span {(F : O⟦X⟧)})
+        (LinearMap.mul O⟦X⟧ O⟦X⟧ ((F : O⟦X⟧) ^ m)) s).trans
+        (congrArg Submodule.Quotient.mk (LinearMap.mul_apply' _ _))
     rw [hι_mk, Ideal.Quotient.smul_mk, Ideal.Quotient.eq_zero_iff_mem, ← hspan,
       Polynomial.coe_pow, pow_succ, Ideal.mem_span_singleton, hcoe]
     exact ⟨(u : O⟦X⟧) * s, by ring⟩
@@ -396,10 +393,8 @@ theorem exists_finite_quotSMulTop_growthTransition (p : ℕ) [Fact p.Prime] {O :
   refine ⟨m + 1, (finite_quotient_growthTransition_iff p O M hM (m + 1)).mpr ?_⟩
   have hprod : ((∏ j ∈ Finset.range (m + 1), growthTransition p O j j : O[X]) : O⟦X⟧) =
       (1 + X) ^ p ^ m - 1 := by
-    have h := prod_range_mul_growthTransition (p := p) (O := O) (n₀ := m + 1) (n := m) le_rfl
-    rw [growthTransition_of_lt (Nat.lt_succ_self m), mul_one] at h
-    simpa only [Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_add, Polynomial.coe_one,
-      Polynomial.coe_X] using congrArg ((↑) : O[X] → O⟦X⟧) h
+    have h := coe_prod_range_mul_growthTransition (p := p) (O := O) (n₀ := m + 1) (n := m) le_rfl
+    rwa [growthTransition_of_lt (Nat.lt_succ_self m), Polynomial.coe_one, mul_one] at h
   suffices ((∏ j ∈ Finset.range (m + 1), growthTransition p O j j : O[X]) : O⟦X⟧) •
       deltaSubmodule p O M = ⊥ by
     rw [this]
@@ -450,7 +445,7 @@ example (p : ℕ) [Fact p.Prime] :
       ¬ Finite (QuotSMulTop (growthTransition p O 1 1 : O⟦X⟧) M) := by
   intro O M
   have hX0 : (growthTransition p O 0 0 : O⟦X⟧) = X := by
-    rw [growthTransition_zero_left]
+    rw [coe_growthTransition_zero_left]
     simp
   have hXsmul : (X : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ M) = ⊥ := by
     simp [M, Ideal.Quotient.smul_top]

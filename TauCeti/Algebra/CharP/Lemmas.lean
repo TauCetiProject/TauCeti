@@ -22,7 +22,8 @@ is prime, a natural number with nonzero cast is prime to it. In characteristic a
 binomial coefficient `(p - 1).choose k` is `(-1) ^ k` for `k ≤ p - 1`. In characteristic `p`, the
 natural-number representative of the inverse of `m` modulo `p` inverts the cast of `m` when `m` is
 prime to `p`, so in a semiring of characteristic a prime `p` every natural number prime to `p` is a
-unit; Mathlib's `CharP.isUnit_natCast_iff` states this for rings.
+unit; Mathlib's `CharP.isUnit_natCast_iff` states this for rings. Consequently, a ring without zero
+divisors in which some natural number is a nonzero nonunit has characteristic zero.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -47,6 +48,8 @@ law.
   `p` when `m` is prime to `p`.
 * `TauCeti.isUnit_natCast_of_not_dvd`: in a semiring of characteristic a prime `p`, a natural
   number prime to `p` is a unit.
+* `TauCeti.charZero_of_natCast_ne_zero_of_not_isUnit`: a ring without zero divisors in which some
+  natural number is a nonzero nonunit has characteristic zero.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
 -/
 
@@ -128,6 +131,17 @@ theorem isUnit_natCast_of_not_dvd {R : Type*} [Semiring R] {p : ℕ} [CharP R p]
     {n : ℕ} (hn : ¬p ∣ n) : IsUnit (n : R) := by
   have h := natCast_mul_natCast_val_inv_eq_one (R := R) p ((hp.coprime_iff_not_dvd.2 hn).symm)
   exact ⟨⟨n, _, h, (Nat.cast_commute _ _).eq.symm.trans h⟩, rfl⟩
+
+/-- A ring without zero divisors in which some natural number is a nonzero nonunit has
+characteristic zero: in prime characteristic every nonzero natural number is prime to the
+characteristic and hence a unit (`TauCeti.isUnit_natCast_of_not_dvd`). -/
+theorem charZero_of_natCast_ne_zero_of_not_isUnit {R : Type*} [Ring R] [NoZeroDivisors R]
+    {n : ℕ} (h0 : (n : R) ≠ 0) (hu : ¬IsUnit (n : R)) : CharZero R := by
+  have : Nontrivial R := nontrivial_of_ne _ _ h0
+  rcases CharP.char_is_prime_or_zero R (ringChar R) with hp | hp0
+  · exact absurd (isUnit_natCast_of_not_dvd hp (mt (ringChar.spec R n).mpr h0)) hu
+  · have := ringChar.of_eq hp0
+    exact CharP.charP_to_charZero R
 
 variable {R : Type*} [Ring R] (p n : ℕ) [ExpChar R p]
 

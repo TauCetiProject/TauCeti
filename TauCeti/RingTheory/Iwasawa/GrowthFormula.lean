@@ -78,7 +78,10 @@ module `Λ ⧸ (X - ϖ)` has `μ = 0` and `λ = 1`, but `#(M ⧸ ω_n M) = p ^ p
 * `TauCeti.Iwasawa.growthTransition_self`, `TauCeti.Iwasawa.growthTransition_succ` and
   `TauCeti.Iwasawa.monic_growthTransition`: `ν_{j,j} = ξ_j`, `ν_{n₀,n+1} = ν_{n₀,n} ξ_{n+1}`, and
   `ν_{n₀,n}` is monic.
-* `TauCeti.Iwasawa.prod_range_mul_growthTransition`: `ω_{n₀-1} · ν_{n₀,n} = ω_n`, and
+* `TauCeti.Iwasawa.prod_range_mul_growthTransition`,
+  `TauCeti.Iwasawa.coe_prod_range_mul_growthTransition` and
+  `TauCeti.Iwasawa.coe_growthTransition_zero_left`: `ω_{n₀-1} · ν_{n₀,n} = ω_n` (as polynomials
+  and as formal power series, so `ν_{0,n} = ω_n`), and
   `TauCeti.Iwasawa.natDegree_prod_range_add_natDegree_growthTransition`: the degrees add up to
   `pⁿ`.
 * `TauCeti.Iwasawa.isDistinguishedAt_growthTransition`: `ν_{n₀,n}` is distinguished at every
@@ -175,6 +178,19 @@ theorem prod_range_mul_growthTransition {n₀ n : ℕ} (h : n₀ ≤ n + 1) :
 theorem growthTransition_zero_left (n : ℕ) :
     growthTransition p O 0 n = (1 + Polynomial.X) ^ p ^ n - 1 := by
   simpa using prod_range_mul_growthTransition (p := p) (O := O) (Nat.zero_le (n + 1))
+
+/-- Coerced to formal power series, `(∏_{j < n₀} ν_{j,j}) · ν_{n₀,n} = (1 + X) ^ pⁿ - 1` for
+`n₀ ≤ n + 1`. -/
+theorem coe_prod_range_mul_growthTransition {n₀ n : ℕ} (h : n₀ ≤ n + 1) :
+    ((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) *
+        (growthTransition p O n₀ n : O⟦X⟧) =
+      (1 + X) ^ p ^ n - 1 := by
+  simpa using congrArg ((↑) : O[X] → O⟦X⟧) (prod_range_mul_growthTransition (p := p) (O := O) h)
+
+/-- Coerced to formal power series, `ν_{0,n}` is `ω_n = (1 + X) ^ pⁿ - 1`. -/
+theorem coe_growthTransition_zero_left (n : ℕ) :
+    ((growthTransition p O 0 n : O[X]) : O⟦X⟧) = (1 + X) ^ p ^ n - 1 := by
+  simp
 
 /-- The transition polynomial is distinguished at every ideal containing `p`. -/
 theorem isDistinguishedAt_growthTransition {I : Ideal O} (hI : (p : O) ∈ I) (n₀ n : ℕ) :

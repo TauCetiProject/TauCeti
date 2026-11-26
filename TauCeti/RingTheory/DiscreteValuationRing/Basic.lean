@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.LocalRing.Quotient
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.Algebra.CharP.Lemmas
 
 /-!
 # Powers of the maximal ideal of a discrete valuation ring
@@ -241,23 +242,13 @@ theorem faithfulSMul_of_isIntegral {R : Type*} [CommRing R] [Ring.DimensionLEOne
     bot_lt_iff_ne_bot.2 (_root_.IsDiscreteValuationRing.not_a_field S)
 
 /-- If a natural number generates a positive power of the maximal ideal of a discrete valuation
-ring, the ring has characteristic zero: a nonzero nonunit natural number cannot exist in prime
-characteristic. -/
+ring, the ring has characteristic zero: `n` is then a nonzero nonunit in the domain `S`. -/
 theorem charZero_of_span_natCast_eq_maximalIdeal_pow {n e : ℕ} (he : 0 < e)
-    (hne : Ideal.span {(n : S)} = maximalIdeal S ^ e) : CharZero S := by
-  have hn0 : (n : S) ≠ 0 := fun h0 ↦
-    _root_.IsDiscreteValuationRing.not_a_field S
-      ((Ideal.pow_eq_bot he.ne').mp (by simpa [h0] using hne.symm))
-  have hnu : ¬ IsUnit (n : S) := fun hu ↦
-    notMem_maximalIdeal.mpr hu (Ideal.pow_le_self he.ne' (hne ▸ Ideal.mem_span_singleton_self _))
-  rcases CharP.char_is_prime_or_zero S (ringChar S) with hq | h0
-  · have hcop : IsCoprime ((ringChar S : ℤ) : S) ((n : ℤ) : S) :=
-      (Nat.isCoprime_iff_coprime.mpr
-        (hq.coprime_iff_not_dvd.mpr (mt (ringChar.spec S n).mpr hn0))).map (Int.castRingHom S)
-    rw [Int.cast_natCast, Int.cast_natCast, CharP.cast_eq_zero S (ringChar S),
-      isCoprime_zero_left] at hcop
-    exact absurd hcop hnu
-  · have := ringChar.of_eq h0
-    exact CharP.charP_to_charZero S
+    (hne : Ideal.span {(n : S)} = maximalIdeal S ^ e) : CharZero S :=
+  charZero_of_natCast_ne_zero_of_not_isUnit
+    (fun h0 ↦ _root_.IsDiscreteValuationRing.not_a_field S
+      ((Ideal.pow_eq_bot he.ne').mp (by simpa [h0] using hne.symm)))
+    (fun hu ↦ notMem_maximalIdeal.mpr hu
+      (Ideal.pow_le_self he.ne' (hne ▸ Ideal.mem_span_singleton_self _)))
 
 end TauCeti.IsDiscreteValuationRing
