@@ -46,12 +46,13 @@ On `[0, 1]` the identity is that of the sphere with moving input ends,
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation`. Outside,
 it is that of the whole plumbed four-punctured sphere,
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`, read in the
-coordinates of moving input ends: the input ends of the inserted pair of pants, pushed forward by
-the plumbing map, are the input ends of centers `c_q`, `ψ(1)` and scales `f`, `-f`, the remaining
-input of the receiving pair of pants is the end of center `c_r` and scale `2 b_r`, and the neck
-contributes no boundary term. For `τ ≥ 1` the inputs of the plumbed sphere of `x₁ (x₂ x₃)` are
-those of the configuration relabelled by `finRotate 3`, which does not change the sum over the
-inputs.
+coordinates of moving input ends
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_smul`): the
+input ends of the inserted pair of pants, pushed forward by the plumbing map, are the input ends
+of centers `c_q`, `ψ(1)` and scales `f`, `-f`, the remaining input of the receiving pair of pants
+is the end of center `c_r` and scale `2 b_r`, and the neck contributes no boundary term. For
+`τ ≥ 1` the inputs of the plumbed sphere of `x₁ (x₂ x₃)` are those of the configuration relabelled
+by `finRotate 3`, which does not change the sum over the inputs.
 
 ## Main results
 
@@ -87,115 +88,7 @@ variable {E E' M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E E'} [TopologicalSpace M] [ChartedSpace E' M] [IsManifold I ⊤ M]
   {ω : SmoothTwoForm I M}
 
-/-- The plane minus the three input punctures `c_q`, `ψ(1)` and `c_r` of a plumbed sphere, listed
-as the centers of its input ends, is the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`. -/
-private theorem setOf_forall_ne_plumbedCenters {q r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
-    (hr : r ≠ inf) (L : ℝ) :
-    {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠
-        (![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) i} =
-      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-  ext z
-  simp only [mem_ofPred_eq, Fin.forall_fin_succ, Matrix.cons_val_zero, Matrix.cons_val_succ]
-  cases q <;> cases r <;> simp_all <;> tauto
-
 variable [FiniteDimensional ℝ E]
-
-/-- **The energy identity on a plumbed sphere, in the coordinates of moving input ends.** Plumb
-the output end of a pair of pants with Hamiltonians `Ha` into the input end `q ≠ ∞` of one with
-Hamiltonians `Hb`, along a neck of length `L > 4` carrying the Hamiltonian `b • G`. Read the plumbed
-sphere as a sphere with the three input ends of centers `c = (c_q, ψ(1), c_r)`, scales
-`a = (f, -f, 2 b_r)` and Hamiltonians `(Ha 0, Ha 1, Hb r)`. Then the energy identity of the whole
-plumbed sphere holds at the asymptotic loops of these input ends and of the output end. -/
-private theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update
-    (hω : ω.IsNondegenerate) {q r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf)
-    {Ha Hb : Puncture → ℝ → M → ℝ} {G : ℝ → M → ℝ}
-    (hHa : ∀ p ≠ inf, Periodic (Ha p) 1) (hHb : ∀ p ≠ q, Periodic (Hb p) 1) (hG : Periodic G 1)
-    (hHas : ∀ p ≠ inf, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha p)))
-    (hHbs : ∀ p ≠ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb p)))
-    (hGs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry G)) {L : ℝ} (hL : 4 < L) (b : ℝ)
-    {Ba Bb : Puncture → ℝ} {BG : ℝ} (hBa : ∀ p ≠ inf, ∀ t x, |Ha p t x| ≤ Ba p)
-    (hBb : ∀ p ≠ q, ∀ t x, |Hb p t x| ≤ Bb p) (hBG : ∀ t x, |G t x| ≤ BG)
-    {c a : Fin 3 → ℂ} (hc : c = ![q.endCenter, q.plumbingMap L 1, r.endCenter])
-    (ha : a = ![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale])
-    {H : Fin 3 → ℝ → M → ℝ} (hH : H = ![Ha zero, Ha one, Hb r]) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u
-      {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i})
-    {x : Fin 3 → ℝ → M} {xout : ℝ → M}
-    (hx : ∀ i (t : ℝ), Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
-      (c i + a i * zero.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x i t)))
-    (hxout : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
-      (inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop (𝓝 (xout t)))
-    (hE : IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation (update Ha inf (b • G)) (update Hb q (b • G)) q L
-          (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation (update Ha inf (b • G)) (update Hb q (b • G)) q L
-          (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i})
-    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
-      {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) :
-    ∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}, ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation (update Ha inf (b • G)) (update Hb q (b • G)) q L
-          (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation (update Ha inf (b • G)) (update Hb q (b • G)) q L
-          (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      (∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i},
-          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
-        ((∑ i, ∫ t in (0 : ℝ)..1, H i t (x i t)) - ∫ t in (0 : ℝ)..1, Hb inf t (xout t)) -
-        ∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i},
-          ω.hamiltonianCurvature
-            (fun z x ↦ plumbedPerturbation (update Ha inf (b • G)) (update Hb q (b • G)) q L
-              (Complex.equivRealProdCLM.symm z) x 1)
-            (fun z x ↦ plumbedPerturbation (update Ha inf (b • G)) (update Hb q (b • G)) q L
-              (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
-  subst hc ha hH
-  rw [setOf_forall_ne_plumbedCenters hq hrq hr L] at hu hE hA ⊢
-  -- The neck Hamiltonian `b • G` is again periodic, `C¹` and bounded.
-  have hN : Periodic (b • G) 1 := hG.smul b
-  have hNs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (b • G)) :=
-    (contDiff_const_smul b).contMDiff.comp hGs
-  have hBN (t : ℝ) (x : M) : |(b • G) t x| ≤ |b| * BG := by
-    rw [Pi.smul_apply, Pi.smul_apply, smul_eq_mul, abs_mul]
-    exact mul_le_mul_of_nonneg_left (hBG t x) (abs_nonneg b)
-  -- The plumbed datum with the neck Hamiltonian `b • G` on both sides of the neck.
-  rw [hω.integral_floerEnergyDensity_plumbedPerturbation hq
-    ((forall_update_iff Ha fun _ f => Periodic f 1).2 ⟨hN, hHa⟩)
-    ((forall_update_iff Hb fun _ f => Periodic f 1).2 ⟨hN, hHb⟩)
-    ((forall_update_iff Ha fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
-      ⟨hNs, hHas⟩)
-    ((forall_update_iff Hb fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
-      ⟨hNs, hHbs⟩)
-    (by simp) hL
-    ((forall_update_iff Ha fun p f => ∀ t x, |f t x| ≤ update Ba inf (|b| * BG) p).2
-      ⟨by simpa using hBN, fun p hp => by simpa [update_of_ne hp] using hBa p hp⟩)
-    ((forall_update_iff Hb fun p f => ∀ t x, |f t x| ≤ update Bb q (|b| * BG) p).2
-      ⟨by simpa using hBN, fun p hp => by simpa [update_of_ne hp] using hBb p hp⟩) hu
-    (xa := fun p ↦ if p = zero then x 0 else x 1)
-    (xb := fun p ↦ if p = inf then xout else x 2) ?_ ?_ hE hA]
-  · -- The Hamiltonian terms are those of the three input ends and of the output end.
-    congr 2
-    rw [Finset.sum_erase_eq_sub (Finset.mem_univ _), Finset.sum_erase_eq_sub (Finset.mem_univ _),
-      Puncture.sum_univ, Puncture.sum_univ, Fin.sum_univ_three]
-    cases q <;> cases r <;> simp_all <;> ring
-  · -- The loops along the inputs of the inserted pair of pants.
-    intro p hp t
-    cases p
-    · simpa only [Matrix.cons_val_zero, plumbingMap_apply, ↓reduceIte] using hx 0 t
-    · simpa only [Matrix.cons_val_one, Matrix.cons_val_zero, plumbingMap_cylindricalEndLift_one,
-        reduceCtorEq, ↓reduceIte] using hx 1 t
-    · exact absurd rfl hp
-  · -- The loops along the remaining input `r` and the output of the receiving pair of pants.
-    intro p hp t
-    obtain rfl | rfl : p = r ∨ p = inf := by cases p <;> cases q <;> cases r <;> simp_all
-    · have hs : p.endSign = 1 := by cases p <;> simp_all
-      simp only [hs, one_mul, cylindricalEndLift_eq_add_mul_cylindricalEndLift_zero p]
-      simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, hr, ↓reduceIte]
-        using hx 2 t
-    · simpa using hxout t
 
 variable {H : Fin 3 → ℝ → M → ℝ} {Hout G G' : ℝ → M → ℝ} {L : ℝ}
 
@@ -250,7 +143,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_associativityPerturb
     ⟨fun p ↦ if p = zero then H 0 else H 1, fun p ↦ if p = inf then Hout else H 2,
       by funext i; fin_cases i <;> rfl, rfl⟩
   rw [associativityPerturbation_of_nonpos hL₀ hτ.le] at hE ⊢
-  exact hω.integral_floerEnergyDensity_plumbedPerturbation_update (q := zero) (r := one)
+  exact hω.integral_floerEnergyDensity_plumbedPerturbation_update_smul (q := zero) (r := one)
     (by decide) (by decide) (by decide)
     (fun p hp ↦ by cases p; exacts [hH 0, hH 1, absurd rfl hp])
     (fun p hp ↦ by cases p; exacts [absurd rfl hp, hH 2, hHout]) hG
@@ -320,7 +213,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_associativityPerturb
     exact (finRotate 3).forall_congr_right.symm
   rw [associativityPerturbation_of_one_le hL₀ hτ.le, hS] at hE ⊢
   rw [hS] at hu hA
-  rw [hω.integral_floerEnergyDensity_plumbedPerturbation_update (q := one) (r := zero)
+  rw [hω.integral_floerEnergyDensity_plumbedPerturbation_update_smul (q := one) (r := zero)
     (by decide) (by decide) (by decide)
     (fun p hp ↦ by cases p; exacts [hH 1, hH 2, absurd rfl hp])
     (fun p hp ↦ by cases p; exacts [hH 0, absurd rfl hp, hHout]) hG'

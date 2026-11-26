@@ -553,13 +553,13 @@ theorem abs_setIntegral_hamiltonianCurvature_associativityPerturbation_le
   have hBG₀ : 0 ≤ BG := (abs_nonneg _).trans (hBG 0 (u 0))
   have hBG'₀ : 0 ≤ BG' := (abs_nonneg _).trans (hBG' 0 (u 0))
   have hsum₀ : 0 ≤ ∑ i, B i := Finset.sum_nonneg fun i _ ↦ hB₀ i
-  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ← Real.eNorm_eq_ofReal_abs,
-    ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_add hsum₀ hBout₀,
-    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hB₀ i, ENNReal.ofReal_mul zero_le_two,
-    ENNReal.ofReal_add hBG₀ hBG'₀, ENNReal.ofReal_ofNat]
-  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (ω.lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le hH hHs hHout hHouts hG hGs
-      hG' hG's hL τ hB hBout hBG hBG' u))
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ← Real.eNorm_eq_ofReal_abs]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    ((ω.lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le hH hHs hHout hHouts hG
+      hGs hG' hG's hL τ hB hBout hBG hBG' u).trans_eq ?_))
+  -- The bound is the image under `ENNReal.ofReal` of the sum of the nonnegative real bounds.
+  simp [ENNReal.ofReal_add, ENNReal.ofReal_mul, ENNReal.ofReal_sum_of_nonneg, add_nonneg, hB₀,
+    hBout₀, hBG₀, hBG'₀, hsum₀]
 
 end TauCeti.SmoothTwoForm
 

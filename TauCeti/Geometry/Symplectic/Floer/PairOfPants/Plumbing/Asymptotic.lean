@@ -35,7 +35,11 @@ the receiving one to `x_r`. If the Hamiltonians are bounded, then
 
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`), with the sign
 `+` on inputs and `-` on the output. The neck contributes no boundary term, and its length enters
-only through the domain.
+only through the domain. When the neck carries a scaled Hamiltonian `b • N`, the inputs of the
+inserted pair of pants pushed forward by the plumbing map and the remaining input of the receiving
+one are input ends `c_i + a_i φ₀(R + i t)` of centers `c_q`, `ψ(1)`, `c_r` and scales `f`, `-f`,
+`2 b_r`, so the identity also holds in the coordinates of a sphere with moving input ends
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_smul`).
 
 The curvature is integrable over `Σ_L`
 (`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`): it is integrable
@@ -67,6 +71,8 @@ In the namespace `TauCeti.SmoothTwoForm`:
   four-punctured sphere.
 * `IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`: the energy identity on the
   whole plumbed four-punctured sphere, at the asymptotic loops of the four outer ends.
+* `IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_smul`: the same identity
+  for a scaled neck Hamiltonian, read in the coordinates of moving input ends.
 * `IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`: the resulting
   energy bound, uniform in the neck length.
 * `IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedPerturbation`: the lower
@@ -225,6 +231,131 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
     (hlim.congr' ((eventually_ge_atTop (L / 2)).mono fun R hR ↦
       (hω.integral_floerEnergyDensity_plumbedTruncation hq hHa hHb hHas hHbs hab hL hR hu).symm))
   rwa [hTP] at h
+
+/-- Two distinct inputs `q` and `r` of a pair of pants are `0` and `1`, in some order. -/
+private theorem eq_zero_and_eq_one_or_eq_one_and_eq_zero {q r : Puncture} (hq : q ≠ inf)
+    (hrq : r ≠ q) (hr : r ≠ inf) : q = zero ∧ r = one ∨ q = one ∧ r = zero := by
+  revert q r
+  decide
+
+/-- An end `p ≠ q` of a pair of pants with distinct inputs `q` and `r` is `r` or the output. -/
+private theorem eq_or_eq_inf_of_ne {p q r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
+    (hr : r ≠ inf) (hp : p ≠ q) : p = r ∨ p = inf := by
+  revert p q r
+  decide
+
+/-- The plane minus the three input punctures `c_q`, `ψ(1)` and `c_r` of a plumbed sphere, listed
+as the centers of its input ends, is the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`. -/
+private theorem setOf_forall_ne_plumbedCenters {r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
+    (hr : r ≠ inf) (L : ℝ) :
+    {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠
+        (![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) i} =
+      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+  ext z
+  simp only [mem_ofPred_eq, Fin.forall_fin_succ, Matrix.cons_val_zero, Matrix.cons_val_succ]
+  rcases eq_zero_and_eq_one_or_eq_one_and_eq_zero hq hrq hr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+    simp only [endCenter_zero, endCenter_one, IsEmpty.forall_iff, and_true] <;> tauto
+
+/-- **The energy identity on a plumbed sphere with a scaled neck, in the coordinates of moving
+input ends.** Plumb the output end of a pair of pants with Hamiltonians `Ha` into the input end
+`q ≠ ∞` of one with Hamiltonians `Hb`, along a neck of length `L > 4` carrying the Hamiltonian
+`b • N`, for bounded period-one `C¹` Hamiltonians on a finite-dimensional manifold with a
+nondegenerate two-form. Read the plumbed sphere as a sphere with the three input ends of centers
+`c = (c_q, ψ(1), c_r)`, scales `a = (f, -f, 2 b_r)` and Hamiltonians `(Ha 0, Ha 1, Hb r)`, where
+`r` is the other input of the receiving pair of pants, `f` the plumbing factor and `b_r` the scale
+of the end `r`. Then the energy identity of the whole plumbed sphere holds at the asymptotic loops
+`x i` of these input ends, along `c_i + a_i φ₀(R + i t)`, and `xout` of the output end. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_smul
+    (hω : ω.IsNondegenerate) {r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf)
+    {N : ℝ → M → ℝ} (hHa : ∀ p ≠ inf, Periodic (Ha p) 1) (hHb : ∀ p ≠ q, Periodic (Hb p) 1)
+    (hN : Periodic N 1)
+    (hHas : ∀ p ≠ inf, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha p)))
+    (hHbs : ∀ p ≠ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb p)))
+    (hNs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry N)) (hL : 4 < L) (b : ℝ)
+    {Ba Bb : Puncture → ℝ} {BN : ℝ} (hBa : ∀ p ≠ inf, ∀ t x, |Ha p t x| ≤ Ba p)
+    (hBb : ∀ p ≠ q, ∀ t x, |Hb p t x| ≤ Bb p) (hBN : ∀ t x, |N t x| ≤ BN)
+    {c a : Fin 3 → ℂ} (hc : c = ![q.endCenter, q.plumbingMap L 1, r.endCenter])
+    (ha : a = ![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale])
+    {H : Fin 3 → ℝ → M → ℝ} (hH : H = ![Ha zero, Ha one, Hb r]) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u
+      {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i})
+    {x : Fin 3 → ℝ → M} {xout : ℝ → M}
+    (hx : ∀ i (t : ℝ), Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (c i + a i * zero.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x i t)))
+    (hxout : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop (𝓝 (xout t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+          (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i})
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
+      {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) :
+    ∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}, ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+          (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      (∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i},
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ((∑ i, ∫ t in (0 : ℝ)..1, H i t (x i t)) - ∫ t in (0 : ℝ)..1, Hb inf t (xout t)) -
+        ∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i},
+          ω.hamiltonianCurvature
+            (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+              (Complex.equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+              (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
+  subst hc ha hH
+  rw [setOf_forall_ne_plumbedCenters hq hrq hr L] at hu hE hA ⊢
+  -- The neck Hamiltonian `b • N` is again periodic, `C¹` and bounded.
+  have hbN : Periodic (b • N) 1 := hN.smul b
+  have hbNs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (b • N)) :=
+    (contDiff_const_smul b).contMDiff.comp hNs
+  have hbBN (t : ℝ) (x : M) : |(b • N) t x| ≤ |b| * BN := by
+    rw [Pi.smul_apply, Pi.smul_apply, smul_eq_mul, abs_mul]
+    exact mul_le_mul_of_nonneg_left (hBN t x) (abs_nonneg b)
+  -- The plumbed datum with the neck Hamiltonian `b • N` on both sides of the neck.
+  rw [hω.integral_floerEnergyDensity_plumbedPerturbation hq
+    ((forall_update_iff Ha fun _ f => Periodic f 1).2 ⟨hbN, hHa⟩)
+    ((forall_update_iff Hb fun _ f => Periodic f 1).2 ⟨hbN, hHb⟩)
+    ((forall_update_iff Ha fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
+      ⟨hbNs, hHas⟩)
+    ((forall_update_iff Hb fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
+      ⟨hbNs, hHbs⟩)
+    (by simp) hL
+    ((forall_update_iff Ha fun p f => ∀ t x, |f t x| ≤ update Ba inf (|b| * BN) p).2
+      ⟨by simpa using hbBN, fun p hp => by simpa [update_of_ne hp] using hBa p hp⟩)
+    ((forall_update_iff Hb fun p f => ∀ t x, |f t x| ≤ update Bb q (|b| * BN) p).2
+      ⟨by simpa using hbBN, fun p hp => by simpa [update_of_ne hp] using hBb p hp⟩) hu
+    (xa := fun p ↦ if p = zero then x 0 else x 1)
+    (xb := fun p ↦ if p = inf then xout else x 2) ?_ ?_ hE hA]
+  · -- The Hamiltonian terms are those of the three input ends and of the output end.
+    congr 2
+    rw [Finset.sum_erase_eq_sub (Finset.mem_univ _), Finset.sum_erase_eq_sub (Finset.mem_univ _),
+      Puncture.sum_univ, Puncture.sum_univ, Fin.sum_univ_three]
+    rcases eq_zero_and_eq_one_or_eq_one_and_eq_zero hq hrq hr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+      simp <;> ring
+  · -- The loops along the inputs of the inserted pair of pants.
+    intro p hp t
+    cases p
+    · simpa only [Matrix.cons_val_zero, plumbingMap_apply, ↓reduceIte] using hx 0 t
+    · simpa only [Matrix.cons_val_one, Matrix.cons_val_zero, plumbingMap_cylindricalEndLift_one,
+        reduceCtorEq, ↓reduceIte] using hx 1 t
+    · exact absurd rfl hp
+  · -- The loops along the remaining input `r` and the output of the receiving pair of pants.
+    intro p hp t
+    obtain rfl | rfl := eq_or_eq_inf_of_ne hq hrq hr hp
+    · simp only [endSign_eq_one hr, one_mul,
+        cylindricalEndLift_eq_add_mul_cylindricalEndLift_zero p]
+      simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, hr, ↓reduceIte]
+        using hx 2 t
+    · simpa using hxout t
 
 /-- **The energy bound on the plumbed four-punctured sphere, for a manifold target.** Under the
 hypotheses of `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`, the

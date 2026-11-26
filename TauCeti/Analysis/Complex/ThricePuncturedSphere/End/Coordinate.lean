@@ -221,8 +221,8 @@ theorem cylindricalEndLift_eq (q : Puncture) (z : ℂ) :
   cases q <;> simp <;> ring
 
 /-- Every end lift is the end lift at `0` scaled by twice the scale of the end and centred at the
-center of the end: the end `q` is the input end of center `c_q` and scale `2 b_q` of a sphere with
-moving input ends. -/
+center of the end, `φ_q(z) = c_q + 2 b_q φ₀(z)`. So for an input `q ≠ ∞` the end `q` is the input
+end of center `c_q` and scale `2 b_q` of a sphere with moving input ends. -/
 theorem cylindricalEndLift_eq_add_mul_cylindricalEndLift_zero (q : Puncture) (z : ℂ) :
     q.cylindricalEndLift z = q.endCenter + 2 * q.endScale * zero.cylindricalEndLift z := by
   rw [cylindricalEndLift_eq, cylindricalEndLift_zero]
