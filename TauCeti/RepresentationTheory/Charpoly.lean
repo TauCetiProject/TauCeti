@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.AsModule
@@ -18,7 +19,8 @@ import TauCeti.LinearAlgebra.Charpoly.Quotient
 For a representation `ρ` of a monoid on a finite free module and an element `g`, the
 characteristic polynomial of `ρ g` is invariant under isomorphism of representations,
 multiplicative on products, and equal to `(X - 1) ^ dim V` for the trivial representation. The
-determinant of `ρ g` is invariant under isomorphism too, on any module.
+determinant of `ρ g` is invariant under isomorphism too, on any module, and for a representation
+of a group it is a unit; over `𝔽₂` it is therefore `1`.
 
 For a representation of a group, `g⁻¹` acts with the reverse of the characteristic polynomial of
 `g`, up to a unit, and so does `g` in the contragredient representation `ρ.dual`. Hence in any
@@ -30,6 +32,9 @@ eigenvalues of arithmetic and geometric Frobenius.
 
 * `Representation.Equiv.charpoly_apply_eq`, `Representation.Equiv.det_apply_eq`: invariance of
   the characteristic polynomial and of the determinant under isomorphism.
+* `Representation.isUnit_det_apply`: a group element acts with a unit determinant.
+* `Representation.det_apply_eq_one_zmod_two`: over `𝔽₂`, a group element acts with
+  determinant `1`.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
@@ -56,6 +61,20 @@ theorem Equiv.det_apply_eq {R G V W : Type*} [CommRing R] [Monoid G] [AddCommGro
     [AddCommGroup W] [Module R W] {ρ : Representation R G V} {σ : Representation R G W}
     (φ : ρ.Equiv σ) (g : G) : (ρ g).det = (σ g).det := by
   rw [← φ.conj_apply_self g, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj]
+
+/-- In a representation of a group, every element acts with a unit determinant, with inverse the
+determinant of `ρ g⁻¹`. -/
+theorem isUnit_det_apply {R G V : Type*} [CommRing R] [Group G] [AddCommGroup V] [Module R V]
+    (ρ : Representation R G V) (g : G) : IsUnit (ρ g).det :=
+  .of_mul_eq_one (ρ g⁻¹).det (by rw [← map_mul, ← map_mul, mul_inv_cancel, map_one, map_one])
+
+/-- Over `𝔽₂`, every element of a group acts with determinant `1`: the determinant is a unit
+of `𝔽₂`. -/
+@[simp]
+theorem det_apply_eq_one_zmod_two {G V : Type*} [Group G] [AddCommGroup V] [Module (ZMod 2) V]
+    (ρ : Representation (ZMod 2) G V) (g : G) : (ρ g).det = 1 := by
+  rw [← (ρ.isUnit_det_apply g).unit_spec, Subsingleton.elim (ρ.isUnit_det_apply g).unit 1,
+    Units.val_one]
 
 variable {R G V W : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Module.Free R V]
   [Module.Finite R V] [AddCommGroup W] [Module R W] [Module.Free R W] [Module.Finite R W]
