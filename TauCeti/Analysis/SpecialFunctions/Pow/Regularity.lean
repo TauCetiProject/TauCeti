@@ -28,8 +28,9 @@ third derivatives of `|x| ^ p` are `p (p - 1) |x| ^ (p - 2)` for `p > 2`
 For `0 < β ≤ 1` the third derivative of `|x| ^ (3 + β)` is `β`-Hölder on all of `ℝ`
 (`TauCeti.holderWith_iteratedFDeriv_three_abs_rpow_three_add`). For `p > 3` the third derivative of
 `|x| ^ p` is `γ`-Hölder near the origin for no `γ > p - 3`
-(`TauCeti.not_holderOnWith_iteratedFDeriv_three_abs_rpow`): `|x| ^ (3 + β)` is `C^{3,β}` near the
-origin, and no better.
+(`TauCeti.not_holderOnWith_iteratedFDeriv_three_abs_rpow`). So for `0 < β ≤ 1` the function
+`|x| ^ (3 + β)` is `C^{3,β}` near the origin, and its third derivative is `γ`-Hölder there for
+no `γ > β`.
 -/
 
 public section
