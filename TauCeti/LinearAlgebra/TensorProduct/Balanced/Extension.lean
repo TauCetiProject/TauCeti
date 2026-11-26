@@ -8,9 +8,10 @@ module
 public import Mathlib.Algebra.Algebra.RestrictScalars
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
-public import TauCeti.LinearAlgebra.Matrix.Idempotent
+public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 
 import TauCeti.Algebra.Module.Projective.Semilinear
+import TauCeti.LinearAlgebra.Matrix.Idempotent.RightRange
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings
@@ -47,7 +48,9 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
 * `TauCeti.BalancedExtension.rangeVecMulLinearEquiv`: extension of the image of an idempotent
-  matrix, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
+  matrix on row vectors, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
+* `TauCeti.BalancedExtension.rangeMulVecBilinEquiv`: extension of the column range of an
+  idempotent matrix, `(e Rⁿ) ⊗_R S ≃ f(e) Sⁿ`.
 
 The extension of the zero module is zero by the `Subsingleton` instances of
 `TauCeti.BalancedTensorProduct`, since `TauCeti.BalancedExtension` is an `abbrev`.
@@ -55,6 +58,8 @@ The extension of the zero module is zero by the `Subsingleton` instances of
 ## Main results
 
 * `TauCeti.BalancedExtension.map_surjective`: extension of scalars preserves surjections.
+* `TauCeti.BalancedExtension.includeRight_surjective`: along a surjective ring homomorphism,
+  every element of `S ⊗_R P` is a tensor `1 ⊗ p`.
 * Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
   `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
   generated projective modules to finitely generated projective modules. No flatness or
@@ -204,6 +209,20 @@ def includeRight : P →ₛₗ[f] BalancedExtension f P where
 
 @[simp]
 theorem includeRight_apply (p : P) : includeRight f P p = tmul f 1 p := (rfl)
+
+/-- Along a surjective ring homomorphism every element of `S ⊗_R P` is a tensor `1 ⊗ p`: writing
+`s = f r`, the tensor `s ⊗ p` is `1 ⊗ (r • p)`. -/
+theorem includeRight_surjective (hf : Function.Surjective f) :
+    Function.Surjective (includeRight f P) := by
+  intro x
+  induction x using induction_on with
+  | tmul s p =>
+    obtain ⟨r, rfl⟩ := hf s
+    exact ⟨r • p, by rw [includeRight_apply, tmul_smul, one_mul]⟩
+  | add x y hx hy =>
+    obtain ⟨x, rfl⟩ := hx
+    obtain ⟨y, rfl⟩ := hy
+    exact ⟨x + y, _root_.map_add _ x y⟩
 
 /-- The balanced biadditive map `(s, p) ↦ s • g p` attached to an `f`-semilinear map `g`. -/
 private def liftAux (g : P →ₛₗ[f] Q) : Scalars f →ₗ[ℤ] P →ₗ[ℤ] Q :=
@@ -575,6 +594,37 @@ theorem rangeVecMulLinearEquiv_symm_apply (he : IsIdempotentElem e)
     (rangeVecMulLinearEquiv f he).symm w =
       ∑ i, tmul f ((w : ι → S) i) ⟨e i, e.row_mem_range_vecMulLinear i⟩ := by
   simp [rangeVecMulLinearEquiv, rangeVecMulLinearInv, Fintype.linearCombination_apply, smul_tmul]
+
+/-- **Extension of scalars on the column range of an idempotent matrix.** Along a ring homomorphism
+`f : R →+* S`, the right `S`-module extension of scalars of the column range `e R^ι` is canonically
+isomorphic to the column range `f(e) S^ι` of `e.map f`. -/
+noncomputable def rangeMulVecBilinEquiv (he : IsIdempotentElem e) :
+    BalancedExtension (RingHom.op f) (LinearMap.range (e.mulVecBilin R Rᵐᵒᵖ)) ≃ₗ[Sᵐᵒᵖ]
+      LinearMap.range ((e.map f).mulVecBilin S Sᵐᵒᵖ) :=
+  (congr (RingHom.op f) (rangeVecMulLinearTransposeMapOpEquiv e).symm).trans <|
+    (rangeVecMulLinearEquiv (RingHom.op f) he.matrix_transpose_map_op).trans <|
+      (LinearEquiv.ofEq _ _ (congrArg (fun M ↦ LinearMap.range M.vecMulLinear)
+        (transpose_map_op_map_ringHom_op e f))).trans
+        (rangeVecMulLinearTransposeMapOpEquiv (e.map f))
+
+@[simp]
+theorem coe_rangeMulVecBilinEquiv_tmul (he : IsIdempotentElem e) (s : Sᵐᵒᵖ)
+    (v : LinearMap.range (e.mulVecBilin R Rᵐᵒᵖ)) :
+    (rangeMulVecBilinEquiv f he (tmul (RingHom.op f) s v) : ι → S) =
+      fun i ↦ f ((v : ι → R) i) * s.unop := by
+  ext i
+  simp [rangeMulVecBilinEquiv, LinearEquiv.trans_apply]
+
+@[simp]
+theorem rangeMulVecBilinEquiv_symm_apply (he : IsIdempotentElem e)
+    (w : LinearMap.range ((e.map f).mulVecBilin S Sᵐᵒᵖ)) :
+    (rangeMulVecBilinEquiv f he).symm w =
+      ∑ j, tmul (RingHom.op f) (op ((w : ι → S) j)) ⟨e.col j, e.col_mem_range_mulVecBilin j⟩ := by
+  rw [LinearEquiv.symm_apply_eq]
+  have hw : (e.map f) *ᵥ (w : ι → S) = (w : ι → S) :=
+    (he.matrix_map f).mem_range_mulVecBilin_iff.mp w.property
+  ext i
+  simpa [mulVec, dotProduct] using (congrFun hw i).symm
 
 end Idempotent
 

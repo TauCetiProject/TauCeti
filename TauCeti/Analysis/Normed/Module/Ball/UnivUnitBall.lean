@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Tactic.Module
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # A Lipschitz estimate for the radial map onto the unit ball

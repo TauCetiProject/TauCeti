@@ -56,6 +56,8 @@ representable by a polynomial ring over the Lazard ring.
 * `FormalGroup.isStrict_smulIso_iff`: the isomorphism `φ` is strict exactly when its linear
   coefficient is `1`.
 * `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
+* `TauCeti.FormalGroupIso.toFormalCoordinate_smul`: the coordinate `e.toFormalCoordinate` of an
+  isomorphism `e : F ≅ G` satisfies `e.toFormalCoordinate • F = G`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
 * `FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ`: the base change of the additive law transported along
@@ -367,6 +369,24 @@ theorem _root_.TauCeti.FormalGroupHom.smul_eq {F G : FormalGroup R} (f : FormalG
     fin_cases i <;> exact φ.subst_subst_inv (PowerSeries.HasSubst.X _)
   rw [smul_toPowerSeries, ← h, f.hom_subst (hasSubst_finTwo (hφ 0) (hφ 1)), h, hX, subst_self,
     id]
+
+/-- The formal coordinate given by the forward series of an isomorphism of formal group laws. -/
+def _root_.TauCeti.FormalGroupIso.toFormalCoordinate {F G : FormalGroup R}
+    (e : FormalGroupIso F G) : FormalCoordinate R where
+  toPowerSeries := e.toHom.toPowerSeries
+  constantCoeff_toPowerSeries := e.toHom.zero_constantCoeff
+  isUnit_coeff_one := e.isUnit_coeff_one
+
+@[simp]
+theorem _root_.TauCeti.FormalGroupIso.toFormalCoordinate_toPowerSeries {F G : FormalGroup R}
+    (e : FormalGroupIso F G) : e.toFormalCoordinate.toPowerSeries = e.toHom.toPowerSeries :=
+  (rfl)
+
+/-- The coordinate of an isomorphism `e : F ≅ G` changes `F` into `G`. -/
+@[simp]
+theorem _root_.TauCeti.FormalGroupIso.toFormalCoordinate_smul {F G : FormalGroup R}
+    (e : FormalGroupIso F G) : e.toFormalCoordinate • F = G :=
+  e.toHom.smul_eq rfl
 
 /-- The isomorphism `φ` from `F` to `φ • F` is strict exactly when `φ` has linear coefficient
 `1`. -/

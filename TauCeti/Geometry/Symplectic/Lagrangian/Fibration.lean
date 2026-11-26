@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 
 /-!
@@ -31,6 +33,9 @@ With the conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`, t
 back from the base generate the vertical motions:
 
 * for a Lagrangian fibration `dim M = 2 dim B` (`IsLagrangianFibration.two_mul_finrank`);
+* so a differentiable section of a Lagrangian fibration, an immersion of the base, is a
+  Lagrangian map as soon as it is isotropic
+  (`IsLagrangianFibration.isLagrangianMap_iff_isIsotropicMap`);
 * the Hamiltonian vector field of a pulled-back function `g ∘ π` is vertical, tangent to the fibres
   (`IsLagrangianFibration.hamiltonianVectorField_comp_mem_ker_mfderiv`), because `d(g ∘ π)`
   vanishes on `ker dπ`, so `X_(g ∘ π)` lies in the symplectic complement of `ker dπ`, which is
@@ -129,6 +134,20 @@ theorem two_mul_card_fin_finrank [FiniteDimensional ℝ E] [Nonempty M] :
     2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
   rw [Fintype.card_fin, h.two_mul_finrank]
 
+/-- **A section of a Lagrangian fibration is Lagrangian as soon as it is isotropic.** A
+differentiable section `s` of the projection `π` of a Lagrangian fibration is an immersion of the
+base, which has half the dimension of `M`, so its tangent images are Lagrangian as soon as they
+are isotropic. -/
+theorem isLagrangianMap_iff_isIsotropicMap [FiniteDimensional ℝ E] {s : B → M}
+    (hs : ∀ b, π (s b) = b) (hsm : MDifferentiable J I s) :
+    hσ.IsLagrangianMap J s ↔ hσ.IsIsotropicMap J s := by
+  refine ⟨fun hL ↦ hL.isIsotropicMap, fun hiso ↦ isLagrangianMap_iff_forall.2 fun b ↦ ?_⟩
+  have : Nonempty M := ⟨s b⟩
+  -- `π` is a left inverse of `s`, so `ds` is injective.
+  exact isLagrangianMap_iff_forall.1 (hiso.isLagrangianMap_of_finrank
+    (fun b ↦ mfderiv_injective_of_leftInverse (h.mdifferentiableAt (s b)) (hsm b) hs)
+    h.two_mul_finrank) b
+
 /-- **Hamiltonian vector fields of pulled-back functions are vertical.** If `g` is differentiable
 at `π x`, the Hamiltonian vector of `g ∘ π` at `x` is tangent to the fibre: it lies in `ker dπ_x`.
 -/
@@ -153,7 +172,7 @@ theorem mfderiv_hamiltonianVectorField_comp_eq_zero [FiniteDimensional ℝ E] {g
 theorem poissonBracket_comp_eq_zero [FiniteDimensional ℝ E] {g k : B → ℝ} {x : M}
     (hg : MDifferentiableAt J 𝓘(ℝ) g (π x)) (hk : MDifferentiableAt J 𝓘(ℝ) k (π x)) :
     σ.poissonBracket (g ∘ π) (k ∘ π) x = 0 := by
-  rw [hσ.poissonBracket_eq_mvfderiv, mvfderiv_comp_apply x hg (h.mdifferentiableAt x),
+  rw [σ.poissonBracket_eq_mvfderiv, mvfderiv_comp_apply x hg (h.mdifferentiableAt x),
     h.mfderiv_hamiltonianVectorField_comp_eq_zero hk, map_zero]
 
 /-- The components of a family `κ ∘ π` of functions pulled back from the base Poisson-commute at
@@ -163,6 +182,14 @@ theorem poissonBracket_comp_apply_eq_zero [FiniteDimensional ℝ E] {ι : Type*}
     σ.poissonBracket ((κ ∘ π) · i) ((κ ∘ π) · j) x = 0 :=
   h.poissonBracket_comp_eq_zero (mdifferentiableAt_pi_space.1 hκ i)
     (mdifferentiableAt_pi_space.1 hκ j)
+
+/-- **Pulled-back functions Poisson-commute everywhere.** For `κ : B → ℝ^ι` differentiable on the
+base, the components of `κ ∘ π` Poisson-commute at every point of `M`. -/
+theorem poissonBracket_comp_apply_eq_zero_of_mdifferentiable [FiniteDimensional ℝ E]
+    {ι : Type*} [Fintype ι] {κ : B → ι → ℝ} (hκ : MDifferentiable J 𝓘(ℝ, ι → ℝ) κ)
+    (i j : ι) (x : M) :
+    σ.poissonBracket ((κ ∘ π) · i) ((κ ∘ π) · j) x = 0 :=
+  h.poissonBracket_comp_apply_eq_zero (hκ (π x)) i j
 
 /-- The Hamiltonian vector field of a `C²` pulled-back function `g ∘ π` is `C¹`. -/
 theorem contMDiff_hamiltonianVectorField_comp [FiniteDimensional ℝ E] {g : B → ℝ}
@@ -218,13 +245,9 @@ theorem flowOf_hamiltonianVectorField_comp_eq [FiniteDimensional ℝ E] [T2Space
     intro s
     have hπγ : π (γ s) = π x := h.apply_maximalIntegralCurve_hamiltonianVectorField_comp hg
       (hc.mem_maximalIntegralCurveInterval x s)
-    have hd : mvfderiv J g (π (γ s)) = mvfderiv J g' (π (γ s)) := by rw [hπγ]; exact hgg'
-    have hX : σ.hamiltonianVectorField (g ∘ π) (γ s) =
-        σ.hamiltonianVectorField (g' ∘ π) (γ s) := by
-      rw [hamiltonianVectorField_def, hamiltonianVectorField_def,
-        mvfderiv_comp (γ s) ((hg _).mdifferentiableAt (by simp)) (h.mdifferentiableAt _),
-        mvfderiv_comp (γ s) ((hg' _).mdifferentiableAt (by simp)) (h.mdifferentiableAt _), hd]
-    rw [← hX]
+    rw [← hamiltonianVectorField_comp_eq_of_mvfderiv_eq (h.mdifferentiableAt _)
+      ((hg _).mdifferentiableAt (by simp)) ((hg' _).mdifferentiableAt (by simp))
+      (by rw [hπγ]; exact hgg')]
     exact hγ s
   have h0 : γ 0 = x := maximalIntegralCurve_zero
   have h1 := hγ'.maximalIntegralCurve_eq (h.contMDiff_hamiltonianVectorField_comp hg') t

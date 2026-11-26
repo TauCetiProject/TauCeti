@@ -9,18 +9,44 @@ public import Mathlib.Algebra.MvPolynomial.Supported
 import Mathlib.RingTheory.Adjoin.Basic
 
 /-!
-# Algebra generation for multivariate polynomials over an intermediate ring
+# Multivariate polynomials supported on a set of variables
 
-For an `R`-algebra `B`, `MvPolynomial σ B` is generated as an `R`-algebra by the base constants
-`C b` and the polynomial variables `X i` (`TauCeti.MvPolynomial.adjoin_range_C_union_range_X`).
+A polynomial in `MvPolynomial.supported R s` is a linear combination of the monomials in the
+variables of `s`, so two linear maps agree on it once they agree on these monomials
+(`MvPolynomial.linearMap_eqOn_supported`). This is the linear analogue of
+`MvPolynomial.derivation_eqOn_supported`.
+
+For an `R`-algebra `B`, `MvPolynomial σ B` is also generated as an `R`-algebra by the base
+constants `C b` and the polynomial variables `X i`
+(`TauCeti.MvPolynomial.adjoin_range_C_union_range_X`).
 
 ## Main results
 
+* `MvPolynomial.linearMap_eqOn_supported`: linear maps agreeing on monomials in `s` agree on
+  `MvPolynomial.supported R s`.
 * `TauCeti.MvPolynomial.adjoin_range_C_union_range_X`: `MvPolynomial σ B` is generated as an
   `R`-algebra by base constants and variables.
 -/
 
 public section
+
+namespace MvPolynomial
+
+variable {σ R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- Two linear maps out of `MvPolynomial σ R` agree on the polynomials in the variables of `s`
+once they agree on the monomials with coefficient `1` in these variables. -/
+theorem linearMap_eqOn_supported {s : Set σ} {f g : MvPolynomial σ R →ₗ[R] M}
+    (h : ∀ m : σ →₀ ℕ, ↑m.support ⊆ s → f (monomial m 1) = g (monomial m 1)) :
+    Set.EqOn f g (supported R s) := by
+  intro p hp
+  rw [SetLike.mem_coe, mem_supported] at hp
+  rw [p.as_sum, map_sum, map_sum]
+  refine Finset.sum_congr rfl fun m hm ↦ ?_
+  rw [← mul_one (p.coeff m), ← smul_eq_mul, ← smul_monomial, map_smul, map_smul,
+    h m fun i hi ↦ hp (support_subset_vars_of_mem_support hm hi)]
+
+end MvPolynomial
 
 namespace TauCeti.MvPolynomial
 

@@ -215,8 +215,13 @@ theorem isSheafFor_bigPresheaf_singleton_of_flat_of_surjective {T T' : Over S} (
   have hxm : bigSectionsRestrict F f m = e y :=
     (bigSectionsBaseChange_one_tmul F f m).symm.trans (congrArg e hm)
   refine ⟨m, hxm, fun (m' : M) hm' ↦ ?_⟩
-  exact Module.FaithfullyFlat.tensorProduct_mk_injective (A := A) (B := A') (M := M) (e.injective
-    (((bigSectionsBaseChange_one_tmul F f m').trans (hm'.trans hxm.symm)).trans
-      (bigSectionsBaseChange_one_tmul F f m).symm))
+  apply f.left.pullbackSections_injective ((pullback T.hom).obj F)
+    (isAffineOpen_top _) (isAffineOpen_top _) hφ
+  have heq : bigSectionsRestrict F f m' = bigSectionsRestrict F f m := hm'.trans hxm.symm
+  rw [bigSectionsRestrict_apply, bigSectionsRestrict_apply] at heq
+  exact (ConcreteCategory.bijective_of_isIso
+    (((pullbackComp f.left T.hom).hom.app F ≫
+      (pullbackCongr (Over.w f)).hom.app F).app ⊤)).injective heq
+
 
 end AlgebraicGeometry.Scheme.Modules
