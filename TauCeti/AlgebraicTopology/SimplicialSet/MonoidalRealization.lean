@@ -131,13 +131,10 @@ preserves all binary products. -/
 theorem preservesBinaryProducts_of_stdSimplex [PreservesColimitsOfSize.{0, u} F]
     [∀ Y : D, PreservesColimitsOfSize.{0, u} (Limits.prod.functor.obj Y)]
     (hΔ : ∀ p q : ℕ, IsIso (Limits.prodComparison F Δ[p] Δ[q])) :
-    PreservesLimitsOfShape (Discrete WalkingPair) F where
-  preservesLimit {G} :=
-    have (K L : SSet.{u}) : IsIso (Limits.prodComparison F K L) :=
-      isIso_prodComparison_of_preservesColimits_prod_functor F hΔ K L
-    have (K L : SSet.{u}) : PreservesLimit (Limits.pair K L) F :=
-      PreservesLimitPair.of_iso_prod_comparison F K L
-    preservesLimit_of_iso_diagram F (diagramIsoPair G).symm
+    PreservesLimitsOfShape (Discrete WalkingPair) F :=
+  have {K L : SSet.{u}} : IsIso (Limits.prodComparison F K L) :=
+    isIso_prodComparison_of_preservesColimits_prod_functor F hΔ K L
+  Limits.preservesBinaryProducts_of_isIso_prodComparison F
 
 /-- Under the hypotheses of `SSet.preservesBinaryProducts_of_stdSimplex`, if `F` also preserves the
 terminal object, then `F` preserves all finite products. -/
@@ -237,22 +234,10 @@ theorem toTopCylinderHomeo_toTopCylinder (X : SSet.{u}) (z : |X| × unitInterval
     (g₂ := TopCat.ofHom (X := |X|) (Y := |X| × unitInterval)
       ⟨fun z ↦ (z, t), by fun_prop⟩)
     fun n x w ↦ ?_) z
-  simp only [TopCat.hom_ofHom, ContinuousMap.coe_mk, toTopCylinder_toTopObjMk,
-    prodStdSimplex₁.prism_apply]
-  have h₁ : toTop.{u}.map (yonedaEquiv.symm x ▷ Δ[1]) ≫
-      toTop.map (CartesianMonoidalCategory.fst X Δ[1]) =
-      toTop.map (CartesianMonoidalCategory.fst Δ[n] Δ[1]) ≫
-        toTop.map (yonedaEquiv.symm x) := by
-    simp [← Functor.map_comp]
-  have h₂ : toTop.{u}.map (yonedaEquiv.symm x ▷ Δ[1]) ≫
-      toTop.map (CartesianMonoidalCategory.snd X Δ[1]) =
-      toTop.map (CartesianMonoidalCategory.snd Δ[n] Δ[1]) := by
-    simp [← Functor.map_comp]
   refine Prod.ext ?_ ?_
-  · rw [toTopCylinderHomeo_fst, ← ConcreteCategory.comp_apply, h₁]
-    simp [SimplexCategory.toTopHomeo_symm_apply]
-  · rw [toTopCylinderHomeo_snd, ← ConcreteCategory.comp_apply, h₂]
-    simp
+  · simp [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_apply,
+      SimplexCategory.toTopHomeo_symm_apply]
+  · simp [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_apply]
 
 /-- The inverse of `SSet.toTopCylinderHomeo X` is `SSet.toTopCylinder X`. -/
 @[simp]
@@ -574,83 +559,16 @@ noncomputable def realizationProductKelleyComparison
     (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k) (K L : SSet.{u}) :
     k.obj (SSet.toTop.obj (Limits.prod K L)) ≅
       Limits.prod (k.obj (SSet.toTop.obj K)) (k.obj (SSet.toTop.obj L)) :=
-  have := SSet.isIso_prodComparison_toTop_comp_of_adjunction k hk K L
-  asIso (Limits.prodComparison (SSet.toTop.{u} ⋙ k) K L)
+  have := SSet.preservesLimit_pair_toTop_comp_of_adjunction k hk K L
+  Limits.PreservesLimitPair.iso (SSet.toTop.{u} ⋙ k) K L
 
 @[simp]
 theorem realizationProductKelleyComparison_hom
     (k : TopCat.{u} ⥤ CompactlyGenerated.{v, u})
     (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k) (K L : SSet.{u}) :
     (realizationProductKelleyComparison k hk K L).hom =
-      Limits.prodComparison (SSet.toTop.{u} ⋙ k) K L :=
-  (rfl)
-
-@[reassoc]
-theorem realizationProductKelleyComparison_hom_fst
-    (k : TopCat.{u} ⥤ CompactlyGenerated.{v, u})
-    (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k) (K L : SSet.{u}) :
-    (realizationProductKelleyComparison k hk K L).hom ≫ Limits.prod.fst =
-      k.map (SSet.toTop.map Limits.prod.fst) :=
-  Limits.prod.lift_fst _ _
-
-@[reassoc]
-theorem realizationProductKelleyComparison_hom_snd
-    (k : TopCat.{u} ⥤ CompactlyGenerated.{v, u})
-    (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k) (K L : SSet.{u}) :
-    (realizationProductKelleyComparison k hk K L).hom ≫ Limits.prod.snd =
-      k.map (SSet.toTop.map Limits.prod.snd) :=
-  Limits.prod.lift_snd _ _
-
-@[reassoc (attr := simp)]
-theorem realizationProductKelleyComparison_inv_map_fst
-    (k : TopCat.{u} ⥤ CompactlyGenerated.{v, u})
-    (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k) (K L : SSet.{u}) :
-    (realizationProductKelleyComparison k hk K L).inv ≫
-      k.map (SSet.toTop.map Limits.prod.fst) = Limits.prod.fst := by
-  have := SSet.isIso_prodComparison_toTop_comp_of_adjunction k hk K L
-  exact Limits.inv_prodComparison_map_fst (SSet.toTop.{u} ⋙ k)
-
-@[reassoc (attr := simp)]
-theorem realizationProductKelleyComparison_inv_map_snd
-    (k : TopCat.{u} ⥤ CompactlyGenerated.{v, u})
-    (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k) (K L : SSet.{u}) :
-    (realizationProductKelleyComparison k hk K L).inv ≫
-      k.map (SSet.toTop.map Limits.prod.snd) = Limits.prod.snd := by
-  have := SSet.isIso_prodComparison_toTop_comp_of_adjunction k hk K L
-  exact Limits.inv_prodComparison_map_snd (SSet.toTop.{u} ⋙ k)
-
-@[reassoc]
-theorem realizationProductKelleyComparison_natural
-    (k : TopCat.{u} ⥤ CompactlyGenerated.{v, u})
-    (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k)
-    {K K' L L' : SSet.{u}} (f : K ⟶ K') (g : L ⟶ L') :
-    k.map (SSet.toTop.map (Limits.prod.map f g)) ≫
-      (realizationProductKelleyComparison k hk K' L').hom =
-      (realizationProductKelleyComparison k hk K L).hom ≫
-        Limits.prod.map (k.map (SSet.toTop.map f)) (k.map (SSet.toTop.map g)) :=
-  Limits.prodComparison_natural (SSet.toTop.{u} ⋙ k) f g
-
-@[reassoc]
-theorem realizationProductKelleyComparison_inv_natural
-    (k : TopCat.{u} ⥤ CompactlyGenerated.{v, u})
-    (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k)
-    {K K' L L' : SSet.{u}} (f : K ⟶ K') (g : L ⟶ L') :
-    (realizationProductKelleyComparison k hk K L).inv ≫
-      k.map (SSet.toTop.map (Limits.prod.map f g)) =
-      Limits.prod.map (k.map (SSet.toTop.map f)) (k.map (SSet.toTop.map g)) ≫
-        (realizationProductKelleyComparison k hk K' L').inv := by
-  have := SSet.isIso_prodComparison_toTop_comp_of_adjunction k hk K L
-  have := SSet.isIso_prodComparison_toTop_comp_of_adjunction k hk K' L'
-  exact Limits.prodComparison_inv_natural (SSet.toTop.{u} ⋙ k) f g
-
-@[reassoc]
-theorem map_braiding_hom_comp_realizationProductKelleyComparison_hom
-    (k : TopCat.{u} ⥤ CompactlyGenerated.{v, u})
-    (hk : CompactlyGenerated.compactlyGeneratedToTop.{v, u} ⊣ k) (K L : SSet.{u}) :
-    k.map (SSet.toTop.map (Limits.prod.braiding K L).hom) ≫
-      (realizationProductKelleyComparison k hk L K).hom =
-      (realizationProductKelleyComparison k hk K L).hom ≫
-        (Limits.prod.braiding (k.obj |K|) (k.obj |L|)).hom :=
-  Limits.map_braiding_hom_comp_prodComparison (SSet.toTop.{u} ⋙ k)
+      Limits.prodComparison (SSet.toTop.{u} ⋙ k) K L := by
+  have := SSet.preservesLimit_pair_toTop_comp_of_adjunction k hk K L
+  exact Limits.PreservesLimitPair.iso_hom (SSet.toTop.{u} ⋙ k) K L
 
 end TauCeti

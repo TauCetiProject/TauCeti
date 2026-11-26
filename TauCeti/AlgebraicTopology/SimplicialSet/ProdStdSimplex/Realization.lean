@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.ProdStdSimplex
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Basic
 public import TauCeti.Geometry.Convex.ConvexSpace.Coupling
 
 import Mathlib.Order.Fin.Prod
@@ -441,20 +441,7 @@ theorem triangulate_naturality {m n p q : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (g : �
     toTop.map (stdSimplex.map f ⊗ₘ stdSimplex.map g) (triangulate.{u} m p (s, t)) =
       triangulate n q (s.map f, t.map g) := by
   apply (toTopHomeo n q).injective
-  rw [toTopHomeo_triangulate]
-  have h₁ : toTop.{u}.map (stdSimplex.map f ⊗ₘ stdSimplex.map g) ≫
-      toTop.map (CartesianMonoidalCategory.fst Δ[n] Δ[q]) =
-      toTop.map (CartesianMonoidalCategory.fst Δ[m] Δ[p]) ≫ toTop.map (stdSimplex.map f) := by
-    simp [← Functor.map_comp]
-  have h₂ : toTop.{u}.map (stdSimplex.map f ⊗ₘ stdSimplex.map g) ≫
-      toTop.map (CartesianMonoidalCategory.snd Δ[n] Δ[q]) =
-      toTop.map (CartesianMonoidalCategory.snd Δ[m] Δ[p]) ≫ toTop.map (stdSimplex.map g) := by
-    simp [← Functor.map_comp]
-  refine Prod.ext ?_ ?_
-  · rw [toTopHomeo_fst, ← ConcreteCategory.comp_apply, h₁]
-    simp [SimplexCategory.toTopHomeo_naturality_apply]
-  · rw [toTopHomeo_snd, ← ConcreteCategory.comp_apply, h₂]
-    simp [SimplexCategory.toTopHomeo_naturality_apply]
+  refine Prod.ext ?_ ?_ <;> simp [SimplexCategory.toTopHomeo_naturality_apply]
 
 /-- The Cartesian monoidal product comparison `|Δ[p] ⊗ Δ[q]| ⟶ |Δ[p]| ⊗ |Δ[q]|` is an isomorphism
 in `TopCat`. -/
