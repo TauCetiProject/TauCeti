@@ -63,30 +63,31 @@ variable {K L : Type*} [Field K] [ValuativeRel K]
 nonzero. -/
 theorem ne_zero_of_isRoot [Semiring L] [Nontrivial L] [Algebra K L]
     {φ : 𝒪ᵥ[K][X]} (hφ : φ.IsEisensteinAt 𝓂ᵥ[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K))).IsRoot α) :
+    (hroot : ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot α) :
     α ≠ 0 :=
-  hφ.ne_zero_of_isRoot_map ((algebraMap K L).injective.comp Subtype.val_injective) hroot
+  hφ.ne_zero_of_isRoot_map ((algebraMap K L).injective.comp Subtype.val_injective)
+    (by rwa [Polynomial.map_map] at hroot)
 
 /-- Any root `α : L` of an Eisenstein polynomial `φ : 𝒪ᵥ[K][X]` in a `K`-algebra is integral over
 `K`. -/
 theorem isIntegral_of_isRoot [Ring L] [Algebra K L]
     {φ : 𝒪ᵥ[K][X]} (hφ : φ.IsEisensteinAt 𝓂ᵥ[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K))).IsRoot α) :
+    (hroot : ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot α) :
     IsIntegral K α := by
   have hlc : IsUnit (φ.map (algebraMap 𝒪ᵥ[K] K)).leadingCoeff := by
     rw [leadingCoeff_map_of_injective Subtype.val_injective]
     exact hφ.isUnit_leadingCoeff.map (algebraMap 𝒪ᵥ[K] K)
   exact IsIntegral.of_isUnit_leadingCoeff hlc (by
-    rw [aeval_def, eval₂_eq_eval_map, Polynomial.map_map]
+    rw [aeval_def, eval₂_eq_eval_map]
     exact hroot.eq_zero)
 
 /-- Over `K`, an Eisenstein polynomial `φ : 𝒪ᵥ[K][X]` equals `C (φ.leadingCoeff : K) * minpoly K α`
 for any root `α` in a domain `K`-algebra `L`. -/
 theorem map_eq_C_leadingCoeff_mul_minpoly [CommRing L] [IsDomain L] [Algebra K L]
     {φ : 𝒪ᵥ[K][X]} (hφ : φ.IsEisensteinAt 𝓂ᵥ[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K))).IsRoot α) :
+    (hroot : ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot α) :
     φ.map (algebraMap 𝒪ᵥ[K] K) = C (φ.leadingCoeff : K) * minpoly K α := by
-  rw [← IsScalarTower.algebraMap_eq 𝒪ᵥ[K] K L] at hroot
+  rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq 𝒪ᵥ[K] K L] at hroot
   have hInt : IsIntegral 𝒪ᵥ[K] α :=
     hφ.isIntegral (by rw [aeval_def, eval₂_eq_eval_map]; exact hroot.eq_zero)
   have hscale := congrArg (Polynomial.map (algebraMap 𝒪ᵥ[K] K))
@@ -103,9 +104,9 @@ images `σ α` over all `K`-embeddings `σ : L →ₐ[K] M` (each occurring once
 theorem roots_map_eq_map_algHom {M : Type*} [Field L] [Algebra K L] [Algebra.IsSeparable K L]
     [Field M] [Algebra K M] [Fintype (L →ₐ[K] M)]
     {φ : 𝒪ᵥ[K][X]} (hφ : φ.IsEisensteinAt 𝓂ᵥ[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K))).IsRoot α)
+    (hroot : ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot α)
     (hgen : K⟮α⟯ = ⊤) :
-    (φ.map ((algebraMap K M).comp (algebraMap 𝒪ᵥ[K] K))).roots =
+    ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K M)).roots =
       (Finset.univ : Finset (L →ₐ[K] M)).val.map fun σ ↦ σ α := by
   have hlcM : algebraMap K M (φ.leadingCoeff : K) ≠ 0 :=
     (_root_.map_ne_zero (algebraMap K M)).mpr fun h ↦
@@ -116,7 +117,7 @@ theorem roots_map_eq_map_algHom {M : Type*} [Field L] [Algebra K L] [Algebra.IsS
   have hnodup : ((minpoly K pb.gen).aroots M).Nodup := by
     rw [aroots_def]
     exact nodup_roots (Polynomial.Separable.map (Algebra.IsSeparable.isSeparable K pb.gen))
-  rw [← Polynomial.map_map, hφ.map_eq_C_leadingCoeff_mul_minpoly hroot,
+  rw [hφ.map_eq_C_leadingCoeff_mul_minpoly hroot,
     Polynomial.map_mul, map_C, roots_C_mul _ hlcM, ← aroots_def, ← hpb_gen,
     pb.aroots_minpoly_eq_map_algHom hnodup]
 
@@ -129,7 +130,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
 
 /-- Any root `α : L` of an Eisenstein polynomial `φ : 𝒪ᵥ[K][X]` lies in `𝒪ᵥ[L]`. -/
 theorem mem_integer_of_isRoot {φ : 𝒪ᵥ[K][X]} (hφ : φ.IsEisensteinAt 𝓂ᵥ[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K))).IsRoot α) :
+    (hroot : ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot α) :
     α ∈ 𝒪ᵥ[L] :=
   mem_integer_of_isUnit_leadingCoeff_of_isRoot hφ.isUnit_leadingCoeff hroot
 

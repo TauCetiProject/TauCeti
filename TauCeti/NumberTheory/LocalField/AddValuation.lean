@@ -29,21 +29,16 @@ real-valued counterpart `TauCeti.realAddValuation` into `WithTop ℝ` lives in
 
 ## Main results
 
-* `TauCeti.ord_intValuation_eq_log_normalizedValuationWithZero`,
-  `TauCeti.mem_integer_iff_ord_intValuation_nonneg`,
-  `TauCeti.mem_integer_iff_normalizedIntAddValuation_nonneg`, and
-  `TauCeti.mem_maximalIdeal_iff_normalizedIntAddValuation_pos`: agreement with `WithZero.log` of
-  `normalizedValuationWithZero` and characterizations of `𝒪[M]` and `𝓂[M]`.
+* `TauCeti.ord_intValuation_eq_log_normalizedValuationWithZero` and
+  `TauCeti.mem_integer_iff_ord_intValuation_nonneg`: agreement with `WithZero.log` of
+  `normalizedValuationWithZero` and characterization of `𝒪[M]`.
 * `TauCeti.ord_intValuation_irreducible`, `TauCeti.ord_intValuation_eq_zero_of_isUnit_integer`,
   `TauCeti.addVal_eq_natCast_toNat_ord_intValuation`,
-  `TauCeti.ord_intValuation_of_addVal_eq_natCast`, and
-  `TauCeti.normalizedIntAddValuation_coe_integer`: values at uniformizers and units of `𝒪[M]`,
-  and comparison with `IsDiscreteValuationRing.addVal 𝒪[M]` via `ENat.map`.
-* `TauCeti.ord_intValuation_algebraMap` and `TauCeti.normalizedIntAddValuation_algebraMap`: scaling
-  by `ramificationIndex` in compatible extensions.
-* `TauCeti.normalizedIntAddValuation_of_ne_zero` and `TauCeti.eq_normalizedIntAddValuation`:
-  uniqueness of `normalizedIntAddValuation M` from agreement with `Valuation.ord (intValuation M)`
-  away from zero.
+  `TauCeti.ord_intValuation_of_addVal_eq_natCast`,
+  `TauCeti.normalizedIntAddValuation_of_ne_zero`, and
+  `TauCeti.normalizedIntAddValuation_coe_integer`: values at uniformizers, units, and nonzero
+  elements, and comparison with `IsDiscreteValuationRing.addVal 𝒪[M]` via `ENat.map`.
+* `TauCeti.ord_intValuation_algebraMap`: scaling by `ramificationIndex` in compatible extensions.
 
 ## References
 
@@ -53,7 +48,7 @@ real-valued counterpart `TauCeti.realAddValuation` into `WithTop ℝ` lives in
 public section
 noncomputable section
 
-open ValuativeRel IsNonarchimedeanLocalField IsLocalRing
+open ValuativeRel IsNonarchimedeanLocalField
 open scoped WithZero
 
 namespace TauCeti
@@ -162,45 +157,6 @@ theorem normalizedIntAddValuation_of_ne_zero {x : M} (hx : x ≠ 0) :
   rw [normalizedIntAddValuation_def, Valuation.addVal_eq_coe]
   exact Valuation.valuation_eq_exp_neg_ord (intValuation M) hv
 
-/-- An element of `M` lies in `𝒪[M]` if and only if its `normalizedIntAddValuation` is
-nonnegative. -/
-theorem mem_integer_iff_normalizedIntAddValuation_nonneg (x : M) :
-    x ∈ 𝒪[M] ↔ 0 ≤ normalizedIntAddValuation M x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · rw [mem_integer_iff_ord_intValuation_nonneg, normalizedIntAddValuation_of_ne_zero hx,
-      ← WithTop.coe_zero, WithTop.coe_le_coe]
-
-/-- A unit of `𝒪[M]` has `normalizedIntAddValuation` equal to `0`. -/
-theorem normalizedIntAddValuation_eq_zero_of_isUnit_integer {u : 𝒪[M]} (hu : IsUnit u) :
-    normalizedIntAddValuation M (u : M) = 0 := by
-  have hu0 : (u : M) ≠ 0 := fun h ↦ hu.ne_zero (Subtype.ext h)
-  rw [normalizedIntAddValuation_of_ne_zero hu0, ord_intValuation_eq_zero_of_isUnit_integer hu,
-    WithTop.coe_zero]
-
-/-- A unit in `𝒪[M]ˣ` coerced to `M` has `normalizedIntAddValuation` equal to `0`. -/
-@[simp]
-theorem normalizedIntAddValuation_coe_integer_units (u : 𝒪[M]ˣ) :
-    normalizedIntAddValuation M ((u : 𝒪[M]) : M) = 0 :=
-  normalizedIntAddValuation_eq_zero_of_isUnit_integer u.isUnit
-
-/-- A uniformizer of `M` has `normalizedIntAddValuation` equal to `1`. -/
-@[simp]
-theorem normalizedIntAddValuation_irreducible {π : 𝒪[M]} (hπ : Irreducible π) :
-    normalizedIntAddValuation M (π : M) = 1 := by
-  have hπ0 : (π : M) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
-  rw [normalizedIntAddValuation_of_ne_zero hπ0, ord_intValuation_irreducible hπ, WithTop.coe_one]
-
-/-- `normalizedIntAddValuation M` is the unique `AddValuation M (WithTop ℤ)` agreeing with
-`Valuation.ord (intValuation M)` on all nonzero elements of `M`. -/
-theorem eq_normalizedIntAddValuation {v : AddValuation M (WithTop ℤ)}
-    (hv : ∀ x : M, x ≠ 0 → v x = (Valuation.ord (intValuation M) x : WithTop ℤ)) :
-    v = normalizedIntAddValuation M := by
-  ext x
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · rw [hv x hx, normalizedIntAddValuation_of_ne_zero hx]
-
 /-- On `𝒪[M]`, `normalizedIntAddValuation M` agrees with `IsDiscreteValuationRing.addVal 𝒪[M]`. -/
 theorem normalizedIntAddValuation_coe_integer (a : 𝒪[M]) :
     normalizedIntAddValuation M (a : M) =
@@ -212,19 +168,6 @@ theorem normalizedIntAddValuation_coe_integer (a : 𝒪[M]) :
       (mem_integer_iff_ord_intValuation_nonneg (a : M)).mp a.property
     rw [normalizedIntAddValuation_of_ne_zero haM, addVal_eq_natCast_toNat_ord_intValuation ha,
       ENat.map_natCast, Int.toNat_of_nonneg hnn]
-
-/-- An element of `𝒪[M]` lies in `𝓂[M]` if and only if its `normalizedIntAddValuation` is strictly
-positive. -/
-theorem mem_maximalIdeal_iff_normalizedIntAddValuation_pos (x : 𝒪[M]) :
-    x ∈ 𝓂[M] ↔ 0 < normalizedIntAddValuation M (x : M) := by
-  have hunit : IsUnit x ↔ IsDiscreteValuationRing.addVal 𝒪[M] x = 0 := by
-    rw [isUnit_iff_dvd_one, ← IsDiscreteValuationRing.addVal_le_iff_dvd,
-      IsDiscreteValuationRing.addVal_one, nonpos_iff_eq_zero]
-  have hmono : StrictMono (ENat.map ((↑) : ℕ → ℤ)) :=
-    ENat.strictMono_map_iff.mpr fun _ _ h ↦ Int.ofNat_lt.mpr h
-  have h0 : (0 : WithTop ℤ) = ENat.map ((↑) : ℕ → ℤ) 0 := by simp
-  rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, hunit, ← ne_eq, ← pos_iff_ne_zero,
-    normalizedIntAddValuation_coe_integer, h0, hmono.lt_iff_lt]
 
 end SingleField
 
@@ -243,17 +186,6 @@ theorem ord_intValuation_algebraMap (x : K) :
   rw [ord_intValuation_eq_log_normalizedValuationWithZero,
     ord_intValuation_eq_log_normalizedValuationWithZero,
     normalizedValuationWithZero_algebraMap (K := K) (L := L), WithZero.log_pow, nsmul_eq_mul]
-
-/-- In a compatible extension `L/K`, `normalizedIntAddValuation L` on `K` multiplies
-`normalizedIntAddValuation K` by `ramificationIndex K L`. -/
-theorem normalizedIntAddValuation_algebraMap (x : K) :
-    normalizedIntAddValuation L (algebraMap K L x) =
-      (normalizedIntAddValuation K x).map ((ramificationIndex K L : ℤ) * ·) := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · have hxL : algebraMap K L x ≠ 0 := (map_ne_zero (algebraMap K L)).mpr hx
-    rw [normalizedIntAddValuation_of_ne_zero hxL, normalizedIntAddValuation_of_ne_zero hx,
-      WithTop.map_coe, ord_intValuation_algebraMap]
 
 end Extension
 

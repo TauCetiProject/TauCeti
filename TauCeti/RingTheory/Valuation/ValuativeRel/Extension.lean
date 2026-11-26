@@ -184,12 +184,12 @@ open Polynomial in
 -/
 theorem mem_integer_of_isUnit_leadingCoeff_of_isRoot {φ : 𝒪ᵥ[K][X]}
     (hlc : IsUnit φ.leadingCoeff) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K))).IsRoot α) :
+    (hroot : ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot α) :
     α ∈ 𝒪ᵥ[L] := by
   have hInt : IsIntegral 𝒪ᵥ[K] α :=
     IsIntegral.of_isUnit_leadingCoeff hlc (by
-      simpa [aeval_def, eval₂_eq_eval_map, IsScalarTower.algebraMap_eq 𝒪ᵥ[K] K L]
-        using hroot.eq_zero)
+      rw [aeval_def, eval₂_eq_eval_map, IsScalarTower.algebraMap_eq 𝒪ᵥ[K] K L, ← Polynomial.map_map]
+      exact hroot.eq_zero)
   exact (Valuation.mem_integer_iff (valuation L) α).mpr
     ((Valuation.integer.integers (valuation L)).isIntegral_iff_v_le_one.mp hInt.tower_top)
 
@@ -198,10 +198,10 @@ open Polynomial in
 `(ξ : L)` is a root of `φ` mapped to `L[X]`. -/
 theorem isRoot_map_integerRing_iff {φ : 𝒪ᵥ[K][X]} {ξ : 𝒪ᵥ[L]} :
     (φ.map (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L])).IsRoot ξ ↔
-      (φ.map ((algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K))).IsRoot (ξ : L) := by
+      ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot (ξ : L) := by
   have hξ : (ξ : L) = algebraMap 𝒪ᵥ[L] L ξ :=
     (Algebra.algebraMap_ofSubsemiring_apply 𝒪ᵥ[L] ξ).symm
-  rw [IsRoot.def, IsRoot.def, hξ, ← algebraMap_comp_algebraMap_integerRing,
+  rw [IsRoot.def, IsRoot.def, Polynomial.map_map, hξ, ← algebraMap_comp_algebraMap_integerRing,
     ← Polynomial.map_map, eval_map_apply,
     map_eq_zero_iff (algebraMap 𝒪ᵥ[L] L) (FaithfulSMul.algebraMap_injective 𝒪ᵥ[L] L)]
 
