@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace
 public import TauCeti.Analysis.InnerProductSpace.Variational.EnergySpace
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.Analysis.Variational.QuadraticEnergy
+import TauCeti.Analysis.RCLike.SesquilinearForm
 
 /-!
 # The kernel-orthogonal Poincaré connector of a compact form pair
@@ -93,9 +93,10 @@ theorem energy_eq_zero_of_mem_formKernel (hn : n ∈ P.formKernel) : P.energy n 
 /-- For a nonnegative energy the form kernel is the zero set of the energy. -/
 theorem mem_formKernel_iff_energy_eq_zero (hq : ∀ w, 0 ≤ P.energy w) :
     u ∈ P.formKernel ↔ P.energy u = 0 := by
-  rw [formKernel, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, energy_def,
-    ContinuousLinearMap.re_apply_self_eq_zero_iff P.hermitian
-      (fun w ↦ by simpa only [energy_def] using hq w)]
+  rw [mem_formKernel, energy_def]
+  simpa using P.form.toLinearMap₁₂.forall_apply_eq_zero_iff_re_apply_self_eq_zero
+    (fun x y ↦ by simpa using P.hermitian x y)
+    (fun w ↦ by simpa [energy_def] using hq w)
 
 /-- The form kernel is the variational eigenspace at `λ = 0`. -/
 @[simp]

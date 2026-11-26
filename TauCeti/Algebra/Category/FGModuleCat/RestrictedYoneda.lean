@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 
 /-!
@@ -14,10 +14,12 @@ public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 For a module `K` over a ring `R`, the functor `Hom(-, K)` restricted to the finitely generated
 modules, `(-, K)|_fg`, is a functor `FGModuleCatᵒᵖ ⥤ AddCommGrpCat`. When `K` is itself finitely
 generated it is representable, by `K` as an object of `FGModuleCat R`. Conversely, if
-`(-, K)|_fg` is finitely generated, that is, a quotient of a representable functor `(-, Y)` with `Y`
-finitely generated, then every morphism from a finitely generated module to `K` factors through a
-single morphism `u : Y ⟶ K`. Applied to the inclusions of the cyclic submodules `R ∙ x`, this puts
-every `x : K` in the range of `u`, so `K` is finitely generated.
+`(-, K)|_fg` is finitely generated, that is, a quotient of a finite sum of representable functors,
+then, as finitely generated modules have finite biproducts, it is a quotient of a single
+representable functor `(-, Y)` with `Y` finitely generated, and every morphism from a finitely
+generated module to `K` factors through a single morphism `u : Y ⟶ K`. Applied to the inclusions
+of the cyclic submodules `R ∙ x`, this puts every `x : K` in the range of `u`, so `K` is finitely
+generated.
 
 So over a field `k`, the restriction of `Hom(-, K)` to finite-dimensional spaces is not a finitely
 generated functor on finite-dimensional spaces for an infinite-dimensional space `K`. Every
