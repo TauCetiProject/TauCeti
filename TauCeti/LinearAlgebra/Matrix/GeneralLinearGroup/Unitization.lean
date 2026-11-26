@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Algebra.Quasiregular
 public import TauCeti.Algebra.Algebra.Unitization.Matrix
 public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+import TauCeti.Algebra.Star.Unitary
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Invertible matrices over a forced unitization
@@ -27,7 +29,9 @@ quasi-units of `Mₙ(A)` are invertible matrices over `A`, and the subgroup is i
 `GLₙ(A)` through the map `Unitization R A → A`, `(r, a) ↦ r • 1 + a`.
 
 Writing `s(g)` for the scalar part of `g ∈ GLₙ(A⁺)` included back into `GLₙ(A⁺)`, the map
-`g ↦ g · s(g)⁻¹` is a retraction of `GLₙ(A⁺)` onto `unitizationGLFstOne R A n`.
+`g ↦ g · s(g)⁻¹` is a retraction of `GLₙ(A⁺)` onto `unitizationGLFstOne R A n`. When `A` and `R`
+carry compatible stars, the scalar part of a unitary matrix is unitary, so the retraction
+preserves unitary matrices.
 
 This is the matrix form of Mathlib's `Unitization.unitsFstOne_mulEquiv_quasiregular`, which
 treats the units of `A⁺` itself. Since matrices with identity scalar part represent every class
@@ -53,6 +57,9 @@ of the relative `K₁` of `A`, it compares relative `K₁` over different scalar
 * `TauCeti.unitizationGLRetract_mem_unitizationGLFstOne`, `TauCeti.unitizationGLRetract_of_mem`:
   the retraction lands in `unitizationGLFstOne R A n` and fixes it.
 * `TauCeti.stabilizeGL_mem_unitizationGLFstOne`: stabilization preserves the identity scalar part.
+* `TauCeti.coe_unitizationGLFst_mem_unitary`, `TauCeti.coe_unitizationGLInl_mem_unitary`,
+  `TauCeti.coe_unitizationGLRetract_mem_unitary`: the scalar part, the inclusion of scalar matrices
+  and the retraction preserve unitary matrices.
 * `TauCeti.units_map_unitizationGLFstOneEquiv_symm`: the inverse isomorphisms for two scalar rings
   `R → S` are compatible with `Unitization R A → Unitization S A`.
 
@@ -280,6 +287,41 @@ theorem stabilizeGL_mem_unitizationGLFstOne {m n : ℕ} (h : m ≤ n)
     mem_unitizationGLFstOne_iff_unitizationGLFst.1 hu, map_one]
 
 end Ring
+
+section Star
+
+variable {R A : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A] {n : Type*}
+  [Fintype n] [DecidableEq n]
+
+/-- The scalar part of a unitary matrix over `A⁺` is a unitary scalar matrix. -/
+theorem coe_unitizationGLFst_mem_unitary {g : GL n (Unitization R A)}
+    (hg : (g : Matrix n n (Unitization R A)) ∈ unitary _) :
+    ((unitizationGLFst R A n g : GL n R) : Matrix n n R) ∈ unitary (Matrix n n R) := by
+  have h : (fun x : Unitization R A ↦ x.fst) = ⇑(fstHom R A : Unitization R A →+* R) :=
+    funext fun x ↦ (fstHom_apply R A x).symm
+  rw [coe_unitizationGLFst, h]
+  exact Matrix.map_mem_unitary _ fst_star hg
+
+/-- A unitary scalar matrix stays unitary over `A⁺`. -/
+theorem coe_unitizationGLInl_mem_unitary {g : GL n R}
+    (hg : (g : Matrix n n R) ∈ unitary (Matrix n n R)) :
+    ((unitizationGLInl R A n g : GL n (Unitization R A)) : Matrix n n (Unitization R A)) ∈
+      unitary _ := by
+  rw [coe_unitizationGLInl, ← funext (inlRingHom_apply R A)]
+  exact Matrix.map_mem_unitary _ (fun x ↦ inl_star x) hg
+
+/-- The retraction `g ↦ g · s(g)⁻¹` onto the matrices with identity scalar part preserves unitary
+matrices. -/
+theorem coe_unitizationGLRetract_mem_unitary {g : GL n (Unitization R A)}
+    (hg : (g : Matrix n n (Unitization R A)) ∈ unitary _) :
+    ((unitizationGLRetract R A n g : GL n (Unitization R A)) : Matrix n n (Unitization R A)) ∈
+      unitary _ := by
+  have h := coe_unitizationGLInl_mem_unitary (A := A) (coe_unitizationGLFst_mem_unitary hg)
+  rw [unitizationGLRetract_def, Units.val_mul, ← Units.mem_unitary_iff_star_eq_inv.1 h]
+  exact mul_mem hg (Unitary.star_mem h)
+
+end Star
 
 section ChangeOfScalars
 
