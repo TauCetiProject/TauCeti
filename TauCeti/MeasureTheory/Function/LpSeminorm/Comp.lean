@@ -25,7 +25,9 @@ the preimage of an arbitrary set (`MeasureTheory.MeasurePreserving.eLpNorm_comp_
 
 For `p = ∞` no bound on the pushforward is needed: precomposition with a quasi-measure-preserving
 map, such as the projection `Prod.fst` from a product of σ-finite measures, preserves `L^∞`
-(`MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`).
+(`MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`). Conversely, pushing forward along
+`f ∈ Lᵖ(μ)` makes the identity lie in `Lᵖ(μ.map f)` on any Borel pseudometrizable codomain, with
+no separability assumption (`MeasureTheory.MemLp.id_map`).
 
 ## Main declarations
 
@@ -36,6 +38,8 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
   on `s`.
 * `MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`: precomposition with a
   quasi-measure-preserving map preserves `L^∞`.
+* `MeasureTheory.MemLp.id_map`: if `f ∈ Lᵖ(μ)` takes values in a Borel pseudometrizable space,
+  then `id ∈ Lᵖ(μ.map f)`.
 * `ContinuousLinearMap.eLpNorm_comp_le`: postcomposition with a continuous semilinear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
 * `Isometry.eLpNorm_comp_of_map_zero`, `LinearIsometry.eLpNorm_comp`,
@@ -93,6 +97,14 @@ theorem MemLp.comp_quasiMeasurePreserving_top (hg : MemLp g ∞ ν)
   rw [memLp_iff, eLpNorm_exponent_top hgm] at hg
   rw [memLp_iff, eLpNorm_exponent_top (hgm.comp_quasiMeasurePreserving hf)]
   exact (eLpNormEssSup_le_of_ae_eNorm_bound (hf.ae ae_le_eLpNormEssSup)).trans_lt hg
+
+/-- **Pushforward into `Lᵖ` of the law.** If `f` lies in `Lᵖ(μ)` with values in a Borel
+pseudometrizable space, then the identity lies in `Lᵖ(μ.map f)`. No separability assumption on the
+codomain is needed. -/
+theorem MemLp.id_map [TopologicalSpace.PseudoMetrizableSpace ε] [MeasurableSpace ε] [BorelSpace ε]
+    {f : α → ε} {p : ℝ≥0∞} (hf : MemLp f p μ) :
+    MemLp id p (μ.map f) :=
+  (memLp_map_measure_iff hf.aestronglyMeasurable.aestronglyMeasurable_id_map hf.aemeasurable).mpr hf
 
 /-- **`eLpNorm` bound for postcomposition.** A continuous semilinear map of the codomain scales
 `eLpNorm` by at most its operator norm. No measurability assumption is needed: a function that
