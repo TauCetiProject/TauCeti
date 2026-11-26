@@ -444,19 +444,11 @@ theorem
   have hΩS : Ω ⊆ S := hΩD.trans hDS
   -- The Floer energy over `Ω` is at most the energy over `S`, which exceeds the topological energy
   -- by at most `∑ q, (B_q + Δ_q)`, whatever the neck positions.
-  have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p k)) (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦
-        pairOfPantsContinuationPerturbation G H (L (p k)) (equivRealProdCLM.symm z) x Complex.I)
-      (u k) z ≤ A + ∑ q, (B q + Δ q) := by
-    have habs := hω.abs_integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_sub_le hG hH
-      (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB hΔ
-      ((hu k).of_le (by norm_num)) (hx k) (hint k) (harea k)
-    refine (hω.setIntegral_floerEnergyDensity_mono_set hΩS
-      isOpen_thricePuncturedSphereReal.measurableSet (hint k) (fun z hz ↦ hJt _ (hpC k) z hz _)
-      (hfl k)).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, htop k]
   exact hconv hΩ hΩD hpC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
-    (fun k ↦ (hint k).mono_set hΩS) hE
+    (fun k ↦ (hint k).mono_set hΩS) fun k ↦
+      hω.setIntegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le hG hH
+        (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB hΔ
+        ((hu k).of_le (by norm_num)) (hx k) (hint k) (harea k) (fun z hz ↦ hJt _ (hpC k) z hz _)
+        (hfl k) (htop k) hΩS
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
