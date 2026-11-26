@@ -61,18 +61,9 @@ variable [T1Space Y] {f : X → Y} {I : X → ℝ≥0∞}
 /-- A good rate function attains its infimum on every fibre where the infimum is finite. -/
 theorem exists_eq_contractedRate (hI : IsGoodRateFunction I) (hf : Continuous f) {y : Y}
     (hy : contractedRate f I y ≠ ∞) : ∃ x, f x = y ∧ I x = contractedRate f I y := by
-  obtain ⟨x₁, hx₁, hlt⟩ : ∃ x₁ ∈ f ⁻¹' {y}, I x₁ < ∞ := by
-    simpa only [contractedRate, iInf_lt_iff, exists_prop] using lt_top_iff_ne_top.mpr hy
-  have hK : IsCompact ({x | I x ≤ I x₁} ∩ f ⁻¹' {y}) :=
-    (hI.isCompact_sublevel _ hlt.ne).inter_right (isClosed_singleton.preimage hf)
-  have hne : ({x | I x ≤ I x₁} ∩ f ⁻¹' {y}).Nonempty :=
-    ⟨x₁, by simp, hx₁⟩
-  obtain ⟨x₀, ⟨hx₀I, hx₀f⟩, hmin⟩ := (hI.lowerSemicontinuous.lowerSemicontinuousOn
-    ({x | I x ≤ I x₁} ∩ f ⁻¹' {y})).exists_isMinOn hne hK
-  refine ⟨x₀, hx₀f, le_antisymm (le_iInf₂ fun x hx => ?_) (biInf_le _ hx₀f)⟩
-  by_cases h : I x ≤ I x₁
-  · exact hmin ⟨h, hx⟩
-  · exact hx₀I.trans (not_le.mp h).le
+  rw [contractedRate_apply] at hy ⊢
+  obtain ⟨x, hx, hxI⟩ := hI.exists_eq_biInf (isClosed_singleton.preimage hf) hy
+  exact ⟨x, Set.mem_singleton_iff.1 (Set.mem_preimage.1 hx), hxI⟩
 
 /-- A finite sublevel set of the contracted rate is the image of the corresponding sublevel set
 of the original rate. -/

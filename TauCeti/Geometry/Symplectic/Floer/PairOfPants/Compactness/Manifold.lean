@@ -115,13 +115,11 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
     ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦
         pairOfPantsPerturbation H (equivRealProdCLM.symm p.1) (φ.symm p.2) v)
       (thricePuncturedSphereReal ×ˢ φ.target) := by
-  refine (φ.contDiffOn_comp_symm_of_contMDiffOn
-    (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x)
-    isOpen_thricePuncturedSphereReal ?_ hnm).clm_apply contDiffOn_const
+  refine φ.contDiffOn_comp_symm_of_contMDiffOn
+    (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v)
+    isOpen_thricePuncturedSphereReal ?_ hnm
   rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd).contMDiffAt).contMDiffWithinAt
+  exact (contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contMDiffWithinAt
 
 /-- **The end Hamiltonian read in a chart is smooth.** For a period-one Hamiltonian `H_q` which is
 `C^n` on `ℝ × M` and a `C^n` partial diffeomorphism `φ` from `M` to a normed space `V`, the

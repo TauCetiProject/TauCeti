@@ -423,6 +423,11 @@ theorem LowerSkeletonRegular.isPairColorRegular [Fintype κ] {F : ℕ → ℝ}
     S.IsPairColorRegular ε :=
   IsPairColorRegular.mono h hε
 
+/-- Lower-skeleton regularity weakens as the schedule grows. -/
+theorem LowerSkeletonRegular.mono [Fintype κ] {F F' : ℕ → ℝ} (h : S.LowerSkeletonRegular F)
+    (hF : F ≤ F') : S.LowerSkeletonRegular F' :=
+  h.isPairColorRegular (hF _)
+
 variable (S) in
 /-- Rename the pair palette of a lower skeleton along an equivalence, keeping its vertex cells. -/
 def relabel {κ' : Type*} (e : κ ≃ κ') : PairSkeleton3 κ' V :=

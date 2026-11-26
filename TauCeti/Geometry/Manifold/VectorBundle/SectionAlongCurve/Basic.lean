@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Basic
-public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Coordinates of vector-bundle sections along curves
@@ -20,9 +18,6 @@ total-space section to `DifferentiableWithinAt` and `ContDiffWithinAt` regularit
 
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for
   `sectionCoord` within a parameter set.
-* `TauCeti.Manifold.eq_sum_repr_sectionCoord_smul_localFrame`,
-  `TauCeti.Manifold.eventually_eq_sum_repr_sectionCoord_smul_localFrame`: pointwise and
-  filter-eventually expansion of a section along a curve in a local frame using `sectionCoord`.
 * `TauCeti.Manifold.differentiableWithinAt_repr_sectionCoord`,
   `TauCeti.Manifold.differentiableAt_repr_sectionCoord`: differentiability of basis coordinates of
   `sectionCoord`.
@@ -52,29 +47,6 @@ variable
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
 variable (γ : 𝕜 → M) (W : ∀ t, V (γ t))
-
-/-! ### Local-frame expansion -/
-
-/-- At a parameter where `γ t` lies in the trivialization base set at `x`, `W t` expands in the
-local frame of a finite model-fibre basis `b` with coefficients read from `sectionCoord γ W x t`. -/
-theorem eq_sum_repr_sectionCoord_smul_localFrame {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι 𝕜 F) {x : M} {t : 𝕜}
-    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
-    W t = ∑ i, b.repr (sectionCoord 𝕜 (F := F) γ W x t) i •
-      (trivializationAt F V x).localFrame b i (γ t) := by
-  simpa only [sectionCoord_apply] using
-    b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := 𝕜) hx (W t)
-
-/-- Along a filter `l` where `γ` tends to a point `y` in the trivialization base set at `x`, `W`
-eventually expands in the local frame of a finite model-fibre basis `b` with coefficients read from
-`sectionCoord γ W x`. -/
-theorem eventually_eq_sum_repr_sectionCoord_smul_localFrame {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι 𝕜 F) {x y : M} {l : Filter 𝕜}
-    (hγ : Tendsto γ l (𝓝 y)) (hy : y ∈ (trivializationAt F V x).baseSet) :
-    ∀ᶠ r in l, W r = ∑ i, b.repr (sectionCoord 𝕜 (F := F) γ W x r) i •
-      (trivializationAt F V x).localFrame b i (γ r) :=
-  (hγ.eventually ((trivializationAt F V x).open_baseSet.mem_nhds hy)).mono fun _ hr ↦
-    eq_sum_repr_sectionCoord_smul_localFrame γ W b hr
 
 /-! ### Differentiability of the coordinate reading -/
 

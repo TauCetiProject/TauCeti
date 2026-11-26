@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.NumberTheory.LocalField.Herbrand.FiniteGalois
-public import TauCeti.NumberTheory.LocalField.WildInertia
+public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
 
 import TauCeti.FieldTheory.Galois.FiberProduct
 import TauCeti.NumberTheory.LocalField.Herbrand.Unramified

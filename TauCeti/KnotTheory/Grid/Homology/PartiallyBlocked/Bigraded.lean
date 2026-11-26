@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.Homology
-public import TauCeti.KnotTheory.Grid.Homology.FullyBlockedBigraded
+public import TauCeti.KnotTheory.Grid.Homology.FullyBlocked.Bigraded
 public import TauCeti.KnotTheory.Grid.Homology.HatBigrading
 public import TauCeti.KnotTheory.Grid.Homology.PartiallyBlocked.Basic
 import Mathlib.RingTheory.MvPolynomial.Ideal
@@ -101,7 +101,7 @@ noncomputable def bigradedPartiallyBlockedHomologyGrading (S : Finset (Fin n)) :
     InternalGrading F (G.val.partiallyBlockedHomology S) (ℤ × ℤ) :=
   (G.bigradedChainMinusGrading F).quotientHomology
     G.isHomogeneous_restrictScalars_unblockedDifferential
-    G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
     (G.val.blockedChains_le_comap_unblockedDifferential S)
     (G.isHomogeneous_restrictScalars_blockedChains S)
 
@@ -135,7 +135,7 @@ theorem rank_bigradedPartiallyBlockedHomologyGrading_piece_insert {S : Finset (F
   have e := (G.bigradedChainMinusGrading F).quotientHomologyProdPieceEquiv
     (h := H.restrictScalars F) (v := DistribSMul.toLinearMap F (GridChainMinus F n) (X t))
     (s := -(1, 1)) G.isHomogeneous_restrictScalars_unblockedDifferential
-    G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
     (G.val.blockedChains_le_comap_unblockedDifferential S)
     (G.isHomogeneous_restrictScalars_blockedChains S)
     (G.val.blockedChains_le_comap_unblockedDifferential (insert t S))
@@ -144,7 +144,6 @@ theorem rank_bigradedPartiallyBlockedHomologyGrading_piece_insert {S : Finset (F
     (fun m => GridDiagram.X_smul_mem_blockedChains (Finset.mem_insert_self t S) m)
     (fun _ hx => GridDiagram.exists_sub_X_smul_mem_blockedChains hx)
     (fun _ hm => GridDiagram.map_mem_blockedChains _ hm)
-    (fun m => (G.val.unblockedDifferential F).map_smul _ m)
     (fun _ hm => GridDiagram.mem_blockedChains_of_X_smul_mem ht hm)
     (fun m => by
       have hm : G.val.unblockedDifferential F (H m) + H (G.val.unblockedDifferential F m) =
