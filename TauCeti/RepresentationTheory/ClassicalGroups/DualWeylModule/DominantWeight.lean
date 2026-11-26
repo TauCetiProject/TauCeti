@@ -28,8 +28,8 @@ twisted by `det ^ λ_{N-1}`.
 
 * `TauCeti.mem_dualWeylLattice`: membership unfolded, homogeneity of degree `λ_s - λ_{N-1}` in the
   column `s` and invariance under the column operations.
-* `TauCeti.dualWeylLattice.finrank_eq_weylDimension`: over a nontrivial commutative ring (more
-  generally one with the strong rank condition) the rank of `∇_R(λ)` is the Weyl dimension of `λ`.
+* `TauCeti.dualWeylLattice.finrank_eq_weylDimension`: over a nontrivial commutative ring (that is,
+  one with the strong rank condition) the rank of `∇_R(λ)` is the Weyl dimension of `λ`.
 
 ## References
 

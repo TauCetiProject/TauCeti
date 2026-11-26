@@ -20,10 +20,11 @@ row and `s` the column. For a vector `d : Fin n → ℕ` of column degrees, the 
 `TauCeti.dualWeylModule R N d` is the submodule of `R[x]` of the polynomials that are homogeneous of
 degree `d s` in the column `s` for every `s`, and invariant under every column operation
 `x ↦ x·(1 + T·e_{st})` with `s < t` (the column `t` replaced by itself plus `T` times the column
-`s`), as an identity in `R[x][T]`. For the row lengths of a partition `ν` it is the polynomial
-model of the dual Weyl module `∇_R(ν)` of `GL_N` of highest weight `ν`, the group acting on the
-rows. Over a field of characteristic zero `∇(ν)` is the irreducible polynomial representation of
-highest weight `ν`; in positive characteristic it need not be irreducible.
+`s`), as an identity in `R[x][T]`. For the row lengths `d s = ν_s` of a partition `ν` with at most
+`N` and at most `n` rows it is the polynomial model of the dual Weyl module `∇_R(ν)` of `GL_N` of
+highest weight `ν`, the group acting on the rows. Over a field of characteristic zero `∇(ν)` is
+the irreducible polynomial representation of highest weight `ν`; in positive characteristic it
+need not be irreducible.
 
 The operations are evaluated through `TauCeti.DualWeylModule.aeval_ite_mul_eq_pow_mul_aeval`
 and `TauCeti.DualWeylModule.aeval_add_ite_mul_eq_aeval`: in every commutative `R`-algebra `S` and
