@@ -75,7 +75,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   (`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`), and likewise off a closed set
   (`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed`).
 * `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
-  `W^{1,p}(Ω)` with weak gradient `0`.
+  `W^{1,p}(Ω)` with weak gradient `0`, and nonzero value on a nonempty domain
+  (`TauCeti.W1p.value_const_ne_zero`).
 * `TauCeti.W1p.integralL`: the integral `∫_Ω u` as a continuous linear functional on
   `W^{1,p}(Ω)`, for `Ω` of finite measure.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn`: an `Lᵖ` function with an `Lᵖ`
@@ -1040,6 +1041,20 @@ theorem W1p.value_const_ae (c : ℝ) :
     W1p.value (W1p.const c : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun _ => c := by
   rw [W1p.value_const]
   exact Lp.coeFn_const p _ c
+
+/-- On a nonempty open set, the value of the constant Sobolev function `c ≠ 0` is nonzero in
+`Lᵖ(Ω)`. -/
+theorem W1p.value_const_ne_zero (hΩ : (Omega : Set E).Nonempty) {c : ℝ} (hc : c ≠ 0) :
+    W1p.value (W1p.const c : W1p mu Omega p) ≠ 0 := by
+  intro h0
+  have : (ae (mu.restrict (Omega : Set E))).NeBot :=
+    ae_restrict_neBot.2 (Omega.isOpen.measure_ne_zero mu hΩ)
+  have h : ∀ᵐ _ ∂mu.restrict (Omega : Set E), c = 0 := by
+    filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c,
+      Lp.coeFn_zero ℝ p (mu.restrict (Omega : Set E))] with _ hx hx0
+    rw [← hx, h0, hx0, Pi.zero_apply]
+  obtain ⟨-, h⟩ := h.exists
+  exact hc h
 
 /-- The weak gradient of a constant Sobolev function is `0`. -/
 @[simp]
