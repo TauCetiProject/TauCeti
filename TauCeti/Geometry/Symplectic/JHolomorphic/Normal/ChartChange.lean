@@ -27,21 +27,22 @@ law of the coefficients of `D`. With `φ'` the complex derivative of `φ` and
 
 `g (ν' w' + μ' conj w') - ∂bar g w' = conj φ' (ν(φ z') g w' + μ(φ z') conj (g w'))`
 
-(`TauCeti.isJHolomorphicAt_prodMk_mul_normalModelStructure_iff`), and it is holomorphic
-everywhere exactly when
+(`TauCeti.isJHolomorphicAt_prodMk_mul_normalModelStructure_iff`), and it is holomorphic on
+`s × ℂ`, for an open chart overlap `s` on which `φ` and `g` are differentiable, exactly when
 
 `g ν' - ∂bar g = conj φ' (ν ∘ φ) g`  and  `g μ' = conj φ' (μ ∘ φ) conj g`
 
-at every point (`TauCeti.isJHolomorphic_prodMk_mul_normalModelStructure_iff`). These are the
+at every point of `s`
+(`TauCeti.isJHolomorphicOn_prodMk_mul_normalModelStructure_iff`). These are the
 laws by which the coefficients of `D` change when a section `s` of the first chart is written as
 `s ∘ φ = g s'` in the second. Two special cases:
 
 * a **change of normal frame** `w ↦ g(z) w` carries `J_N(ν, μ)` to `J_N(ν', μ')` with
   `ν' = ν - g⁻¹ ∂bar g` and `μ' = (g / conj g) μ`
-  (`TauCeti.isJHolomorphic_prodMk_fst_mul_normalModelStructure`);
+  (`TauCeti.isJHolomorphicOn_prodMk_fst_mul_normalModelStructure`);
 * a **holomorphic change of base coordinate** `z = φ(z')` carries `J_N(ν', μ')` to `J_N(ν, μ)`
   with `ν' = conj φ' (ν ∘ φ)` and `μ' = conj φ' (μ ∘ φ)`, the law of the `(0,1)`-form
-  coefficients of `D` (`TauCeti.isJHolomorphic_prodMap_normalModelStructure`).
+  coefficients of `D` (`TauCeti.isJHolomorphicOn_prodMap_normalModelStructure`).
 
 The primitive `λ_A(z, w)(ξ, η) = (ω(w, η) + |w|² A(z) ξ) / 2` of the taming form of the normal
 model (`TauCeti.normalModelPrimitive`) transforms as a connection form. If `g` has unit modulus at
@@ -65,7 +66,7 @@ namespace TauCeti
 
 open Complex ComplexConjugate
 
-variable {ν μ ν' μ' φ g : ℂ → ℂ} {φ' z : ℂ}
+variable {ν μ ν' μ' φ g : ℂ → ℂ} {φ' z : ℂ} {s : Set ℂ}
 
 /-- The chart change `(z, w) ↦ (φ z, g z * w)` has the real derivative
 `(ξ, η) ↦ (φ' ξ, dg(ξ) w + g z η)` at `(z, w)`. -/
@@ -137,77 +138,85 @@ theorem isJHolomorphicAt_prodMk_mul_normalModelStructure_iff (hφ : HasDerivAt �
     refine isJHolomorphicAt_of_hasFDerivAt hL (hlin.2 fun ξ ↦ ?_)
     rw [h, sub_self, mul_zero]
 
-/-- **The chart-change criterion.** Let `φ` be holomorphic and `g` real differentiable. The chart
-change `(z, w) ↦ (φ z, g z * w)` is holomorphic from the normal model `J_N(ν', μ')` to
-`J_N(ν, μ)` exactly when, at every point `z`, with `∂bar g = conjWirtingerDeriv g z 1`,
+/-- **The chart-change criterion.** Let `s` be open, `φ` holomorphic on `s` and `g` real
+differentiable on `s`. The chart change `(z, w) ↦ (φ z, g z * w)` is holomorphic on `s × ℂ` from
+the normal model `J_N(ν', μ')` to `J_N(ν, μ)` exactly when, at every point `z ∈ s`, with
+`∂bar g = conjWirtingerDeriv g z 1`,
 
 `g ν' - ∂bar g = conj φ' (ν ∘ φ) g`  and  `g μ' = conj φ' (μ ∘ φ) conj g`.
 
 These are the laws by which the coefficients of `∂bar s + ν s + μ conj s` change when the section
 `s` is written in the frame and coordinate of the other chart. -/
-theorem isJHolomorphic_prodMk_mul_normalModelStructure_iff (hφ : Differentiable ℂ φ)
-    (hg : Differentiable ℝ g) :
-    IsJHolomorphic (normalModelStructure ν' μ') (normalModelStructure ν μ)
-        (fun p ↦ (φ p.1, g p.1 * p.2)) ↔
-      ∀ z, g z * ν' z - conjWirtingerDeriv g z 1 = conj (deriv φ z) * ν (φ z) * g z ∧
+theorem isJHolomorphicOn_prodMk_mul_normalModelStructure_iff (hs : IsOpen s)
+    (hφ : DifferentiableOn ℂ φ s) (hg : DifferentiableOn ℝ g s) :
+    IsJHolomorphicOn (normalModelStructure ν' μ') (normalModelStructure ν μ)
+        (fun p ↦ (φ p.1, g p.1 * p.2)) (s ×ˢ Set.univ) ↔
+      ∀ z ∈ s, g z * ν' z - conjWirtingerDeriv g z 1 = conj (deriv φ z) * ν (φ z) * g z ∧
         g z * μ' z = conj (deriv φ z) * μ (φ z) * conj (g z) := by
-  simp only [isJHolomorphic_iff, Prod.forall,
-    isJHolomorphicAt_prodMk_mul_normalModelStructure_iff (hφ _).hasDerivAt (hg _)]
-  refine forall_congr' fun z ↦ ⟨fun h ↦ ?_, fun h w ↦ ?_⟩
-  · -- the coefficient law at `w = 1` and `w = I` separates the two coefficients
+  -- on the open set `s × ℂ`, holomorphicity within the set is holomorphicity at each point
+  have hon : IsJHolomorphicOn (normalModelStructure ν' μ') (normalModelStructure ν μ)
+        (fun p ↦ (φ p.1, g p.1 * p.2)) (s ×ˢ Set.univ) ↔
+      ∀ z ∈ s, ∀ w, IsJHolomorphicAt (normalModelStructure ν' μ') (normalModelStructure ν μ)
+        (fun p ↦ (φ p.1, g p.1 * p.2)) (z, w) :=
+    ⟨fun h z hz w ↦ (h.isJHolomorphicWithinAt ⟨hz, trivial⟩).isJHolomorphicAt_of_mem_nhds
+        ((hs.prod isOpen_univ).mem_nhds ⟨hz, trivial⟩),
+      fun h ↦ (isJHolomorphicOn_iff _ _ _ _).2 fun p hp ↦
+        (h p.1 hp.1 p.2).isJHolomorphicWithinAt⟩
+  rw [hon]
+  refine forall₂_congr fun z hz ↦ ?_
+  have hz' : s ∈ nhds z := hs.mem_nhds hz
+  simp only [isJHolomorphicAt_prodMk_mul_normalModelStructure_iff
+    (hφ.differentiableAt hz').hasDerivAt (hg.differentiableAt hz')]
+  refine ⟨fun h ↦ ?_, fun h w ↦ ?_⟩
+  · -- the coefficient law at `w = 1` and `w = I` separates the two coefficients; the
+    -- combinations with `I * h₂` contain `I ^ 2`, which the normalization replaces by `-1`
     have h₁ := h 1
     have h₂ := h I
     simp only [map_mul, map_one, conj_I, mul_one] at h₁ h₂
-    set Y := g z * ν' z - conj (deriv φ z) * ν (φ z) * g z - g z * μ' z -
-      conjWirtingerDeriv g z 1 + conj (deriv φ z) * μ (φ z) * conj (g z)
-    exact ⟨by linear_combination (h₁ - I * h₂) / 2 + Y / 2 * I_sq,
-      by linear_combination (h₁ + I * h₂) / 2 - Y / 2 * I_sq⟩
+    exact ⟨by linear_combination (norm := (ring_nf; simp only [I_sq]; ring)) (h₁ - I * h₂) / 2,
+      by linear_combination (norm := (ring_nf; simp only [I_sq]; ring)) (h₁ + I * h₂) / 2⟩
   · simp only [map_mul]
     linear_combination w * h.1 + conj w * h.2
 
-/-- **A change of normal frame.** For a real differentiable, nowhere-vanishing `g`, the frame
-change `(z, w) ↦ (z, g z * w)` is holomorphic from the normal model `J_N(ν, μ)` to the normal model
-of the coefficients `ν - g⁻¹ ∂bar g` and `(g / conj g) μ`. These are the coefficients of the normal
-operator `∂bar s + ν s + μ conj s` written for the section `g s`. -/
-theorem isJHolomorphic_prodMk_fst_mul_normalModelStructure (hg : Differentiable ℝ g)
-    (hg₀ : ∀ z, g z ≠ 0) :
-    IsJHolomorphic (normalModelStructure ν μ)
+/-- **A change of normal frame.** On an open set `s`, for `g` real differentiable and nonvanishing
+on `s`, the frame change `(z, w) ↦ (z, g z * w)` is holomorphic on `s × ℂ` from the normal model
+`J_N(ν, μ)` to the normal model of the coefficients `ν - g⁻¹ ∂bar g` and `(g / conj g) μ`. These
+are the coefficients of the normal operator `∂bar s + ν s + μ conj s` written for the section
+`g s`. -/
+theorem isJHolomorphicOn_prodMk_fst_mul_normalModelStructure (hs : IsOpen s)
+    (hg : DifferentiableOn ℝ g s) (hg₀ : ∀ z ∈ s, g z ≠ 0) :
+    IsJHolomorphicOn (normalModelStructure ν μ)
       (normalModelStructure (fun z ↦ ν z - conjWirtingerDeriv g z 1 / g z)
         (fun z ↦ g z / conj (g z) * μ z))
-      (fun p ↦ (p.1, g p.1 * p.2)) := by
-  refine (isJHolomorphic_prodMk_mul_normalModelStructure_iff (φ := id) differentiable_id
-    hg).2 fun z ↦ ?_
-  have hc : conj (g z) ≠ 0 := (map_ne_zero _).2 (hg₀ z)
+      (fun p ↦ (p.1, g p.1 * p.2)) (s ×ˢ Set.univ) := by
+  have hT : (fun p : ℂ × ℂ ↦ (p.1, g p.1 * p.2)) = fun p ↦ (id p.1, g p.1 * p.2) := by
+    simp only [id_eq]
+  rw [hT]
+  refine (isJHolomorphicOn_prodMk_mul_normalModelStructure_iff hs differentiableOn_id
+    hg).2 fun z hz ↦ ?_
+  have hc : conj (g z) ≠ 0 := (map_ne_zero _).2 (hg₀ z hz)
   simp only [deriv_id, map_one, one_mul, id_eq]
-  constructor <;> field_simp [hg₀ z, hc]
+  constructor <;> field_simp [hg₀ z hz, hc]
 
-/-- **A holomorphic change of base coordinate.** For a holomorphic `φ`, the map
-`(z, w) ↦ (φ z, w)` is holomorphic from the normal model of the coefficients
+/-- **A holomorphic change of base coordinate.** On an open set `s`, for `φ` holomorphic on `s`,
+the map `(z, w) ↦ (φ z, w)` is holomorphic on `s × ℂ` from the normal model of the coefficients
 `conj φ' (ν ∘ φ)` and `conj φ' (μ ∘ φ)` to the normal model `J_N(ν, μ)`: the coefficients of the
 normal operator transform as `(0,1)`-forms. -/
-theorem isJHolomorphic_prodMap_normalModelStructure (hφ : Differentiable ℂ φ) :
-    IsJHolomorphic
+theorem isJHolomorphicOn_prodMap_normalModelStructure (hs : IsOpen s)
+    (hφ : DifferentiableOn ℂ φ s) :
+    IsJHolomorphicOn
       (normalModelStructure (fun z ↦ conj (deriv φ z) * ν (φ z))
         (fun z ↦ conj (deriv φ z) * μ (φ z)))
-      (normalModelStructure ν μ) (Prod.map φ id) := by
-  have h := (isJHolomorphic_prodMk_mul_normalModelStructure_iff (g := fun _ ↦ 1)
-    (ν' := fun z ↦ conj (deriv φ z) * ν (φ z)) (μ' := fun z ↦ conj (deriv φ z) * μ (φ z))
-    (ν := ν) (μ := μ) hφ (differentiable_const 1)).2 fun z ↦ by
-      have h₀ : conjWirtingerDeriv (fun _ : ℂ ↦ (1 : ℂ)) z 1 = 0 := by
-        simp
-      simp only [h₀, map_one]
-      constructor <;> ring
-  simp only [one_mul] at h
-  exact h
-
-/-- The area form of the fibre pulled back by a change of frame:
-`ω(g w, d w + g η) = |w|² Im (conj g d) + |g|² ω(w, η)`. -/
-private theorem stdComplexSymplecticForm_mul_mul_add_mul (g d w η : ℂ) :
-    stdComplexSymplecticForm (g * w) (d * w + g * η) =
-      ‖w‖ ^ 2 * (conj g * d).im + ‖g‖ ^ 2 * stdComplexSymplecticForm w η := by
-  simp only [stdComplexSymplecticForm_apply, mul_re, mul_im, add_re, add_im, conj_re, conj_im,
-    Complex.sq_norm, normSq_apply]
-  ring
+      (normalModelStructure ν μ) (Prod.map φ id) (s ×ˢ Set.univ) := by
+  have hT : Prod.map φ id = fun p : ℂ × ℂ ↦ (φ p.1, 1 * p.2) :=
+    funext fun p ↦ by simp [Prod.ext_iff]
+  rw [hT]
+  refine (isJHolomorphicOn_prodMk_mul_normalModelStructure_iff (g := fun _ ↦ 1) hs hφ
+    (differentiableOn_const 1)).2 fun z _ ↦ ?_
+  have h₀ : conjWirtingerDeriv (fun _ : ℂ ↦ (1 : ℂ)) z 1 = 0 := by
+    simp
+  simp only [h₀, map_one]
+  constructor <;> ring
 
 /-- **The taming primitive under a unitary change of chart.** Let `φ` have complex derivative
 `φ'` at `z`, and let `g` be real differentiable at `z` with `|g z| = 1`. If the connection forms
@@ -229,8 +238,9 @@ theorem normalModelPrimitive_compContinuousLinearMap_fderiv_prodMk_mul (hφ : Ha
   obtain ⟨L, hL, hLξ⟩ := exists_hasFDerivAt_chartChange hφ hg w
   ext v
   rw [hL.fderiv, ContinuousAlternatingMap.compContinuousLinearMap_apply, normalModelPrimitive_apply,
-    normalModelPrimitive_apply, Function.comp_apply, hLξ, hA,
-    stdComplexSymplecticForm_mul_mul_add_mul, norm_mul, hg₁]
+    normalModelPrimitive_apply, Function.comp_apply, hLξ, hA]
+  simp only [map_add, stdComplexSymplecticForm_mul_right, stdComplexSymplecticForm_mul_mul,
+    norm_mul, hg₁]
   ring
 
 end TauCeti

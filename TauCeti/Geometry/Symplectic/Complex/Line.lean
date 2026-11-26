@@ -52,6 +52,8 @@ conjugating the coordinates exchanges them.
   scales the area form by its determinant.
 * `TauCeti.stdComplexSymplecticForm_mul_mul`: multiplication by `u` scales the area form by
   `‖u‖²`, so rotations preserve it.
+* `TauCeti.stdComplexSymplecticForm_mul_right`: the area spanned by `u w` and `v w` is
+  `‖w‖² Im (conj u v)`.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
@@ -200,6 +202,14 @@ theorem stdComplexSymplecticForm_mul_mul (u v w : ℂ) :
     stdComplexSymplecticForm (u * v) (u * w) = ‖u‖ ^ 2 * stdComplexSymplecticForm v w := by
   simp only [stdComplexSymplecticForm_apply, Complex.mul_re, Complex.mul_im, Complex.sq_norm,
     Complex.normSq_apply]
+  ring
+
+open scoped ComplexConjugate in
+/-- The area spanned by `u w` and `v w` is `‖w‖² Im (conj u v)`. -/
+theorem stdComplexSymplecticForm_mul_right (u v w : ℂ) :
+    stdComplexSymplecticForm (u * w) (v * w) = ‖w‖ ^ 2 * (conj u * v).im := by
+  simp only [stdComplexSymplecticForm_apply, Complex.mul_re, Complex.mul_im, Complex.conj_re,
+    Complex.conj_im, Complex.sq_norm, Complex.normSq_apply]
   ring
 
 private noncomputable def planeBasis (J : AlmostComplexStructure ℂ) : Basis (Fin 2) ℝ ℂ :=
