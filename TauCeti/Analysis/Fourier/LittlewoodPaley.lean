@@ -17,7 +17,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
-import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
