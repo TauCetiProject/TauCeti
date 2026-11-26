@@ -34,7 +34,9 @@ points of index `n`
 `TauCeti.IsMorse.finite_singularHomology_int_of_forall_ne_add_one`,
 `TauCeti.IsMorse.finrank_singularHomology_int_of_forall_ne_add_one`). This applies when all indices
 are even (`TauCeti.forall_manifoldMorseIndex_ne_add_one_of_even`), and then the homology vanishes in
-odd degrees (`TauCeti.IsMorse.isZero_singularHomology_of_odd`).
+odd degrees (`TauCeti.IsMorse.isZero_singularHomology_of_odd`); on a compact manifold, `Hₙ(M; R)`
+vanishes whenever no critical point has index `n`
+(`TauCeti.IsMorse.isZero_singularHomology_of_criticalCount_eq_zero`).
 
 Over a division ring this recovers the equality of Betti numbers and critical counts in the
 lacunary case on a compact manifold
@@ -200,18 +202,28 @@ theorem IsMorse.nonempty_singularHomology_iso_sigma_of_even (hf : IsMorse I f)
   hf.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one
     (forall_manifoldMorseIndex_ne_add_one_of_even heven) R n
 
+/-- **Homology vanishes in a degree with no critical points.** If a Morse function on a compact
+boundaryless manifold has no critical point of index `n`, then `Hₙ(M; R) = 0`, for coefficients in
+any abelian category with coproducts. -/
+theorem IsMorse.isZero_singularHomology_of_criticalCount_eq_zero (hf : IsMorse I f) {n : ℕ}
+    (hn : criticalCount I f n = 0)
+    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) :
+    IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of M)) := by
+  obtain ⟨e⟩ := hf.nonempty_singularHomology_iso_sigma (Or.inl hn) (fun _ _ ↦ Or.inr hn) R
+  -- No critical point has index `n`, so the coproduct is empty.
+  have : IsEmpty ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} :=
+    ⟨fun ⟨x, hx, hxn⟩ ↦ (criticalCount_eq_zero_iff n).1 hn x hx hxn⟩
+  exact (IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim) |>.of_iso e
+
 /-- **Odd homology vanishes for a Morse function with only even indices.** On a compact
 boundaryless manifold carrying a Morse function all of whose critical points have even index, the
 homology vanishes in odd degrees, for coefficients in any abelian category with coproducts. -/
 theorem IsMorse.isZero_singularHomology_of_odd (hf : IsMorse I f)
     (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x))
     {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) {n : ℕ}
-    (hn : Odd n) : IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of M)) := by
-  obtain ⟨e⟩ := hf.nonempty_singularHomology_iso_sigma_of_even heven R n
-  -- No critical point has odd index, so the coproduct is empty.
-  have : IsEmpty ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} :=
-    ⟨fun ⟨x, hx, hxn⟩ ↦ Nat.not_even_iff_odd.2 hn (hxn ▸ heven x hx)⟩
-  exact (IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim) |>.of_iso e
+    (hn : Odd n) : IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of M)) :=
+  hf.isZero_singularHomology_of_criticalCount_eq_zero
+    ((criticalCount_eq_zero_iff n).2 fun x hx hxn ↦ Nat.not_even_iff_odd.2 hn (hxn ▸ heven x hx)) R
 
 /-- **Integral homology is free on the critical points.** If no two critical points of a Morse
 function `f` on a compact boundaryless manifold have indices differing by one, then the integral
