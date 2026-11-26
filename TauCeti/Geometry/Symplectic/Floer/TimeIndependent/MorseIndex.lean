@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 import TauCeti.Analysis.SpecialFunctions.SmoothSegmentPath
-import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Index
 import TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit
@@ -60,7 +59,7 @@ The proof compares `D_u` with the operator along the time-independent cylinder
   (`TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator`), so `E⁻(p)` is
   the positive spectral subspace of the Hessian, of dimension `2n - ind_p(H)` at a nondegenerate
   critical point
-  (`TauCeti.IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex`).
+  (`TauCeti.SymplecticForm.finrank_pointSpectralSubspace_add_morseIndex`).
   A nondegenerate constant orbit sits at a nondegenerate critical point
   (`TauCeti.SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt'`).
 
@@ -113,26 +112,6 @@ section Unitary
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
   {ω : SymplecticForm F} {H : F → ℝ}
 
-/-- At a nondegenerate critical point `p` of `H`, the sum of the eigenspaces of `-i dX_H(p)` at
-negative eigenvalues has dimension `dim F - ind_p(H)`: for the metric `Re ⟪·, ·⟫`, `i dX_H(p)` is
-the Hessian of `H`. -/
-private theorem finrank_pointSpectralSubspace_add_morseIndex
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {p : F} (hp : IsNondegenerateCriticalPoint H p) :
-    Module.finrank ℝ (Module.End.pointSpectralSubspace
-        ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-          (fderiv ℝ (ω.hamiltonianVectorField H) p)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio 0)) +
-      morseIndex H p = Module.finrank ℝ F := by
-  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hHess : ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-      (fderiv ℝ (ω.hamiltonianVectorField H) p)) : F →L[ℝ] F) : F →ₗ[ℝ] F) =
-      -(hessianOperator H p : F →ₗ[ℝ] F) := by
-    ext v
-    simp [apply_fderiv_hamiltonianVectorField_eq_hessianOperator
-      (ω.apply_ofComplexModule_eq_inner hω)]
-  rw [hHess, Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero,
-    ← hp.contDiffAt.stableLinearSubspace_eq_pointSpectralSubspace]
-  exact hp.finrank_stableLinearSubspace_add_morseIndex
-
 /-- Along the time-independent cylinder `(s, t) ↦ γ(s)` over the path `γ` from `p₋` to `p₊` along
 the segment, the operator of the data `(i, 0, H)` has index `ind_{p₊}(H) - ind_{p₋}(H)`, if
 `‖dX_H‖ ≤ a < 2π` on the segment. -/
@@ -147,20 +126,15 @@ private theorem index_floerSobolevOperator_smoothSegmentPath
       (morseIndex H pp : ℤ) - morseIndex H pm := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   have hg := ω.apply_ofComplexModule_eq_inner hω
-  -- `i dX_H(p)` is the Hessian, which is invertible at a nondegenerate critical point.
-  have hinj (p : F) (hp : IsNondegenerateCriticalPoint H p) :
-      Injective (fderiv ℝ (ω.hamiltonianVectorField H) p) := fun v w hvw ↦
-    hp.isInvertible_hessianOperator.injective (by
-      rw [← apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg,
-        ← apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg, hvw])
   rw [index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank hω hH
     (contDiff_smoothSegmentPath (n := 0) pm pp).continuous ha
     (fun s ↦ haH _ (smoothSegmentPath_mem_segment pm pp s))
     (tendsto_const_nhds.congr' (eventuallyEq_smoothSegmentPath_atBot pm pp).symm)
     (tendsto_const_nhds.congr' (eventuallyEq_smoothSegmentPath_atTop pm pp).symm)
-    (hinj pm hpm) (hinj pp hpp)]
-  have hm := finrank_pointSpectralSubspace_add_morseIndex hω hpm
-  have hp := finrank_pointSpectralSubspace_add_morseIndex hω hpp
+    (injective_fderiv_hamiltonianVectorField_of_isNondegenerateCriticalPoint hg hpm)
+    (injective_fderiv_hamiltonianVectorField_of_isNondegenerateCriticalPoint hg hpp)]
+  have hm := finrank_pointSpectralSubspace_add_morseIndex hg hpm
+  have hp := finrank_pointSpectralSubspace_add_morseIndex hg hpp
   omega
 
 /-- **The index of the linearized Floer operator between critical points.** Let `F` be a
