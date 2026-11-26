@@ -15,20 +15,16 @@ Examples and sanity checks for the tagged tree order
 `TauCeti.RelationalConfiguration.unravelTreeRel χ` on `List ℚ × Option ℕ`, for a colouring `χ` of
 `List ℚ`.
 
-* The tags `(x, some 0) < (x, some 1) < ⋯ < (x, some (χ(x) + 1))` form a chain of `χ(x) + 2`
-  nodes above `(x, some 0)`. For `χ(x) = 0`, the tags of `x` other than `(x, some 0)` are pairwise
-  incomparable: above `(x, some 0)` lie only leaves, a subtree of height `2`. For `χ(x) = 1`,
-  `(x, some 0) < (x, some 1) < (x, some 2)` is a chain, of height `3`.
+* The tags `(x, some 0) ≤ (x, some 1) ≤ ⋯ ≤ (x, some (χ(x) + 1))` form a chain of `χ(x) + 2`
+  tags, starting at `(x, some 0)`. For `χ(x) = 0`, the tags of `x` other than `(x, some 0)` are
+  pairwise incomparable. For `χ(x) = 1`, `(x, some 0) ≤ (x, some 1) ≤ (x, some 2)` is a chain.
 * The surplus tags `(x, some m)`, `m > χ(x) + 1`, are leaves directly above `(x, some 0)`: they are
   maximal, and no node lies strictly between. Keeping them changes no height; removing them would
   make the vertex set depend on the code.
 * Without tags, the original nodes form the same tree, the prefix order, for every colouring, so
   the tags carry all of the information.
 * The constant-true code of the language of graphs, outside `graphClass`, colours every node of
-  length `1` with a colour that occurs at no node of any simple graph: its diagonal bit is true,
-  while a simple graph has no loops. So the chain of tags above the tag root `([q], some 0)` of its
-  tagged tree has a number of nodes, `χ([q]) + 2`, that the chain of tags above no tag root of the
-  tagged tree of a simple graph has.
+  length `1` with a colour that occurs at no node of any simple graph.
 -/
 
 public section
@@ -46,7 +42,8 @@ theorem not_unravelTreeRel_of_color_eq_zero (h : χ x = 0) {m m' : ℕ} (hm : 0 
   omega
 
 /-- The tags `(x, some m)` with `m ≤ χ(x) + 1` form a chain: `(x, some m) ≤ (x, some m')` for
-`m ≤ m' ≤ χ(x) + 1`. With `(x, some 0)`, these are `χ(x) + 2` tags above `(x, some 0)`. -/
+`m ≤ m' ≤ χ(x) + 1`. These are the `χ(x) + 2` tags `(x, some 0) ≤ ⋯ ≤ (x, some (χ(x) + 1))`,
+starting at `(x, some 0)`. -/
 theorem unravelTreeRel_some_some_of_le {m m' : ℕ} (h : m ≤ m') (h' : m' ≤ χ x + 1) :
     unravelTreeRel χ (x, some m) (x, some m') :=
   unravelTreeRel_some_some.2 ⟨rfl, by rw [tagLE_iff]; omega⟩
@@ -56,8 +53,7 @@ theorem unravelTreeRel_chain_of_color_eq_one (h : χ x = 1) :
     unravelTreeRel χ (x, some 0) (x, some 1) ∧ unravelTreeRel χ (x, some 1) (x, some 2) := by
   simp [unravelTreeRel_some_some, tagLE_iff, h]
 
-/-- The height differs: `(x, some 1) < (x, some 2)` holds for `χ(x) = 1` and fails for
-`χ(x) = 0`. -/
+/-- The comparison `(x, some 1) ≤ (x, some 2)` holds for `χ(x) = 1` and fails for `χ(x) = 0`. -/
 example : (unravelTreeRel (fun _ => 1) (x, some 1) (x, some 2)) ∧
     ¬ unravelTreeRel (fun _ => 0) (x, some 1) (x, some 2) :=
   ⟨(unravelTreeRel_chain_of_color_eq_one x rfl).2,
@@ -93,10 +89,8 @@ theorem unravelTreeRel_none_none_iff (χ' : List ℚ → ℕ) (y : List ℚ) :
   simp
 
 /-- **At nodes of length `1`, the constant-true code has a colour that no simple graph has at any
-node.** The diagonal bit at `(0, 0)` of the constant-true code is true, and that of a simple graph
-is false. So, by `unravelTreeRel_some_some_of_le`, the chain of tags above `([q], some 0)` for the
-constant-true code and the chain of tags above `(y, some 0)` for `c` have different numbers of
-nodes, the two colours plus `2`. -/
+node.** For every `c ∈ graphClass` and every node `y`, the colour of `[q]` under the constant-true
+code differs from the colour of `y` under `c`. -/
 theorem unravelColor_mk_true_ne {c : RelationalConfiguration Language.graph ℕ}
     (hc : c ∈ graphClass) (q : ℚ) (y : List ℚ) :
     unravelColor (RelationalConfiguration.mk fun _ => true) [q] ≠ unravelColor c y := by
