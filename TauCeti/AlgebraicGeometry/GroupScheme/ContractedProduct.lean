@@ -169,7 +169,7 @@ def contractedProductSchemeIsoOfSection (s : P.sheaf.obj.sections) :
 /-- The isomorphism `contractedProductSchemeIsoOfSection s` sends a point `x : T ⟶ X` to the point
 of `P ×^G X` corresponding to the class `[s, x]`. -/
 @[simp]
-lemma contractedProductSchemeRepresentableBy_homEquiv_comp_isoOfSection_inv
+lemma contractedProductSchemeRepresentableBy_homEquiv_comp_contractedProductSchemeIsoOfSection_inv
     (s : P.sheaf.obj.sections) {T : Over S} (x : T ⟶ X) :
     (P.contractedProductSchemeRepresentableBy X).homEquiv
         (x ≫ (P.contractedProductSchemeIsoOfSection X s).inv) =
@@ -194,15 +194,16 @@ def contractedProductSchemeTrivialIso :
 /-- The isomorphism `contractedProductSchemeTrivialIso` sends a point `x : T ⟶ X` to the point of
 `G ×^G X` corresponding to the class `[1, x]`. -/
 @[simp]
-lemma contractedProductSchemeRepresentableBy_homEquiv_comp_trivialIso_inv {T : Over S}
-    (x : T ⟶ X) :
+lemma
+    contractedProductSchemeRepresentableBy_homEquiv_comp_contractedProductSchemeTrivialIso_inv
+    {T : Over S} (x : T ⟶ X) :
     ((trivial _).contractedProductSchemeRepresentableBy X).homEquiv
         (x ≫ (contractedProductSchemeTrivialIso G X).inv) =
       contractedProductMk (P := trivial _)
         (1 : ((Scheme.fppfTopology.over S).uliftYonedaGrp.{w}.obj G).obj.obj (op T))
         ((uliftYonedaMulActionSheafSectionEquiv G X (op T)).symm x) := by
-  exact (trivial _).contractedProductSchemeRepresentableBy_homEquiv_comp_isoOfSection_inv
-    (G := G) X _ x
+  exact contractedProductSchemeRepresentableBy_homEquiv_comp_contractedProductSchemeIsoOfSection_inv
+    (G := G) (trivial _) X _ x
 
 end CategoryTheory.Sheaf.Torsor
 
