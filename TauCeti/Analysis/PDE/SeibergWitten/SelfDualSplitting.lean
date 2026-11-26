@@ -254,11 +254,9 @@ variable {ρ} in
 /-- If the generators act skew-adjointly, `P_α` is self-adjoint. -/
 theorem isSelfAdjoint_cliffordProjection
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) :
-    IsSelfAdjoint (cliffordProjection o ρ ω) := by
-  have h2 : IsSelfAdjoint (2⁻¹ : ℂ) := by
-    rw [isSelfAdjoint_iff, star_inv₀, Complex.star_def, map_ofNat]
-  exact isSelfAdjoint_halfOneAdd ℂ (A := positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ)
-    (h2.smul (isSelfAdjoint_cliffordRestriction o hρ ω))
+    IsSelfAdjoint (cliffordProjection o ρ ω) :=
+  isSelfAdjoint_halfOneAdd ℂ (A := positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ)
+    (((IsSelfAdjoint.ofNat 2).inv₀ (R := ℂ)).smul (isSelfAdjoint_cliffordRestriction o hρ ω))
 
 variable {ω} in
 /-- On `φ + β` with `P_α φ = φ` and `P_α β = 0`, the Clifford action of `ω` is

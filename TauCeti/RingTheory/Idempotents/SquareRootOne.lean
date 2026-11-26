@@ -50,6 +50,8 @@ consume, but not the passage from a square root of one to the idempotent pair.
   complementary, and its difference recovers `ω`.
 * `TauCeti.halfOneAdd_smul_add_halfOneAdd_neg_smul`: in every module, each vector is the sum of
   its images under the pair.
+* `TauCeti.isUnit_two_of_invertible_two`: `2` is a unit of every algebra over a ring in which `2`
+  is invertible.
 * `TauCeti.halfOneAdd_smul_eq_self_iff`, `TauCeti.halfOneAdd_smul_eq_zero_iff`: for any `ω`, the
   fixed vectors of `½ (1 + ω)` are the `1`-eigenvectors of `ω` and its kernel is the
   `-1`-eigenspace.
@@ -120,22 +122,22 @@ variable {ω : A}
 
 include R in
 /-- `2` is a unit of every algebra over a ring in which `2` is invertible. -/
-private theorem isUnit_two : IsUnit (2 : A) := by
+theorem isUnit_two_of_invertible_two : IsUnit (2 : A) := by
   simpa only [map_ofNat] using (isUnit_of_invertible (2 : R)).map (algebraMap R A)
 
 /-- **The fixed vectors of `½ (1 + ω)` are the `1`-eigenvectors of `ω`**: in any `A`-module,
 `½ (1 + ω) m = m` exactly when `ω m = m`. No property of `ω` is needed. -/
 theorem halfOneAdd_smul_eq_self_iff {M : Type*} [AddCommGroup M] [Module A M] {m : M} :
     halfOneAdd R ω • m = m ↔ ω • m = m := by
-  rw [← (isUnit_two R (A := A)).smul_left_cancel, ← mul_smul, two_mul_halfOneAdd, add_smul,
-    one_smul, two_smul, add_right_inj]
+  rw [← (isUnit_two_of_invertible_two R (A := A)).smul_left_cancel, ← mul_smul,
+    two_mul_halfOneAdd, add_smul, one_smul, two_smul, add_right_inj]
 
 /-- **The kernel of `½ (1 + ω)` is the `-1`-eigenspace of `ω`**: in any `A`-module,
 `½ (1 + ω) m = 0` exactly when `ω m = -m`. No property of `ω` is needed. -/
 theorem halfOneAdd_smul_eq_zero_iff {M : Type*} [AddCommGroup M] [Module A M] {m : M} :
     halfOneAdd R ω • m = 0 ↔ ω • m = -m := by
-  rw [← (isUnit_two R (A := A)).smul_left_cancel, smul_zero, ← mul_smul, two_mul_halfOneAdd,
-    add_smul, one_smul, add_eq_zero_iff_eq_neg']
+  rw [← (isUnit_two_of_invertible_two R (A := A)).smul_left_cancel, smul_zero, ← mul_smul,
+    two_mul_halfOneAdd, add_smul, one_smul, add_eq_zero_iff_eq_neg']
 
 /-- **`½ (1 + ω)` is self-adjoint along with `ω`**, in a star algebra over a star ring. -/
 theorem isSelfAdjoint_halfOneAdd [StarRing R] [StarRing A] [StarModule R A]

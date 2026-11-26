@@ -70,7 +70,9 @@ continuity of the components `α` and `β` along continuous sections are not tre
 
 ## Main definitions
 
-* `TauCeti.SpinCStructure.cliffordProjection`: the operator `P_x(ω) = (1 + C_x(ω) / 2) / 2`.
+* `TauCeti.SpinCStructure.cliffordProjection`: the operator `P_x(ω) = (1 + C_x(ω) / 2) / 2`,
+  the element `TauCeti.halfOneAdd` of `C_x(ω) / 2`
+  (`TauCeti.SpinCStructure.cliffordProjection_def`).
 
 ## References
 
@@ -126,11 +128,17 @@ def cliffordProjection (s : SpinCStructure F E 4) (x : X) (ω : ⋀[ℝ]^2 (E x)
     s.halfSpinorBundle o hQ b ρ hρ 1 x →L[ℂ] s.halfSpinorBundle o hQ b ρ hρ 1 x :=
   halfOneAdd ℂ ((2⁻¹ : ℂ) • s.cliffordRestriction o hQ b ρ hρ x ω)
 
+/-- The defining formula `P_x(ω) = TauCeti.halfOneAdd ℂ (C_x(ω) / 2)`. -/
+theorem cliffordProjection_def (s : SpinCStructure F E 4) {x : X} (ω : ⋀[ℝ]^2 (E x)) :
+    s.cliffordProjection o hQ b ρ hρ x ω =
+      halfOneAdd ℂ ((2⁻¹ : ℂ) • s.cliffordRestriction o hQ b ρ hρ x ω) :=
+  (rfl)
+
 /-- The explicit formula `P_x(ω) = (1 + C_x(ω) / 2) / 2`. -/
 theorem cliffordProjection_eq_smul (s : SpinCStructure F E 4) {x : X} (ω : ⋀[ℝ]^2 (E x)) :
     s.cliffordProjection o hQ b ρ hρ x ω =
       (2⁻¹ : ℂ) • (1 + (2⁻¹ : ℂ) • s.cliffordRestriction o hQ b ρ hρ x ω) := by
-  rw [cliffordProjection, halfOneAdd_def, invOf_eq_inv]
+  rw [cliffordProjection_def, halfOneAdd_def, invOf_eq_inv]
 
 /-- **The Clifford projection as a conjugate**: for every point `p` of the principal bundle over
 `x`, `P_x(ω)` is the model projection `P(⋀² κ_p ω)` conjugated by the unitary frame
@@ -143,8 +151,8 @@ theorem cliffordProjection_eq_conj (s : SpinCStructure F E 4) {x : X} (p : s.P x
           (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p)).toContinuousLinearEquiv
         (SeibergWitten.cliffordProjection o ρ
           (exteriorPower.map 2 (s.vectorFrame b p).toLinearMap ω)) := by
-  rw [cliffordProjection, cliffordRestriction_eq_conj s p, SeibergWitten.cliffordProjection_def,
-    map_halfOneAdd, map_smul]
+  rw [cliffordProjection_def, cliffordRestriction_eq_conj s p,
+    SeibergWitten.cliffordProjection_def, map_halfOneAdd, map_smul]
 
 /-- **The Clifford projection in a frame**: `P_x(ω) [p, ψ] = [p, P(⋀² κ_p ω) ψ]` for every point
 `p` of the principal bundle over `x`. -/
@@ -169,7 +177,8 @@ theorem cliffordRestriction_eq_cliffordProjection (s : SpinCStructure F E 4) {x 
 /-- The complementary projection: `P_x(-ω) = 1 - P_x(ω)`. -/
 theorem cliffordProjection_neg (s : SpinCStructure F E 4) {x : X} (ω : ⋀[ℝ]^2 (E x)) :
     s.cliffordProjection o hQ b ρ hρ x (-ω) = 1 - s.cliffordProjection o hQ b ρ hρ x ω := by
-  rw [cliffordProjection, cliffordProjection, map_neg, smul_neg, halfOneAdd_neg_eq_one_sub]
+  rw [cliffordProjection_def, cliffordProjection_def, map_neg, smul_neg,
+    halfOneAdd_neg_eq_one_sub]
 
 /-- `P_x(-ω) ψ = ψ - P_x(ω) ψ`. -/
 theorem cliffordProjection_neg_apply (s : SpinCStructure F E 4) {x : X} (ω : ⋀[ℝ]^2 (E x))
@@ -188,7 +197,7 @@ theorem cliffordProjection_apply_eq_self_iff (s : SpinCStructure F E 4) {x : X}
     {ω : ⋀[ℝ]^2 (E x)} {ψ : s.halfSpinorBundle o hQ b ρ hρ 1 x} :
     s.cliffordProjection o hQ b ρ hρ x ω ψ = ψ ↔
       s.cliffordRestriction o hQ b ρ hρ x ω ψ = (2 : ℂ) • ψ := by
-  rw [cliffordProjection, ← ContinuousLinearMap.smul_def, halfOneAdd_smul_eq_self_iff,
+  rw [cliffordProjection_def, ← ContinuousLinearMap.smul_def, halfOneAdd_smul_eq_self_iff,
     ContinuousLinearMap.smul_def, smul_apply, inv_smul_eq_iff₀ two_ne_zero]
 
 /-- The kernel of `P_x(ω)` is the `-2`-eigenspace of `C_x(ω)`. -/
@@ -196,17 +205,16 @@ theorem cliffordProjection_apply_eq_zero_iff (s : SpinCStructure F E 4) {x : X}
     {ω : ⋀[ℝ]^2 (E x)} {ψ : s.halfSpinorBundle o hQ b ρ hρ 1 x} :
     s.cliffordProjection o hQ b ρ hρ x ω ψ = 0 ↔
       s.cliffordRestriction o hQ b ρ hρ x ω ψ = (-2 : ℂ) • ψ := by
-  rw [cliffordProjection, ← ContinuousLinearMap.smul_def, halfOneAdd_smul_eq_zero_iff,
+  rw [cliffordProjection_def, ← ContinuousLinearMap.smul_def, halfOneAdd_smul_eq_zero_iff,
     ContinuousLinearMap.smul_def, smul_apply, inv_smul_eq_iff₀ two_ne_zero, smul_neg, neg_smul]
 
 /-- **`P_x(ω)` is self-adjoint**, for the Hermitian metric of the half-spinor bundle. -/
 theorem isSelfAdjoint_cliffordProjection (s : SpinCStructure F E 4) {x : X}
-    (ω : ⋀[ℝ]^2 (E x)) : IsSelfAdjoint (s.cliffordProjection o hQ b ρ hρ x ω) := by
-  have h2 : IsSelfAdjoint (2⁻¹ : ℂ) := by
-    rw [isSelfAdjoint_iff, star_inv₀, Complex.star_def, map_ofNat]
-  exact isSelfAdjoint_halfOneAdd ℂ
+    (ω : ⋀[ℝ]^2 (E x)) : IsSelfAdjoint (s.cliffordProjection o hQ b ρ hρ x ω) :=
+  isSelfAdjoint_halfOneAdd ℂ
     (A := s.halfSpinorBundle o hQ b ρ hρ 1 x →L[ℂ] s.halfSpinorBundle o hQ b ρ hρ 1 x)
-    (h2.smul (isSelfAdjoint_cliffordRestriction (o := o) (hQ := hQ) (b := b) (hρ := hρ) s ω))
+    (((IsSelfAdjoint.ofNat 2).inv₀ (R := ℂ)).smul
+      (isSelfAdjoint_cliffordRestriction (o := o) (hQ := hQ) (b := b) (hρ := hρ) s ω))
 
 /-- **The `ω`-component of `q_x`**: `⟪q_x(ψ), ω⟫ = (‖P_x(ω) ψ‖² - ‖P_x(-ω) ψ‖²) / 2` for every
 two-form `ω` of the fibre. -/
