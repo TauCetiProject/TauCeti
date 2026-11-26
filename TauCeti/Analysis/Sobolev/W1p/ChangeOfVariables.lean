@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
+import TauCeti.Analysis.Calculus.FDeriv.Smul
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -458,19 +459,18 @@ theorem W1p.norm_gradient_compL_inv_smul (hr : r ≠ 0) (hUV : (U : Set E) = r �
     (u : W1p mu V p) :
     ‖W1p.gradient (W1p.compL (fun x : E => r⁻¹ • x) hp hΦ hinj hmaps hL hc hdet u)‖ =
       |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal - 1) * ‖W1p.gradient u‖ := by
-  have hfd : ∀ x : E,
-      (fderiv ℝ (fun x : E => r⁻¹ • x) x).adjoint = r⁻¹ • ContinuousLinearMap.id ℝ E := fun x => by
-    simp only [fderiv_fun_const_smul differentiableAt_fun_id, fderiv_fun_id, map_smulₛₗ,
-      ContinuousLinearMap.adjoint_id, conj_trivial]
+  -- The chain rule contributes the factor `r⁻¹`, and the dilation law the factor `|r| ^ (n / p)`.
   have h := W1p.gradient_compL_ae _ hp hΦ hinj hmaps hL hc hdet u
-  simp only [hfd, smul_apply, ContinuousLinearMap.id_apply] at h
-  have hsmul : (fun x => r⁻¹ • W1p.gradient u (r⁻¹ • x)) =
-      r⁻¹ • fun x => W1p.gradient u (r⁻¹ • x) := rfl
-  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae h, hUV, hsmul, eLpNorm_const_smul,
-    Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr, ← mul_assoc, ENNReal.toReal_mul,
-    ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), toReal_eNorm, norm_inv,
-    Real.norm_eq_abs, Real.rpow_sub (abs_pos.2 hr), Real.rpow_one, div_eq_inv_mul]
-  ring
+  simp only [fderiv_const_smul_id, map_smulₛₗ, ContinuousLinearMap.adjoint_id, conj_trivial,
+    smul_apply, ContinuousLinearMap.id_apply] at h
+  have he : eLpNorm (W1p.gradient (W1p.compL _ hp hΦ hinj hmaps hL hc hdet u)) p (mu.restrict U) =
+      ‖r⁻¹‖ₑ * (ENNReal.ofReal (|r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal)) *
+        eLpNorm (W1p.gradient u) p (mu.restrict V)) := by
+    rw [eLpNorm_congr_ae h, hUV, ← Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr]
+    exact eLpNorm_const_smul _ _ _ _
+  -- It remains to compute the real factor `|r|⁻¹ * |r| ^ (n / p) = |r| ^ (n / p - 1)`.
+  rw [Lp.norm_def, Lp.norm_def, he, Real.rpow_sub_one (abs_ne_zero.2 hr)]
+  simp [Real.rpow_nonneg (abs_nonneg r), div_eq_inv_mul, mul_assoc]
 
 end Dilation
 

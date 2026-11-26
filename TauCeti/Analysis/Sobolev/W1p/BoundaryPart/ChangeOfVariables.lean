@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+import TauCeti.Analysis.Calculus.FDeriv.Smul
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -258,15 +259,13 @@ private theorem exists_mem_w1pVanishingOnSubmodule_norm_value_eq_and_norm_gradie
         ‖W1p.gradient u‖ =
           |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal - 1) * ‖W1p.gradient v‖ := by
   have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr
-  -- The derivative of `x ↦ a • x` is `a • id`, of norm at most `‖a‖ ‖id‖` and Jacobian `aⁿ`.
-  have hfd : ∀ (a : ℝ) (x : E), fderiv ℝ (fun x : E => a • x) x = a • ContinuousLinearMap.id ℝ E :=
-    fun a x => by simp only [fderiv_fun_const_smul differentiableAt_fun_id, fderiv_fun_id]
+  -- The derivative of `x ↦ a • x` has norm `‖a‖ ‖id‖` and Jacobian determinant `aⁿ`.
   have hnorm : ∀ (a : ℝ) (x : E),
       ‖fderiv ℝ (fun x : E => a • x) x‖ ≤ ‖a‖ * ‖ContinuousLinearMap.id ℝ E‖ :=
-    fun a x => hfd a x ▸ norm_smul_le _ _
+    fun a x => (norm_fderiv_const_smul_id a x).le
   have hdet : ∀ (a : ℝ) (x : E),
       |a| ^ Module.finrank ℝ E ≤ |(fderiv ℝ (fun x : E => a • x) x).det| :=
-    fun a x => by simp [hfd, ContinuousLinearMap.det, LinearMap.det_smul, abs_pow]
+    fun a x => by rw [det_fderiv_const_smul_id, abs_pow]
   have habs : ∀ a : ℝ, a ≠ 0 → 0 < |a| ^ Module.finrank ℝ E := fun a ha => by positivity
   -- `Φ = r⁻¹ • ·` maps `U` into `V`, and `Ψ = r • ·` maps `V` into `U` and inverts it.
   have hΦmaps : MapsTo (fun x : E => r⁻¹ • x) U V := fun x hx => by
@@ -276,24 +275,26 @@ private theorem exists_mem_w1pVanishingOnSubmodule_norm_value_eq_and_norm_gradie
   have hΨmaps : MapsTo (fun x : E => r • x) V U := fun y hy => by
     rw [SetLike.mem_coe, ← SetLike.mem_coe, hUV]
     exact smul_mem_smul_set hy
+  have hΦc : ContDiff ℝ ∞ fun x : E => r⁻¹ • x := contDiff_const_smul r⁻¹
   have hΨc : ContDiff ℝ ∞ fun x : E => r • x := contDiff_const_smul r
+  have hΦ : DifferentiableOn ℝ (fun x : E => r⁻¹ • x) U :=
+    (hΦc.differentiable (by simp)).differentiableOn
   have hΨ : DifferentiableOn ℝ (fun x : E => r • x) V :=
     (hΨc.differentiable (by simp)).differentiableOn
-  have hΦ : DifferentiableOn ℝ (fun x : E => r⁻¹ • x) U :=
-    ((contDiff_const_smul (F := E) (𝕜 := ℝ) (n := ∞) r⁻¹).differentiable (by simp)).differentiableOn
-  have hΨinj : InjOn (fun x : E => r • x) V := (smul_right_injective E hr).injOn
   have hΦinj : InjOn (fun x : E => r⁻¹ • x) U := (smul_right_injective E hr').injOn
-  -- `v = u (r • ·)` lies in `W^{1,p}_Γ(V)`, and `u` is its dilate.
+  have hΨinj : InjOn (fun x : E => r • x) V := (smul_right_injective E hr).injOn
+  -- `u` is the dilate of `v = u (r • ·)`, which lies in `W^{1,p}_Γ(V)`.
   obtain ⟨v, rfl⟩ : ∃ v, W1p.compL _ hp hΦ hΦinj hΦmaps (fun x _ => hnorm r⁻¹ x) (habs r⁻¹ hr')
       (fun x _ => hdet r⁻¹ x) v = u :=
     ⟨_, W1p.compL_compL_of_leftInvOn _ hp hΦ hΦinj hΦmaps _ _ _ hΨ hΨinj hΨmaps
       (fun y _ => hnorm r y) (habs r hr) (fun y _ => hdet r y) (fun x _ => smul_inv_smul₀ hr x) u⟩
   refine ⟨v, ?_, W1p.norm_value_compL_inv_smul hp _ _ _ _ _ _ hr hUV v,
     W1p.norm_gradient_compL_inv_smul hp _ _ _ _ _ _ hr hUV v⟩
-  have hv := W1p.compL_mem_w1pVanishingOnSubmodule _ hp hΨ hΨinj hΨmaps (fun y _ => hnorm r y)
-    (habs r hr) (fun y _ => hdet r y) hΨc (Homeomorph.smulOfNeZero r hr).isProperMap hu
-  rwa [preimage_smul₀ hr, inv_smul_smul₀ hr, W1p.compL_compL_of_leftInvOn _ hp hΨ hΨinj hΨmaps
-    _ _ _ hΦ hΦinj hΦmaps _ _ _ (fun y _ => inv_smul_smul₀ hr y) v] at hv
+  rw [← preimage_smul_inv₀ hr] at hu
+  exact (W1p.compL_mem_w1pVanishingOnSubmodule_iff _ hp hΦ hΦinj hΦmaps _ _ _ hΦc
+    (Homeomorph.smulOfNeZero r⁻¹ hr').isProperMap hΨc (Homeomorph.smulOfNeZero r hr).isProperMap
+    hΨmaps (fun y _ => hnorm r y) (habs r hr) (fun y _ => hdet r y)
+    (fun y => inv_smul_smul₀ hr y)).1 hu
 
 /-- One direction of `TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`: a
 Poincaré–Friedrichs inequality on `W^{1,p}_Γ(V)` with constant `C` gives one on
