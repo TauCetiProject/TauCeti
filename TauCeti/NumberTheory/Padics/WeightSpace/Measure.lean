@@ -47,24 +47,24 @@ private def finiteCharacterTest (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ)
     Units.continuous_val.comp <|
       continuous_of_discreteTopology.comp (padicIntUnitsEquivZModUnitsProd p).continuous.fst⟩
 
-/-- The measure on `ℤ_p` obtained by twisting by the finite character `η` and pushing along
-the principal-unit coordinate. Its Amice transform expands the character integral on the
-weight disc with finite character `η`. -/
-def weightDiscMeasure (μ : D(ℤ_[p]ˣ, K)) (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) :
-    D(ℤ_[p], K) :=
-  map (principalCoordinate p) (weight (finiteCharacterTest η) μ)
+/-- The linear map that twists a measure by the finite character `η` and pushes it to `ℤ_p`
+along the principal-unit coordinate. The resulting Amice transform expands the character
+integral on the weight disc with finite character `η`. -/
+def weightDiscMeasure (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) :
+    D(ℤ_[p]ˣ, K) →ₗ[K] D(ℤ_[p], K) :=
+  (map (principalCoordinate p)).comp (weight (finiteCharacterTest η))
 
 /-- Integrate a principal-coordinate test function against the original measure after multiplying
 by the finite character. -/
 theorem weightDiscMeasure_apply (μ : D(ℤ_[p]ˣ, K))
     (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) (f : C(ℤ_[p], K)) :
-    μ.weightDiscMeasure η f = μ ⟨
+    weightDiscMeasure η μ f = μ ⟨
       fun u ↦ (η (padicIntUnitsEquivZModUnitsProd p u).1 : K) *
         f (padicIntUnitsEquivZModUnitsProd p u).2.toAdd,
       by
         exact (finiteCharacterTest η).continuous.mul
           (f.continuous.comp (principalCoordinate p).continuous)⟩ := by
-  rw [weightDiscMeasure, map_apply, weight_apply]
+  rw [weightDiscMeasure, LinearMap.comp_apply, map_apply, weight_apply]
   apply congrArg μ
   ext u
   simp [finiteCharacterTest, principalCoordinate]
@@ -73,7 +73,7 @@ theorem weightDiscMeasure_apply (μ : D(ℤ_[p]ˣ, K))
 as coefficient. -/
 @[simp]
 theorem weightDiscMeasure_dirac (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) (u : ℤ_[p]ˣ) :
-    (dirac K u).weightDiscMeasure η =
+    weightDiscMeasure η (dirac K u) =
       (η (padicIntUnitsEquivZModUnitsProd p u).1 : K) •
         dirac K (padicIntUnitsEquivZModUnitsProd p u).2.toAdd := by
   ext f
@@ -91,21 +91,17 @@ principal-coordinate measure at `t`. -/
 theorem hasSum_weightDiscMeasure_amiceTransform (μ : D(ℤ_[p]ˣ, K))
     (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) {t : K}
     (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
-    HasSum (fun n ↦ (μ.weightDiscMeasure η).amiceTransform.coeff n * t ^ n)
+    HasSum (fun n ↦ (weightDiscMeasure η μ).amiceTransform.coeff n * t ^ n)
       ((ofCoord η t ht).weightTest.characterIntegralAlgHom μ) := by
-  let ν := μ.weightDiscMeasure η
-  have h := (PadicInt.hasSum_mahlerSeries (p := p) ht).map (toCLMEquiv ν)
-    (toCLMEquiv ν).continuous
+  let ν := weightDiscMeasure η μ
   have heval : ν (PadicInt.mahlerSeries (t ^ ·)) =
       (ofCoord η t ht).weightTest.characterIntegralAlgHom μ := by
     rw [weightDiscMeasure_apply, characterIntegralAlgHom_apply]
     apply congrArg μ
     ext u
     simp [PadicInt.coe_addChar_of_value_at_one]
-  rw [coe_toCLMEquiv, heval] at h
-  refine h.congr_fun fun n ↦ ?_
-  simp only [Function.comp_apply, PadicInt.mahlerTerm_eq_smul, map_smul, smul_eq_mul,
-    coe_toCLMEquiv, coeff_amiceTransform, mul_comm, ν]
+  simpa only [PadicInt.mahlerEquiv_apply, PadicInt.fwdDiff_mahlerSeries ht, mul_comm, heval, ν]
+    using ν.hasSum_mahlerEquiv_mul_coeff_amiceTransform (PadicInt.mahlerSeries (t ^ ·))
 
 end Amice
 
@@ -120,7 +116,7 @@ theorem exists_analyticOnNhd_weightDisc (μ : D(ℤ_[p]ˣ, K))
       ∀ (t : K) (ht : ‖t‖ < 1),
         f t = characterIntegralAlgHom
           (ofCoord η t (tendsto_pow_atTop_nhds_zero_of_norm_lt_one ht)).weightTest μ := by
-  let ν := μ.weightDiscMeasure η
+  let ν := weightDiscMeasure η μ
   let c := fun n ↦ ν.amiceTransform.coeff n
   let P := FormalMultilinearSeries.ofScalars K c
   refine ⟨P.sum, P.analyticOnNhd.mono ?_, fun t ht ↦ ?_⟩

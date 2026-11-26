@@ -39,10 +39,10 @@ local notation "P" => pseudomeasures δ (FractionRing M)
 variable [Monoid K] [TopologicalSpace K] in
 private theorem weightTest_ne_one (κ : {κ : WeightSpace p K // κ ≠ 1}) :
     κ.val.weightTest ≠ 1 := by
-  intro h
-  apply κ.property
-  ext u
-  simpa using DFunLike.congr_fun h u
+  have hone : (1 : WeightSpace p K).weightTest = 1 := by
+    ext u
+    simp
+  exact fun h ↦ κ.property (weightTest_injective (h.trans hone.symm))
 
 section Evaluation
 
@@ -70,7 +70,9 @@ theorem pseudoMeasureFun_eq_div (z : P) (κ : {κ : WeightSpace p K // κ ≠ 1}
     pseudoMeasureFun j hj z κ =
       κ.val.weightTest.extendedCharacterRingHom j hj (numerator δ (FractionRing M) g z) /
         ((κ.val g : K) - 1) := by
-  rw [eq_div_iff (sub_ne_zero.mpr hg), mul_comm, pseudoMeasureFun_spec]
+  simpa only [pseudoMeasureFun, AddMonoidHom.pi_apply, weightTest_apply] using
+    κ.val.weightTest.extendedPseudoCharacterEval_eq_div j hj (FractionRing M)
+      (weightTest_ne_one κ) (g := g) (by simpa only [weightTest_apply] using hg) z
 
 /-- Evaluation of an integral measure as a pseudomeasure agrees with its weight integral. -/
 @[simp]
