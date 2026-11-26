@@ -102,47 +102,6 @@ private lemma map_map_eq {E : Type*} [Category* E] {P : Eᵒᵖ ⥤ Type*} {Z Z'
   subst h
   simp
 
-variable {D} in
-/-- The gluing morphisms of a descent datum of sheaves commute with the restrictions along a
-morphism `b : Y' ⟶ Y`, up to the identifications of the objects of the slices involved. -/
-private lemma hom_app_map {Y Y' : C} (b : Y' ⟶ Y) (q : Y ⟶ S) (q' : Y' ⟶ S) {i₁ i₂ : ι}
-    (f₁ : Y ⟶ X i₁) (f₂ : Y ⟶ X i₂) (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q)
-    (f₁' : Y' ⟶ X i₁) (f₂' : Y' ⟶ X i₂) (hf₁' : f₁' ≫ f i₁ = q') (hf₂' : f₂' ≫ f i₂ = q')
-    (h₁ : b ≫ f₁ = f₁') (h₂ : b ≫ f₂ = f₂') {W : Over Y} {W' : Over Y'} (c : W'.left ⟶ W.left)
-    (hc : c ≫ W.hom = W'.hom ≫ b) (x : (sheafObj D i₁).obj.obj (op ((Over.map f₁).obj W))) :
-    (sheafObj D i₂).obj.map (Over.homMk c (by simp [← h₂, reassoc_of% hc]) :
-        (Over.map f₂').obj W' ⟶ (Over.map f₂).obj W).op
-      ((D.hom q f₁ f₂ hf₁ hf₂).hom.app (op W) x) =
-      (D.hom q' f₁' f₂' hf₁' hf₂').hom.app (op W')
-        ((sheafObj D i₁).obj.map (Over.homMk c (by simp [← h₁, reassoc_of% hc]) :
-          (Over.map f₁').obj W' ⟶ (Over.map f₁).obj W).op x) := by
-  subst h₁ h₂
-  have hq : b ≫ q = q' := by rw [← hf₁', ← hf₁, Category.assoc]
-  let c' : (Over.map b).obj W' ⟶ W := Over.homMk c (by simpa using hc)
-  -- The morphism `D.hom q' _ _` is the pullback of `D.hom q f₁ f₂` along `b`, whose components
-  -- are those of `D.hom q f₁ f₂` up to the identifications `Over.homMk (𝟙 _)`.
-  have key := pseudofunctorOver_pullHom_hom_app_apply (D.hom q f₁ f₂ hf₁ hf₂) b (b ≫ f₁)
-    (b ≫ f₂) rfl rfl W' ((sheafObj D i₁).obj.map (Over.homMk c (by simp [reassoc_of% hc]) :
-      (Over.map (b ≫ f₁)).obj W' ⟶ (Over.map f₁).obj W).op x)
-  rw [D.pullHom_hom b q q' hq f₁ f₂ hf₁ hf₂ (b ≫ f₁) (b ≫ f₂) rfl rfl] at key
-  let e₁ : (Over.map f₁).obj ((Over.map b).obj W') ⟶ (Over.map (b ≫ f₁)).obj W' :=
-    Over.homMk (𝟙 _) (by simp)
-  let e₂ : (Over.map (b ≫ f₂)).obj W' ⟶ (Over.map f₂).obj ((Over.map b).obj W') :=
-    Over.homMk (𝟙 _) (by simp)
-  refine Eq.trans ?_ key.symm
-  calc _ = (sheafObj D i₂).obj.map e₂.op ((sheafObj D i₂).obj.map ((Over.map f₂).map c').op
-          ((D.hom q f₁ f₂ hf₁ hf₂).hom.app (op W) x)) :=
-        (map_map_eq _ _ _ (by ext; simp [c', e₂]) _).symm
-    _ = (sheafObj D i₂).obj.map e₂.op ((D.hom q f₁ f₂ hf₁ hf₂).hom.app (op ((Over.map b).obj W'))
-          ((sheafObj D i₁).obj.map ((Over.map f₁).map c').op x)) :=
-        congrArg (fun z ↦ (sheafObj D i₂).obj.map e₂.op z)
-          (NatTrans.naturality_apply (D.hom q f₁ f₂ hf₁ hf₂).hom c'.op x).symm
-    _ = (sheafObj D i₂).obj.map e₂.op ((D.hom q f₁ f₂ hf₁ hf₂).hom.app (op ((Over.map b).obj W'))
-          ((sheafObj D i₁).obj.map e₁.op ((sheafObj D i₁).obj.map
-            (Over.homMk c (by simp [reassoc_of% hc]) :
-              (Over.map (b ≫ f₁)).obj W' ⟶ (Over.map f₁).obj W).op x))) := by
-        rw [map_map_eq _ _ ((Over.map f₁).map c') (by ext; simp [c', e₁])]
-
 namespace GlueSection
 
 variable {D} {T : Over S}
@@ -328,18 +287,6 @@ private lemma map_homMk_id {i : ι} {Z : Over (X i)} (h) (x : (sheafObj D i).obj
   rw [show (Over.homMk (𝟙 Z.left) h : Z ⟶ Z) = 𝟙 Z by ext; simp]
   simp
 
-private lemma hom_app_of_eq {Y : C} (q : Y ⟶ S) {i : ι} (f₁ f₂ : Y ⟶ X i) (hf₁ : f₁ ≫ f i = q)
-    (hf₂ : f₂ ≫ f i = q) (h : f₁ = f₂) (W : Over Y)
-    (x : (sheafObj D i).obj.obj (op ((Over.map f₁).obj W))) :
-    (D.hom q f₁ f₂ hf₁ hf₂).hom.app (op W) x =
-      (sheafObj D i).obj.map (Over.homMk (𝟙 W.left) (by simp [h]) :
-        (Over.map f₂).obj W ⟶ (Over.map f₁).obj W).op x := by
-  subst h
-  have h := congrArg (fun φ : ((J.pseudofunctorOver _).map f₁.op.toLoc).toFunctor.obj (D.obj i) ⟶
-    ((J.pseudofunctorOver _).map f₁.op.toLoc).toFunctor.obj (D.obj i) ↦ φ.hom.app (op W) x)
-    (D.hom_self q f₁ hf₁)
-  exact h.trans (map_homMk_id _ x).symm
-
 variable (D) in
 /-- The value at `(j, Z', g)` of the glued section over `(Over.map (f i)).obj Z` determined by
 an element `d` of `D.obj i` over `Z`: the image of `d` under the gluing morphism of `D` over
@@ -359,8 +306,8 @@ private lemma transportVal_map {i : ι} {Z : Over (X i)} (d : (sheafObj D i).obj
     (hg : g ≫ Z.hom ≫ f i = Z'.hom ≫ f j) :
     (sheafObj D j).obj.map a.op (transportVal D d j Z' g hg) =
       transportVal D d j Z'' (a.left ≫ g) (by simp [hg]) := by
-  have key := hom_app_map a.left (Z'.hom ≫ f j) (Z''.hom ≫ f j) (g ≫ Z.hom) Z'.hom
-    (by simpa using hg) rfl ((a.left ≫ g) ≫ Z.hom) Z''.hom (by simp [hg]) rfl
+  have key := pseudofunctorOver_descentData_hom_app_map a.left (Z'.hom ≫ f j) (Z''.hom ≫ f j)
+    (g ≫ Z.hom) Z'.hom (by simpa using hg) rfl ((a.left ≫ g) ≫ Z.hom) Z''.hom (by simp [hg]) rfl
     (by simp) (Over.w a) (W := Over.mk (𝟙 Z'.left)) (W' := Over.mk (𝟙 Z''.left)) a.left (by simp)
     ((sheafObj D i).obj.map (Over.homMk g (by simp) :
         (Over.map (g ≫ Z.hom)).obj (Over.mk (𝟙 Z'.left)) ⟶ Z).op d)
@@ -394,9 +341,9 @@ private lemma transportVal_hom {i : ι} {Z : Over (X i)} (d : (sheafObj D i).obj
   let k₂ : (Over.map f₂).obj W ⟶ (Over.map (W.hom ≫ f₂)).obj V := Over.homMk (𝟙 _) (by simp [V])
   let H₁ := D.hom ((W.hom ≫ f₁) ≫ f j₁) (g ≫ Z.hom) (W.hom ≫ f₁) (by simp [hg, ← hf₁]) rfl
   let u := (sheafObj D j₁).obj.map ε₁.op (H₁.hom.app (op V) y)
-  have key := hom_app_map W.hom q (W.hom ≫ q) f₁ f₂ hf₁ hf₂ (W.hom ≫ f₁) (W.hom ≫ f₂)
-    (by simp [hf₁]) (by simp [hf₂]) rfl rfl (W := (Over.map W.hom).obj V) (W' := V) (𝟙 _)
-    (by simp [V]) u
+  have key := pseudofunctorOver_descentData_hom_app_map W.hom q (W.hom ≫ q) f₁ f₂ hf₁ hf₂
+    (W.hom ≫ f₁) (W.hom ≫ f₂) (by simp [hf₁]) (by simp [hf₂]) rfl rfl (W := (Over.map W.hom).obj V)
+    (W' := V) (𝟙 _) (by simp [V]) u
   have hw : (sheafObj D j₁).obj.map (Over.homMk (𝟙 _) (by simp [V]) :
       (Over.map (W.hom ≫ f₁)).obj V ⟶ (Over.map f₁).obj ((Over.map W.hom).obj V)).op u =
       H₁.hom.app (op V) y :=
@@ -419,7 +366,7 @@ private lemma transportVal_self {i : ι} {Z : Over (X i)} (d : (sheafObj D i).ob
     transportVal D d i Z (𝟙 Z.left) (by simp) = d := by
   refine (congrArg (fun z ↦ (sheafObj D i).obj.map (Over.homMk (𝟙 Z.left) (by simp) :
       Z ⟶ (Over.map Z.hom).obj (Over.mk (𝟙 Z.left))).op z)
-    (hom_app_of_eq _ _ _ _ _ (by simp) _ _)).trans ?_
+    (pseudofunctorOver_descentData_hom_app_of_eq _ _ _ _ _ (by simp) _ _)).trans ?_
   rw [map_map_eq _ _ (Over.homMk (𝟙 Z.left) (by simp) :
       (Over.map Z.hom).obj (Over.mk (𝟙 Z.left)) ⟶ Z)
     (by ext; simp), map_map_eq _ _ (Over.homMk (𝟙 Z.left) (by simp) : Z ⟶ Z) (by ext; simp),
@@ -464,6 +411,21 @@ def restrictEquiv (i : ι) (Z : Over (X i)) :
 @[simp]
 lemma restrictEquiv_apply (i : ι) (Z : Over (X i)) (s : GlueSection D ((Over.map (f i)).obj Z)) :
     restrictEquiv D i Z s = s.val i Z (𝟙 _) (by simp) := (rfl)
+
+/-- The value at `(j, Z', g)` of the glued section over `(Over.map (f i)).obj Z` determined by
+an element `d` of `D.obj i` over `Z` is the image of `d` under the gluing morphism of `D` over
+`Z'.left` for the morphisms `g ≫ Z.hom` and `Z'.hom`. -/
+@[simp]
+lemma restrictEquiv_symm_apply_val (i : ι) (Z : Over (X i)) (d : (sheafObj D i).obj.obj (op Z))
+    (j : ι) (Z' : Over (X j)) (g : Z'.left ⟶ ((Over.map (f i)).obj Z).left)
+    (hg : g ≫ ((Over.map (f i)).obj Z).hom = Z'.hom ≫ f j) :
+    ((restrictEquiv D i Z).symm d).val j Z' g hg =
+      (sheafObj D j).obj.map (Over.homMk (𝟙 Z'.left) (by simp) :
+          Z' ⟶ (Over.map Z'.hom).obj (Over.mk (𝟙 Z'.left))).op
+        ((D.hom (Z'.hom ≫ f j) (g ≫ Z.hom) Z'.hom (by simpa using hg) rfl).hom.app
+          (op (Over.mk (𝟙 Z'.left)))
+          ((sheafObj D i).obj.map (Over.homMk g (by simp) :
+            (Over.map (g ≫ Z.hom)).obj (Over.mk (𝟙 Z'.left)) ⟶ Z).op d)) := (rfl)
 
 namespace GlueSection
 
@@ -515,6 +477,11 @@ def glueRestrictIso (i : ι) :
 lemma glueRestrictIso_hom_hom_app_apply (i : ι) (Z : (Over (X i))ᵒᵖ)
     (s : GlueSection D ((Over.map (f i)).obj Z.unop)) :
     (glueRestrictIso D i).hom.hom.app Z s = s.val i Z.unop (𝟙 _) (by simp) := (rfl)
+
+@[simp]
+lemma glueRestrictIso_inv_hom_app_apply (i : ι) (Z : (Over (X i))ᵒᵖ)
+    (d : (sheafObj D i).obj.obj Z) :
+    (glueRestrictIso D i).inv.hom.app Z d = (restrictEquiv D i Z.unop).symm d := (rfl)
 
 variable (D) in
 /-- The descent datum of the glued sheaf of `D` is `D`. -/
