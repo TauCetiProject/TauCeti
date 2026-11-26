@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
 public import TauCeti.Topology.Algebra.Module.Multilinear.ModuleTopology
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 public import TauCeti.RepresentationTheory.SymmetricPower
@@ -51,15 +50,10 @@ module topology on `Sym[A]^d M`. -/
 private theorem continuous_symmetricPower_action (ρ : ContinuousRep Γ A M) :
     Continuous fun p : Γ × Sym[A]^d M ↦ ρ.toRepresentation.symmetricPower d p.1 p.2 := by
   obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := A) (M := M)
-  -- the pure tensors of generators span the symmetric power
-  have hspan : Submodule.span A (Set.range fun r : Fin d → Fin n ↦ ⨂ₛ[A] k, s (r k)) = ⊤ := by
-    rw [← SymmetricPower.range_mk, LinearMap.range_eq_map,
-      ← PiTensorProduct.submodule_span_eq_top (g := fun _ ↦ s) fun _ ↦ hs, Submodule.map_span,
-      ← Set.range_comp]
-    simp only [SymmetricPower.tprod, LinearMap.coe_compMultilinearMap, Function.comp_def]
   have := IsModuleTopology.toContinuousAdd A (Sym[A]^d M)
   refine (IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top
-    (ρ.toRepresentation.symmetricPower d) hspan).2 fun r ↦ ?_
+    (ρ.toRepresentation.symmetricPower d)
+    (SymmetricPower.span_tprod_comp_eq_top_of_span_eq_top (ι := Fin d) hs)).2 fun r ↦ ?_
   have htprod : Continuous (SymmetricPower.tprod A (ι := Fin d) (M := M)) :=
     IsModuleTopology.continuous_multilinearMap _
   refine (htprod.comp (continuous_pi fun k ↦ ρ.continuous_orbit (s (r k)))).congr fun g ↦ ?_
