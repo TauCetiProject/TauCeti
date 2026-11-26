@@ -31,11 +31,12 @@ make it an isometric isomorphism, are not proved here.
 ## The argument
 
 Let `G` be an upper strip function of the dual couple with `deriv G θ = u` and boundary
-difference quotients `q`. For an admissible function `Φ` with values in `X₀ ∩ X₁` and real
-`h ≠ 0`, the scalar function `z ↦ ⟨(h i)⁻¹ (G (z + h i) - G z), Φ z⟩` is holomorphic and bounded
-on the strip, and on the line `re z = j` it pairs a difference quotient of `G` in `Xⱼ*` with
-`Φ z ∈ Xⱼ`. The maximum principle bounds its value at `θ` by `‖q‖` times the boundary norms of
-`Φ`, and letting `h → 0` gives `|⟨u, Φ θ⟩| ≤ ‖q‖ sup_j sup_t ‖Φ (j + i t)‖_j`
+difference quotients `q`. For a function `Φ` with values in `X₀ ∩ X₁`, holomorphic on the open
+strip and continuous and bounded on the closed strip, and real `h ≠ 0`, the scalar function
+`z ↦ ⟨(h i)⁻¹ (G (z + h i) - G z), Φ z⟩` is holomorphic and bounded on the strip, and on the line
+`re z = j` it pairs a difference quotient of `G` in `Xⱼ*` with `Φ z ∈ Xⱼ`. The maximum principle
+bounds its value at `θ` by `‖q‖` times the boundary norms of `Φ`, and letting `h → 0` gives
+`|⟨u, Φ θ⟩| ≤ ‖q‖ sup_j sup_t ‖Φ (j + i t)‖_j`
 (`IsUpperStripFunction.norm_sumSpaceEmbed_deriv_apply_le`).
 
 These intersection-valued functions are enough to approach `‖x‖_θ`
@@ -45,7 +46,8 @@ gives the duality estimate.
 ## Main declarations
 
 * `IsUpperStripFunction.norm_sumSpaceEmbed_deriv_apply_le`: the pairing estimate for an upper
-  strip function of the dual couple and an intersection-valued admissible function.
+  strip function of the dual couple and an intersection-valued function, holomorphic on the open
+  strip and continuous and bounded on the closed strip.
 * `UpperComplexMethodSpace.norm_sumSpaceEmbed_toSum_apply_le`: `|⟨u, x⟩| ≤ ‖u‖^[θ] ‖x‖_θ`.
 * `UpperComplexMethodSpace.toStrongDual`: the injective contraction
   `[X₀*, X₁*]^θ →L[ℂ] ([X₀, X₁]_θ)*`, characterized by `toStrongDual_apply_ofInter`.
