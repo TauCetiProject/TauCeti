@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Ergodic.InvariantProbabilities
 public import Mathlib.Dynamics.Ergodic.Extreme
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Ergodic invariant probabilities are the extreme points
@@ -24,10 +25,10 @@ and the Dirac mass at a fixed point of a measurable map is an ergodic invariant 
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory Set
 open scoped ENNReal
+
+namespace TauCeti
 
 variable {X : Type*} [MeasurableSpace X] {T : X → X}
 
@@ -62,9 +63,6 @@ theorem UniquelyErgodic.ergodic (h : UniquelyErgodic T) {ν : ProbabilityMeasure
 theorem ergodic_dirac_of_isFixedPt (hT : Measurable T) {x : X} (hx : Function.IsFixedPt T x) :
     Ergodic T (Measure.dirac x) where
   toMeasurePreserving := ⟨hT, by rw [Measure.map_dirac' hT, hx.eq]⟩
-  aeconst_set s hs _ := by
-    refine Filter.EventuallyEmptyOrUniv.congr ?_ hs.toMeasurable_ae_eq
-    refine Filter.eventuallyConst_iff_exists_eventuallyEq.2 ⟨_, (ae_dirac_iff ?_).2 rfl⟩
-    by_cases h : x ∈ toMeasurable (Measure.dirac x) s <;> simp [h, ← compl_ofPred]
+  aeconst_set _ hs _ := eventuallyEmptyOrUniv_ae_dirac hs
 
 end TauCeti
