@@ -39,7 +39,7 @@ evaluates `e ⊗ f` to `(-1) ^ (i * j) • (ρ₁ a e ⊗ ρ₂ b f)`.
 
 For the spinor modules of oriented even-dimensional Euclidean spaces, `γ` is the chirality
 operator, and the normalized volume element of `V ⊕ W` then acts by the tensor grading; see
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Basic.lean`.
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Orientation.lean`.
 
 ## Main definitions
 

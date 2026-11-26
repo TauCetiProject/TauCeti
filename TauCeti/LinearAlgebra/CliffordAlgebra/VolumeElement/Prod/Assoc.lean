@@ -16,8 +16,9 @@ import TauCeti.LinearAlgebra.LinearEquiv.Basic
 # Associativity of graded tensor products of complex Clifford modules
 
 For even-dimensional oriented real inner product spaces `(U, o₁)` and `(V, o₂)` with
-`Q₁ u = -‖u‖²`, `Q₂ v = -‖v‖²`, and arbitrary `(W, Q₃)`, `TensorProduct.assoc ℂ E F G` intertwines
-the two iterated `CliffordAlgebra.complexProdTensor` actions along
+`Q₁ u = -‖u‖²`, `Q₂ v = -‖v‖²`, `o₁₂` equal to `o₁.prod o₂` transported along
+`(WithLp.linearEquiv 2 ℝ (U × V)).symm`, and arbitrary `(W, Q₃)`, `TensorProduct.assoc ℂ E F G`
+intertwines the two iterated `CliffordAlgebra.complexProdTensor` actions along
 `QuadraticMap.IsometryEquiv.withLpProdAssoc`. When `(W, o₃)` is also even-dimensional with
 `Q₃ w = -‖w‖²`, it carries the left-associated product chirality to the right-associated one.
 
@@ -25,7 +26,8 @@ the two iterated `CliffordAlgebra.complexProdTensor` actions along
 
 * `CliffordAlgebra.conjAlgEquiv_assoc_complexProdTensor` and
   `CliffordAlgebra.assoc_complexProdTensor`: `TensorProduct.assoc ℂ E F G` intertwines the two
-  iterated `complexProdTensor` actions along `QuadraticMap.IsometryEquiv.withLpProdAssoc`.
+  iterated `complexProdTensor` actions along `QuadraticMap.IsometryEquiv.withLpProdAssoc` when
+  `o₁₂` is `o₁.prod o₂` transported along `(WithLp.linearEquiv 2 ℝ (U × V)).symm`.
 * `CliffordAlgebra.assoc_complexProdTensor_complexVolume`: for even-dimensional `(W, o₃)` with
   `Q₃ w = -‖w‖²`, `TensorProduct.assoc ℂ E F G` carries the left-associated chirality action to the
   right-associated one when `o_R` is transported from `o_L` along `LinearEquiv.withLpProdAssoc`.
@@ -143,8 +145,9 @@ private theorem complexProdTensor_assoc_right :
   simp only [AlgHom.comp_assoc, map_comp_map]
   rfl
 
-/-- **Associativity of `complexProdTensor` (algebra-map form).** Conjugating the left-associated
-action on `(E ⊗ F) ⊗ G` by `TensorProduct.assoc ℂ E F G` gives the right-associated action on
+/-- **Associativity of `complexProdTensor` (algebra-map form).** When `o₁₂` is `o₁.prod o₂`
+transported along `(WithLp.linearEquiv 2 ℝ (U × V)).symm`, conjugating the left-associated action
+on `(E ⊗ F) ⊗ G` by `TensorProduct.assoc ℂ E F G` gives the right-associated action on
 `E ⊗ (F ⊗ G)` transported along `QuadraticMap.IsometryEquiv.withLpProdAssoc`. -/
 theorem conjAlgEquiv_assoc_complexProdTensor
     (ho₁₂ : (o₁.prod o₂ Fact.out Fact.out).map (Fin (k + n))
@@ -167,7 +170,8 @@ theorem conjAlgEquiv_assoc_complexProdTensor
   simp only [AlgHom.comp_assoc, map_comp_map]
   rw [QuadraticMap.IsometryEquiv.withLpProdAssoc_toIsometry_baseChange]
 
-/-- **Associativity of `complexProdTensor` (pointwise form).** `TensorProduct.assoc ℂ E F G`
+/-- **Associativity of `complexProdTensor` (pointwise form).** When `o₁₂` is `o₁.prod o₂`
+transported along `(WithLp.linearEquiv 2 ℝ (U × V)).symm`, `TensorProduct.assoc ℂ E F G`
 intertwines the two iterated `complexProdTensor` actions for every Clifford element `a` and tensor
 `t : (E ⊗ F) ⊗ G`. -/
 theorem assoc_complexProdTensor

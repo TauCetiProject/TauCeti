@@ -20,7 +20,7 @@ conjugation (`AlgHom.cliffordProdTensor_of_eq_neg`).
 
 For spinor modules graded by their chirality, reversing the orientation of the first space negates
 its chirality, so this is the orientation-reversal law of the graded product; see
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Basic.lean`. No finiteness or
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Orientation.lean`. No finiteness or
 invertibility of two is needed.
 
 ## Main results

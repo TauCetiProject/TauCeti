@@ -76,8 +76,8 @@ private theorem cliffordProdTensor_eq_linearEquiv_tmul
         (ρ₁ a * γ ^ j.val) ⊗ₜ (evenOddProdEquiv Q₂).symm y := by
     rw [LinearEquiv.symm_apply_eq]
     rcases (by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) j with rfl | rfl
-    · simp [evenOddProdEquiv_symm_of_mem_even hy, ZMod.val_zero]
-    · simp [evenOddProdEquiv_symm_of_mem_odd hy, ZMod.val_one]
+    · simp [evenOddProdEquiv_symm_apply_of_mem_even hy, ZMod.val_zero]
+    · simp [evenOddProdEquiv_symm_apply_of_mem_odd hy, ZMod.val_one]
   have hΨ : cliffordProdTensorLinearEquiv ρ₁ γ hγ ρ₂ hρ₁ hρ₂
       ((prodTensorLinearEquiv Q₁ Q₂).symm (a ⊗ₜ y)) =
       TensorProduct.map (ρ₁ a * γ ^ j.val) (ρ₂ y) := by

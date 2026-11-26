@@ -26,8 +26,8 @@ For even-dimensional oriented real inner product spaces `(V, o₁)` and `(W, o�
   `CliffordAlgebra.koszulComm_complexProdTensor`: `Module.End.koszulComm` intertwines the swapped
   `complexProdTensor` actions along `QuadraticMap.IsometryEquiv.withLpProdComm`.
 * `CliffordAlgebra.koszulComm_complexProdTensor_complexVolume` and
-  `CliffordAlgebra.koszulComm_complexProdTensor_complexVolume_map`: `koszulComm` intertwines the
-  product chiralities of `V ⊕ W` and `W ⊕ V`.
+  `CliffordAlgebra.koszulComm_complexProdTensor_complexVolume_of_map_withLpProdComm`: `koszulComm`
+  intertwines the product chiralities of `V ⊕ W` and `W ⊕ V`.
 
 ## References
 
@@ -126,7 +126,7 @@ theorem koszulComm_complexProdTensor_complexVolume
 (`Orientation.map_withLpProdComm_prod_of_even`), transporting `o_VW` along
 `(LinearEquiv.prodComm ℝ V W).withLpCongr 2` gives `o_WV` and `Module.End.koszulComm` intertwines
 their chiralities. -/
-theorem koszulComm_complexProdTensor_complexVolume_map
+theorem koszulComm_complexProdTensor_complexVolume_of_map_withLpProdComm
     (ho_VW : (o₁.prod o₂ Fact.out Fact.out).map (Fin (n + m))
       (WithLp.linearEquiv 2 ℝ (V × W)).symm = o_VW)
     (ho_WV : Orientation.reindex ℝ (WithLp 2 (W × V)) (finCongr (add_comm n m))

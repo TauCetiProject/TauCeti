@@ -16,8 +16,8 @@ import TauCeti.LinearAlgebra.QuadraticForm.WithLp.L2
 
 Decomposes the `±1`-eigenspaces of the product chirality `Γ_(V ⊕ W)` on `E ⊗ F` as
 `(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^(-μ))`, and proves the corresponding complex dimension
-formulas `dim (E ⊗ F)^μ = dim E⁺ · dim F^μ + dim E⁻ · dim F^(-μ)` and `2 ^ ((n + m) / 2 - 1)` for
-spinor modules.
+formulas `dim (E ⊗ F)^μ = dim E⁺ · dim F^μ + dim E⁻ · dim F^(-μ)`, and `2 ^ ((n + m) / 2 - 1)` for
+spinor modules in positive dimension `n + m ≠ 0`.
 
 ## Main definitions and results
 
@@ -29,7 +29,8 @@ spinor modules.
 * `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume`: dimension formula in terms
   of the factors' eigenspaces.
 * `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume_of_bijective`: half-spin
-  dimension `2 ^ ((n + m) / 2 - 1)` for tensor products of spinor modules.
+  dimension `2 ^ ((n + m) / 2 - 1)` for tensor products of spinor modules in positive dimension
+  `n + m ≠ 0`.
 
 ## References
 

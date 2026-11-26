@@ -59,9 +59,10 @@ belongs to the grading API independently of any spin representation.
   of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_zero_of_even_length` and
   `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` read that off in the even and the odd
   case.
-* `CliffordAlgebra.evenOddProdEquiv_apply`, `CliffordAlgebra.evenOddProdEquiv_symm_of_mem_even`,
-  and `CliffordAlgebra.evenOddProdEquiv_symm_of_mem_odd`: forward and homogeneous-summand inverse
-  evaluation of `evenOddProdEquiv`.
+* `CliffordAlgebra.evenOddProdEquiv_apply`,
+  `CliffordAlgebra.evenOddProdEquiv_symm_apply_of_mem_even`, and
+  `CliffordAlgebra.evenOddProdEquiv_symm_apply_of_mem_odd`: forward and homogeneous-summand
+  inverse evaluation of `evenOddProdEquiv`.
 * `CliffordAlgebra.involute_eq_uzpow_smul_of_mem_evenOdd`: the grade involution acts on the graded
   piece of parity `p` by `(-1) ^ p`.
 * `CliffordAlgebra.apply_smul_eq_involute_smul`: an operator on a Clifford module anticommuting
@@ -143,14 +144,14 @@ theorem evenOddProdEquiv_apply (x : evenOdd Q 0 × evenOdd Q 1) :
 
 /-- An even element maps under `(evenOddProdEquiv Q).symm` to `(⟨x, hx⟩, 0)`. -/
 @[simp]
-theorem evenOddProdEquiv_symm_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 0) :
+theorem evenOddProdEquiv_symm_apply_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 0) :
     (evenOddProdEquiv Q).symm x = (⟨x, hx⟩, 0) :=
   Submodule.prodEquivOfIsCompl_symm_apply_left (evenOdd Q 0) (evenOdd Q 1) (evenOdd_isCompl Q)
     ⟨x, hx⟩
 
 /-- An odd element maps under `(evenOddProdEquiv Q).symm` to `(0, ⟨x, hx⟩)`. -/
 @[simp]
-theorem evenOddProdEquiv_symm_of_mem_odd {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 1) :
+theorem evenOddProdEquiv_symm_apply_of_mem_odd {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 1) :
     (evenOddProdEquiv Q).symm x = (0, ⟨x, hx⟩) :=
   Submodule.prodEquivOfIsCompl_symm_apply_right (evenOdd Q 0) (evenOdd Q 1) (evenOdd_isCompl Q)
     ⟨x, hx⟩
