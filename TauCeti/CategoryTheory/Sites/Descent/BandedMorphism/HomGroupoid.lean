@@ -36,7 +36,7 @@ In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 * `homIso`, `homIso_hom`, `homIso_inv_app`, `hom_homIso_inv`, `homIso_inv_hom`, `homIso_id`,
   `homIso_comp`, `isGroupoid_homCategory`, `hom_isIso`, `groupoid`, `groupoid_inv`,
   `groupoid_comp_inv`, `groupoid_inv_comp`.
-* `componentIso`, `componentIso_hom`, `componentIso_id`, `componentIso_comp`,
+* `componentIso`, `componentIso_hom`, `componentIso_inv`, `componentIso_id`, `componentIso_comp`,
   `componentIso_homIso_inv`.
 
 ## References
@@ -206,6 +206,13 @@ noncomputable def componentIso {X Y : HomCategory bF bG} (m : X ⟶ Y) (U : C)
 theorem componentIso_hom {X Y : HomCategory bF bG} (m : X ⟶ Y) (U : C)
     (x : F.obj (.mk (op U))) :
     (componentIso m U x).hom = (m.hom.as.app (.mk (op U))).toNatTrans.app x :=
+  (rfl)
+
+/-- The inverse of `componentIso m U x` is the inverse of the component of `m`. -/
+@[simp]
+theorem componentIso_inv {X Y : HomCategory bF bG} (m : X ⟶ Y) (U : C)
+    (x : F.obj (.mk (op U))) :
+    (componentIso m U x).inv = inv ((m.hom.as.app (.mk (op U))).toNatTrans.app x) :=
   (rfl)
 
 @[simp]
