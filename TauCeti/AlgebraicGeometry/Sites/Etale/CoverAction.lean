@@ -176,8 +176,12 @@ def smallEtaleCoverActionHom (n : ℕ) :
     (Aut (Over.mk p))ᵐᵒᵖ →*
       AddMonoid.End (Sheaf.H ((p.smallEtalePullback AddCommGrpCat.{u}).obj F) n) where
   toFun g := p.smallEtaleCoverAction g.unop.asIso.hom.left (Over.w g.unop.asIso.hom) F n
-  map_one' := smallEtaleCoverAction_id p F n
-  map_mul' _ _ := smallEtaleCoverAction_comp p F _ _ _ _ n
+  map_one' := by
+    simp only [MulOpposite.unop_one, Aut.one_asIso, Iso.refl_hom, Over.id_left]
+    exact smallEtaleCoverAction_id p F n
+  map_mul' g h := by
+    simp only [MulOpposite.unop_mul, Aut.mul_asIso, Iso.trans_hom, Over.comp_left]
+    exact smallEtaleCoverAction_comp p F _ _ _ _ n
 
 /-- An automorphism `g` of `Y` over `X` acts by `g.asIso.hom.left^♮`. -/
 @[simp]
