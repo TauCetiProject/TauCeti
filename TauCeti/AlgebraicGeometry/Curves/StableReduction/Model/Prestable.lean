@@ -30,8 +30,9 @@ exactly when it is proper and `C` and the special fibre are prestable curves.
   when its generic curve and its special fibre are.
 * `TauCeti.Model.prestableFamily_toBase_iff`: a model is prestable exactly when it is proper and
   its generic curve and its special fibre are prestable.
-* `TauCeti.Model.prestableFamily_toBase_iff_atWorstNodal`: a proper model of a prestable curve is
-  prestable exactly when its special fibre is geometrically connected and at worst nodal.
+* `TauCeti.Model.prestableFamily_toBase_iff_geometricallyConnected_and_atWorstNodal`: a proper
+  model of a prestable curve is prestable exactly when its special fibre is geometrically connected
+  and at worst nodal.
 
 ## References
 
@@ -80,8 +81,8 @@ theorem prestableFamily_toBase_iff (M : Model R K C toK) :
 /-- A proper model of a prestable curve over a discrete valuation ring is a prestable model
 exactly when its special fibre is geometrically connected and at worst nodal of relative
 dimension one. -/
-theorem prestableFamily_toBase_iff_atWorstNodal (M : Model R K C toK) [M.IsProper]
-    [AlgebraicGeometry.PrestableFamily toK] :
+theorem prestableFamily_toBase_iff_geometricallyConnected_and_atWorstNodal (M : Model R K C toK)
+    [M.IsProper] [AlgebraicGeometry.PrestableFamily toK] :
     AlgebraicGeometry.PrestableFamily M.toBase ↔
       GeometricallyConnected (specialFiber R M.toBase).hom ∧
         AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne (specialFiber R M.toBase).hom := by

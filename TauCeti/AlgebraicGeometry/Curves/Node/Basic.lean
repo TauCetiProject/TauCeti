@@ -10,8 +10,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.PureRelativeDimension
 public import TauCeti.RingTheory.Node.Basic
+public import TauCeti.RingTheory.Node.BaseChange
 import Mathlib.AlgebraicGeometry.Fiber
-import TauCeti.RingTheory.Node.BaseChange
 import TauCeti.RingTheory.Node.Flat
 
 /-!
@@ -33,6 +33,7 @@ is pure of dimension one (`TauCeti.NodeAlgebra.isPureDimensional_primeSpectrum`)
 ## Main results
 
 * `TauCeti.NodeAlgebra.flat_spec`: the local model of a node is flat.
+* `TauCeti.NodeAlgebra.isPullback_SpecMap_map`: changing its coefficient ring is a base change.
 * `TauCeti.NodeAlgebra.fiberIso`: its fibres are spectra of node algebras over residue fields.
 * `TauCeti.NodeAlgebra.pureRelativeDimension_spec`: it has pure relative dimension one.
 
@@ -59,6 +60,18 @@ variable {R : Type u} [CommRing R] (a : R)
 /-- The local model of a node is flat. -/
 instance flat_spec : Flat (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))) :=
   Flat.SpecMap_iff.mpr (RingHom.flat_algebraMap_iff.mpr inferInstance)
+
+/-- **Base change of the local model of a node.** For an `R`-algebra `S`, the square formed by
+the coefficient change `Spec S[x, y] ⧸ (xy - a) ⟶ Spec R[x, y] ⧸ (xy - a)` (`NodeAlgebra.map`),
+the structure morphisms and `Spec S ⟶ Spec R` is a pullback. -/
+theorem isPullback_SpecMap_map (S : Type u) [CommRing S] [Algebra R S] :
+    IsPullback (Spec.map (CommRingCat.ofHom (map (S := S) a)))
+      (Spec.algebraMap S (NodeAlgebra S (algebraMap R S a)))
+      (Spec.algebraMap R (NodeAlgebra R a)) (Spec.algebraMap R S) :=
+  isPullback_SpecMap_of_isPushout _ _ _ _ <|
+    (CommRingCat.isPushout_tensorProduct R S (NodeAlgebra R a)).flip.of_iso (Iso.refl _)
+      (Iso.refl _) (Iso.refl _) (baseChange a).toRingEquiv.toCommRingCatIso (by simp) (by simp)
+      (by ext; simp) (by ext; exact (baseChange a).commutes _)
 
 /-- The fibre of the local model of a node over a prime `p` of `R` is the spectrum of the node
 algebra of the image of `a` in the residue field `κ(p)`. -/

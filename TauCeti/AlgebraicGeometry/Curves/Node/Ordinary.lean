@@ -28,17 +28,20 @@ field: for a finite separable extension `L` of `F`, `Spec L[u, v] ⧸ (uv) ⟶ S
 split.
 
 This file shows that a scheme over `F` is at worst nodal of relative dimension one exactly when
-each of its points is an ordinary node or a smooth point. The proof of the converse constructs the
-chart at a singular point `x` after a finite separable extension of `F` depending on `x`, and then
-descends it to `F` (`TauCeti.AlgebraicGeometry.IsOrdinaryNodeOrSmoothAt.of_pullback_fst`). The
-file also records the criteria in these terms: with finite separable extensions at each point, or
+each of its points is an ordinary node or a smooth point. Étale locality on the source deduces
+nodality from the pointwise charts. Conversely, nodality gives the pointwise charts: at a singular
+point `x` the chart is constructed after an auxiliary finite separable extension of the base field
+`F` depending on `x`, and then descended to `F`
+(`TauCeti.AlgebraicGeometry.IsOrdinaryNodeOrSmoothAt.of_pullback_fst`). The file also records the
+criteria in these terms: with auxiliary finite separable base-field extensions at each point, or
 only at the points outside the smooth locus, and after base change to any field extension of `F`,
 for instance an algebraic closure.
 
 The chart construction uses the étale local normal form of a nodal curve
 (`AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_notMem_smoothLocus`): at a non-smooth
 point the chart is `uv = h` over an étale `F`-algebra `R'`, and `h` vanishes in the residue field
-of `R'` at the point below, which is a finite separable extension of `F`.
+of `R'` at the point below. This residue field of the auxiliary étale base, not the residue field
+of `x`, is the finite separable extension of `F` used.
 
 ## Main definitions
 
@@ -47,17 +50,21 @@ of `R'` at the point below, which is a finite separable extension of `F`.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.isOrdinaryNodeOrSmoothAt_comp_iff`: the predicate is étale local on
+  the source.
 * `TauCeti.AlgebraicGeometry.isOrdinaryNodeOrSmoothAt_of_mem_smoothLocus`: points of the smooth
   locus of a curve are smooth points.
+* `TauCeti.AlgebraicGeometry.IsOrdinaryNodeOrSmoothAt.pullback_fst`: ordinary node charts base
+  change along field extensions.
 * `TauCeti.AlgebraicGeometry.IsOrdinaryNodeOrSmoothAt.of_pullback_fst`: ordinary node charts
   descend along étale field extensions.
 * `atWorstNodalOfRelativeDimensionOne_iff_forall_isOrdinaryNodeOrSmoothAt`:
   a scheme over a field is at worst nodal exactly when all its points are ordinary nodes or smooth
   points.
-* `atWorstNodalOfRelativeDimensionOne_iff_forall_exists_isSeparable`: the same with a point above
-  each point after a finite separable extension.
-* `atWorstNodalOfRelativeDimensionOne_iff_forall_notMem_smoothLocus_exists_isSeparable`: for a
-  curve, the same with extensions only at the points outside the smooth locus.
+* `atWorstNodalOfRelativeDimensionOne_iff_forall_exists_isSeparable_isOrdinaryNodeOrSmoothAt`: the
+  same with a point above each point after an auxiliary finite separable base-field extension.
+* `atWorstNodalOfRelativeDimensionOne_iff_notMem_smoothLocus_isSeparable_isOrdinaryNodeOrSmoothAt`:
+  for a curve, the same with extensions only at the points outside the smooth locus.
 * `atWorstNodalOfRelativeDimensionOne_iff_forall_baseChange_isOrdinaryNodeOrSmoothAt`: the same
   after base change to any field extension, for instance an algebraic closure.
 
@@ -108,6 +115,18 @@ theorem IsOrdinaryNodeOrSmoothAt.of_comp {X' : Scheme.{u}} {φ : X' ⟶ X} [Etal
   obtain ⟨U, e, c, he, hc, ⟨u, rfl⟩, hce⟩ := h
   exact ⟨U, e ≫ φ, c, inferInstance, hc, ⟨u, rfl⟩, by rw [hce, Category.assoc]⟩
 
+/-- **The ordinary-node predicate is étale local on the source.** For an étale morphism
+`φ : X' ⟶ X` over `F`, a point of `X'` is an ordinary node or a smooth point exactly when its image
+in `X` is. -/
+theorem isOrdinaryNodeOrSmoothAt_comp_iff {X' : Scheme.{u}} (φ : X' ⟶ X) [Etale φ]
+    (f : X ⟶ Spec (.of F)) (x : X') :
+    IsOrdinaryNodeOrSmoothAt (φ ≫ f) x ↔ IsOrdinaryNodeOrSmoothAt f (φ x) := by
+  refine ⟨IsOrdinaryNodeOrSmoothAt.of_comp, fun ⟨U, e, c, he, hc, ⟨u, hu⟩, hce⟩ ↦ ?_⟩
+  -- Pull the chart back along `φ`.
+  obtain ⟨z, -, hz⟩ := Scheme.Pullback.exists_preimage_pullback (f := e) (g := φ) u x hu
+  exact ⟨_, pullback.snd e φ, pullback.fst e φ ≫ c, inferInstance, inferInstance, ⟨z, hz⟩, by
+    rw [Category.assoc, hce, pullback.condition_assoc]⟩
+
 /-- A point in the smooth locus of a curve over a field is a smooth point, hence an ordinary node
 or a smooth point. -/
 theorem isOrdinaryNodeOrSmoothAt_of_mem_smoothLocus (f : X ⟶ Spec (.of F))
@@ -120,25 +139,54 @@ theorem isOrdinaryNodeOrSmoothAt_of_mem_smoothLocus (f : X ⟶ Spec (.of F))
     X.exists_etale_nodeAlgebra_zero_of_mem_smoothLocus (R := F) hx
   exact ⟨_, g, ψ, hg, hψ, ⟨y, hgy⟩, hbase.symm⟩
 
-/-- After any field extension `F ⟶ L`, a point of the base change lying over a point of the
-smooth locus is a smooth point, hence an ordinary node or a smooth point. -/
-theorem isOrdinaryNodeOrSmoothAt_pullback_fst_of_mem_smoothLocus (L : Type u) [Field L]
-    [Algebra F L] (f : X ⟶ Spec (.of F)) [LocallyOfFinitePresentation f]
-    [PureRelativeDimension 1 f] {y : ↥(pullback (Spec.algebraMap F L) f)}
-    (hy : pullback.snd _ f y ∈ f.smoothLocus) :
+/-- The split node chart `Spec L[u, v] ⧸ (uv)` over a field extension `L` of `F` is the base
+change of the split node chart over `F` (`NodeAlgebra.isPullback_SpecMap_map`, with the smoothing
+parameter `algebraMap F L 0` rewritten to `0`). -/
+private theorem exists_isPullback_nodeAlgebra_zero (L : Type u) [Field L] [Algebra F L] :
+    ∃ φ : Spec (.of (NodeAlgebra L (0 : L))) ⟶ Spec (.of (NodeAlgebra F (0 : F))),
+      IsPullback φ (Spec.algebraMap L (NodeAlgebra L 0)) (Spec.algebraMap F (NodeAlgebra F 0))
+        (Spec.algebraMap F L) := by
+  have H : ∃ φ : Spec (.of (NodeAlgebra L (algebraMap F L 0))) ⟶
+      Spec (.of (NodeAlgebra F (0 : F))),
+      IsPullback φ (Spec.algebraMap L (NodeAlgebra L (algebraMap F L 0)))
+        (Spec.algebraMap F (NodeAlgebra F 0)) (Spec.algebraMap F L) :=
+    ⟨_, NodeAlgebra.isPullback_SpecMap_map 0 L⟩
+  rwa [map_zero] at H
+
+/-- **Ordinary node charts base change along field extensions.** If a point of `X` is an ordinary
+node or a smooth point over `F`, then so is every point above it in the base change of `X` to a
+field extension `L` of `F`, over `L`: the base change of the chart is a chart over
+`Spec L[u, v] ⧸ (uv)`. -/
+theorem IsOrdinaryNodeOrSmoothAt.pullback_fst (L : Type u) [Field L] [Algebra F L]
+    {f : X ⟶ Spec (.of F)} {y : ↥(pullback (Spec.algebraMap F L) f)}
+    (h : IsOrdinaryNodeOrSmoothAt f (pullback.snd _ f y)) :
     IsOrdinaryNodeOrSmoothAt (pullback.fst _ f) y := by
-  let g := Spec.algebraMap F L
-  have h₁ : (pullbackSymmetry g f).hom y ∈ (pullback.snd f g).smoothLocus := by
-    refine Scheme.Hom.preimage_smoothLocus_le_smoothLocus_pullback_snd f g ?_
-    rw [Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply, pullbackSymmetry_hom_comp_fst]
-    exact hy
-  have h₂ : y ∈ ((pullbackSymmetry g f).hom ≫ pullback.snd f g).smoothLocus := by
-    rw [← Scheme.Hom.preimage_smoothLocus_eq]
-    exact h₁
-  have h₃ : y ∈ (pullback.fst g f).smoothLocus := by
-    convert h₂ using 2
-    exact (pullbackSymmetry_hom_comp_snd g f).symm
-  exact isOrdinaryNodeOrSmoothAt_of_mem_smoothLocus _ h₃
+  obtain ⟨φ, H⟩ := exists_isPullback_nodeAlgebra_zero (F := F) L
+  obtain ⟨U, e, c, he, hc, ⟨u, hu⟩, hce⟩ := h
+  -- The chart `U ×_X X_L = U ×_F Spec L` of `X_L`, through a point above `y` and `u`.
+  obtain ⟨z, hz, -⟩ := Scheme.Pullback.exists_preimage_pullback
+    (f := pullback.snd (Spec.algebraMap F L) f) (g := e) y u hu.symm
+  -- Its chart is the base change `Spec L ×_F U ⟶ Spec L ×_F Spec F[u, v] ⧸ (uv)` of `c`.
+  let cL := pullback.map (Spec.algebraMap F L) (e ≫ f) (Spec.algebraMap F L)
+    (Spec.algebraMap F (NodeAlgebra F 0)) (𝟙 _) c (𝟙 _) (by simp) (by simp [hce])
+  have : Etale cL :=
+    MorphismProperty.pullbackMap (MorphismProperty.id_mem _ _) hc (by simp) hce.symm
+  exact ⟨_, pullback.fst _ e, (pullbackLeftPullbackSndIso _ f e).hom ≫ cL ≫
+    H.flip.isoPullback.inv, inferInstance, inferInstance, ⟨z, hz⟩, by simp [cL]⟩
+
+/-- **Ordinary node charts descend along étale field extensions.** If a point of the base change
+of `X` to an étale field extension `L` of `F` is an ordinary node or a smooth point over `L`, then
+so is its image in `X` over `F`: the chart over `Spec L[u, v] ⧸ (uv)` composes with the étale
+coefficient change to `Spec F[u, v] ⧸ (uv)`. -/
+theorem IsOrdinaryNodeOrSmoothAt.of_pullback_fst (L : Type u) [Field L] [Algebra F L]
+    [Algebra.Etale F L] {f : X ⟶ Spec (.of F)} {y : ↥(pullback (Spec.algebraMap F L) f)}
+    (h : IsOrdinaryNodeOrSmoothAt (pullback.fst _ f) y) :
+    IsOrdinaryNodeOrSmoothAt f (pullback.snd _ f y) := by
+  obtain ⟨φ, H⟩ := exists_isPullback_nodeAlgebra_zero (F := F) L
+  have : Etale φ := MorphismProperty.of_isPullback H.flip inferInstance
+  obtain ⟨U, e, c, he, hc, ⟨u, rfl⟩, hce⟩ := h
+  refine ⟨U, e ≫ pullback.snd _ f, c ≫ φ, inferInstance, inferInstance, ⟨u, rfl⟩, ?_⟩
+  rw [Category.assoc, H.w, reassoc_of% hce, Category.assoc, pullback.condition]
 
 /-- An ordinary node or smooth point has an étale neighbourhood that is at worst nodal of
 relative dimension one over the base field. -/
@@ -174,60 +222,42 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_baseChange_isOrdinaryNodeOrSmoothA
     (AtWorstNodalOfRelativeDimensionOne.of_isOrdinaryNodeOrSmoothAt _ h)
 
 /-- A scheme over a field `F` is at worst nodal of relative dimension one if each point `x` has,
-after some finite separable extension `F ⟶ L` depending on `x`, a point above it in the base
-change that is an ordinary node or a smooth point. -/
-private theorem AtWorstNodalOfRelativeDimensionOne.of_forall_exists_isSeparable
+after some auxiliary finite separable extension `F ⟶ L` depending on `x`, a point above it in the
+base change that is an ordinary node or a smooth point: the charts descend to `F`. -/
+private theorem
+    AtWorstNodalOfRelativeDimensionOne.of_forall_exists_isSeparable_isOrdinaryNodeOrSmoothAt
     (f : X ⟶ Spec (.of F))
     (h : ∀ x, ∃ (L : Type u) (_ : Field L) (_ : Algebra F L) (_ : FiniteDimensional F L)
       (_ : Algebra.IsSeparable F L) (y : ↥(pullback (Spec.algebraMap F L) f)),
       pullback.snd _ f y = x ∧ IsOrdinaryNodeOrSmoothAt (pullback.fst _ f) y) :
     AtWorstNodalOfRelativeDimensionOne f := by
-  choose L _ _ _ _ y hy hL using h
-  choose U e he hx hU using fun x ↦ (hL x).exists_etale
-  have : ∀ x, Algebra.Etale F (L x) := fun x ↦ Algebra.Etale.of_isSeparable F (L x)
-  refine AtWorstNodalOfRelativeDimensionOne.of_etale_cover f (fun x ↦ e x ≫ pullback.snd _ f)
-    (fun x ↦ ⟨x, ?_⟩) fun x ↦ ?_
-  · obtain ⟨u, hu⟩ := hx x
-    exact ⟨u, by simp [hu, hy]⟩
-  · rw [Category.assoc, ← pullback.condition, ← Category.assoc]
-    exact (hU x).comp_specAlgebraMap (R := F)
+  refine AtWorstNodalOfRelativeDimensionOne.of_isOrdinaryNodeOrSmoothAt f fun x ↦ ?_
+  obtain ⟨L, _, _, _, _, y, rfl, hy⟩ := h x
+  have := Algebra.Etale.of_isSeparable F L
+  exact hy.of_pullback_fst L
 
-/-- Base change of an étale chart of the node `uv = h` over `R'` along an étale map `R' → L`:
+/-- Base change of an étale chart of the node `uv = h` over `R'` along a ring map `R' → L`:
 the fibre product `Spec T ×_{Spec R'} Spec L` is étale over the node chart `uv = h` over `L`,
 compatibly with the projections to `Spec L`. -/
 private theorem exists_etale_nodeAlgebra_pullback {R' T L : Type u} [CommRing R'] [CommRing T]
-    [Field L] [Algebra R' L] [Algebra.Etale R' L] {h : R'}
+    [CommRing L] [Algebra R' L] {h : R'}
     (ψ : Spec (.of T) ⟶ Spec (.of (NodeAlgebra R' h))) [Etale ψ] :
     ∃ c : pullback (Spec.algebraMap R' L) (ψ ≫ Spec.algebraMap R' (NodeAlgebra R' h)) ⟶
         Spec (.of (NodeAlgebra L (algebraMap R' L h))),
       Etale c ∧ c ≫ Spec.algebraMap L (NodeAlgebra L (algebraMap R' L h)) = pullback.fst _ _ := by
-  let c₀ : pullback (Spec.algebraMap R' L) (ψ ≫ Spec.algebraMap R' (NodeAlgebra R' h)) ⟶
-      pullback (Spec.algebraMap R' L) (Spec.algebraMap R' (NodeAlgebra R' h)) :=
-    pullback.map _ _ _ _ (𝟙 _) ψ (𝟙 _) (by simp) (by simp)
-  have : Etale c₀ := by
-    have : Etale (c₀ ≫ pullback.snd _ _) := by
-      rw [pullback.lift_snd]
-      infer_instance
-    exact Etale.of_comp c₀ (pullback.snd _ _)
-  have : Etale (Spec.map
-      (CommRingCat.ofHom (NodeAlgebra.baseChange (S := L) h).symm.toRingHom)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @Etale)]
-    exact RingHom.Etale.of_bijective (NodeAlgebra.baseChange h).symm.bijective
-  refine ⟨c₀ ≫ (pullbackSpecIso R' L (NodeAlgebra R' h)).hom ≫
-    Spec.map (CommRingCat.ofHom (NodeAlgebra.baseChange h).symm.toRingHom), inferInstance, ?_⟩
-  have hr : CommRingCat.ofHom (algebraMap L (NodeAlgebra L (algebraMap R' L h))) ≫
-      CommRingCat.ofHom (NodeAlgebra.baseChange h).symm.toRingHom =
-        CommRingCat.ofHom (algebraMap L (L ⊗[R'] NodeAlgebra R' h)) := by
-    ext r
-    exact (NodeAlgebra.baseChange h).symm.commutes r
-  simp only [Spec.algebraMap, Category.assoc, ← Spec.map_comp, hr, pullbackSpecIso_hom_fst']
-  exact (pullback.lift_fst _ _ _).trans (Category.comp_id _)
+  -- `Spec L[u, v] ⧸ (uv - h)` is the base change of the node chart `uv = h` along `R' → L`.
+  have H := (NodeAlgebra.isPullback_SpecMap_map h L).flip
+  let c₀ := pullback.map (Spec.algebraMap R' L) (ψ ≫ Spec.algebraMap R' (NodeAlgebra R' h))
+    (Spec.algebraMap R' L) (Spec.algebraMap R' (NodeAlgebra R' h)) (𝟙 _) ψ (𝟙 _) (by simp)
+    (by simp)
+  have : Etale c₀ := MorphismProperty.pullbackMap (MorphismProperty.id_mem _ _) ‹_› (by simp) rfl
+  exact ⟨c₀ ≫ H.isoPullback.inv, inferInstance, by simp [c₀]⟩
 
-/-- The chart construction behind the converse criteria. Let `g : Spec T ⟶ X` and
-`ψ : Spec T ⟶ Spec R'[u, v] ⧸ (uv - h)` be étale, over an étale `F`-algebra `R'`, and let
-`χ : R' →ₐ[F] L` be a map to an étale field extension of `F` whose kernel is the prime of `R'`
-below `ψ y` and which kills `h`. Base changing the chart along `χ` gives an étale chart of
-`X_L` over `Spec L[u, v] ⧸ (uv)` through a point above `g y`. -/
+/-- The chart construction behind the criteria with auxiliary field extensions. Let
+`g : Spec T ⟶ X` and `ψ : Spec T ⟶ Spec R'[u, v] ⧸ (uv - h)` be étale, over an étale
+`F`-algebra `R'`, and let `χ : R' →ₐ[F] L` be a map to an étale field extension of `F` whose
+kernel is the prime of `R'` below `ψ y` and which kills `h`. Base changing the chart along `χ`
+gives an étale chart of `X_L` over `Spec L[u, v] ⧸ (uv)` through a point above `g y`. -/
 private theorem exists_isOrdinaryNodeOrSmoothAt_pullback_of_chart (f : X ⟶ Spec (.of F))
     {R' T : Type u} [CommRing R'] [CommRing T] [Algebra F R'] [Algebra.Etale F R'] {h : R'}
     (g : Spec (.of T) ⟶ X) (ψ : Spec (.of T) ⟶ Spec (.of (NodeAlgebra R' h))) [Etale g]
@@ -267,11 +297,12 @@ private theorem exists_isOrdinaryNodeOrSmoothAt_pullback_of_chart (f : X ⟶ Spe
   · rw [← Scheme.Hom.comp_apply, pullback.lift_snd, Scheme.Hom.comp_apply, hz]
   · rw [hce, pullback.lift_fst]
 
-/-- The residue fields at the nodes of a nodal curve. At a point `x` outside the smooth locus of
-a nodal curve over a field `F`, there are a finite separable extension `K` of `F` (the residue
-field of the chart below `x`) and a point above `x` in the base change to `K` that is an ordinary
-node or a smooth point. -/
-private theorem AtWorstNodalOfRelativeDimensionOne.exists_isSeparable_of_notMem_smoothLocus
+/-- Charts at the singular points of a nodal curve after an auxiliary base-field extension. At a
+point `x` outside the smooth locus of a nodal curve over a field `F`, there are an auxiliary
+finite separable extension `K` of `F` (a residue field of the étale base of the local normal form
+at `x`, not the residue field of `x`) and a point above `x` in the base change to `K` that is an
+ordinary node or a smooth point. -/
+private theorem exists_isSeparable_isOrdinaryNodeOrSmoothAt_of_notMem_smoothLocus
     {f : X ⟶ Spec (.of F)} (hf : AtWorstNodalOfRelativeDimensionOne f) {x : X}
     (hx : letI := hf.syntomic; x ∉ f.smoothLocus) :
     ∃ (K : Type u) (_ : Field K) (_ : Algebra F K) (_ : FiniteDimensional F K)
@@ -298,7 +329,8 @@ private theorem AtWorstNodalOfRelativeDimensionOne.exists_isSeparable_of_notMem_
 
 /-- A point of the smooth locus of a curve over `F` is itself a smooth point of the base change
 along the trivial extension `F = F`. -/
-private theorem exists_isSeparable_of_mem_smoothLocus (f : X ⟶ Spec (.of F))
+private theorem exists_isSeparable_isOrdinaryNodeOrSmoothAt_of_mem_smoothLocus
+    (f : X ⟶ Spec (.of F))
     [LocallyOfFinitePresentation f] [PureRelativeDimension 1 f] {x : X}
     (hx : x ∈ f.smoothLocus) :
     ∃ (L : Type u) (_ : Field L) (_ : Algebra F L) (_ : FiniteDimensional F L)
@@ -309,11 +341,11 @@ private theorem exists_isSeparable_of_mem_smoothLocus (f : X ⟶ Spec (.of F))
       (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)).2
   obtain ⟨y, hy⟩ := (pullback.snd (Spec.algebraMap F F) f).surjective x
   exact ⟨F, inferInstance, inferInstance, inferInstance, inferInstance, y, hy,
-    isOrdinaryNodeOrSmoothAt_pullback_fst_of_mem_smoothLocus F f (hy ▸ hx)⟩
+    (isOrdinaryNodeOrSmoothAt_of_mem_smoothLocus f (hy ▸ hx)).pullback_fst F⟩
 
-/-- At each point `x` of a nodal curve over a field `F` there are a finite separable extension `L`
-of `F` and a point above `x` in the base change to `L` that is an ordinary node or a smooth point.
-The extension can always be taken trivial
+/-- At each point `x` of a nodal curve over a field `F` there are an auxiliary finite separable
+extension `L` of `F` and a point above `x` in the base change to `L` that is an ordinary node or a
+smooth point. The extension can always be taken trivial
 (`AtWorstNodalOfRelativeDimensionOne.isOrdinaryNodeOrSmoothAt`); this is the form in which the
 chart at a singular point is constructed. -/
 theorem AtWorstNodalOfRelativeDimensionOne.exists_isSeparable_isOrdinaryNodeOrSmoothAt
@@ -324,50 +356,8 @@ theorem AtWorstNodalOfRelativeDimensionOne.exists_isSeparable_isOrdinaryNodeOrSm
   have : SyntomicOfRelativeDimension 1 f := hf.syntomic
   have : PureRelativeDimension 1 f := .of_syntomicOfRelativeDimension f
   by_cases hx : x ∈ f.smoothLocus
-  · exact exists_isSeparable_of_mem_smoothLocus f hx
-  · exact hf.exists_isSeparable_of_notMem_smoothLocus hx
-
-/-- Changing the coefficients of the split node chart along an étale field extension `F ⟶ L`
-gives an étale morphism `Spec L[u, v] ⧸ (uv) ⟶ Spec F[u, v] ⧸ (uv)` over `F`: it is the base
-change of `Spec L ⟶ Spec F`. -/
-private theorem exists_etale_nodeAlgebra_zero_baseChange (L : Type u) [Field L] [Algebra F L]
-    [Algebra.Etale F L] :
-    ∃ φ : Spec (.of (NodeAlgebra L (0 : L))) ⟶ Spec (.of (NodeAlgebra F (0 : F))), Etale φ ∧
-      φ ≫ Spec.algebraMap F (NodeAlgebra F 0) =
-        Spec.algebraMap L (NodeAlgebra L 0) ≫ Spec.algebraMap F L := by
-  have : Etale (Spec.map
-      (CommRingCat.ofHom (NodeAlgebra.baseChange (S := L) (0 : F)).toRingHom)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @Etale)]
-    exact RingHom.Etale.of_bijective (NodeAlgebra.baseChange (0 : F)).bijective
-  have hr : CommRingCat.ofHom (algebraMap F L) ≫ CommRingCat.ofHom
-      (algebraMap L (L ⊗[F] NodeAlgebra F 0)) ≫
-        CommRingCat.ofHom (NodeAlgebra.baseChange (S := L) (0 : F)).toRingHom =
-      CommRingCat.ofHom (algebraMap F L) ≫
-        CommRingCat.ofHom (algebraMap L (NodeAlgebra L (algebraMap F L 0))) := by
-    ext r
-    exact (NodeAlgebra.baseChange (S := L) (0 : F)).commutes _
-  have H : ∃ φ : Spec (.of (NodeAlgebra L (algebraMap F L 0))) ⟶
-      Spec (.of (NodeAlgebra F (0 : F))), Etale φ ∧
-        φ ≫ Spec.algebraMap F (NodeAlgebra F 0) =
-          Spec.algebraMap L (NodeAlgebra L (algebraMap F L 0)) ≫ Spec.algebraMap F L := by
-    refine ⟨Spec.map (CommRingCat.ofHom (NodeAlgebra.baseChange (S := L) (0 : F)).toRingHom) ≫
-      (pullbackSpecIso F L (NodeAlgebra F 0)).inv ≫ pullback.snd _ _, inferInstance, ?_⟩
-    simp only [Spec.algebraMap, Category.assoc, ← pullback.condition,
-      pullbackSpecIso_inv_fst'_assoc, ← Spec.map_comp, hr]
-  rwa [map_zero] at H
-
-/-- **Ordinary node charts descend along étale field extensions.** If a point of the base change
-of `X` to an étale field extension `L` of `F` is an ordinary node or a smooth point over `L`, then
-so is its image in `X` over `F`: the chart over `Spec L[u, v] ⧸ (uv)` composes with the étale
-coefficient change to `Spec F[u, v] ⧸ (uv)`. -/
-theorem IsOrdinaryNodeOrSmoothAt.of_pullback_fst (L : Type u) [Field L] [Algebra F L]
-    [Algebra.Etale F L] {f : X ⟶ Spec (.of F)} {y : ↥(pullback (Spec.algebraMap F L) f)}
-    (h : IsOrdinaryNodeOrSmoothAt (pullback.fst _ f) y) :
-    IsOrdinaryNodeOrSmoothAt f (pullback.snd _ f y) := by
-  obtain ⟨φ, hφ, hφF⟩ := exists_etale_nodeAlgebra_zero_baseChange (F := F) L
-  obtain ⟨U, e, c, he, hc, ⟨u, rfl⟩, hce⟩ := h
-  refine ⟨U, e ≫ pullback.snd _ f, c ≫ φ, inferInstance, inferInstance, ⟨u, rfl⟩, ?_⟩
-  rw [Category.assoc, hφF, reassoc_of% hce, Category.assoc, pullback.condition]
+  · exact exists_isSeparable_isOrdinaryNodeOrSmoothAt_of_mem_smoothLocus f hx
+  · exact exists_isSeparable_isOrdinaryNodeOrSmoothAt_of_notMem_smoothLocus hf hx
 
 /-- **Every point of a nodal curve is an ordinary node or a smooth point.** Over any field `F`,
 each point of a scheme at worst nodal of relative dimension one is an ordinary node or a smooth
@@ -388,24 +378,27 @@ theorem atWorstNodalOfRelativeDimensionOne_iff_forall_isOrdinaryNodeOrSmoothAt
   ⟨fun hf ↦ hf.isOrdinaryNodeOrSmoothAt,
     AtWorstNodalOfRelativeDimensionOne.of_isOrdinaryNodeOrSmoothAt f⟩
 
-/-- **The criterion with finite separable residue extensions.** A scheme over a field `F` is at
-worst nodal of relative dimension one if and only if each point `x` has, after some finite
-separable extension `F ⟶ L` depending on `x`, a point above it in the base change that is an
-ordinary node or a smooth point. -/
-theorem atWorstNodalOfRelativeDimensionOne_iff_forall_exists_isSeparable (f : X ⟶ Spec (.of F)) :
+/-- **The criterion with auxiliary finite separable base-field extensions.** A scheme over a field
+`F` is at worst nodal of relative dimension one if and only if each point `x` has, after some
+finite separable extension `F ⟶ L` depending on `x`, a point above it in the base change that is
+an ordinary node or a smooth point. -/
+theorem atWorstNodalOfRelativeDimensionOne_iff_forall_exists_isSeparable_isOrdinaryNodeOrSmoothAt
+    (f : X ⟶ Spec (.of F)) :
     AtWorstNodalOfRelativeDimensionOne f ↔
       ∀ x, ∃ (L : Type u) (_ : Field L) (_ : Algebra F L) (_ : FiniteDimensional F L)
         (_ : Algebra.IsSeparable F L) (y : ↥(pullback (Spec.algebraMap F L) f)),
         pullback.snd _ f y = x ∧ IsOrdinaryNodeOrSmoothAt (pullback.fst _ f) y :=
   ⟨fun hf ↦ hf.exists_isSeparable_isOrdinaryNodeOrSmoothAt,
-    AtWorstNodalOfRelativeDimensionOne.of_forall_exists_isSeparable f⟩
+    AtWorstNodalOfRelativeDimensionOne.of_forall_exists_isSeparable_isOrdinaryNodeOrSmoothAt f⟩
 
-/-- **The criterion with finite separable residue extensions at singular points.** A curve over a
-field `F`, locally of finite presentation and of pure relative dimension one, is at worst nodal if
-and only if each point outside its smooth locus has, after some finite separable extension
-`F ⟶ L` depending on the point, a point above it in the base change that is an ordinary node or a
-smooth point. -/
-theorem atWorstNodalOfRelativeDimensionOne_iff_forall_notMem_smoothLocus_exists_isSeparable
+/-- **The criterion with auxiliary finite separable base-field extensions at singular points.** A
+curve over a field `F`, locally of finite presentation and of pure relative dimension one, is at
+worst nodal if and only if each point outside its smooth locus has, after some finite separable
+extension `F ⟶ L` depending on the point, a point above it in the base change that is an ordinary
+node or a smooth point. -/
+-- The name omits `forall` and `exists` to fit the 100-character line limit.
+theorem
+    atWorstNodalOfRelativeDimensionOne_iff_notMem_smoothLocus_isSeparable_isOrdinaryNodeOrSmoothAt
     (f : X ⟶ Spec (.of F)) [LocallyOfFinitePresentation f] [PureRelativeDimension 1 f] :
     AtWorstNodalOfRelativeDimensionOne f ↔
       ∀ x ∉ f.smoothLocus, ∃ (L : Type u) (_ : Field L) (_ : Algebra F L)
@@ -413,9 +406,11 @@ theorem atWorstNodalOfRelativeDimensionOne_iff_forall_notMem_smoothLocus_exists_
         (y : ↥(pullback (Spec.algebraMap F L) f)),
         pullback.snd _ f y = x ∧ IsOrdinaryNodeOrSmoothAt (pullback.fst _ f) y := by
   refine ⟨fun hf x _ ↦ hf.exists_isSeparable_isOrdinaryNodeOrSmoothAt x, fun h ↦ ?_⟩
-  refine AtWorstNodalOfRelativeDimensionOne.of_forall_exists_isSeparable f fun x ↦ ?_
+  refine
+    AtWorstNodalOfRelativeDimensionOne.of_forall_exists_isSeparable_isOrdinaryNodeOrSmoothAt f
+      fun x ↦ ?_
   by_cases hx : x ∈ f.smoothLocus
-  · exact exists_isSeparable_of_mem_smoothLocus f hx
+  · exact exists_isSeparable_isOrdinaryNodeOrSmoothAt_of_mem_smoothLocus f hx
   · exact h x hx
 
 /-- **The criterion after a field extension.** A scheme over a field `F` is at worst nodal of
