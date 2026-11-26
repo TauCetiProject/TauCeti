@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Euclidean
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Real
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Extension
 
 /-!
@@ -180,14 +179,12 @@ principal bundle is `P ×_σ Spinᶜ(n)`, and the frame of `[p, 1]` is the frame
 Hermitian four-manifold and the canonical lift `U(2) → Spinᶜ(4)`, this is the canonical `Spinᶜ`
 structure. -/
 noncomputable abbrev OrthonormalFrameLift.extendSpinC : SpinCStructure F V n :=
-  s.extend σ hσ hσρ
-    (fun g ↦ TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n
-      (spinCGroup.toSpecialOrthogonal _ _ g))
-    (fun v ↦ (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n
-      v).comp (spinCGroup.continuous_toSpecialOrthogonal_pi _ _))
+  s.extend σ hσ hσρ CliffordAlgebra.norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+    CliffordAlgebra.continuous_spinCGroup_toSpecialOrthogonal_apply
 
-/-- **The frame of `[p, 1]`** in the `Spinᶜ` structure induced by a lift is the frame of `p`. -/
-@[simp]
+/-- **The frame of `[p, 1]`** in the `Spinᶜ` structure induced by a lift is the frame of `p`. Not a
+simp lemma: `simp` proves it by `TauCeti.OrthonormalFrameLift.toFrame_extend_inl`, since
+`extendSpinC` is reducible. -/
 theorem OrthonormalFrameLift.toFrame_extendSpinC_inl (x : X) (p : s.P x) :
     (s.extendSpinC σ hσ hσρ).toFrame ⟨x, PrincipalBundle.Extend.inl σ hσ p⟩ =
       s.toFrame ⟨x, p⟩ :=

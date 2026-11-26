@@ -102,10 +102,8 @@ noncomputable def twist (s : SpinCStructure F V n) : SpinCStructure F V n :=
     (spinCGroup.continuous_mulCircle _ _)
     (by rw [MonoidHom.comp_assoc, spinCGroup.toSpecialOrthogonal_comp_mulCircle,
       MonoidHom.comp_assoc])
-    (fun g ↦ TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n
-      (spinCGroup.toSpecialOrthogonal _ _ g))
-    (fun v ↦ (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n
-      v).comp (spinCGroup.continuous_toSpecialOrthogonal_pi _ _))
+    TauCeti.CliffordAlgebra.norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+    TauCeti.CliffordAlgebra.continuous_spinCGroup_toSpecialOrthogonal_apply
 
 variable {L} (s : SpinCStructure F V n)
 
