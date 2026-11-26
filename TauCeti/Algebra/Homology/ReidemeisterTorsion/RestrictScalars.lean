@@ -15,6 +15,7 @@ import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.LinearAlgebra.Basis.ExtendedIdeal
 import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.LinearAlgebra.Basis.SmulTower
+import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Artinian.EquivPi
 import TauCeti.RingTheory.Norm.Quotient
 
@@ -290,25 +291,6 @@ variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] {m : ℕ} {β : B
   {QA QB : Type*} [CommRing QA] [CommRing QB] [Algebra A QA] [Algebra B QB] [Algebra QA QB]
   [Algebra A QB] [IsScalarTower A QA QB] [IsScalarTower A B QB] {β' : Basis (Fin m) QA QB}
 
-/-- If the basis `β'` of `QB` over `QA` is the image of the basis `β` of `B` over `A`, then the
-coordinates of the image of `y` in `β'` are the images of the coordinates of `y` in `β`. -/
-private theorem repr_algebraMap (hβ' : ∀ a, β' a = algebraMap B QB (β a)) (y : B) (a : Fin m) :
-    β'.repr (algebraMap B QB y) a = algebraMap A QA (β.repr y a) := by
-  have : algebraMap B QB y = ∑ i, algebraMap A QA (β.repr y i) • β' i := by
-    conv_lhs => rw [← β.sum_repr y]
-    simp [hβ', Algebra.smul_def, ← IsScalarTower.algebraMap_apply]
-  rw [this, β'.repr_sum_self]
-
-/-- If the basis `β'` of `QB` over `QA` is the image of the basis `β` of `B` over `A`, then the
-matrix of multiplication by the image of `x` in `β'` is the image of the matrix of multiplication
-by `x` in `β`. -/
-private theorem leftMulMatrix_algebraMap (hβ' : ∀ a, β' a = algebraMap B QB (β a)) (x : B) :
-    Algebra.leftMulMatrix β' (algebraMap B QB x) =
-      (Algebra.leftMulMatrix β x).map (algebraMap A QA) := by
-  ext a b
-  rw [Matrix.map_apply, Algebra.leftMulMatrix_eq_repr_mul, Algebra.leftMulMatrix_eq_repr_mul, hβ',
-    ← map_mul, repr_algebraMap hβ']
-
 variable [IsArtinianRing QA] [IsReduced QA] [IsArtinianRing QB] [IsReduced QB]
   {C : ChainComplex (ModuleCat B) ℤ} {n : ℤ → ℕ} {c : ∀ i, Basis (Fin (n i)) B (C.X i)}
   {D : ChainComplex (ModuleCat A) ℤ} {e : ∀ i, Basis (Fin (n i * m)) A (D.X i)}
@@ -358,7 +340,14 @@ theorem norm_componentwiseReidemeisterTorsion (hβ' : ∀ a, β' a = algebraMap 
   rw [toMatrix_matrixBaseChange_d, toMatrix_matrixBaseChange_d, hd]
   ext x y
   simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.comp_apply, Matrix.map_apply,
-    RingHom.comp_apply, Algebra.leftMulMatrix_quotient_mk, leftMulMatrix_algebraMap hβ']
+    RingHom.comp_apply,
+    Algebra.leftMulMatrix_map β' (β'.quotient p.asIdeal) (Ideal.Quotient.mk _)
+      (Ideal.Quotient.mk _)
+      (fun r ↦ (Ideal.Quotient.algebraMap_quotient_map_quotient r).symm)
+      (Basis.quotient_apply β' _),
+    Algebra.leftMulMatrix_map β β' (algebraMap A QA) (algebraMap B QB)
+      (fun r ↦ by rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply A QA QB])
+      hβ']
 
 end Componentwise
 
