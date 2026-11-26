@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
@@ -202,25 +203,14 @@ complementary: `V = ⟨e₋ℓ, …, e_ℓ⟩ ⊕ V_ℓ`. -/
 theorem isCompl_span_middleSpace :
     IsCompl (Submodule.span R (Set.range D.e ∪ Set.range D.f)) D.middleSpace := by
   classical
-  constructor
-  · -- The middle space lies in the kernel of the coordinates.
-    rw [← Set.Sum.elim_range]
-    refine (Submodule.range_ker_disjoint D.linearIndependent_coords_comp).mono_right
-      fun v hv ↦ ?_
-    obtain ⟨he, hf⟩ := D.mem_middleSpace_iff.mp hv
-    rw [LinearMap.mem_ker]
-    ext (k | k) <;> simp [coords, he, hf]
-  · -- Subtract from `v` its projection `∑ B(e₋ᵢ, v) eᵢ + ∑ B(eᵢ, v) e₋ᵢ` onto the span.
-    rw [codisjoint_iff, eq_top_iff]
-    intro v _
-    set p := ∑ i, associated Q (D.f i) v • D.e i + ∑ i, associated Q (D.e i) v • D.f i
-    have hp : p ∈ Submodule.span R (Set.range D.e ∪ Set.range D.f) :=
-      add_mem (sum_mem fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span
-        (Or.inl ⟨i, rfl⟩))) (sum_mem fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span
-        (Or.inr ⟨i, rfl⟩)))
-    rw [← add_sub_cancel p v]
-    refine Submodule.add_mem_sup hp (D.mem_middleSpace_iff.mpr ⟨fun k ↦ ?_, fun k ↦ ?_⟩) <;>
-      simp [p, map_sum]
+  -- The pairings with `e₋ₖ` and `eₖ` form a family of forms biorthogonal to the `eᵢ`, `e₋ᵢ`.
+  have h := Submodule.isCompl_span_range_iInf_ker_of_apply_eq_ite (v := Sum.elim D.e D.f)
+    (f := Sum.elim (fun k ↦ associated Q (D.f k)) fun k ↦ associated Q (D.e k))
+    (by rintro (i | i) (k | k) <;> simp [eq_comm])
+  rw [Set.Sum.elim_range] at h
+  convert h using 1
+  ext x
+  simp [Submodule.mem_iInf, Sum.forall, and_comm]
 
 /-! ### Transport along isometries -/
 
