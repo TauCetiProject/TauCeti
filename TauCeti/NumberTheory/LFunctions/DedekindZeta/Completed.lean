@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
@@ -219,6 +220,24 @@ theorem completedDedekindZeta_eq_mul_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
   obtain ⟨rep, hrep, h⟩ := exists_completedDedekindZeta_eq_sum K
   rw [h, Finset.sum_apply]
   exact sum_completedPartialZeta_eq_mul_dedekindZeta hrep hs
+
+open scoped ComplexConjugate in
+/-- The completed Dedekind zeta function commutes with complex conjugation, including at its
+poles where both representatives have the canonical value zero. -/
+@[simp] theorem completedDedekindZeta_conj (s : ℂ) :
+    completedDedekindZeta K (conj s) = conj (completedDedekindZeta K s) := by
+  have h : conj ∘ completedDedekindZeta K ∘ conj = completedDedekindZeta K := by
+    apply eq_of_meromorphicNFOn_of_eqOn_halfPlane
+      (meromorphicNFOn_conj_conj_iff.mpr (by simpa using meromorphicNFOn_completedDedekindZeta K))
+      (meromorphicNFOn_completedDedekindZeta K) (σ := 1)
+    intro z hz
+    have hz' : 1 < (conj z).re := by simpa only [conj_re] using Set.mem_ofPred.mp hz
+    have hD := ofReal_cpow_conj (r := ((discr K).natAbs : ℝ)) (by positivity) (z / 2)
+    rw [ofReal_natCast, map_div₀, map_ofNat] at hD
+    simp only [Function.comp_apply, completedDedekindZeta_eq_mul_dedekindZeta K hz',
+      completedDedekindZeta_eq_mul_dedekindZeta K hz, Int.abs_eq_natAbs, Int.cast_natCast,
+      dedekindZeta_conj, Gammaℝ_conj, Gammaℂ_conj, hD, map_mul, map_pow, conj_conj]
+  simpa only [Function.comp_apply, conj_conj] using (congrFun h (conj s)).symm
 
 /-! ### Regularity, poles, and residues -/
 
