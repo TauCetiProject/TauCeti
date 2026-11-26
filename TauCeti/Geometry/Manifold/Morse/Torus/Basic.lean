@@ -99,12 +99,7 @@ theorem torusCos_comp_extChartAt_symm_eventuallyEq (x : ∀ i, AddCircle (p i)) 
       fun y ↦ ∑ i, Real.cos (2 * π / p i * y i) := by
   filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x]
     with y hy
-  rw [extChartAt_pi] at hy ⊢
-  have hsymm : (PartialEquiv.pi fun i ↦ extChartAt 𝓘(ℝ) (x i)).symm y =
-      fun i ↦ (y i : AddCircle (p i)) := by
-    rw [PartialEquiv.pi_symm_apply]
-    exact funext fun i ↦ extChartAt_symm_apply (x i) (hy i (mem_univ i))
-  rw [comp_apply, hsymm, torusCos_coe]
+  rw [comp_apply, extChartAt_pi_symm_apply x hy, torusCos_coe]
 
 /-- The cosine function on a torus is smooth. -/
 theorem contMDiff_torusCos :
