@@ -59,6 +59,29 @@ open Complex MeasureTheory Filter Metric Set Topology
 
 open scoped ENNReal Real
 
+/-- Along a nontangential approach to `x`, eventually `Im z > 0` and `|Re z - x| ≤ δ / 2`. -/
+theorem eventually_nontangentialFilter_abs_re_sub_le (α x : ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    ∀ᶠ z in nontangentialFilter α x, 0 < z.im ∧ |z.re - x| ≤ δ / 2 := by
+  have hη : 0 < δ / (2 * (|α| + 1)) := by positivity
+  filter_upwards [nontangentialCone_mem_nontangentialFilter α x (ENNReal.ofReal_pos.2 hη)] with z hz
+  obtain ⟨hz0, hzα, hzη⟩ := mem_nontangentialCone.1 hz
+  have hzη' : z.im < δ / (2 * (|α| + 1)) := (ENNReal.ofReal_lt_ofReal_iff hη).1 hzη
+  refine ⟨hz0, ?_⟩
+  have h1 : α * z.im ≤ (|α| + 1) * z.im := by nlinarith [le_abs_self α]
+  have h2 : (|α| + 1) * z.im ≤ (|α| + 1) * (δ / (2 * (|α| + 1))) := by gcongr
+  have h3 : (|α| + 1) * (δ / (2 * (|α| + 1))) = δ / 2 := by field_simp
+  linarith
+
+/-- The far-part bound `ENNReal.ofReal (Im z * K) * N` tends to `0` along a nontangential approach,
+for a finite `N`. -/
+theorem tendsto_nontangentialFilter_ofReal_im_mul_mul (α x K : ℝ) {N : ℝ≥0∞} (hN : N ≠ ∞) :
+    Tendsto (fun z : ℂ => ENNReal.ofReal (z.im * K) * N) (nontangentialFilter α x) (𝓝 0) := by
+  have him : Tendsto (fun z : ℂ => z.im * K) (nontangentialFilter α x) (𝓝 0) := by
+    rw [nontangentialFilter_def]
+    simpa using ((by fun_prop : Continuous fun z : ℂ => z.im * K).tendsto (x : ℂ)).mono_left
+      nhdsWithin_le_nhds
+  simpa using ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal him) (Or.inr hN)
+
 /-- **The near and far bound.** Let `h ∈ L¹(Π)` and let `z` be in the cone `Γ^α_∞(x)`, with
 `P(z, s) ≤ c / (1 + s ^ 2)` whenever `|s - x| > δ`. Then `‖P[h](z) - h(x)‖` is at most
 `max 2 (1 + 2 α ^ 2)` times the maximal function at `x` of `h - h(x)` truncated to `B(x, δ)`, plus
@@ -135,24 +158,9 @@ theorem tendsto_nontangentialFilter_upperHalfPlanePoissonIntegralFun_of_tendsto 
   obtain ⟨K, hK⟩ : ∃ K : ℝ, ∀ z : ℂ, 0 ≤ z.im → |z.re - x| ≤ δ / 2 → ∀ s, δ < |s - x| →
       upperHalfPlanePoissonKernel z s ≤ z.im * K * (1 + s ^ 2)⁻¹ :=
     ⟨_, fun _ hz hzx _ hs => upperHalfPlanePoissonKernel_le_of_lt_abs_sub hz hδ hzx hs⟩
-  have hfar : Tendsto (fun z : ℂ => ENNReal.ofReal (z.im * K) *
-      ∫⁻ s, ‖h s - h x‖ₑ ∂upperHalfPlanePoissonMeasure) (nontangentialFilter α x) (𝓝 0) := by
-    have him : Tendsto (fun z : ℂ => z.im * K) (nontangentialFilter α x) (𝓝 0) := by
-      rw [nontangentialFilter_def]
-      simpa using ((by fun_prop : Continuous fun z : ℂ => z.im * K).tendsto (x : ℂ)).mono_left
-        nhdsWithin_le_nhds
-    simpa using ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal him) (Or.inr hN)
-  have hη : 0 < δ / (2 * (|α| + 1)) := by positivity
-  filter_upwards [hfar.eventually (gt_mem_nhds hε'0'),
-    nontangentialCone_mem_nontangentialFilter α x (ENNReal.ofReal_pos.2 hη),
-    nontangentialCone_mem_nontangentialFilter α x (h := ⊤) (by simp)] with z hzfar hz hz'
-  obtain ⟨hz0, hzα, hzη⟩ := mem_nontangentialCone.1 hz
-  have hzη' : z.im < δ / (2 * (|α| + 1)) := (ENNReal.ofReal_lt_ofReal_iff hη).1 hzη
-  have hzx : |z.re - x| ≤ δ / 2 := by
-    have h1 : α * z.im ≤ (|α| + 1) * z.im := by nlinarith [le_abs_self α]
-    have h2 : (|α| + 1) * z.im ≤ (|α| + 1) * (δ / (2 * (|α| + 1))) := by gcongr
-    have h3 : (|α| + 1) * (δ / (2 * (|α| + 1))) = δ / 2 := by field_simp
-    linarith
+  filter_upwards [(tendsto_nontangentialFilter_ofReal_im_mul_mul α x K hN).eventually
+      (gt_mem_nhds hε'0'), eventually_nontangentialFilter_abs_re_sub_le α x hδ,
+    nontangentialCone_mem_nontangentialFilter α x (h := ⊤) (by simp)] with z hzfar ⟨hz0, hzx⟩ hz'
   have hnear : C * maximalFunction volume ((closedBall x δ).indicator fun s => h s - h x) x ≤
       ε' / 2 :=
     (mul_le_mul_right (maximalFunction_indicator_closedBall_le hδ hδc) C).trans_eq
