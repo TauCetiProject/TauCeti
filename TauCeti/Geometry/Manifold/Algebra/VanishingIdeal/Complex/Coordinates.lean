@@ -17,8 +17,8 @@ the class of a function are its complex-valued directional derivatives along the
 tangent basis. In these bases, pullback acts by the transpose of the real Jacobian matrix
 with entries included into the complex numbers.
 
-The comparison with the real coordinate classes uses `Ideal.mapCotangent` for the inclusion
-of real functions and the real basis `TauCeti.smoothCotangentBasis`.
+The comparison with the real coordinate classes uses the inclusion `TauCeti.smoothCotangentOfReal`
+and the real basis `TauCeti.smoothCotangentBasis`.
 -/
 
 public noncomputable section
@@ -30,41 +30,7 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- Inclusion of real smooth functions into complex-valued smooth functions induces a
-real-linear map of their algebraic cotangent spaces. -/
-def smoothCotangentOfReal (I : ModelWithCorners ℝ E H) (x : M) :
-    (smoothVanishingIdeal I x).Cotangent →ₗ[ℝ] (complexSmoothVanishingIdeal I x).Cotangent :=
-  Ideal.mapCotangent _ _ ContMDiffMap.ofReal fun f hf ↦
-    mem_complexSmoothVanishingIdeal_iff.mpr (by simp [mem_smoothVanishingIdeal_iff.mp hf])
-
-/-- On representatives, the cotangent inclusion takes a real function to the same function
-with complex values. -/
-@[simp]
-theorem smoothCotangentOfReal_toCotangent (x : M) (f : smoothVanishingIdeal I x) :
-    smoothCotangentOfReal I x ((smoothVanishingIdeal I x).toCotangent f) =
-      (complexSmoothVanishingIdeal I x).toCotangent
-        ⟨ContMDiffMap.ofReal f, by simp [mem_smoothVanishingIdeal_iff.mp f.property]⟩ :=
-  Ideal.mapCotangent_toCotangent _ _ _ _ f
-
-variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] {x : M}
-
-/-- Inclusion of cotangent classes postcomposes their covectors with the inclusion of scalars. -/
-@[simp]
-theorem complexSmoothCotangentEquiv_smoothCotangentOfReal (hx : I.IsInteriorPoint x)
-    (u : (smoothVanishingIdeal I x).Cotangent) :
-    complexSmoothCotangentEquiv hx (smoothCotangentOfReal I x u) =
-      Complex.ofRealCLM.comp (smoothCotangentEquiv hx u) := by
-  obtain ⟨f, rfl⟩ := Ideal.toCotangent_surjective _ u
-  rw [smoothCotangentOfReal_toCotangent, complexSmoothCotangentEquiv_toCotangent,
-    smoothCotangentEquiv_toCotangent]
-  have h : ⇑(ContMDiffMap.ofReal (f : C^∞⟮I, M; ℝ⟯)) = Complex.ofRealCLM ∘ (f : M → ℝ) :=
-    funext (ContMDiffMap.ofReal_apply _)
-  rw [Subtype.coe_mk, h]
-  ext v
-  exact Complex.ofRealCLM.mvfderiv_comp_apply
-    ((f : C^∞⟮I, M; ℝ⟯).contMDiff.mdifferentiable (by simp)).mdifferentiableAt v
-
-variable {ι : Type*}
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] {x : M} {ι : Type*}
 
 /-- The complex cotangent basis dual to a real tangent basis. Its coordinate functionals
 evaluate the associated complex-valued covector on the real basis vectors. -/
