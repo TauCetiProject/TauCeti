@@ -40,7 +40,8 @@ unit vectors therefore assume `Nontrivial E`.
 * `LinearMap.isLeast_minimalStretch`: `ℓ(A)` is the least value of `‖A v‖` on the unit sphere.
 * `LinearMap.minimalStretch_le_norm`, `LinearMap.minimalStretch_eq_norm_iff`: `ℓ(A) ≤ ‖A‖`, with
   equality if and only if `A = 0` or `A` is conformal.
-* `LinearMap.minimalStretch_pos_iff`: `0 < ℓ(A)` if and only if `A` is injective.
+* `LinearMap.minimalStretch_pos_iff`: `0 < ℓ(A)` if and only if `A` is injective;
+  `LinearMap.minimalStretch_eq_zero_of_not_injective`: `ℓ(A) = 0` when `A` is not injective.
 * `LinearMap.minimalStretch_mul_norm_symm`: `ℓ(A) ‖A⁻¹‖ = 1` for a linear equivalence `A`.
 * `LinearMap.minimalStretch_mul_le_minimalStretch_comp`: `ℓ(B) ℓ(A) ≤ ℓ(B ∘ A)`.
 * `LinearMap.minimalStretch_pow_le_normDet`: `ℓ(A)ⁿ ≤ normDet(A)`; the upper bound
@@ -55,6 +56,8 @@ unit vectors therefore assume `Nontrivial E`.
 * `LinearMap.lipschitzWith_minimalStretch`: `ℓ` is `1`-Lipschitz for the operator norm, by
   Weyl's perturbation bound `LinearMap.abs_singularValues_sub_singularValues_le`; hence it is
   continuous and Borel measurable.
+* `Submodule.det_starProjection_eq_zero`, `Submodule.minimalStretch_starProjection_eq_zero`: the
+  orthogonal projection onto a proper subspace has determinant `0` and minimal stretch `0`.
 
 ## References
 
@@ -166,6 +169,12 @@ theorem minimalStretch_pos_iff [Nontrivial E] (A : E →ₗ[𝕜] F) :
   obtain ⟨v, hv, hAv⟩ := A.exists_mem_sphere_norm_apply_eq_minimalStretch
   exact hAv ▸ norm_pos_iff.mpr
     ((map_ne_zero_iff A h).mpr (ne_zero_of_mem_sphere one_ne_zero ⟨v, hv⟩))
+
+/-- A linear map that is not injective has minimal stretch `0`. -/
+theorem minimalStretch_eq_zero_of_not_injective (A : E →ₗ[𝕜] F)
+    (h : ¬ Function.Injective A) : A.minimalStretch = 0 := by
+  nontriviality E
+  exact le_antisymm (not_lt.1 (mt A.minimalStretch_pos_iff.1 h)) A.minimalStretch_nonneg
 
 /-- On a nonzero space, the minimal stretch of a linear equivalence is the reciprocal of the
 operator norm of its inverse: `ℓ(A) ‖A⁻¹‖ = 1`. -/
@@ -296,3 +305,25 @@ theorem measurable_minimalStretch [MeasurableSpace (E →L[𝕜] F)]
   continuous_minimalStretch.measurable
 
 end LinearMap
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] {V : Submodule 𝕜 E}
+
+/-- The orthogonal projection onto a proper subspace `V` has determinant zero: its kernel is
+`Vᗮ ≠ 0`. -/
+theorem det_starProjection_eq_zero (hV : V ≠ ⊤) :
+    LinearMap.det ((V.starProjection : E →L[𝕜] E) : E →ₗ[𝕜] E) = 0 :=
+  LinearMap.det_eq_zero_iff_ker_ne_bot.2 <|
+    V.ker_starProjection.trans_ne (orthogonal_eq_bot_iff.not.2 hV)
+
+/-- The orthogonal projection onto a proper subspace `V` has minimal stretch zero: it is not
+injective. -/
+theorem minimalStretch_starProjection_eq_zero (hV : V ≠ ⊤) :
+    ((V.starProjection : E →L[𝕜] E) : E →ₗ[𝕜] E).minimalStretch = 0 :=
+  LinearMap.minimalStretch_eq_zero_of_not_injective _ <| by
+    rw [← LinearMap.ker_eq_bot]
+    exact V.ker_starProjection.trans_ne (orthogonal_eq_bot_iff.not.2 hV)
+
+end Submodule

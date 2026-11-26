@@ -17,7 +17,8 @@ A continuous map on an open subset of a finite-dimensional real space has its cl
 derivative as a weak derivative if the classical derivative exists outside a countable set
 and is locally integrable across that set. No differentiability at the exceptional points
 is assumed. In particular, a continuous filling of a puncture does not acquire a point-mass
-term in its distributional first derivative.
+term in its distributional first derivative. A map that agrees on `Ω` with a continuous linear
+map `A` has the constant weak derivative `A` (`TauCeti.hasWeakFDerivOn_const_of_eqOn`).
 
 Integration by parts is obtained by applying
 `TauCeti.integral_apply_eq_zero_of_hasFDerivAt_off_countable` to the product of the map with a
@@ -80,5 +81,13 @@ theorem hasWeakFDerivOn_of_hasFDerivAt_off_countable
     φ.hasCompactSupport.smul_right hdφ v
   rw [integral_congr_ae (Filter.Eventually.of_forall hD), integral_add hi₁ hi₂] at hzero
   exact eq_neg_of_add_eq_zero_right hzero
+
+/-- A map that agrees, on `Ω`, with a continuous linear map `A` has the constant weak derivative
+`A` on `Ω`. -/
+theorem hasWeakFDerivOn_const_of_eqOn {u : E → F} {A : E →L[ℝ] F} (hu : EqOn u A Ω) :
+    HasWeakFDerivOn μ Ω u (fun _ ↦ A) :=
+  hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
+    (A.continuous.continuousOn.congr hu) (locallyIntegrableOn_const A) fun _ hx ↦
+      A.hasFDerivAt.congr_of_eventuallyEq (Filter.eventuallyEq_of_mem (Ω.isOpen.mem_nhds hx.1) hu)
 
 end TauCeti

@@ -158,7 +158,6 @@ theorem IsQuasiregularOn.of_det_le_mul_minimalStretch_pow (hf : IsQuasiregularOn
   exact norm_pow_le_pow_mul_det_of_det_le_mul_minimalStretch_pow (zero_le_one.trans hf.one_le)
     hout hx
 
-
 /-! ### Checks: the orthogonal projection onto a proper nonzero subspace -/
 
 section Projection
@@ -166,42 +165,17 @@ section Projection
 variable {V : Submodule ℝ E}
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- A nonzero vector orthogonal to a proper subspace. -/
-private theorem exists_mem_orthogonal_ne_zero (hV : V ≠ ⊤) : ∃ w ∈ Vᗮ, w ≠ 0 :=
-  Submodule.exists_mem_ne_zero_of_ne_bot (Submodule.orthogonal_eq_bot_iff.not.2 hV)
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The orthogonal projection onto a proper subspace `V` has determinant zero: it kills `Vᗮ ≠ 0`. -/
-theorem det_starProjection_eq_zero (hV : V ≠ ⊤) :
-    LinearMap.det ((V.starProjection : E →L[ℝ] E) : E →ₗ[ℝ] E) = 0 := by
-  obtain ⟨w, hw, hw0⟩ := exists_mem_orthogonal_ne_zero hV
-  refine LinearMap.det_eq_zero_iff_ker_ne_bot.2 fun h ↦ hw0 ?_
-  have hker : w ∈ LinearMap.ker ((V.starProjection : E →L[ℝ] E) : E →ₗ[ℝ] E) :=
-    (V.starProjection_apply_eq_zero_iff).2 hw
-  rwa [h, Submodule.mem_bot] at hker
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The orthogonal projection onto a proper subspace `V` has minimal stretch zero: it is not
-injective. -/
-theorem minimalStretch_starProjection_eq_zero (hV : V ≠ ⊤) :
-    ((V.starProjection : E →L[ℝ] E) : E →ₗ[ℝ] E).minimalStretch = 0 := by
-  obtain ⟨w, hw, hw0⟩ := exists_mem_orthogonal_ne_zero hV
-  have : Nontrivial E := ⟨⟨w, 0, hw0⟩⟩
-  refine le_antisymm (not_lt.1 fun h ↦ hw0 ?_) (LinearMap.minimalStretch_nonneg _)
-  refine (LinearMap.minimalStretch_pos_iff _).1 h ?_
-  simpa using (V.starProjection_apply_eq_zero_iff).2 hw
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- **Check (§3.2): the inner inequality holds for a projection.** The orthogonal projection `P`
-onto a proper subspace satisfies the inner inequality `det P ≤ 1 · ℓ(P)ⁿ`, both sides being `0`. For
+/-- **Check: the inner inequality holds for a projection.** The orthogonal projection `P` onto a
+proper subspace satisfies the inner inequality `det P ≤ 1 · ℓ(P)ⁿ`, both sides being `0`
+(`Submodule.det_starProjection_eq_zero`, `Submodule.minimalStretch_starProjection_eq_zero`). For
 `E = ℝ²` and `V` the first axis, `P` is `(x₁, x₂) ↦ (x₁, 0)`. -/
 theorem det_starProjection_le_one_mul_minimalStretch_pow (hV : V ≠ ⊤) :
     LinearMap.det ((V.starProjection : E →L[ℝ] E) : E →ₗ[ℝ] E) ≤
       1 * ((V.starProjection : E →L[ℝ] E) : E →ₗ[ℝ] E).minimalStretch ^ finrank ℝ E := by
-  rw [det_starProjection_eq_zero hV, one_mul]
+  rw [V.det_starProjection_eq_zero hV, one_mul]
   exact pow_nonneg (LinearMap.minimalStretch_nonneg _) _
 
-/-- **Check (§3.2): a projection is not quasiregular.** The orthogonal projection `P` onto a
+/-- **Check: a projection is not quasiregular.** The orthogonal projection `P` onto a
 subspace `V` with `V ≠ 0` and `V ≠ E` is not `K`-quasiregular, for any `K`, on any nonempty open
 set: `‖P‖ⁿ > 0 = K det P`. So the inner inequality, which `P` satisfies with constant `1`
 (`TauCeti.det_starProjection_le_one_mul_minimalStretch_pow`), does not imply quasiregularity, and
@@ -211,7 +185,7 @@ theorem not_isQuasiregularOn_starProjection (hV₀ : V ≠ ⊥) (hV : V ≠ ⊤)
     (hΩ : (Ω : Set E).Nonempty) : ¬ IsQuasiregularOn K Ω V.starProjection := by
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hV₀
   refine not_isQuasiregularOn_of_eqOn_of_det_eq_zero le_rfl hΩ (fun h ↦ hv0 ?_)
-    (det_starProjection_eq_zero hV) fun _ _ ↦ rfl
+    (V.det_starProjection_eq_zero hV) fun _ _ ↦ rfl
   rw [← Submodule.starProjection_eq_self_iff.2 hv, h, zero_apply]
 
 end Projection
