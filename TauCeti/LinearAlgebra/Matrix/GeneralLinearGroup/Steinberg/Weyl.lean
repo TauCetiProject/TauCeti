@@ -39,6 +39,10 @@ For the roots `(i, j)` and `(j, i)` this needs a third index, since `St₂(R)` i
 * `TauCeti.IndexedSteinbergGroup.w_mul_x_mul_inv`,
   `TauCeti.IndexedSteinbergGroup.h_mul_x_mul_inv`: conjugation of the root generators by `w_{ij}(u)`
   and `h_{ij}(u)`.
+* `TauCeti.IndexedSteinbergGroup.w_mul_x_self_mul_inv`,
+  `TauCeti.IndexedSteinbergGroup.w_mul_x_symm_mul_inv`: conjugation by `w_{ij}(u)` exchanges the
+  opposite roots `(i, j)` and `(j, i)`; `TauCeti.IndexedSteinbergGroup.w_mul_x_fst_out_mul_inv`
+  and its three analogues give the adjacent roots `(i, k)`, `(j, k)`, `(k, i)` and `(k, j)`.
 * `TauCeti.IndexedSteinbergGroup.commute_w_x`: `w_{ij}(u)` commutes with `x_{kl}(t)` when
   `{k, l}` is disjoint from `{i, j}`.
 * `TauCeti.IndexedSteinbergGroup.w_inv`, `TauCeti.IndexedSteinbergGroup.w_symm`:
@@ -46,6 +50,7 @@ For the roots `(i, j)` and `(j, i)` this needs a third index, since `St₂(R)` i
 * `TauCeti.IndexedSteinbergGroup.map_w`, `TauCeti.IndexedSteinbergGroup.mapIndex_w`,
   `TauCeti.SteinbergGroup.ofFin_w` and their analogues for `h`: naturality in ring homomorphisms,
   index embeddings and stabilization.
+* `TauCeti.SteinbergGroup.toStableGL_h`: the image of `h_{ij}(u)` in `GL_∞(R)`.
 
 ## References
 
@@ -97,7 +102,9 @@ private theorem conj_x_chain_reverse {i j k : ι} (hij : i ≠ j) (hki : k ≠ i
     (a b : R) : MulAut.conj (x hij a) (x hki b) = x hkj (-(b * a)) * x hki b :=
   x_mul_x_mul_inv_reverse hij hki hkj a b
 
-private theorem w_conj_ik {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
+/-- Conjugation by `w_{ij}(u)` moves the root `(i, k)`, for `k ∉ {i, j}`, to `(j, k)`:
+`w_{ij}(u) x_{ik}(t) w_{ij}(u)⁻¹ = x_{jk}(-u⁻¹ t)`. -/
+theorem w_mul_x_fst_out_mul_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
     (t : R) : w hij u * x hik t * (w hij u)⁻¹ = x hjk (-(↑u⁻¹ * t)) := by
   rw [← MulAut.conj_apply, conj_w, MulAut.mul_apply, MulAut.mul_apply,
     conj_x_of_commute hij hik hij.symm hik.symm, conj_x_chain hij.symm hik hjk, map_mul,
@@ -110,14 +117,18 @@ private theorem w_conj_ik {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j 
 theorem w_inv {i j : ι} (hij : i ≠ j) (u : Rˣ) : (w hij u)⁻¹ = w hij (-u) := by
   simp [w, mul_assoc]
 
-private theorem w_conj_jk {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
+/-- Conjugation by `w_{ij}(u)` moves the root `(j, k)`, for `k ∉ {i, j}`, to `(i, k)`:
+`w_{ij}(u) x_{jk}(t) w_{ij}(u)⁻¹ = x_{ik}(u t)`. -/
+theorem w_mul_x_snd_out_mul_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
     (t : R) : w hij u * x hjk t * (w hij u)⁻¹ = x hik (u * t) := by
-  have h := w_conj_ik hij hik hjk (-u) (u * t)
+  have h := w_mul_x_fst_out_mul_inv hij hik hjk (-u) (u * t)
   rw [← w_inv, inv_inv, show -(↑(-u)⁻¹ * (↑u * t)) = t by simp] at h
   rw [← h]
   group
 
-private theorem w_conj_ki {i j k : ι} (hij : i ≠ j) (hki : k ≠ i) (hkj : k ≠ j) (u : Rˣ)
+/-- Conjugation by `w_{ij}(u)` moves the root `(k, i)`, for `k ∉ {i, j}`, to `(k, j)`:
+`w_{ij}(u) x_{ki}(t) w_{ij}(u)⁻¹ = x_{kj}(-t u)`. -/
+theorem w_mul_x_out_fst_mul_inv {i j k : ι} (hij : i ≠ j) (hki : k ≠ i) (hkj : k ≠ j) (u : Rˣ)
     (t : R) : w hij u * x hki t * (w hij u)⁻¹ = x hkj (-(t * u)) := by
   rw [← MulAut.conj_apply, conj_w, MulAut.mul_apply, MulAut.mul_apply,
     conj_x_chain_reverse hij hki hkj, map_mul, map_mul, conj_x_chain_reverse hij.symm hkj hki,
@@ -129,25 +140,32 @@ private theorem w_conj_ki {i j k : ι} (hij : i ≠ j) (hki : k ≠ i) (hkj : k 
     ← mul_assoc, ← mul_assoc, ← x_add hkj, ← x_add hkj]
   simp [mul_assoc]
 
-private theorem w_conj_kj {i j k : ι} (hij : i ≠ j) (hki : k ≠ i) (hkj : k ≠ j) (u : Rˣ)
+/-- Conjugation by `w_{ij}(u)` moves the root `(k, j)`, for `k ∉ {i, j}`, to `(k, i)`:
+`w_{ij}(u) x_{kj}(t) w_{ij}(u)⁻¹ = x_{ki}(t u⁻¹)`. -/
+theorem w_mul_x_out_snd_mul_inv {i j k : ι} (hij : i ≠ j) (hki : k ≠ i) (hkj : k ≠ j) (u : Rˣ)
     (t : R) : w hij u * x hkj t * (w hij u)⁻¹ = x hki (t * ↑u⁻¹) := by
-  have h := w_conj_ki hij hki hkj (-u) (t * ↑u⁻¹)
+  have h := w_mul_x_out_fst_mul_inv hij hki hkj (-u) (t * ↑u⁻¹)
   rw [← w_inv, inv_inv, show -(t * ↑u⁻¹ * ↑(-u)) = t by simp] at h
   rw [← h]
   group
 
-private theorem w_conj_ij {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
+/-- Conjugation by `w_{ij}(u)` sends the root `(i, j)` to its opposite: given an index
+`k ∉ {i, j}`, `w_{ij}(u) x_{ij}(t) w_{ij}(u)⁻¹ = x_{ji}(-u⁻¹ t u⁻¹)`. -/
+theorem w_mul_x_self_mul_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
     (t : R) : w hij u * x hij t * (w hij u)⁻¹ = x hij.symm (-(↑u⁻¹ * t * ↑u⁻¹)) := by
   rw [← MulAut.conj_apply, ← mul_one t, ← commutatorElement_x hik hjk.symm hij,
-    map_commutatorElement, MulAut.conj_apply, MulAut.conj_apply, w_conj_ik hij hik hjk,
-    w_conj_kj hij hik.symm hjk.symm, commutatorElement_x hjk hik.symm hij.symm]
+    map_commutatorElement, MulAut.conj_apply, MulAut.conj_apply,
+    w_mul_x_fst_out_mul_inv hij hik hjk, w_mul_x_out_snd_mul_inv hij hik.symm hjk.symm,
+    commutatorElement_x hjk hik.symm hij.symm]
   simp [mul_assoc]
 
-private theorem w_conj_ji {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
+/-- Conjugation by `w_{ij}(u)` sends the root `(j, i)` to its opposite: given an index
+`k ∉ {i, j}`, `w_{ij}(u) x_{ji}(t) w_{ij}(u)⁻¹ = x_{ij}(-u t u)`. -/
+theorem w_mul_x_symm_mul_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
     (t : R) : w hij u * x hij.symm t * (w hij u)⁻¹ = x hij (-(↑u * t * ↑u)) := by
   rw [← MulAut.conj_apply, ← mul_one t, ← commutatorElement_x hjk hik.symm hij.symm,
     map_commutatorElement, MulAut.conj_apply, MulAut.conj_apply,
-    w_conj_jk hij hik hjk, w_conj_ki hij hik.symm hjk.symm,
+    w_mul_x_snd_out_mul_inv hij hik hjk, w_mul_x_out_fst_mul_inv hij hik.symm hjk.symm,
     commutatorElement_x hik hjk.symm hij]
   simp [mul_assoc]
 
@@ -167,7 +185,7 @@ theorem w_symm {i j : ι} (hij : i ≠ j) (h3 : ∃ m, m ≠ i ∧ m ≠ j) (u :
   set v : Rˣ := -u⁻¹ with hv
   have hu : u = -v⁻¹ := by simp [hv]
   rw [hu]
-  have h := w_conj_ji hij hki.symm hkj.symm v (-(↑v⁻¹ : R))
+  have h := w_mul_x_symm_mul_inv hij hki.symm hkj.symm v (-(↑v⁻¹ : R))
   rw [show -(↑v * -(↑v⁻¹ : R) * ↑v) = (v : R) by simp, mul_inv_eq_iff_eq_mul, w] at h
   have hw : w hij.symm (-v⁻¹) =
       x hij.symm (-(↑v⁻¹ : R)) * x hij (v : R) * x hij.symm (-(↑v⁻¹ : R)) := by
@@ -175,11 +193,6 @@ theorem w_symm {i j : ι} (hij : i ≠ j) (h3 : ∃ m, m ≠ i ∧ m ≠ j) (u :
   rw [hw, w]
   refine (mul_left_cancel (a := x hij (v : R)) ?_).symm
   simpa only [mul_assoc] using h.symm
-
-private theorem x_eq_x {i j i' j' : ι} (hij : i ≠ j) (hij' : i' ≠ j') (hi : i = i') (hj : j = j')
-    {a a' : R} (ha : a = a') : x hij a = x hij' a' := by
-  subst hi hj ha
-  rfl
 
 /-- **Conjugation by a Weyl lift word permutes the root generators.** Let `σ` be the
 transposition of `i` and `j`, and let `v` be the family of units with `v_i = -u⁻¹`, `v_j = u` and
@@ -194,28 +207,28 @@ theorem w_mul_x_mul_inv [DecidableEq ι] {i j k l : ι} (hij : i ≠ j) (hkl : k
   obtain ⟨m, hmi, hmj⟩ := h3
   rcases eq_or_ne k i with rfl | hki
   · rcases eq_or_ne l j with rfl | hlj
-    · rw [w_conj_ij hij hmi.symm hmj.symm]
-      exact x_eq_x _ _ (by simp) (by simp) (by simp [hij, mul_assoc])
-    · rw [w_conj_ik hij hkl hlj.symm]
-      exact x_eq_x _ _ (by simp) (by simp [Equiv.swap_apply_of_ne_of_ne hkl.symm hlj])
+    · rw [w_mul_x_self_mul_inv hij hmi.symm hmj.symm]
+      exact x_congr (by simp) (by simp) (by simp [hij, mul_assoc])
+    · rw [w_mul_x_fst_out_mul_inv hij hkl hlj.symm]
+      exact x_congr (by simp) (by simp [Equiv.swap_apply_of_ne_of_ne hkl.symm hlj])
         (by simp [hij, hkl.symm, hlj])
   rcases eq_or_ne k j with rfl | hkj
   · rcases eq_or_ne l i with rfl | hli
-    · rw [w_conj_ji hij hmi.symm hmj.symm]
-      exact x_eq_x _ _ (by simp) (by simp) (by simp [hij, mul_assoc])
-    · rw [w_conj_jk hij hli.symm hkl]
-      exact x_eq_x _ _ (by simp) (by simp [Equiv.swap_apply_of_ne_of_ne hli hkl.symm])
+    · rw [w_mul_x_symm_mul_inv hij hmi.symm hmj.symm]
+      exact x_congr (by simp) (by simp) (by simp [hij, mul_assoc])
+    · rw [w_mul_x_snd_out_mul_inv hij hli.symm hkl]
+      exact x_congr (by simp) (by simp [Equiv.swap_apply_of_ne_of_ne hli hkl.symm])
         (by simp [hij.symm, hli, hkl.symm])
   rcases eq_or_ne l i with rfl | hli
-  · rw [w_conj_ki hij hki hkj]
-    exact x_eq_x _ _ (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj]) (by simp)
+  · rw [w_mul_x_out_fst_mul_inv hij hki hkj]
+    exact x_congr (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj]) (by simp)
       (by simp [hki, hkj, hij])
   rcases eq_or_ne l j with rfl | hlj
-  · rw [w_conj_kj hij hki hkj]
-    exact x_eq_x _ _ (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj]) (by simp)
+  · rw [w_mul_x_out_snd_mul_inv hij hki hkj]
+    exact x_congr (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj]) (by simp)
       (by simp [hki, hkj, hij.symm])
   rw [(commute_w_x hij hkl hki.symm hkj.symm hli.symm hlj.symm u t).eq, mul_inv_cancel_right]
-  exact x_eq_x _ _ (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj])
+  exact x_congr (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj])
     (by simp [Equiv.swap_apply_of_ne_of_ne hli hlj]) (by simp [hki, hkj, hli, hlj])
 
 /-! ## The diagonal lift words -/
@@ -257,7 +270,7 @@ theorem h_mul_x_mul_inv [DecidableEq ι] {i j k l : ι} (hij : i ≠ j) (hkl : k
   rw [h_def, mul_inv_rev, show ∀ a b c d : IndexedSteinbergGroup ι R,
     a * b * c * (d * a⁻¹) = a * (b * c * d) * a⁻¹ from fun _ _ _ _ ↦ by group,
     w_mul_x_mul_inv hij hkl h3, w_mul_x_mul_inv hij _ h3]
-  refine x_eq_x _ _ (by simp) (by simp) ?_
+  refine x_congr (by simp) (by simp) ?_
   rw [← mulSingle_swap_mul_mulSingle hij u k, ← mulSingle_swap_mul_mulSingle hij u l]
   simp only [Units.val_mul, mul_inv_rev, mul_assoc]
 
@@ -360,6 +373,13 @@ theorem ofFin_w {n : ℕ} {i j : Fin n} (hij : i ≠ j) (u : Rˣ) :
 theorem ofFin_h {n : ℕ} {i j : Fin n} (hij : i ≠ j) (u : Rˣ) :
     ofFin R n (h hij u) = h (Fin.val_ne_of_ne hij) u := by
   simp [h_def]
+
+/-- The image of the diagonal lift word `h_{ij}(u)` in `GL_∞(R)`, for `i ≠ j` in `Fin n`, is the
+stabilization of the diagonal matrix with entries `u` at `i`, `u⁻¹` at `j` and `1` elsewhere. -/
+theorem toStableGL_h {n : ℕ} {i j : Fin n} (hij : i ≠ j) (u : Rˣ) :
+    toStableGL R (h (Fin.val_ne_of_ne hij) u) =
+      StableGeneralLinearGroup.of R n (diagGL (Pi.mulSingle i u * Pi.mulSingle j u⁻¹)) := by
+  rw [← ofFin_h hij, toStableGL_ofFin, toGL_h]
 
 end SteinbergGroup
 
