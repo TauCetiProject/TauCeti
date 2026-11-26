@@ -446,6 +446,13 @@ theorem isDomainBetween_withBasepoints {B : Type*} (b : B → Region) {x y : H.G
 theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
   simp
 
+/-- The zero domain connects a generator only to itself. -/
+theorem isDomainBetween_zero_iff {x y : H.Generator} : H.IsDomainBetween x y 0 ↔ x = y := by
+  refine ⟨fun h => H.generatorChain_injective ?_, fun h => h ▸ isDomainBetween_zero x⟩
+  have := h.1
+  rw [map_zero, map_zero] at this
+  exact (sub_eq_zero.mp this.symm).symm
+
 /-- The whole surface connects every generator to itself. -/
 theorem isDomainBetween_one (x : H.Generator) : H.IsDomainBetween x x 1 := by
   simp
@@ -509,6 +516,15 @@ theorem mem_periodicDomains_iff {P : Region → ℤ} :
     P ∈ H.periodicDomains ↔ (∀ z, P (H.basepoint z) = 0) ∧
       H.alphaArcBoundary (H.alphaBoundary P) = 0 ∧ H.betaArcBoundary (H.betaBoundary P) = 0 :=
   Iff.rfl
+
+/-- A domain is periodic for the diagram pointed at the region `z` exactly when it vanishes at
+`z` and its `α`- and `β`-parts are cycles. -/
+theorem mem_periodicDomains_withBasepoints_iff {z : Region} {P : Region → ℤ} :
+    P ∈ (H.withBasepoints fun _ : Unit => z).periodicDomains ↔
+      P z = 0 ∧ H.alphaArcBoundary (H.alphaBoundary P) = 0 ∧
+        H.betaArcBoundary (H.betaBoundary P) = 0 :=
+  -- `withBasepoints` changes only `basepoint`, so the boundary maps agree definitionally.
+  ⟨fun h => ⟨h.1 (), h.2⟩, fun h => ⟨fun _ => h.1, h.2⟩⟩
 
 /-- A domain is periodic exactly when it has multiplicity zero at every basepoint and its
 boundary is `∑ aᵢ αᵢ + ∑ bⱼ βⱼ` for some integers `aᵢ`, `bⱼ`. -/

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.CutByBall
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.CutByBall.Basic
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff

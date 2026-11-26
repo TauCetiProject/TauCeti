@@ -34,6 +34,7 @@ over commutative semirings, needs commutativity.
 * `LaurentPolynomial.coeff_C_mul`: constants scale coefficients. For natural-number constants
   this is Mathlib's `AddMonoidAlgebra.coeff_natCast_mul`, which
   `TauCeti.Algebra.MonoidAlgebra.Basic` tags as a `simp` lemma.
+* `LaurentPolynomial.coeff_C_mul_T`: the coefficients of `a Tⁿ`.
 * `LaurentPolynomial.coeff_one`: the coefficients of `1`.
 * `LaurentPolynomial.coeff_trunc`: `(trunc f).coeff n = f.coeff (n : ℤ)`.
 * `LaurentPolynomial.leadingCoeff_toLaurent` and `LaurentPolynomial.leadingCoeff_mul_T`: the
@@ -73,6 +74,10 @@ theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 �
 theorem coeff_C_mul (t : R) (f : R[T;T⁻¹]) (d : ℤ) : (C t * f).coeff d = t * f.coeff d := by
   rw [← single_eq_C]
   exact AddMonoidAlgebra.coeff_single_zero_mul f t d
+
+/-- The coefficient of degree `m` of `a Tⁿ` is `a` if `n = m` and `0` otherwise. -/
+theorem coeff_C_mul_T (a : R) (n m : ℤ) : (C a * T n).coeff m = if n = m then a else 0 := by
+  rw [← single_eq_C_mul_T, AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
 
 /-- The constant Laurent polynomial `1` has coefficient `1` at exponent `0` and `0` elsewhere. -/
 @[simp]

@@ -187,6 +187,11 @@ theorem locallyPathConnectedSpace [LocallyPathConnectedSpace B]
   exact .of_bases hb fun e _ ⟨_, hs, hsub⟩ ↦
     hs.image' ((hp.localInverseAt e).continuousOn.mono hsub)
 
+/-- A point in the target of the local inverse of `p` at `e` is sent by `p` into its source. -/
+theorem apply_mem_localInverseAt_source_of_mem_target {p : E → B} (hp : IsLocalHomeomorph p)
+    {e y : E} (h : y ∈ (hp.localInverseAt e).target) : p y ∈ (hp.localInverseAt e).source := by
+  simpa only [localInverseAt_symm] using (hp.localInverseAt e).map_target h
+
 /-- Let `L` be a local inverse of a local homeomorphism `p` at `e`. If `φ` is continuous at `z`,
 satisfies `p ∘ φ = p` near `z`, and sends `z` into the target of `L`, then `L ∘ p` agrees with `φ`
 near `z`. -/

@@ -285,7 +285,7 @@ private theorem integral_laplacian_smul_eq_of_tendsto (hp : p ≠ ∞)
     ∫ x, Δ (φ : E → ℝ) x • f x = ∫ x, φ x • g x := by
   -- Mollify with the reflected test function `ρ = φ(-·)` and evaluate at `0`.
   let ρ : 𝓓((⊤ : Opens E), ℝ) :=
-    (ContinuousLinearEquiv.neg ℝ).transportTestFunction (fun _ _ => Opens.mem_top _) φ
+    (ContinuousLinearEquiv.neg ℝ).transportTestFunction ℝ (fun _ _ => Opens.mem_top _) φ
   have hρ_apply : (ρ : E → ℝ) = fun z => φ (-z) := funext fun z =>
     (ContinuousLinearEquiv.transportTestFunction_apply _ _ φ z).trans <| by
       rw [ContinuousLinearEquiv.symm_neg, ContinuousLinearEquiv.neg_apply]

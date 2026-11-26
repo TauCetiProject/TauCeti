@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
 # The combinatorial Maslov index of a domain
@@ -303,10 +304,8 @@ theorem eulerMeasure_eq_sub_sum_pointMeasure (χ : Region → ℤ) (D : Region �
     H.eulerMeasure χ D = ∑ r, (χ r : ℚ) * D r - ∑ p, H.pointMeasure D p := by
   have hcorner : ∑ r, (D r : ℚ) * H.cornerCount r =
       ∑ c : Point × Fin 4, (D (H.cornerRegion c.1 c.2) : ℚ) := by
-    rw [← sum_fiberwise univ (fun c : Point × Fin 4 => H.cornerRegion c.1 c.2)]
-    refine sum_congr rfl fun r _ => ?_
-    rw [sum_congr rfl fun c hc => by rw [(mem_filter.mp hc).2], sum_const, nsmul_eq_mul,
-      cornerCount_eq_card, mul_comm]
+    simp_rw [cornerCount_eq_card, mul_comm (D _ : ℚ), ← nsmul_eq_mul]
+    exact sum_card_filter_nsmul_eq_sum_comp (fun _ _ => mem_univ _) _
   simp only [eulerMeasure_apply, pointMeasure_apply_eq_sum, mul_sub, sum_sub_distrib]
   rw [← sum_div, ← Fintype.sum_prod_type', ← hcorner, sum_div]
   congr 1

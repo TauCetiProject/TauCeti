@@ -9,14 +9,19 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Geometry.Symplectic.Complex.Module.Hom
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # Adapted orthonormal bases of an orthogonal complex structure
@@ -69,6 +74,24 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   existence of oriented unitary frames and completion of a unit vector in dimension four.
 * `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
   an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
+* `OrthonormalBasis.complexCoords_two_almostComplexStructure_apply`,
+  `TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply`: for such a
+  unitary frame, the complex coordinates `OrthonormalBasis.complexCoords` turn `J` into
+  multiplication by `i`, and they are the coordinates of the complex basis `(e₀, e₂)` of `(V, J)`,
+  hence a `ℂ`-linear equivalence from the complex vector space `(V, J)` to `ℂ²`.
+* `TauCeti.AlmostComplexStructure.unitaryGroupFrameEquiv`: for such a unitary frame and the form
+  `Q v = -‖v‖²`, the isomorphism `U(2) ≃* U(V, J)` sending a unitary matrix to the rotation acting
+  as that matrix in the complex coordinates (`complexCoords_unitaryGroupFrameEquiv_apply`,
+  `complexCoords_unitaryGroupFrameEquiv_symm_apply`).
+* `TauCeti.AlmostComplexStructure.exists_complexCoords_apply_eq_mulVec_of_norm_map`: a real linear
+  map preserving norms and commuting with `J` acts as a unitary matrix in the complex coordinates
+  of a unitary frame.
+* `OrthonormalBasis.centralizerToUnitaryGroup`: for a unitary frame of an orthogonal complex
+  structure `J₀ : unitary (V →L[ℝ] V)`, the continuous homomorphism `U(V, J₀) → U(2)` from the
+  orthogonal transformations commuting with `J₀`, sending each to its matrix in the complex
+  coordinates (`OrthonormalBasis.complexCoords_centralizerToUnitaryGroup_apply`,
+  `OrthonormalBasis.coe_centralizerToUnitaryGroup_apply`,
+  `OrthonormalBasis.continuous_centralizerToUnitaryGroup`).
 * `ContinuousLinearMap.orthonormal_adaptedFourFrame`, `ContinuousLinearMap.adaptedFourBasis`: for
   an orthogonal complex structure `K`, a unit vector `a` and a vector `c` with nonzero residual
   `ContinuousLinearMap.complexLineResidual`, the vectors `(a, K a, u, K u)`, with `u` the
@@ -591,6 +614,19 @@ theorem basisOfOrthonormalBasisFinFour_repr_apply_one (h₀ : J (e 0) = e 1) (h�
     (basisOfOrthonormalBasisFinFour h₀ h₂).repr x 1 = (⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫ :=
   basisOfOrthonormalBasis_repr_apply _ x 1
 
+/-- **Complex coordinates of a unitary frame.** For a unitary frame `e`, `J e₀ = e₁` and
+`J e₂ = e₃`, the coordinates of the complex basis `(e₀, e₂)` of `(V, J)`
+(`basisOfOrthonormalBasisFinFour`) are the complex coordinates `e.complexCoords 2`. So these are a
+`ℂ`-linear equivalence from `(V, J)` to `ℂ²`. -/
+theorem basisOfOrthonormalBasisFinFour_equivFun_apply (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (v : V) :
+    letI := J.complexModule
+    (basisOfOrthonormalBasisFinFour h₀ h₂).equivFun v = e.complexCoords 2 v := by
+  let := J.complexModule
+  rw [OrthonormalBasis.complexCoords_two_apply]
+  ext i
+  fin_cases i <;> simp [mul_comm]
+
 end FinFour
 
 end ComplexBasis
@@ -636,6 +672,25 @@ theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ 
     intro i
     fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
   exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
+
+section ComplexCoords
+
+variable {J : TauCeti.AlmostComplexStructure V} {e : OrthonormalBasis (Fin 4) ℝ V}
+
+/-- In the complex coordinates `OrthonormalBasis.complexCoords` of a unitary frame `e`,
+`J e₀ = e₁` and `J e₂ = e₃`, the complex structure `J` is multiplication by `i`. -/
+theorem complexCoords_two_almostComplexStructure_apply (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (v : V) : e.complexCoords 2 (J v) = Complex.I • e.complexCoords 2 v := by
+  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
+  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
+  obtain ⟨z, rfl⟩ := (e.complexCoords 2).symm.surjective v
+  rw [LinearEquiv.apply_symm_apply, ← LinearEquiv.eq_symm_apply, complexCoords_two_symm_apply,
+    complexCoords_two_symm_apply]
+  simp only [map_add, map_smul, h₀, h₁, h₂, h₃, Pi.smul_apply, smul_eq_mul, Complex.mul_re,
+    Complex.mul_im, Complex.I_re, Complex.I_im]
+  module
+
+end ComplexCoords
 
 section UnitaryToAdaptedFourBasis
 
@@ -735,5 +790,285 @@ theorem continuousOn_unitaryToAdaptedFourBasis :
   exact hsum.congr fun K hK ↦ unitaryToAdaptedFourBasis_apply_eq_sum hK.1 hK.2 v
 
 end UnitaryToAdaptedFourBasis
+
+end OrthonormalBasis
+
+namespace TauCeti.AlmostComplexStructure
+
+section UnitaryGroupFrame
+
+open scoped Matrix
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {J : AlmostComplexStructure V} {e : OrthonormalBasis (Fin 4) ℝ V} {Q : QuadraticForm ℝ V}
+
+/-- The real linear automorphism of `V` acting as the matrix `g` in the complex coordinates
+`e.complexCoords 2` of the frame `e`. -/
+private noncomputable def frameRotation (e : OrthonormalBasis (Fin 4) ℝ V)
+    (g : Matrix.unitaryGroup (Fin 2) ℂ) : V ≃ₗ[ℝ] V :=
+  (e.complexCoords 2).trans
+    (((Matrix.UnitaryGroup.toLinearEquiv g).restrictScalars ℝ).trans (e.complexCoords 2).symm)
+
+private theorem complexCoords_frameRotation_apply (g : Matrix.unitaryGroup (Fin 2) ℂ) (v : V) :
+    e.complexCoords 2 (frameRotation e g v) =
+      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v :=
+  (e.complexCoords 2).apply_symm_apply _
+
+/-- The automorphism `frameRotation e g` is a rotation: it preserves norms because `g` is unitary
+and the complex coordinates are isometric, and its real determinant is `|det g|² = 1`. -/
+private theorem frameRotation_mem_specialOrthogonalGroup (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (g : Matrix.unitaryGroup (Fin 2) ℂ) :
+    frameRotation e g ∈ QuadraticMap.specialOrthogonalGroup Q := by
+  refine QuadraticMap.mem_specialOrthogonalGroup_iff.2
+    ⟨QuadraticMap.mem_orthogonalGroup_iff.2 fun v ↦ ?_, Units.ext ?_⟩
+  · rw [hQ, hQ, ← e.norm_toLp_complexCoords (n := 2), complexCoords_frameRotation_apply,
+      ← e.norm_toLp_complexCoords (n := 2) v]
+    have h := Matrix.UnitaryGroup.toLinearIsometryEquiv_apply g
+      (WithLp.toLp 2 (e.complexCoords 2 v))
+    rw [WithLp.ofLp_toLp] at h
+    rw [← h, LinearIsometryEquiv.norm_map]
+  · rw [LinearEquiv.coe_det, Units.val_one]
+    have h := LinearMap.det_conj
+      (((Matrix.UnitaryGroup.toLinearEquiv g).restrictScalars ℝ : (Fin 2 → ℂ) ≃ₗ[ℝ] _) :
+        (Fin 2 → ℂ) →ₗ[ℝ] _) (e.complexCoords 2).symm
+    refine h.trans ?_
+    have hg := Matrix.det_of_mem_unitary g.property
+    rw [Unitary.mem_iff_star_mul_self] at hg
+    have hn : (Complex.normSq (g : Matrix (Fin 2) (Fin 2) ℂ).det : ℂ) = 1 := by
+      rw [Complex.normSq_eq_conj_mul_self]
+      exact hg
+    refine (LinearMap.det_restrictScalars_eq_normSq
+      (Matrix.toLin' (g : Matrix (Fin 2) (Fin 2) ℂ))).trans ?_
+    rw [LinearMap.det_toLin']
+    exact_mod_cast hn
+
+/-- The rotation `frameRotation e g` commutes with `J` for a unitary frame `e`, because the complex
+coordinates turn `J` into multiplication by `i`. -/
+private theorem frameRotation_apply_almostComplexStructure (h₀ : J (e 0) = e 1)
+    (h₂ : J (e 2) = e 3) (g : Matrix.unitaryGroup (Fin 2) ℂ) (v : V) :
+    frameRotation e g (J v) = J (frameRotation e g v) := by
+  refine (e.complexCoords 2).injective ?_
+  rw [complexCoords_frameRotation_apply, e.complexCoords_two_almostComplexStructure_apply h₀ h₂,
+    e.complexCoords_two_almostComplexStructure_apply h₀ h₂, complexCoords_frameRotation_apply,
+    Matrix.mulVec_smul]
+
+/-- For a unitary frame `e`, the homomorphism `U(2) → U(V, J)` sending `g` to the rotation acting
+as `g` in the complex coordinates of `e`. -/
+private noncomputable def frameRotationHom (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1)
+    (h₂ : J (e 2) = e 3) : Matrix.unitaryGroup (Fin 2) ℂ →* J.unitaryGroup Q where
+  toFun g := ⟨⟨frameRotation e g, frameRotation_mem_specialOrthogonalGroup hQ g⟩,
+    mem_unitaryGroup_iff.2 (frameRotation_apply_almostComplexStructure h₀ h₂ g)⟩
+  map_one' := Subtype.ext <| Subtype.ext <| LinearEquiv.ext fun v ↦
+    (e.complexCoords 2).injective <| by
+      rw [complexCoords_frameRotation_apply]
+      simp
+  map_mul' g g' := Subtype.ext <| Subtype.ext <| LinearEquiv.ext fun v ↦
+    (e.complexCoords 2).injective <| by
+      simp only [Subgroup.coe_mul, mul_apply_eq_comp]
+      rw [complexCoords_frameRotation_apply, complexCoords_frameRotation_apply,
+        complexCoords_frameRotation_apply, Matrix.UnitaryGroup.mul_val, Matrix.mulVec_mulVec]
+
+/-- **A complex linear isometry is a unitary matrix in a unitary frame.** A real linear map `A` of
+`V` preserving norms and commuting with `J` acts as a unitary matrix in the complex coordinates of
+a unitary frame `e`, `J e₀ = e₁` and `J e₂ = e₃`: these coordinates are `ℂ`-linear for `J` and
+carry `V` isometrically onto `ℂ²`. -/
+theorem exists_complexCoords_apply_eq_mulVec_of_norm_map (h₀ : J (e 0) = e 1)
+    (h₂ : J (e 2) = e 3) (A : V →ₗ[ℝ] V) (hA : ∀ v, ‖A v‖ = ‖v‖)
+    (hJA : ∀ v, A (J v) = J (A v)) :
+    ∃ g : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2 (A v) =
+      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v := by
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  -- The complex coordinates of `e` are `ℂ`-linear for the complex structure `J` on `V`.
+  let C := (basisOfOrthonormalBasisFinFour h₀ h₂).equivFun
+  have hCv (v : V) : C v = e.complexCoords 2 v :=
+    basisOfOrthonormalBasisFinFour_equivFun_apply h₀ h₂ v
+  have hC (z : Fin 2 → ℂ) : ‖C.symm z‖ = ‖WithLp.toLp 2 z‖ := by
+    rw [← OrthonormalBasis.norm_toLp_complexCoords (n := 2) e, ← hCv, LinearEquiv.apply_symm_apply]
+  -- The matrix `g` is `A` read in the complex coordinates, a `ℂ`-linear isometry of `ℂ²`.
+  let L : EuclideanSpace ℂ (Fin 2) →ₗᵢ[ℂ] EuclideanSpace ℂ (Fin 2) :=
+    { toLinearMap := (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).symm.toLinearMap ∘ₗ
+        C.toLinearMap ∘ₗ
+        ((isComplexLinearMap_iff_apply J J A).2 hJA).toComplexLinearMap ∘ₗ
+        C.symm.toLinearMap ∘ₗ (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).toLinearMap
+      norm_map' x := by
+        obtain ⟨z, rfl⟩ := (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).symm.surjective x
+        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+          IsComplexLinearMap.toComplexLinearMap_apply, WithLp.coe_symm_linearEquiv,
+          WithLp.coe_linearEquiv, hCv]
+        rw [OrthonormalBasis.norm_toLp_complexCoords (n := 2), hA, hC] }
+  refine ⟨Matrix.UnitaryGroup.toLinearIsometryEquiv.symm (L.toLinearIsometryEquiv rfl),
+    fun v ↦ ?_⟩
+  have h := congrArg WithLp.ofLp (Matrix.UnitaryGroup.toLinearIsometryEquiv_apply
+    (Matrix.UnitaryGroup.toLinearIsometryEquiv.symm (L.toLinearIsometryEquiv rfl))
+    (WithLp.toLp 2 (e.complexCoords 2 v)))
+  rw [MulEquiv.apply_symm_apply, LinearIsometry.toLinearIsometryEquiv_apply] at h
+  dsimp only at h
+  rw [← h]
+  simp only [L, LinearIsometry.coe_mk, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    IsComplexLinearMap.toComplexLinearMap_apply, WithLp.coe_linearEquiv,
+    WithLp.coe_symm_linearEquiv, WithLp.ofLp_toLp, hCv]
+  rw [← hCv v, LinearEquiv.symm_apply_apply]
+
+/-- Every rotation in `U(V, J)` acts as a unitary matrix in the complex coordinates of the unitary
+frame `e`. -/
+private theorem exists_complexCoords_apply_eq_mulVec (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (A : J.unitaryGroup Q) :
+    ∃ g : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2
+        (((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v) =
+      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v := by
+  have hA (v : V) : ‖((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v‖ = ‖v‖ := by
+    have h := QuadraticMap.map_app_of_mem_orthogonalGroup
+      (QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q
+        (A : QuadraticMap.specialOrthogonalGroup Q).property) v
+    rw [hQ, hQ, neg_inj] at h
+    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h
+  exact exists_complexCoords_apply_eq_mulVec_of_norm_map h₀ h₂
+    ((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V).toLinearMap hA
+    (mem_unitaryGroup_iff.1 A.property)
+
+/-- **The unitary group in a unitary frame.** For a unitary frame `e`, `J e₀ = e₁` and
+`J e₂ = e₃`, of a space with `Q v = -‖v‖²`, the isomorphism `U(2) ≃* U(V, J)` sending a unitary
+matrix `g` to the rotation acting as `g` in the complex coordinates `e.complexCoords 2`
+(`complexCoords_unitaryGroupFrameEquiv_apply`, `complexCoords_unitaryGroupFrameEquiv_symm_apply`).
+-/
+noncomputable def unitaryGroupFrameEquiv (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1)
+    (h₂ : J (e 2) = e 3) : Matrix.unitaryGroup (Fin 2) ℂ ≃* J.unitaryGroup Q :=
+  MulEquiv.ofBijective (frameRotationHom hQ h₀ h₂)
+    ⟨fun g g' h ↦ Subtype.ext <| Matrix.toLin'.injective <| LinearMap.ext fun z ↦ by
+        obtain ⟨v, rfl⟩ := (e.complexCoords 2).surjective z
+        have h' := congrArg (fun A : J.unitaryGroup Q ↦ e.complexCoords 2
+          (((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v)) h
+        simpa only [Matrix.toLin'_apply] using
+          (complexCoords_frameRotation_apply g v).symm.trans
+            (h'.trans (complexCoords_frameRotation_apply g' v)),
+      fun A ↦ by
+        obtain ⟨g, hg⟩ := exists_complexCoords_apply_eq_mulVec hQ h₀ h₂ A
+        refine ⟨g, Subtype.ext (Subtype.ext (LinearEquiv.ext fun v ↦
+          (e.complexCoords 2).injective ?_))⟩
+        rw [hg]
+        exact complexCoords_frameRotation_apply g v⟩
+
+/-- The rotation `unitaryGroupFrameEquiv g` acts as `g` in the complex coordinates of the frame. -/
+theorem complexCoords_unitaryGroupFrameEquiv_apply (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (g : Matrix.unitaryGroup (Fin 2) ℂ) (v : V) :
+    e.complexCoords 2
+        (((unitaryGroupFrameEquiv hQ h₀ h₂ g : QuadraticMap.specialOrthogonalGroup Q) :
+          V ≃ₗ[ℝ] V) v) =
+      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v :=
+  complexCoords_frameRotation_apply g v
+
+/-- A rotation `A` in `U(V, J)` acts as the unitary matrix `(unitaryGroupFrameEquiv).symm A` in the
+complex coordinates of the frame. -/
+theorem complexCoords_unitaryGroupFrameEquiv_symm_apply (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (A : J.unitaryGroup Q) (v : V) :
+    e.complexCoords 2 (((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v) =
+      ((unitaryGroupFrameEquiv hQ h₀ h₂).symm A : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
+        e.complexCoords 2 v := by
+  conv_lhs => rw [← (unitaryGroupFrameEquiv hQ h₀ h₂).apply_symm_apply A]
+  exact complexCoords_unitaryGroupFrameEquiv_apply hQ h₀ h₂ _ v
+
+end UnitaryGroupFrame
+
+end TauCeti.AlmostComplexStructure
+
+namespace OrthonormalBasis
+
+section CentralizerUnitaryGroup
+
+open scoped Matrix
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  (e : OrthonormalBasis (Fin 4) ℝ V) {J₀ : unitary (V →L[ℝ] V)}
+  (hJ₀ : ∀ v, (J₀ : V →L[ℝ] V) ((J₀ : V →L[ℝ] V) v) = -v)
+  (h₀ : (J₀ : V →L[ℝ] V) (e 0) = e 1) (h₂ : (J₀ : V →L[ℝ] V) (e 2) = e 3)
+
+/-- The matrix of a real linear map of `V` in the complex coordinates `e.complexCoords 2`: its
+column `j` is the complex coordinate vector of the image of the `j`-th complex basis vector. -/
+private noncomputable def complexCoordsMatrix (A : V →L[ℝ] V) : Matrix (Fin 2) (Fin 2) ℂ :=
+  Matrix.of fun i j ↦ e.complexCoords 2 (A ((e.complexCoords 2).symm (Pi.single j 1))) i
+
+omit [CompleteSpace V] in
+private theorem complexCoordsMatrix_eq {A : V →L[ℝ] V} {U : Matrix (Fin 2) (Fin 2) ℂ}
+    (hU : ∀ v, e.complexCoords 2 (A v) = U *ᵥ e.complexCoords 2 v) :
+    e.complexCoordsMatrix A = U := by
+  ext i j
+  rw [complexCoordsMatrix, Matrix.of_apply, hU, LinearEquiv.apply_symm_apply,
+    Matrix.mulVec_single_one, Matrix.col_apply]
+
+include hJ₀ h₀ h₂ in
+/-- An orthogonal transformation commuting with `J₀` acts as a unitary matrix in the complex
+coordinates of a unitary frame `e`. -/
+private theorem exists_complexCoords_apply_eq_mulVec (g : Subgroup.centralizer {J₀}) :
+    ∃ U : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2 (((g : unitary (V →L[ℝ] V)) :
+      V →L[ℝ] V) v) = (U : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v := by
+  let J : TauCeti.AlmostComplexStructure V :=
+    ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
+  have hg := Subgroup.mem_centralizer_singleton_iff.1 g.property
+  exact TauCeti.AlmostComplexStructure.exists_complexCoords_apply_eq_mulVec_of_norm_map (J := J)
+    h₀ h₂ ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V).toLinearMap (Unitary.norm_map _)
+    fun v ↦ congrArg (fun A : unitary (V →L[ℝ] V) ↦ (A : V →L[ℝ] V) v) hg
+
+include hJ₀ h₀ h₂ in
+private theorem complexCoordsMatrix_mem_unitaryGroup (g : Subgroup.centralizer {J₀}) :
+    e.complexCoordsMatrix ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V) ∈
+      Matrix.unitaryGroup (Fin 2) ℂ := by
+  obtain ⟨U, hU⟩ := e.exists_complexCoords_apply_eq_mulVec hJ₀ h₀ h₂ g
+  rw [e.complexCoordsMatrix_eq hU]
+  exact U.property
+
+include hJ₀ h₀ h₂ in
+private theorem complexCoords_apply_eq_complexCoordsMatrix_mulVec
+    (g : Subgroup.centralizer {J₀}) (v : V) :
+    e.complexCoords 2 (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V) v) =
+      e.complexCoordsMatrix ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V) *ᵥ e.complexCoords 2 v := by
+  obtain ⟨U, hU⟩ := e.exists_complexCoords_apply_eq_mulVec hJ₀ h₀ h₂ g
+  rw [e.complexCoordsMatrix_eq hU, hU]
+
+/-- **The unitary matrix of a complex rotation.** For a unitary frame `e` of an orthogonal complex
+structure `J₀`, `J₀ e₀ = e₁` and `J₀ e₂ = e₃`, the homomorphism `U(V, J₀) → U(2)` from the
+orthogonal transformations commuting with `J₀` to unitary matrices, sending `g` to its matrix in
+the complex coordinates `e.complexCoords 2`
+(`OrthonormalBasis.complexCoords_centralizerToUnitaryGroup_apply`). -/
+noncomputable def centralizerToUnitaryGroup :
+    Subgroup.centralizer {J₀} →* Matrix.unitaryGroup (Fin 2) ℂ where
+  toFun g := ⟨e.complexCoordsMatrix ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V),
+    e.complexCoordsMatrix_mem_unitaryGroup hJ₀ h₀ h₂ g⟩
+  map_one' := Subtype.ext (e.complexCoordsMatrix_eq fun v ↦ by simp)
+  map_mul' g g' := Subtype.ext (e.complexCoordsMatrix_eq fun v ↦ by
+    simp only [Subgroup.coe_mul, Submonoid.coe_mul, mul_apply_eq_comp,
+      Submonoid.mk_mul_mk, ← Matrix.mulVec_mulVec]
+    rw [e.complexCoords_apply_eq_complexCoordsMatrix_mulVec hJ₀ h₀ h₂,
+      e.complexCoords_apply_eq_complexCoordsMatrix_mulVec hJ₀ h₀ h₂])
+
+/-- The matrix `centralizerToUnitaryGroup g` is the action of `g` in the complex coordinates of
+the frame. -/
+theorem complexCoords_centralizerToUnitaryGroup_apply (g : Subgroup.centralizer {J₀}) (v : V) :
+    e.complexCoords 2 (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V) v) =
+      (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
+        e.complexCoords 2 v :=
+  e.complexCoords_apply_eq_complexCoordsMatrix_mulVec hJ₀ h₀ h₂ g v
+
+/-- The entry `(i, j)` of the matrix `centralizerToUnitaryGroup g` is the `i`-th complex
+coordinate of the image under `g` of the `j`-th complex basis vector. -/
+theorem coe_centralizerToUnitaryGroup_apply (g : Subgroup.centralizer {J₀}) (i j : Fin 2) :
+    (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g : Matrix (Fin 2) (Fin 2) ℂ) i j =
+      e.complexCoords 2
+        (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V) ((e.complexCoords 2).symm (Pi.single j 1))) i := by
+  rw [complexCoords_centralizerToUnitaryGroup_apply, LinearEquiv.apply_symm_apply,
+    Matrix.mulVec_single_one, Matrix.col_apply]
+
+/-- The matrix of a complex rotation depends continuously on it, for the operator norm. -/
+@[fun_prop]
+theorem continuous_centralizerToUnitaryGroup :
+    Continuous (e.centralizerToUnitaryGroup hJ₀ h₀ h₂) := by
+  have : FiniteDimensional ℝ V := e.toBasis.finiteDimensional_of_finite
+  refine continuous_induced_rng.mpr (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
+  exact ((continuous_apply i).comp
+    ((e.complexCoords 2).toLinearMap.continuous_of_finiteDimensional.comp
+      ((continuous_subtypeVal.comp continuous_subtypeVal).clm_apply continuous_const))).congr
+    fun g ↦ (e.coe_centralizerToUnitaryGroup_apply hJ₀ h₀ h₂ g i j).symm
+
+end CentralizerUnitaryGroup
 
 end OrthonormalBasis

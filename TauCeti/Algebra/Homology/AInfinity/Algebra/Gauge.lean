@@ -512,15 +512,9 @@ theorem IsMinimal.taylor_gauge_apply_of_mem_filtration_add_one (h𝒜 : 𝒜.IsM
 at most `e` does not change the operations of arity at most `e + 1`. -/
 theorem IsMinimal.m_gauge_of_le (h𝒜 : 𝒜.IsMinimal) {e : ℕ}
     (hφe : ∀ z ∈ filtration R A e, φ z = 0) {n : ℕ} (hn : n ≤ e + 1) :
-    (𝒜.gauge φ hφ hφ₁).m n = 𝒜.m n := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn0
-  · rw [m_zero, m_zero]
-  refine MultilinearMap.ext fun x ↦ ?_
-  have h := h𝒜.taylor_gauge_apply_of_mem_filtration_add_one hφ hφ₁ hφe
-    (of_mem_filtration R A (k := ⟨n, hn0⟩) hn
-      (PiTensorProduct.tprod R fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) (x i)))
-  rw [taylor_of_tprod, taylor_of_tprod, gauge_grading] at h
-  simpa only [InternalGrading.koszulTwist_koszulTwist] using h
+    (𝒜.gauge φ hφ hφ₁).m n = 𝒜.m n :=
+  m_eq_of_taylor_eq_on_filtration (gauge_grading 𝒜 φ hφ hφ₁) hn
+    fun _ hz ↦ h𝒜.taylor_gauge_apply_of_mem_filtration_add_one hφ hφ₁ hφe hz
 
 /-- **A gauge transformation of a minimal `A∞` algebra is minimal.** -/
 theorem IsMinimal.isMinimal_gauge (h𝒜 : 𝒜.IsMinimal) : (𝒜.gauge φ hφ hφ₁).IsMinimal := by

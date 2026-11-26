@@ -36,6 +36,8 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 
 * `TauCeti.AInfinityAlgebra.stasheff`: the unsuspended Stasheff identities, with
   `stasheff_arity_one` through `stasheff_arity_four` evaluated verbatim.
+* `TauCeti.AInfinity.stasheff_arity_two_of_stasheffSum_eq_zero`: an operation family satisfying
+  the arity-two identity on homogeneous inputs satisfies the graded Leibniz rule on all inputs.
 * `TauCeti.AInfinityAlgebra.taylor_of_two` and
   `TauCeti.AInfinityAlgebra.barDifferential_of_two`: the Taylor map and the bar differential on a
   two-letter word.
@@ -235,6 +237,11 @@ theorem m_eq_desuspension (𝒜 : AInfinityAlgebra R A) :
     𝒜.m = AInfinity.desuspension 𝒜.grading 𝒜.taylor :=
   𝒜.taylor_isSuspension.eq_desuspension 𝒜.m_zero
 
+/-- `A∞` algebras are determined by their grading and Taylor map. -/
+theorem ext_of_taylor {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.grading)
+    (h : 𝒜.taylor = 𝒜'.taylor) : 𝒜 = 𝒜' :=
+  ext hG (by rw [m_eq_desuspension, m_eq_desuspension, hG, h])
+
 /-- Every `A∞` algebra is built from its own Taylor map. -/
 @[simp]
 theorem ofTaylor_self (𝒜 : AInfinityAlgebra R A) :
@@ -256,34 +263,45 @@ theorem stasheff_arity_one (𝒜 : AInfinityAlgebra R A) (x : A) : 𝒜.m 1 ![�
     simpa [E, AInfinity.stasheffSum_one] using h
   rw [hE, LinearMap.zero_apply]
 
+/-- **The arity-two Stasheff identity on all inputs.** If an operation family satisfies the
+arity-two Stasheff identity on homogeneous inputs, its unary operation is a graded derivation of
+its binary operation, with sign `(-1)^p` on the second differentiated input when the first input
+has degree `p`; the second input need not be homogeneous. -/
+theorem _root_.TauCeti.AInfinity.stasheff_arity_two_of_stasheffSum_eq_zero
+    (G : InternalGrading R A ℤ) (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A)
+    (hm : ∀ (e : ℕ → ℤ) (a : ℕ → A), (∀ i < 2, a i ∈ G.piece (e i)) →
+      AInfinity.stasheffSum m e a 2 = 0)
+    (x y : A) (p : ℤ) (hx : x ∈ G.piece p) :
+    m 1 ![m 2 ![x, y]] = m 2 ![m 1 ![x], y] + negOnePowCast R p • m 2 ![x, m 1 ![y]] := by
+  let L : A →ₗ[R] A :=
+    ((m 1).curryRight ![]).comp ((m 2).curryRight ![x])
+  let Q : A →ₗ[R] A :=
+    (m 2).curryRight ![m 1 ![x]] +
+      negOnePowCast R p • ((m 2).curryRight ![x]).comp ((m 1).curryRight ![])
+  suffices L y = Q y by simpa [L, Q] using this
+  have hLQ : L = Q := by
+    apply G.linearMap_ext
+    intro q z hz
+    let d : ℕ → ℤ := fun i ↦ if i = 0 then p else q
+    let a : ℕ → A := fun i ↦ if i = 0 then x else z
+    have ha : ∀ i < 2, a i ∈ G.piece (d i) := by
+      intro i hi
+      have hi' : i = 0 ∨ i = 1 := by omega
+      rcases hi' with rfl | rfl
+      · simpa [a, d] using hx
+      · simpa [a, d] using hz
+    have h := (AInfinity.stasheffSum_two_eq_zero_iff m d a).mp (hm d a ha)
+    simpa [L, Q, a, d] using h
+  exact LinearMap.congr_fun hLQ y
+
 /-- The arity-two identity is the graded Leibniz rule, with sign `(-1)^(d 0)` on the second
 differentiated input. -/
 theorem stasheff_arity_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
     (hx : x ∈ 𝒜.grading.piece p) :
     𝒜.m 1 ![𝒜.m 2 ![x, y]] =
       𝒜.m 2 ![𝒜.m 1 ![x], y] +
-        negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] := by
-  let L : A →ₗ[R] A :=
-    ((𝒜.m 1).curryRight ![]).comp ((𝒜.m 2).curryRight ![x])
-  let Q : A →ₗ[R] A :=
-    (𝒜.m 2).curryRight ![𝒜.m 1 ![x]] +
-      negOnePowCast R p • ((𝒜.m 2).curryRight ![x]).comp ((𝒜.m 1).curryRight ![])
-  suffices L y = Q y by simpa [L, Q] using this
-  have hLQ : L = Q := by
-    apply 𝒜.grading.linearMap_ext
-    intro q z hz
-    let d : ℕ → ℤ := fun i ↦ if i = 0 then p else q
-    let a : ℕ → A := fun i ↦ if i = 0 then x else z
-    have ha : ∀ i < 2, a i ∈ 𝒜.grading.piece (d i) := by
-      intro i hi
-      have hi' : i = 0 ∨ i = 1 := by omega
-      rcases hi' with rfl | rfl
-      · simpa [a, d] using hx
-      · simpa [a, d] using hz
-    have h := (AInfinity.stasheffSum_two_eq_zero_iff 𝒜.m d a).mp
-      (𝒜.stasheff 2 d a ha)
-    simpa [L, Q, a, d] using h
-  exact LinearMap.congr_fun hLQ y
+        negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] :=
+  AInfinity.stasheff_arity_two_of_stasheffSum_eq_zero 𝒜.grading 𝒜.m (𝒜.stasheff 2) x y p hx
 
 /-- The arity-three Stasheff identity, with the Koszul signs determined by the degrees of its
 first two inputs. -/
@@ -516,6 +534,14 @@ theorem taylor_of_tprod (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) (
       𝒜.m n.val fun i ↦ 𝒜.grading.koszulTwist ((n.val : ℤ) - 1 - i) (x i) := by
   rw [𝒜.taylor_isSuspension.taylor_eq (AInfinity.isSuspension_suspensionTaylor _ _),
     AInfinity.suspensionTaylor_of_tprod]
+
+/-- In positive arity, `𝒜.m n x` evaluates `𝒜.taylor` on the pure tensor word whose `i`-th
+letter is twisted by `koszulTwist ((n : ℤ) - 1 - i)`. -/
+theorem m_apply_eq_taylor_of_tprod_koszulTwist (𝒜 : AInfinityAlgebra R A) {n : ℕ} (hn : 0 < n)
+    (x : Fin n → A) :
+    𝒜.m n x = 𝒜.taylor (ReducedTensorWords.of R A ⟨n, hn⟩
+      (PiTensorProduct.tprod R fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) (x i))) := by
+  rw [𝒜.m_eq_desuspension, AInfinity.desuspension_apply _ _ hn]
 
 /-- The suspended Taylor map sends the word of the first `n` letters of a natural-indexed family of
 homogeneous letters to the piece of their total suspended degree plus one. -/

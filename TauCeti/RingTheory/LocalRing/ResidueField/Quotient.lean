@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 -- `Nat.card` occurs in the statement of `TauCeti.card_residueField_of_surjective`.
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.Algebra.CharP.Quotient
 
 /-!
 # The quotient by a maximal ideal of a local ring
@@ -20,12 +21,18 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
 
 * `TauCeti.isLocalHom_algebraMap_residueField`: `algebraMap R (ResidueField R)` is a local
   homomorphism.
+* `TauCeti.residue_eq_residue_iff`: two elements have the same residue exactly when
+  their difference lies in the maximal ideal.
 * `TauCeti.quotientEquivResidueField`: `R ⧸ 𝔪 ≃ₗ[R] κ` for a maximal ideal `𝔪`,
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
 * `TauCeti.card_residueField_of_surjective`: along a surjective ring homomorphism of
   local rings, the residue fields have the same number of elements.
+* `TauCeti.natCard_residueField_mem_maximalIdeal`: the cast cardinality of the residue field
+  lies in the maximal ideal, including when the residue field is infinite.
+* `TauCeti.dvd_natCard_residueField`: any element whose principal ideal contains the maximal
+  ideal divides the cast cardinality of the residue field.
 -/
 
 public section
@@ -41,6 +48,26 @@ variable {R : Type*} [CommRing R] [IsLocalRing R]
 /-- The canonical algebra map `R →+* ResidueField R` of a local ring is a local homomorphism. -/
 instance isLocalHom_algebraMap_residueField : IsLocalHom (algebraMap R (ResidueField R)) :=
   ResidueField.algebraMap_eq (R := R) ▸ inferInstance
+
+/-- Two elements of a local ring have the same residue if and only if their difference lies in
+the maximal ideal. -/
+theorem residue_eq_residue_iff {x y : R} :
+    residue R x = residue R y ↔ x - y ∈ maximalIdeal R := by
+  rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff]
+
+/-- The cast cardinality of the residue field lies in the maximal ideal. When the residue field
+is infinite, `Nat.card` is zero. -/
+theorem natCard_residueField_mem_maximalIdeal :
+    (Nat.card (ResidueField R) : R) ∈ maximalIdeal R := by
+  apply Ideal.Quotient.eq_zero_iff_mem.mp
+  rw [map_natCast]
+  exact Ideal.Quotient.index_eq_zero (maximalIdeal R)
+
+/-- Every element whose principal ideal contains the maximal ideal divides the cast cardinality
+of the residue field. -/
+theorem dvd_natCard_residueField {π : R} (hπ : maximalIdeal R ≤ Ideal.span {π}) :
+    π ∣ (Nat.card (ResidueField R) : R) :=
+  Ideal.mem_span_singleton.1 (hπ natCard_residueField_mem_maximalIdeal)
 
 /-- The quotient of a local ring by a maximal ideal is its residue field, as an `R`-linear
 equivalence sending the class of `r` to `residue R r`. -/

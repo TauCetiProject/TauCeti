@@ -76,10 +76,14 @@ the finite-rank groups `Stₙ(R)` along the index inclusions `Fin m ↪ Fin n`.
   (`|ι| ≥ 3` or `Infinite ι`).
 * `TauCeti.IndexedSteinbergGroup.range_toGL`: the image of `St_ι(R)` in `GL ι R` is
   `TauCeti.elementarySubgroup ι R`.
+* `TauCeti.IndexedSteinbergGroup.toGL_comp_mapIndex`, `TauCeti.IndexedSteinbergGroup.toGL_mapIndex`:
+  along an embedding of finite index types, `toGL` intertwines `mapIndex` with extension by the
+  identity, `Function.Embedding.extendGL`.
 * `TauCeti.SteinbergGroup.directLimitEquiv`: `St(R)` is isomorphic to the direct limit of
   `Stₙ(R)` over `n : ℕ`.
 * `TauCeti.SteinbergGroup.range_toStableGL`: the image of `toStableGL R` in `GL_∞(R)` is
   `TauCeti.StableGeneralLinearGroup.elementarySubgroup R`.
+* `TauCeti.SteinbergGroup.exists_toStableGL_eq_of`: an elementary matrix lifts to `St(R)`.
 
 ## References
 
@@ -711,13 +715,24 @@ theorem coe_toGL_transposeOp (z : IndexedSteinbergGroup ι R) :
 
 end FiniteIndex
 
+/-- Along an embedding `e : ι ↪ κ` of finite index types, `toGL` intertwines `mapIndex e` with
+extension by the identity along `e`. -/
+theorem toGL_comp_mapIndex [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] (e : ι ↪ κ) :
+    (toGL (ι := κ) (R := R)).comp (mapIndex e) = (e.extendGL R).comp toGL :=
+  hom_ext fun i j hij a ↦ by simp
+
+/-- Along an embedding `e : ι ↪ κ` of finite index types, `toGL` sends the image of `z` under
+`mapIndex e` to the extension of `toGL z` by the identity. -/
+theorem toGL_mapIndex [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] (e : ι ↪ κ)
+    (z : IndexedSteinbergGroup ι R) : toGL (mapIndex e z) = e.extendGL R (toGL z) :=
+  DFunLike.congr_fun (toGL_comp_mapIndex e) z
+
 /-- Along the standard inclusion `Fin m ↪ Fin n` (`m ≤ n`), `toGL` intertwines `mapIndex` with
 matrix stabilization `TauCeti.stabilizeGL`. -/
 theorem toGL_comp_mapIndex_castLE {m n : ℕ} (h : m ≤ n) :
     (toGL (ι := Fin n) (R := R)).comp (mapIndex (Fin.castLEEmb h)) =
       (stabilizeGL R h).comp toGL := by
-  ext i j hij a
-  simp [stabilizeGL_transvectionUnit]
+  rw [toGL_comp_mapIndex, Function.Embedding.extendGL_castLEEmb]
 
 /-- Along the standard inclusion `Fin m ↪ Fin n` (`m ≤ n`), `toGL` commutes with matrix
 stabilization `TauCeti.stabilizeGL`. -/
@@ -957,6 +972,13 @@ theorem range_toStableGL :
     rw [← IndexedSteinbergGroup.range_toGL] at hu
     obtain ⟨z, rfl⟩ := hu
     exact ⟨ofFin R n z, toStableGL_ofFin n z⟩
+
+/-- An elementary matrix, placed in `GL_∞(R)`, lifts to the Steinberg group `St(R)`. -/
+theorem exists_toStableGL_eq_of {n : ℕ} {g : GL (Fin n) R}
+    (hg : g ∈ elementarySubgroup (Fin n) R) :
+    ∃ a, toStableGL R a = StableGeneralLinearGroup.of R n g :=
+  MonoidHom.mem_range.1
+    (range_toStableGL.ge (StableGeneralLinearGroup.of_mem_elementarySubgroup hg))
 
 /-- The projection `St(R) →* GL_∞(R)` intertwines `IndexedSteinbergGroup.map` with
 `StableGeneralLinearGroup.map`. -/

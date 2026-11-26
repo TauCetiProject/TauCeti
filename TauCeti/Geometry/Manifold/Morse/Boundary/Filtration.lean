@@ -651,7 +651,7 @@ chains, the cokernel projection is the restriction to the band `Ioc (a q) (a (q 
 theorem π_morseFiltrationCokernelIso_hom (q : ℤ) :
     cokernel.π _ ≫ (h.morseFiltrationCokernelIso hf ha q).hom =
       (CochainComplex.filtrationFunctorObjIsoOfEqMk _ (h.monotone_morseFiltration hf ha)
-          (fun q ↦ h.morseFiltrationι hf (a q)) (h.morseFiltration_eq_mk hf a) (q + 1)).hom ≫
+          (h.morseFiltrationι hf (a (q + 1))) (h.morseFiltration_eq_mk hf a (q + 1))).hom ≫
         extendMap (h.morseComplexOnRestriction hf (s := Ioc (a q) (a (q + 1))) Ioc_subset_Iic_self
           (fun _ hx _ hy hyx ↦ ⟨hy.1.trans hyx, hx⟩)) ComplexShape.embeddingDownNat :=
   CochainComplex.π_cokernelFiltrationFunctorMapIsoOfIsColimit_hom _ _ _ _ _ _ _ _ _ _

@@ -40,6 +40,8 @@ give residue-field generators even after restricting the source to an open subsc
   of `Spec K` at any point iff it is invertible in the field `K`.
 * `AlgebraicGeometry.Spec.isSepClosed_residueField`: the residue field of the spectrum of a
   separably closed field is separably closed.
+* `AlgebraicGeometry.Spec.isIso_fromSpecResidueField`: for a field `k`, the morphism
+  `Spec κ(s) ⟶ Spec k` from the residue field at the unique point is an isomorphism.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
   determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_closedPoint_mem`: the closed point of
@@ -117,6 +119,17 @@ field itself (`AlgebraicGeometry.Scheme.Spec.residueFieldIsoOfField`). -/
 instance Spec.isSepClosed_residueField {K : Type u} [Field K] [IsSepClosed K]
     (s : Spec (.of K)) : IsSepClosed ((Spec (.of K)).residueField s) :=
   IsSepClosed.of_ringEquiv (Scheme.Spec.residueFieldIsoOfField s).symm.commRingCatIsoToRingEquiv
+
+/-- The spectrum of a field `k` is identified with the spectrum of its residue field at its unique
+point: `Spec κ(s) ⟶ Spec k` is an isomorphism, as `κ(s) = k`. -/
+instance Spec.isIso_fromSpecResidueField {k : Type u} [Field k] (s : Spec (.of k)) :
+    IsIso ((Spec (.of k)).fromSpecResidueField s) := by
+  have := s.isPrime
+  have h : (Ideal.algEquivResidueFieldOfField s.asIdeal).toRingEquiv.toCommRingCatIso.hom =
+      CommRingCat.ofHom (algebraMap (CommRingCat.of k) s.asIdeal.ResidueField) := by
+    ext a; simp [Ideal.algEquivResidueFieldOfField_apply]
+  rw [← Scheme.Spec.map_residueFieldIso_inv_eq_fromSpecResidueField, ← h]
+  infer_instance
 
 section residueFieldCongr
 
@@ -434,6 +447,22 @@ theorem isIso_residueFieldMap_fst (z : ↑(pullback f g))
   have h := T.SpecTensorTo.isIso_residueFieldMap_of_comp (pullback.fst f g) (SpecOfPoint z)
   have hz : T.SpecTensorTo (SpecOfPoint z) = z := SpecTensorTo_SpecOfPoint z
   rwa [hz] at h
+
+/-- If `f` preserves the residue field at `pullback.fst f g z`, then its base change
+`pullback.snd f g` along `g` preserves the residue field at `z`: the mirror image of
+`isIso_residueFieldMap_fst`. -/
+theorem isIso_residueFieldMap_snd (z : ↑(pullback f g))
+    [IsIso (f.residueFieldMap (pullback.fst f g z))] :
+    IsIso ((pullback.snd f g).residueFieldMap z) := by
+  have : IsIso (f.residueFieldMap (pullback.snd g f ((pullbackSymmetry f g).hom z))) := by
+    rw [show pullback.snd g f ((pullbackSymmetry f g).hom z) = pullback.fst f g z by
+      rw [← Scheme.Hom.comp_apply, pullbackSymmetry_hom_comp_snd]]
+    infer_instance
+  have := isIso_residueFieldMap_fst (f := g) (g := f) ((pullbackSymmetry f g).hom z)
+  have h : IsIso (((pullbackSymmetry f g).hom ≫ pullback.fst g f).residueFieldMap z) := by
+    rw [Scheme.residueFieldMap_comp]
+    exact IsIso.comp_isIso' this inferInstance
+  rwa [pullbackSymmetry_hom_comp_fst] at h
 
 end Scheme.Pullback
 

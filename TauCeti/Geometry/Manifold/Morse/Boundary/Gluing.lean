@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Compactification
 public import TauCeti.Geometry.Manifold.Morse.Gluing.Transverse
+import TauCeti.Geometry.Manifold.Boundary.Collar.Topological
+import TauCeti.Geometry.Manifold.Boundary.LocalModels
+import TauCeti.Topology.Closure
 
 /-!
 # Broken index-two trajectories are limits of unbroken ones
@@ -27,7 +31,9 @@ restated for the sets `morseTrajectoryPairs` and `morseBrokenTrajectoryPairs`.
 
 The half-open gluing arc of `IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`
 also moves into the compactified space: since the broken pairs are finite, each of them has a
-neighbourhood there homeomorphic to `[0, δ)`, so it is a boundary point.
+neighbourhood there homeomorphic to `[0, δ)`, so it is a boundary point. With the one-dimensional
+neighbourhoods of the unbroken pairs, these make the compactified space a compact space modelled on
+the half-line with boundary the broken pairs, so the broken pairs have a collar.
 
 ## Main results
 
@@ -40,6 +46,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   broken pairs.
 * `exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs`: every broken pair has a
   neighbourhood in the compactified space homeomorphic to a half-open interval `[0, δ)`.
+* `isCollared_closure_diff_morseTrajectoryPairs`: the broken pairs have a collar in the
+  compactified space.
 
 ## References
 
@@ -123,7 +131,6 @@ theorem exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs {p r : M}
       ∃ (δ : ℝ) (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N),
         (e ⟨0, left_mem_Ico.2 hδ⟩ : closure (hX.morseTrajectoryPairs p r c₁ c₂)) = ⟨w, hw⟩ := by
   set S := hX.morseTrajectoryPairs p r c₁ c₂ with hSdef
-  set B := hX.morseBrokenTrajectoryPairs p r c₁ c₂
   obtain ⟨a₁, a₂⟩ := w
   obtain ⟨q, -, hpq, hqr, ha₁, hc₁, ha₂, hc₂⟩ := hX.mem_morseBrokenTrajectoryPairs.1 hwB
   simp only at ha₁ hc₁ ha₂ hc₂
@@ -136,15 +143,9 @@ theorem exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs {p r : M}
     rw [hSdef, mem_morseTrajectoryPairs, mem_ofPred_eq, hc₁, hc₂]
   rw [hS] at hN hNw
   -- Near `(a₁, a₂)`, the compactified space adds no broken pair other than `(a₁, a₂)`.
-  have hloc : 𝓝[closure S] (a₁, a₂) ≤ 𝓝[insert (a₁, a₂) S] (a₁, a₂) := by
-    have hfar : (B \ {(a₁, a₂)})ᶜ ∈ 𝓝 (a₁, a₂) :=
-      ((h.finite_morseBrokenTrajectoryPairs hf c₁ c₂).sdiff.isClosed.isOpen_compl).mem_nhds
-        (by simp)
-    refine nhdsWithin_le_of_mem (mem_nhdsWithin_iff_exists_mem_nhds_inter.2
-      ⟨_, hfar, fun x ⟨hxB, hxK⟩ ↦ ?_⟩)
-    rcases h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap hxK with hx | hx
-    · exact Or.inr hx
-    · exact Or.inl (not_not.1 fun hne ↦ hxB ⟨hx, hne⟩)
+  have hloc : 𝓝[closure S] (a₁, a₂) ≤ 𝓝[insert (a₁, a₂) S] (a₁, a₂) :=
+    nhdsWithin_closure_le_nhdsWithin_insert
+      (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap) _
   -- The half-open arc, viewed in the compactified space.
   let g : Ico (0 : ℝ) δ → closure S := codRestrict (Subtype.val ∘ e) (closure S) fun s ↦
     insert_subset hw subset_closure (hN (e s).property)
@@ -154,6 +155,39 @@ theorem exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs {p r : M}
     exact (range_comp Subtype.val e).trans (by rw [e.range_coe, image_univ, Subtype.range_coe])
   refine ⟨range g, mem_nhds_subtype_iff_nhdsWithin.2 (hrange ▸ hloc hNw), δ, hδ, hg.toHomeomorph,
     Subtype.ext he₀⟩
+
+include h hf in
+/-- **The boundary of the compactified space of index-two trajectory pairs is collared.** Under the
+hypotheses of `closure_morseTrajectoryPairs`, the points of the closure of the unbroken pairs that
+are not unbroken pairs, which are the broken pairs, have a collar: an open embedding of their set
+times `[0, 1)` into the closure which is the inclusion at depth `0`. The closure is a compact space
+modelled on the half-line whose boundary is the set of broken pairs
+(`TauCeti.exists_chartedSpace_euclideanHalfSpace_one_boundary_eq`), and the boundary of a compact
+manifold is collared (`TauCeti.isCollared_subtypeVal_boundary_of_compactSpace`). -/
+theorem isCollared_closure_diff_morseTrajectoryPairs {p r : M}
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
+    (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
+    (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
+    IsCollared (Subtype.val : {x : closure (hX.morseTrajectoryPairs p r c₁ c₂) |
+      (x : M × M) ∉ hX.morseTrajectoryPairs p r c₁ c₂} →
+        closure (hX.morseTrajectoryPairs p r c₁ c₂)) := by
+  have : CompactSpace (closure (hX.morseTrajectoryPairs p r c₁ c₂)) :=
+    isCompact_iff_compactSpace.1 isClosed_closure.isCompact
+  obtain ⟨C, hC⟩ := exists_chartedSpace_euclideanHalfSpace_one_boundary_eq (F := ℝ)
+    (Module.finrank_self ℝ) (B := {x : closure (hX.morseTrajectoryPairs p r c₁ c₂) |
+      (x : M × M) ∉ hX.morseTrajectoryPairs p r c₁ c₂})
+    (fun x hx ↦ h.exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap
+      x.property (by
+        rw [← h.closure_diff_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap]
+        exact ⟨x.property, hx⟩))
+    fun x hx ↦ h.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap
+      x.property (not_not.1 hx)
+  -- Install the charted structure `C`, so that the boundary `(𝓡∂ 1).boundary` below elaborates.
+  let _ := C
+  have hcol : IsCollared ((↑) : (𝓡∂ 1).boundary (closure (hX.morseTrajectoryPairs p r c₁ c₂)) →
+      closure (hX.morseTrajectoryPairs p r c₁ c₂)) :=
+    isCollared_subtypeVal_boundary_of_compactSpace (n := 0)
+  exact hC ▸ hcol
 
 end IsMorseSmale
 

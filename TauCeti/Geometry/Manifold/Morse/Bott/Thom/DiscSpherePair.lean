@@ -65,8 +65,9 @@ variable {E M S : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace IsCriticalSubmanifold
 
 variable [IsManifold I 2 M] [IsManifold J 1 S] {n : ℕ∞ω} {i : SmoothEmbedding J I n S M}
-  (hn : n ≠ 0) {h : i.IsCriticalSubmanifold f} (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
-  {Θ : TotalSpace P (fun s ↦ i.NormalSpace s hn) → M} {c ε : ℝ}
+  (hn : n ≠ 0) {h : i.IsCriticalSubmanifold f}
+      (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
+  {Θ : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) → M} {c ε : ℝ}
 
 /-- **The negative disc-sphere pair has the homology of its attachment across the level.** Let `i`
 be a critical submanifold of a continuous function `f` on a Hausdorff manifold, let `g` be a fibre
@@ -145,7 +146,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_negativeDiscSpherePair
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hV : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
       HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric)) :

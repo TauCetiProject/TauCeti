@@ -23,6 +23,8 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   finite constant vanishes as `h → 0`.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
+* `ENNReal.tendsto_of_le_liminf_of_le_div`: a family with lower limit at least `a`, bounded by
+  quotients `gᵢ / dᵢ` with `gᵢ → a` and `dᵢ → 1`, converges to `a`.
 * `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds
   `ENNReal.ofReal (K / m i) * T + M * ‖s i - a‖ₑ` converge to `ENNReal.ofReal (K / m₀) * T` along
   a filter on which `m i → m₀ > 0` and `s i → a`, for finite `M`.
@@ -30,6 +32,10 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
   `a ≤ b + c`.
+* `ENNReal.le_of_forall_pos_le_add_ofReal_mul`: if `a ≤ b + ε C` for every `ε > 0`, with `C`
+  finite, then `a ≤ b`.
+* `ENNReal.le_of_forall_one_lt_le_ofReal_pow_mul`: if `a ≤ c ^ k b` for every real `c > 1`, then
+  `a ≤ b`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
 * `ENNReal.ofReal_truncateToReal_le`: the truncation `truncateToReal t x` of `x` at `t`, read back
@@ -67,6 +73,19 @@ theorem tendsto_of_le_add_of_le_add {ι : Type*} {l : Filter ι} {a w : ι → �
     (h := fun i ↦ b + w i) ?_ ?_ (hge.mono fun i hi ↦ tsub_le_iff_right.2 hi) hle
   · simpa using ENNReal.Tendsto.sub tendsto_const_nhds hw (Or.inr ENNReal.zero_ne_top)
   · simpa using tendsto_const_nhds.add hw
+
+/-- In `ℝ≥0∞`, a family whose lower limit is at least `a` and which is bounded by quotients
+`gᵢ / dᵢ`, with `gᵢ → a` and `dᵢ → 1`, converges to `a`. -/
+theorem _root_.ENNReal.tendsto_of_le_liminf_of_le_div {ι : Type*} {l : Filter ι}
+    {f g d : ι → ℝ≥0∞} {a : ℝ≥0∞} (hg : Filter.Tendsto g l (𝓝 a))
+    (hd : Filter.Tendsto d l (𝓝 1)) (hinf : a ≤ Filter.liminf f l)
+    (hle : ∀ᶠ i in l, f i ≤ g i / d i) : Filter.Tendsto f l (𝓝 a) := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact Filter.tendsto_bot
+  have hq : Filter.Tendsto (fun i ↦ g i / d i) l (𝓝 a) := by
+    simpa using ENNReal.Tendsto.div hg (Or.inr one_ne_zero) hd (Or.inl ENNReal.one_ne_top)
+  exact tendsto_of_le_liminf_of_limsup_le hinf
+    ((Filter.limsup_le_limsup hle).trans_eq hq.limsup_eq)
 
 /-- The sum of the lower limits of two `ℝ≥0∞`-valued families is at most the lower limit of their
 sum. -/
@@ -106,6 +125,28 @@ theorem _root_.ENNReal.le_add_of_forall_one_lt_le_add_mul {a b c : ℝ≥0∞}
     simpa using (ENNReal.continuous_coe.tendsto 1).mono_left nhdsWithin_le_nhds
   have hlim : Filter.Tendsto (fun t : ℝ≥0 => b + t * c) (𝓝[>] 1) (𝓝 (b + c)) := by
     simpa using tendsto_const_nhds.add (ENNReal.Tendsto.mul_const h1 (Or.inr hc))
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall h)
+
+/-- If `a ≤ b + ε C` for every `ε > 0`, with `C` finite, then `a ≤ b`. This is the form in which
+an approximation with error `ε` against a finite mass `C` passes to the limit. -/
+theorem _root_.ENNReal.le_of_forall_pos_le_add_ofReal_mul {a b C : ℝ≥0∞} (hC : C ≠ ∞)
+    (h : ∀ ε : ℝ, 0 < ε → a ≤ b + ENNReal.ofReal ε * C) : a ≤ b := by
+  have hlim : Filter.Tendsto (fun ε : ℝ => b + ENNReal.ofReal ε * C) (𝓝[>] 0)
+      (𝓝 (b + 0 * C)) := by
+    refine tendsto_const_nhds.add (ENNReal.Tendsto.mul_const ?_ (Or.inr hC))
+    simpa using (ENNReal.tendsto_ofReal (Filter.tendsto_id (x := 𝓝 (0 : ℝ)))).mono_left
+      nhdsWithin_le_nhds
+  simpa using ge_of_tendsto hlim (eventually_nhdsWithin_of_forall h)
+
+/-- If `a ≤ c ^ k b` for every real `c > 1`, then `a ≤ b`. This lets a family of estimates
+with a loss factor `c ^ k` that may be taken arbitrarily close to `1` pass to the sharp
+estimate. -/
+theorem _root_.ENNReal.le_of_forall_one_lt_le_ofReal_pow_mul (k : ℕ) {a b : ℝ≥0∞}
+    (h : ∀ c : ℝ, 1 < c → a ≤ ENNReal.ofReal c ^ k * b) : a ≤ b := by
+  have hlim : Filter.Tendsto (fun c : ℝ ↦ ENNReal.ofReal c ^ k * b) (𝓝[>] 1) (𝓝 b) := by
+    have := ENNReal.Tendsto.mul_const (b := b)
+      (ENNReal.Tendsto.pow (n := k) (ENNReal.continuous_ofReal.tendsto 1)) (Or.inl (by simp))
+    simpa using this.mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall h)
 
 /-- The cost truncated at `M` on a rectangle `K ×ˢ L` and equal to `M` off it varies by at most `η`

@@ -152,11 +152,7 @@ theorem isDegenerateAt_crossProduct_castAdd_iff (c : SingularCube X p)
         using h (fun j ↦ x (j.castAdd q)) t
     · congr 1
       funext j
-      have hne : j.natAdd p ≠ i.castAdd q := by
-        simp only [ne_eq, Fin.ext_iff, Fin.val_natAdd, Fin.val_castAdd]
-        have := i.isLt
-        omega
-      simp [Function.update_of_ne hne]
+      simp
 
 /-- Degeneracy in the second coordinate block is exactly degeneracy of the second factor. -/
 @[simp]
@@ -174,11 +170,7 @@ theorem isDegenerateAt_crossProduct_natAdd_iff (c : SingularCube X p)
     constructor
     · congr 1
       funext j
-      have hne : j.castAdd q ≠ i.natAdd p := by
-        simp only [ne_eq, Fin.ext_iff, Fin.val_natAdd, Fin.val_castAdd]
-        have := j.isLt
-        omega
-      simp [Function.update_of_ne hne]
+      simp
     · simpa only [Function.update_apply_of_injective _ (Fin.natAdd_injective q p)]
         using h (fun j ↦ x (j.natAdd p)) t
 

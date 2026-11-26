@@ -32,10 +32,10 @@ coordinates of `W^s(r)` on the unstable directions `V_p` of `p`, is onto, its ke
 space of the space `𝓜(p, r)` of trajectories, and `[V_p] = [ker A][ℝ][V_r]` orients `𝓜(p, r)`.
 At a point of a trajectory `v` from `r` to `q` the comparison map `B = (B₁, B₂) : V_r → ℝ × V_q`
 orients `𝓜(r, q)` in the same way. Trajectories from `p` to `q` close to the broken trajectory
-`(u, v)` read the normal coordinates of `W^s(q)` through `V_r`, and their comparison maps are
-expected to converge, up to positive rescaling of the second component, to
-`G = (df_y, B₂ ∘ N_r) = (id × B₂) ∘ A`; that convergence belongs to the gluing analysis and is not
-proved here. The orientation `[V_p] = [ker G][ℝ][V_q]` of the limiting tangent space is computed by
+`(u, v)` read the normal coordinates of `W^s(q)` through `V_r`, and their comparison maps converge,
+without rescaling, to `G = (df_y, B₂ ∘ N_r) = (id × B₂) ∘ A`
+(`TauCeti.IsAdaptedPseudoGradient.tendsto_trajectoryComparison_of_broken`). The orientation
+`[V_p] = [ker G][ℝ][V_q]` of the limiting tangent space is computed by
 `Orientation.shortExact_ker_prodMap_comp_ker_prod` and
 `Orientation.shortExactLeft_ker_prodMap_comp_ker_prod`: with `m₂ = dim ker B`, it is
 `(-1) ^ (m₂ + 1)` times the orientation of `ker A` followed by that of `ker B₂`, which is

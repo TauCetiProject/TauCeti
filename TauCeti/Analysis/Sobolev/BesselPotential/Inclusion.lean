@@ -45,6 +45,8 @@ common compact support, are statements about this map.
 
 * `BesselPotentialSpace.continuous_toLp`: the `Lᵖ` function `J^s u` depends continuously on `u`.
 * `BesselPotentialSpace.continuous_toDistr`: `H^{s,p}(E, G)` embeds continuously in `𝓢'(E, G)`.
+* `BesselPotentialSpace.toDistr_real_smul`: the real action on `H^{s,p}(E, G)` obtained from its
+  complex structure acts on the underlying tempered distribution.
 * `BesselPotentialSpace.continuous_of_continuous_toDistr`: the closed graph criterion for linear
   maps into `H^{s,p}`.
 * `BesselPotentialSpace.mapCLM`: the restriction `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G')` of an
@@ -115,6 +117,17 @@ theorem continuous_toDistr : Continuous fun u : H^{s, p}(E, G) ↦ u.toDistr := 
   have h := ((besselPotential E G (-s)).comp ((Lp.toTemperedDistributionCLM G volume p).comp
     (toLpₗᵢ E G s p).toContinuousLinearEquiv.toContinuousLinearMap)).continuous
   exact h.congr fun u ↦ by simp
+
+/-- The real action on `H^{s,p}(E, G)` obtained from its complex structure, which is the one
+carried by real-linear structures such as products and their submodules, acts on the underlying
+tempered distribution. The expression `a • u` instead elaborates to Mathlib's direct real action,
+for which `BesselPotentialSpace.toDistr_smul` holds; the two actions agree, but only after
+unfolding more than `simp` and `rw` do, so this lemma names the action explicitly. -/
+@[simp]
+theorem toDistr_real_smul (a : ℝ) (u : H^{s, p}(E, G)) :
+    (@HSMul.hSMul ℝ _ _ (@instHSMul _ _ (Module.complexToReal H^{s, p}(E, G)).toSMul) a u).toDistr =
+      a • u.toDistr :=
+  (rfl)
 
 /-- **Closed graph criterion.** A real-linear map `L` from a Banach space into `H^{s,p}(E, G)` is
 continuous as soon as `x ↦ (L x).toDistr` is continuous into the tempered distributions. -/

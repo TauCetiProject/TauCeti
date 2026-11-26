@@ -13,11 +13,12 @@ public import TauCeti.RingTheory.CentralIdempotent
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Length
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Basic
+import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Sequence
 import TauCeti.Algebra.Category.FGModuleCat.Injective
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.FGModuleCat.Projective
@@ -42,9 +43,10 @@ Auslander–Reiten quiver are exactly such classes. **Auslander's theorem** says
 of the modules in `S` are bounded, `A` is connected, and the modules in `S` that are not injective,
 respectively not projective, in `FGModuleCat A` are the sources of left almost split maps,
 respectively the targets of right almost split maps, in `FGModuleCat A`, then `S` contains every
-finitely generated indecomposable module, and `A` is representation-finite. Over a
-finite-dimensional algebra these maps come from the almost-split sequences, and the hypothesis
-disappears (`TauCeti.forall_prop_and_isRepresentationFinite_of_length_le`).
+finitely generated indecomposable module, and `A` is representation-finite. Over an Artin
+algebra, a finite algebra over a commutative Artinian ring, these maps come from the almost-split
+sequences, and the hypothesis disappears
+(`TauCeti.forall_prop_and_isRepresentationFinite_of_length_le`).
 
 The argument has three steps, all in `FGModuleCat A`.
 
@@ -80,8 +82,8 @@ The argument has three steps, all in `FGModuleCat A`.
   irreducible maps and a finitely generated indecomposable module outside it vanish.
 * `TauCeti.forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAlmostSplit`:
   **Auslander's theorem** over an Artinian ring with source and sink maps.
-* `TauCeti.forall_prop_and_isRepresentationFinite_of_length_le`: **Auslander's theorem** for a
-  finite-dimensional algebra.
+* `TauCeti.forall_prop_and_isRepresentationFinite_of_length_le`: **Auslander's theorem** for an
+  Artin algebra.
 
 ## References
 
@@ -267,41 +269,33 @@ theorem forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAl
 
 end Artinian
 
-variable (k : Type u) {A : Type v} [Field k] [Ring A] [Algebra k A] [FiniteDimensional k A]
+variable (R : Type u) [CommRing R] [IsArtinianRing R] {A : Type v} [Ring A] [Algebra R A]
+  [Module.Finite R A] [Small.{w} A]
 
-include k in
-/-- **Auslander's theorem.** Let `A` be a connected finite-dimensional algebra, and `S` a nonempty
-class of finitely generated indecomposable `A`-modules, closed under isomorphism and under
-irreducible maps of `FGModuleCat A` between finitely generated indecomposable modules in both
-directions. If the lengths of the modules in `S` are bounded, then `S` contains every finitely
-generated indecomposable module, and `A` is representation-finite. -/
+include R in
+/-- **Auslander's theorem.** Let `A` be a connected Artin algebra over a commutative Artinian ring
+`R`, and `S` a nonempty class of finitely generated indecomposable `A`-modules, closed under
+isomorphism and under irreducible maps of `FGModuleCat A` between finitely generated
+indecomposable modules in both directions. If the lengths of the modules in `S` are bounded, then
+`S` contains every finitely generated indecomposable module, and `A` is representation-finite. The
+modules may live in any universe in which `A` is small. -/
 theorem forall_prop_and_isRepresentationFinite_of_length_le (hA : centralIdempotents A ⊆ {0, 1})
-    (S : ObjectProperty (FGModuleCat.{max u v w} A)) [S.IsClosedUnderIsomorphisms]
+    (S : ObjectProperty (FGModuleCat.{w} A)) [S.IsClosedUnderIsomorphisms]
     (hS : ∀ X, S X → Indecomposable X.obj)
-    (hirr : ∀ {X Y : FGModuleCat.{max u v w} A} (f : X ⟶ Y), IsIrreducibleMorphism f →
+    (hirr : ∀ {X Y : FGModuleCat.{w} A} (f : X ⟶ Y), IsIrreducibleMorphism f →
       Indecomposable X.obj → Indecomposable Y.obj → (S X ↔ S Y))
     (hne : ∃ X, S X) (b : ℕ) (hb : ∀ X, S X → Module.length A X.obj ≤ b) :
-    (∀ X : FGModuleCat.{max u v w} A, Indecomposable X.obj → S X) ∧
-      IsRepresentationFinite.{max u v w} A := by
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  -- The source and sink maps at non-injective and non-projective modules come from the
-  -- almost-split sequences in `ModuleCat A`, restricted to `FGModuleCat A`.
+    (∀ X : FGModuleCat.{w} A, Indecomposable X.obj → S X) ∧ IsRepresentationFinite.{w} A := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  -- The source and sink maps at non-injective and non-projective modules are the end maps of the
+  -- almost-split sequences of `FGModuleCat A`, moved to the given module along the end isomorphism.
   refine forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAlmostSplit hA S hS
     (fun N hN hinj ↦ ?_) (fun M hM hproj ↦ ?_) hirr hne b hb
-  · have hinj' : ¬ Injective N.obj := fun _ ↦ hinj <| by
-      have := Module.injective_module_of_injective_object A N
-      exact FGModuleCat.injective_of_moduleInjective N
-    obtain ⟨E, _, f, _, _, hE, -, hseq⟩ :=
-      ModuleCat.exists_isAlmostSplit_of_not_injective k N.obj (hS N hN) hinj'
-    exact ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk f,
-      (ObjectProperty.ι _).isLeftAlmostSplit_of_map _ hseq.isLeftAlmostSplit_f⟩
-  · have hproj' : ¬ Projective M.obj := fun _ ↦ hproj <| by
-      have := ModuleCat.projective_of_module_projective (R := A) M.obj
-      exact FGModuleCat.projective_of_moduleProjective A M
-    obtain ⟨E, _, p, _, hE, hseq⟩ :=
-      ModuleCat.exists_isAlmostSplit_arTranslate k k
-        (TauCeti.length_quotient_linearMap_self_eq_one k) M.obj (hS M hM) hproj'
-    exact ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk p,
-      (ObjectProperty.ι _).isRightAlmostSplit_of_map _ hseq.isRightAlmostSplit_g⟩
+  · obtain ⟨T, hT, ⟨e⟩⟩ := FGModuleCat.exists_isAlmostSplit_of_not_injective R N
+      ((FGModuleCat.indecomposable_obj_iff N).mp (hS N hN)) hinj
+    exact ⟨T.X₂, e.inv ≫ T.f, hT.isLeftAlmostSplit_f.iso_comp e.inv⟩
+  · obtain ⟨T, hT, ⟨e⟩⟩ := FGModuleCat.exists_isAlmostSplit R M
+      ((FGModuleCat.indecomposable_obj_iff M).mp (hS M hM)) hproj
+    exact ⟨T.X₂, T.g ≫ e.hom, hT.isRightAlmostSplit_g.comp_iso e.hom⟩
 
 end TauCeti

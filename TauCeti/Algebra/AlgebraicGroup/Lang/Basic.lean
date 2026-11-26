@@ -565,12 +565,14 @@ theorem mapDomain_surjective_of_surjective_of_range_eq_ker
       (e₁ y : WithConv (H₁ →ₐ[F] K)) := mem_fixedSubgroup.mp (e₁ y).property
   obtain ⟨xK, hxK_fix, hxK_map⟩ :=
     MonoidHom.exists_fixed_lift_of_surjective_commutatorMap
-      (BialgHom.mapDomain (A := K) φ) (BialgHom.mapDomain (A := K) ψ) hker
+      (BialgHom.mapDomain (A := K) φ) (BialgHom.mapDomain (A := K) ψ)
+      (MonoidHom.mulExact_iff.mpr hker.symm)
       (FiniteField.frobeniusPoints F 1) (FiniteField.frobeniusPoints F 1)
       (FiniteField.frobeniusPoints F 1)
       (fun g => DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints φ 1) g)
       (fun t => (DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints ψ 1) t).symm)
-      hsurj (surjective_commutatorMap_frobeniusPoints (K := K) one_ne_zero hconn) hyK
+      (surjective_commutatorMap_frobeniusPoints (K := K) one_ne_zero hconn)
+      (hsurj (e₁ y)) hyK
   refine ⟨e₂.symm ⟨xK, mem_fixedSubgroup.mpr hxK_fix⟩, e₁.injective (Subtype.ext ?_)⟩
   rw [FiniteField.coe_rationalPointsMulEquiv_mapDomain, e₂.apply_symm_apply]
   exact hxK_map
