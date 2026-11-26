@@ -35,7 +35,7 @@ arbitrary universe must lie in that universe.
   `u = 1` or `2 = 0` in `R`.
 * `Int.exists_apply_eq_and_apply_eq`: two `ℤ`-valued functions that take all four pairs of signs at
   four points take every pair of signs.
-* `Int.lt_sign_mul_iff`: `(d : ℤ) < (u * v : ℤˣ) * y` holds iff `(d : ℤ) < |y|` and `u * v`
+* `Int.lt_units_mul_iff`: `(d : ℤ) < (u * v : ℤˣ) * y` holds iff `(d : ℤ) < |y|` and `u * v`
   matches the sign of `y`.
 * `TauCeti.uliftIntUnitsSign_apply`: the sign character sends `g` to the image of `g.down` in `k`.
 -/
