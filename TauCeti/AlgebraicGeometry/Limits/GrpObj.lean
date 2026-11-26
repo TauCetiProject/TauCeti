@@ -30,6 +30,16 @@ equality of morphisms over `Dⱼ` which holds over `S`, holds over some later me
 descended morphisms are then a group law (`CategoryTheory.Functor.grpObjObjOfMap`) whose base
 change to `S` is the given one.
 
+Homomorphisms spread out in the same way. A morphism `f` of monoid objects is a homomorphism when
+it is compatible with the units and with the multiplications, two equalities of morphisms, and its
+image under a monoidal functor is a homomorphism exactly when the images of these equalities hold
+(`CategoryTheory.Functor.isMonHom_map_iff_map_eq`). If the base change of `f` to `S` is a
+homomorphism, these equalities therefore hold over some member. Together with the spreading out of
+group laws, this spreads out a group law on the base change to `S` of a finitely presented scheme
+`H` over a member along with the homomorphism property of a morphism `H ⟶ G` over that member.
+When `H ⟶ G` is a monomorphism, for instance the inclusion of a closed subscheme, this spreads out
+a subgroup of the base change of `G` to `S` which is the base change of a subscheme over a member.
+
 ## Main results
 
 * `CategoryTheory.Limits.IsLimit.exists_grpObj_overPullback`: a group law on the base change to
@@ -38,6 +48,13 @@ change to `S` is the given one.
 * `CategoryTheory.Limits.IsLimit.exists_grpObj_pullback_iso`: **spreading out group schemes**. A
   group scheme of finite presentation over `S` is isomorphic, as a group scheme, to the base change
   of a group scheme of finite presentation over some `Dⱼ`.
+* `CategoryTheory.Limits.IsLimit.exists_isMonHom_overPullback_map`: a morphism of monoid objects
+  over `Dᵢ` whose base change to `S` is a homomorphism has a homomorphism as base change to some
+  `Dⱼ`.
+* `CategoryTheory.Limits.IsLimit.exists_grpObj_isMonHom_overPullback`: a group law on the base
+  change to `S` of a finitely presented scheme `H` over `Dᵢ`, for which the base change of a
+  morphism `H ⟶ G` to a monoid object over `Dᵢ` is a homomorphism, is the base change of a group
+  law over some `Dⱼ` for which the base change of `H ⟶ G` is a homomorphism.
 
 ## References
 
@@ -168,6 +185,61 @@ private theorem exists_map_axioms {j : I} (Y : Over (D.obj j)) [QuasiCompact Y.h
 
 omit [IsCofiltered I] [∀ {i j} (f : i ⟶ j), IsAffineHom (D.map f)] [∀ i, CompactSpace (D.obj i)]
   [∀ i, QuasiSeparatedSpace (D.obj i)] in
+/-- Let `Y = X ×_{Dᵢ} Dⱼ` carry candidate unit and multiplication morphisms `one` and `mul`. Let
+`T` be a monoid structure on the base change of `Y` to the cone point with the base changes of
+`one` and `mul` as unit and multiplication, for which the identification with the base change of
+`X` is a homomorphism to a given monoid structure, and let `S` be a monoid structure on the base
+change of `Y` along `h : k ⟶ j` with the same property. Transported to `X ×_{Dᵢ} Dₖ`, the base
+change of `S` to the cone point is identified with the base change of `X` by a homomorphism. -/
+private theorem isMonHom_pullbackCompIsoOfEq_hom_app_ofIso {i j k : I} (X : Over (D.obj i))
+    [MonObj ((Over.pullback (c.π.app i)).obj X)] (g : j ⟶ i) (h : k ⟶ j)
+    (one : 𝟙_ _ ⟶ (Over.pullback (D.map g)).obj X)
+    (mul : (Over.pullback (D.map g)).obj X ⊗ (Over.pullback (D.map g)).obj X ⟶
+      (Over.pullback (D.map g)).obj X)
+    [S : MonObj ((Over.pullback (D.map h)).obj ((Over.pullback (D.map g)).obj X))]
+    (hS_one : η[(Over.pullback (D.map h)).obj ((Over.pullback (D.map g)).obj X)] =
+      ε _ ≫ (Over.pullback (D.map h)).map one)
+    (hS_mul : μ[(Over.pullback (D.map h)).obj ((Over.pullback (D.map g)).obj X)] =
+      Functor.LaxMonoidal.μ _ _ _ ≫ (Over.pullback (D.map h)).map mul)
+    [T : MonObj ((Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X))]
+    (hT_one : η[(Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)] =
+      ε _ ≫ (Over.pullback (c.π.app j)).map one)
+    (hT_mul : μ[(Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)] =
+      Functor.LaxMonoidal.μ _ _ _ ≫ (Over.pullback (c.π.app j)).map mul)
+    (hT : IsMonHom (M := (Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X))
+      ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X)) :
+    letI : MonObj ((Over.pullback (D.map (h ≫ g))).obj X) :=
+      .ofIso (M := (Over.pullback (D.map h)).obj ((Over.pullback (D.map g)).obj X))
+        ((Over.pullbackCompIsoOfEq (D.map_comp h g).symm).app X)
+    IsMonHom (M := (Over.pullback (c.π.app k)).obj ((Over.pullback (D.map (h ≫ g))).obj X))
+      ((Over.pullbackCompIsoOfEq (c.w (h ≫ g))).hom.app X) := by
+  -- The structures are restated on the objects written as images under composite functors, as
+  -- which they occur in the sources of the comparison isomorphisms.
+  let S' : MonObj ((Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X) := S
+  let T' : MonObj ((Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j)).obj X) := T
+  let C := Over.pullbackCompIsoOfEq (D.map_comp h g).symm
+  let : MonObj ((Over.pullback (D.map (h ≫ g))).obj X) :=
+    .ofIso (M := (Over.pullback (D.map h)).obj ((Over.pullback (D.map g)).obj X)) (C.app X)
+  -- The comparison to the cone point factors through the comparisons along `h` and along `g`.
+  rw [Over.pullbackCompIsoOfEq_hom_app_eq (c.w h) (D.map_comp h g).symm (c.w g) (c.w (h ≫ g)) X]
+  have : IsMonHom (M := (Over.pullback (D.map (h ≫ g))).obj X)
+      (N := (Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X) (C.inv.app X) :=
+    inferInstanceAs (IsMonHom (C.app X).inv)
+  have : IsMonHom (M := (Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j)).obj X)
+      ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X) := hT
+  have : IsMonHom (M := (Over.pullback (c.π.app k)).obj
+        ((Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X))
+      (N := (Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j)).obj X)
+      ((Over.pullbackCompIsoOfEq (c.w h)).hom.app ((Over.pullback (D.map g)).obj X)) := by
+    refine NatTrans.isMonHom_app (F := Over.pullback (D.map h) ⋙ Over.pullback (c.π.app k))
+      (G := Over.pullback (c.π.app j)) (X := (Over.pullback (D.map g)).obj X)
+      (hF := Functor.monObjObj (F := Over.pullback (c.π.app k))
+        ((Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X)) (hG := T')
+      (one := one) (mul := mul) _ ?_ ?_ hT_one hT_mul <;> simp [S', hS_one, hS_mul]
+  infer_instance
+
+omit [IsCofiltered I] [∀ {i j} (f : i ⟶ j), IsAffineHom (D.map f)] [∀ i, CompactSpace (D.obj i)]
+  [∀ i, QuasiSeparatedSpace (D.obj i)] in
 /-- Let `Y = X ×_{Dᵢ} Dⱼ` carry candidate group structure morphisms, and let its base change to the
 cone point carry a group law whose unit and multiplication are their base changes, such that the
 identification with the base change of `X` is a homomorphism to a given group law. If the group
@@ -199,32 +271,13 @@ private theorem exists_grpObj_of_map_axioms {i j k : I} (X : Over (D.obj i))
     ∃ (_ : GrpObj ((Over.pullback (D.map (h ≫ g))).obj X)),
       IsMonHom (M := (Over.pullback (c.π.app k)).obj ((Over.pullback (D.map (h ≫ g))).obj X))
         ((Over.pullbackCompIsoOfEq (c.w (h ≫ g))).hom.app X) := by
-  -- The group law over `Dₖ`, on the iterated base change and transported to the direct one. The
-  -- structures are restated on the objects written as images under composite functors, as which
-  -- they occur in the sources of the comparison isomorphisms.
+  -- The group law over `Dₖ`, on the iterated base change and transported to the direct one.
   let S : GrpObj ((Over.pullback (D.map h)).obj ((Over.pullback (D.map g)).obj X)) :=
     (Over.pullback (D.map h)).grpObjObjOfMap one mul inv e₁ e₂ e₃ e₄ e₅
-  let S' : GrpObj ((Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X) := S
-  let T' : GrpObj ((Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j)).obj X) := T
-  let C := Over.pullbackCompIsoOfEq (D.map_comp h g).symm
-  let G : GrpObj ((Over.pullback (D.map (h ≫ g))).obj X) := .ofIso (C.app X)
-  refine ⟨G, ?_⟩
-  rw [Over.pullbackCompIsoOfEq_hom_app_eq (c.w h) (D.map_comp h g).symm (c.w g) (c.w (h ≫ g)) X]
-  have : IsMonHom (M := (Over.pullback (D.map (h ≫ g))).obj X)
-      (N := (Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X) (C.inv.app X) :=
-    inferInstanceAs (IsMonHom (C.app X).inv)
-  have : IsMonHom (M := (Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j)).obj X)
-      ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X) := hT
-  have : IsMonHom (M := (Over.pullback (c.π.app k)).obj
-        ((Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X))
-      (N := (Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j)).obj X)
-      ((Over.pullbackCompIsoOfEq (c.w h)).hom.app ((Over.pullback (D.map g)).obj X)) := by
-    refine NatTrans.isMonHom_app (F := Over.pullback (D.map h) ⋙ Over.pullback (c.π.app k))
-      (G := Over.pullback (c.π.app j)) (X := (Over.pullback (D.map g)).obj X)
-      (hF := Functor.monObjObj (F := Over.pullback (c.π.app k))
-        ((Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X)) (hG := T'.toMonObj)
-      (one := one) (mul := mul) _ ?_ ?_ h_one h_mul <;> simp [S', S]
-  infer_instance
+  exact ⟨.ofIso (G := (Over.pullback (D.map h)).obj ((Over.pullback (D.map g)).obj X))
+      ((Over.pullbackCompIsoOfEq (D.map_comp h g).symm).app X),
+    isMonHom_pullbackCompIsoOfEq_hom_app_ofIso X g h one mul (S := S.toMonObj) (by simp [S])
+      (by simp [S]) (T := T.toMonObj) h_one h_mul hT⟩
 
 include hc in
 /-- **Spreading out a group law.** Let `S = lim Dⱼ` be a cofiltered limit of quasi-compact
@@ -311,6 +364,111 @@ theorem exists_grpObj_pullback_iso (G : Over c.pt) [GrpObj G]
       (inferInstanceAs (QuasiSeparated (pullback.snd p (D.map f))))),
     inferInstanceAs (IsMonHom (M := (Over.pullback (c.π.app j)).obj
       ((Over.pullback (D.map f)).obj (Over.mk p))) (_ ≫ e₀.hom))⟩
+
+include hc in
+omit [∀ i, QuasiSeparatedSpace (D.obj i)] in
+/-- **Spreading out homomorphisms.** Let `S = lim Dⱼ` be a cofiltered limit of quasi-compact
+quasi-separated schemes with affine transition maps, and let `f : X ⟶ Y` be a morphism of monoid
+objects over a member `Dᵢ`, with `X` quasi-compact and `Y` locally of finite type over `Dᵢ`. If the
+base change of `f` to `S` is a homomorphism, then so is its base change to some `Dⱼ`. -/
+theorem exists_isMonHom_overPullback_map {i : I} {X Y : Over (D.obj i)} [MonObj X] [MonObj Y]
+    [QuasiCompact X.hom] [LocallyOfFiniteType Y.hom] (f : X ⟶ Y)
+    [IsMonHom ((Over.pullback (c.π.app i)).map f)] :
+    ∃ (j : I) (g : j ⟶ i), IsMonHom ((Over.pullback (D.map g)).map f) := by
+  obtain ⟨h_one, h_mul⟩ := ((Over.pullback (c.π.app i)).isMonHom_map_iff_map_eq f).mp inferInstance
+  -- Each homomorphism equation holds after base change to some member; combine them.
+  obtain ⟨j, g, e_one, e_mul⟩ := IsCofiltered.exists_and_of_stable
+    (R₁ := fun g ↦ (Over.pullback (D.map g)).map (η[X] ≫ f) = (Over.pullback (D.map g)).map η[Y])
+    (R₂ := fun g ↦ (Over.pullback (D.map g)).map (μ[X] ≫ f) =
+      (Over.pullback (D.map g)).map ((f ⊗ₘ f) ≫ μ[Y]))
+    (fun h e ↦ Over.pullback_map_eq_map_of_comp_eq (D.map_comp h _).symm e)
+    (fun h e ↦ Over.pullback_map_eq_map_of_comp_eq (D.map_comp h _).symm e)
+    (hc.exists_overPullback_map_eq_map _ _ h_one) (hc.exists_overPullback_map_eq_map _ _ h_mul)
+  exact ⟨j, g, ((Over.pullback (D.map g)).isMonHom_map_iff_map_eq f).mpr ⟨e_one, e_mul⟩⟩
+
+omit [IsCofiltered I] [∀ {i j} (f : i ⟶ j), IsAffineHom (D.map f)] [∀ i, CompactSpace (D.obj i)]
+  [∀ i, QuasiSeparatedSpace (D.obj i)] in
+/-- Let `X ×_{Dᵢ} Dⱼ` carry a group law whose base change to the cone point is a given group law,
+and let `f : X ⟶ G` be a morphism to a monoid object over `Dᵢ` whose base change to `Dⱼ` becomes
+a homomorphism after further base change along `h : k ⟶ j`. Then `X ×_{Dᵢ} Dₖ` carries a group law
+whose base change to the cone point is the given one, and for which the base change of `f` is a
+homomorphism. -/
+private theorem exists_grpObj_isMonHom_of_isMonHom_overPullback_map {i j k : I}
+    {X G : Over (D.obj i)} [MonObj G] (f : X ⟶ G) (g : j ⟶ i) (h : k ⟶ j)
+    [GrpObj ((Over.pullback (c.π.app i)).obj X)] [T : GrpObj ((Over.pullback (D.map g)).obj X)]
+    (hT : IsMonHom (M := (Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X))
+      ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X))
+    (hf : IsMonHom ((Over.pullback (D.map h)).map ((Over.pullback (D.map g)).map f))) :
+    ∃ (_ : GrpObj ((Over.pullback (D.map (h ≫ g))).obj X)),
+      IsMonHom ((Over.pullback (D.map (h ≫ g))).map f) ∧
+        IsMonHom (M := (Over.pullback (c.π.app k)).obj ((Over.pullback (D.map (h ≫ g))).obj X))
+          ((Over.pullbackCompIsoOfEq (c.w (h ≫ g))).hom.app X) := by
+  -- The group law over `Dₖ`: the base change of `T`, transported to the direct base change.
+  let C := Over.pullbackCompIsoOfEq (D.map_comp h g).symm
+  let S : GrpObj ((Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X) :=
+    Functor.grpObjObj (F := Over.pullback (D.map h)) (G := (Over.pullback (D.map g)).obj X)
+  let G' : GrpObj ((Over.pullback (D.map (h ≫ g))).obj X) := .ofIso (C.app X)
+  refine ⟨G', ?_, ?_⟩
+  · -- The base change of `f` along `h ≫ g` is that along `g` and `h`, up to the comparisons.
+    have : IsMonHom (M := (Over.pullback (D.map h)).obj ((Over.pullback (D.map g)).obj G))
+        (C.app G).hom :=
+      NatTrans.isMonHom_app (F := Over.pullback (D.map g) ⋙ Over.pullback (D.map h))
+        (G := Over.pullback (D.map (h ≫ g))) (X := G)
+        (hF := Functor.monObjObj (F := Over.pullback (D.map h)) ((Over.pullback (D.map g)).obj G))
+        (one := η[G]) (mul := μ[G]) C.hom (by simp) (by simp) (by simp) (by simp)
+    have e : (Over.pullback (D.map (h ≫ g))).map f =
+        (C.app X).inv ≫ (Over.pullback (D.map h)).map ((Over.pullback (D.map g)).map f) ≫
+          (C.app G).hom := by
+      rw [Iso.app_inv, Iso.app_hom, ← Functor.comp_map, C.hom.naturality,
+        Iso.inv_hom_id_app_assoc]
+    rw [e]
+    infer_instance
+  · exact isMonHom_pullbackCompIsoOfEq_hom_app_ofIso X g h η[(Over.pullback (D.map g)).obj X]
+      μ[(Over.pullback (D.map g)).obj X] (S := S.toMonObj) (by simp [S]) (by simp [S])
+      (T := (Functor.grpObjObj (F := Over.pullback (c.π.app j))).toMonObj) (by simp) (by simp) hT
+
+include hc in
+/-- **Spreading out homomorphisms from a group scheme over the limit.** Let `S = lim Dⱼ` be a
+cofiltered limit of quasi-compact quasi-separated schemes with affine transition maps, let `H` be a
+scheme of finite presentation, quasi-compact and quasi-separated over a member `Dᵢ`, and let
+`f : H ⟶ G` be a morphism to a monoid object `G` locally of finite type over `Dᵢ`. If the base
+change `H ×_{Dᵢ} S` carries a group law for which the base change of `f` is a homomorphism, then
+over some `Dⱼ` the base change `H ×_{Dᵢ} Dⱼ` carries a group law whose base change to `S` is the
+given one, and for which the base change of `f` is a homomorphism. For a monomorphism `f` this
+spreads out a subgroup of `G ×_{Dᵢ} S`. -/
+theorem exists_grpObj_isMonHom_overPullback {i : I} {H G : Over (D.obj i)}
+    [LocallyOfFinitePresentation H.hom] [QuasiCompact H.hom] [QuasiSeparated H.hom]
+    [LocallyOfFiniteType G.hom] [MonObj G] (f : H ⟶ G)
+    [GrpObj ((Over.pullback (c.π.app i)).obj H)] [IsMonHom ((Over.pullback (c.π.app i)).map f)] :
+    ∃ (j : I) (g : j ⟶ i) (_ : GrpObj ((Over.pullback (D.map g)).obj H)),
+      IsMonHom ((Over.pullback (D.map g)).map f) ∧
+        IsMonHom (M := (Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj H))
+          ((Over.pullbackCompIsoOfEq (c.w g)).hom.app H) := by
+  obtain ⟨j, g, T, hT⟩ := hc.exists_grpObj_overPullback H
+  let C := Over.pullbackCompIsoOfEq (c.w g)
+  -- The comparison of the two base changes of `G` to `S` is a homomorphism.
+  have hCG : IsMonHom (M := (Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj G))
+      (C.app G).hom :=
+    NatTrans.isMonHom_app (F := Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j))
+      (G := Over.pullback (c.π.app i)) (X := G)
+      (hF := Functor.monObjObj (F := Over.pullback (c.π.app j)) ((Over.pullback (D.map g)).obj G))
+      (one := η[G]) (mul := μ[G]) C.hom (by simp) (by simp) (by simp) (by simp)
+  -- So the base change to `S` of the base change of `f` to `Dⱼ` is a homomorphism.
+  have : IsMonHom ((Over.pullback (c.π.app j)).map ((Over.pullback (D.map g)).map f)) := by
+    have e : (Over.pullback (c.π.app j)).map ((Over.pullback (D.map g)).map f) =
+        C.hom.app H ≫ (Over.pullback (c.π.app i)).map f ≫ (C.app G).inv := by
+      rw [Iso.app_inv, ← Functor.comp_map, ← Category.assoc, ← C.hom.naturality,
+        Category.assoc, Iso.hom_inv_id_app, Category.comp_id]
+    rw [e]
+    infer_instance
+  have : QuasiCompact ((Over.pullback (D.map g)).obj H).hom := by
+    simpa only [Over.pullback_obj_hom] using
+      (inferInstanceAs (QuasiCompact (pullback.snd H.hom (D.map g))))
+  have : LocallyOfFiniteType ((Over.pullback (D.map g)).obj G).hom := by
+    simpa only [Over.pullback_obj_hom] using
+      (inferInstanceAs (LocallyOfFiniteType (pullback.snd G.hom (D.map g))))
+  obtain ⟨k, h, hh⟩ := hc.exists_isMonHom_overPullback_map ((Over.pullback (D.map g)).map f)
+  exact ⟨k, h ≫ g, exists_grpObj_isMonHom_of_isMonHom_overPullback_map f g h hT hh⟩
 
 end GrpObj
 

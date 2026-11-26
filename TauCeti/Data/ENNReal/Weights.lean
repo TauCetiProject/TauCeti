@@ -10,6 +10,7 @@ module
 
 public import Mathlib.Basic.ENNReal.BigOperators
 public import Mathlib.Basic.ENNReal.Real
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Order.Floor.Ring
 
 /-!
@@ -36,6 +37,8 @@ dominated away from `x₀` and lose less than `1 / M` each.
 ## Main results
 
 * `ENNReal.toReal_sub_add_toReal_sub` -- the excesses in both directions add up to the distance;
+* `ENNReal.sum_ofReal_div_eq_one` -- nonnegative reals divided by their positive sum form a weight
+  vector;
 * `TauCeti.sum_mul_le_two_mul_sum_mul_ite` -- a weighted sum is dominated by its large terms;
 * `TauCeti.le_of_sum_eq_of_forall_ne_le` -- an atom dominating everywhere else can only gain;
 * `TauCeti.add_sum_tsub_eq_of_forall_ne_le` -- it gains exactly the total excess;
@@ -59,6 +62,14 @@ theorem _root_.ENNReal.toReal_sub_add_toReal_sub {a b : ℝ≥0∞} (ha : a ≠ 
       abs_sub_comm, abs_of_nonneg (sub_nonneg.2 (ENNReal.toReal_mono hb h))]
   · rw [tsub_eq_zero_of_le h, ENNReal.toReal_sub_of_le h ha, ENNReal.toReal_zero, add_zero,
       abs_of_nonneg (sub_nonneg.2 (ENNReal.toReal_mono ha h))]
+
+/-- Nonnegative reals with positive sum `c`, divided by `c`, form a weight vector: their masses add
+up to `1`. -/
+theorem _root_.ENNReal.sum_ofReal_div_eq_one {ι : Type*} {s : Finset ι} {f : ι → ℝ} {c : ℝ}
+    (hf : ∀ i ∈ s, 0 ≤ f i) (hs : ∑ i ∈ s, f i = c) (hc : 0 < c) :
+    ∑ i ∈ s, ENNReal.ofReal (f i / c) = 1 := by
+  rw [← ENNReal.ofReal_sum_of_nonneg fun i hi => div_nonneg (hf i hi) hc.le, ← Finset.sum_div, hs,
+    div_self hc.ne', ENNReal.ofReal_one]
 
 /-- For weights summing to `1` and a threshold `t` with `2 t ≤ ∑ j, w j * a j`, the weighted sum is
 at most twice its part over the indices with `t ≤ a j`: the other terms contribute at most `t`. -/

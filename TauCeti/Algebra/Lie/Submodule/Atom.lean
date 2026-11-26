@@ -25,6 +25,10 @@ maps to a Lie submodule strictly below `N`, while `LieSubmodule.comap_incl_eq_to
 `LieSubmodule.comap_incl_eq_bot` read the two extremes of a comap back in the ambient module. The
 coatom statement runs the same way along the projection `LieSubmodule.Quotient.mk' N` instead.
 
+Finally, when `L` kills no nonzero vector of `M`, an atom `N` satisfies `⁅L, N⁆ = N`. For the
+adjoint module this applies to the minimal ideals of a Lie algebra with trivial centre, and an ideal
+`I` with `⁅L, I⁆ = I` is preserved by every Lie module endomorphism of `L`.
+
 ## Main results
 
 * `TauCeti.isIrreducible_iff_isAtom`: a Lie submodule is irreducible as a Lie module exactly when
@@ -42,6 +46,10 @@ coatom statement runs the same way along the projection `LieSubmodule.Quotient.m
   module that does not land inside a Lie submodule `D` sends only zero into `D`.
 * `TauCeti.isIrreducible_quotient_iff_isCoatom`: the quotient of a Lie module by a Lie submodule is
   irreducible exactly when that submodule is a coatom of the lattice of Lie submodules.
+* `TauCeti.top_lie_eq_self_of_isAtom`: an atom `N` of a Lie module without trivial part satisfies
+  `⁅L, N⁆ = N`.
+* `TauCeti.map_le_of_top_lie_eq`: a Lie module endomorphism of `L` preserves every Lie ideal `I`
+  with `⁅L, I⁆ = I`, in particular every minimal ideal of a Lie algebra with trivial centre.
 -/
 
 public section
@@ -201,5 +209,21 @@ theorem isIrreducible_quotient_iff_isCoatom {N : LieSubmodule R L M} :
       have hx : x ∈ P.comap (LieSubmodule.Quotient.mk' N) := LieSubmodule.mem_comap.mpr hq
       rw [← heq] at hx
       exact (LieSubmodule.Quotient.mk_eq_zero _).mpr hx
+
+/-- **An atom of a Lie module without trivial part is its own bracket with `L`.** If no nonzero
+vector of `M` is killed by all of `L`, then every atom `N` of the lattice of Lie submodules
+satisfies `⁅L, N⁆ = N`: the bracket lies in `N`, and it is nonzero since otherwise `L` would act
+trivially on `N`. For `M = L` the hypothesis says that the centre of `L` is trivial. -/
+theorem top_lie_eq_self_of_isAtom (hM : LieModule.maxTrivSubmodule R L M = ⊥)
+    {N : LieSubmodule R L M} (hN : IsAtom N) : ⁅(⊤ : LieIdeal R L), N⁆ = N :=
+  lie_eq_self_of_isAtom_of_ne_bot hN fun h ↦ hN.1 <| le_bot_iff.1 <|
+    hM ▸ (LieModule.le_max_triv_iff_bracket_eq_bot R L M).2 h
+
+/-- **A Lie module endomorphism of `L` preserves each ideal `I` with `⁅L, I⁆ = I`.** Such an
+endomorphism `f` commutes with every `ad x`, so it maps `⁅I, L⁆` into `⁅I, L⁆`. -/
+theorem map_le_of_top_lie_eq {I : LieIdeal R L} (hI : ⁅(⊤ : LieIdeal R L), I⁆ = I)
+    (f : L →ₗ⁅R,L⁆ L) : LieSubmodule.map f I ≤ I := by
+  conv_lhs => rw [← hI, LieSubmodule.lie_comm, LieSubmodule.map_bracket_eq]
+  exact LieSubmodule.lie_le_left _ _
 
 end TauCeti

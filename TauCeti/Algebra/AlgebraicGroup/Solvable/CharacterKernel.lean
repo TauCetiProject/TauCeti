@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Character
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.ClosedSubgroup
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
-import Mathlib.RingTheory.Nilpotent.Lemmas
 
 /-!
 # The character kernel of a connected solvable group is unipotent
@@ -59,13 +58,9 @@ theorem isUnipotentPoint_iff_forall_apply_groupLike_eq_one
   obtain ⟨n, b, htri, hdiag⟩ :=
     Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
       (k := k) (H := H) (M := M)
-  have hu : ((Comodule.coefficientMatrix (C := H) b).map g.ofConv).IsUpperUnitriangular := by
-    rw [Matrix.isUpperUnitriangular_def]
-    exact ⟨htri.map g.ofConv, fun i ↦ hg ⟨_, hdiag i⟩⟩
-  rw [← LinearMap.isNilpotent_toMatrix_iff (b.baseChange K),
-    _root_.map_sub (LinearMap.toMatrix (b.baseChange K) (b.baseChange K)),
-    LinearMap.toMatrix_one, Comodule.toMatrix_endOfPoint]
-  exact hu.isNilpotent_sub_one
+  refine Comodule.isNilpotent_endOfPoint_sub_one_of_isUpperUnitriangular b g.ofConv ?_
+  rw [Matrix.isUpperUnitriangular_def]
+  exact ⟨htri.map g.ofConv, fun i ↦ hg ⟨_, hdiag i⟩⟩
 
 end HopfAlgebra
 

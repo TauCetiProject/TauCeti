@@ -68,6 +68,9 @@ the half-wave phases are with `k = 1`, the propagator intertwines the normalized
   `TauCeti.integrable_phasePropagator_apply_iff`,
   `TauCeti.aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub`: measurability and
   integrability of `a ↦ exp(iτ(a)ω(D)) G(a)` and of retarded integrals.
+* `TauCeti.norm_setIntegral_Iio_phasePropagator_sub_le`,
+  `TauCeti.continuous_setIntegral_Iio_phasePropagator_sub`: retarded integrals of integrable
+  `G : ℝ → L²` are bounded by `‖G‖_{L¹}` and continuous in time.
 * `TauCeti.inner_setIntegral_Iio_phasePropagator_sub`,
   `TauCeti.integrable_inner_setIntegral_Iio_phasePropagator_sub`: pairings of retarded integrals.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
@@ -406,6 +409,15 @@ theorem inner_setIntegral_Iio_phasePropagator_sub {G : ℝ → Lp F 2 (volume : 
     (continuous_sub_left t).aestronglyMeasurable hG).integrableOn, ← integral_conj]
   simp_rw [inner_conj_symm]
 
+/-- The retarded integral `∫_{s < t} exp(i(t - s)ω(D)) G(s) dμ(s)` of an integrable
+`G : ℝ → L²` is at most `‖G‖_{L¹(μ)}` in norm, since `exp(i(t - s)ω(D))` is unitary. -/
+theorem norm_setIntegral_Iio_phasePropagator_sub_le {μ : Measure ℝ}
+    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : Integrable G μ) (t : ℝ) :
+    ‖∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s) ∂μ‖ ≤ ∫ s, ‖G s‖ ∂μ := by
+  refine (norm_integral_le_integral_norm _).trans ?_
+  simp_rw [norm_phasePropagator_apply]
+  exact setIntegral_le_integral hG.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
+
 /-- For integrable `G, H : ℝ → L²`, the pairing `t ↦ ⟪∫_{s < t} exp(i(t - s)ω(D)) G(s) ds, H(t)⟫`
 is integrable, being at most `‖G‖_{L¹} ‖H(t)‖`. -/
 theorem integrable_inner_setIntegral_Iio_phasePropagator_sub
@@ -414,10 +426,25 @@ theorem integrable_inner_setIntegral_Iio_phasePropagator_sub
   refine (hH.norm.const_mul (∫ s, ‖G s‖)).mono'
     ((aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub ω
       hG.aestronglyMeasurable).inner hH.aestronglyMeasurable) (ae_of_all _ fun t ↦ ?_)
-  refine (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
-  refine (norm_integral_le_integral_norm _).trans ?_
-  simp_rw [norm_phasePropagator_apply]
-  exact setIntegral_le_integral hG.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
+  exact (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right
+    (norm_setIntegral_Iio_phasePropagator_sub_le ω hG t) (norm_nonneg _))
+
+/-- The retarded integral `t ↦ ∫_{s < t} exp(i(t - s)ω(D)) G(s) dμ(s)` of an `L²`-valued `G`
+integrable for a measure `μ` that gives singletons measure zero is continuous in time: it is
+`exp(itω(D))` applied to the primitive `t ↦ ∫_{s < t} exp(-isω(D)) G(s) dμ(s)`. -/
+theorem continuous_setIntegral_Iio_phasePropagator_sub {μ : Measure ℝ} [NullSingletonClass μ]
+    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : Integrable G μ) :
+    Continuous fun t ↦ ∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s) ∂μ := by
+  have hK := integrable_phasePropagator_apply ω continuous_neg.aestronglyMeasurable hG
+  have hprim : Continuous fun t ↦ ∫ s in Set.Iio t, phasePropagator F ω (-s) (G s) ∂μ :=
+    continuous_iff_continuousAt.2 fun t ↦
+      hK.integrableOn.continuousOn_Iic_primitive_Iio.continuousAt
+        (Iic_mem_nhds (lt_add_one t))
+  refine ((continuous_phasePropagator_uncurry ω).comp (continuous_id.prodMk hprim)).congr
+    fun t ↦ ?_
+  dsimp only [Function.comp_apply, id]
+  rw [← ContinuousLinearMap.integral_comp_comm _ hK.integrableOn]
+  simp_rw [sub_eq_add_neg, phasePropagator_add_apply]
 
 /-! ### The generator -/
 

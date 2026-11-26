@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Stalk
+
+import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 
 /-!
 # Identity coherence for pullback of sheaves of modules
@@ -19,11 +21,15 @@ Mathlib's `SheafOfModules.pushforwardId` and `SheafOfModules.pullbackId` are the
 identity comparisons. Identity pushforward respects the lax monoidal structure, and identity
 pullback respects the oplax monoidal structure. The unit and tensor formulas supply the identity
 normalization needed when comparing successive pullbacks of tensor products.
+
+For sheaves on a topological space, identity pullback has the strong symmetric monoidal
+structure of pullback along the identity map, and its canonical identity comparison is
+monoidal (`TauCeti.SheafOfModules.isMonoidal_pullbackId_hom`).
 -/
 
 public section
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory TopologicalSpace
 
 namespace TauCeti.SheafOfModules
 
@@ -161,6 +167,36 @@ theorem pullback_id_δ (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
     (by infer_instance) (by infer_instance) _ _ (by infer_instance)
     (_root_.SheafOfModules.conjugateEquiv_pullbackId_hom (ringCatSheaf R)) M N
   simpa using h.symm
+
+end
+
+noncomputable section
+
+/-- Identity pullback has the braided structure of pullback along the identity map of spaces. -/
+instance (priority := 100) _root_.SheafOfModules.pullbackIdBraided
+    {A : Type u} [TopologicalSpace A]
+    (R : Sheaf (Opens.grothendieckTopology A) CommRingCat.{u}) :
+    (pullback.{u} (F := 𝟭 (Opens A)) (S := ringCatSheaf R) (R := ringCatSheaf R)
+      (𝟙 (ringCatSheaf R))).Braided := by
+  haveI : (Opens.map (𝟙 (TopCat.of A))).IsContinuous
+      (Opens.grothendieckTopology A) (Opens.grothendieckTopology A) :=
+    inferInstanceAs ((𝟭 (Opens A)).IsContinuous _ _)
+  haveI : (pushforward.{u} (F := Opens.map (𝟙 (TopCat.of A)))
+      (S := ringCatSheaf R) (R := ringCatSheaf R) (𝟙 (ringCatSheaf R))).IsRightAdjoint :=
+    Functor.isRightAdjoint_of_iso (pushforwardId (ringCatSheaf R)).symm
+  exact pullbackBraided (𝒪X := R) (𝒪Y := R) (f := 𝟙 (TopCat.of A)) (𝟙 (ringCatSheaf R))
+
+/-- The canonical comparison from identity pullback to the identity functor is monoidal. -/
+instance isMonoidal_pullbackId_hom
+    {A : Type u} [TopologicalSpace A]
+    (R : Sheaf (Opens.grothendieckTopology A) CommRingCat.{u}) :
+    NatTrans.IsMonoidal (pullbackId.{u} (ringCatSheaf R)).hom := by
+  refine NatTrans.IsMonoidal.of_oplax (pullbackId.{u} (ringCatSheaf R)).hom ?_ ?_
+  · rw [Functor.OplaxMonoidal.id_η, Category.comp_id]
+    exact (pullback_id_η R).symm
+  · intro M N
+    rw [Functor.OplaxMonoidal.id_δ, Category.comp_id]
+    exact (pullback_id_δ R M N).symm
 
 end
 

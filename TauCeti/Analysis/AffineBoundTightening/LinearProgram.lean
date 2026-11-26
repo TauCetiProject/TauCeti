@@ -213,6 +213,20 @@ theorem objective_le (h : IsFeasible A q₀ p) : objective p ≤ width q₀ :=
 
 end IsFeasible
 
+/-- A zero coefficient row whose initial interval excludes zero rules out every feasible
+assignment, regardless of the initial variable bounds. -/
+theorem not_exists_isFeasible_of_conflicting_zero_row {A : Matrix (Fin m) (Fin n) ℝ}
+    {q₀ : Raw n m} {i : Fin m} (hA : ∀ j, A i j = 0)
+    (hq : (0 : ℝ) ∉ Icc (q₀.1 (.inr i)) (q₀.2 (.inr i))) : ¬ ∃ p, IsFeasible A q₀ p := by
+  rintro ⟨p, hp⟩
+  have hzL (j : Fin n) : p.zL i j = 0 := hp.zL_eq_zero (hA j)
+  have hzU (j : Fin n) : p.zU i j = 0 := hp.zU_eq_zero (hA j)
+  have hlo : 0 ≤ p.endpoints.1 (.inr i) := by simpa [hzL] using hp.sum_zL_le i
+  have hhi : p.endpoints.2 (.inr i) ≤ 0 := by simpa [hzU] using hp.le_sum_zU i
+  have hord := hp.fst_le_snd (.inr i)
+  exact hq ⟨(hp.within.fst_le _).trans (hord.trans hhi),
+    hlo.trans (hord.trans (hp.within.le_snd _))⟩
+
 /-! ### Feasibility is ordered fixedness -/
 
 /-- A canonical assignment is feasible exactly when its endpoints are ordered and fixed by

@@ -71,7 +71,8 @@ public section
 noncomputable section
 
 open Bundle MeasureTheory Module Set TopologicalSpace Complex
-open ContinuousLinearMap (complexAntilinearPartL lsmul lsmul_I_mul_lsmul_I)
+open ContinuousLinearMap
+  (complexAntilinearPartL complexAntilinearPartL_apply_one lsmul lsmul_I_mul_lsmul_I)
 open scoped Manifold ENNReal NNReal ContDiff TauCeti.ComplexManifold Distributions
 
 namespace TauCeti
@@ -96,13 +97,6 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 namespace IsRealCauchyRiemannOperator
-
-omit [FiniteDimensional ℝ F] in
-/-- The value on `1` of the complex antilinear part of a real linear map `L : ℂ → F` is
-`½ (L 1 + i L i)`. -/
-private theorem complexAntilinearPartL_apply_one (L : ℂ →L[ℝ] F) :
-    complexAntilinearPartL L 1 = (2⁻¹ : ℝ) • (L 1 + lsmul ℝ ℂ Complex.I (L Complex.I)) := by
-  simp
 
 omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- The chart reading of the zero `(0,1)`-form vanishes almost everywhere on the chart image. -/
@@ -228,15 +222,8 @@ theorem exists_contDiffOn_ae_eq_of_forall_integral_eq_zero {i : Fin A.n}
     (J := fun _ ↦ lsmul ℝ ℂ Complex.I) (S := fun z ↦ (2 : ℝ) •
       (ContinuousLinearMap.apply ℝ F (1 : ℂ)).comp (A.chartZeroOrder D i z))
     contDiffOn_const ((contDiffOn_const.clm_comp hZ).const_smul _)
-    (fun _ _ ↦ lsmul_I_mul_lsmul_I) hq hη fun φ ↦ ?_
-  have h2 := congrArg ((2 : ℝ) * ·) (h φ)
-  rw [mul_zero, ← integral_const_mul] at h2
-  rw [← h2]
-  refine integral_congr_ae (.of_forall fun z ↦ ?_)
-  simp only [add_apply, complexAntilinearPartL_apply_one, smul_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply, map_add, map_smul,
-    smul_eq_mul]
-  ring
+    (fun _ _ ↦ lsmul_I_mul_lsmul_I) hq hη fun φ ↦
+      integral_apply_cauchyRiemann_eq_zero_of_integral_eq_zero (h φ)
 
 end IsRealCauchyRiemannOperator
 

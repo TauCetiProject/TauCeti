@@ -10,9 +10,10 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
 import TauCeti.Topology.VectorBundle.Section
+import TauCeti.Topology.VectorBundle.Smul
 
 /-!
-# Openness of positivity in bilinear bundles
+# Positivity and comparison in bilinear bundles
 
 For a finite-rank real vector bundle, strict diagonal positivity is an open condition in the
 total space of the bilinear bundle. No symmetry condition is included: symmetric positive forms
@@ -28,6 +29,10 @@ The file also records that pulling back a fixed bilinear form on the model fibre
 trivialization gives a bilinear field continuous on its base set
 (`TauCeti.continuousOn_trivializationAt_pullbackForm`), the local building block for continuous
 Riemannian metrics.
+
+`IsCompact.exists_pos_eventually_mul_bilinear_apply_self_le_and_le_mul` gives quantitative openness:
+two families positive at one parameter on a compact set have uniform positive two-sided
+comparison constants for nearby parameters. Neither symmetry nor a background metric is needed.
 
 The openness proof uses the matrix-cone openness theorem
 `TauCeti.isOpen_setOfPred_re_dotProduct_pos`, transported through a basis and the native
@@ -128,3 +133,83 @@ theorem _root_.IsCompact.isOpen_setOf_forall_mem_forall_bilinear_apply_self_pos
     (isOpen_setOf_forall_bilinear_bundle_apply_self_pos.preimage hb).mem_nhds (hp x hx)
 
 end TauCeti
+
+section Comparison
+
+variable {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [FiniteDimensional ℝ F]
+  {P : Type*} [TopologicalSpace P] {p₀ : P} {K : Set B}
+  {b b₀ : P → ∀ x : K, V x →L[ℝ] V x →L[ℝ] ℝ}
+
+/-- In a finite-rank real vector bundle, if `b` is positive at `p₀` over the compact set `K`,
+then a single positive multiple of `b₀` is bounded above by `b` on `K` for all parameters near
+`p₀`. Both families need only be continuous at points over `p₀` in the product with `K`;
+`b₀` need not be positive. -/
+theorem IsCompact.exists_pos_eventually_mul_bilinear_apply_self_le (hK : IsCompact K)
+    (hb : ∀ x : K, ContinuousAt (fun q : P × K ↦
+      TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ)
+        (q.2 : B) (b q.1 q.2)) (p₀, x))
+    (hb₀ : ∀ x : K, ContinuousAt (fun q : P × K ↦
+      TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ)
+        (q.2 : B) (b₀ q.1 q.2)) (p₀, x))
+    (hpos : ∀ (x : K) (v : V x), v ≠ 0 → 0 < b p₀ x v v) :
+    ∃ c > 0, ∀ᶠ p in 𝓝 p₀, ∀ (x : K) (v : V x), c * b₀ p x v v ≤ b p x v v := by
+  let d (q : (ℝ × P) × K) := TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+    (E := fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) (q.2 : B) (b q.1.2 q.2 + (-q.1.1) • b₀ q.1.2 q.2)
+  have hlocal (x : K) : ContinuousAt d ((0, p₀), x) := by
+    have hproj : Continuous (fun q : (ℝ × P) × K ↦ (q.1.2, q.2)) :=
+      (continuous_snd.comp continuous_fst).prodMk continuous_snd
+    have hscalar : Continuous (fun q : (ℝ × P) × K ↦ -q.1.1) :=
+      (continuous_fst.comp continuous_fst).neg
+    have hp := hproj.continuousAt (x := ((0, p₀), x))
+    have hs := (TauCeti.VectorBundle.continuous_smul ℝ (F →L[ℝ] F →L[ℝ] ℝ)
+      (fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ)).continuousAt.comp'
+      (hscalar.continuousAt.prodMk ((hb₀ x).comp_of_eq hp rfl))
+    exact ((hb x).comp_of_eq hp rfl).add_totalSpace ℝ hs
+  -- Positivity of the difference persists jointly in the scalar and family parameters.
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  have hevent : ∀ᶠ q : ℝ × P in 𝓝 (0, p₀), ∀ (x : K) (v : V x), v ≠ 0 →
+      0 < (b q.2 x + (-q.1) • b₀ q.2 x) v v := by
+    simpa only [mem_univ, forall_const] using
+      (isCompact_univ : IsCompact (univ : Set K)).eventually_forall_of_forall_eventually
+        (P := fun q x ↦ ∀ (v : V x), v ≠ 0 → 0 < (b q.2 x + (-q.1) • b₀ q.2 x) v v)
+        (x₀ := ((0 : ℝ), p₀)) (fun x _ ↦ (hlocal x).eventually <|
+          TauCeti.isOpen_setOf_forall_bilinear_bundle_apply_self_pos.mem_nhds (x := d ((0, p₀), x))
+            (by simpa [d] using hpos x))
+  -- Choose one positive scalar that works throughout a neighbourhood of the family parameter.
+  rw [nhds_prod_eq] at hevent
+  obtain ⟨a, ha, u, hu, h⟩ := eventually_prod_iff.mp hevent
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp ha
+  have hc : a (ε / 2) := hball (by simpa [Real.dist_eq, abs_of_pos hε] using half_lt_self hε)
+  refine ⟨ε / 2, half_pos hε, hu.mono fun p hp x v ↦ ?_⟩
+  by_cases hv : v = 0
+  · simp [hv]
+  · have hle := h hc hp x v hv
+    simp only [add_apply, smul_apply, smul_eq_mul, neg_mul] at hle
+    linarith
+
+/-- In a finite-rank real vector bundle, two families of bilinear fields positive at `p₀` over
+a compact set admit uniform positive two-sided comparison bounds for all parameters near `p₀`.
+Continuity is only required at points over `p₀` in the product of the parameter space with the
+compact subset. The bounds do not require symmetry or a background fibre norm. -/
+theorem IsCompact.exists_pos_eventually_mul_bilinear_apply_self_le_and_le_mul (hK : IsCompact K)
+    (hb : ∀ x : K, ContinuousAt (fun q : P × K ↦
+      TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ)
+        (q.2 : B) (b q.1 q.2)) (p₀, x))
+    (hb₀ : ∀ x : K, ContinuousAt (fun q : P × K ↦
+      TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ)
+        (q.2 : B) (b₀ q.1 q.2)) (p₀, x))
+    (hpos : ∀ (x : K) (v : V x), v ≠ 0 → 0 < b p₀ x v v)
+    (hpos₀ : ∀ (x : K) (v : V x), v ≠ 0 → 0 < b₀ p₀ x v v) :
+    ∃ c > 0, ∃ C > 0, ∀ᶠ p in 𝓝 p₀, ∀ (x : K) (v : V x),
+      c * b₀ p x v v ≤ b p x v v ∧ b p x v v ≤ C * b₀ p x v v := by
+  obtain ⟨c, hc, hl⟩ := hK.exists_pos_eventually_mul_bilinear_apply_self_le hb hb₀ hpos
+  obtain ⟨d, hd, hu⟩ := hK.exists_pos_eventually_mul_bilinear_apply_self_le hb₀ hb hpos₀
+  refine ⟨c, hc, d⁻¹, inv_pos.mpr hd, (hl.and hu).mono fun p hp x v ↦ ⟨hp.1 x v, ?_⟩⟩
+  rw [← div_eq_inv_mul, le_div_iff₀ hd]
+  simpa only [mul_comm] using hp.2 x v
+
+end Comparison

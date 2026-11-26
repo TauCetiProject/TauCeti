@@ -90,7 +90,7 @@ private theorem eval_eq_sum_range_add (z : weakCompletion π S) (a : ℕ → S)
 
 /-- Every weakly completed element has a finite head in the original algebra and a
 weakly completed tail, after factoring out any prescribed power of the parameter. -/
-private theorem exists_eq_of_add_pow_mul (z : weakCompletion π S) (n : ℕ) :
+theorem exists_eq_of_add_pow_mul (z : weakCompletion π S) (n : ℕ) :
     ∃ (s : S) (t : weakCompletion π S),
       z = of π S s + algebraMap O (weakCompletion π S) π ^ n * t := by
   classical
