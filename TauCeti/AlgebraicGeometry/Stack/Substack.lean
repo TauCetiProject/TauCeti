@@ -91,6 +91,21 @@ faithful full-subcategory inclusions. -/
 def ι (P : Substack X) : Hom P.toStackInGroupoids X :=
   P.toObjectProperty.ι
 
+/-- The inclusion sends a substack object to its underlying ambient object. -/
+@[simp]
+lemma ι_app_obj (P : Substack X) (T : LocallyDiscrete Scheme.{u}ᵒᵖ)
+    (M : P.toStackInGroupoids.toSchPseudofunctor.obj T) :
+    (P.ι.app T).toFunctor.obj M = M.obj :=
+  (rfl)
+
+/-- The inclusion sends a morphism to its underlying ambient morphism. Heterogeneous equality
+allows the endpoints to be identified by `ι_app_obj` without exposing the inclusion. -/
+@[simp]
+lemma ι_app_map (P : Substack X) (T : LocallyDiscrete Scheme.{u}ᵒᵖ)
+    {M N : P.toStackInGroupoids.toSchPseudofunctor.obj T} (f : M ⟶ N) :
+    HEq ((P.ι.app T).toFunctor.map f) f.hom :=
+  (HEq.rfl)
+
 /-- A substack inclusion is full on every fibre category. -/
 instance full_ι_app (P : Substack X) (T : LocallyDiscrete Scheme.{u}ᵒᵖ) :
     (P.ι.app T).toFunctor.Full := by

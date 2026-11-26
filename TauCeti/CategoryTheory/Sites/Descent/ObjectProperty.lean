@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Bicategory.Functor.Cat.ObjectProperty
+public import TauCeti.CategoryTheory.Bicategory.Functor.Cat.ObjectProperty
 public import TauCeti.CategoryTheory.Sites.Descent.StrongTrans
 public import TauCeti.CategoryTheory.Sites.Descent.DescentData
 
@@ -105,40 +105,23 @@ theorem isLocal_iff_isStack_fullsubcategory [P.IsClosedUnderMapObj]
 
 variable {G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
 
-/-- The inverse image of an object property along a strong transformation, computed in each
-fibre category. -/
-def inverseImage (Q : G.ObjectProperty) (η : StrongTrans F G) : F.ObjectProperty where
-  prop U := (Q.prop U).inverseImage (η.app U).toFunctor
-
-@[simp]
-lemma inverseImage_prop (Q : G.ObjectProperty) (η : StrongTrans F G)
-    (U : LocallyDiscrete Cᵒᵖ) (M : F.obj U) :
-    (Q.inverseImage η).prop U M ↔ Q.prop U ((η.app U).toFunctor.obj M) :=
-  Iff.rfl
-
 /-- Inverse images of local object properties are local. Naturality transports the pullback
 condition through the component functors of the strong transformation. -/
 instance isLocal_inverseImage (Q : G.ObjectProperty) [Q.IsLocal J]
     (η : StrongTrans F G) : (Q.inverseImage η).IsLocal J where
-  map_obj {X Y M} hM f :=
-    (Q.prop Y).prop_of_iso ((Cat.Hom.toNatIso (η.naturality f)).app M).symm
+  map_obj {X Y M} hM f := by
+    simp only [inverseImage_prop] at hM ⊢
+    exact (Q.prop Y).prop_of_iso ((Cat.Hom.toNatIso (η.naturality f)).app M).symm
       (Q.map_obj hM f)
-  isClosedUnderIsomorphisms U := inferInstanceAs
-    ((Q.prop U).inverseImage (η.app U).toFunctor).IsClosedUnderIsomorphisms
+  isClosedUnderIsomorphisms U := by
+    refine ⟨fun e h ↦ ?_⟩
+    simp only [inverseImage_prop] at h ⊢
+    exact (Q.prop U).prop_of_iso ((η.app U).toFunctor.mapIso e) h
   of_sieve {S R} hR {M} h := by
+    simp only [inverseImage_prop] at h ⊢
     apply IsLocal.of_sieve (P := Q) hR
     intro T f hf
     exact (Q.prop (.mk (op T))).prop_of_iso
       ((Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app M) (h f hf)
-
-@[simp]
-lemma inverseImage_id : P.inverseImage (StrongTrans.id F) = P :=
-  (rfl)
-
-@[simp]
-lemma inverseImage_comp {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
-    (Q : H.ObjectProperty) (η : StrongTrans F G) (θ : StrongTrans G H) :
-    Q.inverseImage (StrongTrans.vcomp η θ) = (Q.inverseImage θ).inverseImage η :=
-  (rfl)
 
 end CategoryTheory.Pseudofunctor.ObjectProperty
