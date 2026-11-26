@@ -24,6 +24,12 @@ event `F`) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A �
 `ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict` and
 `ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict_inter`.
 
+Two independent functions force a finite measure to be zero or a probability measure
+(`ProbabilityTheory.IndepFun.isZeroOrProbabilityMeasure`), and under a measure of infinite total
+mass all their measurable cells and preimages have real mass zero
+(`ProbabilityTheory.IndepFun.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top`,
+`ProbabilityTheory.IndepFun.measureReal_preimage_eq_zero_of_measure_univ_eq_top`).
+
 An independent, identically distributed family admits a measurable version agreeing almost
 everywhere at each index, preserving independence and identical distribution
 (`ProbabilityTheory.iIndepFun.exists_measurable_ae_eq_of_identDistrib`). Preimages of measurable
@@ -207,6 +213,35 @@ theorem iIndepFun.iIndepSet_preimage {Ω ι : Type*} {β : ι → Type*} [Measur
   rw [iIndepSet_iff_iIndep]
   exact iIndep_of_iIndep_of_le h.iIndep fun i ↦ MeasurableSpace.generateFrom_singleton_le <|
     MeasurableSpace.measurableSet_comap.2 ⟨s i, hs i, rfl⟩
+
+/-- Two independent functions under a finite measure force the measure to be zero or a
+probability measure, since `μ univ = μ univ * μ univ`. -/
+theorem IndepFun.isZeroOrProbabilityMeasure {Ω γ : Type*} {mΩ : MeasurableSpace Ω}
+    [MeasurableSpace γ] {μ : Measure Ω} [IsFiniteMeasure μ] {f : Ω → β} {g : Ω → γ}
+    (h : IndepFun f g μ) : IsZeroOrProbabilityMeasure μ := by
+  have huniv : μ univ = μ univ * μ univ := by
+    simpa using h.measure_inter_preimage_eq_mul univ univ .univ .univ
+  refine ⟨(eq_or_ne (μ univ) 0).imp_right fun h0 ↦ ?_⟩
+  exact (ENNReal.mul_eq_left h0 (measure_ne_top μ univ)).mp huniv.symm
+
+/-- Under a measure of infinite total mass, two independent functions have cells
+`f ⁻¹' s ∩ g ⁻¹' t` of real mass zero: every measurable preimage under `f` has mass `0` or `∞`. -/
+theorem IndepFun.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top {Ω γ : Type*}
+    {mΩ : MeasurableSpace Ω} [MeasurableSpace γ] {μ : Measure Ω} {f : Ω → β} {g : Ω → γ}
+    (h : IndepFun f g μ) (hμ : μ univ = ∞) {s : Set β} {t : Set γ} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) : μ.real (f ⁻¹' s ∩ g ⁻¹' t) = 0 := by
+  have hf : μ (f ⁻¹' s) = μ (f ⁻¹' s) * ∞ := by
+    simpa [hμ] using h.measure_inter_preimage_eq_mul s univ hs .univ
+  rw [measureReal_def, h.measure_inter_preimage_eq_mul s t hs ht, ENNReal.toReal_mul, hf,
+    ENNReal.toReal_mul_top, zero_mul]
+
+/-- Under a measure of infinite total mass, the measurable preimages under a function independent
+of another function have real mass zero. Apply it to `h.symm` for the second function. -/
+theorem IndepFun.measureReal_preimage_eq_zero_of_measure_univ_eq_top {Ω γ : Type*}
+    {mΩ : MeasurableSpace Ω} [MeasurableSpace γ] {μ : Measure Ω} {f : Ω → β} {g : Ω → γ}
+    (h : IndepFun f g μ) (hμ : μ univ = ∞) {s : Set β} (hs : MeasurableSet s) :
+    μ.real (f ⁻¹' s) = 0 := by
+  simpa using h.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top hμ hs .univ
 
 end ProbabilityTheory
 
