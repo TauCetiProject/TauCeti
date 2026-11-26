@@ -74,8 +74,8 @@ theorem contMDiffEval_reesZeroFiberBracket_apply
     b.evalEquiv_symm_fderiv_contMDiffEval n (SymmetricAlgebra.map 𝕜 e.toLinearMap q) ξ,
     bL.symmetricGradient_map b e.toLinearMap p ξ.toLinearMap,
     bL.symmetricGradient_map b e.toLinearMap q ξ.toLinearMap]
-  simp only [LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
-  rfl
+  simp only [LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, LinearMap.comp_apply,
+    ContinuousLinearMap.coe_coe]
 
 end SmoothPoissonEvaluation
 

@@ -62,8 +62,6 @@ section DividedCommutator
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
 /-- Every coefficient of a commutator in `reesAlgebra R L` lies one step lower in the PBW
@@ -84,30 +82,35 @@ satisfying `reesParameter R L * c = a * b - b * a`, bundled as an `R[X]`-bilinea
 freeness hypothesis on `L`. -/
 noncomputable def reesDividedCommutator :
     reesAlgebra R L →ₗ[R[X]] reesAlgebra R L →ₗ[R[X]] reesAlgebra R L :=
-  let A := reesAlgebra R L
+  letI : AddCommGroup (reesAlgebra R L) := inferInstance
   LinearMap.codRestrict₂
-    (LinearMap.mul R[X] A - (LinearMap.mul R[X] A).flip)
-    (LinearMap.mul R[X] A (reesParameter R L))
-    (reesParameter_mul_injective R L)
-    fun a b ↦
-      (coeffSubalgebra.exists_X_mul_eq_iff (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
-        (a * b - b * a)).mpr
-        ⟨by
-          have hmem := commutator_coeff_mem_pbwFiltrationPrevious R L a b 0
-          rwa [pbwFiltrationPrevious_zero, Submodule.mem_bot] at hmem,
-         fun n ↦ by
-          rw [← pbwFiltrationPrevious_succ]
-          exact commutator_coeff_mem_pbwFiltrationPrevious R L a b (n + 1)⟩
+    (LinearMap.mul R[X] (reesAlgebra R L) - (LinearMap.mul R[X] (reesAlgebra R L)).flip)
+    (LinearMap.mul R[X] (reesAlgebra R L) (reesParameter R L))
+    (show Function.Injective (LinearMap.mul R[X] (reesAlgebra R L) (reesParameter R L)) from
+      fun _ _ h ↦ reesParameter_mul_injective R L (by simpa only [LinearMap.mul_apply'] using h))
+    (show ∀ a b : reesAlgebra R L,
+        (LinearMap.mul R[X] (reesAlgebra R L) - (LinearMap.mul R[X] (reesAlgebra R L)).flip) a b ∈
+          LinearMap.range (LinearMap.mul R[X] (reesAlgebra R L) (reesParameter R L)) from
+      fun a b ↦ by
+        simp only [LinearMap.mem_range, LinearMap.sub_apply, LinearMap.flip_apply,
+          LinearMap.mul_apply']
+        exact (coeffSubalgebra.exists_X_mul_eq_iff (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
+          (a * b - b * a)).mpr
+          ⟨by
+            have hmem := commutator_coeff_mem_pbwFiltrationPrevious R L a b 0
+            rwa [pbwFiltrationPrevious_zero, Submodule.mem_bot] at hmem,
+           fun n ↦ by
+            rw [← pbwFiltrationPrevious_succ]
+            exact commutator_coeff_mem_pbwFiltrationPrevious R L a b (n + 1)⟩)
 
 /-- **Defining relation of the divided commutator.** -/
 @[simp]
 theorem reesParameter_mul_reesDividedCommutator (a b : reesAlgebra R L) :
     reesParameter R L * reesDividedCommutator R L a b = a * b - b * a := by
-  let A := reesAlgebra R L
-  change (LinearMap.mul R[X] A (reesParameter R L)) (reesDividedCommutator R L a b) =
-    (LinearMap.mul R[X] A - (LinearMap.mul R[X] A).flip) a b
-  rw [reesDividedCommutator]
-  exact LinearMap.codRestrict₂_apply (R := R[X]) _ _ _ _ a b
+  let _ : AddCommGroup (reesAlgebra R L) := inferInstance
+  rw [← LinearMap.mul_apply' (R := R[X]) (reesParameter R L), reesDividedCommutator,
+    LinearMap.codRestrict₂_apply]
+  simp only [LinearMap.sub_apply, LinearMap.flip_apply, LinearMap.mul_apply']
 
 @[simp]
 theorem coe_reesDividedCommutator (a b : reesAlgebra R L) :
@@ -139,7 +142,7 @@ theorem evalOne_reesDividedCommutator (a b : reesAlgebra R L) :
 theorem reesDividedCommutator_eq_iff {a b c : reesAlgebra R L} :
     reesDividedCommutator R L a b = c ↔ a * b - b * a = reesParameter R L * c := by
   refine ⟨fun h ↦ by rw [← h, reesParameter_mul_reesDividedCommutator], fun h ↦ ?_⟩
-  exact (reesParameter_mul_left_inj R L).mp (by rw [reesParameter_mul_reesDividedCommutator, h])
+  exact (reesParameter_mul_right_inj R L).mp (by rw [reesParameter_mul_reesDividedCommutator, h])
 
 /-- The divided commutator of two Rees elements vanishes if and only if they commute. -/
 theorem reesDividedCommutator_eq_zero_iff {a b : reesAlgebra R L} :
@@ -159,43 +162,43 @@ theorem reesDividedCommutator_self (a : reesAlgebra R L) :
 
 theorem reesDividedCommutator_swap (a b : reesAlgebra R L) :
     reesDividedCommutator R L a b = -(reesDividedCommutator R L b a) :=
-  eq_neg_iff_add_eq_zero.mpr <| (reesParameter_mul_left_inj R L).mp <| by
+  eq_neg_iff_add_eq_zero.mpr <| (reesParameter_mul_right_inj R L).mp <| by
     rw [mul_add, reesParameter_mul_reesDividedCommutator, reesParameter_mul_reesDividedCommutator,
       mul_zero, sub_add_sub_cancel, sub_self]
 
-theorem reesDividedCommutator_of_commute {a b : reesAlgebra R L} (h : Commute a b) :
+theorem reesDividedCommutator_eq_zero_of_commute {a b : reesAlgebra R L} (h : Commute a b) :
     reesDividedCommutator R L a b = 0 :=
   (reesDividedCommutator_eq_zero_iff R L).mpr h
 
 @[simp]
 theorem reesDividedCommutator_reesParameter_left (a : reesAlgebra R L) :
     reesDividedCommutator R L (reesParameter R L) a = 0 :=
-  reesDividedCommutator_of_commute R L (commute_reesParameter R L a)
+  reesDividedCommutator_eq_zero_of_commute R L (commute_reesParameter R L a)
 
 @[simp]
 theorem reesDividedCommutator_reesParameter_right (a : reesAlgebra R L) :
     reesDividedCommutator R L a (reesParameter R L) = 0 :=
-  reesDividedCommutator_of_commute R L (commute_reesParameter R L a).symm
+  reesDividedCommutator_eq_zero_of_commute R L (commute_reesParameter R L a).symm
 
 @[simp]
 theorem reesDividedCommutator_algebraMap_left (r : R) (a : reesAlgebra R L) :
     reesDividedCommutator R L (algebraMap R (reesAlgebra R L) r) a = 0 :=
-  reesDividedCommutator_of_commute R L (Algebra.commutes r a)
+  reesDividedCommutator_eq_zero_of_commute R L (Algebra.commutes r a)
 
 @[simp]
 theorem reesDividedCommutator_algebraMap_right (a : reesAlgebra R L) (r : R) :
     reesDividedCommutator R L a (algebraMap R (reesAlgebra R L) r) = 0 :=
-  reesDividedCommutator_of_commute R L (Algebra.commutes r a).symm
+  reesDividedCommutator_eq_zero_of_commute R L (Algebra.commutes r a).symm
 
 @[simp]
 theorem reesDividedCommutator_algebraMap_polynomial_left (q : R[X]) (a : reesAlgebra R L) :
     reesDividedCommutator R L (algebraMap R[X] (reesAlgebra R L) q) a = 0 :=
-  reesDividedCommutator_of_commute R L (Algebra.commutes q a)
+  reesDividedCommutator_eq_zero_of_commute R L (Algebra.commutes q a)
 
 @[simp]
 theorem reesDividedCommutator_algebraMap_polynomial_right (a : reesAlgebra R L) (q : R[X]) :
     reesDividedCommutator R L a (algebraMap R[X] (reesAlgebra R L) q) = 0 :=
-  reesDividedCommutator_of_commute R L (Algebra.commutes q a).symm
+  reesDividedCommutator_eq_zero_of_commute R L (Algebra.commutes q a).symm
 
 @[simp]
 theorem reesDividedCommutator_one_left (a : reesAlgebra R L) :
@@ -227,14 +230,21 @@ theorem reesDividedCommutator_ofNat_right (a : reesAlgebra R L) (n : ℕ) [n.AtL
     reesDividedCommutator R L a (ofNat(n) : reesAlgebra R L) = 0 :=
   reesDividedCommutator_natCast_right R L a n
 
+private theorem reesParameter_mul_mul_reesDividedCommutator (x y z : reesAlgebra R L) :
+    reesParameter R L * (x * reesDividedCommutator R L y z) = x * (y * z - z * y) := by
+  rw [(commute_reesParameter R L x).left_comm, reesParameter_mul_reesDividedCommutator]
+
+private theorem reesParameter_mul_reesDividedCommutator_mul (x y z : reesAlgebra R L) :
+    reesParameter R L * (reesDividedCommutator R L y z * x) = (y * z - z * y) * x := by
+  rw [← mul_assoc, reesParameter_mul_reesDividedCommutator]
+
 /-- **Right Leibniz rule** for `reesDividedCommutator` in `reesAlgebra R L`. -/
 theorem reesDividedCommutator_mul_right (a b c : reesAlgebra R L) :
     reesDividedCommutator R L a (b * c) =
       b * reesDividedCommutator R L a c + reesDividedCommutator R L a b * c :=
-  (reesParameter_mul_left_inj R L).mp <| by
+  (reesParameter_mul_right_inj R L).mp <| by
     rw [reesParameter_mul_reesDividedCommutator, mul_add,
-      (commute_reesParameter R L b).left_comm, reesParameter_mul_reesDividedCommutator,
-      ← mul_assoc (reesParameter R L), reesParameter_mul_reesDividedCommutator]
+      reesParameter_mul_mul_reesDividedCommutator, reesParameter_mul_reesDividedCommutator_mul]
     simp only [mul_sub, sub_mul, mul_assoc]
     abel
 
@@ -242,10 +252,9 @@ theorem reesDividedCommutator_mul_right (a b c : reesAlgebra R L) :
 theorem reesDividedCommutator_mul_left (a b c : reesAlgebra R L) :
     reesDividedCommutator R L (a * b) c =
       a * reesDividedCommutator R L b c + reesDividedCommutator R L a c * b :=
-  (reesParameter_mul_left_inj R L).mp <| by
+  (reesParameter_mul_right_inj R L).mp <| by
     rw [reesParameter_mul_reesDividedCommutator, mul_add,
-      (commute_reesParameter R L a).left_comm, reesParameter_mul_reesDividedCommutator,
-      ← mul_assoc (reesParameter R L), reesParameter_mul_reesDividedCommutator]
+      reesParameter_mul_mul_reesDividedCommutator, reesParameter_mul_reesDividedCommutator_mul]
     simp only [mul_sub, sub_mul, mul_assoc]
     abel
 
@@ -262,25 +271,16 @@ theorem reesDividedCommutator_reesParameter_mul_right (a b : reesAlgebra R L) :
   rw [reesDividedCommutator_mul_right, reesDividedCommutator_reesParameter_right, zero_mul,
     add_zero]
 
-/-- **Exact Jacobi identity** for `reesDividedCommutator` in `reesAlgebra R L`, proved by
-cancelling `reesParameter R L` twice from the associative Jacobi identity. -/
+/-- **Exact Jacobi identity** for `reesDividedCommutator` in `reesAlgebra R L`. -/
 theorem reesDividedCommutator_jacobi (a b c : reesAlgebra R L) :
     reesDividedCommutator R L (reesDividedCommutator R L a b) c +
       reesDividedCommutator R L (reesDividedCommutator R L b c) a +
       reesDividedCommutator R L (reesDividedCommutator R L c a) b = 0 := by
-  rw [← reesParameter_mul_left_inj R L, ← reesParameter_mul_left_inj R L]
-  simp only [mul_zero, mul_add, reesParameter_mul_reesDividedCommutator, mul_sub]
-  rw [← mul_assoc (reesParameter R L), reesParameter_mul_reesDividedCommutator,
-    (commute_reesParameter R L c).left_comm, reesParameter_mul_reesDividedCommutator,
-    ← mul_assoc (reesParameter R L), reesParameter_mul_reesDividedCommutator,
-    (commute_reesParameter R L a).left_comm, reesParameter_mul_reesDividedCommutator,
-    ← mul_assoc (reesParameter R L), reesParameter_mul_reesDividedCommutator,
-    (commute_reesParameter R L b).left_comm, reesParameter_mul_reesDividedCommutator]
-  change ⁅⁅a, b⁆, c⁆ + ⁅⁅b, c⁆, a⁆ + ⁅⁅c, a⁆, b⁆ = 0
-  rw [← lie_skew ⁅a, b⁆ c, ← lie_skew ⁅b, c⁆ a, ← lie_skew ⁅c, a⁆ b]
-  have hj := congrArg Neg.neg (lie_jacobi c a b)
-  rw [neg_add, neg_add, neg_zero] at hj
-  rw [← hj]
+  rw [← reesParameter_mul_right_inj R L, ← reesParameter_mul_right_inj R L]
+  simp only [mul_zero, mul_add, mul_sub, reesParameter_mul_reesDividedCommutator,
+    reesParameter_mul_mul_reesDividedCommutator, reesParameter_mul_reesDividedCommutator_mul]
+  simp only [sub_mul, mul_assoc]
+  abel
 
 end DividedCommutator
 

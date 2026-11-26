@@ -22,12 +22,13 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 universe u v
 
-/-- Over an abelian Lie algebra, `reesAlgebra R L` is commutative (`Abelian.instCommRing`), so its
-divided commutator vanishes identically. -/
+/-- Over an abelian Lie algebra, `reesAlgebra R L` is commutative
+(`TauCeti.UniversalEnvelopingAlgebra.instCommRing`), so its divided commutator vanishes
+identically. -/
 @[simp]
 theorem reesDividedCommutator_eq_zero (R : Type u) (L : Type v) [CommRing R] [LieRing L]
     [LieAlgebra R L] [IsLieAbelian L] (a b : reesAlgebra R L) :
     reesDividedCommutator R L a b = 0 :=
-  reesDividedCommutator_of_commute R L (mul_comm a b)
+  reesDividedCommutator_eq_zero_of_commute R L (mul_comm a b)
 
 end TauCeti.UniversalEnvelopingAlgebra

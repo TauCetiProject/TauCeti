@@ -68,7 +68,7 @@ theorem reesParameter_mul_injective :
   coeffSubalgebra.X_mul_injective (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
 
 @[simp]
-theorem reesParameter_mul_left_inj {a b : reesAlgebra R L} :
+theorem reesParameter_mul_right_inj {a b : reesAlgebra R L} :
     reesParameter R L * a = reesParameter R L * b ↔ a = b :=
   (reesParameter_mul_injective R L).eq_iff
 

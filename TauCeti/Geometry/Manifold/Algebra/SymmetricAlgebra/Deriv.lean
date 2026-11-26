@@ -67,8 +67,7 @@ theorem fderiv_contMDiffEval_apply (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (
     (ξ η : StrongDual 𝕜 E) :
     fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ η =
       η (b.symmetricGradient p ξ.toLinearMap) := by
-  rw [b.fderiv_contMDiffEval]
-  rfl
+  rw [b.fderiv_contMDiffEval, ContinuousLinearMap.apply_apply]
 
 theorem hasDerivAt_contMDiffEval_add_smul_zero (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω)
     (p : SymmetricAlgebra 𝕜 E) (ξ η : StrongDual 𝕜 E) :

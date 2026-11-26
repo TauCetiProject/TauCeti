@@ -262,10 +262,11 @@ theorem eq_reesZeroFiberBracket_of_leibniz {R L} [CommRing R]
   ext p r : 2
   have h := Derivation.congr_fun (SymmetricAlgebra.derivation_ext
     (D₁ := Dleft r) (D₂ := -reesZeroFiberDerivation R L r) fun x ↦ by
-      change B (SymmetricAlgebra.ι R L x) r =
-        -reesZeroFiberBracket R L r (SymmetricAlgebra.ι R L x)
+      simp only [Dleft, Derivation.coe_mk', LinearMap.flip_apply, neg_apply,
+        reesZeroFiberDerivation_apply]
       rw [hgen x r, reesZeroFiberBracket_swap]) p
-  change B p r = -reesZeroFiberBracket R L r p at h
+  simp only [Dleft, Derivation.coe_mk', LinearMap.flip_apply, neg_apply,
+    reesZeroFiberDerivation_apply] at h
   rwa [← reesZeroFiberBracket_swap] at h
 
 /-- **Jacobi identity** for `reesZeroFiberBracket` on `SymmetricAlgebra R L`. -/
@@ -301,10 +302,11 @@ theorem reesZeroFiberBracket_reesZeroFiberBracket (p q r : SymmetricAlgebra R L)
 
 /-- Commuting elements of `reesAlgebra R L` specialize to Poisson-commuting elements of
 `SymmetricAlgebra R L`. -/
-theorem reesZeroFiberBracket_reesSpecializationZero_of_commute {a b : reesAlgebra R L}
+theorem reesZeroFiberBracket_reesSpecializationZero_eq_zero_of_commute {a b : reesAlgebra R L}
     (h : Commute a b) :
     reesZeroFiberBracket R L (reesSpecializationZero R L a) (reesSpecializationZero R L b) = 0 := by
-  rw [reesZeroFiberBracket_reesSpecializationZero, reesDividedCommutator_of_commute R L h, map_zero]
+  rw [reesZeroFiberBracket_reesSpecializationZero,
+    reesDividedCommutator_eq_zero_of_commute R L h, map_zero]
 
 /-- **Naturality of `reesZeroFiberBracket`.** Any Lie algebra homomorphism between free `R`-modules
 induces a Poisson algebra homomorphism on symmetric algebras. -/
@@ -320,14 +322,13 @@ theorem map_reesZeroFiberBracket {M : Type w} [LieRing M] [LieAlgebra R M] [Modu
     ← reesSpecializationZero_reesMap, ← reesSpecializationZero_reesMap,
     reesMap_reesDividedCommutator, reesZeroFiberBracket_reesSpecializationZero]
 
-/-- Scaling check on generators: if `⁅x, y⁆ = c • y`, then `{ι x, ι y} = c • ι y`. -/
+/-- If `⁅x, y⁆ = c • y`, then `{ι x, ι y} = c • ι y`. -/
 theorem reesZeroFiberBracket_ι_of_lie_eq_smul {x y : L} {c : R} (h : ⁅x, y⁆ = c • y) :
     reesZeroFiberBracket R L (SymmetricAlgebra.ι R L x) (SymmetricAlgebra.ι R L y) =
       c • SymmetricAlgebra.ι R L y := by
   rw [reesZeroFiberBracket_ι_ι, h, map_smul]
 
-/-- Quadratic scaling check testing the Leibniz rule beyond linear generators: if `⁅x, y⁆ = c • y`,
-then `{(ι x) ^ 2, ι y} = (2 * c) • (ι x * ι y)`. -/
+/-- If `⁅x, y⁆ = c • y`, then `{(ι x) ^ 2, ι y} = (2 * c) • (ι x * ι y)`. -/
 theorem reesZeroFiberBracket_sq_ι_of_lie_eq_smul {x y : L} {c : R} (h : ⁅x, y⁆ = c • y) :
     reesZeroFiberBracket R L (SymmetricAlgebra.ι R L x ^ 2) (SymmetricAlgebra.ι R L y) =
       (2 * c) • (SymmetricAlgebra.ι R L x * SymmetricAlgebra.ι R L y) := by

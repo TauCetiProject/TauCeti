@@ -81,7 +81,7 @@ theorem reesSpecializationZero_mem_lieInvariants_of_mem_center {z : reesAlgebra 
   rw [← forall_reesZeroFiberBracket_eq_zero_iff_mem_lieInvariants]
   intro q
   obtain ⟨b, rfl⟩ := reesSpecializationZero_surjective R L q
-  exact reesZeroFiberBracket_reesSpecializationZero_of_commute R L
+  exact reesZeroFiberBracket_reesSpecializationZero_eq_zero_of_commute R L
     (Subalgebra.mem_center_iff.mp hz b).symm
 
 /-- **Degree `-1` homogeneity.** The zero-fibre Poisson bracket carries degrees `(m, n)` into degree
