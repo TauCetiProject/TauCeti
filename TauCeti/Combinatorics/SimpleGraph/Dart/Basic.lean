@@ -23,6 +23,8 @@ its head, and a neighbour `w` to the dart `u → w` (`SimpleGraph.dartOfNeighbor
 
 * `SimpleGraph.sum_dart_snd_eq_sum_neighborSet`: a sum over the darts with head `v` is a sum over
   the neighbours of `v`.
+* `SimpleGraph.Dart.eq_symm_comm`: `a` is the reversal of `b` exactly when `b` is the reversal
+  of `a`.
 * `SimpleGraph.DartAdj.edge_ne_iff`: two consecutive darts have different edges exactly when the
   second is not the reverse of the first.
 -/
@@ -67,6 +69,10 @@ theorem sum_dart_snd_eq_sum_neighborSet {M : Type*} [AddCommMonoid M] [Fintype G
     (fun w _ ↦ (G.dartOfNeighborSet v w).symm) (fun _ _ ↦ Finset.mem_univ _) (fun _ _ ↦ by simp)
     (fun d hd ↦ Dart.ext _ _ (Prod.ext rfl (Finset.mem_filter.1 hd).2.symm)) (fun _ _ ↦ rfl)
     (fun d hd ↦ congrArg f (Dart.ext _ _ (Prod.ext rfl (Finset.mem_filter.1 hd).2)))
+
+/-- A dart is the reversal of another exactly when the other is the reversal of the first. -/
+theorem Dart.eq_symm_comm {a b : G.Dart} : a = b.symm ↔ b = a.symm :=
+  Dart.symm_involutive.eq_iff.symm.trans eq_comm
 
 /-- Two consecutive darts have different edges exactly when the second is not the reverse of the
 first. -/
