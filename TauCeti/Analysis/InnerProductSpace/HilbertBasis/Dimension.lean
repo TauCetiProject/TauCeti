@@ -47,6 +47,18 @@ to linear isometric equivalence (`TauCeti.nonempty_linearIsometryEquiv_iff_lift_
 Hilbert spaces have Hilbert dimension `0`, a positive natural number, or `ℵ₀`, and every separable
 infinite-dimensional Hilbert space is unitarily isomorphic to `ℓ²(ℕ, 𝕜)`.
 
+The cardinality bound behind basis invariance only uses that `0` is the only vector orthogonal to
+every `c j`, so an orthonormal family is no larger than any infinite family `w` with that property
+(`Orthonormal.lift_mk_le_of_forall_inner_eq_zero`). Applied to the images `T (b i)` of a Hilbert
+basis under an operator `T : E →L[𝕜] F` with dense range, this shows that `T` does not increase the
+Hilbert dimension (`ContinuousLinearMap.lift_hilbertDim_le_of_denseRange`); in finite dimension
+such a `T` is onto. Hence Hilbert spaces that are isomorphic as topological vector spaces have the
+same Hilbert dimension (`ContinuousLinearEquiv.lift_hilbertDim_eq`), and so are unitarily
+isomorphic (`TauCeti.nonempty_continuousLinearEquiv_iff_lift_hilbertDim_eq`). Finally, Hilbert
+bases of a complete subspace `K` and of `Kᗮ` together form a Hilbert basis of `E`, so the Hilbert
+dimension is additive on orthogonal decompositions
+(`Submodule.hilbertDim_add_hilbertDim_orthogonal`).
+
 ## Main declarations
 
 * `HilbertBasis.separableSpace_iff_countable`: a space with a Hilbert basis `b` is separable iff
@@ -65,6 +77,14 @@ infinite-dimensional Hilbert space is unitarily isomorphic to `ℓ²(ℕ, 𝕜)`
   finite-dimensional Hilbert spaces.
 * `TauCeti.hilbertDim_le_aleph0_iff`, `TauCeti.hilbertDim_eq_aleph0_iff`: separability and
   countably infinite Hilbert dimension.
+* `Orthonormal.lift_mk_le_of_forall_inner_eq_zero`: an orthonormal family is no larger than any
+  infinite family to which only `0` is orthogonal.
+* `ContinuousLinearMap.lift_hilbertDim_le_of_denseRange`: monotonicity along operators with dense
+  range.
+* `ContinuousLinearEquiv.lift_hilbertDim_eq`,
+  `TauCeti.nonempty_continuousLinearEquiv_iff_lift_hilbertDim_eq`: invariance and classification up
+  to continuous linear equivalence.
+* `Submodule.hilbertDim_add_hilbertDim_orthogonal`: additivity on orthogonal decompositions.
 
 ## References
 
@@ -150,18 +170,40 @@ namespace Orthonormal
 
 variable {𝕜 : Type*} {E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
+/-- If `0` is the only vector orthogonal to every `w j`, then every member `v i` of an orthonormal
+family pairs nontrivially with at least one `w j`, so the supports of `i ↦ ⟪v i, w j⟫_𝕜` cover
+`ι`. -/
+theorem iUnion_support_inner_eq_univ_of_forall_inner_eq_zero {ι : Type*} {κ : Type*}
+    {v : ι → E} (hv : Orthonormal 𝕜 v) {w : κ → E}
+    (hw : ∀ x, (∀ j, ⟪x, w j⟫_𝕜 = 0) → x = 0) :
+    (⋃ j : κ, Function.support fun i : ι ↦ ⟪v i, w j⟫_𝕜) = Set.univ := by
+  refine Set.eq_univ_of_forall fun i ↦ Set.mem_iUnion.2 ?_
+  by_contra! h
+  exact hv.ne_zero i (hw _ fun j ↦ Function.notMem_support.1 (h j))
+
 /-- Every member `v i` of an orthonormal family pairs nontrivially with at least one member `c j` of
 any Hilbert basis of `E`, so the supports of `i ↦ ⟪v i, c j⟫_𝕜` cover `ι`. -/
 theorem iUnion_support_inner_eq_univ {ι : Type*} {κ : Type*} {v : ι → E}
     (hv : Orthonormal 𝕜 v) (c : HilbertBasis κ 𝕜 E) :
-    (⋃ j : κ, Function.support fun i : ι ↦ ⟪v i, c j⟫_𝕜) = Set.univ := by
-  refine Set.eq_univ_of_forall fun i ↦ Set.mem_iUnion.2 ?_
-  by_contra! h
-  have hrepr : c.repr (v i) = 0 := by
-    ext j
-    have hj : ⟪v i, c j⟫_𝕜 = 0 := Function.notMem_support.1 (h j)
-    rw [c.repr_apply_apply, ← inner_conj_symm, hj, map_zero, lp.coeFn_zero, Pi.zero_apply]
-  exact hv.ne_zero i (c.repr.map_eq_zero_iff.1 hrepr)
+    (⋃ j : κ, Function.support fun i : ι ↦ ⟪v i, c j⟫_𝕜) = Set.univ :=
+  hv.iUnion_support_inner_eq_univ_of_forall_inner_eq_zero
+    fun _ ↦ c.eq_zero_of_forall_inner_eq_zero
+
+/-- **Orthonormal families are no larger than infinite total families.** If `w` is an infinite
+family to which only `0` is orthogonal, then any orthonormal family `v` has lifted index
+cardinality at most that of `w`. -/
+theorem lift_mk_le_of_forall_inner_eq_zero {ι : Type u} {κ : Type v} [Infinite κ] {v : ι → E}
+    (hv : Orthonormal 𝕜 v) {w : κ → E} (hw : ∀ x, (∀ j, ⟪x, w j⟫_𝕜 = 0) → x = 0) :
+    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #κ := by
+  set s : κ → Set ι := fun j ↦ Function.support fun i : ι ↦ ⟪v i, w j⟫_𝕜
+  have hκ : ℵ₀ ≤ Cardinal.lift.{u} #κ := Cardinal.aleph0_le_lift.2 (Cardinal.aleph0_le_mk κ)
+  calc Cardinal.lift.{v} #ι = Cardinal.lift.{v} #(⋃ j : κ, s j) := by
+        rw [hv.iUnion_support_inner_eq_univ_of_forall_inner_eq_zero hw, Cardinal.mk_univ]
+    _ ≤ Cardinal.lift.{u} #κ * ⨆ j : κ, Cardinal.lift.{v} #(s j) := Cardinal.mk_iUnion_le_lift s
+    _ ≤ Cardinal.lift.{u} #κ * ℵ₀ := mul_le_mul_of_nonneg_left (ciSup_le fun j ↦
+          Cardinal.lift_le_aleph0.2 (Cardinal.le_aleph0_iff_set_countable.2
+            (hv.countable_support_inner_left (w j)))) zero_le
+    _ = Cardinal.lift.{u} #κ := Cardinal.mul_eq_left hκ hκ Cardinal.aleph0_ne_zero
 
 /-- Any orthonormal family in `E` has index cardinality at most that of any Hilbert basis of `E` in
 the same universe. -/
@@ -175,15 +217,8 @@ theorem mk_le {ι κ : Type u} {v : ι → E} (hv : Orthonormal 𝕜 v) (c : Hil
     rw [Cardinal.mk_fintype, Cardinal.mk_fintype, ← c.finrank_eq_card]
     exact mod_cast hv.linearIndependent.fintype_card_le_finrank
   · have : Infinite κ := not_finite_iff_infinite.1 hκ
-    set s : κ → Set ι := fun j ↦ Function.support fun i : ι ↦ ⟪v i, c j⟫_𝕜
-    calc #ι = #(Set.univ : Set ι) := Cardinal.mk_univ.symm
-      _ = #(⋃ j : κ, s j) := by rw [hv.iUnion_support_inner_eq_univ c]
-      _ ≤ #κ * ⨆ j : κ, #(s j) := Cardinal.mk_iUnion_le s
-      _ ≤ #κ * ℵ₀ := mul_le_mul_of_nonneg_left (ciSup_le fun j ↦
-          Cardinal.le_aleph0_iff_set_countable.2
-            (hv.countable_support_inner_left (c j))) zero_le
-      _ = #κ := Cardinal.mul_eq_left (Cardinal.aleph0_le_mk κ) (Cardinal.aleph0_le_mk κ)
-          Cardinal.aleph0_ne_zero
+    simpa using hv.lift_mk_le_of_forall_inner_eq_zero
+      fun _ ↦ c.eq_zero_of_forall_inner_eq_zero
 
 /-- Any orthonormal family `v : ι → E` has lifted index cardinality at most that of any Hilbert
 basis `c : HilbertBasis κ 𝕜 E`. -/
@@ -581,3 +616,116 @@ theorem nonempty_linearIsometryEquiv_of_separableSpace_of_not_finiteDimensional
 end Separable
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+/-- **Operators with dense range do not increase Hilbert dimension.** If `T : E →L[𝕜] F` has dense
+range, then the lifted Hilbert dimension of `F` is at most that of `E`. -/
+theorem lift_hilbertDim_le_of_denseRange {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    {T : E →L[𝕜] F} (hT : DenseRange T) :
+    Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) ≤ Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) := by
+  by_cases hE : FiniteDimensional 𝕜 E
+  · have hrange : LinearMap.range (T : E →ₗ[𝕜] F) = ⊤ := by
+      refine SetLike.coe_injective ?_
+      rw [Submodule.top_coe, ← (LinearMap.range (T : E →ₗ[𝕜] F)).isClosed_of_finiteDimensional
+        |>.closure_eq]
+      simpa [LinearMap.coe_range] using hT.closure_range
+    have : FiniteDimensional 𝕜 F :=
+      Module.Finite.of_surjective (T : E →ₗ[𝕜] F) (LinearMap.range_eq_top.1 hrange)
+    rw [TauCeti.hilbertDim_eq_finrank, TauCeti.hilbertDim_eq_finrank, Cardinal.lift_natCast,
+      Cardinal.lift_natCast, Nat.cast_le, ← finrank_top 𝕜 F, ← hrange]
+    exact LinearMap.finrank_range_le _
+  · obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+    obtain ⟨w', c, -⟩ := exists_hilbertBasis 𝕜 F
+    have : Infinite w := b.infinite_iff_not_finiteDimensional.2 hE
+    rw [b.hilbertDim_eq, c.hilbertDim_eq]
+    refine c.orthonormal.lift_mk_le_of_forall_inner_eq_zero (w := fun i ↦ T (b i)) fun x hx ↦ ?_
+    have h : (innerSL 𝕜 x).comp T = 0 := b.ext_continuousLinearMap fun i ↦ by
+      simpa [innerSL_apply_apply] using hx i
+    exact hT.eq_zero_of_inner_left 𝕜 fun y ↦ by
+      simpa [innerSL_apply_apply] using DFunLike.congr_fun h y
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+/-- **Invariance of Hilbert dimension.** Hilbert spaces that are isomorphic as topological vector
+spaces have equal lifted Hilbert dimensions. -/
+theorem lift_hilbertDim_eq {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (e : E ≃L[𝕜] F) :
+    Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) = Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) :=
+  le_antisymm
+    (ContinuousLinearMap.lift_hilbertDim_le_of_denseRange (T := (e.symm : F →L[𝕜] E))
+      e.symm.surjective.denseRange)
+    (ContinuousLinearMap.lift_hilbertDim_le_of_denseRange (T := (e : E →L[𝕜] F))
+      e.surjective.denseRange)
+
+/-- Hilbert spaces in the same universe that are isomorphic as topological vector spaces have equal
+Hilbert dimensions. -/
+theorem hilbertDim_eq {𝕜 : Type*} {E F : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (e : E ≃L[𝕜] F) :
+    TauCeti.hilbertDim 𝕜 E = TauCeti.hilbertDim 𝕜 F := by
+  simpa using e.lift_hilbertDim_eq
+
+end ContinuousLinearEquiv
+
+namespace TauCeti
+
+/-- Two Hilbert spaces over `𝕜` are isomorphic as topological vector spaces if and only if their
+lifted Hilbert dimensions are equal. By
+`TauCeti.nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq`, this happens exactly when they are
+unitarily equivalent. -/
+theorem nonempty_continuousLinearEquiv_iff_lift_hilbertDim_eq {𝕜 : Type*} {E : Type u}
+    {F : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] :
+    Nonempty (E ≃L[𝕜] F) ↔
+      Cardinal.lift.{v} (hilbertDim 𝕜 E) = Cardinal.lift.{u} (hilbertDim 𝕜 F) :=
+  ⟨fun ⟨e⟩ ↦ e.lift_hilbertDim_eq, fun h ↦
+    let ⟨e⟩ := nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq.2 h
+    ⟨e.toContinuousLinearEquiv⟩⟩
+
+end TauCeti
+
+namespace Submodule
+
+/-- **Hilbert dimension of an orthogonal decomposition.** For a complete subspace `K` of a Hilbert
+space `E`, the Hilbert dimensions of `K` and `Kᗮ` add up to that of `E`. -/
+theorem hilbertDim_add_hilbertDim_orthogonal {𝕜 : Type*} {E : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    (K : Submodule 𝕜 E) [CompleteSpace K] :
+    TauCeti.hilbertDim 𝕜 K + TauCeti.hilbertDim 𝕜 Kᗮ = TauCeti.hilbertDim 𝕜 E := by
+  obtain ⟨w₁, b₁, -⟩ := exists_hilbertBasis 𝕜 K
+  obtain ⟨w₂, b₂, -⟩ := exists_hilbertBasis 𝕜 Kᗮ
+  let v : w₁ ⊕ w₂ → E := Sum.elim (fun i ↦ (b₁ i : E)) fun j ↦ (b₂ j : E)
+  have hv : Orthonormal 𝕜 v := by
+    classical
+    have h₁ := orthonormal_iff_ite.1 b₁.orthonormal
+    have h₂ := orthonormal_iff_ite.1 b₂.orthonormal
+    refine orthonormal_iff_ite.2 ?_
+    rintro (i | i) (j | j)
+    · simpa [v, Submodule.coe_inner] using h₁ i j
+    · simpa [v] using K.inner_right_of_mem_orthogonal (b₁ i).property (b₂ j).property
+    · simpa [v] using K.inner_left_of_mem_orthogonal (b₁ j).property (b₂ i).property
+    · simpa [v, Submodule.coe_inner] using h₂ i j
+  have hsp : (span 𝕜 (Set.range v))ᗮ = ⊥ := by
+    refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
+    have h : ∀ i, ⟪x, v i⟫_𝕜 = 0 := fun i ↦
+      inner_eq_zero_symm.1 ((Submodule.mem_orthogonal _ x).1 hx _ (subset_span ⟨i, rfl⟩))
+    have hxK : x ∈ Kᗮ := (K.mem_orthogonal' x).2 fun u hu ↦
+      b₁.inner_eq_zero_of_forall_inner_eq_zero (fun i ↦ h (.inl i)) hu
+    have hxK' : x ∈ K := by
+      rw [← K.orthogonal_orthogonal]
+      exact (Kᗮ.mem_orthogonal' x).2 fun u hu ↦
+        b₂.inner_eq_zero_of_forall_inner_eq_zero (fun j ↦ h (.inr j)) hu
+    exact inner_self_eq_zero.1 (K.inner_right_of_mem_orthogonal hxK' hxK)
+  rw [b₁.hilbertDim_eq, b₂.hilbertDim_eq, (HilbertBasis.mkOfOrthogonalEqBot hv hsp).hilbertDim_eq,
+    Cardinal.add_def]
+
+end Submodule
