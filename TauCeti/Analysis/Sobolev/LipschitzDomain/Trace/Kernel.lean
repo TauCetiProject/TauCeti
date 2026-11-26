@@ -86,11 +86,8 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (hp : 
     (W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero hp _ _).2
       (by rwa [W1p.lipschitzChartTrace_apply] at hu)
   -- Return to the original coordinates, on the chart epigraph `V = e⁻¹' G`.
-  have hVG : (V : Set (WithLp 2 (ℝ × E))) = e ⁻¹' (G : Set (WithLp 2 (ℝ × E))) := by
-    exact Set.ext fun x => by
-      simp [V, G, coe_normalEpigraph_eq_preimage e h.lipschitzWith.continuous]
-  let w' := W1p.compAffineIsometryEquivL e hVG w
-  have hw' : w' ∈ w1p0Submodule volume V p :=
+  have hVG := coe_chartEpigraph e h.lipschitzWith.continuous
+  have hw' : W1p.compAffineIsometryEquivL e hVG w ∈ w1p0Submodule volume V p :=
     W1p.compAffineIsometryEquivL_mem_w1p0Submodule e hVG hw
   -- A cutoff `χ`, equal to one near `tsupport ψ` and supported in the chart cylinder.
   have hK : IsCompact (tsupport ψ) :=
@@ -99,41 +96,13 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (hp : 
   obtain ⟨χ, N, hχ, -, hχ1, -, hχs, hN, hχN, hgN⟩ :=
     hK.exists_contDiff_cutoff_with_bounds
       ((isOpen_normalCylinder (E := E) a b).preimage e.continuous) hs
-  -- Inside the cylinder `Ω` and `V` agree, so `χ` carries `w'` from `W^{1,p}_0(V)` to
-  -- `W^{1,p}_0(Ω)`.
-  have hmem := W1p.localizeL_restrictL_mem_w1p0Submodule (Ω := V) (V := Ω)
+  -- Inside the cylinder `Ω` and `V` agree, so `χ` carries `w'` from `W^{1,p}_0(V)` back to `ψ u`
+  -- in `W^{1,p}_0(Ω)`.
+  rw [← W1p.localizeL_restrictL_compAffineIsometryEquivL_lipschitzChartLocalizeL h hψ hM hψM hgM
+    hs hχ hN hχN hgN hχs (fun x hx => interior_subset (hχ1 hx)) u]
+  exact W1p.localizeL_restrictL_mem_w1p0Submodule (Ω := V) (V := Ω)
     hχ hN (fun x _ => hχN x) (fun x _ => hgN x)
     (inter_tsupport_subset_chartEpigraph h hχs) (chartEpigraph_inter_tsupport_subset h hχs) hw'
-  convert hmem using 1
-  -- Both sides are `ψ u` on `Ω`.
-  refine W1p.ext_value (Lp.ext ?_)
-  have hwG := (ae_restrict_iff' G.isOpen.measurableSet).1
-    (W1p.value_lipschitzChartLocalizeL_ae h hψ hM hψM hgM hs u)
-  have hwV : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))), x ∈ V →
-      W1p.value w (e x) = (Ω : Set _).indicator (fun y => ψ y • W1p.value u y) x := by
-    filter_upwards [e.measurePreserving.quasiMeasurePreserving.ae hwG] with x hx hxV
-    simpa using hx (hVG.subset hxV)
-  have hw'V := (ae_restrict_iff' V.isOpen.measurableSet).1
-    (W1p.value_compAffineIsometryEquivL_ae e hVG w)
-  have hres := (ae_restrict_iff' (V ⊓ Ω).isOpen.measurableSet).1
-    (W1p.value_restrictL_ae (inf_le_left : V ⊓ Ω ≤ V) w')
-  filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM hgM u,
-    W1p.value_localizeL_ae (inf_le_right : V ⊓ Ω ≤ Ω) hχ hN (fun x _ => hχN x)
-      (fun x _ => hgN x) (fun _ hx => ⟨inter_tsupport_subset_chartEpigraph h hχs hx, hx.1⟩)
-      (W1p.restrictL inf_le_left w'),
-    ae_restrict_of_ae hwV, ae_restrict_of_ae hw'V, ae_restrict_of_ae hres,
-    ae_restrict_mem Ω.isOpen.measurableSet] with x hx hloc hwx hw'x hresx hxΩ
-  rw [hx, hloc]
-  by_cases hxV : x ∈ V
-  · have hxVΩ : x ∈ ((V ⊓ Ω : Opens _) : Set (WithLp 2 (ℝ × E))) := ⟨hxV, hxΩ⟩
-    rw [indicator_of_mem hxVΩ, hresx hxVΩ, hw'x hxV, hwx hxV, indicator_of_mem hxΩ]
-    by_cases hxψ : x ∈ tsupport ψ
-    · rw [interior_subset (hχ1 hxψ), one_smul]
-    · simp [image_eq_zero_of_notMem_tsupport hxψ]
-  · have hxψ : x ∉ tsupport ψ := fun hxψ =>
-      hxV (inter_tsupport_subset_chartEpigraph h hs ⟨hxΩ, hxψ⟩)
-    have hxVΩ : x ∉ ((V ⊓ Ω : Opens _) : Set (WithLp 2 (ℝ × E))) := fun hx => hxV hx.1
-    rw [indicator_of_notMem hxVΩ, image_eq_zero_of_notMem_tsupport hxψ, zero_smul]
 
 end Chart
 

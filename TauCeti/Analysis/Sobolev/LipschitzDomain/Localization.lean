@@ -19,6 +19,12 @@ chart boundary, and transports it to the whole epigraph of the chart graph. Its 
 This is the common localization step for chart trace and reflection extension operators.
 The support need only lie in the original chart cylinder.
 
+Conversely, pulling the localized function back along the chart and localizing it to `Ω` with a
+second cutoff, supported in the chart cylinder and equal to one on the support of `ψ`, recovers
+`ψ u` (`TauCeti.W1p.localizeL_restrictL_compAffineIsometryEquivL_lipschitzChartLocalizeL`). This is
+how a property of the localized function proved in chart coordinates, such as vanishing on the
+boundary or on a part of it, returns to `ψ u` on `Ω`.
+
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §§5.4–5.5.
@@ -109,6 +115,60 @@ theorem W1p.value_lipschitzChartLocalizeL_ae
     rw [indicator_of_mem hzU, indicator_of_mem hzΩ, huz hzU]
   · have hzU : e.symm z ∉ (Ω ⊓ V : Opens (WithLp 2 (ℝ × E))) := fun hx => hzΩ hx.1
     rw [indicator_of_notMem hzU, indicator_of_notMem hzΩ]
+
+/-- **Undoing chart localization.** Pull the chart localization of `u` back along the chart to the
+chart epigraph `V`, and localize it to `Ω` with a cutoff `χ` supported in the chart cylinder and
+equal to one on the support of `ψ`. The result is `ψ u`: inside the cylinder `Ω` and `V` agree. -/
+theorem W1p.localizeL_restrictL_compAffineIsometryEquivL_lipschitzChartLocalizeL
+    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
+    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {χ : WithLp 2 (ℝ × E) → ℝ} {N : ℝ}
+    (hχ : ContDiff ℝ ∞ χ) (hN : 0 ≤ N) (hχN : ∀ x, |χ x| ≤ N) (hgN : ∀ x, ‖∇ χ x‖ ≤ N)
+    (hχs : tsupport χ ⊆ e ⁻¹' normalCylinder a b) (hχ1 : ∀ x ∈ tsupport ψ, χ x = 1)
+    (u : W1p volume Ω p) :
+    W1p.localizeL (inf_le_right : chartEpigraph e h.lipschitzWith.continuous ⊓ Ω ≤ Ω) χ hχ hN
+      (fun x _ => hχN x) (fun x _ => hgN x)
+      (fun _ hx => ⟨inter_tsupport_subset_chartEpigraph h hχs hx, hx.1⟩)
+      (W1p.restrictL inf_le_left (W1p.compAffineIsometryEquivL e
+        (coe_chartEpigraph e h.lipschitzWith.continuous)
+        (W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u))) =
+      W1p.contDiffSMul ψ hψ hM hψM hgM u := by
+  let V := chartEpigraph e h.lipschitzWith.continuous
+  let G := normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩
+  let w := W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u
+  have hVG := coe_chartEpigraph e h.lipschitzWith.continuous
+  let w' := W1p.compAffineIsometryEquivL e hVG w
+  refine W1p.ext_value (Lp.ext ?_)
+  -- In chart coordinates `w` is `ψ u` on `Ω` and zero elsewhere, so the same holds for `w'` on `V`.
+  have hwG := (ae_restrict_iff' G.isOpen.measurableSet).1
+    (W1p.value_lipschitzChartLocalizeL_ae h hψ hM hψM hgM hs u)
+  have hwV : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))), x ∈ V →
+      W1p.value w (e x) = (Ω : Set _).indicator (fun y => ψ y • W1p.value u y) x := by
+    filter_upwards [e.measurePreserving.quasiMeasurePreserving.ae hwG] with x hx hxV
+    simpa using hx (hVG.subset hxV)
+  have hw'V := (ae_restrict_iff' V.isOpen.measurableSet).1
+    (W1p.value_compAffineIsometryEquivL_ae e hVG w)
+  have hres := (ae_restrict_iff' (V ⊓ Ω).isOpen.measurableSet).1
+    (W1p.value_restrictL_ae (inf_le_left : V ⊓ Ω ≤ V) w')
+  filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM hgM u,
+    W1p.value_localizeL_ae (inf_le_right : V ⊓ Ω ≤ Ω) hχ hN (fun x _ => hχN x)
+      (fun x _ => hgN x) (fun _ hx => ⟨inter_tsupport_subset_chartEpigraph h hχs hx, hx.1⟩)
+      (W1p.restrictL inf_le_left w'),
+    ae_restrict_of_ae hwV, ae_restrict_of_ae hw'V, ae_restrict_of_ae hres,
+    ae_restrict_mem Ω.isOpen.measurableSet] with x hx hloc hwx hw'x hresx hxΩ
+  rw [hx, hloc]
+  -- Off `V` the cutoff `ψ` vanishes; on `V`, `χ ψ = ψ`.
+  by_cases hxV : x ∈ V
+  · have hxVΩ : x ∈ ((V ⊓ Ω : Opens _) : Set (WithLp 2 (ℝ × E))) := ⟨hxV, hxΩ⟩
+    rw [indicator_of_mem hxVΩ, hresx hxVΩ, hw'x hxV, hwx hxV, indicator_of_mem hxΩ]
+    by_cases hxψ : x ∈ tsupport ψ
+    · rw [hχ1 x hxψ, one_smul]
+    · simp [image_eq_zero_of_notMem_tsupport hxψ]
+  · have hxψ : x ∉ tsupport ψ := fun hxψ =>
+      hxV (inter_tsupport_subset_chartEpigraph h hs ⟨hxΩ, hxψ⟩)
+    have hxVΩ : x ∉ ((V ⊓ Ω : Opens _) : Set (WithLp 2 (ℝ × E))) := fun hx => hxV hx.1
+    rw [indicator_of_notMem hxVΩ, image_eq_zero_of_notMem_tsupport hxψ, zero_smul]
 
 /-- Chart localization multiplies the Sobolev norm by at most `2 M`, independently of the
 Lipschitz constant of the graph. -/
