@@ -17,12 +17,16 @@ normed field. A topological module over `A` has no proper submodule with nonempt
 theorem then shows that countably many proper closed submodules never cover the whole module.
 This is the form in which Baire category enters gliding-hump arguments that choose a vector
 avoiding countably many closed subspaces at once, such as the inductive constructions used for
-separating ideals of Banach algebras.
+separating ideals of Banach algebras. The vectors avoiding such a family are moreover dense, so
+they can be chosen near any given vector, for instance as generic elements approximating a
+degenerate one.
 
 ## Main results
 
 * `Submodule.exists_forall_notMem_of_isClosed`: a Baire topological module is not the union of
   countably many proper closed submodules.
+* `Submodule.dense_setOf_forall_notMem_of_isClosed`: the vectors outside countably many proper
+  closed submodules are dense.
 -/
 
 public section
@@ -35,14 +39,22 @@ variable {A M ι : Type*} [Ring A] [TopologicalSpace A] [NeBot (𝓝[{x : A | Is
   [AddCommGroup M] [Module A M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul A M]
   [BaireSpace M] [Countable ι]
 
+/-- **Vectors avoiding countably many proper closed submodules are dense.** Over a ring in which
+zero is a limit of units, the vectors of a Baire topological module lying outside each member of
+a countable family of proper closed submodules form a dense set. -/
+theorem dense_setOf_forall_notMem_of_isClosed (p : ι → Submodule A M)
+    (hc : ∀ i, IsClosed (p i : Set M)) (hp : ∀ i, p i ≠ ⊤) : Dense {x : M | ∀ i, x ∉ p i} := by
+  rw [show {x : M | ∀ i, x ∉ p i} = ⋂ i, (p i : Set M)ᶜ by ext; simp]
+  -- Each complement is open, and dense because a proper submodule has empty interior.
+  refine dense_iInter_of_isOpen (fun i ↦ (hc i).isOpen_compl) fun i ↦
+    interior_eq_empty_iff_dense_compl.1 (Set.not_nonempty_iff_eq_empty.1 fun hi ↦ ?_)
+  exact hp i ((p i).eq_top_of_nonempty_interior' hi)
+
 /-- **A Baire module is not a countable union of proper closed submodules.** Over a ring in
 which zero is a limit of units, some vector of a Baire topological module lies outside each
 member of a countable family of proper closed submodules. -/
 theorem exists_forall_notMem_of_isClosed (p : ι → Submodule A M)
-    (hc : ∀ i, IsClosed (p i : Set M)) (hp : ∀ i, p i ≠ ⊤) : ∃ x : M, ∀ i, x ∉ p i := by
-  by_contra! h
-  obtain ⟨i, hi⟩ := nonempty_interior_of_iUnion_of_closed hc
-    (Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr (h x))
-  exact hp i ((p i).eq_top_of_nonempty_interior' hi)
+    (hc : ∀ i, IsClosed (p i : Set M)) (hp : ∀ i, p i ≠ ⊤) : ∃ x : M, ∀ i, x ∉ p i :=
+  (dense_setOf_forall_notMem_of_isClosed p hc hp).nonempty
 
 end Submodule

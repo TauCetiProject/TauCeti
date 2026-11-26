@@ -26,7 +26,8 @@ on `H^q(W, M)` (`TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`), so `H^q_Z(
 (`Scheme.Modules.cohomologyWithSupportZeroLinearEquiv`); it vanishes when `W` does not meet `Z`
 (`Scheme.Modules.subsingleton_cohomologyWithSupport_of_le_compl`), in particular for `Z = ∅`, and
 it is `H^q(W, M)` when `W ⊆ Z` (`Scheme.Modules.cohomologyWithSupportLinearEquivOfSubset`), in
-particular for `Z = X`. The long exact sequence of supports
+particular for `Z = X`, where in degree zero it is the module of global sections
+(`Scheme.Modules.cohomologyWithSupportZeroLinearEquivOfEqUniv`). The long exact sequence of supports
 
 `⋯ ⟶ H^q_Z(W, M) ⟶ H^q(W, M) ⟶ H^q(W ∖ Z, M) ⟶ H^{q+1}_Z(W, M) ⟶ ⋯`
 
@@ -43,6 +44,8 @@ is an exact sequence of `Γ(X, 𝒪_X)`-modules (Stacks, Tag 0G6Y), with the coh
   `W ∩ Z = ∅`.
 * `Scheme.Modules.cohomologyWithSupportLinearEquivOfSubset`: `H^q_Z(W, M) ≃ₗ H^q(W, M)` when
   `W ⊆ Z`, for instance `H^q_X(W, M) ≃ₗ H^q(W, M)`.
+* `Scheme.Modules.cohomologyWithSupportZeroLinearEquivOfEqUniv`: `H⁰_Z(X, M) ≃ₗ Γ(X, M)` when
+  `Z = X`.
 * `Scheme.Modules.cohomologyWithSupportToCohomologyOn`, `Scheme.Modules.cohomologyWithSupportδ`:
   the linear maps of the long exact sequence of supports, whose exactness is
   `Scheme.Modules.exact_cohomologyWithSupportToCohomologyOn_cohomologyOnResLinear`,
@@ -215,6 +218,21 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportLinearEquivOf
     {W : X.Opens} (hW : (W : Set X) ⊆ Z) (q : ℕ) (x : M.cohomologyWithSupport Z W q) :
     M.cohomologyWithSupportLinearEquivOfSubset Z hW q x =
       M.cohomologyWithSupportToCohomologyOn Z W q x :=
+  (rfl)
+
+/-- Degree-zero cohomology with supports in a closed subset `Z` equal to the whole scheme is the
+module of global sections: `H⁰_X(X, M) ≃ₗ Γ(X, M)`, linearly over global functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportZeroLinearEquivOfEqUniv
+    (hZ : (Z : Set X) = Set.univ) : M.cohomologyWithSupport Z ⊤ 0 ≃ₗ[Γ(X, ⊤)] Γ(M, ⊤) :=
+  (M.cohomologyWithSupportLinearEquivOfSubset Z (hZ ▸ Set.subset_univ _) 0).trans
+    ((M.cohomologyOnTopLinearEquiv 0).trans M.cohomologyZeroLinearEquiv)
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportZeroLinearEquivOfEqUniv_apply
+    (hZ : (Z : Set X) = Set.univ) (x : M.cohomologyWithSupport Z ⊤ 0) :
+    M.cohomologyWithSupportZeroLinearEquivOfEqUniv Z hZ x =
+      M.cohomologyZeroLinearEquiv
+        (M.cohomologyOnTopLinearEquiv 0 (M.cohomologyWithSupportToCohomologyOn Z ⊤ 0 x)) :=
   (rfl)
 
 /-- The connecting map `H^q(W ∖ Z, M) ⟶ H^{q+1}_Z(W, M)` of the long exact sequence of supports,
