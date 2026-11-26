@@ -9,11 +9,13 @@ public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.AlgebraicTopology.Singular.Torus.AddCircle
+public import TauCeti.Geometry.Manifold.Morse.FundamentalGroup
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Polynomial
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Morse.Torus
+import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Classification
 
 /-!
 # Perfect Morse functions
@@ -52,13 +54,19 @@ perfect Morse function exists depends on the coefficients, as projective spaces 
   critical point of each index `0, …, N`, and `Hⱼ(ℝPᴺ; k)` is one-dimensional for `j ≤ N` when
   `2 = 0` in `k`. So the moment function is perfect over `ℤ/2`
   (`TauCeti.isPerfectMorse_projectiveMomentFunction_real`).
-* **No perfect Morse function over `ℚ`.** Every Morse function on a nonempty compact manifold of
-  dimension `m` has a critical point of index `m`, at a point of maximum
+* **Obstructions from the top homology and from loops.** Every Morse function on a nonempty
+  compact manifold of dimension `m` has a critical point of index `m`, at a point of maximum
   (`TauCeti.IsMorse.criticalCount_finrank_ne_zero`), so a perfect Morse function forces the top
   homology to be nonzero (`TauCeti.IsPerfectMorse.finrank_singularHomology_finrank_ne_zero`).
-  For even `N ≥ 2` the top homology `H_N(ℝPᴺ; k)` vanishes as soon as `2 ≠ 0` in `k`. So no
-  Morse function on `ℝPᴺ`, for instance on `ℝP²`, is perfect over `ℚ`, or over any division ring
-  of characteristic other than `2` (`TauCeti.not_isPerfectMorse_projectivization_real`). On `ℝP²`
+  Likewise every Morse function on a compact manifold with a nontrivial fundamental group has a
+  critical point of index one (`TauCeti.IsMorse.criticalCount_one_ne_zero`), so a perfect Morse
+  function forces `H₁(M; k) ≠ 0` (`TauCeti.IsPerfectMorse.finrank_singularHomology_one_ne_zero`):
+  a nontrivial fundamental group with vanishing first Betti number obstructs perfection.
+* **No perfect Morse function on `ℝPᴺ` over `ℚ`.** For `N ≥ 2` the fundamental group of `ℝPᴺ`
+  has order two, while `H₁(ℝPᴺ; k) = 0` as soon as `2 ≠ 0` in `k`. So no Morse function on `ℝPᴺ`,
+  for instance on `ℝP²`, is perfect over `ℚ`, or over any division ring of characteristic other
+  than `2` (`TauCeti.not_isPerfectMorse_projectivization_real`). For odd `N` the top homology
+  `H_N(ℝPᴺ; k)` is one-dimensional and does not see this; only the loops do. On `ℝP²`
   the moment function with three distinct weights has three critical points, of indices `0`, `1`
   and `2`; the Betti numbers are `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`. Over `ℚ` its Morse
   polynomial is `Q = t`: `1 + t + t² = 1 + (1 + t) t`. On `ℝPⁿ`, away from characteristic two, it
@@ -240,6 +248,22 @@ theorem IsPerfectMorse.finrank_singularHomology_finrank_ne_zero [Nonempty M]
   rw [hf.criticalCount_eq] at h
   exact_mod_cast h
 
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+  {k : Type u} [DivisionRing k] in
+/-- **A nontrivial fundamental group obstructs perfection.** If a manifold whose fundamental group
+is nontrivial at some basepoint carries a perfect Morse function `f` with coefficients in `k`, and
+`f` is proper and bounded below, for instance on a compact manifold, then `H₁(M; k) ≠ 0`: such a
+Morse function has a critical point of index one (`TauCeti.IsMorse.criticalCount_one_ne_zero`).
+So a compact manifold with a nontrivial fundamental group and vanishing first Betti number over
+`k`, such as `ℝPⁿ` for `n ≥ 2` over `ℚ`, has no perfect Morse function over `k`. -/
+theorem IsPerfectMorse.finrank_singularHomology_one_ne_zero (hf : IsPerfectMorse I k f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) (x : M) [Nontrivial (FundamentalGroup M x)] :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) 1).obj
+      (ModuleCat.of k k)).obj (TopCat.of M)) ≠ 0 := by
+  have h := hf.isMorse.criticalCount_one_ne_zero hp hbdd x
+  rw [hf.criticalCount_eq] at h
+  exact_mod_cast h
+
 /-! ### Zero-dimensional and empty manifolds -/
 
 section Discrete
@@ -317,19 +341,20 @@ theorem isPerfectMorse_projectiveMomentFunction_real (hw : Function.Injective w)
     RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero h2 j]
   simp
 
-/-- **No perfect Morse function on `ℝPᴺ` outside characteristic two.** For even `N ≥ 2`, no Morse
+/-- **No perfect Morse function on `ℝPᴺ` outside characteristic two.** For `N ≥ 2`, no Morse
 function on `ℝPᴺ` is perfect with coefficients in a division ring in which `2 ≠ 0`, such as `ℚ`:
-its maximum is a critical point of index `N`, while `H_N(ℝPᴺ; k) = 0`. In particular `ℝP²`
-admits no perfect Morse function over `ℚ`. -/
-theorem not_isPerfectMorse_projectivization_real (hn : Even n) (hn0 : n ≠ 0) {k : Type}
-    [DivisionRing k] (h2 : (2 : k) ≠ 0) (f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ) :
+the fundamental group of `ℝPᴺ` is nontrivial, so every Morse function has a critical point of
+index one, while `H₁(ℝPᴺ; k) = 0`. In particular `ℝP²` admits no perfect Morse function over `ℚ`. -/
+theorem not_isPerfectMorse_projectivization_real (hn : 2 ≤ n) {k : Type} [DivisionRing k]
+    (h2 : (2 : k) ≠ 0) (f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ) :
     ¬ IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k f := by
   intro hf
-  have h := hf.finrank_singularHomology_finrank_ne_zero
-  rw [finrank_fin_fun, ModuleCat.finrank_eq_zero_of_isZero
-    (RealProjectiveSpace.isZero_singularHomology_projectivization_of_even k
-      (isRegular_iff_ne_zero.2 h2).right hn hn0)] at h
-  exact h rfl
+  let x : ℙ ℝ (Fin (n + 1) → ℝ) := Projectivization.mk ℝ (Pi.single 0 1) (by simp)
+  have := RealProjectiveSpace.nontrivial_fundamentalGroup_projectivization (by omega) x
+  have hc := hf.isMorse.contMDiff.continuous
+  have h := hf.finrank_singularHomology_one_ne_zero hc.isProperMap (isCompact_range hc).bddBelow x
+  rw [RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero h2] at h
+  exact h (ite_eq_right_iff.2 fun h₁ ↦ by obtain h₁ | ⟨rfl, -⟩ := h₁ <;> omega)
 
 /-- **The Morse polynomial of the moment function on `ℝPⁿ` away from characteristic two.** For
 pairwise distinct weights and a division ring `k` in which `2 ≠ 0`, such as `ℚ`, the moment
