@@ -156,9 +156,8 @@ theorem accumulatedEnergy_finiteEnergyCutoff_le (μ : Measure ℝ≥0)
   simp only [finiteEnergyCutoff_def]
   split_ifs <;> simp
 
-/-- Product-space L² convergence implies uniform convergence in outer probability of
-accumulated square energies over all times. For each sufficiently late integrand, the energies
-are finite at all times on a set of full sample measure. -/
+/-- Product-space L² convergence implies uniform convergence in outer probability over all
+times of the real-valued accumulated square energies obtained via `ENNReal.toReal`. -/
 theorem tendsto_measure_exists_eNorm_toReal_accumulatedEnergy_sub_gt {K : Type*}
     [MeasurableSpace Ω] {μ : Measure ℝ≥0} {P : Measure Ω} [SFinite μ] [SFinite P]
     {H : ℝ≥0 → Ω → E} {F : K → ℝ≥0 → Ω → E} {l : Filter K}
