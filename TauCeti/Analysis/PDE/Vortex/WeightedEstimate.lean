@@ -631,6 +631,46 @@ private theorem card_toFinset_le_of_tendsto {m : ℕ} {D : Multiset ℂ}
     (hD : IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z)) : D.toFinset.card ≤ m :=
   (Multiset.toFinset_card_le D).trans (hD.card_eq_of_tendsto_mul_inv_pow hframe).le
 
+/-- An angle cutoff `θ₀` with gradient at most `ε` that equals `π / 2` near every `t` with
+`R₂ < |t|`, composed with `Φ - s₀` for a differentiable `Φ` with gradient at most one, has
+gradient at most `ε` and equals `π / 2` near every `z` with `R₂ < Φ z - s₀`. -/
+private theorem norm_fderiv_comp_sub_le_and_eventuallyEq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {θ₀ : ℝ → ℝ} {Φ : E → ℝ} {ε R₂ : ℝ} (s₀ : ℝ) (hθ₀ : Differentiable ℝ θ₀)
+    (hΦ : Differentiable ℝ Φ) (hθ₀out : ∀ t, R₂ < ‖t‖ → θ₀ =ᶠ[𝓝 t] fun _ ↦ π / 2)
+    (hθ₀d : ∀ t, ‖fderiv ℝ θ₀ t‖ ≤ ε) (hΦd : ∀ z, ‖fderiv ℝ Φ z‖ ≤ 1) :
+    (∀ z, ‖fderiv ℝ (fun t ↦ θ₀ (Φ t - s₀)) z‖ ≤ ε) ∧
+      ∀ z, R₂ < Φ z - s₀ → (fun t ↦ θ₀ (Φ t - s₀)) =ᶠ[𝓝 z] fun _ ↦ π / 2 := by
+  refine ⟨fun z ↦ ?_, fun z hz ↦ ?_⟩
+  · have hd : HasFDerivAt (fun t ↦ θ₀ (Φ t - s₀))
+        ((fderiv ℝ θ₀ (Φ z - s₀)).comp (fderiv ℝ Φ z)) z :=
+      (hθ₀ _).hasFDerivAt.comp z ((hΦ z).hasFDerivAt.sub_const s₀)
+    rw [hd.fderiv]
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    simpa using mul_le_mul (hθ₀d _) (hΦd z) (norm_nonneg _) ((norm_nonneg _).trans (hθ₀d 0))
+  · exact ((hΦ z).sub_const s₀).continuousAt.eventually (hθ₀out _ (hz.trans_le (le_abs_self _)))
+
+/-- At a vortex with the degree-`m` end framing and zero divisor `D`, let `16 m < C`, `a < 1 / 4`
+and `ρ = √(m C / (1 - 4a))`. Wherever the soft distance to the zeros differs from `√b + ρ` by more
+than `ρ + log m`, every zero is at distance at least `ρ` and the mass `|α|² / 4` is at least `a`. -/
+private theorem le_mass_of_lt_abs_softMinDist_sub (hx : ContDiff ℝ ∞ x)
+    (hsol : ∀ z, equation x z = 0) {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z)) {C a b : ℝ}
+    (hC : 16 * (m : ℝ) < C) (ha : 0 < 1 - 4 * a) {z : ℂ}
+    (hz : √(m * C / (1 - 4 * a)) + Real.log m <
+      |softMinDist b D.toFinset z - (√b + √(m * C / (1 - 4 * a)))|) :
+    a ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
+  have := one_sub_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD hC ha (z := z) fun a' ha' ↦ by
+    have hs : D.toFinset.Nonempty := ⟨a', Multiset.mem_toFinset.2 ha'⟩
+    -- The soft distance is at least `√b - log m`, so it exceeds `√b + ρ`.
+    have h₁ := sqrt_sub_log_card_le_softMinDist (b := b) (z := z) hs
+    have hk : Real.log D.toFinset.card ≤ Real.log m := Real.log_le_log
+      (by exact_mod_cast hs.card_pos) (by exact_mod_cast card_toFinset_le_of_tendsto hframe hD)
+    refine le_norm_sub_of_sqrt_add_le_softMinDist (b := b) ?_ (Multiset.mem_toFinset.2 ha')
+    rcases lt_abs.1 hz with h | h <;>
+      linarith [Real.sqrt_nonneg (m * C / (1 - 4 * a)), Real.log_natCast_nonneg m]
+  linarith
+
 /-- **Weighted coercivity of `L_x L_x*` with weights centred on the zeros.** For every degree `m`
 and `|c| < 1/2` there are `b > 0` and `δ > 0` such that every smooth vortex `x` with the
 degree-`m` end framing and zero divisor `D` satisfies `δ ∫ V² |η|² ≤ ∫ V² ⟪L_x L_x* η, η⟫` for
@@ -646,15 +686,10 @@ theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le (m 
       δ * (∫ z, Real.exp (c * softMinDist b D.toFinset z) ^ 2 * ‖η z‖ ^ 2 ∂μ) ≤
         ∫ z, Real.exp (c * softMinDist b D.toFinset z) ^ 2 *
           ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ := by
-  -- The spectral gap of `L_x L_x*` is uniform over the moduli space, and so is the radius beyond
-  -- which the zeros no longer reduce the mass. The weight is nearly flat where `Φ` is small, which
-  -- includes a neighbourhood of every zero of fixed size; there the spectral gap absorbs its
-  -- gradient. Where `Φ` is large every point is far from every zero, and the exterior mass
-  -- `a > c²` absorbs it. The angle of the localization is a function of `Φ`, so its gradient is
-  -- small as well.
+  -- The weight is nearly flat near every zero, where the uniform spectral gap absorbs its
+  -- gradient. Where the angle `θ₀ (Φ - s₀)` is nonzero, the exterior mass `a > c²` absorbs it.
   have hc2 : c ^ 2 < 1 / 4 := by nlinarith [sq_abs c, abs_nonneg c]
   set a : ℝ := (c ^ 2 + 1 / 4) / 2
-  have ha : a ≤ 1 / 4 := by simp only [a]; linarith
   have hca : c ^ 2 < a := by simp only [a]; linarith
   obtain ⟨c₀, hc₀, hgap⟩ :=
     exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) m
@@ -667,75 +702,39 @@ theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le (m 
   set ρ : ℝ := √(m * C / (1 - 4 * a))
   have hlm : 0 ≤ Real.log m := Real.log_natCast_nonneg m
   set r₁ : ℝ := ρ + Real.log m
-  have hr₁ : 0 ≤ r₁ := by positivity
-  obtain ⟨R₂, -, θ₀, hθ₀, hθ₀R, hθ₀out, hθ₀d⟩ := exists_contDiff_angle_cutoff (E := ℝ) hr₁ hε
+  obtain ⟨R₂, -, θ₀, hθ₀, hθ₀R, hθ₀out, hθ₀d⟩ :=
+    exists_contDiff_angle_cutoff (E := ℝ) (by positivity : 0 ≤ r₁) hε
   obtain ⟨b, hb, hflat⟩ := exists_pos_forall_norm_fderiv_softMinDist_le (E := ℂ) m (r₁ + R₂) hε
   refine ⟨b, hb, min (mm / 2) (a - c ^ 2), lt_min (by positivity) (by linarith),
     fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
-  have hcard := card_toFinset_le_of_tendsto hframe hD
-  set s := D.toFinset
-  set Φ : ℂ → ℝ := softMinDist b s
-  have hΦ : ContDiff ℝ ∞ Φ := contDiff_softMinDist hb s
-  have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by simp)
-  set s₀ : ℝ := √b - Real.log m + r₁
+  set Φ : ℂ → ℝ := softMinDist b D.toFinset
+  have hΦ : ContDiff ℝ ∞ Φ := contDiff_softMinDist hb _
+  set s₀ : ℝ := √b + ρ
   set V : ℂ → ℝ := fun z ↦ Real.exp (c * Φ z)
   set θ : ℂ → ℝ := fun z ↦ θ₀ (Φ z - s₀)
   have hV : ContDiff ℝ 2 V := (contDiff_const.mul (hΦ.of_le (by simp))).exp
   have hθ : ContDiff ℝ 2 θ := (hθ₀.of_le (by simp)).comp ((hΦ.of_le (by simp)).sub contDiff_const)
-  -- Where `θ` is not `π / 2`, `Φ ≤ √b + r₁ + R₂` and the gradient of `Φ` is at most `ε`.
-  set S : Set ℂ := {z | Φ z - s₀ ≤ R₂}
-  have hΦS (z : ℂ) (hz : z ∈ S) : ‖fderiv ℝ Φ z‖ ≤ ε := hflat s hcard z (by
-    have : Φ z - s₀ ≤ R₂ := hz
-    simp only [s₀] at this
-    linarith)
-  -- The angle has gradient at most `ε`.
-  have hθd (z : ℂ) : ‖fderiv ℝ θ z‖ ≤ √mm / 4 := by
-    have hd : HasFDerivAt θ ((fderiv ℝ θ₀ (Φ z - s₀)).comp (fderiv ℝ Φ z)) z :=
-      ((hθ₀.differentiable (by simp)) (Φ z - s₀)).hasFDerivAt.comp z
-        ((hΦd z).hasFDerivAt.sub_const s₀)
-    rw [hd.fderiv]
-    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-    have h₁ := hθ₀d (Φ z - s₀)
-    have h₂ := norm_fderiv_softMinDist_le_one hb s z
-    calc ‖fderiv ℝ θ₀ (Φ z - s₀)‖ * ‖fderiv ℝ Φ z‖ ≤ ε * 1 :=
-          mul_le_mul h₁ h₂ (norm_nonneg _) hε.le
-      _ = √mm / 4 := mul_one _
-  -- Outside `S` the angle is `π / 2` nearby.
-  have hθout (z : ℂ) (hz : z ∉ S) : θ =ᶠ[𝓝 z] fun _ ↦ π / 2 := by
-    have hz' : R₂ < Φ z - s₀ := lt_of_not_ge hz
-    have hcont : ContinuousAt (fun t ↦ Φ t - s₀) z := ((hΦd z).sub_const s₀).continuousAt
-    have hlt : R₂ < ‖Φ z - s₀‖ := hz'.trans_le (le_abs_self _)
-    exact hcont.eventually (hθ₀out _ hlt)
-  -- Where `θ ≠ 0`, every zero is at distance at least `ρ`, so the mass exceeds `a`.
-  have hP (z : ℂ) (hz : V z * Real.sin (θ z) ≠ 0) : a ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have hθz : |Φ z - s₀| > r₁ := lt_of_not_ge fun h ↦ hz (by simp [θ, hθ₀R _ h])
-    -- `θ₀` vanishes on `[-r₁, r₁]` and `Φ z - s₀ ≥ -r₁`, so `Φ z > √b + ρ`.
-    have hfar (a' : ℂ) (ha' : a' ∈ D) : ρ ≤ ‖z - a'‖ := by
-      have ha := Multiset.mem_toFinset.2 ha'
-      have h₁ := sqrt_sub_log_card_le_softMinDist (b := b) (z := z) ⟨a', ha⟩
-      have hk : Real.log s.card ≤ Real.log m :=
-        Real.log_le_log (by exact_mod_cast Finset.card_pos.2 ⟨a', ha⟩) (by exact_mod_cast hcard)
-      refine le_norm_sub_of_sqrt_add_le_softMinDist (b := b) ?_ ha
-      rcases lt_abs.1 hθz with h | h <;> simp only [Φ, s₀, r₁] at h h₁ ⊢ <;> linarith
-    have := one_sub_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD (C := C)
-      (by simp only [C]; linarith) (by simp only [a]; linarith : 0 < 1 - 4 * a) hfar
-    simp only [a] at this ⊢
-    linarith
+  -- The angle has gradient at most `ε` and is `π / 2` near every point with `R₂ < Φ - s₀`.
+  obtain ⟨hθd, hθout⟩ := norm_fderiv_comp_sub_le_and_eventuallyEq s₀ (hθ₀.differentiable (by simp))
+    (hΦ.differentiable (by simp)) hθ₀out hθ₀d (norm_fderiv_softMinDist_le_one hb _)
   refine mul_integral_sq_mul_norm_sq_le_of_forall_le (hx.of_le (by simp)) hsol
-    (hgap x D hx hsol hframe hD) ha (v₁ := fun t ↦ V t * Real.cos (θ t))
+    (hgap x D hx hsol hframe hD) (by simp only [a]; linarith) (v₁ := fun t ↦ V t * Real.cos (θ t))
     (v₂ := fun t ↦ V t * Real.sin (θ t)) (hV.mul (Real.contDiff_cos.comp hθ))
     (hV.mul (Real.contDiff_sin.comp hθ)) hV.continuous
-    (fun z ↦ by simp only [mul_pow]; rw [← mul_add, Real.cos_sq_add_sin_sq, mul_one]) hP
-    (min_mul_sq_le_sub_norm_fderiv_sq (S := S) (hV.differentiable (by simp))
+    (fun z ↦ by simp only [mul_pow]; rw [← mul_add, Real.cos_sq_add_sin_sq, mul_one])
+    (fun z hz ↦ le_mass_of_lt_abs_softMinDist_sub hx hsol hframe hD (C := C) (b := b)
+      (by simp only [C]; linarith) (by simp only [a]; linarith)
+      (lt_of_not_ge fun h ↦ hz (by simp [θ, hθ₀R (Φ z - s₀) h])))
+    (min_mul_sq_le_sub_norm_fderiv_sq (S := {z | Φ z - s₀ ≤ R₂}) (hV.differentiable (by simp))
       (hθ.differentiable (by simp)) (fun z ↦ (Real.exp_pos _).le) (fun z ↦ ?_) (fun z hz ↦ ?_)
-      hθout hθd hm.le) hη hηc
-  · exact norm_fderiv_exp_mul_softMinDist_sq_le hb s c z
-  · rw [norm_fderiv_exp_mul_softMinDist hb, mul_pow, mul_pow, sq_abs]
-    have h₂ : ‖fderiv ℝ Φ z‖ ^ 2 ≤ mm / 16 :=
-      sq_le_div_sixteen_of_le_sqrt_div_four (norm_nonneg _) hm.le (hΦS z hz)
-    have hc2' : c ^ 2 ≤ 1 := by linarith
-    calc c ^ 2 * ‖fderiv ℝ Φ z‖ ^ 2 * V z ^ 2 ≤ 1 * (mm / 16) * V z ^ 2 := by gcongr
-      _ = mm / 16 * V z ^ 2 := by ring
+      (fun z hz ↦ hθout z (lt_of_not_ge hz)) hθd hm.le) hη hηc
+  · exact norm_fderiv_exp_mul_softMinDist_sq_le hb _ c z
+  · -- Where `θ` is not `π / 2`, `Φ ≤ √b + r₁ + R₂` and the gradient of `Φ` is at most `ε`.
+    have hΦS : ‖fderiv ℝ Φ z‖ ≤ ε := hflat _ (card_toFinset_le_of_tendsto hframe hD) z (by
+      simp only [Set.mem_ofPred_eq, s₀, r₁] at hz ⊢; linarith)
+    rw [norm_fderiv_exp_mul_softMinDist hb, mul_pow, mul_pow, sq_abs]
+    exact mul_le_mul_of_nonneg_right ((mul_le_of_le_one_left (sq_nonneg _) (by linarith)).trans
+      (sq_le_div_sixteen_of_le_sqrt_div_four (norm_nonneg _) hm.le hΦS)) (sq_nonneg _)
 
 /-- **The weighted estimate for `L_x L_x*` with weights centred on the zeros, uniformly over the
 moduli space.** For every degree `m` and `|c| < 1/2` there is `K` such that every smooth plane
