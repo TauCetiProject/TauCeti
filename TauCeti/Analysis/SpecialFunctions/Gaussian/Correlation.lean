@@ -12,13 +12,14 @@ import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.SpecialFunctions.Gaussian.PowerDecay
 
 /-!
-# Uniform Gaussian bounds for quadratic-twist correlations
+# Uniform majorants for Gaussian-weighted correlations
 
-In the second moment of a Gaussian theta sum over quadratic twists, the pairs whose product
-has square odd part use the trivial correlation bound. The other pairs use a square-root times
-logarithm bound. The Gaussian weights turn these two inequalities into a single summable
-majorant, uniform when the theta scale is at least the inverse square root of the averaging
-length. The only extra summability required is that of the power weight on the square pairs.
+A correlation bound can be constant on an exceptional set of positive integer pairs and grow
+like a square root times a logarithm off that set. The Gaussian weights give a single summable
+majorant, uniform when the scale is at least the inverse square root of the averaging length.
+The only extra summability required is that of the power weight on the exceptional set.
+For quadratic twists of theta sums, the exceptional pairs are those whose product has square
+odd part.
 
 This is the Gaussian-weight estimate used in `New.sum_sq_thetaSeries_jacobiSym_le` in the
 shorter GRH formalization (lsernau/grh-lean, commit `72fead1`,
@@ -85,7 +86,7 @@ private theorem gaussianPair_mul_correlation_le {δ E T u : ℝ} {j : ℕ}
 (typically the square pairs) the correlation bound is `X`. Outside `D` it is
 `2√(mn)(1 + log(mn))`. With `X ≤ T²` and scale `u ≥ 1/T`, the weighted bound at every pair
 is at most a summable coefficient times `T² u⁻²ᵟ`. -/
-theorem _root_.Nat.exists_summable_gaussian_correlation_majorant (j : ℕ) {δ : ℝ} (hδ : 0 < δ)
+theorem exists_summable_gaussian_correlation_majorant {j : ℕ} {δ : ℝ} (hδ : 0 < δ)
     (D : Set (ℕ+ × ℕ+)) [DecidablePred (· ∈ D)]
     (hD : Summable fun p : ℕ+ × ℕ+ ↦ if p ∈ D then
       ((p.1 : ℝ) * (p.2 : ℝ)) ^ (-(1 / 2 + δ)) else 0) :
