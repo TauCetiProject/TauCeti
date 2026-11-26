@@ -103,18 +103,18 @@ example : ¬ IsHeightFunction fun v => v.1 + v.2 := fun h => by
 example (ε : ℤ → Bool) {x : ℤ} (hx : 0 ≤ x) (y : ℤ) :
     tilingHeight {e | rowTiling ε e = true} (x, y) =
       ∑ i ∈ Finset.Ico 0 x, if ε i then 1 else 0 := by
-  simp [tilingHeight_rowTiling, rowHeight_of_nonneg ε hx]
+  simp [rowHeight_of_nonneg ε hx]
 
 /-- For `x < 0`, `H_{M_ε}(x, y) = −Σ_{x ≤ i < 0} ε_i`. -/
 example (ε : ℤ → Bool) {x : ℤ} (hx : x < 0) (y : ℤ) :
     tilingHeight {e | rowTiling ε e = true} (x, y) =
       -∑ i ∈ Finset.Ico x 0, if ε i then 1 else 0 := by
-  simp [tilingHeight_rowTiling, rowHeight_of_neg ε hx]
+  simp [rowHeight_of_neg ε hx]
 
 /-- For the alternating `ε_x = [x odd]`, `H_{M_ε}(x, y) = ⌊x/2⌋`. -/
 example : tilingHeight {e | rowTiling (fun x => decide (Odd x)) e = true} = fun v => v.1 / 2 := by
-  rw [tilingHeight_rowTiling]
   funext v
+  rw [tilingHeight_rowTiling]
   induction v.1 using Int.induction_on with
   | zero => simp
   | succ n ih =>

@@ -161,10 +161,10 @@ theorem rowHeight_add_one (ε : ℤ → Bool) (x : ℤ) :
     ring
 
 /-- **The height of a row tiling**: `H_{M_ε}(x, y) = Σ_{0 ≤ i < x} ε_i − Σ_{x ≤ i < 0} ε_i`. -/
-theorem tilingHeight_rowTiling (ε : ℤ → Bool) :
-    tilingHeight {e | rowTiling ε e = true} = fun v => rowHeight ε v.1 := by
-  refine ((isTiling_rowTiling ε).eq_tilingHeight
-    (isCochainPrimitiveOn_univ_iff.2 fun e => ?_) (rowHeight_zero ε)).symm
+@[simp] theorem tilingHeight_rowTiling (ε : ℤ → Bool) (v : ℤ × ℤ) :
+    tilingHeight {e | rowTiling ε e = true} v = rowHeight ε v.1 := by
+  refine (congrFun ((isTiling_rowTiling ε).eq_tilingHeight (g := fun v => rowHeight ε v.1)
+    (isCochainPrimitiveOn_univ_iff.2 fun e => ?_) (rowHeight_zero ε)) v).symm
   obtain ⟨⟨x, y⟩, k⟩ := e
   by_cases he : rowTiling ε ⟨(x, y), k⟩ = true
   · rw [heightCochain_of_mem he]
