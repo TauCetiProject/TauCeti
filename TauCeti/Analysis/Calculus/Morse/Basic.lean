@@ -21,6 +21,9 @@ import TauCeti.Analysis.Calculus.FDeriv.Comp
 -- Private: the comparison of Łojasiewicz inequalities is used only inside the proof of
 -- `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`.
 import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
+-- Private: invertibility of a nonzero multiple is used only inside the proof of
+-- `TauCeti.isNondegenerateCriticalPoint_const_smul_iff`.
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Nondegenerate critical points
@@ -99,6 +102,8 @@ the notion be read off in any chart.
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
   nondegeneracy is invariant under negating the function.
+* `TauCeti.isNondegenerateCriticalPoint_const_smul_iff`: nondegeneracy is invariant under scaling
+  the function by a nonzero constant.
 * `TauCeti.isNondegenerateCriticalPoint_add_const_iff`: nondegeneracy is invariant under adding a
   constant.
 * `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`: a function equal to a function
@@ -320,6 +325,20 @@ gives both directions. -/
 theorem isNondegenerateCriticalPoint_neg :
     IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
   ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
+
+/-- **Nondegeneracy of a critical point is invariant under scaling the function** by a nonzero
+constant, which scales the differential and the second derivative. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_const_smul_iff {c : ℝ} (hc : c ≠ 0) :
+    IsNondegenerateCriticalPoint (c • f) x ↔ IsNondegenerateCriticalPoint f x := by
+  -- One direction for every nonzero scalar; the other is the same one for `c⁻¹`.
+  have key : ∀ {c : ℝ} {g : E → ℝ}, c ≠ 0 → IsNondegenerateCriticalPoint g x →
+      IsNondegenerateCriticalPoint (c • g) x := fun {c g} hc h ↦
+    ⟨h.contDiffAt.const_smul c,
+      by rw [fderiv_const_smul_field, Pi.smul_apply, h.fderiv_eq_zero, smul_zero],
+      by rw [fderiv_fderiv_const_smul, ContinuousLinearMap.isInvertible_smul_iff hc]
+         exact h.isInvertible⟩
+  exact ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using key (inv_ne_zero hc) h, key hc⟩
 
 /-- **Nondegeneracy of a critical point is invariant under adding a constant**, which changes
 neither the differential nor the second derivative. -/
