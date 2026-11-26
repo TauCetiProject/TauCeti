@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.Angle
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
@@ -57,6 +58,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   `arg (z - 1) + arg (z + 1) ∈ (-π, π]`.
 * `Complex.arg_eq_pi_div_two_sub_arctan_of_im_pos`: in the open upper half-plane,
   `arg w = π / 2 - arctan (re w / im w)`.
+* `Complex.pi_div_two_sub_arg_le_div`: for `0 ≤ z.re` and `0 < z.im`,
+  `π / 2 - arg z ≤ re z / im z`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
@@ -175,6 +178,13 @@ theorem arg_eq_pi_div_two_sub_arctan_of_im_pos {w : ℂ} (hw : 0 < w.im) :
   rw [Real.arctan_eq_of_tan_eq (x := π / 2 - w.arg) ?_ ⟨by linarith, by linarith⟩]
   · ring
   · rw [Real.tan_pi_div_two_sub, tan_arg, inv_div]
+
+/-- If `0 ≤ z.re` and `0 < z.im`, then `arg z` falls short of `π / 2` by at most
+`re z / im z`. -/
+theorem pi_div_two_sub_arg_le_div {z : ℂ} (hre : 0 ≤ z.re) (him : 0 < z.im) :
+    π / 2 - z.arg ≤ z.re / z.im := by
+  rw [arg_eq_pi_div_two_sub_arctan_of_im_pos him, sub_sub_cancel]
+  exact Real.arctan_le_self (div_nonneg hre him.le)
 
 /-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
 `c ω² = -‖c‖`. -/
