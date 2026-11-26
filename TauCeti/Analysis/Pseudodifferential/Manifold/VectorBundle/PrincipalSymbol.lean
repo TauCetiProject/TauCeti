@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # The principal symbol of a pseudodifferential operator between vector bundles
@@ -22,7 +23,8 @@ pseudodifferential operator of order `m` on `M` with a principal symbol on the c
 `σ_m(P)(x, ξ) : E_x → F_x`
 
 for every covector `ξ ∈ T*ₓM` (`TauCeti.sectionClassicalPrincipalSymbol`), so that `σ_m(P)` is a
-section of the homomorphism bundle `Hom(E, F)` pulled back to the cotangent bundle.
+pointwise `Hom(E_x, F_x)`-valued function on the cotangent bundle that does not depend on the
+frames. Its regularity in `(x, ξ)` is not proved here.
 
 It is read off in the preferred trivializations of `E` and `F` at `x`, with the matrix whose
 entries are the principal symbols of the matrix entries of `P` in these frames. That it does not
@@ -46,9 +48,9 @@ positively homogeneous of degree `m` in `ξ`.
 
 An operator is **elliptic at** `x` (`TauCeti.IsSectionClassicalEllipticAt`) when `σ_m(P)(x, ξ)` is
 bijective for every nonzero covector `ξ`. Ellipticity is unchanged by perturbations of order
-`m - 1`, and over a manifold of positive dimension it forces the two bundles to have the same
-rank (`TauCeti.IsSectionClassicalEllipticAt.finrank_eq`). In dimension zero there are no nonzero
-covectors, every operator is elliptic and the ranks are unconstrained.
+`m - 1` and by nonzero scalars, and over a manifold of positive dimension it forces the two bundles
+to have the same rank (`TauCeti.IsSectionClassicalEllipticAt.finrank_eq`). In dimension zero there
+are no nonzero covectors, every operator is elliptic and the ranks are unconstrained.
 
 ## Main definitions
 
@@ -60,8 +62,9 @@ covectors, every operator is elliptic and the ranks are unconstrained.
 
 * `TauCeti.classicalPrincipalSymbol_sectionEntry`: the principal symbols of the matrix entries of
   `P` in arbitrary frames are read off from `σ_m(P)`.
-* `TauCeti.sectionClassicalPrincipalSymbol_add`, `TauCeti.sectionClassicalPrincipalSymbol_smul`:
-  linearity in the operator.
+* `TauCeti.sectionClassicalPrincipalSymbol_add`, `TauCeti.sectionClassicalPrincipalSymbol_smul`,
+  `TauCeti.sectionClassicalPrincipalSymbol_zero`, `TauCeti.sectionClassicalPrincipalSymbol_neg`,
+  `TauCeti.sectionClassicalPrincipalSymbol_sub`: linearity in the operator.
 * `TauCeti.sectionClassicalPrincipalSymbol_eq_zero_iff`: the principal symbol of an operator of
   order `m` vanishes exactly when the operator has order `m - 1`.
 * `TauCeti.sectionClassicalPrincipalSymbol_zero_covector`,
@@ -69,6 +72,7 @@ covectors, every operator is elliptic and the ranks are unconstrained.
 * `TauCeti.sectionClassicalPrincipalSymbol_id`, `TauCeti.isSectionClassicalElliptic_id`: the
   identity of `Γ(E)` has principal symbol the identity of `E_x` and is elliptic of order `0`.
 * `TauCeti.isSectionClassicalEllipticAt_add_iff`: ellipticity only depends on the principal symbol.
+* `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
   point forces `rank E = rank F`.
 
@@ -382,7 +386,7 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_input
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [classicalPrincipalSymbol_comp_mulLeft (hE i)]
   simp [k, ContMDiffMap.ofReal_apply, hθx, frameCutoff_self (V := V) (W := W) n E F x,
-    Bundle.Trivialization.continuousLinearMapAt_real_smul]
+    ← Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
   ring
 
 /-! ### The transformation law -/
@@ -483,6 +487,35 @@ theorem sectionClassicalPrincipalSymbol_smul
     ← coord_sectionClassicalPrincipalSymbol hP,
     LinearMap.smul_apply, map_smul, map_smul, smul_eq_mul]
 
+/-- The principal symbol of the zero operator is `0`. -/
+@[simp]
+theorem sectionClassicalPrincipalSymbol_zero (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    sectionClassicalPrincipalSymbol m (0 : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) x ξ = 0 := by
+  simpa using sectionClassicalPrincipalSymbol_smul (m := m)
+    (zero_mem (sectionClassicalPseudodifferentialOperators (V := V) (E := E) (W := W) (F := F) m))
+    0 x ξ
+
+/-- The principal symbol of `-P` is the negative of that of `P`. -/
+theorem sectionClassicalPrincipalSymbol_neg (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    sectionClassicalPrincipalSymbol m (-P) x ξ = -sectionClassicalPrincipalSymbol m P x ξ := by
+  by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
+  · rw [← neg_one_smul ℂ P, sectionClassicalPrincipalSymbol_smul hP, neg_one_smul]
+  · rw [sectionClassicalPrincipalSymbol_of_notMem hP,
+      sectionClassicalPrincipalSymbol_of_notMem (by rwa [neg_mem_iff]), neg_zero]
+
+/-- The principal symbol of `P - Q` is the difference of those of `P` and `Q`. -/
+theorem sectionClassicalPrincipalSymbol_sub
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hQ : Q ∈ sectionClassicalPseudodifferentialOperators m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    sectionClassicalPrincipalSymbol m (P - Q) x ξ =
+      sectionClassicalPrincipalSymbol m P x ξ - sectionClassicalPrincipalSymbol m Q x ξ := by
+  rw [sub_eq_add_neg, sectionClassicalPrincipalSymbol_add hP (neg_mem hQ),
+    sectionClassicalPrincipalSymbol_neg, ← sub_eq_add_neg]
+
 /-- **Operators of lower order.** A classical pseudodifferential operator between bundles of order
 `m - 1` has principal symbol `0` in order `m`. -/
 theorem sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one
@@ -519,9 +552,7 @@ theorem sub_mem_sectionClassicalPseudodifferentialOperators_of_sectionClassicalP
       sectionClassicalPrincipalSymbol m P x ξ = sectionClassicalPrincipalSymbol m Q x ξ) :
     P - Q ∈ sectionClassicalPseudodifferentialOperators (m - 1) := by
   refine (sectionClassicalPrincipalSymbol_eq_zero_iff (sub_mem hP hQ)).1 fun x ξ ↦ ?_
-  have h' := sectionClassicalPrincipalSymbol_add (sub_mem hP hQ) hQ x ξ
-  rw [sub_add_cancel, h x ξ] at h'
-  exact add_eq_right.1 h'.symm
+  rw [sectionClassicalPrincipalSymbol_sub hP hQ, h x ξ, sub_self]
 
 /-- Adding an operator of order `m - 1` does not change the principal symbol of order `m`. -/
 theorem sectionClassicalPrincipalSymbol_add_of_mem_sub_one
@@ -539,6 +570,7 @@ theorem sectionClassicalPrincipalSymbol_add_of_mem_sub_one
 omit [FiniteDimensional ℂ W] in
 /-- **The principal symbol of the identity.** The identity of `Γ(E)` has principal symbol of order
 `0` the identity of `E_x` at every nonzero covector `ξ ∈ T*ₓM`. -/
+@[simp]
 theorem sectionClassicalPrincipalSymbol_id (x : M)
     {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
     sectionClassicalPrincipalSymbol 0 (LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
@@ -624,6 +656,26 @@ theorem isSectionClassicalElliptic_add_iff
     (hQ : Q ∈ sectionClassicalPseudodifferentialOperators (m - 1)) :
     IsSectionClassicalElliptic m (P + Q) ↔ IsSectionClassicalElliptic m P :=
   forall_congr' fun _ ↦ isSectionClassicalEllipticAt_add_iff hQ
+
+/-- Multiplying by a nonzero complex number does not change ellipticity at a point. -/
+@[simp]
+theorem isSectionClassicalEllipticAt_smul_iff {c : ℂ} (hc : c ≠ 0) {x : M} :
+    IsSectionClassicalEllipticAt m (c • P) x ↔ IsSectionClassicalEllipticAt m P x := by
+  by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
+  · refine forall₂_congr fun ξ _ ↦ ?_
+    rw [sectionClassicalPrincipalSymbol_smul hP, LinearMap.coe_smul]
+    exact (MulAction.bijective (Units.mk0 c hc)).of_comp_iff' _
+  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
+    have hcP : c • P ∉ sectionClassicalPseudodifferentialOperators m := fun h ↦ hP <| by
+      simpa [smul_smul, inv_mul_cancel₀ hc] using Submodule.smul_mem _ c⁻¹ h
+    simp [isSectionClassicalEllipticAt_iff, sectionClassicalPrincipalSymbol_of_notMem hP,
+      sectionClassicalPrincipalSymbol_of_notMem hcP]
+
+/-- Multiplying by a nonzero complex number does not change ellipticity. -/
+@[simp]
+theorem isSectionClassicalElliptic_smul_iff {c : ℂ} (hc : c ≠ 0) :
+    IsSectionClassicalElliptic m (c • P) ↔ IsSectionClassicalElliptic m P :=
+  forall_congr' fun _ ↦ isSectionClassicalEllipticAt_smul_iff hc
 
 /-- **Ellipticity forces equal ranks.** Over a manifold of positive dimension, if `P : Γ(E) → Γ(F)`
 is elliptic at some point, then `E` and `F` have the same rank: the principal symbol at a nonzero

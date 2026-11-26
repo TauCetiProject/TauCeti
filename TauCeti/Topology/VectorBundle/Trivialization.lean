@@ -97,7 +97,9 @@ including its zero extension off the base set
 vector bundle with finite-dimensional model fibre are closed (`VectorBundle.isClosed_submodule`).
 
 Reconstruction at equal base points agrees with the equality cast between fibres
-(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`).
+(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`), and over the base set a fibre
+vector is the combination of the frame vectors `e⁻¹ bⱼ` with the coordinates of its reading in a
+basis `(bⱼ)` of the model fibre (`Bundle.Trivialization.sum_repr_smul_symmL`).
 
 A vector bundle with model fibre `𝕜` is a line bundle. In a fibre `E b` a nonzero vector `v` is a
 basis, and `TauCeti.VectorBundle.lineCoord 𝕜 hv : E b ≃L[𝕜] 𝕜` is the coordinate along it, so that
@@ -289,6 +291,17 @@ theorem symmL_continuousLinearMapAt_eq_cast {x₀ x₁ : B} (h : x₀ = x₁)
     e.symmL 𝕜 x₁ (e.continuousLinearMapAt 𝕜 x₀ v) = cast (congrArg E h) v := by
   subst x₁
   exact e.symmL_continuousLinearMapAt he v
+
+variable {𝕜} in
+/-- **A vector in a frame.** Over the base set of a linear trivialization `e`, a vector `v` of the
+fibre is the combination of the frame vectors `e⁻¹ bⱼ`, for a basis `(bⱼ)` of the model fibre, with
+the coordinates of `e v` in that basis. -/
+theorem sum_repr_smul_symmL {ι : Type*} [Fintype ι] (b : Module.Basis ι 𝕜 F) {x : B}
+    (hx : x ∈ e.baseSet) (v : E x) :
+    ∑ j, b.repr (e.continuousLinearMapAt 𝕜 x v) j • e.symmL 𝕜 x (b j) = v := by
+  calc _ = e.symmL 𝕜 x (∑ j, b.repr (e.continuousLinearMapAt 𝕜 x v) j • b j) := by
+        simp only [map_sum, map_smul]
+    _ = v := by rw [b.sum_repr, e.symmL_continuousLinearMapAt hx]
 
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :
