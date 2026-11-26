@@ -115,10 +115,8 @@ variable [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))]
 
 private theorem pairingL_valueL_const_one (f : Lp ℝ 2 (mu.restrict Omega)) :
     pairingL f W1p.valueL (W1p.const 1) = ∫ x in Omega, f x ∂mu := by
-  rw [pairingL_apply, W1p.valueL_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) 1] with x hx
-  rw [hx, mul_one]
+  rw [pairingL, ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.valueL_apply,
+    real_inner_comm, W1p.inner_value_const, one_mul]
 
 -- The shortcut instances of the energy-form file, to aid instance search for continuous bilinear
 -- forms on `W^{1,2}(Ω)`.

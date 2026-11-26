@@ -143,15 +143,6 @@ section FiniteMeasure
 
 variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
 
-/-- The `L²(Ω)` pairing of a constant with a Sobolev function is the constant times its integral. -/
-private theorem inner_value_const (c : ℝ) (u : W1p mu Omega 2) :
-    ⟪W1p.value (W1p.const c : W1p mu Omega 2), W1p.value u⟫_ℝ =
-      c * ∫ x in Omega, W1p.value u x ∂mu := by
-  rw [W1p.inner_value_eq_setIntegral, ← integral_const_mul]
-  refine integral_congr_ae ?_
-  filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) c] with x hx
-  rw [hx]
-
 /-- On a preconnected `Ω`, a value is orthogonal to the values of the form kernel of the Neumann
 pair, the constants, exactly when it has mean zero. -/
 private theorem value_mem_orthogonal_neumannPair_iff
@@ -163,7 +154,7 @@ private theorem value_mem_orthogonal_neumannPair_iff
   constructor
   · intro h
     have h1 := h _ (CompactFormPair.inclusion_mem_formKernelImage (hconst 1))
-    rwa [neumannPair_inclusion_apply, inner_value_const, one_mul] at h1
+    rwa [neumannPair_inclusion_apply, W1p.inner_value_const, one_mul] at h1
   · intro h x hx
     obtain ⟨n, hn, rfl⟩ := CompactFormPair.mem_formKernelImage.1 hx
     have hg : W1p.gradient n = 0 := by
@@ -171,7 +162,7 @@ private theorem value_mem_orthogonal_neumannPair_iff
       rw [energy_neumannPair, sq_eq_zero_iff, norm_eq_zero] at h0
       exact h0
     obtain ⟨c, rfl⟩ := W1p.exists_eq_const_of_gradient_eq_zero hconn hg
-    rw [neumannPair_inclusion_apply, inner_value_const, h, mul_zero]
+    rw [neumannPair_inclusion_apply, W1p.inner_value_const, h, mul_zero]
 
 /-- The Rayleigh quotients of the Neumann pair over the kernel-orthogonal part are the Rayleigh
 quotients of mean zero. -/

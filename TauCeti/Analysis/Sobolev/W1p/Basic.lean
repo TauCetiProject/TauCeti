@@ -1059,6 +1059,15 @@ theorem W1p.integralL_const (c : ℝ) :
   rw [W1p.integralL_apply, ← smul_eq_mul, ← setIntegral_const]
   exact integral_congr_ae (W1p.value_const_ae c)
 
+/-- The `L²(Ω)` pairing of the constant Sobolev function `c` with `f` is `c ∫_Ω f`. -/
+theorem W1p.inner_value_const (c : ℝ) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ⟪W1p.value (W1p.const c : W1p mu Omega 2), f⟫_ℝ = c * ∫ x in Omega, f x ∂mu := by
+  rw [L2.inner_def, ← integral_const_mul]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) c] with x hx
+  rw [hx]
+  simp [RCLike.inner_apply, mul_comm]
+
 end Const
 
 open scoped Gradient in
