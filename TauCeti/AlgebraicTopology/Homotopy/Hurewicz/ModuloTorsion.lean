@@ -9,9 +9,9 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.FlatBaseChange
 import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 import TauCeti.Algebra.Module.Torsion.Int
-import TauCeti.AlgebraicTopology.Homotopy.AcyclicCover
-import TauCeti.AlgebraicTopology.Homotopy.WhiteheadTower
-import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
+import TauCeti.AlgebraicTopology.EilenbergMacLane.Torsion
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.SerreClass
 import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
@@ -24,17 +24,18 @@ for every simply connected topological space `Y`, together with its rational spe
 
 ## Proof outline
 
-The proof builds a finite Whitehead tower over a CW approximation of `Y`
-(`TauCeti.exists_nConnectedCover_map`), requiring no Hausdorff or CW hypothesis on `Y`:
-* Killing an `S`-torsion bottom homotopy group `π_{m + 2}(Z, z)` via `nConnectedCoverProj`
-  induces an isomorphism on `H_*(-; A)`
-  (`TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_isTorsion'`).
-* Iterating `nConnectedCover` from the CW approximation of `Y` gives an `(n + 1)`-connected space
-  `Z` with a map `q : Z → Y` bijective on `π_k` for `k ≥ n + 2` and inducing isomorphisms on
-  `H_k(-; A)`.
-* Comparing via naturality of `HomotopyGroup.hurewiczModuleCatHom` against the integral Hurewicz
-  isomorphism on `Z` yields the localized Hurewicz isomorphism in degree `n + 2`, and strong
-  induction gives the reverse direction of the connectivity equivalence.
+The `S`-torsion abelian groups form a Serre class `AddCommGrpCat.isSubmonoidTorsion S` satisfying
+Serre's axiom on Eilenberg--Mac Lane spaces (`satisfiesEilenbergMacLaneAxiom_isSubmonoidTorsion`),
+so the general Serre-class Hurewicz theorems
+(`TauCeti.isoModSerre_hurewiczModuleCatHom_of_prop_homotopyGroup` and
+`TauCeti.prop_singularHomology_of_prop_homotopyGroup`) apply without CW or Hausdorff hypotheses
+on `Y`:
+* `HomotopyGroup.hurewiczModuleCatHom` is an isomorphism modulo `S`-torsion, giving `S`-torsion
+  kernel and cokernel via `ModuleCat.kernelIsoKer` and `ModuleCat.cokernelIsoRangeQuotient`.
+* Base change to any localization `A` of `ℤ` at `S` preserves bijectivity exactly when kernel and
+  cokernel are `S`-torsion (`LinearMap.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range`),
+  yielding the localized Hurewicz isomorphism in degree `n + 2`, and strong induction gives the
+  reverse direction of the connectivity equivalence.
 
 ## Main results
 
@@ -70,38 +71,6 @@ noncomputable section
 open AlgebraicTopology CategoryTheory TensorProduct
 open scoped Topology Topology.Homotopy
 
-/-! ### Finite Whitehead tower with `H_*(-; A)`-isomorphism -/
-
-namespace TauCeti
-
-/-- Finite Whitehead tower up to degree `n + 1` preserving `H_*(-; A)` when `π_{m + 2}` is
-`S`-torsion for `m < n`. -/
-private lemma exists_nConnectedCover_of_isTorsion' {Y : Type} [TopologicalSpace Y]
-    [PathConnectedSpace Y] (y : Y) [Subsingleton (π_ 1 Y y)] (S : Submonoid ℤ)
-    (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A] (n : ℕ)
-    (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S) :
-    ∃ (Z : Type) (_ : TopologicalSpace Z) (_ : T2Space Z) (_ : PathConnectedSpace Z)
-      (z : Z) (q : C(Z, Y)) (hqz : q z = y),
-      (∀ k, IsIso (HomologicalComplex.homologyMap ((singularChains A).map (TopCat.ofHom q)) k)) ∧
-      (∀ k < n + 2, Subsingleton (π_ k Z z)) ∧
-      (∀ k, n + 2 ≤ k → Function.Bijective (HomotopyGroup.map (N := Fin k) q hqz)) :=
-  exists_nConnectedCover_map
-    (fun _ _ f ↦ ∀ k, IsIso (HomologicalComplex.homologyMap ((singularChains A).map f) k))
-    (fun _ _ f hf k ↦ hf.isIso_singularHomologyMap (ModuleCat.of A A) k)
-    (fun _ _ _ {f g} hf hg k ↦ by
-      rw [Functor.map_comp, HomologicalComplex.homologyMap_comp]
-      have := hf k
-      have := hg k
-      infer_instance)
-    (fun G _ ↦ Module.IsTorsion' (Additive G) S)
-    (fun _ _ _ _ e h ↦ e.toAdditive.isTorsion'_iff.1 h)
-    (fun _ _ _ _ z m hZ hπZ k ↦ by
-      have h := isIso_singularHomologyMap_nConnectedCoverProj_of_isTorsion' z m hZ hπZ A k
-      rwa [singularHomologyFunctor_obj_map] at h)
-    y n hπ
-
-end TauCeti
-
 /-! ### Serre's Hurewicz isomorphism modulo `S`-torsion -/
 
 namespace HomotopyGroup
@@ -113,6 +82,45 @@ section Localization
 variable {Y : Type} [TopologicalSpace Y] [PathConnectedSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)]
   {S : Submonoid ℤ} {n : ℕ}
 
+/-- The integral Hurewicz homomorphism is an isomorphism modulo `S`-torsion when `π_{m + 2}(Y, y)`
+is `S`-torsion for all `m < n`. -/
+private lemma isoModSerre_hurewiczModuleCatHom
+    (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S) :
+    ((AddCommGrpCat.isSubmonoidTorsion S).inverseImage
+      (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)).isoModSerre
+        (hurewiczModuleCatHom Y y n) := by
+  have : Subsingleton (FundamentalGroup Y y) :=
+    pi1MulEquivFundamentalGroup.symm.toEquiv.subsingleton
+  have : SimplyConnectedSpace Y := simplyConnectedSpace_of_subsingleton_fundamentalGroup y
+  exact isoModSerre_hurewiczModuleCatHom_of_prop_homotopyGroup _ n
+    (satisfiesEilenbergMacLaneAxiom_isSubmonoidTorsion S (n + 2)) y
+    fun i hi ↦ (AddCommGrpCat.prop_inverseImage_isSubmonoidTorsion_iff S _).2 (hπ i hi)
+
+/-- **The kernel of the integral Hurewicz homomorphism is `S`-torsion** when `Y` is simply connected
+and `π_{m + 2}(Y, y)` is `S`-torsion for all `m < n`. -/
+theorem isTorsion'_ker_hurewiczModuleCatHom
+    (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S) :
+    Module.IsTorsion' (LinearMap.ker (hurewiczModuleCatHom Y y n).hom) S :=
+  (AddCommGrpCat.prop_inverseImage_isSubmonoidTorsion_iff S _).1 <|
+    (((AddCommGrpCat.isSubmonoidTorsion S).inverseImage
+      (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)).prop_iff_of_iso
+        (ModuleCat.kernelIsoKer (hurewiczModuleCatHom Y y n))).1
+      ((ObjectProperty.monoModSerre_iff _ _).1 (isoModSerre_hurewiczModuleCatHom hπ).1)
+
+/-- **The cokernel of the integral Hurewicz homomorphism is `S`-torsion** when `Y` is simply
+connected and `π_{m + 2}(Y, y)` is `S`-torsion for all `m < n`. -/
+theorem isTorsion'_quotient_range_hurewiczModuleCatHom
+    (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S) :
+    Module.IsTorsion'
+      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
+          (TopCat.of Y)) ⧸
+        LinearMap.range (hurewiczModuleCatHom Y y n).hom) S :=
+  (AddCommGrpCat.prop_inverseImage_isSubmonoidTorsion_iff S _).1 <|
+    (((AddCommGrpCat.isSubmonoidTorsion S).inverseImage
+      (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)).prop_iff_of_iso
+        (ModuleCat.cokernelIsoRangeQuotient (hurewiczModuleCatHom Y y n))).1
+      ((ObjectProperty.epiModSerre_iff _ _).1 (isoModSerre_hurewiczModuleCatHom hπ).2)
+
 /-- **Hurewicz isomorphism modulo `S`-torsion (bijectivity of base change).** Let `Y` be a simply
 connected space whose homotopy groups `π_{m + 2}(Y, y)` are `S`-torsion for all `m < n`, and let
 `A` be a localization of `ℤ` at `S`. Then the base-changed Hurewicz homomorphism
@@ -120,29 +128,14 @@ connected space whose homotopy groups `π_{m + 2}(Y, y)` are `S`-torsion for all
 theorem bijective_hurewiczModuleCatHom_baseChange
     (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S)
     (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A] :
-    Function.Bijective ((hurewiczModuleCatHom Y y n).hom.baseChange A) := by
-  have := IsLocalization.flat A S
-  obtain ⟨Z, _, _, _, z, q, hqz, hZiso, hZconn, hZbij⟩ :=
-    exists_nConnectedCover_of_isTorsion' y S A n hπ
-  have hnat := congrArg (fun m ↦ (ModuleCat.Hom.hom m).baseChange A)
-    (hurewiczModuleCatHom_naturality q hqz n)
-  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
-    LinearMap.baseChange_comp, LinearMap.baseChange_comp] at hnat
-  have hqH : Function.Bijective
-      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map
-        (TopCat.ofHom q)).hom.baseChange A) := by
-    rw [singularHomologyFunctor_obj_map]
-    exact (bijective_singularHomologyMap_baseChange_iff_isIso ℤ A (TopCat.ofHom q) (n + 2)).2
-      (hZiso (n + 2))
-  have hZhur : Function.Bijective (hurewiczModuleCatHom Z z n).hom :=
-    (ConcreteCategory.isIso_iff_bijective (hurewiczModuleCatHom Z z n)).1
-      (isIso_hurewiczModuleCatHom hZconn)
-  have hqπ := bijective_mapHom_toIntLinearMap (hZbij (n + 2) le_rfl)
-  have hlhs : Function.Bijective
-      (((hurewiczModuleCatHom Y y n).hom.baseChange A).comp
-        ((HomotopyGroup.mapHom (N := Fin (n + 2)) q hqz).toAdditive.toIntLinearMap.baseChange A)) :=
-    hnat ▸ hqH.comp (LinearMap.baseChange_bijective hZhur)
-  exact (Function.Bijective.of_comp_iff _ (LinearMap.baseChange_bijective hqπ)).1 hlhs
+    Function.Bijective ((hurewiczModuleCatHom Y y n).hom.baseChange A) :=
+  ((hurewiczModuleCatHom Y y n).hom.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range
+    S A).2 ⟨isTorsion'_ker_hurewiczModuleCatHom hπ,
+      -- `isTorsion'_quotient_range_hurewiczModuleCatHom` uses `AddCommGroup.toIntModule`,
+      -- whereas `baseChange_bijective_iff_isTorsion'_ker_and_quotient_range` uses
+      -- `Submodule.Quotient.module`.
+      Module.isTorsion'_of_intModule (AddCommGroup.toIntModule _) (Submodule.Quotient.module _)
+        (isTorsion'_quotient_range_hurewiczModuleCatHom hπ)⟩
 
 /-- Localized Hurewicz equivalence using the `Algebra.toModule` `ℤ`-module structure on `A`. -/
 private def hurewiczLocalizationLinearEquivAux
@@ -229,31 +222,6 @@ theorem singularHomologyMap_hurewiczLocalizationLinearEquiv
       (congrArg (fun g ↦ g γ) (singularHomologyMap_comp_hurewiczModuleCatHom f hf n))
   | add z₁ z₂ hz₁ hz₂ => simp only [map_add, hz₁, hz₂]
 
-/-- **The kernel of the integral Hurewicz homomorphism is `S`-torsion** when `Y` is simply connected
-and `π_{m + 2}(Y, y)` is `S`-torsion for all `m < n`. -/
-theorem isTorsion'_ker_hurewiczModuleCatHom
-    (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S) :
-    Module.IsTorsion' (LinearMap.ker (hurewiczModuleCatHom Y y n).hom) S :=
-  have : IsLocalization S (Localization S) := Localization.isLocalization
-  (((hurewiczModuleCatHom Y y n).hom.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range
-    S (Localization S)).1 (bijective_hurewiczModuleCatHom_baseChange hπ (Localization S))).1
-
-/-- **The cokernel of the integral Hurewicz homomorphism is `S`-torsion** when `Y` is simply
-connected and `π_{m + 2}(Y, y)` is `S`-torsion for all `m < n`. -/
-theorem isTorsion'_quotient_range_hurewiczModuleCatHom
-    (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S) :
-    Module.IsTorsion'
-      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
-          (TopCat.of Y)) ⧸
-        LinearMap.range (hurewiczModuleCatHom Y y n).hom) S := by
-  have : IsLocalization S (Localization S) := Localization.isLocalization
-  -- `Module.IsTorsion'` synthesizes `AddCommGroup.toIntModule` on the quotient, whereas
-  -- `baseChange_bijective_iff_isTorsion'_ker_and_quotient_range` uses `Submodule.Quotient.module`
-  -- induced from the `ModuleCat ℤ` structure on `H_{n + 2}(Y; ℤ)`.
-  exact Module.isTorsion'_of_intModule (Submodule.Quotient.module _) (AddCommGroup.toIntModule _)
-    ((((hurewiczModuleCatHom Y y n).hom.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range
-      S (Localization S)).1 (bijective_hurewiczModuleCatHom_baseChange hπ (Localization S))).2)
-
 end Localization
 
 end HomotopyGroup
@@ -273,15 +241,17 @@ theorem subsingleton_singularHomology_of_forall_isTorsion'_homotopyGroup
     (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S)
     {m : ℕ} (hm : m < n) :
     Subsingleton (((singularChains A).obj (TopCat.of Y)).homology (m + 2)) := by
-  obtain ⟨Z, _, _, _, z, q, _, hZiso, hZconn, _⟩ :=
-    exists_nConnectedCover_of_isTorsion' y S A n hπ
-  have : Subsingleton (((singularChains A).obj (TopCat.of Z)).homology (m + 2)) :=
-    ModuleCat.isZero_iff_subsingleton.mp
-      (isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup hZconn A
-        (Nat.succ_ne_zero _) (by omega))
-  have := hZiso (m + 2)
-  exact (asIso (HomologicalComplex.homologyMap ((singularChains A).map (TopCat.ofHom q))
-    (m + 2))).toLinearEquiv.toEquiv.symm.subsingleton
+  have : Subsingleton (FundamentalGroup Y y) :=
+    HomotopyGroup.pi1MulEquivFundamentalGroup.symm.toEquiv.subsingleton
+  have : SimplyConnectedSpace Y := simplyConnectedSpace_of_subsingleton_fundamentalGroup y
+  refine (isTorsion'_singularChains_int_homology_iff S A (TopCat.of Y) (m + 2)).1 ?_
+  rw [← singularHomologyFunctor_obj_obj]
+  exact (AddCommGrpCat.prop_inverseImage_isSubmonoidTorsion_iff S _).1 <|
+    prop_singularHomology_of_prop_homotopyGroup _ (n + 1)
+      (satisfiesEilenbergMacLaneAxiom_isSubmonoidTorsion S (n + 1)) y
+      (fun j hj ↦ (AddCommGrpCat.prop_inverseImage_isSubmonoidTorsion_iff S _).2
+        (hπ j (by omega)))
+      (Nat.succ_ne_zero _) (by omega)
 
 /-- **Serre's connectivity equivalence modulo `S`-torsion (localized homology form).** For a
 simply connected space `(Y, y)`, a submonoid `S : Submonoid ℤ`, a localization `A` of `ℤ` at `S`,

@@ -86,8 +86,6 @@ as well.
 * `HomotopyGroup.hurewiczModuleCatHom`: the integral Hurewicz homomorphism in degree `n + 2` as a
   morphism of `ModuleCat ℤ`, natural in the space (`HomotopyGroup.hurewiczModuleCatHom_naturality`,
   `HomotopyGroup.singularHomologyMap_comp_hurewiczModuleCatHom`).
-* `HomotopyGroup.bijective_mapHom_toIntLinearMap`: bijectivity of the `ℤ`-linearized induced map on
-  higher homotopy groups.
 
 ## References
 
@@ -793,19 +791,6 @@ theorem singularHomologyMap_comp_hurewiczModuleCatHom {X Y : Type} [TopologicalS
   have h := congrArg ModuleCat.Hom.hom (hurewiczModuleCatHom_naturality f hf n).symm
   rwa [ModuleCat.hom_comp, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
     singularHomologyFunctor_obj_map] at h
-
-/-- The induced `ℤ`-linear map `(HomotopyGroup.mapHom f hf).toAdditive.toIntLinearMap` is
-bijective whenever `HomotopyGroup.map f hf` is bijective. -/
-theorem bijective_mapHom_toIntLinearMap {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    {x : X} {y : Y} {f : C(X, Y)} {hf : f x = y} {n : ℕ}
-    (h : Function.Bijective (map (N := Fin (n + 2)) f hf)) :
-    Function.Bijective (mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap := by
-  rw [show ⇑(mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap =
-      ⇑Additive.ofMul ∘ map (N := Fin (n + 2)) f hf ∘ ⇑Additive.toMul by
-    ext a
-    simp only [AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply,
-      mapHom_apply]]
-  exact Additive.ofMul.bijective.comp (h.comp Additive.toMul.bijective)
 
 /-- **The integral Hurewicz homomorphism in an arbitrary universe** `w`,
 `πₙ₊₁(X, x) → Hₙ₊₁(X; ULift.{w} ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the Hurewicz homomorphism
