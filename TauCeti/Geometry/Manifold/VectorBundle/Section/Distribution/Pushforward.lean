@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
-import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial.Topology
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # Pushforward of distributions along smooth maps of manifolds
@@ -72,8 +71,6 @@ These are the manifold versions of `TestFunction.cutoffCompCLM` and
 
 ## Main declarations
 
-* `ContMDiffSection.continuous_trivialPullback`: pullback of sections of trivial bundles is
-  continuous for the compact derivative topologies.
 * `TauCeti.BundleTest.cutoffCompCLM`: the composition `φ ↦ χ · (φ ∘ f)` of tests with a cutoff.
 * `TauCeti.BundleTest.cutoffPushforwardCLM`: the pushforward `f_* (χ T)` with a cutoff.
 * `TauCeti.BundleTest.compCLM`, `TauCeti.BundleTest.pushforwardCLM`: composition of tests with a
@@ -93,61 +90,6 @@ public noncomputable section
 
 open Bundle Set Function Filter Topology TopologicalSpace ContMDiffSection ContinuousLinearMap
 open scoped ContDiff Manifold CompactConvergenceCLM TauCeti.ManifoldWeakWhitney
-
-namespace ContMDiffSection
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [LocallyCompactSpace E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [LocallyCompactSpace E']
-  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
-  [IsManifold I n M] [IsManifold J n N]
-
-omit [LocallyCompactSpace E] [LocallyCompactSpace E'] [IsManifold I n M] [IsManifold J n N] in
-/-- The pullback `x ↦ s (f x)` of a section of a trivial bundle along a `C^n` map `f` is supported
-in the preimage under `f` of the support of `s`. -/
-theorem tsupport_trivialPullback_subset (f : C^n⟮I, M; J, N⟯)
-    (s : Cₛ^n⟮J; F, Bundle.Trivial N F⟯) :
-    (trivialPullback f s).tsupport ⊆ f ⁻¹' s.tsupport := by
-  rw [tsupport_def]
-  refine closure_minimal (fun x hx ↦ ?_) ((isClosed_tsupport s).preimage f.contMDiff.continuous)
-  rw [mem_preimage, tsupport_def]
-  exact subset_closure (by simpa using hx)
-
-/-- Pullback of sections of trivial bundles along a `C^n` map is continuous for the compact
-derivative topologies of the preferred trivializations. In these frames the coefficients of a
-section are its values, so this is continuity of composition with a fixed map in the weak Whitney
-topology. -/
-theorem continuous_trivialPullback (f : C^n⟮I, M; J, N⟯) :
-    letI := frameTopology (I := J) (n := n) (fun y : N ↦ trivializationAt F (Bundle.Trivial N F) y)
-      (fun y ↦ ⟨_, (trivializationAt F (Bundle.Trivial N F) y).open_baseSet⟩) fun _ ↦ subset_rfl
-    letI := frameTopology (I := I) (n := n) (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
-      (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) fun _ ↦ subset_rfl
-    Continuous (trivialPullback (F := F) f) := by
-  let := frameTopology (I := J) (n := n) (fun y : N ↦ trivializationAt F (Bundle.Trivial N F) y)
-    (fun y ↦ ⟨_, (trivializationAt F (Bundle.Trivial N F) y).open_baseSet⟩) fun _ ↦ subset_rfl
-  let := frameTopology (I := I) (n := n) (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
-    (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) fun _ ↦ subset_rfl
-  refine (continuous_frameTopology_iff_frameCoordinates _ _ _).2 fun x ↦ ?_
-  -- The preferred trivializations of trivial bundles have the whole base as base set, so `f`
-  -- restricts to a map between the frame domains at `x` and at `f x`.
-  let g : C^n⟮I, (⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩ : Opens M);
-      J, (⟨_, (trivializationAt F (Bundle.Trivial N F) (f x)).open_baseSet⟩ : Opens N)⟯ :=
-    ⟨fun z ↦ ⟨f z, mem_univ _⟩, (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
-      (f.contMDiff.comp contMDiff_subtypeVal)⟩
-  refine (ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
-    ((continuous_frameCoordinates _ _ _ (f x)).prodMk (continuous_const (y := g)))).congr
-    fun s ↦ ?_
-  ext z
-  simp only [Function.comp_apply, ContMDiffMap.comp_apply,
-    Bundle.Trivialization.frameCoordinates_apply, trivialPullback_apply]
-  -- Both frames of the trivial bundle read off the value of the section.
-  rfl
-
-end ContMDiffSection
 
 namespace TauCeti.BundleTest
 
@@ -206,9 +148,7 @@ theorem cutoffCompCLM_apply (χ : C^∞⟮I, M; ℝ⟯) (hχ : HasCompactSupport
 theorem cutoffCompCLM_id (χ : C^∞⟮I, M; ℝ⟯) (hχ : HasCompactSupport χ) :
     cutoffCompCLM (F := F) χ hχ ContMDiffMap.id = smulLeftCLM χ := by
   ext φ x
-  simp only [cutoffCompCLM_apply, smulLeftCLM_apply]
-  -- The identity map evaluates to its argument.
-  rfl
+  simp
 
 /-- Compositions with cutoffs compose: composing with `g` and the cutoff `χ'` and then with `f`
 and the cutoff `χ` is composing with `g ∘ f` and the cutoff `χ · (χ' ∘ f)`. -/
@@ -286,16 +226,16 @@ theorem compCLM_apply (f : C^∞⟮I, M; J, N⟯) (hf : IsProperMap f)
 
 /-- Composition with the identity is the identity. -/
 @[simp]
-theorem compCLM_id (hid : IsProperMap (ContMDiffMap.id : C^∞⟮I, M; I, M⟯)) :
+theorem compCLM_id
+    (hid : IsProperMap (ContMDiffMap.id : C^∞⟮I, M; I, M⟯) := by exact isProperMap_id) :
     compCLM (F := F) ContMDiffMap.id hid = ContinuousLinearMap.id ℝ _ := by
   ext φ x
-  simp only [compCLM_apply, ContinuousLinearMap.id_apply]
-  -- The identity map evaluates to its argument.
-  rfl
+  simp
 
 /-- Compositions with proper maps compose. -/
 theorem compCLM_compCLM (g : C^∞⟮J, N; K, P⟯) (hg : IsProperMap g) (f : C^∞⟮I, M; J, N⟯)
-    (hf : IsProperMap f) (hgf : IsProperMap (g.comp f)) (φ : BundleTest K F (Bundle.Trivial P F)) :
+    (hf : IsProperMap f) (φ : BundleTest K F (Bundle.Trivial P F))
+    (hgf : IsProperMap (g.comp f) := by exact hg.comp hf) :
     compCLM f hf (compCLM g hg φ) = compCLM (g.comp f) hgf φ := by
   ext x
   simp
@@ -476,19 +416,20 @@ theorem pushforwardCLM_apply (f : C^∞⟮I, M; J, N⟯) (hf : IsProperMap f)
 
 /-- The pushforward along the identity is the identity. -/
 @[simp]
-theorem pushforwardCLM_id (hid : IsProperMap (ContMDiffMap.id : C^∞⟮I, M; I, M⟯)) :
+theorem pushforwardCLM_id
+    (hid : IsProperMap (ContMDiffMap.id : C^∞⟮I, M; I, M⟯) := by exact isProperMap_id) :
     pushforwardCLM (F := F) (W := W) ContMDiffMap.id hid = ContinuousLinearMap.id ℝ _ := by
   ext T φ
   simp
 
 /-- **Functoriality of the pushforward along proper maps**: `(g ∘ f)_* T = g_* (f_* T)`. -/
 theorem pushforwardCLM_pushforwardCLM (g : C^∞⟮J, N; K, P⟯) (hg : IsProperMap g)
-    (f : C^∞⟮I, M; J, N⟯) (hf : IsProperMap f) (hgf : IsProperMap (g.comp f))
-    (T : BundleTest I F (Bundle.Trivial M F) →L_c[ℝ] W) :
+    (f : C^∞⟮I, M; J, N⟯) (hf : IsProperMap f) (T : BundleTest I F (Bundle.Trivial M F) →L_c[ℝ] W)
+    (hgf : IsProperMap (g.comp f) := by exact hg.comp hf) :
     pushforwardCLM g hg (pushforwardCLM f hf T) = pushforwardCLM (g.comp f) hgf T := by
   ext φ
   simp only [pushforwardCLM_apply]
-  rw [compCLM_compCLM g hg f hf hgf]
+  rw [compCLM_compCLM g hg f hf]
 
 /-- Along a proper map, the pushforward with a cutoff `χ` is the pushforward of `χ T`. -/
 theorem cutoffPushforwardCLM_eq_pushforwardCLM_smulLeftDualCLM (χ : C^∞⟮I, M; ℝ⟯)
