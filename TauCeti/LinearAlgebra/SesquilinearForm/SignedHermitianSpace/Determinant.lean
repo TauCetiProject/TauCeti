@@ -107,12 +107,11 @@ theorem apply_det_toMatrix₂ (H : SignedHermitianSpace K V σ ε) (b : Basis ι
       ((ε ^ Fintype.card ι : ℤˣ) : ℤ) • (LinearMap.toMatrix₂ b b H.form).det := by
   have : (LinearMap.toMatrix₂ b b H.form).map σ =
       ((ε : ℤ) : K) • (LinearMap.toMatrix₂ b b H.form)ᵀ := by
-    have hε : ((ε : ℤ) : K) * ((ε : ℤ) : K) = 1 := by
-      rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+    have hε : ((ε : ℤ) : K) * ((ε : ℤ) : K) = 1 := by rw [← sq, units_cast_sq]
     ext i j
     rw [map_apply, LinearMap.toMatrix₂_apply, Matrix.smul_apply, transpose_apply,
-      LinearMap.toMatrix₂_apply, smul_eq_mul, H.form_swap (b i) (b j), Units.smul_def,
-      zsmul_eq_mul, ← mul_assoc, hε, one_mul]
+      LinearMap.toMatrix₂_apply, smul_eq_mul, H.form_swap (b i) (b j),
+      units_smul_eq_mul, ← mul_assoc, hε, one_mul]
   rw [RingHom.map_det, RingHom.mapMatrix_apply, this, det_smul, det_transpose, zsmul_eq_mul]
   push_cast
   ring
@@ -125,7 +124,7 @@ theorem det_toMatrix₂_hyperbolic [RingHomInvPair σ σ] :
   have h₀ : finSumFinEquiv.symm (0 : Fin (1 + 1)) = Sum.inl 0 := rfl
   have h₁ : finSumFinEquiv.symm (1 : Fin (1 + 1)) = Sum.inr 0 := rfl
   rw [← det_reindex_self finSumFinEquiv, det_fin_two]
-  simp [h₀, h₁, Units.smul_def, zsmul_eq_mul]
+  simp [h₀, h₁, units_smul_eq_mul]
 
 end SignedHermitianSpace
 

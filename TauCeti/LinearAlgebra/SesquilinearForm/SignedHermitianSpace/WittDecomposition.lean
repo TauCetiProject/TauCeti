@@ -319,17 +319,10 @@ theorem exists_finrank_eq_wittIndex :
   obtain ⟨x, y, hxy⟩ := H.exists_isHyperbolicFrame_wittIndex
   refine ⟨Submodule.span K (Set.range x), fun u hu v hv ↦ ?_, by
     simpa using finrank_span_eq_card hxy.linearIndependent_left⟩
-  induction hu using Submodule.span_induction with
-  | mem _ hu =>
-    obtain ⟨i, rfl⟩ := hu
-    induction hv using Submodule.span_induction with
-    | mem _ hv => obtain ⟨j, rfl⟩ := hv; exact hxy.form_left i j
-    | zero => simp
-    | add _ _ _ _ h₁ h₂ => simp [h₁, h₂]
-    | smul _ _ _ h => simp [h]
-  | zero => simp
-  | add _ _ _ _ h₁ h₂ => simp [h₁, h₂]
-  | smul _ _ _ h => simp [h]
+  have : Submodule.span K (Set.range x) ≤ (Submodule.span K (Set.range x)).orthogonalBilin H.form :=
+    Submodule.span_le.2 fun _ ⟨j, hj⟩ ↦ hj ▸ Submodule.mem_orthogonalBilin_span.2
+      fun _ ⟨i, hi⟩ ↦ hi ▸ hxy.form_left i j
+  exact Submodule.mem_orthogonalBilin.1 (this hv) u hu
 
 /-- A hyperbolic frame of size half the dimension identifies the space with a hyperbolic space. -/
 theorem IsHyperbolicFrame.equivalent_hyperbolic [FiniteDimensional K V] {ι : Type*} [Fintype ι]

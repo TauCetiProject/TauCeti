@@ -79,17 +79,25 @@ open Module
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] {σ : K →+* K} {ε : ℤˣ}
+section Sign
 
-/-- The sign `ε` acts on a field through its image `±1`. -/
-private theorem units_smul_eq_mul (c : K) : ε • c = ((ε : ℤ) : K) * c := by
+variable {R : Type*} [Ring R] {ε : ℤˣ}
+
+/-- The sign `ε` acts on a ring through its image `±1`. -/
+theorem units_smul_eq_mul (c : R) : ε • c = ((ε : ℤ) : R) * c := by
   rw [Units.smul_def, zsmul_eq_mul]
 
-private theorem units_cast_sq : ((ε : ℤ) : K) ^ 2 = 1 := by
+/-- The image of a sign `ε = ±1` in a ring squares to `1`. -/
+theorem units_cast_sq : ((ε : ℤ) : R) ^ 2 = 1 := by
   rw [← Int.cast_pow, Int.isUnit_sq ε.isUnit, Int.cast_one]
 
-private theorem units_cast_ne_zero : ((ε : ℤ) : K) ≠ 0 := fun h ↦ by
-  simpa [h] using units_cast_sq (K := K) (ε := ε)
+/-- The image of a sign `ε = ±1` in a nontrivial ring is nonzero. -/
+theorem units_cast_ne_zero [Nontrivial R] : ((ε : ℤ) : R) ≠ 0 := fun h ↦ by
+  simpa [h] using units_cast_sq (R := R) (ε := ε)
+
+end Sign
+
+variable {K : Type*} [Field K] {σ : K →+* K} {ε : ℤˣ}
 
 /-- **Every `σ`-hermitian scalar is a trace.** Over a field whose involution `σ` is not the
 identity, every `c` with `σ c = c` is `s + σ s` for a unit `s`. -/

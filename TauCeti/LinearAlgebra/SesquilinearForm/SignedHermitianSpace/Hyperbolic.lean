@@ -112,9 +112,8 @@ def diagonal {n : Type*} [Fintype n] (a : n → K) (ha : ∀ i, σ (a i) = ε �
     simp only [LinearMap.mk₂'ₛₗ_apply, map_sum, map_mul, ha, RingHomInvPair.comp_apply_eq₂,
       Finset.smul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hε : ((ε : ℤ) : K) ^ 2 = 1 := by rw [← Int.cast_pow, Int.isUnit_sq ε.isUnit, Int.cast_one]
-    rw [Units.smul_def, Units.smul_def, zsmul_eq_mul, zsmul_eq_mul]
-    linear_combination (-(σ (y i) * a i * x i)) * hε
+    rw [units_smul_eq_mul, units_smul_eq_mul]
+    linear_combination (-(σ (y i) * a i * x i)) * units_cast_sq (R := K) (ε := ε)
   separatingLeft x hx := funext fun j ↦ by
     classical
     have hj : σ (x j) * a j = 0 := by simpa [Pi.single_apply] using hx (Pi.single j 1)
@@ -280,7 +279,7 @@ variable {ι : Type*} [DecidableEq ι] {x y : ι → V}
 /-- In a hyperbolic frame, `h (y i) (x j) = ε δᵢⱼ`. -/
 theorem form_right_left (hxy : H.IsHyperbolicFrame x y) (i j : ι) :
     H.form (y i) (x j) = if i = j then ((ε : ℤ) : K) else 0 := by
-  rw [H.form_swap, hxy.form_left_right, Units.smul_def, zsmul_eq_mul]
+  rw [H.form_swap, hxy.form_left_right, units_smul_eq_mul]
   split_ifs with h₁ h₂ h₂ <;> simp_all [eq_comm]
 
 /-- An isometric linear map carries hyperbolic frames to hyperbolic frames. -/
@@ -330,7 +329,7 @@ theorem form_hyperbolicFrameMap [RingHomInvPair σ σ] [Fintype ι] (hxy : H.IsH
     hxy.form_right_left, mul_zero, zero_add, add_zero, mul_ite,
     Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, RingHom.id_apply, hyperbolic_form_apply,
     ← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun _ _ ↦ by rw [Units.smul_def, zsmul_eq_mul]; ring
+  exact Finset.sum_congr rfl fun _ _ ↦ by rw [units_smul_eq_mul]; ring
 
 /-- The map `H^ι → V` of a hyperbolic frame is injective. -/
 theorem injective_hyperbolicFrameMap [RingHomInvPair σ σ] [Fintype ι]
@@ -386,16 +385,15 @@ theorem exists_isHyperbolicFrame (hσ : ∃ z, σ z ≠ z) {ι : Type*} [Finite 
     {x : ι → V} (hx : LinearIndependent K x) (hxx : ∀ i j, H.form (x i) (x j) = 0) :
     ∃ y, H.IsHyperbolicFrame x y := by
   cases nonempty_fintype ι
-  have hε : ((ε : ℤ) : K) * ((ε : ℤ) : K) = 1 := by
-    rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+  have hε : ((ε : ℤ) : K) * ((ε : ℤ) : K) = 1 := by rw [← sq, units_cast_sq]
   -- Dual vectors `e j` with `h (x i) (e j) = δᵢⱼ`.
   choose u hu using H.exists_form_apply_eq_ite hx
   set e : ι → V := fun j ↦ ((ε : ℤ) : K) • u j
   have hxe (i j : ι) : H.form (x i) (e j) = if i = j then 1 else 0 := by
-    simp only [e, map_smul, smul_eq_mul, H.form_swap (u j), hu, Units.smul_def, zsmul_eq_mul]
+    simp only [e, map_smul, smul_eq_mul, H.form_swap (u j), hu, units_smul_eq_mul]
     split_ifs <;> simp [*]
   have hex (i j : ι) : H.form (e i) (x j) = if i = j then ((ε : ℤ) : K) else 0 := by
-    rw [H.form_swap, hxe, Units.smul_def, zsmul_eq_mul]
+    rw [H.form_swap, hxe, units_smul_eq_mul]
     split_ifs <;> simp_all [eq_comm]
   -- Correct `e j` by `∑ μ i j • x i`.
   obtain ⟨μ, hμ⟩ : ∃ μ : ι → ι → K, ∀ i j, H.form (e i) (e j) + ε • μ i j + σ (μ j i) = 0 := by
@@ -408,7 +406,7 @@ theorem exists_isHyperbolicFrame (hσ : ∃ z, σ z ≠ z) {ι : Type*} [Finite 
   refine ⟨y, ⟨hxx, fun i j ↦ ?_, hxy⟩⟩
   have hey : H.form (e i) (y j) = H.form (e i) (e j) + ε • μ i j := by
     change H.form (e i) (e j + ∑ k, μ k j • x k) = _
-    simp [map_sum, hex, Units.smul_def, zsmul_eq_mul, mul_comm]
+    simp [map_sum, hex, units_smul_eq_mul, mul_comm]
   have hyy : H.form (y i) (y j) = H.form (e i) (y j) + σ (μ j i) := by
     change H.form (e i + ∑ k, μ k i • x k) (y j) = _
     simp [map_sum, hxy]
