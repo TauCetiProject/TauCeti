@@ -32,11 +32,11 @@ data, together with the functions `ρᵢ`, exist on every compact manifold
 This file proves that `P` loses `m` orders in these norms: for every real `s` there is a constant
 `C` such that
 
-`∑ⱼ ∑ₗ ‖φⱼ · (ℓₗ(t'ⱼ (P u)) ∘ eⱼ⁻¹)‖_{H^{s - m}} ≤ C ∑ᵢ ∑ₖ ‖ψᵢ · (b_k*(tᵢ u) ∘ e'ᵢ⁻¹)‖_{H^s}`
+`∑ⱼ ∑ₗ ‖φⱼ · (χⱼ ℓₗ(t'ⱼ (P u)) ∘ eⱼ⁻¹)‖_{H^{s - m}} ≤ C ∑ᵢ ∑ₖ ‖ψᵢ · (b_k*(tᵢ u) ∘ e'ᵢ⁻¹)‖_{H^s}`
 
-for every smooth section `u` of `E`, where `(eⱼ, t'ⱼ, φⱼ)` is any finite family of charts,
-trivializations of `F` and cutoffs, and `ℓₗ` any finite family of functionals on `W`
-(the theorem
+for every smooth section `u` of `E`, where `(eⱼ, t'ⱼ, χⱼ, φⱼ)` is any finite family of charts,
+trivializations of `F`, smooth functions `χⱼ` supported in their base sets and cutoffs, and `ℓₗ`
+any finite family of functionals on `W` (the theorem
 `exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`).
 This is the a priori estimate through which `P` extends to a bounded operator
 `H^s(M; E) → H^{s - m}(M; F)`, the starting point of the Fredholm theory of elliptic operators
@@ -50,7 +50,9 @@ The operator `P` is pseudodifferential when its matrix entries in cut-off frames
 pseudodifferential operators of order `m`. If `Ψ = ψ ∘ e'` and `ρ = 1` on the support of `Ψ`,
 then
 
-`Ψ u = ∑ₖ (Ψ · ρ b_k*(t u)) · ρ t⁻¹ b_k`,
+`Ψ u = ∑ₖ (Ψ · ρ b_k*(t u)) · ρ t⁻¹ b_k`
+
+(`Bundle.Trivialization.smul_eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection`),
 
 so the frame coefficient `χ ℓ(t' (P (Ψ u)))` is the sum over `k` of the entries
 `f ↦ χ ℓ(t' (P (f · ρ t⁻¹ b_k)))` applied to `Ψ · ρ b_k*(t u)`. The scalar estimate between two
@@ -67,7 +69,9 @@ bounds the reading of each term through `φ` in `e` in `H^{s - m}` by the readin
   frame coefficient of `P u`, read in one chart, is bounded in `H^{s - m}` by the `H^s` norm
   of `u` for a partition.
 * `exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`:
-  the Sobolev estimate `‖P u‖_{H^{s - m}} ≤ C ‖u‖_{H^s}` in these norms.
+  the Sobolev estimate `‖P u‖_{H^{s - m}} ≤ C ‖u‖_{H^s}` in these norms. Its left side is such a
+  Sobolev norm of `P u` when the `φⱼ ∘ eⱼ` add up to `1` and each `χⱼ` equals `1` on
+  `eⱼ⁻¹(supp φⱼ)`; for other `χⱼ` it bounds the readings of `P u` cut off by `χⱼ`.
 
 ## References
 
@@ -103,30 +107,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯} {m : ℝ}
   {ι : Type*} [Fintype ι]
 
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
-  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] in
-/-- A section multiplied by a cutoff `Ψ` is a combination of the cut-off frame sections
-`ρ t⁻¹ b_k`, with the coefficients `Ψ · ρ b_k*(t u)`, when `ρ = 1` wherever `Ψ ≠ 0`. -/
-private theorem smul_eq_sum_smul_cutoffFrameSection (t : Trivialization V (π V E))
-    [MemTrivializationAtlas t] (ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯)
-    (hρ : tsupport ρ ⊆ t.baseSet) (Ψ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯)
-    (hΨρ : ∀ x, Ψ x ≠ 0 → ρ x = 1) (b : Module.Basis ι ℂ V)
-    (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
-    ContMDiffMap.ofReal Ψ • u = ∑ k, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal Ψ)
-      (t.cutoffFrameCoeff ρ hρ (b.coord k).toContinuousLinearMap u) •
-        t.cutoffFrameSection ρ hρ (b k) := by
-  ext x
-  rw [ContMDiffSection.coe_sum, Finset.sum_apply]
-  by_cases hx : Ψ x = 0
-  · simp [hx]
-  have hρx := hΨρ x hx
-  have hxt : x ∈ t.baseSet := hρ (subset_tsupport _ (by simp [Function.mem_support, hρx]))
-  conv_lhs => rw [ContMDiffSection.smul_apply_of_normedAlgebra,
-    ← t.symmL_continuousLinearMapAt (R := ℂ) hxt (u x),
-    ← b.sum_repr (t.continuousLinearMapAt ℂ x (u x)), map_sum, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  simp [hρx, ← t.symmL_apply (R := ℂ) hxt, mul_smul]
-
 /-- **The Sobolev estimate between two charts.** Let `P` be a classical pseudodifferential
 operator of order `m` between bundles, `φ` a cutoff in a chart `e`, `t'` a trivialization of `F`
 with a cutoff `χ` and `ℓ` a functional on `W`, and `ψ` a cutoff in a chart `e'`, with `Ψ` the
@@ -161,8 +141,8 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFr
   have hΨρ (x : M) (hx : e'.cutoffPullback he' ψ 1 x ≠ 0) : ρ x = 1 := by
     obtain ⟨y, hy, rfl⟩ := e'.tsupport_cutoffPullback_subset he' ψ 1 (subset_tsupport _ hx)
     exact hρψ y hy
-  rw [smul_eq_sum_smul_cutoffFrameSection t ρ hρ _ hΨρ b u, map_sum, map_sum, map_sum, map_sum,
-    Finset.mul_sum]
+  rw [t.smul_eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection ρ hρ _ hΨρ b u, map_sum, map_sum,
+    map_sum, map_sum, Finset.mul_sum]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
   -- Each term is the `k`-th matrix entry applied to `Ψ · ρ b_k*(t u)`.
   have hentry : t'.cutoffFrameCoeff χ hχ ℓ (P (LinearMap.mulLeft ℂ
