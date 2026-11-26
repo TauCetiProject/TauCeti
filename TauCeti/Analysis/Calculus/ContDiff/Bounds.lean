@@ -99,6 +99,9 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   up to order `N` give bounded derivatives of `L ∘ f`, with the bound multiplied by `‖L‖`.
 * `ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left`: the same with a separate bound for
   each order, in existential form.
+* `ContDiff.continuousLinearMap_comp_fderiv_and_exists_bound_iteratedFDeriv`: a continuous linear
+  map applied to the derivative of a `C^{n+1}` map with bounded derivatives through order `n + 1`
+  is a `C^n` map with bounded derivatives through order `n`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
 * `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left`,
@@ -523,6 +526,17 @@ theorem ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left
   exact ⟨‖L‖ * C, fun x ↦
     ((L.restrictScalars 𝕜).norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
       (mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _))⟩
+
+/-- A continuous linear map `L` applied to the derivative of a `C^{n+1}` map with bounded
+derivatives through order `n + 1` gives a `C^n` map with bounded derivatives through order `n`. -/
+theorem ContDiff.continuousLinearMap_comp_fderiv_and_exists_bound_iteratedFDeriv {n : ℕ}
+    {f : E → F} (hf : ContDiff 𝕜 (n + 1 : ℕ) f)
+    (hbdd : ∀ i ≤ n + 1, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C) (L : (E →L[𝕜] F) →L[𝕜] G) :
+    ContDiff 𝕜 n (L ∘ fderiv 𝕜 f) ∧
+      ∀ i ≤ n, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i (L ∘ fderiv 𝕜 f) x‖ ≤ C := by
+  have hd : ContDiff 𝕜 n (fderiv 𝕜 f) := hf.fderiv_right (by push_cast; exact le_rfl)
+  exact ⟨L.contDiff.comp hd, L.exists_bound_iteratedFDeriv_comp_left hd fun i hi ↦
+    (hbdd (i + 1) (by omega)).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x⟩
 
 namespace TauCeti
 
