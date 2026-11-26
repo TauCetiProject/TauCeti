@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Distribution.Quotient
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
+import TauCeti.Analysis.LocallyConvex.Polar
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
 /-!
@@ -23,7 +25,10 @@ At a point `x`, a covector vanishing on `D x` descends to the quotient `T_x M �
 functional on the quotient arises this way from its composite with the quotient map. This is the
 linear equivalence `D⁰_x ≃ (T_x M ⧸ D x)*`
 (`TauCeti.CotangentBundle.annihilatorSpaceEquivDualQuotient`), characterized by
-`α ↦ ([v] ↦ α v)`. Together the fibre maps are a `C^n` map of total spaces
+`α ↦ ([v] ↦ α v)`, the instance at `D x` of the identification
+`StrongDual.polarSubmoduleEquivDualQuotient` of the annihilator of a subspace of a
+finite-dimensional topological vector space with the dual of the quotient. Together the fibre
+maps are a `C^n` map of total spaces
 (`TauCeti.IsContMDiffDistribution.contMDiff_totalSpace_annihilatorSpaceEquivDualQuotient`), so
 they assemble to a `C^n` isomorphism of vector bundles
 
@@ -95,28 +100,12 @@ variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 variable (I D) in
 /-- The **identification of the annihilator with the dual of the quotient** at a point `x`: a
 covector `α` vanishing on `D x` descends to the functional `[v] ↦ α v` on `T_x M ⧸ D x`, and every
-functional on the quotient is obtained from its composite with the quotient map. Both spaces are
-finite-dimensional, so this linear equivalence is continuous. It is the analogue, for the
-tangent spaces, which carry no norm, of `Submodule.quotientDualEquivAnnihilator`. -/
+functional on the quotient is obtained from its composite with the quotient map. This is
+`StrongDual.polarSubmoduleEquivDualQuotient` for the subspace `D x` of the tangent space. -/
 def annihilatorSpaceEquivDualQuotient (x : M) :
     annihilatorSpace I D x ≃L[𝕜] (TangentSpace I x ⧸ D x →L[𝕜] 𝕜) :=
-  haveI : FiniteDimensional 𝕜 (TangentSpace I x) := inferInstanceAs (FiniteDimensional 𝕜 E)
-  let e : annihilatorSpace I D x ≃ₗ[𝕜] (TangentSpace I x ⧸ D x →L[𝕜] 𝕜) :=
-  { toFun α := (D x).liftQL (α : TangentSpace I x →L[𝕜] 𝕜)
-      (mem_annihilatorSpace_iff_le_ker.1 α.property)
-    invFun ℓ := ⟨ℓ.comp (D x).mkQL, mem_annihilatorSpace_iff.2 fun v hv ↦ by
-      simp [(Submodule.Quotient.mk_eq_zero (D x)).2 hv]⟩
-    left_inv α := Subtype.ext (ContinuousLinearMap.ext fun v ↦ (rfl))
-    right_inv ℓ := ContinuousLinearMap.ext fun q ↦
-      Submodule.Quotient.induction_on (D x) q fun v ↦ (rfl)
-    map_add' α β := ContinuousLinearMap.ext fun q ↦
-      Submodule.Quotient.induction_on (D x) q fun v ↦ (rfl)
-    map_smul' c α := ContinuousLinearMap.ext fun q ↦
-      Submodule.Quotient.induction_on (D x) q fun v ↦ (rfl) }
-  -- Naming the spaces lets the instance arguments be synthesized before the result type is
-  -- unified with the expected one.
-  LinearEquiv.toContinuousLinearEquiv (𝕜 := 𝕜) (E := annihilatorSpace I D x)
-    (F := TangentSpace I x ⧸ D x →L[𝕜] 𝕜) e
+  (ContinuousLinearEquiv.ofEq _ _ (annihilatorSpace_def x)).trans
+    (StrongDual.polarSubmoduleEquivDualQuotient (D x))
 
 /-- The functional on `T_x M ⧸ D x` induced by a covector `α ∈ D⁰_x` takes the value `α v` on the
 class of `v`. -/
@@ -125,7 +114,7 @@ theorem annihilatorSpaceEquivDualQuotient_apply_mk {x : M} (α : annihilatorSpac
     (v : TangentSpace I x) :
     annihilatorSpaceEquivDualQuotient I D x α (Submodule.Quotient.mk v) =
       (α : TangentSpace I x →L[𝕜] 𝕜) v :=
-  (rfl)
+  StrongDual.polarSubmoduleEquivDualQuotient_apply_mk (D x) _ v
 
 /-- The covector in `D⁰_x` corresponding to a functional `ℓ` on `T_x M ⧸ D x` takes the value
 `ℓ [v]` on `v`. -/
@@ -134,7 +123,7 @@ theorem annihilatorSpaceEquivDualQuotient_symm_apply {x : M}
     (ℓ : TangentSpace I x ⧸ D x →L[𝕜] 𝕜) (v : TangentSpace I x) :
     ((annihilatorSpaceEquivDualQuotient I D x).symm ℓ : TangentSpace I x →L[𝕜] 𝕜) v =
       ℓ (Submodule.Quotient.mk v) :=
-  (rfl)
+  StrongDual.polarSubmoduleEquivDualQuotient_symm_apply (D x) ℓ v
 
 end Fibre
 
