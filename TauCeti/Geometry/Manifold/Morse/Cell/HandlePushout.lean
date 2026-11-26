@@ -13,6 +13,7 @@ import Mathlib.CategoryTheory.Limits.Constructions.BinaryProducts
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import Mathlib.Topology.Category.TopCat.Limits.Products
 import TauCeti.AlgebraicTopology.Disk.Prod
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # Handle attachment across a critical level as a pushout
@@ -316,8 +317,7 @@ theorem IsMorse.exists_isPushout_sublevel_handles (hf : IsMorse I f) {δ : ℝ} 
   obtain ⟨ε, hε, hεδ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ Filter.univ_mem
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
   exact ⟨ε, hε, hεδ, TauCeti.exists_isPushout_sublevel_handles hf.contMDiff ψ hψ _
     (fun _ ↦ manifoldMorseIndex_le_finrank) hε (fun p ↦ (hψp p).2.2.2.1)
     (fun p ↦ (hψp p).2.2.2.2)
@@ -399,17 +399,10 @@ theorem IsMorse.exists_homeomorph_sublevel_sum_of_manifoldMorseIndex_eq_zero (hf
         TopCat.disk.{u} (Module.finrank ℝ E) := by
     rintro _ rfl; exact Homeomorph.uniqueProd _ _
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
-  exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma _)).trans
-    { toFun x := (x.1, hD (h0 x.1 x.1.property) x.2)
-      invFun y := ⟨y.1, (hD (h0 y.1 y.1.property)).symm y.2⟩
-      left_inv x := by simp
-      right_inv y := by simp
-      continuous_toFun := continuous_sigma fun p ↦
-        continuous_const.prodMk (hD (h0 p p.property)).continuous
-      continuous_invFun := continuous_prod_of_discrete_left.2 fun p ↦
-        continuous_sigmaMk.comp (hD (h0 p p.property)).symm.continuous }
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
+  exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma _)).trans <|
+    ((IsHomeomorph.sigmaMap bijective_id fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
+      (hD (h0 p p.property)).isHomeomorph).homeomorph _).trans (Homeomorph.sigmaEquivProd _ _)
 
 /-- **Milnor's cell attachment theorem, from the handle attachment** (Milnor, Theorem 3.2 and
 Remark 3.3). Let `f` be a Morse function on a Hausdorff manifold of dimension `m` whose band
