@@ -266,7 +266,7 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add {g Φ : P ×
   set p := w.1
   -- Each member of the family tends to zero at infinity, hence so does the difference `D`.
   have hlim : ∀ q : P, ‖q‖ ≤ r + δ → Tendsto (fun y ↦ g (q, y)) (cocompact E) (𝓝 0) :=
-    fun q hq ↦ tendsto_cocompact_of_norm_le_mul_exp hc fun y hy ↦ hgd (q, y) hq hy
+    fun q hq ↦ tendsto_cocompact_nhds_zero_of_norm_le_mul_exp hc fun y hy ↦ hgd (q, y) hq hy
   have hpair : ∀ y : E, (p, y) + h = (p + h.1, y + h.2) := fun y ↦
     Prod.ext (Prod.fst_add _ _) (Prod.snd_add _ _)
   have hDlim : Tendsto (fun y ↦ g ((p, y) + h) - g (p, y)) (cocompact E) (𝓝 0) := by
@@ -296,7 +296,7 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add {g Φ : P ×
   have hwD : g (w + h) - g w = g ((p, w.2) + h) - g (p, w.2) := by simp [p]
   rw [hwD]
   refine hcmp.trans (le_of_eq ?_)
-  rw [show -(c * (‖w.2‖ - (R + 1))) = c * (R + 1) + -(c * ‖w.2‖) by ring, Real.exp_add]
+  rw [exp_neg_mul_sub]
   ring
 
 /-- **Exponential decay of the derivatives of a family of forced screened solutions, uniformly in
@@ -613,7 +613,7 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_exp_sub_one_prod {ℓ
     (R₁ := R + 1) fun w _ _ ↦ hℓ.contDiffAt.of_le (by simp)
   -- Each member of the family tends to zero at infinity.
   have hlim : ∀ q : P, ‖q‖ ≤ s + δ → Tendsto (fun y ↦ ℓ (q, y)) (cocompact E) (𝓝 0) :=
-    fun q hq ↦ tendsto_cocompact_of_norm_le_mul_exp hc fun y hy ↦ (hreg q y hq hy).2.1
+    fun q hq ↦ tendsto_cocompact_nhds_zero_of_norm_le_mul_exp hc fun y hy ↦ (hreg q y hq hy).2.1
   refine ⟨M * Real.exp (c * (R + 1)), by positivity, ?_⟩
   rintro ⟨p, z⟩ hw₁ hw₂ h hh
   dsimp only at hw₁ hw₂ ⊢
@@ -647,7 +647,7 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_exp_sub_one_prod {ℓ
       simpa [Real.norm_eq_abs] using this) hw₂
   rw [hpair, Real.norm_eq_abs]
   refine hcmp.trans (le_of_eq ?_)
-  rw [show -(c * (‖z‖ - (R + 1))) = c * (R + 1) + -(c * ‖z‖) by ring, Real.exp_add]
+  rw [exp_neg_mul_sub]
   ring
 
 /-- **The first derivative.** The difference of two translates of a family of solutions of

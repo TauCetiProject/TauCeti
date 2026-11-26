@@ -335,7 +335,7 @@ private theorem exists_log_normSqFamily_spec (hm : 0 < m) (r : ℝ) {c : ℝ} (h
           simp only [normSqFamily]
           gcongr
       _ = 2 * K₁ * Real.exp (c * (r + 2)) * Real.exp (-(c * ‖q.2‖)) := by
-        rw [show -(c * (‖q.2‖ - (r + 2))) = c * (r + 2) + -(c * ‖q.2‖) by ring, Real.exp_add]
+        rw [exp_neg_mul_sub]
         ring
 
 /-- **The end field of the logarithmic moduli.** Outside a disc, for coefficients of norm less
