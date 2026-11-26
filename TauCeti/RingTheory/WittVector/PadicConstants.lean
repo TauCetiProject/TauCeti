@@ -12,7 +12,7 @@ public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 public import TauCeti.RingTheory.WittVector.Frobenius
 
 /-!
-# Frobenius-fixed Witt vectors are the `p`-adic integers
+# `p`-adic and finite constants in Witt vectors
 
 Let `k` be a domain of characteristic `p` (for instance a field). The inclusion `𝔽_p ⊆ k`
 induces a ring homomorphism `ι_k : ℤ_[p] ≅ W(𝔽_p) → W(k)`, the *`p`-adic constants* of
@@ -20,6 +20,10 @@ induces a ring homomorphism `ι_k : ℤ_[p] ≅ W(𝔽_p) → W(k)`, the *`p`-ad
 fixed by the Witt-vector Frobenius `σ`: since `σ` raises every Witt coordinate to its `p`-th
 power, `σ x = x` says that every coordinate of `x` is a root of `X ^ p - X`, that is, lies in
 `𝔽_p`.
+
+For every ring `k` of characteristic `p`, reduction gives canonical finite constants
+`ℤ/p^n → W(k)/p^n`. This map is injective because the `p`-adic constants reflect divisibility
+by `p^n`, and its image is fixed by the induced Witt Frobenius.
 
 As an application, if a matrix `T` over `W(k)` is conjugate to `σ(T)` over some faithful
 `W(k)`-algebra `L` (for instance `L = W(k)[1/p]`), then its characteristic polynomial is fixed by
@@ -36,6 +40,11 @@ polynomial of `F^a` has coefficients in `ℤ_p`.
   `TauCeti.WittVector.padicConstants_injective`, the naturality
   `TauCeti.WittVector.map_padicConstants` and the identification
   `TauCeti.WittVector.padicConstants_zmod` of `ι_{𝔽_p}` with `W(𝔽_p) ≅ ℤ_[p]`.
+* `TauCeti.WittVector.constantsMod`: the canonical finite constants `ℤ/p^n → W(k)/p^n`, with
+  reduction formula `TauCeti.WittVector.constantsMod_toZModPow` and Frobenius invariance
+  `TauCeti.WittVector.frobeniusMod_constantsMod`.
+* `TauCeti.WittVector.padicConstants_mem_span_pow_iff`: the `p`-adic constants reflect
+  divisibility by `p^n`, yielding `TauCeti.WittVector.constantsMod_injective`.
 * `TauCeti.WittVector.frobenius_eq_self_iff` and `TauCeti.WittVector.range_padicConstants`:
   the Frobenius-fixed Witt vectors are exactly the `p`-adic constants.
 * `TauCeti.WittVector.map_frobenius_eq_self_iff_mem_lifts`: the same for polynomials.

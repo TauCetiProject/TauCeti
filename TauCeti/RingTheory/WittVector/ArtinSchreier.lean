@@ -47,8 +47,9 @@ namespace WittVector
 
 variable {p : ℕ} [Fact p.Prime] {k : Type*} [CommRing k] [CharP k p] [PerfectRing k p]
 
-/-- An additive equation between two Witt maps over a perfect ring is solvable whenever its
-reduction modulo `p` is solvable. -/
+/-- Over a perfect ring of characteristic `p`, the map `b ↦ W(F) b - s * W(G) b` is surjective
+on `W(k)` whenever `x ↦ F x - s₀ * G x` is surjective on `k`, where `s₀` is the constant
+coefficient of `s`. -/
 theorem surjective_map_sub_mul_map (s : WittVector p k) (F G : k →+* k)
     (h : Function.Surjective fun x ↦ F x - constantCoeff s * G x) :
     Function.Surjective fun b : WittVector p k ↦ map F b - s * map G b := by
@@ -126,9 +127,7 @@ theorem frobeniusMod_eq_self_iff [IsDomain k] (n : ℕ)
   · obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
     intro hx
     have hcoeff : ∀ i < n, (frobenius x).coeff i = x.coeff i := by
-      rw [frobeniusMod_mk, Ideal.Quotient.eq, mem_span_p_pow_iff_le_coeff_eq_zero,
-        ← le_coeff_eq_iff_le_sub_coeff_eq_zero] at hx
-      exact hx
+      rwa [frobeniusMod_mk, mk_eq_mk_iff_forall_coeff_eq] at hx
     let y : W := mk p (fun i ↦ if i < n then x.coeff i else 0)
     have hy : frobenius y = y := by
       rw [frobenius_eq_self_iff_forall_coeff]
@@ -138,8 +137,7 @@ theorem frobeniusMod_eq_self_iff [IsDomain k] (n : ℕ)
       · simp [y, hi, (Fact.out : p.Prime).ne_zero]
     obtain ⟨z, hz⟩ := frobenius_eq_self_iff.mp hy
     refine ⟨PadicInt.toZModPow n z, ?_⟩
-    rw [constantsMod_toZModPow, hz, Ideal.Quotient.eq,
-      mem_span_p_pow_iff_le_coeff_eq_zero, ← le_coeff_eq_iff_le_sub_coeff_eq_zero]
+    rw [constantsMod_toZModPow, hz, mk_eq_mk_iff_forall_coeff_eq]
     intro i hi
     simp [y, hi]
   · rintro ⟨z, rfl⟩

@@ -16,6 +16,7 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 The Witt-vector Frobenius `φ` of `𝕎 R` commutes with `WittVector.map f` for every ring homomorphism
 `f`, since the coordinates of `φ x` are given by universal integer polynomials in those of `x`.
+For any commutative ring `R`, it induces Frobenius on `W(R)/p^n`.
 
 Let `R` be a ring of characteristic `p`. The Witt-vector Frobenius `φ` of `𝕎 R` raises every
 Witt coordinate to its `p`-th power, so its fixed points are the Witt vectors whose coordinates are
@@ -42,6 +43,10 @@ inverse of `V`, a frame in the sense of displays.
   `φ⁻¹ (φ x) = x` and `φ (φ⁻¹ x) = x` for perfect `R`, with `φ` written as `WittVector.frobenius`.
 * `WittVector.verschiebung_eq_frobeniusEquiv_symm_mul` : `V x = φ⁻¹ x * p` for perfect `R`.
 * `WittVector.mem_span_p_iff_exists_verschiebung` : `p 𝕎 R = V (𝕎 R)` for perfect `R`.
+* `TauCeti.WittVector.frobeniusMod` : Witt Frobenius induced on `W(R)/p^n`, for any commutative
+  ring, with its value on representatives given by `TauCeti.WittVector.frobeniusMod_mk`.
+* `TauCeti.WittVector.mk_eq_mk_iff_forall_coeff_eq` : over a perfect ring of characteristic `p`,
+  two classes modulo `p^n` agree exactly when their first `n` coefficients agree.
 * `TauCeti.WittVector.continuous_frobenius` : `φ` is continuous for the `(p, [ϖ])`-adic topology.
 * `TauCeti.WittVector.continuous_frobeniusEquiv_symm` : so is `φ⁻¹`, for perfect `R`.
 
@@ -159,6 +164,16 @@ def frobeniusMod (n : ℕ) : W ⧸ Ideal.span {(p : W) ^ n} →+* W ⧸ Ideal.sp
 theorem frobeniusMod_mk (n : ℕ) (x : W) :
     frobeniusMod p k n (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (frobenius x) :=
   Ideal.quotientMap_mk
+
+variable {p k} [CharP k p] [PerfectRing k p]
+
+/-- Over a perfect ring of characteristic `p`, two Witt vectors have the same class modulo
+`p^n` exactly when their coefficients below `n` agree. -/
+theorem mk_eq_mk_iff_forall_coeff_eq (n : ℕ) (x y : W) :
+    Ideal.Quotient.mk (Ideal.span {(p : W) ^ n}) x = Ideal.Quotient.mk _ y ↔
+      ∀ i < n, x.coeff i = y.coeff i := by
+  rw [Ideal.Quotient.eq, mem_span_p_pow_iff_le_coeff_eq_zero,
+    ← le_coeff_eq_iff_le_sub_coeff_eq_zero]
 
 end
 
