@@ -176,29 +176,6 @@ private theorem exists_holderOnWith_preciseRepresentative_value (hα : 0 < α) (
   exact preciseRepresentative_congr_ae_nhds
     (B.isOpen.mem_nhds (hK (self_subset_cthickening _ hx))) (W1p.value_restrictL_ae hB u)
 
-/-- **Freezing a coefficient at a Hölder function.** Let `A(x, s)` be `α`-Hölder in `x` on a set
-`T` of diameter at most `D`, uniformly in `s`, and Lipschitz in `s` for every `x ∈ T`. Then the
-coefficient `A(x, v(x))` frozen at a `γ`-Hölder function `v`, `γ ≤ α`, is `γ`-Hölder on `T`. -/
-theorem holderOnWith_matrixBilinearForm_comp {T : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    {D : ℝ≥0} (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D)
-    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) T)
-    (hAs : ∀ x ∈ T, LipschitzWith L fun s => matrixBilinearForm (A x s))
-    {γ Cv : ℝ≥0} (hγα : γ ≤ α) {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hv : HolderOnWith Cv γ v T) :
-    HolderOnWith (Kx * D ^ ((α : ℝ) - γ) + L * Cv) γ
-      (fun x => matrixBilinearForm (A x (v x))) T := by
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  have h1 := ((hAx (v x)).of_le hD hγα).dist_le hx hy
-  have h2 := (hAs y hy).dist_le_mul (v x) (v y)
-  have h3 := hv.dist_le hx hy
-  calc dist (matrixBilinearForm (A x (v x))) (matrixBilinearForm (A y (v y)))
-      ≤ dist (matrixBilinearForm (A x (v x))) (matrixBilinearForm (A y (v x))) +
-        dist (matrixBilinearForm (A y (v x))) (matrixBilinearForm (A y (v y))) :=
-        dist_triangle _ _ _
-    _ ≤ ↑(Kx * D ^ ((α : ℝ) - γ)) * dist x y ^ (γ : ℝ) + L * (Cv * dist x y ^ (γ : ℝ)) :=
-        add_le_add h1 (h2.trans (mul_le_mul_of_nonneg_left h3 L.coe_nonneg))
-    _ = ↑(Kx * D ^ ((α : ℝ) - γ) + L * Cv) * dist x y ^ (γ : ℝ) := by push_cast; ring
-
 /-- **The Schauder step.** If the precise representative `ū` of a weak solution is `γ`-Hölder on
 the `ρ`-thickening of a bounded set `S`, the coefficient `A(x, ū(x))` is `γ`-Hölder there, so the
 Schauder estimate for divergence-form equations makes the precise representative of `∇u`
@@ -247,18 +224,6 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
       (M := ↑(Kx * D ^ ((α : ℝ) - γ) + L * (Cv * D ^ ((γ₀ : ℝ) - γ))) * ρ ^ (γ : ℝ))
   exact ⟨_, h hell haK hGK le_rfl (hf.mono_measure (Measure.restrict_mono hρS le_rfl)) hu' hρ hρS⟩
 
-/-- A positive Hölder exponent `β ≤ 1 - (n + 1) / q` for the gradient, as in the Schauder
-estimates with a datum `f ∈ L^q`, forces `q > n + 1`, where `(n + 1) / ∞ = 0`. -/
-theorem natCast_add_one_lt_of_le_one_sub_div {β : ℝ≥0} (hβ : 0 < β) (hq : 2 ≤ q)
-    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
-  have hβ' : (0 : ℝ) < β := hβ
-  rcases eq_or_ne q ⊤ with rfl | hqt
-  · simp
-  · have hq0 : 0 < q.toReal := ENNReal.toReal_pos (by rintro rfl; simp at hq) hqt
-    refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
-    rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
-    exact (div_lt_one hq0).1 (by linarith)
-
 /-- **Interior `C^{1,β}` regularity for quasilinear divergence-form equations.** Let `Ω ⊆ ℝⁿ⁺¹`
 be open and let `A(x, s)` be a field of matrices, uniformly elliptic with constants `λ, Λ` in `x`
 for every `s`, `α`-Hölder in `x` with a constant independent of `s`, and Lipschitz in `s` with a
@@ -294,7 +259,8 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     ∃ C : ℝ≥0, HolderOnWith C β (preciseRepresentative volume (W1p.gradient u)) S := by
   have hα : 0 < α := hβ.trans_le hβα
   -- The datum costs `(n + 1) / q < 1` of a derivative, so `q > n + 1`.
-  have hqn : (n : ℝ≥0∞) + 1 < q := natCast_add_one_lt_of_le_one_sub_div hβ hq2 hβq
+  have hqn : (n : ℝ≥0∞) + 1 < q :=
+    natCast_add_one_lt_of_le_one_sub_div hβ (zero_lt_two.trans_le hq2).ne' hβq
   -- De Giorgi: `ū` is `γ₀`-Hölder on `S_{R/2}`.
   obtain ⟨γ₀, C₀, hγ₀, h₀⟩ :=
     exists_holderOnWith_preciseRepresentative_value hα hq2 hqn hA hAx hAs hG hf hu hS hR hRS

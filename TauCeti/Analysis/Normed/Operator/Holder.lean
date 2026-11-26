@@ -212,13 +212,14 @@ theorem holderOnWith_bilinearComp {α Kf Kg Kh Mf Mg Mh : ℝ≥0} {f : X → E 
 /-- Applying a family of bilinear maps to a family of vectors in its second slot preserves Hölder
 continuity on a set when both families are bounded there: `x ↦ (f x).flip (g x)`, the linear map
 `v ↦ f x v (g x)`, is Hölder with constant `Kf Mg + Mf Kg`. This is the bilinear estimate
-`ContinuousLinearMap.holderOnWith_comp₂` for the bilinear map `(f, g) ↦ f.flip g`, proved directly
-because the operator norm on maps whose domain is itself a space of bilinear maps is not found by
-instance search. -/
+`ContinuousLinearMap.holderOnWith_comp₂` for the bilinear map `(f, g) ↦ f.flip g`. -/
 theorem holderOnWith_flip_apply {α Kf Kg Mf Mg : ℝ≥0} {f : X → E →L[𝕜] F →L[𝕜] G} {g : X → F}
     {s : Set X} (hf : HolderOnWith Kf α f s) (hg : HolderOnWith Kg α g s)
     (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hgnorm : ∀ x ∈ s, ‖g x‖ ≤ Mg) :
     HolderOnWith (Kf * Mg + Mf * Kg) α (fun x ↦ (f x).flip (g x)) s := by
+  -- Proved directly rather than from `holderOnWith_comp₂`: instance search does not find the
+  -- operator norm on maps whose domain is itself a space of bilinear maps, which the constant
+  -- `‖B‖₊` of `holderOnWith_comp₂` needs for `B = (f, g) ↦ f.flip g`.
   refine HolderOnWith.of_dist_le fun x hx y hy => ?_
   have hfd := hf.dist_le hx hy
   have hgd := hg.dist_le hx hy

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundaryData
-import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.PDE.Quasilinear.GlobalHolder
 import TauCeti.Analysis.PDE.Quasilinear.Regularity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
@@ -59,7 +58,7 @@ where `v` is the Hölder representative of `u`, extended to `closure Ω`. With
 values (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule`) applies at the
 exponent `α'`. It needs a domain with `C^{1,α'}` boundary: the boundary graphs, `C¹` with
 `α`-Hölder derivative, agree near the chart centres with graphs whose derivative is globally
-`α'`-Hölder (`ContDiff.exists_eqOn_ball_and_holderWith_fderiv`).
+`α'`-Hölder (`TauCeti.PDE.forall_frontier_exists_graph_holderWith_fderiv_of_le`).
 
 ## References
 
@@ -79,36 +78,6 @@ namespace TauCeti
 namespace PDE
 
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The boundary graphs of a domain with `C^{1,α}` boundary can be replaced, near the chart
-centres, by graphs whose derivative is globally `α'`-Hölder, for every `α' ≤ min α 1`: a
-`C^{1,α}` boundary is a `C^{1,α'}` boundary. The tangent space `E` is finite-dimensional because
-an affine isometry identifies `ℝ × E` with `ℝⁿ⁺¹`. -/
-private theorem forall_frontier_exists_graph_of_le {Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    {α α' : ℝ≥0} (hα' : α' ≤ α) (hα'1 : α' ≤ 1)
-    (hchart : ∀ x ∈ frontier Ω,
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (ψ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kψ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ ψ 0 = 0 ∧ ContDiff ℝ 1 ψ ∧
-        HolderWith Kψ α (fderiv ℝ ψ) ∧
-        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ ψ z.snd < z.fst)) :
-    ∀ x ∈ frontier Ω,
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (ψ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kψ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ ψ 0 = 0 ∧ ContDiff ℝ 1 ψ ∧
-        HolderWith Kψ α' (fderiv ℝ ψ) ∧
-        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ ψ z.snd < z.fst) := by
-  intro x hx
-  obtain ⟨e, ψ, h₀, r₀, Kψ, hex, hh₀, hr₀, hψ0, hψ, hψK, hgraph⟩ := hchart x hx
-  -- `E` is a linear image of `ℝ × E ≃ ℝⁿ⁺¹`, so it is finite-dimensional.
-  have : FiniteDimensional ℝ (WithLp 2 (ℝ × E)) :=
-    LinearEquiv.finiteDimensional e.linearIsometryEquiv.toLinearEquiv
-  have : FiniteDimensional ℝ E :=
-    Module.Finite.of_surjective
-      ((LinearMap.snd ℝ ℝ E).comp (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap)
-      fun y => ⟨WithLp.toLp 2 (0, y), rfl⟩
-  obtain ⟨ψ', K', hψ', heq, hK'⟩ := hψ.exists_eqOn_ball_and_holderWith_fderiv hψK hα' hα'1 0 r₀
-  refine ⟨e, ψ', h₀, r₀, K', hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hψ0], hψ', hK',
-    fun z hz => ?_⟩
-  rw [hgraph z hz, heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]
 
 variable {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -176,7 +145,8 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear_of_holderOnWi
   -- The coefficient frozen at `w` is `α'`-Hölder on `closure Ω`.
   have haK := holderOnWith_matrixBilinearForm_comp hD hAx hAs hα'α (hwK.of_le hD hα'γ)
   obtain ⟨C, -, H⟩ := exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule hβ hβ1 hβα'
-    hq hβq hΩ (forall_frontier_exists_graph_of_le hα'α (min_le_right _ _) hchart) lam Lam
+    hq hβq hΩ (forall_frontier_exists_graph_holderWith_fderiv_of_le hα'α (min_le_right _ _) hchart)
+    lam Lam
     (Kx * D ^ ((α : ℝ) - α') + L * (Kv * D ^ ((γ : ℝ) - α')) : ℝ≥0)
   obtain ⟨Mg, hMg⟩ := (hDgK.isBounded_image hΩ.closure).exists_norm_le
   -- `u` solves the linear equation with the coefficient frozen at `w`.
@@ -274,7 +244,7 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear {α : ℝ≥0
   by_cases hqn : (n : ℝ≥0∞) + 1 < q
   swap
   · exact ⟨1, one_pos, fun hβ _ _ _ hβq =>
-      absurd (natCast_add_one_lt_of_le_one_sub_div hβ hq hβq) hqn⟩
+      absurd (natCast_add_one_lt_of_le_one_sub_div hβ (zero_lt_two.trans_le hq).ne' hβq) hqn⟩
   -- The exponents of the global Hölder estimate: `f ∈ Lʳ` with `n + 1 < r < q`, and the bounded
   -- field `F` in `L^{n + 3}`.
   obtain ⟨r, hnr, hrq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hqn

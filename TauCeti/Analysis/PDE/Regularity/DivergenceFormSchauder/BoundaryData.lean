@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundedDomain
+import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
 import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
@@ -36,6 +37,11 @@ where `C` depends only on `Ω`, its boundary charts, `n`, `α`, `β`, `q`, `λ`,
 (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule`). This is
 Gilbarg–Trudinger, Theorem 8.33, with boundary values whose gradient is `α`-Hölder up to the
 boundary; for `g = 0` it is `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_isBounded`.
+
+A `C^{1,α}` boundary is also a `C^{1,α'}` boundary for every `α' ≤ min α 1`: near the chart
+centres the boundary graphs agree with graphs whose derivative is `α'`-Hölder
+(`TauCeti.PDE.forall_frontier_exists_graph_holderWith_fderiv_of_le`). So the estimate applies at
+every smaller exponent.
 
 ## The argument
 
@@ -131,6 +137,38 @@ private theorem mul_add_add_le_mul {C₀ M Λ Dβ KG Ka Kg Mg F W : ℝ} (hC₀ 
     mul_nonneg (mul_nonneg hC₀ hΛ) (by positivity : 0 ≤ KG + F + W + Mg),
     mul_nonneg hDβ (by positivity : 0 ≤ KG + F + W + Mg), mul_nonneg hC₀ (add_nonneg hKg hMg)]
 
+/-- **A `C^{1,α}` boundary is a `C^{1,α'}` boundary for every `α' ≤ min α 1`.** Suppose that near
+every frontier point of `Ω`, in rigid coordinates `e`, `Ω` is the region above the graph of a `C¹`
+function `ψ` with `ψ 0 = 0` and `α`-Hölder derivative, inside a normal cylinder. Then the same holds
+with the same coordinates and cylinders and with graphs whose derivative is `α'`-Hölder. -/
+theorem forall_frontier_exists_graph_holderWith_fderiv_of_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    {α α' : ℝ≥0} (hα' : α' ≤ α) (hα'1 : α' ≤ 1)
+    (hchart : ∀ x ∈ frontier Ω,
+      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (ψ : E → ℝ) (h₀ r₀ : ℝ)
+        (Kψ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ ψ 0 = 0 ∧ ContDiff ℝ 1 ψ ∧
+        HolderWith Kψ α (fderiv ℝ ψ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ ψ z.snd < z.fst)) :
+    ∀ x ∈ frontier Ω,
+      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (ψ : E → ℝ) (h₀ r₀ : ℝ)
+        (Kψ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ ψ 0 = 0 ∧ ContDiff ℝ 1 ψ ∧
+        HolderWith Kψ α' (fderiv ℝ ψ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ ψ z.snd < z.fst) := by
+  intro x hx
+  obtain ⟨e, ψ, h₀, r₀, Kψ, hex, hh₀, hr₀, hψ0, hψ, hψK, hgraph⟩ := hchart x hx
+  -- `E` is a linear image of `ℝ × E`, which an affine isometry identifies with `ℝⁿ⁺¹`, so it is
+  -- finite-dimensional.
+  have : FiniteDimensional ℝ (WithLp 2 (ℝ × E)) :=
+    LinearEquiv.finiteDimensional e.linearIsometryEquiv.toLinearEquiv
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_surjective
+      ((LinearMap.snd ℝ ℝ E).comp (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap)
+      fun y => ⟨WithLp.toLp 2 (0, y), rfl⟩
+  obtain ⟨ψ', K', hψ', heq, hK'⟩ := hψ.exists_eqOn_ball_and_holderWith_fderiv hψK hα' hα'1 0 r₀
+  refine ⟨e, ψ', h₀, r₀, K', hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hψ0], hψ', hK',
+    fun z hz => ?_⟩
+  rw [hgraph z hz, heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]
+
 /-- **The global `C^{1,β}` estimate with boundary values.** Let `Ω ⊆ ℝ^{n+1}` be a bounded open
 set with `C^{1,α}` boundary: for every frontier point `x` there are rigid coordinates `e` with
 `e x = 0` and a `C¹` function `γ` with `γ 0 = 0` and `α`-Hölder derivative such that, inside a
@@ -216,9 +254,13 @@ theorem exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule {E : Type*
     rw [Subtype.coe_mk] at h₂
     rw [← h₂, h₁, ← h₃, Pi.sub_apply, sub_add_cancel]
   · refine (hwK.add (hDgK.of_le hD hβα)).mono_const ?_
-    rw [← NNReal.coe_le_coe, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow,
-      Real.coe_toNNReal (C₀ * _) (by positivity),
-      Real.coe_toNNReal ((C₀ * _ + _ + 1) * _) (by positivity), ← hDβdef]
+    have hw₀ : 0 ≤ C₀ * (KG + (Ka * Mg + Lam.toNNReal * Kg) +
+        (eLpNorm f q (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))).toReal +
+          ‖u - g‖) := by
+      positivity
+    rw [← NNReal.coe_le_coe]
+    push_cast [Real.coe_toNNReal _ hw₀, ← hDβdef]
+    refine le_trans ?_ (Real.le_coe_toNNReal _)
     linarith [Mg.coe_nonneg]
   · calc ‖hw' y + Dg y‖ ≤ ‖hw' y‖ + ‖Dg y‖ := norm_add_le _ _
       _ ≤ _ := add_le_add (hwM y hy) (hDgM y hy)

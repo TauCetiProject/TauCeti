@@ -73,6 +73,8 @@ constants are parameters, not hidden existential data.
   bilinear forms, and `C¹` entries give bilinear forms that are Hölder on compact sets.
 * `TauCeti.PDE.lipschitzWith_matrixBilinearForm_of_forall`: Lipschitz entries give Lipschitz
   bilinear forms.
+* `TauCeti.PDE.holderOnWith_matrixBilinearForm_comp`: a coefficient `A(x, s)` Hölder in `x` and
+  Lipschitz in `s`, frozen at a Hölder function `v`, gives a Hölder bilinear form `A(x, v(x))`.
 * `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
 * `TauCeti.PDE.lipschitzOnWith_inv_matrixBilinearForm_self` and
@@ -1294,6 +1296,29 @@ theorem lipschitzWith_matrixBilinearForm_of_forall {X : Type*} [PseudoMetricSpac
   refine Finset.sum_le_sum fun j _ => ?_
   rw [Matrix.sub_apply, ← Real.dist_eq]
   exact (ha i j).dist_le_mul y z
+
+/-- **Freezing a coefficient at a Hölder function.** Let `A(x, s)` be `α`-Hölder in `x` on a set
+`T` of diameter at most `D`, uniformly in `s`, and Lipschitz in `s` for every `x ∈ T`. Then the
+coefficient `A(x, v(x))` frozen at a `γ`-Hölder function `v`, `γ ≤ α`, is `γ`-Hölder on `T`. -/
+theorem holderOnWith_matrixBilinearForm_comp {X : Type*} [PseudoMetricSpace X]
+    {A : X → ℝ → Matrix n n ℝ} {T : Set X} {Kx L α D : ℝ≥0}
+    (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D)
+    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) T)
+    (hAs : ∀ x ∈ T, LipschitzWith L fun s => matrixBilinearForm (A x s))
+    {γ Cv : ℝ≥0} (hγα : γ ≤ α) {v : X → ℝ} (hv : HolderOnWith Cv γ v T) :
+    HolderOnWith (Kx * D ^ ((α : ℝ) - γ) + L * Cv) γ
+      (fun x => matrixBilinearForm (A x (v x))) T := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have h1 := ((hAx (v x)).of_le hD hγα).dist_le hx hy
+  have h2 := (hAs y hy).dist_le_mul (v x) (v y)
+  have h3 := hv.dist_le hx hy
+  calc dist (matrixBilinearForm (A x (v x))) (matrixBilinearForm (A y (v y)))
+      ≤ dist (matrixBilinearForm (A x (v x))) (matrixBilinearForm (A y (v x))) +
+        dist (matrixBilinearForm (A y (v x))) (matrixBilinearForm (A y (v y))) :=
+        dist_triangle _ _ _
+    _ ≤ ↑(Kx * D ^ ((α : ℝ) - γ)) * dist x y ^ (γ : ℝ) + L * (Cv * dist x y ^ (γ : ℝ)) :=
+        add_le_add h1 (h2.trans (mul_le_mul_of_nonneg_left h3 L.coe_nonneg))
+    _ = ↑(Kx * D ^ ((α : ℝ) - γ) + L * Cv) * dist x y ^ (γ : ℝ) := by push_cast; ring
 
 /-- **`C¹` coefficient fields have Hölder bilinear forms on compact sets.** If the entries of `a`
 are continuously differentiable on an open set `s`, then on every compact `S ⊆ s` the map

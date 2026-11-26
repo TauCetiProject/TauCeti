@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Quantitative localization of finite-order Hölder maps
@@ -204,14 +205,12 @@ theorem _root_.ContDiff.exists_eqOn_ball_and_holderWith_fderiv [FiniteDimensiona
     · simpa using (hζb x).1
     · simpa using (hζb x).2.1
     · rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one]; exact (hζb x).2.2
-  have hD : ∀ x ∈ s, ∀ y ∈ s, edist x y ≤ (6 * ρ).toNNReal := fun x hx y hy => by
-    rw [edist_dist, ENNReal.ofReal_le_iff_le_toReal ENNReal.coe_ne_top, ENNReal.coe_toReal,
-      Real.coe_toNNReal _ (by positivity)]
-    linarith [dist_triangle_right x y x₀, mem_ball.1 hx, mem_ball.1 hy]
+  obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ s, ∀ y ∈ s, edist x y ≤ D :=
+    ⟨_, fun x hx y hy => Metric.edist_le_diam_of_mem isBounded_ball hx hy⟩
   -- The first iterated derivative is the derivative, up to the linear isometry
   -- `continuousMultilinearCurryFin1`.
   have hcurry := LinearIsometryEquiv.isometry (continuousMultilinearCurryFin1 ℝ E F)
-  have hfH : HolderOnWith (K * (6 * ρ).toNNReal ^ ((α : ℝ) - α')) α' (iteratedFDeriv ℝ 1 f) s := by
+  have hfH : HolderOnWith (K * D ^ ((α : ℝ) - α')) α' (iteratedFDeriv ℝ 1 f) s := by
     have h := (hfK.holderOnWith s).of_le hD hα'
     rw [fderiv_eq_continuousMultilinearCurryFin1_comp] at h
     exact fun x hx y hy => by simpa only [Function.comp_apply, hcurry.edist_eq] using h x hx y hy

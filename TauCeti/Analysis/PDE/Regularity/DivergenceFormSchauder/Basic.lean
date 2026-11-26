@@ -90,6 +90,8 @@ All in the `TauCeti.PDE` namespace.
   the interior Schauder estimate for `∇u` with a scalar datum `f ∈ L^q`.
 * `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm`: its
   case `f = 0`, with exponent `α`.
+* `natCast_add_one_lt_of_le_one_sub_div`: a positive exponent `β ≤ 1 - (n + 1) / q` forces
+  `q > n + 1`.
 
 ## References
 
@@ -631,6 +633,18 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
     (fun φ => by rw [hu φ, Pi.zero_def]; simp only [zero_mul, integral_zero, add_zero]) hR hRS
   simpa only [sub_self, Real.rpow_zero, mul_one, eLpNorm_zero, ENNReal.toReal_zero, mul_zero,
     add_zero] using h'
+
+/-- A positive Hölder exponent `β ≤ 1 - (n + 1) / q` for the gradient, as in the Schauder
+estimates with a datum `f ∈ L^q`, forces `q > n + 1`, where `(n + 1) / ∞ = 0`. -/
+theorem natCast_add_one_lt_of_le_one_sub_div {β : ℝ≥0} {q : ℝ≥0∞} (hβ : 0 < β) (hq : q ≠ 0)
+    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
+  have hβ' : (0 : ℝ) < β := hβ
+  rcases eq_or_ne q ⊤ with rfl | hqt
+  · simp
+  · have hq0 : 0 < q.toReal := ENNReal.toReal_pos hq hqt
+    refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
+    rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
+    exact (div_lt_one hq0).1 (by linarith)
 
 end PDE
 
