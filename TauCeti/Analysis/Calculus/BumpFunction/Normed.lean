@@ -24,6 +24,9 @@ it may be taken over that compact ball, with the pullback of `μ`, which is a fi
 The measure `f.normedMeasure μ` with density `f.normed μ` against `μ` is a probability measure
 concentrated on that closed ball, and integrating against it is integrating against `f.normed μ`.
 
+As the outer radius tends to zero, the value of the normalized bump at its centre tends to
+infinity, since its integral is one over a ball of vanishing measure.
+
 ## Main declarations
 
 * `ContDiffBump.integrable_normed_smul`: bump-weighted continuous functions are integrable.
@@ -33,11 +36,13 @@ concentrated on that closed ball, and integrating against it is integrating agai
   averages a constant to itself.
 * `ContDiffBump.normedMeasure`: the probability measure with density `f.normed μ`, with
   `ContDiffBump.integral_normedMeasure` and `ContDiffBump.ae_mem_closedBall_normedMeasure`.
+* `ContDiffBump.tendsto_normed_center_atTop`: normalized bumps with outer radii tending to zero
+  tend to infinity at their centre.
 -/
 
 public section
 
-open MeasureTheory Metric
+open Filter MeasureTheory Metric Topology
 
 namespace ContDiffBump
 
@@ -105,5 +110,26 @@ theorem ae_mem_closedBall_normedMeasure : ∀ᵐ x ∂f.normedMeasure μ, x ∈ 
     (ae_of_all _ fun x hx ↦ ball_subset_closedBall <| by
       rw [← f.support_normed_eq (μ := μ)]
       exact fun h ↦ hx (by simp [h]))
+
+omit [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- **Normalized bumps blow up at their centre.** In a nontrivial space, as the outer radii of
+bumps `σ i` centred at `c` tend to zero, the values `(σ i).normed μ c` at the centre tend to
+infinity: the bumps are one at `c`, and their integrals are at most the measures of the closed
+balls of radius `(σ i).rOut`, which tend to zero. -/
+theorem tendsto_normed_center_atTop [Nontrivial E] [μ.IsAddHaarMeasure] {ι : Type*}
+    {l : Filter ι} {σ : ι → ContDiffBump c} (hσ : Tendsto (fun i ↦ (σ i).rOut) l (𝓝 0)) :
+    Tendsto (fun i ↦ (σ i).normed μ c) l atTop := by
+  have hval (i : ι) : (σ i).normed μ c = (∫ x, σ i x ∂μ)⁻¹ := by
+    rw [normed_def, (σ i).one_of_mem_closedBall (mem_closedBall_self (σ i).rIn_pos.le), one_div]
+  have hd : Module.finrank ℝ E ≠ 0 := Module.finrank_pos.ne'
+  have hlim : Tendsto (fun i ↦ (σ i).rOut ^ Module.finrank ℝ E * μ.real (ball 0 1)) l (𝓝 0) := by
+    simpa [zero_pow hd] using (hσ.pow (Module.finrank ℝ E)).mul_const (μ.real (ball 0 1))
+  have hint : Tendsto (fun i ↦ ∫ x, σ i x ∂μ) l (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.2 ⟨squeeze_zero (fun i ↦ (σ i).integral_pos.le)
+      (fun i ↦ ((σ i).integral_le_measure_closedBall μ).trans_eq
+        (μ.addHaar_real_closedBall c (σ i).rOut_pos.le)) hlim,
+      Eventually.of_forall fun i ↦ (σ i).integral_pos⟩
+  simp_rw [hval]
+  exact tendsto_inv_nhdsGT_zero.comp hint
 
 end ContDiffBump
