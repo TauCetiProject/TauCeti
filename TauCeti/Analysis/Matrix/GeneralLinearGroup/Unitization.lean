@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.StableComponent
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitization
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent
@@ -42,7 +43,13 @@ When `K₁(𝕜) = 0`, as for `𝕜 = ℂ` since every `GLₙ(ℂ)` is connected
 vacuous: `K₁(A)` is all of `π₀GL_∞(A⁺)` (`TauCeti.UnitizationKOne.eq_top`,
 `TauCeti.UnitizationKOne.equivStableComponentGroup`). For C⋆-algebras `K₁(A)` is functorial for
 star homomorphisms through `Unitization.starMap` (`TauCeti.UnitizationKOne.map`, `map_id`,
-`map_comp`).
+`map_comp`). This functoriality is homotopy invariant: a point-norm continuous path `t ↦ φₜ` of
+star homomorphisms `A → B`, `t ∈ [0, 1]`, induces the same map `K₁(A) → K₁(B)` at both ends
+(`TauCeti.UnitizationKOne.map_eq_of_continuous`), since for an invertible matrix `u` over `A⁺`
+the invertible matrices obtained by applying `φₜ⁺` to the entries form a path in `GLₙ(B⁺)`.
+The zero star homomorphism induces the trivial map
+(`TauCeti.UnitizationKOne.map_zero_eq_one`), since its unitization sends every invertible
+matrix to its scalar part, whose class comes from `π₀GL_∞(ℂ)`, which is trivial.
 
 ## Main definitions
 
@@ -57,6 +64,8 @@ star homomorphisms through `Unitization.starMap` (`TauCeti.UnitizationKOne.map`,
 * `TauCeti.UnitizationKOne.exists_mk_eq`, `TauCeti.UnitizationKOne.mk_eq_mk_iff`:
   representatives of `K₁(A)` with scalar part `1`, and homotopies within the scalar condition.
 * `TauCeti.UnitizationKOne.map_id`, `TauCeti.UnitizationKOne.map_comp`: functoriality.
+* `TauCeti.UnitizationKOne.map_eq_of_continuous`: homotopy invariance of `K₁`.
+* `TauCeti.UnitizationKOne.map_zero_eq_one`: the zero star homomorphism induces the trivial map.
 * `TauCeti.UnitizationKOne.eq_top`, `TauCeti.UnitizationKOne.equivStableComponentGroup`:
   `K₁(A) ≅ K₁(A⁺)` when `K₁(𝕜) = 0`, for instance for `𝕜 = ℂ`.
 
@@ -237,6 +246,25 @@ theorem _root_.Unitization.continuous_starMap (φ : A →⋆ₙₐ[ℂ] B) :
     Continuous (Unitization.starMap φ : Unitization ℂ A →+* Unitization ℂ B) :=
   map_continuous (Unitization.starMap φ)
 
+/-- For a point-norm continuous family `x ↦ φₓ` of star homomorphisms, applying `φₓ⁺` to the
+entries of an invertible matrix over `A⁺` gives a continuous family in `GLₙ(B⁺)`. -/
+theorem _root_.Unitization.continuous_units_map_starMap {X : Type*} [TopologicalSpace X]
+    {φ : X → A →⋆ₙₐ[ℂ] B} (hφ : ∀ a, Continuous fun x ↦ φ x a) {n : Type*} [Fintype n]
+    [DecidableEq n] (u : GL n (Unitization ℂ A)) :
+    Continuous fun x ↦ Units.map ((Unitization.starMap (φ x) :
+      Unitization ℂ A →+* Unitization ℂ B).mapMatrix (m := n)).toMonoidHom u := by
+  have hentry (v : Matrix n n (Unitization ℂ A)) :
+      Continuous fun x ↦ (v.map (Unitization.starMap (φ x)) : Matrix n n (Unitization ℂ B)) := by
+    refine continuous_pi fun i ↦ continuous_pi fun j ↦ ?_
+    refine Unitization.continuous_iff.2 ⟨?_, ?_⟩
+    · simp only [Matrix.map_apply, Unitization.fst_starMap]
+      exact continuous_const
+    · simp only [Matrix.map_apply, Unitization.snd_starMap]
+      exact hφ _
+  refine Units.continuous_iff.2 ⟨hentry (u : Matrix n n (Unitization ℂ A)), ?_⟩
+  simp only [← map_inv]
+  exact hentry ((u⁻¹ : GL n (Unitization ℂ A)) : Matrix n n (Unitization ℂ A))
+
 /-- The map of stable component groups induced by the unitization of a star homomorphism of
 C⋆-algebras sends `K₁(A)` into `K₁(B)`, since it preserves the scalar part. -/
 theorem map_starMap_mem (φ : A →⋆ₙₐ[ℂ] B) {x : StableComponentGroup (Unitization ℂ A)}
@@ -285,6 +313,36 @@ theorem map_comp (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
         (Unitization.starMap φ : Unitization ℂ A →+* Unitization ℂ B) :=
     RingHom.ext fun x ↦ by simp [Unitization.starMap_comp]
   simp_rw [h]
+
+/-- **Homotopy invariance of `K₁`.** A point-norm continuous path `t ↦ φₜ`, `t ∈ [0, 1]`, of star
+homomorphisms `A → B` induces the same map `K₁(A) → K₁(B)` at `t = 0` and `t = 1`. -/
+theorem map_eq_of_continuous {φ : unitInterval → A →⋆ₙₐ[ℂ] B}
+    (hφ : ∀ a, Continuous fun t ↦ φ t a) : map (φ 0) = map (φ 1) := by
+  ext x
+  obtain ⟨n, u, hu⟩ := StableComponentGroup.exists_mk (x : StableComponentGroup (Unitization ℂ A))
+  rw [coe_map, coe_map, ← hu, StableComponentGroup.map_mk, StableComponentGroup.map_mk,
+    StableComponentGroup.mk_eq_mk_iff]
+  refine ⟨n, le_rfl, ?_⟩
+  rw [stabilizeGL_refl, MonoidHom.id_apply]
+  have hpath : Joined
+      (Units.map ((Unitization.starMap (φ 0) :
+        Unitization ℂ A →+* Unitization ℂ B).mapMatrix (m := Fin n)).toMonoidHom u)
+      (Units.map ((Unitization.starMap (φ 1) :
+        Unitization ℂ A →+* Unitization ℂ B).mapMatrix (m := Fin n)).toMonoidHom u) :=
+    ⟨⟨⟨_, Unitization.continuous_units_map_starMap hφ u⟩, rfl, rfl⟩⟩
+  exact hpath.inv_mul_mem_connectedComponentOfOne
+
+/-- **Zero maps on `K₁`.** The zero star homomorphism induces the trivial map on `K₁`. -/
+@[simp]
+theorem map_zero_eq_one : map (0 : A →⋆ₙₐ[ℂ] B) = 1 := by
+  ext x
+  obtain ⟨n, u, hu⟩ := StableComponentGroup.exists_mk (x : StableComponentGroup (Unitization ℂ A))
+  rw [coe_map, ← hu, StableComponentGroup.map_mk, MonoidHom.one_apply, OneMemClass.coe_one]
+  have h : Units.map ((Unitization.starMap (0 : A →⋆ₙₐ[ℂ] B) :
+      Unitization ℂ A →+* Unitization ℂ B).mapMatrix (m := Fin n)).toMonoidHom u =
+        unitizationGLInl ℂ B (Fin n) (unitizationGLFst ℂ A (Fin n) u) := by
+    refine Units.ext (Matrix.ext fun i j ↦ Unitization.ext ?_ ?_) <;> simp
+  rw [h, ← map_inlRingHom_mk, Subsingleton.elim (StableComponentGroup.mk ℂ n _) 1, map_one]
 
 end UnitizationKOne
 
