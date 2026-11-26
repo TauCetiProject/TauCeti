@@ -16,6 +16,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
@@ -51,9 +52,10 @@ fibre.
 Finiteness of `ν` is a hypothesis of the construction: it is what makes `X^ν` of finite
 presentation over `R`. It holds when `C` is reduced and the rings of sections of `X` are Nagata,
 and over an arbitrary, possibly non-excellent, discrete valuation ring when `C` is smooth of
-relative dimension one over `K` and `X` has relative dimension at most one over `R`
-(`TauCeti.Model.isFinite_fromNormalization_genericι`). Over an affine open `Spec A` of `X`, the
-special fibre `A ⧸ πA` then has dimension at most one, and at every minimal prime of `A[1/π]` the
+relative dimension one over `K` (`TauCeti.Model.isFinite_fromNormalization_genericι`). Over an
+affine open `Spec A` of `X`, the special fibre `A ⧸ πA` then has dimension at most one, since the
+special fibre of a model is no larger than its generic fibre
+(`TauCeti.Model.relativeDimensionLE_toBase`), and at every minimal prime of `A[1/π]` the
 residue field is a function field of one variable over `K` with one-dimensional Kähler
 differentials (`TauCeti.transcendental_and_finrank_kaehlerDifferential_residueField_eq_one`); these
 are the hypotheses of the ring-level finiteness theorem
@@ -76,9 +78,8 @@ are the hypotheses of the ring-level finiteness theorem
   property of the normalization, in the category of models.
 * `TauCeti.Model.isNormalScheme_normalization_of_smooth`: normalizing a model with smooth
   generic fibre gives a normal total space, including for disconnected generic fibres.
-* `TauCeti.Model.isFinite_fromNormalization_genericι`: the normalization of a model of relative
-  dimension at most one, with generic fibre smooth of relative dimension one, is finite, over any
-  discrete valuation ring.
+* `TauCeti.Model.isFinite_fromNormalization_genericι`: the normalization of a model whose
+  generic fibre is smooth of relative dimension one is finite, over any discrete valuation ring.
 
 ## References
 
@@ -171,12 +172,9 @@ private lemma appLE_comp_app_genericι (U : M.total.Opens) :
   rfl
 
 /-- **The normalization of a model of a smooth curve is finite.** If the generic fibre `C` is
-smooth of relative dimension one over `K` and the total space has relative dimension at most one
-over `R`, then the normalization of the total space in `C` is finite, over an arbitrary, possibly
-non-excellent, discrete valuation ring. The relative dimension hypothesis holds for every model
-which is a family of curves. -/
-instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
-    [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase] :
+smooth of relative dimension one over `K`, then the normalization of the total space in `C` is
+finite, over an arbitrary, possibly non-excellent, discrete valuation ring. -/
+instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK] :
     IsFinite M.genericι.fromNormalization := by
   have := M.isOpenImmersion_genericι
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible R

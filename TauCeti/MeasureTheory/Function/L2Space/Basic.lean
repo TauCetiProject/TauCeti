@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -42,7 +43,8 @@ More generally, the L² pairing of an L² function with the class of any square-
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
 in the other order for an L² function given by an almost-everywhere representative
 (`MeasureTheory.L2.toLp_inner_of_ae_eq`). The zero class pairs to zero with every function
-(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`).
+(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`), and composition with a measure-preserving map
+preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
 On a finite measure space, the L² inner product of a constant function `Lp.const 2 μ c` with `f`
 is `⟪c, ∫ f ∂μ⟫` (`MeasureTheory.L2.inner_const_eq_inner_integral`), and for the scalar constant
 `1` it equals `∫ f ∂μ` (`MeasureTheory.L2.inner_const_one`).
@@ -326,6 +328,14 @@ theorem L2.inner_const_one [IsFiniteMeasure μ] (f : Lp 𝕜 2 μ) :
     ⟪Lp.const 2 μ (1 : 𝕜), f⟫_𝕜 = ∫ x, f x ∂μ := by
   rw [L2.inner_const_eq_inner_integral]
   simp
+
+/-- Composition with a measure-preserving map preserves the `L²` inner product. -/
+@[simp]
+theorem Lp.inner_compMeasurePreserving {β : Type*} [MeasurableSpace β] {ν : Measure β}
+    {f : α → β} (hf : MeasurePreserving f μ ν) (u v : Lp E 2 ν) :
+    ⟪Lp.compMeasurePreserving f hf u, Lp.compMeasurePreserving f hf v⟫_𝕜 = ⟪u, v⟫_𝕜 := by
+  simpa only [Lp.compMeasurePreservingₗᵢ_apply] using
+    (Lp.compMeasurePreservingₗᵢ 𝕜 f hf).inner_map_map u v
 
 /-- An L² function orthogonal to every L² function vanishing outside a measurable set `A`
 vanishes almost everywhere on `A`: it is orthogonal to its own restriction to `A`. -/

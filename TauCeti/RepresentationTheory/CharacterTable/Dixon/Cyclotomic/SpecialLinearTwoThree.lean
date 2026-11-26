@@ -50,6 +50,8 @@ Hermitian row orthogonality.
 * `TauCeti.specialLinearTwoThreeCharacterDegrees`: the degrees `1`, `1`, `1`, `3`, `2`, `2`
   and `2`.
 * `TauCeti.specialLinearTwoThreeComplexCharacterTable`: the ordinary table embedded in `ℂ`.
+* `TauCeti.specialLinearTwoThreeCharacter`: row `i` of the exact table, embedded in `ℂ` and read
+  as a function on `SL(2, 3)` through the class numbering.
 
 ## Main results
 
@@ -67,6 +69,9 @@ Hermitian row orthogonality.
   executable cyclotomic certificate.
 * `TauCeti.isCharacterTableSpec_specialLinearTwoThree`: the distinguished complex embedding of the
   displayed ordinary table is a character table of `SL(2, 3)`.
+* `TauCeti.irreducibleCharacters_specialLinearTwoThree`: the irreducible complex characters of
+  `SL(2, 3)` are the seven embedded rows.
+* `TauCeti.specialLinearTwoThreeCharacter_one`: the value of an embedded row at `1` is its degree.
 
 ## References
 
@@ -443,6 +448,45 @@ theorem isCharacterTableSpec_specialLinearTwoThree :
     IsCharacterTableSpec (SpecialLinearGroup (Fin 2) (ZMod 3))
       specialLinearTwoThreeComplexCharacterTable :=
   isCyclotomicCharacterTableSpec_specialLinearTwoThree.isCharacterTableSpec
+
+/-- Row `i` of the exact table `TauCeti.specialLinearTwoThreeExactCharacterTable`, embedded in `ℂ`
+by `TauCeti.Cyclotomic.complexEmbedding` and read as a function on `SL(2, 3)` through the class
+numbering `TauCeti.specialLinearTwoThreeClassData.index`. -/
+noncomputable def specialLinearTwoThreeCharacter (i : SpecialLinearTwoThreeClassIndex)
+    (g : SpecialLinearGroup (Fin 2) (ZMod 3)) : ℂ :=
+  Cyclotomic.complexEmbedding
+    (specialLinearTwoThreeExactCharacterTable i (specialLinearTwoThreeClassData.index g))
+
+/-- An embedded row at `g` is the embedded table entry in the class of `g`. -/
+theorem specialLinearTwoThreeCharacter_apply (i : SpecialLinearTwoThreeClassIndex)
+    (g : SpecialLinearGroup (Fin 2) (ZMod 3)) :
+    specialLinearTwoThreeCharacter i g =
+      Cyclotomic.complexEmbedding
+        (specialLinearTwoThreeExactCharacterTable i (specialLinearTwoThreeClassData.index g)) := by
+  rfl
+
+/-- **The irreducible characters of `SL(2, 3)`** are the seven embedded rows
+`TauCeti.specialLinearTwoThreeCharacter` of the exact table. -/
+theorem irreducibleCharacters_specialLinearTwoThree :
+    irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3)) =
+      Set.range specialLinearTwoThreeCharacter :=
+  ClassData.IsExactCharacterTableSpec.irreducibleCharacters_eq_range
+    isCyclotomicCharacterTableSpec_specialLinearTwoThree _ Cyclotomic.complexEmbedding_star
+
+/-- Every embedded row of the exact table is an irreducible character of `SL(2, 3)`. -/
+theorem specialLinearTwoThreeCharacter_mem_irreducibleCharacters
+    (i : SpecialLinearTwoThreeClassIndex) :
+    specialLinearTwoThreeCharacter i ∈
+      irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3)) := by
+  rw [irreducibleCharacters_specialLinearTwoThree]
+  exact Set.mem_range_self i
+
+/-- At `1`, an embedded row takes the value of its degree. -/
+@[simp]
+theorem specialLinearTwoThreeCharacter_one (i : SpecialLinearTwoThreeClassIndex) :
+    specialLinearTwoThreeCharacter i 1 = specialLinearTwoThreeCharacterDegrees i := by
+  rw [specialLinearTwoThreeCharacter_apply,
+    isCyclotomicCharacterTableSpec_specialLinearTwoThree.table_index_one, map_natCast]
 
 /-- **The Burnside--Dixon--Schneider algorithm, searching for its own prime with budget `2`,
 returns a character table of `SL(2, 3)`.** -/

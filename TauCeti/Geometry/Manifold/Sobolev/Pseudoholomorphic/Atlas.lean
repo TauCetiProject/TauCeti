@@ -48,6 +48,10 @@ The two steps are glued by the locality of the planar equation,
 * `TauCeti.isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas`,
   `TauCeti.isWeakPseudoholomorphic_iff_of_subset_maximalAtlas`: **chart independence**, testing
   families of charts covering `s` and `u '' s`.
+* `TauCeti.isWeakPseudoholomorphicOn_of_forall_exists_chart`: it suffices that, for each chart `ψ`
+  of a family covering `u '' s`, every point has some holomorphic chart around it in which the
+  equation holds; the holomorphic chart may depend on `ψ`. This is used for product targets, whose
+  product charts are tested against their own first factor.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_atlas`, `TauCeti.isWeakPseudoholomorphic_iff_atlas`:
   it suffices to test the atlases of `X` and `M`.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_chartAt`, `TauCeti.isWeakPseudoholomorphic_iff_chartAt`:
@@ -183,23 +187,23 @@ private theorem contMDiffOn_extendTrans_refl {ψ : OpenPartialHomeomorph M H}
     (ψ.contMDiffOn_extendTrans_symm hψ (Ψ := Homeomorph.refl E) contDiff_id).of_le
       (by exact_mod_cast le_top)⟩
 
-/-- **Chart independence of the weak pseudoholomorphic equation.** A map is weakly
-pseudoholomorphic on `s` exactly when it is continuous on `s` and its coordinate expressions solve
-the coordinate equation for the charts of a family `A` of holomorphic charts covering `s` and a
-family `B` of charts of `M` covering `u '' s`. -/
-theorem isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas
+/-- **Testing holomorphic charts near each point.** A map continuous on `s` is weakly
+pseudoholomorphic on `s` once, for a family `B` of charts of `M` covering `u '' s`, every chart
+`ψ` of `B` and every point `x` of `s` with `u x` in the source of `ψ` admit a holomorphic chart `φ`
+of a family `A` around `x` in which the coordinate expression solves the coordinate equation. The
+holomorphic chart may depend on `ψ` and on `x`. -/
+theorem isWeakPseudoholomorphicOn_of_forall_exists_chart
     {A : Set (OpenPartialHomeomorph X ℂ)} (hA : A ⊆ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
-    (hAs : ∀ x ∈ s, ∃ φ ∈ A, x ∈ φ.source)
     {B : Set (OpenPartialHomeomorph M H)} (hB : B ⊆ IsManifold.maximalAtlas I ∞ M)
-    (hBs : ∀ x ∈ s, ∃ ψ ∈ B, u x ∈ ψ.source) :
-    IsWeakPseudoholomorphicOn J ν p u s ↔ ContinuousOn u s ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
+    (hBs : ∀ x ∈ s, ∃ ψ ∈ B, u x ∈ ψ.source) (hc : ContinuousOn u s)
+    (h : ∀ ψ ∈ B, ∀ x ∈ s, u x ∈ ψ.source → ∃ φ ∈ A, x ∈ φ.source ∧
       IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
         (J.chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
         (ν.chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
-        (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm) := by
-  refine ⟨fun h ↦ ⟨h.continuousOn, fun φ hφ ψ hψ ↦ h.isWeakCauchyRiemannOn_chart (hA hφ) (hB hψ)⟩,
-    fun ⟨hc, h⟩ ↦ isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn.2
-      ⟨hc, fun φ' hφ' ψ' hψ' ↦ ?_⟩⟩
+        (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm)) :
+    IsWeakPseudoholomorphicOn J ν p u s := by
+  refine isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn.2
+    ⟨hc, fun φ' hφ' ψ' hψ' ↦ ?_⟩
   -- Change the holomorphic chart, for each chart of `B`.
   have h1 : ∀ ψ ∈ B, IsWeakCauchyRiemannOn p (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
       (J.chartField φ' (ψ.extendTrans I (Homeomorph.refl E)))
@@ -208,10 +212,10 @@ theorem isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas
     intro ψ hψ
     obtain ⟨hψ₁, hψ₁s⟩ := contMDiffOn_extendTrans_refl (hB hψ)
     refine isWeakCauchyRiemannOn_iff_locally.2 fun z hz ↦ ?_
-    obtain ⟨φ, hφA, hxφ⟩ := hAs _ hz.2.1
+    obtain ⟨φ, hφA, hxφ, hφψ⟩ := h ψ hψ _ hz.2.1 hz.2.2
     have hzτ : z ∈ (φ'.symm.trans φ).source := by simpa using ⟨hz.1, hxφ⟩
     refine ⟨_, inter_mem_nhdsWithin _ ((φ'.symm.trans φ).open_source.mem_nhds hzτ), ?_⟩
-    refine ((h φ hφA ψ hψ).comp_symm_trans_of_mem_maximalAtlas (hA hφA) hφ'
+    refine (hφψ.comp_symm_trans_of_mem_maximalAtlas (hA hφA) hφ'
       (hψ₁.mdifferentiableOn one_ne_zero) (hψ₁s.mdifferentiableOn one_ne_zero) inter_subset_right
       (fun w hw ↦ ?_) (fun w hw ↦ ?_)).congr fun w hw ↦ ?_
     · have hw' : w ∈ φ'.target ∧ φ'.symm w ∈ φ.source := by simpa using hw.2
@@ -237,6 +241,24 @@ theorem isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas
     simpa [(ψ.extendTrans I (Homeomorph.refl E)).left_inv (by simpa using hu), hu] using hw.1.2.2
   · have hu : u (φ'.symm w) ∈ ψ.source := hw.2
     simp [ψ.left_inv hu]
+
+/-- **Chart independence of the weak pseudoholomorphic equation.** A map is weakly
+pseudoholomorphic on `s` exactly when it is continuous on `s` and its coordinate expressions solve
+the coordinate equation for the charts of a family `A` of holomorphic charts covering `s` and a
+family `B` of charts of `M` covering `u '' s`. -/
+theorem isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas
+    {A : Set (OpenPartialHomeomorph X ℂ)} (hA : A ⊆ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hAs : ∀ x ∈ s, ∃ φ ∈ A, x ∈ φ.source)
+    {B : Set (OpenPartialHomeomorph M H)} (hB : B ⊆ IsManifold.maximalAtlas I ∞ M)
+    (hBs : ∀ x ∈ s, ∃ ψ ∈ B, u x ∈ ψ.source) :
+    IsWeakPseudoholomorphicOn J ν p u s ↔ ContinuousOn u s ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
+      IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
+        (J.chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
+        (ν.chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
+        (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm) :=
+  ⟨fun h ↦ ⟨h.continuousOn, fun _ hφ _ hψ ↦ h.isWeakCauchyRiemannOn_chart (hA hφ) (hB hψ)⟩,
+    fun ⟨hc, h⟩ ↦ isWeakPseudoholomorphicOn_of_forall_exists_chart hA hB hBs hc
+      fun ψ hψ x hx _ ↦ (hAs x hx).imp fun φ ⟨hφ, hxφ⟩ ↦ ⟨hφ, hxφ, h φ hφ ψ hψ⟩⟩
 
 /-- **Chart independence on the whole surface.** A map is weakly pseudoholomorphic exactly when
 it is continuous and its coordinate expressions solve the coordinate equation for the charts of a
