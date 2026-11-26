@@ -20,7 +20,8 @@ its subgroup of transformations of determinant `1`, the special orthogonal group
 bundle of an oriented Riemannian vector bundle.
 
 An orthogonal transformation of a real inner product space has determinant `1` or `-1`
-(`Unitary.det_eq_one_or_eq_neg_one`; in infinite dimension every determinant is `1`), so it is
+(`Unitary.det_eq_one_or_eq_neg_one`; in infinite dimension every determinant is `1`), the same as
+the determinant of its inverse (`Unitary.det_inv_eq_det`), so it is
 special orthogonal exactly when its determinant is positive
 (`TauCeti.mem_specialOrthogonalGroup_iff_det_pos`) and not special orthogonal exactly when its
 determinant is negative (`TauCeti.notMem_specialOrthogonalGroup_iff_det_neg`). Because the
@@ -53,6 +54,15 @@ theorem abs_det_eq_one (g : unitary (V →L[ℝ] V)) : |(g : V →L[ℝ] V).det|
 theorem det_eq_one_or_eq_neg_one (g : unitary (V →L[ℝ] V)) :
     (g : V →L[ℝ] V).det = 1 ∨ (g : V →L[ℝ] V).det = -1 :=
   abs_eq (zero_le_one' ℝ) |>.1 (abs_det_eq_one g)
+
+/-- An orthogonal transformation and its inverse have the same determinant `±1`. -/
+theorem det_inv_eq_det (g : unitary (V →L[ℝ] V)) :
+    ((g⁻¹ : unitary (V →L[ℝ] V)) : V →L[ℝ] V).det = (g : V →L[ℝ] V).det := by
+  have h : ((g⁻¹ : unitary (V →L[ℝ] V)) : V →L[ℝ] V).det * (g : V →L[ℝ] V).det = 1 := by
+    rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← map_mul LinearMap.det,
+      ← ContinuousLinearMap.toLinearMap_mul, ← Submonoid.coe_mul, inv_mul_cancel,
+      OneMemClass.coe_one, ContinuousLinearMap.toLinearMap_one, map_one]
+  rcases det_eq_one_or_eq_neg_one g with hg | hg <;> rw [hg] at h ⊢ <;> linarith
 
 /-- In positive dimension there is an orthogonal transformation of determinant `-1`: the
 reflection in a hyperplane. -/

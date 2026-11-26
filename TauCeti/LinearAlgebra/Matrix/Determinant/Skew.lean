@@ -28,6 +28,8 @@ basis, in which its matrix is `J` of determinant `1`, and `det M` is the square 
 of the change of basis. For an integer matrix the diagonal vanishes automatically
 and the square root, a rational number, is an integer. Over an arbitrary commutative ring the
 statement is Cayley's identity `det M = Pf(M)²`, which needs the Pfaffian and is not proved here.
+In size two the Pfaffian is the single entry `S 0 1`, and congruence multiplies it by the
+determinant: `M S Mᵀ = det M • S`.
 
 A symmetric integer matrix `A` with even diagonal, of size `2k`, splits as `A = S + Sᵀ`. The
 polynomial `q(X) = det (X • Sᵀ + S)` has degree at most `2k` and is its own reflection at `2k`,
@@ -44,6 +46,8 @@ the Gram matrix `!![2a, b; b, 2c]` of a binary form this is `b² - 4ac ≡ b² (
   diagonal over a field has square determinant.
 * `Matrix.isSquare_det_of_transpose_eq_neg`: a skew-symmetric integer matrix has square
   determinant.
+* `Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg`: for a `2 × 2` skew-symmetric matrix
+  `S` with zero diagonal, `M S Mᵀ = det M • S`.
 * `Matrix.four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose`: in dimension `2k`,
   `(-1)^k det (S + Sᵀ) ≡ det (S - Sᵀ)` modulo `4`.
 * `Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`: for a symmetric integer matrix `A` of
@@ -96,6 +100,19 @@ theorem isSquare_det_of_transpose_eq_neg {M : Matrix ι ι ℤ} (hM : Mᵀ = -M)
   rw [← Rat.isSquare_intCast_iff, Int.cast_det]
   exact isSquare_det_of_transpose_eq_neg_of_diag_eq_zero
     (transpose_map_of_transpose_eq_neg (Int.castRingHom ℚ) hM) (by simp [hd])
+
+/-- **Congruence of a `2 × 2` skew-symmetric matrix multiplies it by the determinant.** For a
+skew-symmetric matrix `S` with zero diagonal and any `M`, `M S Mᵀ = det M • S`: the only entry of
+`S` is its Pfaffian `S 0 1`, and `Pf(M S Mᵀ) = det M Pf(S)`. -/
+theorem mul_mul_transpose_eq_det_smul_of_transpose_eq_neg {R : Type*} [CommRing R]
+    (M : Matrix (Fin 2) (Fin 2) R) {S : Matrix (Fin 2) (Fin 2) R} (hS : Sᵀ = -S)
+    (hd : ∀ i, S i i = 0) : M * S * Mᵀ = M.det • S := by
+  have h10 : S 1 0 = -S 0 1 := by simpa using congrFun (congrFun hS 0) 1
+  have h00 := hd 0
+  have h11 := hd 1
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_two, det_fin_two, h00, h11, h10] <;> ring
 
 /-! ### The determinant of `S + Sᵀ` modulo `4` -/
 
