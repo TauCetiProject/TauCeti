@@ -24,10 +24,8 @@ with nonzero constant term evaluated at an element of value less than `1` has va
 the constant term strictly dominates all the others. This is the polynomial estimate used in
 Stichtenoth's proof that valuation rings of algebraic function fields are discrete.
 
-Weighted coefficient bounds of the form
-`v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k` are stable under products, powers and suitable
-composition, and bound the value of the polynomial at `x`. This controls truncated composites of
-power series.
+Weighted coefficient bounds for products, powers, evaluation, and compositions of polynomials live
+in `TauCeti/RingTheory/Valuation/Polynomial/Weighted.lean`.
 
 Over a valued field, a nonzero polynomial can be rescaled so that its coefficients have value at
 most `1`, one coefficient is `1`, and all coefficients of higher degree have value below `1`. This
