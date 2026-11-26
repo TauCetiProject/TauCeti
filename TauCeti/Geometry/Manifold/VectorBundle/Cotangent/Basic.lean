@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
-public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Topology.FiberBundle.Countable
 public import TauCeti.Topology.FiberBundle.LocallyCompact
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -72,12 +71,10 @@ Pairing a covector field along a map `u` with the image of a tangent field under
 In a chart `c` into a normed space, differentiable with its inverse, a covector `ξ` at `x` is read
 as the covector `ξ ∘ D(c⁻¹)(c x)` of the model space, and this reading is a bijection
 (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`), so it vanishes exactly when
-`ξ` does (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff`); over a real
-inner product space, the same holds for the vector of the model space representing that reading
-(`OpenPartialHomeomorph.MDifferentiable.toDual_symm_comp_mfderiv_symm_eq_zero_iff`). If
-charts `c` of `M` and `φ` of `N` read a map `ι : N → M` as a continuous linear map `L`, then by
-the chain rule a covector at `ι y` vanishes on the image of `dι_y` exactly when its reading in `c`
-vanishes on the range of `L` (`TauCeti.comp_mfderiv_eq_zero_iff_of_eq_linearMap`).
+`ξ` does (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff`). If charts `c`
+of `M` and `φ` of `N` read a map `ι : N → M` as a continuous linear map `L`, then by the chain rule
+a covector at `ι y` vanishes on the image of `dι_y` exactly when its reading in `c` vanishes on the
+range of `L` (`TauCeti.comp_mfderiv_eq_zero_iff_of_eq_linearMap`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -530,23 +527,6 @@ theorem comp_mfderiv_symm_eq_zero_iff (hc : c.MDifferentiable I 𝓘(𝕜, G)) {
     (hx : x ∈ c.source) {ξ : TangentSpace I x →L[𝕜] 𝕜} :
     ξ ∘L mfderiv 𝓘(𝕜, G) I c.symm (c x) = 0 ↔ ξ = 0 :=
   (hc.comp_mfderiv_symm_bijective hx).1.eq_iff' (ContinuousLinearMap.zero_comp _)
-
-end OpenPartialHomeomorph.MDifferentiable
-
-namespace OpenPartialHomeomorph.MDifferentiable
-
-open InnerProductSpace
-
-variable {E H M : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  {c : OpenPartialHomeomorph M E}
-
-/-- In a chart `c` into a real inner product space, differentiable with its inverse, a covector
-`ξ` at `x` in the source of `c` is read as the zero vector of `E` exactly when it is zero. -/
-theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff (hc : c.MDifferentiable I 𝓘(ℝ, E)) {x : M}
-    (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} :
-    (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = 0 ↔ ξ = 0 :=
-  (toDual ℝ E).symm.map_eq_zero_iff.trans (hc.comp_mfderiv_symm_eq_zero_iff hx)
 
 end OpenPartialHomeomorph.MDifferentiable
 

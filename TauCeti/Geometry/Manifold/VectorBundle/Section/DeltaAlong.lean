@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Support
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 public import Mathlib.Geometry.Manifold.Immersion
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Conormal.Basic
@@ -72,6 +73,7 @@ annihilates the image of `dι_y` exactly when, read in the chart `c`, it is orth
 
 * `TauCeti.BundleTest.deltaAlong_apply`: its values.
 * `TauCeti.BundleTest.deltaAlong_dirac`: along a point mass it is a point mass.
+* `TauCeti.BundleTest.dsupport_deltaAlong_subset`: it is supported in the range of `ι`.
 * `TauCeti.BundleTest.waveFrontSet_deltaAlong`: the wave front set of the delta distribution of a
   closed embedded submanifold with a smooth positive density is its conormal bundle.
 
@@ -145,6 +147,12 @@ private theorem continuous_apply_apply {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ
   simp only [comp_apply, ContinuousLinearMap.coe_comp]
   rw [← t.continuousLinearMapAt_apply_of_mem (R := ℝ) hp, t.symmL_continuousLinearMapAt hp]
 
+/-- For a fixed bundle test `s`, the pairing `y ↦ ℓ y (s (ι y))` is continuous. -/
+private theorem continuous_apply_apply_right {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ} (hι : Continuous ι)
+    (hℓ : ∀ y₀, ContinuousAt (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y)) y₀)
+    (s : BundleTest I F V) : Continuous fun y ↦ ℓ y (s (ι y)) :=
+  (continuous_apply_apply hι hℓ).comp (continuous_const.prodMk continuous_id)
+
 variable [MeasurableSpace N] [OpensMeasurableSpace N]
 
 /-- The linear functional underlying `TauCeti.BundleTest.deltaAlong`. -/
@@ -156,8 +164,8 @@ private def deltaAlongₗ (hι : IsProperMap ι) (μ : Measure N) [IsFiniteMeasu
   map_add' s s' := by
     -- The pairing with a test is continuous with compact support, hence integrable.
     have h (s : BundleTest I F V) : Integrable (fun y ↦ ℓ y (s (ι y))) μ :=
-      ((continuous_apply_apply hι.continuous hℓ).comp (continuous_const.prodMk continuous_id))
-        |>.integrable_of_hasCompactSupport <| HasCompactSupport.intro'
+      (continuous_apply_apply_right hι.continuous hℓ s).integrable_of_hasCompactSupport <|
+        HasCompactSupport.intro'
           (hι.isCompact_preimage s.isCompact_tsupport) (isClosed_closure.preimage hι.continuous)
           fun y hy ↦ apply_apply_eq_zero_of_notMem subset_rfl hy
     refine (integral_congr_ae (Eventually.of_forall fun y ↦ ?_)).trans (integral_add (h s) (h s'))
@@ -206,133 +214,31 @@ theorem deltaAlong_dirac (hι : IsProperMap ι) (y : N) (ℓ : (y : N) → V (ι
     (hℓ : ∀ y₀, ContinuousAt (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y)) y₀) :
     deltaAlong (I := I) hι (Measure.dirac y) ℓ hℓ = delta (ι y) (ℓ y) := by
   ext s
-  have hc : Continuous fun y ↦ ℓ y (s (ι y)) :=
-    (continuous_apply_apply hι.continuous hℓ).comp (continuous_const.prodMk continuous_id)
-  rw [deltaAlong_apply, delta_apply, integral_dirac' _ _ hc.stronglyMeasurable]
+  rw [deltaAlong_apply, delta_apply,
+    integral_dirac' _ _ (continuous_apply_apply_right hι.continuous hℓ s).stronglyMeasurable]
+
+/-- **The support of the delta along `ι`.** The delta along a proper map `ι` is supported in the
+range of `ι`, a closed set. -/
+theorem dsupport_deltaAlong_subset (hι : IsProperMap ι) (μ : Measure N)
+    [IsFiniteMeasureOnCompacts μ] (ℓ : (y : N) → V (ι y) →L[ℝ] ℝ)
+    (hℓ : ∀ y₀, ContinuousAt (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y)) y₀) :
+    dsupport (deltaAlong (I := I) hι μ ℓ hℓ) ⊆ range ι := fun x hx ↦ by
+  by_contra hxι
+  refine (notMem_dsupport_iff.2 ⟨(range ι)ᶜ, hι.isClosedMap.isClosed_range.isOpen_compl, hxι,
+    isVanishingOn_iff.2 fun s hs ↦ ?_⟩) hx
+  rw [deltaAlong_apply]
+  exact integral_eq_zero_of_ae (Eventually.of_forall fun y ↦
+    apply_apply_eq_zero_of_notMem hs (not_not.2 (mem_range_self y)))
 
 end Functional
 
-/-! ### The wave front set -/
+/-! ### A cutoff seen through a chart -/
 
-section WaveFrontSet
+section Cutoff
 
-open InnerProductSpace
-open ContinuousLinearMap (toSpanSingleton)
-open scoped RealInnerProductSpace
+variable {E M N E' : Type*} [TopologicalSpace E] [TopologicalSpace M] [TopologicalSpace N]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {ι : N → M}
 
-variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
-  {E' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace N] [ChartedSpace E' N] {ι : N → M}
-
-variable [MeasurableSpace N] [BorelSpace N] [MeasureSpace E'] [BorelSpace E']
-
-omit [I.Boundaryless] [FiniteDimensional ℝ F] [FiniteDimensional ℝ E'] [ChartedSpace E' N]
-  [MeasurableSpace N] [BorelSpace N] [MeasureSpace E'] [BorelSpace E'] in
-/-- For a proper map `ι`, the pairing `y ↦ ℓ y (s (ι y))` with a test function `ψ v` extended
-through a chart `c` and a frame `t` has compact support, contained in `O` when every point `y` with
-`c (ι y)` in a set `B` containing the support of `ψ` lies in `O`. -/
-private theorem hasCompactSupport_apply_chartTestCLM (hι : IsProperMap ι)
-    {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ} {t : Trivialization F (π F V)} [MemTrivializationAtlas t]
-    {c : OpenPartialHomeomorph M E} (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
-    (hct : c.source ⊆ t.baseSet) {O : Set N} {B : Set E}
-    (hB : ∀ y, ι y ∈ c.source → c (ι y) ∈ B → y ∈ O)
-    (ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (hψ : tsupport ψ ⊆ B) (v : F) :
-    HasCompactSupport (fun y ↦
-        ℓ y (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ) (ι y))) ∧
-      tsupport (fun y ↦
-        ℓ y (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ) (ι y))) ⊆
-        O := by
-  set s := t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ)
-  -- The pairing vanishes off the compact set `K = ι⁻¹ (c⁻¹ (supp ψ))`, which lies in `O`.
-  set K := ι ⁻¹' (c.symm '' tsupport ψ)
-  have hψc : IsCompact (c.symm '' tsupport ψ) :=
-    ψ.hasCompactSupport.isCompact.image_of_continuousOn (c.continuousOn_symm.mono ψ.tsupport_subset)
-  have hKcl : IsClosed K := hψc.isClosed.preimage hι.continuous
-  have hKO : K ⊆ O := by
-    rintro y ⟨z, hz, hzy⟩
-    have hzt : z ∈ c.target := ψ.tsupport_subset hz
-    have hy : ι y ∈ c.source := hzy ▸ c.map_target hzt
-    refine hB y hy ?_
-    rw [← hzy, c.right_inv hzt]
-    exact hψ hz
-  have hgK (y : N) (hyK : y ∉ K) : ℓ y (s (ι y)) = 0 := by
-    by_contra h
-    by_cases hyc : ι y ∈ c.source
-    · rw [show ℓ y (s (ι y)) = ψ (c (ι y)) * ℓ y (t.symmL ℝ (ι y) v) by
-        simp [s, t.chartTestCLM_apply_of_mem _ _ _ _ hyc, map_smul]] at h
-      exact hyK ⟨c (ι y), subset_tsupport _ (left_ne_zero_of_mul h), c.left_inv hyc⟩
-    · simp [s, t.chartTestCLM_apply_of_notMem _ _ _ _ hyc] at h
-  exact ⟨HasCompactSupport.intro' (hι.isCompact_preimage hψc) hKcl hgK,
-    (closure_minimal (fun y hy ↦ by_contra fun h ↦ Function.mem_support.1 hy (hgK y h)) hKcl).trans
-      hKO⟩
-
-omit [I.Boundaryless] [FiniteDimensional ℝ F] [FiniteDimensional ℝ E'] [ChartedSpace E' N]
-  [BorelSpace N] in
-/-- **The delta along `ι` read in a chart.** In the setting of
-`Manifold.IsImmersionAt.exists_chart_eq_linearMap`, let integrals against `μ` of continuous
-compactly supported functions with support in `O ⊆ φ.source` be integrals over `φ '' O` against
-`w ν`, and let `χ` be a cutoff supported in `φ '' O`. If every point `y` with `c (ι y) ∈ B` lies
-in `O` and has `χ (φ y) = 1`, then pairing the delta along `ι` with a test function `ψ v`
-supported in `B`, read in `c` and the frame `t`, gives
-`∫ χ(u) w(u) ℓ (φ⁻¹ u) (t⁻¹ v) ψ (L u) dν(u)`. -/
-private theorem integral_apply_chartTestCLM_eq (hι : IsProperMap ι) {μ : Measure N}
-    {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ}
-    (hℓ : ∀ y₀, ContinuousAt (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y)) y₀)
-    {t : Trivialization F (π F V)} [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
-    {φ : OpenPartialHomeomorph N E'} {L : E' →L[ℝ] E} (hmaps : MapsTo ι φ.source c.source)
-    (hcL : ∀ y ∈ φ.source, c (ι y) = L (φ y)) {ν : Measure E'} {O : Set N} (hO : IsOpen O)
-    (hOφ : O ⊆ φ.source) {w : E' → ℝ}
-    (hint : ∀ g : N → ℝ, Continuous g → HasCompactSupport g → tsupport g ⊆ O →
-      ∫ y, g y ∂μ = ∫ u in φ '' O, w u * g (φ.symm u) ∂ν)
-    {χ : E' → ℝ} (hχ : tsupport χ ⊆ φ '' O) {B : Set E}
-    (hB : ∀ y, ι y ∈ c.source → c (ι y) ∈ B → y ∈ O ∧ χ (φ y) = 1)
-    (ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (hψ : tsupport ψ ⊆ B) (v : F) :
-    ∫ y, ℓ y (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ) (ι y)) ∂μ =
-      ∫ u, χ u * (w u * ℓ (φ.symm u) (t.symmL ℝ (ι (φ.symm u)) v)) * ψ (L u) ∂ν := by
-  set s := t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ)
-  -- On the chart source the integrand is `ψ (c (ι y)) ℓ y (t⁻¹ v)`, and it vanishes elsewhere.
-  have hval (y : N) (hy : ι y ∈ c.source) :
-      ℓ y (s (ι y)) = ψ (c (ι y)) * ℓ y (t.symmL ℝ (ι y) v) := by
-    simp [s, t.chartTestCLM_apply_of_mem _ _ _ _ hy, map_smul]
-  have hsupp (y : N) (hy : ℓ y (s (ι y)) ≠ 0) : y ∈ O ∧ χ (φ y) = 1 := by
-    by_cases hyc : ι y ∈ c.source
-    · rw [hval y hyc] at hy
-      exact hB y hyc (hψ (subset_tsupport _ (left_ne_zero_of_mul hy)))
-    · simp [s, t.chartTestCLM_apply_of_notMem _ _ _ _ hyc] at hy
-  have hgc : Continuous fun y ↦ ℓ y (s (ι y)) :=
-    (continuous_apply_apply hι.continuous hℓ).comp (continuous_const.prodMk continuous_id)
-  obtain ⟨hgcs, hgO⟩ := hasCompactSupport_apply_chartTestCLM (ℓ := ℓ) hι hc hct
-    (fun y hy hyB ↦ (hB y hy hyB).1) ψ hψ v
-  rw [hint (fun y ↦ ℓ y (s (ι y))) hgc hgcs hgO]
-  refine (setIntegral_congr_fun ((φ.isOpen_image_of_subset_source hO hOφ).measurableSet) ?_).trans
-    (setIntegral_eq_integral_of_forall_compl_eq_zero fun u hu ↦ ?_)
-  swap
-  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hu (hχ h), zero_mul, zero_mul]
-  rintro u ⟨y, hyO, rfl⟩
-  have hy := hOφ hyO
-  beta_reduce
-  rw [φ.left_inv hy]
-  rw [show χ (φ y) * (w (φ y) * ℓ y (t.symmL ℝ (ι y) v)) * ψ (L (φ y)) =
-    χ (φ y) * (w (φ y) * ℓ y (s (ι y))) by
-      rw [hval y (hmaps hy), hcL y hy]
-      ring]
-  by_cases h : ℓ y (s (ι y)) = 0
-  · simp [h]
-  · rw [(hsupp y h).2, one_mul]
-
-omit [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [∀ x, AddCommGroup (V x)]
-  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
-  [MeasurableSpace N] [BorelSpace N] [MeasureSpace E'] [BorelSpace E'] [I.Boundaryless]
-  [InnerProductSpace ℝ E] [ChartedSpace E' N] in
 /-- **A cutoff and a neighbourhood seeing only the chart.** Let `ι` be an embedding with
 `ι (φ.source) ⊆ c.source`, and let `O ⊆ φ.source` be an open neighbourhood of `y₀`. There are a
 smooth cutoff `χ` equal to `1` at `φ y₀` and supported in `φ '' O`, and an open neighbourhood `B`
@@ -365,6 +271,142 @@ private theorem exists_cutoff_and_nhds (hι : Topology.IsEmbedding ι) {c : Open
       rwa [mem_preimage, c.left_inv hy] at this
     rw [hWO] at hyW
     exact ⟨hyW.1, h₁ hyW.2.2⟩
+
+end Cutoff
+
+/-! ### The wave front set -/
+
+section WaveFrontSet
+
+open InnerProductSpace
+open ContinuousLinearMap (toSpanSingleton)
+open scoped RealInnerProductSpace
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
+  {E' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace N] [ChartedSpace E' N] {ι : N → M}
+
+variable [MeasurableSpace N] [BorelSpace N] [MeasureSpace E'] [BorelSpace E']
+
+omit [I.Boundaryless] [FiniteDimensional ℝ F] in
+/-- On the source of a chart `c`, a covector `ℓ` at `x` pairs with a test function `ψ v` extended
+through `c` and a frame `t` as `ψ (c x) ℓ (t⁻¹ v)`. -/
+private theorem apply_chartTestCLM_postcompCLM_of_mem {t : Trivialization F (π F V)}
+    [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
+    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
+    (ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (v : F) {x : M} (hx : x ∈ c.source)
+    (ℓ : V x →L[ℝ] ℝ) :
+    ℓ (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ) x) =
+      ψ (c x) * ℓ (t.symmL ℝ x v) := by
+  simp [t.chartTestCLM_apply_of_mem _ _ _ _ hx, map_smul]
+
+omit [I.Boundaryless] [FiniteDimensional ℝ F] in
+/-- A covector `ℓ` at `x` pairs nontrivially with a test function `ψ v` extended through a chart
+`c` and a frame `t` only if `x` lies in the source of `c` and `c x` in the support of `ψ`. -/
+private theorem mem_source_and_mem_tsupport_of_apply_chartTestCLM_postcompCLM_ne_zero
+    {t : Trivialization F (π F V)} [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
+    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
+    (ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (v : F) {x : M} {ℓ : V x →L[ℝ] ℝ}
+    (h : ℓ (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ) x) ≠ 0) :
+    x ∈ c.source ∧ c x ∈ tsupport ψ := by
+  by_cases hx : x ∈ c.source
+  · rw [apply_chartTestCLM_postcompCLM_of_mem hc hct ψ v hx] at h
+    exact ⟨hx, subset_tsupport _ (left_ne_zero_of_mul h)⟩
+  · simp [t.chartTestCLM_apply_of_notMem _ _ _ _ hx] at h
+
+omit [I.Boundaryless] [FiniteDimensional ℝ F] [FiniteDimensional ℝ E'] [ChartedSpace E' N]
+  [MeasurableSpace N] [BorelSpace N] [MeasureSpace E'] [BorelSpace E'] in
+/-- For a proper map `ι`, the pairing `y ↦ ℓ y (s (ι y))` with a test function `ψ v` extended
+through a chart `c` and a frame `t` has compact support, contained in `O` when every point `y` with
+`c (ι y)` in a set `B` containing the support of `ψ` lies in `O`. -/
+private theorem hasCompactSupport_apply_chartTestCLM (hι : IsProperMap ι)
+    {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ} {t : Trivialization F (π F V)} [MemTrivializationAtlas t]
+    {c : OpenPartialHomeomorph M E} (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
+    (hct : c.source ⊆ t.baseSet) {O : Set N} {B : Set E}
+    (hB : ∀ y, ι y ∈ c.source → c (ι y) ∈ B → y ∈ O)
+    (ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (hψ : tsupport ψ ⊆ B) (v : F) :
+    HasCompactSupport (fun y ↦
+        ℓ y (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ) (ι y))) ∧
+      tsupport (fun y ↦
+        ℓ y (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ) (ι y))) ⊆
+        O := by
+  set s := t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ)
+  -- The pairing vanishes off the compact set `K = ι⁻¹ (c⁻¹ (supp ψ))`, which lies in `O`.
+  set K := ι ⁻¹' (c.symm '' tsupport ψ)
+  have hψc : IsCompact (c.symm '' tsupport ψ) :=
+    ψ.hasCompactSupport.isCompact.image_of_continuousOn (c.continuousOn_symm.mono ψ.tsupport_subset)
+  have hKcl : IsClosed K := hψc.isClosed.preimage hι.continuous
+  have hKO : K ⊆ O := by
+    rintro y ⟨z, hz, hzy⟩
+    have hzt : z ∈ c.target := ψ.tsupport_subset hz
+    have hy : ι y ∈ c.source := hzy ▸ c.map_target hzt
+    refine hB y hy ?_
+    rw [← hzy, c.right_inv hzt]
+    exact hψ hz
+  have hgK (y : N) (hyK : y ∉ K) : ℓ y (s (ι y)) = 0 := by
+    by_contra h
+    obtain ⟨hyc, hψy⟩ := mem_source_and_mem_tsupport_of_apply_chartTestCLM_postcompCLM_ne_zero
+      hc hct ψ v h
+    exact hyK ⟨c (ι y), hψy, c.left_inv hyc⟩
+  exact ⟨HasCompactSupport.intro' (hι.isCompact_preimage hψc) hKcl hgK,
+    (closure_minimal (fun y hy ↦ by_contra fun h ↦ Function.mem_support.1 hy (hgK y h)) hKcl).trans
+      hKO⟩
+
+omit [I.Boundaryless] [FiniteDimensional ℝ F] [FiniteDimensional ℝ E'] [ChartedSpace E' N]
+  [BorelSpace N] in
+/-- **The delta along `ι` read in a chart.** In the setting of
+`Manifold.IsImmersionAt.exists_chart_eq_linearMap`, let integrals against `μ` of continuous
+compactly supported functions with support in `O ⊆ φ.source` be integrals over `φ '' O` against
+`w ν`, and let `χ` be a cutoff supported in `φ '' O`. If every point `y` with `c (ι y) ∈ B` lies
+in `O` and has `χ (φ y) = 1`, then pairing the delta along `ι` with a test function `ψ v`
+supported in `B`, read in `c` and the frame `t`, gives
+`∫ χ(u) w(u) ℓ (φ⁻¹ u) (t⁻¹ v) ψ (L u) dν(u)`. -/
+private theorem integral_apply_chartTestCLM_eq (hι : IsProperMap ι) {μ : Measure N}
+    {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ}
+    (hℓ : ∀ y₀, ContinuousAt (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y)) y₀)
+    {t : Trivialization F (π F V)} [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
+    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
+    {φ : OpenPartialHomeomorph N E'} {L : E' →L[ℝ] E} (hmaps : MapsTo ι φ.source c.source)
+    (hcL : ∀ y ∈ φ.source, c (ι y) = L (φ y)) {ν : Measure E'} {O : Set N} (hO : IsOpen O)
+    (hOφ : O ⊆ φ.source) {w : E' → ℝ}
+    (hint : ∀ g : N → ℝ, Continuous g → HasCompactSupport g → tsupport g ⊆ O →
+      ∫ y, g y ∂μ = ∫ u in φ '' O, w u * g (φ.symm u) ∂ν)
+    {χ : E' → ℝ} (hχ : tsupport χ ⊆ φ '' O) {B : Set E}
+    (hB : ∀ y, ι y ∈ c.source → c (ι y) ∈ B → y ∈ O ∧ χ (φ y) = 1)
+    (ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (hψ : tsupport ψ ⊆ B) (v : F) :
+    ∫ y, ℓ y (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ) (ι y)) ∂μ =
+      ∫ u, χ u * (w u * ℓ (φ.symm u) (t.symmL ℝ (ι (φ.symm u)) v)) * ψ (L u) ∂ν := by
+  set s := t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) ψ)
+  have hsupp (y : N) (hy : ℓ y (s (ι y)) ≠ 0) : y ∈ O ∧ χ (φ y) = 1 := by
+    obtain ⟨hyc, hψy⟩ := mem_source_and_mem_tsupport_of_apply_chartTestCLM_postcompCLM_ne_zero
+      hc hct ψ v hy
+    exact hB y hyc (hψ hψy)
+  obtain ⟨hgcs, hgO⟩ := hasCompactSupport_apply_chartTestCLM (ℓ := ℓ) hι hc hct
+    (fun y hy hyB ↦ (hB y hy hyB).1) ψ hψ v
+  rw [hint (fun y ↦ ℓ y (s (ι y))) (continuous_apply_apply_right hι.continuous hℓ s) hgcs hgO]
+  refine (setIntegral_congr_fun ((φ.isOpen_image_of_subset_source hO hOφ).measurableSet) ?_).trans
+    (setIntegral_eq_integral_of_forall_compl_eq_zero fun u hu ↦ ?_)
+  swap
+  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hu (hχ h), zero_mul, zero_mul]
+  rintro u ⟨y, hyO, rfl⟩
+  have hy := hOφ hyO
+  beta_reduce
+  rw [φ.left_inv hy]
+  rw [show χ (φ y) * (w (φ y) * ℓ y (t.symmL ℝ (ι y) v)) * ψ (L (φ y)) =
+    χ (φ y) * (w (φ y) * ℓ y (s (ι y))) by
+      rw [show ℓ y (s (ι y)) = _ from
+        apply_chartTestCLM_postcompCLM_of_mem hc hct ψ v (hmaps hy) (ℓ y), hcL y hy]
+      ring]
+  by_cases h : ℓ y (s (ι y)) = 0
+  · simp [h]
+  · rw [(hsupp y h).2, one_mul]
 
 section LocalModel
 
@@ -400,15 +442,14 @@ private theorem exists_restrictCLM_chartComponent_deltaAlong_eq
   set ν : Measure E' := volume
   -- In the chart `φ`, `μ` is `w(u) du` for a smooth positive `w`.
   obtain ⟨w, hw, hwpos, hint⟩ := hμ.exists_integral_real_eq hφ
-  rw [← φ.image_source_eq_target] at hw hwpos hint
-  obtain ⟨χ, hχ, hχU, hχ₀, B, hBc, hB, hBO⟩ :=
-    exists_cutoff_and_nhds hι.isEmbedding (hmaps hy₀) φ.open_source hy₀ subset_rfl
   -- The weight `u ↦ ℓ (φ⁻¹ u) (t⁻¹ v)` is smooth on the chart target.
   have ha : ContDiffOn ℝ ∞
       (fun u ↦ ℓ (φ.symm u) ((trivializationAt F V (ι y₀)).symmL ℝ (ι (φ.symm u)) v)) φ.target :=
     (contMDiffOn_iff_contDiffOn.1 ((hℓ y₀).comp (contMDiffOn_symm_of_mem_maximalAtlas hφ)
       fun u hu ↦ hct (hmaps (φ.map_target hu)))).clm_apply contDiffOn_const
-  rw [← φ.image_source_eq_target] at ha
+  rw [← φ.image_source_eq_target] at hw hwpos hint ha
+  obtain ⟨χ, hχ, hχU, hχ₀, B, hBc, hB, hBO⟩ :=
+    exists_cutoff_and_nhds hι.isEmbedding (hmaps hy₀) φ.open_source hy₀ subset_rfl
   have hH : ContDiff ℝ ∞ fun u ↦
       χ u • (w u * ℓ (φ.symm u) ((trivializationAt F V (ι y₀)).symmL ℝ (ι (φ.symm u)) v)) :=
     (hw.mul ha).contDiff_smul_of_tsupport_subset
@@ -428,13 +469,13 @@ private theorem exists_restrictCLM_chartComponent_deltaAlong_eq
     have hψ : tsupport (TestFunction.monoCLM ℝ ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) ⊆ B := by
       rw [TestFunction.coe_monoCLM_of_le le_rfl hBc]
       exact ψ.tsupport_subset
-    rw [Distribution.restrictCLM_apply, Distribution.restrictCLM_apply,
-      Bundle.Trivialization.chartComponent_apply, deltaAlong_apply,
-      integral_apply_chartTestCLM_eq hι.isProperMap
-        (continuousAt_comp_symmL_of_contMDiffOn hι.continuous hℓ) hc hct hmaps hcL φ.open_source
-        subset_rfl hint hχU
-        hBO _ hψ,
-      Distribution.smulLeftCLM_apply,
+    -- Read in the chart, the delta pairs with `ψ v` as an integral against `ν`.
+    have hpair := integral_apply_chartTestCLM_eq hι.isProperMap
+      (continuousAt_comp_symmL_of_contMDiffOn hι.continuous hℓ) hc hct hmaps hcL φ.open_source
+      subset_rfl hint hχU hBO _ hψ v
+    simp only [Distribution.restrictCLM_apply, Bundle.Trivialization.chartComponent_apply,
+      deltaAlong_apply, Distribution.smulLeftCLM_apply]
+    rw [hpair,
       Distribution.ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _)]
     simp only [Pi.one_apply]
     rw [integral_map L.continuous.aemeasurable (Continuous.aestronglyMeasurable ?_),

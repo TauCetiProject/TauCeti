@@ -105,9 +105,10 @@ theorem that a distribution is smooth near a point exactly when it is microlocal
 point in every nonzero direction
 (`Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt`) turns this into
 microlocal smoothness of `T` at every nonzero covector at `x`, since the differential of the
-inverse chart identifies the covectors at `x` with the vectors of `E`. The latter condition does
-not mention the chart, which gives the independence of the chart and the frame, and the
-projection theorem.
+inverse chart identifies the covectors at `x` with the vectors of `E`, the nonzero ones with the
+nonzero ones (`OpenPartialHomeomorph.MDifferentiable.toDual_symm_comp_mfderiv_symm_eq_zero_iff`).
+The latter condition does not mention the chart, which gives the independence of the chart and
+the frame, and the projection theorem.
 
 ## References
 
@@ -123,6 +124,23 @@ noncomputable section
 
 open Set Filter Function TopologicalSpace Complex Distribution ContinuousLinearMap
 open scoped Manifold ContDiff Distributions Topology InnerProduct CompactConvergenceCLM
+
+namespace OpenPartialHomeomorph.MDifferentiable
+
+open InnerProductSpace
+
+variable {E H M : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {c : OpenPartialHomeomorph M E}
+
+/-- In a chart `c` into a real inner product space, differentiable with its inverse, a covector
+`ξ` at `x` in the source of `c` is read as the zero vector of `E` exactly when it is zero. -/
+theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff (hc : c.MDifferentiable I 𝓘(ℝ, E)) {x : M}
+    (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} :
+    (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = 0 ↔ ξ = 0 :=
+  (toDual ℝ E).symm.map_eq_zero_iff.trans (hc.comp_mfderiv_symm_eq_zero_iff hx)
+
+end OpenPartialHomeomorph.MDifferentiable
 
 /-! ### Microlocal smoothness on the manifold -/
 
