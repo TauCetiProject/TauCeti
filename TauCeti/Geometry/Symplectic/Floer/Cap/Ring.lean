@@ -84,7 +84,7 @@ noncomputable section
 
 namespace TauCeti.Floer
 
-open DirectSum NovikovModule NovikovSeries PeriodGroup
+open _root_.DirectSum NovikovModule NovikovSeries PeriodGroup
 
 variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)

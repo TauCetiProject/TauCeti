@@ -46,6 +46,9 @@ Hessian of `H - κ L` is
   reduction to the transversal plane is positive definite
   (`TauCeti.posDef_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum`): the
   transversal reduction gives one elliptic block, the linearization of the stable circular orbit.
+  For any mass `m ≠ 0`, `m` times the reduced Hessian is positive definite exactly when
+  `m U_L''(‖q‖) > 0`
+  (`TauCeti.posDef_smul_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_iff`).
   By the same formula, at a nondegenerate maximum the transversal Hessian is indefinite, a
   hyperbolic block.
 
@@ -64,6 +67,10 @@ polar canonical parametrization, whose differential is a linear symplectomorphis
 * `TauCeti.hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos`,
   `TauCeti.posDef_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum`: stable
   circular orbits are elliptic.
+* `TauCeti.forall_pos_mul_hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_iff`,
+  `TauCeti.posDef_smul_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_iff`:
+  for `m ≠ 0`, `m` times the transversal Hessian is positive definite exactly when
+  `m U_L''(‖q‖) > 0`.
 
 ## References
 
@@ -721,6 +728,94 @@ theorem posDef_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomen
   exact hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos b hm hq hU h0 hc
     hpos (LinearMap.mem_ker.1 u.property)
     fun hu ↦ hv (SymplecticForm.ReducedSpace.mk_eq_zero_iff.2 hu)
+
+/-- At a circular orbit, `ker d(H, L)` contains a vector outside its symplectic complement with
+radial components `(δr, δp_r) = (1, 0)`. -/
+private theorem exists_mem_ker_not_mem_orthogonal_fderiv_radialProjection_eq (hq : x.1 ≠ 0)
+    (hU : DifferentiableAt ℝ U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) :
+    ∃ v : V × V, fderiv ℝ (centralForceEnergyMomentum b m U) x v = 0 ∧
+      v ∉ stdSymplecticForm.orthogonal (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker ∧
+      fderiv ℝ radialProjection x v = (1, 0) := by
+  obtain ⟨θ, e, hx, he, hφe, hev, hdrad⟩ := exists_polarCanonical b (m := m) (U := U) hq h0
+  have hd := fderiv_apply_eq_polarDiff b hq hU hc hx hφe hev
+  refine ⟨e ((1, 0), (0, 0)), (apply_mem_ker_iff_of_apply_eq_polarDiff hd).2 rfl, fun h ↦ ?_,
+    hdrad _⟩
+  -- The radial momentum direction lies in the kernel and pairs to `1` with the radial direction.
+  have h₁ := (SymplecticForm.mem_orthogonal_iff.1 h) (e ((0, 1), (0, 0)))
+    ((apply_mem_ker_iff_of_apply_eq_polarDiff hd).2 rfl)
+  rw [he.apply] at h₁
+  simp at h₁
+
+/-- **Circular orbits are elliptic exactly at minima of the effective potential.** At a point of a
+circular orbit, as in `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`, with mass
+`m ≠ 0`, `m` times the Hessian of `H - κ L` is positive on every vector of `ker d(H, L)` outside
+the symplectic complement of `ker d(H, L)` exactly when `m U_L''(‖q‖) > 0`. On the transversal
+plane this is
+`TauCeti.posDef_smul_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_iff`. -/
+theorem forall_pos_mul_hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_iff
+    (hm : m ≠ 0) (hq : x.1 ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) :
+    (∀ v ∈ (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker,
+      v ∉ stdSymplecticForm.orthogonal (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker →
+        0 < m * hessianQuadraticForm (fun y ↦ centralForceHamiltonian m U y -
+          angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2) * angularMomentum (b 0) (b 1) y) x v) ↔
+      0 < m * iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ := by
+  set a := iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖
+  have hval {v : V × V} (hv : fderiv ℝ (centralForceEnergyMomentum b m U) x v = 0) :
+      m * hessianQuadraticForm (fun y ↦ centralForceHamiltonian m U y -
+          angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2) * angularMomentum (b 0) (b 1) y) x v =
+        m * a * (fderiv ℝ radialProjection x v).1 ^ 2 + (fderiv ℝ radialProjection x v).2 ^ 2 := by
+    rw [hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum b hm hq hU h0 hc hv,
+      mul_add, ← mul_assoc, mul_div_cancel₀ _ hm]
+  constructor
+  · intro h
+    obtain ⟨v, hv, hvo, hr⟩ :=
+      exists_mem_ker_not_mem_orthogonal_fderiv_radialProjection_eq b (m := m) (U := U) hq
+        (hU.differentiableAt two_ne_zero) h0 hc
+    have h' := h v hv hvo
+    rw [hval hv, hr] at h'
+    simpa using h'
+  · intro hma v hv hvo
+    have hv : fderiv ℝ (centralForceEnergyMomentum b m U) x v = 0 := hv
+    rw [hval hv]
+    have hne : fderiv ℝ radialProjection x v ≠ 0 := fun hr ↦ hvo
+      (mem_orthogonal_ker_of_fderiv_radialProjection_eq_zero b hq
+        (hU.differentiableAt two_ne_zero) h0 hc hv hr)
+    -- `m a δr² + δp_r²` is positive as soon as `(δr, δp_r) ≠ 0`.
+    rcases eq_or_ne (fderiv ℝ radialProjection x v).1 0 with h₁ | h₁
+    · have h₂ : (fderiv ℝ radialProjection x v).2 ≠ 0 := fun h₂ ↦ hne (Prod.ext h₁ h₂)
+      rw [h₁]
+      positivity
+    · exact add_pos_of_pos_of_nonneg (mul_pos hma (by positivity)) (sq_nonneg _)
+
+/-- **Circular orbits are elliptic exactly at minima of the effective potential, on the
+transversal plane.** At a point of a circular orbit, as in
+`TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`, with mass `m ≠ 0`, `m` times the
+transversal reduction of the Hessian of `H - κ L` to `K / (K ∩ K^ω)`, `K = ker d(H, L)`, is
+positive definite exactly when `m U_L''(‖q‖) > 0`. For a positive mass this is the case exactly at
+a nondegenerate minimum of the effective potential. -/
+theorem posDef_smul_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_iff
+    (hm : m ≠ 0) (hq : x.1 ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) :
+    (m • stdSymplecticForm.reducedQuadraticForm
+      (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker
+      (hessianQuadraticForm (fun y ↦ centralForceHamiltonian m U y -
+        angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2) * angularMomentum (b 0) (b 1) y) x)
+      (polar_hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_eq_zero b
+        hq hU h0 hc)).PosDef ↔
+      0 < m * iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ := by
+  rw [← forall_pos_mul_hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_iff
+    b hm hq hU h0 hc]
+  constructor
+  · intro h v hv hvo
+    simpa using h (Submodule.Quotient.mk ⟨v, hv⟩)
+      (by rwa [Ne, SymplecticForm.ReducedSpace.mk_eq_zero_iff])
+  · intro h v hv
+    induction v using Submodule.Quotient.induction_on with
+    | H u =>
+      rw [Ne, SymplecticForm.ReducedSpace.mk_eq_zero_iff] at hv
+      simpa using h u u.property hv
 
 end Plane
 

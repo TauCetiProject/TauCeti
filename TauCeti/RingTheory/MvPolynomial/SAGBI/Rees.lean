@@ -121,19 +121,9 @@ theorem exists_finsupp_sub_sum_mem_weightFiltrationLT
     rw [Finsupp.sum_sub, hsum]
     ring
   rw [heq]
-  refine add_mem (mem_weightFiltrationLT_iff.2 fun x hx ↦ ?_)
-    (Submodule.sum_mem _ fun j _ ↦ mem_weightFiltrationLT_iff.2 fun x hx ↦ ?_)
-  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent] at hx
-    have hxn : Finsupp.weight d x ≠ n := fun h ↦ hx (by simp [h])
-    have hxP : x ∈ P.support := mem_support_iff.2 fun h ↦ hx (by simp [h])
-    exact lt_of_le_of_ne (mem_weightFiltration_iff.1 hP x hxP) hxn
-  -- An exponent of `h j * Q j` is a sum `y + z` with `weight d y + e j = n` and
-  -- `weight d z < e j`.
-  · obtain ⟨y, hy, z, hz, rfl⟩ := Finset.mem_add.1 (support_mul _ _ hx)
-    have := hdeg j y hy
-    have := mem_weightFiltrationLT_iff.1 (hQ j) z hz
-    rw [map_add]
-    omega
+  exact mem_weightFiltrationLT_iff.2 fun x hx ↦
+    weight_sub_weightedHomogeneousComponent_add_sum_lt d e (mem_weightFiltration_iff.1 hP)
+      (fun j _ ↦ hdeg j) (fun j _ ↦ mem_weightFiltrationLT_iff.1 (hQ j)) hx
 
 /-- **Standard representations.** Let each `c i` have weight at most `d i` with component `g i`
 of weight `d i`, let polynomials `r j`, weighted homogeneous of weight `e j`, generate the kernel
