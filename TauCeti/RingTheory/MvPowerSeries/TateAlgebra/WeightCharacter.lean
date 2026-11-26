@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.Sigma0
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Moebius
 import TauCeti.Analysis.Normed.Ring.MulUnit
 import TauCeti.Analysis.Normed.Ring.UnitBall
@@ -17,7 +18,7 @@ its Jacobson radical (a power `𝔭_vᵗ` of the maximal ideal), and `R` a compl
 normed commutative ring with `‖1‖ = 1`, reached from `O` by ring homomorphisms
 `σ₁, …, σ_k : O → R` into the closed unit ball (the embeddings `F_v → K` followed by
 `K → R`). The matrices `!![a, b; c, d]` over `O` with `c ∈ I` and `d` a unit form a monoid
-`Σ₀(I)` (`TauCeti.MvPowerSeries.sigma0Submonoid`); over `ℤ_p` with `I = pᵗ ℤ_p`, its matrices of
+`Σ₀(I)` (`TauCeti.Matrix.sigma0Submonoid`); over `ℤ_p` with `I = pᵗ ℤ_p`, its matrices of
 nonzero determinant form Jacobs's monoid `Σ_t`. When `σᵢ` maps `I` into the open unit ball, each
 `γ ∈ Σ₀(I)` acts on the closed unit polydisc in the coordinates `z₁, …, z_k` by the Möbius
 transformations
@@ -56,9 +57,8 @@ The algebraic weight `u ↦ ∏ᵢ σᵢ(u) ^ mᵢ`, with expansion `∏ᵢ (1 +
 
 ## Main definitions
 
-* `TauCeti.MvPowerSeries.sigma0Submonoid`: the monoid `Σ₀(I)` of matrices with `c ∈ I` and `d` a
-  unit.
-* `TauCeti.MvPowerSeries.sigma0ToMoebius`: its action on the unit polydisc through the `σᵢ`.
+* `TauCeti.MvPowerSeries.sigma0ToMoebius`: the action of `Σ₀(I)` on the unit polydisc through
+  the `σᵢ`.
 * `TauCeti.MvPowerSeries.AnalyticWeight`: a character of `Oˣ` with a restricted expansion near
   `1` that is multiplicative as a formal power series.
 * `TauCeti.MvPowerSeries.AnalyticWeight.automorphyFactor`: the automorphy factor
@@ -87,7 +87,7 @@ The algebraic weight `u ↦ ∏ᵢ σᵢ(u) ^ mᵢ`, with expansion `∏ᵢ (1 +
 
 public section
 
-open MvPowerSeries
+open MvPowerSeries TauCeti.Matrix
 
 namespace TauCeti.MvPowerSeries
 
@@ -95,53 +95,7 @@ section Sigma0
 
 variable {O : Type*} [CommRing O]
 
-/-- The monoid **`Σ₀(I)`** of `2 × 2` matrices `!![a, b; c, d]` over `O` with `c ∈ I` and `d` a
-unit, for an ideal `I` in the Jacobson radical of `O`. For `O = 𝒪_v` and `I = 𝔭_v` these are
-exactly the matrices over `𝒪_v` whose denominator `c z + d` is a unit for every `z ∈ 𝒪_v`, so that
-their Möbius transformations preserve `𝒪_v`; for `I = 𝔭_vᵗ` one additionally has
-`c ≡ 0 mod 𝔭_vᵗ`. -/
-def sigma0Submonoid (I : Ideal O) (hI : I ≤ Ring.jacobson O) :
-    Submonoid (Matrix (Fin 2) (Fin 2) O) where
-  carrier := {γ | γ 1 0 ∈ I ∧ IsUnit (γ 1 1)}
-  one_mem' := ⟨by simp, by simp⟩
-  mul_mem' {γ δ} hγ hδ := by
-    obtain ⟨hc, hd⟩ := hγ
-    obtain ⟨hc', hd'⟩ := hδ
-    simp only [Set.mem_ofPred_eq, Matrix.mul_apply, Fin.sum_univ_two]
-    refine ⟨I.add_mem (I.mul_mem_right _ hc) (I.mul_mem_left _ hc'), ?_⟩
-    -- `c b' + d d' = (c b' (d d')⁻¹ + 1) d d'`, and `c b' (d d')⁻¹` is in the Jacobson radical
-    obtain ⟨u, hu⟩ := hd.mul hd'
-    convert (Ring.mem_jacobson_iff.mp (hI (I.mul_mem_right (δ 0 1) hc)) ↑u⁻¹).mul u.isUnit
-      using 1
-    rw [add_mul, mul_assoc, Units.inv_mul, mul_one, one_mul, hu]
-
 variable {I : Ideal O} {hI : I ≤ Ring.jacobson O} {γ : Matrix (Fin 2) (Fin 2) O}
-
-@[simp]
-theorem mem_sigma0Submonoid_iff : γ ∈ sigma0Submonoid I hI ↔ γ 1 0 ∈ I ∧ IsUnit (γ 1 1) :=
-  Iff.rfl
-
-/-- The lower left entry of an element of `Σ₀(I)` lies in `I`. -/
-theorem lowerLeft_mem_of_mem_sigma0Submonoid (hγ : γ ∈ sigma0Submonoid I hI) : γ 1 0 ∈ I :=
-  hγ.1
-
-/-- The lower right entry of an element of `Σ₀(I)` is a unit. -/
-theorem isUnit_lowerRight_of_mem_sigma0Submonoid (hγ : γ ∈ sigma0Submonoid I hI) :
-    IsUnit (γ 1 1) :=
-  hγ.2
-
-/-- The lower right entry `d` of an element of `Σ₀(I)`, as a unit of `O`. -/
-noncomputable def sigma0LowerRightUnit (γ : sigma0Submonoid I hI) : Oˣ :=
-  (isUnit_lowerRight_of_mem_sigma0Submonoid γ.property).unit
-
-@[simp]
-theorem coe_sigma0LowerRightUnit (γ : sigma0Submonoid I hI) :
-    (sigma0LowerRightUnit γ : O) = (γ : Matrix (Fin 2) (Fin 2) O) 1 1 :=
-  IsUnit.unit_spec _
-
-@[simp]
-theorem sigma0LowerRightUnit_one : sigma0LowerRightUnit (1 : sigma0Submonoid I hI) = 1 :=
-  Units.ext (by simp)
 
 variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
 
@@ -150,7 +104,7 @@ variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [
 theorem map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ : O →+* R) (hσ : ∀ x, ‖σ x‖ ≤ 1)
     (hσI : ∀ y ∈ I, ‖σ y‖ < 1) (hγ : γ ∈ sigma0Submonoid I hI) :
     σ.mapMatrix γ ∈ moebiusSubmonoid R := by
-  obtain ⟨hc, u, hu⟩ := hγ
+  obtain ⟨hc, u, hu⟩ := mem_sigma0Submonoid_iff.mp hγ
   have hσu : ‖σ ↑u‖ = 1 := norm_map_eq_one_of_isUnit hσ u.isUnit
   have hσu' : ‖σ ↑u⁻¹‖ = 1 := norm_map_eq_one_of_isUnit hσ u⁻¹.isUnit
   refine mem_moebiusSubmonoid_iff.mpr ⟨hσ _, hσ _, hσI _ hc, ?_, ?_⟩
