@@ -31,7 +31,7 @@ namespace TauCeti.OneSidedBound
 /-- For large `W` and `W^6 ≤ L ≤ W^6 + 1`, the interval `[10 * L, 11 * L]` lies in
 `[W, W^7]` and can hold `n` windows of width `W` with left endpoints spaced by `2 * W`.
 For the principal level take `L = log b` and `n` one more than the class number. -/
-theorem eventually_auxiliary_prime_window_bounds (n : ℕ) :
+theorem eventually_log_window_bounds (n : ℕ) :
     ∀ᶠ W : ℝ in atTop, ∀ L : ℝ, W ^ 6 ≤ L → L ≤ W ^ 6 + 1 →
       1 ≤ W ∧ W ≤ 10 * L ∧ 10 * L + 2 * n * W ≤ 11 * L ∧ 11 * L ≤ W ^ 7 := by
   filter_upwards [eventually_ge_atTop (max 22 (2 * n : ℝ))] with W hW L hlo hhi
