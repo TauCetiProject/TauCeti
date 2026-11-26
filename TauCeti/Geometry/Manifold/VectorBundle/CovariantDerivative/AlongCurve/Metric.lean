@@ -441,7 +441,8 @@ theorem IsMetricCompatible.deriv_inner_alongCurve
 
 /-- For two differentiable tangent fields with constant inner product near `t` within `s`,
 metric compatibility gives `⟪DₜV, W⟫ + ⟪V, DₜW⟫ = 0` at `t`. -/
-theorem IsMetricCompatible.inner_alongCurveWithin_add_eq_zero_of_eventuallyEq_const
+theorem
+  IsMetricCompatible.inner_alongCurveWithin_add_inner_alongCurveWithin_eq_zero_of_eventuallyEq_const
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
@@ -472,8 +473,8 @@ theorem IsMetricCompatible.inner_alongCurve_add_inner_alongCurve_eq_zero_of_even
     inner ℝ (alongCurve cov γ V t) (W t) +
       inner ℝ (V t) (alongCurve cov γ W t) = 0 := by
   simpa only [alongCurveWithin_univ] using
-    hcov.inner_alongCurveWithin_add_eq_zero_of_eventuallyEq_const (s := Set.univ)
-      hγ.mdifferentiableWithinAt hV.differentiableWithinAt hW.differentiableWithinAt
+    hcov.inner_alongCurveWithin_add_inner_alongCurveWithin_eq_zero_of_eventuallyEq_const
+      (s := Set.univ) hγ.mdifferentiableWithinAt hV.differentiableWithinAt hW.differentiableWithinAt
       (by rwa [nhdsWithin_univ])
 
 /-- **A field of locally constant length is orthogonal to its covariant derivative.** If a
@@ -489,8 +490,9 @@ theorem IsMetricCompatible.inner_alongCurveWithin_self_eq_zero_of_eventually_nor
     (hnorm : ∀ᶠ r in 𝓝[s] t, ‖V r‖ = ‖V t‖) :
     inner ℝ (alongCurveWithin cov γ V s t) (V t) = 0 := by
   have h :=
-    hcov.inner_alongCurveWithin_add_eq_zero_of_eventuallyEq_const (c := ‖V t‖ ^ 2)
-      hγ hV hV (hnorm.mono fun r hr ↦ by simp only [real_inner_self_eq_norm_sq, hr])
+    hcov.inner_alongCurveWithin_add_inner_alongCurveWithin_eq_zero_of_eventuallyEq_const
+      (c := ‖V t‖ ^ 2) hγ hV hV
+      (hnorm.mono fun r hr ↦ by simp only [real_inner_self_eq_norm_sq, hr])
   linarith [real_inner_comm (alongCurveWithin cov γ V s t) (V t)]
 
 /-- **A field of locally constant length is orthogonal to its covariant derivative**, for the
