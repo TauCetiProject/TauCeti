@@ -42,7 +42,9 @@ of `q` and `r`, and let `γ = n / 2 - n / r - 1 / q`. Then there is `C` such tha
   ‖F‖_{L^{p₁}_t L^{r₁'}_x}` for forcing terms `F : ℝ → L²(E)` integrable in time, measured along
   a second wave-admissible pair `(q₁, r₁)` with `2 < q₁ ≤ ∞`, Hölder conjugates `p₁` and `r₁'`,
   and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. This retarded estimate also holds when either pair, or both,
-  is the endpoint pair `q = 2`, `1 + (n - 1) / r = (n - 1) / 2`, of dimension `n ≥ 4`.
+  is the endpoint pair `q = 2`, `1 + (n - 1) / r = (n - 1) / 2`, of dimension `n ≥ 4`; the pairs
+  `(2, r)` beyond the endpoint follow by Bernstein's inequality in
+  `TauCeti.Analysis.PDE.Wave.InhomogeneousStrichartz`.
 
 At the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, which are all wave-admissible, the estimates for `W₊(t) Pⱼ`,
 `cos(tD) Pⱼ` and `D⁻¹ sin(tD) Pⱼ` hold in `L^∞_t L^r_x` with `γ = n / 2 - n / r`, and so does the
@@ -99,8 +101,9 @@ All in the `ContDiffBump` namespace, with `φ` the bump function defining the cu
   `D⁻¹ sin(tD) Pⱼ`.
 * `exists_lintegral_lintegral_enorm_inner_waveSinPropagator_sub_littlewoodPaley_le`: the bilinear
   estimate for the Duhamel pairings.
-* `exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le`: the retarded
-  estimate for the Duhamel integral, with the forcing measured along a second admissible pair.
+* `exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le_of_sharp`: the
+  retarded estimate for the Duhamel integral, with the forcing measured along a second admissible
+  pair, at the pairs with `q > 2` and at the endpoint.
 * `exists_eLpNorm_top_eLpNorm_halfWavePropagator_littlewoodPaley_le`,
   `exists_eLpNorm_top_eLpNorm_waveCosPropagator_littlewoodPaley_le` and
   `exists_eLpNorm_top_eLpNorm_waveSinPropagator_littlewoodPaley_le`: the estimates for `W₊(t) Pⱼ`,
@@ -1240,16 +1243,16 @@ symbol, let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, 
 and let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`.
 The time exponent `2` is allowed only at the endpoint in dimension `n ≥ 4`, on either side or on
 both: `q = 2` only if `1 + (n - 1) / r = (n - 1) / 2`, and `q₁ = 2` only if
-`1 + (n - 1) / r₁ = (n - 1) / 2`.
+`1 + (n - 1) / r₁ = (n - 1) / 2`. These are the pairs covered by the Keel–Tao and Christ–Kiselev
+arguments; the other pairs `(2, r)` follow by Bernstein's inequality in
+`ContDiffBump.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le`.
 Put `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for
 every `j ∈ ℤ` and every forcing term `F : ℝ → L²(E)` that is integrable in time,
 
 `‖∫_{s < t} D⁻¹ sin((t - s)D) Pⱼ Pⱼ F(s) ds‖_{L^q_t L^r_x}`
-`  ≤ C 2^{j(γ + γ₁ - 1)} ‖F‖_{L^{p₁}_t L^{r₁'}_x}`.
-
-The pair `(q₁, r₁) = (q, r)` gives the exponent `2γ - 1`, and the pairs `(∞, r₁)` measure the
-forcing in `L¹_t L^{r₁'}_x`, the energy pair `(∞, 2)` among them. -/
-theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
+`  ≤ C 2^{j(γ + γ₁ - 1)} ‖F‖_{L^{p₁}_t L^{r₁'}_x}`. -/
+theorem
+    exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le_of_sharp
     {q r : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ ∞)
     (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
@@ -1277,7 +1280,8 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
     refine ⟨0, fun j m hm F _ ↦ (eLpNorm_eLpNorm_eq_zero fun t ↦ ?_).trans_le zero_le⟩
     simp_rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero hm, zero_apply,
       map_zero, integral_zero]
-  obtain ⟨hn, hr2⟩ := two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr hq2 hE
+  obtain ⟨hn, hr2⟩ :=
+    two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr hE
   -- In dimension `n ≥ 2` admissibility of `(q₁, r₁)` forces `r₁ ≥ 2`, also for `q₁ = ∞`.
   have hr₁ := two_le_of_waveAdmissible (ENNReal.HolderConjugate.ne_zero r₁ r₁') hqr₁ hn
   -- Test against `L^{p}_t L^{r'}_x` with `p` and `r'` the Hölder conjugates of `q` and `r`.
