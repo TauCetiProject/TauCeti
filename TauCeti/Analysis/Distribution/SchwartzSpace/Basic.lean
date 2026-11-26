@@ -59,6 +59,9 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   `A x = ∑ i ∈ s, c i x • L i` is `∑ i ∈ s, L i (c i f)`.
 * `SchwartzMap.bilinLeftCLM_eq_sum_smulLeftCLM`: the expansion of `x ↦ B (u x) (g x)` in a basis
   of `G` as a finite sum of scalar multiplications.
+* `SchwartzMap.iterate_smulLeftCLM_apply`, `SchwartzMap.iterate_smulLeftCLM_smulLeftCLM_eq_self`:
+  iterated multiplication by a weight of temperate growth and cancellation with a reciprocal power
+  weight.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
   conjugate-linear map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
@@ -508,6 +511,33 @@ theorem integrable_smul_apply (K : 𝓢(E, 𝕜)) {n : ℕ} (A : E [×n]→L[ℝ
       simpa using A.le_opNorm (fun _ ↦ y))
 
 end Polynomial
+
+section Smul
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- Iterating `SchwartzMap.smulLeftCLM F g` on a Schwartz function multiplies by `g ^ k`. -/
+theorem iterate_smulLeftCLM_apply (f : 𝓢(E, F)) {g : E → 𝕜} (hg : g.HasTemperateGrowth) (k : ℕ) :
+    (smulLeftCLM F g)^[k] f = smulLeftCLM F (g ^ k) f := by
+  induction k generalizing f with
+  | zero =>
+    rw [Function.iterate_zero_apply, pow_zero, Pi.one_def, smulLeftCLM_const, one_smul,
+      ContinuousLinearMap.id_apply]
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih, smulLeftCLM_smulLeftCLM_apply hg (hg.pow k), pow_succ']
+
+/-- Iterating multiplication by `g` cancels multiplication by a weight `g'` satisfying
+`g x ^ k * g' x = 1`. -/
+theorem iterate_smulLeftCLM_smulLeftCLM_eq_self (f : 𝓢(E, F)) {g g' : E → 𝕜}
+    (hg : g.HasTemperateGrowth) (hg' : g'.HasTemperateGrowth) {k : ℕ}
+    (hgg' : ∀ x, g x ^ k * g' x = 1) :
+    (smulLeftCLM F g)^[k] (smulLeftCLM F g' f) = f := by
+  have h1 : g ^ k * g' = fun _ ↦ 1 := funext hgg'
+  rw [iterate_smulLeftCLM_apply _ hg, smulLeftCLM_smulLeftCLM_apply (hg.pow k) hg', h1,
+    smulLeftCLM_const, one_smul, ContinuousLinearMap.id_apply]
+
+end Smul
 
 end SchwartzMap
 

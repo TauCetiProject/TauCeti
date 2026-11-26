@@ -32,7 +32,8 @@ quantization of the pointwise adjoint `a(y, ξ)†`
 (`TauCeti.Symbol.integral_inner_quantizeUniformCLM`), the formal adjoint of `Op(a)` is again the
 quantization of a uniform symbol of order `m`
 (`TauCeti.Symbol.IsUniform.exists_integral_inner_quantizeUniformCLM_eq`). Together with the
-composition of uniform symbols (`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`), this
+composition of uniform symbols (`TauCeti.Symbol.uniformSharp`,
+`TauCeti.Symbol.quantizeUniformCLM_uniformSharp`), this
 shows that the quantizations of uniform symbols are closed under composition and formal adjoints,
 with no compact support condition in the position. When `a` has compact spatial support, the
 symbol is the adjoint symbol `TauCeti.Symbol.adjoint`, by uniqueness of symbols

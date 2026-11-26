@@ -242,18 +242,27 @@ theorem IsUniform.exists_norm_iteratedFDeriv_le {a : Symbol n V W m} (ha : a.IsU
     simp only [mixedDeriv_def, coordinateDeriv_nil] at h
     exact h.trans (le_add_of_nonneg_left (hB0 _ _))
 
+/-- A symbol of order `m` whose estimates hold uniformly in the position has spatial Fréchet
+derivatives bounded uniformly in `x` at each order `k`. -/
+theorem IsUniform.exists_norm_iteratedFDeriv_slice_le {a : Symbol n V W m} (ha : a.IsUniform)
+    (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ξ,
+      ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose A hA0 hA using isUniform_iff.1 ha
+  refine ⟨∑ r : Fin k → Fin n, A (List.ofFn r) [], Finset.sum_nonneg fun _ _ ↦ hA0 _ _,
+    fun x ξ ↦ (norm_iteratedFDeriv_le_sum_coordinateDeriv
+      (contDiff_infty.1 (a.contDiff_coefficient_slice ξ) k) x).trans ?_⟩
+  exact (Finset.sum_le_sum fun r _ ↦ by
+    simpa [mixedDeriv_def, coordinateDeriv_nil] using hA (List.ofFn r) [] x ξ).trans_eq
+    (Finset.sum_mul _ _ _).symm
+
 /-- The position slice `x ↦ a(x, ξ)` of a symbol with estimates uniform in the position has
 temperate growth: all its derivatives are bounded. -/
 theorem IsUniform.hasTemperateGrowth_coefficient_slice {a : Symbol n V W m} (ha : a.IsUniform)
-    (ξ : CoordinateSpace n) : (fun x ↦ a.coefficient (x, ξ)).HasTemperateGrowth := by
-  refine .of_norm_iteratedFDeriv_le (a.contDiff_coefficient_slice ξ) fun p ↦ ?_
-  choose B _ hB using isUniform_iff.1 ha
-  refine ⟨∑ r : Fin p → Fin n, B (List.ofFn r) [] * (1 + ‖ξ‖ ^ 2) ^ (m / 2), fun x ↦ ?_⟩
-  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
-    (contDiff_infty.1 (a.contDiff_coefficient_slice ξ) p) x).trans
-    (Finset.sum_le_sum fun r _ ↦ ?_)
-  simpa only [mixedDeriv_def, coordinateDeriv_nil, List.length_nil, CharP.cast_eq_zero,
-    sub_zero] using hB (List.ofFn r) [] x ξ
+    (ξ : CoordinateSpace n) : (fun x ↦ a.coefficient (x, ξ)).HasTemperateGrowth :=
+  .of_norm_iteratedFDeriv_le (a.contDiff_coefficient_slice ξ) fun p ↦
+    let ⟨C, _, h⟩ := ha.exists_norm_iteratedFDeriv_slice_le p
+    ⟨C * (1 + ‖ξ‖ ^ 2) ^ (m / 2), fun x ↦ h x ξ⟩
 
 /-- A position slice `x ↦ a(x, ξ)` of a symbol with compact spatial support has compact support. -/
 theorem HasCompactSpatialSupport.hasCompactSupport_slice {a : Symbol n V W m}

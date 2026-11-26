@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Associativity
-public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform
+public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Expansion
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 
 /-!
@@ -610,20 +610,20 @@ private theorem exists_quantizeUniformCLM_comp_eq_id_add_of_isUniformAsymptoticS
     ∃ (r : Symbol n V V 0) (hr : r.IsUniformlySmoothing),
       quantizeUniformCLM p hp ∘L quantizeUniformCLM q hq =
         ContinuousLinearMap.id ℂ _ + quantizeUniformCLM r hr.isUniform := by
-  obtain ⟨c, hc, hcomp⟩ := hp.exists_quantizeUniformCLM_comp hq
   have hm' : Tendsto (fun k : ℕ ↦ μ' + μ - k) atTop atBot :=
     tendsto_atBot_add_const_left atTop _ <|
       tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
-  -- The symbol `c` of the composition and `1` are both asymptotic sums of the same terms.
+  -- Both `p.uniformSharp q hq` and `1` are asymptotic sums of the same terms.
   have hs := (hpq.isUniformAsymptoticSum_iff_isUniformlySmoothing_sub hm').1
-    (hp.isUniformAsymptoticSum_sharpTerm_of_comp_eq hq hc hcomp)
+    (hp.isUniformAsymptoticSum_uniformSharp hq)
   obtain ⟨r, hr, hrc⟩ := isUniformlySmoothing_iff.1 hs 0
   refine ⟨r, isUniformlySmoothing_iff.2 fun m'' ↦ (isUniformlySmoothing_iff.1 hs m'').imp
     fun _ h ↦ ⟨h.1, h.2.trans hrc.symm⟩, ?_⟩
-  have hcr : c.coefficient = (const (.id ℂ V) + r).coefficient := by
+  have hcr : (p.uniformSharp q hq).coefficient = (const (.id ℂ V) + r).coefficient := by
     rw [coefficient_add, hrc, coefficient_sub, coefficient_inclusion, coefficient_inclusion]
     abel
-  rw [hcomp, quantizeUniformCLM_congr hc ((isUniform_const _).add hr) hcr,
+  rw [← quantizeUniformCLM_uniformSharp hp hq,
+    quantizeUniformCLM_congr (hp.uniformSharp hq) ((isUniform_const _).add hr) hcr,
     quantizeUniformCLM_add (isUniform_const _) hr, quantizeUniformCLM_const]
   ext u x
   simp
@@ -636,9 +636,9 @@ uniformly in the position and which is uniformly elliptic above some radius. The
 
 on Schwartz space, for uniformly smoothing symbols `r` and `r'`. No compact spatial support is
 assumed: the composition is that of the uniform calculus
-(`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`), whose symbol has the expansion
-`TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq`, and `b` is the two-sided
-uniform parametrix symbol
+(`TauCeti.Symbol.uniformSharp`, `TauCeti.Symbol.quantizeUniformCLM_uniformSharp`), whose symbol has
+the expansion `TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_uniformSharp`, and `b` is the
+two-sided uniform parametrix symbol
 `TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm`. -/
 theorem IsUniformlyEllipticAbove.exists_quantizeUniformCLM_comp_eq_id_add {a : Symbol n V W m}
     {R : ℝ} (ha : a.IsUniformlyEllipticAbove R) (hau : a.IsUniform) :

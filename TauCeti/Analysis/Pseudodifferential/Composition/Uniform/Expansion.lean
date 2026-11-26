@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Quantize
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
@@ -17,22 +17,22 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
-# Composition of symbols with uniform estimates
+# The asymptotic expansion of the uniform composition symbol
 
 Let `p` and `a` be symbols of orders `m'` and `m` on `ℝⁿ` whose estimates
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C_{α,β} ⟨ξ⟩^(m - |β|)` hold uniformly in the position
-(`TauCeti.Symbol.IsUniform`). Their quantizations act on Schwartz space
-(`TauCeti.Symbol.quantizeUniformCLM`), and this file shows that `Op(p) ∘ Op(a)` is again the
-quantization of a symbol of order `m' + m` with estimates uniform in the position
-(`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`). The composition symbol `p # a` of
-`TauCeti.Symbol.sharp` is only defined when `a` has compact spatial support, since it is built
-from the Fourier transforms of the position slices of `a`; a uniform symbol such as `a = 1` has
-no such Fourier transforms. With this theorem the uniform symbols form an algebra under
-composition; for instance `J^t ∘ Op(a)` is the quantization of a uniform symbol for every Bessel
-multiplier `J^t`, which gives the Sobolev mapping of uniform symbols at every order
-(`TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`).
+(`TauCeti.Symbol.IsUniform`). Their explicit composition symbol is `p.uniformSharp a ha`
+(`TauCeti.Symbol.uniformSharp` in `TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Basic`),
+a uniform symbol of order `m' + m` whose quantization on Schwartz space satisfies
+`Op(p #_u a) = Op(p) ∘ Op(a)` (`TauCeti.Symbol.quantizeUniformCLM_uniformSharp` in
+`TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Quantize`). This file proves the full
+uniform asymptotic expansion `p #_u a ∼ ∑ₖ sharpTerm p a k` via a lattice partition of unity:
+whereas `TauCeti.Symbol.sharp` (`p # a`) is built from the Fourier transforms of the position
+slices of `a` (which a general uniform symbol such as `a = 1` does not have), cutting `a` into
+compactly supported lattice pieces lets us apply the compactly supported remainder estimates piece
+by piece and sum the remainders over `ℤⁿ`.
 
-## The construction
+## The lattice decomposition
 
 Cut `a` into the pieces `aⱼ(x, ξ) = χ(x - j) a(x, ξ)`, `j ∈ ℤⁿ`, by the integer translates of
 the bump `χ = TauCeti.latticeBump n`, a smooth partition of unity. The pieces have compact
@@ -55,22 +55,21 @@ sum are the sums of the derivatives because the bounds are summable near each po
 Fourier transforms of their slices and the summation of the series are the lattice decomposition
 of `TauCeti.Analysis.Pseudodifferential.LatticeDecomposition`.
 
-Finally `Op(c) = Op(p) ∘ Op(a)`. On a Schwartz function `u`, `Op(p # aⱼ) u = Op(p) (χ(· - j) w)`
-with `w = Op(a) u`, and the series `∑ⱼ χ(· - j) w` converges to `w` in Schwartz space
+On a Schwartz function `u`, `Op(p # aⱼ) u = Op(p) (χ(· - j) w)` with `w = Op(a) u`, and the series
+`∑ⱼ χ(· - j) w` converges to `w` in Schwartz space
 (`SchwartzMap.hasSum_smulLeftCLM_latticeBump_sub`), on which `Op(p)` is continuous. On the other
-side `∑ⱼ Op(p # aⱼ) u (x) = Op(c) u (x)` by dominated convergence in the frequency.
+side `∑ⱼ Op(p # aⱼ) u (x) = Op(c) u (x)` by dominated convergence in the frequency, identifying the
+lattice sum `c` with any uniform symbol of `Op(p) ∘ Op(a)` (in particular `p.uniformSharp a ha`) by
+uniqueness (`TauCeti.Symbol.quantizeSchwartzValue_injective`).
 
 ## Main results
 
-* `TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`: **composition of uniform symbols**.
-  The composition of the quantizations of two uniform symbols of orders `m'` and `m` is the
-  quantization of a uniform symbol of order `m' + m`. The symbol is unique
-  (`TauCeti.Symbol.quantizeSchwartzValue_injective`); when `a` has compact spatial support it is
-  `p # a` (`TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`).
-* `TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq`: **the asymptotic
-  expansion of the composition**. The symbol `c` of `Op(p) ∘ Op(a)` satisfies
-  `c ∼ ∑ₖ sharpTerm p a k` with remainders `c - ∑_{k < N} sharpTerm p a k` of order `m' + m - N`
-  whose estimates are uniform in the position.
+* `TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq` and
+  `TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_uniformSharp`: **the asymptotic
+  expansion of the uniform composition**. Any uniform symbol `c` of `Op(p) ∘ Op(a)` (in particular
+  `p.uniformSharp a ha`) satisfies `c ∼ ∑ₖ sharpTerm p a k` with remainders
+  `c - ∑_{k < N} sharpTerm p a k` of order `m' + m - N` whose estimates are uniform in the
+  position.
 
 ## The expansion
 
@@ -523,18 +522,6 @@ private theorem IsUniform.exists_hasSum_sharp_latticePiece {p : Symbol n W U m'}
     SchwartzMap.toBoundedContinuousFunctionCLM_apply, quantizeUniformCLM_apply] at h
   exact h
 
-/-- **Composition of uniform symbols.** If `p` and `a` are symbols of orders `m'` and `m` whose
-estimates hold uniformly in the position, then `Op(p) ∘ Op(a)` is the quantization of a symbol of
-order `m' + m` whose estimates hold uniformly in the position. No compact spatial support is
-assumed for either symbol. The symbol has the asymptotic expansion `∑ₖ sharpTerm p a k`
-(`TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq`). -/
-theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.IsUniform)
-    {a : Symbol n V W m} (ha : a.IsUniform) :
-    ∃ (c : Symbol n V U (m' + m)) (hc : c.IsUniform),
-      quantizeUniformCLM p hp ∘L quantizeUniformCLM a ha = quantizeUniformCLM c hc :=
-  let ⟨c, hc, _, h⟩ := hp.exists_hasSum_sharp_latticePiece ha
-  ⟨c, hc, h⟩
-
 omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
 /-- The terms of the composition expansion with the lattice pieces of `b` sum to the terms with
 `b`: near each position only finitely many pieces are nonzero, and they sum to `b` there. -/
@@ -569,9 +556,9 @@ private theorem hasSum_coefficient_sharpTerm_latticePiece (p : Symbol n W U m')
     latticeBump_sub_eq_zero_of_notMem (s := (hfin.toFinset : Set (Fin n → ℤ))) hs hy hj, zero_smul]
 
 /-- **The asymptotic expansion of the composition of uniform symbols.** Let `p` and `a` be symbols
-of orders `m'` and `m` whose estimates hold uniformly in the position, and let `c` be the symbol of
-order `m' + m` with `Op(p) ∘ Op(a) = Op(c)`
-(`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`). Then `c ∼ ∑ₖ sharpTerm p a k` in the
+of orders `m'` and `m` whose estimates hold uniformly in the position, and let `c` be any uniform
+symbol of order `m' + m` with `Op(p) ∘ Op(a) = Op(c)` (such as `p.uniformSharp a ha` by
+`TauCeti.Symbol.quantizeUniformCLM_uniformSharp`). Then `c ∼ ∑ₖ sharpTerm p a k` in the
 uniform symbol classes: for every `N`, the remainder
 `c - ∑_{k < N} sharpTerm p a k` is a symbol of order `m' + m - N` whose estimates hold uniformly in
 the position. No compact spatial support is assumed for either symbol; with compact spatial
@@ -603,6 +590,15 @@ theorem IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq {p : Symbol n W U 
   simp only [coefficient_inclusion, Pi.sub_apply, Finset.sum_apply]
   exact ((hbsum q).sub (hasSum_sum fun k _ ↦
     hasSum_coefficient_sharpTerm_latticePiece p a k q)).unique hq
+
+/-- **The asymptotic expansion of `uniformSharp`.** For uniform symbols `p` and `a` of orders `m'`
+and `m`, `p.uniformSharp a ha ∼ ∑ₖ sharpTerm p a k` in the uniform symbol classes. -/
+theorem IsUniform.isUniformAsymptoticSum_uniformSharp {p : Symbol n W U m'}
+    (hp : p.IsUniform) {a : Symbol n V W m} (ha : a.IsUniform) :
+    IsUniformAsymptoticSum (m := fun k : ℕ ↦ m' + m - k)
+      (Symbol.inclusion (by simp) (p.uniformSharp a ha)) (p.sharpTerm a) :=
+  hp.isUniformAsymptoticSum_sharpTerm_of_comp_eq ha (hp.uniformSharp ha)
+    (quantizeUniformCLM_uniformSharp hp ha).symm
 
 end Composition
 

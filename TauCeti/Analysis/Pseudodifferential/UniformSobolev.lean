@@ -33,8 +33,8 @@ is an isometry `H^s → H^{s - t}`; it is the quantization of the uniform symbol
 `TauCeti.Symbol.quantizeUniformCLM_besselPotential`). Composition with `J^t` on the right is exact:
 `Op(a) ∘ J^t` is the quantization of `a ⟨ξ / 2π⟩ ^ t`
 (`TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`). Composition on the left is not, but
-since the composition of two uniform symbols is again one
-(`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`), `J^{s - m} ∘ Op(a) = Op(c)` for a
+since the composition of two uniform symbols is again one (`TauCeti.Symbol.uniformSharp`,
+`TauCeti.Symbol.quantizeUniformCLM_uniformSharp`), `J^{s - m} ∘ Op(a) = Op(c)` for a
 uniform symbol `c` of order `s`. Hence
 
 `J^{s - m} ∘ Op(a) = Op(b) ∘ J^s` with `b = c ⟨ξ / 2π⟩ ^ (-s)`
