@@ -688,6 +688,47 @@ theorem windowEquivalence_inverse (w : NonemptyInterval ℤ) (d : StepDirection)
     (windowEquivalence w d).inverse = ofRepFunctor w d :=
   (rfl)
 
+-- The transports use the projection lemmas so the equations apply with the equivalence opaque.
+/-- The counit recovers the original representation by inverting the assembly isomorphism. -/
+@[simp]
+theorem windowEquivalence_counitIso_hom_app (M : FiniteRep w) :
+    (windowEquivalence w d).counitIso.hom.app M =
+      eqToHom (by simp) ≫ (ofRepIso d M).inv := by
+  erw [eqToHom_refl, Category.id_comp]
+  rfl
+
+/-- The inverse counit is the assembly isomorphism. -/
+@[simp]
+theorem windowEquivalence_counitIso_inv_app (M : FiniteRep w) :
+    (windowEquivalence w d).counitIso.inv.app M =
+      (ofRepIso d M).hom ≫ eqToHom (by simp) := by
+  erw [eqToHom_refl, Category.comp_id]
+  rfl
+
+/-- The unit assembles the vertex maps of the assembly isomorphism for the restricted pair. -/
+@[simp]
+theorem windowEquivalence_unitIso_hom_app (P : InWindow w d) :
+    (windowEquivalence w d).unitIso.hom.app P =
+      ofRepMap (ofRepIso d ((toRepFunctor w d).obj P)).hom.hom ≫ eqToHom (by simp) := by
+  erw [eqToHom_refl, Category.comp_id]
+  let ff := fullyFaithfulToRepFunctor w d
+  let e := windowEquivalence w d
+  let i := ofRepIso d ((toRepFunctor w d).obj P)
+  apply ff.map_injective
+  exact (e.counitInv_app_functor P).symm.trans (ff.map_preimage i.hom).symm
+
+/-- The inverse unit assembles the inverse vertex maps for the restricted pair. -/
+@[simp]
+theorem windowEquivalence_unitIso_inv_app (P : InWindow w d) :
+    (windowEquivalence w d).unitIso.inv.app P =
+      eqToHom (by simp) ≫ ofRepMap (ofRepIso d ((toRepFunctor w d).obj P)).inv.hom := by
+  erw [eqToHom_refl, Category.id_comp]
+  let ff := fullyFaithfulToRepFunctor w d
+  let e := windowEquivalence w d
+  let i := ofRepIso d ((toRepFunctor w d).obj P)
+  apply ff.map_injective
+  exact (e.counit_app_functor P).symm.trans (ff.map_preimage i.inv).symm
+
 section Enlargement
 
 open StepDirection
@@ -855,6 +896,22 @@ def enlargeRestrictIso (d : StepDirection) (h : w ≤ W) :
         _ = f.toLinearMap ((gradeIso P.space hi).hom.hom x').val :=
           (congrArg f.toLinearMap (coe_gradeIso_hom P.space hi x')).symm
         _ = _ := (f.isHomogeneous.coe_restrict_apply b _).symm)
+
+-- Simplify these applications before `Functor.comp_obj` rewrites the dependent object arguments.
+/-- The forward comparison preserves the underlying vector at each vertex of the smaller window. -/
+@[simp↓]
+theorem coe_enlargeRestrictIso_hom_app (h : w ≤ W) (P : InWindow w d)
+    (i : Paths (WindowVertex w))
+    (x : P.space.grade (d.windowDegree W ((windowEmbedding d h).obj i))) :
+    (((((enlargeRestrictIso d h).hom.app P).hom.app i).hom x).val : P.space.Carrier) = x.val :=
+  coe_gradeIso_hom P.space (windowDegree_windowEmbedding_obj d h i) x
+
+/-- The inverse comparison preserves the underlying vector at each vertex of the smaller window. -/
+@[simp↓]
+theorem coe_enlargeRestrictIso_inv_app (h : w ≤ W) (P : InWindow w d)
+    (i : Paths (WindowVertex w)) (x : P.space.grade (d.windowDegree w i)) :
+    (((((enlargeRestrictIso d h).inv.app P).hom.app i).hom x).val : P.space.Carrier) = x.val :=
+  coe_gradeIso_hom P.space (windowDegree_windowEmbedding_obj d h i).symm x
 
 end Enlargement
 
