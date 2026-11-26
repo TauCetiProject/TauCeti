@@ -369,21 +369,6 @@ theorem exists_value_ae_eq_squareMode_and_inner_gradient_eq (m l : ℕ) :
   obtain ⟨u, hu, hval⟩ := exists_mem_w1pVanishingOnSubmodule_value_ae_eq_squareMode m l
   exact ⟨⟨u, hu⟩, hval, fun v => inner_gradient_eq_of_value_ae_eq_squareMode m l hval v.property⟩
 
-/-- The quarter-wave sines `t ↦ sin ((2m + 1) π t / 2)`, `m ≥ 0`, are complete on `(0, 1)`. -/
-private theorem ae_eq_zero_of_forall_integral_mul_sin_eq_zero {g : ℝ → ℝ}
-    (hg : Integrable g (volume.restrict (Ioo (0 : ℝ) 1)))
-    (h : ∀ m : ℕ, ∫ t, g t * Real.sin ((2 * m + 1) * π / 2 * t)
-      ∂volume.restrict (Ioo (0 : ℝ) 1) = 0) :
-    g =ᵐ[volume.restrict (Ioo (0 : ℝ) 1)] 0 := by
-  have hIoc : volume.restrict (Ioo (0 : ℝ) 1) = volume.restrict (Ioc 0 1) :=
-    Measure.restrict_congr_set Ioo_ae_eq_Ioc
-  rw [hIoc] at hg ⊢
-  refine ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero hg fun k => ?_
-  rw [intervalIntegral.integral_of_le zero_le_one, ← hIoc]
-  refine Eq.trans (integral_congr_ae (ae_of_all _ fun t => ?_)) (h k)
-  simp only
-  ring_nf
-
 /-- **Completeness of the separated modes.** An element of `L²((0, 1)²)` orthogonal to every mode
 `(x, y) ↦ sin ((2m + 1) π x / 2) cos (l π y)`, `m, l ≥ 0`, is zero. -/
 theorem eq_zero_of_forall_setIntegral_mul_squareMode_eq_zero
@@ -405,11 +390,7 @@ theorem eq_zero_of_forall_setIntegral_mul_squareMode_eq_zero
     have hGs : Integrable (fun z : ℝ × ℝ => G z * Real.sin ((2 * m + 1) * π / 2 * z.1))
         (μ.prod μ) :=
       hG.mul_bdd (by fun_prop) (ae_of_all _ fun z => by simpa using Real.abs_sin_le_one _)
-    have hIoc : μ = volume.restrict (Ioc 0 1) := Measure.restrict_congr_set Ioo_ae_eq_Ioc
-    have hi := hGs.integral_prod_right
-    rw [hIoc] at hi ⊢
-    refine ae_eq_zero_of_forall_integral_mul_cos_eq_zero hi fun l => ?_
-    rw [intervalIntegral.integral_of_le zero_le_one, ← hIoc]
+    refine ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero hGs.integral_prod_right fun l => ?_
     have hint : Integrable (fun z : ℝ × ℝ => G z * Real.sin ((2 * m + 1) * π / 2 * z.1) *
         Real.cos (l * π * z.2)) (μ.prod μ) :=
       hGs.mul_bdd (by fun_prop) (ae_of_all _ fun z => by simpa using Real.abs_cos_le_one _)
@@ -431,7 +412,8 @@ theorem eq_zero_of_forall_setIntegral_mul_squareMode_eq_zero
       _ = 0 := h m l
   have hG0 := ae_eq_zero_prod_of_forall_integral_mul_eq_zero
     (e := fun (m : ℕ) t => Real.sin ((2 * m + 1) * π / 2 * t))
-    (fun g hg hgm => ae_eq_zero_of_forall_integral_mul_sin_eq_zero hg hgm) hG hH
+    (fun _ hg hgm => ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hg fun k =>
+      (integral_congr_ae (ae_of_all _ fun t => by ring_nf)).trans (hgm k)) hG hH
   refine Lp.ext (Filter.EventuallyEq.trans ?_ (Lp.coeFn_zero ℝ 2 _).symm)
   have hGe : G ∘ T.symm = f := funext fun x => by simp [G]
   rw [← hGe]
