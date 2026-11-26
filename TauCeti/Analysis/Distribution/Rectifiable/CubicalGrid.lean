@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Rectifiable.CoordPlane
 public import TauCeti.Analysis.Distribution.TestFunction.CubicalGrid
+import TauCeti.Algebra.Module.NegOnePowSMul
 
 /-!
 # Coordinate boxes and cubical grid chains are integral currents
@@ -91,7 +92,7 @@ theorem coordBoxCurrent_apply_eq_setIntegral (I : Fin k ↪ Fin n) (x : Euclidea
   simp [preimage_preimage]
 
 /-- The indicator function of a coordinate box is locally integrable for `μHE[k]`. -/
-private theorem locallyIntegrable_indicator_image_coordPlaneMap (I : Fin k ↪ Fin n)
+theorem locallyIntegrable_indicator_image_coordPlaneMap (I : Fin k ↪ Fin n)
     (x : EuclideanSpace ℝ (Fin n)) (r : Fin k → ℝ) :
     LocallyIntegrable ((coordPlaneMap I x '' (ofLp ⁻¹' Icc 0 r)).indicator
       (1 : EuclideanSpace ℝ (Fin n) → ℝ)) μHE[k] := by
@@ -162,10 +163,7 @@ theorem isLocallyIntegral_coordBoxCurrent (I : Fin k ↪ Fin n) (x : EuclideanSp
           (j.succAboveEmb.trans I) (x + EuclideanSpace.single (I j) (r j)) (r ∘ j.succAbove) Ω))
         (mem_integerRectifiableCurrents.2 (isIntegerRectifiable_coordBoxCurrent
           (j.succAboveEmb.trans I) x (r ∘ j.succAbove) Ω))
-      rcases neg_one_pow_eq_or ℝ (j : ℕ) with h | h <;> rw [h]
-      · rwa [one_smul]
-      · have h' := zsmul_mem hsub (-1)
-        rwa [← Int.cast_smul_eq_zsmul ℝ, Int.cast_neg, Int.cast_one] at h'
+      exact neg_one_pow_smul_mem hsub _
     · -- A box with a negative side is the zero current.
       simp only [Pi.le_def, Pi.zero_apply, not_forall, not_le] at hr
       obtain ⟨j, hj⟩ := hr

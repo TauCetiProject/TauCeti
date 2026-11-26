@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.TestFunction.BoxCurrent
 import Mathlib.Algebra.Group.Subgroup.Finsupp
+import TauCeti.Algebra.Module.NegOnePowSMul
 import Mathlib.Analysis.Calculus.FDeriv.Affine
 import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
@@ -541,10 +542,7 @@ theorem comp_extDerivCLM_mem_cubicalGridChains {ε : ℝ}
   have hsub := AddSubgroup.sub_mem _
     (gridCubeCurrent_mem_cubicalGridChains ε (j.succAboveEmb.trans I) (z + Pi.single (I j) 1) Ω)
     (gridCubeCurrent_mem_cubicalGridChains ε (j.succAboveEmb.trans I) z Ω)
-  rcases neg_one_pow_eq_or ℝ (j : ℕ) with h | h <;> rw [h]
-  · rwa [one_smul]
-  · have h' := AddSubgroup.zsmul_mem _ hsub (-1)
-    rwa [← Int.cast_smul_eq_zsmul ℝ, Int.cast_neg, Int.cast_one] at h'
+  exact neg_one_pow_smul_mem hsub _
 
 /-- **Grid chains are normal currents.** -/
 theorem isNormal_of_mem_cubicalGridChains {ε : ℝ} {Ω : Opens (EuclideanSpace ℝ (Fin n))}
@@ -566,6 +564,8 @@ theorem isCompact_dsupport_of_mem_cubicalGridChains {ε : ℝ}
   induction hT using AddSubgroup.closure_induction with
   | mem _ h =>
     obtain ⟨⟨I, z⟩, rfl⟩ := h
+    dsimp only
+    rw [gridCubeCurrent_def]
     exact isCompact_dsupport_coordBoxCurrent _ _ _ Ω
   | zero => simp [dsupport_zero]
   | add S T _ _ hS hT =>
