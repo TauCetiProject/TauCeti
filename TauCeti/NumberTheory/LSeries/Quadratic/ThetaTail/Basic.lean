@@ -45,6 +45,18 @@ theorem quadraticTwistGaussianThetaTailIntegral_def (j : Fin 2) (c : ℕ → ℂ
   unfold quadraticTwistGaussianThetaTailIntegral
   rfl
 
+/-- The joint theta tail ignores the coefficient at zero, in both its ordinary and Möbius
+terms. -/
+theorem quadraticTwistGaussianThetaTailIntegral_congr {j : Fin 2} {c c' : ℕ → ℂ}
+    (h : ∀ n : ℕ+, c n = c' n) (T : ℝ) :
+    quadraticTwistGaussianThetaTailIntegral j c T =
+      quadraticTwistGaussianThetaTailIntegral j c' T := by
+  have hμ : ∀ n : ℕ+, c n * (μ n : ℂ) = c' n * (μ n : ℂ) :=
+    fun n ↦ congrArg (· * (μ n : ℂ)) (h n)
+  rw [quadraticTwistGaussianThetaTailIntegral_def, quadraticTwistGaussianThetaTailIntegral_def,
+    gaussianThetaSeries_congr h,
+    gaussianThetaSeries_congr (c := fun n ↦ c n * μ n) (c' := fun n ↦ c' n * μ n) hμ]
+
 variable {j : Fin 2} {c : ℕ → ℂ}
 
 /-- The full quadratic-twist theta tail integrand is integrable for positive `T` and

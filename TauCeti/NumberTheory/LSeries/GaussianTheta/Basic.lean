@@ -91,6 +91,13 @@ theorem gaussianThetaSeries_def (j : Fin 2) (c : ℕ → ℂ) (u : ℝ) :
   unfold gaussianThetaSeries
   rfl
 
+/-- Coefficients at positive indices determine the normalized Gaussian theta series. -/
+theorem gaussianThetaSeries_congr {j : Fin 2} {c c' : ℕ → ℂ}
+    (h : ∀ n : ℕ+, c n = c' n) : gaussianThetaSeries j c = gaussianThetaSeries j c' := by
+  funext u
+  simp only [gaussianThetaSeries_def, gaussianTheta_def]
+  exact congrArg _ (tsum_congr fun n ↦ by rw [h n])
+
 /-- The Mellin transform of the Gaussian weight of parity `j`. -/
 def gaussianMellin (j : Fin 2) : ℂ → ℂ := mellin fun x ↦ (gaussianMonomial j x : ℂ)
 
