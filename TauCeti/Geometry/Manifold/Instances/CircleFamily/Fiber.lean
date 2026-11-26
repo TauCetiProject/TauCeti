@@ -107,6 +107,13 @@ theorem toHomeomorph_fiberNormalizationDiffeomorph (n : ℕ∞ω) :
     (fiberNormalizationDiffeomorph p n).toHomeomorph = fiberNormalization p :=
   Homeomorph.pullbackDiffeomorph_toHomeomorph _ _ _
 
+/-- The underlying map of the inverse of the normalized-angle diffeomorphism is the inverse of the
+normalized angle. -/
+@[simp]
+theorem coe_fiberNormalizationDiffeomorph_symm (n : ℕ∞ω) :
+    ⇑(fiberNormalizationDiffeomorph p n).symm = (fiberNormalization p).symm :=
+  Homeomorph.coe_pullbackDiffeomorph_symm _ _ _
+
 /-! ### The fixed-period inclusion -/
 
 /-- **The fixed-period inclusion is a diffeomorphism onto its fibre.** The map `x ↦ (p, x)` from
@@ -117,27 +124,13 @@ def fiberDiffeomorph (n : ℕ∞ω) :
     AddCircle (p : ℝ) ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ {z : CircleFamily // z.period = p} :=
   (AddCircle.diffeomorphAddCircle (p : ℝ) 1 n).trans (fiberNormalizationDiffeomorph p n).symm
 
-/-- Rescaling from period `p` to period one and back is the identity, whatever the smoothness
-exponents of the two rescalings. -/
-private theorem diffeomorphAddCircle_diffeomorphAddCircle (n m : ℕ∞ω) (x : AddCircle (p : ℝ)) :
-    AddCircle.diffeomorphAddCircle 1 (p : ℝ) m (AddCircle.diffeomorphAddCircle (p : ℝ) 1 n x) =
-      x := by
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
-  have hp : (p : ℝ) ≠ 0 := (Fact.out : 0 < (p : ℝ)).ne'
-  simp only [AddCircle.diffeomorphAddCircle_apply_mk]
-  congr 1
-  field_simp
-
 /-- The underlying homeomorphism of the fixed-period inclusion is
 `TauCeti.CircleFamily.fiberHomeomorph p`. -/
 @[simp]
 theorem toHomeomorph_fiberDiffeomorph (n : ℕ∞ω) :
     (fiberDiffeomorph p n).toHomeomorph = fiberHomeomorph p := by
   refine Homeomorph.ext fun x ↦ Subtype.ext ?_
-  rw [Diffeomorph.coe_toHomeomorph, fiberDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply,
-    ← Diffeomorph.coe_toHomeomorph_symm, toHomeomorph_fiberNormalizationDiffeomorph,
-    coe_fiberNormalization_symm_apply, diffeomorphAddCircle_diffeomorphAddCircle,
-    coe_fiberHomeomorph]
+  simp [fiberDiffeomorph]
 
 /-- The underlying map of the fixed-period inclusion is `TauCeti.CircleFamily.fiberHomeomorph p`. -/
 theorem coe_fiberDiffeomorph (n : ℕ∞ω) : ⇑(fiberDiffeomorph p n) = fiberHomeomorph p := by
