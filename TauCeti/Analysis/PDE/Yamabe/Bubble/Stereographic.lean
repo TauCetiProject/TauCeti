@@ -33,9 +33,9 @@ In other words, `Φ` is an isometry from `(ℝⁿ, U_{t,b} ^ (4 / (n - 2)) δ)` 
 minus the point `v`. Consequently, its Riemannian Jacobian at `x` is the critical power
 `U_{t,b}(x) ^ pₙ`, where `pₙ = 2 n / (n - 2)` (`TauCeti.Yamabe.criticalExponent`), and `Φ` pushes
 Lebesgue measure weighted by `U_{t,b} ^ pₙ` forward to the Riemannian volume of `Sⁿ \ {v}` — hence
-to the full Riemannian volume of `Sⁿ` whenever `n > 0`. In particular, `u ↦ U_{t,b} · (u ∘ Φ)`
-preserves `L^{pₙ}` integrals between `Sⁿ` and `ℝⁿ`. The scale `2 / t` reflects Mathlib's
-normalization of `σ`, whose inverse chart alone pulls the round metric back to
+to the full Riemannian volume of `Sⁿ` whenever `n > 0`. In particular, for `n > 0`,
+`u ↦ U_{t,b} · (u ∘ Φ)` preserves `L^{pₙ}` integrals between `Sⁿ` and `ℝⁿ`. The scale `2 / t`
+reflects Mathlib's normalization of `σ`, whose inverse chart alone pulls the round metric back to
 `U_{2,0} ^ (4 / (n - 2)) δ`.
 
 This is how integrals over the round sphere, such as the Yamabe quotient of a conformal factor

@@ -160,6 +160,24 @@ private theorem coe_stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) 
   funext ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas_symm_apply
     (stereographic'_mem_maximalAtlas (k := 1) v))
 
+omit [LindelofSpace (sphere (0 : E) 1)] [MeasurableSpace (sphere (0 : E) 1)]
+  [BorelSpace (sphere (0 : E) 1)] in
+private theorem source_stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) :
+    (stereographic'SymmPartialDiffeomorph (n := n) v).source = univ := by
+  rw [stereographic'SymmPartialDiffeomorph, PartialDiffeomorph.symm_toPartialEquiv,
+    PartialEquiv.symm_source]
+  exact (OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas_target _ _).trans <| by
+    rw [stereographic'_target, preimage_univ]
+
+omit [LindelofSpace (sphere (0 : E) 1)] [MeasurableSpace (sphere (0 : E) 1)]
+  [BorelSpace (sphere (0 : E) 1)] in
+private theorem target_stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) :
+    (stereographic'SymmPartialDiffeomorph (n := n) v).target = {v}ᶜ := by
+  rw [stereographic'SymmPartialDiffeomorph, PartialDiffeomorph.symm_toPartialEquiv,
+    PartialEquiv.symm_target]
+  exact (OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas_source _ _).trans
+    (stereographic'_source v)
+
 /-- **Stereographic pushforward onto the punctured sphere.** The inverse stereographic chart from
 `v` pushes Lebesgue measure on `ℝⁿ` weighted by `(4 / (‖y‖² + 4)) ^ n` forward to the Riemannian
 volume of the unit sphere restricted to `{v}ᶜ`. -/
@@ -173,8 +191,11 @@ theorem map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume
   have hmap := (stereographic'SymmPartialDiffeomorph (n := n) v).map_withDensity_riemannianJacobian
     one_ne_zero b.toBasis
   rw [coe_stereographic'SymmPartialDiffeomorph v,
+    source_stereographic'SymmPartialDiffeomorph v,
+    target_stereographic'SymmPartialDiffeomorph v,
+    Measure.restrict_univ, b.addHaar_eq_volume,
     funext (riemannianJacobian_stereographic'_symm v)] at hmap
-  simpa [stereographic'SymmPartialDiffeomorph, b.addHaar_eq_volume] using hmap
+  exact hmap
 
 /-- **Stereographic pushforward of the round-sphere volume.** In positive dimension `n > 0`, the
 centre `v` of projection has Riemannian volume zero, so `(stereographic' n v).symm` pushes
@@ -191,6 +212,16 @@ theorem map_stereographic'_symm_withDensity_eq_riemannianVolume (hn : 0 < n)
   rw [map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume v,
     restrict_compl_singleton v]
 
+omit [Fact (finrank ℝ E = n + 1)] [LindelofSpace (sphere (0 : E) 1)] in
+private theorem measurable_ofReal_stereographic_density :
+    Measurable fun y : EuclideanSpace ℝ (Fin n) ↦ ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n) := by
+  fun_prop
+
+omit [Fact (finrank ℝ E = n + 1)] [LindelofSpace (sphere (0 : E) 1)] in
+private theorem stereographic_density_nonneg (y : EuclideanSpace ℝ (Fin n)) :
+    0 ≤ (4 / (‖y‖ ^ 2 + 4)) ^ n := by
+  positivity
+
 /-- **Lebesgue integration on the round sphere in stereographic coordinates.** For `n > 0`, the
 lower Lebesgue integral of any nonnegative function `f` against the Riemannian volume of `Sⁿ` is
 its stereographic integral weighted by `(4 / (‖y‖² + 4)) ^ n`. No measurability of `f` is
@@ -200,15 +231,13 @@ theorem lintegral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
     ∫⁻ p, f p ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
       ∫⁻ y : EuclideanSpace ℝ (Fin n),
         ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n) * f ((stereographic' n v).symm y) := by
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hn)
-  let b := EuclideanSpace.basisFun (Fin n) ℝ
-  have h := (stereographic'SymmPartialDiffeomorph (n := n) v).setLIntegral_riemannianVolume_eq
-    one_ne_zero b.toBasis f
-  rw [coe_stereographic'SymmPartialDiffeomorph v,
-    funext (riemannianJacobian_stereographic'_symm v)] at h
-  simpa [stereographic'SymmPartialDiffeomorph, restrict_compl_singleton,
-    b.addHaar_eq_volume] using h
+  have he : MeasurableEmbedding (stereographic' n v).symm :=
+    ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding
+  rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v, he.lintegral_map,
+    lintegral_withDensity_eq_lintegral_mul_non_measurable _
+      measurable_ofReal_stereographic_density
+      (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp only [Pi.mul_apply]
 
 /-- **Integrability on the round sphere in stereographic coordinates.** In every dimension `n ≥ 0`,
 a normed-space-valued function `f` on `Sⁿ` is integrable for the Riemannian volume if and only if
@@ -223,15 +252,12 @@ theorem integrable_riemannianVolume_sphere_iff_stereographic'
   rcases n.eq_zero_or_pos with rfl | hn
   · have : Finite (sphere (0 : E) 1) := finite_sphere_of_finrank_eq_one Fact.out (0 : E) 1
     exact ⟨fun _ ↦ Integrable.of_finite, fun _ ↦ Integrable.of_finite⟩
-  · have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-      Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hn)
-    let b := EuclideanSpace.basisFun (Fin n) ℝ
-    have h := (stereographic'SymmPartialDiffeomorph (n := n) v).integrableOn_riemannianVolume_iff
-      one_ne_zero b.toBasis f
-    rw [coe_stereographic'SymmPartialDiffeomorph v,
-      funext (riemannianJacobian_stereographic'_symm v)] at h
-    simpa [IntegrableOn, stereographic'SymmPartialDiffeomorph, restrict_compl_singleton,
-      b.addHaar_eq_volume] using h
+  · have he : MeasurableEmbedding (stereographic' n v).symm :=
+      ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding
+    rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v, he.integrable_map_iff,
+      integrable_withDensity_iff_integrable_smul' measurable_ofReal_stereographic_density
+        (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+    simp only [Function.comp_def, ENNReal.toReal_ofReal (stereographic_density_nonneg _)]
 
 /-- **Bochner integration on the round sphere in stereographic coordinates.** For `n > 0`, the
 integral of any function `f` against the Riemannian volume of `Sⁿ` is its stereographic integral
@@ -243,15 +269,12 @@ theorem integral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
     ∫ p, f p ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
       ∫ y : EuclideanSpace ℝ (Fin n),
         ((4 / (‖y‖ ^ 2 + 4)) ^ n) • f ((stereographic' n v).symm y) := by
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hn)
-  let b := EuclideanSpace.basisFun (Fin n) ℝ
-  have h := (stereographic'SymmPartialDiffeomorph (n := n) v).setIntegral_riemannianVolume_eq
-    one_ne_zero b.toBasis f
-  rw [coe_stereographic'SymmPartialDiffeomorph v,
-    funext (riemannianJacobian_stereographic'_symm v)] at h
-  simpa [stereographic'SymmPartialDiffeomorph, restrict_compl_singleton,
-    b.addHaar_eq_volume] using h
+  have he : MeasurableEmbedding (stereographic' n v).symm :=
+    ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding
+  rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v, he.integral_map,
+    integral_withDensity_eq_integral_toReal_smul measurable_ofReal_stereographic_density
+      (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp only [ENNReal.toReal_ofReal (stereographic_density_nonneg _)]
 
 end Stereographic
 
@@ -340,6 +363,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
 /-- The Riemannian volume measure of the unit `n`-sphere assigns `univ` measure
 `ENNReal.ofReal (roundSphereVolume n)`. -/
+@[simp]
 theorem riemannianVolume_sphere_univ
     [LindelofSpace (sphere (0 : E) 1)]
     [MeasurableSpace (sphere (0 : E) 1)] [BorelSpace (sphere (0 : E) 1)] :
