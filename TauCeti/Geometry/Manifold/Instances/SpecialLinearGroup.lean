@@ -16,6 +16,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Det
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Geometry.Lie.RestrictScalars
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # The analytic special linear group
@@ -43,6 +44,8 @@ Matrix-valued maps use the `L∞` operator norm. Enable `open scoped Matrix.Norm
 * `Matrix.SpecialLinearGroup.isSmoothEmbedding_subtypeVal`: the analytic matrix embedding.
 * `Matrix.SpecialLinearGroup.contMDiff_subtypeVal`, `Matrix.SpecialLinearGroup.contMDiff_toGL`:
   analytic inclusions into matrices and the general linear group.
+* `Matrix.SpecialLinearGroup.contMDiffAt_iff`: a map into the special linear group is `C^k` at a
+  point exactly when its matrix is.
 * `Matrix.SpecialLinearGroup.range_mvfderiv_subtypeVal_one`: the trace-zero tangent image.
 
 ## References
@@ -145,6 +148,18 @@ theorem contMDiff_toGL {k : ℕ∞ω} :
   apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
   simpa only [Function.comp_def, SpecialLinearGroup.coe_GL_coe_matrix] using
     (isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).contMDiff.of_le (show k ≤ ω from le_top)
+
+/-- **Maps into the special linear group.** A map into `SL(n, 𝕜)` is `C^k` at a point exactly when
+its matrix is, since the matrix inclusion is an analytic embedding. -/
+theorem contMDiffAt_iff {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+    {f : M → SpecialLinearGroup n 𝕜} {x : M} {k : ℕ∞ω} :
+    ContMDiffAt I 𝓘(𝕜, Model n 𝕜) k f x ↔
+      ContMDiffAt I 𝓘(𝕜, Matrix n n 𝕜) k (fun y ↦ (f y : Matrix n n 𝕜)) x := by
+  have he := (isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).of_le (le_top : k ≤ ω)
+  rw [ContMDiffAt.iff_comp_isImmersionAt (he.isImmersion.isImmersionAt (f x)),
+    and_iff_right_of_imp fun h ↦ (he.isEmbedding.isInducing.continuousAt_iff).2 h.continuousAt,
+    Function.comp_def]
 
 /-- The special linear group is an analytic Lie group over its scalar field. -/
 instance instLieGroup : LieGroup 𝓘(𝕜, Model n 𝕜) ω (SpecialLinearGroup n 𝕜) := by
