@@ -15,7 +15,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.AlgebraicTopology.Sphere.Zero
-import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Hausdorff
@@ -116,24 +115,12 @@ theorem normDet_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
       (4 / (‖y‖ ^ 2 + 4)) ^ n := by
   have hσ : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm y :=
     mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
-  let x := (stereographic' n v).symm y
-  let ιL : TangentSpace (𝓡 n) x →ₗᵢ[ℝ] E :=
-    (ℝ ∙ (x : E))ᗮ.subtypeₗᵢ.comp (sphereTangentEquiv x).toLinearIsometry
-  let J : EuclideanSpace ℝ (Fin n) →ₗ[ℝ] TangentSpace (𝓡 n) x :=
-    (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y).toLinearMap
-  have hcomp :
-      (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y).toLinearMap =
-        ιL.toLinearMap ∘ₗ J := by
-    refine LinearMap.ext fun (c : TangentSpace (𝓡 n) y) ↦ ?_
-    have h1 := mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv x
-      (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y c)
-    rw [← mvfderiv_comp_apply y ((contMDiff_coe_sphere (m := 1) _).mdifferentiableAt one_ne_zero)
-      hσ, mvfderiv_eq_fderiv] at h1
-    exact h1
-  rw [hcomp, LinearMap.normDet_comp_of_finrank_eq J ιL.toLinearMap rfl,
-    ιL.normDet_eq_one, one_mul]
-  exact (riemannianJacobian_eq_normDet (EuclideanSpace.basisFun (Fin n) ℝ)
-    (stereographic' n v).symm y).symm.trans (riemannianJacobian_stereographic'_symm v y)
+  rw [← riemannianJacobian_eq_normDet_fderiv_comp (EuclideanSpace.basisFun (Fin n) ℝ) hσ
+    fun u w ↦ by
+      rw [inner_tangentSpace_sphere, mvfderiv_apply_eq_mfderiv_apply,
+        mvfderiv_apply_eq_mfderiv_apply]
+      rfl]
+  exact riemannianJacobian_stereographic'_symm v y
 
 end Jacobian
 
