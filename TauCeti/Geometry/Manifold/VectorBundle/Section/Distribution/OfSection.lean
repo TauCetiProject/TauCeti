@@ -17,7 +17,11 @@ finite-dimensional space `E`. Its distributional sections (`TauCeti.BundleDistri
 tests `φ` of the dual-density bundle `W →L |Λ|` (`TauCeti.DualDensityTest`). A section `u` of `W`
 pairs with such a test to the density `x ↦ φ x (u x)`, which can be integrated over `M` without a
 measure (`TauCeti.integralDensity`). This file shows that, for locally integrable `u`, the result
-is a distributional section `TauCeti.BundleDistribution.ofSection I G u`.
+is a distributional section `TauCeti.BundleDistribution.ofSection I G u`. This is the bundle
+analogue of Mathlib's `Distribution.ofFun`, and follows its convention: the functional is zero when
+`u` is not locally integrable, and `TauCeti.BundleDistribution.ofSection_apply` /
+`TauCeti.BundleDistribution.ofSection_of_not_locallyIntegrableSection` correspond to
+`Distribution.ofFun_apply` / `Distribution.ofFun_eq_zero`.
 
 A section is **locally integrable** (`TauCeti.LocallyIntegrableSection`) when its readings
 `TauCeti.sectionInChartAt I G u α` in the preferred chart and trivialization at every point `α` are
@@ -33,7 +37,11 @@ such extensions of its chart localizations along chart cutoffs (`TauCeti.ChartCu
 pairing is integrable for every test (`TauCeti.LocallyIntegrableSection.integrableDensity`), linear,
 and continuous on each fixed-compact support stage, hence continuous for the test topology. The
 local representative of `TauCeti.BundleDistribution.ofSection I G u` in such a chart and frame is
-the reading of `u` (`TauCeti.chartDistributionCLM_ofSection_apply_apply`).
+the reading of `u` (`TauCeti.chartDistributionCLM_ofSection_apply_apply`). The decomposition of
+tests along chart cutoffs is `TauCeti.ChartCutoffs.sum_chartTestSection_chartLocalization`, read on
+bundle tests as in the proof of `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`, and
+the integrals in charts are Mathlib's `TestFunction.integralAgainstBilinCLM`, the map underlying
+`Distribution.ofFun`.
 
 ## Main declarations
 
@@ -124,7 +132,8 @@ def sectionInChartAt (u : (x : M) → W x) (α : M) (y : E) : G :=
 
 variable (I G) in
 /-- A section is locally integrable when its readings in the preferred charts and trivializations
-are locally integrable where they are defined. -/
+are locally integrable where they are defined: Mathlib's `MeasureTheory.LocallyIntegrableOn`, read
+chart by chart. -/
 def LocallyIntegrableSection (u : (x : M) → W x) : Prop :=
   ∀ α : M, LocallyIntegrableOn (sectionInChartAt I G u α)
     ((extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' (trivializationAt G W α).baseSet)
@@ -383,7 +392,9 @@ private theorem cutoffTestCLM_apply (A : ChartCutoffs I M ⊤ M)
 
 omit [MeasurableSpace E] [BorelSpace E] [I.Boundaryless] [SigmaCompactSpace M] in
 /-- A dual-density test supported in a compact set `K` is the sum of the extensions of its chart
-localizations along chart cutoffs meeting `K`. -/
+localizations along chart cutoffs meeting `K`:
+`ChartCutoffs.sum_chartTestSection_chartLocalization` read on bundle tests, as in the proof of
+`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`. -/
 private theorem eq_sum_chartTestCLM (A : ChartCutoffs I M ⊤ M)
     (hA : ∀ α, (A.chart α).source ⊆ (𝒯 α).baseSet)
     (φ : DualDensityTest I M G W) {K : Set M} (hK : IsCompact K)
@@ -488,8 +499,9 @@ private def ofSectionCLM (hu : LocallyIntegrableSection I G u) : BundleDistribut
 variable (I G) in
 open scoped Classical in
 /-- The **distributional section of a locally integrable section** `u` of `W`: the functional
-`φ ↦ ∫ φ (u)` on the dual-density tests, integrating the density `x ↦ φ x (u x)`. It is zero if
-`u` is not locally integrable. -/
+`φ ↦ ∫ φ (u)` on the dual-density tests, integrating the density `x ↦ φ x (u x)`. This is the
+bundle analogue of Mathlib's `Distribution.ofFun`, and follows its convention of being zero when
+the input is not locally integrable. -/
 def BundleDistribution.ofSection (u : (x : M) → W x) : BundleDistribution I M G W :=
   if hu : LocallyIntegrableSection I G u then ofSectionCLM hu else 0
 
