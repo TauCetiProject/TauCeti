@@ -14,17 +14,16 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints.Null
 Let a compact commutative Lie group `G`, such as a torus, act smoothly on a connected Hausdorff
 σ-compact manifold `M` without boundary, and let `𝔨 = {ξ | ξ_M = 0}` be the kernel of the
 infinitesimal action, the Lie algebra of the kernel `⋂ₓ G_x` of the action. Every isotropy algebra
-`𝔤_x = {ξ | ξ_M(x) = 0}` contains `𝔨`. This file proves that `𝔤_x = 𝔨` outside a null set
-(`TauCeti.Lie.isNullSet_setOf_isotropy_ne_ker`): almost every point has isotropy algebra `𝔨`, for
-Lebesgue measure in the charts and so for every measure with densities, such as a Liouville
-measure.
+`𝔤_x = {ξ | ξ_M(x) = 0}` contains `𝔨` (`TauCeti.InfinitesimalAction.ker_toLinearMap_le_isotropy`).
+This file proves that `𝔤_x = 𝔨` outside a null set (`TauCeti.Lie.isNullSet_setOf_isotropy_ne_ker`):
+almost every point has isotropy algebra `𝔨`, for Lebesgue measure in the charts and so for every
+measure with densities, such as a Liouville measure.
 
 A point `x` with `𝔤_x ≠ 𝔨` is fixed by an element `g` of finite order of `G` which moves some
 point of `M` (`TauCeti.Lie.exists_isOfFinOrder_smul_eq_exists_smul_ne_of_mem_isotropy`). There
-are countably many elements of finite order in `G`, finitely many of each order
-(`TauCeti.Lie.finite_setOf_pow_eq_one`). The fixed set of each such `g` has clopen interior,
-which on the connected manifold `M` is empty since `g` acts nontrivially
-(`TauCeti.interior_fixedBy_eq_empty`), so it is a null set
+are countably many elements of finite order in `G` (`TauCeti.Lie.countable_setOf_isOfFinOrder`).
+The fixed set of each such `g` has clopen interior, which on the connected manifold `M` is empty
+since `g` acts nontrivially (`TauCeti.interior_fixedBy_eq_empty`), so it is a null set
 (`TauCeti.isNullSet_fixedBy_iff_of_compactSpace`). Hence the points with `𝔤_x ≠ 𝔨` lie in a
 countable union of null sets.
 
@@ -76,25 +75,17 @@ theorem isNullSet_setOf_isotropy_ne_ker [CompactSpace G] [IsMulCommutative G]
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
   let S := {g : G | IsOfFinOrder g ∧ ∃ y : M, g • y ≠ y}
-  -- There are countably many elements of finite order, finitely many of each order.
-  have hS : S.Countable := by
-    refine (countable_iUnion fun n : ℕ ↦
-      (finite_setOf_pow_eq_one I (Nat.add_one_ne_zero n)).countable).mono fun g hg ↦ ?_
-    obtain ⟨n, hn, hgn⟩ := isOfFinOrder_iff_pow_eq_one.1 hg.1
-    exact mem_iUnion.2 ⟨n - 1, by rwa [mem_ofPred_eq, Nat.sub_add_cancel hn]⟩
+  have hS : S.Countable := (countable_setOf_isOfFinOrder I).mono fun _ hg ↦ hg.1
   refine (IsNullSet.biUnion (s := fun g : G ↦ fixedBy M g) hS fun g hg ↦ ?_).mono fun x hx ↦ ?_
   · -- The fixed set of an element of finite order acting nontrivially has empty interior.
     rw [isNullSet_fixedBy_iff_of_compactSpace I g]
     exact interior_fixedBy_eq_empty hg.1 hg.2
       ((ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) g).of_le ENat.LEInfty.out)
   · -- A point whose isotropy algebra exceeds the kernel is fixed by an element of `S`.
-    have hker : LinearMap.ker (InfinitesimalAction.fundamental I G I' M).toLinearMap ≤
-        ((InfinitesimalAction.fundamental I G I' M).isotropy x).toSubmodule := fun ξ hξ ↦ by
-      rw [LinearMap.mem_ker, InfinitesimalAction.coe_toLinearMap] at hξ
-      simp [hξ]
-    obtain ⟨ξ, hξ, hξk⟩ := IsConcreteLE.not_le_iff_exists.1 fun hle ↦ hx (le_antisymm hle hker)
+    obtain ⟨ξ, hξ, hξk⟩ := IsConcreteLE.not_le_iff_exists.1 fun hle ↦
+      hx (le_antisymm hle (InfinitesimalAction.ker_toLinearMap_le_isotropy _ x))
     obtain ⟨g, hg, hgx, hgy⟩ := exists_isOfFinOrder_smul_eq_exists_smul_ne_of_mem_isotropy hξ
-      (by rwa [LinearMap.mem_ker, InfinitesimalAction.coe_toLinearMap] at hξk)
+      (mt (InfinitesimalAction.mem_ker_toLinearMap_iff _).2 hξk)
     exact mem_iUnion₂.2 ⟨g, ⟨hg, hgy⟩, hgx⟩
 
 /-- **Effective actions of compact commutative Lie groups are locally free almost everywhere.**
