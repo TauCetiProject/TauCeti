@@ -30,6 +30,9 @@ agree.
   yet known to satisfy it, so it cannot be routed through
   `CoxeterSystem.prod_alternatingWord_eq_mul_pow`, which evaluates only the simple reflections
   themselves. The evaluations at lengths `2` and `3` are special cases.
+* `TauCeti.commute_of_prod_map_braidWord` and `TauCeti.mul_mul_eq_of_prod_map_braidWord`: a
+  family satisfying the braid relation at an entry `2` or `3` of the Coxeter matrix satisfies the
+  commutation or the length-three braid relation.
 * `TauCeti.prod_map_alternatingWord_eq_mul_pow`: for a family taking involutions at `i` and `i'`,
   the two alternating words of length `m` differ by the `m`-th power of `f i * f i'`.
 * `TauCeti.pow_eq_one_of_prod_map_alternatingWord_eq`: two involutions satisfying a braid relation
@@ -88,6 +91,25 @@ theorem prod_map_alternatingWord_two (f : B → N) (i i' : B) :
 theorem prod_map_alternatingWord_three (f : B → N) (i i' : B) :
     ((CoxeterSystem.alternatingWord i i' 3).map f).prod = f i' * f i * f i' := by
   simp [prod_map_alternatingWord, Nat.even_iff, mul_assoc]
+
+/-- A family satisfying the braid relation of a Coxeter matrix `M` at an entry `M i j = 2` takes
+commuting values at `i` and `j`. -/
+theorem commute_of_prod_map_braidWord {M : CoxeterMatrix B} {f : B → N} {i j : B}
+    (hf : ((CoxeterSystem.braidWord M i j).map f).prod =
+      ((CoxeterSystem.braidWord M j i).map f).prod) (h : M i j = 2) :
+    Commute (f i) (f j) := by
+  rwa [CoxeterSystem.braidWord, h, CoxeterSystem.braidWord, M.symmetric j i, h,
+    prod_map_alternatingWord_two, prod_map_alternatingWord_two] at hf
+
+/-- A family satisfying the braid relation of a Coxeter matrix `M` at an entry `M i j = 3`
+satisfies the length-three braid relation `f i * f j * f i = f j * f i * f j`. -/
+theorem mul_mul_eq_of_prod_map_braidWord {M : CoxeterMatrix B} {f : B → N} {i j : B}
+    (hf : ((CoxeterSystem.braidWord M i j).map f).prod =
+      ((CoxeterSystem.braidWord M j i).map f).prod) (h : M i j = 3) :
+    f i * f j * f i = f j * f i * f j := by
+  rw [CoxeterSystem.braidWord, h, CoxeterSystem.braidWord, M.symmetric j i, h,
+    prod_map_alternatingWord_three, prod_map_alternatingWord_three] at hf
+  exact hf.symm
 
 /-- **The two alternating words of length `m` differ by the `m`-th power of the rotation**, for
 any family `f` taking involutions at `i` and `i'`: the word alternating between `i` and `i'` and

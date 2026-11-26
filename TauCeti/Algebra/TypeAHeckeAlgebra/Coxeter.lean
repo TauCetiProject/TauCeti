@@ -67,20 +67,12 @@ noncomputable def algEquivHeckeAlgebra :
   AlgEquiv.ofAlgHom
     (lift (CoxeterMatrix.HeckeAlgebra.T _ _)
       (CoxeterMatrix.HeckeAlgebra.T_mul_self _ _)
-      (fun {i j} h ↦ by
-        have hb := CoxeterMatrix.HeckeAlgebra.prod_map_T_braidWord
-          (CoxeterMatrix.A (n - 1)) ((q : R) - ↑q⁻¹) i j
-        rw [braidWord, coxeterMatrixA_eq_three (.inl h), braidWord,
-          coxeterMatrixA_eq_three (.inr h), prod_map_alternatingWord_three,
-          prod_map_alternatingWord_three] at hb
-        exact hb.symm)
-      (fun {i j} h ↦ by
-        have hb := CoxeterMatrix.HeckeAlgebra.prod_map_T_braidWord
-          (CoxeterMatrix.A (n - 1)) ((q : R) - ↑q⁻¹) i j
-        rw [braidWord, coxeterMatrixA_eq_two (.inl h), braidWord,
-          coxeterMatrixA_eq_two (.inr h), prod_map_alternatingWord_two,
-          prod_map_alternatingWord_two] at hb
-        exact hb))
+      (fun h ↦ mul_mul_eq_of_prod_map_braidWord
+        (CoxeterMatrix.HeckeAlgebra.prod_map_T_braidWord _ _ _ _)
+        (coxeterMatrixA_eq_three (.inl h)))
+      (fun h ↦ (commute_of_prod_map_braidWord
+        (CoxeterMatrix.HeckeAlgebra.prod_map_T_braidWord _ _ _ _)
+        (coxeterMatrixA_eq_two (.inl h))).eq))
     (CoxeterMatrix.HeckeAlgebra.lift (T q) T_mul_self prod_map_T_braidWord)
     (CoxeterMatrix.HeckeAlgebra.hom_ext fun i ↦ by simp)
     (hom_ext fun i ↦ by simp)
