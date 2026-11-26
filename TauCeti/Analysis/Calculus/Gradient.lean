@@ -84,6 +84,8 @@ chain rule for the gradient of a real profile composed with a real function.
   `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
 * `TauCeti.inner_fderiv_gradient`: over `ℝ`,
   `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`.
+* `HasDerivAt.hasGradientAt_comp_apply`: on `EuclideanSpace ℝ ι`, if `f` has derivative `f'` at
+  `x i`, then `y ↦ f (y i)` has gradient `f' • eᵢ` at `x`.
 * `TauCeti.norm_smul_gradient_add_smul_gradient_le`: over `ℝ`, the product-rule gradient
   `ζ ∇φ + φ ∇ζ` is bounded by `2 N P` when `ζ`, `∇ζ` are bounded by `N` and `φ`, `∇φ` by `P`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
@@ -457,6 +459,17 @@ theorem gradient_apply_eq_fderiv_apply_single {ι : Type*} [Fintype ι] [Decidab
     ∇ f x i = fderiv ℝ f x (EuclideanSpace.single i 1) := by
   rw [← inner_gradient_left, EuclideanSpace.inner_single_right]
   simp
+
+/-- **The gradient of a function of one Euclidean coordinate.** If `f` has derivative `f'` at
+`x i`, then `y ↦ f (y i)` has gradient `f' • eᵢ` at `x`. -/
+theorem _root_.HasDerivAt.hasGradientAt_comp_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {f : ℝ → ℝ} {f' : ℝ} {x : EuclideanSpace ℝ ι} {i : ι} (hf : HasDerivAt f f' (x i)) :
+    HasGradientAt (fun y : EuclideanSpace ℝ ι => f (y i)) (f' • EuclideanSpace.single i 1) x := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine (hf.comp_hasFDerivAt x
+    (EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).hasFDerivAt).congr_fderiv
+    (ContinuousLinearMap.ext fun y => ?_)
+  simp [EuclideanSpace.inner_single_left]
 
 /-- The gradient `ζ ∇φ + φ ∇ζ` of a product is bounded by `2 N P` when `|ζ|, ‖∇ζ‖ ≤ N` and
 `|φ|, ‖∇φ‖ ≤ P`. -/
