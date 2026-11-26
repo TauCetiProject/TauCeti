@@ -164,8 +164,9 @@ theorem SmoothTwoForm.IsNondegenerate.isReferenceActionCritical (h : σ.IsNondeg
   exists_isSmoothCylinder := hcyl
   hasDerivAt w hwc hper h0 := by
     convert h.hasDerivAt_referenceAction_zero hT hH hcyl hwc hper h0 using 1
-    exact (σ.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero horbit
-      (fun t ↦ (hwc (0, t)).mdifferentiableAt (by simp)) h0 0 1).symm
+    exact (σ.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero
+      (fun t _ ↦ (mem_periodicSolutions.mp horbit).1 t)
+      (fun t ↦ (hwc (0, t)).mdifferentiableAt (by simp)) h0).symm
 
 /-- **Critical points of the action are `1`-periodic orbits.** Let `σ` be a nondegenerate two-form
 vanishing on tori on a manifold without boundary modelled on a finite-dimensional space, and `H` a

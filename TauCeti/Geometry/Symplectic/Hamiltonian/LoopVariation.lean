@@ -31,8 +31,8 @@ the area swept out by the variation, and this file collects what follows from th
   `-∫₀¹ σ(∂_s w, ∂_t w) dt` at `s₀`, then
   `d/ds A_H(γ_s) = ∫₀¹ σ(∂_t w - X_{H_t}(w), ∂_s w) dt`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_sub_intervalIntegral`).
-* **Periodic orbits are critical.** Along a variation of a `1`-periodic orbit `γ` of `X_H`, the
-  integrand vanishes at `s = 0`
+* **Orbits are critical.** Along a variation of a solution `γ` of `γ' = X_{H_t}(γ)`, such as a
+  `1`-periodic orbit of `X_H`, the integrand vanishes at `s = 0`
   (`TauCeti.SmoothTwoForm.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero`).
 * **Critical loops are periodic orbits.** Conversely, for a Hamiltonian which is `1`-periodic in
   time, if `γ' ≠ X_H(γ)` at some time `t₀`, pushing `γ` near `t₀ + ℤ` in a chart direction `e`
@@ -58,7 +58,7 @@ relative to a reference loop
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_sub_intervalIntegral`: the first variation
   formula, from the variation of the area term.
 * `TauCeti.SmoothTwoForm.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero`: the first
-  variation vanishes at a periodic orbit.
+  variation vanishes at an orbit.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mem_periodicSolutions_of_forall_integral_eq_zero`:
   a loop along all of whose variations the first variation vanishes is a periodic orbit.
 
@@ -135,22 +135,23 @@ private theorem apply_eq_of_apply_zero {γ : ℝ → M} (h0 : ∀ t, w (0, t) = 
   rw [hv, h0 t]
 
 omit [FiniteDimensional ℝ E] in
-/-- **The first variation vanishes at a periodic orbit.** Along a variation `w` of a `1`-periodic
-orbit `γ` of `X_H`, differentiable along `s = 0`, the integrand
-`σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation formula vanishes at `s = 0`, since
-`∂_t w(0, t) = γ'(t) = X_{H_t}(γ(t))`; so does its integral. -/
+/-- **The first variation vanishes at an orbit.** Along a variation `w` of a curve `γ` solving
+`γ' = X_{H_t}(γ)` between the times `a` and `b`, such as a `1`-periodic orbit or a seamed solution,
+differentiable along `s = 0`, the integrand `σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation
+formula vanishes at `s = 0` and those times, since `∂_t w(0, t) = γ'(t) = X_{H_t}(γ(t))`; so does
+its integral from `a` to `b`. -/
 theorem SmoothTwoForm.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero {γ : ℝ → M}
-    (horbit : γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1)
-    (hwd : ∀ t, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (0, t)) (h0 : ∀ t, w (0, t) = γ t)
-    (a b : ℝ) :
+    {a b : ℝ} (horbit : ∀ t ∈ uIoo a b, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (H t) (γ t))))
+    (hwd : ∀ t, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (0, t)) (h0 : ∀ t, w (0, t) = γ t) :
     ∫ t in a..b, σ.val (w (0, t))
       ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (0, t)),
         mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] = 0 := by
-  refine (intervalIntegral.integral_congr fun t _ ↦ ?_).trans intervalIntegral.integral_zero
+  refine (intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_).trans intervalIntegral.integral_zero
   have hv : Manifold.curveVelocity I γ t = σ.hamiltonianVectorField (H t) (γ t) := by
     rw [← Manifold.curveVelocityWithin_univ]
     exact Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
-      ((mem_periodicSolutions.mp horbit).1 t).hasMFDerivWithinAt uniqueDiffWithinAt_univ
+      (horbit t ht).hasMFDerivWithinAt uniqueDiffWithinAt_univ
   rw [apply_eq_of_apply_zero h0 (hwd t), hv, sub_self]
   exact (σ.val (γ t)).map_coord_zero 0 rfl
 

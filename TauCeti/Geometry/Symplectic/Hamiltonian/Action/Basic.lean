@@ -40,9 +40,13 @@ and `C¹` maps it obeys the following laws.
   sphere (`TauCeti.cylinderAction_sub_cylinderAction`).
 
 For a closed `C¹` form the action is moreover unchanged along a `C²` homotopy of caps fixing the
-loop (`TauCeti.cylinderAction_eq_of_homotopy`). The capped action `TauCeti.cappedLoopAction` of
-capped Floer theory uses the opposite orientation and sign
-(`TauCeti.cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction`).
+loop (`TauCeti.cylinderAction_eq_of_homotopy`). More generally, for a map `f` preserving the
+form, the action of an `f`-seamed path `γ`, with `γ 1 = f (γ 0)`, measured against an `f`-seamed
+cylinder (`TauCeti.IsSmoothSeamedCylinder`), is unchanged along a homotopy of `f`-seamed cylinders
+relative to their ends (`TauCeti.cylinderAction_eq_of_seamedHomotopy`); the action functional of
+seamed paths built on it is in `TauCeti.Geometry.Symplectic.Hamiltonian.Action.Seamed`. The
+capped action `TauCeti.cappedLoopAction` of capped Floer theory uses the opposite orientation and
+sign (`TauCeti.cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction`).
 
 The action depends on the reference cylinder in general. It only depends on the loop:
 
@@ -81,6 +85,8 @@ reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
   sphere between the two caps.
 * `TauCeti.cylinderAction_eq_of_homotopy`: for a closed `C¹` form, the action is unchanged along a
   `C²` homotopy of caps fixing the loop.
+* `TauCeti.cylinderAction_eq_of_seamedHomotopy`: for a closed `C¹` form preserved by `f`, the
+  action is unchanged along a `C²` homotopy of `f`-seamed cylinders relative to their ends.
 
 ## References
 
@@ -190,6 +196,34 @@ theorem cylinderAction_sub_cylinderAction (hσ : IsSmoothForm I 0 σ) (H : ℝ �
 
 end Continuous
 
+/-- **Homotopy invariance of the seamed action.** Let `σ` be a closed `C¹` two-form and `f` a
+differentiable map preserving it, `f^* σ = σ`. The action does not change along a `C²` homotopy
+`Φ` of `f`-seamed maps, `Φ ((s, 1), c) = f (Φ ((s, 0), c))`, that fixes the start path
+`Φ ((0, t), c)` and either fixes the far end `Φ ((1, t), c)` or keeps it a single point at each
+time `c` (the point may move). So seamed cylinders between the same `f`-seamed paths that are
+homotopic relative to their ends give the same action. For `f = id` the maps are periodic in `t`,
+and this is `TauCeti.cylinderAction_eq_of_homotopy`. -/
+theorem cylinderAction_eq_of_seamedHomotopy [IsManifold I 2 M] {σ : RoughForm I M ℝ 2}
+    (hσ : IsSmoothForm I 1 σ) (hdσ : mextDeriv σ = 0) {f : M → M} (hf : MDifferentiable I I f)
+    (hfσ : mpullback I I f σ = σ) (H : ℝ → M → ℝ) {Φ : (ℝ × ℝ) × ℝ → M}
+    (hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ)
+    (hloop : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((0, t), c) = Φ ((0, t), 0))
+    (hend : (∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, t), 0)) ∨
+      ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, 0), c))
+    (hseam : ∀ s ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, 1), c) = f (Φ ((s, 0), c))) :
+    cylinderAction σ H (fun z ↦ Φ (z, 1)) = cylinderAction σ H (fun z ↦ Φ (z, 0)) := by
+  have hI : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
+  have hc1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
+  -- The loop does not move, so the Hamiltonian terms agree.
+  have hH : ∫ t in 0..1, H t (Φ ((0, t), 1)) = ∫ t in 0..1, H t (Φ ((0, t), 0)) :=
+    intervalIntegral.integral_congr fun t ht ↦ by rw [hloop t (hI ▸ ht) 1 hc1]
+  simp only [cylinderAction_def]
+  rw [rectangleIntegral_eq_of_seamedHomotopy (a := (0, 0)) (b := (1, 1)) hσ hdσ hf hfσ hΦ
+      (.inl fun t ht c hc ↦ hloop t (hI ▸ ht) c hc)
+      (hend.imp (fun h t ht c hc ↦ h t (hI ▸ ht) c hc)
+        fun h t ht c hc ↦ (h t (hI ▸ ht) c hc).trans (h 1 hc1 c hc).symm)
+      (fun s hs c hc ↦ hseam s (hI ▸ hs) c hc), hH]
+
 /-- **Homotopy invariance.** For a closed `C¹` two-form, the action does not change along a `C²`
 homotopy `Φ` that fixes the loop `Φ ((0, t), c)`, keeps the far end `Φ ((1, t), c)` a single
 point at each time `c` (the point may move), and keeps the maps periodic in `t`. So caps related
@@ -200,17 +234,9 @@ theorem cylinderAction_eq_of_homotopy [IsManifold I 2 M] {σ : RoughForm I M ℝ
     (hloop : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((0, t), c) = Φ ((0, t), 0))
     (hcentre : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, 0), c))
     (hper : ∀ s ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, 1), c) = Φ ((s, 0), c)) :
-    cylinderAction σ H (fun z ↦ Φ (z, 1)) = cylinderAction σ H (fun z ↦ Φ (z, 0)) := by
-  have hI : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
-  have hc1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
-  -- The loop does not move, so the Hamiltonian terms agree.
-  have hH : ∫ t in 0..1, H t (Φ ((0, t), 1)) = ∫ t in 0..1, H t (Φ ((0, t), 0)) :=
-    intervalIntegral.integral_congr fun t ht ↦ by rw [hloop t (hI ▸ ht) 1 hc1]
-  simp only [cylinderAction_def]
-  rw [rectangleIntegral_eq_of_homotopy (a := (0, 0)) (b := (1, 1)) hσ hdσ hΦ
-      (.inl fun t ht c hc ↦ hloop t (hI ▸ ht) c hc)
-      (.inr fun t ht c hc ↦ (hcentre t (hI ▸ ht) c hc).trans (hcentre 1 hc1 c hc).symm)
-      (fun s hs c hc ↦ hper s (hI ▸ hs) c hc), hH]
+    cylinderAction σ H (fun z ↦ Φ (z, 1)) = cylinderAction σ H (fun z ↦ Φ (z, 0)) :=
+  cylinderAction_eq_of_seamedHomotopy hσ hdσ mdifferentiable_id (mpullback_id σ) H hΦ hloop
+    (.inr hcentre) hper
 
 namespace SmoothTwoForm
 
