@@ -19,9 +19,8 @@ the readings of its components (`ContinuousLinearMap.inCoordinates_prod`).
 
 ## Main results
 
-* `ContMDiffWithinAt.clm_bundle_prod`, `ContMDiffAt.clm_bundle_prod`,
-  `ContMDiffOn.clm_bundle_prod`, `ContMDiff.clm_bundle_prod`: the fibrewise `prod` of two `C^n`
-  Hom-bundle sections is `C^n`.
+* `ContMDiffWithinAt.clm_bundle_prod`, `ContMDiffOn.clm_bundle_prod`: the fibrewise `prod` of
+  two `C^n` Hom-bundle sections is `C^n`.
 -/
 
 public section
@@ -79,18 +78,6 @@ theorem ContMDiffWithinAt.clm_bundle_prod
 
 /-- The fibrewise `prod` of two `C^n` Hom-bundle sections is a `C^n` section of the Hom bundle into
 the fibrewise product. -/
-theorem ContMDiffAt.clm_bundle_prod
-    (hϕ : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
-      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) (b m) (ϕ m)) x₀)
-    (hψ : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
-      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃) (E := fun x ↦ E₁ x →L[𝕜] E₃ x) (b m) (ψ m)) x₀) :
-    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ × F₃)) n
-      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃) (E := fun x ↦ E₁ x →L[𝕜] (E₂ ×ᵇ E₃) x) (b m)
-        ((ϕ m).prod (ψ m))) x₀ :=
-  ContMDiffWithinAt.clm_bundle_prod hϕ hψ
-
-/-- The fibrewise `prod` of two `C^n` Hom-bundle sections is a `C^n` section of the Hom bundle into
-the fibrewise product. -/
 theorem ContMDiffOn.clm_bundle_prod
     (hϕ : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
       (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) (b m) (ϕ m)) s)
@@ -100,17 +87,5 @@ theorem ContMDiffOn.clm_bundle_prod
       (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃) (E := fun x ↦ E₁ x →L[𝕜] (E₂ ×ᵇ E₃) x) (b m)
         ((ϕ m).prod (ψ m))) s :=
   fun x hx ↦ (hϕ x hx).clm_bundle_prod (hψ x hx)
-
-/-- The fibrewise `prod` of two `C^n` Hom-bundle sections is a `C^n` section of the Hom bundle into
-the fibrewise product. -/
-theorem ContMDiff.clm_bundle_prod
-    (hϕ : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
-      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) (b m) (ϕ m)))
-    (hψ : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
-      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃) (E := fun x ↦ E₁ x →L[𝕜] E₃ x) (b m) (ψ m))) :
-    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ × F₃)) n
-      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃) (E := fun x ↦ E₁ x →L[𝕜] (E₂ ×ᵇ E₃) x) (b m)
-        ((ϕ m).prod (ψ m))) :=
-  fun x ↦ (hϕ x).clm_bundle_prod (hψ x)
 
 end Smooth
