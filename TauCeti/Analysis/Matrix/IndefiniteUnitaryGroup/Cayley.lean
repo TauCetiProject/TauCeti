@@ -246,8 +246,9 @@ theorem fderiv_cayleyChart_apply (hS : IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * 
   -- those of the statement only up to unfolding, so it is applied by `exact`, not rewritten.
   exact (DFunLike.congr_fun (hasFDerivAt_cayleyChart hS).fderiv T).trans (rfl)
 
-/-- At `0` the derivative of the Cayley chart is `T ↦ A⁻¹ T`: it identifies the skew-Hermitian
-matrices with the Lie algebra `A⁻¹ 𝔲(n)` of the unitary group of `A`. -/
+/-- At `0` the derivative of the Cayley chart is `T ↦ A⁻¹ T` for any `A`. When `A` is invertible
+and Hermitian, this identifies the skew-Hermitian matrices with the Lie algebra `A⁻¹ 𝔲(n)` of the
+unitary group of `A`. -/
 theorem fderiv_cayleyChart_zero_apply (T : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     fderiv ℝ (cayleyChart A) 0 T = A⁻¹ * T := by
   rw [fderiv_cayleyChart_apply (by simp)]
