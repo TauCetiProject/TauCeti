@@ -64,9 +64,12 @@ solutions on the slit punctured disc is `C (z - z₀)^{-f₀} exp(-∑_{s ≥ 1}
 constant `C` (`TauCeti.exists_wronskian_eq_of_regularSingular`). For two Frobenius solutions at
 the roots `α₁` and `α₂` the constant is `(α₂ - α₁) a₀ b₀` (`TauCeti.regularSingular_wronskian`),
 and for the Frobenius solution at `α₁` together with the logarithmic solution it is `c a₀²` when
-`N = 0` and `-N a₀ b₀` when `N ≥ 1` (`TauCeti.regularSingular_log_wronskian`). With the
-normalizations above, the Wronskian therefore vanishes nowhere on the slit punctured disc
-(`TauCeti.regularSingular_wronskian_ne_zero`, `TauCeti.regularSingular_log_wronskian_ne_zero`).
+`N = 0` and `-N a₀ b₀` when `N ≥ 1` (`TauCeti.regularSingular_log_wronskian`). The Wronskian
+therefore vanishes nowhere on the slit punctured disc for two Frobenius solutions with
+`α₁ ≠ α₂` and `a₀, b₀ ≠ 0` (`TauCeti.regularSingular_wronskian_ne_zero`), and for the Frobenius
+solution with `a₀ ≠ 0` together with the logarithmic solution with `c ≠ 0` when `N = 0` and
+`b₀ ≠ 0` when `N ≥ 1`, as in DLMF's normalization
+(`TauCeti.regularSingular_log_wronskian_ne_zero`).
 
 ## Implementation notes
 
