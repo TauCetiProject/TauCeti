@@ -27,13 +27,13 @@ flag line stabilizer also has solvable `k`-points.
 
 * `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent`: stabilizer
   of `exteriorFlagVector k d v` for a linearly independent tuple `v`.
-* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector`: stabilizer of
+* `Module.Basis.stabilizerHopfIdeal_span_exteriorFlagVector`: stabilizer of
   `exteriorFlagVector k d b` for a basis `b`.
-* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_le_iff`: characterization via
+* `Module.Basis.stabilizerHopfIdeal_span_exteriorFlagVector_le_iff`: characterization via
   upper triangularity of `coefficientMatrix (C := H ⧸ J.toIdeal) b`.
-* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_eq`: equality with `J` when `b`
+* `Module.Basis.stabilizerHopfIdeal_span_exteriorFlagVector_eq`: equality with `J` when `b`
   is upper triangular over `H ⧸ J.toIdeal` and `(k ∙ b 0).stabilizerHopfIdeal H = J`.
-* `TauCeti.Comodule.isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector`: solvability
+* `Module.Basis.isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector`: solvability
   of `k`-points for any basis flag line stabilizer.
 
 ## References
@@ -101,7 +101,34 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module
       Submodule.stabilizerHopfIdeal_span_ιMulti hv, sup_comm]
     conv_rhs =>
       rw [Fin.univ_castSuccEmb, Finset.cons_eq_insert, Finset.sup_insert, Finset.sup_map]
-    rfl
+    refine congrArg₂ (· ⊔ ·) ?_ (Finset.sup_congr rfl fun i _ ↦ ?_)
+    · rw [show v ∘ Fin.castLE (Nat.le_of_lt_succ (Fin.last (r + 1)).isLt) = v from
+        funext fun x ↦ by simp]
+    · dsimp only [Function.comp_apply, Fin.castSuccEmb_apply]
+      rw [show (v ∘ Fin.castSucc) ∘ Fin.castLE (Nat.le_of_lt_succ i.isLt) =
+          v ∘ Fin.castLE (Nat.le_of_lt_succ i.castSucc.isLt) from
+        funext fun x ↦ by simp]
+
+end FlagStabilizer
+
+end TauCeti.Comodule
+
+namespace Module.Basis
+
+open TauCeti TauCeti.Comodule
+
+universe u v w
+
+variable {k : Type u} {H : Type v} {M : Type w}
+  [Field k] [CommRing H] [HopfAlgebra k H] [AddCommGroup M] [Module k M] [Comodule k H M]
+
+private theorem toMatrix_basePointsRepresentation {d : ℕ} (b : Module.Basis (Fin d) k M)
+    (g : WithConv (H →ₐ[k] k)) :
+    LinearMap.toMatrix b b (basePointsRepresentation (R := k) (H := H) M g) =
+      (coefficientMatrix (C := H) b).map g.ofConv := by
+  ext i j
+  rw [LinearMap.toMatrix_apply, Matrix.map_apply, coefficientMatrix_apply, apply_matrixCoefficient,
+    Module.Basis.coord_apply]
 
 /-- For a basis `b : Module.Basis (Fin d) k M`, the line stabilizer of `exteriorFlagVector k d b` is
 the supremum of the stabilizers of all steps `b.flag r` of the basis flag. -/
@@ -114,7 +141,9 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector {d : ℕ} (b : Module.Basis 
   rw [stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent b.linearIndependent]
   refine Finset.sup_congr rfl fun r _ ↦ ?_
   rw [Module.Basis.flag, Set.range_comp, Fin.range_castLE]
-  rfl
+  refine congrArg (fun s ↦ (Submodule.span k (b '' s)).stabilizerHopfIdeal H) ?_
+  ext t
+  simp [Fin.lt_def]
 
 /-- The line stabilizer of `exteriorFlagVector k d b` lies below `J` if and only if the corestricted
 coefficient matrix of `b` over `H ⧸ J.toIdeal` is upper triangular. -/
@@ -128,7 +157,7 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_le_iff {d : ℕ} (b : Module
        (coefficientMatrix (C := H ⧸ J.toIdeal) b).IsUpperTriangular) := by
   let _ : Comodule k (H ⧸ J.toIdeal) M :=
     Corestrict (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) J).hom.toCoalgHom
-  rw [stabilizerHopfIdeal_span_exteriorFlagVector, Finset.sup_le_iff,
+  rw [b.stabilizerHopfIdeal_span_exteriorFlagVector, Finset.sup_le_iff,
     coefficientMatrix_isUpperTriangular_iff (C := H ⧸ J.toIdeal) b]
   exact ⟨fun h r ↦ ((b.flag r).stabilizerHopfIdeal_le_iff_exists_subcomodule_corestrict J).mp
       (h r (Finset.mem_univ r)),
@@ -148,8 +177,8 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_eq {n : ℕ}
        Module.addCommMonoidToAddCommGroup k
      letI : Comodule k H (exteriorPower.FlagSpace k M (1 + n)) := exteriorFlag k H M (1 + n)
      (k ∙ exteriorPower.exteriorFlagVector k (1 + n) b).stabilizerHopfIdeal H) = J := by
-  refine le_antisymm ((stabilizerHopfIdeal_span_exteriorFlagVector_le_iff b J).mpr htri) ?_
-  rw [stabilizerHopfIdeal_span_exteriorFlagVector, ← h0]
+  refine le_antisymm ((b.stabilizerHopfIdeal_span_exteriorFlagVector_le_iff J).mpr htri) ?_
+  rw [b.stabilizerHopfIdeal_span_exteriorFlagVector, ← h0]
   have hflag1 : b.flag (Fin.succ (0 : Fin (1 + n))) = k ∙ b 0 := by
     rw [b.flag_succ, Fin.castSucc_zero, b.flag_zero, sup_bot_eq]
   rw [← hflag1]
@@ -181,18 +210,18 @@ theorem isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector
   let _ : Comodule k (H ⧸ D.toIdeal) M :=
     Corestrict (CommHopfAlgCat.mkQuotient Hcat D).hom.toCoalgHom
   have htri : (coefficientMatrix (C := H ⧸ D.toIdeal) b).IsUpperTriangular :=
-    (stabilizerHopfIdeal_span_exteriorFlagVector_le_iff b D).mp le_rfl
+    (b.stabilizerHopfIdeal_span_exteriorFlagVector_le_iff D).mp le_rfl
   have hf_mem (g : WithConv ((H ⧸ D.toIdeal) →ₐ[k] k)) :
       f g ∈ upperTriangularGroup (Fin d) k := by
     refine UpperTriangularGroup.mem_iff.mpr fun i j hij ↦ ?_
-    have hval := congrArg (fun x ↦ g.ofConv x) (htri hij)
-    rw [coefficientMatrix_apply, apply_matrixCoefficient, map_zero,
-      basePointsRepresentation_corestrict] at hval
-    have hιD : ιD g = toConv (g.ofConv.comp
-        ((CommHopfAlgCat.mkQuotient Hcat D).hom : H →ₐ[k] _)) :=
-      CommHopfAlgCat.quotientPointsHom_apply Hcat D (CommAlgCat.of k k) g
-    simpa [f, ρ, eMat, hιD, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply,
-      Representation.asGroupHom_apply] using hval
+    have hιD : ιD g = BialgHom.mapDomain (CommHopfAlgCat.mkQuotient Hcat D).hom g := by
+      rw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+    have hmat : ((f g : Matrix (Fin d) (Fin d) k) i j) =
+        LinearMap.toMatrix b b (basePointsRepresentation (R := k) (H := H) M (ιD g)) i j := by
+      rw [LinearMap.toMatrix_apply]
+      exact LinearMap.toMatrixAlgEquiv_apply b _ i j
+    rw [hmat, hιD, ← basePointsRepresentation_corestrict, toMatrix_basePointsRepresentation,
+      Matrix.map_apply, htri hij, map_zero]
   have hker_mem (g : f.ker) :
       ιD g.val ∈ CommHopfAlgCat.quotientPointsSubgroup Hcat J (CommAlgCat.of k k) := by
     have hid : basePointsRepresentation (R := k) (H := H) M (ιD g.val) = LinearMap.id :=
@@ -208,6 +237,4 @@ theorem isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector
     (f.codRestrict (upperTriangularGroup (Fin d) k) hf_mem) ?_
   rw [Subgroup.subtype_range, MonoidHom.ker_codRestrict]
 
-end FlagStabilizer
-
-end TauCeti.Comodule
+end Module.Basis

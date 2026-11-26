@@ -29,12 +29,21 @@ Plücker--Segre embedding of `d`-step flags in `M`. Every `v : Fin d → M` defi
 
 ## Main results
 
+* `TauCeti.exteriorPower.flagSpaceZeroEquiv_tprod`,
+  `TauCeti.exteriorPower.flagSpaceZeroEquiv_symm_apply`,
+  `TauCeti.exteriorPower.flagSpaceSuccEquiv_tprod`,
+  `TauCeti.exteriorPower.flagSpaceSuccEquiv_symm_tprod_tmul`: pure-tensor evaluation lemmas for
+  the canonical flag-space equivalences.
 * `TauCeti.exteriorPower.exteriorFlagVector_def`, `TauCeti.exteriorPower.exteriorFlagMap_tprod`:
   indexed-tensor characterization of `exteriorFlagVector` and `exteriorFlagMap`.
 * `TauCeti.exteriorPower.exteriorFlagMap_id`, `TauCeti.exteriorPower.exteriorFlagMap_comp`,
   `TauCeti.exteriorPower.exteriorFlagMap_exteriorFlagVector`: functoriality of `exteriorFlagMap`.
 * `TauCeti.exteriorPower.exteriorFlagVector_ne_zero_iff`: `exteriorFlagVector k d v ≠ 0` iff
   `LinearIndependent k v`.
+
+## References
+
+* W. Fulton, *Young Tableaux*, LMSST 35, Cambridge University Press (1997), §9.1.
 -/
 
 public section
@@ -70,6 +79,39 @@ noncomputable def flagSpaceSuccEquiv (r : ℕ) :
 
 variable {M}
 
+/-- `flagSpaceZeroEquiv` evaluates on a pure tensor at its unique index `0`. -/
+@[simp]
+theorem flagSpaceZeroEquiv_tprod (x : ∀ i : Fin 1, ⋀[R]^(i : ℕ) M) :
+    flagSpaceZeroEquiv R M (PiTensorProduct.tprod R x) = x 0 := by
+  simp [flagSpaceZeroEquiv]
+
+/-- `(flagSpaceZeroEquiv R M).symm` sends `x : ⋀[R]^0 M` to the corresponding pure tensor via
+`Fin.lastCases`. -/
+theorem flagSpaceZeroEquiv_symm_apply (x : ⋀[R]^0 M) :
+    (flagSpaceZeroEquiv R M).symm x =
+      PiTensorProduct.tprod R (Fin.lastCases x fun i : Fin 0 ↦ i.elim0) :=
+  (flagSpaceZeroEquiv R M).injective (by simp; rfl)
+
+/-- `flagSpaceSuccEquiv` splits a pure tensor into its prefix tensor and its last factor. -/
+@[simp]
+theorem flagSpaceSuccEquiv_tprod (r : ℕ) (x : ∀ i : Fin (r + 2), ⋀[R]^(i : ℕ) M) :
+    flagSpaceSuccEquiv R M r (PiTensorProduct.tprod R x) =
+      (PiTensorProduct.tprod R fun j : Fin (r + 1) ↦ x j.castSucc) ⊗ₜ[R] x (Fin.last (r + 1)) := by
+  dsimp only [flagSpaceSuccEquiv, LinearEquiv.trans_apply]
+  simp only [PiTensorProduct.reindex_tprod, Equiv.symm_symm,
+    PiTensorProduct.tmulEquivDep_symm_apply, TensorProduct.congr_tmul, PiTensorProduct.congr_tprod,
+    LinearEquiv.trans_apply, PiTensorProduct.subsingletonEquiv_apply_tprod]
+  rfl
+
+/-- `(flagSpaceSuccEquiv R M r).symm` recombines a pure prefix tensor and a top factor into a
+single pure tensor via `Fin.lastCases`. -/
+@[simp]
+theorem flagSpaceSuccEquiv_symm_tprod_tmul (r : ℕ)
+    (y : ∀ j : Fin (r + 1), ⋀[R]^(j : ℕ) M) (z : ⋀[R]^(r + 1) M) :
+    (flagSpaceSuccEquiv R M r).symm ((PiTensorProduct.tprod R y) ⊗ₜ[R] z) =
+      PiTensorProduct.tprod R (Fin.lastCases z y) :=
+  (flagSpaceSuccEquiv R M r).injective (by simp)
+
 /-- The exterior flag vector `1 ⊗ v₀ ⊗ (v₀ ∧ v₁) ⊗ ⋯ ⊗ (v₀ ∧ ⋯ ∧ v_{d-1})`
 associated to `v : Fin d → M`. -/
 noncomputable def exteriorFlagVector (d : ℕ) (v : Fin d → M) : FlagSpace R M d :=
@@ -90,7 +132,7 @@ theorem exteriorFlagVector_def (d : ℕ) (v : Fin d → M) :
 @[simp]
 theorem flagSpaceZeroEquiv_exteriorFlagVector (v : Fin 0 → M) :
     flagSpaceZeroEquiv R M (exteriorFlagVector R 0 v) = _root_.exteriorPower.ιMulti R 0 v := by
-  simp [flagSpaceZeroEquiv, exteriorFlagVector]
+  simp [exteriorFlagVector]
 
 /-- Image of `exteriorFlagVector R (r + 1) v` under `flagSpaceSuccEquiv`. -/
 @[simp]
@@ -98,11 +140,8 @@ theorem flagSpaceSuccEquiv_exteriorFlagVector (r : ℕ) (v : Fin (r + 1) → M) 
     flagSpaceSuccEquiv R M r (exteriorFlagVector R (r + 1) v) =
       exteriorFlagVector R r (v ∘ Fin.castSucc) ⊗ₜ[R]
         _root_.exteriorPower.ιMulti R (r + 1) v := by
-  dsimp only [flagSpaceSuccEquiv, exteriorFlagVector, LinearEquiv.trans_apply]
-  simp only [PiTensorProduct.reindex_tprod, Equiv.symm_symm,
-    PiTensorProduct.tmulEquivDep_symm_apply, TensorProduct.congr_tmul, PiTensorProduct.congr_tprod,
-    LinearEquiv.trans_apply, PiTensorProduct.subsingletonEquiv_apply_tprod]
-  congr 1
+  rw [exteriorFlagVector, flagSpaceSuccEquiv_tprod]
+  rfl
 
 /-- Base-case unfolding of `exteriorFlagVector` in degree `0`. -/
 theorem exteriorFlagVector_zero (v : Fin 0 → M) :
@@ -139,7 +178,7 @@ theorem flagSpaceZeroEquiv_exteriorFlagMap_apply (f : M →ₗ[R] N) (w : FlagSp
     flagSpaceZeroEquiv R N (exteriorFlagMap 0 f w) =
       _root_.exteriorPower.map 0 f (flagSpaceZeroEquiv R M w) := by
   induction w using PiTensorProduct.induction_on with
-  | smul_tprod r x => simp [flagSpaceZeroEquiv, exteriorFlagMap]
+  | smul_tprod r x => simp
   | add x y hx hy => simp [hx, hy]
 
 /-- Evaluation of `exteriorFlagMap (r + 1) f` under `flagSpaceSuccEquiv`. -/
@@ -150,13 +189,7 @@ theorem flagSpaceSuccEquiv_exteriorFlagMap_apply (r : ℕ) (f : M →ₗ[R] N)
       TensorProduct.map (exteriorFlagMap r f) (_root_.exteriorPower.map (r + 1) f)
         (flagSpaceSuccEquiv R M r w) := by
   induction w using PiTensorProduct.induction_on with
-  | smul_tprod r' x =>
-    dsimp only [flagSpaceSuccEquiv, exteriorFlagMap, LinearEquiv.trans_apply]
-    simp only [map_smul, PiTensorProduct.map_tprod, PiTensorProduct.reindex_tprod, Equiv.symm_symm,
-      PiTensorProduct.tmulEquivDep_symm_apply, TensorProduct.congr_tmul,
-      PiTensorProduct.congr_tprod, LinearEquiv.trans_apply,
-      PiTensorProduct.subsingletonEquiv_apply_tprod, TensorProduct.map_tmul]
-    congr 2
+  | smul_tprod r' x => simp
   | add x y hx hy => simp [hx, hy]
 
 /-- Base-case unfolding of `exteriorFlagMap` in degree `0`. -/

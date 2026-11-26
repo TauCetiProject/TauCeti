@@ -21,9 +21,9 @@ triangularity in the underlying basis `b : Module.Basis (Fin d) k M`.
 
 ## Main results
 
-* `TauCeti.exteriorPower.exteriorFlagMap_mem_span_iff_isUpperTriangular_toMatrix`: a linear
-  automorphism preserves the line spanned by `exteriorFlagVector k d b` if and only if its
-  matrix in `b` is upper triangular.
+* `Module.Basis.exteriorFlagMap_mem_span_iff_isUpperTriangular_toMatrix`: a linear automorphism
+  preserves the line spanned by `exteriorFlagVector k d b` if and only if its matrix in `b` is
+  upper triangular.
 -/
 
 public section
@@ -66,7 +66,9 @@ private theorem mem_span_prefix_of_exteriorFlagVector_eq_smul {d : ℕ} {u v : F
       have hi := ih (hv.comp Fin.castSucc (Fin.castSucc_injective r))
         (mul_ne_zero a⁻¹.ne_zero hc) ha_smul i
       have hcomp : (v ∘ Fin.castSucc) ∘ Fin.castLE i.isLt =
-          v ∘ Fin.castLE i.castSucc.isLt := rfl
+          v ∘ Fin.castLE i.castSucc.isLt := by
+        funext x
+        simp
       rwa [hcomp] at hi
 
 private theorem exteriorFlagVector_mem_span_of_mem_prefix {d : ℕ} {v : Fin d → M}
@@ -82,7 +84,9 @@ private theorem exteriorFlagVector_mem_span_of_mem_prefix {d : ℕ} {v : Fin d �
     have hv' : LinearIndependent k (v ∘ Fin.castSucc) := hv.comp _ (Fin.castSucc_injective r)
     obtain ⟨c₁, hc₁⟩ := Submodule.mem_span_singleton.mp (ih hv' fun j ↦ by
       have hcomp : (v ∘ Fin.castSucc) ∘ Fin.castLE j.isLt =
-          v ∘ Fin.castLE j.castSucc.isLt := rfl
+          v ∘ Fin.castLE j.castSucc.isLt := by
+        funext x
+        simp
       simpa [hcomp] using hf j.castSucc)
     have hfu : LinearIndependent k (f.toLinearMap ∘ v) := hv.map' f.toLinearMap f.ker
     have hle : Submodule.span k (Set.range (f.toLinearMap ∘ v)) ≤
@@ -105,6 +109,16 @@ private theorem exteriorFlagVector_mem_span_of_mem_prefix {d : ℕ} {v : Fin d �
       Function.comp_assoc, ← hc₁, hc₂, Units.smul_def, ← TensorProduct.smul_tmul',
       TensorProduct.tmul_smul, smul_smul]
 
+end TauCeti.exteriorPower
+
+namespace Module.Basis
+
+open TauCeti.exteriorPower
+
+universe u v
+
+variable {k : Type u} {M : Type v} [Field k] [AddCommGroup M] [Module k M]
+
 /-- A linear automorphism `f : M ≃ₗ[k] M` whose induced map on `FlagSpace k M d` preserves the
 line spanned by `exteriorFlagVector k d b` has upper-triangular matrix in `b`, and conversely. -/
 theorem exteriorFlagMap_mem_span_iff_isUpperTriangular_toMatrix {d : ℕ}
@@ -123,8 +137,7 @@ theorem exteriorFlagMap_mem_span_iff_isUpperTriangular_toMatrix {d : ℕ}
     rw [LinearMap.toMatrix_apply]
     have hmem := mem_span_prefix_of_exteriorFlagVector_eq_smul b.linearIndependent hc0 hc.symm j
     have hset : Set.range (b ∘ Fin.castLE j.isLt) = b '' {t : Fin d | t.castSucc < j.succ} := by
-      rw [Set.range_comp, Fin.range_castLE]
-      rfl
+      simp only [Set.range_comp, Fin.range_castLE, Fin.lt_def, Fin.val_castSucc, Fin.val_succ]
     rw [hset, ← Module.Basis.flag] at hmem
     exact b.flag_le_ker_coord (Fin.le_def.mpr (Nat.succ_le_of_lt hji)) hmem
   · intro htri
@@ -139,4 +152,4 @@ theorem exteriorFlagMap_mem_span_iff_isUpperTriangular_toMatrix {d : ℕ}
     · exact Submodule.smul_mem _ _
         (Submodule.subset_span ⟨⟨i, Nat.lt_succ_of_le (not_lt.mp hij)⟩, rfl⟩)
 
-end TauCeti.exteriorPower
+end Module.Basis

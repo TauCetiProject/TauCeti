@@ -98,8 +98,9 @@ theorem ringKrullDim_centralizer_lt_of_mem_adjointOrbit_boundary [IsReduced H]
   have hx := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_centralizerHopfIdeal x
   have hy := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_centralizerHopfIdeal y
   have := Bialgebra.nontrivial (A := H ⧸ (centralizerHopfIdeal H y).toIdeal) k
+  have := finiteRingKrullDim_of_finiteType k (H ⧸ (centralizerHopfIdeal H y).toIdeal)
   exact lt_of_not_ge fun h ↦
-    horbit.not_ge (TauCeti.le_of_add_ringKrullDim_quotient_eq_of_le k hx hy h)
+    horbit.not_ge (TauCeti.le_of_add_ringKrullDim_quotient_eq_of_le hx hy h)
 
 /-- A minimal-centralizer regular element in the closure of an adjoint orbit already belongs
 to that orbit. In particular no adjoint orbit has a regular element in its boundary. -/

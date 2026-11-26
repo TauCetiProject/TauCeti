@@ -44,7 +44,7 @@ theorem basePointsRepresentation_exteriorFlag (d : ℕ) (g : WithConv (H →ₐ[
   induction d with
   | zero =>
     let _ : Comodule R H (⋀[R]^0 M) := exteriorPower R H M 0
-    rw [exteriorFlag_zero, basePointsRepresentation_transport,
+    rw [exteriorFlag_zero, LinearEquiv.basePointsRepresentation_transport,
       basePointsRepresentation_exteriorPower, exteriorPower.exteriorFlagMap_zero,
       LinearEquiv.symm_symm]
   | succ r ih =>
@@ -52,8 +52,8 @@ theorem basePointsRepresentation_exteriorFlag (d : ℕ) (g : WithConv (H →ₐ[
     let _ : Comodule R H (⋀[R]^(r + 1) M) := exteriorPower R H M (r + 1)
     let _ : Comodule R H (exteriorPower.FlagSpace R M r ⊗[R] ⋀[R]^(r + 1) M) :=
       tensor R H (exteriorPower.FlagSpace R M r) (⋀[R]^(r + 1) M)
-    rw [exteriorFlag_succ, basePointsRepresentation_transport, exteriorPower.exteriorFlagMap_succ,
-      LinearEquiv.symm_symm]
+    rw [exteriorFlag_succ, LinearEquiv.basePointsRepresentation_transport,
+      exteriorPower.exteriorFlagMap_succ, LinearEquiv.symm_symm]
     congr 2
     exact TensorProduct.ext' fun x y ↦ by
       rw [basePointsRepresentation_tensor_tmul, ih, basePointsRepresentation_exteriorPower,

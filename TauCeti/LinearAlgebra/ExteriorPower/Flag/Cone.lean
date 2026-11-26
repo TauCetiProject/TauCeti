@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.Decomposable
-import TauCeti.LinearAlgebra.SymmetricAlgebra.QuadraticForm
+import TauCeti.LinearAlgebra.SymmetricAlgebra.HomogeneousTwo
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 import TauCeti.LinearAlgebra.TensorProduct.Segre
 
@@ -35,6 +35,13 @@ every nonzero element is a unit multiple of `exteriorFlagVector k d b` for a bas
   `exteriorFlagCone k M d` is equivalent to vanishing of all forms in `exteriorFlagForms k M d`.
 * `TauCeti.exteriorPower.exists_basis_of_mem_exteriorFlagCone_of_finrank_eq`: in degree
   `Module.finrank k M`, nonzero cone vectors arise from bases of `M`.
+
+## References
+
+* W. Fulton, *Young Tableaux*, LMSST 35, Cambridge University Press (1997), §9.1 (Plücker and
+  incidence equations cutting out the flag cone).
+* J. Harris, *Algebraic Geometry: A First Course*, GTM 133, Springer (1992), Lecture 2 (Segre
+  `2 × 2` minor equations for pure tensors).
 -/
 
 public section
@@ -152,7 +159,10 @@ private theorem exists_tmul_of_forall_exteriorFlagForms {r : ℕ} {w : FlagSpace
         (SetLike.mul_mem_graded (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule _ _ _)
           (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule _ _ _)), by
       rintro _ ⟨c, v, rfl⟩
-      simp [s, ι, δ]
+      simp only [s, ι, δ, map_sub, map_mul, _root_.SymmetricAlgebra.lift_ι_apply, map_smul,
+        LinearMap.smul_apply, smul_eq_mul, Module.Dual.eval_apply, LinearMap.coe_comp,
+        Function.comp_apply, LinearMap.dualMap_apply, LinearEquiv.coe_coe,
+        flagSpaceSuccEquiv_exteriorFlagVector, TensorProduct.dualDistrib_apply]
       ring⟩
   simpa [s, ι, δ, sub_eq_zero] using hw s hs
 
@@ -183,13 +193,13 @@ private theorem decomposable_of_forall_exteriorFlagForms {r : ℕ}
       (fun _ _ _ ↦ by simp [add_mul]) (fun _ _ _ ↦ by simp)
       (fun _ _ _ ↦ by simp [mul_add]) (fun _ _ _ ↦ by simp)
   let s := _root_.SymmetricAlgebra.map k p₂.dualMap
-    (TauCeti.SymmetricAlgebra.bilinearToQuadForm B : _)
+    (TauCeti.SymmetricAlgebra.homogeneousSubmoduleTwoOfBilin B : _)
   have hs : s ∈ exteriorFlagForms k M (r + 1) :=
     ⟨TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
-        (TauCeti.SymmetricAlgebra.bilinearToQuadForm B).property, by
+        (TauCeti.SymmetricAlgebra.homogeneousSubmoduleTwoOfBilin B).property, by
       rintro _ ⟨c, v, rfl⟩
       rw [_root_.SymmetricAlgebra.lift_eval_map_dualMap,
-        TauCeti.SymmetricAlgebra.lift_eval_bilinearToQuadForm]
+        TauCeti.SymmetricAlgebra.lift_eval_homogeneousSubmoduleTwoOfBilin]
       have hpv : p₂ (c • exteriorFlagVector k (r + 1) v) =
           (c * φ₀ (exteriorFlagVector k r (v ∘ Fin.castSucc))) •
             _root_.exteriorPower.ιMulti k (r + 1) v := by
@@ -199,7 +209,7 @@ private theorem decomposable_of_forall_exteriorFlagForms {r : ℕ}
         _root_.exteriorPower.ι_contract_mul_ιMulti_eq_zero, map_zero, smul_zero]⟩
   have hval := hw s hs
   rwa [_root_.SymmetricAlgebra.lift_eval_map_dualMap, hp₂,
-    TauCeti.SymmetricAlgebra.lift_eval_bilinearToQuadForm] at hval
+    TauCeti.SymmetricAlgebra.lift_eval_homogeneousSubmoduleTwoOfBilin] at hval
 
 private noncomputable def incidenceDual {m : ℕ}
     (η : ⋀[k]^m (Module.Dual k M)) (φ : Module.Dual k (FlagSpace k M m))
@@ -216,6 +226,20 @@ private noncomputable def incidenceDual {m : ℕ}
     (fun _ _ _ ↦ by simp [mul_add]) (fun _ _ _ ↦ by simp)) ∘ₗ
       (flagSpaceSuccEquiv k M (m + 1)).toLinearMap
 
+private theorem incidenceDual_apply_symm_tmul {m : ℕ}
+    (η : ⋀[k]^m (Module.Dual k M)) (φ : Module.Dual k (FlagSpace k M m))
+    (ξ : Module.Dual k (ExteriorAlgebra k M))
+    (a : FlagSpace k M m) (α : ⋀[k]^(m + 1) M) (β : ⋀[k]^(m + 2) M) :
+    incidenceDual η φ ξ
+        ((flagSpaceSuccEquiv k M (m + 1)).symm
+          (((flagSpaceSuccEquiv k M m).symm (a ⊗ₜ[k] α)) ⊗ₜ[k] β)) =
+      φ a * ξ (_root_.ExteriorAlgebra.ι k (_root_.exteriorPower.contract k M m η α) *
+        (β : ExteriorAlgebra k M)) := by
+  simp only [incidenceDual, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.apply_symm_apply, TensorProduct.lift.tmul, LinearMap.mk₂_apply,
+    TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.lid_tmul, map_smul,
+    smul_mul_assoc, smul_eq_mul]
+
 private theorem incidenceDual_exteriorFlagVector_eq_zero {m : ℕ}
     (η : ⋀[k]^m (Module.Dual k M)) (φ : Module.Dual k (FlagSpace k M m))
     (ξ : Module.Dual k (ExteriorAlgebra k M)) (v : Fin (m + 2) → M) :
@@ -225,11 +249,9 @@ private theorem incidenceDual_exteriorFlagVector_eq_zero {m : ℕ}
       Submodule.span k (Set.range v) :=
     Submodule.span_mono (Set.range_comp_subset_range _ _)
       (_root_.exteriorPower.contract_ιMulti_mem_span η (v ∘ Fin.castSucc))
-  simp only [incidenceDual, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    flagSpaceSuccEquiv_exteriorFlagVector (r := m + 1), flagSpaceSuccEquiv_exteriorFlagVector,
-    TensorProduct.lift.tmul, LinearMap.mk₂_apply, TensorProduct.map_tmul, LinearMap.id_apply,
-    TensorProduct.lid_tmul, map_smul, smul_mul_assoc]
-  rw [_root_.exteriorPower.ι_mul_ιMulti_eq_zero_of_mem_span hmem, map_zero, smul_zero]
+  rw [exteriorFlagVector_succ (m + 1) v, exteriorFlagVector_succ m (v ∘ Fin.castSucc),
+    incidenceDual_apply_symm_tmul,
+    _root_.exteriorPower.ι_mul_ιMulti_eq_zero_of_mem_span hmem, map_zero, mul_zero]
 
 private theorem span_le_of_forall_exteriorFlagForms {r : ℕ} {c₀ : k} {u : Fin r → M}
     {v₀ : Fin (r + 1) → M} (hc₀ : c₀ ≠ 0) (hu : LinearIndependent k u)
@@ -266,8 +288,12 @@ private theorem span_le_of_forall_exteriorFlagForms {r : ℕ} {c₀ : k} {u : Fi
         ((c₀ • exteriorFlagVector k (m + 1) u) ⊗ₜ[k]
           _root_.exteriorPower.ιMulti k (m + 2) v₀)) = 0 :=
       mul_self_eq_zero.mp (by simpa [s] using hw s hs)
+    dsimp only [L] at hLw
+    rw [exteriorFlagVector_succ m u, ← TensorProduct.smul_tmul', map_smul, map_smul,
+      incidenceDual_apply_symm_tmul, smul_eq_mul, hφ_m, one_mul] at hLw
+    -- Rewrite `contract.flip (ιMulti u) η` to `contract η (ιMulti u)` to match `hLw`.
     rw [LinearMap.flip_apply]
-    simpa [L, incidenceDual, y_m, hφ_m, hc₀] using hLw
+    exact (mul_eq_zero.mp hLw).resolve_left hc₀
 
 private theorem mem_exteriorFlagCone_succ_of_span_le {r : ℕ} {c₀ : k} {u : Fin r → M}
     {v₀ : Fin (r + 1) → M} (hu : LinearIndependent k u) (hv₀ : LinearIndependent k v₀)

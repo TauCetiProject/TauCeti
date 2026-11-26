@@ -19,7 +19,7 @@ representation.
 
 ## Main results
 
-* `TauCeti.Comodule.basePointsRepresentation_transport`: transporting a comodule along a linear
+* `LinearEquiv.basePointsRepresentation_transport`: transporting a comodule along a linear
   equivalence conjugates its base-point representation.
 
 ## References
@@ -31,8 +31,10 @@ representation.
 public section
 
 open WithConv
+open TauCeti (Comodule)
+open TauCeti.Comodule (Transport transportToHom transportToHom_apply basePointsRepresentation)
 
-namespace TauCeti.Comodule
+namespace LinearEquiv
 
 variable {R H M N : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
   [AddCommMonoid M] [Module R M] [Comodule R H M]
@@ -49,4 +51,4 @@ theorem basePointsRepresentation_transport (e : M ≃ₗ[R] N) (g : WithConv (H 
   simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, transportToHom_apply,
     LinearEquiv.apply_symm_apply] using h
 
-end TauCeti.Comodule
+end LinearEquiv

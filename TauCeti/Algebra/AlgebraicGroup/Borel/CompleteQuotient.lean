@@ -11,12 +11,10 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Quot
 import TauCeti.Algebra.AlgebraicGroup.Borel.Dimension
 import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Boundary
-import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Flag
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.StabilizerDimension
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finrank
-import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -122,7 +120,7 @@ theorem IsBorelOverAlgClosed.isClosed_range_projectiveOrbitMap_exteriorFlagVecto
       ((isBorelOverAlgClosed_iff k G B).mp hB).2.prop.geometricallySolvable
   set w := exteriorPower.exteriorFlagVector k (1 + n) b
   have hstab_w : (k ∙ w).stabilizerHopfIdeal G = B :=
-    Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_eq b B h0 htri
+    b.stabilizerHopfIdeal_span_exteriorFlagVector_eq B h0 htri
   have hwZ : Set.range (Comodule.projectiveOrbitMap (H := G) w hw) ⊆
       ProjectiveSpectrum.zeroLocus _ (exteriorPower.exteriorFlagForms k M (1 + n)) := by
     rw [Comodule.range_projectiveOrbitMap_subset_iff_of_isClosed w hw
@@ -130,7 +128,8 @@ theorem IsBorelOverAlgClosed.isClosed_range_projectiveOrbitMap_exteriorFlagVecto
       (Comodule.mapsTo_projectivePointTranslation_exteriorFlagZeroLocus (1 + n))]
     exact (Comodule.projectiveOrbitMap_counit_mem_exteriorFlagZeroLocus_iff (1 + n) w hw).mpr
       (exteriorPower.exteriorFlagVector_mem_exteriorFlagCone b)
-  refine Comodule.isClosed_range_projectiveOrbitMap_of_forall_mem w hw
+  refine Comodule.isClosed_range_projectiveOrbitMap_of_forall_mem_ringKrullDim_le w hw B
+    (fun a ↦ hstab_w ▸ Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff w hw a)
     (ProjectiveSpectrum.isClosed_zeroLocus _ _) hwZ fun w' hw' hw'Z ↦ ?_
   have hw'_cone : w' ∈ exteriorPower.exteriorFlagCone k M (1 + n) :=
     (Comodule.projectiveOrbitMap_counit_mem_exteriorFlagZeroLocus_iff (1 + n) w' hw').mp hw'Z
@@ -146,14 +145,9 @@ theorem IsBorelOverAlgClosed.isClosed_range_projectiveOrbitMap_exteriorFlagVecto
     congrArg (Submodule.stabilizerHopfIdeal G)
       (by rw [Units.smul_def, Submodule.span_singleton_smul_eq c.isUnit])
   have : Group.IsSolvable (WithConv ((G ⧸ D.toIdeal) →ₐ[k] k)) :=
-    hD_eq ▸ Comodule.isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector b' h0
-  have ho_w := Comodule.topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq w hw B
-    fun a ↦ hstab_w ▸ Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff w hw a
-  have ho_w' := Comodule.topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq _ hw' D
-    (Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff _ hw')
-  have := Bialgebra.nontrivial (A := G ⧸ D.toIdeal) k
-  exact TauCeti.le_of_add_ringKrullDim_quotient_eq_of_le k ho_w ho_w'
-    (hB.ringKrullDim_quotient_le D)
+    hD_eq ▸ b'.isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector h0
+  exact ⟨D, Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff _ hw',
+    hB.ringKrullDim_quotient_le D⟩
 
 /-- **Completeness of Borel homogeneous quotients.** Over an algebraically closed field `k`, every
 Borel subgroup `B` of a reduced affine group `G` of finite type is the scheme-theoretic line
@@ -180,7 +174,7 @@ theorem IsBorelOverAlgClosed.exists_isClosed_projectiveOrbit_stabilizerHopfIdeal
     (Module.Projective.exists_dual_eq_one k
       ((exteriorPower.exteriorFlagVector_ne_zero_iff (v := b)).mpr b.linearIndependent))
   have hstab_w : (k ∙ w).stabilizerHopfIdeal G = B :=
-    Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_eq b B hb0_stab htri
+    b.stabilizerHopfIdeal_span_exteriorFlagVector_eq B hb0_stab htri
   have hclosed : IsClosed (Set.range (Comodule.projectiveOrbitMap (H := G) w hw)) :=
     hB.isClosed_range_projectiveOrbitMap_exteriorFlagVector b hb0_stab htri hw
   have hcoset (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := G.obj) A) :=

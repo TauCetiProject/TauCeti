@@ -27,6 +27,10 @@ of its dual evaluation vanish:
   vanishing of all `2 × 2` dual minors.
 * `TensorProduct.exists_units_smul_of_tmul_eq_tmul`: uniqueness of nonzero pure-tensor factors
   over a field up to a unit scalar.
+
+## References
+
+* J. Harris, *Algebraic Geometry: A First Course*, GTM 133, Springer (1992), Lecture 2.
 -/
 
 public section
@@ -45,7 +49,7 @@ theorem dualDistrib_tmul_mul_dualDistrib_tmul (m : M) (n : N)
     (φ₁ φ₂ : Module.Dual R M) (ψ₁ ψ₂ : Module.Dual R N) :
     dualDistrib R M N (φ₁ ⊗ₜ ψ₁) (m ⊗ₜ n) * dualDistrib R M N (φ₂ ⊗ₜ ψ₂) (m ⊗ₜ n) =
       dualDistrib R M N (φ₁ ⊗ₜ ψ₂) (m ⊗ₜ n) * dualDistrib R M N (φ₂ ⊗ₜ ψ₁) (m ⊗ₜ n) := by
-  simp
+  simp only [dualDistrib_apply]
   ring
 
 end Semiring
