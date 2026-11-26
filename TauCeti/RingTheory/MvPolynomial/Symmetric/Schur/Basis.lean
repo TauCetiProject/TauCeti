@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
 import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Pieri
 
 /-!
@@ -86,6 +86,8 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.span_diagramSchurPoly_eq_top`: the Schur polynomials span the symmetric polynomials
   over a commutative ring, since the dual Pieri rule expands every product of elementary
   symmetric polynomials in them.
+* `TauCeti.map_mem_of_forall_symmetricDiagramSchurPoly`: a linear map out of the symmetric
+  polynomials lands in a submodule once every Schur polynomial does.
 
 ## References
 
@@ -468,6 +470,16 @@ theorem span_diagramSchurPoly_eq_top {N : ℕ} :
   have h1 : (1 : symmetricSubalgebra (Fin N) R) ∈ S :=
     Submodule.subset_span ⟨⊥, symmetricDiagramSchurPoly_bot N⟩
   simpa using hmul q h1
+
+/-- A linear map out of the symmetric polynomials in `N` variables takes values in a submodule `T`
+once it sends every Schur polynomial into `T`, since the Schur polynomials span
+(`TauCeti.span_diagramSchurPoly_eq_top`). -/
+theorem map_mem_of_forall_symmetricDiagramSchurPoly {N : ℕ} {M : Type*} [AddCommMonoid M]
+    [Module R M] (f : symmetricSubalgebra (Fin N) R →ₗ[R] M) {T : Submodule R M}
+    (h : ∀ μ, f (symmetricDiagramSchurPoly N R μ) ∈ T) (y : symmetricSubalgebra (Fin N) R) :
+    f y ∈ T :=
+  (Submodule.map_span_le f (Set.range (symmetricDiagramSchurPoly N R)) T).mpr
+    (by rintro _ ⟨μ, rfl⟩; exact h μ) ⟨y, by simp [span_diagramSchurPoly_eq_top], rfl⟩
 
 end CommRing
 

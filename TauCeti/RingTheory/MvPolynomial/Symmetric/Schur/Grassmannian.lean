@@ -102,7 +102,7 @@ variable {n m R}
 theorem grassmannianIdeal_le_iff {I : Ideal (symmetricSubalgebra (Fin n) R)} :
     grassmannianIdeal n m R ≤ I ↔ ∀ j : Fin n, symmetricHsymm (Fin n) R (m + j + 1) ∈ I := by
   rw [grassmannianIdeal_eq_span, Ideal.span_le, Set.range_subset_iff]
-  rfl
+  simp only [SetLike.mem_coe]
 
 /-- **The ideal contains every `h_k` with `k > m`**, not just its generators
 `h_{m+1}, …, h_{m+n}`: by the relation `∑ᵢ (-1)ⁱ eᵢ h_{k-i} = 0` and the vanishing of `eᵢ` for
@@ -178,12 +178,9 @@ theorem mem_grassmannianIdeal_iff {x : symmetricSubalgebra (Fin n) R} :
       exact hk.trans_le (by simpa using h)
     -- Every symmetric polynomial is a combination of Schur polynomials.
     have hgen (k : ℕ) (hk : m < k) (y : symmetricSubalgebra (Fin n) R) :
-        (y : MvPolynomial (Fin n) R) * hsymm (Fin n) R k ∈ J := by
-      refine (Submodule.map_span_le ((LinearMap.mulRight R (hsymm (Fin n) R k)).comp
-        (symmetricSubalgebra (Fin n) R).val.toLinearMap) (Set.range (symmetricDiagramSchurPoly n R))
-        J).mpr ?_ ⟨y, ?_, rfl⟩
-      · rintro _ ⟨μ, rfl⟩; simpa using hpieri k hk μ
-      · simp [span_diagramSchurPoly_eq_top]
+        (y : MvPolynomial (Fin n) R) * hsymm (Fin n) R k ∈ J :=
+      map_mem_of_forall_symmetricDiagramSchurPoly ((LinearMap.mulRight R (hsymm (Fin n) R k)).comp
+        (symmetricSubalgebra (Fin n) R).val.toLinearMap) (fun μ => by simpa using hpieri k hk μ) y
     intro hx
     obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp hx
     simpa using sum_mem fun j _ => hgen _ (by omega) (c j)
@@ -254,10 +251,8 @@ private theorem top_le_span_mk_diagramSchurPoly :
   -- Every symmetric polynomial is a combination of Schur polynomials.
   rintro x -
   obtain ⟨y, rfl⟩ := Ideal.Quotient.mkₐ_surjective R _ x
-  refine (Submodule.map_span_le (Ideal.Quotient.mkₐ R (grassmannianIdeal n m R)).toLinearMap
-    (Set.range (symmetricDiagramSchurPoly n R)) T).mpr ?_ ⟨y, ?_, rfl⟩
-  · rintro _ ⟨μ, rfl⟩; exact hgen μ
-  · simp [span_diagramSchurPoly_eq_top]
+  exact map_mem_of_forall_symmetricDiagramSchurPoly
+    (Ideal.Quotient.mkₐ R (grassmannianIdeal n m R)).toLinearMap hgen y
 
 variable (n m R) in
 /-- **The rectangular Schur basis**: the quotient `Λₙ ⧸ (h_{m+1}, …, h_{m+n})` of the symmetric
