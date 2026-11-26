@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.SecondDerivatives
 import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.LipschitzRepresentative
 import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
 
@@ -76,48 +77,6 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- Below `B(y₀, r)`, an open set agreeing with the half-space `{c₀ < ⟪x, ν⟫}` is that half-space:
-`Ω ∩ B(y₀, ρ) = {c₀ < ⟪x, ν⟫} ∩ B(y₀, ρ)` for `ρ ≤ r`. -/
-private theorem inter_ball_eq_setOf_inter_ball {H Ω : Opens E} {ν : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {y₀ : E} {r ρ : ℝ}
-    (hΩ : (Ω : Set E) ∩ ball y₀ r = (H : Set E) ∩ ball y₀ r) (hρ : ρ ≤ r) :
-    (Ω : Set E) ∩ ball y₀ ρ = {x | c₀ < ⟪x, ν⟫_ℝ} ∩ ball y₀ ρ := by
-  ext x
-  constructor
-  · rintro ⟨hxΩ, hxb⟩
-    have h1 : x ∈ (Ω : Set E) ∩ ball y₀ r := ⟨hxΩ, ball_subset_ball hρ hxb⟩
-    rw [hΩ] at h1
-    exact ⟨(hH x).1 h1.1, hxb⟩
-  · rintro ⟨hx, hxb⟩
-    have h1 : x ∈ (H : Set E) ∩ ball y₀ r := ⟨(hH x).2 hx, ball_subset_ball hρ hxb⟩
-    rw [← hΩ] at h1
-    exact ⟨h1.1, hxb⟩
-
-/-- A point `z` of the hyperplane `⟪z, ν⟫ = c₀` inside `B(y₀, r)` is a limit of points outside
-`closure Ω`, when `Ω ∩ B(y₀, r)` is the half-ball `{c₀ < ⟪x, ν⟫} ∩ B(y₀, r)`: the points `z - tν`,
-`t > 0` small, lie below the hyperplane in a region disjoint from `Ω`. -/
-private theorem mem_closure_compl_closure_of_inter_ball_eq {H Ω : Opens E} {ν : E} {c₀ : ℝ}
-    (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {y₀ : E} {r : ℝ}
-    (hΩ : (Ω : Set E) ∩ ball y₀ r = (H : Set E) ∩ ball y₀ r) {z : E} (hzr : z ∈ ball y₀ r)
-    (hzν : ⟪z, ν⟫_ℝ = c₀) : z ∈ closure (closure (Ω : Set E))ᶜ := by
-  have hW : {x | ⟪x, ν⟫_ℝ < c₀} ∩ ball y₀ r ⊆ (closure (Ω : Set E))ᶜ := fun x hx =>
-    Set.disjoint_left.1 (Disjoint.closure_right (Set.disjoint_left.2 fun y hy hyΩ => by
-      have h1 : y ∈ (Ω : Set E) ∩ ball y₀ r := ⟨hyΩ, hy.2⟩
-      rw [hΩ] at h1
-      exact lt_asymm hy.1 ((hH y).1 h1.1))
-      ((isOpen_lt (by fun_prop) continuous_const).inter isOpen_ball)) hx
-  have hline : Tendsto (fun t : ℝ => z - t • ν) (𝓝[>] 0) (𝓝 z) := by
-    simpa using ((by fun_prop : Continuous fun t : ℝ => z - t • ν).tendsto 0).mono_left
-      nhdsWithin_le_nhds
-  exact closure_mono hW <| mem_closure_of_tendsto hline
-    (by
-      filter_upwards [hline.eventually (isOpen_ball.mem_nhds hzr), self_mem_nhdsWithin]
-        with t ht ht0
-      refine ⟨(?_ : ⟪z - t • ν, ν⟫_ℝ < c₀), ht⟩
-      have hν2 : 0 < ‖ν‖ ^ 2 := pow_pos (norm_pos_iff.2 hν) 2
-      rw [inner_sub_left, real_inner_smul_left, hzν, real_inner_self_eq_norm_sq]
-      nlinarith [mem_Ioi.1 ht0])
-
 /-- **Zero boundary values on a flat portion of the boundary are attained.** Let
 `H = {x | c₀ < ⟪x, ν⟫}`, let `Ω` be open with `Ω ∩ B(y₀, r) = H ∩ B(y₀, r)`, and let
 `u ∈ H¹(Ω)` vanish on `∂Ω ∩ B(y₀, r)`, in the sense that `ψ u ∈ H¹₀(Ω)` for every smooth `ψ`
@@ -137,7 +96,7 @@ theorem tendsto_nhdsWithin_zero_of_inter_ball_eq {H Ω : Opens E} {ν : E} {c₀
     Tendsto g (𝓝[(Ω : Set E) ∩ ball y₀ ρ] z) (𝓝 0) := by
   -- For `ν = 0` the half-ball is empty.
   rcases eq_or_ne ν 0 with rfl | hν
-  · rw [inter_ball_eq_setOf_inter_ball hH hΩ hρr.le]
+  · rw [inter_ball_eq_setOf_lt_inner_inter_ball hH hΩ hρr.le]
     simp [← hzν]
   have hρ : 0 < ρ := pos_of_mem_ball hz
   -- A cutoff equal to one on `B(y₀, ρ)` localizes `u` to an element `v` of `H¹₀(Ω)`, equal to `g`
@@ -206,7 +165,7 @@ private theorem exists_contDiffOn_two_ae_eq_and_holderOnWith_fderiv_fderiv_of_in
   set S : Opens E := Ω ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩
   have hSH : (S : Set E) ⊆ closedBall y₀ (r / 16) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ} := fun x hx => by
     have hx' : x ∈ (Ω : Set E) ∩ ball y₀ (r / 16) := hx
-    rw [inter_ball_eq_setOf_inter_ball hH hΩ (by linarith)] at hx'
+    rw [inter_ball_eq_setOf_lt_inner_inter_ball hH hΩ (by linarith)] at hx'
     exact ⟨ball_subset_closedBall hx'.2, (le_of_lt hx'.1 : c₀ ≤ ⟪x, ν⟫_ℝ)⟩
   -- The derivatives along the standard basis have weak gradients with Hölder representatives.
   let b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
@@ -274,7 +233,7 @@ theorem exists_contDiffOn_two_ae_eq_and_holderOnWith_of_inter_ball_eq
     exists_contDiffOn_two_ae_eq_and_holderOnWith_fderiv_fderiv_of_inter_ball_eq hα hα1 hν hH hy₀
       hr hΩ ha hell hda hf hfH hu hu0
   have hconv : Convex ℝ ((Ω : Set E) ∩ ball y₀ (r / 16)) := by
-    rw [inter_ball_eq_setOf_inter_ball hH hΩ (by linarith)]
+    rw [inter_ball_eq_setOf_lt_inner_inter_ball hH hΩ (by linarith)]
     exact (convex_halfSpace_gt ⟨fun x y => inner_add_left x y ν, fun c x => by
       rw [real_inner_smul_left, smul_eq_mul]⟩ c₀).inter (convex_ball y₀ (r / 16))
   set S := (Ω : Set E) ∩ ball y₀ (r / 16)
