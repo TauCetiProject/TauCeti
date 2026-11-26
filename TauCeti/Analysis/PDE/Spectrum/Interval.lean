@@ -676,8 +676,8 @@ private theorem hasDerivAt_sin_mul_sub (c t : ℝ) :
   ring
 
 /-- **The cosine modes are weak Neumann eigenfunctions of `-Δ` on an interval.** For every
-`k : ℕ`, the function `x ↦ cos (k π (x - a) / (b - a))` is the value of some `u ∈ H¹_∅(a, b)`, that
-is of some `u ∈ H¹(a, b)` with no boundary condition, with
+`k : ℕ`, the function `x ↦ cos (k π (x - a) / (b - a))` is the value of some `u ∈ H¹_∅(a, b)`,
+the closure in `H¹(a, b)` of the restrictions of test functions on the line, with
 
 `∫ ∇u · ∇v = (k π / (b - a))² ∫ u v` for every `v ∈ H¹_∅(a, b)`. -/
 theorem exists_value_ae_eq_cos_and_inner_gradient_eq (hab : a < b) (k : ℕ) :
@@ -824,10 +824,12 @@ private theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
 
 /-- **The Neumann spectrum of `-Δ` on an interval.** The weak Neumann eigenvalues of `-Δ` on
 `(a, b)` are exactly the numbers `(k π / (b - a))²` with `k ≥ 0`: the problem
-`∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹(a, b)` has a nonzero solution `u ∈ H¹(a, b)`, imposing
-`u'(a) = u'(b) = 0` weakly, exactly for these `κ`. Here `H¹(a, b)` is written `H¹_∅(a, b)`, the
-space of the mixed problem with no Dirichlet part, as in the spectrum of the mixed Laplacian
-(`TauCeti.PDE.spectrum_mixedOperator_laplacian`). -/
+`∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹_∅(a, b)` has a nonzero solution `u ∈ H¹_∅(a, b)`,
+imposing `u'(a) = u'(b) = 0` weakly, exactly for these `κ`. Here `H¹_∅(a, b)` is the space of the
+mixed problem with no Dirichlet part, as in the spectrum of the mixed Laplacian
+(`TauCeti.PDE.spectrum_mixedOperator_laplacian`): the closure in `H¹(a, b)` of the restrictions of
+test functions on the line. It agrees with `H¹(a, b)` exactly when these restrictions are dense
+(`TauCeti.w1pVanishingOnSubmodule_empty_eq_top_iff`), which is not proved here. -/
 theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : a < b)
     {kappa : ℝ} :
     (∃ u : W1pVanishingOn volume (intervalDomain a b) 2 ∅, u ≠ 0 ∧
