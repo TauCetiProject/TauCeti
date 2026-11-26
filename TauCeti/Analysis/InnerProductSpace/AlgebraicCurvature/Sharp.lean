@@ -115,8 +115,14 @@ private theorem adjoint_symmMap₂ (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
     LinearMap.adjoint (symmMap₂ R S) = symmMap₂ R.adjoint S.adjoint := by
   refine linearMap_ext_inner_ιMulti_two fun α β γ δ ↦ ?_
   rw [LinearMap.adjoint_inner_left]
-  simp only [symmMap₂_apply_ιMulti, real_inner_smul_left, real_inner_smul_right,
-    inner_add_left, inner_add_right, inner_ιMulti_two, LinearMap.adjoint_inner_left]
+  -- After `linearMap_ext_inner_ιMulti_two` (#45889), `symmMap₂` uses `Submodule.module` rather than
+  -- `NormedSpace.toModule`; instantiate `real_inner_smul_right` / `inner_add_right` concretely.
+  have hsmul (x y : ⋀[ℝ]^2 (⋀[ℝ]^2 V)) (c : ℝ) : ⟪x, c • y⟫ = c * ⟪x, y⟫ :=
+    real_inner_smul_right x y c
+  have hadd (x y z : ⋀[ℝ]^2 (⋀[ℝ]^2 V)) : ⟪x, y + z⟫ = ⟪x, y⟫ + ⟪x, z⟫ :=
+    inner_add_right x y z
+  simp only [symmMap₂_apply_ιMulti, real_inner_smul_left, hsmul,
+    inner_add_left, hadd, inner_ιMulti_two, LinearMap.adjoint_inner_left]
   simp only [real_inner_comm (R _), real_inner_comm (S _)]
   ring
 

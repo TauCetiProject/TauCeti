@@ -46,6 +46,8 @@ slice.
   has differentiable slices uniformly on that compact set for all nearby parameters.
 * `TauCeti.contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm`: reading the complex factor of
   `ℝ × ℂ × V` in real coordinates is `C^n` from the self-model of `ℝ × (ℝ × ℝ) × V`.
+* `TauCeti.contMDiff_prodMk_equivRealProdCLM_symm`: the same on `(P × (ℝ × ℝ)) × M` for a
+  manifold `M`, with the factors regrouped as `P × (ℂ × M)`.
 * `TauCeti.contMDiff_uncurry_const_mul_comp_const_mul`: `(t, x) ↦ ε * H (ε * t) x` is `C^n`
   when `H` is.
 
@@ -233,6 +235,18 @@ theorem contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm :
   contDiff_fst.contMDiff.prodMk
     ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
       (contDiff_snd.comp contDiff_snd).contMDiff)
+
+/-- Reading the domain point in real coordinates is smooth on a product with a manifold: the map
+`((c, z), x) ↦ (c, (z, x))` from `(P × (ℝ × ℝ)) × M` to `P × (ℂ × M)` is `C^n`. Composing with it
+turns the smoothness of a family on `P × (ℂ × M)` into smoothness in real coordinates. -/
+theorem contMDiff_prodMk_equivRealProdCLM_symm {P E H₀ X : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H₀]
+    {I : ModelWithCorners ℝ E H₀} [TopologicalSpace X] [ChartedSpace H₀ X] :
+    ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) (𝓘(ℝ, P).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun p : (P × (ℝ × ℝ)) × X ↦ (p.1.1, (Complex.equivRealProdCLM.symm p.1.2, p.2))) :=
+  (contDiff_fst.contMDiff.comp contMDiff_fst).prodMk
+    (((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp
+      contMDiff_fst).prodMk contMDiff_snd)
 
 /-- Reflecting and rescaling a time-dependent function by a real constant preserves smoothness:
 if `(t, x) ↦ H t x` is `C^n` on `ℝ × M`, then so is `(t, x) ↦ ε * H (ε * t) x`. With `ε = ±1`,
