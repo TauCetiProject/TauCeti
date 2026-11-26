@@ -83,8 +83,32 @@ theorem leftDual_def [LeftRigidCategory C] [LeftRigidCategory D] (P : LinearTens
     (ᘁP : LinearTensor k C D) = ⟨ᘁP.fst, ᘁP.snd⟩ :=
   rfl
 
+/-- The first component of the right dual is the right dual of the first component. -/
+@[simp]
+theorem rightDual_fst [RightRigidCategory C] [RightRigidCategory D] (P : LinearTensor k C D) :
+    (Pᘁ).fst = P.fstᘁ :=
+  (rfl)
+
+/-- The second component of the right dual is the right dual of the second component. -/
+@[simp]
+theorem rightDual_snd [RightRigidCategory C] [RightRigidCategory D] (P : LinearTensor k C D) :
+    (Pᘁ).snd = P.sndᘁ :=
+  (rfl)
+
+/-- The first component of the left dual is the left dual of the first component. -/
+@[simp]
+theorem leftDual_fst [LeftRigidCategory C] [LeftRigidCategory D] (P : LinearTensor k C D) :
+    (ᘁP).fst = ᘁP.fst :=
+  (rfl)
+
+/-- The second component of the left dual is the left dual of the second component. -/
+@[simp]
+theorem leftDual_snd [LeftRigidCategory C] [LeftRigidCategory D] (P : LinearTensor k C D) :
+    (ᘁP).snd = ᘁP.snd :=
+  (rfl)
+
 -- Prefer the chosen-dual formulas to the general exact-pairing rewrites, which leave
--- projections of the dual pair in the result.
+-- projections of the dual pair to be simplified.
 /-- The evaluation for the chosen right dual is the pure tensor of the right evaluations. -/
 @[simp high]
 theorem rightDual_evaluation [RightRigidCategory C] [RightRigidCategory D]

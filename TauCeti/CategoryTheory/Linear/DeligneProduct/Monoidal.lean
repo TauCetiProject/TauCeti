@@ -75,6 +75,26 @@ theorem tensorObj_def (P Q : LinearTensor k C D) :
 theorem tensorUnit_def : 𝟙_ (LinearTensor k C D) = ⟨𝟙_ C, 𝟙_ D⟩ :=
   rfl
 
+/-- The first component of the tensor product is the tensor product of the first components. -/
+@[simp]
+theorem tensorObj_fst (P Q : LinearTensor k C D) : (P ⊗ Q).fst = P.fst ⊗ Q.fst :=
+  (rfl)
+
+/-- The second component of the tensor product is the tensor product of the second components. -/
+@[simp]
+theorem tensorObj_snd (P Q : LinearTensor k C D) : (P ⊗ Q).snd = P.snd ⊗ Q.snd :=
+  (rfl)
+
+/-- The first component of the tensor unit is the tensor unit of the first factor. -/
+@[simp]
+theorem tensorUnit_fst : (𝟙_ (LinearTensor k C D)).fst = 𝟙_ C :=
+  (rfl)
+
+/-- The second component of the tensor unit is the tensor unit of the second factor. -/
+@[simp]
+theorem tensorUnit_snd : (𝟙_ (LinearTensor k C D)).snd = 𝟙_ D :=
+  (rfl)
+
 /-- Tensoring pure morphisms uses the tensor product in each factor category. -/
 @[simp]
 theorem tmul_tensorHom_tmul {X Y X' Y' : C} {U V U' V' : D}
