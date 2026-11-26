@@ -26,11 +26,11 @@ derivatives of the holomorphic divided difference `dslope f a` at `c`.
 
 ## Main results
 
-* `Complex.norm_iteratedDeriv_dslope_le_of_forall_mem_sphere` uses the boundary oscillation
+* `TauCeti.Complex.norm_iteratedDeriv_dslope_le_of_forall_mem_sphere` uses the boundary oscillation
   about the value at the anchor.
-* `Complex.norm_scaled_taylorCoeff_dslope_le` uses a bound on the boundary values of the original
-  function and gives the geometric gain.
-* `Complex.norm_scaled_taylorCoeff_dslope_le_exp` gives its exponential form.
+* `TauCeti.Complex.norm_scaled_taylorCoeff_dslope_le` uses a bound on the boundary values of the
+  original function and gives the geometric gain.
+* `TauCeti.Complex.norm_scaled_taylorCoeff_dslope_le_exp` gives its exponential form.
 
 ## Specialization
 
@@ -51,7 +51,7 @@ case the geometric factor is `(H / (H + η)) ^ (k + 1)`, and the exponential fac
 
 open Filter Metric Set
 
-namespace Complex
+namespace TauCeti.Complex
 
 /-- Cauchy's estimate for a divided difference, with the boundary oscillation measured relative
 to the value at an interior anchor. -/
@@ -65,10 +65,10 @@ theorem norm_iteratedDeriv_dslope_le_of_forall_mem_sphere {E : Type*}
   have hR : 0 < R := dist_nonneg.trans_lt haR
   have hnbhd := isOpen_ball.mem_nhds ha
   have hg : DiffContOnCl ℂ (dslope f a) (ball c R) :=
-    ⟨(differentiableOn_dslope hnbhd).2 hf.differentiableOn,
+    ⟨(_root_.Complex.differentiableOn_dslope hnbhd).2 hf.differentiableOn,
       (continuousOn_dslope (mem_of_superset hnbhd subset_closure)).2
         ⟨hf.continuousOn, hf.differentiableOn.differentiableAt hnbhd⟩⟩
-  refine norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le k hR hg fun z hz ↦ ?_
+  refine _root_.Complex.norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le k hR hg fun z hz ↦ ?_
   have hgap : R - dist a c ≤ ‖z - a‖ := by
     linarith [dist_triangle z a c, mem_sphere.mp hz, dist_eq_norm z a]
   rw [le_div_iff₀ (sub_pos.mpr haR)]
@@ -90,13 +90,13 @@ theorem norm_scaled_taylorCoeff_dslope_le {E : Type*}
       (2 * M * R / (R - dist a c)) * (dist a c / R) ^ (k + 1) := by
   have hgap : 0 < R - dist a c := sub_pos.mpr (mem_ball.mp ha)
   have hR : 0 < R := dist_nonneg.trans_lt (mem_ball.mp ha)
-  have hfa : ‖f a‖ ≤ M := norm_le_of_forall_mem_frontier_norm_le isBounded_ball hf
+  have hfa : ‖f a‖ ≤ M := _root_.Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball hf
     (fun z hz ↦ hM z (frontier_ball_subset_sphere hz)) (subset_closure ha)
   have hB (z : ℂ) (hz : z ∈ sphere c R) : ‖f z - f a‖ ≤ 2 * M := by
     calc
       ‖f z - f a‖ ≤ ‖f z‖ + ‖f a‖ := norm_sub_le _ _
       _ ≤ 2 * M := by linarith [hM z hz]
-  rw [norm_smul, norm_div, norm_pow, Complex.norm_natCast, ← dist_eq_norm, dist_comm c a]
+  rw [norm_smul, norm_div, norm_pow, _root_.Complex.norm_natCast, ← dist_eq_norm, dist_comm c a]
   calc
     _ ≤ dist a c ^ (k + 1) / k.factorial *
         (k.factorial * (2 * M / (R - dist a c)) / R ^ k) :=
@@ -122,12 +122,18 @@ theorem norm_scaled_taylorCoeff_dslope_le_exp {E : Type*}
     have hz : c + (R : ℂ) ∈ sphere c R := by
       simp [mem_sphere_iff_norm, abs_of_nonneg hR.le]
     exact (norm_nonneg _).trans (hM _ hz)
+  have hsub : dist a c / R = 1 - (R - dist a c) / R := by
+    field_simp
+    ring
   have hratio : dist a c / R ≤ Real.exp (-((R - dist a c) / R)) := by
-    rw [show dist a c / R = 1 - (R - dist a c) / R by field_simp; ring]
+    rw [hsub]
     exact Real.one_sub_le_exp_neg _
+  have hexp : -(k + 1 : ℝ) * ((R - dist a c) / R) =
+      ((k + 1 : ℕ) : ℝ) * (-((R - dist a c) / R)) := by
+    push_cast
+    ring
   refine (norm_scaled_taylorCoeff_dslope_le ha hf hM k).trans ?_
-  rw [show -(k + 1 : ℝ) * ((R - dist a c) / R) =
-    (↑(k + 1) : ℝ) * (-((R - dist a c) / R)) by push_cast; ring, Real.exp_natCast_mul]
+  rw [hexp, Real.exp_natCast_mul]
   gcongr
 
-end Complex
+end TauCeti.Complex
