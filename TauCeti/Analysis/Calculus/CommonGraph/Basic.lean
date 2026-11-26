@@ -15,12 +15,12 @@ public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 Let `E` and `F` be Banach spaces and `P = E × ℝ` with the `L²` product norm, the model of an
 ambient chart split into a horizontal and a vertical direction. A map `f : F → P` which is
-`Cᵏ` on an open set `U` and whose horizontal derivative `v ↦ (df_a v).1` is bijective at `a ∈ U`
-is, near `a`, the graph of a `Cᵏ` height function over an open set of `E`: the inverse function
-theorem applied to the horizontal component of `f`.
+`Cᵏ`, for `k ≠ 0`, on an open set `U` and whose horizontal derivative
+`v ↦ (df_a v).1` is bijective at `a ∈ U` is, near `a`, the graph of a `Cᵏ` height function
+over an open set of `E`: the inverse function theorem applied to the horizontal component of `f`.
 
 Two such parametrized hypersurfaces through a common point are then graphs over one common open
-set of `E`. If the second one lies in the zero set of a function `ρ` whose derivative at the
+set of `E`. If the second one lies in `{0 ≤ ρ}` for a function `ρ` whose derivative at the
 contact point is positive on the vertical direction, and the first one lies in `{ρ ≤ 0}`, the
 heights are ordered: `u₁ ≤ u₂`. This turns one-sidedness of two touching hypersurfaces into the
 order of two graph heights over a common domain, the form in which comparison principles apply.
@@ -30,11 +30,12 @@ order of two graph heights over a common domain, the form in which comparison pr
 * `TauCeti.IsGraphPresentation`: `f` maps `V` bijectively onto the graph of `u` over `D`, with
   `TauCeti.isGraphPresentation_graph` for the graph map itself.
 * `TauCeti.exists_isGraphPresentation`: a hypersurface with a non-vertical tangent plane is
-  locally the graph of a `Cᵏ` height.
+  locally the graph of a `Cᵏ` height, for `k ≠ 0`.
 * `TauCeti.eventually_le_of_hasStrictFDerivAt`: graph heights lying in `{ρ ≤ 0}` and in
-  `{ρ = 0}` are ordered near a contact point.
-* `TauCeti.exists_common_isGraphPresentation_of_le`: two touching hypersurfaces, the first on
-  the side `{ρ ≤ 0}` of the second, are graphs of ordered `Cᵏ` heights over a common open set.
+  `{0 ≤ ρ}` are ordered near a contact point.
+* `TauCeti.exists_common_isGraphPresentation_of_le`: two touching hypersurfaces, the first
+  in `{ρ ≤ 0}` and the second in `{0 ≤ ρ}`, are graphs of ordered `Cᵏ` heights over a common
+  open set, for `k ≠ 0`.
 -/
 
 public section
@@ -116,7 +117,7 @@ theorem mono (h : IsGraphPresentation f V D u) {V' : Set F} (hV' : V' ⊆ V) :
 end IsGraphPresentation
 
 /-- The graph map `y ↦ (y, u y)` presents the graph of `u` over any set `D`. -/
-theorem isGraphPresentation_graph (u : E → ℝ) (D : Set E) :
+@[simp] theorem isGraphPresentation_graph (u : E → ℝ) (D : Set E) :
     IsGraphPresentation (fun y ↦ WithLp.toLp 2 (y, u y)) D D u where
   injOn _ _ _ _ hxy := by simpa using hxy
   image_eq := by simp
@@ -125,8 +126,8 @@ theorem isGraphPresentation_graph (u : E → ℝ) (D : Set E) :
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- **Local graph presentation.** A map `f : F → E × ℝ`, `Cᵏ` on an open set `U`, whose
-horizontal derivative is bijective at `a ∈ U`, maps an open neighbourhood `V ⊆ U` of `a`
+/-- **Local graph presentation.** A map `f : F → E × ℝ`, `Cᵏ` for `k ≠ 0` on an open set
+`U`, whose horizontal derivative is bijective at `a ∈ U`, maps an open neighbourhood `V ⊆ U` of `a`
 bijectively onto the graph of a height `u`, `Cᵏ` on the open image `D` of `V` in `E`. -/
 theorem exists_isGraphPresentation [CompleteSpace E] [CompleteSpace F]
     {f : F → WithLp 2 (E × ℝ)} {U : Set F} {a : F} {k : WithTop ℕ∞} (hk : k ≠ 0)
@@ -179,7 +180,7 @@ theorem exists_isGraphPresentation [CompleteSpace E] [CompleteSpace F]
 
 /-- **One-sidedness gives ordered heights.** Let `ρ` be strictly differentiable at
 `(x₀, t₀)`, with derivative positive on the vertical direction. If the graph of `u₂` lies in
-`{ρ = 0}` and the graph of `u₁` in `{ρ ≤ 0}` near `x₀`, both heights being continuous at `x₀`
+`{0 ≤ ρ}` and the graph of `u₁` in `{ρ ≤ 0}` near `x₀`, both heights being continuous at `x₀`
 with value `t₀`, then `u₁ ≤ u₂` near `x₀`. -/
 theorem eventually_le_of_hasStrictFDerivAt {ρ : WithLp 2 (E × ℝ) → ℝ}
     {ρ' : WithLp 2 (E × ℝ) →L[ℝ] ℝ} {x₀ : E} {t₀ : ℝ}
@@ -187,7 +188,7 @@ theorem eventually_le_of_hasStrictFDerivAt {ρ : WithLp 2 (E × ℝ) → ℝ}
     (hρv : 0 < ρ' (WithLp.toLp 2 (0, 1))) {u₁ u₂ : E → ℝ}
     (hu₁ : ContinuousAt u₁ x₀) (hu₂ : ContinuousAt u₂ x₀) (hu₁₀ : u₁ x₀ = t₀)
     (hu₂₀ : u₂ x₀ = t₀) (hρ₁ : ∀ᶠ y in 𝓝 x₀, ρ (WithLp.toLp 2 (y, u₁ y)) ≤ 0)
-    (hρ₂ : ∀ᶠ y in 𝓝 x₀, ρ (WithLp.toLp 2 (y, u₂ y)) = 0) :
+    (hρ₂ : ∀ᶠ y in 𝓝 x₀, 0 ≤ ρ (WithLp.toLp 2 (y, u₂ y))) :
     ∀ᶠ y in 𝓝 x₀, u₁ y ≤ u₂ y := by
   let e : WithLp 2 (E × ℝ) := WithLp.toLp 2 (0, 1)
   have he0 : e ≠ 0 := by
@@ -224,11 +225,11 @@ theorem eventually_le_of_hasStrictFDerivAt {ρ : WithLp 2 (E × ℝ) → ℝ}
   linarith [mul_pos hdpos hρv]
 
 /-- **Common graph presentation of two touching hypersurfaces.** Let `f₁` and `f₂` be maps into
-`E × ℝ`, `Cᵏ` on open sets `U₁` and `U₂`, with bijective horizontal derivatives at `a₁ ∈ U₁`
-and `a₂ ∈ U₂`, and `f₁ a₁ = f₂ a₂ = p`. Assume that `f₂` takes values in the zero set of a
-function `ρ` strictly differentiable at `p` with derivative positive on the vertical direction,
-and that `f₁` takes values in `{ρ ≤ 0}`. Then there are an open set `D` containing the base
-point of `p` and open neighbourhoods `Vᵢ ⊆ Uᵢ` of `aᵢ` such that `fᵢ` maps `Vᵢ` bijectively
+`E × ℝ`, `Cᵏ` for `k ≠ 0` on open sets `U₁` and `U₂`, with bijective horizontal derivatives
+at `a₁ ∈ U₁` and `a₂ ∈ U₂`, and `f₁ a₁ = f₂ a₂ = p`. Assume that `f₂` takes values in `{0 ≤ ρ}`
+for a function `ρ` strictly differentiable at `p` with derivative positive on the vertical
+direction, and that `f₁` takes values in `{ρ ≤ 0}`. Then there are an open set `D` containing
+the base point of `p` and open neighbourhoods `Vᵢ ⊆ Uᵢ` of `aᵢ` such that `fᵢ` maps `Vᵢ` bijectively
 onto the graph of a `Cᵏ` height `uᵢ` over `D`, and `u₁ ≤ u₂` on `D`. -/
 theorem exists_common_isGraphPresentation_of_le [CompleteSpace E] [CompleteSpace F]
     {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [CompleteSpace F₂]
@@ -240,7 +241,7 @@ theorem exists_common_isGraphPresentation_of_le [CompleteSpace E] [CompleteSpace
     (hbij₂ : Bijective fun v ↦ (WithLp.ofLp (fderiv ℝ f₂ a₂ v)).1) (hp : f₁ a₁ = f₂ a₂)
     {ρ : WithLp 2 (E × ℝ) → ℝ} {ρ' : WithLp 2 (E × ℝ) →L[ℝ] ℝ}
     (hρ : HasStrictFDerivAt ρ ρ' (f₁ a₁)) (hρv : 0 < ρ' (WithLp.toLp 2 (0, 1)))
-    (hρ₁ : ∀ x ∈ U₁, ρ (f₁ x) ≤ 0) (hρ₂ : ∀ x ∈ U₂, ρ (f₂ x) = 0) :
+    (hρ₁ : ∀ x ∈ U₁, ρ (f₁ x) ≤ 0) (hρ₂ : ∀ x ∈ U₂, 0 ≤ ρ (f₂ x)) :
     ∃ D : Set E, IsOpen D ∧ (WithLp.ofLp (f₁ a₁)).1 ∈ D ∧
       ∃ V₁ ⊆ U₁, IsOpen V₁ ∧ a₁ ∈ V₁ ∧ ∃ V₂ ⊆ U₂, IsOpen V₂ ∧ a₂ ∈ V₂ ∧
       ∃ u₁ u₂ : E → ℝ, ContDiffOn ℝ k u₁ D ∧ ContDiffOn ℝ k u₂ D ∧
@@ -264,7 +265,7 @@ theorem exists_common_isGraphPresentation_of_le [CompleteSpace E] [CompleteSpace
     intro y hy
     obtain ⟨x, hx, -, hfx⟩ := hG₁.exists_eq_toLp hy
     exact hfx ▸ hρ₁ x (hV₁U hx)
-  have hρ₂' : ∀ y ∈ D₂, ρ (WithLp.toLp 2 (y, u₂ y)) = 0 := by
+  have hρ₂' : ∀ y ∈ D₂, 0 ≤ ρ (WithLp.toLp 2 (y, u₂ y)) := by
     intro y hy
     obtain ⟨x, hx, -, hfx⟩ := hG₂.exists_eq_toLp hy
     exact hfx ▸ hρ₂ x (hV₂U hx)
