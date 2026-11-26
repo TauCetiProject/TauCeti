@@ -175,16 +175,16 @@ theorem mul_mem_span_image_Tw {J : Set (Fin (n - 1))} {S : Set W}
     simp
   rw [span_image_Tw] at hy ⊢
   rw [hadj] at hx
-  obtain ⟨x, hx, rfl⟩ := hx
-  obtain ⟨y, hy, rfl⟩ := hy
-  exact ⟨x * y, CoxeterMatrix.HeckeAlgebra.mul_mem_span_image_Tw hS hx hy, by simp⟩
+  obtain ⟨x', hx', rfl⟩ := Subalgebra.mem_map.mp hx
+  obtain ⟨y', hy', rfl⟩ := Submodule.mem_map.mp hy
+  exact Submodule.mem_map.mpr
+    ⟨x' * y', CoxeterMatrix.HeckeAlgebra.mul_mem_span_image_Tw hS hx' hy', by simp⟩
 
 /-- The elements `T_w` span the type-A Hecke algebra as an `R`-module. -/
 theorem span_range_Tw :
     Submodule.span R (Set.range (Tw q cs : W → TypeAHeckeAlgebra R q n)) = ⊤ := by
-  rw [← Set.image_univ, span_image_Tw, Set.image_univ, CoxeterMatrix.HeckeAlgebra.span_range_Tw,
-    Submodule.map_top, LinearMap.range_eq_top]
-  exact (algEquivHeckeAlgebra R q n).symm.surjective
+  rw [← Set.image_univ, span_image_Tw]
+  simp [CoxeterMatrix.HeckeAlgebra.span_range_Tw]
 
 end TypeAHeckeAlgebra
 

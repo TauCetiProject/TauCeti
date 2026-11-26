@@ -113,8 +113,7 @@ noncomputable def basisTw : Module.Basis W R (TypeAHeckeAlgebra R q n) :=
 @[simp]
 theorem coe_basisTw : ⇑(basisTw q cs) = (Tw q cs : W → TypeAHeckeAlgebra R q n) := by
   ext w
-  rw [basisTw, Module.Basis.map_apply, CoxeterMatrix.HeckeAlgebra.coe_basisTw]
-  exact algEquivHeckeAlgebra_symm_Tw cs w
+  simp [basisTw]
 
 /-- The coordinates of `x` in the basis `T_w` are those of its image under
 `TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra` in the basis `T_w` of the Hecke algebra of the
@@ -122,13 +121,12 @@ Coxeter matrix. -/
 theorem basisTw_repr (x : TypeAHeckeAlgebra R q n) :
     (basisTw q cs).repr x =
       (CoxeterMatrix.HeckeAlgebra.basisTw _ cs).repr (algEquivHeckeAlgebra R q n x) := by
-  rw [basisTw, Module.Basis.map_repr, LinearEquiv.trans_apply, AlgEquiv.toLinearEquiv_symm,
-    LinearEquiv.symm_symm, AlgEquiv.toLinearEquiv_apply]
+  simp [basisTw]
 
 /-- **The elements `T_w` are linearly independent** over every commutative ring and for every unit
 parameter. -/
-theorem linearIndependent_Tw : LinearIndependent R (Tw q cs : W → TypeAHeckeAlgebra R q n) :=
-  coe_basisTw (q := q) cs ▸ (basisTw q cs).linearIndependent
+theorem linearIndependent_Tw : LinearIndependent R (Tw q cs : W → TypeAHeckeAlgebra R q n) := by
+  simpa using (basisTw q cs).linearIndependent
 
 /-- The coordinates of `x` in the basis `T_w` are the image under the regular representation of
 `x` of the basis vector of `1`. -/
