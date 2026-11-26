@@ -96,7 +96,7 @@ theorem isTameAtLevel_id (m : R) : IsTameAtLevel (RingHom.id R) 1 m where
 /-- An algebra automorphism `σ` of finite order of a field `L` over a commutative semiring `K` is
 tame at level `1` with exponent `orderOf σ`. -/
 theorem _root_.AlgEquiv.isTameAtLevel_orderOf {K L : Type*} [CommSemiring K] [Field L]
-    [Algebra K L] {σ : L ≃ₐ[K] L} (hσ : IsOfFinOrder σ) :
+    [Algebra K L] (σ : L ≃ₐ[K] L) (hσ : IsOfFinOrder σ) :
     IsTameAtLevel (σ : L →+* L) (orderOf σ) 1 where
   map_level := map_one _
   exists_dvd_sum_range_pow_sub_one := ⟨0, by simp⟩
@@ -248,15 +248,41 @@ private lemma exists_fixed_eq_one_add_smul {n : Type*} [Fintype n] [DecidableEq 
       rw [eq_add_of_sub_eq' he]
       simp [add_smul, mul_smul, add_assoc]
 
+private lemma basicOpen_det_sub_smul_superset {n : Type*} [Fintype n] [DecidableEq n]
+    {g v : Matrix n n R} {N : R} {M : Ideal R} [hM : M.IsPrime]
+    (hN_mem : ∀ P : Ideal R, P.IsPrime → g.det ∉ P → N ∈ P)
+    (hN_one : Ideal.Quotient.mk M N = 1) (hvM : v.det ∉ M) :
+    PrimeSpectrum.basicOpen g.det ≤ PrimeSpectrum.basicOpen (g - N • (g - v)).det ∧
+      ⟨M, hM⟩ ∈ PrimeSpectrum.basicOpen (g - N • (g - v)).det := by
+  have hdet_mk (I : Ideal R) : Ideal.Quotient.mk I (g - N • (g - v)).det =
+      ((1 - Ideal.Quotient.mk I N) • g.map (Ideal.Quotient.mk I) +
+        Ideal.Quotient.mk I N • v.map (Ideal.Quotient.mk I)).det := by
+    rw [RingHom.map_det, RingHom.mapMatrix_apply]
+    congr 1
+    ext i j
+    simp only [Matrix.map_apply, Matrix.sub_apply, Matrix.add_apply, Matrix.smul_apply,
+      smul_eq_mul, map_sub, map_mul]
+    ring
+  refine ⟨?_, ?_⟩
+  · rintro ⟨P, hP⟩ hgP
+    have hN_zero : Ideal.Quotient.mk P N = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (hN_mem P hP hgP)
+    rw [PrimeSpectrum.mem_basicOpen, ← Ideal.Quotient.eq_zero_iff_mem, hdet_mk P, hN_zero,
+      sub_zero, one_smul, zero_smul, add_zero, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+    exact Ideal.Quotient.eq_zero_iff_mem.not.mpr hgP
+  · rw [PrimeSpectrum.mem_basicOpen, ← Ideal.Quotient.eq_zero_iff_mem, hdet_mk M, hN_one,
+      sub_self, zero_smul, zero_add, one_smul, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+    exact Ideal.Quotient.eq_zero_iff_mem.not.mpr hvM
+
 /-- **Hilbert's Theorem 90 for `GL n` at congruence level `m` over an Artinian ring.** If `R` is
-Artinian, `σ` is tame at level `m` with exponent `p`, and `c : GL n R` satisfies `c = 1 + m • Y`
-and `MonoidHom.twistedNorm (GeneralLinearGroup.map σ) p c = 1`, then `c * k.map σ = k` for some
-`k : GL n R` with `k = 1 + m • W`. -/
+Artinian, `σ` is tame at level `m` with exponent `p`, and `c : GL n R` satisfies `c.val = 1 + m • Y`
+and `MonoidHom.twistedNorm (GeneralLinearGroup.map σ) p c = 1`, then
+`c * GeneralLinearGroup.map σ k = k` for some `k : GL n R` with `k.val = 1 + m • W`. -/
 theorem IsTameAtLevel.exists_mul_map_eq_of_twistedNorm_eq_one {n : Type*} [Fintype n]
     [DecidableEq n] {σ : R →+* R} {p : ℕ} {m : R} (h_tame : IsTameAtLevel σ p m) [IsArtinianRing R]
     (c : GL n R) {Y : Matrix n n R} (hY : c.val = 1 + m • Y)
     (hc : MonoidHom.twistedNorm (GeneralLinearGroup.map σ) p c = 1) :
-    ∃ k : GL n R, ∃ W : Matrix n n R, c.val * k.val.map σ = k.val ∧ k.val = 1 + m • W := by
+    ∃ k : GL n R, ∃ W : Matrix n n R,
+      c * GeneralLinearGroup.map σ k = k ∧ k.val = 1 + m • W := by
   let τ : Matrix n n R →ₛₗ[σ] Matrix n n R := .mulLeft R c.val ∘ₛₗ σ.toSemilinearMap.mapMatrix
   have hτ_apply (v : Matrix n n R) : τ v = c.val * v.map σ := by simp [τ]
   have hτ (i : ℕ) (v : Matrix n n R) :
@@ -270,10 +296,12 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_twistedNorm_eq_one {n : Type*} [Finty
       ext a b
       simp [pow_succ']
   have hτ_period (v : Matrix n n R) : τ^[p] v = v := by simp [hτ, hc, h_tame.pow_eq_one]
+  -- Pick a `τ`-fixed matrix `g ≡ 1 [mod m]` maximizing the basic open set `D(det g)`.
   obtain ⟨g, ⟨hg, W, hW⟩, hmax⟩ := exists_maximalFor_of_wellFoundedGT
     (fun g ↦ τ g = g ∧ ∃ W : Matrix n n R, g = 1 + m • W) (fun g ↦ PrimeSpectrum.basicOpen g.det)
     (exists_fixed_eq_one_add_smul h_tame hY hτ_apply hτ_period)
-  suffices h_unit : IsUnit g.det from ⟨Matrix.GeneralLinearGroup.mk'' g h_unit, W, hg, hW⟩
+  suffices h_unit : IsUnit g.det from
+    ⟨Matrix.GeneralLinearGroup.mk'' g h_unit, W, Units.ext hg, hW⟩
   by_contra h_nonunit
   obtain ⟨M, hM, hgM⟩ := exists_max_ideal_of_mem_nonunits h_nonunit
   have h_conj (i : ℕ) : (σ ^ i) g.det ∈ M := by
@@ -296,34 +324,18 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_twistedNorm_eq_one {n : Type*} [Finty
   have h_fixed : τ (g - N • (g - v)) = g - N • (g - v) := by simp [hg, hv, hN_fixed]
   have h_cong : g - N • (g - v) = 1 + m • (W - z • (g - v)) := by
     rw [hz, mul_smul, smul_sub m, ← add_sub_assoc, ← hW]
-  have hdet_mk (I : Ideal R) : Ideal.Quotient.mk I (g - N • (g - v)).det =
-      ((1 - Ideal.Quotient.mk I N) • g.map (Ideal.Quotient.mk I) +
-        Ideal.Quotient.mk I N • v.map (Ideal.Quotient.mk I)).det := by
-    rw [RingHom.map_det, RingHom.mapMatrix_apply]
-    congr 1
-    ext i j
-    simp only [Matrix.map_apply, Matrix.sub_apply, Matrix.add_apply, Matrix.smul_apply,
-      smul_eq_mul, map_sub, map_mul]
-    ring
-  have h_le : PrimeSpectrum.basicOpen g.det ≤ PrimeSpectrum.basicOpen (g - N • (g - v)).det := by
-    rintro ⟨P, hP⟩ hgP
-    have hN_zero : Ideal.Quotient.mk P N = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (hN_mem P hP hgP)
-    rw [PrimeSpectrum.mem_basicOpen, ← Ideal.Quotient.eq_zero_iff_mem, hdet_mk P, hN_zero,
-      sub_zero, one_smul, zero_smul, add_zero, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
-    exact Ideal.Quotient.eq_zero_iff_mem.not.mpr hgP
-  have h_mem : ⟨M, hM.isPrime⟩ ∈ PrimeSpectrum.basicOpen (g - N • (g - v)).det := by
-    rw [PrimeSpectrum.mem_basicOpen, ← Ideal.Quotient.eq_zero_iff_mem, hdet_mk M, hN_one,
-      sub_self, zero_smul, zero_add, one_smul, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
-    exact Ideal.Quotient.eq_zero_iff_mem.not.mpr hvM
+  have : M.IsPrime := hM.isPrime
+  obtain ⟨h_le, h_mem⟩ := basicOpen_det_sub_smul_superset hN_mem hN_one hvM
   exact hmax ⟨h_fixed, _, h_cong⟩ h_le h_mem hgM
 
 /-- **Hilbert's Theorem 90 for units at congruence level `m` over an Artinian ring.** If `R` is
 Artinian, `σ` is tame at level `m` with exponent `p`, and `x : Rˣ` satisfies `m ∣ (x : R) - 1` and
-`∏ i ∈ range p, (σ ^ i) x = 1`, then `x * σ g = g` for some `g : Rˣ` with `m ∣ (g : R) - 1`. -/
+`∏ i ∈ range p, (σ ^ i) x = 1`, then `x * Units.map (σ : R →* R) g = g` for some `g : Rˣ` with
+`m ∣ (g : R) - 1`. -/
 theorem IsTameAtLevel.exists_mul_map_eq_of_prod_eq_one {σ : R →+* R} {p : ℕ} {m : R}
     (h_tame : IsTameAtLevel σ p m) [IsArtinianRing R] {x : Rˣ} (hx_one : m ∣ (x : R) - 1)
     (hx_norm : ∏ i ∈ range p, (σ ^ i) (x : R) = 1) :
-    ∃ g : Rˣ, m ∣ (g : R) - 1 ∧ (x : R) * σ g = g := by
+    ∃ g : Rˣ, m ∣ (g : R) - 1 ∧ x * Units.map (σ : R →* R) g = g := by
   obtain ⟨y, hy⟩ := hx_one
   let c : GL Unit R := Units.mk (of fun _ _ ↦ (x : R)) (of fun _ _ ↦ ((x⁻¹ : Rˣ) : R))
     (by ext i j; simp [Matrix.mul_apply]) (by ext i j; simp [Matrix.mul_apply])
@@ -345,7 +357,9 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_prod_eq_one {σ : R →+* R} {p : ℕ
   · have h_det : (k.det : R) = 1 + m * W () () := by simp [hW]
     rw [h_det, add_sub_cancel_left]
     exact dvd_mul_right m _
-  · have h_entry : (c.val * k.val.map σ) () () = k.val () () := by rw [hk]
+  · ext
+    have h_entry : (c.val * k.val.map σ) () () = k.val () () := by
+      simpa using congrArg (fun M : GL Unit R ↦ M.val () ()) hk
     simpa [c, Matrix.mul_apply] using h_entry
 
 /-- **Surjectivity of the orbit product on `σ`-fixed units at congruence level `m` over a finite
@@ -385,7 +399,7 @@ theorem IsTameAtLevel.exists_prod_range_pow_eq_of_finite {σ : R →+* R} {p : �
     have hu_norm : ∏ i ∈ range p, (σ ^ i) ((u : Rˣ) : R) = 1 := by
       rw [← h_norm_coe, MonoidHom.mem_ker.mp hu, OneMemClass.coe_one, Units.val_one]
     obtain ⟨g, hg, hgu⟩ := h_tame.exists_mul_map_eq_of_prod_eq_one (mem_H.mp u.property) hu_norm
-    exact ⟨⟨g, mem_H.mpr hg⟩, div_eq_of_eq_mul'' (Subtype.ext (Units.ext hgu.symm))⟩
+    exact ⟨⟨g, mem_H.mpr hg⟩, div_eq_of_eq_mul'' (Subtype.ext hgu.symm)⟩
   have h_card : Nat.card cob.ker ≤ Nat.card norm.range :=
     calc
       Nat.card cob.ker = cob.range.index := Subgroup.index_range.symm
