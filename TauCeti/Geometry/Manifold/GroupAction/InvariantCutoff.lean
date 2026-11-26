@@ -14,8 +14,8 @@ import TauCeti.Topology.Algebra.ConstMulAction
 /-!
 # Invariant smooth cutoffs for compact group actions
 
-Let a compact group `G`, itself a smooth manifold, act smoothly on a Hausdorff manifold `M`
-modelled on a finite-dimensional space. If `K` is a compact subset of an open set `W` and `K` is
+Let a compact group `G`, itself a smooth manifold, act smoothly on a boundaryless Hausdorff manifold
+`M` modelled on a finite-dimensional space. If `K` is a compact subset of an open set `W` and `K` is
 invariant under the action, there is a smooth function `σ : M → [0, 1]`, equal to `1` near `K`,
 with compact support in `W`, which is moreover invariant: `σ (a • x) = σ x`
 (`IsCompact.exists_contMDiff_one_nhds_tsupport_subset_of_smul_mem`).
@@ -46,9 +46,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 variable (I IG) in
 include IG in
 /-- **An invariant smooth cutoff around an invariant compact set.** If a compact group acts
-smoothly on a Hausdorff manifold modelled on a finite-dimensional space, and `K` is an invariant
-compact subset of an open set `W`, there is a smooth invariant function `σ : M → [0, 1]` equal to
-`1` on a neighbourhood of `K` whose topological support is a compact subset of `W`. -/
+smoothly on a boundaryless Hausdorff manifold modelled on a finite-dimensional space, and `K` is
+an invariant compact subset of an open set `W`, there is a smooth invariant function
+`σ : M → [0, 1]` equal to `1` on a neighbourhood of `K` whose topological support is a compact
+subset of `W`. -/
 theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset_of_smul_mem {K W : Set M}
     (hK : IsCompact K) (hW : IsOpen W) (hKW : K ⊆ W) (hKG : ∀ (a : G), ∀ x ∈ K, a • x ∈ K) :
     ∃ σ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ σ ∧ (∀ᶠ x in 𝓝ˢ K, σ x = 1) ∧ HasCompactSupport σ ∧

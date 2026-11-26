@@ -11,11 +11,11 @@ public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 # Symmetries of time-dependent vector fields commute with their flows
 
 Let `X` be a time-dependent vector field on a manifold `M` whose suspension is complete, so that
-its time-dependent flow `TauCeti.timeDependentFlowOf X s t` is defined everywhere. If a
-differentiable map `g : M → M` carries the field to itself, `dg (X u x) = X u (g x)` at all times
-and points, then the image under `g` of a solution of the equation is again a solution, and by
-uniqueness of solutions `g` commutes with every time map of the flow
-(`TauCeti.apply_timeDependentFlowOf_of_mfderiv_eq`).
+its time-dependent flow `TauCeti.timeDependentFlowOf X s t` is defined everywhere, and let `Y` be a
+time-dependent field on a manifold `M'`. If a differentiable map `f : M → M'` relates the fields,
+`df (X u x) = Y u (f x)` at all times and points, then the image under `f` of a solution for `X`
+is a solution for `Y`, and by uniqueness of solutions `f` intertwines every time map of the two
+flows (`TauCeti.apply_timeDependentFlowOf_of_mfderiv_eq`).
 
 This is the time-dependent counterpart of the naturality of autonomous flows in
 `TauCeti.Geometry.Manifold.Flow.Related`. It makes flows of invariant time-dependent fields
@@ -37,28 +37,35 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   [IsManifold I 1 M] [BoundarylessManifold I M] {X : ℝ → (x : M) → TangentSpace I x}
+  {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [T2Space M']
+  [IsManifold I' 1 M'] [BoundarylessManifold I' M'] {Y : ℝ → (y : M') → TangentSpace I' y}
 
-/-- **Symmetries of a time-dependent field commute with its flow.** If the suspension is complete
-and the differential of a differentiable map `g` carries `X u x` to `X u (g x)` at all times and
-points, then `g` commutes with every time map of the flow. -/
+/-- **Related time-dependent fields have intertwined flows.** If the suspension of `X` is complete
+and the differential of a differentiable map `f` carries `X u x` to `Y u (f x)` at all times and
+points, then `f` carries every time map of the flow of `X` to the corresponding time map of the
+flow of `Y`. -/
 theorem apply_timeDependentFlowOf_of_mfderiv_eq
     (hcomplete : IsCompleteVectorField (timeDependentSuspensionField X))
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-    {g : M → M} (hg : MDifferentiable I I g) (hgX : ∀ u x, mfderiv I I g x (X u x) = X u (g x))
+    (hY : ContMDiff (𝓘(ℝ, ℝ).prod I') I'.tangent 1
+      (fun p : ℝ × M' ↦ (⟨p.2, Y p.1 p.2⟩ : TangentBundle I' M')))
+    {f : M → M'} (hf : MDifferentiable I I' f) (hXY : ∀ u x, mfderiv I I' f x (X u x) = Y u (f x))
     (s t : ℝ) (x : M) :
-    g (timeDependentFlowOf X s t x) = timeDependentFlowOf X s t (g x) := by
-  -- The image under `g` of the flow curve through `x` solves the equation through `g x`.
-  have h := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX
-    (γ := fun u ↦ g (timeDependentFlowOf X s u x)) (fun u ↦ by
-      have hc := (hg _).hasMFDerivAt.comp u
+    f (timeDependentFlowOf X s t x) = timeDependentFlowOf Y s t (f x) := by
+  -- The image under `f` of the flow curve of `X` through `x` solves the equation of `Y` through
+  -- `f x`.
+  have h := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hY
+    (γ := fun u ↦ f (timeDependentFlowOf X s u x)) (fun u ↦ by
+      have hc := (hf _).hasMFDerivAt.comp u
         (hasMFDerivAt_timeDependentFlowOf hX
           ((timeDependentFlowDomain_eq_univ hcomplete).symm ▸ Set.mem_univ ((s, u), x)))
-      have hd : (mfderiv I I g (timeDependentFlowOf X s u x)).comp
+      have hd : (mfderiv I I' f (timeDependentFlowOf X s u x)).comp
           ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (timeDependentFlowOf X s u x))) =
-          (1 : ℝ →L[ℝ] ℝ).smulRight (X u (g (timeDependentFlowOf X s u x))) := by
+          (1 : ℝ →L[ℝ] ℝ).smulRight (Y u (f (timeDependentFlowOf X s u x))) := by
         ext
-        simp [hgX]
+        simp [hXY]
       exact hd ▸ hc) s t
   rw [timeDependentFlowOf_self] at h
   exact h.symm

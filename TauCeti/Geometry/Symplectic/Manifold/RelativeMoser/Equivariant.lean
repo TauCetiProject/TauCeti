@@ -24,15 +24,16 @@ gives a diffeomorphism `Φ` of `M` which
 
 * fixes every point of `K` and moves only the points of a compact set,
 * pulls `σ₁` back to `σ₀` on a neighbourhood of `K`,
-* has identity differential along `K` when `β` has zero first jet along `K`,
+* has identity differential at each point of `K` along whose orbit `β` has zero first jet,
 * and commutes with the action: `Φ (a • x) = a • Φ x`.
 
 The proof makes every ingredient of Moser's argument invariant. The primitive is replaced by its
 average `β' = ∫ a^* β da` over the normalized Haar measure
 (`TauCeti.SmoothForm.measureAverage`), which is invariant, still vanishes along the invariant set
-`K`, keeps a zero first jet there, and still satisfies `dβ' = σ₁ - σ₀` on the largest invariant
-open subset of the region where `dβ = σ₁ - σ₀`, since averaging commutes with `d` and fixes the
-invariant form `σ₁ - σ₀`. The Moser field is cut off by an invariant function
+`K`, keeps a zero first jet at a point when `β` has one along its orbit, and still satisfies
+`dβ' = σ₁ - σ₀` on the largest invariant open subset of the region where `dβ = σ₁ - σ₀`, since
+averaging commutes with `d` and fixes the invariant form `σ₁ - σ₀`. The Moser field is cut off
+by an invariant function
 (`IsCompact.exists_contMDiff_one_nhds_tsupport_subset_of_smul_mem`). The diffeomorphism given by
 Moser's theorem with a given primitive and cut-off
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff`) commutes with
@@ -75,7 +76,8 @@ compact set and `β` a smooth one-form, vanishing along `K`, with `dβ = σ₁ -
 neighbourhood `U` of `K`, and suppose the path `σ₀ + s (σ₁ - σ₀)`, `s ∈ [0, 1]`, is nondegenerate
 along `K`. Then there is a diffeomorphism `Φ` which commutes with the action, fixes every point of
 `K`, moves only the points of a compact set and pulls `σ₁` back to `σ₀` on a neighbourhood of `K`.
-If `β` has zero first jet along `K`, then the differential of `Φ` along `K` is the identity. -/
+At each point of `K` along whose orbit `β` has zero first jet, the differential of `Φ` is the
+identity. -/
 theorem exists_equivariant_diffeomorph_fix_eventually_mpullback_eq {σ₀ σ₁ : SmoothTwoForm I M}
     (h₀ : σ₀.IsClosed) (h₁ : σ₁.IsClosed)
     (hG₀ : ∀ a : G, mpullback I I (a • ·) σ₀.val = σ₀.val)
@@ -87,9 +89,9 @@ theorem exists_equivariant_diffeomorph_fix_eventually_mpullback_eq {σ₀ σ₁ 
     (hnd : ∀ x ∈ K, ∀ s ∈ Icc (0 : ℝ) 1, ((σ₀ + s • (σ₁ - σ₀)).bilinFormAt x).Nondegenerate) :
     ∃ Φ : M ≃ₘ⟮I, I⟯ M, (∀ x ∈ K, Φ x = x) ∧ (∃ C, IsCompact C ∧ ∀ x ∉ C, Φ x = x) ∧
       (∀ᶠ x in 𝓝ˢ K, (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x) ∧
-      ((∀ x ∈ K, HasFDerivAt (RoughForm.inChartAt β.val x) (0 : E →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ)
-        (extChartAt I x x)) →
-        ∀ x ∈ K, mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x)) ∧
+      (∀ x ∈ K, (∀ a : G, HasFDerivAt (RoughForm.inChartAt β.val (a • x))
+        (0 : E →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ) (extChartAt I (a • x) (a • x))) →
+        mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x)) ∧
       ∀ (a : G) (x : M), Φ (a • x) = a • Φ x := by
   borelize G
   have := ContMDiffSMul.continuousSMul (I := IG) (I' := I) (G := G) (M := M) ∞
@@ -118,11 +120,11 @@ theorem exists_equivariant_diffeomorph_fix_eventually_mpullback_eq {σ₀ σ₁ 
     h₀ h₁ hρ hρc (fun x hx ↦ hdβ' x (hρW hx).1) (fun x hx ↦ hndN x (hρW hx).2) hK
     (fun x hx ↦ SmoothForm.measureAverage_eq_zero_of_forall_smul IG μ β fun a ↦
       hβK _ (hKG a x hx)) hρ1
-  refine ⟨Φ, hΦK, ⟨tsupport ρ, hρc, hΦρ⟩, hΦ, fun hjet x hx ↦ hΦ1 x hx ?_, fun a x ↦
+  refine ⟨Φ, hΦK, ⟨tsupport ρ, hρc, hΦρ⟩, hΦ, fun x hx hjet ↦ hΦ1 x hx ?_, fun a x ↦
     hΦG (Diffeomorph.smul IG I ∞ a) (hG₀ a) (hG₁ a)
       (SmoothForm.mpullback_smul_measureAverage IG μ β a) (hρG a) x⟩
-  -- Averaging keeps the zero first jet along the invariant set `K`.
+  -- Averaging keeps a zero first jet along the orbit.
   exact SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul IG μ β
-    (fun a ↦ hβK _ (hKG a x hx)) fun a ↦ hjet _ (hKG a x hx)
+    (fun a ↦ hβK _ (hKG a x hx)) hjet
 
 end TauCeti.SmoothTwoForm

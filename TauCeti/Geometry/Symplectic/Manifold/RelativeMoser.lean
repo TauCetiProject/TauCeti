@@ -10,6 +10,7 @@ import TauCeti.Geometry.Manifold.Flow.TimeDependent.Related
 import TauCeti.Geometry.Manifold.Flow.TimeDependent.RestPoint
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
@@ -311,14 +312,6 @@ private theorem exists_isOpen_isInvertible_flat {σ₀ σ₁ : SmoothTwoForm I M
   have h := huN (mk_mem_prod (hu (projIcc (0 : ℝ) 1 zero_le_one t).property) hx)
   simpa only [O, mem_ofPred_eq, Real.smoothTransition.projIcc] using h
 
-/-- Every value in `[0, 1]` is a value of the smooth step function `Real.smoothTransition`. -/
-private theorem exists_smoothTransition_eq {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
-    ∃ t, Real.smoothTransition t = s := by
-  obtain ⟨t, -, ht⟩ := intermediate_value_Icc zero_le_one
-    Real.smoothTransition.continuous.continuousOn
-    (by rwa [Real.smoothTransition.zero, Real.smoothTransition.one])
-  exact ⟨t, ht⟩
-
 /-- If the path `σ₀ + s (σ₁ - σ₀)`, `s ∈ [0, 1]`, is nondegenerate along a compact set `K`, it
 stays nondegenerate on an open neighbourhood of `K`. -/
 theorem exists_isOpen_forall_nondegenerate {σ₀ σ₁ : SmoothTwoForm I M} {K : Set M}
@@ -328,7 +321,7 @@ theorem exists_isOpen_forall_nondegenerate {σ₀ σ₁ : SmoothTwoForm I M} {K 
       ∀ x ∈ N, ∀ s ∈ Icc (0 : ℝ) 1, ((σ₀ + s • (σ₁ - σ₀)).bilinFormAt x).Nondegenerate := by
   obtain ⟨N, hN, hKN, hinvN⟩ := exists_isOpen_isInvertible_flat hK hnd
   refine ⟨N, hN, hKN, fun x hx s hs ↦ ?_⟩
-  obtain ⟨t, rfl⟩ := exists_smoothTransition_eq hs
+  obtain ⟨t, -, rfl⟩ := Real.smoothTransition.surjOn_Icc hs
   exact isInvertible_flat_iff.1 (hinvN t x hx)
 
 /-! ### Moser's equation and the relative Moser theorems -/
@@ -519,7 +512,7 @@ theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff {σ₀ σ₁ : 
   rotate_left
   · -- The flow of a natural field commutes with the symmetry.
     rw [hΦ]
-    exact (apply_timeDependentFlowOf_of_mfderiv_eq hc hX₁ (g.mdifferentiable (by simp))
+    exact (apply_timeDependentFlowOf_of_mfderiv_eq hc hX₁ hX₁ (g.mdifferentiable (by simp))
       (mfderiv_moserField hinv g hg₀ hg₁ hgβ hgρ) 0 1 x).symm
   -- The trajectories starting near `K` stay, up to time `1`, where `ρ = 1` near each point.
   set V := {y : M | ∀ᶠ z in 𝓝 y, ρ z = 1}
