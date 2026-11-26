@@ -21,8 +21,8 @@ of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inr
 `F` are complete, they are the Hilbert-space adjoints of the coordinate projections
 `WithLp.fstL 2 𝕜 E F` and `WithLp.sndL 2 𝕜 E F` (`WithLp.adjoint_fstL`, `WithLp.adjoint_sndL`,
 `WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`). The diagonal embedding `WithLp.diagL2 𝕜 E`,
-`x ↦ (x, x)`, has adjoint `(x, y) ↦ x + y` (`WithLp.adjoint_diagL2`), and so the map
-`x ↦ (x, x)` is smooth (`WithLp.contDiff_toLp_diag`).
+`x ↦ (x, x)`, has adjoint `(x, y) ↦ x + y` (`WithLp.adjoint_diagL2`); being continuous linear,
+the map `x ↦ (x, x)` is smooth (`WithLp.contDiff_toLp_diag`).
 
 An operator on `WithLp 2 (E × F)` is a `2 × 2` block matrix of operators between the factors:
 `WithLp.blockL2 a b c d` is the operator `(x, y) ↦ (a x + b y, c x + d y)`, and every operator is

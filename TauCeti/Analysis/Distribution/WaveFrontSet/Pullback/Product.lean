@@ -33,7 +33,7 @@ product, that no covector of `WF(S)` is opposite to a covector of `WF(T)` at the
 the wave front set of `S ⊗ T` miss the normal set of the diagonal
 (`Distribution.adjoint_fderiv_diagonal_apply_ne_zero`), and `S ⊗ T` has a pullback along the
 diagonal (`Distribution.pullback`). This pullback is the product
-(`Distribution.pullback_diagonal_transportCLM_tensorProduct`):
+(`Distribution.pullback_diagonal_transportCLM_tensorProduct_eq_product`):
 
 `Δ^* (S ⊗ T) = S T`.
 
@@ -65,8 +65,8 @@ inversion again, hence the product integral above.
 
 * `Distribution.adjoint_fderiv_diagonal_apply_ne_zero`: under Hörmander's condition the wave front
   set of `S ⊗ T` misses the normal set of the diagonal.
-* `Distribution.pullback_diagonal_transportCLM_tensorProduct`: the pullback of `S ⊗ T` along the
-  diagonal is the product `S T`.
+* `Distribution.pullback_diagonal_transportCLM_tensorProduct_eq_product`: the pullback of
+  `S ⊗ T` along the diagonal is the product `S T`.
 
 ## References
 
@@ -324,7 +324,8 @@ private theorem pullback_diagonal_apply_eq_integral (hST : ∀ x, NoOppositeCove
 opposite to a covector of the wave front set of `T`, then the tensor product `S ⊗ T`, moved to the
 Euclidean product `WithLp 2 (E × E)`, has a pullback along the diagonal `x ↦ (x, x)`
 (`Distribution.adjoint_fderiv_diagonal_apply_ne_zero`), and this pullback is the product `S T`. -/
-theorem pullback_diagonal_transportCLM_tensorProduct (h : ∀ x, NoOppositeCovectorsOn S T {x})
+theorem pullback_diagonal_transportCLM_tensorProduct_eq_product
+    (h : ∀ x, NoOppositeCovectorsOn S T {x})
     (hΔ : MapsTo (fun x : E ↦ toLp 2 (x, x)) Ω W) :
     (transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW
         (S.tensorProduct T hV.subset)).pullback (fun x : E ↦ toLp 2 (x, x))
