@@ -22,6 +22,7 @@ probability measures `μ i` on the coordinates, the cylinder set of `x` on `U` h
 
 ## Main results
 
+* `SymbolicDynamics.FullShift.cylinder_eq_setOf`
 * `SymbolicDynamics.FullShift.cylinder_eq_cylinder_singleton`
 * `SymbolicDynamics.FullShift.measurableSet_cylinder`
 * `SymbolicDynamics.FullShift.cylinder_inter_cylinder`
@@ -37,6 +38,11 @@ open MeasureTheory Set
 namespace SymbolicDynamics.FullShift
 
 variable {G A : Type*}
+
+/-- A cylinder set is the set of configurations agreeing with `x` on `U`. -/
+theorem cylinder_eq_setOf (U : Finset G) (x : G → A) :
+    FullShift.cylinder U x = {y | ∀ i ∈ U, y i = x i} :=
+  rfl
 
 /-- A cylinder set is the cylinder event, in the sense of `MeasureTheory.cylinder`, of the single
 pattern `x|_U`. -/

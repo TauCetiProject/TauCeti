@@ -43,8 +43,8 @@ and a configuration `ω : G.edgeSet → Bool`, the weight of `ω` on `F` is
   configurations agreeing with `ω` on `E`. This form needs no conditional probability. Summed
   over the completion set `Ω_F(ω)`, the cylinder identities give
   `w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E ∖ F} = μ[ω]_E`
-  (`SimpleGraph.IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq`), using that
-  `Z^w_F(ω)` only depends on `ω` near `F`
+  (`SimpleGraph.IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq`). Separately, for
+  dimer configurations `Z^w_F(ω)` only depends on `ω` near `F`
   (`SimpleGraph.dimerPartitionFunction_congr_of_isDimerConfiguration`).
 
 **Gauge invariance.** Replacing `w(uv)` by `w(uv) g(u) g(v)` for a positive `g`
@@ -466,8 +466,11 @@ theorem IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq {w : G.edgeSe
   -- up to a null set, `[ω]_{E ∖ F}` is the disjoint union of the `[ω']_E`, `ω' ∈ Ω_F(ω)`
   have hsplit : μ {η | ∀ e ∈ E, e ∉ F → η e = ω e} =
       ∑ ω' ∈ (G.finite_dimerCompletionSet F ω).toFinset, μ {η | ∀ e ∈ E, η e = ω' e} := by
-    rw [← measure_biUnion_finset (f := fun ω' => {η : G.edgeSet → Bool | ∀ e ∈ E, η e = ω' e})
-      ?_ fun ω' _ => SymbolicDynamics.FullShift.measurableSet_cylinder E ω']
+    rw [← measure_biUnion_finset
+      (f := fun ω' : G.edgeSet → Bool => {η : G.edgeSet → Bool | ∀ e ∈ E, η e = ω' e}) ?_
+      fun ω' _ => by
+        rw [← SymbolicDynamics.FullShift.cylinder_eq_setOf]
+        exact SymbolicDynamics.FullShift.measurableSet_cylinder E ω']
     · refine measure_congr (Filter.eventuallyEqSet_iff.2 ?_)
       filter_upwards [hμ.ae_isDimerConfiguration] with η hη
       simp only [mem_ofPred_eq, mem_iUnion, exists_prop, Finite.mem_toFinset]
