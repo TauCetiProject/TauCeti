@@ -44,6 +44,16 @@ theorem columnDet_apply (A : Matrix (Fin n) (Fin n) R) :
   rw [columnDet, MultilinearMap.alternatization_apply]
   simp [MultilinearMap.mkPiAlgebraFin_apply]
 
+/-- An element commuting with all entries commutes with the column determinant. -/
+theorem commute_columnDet (A : Matrix (Fin n) (Fin n) R) {x : R}
+    (h : ∀ i j, Commute (A i j) x) : Commute A.columnDet x := by
+  rw [columnDet_apply]
+  refine Commute.sum_left _ _ _ fun σ _ ↦ ?_
+  rw [Units.smul_def]
+  refine (Commute.list_prod_left _ _ fun y hy ↦ ?_).smul_left _
+  obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
+  exact h (σ j) j
+
 /-- The empty column determinant is one. -/
 @[simp] theorem columnDet_fin_zero (A : Matrix (Fin 0) (Fin 0) R) : A.columnDet = 1 := by
   simp [columnDet_apply]
