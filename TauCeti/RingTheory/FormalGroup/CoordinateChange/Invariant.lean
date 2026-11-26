@@ -41,9 +41,9 @@ laws over `R` (`TauCeti.LazardRing.map_eq_map_of_isStrict`). When the law classi
 strictly isomorphic to the additive law, classified by the augmentation `ε : L →+* ℤ`, the
 extension of `I` along `f` is the extension of the ideal `ε(I)` of `ℤ`
 (`TauCeti.LazardRing.map_eq_map_augmentation_of_isStrict`). Two kinds of law are strictly
-isomorphic to the additive law: every law over a `ℚ`-algebra, by its logarithm, and every law with
-`[p]_F = 0` for a prime `p`, by its normalised logarithm. The two cases above apply this to the
-base changes of the universal law to `L ⊗ ℚ` and to `L / I_(p, ∞)`.
+isomorphic to the additive law: every commutative law over a `ℚ`-algebra, by its logarithm, and
+every commutative law with `[p]_F = 0` for a prime `p`, by its normalised logarithm. The two cases
+above apply this to the base changes of the universal law to `L ⊗ ℚ` and to `L / I_(p, ∞)`.
 
 ## Main results
 
@@ -113,12 +113,13 @@ theorem map_eq_map_augmentation_of_isStrict {I : Ideal LazardRing}
 
 /-- **An invariant ideal of the Lazard ring meeting `ℤ` in `0` is `0`.** If the extensions of an
 ideal `I` of `L` along the two units of `(L, L[b₁, b₂, …])` agree and `I` contains no nonzero
-integer, then `I = 0`. Over `L ⊗ ℚ` the logarithm is a strict isomorphism from the universal law
-to the additive law, so `I (L ⊗ ℚ)` is the extension of the ideal `ε(I)` of `ℤ`, which must vanish
-as `I (L ⊗ ℚ)` is proper; then `I = 0` because `L` is torsion-free. -/
+integer, then `I = 0`. -/
 theorem eq_bot_of_map_rightUnit_eq_map_C {I : Ideal LazardRing} (hI : I.map rightUnit = I.map C)
     (hZ : I.comap (algebraMap ℤ LazardRing) = ⊥) : I = ⊥ := by
-  -- `S = L ⊗ ℚ`, the localization of `L` at the nonzero integers.
+  -- `S = L ⊗ ℚ`, the localization of `L` at the nonzero integers. Over `S` the logarithm is a
+  -- strict isomorphism from the universal law to the additive law, so `I S` is the extension of
+  -- the ideal `ε(I)` of `ℤ`, which must vanish as `I S` is proper; then `I = 0` because `L` is
+  -- torsion-free.
   let M := Algebra.algebraMapSubmonoid LazardRing (nonZeroDivisors ℤ)
   let S := Localization M
   have hunit (n : nonZeroDivisors ℤ) : IsUnit (algebraMap ℤ S n) := by
@@ -143,20 +144,19 @@ theorem eq_bot_of_map_rightUnit_eq_map_C {I : Ideal LazardRing} (hI : I.map righ
     rw [heq]
     exact Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _ hn)
       (by simpa using hunit ⟨n, mem_nonZeroDivisors_of_ne_zero hn0⟩)
-  rw [hJ, Ideal.map_bot, Ideal.map_eq_bot_iff_le_ker,
-    (RingHom.injective_iff_ker_eq_bot _).1 (IsLocalization.injective S hM)] at heq
-  exact le_bot_iff.1 heq
+  rwa [hJ, Ideal.map_bot, Ideal.map_eq_bot_iff_of_injective (IsLocalization.injective S hM)] at heq
 
 /-- **A proper invariant ideal of the Lazard ring containing `I_(p, ∞)` is `I_(p, ∞)`.** Let `p`
 be a prime and `I` a proper ideal of `L` containing the union `I_(p, ∞)` of the height ideals of
 the universal law, whose extensions along the two units of `(L, L[b₁, b₂, …])` agree. Then
-`I = I_(p, ∞)`. Over `L / I_(p, ∞)` the `p`-series vanishes, so the normalised logarithm is a
-strict isomorphism from the universal law to the additive law, and `I (L / I_(p, ∞))` is the
-extension of the ideal `ε(I)` of `ℤ`, which is `(p)` as `I` is proper. -/
+`I = I_(p, ∞)`. -/
 theorem eq_iSup_heightIdeal_of_map_rightUnit_eq_map_C {p : ℕ} (hp : p.Prime)
     {I : Ideal LazardRing} (hI : I.map rightUnit = I.map C)
     (hle : ⨆ n, formalGroup.heightIdeal p n ≤ I) (hne : I ≠ ⊤) :
     I = ⨆ n, formalGroup.heightIdeal p n := by
+  -- Over `L / I_(p, ∞)` the `p`-series vanishes, so the normalised logarithm is a strict
+  -- isomorphism from the universal law to the additive law, and `I (L / I_(p, ∞))` is the
+  -- extension of the ideal `ε(I)` of `ℤ`, which is `(p)` as `I` is proper.
   have : Fact p.Prime := ⟨hp⟩
   set J := ⨆ n, formalGroup.heightIdeal p n
   let f := Ideal.Quotient.mk J
