@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExternalTensor
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Tensor
 import TauCeti.Analysis.Distribution.SchwartzKernel.Basic
 import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
@@ -35,8 +36,22 @@ linear functionals on the scalar tests on `M` has a unique kernel `K` with `K (�
 (`ContinuousLinearMap.existsUnique_schwartzKernel_tensor`). In particular kernels are determined
 by their values on tensor products (`TauCeti.BundleTest.ext_tensor`).
 
-These are the statements for the trivial line bundles: tests are real-valued functions, with no
-density factors and no coefficient bundles.
+The same holds with coefficients in vector bundles. Let `V → M` and `W → N` be finite-rank smooth
+real vector bundles, with external tensor product `V ⊠ W` over `M × N`, whose fibre over `(x, y)` is
+`V x ⊗ W y` (`TauCeti.ExternalTensor`). Every real bilinear map `B` on the bundle tests of `V` and
+of `W` which is continuous in each variable has a unique kernel: a continuous linear map `K` on the
+bundle tests of `V ⊠ W` with
+
+`K (s ⊠ t) = B s t`
+
+for all bundle tests `s` of `V` and `t` of `W`, where `(s ⊠ t)(x, y) = s x ⊗ t y`
+(`TauCeti.BundleTest.externalTensor`,
+`LinearMap.existsUnique_schwartzKernel_externalTensor_of_continuous`, and the operator form
+`ContinuousLinearMap.existsUnique_schwartzKernel_externalTensor`). Densities enter through the
+choice of bundles: an operator from the sections of `W` to the distributional sections of a bundle
+`E` over `M` (`TauCeti.BundleDistribution`) is a map into the functionals on the tests of the bundle
+`Hom(E, |Λ|)` of `E`-dual densities, and its kernel is a functional on the tests of
+`Hom(E, |Λ|) ⊠ W`, the kernel with coefficients in `E ⊠ (W* ⊗ |Λ_N|)` of Hörmander, §6.3.
 
 ## Proof
 
@@ -57,6 +72,16 @@ spaces (`TauCeti.ChartCutoffs.chartTestCLM_localize`).
   `K Φ = ∑ᵢⱼ κᵢⱼ ((ρᵢ ⊗ σⱼ) Φ)`, a locally finite sum. On `φ ⊗ ψ` the term `(i, j)` is
   `B (ρᵢ φ) (σⱼ ψ)`, and summing gives `B φ ψ`.
 
+With coefficients in bundles, the charts are chosen inside base sets of trivializations of `V` and
+of `W` (`TauCeti.ChartCutoffs.exists_source_subset`), so that a test of `V ⊠ W` localized to a
+product chart is a test function with values in the tensor product `F ⊗ F'` of the model fibres.
+Its coordinates in a basis `fₐ ⊗ g_b` are scalar test functions, and the term of the kernel at a
+product chart is the sum over `(a, b)` of the Euclidean kernels of `(φ, ψ) ↦ B (φ • fₐ) (ψ • g_b)`,
+the functions `φ • fₐ` and `ψ • g_b` being extended to bundle tests through the charts and the
+trivializations. Extending `(u, u') ↦ ψ u' φ u • (fₐ ⊗ g_b)` through a product chart gives
+`(φ • fₐ) ⊠ (ψ • g_b)` (`Bundle.Trivialization.chartTestCLM_externalTensor_prodSMulCLM`), which is
+how both the uniqueness and the existence arguments reduce to the scalar Euclidean theorem.
+
 ## Main declarations
 
 * `TauCeti.BundleTest.ext_tensor`: continuous linear maps on the scalar tests on `M × N` that agree
@@ -64,6 +89,11 @@ spaces (`TauCeti.ChartCutoffs.chartTestCLM_localize`).
 * `LinearMap.existsUnique_schwartzKernel_tensor_of_continuous`: **the Schwartz kernel theorem** for
   separately continuous bilinear maps on scalar tests.
 * `ContinuousLinearMap.existsUnique_schwartzKernel_tensor`: its operator form.
+* `TauCeti.BundleTest.ext_externalTensor`: continuous linear maps on the bundle tests of `V ⊠ W`
+  that agree on external tensor products are equal.
+* `LinearMap.existsUnique_schwartzKernel_externalTensor_of_continuous`,
+  `ContinuousLinearMap.existsUnique_schwartzKernel_externalTensor`: **the Schwartz kernel theorem
+  with coefficients in vector bundles**.
 
 ## References
 
@@ -349,6 +379,433 @@ theorem ext_tensor {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace
 
 end Kernel
 
+/-! ### Kernels with coefficients in vector bundles -/
+
+section BundleKernel
+
+open TestFunction (postcompCLM prodSMulCLM sum_postcompCLM_toSpanSingleton_coord
+  postcompCLM_postcompCLM_toSpanSingleton)
+open ContinuousLinearMap (toSpanSingleton)
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N] [T2Space N]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V I]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [FiniteDimensional ℝ F']
+  {W : N → Type*} [∀ y, AddCommGroup (W y)] [∀ y, Module ℝ (W y)] [∀ y, TopologicalSpace (W y)]
+  [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)]
+  [TopologicalSpace (TotalSpace F' W)] [FiberBundle F' W] [VectorBundle ℝ F' W]
+  [ContMDiffVectorBundle ∞ F' W J]
+
+/-! #### Frames in charts -/
+
+/-- The extension of test functions on the target of the chart `A.chart x` to bundle tests of `V`,
+through the preferred trivialization of `V` at `x`. -/
+private def frameTest (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (x : M) :
+    𝓓(⟨(A.chart x).target, (A.chart x).open_target⟩, F) →L[ℝ] BundleTest I F V :=
+  (trivializationAt F V x).chartTestCLM (A.chart x) (A.contMDiffOn_chart x) (hA x)
+
+/-- The localization `s ↦ (ρₓ s) ∘ cₓ⁻¹` of bundle tests of `V`, read in the preferred
+trivialization of `V` at `x`. -/
+private def frameLocalize (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (x : M) :
+    BundleTest I F V →L[ℝ] 𝓓(⟨(A.chart x).target, (A.chart x).open_target⟩, F) :=
+  A.localize (fun x ↦ trivializationAt F V x) hA x
+
+omit [FiniteDimensional ℝ F] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
+private theorem frameTest_frameLocalize (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (x : M)
+    (s : BundleTest I F V) :
+    frameTest A hA x (frameLocalize A hA x s) = smulLeftCLM (A.cutoff x) s :=
+  A.chartTestCLM_localize _ hA x s
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [FiniteDimensional ℝ E']
+  [IsManifold J ∞ N] [T2Space N] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [ContMDiffVectorBundle ∞ F V I] [∀ y, IsTopologicalAddGroup (W y)]
+  [∀ y, ContinuousSMul ℝ (W y)] [ContMDiffVectorBundle ∞ F' W J] in
+/-- The product charts of chart cutoffs subordinate to trivializations of `V` and of `W` lie in
+the base sets of the induced trivializations of `V ⊠ W`. -/
+private theorem source_subset_baseSet_externalTensor (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet) (p : M × N) :
+    ((A.prod A').chart p).source ⊆
+      ((trivializationAt F V p.1).externalTensor (trivializationAt F' W p.2)).baseSet := by
+  rw [ChartCutoffs.prod_chart, OpenPartialHomeomorph.prod_source,
+    Bundle.Trivialization.baseSet_externalTensor]
+  exact prod_mono (hA p.1) (hA' p.2)
+
+/-- The extension of test functions on the target of the product chart `p` to bundle tests of
+`V ⊠ W`, through the induced trivialization of `V ⊠ W`. -/
+private def productTest (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet) (p : M × N) :
+    𝓓(⟨((A.prod A').chart p).target, ((A.prod A').chart p).open_target⟩,
+        ProjectiveTensor ℝ F F') →L[ℝ]
+      BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W) :=
+  ((trivializationAt F V p.1).externalTensor (trivializationAt F' W p.2)).chartTestCLM
+    ((A.prod A').chart p) ((A.prod A').contMDiffOn_chart p)
+    (source_subset_baseSet_externalTensor A hA A' hA' p)
+
+/-- The localization of bundle tests of `V ⊠ W` to the target of the product chart `p`, read in
+the induced trivialization of `V ⊠ W`. -/
+private def productLocalize (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet) (p : M × N) :
+    BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W) →L[ℝ]
+      𝓓(⟨((A.prod A').chart p).target, ((A.prod A').chart p).open_target⟩,
+        ProjectiveTensor ℝ F F') :=
+  (A.prod A').localize
+    (fun p ↦ (trivializationAt F V p.1).externalTensor (trivializationAt F' W p.2))
+    (source_subset_baseSet_externalTensor A hA A' hA') p
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)] in
+private theorem productTest_productLocalize (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet) (p : M × N)
+    (Φ : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W)) :
+    productTest A hA A' hA' p (productLocalize A hA A' hA' p Φ) =
+      smulLeftCLM ((A.prod A').cutoff p) Φ :=
+  (A.prod A').chartTestCLM_localize _ (source_subset_baseSet_externalTensor A hA A' hA') p Φ
+
+/-! #### Coordinates in the tensor product of the model fibres -/
+
+variable (F F') in
+/-- The basis `(fₐ ⊗ g_b)` of the tensor product of the model fibres, for the bases
+`Module.finBasis` of `F` and `F'`. -/
+private def tensorBasis :
+    Module.Basis (Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F')) ℝ
+      (ProjectiveTensor ℝ F F') :=
+  ((Module.finBasis ℝ F).tensorProduct (Module.finBasis ℝ F')).map
+    (ProjectiveTensor.linearEquiv ℝ F F').symm
+
+private theorem tensorBasis_apply (k : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F')) :
+    tensorBasis F F' k =
+      ProjectiveTensor.mk (Module.finBasis ℝ F k.1 ⊗ₜ[ℝ] Module.finBasis ℝ F' k.2) := by
+  rw [tensorBasis, Module.Basis.map_apply, Module.Basis.tensorProduct_apply,
+    ProjectiveTensor.linearEquiv_symm_apply]
+
+private instance : FiniteDimensional ℝ (ProjectiveTensor ℝ F F') :=
+  Module.Finite.of_basis (tensorBasis F F')
+
+/-- The coordinate functional of `tensorBasis` at `k`. -/
+private def tensorCoord (k : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F')) :
+    ProjectiveTensor ℝ F F' →L[ℝ] ℝ :=
+  ((tensorBasis F F').coord k).toContinuousLinearMap
+
+private theorem tensorCoord_tensorBasis
+    (k k' : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F')) :
+    tensorCoord k (tensorBasis F F' k') = if k' = k then 1 else 0 := by
+  simp [tensorCoord, Finsupp.single_apply]
+
+/-- Extending `(u, u') ↦ ψ u' φ u • (fₐ ⊗ g_b)` through the product chart `p` gives the external
+tensor product of the extensions of `φ • fₐ` and `ψ • g_b`. -/
+private theorem productTest_postcompCLM_prodSMulCLM (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet) (p : M × N)
+    (k : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F'))
+    (φ : 𝓓(⟨(A.chart p.1).target, (A.chart p.1).open_target⟩, ℝ))
+    (ψ : 𝓓(⟨(A'.chart p.2).target, (A'.chart p.2).open_target⟩, ℝ)) :
+    productTest A hA A' hA' p (postcompCLM (toSpanSingleton ℝ (tensorBasis F F' k))
+        (prodSMulCLM ψ (A.prod_chart_target A' p).symm.subset φ)) =
+      (frameTest A hA p.1
+          (postcompCLM (toSpanSingleton ℝ (Module.finBasis ℝ F k.1)) φ)).externalTensor
+        (frameTest A' hA' p.2
+          (postcompCLM (toSpanSingleton ℝ (Module.finBasis ℝ F' k.2)) ψ)) := by
+  rw [tensorBasis_apply]
+  exact Bundle.Trivialization.chartTestCLM_externalTensor_prodSMulCLM _ _
+    (A.contMDiffOn_chart p.1) (hA p.1) (A'.contMDiffOn_chart p.2) (hA' p.2) (A.prod_chart A' p)
+    _ _ _ φ ψ _ _
+
+/-- The localization of `s ⊠ t` to the product chart `p`, in the basis `tensorBasis`: its
+coordinates are the tensor products of the coordinates of the localizations of `s` and `t`. -/
+private theorem productLocalize_externalTensor (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet) (p : M × N)
+    (s : BundleTest I F V) (t : BundleTest J F' W) :
+    productLocalize A hA A' hA' p (s.externalTensor t) =
+      ∑ k, postcompCLM (toSpanSingleton ℝ (tensorBasis F F' k))
+        (prodSMulCLM (postcompCLM ((Module.finBasis ℝ F').coord k.2).toContinuousLinearMap
+            (frameLocalize A' hA' p.2 t)) (A.prod_chart_target A' p).symm.subset
+          (postcompCLM ((Module.finBasis ℝ F).coord k.1).toContinuousLinearMap
+            (frameLocalize A hA p.1 s))) := by
+  refine Bundle.Trivialization.chartTestCLM_injective _ ((A.prod A').chart p)
+    ((A.prod A').contMDiffOn_chart p) (source_subset_baseSet_externalTensor A hA A' hA' p) ?_
+  -- Both sides are chart extensions through the trivialization of `V ⊠ W` defining `productTest`.
+  change productTest A hA A' hA' p _ = productTest A hA A' hA' p _
+  rw [productTest_productLocalize, ChartCutoffs.prod_cutoff, smulLeftCLM_mulProd_externalTensor,
+    map_sum]
+  simp_rw [productTest_postcompCLM_prodSMulCLM, Fintype.sum_prod_type, ← externalTensorₗ_apply,
+    ← map_sum (externalTensorₗ _), ← LinearMap.sum_apply, ← map_sum externalTensorₗ,
+    ← map_sum (frameTest _ _ _), sum_postcompCLM_toSpanSingleton_coord, frameTest_frameLocalize]
+
+/-- The coordinate `k` of the localization of `s ⊠ t` to the product chart `p` is the tensor
+product of the coordinates `k.1` of the localization of `s` and `k.2` of that of `t`. -/
+private theorem postcompCLM_tensorCoord_productLocalize_externalTensor (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet) (p : M × N)
+    (s : BundleTest I F V) (t : BundleTest J F' W)
+    (k : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F')) :
+    postcompCLM (tensorCoord k) (productLocalize A hA A' hA' p (s.externalTensor t)) =
+      prodSMulCLM (postcompCLM ((Module.finBasis ℝ F').coord k.2).toContinuousLinearMap
+          (frameLocalize A' hA' p.2 t)) (A.prod_chart_target A' p).symm.subset
+        (postcompCLM ((Module.finBasis ℝ F).coord k.1).toContinuousLinearMap
+          (frameLocalize A hA p.1 s)) := by
+  rw [productLocalize_externalTensor, map_sum]
+  simp_rw [postcompCLM_postcompCLM_toSpanSingleton, tensorCoord_tensorBasis, ite_smul, one_smul,
+    zero_smul, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+
+/-! #### The kernel of a bilinear map -/
+
+section Existence
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- The Euclidean kernel of the scalar bilinear map `(φ, ψ) ↦ B (φ • fₐ) (ψ • g_b)` read through the
+product chart `p`, for the basis vectors `fₐ` of `F` and `g_b` of `F'` indexed by `k = (a, b)`. -/
+private def frameKernel (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) (p : M × N)
+    (k : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F')) :
+    𝓓'(⟨((A.prod A').chart p).target, ((A.prod A').chart p).open_target⟩, G) :=
+  (LinearMap.existsUnique_schwartzKernel_prodSMulCLM_of_continuous
+    (B.compl₁₂ (frameTest A hA p.1 ∘L
+        postcompCLM (toSpanSingleton ℝ (Module.finBasis ℝ F k.1))).toLinearMap
+      (frameTest A' hA' p.2 ∘L
+        postcompCLM (toSpanSingleton ℝ (Module.finBasis ℝ F' k.2))).toLinearMap)
+    (fun _ ↦ (h₁ _).comp (ContinuousLinearMap.continuous _))
+    (fun _ ↦ (h₂ _).comp (ContinuousLinearMap.continuous _))
+    (A.prod_chart_target A' p)).exists.choose
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)] in
+private theorem frameKernel_prodSMulCLM (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) (p : M × N)
+    (k : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F'))
+    (φ : 𝓓(⟨(A.chart p.1).target, (A.chart p.1).open_target⟩, ℝ))
+    (ψ : 𝓓(⟨(A'.chart p.2).target, (A'.chart p.2).open_target⟩, ℝ)) :
+    frameKernel A hA A' hA' B h₁ h₂ p k
+        (prodSMulCLM ψ (A.prod_chart_target A' p).symm.subset φ) =
+      B (frameTest A hA p.1 (postcompCLM (toSpanSingleton ℝ (Module.finBasis ℝ F k.1)) φ))
+        (frameTest A' hA' p.2 (postcompCLM (toSpanSingleton ℝ (Module.finBasis ℝ F' k.2)) ψ)) :=
+  (LinearMap.existsUnique_schwartzKernel_prodSMulCLM_of_continuous _
+    (fun _ ↦ (h₁ _).comp (ContinuousLinearMap.continuous _))
+    (fun _ ↦ (h₂ _).comp (ContinuousLinearMap.continuous _))
+    (A.prod_chart_target A' p)).exists.choose_spec φ ψ
+
+/-- The term of the product chart `p` in the kernel: the local kernels applied to the
+coordinates of the localization of a test of `V ⊠ W`. -/
+private def chartKernel (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) (p : M × N)
+    (Φ : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W)) : G :=
+  ∑ k, frameKernel A hA A' hA' B h₁ h₂ p k
+    (postcompCLM (tensorCoord k) (productLocalize A hA A' hA' p Φ))
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)] in
+private theorem chartKernel_add (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) (p : M × N)
+    (Φ Ψ : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W)) :
+    chartKernel A hA A' hA' B h₁ h₂ p (Φ + Ψ) =
+      chartKernel A hA A' hA' B h₁ h₂ p Φ + chartKernel A hA A' hA' B h₁ h₂ p Ψ := by
+  simp only [chartKernel, map_add, Finset.sum_add_distrib]
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)] in
+private theorem chartKernel_smul (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) (p : M × N) (a : ℝ)
+    (Φ : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W)) :
+    chartKernel A hA A' hA' B h₁ h₂ p (a • Φ) = a • chartKernel A hA A' hA' B h₁ h₂ p Φ := by
+  simp only [chartKernel, map_smul, Finset.smul_sum]
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)] in
+private theorem continuous_chartKernel (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) (p : M × N) :
+    Continuous (chartKernel A hA A' hA' B h₁ h₂ p) :=
+  continuous_finsetSum _ fun k _ ↦ (map_continuous (frameKernel A hA A' hA' B h₁ h₂ p k)).comp
+    ((postcompCLM (tensorCoord k)).continuous.comp (productLocalize A hA A' hA' p).continuous)
+
+/-- On `s ⊠ t` the term of the product chart `p` is `B (ρ s) (σ t)`, for the cutoffs `ρ` and `σ` of
+the two charts. -/
+private theorem chartKernel_externalTensor (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) (p : M × N)
+    (s : BundleTest I F V) (t : BundleTest J F' W) :
+    chartKernel A hA A' hA' B h₁ h₂ p (s.externalTensor t) =
+      B (smulLeftCLM (A.cutoff p.1) s) (smulLeftCLM (A'.cutoff p.2) t) := by
+  simp_rw [chartKernel, postcompCLM_tensorCoord_productLocalize_externalTensor,
+    frameKernel_prodSMulCLM,
+    Fintype.sum_prod_type, ← map_sum (B _), ← LinearMap.sum_apply, ← map_sum B,
+    ← map_sum (frameTest _ _ _), sum_postcompCLM_toSpanSingleton_coord, frameTest_frameLocalize]
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)] in
+/-- A product chart whose cutoff does not meet a compact set `L` contributes nothing to the kernel
+on the tests supported in `L`. -/
+private theorem chartKernel_eq_zero (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) {L : Set (M × N)}
+    {hL : IsCompact L} {p : M × N} (hp : p ∉ (A.prod A').meeting L hL)
+    {Φ : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W)}
+    (hΦ : closure {z | Φ z ≠ 0} ⊆ L) : chartKernel A hA A' hA' B h₁ h₂ p Φ = 0 := by
+  simp only [chartKernel, productLocalize, (A.prod A').localize_eq_zero _ _ hp hΦ, map_zero,
+    Finset.sum_const_zero]
+
+/-- The kernel `Φ ↦ ∑ₚ κ_p Φ` of `B`, a locally finite sum over the product charts, as a linear
+map. -/
+private def bundleKernelₗ (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) :
+    BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W) →ₗ[ℝ] G where
+  toFun Φ := ∑ᶠ p, chartKernel A hA A' hA' B h₁ h₂ p Φ
+  map_add' Φ Ψ := by
+    have hL := Φ.isCompact_tsupport.union Ψ.isCompact_tsupport
+    have h {Φ' : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W)}
+        (hΦ' : closure {z | Φ' z ≠ 0} ⊆ _) :=
+      finsum_eq_sum_of_support_subset (s := (A.prod A').meeting _ hL)
+        (fun p ↦ chartKernel A hA A' hA' B h₁ h₂ p Φ') fun p hp ↦ by_contra fun h ↦
+          hp (chartKernel_eq_zero A hA A' hA' B h₁ h₂ h hΦ')
+    rw [h subset_union_left, h subset_union_right, h (Φ.tsupport_add_subset Ψ),
+      ← Finset.sum_add_distrib]
+    simp only [chartKernel_add]
+  map_smul' a Φ := by
+    have h {Φ' : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W)}
+        (hΦ' : closure {z | Φ' z ≠ 0} ⊆ closure {z | Φ z ≠ 0}) :=
+      finsum_eq_sum_of_support_subset (s := (A.prod A').meeting _ Φ.isCompact_tsupport)
+        (fun p ↦ chartKernel A hA A' hA' B h₁ h₂ p Φ') fun p hp ↦ by_contra fun h ↦
+          hp (chartKernel_eq_zero A hA A' hA' B h₁ h₂ h hΦ')
+    rw [h (Φ.tsupport_smul_subset a), h subset_rfl, Finset.smul_sum]
+    simp only [chartKernel_smul, RingHom.id_apply]
+
+/-- The kernel of `B`, as a continuous linear map. -/
+private def bundleKernel (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) :
+    BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W) →L[ℝ] G where
+  toLinearMap := bundleKernelₗ A hA A' hA' B h₁ h₂
+  cont := by
+    let := frameTopology (I := I.prod J) (n := ∞)
+      (fun z : M × N ↦ trivializationAt (ProjectiveTensor ℝ F F') (ExternalTensor V W) z)
+      (fun z ↦ ⟨_,
+        (trivializationAt (ProjectiveTensor ℝ F F') (ExternalTensor V W) z).open_baseSet⟩)
+      fun _ ↦ subset_rfl
+    refine (BundleTest.continuous_iff_continuous_comp (bundleKernelₗ A hA A' hA' B h₁ h₂)).2
+      fun L ↦ ?_
+    -- On the tests supported in `L` the kernel is a finite sum of continuous maps.
+    refine (continuous_finsetSum ((A.prod A').meeting L L.isCompact) fun p _ ↦
+      (continuous_chartKernel A hA A' hA' B h₁ h₂ p).comp
+        (BundleTest.continuous_ofSupportedIn L)).congr fun σ ↦ ?_
+    exact (finsum_eq_sum_of_support_subset _ fun p hp ↦ by_contra fun h ↦
+      hp (chartKernel_eq_zero A hA A' hA' B h₁ h₂ h
+        (BundleTest.tsupport_ofSupportedIn_subset L σ))).symm
+
+private theorem bundleKernel_externalTensor (A : ChartCutoffs I M ⊤ M)
+    (hA : ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) (A' : ChartCutoffs J N ⊤ N)
+    (hA' : ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet)
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s))
+    (s : BundleTest I F V) (t : BundleTest J F' W) :
+    bundleKernel A hA A' hA' B h₁ h₂ (s.externalTensor t) = B s t := by
+  -- The kernel is the locally finite sum of the terms of the product charts.
+  change ∑ᶠ p, chartKernel A hA A' hA' B h₁ h₂ p (s.externalTensor t) = B s t
+  simp_rw [chartKernel_externalTensor]
+  -- Only the charts whose cutoffs meet the supports of `s` and of `t` contribute.
+  refine (A.finsum_prod_eq_sum_meeting A' s.isCompact_tsupport t.isCompact_tsupport
+    (f := fun i j ↦ B (smulLeftCLM (A.cutoff i) s) (smulLeftCLM (A'.cutoff j) t))
+    (fun i j hi ↦ by rw [A.smulLeftCLM_eq_zero hi subset_rfl, map_zero, LinearMap.zero_apply])
+    (fun i j hj ↦ by rw [A'.smulLeftCLM_eq_zero hj subset_rfl, map_zero])).trans ?_
+  simp_rw [← map_sum (B _), ← LinearMap.sum_apply, ← map_sum B,
+    A.sum_smulLeftCLM s.isCompact_tsupport subset_rfl,
+    A'.sum_smulLeftCLM t.isCompact_tsupport subset_rfl]
+
+end Existence
+
+variable [I.Boundaryless] [SigmaCompactSpace M] [J.Boundaryless] [SigmaCompactSpace N]
+
+/-- **Kernels with coefficients in vector bundles are determined by their values on external
+tensor products.** Two continuous linear maps on the bundle tests of `V ⊠ W` over `M × N` agree
+once they agree on every external tensor product `s ⊠ t` of a bundle test `s` of `V` and a bundle
+test `t` of `W`. -/
+theorem ext_externalTensor {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
+    [T2Space G]
+    {K₁ K₂ : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W) →L[ℝ] G}
+    (h : ∀ s t, K₁ (externalTensor s t) = K₂ (externalTensor s t)) : K₁ = K₂ := by
+  obtain ⟨A, hA⟩ := ChartCutoffs.exists_source_subset (I := I) (n := ⊤)
+    (fun x : M ↦ (trivializationAt F V x).open_baseSet) fun x ↦ mem_baseSet_trivializationAt F V x
+  obtain ⟨A', hA'⟩ := ChartCutoffs.exists_source_subset (I := J) (n := ⊤)
+    (fun y : N ↦ (trivializationAt F' W y).open_baseSet) fun y ↦ mem_baseSet_trivializationAt F' W y
+  -- On the extensions through each product chart of the test functions with values on a line
+  -- `ℝ • (fₐ ⊗ g_b)`, the two maps agree, by the density of tensor products of test functions.
+  have hC (p : M × N) (k : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F')) :
+      K₁ ∘L productTest A hA A' hA' p ∘L postcompCLM (toSpanSingleton ℝ (tensorBasis F F' k)) =
+        K₂ ∘L productTest A hA A' hA' p ∘L
+          postcompCLM (toSpanSingleton ℝ (tensorBasis F F' k)) :=
+    TestFunction.ext_prodSMulCLM (Ω := ⟨(A.chart p.1).target, (A.chart p.1).open_target⟩)
+      (O := ⟨(A'.chart p.2).target, (A'.chart p.2).open_target⟩) (A.prod_chart_target A' p)
+      fun ψ φ ↦ by
+        simp only [ContinuousLinearMap.comp_apply, productTest_postcompCLM_prodSMulCLM, h]
+  ext Φ
+  have hΦ := (A.prod A').sum_chartTestCLM_localize
+    (fun p ↦ (trivializationAt F V p.1).externalTensor (trivializationAt F' W p.2))
+    (source_subset_baseSet_externalTensor A hA A' hA') Φ.isCompact_tsupport subset_rfl
+  rw [← hΦ, map_sum, map_sum]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  -- The chart extension and localization in `hΦ` are `productTest` and `productLocalize`.
+  change K₁ (productTest A hA A' hA' p (productLocalize A hA A' hA' p Φ)) =
+    K₂ (productTest A hA A' hA' p (productLocalize A hA A' hA' p Φ))
+  rw [← sum_postcompCLM_toSpanSingleton_coord (tensorBasis F F') (productLocalize A hA A' hA' p Φ),
+    map_sum, map_sum, map_sum]
+  exact Finset.sum_congr rfl fun k _ ↦ DFunLike.congr_fun (hC p k) _
+
+/-- The kernel of a separately continuous bilinear map on bundle tests exists. -/
+private theorem exists_bundleKernel {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G]
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) :
+    ∃ K : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W) →L[ℝ] G,
+      ∀ s t, K (s.externalTensor t) = B s t := by
+  obtain ⟨A, hA⟩ := ChartCutoffs.exists_source_subset (I := I) (n := ⊤)
+    (fun x : M ↦ (trivializationAt F V x).open_baseSet) fun x ↦ mem_baseSet_trivializationAt F V x
+  obtain ⟨A', hA'⟩ := ChartCutoffs.exists_source_subset (I := J) (n := ⊤)
+    (fun y : N ↦ (trivializationAt F' W y).open_baseSet) fun y ↦ mem_baseSet_trivializationAt F' W y
+  exact ⟨bundleKernel A hA A' hA' B h₁ h₂, bundleKernel_externalTensor A hA A' hA' B h₁ h₂⟩
+
+end BundleKernel
+
 end BundleTest
 
 end TauCeti
@@ -395,3 +852,54 @@ theorem ContinuousLinearMap.existsUnique_schwartzKernel_tensor
       (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp))
     (fun ψ ↦ map_continuous (A ψ))
     (fun φ ↦ (ContinuousEvalConst.continuous_eval_const φ).comp A.continuous)
+
+/-- **The Schwartz kernel theorem on manifolds, with coefficients in vector bundles.** Let `V → M`
+and `W → N` be finite-rank smooth real vector bundles, and let `B` be a real bilinear map on the
+bundle tests of `V` and of `W`, with values in a real Banach space `G`, which is continuous in each
+variable. Then there is a unique continuous linear map `K` on the bundle tests of the external
+tensor product `V ⊠ W` over `M × N`, the kernel of `B`, with `K (s ⊠ t) = B s t` for all bundle
+tests `s` of `V` and `t` of `W`. -/
+theorem LinearMap.existsUnique_schwartzKernel_externalTensor_of_continuous
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+    [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+    [TopologicalSpace (Bundle.TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+    [ContMDiffVectorBundle ∞ F V I]
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [FiniteDimensional ℝ F']
+    {W : N → Type*} [∀ y, AddCommGroup (W y)] [∀ y, Module ℝ (W y)] [∀ y, TopologicalSpace (W y)]
+    [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)]
+    [TopologicalSpace (Bundle.TotalSpace F' W)] [FiberBundle F' W] [VectorBundle ℝ F' W]
+    [ContMDiffVectorBundle ∞ F' W J]
+    (B : BundleTest I F V →ₗ[ℝ] BundleTest J F' W →ₗ[ℝ] G)
+    (h₁ : ∀ t, Continuous fun s ↦ B s t) (h₂ : ∀ s, Continuous (B s)) :
+    ∃! K : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W) →L[ℝ] G,
+      ∀ s t, K (s.externalTensor t) = B s t := by
+  obtain ⟨K, hK⟩ := exists_bundleKernel B h₁ h₂
+  exact ⟨K, hK, fun K' hK' ↦ ext_externalTensor fun s t ↦ (hK' s t).trans (hK s t).symm⟩
+
+/-- **The Schwartz kernel theorem on manifolds with coefficients in vector bundles, operator
+form.** Every continuous linear map `A` from the bundle tests of `W` over `N` to the `G`-valued
+continuous linear functionals on the bundle tests of `V` over `M`, with the topology of compact
+convergence, has a unique kernel: a continuous linear map `K` on the bundle tests of `V ⊠ W` over
+`M × N` with `K (s ⊠ t) = A t s`. For `V` the bundle `Hom(E, |Λ|)` of `E`-dual densities on `M`, the
+functionals are the distributional sections of `E` (`TauCeti.BundleDistribution`), so `A` is an
+operator from sections of `W` to distributional sections of `E`. -/
+theorem ContinuousLinearMap.existsUnique_schwartzKernel_externalTensor
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+    [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+    [TopologicalSpace (Bundle.TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+    [ContMDiffVectorBundle ∞ F V I]
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [FiniteDimensional ℝ F']
+    {W : N → Type*} [∀ y, AddCommGroup (W y)] [∀ y, Module ℝ (W y)] [∀ y, TopologicalSpace (W y)]
+    [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul ℝ (W y)]
+    [TopologicalSpace (Bundle.TotalSpace F' W)] [FiberBundle F' W] [VectorBundle ℝ F' W]
+    [ContMDiffVectorBundle ∞ F' W J]
+    (A : BundleTest J F' W →L[ℝ] (BundleTest I F V →L_c[ℝ] G)) :
+    ∃! K : BundleTest (I.prod J) (ProjectiveTensor ℝ F F') (ExternalTensor V W) →L[ℝ] G,
+      ∀ s t, K (s.externalTensor t) = A t s :=
+  LinearMap.existsUnique_schwartzKernel_externalTensor_of_continuous
+    (LinearMap.mk₂ ℝ (fun s t ↦ A t s) (fun _ _ _ ↦ map_add _ _ _) (fun _ _ _ ↦ map_smul _ _ _)
+      (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp))
+    (fun t ↦ map_continuous (A t))
+    (fun s ↦ (ContinuousEvalConst.continuous_eval_const s).comp A.continuous)
