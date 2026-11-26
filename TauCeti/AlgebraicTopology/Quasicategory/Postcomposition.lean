@@ -177,6 +177,15 @@ noncomputable def tgt (g : Edge y z) :
     simp) ≫
     (sliceFiberIso x z).hom
 
+variable (x) in
+/-- Restricting a cone to the target of `g` agrees with the slice restriction after including
+the right mapping space into the slice over `z`. -/
+@[reassoc]
+lemma tgt_comp_ι (g : Edge y z) :
+    tgt x g ≫ (sliceFiberIso x z).inv ≫ (fiber (slice.π (yonedaEquiv.symm z)) x).ι =
+      (postcompSpace x g).ι ≫ slice.map (stdSimplex.δ 0) (𝟙 X) (by simp) := by
+  simp only [tgt, Category.assoc, Iso.hom_inv_id_assoc, Subcomplex.lift_ι]
+
 /-- The simplex of `Hom^R_X(x, y)` underlying the image under `src` of a cone
 `Δ[n] ⋆ Δ[1] ⟶ X` over `g` is its restriction to `Δ[n] ⋆ Δ[0]` along the source of `Δ[1]`, through
 `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/
@@ -248,7 +257,9 @@ theorem rlp_tgt [X.Quasicategory] {g : Edge y z} (hg : g.IsEquivalence) :
     CategoryTheory.Arrow.isoMk (Subcomplex.eqToIso (postcompSpace_eq_preimage x g))
       (sliceFiberIso x z).symm (by
         rw [← cancel_mono (Subcomplex.ι _)]
-        simp [tgt, m])
+        simp only [Category.assoc, CategoryTheory.Arrow.mk_hom, Iso.symm_hom,
+          Subcomplex.fromPreimage_ι, Subcomplex.eqToIso_hom, Subcomplex.homOfLE_ι_assoc,
+          tgt_comp_ι, m])
   exact (HasLiftingProperty.iff_of_arrow_iso_right i e).2 inferInstance
 
 /-! ### Vertices of `Hom^R_X(x, g)` -/

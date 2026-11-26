@@ -114,49 +114,74 @@ private lemma rlp_restrictionMap_bot {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}
     (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
     (Subcomplex.unionJoin.ι₂_ι _ _)).2 this σ
 
+-- The inclusion of a right mapping space into its slice, used in the base-change square.
+private noncomputable def fiberToSlice (x y : X _⦋0⦌) :
+    (X.rightMappingSpace x y : SSet.{u}) ⟶ slice (yonedaEquiv.symm y) :=
+  (sliceFiberIso x y).inv ≫ (fiber (slice.π (yonedaEquiv.symm y)) x).ι
+
+private instance (x y : X _⦋0⦌) : Mono (fiberToSlice x y) := by
+  dsimp only [fiberToSlice]
+  infer_instance
+
+-- The same inclusion over `Y`, transported to the slice over `yonedaEquiv.symm y ≫ p`.
+private noncomputable def mappedFiberToSlice (p : X ⟶ Y) (x y : X _⦋0⦌) :
+    (Y.rightMappingSpace (p.app _ x) (p.app _ y) : SSet.{u}) ⟶
+      slice (yonedaEquiv.symm y ≫ p) :=
+  fiberToSlice (p.app _ x) (p.app _ y) ≫
+    slice.map (𝟙 _) (𝟙 _) (by rw [Category.id_comp, Category.comp_id, yonedaEquiv_symm_comp])
+
+private instance (p : X ⟶ Y) (x y : X _⦋0⦌) : Mono (mappedFiberToSlice p x y) := by
+  dsimp only [mappedFiberToSlice]
+  infer_instance
+
+-- Constant at `x` in the first component and the fibre inclusion in the second component.
+private noncomputable def slicePullbackMap (p : X ⟶ Y) (x y : X _⦋0⦌) :
+    (Y.rightMappingSpace (p.app _ x) (p.app _ y) : SSet.{u}) ⟶
+      pullback (slice.map (𝟙 _) p (by simp) :
+          slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y) ⟶
+            slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p))
+        (slice.map (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι (𝟙 Y) (by simp) :
+          slice (yonedaEquiv.symm y ≫ p) ⟶
+            slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p)) := by
+  have : IsIso (slice.π ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p)) :=
+    slice.isIso_π _ (by rintro ⟨⟨_, ⟨⟩⟩⟩)
+  have : IsIso (slice.π ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y)) :=
+    slice.isIso_π _ (by rintro ⟨⟨_, ⟨⟩⟩⟩)
+  refine pullback.lift (const x ≫ inv (slice.π _)) (mappedFiberToSlice p x y) ?_
+  rw [← cancel_mono (slice.π _), Category.assoc, slice.map_π, Category.assoc,
+    IsIso.inv_hom_id_assoc, const_comp]
+  simp only [mappedFiberToSlice, fiberToSlice, Category.assoc, slice.map_π,
+    Category.comp_id, fiber.ι_comp, comp_const]
+
 /-- **The map of right mapping spaces is a base change of a relative slice map.** For a map
 `p : X ⟶ Y` and vertices `x` and `y` of `X`, the map `Hom^R_X(x, y) ⟶ Hom^R_Y(p x, p y)` is,
 through `SSet.rightMappingSpace.sliceFiberIso`, the base change of the relative slice map
-`X_{/y} ⟶ X_{/∅} ×_{Y_{/∅}} Y_{/p y}` along the empty diagram, along a map `g` which is constant
+`X_{/y} ⟶ X_{/∅} ×_{Y_{/∅}} Y_{/p y}` along the empty diagram. The bottom map is constant
 at `x` in `X_{/∅} ≅ X` and includes `Hom^R_Y(p x, p y)` as the fibre of `Y_{/p y}` over `p x`. -/
-private lemma isPullback_map (p : X ⟶ Y) (x y : X _⦋0⦌)
-    (g : (Y.rightMappingSpace (p.app _ x) (p.app _ y) : SSet.{u}) ⟶
-      pullback (slice.map (𝟙 _) p (by simp) :
-          slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y) ⟶ _)
-        (slice.map (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι (𝟙 Y) (by simp) :
-          slice (yonedaEquiv.symm y ≫ p) ⟶ _))
-    (hg₁ : g ≫ pullback.fst _ _ ≫ slice.π _ = const x)
-    (hg₂ : g ≫ pullback.snd _ _ = (sliceFiberIso (p.app _ x) (p.app _ y)).inv ≫
-      (fiber (slice.π (yonedaEquiv.symm (p.app _ y))) (p.app _ x)).ι ≫
-        slice.map (𝟙 _) (𝟙 _) (by rw [Category.id_comp, Category.comp_id, yonedaEquiv_symm_comp])) :
-    IsPullback ((sliceFiberIso x y).inv ≫ (fiber (slice.π (yonedaEquiv.symm y)) x).ι)
-      (map x y p) (slice.restrictionMap (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι p
-        (yonedaEquiv.symm y)) g := by
+private lemma isPullback_map (p : X ⟶ Y) (x y : X _⦋0⦌) :
+    IsPullback (fiberToSlice x y) (map x y p)
+      (slice.restrictionMap (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι p (yonedaEquiv.symm y))
+      (slicePullbackMap p x y) := by
   have : IsIso (slice.π ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y)) :=
     slice.isIso_π _ (by rintro ⟨⟨_, ⟨⟩⟩⟩)
-  -- `fE` and `fB` include the right mapping spaces as the fibres of the slices over `x` and
-  -- `p x`, and `φ` identifies two slices of `Y`.
-  obtain ⟨fE, hfE⟩ : ∃ fE, fE = (sliceFiberIso x y).inv ≫
-      (fiber (slice.π (yonedaEquiv.symm y)) x).ι := ⟨_, rfl⟩
-  obtain ⟨φ, hφ⟩ : ∃ φ : _ ⟶ slice (yonedaEquiv.symm y ≫ p), φ =
-      (sliceFiberIso (p.app _ x) (p.app _ y)).inv ≫
-        (fiber (slice.π (yonedaEquiv.symm (p.app _ y))) (p.app _ x)).ι ≫
-          slice.map (𝟙 _) (𝟙 _)
-            (by rw [Category.id_comp, Category.comp_id, yonedaEquiv_symm_comp]) :=
-    ⟨_, rfl⟩
-  rw [← hfE]; rw [← hφ] at hg₂
-  have : Mono fE := by rw [hfE]; infer_instance
-  have : Mono φ := by rw [hφ]; infer_instance
+  set fE := fiberToSlice x y with hfE
+  set φ := mappedFiberToSlice p x y with hφ
+  set g := slicePullbackMap p x y with hg
+  have hg₁ : g ≫ pullback.fst _ _ ≫ slice.π _ = const x := by
+    simp only [hg, slicePullbackMap, pullback.lift_fst_assoc, Category.assoc,
+      IsIso.inv_hom_id, Category.comp_id]
+  have hg₂ : g ≫ pullback.snd _ _ = φ := pullback.lift_snd _ _ _
   have hE : fE ≫ slice.π (yonedaEquiv.symm y) = const x := by
-    rw [hfE, Category.assoc, fiber.ι_comp, comp_const]
+    rw [hfE, fiberToSlice, Category.assoc, fiber.ι_comp, comp_const]
   have hfst : slice.restrictionMap (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι p (yonedaEquiv.symm y) ≫
       pullback.fst _ _ ≫ slice.π _ = slice.π (yonedaEquiv.symm y) := by
     rw [slice.restrictionMap_fst_assoc, slice.map_π, Category.comp_id]
   -- By naturality of `sliceFiberIso`, pushing cones forward along `p` is `map x y p`.
   have hsnd : fE ≫ slice.restrictionMap (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι p
       (yonedaEquiv.symm y) ≫ pullback.snd _ _ = map x y p ≫ φ := by
-    rw [slice.restrictionMap_snd, hfE, hφ, Category.assoc,
-      ← reassoc_of% (sliceFiberIso_inv_comp_map x y p), slice.map_comp]
+    simp only [slice.restrictionMap_snd, hfE, hφ, mappedFiberToSlice, fiberToSlice,
+      Category.assoc]
+    rw [← reassoc_of% (sliceFiberIso_inv_comp_map x y p), slice.map_comp]
     simp only [Category.comp_id]
   have w : fE ≫ slice.restrictionMap _ p _ = map x y p ≫ g := by
     refine pullback.hom_ext ?_ ?_
@@ -170,7 +195,7 @@ private lemma isPullback_map (p : X ⟶ Y) (x y : X _⦋0⦌)
     rw [← hfst, reassoc_of% s.condition, hg₁, comp_const]
   have hlift (s : PullbackCone (slice.restrictionMap _ p _) g) :
       (fiber.lift s.fst _ x (hl s) ≫ (sliceFiberIso x y).hom) ≫ fE = s.fst := by
-    rw [hfE, Category.assoc, Iso.hom_inv_id_assoc, fiber.lift_ι]
+    rw [hfE, fiberToSlice, Category.assoc, Iso.hom_inv_id_assoc, fiber.lift_ι]
   refine IsPullback.of_isLimit (PullbackCone.IsLimit.mk w
     (fun s ↦ fiber.lift s.fst _ x (hl s) ≫ (sliceFiberIso x y).hom) hlift
     (fun s ↦ ?_) (fun s m hm₁ _ ↦ by rw [← cancel_mono fE, hm₁, hlift]))
@@ -183,29 +208,8 @@ private lemma isPullback_map (p : X ⟶ Y) (x y : X _⦋0⦌)
 `X_{/y} ⟶ X ×_Y Y_{/p y}` along the empty diagram (`isPullback_map`), which lifts against
 monomorphisms since the pushout-joins of monomorphisms with `∅ ⟶ Δ[0]` are monomorphisms. -/
 theorem rlp_map {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) (x y : X _⦋0⦌) :
-    (monomorphisms SSet.{u}).rlp (map x y p) := by
-  have : IsIso (slice.π ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p)) :=
-    slice.isIso_π _ (by rintro ⟨⟨_, ⟨⟩⟩⟩)
-  have : IsIso (slice.π ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y)) :=
-    slice.isIso_π _ (by rintro ⟨⟨_, ⟨⟩⟩⟩)
-  -- The map `g` of `isPullback_map`, constant at `x` in its first component.
-  have w : (const x ≫ inv (slice.π _)) ≫ (slice.map (𝟙 _) p (by simp) :
-        slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y) ⟶
-          slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p)) =
-      ((sliceFiberIso (p.app _ x) (p.app _ y)).inv ≫
-        (fiber (slice.π (yonedaEquiv.symm (p.app _ y))) (p.app _ x)).ι ≫
-          (slice.map (𝟙 _) (𝟙 _)
-            (by rw [Category.id_comp, Category.comp_id, yonedaEquiv_symm_comp]) :
-            _ ⟶ slice (yonedaEquiv.symm y ≫ p))) ≫
-        (slice.map (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι (𝟙 Y) (by simp) :
-          slice (yonedaEquiv.symm y ≫ p) ⟶
-            slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p)) := by
-    rw [← cancel_mono (slice.π _), Category.assoc, slice.map_π, Category.assoc,
-      IsIso.inv_hom_id_assoc, const_comp]
-    simp only [Category.assoc, slice.map_π, Category.comp_id, fiber.ι_comp, comp_const]
-  exact MorphismProperty.of_isPullback (isPullback_map p x y (pullback.lift _ _ w)
-    (by rw [pullback.lift_fst_assoc, Category.assoc, IsIso.inv_hom_id, Category.comp_id])
-    (pullback.lift_snd _ _ _)) (rlp_restrictionMap_bot hp _)
+    (monomorphisms SSet.{u}).rlp (map x y p) :=
+  MorphismProperty.of_isPullback (isPullback_map p x y) (rlp_restrictionMap_bot hp _)
 
 end rightMappingSpace
 
