@@ -21,24 +21,29 @@ zeroth-order term `G = -X_{K_s} - J X_{K_t}` (`TauCeti.SymplecticForm.floerZerot
 `TauCeti.SymplecticForm.floerOperator_eq_add_floerZerothOrder`). The **Floer section** around a
 reference map `w`, `TauCeti.SymplecticForm.floerSection`, is therefore the quasilinear section
 `TauCeti.CylinderSobolev.quasilinearSection` of these coefficients, with `b = ∂t w`: a map from
-`W^{1,p}(ℝ × S¹, V)` to `Lᵖ`, for `p > 2`, whose value at a test section `ξ` is
+`W^{1,p}(ℝ × S¹, V)` to `Lᵖ`, for `p > 2`. When `w` is differentiable, `∂t w` and `J` are
+bounded, and `J` and `G` are Lipschitz in `y` uniformly in `z`, its value at a test section `ξ` is
 `F(w + ξ) - F(w)` almost everywhere on the strip (`TauCeti.SymplecticForm.floerSection_toW1p_ae`).
 It is strictly differentiable, with derivative the linearization
 `TauCeti.CylinderSobolev.quasilinearLinearization` of these coefficients
 (`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`).
 
-The zeros of the Floer section are the maps `u = w + ξ` with `F(u) = F(w)`. When the reference map
-is itself a Floer cylinder, `F(w) = 0`, they are the Floer cylinders near `w`, and the Floer
-section is the map to which the implicit function theorem and the Sard–Smale theorem are applied
-in the transversality theory of Floer cylinders. For a reference map with `F(w)` in `Lᵖ`, such as
-a pre-glued map, the chart map `ξ ↦ F(w + ξ)` is the Floer section plus the constant `F(w)`, which
-has the same derivative.
+Under the hypotheses of `TauCeti.SymplecticForm.floerSection_apply_ae` (`∂t w` and `J` bounded,
+`J` and `G` Lipschitz in `y` uniformly in `z`), the Floer section is everywhere given by its
+pointwise formula; outside them it may take the junk value `0`. Under these hypotheses, with `w`
+differentiable, the zeros of the Floer section are the maps `u = w + ξ` with `F(u) = F(w)` almost
+everywhere. When the reference map is itself a Floer cylinder, `F(w) = 0`, they are the Floer
+cylinders near `w`, and the Floer section is the map to which the implicit function theorem and the
+Sard–Smale theorem are applied in the transversality theory of Floer cylinders. For a reference map
+with `F(w)` in `Lᵖ`, such as a pre-glued map, the chart map `ξ ↦ F(w + ξ)` is then the Floer
+section plus the constant `F(w)`, which has the same derivative.
 
 ## Main definitions
 
 * `TauCeti.SymplecticForm.floerSection`: the quasilinear section with `A = J`,
-  `G = floerZerothOrder` and `b = ∂t w`; on test sections it equals `F(w + ξ) - F(w)`
-  (`TauCeti.SymplecticForm.floerSection_toW1p_ae`).
+  `G = floerZerothOrder` and `b = ∂t w`; under the hypotheses of
+  `TauCeti.SymplecticForm.floerSection_toW1p_ae`, on test sections it equals `F(w + ξ) - F(w)`
+  almost everywhere.
 
 ## Main results
 
@@ -72,8 +77,11 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-- **The Floer section** around a reference map `w`: the quasilinear section
 `TauCeti.CylinderSobolev.quasilinearSection` from `W^{1,p}(ℝ × S¹, V)` to `Lᵖ` of the Floer
-operator, with coefficients `A = J` and `G = -X_{K_s} - J X_{K_t}` and with `b = ∂t w`. On the jet
-of a test section `ξ` it is `F(w + ξ) - F(w)` (`TauCeti.SymplecticForm.floerSection_toW1p_ae`). -/
+operator, with coefficients `A = J` and `G = -X_{K_s} - J X_{K_t}` and with `b = ∂t w`. Under the
+hypotheses of `TauCeti.SymplecticForm.floerSection_toW1p_ae` (`w` differentiable, `∂t w` and `J`
+bounded, `J` and `G` Lipschitz in `y`), on the jet of a test section `ξ` it is almost everywhere
+`F(w + ξ) - F(w)`. When the pointwise expression of the section does not lie in `Lᵖ`, its value is
+`0`. -/
 def floerSection (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (w : ℝ × ℝ → V) (p : ℝ≥0∞) [Fact (1 ≤ p)] (x : W1p V p) : Lp V p stripMeasure :=
   quasilinearSection J (ω.floerZerothOrder J Ks Kt) w (fun z ↦ fderiv ℝ w z (0, 1)) p x

@@ -27,10 +27,14 @@ and on the value `y` of the map. For the Floer equation
 `G = -X_{K_s} - J X_{K_t}`. Transversality and gluing study the zeros of `F` near a reference map
 `w` in a chart `ξ ↦ w + ξ`, with `ξ` in the Sobolev space `W^{1,p}(ℝ × S¹, V)` for `p > 2`, the
 dimension of the domain. This file constructs the map `ξ ↦ F(w + ξ) - F(w)` between Banach spaces
-and its derivative. Its zeros are the solutions of `F(w + ξ) = F(w)`, which are the zeros of `F`
-near `w` when `w` is itself a solution, `F(w) = 0`. For a reference map with `F(w)` in `Lᵖ`, such
-as a pre-glued map, the chart map `ξ ↦ F(w + ξ)` of `F` is the section plus the constant `F(w)`,
-an affine shift with the same derivative.
+and its derivative. The difference lies in `Lᵖ` under the hypotheses of
+`TauCeti.CylinderSobolev.quasilinearSection_apply_ae` (`b` and `A` bounded, `A` and `G` Lipschitz
+in `y`, uniformly in `z`), and the section is then everywhere given by its formula; outside these
+hypotheses it may take the junk value `0`. Under them, its zeros are the solutions of
+`F(w + ξ) = F(w)` almost everywhere, which are the zeros of `F` near `w` when `w` is itself a
+solution, `F(w) = 0`. For a reference map with `F(w)` in `Lᵖ`, such as a pre-glued map, the chart
+map `ξ ↦ F(w + ξ)` of `F` is then the section plus the constant `F(w)`, an affine shift with the
+same derivative.
 
 **The section.** For `x = (ξ, ξ_s, ξ_t)` in `W^{1,p}` (`TauCeti.CylinderSobolev.W1p`), with `ξ`
 read through its continuous representative (`TauCeti.CylinderSobolev.continuousValue`), and for
@@ -39,11 +43,12 @@ a function `b` standing for `∂t w`, the **quasilinear section**
 
 `ξ_s + A(z, w + ξ) (b + ξ_t) - A(z, w) b + G(z, w + ξ) - G(z, w)`.
 
-When `b = ∂t w` and `ξ` is smooth, this is `F(w + ξ) - F(w)`: the operator in the chart, minus
-its value at the reference map, which need not lie in `Lᵖ`. Its pointwise formula is
+When `b = ∂t w` and `ξ` is smooth, this expression is `F(w + ξ) - F(w)`: the operator in the
+chart, minus its value at the reference map, which need not lie in `Lᵖ`. When the expression does
+not lie in `Lᵖ`, the section takes the value `0`. Its pointwise formula is
 `TauCeti.CylinderSobolev.quasilinearSection_apply_ae`, under bounds making every term of it lie in
-`Lᵖ`: `b` and `A` bounded, `A` and `G` Lipschitz in `y`, uniformly in `z`. On the jet of a test
-section it is computed from classical derivatives
+`Lᵖ`: `b` and `A` bounded, `A` and `G` Lipschitz in `y`, uniformly in `z`. Under the same bounds,
+on the jet of a test section it is almost everywhere computed from classical derivatives
 (`TauCeti.CylinderSobolev.quasilinearSection_toW1p_ae`).
 
 **The linearization.** At `x₀ = (ξ₀, ξ₀_s, ξ₀_t)`, with `u₀ = w + ξ₀`, the derivative of the
