@@ -65,8 +65,8 @@ theorem fderiv_sqrtEsymmTwo_one_single (j : Fin 3) :
       (fun μ : Fin 3 → ℝ ↦ μ 0 * μ 1 + μ 0 * μ 2 + μ 1 * μ 2) 1).sqrt (by norm_num)
   -- On the line through `e` in a coordinate direction, `σ₂ = 3 + 2t`.
   have h := (((hasDerivAt_id' (0 : ℝ)).const_mul 2).const_add 3).sqrt (by norm_num)
-  rw [(hd.hasFDerivAt.hasLineDerivAt _).unique (h.hasLineDerivAt_of_add_smul
-    (.of_forall fun t ↦ by fin_cases j <;> simp [sqrtEsymmTwo] <;> ring_nf))]
+  rw [hd.fderiv_apply_eq_of_hasDerivAt_add_smul h
+    (.of_forall fun t ↦ by fin_cases j <;> simp [sqrtEsymmTwo] <;> ring_nf)]
   rw [show (3 : ℝ) + 2 * 0 = 3 by norm_num]
   field_simp
 
@@ -95,8 +95,8 @@ theorem fderiv_quotTwo_single_zero {μ : Fin 2 → ℝ} (hμ : μ 0 + μ 1 ≠ 0
   -- On the line `μ + t e₁`, `σ₂/σ₁ = s λ₂/(s + λ₂)` with `s = λ₁ + t`.
   have h := ((hasDerivAt_id' (μ 0)).mul_const (μ 1)).fun_div
     ((hasDerivAt_id' (μ 0)).add_const (μ 1)) hμ
-  rw [((differentiableAt_quotTwo hμ).hasFDerivAt.hasLineDerivAt _).unique
-    (h.hasLineDerivAt_of_add_smul (.of_forall fun t ↦ by simp [quotTwo]))]
+  rw [(differentiableAt_quotTwo hμ).fderiv_apply_eq_of_hasDerivAt_add_smul h
+    (.of_forall fun t ↦ by simp [quotTwo])]
   field_simp
   ring
 
@@ -106,8 +106,8 @@ theorem fderiv_quotTwo_single_one {μ : Fin 2 → ℝ} (hμ : μ 0 + μ 1 ≠ 0)
   -- On the line `μ + t e₂`, `σ₂/σ₁ = λ₁ s/(λ₁ + s)` with `s = λ₂ + t`.
   have h := ((hasDerivAt_id' (μ 1)).const_mul (μ 0)).fun_div
     ((hasDerivAt_id' (μ 1)).const_add (μ 0)) hμ
-  rw [((differentiableAt_quotTwo hμ).hasFDerivAt.hasLineDerivAt _).unique
-    (h.hasLineDerivAt_of_add_smul (.of_forall fun t ↦ by simp [quotTwo]))]
+  rw [(differentiableAt_quotTwo hμ).fderiv_apply_eq_of_hasDerivAt_add_smul h
+    (.of_forall fun t ↦ by simp [quotTwo])]
   field_simp
   ring
 
@@ -171,8 +171,8 @@ theorem fderiv_quotThree_pointM_single_zero {M : ℝ} (hM : 0 < M) :
   -- On the line `(M + t, 1, 1)`, `σ₂/σ₁ = (2s + 1)/(s + 2)` with `s = M + t`.
   have h := (((hasDerivAt_id' M).const_mul 2).add_const 1).fun_div
     ((hasDerivAt_id' M).add_const 2) hM2
-  rw [((differentiableAt_quotThree (by simp; linarith)).hasFDerivAt.hasLineDerivAt _).unique
-    (h.hasLineDerivAt_of_add_smul (.of_forall fun t ↦ by simp [quotThree]; ring_nf))]
+  rw [(differentiableAt_quotThree (by simp; linarith)).fderiv_apply_eq_of_hasDerivAt_add_smul h
+    (.of_forall fun t ↦ by simp [quotThree]; ring_nf)]
   field_simp
   ring
 
@@ -184,8 +184,8 @@ theorem fderiv_quotThree_pointM_single_of_ne_zero {M : ℝ} (hM : 0 < M) {j : Fi
   -- `σ₂/σ₁ = ((M + 1)s + M)/(s + M + 1)` with `s = 1 + t`.
   have h := (((hasDerivAt_id' (1 : ℝ)).const_mul (M + 1)).add_const M).fun_div
     ((hasDerivAt_id' (1 : ℝ)).add_const (M + 1)) (by linarith)
-  rw [((differentiableAt_quotThree (by simp; linarith)).hasFDerivAt.hasLineDerivAt _).unique
-    (h.hasLineDerivAt_of_add_smul (.of_forall fun t ↦ ?_))]
+  rw [(differentiableAt_quotThree (by simp; linarith)).fderiv_apply_eq_of_hasDerivAt_add_smul h
+    (.of_forall fun t ↦ ?_)]
   · have hM2 : M + 2 ≠ 0 := by linarith
     field_simp
     ring
