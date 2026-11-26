@@ -92,6 +92,11 @@ relative homotopy invariance of cubical homology is transported from the simplic
   `TopPair.IsCubicalRepresentative.smul`, `TopPair.IsCubicalRepresentative.zsmul`,
   `TopPair.IsCubicalRepresentative.unique`:
   representatives are linear and determine their class.
+* `TopPair.IsCubicalRepresentative.of_sub_mem_range`: a representative may be changed by a chain
+  of the subspace.
+* `TopPair.mem_range_map_ofInclusion_iff`, `TopPair.sub_mem_range_map_ofInclusion`: for nested
+  subsets `A ⊆ T` of a space, the chains of the subspace of the pair `(T, A)` are the chains of `T`
+  whose push-forward is supported in `A`.
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -550,6 +555,21 @@ theorem IsCubicalRepresentative.unique {c : ((normalizedCubicalChainComplex k).o
   obtain ⟨r', hr', rfl⟩ := h'
   rw [(P.cubicalChainComplex k).moduleCat_iCycles_injective n (hr.symm.trans hr')]
 
+/-- A chain differing from a representative of a relative class by a chain of the subspace
+represents the same class. -/
+theorem IsCubicalRepresentative.of_sub_mem_range {c c' : NormalizedCubicalChain P.fst k n}
+    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c' μ)
+    (hc : c - c' ∈ LinearMap.range (NormalizedCubicalChain.map k P.map.hom n)) :
+    P.IsCubicalRepresentative k c μ := by
+  have hc' : c - c' ∈ LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f n).hom := by
+    obtain ⟨d, hd⟩ := hc
+    exact ⟨d, (normalizedCubicalChainComplex_map_f_apply ..).trans hd⟩
+  obtain ⟨r, hr, rfl⟩ := (TopPair.isCubicalRepresentative_iff _ _).1 h
+  refine (TopPair.isCubicalRepresentative_iff _ _).2 ⟨r, ?_, rfl⟩
+  rw [← hr]
+  exact sub_eq_zero.1 ((LinearMap.map_sub _ c c').symm.trans
+    ((HomologicalComplex.cokernel_π_f_apply_eq_zero_iff _ _ _).2 hc'))
+
 /-- **Relative cycles represent relative classes**: a chain of the ambient space of a pair whose
 boundary is a chain of the subspace represents a class of the relative homology. -/
 theorem exists_isCubicalRepresentative_of_d_mem
@@ -616,6 +636,40 @@ theorem exists_d_sub_mem_range_of_isZero
   exact h.eq_zero_iff.1 ((ModuleCat.subsingleton_of_isZero hP).elim _ _)
 
 end Representative
+
+section Support
+
+variable {k} {X : Type u} [TopologicalSpace X]
+
+/-- For nested subsets `A ⊆ T`, a chain of `T` is a chain of `A`, a chain of the subspace of the
+pair `(T, A)`, exactly when its push-forward to `X` is supported in `A`. -/
+theorem mem_range_map_ofInclusion_iff {A T : Set X} (h : A ⊆ T) {n : ℕ}
+    (c : NormalizedCubicalChain (TopPair.ofInclusion (X := TopCat.of X) h).fst k n) :
+    c ∈ LinearMap.range (NormalizedCubicalChain.map k
+        (TopPair.ofInclusion (X := TopCat.of X) h).map.hom n) ↔
+      NormalizedCubicalChain.map k (ContinuousMap.subtypeVal T) n c ∈
+        NormalizedCubicalChain.supportedIn k A n := by
+  rw [NormalizedCubicalChain.range_map_eq_supportedIn_range (R := k)
+      (TopPair.ofInclusion (X := TopCat.of X) h).isEmbedding_map.isInducing n,
+    TopPair.range_ofInclusion_map]
+  refine (NormalizedCubicalChain.map_mem_supportedIn_image_iff k (ι := ContinuousMap.subtypeVal T)
+    Topology.IsEmbedding.subtypeVal (Subtype.val ⁻¹' A) c).symm.trans ?_
+  have himage : ⇑(ContinuousMap.subtypeVal T) '' (Subtype.val ⁻¹' A) = A :=
+    (Subtype.image_preimage_coe T A).trans (Set.inter_eq_right.2 h)
+  rw [himage]
+
+/-- For nested subsets `A ⊆ T`, the difference of two chains of `T` is a chain of `A` when the
+difference of their push-forwards to `X` is supported in `A`. -/
+theorem sub_mem_range_map_ofInclusion {A T : Set X} (h : A ⊆ T) {n : ℕ}
+    (c c' : NormalizedCubicalChain T k n)
+    (hc : NormalizedCubicalChain.map k (ContinuousMap.subtypeVal T) n c -
+        NormalizedCubicalChain.map k (ContinuousMap.subtypeVal T) n c' ∈
+      NormalizedCubicalChain.supportedIn k A n) :
+    c - c' ∈ LinearMap.range (NormalizedCubicalChain.map k
+      (TopPair.ofInclusion (X := TopCat.of X) h).map.hom n) :=
+  (mem_range_map_ofInclusion_iff h (c - c')).2 (by rwa [map_sub])
+
+end Support
 
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
 subspace `A'` induces the zero map on relative cubical chains. -/

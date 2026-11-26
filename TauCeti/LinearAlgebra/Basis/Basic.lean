@@ -30,6 +30,8 @@ vectors indexed by `ι`.
   that coordinate times the corresponding basis vector.
 * `Module.Basis.sum_repr_mul_repr'`: expanding a vector in a finite basis `b'` and reading a
   coordinate in a basis `b`, in the multiplication order valid over a noncommutative semiring.
+* `Module.Basis.repr_finsetSum_smul_self_apply`: the coordinates of a combination of basis vectors
+  over a `Finset` are its coefficients.
 * `Module.Basis.intertwines_of_apply`: a linear map that intertwines two endomorphisms on a basis
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
@@ -120,6 +122,17 @@ theorem sum_repr_mul_repr' {κ : Type*} [Fintype κ] (b : Basis ι K V) (b' : Ba
     ∑ j, b'.repr x j * b.repr (b' j) i = b.repr x i := by
   have h := congrArg (fun y ↦ b.repr y i) (b'.sum_repr x)
   simpa only [map_sum, map_smul, Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul] using h
+
+/-- The `i`-th coordinate of a combination `∑ j ∈ S, f j • b j` of basis vectors is `f i`, when
+`f` vanishes at `i` outside `S`: a `Finset` counterpart of `Module.Basis.repr_sum_self`. -/
+theorem repr_finsetSum_smul_self_apply (b : Basis ι K V) (S : Finset ι) (f : ι → K) {i : ι}
+    (hf : i ∉ S → f i = 0) : b.repr (∑ j ∈ S, f j • b j) i = f i := by
+  classical
+  simp only [map_sum, map_smul, repr_self, Finsupp.finsetSum_apply, Finsupp.smul_apply,
+    Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq']
+  split_ifs with hi
+  · rfl
+  · exact (hf hi).symm
 
 /-- A linear map intertwines two endomorphisms if it does so on every vector of a basis. -/
 theorem intertwines_of_apply {W : Type*} [AddCommMonoid W] [Module K W]
