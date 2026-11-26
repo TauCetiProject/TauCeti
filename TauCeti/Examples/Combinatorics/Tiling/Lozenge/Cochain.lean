@@ -92,13 +92,13 @@ example : IsSimplyConnectedRegion
       ⟨(0, 0), true⟩} := by
   have h1 := isSimplyConnectedRegion_singleton (⟨(0, 0), true⟩ : TriFace)
   have h2 := h1.insert_of_notMem_regionVertices (f := ⟨(0, 0), false⟩) (i := 2) (p := (0, 1))
-    (by simp) (by simp) (by simp [Prod.ext_iff]) (by simp [Prod.ext_iff])
+    (by simp) (by simp) (by simp [Prod.ext_iff])
   have h3 := h2.insert_of_notMem_regionVertices (f := ⟨(-1, 0), true⟩) (i := 1) (p := (-1, 0))
-    (by simp) (by simp) (by simp [Prod.ext_iff]) (by simp [Prod.ext_iff])
+    (by simp) (by simp) (by simp [Prod.ext_iff])
   have h4 := h3.insert_of_notMem_regionVertices (f := ⟨(-1, -1), false⟩) (i := 0) (p := (-1, -1))
-    (by simp) (by simp) (by simp [Prod.ext_iff]) (by simp [Prod.ext_iff])
+    (by simp) (by simp) (by simp [Prod.ext_iff])
   have h5 := h4.insert_of_notMem_regionVertices (f := ⟨(-1, -1), true⟩) (i := 2) (p := (0, -1))
-    (by simp) (by simp) (by simp [Prod.ext_iff]) (by simp [Prod.ext_iff])
+    (by simp) (by simp) (by simp [Prod.ext_iff])
   exact h5.insert_of_two_edges (f := ⟨(0, -1), false⟩) (i := 0) (j := 1) (by decide)
     (by simp) (by simp)
 

@@ -39,7 +39,8 @@ of the faces of `R`, which makes the local height rules of a tiling consistent.
 * `TauCeti.IsExactCochainOn.isClosedCochainOn`: exact cochains are closed.
 * `TauCeti.IsConnectedRegion.sub_eq_sub_of_isCochainPrimitiveOn`: on a connected region a
   primitive is unique up to an additive constant.
-* `TauCeti.isSimplyConnectedRegion_vadd_iff`: simple connectivity is invariant under translations.
+* `TauCeti.isSimplyConnectedRegion_vadd_iff` and `TauCeti.isSimplyConnectedRegion_rot_iff`:
+  simple connectivity is invariant under translations and the rotation `ρ`.
 * `TauCeti.IsCochainPrimitiveOn.insert_of_isClosedCochainOn`: if `g` is a primitive on `R` of a
   cochain `c` closed on the face `f`, and `g` is correct on two edges of `f`, then `g` is a
   primitive of `c` on `insert f R`.
@@ -306,6 +307,57 @@ variable (w : ℤ × ℤ)
 
 end Translation
 
+/-! ### The rotation -/
+
+section Rotation
+
+/-- **Closedness under the rotation.** `ρ` preserves the orientation of the edges of direction
+`1` and reverses those of directions `2` and `3` (`ρ e₂ = -e₃` and `ρ e₃ = -e₁`), so a cochain `c`
+is closed on `ρ R` exactly when its signed pullback, `c ∘ ρ` along `e₁` and `-c ∘ ρ` along `e₂`
+and `e₃`, is closed on `R`. -/
+@[simp] theorem isClosedCochainOn_rot_iff :
+    IsClosedCochainOn (TriFace.rot '' R) c ↔
+      IsClosedCochainOn R fun e => if e.k = 0 then c (TriEdge.rot e) else -c (TriEdge.rot e) := by
+  simp only [isClosedCochainOn_def, Set.forall_mem_image, TriFace.edge_rot, TriFace.edge_k]
+  refine forall₂_congr fun f _ => ?_
+  simp only [Fin.reduceSub, Fin.reduceEq, ↓reduceIte]
+  constructor <;> intro h <;> linarith
+
+/-- A function `g` is a primitive of `c` on `ρ R` exactly when `g ∘ ρ` is a primitive on `R` of
+the signed pullback of `c` (see `isClosedCochainOn_rot_iff`). -/
+@[simp] theorem isCochainPrimitiveOn_rot_iff :
+    IsCochainPrimitiveOn (TriFace.rot '' R) c g ↔
+      IsCochainPrimitiveOn R (fun e => if e.k = 0 then c (TriEdge.rot e) else -c (TriEdge.rot e))
+        fun u => g (latticeRot u) := by
+  simp only [isCochainPrimitiveOn_def, regionEdges_rot, Set.forall_mem_image, TriEdge.rot_v,
+    TriEdge.target_rot]
+  refine forall₂_congr fun e _ => ?_
+  split_ifs <;> constructor <;> intro h <;> linarith
+
+@[simp] theorem isExactCochainOn_rot_iff :
+    IsExactCochainOn (TriFace.rot '' R) c ↔
+      IsExactCochainOn R fun e => if e.k = 0 then c (TriEdge.rot e) else -c (TriEdge.rot e) := by
+  refine ⟨fun ⟨g, hg⟩ => ⟨_, isCochainPrimitiveOn_rot_iff.1 hg⟩, fun ⟨g, hg⟩ =>
+    ⟨fun u => g (latticeRot.symm u), isCochainPrimitiveOn_rot_iff.2 ?_⟩⟩
+  simpa only [AddEquiv.symm_apply_apply] using hg
+
+/-- **Simple connectivity is invariant under the rotation `ρ`.** -/
+@[simp] theorem isSimplyConnectedRegion_rot_iff (R : Set TriFace) :
+    IsSimplyConnectedRegion (TriFace.rot '' R) ↔ IsSimplyConnectedRegion R := by
+  have key : ∀ R : Set TriFace, IsSimplyConnectedRegion R →
+      IsSimplyConnectedRegion (TriFace.rot '' R) := fun R h =>
+    ⟨h.nonempty.image _, (isConnectedRegion_rot_iff R).2 h.isConnectedRegion, fun c hc =>
+      isExactCochainOn_rot_iff.2
+        (h.isExactCochainOn_of_isClosedCochainOn _ (isClosedCochainOn_rot_iff.1 hc))⟩
+  refine ⟨fun h => ?_, key R⟩
+  have h3 : TriFace.rot '' (TriFace.rot '' (TriFace.rot '' R)) = R := by
+    have h : ∀ f, TriFace.rot (TriFace.rot (TriFace.rot f)) = f := fun f => by
+      simpa [pow_succ] using DFunLike.congr_fun TriFace.rot_pow_three f
+    simp only [Set.image_image, h, Set.image_id']
+  simpa only [h3] using key _ (key _ h)
+
+end Rotation
+
 /-! ### Faces and shelling -/
 
 /-- If a cochain vanishes on two distinct edges of a face and is closed on that face, it vanishes
@@ -353,8 +405,9 @@ theorem isSimplyConnectedRegion_singleton (f : TriFace) : IsSimplyConnectedRegio
 simply connected. -/
 theorem IsSimplyConnectedRegion.insert_of_notMem_regionVertices (hR : IsSimplyConnectedRegion R)
     {f : TriFace} {i : Fin 3} (hi : f.edge i ∈ regionEdges R) {p : ℤ × ℤ}
-    (hp : p ∈ f.vertices) (hpi : p ∉ (f.edge i).endpoints) (hpR : p ∉ regionVertices R) :
+    (hp : p ∈ f.vertices) (hpR : p ∉ regionVertices R) :
     IsSimplyConnectedRegion (insert f R) := by
+  have hpi : p ∉ (f.edge i).endpoints := fun h => hpR (mem_regionVertices_of_mem_endpoints hi h)
   have hj : i + 1 ≠ i := by fin_cases i <;> decide
   set e₁ := f.edge (i + 1) with he₁
   have hpe₁ : p ∈ e₁.endpoints := TriFace.mem_endpoints_of_notMem hj.symm hp hpi
