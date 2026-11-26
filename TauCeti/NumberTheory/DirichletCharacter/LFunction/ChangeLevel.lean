@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 
 /-!
 # Uniform bounds for deleted Euler factors
@@ -23,6 +24,9 @@ characters at their common level, including primes dividing both conductors.
 The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
 meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
 pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
+For principal characters `LFunctionTrivChar₁_eq_mul_eulerFactors` gives the comparison even at `1`
+after the pole is removed. `one_sub_rpow_pow_le_norm_eulerFactors` bounds the correction from
+below in terms of the number of distinct prime divisors, rather than the size of the new level.
 The factors are also nonzero on `Re(s) < 0`:
 `DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
 
@@ -40,7 +44,7 @@ open scoped Topology
 namespace DirichletCharacter
 
 private theorem norm_mul_prime_cpow_le {M p : ℕ} (χ : DirichletCharacter ℂ M)
-    (hp : p.Prime) {δ : ℝ} (hδ : 0 < δ) {s : ℂ} (hs : δ ≤ s.re) :
+    (hp : p.Prime) {δ : ℝ} (hδ : 0 ≤ δ) {s : ℂ} (hs : δ ≤ s.re) :
     ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (2 : ℝ) ^ (-δ) := by
   rw [norm_mul, norm_natCast_cpow_of_pos hp.pos, neg_re]
   calc
@@ -70,7 +74,7 @@ theorem prod_one_sub_mul_prime_cpow_ne_zero {M N : ℕ} (χ : DirichletCharacter
       exact lt_irrefl _ hlt
     · rw [χ.map_nonunit hu, zero_mul] at h1
       exact zero_ne_one h1
-  · have hlt := (norm_mul_prime_cpow_le χ hp hs le_rfl).trans_lt
+  · have hlt := (norm_mul_prime_cpow_le χ hp hs.le le_rfl).trans_lt
       (Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (neg_neg_of_pos hs))
     rw [h1, norm_one] at hlt
     exact (lt_self_iff_false 1).mp hlt
@@ -92,7 +96,7 @@ theorem exists_norm_prod_one_sub_mul_prime_cpow_le_rpow {δ ε : ℝ}
   refine ⟨A, hA, fun M N hN χ s hs ↦ ?_⟩
   have hlocal (p : ℕ) (hp : p ∈ N.primeFactors) :
       ‖1 - χ p * (p : ℂ) ^ (-s)‖ ≤ K ∧ ‖(1 - χ p * (p : ℂ) ^ (-s))⁻¹‖ ≤ K := by
-    have hz := norm_mul_prime_cpow_le χ (Nat.prime_of_mem_primeFactors hp) hδ hs
+    have hz := norm_mul_prime_cpow_le χ (Nat.prime_of_mem_primeFactors hp) hδ.le hs
     have hlo : 1 - r ≤ ‖1 - χ p * (p : ℂ) ^ (-s)‖ := by
       have := norm_sub_norm_le (1 : ℂ) (χ p * (p : ℂ) ^ (-s))
       simp only [norm_one] at this
@@ -111,6 +115,36 @@ theorem exists_norm_prod_one_sub_mul_prime_cpow_le_rpow {δ ε : ℝ}
   · rw [← prod_inv_distrib, norm_prod]
     exact (prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) (fun p hp ↦ (hlocal p hp).2)).trans
       (by simpa using hbound N hN)
+
+/-- On `Re s ≥ δ ≥ 0`, each deleted Euler factor has norm at least `1 - 2 ^ (-δ)`.
+When `δ > 0`, a bound on the number of prime divisors thus bounds the product away from zero,
+independently of the level's prime-power exponents. -/
+theorem one_sub_rpow_pow_le_norm_eulerFactors {M N k : ℕ} (χ : DirichletCharacter ℂ M)
+    (hk : N.primeFactors.card ≤ k) {δ : ℝ} (hδ : 0 ≤ δ) {s : ℂ} (hs : δ ≤ s.re) :
+    (1 - (2 : ℝ) ^ (-δ)) ^ k ≤ ‖∏ p ∈ N.primeFactors, (1 - χ p * (p : ℂ) ^ (-s))‖ := by
+  have hbase : 0 ≤ 1 - (2 : ℝ) ^ (-δ) := sub_nonneg.mpr <| by
+    rw [← Real.rpow_zero (2 : ℝ)]
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (neg_nonpos.mpr hδ)
+  have hbase' : 1 - (2 : ℝ) ^ (-δ) ≤ 1 := sub_le_self _ (by positivity)
+  refine (pow_le_pow_of_le_one hbase hbase' hk).trans ?_
+  rw [norm_prod, ← prod_const]
+  refine prod_le_prod₀ (fun _ _ ↦ hbase) fun p hp ↦ ?_
+  have h := norm_mul_prime_cpow_le χ (Nat.prime_of_mem_primeFactors hp) hδ hs
+  have htri := norm_sub_norm_le (1 : ℂ) (χ p * (p : ℂ) ^ (-s))
+  rw [norm_one] at htri
+  linarith
+
+/-- After removing the principal pole, the change-of-level formula from level one holds
+at every `s`, including `s = 1`. -/
+theorem LFunctionTrivChar₁_eq_mul_eulerFactors (N : ℕ) [NeZero N] (s : ℂ) :
+    LFunctionTrivChar₁ N s =
+      LFunctionTrivChar₁ 1 s * ∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
+  by_cases hs : s = 1
+  · subst s
+    simp [LFunctionTrivChar₁, cpow_neg_one]
+  · rw [LFunctionTrivChar₁_apply_of_ne_one N hs, LFunctionTrivChar₁_one_apply_of_ne_one hs,
+      LFunctionTrivChar_eq_mul_riemannZeta hs]
+    ring
 
 /-- Raising the level multiplies `χ.LFunction` by the deleted Euler factors on a punctured
 neighbourhood of every `s : ℂ`. -/
