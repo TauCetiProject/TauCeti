@@ -228,9 +228,8 @@ theorem domain_eq_span_star_mul (hτ : IsTrace τ) :
     domain τ = Submodule.span ℂ
       {z | ∃ x ∈ sqIntegrable τ, ∃ y ∈ sqIntegrable τ, z = star y * x} := by
   refine le_antisymm (Submodule.span_le.2 fun z hz ↦ ?_) (Submodule.span_le.2 ?_)
-  · obtain ⟨b, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 (mem_finitePart.1 hz).1
-    exact Submodule.subset_span ⟨b, star_mul_self_mem_finitePart_iff.1 hz, b,
-      star_mul_self_mem_finitePart_iff.1 hz, rfl⟩
+  · obtain ⟨b, hb, rfl⟩ := exists_eq_star_mul_self_of_mem_finitePart hz
+    exact Submodule.subset_span ⟨b, hb, b, hb, rfl⟩
   · rintro _ ⟨x, hx, y, hy, rfl⟩
     exact hτ.star_mul_mem_domain hx hy
 
@@ -282,8 +281,8 @@ theorem domain_subset_sqIntegrable (hτ : IsTrace τ) : (domain τ : Set B) ⊆ 
   intro z hz
   induction hz using Submodule.span_induction with
   | mem z hz =>
-    obtain ⟨b, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 (mem_finitePart.1 hz).1
-    exact hτ.mul_mem_sqIntegrable_left _ (star_mul_self_mem_finitePart_iff.1 hz)
+    obtain ⟨b, hb, rfl⟩ := exists_eq_star_mul_self_of_mem_finitePart hz
+    exact hτ.mul_mem_sqIntegrable_left _ hb
   | zero => exact hτ.zero_mem_sqIntegrable
   | add z w _ _ hz hw => exact hτ.add_mem_sqIntegrable hz hw
   | smul c z _ hz => exact hτ.smul_mem_sqIntegrable c hz
@@ -499,8 +498,7 @@ theorem linearMap_mul_comm (hτ : IsTrace τ) {x : B} (hx : x ∈ domain τ) (z 
   induction hx using Submodule.span_induction with
   | mem x hx =>
     -- `x = b⋆b` with `b ∈ 𝔫_τ`, and both `τ(b⋆bz)` and `τ(zb⋆b)` equal `τ(bzb⋆)`.
-    obtain ⟨b, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 (mem_finitePart.1 hx).1
-    have hb := star_mul_self_mem_finitePart_iff.1 hx
+    obtain ⟨b, hb, rfl⟩ := exists_eq_star_mul_self_of_mem_finitePart hx
     have h₁ := hτ.linearMap_star_mul_comm (hτ.mul_mem_sqIntegrable_right z hb) hb
     have h₂ := hτ.linearMap_star_mul_comm hb (hτ.mul_mem_sqIntegrable_right (star z) hb)
     simp only [star_mul, star_star, mul_assoc] at h₁ h₂ ⊢
@@ -539,7 +537,7 @@ theorem linearMap_toTrace (ω : PositiveTracialFunctional B) (z : domain ω.toTr
     obtain ⟨hre, him⟩ := Complex.nonneg_iff.mp (map_nonneg ω (mem_finitePart.1 hx).1)
     simp only [ψ, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
       LinearMap.coe_ofClass, toTrace_apply, ENNReal.toReal_ofReal hre]
-    exact Complex.ext rfl him.symm
+    exact Complex.ext (Complex.ofReal_re _) (by simpa using him.symm)
   simp [← ω.isTrace_toTrace.eq_linearMap hψ, ψ]
 
 end PositiveTracialFunctional
