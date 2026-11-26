@@ -222,7 +222,7 @@ theorem toValuation_toAbsoluteValue :
 end NormedField
 
 /-- Mathlib's absolute value of a valuation of rank at most one is nonarchimedean. -/
-theorem Valuation.isNonarchimedean_absoluteValue {K Γ₀ : Type*} [Field K]
+theorem Valuation.isNonarchimedean_absoluteValue {K Γ₀ : Type*} [DivisionRing K]
     [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation K Γ₀) [RankLeOne v] :
     IsNonarchimedean v.absoluteValue := fun x y ↦ by
   simpa using v.norm_add_le x y

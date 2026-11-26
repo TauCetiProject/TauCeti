@@ -168,8 +168,9 @@ valuation subring. -/
 theorem valuationSubring_comp {L : Type*} [Field L] (hw : IsNonarchimedean w) {f : L →+* K}
     (hf : Function.Injective f) :
     (w.comp hf).valuationSubring (isNonarchimedean_comp hw hf) =
-      (w.valuationSubring hw).comap f :=
-  ValuationSubring.ext _ _ fun _ ↦ Iff.rfl
+      (w.valuationSubring hw).comap f := by
+  ext
+  simp [ValuationSubring.mem_comap, mem_valuationSubring_iff, comp_apply]
 
 /-- The valuation subring of the restriction of `w` to a subfield `L` is the intersection of the
 valuation subring of `w` with `L`. -/

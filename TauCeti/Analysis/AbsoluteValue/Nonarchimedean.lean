@@ -78,7 +78,7 @@ theorem isNonarchimedean_comp {R T S : Type*} [Semiring R] [Semiring T] [Semirin
     [LinearOrder S] {v : AbsoluteValue R S} (hv : IsNonarchimedean v) {f : T →+* R}
     (hf : Function.Injective f) :
     IsNonarchimedean (v.comp hf) := fun x y ↦ by
-  simpa [AbsoluteValue.comp] using hv (f x) (f y)
+  simpa only [comp_apply, map_add] using hv (f x) (f y)
 
 /-- An absolute value underneath a nonarchimedean absolute value is nonarchimedean. -/
 theorem isNonarchimedean_under_of_liesOver {K L S : Type*} [CommSemiring K] [Semiring L]
