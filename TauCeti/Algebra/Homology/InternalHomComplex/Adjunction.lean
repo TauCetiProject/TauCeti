@@ -28,7 +28,7 @@ the totalized tensor bifunctor `CategoryTheory.Functor.map₂HomotopyCategory` a
 If `C` is abelian, `P` is K-flat and `I` is K-injective, then `𝓗om^•(P, I)` is K-injective
 (`TauCeti.isKInjective_internalHomComplex`): a map from an acyclic complex `A` to `𝓗om^•(P, I)`
 uncurries to a map from the acyclic complex `P ⊗ A` to `I`. This is the input from which the
-derived tensor-Hom adjunction `K ⊗^L L ⊣ R𝓗om(L, -)` on the unbounded derived category is built.
+derived tensor-Hom adjunction `L ⊗^L - ⊣ R𝓗om(L, -)` on the unbounded derived category is built.
 
 ## Main definitions
 

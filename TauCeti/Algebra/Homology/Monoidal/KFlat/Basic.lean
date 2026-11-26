@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.Algebra.Homology.Single.Coproduct
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
+public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 import Mathlib.Algebra.Homology.BifunctorShift
 import TauCeti.Algebra.Homology.HomologySequenceLemmas
@@ -57,6 +58,8 @@ K-flat. K-flat resolutions of unbounded complexes are constructed in
 * `CochainComplex.isKFlat_single_of_flat`, `CochainComplex.isKFlat_tensorUnit`,
   `CochainComplex.isKFlat_of_bounded_flat`: flat objects, the monoidal unit complex, and bounded
   complexes of flat objects are K-flat.
+* `HomologicalComplex.acyclic_mapHomologicalComplex_tensorRight_of_preservesFiniteLimits`: in a
+  braided category, tensoring on the right with a flat object preserves acyclic complexes.
 * `CochainComplex.isKFlat_of_isColimit`: closure under suitable colimits.
 * `CochainComplex.isKFlat_of_boundedAbove_flat`: bounded above complexes of flat objects are
   K-flat.
@@ -169,6 +172,20 @@ theorem isKFlat_X₃ {S : ShortComplex (CochainComplex C ℤ)}
     (quasiIsoAt_iff_exactAt _ i (h₁ i)).2 (h₂ i))
 
 end CategoryTheory.ShortComplex.ShortExact
+
+omit [∀ K L : CochainComplex C ℤ, HasTensor K L] in
+/-- In a braided monoidal abelian category, tensoring on the right with a flat object `G` preserves
+acyclic complexes: by the braiding, `- ⊗ G` is isomorphic to `G ⊗ -`, which is exact. -/
+theorem HomologicalComplex.acyclic_mapHomologicalComplex_tensorRight_of_preservesFiniteLimits
+    [BraidedCategory C] (G : C) [PreservesFiniteLimits (tensorLeft G)]
+    [PreservesFiniteColimits (tensorLeft G)] {ι : Type*} {c : ComplexShape ι}
+    {E : HomologicalComplex C c} (hE : E.Acyclic) :
+    (((tensorRight G).mapHomologicalComplex c).obj E).Acyclic := by
+  have : PreservesFiniteLimits (tensorRight G) :=
+    preservesFiniteLimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
+  have : PreservesFiniteColimits (tensorRight G) :=
+    preservesFiniteColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
+  exact fun i ↦ (hE i).map (tensorRight G)
 
 namespace CochainComplex
 

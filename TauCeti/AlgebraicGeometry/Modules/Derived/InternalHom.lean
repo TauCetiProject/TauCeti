@@ -31,7 +31,13 @@ by `TauCeti.AlgebraicGeometry.Coherent.isLeftDerivabilityStructure_kFlat_localiz
 (`TauCeti/AlgebraicGeometry/Modules/Derived/Tensor.lean`). The separating family is the
 extensions by zero `j_! 𝒪_U` of the structure sheaf of the opens `U` of `X`
 (`SheafOfModules.isSeparating_freeYonedaFunctor`); they are flat, so tensoring with them preserves
-acyclic complexes (`SheafOfModules.acyclic_tensorRight_freeYonedaFunctor_obj`).
+acyclic complexes
+(`TauCeti.AlgebraicGeometry.Coherent.acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj`).
+The lemmas `TauCeti.AlgebraicGeometry.Coherent.derivedTensorInternalHomAdj_eq` and
+`TauCeti.AlgebraicGeometry.Coherent.derivedInternalHomStructureSheafIso_eq` identify the two
+constructions with the general ones, so that their API (for instance
+`TauCeti.exists_derivedTensorInternalHomAdj_eq` and
+`TauCeti.derivedInternalHomSingleUnitIso_hom_app`) applies to them.
 
 ## References
 
@@ -51,19 +57,17 @@ namespace TauCeti.AlgebraicGeometry.Coherent
 
 variable (X : Scheme.{u})
 
-/-- The extensions by zero `j_! 𝒪_U` of the structure sheaf of the opens `U` of `X`, as a family
-of `𝒪_X`-modules. -/
-private abbrev separatingFamily : ObjectProperty X.Modules :=
-  ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj
-
-/-- The extensions by zero `j_! 𝒪_U` of the structure sheaf form a separating family of
-`𝒪_X`-modules for which tensoring on the right preserves acyclic complexes. -/
-private lemma acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj (G : X.Modules)
-    (hG : separatingFamily X G)
+/-- Tensoring on the right with a member of the family of extensions by zero `j_! 𝒪_U` of the
+structure sheaf of the opens `U` of `X` preserves acyclic complexes, since these sheaves are flat
+(`HomologicalComplex.acyclic_mapHomologicalComplex_tensorRight_of_preservesFiniteLimits`). -/
+lemma acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj (G : X.Modules)
+    (hG : ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj G)
     (E : CochainComplex X.Modules ℤ) (hE : E.Acyclic) :
     (((tensorRight G).mapHomologicalComplex _).obj E).Acyclic := by
-  obtain ⟨U⟩ := hG
-  exact SheafOfModules.acyclic_tensorRight_freeYonedaFunctor_obj (R := X.sheaf) U hE
+  have : PreservesFiniteLimits (tensorLeft G) := by
+    obtain ⟨U⟩ := hG
+    exact SheafOfModules.preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj (R := X.sheaf) U
+  exact HomologicalComplex.acyclic_mapHomologicalComplex_tensorRight_of_preservesFiniteLimits G hE
 
 variable [HasDerivedCategory.{w} X.Modules]
 
@@ -76,18 +80,45 @@ def derivedTensorInternalHomAdj (L : DerivedCategory X.Modules) :
   -- `X.Modules` and the separating family are given explicitly: otherwise the category is read
   -- off the type of `SheafOfModules.isSeparating_freeYonedaFunctor` as the unfolded
   -- `SheafOfModules X.ringCatSheaf`, on which the instances for `X.Modules` are not found.
-  TauCeti.derivedTensorInternalHomAdj (C := X.Modules) (S := separatingFamily X)
+  TauCeti.derivedTensorInternalHomAdj (C := X.Modules)
+    (S := ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj)
     (SheafOfModules.isSeparating_freeYonedaFunctor _)
     (acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj X) (derivedTensor X.Modules)
     (derivedTensorCounit X.Modules) L
+
+/-- `Coherent.derivedTensorInternalHomAdj X L` is the general adjunction
+`TauCeti.derivedTensorInternalHomAdj` for the separating family of the `j_! 𝒪_U`, so that its API
+(`TauCeti.exists_derivedTensorInternalHomAdj_eq`,
+`TauCeti.derivedTensorInternalHomAdjOfQuasiIso_homEquiv`) applies. -/
+lemma derivedTensorInternalHomAdj_eq (L : DerivedCategory X.Modules) :
+    derivedTensorInternalHomAdj X L =
+      TauCeti.derivedTensorInternalHomAdj (C := X.Modules)
+        (S := ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj)
+        (SheafOfModules.isSeparating_freeYonedaFunctor _)
+        (acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj X) (derivedTensor X.Modules)
+        (derivedTensorCounit X.Modules) L :=
+  (rfl)
 
 /-- The derived internal Hom `R𝓗om(𝒪_X[0], -)` out of the structure sheaf placed in degree `0`
 is the identity functor of `D(𝒪_X)`. -/
 def derivedInternalHomStructureSheafIso :
     (derivedInternalHom X.Modules).obj
         (op ((DerivedCategory.singleFunctor X.Modules 0).obj (𝟙_ X.Modules))) ≅ 𝟭 _ :=
-  derivedInternalHomSingleUnitIso X.Modules (S := separatingFamily X)
+  derivedInternalHomSingleUnitIso X.Modules
+    (S := ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj)
     (SheafOfModules.isSeparating_freeYonedaFunctor _)
     (acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj X)
+
+/-- `Coherent.derivedInternalHomStructureSheafIso X` is the general isomorphism
+`TauCeti.derivedInternalHomSingleUnitIso` for the separating family of the `j_! 𝒪_U`, so that its
+components are given by `TauCeti.derivedInternalHomSingleUnitIso_hom_app` and
+`TauCeti.derivedInternalHomSingleUnitIso_inv_app`. -/
+lemma derivedInternalHomStructureSheafIso_eq :
+    derivedInternalHomStructureSheafIso X =
+      derivedInternalHomSingleUnitIso X.Modules
+        (S := ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj)
+        (SheafOfModules.isSeparating_freeYonedaFunctor _)
+        (acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj X) :=
+  (rfl)
 
 end TauCeti.AlgebraicGeometry.Coherent

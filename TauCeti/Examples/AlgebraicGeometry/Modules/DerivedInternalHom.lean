@@ -31,7 +31,7 @@ bifunctor above, given a separating family of objects `G` for which `- ⊗ G` pr
 complexes. For `𝒪_X`-modules the extensions by zero `j_! 𝒪_U` of the structure sheaf form such a
 family: they separate (`SheafOfModules.isSeparating_freeYonedaFunctor`) and are flat, so tensoring
 with them preserves acyclic complexes
-(`SheafOfModules.acyclic_tensorRight_freeYonedaFunctor_obj`).
+(`TauCeti.AlgebraicGeometry.Coherent.acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj`).
 
 ## References
 
@@ -64,7 +64,7 @@ example (K : CochainComplex X.Modules ℤ) (L : DerivedCategory X.Modules) :
     (P := (ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj :
       ObjectProperty X.Modules))
     (SheafOfModules.isSeparating_freeYonedaFunctor _)
-    (fun _ ⟨U⟩ _ hE ↦ SheafOfModules.acyclic_tensorRight_freeYonedaFunctor_obj (R := X.sheaf) U hE)
+    (AlgebraicGeometry.Coherent.acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj X)
     K L
 
 /-- The internal Hom complex out of `𝒪_X` placed in degree `0` is the target complex. -/

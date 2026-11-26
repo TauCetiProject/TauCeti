@@ -57,6 +57,10 @@ separating family is used (`TauCeti.quasiIso_internalHomComplexPrecomp`).
 
 * `TauCeti.exists_derivedTensorInternalHomAdj_eq`: `TauCeti.derivedTensorInternalHomAdj` is
   `TauCeti.derivedTensorInternalHomAdjOfQuasiIso` for some K-flat model.
+* `TauCeti.derivedInternalHomSingleUnitIso_hom_app` and
+  `TauCeti.derivedInternalHomSingleUnitIso_inv_app`: the components of
+  `TauCeti.derivedInternalHomSingleUnitIso`, in terms of the counit and unit of
+  `TauCeti.derivedTensorInternalHomAdj` and the derived left unitor.
 * `TauCeti.derivedTensorInternalHomAdjOfIsKFlat_homEquiv` and
   `TauCeti.derivedTensorInternalHomAdjOfQuasiIso_homEquiv`: the bijections of these adjunctions, in
   terms of currying on homotopy categories.
@@ -228,5 +232,37 @@ def derivedInternalHomSingleUnitIso {S : ObjectProperty C} (hS : S.IsSeparating)
     (derivedInternalHom C).obj (op ((DerivedCategory.singleFunctor C 0).obj (𝟙_ C))) ≅ 𝟭 _ :=
   ((derivedTensorInternalHomAdj hS hSacyclic (derivedTensor C) (derivedTensorCounit C)
     _).ofNatIsoLeft (derivedTensorLeftUnitor C)).rightAdjointUniq Adjunction.id
+
+/-- The component of `derivedInternalHomSingleUnitIso` at `M` is the counit of the derived
+tensor–internal Hom adjunction for `𝟙_ C[0]` at `M`, precomposed with the inverse of the derived
+left unitor `derivedTensorLeftUnitor`. -/
+lemma derivedInternalHomSingleUnitIso_hom_app {S : ObjectProperty C} (hS : S.IsSeparating)
+    (hSacyclic : ∀ G, S G → ∀ X : CochainComplex C ℤ, X.Acyclic →
+      (((tensorRight G).mapHomologicalComplex _).obj X).Acyclic) (M : DerivedCategory C) :
+    (derivedInternalHomSingleUnitIso C hS hSacyclic).hom.app M =
+      (derivedTensorLeftUnitor C).inv.app _ ≫
+        (derivedTensorInternalHomAdj hS hSacyclic (derivedTensor C) (derivedTensorCounit C)
+          _).counit.app M := by
+  simpa [derivedInternalHomSingleUnitIso] using Adjunction.rightAdjointUniq_hom_app_counit
+    ((derivedTensorInternalHomAdj hS hSacyclic (derivedTensor C) (derivedTensorCounit C)
+      _).ofNatIsoLeft (derivedTensorLeftUnitor C)) Adjunction.id M
+
+/-- The inverse of `derivedInternalHomSingleUnitIso` at `M` is the unit of the derived
+tensor–internal Hom adjunction for `𝟙_ C[0]` at `M`, followed by `R𝓗om(𝟙_ C[0], -)` applied to
+the derived left unitor `derivedTensorLeftUnitor`. -/
+lemma derivedInternalHomSingleUnitIso_inv_app {S : ObjectProperty C} (hS : S.IsSeparating)
+    (hSacyclic : ∀ G, S G → ∀ X : CochainComplex C ℤ, X.Acyclic →
+      (((tensorRight G).mapHomologicalComplex _).obj X).Acyclic) (M : DerivedCategory C) :
+    (derivedInternalHomSingleUnitIso C hS hSacyclic).inv.app M =
+      (derivedTensorInternalHomAdj hS hSacyclic (derivedTensor C) (derivedTensorCounit C)
+          _).unit.app M ≫
+        ((derivedInternalHom C).obj (op ((DerivedCategory.singleFunctor C 0).obj (𝟙_ C)))).map
+          ((derivedTensorLeftUnitor C).hom.app M) := by
+  rw [← cancel_mono ((derivedInternalHomSingleUnitIso C hS hSacyclic).hom.app M),
+    Iso.inv_hom_id_app]
+  -- the unit of `ofNatIsoLeft` is definitionally the unit followed by the image of the unitor
+  exact (Adjunction.unit_rightAdjointUniq_hom_app ((derivedTensorInternalHomAdj hS hSacyclic
+    (derivedTensor C) (derivedTensorCounit C) _).ofNatIsoLeft (derivedTensorLeftUnitor C))
+      Adjunction.id M).symm
 
 end TauCeti
