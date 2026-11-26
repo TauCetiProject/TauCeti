@@ -40,6 +40,7 @@ of `q`, and the gaps between equally spaced times are the length divided by `m +
 
 ## Main definitions
 
+* `TauCeti.Manifold.slideTimes`: the times at which the slide samples the broken geodesic.
 * `TauCeti.Manifold.cyclicDistanceCutSampleBrokenGeodesic`: the composite `evₘ₊₁ ∘ geoⁿ` of
   distance cuts.
 * `TauCeti.Manifold.cyclicDistanceCutSampleBrokenGeodesicHomotopy`: the homotopy from the iterate
@@ -131,16 +132,26 @@ theorem coe_cyclicDistanceCutSampleBrokenGeodesic_apply_zero {n : ℕ} {δ : Fin
 /-- The times of the slide at `s`: the convex combination `(1 - s) aⱼ + s bⱼ` of the time `aⱼ` at
 which the closed broken geodesic through `q` passes through the `j`-th vertex of
 `(q₀, …, q₀, q₁, …, qₙ)` and the equally spaced time `bⱼ = L j / (n + k + 1)` for its length `L`. -/
-private def slideTimes {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r) (s : unitInterval)
+def slideTimes {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r) (s : unitInterval)
     (q : cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) : ℝ≥0 :=
   unitInterval.toNNReal (unitInterval.symm s) *
       Fin.partialSum (fun i ↦ nndist (q.val i) (q.val (i + 1))) (Fin.castSucc ⟨j - k, by omega⟩) +
     unitInterval.toNNReal s * ((cyclicDistanceCutBrokenGeodesic hr hδ q).length *
       ((j : ℕ) / (n + k + 1 : ℕ) : ℝ≥0))
 
+/-- The defining formula of the times of the slide. -/
+theorem slideTimes_def {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r) (s : unitInterval)
+    (q : cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) :
+    slideTimes hr hδ s q j = unitInterval.toNNReal (unitInterval.symm s) *
+        Fin.partialSum (fun i ↦ nndist (q.val i) (q.val (i + 1)))
+          (Fin.castSucc ⟨j - k, by omega⟩) +
+      unitInterval.toNNReal s * ((cyclicDistanceCutBrokenGeodesic hr hδ q).length *
+        ((j : ℕ) / (n + k + 1 : ℕ) : ℝ≥0)) :=
+  (rfl)
+
 /-- At the start of the slide, the times are the vertex times. -/
 @[simp]
-private theorem slideTimes_zero {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
+theorem slideTimes_zero {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
     (q : cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) :
     slideTimes hr hδ 0 q j =
       Fin.partialSum (fun i ↦ nndist (q.val i) (q.val (i + 1)))
@@ -149,7 +160,7 @@ private theorem slideTimes_zero {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : �
 
 /-- At the end of the slide, the times are the equally spaced times. -/
 @[simp]
-private theorem slideTimes_one {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
+theorem slideTimes_one {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
     (q : cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) :
     slideTimes hr hδ 1 q j =
       (cyclicDistanceCutBrokenGeodesic hr hδ q).length * ((j : ℕ) / (n + k + 1 : ℕ) : ℝ≥0) := by
@@ -225,8 +236,8 @@ def cyclicDistanceCutSampleBrokenGeodesicHomotopy {n k : ℕ} {δ : Fin (n + 1) 
       MoorePath.sample_apply, MooreFreeLoopSpace.length_toMoorePath]
 
 /-- At `p = (s, q)`, the `j`-th vertex of the slide is the broken geodesic through `q` evaluated at
-the `j`-th time of the slide at `s`. It is private since the times of the slide are. -/
-private theorem coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply {n k : ℕ}
+the `j`-th time of the slide at `s`. -/
+theorem coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply {n k : ℕ}
     {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r)
     (hδδ' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
     (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j)

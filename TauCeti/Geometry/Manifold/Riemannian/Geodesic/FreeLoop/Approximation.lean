@@ -278,6 +278,14 @@ def sampleBrokenGeodesicLoopHomotopy :
   (MooreFreeLoopSpace.arcStraightening (isPathInterpolation_geodesicInterpolation hr)
     n.succ_pos).trans (brokenPathDurationHomotopy hr n)
 
+/-- The homotopy from a free loop to the broken geodesic through its sampled vertices straightens
+the arcs and then changes their durations. -/
+theorem sampleBrokenGeodesicLoopHomotopy_eq_trans :
+    sampleBrokenGeodesicLoopHomotopy hr n =
+      (MooreFreeLoopSpace.arcStraightening (isPathInterpolation_geodesicInterpolation hr)
+        n.succ_pos).trans (brokenPathDurationHomotopy hr n) :=
+  (rfl)
+
 /-- The homotopy changing the durations of the arcs keeps the base point: every broken loop of the
 homotopy starts at the first sampled vertex. -/
 @[simp]

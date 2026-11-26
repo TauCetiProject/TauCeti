@@ -60,6 +60,8 @@ The Moore path version of the construction is in
   an arc.
 * `TauCeti.isPathInterpolation_segment`: segments interpolate in a real topological vector
   space.
+* `TauCeti.straightenArcs_comp`: a map carrying interpolating paths to interpolating paths carries
+  the straightening homotopy along.
 
 ## References
 
@@ -311,6 +313,17 @@ theorem straightenArcs_target (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
 theorem straightenArcs_const (hρ : IsPathInterpolation ρ U) {x : X} (hx : (x, x) ∈ U)
     (t s : I) : straightenArcs ρ r (ContinuousMap.const I x) t s = x := by
   simp [straightenArcs, arcSquare, hρ.apply_diag x hx]
+
+/-- **Naturality of the straightening homotopy.** If a continuous map `F` carries the
+interpolating path of `ρ` from each vertex `f (i/r)` to each point of its arc to the interpolating
+path of `ρ'` between their images, then it carries the straightening homotopy of `f` to that of
+`F ∘ f`. -/
+theorem straightenArcs_comp {ρ' : Y × Y → C(I, Y)} (F : C(X, Y)) (hr : 0 < r)
+    (hF : ∀ i < r, ∀ a : I, ρ' (F (f (arcPoint r i 0)), F (f (arcPoint r i a))) =
+      F.comp (ρ (f (arcPoint r i 0), f (arcPoint r i a))))
+    (t s : I) : straightenArcs ρ' r (F.comp f) t s = F (straightenArcs ρ r f t s) := by
+  simp only [straightenArcs, arcSquare, ContinuousMap.comp_apply]
+  rw [hF _ (arcIndex_lt hr s), ContinuousMap.comp_apply]
 
 end Straighten
 
