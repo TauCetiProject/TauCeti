@@ -455,27 +455,9 @@ private theorem exists_algEquiv_map_prod_galEquivProd_gaussSum {m : ℕ} [NeZero
     (prod_galEquivProd_gaussSum_eq_of_isPrimitiveRoot m K' P' hcop' hζ₀ hζ' hx)
   rw [map_zpow₀, hσ_conj, heL_g]
 
-private theorem gaussSum_ne_zero (m : ℕ) [NeZero m]
-    {K L : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] (hm : 2 ≤ m)
-    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
-    [Field L] [Algebra K L]
-    {p : ℕ} [Fact p.Prime] [Fintype (𝓞 K ⧸ P)] [Algebra (ZMod p) (𝓞 K ⧸ P)]
-    {ζ : L} (hζ : IsPrimitiveRoot ζ p) :
-    gaussSum
-      ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-      (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one) ≠ 0 := by
-  let _ := Ideal.Quotient.field P
-  let f : 𝓞 K →+* L := (algebraMap K L).comp (algebraMap (𝓞 K) K)
-  have hf : Function.Injective f :=
-    (algebraMap K L).injective.comp (FaithfulSMul.algebraMap_injective _ _)
-  have hg_pow := (Ideal.stickelbergerPhi_prime P hP hm hf
-    (isPrimitive_traceAddChar (𝓞 K ⧸ P) hζ)).symm
-  exact fun hg0 ↦ Ideal.stickelbergerPhi_ne_zero hP hm
-    (hf (by rw [map_zero, ← hg_pow, hg0, zero_pow (NeZero.ne m)]))
-
 private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
     (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
-    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
     (x : stickelbergerDenominatorIdeal m) :
     ∃ u : Kˣ,
       let p : ℕ := Ideal.absNorm (Ideal.under ℤ P)
@@ -520,8 +502,13 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
         ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
       (traceAddChar p (𝓞 K ⧸ P) hζp.pow_eq_one))) ^
       (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a
+  have hcard : (Fintype.card (𝓞 K ⧸ P) : L) ≠ 0 := by
+    rw [← map_natCast (algebraMap K L)]
+    exact (map_ne_zero_iff _ (algebraMap K L).injective).mpr
+      (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
   have hgx_ne : gx ≠ 0 := Finset.prod_ne_zero_iff.mpr fun a _ ↦ zpow_ne_zero _ <|
-    (map_ne_zero_iff (σ a) (σ a).injective).mpr (gaussSum_ne_zero m hm P hP hζp)
+    (map_ne_zero_iff (σ a) (σ a).injective).mpr
+      (gaussSum_ne_zero hcard _ (isPrimitive_traceAddChar (𝓞 K ⧸ P) hζp))
   have hfixed (ρ : Gal(L/K)) : ρ gx = gx := by
     rw [← AlgEquiv.restrictScalars_apply ℚ ρ gx,
       IsCyclotomicExtension.restrictScalars_eq_galEquivProd_symm_one ℚ K L p hcop hζp ρ]
@@ -535,7 +522,7 @@ canonical homomorphism `Multiplicative (stickelbergerDenominatorIdeal m) →* K�
 to the Galois-descended element `∏_a (σ_a g(χ_P, ψ)) ^ (x.coeff a) ∈ Kˣ`. -/
 noncomputable def stickelbergerGaussProduct (m : ℕ) [NeZero m]
     (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
-    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m) :
+    (_hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m) :
     Multiplicative (stickelbergerDenominatorIdeal m) →* Kˣ := by
   classical
   let p : ℕ := Ideal.absNorm (Ideal.under ℤ P)
@@ -544,19 +531,19 @@ noncomputable def stickelbergerGaussProduct (m : ℕ) [NeZero m]
   let L := CyclotomicField p K
   exact
     { toFun := fun x ↦
-        Classical.choose (exists_stickelbergerGaussProduct m K hm P hP (Multiplicative.toAdd x))
+        Classical.choose (exists_stickelbergerGaussProduct m K P hP (Multiplicative.toAdd x))
       map_one' := Units.ext <| (algebraMap K L).injective <| by
         have h1 := Classical.choose_spec
-          (exists_stickelbergerGaussProduct m K hm P hP (Multiplicative.toAdd (1 :
+          (exists_stickelbergerGaussProduct m K P hP (Multiplicative.toAdd (1 :
             Multiplicative (stickelbergerDenominatorIdeal m))))
         dsimp only at h1; rw [Units.val_one, (algebraMap K L).map_one, h1]; simp
       map_mul' := fun x₁ x₂ ↦ Units.ext <| (algebraMap K L).injective <| by
         have h12 := Classical.choose_spec
-          (exists_stickelbergerGaussProduct m K hm P hP (Multiplicative.toAdd (x₁ * x₂)))
+          (exists_stickelbergerGaussProduct m K P hP (Multiplicative.toAdd (x₁ * x₂)))
         have h1 := Classical.choose_spec
-          (exists_stickelbergerGaussProduct m K hm P hP (Multiplicative.toAdd x₁))
+          (exists_stickelbergerGaussProduct m K P hP (Multiplicative.toAdd x₁))
         have h2 := Classical.choose_spec
-          (exists_stickelbergerGaussProduct m K hm P hP (Multiplicative.toAdd x₂))
+          (exists_stickelbergerGaussProduct m K P hP (Multiplicative.toAdd x₂))
         dsimp only at h12 h1 h2
         rw [Units.val_mul, (algebraMap K L).map_mul, h12, h1, h2]
         simp only [toAdd_mul, Submodule.coe_add, MonoidAlgebra.coeff_add, Finsupp.add_apply,
@@ -566,8 +553,13 @@ noncomputable def stickelbergerGaussProduct (m : ℕ) [NeZero m]
         have : CharP (𝓞 K ⧸ P) p :=
           Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
         let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
+        have hcard : (Fintype.card (𝓞 K ⧸ P) : L) ≠ 0 := by
+          rw [← map_natCast (algebraMap K L)]
+          exact (map_ne_zero_iff _ (algebraMap K L).injective).mpr
+            (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
         exact zpow_add₀ ((map_ne_zero_iff _ (AlgEquiv.injective _)).mpr
-          (gaussSum_ne_zero m hm P hP (IsCyclotomicExtension.zeta_spec p K L))) _ _ }
+          (gaussSum_ne_zero hcard _
+            (isPrimitive_traceAddChar (𝓞 K ⧸ P) (IsCyclotomicExtension.zeta_spec p K L)))) _ _ }
 
 /-- **Image of `stickelbergerGaussProduct` in any compositum.** For any compositum `L = K(ζ_p)`
 over `K`, any prime `p` below `P`, and any primitive `p`-th root of unity `ζ : L`,
@@ -601,7 +593,7 @@ theorem algebraMap_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   let ζ₀ : L₀ := IsCyclotomicExtension.zeta (Ideal.absNorm (Ideal.under ℤ P)) K L₀
   have hζ₀ : IsPrimitiveRoot ζ₀ (Ideal.absNorm (Ideal.under ℤ P)) :=
     IsCyclotomicExtension.zeta_spec (Ideal.absNorm (Ideal.under ℤ P)) K L₀
-  have hL₀ := Classical.choose_spec (exists_stickelbergerGaussProduct m K hm P hP x)
+  have hL₀ := Classical.choose_spec (exists_stickelbergerGaussProduct m K P hP x)
   dsimp only at hL₀
   subst hp_eq
   have hPP_refl :
@@ -616,7 +608,7 @@ theorem algebraMap_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   simp only [AlgEquiv.coe_refl, id_eq] at heL_K
   rw [← heL_K]
   change eL (algebraMap K L₀ (↑(Classical.choose
-    (exists_stickelbergerGaussProduct m K hm P hP x)) : K)) = _
+    (exists_stickelbergerGaussProduct m K P hP x)) : K)) = _
   rw [hL₀]
   convert heL_prod
   exact Subsingleton.elim _ _
