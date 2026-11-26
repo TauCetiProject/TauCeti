@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.RadialTwist
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The `π₁`-sensitive capacity of a disc is at least its area
@@ -36,8 +36,6 @@ the Hamiltonian is admissible with maximum `κ ∫ φ / 2`, which approaches `π
 
 ## Main results
 
-* `TauCeti.eq_of_periodic_radialHamiltonian`: a periodic orbit of a radial Hamiltonian along which
-  the period times the angular speed is less than `2π` in absolute value is constant.
 * `TauCeti.ofReal_pi_mul_sq_le_contractibleHZCapacity`: a set containing a disc of radius `r` has
   `π₁`-sensitive capacity at least `π r²`, whatever set contractibility is tested in.
 
@@ -59,44 +57,6 @@ open Complex Filter Function Metric Set Topology
 open scoped ContDiff
 
 namespace TauCeti
-
-/-! ### Slow periodic orbits of radial Hamiltonians are constant -/
-
-/-- **Slow periodic orbits of a radial Hamiltonian are constant.** Let `γ` be a solution of
-Hamilton's equations of the radial Hamiltonian `-G(‖w - p‖²) / 2` (`TauCeti.radialHamiltonian`) on
-the complex line, whose vector field is globally Lipschitz, and let `γ` be `T`-periodic with
-`T ≠ 0`. The orbit turns about `p` at the angular speed `G'(‖γ 0 - p‖²)`; if the angle
-`T G'(‖γ 0 - p‖²)` it turns through in one period is less than `2π` in absolute value, then `γ` is
-constant. -/
-theorem eq_of_periodic_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNReal}
-    (hX : LipschitzWith K
-      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p)))
-    {γ : ℝ → ℂ} (hγ : ∀ t, HasDerivAt γ
-      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p) (γ t)) t)
-    (hG : DifferentiableAt ℝ G (‖γ 0 - p‖ ^ 2)) {T : ℝ} (hT : T ≠ 0) (hper : Periodic γ T)
-    (hslow : |T * deriv G (‖γ 0 - p‖ ^ 2)| < 2 * Real.pi) (t : ℝ) : γ t = γ 0 := by
-  set c := deriv G (‖γ 0 - p‖ ^ 2)
-  have hrot (s : ℝ) : γ s = p + Complex.exp (Complex.I * ↑(s * c)) * (γ 0 - p) := by
-    rw [eq_flowOfLipschitz hX hγ s, ← SymplecticForm.hamiltonianFlow_eq,
-      hamiltonianFlow_radialHamiltonian hX hG]
-  rcases eq_or_ne (γ 0 - p) 0 with hw | hw
-  · rw [hrot t, hw, mul_zero, add_zero, ← sub_eq_zero.1 hw]
-  -- One period turns `γ 0` through the angle `T c`, a multiple of `2π` smaller than `2π`.
-  have hexp : Complex.exp (Complex.I * ↑(T * c)) = 1 := by
-    refine mul_right_cancel₀ hw ?_
-    rw [one_mul, ← sub_eq_iff_eq_add'.2 (hrot T), ← zero_add T, hper 0]
-  obtain ⟨n, hn⟩ := Complex.exp_eq_one_iff.1 hexp
-  have hn' : T * c = n * (2 * Real.pi) := by
-    have := congrArg Complex.im hn
-    simpa using this
-  have hn0 : n = 0 := by
-    rw [hn', abs_mul, abs_of_pos Real.two_pi_pos] at hslow
-    have : |(n : ℝ)| < 1 := by nlinarith [Real.two_pi_pos]
-    exact Int.abs_lt_one_iff.1 (by exact_mod_cast this)
-  have hc : c = 0 := by
-    rw [hn0, Int.cast_zero, zero_mul] at hn'
-    exact (mul_eq_zero.1 hn').resolve_left hT
-  rw [hrot t, hc, mul_zero, ofReal_zero, mul_zero, Complex.exp_zero, one_mul, add_sub_cancel]
 
 /-! ### A slow radial profile -/
 
@@ -131,8 +91,8 @@ private theorem deriv_profile : deriv (profile hR ht₀ ht₁) =
   funext fun s ↦ (hasDerivAt_profile hR ht₀ ht₁ s).deriv
 
 private theorem contDiff_profile : ContDiff ℝ ∞ (profile hR ht₀ ht₁) :=
-  contDiff_infty_iff_deriv.2 ⟨fun s ↦ (hasDerivAt_profile hR ht₀ ht₁ s).differentiableAt,
-    by rw [deriv_profile]; exact contDiff_const.mul (bump hR ht₀ ht₁).contDiff⟩
+  contDiff_const.mul
+    (by simpa using ((bump hR ht₀ ht₁).contDiff (n := ⊤)).contDiff_add_one_integral R)
 
 private theorem monotone_profile : Monotone (profile hR ht₀ ht₁) :=
   monotone_of_deriv_nonneg ((contDiff_profile hR ht₀ ht₁).differentiable (by simp))
@@ -147,14 +107,19 @@ private theorem abs_deriv_profile_lt (s : ℝ) :
         mul_le_of_le_one_right (by positivity) (bump hR ht₀ ht₁).le_one
     _ < 2 * Real.pi := by nlinarith [Real.pi_pos]
 
+/-- The bump integrates to `0` over an interval on which it vanishes. -/
+private theorem integral_bump_eq_zero {a b : ℝ}
+    (hab : ∀ u ∈ uIcc a b, u ∉ Ioo ((1 - t) * R / 4) ((3 + t) * R / 4)) :
+    ∫ u in a..b, bump hR ht₀ ht₁ u = 0 := by
+  rw [intervalIntegral.integral_congr (g := 0) fun u hu ↦ bump_eq_zero hR ht₀ ht₁ (hab u hu)]
+  simp
+
 /-- The profile vanishes from `(3 + t) R / 4 < R` on. -/
 private theorem profile_eq_zero {s : ℝ} (hs : (3 + t) * R / 4 ≤ s) : profile hR ht₀ ht₁ s = 0 := by
   have hmin : (3 + t) * R / 4 ≤ min R s := le_min (by nlinarith) hs
-  rw [profile, intervalIntegral.integral_congr (g := 0) fun u hu ↦ bump_eq_zero hR ht₀ ht₁
-    fun h ↦ ?_]
-  · simp
-  · rw [uIcc, mem_Icc] at hu
-    linarith [h.2, hu.1]
+  rw [profile, integral_bump_eq_zero hR ht₀ ht₁ fun u hu h ↦ ?_, mul_zero]
+  rw [uIcc, mem_Icc] at hu
+  linarith [h.2, hu.1]
 
 private theorem profile_nonpos (s : ℝ) : profile hR ht₀ ht₁ s ≤ 0 :=
   (monotone_profile hR ht₀ ht₁ (le_max_left s ((3 + t) * R / 4))).trans
@@ -165,10 +130,9 @@ private theorem profile_eq_profile_zero {s : ℝ} (hs₀ : 0 ≤ s) (hs : s ≤ 
     profile hR ht₀ ht₁ s = profile hR ht₀ ht₁ 0 := by
   have hint (a b : ℝ) := (bump hR ht₀ ht₁).continuous.intervalIntegrable (μ := MeasureTheory.volume)
     a b
-  have h0 : ∫ u in (0 : ℝ)..s, bump hR ht₀ ht₁ u = 0 := by
-    rw [intervalIntegral.integral_congr (g := 0) fun u hu ↦ bump_eq_zero hR ht₀ ht₁ fun h ↦ ?_]
-    · simp
-    · rw [uIcc_of_le hs₀, mem_Icc] at hu
+  have h0 : ∫ u in (0 : ℝ)..s, bump hR ht₀ ht₁ u = 0 := integral_bump_eq_zero hR ht₀ ht₁
+    fun u hu h ↦ by
+      rw [uIcc_of_le hs₀, mem_Icc] at hu
       linarith [h.1]
   rw [profile, profile, ← intervalIntegral.integral_add_adjacent_intervals (hint R 0) (hint 0 s),
     h0, add_zero]
