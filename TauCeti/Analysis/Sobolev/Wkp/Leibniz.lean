@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.FDeriv.Const
 import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
@@ -420,7 +421,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] {U K : Set E}
 
-/-- Multiplication by a smooth coefficient preserves (W^{k,p}(Ω)) if the coefficient
+/-- Multiplication by a smooth coefficient preserves `W^{k,p}(Ω)` if the coefficient
 is smooth on an open neighbourhood of `closure Ω` and constant off a compact set there. -/
 theorem exists_value_ae_eq_mul_of_eqOn_compl_isCompact (k : ℕ)
     {ψ : E → ℝ} {c : ℝ} (hU : IsOpen U) (hΩU : closure (Omega : Set E) ⊆ U)
@@ -449,6 +450,21 @@ theorem exists_value_ae_eq_mul_of_eqOn_compl_isCompact (k : ℕ)
       rw [hψx, sub_self, mul_zero]
   rw [h₁, Pi.add_apply, h₂, Pi.smul_apply, h₃, h, smul_eq_mul]
   ring
+
+/-- Multiplication by a directional derivative of a smooth function constant off a compact
+set preserves `W^{k,p}(Ω)`, including on unbounded domains. -/
+theorem exists_value_ae_eq_mul_fderiv_of_eqOn_const (k : ℕ)
+    {c : E → ℝ} {c₀ : ℝ} (hK : IsCompact K) (hc : ContDiff ℝ ∞ c)
+    (hconst : EqOn c (fun _ ↦ c₀) Kᶜ) (v : E) (u : Wkp mu Omega p k) :
+    ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
+      fun x ↦ fderiv ℝ c x v * value k u x := by
+  have hd : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ c x v) :=
+    (hc.fderiv_right (by simp)).clm_apply contDiff_const
+  have hs : HasCompactSupport (fun x ↦ fderiv ℝ c x v) := by
+    apply HasCompactSupport.intro hK
+    intro x hx
+    simp [fderiv_eq_zero_of_eqOn_const ℝ hK.isClosed.isOpen_compl hconst hx]
+  exact exists_value_ae_eq_mul_of_hasCompactSupport k hd hs u
 
 end TauCeti.Wkp
 

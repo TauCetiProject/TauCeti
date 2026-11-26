@@ -307,10 +307,9 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_se
 
 /-! ### Differentiating the equation with differentiable coefficients -/
 
-/-- Differentiate a principal weak equation while retaining the Sobolev order of its
-derivative. The energy density must be bounded, and multiplication by each of the two
-coefficient derivatives in the commutator must preserve `H^k`. These assumptions separate
-the equation argument from compact-domain or compact-perturbation multiplier estimates. -/
+/-- If `u ∈ H^{k+2}` solves `-div(a ∇u) = F` with `F ∈ H^{k+1}`, then
+`∂_e u ∈ H^{k+1}` solves the same principal equation with `H^k` forcing, provided the
+energy density is bounded and multiplication by `∂_e aⁱʲ` and `∂ᵢ∂_e aⁱʲ` preserves `H^k`. -/
 theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_mul
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (k : ℕ)
     (ha : ∀ i j, ContDiffOn ℝ 2 (fun x ↦ a x i j) Omega)
@@ -792,25 +791,17 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_of_eqOn_const (hK : IsComp
   obtain ⟨_, _, hL, hM⟩ := exists_lipschitzWith_and_norm_bound_of_eqOn_const hK hconst hsm
   have hcoeff := memLp_energyIntegrand_of_continuous (mu := mu) hM hL.continuous Omega
   let C₁ (i j : ι) (x : E) := fderiv ℝ (fun y ↦ a y i j) x e
-  let C₂ (i j : ι) (x : E) := fderiv ℝ (C₁ i j) x (𝔟 i)
   have hs₁ (i j : ι) : ContDiff ℝ ∞ (C₁ i j) :=
     ((hsm i j).fderiv_right (by simp)).clm_apply contDiff_const
-  have hs₂ (i j : ι) : ContDiff ℝ ∞ (C₂ i j) :=
-    ((hs₁ i j).fderiv_right (by simp)).clm_apply contDiff_const
   have hc (i j : ι) : EqOn (fun x ↦ a x i j) (fun _ ↦ A i j) Kᶜ :=
     fun _ hx ↦ congrArg (fun B ↦ B i j) (hconst hx)
   have hc₁ (i j : ι) : EqOn (C₁ i j) (fun _ ↦ 0) Kᶜ := fun x hx ↦ by
     simp [C₁, fderiv_eq_zero_of_eqOn_const ℝ hK.isClosed.isOpen_compl (hc i j) hx]
-  have hc₂ (i j : ι) : EqOn (C₂ i j) (fun _ ↦ 0) Kᶜ := fun x hx ↦ by
-    simp [C₂, fderiv_eq_zero_of_eqOn_const ℝ hK.isClosed.isOpen_compl (hc₁ i j) hx]
   exact exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_mul k
     (fun i j ↦ (hsm i j).contDiffOn.of_le (by simp)) hcoeff F U hU hu e
-    (fun i j v ↦ Wkp.exists_value_ae_eq_mul_of_eqOn_compl_isCompact k
-      isOpen_univ (subset_univ _) hK (hs₁ i j).contDiffOn
-      (fun x hx ↦ hc₁ i j hx.2) v)
-    (fun i j v ↦ Wkp.exists_value_ae_eq_mul_of_eqOn_compl_isCompact k
-      isOpen_univ (subset_univ _) hK (hs₂ i j).contDiffOn
-      (fun x hx ↦ hc₂ i j hx.2) v)
+    (fun i j v ↦ Wkp.exists_value_ae_eq_mul_fderiv_of_eqOn_const k hK (hsm i j) (hc i j) e v)
+    (fun i j v ↦ Wkp.exists_value_ae_eq_mul_fderiv_of_eqOn_const k hK
+      (hs₁ i j) (hc₁ i j) (𝔟 i) v)
 
 end TauCeti.PDE
 

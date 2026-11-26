@@ -701,8 +701,7 @@ theorem Wkp.exists_hasWeakLineDerivOn_of_normal_and_tangential (k : ℕ)
       HasWeakLineDerivOn mu Omega q (Wkp.value k T) τ) (v : E) :
     ∃ D : Wkp mu Omega p k, HasWeakLineDerivOn mu Omega q (Wkp.value k D) v := by
   let P := (ℝ ∙ e)ᗮ.starProjection
-  obtain ⟨T, hT⟩ := hT (P v) (Submodule.mem_orthogonal_singleton_iff_inner_left.1
-    (Submodule.starProjection_apply_mem _ _))
+  obtain ⟨T, hT⟩ := hT (P v) (by simp [P])
   have hsplit : P v + ⟪e, v⟫_ℝ • e = v := by
     simpa only [Submodule.starProjection_singleton, he, one_pow, RCLike.ofReal_real_eq_id,
       id_eq, div_one, add_comm, P] using

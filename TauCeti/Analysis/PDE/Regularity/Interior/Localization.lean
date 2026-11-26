@@ -17,8 +17,9 @@ A smooth compactly supported cutoff preserves the Sobolev order of the forcing i
 solution has one more derivative. When the cutoff solution has zero trace, extending it
 by zero to a larger open domain preserves this forcing order as well.
 
-These proofs generalize the order-one localization in `Regularity/Interior/Basic.lean`
-and the extension-by-zero argument in `Regularity/FlatBoundary.lean`.
+These results refine the `L²`-forcing localization theorem
+`exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem`
+in `Regularity/Interior/Basic.lean` to `H^k` forcing.
 -/
 
 public section

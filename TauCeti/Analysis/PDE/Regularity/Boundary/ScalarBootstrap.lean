@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
-import TauCeti.Analysis.Calculus.FDeriv.Const
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.PDE.Ellipticity.PosDef
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
@@ -33,9 +32,22 @@ localized forcing. The cutoff one on `closure V` then gives the same solution th
 as the global half-space problem, where tangential differentiation and the conormal
 flux recover all derivatives.
 
-The differentiated equation adapts the proof in `Regularity/HigherOrder.lean`, the conormal
-argument adapts `Regularity/HalfSpace.lean`, and cutoff localization and extension by zero
-adapt `Regularity/FlatBoundary.lean`.
+The global theorem gives `H^{k+2}` regularity for `H^k` forcing and smooth uniformly
+elliptic coefficients constant off a compact set. It also covers convex domains invariant
+under tangential translations. The finite-order local theorem accepts `H^k` forcing on
+the chart patch; the smooth-forcing theorem gives every Sobolev order on a fixed patch.
+
+The differentiated equation, conormal argument, and cutoff localization adapt the proofs in
+`Regularity/HigherOrder.lean`, `Regularity/HalfSpace.lean`, and `Regularity/FlatBoundary.lean`.
+
+## Main results
+
+* `UniformlyEllipticOn.exists_value_succ_succ_eq_of_isWeakSolutionDirichlet_of_mapsTo`:
+  global finite-order regularity.
+* `UniformlyEllipticOn.exists_value_succ_succ_eq_value_restrictL_of_mapsTo`:
+  finite-order regularity with Sobolev forcing on a chart patch.
+* `exists_value_eq_value_restrictL_allOrders_of_halfSpace`:
+  every finite Sobolev order on a fixed patch with smooth local data.
 
 Reference: L. C. Evans, *Partial Differential Equations*, §6.3.2, Theorem 5.
 -/
@@ -80,54 +92,6 @@ private theorem flux_eq_normal_add_tangential (u : W1p mu Omega 2) {e : E} (he :
   rw [flux_eq_sum]
   exact sub_eq_iff_eq_add.mp h
 
-private theorem hasWeakLineDerivOn_normal_flux
-    {u : W1p0 mu Omega 2} {f : Lp ℝ 2 (mu.restrict Omega)}
-    (hu : IsWeakSolutionDirichlet a 0 0 f u) {e : E} (he : ‖e‖ = 1)
-    (hq : LocallyIntegrableOn (flux (u : W1p mu Omega 2) a e) Omega mu)
-    {G : ι → E → ℝ} (hG : ∀ i, HasWeakLineDerivOn mu Omega
-      (flux (u : W1p mu Omega 2) a (b i)) (G i) ((ℝ ∙ e)ᗮ.starProjection (b i))) :
-    HasWeakLineDerivOn mu Omega (flux (u : W1p mu Omega 2) a e)
-      (fun x ↦ -(f x + ∑ i, G i x)) e := by
-  set w := (u : W1p mu Omega 2)
-  set P := (ℝ ∙ e)ᗮ.starProjection
-  have hf := Lp.locallyIntegrableOn f (by norm_num)
-  have hGloc := locallyIntegrableOn_finsetSum Finset.univ
-    fun i _ ↦ (hG i).locallyIntegrableOn_deriv
-  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hq, (hf.add hGloc).neg, ?_⟩
-  intro φ
-  have hφ : Differentiable ℝ (φ : E → ℝ) := φ.contDiff.differentiable (by simp)
-  have hI : ∀ i, Integrable (fun x ↦ lineDeriv ℝ (φ : E → ℝ) x (P (b i)) •
-      flux w a (b i) x) mu := fun i ↦
-    integrable_lineDeriv_smul_of_locallyIntegrableOn (hG i).locallyIntegrableOn φ _
-  have hIq := integrable_lineDeriv_smul_of_locallyIntegrableOn hq φ e
-  have hsplit : (∫ x in Omega, matrixBilinearForm (a x)
-        (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x) (W1p.gradient w x) ∂mu) =
-      ∫ x in Omega, (lineDeriv ℝ (φ : E → ℝ) x e • flux w a e x +
-        ∑ i, lineDeriv ℝ (φ : E → ℝ) x (P (b i)) • flux w a (b i) x) ∂mu := by
-    refine integral_congr_ae ?_
-    filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.gradient_ofTestFunctionₗ, hx, ← ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
-      (b).bilin_eq_inner_mul_sum_add_sum_sum_inner_starProjection b _ e]
-    simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, RCLike.ofReal_real_eq_id,
-      id_eq, he, one_pow, inv_one, one_smul, real_inner_comm (gradient (φ : E → ℝ) x),
-      inner_gradient_left, (hφ x).lineDeriv_eq_fderiv,
-      smul_eq_mul, flux_eq_sum, Finset.mul_sum, P, real_inner_comm (W1p.gradient w x)]
-  have heq := hu.energyFormH1_ofTestFunctionₗ φ
-  rw [energyFormH1_zero_zero_eq_setIntegral, hsplit,
-    integral_add hIq.integrableOn
-      (integrable_finsetSum _ fun i _ ↦ (hI i).integrableOn),
-    integral_finsetSum _ fun i _ ↦ (hI i).integrableOn,
-    setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul φ e] at heq
-  simp_rw [setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul φ,
-    fun i ↦ (hG i).integral_lineDeriv_smul_eq_neg_integral_smul φ] at heq
-  have hIG i := φ.integrable_smul (hG i).locallyIntegrableOn_deriv
-  have hR := TestFunction.neg_integral_smul_neg_add_eq
-    (G := fun i (_ : Unit) ↦ G i) φ hf (fun i _ ↦ hIG i)
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_unit, one_nsmul] at hR
-  rw [hR]
-  simp only [Finset.sum_neg_distrib] at heq
-  linarith [heq]
-
 private theorem exists_value_ae_eq_flux (hK : IsCompact K)
     (hconst : EqOn a (fun _ ↦ A) Kᶜ) (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j))
     (k : ℕ) {u : W1p mu Omega 2} (U : Wkp mu Omega 2 (k + 1))
@@ -139,42 +103,31 @@ private theorem exists_value_ae_eq_flux (hK : IsCompact K)
     exact ⟨M, hM.trans (hD.mono fun x hx ↦ congrArg (matrixBilinearForm (a x) p (b j) * ·) hx)⟩
   exact ⟨Q, hQ.mono fun x hx ↦ hx.trans (flux_eq_sum u p x).symm⟩
 
-private theorem exists_hasWeakLineDerivOn_flux (hK : IsCompact K)
+private theorem exists_hasWeakLineDerivOn_flux_components (hK : IsCompact K)
     (hconst : EqOn a (fun _ ↦ A) Kᶜ) (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j))
     (k : ℕ) {u : W1p mu Omega 2} (U : Wkp mu Omega 2 (k + 1))
     (hU : Wkp.value (k + 1) U = W1p.value u) (p τ : E)
     (T : Wkp mu Omega 2 (k + 1))
     (hT : HasWeakLineDerivOn mu Omega (W1p.value u) (Wkp.value (k + 1) T) τ) :
-    ∃ Q : Wkp mu Omega 2 k, HasWeakLineDerivOn mu Omega (flux u a p) (Wkp.value k Q) τ := by
+    ∀ j, ∃ Q : Wkp mu Omega 2 k, HasWeakLineDerivOn mu Omega
+      (fun x ↦ matrixBilinearForm (a x) p (b j) * ⟪W1p.gradient u x, b j⟫_ℝ)
+      (Wkp.value k Q) τ := by
   let C (j : ι) (x : E) := matrixBilinearForm (a x) p (b j)
   have hC (j : ι) : ContDiff ℝ ∞ (C j) :=
     contDiff_matrixBilinearForm_apply hsm contDiff_const contDiff_const
-  have hG (j : ι) : ∃ G : Wkp mu Omega 2 k, HasWeakLineDerivOn mu Omega
-      (fun x ↦ C j x * ⟪W1p.gradient u x, b j⟫_ℝ) (Wkp.value k G) τ := by
-    obtain ⟨D, hD⟩ := Wkp.exists_value_ae_eq_gradient_inner k U hU (b j)
-    obtain ⟨Tj, hTj⟩ := Wkp.exists_hasWeakLineDerivOn_value k T (b j)
-    have hDτ := hT.comm hTj (W1p.hasWeakLineDerivOn_inner_gradient u (b j))
-    have hC' : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ (C j) x τ) :=
-      ((hC j).fderiv_right (by simp)).clm_apply contDiff_const
-    have hc : EqOn (C j) (fun _ ↦ matrixBilinearForm A p (b j)) Kᶜ :=
-      fun _ hx ↦ congrArg (fun B ↦ matrixBilinearForm B p (b j)) (hconst hx)
-    have hc' : EqOn (fun x ↦ fderiv ℝ (C j) x τ) (fun _ ↦ 0) Kᶜ := fun x hx ↦ by
-      simp [fderiv_eq_zero_of_eqOn_const ℝ hK.isClosed.isOpen_compl hc hx]
-    obtain ⟨M, hM⟩ := exists_value_ae_eq_mul_coefficient hK hconst hsm k p (b j) Tj
-    obtain ⟨N, hN⟩ := Wkp.exists_value_ae_eq_mul_of_eqOn_compl_isCompact k
-      isOpen_univ (subset_univ _) hK hC'.contDiffOn (fun _ hx ↦ hc' hx.2) D
-    refine ⟨M + N, ?_⟩
-    apply ((hDτ.contDiffOn_smul_of_ne_zero (hC j).contDiffOn (by simp)).congr_ae
-      (Eventually.of_forall fun x ↦ smul_eq_mul _ _)).congr_ae_deriv
-    filter_upwards [Wkp.value_add_ae k M N, hM, hN, hD] with x h₁ h₂ h₃ h₄
-    simp only [smul_eq_mul, h₁, Pi.add_apply, h₂, h₃, h₄, C]
-  choose G hG using hG
-  refine ⟨∑ i, G i, ?_⟩
-  refine ((HasWeakLineDerivOn.sum Finset.univ fun i _ ↦ hG i).congr_ae
-    (Eventually.of_forall fun x ↦ ?_)).congr_ae_deriv ?_
-  · exact (flux_eq_sum u p x).symm
-  · filter_upwards [Wkp.value_finsetSum_ae k Finset.univ G] with x hx
-    exact hx.symm
+  intro j
+  obtain ⟨D, hD⟩ := Wkp.exists_value_ae_eq_gradient_inner k U hU (b j)
+  obtain ⟨Tj, hTj⟩ := Wkp.exists_hasWeakLineDerivOn_value k T (b j)
+  have hDτ := hT.comm hTj (W1p.hasWeakLineDerivOn_inner_gradient u (b j))
+  have hc : EqOn (C j) (fun _ ↦ matrixBilinearForm A p (b j)) Kᶜ :=
+    fun _ hx ↦ congrArg (fun B ↦ matrixBilinearForm B p (b j)) (hconst hx)
+  obtain ⟨M, hM⟩ := exists_value_ae_eq_mul_coefficient hK hconst hsm k p (b j) Tj
+  obtain ⟨N, hN⟩ := Wkp.exists_value_ae_eq_mul_fderiv_of_eqOn_const k hK (hC j) hc τ D
+  refine ⟨M + N, ?_⟩
+  apply ((hDτ.contDiffOn_smul_of_ne_zero (hC j).contDiffOn (by simp)).congr_ae
+    (Eventually.of_forall fun x ↦ smul_eq_mul _ _)).congr_ae_deriv
+  filter_upwards [Wkp.value_add_ae k M N, hM, hN, hD] with x h₁ h₂ h₃ h₄
+  simp only [smul_eq_mul, h₁, Pi.add_apply, h₂, h₃, h₄, C]
 
 private theorem exists_value_ae_eq_normal_flux (hK : IsCompact K)
     (hconst : EqOn a (fun _ ↦ A) Kᶜ) (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j))
@@ -187,25 +140,41 @@ private theorem exists_value_ae_eq_normal_flux (hK : IsCompact K)
     ∃ Q : Wkp mu Omega 2 (k + 2), Wkp.value (k + 2) Q =ᵐ[mu.restrict Omega]
       flux (u : W1p mu Omega 2) a e := by
   let P := (ℝ ∙ e)ᗮ.starProjection
-  have hP (i : ι) : ⟪P (b i), e⟫_ℝ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ _)
+  have hP (i : ι) : ⟪P (b i), e⟫_ℝ = 0 := by
+    simp [P]
   have hTang (p τ : E) (hτ : ⟪τ, e⟫_ℝ = 0) :
       ∃ Q : Wkp mu Omega 2 (k + 1),
         HasWeakLineDerivOn mu Omega (flux (u : W1p mu Omega 2) a p) (Wkp.value (k + 1) Q) τ := by
     obtain ⟨T, ht⟩ := hT τ hτ
-    exact exists_hasWeakLineDerivOn_flux hK hconst hsm (k + 1) U hU p τ T ht
+    choose G hG using exists_hasWeakLineDerivOn_flux_components hK hconst hsm
+      (k + 1) U hU p τ T ht
+    refine ⟨∑ j, G j, ?_⟩
+    refine ((HasWeakLineDerivOn.sum Finset.univ fun j _ ↦ hG j).congr_ae
+      (Eventually.of_forall fun x ↦ (flux_eq_sum _ _ x).symm)).congr_ae_deriv ?_
+    exact EventuallyEq.symm (Wkp.value_finsetSum_ae (k + 1) Finset.univ G)
   obtain ⟨q, hq⟩ := exists_value_ae_eq_flux hK hconst hsm (k + 1) U hU e
   have hqLp := (Lp.memLp (Wkp.value (k + 1) q)).ae_eq hq
-  have hqLoc := locallyIntegrableOn_of_locallyIntegrable_restrict (hqLp.locallyIntegrable (by simp))
-  choose G hG using fun i ↦ hTang (b i) (P (b i)) (hP i)
-  have hn := hasWeakLineDerivOn_normal_flux hu he hqLoc hG
+  have hGcomp (i j : ι) : ∃ Q : Wkp mu Omega 2 (k + 1), HasWeakLineDerivOn mu Omega
+      (fun x ↦ matrixBilinearForm (a x) (b i) (b j) * ⟪W1p.gradient (u : W1p mu Omega 2) x, b j⟫_ℝ)
+      (Wkp.value (k + 1) Q) (P (b i)) := by
+    obtain ⟨T, ht⟩ := hT (P (b i)) (hP i)
+    exact exists_hasWeakLineDerivOn_flux_components hK hconst hsm (k + 1) U hU
+      (b i) (P (b i)) T ht j
+  choose G hG using hGcomp
+  have hn := hasWeakLineDerivOn_sum_smul_inner_gradient (ν := e)
+    (fun p q ↦ (contDiff_matrixBilinearForm_apply hsm
+      (contDiff_const (c := p)) (contDiff_const (c := q))).continuous.continuousOn)
+    hu.energyFormH1_ofTestFunctionₗ (fun i j ↦ by simpa only [smul_eq_mul] using hG i j)
+  simp only [he, one_pow, inv_one, one_smul, smul_eq_mul, ← flux_eq_sum] at hn
   have hN : HasWeakLineDerivOn mu Omega (flux (u : W1p mu Omega 2) a e)
-      (Wkp.value (k + 1) (-(F + ∑ i, G i))) e := by
+      (Wkp.value (k + 1) (-(F + ∑ i, ∑ j, G i j))) e := by
     apply hn.congr_ae_deriv
-    filter_upwards [Wkp.value_neg_ae (k + 1) (F + ∑ i, G i),
-      Wkp.value_add_ae (k + 1) F (∑ i, G i),
-      Wkp.value_finsetSum_ae (k + 1) Finset.univ G] with x h₁ h₂ h₃
-    simp only [h₁, h₂, Pi.neg_apply, Pi.add_apply, h₃]
+    filter_upwards [Wkp.value_neg_ae (k + 1) (F + ∑ i, ∑ j, G i j),
+      Wkp.value_add_ae (k + 1) F (∑ i, ∑ j, G i j),
+      Wkp.value_finsetSum_ae (k + 1) Finset.univ (fun i ↦ ∑ j, G i j),
+      ae_all_iff.2 (fun i ↦ Wkp.value_finsetSum_ae (k + 1) Finset.univ (G i))]
+      with x h₁ h₂ h₃ h₄
+    simp only [h₁, h₂, Pi.neg_apply, Pi.add_apply, h₃, h₄]
   choose d hd using Wkp.exists_hasWeakLineDerivOn_of_normal_and_tangential (k + 1) he hN (hTang e)
   exact Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn (k + 1) hqLp d hd
 
@@ -224,8 +193,8 @@ private theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_normal_of_tangenti
     ∃ N : Wkp mu Omega 2 (k + 2),
       HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (Wkp.value (k + 2) N) e := by
   let P := (ℝ ∙ e)ᗮ.starProjection
-  have hP (i : ι) : ⟪P (b i), e⟫_ℝ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ _)
+  have hP (i : ι) : ⟪P (b i), e⟫_ℝ = 0 := by
+    simp [P]
   obtain ⟨Q, hQ⟩ := exists_value_ae_eq_normal_flux hK hconst hsm k F hu U hU he hT
   obtain ⟨T, hTeq⟩ := Wkp.exists_value_ae_eq_sum (k + 2) fun i ↦ by
     obtain ⟨Ti, hi⟩ := hT (P (b i)) (hP i)
@@ -257,11 +226,12 @@ private theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_normal_of_tangenti
   simp only [Pi.inv_apply]
   rw [add_sub_cancel_right, inv_mul_cancel_left₀ (ne_of_gt (hΩS (subset_closure hx)))]
 
-/-- Global `H^{k+2}` regularity of a homogeneous Dirichlet solution on a half-space, with
-`H^k` forcing and smooth uniformly elliptic coefficients constant off a compact set. -/
-theorem UniformlyEllipticOn.exists_value_succ_succ_eq_of_isWeakSolutionDirichlet_halfSpace
+/-- Global `H^{k+2}` regularity with `H^k` forcing and smooth uniformly elliptic coefficients
+constant off a compact set, on a convex domain invariant under tangential translations. -/
+theorem UniformlyEllipticOn.exists_value_succ_succ_eq_of_isWeakSolutionDirichlet_of_mapsTo
     [DecidableEq ι]
-    {ν : E} {c : ℝ} (hν : ν ≠ 0) (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
+    {ν : E} (hν : ν ≠ 0) (hΩc : Convex ℝ (Omega : Set E))
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
     (ha : UniformlyEllipticOn (Omega : Set E) a lam Lam) (hK : IsCompact K)
     (hconst : EqOn a (fun _ ↦ A) Kᶜ)
     (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j)) (k : ℕ)
@@ -271,7 +241,7 @@ theorem UniformlyEllipticOn.exists_value_succ_succ_eq_of_isWeakSolutionDirichlet
   induction k generalizing u with
   | zero =>
     obtain ⟨_, _, hL, -⟩ := exists_lipschitzWith_and_norm_bound_of_eqOn_const hK hconst hsm
-    obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_of_halfSpace hν hΩ hL.lipschitzOnWith hu
+    obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_of_mapsTo hν hΩ hL.lipschitzOnWith hu
     exact ⟨U, by
       rw [Wkp.value_succ, hU]
       exact Wkp.value_one (u : W1p mu Omega 2)⟩
@@ -300,8 +270,7 @@ theorem UniformlyEllipticOn.exists_value_succ_succ_eq_of_isWeakSolutionDirichlet
         exact ⟨Wkp.firstOrder k D, by simpa only [hU, Wkp.value_firstOrder] using hd⟩
       choose D hD using hD
       have hmem := W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn (by simp)
-        (TauCeti.convex_of_halfSpace hΩ) (TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτν)
-        b u.property hD hd₁
+        hΩc (hΩ τ hτν) b u.property hD hd₁
       let d₀ : W1p0 mu Omega 2 := ⟨Wkp.firstOrder k d, hmem⟩
       have hd₀ : IsWeakSolutionDirichlet a 0 0 (Wkp.value k G) d₀ :=
         (isWeakSolutionDirichlet_iff _ _).2 hdG
@@ -336,19 +305,20 @@ private theorem mem_iff_mem_of_inter_eq (hΩU : (Omega : Set E) ∩ U = (H : Set
     {x : E} (hx : x ∈ (U : Set E)) : x ∈ Omega ↔ x ∈ H := by
   simpa only [← SetLike.mem_coe, mem_inter_iff, hx, and_true] using Set.ext_iff.1 hΩU x
 
-private theorem exists_value_eq_value_restrictL_of_halfSpace_of_order
-    (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
+private theorem exists_value_eq_value_restrictL_of_mapsTo_of_order
+    (hν : ν ≠ 0) (hHc : Convex ℝ (H : Set E))
+    (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
     (hΩU : (Omega : Set E) ∩ U = (H : Set E) ∩ U)
     (ha : UniformlyEllipticOn ((Omega : Set E) ∩ U) a lam Lam)
     (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ a x i j) U)
-    (hf : ContDiffOn ℝ ∞ f U)
+    (k : ℕ) (F : Wkp mu (Omega ⊓ U) 2 k)
     (hu : ∀ v : W1p0 mu (Omega ⊓ U) 2,
       energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ U) 2) =
-        ∫ x in Omega ⊓ U, f x * W1p.value (v : W1p mu (Omega ⊓ U) 2) x ∂mu)
+        ∫ x in Omega ⊓ U, Wkp.value k F x * W1p.value (v : W1p mu (Omega ⊓ U) 2) x ∂mu)
     (hu0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
       tsupport ψ ⊆ U → ∃ v : W1p0 mu Omega 2,
         W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x ↦ ψ x * W1p.value u x)
-    (k : ℕ) {W : Opens E} (hW : IsCompact (closure (W : Set E)))
+    {W : Opens E} (hW : IsCompact (closure (W : Set E)))
     (hWU : closure (W : Set E) ⊆ U) (hV : IsCompact (closure (V : Set E)))
     (hVW : closure (V : Set E) ⊆ W) (Z : Wkp mu (Omega ⊓ W) 2 (k + 1))
     (hZ : Wkp.value (k + 1) Z = W1p.value (W1p.restrictL inf_le_left u)) :
@@ -367,16 +337,15 @@ private theorem exists_value_eq_value_restrictL_of_halfSpace_of_order
   have hDH : D ≤ H := fun x hx ↦ (hΩH x (hWsub hx.2)).1 hx.1
   have hz₁ : Wkp.firstOrder k Z = W1p.restrictL hD u :=
     W1p.ext_value ((Wkp.value_firstOrder k Z).trans hZ)
-  obtain ⟨F, hF⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (Omega := D)
-    (p := 2) k U.isOpen (hf.of_le (by simp)) hW
-    (fun x hx ↦ subset_closure hx.2) hWU
+  let FD := Wkp.restrictL hDU k F
   have huD (v : W1p0 mu D 2) :
       energyFormH1 a' 0 0 (Wkp.firstOrder k Z) (v : W1p mu D 2) =
-        ∫ x in D, Wkp.value k F x * W1p.value (v : W1p mu D 2) x ∂mu := by
+        ∫ x in D, Wkp.value k FD x * W1p.value (v : W1p mu D 2) x ∂mu := by
     rw [hz₁, ← W1p.restrictL_restrictL inf_le_left hDU,
       energyFormH1_restrictL_eq_setIntegral_of_eqOn hDU
       (fun x hx ↦ hagree (subset_closure hx.2)) hu]
-    exact integral_congr_ae (hF.mono fun x hx ↦ congrArg (· * W1p.value (v : W1p mu D 2) x) hx.symm)
+    exact integral_congr_ae ((Wkp.value_restrictL_ae hDU k F).mono fun x hx ↦
+      congrArg (· * W1p.value (v : W1p mu D 2) x) hx.symm)
   obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
     hV.exists_contDiff_cutoff_with_bounds W.isOpen hVW
   obtain ⟨d, hd⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL hWsub hu0 hψ hψc hψs
@@ -389,9 +358,9 @@ private theorem exists_value_eq_value_restrictL_of_halfSpace_of_order
   have hts : tsupport ψ ∩ H ⊆ (D : Set E) := fun x hx ↦
     ⟨(hΩH x (hWsub (hψs hx.1))).2 hx.2, hψs hx.1⟩
   obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator
-    hM hL hsm' hDH k F Z huD hψ hψc hts hN _ _ (hψu ▸ d.property)
-  obtain ⟨Q, hQ⟩ := ha'.exists_value_succ_succ_eq_of_isWeakSolutionDirichlet_halfSpace
-    hν hH hK hconst hsm' k hw
+    hM hL hsm' hDH k FD Z huD hψ hψc hts hN _ _ (hψu ▸ d.property)
+  obtain ⟨Q, hQ⟩ := ha'.exists_value_succ_succ_eq_of_isWeakSolutionDirichlet_of_mapsTo
+    hν hHc hH hK hconst hsm' k hw
   have hVD : Omega ⊓ V ≤ D := fun _ hx ↦ ⟨hx.1, hVW (subset_closure hx.2)⟩
   have hVH : Omega ⊓ V ≤ H := hVD.trans hDH
   refine ⟨Wkp.restrictL hVH (k + 2) Q, Lp.ext ?_⟩
@@ -402,6 +371,42 @@ private theorem exists_value_eq_value_restrictL_of_halfSpace_of_order
     ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h₁ h₂ h₃ h₄ hx
   have hψx : ψ x = 1 := interior_subset (hψ1 (subset_closure hx.2))
   rw [h₁, hQ, h₂, indicator_of_mem (hVD hx), hψx, one_mul, hz₁, h₃, h₄]
+
+/-- Local `H^{k+2}` regularity for `H^k` forcing near a flat homogeneous Dirichlet boundary.
+The model domain is convex and invariant under translations orthogonal to a nonzero normal;
+in particular it may be a half-space or a slab. The equation and coefficient assumptions
+are local to `Ω ∩ U`, and the forcing need only belong to `H^k(Ω ∩ U)`. -/
+theorem UniformlyEllipticOn.exists_value_succ_succ_eq_value_restrictL_of_mapsTo
+    (hν : ν ≠ 0) (hHc : Convex ℝ (H : Set E))
+    (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
+    (hΩU : (Omega : Set E) ∩ U = (H : Set E) ∩ U)
+    (ha : UniformlyEllipticOn ((Omega : Set E) ∩ U) a lam Lam)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ a x i j) U)
+    (k : ℕ) (F : Wkp mu (Omega ⊓ U) 2 k)
+    (hu : ∀ v : W1p0 mu (Omega ⊓ U) 2,
+      energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ U) 2) =
+        ∫ x in Omega ⊓ U, Wkp.value k F x * W1p.value (v : W1p mu (Omega ⊓ U) 2) x ∂mu)
+    (hu0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
+      tsupport ψ ⊆ U → ∃ v : W1p0 mu Omega 2,
+        W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x ↦ ψ x * W1p.value u x)
+    (hV : IsCompact (closure (V : Set E))) (hVU : closure (V : Set E) ⊆ U) :
+    ∃ Q : Wkp mu (Omega ⊓ V) 2 (k + 2),
+      Wkp.value (k + 2) Q = W1p.value (W1p.restrictL inf_le_left u) := by
+  induction k using Nat.strong_induction_on generalizing V with
+  | ind k ih =>
+    obtain ⟨W₀, hWo, hVW, hWU, hW⟩ :=
+      exists_open_between_and_isCompact_closure hV U.isOpen hVU
+    let W : Opens E := ⟨W₀, hWo⟩
+    have hZ : ∃ Z : Wkp mu (Omega ⊓ W) 2 (k + 1),
+        Wkp.value (k + 1) Z = W1p.value (W1p.restrictL inf_le_left u) := by
+      cases k with
+      | zero => exact ⟨W1p.restrictL inf_le_left u, Wkp.value_one _⟩
+      | succ k =>
+        exact ih k (Nat.lt_succ_self k) (Wkp.lowerOrder k F)
+          (by simpa only [← Wkp.value_succ] using hu) hW hWU
+    obtain ⟨Z, hZ⟩ := hZ
+    exact exists_value_eq_value_restrictL_of_mapsTo_of_order hν hHc hH hΩU ha hsmooth
+      k F hu hu0 hW hWU hV hVW Z hZ
 
 private theorem exists_value_eq_value_restrictL_allOrders_of_ne_zero
     (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
@@ -418,27 +423,32 @@ private theorem exists_value_eq_value_restrictL_allOrders_of_ne_zero
     (hV : IsCompact (closure (V : Set E))) (hVU : closure (V : Set E) ⊆ U) :
     ∀ k : ℕ, ∃ Q : Wkp mu (Omega ⊓ V) 2 k,
       Wkp.value k Q = W1p.value (W1p.restrictL inf_le_left u) := by
-  have high (k : ℕ) {V : Opens E} (hV : IsCompact (closure (V : Set E)))
-      (hVU : closure (V : Set E) ⊆ U) :
-      ∃ Q : Wkp mu (Omega ⊓ V) 2 (k + 2),
-        Wkp.value (k + 2) Q = W1p.value (W1p.restrictL inf_le_left u) := by
-    induction k using Nat.strong_induction_on generalizing V with
-    | ind k ih =>
-      obtain ⟨W₀, hWo, hVW, hWU, hW⟩ :=
-        exists_open_between_and_isCompact_closure hV U.isOpen hVU
-      let W : Opens E := ⟨W₀, hWo⟩
-      have hZ : ∃ Z : Wkp mu (Omega ⊓ W) 2 (k + 1),
-          Wkp.value (k + 1) Z = W1p.value (W1p.restrictL inf_le_left u) := by
-        cases k with
-        | zero => exact ⟨W1p.restrictL inf_le_left u, Wkp.value_one _⟩
-        | succ k => exact ih k (Nat.lt_succ_self k) hW hWU
-      obtain ⟨Z, hZ⟩ := hZ
-      exact exists_value_eq_value_restrictL_of_halfSpace_of_order
-        hν hH hΩU ha hsmooth hf hu hu0 k hW hWU hV hVW Z hZ
+  obtain ⟨W₀, hWo, hVW, hWU, hW⟩ :=
+    exists_open_between_and_isCompact_closure hV U.isOpen hVU
+  let W : Opens E := ⟨W₀, hWo⟩
+  have hWsub : (W : Set E) ⊆ U := subset_closure.trans hWU
+  have hDU : Omega ⊓ W ≤ Omega ⊓ U := fun _ hx ↦ ⟨hx.1, hWsub hx.2⟩
+  have hΩW : (Omega : Set E) ∩ W = (H : Set E) ∩ W := by
+    ext x
+    simp only [mem_inter_iff]
+    exact and_congr_left fun hx ↦ mem_iff_mem_of_inter_eq hΩU (hWsub hx)
   intro k
-  obtain ⟨Q, hQ⟩ := high k hV hVU
-  have hk : k ≤ k + 2 := by omega
-  exact ⟨Wkp.toOrderL hk Q, (Wkp.value_toOrderL _ Q).trans hQ⟩
+  obtain ⟨F, hF⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact
+    (mu := mu) (Omega := Omega ⊓ W) (p := 2) k U.isOpen (hf.of_le (by simp)) hW
+    (fun x hx ↦ subset_closure hx.2) hWU
+  have huD (v : W1p0 mu (Omega ⊓ W) 2) :
+      energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ W) 2) =
+        ∫ x in Omega ⊓ W, Wkp.value k F x * W1p.value (v : W1p mu (Omega ⊓ W) 2) x ∂mu := by
+    rw [← W1p.restrictL_restrictL inf_le_left hDU,
+      energyFormH1_restrictL_eq_setIntegral hDU hu]
+    exact integral_congr_ae (hF.mono fun x hx ↦
+      congrArg (· * W1p.value (v : W1p mu (Omega ⊓ W) 2) x) hx.symm)
+  obtain ⟨Q, hQ⟩ := (ha.mono_set hDU).exists_value_succ_succ_eq_value_restrictL_of_mapsTo
+    hν (TauCeti.convex_of_halfSpace hH)
+    (fun _ hτ ↦ TauCeti.mapsTo_add_smul_of_halfSpace hH hτ) hΩW
+    (fun i j ↦ (hsmooth i j).mono hWsub) k F huD
+    (fun ψ hψ hψc hψs ↦ hu0 ψ hψ hψc (hψs.trans hWsub)) hV hVW
+  exact ⟨Wkp.toOrderL (by omega : k ≤ k + 2) Q, (Wkp.value_toOrderL _ Q).trans hQ⟩
 
 private theorem exists_value_eq_value_restrictL_allOrders_of_interior
     (hUΩ : U ≤ Omega) (ha : UniformlyEllipticOn ((Omega : Set E) ∩ U) a lam Lam)
@@ -512,7 +522,7 @@ order locally up to a flat homogeneous Dirichlet boundary.
 
 The weak equation and the uniform positive lower bound for the coefficient field are required
 only on the chart patch. The equation is tested against smooth compactly supported functions.
-Smoothness bounds the coefficients on a smaller compact neighbourhood.
+No upper bound on the coefficients is assumed; smoothness on `U` suffices.
 A zero normal gives an interior or empty patch, for which there is no trace condition. -/
 theorem exists_value_eq_value_restrictL_allOrders_of_halfSpace
     (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
@@ -539,11 +549,8 @@ theorem exists_value_eq_value_restrictL_allOrders_of_halfSpace
   have hWΩU : Omega ⊓ W ≤ Omega ⊓ U := fun _ hx ↦ ⟨hx.1, hWsub hx.2⟩
   have hΩW : (Omega : Set E) ∩ W = (H : Set E) ∩ W := by
     ext x
-    constructor
-    · intro hx
-      exact ⟨((Set.ext_iff.1 hΩU x).1 ⟨hx.1, hWsub hx.2⟩).1, hx.2⟩
-    · intro hx
-      exact ⟨((Set.ext_iff.1 hΩU x).2 ⟨hx.1, hWsub hx.2⟩).1, hx.2⟩
+    simp only [mem_inter_iff]
+    exact and_congr_left fun hx ↦ mem_iff_mem_of_inter_eq hΩU (hWsub hx)
   obtain ⟨_, haW⟩ :=
     exists_uniformlyEllipticOn_inter_of_isCompact_closure (W := W) hW hWU hlam
       ha hsmooth
