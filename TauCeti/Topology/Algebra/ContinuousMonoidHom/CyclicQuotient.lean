@@ -59,21 +59,6 @@ theorem exists_comp_eq_iff_orderOf_apply_dvd_natCard
 
 variable {A : Type*} [CommMonoid A] [TopologicalSpace A] [ContinuousMul A] [T2Space A]
 
-/-- Evaluation on a topological generator preserves the order of a continuous character. -/
-theorem orderOf_apply_eq_of_topologicalGenerator (χ : G →ₜ* A)
-    (hg : (Subgroup.closure {g}).topologicalClosure = ⊤) :
-    orderOf (χ g) = orderOf χ := by
-  rw [orderOf_eq_orderOf_iff]
-  intro n
-  constructor
-  · intro h
-    apply toMonoidHom_injective
-    apply MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top hg
-      (χ ^ n).continuous (1 : G →ₜ* A).continuous
-    simpa [Set.eqOn_singleton] using h
-  · intro h
-    simpa using DFunLike.congr_fun h g
-
 /-- In a family of discrete quotients of sizes `p ^ n` of a topologically cyclic group, the
 least level through which a character of order `p ^ r` factors is `r`. -/
 theorem isLeast_level_of_orderOf_eq_pow (χ : G →ₜ* A)
