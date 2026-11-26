@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Lojasiewicz
 public import TauCeti.Dynamics.Flow.Stable.Retraction
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Stable sets of a Łojasiewicz critical set of a negative gradient flow
@@ -28,7 +28,7 @@ point of `C`, behaves as follows.
   map is continuous (`Flow.IsNegativeGradient.continuousOn_limUnder_of_lojasiewicz`). On compact
   subsets of the stable set the convergence is uniform
   (`Flow.IsNegativeGradient.tendstoUniformlyOn_limUnder_of_lojasiewicz`).
-* It strong deformation retracts onto `C`, by following the flow to its limit
+* It strong deformation retracts onto `C`
   (`Flow.IsNegativeGradient.exists_strong_deformation_retraction_of_lojasiewicz`).
 
 The input is the finite-length bound for gradient trajectories
@@ -77,12 +77,12 @@ theorem dist_apply_le_of_lojasiewicz (hφ : IsNegativeGradient φ f) (hf : Diffe
   gcongr
   exact sub_le_self _ (Real.rpow_nonneg (sub_nonneg.2 hb) _)
 
-/-- The length bound `e ↦ e ^ (1 - θ) / (c (1 - θ))` tends to `0` as `e → 0⁺`. -/
-private theorem tendsto_rpow_div (hθ : θ < 1) :
+/-- The length bound `e ↦ e ^ (1 - θ) / (c (1 - θ))` tends to `0` as `e → 0⁺`, the form taken by
+the results on flows with a Lyapunov function. -/
+private theorem tendsto_lengthBound (hθ : θ < 1) :
     Tendsto (fun e : ℝ ↦ e ^ (1 - θ) / (c * (1 - θ))) (𝓝[≥] 0) (𝓝 0) := by
-  have h := ((Real.continuousAt_rpow_const 0 (1 - θ) (Or.inr (sub_pos.2 hθ).le)).tendsto.div_const
-    (c * (1 - θ))).mono_left (nhdsWithin_le_nhds (s := Ici 0))
-  simpa [Real.zero_rpow (sub_pos.2 hθ).ne'] using h
+  simpa using ((TauCeti.tendsto_rpow_nhds_zero (sub_pos.2 hθ)).div_const (c * (1 - θ))).mono_left
+    nhdsWithin_le_nhds
 
 variable (hφ : IsNegativeGradient φ f) (hf : Differentiable ℝ f) (hC : IsCompact C)
   (hCb : ∀ p ∈ C, f p = b) (hU : U ∈ 𝓝ˢ C) (hc : 0 < c) (hθ : θ < 1)
@@ -104,7 +104,7 @@ theorem tendstoLocallyUniformlyOn_limUnder_of_lojasiewicz :
     TendstoLocallyUniformlyOn (fun t x ↦ φ t x) (fun x ↦ limUnder atTop fun t ↦ φ t x) atTop
       (⋃ p ∈ C, φ.stableSet p) :=
   tendstoLocallyUniformlyOn_limUnder_biUnion_stableSet hf.continuous
-    (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_rpow_div hθ)
+    (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_lengthBound hθ)
     (forall_dist_apply_le hφ hf hc hθ hL)
 
 /-- **Orbits converge uniformly on compact subsets of the stable set of a Łojasiewicz critical
@@ -116,7 +116,7 @@ theorem tendstoUniformlyOn_limUnder_of_lojasiewicz {K : Set E} (hK : IsCompact K
     (hKS : K ⊆ ⋃ p ∈ C, φ.stableSet p) :
     TendstoUniformlyOn (fun t x ↦ φ t x) (fun x ↦ limUnder atTop fun t ↦ φ t x) atTop K :=
   tendstoUniformlyOn_limUnder_of_subset_biUnion_stableSet hf.continuous
-    (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_rpow_div hθ)
+    (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_lengthBound hθ)
     (forall_dist_apply_le hφ hf hc hθ hL) hK hKS
 
 /-- **The limit map is continuous on the stable set of a Łojasiewicz critical set.** If `f`
@@ -126,22 +126,21 @@ flow is continuous on that stable set. -/
 theorem continuousOn_limUnder_of_lojasiewicz :
     ContinuousOn (fun x ↦ limUnder atTop fun t ↦ φ t x) (⋃ p ∈ C, φ.stableSet p) :=
   continuousOn_limUnder_biUnion_stableSet hf.continuous
-    (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_rpow_div hθ)
+    (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_lengthBound hθ)
     (forall_dist_apply_le hφ hf hc hθ hL)
 
 /-- **The stable set of a Łojasiewicz critical set deformation retracts onto it.** Let `C` be a
 compact set of rest points of the negative gradient flow of `f`, on which `f = b`, and suppose
 `‖∇f‖ ≥ c (f - b) ^ θ` with `c > 0` and `θ < 1` near `C` wherever `f ≥ b`. Then the stable set
-`⋃ p ∈ C, stableSet φ p` strong deformation retracts onto `C`, by flowing each point to the limit
-of its orbit. -/
+`⋃ p ∈ C, stableSet φ p` strong deformation retracts onto `C`. -/
 theorem exists_strong_deformation_retraction_of_lojasiewicz
     (hfix : ∀ p ∈ C, ∀ t, φ t p = p) :
     ∃ r : C(↥(⋃ p ∈ C, φ.stableSet p), C),
       (∀ p, r (ContinuousMap.inclusion (subset_biUnion_stableSet hfix) p) = p) ∧
-      Nonempty (((ContinuousMap.inclusion (subset_biUnion_stableSet hfix)).comp r).HomotopyRel
-        (.id _) {x | (x : E) ∈ C}) :=
+      Nonempty ((ContinuousMap.id _).HomotopyRel
+        ((ContinuousMap.inclusion (subset_biUnion_stableSet hfix)).comp r) {x | (x : E) ∈ C}) :=
   exists_strong_deformation_retraction_biUnion_stableSet hf.continuous
-    (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_rpow_div hθ)
+    (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_lengthBound hθ)
     (forall_dist_apply_le hφ hf hc hθ hL) hfix
 
 end Flow.IsNegativeGradient

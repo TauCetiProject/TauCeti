@@ -42,14 +42,16 @@ this holds with `Ψ e = e ^ (1 - θ) / (c (1 - θ))`, by the finite-length argum
   Hence the limit map `ℓ` is continuous on `S`
   (`Flow.continuousOn_limUnder_biUnion_stableSet`), and on compact subsets of `S` the
   convergence is uniform (`Flow.tendstoUniformlyOn_limUnder_of_subset_biUnion_stableSet`).
-* **Strong deformation retraction.** If the points of `C` are rest points, then `C ⊆ S`, and
-  `(s, x) ↦ φ (s / (1 - s)) x` for `s < 1`, `(1, x) ↦ ℓ x` is a strong deformation retraction of
-  `S` onto `C` (`Flow.exists_strong_deformation_retraction_biUnion_stableSet`).
+* **Strong deformation retraction.** If the points of `C` are rest points, then `C ⊆ S`, and `S`
+  strong deformation retracts onto `C`
+  (`Flow.exists_strong_deformation_retraction_biUnion_stableSet`). The proof deforms `S` along
+  the reparametrized flow `(s, x) ↦ φ (s / (1 - s)) x` for `s < 1`, ending at `(1, x) ↦ ℓ x`.
 
-Without a length bound none of this holds: a smooth gradient flow can have an orbit spiralling
-towards a circle of critical points, with no limit at all. Nothing here assumes that `C` is a
-manifold, that the critical points are nondegenerate in any sense, or that the ambient space is
-locally compact; the compactness of `C` alone makes the trapping neighbourhood uniform.
+Some such bound is needed: without it, orbits starting near `C` need not converge. A smooth
+gradient flow can have an orbit spiralling towards a circle of critical points, with no limit at
+all. Nothing here assumes that `C` is a manifold, that the critical points are nondegenerate in
+any sense, or that the ambient space is locally compact; the compactness of `C` alone makes the
+trapping neighbourhood uniform.
 
 ## References
 
@@ -240,6 +242,11 @@ private theorem retractionMap_of_lt {q : I × α} (hq : (q.1 : ℝ) < 1) :
   simp [retractionMap, hq]
 
 omit hg hanti hC hCb hU hΨ hlen in
+private theorem retractionMap_of_not_lt {q : I × α} (hq : ¬(q.1 : ℝ) < 1) :
+    retractionMap φ q = limUnder atTop fun t ↦ φ t q.2 := by
+  simp [retractionMap, hq]
+
+omit hg hanti hC hCb hU hΨ hlen in
 private theorem retractionMap_one (x : α) :
     retractionMap φ (1, x) = limUnder atTop fun t ↦ φ t x := by
   simp [retractionMap]
@@ -289,21 +296,20 @@ private theorem continuousOn_retractionMap :
         nlinarith
       rw [retractionMap_of_lt hs1, dist_comm]
       exact (hT _ hτT x hxN).le
-    · obtain rfl : s = 1 := Subtype.ext (le_antisymm (unitInterval.le_one s) (not_lt.1 hs1))
-      simpa [retractionMap_one] using (half_pos hε).le
+    · rw [retractionMap_of_not_lt hs1]
+      simpa using (half_pos hε).le
 
 /-- **The stable set of a compact set of rest points deformation retracts onto it.** Let `φ` be a
 real flow on a metric space, `g` a continuous function antitone along every orbit, and `C` a
 compact set of rest points of `φ` on which `g = b`. Suppose that near `C` the displacement of
 orbit segments along which `g ≥ b` is bounded by `Ψ` of the drop of `g`, with `Ψ e → 0` as
-`e → 0⁺`. Then the stable set `⋃ p ∈ C, stableSet φ p` strong deformation retracts onto `C`,
-through the deformation `(s, x) ↦ φ (s / (1 - s)) x` for `s < 1`, ending at the limit map. -/
+`e → 0⁺`. Then the stable set `⋃ p ∈ C, stableSet φ p` strong deformation retracts onto `C`. -/
 theorem exists_strong_deformation_retraction_biUnion_stableSet
     (hfix : ∀ p ∈ C, ∀ t, φ t p = p) :
     ∃ r : C(↥(⋃ p ∈ C, φ.stableSet p), C),
       (∀ p, r (ContinuousMap.inclusion (subset_biUnion_stableSet hfix) p) = p) ∧
-      Nonempty (((ContinuousMap.inclusion (subset_biUnion_stableSet hfix)).comp r).HomotopyRel
-        (.id _) {x | (x : α) ∈ C}) := by
+      Nonempty ((ContinuousMap.id _).HomotopyRel
+        ((ContinuousMap.inclusion (subset_biUnion_stableSet hfix)).comp r) {x | (x : α) ∈ C}) := by
   set S := ⋃ p ∈ C, φ.stableSet p
   have hcont := continuousOn_retractionMap hg hanti hC hCb hU hΨ hlen
   -- The deformation keeps the stable set inside itself.
@@ -313,15 +319,14 @@ theorem exists_strong_deformation_retraction_biUnion_stableSet
     · obtain ⟨p, hp, hxp⟩ := mem_iUnion₂.1 hx
       rw [retractionMap_of_lt hs]
       exact mem_biUnion hp ((φ.apply_mem_stableSet_iff _).2 hxp)
-    · obtain rfl : s = 1 := Subtype.ext (le_antisymm (unitInterval.le_one s) (not_lt.1 hs))
-      rw [retractionMap_one]
+    · rw [retractionMap_of_not_lt hs]
       exact subset_biUnion_stableSet hfix (limUnder_atTop_mem_of_mem_biUnion_stableSet hx)
   have hlimfix : ∀ p ∈ C, (limUnder atTop fun t ↦ φ t p) = p := fun p hp ↦
     limUnder_atTop_eq_of_mem_stableSet (self_mem_stableSet_iff.2 (hfix p hp))
   let r : C(S, C) := ⟨fun x ↦ ⟨limUnder atTop fun t ↦ φ t x,
       limUnder_atTop_mem_of_mem_biUnion_stableSet x.property⟩,
     ((continuousOn_limUnder_biUnion_stableSet hg hanti hC hCb hU hΨ hlen).domRestrict).subtype_mk _⟩
-  refine ⟨r, fun p ↦ Subtype.ext (hlimfix p p.property), ⟨ContinuousMap.HomotopyRel.symm ?_⟩⟩
+  refine ⟨r, fun p ↦ Subtype.ext (hlimfix p p.property), ⟨?_⟩⟩
   exact
     { toFun := fun q ↦ ⟨retractionMap φ (q.1, q.2), hmem q⟩
       continuous_toFun := (hcont.comp_continuous
@@ -332,8 +337,7 @@ theorem exists_strong_deformation_retraction_biUnion_stableSet
       prop' := fun s x hx ↦ Subtype.ext (by
         by_cases hs : (s : ℝ) < 1
         · simpa [retractionMap_of_lt (q := (s, (x : α))) hs] using hfix _ hx _
-        · obtain rfl : s = 1 := Subtype.ext (le_antisymm (unitInterval.le_one s) (not_lt.1 hs))
-          simp [retractionMap_one, hlimfix _ hx]) }
+        · simp [retractionMap_of_not_lt (q := (s, (x : α))) hs, hlimfix _ hx]) }
 
 end Limit
 
