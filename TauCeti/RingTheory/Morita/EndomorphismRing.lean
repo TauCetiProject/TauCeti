@@ -15,7 +15,7 @@ import Mathlib.Algebra.Category.ModuleCat.Injective
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Endomorphism
 import TauCeti.Algebra.Category.ModuleCat.AdditiveClosure
 import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
-import TauCeti.CategoryTheory.Functor.RingEquivEnd
+import TauCeti.Algebra.Category.ModuleCat.End
 import TauCeti.RingTheory.Morita.Progenerator
 
 /-!
@@ -55,10 +55,10 @@ closure of `M`, so `M' ≅ G (G⁻¹ M')` is in the additive closure of `G M`. H
 Module.End Γ' (G M)` and `Module.End Γ' M' ≅ A'`, by the double centralizer property of a generator
 (`TauCeti.algEquivEndEndOfIsGenerator`).
 
-## Main definitions
-
-* `CategoryTheory.Functor.FullyFaithful.moduleEndAlgEquiv`: the identification
-  `Module.End A M ≃ₐ[R] Module.End B (F M)` for an `R`-linear fully faithful functor `F`.
+This adapts the proof of `TauCeti.exists_moritaEquivalence_functor_obj_iso_of_algEquiv_end`
+(`TauCeti/RingTheory/Morita/Tachikawa/Correspondence.lean`), which runs the same chain for an
+`R`-algebra isomorphism `Module.End A M ≃ₐ[R] Module.End A' M'`, to a Morita equivalence between
+the endomorphism algebras.
 
 ## Main results
 
@@ -83,39 +83,6 @@ open CategoryTheory
 open scoped ModuleCat.Algebra
 
 universe u v w
-
-namespace CategoryTheory.Functor.FullyFaithful
-
-variable (R : Type*) [CommSemiring R] {A B : Type*} [Ring A] [Algebra R A] [Ring B] [Algebra R B]
-  {F : ModuleCat.{v} A ⥤ ModuleCat.{w} B} [F.Additive] [F.Linear R] (hF : F.FullyFaithful)
-
-/-- An `R`-linear fully faithful functor `F` between module categories, for instance a Morita
-equivalence, identifies the endomorphism algebra of a module `M` with that of `F M`. -/
-noncomputable def moduleEndAlgEquiv (M : ModuleCat.{v} A) :
-    Module.End A M ≃ₐ[R] Module.End B (F.obj M) :=
-  AlgEquiv.ofRingEquiv (f := (ModuleCat.endRingEquiv M).symm.trans
-    ((hF.ringEquivEnd M).trans (ModuleCat.endRingEquiv (F.obj M)))) fun r ↦ by
-    rw [RingEquiv.trans_apply, RingEquiv.trans_apply, ModuleCat.endRingEquiv_apply,
-      Functor.FullyFaithful.ringEquivEnd_apply_asHom]
-    -- The endomorphism `algebraMap R _ r` of `M` is `r • 𝟙 M`, and `F` is `R`-linear.
-    change (F.map (r • 𝟙 M)).hom = _
-    rw [F.map_smul, F.map_id]
-    rfl
-
-@[simp]
-theorem moduleEndAlgEquiv_apply (M : ModuleCat.{v} A) (f : Module.End A M) :
-    hF.moduleEndAlgEquiv R M f = (F.map (ModuleCat.ofHom f)).hom := by
-  rw [moduleEndAlgEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply, RingEquiv.trans_apply,
-    ModuleCat.endRingEquiv_apply, Functor.FullyFaithful.ringEquivEnd_apply_asHom]
-  rfl
-
-@[simp]
-theorem moduleEndAlgEquiv_symm_apply (M : ModuleCat.{v} A) (g : Module.End B (F.obj M)) :
-    (hF.moduleEndAlgEquiv R M).symm g = (hF.preimage (ModuleCat.ofHom g)).hom := by
-  rw [AlgEquiv.symm_apply_eq, moduleEndAlgEquiv_apply]
-  exact congrArg ModuleCat.Hom.hom (hF.map_preimage (ModuleCat.ofHom g)).symm
-
-end CategoryTheory.Functor.FullyFaithful
 
 namespace TauCeti
 
