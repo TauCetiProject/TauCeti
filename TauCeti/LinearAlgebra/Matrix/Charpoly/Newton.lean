@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+public import Mathlib.Algebra.MvPolynomial.Supported
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
@@ -29,6 +30,11 @@ Newton's identity for that multiset (`Multiset.mul_esymm_eq_sum`). The general c
 universal matrix `Matrix.mvPolynomialX` over `ℤ`, whose coefficient ring embeds into an
 algebraically closed field.
 
+Since `c_0 = 1`, the recurrence solves for `p_r` without any division: the traces of the positive
+powers are universal integer polynomials in the coefficients, `p_k = N_k(c_1, …, c_k)` for the
+Newton trace polynomials `TauCeti.newtonTracePolynomial k`. So `p_1 = -c_1` and
+`p_2 = c_1 ^ 2 - 2 c_2`.
+
 When division by the integers `1, …, r` is unique, the recurrence determines `c_r` from the traces
 `p_1, …, p_r`. So over a ring without additive torsion, such as a field of characteristic zero,
 the traces of the first `d` powers of a `d × d` matrix determine its characteristic polynomial.
@@ -38,6 +44,10 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
 * `Matrix.mul_coeff_charpolyRev_eq_neg_sum`: **Newton's identities** for the traces of the powers
   of a matrix over any commutative ring; `LinearMap.mul_coeff_reverse_charpoly_eq_neg_sum` is the
   same statement for an endomorphism of a finite free module.
+* `TauCeti.newtonTracePolynomial`, `Matrix.trace_pow_eq_aeval_newtonTracePolynomial`: over any
+  commutative ring, `tr (A ^ k)` for `0 < k` is a universal integer polynomial in the coefficients
+  of `det (1 - X A)`, involving only `c_1, …, c_k`
+  (`TauCeti.newtonTracePolynomial_mem_supported`).
 * `Matrix.trace_pow_eq_of_charpolyRev_eq`: over any commutative ring, `det (1 - X A)` determines
   the traces of all positive powers of `A`.
 * `Matrix.trace_pow_eq_of_charpoly_eq`: over any commutative ring, the characteristic polynomial
@@ -66,6 +76,64 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
 public section
 
 open Finset Polynomial
+
+namespace TauCeti
+
+open MvPolynomial in
+/-- **The Newton trace polynomials.** The integer polynomials `N_k` in the variables `X i`,
+`i : ℕ`, given by `N_0 = 0` and
+`N_(k+1) = -(k + 1) X_(k+1) - (X_k N_1 + X_(k-1) N_2 + ⋯ + X_1 N_k)`.
+Substituting the coefficients `c_i` of `det (1 - X A)` for the variables gives `tr (A ^ k)` for
+every `0 < k` and every square matrix `A` over every commutative ring
+(`Matrix.trace_pow_eq_aeval_newtonTracePolynomial`), and `N_k` involves only the variables
+`X 1, …, X k` (`TauCeti.newtonTracePolynomial_mem_supported`). So `N_1 = -X 1` and
+`N_2 = X 1 ^ 2 - 2 X 2`. -/
+noncomputable def newtonTracePolynomial : ℕ → MvPolynomial ℕ ℤ
+  | 0 => 0
+  | k + 1 => -((k + 1 : MvPolynomial ℕ ℤ) * X (k + 1)) -
+      ∑ j : Fin k, X (k - j) * newtonTracePolynomial (j + 1)
+
+@[simp]
+theorem newtonTracePolynomial_zero : newtonTracePolynomial 0 = 0 := by
+  rw [newtonTracePolynomial]
+
+open MvPolynomial in
+/-- The defining recurrence of the Newton trace polynomials. -/
+theorem newtonTracePolynomial_succ (k : ℕ) :
+    newtonTracePolynomial (k + 1) = -((k + 1 : MvPolynomial ℕ ℤ) * X (k + 1)) -
+      ∑ j : Fin k, X (k - j) * newtonTracePolynomial (j + 1) := by
+  rw [newtonTracePolynomial]
+
+open MvPolynomial in
+/-- `N_1 = -X 1`: the trace is minus the first coefficient. -/
+@[simp]
+theorem newtonTracePolynomial_one : newtonTracePolynomial 1 = -X 1 := by
+  rw [newtonTracePolynomial_succ]
+  simp
+
+open MvPolynomial in
+/-- `N_2 = X 1 ^ 2 - 2 X 2`. -/
+theorem newtonTracePolynomial_two : newtonTracePolynomial 2 = X 1 ^ 2 - 2 * X 2 := by
+  rw [newtonTracePolynomial_succ]
+  simp only [Fin.sum_univ_one, Fin.val_zero, zero_add, newtonTracePolynomial_one]
+  ring
+
+open MvPolynomial in
+/-- The Newton trace polynomial `N_k` involves only the variables `X 1, …, X k`. -/
+theorem newtonTracePolynomial_mem_supported (k : ℕ) :
+    newtonTracePolynomial k ∈ supported ℤ (Set.Icc 1 k) := by
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+  rcases k with _ | k
+  · rw [newtonTracePolynomial_zero]
+    exact zero_mem _
+  rw [newtonTracePolynomial_succ]
+  refine sub_mem (neg_mem (mul_mem (add_mem (natCast_mem _ _) (one_mem _))
+    (X_mem_supported.mpr ⟨by omega, le_rfl⟩))) (sum_mem fun j _ ↦ mul_mem
+      (X_mem_supported.mpr ⟨by omega, by omega⟩)
+      (supported_mono (Set.Icc_subset_Icc_right (by omega)) (ih _ (by omega))))
+
+end TauCeti
 
 namespace Matrix
 
@@ -127,6 +195,32 @@ theorem mul_coeff_charpolyRev_eq_neg_sum (A : Matrix n n R) (r : ℕ) :
   have hφ : U.map φ = A := mvPolynomialX_map_eval₂ _ A
   have h := congrArg φ hU
   simpa [← hφ, charpolyRev_map, coeff_map, ← Matrix.map_pow, AddMonoidHom.map_trace] using h
+
+/-- **The power sums are integer polynomials in the coefficients.** Over any commutative ring, the
+trace of the `k`-th power of a square matrix `A`, for `0 < k`, is the Newton trace polynomial
+`TauCeti.newtonTracePolynomial k`, a universal integer polynomial, evaluated at the coefficients
+`c_1, …, c_k` of `det (1 - X A)`. -/
+theorem trace_pow_eq_aeval_newtonTracePolynomial (A : Matrix n n R) {k : ℕ} (hk : 0 < k) :
+    (A ^ k).trace =
+      MvPolynomial.aeval (fun i ↦ A.charpolyRev.coeff i) (TauCeti.newtonTracePolynomial k) := by
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+  obtain ⟨r, rfl⟩ : ∃ r, k = r + 1 := ⟨k - 1, by omega⟩
+  -- Newton's identity in degree `r + 1`, with its last term `c_0 p_(r + 1) = p_(r + 1)` split off.
+  have h := A.mul_coeff_charpolyRev_eq_neg_sum (r + 1)
+  rw [sum_range_succ, Nat.sub_self, coeff_charpolyRev_zero, one_mul] at h
+  have hsum : ∑ j : Fin r, MvPolynomial.aeval (fun i ↦ A.charpolyRev.coeff i)
+      (MvPolynomial.X (r - j) * TauCeti.newtonTracePolynomial (j + 1)) =
+      ∑ j ∈ range r, A.charpolyRev.coeff (r - j) * (A ^ (j + 1)).trace := by
+    rw [Fin.sum_univ_eq_sum_range (fun j ↦ MvPolynomial.aeval (fun i ↦ A.charpolyRev.coeff i)
+      (MvPolynomial.X (r - j) * TauCeti.newtonTracePolynomial (j + 1)))]
+    refine sum_congr rfl fun j hj ↦ ?_
+    rw [mem_range] at hj
+    rw [map_mul, MvPolynomial.aeval_X, ← ih (j + 1) (by omega) (by omega)]
+  rw [TauCeti.newtonTracePolynomial_succ, map_sub, map_neg, map_sum, hsum, map_mul,
+    MvPolynomial.aeval_X, map_add, map_natCast, map_one]
+  push_cast at h
+  linear_combination h
 
 /-- Over any commutative ring, `det (1 - X A)` determines the traces of all positive powers of `A`:
 matrices with the same `det (1 - X A)`, possibly of different sizes, have the same `tr (A ^ j)`
