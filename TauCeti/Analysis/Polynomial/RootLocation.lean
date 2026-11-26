@@ -19,7 +19,8 @@ Let `p` be a split polynomial over a domain with a multiplicative seminorm. If
 coefficient times the product of `u - b` over the roots `b`, and there are `p.natDegree` of
 them. Consequently, if `p` is small at `u` compared with its leading coefficient,
 `‖p.eval u‖ < ‖p.leadingCoeff‖ * r ^ p.natDegree` with `0 ≤ r`, then some root of `p` lies
-within `r` of `u`.
+within `r` of `u`. Equivalently, if every root of `p` lies at distance at least `d ≥ 0` from `u`,
+then `‖p.leadingCoeff‖ * d ^ p.natDegree ≤ ‖p.eval u‖`.
 
 This is the pointwise step of root approximation for polynomial families, used in
 `TauCeti.Analysis.Polynomial.ContinuityOfRoots.Approximation`.
@@ -74,5 +75,16 @@ theorem exists_mem_roots_norm_sub_lt {R : Type*} [SeminormedCommRing R] [IsDomai
   obtain ⟨b, hb, hle⟩ := hp.exists_mem_roots_norm_sub_pow_le h0 u
   exact ⟨b, hb, lt_of_pow_lt_pow_left₀ _ hr
     (lt_of_mul_lt_mul_left (hle.trans_lt h) (norm_nonneg _))⟩
+
+/-- **A lower bound away from the roots.** If every root of a split polynomial `p` lies at
+distance at least `d ≥ 0` from `u`, then `‖p.leadingCoeff‖ * d ^ p.natDegree ≤ ‖p.eval u‖`.
+This includes constant `p`. The seminorm only needs to be multiplicative. -/
+theorem norm_leadingCoeff_mul_pow_le_norm_eval {R : Type*} [SeminormedCommRing R] [IsDomain R]
+    [NormMulClass R] {p : R[X]} (hp : p.Splits) {u : R} {d : ℝ} (hd : 0 ≤ d)
+    (h : ∀ b ∈ p.roots, d ≤ ‖u - b‖) :
+    ‖p.leadingCoeff‖ * d ^ p.natDegree ≤ ‖p.eval u‖ := by
+  by_contra! hlt
+  obtain ⟨b, hb, hub⟩ := hp.exists_mem_roots_norm_sub_lt hd hlt
+  exact (h b hb).not_gt hub
 
 end Polynomial.Splits
