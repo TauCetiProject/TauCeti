@@ -455,20 +455,13 @@ theorem exists_continuous_section_of_latticeMonodromyHom_eq_one [PathConnectedSp
     exact (latticeProjFiberEquiv F L x).eq_symm_apply.2 h.symm
   obtain ⟨s, hsx, hps⟩ := (hL.exists_section_iff_forall_monodromy_eq e).2 he
   have hproj (b : B) : (s b).val.proj = b := congrFun hps b
-  refine ⟨fun b ↦ cast (congrArg E (hproj b)) (s b).val.snd, ?_, fun b ↦ ?_, ?_⟩
+  refine ⟨fun b ↦ (latticeProjFiberEquiv F L b ⟨s b, hproj b⟩ : E b), ?_,
+    fun b ↦ (latticeProjFiberEquiv F L b ⟨s b, hproj b⟩).property, ?_⟩
   · refine (continuous_subtypeVal.comp s.continuous).congr fun b ↦ ?_
     exact (TotalSpace.mk_cast (hproj b) _).symm
-  · have key (v : {v : TotalSpace F E // v.snd ∈ L v.proj}) (h : v.val.proj = b) :
-        cast (congrArg E h) v.val.snd ∈ L b := by
-      obtain ⟨⟨c, w⟩, hw⟩ := v
-      cases h
-      exact hw
-    exact key (s b) (hproj b)
-  · have key (v : {v : TotalSpace F E // v.snd ∈ L v.proj}) (h : v.val.proj = x) (hv : v = e) :
-        cast (congrArg E h) v.val.snd = a := by
-      cases hv
-      rfl
-    exact key (s x) (hproj x) hsx
+  · change ((latticeProjFiberEquiv F L x ⟨s x, hproj x⟩ : L x) : E x) = a
+    rw [show (⟨s x, hproj x⟩ : latticeProj F L ⁻¹' {x}) = e from Subtype.ext hsx,
+      Equiv.apply_symm_apply]
 
 /-- **Trivial monodromy gives a global frame.** Let `L` be a family of full lattices of rank
 `|ι|`: every `L b` is spanned over `ℤ` by a linearly independent family indexed by `ι`. Over a

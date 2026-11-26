@@ -10,6 +10,7 @@ import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Compact
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Hamiltonian
 import Mathlib.Algebra.Group.Subgroup.Finsupp
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
+import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.DevelopingMap
 import TauCeti.Geometry.Manifold.Flow.Related
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -407,19 +408,10 @@ theorem exists_actionAngle_iff [BoundarylessManifold J B]
       hsσ⟩
   · rintro ⟨ha, hinj, hΛ, s, hsm, hs, hsσ⟩
     -- The exact frame `α_j = p • da_j` spans the period lattice.
-    have hda (j : ι) : ContMDiff J (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞ fun b ↦ TotalSpace.mk' (F →L[ℝ] ℝ)
-        (E := fun b : B ↦ TangentSpace J b →L[ℝ] ℝ) b (mvfderiv J (fun c ↦ a c j) b) :=
-      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).contMDiff.comp ha :
-        ContMDiff J 𝓘(ℝ) (∞ + 1) (fun c ↦ a c j)).contMDiff_totalSpaceMk_mvfderiv
-    let α : ι → SmoothForm J B ℝ 1 := fun j ↦
-      SmoothForm.degreeOneEquiv.symm (p • ⟨fun b ↦ mvfderiv J (fun c ↦ a c j) b, hda j⟩)
+    let α : ι → SmoothForm J B ℝ 1 := CotangentBundle.developingForm p ⟨a, ha⟩
     have hα (j : ι) (b : B) (v : TangentSpace J b) :
-        SmoothForm.degreeOneEquiv (α j) b v = p * mfderiv J 𝓘(ℝ, ι → ℝ) a b v j := by
-      have hab := (ha b).mdifferentiableAt (by simp)
-      simp only [α, LinearEquiv.apply_symm_apply, ContMDiffSection.coe_smul, Pi.smul_apply,
-        smul_apply, smul_eq_mul]
-      exact congrArg (p * ·) ((mvfderiv_apply_apply hab v j).symm.trans
-        (congrArg (· j) (mvfderiv_apply_eq_mfderiv_apply a b v)))
+        SmoothForm.degreeOneEquiv (α j) b v = p * mfderiv J 𝓘(ℝ, ι → ℝ) a b v j :=
+      CotangentBundle.degreeOneEquiv_developingForm_apply p ⟨a, ha⟩ j b v
     have hαΛ (b : B) : (fun j ↦ (SmoothForm.degreeOneEquiv (α j) b : F →L[ℝ] ℝ)) =
         fun j ↦ p • ((ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp
           (mfderiv J 𝓘(ℝ, ι → ℝ) a b) : F →L[ℝ] ℝ) :=
