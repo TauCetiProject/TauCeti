@@ -46,7 +46,7 @@ example (k : Type u) [CommRing k] :
   have hD₁ : D₁.IsEffectiveCartier := isEffectiveCartier_ofIdealTop_span_ΓSpecIso_inv (hX 0)
   have hD₂ : D₂.IsEffectiveCartier := isEffectiveCartier_ofIdealTop_span_ΓSpecIso_inv (hX 1)
   exact ⟨hD₁.blowupSupResidualLeft D₂, hD₂.blowupSupResidualRight D₁,
-    disjoint_support_blowupSupResidual D₁ D₂⟩
+    disjoint_support_blowupSupResidualLeft_blowupSupResidualRight D₁ D₂⟩
 
 -- Check 2: On `𝔸¹_k = Spec k[t]`, for `D₁ = 2[0] = (t²)` and `D₂ = 3[0] = (t³)`, the blowup along
 -- `(t²) ⊔ (t³) = (t²)` is an isomorphism, with `D'₁ = ⊤` (empty) and `D'₂ = p* (t)`.
@@ -69,7 +69,7 @@ example (k : Type u) [CommRing k] :
     rw [Ideal.span_singleton_le_span_singleton]
     exact map_dvd (Scheme.ΓSpecIso (.of R)).inv.hom ⟨Polynomial.X, by ring⟩
   refine ⟨hD₁.isIso_blowupToBase_sup_of_le hle, blowupSupResidualLeft_eq_top_of_le hle, ?_⟩
-  rw [blowupSupResidualRight_of_le hD₁.locallyPrincipal hle]
+  rw [blowupSupResidualRight_eq_comap_colon_of_le hD₁.locallyPrincipal hle]
   congr 1
   rw [ofIdealTop_colon_ofIdealTop]
   refine congrArg ofIdealTop ?_
@@ -124,7 +124,7 @@ example :
   refine ⟨hDt, hDe, hDt.isIso_blowupToBase_sup_of_le hle,
     blowupSupResidualLeft_eq_top_of_le hle, ?_,
     comap_mul_blowupSupResidualRight_eq Dt Dt2⟩
-  rw [blowupSupResidualRight_of_le hDt.locallyPrincipal hle]
+  rw [blowupSupResidualRight_eq_comap_colon_of_le hDt.locallyPrincipal hle]
   congr 1
   rw [ofIdealTop_colon_ofIdealTop]
   refine congrArg ofIdealTop ?_

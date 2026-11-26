@@ -50,9 +50,10 @@ open `U` where `D₁(U) = (x₁)` and `D₂(U) = (x₂)`, the residual ideals on
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_blowupToBase_sup_mul_blowupSupResidualLeft`,
   `AlgebraicGeometry.Scheme.IdealSheafData.comap_blowupToBase_sup_mul_blowupSupResidualRight`:
   `F * D'ᵢ = p* Dᵢ`.
-* `AlgebraicGeometry.Scheme.IdealSheafData.blowupSupResidualLeft_sup_right`,
-  `AlgebraicGeometry.Scheme.IdealSheafData.disjoint_support_blowupSupResidual`: `D'₁ ⊔ D'₂ = ⊤`
-  and `D'₁`, `D'₂` have disjoint supports.
+* In `AlgebraicGeometry.Scheme.IdealSheafData`:
+  `blowupSupResidualLeft_sup_blowupSupResidualRight` and
+  `disjoint_support_blowupSupResidualLeft_blowupSupResidualRight`
+  (`D'₁ ⊔ D'₂ = ⊤` and `D'₁`, `D'₂` have disjoint supports).
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_mul_blowupSupResidualRight_eq`:
   `p* D₁ * D'₂ = p* D₂ * D'₁`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.blowupSupResidualLeft`,
@@ -66,8 +67,9 @@ open `U` where `D₁(U) = (x₁)` and `D₂(U) = (x₂)`, the residual ideals on
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.isProper_blowupToBase_sup`,
   `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.isIso_blowupToBase_sup_of_le`:
   properness of `Bl_{D₁ ⊔ D₂} X ⟶ X` and triviality when `D₂ ≤ D₁`.
-* `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_blowupSupResidual_mul_inv`:
-  `[D'₁] * [D'₂]⁻¹ = p* ([D₁] * [D₂]⁻¹)`.
+* In `TauCeti.AlgebraicGeometry.LineBundleClass`:
+  `mk_toInvertibleSheaf_blowupSupResidualLeft_mul_inv_blowupSupResidualRight`
+  (`[D'₁] * [D'₂]⁻¹ = p* ([D₁] * [D₂]⁻¹)`).
 
 ## References
 
@@ -151,13 +153,10 @@ ideal `F` with the left residual ideal `D'₁` is the pulled-back ideal `p* D₁
 theorem comap_blowupToBase_sup_mul_blowupSupResidualLeft (D₁ D₂ : X.IdealSheafData) :
     (D₁.comap (D₁ ⊔ D₂).blowupToBase ⊔ D₂.comap (D₁ ⊔ D₂).blowupToBase) *
         D₁.blowupSupResidualLeft D₂ =
-      D₁.comap (D₁ ⊔ D₂).blowupToBase :=
-  (congrArg (· * _)
-    (comap_sup (J₁ := D₁) (J₂ := D₂) (f := (D₁ ⊔ D₂).blowupToBase)).symm).trans
-    ((mul_comm _ _).trans
-      ((D₁.comap (D₁ ⊔ D₂).blowupToBase).eq_colon_mul ((D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase)
-        (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.locallyPrincipal
-        (comap_mono _ le_sup_left)).symm)
+      D₁.comap (D₁ ⊔ D₂).blowupToBase := by
+  rw [← comap_sup, mul_comm]
+  exact (eq_colon_mul _ _ (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.locallyPrincipal
+    (comap_mono _ le_sup_left)).symm
 
 /-- **Right factorization `p* D₂ = F + D'₂`.** On `Bl_{D₁ ⊔ D₂} X`, the product of the exceptional
 ideal `F` with the right residual ideal `D'₂` is the pulled-back ideal `p* D₂`. -/
@@ -165,18 +164,15 @@ ideal `F` with the right residual ideal `D'₂` is the pulled-back ideal `p* D�
 theorem comap_blowupToBase_sup_mul_blowupSupResidualRight (D₁ D₂ : X.IdealSheafData) :
     (D₁.comap (D₁ ⊔ D₂).blowupToBase ⊔ D₂.comap (D₁ ⊔ D₂).blowupToBase) *
         D₁.blowupSupResidualRight D₂ =
-      D₂.comap (D₁ ⊔ D₂).blowupToBase :=
-  (congrArg (· * _)
-    (comap_sup (J₁ := D₁) (J₂ := D₂) (f := (D₁ ⊔ D₂).blowupToBase)).symm).trans
-    ((mul_comm _ _).trans
-      ((D₂.comap (D₁ ⊔ D₂).blowupToBase).eq_colon_mul ((D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase)
-        (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.locallyPrincipal
-        (comap_mono _ le_sup_right)).symm)
+      D₂.comap (D₁ ⊔ D₂).blowupToBase := by
+  rw [← comap_sup, mul_comm]
+  exact (eq_colon_mul _ _ (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.locallyPrincipal
+    (comap_mono _ le_sup_right)).symm
 
 /-- **Coprimality of residual ideals.** On `Bl_{D₁ ⊔ D₂} X`, the sum of the two residual ideals
 `D'₁` and `D'₂` is the unit ideal sheaf. -/
 @[simp]
-theorem blowupSupResidualLeft_sup_right (D₁ D₂ : X.IdealSheafData) :
+theorem blowupSupResidualLeft_sup_blowupSupResidualRight (D₁ D₂ : X.IdealSheafData) :
     D₁.blowupSupResidualLeft D₂ ⊔ D₁.blowupSupResidualRight D₂ = ⊤ := by
   refine (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.mul_left_cancel ?_
   rw [mul_inf, comap_sup, comap_blowupToBase_sup_mul_blowupSupResidualLeft,
@@ -184,9 +180,10 @@ theorem blowupSupResidualLeft_sup_right (D₁ D₂ : X.IdealSheafData) :
 
 /-- **Cartier separation of supports.** On `Bl_{D₁ ⊔ D₂} X`, the two residual subschemes `V(D'₁)`
 and `V(D'₂)` have disjoint supports. -/
-theorem disjoint_support_blowupSupResidual (D₁ D₂ : X.IdealSheafData) :
+theorem disjoint_support_blowupSupResidualLeft_blowupSupResidualRight
+    (D₁ D₂ : X.IdealSheafData) :
     Disjoint (D₁.blowupSupResidualLeft D₂).support (D₁.blowupSupResidualRight D₂).support := by
-  rw [disjoint_iff, ← support_sup, blowupSupResidualLeft_sup_right, support_top]
+  rw [disjoint_iff, ← support_sup, blowupSupResidualLeft_sup_blowupSupResidualRight, support_top]
 
 /-- **Cross-sum identity `p* D₁ + D'₂ = p* D₂ + D'₁`.** On `Bl_{D₁ ⊔ D₂} X`, the ideal products
 `p* D₁ * D'₂` and `p* D₂ * D'₁` coincide. -/
@@ -241,7 +238,7 @@ theorem blowupSupResidualRight_eq_top_of_le {D₁ D₂ : X.IdealSheafData} (h : 
 
 /-- If `D₁` is locally principal and `D₂ ≤ D₁`, the right residual ideal on `Bl_{D₁ ⊔ D₂} X` is
 the pullback of the quotient `(D₂ : D₁)`. -/
-theorem blowupSupResidualRight_of_le {D₁ D₂ : X.IdealSheafData}
+theorem blowupSupResidualRight_eq_comap_colon_of_le {D₁ D₂ : X.IdealSheafData}
     (hD₁ : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧
       ∃ a : Γ(X, U), D₁.ideal U = Ideal.span {a})
     (h : D₂ ≤ D₁) :
@@ -255,7 +252,7 @@ theorem blowupSupResidualRight_of_le {D₁ D₂ : X.IdealSheafData}
 
 /-- If `D₂` is locally principal and `D₁ ≤ D₂`, the left residual ideal on `Bl_{D₁ ⊔ D₂} X` is
 the pullback of the quotient `(D₁ : D₂)`. -/
-theorem blowupSupResidualLeft_of_le {D₁ D₂ : X.IdealSheafData}
+theorem blowupSupResidualLeft_eq_comap_colon_of_le {D₁ D₂ : X.IdealSheafData}
     (hD₂ : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧
       ∃ a : Γ(X, U), D₂.ideal U = Ideal.span {a})
     (h : D₁ ≤ D₂) :
@@ -337,7 +334,8 @@ variable {X : Scheme.{u}}
 /-- **Picard-group difference identity `D'₁ - D'₂ = p* (D₁ - D₂)`.** In the Picard group of
 `Bl_{D₁ ⊔ D₂} X`, the ratio of the line-bundle classes of the residual effective Cartier divisors
 equals the pullback of the ratio of the classes of `D₁` and `D₂`. -/
-theorem mk_toInvertibleSheaf_blowupSupResidual_mul_inv {D₁ D₂ : X.IdealSheafData}
+theorem mk_toInvertibleSheaf_blowupSupResidualLeft_mul_inv_blowupSupResidualRight
+    {D₁ D₂ : X.IdealSheafData}
     (hD₁ : D₁.IsEffectiveCartier) (hD₂ : D₂.IsEffectiveCartier) :
     mk (hD₁.blowupSupResidualLeft D₂).toInvertibleSheaf *
         (mk (hD₂.blowupSupResidualRight D₁).toInvertibleSheaf)⁻¹ =
