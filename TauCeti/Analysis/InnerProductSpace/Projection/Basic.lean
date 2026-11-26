@@ -79,6 +79,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 ## Main results
 
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
+* `Submodule.starProjection_congr`: equal submodules with `HasOrthogonalProjection` instances have
+  equal orthogonal projections.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
@@ -180,6 +182,14 @@ variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalPr
 theorem starProjection_starProjection_apply (x : E) :
     U.starProjection (U.starProjection x) = U.starProjection x :=
   starProjection_eq_self_iff.mpr (U.starProjection_apply_mem x)
+
+/-- Equal submodules with `HasOrthogonalProjection` instances have equal orthogonal projections.
+Since `Submodule.HasOrthogonalProjection` is a `Prop`-valued class, any two instances on the
+same submodule are definitionally equal by proof irrelevance. -/
+theorem starProjection_congr {K₁ K₂ : Submodule 𝕜 E} [K₁.HasOrthogonalProjection]
+    [K₂.HasOrthogonalProjection] (h : K₁ = K₂) : K₁.starProjection = K₂.starProjection := by
+  subst h
+  rfl
 
 /-- The inner product with the orthogonal-complement projection is squared distance, embedded
 in the scalar field. In particular, this inner product is real even for complex scalars. -/

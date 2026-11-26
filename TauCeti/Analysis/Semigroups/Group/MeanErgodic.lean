@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Semigroups.Group.Eigenspace
 public import TauCeti.Analysis.Semigroups.Group.Unitary
 import Mathlib.Analysis.InnerProductSpace.MeanErgodic
 import Mathlib.MeasureTheory.Integral.IntervalAverage
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.RestrictScalars
 import TauCeti.Analysis.Semigroups.Group.PhaseShift.Unitary
 import TauCeti.MeasureTheory.Integral.Average
@@ -53,8 +54,6 @@ establishes shift invariance via the coboundary telescoping identity
   space.
 * `TauCeti.Semigroups.StronglyContinuousGroup.inner_intervalIntegral_orbit`: commuting an inner
   product past an orbit interval integral.
-* `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.norm_intervalIntegral_orbit_le`: norm
-  bound `‖∫ t in a..b, U t v‖ ≤ ‖v‖ * |b - a|` for unitary C₀-groups.
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.tendsto_average_starProjection`:
   continuous-time von Neumann mean ergodic theorem for unitary C₀-groups.
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.tendsto_twistedAverage_starProjection`:
@@ -330,12 +329,6 @@ namespace IsUnitary
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 variable {U : StronglyContinuousGroup H}
 
-/-- For a unitary C₀-group `U`, the interval integral of an orbit has norm at most
-`‖v‖ * |b - a|`. -/
-theorem norm_intervalIntegral_orbit_le (hU : U.IsUnitary) (a b : ℝ) (v : H) :
-    ‖∫ t in a..b, U t v‖ ≤ ‖v‖ * |b - a| :=
-  StronglyContinuousGroup.norm_intervalIntegral_orbit_le U hU.opNorm_le_one a b v
-
 section ComplexMeanErgodic
 
 attribute [local instance] InnerProductSpace.complexToReal
@@ -348,15 +341,9 @@ theorem tendsto_average_starProjection [CompleteSpace H] (hU : U.IsUnitary) (v :
     Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop
       (𝓝 ((U.fixedSubmodule hU.isComplexLinear).starProjection v)) := by
   have h := U.tendsto_average_orbit_starProjection_fixedSpace hU.opNorm_le_one v
-  have hcongr : ∀ {K₁ K₂ : Submodule ℝ H} [K₁.HasOrthogonalProjection]
-      [K₂.HasOrthogonalProjection], K₁ = K₂ → K₁.starProjection v = K₂.starProjection v := by
-    rintro K₁ _ _ _ rfl
-    rfl
-  have hproj :
-      U.fixedSpace.starProjection v = (U.fixedSubmodule hU.isComplexLinear).starProjection v :=
-    (hcongr (U.fixedSubmodule_restrictScalars hU.isComplexLinear)).symm.trans
-      (Submodule.starProjection_restrictScalars_apply (U.fixedSubmodule hU.isComplexLinear) v)
-  rwa [hproj] at h
+  rw [Submodule.starProjection_congr (U.fixedSubmodule_restrictScalars hU.isComplexLinear).symm,
+    Submodule.starProjection_restrictScalars_apply] at h
+  exact h
 
 end ComplexMeanErgodic
 
@@ -369,17 +356,8 @@ theorem tendsto_twistedAverage_starProjection [CompleteSpace H] (hU : U.IsUnitar
         T⁻¹ • ∫ t in (0 : ℝ)..T, Complex.exp (-(ω * t * Complex.I)) • U t v)
       atTop (𝓝 ((U.eigenspace hU.isComplexLinear ω).starProjection v)) := by
   have h := (hU.phaseShift ω).tendsto_average_starProjection v
-  -- `eigenspace` is not `@[expose]` across `module` boundaries, so `rfl` cannot unfold it here;
-  -- transport `starProjection` along `eigenspace_eq_fixedSubmodule_phaseShift`.
-  have hproj : ((U.phaseShift hU.isComplexLinear ω).fixedSubmodule
-      (hU.phaseShift ω).isComplexLinear).starProjection v =
-      (U.eigenspace hU.isComplexLinear ω).starProjection v := by
-    have hcongr : ∀ {K₁ K₂ : Submodule ℂ H} [K₁.HasOrthogonalProjection]
-        [K₂.HasOrthogonalProjection], K₁ = K₂ → K₁.starProjection v = K₂.starProjection v := by
-      rintro K₁ _ _ _ rfl
-      rfl
-    exact hcongr (U.eigenspace_eq_fixedSubmodule_phaseShift hU.isComplexLinear ω).symm
-  rw [hproj] at h
+  rw [Submodule.starProjection_congr
+    (U.eigenspace_eq_fixedSubmodule_phaseShift hU.isComplexLinear ω).symm] at h
   refine h.congr fun T ↦ ?_
   congr 1
   refine intervalIntegral.integral_congr fun t _ ↦ ?_

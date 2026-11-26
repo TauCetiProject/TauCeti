@@ -88,10 +88,8 @@ private theorem intervalIntegral_inner_twisted_orbit_eq (hU : U.IsUnitary)
       conj (Complex.exp (s * (ξ - ω) * Complex.I)) * Complex.exp (t * (ξ - ω) * Complex.I))
       ((volume.restrict (Set.uIoc 0 T)).prod σ) :=
     Integrable.of_bound (by fun_prop : Continuous _).aestronglyMeasurable 1
-      (Eventually.of_forall fun p ↦ by
-        rw [Function.uncurry_apply_pair, norm_mul, Complex.norm_conj, ← Complex.ofReal_sub,
-          ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I, ← Complex.ofReal_mul,
-          Complex.norm_exp_ofReal_mul_I, mul_one])
+      (Eventually.of_forall fun ⟨t, ξ⟩ ↦ by
+        simp [Complex.norm_exp])
   rw [intervalIntegral_integral_swap hint]
   exact integral_congr_ae (Eventually.of_forall fun ξ ↦ intervalIntegral.integral_const_mul _ _)
 
@@ -117,12 +115,8 @@ private theorem norm_intervalIntegral_twisted_sq_eq [CompleteSpace H] (hU : U.Is
     Integrable.of_bound
       ((Complex.continuous_conj.comp (by fun_prop)).mul
         (hK_cont.comp continuous_snd)).aestronglyMeasurable |T|
-      (Eventually.of_forall fun p ↦ by
-        dsimp only [e]
-        rw [Function.uncurry_apply_pair, norm_mul, Complex.norm_conj, ← Complex.ofReal_sub,
-          ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
-        simpa only [Complex.ofReal_mul, Complex.ofReal_sub, sub_zero] using
-          TauCeti.norm_integral_cexp_le (p.2 - ω) 0 T)
+      (Eventually.of_forall fun ⟨s, ξ⟩ ↦ by
+        simpa [e, Complex.norm_exp] using TauCeti.norm_integral_cexp_le (ξ - ω) 0 T)
   have hcomplex :
       ((‖∫ t in (0 : ℝ)..T, f t‖ ^ 2 : ℝ) : ℂ) = ((∫ ξ, ‖K ξ‖ ^ 2 ∂σ : ℝ) : ℂ) := by
     calc
