@@ -131,6 +131,7 @@ def singularHomologyIsoSublevelPairOfContractibleSpace (hab : a ≤ b)
 /-- The isomorphism `TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace` is the map induced
 by the inclusion `x ↦ x` of `X` into the subspace `{f ≤ b}`, which is all of `X`, followed by the
 quotient map `Hₖ₊₁({f ≤ b}) ⟶ Hₖ₊₁({f ≤ b}, {f ≤ a})`. -/
+@[reassoc]
 theorem singularHomologyIsoSublevelPairOfContractibleSpace_hom (hab : a ≤ b)
     [ContractibleSpace {x | f x ≤ a}] (hb : ∀ x, f x ≤ b) (R : A) (k : ℕ) :
     (singularHomologyIsoSublevelPairOfContractibleSpace hab hb R k).hom =
