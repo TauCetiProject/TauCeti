@@ -150,10 +150,8 @@ theorem ghostMap_verschiebung_of_not_dvd (n : ℕ) (x : BigWittVector (S / n) R)
 /-- The Verschiebung commutes with coefficient homomorphisms. -/
 @[simp]
 theorem verschiebung_map (n : ℕ) (f : R →+* R') (x : BigWittVector (S / n) R) :
-    verschiebung n (map f x) = map f (verschiebung n x) := by
-  ext m
-  simp only [coeff_verschiebung, coeff_map]
-  split_ifs <;> simp
+    verschiebung n (map f x) = map f (verschiebung n x) :=
+  verschiebungFun_map n f x
 
 /-- The Verschiebung commutes with restriction to smaller truncation sets. -/
 theorem restrict_verschiebung (n : ℕ) (h : T ≤ S) (x : BigWittVector (S / n) R) :
