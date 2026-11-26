@@ -144,9 +144,10 @@ theorem degree_eq_of_cobordism {E₀ H₀ M₀ : Type*} [NormedAddCommGroup E₀
   -- proper. A regular value of `g` from Sard's theorem is regular for both ends.
   have : T2Space M₀ := .of_injective_continuous hi₀ hj₀.contMDiff.continuous
   have : T2Space M₁ := .of_injective_continuous hi₁ hj₁.contMDiff.continuous
-  have hc₀ := hj₀.isLocalHomeomorph.isClosedEmbedding_of_isCompl_range hi₀ hj₁.isLocalHomeomorph hc
-  have hc₁ := hj₁.isLocalHomeomorph.isClosedEmbedding_of_isCompl_range hi₁ hj₀.isLocalHomeomorph
-    hc.symm
+  have hc₀ := hj₀.isLocalHomeomorph.isClosedEmbedding_of_isCompl_range hi₀
+    hj₁.isLocalHomeomorph.isOpenMap hc
+  have hc₁ := hj₁.isLocalHomeomorph.isClosedEmbedding_of_isCompl_range hi₁
+    hj₀.isLocalHomeomorph.isOpenMap hc.symm
   have := hgp.sigmaCompactSpace
   have hcard : Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) = Module.finrank ℝ E' := by
     simp [← o'.card_eq]
