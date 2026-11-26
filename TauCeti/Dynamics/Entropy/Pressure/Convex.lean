@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Dynamics.Entropy.Pressure
 import Mathlib.Analysis.MeanInequalities
-import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 import TauCeti.Analysis.Asymptotics.ExpGrowth
 
 /-!
@@ -15,13 +14,14 @@ import TauCeti.Analysis.Asymptotics.ExpGrowth
 
 For a map `T : X → X` of a uniform space, the topological pressure `φ ↦ P(T, φ)` is convex:
 for `0 ≤ t ≤ 1`, `P(T, t • φ + (1 - t) • ψ) ≤ t * P(T, φ) + (1 - t) * P(T, ψ)` in `EReal`,
-provided `P(T, φ)` and `P(T, ψ)` are not `⊤`. The proof applies Hölder's inequality with exponents
-`1 / t` and `1 / (1 - t)` to the sum over each dynamical net: the weight of the combined potential
-at `x` is
+unless one of `P(T, φ)` and `P(T, ψ)` is `⊤` and the other `⊥`. The proof applies Hölder's
+inequality with exponents `1 / t` and `1 / (1 - t)` to the sum over each dynamical net: the weight
+of the combined potential at `x` is
 `exp (birkhoffSum T φ n x) ^ t * exp (birkhoffSum T ψ n x) ^ (1 - t)`.
 
-The finiteness hypotheses exclude the indeterminate sum `⊤ + ⊥` on the right, where the
-pressure of one potential grows faster than any exponential and that of the other decays faster.
+The hypotheses exclude only the indeterminate sum `⊤ + ⊥` on the right, where the pressure of
+one potential grows faster than any exponential and that of the other decays faster. When one
+pressure is `⊤` and the other is not `⊥`, the right-hand side is `⊤`.
 
 ## Main results
 
@@ -29,6 +29,12 @@ pressure of one potential grows faster than any exponential and that of the othe
   `pressureNetSum T φ U n ^ t * pressureNetSum T ψ U n ^ (1 - t)`.
 * `TauCeti.netPressureEntourage_smul_add_smul_le`: convexity of the pressure at an entourage.
 * `TauCeti.topologicalPressure_smul_add_smul_le`: convexity of the topological pressure.
+
+## References
+
+* Peter Walters, *An Introduction to Ergodic Theory*, Graduate Texts in Mathematics 79, Springer,
+  1982, Theorem 9.7: convexity of the pressure, proved by Hölder's inequality on the sums over
+  separated sets.
 -/
 
 public section
@@ -51,9 +57,10 @@ private theorem ofReal_exp_birkhoffSum_smul_add_smul (T : X → X) (φ ψ : X �
       t * birkhoffSum T φ n x + (1 - t) * birkhoffSum T ψ n x := by
     simp only [birkhoffSum, Finset.mul_sum, ← Finset.sum_add_distrib, Pi.add_apply,
       Pi.smul_apply, smul_eq_mul]
-  rw [hsum, Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le, mul_comm t, mul_comm (1 - t),
-    Real.exp_mul, Real.exp_mul, ENNReal.ofReal_rpow_of_pos (Real.exp_pos _),
-    ENNReal.ofReal_rpow_of_pos (Real.exp_pos _)]
+  rw [hsum, ENNReal.ofReal_rpow_of_pos (Real.exp_pos _),
+    ENNReal.ofReal_rpow_of_pos (Real.exp_pos _), ← ENNReal.ofReal_mul (by positivity),
+    ← Real.exp_mul, ← Real.exp_mul, ← Real.exp_add]
+  ring_nf
 
 /-- **Hölder's inequality for pressure sums.** For `0 < t < 1`, the pressure sum of
 `t • φ + (1 - t) • ψ` is at most `pressureNetSum T φ U n ^ t * pressureNetSum T ψ U n ^ (1 - t)`.
@@ -62,13 +69,7 @@ theorem pressureNetSum_smul_add_smul_le (ht₀ : 0 < t) (ht₁ : t < 1) (T : X �
     (U : SetRel X X) (n : ℕ) :
     pressureNetSum T (t • φ + (1 - t) • ψ) U n ≤
       pressureNetSum T φ U n ^ t * pressureNetSum T ψ U n ^ (1 - t) := by
-  have hpq : (1 / t).HolderConjugate (1 / (1 - t)) := by
-    rw [Real.holderConjugate_iff]
-    refine ⟨?_, ?_⟩
-    · rw [lt_div_iff₀ ht₀, one_mul]
-      exact ht₁
-    · simp only [one_div, inv_inv]
-      ring
+  have hpq := Real.holderConjugate_one_div ht₀ (sub_pos.mpr ht₁) (add_sub_cancel t 1)
   rw [pressureNetSum_le_iff]
   intro s hs
   set f : X → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (Real.exp (birkhoffSum T φ n x))
@@ -90,20 +91,24 @@ theorem pressureNetSum_smul_add_smul_le (ht₀ : 0 < t) (ht₁ : t < 1) (T : X �
         · exact hs.sum_le_pressureNetSum
         · exact hs.sum_le_pressureNetSum
 
-/-- A nonnegative real multiple of an extended real other than `⊤` is not `⊤`. -/
-private theorem coe_mul_ne_top {c : ℝ} (hc : 0 ≤ c) {a : EReal} (ha : a ≠ ⊤) :
-    (c : EReal) * a ≠ ⊤ :=
-  (EReal.mul_ne_top _ _).mpr ⟨.inl (EReal.coe_ne_bot c), .inl (EReal.coe_nonneg.mpr hc),
-    .inl (EReal.coe_ne_top c), .inr ha⟩
-
-/-- **Convexity at an entourage.** For `0 < t < 1`, if the pressures of `φ` and `ψ` at the
-entourage `U` are not `⊤`, then the pressure of `t • φ + (1 - t) • ψ` at `U` is at most
-`t * netPressureEntourage T φ U + (1 - t) * netPressureEntourage T ψ U`. -/
+/-- **Convexity at an entourage.** For `0 < t < 1`, unless one of the pressures of `φ` and `ψ`
+at the entourage `U` is `⊤` and the other `⊥`, the pressure of `t • φ + (1 - t) • ψ` at `U` is at
+most `t * netPressureEntourage T φ U + (1 - t) * netPressureEntourage T ψ U`. -/
 theorem netPressureEntourage_smul_add_smul_le (ht₀ : 0 < t) (ht₁ : t < 1)
-    (hφ : netPressureEntourage T φ U ≠ ⊤) (hψ : netPressureEntourage T ψ U ≠ ⊤) :
+    (h : netPressureEntourage T φ U ≠ ⊤ ∨ netPressureEntourage T ψ U ≠ ⊥)
+    (h' : netPressureEntourage T φ U ≠ ⊥ ∨ netPressureEntourage T ψ U ≠ ⊤) :
     netPressureEntourage T (t • φ + (1 - t) • ψ) U ≤
       t * netPressureEntourage T φ U + ((1 - t : ℝ) : EReal) * netPressureEntourage T ψ U := by
-  have h1t : (0 : ℝ) ≤ 1 - t := (sub_pos.mpr ht₁).le
+  have h1t : (0 : ℝ) < 1 - t := sub_pos.mpr ht₁
+  rcases eq_or_ne (netPressureEntourage T φ U) ⊤ with hφ | hφ
+  · rw [hφ, EReal.coe_mul_top_of_pos ht₀, EReal.top_add_of_ne_bot]
+    · exact le_top
+    · simp [EReal.mul_ne_bot, h.resolve_left (not_not.mpr hφ), h1t.le, -EReal.coe_sub]
+  rcases eq_or_ne (netPressureEntourage T ψ U) ⊤ with hψ | hψ
+  · rw [hψ, EReal.coe_mul_top_of_pos h1t, EReal.add_top_of_ne_bot]
+    · exact le_top
+    · simp [EReal.mul_ne_bot, h'.resolve_right (not_not.mpr hψ), ht₀.le]
+  replace h1t := h1t.le
   rw [netPressureEntourage_def] at hφ hψ ⊢
   rw [netPressureEntourage_def, netPressureEntourage_def, ← expGrowthSup_rpow ht₀.le,
     ← expGrowthSup_rpow h1t]
@@ -111,28 +116,39 @@ theorem netPressureEntourage_smul_add_smul_le (ht₀ : 0 < t) (ht₁ : t < 1)
     pressureNetSum_smul_add_smul_le ht₀ ht₁ T φ ψ U n).trans (expGrowthSup_mul_le ?_ ?_)
   · right
     rw [expGrowthSup_rpow h1t]
-    exact coe_mul_ne_top h1t hψ
+    simp [EReal.mul_ne_top, h1t, hψ, -EReal.coe_sub]
   · left
     rw [expGrowthSup_rpow ht₀.le]
-    exact coe_mul_ne_top ht₀.le hφ
+    simp [EReal.mul_ne_top, ht₀.le, hφ]
 
-/-- **Convexity of topological pressure.** For `0 ≤ t ≤ 1`, if `P(T, φ)` and `P(T, ψ)` are not
-`⊤`, then `P(T, t • φ + (1 - t) • ψ) ≤ t * P(T, φ) + (1 - t) * P(T, ψ)`. -/
+/-- **Convexity of topological pressure.** For `0 ≤ t ≤ 1`, unless one of `P(T, φ)` and
+`P(T, ψ)` is `⊤` and the other `⊥`, `P(T, t • φ + (1 - t) • ψ) ≤ t * P(T, φ) + (1 - t) * P(T, ψ)`.
+-/
 theorem topologicalPressure_smul_add_smul_le [UniformSpace X] (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1)
-    (hφ : topologicalPressure T φ ≠ ⊤) (hψ : topologicalPressure T ψ ≠ ⊤) :
+    (h : topologicalPressure T φ ≠ ⊤ ∨ topologicalPressure T ψ ≠ ⊥)
+    (h' : topologicalPressure T φ ≠ ⊥ ∨ topologicalPressure T ψ ≠ ⊤) :
     topologicalPressure T (t • φ + (1 - t) • ψ) ≤
       t * topologicalPressure T φ + ((1 - t : ℝ) : EReal) * topologicalPressure T ψ := by
   rcases ht₀.eq_or_lt with rfl | ht₀
   · simp
   rcases ht₁.eq_or_lt with rfl | ht₁
   · simp
+  have h1t : (0 : ℝ) < 1 - t := sub_pos.mpr ht₁
+  rcases eq_or_ne (topologicalPressure T φ) ⊤ with hφ | hφ
+  · rw [hφ, EReal.coe_mul_top_of_pos ht₀, EReal.top_add_of_ne_bot]
+    · exact le_top
+    · simp [EReal.mul_ne_bot, h.resolve_left (not_not.mpr hφ), h1t.le, -EReal.coe_sub]
+  rcases eq_or_ne (topologicalPressure T ψ) ⊤ with hψ | hψ
+  · rw [hψ, EReal.coe_mul_top_of_pos h1t, EReal.add_top_of_ne_bot]
+    · exact le_top
+    · simp [EReal.mul_ne_bot, h'.resolve_right (not_not.mpr hψ), ht₀.le]
   rw [topologicalPressure_le_iff]
   intro U hU
   have hφU : netPressureEntourage T φ U ≠ ⊤ :=
     ne_top_of_le_ne_top hφ (netPressureEntourage_le_topologicalPressure hU)
   have hψU : netPressureEntourage T ψ U ≠ ⊤ :=
     ne_top_of_le_ne_top hψ (netPressureEntourage_le_topologicalPressure hU)
-  refine (netPressureEntourage_smul_add_smul_le ht₀ ht₁ hφU hψU).trans ?_
+  refine (netPressureEntourage_smul_add_smul_le ht₀ ht₁ (.inl hφU) (.inr hψU)).trans ?_
   gcongr <;> exact netPressureEntourage_le_topologicalPressure hU
 
 end TauCeti
