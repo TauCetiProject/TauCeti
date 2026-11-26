@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.Incidence
-public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Generator
 
 /-!
@@ -30,12 +29,15 @@ The cellular basis vector `eⱼ` is the image under the characteristic map of th
 `Hₙ(Dⁿ, Sⁿ⁻¹)`, and `χⱼ` is the image of the identity cube, so the comparison reduces to the cube
 pair `(Iⁿ, ∂Iⁿ)`, where the identity cube is `(-1) ^ (n choose 2)` times the generator
 `TauCeti.singularHomologyCubeBoundaryPairIso` transported from the disk
-(`TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle` in positive dimension;
-in dimension `0` both are the class of the point).
+(`TauCeti.singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_of_isCubicalRepresentative_upCube`).
 
 So the characteristic cubes of the cells form a basis of the cellular chain groups, and a cellular
 chain can be computed on normalized cubical chains, for instance from chains on a path space
 pushed to the base.
+
+Read in relative singular homology, the cellular differential is the cubical connecting morphism
+of `(Xⁿ⁺¹, Xⁿ)` followed by the map to the relative cubical homology of `(Xⁿ, Xⁿ⁻¹)`
+(`TauCeti.cellularDifferential_singularCubicalHomologyIso_inv`).
 
 ## Main results
 
@@ -47,6 +49,8 @@ pushed to the base.
   relative cubical homology of the skeletal pair.
 * `TauCeti.singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_cellularChainBasis`: that class is
   `(-1) ^ (n choose 2)` times the cellular basis vector of the cell.
+* `TauCeti.cellularDifferential_singularCubicalHomologyIso_inv`: the cellular differential is the
+  cubical connecting morphism.
 
 ## References
 
@@ -100,59 +104,6 @@ theorem exists_isCubicalRepresentative_characteristicCube (n : ℕ) (j : cell C 
       (NormalizedCubicalChain.ofCube (skeletonPair C n).fst R (characteristicCube C n j)) μ :=
   TopPair.exists_isCubicalRepresentative_ofCube R _ (mapsTo_characteristicCube_boundary n j)
 
-/-- **The identity cube is a signed generator**: read in relative singular homology, the class of
-the identity cube of `(Iⁿ, ∂Iⁿ)` is `(-1) ^ (n choose 2)` times the generator
-`TauCeti.singularHomologyCubeBoundaryPairIso`. -/
-private lemma singularCubicalHomologyIso_inv_upCube {n : ℕ}
-    {κ : ((cubeBoundaryPair.{w} n).cubicalChainComplex R).homology n}
-    (hκ : (cubeBoundaryPair.{w} n).IsCubicalRepresentative R
-      (NormalizedCubicalChain.ofCube _ R (upCube.{w} n)) κ) :
-    (TopPair.singularCubicalHomologyIso R (cubeBoundaryPair.{w} n) n).inv κ =
-      (-1 : R) ^ n.choose 2 • (singularHomologyCubeBoundaryPairIso (ModuleCat.of R R) n).inv 1 := by
-  cases n with
-  | zero =>
-    let P := cubeBoundaryPair.{w} 0
-    let pt : P.fst := ULift.up fun i ↦ i.elim0
-    -- `κ` is the relative class of the absolute class of the point.
-    have hκ' : HomologicalComplex.homologyMap
-        (cokernel.π ((normalizedCubicalChainComplex R).map P.map)) 0
-          (((normalizedCubicalChainComplex R).obj P.fst).homologyπ 0
-            (cubicalCycleOfPoint R pt)) = κ := by
-      refine P.homologyMap_homologyπ_eq_of_isCubicalRepresentative R _ hκ ?_
-      rw [iCycles_cubicalCycleOfPoint, LinearEquiv.apply_symm_apply]
-      have hpt : SingularCube.point pt = upCube.{w} 0 :=
-        ContinuousMap.ext fun _ ↦ ULift.ext (funext fun i ↦ i.elim0)
-      rw [hpt, sub_self]
-      exact zero_mem _
-    -- The generator of `H₀(I⁰, ∂I⁰)` is the class of the point.
-    have hg : (singularHomologyCubeBoundaryPairIso (ModuleCat.of R R) 0).inv =
-        singularHomology₀Section (ModuleCat.of R R) pt ≫
-          P.singularHomologyπ (ModuleCat.of R R) 0 := by
-      rw [singularHomologyCubeBoundaryPairIso_inv, singularHomologyDiskBoundaryPairIso_zero_inv]
-      exact TopPair.singularHomology₀Section_singularHomologyMap _ _ (diskBoundaryPairToCube.{w} 0)
-        (diskCenter 0) pt (ULift.ext (funext fun i ↦ i.elim0))
-    have hM := ConcreteCategory.congr_hom
-      (TopPair.homologyMap_π_comp_singularCubicalHomologyIso_inv R P 0)
-      ((singularCubicalHomologyIso R P.fst 0).hom
-        ((singularHomology₀Section (ModuleCat.of R R) pt).hom 1))
-    rw [Nat.choose_zero_succ, pow_zero, one_smul, hg, ← hκ',
-      ← singularCubicalHomologyIso_hom_singularHomology₀Section]
-    refine (ConcreteCategory.comp_apply _ _ _).symm.trans (hM.trans ?_)
-    -- The singular homology of the point appears in its simplicial and in its chain complex
-    -- presentation, which agree only up to unfolding.
-    erw [ConcreteCategory.comp_apply, Iso.hom_inv_id_apply]
-    rfl
-  | succ m =>
-    have hκ' : κ = ((cubeBoundaryPair.{w} (m + 1)).cubicalChainComplex R).homologyπ (m + 1)
-        (cubeBoundaryPairCycle R m) :=
-      hκ.unique ((TopPair.isCubicalRepresentative_iff _ _).2 ⟨_, by
-        have h := TopPair.cubicalChainOfCube_def R (P := cubeBoundaryPair.{w} (m + 1))
-          (upCube.{w} (m + 1))
-        rw [normalizedCubicalChainComplexXEquiv_symm_apply] at h
-        rw [iCycles_cubeBoundaryPairCycle, h], rfl⟩)
-    rw [hκ', singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle,
-      Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_comm (m + 1) m]
-
 variable {C} in
 /-- Read on the Euclidean disk pair, the map of pairs `(Iⁿ, ∂Iⁿ) ⟶ (Xⁿ, Xⁿ⁻¹)` of the
 characteristic cube of the cell `j` is the characteristic map of `j`. -/
@@ -197,12 +148,46 @@ theorem singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_cellularChainBasis {n
     erw [NormalizedCubicalChain.map_ofCube] at h
     rw [hcid] at h
     exact h.unique hμ
-  -- Both sides are the generator of the disk pair pushed along the characteristic map of `j`.
-  rw [← hfμ, ← ModuleCat.comp_apply, TopPair.singularCubicalHomologyIso_inv_naturality,
-    ModuleCat.comp_apply, singularCubicalHomologyIso_inv_upCube R hκ, map_smul,
-    singularHomologyCubeBoundaryPairIso_inv, ← ModuleCat.comp_apply, Category.assoc,
-    ← TopPair.singularHomologyMap_comp, diskBoundaryPairToCube_comp_cubeBoundaryPairHom,
-    ← ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap,
-    ModuleCat.comp_apply, cellularChainBasis_apply]
+  -- By naturality, the class of the characteristic cube is the image along `f` of the class of
+  -- the identity cube, a signed generator of the cube pair.
+  have h₁ : (TopPair.singularCubicalHomologyIso R (skeletonPair C n) n).inv μ =
+      (-1 : R) ^ n.choose 2 • TopPair.singularHomologyMap f (ModuleCat.of R R) n
+        ((singularHomologyCubeBoundaryPairIso (ModuleCat.of R R) n).inv 1) := by
+    rw [← hfμ, ← ModuleCat.comp_apply, TopPair.singularCubicalHomologyIso_inv_naturality,
+      ModuleCat.comp_apply,
+      singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_of_isCubicalRepresentative_upCube R hκ,
+      map_smul]
+  -- Pushed along `f`, the generator of the cube pair is the generator of the disk pair pushed
+  -- along the characteristic map of `j`, which is the cellular basis vector of `j`.
+  have h₂ : TopPair.singularHomologyMap f (ModuleCat.of R R) n
+      ((singularHomologyCubeBoundaryPairIso (ModuleCat.of R R) n).inv 1) =
+        cellularChainBasis C R n j := by
+    rw [singularHomologyCubeBoundaryPairIso_inv, ← ModuleCat.comp_apply, Category.assoc,
+      ← TopPair.singularHomologyMap_comp, diskBoundaryPairToCube_comp_cubeBoundaryPairHom,
+      ← ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap,
+      ModuleCat.comp_apply, cellularChainBasis_apply]
+  rw [h₁, h₂]
+
+variable {C} in
+/-- **The cellular differential is the cubical connecting morphism.** Read in relative singular
+homology through `TopPair.singularCubicalHomologyIso`, the cellular differential of the class of a
+relative cubical cycle of `(Xⁿ⁺¹, Xⁿ)` is the image of its cubical connecting class in the relative
+cubical homology of `(Xⁿ, Xⁿ⁻¹)`. -/
+lemma cellularDifferential_singularCubicalHomologyIso_inv (n : ℕ)
+    (μ : ((skeletonPair C (n + 1)).cubicalChainComplex R).homology (n + 1)) :
+    cellularDifferential C (ModuleCat.of R R) n
+        ((TopPair.singularCubicalHomologyIso R (skeletonPair C (n + 1)) (n + 1)).inv μ) =
+      (TopPair.singularCubicalHomologyIso R (skeletonPair C n) n).inv
+        (HomologicalComplex.homologyMap
+          (cokernel.π ((normalizedCubicalChainComplex R).map (skeletonPair C n).map)) n
+          ((skeletonPair C (n + 1)).cubicalHomologyδ R (n + 1) n rfl μ)) := by
+  have h₁ := ConcreteCategory.congr_hom
+    (TopPair.singularCubicalHomologyIso_inv_singularHomologyδ R (skeletonPair C (n + 1)) (n + 1) n)
+    μ
+  have h₂ := ConcreteCategory.congr_hom
+    (TopPair.homologyMap_π_comp_singularCubicalHomologyIso_inv R (skeletonPair C n) n)
+    ((skeletonPair C (n + 1)).cubicalHomologyδ R (n + 1) n rfl μ)
+  rw [cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ]
+  exact (congrArg (skeletonPairπ C (ModuleCat.of R R) n).hom h₁).trans h₂.symm
 
 end TauCeti
