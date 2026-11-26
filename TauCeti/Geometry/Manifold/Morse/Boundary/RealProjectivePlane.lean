@@ -744,23 +744,10 @@ theorem nonempty_linearEquiv_homology_zero_signedMorseCochainComplex_projectiveM
     Nonempty ((hX.signedMorseCochainComplex 𝔬 hf R hsq).homology 0 ≃ₗ[R] R) := by
   have hw := isMorse_projectiveMomentFunction_iff.1 hf
   obtain ⟨p, hp⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 0) (by norm_num)
-  let : Unique {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
-      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 0} := ⟨⟨p⟩, hp⟩
-  set K := hX.signedMorseCochainComplex 𝔬 hf R hsq
-  -- No coboundary enters degree `0`, and the coboundary out of it is the transpose of the
-  -- boundary into degree `0`, which vanishes.
-  have h₁ : K.d ((ComplexShape.up ℕ).prev 0) 0 = 0 := K.shape _ _ (by simp)
-  have h₂ : K.d 0 ((ComplexShape.up ℕ).next 0) = 0 := by
-    rw [CochainComplex.next, signedMorseCochainComplex_d,
-      IsMorseSmale.signedMorseBoundaryAt_zero_eq_zero_of_unique_index_zero hf
-        (hX.isMorseSmale_projectiveMomentFunction_real hw)
-        (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0)]
-    ext a c
-    -- Both sides are zero; the zero morphism is typed between the terms of `K`.
-    simp only [ModuleCat.hom_ofHom, LinearMap.lcomp_apply', LinearMap.comp_zero]
-    rfl
-  exact ⟨(K.XIsoHomologyOfDEqZero 0 h₁ h₂).toLinearEquiv.symm.trans
-    ((Finsupp.llift R ℤ R _).symm.trans (LinearEquiv.funUnique _ R R))⟩
+  exact nonempty_linearEquiv_homology_zero_signedMorseCochainComplex hsq
+    (IsMorseSmale.signedMorseBoundaryAt_zero_eq_zero_of_unique_index_zero hf
+      (hX.isMorseSmale_projectiveMomentFunction_real hw)
+      (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0)) p hp
 
 /-- The coboundary from degree `1` to degree `2` of `ℝℙ²` sends an integral cochain `b` to the
 cochain whose value at the maximum `p` is the boundary coefficient `±2` of `p` at the saddle `q`
@@ -781,7 +768,7 @@ private theorem signedMorseBoundaryAt_one_comp_projectiveMomentFunction_real
   have hq (r) : r = q := (hq' r).trans (hq' q).symm
   rw [LinearMap.comp_apply, eq_single_of_forall_eq_projectiveMomentFunction_real hq
     (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1 _), signedMorseBoundaryAt_single_apply, one_mul, Int.cast_id,
-    ← smul_eq_mul, ← map_zsmul, Finsupp.smul_single, smul_eq_mul, mul_one]
+    Finsupp.map_single_int, smul_eq_mul]
 
 include hX hXε in
 /-- **`H¹(ℝℙ²; ℤ) = 0`.** For an adapted pseudo-gradient of the moment function on the real
@@ -812,7 +799,7 @@ theorem isZero_homology_one_signedMorseCochainComplex_projectiveMomentFunction_r
     rcases signedMorseBoundaryCoeff_eq_two_or_eq_neg_two_projectiveMomentFunction_real hX hXε hf
       𝔬 p.property q.property with h | h <;> simp [h]
   have hab' : a (Finsupp.single q 1) = b (Finsupp.single q 1) := mul_left_cancel₀ hne hp
-  exact Finsupp.lhom_ext' fun r ↦ LinearMap.ext_ring (by rw [hq r]; exact hab')
+  exact Finsupp.lhom_ext_of_forall_eq hq hab'
 
 include hX hXε in
 /-- **The coboundaries in degree two of `ℝℙ²`.** For an adapted pseudo-gradient of the moment
@@ -834,10 +821,7 @@ theorem mem_range_lcomp_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_r
   have hcoeff := signedMorseBoundaryCoeff_eq_two_or_eq_neg_two_projectiveMomentFunction_real hX hXε
     hf 𝔬 p.property q.property
   -- A cochain of index two is determined by its value at the maximum, the only point of index two.
-  have hext {a b : ({p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
-      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1 + 1} →₀ ℤ) →ₗ[ℤ] ℤ}
-      (h : a (Finsupp.single p 1) = b (Finsupp.single p 1)) : a = b :=
-    Finsupp.lhom_ext' fun r ↦ LinearMap.ext_ring (by rw [(hp' r).trans (hp' p).symm]; exact h)
+  have hp (r) : r = p := (hp' r).trans (hp' p).symm
   constructor
   · -- A coboundary takes the value `±2` times the value at the saddle at the maximum.
     rintro ⟨b, rfl⟩
@@ -847,7 +831,8 @@ theorem mem_range_lcomp_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_r
   · -- A value `2k` at the maximum is the coboundary of `±k` times the value at the saddle.
     rintro ⟨k, hk⟩
     rcases hcoeff with h | h <;>
-      [refine ⟨k • Finsupp.lapply q, hext ?_⟩; refine ⟨(-k) • Finsupp.lapply q, hext ?_⟩] <;>
+      [refine ⟨k • Finsupp.lapply q, Finsupp.lhom_ext_of_forall_eq hp ?_⟩;
+        refine ⟨(-k) • Finsupp.lapply q, Finsupp.lhom_ext_of_forall_eq hp ?_⟩] <;>
     · rw [LinearMap.lcomp_apply',
         signedMorseBoundaryAt_one_comp_projectiveMomentFunction_real hX hf 𝔬 _ p q, h, hk]
       simp only [LinearMap.smul_apply, Finsupp.lapply_apply, Finsupp.single_eq_same]
