@@ -18,9 +18,7 @@ charted spaces are therefore path-connected. Extended charts also provide convex
 neighbourhood bases (`ModelWithCorners.isBasis_convex_image_extChartAt`) and simply connected
 neighbourhoods, so real manifolds are semilocally simply connected. In a second-countable
 charted space this implies countability of the fundamental group
-(`ModelWithCorners.countable_fundamentalGroup`). Over a second-countable model space, every
-compact subset of a charted space has a second-countable open neighbourhood covered by finitely
-many chart domains (`ChartedSpace.exists_opens_secondCountableTopology`).
+(`ModelWithCorners.countable_fundamentalGroup`).
 -/
 
 public section
@@ -164,22 +162,3 @@ theorem countable_fundamentalGroup (I : ModelWithCorners 𝕜 E H) (M : Type*)
   TauCeti.countable_fundamentalGroup x₀
 
 end ModelWithCorners
-
-/-- Every compact subset `K` of a charted space over a second-countable model space `H` has a
-second-countable open neighbourhood (covered by finitely many chart domains). -/
-theorem ChartedSpace.exists_opens_secondCountableTopology (H : Type*) [TopologicalSpace H]
-    [SecondCountableTopology H] {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {K : Set M} (hK : IsCompact K) :
-    ∃ M₀ : TopologicalSpace.Opens M, K ⊆ M₀ ∧ SecondCountableTopology M₀ := by
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : M ↦ (chartAt H x).source)
-    (fun x ↦ (chartAt H x).open_source) fun x _ ↦ Set.mem_iUnion.2 ⟨x, mem_chart_source H x⟩
-  let M₀ : TopologicalSpace.Opens M :=
-    ⟨⋃ x ∈ t, (chartAt H x).source, isOpen_biUnion fun x _ ↦ (chartAt H x).open_source⟩
-  have hcover : ⋃ z ∈ Subtype.val ⁻¹' (t : Set M), (chartAt H (z : M₀)).source = Set.univ := by
-    refine Set.eq_univ_iff_forall.2 fun y ↦ ?_
-    obtain ⟨x, hxt, hyx⟩ := Set.mem_iUnion₂.1 y.property
-    refine Set.mem_iUnion₂.2 ⟨⟨x, Set.mem_iUnion₂.2 ⟨x, hxt, mem_chart_source H x⟩⟩, hxt, ?_⟩
-    rw [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source]
-    exact hyx
-  exact ⟨M₀, ht, ChartedSpace.secondCountable_of_countable_cover H hcover
-    ((t.finite_toSet.preimage Subtype.val_injective.injOn).countable)⟩

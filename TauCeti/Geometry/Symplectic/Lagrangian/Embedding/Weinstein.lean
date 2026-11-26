@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Normal
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens.Diffeomorph
-import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
@@ -547,9 +547,9 @@ theorem exists_diffeomorph_opens_of_isLagrangianEmbedding_comp_diffeomorph
      fun ⟨hz₁, hz₂⟩ ↦ ⟨(f.cotangent.symm_apply_apply z) ▸ mem_preimage.1 (Opens.mem_mk.1 hz₁),
       hz₂⟩⟩
   let g : O₁ ≃ₘ⟮J.prod 𝓘(ℝ, F →L[ℝ] ℝ), J'.prod 𝓘(ℝ, F' →L[ℝ] ℝ)⟯ O₂ := f.cotangent.subtype hO₁₂
-  obtain ⟨U, ψ₁, hψ₁, hψ₁form⟩ :=
+  obtain ⟨U, hU, ψ₁, hU_mem, hψ₁, hψ₁form⟩ :=
     SmoothForm.exists_diffeomorph_opens_of_le φ₁ hform₁ (inf_le_left : O₁ ≤ V₁)
-  obtain ⟨V, ψ₂, hψ₂, hψ₂form⟩ :=
+  obtain ⟨V, hV, ψ₂, hV_mem, hψ₂, hψ₂form⟩ :=
     SmoothForm.exists_diffeomorph_opens_of_le φ₂ hform₂ (inf_le_right : O₂ ≤ V₂)
   refine ⟨U, V, (ψ₁.trans g).trans ψ₂.symm, fun q ↦ ?_, ?_⟩
   · obtain ⟨hx₁, hval₁⟩ := hφ₁ q
@@ -560,14 +560,14 @@ theorem exists_diffeomorph_opens_of_isLagrangianEmbedding_comp_diffeomorph
       ⟨(φ₁ ⟨i q, hx₁⟩).property, Opens.mem_mk.2 (mem_preimage.2 (by
         rw [hval₁, hcot, ← hval₂]
         exact (φ₂ ⟨j (f q), hy₂⟩).property))⟩
-    obtain ⟨hxU, hψ₁q⟩ := hψ₁ (i q) hx₁ hxO₁
+    have hxU : i q ∈ U := (hU_mem ⟨i q, hx₁⟩).2 hxO₁
     have hyO₂ : (φ₂ ⟨j (f q), hy₂⟩ : CotangentBundle J' Q') ∈ O₂ := by
       rw [hval₂, ← hcot, ← hval₁]
       exact (hO₁₂ _).1 hxO₁
-    obtain ⟨hyV, hψ₂q⟩ := hψ₂ (j (f q)) hy₂ hyO₂
+    have hyV : j (f q) ∈ V := (hV_mem ⟨j (f q), hy₂⟩).2 hyO₂
     refine ⟨hxU, ?_⟩
     have hgeq : g (ψ₁ ⟨i q, hxU⟩) = ψ₂ ⟨j (f q), hyV⟩ :=
-      Subtype.ext (by simp [g, hψ₁q, hval₁, hcot, hψ₂q, hval₂])
+      Subtype.ext (by simp [g, hψ₁, hval₁, hcot, hψ₂, hval₂])
     have hΦq : ((ψ₁.trans g).trans ψ₂.symm) ⟨i q, hxU⟩ = ⟨j (f q), hyV⟩ := by simp [hgeq]
     exact congrArg Subtype.val hΦq
   · rw [SmoothForm.mpullback_trans, SmoothForm.mpullback_trans,

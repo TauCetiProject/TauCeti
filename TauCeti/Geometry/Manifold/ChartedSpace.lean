@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.Perfect
+import Mathlib.Geometry.Manifold.HasGroupoid
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -18,8 +19,9 @@ representatives transform: under a change of chart, under composition with a con
 between charted spaces, and how punctured neighbourhoods are carried by the inverse chart. These
 are the facts needed to read a local notion of one variable (meromorphy, orders, ...) on a
 charted space in its preferred charts and to check that it is well behaved. Some global properties
-of the model space also pass to the charted space: having no isolated points, and, for a Lindelöf
-charted space, second countability.
+of the model space also pass to the charted space: having no isolated points, and, over a
+second-countable model space, second countability of Lindelöf charted spaces and of open
+neighbourhoods of compact subsets.
 
 ## Main results
 
@@ -35,6 +37,8 @@ charted space, second countability.
   isolated points.
 * `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space over a second-countable
   model space is second countable.
+* `ChartedSpace.exists_opens_secondCountableTopology`: every compact subset of a charted space over
+  a second-countable model space has a second-countable open neighbourhood.
 -/
 
 public section
@@ -111,3 +115,22 @@ theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace
   obtain ⟨s, hsc, hsU⟩ := LindelofSpace.elim_nhds_subcover (fun x : X ↦ (chartAt H x).source)
     fun x ↦ chart_source_mem_nhds H x
   exact ChartedSpace.secondCountable_of_countable_cover H hsU hsc
+
+/-- Every compact subset `K` of a charted space over a second-countable model space `H` has a
+second-countable open neighbourhood (covered by finitely many chart domains). -/
+theorem ChartedSpace.exists_opens_secondCountableTopology (H : Type*) [TopologicalSpace H]
+    [SecondCountableTopology H] {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
+    {K : Set X} (hK : IsCompact K) :
+    ∃ U : TopologicalSpace.Opens X, K ⊆ U ∧ SecondCountableTopology U := by
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : X ↦ (chartAt H x).source)
+    (fun x ↦ (chartAt H x).open_source) fun x _ ↦ Set.mem_iUnion.2 ⟨x, mem_chart_source H x⟩
+  let U : TopologicalSpace.Opens X :=
+    ⟨⋃ x ∈ t, (chartAt H x).source, isOpen_biUnion fun x _ ↦ (chartAt H x).open_source⟩
+  have hcover : ⋃ z ∈ Subtype.val ⁻¹' (t : Set X), (chartAt H (z : U)).source = Set.univ := by
+    refine Set.eq_univ_iff_forall.2 fun y ↦ ?_
+    obtain ⟨x, hxt, hyx⟩ := Set.mem_iUnion₂.1 y.property
+    refine Set.mem_iUnion₂.2 ⟨⟨x, Set.mem_iUnion₂.2 ⟨x, hxt, mem_chart_source H x⟩⟩, hxt, ?_⟩
+    rw [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source]
+    exact hyx
+  exact ⟨U, ht, ChartedSpace.secondCountable_of_countable_cover H hcover
+    ((t.finite_toSet.preimage Subtype.val_injective.injOn).countable)⟩

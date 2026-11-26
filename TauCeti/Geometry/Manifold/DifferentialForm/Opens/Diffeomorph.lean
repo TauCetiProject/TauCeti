@@ -121,8 +121,9 @@ theorem mpullback_symm_subtype_eq_of_apply_eq
   exact h1.1 hz.symm
 
 /-- Restricting a diffeomorphism `φ : U₁ ≃ₘ V₁` (pulling `β|_{V₁}` back to `α|_{U₁}`) to an open
-subset `O ≤ V₁` yields an open subset `U ≤ U₁` and a diffeomorphism `ψ : U ≃ₘ O` agreeing with `φ`
-where `φ` lands in `O` and pulling `β|_O` back to `α|_U`. -/
+subset `O ≤ V₁` yields an open subset `U ≤ U₁` (consisting of the points of `U₁` mapped into `O`)
+and a diffeomorphism `ψ : U ≃ₘ O` agreeing with `φ` along `Opens.inclusion hU` and pulling `β|_O`
+back to `α|_U`. -/
 theorem exists_diffeomorph_opens_of_le
     {U₁ : Opens M} {V₁ : Opens M'} (φ : U₁ ≃ₘ⟮I, I'⟯ V₁)
     {α : SmoothForm I M F k} {β : SmoothForm I' M' F k}
@@ -130,15 +131,16 @@ theorem exists_diffeomorph_opens_of_le
         (mpullback (Subtype.val : V₁ → M') contMDiff_subtypeVal β) =
       mpullback (Subtype.val : U₁ → M) contMDiff_subtypeVal α)
     {O : Opens M'} (hO : O ≤ V₁) :
-    ∃ (U : Opens M) (ψ : U ≃ₘ⟮I, I'⟯ O),
-      (∀ (x : M) (hx₁ : x ∈ U₁), (φ ⟨x, hx₁⟩ : M') ∈ O →
-        ∃ hx : x ∈ U, (ψ ⟨x, hx⟩ : M') = (φ ⟨x, hx₁⟩ : M')) ∧
+    ∃ (U : Opens M) (hU : U ≤ U₁) (ψ : U ≃ₘ⟮I, I'⟯ O),
+      (∀ z : U₁, (z : M) ∈ U ↔ (φ z : M') ∈ O) ∧
+      (∀ u : U, (ψ u : M') = (φ (Opens.inclusion hU u) : M')) ∧
       mpullback ψ ψ.contMDiff
           (mpullback (Subtype.val : O → M') contMDiff_subtypeVal β) =
         mpullback (Subtype.val : U → M) contMDiff_subtypeVal α := by
   let S' : Opens U₁ := ⟨{x : U₁ | (φ x : M') ∈ O},
     O.isOpen.preimage (continuous_subtypeVal.comp φ.continuous)⟩
   let U : Opens M := ⟨Subtype.val '' (S' : Set U₁), U₁.isOpen.isOpenMap_subtypeVal _ S'.isOpen⟩
+  have hU : U ≤ U₁ := Subtype.coe_image_subset (U₁ : Set M) (S' : Set U₁)
   have hφ_symm_mem (y : O) : (φ (φ.symm (Opens.inclusion hO y)) : M') ∈ O := by
     rw [congrArg (Subtype.val : V₁ → M') (φ.apply_symm_apply (Opens.inclusion hO y))]
     exact y.property
@@ -154,10 +156,10 @@ theorem exists_diffeomorph_opens_of_le
       contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff S' _).1
         (φ.symm.contMDiff.comp (contMDiff_inclusion hO)) }
   let ψ : U ≃ₘ⟮I, I'⟯ O := (Diffeomorph.opensImage (I := I) S').symm.trans φO
-  have hψ_apply (u : U) : (ψ u : M') =
-      (φ (Opens.inclusion (Subtype.coe_image_subset (U₁ : Set M) (S' : Set U₁)) u) : M') :=
+  have hψ_apply (u : U) : (ψ u : M') = (φ (Opens.inclusion hU u) : M') :=
     congrArg (fun z : U₁ ↦ (φ z : M')) (Diffeomorph.opensImage_symm_apply_coe (I := I) S' u)
-  refine ⟨U, ψ, fun x hx₁ hxO ↦ ⟨⟨⟨x, hx₁⟩, hxO, rfl⟩, hψ_apply ⟨x, ⟨x, hx₁⟩, hxO, rfl⟩⟩, ?_⟩
+  refine ⟨U, hU, ψ, fun z ↦ ⟨fun ⟨w, hw, hwz⟩ ↦ Subtype.ext hwz ▸ hw, fun hz ↦ ⟨z, hz, rfl⟩⟩,
+    hψ_apply, ?_⟩
   have hcomp : (Subtype.val : O → M') ∘ ⇑φO =
       ((Subtype.val : V₁ → M') ∘ ⇑φ) ∘ (Subtype.val : S' → U₁) := rfl
   rw [mpullback_trans, mpullback_mpullback_of_comp_eq φO.contMDiff contMDiff_subtypeVal
