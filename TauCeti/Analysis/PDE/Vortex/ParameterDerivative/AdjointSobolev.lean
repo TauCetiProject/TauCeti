@@ -308,29 +308,6 @@ theorem exists_forall_norm_exp_mul_smul_adjoint_orthogonalRightInverse_le_of_for
     _ ≤ K₂ * (‖w‖ + K₀ * ‖w‖) := by gcongr
     _ = K₂ * (1 + K₀) * ‖w‖ := by ring
 
-/-- The derivative along `u` of the adjoints `(ι ∘ Q p)†` of the orthogonal right inverses, read as
-operators on `L²(ℂ; ℝ⁴)` through the values `ι` of the fields, is the adjoint `(ι ∘ Q'_u)†` of the
-derivative of the right inverses. -/
-private theorem fderiv_adjoint_orthogonalRightInverse_apply {m : ℕ}
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
-    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
-    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X} (hax : a p₀ =ᵐ[μ⊤] x)
-    (ha : DifferentiableAt ℝ a p₀) (u : X) (h : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    fderiv ℝ (fun p ↦ ContinuousLinearMap.adjoint (sobolevFieldValues ∘L
-      orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p)))) p₀ u h =
-      ContinuousLinearMap.adjoint (sobolevFieldValues ∘L fderiv ℝ (fun p ↦
-        orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p))) p₀ u) h := by
-  obtain ⟨hT, hsurj, hd, -⟩ :=
-    isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
-  have hQd : DifferentiableAt ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
-      (sobolevGaugeFixedOperator (a p))) p₀ :=
-    ((hT.contDiffAt_orthogonalRightInverse (n := 1) sobolevFieldValues_injective
-      hsurj).differentiableAt one_ne_zero).comp p₀ hd
-  rw [((hasFDerivAt_const sobolevFieldValues p₀).clm_comp hQd.hasFDerivAt).clm_adjoint.fderiv]
-  simp only [ContinuousLinearMap.comp_zero, add_zero, ContinuousLinearMap.comp_apply,
-    adjointRealCLM_apply, compL_apply]
-
 /-- **The derivative of the adjoints of the orthogonal right inverses.** Let `x` be a smooth plane
 vortex with the degree-`m` end framing, `a` a family of `L∞` coefficients, differentiable at `p₀`,
 with `a p₀` the class of `x`, and `Q p` the right inverse of the realization `L_(a p)` with values
@@ -742,16 +719,15 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_fderiv_adjoint_add (m : �
     (fun i ↦ W i + inclusion (by linarith : (k : ℝ) ≤ k + 1) (uπ i))
     fun i ↦ coeFn_inclusionLp_add_ae_eq_exp_mul_smul_add (hW i) (huπ' i)
   refine ⟨U, hU, hUn.trans ?_⟩
+  have hG : ‖G‖ ≤ ‖G‖ + ‖u₀‖ := le_add_of_nonneg_right (norm_nonneg _)
+  have hu : ‖u₀‖ ≤ ‖G‖ + ‖u₀‖ := le_add_of_nonneg_left (norm_nonneg _)
   calc K₁ * M * ‖fun i ↦ W i + inclusion (by linarith : (k : ℝ) ≤ k + 1) (uπ i)‖ ≤
-        K₁ * M * (Ct * M' * (KA * ‖G‖) + Kπ * M' * ‖u₀‖) := by
+        K₁ * M * (Ct * M' * (KA * (‖G‖ + ‖u₀‖)) + Kπ * M' * (‖G‖ + ‖u₀‖)) := by
         gcongr
         refine (norm_add_le W _).trans ?_
         gcongr
-        · exact hWn.trans (by gcongr)
-        · exact huπn'.trans huπn
-    _ ≤ K₁ * M * (Ct * M' * (KA * ‖G‖) + Kπ * M' * ‖u₀‖) +
-        K₁ * M * (Ct * M' * (KA * ‖u₀‖) + Kπ * M' * ‖G‖) :=
-        le_add_of_nonneg_right (by positivity)
+        · exact hWn.trans (by gcongr; exact hugn.trans (by gcongr))
+        · exact huπn'.trans (huπn.trans (by gcongr))
     _ = K₁ * (Ct * KA + Kπ) * M * M' * (‖G‖ + ‖u₀‖) := by ring
 
 /-- **The `Q` part of the second derivative of the adjoints.** For every degree `m`, radius `R₀`,
@@ -828,11 +804,11 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_orthogonalRightInverse_ad
         gcongr
         · exact huSvn.trans (by gcongr)
         · exact huSwn.trans (by gcongr)
-    _ ≤ KS * M₂ * ‖u₀‖ + KS * Mv * (Kπ * Mw * ‖u₀‖) + KS * Mw * (Kπ * Mv * ‖u₀‖) +
-        2 * KS * Kπ * M₂ * ‖u₀‖ + KS * Mv * Mw * ‖u₀‖ := by
-        have := norm_nonneg u₀
-        nlinarith [mul_nonneg (mul_nonneg (mul_nonneg hKS hKπ) hM₂) this,
-          mul_nonneg (mul_nonneg (mul_nonneg hKS hMv) hMw) this]
+    _ = KS * M₂ * ‖u₀‖ + 2 * KS * Kπ * (Mv * Mw) * ‖u₀‖ := by ring
+    _ ≤ KS * (M₂ + Mv * Mw) * ‖u₀‖ + 2 * KS * Kπ * (M₂ + Mv * Mw) * ‖u₀‖ := by
+        gcongr
+        · exact le_add_of_nonneg_right (by positivity)
+        · exact le_add_of_nonneg_left hM₂
     _ = KS * (1 + 2 * Kπ) * (M₂ + Mv * Mw) * ‖u₀‖ := by ring
 
 /-- **The `Q†` term of the second derivative of the adjoints.** For every degree `m`, radius `R₀`,
@@ -920,9 +896,12 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_adjoint_sub (m : ℕ) (R�
     _ ≤ KA * (KS * (M₂ + Mv * Mw) * ‖u₀‖ + Ct * M₂ * (KA * ‖G‖)) := by
         gcongr
         exact hW₂n.trans (by gcongr)
-    _ ≤ KA * (KS * (M₂ + Mv * Mw) * ‖u₀‖ + Ct * M₂ * (KA * ‖G‖)) +
-        KA * (KS * (M₂ + Mv * Mw) * ‖G‖ + Ct * (M₂ * ‖u₀‖ + Mv * Mw * (‖G‖ + ‖u₀‖)) * KA) :=
-        le_add_of_nonneg_right (by positivity)
+    _ ≤ KA * (KS * (M₂ + Mv * Mw) * (‖G‖ + ‖u₀‖) +
+        Ct * (M₂ + Mv * Mw) * (KA * (‖G‖ + ‖u₀‖))) := by
+        gcongr
+        · exact le_add_of_nonneg_left (norm_nonneg _)
+        · exact le_add_of_nonneg_right (by positivity)
+        · exact le_add_of_nonneg_right (norm_nonneg _)
     _ = KA * (KS + Ct * KA) * (M₂ + Mv * Mw) * (‖G‖ + ‖u₀‖) := by ring
 
 /-- **The weighted Sobolev estimate for the second parameter derivative of the adjoints of the
