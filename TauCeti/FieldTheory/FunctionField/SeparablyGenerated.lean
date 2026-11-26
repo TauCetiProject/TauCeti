@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.Separable.Regular
 public import TauCeti.FieldTheory.Separable.TranscendenceDegreeOne
+import TauCeti.FieldTheory.FunctionField.Automorphism.FixedField
 
 /-!
 # Separably generated and regular algebraic function fields
@@ -26,6 +27,10 @@ that `F ⊗[k] L` is a domain for one (equivalently every) algebraically closed 
 and equivalently `F ⊗[k] K` is a domain for every field extension `K / k` — if and only if `k` is
 integrally closed in `F` and `F / k` admits a separating element.
 
+A function field with exact constants and infinitely many automorphisms has a separating element
+as well, by Rosenlicht's criterion: its automorphisms fix only `k`
+(`TauCeti.IsFunctionField.exists_transcendental_and_isSeparable_adjoin_of_infinite_algEquiv`).
+
 In general a separating element need not exist. An element of `F` outside `k` with a
 `p`-power in `k`, such as `t^{1/p}` in `𝔽_p(t^{1/p})(X)` over `𝔽_p(t)`, would be both separable
 and purely inseparable over `k(x)` for a separating `x`, hence a constant of `k(x)`, which it is
@@ -38,6 +43,8 @@ element (`TauCeti.not_exists_transcendental_and_isSeparable_adjoin_of_pow_eq_add
   function field over a perfect field has a separating element.
 * `TauCeti.IsFunctionField.exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced`:
   a geometrically reduced function field has a separating element.
+* `TauCeti.IsFunctionField.exists_transcendental_and_isSeparable_adjoin_of_infinite_algEquiv`: a
+  function field with exact constants and infinitely many automorphisms has a separating element.
 * `TauCeti.IsFunctionField.isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin`:
   a function field is geometrically reduced if and only if it has a separating element.
 * `TauCeti.IsFunctionField.isDomain_tensorProduct_iff_of_isAlgClosed`,
@@ -52,6 +59,8 @@ element (`TauCeti.not_exists_transcendental_and_isSeparable_adjoin_of_pow_eq_add
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Proposition 3.10.2,
   Section III.6, and Section IV.1.
 * S. Lang, *Introduction to Algebraic Geometry*, Chapter III, Section 1.
+* M. Rosenlicht, *Automorphisms of function fields*, Trans. Amer. Math. Soc. 79 (1955), 1–11,
+  §3, Corollary, p. 5.
 -/
 
 public section
@@ -88,6 +97,23 @@ theorem exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced
   let : Algebra.EssFiniteType k F := hF.essFiniteType
   exact TauCeti.exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced
     hF.trdeg_eq_one
+
+/-- **A function field with infinitely many automorphisms is separably generated** (Rosenlicht):
+if `F / k` has exact constants and infinitely many `k`-automorphisms, then it has a transcendental
+element `x` such that `F / k(x)` is separable, whether or not `k` is perfect.
+
+Neither hypothesis can be dropped. Over `k = 𝔽_p(t)`, the field `F = k(t ^ (1 / p))(x)` has the
+infinitely many automorphisms `x ↦ x + c`, `c ∈ k`, but no separating element
+(`TauCeti.not_isSeparable_adjoin_of_pow_mem`). With exact constants, `y ^ p = a + b x ^ p` over
+`𝔽_p(a, b)` has no separating element
+(`TauCeti.not_exists_transcendental_and_isSeparable_adjoin_of_pow_eq_add_mul_X_pow`), so by this
+theorem it has only finitely many automorphisms. -/
+theorem exists_transcendental_and_isSeparable_adjoin_of_infinite_algEquiv
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) [Infinite (F ≃ₐ[k] F)] :
+    ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  let : Algebra.EssFiniteType k F := hF.essFiniteType
+  exact TauCeti.exists_transcendental_and_isSeparable_adjoin_of_fixedField_eq_bot hF.trdeg_eq_one
+    (hF.fixedField_top_eq_bot hex)
 
 /-- **Separating-element characterization of geometrically reduced function fields**: a one-variable
 function field `F / k` is geometrically reduced if and only if it admits a separating element `x`
