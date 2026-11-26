@@ -50,9 +50,7 @@ norm-dense in `B^s_{p,q}(E, F)` whenever `1 ≤ p < ∞` and `1 ≤ q < ∞`.
   inclusions, change of bump, `postcomp`, `BesselPotentialSpace`, dyadic partial sums, Fourier
   multipliers, Bessel-potential lifting, smooth multiplication and pullback by diffeomorphisms.
 * `SchwartzMap.toBesovSpaceCLM_injective`: the inclusion of `𝓢(E, F)` into `B^s_{p,q}` is
-  injective; on a zero-dimensional space every complex-homogeneous map between Schwartz functions
-  is therefore bounded between any two Besov norms
-  (`SchwartzMap.exists_norm_toBesovSpaceCLM_le_of_subsingleton`).
+  injective.
 * `SchwartzMap.denseRange_toBesovSpaceCLM` and
   `SchwartzMap.dense_image_toBesovSpaceCLM_hasCompactSupport`: for `1 ≤ p < ∞` and `1 ≤ q < ∞`,
   Schwartz functions and compactly supported smooth functions are dense in `B^s_{p,q}(E, F)`.
@@ -206,29 +204,6 @@ variable (F φ s p q) in
 theorem toBesovSpaceCLM_injective : Function.Injective (toBesovSpaceCLM F φ s p q) :=
   fun u v h ↦ toBesselPotentialSpaceCLM_injective s p <|
     BesselPotentialSpace.ext (by simpa using congrArg TauCeti.BesovSpace.toDistr h)
-
-/-- **Dimension zero.** On a zero-dimensional space `E`, every complex-homogeneous map `T` from
-complex-valued Schwartz functions to Schwartz functions is bounded from `B^s_{p,q}` to
-`B^r_{p',q'}`: there is a constant `C` with `‖T u‖_{B^r_{p',q'}} ≤ C ‖u‖_{B^s_{p,q}}` for every
-`u`. -/
-theorem exists_norm_toBesovSpaceCLM_le_of_subsingleton [Subsingleton E] {r : ℝ}
-    {p' q' : ℝ≥0∞} [Fact (1 ≤ p')] [Fact (1 ≤ q')] {T : 𝓢(E, ℂ) → 𝓢(E, F)}
-    (hT : ∀ (c : ℂ) u, T (c • u) = c • T u) :
-    ∃ C, ∀ u, ‖toBesovSpaceCLM F φ r p' q' (T u)‖ ≤ C * ‖toBesovSpaceCLM ℂ φ s p q u‖ := by
-  -- Every `u` is `u 0 • u₁` for the constant Schwartz function `u₁ = 1`.
-  let u₁ : 𝓢(E, ℂ) := HasCompactSupport.toSchwartzMap (f := fun _ ↦ (1 : ℂ))
-    Set.subsingleton_of_subsingleton.isCompact contDiff_const
-  have hu₁ (x : E) : u₁ x = 1 := (rfl)
-  have hu (u : 𝓢(E, ℂ)) : u = u 0 • u₁ := by
-    ext x
-    simp [hu₁, Subsingleton.elim x 0]
-  have h₁ : ‖toBesovSpaceCLM ℂ φ s p q u₁‖ ≠ 0 := by
-    rw [norm_ne_zero_iff, ← map_zero (toBesovSpaceCLM ℂ φ s p q)]
-    refine (toBesovSpaceCLM_injective ℂ φ s p q).ne fun h ↦ ?_
-    simpa [hu₁] using congr($h 0)
-  refine ⟨‖toBesovSpaceCLM F φ r p' q' (T u₁)‖ / ‖toBesovSpaceCLM ℂ φ s p q u₁‖, fun u ↦ ?_⟩
-  rw [hu u, hT, map_smul, map_smul, norm_smul, norm_smul]
-  exact le_of_eq (by field_simp)
 
 end SchwartzMap
 

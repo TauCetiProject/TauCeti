@@ -28,15 +28,18 @@ the same holds for the Besov norms `B^s_{p,q}`, `1 ≤ p, q ≤ ∞`, among them
 `𝒞^s = B^s_{∞,∞}` (`TauCeti.exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`).
 The reading in `e` is `θ · (w ∘ κ)` for the reading `w` in `e'`, the transition map `κ = e' ∘ e⁻¹`
 and a cutoff `θ` with compact support in the source of `κ` (`OpenPartialHomeomorph.overlapCutoff`,
-`TauCeti.cutoffPushforwardSchwartz_mulLeft_ofReal_cutoffPullback_apply`), and such localized
-changes of variables are bounded on `H^s`
-(`BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp`) and on
+`TauCeti.cutoffPushforwardSchwartz_mulLeft_ofReal_cutoffPullback_apply`). So changing the chart
+of a reading is bounded in every norm in which such localized changes of variables are bounded
+(`TauCeti.exists_norm_cutoffPushforwardSchwartz_mulLeft_le`), among them the norms of `H^s`
+(`BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp`) and of
 `B^s_{p,q}` (`TauCeti.BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp`).
 
 ## Main results
 
 * `TauCeti.cutoffPushforwardSchwartz_mulLeft_ofReal_cutoffPullback_apply`: the reading of `Ψ g` in
   `e` as a localized change of variables of the reading of `g` in `e'`.
+* `TauCeti.exists_norm_cutoffPushforwardSchwartz_mulLeft_le`: changing the chart of a reading
+  costs a constant in every norm in which localized changes of variables are bounded.
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`: changing
   the chart of a reading costs a constant in the `H^s` norm.
 * `TauCeti.exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`: changing the chart of
@@ -89,6 +92,36 @@ theorem cutoffPushforwardSchwartz_mulLeft_ofReal_cutoffPullback_apply
   · rw [overlapCutoff_apply he' he, cutoffPullback_apply_of_notMem he' _ _ hy]
     simp [cutoffPullback_apply_of_notMem he' _ _ hy]
 
+/-- **Changing the chart of a reading, in an abstract norm.** Let `L` be a map out of
+`𝓢(ℝⁿ, ℂ)` into a seminormed group in whose norm every localized change of variables
+`u ↦ θ · (u ∘ κ)` is bounded, `ψ` a cutoff in a chart `e'`, with `Ψ` the smooth function `ψ ∘ e'`
+on `M`, extended by `0`, and `τ` a cutoff in a chart `e`. There is a constant `C` such that for
+every smooth `g` on `M`, the reading `τ · ((Ψ g) ∘ e⁻¹)` of `Ψ g` in `e` satisfies
+
+`‖L (τ · ((Ψ g) ∘ e⁻¹))‖ ≤ C ‖L (ψ · (g ∘ e'⁻¹))‖`. -/
+theorem exists_norm_cutoffPushforwardSchwartz_mulLeft_le {X G : Type*} [SeminormedAddCommGroup X]
+    [FunLike G 𝓢(CoordinateSpace n, ℂ) X] (L : G)
+    (hL : ∀ {κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n)},
+      ContDiffOn ℝ ∞ κ κ.source → ContDiffOn ℝ ∞ κ.symm κ.target →
+      ∀ {θ : CoordinateSpace n → ℝ}, ContDiff ℝ ∞ θ → HasCompactSupport θ →
+        tsupport θ ⊆ κ.source → ∃ C, ∀ u v : 𝓢(CoordinateSpace n, ℂ),
+          (∀ x, v x = θ x • u (κ x)) → ‖L v‖ ≤ C * ‖L u‖)
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (τ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (ψ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)) :
+    ∃ C, ∀ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      ‖L (e.cutoffPushforwardSchwartz he τ
+          (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1)) g))‖ ≤
+        C * ‖L (e'.cutoffPushforwardSchwartz he' ψ g)‖ := by
+  obtain ⟨ψ₁, hψ₁, -⟩ := TestFunction.exists_eventually_eq_one
+    (Ω := ⟨e'.target, e'.open_target⟩) (n := ⊤) ψ.hasCompactSupport.isCompact ψ.tsupport_subset
+  obtain ⟨hθ, hθc, hθs⟩ := overlapCutoff_spec he' he τ ψ₁
+  obtain ⟨C, hC⟩ := hL (contDiffOn_symm_trans_of_mem_maximalAtlas he he')
+    (fun _ hz ↦ (contDiffAt_symm_trans_symm_of_mem_maximalAtlas he he' hz).contDiffWithinAt)
+    hθ hθc hθs
+  exact ⟨C, fun g ↦ hC _ _
+    (cutoffPushforwardSchwartz_mulLeft_ofReal_cutoffPullback_apply he he' τ ψ hψ₁ g)⟩
+
 /-- **Changing the chart of a reading.** Let `ψ` be a cutoff in a chart `e'`, with `Ψ` the smooth
 function `ψ ∘ e'` on `M`, extended by `0`, and `τ` a cutoff in a chart `e`. For every real `s`
 there is a constant `C` such that for every smooth `g` on `M`, the reading `τ · ((Ψ g) ∘ e⁻¹)` of
@@ -102,16 +135,10 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_
     ∃ C, ∀ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 (e.cutoffPushforwardSchwartz he τ
           (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1)) g))‖ ≤
-        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 (e'.cutoffPushforwardSchwartz he' ψ g)‖ := by
-  obtain ⟨ψ₁, hψ₁, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨e'.target, e'.open_target⟩) (n := ⊤) ψ.hasCompactSupport.isCompact ψ.tsupport_subset
-  obtain ⟨hθ, hθc, hθs⟩ := overlapCutoff_spec he' he τ ψ₁
-  obtain ⟨C, hC⟩ := BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp
-    (F := ℂ) (contDiffOn_symm_trans_of_mem_maximalAtlas he he')
-    (fun _ hz ↦ (contDiffAt_symm_trans_symm_of_mem_maximalAtlas he he' hz).contDiffWithinAt)
-    hθ hθc hθs s
-  exact ⟨C, fun g ↦ hC _ _
-    (cutoffPushforwardSchwartz_mulLeft_ofReal_cutoffPullback_apply he he' τ ψ hψ₁ g)⟩
+        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 (e'.cutoffPushforwardSchwartz he' ψ g)‖ :=
+  exists_norm_cutoffPushforwardSchwartz_mulLeft_le _ (fun hκ hκ' _ hθ hθc hθs ↦
+    BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc
+      hθs s) he he' τ ψ
 
 /-- **Changing the chart of a Besov reading.** Let `ψ` be a cutoff in a chart `e'`, with `Ψ` the
 smooth function `ψ ∘ e'` on `M`, extended by `0`, and `τ` a cutoff in a chart `e`. For every real
@@ -128,15 +155,9 @@ theorem exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le
     ∃ C, ∀ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p q (e.cutoffPushforwardSchwartz he τ
           (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1)) g))‖ ≤
-        C * ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p q (e'.cutoffPushforwardSchwartz he' ψ g)‖ := by
-  obtain ⟨ψ₁, hψ₁, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨e'.target, e'.open_target⟩) (n := ⊤) ψ.hasCompactSupport.isCompact ψ.tsupport_subset
-  obtain ⟨hθ, hθc, hθs⟩ := overlapCutoff_spec he' he τ ψ₁
-  obtain ⟨C, hC⟩ := BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp
-    (F := ℂ) (contDiffOn_symm_trans_of_mem_maximalAtlas he he')
-    (fun _ hz ↦ (contDiffAt_symm_trans_symm_of_mem_maximalAtlas he he' hz).contDiffWithinAt)
-    hθ hθc hθs φ s p q
-  exact ⟨C, fun g ↦ hC _ _
-    (cutoffPushforwardSchwartz_mulLeft_ofReal_cutoffPullback_apply he he' τ ψ hψ₁ g)⟩
+        C * ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p q (e'.cutoffPushforwardSchwartz he' ψ g)‖ :=
+  exists_norm_cutoffPushforwardSchwartz_mulLeft_le _ (fun hκ hκ' _ hθ hθc hθs ↦
+    BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc hθs φ s p q) he he'
+    τ ψ
 
 end TauCeti

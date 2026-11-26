@@ -27,16 +27,14 @@ The pullback along a bijection `Φ` of `E` with bounded derivatives is bounded o
 (`TauCeti.BesovSpace.compCLM`), and so is multiplication by a Schwartz function
 (`TauCeti.BesovSpace.smulLeftCLM`). A partition of unity writes `θ · (u ∘ e)` as a finite sum
 `∑ᵢ χᵢ · (u ∘ Φᵢ)` of such pullbacks multiplied by Schwartz functions
-(`TauCeti.exists_sum_smul_comp_eq_smul_comp`), which is the image of `u` under a bounded operator
-on `B^s_{p,q}`. This is the argument of
-`BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp` for `H^s`.
+(`TauCeti.exists_sum_smul_comp_eq_smul_comp`), so `u ↦ θ · (u ∘ e)` is bounded in every norm in
+which these pullbacks and multiplications are bounded (`TauCeti.exists_norm_le_of_eq_smul_comp`),
+as for `H^s` (`BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp`).
 
 ## References
 
 * H. Triebel, *Theory of Function Spaces*, Birkhäuser, 1983, §2.10.2 (diffeomorphisms and
   localization in Besov spaces).
-* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
-  Appendix B.1.
 -/
 
 public section
@@ -62,32 +60,12 @@ theorem exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp {e : OpenPartialHomeomorp
     ∃ C, ∀ u v : 𝓢(E, F), (∀ x, v x = θ x • u (e x)) →
       ‖SchwartzMap.toBesovSpaceCLM F φ s p q v‖ ≤
         C * ‖SchwartzMap.toBesovSpaceCLM F φ s p q u‖ := by
-  obtain ⟨t, Φ, χ, hΦ, hsum⟩ :=
-    TauCeti.exists_sum_smul_comp_eq_smul_comp (F := F) he he' hθ hθc hθe
-  choose hΦs hΨs hΦb hΨb using hΦ
-  have hΦt (x : e.source) :=
-    Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos (hΦs x) (hΦb x)
-  have hΨt (x : e.source) :=
-    Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos (hΨs x) (hΨb x)
-  have hχb (x : e.source) (k : ℕ) (_ : k ≤ ⌊|s|⌋₊ + 1) :
-      ∃ C, ∀ y, ‖iteratedFDeriv ℝ k (χ x : E → ℂ) y‖ ≤ C :=
-    ⟨_, (χ x).norm_iteratedFDeriv_le_seminorm ℝ k⟩
-  -- `v` is the image of `u` under the bounded operator `∑ x, χ x · Φ x^*`.
-  let T : BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s p q := ∑ x ∈ t,
-    smulLeftCLM F φ s p q (χ x) (χ x).hasTemperateGrowth (hχb x) ∘L
-      compCLM F φ s p q (Φ x) (hΦt x) (hΨt x) (fun k hk _ ↦ hΦb x k hk) (fun k hk _ ↦ hΨb x k hk)
-  refine ⟨‖T‖, fun u v hv ↦ ?_⟩
-  have hvT : v = ∑ x ∈ t, SchwartzMap.smulLeftCLM F (χ x : E → ℂ)
-      (SchwartzMap.compCLM ℂ (hΦt x) ((hΨt x).exists_norm_le_of_leftInverse (Φ x).left_inv)
-        u) := by
-    ext y
-    simp only [sum_apply, SchwartzMap.smulLeftCLM_apply_apply
-      (SchwartzMap.hasTemperateGrowth _), SchwartzMap.compCLM_apply, Function.comp_apply, hv,
-      hsum]
-  have hT : T (SchwartzMap.toBesovSpaceCLM F φ s p q u) =
-      SchwartzMap.toBesovSpaceCLM F φ s p q v := by
-    simp [T, hvT, map_sum]
-  rw [← hT]
-  exact T.le_opNorm _
+  refine TauCeti.exists_norm_le_of_eq_smul_comp (SchwartzMap.toBesovSpaceCLM F φ s p q)
+    (fun Φ hΦ hΨ hΦb hΨb ↦ ?_) (fun χ ↦ ?_) he he' hθ hθc hθe
+  · let T := compCLM F φ s p q Φ hΦ hΨ (fun k hk _ ↦ hΦb k hk) (fun k hk _ ↦ hΨb k hk)
+    exact ⟨‖T‖, fun u ↦ by simpa [T] using T.le_opNorm (SchwartzMap.toBesovSpaceCLM F φ s p q u)⟩
+  · let T := smulLeftCLM F φ s p q (χ : E → ℂ) χ.hasTemperateGrowth
+      fun k _ ↦ ⟨_, χ.norm_iteratedFDeriv_le_seminorm ℝ k⟩
+    exact ⟨‖T‖, fun u ↦ by simpa [T] using T.le_opNorm (SchwartzMap.toBesovSpaceCLM F φ s p q u)⟩
 
 end TauCeti.BesovSpace

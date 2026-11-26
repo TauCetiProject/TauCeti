@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+import TauCeti.Analysis.Distribution.SchwartzSpace.Subsingleton
 
 /-!
 # Bessel-potential norms on a zero-dimensional space
@@ -13,9 +14,10 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 On a zero-dimensional space `E`, a complex-valued Schwartz function `u` is `u 0` times the
 constant function `1`. Hence every complex-homogeneous map out of `𝓢(E, ℂ)` is bounded between
 any two Bessel-potential norms
-(`SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_le_of_subsingleton`). This settles the
-zero-dimensional case of mapping estimates whose proofs in positive dimension go through symbol
-estimates.
+(`SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_le_of_subsingleton`), an instance of
+`SchwartzMap.exists_norm_le_of_subsingleton` for the injective inclusion of `𝓢(E, ℂ)` into
+`H^{s,p}`. This settles the zero-dimensional case of mapping estimates whose proofs in positive
+dimension go through symbol estimates.
 -/
 
 public section
@@ -36,20 +38,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_le_of_subsingleton [Subsingleton E
     {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] {T : 𝓢(E, ℂ) → 𝓢(E, F)}
     (hT : ∀ (c : ℂ) u, T (c • u) = c • T u) (s r : ℝ) :
     ∃ C, ∀ u, ‖toBesselPotentialSpaceCLM r q (T u)‖ ≤ C * ‖toBesselPotentialSpaceCLM s p u‖ := by
-  -- Every `u` is `u 0 • u₁` for the constant Schwartz function `u₁ = 1`.
-  let u₁ : 𝓢(E, ℂ) := HasCompactSupport.toSchwartzMap (f := fun _ ↦ (1 : ℂ))
-    Set.subsingleton_of_subsingleton.isCompact contDiff_const
-  have hu₁ (x : E) : u₁ x = 1 := (rfl)
-  have hu (u : 𝓢(E, ℂ)) : u = u 0 • u₁ := by
-    ext x
-    simp [hu₁, Subsingleton.elim x 0]
-  have h₁ : ‖toBesselPotentialSpaceCLM s p u₁‖ ≠ 0 := by
-    rw [norm_ne_zero_iff, ← map_zero (toBesselPotentialSpaceCLM s p)]
-    refine (toBesselPotentialSpaceCLM_injective s p).ne fun h ↦ ?_
-    simpa [hu₁] using congr($h 0)
-  refine ⟨‖toBesselPotentialSpaceCLM r q (T u₁)‖ / ‖toBesselPotentialSpaceCLM s p u₁‖,
-    fun u ↦ ?_⟩
-  rw [hu u, hT, map_smul, map_smul, norm_smul, norm_smul]
-  exact le_of_eq (by field_simp)
+  simpa using exists_norm_le_of_subsingleton (toBesselPotentialSpaceCLM_injective s p)
+    (T := fun u ↦ toBesselPotentialSpaceCLM r q (T u)) fun c u ↦ by simp [hT]
 
 end SchwartzMap

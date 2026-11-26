@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Besov
-public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
-import TauCeti.Geometry.Manifold.Sobolev.ChartReading
+public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartPatching
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LocalizedChangeOfVariables
 
 /-!
 # Hölder–Zygmund and Besov estimates for classical pseudodifferential operators on a manifold
@@ -36,24 +34,17 @@ and `m`, where operators of order `0` need not be bounded on `L^∞`.
 ## The argument
 
 This is the argument of the Sobolev estimate
-`TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`, with the
-Euclidean Besov estimates in place of the Sobolev ones. The core is an estimate between two charts
-(`TauCeti.exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le`): the reading
-through `φ` in a chart `e` of `P (Ψ g)`, where `Ψ` is a cutoff `ψ` in a second chart `e'` read on
-`M`, is bounded in `B^{s - m}_{p,∞}` by the reading `ψ · (g ∘ e'⁻¹)` of `g` in `B^s_{p,∞}`.
-
-* A partition of unity `ρₖ` on `e'⁻¹(supp ψ)` splits `Ψ g` into pieces `ρₖ Ψ g`, where each `ρₖ`
-  is supported in the source of a chart `Eₖ` agreeing with `e` over the support of `φ`
-  (`IsCompact.exists_smoothPartition_mem_maximalAtlas_eqOn_symm`).
-* In the chart `Eₖ`, the reading of `P (ρₖ Ψ g)` through `φ` is a chart compression of `P`
-  applied to the reading `Wₖ` of `ρₖ Ψ g` in `Eₖ`. So it is `Op(aₖ) Wₖ` for a classical symbol
-  `aₖ` of order `m` with compact spatial support, and
-  `‖Op(aₖ) Wₖ‖_{B^{s - m}_{p,∞}} ≤ C ‖Wₖ‖_{B^s_{p,∞}}`
-  (`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le`).
-* Changing the chart of a reading is bounded on `B^s_{p,∞}`
-  (`TauCeti.exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`).
-
-The estimate for a partition `ψᵢ` then follows by writing `u = ∑ᵢ Ψᵢ u`.
+`TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: both
+are the chart-patching estimates of
+`TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le`,
+`TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_le_sum` and
+`TauCeti.exists_sum_norm_cutoffPushforwardSchwartz_apply_le_sum`, here for the source norm
+`B^s_{p,∞}` and the target norm `B^{s - m}_{p,∞}`. Their hypotheses hold because the inclusion of
+Schwartz functions in `B^s_{p,∞}` is injective (`SchwartzMap.toBesovSpaceCLM_injective`),
+localized changes of variables are bounded on `B^s_{p,∞}`
+(`TauCeti.BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp`), and `Op(a)` is bounded
+`B^s_{p,∞} → B^{s - m}_{p,∞}` for every symbol `a` of order `m` with compact spatial support
+(`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le`).
 
 ## Main results
 
@@ -80,7 +71,7 @@ public section
 
 noncomputable section
 
-open Filter Set TauCeti
+open TauCeti
 open scoped ContDiff Manifold Distributions SchwartzMap ENNReal
 
 namespace TauCeti
@@ -92,68 +83,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {m : ℝ}
   {e e' : OpenPartialHomeomorph M (CoordinateSpace n)}
-
-/-- **One chart.** In a chart `E` that agrees with `e` over the support of `φ`, reading `P` from
-`E` through a cutoff `χ` to `e` through `φ` is a chart compression of `P`, hence a quantization
-`Op(a)` with `a` of compact spatial support, bounded `B^s_{p,∞} → B^{s - m}_{p,∞}`. -/
-private theorem exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_complexCutoffPullback_le
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (hP : P ∈ classicalPseudodifferentialOperators m)
-    {E : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (hE : E ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hφE : tsupport φ ⊆ E.target)
-    (hEe : EqOn E.symm e.symm (tsupport φ)) (χ : 𝓓(⟨E.target, E.open_target⟩, ℝ))
-    (b : ContDiffBump (0 : CoordinateSpace n)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
-    ∃ A, 0 ≤ A ∧ ∀ w : 𝓢(CoordinateSpace n, ℂ),
-      ‖SchwartzMap.toBesovSpaceCLM ℂ b (s - m) p ∞ (e.cutoffPushforwardSchwartz he φ
-          (P (E.complexCutoffPullback hE χ (ContMDiffMap.ofContDiff w (w.smooth ⊤)))))‖ ≤
-        A * ‖SchwartzMap.toBesovSpaceCLM ℂ b s p ∞ w‖ := by
-  let φ' : 𝓓(⟨E.target, E.open_target⟩, ℝ) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφE⟩
-  have hφ' : (φ' : CoordinateSpace n → ℝ) = φ := (rfl)
-  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 E hE φ' χ
-  have ha' := hasCompactSpatialSupport_of_eq_complexChartCompression hE ha
-  -- `Op(a) w` is the reading of `P (χ w ∘ E)` through `φ` in `e`, since `E⁻¹ = e⁻¹` on the
-  -- support of `φ`.
-  have hread (w : 𝓢(CoordinateSpace n, ℂ)) : Symbol.quantizeUniformCLM a.toSymbol ha'.isUniform w =
-      e.cutoffPushforwardSchwartz he φ
-        (P (E.complexCutoffPullback hE χ (ContMDiffMap.ofContDiff w (w.smooth ⊤)))) := by
-    ext y
-    rw [Symbol.quantizeUniformCLM_apply, ha, complexChartCompression_def, LinearMap.comp_apply,
-      LinearMap.comp_apply, complexCutoffPushforward_congr hE he hφ' hEe,
-      complexCutoffPushforward_apply, cutoffPushforwardSchwartz_apply]
-  obtain ⟨A, hA0, hA⟩ := ha'.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b s
-  exact ⟨A, hA0, fun w ↦ hread w ▸ hA w⟩
-
-/-- **The estimate between two charts in dimension zero.** There `Ψ g` is the pullback of its
-reading `w = ψ · (g ∘ e'⁻¹)`, through a cutoff equal to `1` on the support of `ψ`, so the reading
-of `P (Ψ g)` in `e` is homogeneous in `w`. -/
-private theorem exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_le_of_dim_eq_zero
-    (hn : n = 0) (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (ψ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
-    (b : ContDiffBump (0 : CoordinateSpace n)) (s r : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
-    ∃ C, ∀ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
-      ‖SchwartzMap.toBesovSpaceCLM ℂ b r p ∞ (e.cutoffPushforwardSchwartz he φ
-          (P (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1)) g)))‖ ≤
-        C * ‖SchwartzMap.toBesovSpaceCLM ℂ b s p ∞ (e'.cutoffPushforwardSchwartz he' ψ g)‖ := by
-  obtain ⟨ψ₁, hψ₁, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨e'.target, e'.open_target⟩) (n := ⊤) ψ.hasCompactSupport.isCompact ψ.tsupport_subset
-  have hcw (c : ℂ) (w : 𝓢(CoordinateSpace n, ℂ)) : ContMDiffMap.ofContDiff (c • w)
-      ((c • w).smooth ⊤) = c • ContMDiffMap.ofContDiff w (w.smooth ⊤) := by
-    ext
-    simp
-  have : Subsingleton (CoordinateSpace n) := by
-    subst hn
-    exact ⟨fun x y ↦ PiLp.ext fun i ↦ i.elim0⟩
-  obtain ⟨C, hC⟩ := SchwartzMap.exists_norm_toBesovSpaceCLM_le_of_subsingleton
-    (φ := b) (s := s) (p := p) (q := ∞) (r := r) (p' := p) (q' := ∞)
-    (T := fun w ↦ e.cutoffPushforwardSchwartz he φ
-      (P (e'.complexCutoffPullback he' ψ₁ (ContMDiffMap.ofContDiff w (w.smooth ⊤)))))
-    (fun c w ↦ by simp only [hcw, map_smul])
-  refine ⟨C, fun g ↦ ?_⟩
-  rw [mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback he'
-    fun y hy ↦ hψ₁.self_of_nhdsSet y hy]
-  exact hC _
 
 /-- **The Besov estimate between two charts.** Let `P` be a classical pseudodifferential operator
 of order `m`, `φ` a cutoff in a chart `e` and `ψ` a cutoff in a chart `e'`, with `Ψ` the smooth
@@ -171,42 +100,14 @@ theorem exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le
     ∃ C, ∀ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       ‖SchwartzMap.toBesovSpaceCLM ℂ b (s - m) p ∞ (e.cutoffPushforwardSchwartz he φ
           (P (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1)) g)))‖ ≤
-        C * ‖SchwartzMap.toBesovSpaceCLM ℂ b s p ∞ (e'.cutoffPushforwardSchwartz he' ψ g)‖ := by
-  classical
-  rcases eq_or_ne n 0 with hn | hn
-  · exact exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_le_of_dim_eq_zero hn he he' φ ψ b
-      s (s - m) p
-  have : NeZero n := ⟨hn⟩
-  -- A partition of unity `ρ k` on `e'⁻¹(supp ψ)`, with `ρ k` supported in the source of a chart
-  -- `E k` agreeing with `e` over the support of `φ`; `ρ k` is the cutoff `τ k` read on `M`, and
-  -- `χ k = 1` on the support of `τ k`.
-  obtain ⟨ι, _, ρ, E, hρ1, hE⟩ :=
-    (e'.isCompact_symm_image_tsupport ψ).exists_smoothPartition_mem_maximalAtlas_eqOn_symm
-      he φ.hasCompactSupport.isCompact φ.tsupport_subset
-  choose hEa hρc hρE hφE hEe using hE
-  choose τ hτ using fun k ↦ (E k).exists_cutoffPullback_one_eq (hEa k) (hρc k) (hρE k)
-  choose χ hχ using fun k ↦ TestFunction.exists_eventually_eq_one
-    (Ω := ⟨(E k).target, (E k).open_target⟩) (n := ⊤) (τ k).hasCompactSupport.isCompact
-    (τ k).tsupport_subset
-  choose A hA0 hA using fun k ↦
-    exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_complexCutoffPullback_le he hP (hEa k) φ
-      (hφE k) (hEe k) (χ k) b s p
-  choose B hB using fun k ↦
-    exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le (hEa k) he' (τ k) ψ b s p ∞
-  refine ⟨∑ k, A k * B k, fun g ↦ ?_⟩
-  set G := LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1)) g with hGdef
-  -- `G` is supported in `e'⁻¹(supp ψ)`, where the `ρ k` add up to `1`.
-  have hG : G = ∑ k,
-      LinearMap.mulLeft ℂ (ContMDiffMap.ofReal ((E k).cutoffPullback (hEa k) (τ k) 1)) G := by
-    simp only [hτ]
-    refine ContMDiffMap.eq_sum_mulLeft_ofReal _ ρ (fun x hx ↦ ?_) hρ1
-    refine tsupport_cutoffPullback_subset he' ψ 1 (subset_tsupport _ fun h ↦ hx ?_)
-    simp [hGdef, h]
-  rw [hG, map_sum, map_sum, map_sum, Finset.sum_mul]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
-  rw [mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback (hEa k)
-    fun y hy ↦ (hχ k).1.self_of_nhdsSet y hy, mul_assoc]
-  exact (hA k _).trans (mul_le_mul_of_nonneg_left (hB k g) (hA0 k))
+        C * ‖SchwartzMap.toBesovSpaceCLM ℂ b s p ∞ (e'.cutoffPushforwardSchwartz he' ψ g)‖ :=
+  exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le hP
+    (SchwartzMap.toBesovSpaceCLM_injective ℂ b s p ∞)
+    (fun hκ hκ' _ hθ hθc hθs ↦
+      BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc hθs b s p ∞)
+    _ (fun _ ha ↦ (ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b s).imp
+      fun _ hA w ↦ hA.2 w)
+    he he' φ ψ
 
 /-- **The Besov estimate in one chart.** Let `P` be a classical pseudodifferential operator of
 order `m` and `ψᵢ` finitely many cutoffs in charts `e'ᵢ` whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`,
@@ -227,20 +128,14 @@ theorem exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum
     ∃ C, ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       ‖SchwartzMap.toBesovSpaceCLM ℂ b (s - m) p ∞ (e.cutoffPushforwardSchwartz he φ (P u))‖ ≤
         C * ∑ i, ‖SchwartzMap.toBesovSpaceCLM ℂ b s p ∞
-          ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
-  choose C hC using fun i ↦
-    exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le hP he (he' i) φ (ψ i) b
-      s p
-  refine ⟨∑ i, |C i|, fun u ↦ ?_⟩
-  -- `u = ∑ᵢ Ψᵢ u`, and each piece is estimated in the chart `eᵢ`.
-  have hu : u = ∑ i,
-      LinearMap.mulLeft ℂ (ContMDiffMap.ofReal ((e' i).cutoffPullback (he' i) (ψ i) 1)) u :=
-    ContMDiffMap.eq_sum_mulLeft_ofReal _ _ (subset_univ _) fun x _ ↦ hψ x
-  conv_lhs => rw [hu, map_sum, map_sum, map_sum]
-  rw [Finset.mul_sum]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (hC i u).trans ?_)
-  exact mul_le_mul_of_nonneg_right ((le_abs_self _).trans (Finset.single_le_sum
-    (fun j _ ↦ abs_nonneg (C j)) (Finset.mem_univ i))) (norm_nonneg _)
+          ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ :=
+  exists_norm_cutoffPushforwardSchwartz_apply_le_sum hP
+    (SchwartzMap.toBesovSpaceCLM_injective ℂ b s p ∞)
+    (fun hκ hκ' _ hθ hθc hθs ↦
+      BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc hθs b s p ∞)
+    _ (fun _ ha ↦ (ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b s).imp
+      fun _ hA w ↦ hA.2 w)
+    he φ he' ψ hψ
 
 /-- **Besov and Hölder–Zygmund estimates for classical pseudodifferential operators on a
 manifold.** Let `P` be a classical pseudodifferential operator of order `m` and `ψᵢ` finitely many
@@ -267,10 +162,13 @@ theorem exists_sum_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum
       ∑ j, ‖SchwartzMap.toBesovSpaceCLM ℂ b (s - m) p ∞
           ((e j).cutoffPushforwardSchwartz (he j) (φ j) (P u))‖ ≤
         C * ∑ i, ‖SchwartzMap.toBesovSpaceCLM ℂ b s p ∞
-          ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
-  choose C hC using fun j ↦
-    exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum hP (he j) (φ j) he' ψ hψ b s
-      p
-  exact ⟨∑ j, C j, fun u ↦ (Finset.sum_le_sum fun j _ ↦ hC j u).trans_eq (Finset.sum_mul ..).symm⟩
+          ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ :=
+  exists_sum_norm_cutoffPushforwardSchwartz_apply_le_sum hP
+    (SchwartzMap.toBesovSpaceCLM_injective ℂ b s p ∞)
+    (fun hκ hκ' _ hθ hθc hθs ↦
+      BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc hθs b s p ∞)
+    _ (fun _ ha ↦ (ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b s).imp
+      fun _ hA w ↦ hA.2 w)
+    he φ he' ψ hψ
 
 end TauCeti
