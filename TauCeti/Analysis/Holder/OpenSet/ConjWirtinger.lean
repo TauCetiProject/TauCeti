@@ -35,7 +35,9 @@ holomorphic curves.
 * `TauCeti.CkHolderSpaceOn.conjWirtingerDerivL`: the operator
   `C^{1,α}(Ω, F) →L[ℝ] C^{0,α}(Ω, F)`, `u ↦ ∂u/∂(conj z)`.
 * `TauCeti.CkHolderSpaceOn.conjWirtingerDerivL_apply`: it equals `∂/∂(conj z)` of a representative
-  of the germ at the evaluation point.
+  of the germ at the evaluation point; in particular
+  (`TauCeti.CkHolderSpaceOn.conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend`) of the
+  extension to the closure.
 * `TauCeti.CkHolderSpaceOn.conjWirtingerDerivL_compLeftL`: it commutes with postcomposition by a
   complex-linear map, for instance with the coordinate projections of `ℂⁿ`.
 * `TauCeti.CkHolderSpaceOn.wirtingerDerivL`: the operator
@@ -79,6 +81,13 @@ theorem conjWirtingerDerivL_apply (u : CkHolderSpaceOn 1 α Ω F) (z : Ω) {g : 
     (hg : u.extend =ᶠ[𝓝 (z : ℂ)] g) :
     conjWirtingerDerivL α Ω F u z = conjWirtingerDeriv g z 1 := by
   rw [conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend, hg.conjWirtingerDeriv_eq]
+
+/-- The Cauchy–Riemann operator on `C^{1,α}(Ω)` agrees on `Ω` with the conjugate Wirtinger
+derivative of the extension to the closure. -/
+theorem conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend
+    (u : CkHolderSpaceOn 1 α Ω F) (z : Ω) :
+    conjWirtingerDerivL α Ω F u z = conjWirtingerDeriv u.closureExtend z 1 :=
+  conjWirtingerDerivL_apply u z (u.closureExtend_eventuallyEq_extend z.property).symm
 
 /-- The Cauchy–Riemann operator on `C^{1,α}(Ω)` commutes with postcomposition by a continuous
 complex-linear map `L`: `∂(L ∘ u)/∂(conj z) = L ∘ ∂u/∂(conj z)`. -/
