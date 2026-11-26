@@ -22,7 +22,6 @@ import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Geometry.Symplectic.Rescale
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on the Riemann sphere
@@ -363,6 +362,19 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
 
 /-! ### The formal adjoint -/
 
+/-- For data regular along `u` at every point of the plane, `w ‖D_u^* θ‖²` is integrable for a
+continuous weight `w` and a compactly supported `C¹` covector field `θ`. -/
+private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall
+    {L : ℝ × ℝ → V → V →L[ℝ] V} (hL : ∀ z, ContDiffAt ℝ 1 (uncurry L) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u) {w : ℝ × ℝ → ℝ}
+    (hw : Continuous w) {θ : ℝ × ℝ → V →L[ℝ] ℝ} (hθ : ContDiff ℝ 1 θ)
+    (hθc : HasCompactSupport θ) :
+    Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint L Ks Kt u θ z‖ ^ 2 :=
+  ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_univ (fun z _ ↦ hL z)
+    (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun _ _ ↦ hu.contDiffAt) hw.continuousOn hθ subset_rfl
+    hθc (subset_univ _)
+
 /-- **The energy estimate for the adjoint of constant data.** For a constant `ω`-compatible
 structure `J₀` and the zero perturbation, the Dirichlet energy of a compactly supported `C²`
 covector field is controlled by the `L²` norm of its formal adjoint, with no lower-order term. The
@@ -410,11 +422,11 @@ private theorem exists_forall_integral_norm_fderiv_sq_le_of_const (h₀ : ω.Com
     simp only [ContinuousLinearEquiv.coe_coe] at e1 e2
     rw [hη', hη', mul_add, ← mul_pow, ← mul_pow]
     gcongr
-  have iD := ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_univ
-    (J := fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
-    (Kt := fun _ _ ↦ 0) (u := 0) (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ contDiffAt_const)
-    (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ contDiffAt_const) (w := fun _ ↦ c₂ ^ 2)
-    continuousOn_const (hη.of_le one_le_two) subset_rfl hc (subset_univ _)
+  have iD := integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall (ω := ω)
+    (L := fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
+    (Kt := fun _ _ ↦ 0) (u := 0) (fun _ ↦ contDiffAt_const) (fun _ ↦ contDiffAt_const)
+    (fun _ ↦ contDiffAt_const) contDiff_const (w := fun _ ↦ c₂ ^ 2) continuous_const
+    (hη.of_le one_le_two) hc
   calc _ ≤ ∫ z, c₁ ^ 2 * (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) :=
         integral_mono (integrable_norm_fderiv_sq_add (hη.of_le one_le_two) hc _ _)
@@ -647,6 +659,23 @@ private theorem exists_forall_integral_sobolevDensity_covectorPullback_realChart
         rw [← mul_assoc]
         exact mul_le_mul_of_nonneg_left hcv (by positivity)
 
+/-- The integral of a nonnegative integrable function over the disc `|w| ≤ r` is at most its
+integral over the square `‖w‖ ≤ r`. -/
+private theorem setIntegral_setOf_norm_equivRealProdCLM_symm_le_le {f : ℝ × ℝ → ℝ}
+    (hf : Integrable f) (hf0 : 0 ≤ f) (r : ℝ) :
+    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ r}, f z ≤ ∫ z in closedBall 0 r, f z :=
+  setIntegral_mono_set hf.integrableOn (Eventually.of_forall hf0)
+    (Eventually.of_forall (setOf_norm_equivRealProdCLM_symm_le_subset_closedBall r))
+
+/-- The arithmetic closing the estimates of the formal adjoint on a disc and near infinity:
+`C (p X' + q Y') ≤ C (p + q) (X + Y)` when `X' ≤ X` and `Y' ≤ Y`, all terms nonnegative. -/
+private theorem mul_add_mul_le_mul_add {C p q X X' Y Y' : ℝ} (hC : 0 ≤ C) (hp : 0 ≤ p)
+    (hq : 0 ≤ q) (hX : X' ≤ X) (hY : Y' ≤ Y) (hX0 : 0 ≤ X) (hY0 : 0 ≤ Y) :
+    C * (p * X' + q * Y') ≤ C * (p + q) * (X + Y) := by
+  rw [mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ hC
+  nlinarith [mul_le_mul_of_nonneg_left hX hp, mul_le_mul_of_nonneg_left hY hq]
+
 /-- **The estimate of the formal adjoint on a disc.** The `W^{1,2}` norm of a compactly supported
 covector field on the disc `|w| ≤ a` is controlled by the `L²` norm of `D_u^* η` and the `L²` norm
 of `η` on the square `‖w‖ ≤ a + 1`. -/
@@ -677,7 +706,7 @@ private theorem
   obtain ⟨c, hc0, hcut⟩ := ω.exists_forall_norm_floerLinearizationAdjoint_smul_sq_le
     (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (Ks := Ks) (Kt := Kt) hJ hu
     (hψ.of_le (by simp)) hψ01 hK₁ fun z hz ↦ hψK z (not_le.1 hz)
-  refine ⟨C₁ * (c + 3), by positivity, fun η hη hηc ↦ ?_⟩
+  refine ⟨C₁ * (2 + (c + 1)), by positivity, fun η hη hηc ↦ ?_⟩
   set η₁ : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ ψ w • η w
   have hη₁ : ContDiff ℝ 2 η₁ := (hψ.of_le (by simp)).smul hη
   have hη₁K : tsupport η₁ ⊆ K₁ := (tsupport_smul_subset_left ψ η).trans <|
@@ -708,16 +737,12 @@ private theorem
   have hint {θ : ℝ × ℝ → V →L[ℝ] ℝ} (hθ : ContDiff ℝ 1 θ) (hθc : HasCompactSupport θ) :
       Integrable fun z ↦ ‖ω.floerLinearizationAdjoint
         (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u θ z‖ ^ 2 := by
-    simpa using ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_univ
-      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (fun z _ ↦ hJ z)
-      (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) (w := fun _ ↦ 1)
-      continuousOn_const hθ subset_rfl hθc (subset_univ _)
+    simpa using integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall (ω := ω)
+      (L := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu (w := fun _ ↦ 1)
+      continuous_const hθ hθc
   have iD := hint (hη.of_le one_le_two) hηc
   have iη : Integrable fun z ↦ ‖η z‖ ^ 2 :=
     hη.continuous.integrable_norm_sq_of_hasCompactSupport hηc
-  have hball : ∫ z in K₁, ‖η z‖ ^ 2 ≤ ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2 :=
-    setIntegral_mono_set iη.integrableOn (Eventually.of_forall fun _ ↦ sq_nonneg _)
-      (Eventually.of_forall fun z hz ↦ setOf_norm_equivRealProdCLM_symm_le_subset_closedBall _ hz)
   have hfull : ∫ z in K₁, ‖ω.floerLinearizationAdjoint
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 ≤
       ∫ z, ‖ω.floerLinearizationAdjoint
@@ -741,22 +766,10 @@ private theorem
           (c + 1) * ∫ z in K₁, ‖η z‖ ^ 2) := by
         rw [integral_add ((iD.const_mul 2).integrableOn) ((iη.const_mul _).integrableOn),
           integral_const_mul, integral_const_mul]
-    _ ≤ _ := by
-        have h0 : 0 ≤ ∫ z, ‖ω.floerLinearizationAdjoint
-            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
-          integral_nonneg fun _ ↦ sq_nonneg _
-        have h0' : 0 ≤ ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2 :=
-          setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _
-        have key : 2 * (∫ z in K₁, ‖ω.floerLinearizationAdjoint
-            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
-            (c + 1) * ∫ z in K₁, ‖η z‖ ^ 2 ≤ (c + 3) * ((∫ z, ‖ω.floerLinearizationAdjoint
-              (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
-              ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2) := by
-          nlinarith [mul_le_mul_of_nonneg_left hball (by linarith : (0 : ℝ) ≤ c + 1)]
-        calc _ ≤ C₁ * ((c + 3) * ((∫ z, ‖ω.floerLinearizationAdjoint
-              (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
-              ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2)) := mul_le_mul_of_nonneg_left key hC₁
-          _ = _ := by ring
+    _ ≤ _ := mul_add_mul_le_mul_add hC₁ zero_le_two (by linarith) hfull
+        (setIntegral_setOf_norm_equivRealProdCLM_symm_le_le iη (fun _ ↦ sq_nonneg _) _)
+        (integral_nonneg fun _ ↦ sq_nonneg _)
+        (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _)
 
 /-- Where `2 T < |w|`, so that `T < ‖w‖`, the structures are `J₀` near `w`. -/
 private theorem eventuallyEq_const_of_eq_base (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
@@ -923,22 +936,13 @@ private theorem
     exact norm_pow_four_mul_le (sq_nonneg _) (indicator_nonneg (fun _ _ ↦ sq_nonneg _) _) hc0
       (fun h ↦ indicator_of_notMem (show w ∉ K₁ from not_le.2 h) _) hcw
   -- (D) Integrating the pointwise bound.
-  have iW := ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_univ
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (fun z _ ↦ hJ z)
-    (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt)
-    (w := fun z ↦ (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2) (by fun_prop) (hη.of_le one_le_two) subset_rfl hηc
-    (subset_univ _)
+  have iW := integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall (ω := ω)
+    (L := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
+    (w := fun z ↦ (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2) (by fun_prop) (hη.of_le one_le_two) hηc
   have iη : Integrable fun z ↦ ‖η z‖ ^ 2 :=
     hη.continuous.integrable_norm_sq_of_hasCompactSupport hηc
   have hK₁m : MeasurableSet K₁ := hK₁.isClosed.measurableSet
   have iK := (integrable_indicator_iff hK₁m).2 iη.integrableOn
-  have hX : 0 ≤ ∫ z, (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
-    integral_nonneg fun _ ↦ by positivity
-  have hY : ∫ z in K₁, ‖η z‖ ^ 2 ≤ ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2 :=
-    setIntegral_mono_set iη.integrableOn (Eventually.of_forall fun _ ↦ sq_nonneg _)
-      (Eventually.of_forall fun z hz ↦ setOf_norm_equivRealProdCLM_symm_le_subset_closedBall _ hz)
-  have hY0 : 0 ≤ ∫ z in K₁, ‖η z‖ ^ 2 := setIntegral_nonneg hK₁m fun _ _ ↦ sq_nonneg _
   calc _ ≤ _ := hA
     _ ≤ _ := hest
     _ ≤ C₂ * ∫ w, (2 * ((1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
@@ -952,20 +956,10 @@ private theorem
           c * (1 + (a + 1) ^ 2) ^ 2 * ∫ z in K₁, ‖η z‖ ^ 2) := by
         rw [integral_add (iW.const_mul 2) (iK.const_mul _), integral_const_mul,
           integral_const_mul, integral_indicator hK₁m]
-    _ ≤ _ := by
-        have hc' : 0 ≤ c * (1 + (a + 1) ^ 2) ^ 2 := by positivity
-        have key : 2 * (∫ z, (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
-            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
-            c * (1 + (a + 1) ^ 2) ^ 2 * (∫ z in K₁, ‖η z‖ ^ 2) ≤
-            (2 + c * (1 + (a + 1) ^ 2) ^ 2) * ((∫ z, (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 *
-              ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-                Ks Kt u η z‖ ^ 2) + ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2) := by
-          nlinarith [mul_le_mul_of_nonneg_left hY hc', mul_nonneg hc' hX]
-        calc _ ≤ C₂ * ((2 + c * (1 + (a + 1) ^ 2) ^ 2) * ((∫ z, (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 *
-              ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-                Ks Kt u η z‖ ^ 2) + ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2)) :=
-              mul_le_mul_of_nonneg_left key hC₂
-          _ = _ := by ring
+    _ ≤ _ := mul_add_mul_le_mul_add hC₂ zero_le_two (by positivity) le_rfl
+        (setIntegral_setOf_norm_equivRealProdCLM_symm_le_le iη (fun _ ↦ sq_nonneg _) _)
+        (integral_nonneg fun _ ↦ by positivity)
+        (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _)
 
 /-- **The semi-Fredholm estimate of the formal adjoint on the Riemann sphere.** Let the Floer data
 `J`, `K_s`, `K_t` on the plane `ℝ × ℝ ≅ ℂ` be the fixed `ω`-compatible structure `J₀` and the zero
@@ -1021,10 +1015,9 @@ theorem
       ∫ z, (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
         (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
     integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ sq_nonneg _)
-      (ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_univ
-        (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (fun z _ ↦ hJ z)
-        (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) (by fun_prop)
-        (hη.of_le one_le_two) subset_rfl hηc (subset_univ _))
+      (integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall
+        (L := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu (by fun_prop)
+        (hη.of_le one_le_two) hηc)
       (Eventually.of_forall fun z ↦ le_mul_of_one_le_left (sq_nonneg _)
           (one_le_pow₀ (by nlinarith [sq_nonneg z.1, sq_nonneg z.2])))
   have hY : ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2 ≤ ∫ z in closedBall 0 (a + 1 + 1), ‖η z‖ ^ 2 :=
