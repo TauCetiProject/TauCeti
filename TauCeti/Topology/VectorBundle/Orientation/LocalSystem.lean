@@ -26,7 +26,8 @@ along a path precomposes with path lifting in the cover. With `R = ℤ` this is 
 local system whose fibre over `b` is a copy of `ℤ` with the two orientations of `E_b` as its
 generators: evaluation at any orientation `o` of `E_b` identifies the fibre with `R`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemFiberEquiv`), and the opposite orientation
-gives the opposite identification.
+gives the opposite identification. In particular every fibre has rank one over a ring with the
+strong rank condition (`TauCeti.VectorBundleOrientationCover.finrank_signLocalSystem_obj`).
 
 An orientation of the bundle is a continuous section of the orientation double cover, so it
 trivializes the orientation local system
@@ -90,6 +91,8 @@ two orientations of a fibre, and it projects to a loop whose monodromy exchanges
 
 ## Main results
 
+* `TauCeti.VectorBundleOrientationCover.finrank_signLocalSystem_obj`: the fibres of the orientation
+  local system have rank one.
 * `TauCeti.VectorBundleOrientationCover.exists_monodromyRepresentation_signLocalSystem_eq_neg_one`:
   a non-orientable bundle over a connected, locally path-connected base has an
   orientation-reversing loop.
@@ -349,6 +352,24 @@ instance projective_signLocalSystem_obj (x : FundamentalGroupoid (TopCat.of B)) 
     exact (ModuleCat.isZero_of_subsingleton _).projective
 
 variable [FiniteDimensional ℝ F]
+
+/-- The fibres of the orientation local system are finitely generated: each is a copy of `R`. -/
+instance finite_signLocalSystem_obj (x : FundamentalGroupoid (TopCat.of B)) :
+    Module.Finite R ((signLocalSystem F E R hι).obj x) := by
+  obtain ⟨b⟩ := x
+  obtain ⟨q, hq⟩ := surjective_proj (F := F) (E := E) hι b
+  exact .equiv (liftFiberEquiv hι q hq).symm
+
+/-- **The orientation local system has rank one.** Over a ring with the strong rank condition,
+every fibre of the orientation local system has rank `1`: evaluation at either orientation of the
+fibre of `E` identifies it with `R`. -/
+@[simp]
+theorem finrank_signLocalSystem_obj [StrongRankCondition R]
+    (x : FundamentalGroupoid (TopCat.of B)) :
+    finrank R ((signLocalSystem F E R hι).obj x) = 1 := by
+  obtain ⟨b⟩ := x
+  obtain ⟨q, hq⟩ := surjective_proj (F := F) (E := E) hι b
+  exact (liftFiberEquiv hι q hq).finrank_eq.trans (finrank_self R)
 
 /-- **A non-orientable bundle has an orientation-reversing loop.** Over a connected, locally
 path-connected base, if `E` is not orientable, some loop at `b` acts by `-1` on the fibre of the
