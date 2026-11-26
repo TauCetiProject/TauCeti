@@ -31,11 +31,12 @@ type.
 * `TauCeti.existsUnique_mem_highFlipEdges_k`, `TauCeti.existsUnique_mem_lowFlipEdges_k`: each
   triple has exactly one edge of each direction.
 * `TauCeti.IsFlipAt.symm`: if `M` contains at most one edge of each face round `v`, a flip from
-  `M` to `M'` at `v` can be undone, `IsFlipAt v M' M`.
+  `M` to `M'` at `v` can be undone, `IsFlipAt v M' M`; `TauCeti.IsFlip.symm` for tilings.
 * `TauCeti.IsFlipAt.symmDiff_eq`: under the same hypothesis `M` and `M'` differ exactly in the six
   edges at `v` named in the definition.
-* `TauCeti.IsFlipAt.isTiling`: a flip of a tiling of a region containing the six faces round `v`
-  is a tiling of the region.
+* `TauCeti.IsFlipAt.isTiling`, `TauCeti.IsFlip.isTiling`: a flip of a tiling of a region is a
+  tiling of the region.
+* `TauCeti.IsTiling.diff_union`: replacing a tiling of a subregion by another tiling of it.
 
 ## References
 
@@ -74,10 +75,10 @@ theorem highFlipEdges_def (v : ℤ × ℤ) :
 theorem lowFlipEdges_def (v : ℤ × ℤ) :
     lowFlipEdges v = {⟨v, 0⟩, ⟨v, 1⟩, ⟨v - (1, 1), 2⟩} := (rfl)
 
-theorem mem_highFlipEdges :
+@[simp] theorem mem_highFlipEdges :
     e ∈ highFlipEdges v ↔ e = ⟨v, 2⟩ ∨ e = ⟨v - (1, 0), 0⟩ ∨ e = ⟨v - (0, 1), 1⟩ := Iff.rfl
 
-theorem mem_lowFlipEdges :
+@[simp] theorem mem_lowFlipEdges :
     e ∈ lowFlipEdges v ↔ e = ⟨v, 0⟩ ∨ e = ⟨v, 1⟩ ∨ e = ⟨v - (1, 1), 2⟩ := Iff.rfl
 
 theorem isFlipAt_def : IsFlipAt v M M' ↔
@@ -92,21 +93,21 @@ theorem isFlip_def : IsFlip M M' ↔ ∃ v, IsFlipAt v M M' := Iff.rfl
 theorem existsUnique_mem_highFlipEdges_k (v : ℤ × ℤ) (k : Fin 3) :
     ∃! e, e ∈ highFlipEdges v ∧ e.k = k := by
   fin_cases k
-  · exact ⟨⟨v - (1, 0), 0⟩, by simp [mem_highFlipEdges], fun e ⟨he, hk⟩ => by
+  · exact ⟨⟨v - (1, 0), 0⟩, by simp, fun e ⟨he, hk⟩ => by
       rcases mem_highFlipEdges.1 he with rfl | rfl | rfl <;> simp_all⟩
-  · exact ⟨⟨v - (0, 1), 1⟩, by simp [mem_highFlipEdges], fun e ⟨he, hk⟩ => by
+  · exact ⟨⟨v - (0, 1), 1⟩, by simp, fun e ⟨he, hk⟩ => by
       rcases mem_highFlipEdges.1 he with rfl | rfl | rfl <;> simp_all⟩
-  · exact ⟨⟨v, 2⟩, by simp [mem_highFlipEdges], fun e ⟨he, hk⟩ => by
+  · exact ⟨⟨v, 2⟩, by simp, fun e ⟨he, hk⟩ => by
       rcases mem_highFlipEdges.1 he with rfl | rfl | rfl <;> simp_all⟩
 
 theorem existsUnique_mem_lowFlipEdges_k (v : ℤ × ℤ) (k : Fin 3) :
     ∃! e, e ∈ lowFlipEdges v ∧ e.k = k := by
   fin_cases k
-  · exact ⟨⟨v, 0⟩, by simp [mem_lowFlipEdges], fun e ⟨he, hk⟩ => by
+  · exact ⟨⟨v, 0⟩, by simp, fun e ⟨he, hk⟩ => by
       rcases mem_lowFlipEdges.1 he with rfl | rfl | rfl <;> simp_all⟩
-  · exact ⟨⟨v, 1⟩, by simp [mem_lowFlipEdges], fun e ⟨he, hk⟩ => by
+  · exact ⟨⟨v, 1⟩, by simp, fun e ⟨he, hk⟩ => by
       rcases mem_lowFlipEdges.1 he with rfl | rfl | rfl <;> simp_all⟩
-  · exact ⟨⟨v - (1, 1), 2⟩, by simp [mem_lowFlipEdges], fun e ⟨he, hk⟩ => by
+  · exact ⟨⟨v - (1, 1), 2⟩, by simp, fun e ⟨he, hk⟩ => by
       rcases mem_lowFlipEdges.1 he with rfl | rfl | rfl <;> simp_all⟩
 
 theorem disjoint_highFlipEdges_lowFlipEdges (v : ℤ × ℤ) :
@@ -138,7 +139,7 @@ theorem existsUnique_mem_highFlipEdges (hf : f ∈ vertexFaces v) :
   obtain ⟨x, y⟩ := v
   simp only [vertexFaces_def, Finset.mem_insert, Finset.mem_singleton] at hf
   refine existsUnique_of_exists_of_unique ?_ ?_
-  · rcases hf with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [mem_highFlipEdges]
+  · rcases hf with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
   · rintro e e' ⟨he, hef⟩ ⟨he', he'f⟩
     rcases mem_highFlipEdges.1 he with rfl | rfl | rfl <;>
       rcases mem_highFlipEdges.1 he' with rfl | rfl | rfl <;>
@@ -151,7 +152,7 @@ theorem existsUnique_mem_lowFlipEdges (hf : f ∈ vertexFaces v) :
   obtain ⟨x, y⟩ := v
   simp only [vertexFaces_def, Finset.mem_insert, Finset.mem_singleton] at hf
   refine existsUnique_of_exists_of_unique ?_ ?_
-  · rcases hf with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [mem_lowFlipEdges]
+  · rcases hf with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
   · rintro e e' ⟨he, hef⟩ ⟨he', he'f⟩
     rcases mem_lowFlipEdges.1 he with rfl | rfl | rfl <;>
       rcases mem_lowFlipEdges.1 he' with rfl | rfl | rfl <;>
@@ -170,66 +171,95 @@ theorem isTiling_lowFlipEdges (v : ℤ × ℤ) :
   isTiling_def.2 ⟨fun _ he _ hf => mem_vertexFaces_of_mem_lowFlipEdges he hf,
     fun _ hf => existsUnique_mem_lowFlipEdges hf⟩
 
-/-! ### Replacing one tiling of a hexagon by the other -/
+/-! ### Replacing a tiling of a subregion -/
 
-section Replace
-
-/-- If `M` contains at most one edge of each face round `v` and contains a tiling `A` of the
-hexagon round `v`, then it contains no edge of another tiling `B` disjoint from `A`. -/
-theorem disjoint_of_tiling_hexagon (hA : IsTiling (vertexFaces v : Set TriFace) A)
-    (hB : IsTiling (vertexFaces v : Set TriFace) B) (hAB : Disjoint A B)
-    (hM : ∀ f ∈ vertexFaces v, ∀ e ∈ M, ∀ e' ∈ M, e ∈ f.edges → e' ∈ f.edges → e = e')
-    (hAM : A ⊆ M) :
-    Disjoint M B := by
+/-- If `M` contains at most one edge of each face of `S` and contains a tiling `A` of `S`, then it
+contains no edge of a tiling `B` of `S` disjoint from `A`. -/
+theorem disjoint_of_isTiling_of_subset {S : Set TriFace} (hA : IsTiling S A) (hB : IsTiling S B)
+    (hAB : Disjoint A B) (hM : ∀ f ∈ S, ∀ e ∈ M, ∀ e' ∈ M, e ∈ f.edges → e' ∈ f.edges → e = e')
+    (hAM : A ⊆ M) : Disjoint M B := by
   rw [Set.disjoint_right]
   intro b hb hbM
-  have hf : b.whiteFace ∈ vertexFaces v := hB.whiteFace_mem hb
+  have hf : b.whiteFace ∈ S := hB.whiteFace_mem hb
   obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hf
   have := hM _ hf a (hAM ha) b hbM haf b.mem_whiteFace_edges
   exact Set.disjoint_left.1 hAB ha (this ▸ hb)
 
-/-- Replacing `A` by `B` in a tiling of a region containing the hexagon gives a tiling. -/
-theorem isTiling_replace_tiling_hexagon (hA : IsTiling (vertexFaces v : Set TriFace) A)
-    (hB : IsTiling (vertexFaces v : Set TriFace) B) (hM : IsTiling R M) (hAM : A ⊆ M)
-    (hR : (vertexFaces v : Set TriFace) ⊆ R) : IsTiling R (M \ A ∪ B) := by
+/-- Replacing a tiling `A` of a subregion `S` by another tiling `B` of `S`, inside a tiling `M` of
+`R` containing `A`, gives a tiling of `R`. -/
+theorem IsTiling.diff_union {S : Set TriFace} (hM : IsTiling R M) (hA : IsTiling S A)
+    (hB : IsTiling S B) (hAM : A ⊆ M) : IsTiling R (M \ A ∪ B) := by
+  have hSR : S ⊆ R := fun f hf => by
+    obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hf
+    exact hM.mem_of_mem_edges (hAM ha) haf
   refine isTiling_def.2 ⟨?_, fun f hf => ?_⟩
   · rintro e (⟨heM, -⟩ | heB) f hef
     · exact hM.mem_of_mem_edges heM hef
-    · exact hR (hB.mem_of_mem_edges heB hef)
-  by_cases hfv : f ∈ vertexFaces v
-  · obtain ⟨b, ⟨hb, hbf⟩, hbu⟩ := hB.existsUnique hfv
+    · exact hSR (hB.mem_of_mem_edges heB hef)
+  by_cases hfS : f ∈ S
+  · obtain ⟨b, ⟨hb, hbf⟩, hbu⟩ := hB.existsUnique hfS
     refine ⟨b, ⟨Or.inr hb, hbf⟩, fun e ⟨he, hef⟩ => ?_⟩
     rcases he with ⟨heM, heA⟩ | heB
-    · obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hfv
+    · obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hfS
       exact absurd (hM.eq_of_mem_edges heM (hAM ha) hef haf ▸ ha) heA
     · exact hbu e ⟨heB, hef⟩
-  · have hAf : ∀ e ∈ A, e ∉ f.edges := fun e he hef => hfv (hA.mem_of_mem_edges he hef)
-    have hBf : ∀ e ∈ B, e ∉ f.edges := fun e he hef => hfv (hB.mem_of_mem_edges he hef)
+  · have hAf : ∀ e ∈ A, e ∉ f.edges := fun e he hef => hfS (hA.mem_of_mem_edges he hef)
+    have hBf : ∀ e ∈ B, e ∉ f.edges := fun e he hef => hfS (hB.mem_of_mem_edges he hef)
     obtain ⟨e, ⟨heM, hef⟩, heu⟩ := hM.existsUnique hf
     refine ⟨e, ⟨Or.inl ⟨heM, fun heA => hAf e heA hef⟩, hef⟩, fun e' ⟨he', he'f⟩ => ?_⟩
     rcases he' with ⟨he'M, -⟩ | he'B
     · exact heu e' ⟨he'M, he'f⟩
     · exact absurd he'f (hBf e' he'B)
 
-/-- Replacing `A` by `B` and then `B` by `A` gives back `M`, when `M` contains `A` and no edge of
-`B`. -/
-theorem replace_replace_tiling_hexagon (hAM : A ⊆ M) (hMB : Disjoint M B) :
-    (M \ A ∪ B) \ B ∪ A = M := by
-  ext e
-  constructor
-  · rintro (⟨⟨heM, -⟩ | heB, heB'⟩ | heA)
-    · exact heM
-    · exact absurd heB heB'
-    · exact hAM heA
-  · intro heM
-    by_cases heA : e ∈ A
-    · exact Or.inr heA
-    · exact Or.inl ⟨Or.inl ⟨heM, heA⟩, fun heB => Set.disjoint_left.1 hMB heM heB⟩
+/-! ### Flips -/
 
-/-- Replacing `A` by `B` in a set containing `A` and no edge of `B` changes exactly the edges of
-`A` and `B`. -/
-theorem symmDiff_replace_tiling_hexagon (hAB : Disjoint A B) (hAM : A ⊆ M) (hMB : Disjoint M B) :
-    symmDiff M (M \ A ∪ B) = A ∪ B := by
+/-- A flip at `v` replaces a triple `A` by a triple `B`, where `(A, B)` is one of the two orders of
+`highFlipEdges v` and `lowFlipEdges v`. -/
+theorem isFlipAt_iff_exists : IsFlipAt v M M' ↔ ∃ A B,
+    (A = highFlipEdges v ∧ B = lowFlipEdges v ∨ A = lowFlipEdges v ∧ B = highFlipEdges v) ∧
+      A ⊆ M ∧ M' = M \ A ∪ B := by
+  constructor
+  · rintro (⟨hAM, rfl⟩ | ⟨hAM, rfl⟩)
+    exacts [⟨_, _, Or.inl ⟨rfl, rfl⟩, hAM, rfl⟩, ⟨_, _, Or.inr ⟨rfl, rfl⟩, hAM, rfl⟩]
+  · rintro ⟨A, B, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, hAM, rfl⟩
+    exacts [Or.inl ⟨hAM, rfl⟩, Or.inr ⟨hAM, rfl⟩]
+
+/-- In either order, the two triples are disjoint tilings of the hexagon round `v` whose union is
+the six edges at `v`. -/
+private theorem isTiling_and_isTiling_of_flipPair
+    (h : A = highFlipEdges v ∧ B = lowFlipEdges v ∨ A = lowFlipEdges v ∧ B = highFlipEdges v) :
+    IsTiling (vertexFaces v : Set TriFace) A ∧ IsTiling (vertexFaces v : Set TriFace) B ∧
+      Disjoint A B ∧ A ∪ B = highFlipEdges v ∪ lowFlipEdges v := by
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · exact ⟨isTiling_highFlipEdges v, isTiling_lowFlipEdges v,
+      disjoint_highFlipEdges_lowFlipEdges v, rfl⟩
+  · exact ⟨isTiling_lowFlipEdges v, isTiling_highFlipEdges v,
+      (disjoint_highFlipEdges_lowFlipEdges v).symm, Set.union_comm _ _⟩
+
+namespace IsFlipAt
+
+/-- **A flip can be undone**: if `M` contains at most one edge of each of the six faces round `v`
+and `IsFlipAt v M M'`, then `IsFlipAt v M' M`. -/
+theorem symm (h : IsFlipAt v M M')
+    (hM : ∀ f ∈ vertexFaces v, ∀ e ∈ M, ∀ e' ∈ M, e ∈ f.edges → e' ∈ f.edges → e = e') :
+    IsFlipAt v M' M := by
+  obtain ⟨A, B, hp, hAM, rfl⟩ := isFlipAt_iff_exists.1 h
+  obtain ⟨hA, hB, hAB, -⟩ := isTiling_and_isTiling_of_flipPair hp
+  have hMB := disjoint_of_isTiling_of_subset hA hB hAB hM hAM
+  refine isFlipAt_iff_exists.2 ⟨B, A, hp.symm.imp And.symm And.symm, Set.subset_union_right, ?_⟩
+  rw [Set.union_sdiff_right, sdiff_eq_left.2 (hMB.mono_left Set.sdiff_subset),
+    Set.sdiff_union_of_subset hAM]
+
+/-- **A flip changes exactly the six edges at `v`**: if `M` contains at most one edge of each of
+the six faces round `v` and `IsFlipAt v M M'`, then `M` and `M'` differ exactly in
+`(v,3)`, `(v−e₁,1)`, `(v−e₂,2)`, `(v,1)`, `(v,2)`, `(v−e₃,3)`. -/
+theorem symmDiff_eq (h : IsFlipAt v M M')
+    (hM : ∀ f ∈ vertexFaces v, ∀ e ∈ M, ∀ e' ∈ M, e ∈ f.edges → e' ∈ f.edges → e = e') :
+    symmDiff M M' = highFlipEdges v ∪ lowFlipEdges v := by
+  obtain ⟨A, B, hp, hAM, rfl⟩ := isFlipAt_iff_exists.1 h
+  obtain ⟨hA, hB, hAB, hAB'⟩ := isTiling_and_isTiling_of_flipPair hp
+  have hMB := disjoint_of_isTiling_of_subset hA hB hAB hM hAM
+  rw [← hAB']
   ext e
   simp only [Set.mem_symmDiff, Set.mem_union, Set.mem_sdiff]
   by_cases heA : e ∈ A
@@ -240,62 +270,26 @@ theorem symmDiff_replace_tiling_hexagon (hAB : Disjoint A B) (hAM : A ⊆ M) (hM
       simp [heA, heB, heM]
     · simp [heA, heB]
 
-end Replace
-
-/-! ### Flips -/
-
-namespace IsFlipAt
-
-variable (hM : ∀ f ∈ vertexFaces v, ∀ e ∈ M, ∀ e' ∈ M, e ∈ f.edges → e' ∈ f.edges → e = e')
-
-include hM in
-/-- **A flip can be undone**: if `M` contains at most one edge of each of the six faces round `v`
-and `IsFlipAt v M M'`, then `IsFlipAt v M' M`. -/
-theorem symm (h : IsFlipAt v M M') : IsFlipAt v M' M := by
-  have hd := disjoint_highFlipEdges_lowFlipEdges v
-  rcases h with ⟨hAM, rfl⟩ | ⟨hAM, rfl⟩
-  · refine Or.inr ⟨Set.subset_union_right, ?_⟩
-    exact (replace_replace_tiling_hexagon
-      hAM (disjoint_of_tiling_hexagon (isTiling_highFlipEdges v) (isTiling_lowFlipEdges v) hd hM
-        hAM)).symm
-  · refine Or.inl ⟨Set.subset_union_right, ?_⟩
-    exact (replace_replace_tiling_hexagon
-      hAM (disjoint_of_tiling_hexagon (isTiling_lowFlipEdges v) (isTiling_highFlipEdges v)
-        hd.symm hM hAM)).symm
-
-include hM in
-/-- **A flip changes exactly the six edges at `v`**: if `M` contains at most one edge of each of
-the six faces round `v` and `IsFlipAt v M M'`, then `M` and `M'` differ exactly in
-`(v,3)`, `(v−e₁,1)`, `(v−e₂,2)`, `(v,1)`, `(v,2)`, `(v−e₃,3)`. -/
-theorem symmDiff_eq (h : IsFlipAt v M M') :
-    symmDiff M M' = highFlipEdges v ∪ lowFlipEdges v := by
-  have hd := disjoint_highFlipEdges_lowFlipEdges v
-  rcases h with ⟨hAM, rfl⟩ | ⟨hAM, rfl⟩
-  · exact symmDiff_replace_tiling_hexagon hd
-      hAM (disjoint_of_tiling_hexagon (isTiling_highFlipEdges v) (isTiling_lowFlipEdges v) hd hM
-        hAM)
-  · rw [Set.union_comm (highFlipEdges v)]
-    exact symmDiff_replace_tiling_hexagon
-      hd.symm hAM (disjoint_of_tiling_hexagon (isTiling_lowFlipEdges v) (isTiling_highFlipEdges v)
-        hd.symm hM hAM)
-
-omit hM in
-/-- **Flips preserve tilings**: a flip at `v` of a tiling of a region containing the six faces
-round `v` is a tiling of the region. -/
-theorem isTiling (h : IsFlipAt v M M') (hMR : IsTiling R M)
-    (hR : (vertexFaces v : Set TriFace) ⊆ R) : IsTiling R M' := by
-  rcases h with ⟨hAM, rfl⟩ | ⟨hAM, rfl⟩
-  · exact isTiling_replace_tiling_hexagon (isTiling_highFlipEdges v) (isTiling_lowFlipEdges v)
-      hMR hAM hR
-  · exact isTiling_replace_tiling_hexagon (isTiling_lowFlipEdges v) (isTiling_highFlipEdges v)
-      hMR hAM hR
+/-- **Flips preserve tilings**: a flip of a tiling of a region is a tiling of the region. -/
+theorem isTiling (h : IsFlipAt v M M') (hM : IsTiling R M) : IsTiling R M' := by
+  obtain ⟨A, B, hp, hAM, rfl⟩ := isFlipAt_iff_exists.1 h
+  obtain ⟨hA, hB, -, -⟩ := isTiling_and_isTiling_of_flipPair hp
+  exact hM.diff_union hA hB hAM
 
 end IsFlipAt
 
-/-- A tiling contains at most one edge of each face of the region, in particular of the six faces
-round `v` when they lie in the region. -/
-theorem IsTiling.eq_of_mem_vertexFaces (hMR : IsTiling R M) :
-    ∀ f ∈ vertexFaces v, ∀ e ∈ M, ∀ e' ∈ M, e ∈ f.edges → e' ∈ f.edges → e = e' :=
-  fun _ _ _ he _ he' hef he'f => hMR.eq_of_mem_edges he he' hef he'f
+namespace IsFlip
+
+/-- A flip of a tiling can be undone. -/
+theorem symm (h : IsFlip M M') (hM : IsTiling R M) : IsFlip M' M :=
+  let ⟨v, hv⟩ := h
+  ⟨v, hv.symm fun _ _ _ he _ he' => hM.eq_of_mem_edges he he'⟩
+
+/-- **Flips preserve tilings**: a flip of a tiling of a region is a tiling of the region. -/
+theorem isTiling (h : IsFlip M M') (hM : IsTiling R M) : IsTiling R M' :=
+  let ⟨_, hv⟩ := h
+  hv.isTiling hM
+
+end IsFlip
 
 end TauCeti
