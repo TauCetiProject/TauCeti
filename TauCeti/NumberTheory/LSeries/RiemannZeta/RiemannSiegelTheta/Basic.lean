@@ -75,18 +75,20 @@ theorem riemannSiegelTheta_def (T : ℝ) :
 theorem riemannSiegelTheta_zero : riemannSiegelTheta 0 = 0 := by
   rw [riemannSiegelTheta_def, intervalIntegral.integral_same]
 
+private theorem one_quarter_add_div_two_mul_I (T : ℝ) :
+    ((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I = 1 / 4 + (T : ℂ) / 2 * I := by
+  push_cast
+  ring
+
 /-- `T ↦ Im log Γ(1/4 + iT/2) - (T/2) log π` has derivative `(Re ψ(1/4 + iT/2) - log π) / 2`. -/
 private theorem hasDerivAt_im_logGamma_sub (T : ℝ) :
     HasDerivAt (fun T : ℝ ↦ (logGamma (1 / 4 + (T : ℂ) / 2 * I)).im - T / 2 * Real.log π)
       (((digamma (1 / 4 + (T : ℂ) / 2 * I)).re - Real.log π) / 2) T := by
-  have hcast (T : ℝ) : ((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I = 1 / 4 + (T : ℂ) / 2 * I := by
-    push_cast
-    ring
   have hmem : ((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I ∈ slitPlane :=
     Complex.mem_slitPlane_iff.mpr (Or.inl (by simp))
   have him := ((hasDerivAt_im_logGamma_ofReal_add_mul_I hmem).comp T
     ((hasDerivAt_id T).div_const 2)).sub ((hasDerivAt_id T).div_const 2 |>.mul_const (Real.log π))
-  simp only [Function.comp_def, id, hcast] at him
+  simp only [Function.comp_def, id, one_quarter_add_div_two_mul_I] at him
   convert him using 1
   ring
 
@@ -95,26 +97,21 @@ private theorem hasDerivAt_im_logGamma_sub (T : ℝ) :
 `ϑ(T) = Im log Γ(1/4 + iT/2) - (T/2) log π`. -/
 theorem riemannSiegelTheta_eq_im_logGamma_sub (T : ℝ) :
     riemannSiegelTheta T = (logGamma (1 / 4 + (T : ℂ) / 2 * I)).im - T / 2 * Real.log π := by
-  have hcast (T : ℝ) : ((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I =
-      1 / 4 + (T : ℂ) / 2 * I := by
-    push_cast
-    ring
   rw [riemannSiegelTheta_def]
-  simp_rw [← hcast]
-  let F : ℝ → ℝ := fun t : ℝ ↦ (digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I)).re
-  change (∫ t in (0 : ℝ)..T, (F (t / 2) - Real.log π) / 2) =
-    (logGamma (((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I)).im - T / 2 * Real.log π
+  -- Expose `t ↦ t / 2` for the change of variables and the general vertical integral.
+  simp_rw [← one_quarter_add_div_two_mul_I]
   rw [intervalIntegral.integral_comp_div (a := 0) (b := T) (c := 2)
-    (f := fun t : ℝ => (F t - Real.log π) / 2) (by norm_num)]
+    (f := fun t : ℝ => ((digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I)).re - Real.log π) / 2)
+    (by norm_num)]
   simp only [zero_div, smul_eq_mul, intervalIntegral.integral_div]
   have hψ : Continuous fun t : ℝ => digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I) :=
     analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun _ ↦ by norm_num
-  have hF : Continuous F := Complex.continuous_re.comp hψ
-  rw [intervalIntegral.integral_sub (hF.intervalIntegrable 0 (T / 2)) intervalIntegrable_const]
-  have hInt := integral_re_digamma_ofReal_add_mul_I (σ := 1 / 4) (by norm_num) (T / 2)
-  change (∫ t in (0 : ℝ)..T / 2, F t) =
-    (logGamma (((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I)).im at hInt
-  rw [hInt, intervalIntegral.integral_const]
+  have hre : Continuous fun t : ℝ => (digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I)).re :=
+    Complex.continuous_re.comp hψ
+  rw [intervalIntegral.integral_sub
+    (hre.intervalIntegrable 0 (T / 2)) intervalIntegrable_const]
+  rw [integral_re_digamma_ofReal_add_mul_I (σ := 1 / 4) (by norm_num) (T / 2),
+    intervalIntegral.integral_const]
   simp only [sub_zero, smul_eq_mul]
   ring
 
