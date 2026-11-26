@@ -35,7 +35,9 @@ In particular the coefficients of `II` in Tau Ceti's boundary charts are `C^k`.
 
 Pairing `II` with a local frame of `T∂M` at `k = 0` shows that `II` is a continuous section of the
 bundle of bilinear forms on `T∂M` (`TauCeti.continuousAt_boundarySecondFundamentalForm`,
-`TauCeti.continuous_boundarySecondFundamentalForm`).
+`TauCeti.continuous_boundarySecondFundamentalForm`). The induced metric `h` is a continuous
+section in the same way (`TauCeti.contMDiffAt_boundaryInducedForm_apply`,
+`TauCeti.continuous_boundaryInducedForm`).
 -/
 
 public section
@@ -153,5 +155,63 @@ theorem continuous_boundarySecondFundamentalForm :
         TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
       (boundarySecondFundamentalForm q).toContinuousBilinearMap) :=
   continuous_iff_continuousAt.2 continuousAt_boundarySecondFundamentalForm
+
+omit [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
+/-- **The induced metric of the boundary is a `C^k` section** of the bundle of bilinear forms on
+`T∂M`, on a `C^(k + 1)` manifold with a `C^k` metric: it pairs two tangent fields `U`, `W` of the
+boundary manifold that are `C^k` at `q₀` to a function `q ↦ h_q(U q, W q)` that is `C^k` at
+`q₀`. -/
+theorem contMDiffAt_boundaryInducedForm_apply (hm : k + 1 ≤ m) (hl : k ≤ l)
+    {U W : (q : (𝓡∂ (n + 1)).boundary M) → TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q}
+    {q₀ : (𝓡∂ (n + 1)).boundary M}
+    (hU : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)).tangent k
+      (T% U) q₀)
+    (hW : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)).tangent k
+      (T% W) q₀) :
+    ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ) k
+      (fun q ↦ boundaryInducedForm q (U q) (W q)) q₀ := by
+  have : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) k (EuclideanSpace ℝ (Fin (n + 1)))
+      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := .of_le hl
+  have hι : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) m
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) :=
+    (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := m) M).contMDiff
+  -- The bundle argument of `ContMDiffAt.inner_bundle` is not inferred through `TangentSpace`.
+  simpa only [boundaryInducedForm_apply] using
+    ContMDiffAt.inner_bundle (IB := 𝓡∂ (n + 1)) (F := EuclideanSpace ℝ (Fin (n + 1)))
+      (E := fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) (b := Subtype.val)
+      ((hι q₀).mfderiv_apply_sectionAlong hU hm) ((hι q₀).mfderiv_apply_sectionAlong hW hm)
+
+/-- **Continuity of the induced metric**: `q ↦ h_q` is a section of the bundle of bilinear forms on
+`T∂M` that is continuous at every point. Its pairings with a local frame of `T∂M` at `q₀` are
+continuous on the base set of the frame, by `TauCeti.contMDiffAt_boundaryInducedForm_apply` at
+`k = 0`. -/
+theorem continuousAt_boundaryInducedForm (q₀ : (𝓡∂ (n + 1)).boundary M) :
+    ContinuousAt (fun q ↦ TotalSpace.mk'
+      (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
+      (E := fun q : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
+        TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
+      (boundaryInducedForm q).toContinuousBilinearMap) q₀ := by
+  set e := trivializationAt (EuclideanSpace ℝ (Fin n))
+    (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) q₀
+  let b := Module.Basis.ofVectorSpace ℝ (EuclideanSpace ℝ (Fin n))
+  have hframe (i) {q} (hq : q ∈ e.baseSet) : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+      𝓘(ℝ, EuclideanSpace ℝ (Fin n)).tangent 0 (T% (e.localFrame b i)) q :=
+    (e.contMDiffOn_localFrame_baseSet 0 b i).contMDiffAt (e.open_baseSet.mem_nhds hq)
+  exact ((Manifold.contMDiffOn_bilinear_of_localFrame (n := 0) b subset_rfl fun i j q hq ↦
+    (contMDiffAt_boundaryInducedForm_apply (k := 0) (m := 2) (l := 1) (by norm_num)
+      (by norm_num) (hframe i hq) (hframe j hq)).contMDiffWithinAt).contMDiffAt
+    (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' q₀))).continuousAt
+
+variable (n M) in
+/-- **Continuity of the induced metric**: `q ↦ h_q` is a continuous section of the bundle of
+bilinear forms on `T∂M`. -/
+theorem continuous_boundaryInducedForm :
+    Continuous (fun q ↦ TotalSpace.mk'
+      (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
+      (E := fun q : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
+        TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
+      (boundaryInducedForm q).toContinuousBilinearMap) :=
+  continuous_iff_continuousAt.2 continuousAt_boundaryInducedForm
 
 end TauCeti
