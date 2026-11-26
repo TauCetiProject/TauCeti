@@ -11,7 +11,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 /-!
 # The image of the fundamental group of a field extension
 
-Let `K → L → Ω` be fields with `Ω` separably closed and Galois over `K` and over `L`. The
+Let `K → L → Ω` be fields with `Ω` separably closed and Galois over `K` (hence over `L`). The
 homomorphism of étale fundamental groups `π₁(Spec L, x) → π₁(Spec K, x)` induced by
 `Spec L ⟶ Spec K` is restriction of scalars `Gal(Ω/L) → Gal(Ω/K)`
 (`TauCeti.FiniteEtaleScheme.mapAutFiber_toAutContinuousMulEquiv`). So it is injective
@@ -55,13 +55,14 @@ theorem spec_algebraMap_comp_spec_algebraMap :
       Spec.map (CommRingCat.ofHom (algebraMap K Ω)) := by
   rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
 
-variable [IsSepClosed Ω] [IsGalois K Ω] [IsGalois L Ω]
+variable [IsSepClosed Ω] [IsGalois K Ω]
 
 /-- **The map of fundamental groups of a field extension is injective**, since restriction of
 scalars `Gal(Ω/L) → Gal(Ω/K)` is. -/
 theorem injective_mapAutFiber_spec :
     Function.Injective (mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap K L)))
       (spec_algebraMap_comp_spec_algebraMap K Ω L)) := by
+  have := IsGalois.tower_top_of_isGalois K L Ω
   intro a b hab
   obtain ⟨σ, rfl⟩ := (toAutContinuousMulEquiv _ Gal(Ω/L)).surjective a
   obtain ⟨τ, rfl⟩ := (toAutContinuousMulEquiv _ Gal(Ω/L)).surjective b
@@ -76,6 +77,7 @@ theorem mem_range_mapAutFiber_spec_iff
     g ∈ (mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap K L)))
         (spec_algebraMap_comp_spec_algebraMap K Ω L)).toMonoidHom.range ↔ ∀ l : L,
       (toAutContinuousMulEquiv _ Gal(Ω/K)).symm g (algebraMap L Ω l) = algebraMap L Ω l := by
+  have := IsGalois.tower_top_of_isGalois K L Ω
   obtain ⟨σ, rfl⟩ := (toAutContinuousMulEquiv _ Gal(Ω/K)).surjective g
   rw [ContinuousMulEquiv.symm_apply_apply]
   constructor

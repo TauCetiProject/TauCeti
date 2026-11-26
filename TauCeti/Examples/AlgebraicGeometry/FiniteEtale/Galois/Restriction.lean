@@ -31,8 +31,6 @@ local notation "Ω" => AlgebraicClosure (GaloisField p 2)
 
 instance instIsGaloisZModAlgebraicClosure : IsGalois (ZMod p) Ω := {}
 
-instance instIsGaloisGaloisFieldAlgebraicClosure : IsGalois (GaloisField p 2) Ω := {}
-
 /-- The map `π₁(Spec 𝔽_(p²)) → π₁(Spec 𝔽_p)` is injective. -/
 theorem injective :
     Function.Injective (mapAutFiber
