@@ -32,6 +32,7 @@ surjective if and only if `n = 1` or `f` is a unit. For instance over `A = ℤ` 
 
 ## Main definitions
 
+* `TauCeti.rootChart`: the affine root chart `A[t]/(tⁿ - f)`.
 * `TauCeti.rootChartCoaction`: the coaction `δ : B → H ⊗[A] B`, `t ↦ h ⊗ t`.
 * `TauCeti.rootChartComparison`: the action comparison `Θ : B ⊗[A] B → H ⊗[A] B`.
 
@@ -39,6 +40,8 @@ surjective if and only if `n = 1` or `f` is a unit. For instance over `A = ℤ` 
 
 * `TauCeti.rootChartComparison_root_pow_tmul_root_pow`: the weighted permutation formula
   `Θ(tⁱ ⊗ tʲ) = f ^ ((i + j) / n) • (hⁱ ⊗ t^((i + j) % n))`.
+* `TauCeti.rootChartComparison_basis_tensorProduct`: the same formula in the monomial bases,
+  exhibiting `Θ` as diagonal against a cyclically reindexed target basis.
 * `TauCeti.rootChartComparison_injective_iff`: for `n ≠ 0`, `Θ` is injective if and only if
   `n = 1` or `f` is left regular.
 * `TauCeti.rootChartComparison_surjective_iff`: for `n ≠ 0`, `Θ` is surjective if and only if
@@ -61,25 +64,40 @@ open Polynomial TensorProduct
 
 namespace TauCeti
 
+/-- The affine root chart `A[t]/(tⁿ - f)`, for a commutative ring `A`, an arbitrary `f ∈ A` and
+`n ∈ ℕ`. At `f = 1` it is `A[h]/(hⁿ - 1)`, the coordinate ring of `μ_n`. -/
+abbrev rootChart (A : Type*) [CommRing A] (f : A) (n : ℕ) :=
+  AdjoinRoot (X ^ n - C f : A[X])
+
 variable (A : Type*) [CommRing A] (f : A) (n : ℕ)
 
 /-- The coaction `δ : A[t]/(tⁿ - f) → A[h]/(hⁿ - 1) ⊗[A] A[t]/(tⁿ - f)` of the coordinate ring
 of `μ_n` on the affine root chart: the `A`-algebra map with `δ(t) = h ⊗ t`. It is the coordinate
 ring map of the action of `μ_n` on `Spec A[t]/(tⁿ - f)` scaling the root. -/
-noncomputable def rootChartCoaction :
-    AdjoinRoot (X ^ n - C f : A[X]) →ₐ[A]
-      AdjoinRoot (X ^ n - C 1 : A[X]) ⊗[A] AdjoinRoot (X ^ n - C f : A[X]) :=
+noncomputable def rootChartCoaction : rootChart A f n →ₐ[A] rootChart A 1 n ⊗[A] rootChart A f n :=
   AdjoinRoot.liftAlgHom _ (Algebra.ofId A _) (AdjoinRoot.root _ ⊗ₜ AdjoinRoot.root _) (by
-    rw [eval₂_sub, eval₂_X_pow, eval₂_C, Algebra.TensorProduct.tmul_pow,
-      AdjoinRoot.root_X_pow_sub_C_pow, AdjoinRoot.root_X_pow_sub_C_pow, sub_eq_zero,
-      map_one (AdjoinRoot.of (X ^ n - C (1 : A))), AlgHom.coe_toRingHom, Algebra.ofId_apply,
-      Algebra.TensorProduct.algebraMap_apply', AdjoinRoot.algebraMap_eq])
+    simp only [eval₂_sub, eval₂_X_pow, eval₂_C, Algebra.TensorProduct.tmul_pow,
+      AdjoinRoot.root_X_pow_sub_C_pow, map_one, sub_eq_zero]
+    -- `AdjoinRoot.of` is `algebraMap` by definition (`AdjoinRoot.algebraMap_eq`).
+    exact (Algebra.TensorProduct.algebraMap_apply' f).symm)
 
 /-- The coaction sends the root `t` to `h ⊗ t`. -/
 @[simp]
 theorem rootChartCoaction_root :
     rootChartCoaction A f n (AdjoinRoot.root _) = AdjoinRoot.root _ ⊗ₜ AdjoinRoot.root _ :=
   AdjoinRoot.liftAlgHom_root _ _ _ _
+
+/-- The coaction fixes constants: `δ(a) = 1 ⊗ a`. -/
+theorem rootChartCoaction_algebraMap (a : A) :
+    rootChartCoaction A f n (algebraMap A _ a) = 1 ⊗ₜ algebraMap A _ a := by
+  rw [AlgHom.commutes, Algebra.TensorProduct.algebraMap_apply']
+
+/-- The coaction fixes constants, stated with `AdjoinRoot.of`, the simp normal form of
+`algebraMap` (`AdjoinRoot.algebraMap_eq`): `δ(a) = 1 ⊗ a`. -/
+@[simp]
+theorem rootChartCoaction_of (a : A) :
+    rootChartCoaction A f n (AdjoinRoot.of _ a) = 1 ⊗ₜ AdjoinRoot.of _ a := by
+  simpa using rootChartCoaction_algebraMap A f n a
 
 /-- The character weight of a root power: the coaction sends `tⁱ` to `hⁱ ⊗ tⁱ`. -/
 theorem rootChartCoaction_root_pow (i : ℕ) :
@@ -90,8 +108,7 @@ theorem rootChartCoaction_root_pow (i : ℕ) :
 /-- An `A`-algebra map `A[t]/(tⁿ - f) → A[h]/(hⁿ - 1) ⊗[A] A[t]/(tⁿ - f)` sending `t` to `h ⊗ t` is
 the coaction. -/
 theorem eq_rootChartCoaction_of_root
-    {ψ : AdjoinRoot (X ^ n - C f : A[X]) →ₐ[A]
-      AdjoinRoot (X ^ n - C 1 : A[X]) ⊗[A] AdjoinRoot (X ^ n - C f : A[X])}
+    {ψ : rootChart A f n →ₐ[A] rootChart A 1 n ⊗[A] rootChart A f n}
     (hψ : ψ (AdjoinRoot.root _) = AdjoinRoot.root _ ⊗ₜ AdjoinRoot.root _) :
     ψ = rootChartCoaction A f n :=
   AdjoinRoot.algHom_ext (by rw [hψ, rootChartCoaction_root])
@@ -100,14 +117,13 @@ theorem eq_rootChartCoaction_of_root
 chart `B = A[t]/(tⁿ - f)` and `H = A[h]/(hⁿ - 1)`. It is the coordinate ring map of the action
 comparison `μ_n ×_A Spec B → Spec B ×_A Spec B`, `(ζ, x) ↦ (ζ x, x)`. -/
 noncomputable def rootChartComparison :
-    AdjoinRoot (X ^ n - C f : A[X]) ⊗[A] AdjoinRoot (X ^ n - C f : A[X]) →ₐ[A]
-      AdjoinRoot (X ^ n - C 1 : A[X]) ⊗[A] AdjoinRoot (X ^ n - C f : A[X]) :=
+    rootChart A f n ⊗[A] rootChart A f n →ₐ[A] rootChart A 1 n ⊗[A] rootChart A f n :=
   Algebra.TensorProduct.lift (rootChartCoaction A f n) Algebra.TensorProduct.includeRight
     fun _ _ => Commute.all _ _
 
 /-- The action comparison on a pure tensor: `Θ(b ⊗ c) = δ(b) (1 ⊗ c)`. -/
 @[simp]
-theorem rootChartComparison_tmul (b c : AdjoinRoot (X ^ n - C f : A[X])) :
+theorem rootChartComparison_tmul (b c : rootChart A f n) :
     rootChartComparison A f n (b ⊗ₜ c) = rootChartCoaction A f n b * (1 ⊗ₜ c) := by
   rw [rootChartComparison, Algebra.TensorProduct.lift_tmul,
     Algebra.TensorProduct.includeRight_apply]
@@ -120,8 +136,9 @@ theorem rootChartComparison_root_pow_tmul_root_pow (i j : ℕ) :
       f ^ ((i + j) / n) •
         ((AdjoinRoot.root (X ^ n - C 1 : A[X]) ^ i) ⊗ₜ (AdjoinRoot.root _ ^ ((i + j) % n))) := by
   rw [rootChartComparison_tmul, rootChartCoaction_root_pow, Algebra.TensorProduct.tmul_mul_tmul,
-    mul_one, ← pow_add, AdjoinRoot.root_X_pow_sub_C_pow_eq_mul_pow_mod n (i + j) f, ← map_pow,
-    ← AdjoinRoot.algebraMap_eq, ← Algebra.smul_def, tmul_smul]
+    mul_one, ← pow_add, AdjoinRoot.root_X_pow_sub_C_pow_eq_mul_pow_mod n (i + j) f]
+  -- Move the weight `f ^ ((i + j) / n)` out of the second factor as a scalar.
+  rw [← tmul_smul, Algebra.smul_def, AdjoinRoot.algebraMap_eq, map_pow]
 
 section Criteria
 
@@ -146,7 +163,7 @@ private theorem forall_pow_div_iff {P : A → Prop} (hpow : ∀ k, P f → P (f 
 /-- The action comparison sends each monomial `tⁱ ⊗ tʲ` of the source basis to
 `f ^ ((i + j) / n)` times the monomial `hⁱ ⊗ t^(i + j)` of the target basis, the exponent of `t`
 read modulo `n`. -/
-private theorem rootChartComparison_basis [Nontrivial A] (p : Fin n × Fin n) :
+theorem rootChartComparison_basis_tensorProduct [Nontrivial A] (p : Fin n × Fin n) :
     rootChartComparison A f n ((AdjoinRoot.basisXPowSubC n f).tensorProduct
         (AdjoinRoot.basisXPowSubC n f) p) =
       f ^ (((p.1 : ℕ) + p.2) / n) • (((AdjoinRoot.basisXPowSubC n (1 : A)).tensorProduct
@@ -165,14 +182,14 @@ theorem rootChartComparison_injective_iff :
     Function.Injective (rootChartComparison A f n) ↔ n = 1 ∨ IsLeftRegular f := by
   cases subsingleton_or_nontrivial A with
   | inl _ =>
-    have := Module.subsingleton A
-      (AdjoinRoot (X ^ n - C f : A[X]) ⊗[A] AdjoinRoot (X ^ n - C f : A[X]))
+    have := Module.subsingleton A (rootChart A f n ⊗[A] rootChart A f n)
     exact iff_of_true (Function.injective_of_subsingleton _)
       (Or.inr fun _ _ _ => Subsingleton.elim _ _)
   | inr _ =>
     rw [← forall_pow_div_iff A f n (fun k hf => hf.pow k) isRegular_one.left]
     exact Module.Basis.injective_iff_forall_isLeftRegular_of_apply_eq_smul _ _
-      (g := (rootChartComparison A f n).toLinearMap) (rootChartComparison_basis A f n)
+      (g := (rootChartComparison A f n).toLinearMap)
+      (rootChartComparison_basis_tensorProduct A f n)
 
 /-- **Sharp surjectivity criterion.** For `n ≠ 0`, the action comparison
 `A[t]/(tⁿ - f) ⊗[A] A[t]/(tⁿ - f) → A[h]/(hⁿ - 1) ⊗[A] A[t]/(tⁿ - f)` is surjective if and only if
@@ -181,13 +198,13 @@ theorem rootChartComparison_surjective_iff :
     Function.Surjective (rootChartComparison A f n) ↔ n = 1 ∨ IsUnit f := by
   cases subsingleton_or_nontrivial A with
   | inl _ =>
-    have := Module.subsingleton A
-      (AdjoinRoot (X ^ n - C 1 : A[X]) ⊗[A] AdjoinRoot (X ^ n - C f : A[X]))
+    have := Module.subsingleton A (rootChart A 1 n ⊗[A] rootChart A f n)
     exact iff_of_true (Function.surjective_to_subsingleton _) (Or.inr (isUnit_of_subsingleton f))
   | inr _ =>
     rw [← forall_pow_div_iff A f n (fun k hf => hf.pow k) isUnit_one]
     exact Module.Basis.surjective_iff_forall_isUnit_of_apply_eq_smul _ _
-      (g := (rootChartComparison A f n).toLinearMap) (rootChartComparison_basis A f n)
+      (g := (rootChartComparison A f n).toLinearMap)
+      (rootChartComparison_basis_tensorProduct A f n)
 
 /-- **Sharp bijectivity criterion.** For `n ≠ 0`, the action comparison
 `A[t]/(tⁿ - f) ⊗[A] A[t]/(tⁿ - f) → A[h]/(hⁿ - 1) ⊗[A] A[t]/(tⁿ - f)` is bijective if and only if
