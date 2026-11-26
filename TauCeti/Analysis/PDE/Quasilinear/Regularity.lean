@@ -201,8 +201,8 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
   -- A bound for the distances in the bounded set `S_ρ`.
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ thickening ρ S, ∀ y ∈ thickening ρ S, edist x y ≤ D :=
     ⟨_, fun x hx y hy => Metric.edist_le_diam_of_mem hS.thickening hx hy⟩
-  have haK := holderOnWith_matrixBilinearForm_comp hD (fun s => (hAx s).mono hρS)
-    (fun x hx => hAs x (hρS hx)) hγα (hv.of_le hD hγγ₀)
+  have haK := (hv.of_le hD hγγ₀).superposition (mapsTo_univ _ _)
+    (fun s _ => ((hAx s).mono hρS).of_le hD hγα) fun x hx => (hAs x (hρS hx)).lipschitzOnWith
   have hGK : HolderOnWith (KG * D ^ ((α : ℝ) - γ)) γ G (thickening ρ S) :=
     (hG.mono hρS).of_le hD hγα
   have hell : UniformlyEllipticOn S

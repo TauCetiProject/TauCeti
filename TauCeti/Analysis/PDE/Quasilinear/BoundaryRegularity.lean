@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundaryData
+import TauCeti.Analysis.Holder.Superposition
 import TauCeti.Analysis.PDE.Quasilinear.GlobalHolder
 import TauCeti.Analysis.PDE.Quasilinear.Regularity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
@@ -54,7 +55,7 @@ gradient is Hölder.
 A weak solution `u` solves the linear equation with the frozen coefficient `a(x) = A(x, v(x))`,
 where `v` is the Hölder representative of `u`, extended to `closure Ω`. With
 `α' = min α γ` (and `α' ≤ 1`), the coefficient `a` is `α'`-Hölder on `closure Ω`
-(`TauCeti.PDE.holderOnWith_matrixBilinearForm_comp`), so the global Schauder estimate with boundary
+(`HolderOnWith.superposition`), so the global Schauder estimate with boundary
 values (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule`) applies at the
 exponent `α'`. It needs a domain with `C^{1,α'}` boundary: the boundary graphs, `C¹` with
 `α`-Hölder derivative, agree near the chart centres with graphs whose derivative is globally
@@ -143,7 +144,8 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear_of_holderOnWi
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ s, ∀ y ∈ s, edist x y ≤ D :=
     ⟨_, fun x hx y hy => Metric.edist_le_diam_of_mem hΩ.closure hx hy⟩
   -- The coefficient frozen at `w` is `α'`-Hölder on `closure Ω`.
-  have haK := holderOnWith_matrixBilinearForm_comp hD hAx hAs hα'α (hwK.of_le hD hα'γ)
+  have haK := (hwK.of_le hD hα'γ).superposition (mapsTo_univ _ _)
+    (fun s _ => (hAx s).of_le hD hα'α) fun x hx => (hAs x hx).lipschitzOnWith
   obtain ⟨C, -, H⟩ := exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule hβ hβ1 hβα'
     hq hβq hΩ (forall_frontier_exists_graph_holderWith_fderiv_of_le hα'α (min_le_right _ _) hchart)
     lam Lam
