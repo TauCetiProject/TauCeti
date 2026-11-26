@@ -27,12 +27,12 @@ explicit argument, as in `AbsoluteValue.nonarchRpow`, rather than an instance.
 
 * `AbsoluteValue.valuationSubring`: the valuation subring `{x | w x ≤ 1}` of a nonarchimedean
   absolute value `w` on a field.
-* `AbsoluteValue.toValuation`: a nonarchimedean real absolute value as a valuation with values in
-  `ℝ≥0`. Its valuation subring is `AbsoluteValue.valuationSubring`
-  (`AbsoluteValue.valuationSubring_toValuation`).
 
 ## Main results
 
+* `AbsoluteValue.valuationSubring_toValuation`: the valuation subring of the valuation
+  `AbsoluteValue.toValuation` attached to a nonarchimedean real absolute value is
+  `AbsoluteValue.valuationSubring`.
 * `AbsoluteValue.mem_nonunits_valuationSubring_iff`,
   `AbsoluteValue.mem_maximalIdeal_valuationSubring_iff`,
   `AbsoluteValue.isUnit_valuationSubring_iff`: the nonunits of the valuation subring are the
@@ -186,21 +186,6 @@ end Field
 
 section Real
 
-/-- A nonarchimedean real absolute value, as a valuation with values in `ℝ≥0`. -/
-def toValuation {R : Type*} [Ring R] [Nontrivial R] {w : AbsoluteValue R ℝ}
-    (hw : IsNonarchimedean w) : Valuation R ℝ≥0 where
-  toFun x := .mk (w x) (w.nonneg x)
-  map_zero' := NNReal.eq w.map_zero
-  map_one' := NNReal.eq w.map_one
-  map_mul' x y := NNReal.eq (w.map_mul x y)
-  map_add_le_max' x y := by exact_mod_cast hw x y
-
-/-- The valuation attached to `w` takes the values of `w`. -/
-@[simp]
-theorem coe_toValuation_apply {R : Type*} [Ring R] [Nontrivial R] {w : AbsoluteValue R ℝ}
-    (hw : IsNonarchimedean w) (x : R) : (w.toValuation hw x : ℝ) = w x :=
-  NNReal.coe_mk _ _
-
 variable {K : Type*} [Field K] {w : AbsoluteValue K ℝ}
 
 /-- The valuation subring of the valuation attached to `w` is the valuation subring of `w`. -/
@@ -260,7 +245,7 @@ theorem isNonarchimedean_toAbsoluteValue : IsNonarchimedean (toAbsoluteValue K) 
 /-- Mathlib's valuation of a nonarchimedean normed field is the valuation attached to its norm. -/
 theorem toValuation_toAbsoluteValue :
     (toAbsoluteValue K).toValuation (isNonarchimedean_toAbsoluteValue K) = valuation :=
-  Valuation.ext fun _ ↦ rfl
+  Valuation.ext fun x ↦ NNReal.eq (AbsoluteValue.coe_toValuation_apply _ x)
 
 /-- The valuation subring of the norm of a nonarchimedean normed field is the valuation subring
 of Mathlib's valuation of the field. -/
