@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.PositiveDefiniteMatrix
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import TauCeti.LinearAlgebra.Matrix.Hermitian.TraceZero
 import TauCeti.Algebra.Star.SelfAdjoint.Finite
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
@@ -31,14 +32,15 @@ symmetric) matrices. They are the positive factors in the polar decomposition
 over `ℝ`).
 
 The determinant of a positive-definite matrix is a positive real number, and along the ray
-`t ↦ eᵗ P` it is `e^(t · card n) det P`, so `1` is a regular value of the determinant on the cone
-when `n` is nonempty. Hence `P₁` is a regular level, and it carries the analytic atlas of
-`TauCeti.regularLevelChartedSpace`, modelled on a real vector space of dimension one less than
-that of the Hermitian matrices (`Matrix.PosDefDetOne.Model`). As for the special linear group, the
-atlas is chosen nonconstructively: its public properties are the manifold instance
+`t ↦ eᵗ P` it is `e^(t · card n) det P`, so `1` is a regular value of the real part of the
+determinant (the determinant read as a real function) on the cone when `n` is nonempty. Hence
+`P₁` is a regular level, and it carries the analytic atlas of `TauCeti.regularLevelChartedSpace`,
+modelled on a real vector space of dimension one less than that of the Hermitian matrices
+(`Matrix.PosDefDetOne.Model`). As for the special linear group, the atlas is chosen
+nonconstructively: its public properties are the manifold instance
 `Matrix.PosDefDetOne.instIsManifold` and the smooth embedding
-`Matrix.PosDefDetOne.isSmoothEmbedding_val` into the cone. For an empty index type, `P₁` is a
-point and carries the discrete atlas.
+`Matrix.PosDefDetOne.isSmoothEmbedding_subtypeVal` into the cone. For an empty index type, `P₁`
+is a point and carries the discrete atlas.
 
 The matrix exponential restricts to **exponential coordinates** on `P₁`: since
 `det (exp X) = exp (trace X)`, it maps the trace-free Hermitian matrices
@@ -54,13 +56,11 @@ To state or use these results, `open scoped Matrix.Norms.L2Operator` and enable
 * `Matrix.PosDefDetOne`: the positive-definite matrices of determinant one, as a subtype of the
   positive-definite cone.
 * `Matrix.PosDefDetOne.instChartedSpace`, `Matrix.PosDefDetOne.instIsManifold`: the analytic
-  regular-level manifold structure.
-* `Matrix.PosDefDetOne.isSmoothEmbedding_val`: the inclusion into the positive-definite cone is an
-  analytic embedding.
-* `Matrix.PosDefDetOne.contMDiff_val_comp_iff`: a map into `P₁` is `C^k` exactly when it is
+  regular-level manifold structure (the discrete one on a point for an empty index type).
+* `Matrix.PosDefDetOne.isSmoothEmbedding_subtypeVal`: the inclusion into the positive-definite cone
+  is an analytic embedding.
+* `Matrix.PosDefDetOne.contMDiff_subtypeVal_comp_iff`: a map into `P₁` is `C^k` exactly when it is
   `C^k` into the cone.
-* `Matrix.traceZeroSelfAdjoint`: the trace-free Hermitian matrices, a real vector subspace of the
-  Hermitian matrices.
 * `Matrix.traceZeroExpDiffeomorph`: the exponential coordinates `X ↦ exp X` on `P₁`, with inverse
   the matrix logarithm.
 
@@ -85,16 +85,18 @@ attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
 variable (n 𝕜) in
 /-- The **positive-definite matrices of determinant one**, as a subtype of the positive-definite
-cone `Matrix.posDefOpens n 𝕜`. They carry the regular-level manifold structure
-`Matrix.PosDefDetOne.instChartedSpace`. -/
+cone `Matrix.posDefOpens n 𝕜`. For a nonempty index type they carry the regular-level manifold
+structure `Matrix.PosDefDetOne.instChartedSpace`; for an empty one they form a point, with the
+discrete structure. -/
 abbrev PosDefDetOne : Type _ :=
   {P : posDefOpens n 𝕜 // ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1}
 
 namespace PosDefDetOne
 
 variable (n 𝕜) in
-/-- The model vector space of the positive-definite matrices of determinant one, of dimension one
-less than the real dimension of the Hermitian matrices. -/
+/-- The model vector space of the positive-definite matrices of determinant one. For a nonempty
+index type its dimension is one less than the real dimension of the Hermitian matrices; for an
+empty one both dimensions are `0`. -/
 abbrev Model : Type :=
   Fin (Module.finrank ℝ (selfAdjoint (Matrix n n 𝕜)) - 1) → ℝ
 
@@ -163,13 +165,17 @@ private theorem isRegularValue_reDet [Nonempty n] :
   rw [map_smul, hv]
   exact div_mul_cancel₀ y hcard
 
+/-- The properties of the chosen atlas on `PosDefDetOne`: it is an analytic manifold structure for
+which the inclusion into the cone is an analytic embedding. -/
+private abbrev IsEmbeddedAtlas (c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜)) : Prop :=
+  letI := c
+  IsManifold 𝓘(ℝ, Model n 𝕜) ω (PosDefDetOne n 𝕜) ∧
+    IsSmoothEmbedding 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) ω
+      (Subtype.val : PosDefDetOne n 𝕜 → posDefOpens n 𝕜)
+
 /-- For an empty index type, `PosDefDetOne` is a point, with the discrete manifold structure. -/
 private theorem exists_charts_of_isEmpty [IsEmpty n] :
-    ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜),
-      letI := c
-      IsManifold 𝓘(ℝ, Model n 𝕜) ω (PosDefDetOne n 𝕜) ∧
-        IsSmoothEmbedding 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) ω
-          (Subtype.val : PosDefDetOne n 𝕜 → posDefOpens n 𝕜) := by
+    ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜), IsEmbeddedAtlas c := by
   have : Subsingleton (PosDefDetOne n 𝕜) :=
     ⟨fun P Q ↦ Subtype.ext (Subtype.ext (Subtype.ext (Subsingleton.elim _ _)))⟩
   have : IsEmpty (Fin (Module.finrank ℝ (selfAdjoint (Matrix n n 𝕜)) - 1)) := by
@@ -188,11 +194,7 @@ private theorem exists_charts_of_isEmpty [IsEmpty n] :
 /-- For a nonempty index type, `PosDefDetOne` carries the atlas of the regular level `1` of the
 real part of the determinant, for which its inclusion into the cone is an analytic embedding. -/
 private theorem exists_charts_of_nonempty [Nonempty n] :
-    ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜),
-      letI := c
-      IsManifold 𝓘(ℝ, Model n 𝕜) ω (PosDefDetOne n 𝕜) ∧
-        IsSmoothEmbedding 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) ω
-          (Subtype.val : PosDefDetOne n 𝕜 → posDefOpens n 𝕜) := by
+    ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜), IsEmbeddedAtlas c := by
   have hfm (P : posDefOpens n 𝕜) (_ : reDet P = 1) :
       ContMDiffAt 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) 𝓘(ℝ, ℝ) ω reDet P :=
     contMDiff_reDet.contMDiffAt
@@ -228,23 +230,20 @@ private theorem exists_charts_of_nonempty [Nonempty n] :
 /-- The regular-level manifold structure on `PosDefDetOne`, with the analytic embedding into the
 cone; for an empty index type, the discrete structure on a point. -/
 private theorem exists_charts :
-    ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜),
-      letI := c
-      IsManifold 𝓘(ℝ, Model n 𝕜) ω (PosDefDetOne n 𝕜) ∧
-        IsSmoothEmbedding 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) ω
-          (Subtype.val : PosDefDetOne n 𝕜 → posDefOpens n 𝕜) := by
+    ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜), IsEmbeddedAtlas c := by
   cases isEmpty_or_nonempty n
   · exact exists_charts_of_isEmpty
   · exact exists_charts_of_nonempty
 
 /-- The analytic atlas on the positive-definite matrices of determinant one, chosen
-nonconstructively among the atlases of a regular level. Its public properties are
-`Matrix.PosDefDetOne.instIsManifold` and `Matrix.PosDefDetOne.isSmoothEmbedding_val`;
-individual charts are not specified. -/
+nonconstructively: for a nonempty index type, among the atlases of a regular level; for an empty
+one, the discrete atlas on a point. Its public properties are `Matrix.PosDefDetOne.instIsManifold`
+and `Matrix.PosDefDetOne.isSmoothEmbedding_subtypeVal`; individual charts are not specified. -/
 @[instance_reducible]
 instance instChartedSpace : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜) :=
   -- The private witness cannot be unfolded in exported data. Proof irrelevance identifies this
-  -- witness with the one used by `choose_spec` below.
+  -- witness with the one used by `choose_spec` below. The private predicate `IsEmbeddedAtlas`
+  -- cannot appear in this exported type either, so the abbreviation is unfolded by hand.
   Classical.choose (show ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜),
     letI := c
     IsManifold 𝓘(ℝ, Model n 𝕜) ω (PosDefDetOne n 𝕜) ∧
@@ -257,59 +256,39 @@ instance instIsManifold : IsManifold 𝓘(ℝ, Model n 𝕜) ω (PosDefDetOne n 
 
 /-- The inclusion of the positive-definite matrices of determinant one into the positive-definite
 cone is an analytic embedding. -/
-theorem isSmoothEmbedding_val :
+theorem isSmoothEmbedding_subtypeVal :
     IsSmoothEmbedding 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) ω
       (Subtype.val : PosDefDetOne n 𝕜 → posDefOpens n 𝕜) :=
   (Classical.choose_spec exists_charts).2
 
 /-- The inclusion into the positive-definite cone has every regularity. -/
-theorem contMDiff_val {k : ℕ∞ω} :
+theorem contMDiff_subtypeVal {k : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) k
       (Subtype.val : PosDefDetOne n 𝕜 → posDefOpens n 𝕜) :=
-  (isSmoothEmbedding_val (n := n) (𝕜 := 𝕜)).contMDiff.of_le le_top
+  (isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).contMDiff.of_le le_top
 
 /-- The inclusion into the matrices has every regularity. -/
 theorem contMDiff_coe {k : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) k
       (fun P : PosDefDetOne n 𝕜 ↦ ((P.val : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜)) :=
-  contMDiff_coe_posDefOpens.comp contMDiff_val
+  contMDiff_coe_posDefOpens.comp contMDiff_subtypeVal
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
 /-- A map into the positive-definite matrices of determinant one is `C^k` exactly when it is
 `C^k` as a map into the positive-definite cone. -/
-theorem contMDiff_val_comp_iff {k : ℕ∞ω} {f : M → PosDefDetOne n 𝕜} :
+theorem contMDiff_subtypeVal_comp_iff {k : ℕ∞ω} {f : M → PosDefDetOne n 𝕜} :
     ContMDiff I 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) k (Subtype.val ∘ f) ↔
       ContMDiff I 𝓘(ℝ, Model n 𝕜) k f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ contMDiff_val.comp hf⟩
+  refine ⟨fun hf ↦ ?_, fun hf ↦ contMDiff_subtypeVal.comp hf⟩
   exact (ContMDiff.iff_comp_isImmersion
-    ((isSmoothEmbedding_val (n := n) (𝕜 := 𝕜)).isImmersion.of_le le_top)).2
+    ((isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).isImmersion.of_le le_top)).2
     ⟨hf.continuous.subtype_mk _, hf⟩
 
 end PosDefDetOne
 
 /-! ### Exponential coordinates -/
-
-variable (n 𝕜) in
-/-- The **trace-free Hermitian matrices** (over `ℝ`, the trace-free symmetric matrices), a real
-vector subspace of the Hermitian matrices. -/
-def traceZeroSelfAdjoint : Submodule ℝ (selfAdjoint (Matrix n n 𝕜)) where
-  carrier := {X | (X : Matrix n n 𝕜).trace = 0}
-  add_mem' {X Y} hX hY := by
-    simp only [Set.mem_ofPred_eq, AddSubgroup.coe_add, trace_add] at hX hY ⊢
-    rw [hX, hY, add_zero]
-  zero_mem' := by simp
-  smul_mem' c X hX := by
-    simp only [Set.mem_ofPred_eq, selfAdjoint.val_smul, trace_smul] at hX ⊢
-    rw [hX, smul_zero]
-
-omit [DecidableEq n] in
-/-- Membership in the trace-free Hermitian matrices is the vanishing of the trace. -/
-@[simp]
-theorem mem_traceZeroSelfAdjoint {X : selfAdjoint (Matrix n n 𝕜)} :
-    X ∈ traceZeroSelfAdjoint n 𝕜 ↔ (X : Matrix n n 𝕜).trace = 0 :=
-  Iff.rfl
 
 variable (n 𝕜) in
 /-- **Exponential coordinates on the positive-definite matrices of determinant one**: the matrix
@@ -323,27 +302,29 @@ def traceZeroExpDiffeomorph (k : ℕ∞ω) :
   toFun X := ⟨hermitianExpDiffeomorph n 𝕜 k X, by
     rw [coe_hermitianExpDiffeomorph_apply]
     exact (isHermitian_iff_isSelfAdjoint.2 (X : selfAdjoint (Matrix n n 𝕜)).property
-      ).det_exp_eq_one_iff.2 X.property⟩
+      ).det_exp_eq_one_iff.2 (mem_traceZeroSelfAdjoint.1 X.property)⟩
   invFun P := ⟨(hermitianExpDiffeomorph n 𝕜 k).symm P.val, by
     have hP := P.property
     rw [← (hermitianExpDiffeomorph n 𝕜 k).apply_symm_apply P.val,
       coe_hermitianExpDiffeomorph_apply] at hP
-    exact (isHermitian_iff_isSelfAdjoint.2
-      ((hermitianExpDiffeomorph n 𝕜 k).symm P.val).property).det_exp_eq_one_iff.1 hP⟩
+    exact mem_traceZeroSelfAdjoint.2 ((isHermitian_iff_isSelfAdjoint.2
+      ((hermitianExpDiffeomorph n 𝕜 k).symm P.val).property).det_exp_eq_one_iff.1 hP)⟩
   left_inv X := Subtype.ext ((hermitianExpDiffeomorph n 𝕜 k).symm_apply_apply X)
   right_inv P := Subtype.ext ((hermitianExpDiffeomorph n 𝕜 k).apply_symm_apply P.val)
   contMDiff_toFun := by
-    -- The inclusion of the trace-free subspace is a bounded linear map.
-    have hι : ContDiff ℝ k (Subtype.val : traceZeroSelfAdjoint n 𝕜 → selfAdjoint (Matrix n n 𝕜)) :=
-      IsBoundedLinearMap.contDiff ⟨⟨fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩, ⟨1, one_pos, fun _ ↦ by simp⟩⟩
-    have h := (hermitianExpDiffeomorph n 𝕜 k).contMDiff.comp hι.contMDiff
-    exact PosDefDetOne.contMDiff_val_comp_iff.1 h
+    -- The spaces are named so that the subspace's normed structure is found by instance search:
+    -- the definition of `traceZeroSelfAdjoint` is not exposed to unification here.
+    have hι : ContDiff ℝ k (traceZeroSelfAdjoint n 𝕜).subtypeL :=
+      ContinuousLinearMap.contDiff (E := traceZeroSelfAdjoint n 𝕜)
+        (F := selfAdjoint (Matrix n n 𝕜)) _
+    exact PosDefDetOne.contMDiff_subtypeVal_comp_iff.1
+      ((hermitianExpDiffeomorph n 𝕜 k).contMDiff.comp hι.contMDiff)
   contMDiff_invFun := by
     -- A continuous linear projection onto the trace-free subspace reads the inverse, a map into
     -- the Hermitian matrices, as a map into that subspace.
     obtain ⟨π, hπ⟩ := Submodule.ClosedComplemented.of_finiteDimensional (traceZeroSelfAdjoint n 𝕜)
     refine (π.contDiff.contMDiff.comp ((hermitianExpDiffeomorph n 𝕜 k).symm.contMDiff.comp
-      PosDefDetOne.contMDiff_val)).congr fun P ↦ ?_
+      PosDefDetOne.contMDiff_subtypeVal)).congr fun P ↦ ?_
     exact (hπ ⟨_, _⟩).symm
 
 /-- The underlying matrix of the exponential coordinates is the matrix exponential. -/
