@@ -346,14 +346,14 @@ private theorem exists_ne_zero_equivalent_smul_singularCupPairing :
   exact ⟨(QuadraticMap.isometryEquivOfCompLinearEquiv Q L).symm⟩
 
 include o hn e in
-/-- **The positive index of inertia of the intersection form of `Sᵈ⁺¹ × M`.** For a compact
-connected oriented manifold `M` of dimension `2p + d + 1` with `p + d + 1` even, an ordered field
-`k` over which `Hᵖ⁺ᵈ⁺¹(M; k)` and `Hᵖ(M; k)` are finite dimensional, a homeomorphism
-`e : X ≃ₜ Sᵈ⁺¹ × M` and any homological orientation of the manifold `X`, the cup pairing on
-`Hᵖ⁺ᵈ⁺¹(X; k)` against the fundamental class `[X]_k` has positive index of inertia
-`dim Hᵖ(M; k)`. For a closed connected oriented three-manifold `Y` with finite-dimensional real
-cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁺(S¹ × Y) = b₁(Y)`, for either orientation
-of `S¹ × Y`; for `X = (ℝ / Tℤ) × Y` it is
+/-- **The positive index of inertia of the intersection form of a manifold homeomorphic to
+`Sᵈ⁺¹ × M`.** For a compact connected oriented manifold `M` of dimension `2p + d + 1` with
+`p + d + 1` even, an ordered field `k` over which `Hᵖ⁺ᵈ⁺¹(M; k)` and `Hᵖ(M; k)` are finite
+dimensional, a homeomorphism `e : X ≃ₜ Sᵈ⁺¹ × M` and any homological orientation of the manifold
+`X`, the cup pairing on `Hᵖ⁺ᵈ⁺¹(X; k)` against the fundamental class `[X]_k` has positive index of
+inertia `dim Hᵖ(M; k)`. For a closed connected oriented three-manifold `Y` with
+finite-dimensional real cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁺(X) = b₁(Y)` for any
+`X` homeomorphic to `S¹ × Y`, for either orientation of `X`; for `X = (ℝ / Tℤ) × Y` it is
 `TauCeti.HomologicalOrientation.sigPos_singularCupPairing_addCircle_prod_fundamentalClassOver`. -/
 theorem sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
@@ -373,12 +373,13 @@ theorem sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph (hp : Even 
     exact o.sigPos_singularCupPairing_sphere_fundamentalClassOver hn hp
 
 include o hn e in
-/-- **The negative index of inertia of the intersection form of `Sᵈ⁺¹ × M`.** Under the
-hypotheses of
+/-- **The negative index of inertia of the intersection form of a manifold homeomorphic to
+`Sᵈ⁺¹ × M`.** Under the hypotheses of
 `TauCeti.HomologicalOrientation.sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph`, for
 a manifold `X` homeomorphic to `Sᵈ⁺¹ × M`, the cup pairing on `Hᵖ⁺ᵈ⁺¹(X; k)` against `[X]_k` has
 negative index of inertia `dim Hᵖ(M; k)`. For a closed connected oriented three-manifold `Y` with
-finite-dimensional real cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁻(S¹ × Y) = b₁(Y)`. -/
+finite-dimensional real cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁻(X) = b₁(Y)` for any
+`X` homeomorphic to `S¹ × Y`. -/
 theorem sigNeg_singularCupPairing_fundamentalClassOver_of_homeomorph (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) (p + (d + 1)))]

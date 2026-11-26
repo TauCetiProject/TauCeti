@@ -15,7 +15,7 @@ public import TauCeti.Geometry.Sphere.Circle
 A torus is often modelled as a product `∀ i, AddCircle (p i)` of additive circles, as for the
 smooth manifold structure used in Morse theory and de Rham cohomology. When every period `p i` is
 nonzero, each factor is homeomorphic to the unit circle `TopCat.sphere 1`, through the complex unit
-circle (`AddCircle.homeomorphCircle` and `EuclideanSpace.sphereHomeomorphCircle`). So the torus is
+circle (`AddCircle.homeomorphSphere`). So the torus is
 homeomorphic to the product `ι → TopCat.sphere 1` of unit circles
 (`TauCeti.piAddCircleHomeomorphSphere`), whose homology is computed in
 `ModuleCat.finrank_singularHomology_torus`.
@@ -26,6 +26,7 @@ coefficients in a free module `M` over a commutative ring is free, and of rank
 
 ## Main declarations
 
+* `AddCircle.homeomorphSphere`: the homeomorphism `AddCircle T ≃ₜ S¹` for a nonzero period `T`.
 * `TauCeti.piAddCircleHomeomorphSphere`: the homeomorphism `(∀ i, AddCircle (p i)) ≃ₜ (ι → S¹)`.
 * `ModuleCat.free_singularHomology_pi_addCircle`,
   `ModuleCat.finite_singularHomology_pi_addCircle` and
@@ -41,6 +42,13 @@ open CategoryTheory AlgebraicTopology
 
 universe w
 
+/-- An additive circle `ℝ / Tℤ` with nonzero period is homeomorphic to the unit circle
+`TopCat.sphere 1`, through the complex unit circle (`AddCircle.homeomorphCircle` and
+`TauCeti.sphereOneHomeomorphCircle`). -/
+def AddCircle.homeomorphSphere {T : ℝ} (hT : T ≠ 0) : AddCircle T ≃ₜ TopCat.sphere.{w} 1 :=
+  (AddCircle.homeomorphCircle hT).trans
+    (TauCeti.sphereOneHomeomorphCircle.trans Homeomorph.ulift).symm
+
 namespace TauCeti
 
 variable {ι : Type w} (p : ι → ℝ) [∀ i, NeZero (p i)]
@@ -48,8 +56,7 @@ variable {ι : Type w} (p : ι → ℝ) [∀ i, NeZero (p i)]
 /-- A torus `∀ i, AddCircle (p i)` of additive circles with nonzero periods is homeomorphic to the
 product `ι → TopCat.sphere 1` of unit circles, factorwise through the complex unit circle. -/
 def piAddCircleHomeomorphSphere : (∀ i, AddCircle (p i)) ≃ₜ (ι → TopCat.sphere.{w} 1) :=
-  Homeomorph.piCongrRight fun i ↦ (AddCircle.homeomorphCircle (NeZero.ne (p i))).trans
-    (EuclideanSpace.sphereHomeomorphCircle.symm.trans Homeomorph.ulift.symm)
+  Homeomorph.piCongrRight fun i ↦ AddCircle.homeomorphSphere (NeZero.ne (p i))
 
 /-- The homology of a torus of additive circles is that of the product of unit circles. -/
 private def singularHomologyPiAddCircleLinearEquiv {k : Type w} [CommRing k]

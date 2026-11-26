@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Coefficients
-public import TauCeti.Geometry.Sphere.Circle
+public import TauCeti.AlgebraicTopology.Singular.Torus.AddCircle
 
 /-!
 # The intersection form of `(ℝ / Tℤ) × M`
@@ -27,8 +26,8 @@ For a closed connected oriented three-manifold `Y` with finite-dimensional real 
 `(ℝ / ℤ)_s × Y` on which the Seiberg–Witten invariants of a product with a circle are computed.
 
 The circle `ℝ / Tℤ` is homeomorphic to the unit circle `S¹ ⊆ ℝ²`, through the complex unit circle
-(`AddCircle.homeomorphCircle`, `EuclideanSpace.sphereHomeomorphCircle`), so `X` is homeomorphic to
-`S¹ × M`. The computation for manifolds homeomorphic to `Sᵈ⁺¹ × M`
+(`AddCircle.homeomorphSphere`), so `X` is homeomorphic to `S¹ × M`. The computation for manifolds
+homeomorphic to `Sᵈ⁺¹ × M`
 (`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph`)
 then applies with `d = 0`.
 
@@ -72,11 +71,8 @@ theorem sigPos_singularCupPairing_addCircle_prod_fundamentalClassOver (hp : Even
       ((TopCat.of (AddCircle T × M)).singularCupPairing k (p := p + 1) (q := p + 1) (by omega)
         (oX.fundamentalClassOver hX k))) =
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) p) :=
-  -- `ℝ / Tℤ ≃ₜ S¹` through the complex unit circle.
   o.sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph (d := 0) hn oX hX
-    (((AddCircle.homeomorphCircle (Fact.out : 0 < T).ne').trans
-      (EuclideanSpace.sphereHomeomorphCircle.symm.trans Homeomorph.ulift.symm)).prodCongr
-        (Homeomorph.refl M)) hp
+    ((AddCircle.homeomorphSphere (Fact.out : 0 < T).ne').prodCongr (Homeomorph.refl M)) hp
 
 include o hn in
 /-- **The negative index of inertia of the intersection form of `(ℝ / Tℤ) × M`.** Under the
@@ -94,10 +90,7 @@ theorem sigNeg_singularCupPairing_addCircle_prod_fundamentalClassOver (hp : Even
       ((TopCat.of (AddCircle T × M)).singularCupPairing k (p := p + 1) (q := p + 1) (by omega)
         (oX.fundamentalClassOver hX k))) =
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) p) :=
-  -- `ℝ / Tℤ ≃ₜ S¹` through the complex unit circle.
   o.sigNeg_singularCupPairing_fundamentalClassOver_of_homeomorph (d := 0) hn oX hX
-    (((AddCircle.homeomorphCircle (Fact.out : 0 < T).ne').trans
-      (EuclideanSpace.sphereHomeomorphCircle.symm.trans Homeomorph.ulift.symm)).prodCongr
-        (Homeomorph.refl M)) hp
+    ((AddCircle.homeomorphSphere (Fact.out : 0 < T).ne').prodCongr (Homeomorph.refl M)) hp
 
 end TauCeti.HomologicalOrientation
