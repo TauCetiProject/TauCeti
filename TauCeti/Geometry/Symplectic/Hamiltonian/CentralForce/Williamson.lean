@@ -75,7 +75,8 @@ theorem hasWilliamsonTypeAt_centralForceEnergyMomentum_one_zero_zero (hm : 0 < m
         hessianQuadraticForm_smul, smul_apply, hH u]
       simp [mul_assoc]
   -- The critical functional `ℓ₀` with `ℓ₀ ∘ F = H - Ω L` has transversal Hessian `ν • P`.
-  obtain ⟨ℓ₀, hℓ₀, hcomp⟩ := exists_comp_fderiv_eq_zero_and_comp_eq b hUd hq h0 hU'
+  obtain ⟨ℓ₀, hℓ₀, hcomp⟩ :=
+    exists_comp_fderiv_centralForceEnergyMomentum_eq_zero_and_comp_eq b hUd hq h0 hU'
   refine SymplecticForm.hasWilliamsonTypeAt_iff.2
     ⟨hnd, (SymplecticForm.hasWilliamsonType_iff_of_span_eq ?_).2 he.hasWilliamsonType_elliptic⟩
   rw [Set.range_unique (f := SymplecticForm.elliptic e), Fin.default_eq_zero]
