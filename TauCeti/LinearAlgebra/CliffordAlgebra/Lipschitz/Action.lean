@@ -9,9 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
--- Private: the form-preservation proof uses injectivity of the scalars and the shared
--- calculation `algebraMap_apply_eq_of_ι_eq_involute_mul_ι_mul_inv`.
-import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Action
 
 /-!
 # The Lipschitz group acting on its quadratic space by twisted conjugation
@@ -40,7 +38,8 @@ surjectivity results.
 * `CliffordAlgebra.vectorMap Q x`: the unbundled endomorphism of the quadratic space induced by
   twisted conjugation by any Clifford unit `x`, the vector part of `involute x * ι v * x⁻¹`.
 * `CliffordAlgebra.lipschitzVectorAction Q x`: the automorphism of the quadratic space
-  induced by twisted conjugation by a Lipschitz element.
+  induced by twisted conjugation by a Lipschitz element, the restriction of the action
+  `CliffordAlgebra.vectorNormalizerAction` of the vector normalizer, read off through `ιInv`.
 * `CliffordAlgebra.lipschitzToOrthogonal Q`: the resulting homomorphism to `O(Q)`.
 
 ## Main results
@@ -109,14 +108,6 @@ private theorem twistedConj_apply (x : (CliffordAlgebra Q)ˣ) (a : CliffordAlgeb
   rw [twistedConj]
   rfl
 
-private theorem twistedConj_one (a : CliffordAlgebra Q) : twistedConj Q 1 a = a := by
-  simp
-
-private theorem twistedConj_mul (x y : (CliffordAlgebra Q)ˣ) (a : CliffordAlgebra Q) :
-    twistedConj Q (x * y) a = twistedConj Q x (twistedConj Q y a) := by
-  simp only [twistedConj_apply, Units.val_mul, mul_inv_rev, map_mul]
-  noncomm_ring
-
 /-- For a Clifford unit that is a product of `r` vectors, twisted conjugation is `(-1) ^ r` times
 ordinary conjugation. This records the sign relating the two conventions without requiring the
 vectors to be orthogonal. -/
@@ -178,18 +169,6 @@ theorem vectorMap_map_app_of_involute_act_ι_mem_range_ι {x : (CliffordAlgebra 
     (algebraMap_apply_eq_of_ι_eq_involute_mul_ι_mul_inv
       (ι_vectorMap_apply_of_mem_range_ι Q (hx m)))
 
-private theorem vectorMap_one : vectorMap Q 1 = LinearMap.id := by
-  ext m
-  apply ι_injective Q
-  rw [ι_vectorMap_apply Q (one_mem _), twistedConj_one, LinearMap.id_coe, id_eq]
-
-private theorem vectorMap_mul {x y : (CliffordAlgebra Q)ˣ} (hx : x ∈ lipschitzGroup Q)
-    (hy : y ∈ lipschitzGroup Q) : vectorMap Q (x * y) = vectorMap Q x ∘ₗ vectorMap Q y := by
-  ext m
-  apply ι_injective Q
-  rw [ι_vectorMap_apply Q (mul_mem hx hy), LinearMap.comp_apply, ι_vectorMap_apply Q hx,
-    ι_vectorMap_apply Q hy, twistedConj_mul]
-
 omit [Invertible (2 : R)] in
 private theorem twistedConj_ι_eq_reflection (v : M) [Invertible (Q v)]
     {x : (CliffordAlgebra Q)ˣ} (hx : (x : CliffordAlgebra Q) = ι Q v) (m : M) :
@@ -229,24 +208,20 @@ private theorem vectorMap_eq_reflection (v : M) [Invertible (Q v)] {x : (Cliffor
 
 /-! ### The action of the Lipschitz group -/
 
-private def vectorEndHom : lipschitzGroup Q →* Module.End R M where
-  toFun x := vectorMap Q (x : (CliffordAlgebra Q)ˣ)
-  map_one' := vectorMap_one Q
-  map_mul' x y := (vectorMap_mul Q x.property y.property).trans (Module.End.mul_eq_comp _ _).symm
+private theorem lipschitzGroup_le_vectorNormalizer : lipschitzGroup Q ≤ vectorNormalizer Q :=
+  fun _ hx => (mem_vectorNormalizer_iff Q _).mpr
+    ⟨lipschitzGroup.involute_act_ι_mem_range_ι hx, by
+      simpa only [inv_inv] using lipschitzGroup.involute_act_ι_mem_range_ι (inv_mem hx)⟩
 
 private def vectorActionHom : lipschitzGroup Q →* M ≃ₗ[R] M :=
-  (LinearMap.GeneralLinearGroup.generalLinearEquiv R M).toMonoidHom.comp
-    (vectorEndHom Q).toHomUnits
+  (vectorNormalizerAction (ι_leftInverse Q)).comp
+    (Subgroup.inclusion (lipschitzGroup_le_vectorNormalizer Q))
 
 /-- The automorphism of the quadratic space induced by twisted conjugation by an element of the
 Lipschitz group. It is characterized by `ι_lipschitzVectorAction_apply`, which identifies it with
 twisted conjugation inside the Clifford algebra. -/
 def lipschitzVectorAction (x : lipschitzGroup Q) : M ≃ₗ[R] M :=
   vectorActionHom Q x
-
-private theorem vectorEndHom_apply (x : lipschitzGroup Q) (m : M) :
-    vectorEndHom Q x m = vectorMap Q (x : (CliffordAlgebra Q)ˣ) m :=
-  rfl
 
 /-- The identity Lipschitz element acts by the identity linear equivalence. -/
 @[simp]
@@ -262,21 +237,19 @@ theorem lipschitzVectorAction_mul (x y : lipschitzGroup Q) :
 
 variable {Q}
 
-private theorem lipschitzVectorAction_apply (x : lipschitzGroup Q) (m : M) :
-    lipschitzVectorAction Q x m = vectorMap Q (x : (CliffordAlgebra Q)ˣ) m := by
-  rw [lipschitzVectorAction, vectorActionHom, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom,
-    LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
-    MonoidHom.coe_toHomUnits]
-  exact vectorEndHom_apply Q x m
-
 /-- A Lipschitz element acts on a vector by twisted conjugation inside the Clifford algebra. -/
 @[simp]
 theorem ι_lipschitzVectorAction_apply (x : lipschitzGroup Q) (m : M) :
     ι Q (lipschitzVectorAction Q x m) =
       involute (Q := Q) ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
         (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-  rw [lipschitzVectorAction_apply, ι_vectorMap_apply Q x.property, twistedConj_apply]
+  rw [lipschitzVectorAction, vectorActionHom, MonoidHom.comp_apply,
+    ι_vectorNormalizerAction_apply, Subgroup.coe_inclusion]
+
+private theorem lipschitzVectorAction_apply (x : lipschitzGroup Q) (m : M) :
+    lipschitzVectorAction Q x m = vectorMap Q (x : (CliffordAlgebra Q)ˣ) m :=
+  ι_injective Q <| by
+    rw [ι_lipschitzVectorAction_apply, ι_vectorMap_apply Q x.property, twistedConj_apply]
 
 /-- **A vector acts by the reflection in its orthogonal hyperplane.** These are the generators of
 the Lipschitz group, so this identification is what Cartan--Dieudonné turns into surjectivity of

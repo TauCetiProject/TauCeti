@@ -44,10 +44,10 @@ the `star` norm `CliffordAlgebra.lipschitzNorm` of the Lipschitz group; it is no
 norm `CliffordAlgebra.cliffordNorm` of
 `TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm`, which differs on odd elements.
 
-When `M` is free, `ι` is injective in every characteristic (`CliffordAlgebra.ι_injective_of_free`),
-and the vector action `CliffordAlgebra.vectorNormalizerAction` of the vector normalizer restricts
-to the *vector action* `ρ : GPin(Q) → O(Q)` (`CliffordAlgebra.gpinToOrthogonal`), with
-`ι (ρ(g) v) = α(g) ι(v) g⁻¹`.
+When `M` is free, `ι` has a linear left inverse in every characteristic
+(`CliffordAlgebra.exists_leftInverse_ι_of_free`), and the vector action
+`CliffordAlgebra.vectorNormalizerAction` of the vector normalizer restricts to the *vector action*
+`ρ : GPin(Q) → O(Q)` (`CliffordAlgebra.gpinToOrthogonal`), with `ι (ρ(g) v) = α(g) ι(v) g⁻¹`.
 
 These are the groups of points over `R` of the Clifford and general spin group functors of
 Conrad, App. C, §C.4. The comparisons with Mathlib's `lipschitzGroup` (over any commutative ring)
@@ -404,9 +404,10 @@ variable (Q) in
 /-- **The vector action** `ρ : GPin(Q) → O(Q)` of the Clifford group of a quadratic form on a free
 module, in every characteristic: `ι (ρ(g) v) = α(g) ι(v) g⁻¹`. -/
 noncomputable def gpinToOrthogonal : gpinGroup Q →* TauCeti.QuadraticMap.orthogonalGroup Q :=
-  ((vectorNormalizerAction Q).comp
+  ((vectorNormalizerAction (exists_leftInverse_ι_of_free Q).choose_spec).comp
     (Subgroup.inclusion (gpinGroup_le_vectorNormalizer Q))).codRestrict _ fun _ =>
-      TauCeti.QuadraticMap.mem_orthogonalGroup_iff.mpr (vectorNormalizerAction_map_app _)
+      TauCeti.QuadraticMap.mem_orthogonalGroup_iff.mpr
+        (vectorNormalizerAction_map_app _ (algebraMap_injective_of_free Q) _)
 
 /-- The vector action of the Clifford group is twisted conjugation. -/
 @[simp]
@@ -414,7 +415,7 @@ theorem ι_gpinToOrthogonal_apply (x : gpinGroup Q) (m : M) :
     ι Q ((gpinToOrthogonal Q x : M ≃ₗ[R] M) m) =
       involute ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
         (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
-  ι_vectorNormalizerAction_apply _ m
+  ι_vectorNormalizerAction_apply _ _ m
 
 end Free
 
