@@ -236,11 +236,16 @@ theorem mem_Icc_of_forall_hasDerivAt_effectivePotential (t : ℝ) : (γ t).1 ∈
   (mem_Icc_and_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t).1
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
+/-- Along the motion, the radius is positive. -/
+private theorem fst_pos (t : ℝ) : 0 < (γ t).1 :=
+  hr₁.trans_le (mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ
+    h₀ hE t).1
+
+include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- Along the motion, the radius moves with velocity `m⁻¹ p_r`. -/
 private theorem hasDerivAt_radius (t : ℝ) :
     HasDerivAt (fun s ↦ (γ s).1) (m⁻¹ * (γ t).2) t := by
-  have hpos := hr₁.trans_le (mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂
-    hlt hd₁ hd₂ hγ h₀ hE t).1
+  have hpos := fst_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t
   exact (hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential (hγ t) hpos
     (hU.differentiableAt (Ioi_mem_nhds hpos))).congr_deriv (div_eq_inv_mul _ _)
 
@@ -248,8 +253,7 @@ include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- Along the motion, the radial momentum moves with velocity `-U_ℓ'(r)`. -/
 private theorem hasDerivAt_momentum (t : ℝ) :
     HasDerivAt (fun s ↦ (γ s).2) (-deriv (effectivePotential m ℓ U) (γ t).1) t := by
-  have hpos := hr₁.trans_le (mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂
-    hlt hd₁ hd₂ hγ h₀ hE t).1
+  have hpos := fst_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t
   have hUd := hU.differentiableAt (Ioi_mem_nhds hpos)
   refine (hasDerivAt_snd_of_hasDerivAt_hamiltonianVectorField_effectivePotential (hγ t) hpos
     hUd).congr_deriv ?_
@@ -276,19 +280,17 @@ private theorem momentum_ne_zero_iff (t : ℝ) : (γ t).2 ≠ 0 ↔ (γ t).1 ∈
     · rw [h] at hEt
       linarith
   · intro hr hp
-    rw [hp] at hEt
-    have := hlt _ hr
-    simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div,
-      zero_add] at hEt
-    linarith
+    rw [hp, zero_pow two_ne_zero, zero_div, zero_add] at hEt
+    linarith [hlt _ hr]
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
-/-- At the turning points the radial momentum vanishes. -/
-private theorem momentum_eq_zero {u : ℝ} (h : (γ u).1 = r₁ ∨ (γ u).1 = r₂) : (γ u).2 = 0 :=
-  not_not.1 fun hp ↦ by
-    have := (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).1 hp
-    rcases h with h | h <;> rw [h] at this
-    exacts [this.1.false, this.2.false]
+/-- Along the motion, the radius stays in `(r₁, r₂)` during a rise with positive radial momentum
+followed by a fall with negative radial momentum. -/
+private theorem fst_mem_Ioo {t₁ t₂ t₃ u : ℝ} (hpos : ∀ u ∈ Ioo t₁ t₂, 0 < (γ u).2)
+    (hneg : ∀ u ∈ Ioo t₂ t₃, (γ u).2 < 0) (hu : u ∈ Ioo t₁ t₂ ∨ u ∈ Ioo t₂ t₃) :
+    (γ u).1 ∈ Ioo r₁ r₂ :=
+  (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).1 <|
+    hu.elim (fun hu ↦ (hpos u hu).ne') fun hu ↦ (hneg u hu).ne
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- Along the motion, the absolute radial momentum is `|p_r|(r)`. -/
@@ -305,7 +307,7 @@ private theorem sub_eq_integral_of_pos {s t : ℝ} (hst : s ≤ t) (hp : ∀ u �
   have hmem := mem_Icc_and_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
   have hmono := strictMonoOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hm)
       (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hp
-  have hpos (u : ℝ) : 0 < (γ u).1 := hr₁.trans_le (hmem u).1.1
+  have hpos := fst_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
   exact sub_eq_integral_div_absRadialMomentum hm hst (fun u _ ↦ hγ u) (fun u _ ↦ hpos u)
     (fun u _ ↦ hU.differentiableAt (Ioi_mem_nhds (hpos u))) (hmem s).2
     (fun r hr ↦ hlt r ⟨(hmem s).1.1.trans_lt hr.1, hr.2.trans_le (hmem t).1.2⟩)
@@ -320,7 +322,7 @@ private theorem sub_eq_integral_of_neg {s t : ℝ} (hst : s ≤ t) (hp : ∀ u �
   have hmem := mem_Icc_and_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
   have hanti := strictAntiOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hm)
       (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hp
-  have hpos (u : ℝ) : 0 < (γ u).1 := hr₁.trans_le (hmem u).1.1
+  have hpos := fst_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
   exact sub_eq_integral_div_absRadialMomentum hm hst (fun u _ ↦ hγ u) (fun u _ ↦ hpos u)
     (fun u _ ↦ hU.differentiableAt (Ioi_mem_nhds (hpos u))) (hmem s).2
     (fun r hr ↦ hlt r ⟨(hmem t).1.1.trans_lt hr.1, hr.2.trans_le (hmem s).1.2⟩)
@@ -332,37 +334,15 @@ include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 the radius runs monotonically inside the well, so the interval lasts at most the time quadrature
 `∫_{r₁}^{r₂} m dr / |p_r|`. -/
 private theorem sub_le_integral {s t : ℝ} (hst : s ≤ t) (hp : ∀ u ∈ Ioo s t, (γ u).2 ≠ 0) :
-    t - s ≤ ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r := by
-  have hint := intervalIntegrable_div_absRadialMomentum_well hm hr₁ h₁₂ hU hlt hd₁ hd₂
-  have hnn : 0 ≤ᵐ[volume.restrict (Ioc r₁ r₂)] fun r ↦ m / absRadialMomentum m U ℓ E r :=
-    ae_of_all _ fun r ↦ div_nonneg hm.le (absRadialMomentum_nonneg _ _ _ _ _)
-  have hmem := mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂
-    hγ h₀ hE
-  have hpc := continuous_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
-  rcases hst.eq_or_lt with rfl | hst'
-  · rw [sub_self]
-    exact intervalIntegral.integral_nonneg h₁₂.le fun r _ ↦
-      div_nonneg hm.le (absRadialMomentum_nonneg _ _ _ _ _)
-  -- The radial momentum has a constant sign on `(s, t)`.
-  have hsign {u w : ℝ} (hu : u ∈ Ioo s t) (hw : w ∈ Ioo s t) :
-      SignType.sign (γ u).2 = SignType.sign (γ w).2 :=
-    isPreconnected_Ioo.sign_eq_of_continuousOn hpc.continuousOn hp hu hw
-  have hmid : (s + t) / 2 ∈ Ioo s t := ⟨by linarith, by linarith⟩
-  rcases (hp _ hmid).lt_or_gt with hneg | hpos
-  · have hp' (u : ℝ) (hu : u ∈ Ioo s t) : (γ u).2 < 0 :=
-      sign_eq_neg_one_iff.1 ((hsign hu hmid).trans (sign_eq_neg_one_iff.2 hneg))
-    have hlt' := strictAntiOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hm)
-      (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hp'
-      ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
-    rw [sub_eq_integral_of_neg hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hst hp']
-    exact intervalIntegral.integral_mono_interval (hmem t).1 hlt'.le (hmem s).2 hnn hint
-  · have hp' (u : ℝ) (hu : u ∈ Ioo s t) : 0 < (γ u).2 :=
-      sign_eq_one_iff.1 ((hsign hu hmid).trans (sign_eq_one_iff.2 hpos))
-    have hlt' := strictMonoOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hm)
-      (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hp'
-      ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
-    rw [sub_eq_integral_of_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hst hp']
-    exact intervalIntegral.integral_mono_interval (hmem s).1 hlt'.le (hmem t).2 hnn hint
+    t - s ≤ ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r :=
+  sub_le_integral_of_forall_hasDerivAt_mul (inv_pos.2 hm)
+    (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (continuous_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (intervalIntegrable_div_absRadialMomentum_well hm hr₁ h₁₂ hU hlt hd₁ hd₂)
+    (fun _ _ ↦ div_nonneg hm.le (absRadialMomentum_nonneg _ _ _ _ _))
+    (fun _ _ ↦ sub_eq_integral_of_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (fun _ _ ↦ sub_eq_integral_of_neg hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hst hp
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- At the inner turning point the radial momentum has positive derivative `-U_ℓ'(r₁)`. -/
@@ -441,11 +421,8 @@ theorem exists_mem_Ioo_fst_eq_of_forall_hasDerivAt_effectivePotential {t₁ : �
       ∀ u ∈ Ioo t₂ (t₁ + radialPeriod m U ℓ E r₁ r₂), (γ u).2 < 0 := by
   obtain ⟨t₂, h₁₂', h₂, hpos⟩ := exists_outer hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE h₁
   obtain ⟨t₃, h₂₃, h₃, hneg⟩ := exists_inner hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE h₂
-  have hmem (u : ℝ) (hu : u ∈ Ioo t₁ t₂ ∨ u ∈ Ioo t₂ t₃) : (γ u).1 ∈ Ioo r₁ r₂ :=
-    (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).1 <|
-      hu.elim (fun hu ↦ (hpos u hu).ne') fun hu ↦ (hneg u hu).ne
-  have hpos' (u : ℝ) : 0 < (γ u).1 := hr₁.trans_le (mem_Icc_of_forall_hasDerivAt_effectivePotential
-    hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).1
+  have hmem (u : ℝ) := fst_mem_Ioo hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hpos hneg (u := u)
+  have hpos' := fst_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
   have hT := sub_eq_radialPeriod hm h₁₂'.le h₂₃.le (fun u _ ↦ hγ u) (fun u _ ↦ hpos' u)
     (fun u _ ↦ hU.differentiableAt (Ioi_mem_nhds (hpos' u)))
     (mem_Icc_and_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t₁).2 hlt (Or.inl ⟨h₁, h₂⟩)
@@ -464,7 +441,8 @@ private theorem sub_eq_integral_and_nonneg {a b u : ℝ} (ha : (γ a).1 = r₁)
   · rw [sub_eq_integral_of_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hu.1
       (fun w hw ↦ hp w ⟨hw.1, hw.2.trans_le hu.2⟩), ha]
   rcases hu.1.eq_or_lt with rfl | h₁
-  · exact (momentum_eq_zero hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE (Or.inl ha)).ge
+  · exact (eq_zero_of_eq_or_eq_of_forall_ne_zero_iff
+      (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) (Or.inl ha)).ge
   rcases hu.2.eq_or_lt with rfl | h₂
   · -- At the end of the stretch, the momentum is a limit of positive values.
     exact ge_of_tendsto (((hasDerivAt_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
@@ -483,7 +461,8 @@ private theorem sub_eq_integral_and_nonpos {a b u : ℝ} (hb : (γ b).1 = r₁)
   · rw [sub_eq_integral_of_neg hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hu.2
       (fun w hw ↦ hp w ⟨hu.1.trans_lt hw.1, hw.2⟩), hb]
   rcases hu.2.eq_or_lt with rfl | h₂
-  · exact (momentum_eq_zero hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE (Or.inl hb)).le
+  · exact (eq_zero_of_eq_or_eq_of_forall_ne_zero_iff
+      (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) (Or.inl hb)).le
   rcases hu.1.eq_or_lt with rfl | h₁
   · -- At the start of the stretch, the momentum is a limit of negative values.
     exact le_of_tendsto (((hasDerivAt_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
@@ -594,11 +573,8 @@ theorem sub_eq_two_mul_apsidalAngle_of_forall_hasDerivAt_effectivePotential {θ 
   obtain ⟨t₂, ⟨hs₂, h₂T⟩, h₂, hT, hpos, hneg⟩ :=
     exists_mem_Ioo_fst_eq_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁
       hd₂ hγ h₀ hE hs
-  have hmem (u : ℝ) (hu : u ∈ Ioo s t₂ ∨ u ∈ Ioo t₂ (s + T)) : (γ u).1 ∈ Ioo r₁ r₂ :=
-    (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).1 <|
-      hu.elim (fun hu ↦ (hpos u hu).ne') fun hu ↦ (hneg u hu).ne
-  have hpos' (u : ℝ) : 0 < (γ u).1 := hr₁.trans_le (mem_Icc_of_forall_hasDerivAt_effectivePotential
-    hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).1
+  have hmem (u : ℝ) := fst_mem_Ioo hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hpos hneg (u := u)
+  have hpos' := fst_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
   rw [hconst t s]
   exact sub_eq_two_mul_apsidalAngle hm hs₂.le h₂T.le (fun u _ ↦ hγ u) (fun u _ ↦ hpos' u)
     (fun u _ ↦ hU.differentiableAt (Ioi_mem_nhds (hpos' u)))

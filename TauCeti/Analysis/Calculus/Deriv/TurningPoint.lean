@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Topology.Order.IntermediateValue
 
@@ -16,7 +18,10 @@ import TauCeti.Topology.Order.IntermediateValue
 Let `x, p : ℝ → ℝ` describe a motion with one degree of freedom: the position `x` moves with
 velocity `c p` for a constant `c > 0`, and the momentum `p` is continuous. While `p` keeps a sign,
 the position is strictly monotone (`TauCeti.strictMonoOn_Icc_of_forall_hasDerivAt_mul`,
-`TauCeti.strictAntiOn_Icc_of_forall_hasDerivAt_mul`).
+`TauCeti.strictAntiOn_Icc_of_forall_hasDerivAt_mul`). If `x` stays in `[a, b]` and the elapsed time
+along every monotone stretch is the quadrature `∫ g` between the positions reached, for some
+nonnegative `g` integrable on `[a, b]`, then every time interval on which `p` does not vanish lasts
+at most `∫_a^b g` (`TauCeti.sub_le_integral_of_forall_hasDerivAt_mul`).
 
 Suppose moreover that `x` stays in `[a, b]`, that `p` vanishes exactly when `x` is at a turning
 point `a` or `b`, that `p` has a positive derivative whenever `x = a` and a negative one whenever
@@ -37,7 +42,7 @@ turning points.
 
 public section
 
-open Filter Set
+open Filter Set MeasureTheory
 open scoped Topology
 
 namespace TauCeti
@@ -74,6 +79,39 @@ variable (hc : 0 < c) (hx : ∀ t, HasDerivAt x (c * p t) t) (hp : Continuous p)
   (hb : ∀ t, x t = b → ∃ d, d < 0 ∧ HasDerivAt p d t)
   (hL : ∀ s t, s ≤ t → (∀ u ∈ Ioo s t, p u ≠ 0) → t - s ≤ L)
 
+include hc hx hp hmem in
+/-- **Passages are short.** Let `x` move with velocity `c p`, `c > 0`, with `p` continuous and `x`
+in `[a, b]`, and let `g` be nonnegative and integrable on `[a, b]`. Suppose that the elapsed time
+along a stretch where `p > 0` is `∫_{x(s)}^{x(t)} g`, and along a stretch where `p < 0` it is
+`∫_{x(t)}^{x(s)} g`. Then every time interval on which `p` does not vanish lasts at most
+`∫_a^b g`. -/
+theorem sub_le_integral_of_forall_hasDerivAt_mul {g : ℝ → ℝ} (hg : IntervalIntegrable g volume a b)
+    (hg₀ : ∀ y ∈ Icc a b, 0 ≤ g y)
+    (hrise : ∀ s t, s ≤ t → (∀ u ∈ Ioo s t, 0 < p u) → t - s = ∫ y in x s..x t, g y)
+    (hfall : ∀ s t, s ≤ t → (∀ u ∈ Ioo s t, p u < 0) → t - s = ∫ y in x t..x s, g y)
+    {s t : ℝ} (hst : s ≤ t) (hne : ∀ u ∈ Ioo s t, p u ≠ 0) : t - s ≤ ∫ y in a..b, g y := by
+  have hnn : 0 ≤ᵐ[volume.restrict (Ioc a b)] g :=
+    ae_restrict_of_forall_mem measurableSet_Ioc fun y hy ↦ hg₀ y (Ioc_subset_Icc_self hy)
+  rcases hst.eq_or_lt with rfl | hst'
+  · rw [sub_self]
+    exact intervalIntegral.integral_nonneg ((hmem s).1.trans (hmem s).2) hg₀
+  -- `p` has a constant sign on `(s, t)`, that of its value at the midpoint.
+  have hsign {u w : ℝ} (hu : u ∈ Ioo s t) (hw : w ∈ Ioo s t) :
+      SignType.sign (p u) = SignType.sign (p w) :=
+    isPreconnected_Ioo.sign_eq_of_continuousOn hp.continuousOn hne hu hw
+  have hmid : (s + t) / 2 ∈ Ioo s t := ⟨by linarith, by linarith⟩
+  rcases (hne _ hmid).lt_or_gt with hneg | hpos
+  · have hp' (u : ℝ) (hu : u ∈ Ioo s t) : p u < 0 :=
+      sign_eq_neg_one_iff.1 ((hsign hu hmid).trans (sign_eq_neg_one_iff.2 hneg))
+    have hlt := strictAntiOn_Icc_of_forall_hasDerivAt_mul hc hx hp' ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
+    rw [hfall s t hst hp']
+    exact intervalIntegral.integral_mono_interval (hmem t).1 hlt.le (hmem s).2 hnn hg
+  · have hp' (u : ℝ) (hu : u ∈ Ioo s t) : 0 < p u :=
+      sign_eq_one_iff.1 ((hsign hu hmid).trans (sign_eq_one_iff.2 hpos))
+    have hlt := strictMonoOn_Icc_of_forall_hasDerivAt_mul hc hx hp' ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
+    rw [hrise s t hst hp']
+    exact intervalIntegral.integral_mono_interval (hmem s).1 hlt.le (hmem t).2 hnn hg
+
 include hL in
 /-- The bound on the duration of passages is nonnegative. -/
 private theorem nonneg_of_forall_sub_le : 0 ≤ L := by
@@ -88,8 +126,9 @@ private theorem eq_or_eq_of_eq_zero {t : ℝ} (h : p t = 0) : x t = a ∨ x t = 
   · exact Or.inr (le_antisymm (hmem t).2 (not_lt.1 fun h'' ↦ hnot ⟨h', h''⟩))
 
 include hne in
-/-- At the turning points `p` vanishes. -/
-private theorem eq_zero_of_eq_or_eq {t : ℝ} (h : x t = a ∨ x t = b) : p t = 0 :=
+/-- If `p` vanishes exactly when `x` is outside `(a, b)`, then `p` vanishes whenever `x` is at one
+of the turning points `a` or `b`. -/
+theorem eq_zero_of_eq_or_eq_of_forall_ne_zero_iff {t : ℝ} (h : x t = a ∨ x t = b) : p t = 0 :=
   not_not.1 fun hpt ↦ by
     have := (hne t).1 hpt
     rcases h with h | h <;> rw [h] at this
@@ -117,7 +156,7 @@ reaches `b` at a later time `t₂`, with `p` positive in between. -/
 theorem exists_gt_eq_and_forall_pos_of_forall_hasDerivAt_mul {t₁ : ℝ} (h₁ : x t₁ = a) :
     ∃ t₂, t₁ < t₂ ∧ x t₂ = b ∧ ∀ u ∈ Ioo t₁ t₂, 0 < p u := by
   obtain ⟨d, hd, hpd⟩ := ha t₁ h₁
-  have hp₁ := eq_zero_of_eq_or_eq hne (Or.inl h₁)
+  have hp₁ := eq_zero_of_eq_or_eq_of_forall_ne_zero_iff hne (Or.inl h₁)
   obtain ⟨t₂, h₁₂, hp₂, hpos⟩ := exists_next_zero hp hL one_ne_zero (by
     simpa [hp₁] using hpd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hd)
   simp only [one_mul] at hpos
@@ -134,7 +173,7 @@ negative in between. -/
 theorem exists_gt_eq_and_forall_neg_of_forall_hasDerivAt_mul {t₂ : ℝ} (h₂ : x t₂ = b) :
     ∃ t₃, t₂ < t₃ ∧ x t₃ = a ∧ ∀ u ∈ Ioo t₂ t₃, p u < 0 := by
   obtain ⟨d, hd, hpd⟩ := hb t₂ h₂
-  have hp₂ := eq_zero_of_eq_or_eq hne (Or.inr h₂)
+  have hp₂ := eq_zero_of_eq_or_eq_of_forall_ne_zero_iff hne (Or.inr h₂)
   obtain ⟨t₃, h₂₃, hp₃, hneg⟩ := exists_next_zero hp hL (neg_ne_zero.2 one_ne_zero) (by
     simpa [hp₂] using hpd.neg.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos (neg_pos.2 hd))
   simp only [neg_one_mul, neg_pos] at hneg

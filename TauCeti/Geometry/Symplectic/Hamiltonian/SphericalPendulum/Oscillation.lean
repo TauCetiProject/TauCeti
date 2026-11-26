@@ -131,65 +131,57 @@ private theorem exists_hasDerivAt_momentum_neg {t : ℝ}
   ⟨_, by rw [hz]; exact three_mul_sphericalPendulumUpperTurningPoint_sq_sub_neg hj hz₀ hV,
     hasDerivAt_momentum hγ hF t⟩
 
-include hj hz₀ hV in
-/-- The half period `∫_{z₋}^{z₊} dz / √(2 (h - z) (1 - z²) - j²)` is nonnegative. -/
-private theorem halfPeriod_nonneg :
-    0 ≤ ∫ z in (sphericalPendulumLowerTurningPoint h j)..
-      (sphericalPendulumUpperTurningPoint h j), (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ :=
-  intervalIntegral.integral_nonneg
-    (sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV).le
-    fun _ _ ↦ inv_nonneg.2 (Real.sqrt_nonneg _)
-
 include hj hz₀ hV hγ hF
+
+/-- **Time along a rising stretch.** While the vertical momentum of a motion is positive on
+`(s, t)`, the elapsed time is the quadrature
+`t - s = ∫_{z(s)}^{z(t)} dz / √(2 (h - z) (1 - z²) - j²)`. -/
+private theorem sub_eq_integral_of_pos {s t : ℝ} (hst : s ≤ t)
+    (hp : ∀ u ∈ Ioo s t, 0 < (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) :
+    t - s = ∫ z in (γ s : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2..
+      (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2,
+        (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ := by
+  have hz := height_mem_Icc hj hz₀ hV hγ hF
+  have hmono := strictMonoOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
+    (hγ.isMIntegralCurveOn _) hp
+  exact sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum hst
+    (hγ.isMIntegralCurveOn _) (energyMomentum_eq hγ hF s) (fun z hz' ↦
+      two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV
+        ⟨(hz s).1.trans_lt hz'.1, hz'.2.trans_le (hz t).2⟩)
+    (Or.inl ⟨rfl, rfl⟩) fun u hu ↦ ⟨hmono ⟨le_rfl, hst⟩ (Ioo_subset_Icc_self hu) hu.1,
+      hmono (Ioo_subset_Icc_self hu) ⟨hst, le_rfl⟩ hu.2⟩
+
+/-- **Time along a falling stretch.** While the vertical momentum of a motion is negative on
+`(s, t)`, the elapsed time is the quadrature
+`t - s = ∫_{z(t)}^{z(s)} dz / √(2 (h - z) (1 - z²) - j²)`. -/
+private theorem sub_eq_integral_of_neg {s t : ℝ} (hst : s ≤ t)
+    (hp : ∀ u ∈ Ioo s t, (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 < 0) :
+    t - s = ∫ z in (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2..
+      (γ s : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2,
+        (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ := by
+  have hz := height_mem_Icc hj hz₀ hV hγ hF
+  have hanti := strictAntiOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
+    (hγ.isMIntegralCurveOn _) hp
+  exact sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum hst
+    (hγ.isMIntegralCurveOn _) (energyMomentum_eq hγ hF s) (fun z hz' ↦
+      two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV
+        ⟨(hz t).1.trans_lt hz'.1, hz'.2.trans_le (hz s).2⟩)
+    (Or.inr ⟨rfl, rfl⟩) fun u hu ↦ ⟨hanti (Ioo_subset_Icc_self hu) ⟨hst, le_rfl⟩ hu.2,
+      hanti ⟨le_rfl, hst⟩ (Ioo_subset_Icc_self hu) hu.1⟩
 
 /-- **Passages are short.** During a time interval on which the vertical momentum of a motion does
 not vanish, its height runs monotonically between the turning points, so the length of the interval
 is at most the half period `∫_{z₋}^{z₊} dz / √(2 (h - z) (1 - z²) - j²)`. -/
-private theorem sub_le_integral {s t : ℝ}
+private theorem sub_le_integral {s t : ℝ} (hst : s ≤ t)
     (hp : ∀ u ∈ Ioo s t, (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 ≠ 0) :
     t - s ≤ ∫ z in (sphericalPendulumLowerTurningPoint h j)..
-      (sphericalPendulumUpperTurningPoint h j), (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ := by
-  by_cases hst : s < t
-  case neg => exact (sub_nonpos.mpr (le_of_not_gt hst)).trans (halfPeriod_nonneg hj hz₀ hV)
-  have hint := intervalIntegrable_inv_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq hj hz₀ hV
-  have hnn : 0 ≤ᵐ[volume.restrict (Ioc (sphericalPendulumLowerTurningPoint h j)
-      (sphericalPendulumUpperTurningPoint h j))] fun z ↦ (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ :=
-    ae_of_all _ fun z ↦ inv_nonneg.2 (Real.sqrt_nonneg _)
-  have hpos (z₁ z₂ : ℝ) (h₁ : sphericalPendulumLowerTurningPoint h j ≤ z₁)
-      (h₂ : z₂ ≤ sphericalPendulumUpperTurningPoint h j) :
-      ∀ z ∈ Ioo z₁ z₂, 0 < 2 * (h - z) * (1 - z ^ 2) - j ^ 2 := fun z hz ↦
-    two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV ⟨h₁.trans_lt hz.1, hz.2.trans_le h₂⟩
-  have hz := height_mem_Icc hj hz₀ hV hγ hF
-  have hFs := energyMomentum_eq hγ hF s
-  set z := fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2
-  set p := fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2
-  -- The vertical momentum has a constant sign on `(s, t)`.
-  have hpc : Continuous p := continuous_momentum hγ hF
-  have hsign {u w : ℝ} (hu : u ∈ Ioo s t) (hw : w ∈ Ioo s t) :
-      SignType.sign (p u) = SignType.sign (p w) :=
-    isPreconnected_Ioo.sign_eq_of_continuousOn hpc.continuousOn hp hu hw
-  have hm : (s + t) / 2 ∈ Ioo s t := ⟨by linarith, by linarith⟩
-  rcases (hp _ hm).lt_or_gt with hneg | hpos'
-  · -- The height decreases from `z s` to `z t`.
-    have hanti := strictAntiOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
-      (hγ.isMIntegralCurveOn _) fun u hu ↦
-      sign_eq_neg_one_iff.1 ((hsign hu hm).trans (sign_eq_neg_one_iff.2 hneg))
-    have hst₁ : z t < z s := hanti ⟨le_rfl, hst.le⟩ ⟨hst.le, le_rfl⟩ hst
-    rw [sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum hst.le
-      (hγ.isMIntegralCurveOn _) hFs (hpos (z t) (z s) (hz t).1 (hz s).2) (Or.inr ⟨rfl, rfl⟩)
-      fun u hu ↦ ⟨hanti (Ioo_subset_Icc_self hu) ⟨hst.le, le_rfl⟩ hu.2,
-        hanti ⟨le_rfl, hst.le⟩ (Ioo_subset_Icc_self hu) hu.1⟩]
-    exact intervalIntegral.integral_mono_interval (hz t).1 hst₁.le (hz s).2 hnn hint
-  · -- The height increases from `z s` to `z t`.
-    have hmono := strictMonoOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
-      (hγ.isMIntegralCurveOn _) fun u hu ↦
-      sign_eq_one_iff.1 ((hsign hu hm).trans (sign_eq_one_iff.2 hpos'))
-    have hst₁ : z s < z t := hmono ⟨le_rfl, hst.le⟩ ⟨hst.le, le_rfl⟩ hst
-    rw [sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum hst.le
-      (hγ.isMIntegralCurveOn _) hFs (hpos (z s) (z t) (hz s).1 (hz t).2) (Or.inl ⟨rfl, rfl⟩)
-      fun u hu ↦ ⟨hmono ⟨le_rfl, hst.le⟩ (Ioo_subset_Icc_self hu) hu.1,
-        hmono (Ioo_subset_Icc_self hu) ⟨hst.le, le_rfl⟩ hu.2⟩]
-    exact intervalIntegral.integral_mono_interval (hz s).1 hst₁.le (hz t).2 hnn hint
+      (sphericalPendulumUpperTurningPoint h j), (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ :=
+  sub_le_integral_of_forall_hasDerivAt_mul one_pos
+    (fun u ↦ (hasDerivAt_height hγ u).congr_deriv (one_mul _).symm) (continuous_momentum hγ hF)
+    (height_mem_Icc hj hz₀ hV hγ hF) (intervalIntegrable_inv_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
+      hj hz₀ hV) (fun _ _ ↦ inv_nonneg.2 (Real.sqrt_nonneg _))
+    (fun _ _ ↦ sub_eq_integral_of_pos hj hz₀ hV hγ hF)
+    (fun _ _ ↦ sub_eq_integral_of_neg hj hz₀ hV hγ hF) hst hp
 
 /-- **Every motion reaches the lower turning point.** Above the curve of relative equilibria, a
 motion of the spherical pendulum defined at all times has a time at which its height is the lower
@@ -201,7 +193,7 @@ theorem exists_apply_two_eq_sphericalPendulumLowerTurningPoint_of_isMIntegralCur
     (fun u ↦ (hasDerivAt_height hγ u).congr_deriv (one_mul _).symm) (continuous_momentum hγ hF)
     (height_mem_Icc hj hz₀ hV hγ hF) (momentum_ne_zero_iff hj hz₀ hV hγ hF)
     (fun _ ↦ exists_hasDerivAt_momentum_neg hj hz₀ hV hγ hF)
-    (fun _ _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) t₀
+    (fun _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) t₀
   ⟨s, hs⟩
 
 /-- **One oscillation of the height.** Above the curve of relative equilibria, let a motion of the
@@ -225,11 +217,11 @@ theorem exists_mem_Ioo_apply_two_eq_sphericalPendulumUpperTurningPoint_of_isMInt
   obtain ⟨t₂, h₁₂, h₂, hpos⟩ := exists_gt_eq_and_forall_pos_of_forall_hasDerivAt_mul one_pos hx
     (continuous_momentum hγ hF) (height_mem_Icc hj hz₀ hV hγ hF)
     (momentum_ne_zero_iff hj hz₀ hV hγ hF) (fun _ ↦ exists_hasDerivAt_momentum_pos hj hz₀ hV hγ hF)
-    (fun _ _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) h₁
+    (fun _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) h₁
   obtain ⟨t₃, h₂₃, h₃, hneg⟩ := exists_gt_eq_and_forall_neg_of_forall_hasDerivAt_mul one_pos hx
     (continuous_momentum hγ hF) (height_mem_Icc hj hz₀ hV hγ hF)
     (momentum_ne_zero_iff hj hz₀ hV hγ hF) (fun _ ↦ exists_hasDerivAt_momentum_neg hj hz₀ hV hγ hF)
-    (fun _ _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) h₂
+    (fun _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) h₂
   have hT := sub_eq_sphericalPendulumPeriod_of_isMIntegralCurveOn hj hz₀ hV h₁₂.le h₂₃.le
     (hγ.isMIntegralCurveOn _) (energyMomentum_eq hγ hF t₁) h₁ h₂ h₃ fun u hu ↦
       (momentum_ne_zero_iff hj hz₀ hV hγ hF u).1 <| hu.elim (fun hu ↦ (hpos u hu).ne')
