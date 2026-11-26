@@ -24,7 +24,7 @@ follows from the composition law of the naturality isomorphisms of `η`
 When `F` and `G` are prestacks this is a morphism of sheaves (`homSheafMap`). When moreover `F`
 and `G` are gerbes banded by the same sheaf `A` and `η` preserves the bands, it is injective (the
 fibres of `F` are groupoids) and locally surjective (local anchors exist by the gerbe condition),
-so it is an isomorphism of sheaves (`homSheafMap_isIso`, `homSheafIso`). Evaluating at the
+so it is an isomorphism of sheaves (`isIso_homSheafMap`, `homSheafIso`). Evaluating at the
 identity slice, `η_U.map : (x ⟶ y) → (η_U x ⟶ η_U y)` is bijective with no global anchor
 (`BandedMorphism.map_bijective`), so every component functor of `η` is full (`BandedMorphism.full`)
 (Olsson, Lemma 31.3).
@@ -36,7 +36,7 @@ identity slice, `η_U.map : (x ⟶ y) → (η_U x ⟶ η_U y)` is bijective with
   `GerbeMorphismPullback.homSheafMap`.
 * `GerbeMorphismPullback.homPresheafMap_injective`,
   `GerbeMorphismPullback.homPresheafMap_imageSieve_mem`,
-  `GerbeMorphismPullback.homSheafMap_isIso`, `GerbeMorphismPullback.homSheafIso`,
+  `GerbeMorphismPullback.isIso_homSheafMap`, `GerbeMorphismPullback.homSheafIso`,
   `BandedMorphism.map_bijective`, `BandedMorphism.full`.
 
 ## References
@@ -169,23 +169,23 @@ variable (J) [F.IsGerbe J] [G.IsGerbe J]
 include bF bG in
 /-- The map on sheaves of morphisms of a band-preserving morphism of gerbes is locally
 injective. -/
-theorem homSheafMap_isLocallyInjective (x y : F.obj (.mk (op U))) :
+theorem isLocallyInjective_homSheafMap (x y : F.obj (.mk (op U))) :
     Sheaf.IsLocallyInjective (homSheafMap η J x y) :=
   Presheaf.isLocallyInjective_of_injective _ _ (homPresheafMap_injective η bF bG)
 
 include bF bG in
 /-- The map on sheaves of morphisms of a band-preserving morphism of gerbes is locally
 surjective. -/
-theorem homSheafMap_isLocallySurjective (x y : F.obj (.mk (op U))) :
+theorem isLocallySurjective_homSheafMap (x y : F.obj (.mk (op U))) :
     Sheaf.IsLocallySurjective (homSheafMap η J x y) where
   imageSieve_mem s := homPresheafMap_imageSieve_mem η bF bG _ s
 
 include bF bG in
 /-- **The sheaves of morphisms are isomorphic.** For a band-preserving morphism of gerbes, the
 map on sheaves of morphisms is an isomorphism (Olsson, Lemma 31.3). -/
-theorem homSheafMap_isIso (x y : F.obj (.mk (op U))) : IsIso (homSheafMap η J x y) :=
+theorem isIso_homSheafMap (x y : F.obj (.mk (op U))) : IsIso (homSheafMap η J x y) :=
   (Sheaf.isLocallyBijective_iff_isIso _).1
-    ⟨homSheafMap_isLocallyInjective η J bF bG x y, homSheafMap_isLocallySurjective η J bF bG x y⟩
+    ⟨isLocallyInjective_homSheafMap η J bF bG x y, isLocallySurjective_homSheafMap η J bF bG x y⟩
 
 /-- **The isomorphism of sheaves of morphisms** `F.sheafHom J x y ≅ G.sheafHom J (η_U x) (η_U y)`
 of a band-preserving morphism of gerbes, with forward map `homSheafMap`. -/
@@ -193,7 +193,7 @@ noncomputable def homSheafIso (x y : F.obj (.mk (op U))) :
     F.sheafHom J x y ≅
       G.sheafHom J ((η.app (.mk (op U))).toFunctor.obj x)
         ((η.app (.mk (op U))).toFunctor.obj y) :=
-  have := homSheafMap_isIso η J bF bG x y
+  have := isIso_homSheafMap η J bF bG x y
   asIso (homSheafMap η J x y)
 
 @[simp]
