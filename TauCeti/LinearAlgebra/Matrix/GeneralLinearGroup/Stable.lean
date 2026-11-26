@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.Algebra.Colimit.Abelianization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
 # The stable general linear group and algebraic `K₁`
@@ -64,6 +65,7 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 
 * `TauCeti.stabilizeGL_apply`, `TauCeti.coe_stabilizeGL_apply`: block and entry formulas for a
   stabilized matrix.
+* `TauCeti.coe_stabilizeGL_mem_unitary`: stabilization preserves unitary matrices.
 * `Function.Embedding.extendGL_castLEEmb`: stabilization is extension by the identity along the
   inclusion `Fin m ↪ Fin n` of the first `m` indices.
 * `TauCeti.StableGeneralLinearGroup.mem_elementarySubgroup_iff`: an element of `GL_∞(A)` is
@@ -147,6 +149,13 @@ theorem coe_stabilizeGL_apply {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) (i j 
     MonoidHom.inl_apply, Equiv.coe_reindexGL, coe_fromBlocksGL, submatrix_apply,
     Matrix.one_apply, e.apply_eq_iff_eq]
   rcases i with i | i <;> rcases j with j | j <;> simp [e, Matrix.one_apply]
+
+/-- Stabilization sends unitary matrices to unitary matrices. -/
+theorem coe_stabilizeGL_mem_unitary [StarRing A] {m n : ℕ} (h : m ≤ n) {u : GL (Fin m) A}
+    (hu : (u : Matrix (Fin m) (Fin m) A) ∈ unitary _) :
+    (stabilizeGL A h u : Matrix (Fin n) (Fin n) A) ∈ unitary _ := by
+  rw [stabilizeGL_apply, Equiv.coe_reindexGL, coe_fromBlocksGL, ← reindex_apply]
+  exact (reindex_fromBlocks_zero_zero_mem_unitary_iff _).2 ⟨hu, one_mem _⟩
 
 /-- Stabilization to the same size is the identity. -/
 @[simp]
