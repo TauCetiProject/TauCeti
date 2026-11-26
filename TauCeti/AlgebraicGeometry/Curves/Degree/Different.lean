@@ -84,20 +84,6 @@ variable (k : Type u) [Field k] {X Y : Scheme.{u}}
   [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))]
   (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [IsDominant f]
 
-private theorem algebraMap_stalkMap_eq_functionFieldMap [IsIntegral X] [IsIntegral Y]
-    (x : X) (a : Y.presheaf.stalk (f x)) :
-    algebraMap (X.presheaf.stalk x) X.functionField ((f.stalkMap x) a) =
-      f.functionFieldMap (algebraMap (Y.presheaf.stalk (f x)) Y.functionField a) := by
-  obtain ⟨U, hxU, s, rfl⟩ := TopCat.Presheaf.exists_germ_eq Y.presheaf a
-  have : Nonempty U := ⟨⟨f x, hxU⟩⟩
-  have hgerm := congr($(f.germ_stalkMap U x hxU) s)
-  have hpull := congr($(f.germToFunctionField_functionFieldMap U) s)
-  rw [CommRingCat.comp_apply, CommRingCat.comp_apply] at hgerm hpull
-  rw [hgerm,
-    X.algebraMap_germ_eq_germToFunctionField (show x ∈ f ⁻¹ᵁ U from hxU),
-    Y.algebraMap_germ_eq_germToFunctionField hxU]
-  exact hpull.symm
-
 /-- Transport separability from a typeclass `Algebra Y.functionField X.functionField` to the
 algebra structure induced by `f.functionFieldMap` when the two maps agree pointwise. -/
 theorem isSeparable_functionFieldMap [IsIntegral X] [IsIntegral Y]
@@ -157,7 +143,7 @@ theorem ramificationIdealSheaf_stalkIdeal_eq_maximalIdeal_pow_differentExponent
       rfl
     rw [X.coe_stalkToPlaceIntegersAlgEquiv (k := k) x, he₀,
       Y.coe_stalkToPlaceIntegersAlgEquiv (k := k) (f x), hmap]
-    exact algebraMap_stalkMap_eq_functionFieldMap f x y
+    exact (f.functionFieldMap_algebraMap_stalk x y).symm
   let eM := KaehlerDifferential.mapSemilinearEquivOfRingEquiv e₀ e fun r ↦ (he r).symm
   have hfitt := ramificationIdealSheaf_stalkIdeal_eq_fittingIdeal_kaehlerDifferential k f x
   let _ := moduleFinite_kaehlerDifferential_stalk k f x
@@ -174,7 +160,7 @@ theorem ramificationIdealSheaf_stalkIdeal_eq_maximalIdeal_pow_differentExponent
         (e : X.presheaf.stalk x →+* P'.integers) from
       RingHom.ext fun z ↦ (e.symm_apply_apply z).symm,
     ← Ideal.map_map,
-    ← TauCeti.fittingIdeal_eq_map_of_semilinearEquiv' eM 0,
+    ← TauCeti.fittingIdeal_eq_map_of_semilinearEquiv eM 0,
     Place.fittingIdeal_kaehlerDifferential_integers_eq_maximalIdeal_pow (k := k)
       (F := Y.functionField) P',
     Ideal.map_pow, hmax]
