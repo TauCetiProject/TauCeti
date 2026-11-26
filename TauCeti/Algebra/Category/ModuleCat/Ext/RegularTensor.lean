@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
+public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
-public import Mathlib.RingTheory.Noetherian.Defs
 import TauCeti.Algebra.Category.ModuleCat.Algebra
 import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 import TauCeti.Algebra.Module.AuslanderReiten.TensorCokernel
@@ -179,12 +179,13 @@ theorem extRegularTensor_bijective_of_shortExact (hS : S.ShortExact) (Y : Module
     he ▸ (transposeTensorEquivExt k hS (LinearEquiv.refl A Y)).bijective
   exact (Function.Bijective.of_comp_iff _ e.bijective).mp hb
 
-/-- Over a left Noetherian algebra, a finitely generated module of projective dimension at most
-one satisfies the tensor formula for `Ext¹` with every coefficient module. -/
-theorem extRegularTensor_bijective [IsNoetherianRing A] (M Y : ModuleCat.{u} A)
-    [Module.Finite A M] [HasProjectiveDimensionLT M 2] :
+/-- A finitely presented module of projective dimension at most one satisfies the tensor formula
+for `Ext¹` with every coefficient module. -/
+theorem extRegularTensor_bijective (M Y : ModuleCat.{u} A)
+    [Module.FinitePresentation A M] [HasProjectiveDimensionLT M 2] :
     Function.Bijective (extRegularTensor k M Y 1) := by
   obtain ⟨m, f, hf⟩ := Module.Finite.exists_fin' A M
+  have : Module.Finite A (LinearMap.ker f) := .of_fg (Module.FinitePresentation.fg_ker f hf)
   have hker := (f.hasProjectiveDimensionLE_succ_iff_ker hf 0).mp
     (inferInstanceAs (HasProjectiveDimensionLT M 2))
   have : HasProjectiveDimensionLT (of A (LinearMap.ker f)) 1 := hker
@@ -192,16 +193,16 @@ theorem extRegularTensor_bijective [IsNoetherianRing A] (M Y : ModuleCat.{u} A)
     (of A (LinearMap.ker f)).projective_of_module_projective
   exact extRegularTensor_bijective_of_shortExact k (LinearMap.shortExact_shortComplexKer hf) Y
 
-/-- The canonical `Ext¹_A(M,A) ⊗_A Y ≃ Ext¹_A(M,Y)` for a finite module of projective
-dimension at most one over a left Noetherian algebra. -/
-noncomputable def extRegularTensorEquiv [IsNoetherianRing A] (M Y : ModuleCat.{u} A)
-    [Module.Finite A M] [HasProjectiveDimensionLT M 2] :
+/-- The canonical `Ext¹_A(M,A) ⊗_A Y ≃ Ext¹_A(M,Y)` for a finitely presented module of projective
+dimension at most one. -/
+noncomputable def extRegularTensorEquiv (M Y : ModuleCat.{u} A)
+    [Module.FinitePresentation A M] [HasProjectiveDimensionLT M 2] :
     BalancedTensorProduct k A (Ext M (of A A) 1) Y ≃ₗ[k] Ext M Y 1 :=
   LinearEquiv.ofBijective _ (extRegularTensor_bijective k M Y)
 
 /-- The tensor equivalence evaluates by the canonical pushforward map. -/
 @[simp]
-theorem extRegularTensorEquiv_apply [IsNoetherianRing A] [Module.Finite A M]
+theorem extRegularTensorEquiv_apply [Module.FinitePresentation A M]
     [HasProjectiveDimensionLT M 2] (t : BalancedTensorProduct k A (Ext M (of A A) 1) Y) :
     extRegularTensorEquiv k M Y t = extRegularTensor k M Y 1 t := (rfl)
 

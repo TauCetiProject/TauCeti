@@ -36,8 +36,7 @@ namespace TauCeti.PathAlgebra
 
 universe u v w
 
-variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q] [Finite Q]
-  [Finite (Quiver.TotalPath Q)]
+variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q] [Finite (Quiver.TotalPath Q)]
 
 local notation "A" => pathAlgebra k Q
 local notation "DA" => of A (MatlisDual k k A)
@@ -52,6 +51,8 @@ noncomputable def extDualRegularTensorEquiv (M : ModuleCat.{max u v w} A) :
     Module.Finite.equiv (MatlisDual.equivLinearMap k k A).symm
   have : Module.Finite A (MatlisDual k k A) :=
     Module.Finite.of_restrictScalars_finite k A _
+  have : Module.FinitePresentation A (MatlisDual k k A) :=
+    Module.finitePresentation_of_finite A _
   exact extRegularTensorEquiv k DA M
 
 /-- The path-algebra comparison takes a tensor with `m` to pushout along `a ↦ a • m`. -/
