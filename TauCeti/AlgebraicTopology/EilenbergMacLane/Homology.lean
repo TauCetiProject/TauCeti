@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Homology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.UniquelyDivisible
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
-public import TauCeti.AlgebraicTopology.Singular.Coefficients.ULift
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.ULift
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
@@ -100,9 +99,8 @@ theorem nonempty_addEquiv_singularHomology_one {G : Type v} [Group G] {X : Type 
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)) := by
   have := hX.isAspherical.pathConnectedSpace
   obtain ⟨φ⟩ := hX.nonempty_fundamentalGroupMulEquiv
-  exact ⟨((MulEquiv.toAdditive φ.abelianizationCongr).symm.trans
-    (HurewiczOne.hurewiczHomologyAddEquiv (X := TopCat.of X) x ULift.ringEquiv)).trans
-    ((TopCat.of X).singularHomologyUliftAddEquiv.{u, 0} ℤ 1).symm⟩
+  exact ⟨(MulEquiv.toAdditive φ.abelianizationCongr).symm.trans
+    (HurewiczOne.hurewiczHomologyUliftAddEquiv (X := TopCat.of X) x)⟩
 
 /-- **The first integral homology of a `K(A, 1)` space is `A`.** For an abelian group `A`, the
 abelianization of `A` is `A` itself, so a `K(A, 1)` space `X` has `H₁(X; ℤ) ≅ A`. -/
