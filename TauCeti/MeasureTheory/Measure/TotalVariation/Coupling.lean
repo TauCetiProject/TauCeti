@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.TotalVariation.Countable
+public import Mathlib.MeasureTheory.Measure.TotalVariation.Defs
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 
