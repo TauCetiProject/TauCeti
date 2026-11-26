@@ -14,9 +14,9 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import Mathlib.RingTheory.Polynomial.Tower
 import Mathlib.Topology.Algebra.Polynomial
-import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Remainder
 import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.OfReal
-import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
@@ -301,7 +301,9 @@ private theorem intervalIntegrable_deriv_one_sub_cpow_mul_cexp {a : ℂ} (ha : 0
       (fun x : ℝ =>
         -a * ((1 - r * (1 - x) : ℝ) : ℂ) * ((1 - x : ℝ) : ℂ) ^ (a - 1) * cexp (a * r * x))
       volume 0 1 := by
-  have h1 := TauCeti.intervalIntegrable_const_sub_cpow (p := a - 1) (by simp [ha]) 1 0 1
+  have h1 : IntervalIntegrable (fun x : ℝ => ((1 - x : ℝ) : ℂ) ^ (a - 1)) volume 0 1 := by
+    simpa only [ofReal_sub, ofReal_one] using
+      TauCeti.intervalIntegrable_one_sub_ofReal_cpow (s := a - 1) (by simp [ha]) 0
   have hc1 : ContinuousOn (fun x : ℝ => -a * ((1 - r * (1 - x) : ℝ) : ℂ)) [[0, 1]] :=
     (continuous_const.mul (continuous_ofReal.comp
       (continuous_const.sub (continuous_const.mul (continuous_const.sub continuous_id)))))

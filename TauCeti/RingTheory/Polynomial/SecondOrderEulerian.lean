@@ -83,7 +83,6 @@ theorem secondOrderEulerianPolynomial_zero : secondOrderEulerianPolynomial 0 = 1
   (rfl)
 
 /-- DLMF 8.11.8: `b_{k+1}(X) = X (1 - X) b_k'(X) + (2k + 1) X b_k(X)`. -/
-@[simp]
 theorem secondOrderEulerianPolynomial_succ (k : ℕ) :
     secondOrderEulerianPolynomial (k + 1) =
       X * (1 - X) * (secondOrderEulerianPolynomial k).derivative +
@@ -91,6 +90,7 @@ theorem secondOrderEulerianPolynomial_succ (k : ℕ) :
   (rfl)
 
 /-- DLMF 8.11.9: `b₁(X) = X`. -/
+@[simp]
 theorem secondOrderEulerianPolynomial_one : secondOrderEulerianPolynomial 1 = X := by
   simp [secondOrderEulerianPolynomial]
 
@@ -118,9 +118,10 @@ theorem secondOrderEulerianPolynomial_four :
   ring
 
 /-- For `k ≥ 1`, `b_k` vanishes at `0`. -/
+@[simp]
 theorem eval_zero_secondOrderEulerianPolynomial_succ (k : ℕ) :
     (secondOrderEulerianPolynomial (k + 1)).eval 0 = 0 := by
-  simp
+  simp [secondOrderEulerianPolynomial_succ]
 
 /-- Evaluating `b_k` at `0` gives `1` for `k = 0` and `0` for `k ≥ 1`. -/
 theorem eval_zero_secondOrderEulerianPolynomial (k : ℕ) :
@@ -146,9 +147,10 @@ theorem eval_one_secondOrderEulerianPolynomial (k : ℕ) :
       congr 2
 
 /-- Over any commutative ring, `b_{k+1}(0) = 0`. -/
+@[simp]
 theorem aeval_zero_secondOrderEulerianPolynomial_succ {R : Type*} [CommRing R] (k : ℕ) :
     aeval (0 : R) (secondOrderEulerianPolynomial (k + 1)) = 0 := by
-  simp
+  simp [secondOrderEulerianPolynomial_succ]
 
 /-- Over any commutative ring, `b_k(1) = (2k - 1)‼`. -/
 @[simp]

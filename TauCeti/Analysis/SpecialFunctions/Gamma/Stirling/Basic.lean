@@ -49,8 +49,6 @@ axis sign alternation are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/R
 * `TauCeti.norm_stirlingRemainder_le`, `TauCeti.norm_stirlingRemainder_le_of_abs_arg_le`: Nemes's
   explicit slit-plane and closed-sector bounds for `stirlingRemainder`.
 * `TauCeti.abs_log_norm_Gamma_sub_stirling_le`: the real-part form for `log ‖Γ s‖`.
-* `TauCeti.Gamma_isEquivalent_stirling_sector`: multiplicative Stirling asymptotic
-  `Γ(s) ~ √(2π) s ^ (s - 1/2) e ^ (-s)` on closed sectors `|arg s| ≤ π - δ`.
 
 ## References
 
@@ -63,7 +61,7 @@ axis sign alternation are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/R
 
 public section
 
-open Complex Real Filter Set Topology MeasureTheory Asymptotics Bornology
+open Complex Real Filter Set Topology MeasureTheory
 
 namespace Stirling
 
@@ -265,47 +263,5 @@ theorem abs_log_norm_Gamma_sub_stirling_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ)
       Real.log (2 * π) / 2)| ≤ 1 / (8 * Real.sin (δ / 2) ^ 2 * ‖s‖) := by
   rw [← stirlingRemainder_re (mem_slitPlane_of_abs_arg_le hδ hs hs0)]
   exact (abs_re_le_norm _).trans (norm_stirlingRemainder_le_of_abs_arg_le hδ hs hs0)
-
-private theorem tendsto_stirlingRemainder_sector {δ : ℝ} (hδ : 0 < δ) :
-    Tendsto stirlingRemainder (cobounded ℂ ⊓ 𝓟 {s : ℂ | |s.arg| ≤ π - δ}) (𝓝 0) := by
-  set δ' := min δ (π / 2)
-  have hδ' : 0 < δ' := lt_min hδ (by positivity)
-  have hzero : Tendsto (fun s : ℂ ↦ (8 * Real.sin (δ' / 2) ^ 2)⁻¹ * ‖s‖⁻¹)
-      (cobounded ℂ ⊓ 𝓟 {s : ℂ | |s.arg| ≤ π - δ}) (𝓝 0) := by
-    have h := (tendsto_inv_atTop_zero.comp (tendsto_norm_cobounded_atTop (E := ℂ))).const_mul
-      (8 * Real.sin (δ' / 2) ^ 2)⁻¹
-    rw [mul_zero] at h
-    exact h.mono_left inf_le_left
-  refine squeeze_zero_norm' ?_ hzero
-  rw [eventually_inf_principal]
-  filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop 0] with s hs_norm hs_arg
-  have hs' : |s.arg| ≤ π - δ' :=
-    le_trans hs_arg (sub_le_sub_left (min_le_left _ _) π)
-  refine (norm_stirlingRemainder_le_of_abs_arg_le hδ' hs' (norm_pos_iff.mp hs_norm)).trans_eq ?_
-  rw [one_div, mul_inv]
-
-/-- **Multiplicative Stirling's formula on a sector**: for every `δ > 0`,
-`Γ(s) ~ √(2π) s ^ (s - 1/2) e ^ (-s)` as `s → ∞` in the closed sector `|arg s| ≤ π - δ`. -/
-theorem Gamma_isEquivalent_stirling_sector {δ : ℝ} (hδ : 0 < δ) :
-    (fun s : ℂ ↦ Complex.Gamma s)
-      ~[cobounded ℂ ⊓ 𝓟 {s : ℂ | |s.arg| ≤ π - δ}]
-        fun s : ℂ ↦ (Real.sqrt (2 * π) : ℂ) * s ^ (s - 1 / 2) * Complex.exp (-s) := by
-  refine isEquivalent_of_tendsto_one ?_
-  have hexp := (Complex.continuous_exp.tendsto 0).comp (tendsto_stirlingRemainder_sector hδ)
-  rw [Complex.exp_zero] at hexp
-  refine hexp.congr' ?_
-  rw [EventuallyEq, eventually_inf_principal]
-  filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop 0] with s hs_norm hs_arg
-  have hs0 : s ≠ 0 := norm_pos_iff.mp hs_norm
-  have hslit : s ∈ slitPlane := mem_slitPlane_of_abs_arg_le hδ hs_arg hs0
-  have hsqrt : Complex.exp ((Real.log (2 * π) / 2 : ℝ)) = (Real.sqrt (2 * π) : ℂ) := by
-    rw [← ofReal_exp, Real.sqrt_eq_rpow, Real.rpow_def_of_pos (by positivity)]
-    ring_nf
-  dsimp [Function.comp_def, Pi.div_apply]
-  rw [stirlingRemainder_def, Complex.exp_sub, exp_logGamma hslit, Complex.exp_add, Complex.exp_sub,
-    hsqrt, cpow_def_of_ne_zero hs0]
-  have hexps : Complex.exp s ≠ 0 := Complex.exp_ne_zero s
-  field_simp [hexps, Complex.exp_neg]
-  rw [mul_assoc, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, mul_one]
 
 end TauCeti

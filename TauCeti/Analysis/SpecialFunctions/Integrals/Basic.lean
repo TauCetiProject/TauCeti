@@ -35,8 +35,6 @@ Interval integrals of elementary functions in closed form or as series, continui
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_abs_sub_rpow_of_le`: for `r > -1` and `a ≤ c ≤ b`,
   `∫ x in a..b, |x - c|^r = ((c - a)^(r + 1) + (b - c)^(r + 1)) / (r + 1)`.
-* `TauCeti.intervalIntegrable_const_sub_cpow`: the complex power `(c - x)^p` is interval
-  integrable on every interval, for `-1 < p.re`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
 * `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, c * t ^ T ≤ c / (T + 1)` for `T > -1`,
@@ -155,13 +153,6 @@ theorem integral_abs_sub_rpow_of_le {r c a b : ℝ}
     intervalIntegral.integral_congr hl,
     intervalIntegral.integral_congr hh,
     TauCeti.integral_sub_rpow hr a c, TauCeti.integral_sub_const_rpow hr c b, add_div]
-
-/-- The complex power `(c - x)^p`, singular at `x = c`, is interval integrable between `a` and `b`
-for `-1 < p.re`. -/
-theorem intervalIntegrable_const_sub_cpow {p : ℂ} (hp : -1 < p.re) (c a b : ℝ) :
-    IntervalIntegrable (fun x : ℝ => ((c - x : ℝ) : ℂ) ^ p) MeasureTheory.volume a b := by
-  simpa using
-    (intervalIntegral.intervalIntegrable_cpow' hp (a := c - a) (b := c - b)).comp_sub_left c
 
 open MeasureTheory Set in
 /-- Away from the singularity, the weight `(b - x)^r` with `r < -1` has integral at most
