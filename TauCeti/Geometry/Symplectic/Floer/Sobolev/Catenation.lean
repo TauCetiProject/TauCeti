@@ -277,7 +277,7 @@ private theorem memLp_and_isFredholm_floerSobolevOperator_loopInterpolation
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (Floer.continuationHomotopy H H') (loopInterpolation x x')) ⊤
         StripSobolev.stripMeasure ∧
-      (ω.floerSobolevOperator
+      (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (Floer.continuationHomotopy H H') (loopInterpolation x x')).IsFredholm := by
   have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
@@ -358,13 +358,13 @@ private theorem index_floerSobolevOperator_loopInterpolation_eq_add
     (hnd₀ : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H₀ hX₀ 0 1) (y 0))
     (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t) (hxpper : Periodic xp 1)
     (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (Floer.continuationHomotopy Hm Hp) (loopInterpolation xm xp)).index =
-      (ω.floerSobolevOperator
+      (ω.floerSobolevOperator 2
           (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
           (fun _ _ ↦ 0) (Floer.continuationHomotopy Hm H₀) (loopInterpolation xm y)).index +
-        (ω.floerSobolevOperator
+        (ω.floerSobolevOperator 2
           (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
           (fun _ _ ↦ 0) (Floer.continuationHomotopy H₀ Hp) (loopInterpolation y xp)).index := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
@@ -443,9 +443,9 @@ private theorem index_floerSobolevOperator_eq_loopInterpolation
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).index =
-      (ω.floerSobolevOperator
+      (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (Floer.continuationHomotopy Hm Hp) (loopInterpolation xm xp)).index := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
@@ -546,11 +546,11 @@ theorem index_floerSobolevOperator_eq_add
     (hδ₂p : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u₂ (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).index =
-      (ω.floerSobolevOperator (fun w y ↦ (J₁ w y).toLinearMap.toContinuousLinearMap) Ks₁ Kt₁
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J₁ w y).toLinearMap.toContinuousLinearMap) Ks₁ Kt₁
           u₁).index +
-        (ω.floerSobolevOperator (fun w y ↦ (J₂ w y).toLinearMap.toContinuousLinearMap) Ks₂ Kt₂
+        (ω.floerSobolevOperator 2 (fun w y ↦ (J₂ w y).toLinearMap.toContinuousLinearMap) Ks₂ Kt₂
           u₂).index := by
   rw [index_floerSobolevOperator_eq_loopInterpolation ω hω hXm hHm hHmper hXp hHp hHpper hxm
       hxmper hndm hxp hxpper hndp hcyl hJ hKs hKt hJc hu huxm hδm huxp hδp,
@@ -609,9 +609,9 @@ theorem index_floerSobolevOperator_add_eq_zero
     (hδ₂p : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u₂ (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J₁ w y).toLinearMap.toContinuousLinearMap) Ks₁ Kt₁
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J₁ w y).toLinearMap.toContinuousLinearMap) Ks₁ Kt₁
           u₁).index +
-        (ω.floerSobolevOperator (fun w y ↦ (J₂ w y).toLinearMap.toContinuousLinearMap) Ks₂ Kt₂
+        (ω.floerSobolevOperator 2 (fun w y ↦ (J₂ w y).toLinearMap.toContinuousLinearMap) Ks₂ Kt₂
           u₂).index = 0 := by
   rw [index_floerSobolevOperator_eq_loopInterpolation ω hω hXm hHm hHmper hX₀ hH₀ hH₀per hxm
       hxmper hndm hy hyper hnd₀ hcyl₁ hJ₁ hKs₁ hKt₁ hJc₁ hu₁ hu₁xm hδ₁m hu₁y hδ₁p,
