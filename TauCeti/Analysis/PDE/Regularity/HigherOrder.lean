@@ -314,16 +314,31 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_se
 
 /-! ### Differentiating the equation with differentiable coefficients -/
 
+omit [mu.IsAddHaarMeasure] in
+/-- A coefficient field whose entries have bounded derivatives on `Ω`, of any order, has an
+essentially bounded energy integrand on `Ω`: its entries are continuous and bounded there. -/
+private theorem memLp_energyIntegrand_of_bddDerivOn {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {k : ℕ} (ha : ∀ i j, BddDerivOn ℝ k (fun x => a x i j) (Omega : Set (EuclideanSpace ℝ ι))) :
+    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) := by
+  choose C hC using fun i j => (ha i j).exists_bound
+  exact memLp_energyIntegrand_of_continuousOn_of_norm_le (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) (Lam := ∑ i, ∑ j, C i j)
+    (continuousOn_pi.2 fun i => continuousOn_pi.2 fun j => (ha i j).contDiffOn.continuousOn)
+    continuousOn_const continuousOn_const
+    (fun x hx => (norm_matrixBilinearForm_le_sum_abs (a x)).trans
+      (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => by
+        simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using
+          hC i j 0 (Nat.zero_le _) x hx))
+    (fun _ _ => by simp) (fun _ _ => by simp)
+
 /-- **The derivative of a weak solution with coefficients with bounded derivatives.** Let the
 entries of `a` be of class `C^{k+2}` on `Ω` with derivatives of order at most `k + 2` bounded on
-`Ω`, let the energy integrand of `a` be essentially bounded on `Ω`, let `F ∈ W^{k+1,2}(Ω)`, and
-let `u ∈ H^{k+2}(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = F` against `H¹₀(Ω)`. Then along every direction `e` the
-derivative `∂ₑu ∈ H¹(Ω)` solves `-∂ᵢ(aⁱʲ ∂ⱼ(∂ₑu)) = G` against `H¹₀(Ω)` for some
-`G ∈ W^{k,2}(Ω)`. Neither `Ω` nor `closure Ω` need be bounded, and no ellipticity and no boundary
-condition on `u` is used. -/
+`Ω`, let `F ∈ W^{k+1,2}(Ω)`, and let `u ∈ H^{k+2}(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = F` against
+`H¹₀(Ω)`. Then along every direction `e` the derivative `∂ₑu ∈ H¹(Ω)` solves
+`-∂ᵢ(aⁱʲ ∂ⱼ(∂ₑu)) = G` against `H¹₀(Ω)` for some `G ∈ W^{k,2}(Ω)`. Neither `Ω` nor
+`closure Ω` need be bounded, and no ellipticity and no boundary condition on `u` is used. -/
 theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_bddDerivOn
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega)) (k : ℕ)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (k : ℕ)
     (ha : ∀ i j, BddDerivOn ℝ (k + 2) (fun x => a x i j) (Omega : Set (EuclideanSpace ℝ ι)))
     {F : Wkp mu Omega 2 (k + 1)} {u : W1p mu Omega 2}
     (hw : ∃ w : Wkp mu Omega 2 (k + 2), Wkp.value (k + 2) w = W1p.value u)
@@ -339,6 +354,7 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_bddDerivOn
   have hΩo := Omega.isOpen
   have haΩ : ∀ i j, ContDiffOn ℝ 2 (fun x => a x i j) Omega := fun i j =>
     (ha i j).contDiffOn.of_le (by norm_cast; omega)
+  have hcoeff := memLp_energyIntegrand_of_bddDerivOn (mu := mu) ha
   -- The first and second weak derivatives of `u`, from `u ∈ H^{k+2}(Ω)`.
   choose D hD using fun j => Wkp.exists_hasWeakLineDerivOn_value (k + 1) w (b j)
   choose E hE using fun i j => Wkp.exists_hasWeakLineDerivOn_value k (D j) (b i)
@@ -412,11 +428,8 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
       HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value d) e ∧
       ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 d (v : W1p mu Omega 2) =
         ∫ x in Omega, Wkp.value k G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  -- The energy integrand of `a` is bounded on `Ω`, and so are the derivatives of the entries.
-  have hcoeff := memLp_energyIntegrand_of_continuousOn (mu := mu) (b := 0) (c := 0) hΩ
-    ((continuousOn_pi.2 fun i => continuousOn_pi.2 fun j => (ha i j).continuousOn).mono hΩU)
-    continuousOn_const continuousOn_const
-  exact exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_bddDerivOn hcoeff k
+  -- The compactness of `closure Ω` bounds the derivatives of the entries on `Ω`.
+  exact exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_bddDerivOn k
     (fun i j => ContDiffOn.bddDerivOn_of_isCompact_closure (by exact_mod_cast ha i j)
       hU.uniqueDiffOn Omega.isOpen hΩ hΩU) hw hu e
 

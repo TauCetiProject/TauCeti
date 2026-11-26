@@ -96,8 +96,7 @@ private theorem exists_hasWeakLineDerivOn_tangential (hν : ν ≠ 0)
     (hΩc : Convex ℝ (Omega : Set (EuclideanSpace ℝ ι)))
     (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega)) {m : ℕ}
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega) {m : ℕ}
     (hbd : ∀ i j, BddDerivOn ℝ (m + 2) (fun x => a x i j) (Omega : Set (EuclideanSpace ℝ ι)))
     (ih : ∀ (G : Wkp mu Omega 2 m) (t : W1p0 mu Omega 2),
       IsWeakSolutionDirichlet a 0 0 (Wkp.value m G) t →
@@ -111,11 +110,44 @@ private theorem exists_hasWeakLineDerivOn_tangential (hν : ν ≠ 0)
   -- `∂_τ u ∈ H¹₀(Ω)`, and it solves the differentiated equation with forcing `G ∈ W^{m,2}(Ω)`.
   obtain ⟨t, ht⟩ := ha.exists_hasWeakLineDerivOn_of_mapsTo hν hΩc hΩ hK hu hτ
   obtain ⟨d, G, hd, hG⟩ := exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_bddDerivOn
-    hcoeff m hbd ⟨U, hU⟩ ((isWeakSolutionDirichlet_iff _ _).1 hu) τ
+    m hbd ⟨U, hU⟩ ((isWeakSolutionDirichlet_iff _ _).1 hu) τ
   obtain rfl : d = (t : W1p mu Omega 2) := W1p.ext_value (Lp.ext (hd.ae_eq ht))
   -- The induction hypothesis puts `∂_τ u` in `W^{m+2,2}(Ω)`.
   obtain ⟨T, hT⟩ := ih G t ((isWeakSolutionDirichlet_iff _ _).2 hG)
   exact ⟨T, by rw [hU, hT]; exact ht⟩
+
+omit [DecidableEq ι] in
+/-- Negating a family of Sobolev functions with given values negates their values almost
+everywhere, in the form taken by `TauCeti.Wkp.ae_value_add_sum_eq`. -/
+private theorem ae_forall_value_neg_eq {k : ℕ} {Y : ι → ι → Wkp mu Omega 2 k}
+    {c : ι → ι → EuclideanSpace ℝ ι → ℝ}
+    (hY : ∀ i j, (Wkp.value k (Y i j) : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] c i j)
+    (s t : Finset ι) :
+    ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, Wkp.value k (-Y i j) x = -c i j x :=
+  (Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => by
+    filter_upwards [Wkp.value_neg_ae k (Y i j), hY i j] with x h₁ h₂
+    rw [h₁, Pi.neg_apply, h₂]).mono fun _ h i _ j _ => h i j
+
+/-- For a unit vector `e`, the coefficient `ρ = ∑ᵢⱼ eᵢ eⱼ aⁱʲ = ⟪e, a e⟫` of the purely normal
+second derivative has bounded derivatives along with the entries of `a`, and `λ ≤ ρ` on `Ω`. -/
+private theorem bddDerivOn_sum_inner_smul_and_le {e : EuclideanSpace ℝ ι} (he : ‖e‖ = 1)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam) {m : ℕ}
+    (hbd : ∀ i j, BddDerivOn ℝ m (fun x => a x i j) (Omega : Set (EuclideanSpace ℝ ι))) :
+    BddDerivOn ℝ m (fun x => ∑ i, ∑ j, (⟪e, EuclideanSpace.basisFun ι ℝ i⟫_ℝ *
+        ⟪e, EuclideanSpace.basisFun ι ℝ j⟫_ℝ) • a x i j) (Omega : Set (EuclideanSpace ℝ ι)) ∧
+      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+        lam ≤ ∑ i, ∑ j, (⟪e, EuclideanSpace.basisFun ι ℝ i⟫_ℝ *
+          ⟪e, EuclideanSpace.basisFun ι ℝ j⟫_ℝ) • a x i j := by
+  refine ⟨BddDerivOn.sum Omega.isOpen fun i _ => BddDerivOn.sum Omega.isOpen fun j _ =>
+    (hbd i j).const_smul Omega.isOpen _, fun x hx => ?_⟩
+  -- `ρ(x) = ⟪e, a(x) e⟫ ≥ λ ‖e‖² = λ`.
+  have hrho : ∑ i, ∑ j, (⟪e, EuclideanSpace.basisFun ι ℝ i⟫_ℝ *
+      ⟪e, EuclideanSpace.basisFun ι ℝ j⟫_ℝ) • a x i j = matrixBilinearForm (a x) e e := by
+    rw [matrixBilinearForm_apply_eq_sum]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [EuclideanSpace.inner_basisFun_real, EuclideanSpace.inner_basisFun_real, smul_eq_mul]
+  rw [hrho, matrixBilinearForm_self]
+  simpa only [he, one_pow, mul_one] using ha.lower_bound hx e
 
 /-- **The purely normal second derivative from the equation.** Let `e` be a unit vector, let `a`
 be uniformly elliptic on `Ω` with entries of class `C^{m+2}` with bounded derivatives, and let
@@ -162,45 +194,37 @@ private theorem exists_hasWeakLineDerivOn_normal {e : EuclideanSpace ℝ ι} (he
     ((hbd i j).of_le (by omega)) (R i j)
   -- The coefficient `ρ = ⟪e, a e⟫` of `∂_e ∂_e u` is bounded below by `λ`.
   set rho : EuclideanSpace ℝ ι → ℝ := fun x => ∑ i, ∑ j, (⟪e, b i⟫_ℝ * ⟪e, b j⟫_ℝ) • a x i j
-  have hrho : BddDerivOn ℝ (m + 1) rho (Omega : Set (EuclideanSpace ℝ ι)) :=
-    BddDerivOn.sum Omega.isOpen fun i _ => BddDerivOn.sum Omega.isOpen fun j _ =>
-      ((hbd i j).of_le (by omega)).const_smul Omega.isOpen _
-  have hrl : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), lam ≤ rho x := fun x hx => by
-    simpa only [he, one_pow, mul_one, ← matrixBilinearForm_self, matrixBilinearForm_apply_eq_sum,
-      rho, hb, EuclideanSpace.inner_basisFun_real, smul_eq_mul] using ha.lower_bound hx e
-  -- `ρ ∂_e ∂_e u = -F - ∑ᵢⱼ (∂ᵢaⁱʲ ∂ⱼu + aⁱʲ Rᵢⱼ)` lies in `W^{m+1,2}(Ω)`; divide by `ρ`.
-  obtain ⟨N, hN⟩ := Wkp.exists_value_eq_of_value_ae_eq_mul hrho ha.pos hrl (Wkp.value m Dee)
-    (-F + ∑ i, ∑ j, (-Y₁ i j + -Y₂ i j)) (by
-      filter_upwards [Wkp.ae_value_add_sum_eq (-F) Finset.univ Finset.univ (fun i j => -Y₁ i j)
-          (fun i j => -Y₂ i j) (c₁ := fun i j x => -(fderiv ℝ (fun y => a y i j) x (b i) *
-            Wkp.value (m + 1) (D j) x))
-          (c₂ := fun i j x => -(a x i j * Wkp.value (m + 1) (R i j) x))
-          ((Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => by
-            filter_upwards [Wkp.value_neg_ae (m + 1) (Y₁ i j), hY₁ i j] with x h₁ h₂
-            rw [h₁, Pi.neg_apply, h₂]).mono fun x h i _ j _ => h i j)
-          ((Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => by
-            filter_upwards [Wkp.value_neg_ae (m + 1) (Y₂ i j), hY₂ i j] with x h₁ h₂
-            rw [h₁, Pi.neg_apply, h₂]).mono fun x h i _ j _ => h i j),
-        Wkp.value_neg_ae (m + 1) F, heq, hg₁, Filter.eventually_all.2 fun i =>
-          Filter.eventually_all.2 fun j =>
-            Wkp.ae_inner_gradient_firstOrder_lineDerivL_eq he hT (b i) (b j)]
-        with x hx hF hx₀ hx₁ hx₂
-      rw [hx, hF, Pi.neg_apply, ← hx₀]
-      simp only [hx₁, D, R, hx₂, rho, smul_eq_mul, Finset.sum_mul, ← Finset.sum_add_distrib]
-      exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring)
+  obtain ⟨hrho, hrl⟩ := bddDerivOn_sum_inner_smul_and_le (m := m + 1) he ha
+    fun i j => (hbd i j).of_le (by omega)
+  -- By the equation, `ρ ∂_e ∂_e u = -F - ∑ᵢⱼ (∂ᵢaⁱʲ ∂ⱼu + aⁱʲ Rᵢⱼ) ∈ W^{m+1,2}(Ω)`.
+  have hDee : (Wkp.value (m + 1) (-F + ∑ i, ∑ j, (-Y₁ i j + -Y₂ i j)) :
+      EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] fun x => rho x * Wkp.value m Dee x := by
+    filter_upwards [Wkp.ae_value_add_sum_eq (-F) Finset.univ Finset.univ (fun i j => -Y₁ i j)
+        (fun i j => -Y₂ i j) (c₁ := fun i j x => -(fderiv ℝ (fun y => a y i j) x (b i) *
+          Wkp.value (m + 1) (D j) x))
+        (c₂ := fun i j x => -(a x i j * Wkp.value (m + 1) (R i j) x))
+        (ae_forall_value_neg_eq hY₁ _ _) (ae_forall_value_neg_eq hY₂ _ _),
+      Wkp.value_neg_ae (m + 1) F, heq, hg₁, Filter.eventually_all.2 fun i =>
+        Filter.eventually_all.2 fun j =>
+          Wkp.ae_inner_gradient_firstOrder_lineDerivL_eq he hT (b i) (b j)]
+      with x hx hF hx₀ hx₁ hx₂
+    rw [hx, hF, Pi.neg_apply, ← hx₀]
+    simp only [hx₁, D, R, hx₂, rho, smul_eq_mul, Finset.sum_mul, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  -- Dividing by `ρ ≥ λ` puts `∂_e ∂_e u` in `W^{m+1,2}(Ω)`.
+  obtain ⟨N, hN⟩ :=
+    Wkp.exists_value_eq_of_value_ae_eq_mul hrho ha.pos hrl (Wkp.value m Dee) _ hDee
   exact ⟨N, by rw [hN]; exact Wkp.hasWeakLineDerivOn_lineDerivL _ _ _⟩
 
 /-- **The induction on the order.** Under the hypotheses of
-`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`, with the energy integrand of `a`
-essentially bounded on `Ω`: if the entries of `a` are of class `C^{m+1}` on `Ω` with bounded
-derivatives, then every solution `u ∈ H¹₀(Ω)` of the Dirichlet problem with forcing in
-`W^{m,2}(Ω)` lies in `W^{m+2,2}(Ω)`. -/
+`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`: if the entries of `a` are of
+class `C^{m+1}` on `Ω` with bounded derivatives, then every solution `u ∈ H¹₀(Ω)` of the Dirichlet
+problem with forcing in `W^{m,2}(Ω)` lies in `W^{m+2,2}(Ω)`. -/
 private theorem exists_value_eq_value_of_mapsTo_of_bddDerivOn (hν : ν ≠ 0)
     (hΩc : Convex ℝ (Omega : Set (EuclideanSpace ℝ ι)))
     (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega)) :
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega) :
     ∀ m : ℕ, (∀ i j, BddDerivOn ℝ (m + 1) (fun x => a x i j) (Omega : Set (EuclideanSpace ℝ ι))) →
       ∀ (F : Wkp mu Omega 2 m) (u : W1p0 mu Omega 2),
         IsWeakSolutionDirichlet a 0 0 (Wkp.value m F) u →
@@ -211,7 +235,7 @@ private theorem exists_value_eq_value_of_mapsTo_of_bddDerivOn (hν : ν ≠ 0)
     rw [Wkp.value_succ, hU]
     exact Wkp.value_one (u : W1p mu Omega 2)
   | m + 1, hbd, F, u, hu => by
-    have ih := exists_value_eq_value_of_mapsTo_of_bddDerivOn hν hΩc hΩ ha hK hcoeff m
+    have ih := exists_value_eq_value_of_mapsTo_of_bddDerivOn hν hΩc hΩ ha hK m
       fun i j => (hbd i j).of_le (by omega)
     obtain ⟨U, hU⟩ := ih (Wkp.lowerOrder m F) u (by rwa [← Wkp.value_succ])
     set b := EuclideanSpace.basisFun ι ℝ
@@ -226,7 +250,7 @@ private theorem exists_value_eq_value_of_mapsTo_of_bddDerivOn (hν : ν ≠ 0)
       · have hτν : ⟪τ, ν⟫_ℝ = 0 := by
           rw [real_inner_smul_right] at hτ
           exact (mul_eq_zero.1 hτ).resolve_left (inv_ne_zero (norm_ne_zero_iff.2 hν))
-        obtain ⟨T, hT⟩ := exists_hasWeakLineDerivOn_tangential hν hΩc hΩ ha hK hcoeff hbd
+        obtain ⟨T, hT⟩ := exists_hasWeakLineDerivOn_tangential hν hΩc hΩ ha hK hbd
           (ih := ih) hu hU hτν
         exact ⟨T, fun _ => hT⟩
       · exact ⟨0, fun h => absurd h hτ⟩
@@ -274,7 +298,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_of_mapsTo_of_contDiffOn (hν :
   -- order at most `m + 1` are bounded on `Ω`.
   have hbd : ∀ i j, BddDerivOn ℝ (m + 1) (fun x => a x i j)
       (Omega : Set (EuclideanSpace ℝ ι)) := fun i j => by
-    refine ⟨hsmooth i j, max (max Lam K) C, fun k hk x hx => ?_⟩
+    refine bddDerivOn_iff.2 ⟨hsmooth i j, max (max Lam K) C, fun k hk x hx => ?_⟩
     rcases k with _ | _ | k
     · rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs]
       exact (ha.abs_apply_le hx i j).trans ((le_max_left _ _).trans (le_max_left _ _))
@@ -283,14 +307,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_of_mapsTo_of_contDiffOn (hν :
         (lipschitzOnWith_apply_apply_of_matrixBilinearForm hK i j)).trans
         ((le_max_right _ _).trans (le_max_left _ _))
     · exact (hC i j (k + 2) (by omega) hk x hx).trans (le_max_right _ _)
-  -- The energy integrand of `a` is essentially bounded on `Ω`.
-  have hcoeff := memLp_energyIntegrand_of_bounds (mu := mu) (Omega := Omega) (b := 0) (c := 0)
-    (beta := 0) (gamma := 0) ha.upper_nonneg
-    (ContinuousOn.aestronglyMeasurable (β := ι → ι → ℝ) (continuousOn_pi.2 fun i =>
-      continuousOn_pi.2 fun j => (hsmooth i j).continuousOn) Omega.isOpen.measurableSet)
-    aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun x hx => ha.upper_bound hx) (fun _ _ => by simp) (fun _ _ => by simp)
-  exact exists_value_eq_value_of_mapsTo_of_bddDerivOn hν hΩc hΩ ha hK hcoeff m hbd F u hu
+  exact exists_value_eq_value_of_mapsTo_of_bddDerivOn hν hΩc hΩ ha hK m hbd F u hu
 
 /-- **`H^{m+2}` regularity up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
 `ν ≠ 0`, let `a` be uniformly elliptic and bounded on `Ω`, with `x ↦ a(x)` Lipschitz on `Ω` as a

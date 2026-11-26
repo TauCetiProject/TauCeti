@@ -352,6 +352,12 @@ theorem value_add_ae (k : ℕ) (u v : Wkp mu Omega p k) :
     ⇑(value k (u + v)) =ᵐ[mu.restrict Omega] ⇑(value k u) + ⇑(value k v) := by
   simpa only [value_add] using Lp.coeFn_add (value k u) (value k v)
 
+/-- The value of a difference of two Sobolev functions is almost everywhere the difference of their
+values. -/
+theorem value_sub_ae (k : ℕ) (u v : Wkp mu Omega p k) :
+    ⇑(value k (u - v)) =ᵐ[mu.restrict Omega] ⇑(value k u) - ⇑(value k v) := by
+  simpa only [value_sub] using Lp.coeFn_sub (value k u) (value k v)
+
 /-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
 of its value. -/
 theorem value_smul_ae (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :

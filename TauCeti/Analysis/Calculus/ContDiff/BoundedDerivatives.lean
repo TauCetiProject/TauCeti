@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Group.Bounded
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 
 /-!
@@ -77,7 +78,6 @@ variable {s : Set E} {k l : ℕ} {f : E → F}
 variable (𝕜) in
 /-- `f` is `Cᵏ` on `s`, and its derivatives of order at most `k` are bounded on `s` by a common
 constant. -/
-@[expose]
 def BddDerivOn (k : ℕ) (f : E → F) (s : Set E) : Prop :=
   ContDiffOn 𝕜 k f s ∧ ∃ C : ℝ, ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C
 
@@ -140,16 +140,12 @@ theorem ContDiffOn.bddDerivOn_of_isCompact_closure {𝕜 E F : Type*} [Nontrivia
     {f : E → F} {U s : Set E} {k : ℕ} (hf : ContDiffOn 𝕜 k f U) (hU : UniqueDiffOn 𝕜 U)
     (hs : IsOpen s) (hcpt : IsCompact (closure s)) (hsU : closure s ⊆ U) :
     TauCeti.BddDerivOn 𝕜 k f s := by
-  -- Each derivative within `U` is continuous on `U`, hence bounded on `closure s`.
-  choose C hC using fun i : Fin (k + 1) => hcpt.exists_bound_of_continuousOn
-    ((hf.continuousOn_iteratedFDerivWithin (by exact_mod_cast Nat.lt_succ_iff.1 i.isLt) hU).mono
-      hsU)
-  refine ⟨hf.mono (subset_closure.trans hsU), ∑ i, |C i|, fun i hi x hx => ?_⟩
+  -- The derivatives within `U` have a common bound on the compact set `closure s`.
+  obtain ⟨A, hA⟩ := hf.exists_bound_iteratedFDerivWithin hU hcpt hsU
+  refine ⟨hf.mono (subset_closure.trans hsU), A, fun i hi x hx => ?_⟩
   -- On the open set `s ⊆ U`, the derivative within `U` is the derivative.
   have hxU : U =ᶠ[nhds x] (Set.univ : Set E) :=
     Filter.eventuallyEqSet_univ.2
       (Filter.mem_of_superset (hs.mem_nhds hx) (subset_closure.trans hsU))
-  have h := hC ⟨i, Nat.lt_succ_of_le hi⟩ x (subset_closure hx)
-  rw [iteratedFDerivWithin_congr_set hxU, iteratedFDerivWithin_univ] at h
-  exact h.trans ((le_abs_self _).trans (Finset.single_le_sum (f := fun j => |C j|)
-    (fun j _ => abs_nonneg _) (Finset.mem_univ _)))
+  have h := hA i hi x (subset_closure hx)
+  rwa [iteratedFDerivWithin_congr_set hxU, iteratedFDerivWithin_univ] at h

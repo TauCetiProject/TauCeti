@@ -94,7 +94,7 @@ theorem exists_value_ae_eq_mul_of_bddDerivOn {k : ℕ} {psi : E → ℝ}
       ?_).congr_ae_deriv ?_⟩
     · filter_upwards [hg] with x hx
       rw [hx, smul_eq_mul]
-    · filter_upwards [value_add k w₁ w₂ ▸ Lp.coeFn_add (value k w₁) (value k w₂), hw₁, hw₂]
+    · filter_upwards [value_add_ae k w₁ w₂, hw₁, hw₂]
         with x hx h₁ h₂
       rw [hx, Pi.add_apply, h₁, h₂, ← value_succ, smul_eq_mul, smul_eq_mul]
 
@@ -137,7 +137,7 @@ theorem exists_value_eq_of_value_ae_eq_mul {k : ℕ} {rho : E → ℝ}
     refine (((hg.contDiffOn_smul_of_ne_zero hinv (by simp)).congr_ae ?_).congr_ae_deriv ?_)
     · filter_upwards [hw, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
       rw [smul_eq_mul, hx, ← mul_assoc, inv_mul_cancel₀ (hne x hxΩ), one_mul]
-    · filter_upwards [hq.coeFn_toLp, hw, hz, value_sub k g z ▸ Lp.coeFn_sub (value k g) (value k z),
+    · filter_upwards [hq.coeFn_toLp, hw, hz, value_sub_ae k g z,
         ae_restrict_mem Omega.isOpen.measurableSet] with x hx hwx hzx hsub hxΩ
       have hdx : DifferentiableAt ℝ rho x :=
         ((hrho.contDiffOn x hxΩ).differentiableWithinAt (by simp)).differentiableAt
