@@ -331,10 +331,6 @@ theorem two_nsmul_discriminantGroup_firstLattice (a : firstLattice.DiscriminantG
     2 • a = 0 :=
   nsmul_discriminantGroup_ofGramMatrix_basisFun_eq_zero _ _ firstGram_mul_firstGramTwiceInverse a
 
-/-- Every dual basis class of the first ten-curve lattice is killed by two. -/
-theorem two_nsmul_firstDualClass (i : Fin 10) : 2 • firstDualClass i = 0 :=
-  two_nsmul_discriminantGroup_firstLattice _
-
 private theorem firstDualClass_pairwise_ne :
     firstDualClass 0 ≠ 0 ∧ firstDualClass 6 ≠ 0 ∧ firstDualClass 7 ≠ 0 ∧
       firstDualClass 0 ≠ firstDualClass 6 ∧ firstDualClass 0 ≠ firstDualClass 7 ∧
@@ -575,10 +571,6 @@ theorem secondDualClass_nine : secondDualClass 9 = 0 :=
 theorem two_nsmul_discriminantGroup_secondLattice (a : secondLattice.DiscriminantGroup) :
     2 • a = 0 :=
   nsmul_discriminantGroup_ofGramMatrix_basisFun_eq_zero _ _ secondGram_mul_secondGramTwiceInverse a
-
-/-- Every dual basis class of the second ten-curve lattice is killed by two. -/
-theorem two_nsmul_secondDualClass (i : Fin 10) : 2 • secondDualClass i = 0 :=
-  two_nsmul_discriminantGroup_secondLattice _
 
 private theorem secondDualClass_pairwise_ne :
     secondDualClass 0 ≠ 0 ∧ secondDualClass 6 ≠ 0 ∧ secondDualClass 7 ≠ 0 ∧
