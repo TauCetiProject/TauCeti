@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.CrossRatio
 public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Log
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 /-!
 # Conformal maps of the strip onto a Jordan domain with two marked boundary points
