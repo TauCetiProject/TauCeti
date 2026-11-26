@@ -268,16 +268,11 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
   let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
   have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ : Algebra B P'.integers := ((algebraMap B F').codRestrict P'.integers hB).toAlgebra
-  have : IsScalarTower O B P'.integers := .of_algebraMap_eq fun _ ↦ rfl
-  -- `𝒪_{P'}` is the localization of the local model at the centre of `P'`.
-  let eB : HeightOneSpectrum.valuationSubringAtPrime F' q ≃ₐ[B] P'.integers :=
-    AlgEquiv.ofRingEquiv
-      (f := RingEquiv.subringCongr
-        (congrArg ValuationSubring.toSubring (P'.valuationSubringAtPrime_eq_integers hB)))
-      fun _ ↦ rfl
+  let _ := P'.integersAlgebra hB
+  have := P'.isScalarTower_integers hB
+  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    IsLocalization.isLocalization_of_algEquiv q.asIdeal.primeCompl eB
+    P'.isLocalization_integers_center hB
   exact Algebra.FormallyUnramified.iff_of_equiv
     ((IsLocalization.algEquiv q.asIdeal.primeCompl (Localization.AtPrime q.asIdeal)
       P'.integers).restrictScalars O)
