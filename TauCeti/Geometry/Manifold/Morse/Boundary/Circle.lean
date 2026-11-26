@@ -60,7 +60,7 @@ direction `-X` of the flow followed by `T W^u(q)`.
 `R² → R²` in degrees `1 → 0`, and `∂² = 0` holds since the circle has dimension one
 (`signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_one`). A chain `c` of index
 `1` is a cycle exactly when `c(p₀) ε₀ = c(p₁) ε₁`
-(`signedMorseBoundaryAt_zero_eq_zero_iff_circleCosTwo`), so the cycles are the multiples of
+(`signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff`), so the cycles are the multiples of
 `ε₀ p₀ + ε₁ p₁` and `H₁ = R` (`nonempty_linearEquiv_homology_one_signedMorseComplex_circleCosTwo`);
 the boundaries are the kernel of the signed augmentation `c ↦ c(q₀) η₀ + c(q₁) η₁`
 (`mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff`), so `H₀ = R`
@@ -95,7 +95,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `signedMorseBoundaryCoeff_circleCosTwo_eq_ite`: for the orientations `+∂_θ` of the maxima and
   the negative orientations of the minima, the integral Morse differential is `I - S`.
 * `exists_morseOrientation_fundamentalSign_circleCosTwo_eq_one`: these orientations exist.
-* `signedMorseBoundaryAt_zero_eq_zero_iff_circleCosTwo`: the cycles of degree one.
+* `signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff`: the cycles of degree one.
 * `mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff`: the boundaries of degree zero.
 * `nonempty_linearEquiv_homology_zero_signedMorseComplex_circleCosTwo`,
   `nonempty_linearEquiv_homology_one_signedMorseComplex_circleCosTwo`: `H₀ = H₁ = R`.
@@ -696,7 +696,7 @@ every choice of orientations, a chain `c` of index `1` with coefficients in a ri
 integral Morse cycle exactly when `c(p₀) ε₀ = c(p₁) ε₁`, where `ε_j = ±1` is the fundamental sign
 of the maximum `p_j` for the positive orientation of the circle. So the cycles are the multiples of
 `ε₀ p₀ + ε₁ p₁`. -/
-theorem signedMorseBoundaryAt_zero_eq_zero_iff_circleCosTwo (hδ : 0 < δ)
+theorem signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff (hδ : 0 < δ)
     (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
       manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} →₀ R) :
     hX.signedMorseBoundaryAt 𝔬 hf R 0 c = 0 ↔
@@ -744,7 +744,7 @@ theorem nonempty_linearEquiv_homology_one_signedMorseComplex_circleCosTwo (hδ :
   have hrange : LinearMap.range φ = LinearMap.ker (hX.signedMorseBoundaryAt 𝔬 hf R 0) := by
     ext c
     rw [LinearMap.mem_range, LinearMap.mem_ker,
-      signedMorseBoundaryAt_zero_eq_zero_iff_circleCosTwo hδ, ← circleCosTwoMaxEquiv_apply hδ 0,
+      signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff hδ, ← circleCosTwoMaxEquiv_apply hδ 0,
       ← circleCosTwoMaxEquiv_apply hδ 1]
     constructor
     · rintro ⟨a, rfl⟩
