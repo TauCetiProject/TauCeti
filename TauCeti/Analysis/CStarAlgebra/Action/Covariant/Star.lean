@@ -145,13 +145,4 @@ theorem norm_integratedStarAlgHomL1_le (x : Completion (ConvolutionAlgebra α μ
     ‖P.integratedStarAlgHomL1 μ x‖ ≤ ‖x‖ :=
   P.norm_integratedOperatorL1_le μ x
 
-/-- The `L¹` integrated ⋆-homomorphism is nondegenerate precisely when the coefficient
-representation is nondegenerate. -/
-@[simp]
-theorem isNondegenerate_integratedStarAlgHomL1_iff [μ.IsOpenPosMeasure] :
-    (P.integratedStarAlgHomL1 μ).IsNondegenerate ↔ P.coefficient.IsNondegenerate := by
-  rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense]
-  simp_rw [integratedStarAlgHomL1_apply]
-  exact P.dense_span_integratedOperatorL1_iff μ
-
 end TauCeti.CStarAction.CovariantRepresentation

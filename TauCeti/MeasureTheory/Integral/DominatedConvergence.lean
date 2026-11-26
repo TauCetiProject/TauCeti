@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
-import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -63,8 +62,6 @@ integrated norms are summable is integrable.
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 * `TauCeti.integrable_of_hasSum_of_summable_integral_norm`: an a.e. pointwise sum of integrable
   functions whose integrated norms are summable is integrable.
-* `TauCeti.integrable_tsum_of_summable_integral_norm`: a countable pointwise `tsum` of integrable
-  functions with summable `L¹` norms is integrable.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
   `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
 -/
@@ -400,21 +397,6 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
     · refine tendsto_const_nhds.congr fun k => ?_
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
-
-/-- If `F i` are integrable over a countable index type `ι` and `∑' i, ∫ x, ‖F i x‖ ∂μ < ∞`,
-then the pointwise `tsum` is integrable. This pairs with
-`MeasureTheory.hasSum_integral_of_summable_integral_norm`. -/
-theorem integrable_tsum_of_summable_integral_norm {ι E : Type*} [Countable ι]
-    [NormedAddCommGroup E] [CompleteSpace E] {F : ι → α → E}
-    (hF_int : ∀ i, Integrable (F i) μ) (hF_sum : Summable fun i ↦ ∫ x, ‖F i x‖ ∂μ) :
-    Integrable (fun x ↦ ∑' i, F i x) μ := by
-  have heNorm : ∑' i, ‖(hF_int i).toL1 (F i)‖ₑ ≠ ⊤ :=
-    tsum_eNorm_ne_top_iff_summable_norm.2 <| by
-      simpa only [L1.norm_of_fun_eq_integral_norm (hF_int _)] using hF_sum
-  refine (L1.integrable_coeFn (∑' i, (hF_int i).toL1 (F i))).congr ?_
-  filter_upwards [Lp.coeFn_tsum heNorm,
-    ae_all_iff.2 fun i ↦ (hF_int i).coeFn_toL1] with x hx hcoe
-  exact hx.trans (tsum_congr fun i ↦ hcoe i)
 
 /-- **`L¹` continuity of a dominated family.** If `P(·, z)` is almost everywhere strongly
 measurable on `[a, b]` for `z ∈ U`, `z ↦ P(t, z)` is continuous on `U` for almost every

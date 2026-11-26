@@ -14,7 +14,6 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
-import TauCeti.MeasureTheory.Function.Lp.WeightedOrbit
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
@@ -86,9 +85,8 @@ uniform bound are hypotheses of the definition: they are exactly what makes the 
 integrable, and they hold for the unitary representations that are the main application.
 Measurability of the integrands `g ↦ f g • π g v` is read off from the continuity of the orbits and
 the inner regularity of `μ` for compact sets
-(`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply` via
-`TauCeti.weightedOrbitL1`): an integrable weight lives on a σ-finite set, which up to a null set is
-a countable union of compact sets with separable images.
+(`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`): an integrable weight lives on a
+σ-finite set, which up to a null set is a countable union of compact sets with separable images.
 The Haar measure `MeasureTheory.Measure.addHaar` of a locally compact group is regular, hence has
 this property, so no second countability of `G` or separability of `E` is needed. Only the
 convolution identity, which integrates over `G × G`, still asks for
@@ -113,22 +111,16 @@ variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddMonoid G] [Topolo
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
 
-omit [TopologicalSpace G] [MeasurableSpace G] [R1Space G] [BorelSpace G]
-  [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] in
-private theorem norm_lsmul_contRep_le {C : ℝ} (hC : ∀ g, ‖π g‖ ≤ C) (g : G) (c : 𝕜) (v : E) :
-    ‖(ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] E →L[𝕜] E) c (π (.ofAdd g) v)‖ ≤
-      C * ‖c‖ * ‖v‖ := by
-  rw [ContinuousLinearMap.lsmul_apply, norm_smul]
-  exact (mul_le_mul_of_nonneg_left ((π _).le_of_opNorm_le (hC _) v) (norm_nonneg c)).trans_eq
-    (by ring)
-
 omit [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] in
 /-- The integrand of the integrated form is integrable. -/
 private theorem integrable_smul_apply (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
     {C : ℝ} (hC : ∀ g, ‖π g‖ ≤ C) {f : G → 𝕜} (hf : Integrable f μ) (v : E) :
-    Integrable (fun g ↦ f g • π (.ofAdd g) v) μ :=
-  integrable_weightedOrbit (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] E →L[𝕜] E)
-    (fun g : G ↦ π (.ofAdd g)) hcont (norm_lsmul_contRep_le hC) hf v
+    Integrable (fun g ↦ f g • π (.ofAdd g) v) μ := by
+  refine (hf.norm.mul_const (C * ‖v‖)).mono'
+    (hf.aefinStronglyMeasurable.aestronglyMeasurable_smul (hcont v)) (.of_forall fun g ↦ ?_)
+  rw [norm_smul]
+  gcongr
+  exact (π _).le_of_opNorm_le (hC _) v
 
 omit [TopologicalSpace G] [R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]
   [SMulCommClass ℝ 𝕜 E] in
@@ -136,9 +128,13 @@ omit [TopologicalSpace G] [R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTo
 weight. -/
 private theorem norm_integral_smul_apply_le {C : ℝ} (hC : ∀ g, ‖π g‖ ≤ C) {f : G → 𝕜}
     (hf : Integrable f μ) (v : E) :
-    ‖∫ g, f g • π (.ofAdd g) v ∂μ‖ ≤ C * (∫ g, ‖f g‖ ∂μ) * ‖v‖ :=
-  norm_integral_weightedOrbit_le (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] E →L[𝕜] E)
-    (fun g : G ↦ π (.ofAdd g)) (norm_lsmul_contRep_le hC) hf v
+    ‖∫ g, f g • π (.ofAdd g) v ∂μ‖ ≤ C * (∫ g, ‖f g‖ ∂μ) * ‖v‖ := by
+  calc ‖∫ g, f g • π (.ofAdd g) v ∂μ‖ ≤ ∫ g, ‖f g‖ * (C * ‖v‖) ∂μ := by
+        refine norm_integral_le_of_norm_le (hf.norm.mul_const _) (.of_forall fun g ↦ ?_)
+        rw [norm_smul]
+        gcongr
+        exact (π _).le_of_opNorm_le (hC _) v
+    _ = C * (∫ g, ‖f g‖ ∂μ) * ‖v‖ := by rw [integral_mul_const]; ring
 
 variable (π) in
 /-- The **integrated form** of a strongly continuous, uniformly bounded representation `π` of an
@@ -149,24 +145,46 @@ noncomputable def _root_.ContRepresentation.integratedOperatorL1
     (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
     (hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C) (μ : Measure G) [μ.InnerRegularCompactLTTop] :
     (G →₁[μ] 𝕜) →L[𝕜] E →L[𝕜] E :=
-  weightedOrbitL1 μ (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] E →L[𝕜] E)
-    (fun g : G ↦ π (.ofAdd g)) hcont (norm_lsmul_contRep_le hbdd.choose_spec)
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ 𝕜 (fun (f : G →₁[μ] 𝕜) v ↦ ∫ g, f g • π (.ofAdd g) v ∂μ)
+      (fun f₁ f₂ v ↦ by
+        rw [← integral_add (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn _) v)
+          (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn _) v)]
+        refine integral_congr_ae ?_
+        filter_upwards [Lp.coeFn_add f₁ f₂] with g hg
+        rw [hg, Pi.add_apply, add_smul])
+      (fun c f v ↦ by
+        rw [← integral_smul]
+        refine integral_congr_ae ?_
+        filter_upwards [Lp.coeFn_smul c f] with g hg
+        rw [hg, Pi.smul_apply, smul_eq_mul, mul_smul])
+      (fun f v w ↦ by
+        rw [← integral_add (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn _) v)
+          (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn _) w)]
+        simp_rw [map_add, smul_add])
+      (fun c f v ↦ by
+        rw [← integral_smul]
+        simp_rw [map_smul, smul_comm c]))
+    hbdd.choose fun f v ↦ by
+      simpa [L1.norm_eq_integral_norm] using norm_integral_smul_apply_le hbdd.choose_spec
+        (L1.integrable_coeFn f) v
 
 variable {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
 /-- The integrated form acts on a vector by integrating its orbit against the weight. -/
 theorem _root_.ContRepresentation.integratedOperatorL1_apply (f : G →₁[μ] 𝕜) (v : E) :
-    π.integratedOperatorL1 hcont hbdd μ f v = ∫ g, f g • π (.ofAdd g) v ∂μ := by
-  dsimp only [ContRepresentation.integratedOperatorL1]
-  exact weightedOrbitL1_apply f v
+    π.integratedOperatorL1 hcont hbdd μ f v = ∫ g, f g • π (.ofAdd g) v ∂μ :=
+  (rfl)
 
 /-- The integrated form of the class of an integrable function. -/
 @[simp]
 theorem _root_.ContRepresentation.integratedOperatorL1_toL1 {f : G → 𝕜} (hf : Integrable f μ)
     (v : E) :
     π.integratedOperatorL1 hcont hbdd μ (hf.toL1 f) v = ∫ g, f g • π (.ofAdd g) v ∂μ := by
-  dsimp only [ContRepresentation.integratedOperatorL1]
-  exact weightedOrbitL1_toL1 hf v
+  rw [ContRepresentation.integratedOperatorL1_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toL1] with g hg
+  rw [hg]
 
 /-- On an incomplete space every Bochner integral is the junk value `0`, so the integrated form
 vanishes. -/

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Measure.OpenPos
-import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
 # The L¹ norm on the twisted convolution algebra
@@ -24,9 +23,7 @@ twisted involution is an L¹ isometry, `‖f*‖₁ = ‖f‖₁`, because the m
 These structures give the compact-support convolution algebra its L¹ topology, used for extending
 bounded integrated representations and completing the algebra. The map `toL1` records its
 realization in the ordinary coefficient-valued Bochner space; `toL1LI` is its linear isometric
-version, and `toL1FromCompletion` extends `toL1LI` to
-`UniformSpace.Completion (ConvolutionAlgebra α μ)` without local compactness. Multiplication in
-that Bochner space is not the pointwise product.
+version. Multiplication in that Bochner space is not the pointwise product.
 
 The completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
 ⋆-algebra, Williams's `L¹(G, A)`. The instances of `TauCeti.Analysis.Normed.Ring.Completion`,
@@ -42,7 +39,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory UniformSpace
+open MeasureTheory
 open scoped CompactlySupported
 
 namespace TauCeti.CStarAction.ConvolutionAlgebra
@@ -65,10 +62,6 @@ def toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ where
   map_smul' c f := by
     simpa only [ofConv_smul, CompactlySupportedContinuousMap.coe_smul, RingHom.id_apply] using
       Integrable.toL1_smul' (f.ofConv : G → A) f.ofConv.integrable c
-
-/-- `toL1` sends `f` to the Bochner `L¹` class of `f.ofConv`. -/
-theorem toL1_apply (f : ConvolutionAlgebra α μ) : toL1 f = f.ofConv.integrable.toL1 f.ofConv :=
-  (rfl)
 
 /-- The L¹ class of a convolution coefficient is represented by its underlying function. -/
 theorem coeFn_toL1 (f : ConvolutionAlgebra α μ) : toL1 f =ᵐ[μ] f.ofConv :=
@@ -107,23 +100,6 @@ def toL1LI : ConvolutionAlgebra α μ →ₗᵢ[ℂ] Lp A 1 μ where
 @[simp]
 theorem toL1LI_apply (f : ConvolutionAlgebra α μ) : toL1LI α μ f = toL1 f :=
   (rfl)
-
-/-- `toL1` preserves norms. -/
-@[simp]
-theorem norm_toL1 (f : ConvolutionAlgebra α μ) : ‖toL1 f‖ = ‖f‖ := by
-  rw [← toL1LI_apply, LinearIsometry.norm_map]
-
-variable (α μ) in
-/-- Linear isometry from `Completion (ConvolutionAlgebra α μ)` into `Lp A 1 μ`, extending
-`ConvolutionAlgebra.toL1LI` without requiring local compactness of `G`. -/
-def toL1FromCompletion : Completion (ConvolutionAlgebra α μ) →ₗᵢ[ℂ] Lp A 1 μ :=
-  (toL1LI α μ).fromCompletion
-
-/-- On compactly supported elements, `toL1FromCompletion` agrees with `toL1`. -/
-@[simp]
-theorem toL1FromCompletion_coe (f : ConvolutionAlgebra α μ) :
-    toL1FromCompletion α μ f = toL1 f :=
-  ((toL1LI α μ).fromCompletion_apply_coe f).trans (toL1LI_apply f)
 
 section Multiplication
 

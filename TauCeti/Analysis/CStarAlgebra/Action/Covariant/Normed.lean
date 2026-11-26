@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
 public import Mathlib.Topology.Algebra.LinearMapCompletion
-import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Contractive integrated representations
@@ -20,8 +19,7 @@ compact-support twisted convolution algebra with its L¹ seminorm to the bounded
 the representation space. We bundle it both as a continuous linear map and, for a left-invariant
 measure, as a nonunital algebra homomorphism. Extending by continuity, the integrated form is a
 contractive nonunital algebra homomorphism on the twisted L¹ algebra, the completion
-`UniformSpace.Completion (ConvolutionAlgebra α μ)`. Its ranges generate the same closed essential
-subspace as the coefficient representation, so nondegeneracy is preserved and reflected.
+`UniformSpace.Completion (ConvolutionAlgebra α μ)`.
 
 Only finiteness on compact sets is needed for continuity. Left invariance is needed for the
 algebra homomorphism. Neither unitality of the coefficient algebra, nondegeneracy of the
@@ -125,37 +123,6 @@ theorem norm_integratedOperatorL1_le (x : Completion (ConvolutionAlgebra α μ))
     simpa only [integratedOperatorL1_coe, Completion.norm_coe, one_mul,
       integratedOperatorCLM_apply] using (P.integratedOperatorCLM μ).le_of_opNorm_le
         (P.norm_integratedOperatorCLM_le μ) f
-
-/-- The `L¹` integrated form generates the same closed essential subspace as the coefficient
-representation. -/
-theorem topologicalClosure_span_integratedOperatorL1 [LocallyCompactSpace G] [μ.IsOpenPosMeasure] :
-    (Submodule.span ℂ
-      (⋃ x : Completion (ConvolutionAlgebra α μ),
-        Set.range (P.integratedOperatorL1 μ x))).topologicalClosure =
-      (Submodule.span ℂ (⋃ a : A, Set.range (P.coefficient a))).topologicalClosure := by
-  rw [← Completion.denseRange_coe.topologicalClosure_span_iUnion_range_comp_eq (R := ℂ)
-    (L := fun x : Completion (ConvolutionAlgebra α μ) => ⇑(P.integratedOperatorL1 μ x)) fun v =>
-      (ContinuousLinearMap.apply ℂ H v).continuous.comp (P.continuous_integratedOperatorL1 μ)]
-  have hU : (⋃ f : ConvolutionAlgebra α μ, Set.range (P.integratedOperatorL1 μ f)) =
-      ⋃ f : C_c(G, A), Set.range (P.integratedOperator μ f) := by
-    simp_rw [integratedOperatorL1_coe]
-    simpa only [ConvolutionAlgebra.linearEquiv_apply] using
-      (ConvolutionAlgebra.linearEquiv α μ).surjective.iUnion_comp
-        fun g => Set.range (P.integratedOperator μ g)
-  rw [hU]
-  exact P.topologicalClosure_span_integratedOperator μ
-
-/-- The `L¹` integrated form has dense span of ranges precisely when the coefficient
-representation is nondegenerate. -/
-theorem dense_span_integratedOperatorL1_iff [LocallyCompactSpace G] [μ.IsOpenPosMeasure] :
-    Dense (Submodule.span ℂ
-      (⋃ x : Completion (ConvolutionAlgebra α μ),
-        Set.range (P.integratedOperatorL1 μ x)) : Set H) ↔
-      P.coefficient.IsNondegenerate := by
-  rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense,
-    Submodule.dense_iff_topologicalClosure_eq_top,
-    Submodule.dense_iff_topologicalClosure_eq_top,
-    P.topologicalClosure_span_integratedOperatorL1 μ]
 
 end Multiplication
 

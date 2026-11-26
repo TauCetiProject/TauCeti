@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
-public import TauCeti.Analysis.CStarAlgebra.Action.Hom.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.Hom
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.PhragmenLindelof

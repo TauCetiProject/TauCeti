@@ -384,8 +384,8 @@ theorem Integrable.convolutionL_toLp_ae_eq [NontriviallyNormedField 𝕜] [Norme
 /-- On a locally compact Hausdorff group `G` with a regular Haar measure `μ`, `Lp.convolutionL`
 applied to `(hh.toL1 h)` and `(hf.toL1 f)` agrees `μ`-almost everywhere with
 `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ` for any two `μ`-integrable functions `h` and `f`, trading the
-continuity and compact-support hypotheses of `MeasureTheory.Lp.convolutionL_toLp_ae_eq`
-(at `p = 1`) for local compactness, Hausdorffness, and a regular Haar measure. -/
+continuity and compact-support hypotheses of `MeasureTheory.Lp.convolutionL_toL1_ae_eq` for local
+compactness, Hausdorffness, and a regular Haar measure. -/
 theorem Integrable.convolutionL_toL1_ae_eq [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
     [NormedSpace ℝ E] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E]
     {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : Integrable f μ) :

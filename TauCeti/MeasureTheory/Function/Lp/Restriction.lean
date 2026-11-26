@@ -10,10 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
-import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
-import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Exponent
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -42,8 +39,6 @@ finite-measure sets.
 * `Set.setIntegralLp_apply`: the pointwise formula for this map.
 * `MeasureTheory.Lp.integralPositiveLinearMap`: integration against a finite measure as a
   positive linear functional on real `Lᵖ`.
-* `MeasureTheory.Lp.integral_ae_eq_integral_of_hasCompactSupport`: pointwise integral formula for
-  an `Lᵖ`-valued Bochner integral whose slices come from a compactly supported continuous kernel.
 * `TauCeti.totallyBounded_restrict_of_forall_eqOn`: restricting a totally bounded family of `Lᵖ`
   classes to a measurable set on which they agree with given functions.
 * `TauCeti.tendsto_setLIntegral_enorm_sub_of_tendsto_Lp`: convergence of representatives on a
@@ -138,34 +133,6 @@ variable {μ p}
 theorem integralPositiveLinearMap_apply (φ : Lp ℝ p μ) :
     integralPositiveLinearMap μ p φ = ∫ x, φ x ∂μ :=
   (Set.setIntegralLp_apply (𝕜 := ℝ) Set.univ (measure_lt_top μ _) φ).trans setIntegral_univ
-
-/-- An `Lᵖ`-valued Bochner integral (`1 ≤ p < ∞`) whose integrands `T y` are represented almost
-everywhere by slices `x ↦ F x y` of a compactly supported continuous kernel is represented almost
-everywhere by the pointwise integral `x ↦ ∫ y, F x y ∂μ`. -/
-theorem integral_ae_eq_integral_of_hasCompactSupport {X E : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : p ≠ ∞) {T : X → Lp E p μ} {F : X → X → E} (hT_int : Integrable T μ)
-    (hFc : Continuous (Function.uncurry F)) (hFs : HasCompactSupport (Function.uncurry F))
-    (hint : Integrable (fun x => ∫ y, F x y ∂μ) μ)
-    (hT_ae : ∀ᵐ y ∂μ, T y =ᵐ[μ] fun x => F x y) :
-    (∫ y, T y ∂μ : Lp E p μ) =ᵐ[μ] fun x => ∫ y, F x y ∂μ := by
-  refine AEFinStronglyMeasurable.ae_eq_of_forall_setIntegral_eq
-    (fun s _ hμs => (L1.integrable_coeFn (Set.LpToL1RestrictCLM (𝕜 := ℝ) s hμs _)).congr
-      (Set.LpToL1RestrictCLM_coeFn s hμs _))
-    (fun _ _ _ => hint.integrableOn) (fun s _ hμs => ?_)
-    ((Lp.finStronglyMeasurable _ (lt_of_lt_of_le zero_lt_one Fact.out).ne' hp)
-      |>.aefinStronglyMeasurable)
-    hint.aefinStronglyMeasurable
-  rw [← Set.setIntegralLp_apply (𝕜 := ℝ) s hμs,
-    ← (Set.setIntegralLp (𝕜 := ℝ) s hμs).integral_comp_comm hT_int]
-  simp_rw [Set.setIntegralLp_apply]
-  refine (integral_congr_ae ?_).trans
-    (integral_integral_swap_of_hasCompactSupport (μ := μ) (ν := μ.restrict s)
-      (f := fun y x => F x y) (hFc.comp continuous_swap)
-      (hFs.comp_homeomorph (Homeomorph.prodComm X X)))
-  filter_upwards [hT_ae] with y hy
-  exact integral_congr_ae (ae_restrict_of_ae hy)
 
 end MeasureTheory.Lp
 

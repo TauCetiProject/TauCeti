@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
-import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
 
 /-!
 # Realizing compactly supported continuous functions in `Lᵖ`
@@ -18,8 +17,7 @@ Every compactly supported continuous function `f : C_c(X, E)` belongs to `ℒp(X
 measure `μ` is finite on compact sets (`IsFiniteMeasureOnCompacts μ`) and open sets are measurable
 (`OpensMeasurableSpace X`). This file packages the resulting canonical linear map
 `CompactlySupportedContinuousMap.toLp p μ 𝕜 : C_c(X, E) →ₗ[𝕜] Lp E p μ`, together with its
-almost-everywhere representative, `Lᵖ` norm formula, injectivity under `μ.IsOpenPosMeasure`, and
-pointwise convergence of norm-summable `Lᵖ` series of `C_c(X, E)` functions.
+almost-everywhere representative, `Lᵖ` norm formula, and injectivity under `μ.IsOpenPosMeasure`.
 
 None of these basic constructions require local compactness, `R₁` separation, regularity, or
 Urysohn's lemma; density of the range in `Lp E p μ` for `p < ∞` on locally compact `R₁` spaces is
@@ -37,8 +35,6 @@ proved separately in `TauCeti.MeasureTheory.Function.Lp.LocallyCompact`.
 * `CompactlySupportedContinuousMap.norm_toLp`: `‖toLp p μ 𝕜 f‖ = ENNReal.toReal (eLpNorm f p μ)`.
 * `CompactlySupportedContinuousMap.toLp_injective` and `CompactlySupportedContinuousMap.toLp_inj`:
   `toLp` is injective when `μ` gives positive measure to every nonempty open set.
-* `CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp`: almost-everywhere absolute series
-  convergence for representatives of a norm-summable `Lᵖ` series in `C_c(X, E)`.
 -/
 
 public section
@@ -107,25 +103,5 @@ theorem toLp_inj [OpensMeasurableSpace X] {p : ℝ≥0∞} {μ : Measure X}
     [IsBoundedSMul 𝕜 E] {f g : C_c(X, E)} :
     toLp p μ 𝕜 f = toLp p μ 𝕜 g ↔ f = g :=
   (toLp_injective p μ 𝕜).eq_iff
-
-/-- If a countable family of compactly supported continuous functions has sum `v` in `Lᵖ` with
-summable `Lᵖ` norms, then at almost every point `t` the pointwise series `ψ i t` converges
-absolutely to `v t`. -/
-theorem ae_hasSum_of_hasSum_toLp {X E ι : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] [NormedAddCommGroup E] [CompleteSpace E] {μ : Measure X}
-    [IsFiniteMeasureOnCompacts μ] [Countable ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] (𝕜 : Type*)
-    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {ψ : ι → C_c(X, E)} {v : Lp E p μ}
-    (hsum : HasSum (fun i => toLp p μ 𝕜 (ψ i)) v)
-    (hnorm : Summable fun i => ‖toLp p μ 𝕜 (ψ i)‖) :
-    ∀ᵐ t ∂μ, HasSum (fun i => ψ i t) (v t) ∧ Summable fun i => ‖ψ i t‖ := by
-  have heNorm : ∑' i, ‖toLp p μ 𝕜 (ψ i)‖ₑ ≠ ∞ :=
-    tsum_eNorm_ne_top_iff_summable_norm.2 hnorm
-  filter_upwards [Lp.hasSum_coeFn_tsum heNorm,
-    summable_norm_of_tsum_eLpNorm_ne_top Fact.out (by simpa [Lp.eNorm_def] using heNorm),
-    ae_all_iff.2 fun i => (coeFn_toLp (p := p) (μ := μ) 𝕜 (ψ i)).mono fun _ h => h]
-    with t ht hnt hcoe
-  rw [hsum.tsum_eq] at ht
-  simp only [hcoe] at ht hnt
-  exact ⟨ht, hnt⟩
 
 end CompactlySupportedContinuousMap

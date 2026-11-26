@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Hom.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.Hom
 public import TauCeti.Analysis.CStarAlgebra.Action.Quotient
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 

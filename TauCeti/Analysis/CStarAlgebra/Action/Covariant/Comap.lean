@@ -110,14 +110,6 @@ theorem integratedOperatorL1_comap (x : Completion (ConvolutionAlgebra α μ)) :
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih f => simpa using P.integratedOperator_comap φ μ f
 
-/-- Pullback and the `L¹` integrated ⋆-homomorphism commute on the twisted `L¹` completions. -/
-theorem integratedStarAlgHomL1_comap :
-    (P.comap φ).integratedStarAlgHomL1 μ =
-      (P.integratedStarAlgHomL1 μ).comp (φ.convolutionMapL1 μ) :=
-  NonUnitalStarAlgHom.ext fun x => by
-    simpa only [NonUnitalStarAlgHom.comp_apply, integratedStarAlgHomL1_apply] using
-      P.integratedOperatorL1_comap φ μ x
-
 end TauCeti.CStarAction.CovariantRepresentation
 
 namespace TauCeti.CStarAction.Hom
