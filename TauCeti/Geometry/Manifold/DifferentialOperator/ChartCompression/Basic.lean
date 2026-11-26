@@ -14,6 +14,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
@@ -76,6 +77,9 @@ with no continuity assumed) and computes their principal symbols:
 * `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has finitely many cutoffs in preferred
   charts whose pullbacks sum to `1` on it, through which operators on `M` are assembled from
   operators in charts.
+* `TauCeti.exists_forall_apply_eq_sum_complexCutoffPullback_mul_apply_mul`: on a compact manifold,
+  every complex-linear operator `P` is a finite sum `∑ᵢⱼ φᵢⱼ P ψᵢⱼ` of compressions by cutoffs in
+  charts of the maximal atlas, the same charts and cutoffs serving for every `P`.
 * `OpenPartialHomeomorph.complexChartCompression_congr`: two charts with the same inverse on the
   supports of the cutoffs give the same chart compressions.
 * `OpenPartialHomeomorph.complexChartCompression_comp_apply`: the compression of a composition
@@ -745,3 +749,64 @@ theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K
   exact Finset.sum_congr rfl fun j _ ↦ hρ (σ.symm j) y
 
 end ChartPartition
+
+/-! ### Splitting an operator into chart pieces -/
+
+namespace TauCeti
+
+universe u
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [Nontrivial E] {M : Type u} [TopologicalSpace M] [ChartedSpace E M] [T2Space M]
+  [IsManifold 𝓘(ℝ, E) ∞ M]
+
+/-- **Splitting operators into chart pieces.** On a nonempty compact manifold modelled on a
+nontrivial finite-dimensional space there are finitely many charts `e'ᵢⱼ` of the maximal atlas, with
+cutoffs `φᵢⱼ` and `ψᵢⱼ` in their targets, such that every complex-linear operator `P` on the smooth
+functions is `P = ∑ᵢⱼ φᵢⱼ P ψᵢⱼ`, the cutoffs being read on `M` through the charts. -/
+theorem exists_forall_apply_eq_sum_complexCutoffPullback_mul_apply_mul [CompactSpace M]
+    [Nonempty M] :
+    ∃ (ι : Type u) (_ : Fintype ι) (κ : ι → Type u) (_ : ∀ i, Fintype (κ i))
+      (e' : ∀ i, κ i → OpenPartialHomeomorph M E)
+      (he' : ∀ i j, e' i j ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+      (φ ψ : ∀ i j, 𝓓(⟨(e' i j).target, (e' i j).open_target⟩, ℝ)),
+      ∀ (P : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) (u) (x : M),
+        P u x = ∑ i, ∑ j, (e' i j).complexCutoffPullback (he' i j) (φ i j) 1 x *
+          P ((e' i j).complexCutoffPullback (he' i j) (ψ i j) 1 * u) x := by
+  classical
+  -- A partition of unity `ρᵢ` on `M`, each `ρᵢ` supported in the source of a chart `eᵢ`.
+  obtain ⟨ι, _, ρ, e, hρ1, he⟩ :=
+    (isCompact_univ : IsCompact (univ : Set M)).exists_smoothPartition_mem_maximalAtlas_eqOn_symm
+      (IsManifold.chart_mem_maximalAtlas (Classical.arbitrary M))
+      (isCompact_empty (X := E)) (empty_subset _)
+  choose he hρc hρe _ _ using he
+  -- For each `i`, a partition of unity `σᵢⱼ` on `M`, with `σᵢⱼ` supported in the source of a chart
+  -- `e'ᵢⱼ` that agrees with `eᵢ` on `eᵢ(supp ρᵢ)`. So `ρᵢ` is supported in that source too.
+  choose κ _ σ e' hσ1 he' using fun i ↦
+    (isCompact_univ : IsCompact (univ : Set M)).exists_smoothPartition_mem_maximalAtlas_eqOn_symm
+      (he i) ((hρc i).image_of_continuousOn ((e i).continuousOn.mono (hρe i)))
+      (image_subset_iff.2 fun p hp ↦ (e i).map_source (hρe i hp))
+  choose he' hσc hσE hCE hEe using he'
+  have hρE (i : ι) (j : κ i) : tsupport (ρ i) ⊆ (e' i j).source := fun p hp ↦ by
+    rw [← (e i).left_inv (hρe i hp), ← hEe i j (mem_image_of_mem _ hp)]
+    exact (e' i j).map_target (hCE i j (mem_image_of_mem _ hp))
+  -- The functions `ρᵢ` and `σᵢⱼ` are cutoffs `φᵢⱼ` and `ψᵢⱼ` in the chart `e'ᵢⱼ`, read on `M`.
+  choose φ hφ using fun i j ↦ (e' i j).exists_cutoffPullback_one_eq (he' i j) (hρc i) (hρE i j)
+  choose ψ hψ using fun i j ↦ (e' i j).exists_cutoffPullback_one_eq (he' i j) (hσc i j) (hσE i j)
+  refine ⟨ι, inferInstance, κ, inferInstance, e', he', φ, ψ, fun P u x ↦ ?_⟩
+  -- `P u = ∑ᵢ ρᵢ P u = ∑ᵢ ∑ⱼ ρᵢ P (σᵢⱼ u)`.
+  calc P u x = ∑ i, (ρ i x : ℂ) * P u x := by
+        rw [← Finset.sum_mul, ← Complex.ofReal_sum, hρ1 x (mem_univ x), Complex.ofReal_one,
+          one_mul]
+    _ = _ := Finset.sum_congr rfl fun i _ ↦ by
+        have hu : u = ∑ j, (e' i j).complexCutoffPullback (he' i j) (ψ i j) 1 * u := by
+          ext p
+          simp only [ContMDiffMap.coe_sum, ContMDiffMap.coe_mul, Finset.sum_apply, Pi.mul_apply,
+            OpenPartialHomeomorph.complexCutoffPullback_one_apply, hψ, ← Finset.sum_mul,
+            ← Complex.ofReal_sum, hσ1 i p (mem_univ p), Complex.ofReal_one, one_mul]
+        conv_lhs => rw [hu]
+        rw [map_sum, ContMDiffMap.coe_sum, Finset.sum_apply, Finset.mul_sum]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [OpenPartialHomeomorph.complexCutoffPullback_one_apply, hφ]
+
+end TauCeti

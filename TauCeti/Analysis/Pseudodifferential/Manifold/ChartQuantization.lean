@@ -43,6 +43,8 @@ on the overlap and vanishes off it
 
 ## Main definitions
 
+* `OpenPartialHomeomorph.cutoffPushforwardSchwartz`: the function `ψ · (u ∘ e⁻¹)` on `ℝⁿ`, for a
+  smooth function `u` on `M`, as a Schwartz function.
 * `OpenPartialHomeomorph.chartQuantization`: the quantization `Op_e(a)` of a classical symbol `a`
   in a chart `e`, localized by cutoffs `φ` and `ψ`.
 
@@ -86,7 +88,7 @@ include he
 /-! ### The chart quantization -/
 
 /-- The compactly supported smooth function `ψ · (u ∘ e⁻¹)` on `ℝⁿ`, as a Schwartz function. -/
-private def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) : 𝓢(CoordinateSpace n, ℂ) :=
   HasCompactSupport.toSchwartzMap (f := e.complexCutoffPushforward he ψ u)
     (by
@@ -97,10 +99,30 @@ private def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, 
     (contMDiff_iff_contDiff.1 (e.complexCutoffPushforward he ψ u).contMDiff)
 
 omit [T2Space M] in
-private theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+/-- The Schwartz function `e.cutoffPushforwardSchwartz he ψ u` takes the value `ψ y • u (e⁻¹ y)` at
+`y`. -/
+@[simp]
+theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
-    cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
+    e.cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
   e.complexCutoffPushforward_apply he ψ u y
+
+/-- For a cutoff `ψ₁` equal to `1` on the support of `ψ`, the pullback by `ψ` of the Schwartz
+function `ψ₁ · (u ∘ e⁻¹)`, read on `M`, is `ψ u`, with `ψ` read on `M` through the chart. -/
+theorem complexCutoffPullback_cutoffPushforwardSchwartz {ψ ψ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hψ₁ : EqOn ψ₁ 1 (tsupport ψ)) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff (e.cutoffPushforwardSchwartz he ψ₁ u)
+      ((e.cutoffPushforwardSchwartz he ψ₁ u).smooth ⊤)) = e.complexCutoffPullback he ψ 1 * u := by
+  ext q
+  by_cases hq : q ∈ e.source
+  · have h := mul_complexCutoffPullback_apply_of_eq_smul he ψ (g := 1)
+      (hψ₁.mono inter_subset_left)
+      (f := ContMDiffMap.ofContDiff _ ((e.cutoffPushforwardSchwartz he ψ₁ u).smooth ⊤))
+      (fun y ↦ by rw [ContMDiffMap.coe_ofContDiff, cutoffPushforwardSchwartz_apply]) hq
+    rw [Pi.one_apply, one_mul, one_mul, e.left_inv hq] at h
+    rw [h, ContMDiffMap.coe_mul, Pi.mul_apply, complexCutoffPullback_apply_of_mem he _ _ hq,
+      ContMDiffMap.coe_one, Pi.one_apply, smul_one_mul]
+  · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
 
 /-- The **quantization of a classical symbol `a` in the chart `e`**, localized by cutoffs `φ` and
 `ψ` with compact supports in the chart target: the operator
@@ -123,7 +145,7 @@ def chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (a : Cl
         (a.toSymbol.continuous_coefficient_slice x).aestronglyMeasurable hC]
     congr 1
     ext y
-    simp [cutoffPushforwardSchwartz_apply, smul_add]
+    simp [smul_add]
   map_smul' c u := by
     rw [RingHom.id_apply, ← map_smul]
     congr 1
@@ -132,7 +154,7 @@ def chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (a : Cl
       ← smul_eq_mul, ← quantizeSchwartzValue_smul_right]
     congr 1
     ext y
-    simp [cutoffPushforwardSchwartz_apply, ContMDiffMap.complex_smul_apply]
+    simp [ContMDiffMap.complex_smul_apply]
     ring
 
 /-- On the chart source, the chart quantization of `a` is `φ · Op(a) v` read through the chart,
@@ -217,21 +239,10 @@ theorem chartQuantization_eq_mulLeft_comp_comp_mulLeft {φ ψ : 𝓓(⟨e.target
   set v := cutoffPushforwardSchwartz he ψ₁ u
   have hv (y : CoordinateSpace n) : v y = ψ₁ y • u (e.symm y) :=
     cutoffPushforwardSchwartz_apply he ψ₁ u y
-  -- Read on `M`, the pullback of `v` by `ψ` is `ψ u`, since `ψ₁ = 1` on the support of `ψ`.
-  have hpull : e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff v (v.smooth ⊤)) =
-      e.complexCutoffPullback he ψ 1 * u := by
-    ext q
-    by_cases hq : q ∈ e.source
-    · have h := mul_complexCutoffPullback_apply_of_eq_smul he ψ (g := 1)
-        (hψ₁.mono inter_subset_left) (f := ContMDiffMap.ofContDiff v (v.smooth ⊤))
-        (fun y ↦ by rw [ContMDiffMap.coe_ofContDiff, hv]) hq
-      rw [Pi.one_apply, one_mul, one_mul, e.left_inv hq] at h
-      rw [h, ContMDiffMap.coe_mul, Pi.mul_apply, complexCutoffPullback_apply_of_mem he _ _ hq,
-        ContMDiffMap.coe_one, Pi.one_apply, smul_one_mul]
-    · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
   by_cases hp : p ∈ e.source
-  · rw [chartQuantization_apply_of_mem he φ₁ ψ₁ a u hv hp, ha, complexChartCompression_apply,
-      e.left_inv hp, hpull]
+  · -- Read on `M`, the pullback of `v` by `ψ` is `ψ u`, since `ψ₁ = 1` on the support of `ψ`.
+    rw [chartQuantization_apply_of_mem he φ₁ ψ₁ a u hv hp, ha, complexChartCompression_apply,
+      e.left_inv hp, complexCutoffPullback_cutoffPushforwardSchwartz he hψ₁ u]
     simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
       complexCutoffPullback_apply_of_mem he _ _ hp, ContMDiffMap.coe_one, Pi.one_apply,
       smul_one_mul]
