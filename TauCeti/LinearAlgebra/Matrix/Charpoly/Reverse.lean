@@ -215,8 +215,9 @@ theorem C_det_mul_charpolyRev_of_mul_eq_smul_one {A B : Matrix ι ι R} {c : R}
       simp [charmatrix_apply_eq, smul_eq_C_mul]
     · simp [hij]
   rw [charpoly, ← coe_compRingHom_apply, RingHom.map_det _ A.charmatrix, hA, det_neg, det_mul,
-    charpolyRev, RingHom.map_det C A, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
-  simp
+    charpolyRev, RingHom.map_det C A]
+  -- the two signs `(-1) ^ n` cancel
+  simp [← mul_assoc, ← mul_pow]
 
 /-- `det (1 - X A)` is unchanged by transposition. -/
 @[simp]

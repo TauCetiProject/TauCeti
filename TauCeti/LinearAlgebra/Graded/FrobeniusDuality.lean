@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 import Mathlib.Data.ZMod.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Charpoly.Pairing
 import TauCeti.LinearAlgebra.Determinant.Basic
@@ -76,6 +77,7 @@ def gradedEulerChar (d : ℕ) (b : ℤ → ℕ) : ℤ :=
   ∑ i ∈ Finset.Icc 0 (2 * (d : ℤ)), (i.negOnePow : ℤ) * b i
 
 /-- The Euler characteristic is additive in the Betti numbers, for instance under direct sums. -/
+@[simp]
 theorem gradedEulerChar_add (d : ℕ) (b b' : ℤ → ℕ) :
     gradedEulerChar d (b + b') = gradedEulerChar d b + gradedEulerChar d b' := by
   simp [gradedEulerChar, mul_add, Finset.sum_add_distrib]
@@ -103,6 +105,7 @@ theorem gradedDelta_conj {H' : ℤ → Type*} [∀ i, AddCommGroup (H' i)] [∀ 
 
 /-- The alternating determinant is multiplicative under degreewise direct sums of finite free
 modules. -/
+@[simp]
 theorem gradedDelta_prodCongr {H' : ℤ → Type*} [∀ i, AddCommGroup (H' i)]
     [∀ i, Module R (H' i)] [∀ i, Module.Free R (H i)] [∀ i, Module.Finite R (H i)]
     [∀ i, Module.Free R (H' i)] [∀ i, Module.Finite R (H' i)] (d : ℕ) (F : ∀ i, H i ≃ₗ[R] H i)
@@ -223,11 +226,10 @@ theorem gradedDelta_sq :
       (fun i hi ↦ by simp only [Finset.mem_Icc] at hi ⊢; omega)
       (fun i _ ↦ by ring) (fun i _ ↦ by ring)
       (fun i _ ↦ by rw [sub_sub_cancel, Int.negOnePow_sub, Int.negOnePow_two_mul, one_mul])
-  have hsum (s : Finset ℤ) (f : ℤ → ℤ) : ∏ i ∈ s, q ^ f i = q ^ ∑ i ∈ s, f i := by
-    induction s using Finset.cons_induction <;> simp [zpow_add, *]
   rw [sq]
   nth_rw 2 [hrefl]
-  rw [gradedDelta, ← Finset.prod_mul_distrib, gradedEulerChar, Finset.mul_sum, ← hsum]
+  rw [gradedDelta, ← Finset.prod_mul_distrib, gradedEulerChar, Finset.mul_sum,
+    ← Finset.prod_zpow_eq_zpow_sum]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
   rw [← mul_zpow, D.det_mul_det (by ring), ← zpow_natCast, ← zpow_mul]
   push_cast
