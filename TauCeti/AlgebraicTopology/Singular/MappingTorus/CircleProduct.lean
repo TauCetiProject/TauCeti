@@ -40,7 +40,7 @@ pair `v, t` in `TauCeti.LinearAlgebra.BilinearForm.HyperbolicPair` and
 `TauCeti.Geometry.Symplectic.Manifold.Suspension.Chamber`, such as
 `LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span` and
 `LinearMap.BilinForm.sigPos_toQuadraticMap_baseChange_eq_one_of_isOfFinAddOrder_span`, applied to
-`H = H²(X; ℤ)` with its `ℤ`-module structure `AddCommGroup.toIntModule`.
+`H = H²(X; ℤ)` with its cohomology `ℤ`-module structure.
 
 The proof combines three computations. The cohomology of a product with a circle splits as
 `H²((ℝ / pℤ) × Y; ℤ) ≅ H²(Y; ℤ) × H¹(Y; ℤ)` by slant products

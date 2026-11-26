@@ -30,7 +30,7 @@ with `[M]_ℤ` is a bijection
 
 `Hᵖ(M; ℤ) → H_q(M; ℤ)`, `α ↦ [M]_ℤ ⌢ α`, `p + q = n`
 
-(`TauCeti.HomologicalOrientation.bijective_singularCapLinearMap_fundamentalClass`). Since
+(`TauCeti.HomologicalOrientation.bijective_singularCapLinearMap_intFundamentalClass`). Since
 `⟨β, [M]_ℤ ⌢ α⟩ = ⟨α ⌣ β, [M]_ℤ⟩`, every homology class `x ∈ H_q(M; ℤ)` has a Poincaré dual
 `α ∈ Hᵖ(M; ℤ)`, with `⟨α ⌣ β, [M]_ℤ⟩ = ⟨β, x⟩` for every `β ∈ H^q(M; ℤ)`
 (`TauCeti.HomologicalOrientation.exists_forall_singularCupPairing_eq_singularKronecker`). This is
@@ -44,14 +44,9 @@ The proof compares the two cap products by their naturality in the chain coeffic
 (`TopCat.singularCapLinearMap_singularCohomologyChainCoefficientMap`) and by their independence
 of the presentation of the `ℤ`-linear structure (`TopCat.singularCap_eqToHom`).
 
-## Main definitions
-
-* `TauCeti.HomologicalOrientation.intFundamentalClass`: the integral fundamental class `[M]_ℤ`,
-  with chain coefficients `ℤ`.
-
 ## Main results
 
-* `TauCeti.HomologicalOrientation.bijective_singularCapLinearMap_fundamentalClass`: capping with
+* `TauCeti.HomologicalOrientation.bijective_singularCapLinearMap_intFundamentalClass`: capping with
   the integral fundamental class `[M]_ℤ` is bijective.
 * `TauCeti.HomologicalOrientation.exists_forall_singularCupPairing_eq_singularKronecker`: every
   integral homology class has a Poincaré dual for the cup pairing on `[M]_ℤ`.
@@ -77,35 +72,12 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M]
 
 attribute [local instance 1100] ModuleCat.instLinear
 
-/-- **The integral fundamental class** `[M]_ℤ ∈ Hₙ(M; ℤ)`: the fundamental class
-`TauCeti.HomologicalOrientation.fundamentalClass`, read with chain coefficients the unit object
-`ℤ` of `ModuleCat ℤ` instead of `ULift ℤ`, through the coefficient isomorphism
-`TauCeti.uliftIntIso` (as in `TauCeti.uliftIntHomologyIso`). -/
-def intFundamentalClass :
-    ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (𝟙_ (ModuleCat.{0} ℤ))).obj (TopCat.of M) :=
-  (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app (TopCat.of M)).hom
-    (o.fundamentalClass hn)
-
-/-- The integral fundamental class is the image of the fundamental class under the coefficient
-isomorphism `TauCeti.uliftIntIso`. -/
-theorem intFundamentalClass_def :
-    o.intFundamentalClass hn =
-      (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app
-        (TopCat.of M)).hom (o.fundamentalClass hn) :=
-  (rfl)
-
-/-- Reversing the orientation negates the integral fundamental class. -/
-@[simp]
-theorem intFundamentalClass_neg : (-o).intFundamentalClass hn = -o.intFundamentalClass hn := by
-  rw [intFundamentalClass_def, intFundamentalClass_def, fundamentalClass_neg]
-  exact map_neg _ _
-
 attribute [local instance] MonoidalPreadditive.monoidalLinearInt in
 /-- **Poincaré duality for the integral fundamental class.** For a closed manifold `M` of
 dimension `n` with a homological orientation, capping with the fundamental class read with chain
 coefficients `ℤ` is a bijection `Hᵖ(M; ℤ) → H_q(M; ℤ)`, `α ↦ [M]_ℤ ⌢ α`, for `p + q = n`, in the
 convention of `TopCat.singularCapLinearMap` and `TopCat.singularCupPairing`. -/
-theorem bijective_singularCapLinearMap_fundamentalClass {p q : ℕ} (h : p + q = n) :
+theorem bijective_singularCapLinearMap_intFundamentalClass {p q : ℕ} (h : p + q = n) :
     Function.Bijective ((TopCat.of M).singularCapLinearMap ℤ h (o.intFundamentalClass hn)) := by
   let e := eqToHom (congrArg (fun L : Linear ℤ (ModuleCat.{0} ℤ) ↦
     @TopCat.singularCohomology _ _ _ _ (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ _ L
@@ -138,7 +110,7 @@ theorem exists_forall_singularCupPairing_eq_singularKronecker {p q : ℕ} (h : p
       ∀ β : (TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) q,
         (TopCat.of M).singularCupPairing ℤ h (o.intFundamentalClass hn) α β =
           ((TopCat.of M).singularKronecker ℤ q β).hom x := by
-  obtain ⟨α, hα⟩ := (o.bijective_singularCapLinearMap_fundamentalClass hn h).2 x
+  obtain ⟨α, hα⟩ := (o.bijective_singularCapLinearMap_intFundamentalClass hn h).2 x
   exact ⟨α, fun β ↦ by
     rw [TopCat.singularCupPairing_eq_singularKronecker_singularCapLinearMap, hα]⟩
 
