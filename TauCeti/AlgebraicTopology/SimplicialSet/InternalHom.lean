@@ -72,6 +72,12 @@ open CategoryTheory MonoidalCategory MonoidalClosed CartesianMonoidalCategory Li
 
 namespace SSet
 
+/-- The vertex classified by a composite global element is the image of the classified vertex. -/
+@[simp]
+lemma unitHomEquiv_comp {K L : SSet.{u}} (φ : 𝟙_ SSet ⟶ K) (ψ : K ⟶ L) :
+    unitHomEquiv _ (φ ≫ ψ) = ψ.app _ (unitHomEquiv _ φ) :=
+  (rfl)
+
 section ihom
 
 variable (K : SSet.{u}) {X Y Z : SSet.{u}}
@@ -171,21 +177,6 @@ lemma pre_app_app_ihomObj₀Equiv_symm {Y : SSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z
   apply yonedaEquiv.symm.injective
   rw [← yonedaEquiv_symm_comp, yonedaEquiv_symm_ihomObj₀Equiv_symm,
     yonedaEquiv_symm_ihomObj₀Equiv_symm, curry_pre_app, whiskerRight_fst_assoc]
-
-/-- Every vertex of `Fun(X, Z)` is the vertex given by the global element `curry' g` of a map
-`g : X ⟶ Z`. -/
-lemma exists_unitHomEquiv_curry'_eq (v : ((ihom X).obj Z) _⦋0⦌) :
-    ∃ g : X ⟶ Z, unitHomEquiv _ (curry' g) = v :=
-  ⟨uncurry' ((unitHomEquiv _).symm v), by rw [curry'_uncurry', Equiv.apply_symm_apply]⟩
-
-/-- Precomposition `Fun(Y, Z) ⟶ Fun(X, Z)` with `f : X ⟶ Y` sends the vertex given by the global
-element `curry' g` to the vertex given by `curry' (f ≫ g)`. -/
-@[simp]
-lemma pre_app_app_unitHomEquiv_curry' {Y : SSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    ((pre f).app Z).app _ (unitHomEquiv _ (curry' g)) = unitHomEquiv _ (curry' (f ≫ g)) := by
-  rw [← curry'_pre_app]
-  -- `unitHomEquiv` evaluates a global element at the unique vertex of the point.
-  rfl
 
 /-- Restricting the homotopy defined by a `1`-simplex `s` of `Fun(X, Z)` to an end of the cylinder
 gives the map corresponding to the matching face of `s`. -/

@@ -31,7 +31,7 @@ equivalence (`SSet.isEquivalence_ihomHoFunctor_nerve`), so the categorical equiv
 `Fun(D, N A) ⟶ SSet.functorsInverting W (N A)` says that precomposition with `ho f` reflects
 isomorphisms of functors `ho D ⥤ A` and reaches every functor `ho C ⥤ A` inverting the classes of
 `W` up to isomorphism. This recognizes a localization of categories
-(`CategoryTheory.Functor.IsLocalization.of_nonempty_iso`).
+(`CategoryTheory.Functor.IsLocalization.of_exists_comp_iso_Q`).
 
 ## Main declarations
 
@@ -64,27 +64,25 @@ namespace SSet
 variable {C D : SSet.{u}} (W : Set (C _⦋1⦌))
 
 /-- The full subquasicategory of the functor quasicategory `Fun(C, E)` on the maps `C ⟶ E` that
-send every edge of `W` to an equivalence. A vertex `v` of `Fun(C, E)` is the global element
-`(unitHomEquiv _).symm v`, which corresponds to the map `uncurry' ((unitHomEquiv _).symm v)`. -/
+send every edge of `W` to an equivalence. Vertices correspond to maps via `SSet.ihomObj₀Equiv`. -/
 def functorsInverting (E : SSet.{u}) : ((ihom C).obj E).Subcomplex :=
   ((ihom C).obj E).fullEnhancedSubcategory fun v ↦
-    ∀ w ∈ W, ((Edge.mk' w).map (uncurry' ((unitHomEquiv _).symm v))).IsEquivalence
+    ∀ w ∈ W, ((Edge.mk' w).map (ihomObj₀Equiv _ _ v)).IsEquivalence
 
 /-- The vertex of `Fun(C, E)` given by a map `g : C ⟶ E` lies in `SSet.functorsInverting W E`
 exactly when `g` sends every edge of `W` to an equivalence. -/
 @[simp]
-lemma unitHomEquiv_curry'_mem_functorsInverting_iff {E : SSet.{u}} (g : C ⟶ E) :
-    unitHomEquiv _ (curry' g) ∈ (functorsInverting W E).obj (op ⦋0⦌) ↔
+lemma ihomObj₀Equiv_symm_mem_functorsInverting_iff {E : SSet.{u}} (g : C ⟶ E) :
+    (ihomObj₀Equiv _ _).symm g ∈ (functorsInverting W E).obj (op ⦋0⦌) ↔
       ∀ w ∈ W, ((Edge.mk' w).map g).IsEquivalence := by
-  rw [functorsInverting, mem_fullEnhancedSubcategory_obj_zero_iff, Equiv.symm_apply_apply,
-    uncurry'_curry']
+  rw [functorsInverting, mem_fullEnhancedSubcategory_obj_zero_iff, Equiv.apply_symm_apply]
 
 /-- A simplex of `Fun(C, E)` lies in `SSet.functorsInverting W E` exactly when each of its vertices
 sends every edge of `W` to an equivalence. -/
 lemma mem_functorsInverting_obj_iff {E : SSet.{u}} {n : SimplexCategoryᵒᵖ}
     (x : ((ihom C).obj E).obj n) : x ∈ (functorsInverting W E).obj n ↔
       ∀ v : ⦋0⦌ ⟶ n.unop, ∀ w ∈ W, ((Edge.mk' w).map
-        (uncurry' ((unitHomEquiv _).symm (((ihom C).obj E).map v.op x)))).IsEquivalence :=
+        (ihomObj₀Equiv _ _ (((ihom C).obj E).map v.op x))).IsEquivalence :=
   mem_fullEnhancedSubcategory_obj_iff _ x
 
 instance (E : SSet.{u}) [Quasicategory E] : Quasicategory (functorsInverting W E : SSet) :=
@@ -120,8 +118,8 @@ noncomputable def precomp (f : C ⟶ D)
     (hf : ∀ w ∈ W, IsIso (HomotopyCategory.homMk ((Edge.mk' w).map f))) (E : SSet.{u})
     [Quasicategory E] : (ihom D).obj E ⟶ (functorsInverting W E : SSet) :=
   Subcomplex.lift ((pre f).app E) <| (range_le_fullEnhancedSubcategory_iff _ _).2 fun y ↦ by
-    obtain ⟨g, rfl⟩ := exists_unitHomEquiv_curry'_eq y
-    rw [pre_app_app_unitHomEquiv_curry', Equiv.symm_apply_apply, uncurry'_curry']
+    obtain ⟨g, rfl⟩ := (ihomObj₀Equiv _ _).symm.surjective y
+    rw [pre_app_app_ihomObj₀Equiv_symm, Equiv.apply_symm_apply]
     exact isEquivalence_map_comp W hf g
 
 @[reassoc (attr := simp)]
@@ -245,11 +243,13 @@ private lemma exists_nonempty_iso_comp (F : C.HomotopyCategory ⥤ (nerve A).Hom
   let ΘC := ihomHoFunctor C (nerve A)
   -- The functor `F` is `ho g` up to isomorphism for a map `g : C ⟶ N A`, which sends `W` to
   -- equivalences since `F` inverts the classes of `W`.
-  obtain ⟨g, hb⟩ := exists_eq_mk_unitHomEquiv_curry' (ΘC.objPreimage F)
-  let e : mapHomotopyCategory g ≅ F := eqToIso (by rw [hb, ihomHoFunctor_obj_mk,
-    uncurry'_curry']) ≪≫ ΘC.objObjPreimageIso F
-  have hg : unitHomEquiv _ (curry' g) ∈ (functorsInverting W (nerve A)).obj (op ⦋0⦌) := by
-    rw [unitHomEquiv_curry'_mem_functorsInverting_iff]
+  obtain ⟨v, hv⟩ : ∃ v, ΘC.objPreimage F = HomotopyCategory.mk v :=
+    ⟨_, (HomotopyCategory.objEquiv.symm_apply_apply _).symm⟩
+  obtain ⟨g, rfl⟩ := (ihomObj₀Equiv _ _).symm.surjective v
+  let e : mapHomotopyCategory g ≅ F :=
+    eqToIso (by rw [hv, ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm]) ≪≫ ΘC.objObjPreimageIso F
+  have hg : (ihomObj₀Equiv _ _).symm g ∈ (functorsInverting W (nerve A)).obj (op ⦋0⦌) := by
+    rw [ihomObj₀Equiv_symm_mem_functorsInverting_iff]
     intro w hw
     rw [Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk]
     exact (MorphismProperty.IsInvertedBy.iff_of_iso _ e).2 hF _ (.mk ⟨w, hw⟩)
@@ -258,13 +258,13 @@ private lemma exists_nonempty_iso_comp (F : C.HomotopyCategory ⥤ (nerve A).Hom
   let a := (mapHomotopyCategory P).objPreimage
     (HomotopyCategory.mk (⟨_, hg⟩ : (functorsInverting W (nerve A) : SSet) _⦋0⦌))
   let i : (mapHomotopyCategory ((pre f).app (nerve A))).obj a ≅
-      HomotopyCategory.mk (unitHomEquiv _ (curry' g)) :=
+      HomotopyCategory.mk ((ihomObj₀Equiv _ _).symm g) :=
     eqToIso (by rw [mapHomotopyCategory_pre_app_eq h]) ≪≫
       (mapHomotopyCategory (functorsInverting W (nerve A)).ι).mapIso
         ((mapHomotopyCategory P).objObjPreimageIso _)
   refine ⟨(ihomHoFunctor D (nerve A)).obj a, ⟨eqToIso ?_ ≪≫ ΘC.mapIso i ≪≫ eqToIso ?_ ≪≫ e⟩⟩
   · exact (ihomHoFunctor_obj_mapHomotopyCategory_pre_app f a).symm
-  · rw [ihomHoFunctor_obj_mk, uncurry'_curry']
+  · rw [ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm]
 
 /-- **The homotopy category of a localization.** If `f : C ⟶ D` is a localization of `C` at `W`,
 then the induced functor of homotopy categories `ho C ⥤ ho D` is a localization of categories at
@@ -277,7 +277,7 @@ theorem isLocalization_mapHomotopyCategory :
     rintro _ _ _ ⟨w⟩
     rw [mapHomotopyCategory_map_homMk]
     exact h.isIso_homotopyCategoryHomMk_map w w.property
-  refine Functor.IsLocalization.of_nonempty_iso _ W' hL ?_ fun F₁ F₂ ⟨α⟩ ↦ ?_
+  refine Functor.IsLocalization.of_exists_comp_iso_Q _ W' hL ?_ fun F₁ F₂ ⟨α⟩ ↦ ?_
   · -- Apply `exists_nonempty_iso_comp` to `W'.Q` followed by the inverse of the counit
     -- equivalence `ho (N W'.Localization) ≌ W'.Localization`.
     let ε : (nerve W'.Localization).HomotopyCategory ≌ W'.Localization :=
@@ -316,7 +316,7 @@ theorem isLocalization_id (W : Set (D _⦋1⦌))
   have htop : functorsInverting W E = ⊤ :=
     top_le_iff.1 ((le_fullEnhancedSubcategory_iff _ _).2 fun x _ w hw ↦
       (Edge.isEquivalence_iff_of_edge_eq rfl).1
-        (isEquivalence_map_comp W hid (uncurry' ((unitHomEquiv _).symm x)) w hw))
+        (isEquivalence_map_comp W hid (ihomObj₀Equiv _ _ x) w hw))
   have : IsIso (functorsInverting.precomp (𝟙 D) hid E) := by
     have : IsIso (functorsInverting W E).ι := by
       rw [htop]

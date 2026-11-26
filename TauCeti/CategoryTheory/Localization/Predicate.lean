@@ -19,7 +19,7 @@ endofunctors of `D`.
 
 ## Main results
 
-* `CategoryTheory.Functor.IsLocalization.of_nonempty_iso`: the recognition criterion.
+* `CategoryTheory.Functor.IsLocalization.of_exists_comp_iso_Q`: the recognition criterion.
 -/
 
 public section
@@ -31,7 +31,7 @@ variable {C D : Type*} [Category* C] [Category* D] (L : C ⥤ D) (W : MorphismPr
 /-- A functor `L : C ⥤ D` inverting `W` is a localization with respect to `W` when the
 localization functor `W.Q` factors through `L` up to isomorphism, and two endofunctors of `D`
 are isomorphic as soon as their composites with `L` are. -/
-theorem of_nonempty_iso (hL : W.IsInvertedBy L)
+theorem of_exists_comp_iso_Q (hL : W.IsInvertedBy L)
     (hS : ∃ G : D ⥤ W.Localization, Nonempty (L ⋙ G ≅ W.Q))
     (hR : ∀ F₁ F₂ : D ⥤ D, Nonempty (L ⋙ F₁ ≅ L ⋙ F₂) → Nonempty (F₁ ≅ F₂)) :
     L.IsLocalization W := by

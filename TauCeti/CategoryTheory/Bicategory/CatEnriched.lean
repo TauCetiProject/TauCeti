@@ -33,7 +33,6 @@ variable {C : Type u} [Category.{v} C] [EnrichedOrdinaryCategory Cat.{v', u'} C]
 
 /-- The invertible `2`-cells `f ≅ g` of `CatEnrichedOrdinary C` are the isomorphisms
 `homEquiv f ≅ homEquiv g` of the hom-category. -/
-@[expose, simps]
 def isoEquiv {X Y : CatEnrichedOrdinary C} {f g : X ⟶ Y} :
     (f ≅ g) ≃ (homEquiv f ≅ homEquiv g) where
   toFun α :=
@@ -48,5 +47,21 @@ def isoEquiv {X Y : CatEnrichedOrdinary C} {f g : X ⟶ Y} :
       inv_hom_id := Hom.ext _ _ β.inv_hom_id }
   left_inv _ := rfl
   right_inv _ := rfl
+
+@[simp]
+lemma isoEquiv_apply_hom {X Y : CatEnrichedOrdinary C} {f g : X ⟶ Y} (α : f ≅ g) :
+    (isoEquiv α).hom = α.hom.base := (rfl)
+
+@[simp]
+lemma isoEquiv_apply_inv {X Y : CatEnrichedOrdinary C} {f g : X ⟶ Y} (α : f ≅ g) :
+    (isoEquiv α).inv = α.inv.base := (rfl)
+
+@[simp]
+lemma isoEquiv_symm_apply_hom {X Y : CatEnrichedOrdinary C} {f g : X ⟶ Y}
+    (β : homEquiv f ≅ homEquiv g) : (isoEquiv.symm β).hom = .mk β.hom := (rfl)
+
+@[simp]
+lemma isoEquiv_symm_apply_inv {X Y : CatEnrichedOrdinary C} {f g : X ⟶ Y}
+    (β : homEquiv f ≅ homEquiv g) : (isoEquiv.symm β).inv = .mk β.inv := (rfl)
 
 end CategoryTheory.CatEnrichedOrdinary

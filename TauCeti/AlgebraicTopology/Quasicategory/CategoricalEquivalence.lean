@@ -130,9 +130,7 @@ lemma nonempty_iso_homMk_pre_app {h h' : X ⟶ Y} (α : h ≅ h') (E : SSet.{u})
     curry ((β_ _ _).hom ≫ comp X.obj Y.obj E)
   have hc (k : X.obj ⟶ Y.obj) : c.app _ (unitHomEquiv _ (curry' k)) =
       unitHomEquiv _ (curry' ((pre k).app E)) := by
-    -- The image under `c` of the vertex given by the global element `curry' k` is the vertex
-    -- given by the global element `curry' k ≫ c`, by definition of `unitHomEquiv`.
-    change unitHomEquiv _ (curry' k ≫ c) = _
+    rw [← unitHomEquiv_comp]
     rw [← curry'_uncurry' (curry' k ≫ c), uncurry', uncurry_natural_left, uncurry_curry,
       BraidedCategory.braiding_naturality_right_assoc, curry'_whiskerRight_comp]
     simp

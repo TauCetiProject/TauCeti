@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.HoFunctorMonoidal
 public import Mathlib.CategoryTheory.Category.Cat.CartesianClosed
 public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
 public import Mathlib.CategoryTheory.Monoidal.Closed.Functor
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.EssImage
 public import TauCeti.CategoryTheory.Monoidal.Closed.Curry
 
@@ -133,13 +134,26 @@ lemma ihomHoFunctor_obj_mk (φ : 𝟙_ SSet ⟶ (ihom A).obj B) :
   simp only [Iso.refl_hom]
   exact this
 
-/-- Every object of `ho Fun(A, B)` is the vertex given by the global element `curry' g` of a map
-`g : A ⟶ B`. -/
-lemma exists_eq_mk_unitHomEquiv_curry' (b : ((ihom A).obj B).HomotopyCategory) :
-    ∃ g : A ⟶ B, b = .mk (unitHomEquiv _ (MonoidalClosed.curry' g)) := by
-  induction b with | mk v =>
-    exact ⟨MonoidalClosed.uncurry' ((unitHomEquiv _).symm v),
-      by rw [MonoidalClosed.curry'_uncurry', Equiv.apply_symm_apply]⟩
+/-- On the vertex corresponding to `g : A ⟶ B` under `ihomObj₀Equiv`, the comparison is the
+induced functor `ho g`. -/
+@[simp]
+lemma ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm (g : A ⟶ B) :
+    (ihomHoFunctor A B).obj (.mk ((ihomObj₀Equiv A B).symm g)) = mapHomotopyCategory g := by
+  let v := (ihomObj₀Equiv A B).symm g
+  let φ := (unitHomEquiv _).symm v
+  have hφ : MonoidalClosed.uncurry' φ = g := by
+    have h := ihomObj₀Equiv_app φ PUnit.unit
+    -- The tensor unit has a unique vertex, so its constant map is `toUnit A`.
+    have hu : φ.app _ PUnit.unit = v := (unitHomEquiv _).apply_symm_apply v
+    have hunit : CartesianMonoidalCategory.lift (𝟙 A) (const PUnit.unit) = (ρ_ A).inv := by
+      rfl
+    rw [hu, hunit, Equiv.apply_symm_apply] at h
+    exact h.symm
+  calc
+    _ = (ihomHoFunctor A B).obj (.mk (unitHomEquiv _ φ)) := by
+      rw [Equiv.apply_symm_apply]
+    _ = mapHomotopyCategory (MonoidalClosed.uncurry' φ) := ihomHoFunctor_obj_mk φ
+    _ = mapHomotopyCategory g := congrArg mapHomotopyCategory hφ
 
 /-- **Naturality of the comparison in the source**: under the comparisons
 `ho Fun(-, B) ⥤ (ho - ⥤ ho B)`, precomposition with `f : A' ⟶ A` on `Fun(A, B)` corresponds to
@@ -149,14 +163,11 @@ lemma ihomHoFunctor_obj_mapHomotopyCategory_pre_app {A' : SSet.{u}} (f : A' ⟶ 
     (ihomHoFunctor A' B).obj
         ((mapHomotopyCategory ((MonoidalClosed.pre f).app B)).obj a) =
       mapHomotopyCategory f ⋙ (ihomHoFunctor A B).obj a := by
-  obtain ⟨g, rfl⟩ := exists_eq_mk_unitHomEquiv_curry' a
-  -- `unitHomEquiv` evaluates a global element at the unique vertex of the point, so the image of
-  -- the vertex given by `curry' g` is the vertex given by `curry' g ≫ (pre f).app B`.
-  change (ihomHoFunctor A' B).obj
-      (.mk (unitHomEquiv _ (MonoidalClosed.curry' g ≫ (MonoidalClosed.pre f).app B))) = _
-  rw [MonoidalClosed.curry'_pre_app, ihomHoFunctor_obj_mk, ihomHoFunctor_obj_mk,
-    MonoidalClosed.uncurry'_curry', MonoidalClosed.uncurry'_curry']
-  exact congrArg Cat.Hom.toFunctor (hoFunctor.map_comp f g)
+  induction a with | mk v =>
+    obtain ⟨g, rfl⟩ := (ihomObj₀Equiv A B).symm.surjective v
+    rw [mapHomotopyCategory_obj_mk, pre_app_app_ihomObj₀Equiv_symm,
+      ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm, ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm]
+    exact congrArg Cat.Hom.toFunctor (hoFunctor.map_comp f g)
 
 open CartesianMonoidalCategory MonoidalClosed in
 /-- Under the comparison `ho Fun(A, N C) ⥤ (ho A ⥤ ho (N C))` followed by the counit
