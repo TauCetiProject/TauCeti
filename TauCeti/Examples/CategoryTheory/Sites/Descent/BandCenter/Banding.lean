@@ -25,24 +25,24 @@ open CategoryTheory CategoryTheory.Pseudofunctor Opposite Bicategory
 
 variable {C : Type*} [Category* C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} {J : GrothendieckTopology C}
   {A : Sheaf J AddCommGrpCat} (b : F.AbelianBanding J A)
-  (hF : ∀ U : C, IsGroupoid (F.obj (.mk (op U))))
+  [∀ U : C, IsGroupoid (F.obj (.mk (op U)))]
 
 /-- The zero coefficient gives the identity central unit. -/
-example (U : C) : b.coefficientCenter hF U 1 = 1 :=
+example (U : C) : b.coefficientCenter U 1 = 1 :=
   map_one _
 
 /-- The zero coefficient gives the identity central section. -/
-example (U : C) : b.centerFromBanding hF U 1 = 1 :=
+example (U : C) : b.centerFromBanding U 1 = 1 :=
   map_one _
 
 /-- The central unit of the inverse coefficient has the inverse band automorphism as component. -/
 example (U : C) (a : Multiplicative (A.obj.obj (op U))) (x : F.obj (.mk (op U))) :
-    (b.coefficientCenter hF U a⁻¹).val.app x = (b.mulEquiv U x a).asIso.inv := by
+    (b.coefficientCenter U a⁻¹).val.app x = (b.mulEquiv U x a).asIso.inv := by
   rw [AbelianBanding.coefficientCenter_app, map_inv, Aut.inv_asIso, Iso.symm_hom]
 
 /-- Evaluating the central section of `a` at the identity arrow recovers `b(U, x)(a)`. -/
 example (U : C) (a : Multiplicative (A.obj.obj (op U))) (x : F.obj (.mk (op U))) :
-    IntrinsicBandSections.evaluation (𝟙 U) x (b.centerFromBanding hF U a) = b.mulEquiv U x a := by
+    IntrinsicBandSections.evaluation (𝟙 U) x (b.centerFromBanding U a) = b.mulEquiv U x a := by
   simp
 
 end TauCeti.Examples.BandCenterBanding

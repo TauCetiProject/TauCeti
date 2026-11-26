@@ -60,26 +60,23 @@ namespace CategoryTheory.Pseudofunctor.AbelianBanding
 
 variable {C : Type u} [Category.{v} C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
   {J : GrothendieckTopology C} {A : Sheaf J AddCommGrpCat.{w}} (b : F.AbelianBanding J A)
-  (hF : ∀ U : C, IsGroupoid (F.obj (.mk (op U))))
 
-include hF in
 /-- **Band automorphisms are natural** when the fibres are groupoids: for every fibre arrow
 `f : x ⟶ y`, `f ≫ b(U, y)(a) = b(U, x)(a) ≫ f`. -/
 @[reassoc]
-theorem naturality_mulEquiv_hom {U : C} {x y : F.obj (.mk (op U))} (f : x ⟶ y)
-    (a : Multiplicative (A.obj.obj (op U))) :
-    f ≫ (b.mulEquiv U y a).asIso.hom = (b.mulEquiv U x a).asIso.hom ≫ f := by
-  have := hF U
-  exact (b.mulEquiv_hom_comp (asIso f) a).symm
+theorem naturality_mulEquiv_hom {U : C} [IsGroupoid (F.obj (.mk (op U)))]
+    {x y : F.obj (.mk (op U))} (f : x ⟶ y) (a : Multiplicative (A.obj.obj (op U))) :
+    f ≫ (b.mulEquiv U y a).asIso.hom = (b.mulEquiv U x a).asIso.hom ≫ f :=
+  (b.mulEquiv_hom_comp (asIso f) a).symm
 
 /-- The **central unit of a coefficient** `a ∈ A(U)`: the invertible natural endomorphism of the
 identity of the fibre over `U` with component `b(U, x)(a)` at `x`, as a group homomorphism
 `z_b(U) : A(U) →* (CatCenter (F U))ˣ`. -/
-noncomputable def coefficientCenter (U : C) :
+noncomputable def coefficientCenter (U : C) [IsGroupoid (F.obj (.mk (op U)))] :
     Multiplicative (A.obj.obj (op U)) →* (CatCenter (F.obj (.mk (op U))))ˣ where
   toFun a := (Aut.unitsEndEquivAut (𝟭 _)).symm
     (.of (NatIso.ofComponents (fun x ↦ (b.mulEquiv U x a).asIso)
-      fun f ↦ b.naturality_mulEquiv_hom hF f a))
+      fun f ↦ b.naturality_mulEquiv_hom f a))
   map_one' := by
     rw [MulEquiv.symm_apply_eq, map_one]
     refine Aut.ext (Iso.ext (NatTrans.ext (funext fun x ↦ ?_)))
@@ -93,28 +90,31 @@ noncomputable def coefficientCenter (U : C) :
 
 /-- The component of the central unit of `a` at `x` is the band automorphism `b(U, x)(a)`. -/
 @[simp]
-theorem coefficientCenter_app (U : C) (a : Multiplicative (A.obj.obj (op U)))
-    (x : F.obj (.mk (op U))) :
-    (b.coefficientCenter hF U a).val.app x = (b.mulEquiv U x a).asIso.hom :=
+theorem coefficientCenter_app (U : C) [IsGroupoid (F.obj (.mk (op U)))]
+    (a : Multiplicative (A.obj.obj (op U))) (x : F.obj (.mk (op U))) :
+    (b.coefficientCenter U a).val.app x = (b.mulEquiv U x a).asIso.hom :=
   (rfl)
 
 /-- Evaluating the central unit of `a` at `x` gives the band automorphism `b(U, x)(a)`. -/
-theorem unitsEndEval_coefficientCenter (U : C) (a : Multiplicative (A.obj.obj (op U)))
-    (x : F.obj (.mk (op U))) :
-    NatTrans.unitsEndEval (𝟭 _) x (b.coefficientCenter hF U a) = b.mulEquiv U x a :=
+theorem unitsEndEval_coefficientCenter (U : C) [IsGroupoid (F.obj (.mk (op U)))]
+    (a : Multiplicative (A.obj.obj (op U))) (x : F.obj (.mk (op U))) :
+    NatTrans.unitsEndEval (𝟭 _) x (b.coefficientCenter U a) = b.mulEquiv U x a :=
   Aut.ext (Iso.ext (by
     rw [NatTrans.unitsEndEval_asIso_hom]
     -- `CatCenter.app` is Mathlib's abbreviation for `asHom.app`
-    exact b.coefficientCenter_app hF U a x))
+    exact b.coefficientCenter_app U a x))
 
 /-- **Restriction of central units.** Pulling the central unit of `a` back along `f : V ⟶ U` at
 `x` gives the central unit of the restriction `a|_V` at `F(f) x`. -/
-theorem map_coefficientCenter_app {U V : C} (f : V ⟶ U) (a : Multiplicative (A.obj.obj (op U)))
+theorem map_coefficientCenter_app {U V : C} [IsGroupoid (F.obj (.mk (op U)))]
+    [IsGroupoid (F.obj (.mk (op V)))] (f : V ⟶ U) (a : Multiplicative (A.obj.obj (op U)))
     (x : F.obj (.mk (op U))) :
-    (F.map f.op.toLoc).toFunctor.map ((b.coefficientCenter hF U a).val.app x) =
-      (b.coefficientCenter hF V (.ofAdd (A.obj.map f.op a.toAdd))).val.app
+    (F.map f.op.toLoc).toFunctor.map ((b.coefficientCenter U a).val.app x) =
+      (b.coefficientCenter V (.ofAdd (A.obj.map f.op a.toAdd))).val.app
         ((F.map f.op.toLoc).toFunctor.obj x) := by
   rw [coefficientCenter_app, coefficientCenter_app, map_mulEquiv_hom]
+
+variable [∀ U : C, IsGroupoid (F.obj (.mk (op U)))]
 
 /-- The **central section of a coefficient** `a ∈ A(U)`: the intrinsic central section whose
 component at `f : V ⟶ U` is the central unit of the restriction `a|_V`, as a group homomorphism
@@ -122,7 +122,7 @@ component at `f : V ⟶ U` is the central unit of the restriction `a|_V`, as a g
 noncomputable def centerFromBanding (U : C) :
     Multiplicative (A.obj.obj (op U)) →* IntrinsicBandSections F U where
   toFun a := IntrinsicBandSections.ofCompatible
-    (fun V f ↦ b.coefficientCenter hF V (.ofAdd (A.obj.map f.op a.toAdd)))
+    (fun V f ↦ b.coefficientCenter V (.ofAdd (A.obj.map f.op a.toAdd)))
     ((F.isPullbackCompatible_iff _).mpr fun V W f g x ↦ by simp)
   map_one' := IntrinsicBandSections.ext fun V f x ↦ by
     simp only [IntrinsicBandSections.val_ofCompatible, toAdd_one, map_zero, ofAdd_zero, map_one,
@@ -135,8 +135,8 @@ noncomputable def centerFromBanding (U : C) :
 @[simp]
 theorem val_centerFromBanding (U : C) (a : Multiplicative (A.obj.obj (op U))) (V : C)
     (f : V ⟶ U) :
-    (b.centerFromBanding hF U a).val V f =
-      b.coefficientCenter hF V (.ofAdd (A.obj.map f.op a.toAdd)) :=
+    (b.centerFromBanding U a).val V f =
+      b.coefficientCenter V (.ofAdd (A.obj.map f.op a.toAdd)) :=
   IntrinsicBandSections.val_ofCompatible _ _ V f
 
 /-- **Evaluation of the central section of a coefficient**: `ev_(f, x)(c_b(U)(a)) = b(V, x)(a|_V)`
@@ -144,7 +144,7 @@ for every `f : V ⟶ U` and every `x` over `V`. -/
 @[simp]
 theorem evaluation_centerFromBanding {U V : C} (f : V ⟶ U) (x : F.obj (.mk (op V)))
     (a : Multiplicative (A.obj.obj (op U))) :
-    IntrinsicBandSections.evaluation f x (b.centerFromBanding hF U a) =
+    IntrinsicBandSections.evaluation f x (b.centerFromBanding U a) =
       b.mulEquiv V x (.ofAdd (A.obj.map f.op a.toAdd)) :=
   Aut.ext (Iso.ext (by
     rw [IntrinsicBandSections.evaluation_asIso_hom, val_centerFromBanding,
@@ -153,8 +153,8 @@ theorem evaluation_centerFromBanding {U V : C} (f : V ⟶ U) (x : F.obj (.mk (op
 /-- **Restriction of the central section of a coefficient**: `r_f(c_b(U)(a)) = c_b(V)(a|_V)`. -/
 @[simp]
 theorem restrict_centerFromBanding {U V : C} (f : V ⟶ U) (a : Multiplicative (A.obj.obj (op U))) :
-    IntrinsicBandSections.restrict f (b.centerFromBanding hF U a) =
-      b.centerFromBanding hF V (.ofAdd (A.obj.map f.op a.toAdd)) :=
+    IntrinsicBandSections.restrict f (b.centerFromBanding U a) =
+      b.centerFromBanding V (.ofAdd (A.obj.map f.op a.toAdd)) :=
   IntrinsicBandSections.ext fun W g x ↦ by simp
 
 /-- **Characterization by evaluations.** A central section over `U` whose evaluation at every
@@ -163,7 +163,7 @@ theorem eq_centerFromBanding {U : C} (a : Multiplicative (A.obj.obj (op U)))
     (s : IntrinsicBandSections F U)
     (hs : ∀ (V : C) (f : V ⟶ U) (x : F.obj (.mk (op V))),
       IntrinsicBandSections.evaluation f x s = b.mulEquiv V x (.ofAdd (A.obj.map f.op a.toAdd))) :
-    s = b.centerFromBanding hF U a :=
+    s = b.centerFromBanding U a :=
   IntrinsicBandSections.ext_evaluation fun V f x ↦ by
     rw [hs, evaluation_centerFromBanding]
 
@@ -171,7 +171,7 @@ theorem eq_centerFromBanding {U : C} (a : Multiplicative (A.obj.obj (op U)))
 one object `x` over `U`, then their central sections of `a` differ. -/
 theorem centerFromBanding_ne {b' : F.AbelianBanding J A} {U : C} {x : F.obj (.mk (op U))}
     {a : Multiplicative (A.obj.obj (op U))} (hne : b.mulEquiv U x a ≠ b'.mulEquiv U x a) :
-    b.centerFromBanding hF U a ≠ b'.centerFromBanding hF U a := by
+    b.centerFromBanding U a ≠ b'.centerFromBanding U a := by
   intro h
   apply hne
   have := congrArg (IntrinsicBandSections.evaluation (𝟙 U) x) h
