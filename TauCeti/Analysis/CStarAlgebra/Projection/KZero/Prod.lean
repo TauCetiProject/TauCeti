@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import TauCeti.Algebra.Star.Projection.Add
 public import TauCeti.Analysis.CStarAlgebra.Projection.Perturbation
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.Basic
 
@@ -14,7 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.Basic
 # `K₀` of a direct sum of C⋆-algebras
 
 Let `e`, `e + x` and `e + y` be matrix projections over a C⋆-algebra with `x y = y x = 0`. Then
-`e + x + y` is a projection (`TauCeti.isStarProjection_add_add_of_mul_eq_zero`), and
+`e + x + y` is a projection (`IsStarProjection.add_add_of_mul_eq_zero`), and
 `[e + x + y] + [e] = [e + x] + [e + y]` in the projection monoid
 (`TauCeti.ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero`). The proof is a rotation homotopy:
 `diag(e + x + y, e)` and `diag(e + x, e + y)` are joined by the path of projections
@@ -51,32 +52,12 @@ namespace TauCeti
 
 section Rotation
 
+/-- `x` is self-adjoint if `e` and `e + x` are. -/
+private theorem isSelfAdjoint_of_add {R : Type*} [AddCommGroup R] [StarAddMonoid R] {e x : R}
+    (he : IsSelfAdjoint e) (hex : IsSelfAdjoint (e + x)) : IsSelfAdjoint x := by
+  simpa using hex.sub he
+
 variable {C : Type*} [NonUnitalCStarAlgebra C] {n : Type*} [Fintype n] {e x y : Matrix n n C}
-
-/-- The block identity `(e + y)² = e + y` with `e² = e`, in the form `e y + y e + y y = y`. -/
-private theorem mul_add_mul_add_mul_eq (he : IsStarProjection e) (hey : IsStarProjection (e + y)) :
-    e * y + y * e + y * y = y := by
-  have h := hey.isIdempotentElem.eq
-  have he' := he.isIdempotentElem.eq
-  simp only [mul_add, add_mul] at h
-  linear_combination (norm := module) h - he'
-
-/-- `e + x + y` is a projection if `e`, `e + x` and `e + y` are and `x y = y x = 0`. -/
-theorem isStarProjection_add_add_of_mul_eq_zero (he : IsStarProjection e)
-    (hex : IsStarProjection (e + x)) (hey : IsStarProjection (e + y)) (hxy : x * y = 0)
-    (hyx : y * x = 0) : IsStarProjection (e + x + y) := by
-  refine ⟨?_, ?_⟩
-  · have hx := mul_add_mul_add_mul_eq he hex
-    have hy := mul_add_mul_add_mul_eq he hey
-    have he' := he.isIdempotentElem.eq
-    rw [IsIdempotentElem]
-    simp only [mul_add, add_mul, hxy, hyx]
-    linear_combination (norm := module) he' + hx + hy
-  · have hxs : IsSelfAdjoint x := by
-      simpa using hex.isSelfAdjoint.sub he.isSelfAdjoint
-    have hys : IsSelfAdjoint y := by
-      simpa using hey.isSelfAdjoint.sub he.isSelfAdjoint
-    exact (he.isSelfAdjoint.add hxs).add hys
 
 /-- The rotation path at the angle with cosine `c` and sine `s` consists of projections. -/
 private theorem isStarProjection_rotation (he : IsStarProjection e)
@@ -84,13 +65,11 @@ private theorem isStarProjection_rotation (he : IsStarProjection e)
     (hyx : y * x = 0) {c s : ℂ} (hc : star c = c) (hs : star s = s) (hcs : c ^ 2 + s ^ 2 = 1) :
     IsStarProjection (fromBlocks (e + x + c ^ 2 • y) ((c * s) • y) ((c * s) • y)
       (e + s ^ 2 • y)) := by
-  have hx := mul_add_mul_add_mul_eq he hex
-  have hy := mul_add_mul_add_mul_eq he hey
+  have hx := he.isIdempotentElem.mul_add_mul_add_mul_eq hex.isIdempotentElem
+  have hy := he.isIdempotentElem.mul_add_mul_add_mul_eq hey.isIdempotentElem
   have he' := he.isIdempotentElem.eq
-  have hxs : IsSelfAdjoint x := by
-    simpa using hex.isSelfAdjoint.sub he.isSelfAdjoint
-  have hys : IsSelfAdjoint y := by
-    simpa using hey.isSelfAdjoint.sub he.isSelfAdjoint
+  have hxs := isSelfAdjoint_of_add he.isSelfAdjoint hex.isSelfAdjoint
+  have hys := isSelfAdjoint_of_add he.isSelfAdjoint hey.isSelfAdjoint
   refine ⟨?_, ?_⟩
   · rw [IsIdempotentElem, fromBlocks_multiply]
     congr 1
@@ -108,18 +87,17 @@ private theorem isStarProjection_rotation (he : IsStarProjection e)
   · have he's : eᴴ = e := he.isSelfAdjoint
     have hx's : xᴴ = x := hxs
     have hy's : yᴴ = y := hys
-    change (fromBlocks _ _ _ _)ᴴ = _
+    rw [IsSelfAdjoint, Matrix.star_eq_conjTranspose]
     simp [fromBlocks_conjTranspose, conjTranspose_smul, he's, hx's, hy's, hc, hs, star_pow,
       star_mul']
 
 /-- **Rotation of orthogonal summands.** If `e`, `e + x` and `e + y` are matrix projections over a
 C⋆-algebra and `x y = y x = 0`, then `[e + x + y] + [e] = [e + x] + [e + y]` in the projection
-monoid. The block projections `diag(e + x + y, e)` and `diag(e + x, e + y)` are joined by the
-rotation path `diag(e, e) + diag(x, 0) + R_t diag(y, 0) R_t⋆`. -/
+monoid. -/
 theorem ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero (he : IsStarProjection e)
     (hex : IsStarProjection (e + x)) (hey : IsStarProjection (e + y)) (hxy : x * y = 0)
     (hyx : y * x = 0) :
-    mk (e + x + y) (isStarProjection_add_add_of_mul_eq_zero he hex hey hxy hyx) + mk e he =
+    mk (e + x + y) (he.add_add_of_mul_eq_zero hex hey hxy hyx) + mk e he =
       mk (e + x) hex + mk (e + y) hey := by
   classical
   rw [← mk_fromBlocks, ← mk_fromBlocks]
@@ -163,10 +141,9 @@ private abbrev starMapFst : Unitization ℂ (A × B) →⋆ₙ+* Unitization ℂ
 private abbrev starMapSnd : Unitization ℂ (A × B) →⋆ₙ+* Unitization ℂ (A × B) :=
   NonUnitalStarRingHom.ofClass (Unitization.starMap (cornerSnd (A := A) (B := B)))
 
-/-- The scalar part `(r, a) ↦ (r, 0)` of `(A × B)⁺`. -/
+/-- The scalar part `(r, a) ↦ (r, 0)` of `(A × B)⁺`, the unitization of the zero map. -/
 private abbrev scalarPart : Unitization ℂ (A × B) →⋆ₙ+* Unitization ℂ (A × B) :=
-  NonUnitalStarRingHom.ofClass
-    ((StarAlgHom.ofId ℂ (Unitization ℂ (A × B))).comp (Unitization.fstStarAlgHom ℂ (A × B)))
+  NonUnitalStarRingHom.ofClass (Unitization.starMap (0 : A × B →⋆ₙₐ[ℂ] A × B))
 
 /-- On the projection monoid of `(A × B)⁺`, the corner maps add up to the identity plus the
 scalar part. -/
@@ -201,7 +178,7 @@ private theorem projectionMonoid_map_add_map (v : ProjectionMonoid (Unitization 
           · exact ProjectionMonoid.mk_eq_mk (by rw [hex]; exact .refl hpx)
           · exact ProjectionMonoid.mk_eq_mk (by rw [hey]; exact .refl hpy)
       _ = ProjectionMonoid.mk (e + x + y)
-            (isStarProjection_add_add_of_mul_eq_zero he hpx hpy hxy hyx) +
+            (he.add_add_of_mul_eq_zero hpx hpy hxy hyx) +
           ProjectionMonoid.mk e he :=
         (ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero he hpx hpy hxy hyx).symm
       _ = _ := by
@@ -223,15 +200,12 @@ theorem map_inl_comp_fst_add_map_inr_comp_snd :
         map ((NonUnitalStarAlgHom.inr ℂ A B).comp (NonUnitalStarAlgHom.snd ℂ A B)) =
       AddMonoidHom.id (UnitizationKZero ℂ (A × B)) := by
   ext x
-  have hx : augmentation ℂ (A × B) x = 0 := (mem_iff _).1 x.property
   have h := DFunLike.congr_fun (projectionKZero_map_add_map (A := A) (B := B))
     (x : ProjectionKZero (Unitization ℂ (A × B)))
-  have hs : ProjectionKZero.map (scalarPart (A := A) (B := B)) =
-      (inl ℂ (A × B)).comp (augmentation ℂ (A × B)) := by
-    rw [inl_def, augmentation_def, ← ProjectionKZero.map_comp]
-    rfl
-  rw [hs, AddMonoidHom.add_apply, AddMonoidHom.add_apply, AddMonoidHom.comp_apply, hx,
-    _root_.map_zero, add_zero, AddMonoidHom.id_apply] at h
+  have h₀ : ProjectionKZero.map (scalarPart (A := A) (B := B)) x = 0 := by
+    simpa only [coe_map, AddMonoidHom.zero_apply, ZeroMemClass.coe_zero] using congrArg Subtype.val
+      (DFunLike.congr_fun (map_zero (R := ℂ) (A := A × B) (B := A × B)) x)
+  rw [AddMonoidHom.add_apply, AddMonoidHom.add_apply, h₀, add_zero, AddMonoidHom.id_apply] at h
   rw [AddMonoidHom.add_apply, AddSubgroup.coe_add, coe_map, coe_map, AddMonoidHom.id_apply]
   exact h
 
@@ -253,13 +227,7 @@ noncomputable def prodAddEquiv :
       ext; simp
     have h₄ : (NonUnitalStarAlgHom.snd ℂ A B).comp (NonUnitalStarAlgHom.inl ℂ A B) = 0 := by
       ext; simp
-    refine Prod.ext ?_ ?_ <;> dsimp only
-    · rw [map_add, ← AddMonoidHom.comp_apply, ← AddMonoidHom.comp_apply, ← map_comp,
-        ← map_comp, h₁, h₃, map_id, map_zero]
-      simp
-    · rw [map_add, ← AddMonoidHom.comp_apply, ← AddMonoidHom.comp_apply, ← map_comp,
-        ← map_comp, h₂, h₄, map_id, map_zero]
-      simp
+    refine Prod.ext ?_ ?_ <;> simp [← AddMonoidHom.comp_apply, ← map_comp, h₁, h₂, h₃, h₄]
   map_add' x y := by simp
 
 @[simp]
