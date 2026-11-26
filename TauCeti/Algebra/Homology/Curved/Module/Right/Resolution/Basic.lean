@@ -148,9 +148,8 @@ variable {M : CurvedDGRightModuleCat.{u, u, u} h} (r : LeftResolution M)
 /-- On elements, `r.ι n` followed by `r.π n` vanishes. -/
 @[simp]
 theorem closedHom_π_ι_apply (n : ℕ) (x : r.syzygy (n + 1)) :
-    closedHom (r.π n) (closedHom (r.ι n) x) = 0 := by
-  rw [← LinearMap.comp_apply, ← closedHom_comp, r.ι_comp_π n, closedHom_zero,
-    LinearMap.zero_apply]
+    closedHom (r.π n) (closedHom (r.ι n) x) = 0 :=
+  closedHom_apply_eq_zero_of_comp_eq_zero (r.ι_comp_π n) x
 
 /-- The internal horizontal differential `δ_n = π_{n+1} ≫ ι_n : P_{n+1} ⟶ P_n` of a left
 resolution. -/
@@ -177,9 +176,8 @@ theorem diff_comp_diff (n : ℕ) : r.diff (n + 1) ≫ r.diff n = 0 := by
 
 /-- On elements, consecutive horizontal differentials compose to zero. -/
 theorem closedHom_diff_diff_apply (n : ℕ) (x : r.term (n + 2)) :
-    closedHom (r.diff n) (closedHom (r.diff (n + 1)) x) = 0 := by
-  rw [← LinearMap.comp_apply, ← closedHom_comp, r.diff_comp_diff n, closedHom_zero,
-    LinearMap.zero_apply]
+    closedHom (r.diff n) (closedHom (r.diff (n + 1)) x) = 0 :=
+  closedHom_apply_eq_zero_of_comp_eq_zero (r.diff_comp_diff n) x
 
 /-- The `n`-th horizontal differential followed by `π_n` vanishes. -/
 @[reassoc (attr := simp)]
@@ -188,9 +186,8 @@ theorem diff_comp_π (n : ℕ) : r.diff n ≫ r.π n = 0 := by
 
 /-- On elements, `r.diff n` followed by `r.π n` vanishes. -/
 theorem closedHom_π_diff_apply (n : ℕ) (x : r.term (n + 1)) :
-    closedHom (r.π n) (closedHom (r.diff n) x) = 0 := by
-  rw [← LinearMap.comp_apply, ← closedHom_comp, r.diff_comp_π n, closedHom_zero,
-    LinearMap.zero_apply]
+    closedHom (r.π n) (closedHom (r.diff n) x) = 0 :=
+  closedHom_apply_eq_zero_of_comp_eq_zero (r.diff_comp_π n) x
 
 /-- The augmentation morphism `P_0 ⟶ M` of a left resolution, given by `π_0 ≫ syzygyZeroIso.hom`. -/
 noncomputable def aug :
@@ -227,15 +224,15 @@ instance epi_aug : Epi r.aug := by
   exact epi_comp (r.π 0) r.syzygyZeroIso.hom
 
 /-- In a left resolution, `closedHom (r.ι n)` is injective. -/
-theorem injective_ι (n : ℕ) : Function.Injective (closedHom (r.ι n)) :=
+theorem closedHom_ι_injective (n : ℕ) : Function.Injective (closedHom (r.ι n)) :=
   (shortExact_iff.1 (r.shortExact n)).1
 
 /-- In a left resolution, `closedHom (r.π n)` is surjective. -/
-theorem surjective_π (n : ℕ) : Function.Surjective (closedHom (r.π n)) :=
+theorem closedHom_π_surjective (n : ℕ) : Function.Surjective (closedHom (r.π n)) :=
   (shortExact_iff.1 (r.shortExact n)).2.1
 
 /-- The augmentation `P_0 ⟶ M` is surjective on elements. -/
-theorem surjective_aug : Function.Surjective (closedHom r.aug) :=
+theorem closedHom_aug_surjective : Function.Surjective (closedHom r.aug) :=
   (GradedModuleCat.epi_iff_surjective _).1
     (inferInstance : Epi ((forgetDifferential (h := h)).map r.aug))
 

@@ -258,9 +258,8 @@ noncomputable def prodTotalToGradedIso :
 @[simp]
 theorem prodTotalToGradedIso_hom_apply_val (y : toGradedModuleCat r.prodTotal) (n : ULift.{u} ℕ) :
     (r.prodTotalToGradedIso.hom.hom y).val n = r.prodTotalProj n.down y := by
-  rw [prodTotalToGradedIso, Iso.trans_hom, GradedModuleCat.hom_comp, LinearMap.comp_apply,
-    forgetDifferentialProductIso_hom_hom, LinearMap.id_apply, prodTotalToProductGradedIso,
-    GradedModuleCat.isoMk_hom_hom, LinearEquiv.coe_coe, prodTotalProj_eq_val]
+  simp [prodTotalToGradedIso, prodTotalToProductGradedIso, GradedModuleCat.isoMk_hom_hom,
+    prodTotalProj_eq_val]
 
 /-- On elements, `prodTotalToGradedIso.inv` has the given coordinate projections. -/
 @[simp]
@@ -268,10 +267,8 @@ theorem prodTotalToGradedIso_inv_apply (n : ℕ)
     (y : GradedModuleCat.product fun k : ULift.{u} ℕ ↦
       toGradedModuleCat ((r.term k.down).shift (k.down : ℤ))) :
     r.prodTotalProj n (r.prodTotalToGradedIso.inv.hom y) = y.val ⟨n⟩ := by
-  rw [prodTotalToGradedIso, Iso.trans_inv, GradedModuleCat.hom_comp, LinearMap.comp_apply,
-    forgetDifferentialProductIso_inv_hom, LinearMap.id_apply, prodTotalProj_eq_val,
-    prodTotalToProductGradedIso, GradedModuleCat.isoMk_inv_hom, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply]
+  simp [prodTotalToGradedIso, prodTotalToProductGradedIso, GradedModuleCat.isoMk_inv_hom,
+    prodTotalProj_eq_val]
 
 /-- The `n`-th graded coordinate projection `toGradedModuleCat r.prodTotal ⟶ toGradedModuleCat
 ((r.term n)[n])`. -/
@@ -406,9 +403,9 @@ theorem closedHom_prodTotalAug_apply (y : r.prodTotal) :
   simp [prodTotalAug, closedHom_prodTotalAugZero_apply]
 
 /-- The closed augmentation `r.prodTotal ⟶ M` is surjective on elements. -/
-theorem surjective_prodTotalAug : Function.Surjective (closedHom r.prodTotalAug) := by
+theorem closedHom_prodTotalAug_surjective : Function.Surjective (closedHom r.prodTotalAug) := by
   intro m
-  obtain ⟨x, hx⟩ := r.surjective_aug m
+  obtain ⟨x, hx⟩ := r.closedHom_aug_surjective m
   let incl₀ : toGradedModuleCat (r.term 0) ⟶ toGradedModuleCat r.prodTotal :=
     r.prodTotalGradedLift fun n ↦
       match n with
@@ -421,7 +418,7 @@ theorem surjective_prodTotalAug : Function.Surjective (closedHom r.prodTotalAug)
 /-- The closed augmentation `r.prodTotal ⟶ M` of a left resolution is an epimorphism. -/
 instance epi_prodTotalAug : Epi r.prodTotalAug :=
   (forgetDifferential (h := h)).epi_of_epi_map
-    ((GradedModuleCat.epi_iff_surjective _).2 r.surjective_prodTotalAug)
+    ((GradedModuleCat.epi_iff_surjective _).2 r.closedHom_prodTotalAug_surjective)
 
 /-! ### Truncation tower and contraacyclicity of `cone prodTotalAug` -/
 
@@ -638,12 +635,10 @@ private noncomputable def truncKernelMap (k : ℕ) :
 private theorem truncKernelMap_comp_truncTransition (k : ℕ) :
     r.truncKernelMap k ≫ r.truncTransition k = 0 := by
   apply closedHom_ext; rintro ⟨x₁, x₂⟩
-  rw [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply]
-  dsimp only [truncKernelMap, truncTransition]
-  rw [closedHom_coneMap_apply, closedHom_coneDesc, LinearMap.comp_apply, LinearMap.snd_apply]
-  simp only [Submodule.coe_zero, LinearMap.zero_apply, add_zero]
-  rw [← LinearMap.comp_apply, ← closedHom_comp, r.partialMap_comp_partialStepToTrunc k,
-    closedHom_zero, LinearMap.zero_apply]
+  simp only [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply,
+    truncKernelMap, truncTransition, closedHom_coneMap_apply, closedHom_coneDesc,
+    Submodule.coe_zero, add_zero]
+  exact closedHom_apply_eq_zero_of_comp_eq_zero (r.partialMap_comp_partialStepToTrunc k) x₂
 
 /-- Each transition `t_k : F_{k+1} ⟶ F_k` has contractible kernel `cone(𝟙 (K_{k+1}[k+1]))`. -/
 private theorem truncTransition_shortExact (k : ℕ) :
@@ -660,8 +655,8 @@ private theorem truncTransition_shortExact (k : ℕ) :
     rw [r.closedHom_partialMap_succ, r.closedHom_partialMap_succ] at h2
     have h2' : -closedHom (r.ι k) b₁ = -closedHom (r.ι k) b₂ := by
       simpa only [r.partialFst_partialMk] using congrArg (r.partialFst k) h2
-    exact Prod.ext h1 (r.injective_ι k (neg_inj.mp h2'))
-  · intro w; dsimp only [ShortComplex.mk]; obtain ⟨y, hy⟩ := r.surjective_π k w.1
+    exact Prod.ext h1 (r.closedHom_ι_injective k (neg_inj.mp h2'))
+  · intro w; dsimp only [ShortComplex.mk]; obtain ⟨y, hy⟩ := r.closedHom_π_surjective k w.1
     refine ⟨(0, r.partialMk k y w.2), ?_⟩
     rw [r.closedHom_truncTransition_apply, r.partialFst_partialMk, r.partialSnd_partialMk, hy]
     exact Prod.mk.eta
@@ -678,9 +673,8 @@ private theorem truncTransition_shortExact (k : ℕ) :
       congr 1; rw [r.closedHom_partialMap_succ, map_neg, neg_neg, hb]
       exact r.partial_ext k rfl hg.symm
     · rintro ⟨u, hu⟩
-      have h0 := congrArg (fun l ↦ closedHom l u) (r.truncKernelMap_comp_truncTransition k)
-      rwa [closedHom_comp, LinearMap.comp_apply, hu, closedHom_zero, LinearMap.zero_apply,
-        r.closedHom_truncTransition_apply] at h0
+      have h0 := closedHom_apply_eq_zero_of_comp_eq_zero (r.truncKernelMap_comp_truncTransition k) u
+      rwa [hu, r.closedHom_truncTransition_apply] at h0
 
 /-- Every truncation `F_k` in the Milnor tower is contraacyclic. -/
 private theorem contraacyclic_truncObj (k : ℕ) :
@@ -741,37 +735,37 @@ private theorem coneToPartial_differential (u : cone r.prodTotalAugZero) (k : �
         r.partialSnd_partialMk, add_zero, r.partialSnd_differential,
         r.partialFst_coneToPartial_succ, r.partialSnd_coneToPartial_succ, ih, add_comm]
 
+private noncomputable def coneToTruncLin (k : ℕ) :
+    cone r.prodTotalAugZero →ₗ[Aᵐᵒᵖ] r.truncObj k :=
+  ((closedHom (r.π k)).comp
+      ((r.prodTotalProj k).comp (LinearMap.fst Aᵐᵒᵖ r.prodTotal (r.syzygy 0)))).prod
+    (r.coneToPartial k)
+
+private theorem coneToTruncLin_apply (k : ℕ) (u : cone r.prodTotalAugZero) :
+    r.coneToTruncLin k u = (closedHom (r.π k) (r.prodTotalProj k u.1), r.coneToPartial k u) :=
+  rfl
+
 /-- The closed projection `q_k : cone(prodTotalAugZero) ⟶ F_k`, sending `(y, z_0)` to
 `(π_k(y_k), coneToPartial k (y, z_0))`. -/
 private noncomputable def coneToTrunc (k : ℕ) :
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone r.prodTotalAugZero) ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (r.truncObj k) :=
-  closedHomOf
-    (((closedHom (r.π k)).comp
-        ((r.prodTotalProj k).comp (LinearMap.fst Aᵐᵒᵖ r.prodTotal (r.syzygy 0)))).prod
-      (r.coneToPartial k))
+  closedHomOf (r.coneToTruncLin k)
     (fun p u hu ↦ by
-      rw [cone_grading, Submodule.mem_prod, LinearMap.prod_apply]; dsimp only [Function.prod]
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.fst_apply]
-      refine ⟨?_, r.coneToPartial_mem hu k⟩
-      rw [shift_grading]; rw [cone_grading] at hu
-      exact closedHom_mem (r.π k) ((r.mem_prodTotal_grading_iff (p + 1) u.1).mp hu.1 k))
+      have hu' := hu
+      rw [cone_grading, Submodule.mem_prod] at hu'
+      rw [r.coneToTruncLin_apply, cone_grading, Submodule.mem_prod, shift_grading]
+      exact ⟨closedHom_mem (r.π k) ((r.mem_prodTotal_grading_iff (p + 1) u.1).mp hu'.1 k),
+        r.coneToPartial_mem hu k⟩)
     (fun u ↦ by
-      rw [LinearMap.prod_apply, LinearMap.prod_apply]; dsimp only [Function.prod]
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-        LinearMap.fst_apply, LinearMap.fst_apply, cone_differential_apply,
-        r.coneToPartial_differential u k, cone_differential_apply]
-      dsimp only; apply Prod.ext
-      · rw [map_neg, prodTotal_differential_apply, map_neg, map_add, shift_differential_apply,
-          Units.smul_def, Units.smul_def, map_zsmul, differential_closedHom,
-          r.closedHom_π_diff_apply k _, add_zero]
-      · rw [add_comm])
+      rw [r.coneToTruncLin_apply, r.coneToTruncLin_apply, r.coneToPartial_differential u k]
+      simp [cone_differential_apply, prodTotal_differential_apply, shift_differential_apply,
+        Units.smul_def, add_comm])
 
 private theorem closedHom_coneToTrunc_apply (k : ℕ) (u : cone r.prodTotalAugZero) :
     closedHom (r.coneToTrunc k) u =
       (closedHom (r.π k) (r.prodTotalProj k u.1), r.coneToPartial k u) := by
-  dsimp only [coneToTrunc]; rw [closedHom_closedHomOf, LinearMap.prod_apply]
-  dsimp only [Function.prod]; rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.fst_apply]
+  simp [coneToTrunc, r.coneToTruncLin_apply]
 
 private theorem coneToTrunc_succ_comp_transition (k : ℕ) :
     r.coneToTrunc (k + 1) ≫ r.truncTransition k = r.coneToTrunc k := by
@@ -781,7 +775,7 @@ private theorem coneToTrunc_succ_comp_transition (k : ℕ) :
     r.partialFst_coneToPartial_succ, r.partialSnd_coneToPartial_succ]
 
 /-- Surjectivity of `truncTransition k` on degree-`p` homogeneous pieces. -/
-private theorem surjective_truncTransition_piece (k : ℕ) (p : ℤ)
+private theorem truncTransition_piece_surjective (k : ℕ) (p : ℤ)
     (w : r.truncObj k) (hw : w ∈ (r.truncObj k).grading p) :
     ∃ z : r.truncObj (k + 1), z ∈ (r.truncObj (k + 1)).grading p ∧
       closedHom (r.truncTransition k) z = w := by
@@ -851,11 +845,11 @@ private noncomputable def truncProdToProdTotal :
 
 private theorem truncProdToProdTotal_apply (x : r.truncProd) (n : ℕ) :
     r.prodTotalProj n (r.truncProdToProdTotal x) = r.partialFst n (x.val ⟨n + 1⟩).2 := by
-  rw [prodTotalProj_eq_val]; dsimp only [truncProdToProdTotal]
-  rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply, InternalGrading.productLiftLinear_apply, LinearMap.comp_apply,
-    LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearMap.restrictScalars_apply,
-    InternalGrading.productEval_apply, LinearMap.snd_apply]
+  simp only [prodTotalProj_eq_val, truncProdToProdTotal, LinearMap.comp_apply,
+    LinearMap.restrictScalars_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  rw [InternalGrading.productLiftLinear_apply]
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearMap.snd_apply]
+  rw [InternalGrading.productEval_apply]
 
 /-- The `R`-module tower of degree-`p` homogeneous pieces of the truncation tower. -/
 private noncomputable def truncPieceTower (p : ℤ) : ModuleTower.{u} R :=
@@ -875,13 +869,9 @@ private theorem truncPieceTower_transition_apply (p : ℤ) (k : ℕ)
 private theorem closedHom_milnorDiff_apply (a : r.truncProd) (k : ℕ) :
     r.truncProdEval k (closedHom r.milnorDiff a) =
       r.truncProdEval k a - closedHom (r.truncTransition k) (r.truncProdEval (k + 1) a) := by
-  dsimp only [truncProdEval, milnorDiff]
-  rw [closedHom_closedProductLift_apply, ← forgetDifferential_map_hom, Functor.map_sub,
-    GradedModuleCat.hom_sub, forgetDifferential_map_hom, forgetDifferential_map_hom,
-    LinearMap.sub_apply, closedHom_closedProductπ_apply, closedHom_comp, LinearMap.comp_apply,
-    closedHom_closedProductπ_apply]
+  simp [truncProdEval, milnorDiff]
 
-private theorem injective_milnorIncl : Function.Injective (closedHom r.milnorIncl) := by
+private theorem closedHom_milnorIncl_injective : Function.Injective (closedHom r.milnorIncl) := by
   intro (u₁ : cone r.prodTotalAugZero) (u₂ : cone r.prodTotalAugZero) hu
   have hcomp (k : ℕ) : closedHom (r.coneToTrunc k) u₁ = closedHom (r.coneToTrunc k) u₂ := by
     have hk := congrArg (fun x : r.truncProd ↦ x.val ⟨k⟩) hu
@@ -899,7 +889,7 @@ private theorem exists_milnorDiff_eq_of_mem (p : ℤ) (bp : r.truncProd)
     ∃ a : r.truncProd, closedHom r.milnorDiff a = bp := by
   have hsurj : ∀ k : ℕ, Function.Surjective ((r.truncPieceTower p).transition k) :=
     fun k ⟨w, hw⟩ ↦ by
-      obtain ⟨z, hz, hzw⟩ := r.surjective_truncTransition_piece k p w hw
+      obtain ⟨z, hz, hzw⟩ := r.truncTransition_piece_surjective k p w hw
       let z' : (r.truncPieceTower p).obj (Opposite.op (k + 1)) := ⟨z, hz⟩
       exact ⟨z', Subtype.ext ((r.truncPieceTower_transition_apply p k z').trans hzw)⟩
   obtain ⟨x, hx⟩ := (r.truncPieceTower p).shift_surjective hsurj fun k ↦
@@ -919,7 +909,7 @@ private theorem exists_milnorDiff_eq_of_mem (p : ℤ) (bp : r.truncProd)
     exact (Submodule.coe_sub ((r.truncObj k).grading p) (x k) _).symm
   exact hk
 
-private theorem surjective_milnorDiff : Function.Surjective (closedHom r.milnorDiff) := by
+private theorem closedHom_milnorDiff_surjective : Function.Surjective (closedHom r.milnorDiff) := by
   intro (b : r.truncProd); rw [← LinearMap.mem_range]
   induction b using DirectSum.Decomposition.inductionOn r.truncProd.grading with
   | zero => exact Submodule.zero_mem _
@@ -953,14 +943,13 @@ private theorem exact_milnorIncl_milnorDiff :
     rw [r.closedHom_truncTransition_apply] at hk
     dsimp only at hk ⊢; rw [hk]; exact Prod.mk.eta
   · rintro ⟨u, rfl⟩
-    simpa only [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply]
-      using congrArg (fun l ↦ closedHom l u) r.milnorIncl_comp_milnorDiff
+    exact closedHom_apply_eq_zero_of_comp_eq_zero r.milnorIncl_comp_milnorDiff u
 
 /-- The Milnor sequence `0 ⟶ cone(prodTotalAugZero) ⟶ ∏ₖ F_k ⟶ ∏ₖ F_k ⟶ 0` is short exact
 in the closed abelian category of curved right modules. -/
 private theorem milnor_shortExact :
     (ShortComplex.mk r.milnorIncl r.milnorDiff r.milnorIncl_comp_milnorDiff).ShortExact :=
-  shortExact_iff.2 ⟨r.injective_milnorIncl, r.surjective_milnorDiff,
+  shortExact_iff.2 ⟨r.closedHom_milnorIncl_injective, r.closedHom_milnorDiff_surjective,
     r.exact_milnorIncl_milnorDiff⟩
 
 /-- The mapping cone of `prodTotalAugZero : r.prodTotal ⟶ r.syzygy 0` is contraacyclic. -/

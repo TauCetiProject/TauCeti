@@ -23,9 +23,9 @@ orthogonal to graded-projective objects, this restriction is unconditionally ful
 `Graded.Projective.Model`).
 
 Essential surjectivity holds whenever every countable product of projective graded right
-`A`-modules has finite projective dimension (`HasFiniteProjectiveDimensionOfCountableProducts`,
-which in particular follows from Positselski's uniform countable-product hypothesis `(**)`). Given
-any curved right module `M`:
+`A`-modules has finite projective dimension
+(`HasFiniteProjectiveDimensionOfCountableProductsOfProjective`, which in particular follows from
+Positselski's uniform countable-product hypothesis `(**)`). Given any curved right module `M`:
 
 1. Choose a graded-projective left resolution `r` of `M` (`LeftResolution.ofGradedProjective`).
 2. Its product totalization `Tot^Π(r)` has underlying graded module isomorphic to the countable
@@ -41,16 +41,16 @@ any curved right module `M`:
 Combining full faithfulness with this replacement yields the triangulated equivalence
 `(gradedProjective R h).FullSubcategory ≌ ContraderivedCategory R h`. When every graded right
 `A`-module has finite projective dimension (for instance when the graded right global dimension is
-finite), `HasFiniteProjectiveDimensionOfCountableProducts` holds immediately, and
+finite), `HasFiniteProjectiveDimensionOfCountableProductsOfProjective` holds immediately, and
 `Graded.Projective.Model` also proves the equivalence directly without product totalization.
 
 ## Main definitions
 
-* `TauCeti.CurvedDGRightModuleCat.HasFiniteProjectiveDimensionOfCountableProducts`: the
+* `TauCeti.CurvedDGRightModuleCat.HasFiniteProjectiveDimensionOfCountableProductsOfProjective`: the
   countable-product projective-dimension hypothesis for graded right `A`-modules (generalizing
   Positselski's uniform condition `(**)`).
-* `gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProducts` (in
-  `ContraderivedCategory`): under `HasFiniteProjectiveDimensionOfCountableProducts`, the
+* `gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProductsOfProjective` (in
+  `ContraderivedCategory`): under `HasFiniteProjectiveDimensionOfCountableProductsOfProjective`, the
   equivalence between the homotopy category of graded-projective curved right modules and the
   contraderived category.
 
@@ -60,9 +60,10 @@ finite), `HasFiniteProjectiveDimensionOfCountableProducts` holds immediately, an
   products of projective graded right `A`-modules have finite projective dimension, every curved
   right module admits a closed morphism from a graded-projective curved right module with
   contraacyclic mapping cone.
-* `ContraderivedCategory.isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProducts`:
-  Positselski's Theorem 7.9(b), asserting that `(gradedProjective R h).ι ⋙ Q` is an equivalence
-  when countable products of projective graded right `A`-modules have finite projective dimension.
+* `isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProductsOfProjective` (in
+  `ContraderivedCategory`): Positselski's Theorem 7.9(b), asserting that
+  `(gradedProjective R h).ι ⋙ Q` is an equivalence when countable products of projective graded
+  right `A`-modules have finite projective dimension.
 
 ## References
 
@@ -98,15 +99,15 @@ variable (𝒜) in
 /-- Every countable product of projective graded right `A`-modules has finite projective
 dimension. In particular, this holds under Positselski's uniform countable-product
 projective-dimension condition `(**)`. -/
-def HasFiniteProjectiveDimensionOfCountableProducts : Prop :=
+def HasFiniteProjectiveDimensionOfCountableProductsOfProjective : Prop :=
   ∀ (P : ULift.{u} ℕ →
       GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
     (∀ n, Projective (P n)) → ∃ d : ℕ, HasProjectiveDimensionLE (∏ᶜ P) d
 
 variable (𝒜) in
-/-- Defining characterization of `HasFiniteProjectiveDimensionOfCountableProducts`. -/
-theorem hasFiniteProjectiveDimensionOfCountableProducts_def :
-    HasFiniteProjectiveDimensionOfCountableProducts 𝒜 ↔
+/-- Defining characterization of `HasFiniteProjectiveDimensionOfCountableProductsOfProjective`. -/
+theorem hasFiniteProjectiveDimensionOfCountableProductsOfProjective_def :
+    HasFiniteProjectiveDimensionOfCountableProductsOfProjective 𝒜 ↔
       ∀ (P : ULift.{u} ℕ →
           GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
         (∀ n, Projective (P n)) → ∃ d : ℕ, HasProjectiveDimensionLE (∏ᶜ P) d :=
@@ -116,7 +117,7 @@ theorem hasFiniteProjectiveDimensionOfCountableProducts_def :
 then every curved right module admits a closed morphism from a graded-projective curved right
 module whose mapping cone is contraacyclic. -/
 theorem exists_gradedProjective_contraacyclic_cone
-    (hprod : HasFiniteProjectiveDimensionOfCountableProducts 𝒜)
+    (hprod : HasFiniteProjectiveDimensionOfCountableProductsOfProjective 𝒜)
     (M : CurvedDGRightModuleCat.{u, u, u} h) :
     ∃ (Q : CurvedDGRightModuleCat.{u, u, u} h)
       (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
@@ -129,7 +130,8 @@ theorem exists_gradedProjective_contraacyclic_cone
   have hP : ∀ n, Projective (P n) := fun n ↦
     have := LeftResolution.projective_ofGradedProjective_term M n.down
     inferInstance
-  obtain ⟨d, hProdDim⟩ := (hasFiniteProjectiveDimensionOfCountableProducts_def 𝒜).1 hprod P hP
+  obtain ⟨d, hProdDim⟩ :=
+    (hasFiniteProjectiveDimensionOfCountableProductsOfProjective_def 𝒜).1 hprod P hP
   have hTotDim : HasProjectiveDimensionLT
       (toGradedModuleCat (DGHomotopyCategory.of R r.prodTotal).underlying) (d + 1) :=
     hasProjectiveDimensionLT_of_iso r.prodTotalToPiIso.symm (d + 1)
@@ -155,8 +157,8 @@ variable (R h) in
 If every countable product of projective graded right `A`-modules has finite projective dimension,
 then the restriction of the contraderived localization functor to the triangulated full subcategory
 of graded-projective curved right modules is an equivalence. -/
-theorem isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProducts
-    (hprod : HasFiniteProjectiveDimensionOfCountableProducts 𝒜) :
+theorem isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProductsOfProjective
+    (hprod : HasFiniteProjectiveDimensionOfCountableProductsOfProjective 𝒜) :
     ((gradedProjective R h).ι ⋙ Q R h).IsEquivalence := by
   refine ObjectProperty.isEquivalence_ι_comp_of_le_leftOrthogonal (Q R h)
     (gradedProjective_le_leftOrthogonal_contraacyclic R h) fun X ↦ ?_
@@ -166,22 +168,25 @@ theorem isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProduc
   exact (trW_dgClosedToHomotopy_map_iff _ f).2 hf
 
 variable (R h) in
-/-- Under `HasFiniteProjectiveDimensionOfCountableProducts`, the triangulated full subcategory of
-graded-projective curved right modules is equivalent to the contraderived category via the
-localization functor. -/
-noncomputable def gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProducts
-    (hprod : HasFiniteProjectiveDimensionOfCountableProducts 𝒜) :
+/-- Under `HasFiniteProjectiveDimensionOfCountableProductsOfProjective`, the triangulated full
+subcategory of graded-projective curved right modules is equivalent to the contraderived category
+via the localization functor. -/
+noncomputable def
+    gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProductsOfProjective
+    (hprod : HasFiniteProjectiveDimensionOfCountableProductsOfProjective 𝒜) :
     (gradedProjective R h).FullSubcategory ≌ ContraderivedCategory R h :=
-  have := isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProducts R h hprod
+  have :=
+    isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProductsOfProjective R h hprod
   ((gradedProjective R h).ι ⋙ Q R h).asEquivalence
 
 /-- The forward functor of
-`gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProducts` is the restriction of
-the contraderived localization functor. -/
+`gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProductsOfProjective` is the
+restriction of the contraderived localization functor. -/
 @[simp]
-theorem gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProducts_functor
-    (hprod : HasFiniteProjectiveDimensionOfCountableProducts 𝒜) :
-    (gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProducts
+theorem
+    gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProductsOfProjective_functor
+    (hprod : HasFiniteProjectiveDimensionOfCountableProductsOfProjective 𝒜) :
+    (gradedProjectiveEquivalenceOfHasFiniteProjectiveDimensionOfCountableProductsOfProjective
       R h hprod).functor =
       (gradedProjective R h).ι ⋙ Q R h :=
   (rfl)

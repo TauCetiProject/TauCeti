@@ -43,7 +43,8 @@ Consequently the localization functor to the contraderived category is bijective
 out of a graded-projective module. This is the full faithfulness in Positselski's graded-projective
 model of the contraderived category; essential surjectivity under the countable-product
 hypothesis is proved in `Graded.Projective.Countable`
-(`ContraderivedCategory.isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProducts`).
+(`isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProductsOfProjective` in
+`ContraderivedCategory`).
 
 ## Main definitions
 
@@ -160,17 +161,21 @@ instance : (gradedProjective R h).IsStableUnderShift ℤ where
 to homotopy equivalence. -/
 instance : (gradedProjective R h).IsTriangulatedClosed₃ where
   ext₃' T hT h₁ h₂ := by
-    obtain ⟨f, hf⟩ := (dgClosedToHomotopy R).map_surjective T.mor₁
-    let f' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) T.obj₁.underlying ⟶
-        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) T.obj₂.underlying := f
+    obtain ⟨f, hf⟩ := (dgClosedToHomotopy R).map_surjective
+      (X := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) T.obj₁.underlying)
+      (Y := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) T.obj₂.underlying)
+      (eqToHom (DGHomotopyCategory.of_underlying R T.obj₁) ≫ T.mor₁ ≫
+        eqToHom (DGHomotopyCategory.of_underlying R T.obj₂).symm)
     have : Projective (toGradedModuleCat T.obj₁.underlying) := (gradedProjective_iff _).1 h₁
     have : Projective (toGradedModuleCat T.obj₂.underlying) := (gradedProjective_iff _).1 h₂
-    have hcone : gradedProjective R h (DGHomotopyCategory.of R (cone f')) :=
-      (gradedProjective_iff _).2 (projective_toGradedModuleCat_cone f')
-    obtain ⟨e, _⟩ := exists_iso_of_arrow_iso (coneTriangle f') T
-      (coneTriangle_distinguished f') hT
-      (Arrow.isoMk (Iso.refl _) (Iso.refl _) (by simpa using hf.symm))
-    exact ⟨DGHomotopyCategory.of R (cone f'), hcone, ⟨(Triangle.π₃.mapIso e).symm⟩⟩
+    have hcone : gradedProjective R h (DGHomotopyCategory.of R (cone f)) :=
+      (gradedProjective_iff _).2 (projective_toGradedModuleCat_cone f)
+    obtain ⟨e, _⟩ := exists_iso_of_arrow_iso (coneTriangle f) T
+      (coneTriangle_distinguished f) hT
+      (Arrow.isoMk (eqToIso (DGHomotopyCategory.of_underlying R T.obj₁))
+        (eqToIso (DGHomotopyCategory.of_underlying R T.obj₂))
+        (by dsimp; rw [hf]; simp))
+    exact ⟨DGHomotopyCategory.of R (cone f), hcone, ⟨(Triangle.π₃.mapIso e).symm⟩⟩
 
 /-- The graded-projective curved right modules form a triangulated subcategory of the curved
 homotopy category. -/
