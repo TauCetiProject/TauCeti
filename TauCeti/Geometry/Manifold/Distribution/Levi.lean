@@ -62,6 +62,8 @@ the Lie bracket under pullback of vector fields, and is stated with the induced 
   diffeomorphisms: if `f` pulls a `C¹` distribution `D'` back to `D` near `x`, then `df_x` carries
   the Levi form of `D` at `x` to that of `D'` at `f x`, through the isomorphism of normal spaces
   `T_x M ⧸ D x ≃ T_(f x) N ⧸ D' (f x)` it induces (`IsLocalDiffeomorphAt.mfderivQuotientEquiv`).
+* `TauCeti.bijective_distributionLeviForm_iff_of_isLocalDiffeomorphAt`: nondegeneracy of the Levi
+  form is invariant under local diffeomorphisms.
 * `TauCeti.distributionLeviForm_swap` and `TauCeti.distributionLeviForm_self`: the Levi form is
   antisymmetric and alternating.
 * `TauCeti.distributionLeviForm_eq_zero_iff`: vanishing at a point can be tested on local
@@ -436,6 +438,25 @@ theorem distributionLeviForm_mfderivRestrictEquiv (hD' : IsContMDiffDistribution
     ← mfderiv_mlieBracket_of_eventually_related hf.contMDiffAt
       (by rwa [minSmoothness_of_isRCLikeNormedField]) hV hW hV' hW' hVV' hWW']
   simp
+
+/-- **Nondegeneracy of the Levi form is invariant under local diffeomorphisms.** If a `C²` local
+diffeomorphism `f` at `x` pulls a `C¹` distribution `D'` back to `D` near `x`, then the Levi form
+of `D'` at `f x` is nondegenerate, in the sense that `u ↦ L_D' (u, ·)` is bijective, exactly when
+that of `D` at `x` is. -/
+theorem bijective_distributionLeviForm_iff_of_isLocalDiffeomorphAt
+    (hD' : IsContMDiffDistribution J n k D') (hn : 1 ≤ n) (hf : IsLocalDiffeomorphAt I J m f x)
+    (hm : 2 ≤ m) (hDf : ∀ᶠ z in 𝓝 x, D z = (D' (f z)).comap (mfderiv I J f z).toLinearMap) :
+    Bijective (distributionLeviForm D' (f x)) ↔ Bijective (distributionLeviForm D x) := by
+  set e := hf.mfderivRestrictEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds
+  set q := hf.mfderivQuotientEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds
+  -- `L_D' = Φ ∘ L_D ∘ e⁻¹`, where `Φ` transports linear maps `D x → T_x M ⧸ D x` along `e`, `q`.
+  have h : ⇑(distributionLeviForm D' (f x)) =
+      ⇑(e.arrowCongr q) ∘ ⇑(distributionLeviForm D x) ∘ ⇑e.symm := by
+    ext u v
+    rw [Function.comp_apply, Function.comp_apply, LinearEquiv.arrowCongr_apply,
+      ← distributionLeviForm_mfderivRestrictEquiv hD' hn hf hm hDf, LinearEquiv.apply_symm_apply,
+      LinearEquiv.apply_symm_apply]
+  rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
 
 end Naturality
 
