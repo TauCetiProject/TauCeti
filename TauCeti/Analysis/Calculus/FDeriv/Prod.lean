@@ -90,6 +90,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   has norm at most that of the derivative of the function.
 * `TauCeti.fderiv_comp_fst`, `TauCeti.norm_fderiv_comp_fst_le`: the derivative of a function of
   the first variable alone, and the bound of its norm by that of the derivative of the function.
+* `TauCeti.fderiv_add_comp_fst`: the derivative of `y ↦ f y + h y.1`, a function on the product
+  plus a function of the first variable alone.
 * `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
   second coordinate, with no differentiability assumption.
 * `TauCeti.fderiv_apply_fst`: the first coordinate of the derivative of a map into a product is
@@ -274,6 +276,14 @@ theorem norm_fderiv_comp_fst_le (f : E → G) (z : E × F) :
   rw [fderiv_comp_fst]
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le 𝕜 E F))
+
+/-- The derivative of `y ↦ f y + h y.1`, a function on the product plus a function of the first
+variable alone, is that of `f` plus that of `h` read on the first component. -/
+theorem fderiv_add_comp_fst {f : E × F → G} {h : E → G} {z : E × F}
+    (hf : DifferentiableAt 𝕜 f z) (hh : DifferentiableAt 𝕜 h z.1) :
+    fderiv 𝕜 (fun y ↦ f y + h y.1) z =
+      fderiv 𝕜 f z + (fderiv 𝕜 h z.1).comp (ContinuousLinearMap.fst 𝕜 E F) :=
+  (hf.hasFDerivAt.add (hh.hasFDerivAt.comp z hasFDerivAt_fst)).fderiv
 
 /-- A map `w ↦ (c, g w)` with a constant first coordinate has the derivative of `g` in the second
 coordinate, with no differentiability assumption. -/
