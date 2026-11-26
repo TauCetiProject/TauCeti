@@ -39,8 +39,8 @@ grows into a representation of the whole Lie algebra in the proof of Ado's theor
 
 Each theorem also has an internal form, for a Lie algebra `L` with an ideal `S` and a Lie
 subalgebra `H` whose underlying submodules are complementary. The internal statements mention no
-equivalence `L ≃ S ⋊ H`: they compose the extensions above with the recognition isomorphism
-`LieIdeal.semiDirectSumEquiv`, which carries `S` onto the left factor.
+equivalence `L ≃ S ⋊ H`: they compose the extensions above with the inverse of the recognition
+isomorphism `LieIdeal.semiDirectSumEquiv`, which carries `s : S`, viewed in `L`, to `inl s`.
 
 ## Main results
 
@@ -170,16 +170,16 @@ section Internal
 
 The theorems above, read for a Lie algebra `L` presented internally by an ideal `S` and a
 complementary Lie subalgebra `H`, through the recognition isomorphism
-`LieIdeal.semiDirectSumEquiv S H : ↥S ⋊⁅(LieIdeal.ad S).comp H.incl⁆ ↥H ≃ₗ⁅K⁆ L`. No equivalence
-appears in the statements. -/
+`LieIdeal.semiDirectSumEquiv S H hc : ↥S ⋊⁅(LieIdeal.ad S).comp H.incl⁆ ↥H ≃ₗ⁅K⁆ L`, where
+`hc : IsCompl S.toSubmodule H.toSubmodule`. No equivalence appears in the statements. -/
 
 variable {K : Type u} {L : Type v} {V : Type x}
   [Field K] [LieRing L] [LieAlgebra K L]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 omit [FiniteDimensional K V] in
-/-- Transport of the kernel control of a representation of `↥S ⋊ ↥H` to `L`, along the
-recognition isomorphism, which carries an element of `S` to its image in the left factor. -/
+/-- Transport of the kernel control of a representation of `↥S ⋊ ↥H` to `L`, along the inverse
+of the recognition isomorphism, which carries `s : S`, viewed in `L`, to `inl s`. -/
 private theorem ker_comp_semiDirectSumEquiv_symm_le {S : LieIdeal K L} {H : LieSubalgebra K L}
     (hc : IsCompl S.toSubmodule H.toSubmodule) {W : Type*} [AddCommGroup W] [Module K W]
     (ρ : (↥S ⋊⁅(LieIdeal.ad S).comp H.incl⁆ ↥H) →ₗ⁅K⁆ Module.End K W)
