@@ -185,8 +185,9 @@ private theorem exists_pos_forall_subseq_ball_add_int (hω : ω.IsNondegenerate)
 /-- **Floer cylinders in a closed manifold with doubly periodic data converge off finitely many
 bubbling points.** Let `ω` be a nondegenerate two-form on a compact boundaryless manifold `M`, let
 `e : M → F` be an injective differentiable map into a normed space, and let `K = K_s ds + K_t dt`
-and `J(z, x)` be invariant under the translations of the domain by the integer points `(m, n)`,
-`C²` in the charts of `M`, with `J(z, x)` tamed by `ω`, uniformly tame with respect to `e`,
+and `J(z, x)` be invariant under the translations of the domain by the integer points `(m, n)`.
+Let `J(z, x)` and the Hamiltonian vector fields of `K_s` and `K_t`, read in the chart at every
+point, be `C²`, with `J(z, x)` tamed by `ω`, uniformly tame with respect to `e`,
 `c ‖d e v‖² ≤ ω(v, J v)` with `c > 0`, and the pushforwards `d e (X_{K_s})`, `d e (X_{K_t})` at most
 `B`. There is a threshold `δ > 0` with the following property. Let `uₖ : ℝ × ℝ → M` be `C³`
 solutions of the Floer equation `(du - X_K)^{0,1} = 0` for `J(z, u)`, of period one in `t` (that
