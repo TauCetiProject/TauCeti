@@ -163,13 +163,15 @@ theorem sndLinearMap_comp_inrLinearMap :
 
 @[simp]
 theorem sndLinearMap_comp_inlLinearMap :
-    sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ inlLinearMap 𝕜' I F₁ F₂ n E₁ E₂ = 0 :=
-  (rfl)
+    sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ inlLinearMap 𝕜' I F₁ F₂ n E₁ E₂ = 0 := by
+  ext s x
+  simp
 
 @[simp]
 theorem fstLinearMap_comp_inrLinearMap :
-    fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ inrLinearMap 𝕜' I F₁ F₂ n E₁ E₂ = 0 :=
-  (rfl)
+    fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ inrLinearMap 𝕜' I F₁ F₂ n E₁ E₂ = 0 := by
+  ext s x
+  simp
 
 /-- Two sections of a direct-sum bundle are equal when their components are. -/
 theorem prod_ext {s t : Cₛ^n⟮I; F₁ × F₂, E₁ ×ᵇ E₂⟯}

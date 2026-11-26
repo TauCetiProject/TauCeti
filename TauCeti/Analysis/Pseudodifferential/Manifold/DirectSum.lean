@@ -147,45 +147,37 @@ theorem blockLinearMap_mem_sectionClassicalPseudodifferentialOperators_iff
         P₁₂ ∈ sectionClassicalPseudodifferentialOperators m ∧
           P₂₁ ∈ sectionClassicalPseudodifferentialOperators m ∧
             P₂₂ ∈ sectionClassicalPseudodifferentialOperators m := by
-  -- `A ∘ Q ∘ B` has order `0 + (m + 0) = m` when `A` and `B` have order `0` and `Q` order `m`
-  have hfst := fstLinearMap_mem_sectionClassicalPseudodifferentialOperators (V₁ := W₁) (V₂ := W₂)
-      (E₁ := F₁) (E₂ := F₂) (n := n)
-  have hsnd := sndLinearMap_mem_sectionClassicalPseudodifferentialOperators (V₁ := W₁) (V₂ := W₂)
-      (E₁ := F₁) (E₂ := F₂) (n := n)
-  have hinl := inlLinearMap_mem_sectionClassicalPseudodifferentialOperators (V₁ := V₁) (V₂ := V₂)
-      (E₁ := E₁) (E₂ := E₂) (n := n)
-  have hinr := inrLinearMap_mem_sectionClassicalPseudodifferentialOperators (V₁ := V₁) (V₂ := V₂)
-      (E₁ := E₁) (E₂ := E₂) (n := n)
-  refine ⟨fun h ↦ ?_, fun ⟨h₁₁, h₁₂, h₂₁, h₂₂⟩ ↦ ?_⟩
-  · -- each entry is the block operator between a projection and an inclusion
-    refine ⟨?_, ?_, ?_, ?_⟩
-    · simpa using comp_mem_sectionClassicalPseudodifferentialOperators hfst
-        (comp_mem_sectionClassicalPseudodifferentialOperators h hinl)
-    · simpa using comp_mem_sectionClassicalPseudodifferentialOperators hfst
-        (comp_mem_sectionClassicalPseudodifferentialOperators h hinr)
-    · simpa using comp_mem_sectionClassicalPseudodifferentialOperators hsnd
-        (comp_mem_sectionClassicalPseudodifferentialOperators h hinl)
-    · simpa using comp_mem_sectionClassicalPseudodifferentialOperators hsnd
-        (comp_mem_sectionClassicalPseudodifferentialOperators h hinr)
-  · -- the block operator is the sum of the four operators `inᵢ ∘ Pᵢⱼ ∘ prⱼ`
-    have hfst' := fstLinearMap_mem_sectionClassicalPseudodifferentialOperators (V₁ := V₁) (V₂ := V₂)
-      (E₁ := E₁) (E₂ := E₂) (n := n)
-    have hsnd' := sndLinearMap_mem_sectionClassicalPseudodifferentialOperators (V₁ := V₁) (V₂ := V₂)
-      (E₁ := E₁) (E₂ := E₂) (n := n)
-    have hinl' := inlLinearMap_mem_sectionClassicalPseudodifferentialOperators (V₁ := W₁) (V₂ := W₂)
-      (E₁ := F₁) (E₂ := F₂) (n := n)
-    have hinr' := inrLinearMap_mem_sectionClassicalPseudodifferentialOperators (V₁ := W₁) (V₂ := W₂)
-      (E₁ := F₁) (E₂ := F₂) (n := n)
-    rw [blockLinearMap_def, LinearMap.comp_add, LinearMap.comp_add]
-    refine add_mem (add_mem ?_ ?_) (add_mem ?_ ?_)
-    · simpa using comp_mem_sectionClassicalPseudodifferentialOperators hinl'
-        (comp_mem_sectionClassicalPseudodifferentialOperators h₁₁ hfst')
-    · simpa using comp_mem_sectionClassicalPseudodifferentialOperators hinl'
-        (comp_mem_sectionClassicalPseudodifferentialOperators h₁₂ hsnd')
-    · simpa using comp_mem_sectionClassicalPseudodifferentialOperators hinr'
-        (comp_mem_sectionClassicalPseudodifferentialOperators h₂₁ hfst')
-    · simpa using comp_mem_sectionClassicalPseudodifferentialOperators hinr'
-        (comp_mem_sectionClassicalPseudodifferentialOperators h₂₂ hsnd')
+  refine ⟨fun h ↦ ⟨?_, ?_, ?_, ?_⟩, fun ⟨h₁₁, h₁₂, h₂₁, h₂₂⟩ ↦ ?_⟩
+  -- each entry is the block operator between a projection and an inclusion
+  · simpa using comp_comp_mem_sectionClassicalPseudodifferentialOperators
+      fstLinearMap_mem_sectionClassicalPseudodifferentialOperators h
+      inlLinearMap_mem_sectionClassicalPseudodifferentialOperators
+  · simpa using comp_comp_mem_sectionClassicalPseudodifferentialOperators
+      fstLinearMap_mem_sectionClassicalPseudodifferentialOperators h
+      inrLinearMap_mem_sectionClassicalPseudodifferentialOperators
+  · simpa using comp_comp_mem_sectionClassicalPseudodifferentialOperators
+      sndLinearMap_mem_sectionClassicalPseudodifferentialOperators h
+      inlLinearMap_mem_sectionClassicalPseudodifferentialOperators
+  · simpa using comp_comp_mem_sectionClassicalPseudodifferentialOperators
+      sndLinearMap_mem_sectionClassicalPseudodifferentialOperators h
+      inrLinearMap_mem_sectionClassicalPseudodifferentialOperators
+  -- the block operator is the sum of the four operators `inᵢ ∘ Pᵢⱼ ∘ prⱼ`
+  rw [blockLinearMap_def, LinearMap.comp_add, LinearMap.comp_add]
+  exact add_mem
+    (add_mem
+      (comp_comp_mem_sectionClassicalPseudodifferentialOperators
+        inlLinearMap_mem_sectionClassicalPseudodifferentialOperators h₁₁
+        fstLinearMap_mem_sectionClassicalPseudodifferentialOperators)
+      (comp_comp_mem_sectionClassicalPseudodifferentialOperators
+        inlLinearMap_mem_sectionClassicalPseudodifferentialOperators h₁₂
+        sndLinearMap_mem_sectionClassicalPseudodifferentialOperators))
+    (add_mem
+      (comp_comp_mem_sectionClassicalPseudodifferentialOperators
+        inrLinearMap_mem_sectionClassicalPseudodifferentialOperators h₂₁
+        fstLinearMap_mem_sectionClassicalPseudodifferentialOperators)
+      (comp_comp_mem_sectionClassicalPseudodifferentialOperators
+        inrLinearMap_mem_sectionClassicalPseudodifferentialOperators h₂₂
+        sndLinearMap_mem_sectionClassicalPseudodifferentialOperators))
 
 /-- **Operators between direct sums.** An operator `P : Γ(E₁ ×ᵇ E₂) → Γ(F₁ ×ᵇ F₂)` is a classical
 pseudodifferential operator of order `m` exactly when its four entries `prᵢ ∘ P ∘ inⱼ` are. -/
