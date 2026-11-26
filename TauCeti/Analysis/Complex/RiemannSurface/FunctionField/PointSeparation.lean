@@ -14,10 +14,10 @@ import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Separation
 /-!
 # Meromorphic functions with a single pole, and point separation
 
-Let `X` be a compact connected Riemann surface whose structure sheaf has finite-dimensional first
-Čech cohomology `H¹(X, 𝒪)`. This file produces meromorphic functions on `X` with a pole of exactly
-prescribed order at one point and no other poles, and deduces the separation properties of the
-field `M(X)` of meromorphic functions on which its algebraic description rests.
+Let `X` be a compact connected Hausdorff Riemann surface. This file produces meromorphic functions
+on `X` with a pole of exactly prescribed order at one point and no other poles, and deduces the
+separation properties of the field `M(X)` of meromorphic functions on which its algebraic
+description rests.
 
 Along the staircase `k[x]`, `k = 0, 1, 2, …`, Riemann–Roch eventually raises `h⁰` by one at every
 step (`TauCeti.RiemannSurface.eventually_finrank_divisorSheaf_add_nsmul_ofPoint_succ`), and a
@@ -32,10 +32,6 @@ pole of order exactly `k + 1` at `x` and no other pole
 * for a finite holomorphic map `β : X → ℙ¹`, the field `M(X)` has degree exactly `deg β` over the
   rational functions `ℂ(t)` pulled back along `β`, and is generated over `ℂ(t)` by a single
   meromorphic function, since the points of an unbranched fibre are pairwise separated.
-
-The finiteness of `H¹(X, 𝒪)` is taken as an instance argument, as in
-`TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch`; once an instance is available,
-these results hold unconditionally by instance resolution.
 
 ## Main results
 
@@ -71,11 +67,9 @@ namespace TauCeti.RiemannSurface.MeromorphicFunction
 
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   [CompactSpace X] [T2Space X] [ConnectedSpace X]
-  [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-    (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
 
-/-- **Functions with a single pole of prescribed order.** On a compact connected Riemann surface
-with finite-dimensional `H¹(X, 𝒪)`, for all large `k` some meromorphic function has a pole of
+/-- **Functions with a single pole of prescribed order.** On a compact connected Riemann surface,
+for all large `k` some meromorphic function has a pole of
 order exactly `k` at `x` and is holomorphic at every other point. -/
 theorem eventually_exists_order_eq_neg (x : X) :
     ∀ᶠ k : ℕ in atTop, ∃ f : MeromorphicFunction X,
@@ -95,8 +89,8 @@ theorem eventually_exists_order_eq_neg (x : X) :
   have hpy : WeilDivisor.ofPoint x y = 0 := WeilDivisor.coeff_ofPoint_of_ne hy
   simpa [hpy] using hf y
 
-/-- **Meromorphic functions separate points.** On a compact connected Riemann surface with
-finite-dimensional `H¹(X, 𝒪)`, every point `x` is the only pole of some meromorphic function. -/
+/-- **Meromorphic functions separate points.** On a compact connected Riemann surface,
+every point `x` is the only pole of some meromorphic function. -/
 theorem exists_apply_eq_infty_and_forall_ne_infty (x : X) :
     ∃ f : MeromorphicFunction X, f x = ∞ ∧ ∀ y ≠ x, f y ≠ ∞ := by
   obtain ⟨N, hN⟩ := eventually_atTop.1 (eventually_exists_order_eq_neg x)
@@ -105,16 +99,16 @@ theorem exists_apply_eq_infty_and_forall_ne_infty (x : X) :
   rw [hfx]
   exact_mod_cast (by omega : (-(N + 1 : ℕ) : ℤ) < 0)
 
-/-- **Meromorphic functions separate points.** On a compact connected Riemann surface with
-finite-dimensional `H¹(X, 𝒪)`, two distinct points take different values under some meromorphic
+/-- **Meromorphic functions separate points.** On a compact connected Riemann surface,
+two distinct points take different values under some meromorphic
 function. -/
 theorem exists_apply_ne_apply_of_ne {x y : X} (hxy : x ≠ y) :
     ∃ f : MeromorphicFunction X, f x ≠ f y := by
   obtain ⟨f, hfx, hf⟩ := exists_apply_eq_infty_and_forall_ne_infty x
   exact ⟨f, by rw [hfx]; exact (hf y hxy.symm).symm⟩
 
-/-- **The order at a point is surjective.** On a compact connected Riemann surface with
-finite-dimensional `H¹(X, 𝒪)`, every integer is the order at `x` of some meromorphic function, so
+/-- **The order at a point is surjective.** On a compact connected Riemann surface,
+every integer is the order at `x` of some meromorphic function, so
 `ord_x` is a normalized discrete valuation of `M(X)`. -/
 theorem order_surjective (x : X) : Function.Surjective (order (X := X) x) := by
   -- The quotient of functions with poles of orders `N + 1` and `N` at `x` and no other poles
@@ -137,8 +131,8 @@ theorem order_surjective (x : X) : Function.Surjective (order (X := X) x) := by
       rw [zpow_negSucc, AddValuation.map_inv, AddValuation.map_pow, ht, nsmul_one]
       norm_cast
 
-/-- **Different points have different orders.** On a compact connected Riemann surface with
-finite-dimensional `H¹(X, 𝒪)`, the order `ord_x` determines the point `x`. -/
+/-- **Different points have different orders.** On a compact connected Riemann surface,
+the order `ord_x` determines the point `x`. -/
 theorem order_injective : Function.Injective (order (X := X)) := by
   intro x y hxy
   by_contra hne
@@ -153,9 +147,8 @@ variable (β : FiniteHolomorphicMap X (OnePoint ℂ))
   [Algebra (RatFunc ℂ) (MeromorphicFunction X)]
 
 /-- **The meromorphic function field is a simple extension of `ℂ(t)`.** Let `β : X → ℙ¹` be a
-finite holomorphic map from a compact connected Riemann surface with finite-dimensional
-`H¹(X, 𝒪)`, and let `ℂ(t)` act on `M(X)` by pullback along `β`. Then some meromorphic function
-generates `M(X)` over `ℂ(t)`. -/
+finite holomorphic map from a compact connected Riemann surface, and let `ℂ(t)` act on `M(X)` by
+pullback along `β`. Then some meromorphic function generates `M(X)` over `ℂ(t)`. -/
 theorem exists_adjoin_simple_eq_top
     (h : algebraMap (RatFunc ℂ) (MeromorphicFunction X) =
       ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom) :
@@ -166,7 +159,7 @@ theorem exists_adjoin_simple_eq_top
   exact ⟨f, adjoin_simple_eq_top_of_injOn_fiber β h f hy₀ hf hinj⟩
 
 /-- **The degree theorem.** Let `β : X → ℙ¹` be a finite holomorphic map from a compact connected
-Riemann surface with finite-dimensional `H¹(X, 𝒪)`, and let `ℂ(t)` act on `M(X)` by pullback along
+Riemann surface, and let `ℂ(t)` act on `M(X)` by pullback along
 `β`. Then `M(X)` has degree exactly `deg β` over `ℂ(t)`. -/
 theorem finrank_ratFunc_eq_degree
     (h : algebraMap (RatFunc ℂ) (MeromorphicFunction X) =

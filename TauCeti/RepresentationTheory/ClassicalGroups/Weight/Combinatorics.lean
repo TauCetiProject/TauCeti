@@ -52,6 +52,8 @@ consumer.
 * `TauCeti.weightOfMultiset_injective`: **a multiset is recovered from its weight.**
 * `TauCeti.exists_sym_weightOfMultiset_eq_iff`: **the multiplicity vectors of the unordered
   `d`-tuples over `Fin n` are exactly the nonnegative integer vectors summing to `d`.**
+* `TauCeti.weightOfMultiset_symFinTwoEquiv_symm`: the weight of the unordered `d`-tuple over
+  `Fin 2` with `i` zeros is `(i, d - i)`, the exponents of the monomial `x^i y^{d-i}`.
 * `TauCeti.weightChar_weightOfMultiset`: **the torus character of a multiset weight** is the
   product of the entries it lists.
 * `TauCeti.weightOfMultiset_ofFn_apply`: **the content of an ordered tuple counts the places at
@@ -125,6 +127,15 @@ theorem exists_sym_weightOfMultiset_eq_iff {n d : ℕ} (l : Fin n → ℤ) :
     rw [weightOfMultiset_apply, ← Sym.coe_equivNatSumOfFintype_apply_apply,
       Equiv.apply_symm_apply]
     exact Int.toNat_of_nonneg (hnonneg i)
+
+/-- **The exponents of the monomial `x^i y^{d-i}`**: the unordered `d`-tuple over `Fin 2` with
+`i` entries equal to `0` (`TauCeti.symFinTwoEquiv`) has `i` copies of `0` and `d - i` copies
+of `1`. -/
+theorem weightOfMultiset_symFinTwoEquiv_symm (d : ℕ) (i : Fin (d + 1)) :
+    weightOfMultiset (((symFinTwoEquiv d).symm i : Sym (Fin 2) d) : Multiset (Fin 2)) =
+      ![(i : ℤ), ((d - i : ℕ) : ℤ)] := by
+  ext j
+  fin_cases j <;> simp [weightOfMultiset_apply, Multiset.count_replicate]
 
 /-! ## The content of an ordered tuple -/
 

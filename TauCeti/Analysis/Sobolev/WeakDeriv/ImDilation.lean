@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 public import TauCeti.Analysis.Complex.ImDilation
-import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
 
 /-!
 # The weak chain rule for dilations of the imaginary part

@@ -162,12 +162,18 @@ theorem _root_.CategoryTheory.IsCoseparator.additiveClosure_of_injective {M : FG
     IsArtinian.exists_injective_linearMap_pi ((FGModuleCat.isCoseparator_iff M).1 hM I)
   let ι : I ⟶ ⨁ fun _ : Fin n ↦ M :=
     biproduct.lift fun j ↦ ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g))
-  have : Mono ι := Preadditive.mono_of_cancel_zero ι fun {Z} h hh ↦ by
-    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun z ↦ hg ?_))
-    ext j
-    simpa [ι] using congr(($hh ≫ biproduct.π _ j).hom.hom z)
+  -- The `j`-th coordinate of `ι` is `proj j ∘ g`, so `ι` is injective because `g` is.
+  have : Mono ι := ConcreteCategory.mono_of_injective ι fun x y hxy ↦ hg <| funext fun j ↦ by
+    have hπ : ι ≫ biproduct.π _ j =
+        ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g)) := biproduct.lift_π _ j
+    have h := congrArg (ConcreteCategory.hom (biproduct.π (fun _ : Fin n ↦ M) j)) hxy
+    rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hπ] at h
+    -- `h` evaluates `ObjectProperty.homMk (ModuleCat.ofHom (proj j ∘ₗ g))` at `x` and `y`; these
+    -- wrappers have no simp lemmas through `ConcreteCategory.hom` (`simpa` leaves them), and the
+    -- value is `g x j` by definition of `homMk`, `ofHom`, `proj` and `∘ₗ`.
+    exact h
   exact (additiveClosure M).prop_of_retract ⟨ι, Injective.factorThru (𝟙 I) ι, by simp⟩
-    ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
+    (additiveClosure_biproduct (M := M) n)
 
 /-- **The regular module lies in the additive closure of a generator**: if `M` is a generator of
 the module category, then the regular module lies in `add M`. -/

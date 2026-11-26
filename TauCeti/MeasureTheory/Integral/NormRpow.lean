@@ -57,6 +57,9 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
+* `TauCeti.lintegral_setLIntegral_enorm_sub_rpow_le`: an upper bound
+  `n μ(B(0, 1)) D ^ (n + s) / (n + s) · ν A` for the integral over a set of centres `p` of the
+  potential `∫ x in A, ‖x - p‖ ^ s dν` of an s-finite measure `ν`.
 * `TauCeti.ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le`: off-diagonal real-norm domination
   `‖f y‖ ≤ C * ‖x - y‖ ^ s` on a measurable set implies `∀ᵐ y, ‖f y‖ₑ ≤ ofReal C * ‖x - y‖ₑ ^ s`
   under any null-singleton measure.
@@ -78,6 +81,8 @@ at most `|x - Re e| ^ s`.
 * `Bornology.IsBounded.memLp_norm_rpow_restrict`,
   `Bornology.IsBounded.memLp_norm_rpow_restrict_iff`: `‖x‖ ^ s` is `Lᵖ` on a bounded
   neighbourhood of the origin exactly when `-d < s p`.
+* `TauCeti.not_memLp_id`: on a nontrivial finite-dimensional space with an additive Haar measure,
+  the identity map does not belong to global `Lᵖ` for any nonzero exponent `p`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -480,6 +485,25 @@ theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
     setLIntegral_enorm_sub_rpow_le_of_mem_closure
       (s := 1 - (Module.finrank ℝ E : ℝ)) (by linarith) hb (subset_closure hx)
 
+/-- **Averaging the potential of a measure.** Let `ν` be an s-finite measure and suppose that
+every point of `A` lies within distance `D` of every point of `P`. For `s > -dim E`, the potential
+`p ↦ ∫ x in A, ‖x - p‖ ^ s dν` of `ν` restricted to `A` has integral over `P` at most
+`n μ(B(0, 1)) D ^ (n + s) / (n + s)` times `ν A`. For `s = -k` with `k < n`, the kernel
+`‖x - p‖ ^ (-k)` is, up to a constant, the `k`-th power of the local Lipschitz constant at `x` of a
+radial projection from `p` (`TauCeti.lipschitzOnWith_frontierRadialProjection_ball`), so this
+averages that power over the centre. -/
+theorem lintegral_setLIntegral_enorm_sub_rpow_le {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) (ν : Measure E) [SFinite ν] {A P : Set E} {D : ℝ}
+    (hAP : ∀ x ∈ A, P ⊆ closedBall x D) :
+    ∫⁻ p in P, ∫⁻ x in A, ‖x - p‖ₑ ^ s ∂ν ∂mu ≤
+      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball 0 1) *
+        (D ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s))) * ν A := by
+  rw [lintegral_lintegral_swap (by fun_prop), ← setLIntegral_const]
+  refine setLIntegral_mono measurable_const fun x hx ↦ ?_
+  rcases lt_or_ge D 0 with hD | hD
+  · simp [subset_empty_iff.1 ((hAP x hx).trans (closedBall_eq_empty.2 hD).subset)]
+  · exact (lintegral_mono_set (hAP x hx)).trans_eq (setLIntegral_closedBall_enorm_sub_rpow hs hD x)
+
 section Inverse
 
 open scoped ENNReal Topology
@@ -573,56 +597,6 @@ theorem not_memLp_norm_inv_closedBall [Nontrivial E] {ε : ℝ} (hε : 0 < ε) {
   simp only [← Real.rpow_neg_one] at h2
   exact lt_irrefl _ (((isBounded_closedBall.memLp_norm_rpow_restrict_iff
     (closedBall_mem_nhds 0 hε) (by simp)).1 h2).trans_eq (by simp))
-
-omit [FiniteDimensional ℝ E] in
-private theorem mul_eLpNorm_ball_le_eLpNorm_id {p : ℝ≥0∞} (hp : 0 < p) {e : E} (he : ‖e‖ = 1)
-    {R : ℝ} (hR : 2 ≤ R) :
-    ‖R - 1‖ₑ * mu (ball 0 1) ^ (1 / p.toReal) ≤ eLpNorm (fun x : E => x) p mu := by
-  set B : Set E := ball (R • e) 1
-  have hB_ne : mu.restrict B ≠ 0 := by
-    rw [ne_eq, Measure.restrict_eq_zero, Measure.addHaar_ball_center]
-    exact (measure_ball_pos mu 0 one_pos).ne'
-  calc ‖R - 1‖ₑ * mu (ball 0 1) ^ (1 / p.toReal)
-      = eLpNorm (fun _ : E => R - 1) p (mu.restrict B) := by
-          rw [eLpNorm_const _ hp.ne' hB_ne, Measure.restrict_apply_univ]
-          simp only [B, Measure.addHaar_ball_center]
-    _ ≤ eLpNorm (fun x : E => x) p (mu.restrict B) := by
-          refine eLpNorm_mono_ae aestronglyMeasurable_const
-            ((ae_restrict_iff' measurableSet_ball).2 (Filter.Eventually.of_forall fun x hx => ?_))
-          have hdist : ‖x - R • e‖ < 1 := by simpa [B, dist_eq_norm] using hx
-          have hRe : ‖R • e‖ = R := by
-            rw [norm_smul, Real.norm_of_nonneg (by linarith), he, mul_one]
-          have hnorm : R - 1 ≤ ‖x‖ := by
-            have := norm_sub_norm_le (R • e) x
-            rw [norm_sub_rev, hRe] at this
-            linarith
-          rwa [Real.norm_of_nonneg (by linarith)]
-    _ ≤ eLpNorm (fun x : E => x) p mu := eLpNorm_mono_measure _ Measure.restrict_le_self
-
-/-- On any nontrivial finite-dimensional real normed space, the identity map is not globally `Lᵖ`
-for any `0 < p`, with respect to any additive Haar measure. -/
-theorem not_memLp_id [Nontrivial E] {p : ℝ≥0∞} (hp : 0 < p) :
-    ¬ MemLp (fun x : E => x) p mu := by
-  intro h
-  obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  set e : E := ‖v‖⁻¹ • v
-  have he : ‖e‖ = 1 := by simp [e, norm_smul, hv]
-  set C : ℝ≥0∞ := mu (ball 0 1) ^ (1 / p.toReal)
-  have hB₀_lt : mu (ball 0 1) < ∞ := measure_ball_lt_top
-  have hC_pos : 0 < C := ENNReal.rpow_pos (measure_ball_pos mu 0 one_pos) hB₀_lt.ne
-  have hC_ne_top : C ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) hB₀_lt.ne
-  set R : ℝ := (eLpNorm (fun x : E => x) p mu / C).toReal + 2
-  have hR : 2 ≤ R := le_add_of_nonneg_left ENNReal.toReal_nonneg
-  have hle : ‖R - 1‖ₑ * C ≤ eLpNorm (fun x : E => x) p mu :=
-    mul_eLpNorm_ball_le_eLpNorm_id hp he hR
-  have hdiv_lt : eLpNorm (fun x : E => x) p mu / C < ‖R - 1‖ₑ := by
-    have hfin : eLpNorm (fun x : E => x) p mu / C ≠ ∞ :=
-      ENNReal.div_ne_top h.eLpNorm_lt_top.ne hC_pos.ne'
-    rw [← ENNReal.ofReal_toReal hfin, ← ofReal_norm, Real.norm_of_nonneg (by linarith)]
-    exact (ENNReal.ofReal_lt_ofReal_iff (by linarith)).2 (by simp only [R]; linarith)
-  have hlt : eLpNorm (fun x : E => x) p mu < ‖R - 1‖ₑ * C :=
-    (ENNReal.div_lt_iff (Or.inl hC_pos.ne') (Or.inl hC_ne_top)).1 hdiv_lt
-  exact hlt.not_ge hle
 
 end Inverse
 
@@ -733,3 +707,32 @@ theorem not_integrable_norm_sub_rpow [Nontrivial E] (μ : Measure E) [μ.IsAddHa
   linarith
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+/-- On a nontrivial finite-dimensional real normed space with an additive Haar measure, the
+identity map does not belong to global `Lᵖ` for any nonzero exponent `p`. -/
+theorem not_memLp_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    {mu : Measure E} [mu.IsAddHaarMeasure] {p : ℝ≥0∞} (hp : p ≠ 0) :
+    ¬ MemLp (id : E → E) p mu := by
+  intro h
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · have htop : eLpNormEssSup (id : E → E) mu < ⊤ := by
+      simpa [eLpNorm_exponent_top h.aestronglyMeasurable] using h.eLpNorm_lt_top
+    obtain ⟨C, hC⟩ := eLpNormEssSup_lt_top_iff_isBoundedUnder.1 htop
+    obtain ⟨x, hx⟩ := exists_norm_eq E (by positivity : (0 : ℝ) ≤ (C : ℝ) + 1)
+    have hU : IsOpen {y : E | (C : ℝ) < ‖y‖} := isOpen_lt continuous_const continuous_norm
+    have hUne : {y : E | (C : ℝ) < ‖y‖}.Nonempty := ⟨x, by simp [hx]⟩
+    have hnull : mu {y : E | (C : ℝ) < ‖y‖} = 0 := by
+      rw [measure_eq_zero_iff_ae_notMem]
+      filter_upwards [hC] with y hy
+      exact not_lt.2 (NNReal.coe_le_coe.2 hy)
+    exact (hU.measure_pos mu hUne).ne' hnull
+  · exact mu.not_integrable_norm_sub_rpow p.toReal 0 <| by
+      simpa using (integrable_norm_rpow_iff h.aestronglyMeasurable hp hptop).2 h
+
+end TauCeti

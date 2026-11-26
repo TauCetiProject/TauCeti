@@ -6,19 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
-public import TauCeti.MeasureTheory.Function.MemLpLoc.Locality
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 
 /-!
 # Locality of the local Sobolev classes
 
-The classes `TauCeti.MemLpLoc p U` (re-exported from
-`TauCeti.MeasureTheory.Function.MemLpLoc.Locality`) and `TauCeti.MemWkpLoc p U k` have the sheaf
-property: membership can be checked near each point, and membership on every member of an open cover
-gives membership on the union. Concretely, for an arbitrary set `U ⊆ E`, a function lies in
-the class on `U` exactly when every point of `U` has a neighbourhood within `U` on which it
-lies in the class. The set `U` need not be open: for a set reaching part of its boundary, such as
-a relatively open subset of a closed half-space, the neighbourhoods are relative ones and the `Lᵖ`
+The classes `TauCeti.MemWkpLoc p U k` have the sheaf property: membership can be checked near each
+point, and membership on every member of an open cover gives membership on the union (the
+corresponding locality results for `TauCeti.MemLpLoc` live in
+`TauCeti.MeasureTheory.Function.MemLpLoc`). Concretely, for an arbitrary set `U ⊆ E`, a function
+lies in the class on `U` exactly when every point of `U` has a neighbourhood within `U` on which it
+lies in the class. The set `U` need not be open: for a set reaching part of its boundary, such as a
+relatively open subset of a closed half-space, the neighbourhoods are relative ones and the `Lᵖ`
 bounds reach the boundary, as in the definition.
 
 This is what lets regularity statements be proved one point at a time, for instance in
@@ -26,21 +25,20 @@ elliptic bootstrapping, and lets membership in coordinates be assembled from cha
 
 ## Main results
 
-* `TauCeti.memLpLoc_iff_locally` and `TauCeti.memWkpLoc_iff_locally`: membership holds exactly
-  when it holds on a relative neighbourhood of each point.
-* `TauCeti.memLpLoc_iff_forall_inter` and `TauCeti.memWkpLoc_iff_forall_inter`: membership on
-  `U` is membership on `U ∩ O i` for every member of an open cover `O` of `U`.
-* `TauCeti.memLpLoc_iSup_iff` and `TauCeti.memWkpLoc_iSup_iff`: the sheaf property for open
-  covers of an open set.
+* `TauCeti.memWkpLoc_iff_locally`: membership holds exactly when it holds on a relative
+  neighbourhood of each point.
+* `TauCeti.memWkpLoc_iff_forall_inter`: membership on `U` is membership on `U ∩ O i` for every
+  member of an open cover `O` of `U`.
+* `TauCeti.memWkpLoc_iSup_iff`: the sheaf property for open covers of an open set.
 
 For positive order the codomain is assumed complete: an empty cover carries no weak
 derivative to supply the completeness that the weak-derivative predicate demands.
 
 ## Implementation notes
 
-Local `Lᵖ` membership on a compact set is assembled from finitely many compact pieces in
-`TauCeti.MeasureTheory.Function.MemLpLoc.Locality`. At positive order the
-local weak derivatives are glued by `TauCeti.exists_hasWeakFDerivOn_iSup` on the interior of `U`,
+Order-zero locality (`TauCeti.memLpLoc_iff_forall_inter`, in
+`TauCeti.MeasureTheory.Function.MemLpLoc`) handles the base case. At positive order the local
+weak derivatives are glued by `TauCeti.exists_hasWeakFDerivOn_iSup` on the interior of `U`,
 which is covered by the interiors of the sets `U ∩ O i`. The glued field is only determined almost
 everywhere on that interior, and the class on `U` also bounds it on the part of `U` outside its
 interior, which may have positive measure. The glued field is therefore set to zero off the

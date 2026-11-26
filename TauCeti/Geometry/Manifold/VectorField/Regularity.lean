@@ -755,17 +755,19 @@ theorem eventually_hasDerivAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → 
   rw [hzid, (extChartAt I y).right_inv hz]
 
 /-- Read in the chart at `y`, a family fixing `y` at time `t`, continuous at `(t, y)` and moving
-the points near `y` with the velocity of `V` at every time near `t`, moves the points near the
-chart centre at every time near `t` with the coordinate velocity of `V`, the pullback of `V` to the
-chart, evaluated at their current position. -/
+the points near `y` at every time `u` near `t` with the velocity of a field `V u`, which may
+depend on the time, moves the points near the chart centre at every time `u` near `t` with the
+coordinate velocity of `V u`, the pullback of `V u` to the chart, evaluated at their current
+position. -/
 theorem eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod {ψ : 𝕜 → M → M}
-    {V : (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
+    {V : 𝕜 → (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
     (hψ : ContinuousAt (fun p : 𝕜 × M ↦ ψ p.1 p.2) (t, y))
     (hvel : ∀ᶠ p in 𝓝 (t, y),
-      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u p.2) p.1 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V (ψ p.1 p.2)))) :
+      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u p.2) p.1
+        ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V p.1 (ψ p.1 p.2)))) :
     ∀ᶠ p in 𝓝 (t, extChartAt I y y), HasDerivAt
       (fun u ↦ extChartAt I y (ψ u ((extChartAt I y).symm p.2)))
-      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm V (range I)
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm (V p.1) (range I)
         (extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2)))) p.1 := by
   -- The inverse chart in the second factor carries `(t, extChartAt I y y)` to `(t, y)`.
   have hc : ContinuousAt (fun p : 𝕜 × E ↦ (p.1, (extChartAt I y).symm p.2))
@@ -781,7 +783,7 @@ theorem eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod {ψ : �
       exact extChartAt_source_mem_nhds y)
   filter_upwards [hc.eventually (hpt ▸ hvel), hsrc] with p hpv hps
   exact (hpv.hasDerivAt_extChartAt_comp hps).congr_deriv
-    (VectorField.mpullbackWithin_extChartAt_symm_apply V hps).symm
+    (VectorField.mpullbackWithin_extChartAt_symm_apply (V p.1) hps).symm
 
 end ChartVelocity
 

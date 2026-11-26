@@ -18,7 +18,7 @@ import TauCeti.MeasureTheory.Integral.NormRpow
 On a finite-dimensional real inner product space of dimension `d ≥ 2`, the normalized radial map
 `NormedSpace.normalize : E → E` (`x ↦ ‖x‖⁻¹ • x`) belongs to `TauCeti.MemWkpLoc p U 1` near the
 origin if and only if `p < d` (`TauCeti.memWkpLoc_one_normalize_iff`), matching the critical local
-`Lᵖ` threshold for `x ↦ ‖x‖⁻¹` from `TauCeti.MeasureTheory.Function.MemLpLoc.NormRpow`.
+`Lᵖ` threshold for `x ↦ ‖x‖⁻¹` from `TauCeti.MeasureTheory.Function.MemLpLoc.NormInv`.
 
 ## Main declarations
 

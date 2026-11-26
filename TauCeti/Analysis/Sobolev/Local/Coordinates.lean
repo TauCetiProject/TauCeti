@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Complex.OperatorNorm
 
@@ -13,9 +14,10 @@ import TauCeti.Analysis.Complex.OperatorNorm
 # Coordinates of local Sobolev maps
 
 A map into a finite-dimensional real normed space is locally Sobolev of order `k` if and
-only if all its coordinates in a finite basis are. These criteria
-allow scalar local estimates to be applied to vector-valued maps without choosing compatible
-representatives of their iterated weak derivatives.
+only if all its coordinates in a finite basis are (the local `Lᵖ` criterion
+`Module.Basis.memLpLoc_iff` lives in `TauCeti.MeasureTheory.Function.MemLpLoc`). These
+criteria allow scalar local estimates to be applied to vector-valued maps without choosing
+compatible representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.

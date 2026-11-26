@@ -80,7 +80,7 @@ private theorem memWkpLoc_smul_measure_imp {E : Type u} {F : Type v}
     (fun _ _ _ _ _ hg => by
       obtain ⟨hp, D, hD, hk⟩ := (@memWkpLoc_succ_iff E _ _ _ ⟨μ⟩ _ _ _ _ _ _).1 hg
       exact ⟨(memLpLoc_smul_measure_iff hc0 hc).2 hp, D,
-        (hasWeakFDerivOn_smul_measure_iff (μ := μ) (D := D) hc0 hc).2 hD, hk⟩)
+        (hasWeakFDerivOn_smul_measure_iff hc0 hc).2 hD, hk⟩)
     ((@ContinuousLinearEquiv.comp_memWkpLoc_iff E F (ULift.{u} F) _ _ ⟨μ⟩ _ _ _ _ p U k f
       ContinuousLinearEquiv.ulift.symm).2 hf)
 

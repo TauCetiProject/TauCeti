@@ -35,8 +35,8 @@ the Fourier transform of `φ e_η` is `𝓕 φ (· + η)`.
 * `TestFunction.exists_forall_norm_iteratedFDeriv_bilinLeftCLM_fourierAtom_le`: the derivatives of
   `φ e_η` grow at most polynomially in `η`.
 * `TestFunction.fourierAtomMulSchwartzMap`: `φ e_η` as a Schwartz function.
-* `TestFunction.fourier_fourierAtomMulSchwartzMap`: the Fourier transform of `φ e_η` is
-  `𝓕 φ (· + η)`.
+* `TestFunction.fourier_fourierAtomMulSchwartzMap`, `TestFunction.fourier_bilinLeftCLM_fourierAtom`:
+  the Fourier transform of `φ e_η` is `𝓕 φ (· + η)`.
 -/
 
 public section
@@ -134,5 +134,17 @@ theorem fourier_fourierAtomMulSchwartzMap [FiniteDimensional ℝ E] [MeasurableS
       inner_neg_right, Circle.smul_def, smul_eq_mul, mul_comm]
   rw [SchwartzMap.fourier_coe, hmod, TauCeti.fourier_fourierChar_smul, sub_neg_eq_add,
     SchwartzMap.fourier_coe]
+
+/-- **Modulation is translation in frequency**, for the function underlying `φ e_η`: its Fourier
+transform is `ξ ↦ 𝓕 φ (ξ + η)`. -/
+theorem fourier_bilinLeftCLM_fourierAtom [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] (φ : 𝓓(Ω, ℂ)) (η ξ : E) :
+    𝓕 (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ : E → ℂ) ξ =
+      𝓕 (φ : E → ℂ) (ξ + η) := by
+  have h := fourier_fourierAtomMulSchwartzMap φ η ξ
+  have hcoe : ⇑(φ.fourierAtomMulSchwartzMap η) = ⇑(bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
+      (TauCeti.contDiff_fourierAtom η) φ) := funext fun x ↦ by simp [bilinLeftCLM_apply]
+  rwa [SchwartzMap.fourier_coe, SchwartzMap.fourier_coe, hcoe,
+    show ⇑(toSchwartzMapCLM ℂ φ) = ⇑φ from funext (toSchwartzMapCLM_apply φ)] at h
 
 end TestFunction

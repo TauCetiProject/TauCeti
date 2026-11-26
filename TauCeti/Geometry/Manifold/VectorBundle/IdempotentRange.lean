@@ -59,8 +59,7 @@ theorem contMDiffOn_coordChangeL_rangeTrivialization (hp : ContMDiff I 𝓘(𝕜
     (ContinuousLinearMap.compL 𝕜' F' F F' P).comp
       ((ContinuousLinearMap.compL 𝕜' F' F F).flip Q)
   have hA : ContMDiffOn I 𝓘(𝕜, F →L[𝕜'] F) n
-      (fun x ↦ (p x * p x₁ + (1 - p x) * (1 - p x₁))⁻¹ʳ * p x *
-        (p x * p x₀ + (1 - p x) * (1 - p x₀)))
+      (fun x ↦ (intertwiner (p x₁) (p x))⁻¹ʳ * p x * intertwiner (p x₀) (p x))
       ((rangeTrivialization hp.continuous hidem x₀ φ).baseSet ∩
         (rangeTrivialization hp.continuous hidem x₁ φ₁).baseSet) := by
     have hi := (contMDiffOn_inverse_intertwiner hp x₁).mono
@@ -73,8 +72,7 @@ theorem contMDiffOn_coordChangeL_rangeTrivialization (hp : ContMDiff I 𝓘(𝕜
         ((hi x hx).prodMk_space (hp x).contMDiffWithinAt)).prodMk_space
         ((contMDiff_intertwiner hp x₀) x).contMDiffWithinAt)
   have hD : ContMDiffOn I 𝓘(𝕜, F' →L[𝕜'] F') n
-      (fun x ↦ D ((p x * p x₁ + (1 - p x) * (1 - p x₁))⁻¹ʳ * p x *
-        (p x * p x₀ + (1 - p x) * (1 - p x₀))))
+      (fun x ↦ D ((intertwiner (p x₁) (p x))⁻¹ʳ * p x * intertwiner (p x₀) (p x)))
       ((rangeTrivialization hp.continuous hidem x₀ φ).baseSet ∩
         (rangeTrivialization hp.continuous hidem x₁ φ₁).baseSet) :=
     fun x hx ↦ (D.restrictScalars 𝕜).contDiff.comp_contMDiffWithinAt (hA x hx)
@@ -146,7 +144,7 @@ theorem contMDiff_range_inclusion
   have hu := (contMDiff_intertwiner hp v.proj v.proj).comp v hb
   have hur : ContMDiffAt (I.prod 𝓘(𝕜, F')) 𝓘(𝕜, F →L[𝕜] F) n
       (fun w : TotalSpace F' (fun x ↦ (p x).range) ↦
-        (p w.proj * p v.proj + (1 - p w.proj) * (1 - p v.proj)).restrictScalars 𝕜) v :=
+        (intertwiner (p v.proj) (p w.proj)).restrictScalars 𝕜) v :=
     (ContinuousLinearMap.restrictScalarsIsometry 𝕜' F F 𝕜 𝕜
       ).toContinuousLinearMap.contDiff.comp_contMDiffAt hu
   have hq := (Q.restrictScalars 𝕜).contDiff.comp_contMDiffAt hc
@@ -162,8 +160,7 @@ theorem contMDiff_range_inclusion
   have he' := congrArg Prod.snd he
   -- Remove the range subtype before rewriting the base coordinate.
   change p (e w).1
-    ((p (e w).1 * p v.proj + (1 - p (e w).1) * (1 - p v.proj))
-      (φ (e w).2)) = (w.snd : F) at he'
+    (intertwiner (p v.proj) (p (e w).1) (φ (e w).2)) = (w.snd : F) at he'
   rw [e.coe_fst' (e.mem_source.mp hw)] at he'
   exact he'.symm
 
@@ -204,9 +201,9 @@ theorem contMDiffAt_range_mk
   let P : F →L[𝕜'] F' := (φ.symm : (p (b x)).range →L[𝕜'] F') ∘L (p (b x)).rangeRestrict
   have hi := (contMDiffOn_inverse_intertwiner hp (b x)).contMDiffAt
     ((isOpen_setOf_isUnit_intertwiner hp.continuous (b x)).mem_nhds
-      (ContinuousLinearMap.IsIdempotentElem.isUnit_mul_self_add_one_sub_mul_one_sub (hidem (b x))))
+      (hidem (b x)).isUnit_intertwiner_self)
   have hir : ContMDiffAt J 𝓘(𝕜, F →L[𝕜] F) n
-      (fun y ↦ ((p (b y) * p (b x) + (1 - p (b y)) * (1 - p (b x)))⁻¹ʳ).restrictScalars 𝕜) x :=
+      (fun y ↦ ((intertwiner (p (b x)) (p (b y)))⁻¹ʳ).restrictScalars 𝕜) x :=
     (ContinuousLinearMap.restrictScalarsIsometry 𝕜' F F 𝕜 𝕜
       ).toContinuousLinearMap.contDiff.comp_contMDiffAt (hi.comp x hb)
   have hh := (P.restrictScalars 𝕜).contDiff.comp_contMDiffAt (hir.clm_apply hv)

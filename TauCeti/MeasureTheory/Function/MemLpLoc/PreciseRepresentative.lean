@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Function.MemLpLoc
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.MeasureTheory.Function.MemLpLoc.Coordinates
 
 /-!
 # Coordinatewise precise representatives of locally `Lᵖ` functions

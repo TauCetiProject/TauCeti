@@ -75,4 +75,19 @@ theorem eulerChar_eq_two_mul_card_sub_two_mul_sum_genus :
   simp_rw [← (isConnected_restrictToOrbit t _).two_sub_two_mul_genus]
   simp [Finset.sum_sub_distrib, ← Finset.mul_sum, Nat.card_eq_fintype_card, mul_comm]
 
+omit [Fintype t.MonodromyOrbit] in
+/-- A triple has Euler characteristic twice its number of connected components exactly when
+every connected restriction has Euler characteristic `2`, that is, is a sphere. -/
+theorem eulerChar_eq_two_mul_card_monodromyOrbit_iff :
+    t.eulerChar = 2 * Nat.card t.MonodromyOrbit ↔
+      ∀ O : t.MonodromyOrbit, (t.restrictToOrbit O).eulerChar = 2 := by
+  let _ : Fintype t.MonodromyOrbit := Fintype.ofFinite _
+  have hle : ∀ O ∈ (Finset.univ : Finset t.MonodromyOrbit),
+      (t.restrictToOrbit O).eulerChar ≤ 2 :=
+    fun O _ ↦ (t.isConnected_restrictToOrbit O).eulerChar_le_two
+  have h2 : (2 * Nat.card t.MonodromyOrbit : ℤ) = ∑ _O : t.MonodromyOrbit, (2 : ℤ) := by
+    simp [Nat.card_eq_fintype_card, mul_comm]
+  rw [eulerChar_eq_sum_restrictToOrbit, h2, Finset.sum_eq_sum_iff_of_le hle]
+  simp
+
 end TauCeti.PermutationTriple

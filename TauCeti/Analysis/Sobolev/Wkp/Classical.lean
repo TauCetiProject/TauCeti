@@ -387,12 +387,12 @@ theorem Wkp.exists_value_ae_eq_sub_of_contDiffOn {U : Opens (EuclideanSpace ℝ 
   obtain ⟨V, hV⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (p := p)
     (Omega := Omega) 2 hW hw hΩ.isCompact_closure subset_closure hΩW
   refine ⟨V - restrictL hΩU 2 u, ?_, ?_⟩
-  · rw [← valueL_apply, map_sub, valueL_apply, valueL_apply]
+  · rw [value_sub]
     filter_upwards [Lp.coeFn_sub (value 2 V) (value 2 (restrictL hΩU 2 u)), hV,
       value_restrictL_ae hΩU 2 u, ae_restrict_of_ae_restrict_of_subset hΩU hū]
       with y h1 h2 h3 h4
     rw [h1, Pi.sub_apply, h2, h3, h4]
-  · rw [← iteratedGradientL_apply, map_sub, iteratedGradientL_apply, iteratedGradientL_apply]
+  · rw [iteratedGradient_sub]
     filter_upwards [Lp.coeFn_sub (iteratedGradient 1 V)
         (iteratedGradient 1 (restrictL hΩU 2 u)),
       iteratedGradient_one_single_apply_ae_eq_of_contDiffOn V (hw.mono (subset_closure.trans hΩW))

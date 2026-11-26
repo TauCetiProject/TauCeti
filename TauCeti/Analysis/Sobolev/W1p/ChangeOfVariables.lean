@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Jacobian
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
 
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
