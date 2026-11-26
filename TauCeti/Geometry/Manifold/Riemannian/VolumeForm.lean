@@ -96,6 +96,20 @@ theorem riemannianVolumeForm_neg (o : Manifold.Orientation I M (Fin m)) :
   let := (-o).fact_finrank_tangentSpace x
   simp [riemannianVolumeForm_apply, _root_.Orientation.volumeForm_neg_orientation]
 
+open scoped Classical in
+/-- The volume form on a tangent basis `b` is `±√(det G)` for the Gram matrix `G` of `b`, with
+sign `+` exactly when `b` is positively oriented. -/
+theorem riemannianVolumeForm_apply_basis (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x)) :
+    riemannianVolumeForm o x b =
+      if b.orientation = o.orientationAt x then √(Matrix.gram ℝ b).det
+        else -√(Matrix.gram ℝ b).det := by
+  let := o.fact_finrank_tangentSpace x
+  rw [riemannianVolumeForm_apply]
+  split_ifs with hb
+  · exact (o.orientationAt x).volumeForm_apply_eq_sqrt_det_gram b hb
+  · exact (o.orientationAt x).volumeForm_apply_eq_neg_sqrt_det_gram b hb
+
 /-- The volume form takes value `1` on a positively oriented orthonormal tangent basis. -/
 theorem riemannianVolumeForm_apply_orthonormal
     (o : Manifold.Orientation I M (Fin m)) (x : M)
@@ -205,6 +219,16 @@ theorem abs_apply_le_abs_riemannianVolumeForm
     abs_mul, abs_mul, hvolb, mul_one]
   exact mul_le_of_le_one_right (abs_nonneg _) hωb
 
+/-- The Riemannian volume form is positive on every positively oriented tangent basis. -/
+theorem riemannianVolumeForm_apply_pos
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (c : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hc : c.orientation = Manifold.Orientation.orientationAt o x) :
+    0 < riemannianVolumeForm o x c := by
+  let := o.fact_finrank_tangentSpace x
+  rw [riemannianVolumeForm_apply]
+  exact _root_.Orientation.volumeForm_apply_pos_iff.2 hc
+
 /-- **Pointwise comass inequality** on positively oriented tangent bases: in every degree `m : ℕ`,
 if `|ω(v)| ≤ 1` on every orthonormal `m`-frame `v` of `T_x M`, then `|ω(c)| ≤ dvol_g(c)` on every
 positively oriented basis `c` of `T_x M`. -/
@@ -214,12 +238,9 @@ theorem abs_apply_le_riemannianVolumeForm
     (hω : ∀ v : Fin m → TangentSpace I x, Orthonormal ℝ v → |ω v| ≤ 1)
     (c : Module.Basis (Fin m) ℝ (TangentSpace I x))
     (hc : c.orientation = Manifold.Orientation.orientationAt o x) :
-    |ω c| ≤ riemannianVolumeForm o x c := by
-  let := o.fact_finrank_tangentSpace x
-  have hpos : 0 < riemannianVolumeForm o x c := by
-    rw [riemannianVolumeForm_apply]
-    exact _root_.Orientation.volumeForm_apply_pos_iff.2 hc
-  exact (abs_apply_le_abs_riemannianVolumeForm o x ω hω c).trans_eq (abs_of_pos hpos)
+    |ω c| ≤ riemannianVolumeForm o x c :=
+  (abs_apply_le_abs_riemannianVolumeForm o x ω hω c).trans_eq
+    (abs_of_pos (riemannianVolumeForm_apply_pos o x c hc))
 
 /-- Signed pointwise comass inequality on positively oriented tangent bases: in every degree
 `m : ℕ`, if `|ω(v)| ≤ 1` on every orthonormal `m`-frame `v` of `T_x M`, then `ω(c) ≤ dvol_g(c)` on
@@ -351,7 +372,6 @@ private theorem riemannianVolumeForm_basisAt (o : Manifold.Orientation I M (Fin 
         else -chartVolumeDensity (I := I) x y := by
   set e := trivializationAt E (TangentSpace I) x
   set b := (Module.finBasis ℝ E).reindex σ
-  let := o.fact_finrank_tangentSpace y
   have hdet : (Matrix.gram ℝ (e.basisAt b hy)).det =
       (Riemannian.Tensor.chartGramMatrix (I := I) x y).det := by
     rw [Riemannian.Tensor.gram_basisAt_finBasis_reindex, Matrix.det_submatrix_equiv_self]
@@ -359,10 +379,8 @@ private theorem riemannianVolumeForm_basisAt (o : Manifold.Orientation I M (Fin 
       b.orientation = e.mapOrientation (Fin m) hy (o.orientationAt y) := by
     rw [Trivialization.basisAt, Module.Basis.orientation_map, Trivialization.mapOrientation_apply,
       ← Orientation.map_symm, Equiv.symm_apply_eq]
-  rw [riemannianVolumeForm_apply, chartVolumeDensity_def, ← hdet]
-  split_ifs with h
-  · exact (o.orientationAt y).volumeForm_apply_eq_sqrt_det_gram _ (hor.2 h)
-  · exact (o.orientationAt y).volumeForm_apply_eq_neg_sqrt_det_gram _ (mt hor.1 h)
+  rw [riemannianVolumeForm_apply_basis, chartVolumeDensity_def, ← hdet]
+  exact if_congr hor rfl rfl
 
 /-- **The volume form in a coordinate frame.** Near `x`, the volume form evaluated on the
 coordinate frame of the chart at `x`, reindexed along `σ`, is `±√(det g)`: the chart volume

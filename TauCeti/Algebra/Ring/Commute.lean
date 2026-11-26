@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Group.Action.Defs
-public import Mathlib.Algebra.Group.Hom.End
 public import Mathlib.Algebra.Ring.Commute
-import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -20,10 +18,13 @@ compatibly with the multiplication. For an operator `u`, `1 - a • u` is the op
 generalised kernel at a zero `a` of the Fredholm determinant of `u` carries the Riesz projector.
 
 Each member of a pairwise commuting finite family commutes with the family's sum, so it preserves
-the eigenvalue equations of that sum. Commuting additive endomorphisms annihilating a vector in
-degrees `r₁` and `r₀` have sum and difference annihilating it in degree `r₁ + r₀`.
+the eigenvalue equations of that sum.
 
-The product of two elements which anticommute with `b` commutes with `b`.
+The product of two elements which anticommute with `b` commutes with `b`. If `F * F = 1`, the
+commutator `F * X - X * F` anticommutes with `F`; an element `γ` anticommuting with `F` turns the
+anticommutator `F * X + X * F` into minus the commutator of `F` with `γ * X`; and if `η`
+anticommutes with `F`, the anticommutator of `X * η` with `F` is `(F * X - X * F) * η`. These are
+the algebraic steps behind the commutator identities of the conditional trace of a Fredholm module.
 
 Powers of an element against an inhomogeneous recurrence: in a semiring, not necessarily
 commutative, let `C` commute with `u` and let `Wₖ` satisfy `C W₀ = d₀` and
@@ -43,13 +44,16 @@ A square-zero differential commutes with any element `e` satisfying a homotopy i
 * `Commute.pow_succ_mul_eq_pow_mul_of_mul_eq`: `C ^ (h + 1) W_h = C ^ h d_h` when `C` commutes
   with `u` and `Wₖ` satisfies the inhomogeneous recurrence `C W₀ = d₀`, `C Wₖ₊₁ = dₖ₊₁ + u Wₖ`
   for `k < h`, with `dⱼ = 0` for `j < h`.
-* `Commute.add_pow_apply_eq_zero`, `Commute.sub_pow_apply_eq_zero`: nilpotent action of `x + y`
-  and `x - y` at degree `r₁ + r₀` when commuting additive endomorphisms `x`, `y` kill `u` at
-  degrees `r₁`, `r₀`.
 * `TauCeti.commute_of_sq_zero_of_homotopy`: commutation of a square-zero differential with its
   homotopy projector.
 * `TauCeti.commute_mul_of_mul_eq_neg_mul`: a product of two elements anticommuting with `b`
   commutes with `b`.
+* `TauCeti.mul_mul_sub_mul_eq_neg_of_mul_self_eq_one`: if `F * F = 1`, the commutator
+  `F * X - X * F` anticommutes with `F`.
+* `TauCeti.mul_mul_add_mul_eq_neg_of_mul_eq_neg_mul`: if `γ` anticommutes with `F`, then
+  `γ * (F * X + X * F) = -(F * (γ * X) - γ * X * F)`.
+* `TauCeti.mul_mul_add_mul_mul_eq_of_mul_eq_neg_mul`: if `η` anticommutes with `F`, then
+  `F * (X * η) + X * η * F = (F * X - X * F) * η`.
 * `Finset.sum_smul_smul_eq_smul_smul`: if the sum of a pairwise commuting family scales `x` by
   `μ`, it scales `p a • x` by `μ` for each member `p a`. The vector `p a • x` may be zero.
 -/
@@ -91,33 +95,6 @@ theorem pow_succ_mul_eq_pow_mul_of_mul_eq {A : Type*} [Semiring A] {C u : A} {W 
           rw [mul_add, (hu.pow_right (h + 1)).symm.left_comm]
       _ = C ^ (h + 1) * d (h + 1) := by rw [hz, mul_zero, add_zero]
 
-/-- If commuting additive endomorphisms `x` and `y` satisfy `(x ^ r₁) u = 0` and `(y ^ r₀) u = 0`,
-then `((x + y) ^ (r₁ + r₀)) u = 0`. -/
-theorem add_pow_apply_eq_zero {M : Type*} [AddCommMonoid M] {x y : AddMonoid.End M}
-    (hxy : Commute x y) {r₁ r₀ : ℕ} {u : M} (hx : (x ^ r₁) u = 0) (hy : (y ^ r₀) u = 0) :
-    ((x + y) ^ (r₁ + r₀)) u = 0 := by
-  rw [hxy.add_pow']
-  refine Finset.sum_induction _ (fun f : AddMonoid.End M ↦ f u = 0)
-    (fun f g hf hg ↦ by rw [show (f + g) u = f u + g u from rfl, hf, hg, add_zero]) rfl
-    fun ij hij ↦ ?_
-  rw [nsmul_eq_mul, AddMonoid.End.coe_mul, Function.comp_apply]
-  rcases le_or_gt r₁ ij.1 with h₁ | h₁
-  · rw [← Nat.sub_add_cancel h₁, pow_add, mul_assoc, AddMonoid.End.coe_mul, Function.comp_apply,
-      ((hxy.pow_left r₁).pow_right ij.2).eq, AddMonoid.End.coe_mul, Function.comp_apply, hx,
-      map_zero, map_zero, map_zero]
-  · have h₂ : r₀ ≤ ij.2 := by have := Finset.mem_antidiagonal.1 hij; omega
-    rw [← Nat.sub_add_cancel h₂, pow_add, ← mul_assoc, AddMonoid.End.coe_mul,
-      Function.comp_apply, hy, map_zero, map_zero]
-
-/-- If commuting additive endomorphisms `x` and `y` satisfy `(x ^ r₁) u = 0` and `(y ^ r₀) u = 0`,
-then `((x - y) ^ (r₁ + r₀)) u = 0`. -/
-theorem sub_pow_apply_eq_zero {M : Type*} [AddCommGroup M] {x y : AddMonoid.End M}
-    (hxy : Commute x y) {r₁ r₀ : ℕ} {u : M} (hx : (x ^ r₁) u = 0) (hy : (y ^ r₀) u = 0) :
-    ((x - y) ^ (r₁ + r₀)) u = 0 := by
-  rw [sub_eq_add_neg]
-  refine hxy.neg_right.add_pow_apply_eq_zero hx ?_
-  rw [neg_pow, AddMonoid.End.coe_mul, Function.comp_apply, hy, map_zero]
-
 end Commute
 
 namespace TauCeti
@@ -137,6 +114,30 @@ theorem commute_of_sq_zero_of_homotopy {A : Type*} [Ring A] {d h e : A}
 theorem commute_mul_of_mul_eq_neg_mul {A : Type*} [Semigroup A] [HasDistribNeg A] {a w b : A}
     (ha : a * b = -(b * a)) (hw : w * b = -(b * w)) : Commute (a * w) b := by
   rw [commute_iff_eq, mul_assoc, hw, mul_neg, ← mul_assoc, ha, neg_mul, neg_neg, mul_assoc]
+
+/-- If `F * F = 1`, the commutator `F * X - X * F` anticommutes with `F`. -/
+theorem mul_mul_sub_mul_eq_neg_of_mul_self_eq_one {A : Type*} [Ring A] {F : A} (hF : F * F = 1)
+    (X : A) : F * (F * X - X * F) = -((F * X - X * F) * F) := by
+  have h : F * (F * X - X * F) + (F * X - X * F) * F = F * F * X - X * (F * F) := by
+    noncomm_ring
+  rw [eq_neg_iff_add_eq_zero, h, hF, one_mul, mul_one, sub_self]
+
+/-- If `γ` anticommutes with `F`, then `γ (F X + X F)` is minus the commutator of `F` with
+`γ X`. -/
+theorem mul_mul_add_mul_eq_neg_of_mul_eq_neg_mul {A : Type*} [Ring A] {F γ : A}
+    (hγ : γ * F = -(F * γ)) (X : A) :
+    γ * (F * X + X * F) = -(F * (γ * X) - γ * X * F) := by
+  calc γ * (F * X + X * F) = γ * F * X + γ * X * F := by noncomm_ring
+    _ = -(F * γ) * X + γ * X * F := by rw [hγ]
+    _ = _ := by noncomm_ring
+
+/-- If `η` anticommutes with `F`, the anticommutator of `X η` with `F` is `(F X - X F) η`. -/
+theorem mul_mul_add_mul_mul_eq_of_mul_eq_neg_mul {A : Type*} [Ring A] {F η : A}
+    (hη : F * η = -(η * F)) (X : A) :
+    F * (X * η) + X * η * F = (F * X - X * F) * η := by
+  have h : η * F = -(F * η) := by rw [hη, neg_neg]
+  calc F * (X * η) + X * η * F = F * X * η + X * (η * F) := by noncomm_ring
+    _ = _ := by rw [h]; noncomm_ring
 
 end TauCeti
 

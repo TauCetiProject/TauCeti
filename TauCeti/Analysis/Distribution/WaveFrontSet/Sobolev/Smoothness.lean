@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Distribution.Sobolev
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -48,6 +47,8 @@ particular `T` is smooth on all of `Ω` exactly when every `H^s` singular suppor
   near `x` exactly when it is `H^s` near every point close to `x`, for every `s`.
 * `Distribution.singularSupport_eq_inter_closure_iUnion_sobolevSingularSupport`: the singular
   support is the closure in `Ω` of the union of the `H^s` singular supports.
+* `Distribution.disjoint_singularSupport_iff_forall_disjoint_sobolevSingularSupport`: an open set
+  avoids the singular support exactly when it avoids the `H^s` singular support for every `s`.
 * `Distribution.singularSupport_eq_empty_iff_forall_sobolevSingularSupport_eq_empty`: `T` is
   smooth on `Ω` exactly when it is `H^s` near every point of `Ω` for every `s`.
 
@@ -77,16 +78,9 @@ is a smooth function `g`: it pairs with every Schwartz function `ψ` as `∫ ψ 
 theorem exists_contDiff_cutoffTempered_eq_integral {φ : 𝓓(Ω, ℂ)}
     (h : ∀ s, ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) :
     ∃ g : E → ℂ, ContDiff ℝ ∞ g ∧ ∀ ψ : 𝓢(E, ℂ), T.cutoffTempered φ ψ = ∫ x, ψ x • g x := by
-  refine exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦ ?_
-  -- Each point of `tsupport φ` has a neighbourhood on which every cutoff gives an `H^s` product.
-  choose U hU hUs using fun x : tsupport φ ↦
-    (h s x x.property).exists_nhds_forall_memSobolev_cutoffTempered
-  -- Split `φ` into finitely many test functions supported in these neighbourhoods.
-  obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  rw [← hψφ, cutoffTempered_sum_cutoff]
-  exact MemSobolev.sum fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+  exact exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦
+    cutoffTempered_induction _ (memSobolev_fun_zero E ℂ s 2) (fun _ _ ↦ MemSobolev.add)
+      fun x hx ↦ (h s x hx).exists_nhds_forall_memSobolev_cutoffTempered
 
 /-- **Smoothness from every Sobolev order.** A complex distribution is a smooth function near a
 point `x ∈ Ω` exactly when, for every real `s`, it is `H^s` near every point of a neighbourhood
@@ -132,6 +126,15 @@ theorem singularSupport_eq_inter_closure_iUnion_sobolevSingularSupport (T : 𝓓
       mem_closure_iff_nhds.1 hx _ (T.isOpen_diff_singularSupport.mem_nhds ⟨hxΩ, h⟩)
     obtain ⟨s, hs⟩ := mem_iUnion.1 hy'
     exact hy (sobolevSingularSupport_subset_singularSupport s T hs)
+
+/-- **Avoiding the singular support on an open set.** An open set `U` avoids the singular support
+of a complex distribution exactly when it avoids its `H^s` singular support for every real `s`. -/
+theorem disjoint_singularSupport_iff_forall_disjoint_sobolevSingularSupport {U : Set E}
+    (hU : IsOpen U) :
+    Disjoint U T.singularSupport ↔ ∀ s, Disjoint U (T.sobolevSingularSupport s) := by
+  refine ⟨fun h s ↦ h.mono_right (sobolevSingularSupport_subset_singularSupport s T), fun h ↦ ?_⟩
+  rw [singularSupport_eq_inter_closure_iUnion_sobolevSingularSupport]
+  exact ((disjoint_iUnion_right.2 h).closure_right hU).mono_right inter_subset_right
 
 /-- A complex distribution is smooth near every point of `Ω` exactly when it is `H^s` near every
 point of `Ω`, for every real `s`. -/

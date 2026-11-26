@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Conjugation
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition

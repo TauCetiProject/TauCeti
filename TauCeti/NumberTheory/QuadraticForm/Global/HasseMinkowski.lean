@@ -8,22 +8,16 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic
 import TauCeti.NumberTheory.QuadraticForm.Global.Cancellation
-import TauCeti.NumberTheory.QuadraticForm.Global.HigherRank
-import TauCeti.NumberTheory.QuadraticForm.Global.LowRank
-import TauCeti.NumberTheory.QuadraticForm.Global.Quaternary
-import TauCeti.NumberTheory.QuadraticForm.Global.Ternary.Basic
+import TauCeti.NumberTheory.QuadraticForm.Global.Isotropy
 
 /-!
 # The Hasse–Minkowski theorem for quadratic forms over number fields
 
-Let `K` be a number field in any universe. This file proves the local-to-global principles of
-Hasse and Minkowski for quadratic forms on finite-dimensional `K`-vector spaces, with no
+Let `K` be a number field in any universe. Building on the local-to-global principles for isotropy
+and scalar representation proved in `TauCeti.NumberTheory.QuadraticForm.Global.Isotropy`, this file
+proves the Hasse–Minkowski theorems for representation of forms and for isometry over `K`, with no
 nondegeneracy hypothesis on any form:
 
-* **Isotropy** (O'Meara 66:1; Milne, Chapter VIII, Theorem 3.5(b)): a quadratic form is isotropic
-  over `K` if and only if it is isotropic at every finite and every real place.
-* **Scalar representation** (O'Meara 66:3 in rank one): a quadratic form represents a scalar
-  `a : K` if and only if it represents `a` at every finite and every real place (including `a = 0`).
 * **Form representation** (O'Meara 66:3): a quadratic form `Q` admits an injective isometry into a
   quadratic form `R` on a finite-dimensional space if and only if it does so at every finite and
   every real place (finite-dimensionality of the domain of `Q` follows from local representation).
@@ -34,15 +28,6 @@ nondegeneracy hypothesis on any form:
 
 ## Proof outline
 
-The binary and lower-rank isotropy cases come from
-`QuadraticForm.not_anisotropic_iff_isLocallyIsotropic_of_finrank_le_two`, the ternary case from
-`QuadraticForm.not_anisotropic_of_isLocallyIsotropic_ternary`, and the quaternary case from
-`QuadraticForm.not_anisotropic_of_isLocallyIsotropic_quaternary`. The higher-rank induction step
-(`QuadraticForm.not_anisotropic_of_isLocallyIsotropic_of_five_le_finrank`) then closes isotropy in
-all dimensions.
-
-Scalar representation follows for regular forms by applying isotropy to `⟨-a⟩ ⊥ Q`, and for
-arbitrary forms by splitting off the radical (`QuadraticForm.exists_equivalent_zero_radical_prod`).
 Representation of a regular form `Q` by a regular form `R` proceeds by induction on the dimension
 of `Q`, splitting off a common nonzero value `⟨c⟩` and applying Witt cancellation for
 representation (`TauCeti.isRepresentedBy_of_prod_isRepresentedBy_prod`) at each place. For
@@ -55,11 +40,6 @@ finite dimension (`QuadraticForm.LocallyEquivalent.finrank_eq`).
 
 ## Main results
 
-* `QuadraticForm.IsLocallyIsotropic.not_anisotropic`,
-  `QuadraticForm.not_anisotropic_iff_isLocallyIsotropic`: Hasse–Minkowski for isotropy.
-* `QuadraticForm.LocallyRepresentsScalar.represents`,
-  `QuadraticForm.represents_iff_locallyRepresentsScalar`: Hasse–Minkowski for scalar
-  representation.
 * `QuadraticForm.LocallyRepresents.isRepresentedBy`,
   `QuadraticForm.isRepresentedBy_iff_locallyRepresents`: Hasse–Minkowski for representation of
   forms.
@@ -68,9 +48,8 @@ finite dimension (`QuadraticForm.LocallyEquivalent.finrank_eq`).
 
 ## References
 
-* O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), 66:1, 66:3, and 66:4.
-* J. S. Milne, *Class Field Theory*, v4.03, Chapter VIII, Theorem 3.1, Theorem 3.5(b),
-  Proposition 3.7, and Theorem 6.3.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), 66:3 and 66:4.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VIII, Proposition 3.7 and Theorem 6.3.
 -/
 
 public section
@@ -83,112 +62,11 @@ universe u v w
 
 namespace QuadraticForm
 
-section Isotropy
-
-variable {K : Type u} [Field K] [NumberField K]
-
-/-- Every locally isotropic diagonal regular form over a number field is isotropic, proved by
-strong induction on the rank. -/
-private theorem not_anisotropic_presentedForm_aux :
-    ∀ n : ℕ, ∀ (p : RegularFormPresentation K),
-      p.1 = n → (presentedForm p).IsLocallyIsotropic → ¬(presentedForm p).Anisotropic := by
-  intro n
-  induction n using Nat.strong_induction_on with
-  | ind n ih =>
-    intro p hp hloc
-    let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-    by_cases h2 : n ≤ 2
-    · exact (not_anisotropic_iff_isLocallyIsotropic_of_finrank_le_two (presentedForm p)
-        (by simpa [hp] using h2)).mpr hloc
-    by_cases h3 : n = 3
-    · exact not_anisotropic_of_isLocallyIsotropic_ternary (by simpa [hp] using h3) hloc
-    by_cases h4 : n = 4
-    · exact not_anisotropic_of_isLocallyIsotropic_quaternary (by simpa [hp] using h4) hloc
-    · exact not_anisotropic_of_isLocallyIsotropic_of_five_le_finrank
-        (nondegenerate_presentedForm p) (by rw [Module.finrank_fin_fun]; omega) hloc
-        fun q hq hqloc => ih q.1 (by rw [Module.finrank_fin_fun] at hq; omega) q rfl hqloc
-
-variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-
-/-- **Hasse–Minkowski theorem for isotropy** (O'Meara 66:1; Milne, Chapter VIII, Theorem 3.5(b)):
-a quadratic form on a finite-dimensional vector space over a number field that is isotropic at
-every finite and every real place is isotropic over `K`. No nondegeneracy hypothesis is needed. -/
-theorem IsLocallyIsotropic.not_anisotropic {Q : _root_.QuadraticForm K V}
-    (h : Q.IsLocallyIsotropic) : ¬Q.Anisotropic := by
-  intro hA
-  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  obtain ⟨p, hQp⟩ := exists_presentedForm_equivalent Q hA.nondegenerate
-  exact not_anisotropic_presentedForm_aux p.1 p rfl
-    ((QuadraticForm.QuadraticMap.Equivalent.isLocallyIsotropic_iff hQp).mp h)
-    (hQp.anisotropic_iff.mp hA)
-
-/-- **Hasse–Minkowski theorem for isotropy** (O'Meara 66:1; Milne, Chapter VIII, Theorem 3.5(b)):
-a quadratic form on a finite-dimensional vector space over a number field is isotropic if and only
-if it is isotropic at every finite and every real place. No nondegeneracy hypothesis is needed. -/
-theorem not_anisotropic_iff_isLocallyIsotropic (Q : _root_.QuadraticForm K V) :
-    ¬Q.Anisotropic ↔ Q.IsLocallyIsotropic :=
-  ⟨Q.isLocallyIsotropic_of_not_anisotropic, IsLocallyIsotropic.not_anisotropic⟩
-
-end Isotropy
-
 section Representation
 
 variable {K : Type u} [Field K] [NumberField K]
 variable {V : Type v} [AddCommGroup V] [Module K V]
 variable {W : Type w} [AddCommGroup W] [Module K W] [FiniteDimensional K W]
-
-/-- **Hasse–Minkowski theorem for scalar representation** (O'Meara 66:3 in rank one), for regular
-forms. -/
-private theorem represents_of_locallyRepresentsScalar_of_nondegenerate [FiniteDimensional K V]
-    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) {a : K}
-    (h : Q.LocallyRepresentsScalar a) : Represents Q a := by
-  by_cases ha : a = 0
-  · subst ha
-    exact represents_zero Q
-  · have hiso : ¬(Q.prod ((-a) • (sq : _root_.QuadraticForm K K))).Anisotropic := by
-      have hcomm : (Q.prod ((-a) • (sq : _root_.QuadraticForm K K))).Equivalent
-          (((-a) • (sq : _root_.QuadraticForm K K)).prod Q) :=
-        ⟨IsometryEquiv.prodComm Q _⟩
-      exact hcomm.anisotropic_iff.not.mpr h.isLocallyIsotropic_smul_sq_prod.not_anisotropic
-    exact mem_unitValueSet.mp
-      ((mem_unitValueSet_iff_not_anisotropic_prod Q hQ (Units.mk0 a ha)).mpr hiso)
-
-/-- **Hasse–Minkowski theorem for scalar representation** (O'Meara 66:3 in rank one): a quadratic
-form on a finite-dimensional vector space over a number field represents a scalar `a` if it
-represents `a` at every finite and every real place. Neither nondegeneracy nor `a ≠ 0` is needed.
--/
-theorem LocallyRepresentsScalar.represents [FiniteDimensional K V] {Q : _root_.QuadraticForm K V}
-    {a : K} (h : Q.LocallyRepresentsScalar a) : Represents Q a := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  obtain ⟨C, -, hC, hQe⟩ := Q.exists_equivalent_zero_radical_prod
-  let QC : _root_.QuadraticForm K C := Q.restrict C
-  have hzero_loc : LocallyRepresentsScalar
-      ((0 : _root_.QuadraticForm K Q.radical).prod QC) a :=
-    (QuadraticForm.QuadraticMap.Equivalent.locallyRepresentsScalar_iff hQe a).mp h
-  have hC_loc : QC.LocallyRepresentsScalar a := by
-    refine (locallyRepresentsScalar_iff QC a).mpr ⟨fun v => ?_, fun w => ?_⟩
-    · obtain ⟨⟨r, x⟩, hx⟩ := (represents_iff _ _).mp <|
-        (atFinitePlaceProd _ _ v).represents_iff _ |>.mp
-          (((locallyRepresentsScalar_iff _ _).mp hzero_loc).1 v)
-      refine (represents_iff _ _).mpr ⟨x, ?_⟩
-      simpa [atFinitePlace_def, baseChange_zero] using hx
-    · let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
-      obtain ⟨⟨r, x⟩, hx⟩ := (represents_iff _ _).mp <|
-        (atRealPlaceProd _ _ w).represents_iff _ |>.mp
-          (((locallyRepresentsScalar_iff _ _).mp hzero_loc).2 w)
-      refine (represents_iff _ _).mpr ⟨x, ?_⟩
-      simpa [atRealPlace_def, baseChange_zero] using hx
-  exact (restrict_isRepresentedBy Q C).represents
-    (represents_of_locallyRepresentsScalar_of_nondegenerate hC hC_loc)
-
-/-- **Hasse–Minkowski theorem for scalar representation** (O'Meara 66:3 in rank one): a quadratic
-form on a finite-dimensional vector space over a number field represents a scalar `a` if and only
-if it represents `a` at every finite and every real place. Neither nondegeneracy nor `a ≠ 0` is
-needed. -/
-theorem represents_iff_locallyRepresentsScalar [FiniteDimensional K V]
-    (Q : _root_.QuadraticForm K V) (a : K) :
-    Represents Q a ↔ Q.LocallyRepresentsScalar a :=
-  ⟨LocallyRepresentsScalar.of_represents, LocallyRepresentsScalar.represents⟩
 
 /-- **Hasse–Minkowski theorem for representation of forms** (O'Meara 66:3), when both forms are
 regular, proved by induction on the dimension of the represented form. -/
@@ -215,8 +93,9 @@ private theorem isRepresentedBy_of_locallyRepresents_of_nondegenerate_aux :
     let L : _root_.QuadraticForm K K := c • QuadraticMap.sq
     have hline_nd : L.Nondegenerate := nondegenerate_smul_sq hc
     have hR_c : Represents R c :=
-      (hloc.locallyRepresentsScalar
-        (LocallyRepresentsScalar.of_represents ((represents_iff Q c).mpr ⟨v₀, rfl⟩))).represents
+      (represents_iff_locallyRepresentsScalar R c).mpr
+        (hloc.locallyRepresentsScalar
+          (LocallyRepresentsScalar.of_represents ((represents_iff Q c).mpr ⟨v₀, rfl⟩)))
     -- Split `⟨c⟩` off both `Q` and `R` with regular complements `Q|_P` and `R|_S`.
     obtain ⟨P, hP, hQP⟩ :=
       (((represents_iff Q c).mpr ⟨v₀, rfl⟩).isRepresentedBy_smul_sq hc).exists_equivalent_prod
@@ -257,7 +136,8 @@ private theorem zero_fin_isRepresentedBy_presentedForm :
       refine ⟨Pi.single 0 1, fun h0 => ?_, rfl⟩
       have h1 := congrFun h0 0; simp at h1
     have hp_iso : ¬(presentedForm p).Anisotropic :=
-      (hloc.isLocallyIsotropic (isLocallyIsotropic_of_not_anisotropic _ hzero_iso)).not_anisotropic
+      not_anisotropic_of_isLocallyIsotropic
+        (hloc.isLocallyIsotropic (isLocallyIsotropic_of_not_anisotropic _ hzero_iso))
     obtain ⟨q, hq⟩ :=
       exists_hyperbolicPlane_prod_equivalent (presentedForm p) (nondegenerate_presentedForm p)
         hp_iso

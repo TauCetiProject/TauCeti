@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Topology.MetricSpace.Bounded
@@ -24,8 +25,15 @@ The same holds for the upper half of a circle about a point `z₀` of the real a
 are joined by arcs of angle at most `π` inside the half-circle, along which only derivatives
 within the closed upper half-plane are needed.
 
+If `u` is only differentiable within a set containing the circle near a given angle, for instance
+a closed disc whose boundary is the circle, the velocity of the loop at that angle is still given
+by the derivative of `u` within that set.
+
 ## Main results
 
+* `TauCeti.deriv_comp_circleMap_eq_fderivWithin`: the velocity of the loop
+  `θ ↦ u(z₀ + ρ e^{iθ})` is the derivative of `u` within any set containing the nearby arc of the
+  circle, applied to the tangent vector `i ρ e^{iθ}`.
 * `TauCeti.norm_sub_le_of_norm_fderiv_le_circle`: if `‖du‖ ≤ L` along the arc of the circle of
   radius `ρ` about `z₀` between the angles `θ₁` and `θ₂`, then the images of its endpoints are at
   distance at most `L ρ |θ₂ - θ₁|`.
@@ -48,6 +56,16 @@ open Complex Metric Set Filter Topology
 open scoped Real
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {u : ℂ → E} {z₀ : ℂ}
+
+/-- If `u : ℂ → E` is differentiable within a set `s` containing the arc of the circle of radius `ρ`
+about `z₀` near the angle `θ`, then the velocity at `θ` of the loop `θ ↦ u(z₀ + ρ e^{iθ})` is the
+derivative of `u` within `s` applied to the tangent vector `i ρ e^{iθ}` of the circle. -/
+theorem deriv_comp_circleMap_eq_fderivWithin {s : Set ℂ} {ρ θ : ℝ}
+    (hs : ∀ᶠ t in 𝓝 θ, circleMap z₀ ρ t ∈ s)
+    (hu : DifferentiableWithinAt ℝ u s (circleMap z₀ ρ θ)) :
+    deriv (fun θ ↦ u (circleMap z₀ ρ θ)) θ =
+      fderivWithin ℝ u s (circleMap z₀ ρ θ) (circleMap 0 ρ θ * I) :=
+  (hu.hasFDerivWithinAt.comp_hasDerivAt θ (hasDerivAt_circleMap z₀ ρ θ) hs).deriv
 
 /-- If `u : ℂ → E` is differentiable with `‖du‖ ≤ L` along the arc of the circle of radius
 `ρ ≥ 0` about `z₀` between the angles `θ₁` and `θ₂`, then the images of the endpoints of the arc

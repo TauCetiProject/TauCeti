@@ -30,7 +30,8 @@ of equal dimension are equivalent.  `TauCeti.NumberTheory.QuadraticForm.Global.C
 makes this omission explicit.
 
 If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic; for a
-regular form, the converse holds as well.
+regular form, the converse holds as well. Adjoining a zero orthogonal summand does not change
+which scalars a form locally represents.
 
 -/
 
@@ -144,10 +145,9 @@ theorem LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
       (by simpa using ha)
     simp
 
-/-- For a regular quadratic form on a finite-dimensional space over a number field and any scalar
-`a`, adjoining `⟨-a⟩` produces a locally isotropic form if and only if the form locally represents
-`a`. -/
-theorem isLocallyIsotropic_smul_sq_prod_iff [FiniteDimensional K W]
+/-- For a regular quadratic form over a number field and any scalar `a`, adjoining `⟨-a⟩` produces
+a locally isotropic form if and only if the form locally represents `a`. -/
+theorem isLocallyIsotropic_smul_sq_prod_iff
     (Q : _root_.QuadraticForm K W) (hQ : Q.Nondegenerate) (a : K) :
     IsLocallyIsotropic (((-a) • (QuadraticMap.sq : _root_.QuadraticForm K K)).prod Q) ↔
       Q.LocallyRepresentsScalar a := by
@@ -217,6 +217,19 @@ theorem LocallyRepresentsScalar.of_represents {Q : _root_.QuadraticForm K V} {a 
     let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticForm.atRealPlace_def]
     simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℝ)
+
+/-- Adjoining a zero orthogonal summand does not change local scalar representation: a form
+whose orthogonal sum with a zero form locally represents `a` already locally represents `a`. -/
+theorem LocallyRepresentsScalar.of_prod_zero {Q : _root_.QuadraticForm K V} {a : K}
+    (h : LocallyRepresentsScalar (Q.prod (0 : _root_.QuadraticForm K W)) a) :
+    Q.LocallyRepresentsScalar a := by
+  refine ⟨fun v ↦ ?_, fun w ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := (QuadraticMap.represents_iff _ _).mp
+      (((atFinitePlaceProd Q 0 v).represents_iff _).mp (h.1 v))
+    exact (QuadraticMap.represents_iff _ _).mpr ⟨x.1, by simpa using hx⟩
+  · obtain ⟨x, hx⟩ := (QuadraticMap.represents_iff _ _).mp
+      (((atRealPlaceProd Q 0 w).represents_iff _).mp (h.2 w))
+    exact (QuadraticMap.represents_iff _ _).mpr ⟨x.1, by simpa using hx⟩
 
 /-- Globally equivalent quadratic forms are locally equivalent. -/
 theorem LocallyEquivalent.of_equivalent {Q : _root_.QuadraticForm K V}

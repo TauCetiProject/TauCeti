@@ -36,8 +36,11 @@ hypothesis enters. This is the route to finiteness of the normalization of a fla
 algebra `A` over a possibly non-excellent discrete valuation ring `R` in its generic fibre
 `B = A[1/π]` when `B` is smooth of relative dimension one over the fraction field `K`. Applying
 these results requires constructing, near each point of the special fibre, a coordinate `x ∈ A`
-such that `A` is quasi-finite over `R[x]`, `B` is torsion-free over `R[x]`, and
-`K(x) ⊗[R[x]] B` is étale over `K(x)`. This coordinate construction is not supplied here.
+such that `A` is quasi-finite over `R[x]` at the chosen point, `B` is torsion-free over `R[x]`,
+and `K(x) ⊗[R[x]] B` is étale over `K(x)`. This coordinate is constructed by
+`TauCeti.exists_quasiFiniteAt_and_forall_isSeparable_adjoin`, and
+`TauCeti.finite_integralClosure_of_forall_transcendental_and_finrank_kaehlerDifferential_eq_one`
+applies it.
 
 ## Main results
 

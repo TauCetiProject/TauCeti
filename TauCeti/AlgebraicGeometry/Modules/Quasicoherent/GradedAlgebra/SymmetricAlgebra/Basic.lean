@@ -39,10 +39,13 @@ tag 01M1).
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraDegreeIso`: the natural isomorphism between
   the degree-`n` component of `Sym F` and the quasicoherent symmetric power `Symⁿ F`;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraDegreeOneIso`: the natural isomorphism between
-  the degree-one component of `Sym F` and `F`;
+  the degree-one component of `Sym F` and `F`, and its component
+  `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraXOneIso` as an isomorphism of module sheaves;
 * `TauCeti.AlgebraicGeometry.isIso_one_gradedSymmetricAlgebra` and
   `TauCeti.AlgebraicGeometry.epi_mul_gradedSymmetricAlgebra`: the unit and the multiplications of
   `Sym F` are respectively an isomorphism and epimorphisms;
+* `TauCeti.AlgebraicGeometry.isZero_gradedSymmetricAlgebra_obj_X`: the symmetric powers of
+  positive degree of a zero sheaf vanish;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_hom_ext`: a graded algebra morphism out of
   `Sym F` is determined by its degree-one component;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_map_degreeOne`: a graded algebra morphism
@@ -261,6 +264,32 @@ theorem gradedSymmetricAlgebraDegreeOneIso_inv_app_hom (F : QuasicoherentSheaf X
         eqToHom (degree_obj_gradedSymmetricAlgebra_obj F 1).symm :=
   (rfl)
 
+/-- The degree-one component of the graded symmetric algebra of `F` is isomorphic to `F`, through
+the identification `Sym¹ F ≅ F`. This is the isomorphism of module sheaves underlying the component
+of `gradedSymmetricAlgebraDegreeOneIso` at `F`. -/
+def gradedSymmetricAlgebraXOneIso (F : QuasicoherentSheaf X) :
+    ((gradedSymmetricAlgebra X).obj F).obj.X 1 ≅ F.obj :=
+  eqToIso (gradedSymmetricAlgebra_obj_obj_X F 1) ≪≫
+    (SheafOfModules.symmetricPowerOneIso X.sheaf).app F.obj
+
+/-- The isomorphism `gradedSymmetricAlgebraXOneIso` is the identification `Sym¹ F ≅ F`, after
+identifying the degree-one component with `Sym¹ F`. -/
+@[simp]
+theorem gradedSymmetricAlgebraXOneIso_hom (F : QuasicoherentSheaf X) :
+    (gradedSymmetricAlgebraXOneIso F).hom =
+      eqToHom (gradedSymmetricAlgebra_obj_obj_X F 1) ≫
+        (SheafOfModules.symmetricPowerOneIso X.sheaf).hom.app F.obj :=
+  (rfl)
+
+/-- The inverse of `gradedSymmetricAlgebraXOneIso` is the identification `F ≅ Sym¹ F`, followed
+by the identification of `Sym¹ F` with the degree-one component. -/
+@[simp]
+theorem gradedSymmetricAlgebraXOneIso_inv (F : QuasicoherentSheaf X) :
+    (gradedSymmetricAlgebraXOneIso F).inv =
+      (SheafOfModules.symmetricPowerOneIso X.sheaf).inv.app F.obj ≫
+        eqToHom (gradedSymmetricAlgebra_obj_obj_X F 1).symm :=
+  (rfl)
+
 /-- The graded symmetric algebra functor is faithful: a morphism of quasicoherent sheaves is
 recovered from its action in degree one. -/
 instance : (gradedSymmetricAlgebra X).Faithful :=
@@ -284,6 +313,20 @@ instance epi_mul_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) (i j : ℕ) :
   rw [mul_gradedSymmetricAlgebra]
   exact epi_comp' (h _) (epi_comp' (SheafOfModules.epi_symmetricPowerMul (R := X.sheaf) F.obj i j)
     (h _))
+
+open Limits in
+/-- The symmetric powers `Symⁿ F` of positive degree of a zero quasicoherent sheaf `F` vanish:
+the multiplication `Symⁿ⁻¹ F ⊗ F ⟶ Symⁿ F` is an epimorphism out of a zero sheaf. -/
+theorem isZero_gradedSymmetricAlgebra_obj_X {F : QuasicoherentSheaf X} (hF : IsZero F.obj)
+    {n : ℕ} (hn : n ≠ 0) : IsZero (((gradedSymmetricAlgebra X).obj F).obj.X n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  set A := ((gradedSymmetricAlgebra X).obj F).obj
+  have h1 : IsZero (A.X 1) := hF.of_iso (gradedSymmetricAlgebraXOneIso F)
+  have h : IsZero (A.X m ⊗ A.X 1) := (MonoidalCategory.tensorLeft (A.X m)).map_isZero h1
+  -- `mul m 1` lands in `A.X (m + 1)` with the addition of the grading monoid `ℕ`, which
+  -- instance search does not identify with the goal's `m + 1`; elaborating without the expected
+  -- type (`(e :)`) lets it find `epi_mul_gradedSymmetricAlgebra` before unifying with the goal.
+  exact (IsZero.of_epi (A.toMon.mul m 1) h :)
 
 /-- Morphisms of graded quasicoherent algebras out of the graded symmetric algebra `Sym F` are
 determined by their degree-one components. -/

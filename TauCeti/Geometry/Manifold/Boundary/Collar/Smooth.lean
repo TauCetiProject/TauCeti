@@ -247,6 +247,15 @@ theorem opensRange_reparam_le : (c.reparam ψ hψ hψi hψ0).opensRange ≤ c.op
   rintro _ ⟨p, rfl⟩
   exact ⟨(p.1, ψ p.2), rfl⟩
 
+/-- The image of the reparametrized collar is the image under the collar of `∂M × range ψ`. -/
+theorem range_reparam : range (c.reparam ψ hψ hψi hψ0) = c '' (univ ×ˢ range ψ) := by
+  ext y
+  constructor
+  · rintro ⟨p, rfl⟩
+    exact ⟨(p.1, ψ p.2), ⟨mem_univ _, mem_range_self _⟩, rfl⟩
+  · rintro ⟨⟨x, _⟩, ⟨-, s, rfl⟩, rfl⟩
+    exact ⟨(x, s), rfl⟩
+
 /-- Reparametrizing the depth by a surjective `ψ` does not change the image of a collar. -/
 theorem opensRange_reparam (hψs : Surjective ψ) :
     (c.reparam ψ hψ hψi hψ0).opensRange = c.opensRange := by
