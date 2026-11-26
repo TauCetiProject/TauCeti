@@ -342,16 +342,7 @@ theorem holderOnWith_coefficientField {a : EuclideanSpace ℝ ι → Matrix ι �
     (hξ : HolderOnWith Kξ α ξ s) (hL : ∀ x ∈ s, ‖matrixBilinearForm (a x)‖ ≤ L)
     (hN : ∀ x ∈ s, ‖ξ x‖ ≤ N) :
     HolderOnWith (L * Kξ + N * Ka) α (coefficientField a ξ) s := by
-  have hflip : HolderOnWith Ka α (fun x => (matrixBilinearForm (a x)).flip) s :=
-    HolderOnWith.of_dist_le fun x hx y hy => by
-      have h := ha.dist_le hx hy
-      have hsub : (matrixBilinearForm (a x) - matrixBilinearForm (a y)).flip =
-          (matrixBilinearForm (a x)).flip - (matrixBilinearForm (a y)).flip := by
-        ext
-        simp
-      rw [dist_eq_norm] at h ⊢
-      rwa [← ContinuousLinearMap.opNorm_flip, hsub] at h
-  have h := hflip.clm_apply hξ
+  have h := ha.clm_flip.clm_apply hξ
     (fun x hx => (ContinuousLinearMap.opNorm_flip (matrixBilinearForm (a x))).trans_le (hL x hx)) hN
   refine HolderOnWith.of_dist_le fun x hx y hy => ?_
   rw [coefficientField, coefficientField, LinearIsometryEquiv.dist_map]
@@ -364,20 +355,10 @@ theorem holderOnWith_coefficientField_const {a : EuclideanSpace ℝ ι → Matri
     {s : Set (EuclideanSpace ℝ ι)} {α Ka : ℝ≥0}
     (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s) (p : EuclideanSpace ℝ ι) :
     HolderOnWith (Ka * ‖p‖₊) α (coefficientField a fun _ => p) s := by
+  have h := haK.clm_flip.clm_apply_const p
   refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  rw [dist_eq_norm, coefficientField, coefficientField, ← map_sub, LinearIsometryEquiv.norm_map]
-  have hle : ‖(matrixBilinearForm (a x)).flip p - (matrixBilinearForm (a y)).flip p‖ ≤
-      ‖matrixBilinearForm (a x) - matrixBilinearForm (a y)‖ * ‖p‖ := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun ξ => ?_
-    have h := (matrixBilinearForm (a x) - matrixBilinearForm (a y)).le_opNorm₂ ξ p
-    simp only [FunLike.coe_sub, Pi.sub_apply, ContinuousLinearMap.flip_apply] at h ⊢
-    linarith
-  calc _ ≤ _ := hle
-    _ ≤ (Ka : ℝ) * dist x y ^ (α : ℝ) * ‖p‖ := by
-        have hd := haK.dist_le hx hy
-        rw [dist_eq_norm] at hd
-        exact mul_le_mul_of_nonneg_right hd (norm_nonneg _)
-    _ = _ := by push_cast; ring
+  rw [coefficientField, coefficientField, LinearIsometryEquiv.dist_map]
+  exact h.dist_le hx hy
 
 omit [mu.IsAddHaarMeasure] in
 /-- On an open set `B` inside a set `S` on which the bilinear forms of `a` are `α`-Hölder, with

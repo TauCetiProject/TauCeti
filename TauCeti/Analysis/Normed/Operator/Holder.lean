@@ -30,9 +30,11 @@ are Hölder and bounded on the same set, so is their product (`HolderOnWith.smul
 
 A continuous linear map applied after a Hölder function is Hölder, the constant multiplied by
 the operator norm (`ContinuousLinearMap.holderWith_comp`). Evaluating a Hölder family of
-continuous linear maps at a vector of norm at most one keeps the Hölder constant
+continuous linear maps at a fixed vector `v` multiplies the Hölder constant by `‖v‖`
+(`HolderOnWith.clm_apply_const`), so a vector of norm at most one keeps it
 (`HolderOnWith.clm_apply_of_norm_le_one`); evaluating it at a bounded Hölder family of vectors
-obeys the product rule (`HolderOnWith.clm_apply`).
+obeys the product rule (`HolderOnWith.clm_apply`). Flipping the arguments of a Hölder family of
+bilinear maps keeps the Hölder constant (`HolderOnWith.clm_flip`).
 
 Composing a family of bilinear maps with two families of linear maps, `(f x).bilinearComp (g x)
 (h x)`, preserves Hölder continuity when the three families are bounded
@@ -300,14 +302,32 @@ theorem smul_of_norm_le {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G
   ((ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] G →L[𝕜] G).holderOnWith_comp₂ hc hf hcnorm
     hfnorm).mono_const (mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le)
 
+/-- Evaluating a family of continuous linear maps, Hölder on `s` with constant `C`, at a fixed
+vector `v` gives a Hölder function on `s` with constant `C ‖v‖`. -/
+theorem clm_apply_const [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {C α : ℝ≥0}
+    {f : X → F →L[𝕜] G} {s : Set X} (hf : HolderOnWith C α f s) (v : F) :
+    HolderOnWith (C * ‖v‖₊) α (fun x ↦ f x v) s := fun x hx y hy ↦ by
+  calc edist (f x v) (f y v) ≤ edist (f x) (f y) * ‖v‖₊ := by
+        rw [edist_nndist, edist_nndist, nnDist_eq_nnNorm, nnDist_eq_nnNorm, ← sub_apply]
+        exact_mod_cast (f x - f y).le_opNNNorm v
+    _ ≤ C * edist x y ^ (α : ℝ) * ‖v‖₊ := by gcongr; exact hf x hx y hy
+    _ = _ := by push_cast; ring
+
 /-- Evaluating a family of continuous linear maps, Hölder on `s`, at a vector of norm at most `1`
 keeps the Hölder constant. -/
 theorem clm_apply_of_norm_le_one [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {C α : ℝ≥0}
     {f : X → F →L[𝕜] G} {s : Set X} (hf : HolderOnWith C α f s) {v : F} (hv : ‖v‖ ≤ 1) :
-    HolderOnWith C α (fun x ↦ f x v) s := fun x hx y hy ↦ by
-  refine le_trans ?_ (hf x hx y hy)
-  rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← sub_apply]
-  exact ENNReal.ofReal_le_ofReal ((f x - f y).unit_le_opNorm _ hv)
+    HolderOnWith C α (fun x ↦ f x v) s :=
+  (hf.clm_apply_const v).mono_const (mul_le_of_le_one_right zero_le hv)
+
+/-- Flipping the arguments of a family of continuous bilinear maps, Hölder on `s`, keeps the
+Hölder constant, since `ContinuousLinearMap.flip` is a linear isometry. -/
+theorem clm_flip {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {C α : ℝ≥0}
+    {f : X → E →L[𝕜] F →L[𝕜] G} {s : Set X} (hf : HolderOnWith C α f s) :
+    HolderOnWith C α (fun x ↦ (f x).flip) s := fun x hx y hy ↦ by
+  rw [← ContinuousLinearMap.coe_flipₗᵢ', LinearIsometryEquiv.edist_map]
+  exact hf x hx y hy
 
 /-- Evaluating a family of continuous linear maps at a family of vectors, both Hölder and bounded
 on `s`, gives a Hölder function on `s`, with constant `Mf Kv + Mv Kf`. -/
