@@ -123,6 +123,7 @@ theorem map_smul_diagonal_const (A : GL n B) (m : ℤ) (hξ : IsUnit (algebraMap
 
 /-- If `ξ` is not a unit of `B`, then `diag(ξ^a) Bⁿ ⊆ diag(ξ^b) Bⁿ` exactly when `b ≤ a`
 pointwise. -/
+@[simp]
 theorem diagonal_le_diagonal_iff (hξ' : ¬IsUnit ξ) {a b : n → ℤ}
     (hξ : IsUnit (algebraMap B K ξ)) : diagonal a hξ ≤ diagonal b hξ ↔ b ≤ a := by
   refine ⟨fun h i ↦ ?_, fun h v hv ↦ mem_diagonal.mpr fun i ↦ ?_⟩
