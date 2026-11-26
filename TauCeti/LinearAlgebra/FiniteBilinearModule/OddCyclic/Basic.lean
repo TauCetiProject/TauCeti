@@ -78,20 +78,6 @@ prime, `k ≥ 1` and `θ` prime to `p`, this is **Nikulin's odd cyclic generator
       push_cast
       field_simp)
 
-/-- The underlying additive group of `oddCyclic m hm θ` is `ZMod m`. -/
-def oddCyclicAddEquiv : oddCyclic m hm θ ≃+ ZMod m :=
-  AddEquiv.refl (ZMod m)
-
-/-- `oddCyclicAddEquiv` acts as the identity on the underlying `ZMod m` carrier. -/
-@[simp]
-theorem oddCyclicAddEquiv_apply (x : oddCyclic m hm θ) :
-    oddCyclicAddEquiv m hm θ x = x := (rfl)
-
-/-- The inverse of `oddCyclicAddEquiv` acts as the identity on `ZMod m`. -/
-@[simp]
-theorem oddCyclicAddEquiv_symm_apply (x : ZMod m) :
-    (oddCyclicAddEquiv m hm θ).symm x = x := (rfl)
-
 /-- The order of `oddCyclic m hm θ` is `m`: its carrier is `ZMod m` by definition. -/
 @[simp]
 theorem natCard_oddCyclic : Nat.card (oddCyclic m hm θ) = m :=

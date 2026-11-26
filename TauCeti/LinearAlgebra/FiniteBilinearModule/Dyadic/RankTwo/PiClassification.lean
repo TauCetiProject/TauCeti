@@ -128,4 +128,33 @@ theorem nonempty_isometry_pi_dyadicU_prod_pi_dyadicV_iff (k : ℕ) [NeZero k]
     obtain ⟨f⟩ := nonempty_isometry_pi_dyadicU_prod_pi_dyadicV_normal_form k c d
     exact ⟨e.trans ((Isometry.ofEq (by rw [hn, hp])).trans f.symm)⟩
 
+/-- The rank-two dyadic generators `u^{(2)}(2^k)` and `v^{(2)}(2^k)` are quadratically isometric if
+and only if `k = 0` (when both are trivial). -/
+@[simp]
+theorem nonempty_isometry_dyadicU_dyadicV_iff (k : ℕ) :
+    Nonempty ((dyadicU k).Isometry (dyadicV k)) ↔ k = 0 := by
+  constructor
+  · rintro ⟨f⟩
+    by_contra hk
+    have : NeZero k := ⟨hk⟩
+    let eU : Isometry (dyadicU k)
+        ((pi fun _ : Fin 1 ↦ dyadicU k).prod (pi fun _ : Fin 0 ↦ dyadicV k)) :=
+      ((prodUnique (dyadicU k).quadratic (pi fun _ : Fin 0 ↦ dyadicU k).quadratic).symm.trans
+        (consPi fun _ : Fin 1 ↦ (dyadicU k).quadratic)).trans
+        (prodUnique (pi fun _ : Fin 1 ↦ dyadicU k).quadratic
+          (pi fun _ : Fin 0 ↦ dyadicV k).quadratic).symm
+    let eV : Isometry (dyadicV k)
+        ((pi fun _ : Fin 0 ↦ dyadicU k).prod (pi fun _ : Fin 1 ↦ dyadicV k)) :=
+      ((prodUnique (dyadicV k).quadratic (pi fun _ : Fin 0 ↦ dyadicV k).quadratic).symm.trans
+        (consPi fun _ : Fin 1 ↦ (dyadicV k).quadratic)).trans
+        (uniqueProd (pi fun _ : Fin 0 ↦ dyadicU k).quadratic
+          (pi fun _ : Fin 1 ↦ dyadicV k).quadratic).symm
+    have h := (nonempty_isometry_pi_dyadicU_prod_pi_dyadicV_iff k 1 0 0 1).mp
+      ⟨eU.symm.trans (f.trans eV)⟩
+    norm_num at h
+  · rintro rfl
+    have := subsingleton_dyadicU_zero
+    have := subsingleton_dyadicV_zero
+    exact ⟨Isometry.ofSubsingleton⟩
+
 end TauCeti.FiniteQuadraticModule

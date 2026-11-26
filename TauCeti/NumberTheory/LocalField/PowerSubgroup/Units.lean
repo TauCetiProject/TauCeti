@@ -48,9 +48,6 @@ theorem card_integerUnitPowerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
   let e : Kˣ ≃* Multiplicative ℤ × 𝒪[K]ˣ :=
     (unitsEquivIntProd K ϖ hϖ).toMulEquiv.trans
       (MulEquiv.prodCongr (.refl _) unitFiltrationZeroEquivIntegerUnits)
-  have hprod : (powMonoidHom n : Multiplicative ℤ × 𝒪[K]ˣ →* _) =
-      (powMonoidHom n).prodMap (powMonoidHom n) := by
-    ext x <;> simp
   have hZ : (powMonoidHom n : Multiplicative ℤ →* _).range.index = n := by
     have hker : (powMonoidHom n : Multiplicative ℤ →* _).ker = ⊥ := by
       ext
@@ -60,7 +57,7 @@ theorem card_integerUnitPowerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
   have hcount : Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) =
       n * Nat.card (𝒪[K]ˣ ⧸ (powMonoidHom n : 𝒪[K]ˣ →* 𝒪[K]ˣ).range) := by
     rw [← Subgroup.index_eq_card, ← Subgroup.index_map_equiv _ e,
-      e.map_range_powMonoidHom n, hprod, MonoidHom.range_prodMap, Subgroup.index_prod,
+      e.map_range_powMonoidHom n, Subgroup.range_powMonoidHom_prod, Subgroup.index_prod,
       hZ, Subgroup.index_eq_card]
   rw [card_powerClasses hn, mul_assoc] at hcount
   exact Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hn0) hcount.symm

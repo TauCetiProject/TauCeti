@@ -169,10 +169,6 @@ theorem rank_pi_eq_sup_of_coprime_card {ι : Type*} [Fintype ι] (M : ι → Typ
   simp_rw [AddGroup.rank_eq_spanFinrank]
   exact TauCeti.AddCommGroup.spanFinrank_pi_eq_sup_of_coprime_card M hcop
 
-private abbrev finTwoPair {α : Sort*} (a b : α) : Fin 2 → α
-  | 0 => a
-  | 1 => b
-
 private theorem rank_prod_eq_rank_piFinTwo.{u} (F : Fin 2 → Type u) [∀ i, AddCommGroup (F i)]
     [∀ i, AddGroup.FG (F i)] :
     AddGroup.rank (F 0 × F 1) = AddGroup.rank (∀ i, F i) :=
@@ -182,14 +178,14 @@ private theorem rank_prod_eq_max_of_coprime_card_aux.{u} {M N : Type u}
     [instM : AddCommGroup M] [instN : AddCommGroup N] [hM : AddGroup.FG M] [hN : AddGroup.FG N]
     (hcop : (Nat.card M).Coprime (Nat.card N)) :
     AddGroup.rank (M × N) = max (AddGroup.rank M) (AddGroup.rank N) := by
-  let F : Fin 2 → Type u := finTwoPair M N
+  let F : Fin 2 → Type u := ![M, N]
   let _ : ∀ i, AddCommGroup (F i) := fun | 0 => instM | 1 => instN
   have : ∀ i, AddGroup.FG (F i) := fun | 0 => hM | 1 => hN
   have hF : Pairwise fun i j ↦ (Nat.card (F i)).Coprime (Nat.card (F j)) := by
     simpa [Pairwise, Fin.forall_fin_two, F] using ⟨hcop, hcop.symm⟩
-  rw [rank_prod_eq_rank_piFinTwo F, rank_pi_eq_sup_of_coprime_card F hF]
-  have huniv : (Finset.univ : Finset (Fin 2)) = {0, 1} := by decide
-  rw [huniv, Finset.sup_insert, Finset.sup_singleton]
+  change AddGroup.rank (F 0 × F 1) = max (AddGroup.rank (F 0)) (AddGroup.rank (F 1))
+  rw [rank_prod_eq_rank_piFinTwo F, rank_pi_eq_sup_of_coprime_card F hF,
+    Finset.univ_fin2, Finset.sup_insert, Finset.sup_singleton]
 
 /-- For two finitely generated abelian groups of coprime orders, `AddGroup.rank (M × N)` is the
 maximum of `AddGroup.rank M` and `AddGroup.rank N`. -/
@@ -220,9 +216,10 @@ theorem rank_prod_zmod (m n : ℕ) :
       AddGroup.rank_zmod, AddGroup.rank_zmod]
     split_ifs <;> simp_all
   · obtain ⟨p, hp, hp_dvd⟩ := Nat.exists_prime_and_dvd hcop
-    let F : Fin 2 → ℕ := finTwoPair m n
+    let F : Fin 2 → ℕ := ![m, n]
     have hdvd : ∀ i : Fin 2, p ∣ F i := Fin.forall_fin_two.2
       ⟨hp_dvd.trans (Nat.gcd_dvd_left m n), hp_dvd.trans (Nat.gcd_dvd_right m n)⟩
+    change AddGroup.rank (ZMod (F 0) × ZMod (F 1)) = 2
     rw [rank_prod_eq_rank_piFinTwo (fun i ↦ ZMod (F i)),
       AddGroup.rank_pi_zmod _ hp hdvd, Fintype.card_fin]
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
-import TauCeti.GroupTheory.Torsion
+import TauCeti.Algebra.Group.Primary.Basic
 
 /-!
 # Primary components of finite bilinear and quadratic modules
@@ -44,7 +44,7 @@ of the `p`-primary components.
 * `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
   `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to an
   isometry of `p`-primary components.
-* `TauCeti.FiniteQuadraticModule.restrictPrimaryComponentProdIsometry`: the `p`-primary component
+* `TauCeti.FiniteQuadraticModule.primaryComponentProdIsometry`: the `p`-primary component
   of an orthogonal product is the orthogonal product of the `p`-primary components.
 
 ## References
@@ -76,24 +76,6 @@ variable (A : FiniteBilinearModule)
 `AddCommGroup.primaryComponent A p`. -/
 abbrev primaryComponent (p : ℕ) : FiniteBilinearModule :=
   A.restrict (AddCommGroup.primaryComponent A p)
-
-/-- The underlying additive group of `A.primaryComponent p` is
-`AddCommGroup.primaryComponent A p`. -/
-def primaryComponentAddEquiv (p : ℕ) :
-    A.primaryComponent p ≃+ AddCommGroup.primaryComponent A p :=
-  AddEquiv.refl (AddCommGroup.primaryComponent A p)
-
-/-- `primaryComponentAddEquiv` acts as the identity on elements of
-`AddCommGroup.primaryComponent A p`. -/
-@[simp]
-theorem primaryComponentAddEquiv_apply (p : ℕ) (x : A.primaryComponent p) :
-    A.primaryComponentAddEquiv p x = x := (rfl)
-
-/-- The inverse of `primaryComponentAddEquiv` acts as the identity on elements of
-`AddCommGroup.primaryComponent A p`. -/
-@[simp]
-theorem primaryComponentAddEquiv_symm_apply (p : ℕ) (x : AddCommGroup.primaryComponent A p) :
-    (A.primaryComponentAddEquiv p).symm x = x := (rfl)
 
 /-! ## Orthogonality -/
 
@@ -228,24 +210,6 @@ theorem primaryComponent_toFiniteBilinearModule (p : ℕ) :
     (A.primaryComponent p).toFiniteBilinearModule = A.toFiniteBilinearModule.primaryComponent p :=
   rfl
 
-/-- The underlying additive group of `A.primaryComponent p` is
-`AddCommGroup.primaryComponent A p`. -/
-def primaryComponentAddEquiv (p : ℕ) :
-    A.primaryComponent p ≃+ AddCommGroup.primaryComponent A p :=
-  AddEquiv.refl (AddCommGroup.primaryComponent A p)
-
-/-- `primaryComponentAddEquiv` acts as the identity on elements of
-`AddCommGroup.primaryComponent A p`. -/
-@[simp]
-theorem primaryComponentAddEquiv_apply (p : ℕ) (x : A.primaryComponent p) :
-    A.primaryComponentAddEquiv p x = x := (rfl)
-
-/-- The inverse of `primaryComponentAddEquiv` acts as the identity on elements of
-`AddCommGroup.primaryComponent A p`. -/
-@[simp]
-theorem primaryComponentAddEquiv_symm_apply (p : ℕ) (x : AddCommGroup.primaryComponent A p) :
-    (A.primaryComponentAddEquiv p).symm x = x := (rfl)
-
 /-- The polar pairing of a nondegenerate finite quadratic module restricts nondegenerately to each
 prime-primary component. -/
 theorem isNondegenerate_primaryComponent (hA : A.IsNondegenerate) {p : ℕ}
@@ -315,30 +279,30 @@ theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteQuadratic
 
 /-- **The `p`-primary component of an orthogonal product** is the orthogonal product of the
 `p`-primary components (`AddCommGroup.primaryComponent_prod`). -/
-def restrictPrimaryComponentProdIsometry (B : FiniteQuadraticModule) (p : ℕ) :
+def primaryComponentProdIsometry (B : FiniteQuadraticModule) (p : ℕ) :
     Isometry ((A.prod B).primaryComponent p)
       ((A.primaryComponent p).prod (B.primaryComponent p)) :=
   ((A.prod B).restrictCongr (AddCommGroup.primaryComponent_prod A B p)).trans
     (A.restrictProdIsometry _ _)
 
-/-- The first component of `restrictPrimaryComponentProdIsometry` is the first coordinate. -/
+/-- The first component of `primaryComponentProdIsometry` is the first coordinate. -/
 @[simp]
-theorem restrictHom_restrictPrimaryComponentProdIsometry_apply_fst (B : FiniteQuadraticModule)
+theorem restrictHom_primaryComponentProdIsometry_apply_fst (B : FiniteQuadraticModule)
     (p : ℕ) (x : (A.prod B).primaryComponent p) :
     A.restrictHom (AddCommGroup.primaryComponent A p)
-        (A.restrictPrimaryComponentProdIsometry B p x).1 =
+        (A.primaryComponentProdIsometry B p x).1 =
       ((A.prod B).restrictHom (AddCommGroup.primaryComponent (A.prod B) p) x).1 := by
-  rw [restrictPrimaryComponentProdIsometry, Isometry.trans_apply,
+  rw [primaryComponentProdIsometry, Isometry.trans_apply,
     restrictHom_restrictProdIsometry_apply_fst, restrictHom_restrictCongr_apply]
 
-/-- The second component of `restrictPrimaryComponentProdIsometry` is the second coordinate. -/
+/-- The second component of `primaryComponentProdIsometry` is the second coordinate. -/
 @[simp]
-theorem restrictHom_restrictPrimaryComponentProdIsometry_apply_snd (B : FiniteQuadraticModule)
+theorem restrictHom_primaryComponentProdIsometry_apply_snd (B : FiniteQuadraticModule)
     (p : ℕ) (x : (A.prod B).primaryComponent p) :
     B.restrictHom (AddCommGroup.primaryComponent B p)
-        (A.restrictPrimaryComponentProdIsometry B p x).2 =
+        (A.primaryComponentProdIsometry B p x).2 =
       ((A.prod B).restrictHom (AddCommGroup.primaryComponent (A.prod B) p) x).2 := by
-  rw [restrictPrimaryComponentProdIsometry, Isometry.trans_apply,
+  rw [primaryComponentProdIsometry, Isometry.trans_apply,
     restrictHom_restrictProdIsometry_apply_snd, restrictHom_restrictCongr_apply]
 
 end FiniteQuadraticModule

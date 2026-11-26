@@ -64,8 +64,6 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 * `IsAddPGroup.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
 * `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
   of finite order is already the image of a `p`-primary element.
-* `AddCommGroup.primaryComponent_prod`: the `p`-primary component of a product is the product of
-  the `p`-primary components.
 * `IsAddPGroup.primaryComponent_eq_bot`: a `p`-primary torsion group has trivial `q`-primary
   component for every prime `q ≠ p`.
 -/
@@ -279,20 +277,6 @@ theorem exists_mem_primaryComponent_apply_eq {M N : Type*} [AddCommMonoid M] [Ad
   refine ⟨a • c • m, ⟨b, ?_⟩, ?_⟩
   · rw [smul_comm (p ^ b) a, smul_smul (p ^ b) c, ← hord, addOrderOf_nsmul_eq_zero, smul_zero]
   · simpa only [map_nsmul] using ha
-
-/-- **Primary components of a product.** An element of `M × N` is killed by a power of `p` exactly
-when both of its coordinates are, so the `p`-primary component of `M × N` is the product of the
-`p`-primary components of `M` and `N`. -/
-theorem _root_.AddCommGroup.primaryComponent_prod (M N : Type*) [AddCommGroup M]
-    [AddCommGroup N] (p : ℕ) :
-    AddCommGroup.primaryComponent (M × N) p =
-      (AddCommGroup.primaryComponent M p).prod (AddCommGroup.primaryComponent N p) := by
-  ext x
-  simp only [AddSubgroup.mem_prod, AddCommGroup.mem_primaryComponent, Prod.ext_iff,
-    Prod.smul_fst, Prod.smul_snd, Prod.fst_zero, Prod.snd_zero]
-  refine ⟨fun ⟨k, h₁, h₂⟩ ↦ ⟨⟨k, h₁⟩, ⟨k, h₂⟩⟩, fun ⟨⟨k, hk⟩, ⟨l, hl⟩⟩ ↦ ⟨k + l, ?_, ?_⟩⟩
-  · rw [pow_add, mul_comm, ← smul_smul, hk, smul_zero]
-  · rw [pow_add, ← smul_smul, hl, smul_zero]
 
 /-- **A `p`-group has no `q`-primary elements** for a prime `q ≠ p`: an element killed by powers of
 both primes has order dividing two coprime numbers. -/

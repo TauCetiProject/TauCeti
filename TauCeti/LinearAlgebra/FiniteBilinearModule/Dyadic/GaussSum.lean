@@ -54,8 +54,6 @@ sum `-2`, because its form takes the value `1/2` on the three nonzero elements o
 * `TauCeti.FiniteQuadraticModule.scaledGaussSum_dyadicU_pow_add` and
   `TauCeti.FiniteQuadraticModule.scaledGaussSum_dyadicV_pow_add`: scaling a generator at
   exponent `j + e` by `2^j` gives `2^(2j)` times its Gauss sum at exponent `e`.
-* `TauCeti.FiniteQuadraticModule.nonempty_isometry_dyadicU_dyadicV_iff`: `u^{(2)}(2^k)` and
-  `v^{(2)}(2^k)` are quadratically isometric if and only if `k = 0`.
 
 ## References
 
@@ -493,26 +491,5 @@ theorem scaledGaussSum_dyadicV_pow_add (j e : ℕ) :
   push_cast
   rw [pow_add]
   field_simp
-
-/-- The rank-two dyadic generators `u^{(2)}(2^k)` and `v^{(2)}(2^k)` are quadratically isometric if
-and only if `k = 0` (when both are trivial). For `k = j + 1 > 0`, their `2^j`-scaled Gauss sums
-have opposite signs `±2^(2j + 1)`. -/
-@[simp]
-theorem nonempty_isometry_dyadicU_dyadicV_iff (k : ℕ) :
-    Nonempty ((dyadicU k).Isometry (dyadicV k)) ↔ k = 0 := by
-  constructor
-  · rintro ⟨f⟩
-    by_contra hk
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
-    have h := f.scaledGaussSum_eq (2 ^ j)
-    rw [scaledGaussSum_dyadicU_pow_add j 1, scaledGaussSum_dyadicV_pow_add j 1,
-      gaussSum_dyadicU, gaussSum_dyadicV, pow_one, pow_one] at h
-    have h2 : (2 : ℂ) ^ (2 * j) ≠ 0 := pow_ne_zero _ (by norm_num)
-    have hne : (2 : ℂ) = -2 := mul_left_cancel₀ h2 h
-    norm_num at hne
-  · rintro rfl
-    have := subsingleton_dyadicU_zero
-    have := subsingleton_dyadicV_zero
-    exact ⟨Isometry.ofSubsingleton⟩
 
 end TauCeti.FiniteQuadraticModule

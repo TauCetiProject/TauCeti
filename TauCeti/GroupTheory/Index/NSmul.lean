@@ -257,6 +257,11 @@ theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] (n
   rwa [← h, MonoidHom.coe_toAdditive_range, MonoidHom.coe_toAdditive_ker,
     index_toAddSubgroup] at this
 
+@[to_additive nsmulAddMonoidHom_prod]
+private theorem powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
+    (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
+  ext x <;> simp
+
 /-- The subgroup of `n`-th powers in a product is the product of the subgroups of `n`-th
 powers. -/
 @[to_additive range_nsmulAddMonoidHom_prod
@@ -265,9 +270,7 @@ powers. -/
 theorem range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
     (powMonoidHom n : A × B →* A × B).range =
       (powMonoidHom n : A →* A).range.prod (powMonoidHom n : B →* B).range := by
-  have : (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
-    ext x <;> simp
-  rw [this, MonoidHom.range_prodMap]
+  rw [powMonoidHom_prod, MonoidHom.range_prodMap]
 
 /-- The index of the `n`-th powers in a product is the product of the indices. -/
 @[simp]
@@ -280,9 +283,8 @@ theorem index_range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] 
 theorem card_ker_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
     Nat.card (powMonoidHom n : A × B →* A × B).ker =
       Nat.card (powMonoidHom n : A →* A).ker * Nat.card (powMonoidHom n : B →* B).ker := by
-  have : (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
-    ext x <;> simp
-  rw [this, MonoidHom.ker_prodMap, Nat.card_congr (prodEquiv _ _).toEquiv, Nat.card_prod]
+  rw [powMonoidHom_prod, MonoidHom.ker_prodMap, Nat.card_congr (prodEquiv _ _).toEquiv,
+    Nat.card_prod]
 
 end Subgroup
 

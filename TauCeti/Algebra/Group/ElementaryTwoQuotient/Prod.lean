@@ -47,9 +47,8 @@ namespace TauCeti
 section Prod
 
 private theorem elementaryTwoQuotientMk_eq_modNMkQ {G : Type*} [CommGroup G] (g : G) :
-    elementaryTwoQuotientMk g = ModN.mkQ 2 (Additive.ofMul g) := by
-  -- `elementaryTwoQuotientMk` is not `@[expose]` in `Basic`, so bridge via `Submodule.Quotient.mk`.
-  rw [elementaryTwoQuotientMk_eq_mkQ, ModN.mkQ_apply]
+    elementaryTwoQuotientMk g = ModN.mkQ 2 (Additive.ofMul g) :=
+  elementaryTwoQuotientMk_eq_mkQ g
 
 /-- **The elementary-2 quotient of a product is the product of the elementary-2 quotients.** For
 commutative groups `G` and `H`, the class map identifies `(G × H)/(G × H)²` with `G/G² × H/H²`

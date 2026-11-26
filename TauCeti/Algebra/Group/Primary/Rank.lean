@@ -48,7 +48,6 @@ theorem eq_top_of_map_mkQ_eq_top {p : ℕ} {G : Type*} [AddCommGroup G] [Finite 
   have hstep (g : G) : ∃ h ∈ H, ∃ g' : G, g = h + p • g' := by
     have hmem : ModN.mkQ p g ∈ H.map (ModN.mkQ p) := hmap ▸ trivial
     obtain ⟨h, hh, hgh⟩ := hmem
-    rw [ModN.mkQ_apply, ModN.mkQ_apply] at hgh
     have hsub : g - h ∈ LinearMap.range (LinearMap.lsmul ℤ G (p : ℤ)) :=
       (Submodule.Quotient.eq _).mp hgh.symm
     obtain ⟨g', hg'⟩ := hsub
@@ -80,7 +79,7 @@ theorem rank_eq_finrank_modN {p : ℕ} (hp : p.Prime) {G : Type*} [AddCommGroup 
     AddGroup.rank G = Module.finrank (ZMod p) (ModN G p) := by
   classical
   have : Fact p.Prime := ⟨hp⟩
-  have hsurj : Function.Surjective (ModN.mkQ (G := G) p) := ModN.mkQ_surjective p
+  have hsurj : Function.Surjective (ModN.mkQ (G := G) p) := Submodule.mkQ_surjective _
   rw [← AddGroup.rank_eq_finrank_zmod (ModN G p)]
   refine le_antisymm ?_ (AddGroup.rank_le_of_surjective (ModN.mkQ p) hsurj)
   -- Any lift of a generating set of `G / pG` generates `G` modulo `p • G`, hence modulo `p ^ k • G`

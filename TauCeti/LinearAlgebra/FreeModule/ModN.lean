@@ -64,16 +64,6 @@ public section
 
 namespace ModN
 
-/-- `ModN.mkQ n` sends `x` to its quotient class `Submodule.Quotient.mk x`. -/
-theorem mkQ_apply {G : Type*} [AddCommGroup G] (n : ℕ) (x : G) :
-    mkQ n x = (Submodule.Quotient.mk x : ModN G n) :=
-  Submodule.mkQ_apply _ x
-
-/-- The quotient map `ModN.mkQ n : G →+ ModN G n` is surjective. -/
-theorem mkQ_surjective {G : Type*} [AddCommGroup G] (n : ℕ) :
-    Function.Surjective (mkQ (G := G) n) :=
-  Submodule.mkQ_surjective _
-
 /-- The `ℤ`-linear multiplication-by-`n` range equals the additive range of
 `nsmulAddMonoidHom n`. -/
 theorem range_lsmul_toAddSubgroup_eq_range_nsmul (G : Type*) [AddCommGroup G] (n : ℕ) :
@@ -92,9 +82,8 @@ noncomputable def quotientRangeNSMulAddEquiv (G : Type*) [AddCommGroup G] (n : �
 @[simp]
 theorem quotientRangeNSMulAddEquiv_mkQ (G : Type*) [AddCommGroup G] (n : ℕ) (x : G) :
     quotientRangeNSMulAddEquiv G n (mkQ n x) =
-      (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) := by
-  rw [mkQ_apply]
-  exact QuotientAddGroup.quotientAddEquivOfEq_mk (range_lsmul_toAddSubgroup_eq_range_nsmul G n) x
+      (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) :=
+  QuotientAddGroup.quotientAddEquivOfEq_mk (range_lsmul_toAddSubgroup_eq_range_nsmul G n) x
 
 /-- The inverse of `ModN.quotientRangeNSMulAddEquiv` maps the quotient class of `x` to
 `mkQ n x`. -/
