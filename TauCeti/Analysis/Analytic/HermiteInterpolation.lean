@@ -21,7 +21,7 @@ import TauCeti.LinearAlgebra.HermiteInterpolation
 Over a characteristic-zero nontrivially normed field `𝕜`, given a function `f : 𝕜 → 𝕜` analytic on a
 neighbourhood of `U`, a finite set `t ⊆ U`, and prescribed jet multiplicities `m : 𝕜 → ℕ`, algebraic
 Hermite interpolation (`Polynomial.ordinaryHermiteJet_bijective`) constructs a unique polynomial `P`
-of degree `< ∑ x ∈ t, m x` matching the iterated derivatives of `f` up to order `m a` at each
+of degree `< ∑ x ∈ t, m x` matching the iterated derivatives of `f` of orders `k < m a` at each
 `a ∈ t`. Because `f - P` then vanishes to order at least `m a` at every `a ∈ t`, repeated divided
 differences (`AnalyticOnNhd.exists_eq_prod_pow_smul`) factor the remainder globally as
 `f z - P.eval z = (∏ x ∈ t, (X - C x) ^ m x).eval z * F z` for a function `F : 𝕜 → 𝕜` analytic on a
@@ -47,7 +47,7 @@ open Polynomial Set
 neighbourhood of `U` over a complete characteristic-zero nontrivially normed field `𝕜`, let
 `t : Finset 𝕜` satisfy `(t : Set 𝕜) ⊆ U`, and let `m : 𝕜 → ℕ` prescribe jet orders. There exist a
 polynomial `P : 𝕜[X]` of degree `< ∑ x ∈ t, m x` and a function `F : 𝕜 → 𝕜` analytic on a
-neighbourhood of `U` such that `P` matches the iterated derivatives of `f` up to order `m a` at
+neighbourhood of `U` such that `P` matches the iterated derivatives of `f` of orders `k < m a` at
 every `a ∈ t` and `f z - P.eval z = (∏ x ∈ t, (X - C x) ^ m x).eval z * F z` for all `z : 𝕜`. -/
 theorem AnalyticOnNhd.exists_polynomial_iteratedDeriv_eq_and_sub_eq_mul
     {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [CharZero 𝕜] {U : Set 𝕜} {f : 𝕜 → 𝕜}
@@ -76,8 +76,7 @@ theorem AnalyticOnNhd.exists_polynomial_iteratedDeriv_eq_and_sub_eq_mul
     have haU : a ∈ U := htU ha
     rw [natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero (hh_an a haU)]
     intro k hk
-    change iteratedDeriv k (f - fun z ↦ P.eval z) a = 0
-    rw [iteratedDeriv_sub (hf a haU).contDiffAt (hP_an a (mem_univ a)).contDiffAt,
+    rw [iteratedDeriv_fun_sub (hf a haU).contDiffAt (hP_an a (mem_univ a)).contDiffAt,
       hP_jet ha hk, sub_self]
   obtain ⟨F, hF, hfactor⟩ := hh_an.exists_eq_prod_pow_smul t m hord
   refine ⟨P, F, hP_deg, hF, fun _ ha _ hk ↦ hP_jet ha hk, fun z ↦ ?_⟩
