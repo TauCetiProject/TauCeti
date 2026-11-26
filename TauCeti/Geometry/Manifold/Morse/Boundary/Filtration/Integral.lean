@@ -101,22 +101,11 @@ theorem signedMorseBoundaryCoeffs_coeff (p q : criticalPoints 𝓘(ℝ, E) f) :
 /-- **The integral Morse complex with all critical values is the integral Morse complex.** -/
 def signedMorseBoundaryCoeffsComplexOnUnivIso :
     (hX.signedMorseBoundaryCoeffs 𝔬 hf R hsq).complexOn univ ≅ hX.signedMorseComplex 𝔬 hf R hsq :=
-  Hom.isoOfComponents
-    (fun n ↦ (Finsupp.domLCongr (MorseGenerators.univEquiv E f n)).toModuleIso) <| by
-    rintro _ n rfl
-    rw [MorseBoundaryCoeffs.complexOn_d, signedMorseComplex_d]
-    refine ModuleCat.hom_ext (LinearMap.ext fun (c : MorseGenerators E f (n + 1) univ →₀ R) ↦
-      Finsupp.ext fun q ↦ ?_)
-    -- The terms of `complexOn` and `signedMorseComplex` are `ModuleCat.of` of the chain modules
-    -- only after unfolding these definitions, so the goal is not type-correct at reducible
-    -- transparency and the `ModuleCat` composition lemmas do not rewrite it; `change` states it
-    -- on the underlying chains instead.
-    change hX.signedMorseBoundaryAt 𝔬 hf R n (Finsupp.equivMapDomain _ c) q =
-      Finsupp.equivMapDomain _ ((hX.signedMorseBoundaryCoeffs 𝔬 hf R hsq).boundaryOn univ n c) q
-    rw [Finsupp.equivMapDomain_apply, MorseBoundaryCoeffs.boundaryOn_apply,
-      signedMorseBoundaryAt_apply, Finsupp.equivMapDomain_eq_mapDomain,
-      Finsupp.sum_mapDomain_index (fun _ ↦ zero_mul _) fun _ _ _ ↦ add_mul ..]
-    simp
+  (hX.signedMorseBoundaryCoeffs 𝔬 hf R hsq).complexOnUnivIso (hX.signedMorseBoundaryAt 𝔬 hf R)
+    (fun _ c q ↦ by
+      simp only [signedMorseBoundaryCoeffs_coeff]
+      exact signedMorseBoundaryAt_apply hf c q)
+    ((signedMorseBoundaryAt_comp_signedMorseBoundaryAt_eq_zero_iff hf).2 hsq)
 
 /-- The identification of the integral Morse complex with all critical values with the integral
 Morse complex sends a chain to the same chain. -/
@@ -125,9 +114,7 @@ theorem signedMorseBoundaryCoeffsComplexOnUnivIso_hom_f_apply (n : ℕ)
     (c : MorseGenerators E f n univ →₀ R) :
     (signedMorseBoundaryCoeffsComplexOnUnivIso hsq).hom.f n c =
       c.mapDomain (MorseGenerators.univEquiv E f n) :=
-  -- The component is `(Finsupp.domLCongr _).toModuleIso`, whose application to a chain is
-  -- `Finsupp.equivMapDomain` by definition of `Finsupp.domLCongr`.
-  Finsupp.equivMapDomain_eq_mapDomain _ c
+  MorseBoundaryCoeffs.complexOnUnivIso_hom_f_apply _ _ _ _ n c
 
 /-- The inverse identification of the integral Morse complex with the integral Morse complex with
 all critical values sends a chain to the same chain. -/
@@ -136,8 +123,7 @@ theorem signedMorseBoundaryCoeffsComplexOnUnivIso_inv_f_apply (n : ℕ)
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) :
     (signedMorseBoundaryCoeffsComplexOnUnivIso hsq).inv.f n c =
       c.mapDomain (MorseGenerators.univEquiv E f n).symm :=
-  -- As above, the component applied to a chain is `Finsupp.equivMapDomain` by definition.
-  Finsupp.equivMapDomain_eq_mapDomain _ c
+  MorseBoundaryCoeffs.complexOnUnivIso_inv_f_apply _ _ _ _ n c
 
 variable {a : ℤ → ℝ} (ha : Monotone a)
 
@@ -147,8 +133,8 @@ def signedMorseFiltrationAbutmentIso (n : ℕ) :
     (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
         ((hX.signedMorseBoundaryCoeffs 𝔬 hf R hsq).monotone_filtration ha))).abutment (-n) ≅
       (hX.signedMorseComplex 𝔬 hf R hsq).homology n :=
-  (hX.signedMorseBoundaryCoeffs 𝔬 hf R hsq).filtrationAbutmentIso ha n ≪≫
-    (homologyFunctor _ _ n).mapIso (signedMorseBoundaryCoeffsComplexOnUnivIso hsq)
+  (hX.signedMorseBoundaryCoeffs 𝔬 hf R hsq).filtrationAbutmentIsoOfIso ha
+    (signedMorseBoundaryCoeffsComplexOnUnivIso hsq) n
 
 end IsAdaptedPseudoGradient
 

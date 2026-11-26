@@ -79,22 +79,9 @@ theorem morseBoundaryCoeffs_coeff : (h.morseBoundaryCoeffs hf).coeff = h.morseBo
 /-- **The mod-two Morse complex with all critical values is the mod-two Morse complex.** -/
 def morseBoundaryCoeffsComplexOnUnivIso :
     (h.morseBoundaryCoeffs hf).complexOn univ ≅ h.morseComplex hf :=
-  Hom.isoOfComponents
-    (fun n ↦ (Finsupp.domLCongr (MorseGenerators.univEquiv E f n)).toModuleIso) <| by
-    rintro _ n rfl
-    rw [MorseBoundaryCoeffs.complexOn_d, morseComplex_d]
-    refine ModuleCat.hom_ext (LinearMap.ext fun (c : MorseGenerators E f (n + 1) univ →₀ ZMod 2) ↦
-      Finsupp.ext fun q ↦ ?_)
-    -- The terms of `complexOn` and `morseComplex` are `ModuleCat.of` of the chain modules only
-    -- after unfolding these definitions, so the goal is not type-correct at reducible
-    -- transparency and the `ModuleCat` composition lemmas do not rewrite it; `change` states it
-    -- on the underlying chains instead.
-    change h.morseBoundaryAt hf n (Finsupp.equivMapDomain _ c) q =
-      Finsupp.equivMapDomain _ ((h.morseBoundaryCoeffs hf).boundaryOn univ n c) q
-    rw [Finsupp.equivMapDomain_apply, MorseBoundaryCoeffs.boundaryOn_apply, morseBoundaryAt_apply,
-      Finsupp.equivMapDomain_eq_mapDomain,
-      Finsupp.sum_mapDomain_index (fun _ ↦ zero_mul _) fun _ _ _ ↦ add_mul ..]
-    simp
+  (h.morseBoundaryCoeffs hf).complexOnUnivIso (h.morseBoundaryAt hf)
+    (fun _ c q ↦ by rw [morseBoundaryCoeffs_coeff, h.morseBoundaryAt_apply hf c q])
+    (h.morseBoundaryAt_comp_morseBoundaryAt hf)
 
 /-- The identification of the mod-two Morse complex with all critical values with the mod-two
 Morse complex sends a chain to the same chain. -/
@@ -103,9 +90,7 @@ theorem morseBoundaryCoeffsComplexOnUnivIso_hom_f_apply (n : ℕ)
     (c : MorseGenerators E f n univ →₀ ZMod 2) :
     (h.morseBoundaryCoeffsComplexOnUnivIso hf).hom.f n c =
       c.mapDomain (MorseGenerators.univEquiv E f n) :=
-  -- The component is `(Finsupp.domLCongr _).toModuleIso`, whose application to a chain is
-  -- `Finsupp.equivMapDomain` by definition of `Finsupp.domLCongr`.
-  Finsupp.equivMapDomain_eq_mapDomain _ c
+  MorseBoundaryCoeffs.complexOnUnivIso_hom_f_apply _ _ _ _ n c
 
 /-- The inverse identification of the mod-two Morse complex with the mod-two Morse complex with
 all critical values sends a chain to the same chain. -/
@@ -114,8 +99,7 @@ theorem morseBoundaryCoeffsComplexOnUnivIso_inv_f_apply (n : ℕ)
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ ZMod 2) :
     (h.morseBoundaryCoeffsComplexOnUnivIso hf).inv.f n c =
       c.mapDomain (MorseGenerators.univEquiv E f n).symm :=
-  -- As above, the component applied to a chain is `Finsupp.equivMapDomain` by definition.
-  Finsupp.equivMapDomain_eq_mapDomain _ c
+  MorseBoundaryCoeffs.complexOnUnivIso_inv_f_apply _ _ _ _ n c
 
 variable {a : ℤ → ℝ} (ha : Monotone a)
 
@@ -125,8 +109,8 @@ def morseFiltrationAbutmentIso (n : ℕ) :
     (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
         ((h.morseBoundaryCoeffs hf).monotone_filtration ha))).abutment (-n) ≅
       (h.morseComplex hf).homology n :=
-  (h.morseBoundaryCoeffs hf).filtrationAbutmentIso ha n ≪≫
-    (homologyFunctor _ _ n).mapIso (h.morseBoundaryCoeffsComplexOnUnivIso hf)
+  (h.morseBoundaryCoeffs hf).filtrationAbutmentIsoOfIso ha
+    (h.morseBoundaryCoeffsComplexOnUnivIso hf) n
 
 end IsMorseSmale
 

@@ -77,13 +77,16 @@ In the namespace `TauCeti.MorseBoundaryCoeffs`:
 * `complexOnInclusion`, `complexOnRestriction`: the chain maps between these complexes for a lower
   and for an upper part of `s`.
 * `complexOn_d_eq_zero`: with at most one critical value in `s`, the differential vanishes.
+* `complexOnUnivIso`: the Morse complex with all critical values is the chain complex on the
+  critical points of each index with any differentials given by the coefficients.
 * `bandSequence_shortExact`: the short exact sequence of a sublevel, a larger sublevel and the
   band between them.
 * `filtration`: the critical-value filtration of the regraded Morse complex.
 * `spectralSequence`: its spectral sequence.
 * `spectralSequenceFirstPageXIso`, `spectralSequenceFirstPageXIsoOfSubsingleton`,
   `finrank_spectralSequence_page_two_X`: its first page.
-* `filtrationAbutmentIso`, `spectralSequencePageXIsoGraded`: its convergence to Morse homology.
+* `filtrationAbutmentIso`, `filtrationAbutmentIsoOfIso`, `spectralSequencePageXIsoGraded`: its
+  convergence to Morse homology.
 
 ## References
 
@@ -348,6 +351,73 @@ theorem complexOn_d_eq_zero
     rfl
   · exact (C.complexOn s).shape i j hij
 
+/-! ### The Morse complex with all critical values -/
+
+/-- **The Morse complex with all critical values on the critical points of each index.** Let
+`d n` be linear maps from the free `R`-module on the critical points of index `n + 1` to that on
+those of index `n`, squaring to zero, whose coefficient of `q` in the image of `p` is
+`C.coeff p q`. Then the Morse complex with all critical values is the chain complex with these
+differentials. -/
+def complexOnUnivIso
+    (d : ∀ n : ℕ,
+      ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ R) →ₗ[R]
+        ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R))
+    (hd : ∀ n c q, d n c q = c.sum fun p a ↦ a * C.coeff p.val q.val)
+    (hsq : ∀ n, d n ∘ₗ d (n + 1) = 0) :
+    C.complexOn univ ≅ ChainComplex.of
+      (fun n ↦ ModuleCat.of R
+        ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R))
+      (fun n ↦ ModuleCat.ofHom (d n))
+      fun n ↦ by rw [← ModuleCat.ofHom_comp, hsq, ModuleCat.ofHom_zero] :=
+  Hom.isoOfComponents
+    (fun n ↦ (Finsupp.domLCongr (MorseGenerators.univEquiv E f n)).toModuleIso) <| by
+    rintro _ n rfl
+    rw [complexOn_d]
+    -- `ChainComplex.of_d` writes the differential between the terms `ModuleCat.of R _`, so `rw`
+    -- cannot rewrite it inside this composite, whose motive would not be type-correct; `simp only`
+    -- can.
+    simp only [ChainComplex.of_d]
+    refine ModuleCat.hom_ext (LinearMap.ext fun (c : MorseGenerators E f (n + 1) univ →₀ R) ↦
+      Finsupp.ext fun q ↦ ?_)
+    -- The terms of `complexOn` and of the target are `ModuleCat.of` of the chain modules only
+    -- after unfolding these definitions, so the goal is not type-correct at reducible
+    -- transparency and the `ModuleCat` composition lemmas do not rewrite it; `change` states it
+    -- on the underlying chains instead.
+    change d n (Finsupp.equivMapDomain _ c) q =
+      Finsupp.equivMapDomain _ (C.boundaryOn univ n c) q
+    rw [Finsupp.equivMapDomain_apply, boundaryOn_apply, hd, Finsupp.equivMapDomain_eq_mapDomain,
+      Finsupp.sum_mapDomain_index (fun _ ↦ zero_mul _) fun _ _ _ ↦ add_mul ..]
+    simp
+
+/-- The identification of the Morse complex with all critical values with the complex on the
+critical points of each index sends a chain to the same chain. -/
+@[simp]
+theorem complexOnUnivIso_hom_f_apply
+    (d : ∀ n : ℕ,
+      ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ R) →ₗ[R]
+        ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R))
+    (hd : ∀ n c q, d n c q = c.sum fun p a ↦ a * C.coeff p.val q.val)
+    (hsq : ∀ n, d n ∘ₗ d (n + 1) = 0) (n : ℕ) (c : MorseGenerators E f n univ →₀ R) :
+    (C.complexOnUnivIso d hd hsq).hom.f n c = c.mapDomain (MorseGenerators.univEquiv E f n) :=
+  -- The component is `(Finsupp.domLCongr _).toModuleIso`, whose application to a chain is
+  -- `Finsupp.equivMapDomain` by definition of `Finsupp.domLCongr`.
+  Finsupp.equivMapDomain_eq_mapDomain _ c
+
+/-- The inverse identification of the complex on the critical points of each index with the Morse
+complex with all critical values sends a chain to the same chain. -/
+@[simp]
+theorem complexOnUnivIso_inv_f_apply
+    (d : ∀ n : ℕ,
+      ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ R) →ₗ[R]
+        ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R))
+    (hd : ∀ n c q, d n c q = c.sum fun p a ↦ a * C.coeff p.val q.val)
+    (hsq : ∀ n, d n ∘ₗ d (n + 1) = 0) (n : ℕ)
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) :
+    (C.complexOnUnivIso d hd hsq).inv.f n c =
+      c.mapDomain (MorseGenerators.univEquiv E f n).symm :=
+  -- As above, the component applied to a chain is `Finsupp.equivMapDomain` by definition.
+  Finsupp.equivMapDomain_eq_mapDomain _ c
+
 /-! ### Inclusions and restrictions -/
 
 variable {s t u}
@@ -540,6 +610,13 @@ def filtrationι (a : ℝ) :
       (C.complexOn univ).extend ComplexShape.embeddingDownNat :=
   extendMap (C.complexOnInclusion (subset_univ _) fun _ _ _ hy hxy ↦ hxy.le.trans hy) _
 
+/-- The inclusion of the regraded chains of the critical points with value at most `a` is the
+regraded inclusion of the sublevel complex into the Morse complex. -/
+theorem filtrationι_def (a : ℝ) :
+    C.filtrationι a = extendMap (C.complexOnInclusion (subset_univ _)
+      fun _ _ _ hy hxy ↦ hxy.le.trans hy) ComplexShape.embeddingDownNat :=
+  (rfl)
+
 instance mono_filtrationι (a : ℝ) : Mono (C.filtrationι a) := by
   rw [filtrationι]
   exact HomologicalComplex.mono_extendMap _ _
@@ -688,6 +765,15 @@ def filtrationAbutmentIso (n : ℕ) :
       (C.complexOn univ).homology n :=
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat rfl
+
+/-- The abutment of the critical-value spectral sequence in degree `-n` is the homology in degree
+`n` of any complex isomorphic to the Morse complex with all critical values. -/
+def filtrationAbutmentIsoOfIso {K : ChainComplex (ModuleCat R) ℕ} (e : C.complexOn univ ≅ K)
+    (n : ℕ) :
+    (CochainComplex.spectralObject
+        (CochainComplex.filtrationFunctor _ (C.monotone_filtration ha))).abutment (-n) ≅
+      K.homology n :=
+  C.filtrationAbutmentIso ha n ≪≫ (homologyFunctor _ _ n).mapIso e
 
 /-- **Strong convergence of the critical-value spectral sequence.** If `a q₀` lies below and
 `a q₁` above all critical values, then on every page `r ≥ 2` with `q - r + 2 ≤ q₀` and
