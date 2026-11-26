@@ -978,6 +978,30 @@ theorem IsCriticalBandCut.strictMono {a : ℤ → ℝ} (h : IsCriticalBandCut I 
 theorem IsCriticalBandCut.monotone {a : ℤ → ℝ} (h : IsCriticalBandCut I f a) : Monotone a :=
   h.strictMono.monotone
 
+section Diffeomorph
+
+variable {F G M' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace M'] [ChartedSpace G M'] {n : WithTop ℕ∞}
+  {f' : M' → ℝ}
+
+/-- **Critical bands under a diffeomorphism.** If `σ : M → M'` is a `C^n` diffeomorphism with
+`1 ≤ n` and `f'⁻¹[s, t]` is a critical band of `f'`, then `(f' ∘ σ)⁻¹[s, t] = σ⁻¹(f'⁻¹[s, t])` is a
+critical band of `f' ∘ σ`, with the same critical value: `σ` is a homeomorphism matching the
+critical points of `f' ∘ σ` with those of `f'`. -/
+theorem IsCriticalBand.comp_diffeomorph (σ : M ≃ₘ^n⟮I, J⟯ M') (hn : 1 ≤ n) {s t : ℝ}
+    (h : IsCriticalBand J f' s t) : IsCriticalBand I (f' ∘ σ) s t := by
+  obtain ⟨c, hc, hcrit⟩ := h.exists_mem_Ioo_forall_eq
+  exact ⟨σ.toHomeomorph.isCompact_preimage.2 h.isCompact, c, hc, fun x hx hfx ↦
+    hcrit (σ x) (((σ.isLocalDiffeomorph x).mem_criticalPoints_comp_iff hn).1 hx) hfx⟩
+
+/-- **Critical-band cuts under a diffeomorphism.** If `σ : M → M'` is a `C^n` diffeomorphism with
+`1 ≤ n`, every critical-band cut of `f'` is a critical-band cut of `f' ∘ σ`. -/
+theorem IsCriticalBandCut.comp_diffeomorph {a : ℤ → ℝ} (σ : M ≃ₘ^n⟮I, J⟯ M') (hn : 1 ≤ n)
+    (h : IsCriticalBandCut J f' a) : IsCriticalBandCut I (f' ∘ σ) a :=
+  ⟨fun q ↦ (h.isCriticalBand q).comp_diffeomorph σ hn⟩
+
+end Diffeomorph
+
 /-- **Critical-band cuts exist on compact manifolds with finitely many critical values.** A
 continuous function `f` on a compact manifold with finitely many critical values has a
 critical-band cut `a : ℤ → ℝ` which starts below and ends above all values of `f`, so that the

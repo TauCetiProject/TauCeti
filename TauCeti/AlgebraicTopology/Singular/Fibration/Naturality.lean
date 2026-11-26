@@ -194,7 +194,8 @@ theorem isIso_serreSpectralSequenceMapOver_hom_f (hf : f ≫ p' = p)
       (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (f.preimageMap hf {b})))
     (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
     IsIso (((serreSpectralSequenceMapOver C R hf).hom r hr).f pq) := by
-  refine isIso_filteredSpaceSpectralSequenceMap_hom_f _ _ _ _ _ (fun b n ↦ ?_) r hr pq
+  suffices IsIso (serreSpectralSequenceMapOver C R hf) from inferInstance
+  refine isIso_filteredSpaceSpectralSequenceMap _ _ _ _ _ fun b n ↦ ?_
   rcases lt_or_ge b (-1) with hb | hb
   · -- Below the base both stages are the preimage of `D`, so both pairs have no homology.
     have hz {E₀ : _root_.TopCat.{u}} (p₀ : E₀ ⟶ B) :
@@ -223,7 +224,9 @@ theorem _root_.TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom
     (Φ : FiberHomotopyEquiv p.hom p'.hom) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
     IsIso (((serreSpectralSequenceMapOver C R (f := _root_.TopCat.ofHom Φ.toFun)
       (_root_.TopCat.hom_ext Φ.comp_toFun)).hom r hr).f pq) := by
-  refine isIso_filteredSpaceSpectralSequenceMap_hom_f _ _ _ _ _ (fun b n ↦ ?_) r hr pq
+  suffices IsIso (serreSpectralSequenceMapOver C R (f := _root_.TopCat.ofHom Φ.toFun)
+      (_root_.TopCat.hom_ext Φ.comp_toFun)) from inferInstance
+  refine isIso_filteredSpaceSpectralSequenceMap _ _ _ _ _ fun b n ↦ ?_
   -- The step `b ≤ b + 1` is the pair of preimages of the skeleta `S₀ ⊆ S₁`, and over `S₁` it is
   -- the map of pairs of the restriction of `Φ`, relative to the preimages of `S₀`.
   let S₀ : Set B := skeletonLT C ((b + 1).toNat : ℕ∞)

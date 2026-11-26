@@ -71,8 +71,8 @@ singular chains.
   (`TauCeti.filteredSpaceSpectralSequenceMap`), functorial in `g`. On the first page it is the map
   `Hₙ(X (q + 1), X q) ⟶ Hₙ(X' (q + 1), X' q)` induced by `g`
   (`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality`), so if these maps are
-  isomorphisms, the morphism of spectral sequences is an isomorphism on every page
-  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`). A homeomorphism matching the two
+  isomorphisms, the morphism of spectral sequences is an isomorphism
+  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap`). A homeomorphism matching the two
   filtrations induces an isomorphism of spectral sequences
   (`TauCeti.filteredSpaceSpectralSequenceIso`). On the abutment, the underlying
   morphism of spectral objects is the map `Hₙ(g)` in singular homology
@@ -702,14 +702,14 @@ theorem filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality (pq : ℤ × �
 
 /-- **The comparison theorem for maps of filtered spaces.** If a map `g : Y ⟶ Y'` carrying each
 `X q` into `X' q` induces isomorphisms `Hₙ(X (q + 1), X q) ≅ Hₙ(X' (q + 1), X' q)` for every `q`
-and `n`, then the induced morphism of spectral sequences is an isomorphism on every object of every
-page `r ≥ 2`, that is, from the first page on. -/
-theorem isIso_filteredSpaceSpectralSequenceMap_hom_f
+and `n`, then the induced morphism of spectral sequences is an isomorphism of spectral sequences,
+so in particular an isomorphism on every object of every page `r ≥ 2`. -/
+theorem isIso_filteredSpaceSpectralSequenceMap
     (h : ∀ (q : ℤ) (n : ℕ), IsIso (TopPair.singularHomologyMap
-      (filteredSpaceStepMap hX hX' g hg (Int.le_add_one le_rfl : q ≤ q + 1)) R n))
-    (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
-    IsIso (((filteredSpaceSpectralSequenceMap R hX hX' g hg).hom r hr).f pq) := by
-  refine isIso_hom_f_of_isIso_page_two R hX _ (fun pq n hn ↦ ?_) r hr pq
+      (filteredSpaceStepMap hX hX' g hg (Int.le_add_one le_rfl : q ≤ q + 1)) R n)) :
+    IsIso (filteredSpaceSpectralSequenceMap R hX hX' g hg) := by
+  refine SpectralSequence.Hom.isIso_of_isIso_hom_f _ fun pq ↦
+    isIso_hom_f_of_isIso_page_two R hX _ (fun pq n hn ↦ ?_) 2 le_rfl pq
   have e := filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality R hX hX' g hg pq pq.2
     (pq.2 + 1) rfl rfl _ rfl n hn
   rw [← Iso.eq_comp_inv] at e
@@ -737,19 +737,21 @@ theorem isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap {a b : �
     (h : ∀ q, a ≤ q → q < b → ∀ n : ℕ, IsIso (TopPair.singularHomologyMap
       (filteredSpaceStepMap hX hX' g hg (Int.le_add_one le_rfl : q ≤ q + 1)) R n))
     (n : ℕ) : IsIso (((AlgebraicTopology.singularHomologyFunctor A n).obj R).map g) := by
-  -- The morphism of spectral sequences is an isomorphism from the first page on: outside the
+  -- The morphism of spectral sequences is an isomorphism: outside the
   -- bands `a ≤ q < b` both relative homologies vanish.
-  have hpage := isIso_filteredSpaceSpectralSequenceMap_hom_f R hX hX' g hg (fun q m ↦ by
+  have := isIso_filteredSpaceSpectralSequenceMap R hX hX' g hg fun q m ↦ by
     by_cases hq : q ∈ Set.Ico a b
     · exact h q hq.1 hq.2 m
     · exact (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX ha hb hq m).isIso
-        (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX' ha' hb' hq m) _) 2 le_rfl
+        (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX' ha' hb' hq m) _
   -- Both filtrations are finite, so it is an isomorphism on the abutments.
   have habut :=
     CochainComplex.isIso_spectralObjectMap_hom_app_abutment_of_isIso_spectralSequence_page _ _ _ _
       (chainFiltrationMap (𝟙 _) hX hX' g hg) (singularChainFiltration_eq_bot R ha)
       (singularChainFiltration_eq_bot R ha') (chainFiltration_eq_top _ hb)
-      (chainFiltration_eq_top _ hb') 2 le_rfl hpage (-n)
+      (chainFiltration_eq_top _ hb') 2 le_rfl
+      (fun _ ↦ inferInstanceAs (IsIso (((filteredSpaceSpectralSequenceMap R hX hX' g hg).hom 2
+        le_rfl).f _))) (-n)
   have e := chainFiltrationAbutmentIso_hom_naturality (𝟙 ((singularChainComplexFunctor A).obj R))
     hX hX' g hg n
   rw [NatTrans.id_app, Category.comp_id, ← Iso.inv_comp_eq] at e

@@ -30,6 +30,11 @@ page, and, by induction, on every object of every page `r' ≥ r`.
   preserve the lines `a + 2b = const`.
 
 An isomorphism of spectral sequences is an isomorphism on every page (an instance on `f.hom r`).
+
+## References
+
+* J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
+  Chapter 3 (comparison theorem).
 -/
 
 public section
@@ -124,9 +129,8 @@ lemma isIso_of_isIso_hom_f (h : ∀ pq, IsIso ((f.hom r₀ le_rfl).f pq)) : IsIs
   refine ⟨⟨{ hom r hr := inv (f.hom r hr), comm r r' pq hrr' hr := ?_ }, ?_, ?_⟩⟩
   · -- The square for the inverses is the square for `f`, composed with the inverses on both sides.
     rw [← cancel_mono ((f.hom r' (hr.trans (by lia))).f pq), Category.assoc, Category.assoc,
-      ← f.comm r r' pq, ← HomologicalComplex.homologyMap_comp_assoc, IsIso.inv_hom_id,
-      HomologicalComplex.homologyMap_id, Category.id_comp, ← HomologicalComplex.comp_f,
-      IsIso.inv_hom_id, HomologicalComplex.id_f, Category.comp_id]
+      ← f.comm r r' pq]
+    simp
   all_goals ext r hr : 1; simp
 
 end CategoryTheory.SpectralSequence.Hom

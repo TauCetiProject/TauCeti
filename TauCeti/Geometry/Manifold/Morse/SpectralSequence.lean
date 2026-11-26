@@ -50,19 +50,19 @@ object at `(p, q)` is instead the relative homology of the lower sublevel with t
 bundles of the critical submanifolds in the band attached, by Bott's theorem
 (`TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
-The spectral sequence is natural in the function and does not depend on where exactly the bands
-are cut. If `a ≤ a'` and each band `f⁻¹[a q, a' q]` is compact and free of critical points, the
-identity of `M` induces an isomorphism from the spectral sequence of `q ↦ {f ≤ a q}` to that of
+The spectral sequence is invariant under homeomorphisms and does not depend on where exactly the
+bands are cut. If `a ≤ a'` and each band `f⁻¹[a q, a' q]` is compact and free of critical points,
+the identity of `M` induces an isomorphism from the spectral sequence of `q ↦ {f ≤ a q}` to that of
 `q ↦ {f ≤ a' q}` (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_sublevel`): on the first page it
 is the map on the relative homology of the bands induced by the inclusions of sublevels, which
 cross bands without critical points. Without comparing `a` and `a'`, if each band between `a q`
 and `a' q` is compact and free of critical points, the two spectral sequences are isomorphic
 through the cut `a ⊔ a'` (`TauCeti.filteredSpaceSpectralSequenceSublevelIso`): moving each cut of
 a critical-band filtration within the regular interval containing it does not change the spectral
-sequence. A diffeomorphism `σ : M → M'` carries every critical-band cut of `f'` to one of
-`f' ∘ σ` (`TauCeti.IsCriticalBandCut.comp_diffeomorph`), and since the sublevels of `f' ∘ σ` are
-the preimages of those of `f'`, it identifies the two spectral sequences
-(`TauCeti.filteredSpaceSpectralSequenceIso`).
+sequence. A homeomorphism `σ : M ≃ₜ M'` carries the sublevels of `f' ∘ σ` to those of `f'`, so it
+induces an isomorphism between their spectral sequences
+(`TauCeti.filteredSpaceSpectralSequenceSublevelCompIso`). A diffeomorphism moreover carries every
+critical-band cut of `f'` to one of `f' ∘ σ` (`TauCeti.IsCriticalBandCut.comp_diffeomorph`).
 
 On a compact manifold the filtration of a cut starting below and ending above all values of `f` is
 finite, from `∅` to `M`, so the spectral sequence converges to the singular homology of `M`: with
@@ -94,8 +94,8 @@ which records only the dimensions.
   intervals induces an isomorphism of spectral sequences.
 * `TauCeti.filteredSpaceSpectralSequenceSublevelIso`: cuts lying in the same regular intervals
   give isomorphic spectral sequences.
-* `TauCeti.IsCriticalBandCut.comp_diffeomorph`: critical-band cuts are preserved by composing with
-  a diffeomorphism.
+* `TauCeti.filteredSpaceSpectralSequenceSublevelCompIso`: a homeomorphism identifies the spectral
+  sequences of the sublevel filtrations of `f' ∘ σ` and `f'`.
 * `TauCeti.IsMorse.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma`: the first page is
   free on the critical points of the band.
 * `TauCeti.IsMorse.isZero_filteredSpaceSpectralSequence_page_two_X`: it vanishes in a total degree
@@ -112,7 +112,9 @@ which records only the dimensions.
 
 The existence of critical-band cuts on compact manifolds,
 `TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints` and
-`TauCeti.IsMorse.exists_isCriticalBandCut`, is in `TauCeti.Geometry.Manifold.Morse.CriticalPoints`.
+`TauCeti.IsMorse.exists_isCriticalBandCut`, and their invariance under diffeomorphisms,
+`TauCeti.IsCriticalBandCut.comp_diffeomorph`, are in
+`TauCeti.Geometry.Manifold.Morse.CriticalPoints`.
 
 ## References
 
@@ -122,6 +124,8 @@ The existence of critical-band cuts on compact manifolds,
   a manifold by the sublevels of a function cut between its critical values.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
   §2.2, the spectral sequence of a filtered complex.
+* R. L. Cohen, K. Iga and P. Norbury, *Topics in Morse theory: lecture notes*, 2006,
+  Theorems 15.6–15.7 (naturality of the spectral sequence).
 -/
 
 public section
@@ -223,8 +227,7 @@ theorem isIso_filteredSpaceSpectralSequenceMap_sublevel (hf : ContMDiff I 𝓘(�
       IsIso (SSet.homologyMap (TopCat.toSSet.map (sublevelPair f (haa' q)).map) R k) :=
     isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero hf (haa' q) (hcompact q)
       (fun x h₁ h₂ hx ↦ hcrit q x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨h₁, h₂⟩) R k
-  refine SpectralSequence.Hom.isIso_of_isIso_hom_f _
-    (isIso_filteredSpaceSpectralSequenceMap_hom_f R _ _ _ _ (fun q n ↦ ?_) 2 le_rfl)
+  refine isIso_filteredSpaceSpectralSequenceMap R _ _ _ _ fun q n ↦ ?_
   -- The map of pairs induced by the identity consists of the two sublevel inclusions.
   set φ := filteredSpaceStepMap (Y := TopCat.of M) (Y' := TopCat.of M)
     ((sublevel_mono f).comp ha) ((sublevel_mono f).comp ha') (𝟙 _)
@@ -296,33 +299,37 @@ theorem filteredSpaceSpectralSequenceSublevelIso_hom_comp (hf : ContMDiff I 𝓘
         (fun q _ hx ↦ (hx : f _ ≤ a q).trans (le_sup_left : a q ≤ (a ⊔ a') q)) := by
   simp [filteredSpaceSpectralSequenceSublevelIso]
 
-section Diffeomorph
+section Homeomorph
 
-variable {F G M' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
-  {J : ModelWithCorners ℝ F G} [TopologicalSpace M'] [ChartedSpace G M'] {n : WithTop ℕ∞}
-  {f' : M' → ℝ}
+variable {M' : Type u} [TopologicalSpace M'] {f' : M' → ℝ}
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- **Critical bands under a diffeomorphism.** If `σ : M → M'` is a `C^n` diffeomorphism with
-`1 ≤ n` and `f'⁻¹[s, t]` is a critical band of `f'`, then `(f' ∘ σ)⁻¹[s, t] = σ⁻¹(f'⁻¹[s, t])` is a
-critical band of `f' ∘ σ`, with the same critical value: `σ` is a homeomorphism matching the
-critical points of `f' ∘ σ` with those of `f'`. -/
-theorem IsCriticalBand.comp_diffeomorph (σ : M ≃ₘ^n⟮I, J⟯ M') (hn : 1 ≤ n) {s t : ℝ}
-    (h : IsCriticalBand J f' s t) : IsCriticalBand I (f' ∘ σ) s t := by
-  obtain ⟨c, hc, hcrit⟩ := h.exists_mem_Ioo_forall_eq
-  exact ⟨σ.toHomeomorph.isCompact_preimage.2 h.isCompact, c, hc, fun x hx hfx ↦
-    hcrit (σ x) (((σ.isLocalDiffeomorph x).mem_criticalPoints_comp_iff hn).1 hx) hfx⟩
+/-- **The spectral sequence of a sublevel filtration is invariant under homeomorphisms.** If
+`σ : M ≃ₜ M'` is a homeomorphism, the sublevels `{f' ∘ σ ≤ a q}` are the preimages under `σ` of the
+sublevels `{f' ≤ a q}`, so `σ` induces an isomorphism from the spectral sequence of the filtration
+`q ↦ {f' ∘ σ ≤ a q}` to that of `q ↦ {f' ≤ a q}`. Together with
+`TauCeti.IsCriticalBandCut.comp_diffeomorph`, a diffeomorphism identifies the spectral sequences of
+the critical-band filtrations of `f' ∘ σ` and `f'`. -/
+def filteredSpaceSpectralSequenceSublevelCompIso (σ : M ≃ₜ M') (ha : Monotone a) :
+    filteredSpaceSpectralSequence (Y := TopCat.of M) R ((sublevel_mono (f' ∘ σ)).comp ha) ≅
+      filteredSpaceSpectralSequence (Y := TopCat.of M') R ((sublevel_mono f').comp ha) :=
+  filteredSpaceSpectralSequenceIso R _ _ (TopCat.isoOfHomeo (X := .of M) (Y := .of M') σ)
+    (fun _ _ hx ↦ hx)
+    fun q y (hy : f' y ≤ a q) ↦ show f' (σ (σ.symm y)) ≤ a q by rwa [σ.apply_symm_apply]
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- **Critical-band cuts under a diffeomorphism.** If `σ : M → M'` is a `C^n` diffeomorphism with
-`1 ≤ n`, every critical-band cut of `f'` is a critical-band cut of `f' ∘ σ`. The sublevels of
-`f' ∘ σ` are the preimages under `σ` of those of `f'`, so `σ` identifies the two critical-band
-filtrations and their spectral sequences (`TauCeti.filteredSpaceSpectralSequenceIso`). -/
-theorem IsCriticalBandCut.comp_diffeomorph (σ : M ≃ₘ^n⟮I, J⟯ M') (hn : 1 ≤ n)
-    (h : IsCriticalBandCut J f' a) : IsCriticalBandCut I (f' ∘ σ) a :=
-  ⟨fun q ↦ (h.isCriticalBand q).comp_diffeomorph σ hn⟩
+/-- The isomorphism `TauCeti.filteredSpaceSpectralSequenceSublevelCompIso` is the morphism of
+spectral sequences induced by the homeomorphism. -/
+@[simp]
+lemma filteredSpaceSpectralSequenceSublevelCompIso_hom (σ : M ≃ₜ M') (ha : Monotone a) :
+    (filteredSpaceSpectralSequenceSublevelCompIso R (f' := f') σ ha).hom =
+      filteredSpaceSpectralSequenceMap (Y := TopCat.of M) (Y' := TopCat.of M') R
+        ((sublevel_mono (f' ∘ σ)).comp ha) ((sublevel_mono f').comp ha)
+        (TopCat.isoOfHomeo (X := .of M) (Y := .of M') σ).hom
+        fun _ _ hx ↦ hx :=
+  filteredSpaceSpectralSequenceIso_hom ..
 
-end Diffeomorph
+end Homeomorph
 
 /-- **The first page of the spectral sequence of a critical-band filtration is free on the
 critical points.** Let `f` be a Morse function and `a : ℤ → ℝ` monotone, and let the band
