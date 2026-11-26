@@ -45,7 +45,9 @@ parallel notion of Hölder continuity.
   at most `max 1 (K ^ α)`, and `TauCeti.HolderSpace.compIsometryEquivLIE`, precomposition with an
   isometric equivalence, as a linear isometric equivalence.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
-  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
+  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry; an element of
+  `HolderSpace α X (ι → Y)` is determined by its coordinates
+  (`TauCeti.HolderSpace.ext_compLeftL_proj`).
 * `TauCeti.HolderSpace.norm_le_mul_norm_of_apply_eq`: an element whose values are those of `g`
   followed by a continuous linear map `L` has norm at most `‖L‖ * ‖g‖`.
 * `TauCeti.HolderSpace.norm_le_norm_of_apply_comp`: an element whose values are those of `F` along
@@ -723,6 +725,13 @@ theorem norm_le_mul_norm_of_apply_eq (L : Y →L[ℝ] Y') {f : HolderSpace α X 
     {g : HolderSpace α X Y} (h : ∀ x, f x = L (g x)) : ‖f‖ ≤ ‖L‖ * ‖g‖ := by
   rw [show f = compLeftL L g from ext fun x ↦ by rw [h, compLeftL_apply]]
   exact (compLeftL L).le_of_opNorm_le (norm_compLeftL_le L) g
+
+/-- An element of `HolderSpace α X (ι → Y)` is determined by its coordinates. -/
+theorem ext_compLeftL_proj {ι : Type*} [Fintype ι] {f f' : HolderSpace α X (ι → Y)}
+    (h : ∀ i, compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i) f =
+      compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i) f') :
+    f = f' :=
+  ext fun x ↦ funext fun i ↦ by simpa using congrArg (· x) (h i)
 
 end compLeft
 

@@ -51,6 +51,11 @@ multiple of `x`.
 * `TauCeti.sphereHeight_unitSphereEquiv`: a linear isometry fixing `v` preserves the height.
 * `TauCeti.sphereHeight_comp_extChartAt_symm`: in the preferred chart at the north pole it is
   `stereographicHeight`.
+* `TauCeti.stereographic_symm_image_closedBall` and `TauCeti.stereographic_symm_image_sphere`: for
+  `-1 ≤ a < 1`, in the stereographic coordinates from the north pole the polar cap `{h ≤ a}` and
+  the parallel `{h = a}` are a closed round ball and its boundary sphere about the origin.
+* `TauCeti.interior_setOf_sphereHeight_le`: for `-1 < a < 1`, the interior of the closed polar
+  cap `{h ≤ a}` is the open polar cap `{h < a}`.
 * `TauCeti.mvfderiv_sphereHeight_eq_zero_iff` and `TauCeti.mfderiv_sphereHeight_eq_zero_iff`: its
   critical points are the two poles.
 * `TauCeti.sphereHeight_lt_self` and `TauCeti.sphereHeight_neg_lt`: the north pole is its strict
@@ -457,6 +462,97 @@ theorem sphereHeight_stereographic_symm_apply (v : sphere (0 : E) 1) (w : (ℝ �
     RCLike.conj_to_real]
   field_simp
   ring
+
+/-- The sublevel `{h ≤ a}`, for `a < 1`, misses the north pole `v`, so it lies in the source of
+the stereographic projection from `v`. -/
+theorem sublevel_sphereHeight_subset_source (v : sphere (0 : E) 1) {a : ℝ} (ha' : a < 1) :
+    {x | sphereHeight v x ≤ a} ⊆ (stereographic (norm_eq_of_mem_sphere v)).source := by
+  intro x hx hxv
+  rw [mem_singleton_iff] at hxv
+  simp only [mem_ofPred_eq, hxv, Subtype.coe_eta, sphereHeight_self] at hx
+  linarith
+
+/-- The stereographic projection from the north pole `v` carries the sublevel `{h ≤ a}`, for
+`a < 1`, onto the sublevel `{w | -stereographicHeight w ≤ a}` of the height read in the chart. -/
+theorem image_stereographic_sublevel_sphereHeight (v : sphere (0 : E) 1) {a : ℝ}
+    (ha' : a < 1) : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
+      {w | -stereographicHeight w ≤ a} := by
+  rw [OpenPartialHomeomorph.image_eq_target_inter_inv_preimage _
+    (sublevel_sphereHeight_subset_source v ha')]
+  ext w
+  simp only [stereographic_target, univ_inter, mem_preimage, mem_ofPred_eq,
+    sphereHeight_stereographic_symm_apply]
+
+/-- For `-1 ≤ a < 1`, the stereographic projection from the north pole `v` carries the polar cap
+`{h ≤ a}` onto the closed ball of radius `√(4 (1 + a) / (1 - a))` about the origin. -/
+theorem image_stereographic_sublevel_sphereHeight_eq_closedBall (v : sphere (0 : E) 1) {a : ℝ}
+    (ha : -1 ≤ a) (ha' : a < 1) :
+    stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
+      closedBall 0 √(4 * (1 + a) / (1 - a)) := by
+  rw [image_stereographic_sublevel_sphereHeight v ha']
+  ext w
+  rw [mem_ofPred_eq, neg_stereographicHeight_le_iff ha ha' w, mem_closedBall_zero_iff]
+
+/-- For `-1 ≤ a < 1`, the inverse of the stereographic projection from the north pole `v` carries
+the closed ball of radius `√(4 (1 + a) / (1 - a))` about the origin onto the polar cap
+`{h ≤ a}`. -/
+theorem stereographic_symm_image_closedBall (v : sphere (0 : E) 1) {a : ℝ} (ha : -1 ≤ a)
+    (ha' : a < 1) :
+    (stereographic (norm_eq_of_mem_sphere v)).symm '' closedBall 0 √(4 * (1 + a) / (1 - a)) =
+      {x | sphereHeight v x ≤ a} := by
+  rw [← image_stereographic_sublevel_sphereHeight_eq_closedBall v ha ha']
+  exact (stereographic _).toPartialEquiv.symm_image_image_of_subset_source
+    (sublevel_sphereHeight_subset_source v ha')
+
+/-- For `-1 ≤ a < 1`, the inverse of the stereographic projection from the north pole `v` carries
+the sphere of radius `√(4 (1 + a) / (1 - a))` about the origin onto the parallel `{h = a}`. -/
+theorem stereographic_symm_image_sphere (v : sphere (0 : E) 1) {a : ℝ} (ha : -1 ≤ a)
+    (ha' : a < 1) :
+    (stereographic (norm_eq_of_mem_sphere v)).symm '' sphere 0 √(4 * (1 + a) / (1 - a)) =
+      {x | sphereHeight v x = a} := by
+  have hs : {x | sphereHeight v x = a} ⊆ (stereographic (norm_eq_of_mem_sphere v)).source :=
+    fun x hx ↦ sublevel_sphereHeight_subset_source v ha' (le_of_eq hx)
+  have himage : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x = a} =
+      sphere 0 √(4 * (1 + a) / (1 - a)) := by
+    rw [OpenPartialHomeomorph.image_eq_target_inter_inv_preimage _ hs]
+    ext w
+    simp only [stereographic_target, univ_inter, mem_preimage, mem_ofPred_eq,
+      sphereHeight_stereographic_symm_apply, neg_stereographicHeight_eq_iff ha ha',
+      mem_sphere_zero_iff_norm]
+  rw [← himage]
+  exact (stereographic _).toPartialEquiv.symm_image_image_of_subset_source hs
+
+/-- For `-1 < a < 1`, the interior of the closed polar cap `{h ≤ a}` is the open polar cap
+`{h < a}`: in the stereographic coordinates from the north pole `v`, it is the interior of a closed
+round ball. -/
+theorem interior_setOf_sphereHeight_le (v : sphere (0 : E) 1) {a : ℝ} (ha : -1 < a)
+    (ha' : a < 1) : interior {x | sphereHeight v x ≤ a} = {x | sphereHeight v x < a} := by
+  have he := isOpenEmbedding_stereographic_symm (norm_eq_of_mem_sphere v)
+  have hR : √(4 * (1 + a) / (1 - a)) ≠ 0 :=
+    (Real.sqrt_pos.2 (div_pos (by linarith) (by linarith))).ne'
+  -- Both sets miss `v`, so they lie in the range of the inverse projection, which is injective.
+  have hrange : {x | sphereHeight v x ≤ a} ⊆ range (stereographic (norm_eq_of_mem_sphere v)).symm :=
+    fun x hx ↦ by
+      rw [range_stereographic_symm (norm_eq_of_mem_sphere v) v.property]
+      exact sublevel_sphereHeight_subset_source v ha' hx
+  rw [← preimage_eq_preimage' (interior_subset.trans hrange)
+      ((ofPred_subset_ofPred.2 fun _ ↦ le_of_lt).trans hrange),
+    he.isOpenMap.preimage_interior_eq_interior_preimage he.continuous,
+    ← stereographic_symm_image_closedBall v ha.le ha', he.injective.preimage_image,
+    interior_closedBall _ hR]
+  ext w
+  simp only [mem_ball_zero_iff, mem_preimage, mem_ofPred_eq, sphereHeight_stereographic_symm_apply,
+    lt_iff_le_and_ne, ne_eq, neg_stereographicHeight_le_iff ha.le ha',
+    neg_stereographicHeight_eq_iff ha.le ha']
+
+/-- For `-1 < a < 1`, the complement of the interior of the closed polar cap `{h ≤ a}` is the
+opposite closed polar cap `{h' ≤ -a}`, where `h'` is the height in the direction of `-v`. -/
+theorem compl_interior_setOf_sphereHeight_le (v : sphere (0 : E) 1) {a : ℝ} (ha : -1 < a)
+    (ha' : a < 1) :
+    (interior {x | sphereHeight v x ≤ a})ᶜ = {x | sphereHeight (-v) x ≤ -a} := by
+  rw [interior_setOf_sphereHeight_le v ha ha']
+  ext x
+  simp
 
 /-- The north pole is a nondegenerate critical point of the height function. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_self (v : sphere (0 : E) 1) :

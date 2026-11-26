@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Adjoint
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
 import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
