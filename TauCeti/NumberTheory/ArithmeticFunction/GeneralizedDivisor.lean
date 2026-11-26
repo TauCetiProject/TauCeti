@@ -161,6 +161,12 @@ theorem generalizedDivisor_natCast (k : ℕ) :
   | zero => simp
   | succ k ih => rw [Nat.cast_succ, generalizedDivisor_add, ih, generalizedDivisor_one, pow_succ]
 
+/-- The numeric-literal form of `generalizedDivisor_natCast`: for instance `d_2 = ζ ^ 2`. -/
+@[simp]
+theorem generalizedDivisor_ofNat (k : ℕ) [k.AtLeastTwo] :
+    generalizedDivisor (ofNat(k) : R) = (ζ : ArithmeticFunction R) ^ (ofNat(k) : ℕ) :=
+  generalizedDivisor_natCast k
+
 /-- `d_{-1}` is the Möbius function, the convolution inverse of `ζ = d_1`. -/
 @[simp]
 theorem generalizedDivisor_neg_one : generalizedDivisor (-1 : R) = (μ : ArithmeticFunction R) := by
