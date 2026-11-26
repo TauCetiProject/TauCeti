@@ -294,7 +294,7 @@ theorem HasProperSupport.frequencyDeriv {a : Amplitude n V W m}
 
 /-- Multiplying any amplitude by a spatial cutoff `φ(x, y)` with `TauCeti.HasProperInputSupport`
 yields an amplitude with proper input support. -/
-theorem hasProperInputSupport_smulPositions_of_cutoff (a : Amplitude n V W m)
+theorem hasProperInputSupport_smulPositions_of_hasProperInputSupport (a : Amplitude n V W m)
     {φ : CoordinateSpace n × CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
     (hφ_in : TauCeti.HasProperInputSupport fun x y ↦ φ (x, y)) :
     (a.smulPositions φ hφ).HasProperInputSupport :=
@@ -303,7 +303,7 @@ theorem hasProperInputSupport_smulPositions_of_cutoff (a : Amplitude n V W m)
 
 /-- Multiplying any amplitude by a spatial cutoff `φ(x, y)` with `TauCeti.HasProperOutputSupport`
 yields an amplitude with proper output support. -/
-theorem hasProperOutputSupport_smulPositions_of_cutoff (a : Amplitude n V W m)
+theorem hasProperOutputSupport_smulPositions_of_hasProperOutputSupport (a : Amplitude n V W m)
     {φ : CoordinateSpace n × CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
     (hφ_out : TauCeti.HasProperOutputSupport fun x y ↦ φ (x, y)) :
     (a.smulPositions φ hφ).HasProperOutputSupport :=
@@ -312,13 +312,15 @@ theorem hasProperOutputSupport_smulPositions_of_cutoff (a : Amplitude n V W m)
 
 /-- Multiplying any amplitude by a properly supported spatial cutoff `φ(x, y)` yields a properly
 supported amplitude. -/
-theorem hasProperSupport_smulPositions_of_cutoff (a : Amplitude n V W m)
+theorem hasProperSupport_smulPositions_of_hasProperSupport (a : Amplitude n V W m)
     {φ : CoordinateSpace n × CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
     (hφ_prop : TauCeti.HasProperSupport fun x y ↦ φ (x, y)) :
     (a.smulPositions φ hφ).HasProperSupport :=
   hasProperSupport_iff.mpr
-    ⟨a.hasProperInputSupport_smulPositions_of_cutoff hφ hφ_prop.hasProperInputSupport,
-      a.hasProperOutputSupport_smulPositions_of_cutoff hφ hφ_prop.hasProperOutputSupport⟩
+    ⟨a.hasProperInputSupport_smulPositions_of_hasProperInputSupport hφ
+        hφ_prop.hasProperInputSupport,
+      a.hasProperOutputSupport_smulPositions_of_hasProperOutputSupport hφ
+        hφ_prop.hasProperOutputSupport⟩
 
 /-- Multiplying by a smooth function of the positions keeps proper output support. -/
 theorem HasProperOutputSupport.smulPositions {a : Amplitude n V W m} (ha : a.HasProperOutputSupport)

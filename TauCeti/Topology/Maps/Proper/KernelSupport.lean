@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Algebra.Support
+public import TauCeti.Topology.Algebra.Support
 public import TauCeti.Topology.Maps.Proper.Basic
 import Mathlib.Topology.Algebra.Group.Pointwise
 import Mathlib.Topology.Compactness.LocallyCompact
@@ -106,10 +107,6 @@ theorem HasProperInputSupport.of_tsupport_subset {K : X → Y → M} {K' : X →
     HasProperInputSupport K' :=
   hK.comp (Topology.IsClosedEmbedding.inclusion hsub
     ((isClosed_tsupport _).preimage continuous_subtypeVal)).isProperMap
-
-private theorem tsupport_uncurry_flip (K : X → Y → M) :
-    tsupport (uncurry (_root_.flip K)) = Prod.swap ⁻¹' tsupport (uncurry K) :=
-  ((Homeomorph.prodComm Y X).preimage_closure (support (uncurry K))).symm
 
 /-- Flipping the two arguments of a kernel exchanges input and output proper support. -/
 theorem HasProperInputSupport.flip {K : X → Y → M} (hK : HasProperInputSupport K) :
@@ -278,22 +275,19 @@ theorem not_hasProperSupport_of_tsupport_eq_univ [Nonempty X] [NoncompactSpace Y
     {K : X → Y → M} (h : tsupport (uncurry K) = univ) : ¬HasProperSupport K :=
   fun hK ↦ not_hasProperInputSupport_of_tsupport_eq_univ h hK.1
 
-private theorem tsupport_uncurry_const {c : M} (hc : c ≠ 0) :
-    tsupport (uncurry fun (_ : X) (_ : Y) ↦ c) = univ := by
-  have h : (uncurry fun (_ : X) (_ : Y) ↦ c) = fun _ : X × Y ↦ c := rfl
-  rw [h, tsupport, support_const hc, closure_univ]
-
 /-- A nonzero constant kernel lacks proper input support when `X` is nonempty and `Y` is
 noncompact. -/
 theorem not_hasProperInputSupport_const [Nonempty X] [NoncompactSpace Y] {c : M} (hc : c ≠ 0) :
     ¬HasProperInputSupport fun (_ : X) (_ : Y) ↦ c :=
-  not_hasProperInputSupport_of_tsupport_eq_univ (tsupport_uncurry_const hc)
+  not_hasProperInputSupport_of_tsupport_eq_univ
+    (by simpa [uncurry_def] using tsupport_const (Y := X × Y) hc)
 
 /-- A nonzero constant kernel lacks proper output support when `X` is noncompact and `Y` is
 nonempty. -/
 theorem not_hasProperOutputSupport_const [NoncompactSpace X] [Nonempty Y] {c : M} (hc : c ≠ 0) :
     ¬HasProperOutputSupport fun (_ : X) (_ : Y) ↦ c :=
-  not_hasProperOutputSupport_of_tsupport_eq_univ (tsupport_uncurry_const hc)
+  not_hasProperOutputSupport_of_tsupport_eq_univ
+    (by simpa [uncurry_def] using tsupport_const (Y := X × Y) hc)
 
 /-- A nonzero constant kernel is not properly supported when `X` is nonempty and `Y` is
 noncompact. -/
@@ -322,10 +316,32 @@ theorem HasProperSupport.neg {G : Type*} [NegZeroClass G] {K : X → Y → G}
 theorem HasProperInputSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X → Y → M}
     (h₁ : HasProperInputSupport K₁) (h₂ : HasProperInputSupport K₂) :
     HasProperInputSupport (K₁ + K₂) := by
-  have hunion : IsProperMap fun p : ↥(tsupport (uncurry K₁) ∪ tsupport (uncurry K₂)) ↦ p.val.1 :=
-    continuous_fst.continuousOn.isProperMap_restrict_union h₁ h₂
-  have hsub : tsupport (uncurry (K₁ + K₂)) ⊆ tsupport (uncurry K₁) ∪ tsupport (uncurry K₂) :=
-    tsupport_add (uncurry K₁) (uncurry K₂)
+  let U : Set (X × Y) := tsupport (uncurry K₁) ∪ tsupport (uncurry K₂)
+  let s₁ : Set U := ((↑) : U → X × Y) ⁻¹' tsupport (uncurry K₁)
+  let s₂ : Set U := ((↑) : U → X × Y) ⁻¹' tsupport (uncurry K₂)
+  have hs₁ : IsClosed s₁ := (isClosed_tsupport _).preimage continuous_subtypeVal
+  have hs₂ : IsClosed s₂ := (isClosed_tsupport _).preimage continuous_subtypeVal
+  have hcov : s₁ ∪ s₂ = Set.univ := by
+    ext ⟨p, hp⟩
+    simpa [s₁, s₂, U] using hp
+  let e₁ : s₁ ≃ₜ tsupport (uncurry K₁) :=
+    { toFun := fun p ↦ ⟨p.val.val, p.property⟩
+      invFun := fun p ↦ ⟨⟨p.val, Or.inl p.property⟩, p.property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      continuous_toFun := continuous_subtypeVal.subtypeVal.subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
+  let e₂ : s₂ ≃ₜ tsupport (uncurry K₂) :=
+    { toFun := fun p ↦ ⟨p.val.val, p.property⟩
+      invFun := fun p ↦ ⟨⟨p.val, Or.inr p.property⟩, p.property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      continuous_toFun := continuous_subtypeVal.subtypeVal.subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
+  have hunion : IsProperMap fun p : U ↦ p.val.1 :=
+    (IsClosed.isProperMap_iff_domRestrict_of_union_eq_univ hs₁ hs₂ hcov).2
+      ⟨h₁.comp e₁.isProperMap, h₂.comp e₂.isProperMap⟩
+  have hsub : tsupport (uncurry (K₁ + K₂)) ⊆ U := tsupport_add (uncurry K₁) (uncurry K₂)
   exact hunion.comp (Topology.IsClosedEmbedding.inclusion hsub
     ((isClosed_tsupport _).preimage continuous_subtypeVal)).isProperMap
 

@@ -631,25 +631,31 @@ theorem leftSymbol_ofRight_ofSpatial [CompleteSpace W]
 
 /-! ### Smoothness without completeness hypotheses -/
 
+private noncomputable def fromCompletionRealL (V W : Type*) [NormedAddCommGroup V]
+    [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] :
+    (V →L[ℂ] W) →L[ℝ] (UniformSpace.Completion V →L[ℂ] W) :=
+  ContinuousLinearMap.restrictScalars ℝ
+    (ContinuousLinearMap.fromCompletionL (σ₁₂ := RingHom.id ℂ) (E := V) (F := W))
+
 private def extendCompletion [CompleteSpace W] (a : Amplitude n V W m) :
     Amplitude n (UniformSpace.Completion V) W m where
-  coefficient p := ContinuousLinearMap.fromCompletionCLM (σ₁₂ := RingHom.id ℂ) (a.coefficient p)
-  contDiff_coefficient :=
-    (ContinuousLinearMap.restrictScalars ℝ
-      (ContinuousLinearMap.fromCompletionCLM (σ₁₂ := RingHom.id ℂ) (E := V) (F := W))
-      ).contDiff.comp a.contDiff_coefficient
+  coefficient p := fromCompletionRealL V W (a.coefficient p)
+  contDiff_coefficient := (fromCompletionRealL V W).contDiff.comp a.contDiff_coefficient
   exists_bound K hK α γ β := by
-    let L : (V →L[ℂ] W) →L[ℝ] (UniformSpace.Completion V →L[ℂ] W) :=
-      ContinuousLinearMap.restrictScalars ℝ
-        (ContinuousLinearMap.fromCompletionCLM (σ₁₂ := RingHom.id ℂ) (E := V) (F := W))
     obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α γ β
-    refine ⟨‖L‖ * C, mul_nonneg (norm_nonneg L) hC0, fun x y hxy ξ ↦ ?_⟩
-    have hL : (fun p ↦ ContinuousLinearMap.fromCompletionCLM
-        (σ₁₂ := RingHom.id ℂ) (a.coefficient p)) = fun p ↦ L (a.coefficient p) := rfl
-    rw [hL, L.iteratedFDerivAlong_comp_left a.contDiff_coefficient (amplitudeDirections α γ β)
-      (by simp), mul_assoc]
+    refine ⟨‖fromCompletionRealL V W‖ * C,
+      mul_nonneg (norm_nonneg (fromCompletionRealL V W)) hC0, fun x y hxy ξ ↦ ?_⟩
+    rw [(fromCompletionRealL V W).iteratedFDerivAlong_comp_left a.contDiff_coefficient
+      (amplitudeDirections α γ β) (by simp), mul_assoc]
     exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_left (hC x y hxy ξ) (norm_nonneg L))
+      (mul_le_mul_of_nonneg_left (hC x y hxy ξ) (norm_nonneg (fromCompletionRealL V W)))
+
+@[simp]
+private theorem coefficient_extendCompletion [CompleteSpace W] (a : Amplitude n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
+    (extendCompletion a).coefficient p =
+      ContinuousLinearMap.fromCompletionL (σ₁₂ := RingHom.id ℂ) (a.coefficient p) := by
+  simp [extendCompletion, fromCompletionRealL]
 
 private theorem HasProperInputSupport.extendCompletion_support [CompleteSpace W]
     {a : Amplitude n V W m} (ha : a.HasProperInputSupport) :
@@ -657,8 +663,7 @@ private theorem HasProperInputSupport.extendCompletion_support [CompleteSpace W]
   hasProperInputSupport_iff.2 fun K hK ↦ by
     obtain ⟨L, hL, hLa⟩ := hasProperInputSupport_iff.1 ha K hK
     refine ⟨L, hL, fun x hx y hy ξ ↦ ?_⟩
-    dsimp [Amplitude.extendCompletion]
-    rw [hLa x hx y hy ξ, map_zero]
+    rw [coefficient_extendCompletion, hLa x hx y hy ξ, map_zero]
 
 /-- **Proper input support implies smooth outputs.** Unconditional on completeness of `V` and `W`:
 for any amplitude `a` with proper input support and any Schwartz function `u`, `Op(a) u` is `C^∞`
@@ -679,8 +684,7 @@ theorem HasProperInputSupport.contDiff_quantizeAmplitudeValue
     rw [quantizeSchwartzValue_leftSymbol ha.extendCompletion_support uExt x]
     refine quantizeAmplitudeValue_congr_apply_at fun y ξ ↦ ?_
     have hcoe : uExt y = (u y : UniformSpace.Completion V) := SchwartzMap.postcompCLM_apply _ u y
-    exact hcoe ▸ (ContinuousLinearMap.fromCompletionCLM_apply_coe
-      (σ₁₂ := RingHom.id ℂ) (a.coefficient (x, y, ξ)) (u y)).symm
+    rw [hcoe, coefficient_extendCompletion, ContinuousLinearMap.fromCompletionL_apply_coe]
   rw [hquant]
   exact ((extendCompletion a).leftSymbol ha.extendCompletion_support
     ).contDiff_quantizeSchwartzValue uExt

@@ -339,7 +339,7 @@ theorem contDiff_localizedOffDiagonalKernel (a : Symbol n V W m)
   rcases eq_or_ne x y with rfl | hxy
   · refine (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq ?_
     filter_upwards [hχ_diag x] with ⟨x', y'⟩ h1
-    have h1' : χ x' y' = 1 := h1
+    have h1' : χ x' y' = 1 := by simpa [Function.uncurry] using h1
     simp [localizedOffDiagonalKernel, h1']
   · exact ((contDiff_const.sub hχ).contDiffAt (x := (x, y))).smul
       (a.contDiffOn_offDiagonalKernel.contDiffAt (isClosed_diagonal.isOpen_compl.mem_nhds hxy))

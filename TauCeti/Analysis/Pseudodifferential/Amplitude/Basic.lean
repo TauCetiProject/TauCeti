@@ -179,13 +179,6 @@ theorem quantizeAmplitudeValue_congr_apply_at {V₁ V₂ : Type*} [NormedAddComm
   dsimp only
   rw [funext fun y ↦ h y ((2 * π) • ζ)]
 
-/-- Two amplitudes whose coefficients agree on all input positions and frequencies at output
-position `x` quantize to the same value at `x`. -/
-theorem quantizeAmplitudeValue_congr_at {a₁ a₂ : E × E × E → V →L[ℂ] W}
-    (u : 𝓢(E, V)) {x : E} (h : ∀ y ξ, a₁ (x, y, ξ) = a₂ (x, y, ξ)) :
-    quantizeAmplitudeValue a₁ u x = quantizeAmplitudeValue a₂ u x :=
-  quantizeAmplitudeValue_congr_apply_at fun y ξ ↦ by rw [h y ξ]
-
 /-- An amplitude `a(x, y, ξ) = b(x, ξ)` independent of the input position quantizes to the
 quantization of the symbol `b`. -/
 theorem quantizeAmplitudeValue_eq_quantizeSchwartzValue [CompleteSpace V] [CompleteSpace W]

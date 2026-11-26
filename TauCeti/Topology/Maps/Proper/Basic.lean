@@ -47,8 +47,6 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
   finitely many closed sets is proper if and only if its restriction to each piece is proper.
 * `Continuous.isClosedEmbedding_fst_prod`: a parameter-preserving map `(p, x) ↦ (p, G (p, x))`
   with injective slices, compact second factor and Hausdorff target is a closed embedding.
-* `ContinuousOn.isProperMap_restrict_biUnion` and `ContinuousOn.isProperMap_restrict_union`: a
-  map continuous on a finite union of subsets and proper on each piece is proper on their union.
 -/
 
 public section
@@ -221,55 +219,6 @@ theorem Continuous.isClosedEmbedding_fst_prod {P : Type*} [TopologicalSpace P] [
     rw [himage]
     exact isClosedMap_fst_of_compactSpace _
       ((hC.preimage (by fun_prop)).inter (isClosed_eq (by fun_prop) (by fun_prop)))
-
-/-- If `f : X → Y` is continuous on `⋃ i ∈ s, S i` and proper on each member of a finite family
-`S`, then `f` is proper on `⋃ i ∈ s, S i`. No separation axiom is needed. -/
-theorem ContinuousOn.isProperMap_restrict_biUnion {ι : Type*} (s : Finset ι) (S : ι → Set X)
-    (hf : ContinuousOn f (⋃ i ∈ s, S i)) (hSf : ∀ i ∈ s, IsProperMap fun x : S i ↦ f x) :
-    IsProperMap fun x : ↥(⋃ i ∈ s, S i) ↦ f x := by
-  let U : Set X := ⋃ i ∈ s, S i
-  let T : s → Set U := fun i ↦ ((↑) : U → X) ⁻¹' S i.val
-  have hcov : (⋃ i : s, T i) = Set.univ := by
-    ext ⟨x, hx⟩
-    simpa [T, U] using hx
-  have hTi (i : s) : IsProperMap ((T i).domRestrict (U.domRestrict f)) := by
-    let e : T i ≃ₜ S i.val :=
-      { toFun := fun x ↦ ⟨x.val.val, x.property⟩
-        invFun := fun x ↦ ⟨⟨x.val, Set.mem_biUnion i.property x.property⟩, x.property⟩
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl
-        continuous_toFun := continuous_subtypeVal.subtypeVal.subtype_mk _
-        continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
-    exact (hSf i.val i.property).comp e.isProperMap
-  rw [isProperMap_iff_isClosedMap_and_compact_fibers]
-  refine ⟨hf.domRestrict, fun C hC ↦ ?_, fun y ↦ ?_⟩
-  · have himage : (fun x : U ↦ f x) '' C =
-        ⋃ i : s, (T i).domRestrict (U.domRestrict f) '' (((↑) : T i → U) ⁻¹' C) := by
-      rw [← Function.comp_def f Subtype.val, ← Set.domRestrict_eq]
-      simp_rw [Set.image_domRestrict, ← Set.image_iUnion, ← Set.inter_iUnion, hcov, Set.inter_univ]
-    rw [himage]
-    exact isClosed_iUnion_of_finite fun i : s ↦
-      (hTi i).isClosedMap _ (hC.preimage continuous_subtypeVal)
-  · have hfib : (fun x : U ↦ f x) ⁻¹' {y} =
-        ⋃ i : s, ((↑) : T i → U) '' ((T i).domRestrict (U.domRestrict f) ⁻¹' {y}) := by
-      rw [← Function.comp_def f Subtype.val, ← Set.domRestrict_eq]
-      simp_rw [Set.domRestrict_eq, Set.preimage_comp, Subtype.image_preimage_coe,
-        ← Set.iUnion_inter, hcov, Set.univ_inter]
-    rw [hfib]
-    exact isCompact_iUnion fun i : s ↦
-      ((hTi i).isCompact_preimage isCompact_singleton).image continuous_subtypeVal
-
-/-- If `f : X → Y` is continuous on `S₁ ∪ S₂` and proper on subsets `S₁` and `S₂`, then `f` is
-proper on `S₁ ∪ S₂`. No separation axiom is needed. -/
-theorem ContinuousOn.isProperMap_restrict_union {S₁ S₂ : Set X} (hf : ContinuousOn f (S₁ ∪ S₂))
-    (hf₁ : IsProperMap fun x : S₁ ↦ f x) (hf₂ : IsProperMap fun x : S₂ ↦ f x) :
-    IsProperMap fun x : ↥(S₁ ∪ S₂) ↦ f x := by
-  let S : Bool → Set X := Bool.rec S₂ S₁
-  have hcover : (⋃ b ∈ (Finset.univ : Finset Bool), S b) = S₁ ∪ S₂ := by
-    ext x
-    simp [S, Bool.exists_bool, or_comm]
-  exact ((hf.mono hcover.le).isProperMap_restrict_biUnion Finset.univ S fun b _ ↦
-    Bool.casesOn b hf₂ hf₁).comp (Homeomorph.setCongr hcover.symm).isProperMap
 
 namespace TauCeti
 

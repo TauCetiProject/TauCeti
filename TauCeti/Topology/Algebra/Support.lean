@@ -39,6 +39,10 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `TauCeti.tsupport_subset_of_forall_notMem_eq_zero`: a function vanishing off a closed set `s`
   has topological support in `s`, with multiplicative version
   `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
+* `TauCeti.mulTSupport_const` and `TauCeti.tsupport_const`: the topological support of a
+  non-unit / nonzero constant function is `Set.univ`.
+* `TauCeti.mulTSupport_uncurry_flip` and `TauCeti.tsupport_uncurry_flip`: flipping the arguments
+  of a binary function pulls back its topological support along `Prod.swap`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
 * `HasCompactSupport.comp_subtypeVal`: the restriction of a compactly supported function to a set
@@ -114,6 +118,28 @@ end Prod
 theorem mulTSupport_subset_of_forall_notMem_eq_one {Y M : Type*} [TopologicalSpace Y] [One M]
     {f : Y → M} {s : Set Y} (hf : ∀ x ∉ s, f x = 1) (hs : IsClosed s) : mulTSupport f ⊆ s :=
   hs.closure_subset_iff.2 (Function.mulSupport_subset_iff'.2 hf)
+
+/-- The topological multiplicative support of a non-unit constant function is the whole space. -/
+@[to_additive /-- The topological support of a nonzero constant function is the whole space. -/]
+theorem mulTSupport_const {Y M : Type*} [TopologicalSpace Y] [One M] {c : M} (hc : c ≠ 1) :
+    mulTSupport (fun _ : Y ↦ c) = Set.univ := by
+  rw [mulTSupport, Function.mulSupport_const hc, closure_univ]
+
+/-- The topological multiplicative support of `Function.uncurry (_root_.flip K)` is the preimage
+under `Prod.swap` of the topological multiplicative support of `Function.uncurry K`. -/
+@[to_additive /-- The topological support of `Function.uncurry (_root_.flip K)` is the preimage
+under `Prod.swap` of the topological support of `Function.uncurry K`. -/]
+theorem mulTSupport_uncurry_flip {X Y M : Type*} [TopologicalSpace X] [TopologicalSpace Y] [One M]
+    (K : X → Y → M) :
+    mulTSupport (Function.uncurry (_root_.flip K)) =
+      Prod.swap ⁻¹' mulTSupport (Function.uncurry K) := by
+  have hsup : Function.mulSupport (Function.uncurry (_root_.flip K)) =
+      Prod.swap ⁻¹' Function.mulSupport (Function.uncurry K) := by
+    ext ⟨y, x⟩
+    simp [Function.mem_mulSupport, _root_.flip]
+  rw [mulTSupport, mulTSupport, hsup]
+  simpa only [Homeomorph.coe_prodComm] using
+    ((Homeomorph.prodComm Y X).preimage_closure (Function.mulSupport (Function.uncurry K))).symm
 
 end TauCeti
 

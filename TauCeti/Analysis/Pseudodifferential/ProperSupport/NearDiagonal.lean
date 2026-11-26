@@ -89,7 +89,7 @@ theorem hasProperInputSupport_localizeAmplitude (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
     (hχ_in : HasProperInputSupport χ) :
     (a.localizeAmplitude χ hχ).HasProperInputSupport :=
-  Amplitude.hasProperInputSupport_smulPositions_of_cutoff _ _
+  Amplitude.hasProperInputSupport_smulPositions_of_hasProperInputSupport _ _
     (hχ_in.of_tsupport_subset (tsupport_comp_subset Complex.ofReal_zero (uncurry χ)))
 
 /-- If the spatial cutoff `χ` has proper output support (`(x, y) ↦ y` proper on `tsupport χ`), then
@@ -98,7 +98,7 @@ theorem hasProperOutputSupport_localizeAmplitude (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
     (hχ_out : HasProperOutputSupport χ) :
     (a.localizeAmplitude χ hχ).HasProperOutputSupport :=
-  Amplitude.hasProperOutputSupport_smulPositions_of_cutoff _ _
+  Amplitude.hasProperOutputSupport_smulPositions_of_hasProperOutputSupport _ _
     (hχ_out.of_tsupport_subset (tsupport_comp_subset Complex.ofReal_zero (uncurry χ)))
 
 /-- If the spatial cutoff `χ` is properly supported, then `a.localizeAmplitude χ hχ` is a properly
@@ -173,8 +173,8 @@ private theorem quantizeSchwartzValue_eq_integral_localizedOffDiagonalKernel_of_
   have hx_notMem : x ∉ tsupport (w : CoordinateSpace n → V) := by
     refine notMem_tsupport_iff_eventuallyEq.2 ?_
     filter_upwards [hχ_diag] with y hy
-    have hy1 : χ x y = 1 := hy
-    simp [hw, hy1]
+    simp only [Pi.one_apply] at hy
+    simp [hw, hy]
   rw [a.quantizeSchwartzValue_eq_integral_offDiagonalKernel ((funext hw).symm ▸ hs) hx_notMem]
   congr 1 with y
   rw [hw, ContinuousLinearMap.map_smul_of_tower, localizedOffDiagonalKernel_apply, smul_apply]

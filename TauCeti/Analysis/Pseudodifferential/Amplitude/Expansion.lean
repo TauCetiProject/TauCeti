@@ -223,7 +223,8 @@ theorem leftTerm_smulPositions {φ : CoordinateSpace n × CoordinateSpace n → 
   funext ⟨x, ξ⟩
   refine coefficient_leftTerm_congr_of_eventuallyEq_snd ?_ k
   filter_upwards [(continuous_fst.tendsto (x, ξ)).eventually (hφ₁ x)] with q hq
-  rw [coefficient_smulPositions, show φ (x, q.1) = 1 from hq, one_smul]
+  simp only [Pi.one_apply] at hq
+  rw [coefficient_smulPositions, hq, one_smul]
 
 /-- **The terms of the expansion of a right quantization.** For the amplitude `b(y, ξ)` of the
 right quantization of a symbol `b`, the term of order `m - k` is

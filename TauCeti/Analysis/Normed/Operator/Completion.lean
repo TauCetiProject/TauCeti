@@ -68,7 +68,7 @@ space `V` and `c < s`, then `ContinuousLinearMap.denseRange_comp` and rescaling 
 
 * `ContinuousLinearMap.norm_completion`: `‖f.completion‖ = ‖f‖`.
 * `ContinuousLinearMap.norm_fromCompletion`: `‖f.fromCompletion‖ = ‖f‖`.
-* `ContinuousLinearMap.fromCompletionCLM`: bounded linear operator extending
+* `ContinuousLinearMap.fromCompletionL`: bounded linear operator extending
   `E →SL[σ₁₂] F` to `Completion E →SL[σ₁₂] F`.
 * `ContinuousLinearMap.norm_toComplL_comp` and `ContinuousLinearMap.eNorm_toComplL_comp`:
   composing with the embedding of the codomain into its completion preserves the operator norm.
@@ -143,7 +143,7 @@ theorem norm_fromCompletion [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂]
 
 /-- Extending a bounded semilinear map into a complete Hausdorff space to the completion of its
 domain, as a continuous `𝕜₂`-linear operator between operator spaces. -/
-noncomputable def fromCompletionCLM [T0Space F] [CompleteSpace F] :
+noncomputable def fromCompletionL [T0Space F] [CompleteSpace F] :
     (E →SL[σ₁₂] F) →L[𝕜₂] (Completion E →SL[σ₁₂] F) :=
   LinearMap.mkContinuous
     { toFun := ContinuousLinearMap.fromCompletion
@@ -152,13 +152,13 @@ noncomputable def fromCompletionCLM [T0Space F] [CompleteSpace F] :
     1 fun f ↦ by simp
 
 @[simp]
-theorem fromCompletionCLM_apply [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂] F) :
-    fromCompletionCLM (σ₁₂ := σ₁₂) f = f.fromCompletion :=
+theorem fromCompletionL_apply [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂] F) :
+    fromCompletionL (σ₁₂ := σ₁₂) f = f.fromCompletion :=
   LinearMap.mkContinuous_apply _ _ _ f
 
-theorem fromCompletionCLM_apply_coe [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂] F) (x : E) :
-    fromCompletionCLM (σ₁₂ := σ₁₂) f (x : Completion E) = f x := by
-  rw [fromCompletionCLM_apply, f.fromCompletion_apply_coe]
+theorem fromCompletionL_apply_coe [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂] F) (x : E) :
+    fromCompletionL (σ₁₂ := σ₁₂) f (x : Completion E) = f x := by
+  rw [fromCompletionL_apply, f.fromCompletion_apply_coe]
 
 /-- If `f` lifts every vector of norm less than `r` to a vector of norm less than `r`, then so
 does its extension `f.completion` to the completions. -/
