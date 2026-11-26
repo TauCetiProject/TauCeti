@@ -33,9 +33,14 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
 * `CStarMatrix.normalizedTrace`: the normalized trace `tr_k`, with `tr_k(1) = 1` for `k ≠ 0`,
   `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order; `CStarMatrix.normalizedTrace_matrixUnit`
   evaluates it on matrix units.
-* `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, of norm
-  at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and
-  invariant under reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
+* `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, tracial
+  (`CStarMatrix.normalizedTraceMap_mul_comm`), of norm at most `1`
+  (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and invariant under
+  reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
+* `CStarMatrix.normalizedTrace_blockDiagonal'`: the normalized trace of a block-diagonal matrix
+  weights the block `i` by `|n i| / |Σ i, n i|`, and so does
+  `CStarMatrix.normalizedTwoNorm_blockDiagonal'_sq` for `‖·‖₂²`; hence
+  `CStarMatrix.normalizedTwoNorm_blockDiagonal'_le`: `‖diag(x_i)‖₂ ≤ c` when every `‖x_i‖₂ ≤ c`.
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
 * `CStarMatrix.normalizedTwoNorm_matrixUnit`: `‖e_ij‖₂ = k^{-1/2}`.
@@ -280,6 +285,18 @@ theorem normalizedTrace_star_mul_self_eq_zero_iff {x : CStarMatrix n n ℂ} :
     normalizedTrace (star x * x) = 0 ↔ x = 0 := by
   simp [normalizedTrace_star_mul_self]
 
+/-- The Schwarz defect of the normalized trace at `x` is `tr_k(y⋆y)` for `y = x - tr_k(x)·1`:
+`tr_k(x⋆x) - conj (tr_k x) tr_k(x) = tr_k((x - tr_k(x)·1)⋆(x - tr_k(x)·1))`. -/
+theorem normalizedTrace_star_mul_self_sub [DecidableEq n] (x : CStarMatrix n n ℂ) :
+    normalizedTrace (star x * x) - star (normalizedTrace x) * normalizedTrace x =
+      normalizedTrace (star (x - normalizedTrace x • 1) * (x - normalizedTrace x • 1)) := by
+  cases isEmpty_or_nonempty n
+  · simp
+  simp only [star_sub, star_smul, star_one, sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm,
+    one_mul, mul_one, normalizedTrace_sub, normalizedTrace_smul, normalizedTrace_star,
+    normalizedTrace_one]
+  ring
+
 /-- The triangle inequality for the normalized 2-norm. -/
 theorem normalizedTwoNorm_add_le (x y : CStarMatrix n n ℂ) :
     normalizedTwoNorm (x + y) ≤ normalizedTwoNorm x + normalizedTwoNorm y := by
@@ -435,6 +452,11 @@ def normalizedTraceMap : CStarMatrix n n ℂ →P[ℂ] ℂ where
 theorem normalizedTraceMap_apply (x : CStarMatrix n n ℂ) :
     normalizedTraceMap n x = normalizedTrace x :=
   (rfl)
+
+/-- `normalizedTraceMap n` is tracial: `tr_k(xy) = tr_k(yx)`. -/
+theorem normalizedTraceMap_mul_comm (x y : CStarMatrix n n ℂ) :
+    normalizedTraceMap n (x * y) = normalizedTraceMap n (y * x) := by
+  rw [normalizedTraceMap_apply, normalizedTraceMap_apply, normalizedTrace_mul_comm]
 
 variable (n) in
 /-- The normalized trace has operator norm at most `1`. -/
@@ -643,5 +665,70 @@ theorem normalizedTwoNorm_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m
   rw [normalizedTwoNorm_ofMatrix_kronecker, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
 end BlockTensor
+
+end CStarMatrix
+
+namespace CStarMatrix
+
+section BlockDiagonal
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {n : ι → Type*} [∀ i, Fintype (n i)]
+
+/-- The normalized trace of a block-diagonal matrix weights the normalized trace of the block `i`
+by `|n i| / |Σ i, n i|`. -/
+@[simp]
+theorem normalizedTrace_blockDiagonal' (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
+    normalizedTrace (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) =
+      ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℂ) * normalizedTrace (x i) := by
+  simp only [normalizedTrace_def, Equiv.symm_apply_apply, Matrix.trace_blockDiagonal',
+    Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rcases eq_or_ne (Fintype.card (n i)) 0 with h | h
+  · have := Fintype.card_eq_zero_iff.mp h
+    simp [Matrix.trace]
+  · field_simp
+
+/-- The normalized trace of the corner embedding at `i` is that of the block, weighted by
+`|n i| / |Σ i, n i|`. -/
+@[simp]
+theorem normalizedTrace_blockDiagonalSingle (i : ι) (x : CStarMatrix (n i) (n i) ℂ) :
+    normalizedTrace (blockDiagonalSingle ℂ ℂ i x) =
+      (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℂ) * normalizedTrace x := by
+  have h := normalizedTrace_blockDiagonal' (Pi.single i x)
+  rw [← sum_blockDiagonalSingle (R := ℂ), Fintype.sum_eq_single i (fun j hj => by simp [hj]),
+    Fintype.sum_eq_single i (fun j hj => by simp [hj]), Pi.single_eq_same] at h
+  exact h
+
+/-- **Block additivity of the normalized 2-norm** for a block-diagonal matrix:
+`‖diag(x_i)‖₂² = Σᵢ (|n i| / |Σ i, n i|) ‖x_i‖₂²`. -/
+theorem normalizedTwoNorm_blockDiagonal'_sq (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
+    normalizedTwoNorm (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) ^ 2 =
+      ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℝ) * normalizedTwoNorm (x i) ^ 2 := by
+  have h : star (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) *
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i)) =
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (star (x i) * x i)) := by
+    apply ofMatrix.symm.injective
+    simp [Matrix.blockDiagonal'_conjTranspose, ← Matrix.blockDiagonal'_mul]
+  rw [normalizedTwoNorm_sq, h, normalizedTrace_blockDiagonal', Complex.re_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [normalizedTrace_star_mul_self, ← Complex.ofReal_natCast, ← Complex.ofReal_natCast,
+    ← Complex.ofReal_div, ← Complex.ofReal_mul, Complex.ofReal_re]
+
+/-- A block-diagonal matrix whose blocks all have normalized 2-norm at most `c` has normalized
+2-norm at most `c`: `‖diag(x_i)‖₂²` is a weighted average of the `‖x_i‖₂²`. -/
+theorem normalizedTwoNorm_blockDiagonal'_le {x : ∀ i, CStarMatrix (n i) (n i) ℂ} {c : ℝ}
+    (hc : 0 ≤ c) (h : ∀ i, normalizedTwoNorm (x i) ≤ c) :
+    normalizedTwoNorm (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) ≤ c := by
+  refine (pow_le_pow_iff_left₀ (normalizedTwoNorm_nonneg _) hc two_ne_zero).1 ?_
+  rw [normalizedTwoNorm_blockDiagonal'_sq]
+  calc ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℝ) * normalizedTwoNorm (x i) ^ 2
+      ≤ ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℝ) * c ^ 2 := by
+        gcongr with i
+        exacts [normalizedTwoNorm_nonneg _, h i]
+    _ = (Fintype.card (Σ i, n i) / Fintype.card (Σ i, n i) : ℝ) * c ^ 2 := by
+        rw [← Finset.sum_mul, ← Finset.sum_div, Fintype.card_sigma, Nat.cast_sum]
+    _ ≤ c ^ 2 := mul_le_of_le_one_left (by positivity) (div_self_le_one _)
+
+end BlockDiagonal
 
 end CStarMatrix

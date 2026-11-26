@@ -74,6 +74,30 @@ lemma mapValue_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
   rw [WithConv.ofConv_toConv, AlgHom.comp_apply]
   rw [hg h hh, map_zero]
 
+/-- Post-composition by an injective algebra homomorphism reflects the ambient-point subgroup cut
+out by a Hopf ideal, including when the source and target value algebras lie in different
+universes. -/
+lemma mapValue_mem_quotientPointsSubgroup_iff (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A : Type w} {B : Type w'}
+    [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    {χ : A →ₐ[R] B} (hχ : Function.Injective χ)
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A)) :
+    AlgHom.mapValue χ g ∈ quotientPointsSubgroup H I (CommAlgCat.of R B) ↔
+      g ∈ quotientPointsSubgroup H I (CommAlgCat.of R A) := by
+  rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
+  refine forall₂_congr fun h _ ↦ ?_
+  rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv, AlgHom.comp_apply, map_eq_zero_iff χ hχ]
+
+/-- Along an injective algebra homomorphism, the ambient-point subgroup cut out by a Hopf ideal is
+the preimage of the corresponding subgroup under post-composition. -/
+lemma comap_mapValue_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A : Type w} {B : Type w'}
+    [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    {χ : A →ₐ[R] B} (hχ : Function.Injective χ) :
+    (quotientPointsSubgroup H I (CommAlgCat.of R B)).comap (AlgHom.mapValue χ) =
+      quotientPointsSubgroup H I (CommAlgCat.of R A) :=
+  Subgroup.ext (mapValue_mem_quotientPointsSubgroup_iff H I hχ)
+
 /-- Post-composition preserves the ambient-point subgroup cut out by a Hopf ideal. -/
 lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}

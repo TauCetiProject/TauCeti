@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Kummer
 public import TauCeti.AlgebraicGeometry.Sites.Big.StructureSheaf
 public import TauCeti.AlgebraicGeometry.Sites.Fpqc
+public import TauCeti.CategoryTheory.Sites.Over.Pullback
+public import TauCeti.CategoryTheory.Sites.ShortExact
 
 /-!
 # The Kummer sequence on the big étale site
@@ -28,6 +30,15 @@ invertible. These covers together form an étale cover of `T`
 every topology finer than the étale topology, and the sheaf statements for every such topology
 coarser than the fpqc topology, such as the étale topology itself.
 
+The two parts assemble into the Kummer sequence `AlgebraicGeometry.Scheme.kummerSequence`, a
+short exact sequence of sheaves of abelian groups (`kummerSequence_shortExact`). The big étale
+site is too large for sheafification into abelian groups of the same universe, so its sheaves are
+not known to form an abelian category; exactness instead uses that a locally surjective morphism
+of abelian sheaves is the cokernel of its kernel
+(`CategoryTheory.ShortComplex.shortExact_of_isLocallySurjective`). The Kummer sequence is
+compatible with change of base: along `f : T ⟶ S` it restricts to the Kummer sequence of `T`
+(`kummerSequenceOverMapPullbackIso`).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.exists_etale_cover_pow_eq`: if `n` is invertible on a scheme `X`, every
@@ -37,6 +48,13 @@ coarser than the fpqc topology, such as the étale topology itself.
 * `AlgebraicGeometry.Scheme.epi_sheafPushforwardContinuous_map_powHom`: for `n` invertible on `S`,
   the `n`-th power map of `𝔾_m`, regarded as a map of sheaves for such a topology coarser than
   the fpqc topology, for instance the étale topology, is an epimorphism.
+* `AlgebraicGeometry.Scheme.kummerSequence`: the Kummer sequence `0 → μ_n → 𝔾_m → 𝔾_m → 0` on
+  the site `Over S` for a topology coarser than the fpqc topology.
+* `AlgebraicGeometry.Scheme.kummerSequence_shortExact`: for `n` invertible on `S` and a topology
+  between the étale and the fpqc topology, the Kummer sequence is short exact.
+* `AlgebraicGeometry.Scheme.kummerSequenceOverMapPullbackIso`: the restriction of the Kummer
+  sequence of `S` along `f : T ⟶ S` is the Kummer sequence of `T`, so it is short exact as well
+  (`kummerSequence_map_overMapPullback_shortExact`).
 
 ## References
 
@@ -120,5 +138,175 @@ theorem epi_sheafPushforwardContinuous_map_powHom {J : GrothendieckTopology Sche
       (J.over S) (fpqcTopology.over S)).map (powHom S n)) :=
     isLocallySurjective_powHom S hJ hn
   inferInstance
+
+section KummerSequence
+
+variable (J : GrothendieckTopology Scheme.{u})
+  [(𝟭 (Over S)).IsContinuous (J.over S) (fpqcTopology.over S)] (n : ℕ)
+
+/-- **The Kummer sequence** `0 → μ_n → 𝔾_m → 𝔾_m → 0` of `S`, whose second map is the `n`-th
+power map, as a complex of sheaves of abelian groups on the site `Over S` for a topology `J` on
+schemes coarser than the fpqc topology, such as the étale topology. It is short exact when `n` is
+invertible on `S` and `J` is finer than the étale topology (`kummerSequence_shortExact`). -/
+@[expose]
+noncomputable def kummerSequence : ShortComplex (Sheaf (J.over S) AddCommGrpCat.{u}) :=
+  (ShortComplex.mk (muToGm S n) (powHom S n) (muToGm_comp_powHom S n)).map
+    ((𝟭 (Over S)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over S) (fpqcTopology.over S))
+
+@[simp]
+lemma kummerSequence_X₁ : (kummerSequence S J n).X₁ =
+    ((𝟭 (Over S)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over S)
+      (fpqcTopology.over S)).obj (mu S n) :=
+  (rfl)
+
+@[simp]
+lemma kummerSequence_X₂ : (kummerSequence S J n).X₂ =
+    ((𝟭 (Over S)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over S)
+      (fpqcTopology.over S)).obj (Gm S) :=
+  (rfl)
+
+@[simp]
+lemma kummerSequence_X₃ : (kummerSequence S J n).X₃ =
+    ((𝟭 (Over S)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over S)
+      (fpqcTopology.over S)).obj (Gm S) :=
+  (rfl)
+
+@[simp]
+lemma kummerSequence_f : (kummerSequence S J n).f =
+    ((𝟭 (Over S)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over S)
+      (fpqcTopology.over S)).map (muToGm S n) :=
+  (rfl)
+
+@[simp]
+lemma kummerSequence_g : (kummerSequence S J n).g =
+    ((𝟭 (Over S)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over S)
+      (fpqcTopology.over S)).map (powHom S n) :=
+  (rfl)
+
+/-- **The Kummer sequence is exact.** For `n` invertible on `S` and a topology `J` on schemes
+between the étale and the fpqc topology, such as the étale topology itself, the Kummer sequence
+`0 → μ_n → 𝔾_m → 𝔾_m → 0` is a short exact sequence of sheaves of abelian groups on the site
+`Over S` for `J`. -/
+@[stacks 03PL]
+theorem kummerSequence_shortExact (hJ : etaleTopology ≤ J) (hn : IsUnit (n : Γ(S, ⊤))) :
+    (kummerSequence S J n).ShortExact := by
+  have : Sheaf.IsLocallySurjective (kummerSequence S J n).g := isLocallySurjective_powHom S hJ hn
+  -- The kernel fork of `kummerSequence` is the image of the kernel fork of `μ_n` on the fpqc site.
+  exact ShortComplex.shortExact_of_isLocallySurjective (isLimitMuKernelForkMap S J n)
+
+variable {S} {T : Scheme.{u}} (f : T ⟶ S)
+  [(𝟭 (Over T)).IsContinuous (J.over T) (fpqcTopology.over T)]
+
+/-- The Kummer complex `μ_n ⟶ 𝔾_m ⟶ 𝔾_m` on the big fpqc site of `S` restricts, along
+`f : T ⟶ S`, to the Kummer complex on the big fpqc site of `T`. -/
+private noncomputable def fpqcKummerOverMapPullbackIso :
+    (ShortComplex.mk (muToGm S n) (powHom S n) (muToGm_comp_powHom S n)).map
+        (fpqcTopology.overMapPullback AddCommGrpCat.{u} f) ≅
+      ShortComplex.mk (muToGm T n) (powHom T n) (muToGm_comp_powHom T n) :=
+  ShortComplex.isoMk (muOverMapPullbackIso f n) (GmOverMapPullbackIso f) (GmOverMapPullbackIso f)
+    (muOverMapPullbackIso_hom_comp_muToGm f n) (GmOverMapPullbackIso_hom_comp_powHom f n)
+
+/-- **The Kummer sequence restricts to the Kummer sequence.** For a morphism `f : T ⟶ S`, the
+restriction of the Kummer sequence of `S` along `f`, from the site `Over S` to the site `Over T`
+(the slice of `Over S` at `T`), is the Kummer sequence of `T`. -/
+noncomputable def kummerSequenceOverMapPullbackIso :
+    (kummerSequence S J n).map (J.overMapPullback AddCommGrpCat.{u} f) ≅
+      kummerSequence T J n :=
+  -- Regarding fpqc sheaves as `J`-sheaves commutes with the restriction along `f`, and the
+  -- restriction of the fpqc Kummer complex of `S` is that of `T`.
+  (ShortComplex.mk (muToGm S n) (powHom S n) (muToGm_comp_powHom S n)).mapNatIso
+      (J.sheafPushforwardContinuousIdCompOverMapPullbackIso fpqcTopology AddCommGrpCat.{u} f) ≪≫
+    ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+      (fpqcTopology.over T)).mapShortComplex.mapIso (fpqcKummerOverMapPullbackIso n f)
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_hom_τ₁ :
+    (kummerSequenceOverMapPullbackIso J n f).hom.τ₁ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (muOverMapPullbackIso f n).hom := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₁, ShortComplex.map_comp, Iso.trans_hom,
+    ShortComplex.mapNatIso_hom, Functor.mapIso_hom, ShortComplex.comp_τ₁,
+    ShortComplex.mapNatTrans_τ₁,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_hom_app,
+    Functor.comp_obj, Functor.mapShortComplex_map_τ₁]
+  exact Category.id_comp _
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_hom_τ₂ :
+    (kummerSequenceOverMapPullbackIso J n f).hom.τ₂ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).hom := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₂, ShortComplex.map_comp, Iso.trans_hom,
+    ShortComplex.mapNatIso_hom, Functor.mapIso_hom, ShortComplex.comp_τ₂,
+    ShortComplex.mapNatTrans_τ₂,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_hom_app,
+    Functor.comp_obj, Functor.mapShortComplex_map_τ₂]
+  exact Category.id_comp _
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_hom_τ₃ :
+    (kummerSequenceOverMapPullbackIso J n f).hom.τ₃ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).hom := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₃, ShortComplex.map_comp, Iso.trans_hom,
+    ShortComplex.mapNatIso_hom, Functor.mapIso_hom, ShortComplex.comp_τ₃,
+    ShortComplex.mapNatTrans_τ₃,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_hom_app,
+    Functor.comp_obj, Functor.mapShortComplex_map_τ₃]
+  exact Category.id_comp _
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_inv_τ₁ :
+    (kummerSequenceOverMapPullbackIso J n f).inv.τ₁ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (muOverMapPullbackIso f n).inv := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₁, ShortComplex.map_comp, Iso.trans_inv,
+    Functor.mapIso_inv, ShortComplex.mapNatIso_inv, ShortComplex.comp_τ₁,
+    Functor.mapShortComplex_map_τ₁, ShortComplex.mapNatTrans_τ₁,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_inv_app,
+    Functor.comp_obj]
+  exact Category.comp_id _
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_inv_τ₂ :
+    (kummerSequenceOverMapPullbackIso J n f).inv.τ₂ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).inv := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₂, ShortComplex.map_comp, Iso.trans_inv,
+    Functor.mapIso_inv, ShortComplex.mapNatIso_inv, ShortComplex.comp_τ₂,
+    Functor.mapShortComplex_map_τ₂, ShortComplex.mapNatTrans_τ₂,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_inv_app,
+    Functor.comp_obj]
+  exact Category.comp_id _
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_inv_τ₃ :
+    (kummerSequenceOverMapPullbackIso J n f).inv.τ₃ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).inv := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₃, ShortComplex.map_comp, Iso.trans_inv,
+    Functor.mapIso_inv, ShortComplex.mapNatIso_inv, ShortComplex.comp_τ₃,
+    Functor.mapShortComplex_map_τ₃, ShortComplex.mapNatTrans_τ₃,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_inv_app,
+    Functor.comp_obj]
+  exact Category.comp_id _
+
+/-- **The restricted Kummer sequence is exact.** For a morphism `f : T ⟶ S`, a natural number `n`
+invertible on `T` (for instance, invertible on `S`) and a topology `J` on schemes between the
+étale and the fpqc topology, the restriction of the Kummer sequence of `S` along `f` to the site
+`Over T` is short exact. -/
+theorem kummerSequence_map_overMapPullback_shortExact (hJ : etaleTopology ≤ J)
+    (hn : IsUnit (n : Γ(T, ⊤))) :
+    ((kummerSequence S J n).map (J.overMapPullback AddCommGrpCat.{u} f)).ShortExact :=
+  ShortComplex.shortExact_of_iso (kummerSequenceOverMapPullbackIso J n f).symm
+    (kummerSequence_shortExact T J n hJ hn)
+
+end KummerSequence
 
 end AlgebraicGeometry.Scheme

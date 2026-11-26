@@ -27,7 +27,9 @@ ideals it needs no argument that the kernel of `H → ℝ ⊗[ℚ] H → O(S)` i
 
 ## Main declarations
 
-* `TauCeti.DeligneTorus.mumfordTateHopfIdeal h`: the Hopf ideal of `H` cutting out `MT(h)`.
+* `TauCeti.DeligneTorus.mumfordTateHopfIdeal h`: the Hopf ideal of `H` cutting out `MT(h)`, the
+  Hopf-ideal contraction of the largest Hopf ideal contained in the kernel of the coordinate map
+  of `h` (`TauCeti.DeligneTorus.mumfordTateHopfIdeal_def`).
 * `TauCeti.DeligneTorus.le_mumfordTateHopfIdeal_iff`: **minimality**; `MT(h)` is contained in
   the closed `ℚ`-subgroup cut out by `I` exactly when `h` kills `I_ℝ`.
 * `TauCeti.DeligneTorus.mumfordTateLift`,
@@ -70,6 +72,12 @@ Contravariantly, `MT(h)` is the smallest closed `ℚ`-subgroup of `G` through wh
 noncomputable def mumfordTateHopfIdeal
     (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S) : HopfIdeal ℚ H :=
   contractHopfIdeal (commonKernelHopfIdeal fun _ : Unit ↦ h)
+
+/-- The Mumford–Tate ideal is the contraction to `ℚ` of the largest Hopf ideal killed by `h`. -/
+theorem mumfordTateHopfIdeal_def
+    (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S) :
+    mumfordTateHopfIdeal h = contractHopfIdeal (commonKernelHopfIdeal fun _ : Unit ↦ h) := by
+  rw [mumfordTateHopfIdeal]
 
 /-- **Minimality of the Mumford–Tate group.** A Hopf ideal `I` lies below the Mumford–Tate ideal
 of `h` exactly when `h` kills its real extension: the closed `ℚ`-subgroup cut out by `I`

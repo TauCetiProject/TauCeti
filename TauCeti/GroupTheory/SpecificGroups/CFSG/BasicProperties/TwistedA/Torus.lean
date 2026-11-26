@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TwistedA.Basic
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Basic
 
 /-!
 # A torus and fixed Weyl representative in the Steinberg fixed points of `²A₂(q)`

@@ -126,14 +126,14 @@ the tangent space of the base. In particular the negative normal spaces of `f �
 the preimages of the negative spaces of the Hessian of `f`. -/
 theorem IsCriticalSubmanifold.normalHessian_comp_apply [IsManifold I' 2 Z] (hn : n ≠ 0)
     (h : i.IsCriticalSubmanifold (f ∘ π)) (s : S) (hreg : IsRegularPoint I' I π (i s))
-    (htan : i.tangentRange s hn = (mfderiv I' I π (i s)).ker)
+    (htan : i.isImmersion.tangentRange s hn = (mfderiv I' I π (i s)).ker)
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f (π (i s))) (hπ : ContMDiffAt I' I 2 π (i s))
-    (hcrit : π (i s) ∈ criticalPoints I f) (a b : i.NormalSpace s hn) :
+    (hcrit : π (i s) ∈ criticalPoints I f) (a b : i.isImmersion.NormalSpace s hn) :
     h.normalHessian hn s a b =
       criticalHessian I f (π (i s)) (i.normalSpaceEquivOfSurjective s hn hreg htan a)
         (i.normalSpaceEquivOfSurjective s hn hreg htan b) := by
-  obtain ⟨v, rfl⟩ := i.normalClass_surjective s hn a
-  obtain ⟨w, rfl⟩ := i.normalClass_surjective s hn b
+  obtain ⟨v, rfl⟩ := i.isImmersion.normalClass_surjective s hn a
+  obtain ⟨w, rfl⟩ := i.isImmersion.normalClass_surjective s hn b
   rw [h.normalHessian_normalClass, normalSpaceEquivOfSurjective_normalClass,
     normalSpaceEquivOfSurjective_normalClass, criticalHessian_comp_apply rfl hf hπ hcrit]
 

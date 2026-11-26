@@ -36,7 +36,8 @@ degrees. This grading is used by tensor products of differential graded objects 
 
 ## Main results
 
-* `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
+* `TauCeti.InternalGrading.tmul_mem_tensorProduct` and
+  `TauCeti.InternalGrading.tmul_mem_tensorProduct_ofDecomposition`: degrees add on pure tensors.
 * `TauCeti.InternalGrading.tensorProduct_piece_le_of_add_eq`: a submodule containing every
   homogeneous pure tensor `x ⊗ₜ y` with `p + q = n` contains the degree-`n` piece.
 * `TauCeti.InternalGrading.tensorProduct_piece_eq_iSup` and
@@ -157,6 +158,14 @@ theorem tmul_mem_tensorProduct {ι : Type*} [DecidableEq ι] [Add ι]
   Submodule.mem_iSup_of_mem (p, q) <| Submodule.mem_iSup_of_mem rfl <| by
     simpa only [tensorProductBidegreePiece, TensorProduct.mk_apply] using
       Submodule.apply_mem_map₂ (TensorProduct.mk R M N) hx hy
+
+/-- For gradings given by decompositions `ℳ` and `𝒩`, a pure tensor of elements of `ℳ p` and
+`𝒩 q` is homogeneous of degree `p + q` in the tensor-product grading. -/
+theorem tmul_mem_tensorProduct_ofDecomposition {ι : Type*} [DecidableEq ι] [Add ι]
+    (ℳ : ι → Submodule R M) (𝒩 : ι → Submodule R N) [DirectSum.Decomposition ℳ]
+    [DirectSum.Decomposition 𝒩] {p q : ι} {x : M} {y : N} (hx : x ∈ ℳ p) (hy : y ∈ 𝒩 q) :
+    x ⊗ₜ[R] y ∈ ((ofDecomposition ℳ).tensorProduct (ofDecomposition 𝒩)).piece (p + q) :=
+  tmul_mem_tensorProduct _ _ (by rwa [ofDecomposition_piece]) (by rwa [ofDecomposition_piece])
 
 /-- A submodule containing every pure tensor of homogeneous elements whose degrees sum to `n`
 contains the whole degree-`n` piece of the tensor-product grading. -/

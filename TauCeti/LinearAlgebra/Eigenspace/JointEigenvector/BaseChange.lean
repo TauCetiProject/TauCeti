@@ -9,6 +9,9 @@ public import TauCeti.RingTheory.Artinian.Socle
 public import TauCeti.RingTheory.Support.BaseChange
 public import Mathlib.RingTheory.Support
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.Algebra.Module.LocalizedModule.Lift
 import TauCeti.RingTheory.TensorProduct.CentralBaseChange
 
 /-!
@@ -46,6 +49,11 @@ of `k ⊗[O] L`, and the socle of an Artinian module provides the eigenvector.
   in terms of the support of `L ⧸ I • L`, for an ideal `I` killed by the character.
 * `AlgHom.exists_ne_zero_forall_baseChange_eq_smul`: every character has a nonzero joint
   eigenvector when `A` acts faithfully on `L`.
+* `AlgHom.exists_ne_zero_forall_baseChange_lsmul_apply_eq_smul`: the same for a character
+  `A → V` with values in a domain `V`, when `L` is moreover flat over `O`. The character to the
+  fraction field of `V` occurs on `L` after base change, and clearing denominators along the
+  localization `V ⊗[O] L → k ⊗[O] L` gives a nonzero integral eigenvector. This is the occurrence
+  step of the Deligne–Serre eigenvalue lifting lemma.
 
 ## References
 
@@ -164,5 +172,31 @@ theorem exists_ne_zero_forall_baseChange_eq_smul [FaithfulSMul A L] (φ : A →�
     ∃ v : k ⊗[O] L, v ≠ 0 ∧ ∀ a : A, (Algebra.lsmul O O L a).baseChange k v = φ a • v :=
   φ.exists_ne_zero_forall_baseChange_eq_smul_of_annihilator_le <| by
     simp [Module.annihilator_eq_bot.2 ‹_›]
+
+variable (k) {V : Type*} [CommRing V] [Algebra O V] [Algebra V k] [IsFractionRing V k]
+  [IsScalarTower O V k] in
+include k in
+/-- **Occurrence of an integral character.** Let `A` be a commutative `O`-algebra, finite as an
+`O`-module, acting faithfully on a module `L` finite over `A` and flat over `O`, and let `V` be a
+domain over `O` with fraction field `k`. Every `O`-algebra map `ψ : A →ₐ[O] V` occurs on
+`V ⊗[O] L`: some nonzero `n` satisfies `(a • ·).baseChange V n = ψ a • n` for every `a : A`. -/
+theorem exists_ne_zero_forall_baseChange_lsmul_apply_eq_smul [Module.Flat O L] [FaithfulSMul A L]
+    (ψ : A →ₐ[O] V) :
+    ∃ n : V ⊗[O] L, n ≠ 0 ∧ ∀ a : A, (Algebra.lsmul O O L a).baseChange V n = ψ a • n := by
+  -- The character `A → k` induced by `ψ` occurs on the faithful module `k ⊗[O] L`.
+  obtain ⟨v, hv0, hv⟩ :=
+    ((IsScalarTower.toAlgHom O V k).comp ψ).exists_ne_zero_forall_baseChange_eq_smul (L := L)
+  -- Clear the denominators of `v` along the localization `V ⊗[O] L → k ⊗[O] L`.
+  let g : V ⊗[O] L →ₗ[V] k ⊗[O] L := AlgebraTensorModule.rTensor O L (Algebra.linearMap V k)
+  have hg : Function.Injective g :=
+    Module.Flat.rTensor_preserves_injective_linearMap ((Algebra.linearMap V k).restrictScalars O)
+      (IsFractionRing.injective V k)
+  obtain ⟨n, hn0, hn, -⟩ :=
+    IsLocalizedModule.exists_ne_zero_forall_apply_eq_smul_of_injective (nonZeroDivisors V) hg
+      (T := fun a : A ↦ (Algebra.lsmul O O L a).baseChange V)
+      (T' := fun a : A ↦ ((Algebra.lsmul O O L a).baseChange k).restrictScalars V)
+      (fun a ↦ by ext; simp [g]) hv0 (b := fun a ↦ ψ a) fun a ↦ by
+        simpa [algebraMap_smul] using hv a
+  exact ⟨n, hn0, hn⟩
 
 end AlgHom

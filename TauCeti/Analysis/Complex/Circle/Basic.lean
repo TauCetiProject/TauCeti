@@ -23,6 +23,7 @@ import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.RingTheory.IntegralDomain
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -78,6 +79,11 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
+* `Circle.sq_exp_mul_inv`: the square of the quotient of `exp(jθ)` by `exp(kθ)` is the power
+  `exp(2θ)^(j - k)`.
+* `Circle.sq_mul_inv_ne_one`: `(d e⁻¹)² ≠ 1` for unit directions `d` and `e` that are not
+  parallel.
+* `Circle.isCyclic_of_finite`: every finite subgroup of the circle is cyclic.
 * `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
   differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
@@ -322,6 +328,14 @@ theorem contDiff_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.contDiff.comp hu
 
+/-- The pointwise inverse of a circle-valued map that is `Cⁿ` at `z`, as a map into `ℂ`, is `Cⁿ`
+at `z`. -/
+theorem contDiffAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {u : E → Circle} {z : E} (hu : ContDiffAt ℝ n (fun w ↦ (u w : ℂ)) z) :
+    ContDiffAt ℝ n (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.contDiff.contDiffAt.comp z hu
+
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
 def expContinuousMonoidHom : ContinuousMonoidHom (Multiplicative ℝ) Circle where
@@ -479,6 +493,26 @@ theorem infinite_setOf_sq_eq_one_pi {ι : Type*} [Infinite ι] :
   funext i
   rw [Pi.pow_apply, Pi.one_apply, Function.comp_apply]
   split_ifs <;> simp
+
+/-- The square of the quotient of `exp(jθ)` by `exp(kθ)` is the power `exp(2θ)^(j - k)`. -/
+theorem sq_exp_mul_inv (θ : ℝ) (j k : ℤ) :
+    (Circle.exp (j * θ) * (Circle.exp (k * θ))⁻¹) ^ 2 = Circle.exp (2 * θ) ^ (j - k) := by
+  rw [← Circle.exp_neg, ← Circle.exp_add, ← Circle.exp_natCast_mul, ← Circle.exp_intCast_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- The rotation by `(d e⁻¹)²` is not the identity when the directions `d` and `e` are not
+parallel. -/
+theorem sq_mul_inv_ne_one {d e : Circle} (hde : d ≠ e) (hde' : d ≠ -e) : (d * e⁻¹) ^ 2 ≠ 1 := by
+  rw [Ne, sq_eq_one_iff]
+  rintro (h | h)
+  · exact hde (mul_inv_eq_one.1 h)
+  · exact hde' (by rw [mul_inv_eq_iff_eq_mul.1 h, neg_one_mul])
+
+/-- Every finite subgroup of the circle is cyclic: it is a finite group of units of `ℂ`. -/
+instance isCyclic_of_finite (H : Subgroup Circle) [Finite H] : IsCyclic H :=
+  isCyclic_of_injective_ringHom (coeHom.comp H.subtype) fun _ _ h => Subtype.ext (coe_injective h)
 
 end Circle
 

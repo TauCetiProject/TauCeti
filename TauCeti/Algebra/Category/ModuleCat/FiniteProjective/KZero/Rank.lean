@@ -68,6 +68,8 @@ is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is zero an
   class is `[P] - n[A]`.
 * `TauCeti.FiniteProjectiveModules.rankEquiv_of`: the class of a free module goes to its rank.
 * `TauCeti.FiniteProjectiveModules.subsingleton_splitK0`: `K₀` of the zero ring is trivial.
+* `TauCeti.FiniteProjectiveModules.isAddTorsionFree_splitK0`: the split `K₀` of finitely
+  generated projective modules over a possibly noncommutative local ring is torsion-free.
 * `TauCeti.kZero_divisionRing`: `K₀` of a division ring is `ℤ`, with `[D] ↦ 1`.
 * `TauCeti.kZero_of_isLocalRing`: `K₀` of a possibly noncommutative local ring is `ℤ`, with
   `[R] ↦ 1`.
@@ -271,6 +273,17 @@ instance FiniteProjectiveModules.subsingleton_splitK0 (A : Type u) [Ring A] [Sub
       (finiteProjectiveModules A).ι P (ModuleCat.isZero_of_subsingleton _))
   | neg x hx => rw [hx, neg_zero]
   | add x y hx hy => rw [hx, hy, add_zero]
+
+/-- Over a possibly noncommutative local ring every finitely generated projective module is free,
+so the split `K₀` of finitely generated projective modules is `ℤ`
+(`TauCeti.FiniteProjectiveModules.rankEquiv`) and in particular torsion-free. -/
+instance FiniteProjectiveModules.isAddTorsionFree_splitK0 (B : Type u) [Ring B]
+    [IsLocalRing B] :
+    IsAddTorsionFree (SplitK0.{u} (finiteProjectiveModules B).FullSubcategory) :=
+  let e := rankEquiv B fun P ↦
+    have := Module.free_of_projective_of_isLocalRing (R := B) (M := P.obj)
+    inferInstance
+  e.injective.isAddTorsionFree e.toAddMonoidHom
 
 /-- `K₀` of a division ring `D` is `ℤ`, with the class of the free right module of rank one going
 to `1`. -/
