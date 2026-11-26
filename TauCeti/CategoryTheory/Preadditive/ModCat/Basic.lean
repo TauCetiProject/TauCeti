@@ -28,15 +28,19 @@ limits and colimits that exist in `A`. Mathlib's `CategoryTheory/Abelian/Subcate
 makes `ModCat C` abelian, and it has every shape of colimit that `AddCommGrpCat.{w}` has.
 
 The representable functors `Hom(-, X)` form the Yoneda embedding `ModCat.yoneda : C ⥤ ModCat C`,
-and they are projective by the Yoneda lemma. When `D` is `R`-linear, `ModCat D` is `R`-linear,
-with `r ∈ R` acting on `φ : F ⟶ G` by `φ ≫ G(r • 𝟙)` ([Mitchell, §11]). Finally, finitely
+and they are projective by the Yoneda lemma. When `D` is `R`-linear, so is the category
+`D ⥤+ A` of additive functors into any preadditive `A`, with `r ∈ R` acting on `φ : F ⟶ G` by
+`φ ≫ G(r • 𝟙)` ([Mitchell, §11]); in particular `ModCat D` is `R`-linear. Finally, finitely
 presented functors are additive, so `mod C` is a full subcategory of `ModCat C`.
 
 ## Main definitions
 
 * `TauCeti.ModCat C`: the category `Cᵒᵖ ⥤+ AddCommGrpCat.{w}` of `C`-modules.
 * `TauCeti.ModCat.yoneda C : C ⥤ ModCat C`: the Yoneda embedding `X ↦ Hom(-, X)`.
-* `TauCeti.ModCat.smulEnd R r G : G ⟶ G`: the action of `r ∈ R` on an `R`-linear module `G`.
+* `TauCeti.AdditiveFunctor.smulEnd R r G : G ⟶ G`: the action of `r ∈ R` on an additive functor
+  `G` out of an `R`-linear category.
+* `TauCeti.AdditiveFunctor.sourceLinear R : Linear R (D ⥤+ A)`: the `R`-linear structure induced
+  by an `R`-linear source.
 * `TauCeti.ModCat.ofFinitelyPresented C`: the fully faithful inclusion `mod C ⥤ ModCat C`.
 
 ## Main results
@@ -48,14 +52,15 @@ presented functors are additive, so `mod C` is a full subcategory of `ModCat C`.
 * `Abelian (ModCat C)` and `HasColimitsOfShape J (ModCat C)`, found by instance inference from
   the closure instances and Mathlib's full-subcategory instances.
 * `Projective ((ModCat.yoneda C).obj X)`: representable modules are projective.
-* `Linear R (ModCat D)` for an `R`-linear preadditive category `D`.
+* `Linear R (D ⥤+ AddCommGrpCat)` for an `R`-linear preadditive category `D`; specializing `D`
+  to an opposite category gives `Linear R (ModCat D)`.
 
 ## References
 
 * B. Mitchell, *Rings with several objects*, Adv. Math. 8 (1972), 1–161, §§3, 11.
 -/
 
-@[expose] public section
+public section
 
 universe w v u
 
@@ -152,89 +157,107 @@ end ModCat
 
 section Linear
 
-variable {D : Type u} [Category.{v} D] [Preadditive D] (R : Type*) [Semiring R] [Linear R D]
+variable {D : Type*} [Category* D] [Preadditive D] {A : Type*} [Category* A] [Preadditive A]
+  (R : Type*) [Semiring R] [Linear R D]
 
-namespace ModCat
+namespace AdditiveFunctor
 
-/-- The action of `r ∈ R` on a module `G` over an `R`-linear category: the endomorphism of `G`
-whose component at `c` is `G(r • 𝟙 c)`. -/
-def smulEnd (r : R) (G : ModCat.{w} D) : G ⟶ G :=
+/-- The action of `r ∈ R` on an additive functor `G` out of an `R`-linear category: the
+endomorphism of `G` whose component at `X` is `G(r • 𝟙 X)`. -/
+def smulEnd (r : R) (G : D ⥤+ A) : G ⟶ G :=
   ObjectProperty.homMk
-    { app c := G.obj.map (r • 𝟙 c.unop).op
-      naturality c c' f := by
-        rw [← G.obj.map_comp, ← G.obj.map_comp]
-        congr 1
-        apply Quiver.Hom.unop_inj
-        simp }
+    { app X := G.obj.map (r • 𝟙 X)
+      naturality X Y f := by rw [← G.obj.map_comp, ← G.obj.map_comp, Linear.smul_comp,
+        Linear.comp_smul, Category.id_comp, Category.comp_id] }
 
-/-- The component of `smulEnd R r G` at `c` is `G(r • 𝟙 c)`. -/
+/-- The component of `smulEnd R r G` at `X` is `G(r • 𝟙 X)`. -/
 @[simp]
-theorem smulEnd_hom_app (r : R) (G : ModCat.{w} D) (c : Dᵒᵖ) :
-    (smulEnd R r G).hom.app c = G.obj.map (r • 𝟙 c.unop).op :=
-  rfl
+theorem smulEnd_hom_app (r : R) (G : D ⥤+ A) (X : D) :
+    (smulEnd R r G).hom.app X = G.obj.map (r • 𝟙 X) := by
+  simp [smulEnd]
 
-/-- The action of `r ∈ R` commutes with every morphism of modules. -/
+/-- The action of `r ∈ R` commutes with every morphism of additive functors. -/
 @[reassoc]
-theorem comp_smulEnd (r : R) {F G : ModCat.{w} D} (φ : F ⟶ G) :
+theorem comp_smulEnd (r : R) {F G : D ⥤+ A} (φ : F ⟶ G) :
     φ ≫ smulEnd R r G = smulEnd R r F ≫ φ := by
-  ext c : 3
+  ext X : 3
   exact (φ.hom.naturality _).symm
 
 /-- The unit of `R` acts as the identity. -/
 @[simp]
-theorem smulEnd_one (G : ModCat.{w} D) : smulEnd R 1 G = 𝟙 G := by
-  ext c : 3
+theorem smulEnd_one (G : D ⥤+ A) : smulEnd R 1 G = 𝟙 G := by
+  ext X : 3
   simp
 
 /-- The action of `r * s` is the action of `s` followed by the action of `r`. -/
-theorem smulEnd_mul (r s : R) (G : ModCat.{w} D) :
+theorem smulEnd_mul (r s : R) (G : D ⥤+ A) :
     smulEnd R (r * s) G = smulEnd R s G ≫ smulEnd R r G := by
-  ext c : 3
+  ext X : 3
   simp [← Functor.map_comp, mul_smul]
 
 /-- The action is additive in the scalar. -/
-theorem smulEnd_add (r s : R) (G : ModCat.{w} D) :
+theorem smulEnd_add (r s : R) (G : D ⥤+ A) :
     smulEnd R (r + s) G = smulEnd R r G + smulEnd R s G := by
-  ext c : 3
-  change _ = ((smulEnd R r G).hom + (smulEnd R s G).hom).app c
-  simp [add_smul, op_add, Functor.map_add]
+  have h := (AdditiveFunctor.forget D A).map_add (f := smulEnd R r G) (g := smulEnd R s G)
+  simp only [AdditiveFunctor.forget_map] at h
+  ext X : 3
+  simp [h, add_smul, Functor.map_add]
 
 /-- The zero scalar acts as zero. -/
 @[simp]
-theorem smulEnd_zero (G : ModCat.{w} D) : smulEnd R 0 G = 0 := by
-  ext c : 3
+theorem smulEnd_zero (G : D ⥤+ A) : smulEnd R 0 G = 0 := by
+  ext X : 3
   simp
 
-end ModCat
+/-- The `R`-linear structure on `D ⥤+ A` coming from the `R`-linear source `D`: `r ∈ R` acts on
+`φ : F ⟶ G` by `φ ≫ smulEnd R r G`, with components `φ_X ≫ G(r • 𝟙 X)` ([Mitchell, §11]).
 
-/-- **`Mod D` is `R`-linear** when `D` is: `r ∈ R` acts on `φ : F ⟶ G` by `φ ≫ G(r • 𝟙)`. -/
-instance : Linear R (ModCat.{w} D) where
-  homModule F G :=
-    { smul r φ := φ ≫ ModCat.smulEnd R r G
-      one_smul φ := by
-        change φ ≫ _ = φ
-        simp
-      mul_smul r s φ := by
-        change φ ≫ _ = (φ ≫ _) ≫ _
-        rw [ModCat.smulEnd_mul, Category.assoc]
-      smul_zero r := zero_comp
-      smul_add r φ ψ := Preadditive.add_comp _ _ _ _ _ _
-      add_smul r s φ := by
-        change φ ≫ _ = φ ≫ _ + φ ≫ _
-        rw [ModCat.smulEnd_add, Preadditive.comp_add]
-      zero_smul φ := by
-        change φ ≫ _ = 0
-        simp }
-  smul_comp F G H r φ ψ := by
-    change (φ ≫ _) ≫ ψ = (φ ≫ ψ) ≫ _
-    rw [Category.assoc, ← ModCat.comp_smulEnd, Category.assoc]
-  comp_smul F G H φ r ψ := (Category.assoc _ _ _).symm
+It is not a global instance: when `A` is `R`-linear too, Mathlib's `functorCategoryLinear` and
+`Linear.fullSubcategory` give `D ⥤+ A` the pointwise `R`-linear structure of the target, which
+differs from this one on functors that are additive but not `R`-linear. -/
+@[instance_reducible]
+def sourceLinear : Linear R (D ⥤+ A) where
+  homModule _ G :=
+    { smul r φ := φ ≫ smulEnd R r G
+      one_smul φ := (congrArg (φ ≫ ·) (smulEnd_one R G)).trans (Category.comp_id φ)
+      mul_smul r s φ := (congrArg (φ ≫ ·) (smulEnd_mul R r s G)).trans
+        (Category.assoc _ _ _).symm
+      smul_zero _ := zero_comp
+      smul_add _ _ _ := Preadditive.add_comp _ _ _ _ _ _
+      add_smul r s φ := (congrArg (φ ≫ ·) (smulEnd_add R r s G)).trans
+        (Preadditive.comp_add _ _ _ _ _ _)
+      zero_smul φ := (congrArg (φ ≫ ·) (smulEnd_zero R G)).trans comp_zero }
+  smul_comp _ _ _ r φ ψ :=
+    (Category.assoc _ _ _).trans <| ((congrArg (φ ≫ ·) (comp_smulEnd R r ψ)).symm).trans
+      (Category.assoc _ _ _).symm
+  comp_smul _ _ _ _ _ _ := (Category.assoc _ _ _).symm
 
-/-- The components of `r • φ` are `φ_c ≫ G(r • 𝟙 c)`. -/
-@[simp]
-theorem ModCat.smul_hom_app (r : R) {F G : ModCat.{w} D} (φ : F ⟶ G) (c : Dᵒᵖ) :
-    (r • φ).hom.app c = φ.hom.app c ≫ G.obj.map (r • 𝟙 c.unop).op :=
+attribute [local instance] sourceLinear
+
+/-- In `sourceLinear R`, the scalar `r` acts on `φ : F ⟶ G` by composing with `smulEnd R r G`. -/
+theorem smul_eq_comp_smulEnd (r : R) {F G : D ⥤+ A} (φ : F ⟶ G) :
+    r • φ = φ ≫ smulEnd R r G := by
+  unfold sourceLinear
   rfl
+
+/-- In `sourceLinear R`, the components of `r • φ` are `φ_X ≫ G(r • 𝟙 X)`. -/
+@[simp]
+theorem smul_hom_app (r : R) {F G : D ⥤+ A} (φ : F ⟶ G) (X : D) :
+    (r • φ).hom.app X = φ.hom.app X ≫ G.obj.map (r • 𝟙 X) := by
+  simp [smul_eq_comp_smulEnd]
+
+end AdditiveFunctor
+
+/-- **Additive functors into abelian groups out of an `R`-linear category are `R`-linear**, with
+the structure `AdditiveFunctor.sourceLinear R`. The target `AddCommGrpCat` is linear only over
+`ℕ` and `ℤ`, where the two actions agree, so this instance does not compete with the pointwise
+structure. -/
+instance AdditiveFunctor.linearAddCommGrpCat : Linear R (D ⥤+ AddCommGrpCat.{w}) :=
+  AdditiveFunctor.sourceLinear R
+
+/-- **`Mod D` is `R`-linear** when `D` is, by specializing the instance above to the source
+`Dᵒᵖ`. -/
+example : Linear R (ModCat.{w} D) := inferInstance
 
 end Linear
 
