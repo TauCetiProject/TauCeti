@@ -64,6 +64,8 @@ change of coordinates.
 * `TauCeti.Toric.mem_facetPolyhedron_hirzebruch_iff`: the polyhedron is the trapezoid.
 * `TauCeti.Toric.isDelzant_hirzebruch`: for `0 < b`, `0 < a` and `k b < a` it is a Delzant
   polytope.
+* `TauCeti.Toric.isDelzant_rectangle`: the case `k = 0`, the rectangle `[0, a] × [0, b]`, is
+  Delzant.
 * `TauCeti.Toric.extremePoints_facetPolyhedron_hirzebruch`,
   `TauCeti.Toric.ncard_extremePoints_facetPolyhedron_hirzebruch`: its four vertices.
 * `TauCeti.Toric.exists_equiv_cornerChop_simplex_eq_hirzebruch`,
@@ -362,6 +364,13 @@ theorem isDelzant_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
   rw [isSmoothVertex_iff_span_eq_top, hA, image_pair, span_pair_hirzebruchNormal_eq_top hij,
     Module.finrank_fin_fun]
   exact ⟨rfl, (ncard_insert_le _ _).trans (by simp)⟩
+
+/-- **The rectangle is Delzant.** For `a, b > 0`, the rectangle `[0, a] × [0, b]`, presented in
+`ℤ²` as the Hirzebruch trapezoid with `k = 0`, is a Delzant polytope: the case `k = 0` of
+`isDelzant_hirzebruch`. -/
+theorem isDelzant_rectangle (ha : 0 < a) (hb : 0 < b) :
+    IsDelzant ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal 0) (hirzebruchSupport a b) :=
+  isDelzant_hirzebruch hb ha (by simpa using ha)
 
 /-! ### Vertices -/
 
