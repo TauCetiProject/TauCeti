@@ -84,17 +84,6 @@ theorem natCast_card_eq_zero_of_markoffVieta_mem (h2 : (2 : K) ≠ 0) (h3 : (3 :
       _ = 2 * #S := by rw [← mul_sum, htot]
   linear_combination h32
 
-/-- The nonzero locus `X*(𝔽₂)` consists of `(1, 1, 1)` and its three neighbours `(0, 1, 1)`,
-`(1, 0, 1)` and `(1, 1, 0)`. -/
-private theorem mem_markoffSetNonzero_zmod_two {y : Fin 3 → ZMod 2} :
-    y ∈ markoffSetNonzero (ZMod 2) ↔
-      y ∈ ({![0, 1, 1], ![1, 0, 1], ![1, 1, 0], ![1, 1, 1]} : Finset (Fin 3 → ZMod 2)) := by
-  obtain ⟨a, b, c, rfl⟩ : ∃ a b c, y = ![a, b, c] :=
-    ⟨y 0, y 1, y 2, by ext i; fin_cases i <;> rfl⟩
-  simp only [mem_markoffSetNonzero, mem_markoffSet]
-  revert a b c
-  decide
-
 /-- Over `𝔽₂` the Vieta move `R_i` sends `(1, 1, 1)` to the triple whose `i`-th coordinate is `0`
 and whose other coordinates are `1`. -/
 private theorem markoffVieta_one_zmod_two (i : Fin 3) :

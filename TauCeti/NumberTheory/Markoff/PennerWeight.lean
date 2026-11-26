@@ -13,6 +13,7 @@ import Mathlib.Algebra.GroupWithZero.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Penner weights on the Markoff surface
@@ -77,19 +78,17 @@ theorem pennerWeight_of_mul_eq_zero {i : Fin 3} {x : Fin 3 → K}
   simp [pennerWeight, h]
 
 /-- If a coordinate `x_j` with `j ≠ i` vanishes, then `w_i(x) = 1/2`. -/
-theorem pennerWeight_of_apply_eq_zero_of_ne {i j : Fin 3} {x : Fin 3 → K} (h : x j = 0)
+theorem pennerWeight_eq_inv_two_of_apply_eq_zero_of_ne {i j : Fin 3} {x : Fin 3 → K} (h : x j = 0)
     (hij : i ≠ j) : pennerWeight i x = 2⁻¹ := by
   refine pennerWeight_of_mul_eq_zero ?_
   fin_cases i <;> fin_cases j <;> simp_all
 
 /-- At a point of `X*(K)` whose `i`-th coordinate vanishes, `w_i(x) = 0`: the two other
 coordinates are then nonzero. -/
-theorem pennerWeight_of_apply_eq_zero {i : Fin 3} {x : Fin 3 → K}
+theorem pennerWeight_eq_zero_of_apply_eq_zero {i : Fin 3} {x : Fin 3 → K}
     (hx : x ∈ markoffSetNonzero K) (h : x i = 0) : pennerWeight i x = 0 := by
-  have h1 : x (i + 1) ≠ 0 :=
-    apply_ne_zero_of_mem_markoffSetNonzero hx h (by fin_cases i <;> decide)
-  have h2 : x (i + 2) ≠ 0 :=
-    apply_ne_zero_of_mem_markoffSetNonzero hx h (by fin_cases i <;> decide)
+  have h1 : x (i + 1) ≠ 0 := apply_ne_zero_of_mem_markoffSetNonzero hx h (by simp)
+  have h2 : x (i + 2) ≠ 0 := apply_ne_zero_of_mem_markoffSetNonzero hx h (by simp)
   rw [pennerWeight_of_mul_ne_zero (mul_ne_zero h1 h2), h, zero_div]
 
 /-- The Penner weights are equivariant under coordinate permutations: with `P_σ x = x ∘ σ⁻¹`, so
@@ -101,8 +100,8 @@ theorem pennerWeight_comp_perm (σ : Equiv.Perm (Fin 3)) (i : Fin 3) (x : Fin 3 
     apply_add_one_mul_apply_add_two_comp_perm σ i x
   by_cases h : x (i + 1) * x (i + 2) = 0
   · rw [pennerWeight_of_mul_eq_zero h, pennerWeight_of_mul_eq_zero (hmul ▸ h)]
-  · rw [pennerWeight_of_mul_ne_zero h, pennerWeight_of_mul_ne_zero (hmul ▸ h), mul_assoc, hmul,
-      Function.comp_apply, Equiv.symm_apply_apply, mul_assoc]
+  · rw [pennerWeight_of_mul_ne_zero h, pennerWeight_of_mul_ne_zero (hmul ▸ h)]
+    simp [mul_assoc, apply_add_one_mul_apply_add_two_comp_perm]
 
 /-- **The Penner weights sum to one.** If `2` and `3` are nonzero in `K`, the three weights of a
 point of the nonzero locus `X*(K)` sum to `1`. -/
@@ -113,21 +112,18 @@ theorem sum_pennerWeight (h2 : (2 : K) ≠ 0) (h3 : (3 : K) ≠ 0) {x : Fin 3 �
     obtain ⟨k, hk⟩ := hzero
     have hw : ∀ i, pennerWeight i x = if i = k then 0 else 2⁻¹ := fun i => by
       split_ifs with hik
-      · exact pennerWeight_of_apply_eq_zero hx (hik ▸ hk)
-      · exact pennerWeight_of_apply_eq_zero_of_ne hk hik
-    simp only [hw, Fin.sum_univ_three]
-    fin_cases k <;> simp <;> field_simp <;> norm_num
+      · exact pennerWeight_eq_zero_of_apply_eq_zero hx (hik ▸ hk)
+      · exact pennerWeight_eq_inv_two_of_apply_eq_zero_of_ne hk hik
+    fin_cases k <;> simp [hw, Fin.sum_univ_three, ← two_mul, h2]
   · -- No coordinate vanishes: divide the Markoff equation by `3 x₀ x₁ x₂`.
     push Not at hzero
-    have h0 := hzero 0
-    have h1 := hzero 1
-    have h2' := hzero 2
     have hm := mem_markoffSet.mp (markoffSetNonzero_subset_markoffSet hx)
     simp only [Fin.sum_univ_three]
-    rw [pennerWeight_of_mul_ne_zero (by simp [*]), pennerWeight_of_mul_ne_zero (by simp [*]),
-      pennerWeight_of_mul_ne_zero (by simp [*])]
+    rw [pennerWeight_of_mul_ne_zero (mul_ne_zero (hzero _) (hzero _)),
+      pennerWeight_of_mul_ne_zero (mul_ne_zero (hzero _) (hzero _)),
+      pennerWeight_of_mul_ne_zero (mul_ne_zero (hzero _) (hzero _))]
     simp only [Fin.isValue, Fin.reduceAdd]
-    field_simp
+    field_simp [hzero 0, hzero 1, hzero 2]
     linear_combination hm
 
 /-- **The Vieta moves complement the Penner weights.** If `2` and `3` are nonzero in `K`, then
@@ -136,17 +132,17 @@ move keeps `x_{i+1}` and `x_{i+2}` and replaces `x_i` by `3 x_{i+1} x_{i+2} - x_
 theorem pennerWeight_add_pennerWeight_markoffVieta (h2 : (2 : K) ≠ 0) (h3 : (3 : K) ≠ 0)
     (i : Fin 3) (x : Fin 3 → K) :
     pennerWeight i x + pennerWeight i (markoffVieta i x) = 1 := by
-  have hne1 : i + 1 ≠ i := by fin_cases i <;> decide
-  have hne2 : i + 2 ≠ i := by fin_cases i <;> decide
-  have hR1 : markoffVieta i x (i + 1) = x (i + 1) := markoffVieta_apply_of_ne hne1 x
-  have hR2 : markoffVieta i x (i + 2) = x (i + 2) := markoffVieta_apply_of_ne hne2 x
+  have hR1 : markoffVieta i x (i + 1) = x (i + 1) := markoffVieta_apply_of_ne (by simp) x
+  have hR2 : markoffVieta i x (i + 2) = x (i + 2) := markoffVieta_apply_of_ne (by simp) x
   by_cases h : x (i + 1) * x (i + 2) = 0
   · rw [pennerWeight_of_mul_eq_zero h, pennerWeight_of_mul_eq_zero (by rwa [hR1, hR2])]
     field_simp
     norm_num
   · rw [pennerWeight_of_mul_ne_zero h, pennerWeight_of_mul_ne_zero (by rwa [hR1, hR2]), hR1, hR2,
-      markoffVieta_apply_self, ← add_div, mul_assoc, add_sub_cancel]
-    exact div_self (mul_ne_zero h3 h)
+      markoffVieta_apply_self]
+    obtain ⟨h1, h2'⟩ := mul_ne_zero_iff.mp h
+    field_simp
+    ring
 
 /-- A triple fixed by the `i`-th Vieta move has `i`-th Penner weight `1/2`, provided `2` and `3`
 are nonzero in `K`. -/
