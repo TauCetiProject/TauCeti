@@ -77,7 +77,9 @@ functions are only Lipschitz.
 * `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact` and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz`: for finite `p` it contains the
   restrictions of the Sobolev, in particular of the locally Lipschitz, functions on the whole space
-  vanishing outside a compact set disjoint from `closure Γ`.
+  vanishing outside a compact set disjoint from `closure Γ`; in particular
+  `TauCeti.W1p.const_mem_w1pVanishingOnSubmodule_empty`: on a bounded `Ω` it contains the
+  constants for `Γ = ∅`.
 * `TauCeti.W1pVanishingOn.instNormedAddCommGroup` and
   `TauCeti.W1pVanishingOn.instInnerProductSpace`: shortcut instances, registered locally by files
   applying abstract Hilbert space results to `W^{1,2}_Γ(Ω)`.
@@ -471,6 +473,22 @@ theorem W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz (hp : p ≠ (∞ : �
       rw [hx]
       exact image_eq_zero_of_notMem_tsupport hxK)
   rwa [W1p.restrictL_eq_of_value_ae_eq le_top ((hw.filter_mono ae_restrict_le).trans hu.symm)] at h
+
+/-- **Constants lie in `W^{1,p}_∅(Ω)` on a bounded set.** For `1 ≤ p < ∞` and a bounded open
+set `Ω`, every constant function lies in `W^{1,p}_∅(Ω)`. -/
+theorem W1p.const_mem_w1pVanishingOnSubmodule_empty (hp : p ≠ (∞ : ℝ≥0∞))
+    (hb : Bornology.IsBounded (Omega : Set E)) [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+    (c : ℝ) : (W1p.const c : W1p mu Omega p) ∈ w1pVanishingOnSubmodule mu Omega p ∅ := by
+  -- A multiple of a smooth bump equal to `1` on a ball containing `Ω` agrees with `c` on `Ω`.
+  obtain ⟨R, hR⟩ := hb.subset_closedBall 0
+  let φ : ContDiffBump (0 : E) := ⟨max R 1, max R 1 + 1, by positivity, by linarith⟩
+  refine W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz (G := fun x => c * φ x) hp
+    (contDiff_const.mul (φ.contDiff (n := 1))).locallyLipschitz φ.hasCompactSupport.mul_left
+    (by simp) ?_
+  filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c,
+    ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+  rw [hx, φ.one_of_mem_closedBall (Metric.closedBall_subset_closedBall (le_max_left R 1)
+    (hR hxΩ)), mul_one]
 
 /-! ### Shortcut instances for the Hilbert space `W^{1,2}_Γ(Ω)`
 
