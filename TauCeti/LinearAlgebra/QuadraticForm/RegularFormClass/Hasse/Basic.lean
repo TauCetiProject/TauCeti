@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct
-import TauCeti.Algebra.BrauerGroup.Quaternion
+import Mathlib.Basic.Real.Basic
 
 /-!
 # The Hasse invariant of a regular quadratic form
@@ -31,7 +31,11 @@ equal values on isometric binary forms (Lam V.3.18).
 
 Every symbol is `2`-torsion, so the Hasse invariant takes values in the `2`-torsion of the Brauer
 group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the forms `⟨1, 1⟩` and
-`⟨-1, -1⟩` have the same rank and the same discriminant, and different Hasse invariants.
+`⟨-1, -1⟩` have the same rank and the same discriminant, and different Hasse invariants. Over any
+semireal field `K`, however, `(rank, discr, hasseInvariant)` still does not classify regular forms:
+`⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share rank `4`, trivial discriminant, and trivial Hasse
+invariant (`[(-1, -1)]^C(4, 2) = 1`), yet are not isometric because `-1` is not a sum of squares in
+`K`.
 
 ## Main definitions
 
@@ -60,11 +64,15 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul_mk`: the same scaling formula for
   multiplication by the rank-one class.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul`: the scaling formula for any class.
+* `TauCeti.RegularFormClass.hasseInvariant_nsmul_mk_rankOne`: the Hasse invariant of `n • ⟨a⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_neg_neg_mul`: the Hasse invariant of the pure
   quaternion norm form `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
   Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_sq`: the invariant is `2`-torsion.
+* `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one`: over any semireal
+  field, `4 • 1 = ⟨1, 1, 1, 1⟩` and `4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` are not isometric, witnessing
+  that rank, discriminant, and Hasse invariant do not classify regular forms.
 
 ## References
 
@@ -318,6 +326,63 @@ theorem hasseInvariant_mk_neg_neg_mul (a b : Kˣ) :
           ac_rfl
     _ = _ := by simp
 
+/-- The orthogonal sum of `n` copies of a rank-one class `⟨a⟩` has Hasse invariant
+`[(a, -1)]^C(n, 2)`. -/
+theorem hasseInvariant_nsmul_mk_rankOne (n : ℕ) (a : Kˣ) :
+    hasseInvariant (n • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) =
+      quaternionClass a (-1) ^ n.choose 2 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [succ_nsmul, hasseInvariant_add, ih]
+    simp [discr_mk, quaternionClass_self, Nat.choose_succ_succ, pow_add, mul_comm]
+
+/-! ### Non-classification over semireal fields -/
+
+section Semireal
+
+variable [IsSemireal K]
+
+/-- **Rank, discriminant, and Hasse invariant do not classify regular forms over a semireal
+field**: `4 • 1 = ⟨1, 1, 1, 1⟩` and `4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` are not isometric because `-1`
+is not a sum of squares in `K`, although both have rank `4`, trivial discriminant, and trivial
+Hasse invariant (`[(-1, -1)]` occurs `C(4, 2) = 6` times). In particular this holds over every
+ordered field, such as `ℚ` and `ℝ`. -/
+theorem four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one :
+    (4 : ℕ) • (1 : RegularFormClass K) ≠
+      4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩ := by
+  intro h
+  rw [← mk_rankOne_one, ← mk_const, ← mk_const, mk_eq_mk_iff] at h
+  obtain ⟨e⟩ := h
+  have hneg : presentedForm (⟨4, fun _ => (1 : Kˣ)⟩ : RegularFormPresentation K)
+      (e.symm (Pi.single 0 1)) = -1 := by
+    rw [e.symm.map_app, presentedForm_apply]
+    simp [Pi.single_apply]
+  exact IsSemireal.not_isSumSq_neg_one K (by rw [← hneg, presentedForm_apply]; simp)
+
+/-- **Worked example.** Over any semireal field `K`, `4 • 1 = ⟨1, 1, 1, 1⟩` and
+`4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` share rank `4`, discriminant `0`, and Hasse invariant `1`, yet are
+not isometric. -/
+example :
+    let posFour : RegularFormClass K := 4 • 1
+    let negFour : RegularFormClass K :=
+      4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩
+    posFour.rank = 4 ∧ negFour.rank = 4 ∧
+      discr posFour = 0 ∧ discr negFour = 0 ∧
+      hasseInvariant posFour = 1 ∧ hasseInvariant negFour = 1 ∧
+      posFour ≠ negFour := by
+  dsimp only
+  refine ⟨by rw [rank_nsmul, rank_one, mul_one], by rw [rank_nsmul, rank_mk, mul_one],
+    by rw [discr_nsmul, discr_one, smul_zero], ?_,
+    by rw [nsmul_one, hasseInvariant_natCast], ?_,
+    four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one⟩
+  · rw [nsmul_eq_mul, mul_comm, discr_mk_rankOne_mul_of_even (-1) (by rw [rank_natCast]; decide),
+      discr_natCast]
+  · rw [hasseInvariant_nsmul_mk_rankOne,
+      (quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 4 2)).mpr (by decide)]
+
+end Semireal
+
 end RegularFormClass
 
 /-- **Worked example.** Over `ℝ` the binary forms `⟨1, 1⟩` and `⟨-1, -1⟩` have the same rank and
@@ -328,6 +393,6 @@ example : RegularFormClass.hasseInvariant
     RegularFormClass.hasseInvariant (Quotient.mk (regularFormSetoid ℝ) ⟨2, ![(1 : ℝˣ), 1]⟩) := by
   rw [RegularFormClass.hasseInvariant_mk_binary, RegularFormClass.hasseInvariant_mk_binary,
     BrauerGroup.quaternionClass_one_left]
-  simpa [BrauerGroup.quaternionClass_def] using Quaternion.mk_ne_one
+  exact BrauerGroup.quaternionClass_neg_one_neg_one_ne_one
 
 end TauCeti

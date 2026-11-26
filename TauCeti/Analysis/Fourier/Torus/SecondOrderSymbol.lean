@@ -33,7 +33,7 @@ of this quadratic form on integer frequencies.
 * `UnitAddTorus.mFourierCoeff_lineDeriv` and its coordinate specialization
   `UnitAddTorus.mFourierCoeff_lineDeriv_single`: first-order Fourier multipliers.
 * `MeasureTheory.Integrable.ae_eq_of_forall_mFourierCoeff_eq`: Fourier uniqueness for integrable
-  functions; `TauCeti.UnitAddTorus.eq_of_mFourierCoeff_eq` is the smooth-function counterpart.
+  functions; `Continuous.eq_of_mFourierCoeff_eq` is the continuous-function counterpart.
 -/
 
 public section
@@ -60,6 +60,11 @@ theorem torusSecondOrderSymbol_def (A : Matrix d d ℝ) (k : d → ℤ) :
 theorem torusSecondOrderSymbol_zero (A : Matrix d d ℝ) : A.torusSecondOrderSymbol 0 = 0 := by
   simp [torusSecondOrderSymbol]
 
+@[simp]
+theorem zero_torusSecondOrderSymbol (k : d → ℤ) :
+    (0 : Matrix d d ℝ).torusSecondOrderSymbol k = 0 := by
+  simp [torusSecondOrderSymbol]
+
 open Classical in
 /-- The constant-coefficient operator `-∑ i, ∑ j, A i j ∂ᵢ∂ⱼ` on the unit torus. -/
 def torusSecondOrderOperator (A : Matrix d d ℝ) (f : UnitAddTorus d → ℂ) : UnitAddTorus d → ℂ :=
@@ -69,6 +74,8 @@ theorem torusSecondOrderOperator_apply [DecidableEq d] (A : Matrix d d ℝ) (f :
     (x : UnitAddTorus d) :
     A.torusSecondOrderOperator f x =
       -(∑ i, ∑ j, (A i j : ℂ) * lineDeriv (lineDeriv f (Pi.single j 1)) (Pi.single i 1) x) := by
+  -- The definition uses classical coordinate directions to avoid a DecidableEq parameter.
+  -- Pointwise equality identifies them with the caller's coordinate directions.
   have hsingle (i : d) :
       @Pi.single d (fun _ ↦ ℝ) (fun _ ↦ inferInstance) (Classical.decEq d) i 1 =
         (Pi.single i 1 : d → ℝ) := by
@@ -83,6 +90,16 @@ theorem torusSecondOrderOperator_const (A : Matrix d d ℝ) (c : ℂ) :
   have hzero (w : d → ℝ) : lineDeriv (0 : UnitAddTorus d → ℂ) w = 0 := by
     simpa only [Pi.zero_def] using lineDeriv_const (d := d) 0 w
   simp [torusSecondOrderOperator, hzero]
+
+@[simp]
+theorem zero_torusSecondOrderOperator (f : UnitAddTorus d → ℂ) :
+    (0 : Matrix d d ℝ).torusSecondOrderOperator f = 0 := by
+  simp [torusSecondOrderOperator]
+
+@[simp]
+theorem torusSecondOrderOperator_zero (A : Matrix d d ℝ) :
+    A.torusSecondOrderOperator 0 = 0 :=
+  A.torusSecondOrderOperator_const 0
 
 /-- A constant-coefficient second-order operator maps `C^(n+2)` lifts to `C^n` lifts. -/
 theorem contDiff_torusSecondOrderOperator (A : Matrix d d ℝ) {f : UnitAddTorus d → ℂ} {n : ℕ∞ω}
@@ -107,13 +124,15 @@ theorem mFourierCoeff_torusSecondOrderOperator (A : Matrix d d ℝ) {f : UnitAdd
     (hf : ContDiff ℝ 2 fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) (k : d → ℤ) :
     mFourierCoeff (A.torusSecondOrderOperator f) k =
       (A.torusSecondOrderSymbol k : ℂ) * mFourierCoeff f k := by
+  -- This local instance agrees with the classical coordinate directions in the definition.
   classical
   have hderiv (j : d) := contDiff_lineDeriv (n := 1) hf (Pi.single j 1)
   have hint (i j : d) : MeasureTheory.Integrable
       (-(A i j : ℂ) • lineDeriv (lineDeriv f (Pi.single j 1)) (Pi.single i 1)) :=
-    ((isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2
-      (contDiff_lineDeriv (n := 0) (hderiv j) (Pi.single i 1)).continuous
-      ).integrable_of_hasCompactSupport (.of_compactSpace _)).smul _
+    (Continuous.integrable_of_hasCompactSupport
+      (continuous_comp_coe_iff.1
+        (contDiff_lineDeriv (n := 0) (hderiv j) (Pi.single i 1)).continuous)
+      (.of_compactSpace _)).smul _
   rw [torusSecondOrderOperator, mFourierCoeff_sum (f := fun i ↦ ∑ j,
     -(A i j : ℂ) • lineDeriv (lineDeriv f (Pi.single j 1)) (Pi.single i 1))
     (fun i _ ↦ MeasureTheory.integrable_finsetSum' _ fun j _ ↦ hint i j)]
@@ -138,14 +157,10 @@ theorem torusSecondOrderOperator_eq_smul_iff (A : Matrix d d ℝ) {f : UnitAddTo
     rw [h, mFourierCoeff_smul, smul_eq_mul] at hcoeff
     exact mul_right_cancel₀ hk hcoeff.symm
   · intro h
-    have hc : Continuous f := isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2 hf.continuous
-    have hAc : Continuous (A.torusSecondOrderOperator f) :=
-      isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2
-        (A.contDiff_torusSecondOrderOperator (n := 0) hf).continuous
-    refine MeasureTheory.Measure.eq_of_ae_eq
-      ((hAc.integrable_of_hasCompactSupport (.of_compactSpace _)).ae_eq_of_forall_mFourierCoeff_eq
-        ((continuous_const.smul hc).integrable_of_hasCompactSupport (.of_compactSpace _))
-        fun k ↦ ?_) hAc (continuous_const.smul hc)
+    refine Continuous.eq_of_mFourierCoeff_eq
+      (continuous_comp_coe_iff.1 (A.contDiff_torusSecondOrderOperator (n := 0) hf).continuous)
+      (continuous_const.smul (continuous_comp_coe_iff.1 hf.continuous))
+        fun k ↦ ?_
     rw [A.mFourierCoeff_torusSecondOrderOperator hf, mFourierCoeff_smul, smul_eq_mul]
     by_cases hk : mFourierCoeff f k = 0
     · simp [hk]
@@ -158,7 +173,7 @@ theorem exists_torusSecondOrderSymbol_eq_of_eigenfunction (A : Matrix d d ℝ)
     (hf : ContDiff ℝ 2 fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle))
     (hne : f ≠ 0) {μ : ℂ} (h : A.torusSecondOrderOperator f = μ • f) :
     ∃ k, mFourierCoeff f k ≠ 0 ∧ (A.torusSecondOrderSymbol k : ℂ) = μ := by
-  have hc : Continuous f := isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2 hf.continuous
+  have hc : Continuous f := continuous_comp_coe_iff.1 hf.continuous
   obtain ⟨k, hk⟩ := hc.exists_mFourierCoeff_ne_zero hne
   exact ⟨k, hk, (A.torusSecondOrderOperator_eq_smul_iff hf).1 h k hk⟩
 
@@ -181,21 +196,15 @@ theorem torusSecondOrderOperator_add (A : Matrix d d ℝ) {f g : UnitAddTorus d 
     (hg : ContDiff ℝ 2 fun x : d → ℝ ↦ g fun i ↦ (x i : UnitAddCircle)) :
     A.torusSecondOrderOperator (f + g) =
       A.torusSecondOrderOperator f + A.torusSecondOrderOperator g := by
-  have hc {u : UnitAddTorus d → ℂ}
-      (hu : ContDiff ℝ 2 fun x : d → ℝ ↦ u fun i ↦ (x i : UnitAddCircle)) : Continuous u :=
-    isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2 hu.continuous
   have hAc {u : UnitAddTorus d → ℂ}
-      (hu : ContDiff ℝ 2 fun x : d → ℝ ↦ u fun i ↦ (x i : UnitAddCircle)) :
-      Continuous (A.torusSecondOrderOperator u) :=
-    isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2
-      (A.contDiff_torusSecondOrderOperator (n := 0) hu).continuous
+      (hu : ContDiff ℝ 2 fun x : d → ℝ ↦ u fun i ↦ (x i : UnitAddCircle)) :=
+    continuous_comp_coe_iff.1 (A.contDiff_torusSecondOrderOperator (n := 0) hu).continuous
   have hint {u : UnitAddTorus d → ℂ} (hu : Continuous u) : MeasureTheory.Integrable u :=
     hu.integrable_of_hasCompactSupport (.of_compactSpace _)
-  refine MeasureTheory.Measure.eq_of_ae_eq
-    ((hint (hAc (hf.add hg))).ae_eq_of_forall_mFourierCoeff_eq
-      (hint ((hAc hf).add (hAc hg))) fun k ↦ ?_) (hAc (hf.add hg)) ((hAc hf).add (hAc hg))
+  refine (hAc (hf.add hg)).eq_of_mFourierCoeff_eq ((hAc hf).add (hAc hg)) fun k ↦ ?_
   rw [A.mFourierCoeff_torusSecondOrderOperator (hf.add hg),
-    mFourierCoeff_add (hint (hc hf)) (hint (hc hg)),
+    mFourierCoeff_add (hint (continuous_comp_coe_iff.1 hf.continuous))
+      (hint (continuous_comp_coe_iff.1 hg.continuous)),
     mFourierCoeff_add (hint (hAc hf)) (hint (hAc hg)),
     A.mFourierCoeff_torusSecondOrderOperator hf, A.mFourierCoeff_torusSecondOrderOperator hg,
     mul_add]
@@ -205,16 +214,11 @@ with `C²` lifts. -/
 theorem torusSecondOrderOperator_smul (A : Matrix d d ℝ) {f : UnitAddTorus d → ℂ}
     (hf : ContDiff ℝ 2 fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) (c : ℂ) :
     A.torusSecondOrderOperator (c • f) = c • A.torusSecondOrderOperator f := by
-  have hAc : Continuous (A.torusSecondOrderOperator f) :=
-    isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2
-      (A.contDiff_torusSecondOrderOperator (n := 0) hf).continuous
-  have hcAc : Continuous (A.torusSecondOrderOperator (c • f)) :=
-    isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2
-      (A.contDiff_torusSecondOrderOperator (f := c • f) (n := 0) (hf.const_smul c)).continuous
-  refine MeasureTheory.Measure.eq_of_ae_eq
-    ((hcAc.integrable_of_hasCompactSupport (.of_compactSpace _)).ae_eq_of_forall_mFourierCoeff_eq
-      ((continuous_const.smul hAc).integrable_of_hasCompactSupport (.of_compactSpace _))
-      fun k ↦ ?_) hcAc (continuous_const.smul hAc)
+  have hAc := continuous_comp_coe_iff.1
+    (A.contDiff_torusSecondOrderOperator (n := 0) hf).continuous
+  refine Continuous.eq_of_mFourierCoeff_eq (continuous_comp_coe_iff.1
+    (A.contDiff_torusSecondOrderOperator (f := c • f) (n := 0) (hf.const_smul c)).continuous)
+    (continuous_const.smul hAc) fun k ↦ ?_
   rw [A.mFourierCoeff_torusSecondOrderOperator (hf.const_smul c),
     mFourierCoeff_smul, mFourierCoeff_smul, A.mFourierCoeff_torusSecondOrderOperator hf,
     smul_eq_mul, smul_eq_mul]

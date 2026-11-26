@@ -22,9 +22,8 @@ quasicoherent module, for every morphism `f`.
 The proof reduces first to morphisms with affine target, by restricting to the preimages of the
 affine opens of `Y`, then to morphisms between affine schemes, by restricting to the affine opens
 of `X`, and finally to morphisms of spectra, along `Scheme.isoSpec`. Each step uses the
-composition compatibility and `Scheme.Modules.isIso_iff_of_isOpenCover`. It is the reduction
-used for tensor products in `Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`, stated for an
-arbitrary family of comparison maps.
+composition compatibility and `Scheme.Modules.isIso_iff_of_isOpenCover`. The result applies to
+an arbitrary family of comparison maps.
 
 Invertibility along open immersions is itself formal. Along an open immersion `j`, a comparison
 whose transpose under the pullback--pushforward adjunction factors through a pushforward

@@ -186,9 +186,11 @@ private theorem weight_smul_norm_rpow_ae_eq (μ : Measure E) {R : ℝ} (hR : 0 �
   rw [smul_eq_mul, ← Real.rpow_add (hR.trans_lt hx)]
   ring_nf
 
+omit [BorelSpace E] in
 /-- On a measure that does not charge the origin, a function in `Lᵖ_δ` is almost everywhere
 strongly measurable. -/
-theorem MemWeightedLp.aestronglyMeasurable {v : E → F} {p : ℝ≥0∞} {δ : ℝ} {μ : Measure E}
+theorem MemWeightedLp.aestronglyMeasurable [OpensMeasurableSpace E]
+    {v : E → F} {p : ℝ≥0∞} {δ : ℝ} {μ : Measure E}
     (hv : MemWeightedLp v p δ μ) (h0 : ∀ᵐ x ∂μ, x ≠ 0) : AEStronglyMeasurable v μ := by
   set a := -δ - Module.finrank ℝ E * p⁻¹.toReal
   have hmeas : AEStronglyMeasurable (fun x : E => ‖x‖ ^ (-a)) μ :=
@@ -468,3 +470,4 @@ theorem memWeightedSobolev_of_isBigO [FiniteDimensional ℝ E] [BorelSpace E] {�
     (hcont.aestronglyMeasurable hU.measurableSet) hO'
 
 end TauCeti
+

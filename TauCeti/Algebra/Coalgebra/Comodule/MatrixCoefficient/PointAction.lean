@@ -7,11 +7,13 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
+public import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Unipotent
 public import TauCeti.LinearAlgebra.Matrix.Triangular
+import Mathlib.RingTheory.Nilpotent.Lemmas
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
@@ -32,10 +34,12 @@ found on geometric points to an actual flag by subcomodules.
 
 * `TauCeti.Comodule.toMatrix_endOfPoint`: the matrix of a point action is the evaluated
   coefficient matrix.
+* `TauCeti.Comodule.isNilpotent_endOfPoint_sub_one_of_isUpperUnitriangular`: a point carrying a
+  coefficient matrix to an upper-unitriangular matrix acts unipotently.
 * `TauCeti.Comodule.charpoly_endOfPoint_comp`: characteristic polynomials of point actions
   commute with scalar extension.
-* `TauCeti.Comodule.isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq`: a universal
-  characteristic-polynomial identity makes every point action unipotent.
+* `TauCeti.Comodule.mem_aroots_charpoly_endOfPoint_iff`: the roots of the characteristic
+  polynomial of a rational point are the eigenvalues of the point after scalar extension.
 * `TauCeti.Comodule.coefficientMatrix_isUpperTriangular_iff_forall_toMatrix_endOfPoint`:
   pointwise detection of upper triangularity.
 * `TauCeti.Comodule.coefficientMatrix_isUpperUnitriangular_iff_forall_toMatrix_endOfPoint`:
@@ -84,6 +88,27 @@ theorem toMatrix_endOfPoint (b : Basis i R M) (g : C →ₐ[R] A) :
 
 end Matrix
 
+section Unitriangular
+
+variable {R : Type u} {C : Type v} {M : Type w} {A : Type x} {i : Type y}
+variable [CommRing R] [Semiring C] [Algebra R C] [Coalgebra R C]
+variable [AddCommGroup M] [Module R M] [Comodule R C M]
+variable [CommRing A] [Algebra R A]
+variable [Finite i] [LinearOrder i]
+
+/-- A point acts unipotently on a finite free comodule when it carries the coefficient matrix of
+some basis to an upper-unitriangular matrix. -/
+theorem isNilpotent_endOfPoint_sub_one_of_isUpperUnitriangular (b : Basis i R M)
+    (g : C →ₐ[R] A) (h : ((coefficientMatrix (C := C) b).map g).IsUpperUnitriangular) :
+    IsNilpotent (endOfPoint M g - 1) := by
+  have := Fintype.ofFinite i
+  rw [← LinearMap.isNilpotent_toMatrix_iff (b.baseChange A),
+    _root_.map_sub (LinearMap.toMatrix (b.baseChange A) (b.baseChange A)),
+    LinearMap.toMatrix_one, toMatrix_endOfPoint]
+  exact h.isNilpotent_sub_one
+
+end Unitriangular
+
 section Charpoly
 
 variable {R : Type u} {C : Type v} {M : Type w}
@@ -106,49 +131,17 @@ theorem charpoly_endOfPoint_comp [Module.Free R M] [Module.Finite R M]
   ext p q
   simp [Matrix.map_apply]
 
-/-- A universal `X - 1` characteristic-polynomial identity makes the action of every point on
-the comodule unipotent. -/
-theorem isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq
-    {k : Type u} [Field k] {H : Type v} [CommRing H] [HopfAlgebra k H]
-    {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
-    {L : Type x} [CommRing L] [Algebra k L]
-    (g : WithConv (H →ₐ[k] L)) {ι : Type y} [Fintype ι] [DecidableEq ι] (b : Basis ι k M)
-    (hCcharpoly : (coefficientMatrix (C := H) b).charpoly =
-      ((Polynomial.X - (1 : Polynomial k)) ^ Module.finrank k M).map
-        (algebraMap k H)) :
-    LinearMap.GeneralLinearGroup.IsUnipotent
-      (LinearMap.GeneralLinearGroup.ofLinearEquiv (pointsAction M g)) := by
-  have := Module.Free.of_basis b
-  have := Module.Finite.of_basis b
-  let C := coefficientMatrix (C := H) b
-  let d := Module.finrank k M
-  let P : Polynomial k := (Polynomial.X - 1) ^ d
-  have hgcharpoly : (endOfPoint M g.ofConv).charpoly =
-      P.map (algebraMap k L) := by
-    let e : H →ₐ[k] H := AlgHom.id k H
-    calc
-      (endOfPoint M g.ofConv).charpoly =
-          (endOfPoint M e).charpoly.map g.ofConv := by
-        simpa only [e, AlgHom.comp_id] using
-          (charpoly_endOfPoint_comp e g.ofConv)
-      _ = C.charpoly.map g.ofConv := by
-        congr 1
-        rw [← LinearMap.charpoly_toMatrix (endOfPoint M e) (b.baseChange H),
-          toMatrix_endOfPoint]
-        exact congrArg Matrix.charpoly (by
-          simpa only [e, AlgHom.coe_id] using Matrix.map_id C)
-      _ = _ := by
-        rw [hCcharpoly, Polynomial.map_map]
-        congr 1
-        ext x
-        exact g.ofConv.commutes x
-  apply LinearMap.GeneralLinearGroup.isUnipotent_of_charpoly_eq (n := d)
-  have hcoe :
-      ((LinearMap.GeneralLinearGroup.ofLinearEquiv (pointsAction M g)) :
-        Module.End _ _) = endOfPoint M g.ofConv :=
-    pointsAction_toLinearMap M g
-  rw [hcoe]
-  exact hgcharpoly.trans (by simp [P])
+/-- For a `k`-point `γ`, the roots in a field `Ω` of the characteristic polynomial of `γ` on a
+finite-dimensional comodule are the eigenvalues of the induced `Ω`-point. -/
+theorem mem_aroots_charpoly_endOfPoint_iff {k H Ω M : Type*} [Field k] [Semiring H] [Algebra k H]
+    [Coalgebra k H] [Field Ω] [Algebra k Ω] [AddCommGroup M] [Module k M] [Comodule k H M]
+    [Module.Finite k M] (γ : H →ₐ[k] k) (μ : Ω) :
+    μ ∈ (endOfPoint M γ).charpoly.aroots Ω ↔
+      Module.End.HasEigenvalue (endOfPoint M ((Algebra.ofId k Ω).comp γ)) μ := by
+  rw [Module.End.hasEigenvalue_iff_isRoot_charpoly, charpoly_endOfPoint_comp,
+    Polynomial.mem_aroots, Polynomial.IsRoot.def, Algebra.toRingHom_ofId,
+    Polynomial.eval_map_algebraMap]
+  exact and_iff_right (endOfPoint M γ).charpoly_monic.ne_zero
 
 end Charpoly
 

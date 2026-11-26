@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Modules.Derived.Restrict
 import Mathlib.Algebra.CharP.Two
 import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 import Mathlib.Data.ZMod.Basic
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!
@@ -36,17 +35,10 @@ since the sections of `(ℤ/2)~` over `D(2)` form the localization `(ℤ/2)[1/2]
 example : IsZero
     (((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).ι.derivedRestrict.obj
       ((singleFunctor _ 0).obj ((tilde.functor (.of ℤ)).obj (.of _ (ZMod 2))))) := by
-  have := subsingleton_tilde_basicOpen_of_smul_eq_zero (R := .of ℤ) (M := .of _ (ZMod 2)) 2
-    fun m ↦ by rw [two_smul]; exact CharTwo.add_self_eq_zero (R := ZMod 2) m
-  rw [← basicOpen_eq_of_affine, ← Scheme.Opens.ι_image_top
-    ((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2))] at this
-  -- Transport along the identification of the sections of the restriction over `⊤` with those
-  -- over the image of `⊤`.
-  have := @Equiv.subsingleton _ _ (Scheme.Modules.restrictAppIso
-    ((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).ι
-    ((tilde.functor (.of ℤ)).obj (.of _ (ZMod 2))) ⊤).addCommGroupIsoToAddEquiv.toEquiv this
   exact ((singleFunctor _ 0).map_isZero
-    (Scheme.Modules.isZero_of_subsingleton_sections_top _)).of_iso
+    (isZero_tilde_restrict_of_le_basicOpen_of_smul_eq_zero (R := .of ℤ) (M := .of _ (ZMod 2)) 2
+      (fun m ↦ by rw [two_smul]; exact CharTwo.add_self_eq_zero (R := ZMod 2) m)
+      (basicOpen_eq_of_affine _).le)).of_iso
     (((Scheme.Modules.restrictFunctor _).mapDerivedCategorySingleFunctor 0).app _)
 
 /-- `(ℤ/2)~[0]` is non-zero in `D(𝒪_{Spec ℤ})`, so the identity of `D(𝒪_{Spec ℤ})`, which keeps

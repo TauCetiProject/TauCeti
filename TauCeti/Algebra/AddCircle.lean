@@ -49,7 +49,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.coe_eq_coe_iff_exists_zsmul`: two elements have the same class in `AddCircle p`
   exactly when they differ by an integer multiple of `p`, and
   `AddCircle.eq_of_coe_eq_of_abs_sub_lt`: two such elements closer than `p` are equal.
-* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`.
+* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`, and
+  `AddCircle.pi_coe_eq_zero_iff`: a lift of `0` is a family of integer multiples of `p`.
 * `AddCircle.intCast_floor_equivIco_add`: the floor of the sum of two representatives in
   `[0, 1)` is their defect of additivity.
 * `AddCircle.natCard_torsionBy_le` and `AddCircle.natCard_torsionBy_pi_le`: when
@@ -61,8 +62,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / 2`.
 * `AddCircle.addOrderOf_period_div_of_ne_zero`: for a nonzero period and positive `n`, the class
   of `p / n` has additive order `n`.
-* `AddCircle.infinite_of_neZero`: the instance that `AddCircle p` is infinite for a nonzero
-  period in characteristic zero.
+* `AddCircle.infinite`: the instance that `AddCircle p` is infinite for every period in
+  characteristic zero.
 * `AddCircle.natCard_torsionBy`: for positive `n`, the `n`-torsion of `AddCircle p` has exactly `n`
   elements; for `n = 0` the statement holds only through the junk value `Nat.card = 0` of the
   infinite group.
@@ -80,6 +81,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.range_nsmul_coe_rat` and `AddCircle.ncard_range_nsmul_coe_rat`: for a positive
   period in a linearly ordered field, the `ℕ`-multiples of the class of a rational multiple
   `q * p` of the period form the `q.den`-torsion, so there are exactly `q.den` of them.
+* `Int.fract_natCast_mul_ratCast_eq_iff`: in a linearly ordered floor field, the multiples
+  `m * q` and `n * q` of a rational number `q` have the same fractional part exactly when
+  `m ≡ n [MOD q.den]`.
 * `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
   class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`; when `n` is nonzero
   in `𝕜` these are the canonical generators of the `n`- and the `n / d`-torsion.
@@ -176,6 +180,13 @@ coercion so that `obtain ⟨t, rfl⟩` leaves terms that lemmas about coerced an
 theorem exists_pi_coe_eq {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} (θ : ι → AddCircle p) :
     ∃ t : ι → 𝕜, (fun j ↦ (t j : AddCircle p)) = θ :=
   QuotientAddGroup.mk_surjective.comp_left θ
+
+/-- A family of representatives vanishes in the torus `(𝕜 / pℤ)^ι` exactly when it is a family of
+integer multiples of the period. -/
+theorem pi_coe_eq_zero_iff {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} {t : ι → 𝕜} :
+    (fun j ↦ (t j : AddCircle p)) = 0 ↔ ∃ v : ι → ℤ, (fun j ↦ v j • p) = t := by
+  simp only [funext_iff, Pi.zero_apply, coe_eq_zero_iff]
+  exact Classical.skolem
 
 /-- An integer reduces to zero in `AddCircle (1 : 𝕜)`. -/
 @[simp]
@@ -385,14 +396,33 @@ theorem addOrderOf_period_div_of_ne_zero (hn : 0 < n) :
   have hdvd : (n : ℤ) ∣ m := ⟨k, by rw [mul_comm]; exact_mod_cast hkm⟩
   exact hmn.not_ge (Nat.le_of_dvd hm (Int.natCast_dvd_natCast.mp hdvd))
 
-/-- For a nonzero period in characteristic zero, `AddCircle p` is infinite: the classes of
-`p / (k + 1)` have pairwise distinct additive orders. -/
-instance infinite_of_neZero : Infinite (AddCircle p) :=
-  Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ by
+end ExactOrder
+
+section Infinite
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜)
+
+/-- In characteristic zero, `AddCircle p` is infinite for every period `p`. For `p ≠ 0` the
+classes of `p / (k + 1)` have pairwise distinct additive orders; `AddCircle 0` is a copy of `𝕜`,
+in which the natural numbers are distinct. -/
+instance infinite : Infinite (AddCircle p) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · refine Infinite.of_injective (fun k : ℕ ↦ ((k : 𝕜) : AddCircle (0 : 𝕜))) fun a b h ↦ ?_
+    obtain ⟨k, hk⟩ := coe_eq_coe_iff_exists_zsmul.1 h
+    rw [smul_zero, eq_comm, sub_eq_zero] at hk
+    exact_mod_cast hk
+  · have : NeZero p := ⟨hp⟩
+    refine Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ ?_
     have := congrArg addOrderOf h
     rw [addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _),
       addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _)] at this
     exact Nat.succ_injective this
+
+end Infinite
+
+section ExactOrder
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜) [NeZero p] {m n : ℕ}
 
 /-- The `n`-torsion of `AddCircle p` has exactly `n` elements. For `n = 0` this is the junk value
 `Nat.card = 0` of the infinite group `AddCircle p`. -/
@@ -464,6 +494,18 @@ theorem ncard_range_nsmul_coe_rat (q : ℚ) :
     (Set.range (· • ((q * p : 𝕜) : AddCircle p) : ℕ → AddCircle p)).ncard = q.den := by
   rw [← AddSubmonoid.coe_multiples, ← Nat.card_coe_set_eq, SetLike.coe_sort_coe,
     Nat.card_addSubmonoidMultiples, addOrderOf_coe_rat]
+
+/-- For a rational number `q`, the multiples `m * q` and `n * q` have the same fractional part
+exactly when `m` and `n` are congruent modulo the denominator of `q`. -/
+theorem _root_.Int.fract_natCast_mul_ratCast_eq_iff [FloorRing 𝕜] (q : ℚ) {m n : ℕ} :
+    Int.fract (m * (q : 𝕜)) = Int.fract (n * (q : 𝕜)) ↔ m ≡ n [MOD q.den] := by
+  have : Fact ((0 : 𝕜) < 1) := ⟨one_pos⟩
+  -- Route: `m ≡ n [MOD q.den]` is `m • ↑q = n • ↑q` in `AddCircle 1`, as `q.den` is the order of
+  -- `↑q`; that is `↑(m * q) = ↑(n * q)`, i.e. `m * q - n * q` is an integer, which is the equality
+  -- of fractional parts.
+  rw [← addOrderOf_coe_rat (p := (1 : 𝕜)) (q := q), ← nsmul_eq_nsmul_iff_modEq, ← coe_nsmul,
+    ← coe_nsmul, Int.fract_eq_fract, ← sub_eq_zero, ← coe_sub, coe_eq_zero_iff]
+  simp [eq_comm]
 
 end RationalMultiple
 
@@ -707,6 +749,14 @@ theorem toRatAddCircle_apply (x : ZMod n) :
     have hx : ((x.val : ℕ) : ZMod n) = x := ZMod.natCast_rightInverse x
     conv_lhs => rw [← hx]
     rw [toRatAddCircle_natCast]
+
+/-- Transport along an equality of moduli commutes with the embeddings of `ℤ/m` and `ℤ/n` into
+`ℚ/ℤ`. -/
+@[simp]
+theorem toRatAddCircle_ringEquivCongr {m : ℕ} (h : m = n) (x : ZMod m) :
+    toRatAddCircle n (ZMod.ringEquivCongr h x) = toRatAddCircle m x := by
+  subst h
+  rw [ZMod.ringEquivCongr_refl_apply]
 
 /-- Only the zero residue has integral image in `ℚ/ℤ`. -/
 @[simp]

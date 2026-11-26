@@ -9,6 +9,8 @@ public import Mathlib.Data.Nat.Choose.Central
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Central-binomial probabilities and series
@@ -22,11 +24,17 @@ exactly when `|q| < 1 / 4`. At the boundary, the elementary lower bound on centr
 binomial coefficients compares this series with the harmonic series; no asymptotic
 formula is needed.
 
+Inside the radius the sum is `1 / √(1 - 4q)`: the central binomial coefficients divided by
+`4 ^ n` are the multiset coefficients of one half, so this is the binomial series of
+`(1 - 4q) ^ (-1/2)`.
+
 The extended nonnegative sum detects the same boundary without the convention that
 an unsummable real series has sum zero. In particular, for a nearest-neighbor walk
 with right-step probability `p`, the sum of the even-time return probabilities
 `Nat.centralBinom n * (p * (1 - p)) ^ n` is infinite exactly at `p = 1 / 2`.
-This is the numerical input to the Green-function recurrence criterion.
+This is the numerical input to the Green-function recurrence criterion. For every
+nonnegative `q` the extended sum equals `1 / √(1 - 4q)`, read as infinite from `q = 1 / 4` on;
+at `q = p (1 - p)` this is `1 / |2p - 1|`, which gives the return probability of the walk.
 
 The random-walk application follows J. R. Norris, *Markov Chains* (1997), §1.6.
 The estimates used here are Mathlib's `Nat.centralBinom_le_four_pow` and
@@ -119,6 +127,18 @@ theorem summable_centralBinom_mul_pow_iff {q : ℝ} :
   rw [← summable_abs_iff]
   simpa only [abs_mul, abs_pow, Nat.abs_cast] using key |q| (abs_nonneg q)
 
+/-- **The central-binomial generating function.** Inside its radius of convergence,
+`∑ n, (2n choose n) q ^ n = 1 / √(1 - 4q)`. -/
+theorem hasSum_centralBinom_mul_pow {q : ℝ} (hq : |q| < 1 / 4) :
+    HasSum (fun n : ℕ => (n.centralBinom : ℝ) * q ^ n) (√(1 - 4 * q))⁻¹ := by
+  have h := hasSum_multichoose_mul_geometric_of_abs_lt_one (r := 2⁻¹) (x := 4 * q)
+    (by rw [abs_mul, abs_of_pos four_pos]; linarith)
+  convert h using 1
+  · ext n
+    rw [Ring.multichoose_inv_two, mul_pow]
+    field_simp
+  · norm_num [Real.sqrt_eq_rpow]
+
 end TauCeti
 
 namespace NNReal
@@ -153,5 +173,25 @@ theorem tsum_centralBinom_mul_mul_one_sub_pow_eq_top_iff (p : ℝ≥0) :
   · rintro rfl
     rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_sub (by norm_num)]
     norm_num
+
+/-- The extended central-binomial generating function, for every nonnegative `q`:
+`∑ n, (2n choose n) q ^ n = 1 / √(1 - 4q)`. At and beyond the radius of convergence both sides
+are infinite, since the real square root of a nonpositive number is zero. -/
+theorem tsum_centralBinom_mul_pow (q : ℝ≥0) :
+    ∑' n : ℕ, (n.centralBinom : ℝ≥0∞) * (q : ℝ≥0∞) ^ n =
+      (ENNReal.ofReal √(1 - 4 * (q : ℝ)))⁻¹ := by
+  rcases lt_or_ge q (1 / 4) with hq | hq
+  · have hq' : (q : ℝ) < 1 / 4 := by exact_mod_cast hq
+    have hs := TauCeti.hasSum_centralBinom_mul_pow (q := q) (by rwa [abs_of_nonneg q.coe_nonneg])
+    have hterm (n : ℕ) : (n.centralBinom : ℝ≥0∞) * (q : ℝ≥0∞) ^ n =
+        ENNReal.ofReal ((n.centralBinom : ℝ) * (q : ℝ) ^ n) := by
+      rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
+        ENNReal.ofReal_pow q.coe_nonneg, ENNReal.ofReal_coe_nnreal]
+    simp_rw [hterm]
+    rw [← ENNReal.ofReal_tsum_of_nonneg (fun n => by positivity) hs.summable, hs.tsum_eq,
+      ENNReal.ofReal_inv_of_pos (Real.sqrt_pos.2 (by linarith))]
+  · have hq' : (1 : ℝ) / 4 ≤ q := by exact_mod_cast hq
+    rw [(tsum_centralBinom_mul_pow_eq_top_iff q).2 hq, Real.sqrt_eq_zero'.2 (by linarith),
+      ENNReal.ofReal_zero, ENNReal.inv_zero]
 
 end NNReal

@@ -40,8 +40,11 @@ at the end of a finite-energy plane: the inverted map `w ↦ u w⁻¹`, filled a
 (`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Both give a
 continuous `W^{1,p}` weak solution with `p > 2` for a `C²` structure `J`, the input of interior
 elliptic regularity for the nonlinear Cauchy--Riemann equation. That regularity theorem is not
-proved here. The regularity it gives the filling is limited by that of `J`, so a smooth filling,
-which completes the removal of singularities, also needs a smooth `J`.
+proved here but in `TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`;
+`TauCeti.contDiffOn_ball_and_fderiv_apply_one_add_eq_of_isWeakCauchyRiemannOn` applies it
+across a puncture, and `TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`
+uses that to complete the removal of singularities for the filling. The regularity it gives the
+filling is limited by that of `J`, so a smooth filling also needs a smooth `J`.
 
 ## References
 
@@ -172,15 +175,13 @@ theorem exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy
       compl_subset_compl.2 (closedBall_subset_closedBall (by linarith [not_lt.1 hR]))
     exact this (hu.mono hS) (fun z hz ↦ hCR z (hS hz)) (huK.mono_left hS)
       (fun z hz ↦ htame z (hS hz)) (henergy.mono_set hS) one_pos
-  have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   -- The inverted map is a finite-energy solution on the punctured disc of radius `R⁻¹`.
+  obtain ⟨hv, hCRv, hvK, hvtame, hvenergy⟩ :=
+    contDiffOn_comp_inv_and_integrableOn_of_finite_energy (hJ.continuousOn.mono hKW) hK hJsq hu
+      hCR huK htame henergy
   obtain ⟨q, hq, hlim, -, ε, hε, -, p, hp, hweak⟩ :=
     ω.exists_isWeakCauchyRiemannOn_update_of_finite_energy hg hc (inv_pos.2 hR) hW hJ hK hKW
-      hJsq (hu.comp ((contDiffOn_inv ℝ).mono fun w hw ↦ hw.2) hDE)
-      (fun w hw ↦ fderiv_comp_inv_apply_I_eq hw.2 (hCR _ (hDE hw)) (hJsq _ (huK (hDE hw))))
-      (huK.comp hDE) (fun w hw ↦ htame _ (hDE hw))
-      (integrableOn_norm_fderiv_comp_inv_apply_one_sq hCR (fun z hz ↦ hM _ (huK hz)) henergy)
+      hJsq hv hCRv hvK hvtame hvenergy
   refine ⟨q, hq, ?_, ε, hε, p, hp, hweak⟩
   rw [← Metric.cobounded_eq_cocompact]
   simpa [Function.comp_def] using hlim.comp tendsto_inv₀_cobounded'

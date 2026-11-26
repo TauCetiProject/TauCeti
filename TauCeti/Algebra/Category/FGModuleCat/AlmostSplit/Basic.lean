@@ -20,7 +20,8 @@ import TauCeti.Algebra.Category.ModuleCat.Injective.LeftAlmostSplit
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.ModuleCat.Minimal
 import TauCeti.CategoryTheory.AlmostSplit.Equivalence
-import TauCeti.CategoryTheory.AlmostSplit.Irreducible
+import TauCeti.CategoryTheory.AlmostSplit.Irreducible.Basic
+import TauCeti.CategoryTheory.AlmostSplit.Minimal
 import TauCeti.CategoryTheory.Preadditive.Radical.Basic
 
 /-!
@@ -165,15 +166,11 @@ theorem exists_isLeftAlmostSplit_biproduct {X : FGModuleCat.{w} A} (hX : Indecom
       have : IsIso ((ObjectProperty.ι _).map u) := hmin _ (congrArg (ObjectProperty.ι _).map hu)
       exact isIso_of_fully_faithful (ObjectProperty.ι _) u
   obtain ⟨n, F, hF, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct E
-  refine ⟨n, F, f ≫ e.hom, hF, hf.comp_iso e.hom, fun u hu ↦ ?_, fun j ↦ ?_⟩
-  · -- Left minimality is invariant under the isomorphism `e`.
-    have := hmin (e.hom ≫ u ≫ e.inv) (by
-      rw [← Category.assoc, ← Category.assoc, hu, Category.assoc, e.hom_inv_id, Category.comp_id])
-    simpa using (inferInstance : IsIso (e.inv ≫ (e.hom ≫ u ≫ e.inv) ≫ e.hom))
-  · have hrad := comp_mem_jacobsonRadical_right hf.mem_jacobsonRadical (e.hom ≫ biproduct.π F j)
-    rw [Category.assoc]
-    exact hf.isIrreducibleMorphism_comp_of_isSplitEpi hmin _ fun _ ↦ (hF j).1
-      ((ObjectProperty.ι _).map_isZero (isZero_of_isSplitEpi_of_mem_jacobsonRadical hrad))
+  refine ⟨n, F, f ≫ e.hom, hF, hf.comp_iso e.hom, left_minimal_comp_iso hmin e.hom,
+    fun j ↦ ?_⟩
+  rw [Category.assoc]
+  exact hf.isIrreducibleMorphism_comp_of_not_isZero hmin
+    (fun hz ↦ (hF j).1 ((ObjectProperty.ι _).map_isZero hz)) _
 
 /-- **Sink maps.** Let `A` be an Artinian ring, and `X` a finitely generated indecomposable module
 that, unless it is projective in `FGModuleCat A`, has a right almost split map in
@@ -206,15 +203,11 @@ theorem exists_isRightAlmostSplit_biproduct {X : FGModuleCat.{w} A} (hX : Indeco
       exact IsKrullSchmidt.exists_isRightAlmostSplit_and_minimal X
         ((isFinitelyPresentedFunctor_simpleFunctor_iff X).2 ⟨E, p, hp⟩)
   obtain ⟨n, F, hF, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct E
-  refine ⟨n, F, e.inv ≫ g, hF, hg.iso_comp e.inv, fun u hu ↦ ?_, fun j ↦ ?_⟩
-  · -- Right minimality is invariant under the isomorphism `e`.
-    have := hmin (e.hom ≫ u ≫ e.inv) (by
-      rw [Category.assoc, Category.assoc, hu, e.hom_inv_id_assoc])
-    simpa using (inferInstance : IsIso (e.inv ≫ (e.hom ≫ u ≫ e.inv) ≫ e.hom))
-  · have hrad := comp_mem_jacobsonRadical_left (biproduct.ι F j ≫ e.inv) hg.mem_jacobsonRadical
-    rw [← Category.assoc]
-    exact hg.isIrreducibleMorphism_comp_of_isSplitMono hmin _ fun _ ↦ (hF j).1
-      ((ObjectProperty.ι _).map_isZero (isZero_of_isSplitMono_of_mem_jacobsonRadical hrad))
+  refine ⟨n, F, e.inv ≫ g, hF, hg.iso_comp e.inv, right_minimal_iso_comp hmin e.inv,
+    fun j ↦ ?_⟩
+  rw [← Category.assoc]
+  exact hg.isIrreducibleMorphism_comp_of_not_isZero hmin
+    (fun hz ↦ (hF j).1 ((ObjectProperty.ι _).map_isZero hz)) _
 
 end Artinian
 

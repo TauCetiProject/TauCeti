@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Univ
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
@@ -30,8 +31,8 @@ of pointwise limits of measurable maps, available for matrix-valued functions wi
 matrix norm.
 
 Matrices with countably many rows and columns are second countable when their entries are, and
-matrices with finitely many rows and columns are σ-compact when their entries are. Matrices over
-a compact space are compact.
+matrices with finitely many rows and columns are σ-compact, respectively locally compact, when
+their entries are. Matrices over a compact space are compact.
 
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
@@ -71,7 +72,10 @@ In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗�
 both partial traces of a continuously varying matrix on a product index.
 
 A matrix-valued function converges exactly when each of its entries does
-(`Matrix.tendsto_iff_tendsto_apply`). The matrices with nonnegative diagonal form a closed set
+(`Matrix.tendsto_iff_tendsto_apply`), and exactly when its products with all column vectors do
+(`Matrix.tendsto_iff_forall_tendsto_mulVec`). In particular, pointwise convergence of
+sesquilinear forms gives convergence of their Gram matrices in any pair of finite bases
+(`LinearMap.tendsto_toMatrix₂`). The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
 
 `Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
@@ -108,6 +112,12 @@ instance {m n α : Type*} [Countable m] [Countable n] [TopologicalSpace α]
 instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [SigmaCompactSpace α] :
     SigmaCompactSpace (Matrix m n α) :=
   inferInstanceAs (SigmaCompactSpace (m → n → α))
+
+/-- Matrices with finitely many rows and columns over a locally compact space form a locally
+compact space. -/
+instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [LocallyCompactSpace α] :
+    LocallyCompactSpace (Matrix m n α) :=
+  inferInstanceAs (LocallyCompactSpace (m → n → α))
 
 /-- Matrices over a compact space form a compact space (Tychonoff). -/
 instance {m n α : Type*} [TopologicalSpace α] [CompactSpace α] :
@@ -400,6 +410,17 @@ theorem tendsto_iff_tendsto_apply {α m n R : Type*} [TopologicalSpace R] {l : F
     Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) :=
   tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
 
+open Filter Topology in
+/-- A matrix-valued function converges exactly when its products with every column vector do. -/
+theorem tendsto_iff_forall_tendsto_mulVec {α m n R : Type*} [Fintype n] [NonAssocSemiring R]
+    [TopologicalSpace R] [IsTopologicalSemiring R] {l : Filter α} {M : α → Matrix m n R}
+    {D : Matrix m n R} :
+    Tendsto M l (𝓝 D) ↔ ∀ v, Tendsto (fun x ↦ M x *ᵥ v) l (𝓝 (D *ᵥ v)) := by
+  classical
+  refine ⟨fun h v ↦ ((continuous_id.matrix_mulVec continuous_const).tendsto D).comp h,
+    fun h ↦ tendsto_iff_tendsto_apply.2 fun i j ↦ ?_⟩
+  simpa [mulVec_single_one] using tendsto_pi_nhds.1 (h (Pi.single j 1)) i
+
 /-- The matrices with nonnegative diagonal form a closed set. -/
 theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]
     [OrderClosedTopology R] : IsClosed {M : Matrix n n R | ∀ i, 0 ≤ M i i} := by
@@ -407,3 +428,20 @@ theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero 
   exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
 
 end Matrix
+
+namespace LinearMap
+
+open Filter Topology in
+/-- Pointwise convergence of sesquilinear forms gives convergence of their Gram matrices in any
+pair of finite bases. -/
+theorem tendsto_toMatrix₂ {R M₁ M₂ N₂ n m α : Type*} [CommSemiring R] [AddCommMonoid M₁]
+    [Module R M₁] [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid N₂] [Module R N₂]
+    [TopologicalSpace N₂] {σ₁ σ₂ : R →+* R} [Fintype n] [Fintype m] [DecidableEq n]
+    [DecidableEq m] (b₁ : Module.Basis n R M₁) (b₂ : Module.Basis m R M₂) {l : Filter α}
+    {B : α → M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] N₂} {B₀ : M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] N₂}
+    (hB : ∀ u v, Tendsto (fun a ↦ B a u v) l (𝓝 (B₀ u v))) :
+    Tendsto (fun a ↦ toMatrix₂ b₁ b₂ (B a)) l (𝓝 (toMatrix₂ b₁ b₂ B₀)) :=
+  Matrix.tendsto_iff_tendsto_apply.2 fun i j ↦ by
+    simpa only [toMatrix₂_apply] using hB (b₁ i) (b₂ j)
+
+end LinearMap

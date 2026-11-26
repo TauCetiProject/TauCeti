@@ -53,6 +53,15 @@ theorem charFn_eq_one_iff [Nontrivial R] (hU : IsClopen U) : charFn R hU = 1 ↔
   · subst h
     exact charFn_univ R
 
+/-- Pulling back the characteristic function of a clopen set `U` along a continuous map `f` gives
+the characteristic function of the preimage `f ⁻¹' U`. -/
+@[simp]
+theorem comap_charFn {Y : Type*} [TopologicalSpace Y] {W : Set Y} (f : C(X, Y))
+    (hW : IsClopen W) : (charFn R hW).comap f = charFn R (hW.preimage f.continuous) := by
+  ext x
+  simp only [coe_comap_apply, coe_charFn]
+  exact (Set.indicator_comp_right (g := 1) f).symm
+
 end LocallyConstant
 
 namespace TopologicalSpace.CompactOpens
@@ -65,6 +74,11 @@ noncomputable def charFn (U : CompactOpens X) : LocallyConstant X R :=
   LocallyConstant.charFn R U.toClopens.isClopen
 
 theorem coe_charFn (U : CompactOpens X) : ⇑(U.charFn R) = Set.indicator (U : Set X) 1 :=
+  (rfl)
+
+/-- `U.charFn R` is the characteristic function of the clopen set underlying `U`. -/
+theorem charFn_def (U : CompactOpens X) :
+    U.charFn R = LocallyConstant.charFn R U.toClopens.isClopen :=
   (rfl)
 
 variable {R}

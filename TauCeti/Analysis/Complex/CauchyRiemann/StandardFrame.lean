@@ -297,7 +297,7 @@ theorem isWeakLinearCauchyRiemannOn_iff_frame [FiniteDimensional ℂ V] (hp : 2 
       (hηp : MemLpLoc p Ω η) (hDηp : MemLpLoc p Ω Dη) :
       HasWeakFDerivOn volume Ω (fun z => Φ z (η z))
         (fun z => B.precompL ℂ (DΦ z) (η z) + B.precompR ℂ (Φ z) (Dη z)) :=
-    hΦ.bilin_of_memLpLoc B hp hp1 le_rfl hΦc.memLpLoc hDΦ hη hηp hDηp
+    hΦ.bilin_of_finrank_lt B (by simpa using hp) hp1 le_rfl hΦc.memLpLoc hDΦ hη hηp hDηp
   have halg (z : ℂ) (hz : z ∈ (Ω : Set ℂ)) (Dη : ℂ →L[ℝ] V) (w : V) :
       (B.precompL ℂ (DΦ z) w + B.precompR ℂ (Φ z) Dη) 1 +
           J z ((B.precompL ℂ (DΦ z) w + B.precompR ℂ (Φ z) Dη) I) + C z (Φ z w) =

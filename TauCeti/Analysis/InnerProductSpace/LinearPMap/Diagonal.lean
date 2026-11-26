@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
+import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.Normed.Lp.Finsupp
 import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!
@@ -59,6 +62,10 @@ so `f` only enters through its values `f (λ i)` at the eigenvalues.
 * `HilbertBasis.mem_diagonalPMap_domain_iff`, `HilbertBasis.inner_diagonalPMap_apply`,
   `HilbertBasis.mem_graph_diagonalPMap_iff`: the domain, the coordinates and the graph of a
   diagonal operator.
+* `HilbertBasis.default_diagonalPMap_apply`: in the standard Hilbert basis of `ℓ²(ι, 𝕜)` a
+  diagonal operator multiplies the entries.
+* `HilbertBasis.mem_diagonalPMap_domain_of_hasFiniteSupport`: finitely supported vectors lie in
+  the domain.
 * `HilbertBasis.hasSum_diagonalPMap_apply`: the expansion
   `b.diagonalPMap c x = ∑ᵢ c i ⟪b i, x⟫ • b i`.
 * `HilbertBasis.diagonalPMap_domain_eq_top`: a bounded family gives an everywhere defined operator,
@@ -149,6 +156,13 @@ theorem mem_diagonalPMap_domain_iff {x : E} :
   rw [mem_diagonalPMap_domain_iff_memℓp, memℓp_gen_iff (by norm_num)]
   norm_num
 
+/-- A vector with finitely many nonzero coordinates `⟪b i, x⟫` lies in the domain of every
+diagonal operator `b.diagonalPMap c`. -/
+theorem mem_diagonalPMap_domain_of_hasFiniteSupport {x : E}
+    (hx : (fun i ↦ ⟪b i, x⟫_𝕜).HasFiniteSupport) : x ∈ (b.diagonalPMap c).domain := by
+  rw [mem_diagonalPMap_domain_iff_memℓp]
+  exact (Function.HasFiniteSupport.fun_mul_right c hx).memℓp 2
+
 /-- The coordinates of `b.diagonalPMap c x` in the Hilbert basis `b` are `c i * ⟪b i, x⟫`. -/
 @[simp]
 theorem repr_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
@@ -160,6 +174,17 @@ theorem repr_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
 theorem inner_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
     ⟪b i, b.diagonalPMap c x⟫_𝕜 = c i * ⟪b i, (x : E)⟫_𝕜 := by
   rw [← b.repr_apply_apply, repr_diagonalPMap_apply]
+
+open scoped lp in
+/-- In the standard Hilbert basis of `ℓ²(ι, 𝕜)` the diagonal operator multiplies the entries:
+`(diagonalPMap c x) i = c i * x i`. -/
+@[simp]
+theorem default_diagonalPMap_apply (c : ι → 𝕜)
+    (x : ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).diagonalPMap c).domain) (i : ι) :
+    ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).diagonalPMap c x : ℓ²(ι, 𝕜)) i =
+      c i * (x : ℓ²(ι, 𝕜)) i := by
+  rw [← inner_default_apply, ← inner_default_apply (x : ℓ²(ι, 𝕜))]
+  exact inner_diagonalPMap_apply _ _ x i
 
 /-- A vector `y` is the image of `x` under the diagonal operator if and only if its coordinates are
 those of `x` multiplied by `c`. -/

@@ -51,6 +51,13 @@ theorem bfzLetter_castAdd (w : List (Fin r × Bool)) (k : Fin r) :
     bfzLetter w (k.castAdd w.length) = (k.rev, false) := by
   simp [bfzLetter, k.isLt]
 
+/-- Among prefix positions, each colour occurs only at its canonical reversed index. -/
+theorem bfzLetter_fst_eq_iff_of_lt (w : List (Fin r × Bool)) (i : Fin r)
+    {k : Fin (r + w.length)} (hk : (k : ℕ) < r) :
+    (bfzLetter w k).1 = i ↔ k = i.rev.castAdd w.length := by
+  rw [bfzLetter_def, dite_eq_left hk, Fin.rev_eq_iff]
+  simp only [Fin.ext_iff, Fin.val_castAdd]
+
 /-- The actual word follows the prefix without changing its letters. -/
 @[simp]
 theorem bfzLetter_natAdd (w : List (Fin r × Bool)) (k : Fin w.length) :

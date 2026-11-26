@@ -6,13 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Product
+public import TauCeti.Analysis.InnerProductSpace.GraphPatch
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.SegmentChain
 import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
-import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Holder.Interpolation
+import TauCeti.Topology.MetricSpace.Bounded
+import TauCeti.Analysis.Sobolev.LipschitzDomain.GraphPatch
+import TauCeti.Analysis.Sobolev.LipschitzDomain.MeasureDensity
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# The Hölder spaces `C^{k,α}(Ω)` on a bounded Lipschitz domain
+# Hölder spaces `C^{k,α}(Ω)` and interpolation inequalities on a bounded Lipschitz domain
 
 On a convex open set, the derivative fields of an element of `C^{k,α}(Ω)` below the top order are
 `α`-Hölder for `α ≤ 1`, by the mean value inequality, and so `C^{k+1,α}(Ω) ⊆ C^{k,α}(Ω)`
@@ -26,11 +31,32 @@ for a continuous bilinear map `B`, so that coefficients in `C^{k,α}(Ω)` act on
 bounded multiplication. The domains of the global Schauder theory, bounded domains with
 `C^{k,α}` boundary for `k ≥ 1`, are bounded Lipschitz domains.
 
+The same geometry gives the interpolation inequalities up to the boundary: for `u` of class `C²`
+on `Ω` with `‖u‖ ≤ M` and `D²u` `α`-Hölder with constant `V` on `Ω`, and every `0 < ε ≤ 1`,
+
+`‖Du(x)‖ ≤ C (ε⁻¹ M + ε^(1 + α) V)` and `‖D²u(x)‖ ≤ C (ε⁻² M + ε^α V)` for `x ∈ Ω`,
+
+with `C` depending only on `Ω`. The interior forms (`HolderOnWith.norm_fderiv_le_of_contDiffOn`,
+`HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn`) need a ball of radius comparable to `ε`
+about `x` inside `Ω`. Near the boundary, `B(x, ε)` still contains a ball in `Ω` of radius
+comparable to `ε` (the interior corkscrew condition,
+`Set.IsLipschitzDomain.exists_closedBall_subset_inter_ball`); the Hölder bound on `D²u` carries the
+Hessian estimate from its centre back to `x`, and the mean value inequality along a short chain of
+segments in `Ω` carries the gradient estimate. With `ε` small, these bounds let a global Schauder
+estimate absorb the norms of `Du` and `D²u` on its right side, leaving only the supremum of
+`‖u‖` there.
+
 ## Main declarations
 
 * `Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`: there is a constant `C`,
   depending only on `Ω` and `α`, such that every map with `‖g‖ ≤ M` and `‖fderiv ℝ g‖ ≤ L` on
   `Ω` is `α`-Hölder on `Ω` with constant `C (L + M)`.
+* `Set.HasLipschitzGraphBoundary.exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le`: on a
+  bounded set `Ω` with Lipschitz graph boundary, bounds `N` on `‖φ‖`, `‖Dφ‖` and `‖D²φ‖` on `Ω`
+  make `φ` and `Dφ` `α`-Hölder on `Ω` with constant `C N`.
+* `Set.IsLipschitzDomain.exists_norm_iteratedFDeriv_two_le` and
+  `Set.IsLipschitzDomain.exists_norm_fderiv_le`: the interpolation inequalities for the Hessian
+  and the gradient on a bounded Lipschitz domain.
 * `TauCeti.CkHolderSpaceOn.exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain`: there is a
   constant `C`, depending only on `Ω` and `α`, such that every derivative field through order `k`
   of every `f ∈ C^{k,α}(Ω)` is `α`-Hölder on `Ω` with constant `C ‖f‖`.
@@ -47,14 +73,15 @@ bounded multiplication. The domains of the global Schauder theory, bounded domai
 ## References
 
 * D. Gilbarg and N. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 4.1.
+  Section 4.1, and Section 6.8 (Lemma 6.35: the global interpolation inequalities, there on
+  domains with `C^{k,α}` boundary).
 -/
 
 public section
 
 noncomputable section
 
-open TopologicalSpace
+open Metric TopologicalSpace
 open scoped NNReal
 
 universe u v w
@@ -74,29 +101,173 @@ theorem exists_holderOnWith_of_norm_fderiv_le {Ω : Set E} (hΩ : Ω.IsLipschitz
     ∃ C : ℝ≥0, ∀ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {g : E → G} {M L : ℝ≥0},
       (∀ x ∈ Ω, DifferentiableAt ℝ g x) → (∀ x ∈ Ω, ‖g x‖ ≤ M) →
         (∀ x ∈ Ω, ‖fderiv ℝ g x‖ ≤ L) → HolderOnWith (C * (L + M)) α g Ω := by
-  obtain ⟨C₀, δ, hδ, hchain⟩ := hΩ.exists_segment_chain hb
+  obtain ⟨C₀, δ, hδ, hnear⟩ := hΩ.exists_dist_le_of_norm_fderiv_le hb
   refine ⟨C₀ * δ ^ (1 - (α : ℝ)) + 2 * δ ^ (-(α : ℝ)), fun {G} _ _ g M L hdiff hval hder ↦ ?_⟩
-  -- Lipschitz at scales below `δ`, by the mean value inequality along a chain of segments.
-  have hnear : ∀ x ∈ Ω, ∀ y ∈ Ω, dist x y < δ →
-      dist (g x) (g y) ≤ ((L * C₀ : ℝ≥0) : ℝ) * dist x y ^ ((1 : ℝ≥0) : ℝ) := by
-    intro x hx y hy hxy
-    obtain ⟨p, q, h1, h2, h3, hlen⟩ := hchain x hx y hy hxy
-    rw [dist_comm, dist_eq_norm, NNReal.coe_one, Real.rpow_one, NNReal.coe_mul, mul_assoc]
-    exact (TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset hdiff hder h1 h2
-      h3).trans (mul_le_mul_of_nonneg_left hlen L.coe_nonneg)
   have hfar : ∀ x ∈ Ω, ∀ y ∈ Ω, dist (g x) (g y) ≤ ((2 * M : ℝ≥0) : ℝ) := by
     intro x hx y hy
     rw [dist_eq_norm]
     push_cast
     linarith [norm_sub_le (g x) (g y), hval x hx, hval y hy]
-  refine (HolderOnWith.of_le_of_dist_le hnear hfar hα hδ).mono_const ?_
+  refine (HolderOnWith.of_le_of_dist_le (K := L * C₀) (β := 1) (fun x hx y hy hxy ↦ ?_) hfar hα
+    hδ).mono_const ?_
+  · rw [NNReal.coe_one, Real.rpow_one, NNReal.coe_mul, mul_comm (L : ℝ)]
+    exact hnear hdiff hder x hx y hy hxy
   rw [← NNReal.coe_le_coe]
   push_cast
   nlinarith [mul_nonneg (mul_nonneg M.coe_nonneg C₀.coe_nonneg)
       (Real.rpow_nonneg δ.coe_nonneg (1 - (α : ℝ))),
     mul_nonneg L.coe_nonneg (Real.rpow_nonneg δ.coe_nonneg (-(α : ℝ)))]
 
+/-- **Interpolation inequality for the Hessian on a bounded Lipschitz domain.** There is a
+constant `C`, depending only on `Ω`, such that for every `u` of class `C²` on `Ω` with `‖u‖ ≤ M`
+on `Ω` and `D²u` `α`-Hölder with constant `V` on `Ω`, and every `0 < ε ≤ 1`,
+
+`‖D²u(x)‖ ≤ C (ε⁻² M + ε^α V)` for every `x ∈ Ω`.
+
+Compare `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn`, the same bound at the centre of
+a ball contained in the set: by the interior corkscrew condition
+(`Set.IsLipschitzDomain.exists_closedBall_subset_inter_ball`), the ball `B(x, ε)` contains a ball in
+`Ω` of radius comparable to `ε`, and the Hölder bound on `D²u` carries the estimate at its centre
+back to `x`. -/
+theorem exists_norm_iteratedFDeriv_two_le {Ω : Set E} (hΩ : Ω.IsLipschitzDomain E')
+    (hb : Bornology.IsBounded Ω) :
+    ∃ C : ℝ≥0, ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {u : E → F}
+      {α M V : ℝ≥0}, ContDiffOn ℝ 2 u Ω → (∀ x ∈ Ω, ‖u x‖ ≤ M) →
+        HolderOnWith V α (iteratedFDeriv ℝ 2 u) Ω → ∀ {ε : ℝ}, 0 < ε → ε ≤ 1 → ∀ x ∈ Ω,
+          ‖iteratedFDeriv ℝ 2 u x‖ ≤ C * (M / ε ^ 2 + V * ε ^ (α : ℝ)) := by
+  obtain ⟨c, hc0, hc1, hball⟩ :=
+    hΩ.exists_closedBall_subset_inter_ball hb.isCompact_frontier one_pos
+  refine ⟨⟨8 / c ^ 2 + 4, by positivity⟩, fun {F} _ _ u α M V hu hM hV ε hε hε1 x hx ↦ ?_⟩
+  obtain ⟨y, hy⟩ := hball x (subset_closure hx) ε hε hε1
+  have hyΩ : y ∈ Ω ∩ ball x ε := hy (mem_closedBall_self (by positivity))
+  -- The interior interpolation inequality at the centre `y`, on a ball of radius `2 (c ε / 2)`.
+  have hy2 := HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn hΩ.isOpen hu subset_rfl hV
+    (fun z hz ↦ hM z hz) (ε := c * ε / 2) (by positivity)
+    (by rw [mul_div_cancel₀ _ two_ne_zero]; exact hy.trans inter_subset_left)
+  -- The Hölder bound on `D²u` between `x` and `y`.
+  have hxy : ‖iteratedFDeriv ℝ 2 u x - iteratedFDeriv ℝ 2 u y‖ ≤ V * ε ^ (α : ℝ) := by
+    rw [← dist_eq_norm]
+    exact (hV.dist_le hx hyΩ.1).trans (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg
+      (by simpa [dist_comm] using (mem_ball.1 hyΩ.2).le) α.coe_nonneg) V.coe_nonneg)
+  have hpow : (c * ε / 2) ^ (α : ℝ) ≤ ε ^ (α : ℝ) :=
+    Real.rpow_le_rpow (by positivity) (by nlinarith) α.coe_nonneg
+  have hM2 : 2 * (M : ℝ) / (c * ε / 2) ^ 2 = 8 / c ^ 2 * (M / ε ^ 2) := by
+    field_simp
+    ring
+  have hε2 : 0 ≤ (M : ℝ) / ε ^ 2 := by positivity
+  have hεα : 0 ≤ (V : ℝ) * ε ^ (α : ℝ) := by positivity
+  calc ‖iteratedFDeriv ℝ 2 u x‖
+      ≤ ‖iteratedFDeriv ℝ 2 u y‖ + ‖iteratedFDeriv ℝ 2 u x - iteratedFDeriv ℝ 2 u y‖ :=
+        norm_le_norm_add_norm_sub' _ _
+    _ ≤ 8 / c ^ 2 * (M / ε ^ 2) + 3 * V * ε ^ (α : ℝ) + V * ε ^ (α : ℝ) := by
+        rw [← hM2]
+        nlinarith [mul_le_mul_of_nonneg_left hpow V.coe_nonneg]
+    _ ≤ (8 / c ^ 2 + 4) * (M / ε ^ 2 + V * ε ^ (α : ℝ)) := by
+        nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ 8 / c ^ 2) hεα]
+
+/-- **Interpolation inequality for the gradient on a bounded Lipschitz domain.** There is a
+constant `C`, depending only on `Ω`, such that for every `u` of class `C²` on `Ω` with `‖u‖ ≤ M`
+on `Ω` and `D²u` `α`-Hölder with constant `V` on `Ω`, and every `0 < ε ≤ 1`,
+
+`‖Du(x)‖ ≤ C (ε⁻¹ M + ε^(1 + α) V)` for every `x ∈ Ω`.
+
+Compare `HolderOnWith.norm_fderiv_le_of_contDiffOn`, the same bound at the centre of a ball
+contained in the set. Here the bound at the centre `y` of a ball in `Ω ∩ B(x, ε)`
+(`Set.IsLipschitzDomain.exists_closedBall_subset_inter_ball`) is carried back to `x` along a chain
+of segments in `Ω` of length comparable to `‖x - y‖`
+(`Set.IsLipschitzDomain.exists_dist_le_of_norm_fderiv_le`), on which `‖D²u‖` is bounded by
+`Set.IsLipschitzDomain.exists_norm_iteratedFDeriv_two_le`. -/
+theorem exists_norm_fderiv_le {Ω : Set E} (hΩ : Ω.IsLipschitzDomain E')
+    (hb : Bornology.IsBounded Ω) :
+    ∃ C : ℝ≥0, ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {u : E → F}
+      {α M V : ℝ≥0}, ContDiffOn ℝ 2 u Ω → (∀ x ∈ Ω, ‖u x‖ ≤ M) →
+        HolderOnWith V α (iteratedFDeriv ℝ 2 u) Ω → ∀ {ε : ℝ}, 0 < ε → ε ≤ 1 → ∀ x ∈ Ω,
+          ‖fderiv ℝ u x‖ ≤ C * (M / ε + V * ε ^ (1 + (α : ℝ))) := by
+  obtain ⟨C₂, hC₂⟩ := hΩ.exists_norm_iteratedFDeriv_two_le hb
+  obtain ⟨c, hc0, hc1, hball⟩ :=
+    hΩ.exists_closedBall_subset_inter_ball hb.isCompact_frontier one_pos
+  obtain ⟨C₀, δ₀, hδ₀, hlip⟩ := hΩ.exists_dist_le_of_norm_fderiv_le hb
+  set ρ : ℝ := min (δ₀ : ℝ) 1
+  have hρ0 : 0 < ρ := lt_min hδ₀ one_pos
+  refine ⟨⟨1 / (c * ρ) + 1 + C₂ * C₀, by positivity⟩,
+    fun {F} _ _ u α M V hu hM hV ε hε hε1 x hx ↦ ?_⟩
+  obtain ⟨y, hy⟩ := hball x (subset_closure hx) (ρ * ε) (by positivity)
+    (by nlinarith [min_le_right (δ₀ : ℝ) 1])
+  have hyΩ : y ∈ Ω ∩ ball x (ρ * ε) := hy (mem_closedBall_self (by positivity))
+  have hdxy : dist x y < ρ * ε := by simpa [dist_comm] using mem_ball.1 hyΩ.2
+  -- The interior interpolation inequality at the centre `y`, on a ball of radius `c ρ ε`.
+  have hy1 := HolderOnWith.norm_fderiv_le_of_contDiffOn hΩ.isOpen hu subset_rfl hV
+    (fun z hz ↦ hM z hz) (by positivity) (hy.trans inter_subset_left)
+  -- The Hessian bound at scale `ε` on all of `Ω`, and the mean value inequality along a chain.
+  have hD2 : ∀ z ∈ Ω, ‖fderiv ℝ (fderiv ℝ u) z‖ ≤ C₂ * (M / ε ^ 2 + V * ε ^ (α : ℝ)) :=
+    fun z hz ↦ by
+      rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+      exact hC₂ hu hM hV hε hε1 z hz
+  have hmv := hlip (fun z hz ↦
+      ((hu.contDiffAt (hΩ.isOpen.mem_nhds hz)).hasFDerivAt_fderiv le_rfl).differentiableAt)
+    hD2 x hx y hyΩ.1 (hdxy.trans_le (by nlinarith [min_le_left (δ₀ : ℝ) 1]))
+  -- Collect the three terms.
+  have hcρ : c * ρ ≤ 1 := by nlinarith [min_le_right (δ₀ : ℝ) 1]
+  have hpow : (c * (ρ * ε)) ^ (1 + (α : ℝ)) ≤ ε ^ (1 + (α : ℝ)) :=
+    Real.rpow_le_rpow (by positivity) (by nlinarith [mul_le_mul_of_nonneg_right hcρ hε.le])
+      (by positivity)
+  have hM1 : (M : ℝ) / (c * (ρ * ε)) = 1 / (c * ρ) * (M / ε) := by field_simp
+  have hexp : (M / ε ^ 2 + V * ε ^ (α : ℝ)) * ε = M / ε + V * ε ^ (1 + (α : ℝ)) := by
+    rw [Real.rpow_add hε, Real.rpow_one]
+    field_simp
+  have hle : dist x y ≤ ε := hdxy.le.trans (by nlinarith [min_le_right (δ₀ : ℝ) 1])
+  have hxy : ‖fderiv ℝ u x - fderiv ℝ u y‖ ≤ C₂ * C₀ * (M / ε + V * ε ^ (1 + (α : ℝ))) := by
+    rw [← dist_eq_norm, ← hexp]
+    calc _ ≤ C₀ * (C₂ * (M / ε ^ 2 + V * ε ^ (α : ℝ))) * dist x y := hmv
+      _ ≤ C₀ * (C₂ * (M / ε ^ 2 + V * ε ^ (α : ℝ))) * ε := by gcongr
+      _ = _ := by ring
+  calc ‖fderiv ℝ u x‖
+      ≤ ‖fderiv ℝ u y‖ + ‖fderiv ℝ u x - fderiv ℝ u y‖ := norm_le_norm_add_norm_sub' _ _
+    _ ≤ 1 / (c * ρ) * (M / ε) + V * ε ^ (1 + (α : ℝ)) +
+          C₂ * C₀ * (M / ε + V * ε ^ (1 + (α : ℝ))) := by
+        rw [← hM1]
+        nlinarith [mul_le_mul_of_nonneg_left hpow V.coe_nonneg]
+    _ ≤ (1 / (c * ρ) + 1 + C₂ * C₀) * (M / ε + V * ε ^ (1 + (α : ℝ))) := by
+        nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ 1 / (c * ρ))
+          (by positivity : (0 : ℝ) ≤ V * ε ^ (1 + (α : ℝ))),
+          (by positivity : (0 : ℝ) ≤ M / ε)]
+
 end Set.IsLipschitzDomain
+
+namespace Set.HasLipschitzGraphBoundary
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [ProperSpace F]
+
+/-- On a bounded set `Ω` with Lipschitz graph boundary in a real inner product space of dimension
+`n + 1`, and for `α ≤ 1`, there is a constant `C`, depending only on `Ω` and `α`, such that every
+`φ` that is `C²` at each point of `Ω` with `‖φ‖`, `‖Dφ‖` and `‖D²φ‖` bounded by `N` on `Ω` has `φ`
+and `Dφ` `α`-Hölder on `Ω` with constant `C N`. Such a set is a Lipschitz domain
+(`Set.HasLipschitzGraphBoundary.isLipschitzDomain`), so this is
+`Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le` applied to `φ` and `Dφ`. -/
+theorem exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le {n : ℕ}
+    (hF : Module.finrank ℝ F = n + 1) {Ω : Set F} (hbdry : Ω.HasLipschitzGraphBoundary)
+    (hΩ : Bornology.IsBounded Ω) (hα1 : α ≤ 1) :
+    ∃ C : ℝ≥0, ∀ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {φ : F → G} {N : ℝ≥0},
+      (∀ z ∈ Ω, ContDiffAt ℝ 2 φ z) → (∀ z ∈ Ω, ‖φ z‖ ≤ N) →
+      (∀ z ∈ Ω, ‖fderiv ℝ φ z‖ ≤ N) → (∀ z ∈ Ω, ‖iteratedFDeriv ℝ 2 φ z‖ ≤ N) →
+      HolderOnWith (C * N) α φ Ω ∧ HolderOnWith (C * N) α (fderiv ℝ φ) Ω := by
+  have hΩL := hbdry.isLipschitzDomain hF
+  -- Two instances of the Hölder bound, as `φ` and `Dφ` take values in different universes.
+  obtain ⟨C₀, hC₀⟩ := hΩL.exists_holderOnWith_of_norm_fderiv_le hΩ hα1
+  obtain ⟨C₁, hC₁⟩ := hΩL.exists_holderOnWith_of_norm_fderiv_le hΩ hα1
+  refine ⟨2 * (C₀ + C₁), fun {G} _ _ φ N hcd h0 h1 h2 => ?_⟩
+  have hle (C : ℝ≥0) (hC : C ≤ C₀ + C₁) : C * (N + N) ≤ 2 * (C₀ + C₁) * N := by
+    calc C * (N + N) ≤ (C₀ + C₁) * (N + N) := by gcongr
+      _ = 2 * (C₀ + C₁) * N := by ring
+  constructor
+  · exact (hC₀ (fun z hz => (hcd z hz).differentiableAt (by norm_num)) h0 h1).mono_const
+      (hle C₀ le_self_add)
+  · refine (hC₁ (fun z hz => ((hcd z hz).fderiv_right (m := 1) (by norm_num)).differentiableAt
+      (by norm_num)) h1 fun z hz => ?_).mono_const (hle C₁ le_add_self)
+    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+    exact h2 z hz
+
+end Set.HasLipschitzGraphBoundary
 
 namespace TauCeti
 

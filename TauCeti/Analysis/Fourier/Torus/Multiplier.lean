@@ -40,9 +40,10 @@ are shown to converge.
 * `TauCeti.UnitAddTorus.norm_fourierMultiplier`: `‖T_m‖ = ‖m‖`.
 * `TauCeti.UnitAddTorus.fourierMultiplier_injective`: the symbol is determined by the operator.
 * `TauCeti.UnitAddTorus.hasSum_fourierMultiplier`: the Fourier series of `T_m f`.
+* `TauCeti.UnitAddTorus.isSelfAdjoint_fourierMultiplier`: a multiplier with a real symbol is
+  self-adjoint.
 * `TauCeti.UnitAddTorus.hasSum_norm_sq_mFourierCoeff`: Parseval's identity
   `‖f‖² = ∑ₙ ‖f̂(n)‖²` in `L²(𝕋ᵈ)`.
-* `TauCeti.UnitAddTorus.norm_mFourierCoeff_le_norm`: `‖f̂(n)‖ ≤ ‖f‖` in `L²(𝕋ᵈ)`.
 * `TauCeti.UnitAddTorus.tendsto_fourierMultiplier_apply`: strong continuity in the symbol.
 
 ## References
@@ -80,13 +81,6 @@ theorem hasSum_norm_sq_mFourierCoeff (f : L²(UnitAddTorus d)) :
     mFourierBasis_repr] at h
   exact h
 
-/-- Every Fourier coefficient of `f ∈ L²(𝕋ᵈ)` is bounded by the `L²` norm of `f`, by Parseval's
-identity. -/
-theorem norm_mFourierCoeff_le_norm (f : L²(UnitAddTorus d)) (n : d → ℤ) :
-    ‖mFourierCoeff f n‖ ≤ ‖f‖ :=
-  (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1
-    (le_hasSum (hasSum_norm_sq_mFourierCoeff f) n fun _ _ ↦ sq_nonneg _)
-
 /-- The **Fourier multiplier** on `L²(𝕋ᵈ)` with bounded symbol `m : ℤᵈ → ℂ`: the operator
 multiplying the `n`-th Fourier coefficient by `m n`. It is the diagonal operator with entries `m` in
 the Fourier basis `mFourierBasis`, and `m ↦ T_m` is a unital algebra homomorphism from
@@ -119,6 +113,12 @@ theorem fourierMultiplier_mFourierLp (m : ℓ^∞(d → ℤ, ℂ)) (n : d → �
 theorem hasSum_fourierMultiplier (m : ℓ^∞(d → ℤ, ℂ)) (f : L²(UnitAddTorus d)) :
     HasSum (fun n ↦ (m n * mFourierCoeff f n) • mFourierLp 2 n) (fourierMultiplier m f) := by
   simpa using hasSum_mFourier_series_L2 (fourierMultiplier m f)
+
+/-- A Fourier multiplier with a self-adjoint, that is real, symbol is self-adjoint:
+`⟪T_m a, b⟫ = ⟪a, T_m b⟫`. -/
+theorem isSelfAdjoint_fourierMultiplier {m : ℓ^∞(d → ℤ, ℂ)} (hm : IsSelfAdjoint m) :
+    IsSelfAdjoint (fourierMultiplier m) :=
+  mFourierBasis.isSelfAdjoint_diagonal hm
 
 /-- The operator norm of a Fourier multiplier is the supremum norm of its symbol. -/
 @[simp]

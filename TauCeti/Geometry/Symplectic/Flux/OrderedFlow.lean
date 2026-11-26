@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.OrderedFlow
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.PathClass
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Stabilizer
 public import TauCeti.Geometry.Symplectic.Flux.Flow
 public import TauCeti.Geometry.Symplectic.Flux.Trans
@@ -50,10 +51,11 @@ the corrected isotopy `ψ_t⁻¹ ∘ φ_t` is at every time the Hamiltonian vect
 function
 (`Diffeotopy.exists_isHamiltonianVectorField_velocity_trans_symm_orderedGlobalFlowDiffeotopy`).
 If the flux of `φ` vanishes and the classes
-`[ι_(Y i) σ]` are linearly independent, every total time `A i 1` vanishes. Then `ψ` is a loop,
-and it contracts to the constant diffeotopy relative to both time ends through maps preserving
+`[ι_(Y i) σ]` are linearly independent, every total time `A i 1` vanishes
+(`TauCeti.Diffeotopy.apply_one_eq_zero_of_flux_orderedGlobalFlowDiffeotopy_eq_zero`). Then `ψ` is a
+loop, and it contracts to the constant diffeotopy relative to both time ends through maps preserving
 `σ`, by scaling all the time functions by `1 - s`
-(`TauCeti.Diffeotopy.exists_homotopy_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer`).
+(`TauCeti.Diffeotopy.homotopicWith_orderedGlobalFlowDiffeotopy_refl`).
 
 ## Main results
 
@@ -62,9 +64,10 @@ and it contracts to the constant diffeotopy relative to both time ends through m
 * `TauCeti.exists_mem_diffeomorphStabilizer_coe_eq_orderedFlowOf`: every ordered flow
   of complete symplectic fields preserves `σ`.
 * `TauCeti.Diffeotopy.flux_orderedGlobalFlowDiffeotopy`: the flux of an ordered symplectic flow.
-* `TauCeti.Diffeotopy.exists_homotopy_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer`: an
-  ordered symplectic flow with vanishing total times contracts relative to both time ends through
-  maps preserving `σ`.
+* `TauCeti.Diffeotopy.apply_one_eq_zero_of_flux_orderedGlobalFlowDiffeotopy_eq_zero`: an ordered
+  flow of fields with linearly independent classes and zero flux has vanishing total times.
+* `TauCeti.Diffeotopy.homotopicWith_orderedGlobalFlowDiffeotopy_refl`: an ordered symplectic flow
+  with vanishing total times contracts relative to both time ends through maps preserving `σ`.
 * `TauCeti.Diffeotopy.exists_isHamiltonianVectorField_velocity_orderedGlobalFlowDiffeotopy_sub`:
   the instantaneous contraction classes of an ordered symplectic flow.
 * `Diffeotopy.exists_isHamiltonianVectorField_velocity_trans_symm_orderedGlobalFlowDiffeotopy`:
@@ -164,28 +167,41 @@ theorem flux_orderedGlobalFlowDiffeotopy (σ : closedForms I M 2)
         (timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer hσ (hY 0) (hc 0) _ _ _)),
       flux_globalFlowDiffeotopyAlong, ih (Y := fun i ↦ Y i.succ) (fun i ↦ hY i.succ)]
 
+/-- **Ordered symplectic flows of zero flux have vanishing total times.** For a closed two-form
+`σ`, complete smooth symplectic vector fields `Y i` whose classes `[ι_(Y i) σ]` are linearly
+independent, and smooth time functions `A i` with `A i 0 = 0`, if the ordered flow
+`ψ_t = ψ^(Y 0)_(A 0 t) ∘ ⋯ ∘ ψ^(Y (k-1))_(A (k-1) t)` has zero flux, then every total time `A i 1`
+vanishes. -/
+theorem apply_one_eq_zero_of_flux_orderedGlobalFlowDiffeotopy_eq_zero (σ : closedForms I M 2)
+    {Y : Fin k → Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯}
+    (hY : ∀ i, Y i ∈ SmoothTwoForm.symplecticVectorFields σ.val)
+    (hc : ∀ i, IsCompleteVectorField (Y i)) (A : Fin k → ℝ → ℝ) (hA : ∀ i, ContDiff ℝ ∞ (A i))
+    (hA₀ : ∀ i, A i 0 = 0)
+    (hli : LinearIndependent ℝ fun i ↦ SmoothTwoForm.interiorClass σ.val ⟨Y i, hY i⟩)
+    (hΦ : (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A hA
+      hA₀).final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A hA
+      hA₀).flux σ hΦ = 0) (i : Fin k) :
+    A i 1 = 0 :=
+  Fintype.linearIndependent_iff.1 hli _
+    ((flux_orderedGlobalFlowDiffeotopy σ hY hc A hA hA₀ hΦ).symm.trans h) i
+
 /-- **Ordered symplectic flows with vanishing total times contract symplectically.** For a closed
 two-form `σ`, complete smooth symplectic vector fields `Y i` and smooth time functions `A i` with
 `A i 0 = 0 = A i 1`, the ordered flow `ψ_t = ψ^(Y 0)_(A 0 t) ∘ ⋯ ∘ ψ^(Y (k-1))_(A (k-1) t)` is a
 loop, and it is homotopic to the constant diffeotopy relative to both time ends through maps
-preserving `σ`: there is a smooth `G` with `G (·, 0)` the motion of `ψ`, `G (·, 1)` the constant
-motion, `G ((x, 0), s) = G ((x, 1), s) = x`, and every map `x ↦ G ((x, t), s)` preserving `σ`. -/
-theorem exists_homotopy_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer
+preserving `σ`: the intermediate maps are the ordered flows for the scaled times `(1 - s) A i t`. -/
+theorem homotopicWith_orderedGlobalFlowDiffeotopy_refl
     {σ : SmoothTwoForm I M} (hσ : σ.IsClosed) {Y : Fin k → Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯}
     (hY : ∀ i, Y i ∈ σ.symplecticVectorFields) (hc : ∀ i, IsCompleteVectorField (Y i))
     (A : Fin k → ℝ → ℝ) (hA : ∀ i, ContDiff ℝ ∞ (A i)) (hA₀ : ∀ i, A i 0 = 0)
     (h₁ : ∀ i, A i 1 = 0) :
-    ∃ G : (M × unitInterval) × unitInterval → M,
-      ContMDiff ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) I ∞ G ∧
-      (∀ p, G (p, 0) = (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i)
-        (fun i ↦ (Y i).contMDiff) hc A hA hA₀).cylinderMap p) ∧
-      (∀ p, G (p, 1) = p.1) ∧ (∀ x s, G ((x, 0), s) = x) ∧ (∀ x s, G ((x, 1), s) = x) ∧
-      ∀ t s, ∃ f ∈ SmoothForm.diffeomorphStabilizer σ, ⇑f = fun x ↦ G ((x, t), s) := by
-  obtain ⟨G, hG, hG₀, hG₁, h₀, h₁', hslice⟩ :=
-    exists_homotopy_orderedGlobalFlowDiffeotopy le_top _ _ hc A hA hA₀ h₁
-  refine ⟨G, hG, hG₀, hG₁, h₀, h₁', fun t s ↦ ?_⟩
-  rw [hslice t s]
-  exact exists_mem_diffeomorphStabilizer_coe_eq_orderedFlowOf hσ hY hc _
+    HomotopicWith (SmoothForm.diffeomorphStabilizer σ)
+      (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A hA hA₀)
+      (refl I ∞ M) :=
+  homotopicWith_iff.2 ⟨_, _, isHomotopy_orderedGlobalFlowDiffeotopy_refl le_top _ _ hc A hA hA₀ h₁,
+    fun t s ↦ exists_mem_diffeomorphStabilizer_coe_eq_orderedFlowOf hσ hY hc
+      (fun i ↦ (1 - (s : ℝ)) * A i t)⟩
 
 /-- **The velocity field of an ordered symplectic flow.** For a closed two-form `σ`, complete
 smooth symplectic vector fields `Y i` and smooth time functions `A i` with `A i 0 = 0`, the

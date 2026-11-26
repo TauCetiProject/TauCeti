@@ -70,7 +70,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   fixing the normal closure of `L` in `Kˢ`, with no embedding chosen.
 * `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
   `Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K` between Mathlib's absolute Galois
-  groups, `galoisSubgroupEquiv K L σ` followed by the inclusion of `galoisSubgroup K L σ`.
+  groups, `galoisSubgroupEquiv K L σ` followed by the inclusion of `galoisSubgroup K L σ`;
+  `TauCeti.continuousAbsoluteGaloisGroupExtend K L σ` bundles it as `G_L →ₜ* G_K`.
 * `TauCeti.absoluteGaloisGroupExtendEquiv K L σ hU`: for a subgroup `U` of
   `Field.absoluteGaloisGroup K` that is the image of `absoluteGaloisGroupExtend K L σ`, the
   isomorphism of topological groups `Field.absoluteGaloisGroup L ≃ₜ* U`.
@@ -280,6 +281,27 @@ theorem continuous_absoluteGaloisGroupExtend : Continuous (absoluteGaloisGroupEx
       (galoisSubgroupEquiv K L σ).continuous_toFun.comp
         (absoluteGaloisGroupRestrictEquiv L).continuous_toFun
 
+/-- **The absolute Galois group of a finite extension inside that of `K`**, as a continuous
+homomorphism `G_L →ₜ* G_K` along a `K`-embedding `σ : L →ₐ[K] Kˢ`
+(`TauCeti.absoluteGaloisGroupExtend`). -/
+def continuousAbsoluteGaloisGroupExtend :
+    Field.absoluteGaloisGroup L →ₜ* Field.absoluteGaloisGroup K :=
+  ⟨absoluteGaloisGroupExtend K L σ, continuous_absoluteGaloisGroupExtend K L σ⟩
+
+/-- `continuousAbsoluteGaloisGroupExtend` is `absoluteGaloisGroupExtend`. -/
+@[simp]
+theorem continuousAbsoluteGaloisGroupExtend_apply (τ : Field.absoluteGaloisGroup L) :
+    continuousAbsoluteGaloisGroupExtend K L σ τ = absoluteGaloisGroupExtend K L σ τ :=
+  (rfl)
+
+/-- `continuousAbsoluteGaloisGroupExtend`, as a homomorphism, is `absoluteGaloisGroupExtend`. -/
+@[simp]
+theorem coe_continuousAbsoluteGaloisGroupExtend :
+    (continuousAbsoluteGaloisGroupExtend K L σ :
+        Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K) =
+      absoluteGaloisGroupExtend K L σ :=
+  (rfl)
+
 /-- The map `G_L → G_K` induced by an embedding of a finite extension is injective. -/
 theorem injective_absoluteGaloisGroupExtend :
     Function.Injective (absoluteGaloisGroupExtend K L σ) :=
@@ -328,9 +350,9 @@ continuous injection from a compact group to a Hausdorff one. -/
 def absoluteGaloisGroupExtendEquiv {U : Subgroup (Field.absoluteGaloisGroup K)}
     (hU : (absoluteGaloisGroupExtend K L σ).range = U) : Field.absoluteGaloisGroup L ≃ₜ* U :=
   haveI : T2Space (Field.absoluteGaloisGroup K) := krullTopology_t2
-  let f : Field.absoluteGaloisGroup L →ₜ* Field.absoluteGaloisGroup K :=
-    ⟨absoluteGaloisGroupExtend K L σ, continuous_absoluteGaloisGroupExtend K L σ⟩
-  have hf : (f : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K).range = U := hU
+  let f := continuousAbsoluteGaloisGroupExtend K L σ
+  have hf : (f : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K).range = U := by
+    rw [coe_continuousAbsoluteGaloisGroupExtend, hU]
   hf ▸ f.equivRangeOfIsEmbedding ((continuous_absoluteGaloisGroupExtend K L σ).isClosedEmbedding
     (injective_absoluteGaloisGroupExtend K L σ)).isEmbedding
 

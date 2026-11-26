@@ -159,6 +159,11 @@ theorem mk_zero {b : B} (p : P b) : mk G p (0 : F) = 0 := by
   -- `instAddCommGroup` uses the model zero as the fibre zero.
   rfl
 
+/-- Classes in a fixed principal frame respect negation. -/
+@[simp]
+theorem mk_neg {b : B} (p : P b) (v : F) : mk G p (-v) = -mk G p v :=
+  eq_neg_of_add_eq_zero_left (by rw [← mk_add, neg_add_cancel, mk_zero])
+
 /-- Changing a principal frame transforms the vector coordinate by the division element. -/
 @[simp]
 theorem mkContinuousLinearEquiv_symm_apply_mk {b : B} (p q : P b) (v : F) :
@@ -207,6 +212,13 @@ theorem finrank_eq (b : B) : Module.finrank 𝕜 (AssociatedBundle G P F b) = Mo
 instance instFiniteDimensional [FiniteDimensional 𝕜 F] (b : B) :
     FiniteDimensional 𝕜 (AssociatedBundle G P F b) :=
   (mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).toLinearEquiv.finiteDimensional
+
+/-- The associated fibers of a finite-dimensional model carry the module topology, the finest
+topology making addition and scalar multiplication continuous. -/
+instance instIsModuleTopology [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] (b : B) :
+    IsModuleTopology 𝕜 (AssociatedBundle G P F b) :=
+  haveI := FiberBundle.t2Space F (AssociatedBundle G P F) b
+  isModuleTopologyOfFiniteDimensional
 
 section AlternatingMap
 

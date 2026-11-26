@@ -32,7 +32,9 @@ nonzero algebraic integer with bounded conjugates bounds such a sum of prime log
 * `NumberField.RingOfIntegers.one_le_abs_norm`: `1 ≤ |N(α)|` for every nonzero `α : 𝓞 K`.
 * `NumberField.RingOfIntegers.dvd_natAbs_norm`: every `α : 𝓞 K` divides `|N(α)|`.
 * `NumberField.RingOfIntegers.intCast_dvd_intCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℤ`.
-* `NumberField.RingOfIntegers.natCast_dvd_natCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℕ`.
+* `NumberField.RingOfIntegers.natCast_dvd_natCast`,
+  `NumberField.RingOfIntegers.span_natCast_eq_span_natCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` and
+  `Ideal.span {(m : 𝓞 K)} = Ideal.span {(n : 𝓞 K)} ↔ m = n` for `m n : ℕ`.
 * `NumberField.RingOfIntegers.isUnit_intCast`, `NumberField.RingOfIntegers.isUnit_natCast`,
   `NumberField.RingOfIntegers.isUnit_natCast_iff`: `IsUnit (m : 𝓞 K) ↔ IsUnit m` for `m : ℤ` or
   `m : ℕ` (and `↔ m = 1` for `m : ℕ`).
@@ -84,6 +86,14 @@ theorem intCast_dvd_intCast {m n : ℤ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m �
 @[simp, norm_cast]
 theorem natCast_dvd_natCast {m n : ℕ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m ∣ n := by
   simpa using (intCast_dvd_intCast (K := K) (m := m) (n := n)).trans Int.natCast_dvd_natCast
+
+/-- Natural numbers generate equal ideals in `𝓞 K` if and only if they are equal. -/
+@[simp]
+theorem span_natCast_eq_span_natCast {m n : ℕ} :
+    Ideal.span {(m : 𝓞 K)} = Ideal.span {(n : 𝓞 K)} ↔ m = n := by
+  rw [le_antisymm_iff, Ideal.span_singleton_le_span_singleton,
+    Ideal.span_singleton_le_span_singleton, natCast_dvd_natCast, natCast_dvd_natCast,
+    and_comm, Nat.dvd_antisymm_iff]
 
 /-- A rational integer is a unit in `𝓞 K` if and only if it is a unit in `ℤ`. -/
 @[simp, norm_cast]

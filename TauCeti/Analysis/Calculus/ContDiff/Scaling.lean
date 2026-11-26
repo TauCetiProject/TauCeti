@@ -17,10 +17,16 @@ the corresponding derivative of the cutoff error. No regularity of `χ` is assum
 Including order zero, the same hypotheses give a uniform bound `B + ‖c‖` after subtracting
 an arbitrary constant `c`.
 
-This estimate is shared by the Sobolev and Schwartz-space cutoff approximations. It is
+The `B / R` estimate is shared by the Sobolev and Schwartz-space cutoff approximations. It is
 extracted from the derivative scaling argument in
 `TauCeti/Analysis/Distribution/SchwartzSpace/Cutoff.lean`, using
 `ContinuousLinearEquiv.norm_iteratedFDeriv_comp_right_le`.
+
+Measured in units of a scale `h > 0`, the derivatives of a function placed at scale `h` about a
+centre `x` are those of the function itself:
+`h ^ i * ‖Dⁱ (χ (h⁻¹ • (· - x))) y‖ = ‖Dⁱ χ (h⁻¹ • (y - x))‖`
+(`TauCeti.pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub`). This identity is used for changes of
+chart in the semiclassical Sobolev norms.
 -/
 
 public section
@@ -64,5 +70,15 @@ theorem norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm {χ : E → F} {
   · exact (norm_iteratedFDeriv_comp_inv_smul_sub_const_le hi hB hR c x).trans
       ((div_le_self ((norm_nonneg _).trans (hB 0)) hR).trans (le_add_of_nonneg_right
         (norm_nonneg c)))
+
+/-- Measured in units of a scale `h > 0`, the `i`-th derivative of a function placed at scale `h`
+about a centre `x`, `y ↦ χ (h⁻¹ • (y - x))`, has the norm of the `i`-th derivative of `χ` at the
+corresponding point. No regularity of `χ` is assumed. -/
+theorem pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub (χ : E → F) {h : ℝ} (hh : 0 < h) (x : E)
+    (i : ℕ) (y : E) :
+    h ^ i * ‖iteratedFDeriv ℝ i (fun y ↦ χ (h⁻¹ • (y - x))) y‖ =
+      ‖iteratedFDeriv ℝ i χ (h⁻¹ • (y - x))‖ := by
+  rw [iteratedFDeriv_comp_sub (f := fun w ↦ χ (h⁻¹ • w)), norm_iteratedFDeriv_comp_const_smul]
+  simp [abs_of_pos hh, hh.ne']
 
 end TauCeti
