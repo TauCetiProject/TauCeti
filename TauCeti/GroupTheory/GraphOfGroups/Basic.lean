@@ -135,6 +135,14 @@ theorem cast_ω_eq_α {e e' : Γ.E} (he : e' = Γ.rev e) (h₁ : Γ.tgt e' = Γ.
   rw [ω_rev_apply]
   simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
 
+/-- `α` commutes with transport along an equality of darts `e = e'`, read through the
+identifications of the edge groups and of the vertex groups at the sources. -/
+theorem cast_α {e e' : Γ.E} (h : e = e') (d : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
+    MulEquiv.cast (M := fun e => 𝔸.vertexGroup (Γ.src e)) h (𝔸.α e d) =
+      𝔸.α e' (MulEquiv.cast (M := 𝔸.edgeGroup) (congrArg Γ.toGeomEdge h) d) := by
+  subst h
+  simp only [MulEquiv.cast_apply, cast_eq]
+
 section Arrow
 
 variable {a b : Γ.V}

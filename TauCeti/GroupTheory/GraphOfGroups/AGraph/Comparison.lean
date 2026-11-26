@@ -49,15 +49,11 @@ definition. The morphism of graphs of groups defined by the pullback is the comp
 `AGraph.toHom` for `B'` with the morphism given by `φ`, the identities of the vertex groups and
 trivial twisting elements, so the pullback's `ν` factors through `π₁(𝔹', u₀')` (`π₁.map_map`).
 
-This file ports the comparison development of Tau Ceti PR #39438 (see the references), whose files
-under `AGraph/` were left out when it was merged. The port replaces its hand-made letter map
-`pathMap`/`letterPath` by the morphism of graphs of groups `AGraph.toHom` and its path map.
-
 ## References
 
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
   Internat. J. Algebra Comput. 15 (2005), §4, Proposition 4.15.
-* The Lean development ported here:
+* The comparison was first formalised in
   [Tau Ceti PR #39438](https://github.com/TauCetiProject/TauCeti/pull/39438), accepted at head
   `69d53542b6`.
 -/

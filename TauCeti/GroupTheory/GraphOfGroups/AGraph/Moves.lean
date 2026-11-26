@@ -67,8 +67,7 @@ and `1` elsewhere.
   and Lemma 4.16.
 * The moves and their preservation theorems were first formalised in
   [Tau Ceti PR #39438](https://github.com/TauCetiProject/TauCeti/pull/39438), accepted at head
-  `69d53542b6`, whose files under `AGraph/` were left out when it was merged; this file ports them
-  to `AGraph.toHom`.
+  `69d53542b6`.
 -/
 
 public section
@@ -200,8 +199,7 @@ base vertex, read in `π₁(𝔸, v₀)`, normalizes it. -/
 theorem subgroup_conj_eq_self_iff : (B.conj g).subgroup = B.subgroup ↔
     MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.vertexHom Quiver.Path.nil (g B.base)) ∈
       Subgroup.normalizer (B.subgroup : Set (π₁ 𝔸 v₀)) := by
-  rw [subgroup_conj, Subgroup.mem_normalizer_iff_map_conj_eq]
-  rfl
+  rw [subgroup_conj, Subgroup.mem_normalizer_iff_map_conj_eq, MulEquiv.toMonoidHom_eq_coe]
 
 /-- A conjugation move whose element `g_{u₀}` at the base vertex lies in the vertex group `B_{u₀}`
 preserves the represented subgroup; this covers the moves A0 admissible with respect to the base
@@ -405,16 +403,8 @@ theorem IsFolded.bassSerre (hB : B.IsFolded) (hc : ∀ f, c (B.graph.rev f) = Mu
     rintro ⟨a', ha', c₀, h⟩
     rw [grpSrc_bassSerre] at ha'
     -- `α` of the type of `f₂`, read through the equal type of `f₁`.
-    have hα : MulEquiv.cast (M := fun e => 𝔸.vertexGroup (Γ.src e)) he
-        (𝔸.α (B.typ.mapE f₂) (c f₂)) = 𝔸.α (B.typ.mapE f₁)
-          (MulEquiv.cast (M := 𝔸.edgeGroup) (congrArg Γ.toGeomEdge he) (c f₂)) := by
-      have key : ∀ {e e' : Γ.E} (h : e = e') (d : 𝔸.edgeGroup (Γ.toGeomEdge e)),
-          MulEquiv.cast (M := fun e => 𝔸.vertexGroup (Γ.src e)) h (𝔸.α e d) =
-            𝔸.α e' (MulEquiv.cast (M := 𝔸.edgeGroup) (congrArg Γ.toGeomEdge h) d) := by
-        rintro e _ rfl d
-        simp only [MulEquiv.cast_apply, cast_eq]
-      exact key he (c f₂)
-    rw [bassSerre_labelα, bassSerre_labelα, map_mul, map_inv, hα] at h
+    rw [bassSerre_labelα, bassSerre_labelα, map_mul, map_inv,
+      𝔸.cast_α (e := B.typ.mapE f₂) (e' := B.typ.mapE f₁) he (c f₂)] at h
     refine hB.eq_of_label f₁ f₂ hs he ⟨a', ha', (c f₁)⁻¹ * c₀ *
       MulEquiv.cast (M := 𝔸.edgeGroup) (congrArg Γ.toGeomEdge he) (c f₂), ?_⟩
     rw [mul_inv_eq_iff_eq_mul.1 h, map_mul, map_mul, map_inv]

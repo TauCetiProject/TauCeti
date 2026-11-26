@@ -83,7 +83,7 @@ rank of its underlying graph plus the sum of the ranks of its vertex groups.
   Definition 4.1 and Example 4.4; §6, Definition 6.1.
 * The helpers `cast_vertexHom_nil_mem_subgroup`, `cast_mem_grp` and `rankGrp_congr` come from
   [Tau Ceti PR #39438](https://github.com/TauCetiProject/TauCeti/pull/39438), accepted at head
-  `69d53542b6`, whose files under `AGraph/` were left out when it was merged.
+  `69d53542b6`.
 -/
 
 public section
