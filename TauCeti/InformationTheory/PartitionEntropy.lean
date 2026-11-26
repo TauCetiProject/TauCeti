@@ -10,6 +10,7 @@ public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Entropy of countable measurable partitions
@@ -167,7 +168,7 @@ private theorem ofReal_negMulLog_eq_add {p q : ℝ} (hp : 0 ≤ p) (hpq : p ≤ 
   have hq0 : 0 < q := hp.trans_le hpq
   rw [← ENNReal.ofReal_mul hp.le, ← ENNReal.ofReal_add
     (mul_nonneg hp.le (neg_nonneg.mpr (log_nonpos hq0.le hq)))
-    (mul_nonneg hp.le (log_nonneg ((one_le_div hp).mpr hpq))),
+    (mul_log_div_nonneg hp.le hpq),
     log_div hq0.ne' hp.ne', negMulLog]
   ring_nf
 
