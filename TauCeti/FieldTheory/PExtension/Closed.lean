@@ -222,6 +222,12 @@ theorem IsSeparablyPClosed.mono {Q : Set ℕ} (h : IsSeparablyPClosed Q K) (hPQ 
 theorem IsPClosed.isSeparablyPClosed (h : IsPClosed P K) : IsSeparablyPClosed P K :=
   fun E hfin _ hE ↦ h E hfin hE
 
+variable (K) in
+/-- Every field is separably `∅`-closed: the only `∅`-number is `1`. -/
+@[simp]
+theorem isSeparablyPClosed_empty : IsSeparablyPClosed ∅ K :=
+  (isPClosed_empty K).isSeparablyPClosed
+
 /-- For a perfect field, for instance one of characteristic zero, being separably `P`-closed is
 the same as being `P`-closed. -/
 theorem isSeparablyPClosed_iff_isPClosed [PerfectField K] :
