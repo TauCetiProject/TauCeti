@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.BorelSpace
-public import TauCeti.MeasureTheory.Constructions.BorelSpace.Matrix.GeneralLinearGroup
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Unique
 
 /-!
 # `GL₁` of the adeles and the ideles
@@ -30,12 +30,13 @@ noncomputable example : GL (Fin 1) (AdeleRing (𝓞 F) F) ≃ₜ* IdeleGroup (�
 /-- The same map is a measurable equivalence for the Borel structures of `GL₁(𝔸_F)` and of the
 ideles. -/
 noncomputable example : GL (Fin 1) (AdeleRing (𝓞 F) F) ≃ᵐ IdeleGroup (𝓞 F) F :=
-  Matrix.GeneralLinearGroup.uniqueMeasurableEquiv _ _
+  (Matrix.GeneralLinearGroup.uniqueContinuousMulEquiv _ _).toHomeomorph.toMeasurableEquiv
 
 /-- The measurable equivalence reads off the matrix entry. -/
 example (g : GL (Fin 1) (AdeleRing (𝓞 F) F)) :
-    (Matrix.GeneralLinearGroup.uniqueMeasurableEquiv _ _ g : AdeleRing (𝓞 F) F) =
-      (g : Matrix (Fin 1) (Fin 1) (AdeleRing (𝓞 F) F)) 0 0 := by
-  simp
+    ((Matrix.GeneralLinearGroup.uniqueContinuousMulEquiv _ _).toHomeomorph.toMeasurableEquiv g :
+        AdeleRing (𝓞 F) F) =
+      (g : Matrix (Fin 1) (Fin 1) (AdeleRing (𝓞 F) F)) 0 0 :=
+  Matrix.GeneralLinearGroup.coe_uniqueContinuousMulEquiv_apply g
 
 end TauCeti.Examples
