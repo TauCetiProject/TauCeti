@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.RowLattice
 public import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
 
 /-!
@@ -91,13 +90,14 @@ theorem isLeast_length_matrixKernel (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* 
     exact (A.map ev).smul_mem_rowLattice (ev a) v
   let e₁ := IsDiscreteValuationRing.quotientEquivTorsionBySet (K := K) ha
   let eHom : (Q →ₗ[O] O ⧸ Ideal.span {ev a}) ≃ₗ[O] (Q →ₗ[O] KO) :=
-    { toFun := fun φ ↦ (Submodule.subtype _).comp (e₁.toLinearMap.comp φ)
+    (LinearEquiv.congrRight e₁).trans
+    { toFun := fun φ ↦ (Submodule.subtype _).comp φ
       map_add' := fun _ _ ↦ by ext; simp
       map_smul' := fun _ _ ↦ by ext; simp
-      invFun := fun ψ ↦ e₁.symm.toLinearMap.comp (ψ.codRestrict _ fun x ↦ by
+      invFun := fun ψ ↦ ψ.codRestrict _ fun x ↦ by
         rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff, ← map_smul,
-          h_kill, map_zero])
-      left_inv := fun φ ↦ LinearMap.ext fun x ↦ e₁.symm_apply_apply (φ x)
+          h_kill, map_zero]
+      left_inv := fun φ ↦ by ext; rfl
       right_inv := fun ψ ↦ by ext x; simp }
   rw [length_matrixKernel_eq_length_linearMap, eHom.length_eq,
     IsDiscreteValuationRing.length_linearMap_fractionRing_quotient (K := K),

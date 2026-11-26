@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Length
-import TauCeti.LinearAlgebra.Pi.Orthogonal
+public import TauCeti.LinearAlgebra.Pi.Orthogonal
 
 /-!
 # Row lattices, maximal minors, and matrix kernels
@@ -54,6 +54,16 @@ theorem mem_matrixKernel {A : Matrix r k O} {B : Type*} [AddCommMonoid B] [Modul
     {w : k → B} :
     w ∈ A.matrixKernel B ↔ ∀ i : r, ∑ j : k, A i j • w j = 0 := by
   simp [matrixKernel]
+
+/-- The kernel of a matrix on `k → B` is the orthogonal of its row span under the pairing
+`⟨v, w⟩ = ∑ j, v j • w j`. -/
+theorem matrixKernel_eq_orthogonalBilin (A : Matrix r k O) (B : Type*)
+    [AddCommMonoid B] [Module O B] :
+    A.matrixKernel B =
+      (span O (Set.range A.row)).orthogonalBilin (Fintype.bilinearCombination O O).flip := by
+  ext w
+  rw [mem_matrixKernel, Submodule.mem_orthogonalBilin_span, Set.forall_mem_range]
+  simp [Fintype.linearCombination_apply]
 
 /-- The submodule of `k → O` spanned by the rows of `A` and of `a • 1`. -/
 def rowLattice [DecidableEq k] (A : Matrix r k O) (a : O) : Submodule O (k → O) :=
@@ -135,10 +145,9 @@ theorem length_matrixKernel_eq_length_linearMap (A : Matrix r k O) (a : O) :
       length O (((k → O) ⧸ A.rowLattice a) →ₗ[O] O ⧸ Ideal.span {a}) := by
   have h_orth : A.matrixKernel (O ⧸ Ideal.span {a}) =
       (A.rowLattice a).orthogonalBilin (Fintype.bilinearCombination O O).flip := by
+    rw [rowLattice_eq_span, ← matrixKernel_eq_orthogonalBilin]
     ext w
-    rw [mem_matrixKernel, rowLattice, Submodule.mem_orthogonalBilin_span, Set.forall_mem_range]
-    simp only [LinearMap.flip_apply, Fintype.bilinearCombination_apply,
-      Fintype.linearCombination_apply, Sum.forall, Matrix.row_apply, Matrix.fromRows_apply_inl,
+    simp only [mem_matrixKernel, Sum.forall, Matrix.fromRows_apply_inl,
       Matrix.fromRows_apply_inr, Matrix.smul_apply, smul_eq_mul]
     refine ⟨fun h ↦ ⟨h, fun i ↦ Finset.sum_eq_zero fun j _ ↦ ?_⟩, And.left⟩
     simp [Algebra.smul_def, (Ideal.Quotient.eq_zero_iff_dvd a _).2 (dvd_mul_right a _)]

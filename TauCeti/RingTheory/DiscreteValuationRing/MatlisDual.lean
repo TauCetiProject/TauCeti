@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import TauCeti.Algebra.Module.Injective.Cogenerator
-public import TauCeti.LinearAlgebra.Pi.Orthogonal
+public import TauCeti.LinearAlgebra.Matrix.RowLattice
 public import TauCeti.RingTheory.DiscreteValuationRing.Length
 import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 
@@ -191,16 +191,9 @@ variable {ι : Type*} {O K : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuati
 acting on `(K/O)^ι`, the orthogonal of the rows of `M`, has length the valuation of `det M`, both
 sides infinite when `det M = 0`. -/
 theorem length_ker_eq_addVal_det (M : Matrix ι ι O) :
-    Module.length O (LinearMap.ker (LinearMap.pi fun i ↦ ∑ j, M i j •
-        LinearMap.proj j : (ι → K ⧸ range (Algebra.linearMap O K)) →ₗ[O] _)) =
+    Module.length O (M.matrixKernel (K ⧸ range (Algebra.linearMap O K))) =
       addVal O M.det := by
-  have hker : LinearMap.ker (LinearMap.pi fun i ↦ ∑ j, M i j •
-        LinearMap.proj j : (ι → K ⧸ range (Algebra.linearMap O K)) →ₗ[O] _) =
-      (Submodule.span O (Set.range M.row)).orthogonalBilin
-        (Fintype.bilinearCombination O O).flip := by
-    ext u
-    rw [LinearMap.mem_ker, Submodule.mem_orthogonalBilin_span, Set.forall_mem_range, funext_iff]
-    simp [Matrix.row, Fintype.linearCombination_apply]
-  rw [hker, length_orthogonalBilin, length_quotient_span_range_eq_addVal_det]
+  rw [matrixKernel_eq_orthogonalBilin, length_orthogonalBilin,
+    length_quotient_span_range_eq_addVal_det]
 
 end Matrix
