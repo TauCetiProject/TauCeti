@@ -289,12 +289,10 @@ theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_pairOfPantsPerturbati
       q.endAngularForm (equivRealProdCLM.symm z) v
   have ha (q : Puncture) : ContinuousOn (a q) D := fun z hz ↦ by
     have hw := Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hDS hz)) q
-    have hsymm := equivRealProdCLM.symm.continuous.continuousAt (x := z)
-    exact ((Real.smoothTransition.continuous.continuousAt.comp ((continuousAt_const.mul
-      ((Puncture.contDiffAt_re_endCoord q hw (n := 0)).continuousAt.comp hsymm)).sub
-        continuousAt_const)).mul
-      (((Puncture.contDiffAt_endAngularForm q hw (n := 0)).continuousAt.comp hsymm).clm_apply
-        continuousAt_const)).continuousWithinAt
+    have hsymm := (equivRealProdCLM.symm.contDiff (n := 0)).contMDiff.contMDiffAt (x := z)
+    exact ((contMDiffAt_smoothTransition_endCoord_comp q (n := 0) hsymm contMDiffAt_const
+      hw).continuousAt.mul (((Puncture.contDiffAt_endAngularForm q hw (n := 0)).continuousAt.comp
+        hsymm.continuousAt).clm_apply continuousAt_const)).continuousWithinAt
   choose C hC using fun q ↦ hD.exists_bound_of_continuousOn (ha q)
   refine ⟨∑ q, C q * LH q, fun z hz x ↦ ?_⟩
   have hHd (q : Puncture) (t : ℝ) : MDifferentiable I 𝓘(ℝ) (H q t) :=
