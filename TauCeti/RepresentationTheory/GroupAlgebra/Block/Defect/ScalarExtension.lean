@@ -25,8 +25,8 @@ the defect classes of a block, like its defect groups
 
 ## Main results
 
-* `TauCeti.repr_centerMapRingHom_mul_apply_classSumCenter`: the product `a(C) λ(K_C)` for `f_* b`
-  and `λ'` is `f` of that for `b` and `λ`.
+* `TauCeti.classSumBasis_repr_centerMapRingHom_apply_mul`: the product `a(C) λ(K_C)` for `f_* b`
+  and `λ'` is `f` of that for `b` and `λ`, over any commutative semirings.
 * `TauCeti.isDefectClass_centerMapRingHom_iff`: defect classes are invariant under scalar
   extension.
 -/
@@ -37,16 +37,16 @@ namespace TauCeti
 
 open MonoidAlgebra
 
-variable {G k k' : Type*} [Group G] [Fintype G] [DecidableEq G] [Field k] [Field k']
-  (f : k →+* k') {φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k}
-  {φ' : Subalgebra.center k' (MonoidAlgebra k' G) →ₐ[k'] k'}
+variable {G : Type*} [Group G] [Fintype G] [DecidableEq G]
 
 /-- For `λ'` extending `λ` along `f`, the product `a(C) λ(K_C)` of the coefficient of
 `f_* b` on the class `C` and the value of `λ'` at the class sum `K_C` is `f` of the same product
 for `b` and `λ`. -/
-theorem repr_centerMapRingHom_mul_apply_classSumCenter
+theorem classSumBasis_repr_centerMapRingHom_apply_mul {R S : Type*} [CommSemiring R]
+    [CommSemiring S] (f : R →+* S) {φ : Subalgebra.center R (MonoidAlgebra R G) →ₐ[R] R}
+    {φ' : Subalgebra.center S (MonoidAlgebra S G) →ₐ[S] S}
     (hφ : ∀ x, φ' (centerMapRingHom G f x) = f (φ x))
-    (b : Subalgebra.center k (MonoidAlgebra k G)) (C : ConjClasses G) :
+    (b : Subalgebra.center R (MonoidAlgebra R G)) (C : ConjClasses G) :
     classSumBasis.repr (centerMapRingHom G f b) C * φ' (classSumCenter C) =
       f (classSumBasis.repr b C * φ (classSumCenter C)) := by
   rw [classSumBasis_repr_apply, classSumBasis_repr_apply, centerToConjClasses_centerMapRingHom,
@@ -55,10 +55,13 @@ theorem repr_centerMapRingHom_mul_apply_classSumCenter
 /-- **Defect classes under scalar extension.** For a homomorphism of fields `f : k → k'` and a
 `k'`-algebra homomorphism `λ'` of `Z(k'[G])` extending `λ` along `f`, a conjugacy class is a
 defect class of `f_* b` for `λ'` exactly when it is a defect class of `b` for `λ`. -/
-theorem isDefectClass_centerMapRingHom_iff (hφ : ∀ x, φ' (centerMapRingHom G f x) = f (φ x))
+theorem isDefectClass_centerMapRingHom_iff {k k' : Type*} [Field k] [Field k'] (f : k →+* k')
+    {φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k}
+    {φ' : Subalgebra.center k' (MonoidAlgebra k' G) →ₐ[k'] k'}
+    (hφ : ∀ x, φ' (centerMapRingHom G f x) = f (φ x))
     {b : Subalgebra.center k (MonoidAlgebra k G)} {C : ConjClasses G} :
     IsDefectClass φ' (centerMapRingHom G f b) C ↔ IsDefectClass φ b C := by
-  rw [isDefectClass_iff, isDefectClass_iff, repr_centerMapRingHom_mul_apply_classSumCenter f hφ,
+  rw [isDefectClass_iff, isDefectClass_iff, classSumBasis_repr_centerMapRingHom_apply_mul f hφ,
     map_ne_zero]
 
 end TauCeti
