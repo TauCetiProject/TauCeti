@@ -22,8 +22,11 @@ nonzero sum of doubly periodic domains has large positive and negative multiplic
 a norm. This file is the part of that argument which takes place on the incidence data
 `TauCeti.HeegaardTripleRegionSystem`, in parallel with
 `TauCeti.LowDimTopology.Heegaard.PeriodicNorm` for diagrams; both apply the criteria for subgroups
-of `Region → ℤ` of that file, `TauCeti.forall_nonneg_eq_zero_of_forall_exists_mul_norm_le` and
-`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`.
+of `Region → ℤ` of that file, `TauCeti.forall_nonneg_eq_zero_of_forall_exists_mul_norm_le`,
+`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`,
+`TauCeti.exists_forall_abs_le_mul_norm` and
+`TauCeti.exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`, the last two to the
+finitely many changes of the Maslov index at triangle domains with given corners.
 
 The norms are the sup norms `‖ν P‖` of an additive map `ν : (Region → ℤ) →+ (κ → ℤ)`, with `κ`
 finite, injective on the sums of doubly periodic domains; in the winding argument `ν P` records the
@@ -87,6 +90,28 @@ theorem weaklyAdmissible_of_forall_exists_mul_norm_le
 
 variable [Fintype PointAB] [Fintype PointBC] [Fintype PointAC] [Fintype Region]
 
+open Classical in
+/-- The change of the Maslov index at a triangle domain with corners `c`, as an additive functional
+on the sums of doubly periodic domains; it is the same at all such triangle domains, and `0` when
+there are none. -/
+private noncomputable def cornerMaslovIndex (χ : Region → ℤ)
+    (c : T.alphaBeta.Generator × T.betaGamma.Generator × T.alphaGamma.Generator) :
+    T.doublyPeriodicDomains →+ ℚ :=
+  if h : ∃ E, T.IsTriangleDomain c.1 c.2.1 c.2.2 E then
+    AddMonoidHom.mk' (fun P ↦ T.periodicMaslovIndex χ c.1 c.2.2 h.choose P) fun P Q ↦
+      h.choose_spec.periodicMaslovIndex_add χ P.property Q.property
+  else 0
+
+/-- At a triangle domain `E` with corners `x`, `y`, `w`, the functional `cornerMaslovIndex` is the
+change of the Maslov index of `E`. -/
+private theorem cornerMaslovIndex_apply {χ : Region → ℤ} {x : T.alphaBeta.Generator}
+    {y : T.betaGamma.Generator} {w : T.alphaGamma.Generator} {E : Region → ℤ}
+    (hE : T.IsTriangleDomain x y w E) (P : T.doublyPeriodicDomains) :
+    cornerMaslovIndex χ (x, y, w) P = T.periodicMaslovIndex χ x w E P := by
+  have h : ∃ E, T.IsTriangleDomain x y w E := ⟨E, hE⟩
+  simp only [cornerMaslovIndex, h, ↓reduceDIte, AddMonoidHom.mk'_apply]
+  exact hE.periodicMaslovIndex_eq_of_isTriangleDomain χ (Exists.choose_spec _) P.property
+
 /-- **The Maslov index of a triple is bounded by the norm.** If `ν` is injective on the sums of
 doubly periodic domains, there is a constant `C ≥ 0` such that `|μ(E + P) - μ(E)| ≤ C * ‖ν P‖` for
 every such sum `P` and every triangle domain `E`, with any corners. -/
@@ -94,29 +119,12 @@ theorem exists_abs_periodicMaslovIndex_le_mul_norm
     (hν : ∀ P ∈ T.doublyPeriodicDomains, ν P = 0 → P = 0) (χ : Region → ℤ) :
     ∃ C, 0 ≤ C ∧ ∀ x y w E, T.IsTriangleDomain x y w E → ∀ P ∈ T.doublyPeriodicDomains,
       |(T.periodicMaslovIndex χ x w E P : ℝ)| ≤ C * ‖ν P‖ := by
-  have hinj : Function.Injective (ν.comp T.doublyPeriodicDomains.subtype) :=
-    (injective_iff_map_eq_zero _).mpr fun P hP ↦ Subtype.ext (hν P P.property hP)
-  -- For fixed corners, the change of the Maslov index is one additive functional of `P`.
-  have hC (c : T.alphaBeta.Generator × T.betaGamma.Generator × T.alphaGamma.Generator) :
-      ∃ C, 0 ≤ C ∧ ∀ E, T.IsTriangleDomain c.1 c.2.1 c.2.2 E →
-        ∀ P ∈ T.doublyPeriodicDomains, |(T.periodicMaslovIndex χ c.1 c.2.2 E P : ℝ)| ≤
-          C * ‖ν P‖ := by
-    by_cases h : ∃ E₀, T.IsTriangleDomain c.1 c.2.1 c.2.2 E₀
-    · obtain ⟨E₀, hE₀⟩ := h
-      let f : T.doublyPeriodicDomains →+ ℝ :=
-        AddMonoidHom.mk' (fun P ↦ (T.periodicMaslovIndex χ c.1 c.2.2 E₀ P : ℝ)) fun P Q ↦ by
-          simp [hE₀.periodicMaslovIndex_add χ P.property Q.property]
-      obtain ⟨C, hC₀, hC⟩ := AddMonoidHom.exists_norm_le_mul_norm_of_injective f hinj
-      refine ⟨C, hC₀, fun E hE P hP ↦ ?_⟩
-      rw [hE₀.periodicMaslovIndex_eq_of_isTriangleDomain χ hE hP, ← Real.norm_eq_abs]
-      exact hC ⟨P, hP⟩
-    · exact ⟨0, le_rfl, fun E hE ↦ (h ⟨E, hE⟩).elim⟩
-  -- There are finitely many corners, so the sum of the constants bounds them all.
-  choose C hC₀ hC using hC
-  refine ⟨∑ c, C c, sum_nonneg fun c _ ↦ hC₀ c, fun x y w E hE P hP ↦ ?_⟩
-  refine (hC (x, y, w) E hE P hP).trans ?_
-  exact mul_le_mul_of_nonneg_right
-    (single_le_sum (fun c _ ↦ hC₀ c) (mem_univ (x, y, w))) (norm_nonneg _)
+  -- For fixed corners, the change of the Maslov index is one additive functional of `P`, and
+  -- there are finitely many corners.
+  obtain ⟨C, hC₀, hC⟩ := exists_forall_abs_le_mul_norm hν fun c ↦
+    (Rat.castHom ℝ).toAddMonoidHom.comp (cornerMaslovIndex (T := T) χ c)
+  refine ⟨C, hC₀, fun x y w E hE P hP ↦ ?_⟩
+  simpa [cornerMaslovIndex_apply hE] using hC (x, y, w) ⟨P, hP⟩
 
 /-- **Strong admissibility of a triple from a detected norm.** If `ν` is injective on the sums of
 doubly periodic domains, the change `μ(E + P) - μ(E)` of the Maslov index of `E` is at most
@@ -139,11 +147,10 @@ theorem exists_forall_stronglyAdmissible_of_forall_exists_mul_norm_le
     (hν : ∀ P ∈ T.doublyPeriodicDomains, ν P = 0 → P = 0) (χ : Region → ℤ) :
     ∃ C, 0 ≤ C ∧ ∀ D, C < D → (∀ P ∈ T.doublyPeriodicDomains, ∃ r, D * ‖ν P‖ ≤ P r) →
       ∀ x y w E, T.IsTriangleDomain x y w E → T.StronglyAdmissible χ x w E := by
-  obtain ⟨C, hC₀, hC⟩ := exists_abs_periodicMaslovIndex_le_mul_norm hν χ
-  refine ⟨C / 2, by positivity, fun D hCD hD x y w E hE ↦
-    stronglyAdmissible_of_forall_exists_mul_norm_le hν (C := C) (fun P hP ↦ ?_) hD
-      (by linarith)⟩
-  exact (le_abs_self _).trans (hC x y w E hE P hP)
+  obtain ⟨C, hC₀, hC⟩ :=
+    exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le hν (cornerMaslovIndex χ)
+  refine ⟨C, hC₀, fun D hCD hD x y w E hE ↦ stronglyAdmissible_iff.mpr fun P hP hne _ ↦ ?_⟩
+  simpa [cornerMaslovIndex_apply hE] using hC D hCD hD (x, y, w) ⟨P, hP⟩ hne
 
 end HeegaardTripleRegionSystem
 

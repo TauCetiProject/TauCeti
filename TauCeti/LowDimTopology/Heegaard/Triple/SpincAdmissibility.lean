@@ -205,17 +205,6 @@ theorem IsTriangleDomain.periodicMaslovIndex_add_zsmul_one
     (hE.add_of_mem hP).maslovIndex_zsmul_one_add hχ k]
   ring
 
-/-- The change of the Maslov index by a sum of doubly periodic domains `P` is the same at two
-triangle domains in one class, that is, when `E' - E` is a sum of doubly periodic domains. -/
-theorem IsTriangleDomain.periodicMaslovIndex_of_sub_mem (χ : Region → ℤ)
-    (hE : T.IsTriangleDomain x y w E) (h : E' - E ∈ T.doublyPeriodicDomains)
-    (hP : P ∈ T.doublyPeriodicDomains) :
-    T.periodicMaslovIndex χ x w E' P = T.periodicMaslovIndex χ x w E P := by
-  have hsum := hE.periodicMaslovIndex_add χ h hP
-  simp only [periodicMaslovIndex_def, show E + (E' - E + P) = E' + P by abel,
-    show E + (E' - E) = E' by abel] at hsum ⊢
-  linarith
-
 /-- The change of the Maslov index by a sum of doubly periodic domains `P` is the same at any two
 triangle domains with the same corners `x`, `y`, `w`, whether or not they lie in one class: by
 `IsTriangleDomain.periodicMaslovIndex_add_add_eq` it only depends on the corners. -/
@@ -225,6 +214,14 @@ theorem IsTriangleDomain.periodicMaslovIndex_eq_of_isTriangleDomain (χ : Region
     T.periodicMaslovIndex χ x w E' P = T.periodicMaslovIndex χ x w E P := by
   obtain ⟨P₁, h₁, P₂, h₂, P₃, h₃, rfl⟩ := mem_doublyPeriodicDomains_iff.mp hP
   rw [hE.periodicMaslovIndex_add_add_eq χ h₁ h₂ h₃, hE'.periodicMaslovIndex_add_add_eq χ h₁ h₂ h₃]
+
+/-- The change of the Maslov index by a sum of doubly periodic domains `P` is the same at two
+triangle domains in one class, that is, when `E' - E` is a sum of doubly periodic domains. -/
+theorem IsTriangleDomain.periodicMaslovIndex_of_sub_mem (χ : Region → ℤ)
+    (hE : T.IsTriangleDomain x y w E) (h : E' - E ∈ T.doublyPeriodicDomains)
+    (hP : P ∈ T.doublyPeriodicDomains) :
+    T.periodicMaslovIndex χ x w E' P = T.periodicMaslovIndex χ x w E P :=
+  hE.periodicMaslovIndex_eq_of_isTriangleDomain χ (hE.of_sub_mem_doublyPeriodicDomains h).1 hP
 
 /-- Juxtaposing a disk domain from `x'` to `x` in `(Σ, α, β)` with a triangle domain `E` leaves the
 change `μ(E + P) - μ(E)` unchanged for every sum `P` of doubly periodic domains. -/

@@ -42,8 +42,11 @@ multiplicities of the boundary of `P` on the attaching curves.
 
 Both criteria hold for any subgroup `S` of `Region → ℤ` on which `ν` is injective
 (`TauCeti.forall_nonneg_eq_zero_of_forall_exists_mul_norm_le` and
-`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`), so the versions for the
-sums of doubly periodic domains of Heegaard triples in
+`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`), as do the bound of finitely
+many additive functionals on `S` by the norm (`TauCeti.exists_forall_abs_le_mul_norm`) and the
+resulting strong admissibility for all of them at once
+(`TauCeti.exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`), so the versions
+for the sums of doubly periodic domains of Heegaard triples in
 `TauCeti.LowDimTopology.Heegaard.Triple.PeriodicNorm` use them too.
 
 The winding estimate `AddMonoidHom.exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le`
@@ -112,6 +115,42 @@ theorem forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le
     linarith [hC P hP]
   exact_mod_cast h
 
+/-- **Finitely many functionals are bounded by a detected norm.** If `ν` is injective on a subgroup
+`S` of domains, there is a constant `C ≥ 0` such that `|f i P| ≤ C * ‖ν P‖` for every `P ∈ S` and
+each of finitely many additive functionals `f i` on `S`. -/
+theorem exists_forall_abs_le_mul_norm {ι : Type*} [Finite ι] (hν : ∀ P ∈ S, ν P = 0 → P = 0)
+    (f : ι → S →+ ℝ) : ∃ C, 0 ≤ C ∧ ∀ i, ∀ P : S, |f i P| ≤ C * ‖ν P‖ := by
+  have := Fintype.ofFinite ι
+  have hinj : Function.Injective (ν.comp S.subtype) :=
+    (injective_iff_map_eq_zero _).mpr fun P hP ↦ Subtype.ext (hν P P.property hP)
+  choose C hC₀ hC using fun i ↦ AddMonoidHom.exists_norm_le_mul_norm_of_injective (f i) hinj
+  refine ⟨∑ i, C i, sum_nonneg fun i _ ↦ hC₀ i, fun i P ↦ ?_⟩
+  refine ((Real.norm_eq_abs _).symm.trans_le (hC i P)).trans ?_
+  exact mul_le_mul_of_nonneg_right
+    (single_le_sum (fun i _ ↦ hC₀ i) (mem_univ i)) (norm_nonneg _)
+
+/-- **Large coefficients for finitely many functionals under a detected norm.** If `ν` is injective
+on a subgroup `S` of domains, there is a constant `C ≥ 0` such that, whenever every `P ∈ S` has a
+region of multiplicity at least `D * ‖ν P‖` for some `D > C`, every nonzero `P ∈ S` has a
+coefficient larger than `m i P / 2`, for each of finitely many additive functionals `m i` on `S`.
+This is the strong admissibility at every generator of
+`TauCeti.HeegaardRegionSystem.exists_forall_stronglyAdmissible_of_forall_exists_mul_norm_le` and of
+its version for Heegaard triples, for `m` the Maslov indices. -/
+theorem exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le {ι : Type*} [Finite ι]
+    (hν : ∀ P ∈ S, ν P = 0 → P = 0) (m : ι → S →+ ℚ) :
+    ∃ C, 0 ≤ C ∧ ∀ D, C < D → (∀ P ∈ S, ∃ r, D * ‖ν P‖ ≤ P r) →
+      ∀ i, ∀ P : S, (P : Region → ℤ) ≠ 0 → ∃ r, m i P / 2 < (P : Region → ℤ) r := by
+  classical
+  obtain ⟨C, hC₀, hC⟩ :=
+    exists_forall_abs_le_mul_norm hν fun i ↦ (Rat.castHom ℝ).toAddMonoidHom.comp (m i)
+  refine ⟨C / 2, by positivity, fun D hCD hD i P hne ↦ ?_⟩
+  -- Extend `m i` by `0` off `S` to apply the criterion for a single functional.
+  have h := forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le hν
+    (m := fun Q ↦ if hQ : Q ∈ S then m i ⟨Q, hQ⟩ else 0) (C := C)
+    (fun Q hQ ↦ by simpa [hQ] using (le_abs_self _).trans (hC i ⟨Q, hQ⟩)) hD
+    (by linarith) P P.property hne
+  simpa [P.property] using h
+
 end Subgroup
 
 namespace HeegaardRegionSystem
@@ -137,18 +176,9 @@ theorem exists_abs_maslovIndex_le_mul_norm
     (hν : ∀ P ∈ H.periodicDomains, ν P = 0 → P = 0) (χ : Region → ℤ) :
     ∃ C, 0 ≤ C ∧ ∀ (x : H.Generator), ∀ P ∈ H.periodicDomains,
       |(H.maslovIndex χ x x P : ℝ)| ≤ C * ‖ν P‖ := by
-  have hinj : Function.Injective (ν.comp H.periodicDomains.subtype) :=
-    (injective_iff_map_eq_zero _).mpr fun P hP ↦ Subtype.ext (hν P P.property hP)
-  have hC (x : H.Generator) : ∃ C, 0 ≤ C ∧ ∀ P : H.periodicDomains,
-      ‖((Rat.castHom ℝ).toAddMonoidHom.comp
-        ((H.maslovIndex χ x x).comp H.periodicDomains.subtype)) P‖ ≤
-        C * ‖(ν.comp H.periodicDomains.subtype) P‖ :=
-    AddMonoidHom.exists_norm_le_mul_norm_of_injective _ hinj
-  choose C hC₀ hC using hC
-  refine ⟨∑ x, C x, sum_nonneg fun x _ ↦ hC₀ x, fun x P hP ↦ ?_⟩
-  refine ((Real.norm_eq_abs _).symm.trans_le (hC x ⟨P, hP⟩)).trans ?_
-  exact mul_le_mul_of_nonneg_right
-    (single_le_sum (fun x _ ↦ hC₀ x) (mem_univ x)) (norm_nonneg _)
+  obtain ⟨C, hC₀, hC⟩ := exists_forall_abs_le_mul_norm hν fun x : H.Generator ↦
+    (Rat.castHom ℝ).toAddMonoidHom.comp ((H.maslovIndex χ x x).comp H.periodicDomains.subtype)
+  exact ⟨C, hC₀, fun x P hP ↦ hC x ⟨P, hP⟩⟩
 
 /-- **Strong admissibility from a detected norm.** If `ν` is injective on periodic domains, the
 Maslov index at `x` of every periodic domain `P` is at most `C * ‖ν P‖`, and every periodic domain
@@ -170,11 +200,10 @@ theorem exists_forall_stronglyAdmissible_of_forall_exists_mul_norm_le
     (hν : ∀ P ∈ H.periodicDomains, ν P = 0 → P = 0) (χ : Region → ℤ) :
     ∃ C, 0 ≤ C ∧ ∀ D, C < D → (∀ P ∈ H.periodicDomains, ∃ r, D * ‖ν P‖ ≤ P r) →
       ∀ x, H.StronglyAdmissible χ x := by
-  obtain ⟨C, hC₀, hC⟩ := exists_abs_maslovIndex_le_mul_norm hν χ
-  refine ⟨C / 2, by positivity, fun D hCD hD x ↦
-    stronglyAdmissible_of_forall_exists_mul_norm_le hν (C := C) (fun P hP ↦ ?_) hD
-      (by linarith)⟩
-  exact (le_abs_self _).trans (hC x P hP)
+  obtain ⟨C, hC₀, hC⟩ := exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le hν
+    fun x : H.Generator ↦ (H.maslovIndex χ x x).comp H.periodicDomains.subtype
+  exact ⟨C, hC₀, fun D hCD hD x ↦
+    stronglyAdmissible_iff.mpr fun P hP hne _ ↦ hC D hCD hD x ⟨P, hP⟩ hne⟩
 
 end HeegaardRegionSystem
 
