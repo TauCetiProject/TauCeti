@@ -32,9 +32,7 @@ public section
 namespace TauCeti.DefectZeroSymmetricExamples
 
 open _root_.MonoidAlgebra Module GroupAlgebraBlockExamples Examples.BlockDefectSymmetric
-
-/-- The transposition `τ = (0 1)` of `S₃`. -/
-abbrev τ : S₃ := Equiv.swap 0 1
+  PrincipalBlockDefectExamples
 
 /-- The blocks `1 + ρ + ρ²` and `ρ + ρ²` of `𝔽₂[S₃]`. -/
 noncomputable abbrev blocksS₃ : Fin 2 → Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) S₃) :=
