@@ -8,7 +8,7 @@ module
 import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.GroupTheory.SpecificGroups.Dihedral
 import Mathlib.Topology.Instances.ZMod
-import TauCeti.Topology.Algebra.Group.Heisenberg
+import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 import TauCeti.Topology.Algebra.Group.Powerful
 
 /-!
