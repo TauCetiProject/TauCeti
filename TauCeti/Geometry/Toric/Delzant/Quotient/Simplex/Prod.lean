@@ -1,0 +1,626 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Toric.Delzant.Hirzebruch
+public import TauCeti.Geometry.Toric.Delzant.Quotient.Naturality
+public import TauCeti.Geometry.Toric.Delzant.Quotient.Prod
+public import TauCeti.Geometry.Toric.Delzant.Quotient.Simplex.Symplectic
+public import TauCeti.Geometry.Symplectic.Manifold.Prod
+import TauCeti.Algebra.Group.Pi.Lemmas
+
+/-!
+# Delzant quotients of products of simplices
+
+Let `Δ_a ⊆ (ℝⁿ)*` and `Δ_b ⊆ (ℝᵐ)*` be the standard simplices of sizes `a, b > 0`. The Delzant
+quotient of `Δ_a` is `(ℂPⁿ, 2π a ω_FS)` (`TauCeti.Toric.DelzantQuotient.simplexDiffeomorph`), and
+the Delzant quotient of a product of polytopes is the symplectic product of the Delzant quotients
+(`TauCeti.Toric.IsDelzant.delzantQuotientProdDiffeomorph`). Together they identify the Delzant
+quotient of the product presentation of `Δ_a × Δ_b` with
+
+`(ℂPⁿ × ℂPᵐ, 2π a ω_FS ⊕ 2π b ω_FS)`
+
+(`TauCeti.Toric.DelzantQuotient.simplexProdDiffeomorph`,
+`TauCeti.Toric.DelzantQuotient.mpullback_simplexProdDiffeomorph_prod`), with the moment map
+`([w], [w']) ↦ ((a |w_(k + 1)|²)_k, (b |w'_(l + 1)|²)_l)` for unit vectors `w` and `w'`.
+
+**Products of two-spheres.** For `n = m = 1` the product `[0, a] × [0, b]` of two intervals is
+the rectangle, presented in the lattice `ℤ²` as the Hirzebruch trapezoid with `k = 0`
+(`TauCeti.Toric.hirzebruchNormal 0`, `TauCeti.Toric.hirzebruchSupport a b`): the normals
+`(1, 0)`, `(0, 1)`, `(0, -1)`, `(-1, 0)` with support constants `0`, `0`, `-b`, `-a`. Listing
+these facets as those of the two intervals, `(1, 0)` and `(-1, 0)` for the first and `(0, 1)` and
+`(0, -1)` for the second, and splitting `ℤ²` as `ℤ × ℤ`, matches this presentation with the
+product presentation of `Δ_a × Δ_b`: the two have the same level and the same kernel torus after
+relabelling the coordinates of `ℂ⁴`. So the Delzant quotient of the rectangle, the toric
+`S² × S²`, is `(ℂP¹ × ℂP¹, 2π a ω_FS ⊕ 2π b ω_FS)`
+(`TauCeti.Toric.DelzantQuotient.rectangleDiffeomorph`,
+`TauCeti.Toric.DelzantQuotient.mpullback_rectangleDiffeomorph_prod`), with moment map
+`([w], [w']) ↦ (a |w₁|², b |w'₁|²)` (`reducedMomentMap_rectangleDiffeomorph_symm_mk_apply_zero`,
+`reducedMomentMap_rectangleDiffeomorph_symm_mk_apply_one`). Its symplectic volume
+`(2π)² a b` is the case `k = 0` of
+`TauCeti.Toric.liouvilleMeasure_univ_delzantQuotientSymplecticForm_hirzebruch`.
+
+## Main definitions
+
+* `TauCeti.Toric.DelzantQuotient.simplexProdDiffeomorph`: the diffeomorphism of the Delzant
+  quotient of `Δ_a × Δ_b` with `ℂPⁿ × ℂPᵐ`.
+* `TauCeti.Toric.DelzantQuotient.rectangleDiffeomorph`: the diffeomorphism of the Delzant
+  quotient of the rectangle `[0, a] × [0, b]` with `ℂP¹ × ℂP¹`.
+
+## Main results
+
+* `TauCeti.Toric.DelzantQuotient.mpullback_simplexProdDiffeomorph_prod`,
+  `TauCeti.Toric.DelzantQuotient.isSymplectomorphism_simplexProdDiffeomorph`: the Delzant quotient
+  of `Δ_a × Δ_b` is `(ℂPⁿ × ℂPᵐ, 2π a ω_FS ⊕ 2π b ω_FS)`.
+* `TauCeti.Toric.DelzantQuotient.mpullback_rectangleDiffeomorph_prod`,
+  `TauCeti.Toric.DelzantQuotient.isSymplectomorphism_rectangleDiffeomorph`: the Delzant quotient
+  of the rectangle is `(ℂP¹ × ℂP¹, 2π a ω_FS ⊕ 2π b ω_FS)`.
+
+## References
+
+* A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
+  Springer, 2001, Sections 28–29 (Delzant's construction and its examples).
+* V. Guillemin, *Moment Maps and Combinatorial Invariants of Hamiltonian `T^n`-spaces*,
+  Birkhäuser, 1994, Chapter 1.
+-/
+
+public section
+
+noncomputable section
+
+open Metric Module Real
+open scoped Manifold ContDiff
+
+namespace TauCeti.Toric
+
+namespace DelzantQuotient
+
+/-! ### Products of simplices -/
+
+section SimplexProd
+
+variable (n m : ℕ) [NeZero n] [NeZero m] {a b : ℝ}
+
+/-- **The Delzant quotient of a product of simplices is `ℂPⁿ × ℂPᵐ` as a smooth manifold.** For
+`a, b > 0`, the Delzant quotient of the product presentation of the simplices `Δ_a ⊆ (ℝⁿ)*` and
+`Δ_b ⊆ (ℝᵐ)*` is diffeomorphic to `ℂPⁿ × ℂPᵐ`, by the product of `simplexDiffeomorph` on the two
+factors composed with the identification `delzantQuotientProdDiffeomorph` of the Delzant quotient
+of a product with the product of the Delzant quotients. -/
+def simplexProdDiffeomorph (ha : 0 < a) (hb : 0 < b) :
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+      (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    DelzantQuotient (((Int.castAddHom ℝ).compLeft (Fin n)).prodMap
+        ((Int.castAddHom ℝ).compLeft (Fin m)))
+        (prodNormal (simplexNormal (Fin n)) (simplexNormal (Fin m)))
+        (Sum.elim (simplexSupport a) (simplexSupport b)) ≃ₘ⟮
+      𝓘(ℝ, ProperSMul.QuotientModelSpace
+        (kernelTorusLieAlgebra (((Int.castAddHom ℝ).compLeft (Fin n)).prodMap
+          ((Int.castAddHom ℝ).compLeft (Fin m)))
+          (prodNormal (simplexNormal (Fin n)) (simplexNormal (Fin m))))
+        (Fin (Fintype.card (Option (Fin n) ⊕ Option (Fin m)) +
+          finrank ℝ ((Fin n → ℝ) × (Fin m → ℝ))) → ℝ)),
+      𝓘(ℝ, Fin n → ℂ).prod 𝓘(ℝ, Fin m → ℂ)⟯
+      ComplexProjectiveSpace n × ComplexProjectiveSpace m :=
+  letI := (isDelzant_simplex ha).delzantQuotientChartedSpace (isIntegralLattice_intCast n)
+  letI := (isDelzant_simplex hb).delzantQuotientChartedSpace (isIntegralLattice_intCast m)
+  letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+    (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+      ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+  haveI := (isDelzant_simplex ha).isManifold_delzantQuotient (isIntegralLattice_intCast n)
+  haveI := (isDelzant_simplex hb).isManifold_delzantQuotient (isIntegralLattice_intCast m)
+  -- `Diffeomorph.prodCongr` needs the two factors to share their model spaces, which these do not,
+  -- so the composite with the product of the two diffeomorphisms is assembled directly.
+  { toEquiv := (prodHomeomorph ((Int.castAddHom ℝ).compLeft (Fin n))
+        ((Int.castAddHom ℝ).compLeft (Fin m)) (simplexNormal (Fin n)) (simplexNormal (Fin m))
+        (simplexSupport a) (simplexSupport b)).toEquiv.trans
+      ((simplexDiffeomorph n ha).toEquiv.prodCongr (simplexDiffeomorph m hb).toEquiv)
+    contMDiff_toFun := by
+      have h := ((simplexDiffeomorph n ha).contMDiff.prodMap
+        (simplexDiffeomorph m hb).contMDiff).comp
+          ((isDelzant_simplex ha).delzantQuotientProdDiffeomorph (isDelzant_simplex hb)
+            (isIntegralLattice_intCast n) (isIntegralLattice_intCast m)).contMDiff
+      rwa [IsDelzant.coe_delzantQuotientProdDiffeomorph] at h
+    contMDiff_invFun := by
+      have h := ((isDelzant_simplex ha).delzantQuotientProdDiffeomorph (isDelzant_simplex hb)
+        (isIntegralLattice_intCast n) (isIntegralLattice_intCast m)).symm.contMDiff.comp
+          ((simplexDiffeomorph n ha).symm.contMDiff.prodMap
+            (simplexDiffeomorph m hb).symm.contMDiff)
+      rwa [IsDelzant.coe_delzantQuotientProdDiffeomorph_symm] at h }
+
+/-- `simplexProdDiffeomorph` is the product of `simplexDiffeomorph` on the two factors, composed
+with the identification `prodHomeomorph` of the Delzant quotient of a product with the product of
+the Delzant quotients. -/
+@[simp]
+theorem coe_simplexProdDiffeomorph (ha : 0 < a) (hb : 0 < b) :
+    letI := (isDelzant_simplex ha).delzantQuotientChartedSpace (isIntegralLattice_intCast n)
+    letI := (isDelzant_simplex hb).delzantQuotientChartedSpace (isIntegralLattice_intCast m)
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    ⇑(simplexProdDiffeomorph n m ha hb) =
+      Prod.map (simplexDiffeomorph n ha) (simplexDiffeomorph m hb) ∘
+        prodHomeomorph ((Int.castAddHom ℝ).compLeft (Fin n)) ((Int.castAddHom ℝ).compLeft (Fin m))
+          (simplexNormal (Fin n)) (simplexNormal (Fin m)) (simplexSupport a) (simplexSupport b) :=
+  (rfl)
+
+/-- The inverse of `simplexProdDiffeomorph` is the product of the inverses of
+`simplexDiffeomorph`, followed by the inverse of `prodHomeomorph`. -/
+@[simp]
+theorem coe_simplexProdDiffeomorph_symm (ha : 0 < a) (hb : 0 < b) :
+    letI := (isDelzant_simplex ha).delzantQuotientChartedSpace (isIntegralLattice_intCast n)
+    letI := (isDelzant_simplex hb).delzantQuotientChartedSpace (isIntegralLattice_intCast m)
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    ⇑(simplexProdDiffeomorph n m ha hb).symm =
+      (prodHomeomorph ((Int.castAddHom ℝ).compLeft (Fin n)) ((Int.castAddHom ℝ).compLeft (Fin m))
+          (simplexNormal (Fin n)) (simplexNormal (Fin m)) (simplexSupport a)
+          (simplexSupport b)).symm ∘
+        Prod.map (simplexDiffeomorph n ha).symm (simplexDiffeomorph m hb).symm :=
+  (rfl)
+
+/-- **The Delzant quotient of a product of simplices is `(ℂPⁿ × ℂPᵐ, 2π a ω_FS ⊕ 2π b ω_FS)`.**
+The diffeomorphism `simplexProdDiffeomorph` pulls the product of `2π a` times the Fubini–Study form
+of `ℂPⁿ` and `2π b` times that of `ℂPᵐ` back to the reduced symplectic form of the Delzant quotient
+of `Δ_a × Δ_b`. -/
+theorem mpullback_simplexProdDiffeomorph_prod (ha : 0 < a) (hb : 0 < b) :
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    haveI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).isManifold_delzantQuotient
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    SmoothForm.mpullback (simplexProdDiffeomorph n m ha hb)
+        (simplexProdDiffeomorph n m ha hb).contMDiff
+        (SmoothTwoForm.prod ((2 * π * a) • ComplexProjectiveSpace.fubiniStudyForm n)
+          ((2 * π * b) • ComplexProjectiveSpace.fubiniStudyForm m)) =
+      IsDelzant.delzantQuotientSymplecticForm ((isDelzant_simplex ha).prod
+        (isIntegralLattice_intCast n).injective (isIntegralLattice_intCast m).injective
+          (isDelzant_simplex hb))
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m)) := by
+  let _ := (isDelzant_simplex ha).delzantQuotientChartedSpace (isIntegralLattice_intCast n)
+  let _ := (isDelzant_simplex hb).delzantQuotientChartedSpace (isIntegralLattice_intCast m)
+  let _ := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+    ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+  have := (isDelzant_simplex ha).isManifold_delzantQuotient (isIntegralLattice_intCast n)
+  have := (isDelzant_simplex hb).isManifold_delzantQuotient (isIntegralLattice_intCast m)
+  have := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).isManifold_delzantQuotient
+    ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+  -- Pull back in two steps: along the product of the two `simplexDiffeomorph`, then along the
+  -- identification of the Delzant quotient of the product with the product of Delzant quotients.
+  have hcomp : ⇑(simplexProdDiffeomorph n m ha hb) =
+      Prod.map (simplexDiffeomorph n ha) (simplexDiffeomorph m hb) ∘
+        ⇑((isDelzant_simplex ha).delzantQuotientProdDiffeomorph (isDelzant_simplex hb)
+          (isIntegralLattice_intCast n) (isIntegralLattice_intCast m)) := by
+    rw [coe_simplexProdDiffeomorph, IsDelzant.coe_delzantQuotientProdDiffeomorph]
+  have hprod := SmoothTwoForm.mpullback_prodMap_prod (simplexDiffeomorph n ha).contMDiff
+    (simplexDiffeomorph m hb).contMDiff ((2 * π * a) • ComplexProjectiveSpace.fubiniStudyForm n)
+    ((2 * π * b) • ComplexProjectiveSpace.fubiniStudyForm m)
+  rw [mpullback_simplexDiffeomorph_smul_fubiniStudyForm,
+    mpullback_simplexDiffeomorph_smul_fubiniStudyForm] at hprod
+  rw [← IsDelzant.mpullback_delzantQuotientProdDiffeomorph_prod, ← hprod,
+    SmoothForm.mpullback_mpullback]
+  exact SmoothForm.mpullback_congr _ _ hcomp _
+
+/-- **The Delzant quotient of a product of simplices is symplectomorphic to
+`(ℂPⁿ × ℂPᵐ, 2π a ω_FS ⊕ 2π b ω_FS)`**, by `simplexProdDiffeomorph`. -/
+theorem isSymplectomorphism_simplexProdDiffeomorph (ha : 0 < a) (hb : 0 < b) :
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    haveI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).isManifold_delzantQuotient
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    SmoothTwoForm.IsSymplectomorphism
+      (IsDelzant.delzantQuotientSymplecticForm ((isDelzant_simplex ha).prod
+        (isIntegralLattice_intCast n).injective (isIntegralLattice_intCast m).injective
+          (isDelzant_simplex hb))
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m)))
+      (SmoothTwoForm.prod ((2 * π * a) • ComplexProjectiveSpace.fubiniStudyForm n)
+        ((2 * π * b) • ComplexProjectiveSpace.fubiniStudyForm m))
+      (simplexProdDiffeomorph n m ha hb) :=
+  letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+    (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+      ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+  haveI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+    (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).isManifold_delzantQuotient
+      ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+  SmoothTwoForm.isSymplectomorphism_iff_mpullback_eq.2
+    (mpullback_simplexProdDiffeomorph_prod n m ha hb)
+
+/-- **The moment map of `ℂPⁿ × ℂPᵐ`, first factor.** Under `simplexProdDiffeomorph`, the reduced
+moment map of the Delzant quotient of `Δ_a × Δ_b` sends the point `([w], [w'])` of
+`ℂPⁿ × ℂPᵐ`, for unit vectors `w` and `w'`, to a covector whose coordinate along the `k`-th basis
+vector of `ℝⁿ` is `a |w_(k + 1)|²`. -/
+theorem reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_fst (ha : 0 < a) (hb : 0 < b)
+    (w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1)
+    (w' : sphere (0 : EuclideanSpace ℂ (Fin (m + 1))) 1) (k : Fin n) :
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    reducedMomentMap (i := ((Int.castAddHom ℝ).compLeft (Fin n)).prodMap
+        ((Int.castAddHom ℝ).compLeft (Fin m)))
+        (u := prodNormal (simplexNormal (Fin n)) (simplexNormal (Fin m)))
+        (c := Sum.elim (simplexSupport a) (simplexSupport b))
+        (surjective_linearCombination_prodNormal surjective_linearCombination_simplexNormal
+          surjective_linearCombination_simplexNormal)
+        ((simplexProdDiffeomorph n m ha hb).symm
+          (ComplexProjectiveSpace.mk n w, ComplexProjectiveSpace.mk m w')) (Pi.single k 1, 0) =
+      a * ‖(w : EuclideanSpace ℂ (Fin (n + 1))) k.succ‖ ^ 2 := by
+  let _ := (isDelzant_simplex ha).delzantQuotientChartedSpace (isIntegralLattice_intCast n)
+  let _ := (isDelzant_simplex hb).delzantQuotientChartedSpace (isIntegralLattice_intCast m)
+  -- The inverse of `simplexProdDiffeomorph` is, by definition, the product of the inverses of
+  -- `simplexDiffeomorph` followed by the inverse of `prodHomeomorph`.
+  have h := DFunLike.congr_fun (reducedMomentMap_prodHomeomorph_symm
+    (surjective_linearCombination_simplexNormal (κ := Fin n))
+    (surjective_linearCombination_simplexNormal (κ := Fin m))
+    ((simplexDiffeomorph n ha).symm (ComplexProjectiveSpace.mk n w),
+      (simplexDiffeomorph m hb).symm (ComplexProjectiveSpace.mk m w'))) (Pi.single k 1, 0)
+  rw [ContinuousLinearMap.coprod_apply, map_zero, add_zero,
+    reducedMomentMap_simplexDiffeomorph_symm_mk_apply] at h
+  exact h
+
+/-- **The moment map of `ℂPⁿ × ℂPᵐ`, second factor.** Under `simplexProdDiffeomorph`, the reduced
+moment map of the Delzant quotient of `Δ_a × Δ_b` sends the point `([w], [w'])` of
+`ℂPⁿ × ℂPᵐ`, for unit vectors `w` and `w'`, to a covector whose coordinate along the `l`-th basis
+vector of `ℝᵐ` is `b |w'_(l + 1)|²`. -/
+theorem reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_snd (ha : 0 < a) (hb : 0 < b)
+    (w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1)
+    (w' : sphere (0 : EuclideanSpace ℂ (Fin (m + 1))) 1) (l : Fin m) :
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast n).injective
+        (isIntegralLattice_intCast m).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+        ((isIntegralLattice_intCast n).prod (isIntegralLattice_intCast m))
+    reducedMomentMap (i := ((Int.castAddHom ℝ).compLeft (Fin n)).prodMap
+        ((Int.castAddHom ℝ).compLeft (Fin m)))
+        (u := prodNormal (simplexNormal (Fin n)) (simplexNormal (Fin m)))
+        (c := Sum.elim (simplexSupport a) (simplexSupport b))
+        (surjective_linearCombination_prodNormal surjective_linearCombination_simplexNormal
+          surjective_linearCombination_simplexNormal)
+        ((simplexProdDiffeomorph n m ha hb).symm
+          (ComplexProjectiveSpace.mk n w, ComplexProjectiveSpace.mk m w')) (0, Pi.single l 1) =
+      b * ‖(w' : EuclideanSpace ℂ (Fin (m + 1))) l.succ‖ ^ 2 := by
+  let _ := (isDelzant_simplex ha).delzantQuotientChartedSpace (isIntegralLattice_intCast n)
+  let _ := (isDelzant_simplex hb).delzantQuotientChartedSpace (isIntegralLattice_intCast m)
+  -- The inverse of `simplexProdDiffeomorph` is, by definition, the product of the inverses of
+  -- `simplexDiffeomorph` followed by the inverse of `prodHomeomorph`.
+  have h := DFunLike.congr_fun (reducedMomentMap_prodHomeomorph_symm
+    (surjective_linearCombination_simplexNormal (κ := Fin n))
+    (surjective_linearCombination_simplexNormal (κ := Fin m))
+    ((simplexDiffeomorph n ha).symm (ComplexProjectiveSpace.mk n w),
+      (simplexDiffeomorph m hb).symm (ComplexProjectiveSpace.mk m w'))) (0, Pi.single l 1)
+  rw [ContinuousLinearMap.coprod_apply, map_zero, zero_add,
+    reducedMomentMap_simplexDiffeomorph_symm_mk_apply] at h
+  exact h
+
+end SimplexProd
+
+/-! ### The rectangle -/
+
+section Rectangle
+
+variable {a b : ℝ}
+
+/-- The facets `(1, 0)`, `(0, 1)`, `(0, -1)`, `(-1, 0)` of the rectangle, listed as the facets
+`some 0` and `none` of the first interval and of the second. -/
+private def rectangleFacetEquiv : Fin 4 ≃ Option (Fin 1) ⊕ Option (Fin 1) where
+  toFun := ![.inl (some 0), .inr (some 0), .inr none, .inl none]
+  invFun
+    | .inl (some _) => 0
+    | .inr (some _) => 1
+    | .inr none => 2
+    | .inl none => 3
+  left_inv := by decide
+  right_inv := by decide
+
+/-- The splitting `ℤ² = ℤ × ℤ` of the lattice of the rectangle. -/
+private def rectangleLatticeMap (v : Fin 2 → ℤ) : (Fin 1 → ℤ) × (Fin 1 → ℤ) :=
+  (fun _ ↦ v 0, fun _ ↦ v 1)
+
+/-- The splitting `ℝ² = ℝ × ℝ`. -/
+private def rectangleLinearMap : (Fin 2 → ℝ) →ₗ[ℝ] (Fin 1 → ℝ) × (Fin 1 → ℝ) :=
+  (LinearMap.pi fun _ ↦ LinearMap.proj 0).prod (LinearMap.pi fun _ ↦ LinearMap.proj 1)
+
+private theorem surjective_rectangleLatticeMap : Function.Surjective rectangleLatticeMap :=
+  fun p ↦ ⟨![p.1 0, p.2 0], by
+    ext k <;> fin_cases k <;> rfl⟩
+
+private theorem injective_rectangleLinearMap : Function.Injective rectangleLinearMap := by
+  intro y y' h
+  ext k
+  fin_cases k
+  · exact congrFun (congrArg Prod.fst h) 0
+  · exact congrFun (congrArg Prod.snd h) 0
+
+private theorem rectangleLinearMap_intCast (v : Fin 2 → ℤ) :
+    rectangleLinearMap ((Int.castAddHom ℝ).compLeft (Fin 2) v) =
+      ((Int.castAddHom ℝ).compLeft (Fin 1)).prodMap ((Int.castAddHom ℝ).compLeft (Fin 1))
+        (rectangleLatticeMap v) := by
+  ext k <;> fin_cases k <;> rfl
+
+/-- Listed along `rectangleFacetEquiv`, the normals of the product of two intervals are the
+normals of the rectangle, split along `ℤ² = ℤ × ℤ`. -/
+private theorem prodNormal_comp_rectangleFacetEquiv :
+    prodNormal (simplexNormal (Fin 1)) (simplexNormal (Fin 1)) ∘ rectangleFacetEquiv =
+      fun j ↦ rectangleLatticeMap (hirzebruchNormal 0 j) := by
+  funext j
+  fin_cases j <;> ext k <;> fin_cases k <;>
+    simp [rectangleFacetEquiv, rectangleLatticeMap, hirzebruchNormal_def]
+
+/-- Listed along `rectangleFacetEquiv`, the support constants of the product of two intervals are
+those of the rectangle. -/
+private theorem sumElim_simplexSupport_comp_rectangleFacetEquiv :
+    Sum.elim (simplexSupport a) (simplexSupport b) ∘ rectangleFacetEquiv =
+      hirzebruchSupport a b := by
+  funext j
+  fin_cases j <;> simp [rectangleFacetEquiv, hirzebruchSupport_def]
+
+/-- The levels of the rectangle and of the product of two intervals correspond along
+`rectangleFacetEquiv`. -/
+private theorem prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
+    (x : EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :
+    Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ rectangleFacetEquiv)
+        (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ rectangleFacetEquiv) x ∈
+        delzantLevel (((Int.castAddHom ℝ).compLeft (Fin 1)).prodMap
+          ((Int.castAddHom ℝ).compLeft (Fin 1)))
+          (prodNormal (simplexNormal (Fin 1)) (simplexNormal (Fin 1)))
+          (Sum.elim (simplexSupport a) (simplexSupport b)) ↔
+      x ∈ delzantLevel ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal 0)
+        (hirzebruchSupport a b) := by
+  rw [prodMap_piLpCongrLeft_mem_delzantLevel_iff, prodNormal_comp_rectangleFacetEquiv,
+    sumElim_simplexSupport_comp_rectangleFacetEquiv,
+    delzantLevel_comp_left injective_rectangleLinearMap rectangleLinearMap_intCast]
+
+/-- The kernel tori of the rectangle and of the product of two intervals correspond along
+`rectangleFacetEquiv`. -/
+private theorem comp_symm_mem_ker_facetTorusHom_rectangle_iff (θ : Fin 4 → AddCircle (2 * π)) :
+    θ ∘ rectangleFacetEquiv.symm ∈ (facetTorusHom (((Int.castAddHom ℝ).compLeft (Fin 1)).prodMap
+        ((Int.castAddHom ℝ).compLeft (Fin 1)))
+        (prodNormal (simplexNormal (Fin 1)) (simplexNormal (Fin 1))) (2 * π)).ker ↔
+      θ ∈ (facetTorusHom ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal 0) (2 * π)).ker
+        := by
+  rw [AddMonoidHom.mem_ker, ← facetTorusHom_comp_equiv, ← AddMonoidHom.mem_ker,
+    prodNormal_comp_rectangleFacetEquiv, ker_facetTorusHom_comp_left surjective_rectangleLatticeMap
+      injective_rectangleLinearMap rectangleLinearMap_intCast]
+
+/-- **The Delzant quotient of the rectangle is `ℂP¹ × ℂP¹` as a smooth manifold.** For `a, b > 0`,
+the Delzant quotient of the rectangle `[0, a] × [0, b]`, presented in `ℤ²` as the Hirzebruch
+trapezoid with `k = 0`, is diffeomorphic to `ℂP¹ × ℂP¹`. The moment map becomes
+`([w], [w']) ↦ (a |w₁|², b |w'₁|²)`, so the facets `{x(e₁) = 0}` and `{x(e₁) = a}` are where the
+homogeneous coordinate `1`, respectively `0`, of the first factor vanishes, and likewise for
+`x(e₂)` and the second factor. -/
+def rectangleDiffeomorph (ha : 0 < a) (hb : 0 < b) :
+    letI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+      (isIntegralLattice_intCast 2)
+    DelzantQuotient ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal 0)
+        (hirzebruchSupport a b) ≃ₘ⟮
+      𝓘(ℝ, ProperSMul.QuotientModelSpace
+        (kernelTorusLieAlgebra ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal 0))
+        (Fin (Fintype.card (Fin 4) + finrank ℝ (Fin 2 → ℝ)) → ℝ)),
+      𝓘(ℝ, Fin 1 → ℂ).prod 𝓘(ℝ, Fin 1 → ℂ)⟯
+      ComplexProjectiveSpace 1 × ComplexProjectiveSpace 1 :=
+  letI := (isDelzant_hirzebruch (k := 0) hb ha
+    (by simpa using ha)).delzantQuotientChartedSpace (isIntegralLattice_intCast 2)
+  letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
+      (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+    ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+  (IsDelzant.delzantQuotientCongrDiffeomorph ((isDelzant_simplex ha).prod
+      (isIntegralLattice_intCast 1).injective (isIntegralLattice_intCast 1).injective
+        (isDelzant_simplex hb))
+    (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha))
+    ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+    (isIntegralLattice_intCast 2) rectangleFacetEquiv
+    prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
+    comp_symm_mem_ker_facetTorusHom_rectangle_iff).trans (simplexProdDiffeomorph 1 1 ha hb)
+
+/-- `rectangleDiffeomorph` is the change of presentation from the rectangle to the product of two
+intervals, followed by `simplexProdDiffeomorph`. -/
+private theorem rectangleDiffeomorph_apply (ha : 0 < a) (hb : 0 < b)
+    (q : DelzantQuotient ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal 0)
+      (hirzebruchSupport a b)) :
+    letI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+      (isIntegralLattice_intCast 2)
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
+      (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+      ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+    rectangleDiffeomorph ha hb q = simplexProdDiffeomorph 1 1 ha hb
+      (IsDelzant.delzantQuotientCongrDiffeomorph ((isDelzant_simplex ha).prod
+          (isIntegralLattice_intCast 1).injective (isIntegralLattice_intCast 1).injective
+            (isDelzant_simplex hb))
+          (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha))
+          ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+          (isIntegralLattice_intCast 2) rectangleFacetEquiv
+          prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
+          comp_symm_mem_ker_facetTorusHom_rectangle_iff q) := by
+  let _ := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+    (isIntegralLattice_intCast 2)
+  let _ := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
+      (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+    ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+  rw [rectangleDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply]
+
+/-- **The Delzant quotient of the rectangle is `(ℂP¹ × ℂP¹, 2π a ω_FS ⊕ 2π b ω_FS)`.** The
+diffeomorphism `rectangleDiffeomorph` pulls the product of `2π a` and `2π b` times the
+Fubini–Study form of `ℂP¹` back to the reduced symplectic form of the Delzant quotient of the
+rectangle `[0, a] × [0, b]`. -/
+theorem mpullback_rectangleDiffeomorph_prod (ha : 0 < a) (hb : 0 < b) :
+    letI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+      (isIntegralLattice_intCast 2)
+    haveI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).isManifold_delzantQuotient
+      (isIntegralLattice_intCast 2)
+    SmoothForm.mpullback (rectangleDiffeomorph ha hb) (rectangleDiffeomorph ha hb).contMDiff
+        (SmoothTwoForm.prod ((2 * π * a) • ComplexProjectiveSpace.fubiniStudyForm 1)
+          ((2 * π * b) • ComplexProjectiveSpace.fubiniStudyForm 1)) =
+      (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientSymplecticForm
+        (isIntegralLattice_intCast 2) := by
+  let _ := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+    (isIntegralLattice_intCast 2)
+  let _ := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
+      (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+    ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+  have := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).isManifold_delzantQuotient
+    (isIntegralLattice_intCast 2)
+  have := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
+      (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).isManifold_delzantQuotient
+    ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+  -- Pull back in two steps: along `simplexProdDiffeomorph`, then along the change of
+  -- presentation from the rectangle to the product of two intervals.
+  have hcomp : ⇑(rectangleDiffeomorph ha hb) = ⇑(simplexProdDiffeomorph 1 1 ha hb) ∘
+      ⇑(IsDelzant.delzantQuotientCongrDiffeomorph ((isDelzant_simplex ha).prod
+        (isIntegralLattice_intCast 1).injective (isIntegralLattice_intCast 1).injective
+          (isDelzant_simplex hb))
+        (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha))
+        ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+        (isIntegralLattice_intCast 2) rectangleFacetEquiv
+        prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
+        comp_symm_mem_ker_facetTorusHom_rectangle_iff) :=
+    funext (rectangleDiffeomorph_apply ha hb)
+  rw [← IsDelzant.mpullback_delzantQuotientCongrDiffeomorph_delzantQuotientSymplecticForm
+      ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
+        (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb))
+      (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha))
+      ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+      (isIntegralLattice_intCast 2) rectangleFacetEquiv
+      prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
+      comp_symm_mem_ker_facetTorusHom_rectangle_iff,
+    ← mpullback_simplexProdDiffeomorph_prod 1 1 ha hb, SmoothForm.mpullback_mpullback]
+  exact SmoothForm.mpullback_congr _ _ hcomp _
+
+/-- **The Delzant quotient of the rectangle is symplectomorphic to
+`(ℂP¹ × ℂP¹, 2π a ω_FS ⊕ 2π b ω_FS)`**, by `rectangleDiffeomorph`. -/
+theorem isSymplectomorphism_rectangleDiffeomorph (ha : 0 < a) (hb : 0 < b) :
+    letI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+      (isIntegralLattice_intCast 2)
+    haveI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).isManifold_delzantQuotient
+      (isIntegralLattice_intCast 2)
+    SmoothTwoForm.IsSymplectomorphism
+      ((isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientSymplecticForm
+        (isIntegralLattice_intCast 2))
+      (SmoothTwoForm.prod ((2 * π * a) • ComplexProjectiveSpace.fubiniStudyForm 1)
+        ((2 * π * b) • ComplexProjectiveSpace.fubiniStudyForm 1))
+      (rectangleDiffeomorph ha hb) :=
+  letI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+    (isIntegralLattice_intCast 2)
+  haveI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).isManifold_delzantQuotient
+    (isIntegralLattice_intCast 2)
+  SmoothTwoForm.isSymplectomorphism_iff_mpullback_eq.2
+    (mpullback_rectangleDiffeomorph_prod ha hb)
+
+/-- The two moment map coordinates of the rectangle at `(rectangleDiffeomorph ha hb).symm p` agree
+with the corresponding coordinates of the product of two intervals at
+`(simplexProdDiffeomorph 1 1 ha hb).symm p`. -/
+private theorem reducedMomentMap_rectangleDiffeomorph_symm_apply (ha : 0 < a) (hb : 0 < b)
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ
+      fun j ↦ (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 j)))
+    (p : ComplexProjectiveSpace 1 × ComplexProjectiveSpace 1) (j : Fin 4) :
+    letI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+      (isIntegralLattice_intCast 2)
+    letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
+        (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+      ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+    reducedMomentMap hβ ((rectangleDiffeomorph ha hb).symm p)
+        ((Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 j)) - hirzebruchSupport a b j =
+      reducedMomentMap (i := ((Int.castAddHom ℝ).compLeft (Fin 1)).prodMap
+          ((Int.castAddHom ℝ).compLeft (Fin 1)))
+          (u := prodNormal (simplexNormal (Fin 1)) (simplexNormal (Fin 1)))
+          (c := Sum.elim (simplexSupport a) (simplexSupport b))
+          (surjective_linearCombination_prodNormal surjective_linearCombination_simplexNormal
+            surjective_linearCombination_simplexNormal)
+          ((simplexProdDiffeomorph 1 1 ha hb).symm p)
+          ((((Int.castAddHom ℝ).compLeft (Fin 1)).prodMap ((Int.castAddHom ℝ).compLeft (Fin 1)))
+            (prodNormal (simplexNormal (Fin 1)) (simplexNormal (Fin 1))
+              (rectangleFacetEquiv j))) -
+        Sum.elim (simplexSupport a) (simplexSupport b) (rectangleFacetEquiv j) := by
+  let _ := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+    (isIntegralLattice_intCast 2)
+  let _ := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
+        (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
+    ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+  have h := reducedMomentMap_congr_apply_sub rectangleFacetEquiv
+    prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
+    comp_symm_mem_ker_facetTorusHom_rectangle_iff
+    (surjective_linearCombination_prodNormal surjective_linearCombination_simplexNormal
+      surjective_linearCombination_simplexNormal) hβ ((rectangleDiffeomorph ha hb).symm p) j
+  have hq : (IsDelzant.delzantQuotientCongrDiffeomorph ((isDelzant_simplex ha).prod
+      (isIntegralLattice_intCast 1).injective (isIntegralLattice_intCast 1).injective
+        (isDelzant_simplex hb))
+      (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha))
+      ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+      (isIntegralLattice_intCast 2) rectangleFacetEquiv
+      prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
+      comp_symm_mem_ker_facetTorusHom_rectangle_iff)
+      ((rectangleDiffeomorph ha hb).symm p) = (simplexProdDiffeomorph 1 1 ha hb).symm p := by
+    rw [← (simplexProdDiffeomorph 1 1 ha hb).symm_apply_apply
+      (IsDelzant.delzantQuotientCongrDiffeomorph ((isDelzant_simplex ha).prod
+      (isIntegralLattice_intCast 1).injective (isIntegralLattice_intCast 1).injective
+        (isDelzant_simplex hb))
+      (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha))
+      ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
+      (isIntegralLattice_intCast 2) rectangleFacetEquiv
+      prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
+      comp_symm_mem_ker_facetTorusHom_rectangle_iff
+      ((rectangleDiffeomorph ha hb).symm p)), ← rectangleDiffeomorph_apply,
+      Diffeomorph.apply_symm_apply]
+  rw [IsDelzant.coe_delzantQuotientCongrDiffeomorph] at hq
+  rw [hq] at h
+  exact h.symm
+
+/-- **The moment map of `ℂP¹ × ℂP¹`, first coordinate.** Under `rectangleDiffeomorph`, the reduced
+moment map of the Delzant quotient of the rectangle `[0, a] × [0, b]` sends the point
+`([w], [w'])`, for unit vectors `w` and `w'` of `ℂ²`, to a covector with first coordinate
+`x(e₁) = a |w₁|²`. -/
+theorem reducedMomentMap_rectangleDiffeomorph_symm_mk_apply_zero (ha : 0 < a) (hb : 0 < b)
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ
+      fun j ↦ (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 j)))
+    (w w' : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
+    letI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+      (isIntegralLattice_intCast 2)
+    reducedMomentMap hβ ((rectangleDiffeomorph ha hb).symm
+        (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w')) (Pi.single 0 1) =
+      a * ‖(w : EuclideanSpace ℂ (Fin 2)) 1‖ ^ 2 := by
+  have h := reducedMomentMap_rectangleDiffeomorph_symm_apply ha hb hβ
+    (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w') 0
+  have he : rectangleFacetEquiv 0 = .inl (some 0) := rfl
+  have hn : (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 0) = Pi.single 0 1 := by
+    ext k
+    fin_cases k <;> simp [hirzebruchNormal_def]
+  simp only [he, hn, prodNormal_inl, simplexNormal_some, AddMonoidHom.coe_prodMap, Prod.map_apply,
+    AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one, map_zero, Sum.elim_inl,
+    simplexSupport_some, hirzebruchSupport_def, Matrix.cons_val_zero, sub_zero] at h
+  rw [h, reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_fst, Fin.succ_zero_eq_one]
+
+/-- **The moment map of `ℂP¹ × ℂP¹`, second coordinate.** Under `rectangleDiffeomorph`, the
+reduced moment map of the Delzant quotient of the rectangle `[0, a] × [0, b]` sends the point
+`([w], [w'])`, for unit vectors `w` and `w'` of `ℂ²`, to a covector with second coordinate
+`x(e₂) = b |w'₁|²`. -/
+theorem reducedMomentMap_rectangleDiffeomorph_symm_mk_apply_one (ha : 0 < a) (hb : 0 < b)
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ
+      fun j ↦ (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 j)))
+    (w w' : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
+    letI := (isDelzant_hirzebruch (k := 0) hb ha (by simpa using ha)).delzantQuotientChartedSpace
+      (isIntegralLattice_intCast 2)
+    reducedMomentMap hβ ((rectangleDiffeomorph ha hb).symm
+        (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w')) (Pi.single 1 1) =
+      b * ‖(w' : EuclideanSpace ℂ (Fin 2)) 1‖ ^ 2 := by
+  have h := reducedMomentMap_rectangleDiffeomorph_symm_apply ha hb hβ
+    (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w') 1
+  have he : rectangleFacetEquiv 1 = .inr (some 0) := rfl
+  have hn : (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 1) = Pi.single 1 1 := by
+    ext k
+    fin_cases k <;> simp [hirzebruchNormal_def]
+  simp only [he, hn, prodNormal_inr, simplexNormal_some, AddMonoidHom.coe_prodMap, Prod.map_apply,
+    AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one, map_zero, Sum.elim_inr,
+    simplexSupport_some, hirzebruchSupport_def, Matrix.cons_val_one, Matrix.cons_val_zero,
+    sub_zero] at h
+  rw [h, reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_snd, Fin.succ_zero_eq_one]
+
+end Rectangle
+
+end DelzantQuotient
+
+end TauCeti.Toric
