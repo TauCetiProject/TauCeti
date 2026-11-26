@@ -478,8 +478,9 @@ theorem mem_range_fromBlocksHom_iff {g : indefiniteUnitaryGroup p q R} :
   exact (hB0 ▸ hM).symm
 
 /-- An element of `U(p, q)` (or `O(p, q)`) is unitary in the ambient space if and only if it lies
-in the block-diagonal subgroup `U(p) × U(q)` (the range of `fromBlocksHom`). -/
-theorem mem_range_fromBlocksHom_iff_mem_unitaryGroup [IsDomain R] [NeZero (2 : R)]
+in the block-diagonal subgroup `U(p) × U(q)` (the range of `fromBlocksHom`), provided `2` is
+left-regular in `R`. -/
+theorem mem_range_fromBlocksHom_iff_mem_unitaryGroup (h2 : IsLeftRegular (2 : R))
     (g : indefiniteUnitaryGroup p q R) :
     g ∈ (fromBlocksHom p q R).range ↔
       ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) ∈ unitaryGroup (p ⊕ q) R := by
@@ -503,10 +504,11 @@ theorem mem_range_fromBlocksHom_iff_mem_unitaryGroup [IsDomain R] [NeZero (2 : R
     rw [← fromBlocks_toBlocks M, hJblock] at h21
     simp only [fromBlocks_multiply, Matrix.zero_mul, Matrix.mul_zero, add_zero, zero_add,
       Matrix.one_mul, Matrix.mul_one, Matrix.neg_mul, toBlocks_fromBlocks₂₁] at h21
-    have h2 : (2 : R) • M.toBlocks₂₁ = 0 := by
-      rw [two_smul]
-      exact eq_neg_iff_add_eq_zero.1 h21.symm
-    exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+    ext i j
+    have h2ij : (2 : R) * M.toBlocks₂₁ i j = (2 : R) * 0 := by
+      rw [two_mul, mul_zero]
+      exact eq_neg_iff_add_eq_zero.1 (congrFun (congrFun h21.symm i) j)
+    exact h2 h2ij
 
 end indefiniteUnitaryGroup
 
