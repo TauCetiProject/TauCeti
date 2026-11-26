@@ -168,15 +168,11 @@ def map : BassK1 C →+ BassK1 D :=
 @[simp] theorem map_of {X : C} (a : X ≅ X) : map F (of a) = of (F.mapIso a) :=
   lift_of _ _ _ _ _
 
-attribute [local instance] preservesBinaryBiproducts_of_preservesBiproducts
-
 @[simp] theorem map_id : map (𝟭 C) = AddMonoidHom.id _ :=
   hom_ext fun a => by simp [Functor.mapIso]
 
 theorem map_comp {E : Type u''} [Category.{v''} E] [HasZeroMorphisms E] [HasBinaryBiproducts E]
     (H : D ⥤ E) [H.PreservesZeroMorphisms] [PreservesBinaryBiproducts H] :
-    letI : PreservesBinaryBiproducts (F ⋙ H) :=
-      ⟨fun {_ _} => ⟨fun hb => ⟨isBinaryBilimitOfPreserves H (isBinaryBilimitOfPreserves F hb)⟩⟩⟩
     map (F ⋙ H) = (map H).comp (map F) :=
   hom_ext fun a => by simp [Functor.mapIso]
 
