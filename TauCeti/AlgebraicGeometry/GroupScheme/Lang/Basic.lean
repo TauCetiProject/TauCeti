@@ -203,6 +203,15 @@ theorem exists_comp_langKernelι_iff {T : Over (Spec (CommRingCat.of k))} (x : T
     (∃ y, y ≫ langKernelι k a ha G = x) ↔ qPowerFrobeniusOver k a ha T ≫ x = x := by
   rw [← div_eq_one, ← comp_langMap_hom_hom_hom, exists_comp_langKernelι_iff_comp_langMap]
 
+variable (G) in
+/-- Frobenius acts as the identity on the scheme-theoretic Lang kernel. -/
+@[simp]
+theorem qPowerFrobeniusOver_langKernel :
+    qPowerFrobeniusOver k a ha (langKernel k a ha G).X = 𝟙 _ := by
+  apply (cancel_mono (langKernelι k a ha G)).mp
+  rw [Category.id_comp]
+  exact (exists_comp_langKernelι_iff k a ha _).mp ⟨𝟙 _, Category.id_comp _⟩
+
 /-- Every `k`-rational point of `G` factors through the kernel of the Lang map: the `q`-power
 Frobenius of `Spec k` is the identity. -/
 theorem exists_comp_langKernelι (x : 𝟙_ (Over (Spec (CommRingCat.of k))) ⟶ G.X) :
