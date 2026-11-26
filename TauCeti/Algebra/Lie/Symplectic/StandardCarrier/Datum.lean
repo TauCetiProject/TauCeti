@@ -100,12 +100,11 @@ theorem pinnedRepresentation_ι (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
 
 /-- On Lie elements, the pinned action is the linear map associated to the corresponding
 symplectic matrix. -/
-theorem pinnedRepresentation_ι_eq_toLin' (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
+theorem pinnedRepresentation_ι_matrix (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
     pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
-      Matrix.toLin' (pinnedLieEquiv n ht x).val := by
-  apply LinearMap.ext
-  intro v
-  rw [pinnedRepresentation_ι, rep_ι_apply, Matrix.toLin'_apply]
+      Matrix.toLinAlgEquiv' (pinnedLieEquiv n ht x : Matrix _ _ ℚ) := by
+  rw [pinnedRepresentation_ι, rep_def]
+  exact UniversalEnvelopingAlgebra.representation_ι_matrix (pinnedLieEquiv n ht x)
 
 /-- On the Lie algebra, `pinnedRepresentation` multiplies a coordinate vector by the symplectic
 matrix `pinnedLieEquiv n ht x`. -/
@@ -114,7 +113,7 @@ theorem pinnedRepresentation_ι_apply (x : (DynkinType.C (n + 1)).lieAlgebra ht)
     pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (pinnedLieEquiv n ht x :
         Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *ᵥ v := by
-  rw [pinnedRepresentation_ι_eq_toLin', Matrix.toLin'_apply]
+  rw [pinnedRepresentation_ι_matrix, Matrix.toLinAlgEquiv'_apply]
 
 /-- A pinned Cartan generator acts as the standard symplectic simple coroot with the same
 number. -/
@@ -167,9 +166,10 @@ theorem pinnedRepresentation_ι_injective :
     Function.Injective fun x : (DynkinType.C (n + 1)).lieAlgebra ht =>
       pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
   intro x y hxy
-  dsimp only at hxy
-  rw [pinnedRepresentation_ι_eq_toLin', pinnedRepresentation_ι_eq_toLin'] at hxy
-  exact (pinnedLieEquiv n ht).injective (Subtype.ext (Matrix.toLin'.injective hxy))
+  simp only [pinnedRepresentation_ι, rep_def] at hxy
+  exact (pinnedLieEquiv n ht).injective
+    (UniversalEnvelopingAlgebra.representation_ι_injective ℚ (sp (Fin (n + 1)) ℚ)
+      ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) hxy)
 
 /-- **The standard coordinate lattice is stable under the Kostant integral form of the pinned
 type-`C_(n+1)` generators.** -/
