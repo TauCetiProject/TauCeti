@@ -99,7 +99,8 @@ def divisorCore : List (X × Bool) → VectorBundleCore ℂ X ℂ (X × Bool)
       coordChange_comp := fun _ _ _ _ _ _ ↦ rfl }
   | (x, s) :: D => signedPointTwistCore ℂ (divisorCore D).Fiber x s
 
-@[simp] theorem divisorCore_nil_baseSet (i : X × Bool) : (divisorCore []).baseSet i = univ :=
+@[simp] theorem divisorCore_nil_localTriv_baseSet (i : X × Bool) :
+    ((divisorCore []).localTriv i).baseSet = univ :=
   (rfl)
 
 @[simp] theorem divisorCore_nil_coordChange (i j : X × Bool) (z : X) :
@@ -296,9 +297,8 @@ def IsSignedTransverseZero (σ : ∀ z, L z) (x : X) (s : Bool) : Prop :=
 omit [∀ z, AddCommGroup (L z)] [∀ z, Module ℂ (L z)] [∀ z, Module ℝ (L z)]
   [∀ z, IsScalarTower ℝ ℂ (L z)] [VectorBundle ℂ ℂ L] in
 /-- The sign of a transverse zero depends only on the section near the zero. -/
-theorem IsSignedTransverseZero.congr {L' : X → Type} [∀ z, AddCommGroup (L' z)]
-    [∀ z, Module ℂ (L' z)] [∀ z, TopologicalSpace (L' z)]
-    [TopologicalSpace (TotalSpace ℂ L')] [FiberBundle ℂ L'] [VectorBundle ℂ ℂ L']
+theorem IsSignedTransverseZero.congr {L' : X → Type} [∀ z, TopologicalSpace (L' z)]
+    [TopologicalSpace (TotalSpace ℂ L')] [FiberBundle ℂ L']
     {σ : ∀ z, L z} {σ' : ∀ z, L' z} {x : X} {s : Bool} (h : IsSignedTransverseZero σ x s)
     (h' : negPointTwistChartReading ℂ x σ =ᶠ[𝓝 (chartAt ℂ x x)]
       negPointTwistChartReading ℂ x σ') :
