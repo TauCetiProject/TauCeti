@@ -35,6 +35,8 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
 * `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
   function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
   by a cutoff equal to `1` on the support of `τ`.
+* `TauCeti.eq_of_forall_cutoffPushforwardSchwartz_eq`: the readings of a function through cutoffs
+  whose readings on `M` add up to `1` determine it.
 -/
 
 public section
@@ -161,3 +163,36 @@ theorem overlapCutoff_spec (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
 end Overlap
 
 end OpenPartialHomeomorph
+
+namespace TauCeti
+
+open OpenPartialHomeomorph
+
+variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M] [T2Space M]
+
+/-- **Readings through a chart partition determine a function.** Let `ψᵢ` be finitely many cutoffs
+in charts `eᵢ` whose readings `ψᵢ ∘ eᵢ` on `M`, extended by `0`, add up to `1`. Two smooth
+functions `u` and `v` on `M` whose readings `ψᵢ · (u ∘ eᵢ⁻¹)` and `ψᵢ · (v ∘ eᵢ⁻¹)` agree for
+every `i` are equal. -/
+theorem eq_of_forall_cutoffPushforwardSchwartz_eq {ι : Type*} [Fintype ι]
+    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    {u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (h : ∀ i, (e i).cutoffPushforwardSchwartz (he i) (ψ i) u =
+      (e i).cutoffPushforwardSchwartz (he i) (ψ i) v) : u = v := by
+  ext x
+  -- `f x = ∑ᵢ ψᵢ(eᵢ x) f(x)`, and the `i`-th term is read off from the reading of `f` in `eᵢ`.
+  have hsum (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+      f x = ∑ i, ((e i).cutoffPullback (he i) (ψ i) 1 x : ℂ) * f x := by
+    rw [← Finset.sum_mul, ← Complex.ofReal_sum, hψ x, Complex.ofReal_one, one_mul]
+  rw [hsum u, hsum v]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hx : x ∈ (e i).source
+  · have hi := congrArg (fun f : 𝓢(CoordinateSpace n, ℂ) ↦ f (e i x)) (h i)
+    simp only [cutoffPushforwardSchwartz_apply, (e i).left_inv hx, Complex.real_smul] at hi
+    rwa [cutoffPullback_one_apply_of_mem (he i) _ hx]
+  · simp [cutoffPullback_apply_of_notMem (he i) _ _ hx]
+
+end TauCeti

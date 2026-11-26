@@ -69,6 +69,8 @@ is compact.
 
 ## Main results
 
+* `BesselPotentialSpace.smulLeftCLM_toBesselPotentialSpaceCLM`: on Schwartz functions,
+  multiplication by `φ` in `H^s` is multiplication of Schwartz functions.
 * `BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM`: `u ↦ φ u` is compact from
   `H^s` to `H^r` for `r < s`.
 * `BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`: a bounded subset of
@@ -292,6 +294,13 @@ private theorem fourierWeighted_toBesselPotentialSpaceCLM (t : ℝ) (u : 𝓢(E,
     (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 u)) 2 volume] with ξ hξ
   rw [hξ, SchwartzMap.smulLeftCLM_apply_apply hw]
 
+/-- On a Schwartz function `u`, multiplication by `φ` in `H^s` is the Schwartz function `φ u`. -/
+@[simp]
+theorem smulLeftCLM_toBesselPotentialSpaceCLM (φ : 𝓢(E, ℂ)) (s : ℝ) (u : 𝓢(E, F)) :
+    smulLeftCLM s φ (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+      SchwartzMap.toBesselPotentialSpaceCLM s 2 (SchwartzMap.smulLeftCLM F (φ : E → ℂ) u) :=
+  ext (by simp [smulLeftCLM_toTemperedDistributionCLM_eq])
+
 /-- In weighted Fourier coordinates, `u ↦ φ u` from `H^s` to `H^r` is the integral operator with
 the kernel `⟨ξ⟩ ^ r 𝓕 φ (ξ - η) ⟨η⟩ ^ (-s)`: `𝓕 (φ u) = 𝓕 φ ⋆ 𝓕 u`. -/
 private theorem fourierWeighted_comp_eq (φ : 𝓢(E, ℂ)) (h : r ≤ s) :
@@ -302,8 +311,8 @@ private theorem fourierWeighted_comp_eq (φ : 𝓢(E, ℂ)) (h : r ≤ s) :
   refine continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦ ?_
   -- On a Schwartz function `u`, `φ u` is the Schwartz function `φ • u`.
   have hφu : inclusion h (smulLeftCLM s φ (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)) =
-      SchwartzMap.toBesselPotentialSpaceCLM r 2 (SchwartzMap.smulLeftCLM F (φ : E → ℂ) u) :=
-    ext (by simp [smulLeftCLM_toTemperedDistributionCLM_eq])
+      SchwartzMap.toBesselPotentialSpaceCLM r 2 (SchwartzMap.smulLeftCLM F (φ : E → ℂ) u) := by
+    rw [smulLeftCLM_toBesselPotentialSpaceCLM, inclusion_toBesselPotentialSpaceCLM]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hφu]
   refine (TauCeti.integralOperatorLp_eq_iff.2 ?_).symm
   filter_upwards [fourierWeighted_toBesselPotentialSpaceCLM r (SchwartzMap.smulLeftCLM F
