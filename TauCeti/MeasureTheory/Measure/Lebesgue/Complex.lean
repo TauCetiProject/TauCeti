@@ -243,6 +243,15 @@ theorem inter_setOf_im_nonneg_ae_eq_interior (Ω : Opens ℂ) :
   rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
   exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
 
+/-- Almost every point, indeed every point, of the interior `Ω ∩ {0 < im}` of the half-disc
+`Ω ∩ {0 ≤ im}` lies in the open upper half-plane. -/
+theorem ae_restrict_interior_inter_setOf_im_nonneg_im_pos (Ω : Opens ℂ) :
+    ∀ᵐ z ∂volume.restrict (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ),
+      0 < z.im := by
+  refine (ae_restrict_iff' (Opens.interior _).isOpen.measurableSet).2 (.of_forall fun z hz => ?_)
+  rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen] at hz
+  exact hz.2
+
 /-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
 including on an empty coordinate type. -/
 theorem volume_preserving_complexToRealEuclidean {ι : Type*} [Fintype ι] :
