@@ -59,6 +59,7 @@ private theorem exists_partial_coloring_of_forall_exists_card_le
           hf (Finset.mem_erase.mpr ⟨hav, ha⟩) (Finset.mem_erase.mpr ⟨hbv, hb⟩) hab
   · exact ⟨fun _ ↦ 0, fun _ _ hv ↦ (hs ⟨_, hv⟩).elim⟩
 
+variable {G} in
 /-- The Szekeres–Wilf bound: if every nonempty finite vertex set contains a vertex with at most
 `k` neighbours in that set, then the graph is colourable with `k + 1` colours. -/
 theorem colorable_succ_of_forall_exists_card_le
@@ -76,7 +77,7 @@ theorem colorable_succ_of_forall_exists_card_le
 
 /-- A finite simple graph is colourable with one more colour than its maximum degree. -/
 theorem colorable_maxDegree_add_one [Fintype V] : G.Colorable (G.maxDegree + 1) := by
-  apply G.colorable_succ_of_forall_exists_card_le
+  apply colorable_succ_of_forall_exists_card_le
   intro s hs
   obtain ⟨v, hv⟩ := hs
   refine ⟨v, hv, ?_⟩
