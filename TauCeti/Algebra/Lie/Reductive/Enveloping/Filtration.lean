@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Reductive.EnvelopingCenter
+public import TauCeti.Algebra.Lie.Reductive.Enveloping.Center
 public import TauCeti.Algebra.Lie.UniversalEnveloping.ComplementaryIdeals.Filtration
 
 /-!
@@ -57,6 +57,7 @@ theorem map_pbwFiltration_reductiveEnveloping (n : ℕ) :
 
 /-- Forward compatibility: `reductiveEnveloping` sends PBW degree `n` into total tensor degree
 `n`, and an element whose image has total tensor degree `n` has PBW degree `n`. -/
+@[simp]
 theorem reductiveEnveloping_mem_tensorFiltration_iff {n : ℕ} {x : UL} :
     reductiveEnveloping K L x ∈ T n ↔ x ∈ pbwFiltration K L n := by
   rw [reductiveEnveloping_def]
@@ -64,6 +65,7 @@ theorem reductiveEnveloping_mem_tensorFiltration_iff {n : ℕ} {x : UL} :
 
 /-- Inverse compatibility: the inverse of `reductiveEnveloping` sends total tensor degree `n` into
 PBW degree `n`, and conversely. -/
+@[simp]
 theorem reductiveEnveloping_symm_mem_pbwFiltration_iff {n : ℕ} {t : SZ ⊗[K] UD} :
     (reductiveEnveloping K L).symm t ∈ pbwFiltration K L n ↔ t ∈ T n := by
   rw [reductiveEnveloping_def]

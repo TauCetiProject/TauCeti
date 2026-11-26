@@ -53,22 +53,23 @@ theorem map_pbwFiltration_envelopingEquivOfIsCompl (n : ℕ) :
     (pbwFiltration R L n).map (envelopingEquivOfIsCompl R I J h).toAlgHom.toLinearMap = T n := by
   have he : (envelopingEquivOfIsCompl R I J h).toAlgHom.toLinearMap =
       (productEnveloping R I J).toAlgHom.toLinearMap ∘ₗ
-        (mapEquiv R (LieIdeal.prodEquivOfIsCompl I J h).symm).toLinearMap :=
-    LinearMap.ext fun _ ↦ by rw [envelopingEquivOfIsCompl_def]; rfl
+        (mapEquiv R (LieIdeal.prodEquivOfIsCompl I J h).symm).toLinearMap := by
+    simp only [envelopingEquivOfIsCompl_def, AlgEquiv.toAlgHom_toLinearMap,
+      AlgEquiv.toLinearEquiv_toLinearMap, AlgEquiv.trans_toLinearMap]
   rw [he, Submodule.map_comp, mapEquiv_pbwFiltration, map_pbwFiltration_productEnveloping]
 
 /-- Forward compatibility: `envelopingEquivOfIsCompl` sends PBW degree `n` into total tensor
 degree `n`, and an element whose image has total tensor degree `n` has PBW degree `n`. -/
+@[simp]
 theorem envelopingEquivOfIsCompl_mem_tensorFiltration_iff {n : ℕ} {x : UL} :
     envelopingEquivOfIsCompl R I J h x ∈ T n ↔ x ∈ pbwFiltration R L n := by
-  rw [← map_pbwFiltration_envelopingEquivOfIsCompl R I J h, Submodule.mem_map]
-  constructor
-  · rintro ⟨y, hy, hxy⟩
-    rwa [← (envelopingEquivOfIsCompl R I J h).injective hxy]
-  · exact fun hx ↦ ⟨x, hx, rfl⟩
+  rw [← map_pbwFiltration_envelopingEquivOfIsCompl R I J h, AlgEquiv.toAlgHom_toLinearMap,
+    Submodule.mem_map_equiv, ← AlgEquiv.toLinearEquiv_symm, AlgEquiv.toLinearEquiv_apply,
+    AlgEquiv.symm_apply_apply]
 
 /-- Inverse compatibility: the inverse of `envelopingEquivOfIsCompl` sends total tensor degree `n`
 into PBW degree `n`, and conversely. -/
+@[simp]
 theorem envelopingEquivOfIsCompl_symm_mem_pbwFiltration_iff {n : ℕ}
     {t : SymmetricAlgebra R I ⊗[R] UJ} :
     (envelopingEquivOfIsCompl R I J h).symm t ∈ pbwFiltration R L n ↔ t ∈ T n := by
