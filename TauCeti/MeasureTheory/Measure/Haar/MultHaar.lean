@@ -25,8 +25,9 @@ inversion (`TauCeti.map_multHaar_inv`), and gives the interval `[1, e]` mass one
 `t ↦ t ^ γ`, `γ ≠ 0`, sends it to `|γ|⁻¹ dt / t` (`TauCeti.map_multHaar_rpow`), so it multiplies
 `L^q(dt / t)` seminorms by `|γ| ^ (-1 / q)` (`TauCeti.eLpNorm_comp_rpow_multHaar`).
 
-At a positive cutoff `a`, the reflection `t ↦ a² / t` exchanges the two sides of `a` in
-`(0, ∞)` and preserves `dt / t` (`TauCeti.measurePreserving_sq_div_multHaar_restrict_Ioi`).
+The map `t ↦ c / t` for `c > 0` preserves `dt / t` (`TauCeti.measurePreserving_div_multHaar`).
+At a positive cutoff `a`, the reflection `t ↦ a² / t` carries the upper ray to the lower part of
+`(0, ∞)` with their restricted measures (`TauCeti.measurePreserving_sq_div_multHaar_restrict_Ioi`).
 Under reciprocal symmetry, integrability is equivalent to integrability on the upper ray
 (`TauCeti.integrable_multHaar_iff_of_sq_div`), and the full integral at a positive cutoff is twice
 the upper-ray integral (`TauCeti.integral_multHaar_eq_two_smul_of_sq_div`).
@@ -238,6 +239,13 @@ theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by
   rw [← map_volume_exp, map_map measurable_inv Real.measurable_exp, hcomp,
     ← map_map Real.measurable_exp measurable_neg, map_neg_eq_self]
 
+/-- Division of a positive constant by the variable preserves `dt / t`. -/
+theorem measurePreserving_div_multHaar {c : ℝ} (hc : 0 < c) :
+    MeasurePreserving (c / ·) multHaar multHaar := by
+  simpa only [Function.comp_def, div_eq_mul_inv] using
+    MeasurePreserving.comp ⟨measurable_const_mul c, map_multHaar_mul_left hc⟩
+      ⟨measurable_inv, map_multHaar_inv⟩
+
 /-- Reciprocal reflection about a positive cutoff carries `dt / t` on the upper ray to
 `dt / t` on the lower ray. -/
 theorem measurePreserving_sq_div_multHaar_restrict_Ioi {a : ℝ} (ha : 0 < a) :
@@ -246,17 +254,12 @@ theorem measurePreserving_sq_div_multHaar_restrict_Ioi {a : ℝ} (ha : 0 < a) :
   have hsq := sq_pos_of_pos ha
   have hcomp : (fun t : ℝ ↦ a ^ 2 / t) = (a ^ 2 * ·) ∘ Inv.inv :=
     funext fun t ↦ div_eq_mul_inv _ t
-  have hpres : MeasurePreserving (fun t : ℝ ↦ a ^ 2 / t) multHaar multHaar := by
-    rw [hcomp]
-    have hmul : MeasurePreserving (a ^ 2 * ·) multHaar multHaar :=
-      ⟨measurable_const_mul _, map_multHaar_mul_left hsq⟩
-    have hinv : MeasurePreserving Inv.inv multHaar multHaar := ⟨measurable_inv, map_multHaar_inv⟩
-    exact hmul.comp hinv
   have hpre : (fun t : ℝ ↦ a ^ 2 / t) ⁻¹' Ioo 0 a = Ioi a := by
     rw [hcomp, preimage_comp, preimage_const_mul_Ioo₀ _ _ hsq, zero_div, inv_preimage,
       inv_Ioo_0_left (div_pos ha hsq)]
     simp only [inv_div, pow_two, mul_div_cancel_left₀ _ ha.ne']
-  simpa only [hpre] using hpres.restrict_preimage (measurableSet_Ioo (a := 0) (b := a))
+  simpa only [hpre] using
+    (measurePreserving_div_multHaar hsq).restrict_preimage (measurableSet_Ioo (a := 0) (b := a))
 
 private theorem measurableEmbedding_sq_div {a : ℝ} (ha : a ≠ 0) :
     MeasurableEmbedding (fun t : ℝ ↦ a ^ 2 / t) := by
