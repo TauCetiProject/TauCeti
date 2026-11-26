@@ -27,12 +27,9 @@ they have the same entropy.
   isomorphism mod 0; in particular (`TauCeti.measureEntropy_eq_of_measurableEquiv`) under
   conjugacy by a measure-preserving measurable equivalence.
 
-These are item 1 of §4.1 of the ClassicalErgodicTheory roadmap.
-
 ## References
 
-* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Problem 4.3, p. 130 (the locator given by
-  the ClassicalErgodicTheory roadmap).
+* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Problem 4.3, p. 130.
 -/
 
 public section
@@ -46,18 +43,6 @@ variable {X Y ι : Type*} {mX : MeasurableSpace X} {mY : MeasurableSpace Y}
   {μ : Measure X} {ν : Measure Y} {T : X → X} {S : Y → Y} {π : X → Y}
 
 namespace IsFactorMap
-
-/-- A factor map intertwines all iterates almost everywhere, when `T` is quasi-measure-preserving:
-`π ∘ T^[k] =ᵐ[μ] S^[k] ∘ π`. -/
-theorem comp_iterate_ae_eq (h : IsFactorMap π T S μ ν) (hT : QuasiMeasurePreserving T μ μ)
-    (k : ℕ) : π ∘ T^[k] =ᵐ[μ] S^[k] ∘ π := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    have h₁ : π ∘ T^[k] ∘ T =ᵐ[μ] (S^[k] ∘ π) ∘ T := hT.ae_eq_comp ih
-    have h₂ : S^[k] ∘ (π ∘ T) =ᵐ[μ] S^[k] ∘ (S ∘ π) := h.comp_ae_eq.fun_comp _
-    rw [iterate_succ, iterate_succ]
-    exact h₁.trans h₂
 
 /-- The itineraries under `T` of the pulled-back label `a ∘ π` are almost everywhere the
 pullbacks of the itineraries of `a` under `S`. -/
@@ -113,10 +98,12 @@ theorem IsIsomorphicModNull.measureEntropy_eq (h : IsIsomorphicModNull T μ S ν
       (e.isFactorMap.measureEntropy_le hT.quasiMeasurePreserving hS)
 
 /-- Systems conjugate by a measure-preserving measurable equivalence have the same measure
-entropy, for measure-preserving `T` and measurable `S`. -/
+entropy, for measure-preserving `T`. -/
 theorem measureEntropy_eq_of_measurableEquiv (e : X ≃ᵐ Y) (he : MeasurePreserving e μ ν)
-    (hconj : Semiconj e T S) (hT : MeasurePreserving T μ μ) (hS : Measurable S) :
-    measureEntropy μ T = measureEntropy ν S :=
-  (IsIsomorphicModNull.of_measurableEquiv e he hconj).measureEntropy_eq hT hS
+    (hconj : Semiconj e T S) (hT : MeasurePreserving T μ μ) :
+    measureEntropy μ T = measureEntropy ν S := by
+  have hS : S = e ∘ T ∘ e.symm := funext fun y ↦ by simpa using (hconj (e.symm y)).symm
+  exact (IsIsomorphicModNull.of_measurableEquiv e he hconj).measureEntropy_eq hT
+    (hS ▸ e.measurable.comp (hT.measurable.comp e.symm.measurable))
 
 end TauCeti
