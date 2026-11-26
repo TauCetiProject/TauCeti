@@ -33,9 +33,10 @@ to variable elimination by minimal-exponent slicing in multihomogeneous polynomi
 * `MvPolynomial.monomial_one_dvd_iff`, `MvPolynomial.X_pow_dvd_iff`, `MvPolynomial.X_dvd_iff`:
   divisibility by `monomial k 1`, `Xᵢ ^ n`, and `Xᵢ` in terms of the exponent support.
 * `MvPolynomial.X_pow_dvd_X_pow_mul_iff`: for `i ≠ j`, `Xᵢ ^ k ∣ Xⱼ ^ l * p ↔ Xᵢ ^ k ∣ p`.
-* `MvPolynomial.not_X_dvd_of_constantCoeff_ne_zero`,
-  `MvPolynomial.exists_eq_monomial_mul_and_forall_not_X_dvd`: every nonzero polynomial factors as
-  `monomial k 1 * q` with `q` divisible by no variable `Xᵢ`.
+* `MvPolynomial.not_X_dvd_of_constantCoeff_ne_zero`, `MvPolynomial.not_isUnit_X`,
+  `MvPolynomial.exists_eq_monomial_mul_and_forall_not_X_dvd`: no variable `Xᵢ` is a unit over a
+  nontrivial semiring, and every nonzero polynomial factors as `monomial k 1 * q` with `q`
+  divisible by no variable `Xᵢ`.
 * `MvPolynomial.aeval_update_X_zero_eq_modMonomial`, `MvPolynomial.modMonomial_single_mul`: setting
   `X i` to `0` computes the remainder `p.modMonomial (Finsupp.single i 1)`, which is multiplicative.
 * `MvPolynomial.X_dvd_mul_iff_of_noZeroDivisors`, `MvPolynomial.dvd_X_mul_iff_of_not_X_dvd`,
@@ -85,6 +86,10 @@ theorem not_X_dvd_of_constantCoeff_ne_zero {p : MvPolynomial σ R}
     (hp : constantCoeff p ≠ 0) (i : σ) : ¬ X i ∣ p := fun h ↦ by
   have h0 : (0 : σ →₀ ℕ) ∈ p.support := mem_support_iff.mpr (by simpa [constantCoeff_eq] using hp)
   exact X_dvd_iff.mp h 0 h0 rfl
+
+/-- Over a nontrivial commutative semiring, no variable `Xᵢ` is a unit. -/
+theorem not_isUnit_X [Nontrivial R] (i : σ) : ¬ IsUnit (X i : MvPolynomial σ R) :=
+  fun h ↦ not_isUnit_zero (by simpa using h.map constantCoeff : IsUnit (0 : R))
 
 /-- **Factoring out the greatest common monic monomial.** Every nonzero multivariate polynomial `p`
 factors as `monomial k 1 * q` where `k` is the coordinatewise infimum of `p.support` and no

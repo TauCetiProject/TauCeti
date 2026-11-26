@@ -79,17 +79,15 @@ theorem isUnit_toLaurent_iff [Nontrivial R] {p : MvPolynomial K R} :
 if and only if `toLaurent p` is a unit and no variable `Xᵢ` divides `p`. -/
 theorem isUnit_iff_isUnit_toLaurent_and_forall_not_X_dvd [Nontrivial R] {p : MvPolynomial K R} :
     IsUnit p ↔ IsUnit (toLaurent p) ∧ ∀ i : K, ¬ X i ∣ p := by
-  refine ⟨fun hp ↦ ⟨hp.map toLaurent, fun i hXi ↦ ?_⟩, fun ⟨hu, hX⟩ ↦ ?_⟩
-  · have huX : IsUnit (X i : MvPolynomial K R) := isUnit_of_dvd_unit hXi hp
-    have hu0 : IsUnit (0 : R) := by simpa using huX.map constantCoeff
-    exact not_isUnit_zero hu0
-  · obtain ⟨n, r, hr, rfl⟩ := isUnit_toLaurent_iff.mp hu
-    have hn0 : n = 0 := by
-      ext i
-      by_contra hni
-      exact hX i (X_dvd_monomial.mpr (Or.inr hni))
-    rw [hn0, monomial_zero']
-    exact hr.map C
+  refine ⟨fun hp ↦ ⟨hp.map toLaurent,
+    fun i hXi ↦ not_isUnit_X i (isUnit_of_dvd_unit hXi hp)⟩, fun ⟨hu, hX⟩ ↦ ?_⟩
+  obtain ⟨n, r, hr, rfl⟩ := isUnit_toLaurent_iff.mp hu
+  have hn0 : n = 0 := by
+    ext i
+    by_contra hni
+    exact hX i (X_dvd_monomial.mpr (Or.inr hni))
+  rw [hn0, monomial_zero']
+  exact hr.map C
 
 /-- **Descent of relative primality from `LaurentRing` to `MvPolynomial`.** If `toLaurent p` and
 `toLaurent q` are relatively prime and no variable `Xᵢ` divides both `p` and `q`, then `p` and `q`
@@ -186,8 +184,7 @@ only if `toLaurent p` and `toLaurent q` are relatively prime and no variable `X�
 and `q`. -/
 theorem isRelPrime_iff_isRelPrime_toLaurent [Nontrivial R] {p q : MvPolynomial K R} :
     IsRelPrime p q ↔ IsRelPrime (toLaurent p) (toLaurent q) ∧ ∀ i : K, ¬ (X i ∣ p ∧ X i ∣ q) :=
-  ⟨fun h ↦ ⟨isRelPrime_toLaurent h, fun _ ⟨hp, hq⟩ ↦
-      not_isUnit_zero (by simpa using (h hp hq).map constantCoeff : IsUnit (0 : R))⟩,
+  ⟨fun h ↦ ⟨isRelPrime_toLaurent h, fun i ⟨hp, hq⟩ ↦ not_isUnit_X i (h hp hq)⟩,
     fun ⟨hL, hX⟩ ↦ isRelPrime_of_toLaurent hL hX⟩
 
 end Ascent
