@@ -60,6 +60,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.weylGroupRootRep_apply`, `RootPairing.weylGroupRootRep_ofIdx_apply`,
   `RootPairing.weylGroupRootRep_injective`, and `RootPairing.ker_weylGroupRootRep` identify the
   action of `P.weylGroupRootRep` with scalar multiplication and record its faithfulness.
+* `RootPairing.weylGroupCorootRep_apply` identifies the action of `P.weylGroupCorootRep` with
+  scalar multiplication.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
   span.
@@ -389,6 +391,13 @@ multiplication on `M`. -/
 @[simp]
 theorem weylGroupRootRep_apply (w : P.weylGroup) (x : M) :
     P.weylGroupRootRep w x = w • x :=
+  (rfl)
+
+/-- The coroot-space representation `P.weylGroupCorootRep` acts by the scalar multiplication of the
+opposite Weyl group on `N`. -/
+@[simp]
+theorem weylGroupCorootRep_apply (w : P.weylGroup.op) (y : N) :
+    P.weylGroupCorootRep w y = w • y :=
   (rfl)
 
 /-- The weight-space representation of the Weyl group is faithful over every commutative ring. -/

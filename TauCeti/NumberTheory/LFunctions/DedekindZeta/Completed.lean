@@ -8,7 +8,9 @@ module
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
 import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Analysis.Meromorphic.RCLike
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
@@ -71,6 +73,8 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
 * `TauCeti.LFunctions.analyticAt_dedekindZetaC_iff`,
   `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_one`: `ζ_K` is analytic exactly away
   from `1`, where it has a simple pole.
+* `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_ne_top`: `ζ_K` has finite order
+  everywhere.
 * `TauCeti.LFunctions.tendsto_sub_one_mul_dedekindZetaC`: its residue at `s = 1` is
   `NumberField.dedekindZeta_residue K = 2 ^ r₁ (2π) ^ r₂ h R / (w √|d_K|)`.
 
@@ -222,6 +226,24 @@ theorem completedDedekindZeta_eq_mul_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
   obtain ⟨rep, hrep, h⟩ := exists_completedDedekindZeta_eq_sum K
   rw [h, Finset.sum_apply]
   exact sum_completedPartialZeta_eq_mul_dedekindZeta hrep hs
+
+open scoped ComplexConjugate in
+/-- The completed Dedekind zeta function commutes with complex conjugation, including at its
+poles where both representatives have the canonical value zero. -/
+@[simp] theorem completedDedekindZeta_conj (s : ℂ) :
+    completedDedekindZeta K (conj s) = conj (completedDedekindZeta K s) := by
+  have h : conj ∘ completedDedekindZeta K ∘ conj = completedDedekindZeta K := by
+    apply eq_of_meromorphicNFOn_of_eqOn_halfPlane
+      (meromorphicNFOn_conj_conj_iff.mpr (by simpa using meromorphicNFOn_completedDedekindZeta K))
+      (meromorphicNFOn_completedDedekindZeta K) (σ := 1)
+    intro z hz
+    have hz' : 1 < (conj z).re := by simpa only [conj_re] using Set.mem_ofPred.mp hz
+    have hD := ofReal_cpow_conj (r := ((discr K).natAbs : ℝ)) (by positivity) (z / 2)
+    rw [ofReal_natCast, map_div₀, map_ofNat] at hD
+    simp only [Function.comp_apply, completedDedekindZeta_eq_mul_dedekindZeta K hz',
+      completedDedekindZeta_eq_mul_dedekindZeta K hz, Int.abs_eq_natAbs, Int.cast_natCast,
+      dedekindZeta_conj, Gammaℝ_conj, Gammaℂ_conj, hD, map_mul, map_pow, conj_conj]
+  simpa only [Function.comp_apply, conj_conj] using (congrFun h (conj s)).symm
 
 /-! ### Regularity, poles, and residues -/
 
@@ -485,6 +507,13 @@ theorem meromorphicOrderAt_dedekindZetaC_one :
     meromorphicOrderAt (dedekindZetaC K) 1 = (-1 : ℤ) :=
   (meromorphic_dedekindZetaC K 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
     (ofReal_ne_zero.mpr (dedekindZeta_residue_pos K).ne') (tendsto_sub_one_mul_dedekindZetaC K)
+
+/-- `ζ_K` has finite order at every point, since it has a simple pole at `1` and therefore is
+not the zero meromorphic function. -/
+theorem meromorphicOrderAt_dedekindZetaC_ne_top (z : ℂ) :
+    meromorphicOrderAt (dedekindZetaC K) z ≠ ⊤ :=
+  ((meromorphic_dedekindZetaC K).exists_meromorphicOrderAt_ne_top_iff_forall.mp
+    ⟨1, by simp [meromorphicOrderAt_dedekindZetaC_one]⟩) z
 
 /-- `ζ_K` is analytic at `s` if and only if `s ≠ 1`. -/
 @[simp]

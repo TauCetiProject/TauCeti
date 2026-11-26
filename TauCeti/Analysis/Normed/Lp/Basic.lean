@@ -76,14 +76,19 @@ separable fibres and countably many nontrivial fibres suffice for separability
 characterization `lp.separableSpace_iff` (and `lp.separableSpace_iff_countable` when every fibre is
 nontrivial and separable).
 
+The single-coordinate embedding `lp.single p i` is injective at every exponent
+(`lp.single_injective`), so `lp E p` is nontrivial whenever at least one summand is
+(`lp.nontrivial_at`, `lp.nontrivial_iff`, `lp.instNontrivial`, `lp.instNontrivialOfNonempty`).
+
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`). In the scalar case such an operator `T` is given by
-its coordinate series `T x = ∑ i, xᵢ • T eᵢ` (`ContinuousLinearMap.hasSum_smul_lp_single`), so for
-`q ≠ ∞` an operator out of `ℓ^q` into a Hausdorff space is determined by its values on the unit
-coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`). On ℓ¹, a uniform bound `C` on the
-norms `‖T eᵢ‖` bounds `‖T‖` (`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the
-supremum of the norms `‖T eᵢ‖` (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
+(`lp.tendsto_apply_of_tendsto_apply_single`). For `q ≠ ∞`, a continuous linear map `T` out of
+scalar `ℓ^q` is given by its coordinate series `T x = ∑ i, xᵢ • T eᵢ`
+(`ContinuousLinearMap.hasSum_smul_lp_single`), so an operator out of `ℓ^q` into a Hausdorff space is
+determined by its values on the unit coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`).
+On ℓ¹, a uniform bound `C` on the norms `‖T eᵢ‖` bounds `‖T‖`
+(`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the supremum of the norms `‖T eᵢ‖`
+(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
 `ContinuousLinearMap.nnnorm_eq_ciSup_nnnorm_lp_single`). For iterated `ℓᵖ` spaces (`1 ≤ p`), the
 uncurried sequence lies in `ℓᵖ` on the product index type (`lp.memℓp_prod`), and for `1 ≤ p < ∞`
 the `p`-th powers of the doubly indexed coordinate norms are summable
@@ -492,6 +497,36 @@ theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
   exact ContinuousLinearMap.tendsto_apply_of_dense hD hC (fun y hy ↦ hy) x
 
 end Density
+
+section Nontrivial
+
+variable {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞}
+
+/-- The single-coordinate embedding `lp.single p i` is injective at every exponent. -/
+theorem single_injective [DecidableEq ι] (p : ℝ≥0∞) (i : ι) :
+    Function.Injective (lp.single (E := E) p i) :=
+  fun _ _ hab => by simpa only [lp.single_apply_self] using congr($hab i)
+
+/-- `lp E p` is nontrivial whenever at least one summand `E i` is nontrivial. -/
+theorem nontrivial_at (i : ι) [Nontrivial (E i)] : Nontrivial (lp E p) := by
+  classical
+  exact (single_injective p i).nontrivial
+
+/-- `lp E p` is nontrivial if and only if at least one summand `E i` is nontrivial. -/
+theorem nontrivial_iff : Nontrivial (lp E p) ↔ ∃ i, Nontrivial (E i) := by
+  refine ⟨fun ⟨x, y, hxy⟩ => ?_, fun ⟨i, _⟩ => nontrivial_at i⟩
+  by_contra! h
+  exact hxy (lp.ext (funext fun i => (h i).elim (x i) (y i)))
+
+/-- `lp E p` is nontrivial when `ι` is inhabited and `E default` is nontrivial. -/
+instance instNontrivial [Inhabited ι] [Nontrivial (E default)] : Nontrivial (lp E p) :=
+  nontrivial_at default
+
+/-- `lp E p` is nontrivial when `ι` is nonempty and every summand `E i` is nontrivial. -/
+instance instNontrivialOfNonempty [Nonempty ι] [∀ i, Nontrivial (E i)] : Nontrivial (lp E p) :=
+  ‹Nonempty ι›.elim fun i => nontrivial_at i
+
+end Nontrivial
 
 /-- For `p ≠ ∞`, every vector of `lp E p` vanishes outside a countable set of indices. -/
 theorem countable_dsupport (hp : p ≠ ∞) (f : lp E p) : {i | f i ≠ 0}.Countable :=

@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Matching.Dimer
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.Algebra.BigOperators.Field
+import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
 
 /-!
 # Dimer Boltzmann laws and dimer Gibbs measures
@@ -26,8 +27,11 @@ and a configuration `ω : G.edgeSet → Bool`, the weight of `ω` on `F` is
   masses and the partition function are finite sums, over the configurations `η` on `F`, of
   functions of the gluing of `η` to `ω` off `F`
   (`SimpleGraph.dimerBoltzmann_apply_eq_sum_updateFinset`,
-  `SimpleGraph.dimerPartitionFunction_eq_sum_updateFinset`), it is carried by dimer configurations
-  (`SimpleGraph.dimerBoltzmann_setOf_not_isDimerConfiguration`), and the laws are consistent:
+  `SimpleGraph.dimerPartitionFunction_eq_sum_updateFinset`), and it is carried by dimer
+  configurations (`SimpleGraph.dimerBoltzmann_setOf_not_isDimerConfiguration`). If `E` contains
+  every edge sharing a vertex with an edge of `F`, then for dimer configurations `ω`, `η` it gives
+  the cylinder `[ω]_E` the mass `w(ω ∩ F) / Z^w_F(η)` when `η` agrees with `ω` on `E ∖ F`, and
+  `0` otherwise (`SimpleGraph.dimerBoltzmann_setOf_forall_mem_eq`). The laws are consistent:
   for `Λ ⊆ Δ`, `∫ γ^w_Λ(A | ω'') dγ^w_Δ(ω'' | ω) = γ^w_Δ(A | ω)`
   (`SimpleGraph.lintegral_dimerBoltzmann_dimerBoltzmann`), since resampling `Λ` changes neither
   the weight on `Δ ∖ Λ` nor the partition function of `Λ`.
@@ -232,6 +236,49 @@ theorem dimerBoltzmann_setOf_not_isDimerConfiguration [G.LocallyFinite] [Countab
   refine Finset.sum_eq_zero fun ω' hω' => indicator_of_notMem ?_ _
   simp only [Finite.mem_toFinset, mem_dimerCompletionSet] at hω'
   simpa using hω'.1
+
+/-! ### Cylinders -/
+
+/-- **The Boltzmann mass of a cylinder.** Let `E` contain every edge sharing a vertex with an edge
+of `F`. For dimer configurations `ω` and `η`, `γ^w_F(· | η)` gives the cylinder `[ω]_E` the mass
+`w(ω ∩ F) / Z^w_F(η)` if `η` agrees with `ω` on `E ∖ F`, and `0` otherwise. -/
+theorem dimerBoltzmann_setOf_forall_mem_eq (w : G.edgeSet → ℝ) {F E : Finset G.edgeSet}
+    (hE : ∀ e ∈ F, ∀ e' : G.edgeSet, (∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (e' : Sym2 V)) → e' ∈ E)
+    {ω η : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) (hη : G.IsDimerConfiguration η) :
+    G.dimerBoltzmann w F η {ζ | ∀ e ∈ E, ζ e = ω e} =
+      {ζ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → ζ e = ω e}.indicator
+        (fun _ => ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F η)) η := by
+  have hmeas : MeasurableSet {ζ : G.edgeSet → Bool | ∀ e ∈ E, ζ e = ω e} :=
+    SymbolicDynamics.FullShift.measurableSet_cylinder E ω
+  rw [dimerBoltzmann_apply w F η hmeas]
+  by_cases hηω : ∀ e ∈ E, e ∉ F → η e = ω e
+  · rw [indicator_of_mem (by exact hηω)]
+    -- the gluing of `ω` on `F` to `η` off `F` is a dimer configuration
+    have himg := image_restrict_dimerCompletionSet_eq hη hω fun e he ⟨f, hf, v, hve, hvf⟩ =>
+      hηω e (hE f hf e ⟨v, hvf, hve⟩) he
+    obtain ⟨ω', hω', hr⟩ : F.restrict ω ∈ F.restrict '' G.dimerCompletionSet F η :=
+      himg ▸ ⟨ω, mem_dimerCompletionSet_self hω, rfl⟩
+    have hω'F (e : G.edgeSet) (he : e ∈ F) : ω' e = ω e := congrFun hr ⟨e, he⟩
+    have hmem : ω' ∈ {ζ : G.edgeSet → Bool | ∀ e ∈ E, ζ e = ω e} := fun e he => by
+      by_cases hF : e ∈ F
+      · exact hω'F e hF
+      · exact ((mem_dimerCompletionSet.1 hω').2 e hF).trans (hηω e he hF)
+    rw [Finset.sum_eq_single_of_mem ω' ((Finite.mem_toFinset _).2 hω')]
+    · rw [indicator_of_mem hmem, dimerWeight_congr w hω'F]
+    · intro ζ hζ hne
+      refine indicator_of_notMem (fun hζE => hne (funext fun e => ?_)) _
+      rw [Finite.mem_toFinset] at hζ
+      by_cases hF : e ∈ F
+      · exact (hζE e (hE e hF e ⟨_, Sym2.out_fst_mem _, Sym2.out_fst_mem _⟩)).trans
+          (hω'F e hF).symm
+      · exact ((mem_dimerCompletionSet.1 hζ).2 e hF).trans
+          ((mem_dimerCompletionSet.1 hω').2 e hF).symm
+  · rw [indicator_of_notMem (by exact hηω)]
+    refine Finset.sum_eq_zero fun ζ hζ => indicator_of_notMem (fun hζE => hηω ?_) _
+    rw [Finite.mem_toFinset] at hζ
+    intro e he hF
+    rw [← (mem_dimerCompletionSet.1 hζ).2 e hF]
+    exact hζE e he
 
 /-! ### Consistency -/
 
