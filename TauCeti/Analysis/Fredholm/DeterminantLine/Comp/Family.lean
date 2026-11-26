@@ -213,13 +213,20 @@ theorem detLineOrientationTransport_clm_comp (hf : ContinuousOn f (uIcc a b))
         (smul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero))
           ((LinearEquiv.map_ne_zero_iff _).2 (TauCeti.tmul_ne_zero hv₁ hw₁))) := by
   classical
-  -- Coherent families through `v₀` and `w₀` end on the rays of `v₁` and `w₁`.
-  obtain ⟨V, rfl, hV⟩ := exists_isDetLineCoherentOn_Icc hf hFf left_mem_uIcc hv₀
-  obtain ⟨W, rfl, hW⟩ := exists_isDetLineCoherentOn_Icc hg hFg left_mem_uIcc hw₀
-  have hb := (ray_eq_iff _ _).1 ((detLineOrientationTransport_rayOfNeZero hf hFf hV).symm.trans htr)
-  have hb' := (ray_eq_iff _ _).1
-    ((detLineOrientationTransport_rayOfNeZero hg hFg hW).symm.trans htr')
-  -- Their normalized composites form a coherent family for `g ∘ f`.
+  refine detLineOrientationTransport_rayOfNeZero_apply_tmul hf hg (hg.clm_comp hf) hFf hFg
+    (fun t ht ↦ (hFg t ht).comp (hFf t ht))
+    ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (f a).range) *
+          finrank ℝ (LinearMap.range ((f a : E →ₗ[ℝ] F).kerCompToKer (g a : F →ₗ[ℝ] P))) +
+        finrank ℝ (LinearMap.range ((f a : E →ₗ[ℝ] F).cokerToCokerComp (g a : F →ₗ[ℝ] P))) *
+          finrank ℝ (P ⧸ (g a).range)) •
+      ((f a : E →ₗ[ℝ] F).detLineCompEquiv (g a : F →ₗ[ℝ] P)).symm.toLinearMap)
+    ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (f b).range) *
+          finrank ℝ (LinearMap.range ((f b : E →ₗ[ℝ] F).kerCompToKer (g b : F →ₗ[ℝ] P))) +
+        finrank ℝ (LinearMap.range ((f b : E →ₗ[ℝ] F).cokerToCokerComp (g b : F →ₗ[ℝ] P))) *
+          finrank ℝ (P ⧸ (g b).range)) •
+      ((f b : E →ₗ[ℝ] F).detLineCompEquiv (g b : F →ₗ[ℝ] P)).symm.toLinearMap)
+    (fun V W hV hW ↦ ?_) hv₀ hw₀ hv₁ hw₁ _ _ htr htr'
+  -- The normalized composites of coherent families form a coherent family for `g ∘ f`.
   let U (t : ℝ) : ((g t).comp (f t) : E →ₗ[ℝ] P).detLine :=
     if ht : t ∈ uIcc a b then
       have := (hFf t ht).finite_ker
@@ -232,24 +239,8 @@ theorem detLineOrientationTransport_clm_comp (hf : ContinuousOn f (uIcc a b))
           finrank ℝ (P ⧸ (g t).range)) •
         ((f t : E →ₗ[ℝ] F).detLineCompEquiv (g t : F →ₗ[ℝ] P)).symm (V t ⊗ₜ W t)
     else 0
-  have hU : IsDetLineCoherentOn (fun t ↦ (g t).comp (f t)) U (uIcc a b) :=
-    IsDetLineCoherentOn.clm_comp hf hg hFf hFg hV hW fun t ht _ _ _ _ ↦ dite_eq_left ht
-  have hUa : U a = _ := dite_eq_left left_mem_uIcc
-  have hUb : U b = _ := dite_eq_left right_mem_uIcc
-  refine (congrArg (detLineOrientationTransport a b _ _) ?_).trans
-    ((detLineOrientationTransport_rayOfNeZero (hg.clm_comp hf)
-      (fun t ht ↦ (hFg t ht).comp (hFf t ht)) hU).trans ?_)
-  · refine (ray_eq_iff _ _).2 ?_
-    rw [hUa]
-    exact SameRay.rfl
-  · refine (ray_eq_iff _ _).2 ?_
-    rw [hUb]
-    exact (hb.tmul hb').map
-      ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (f b).range) *
-          finrank ℝ (LinearMap.range ((f b : E →ₗ[ℝ] F).kerCompToKer (g b : F →ₗ[ℝ] P))) +
-        finrank ℝ (LinearMap.range ((f b : E →ₗ[ℝ] F).cokerToCokerComp (g b : F →ₗ[ℝ] P))) *
-          finrank ℝ (P ⧸ (g b).range)) •
-        ((f b : E →ₗ[ℝ] F).detLineCompEquiv (g b : F →ₗ[ℝ] P)).symm.toLinearMap)
+  exact ⟨U, IsDetLineCoherentOn.clm_comp hf hg hFf hFg hV hW fun t ht _ _ _ _ ↦ dite_eq_left ht,
+    dite_eq_left left_mem_uIcc, dite_eq_left right_mem_uIcc⟩
 
 end Transport
 
