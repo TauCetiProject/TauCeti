@@ -24,8 +24,6 @@ bases of two domains with comparable transcendence degrees.
   middle ring, at least its transcendence degree over the bottom ring, then the middle ring is
   algebraic over the bottom ring; `TauCeti.isAlgebraic_of_trdeg_eq_one` is the case of
   transcendence degree one.
-* `AlgebraicIndependent.natCard_le_toNat_trdeg`: an algebraically independent family in a
-  finite-type algebra over a domain has cardinality at most `(Algebra.trdeg R A).toNat`.
 * `Transcendental.exists_isTranscendenceBasis_mem`: a transcendental element lies in a
   transcendence basis.
 * `IsTranscendenceBasis.nonempty_embedding_of_lift_trdeg_le`,
@@ -82,16 +80,6 @@ theorem isAlgebraic_of_trdeg_eq_one (h : Algebra.trdeg R A = 1) (h' : Algebra.tr
   exact isAlgebraic_of_trdeg_le (h.trans h'.symm).le (h' ▸ Cardinal.one_lt_aleph0)
 
 end TauCeti
-
-/-- An algebraically independent family in a finite-type algebra over a domain has cardinality at
-most `(Algebra.trdeg R A).toNat`. -/
-theorem AlgebraicIndependent.natCard_le_toNat_trdeg {R A ι : Type*}
-    [CommRing R] [IsDomain R] [CommRing A] [Algebra R A] [Algebra.FiniteType R A]
-    {x : ι → A} (hx : AlgebraicIndependent R x) :
-    Nat.card ι ≤ (Algebra.trdeg R A).toNat := by
-  rw [Nat.card, ← Cardinal.toNat_lift, ← Cardinal.toNat_lift (Algebra.trdeg R A)]
-  exact Cardinal.toNat_le_toNat hx.lift_cardinalMk_le_trdeg
-    (Cardinal.lift_lt_aleph0.mpr (trdeg_lt_aleph0_of_finiteType (R := R) (S := A)))
 
 /-- An element transcendental over `R` lies in some transcendence basis over `R`. -/
 theorem Transcendental.exists_isTranscendenceBasis_mem {R A : Type*} [CommRing R] [CommRing A]

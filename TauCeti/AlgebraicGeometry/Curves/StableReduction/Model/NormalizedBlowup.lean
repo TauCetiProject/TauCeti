@@ -45,7 +45,7 @@ This file establishes the basic properties of a single normalized-blowup step:
 
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Oxford University Press, 2002, Section 8.3
   and Chapter 10.
-* [Stacks Project, Section 55.8 (0C2T)](https://stacks.math.columbia.edu/tag/0C2T).
+* [Stacks Project, Lemma 55.8.2 (0C2T)](https://stacks.math.columbia.edu/tag/0C2T).
 -/
 
 public section

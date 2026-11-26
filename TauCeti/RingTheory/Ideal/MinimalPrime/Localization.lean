@@ -7,29 +7,27 @@ module
 
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 public import Mathlib.RingTheory.KrullDimension.Basic
-public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
-import Mathlib.RingTheory.Localization.LocalizationLocalization
 import Mathlib.Tactic.Ring
 
 /-!
 # Minimal primes and localization
 
-This file collects facts about the localization of a commutative ring or semiring and its minimal
-primes:
+This file collects three facts about the localization of a commutative semiring `A` at a prime `m`
+and the minimal primes below `m`.
 
-* If the localization `A_m` is a domain, as it is when `A_m` is a regular local ring, then the
-  kernel of `A → A_m` is a prime contained in every prime `q ≤ m`, so it is the only minimal prime
-  of `A` contained in `m`. Consequently every prime `q ≤ m` contains every minimal prime `P ≤ m`:
-  the primes below `m` all lie on the single irreducible component `V(P)` of `Spec A` through `m`.
-  This is what makes the height of `m` a lower bound for the dimension of that component.
-* If `m` is minimal over a radical ideal `I`, then `I` generates the maximal ideal of `A_m`. For a
-  principal ideal `I = (f)` with `A ⧸ (f)` reduced, this says that `f` generates the maximal ideal
-  of the localization at every prime minimal over `f`. For `I = ⊥` in a reduced ring, the maximal
-  ideal of `A_P` is zero at every minimal prime `P`, so `P.ResidueField` is itself a localization
-  of `A` at `P`.
-* If `p` is minimal over an ideal `I`, then every element `x ∈ p` becomes nilpotent modulo `I` in
-  the localization at `p`: some `s ∉ p` carries a power of `x` into `I`. This is how a property of
-  `I` preserved under such multipliers passes to the minimal primes over `I`.
+If the localization `A_m` is a domain, as it is when `A_m` is a regular local ring, then the
+kernel of `A → A_m` is a prime contained in every prime `q ≤ m`, so it is the only minimal prime
+of `A` contained in `m`. Consequently every prime `q ≤ m` contains every minimal prime `P ≤ m`:
+the primes below `m` all lie on the single irreducible component `V(P)` of `Spec A` through `m`.
+This is what makes the height of `m` a lower bound for the dimension of that component.
+
+If `m` is minimal over a radical ideal `I`, then `I` generates the maximal ideal of `A_m`. For a
+principal ideal `I = (f)` with `A ⧸ (f)` reduced, this says that `f` generates the maximal ideal
+of the localization at every prime minimal over `f`.
+
+If `p` is minimal over an ideal `I`, then every element `x ∈ p` becomes nilpotent modulo `I` in
+the localization at `p`: some `s ∉ p` carries a power of `x` into `I`. This is how a property of
+`I` preserved under such multipliers passes to the minimal primes over `I`.
 
 ## Main results
 
@@ -39,8 +37,6 @@ primes:
   are coprime when all maximal localizations are domains.
 * `IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes`: if `m` is minimal over a
   radical ideal `I`, then `I` generates the maximal ideal of `A_m`.
-* `TauCeti.isLocalization_atPrime_residueField_of_mem_minimalPrimes`: at a minimal prime `P` of a
-  reduced ring `B`, `P.ResidueField` is a localization of `B` at `P`.
 * `IsLocalization.comap_mem_minimalPrimes_of_krullDimLE_zero`: in a localization at
   non-zero-divisors of Krull dimension zero, such as an Artinian total ring of fractions, every
   prime contracts to a minimal prime.
@@ -97,53 +93,6 @@ theorem map_eq_maximalIdeal_of_mem_minimalPrimes {R : Type*} [CommSemiring R] {I
     ← IsLocalization.map_radical q.primeCompl A, hI.radical]
 
 end IsLocalization.AtPrime
-
-namespace TauCeti
-
-/-- At a minimal prime `P` of a reduced ring `B`, the residue field `P.ResidueField` is a
-localization of `B` at `P`. -/
-theorem isLocalization_atPrime_residueField_of_mem_minimalPrimes {B : Type*} [CommRing B]
-    [IsReduced B] {P : Ideal B} (hP : P ∈ minimalPrimes B) :
-    letI := hP.1.1
-    IsLocalization.AtPrime P.ResidueField P := by
-  have : P.IsPrime := hP.1.1
-  have hmax : IsLocalRing.maximalIdeal (Localization.AtPrime P) = ⊥ := by
-    have h := IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes
-      (Localization.AtPrime P) (Ideal.isRadical_bot (R := B)) hP
-    rwa [Ideal.map_bot, eq_comm] at h
-  have hbij : Function.Bijective
-      (IsScalarTower.toAlgHom B (Localization.AtPrime P) P.ResidueField) := by
-    rw [IsScalarTower.coe_toAlgHom', IsLocalRing.ResidueField.algebraMap_eq]
-    exact ⟨(RingHom.injective_iff_ker_eq_bot _).mpr (IsLocalRing.ker_residue.trans hmax),
-      IsLocalRing.residue_surjective⟩
-  exact IsLocalization.isLocalization_of_algEquiv P.primeCompl (AlgEquiv.ofBijective _ hbij)
-
-/-- For a minimal prime `P` of a reduced `R`-algebra `B` and a submonoid `M ≤ P.primeCompl`,
-`P.ResidueField` is a localization of `B` at `P` and of `S = M⁻¹ B` at the image of `P.primeCompl`,
-compatibly with the `R → B → S` scalar tower. -/
-theorem with_residueField_isLocalization_of_mem_minimalPrimes {R B S : Type*} [CommRing R]
-    [CommRing B] [Algebra R B] [IsReduced B] {P : Ideal B} [P.IsPrime]
-    (hP : P ∈ minimalPrimes B) (M : Submonoid B) (hM : M ≤ P.primeCompl)
-    [CommRing S] [Algebra R S] [Algebra B S] [IsScalarTower R B S] [IsLocalization M S]
-    {C : Prop}
-    (h : [IsLocalization.AtPrime P.ResidueField P] → [Algebra S P.ResidueField] →
-      [IsScalarTower B S P.ResidueField] → [IsScalarTower R S P.ResidueField] →
-      [IsLocalization (P.primeCompl.map (algebraMap B S)) P.ResidueField] → C) : C := by
-  have : IsLocalization.AtPrime P.ResidueField P :=
-    isLocalization_atPrime_residueField_of_mem_minimalPrimes hP
-  let : Algebra S P.ResidueField :=
-    IsLocalization.localizationAlgebraOfSubmonoidLe S P.ResidueField M P.primeCompl hM
-  have : IsScalarTower B S P.ResidueField :=
-    IsLocalization.localization_isScalarTower_of_submonoid_le S P.ResidueField M P.primeCompl hM
-  have : IsScalarTower R S P.ResidueField := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply R B P.ResidueField,
-      IsScalarTower.algebraMap_apply B S P.ResidueField,
-      ← IsScalarTower.algebraMap_apply R B S]
-  have : IsLocalization (P.primeCompl.map (algebraMap B S)) P.ResidueField :=
-    IsLocalization.isLocalization_of_submonoid_le S P.ResidueField M P.primeCompl hM
-  exact h
-
-end TauCeti
 
 namespace IsLocalization
 

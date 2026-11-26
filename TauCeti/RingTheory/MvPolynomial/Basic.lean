@@ -5,25 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.LinearAlgebra.Dimension.BaseChange
 
 /-!
-# Basic lemmas for multivariate polynomial rings
+# Module-finiteness of multivariate polynomial maps and monomial coordinates
 
-This file collects general algebraic properties of multivariate polynomial rings:
+`MvPolynomial.map f` is a finite ring map whenever `f` is: a family generating `S` over `R`
+generates `MvPolynomial σ S` over `MvPolynomial σ R` once its members are read as constants.
+Moreover, module-finiteness of `MvPolynomial.aeval x` is preserved under precomposition with any
+surjective reindexing of the variables (`AlgHom.Finite.aeval_comp_of_surjective`).
 
-* `MvPolynomial.map f` is a finite ring map whenever `f` is: a family generating `S` over `R`
-  generates `MvPolynomial σ S` over `MvPolynomial σ R` once its members are read as constants.
-  This is the coefficient-extension half of the finiteness that Stacks 10.161.13 (tag 032O)
-  records as "`R'[x^{1/q}]` is finite over `R[x]`"; the `expand` half lives in
-  `TauCeti/RingTheory/MvPolynomial/Expand.lean`. Nothing here mentions `expand`, which is why it
-  sits in this file rather than that one.
-* When the variable type `ι` is a subsingleton (at most one variable), the univariate polynomial
-  ring `R[X]` surjects onto `MvPolynomial ι R` via an `R`-algebra homomorphism.
+The `MvPolynomial.map` lemma is the coefficient-extension half of the finiteness that Stacks
+10.161.13 (tag 032O) records as "`R'[x^{1/q}]` is finite over `R[x]`"; the `expand` half lives in
+`TauCeti/RingTheory/MvPolynomial/Expand.lean`. Nothing here mentions `expand`, which is why it
+sits in this file rather than that one.
 
 The coordinates of a polynomial in the monomial basis `MvPolynomial.basisMonomials` are its
 coefficients (`MvPolynomial.basisMonomials_repr_apply`).
@@ -31,20 +29,18 @@ coefficients (`MvPolynomial.basisMonomials_repr_apply`).
 ## Main results
 
 * `TauCeti.MvPolynomial.finite_map`: `MvPolynomial.map f` is finite when `f` is.
-* `TauCeti.MvPolynomial.exists_surjective_algHom_of_subsingleton`: `R[X]` surjects onto
-  `MvPolynomial ι R` whenever `ι` is a subsingleton.
+* `AlgHom.Finite.aeval_comp_of_surjective`: `(MvPolynomial.aeval x).Finite` implies
+  `(MvPolynomial.aeval (x ∘ e)).Finite` when `e` is surjective.
 * `MvPolynomial.basisMonomials_repr_apply`: coordinates in the monomial basis are coefficients.
 
 ## Provenance
 
-The finiteness argument for `MvPolynomial.finite_map` is Stacks 10.161.13 (tag 032O), which is
-univariate and whose proof records it as "Since `R` is N-2 we see that `R′` is finite over `R` and
-hence `R′[x^{1/q}]` is finite over `R[x]`"; the multivariate form is not claimed as source material.
+The argument for `finite_map` is Stacks 10.161.13 (tag 032O), which is univariate and whose proof
+records it as "Since `R` is N-2 we see that `R′` is finite over `R` and hence `R′[x^{1/q}]` is
+finite over `R[x]`"; the multivariate form is not claimed as source material.
 -/
 
 public section
-
-open Polynomial
 
 namespace MvPolynomial
 
@@ -55,6 +51,15 @@ theorem basisMonomials_repr_apply {σ R : Type*} [CommSemiring R] (p : MvPolynom
   (rfl)
 
 end MvPolynomial
+
+/-- Module-finiteness of `MvPolynomial.aeval x` is preserved under precomposition with a surjective
+reindexing of the variables. -/
+theorem AlgHom.Finite.aeval_comp_of_surjective {σ τ R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] {x : τ → A} {e : σ → τ} (hx : (MvPolynomial.aeval (R := R) x).Finite)
+    (he : Function.Surjective e) :
+    (MvPolynomial.aeval (R := R) (x ∘ e)).Finite := by
+  rw [← MvPolynomial.aeval_comp_rename]
+  exact hx.comp (.of_surjective _ (MvPolynomial.rename_surjective e he))
 
 namespace TauCeti
 
@@ -78,18 +83,5 @@ theorem MvPolynomial.finite_map {σ R S : Type*} [CommRing R] [CommRing S] {f : 
     IsBaseChange.finite
       (Algebra.IsPushout.out (R := R) (S := MvPolynomial σ R) (R' := S) (S' := MvPolynomial σ S))
   exact h
-
-/-- When `ι` has at most one element, there is a surjective `R`-algebra homomorphism from the
-univariate polynomial ring `R[X]` onto `MvPolynomial ι R`. -/
-theorem MvPolynomial.exists_surjective_algHom_of_subsingleton (R ι : Type*)
-    [CommSemiring R] [Subsingleton ι] :
-    ∃ φ : R[X] →ₐ[R] MvPolynomial ι R, Function.Surjective φ := by
-  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i⟩⟩
-  · refine ⟨(MvPolynomial.isEmptyAlgEquiv R ι).symm.toAlgHom.comp (Polynomial.aeval (0 : R)),
-      (MvPolynomial.isEmptyAlgEquiv R ι).symm.surjective.comp ?_⟩
-    simpa [Polynomial.coe_aeval_eq_eval] using Polynomial.eval_surjective (0 : R)
-  · let _ : Unique ι := uniqueOfSubsingleton i
-    exact ⟨(MvPolynomial.uniqueAlgEquiv R ι).symm.toAlgHom,
-      (MvPolynomial.uniqueAlgEquiv R ι).symm.surjective⟩
 
 end TauCeti

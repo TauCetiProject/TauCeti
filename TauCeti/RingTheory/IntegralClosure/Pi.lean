@@ -5,12 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
-public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
-
-import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
-import TauCeti.RingTheory.IntegralClosure.Map
 
 /-!
 # Integral closure in a finite product
@@ -19,11 +14,6 @@ An element of a finite product of algebras is integral exactly when each coordin
 integral. Consequently, integral closure commutes with finite products. This comparison
 allows normalization and étaleness questions for finite products of fields to be checked
 on the individual field factors.
-
-In particular, for a reduced algebra `B` with finitely many minimal primes over a Noetherian ring
-`P`, finiteness of `integralClosure P B` reduces to finiteness of `integralClosure P Q.ResidueField`
-for each minimal prime `Q` of `B`
-(`TauCeti.finite_integralClosure_of_isReduced_of_forall_minimalPrimes`).
 
 The finiteness assumption is essential: the integral equations for infinitely many
 coordinates need not have a common degree or common coefficients.
@@ -74,33 +64,5 @@ theorem integralClosurePiAlgEquiv_apply (x : integralClosure R (∀ i, B i)) (i 
 @[simp]
 theorem integralClosurePiAlgEquiv_symm_apply (x : ∀ i, integralClosure R (B i)) (i : ι) :
     ((integralClosurePiAlgEquiv R B).symm x : ∀ i, B i) i = x i := (rfl)
-
-/-- Let `P` be a Noetherian ring and `B` a reduced `P`-algebra with finitely many minimal primes.
-If the integral closure of `P` in the residue field `Q.ResidueField` of every minimal prime `Q` of
-`B` is a finite `P`-module, then `integralClosure P B` is a finite `P`-module. -/
-theorem finite_integralClosure_of_isReduced_of_forall_minimalPrimes {P B : Type*} [CommRing P]
-    [IsNoetherianRing P] [CommRing B] [Algebra P B] [IsReduced B] [Finite (minimalPrimes B)]
-    (hfin : ∀ (Q : Ideal B) (hQ : Q ∈ minimalPrimes B), haveI := hQ.1.1;
-      Module.Finite P (integralClosure P Q.ResidueField)) :
-    Module.Finite P (integralClosure P B) := by
-  let F := fun i : minimalPrimes B ↦ i.val.ResidueField
-  have (i : minimalPrimes B) : Module.Finite P (integralClosure P (F i)) := hfin i.val i.property
-  have : Module.Finite P (integralClosure P (∀ i : minimalPrimes B, F i)) :=
-    Module.Finite.equiv (integralClosurePiAlgEquiv P F).toLinearEquiv.symm
-  let ψ : B →ₐ[P] ∀ i : minimalPrimes B, F i :=
-    AlgHom.pi fun i ↦ IsScalarTower.toAlgHom P B (F i)
-  have hψ_inj : Function.Injective ψ := by
-    let φ₁ : B →+* ∀ i : minimalPrimes B, B ⧸ i.val :=
-      RingHom.pi fun i ↦ Ideal.Quotient.mk i.val
-    let φ₂ : (∀ i : minimalPrimes B, B ⧸ i.val) → ∀ i : minimalPrimes B, F i :=
-      fun g i ↦ algebraMap (B ⧸ i.val) (F i) (g i)
-    have hcomp : (ψ : B → ∀ i : minimalPrimes B, F i) = φ₂ ∘ φ₁ := by
-      ext x i
-      exact IsScalarTower.algebraMap_apply B (B ⧸ i.val) (F i) x
-    have hφ₂ : Function.Injective φ₂ := fun u v huv ↦ funext fun i ↦
-      IsFractionRing.injective (B ⧸ i.val) (F i) (congrFun huv i)
-    exact hcomp ▸ hφ₂.comp (Ideal.injective_pi_quotient_mk_minimalPrimes B)
-  exact Module.Finite.of_injective ψ.mapIntegralClosure.toLinearMap
-    (AlgHom.mapIntegralClosure_injective hψ_inj)
 
 end TauCeti

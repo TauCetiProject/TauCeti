@@ -26,7 +26,6 @@ embeds into their product.
 ## Main results
 
 * `IsDomain.uniqueMinimalPrimes`: an integral domain has a unique minimal prime.
-* `Ideal.minimalPrime_isPrime`: every minimal prime of a commutative semiring is prime.
 * `Ideal.injective_pi_quotient_mk_minimalPrimes`: a reduced ring embeds into the product of its
   quotients by its minimal primes.
 * `Ideal.notMem_radical_iff_exists_mem_minimalPrimes_notMem`: an element lies outside `I.radical`
@@ -44,11 +43,6 @@ instance IsDomain.uniqueMinimalPrimes (R : Type*) [CommSemiring R] [IsDomain R] 
   uniq p := Subtype.ext <| by simpa [IsDomain.minimalPrimes_eq_singleton_bot] using p.property
 
 namespace Ideal
-
-/-- Every minimal prime of a commutative semiring is a prime ideal. -/
-instance minimalPrime_isPrime {B : Type*} [CommSemiring B] (i : minimalPrimes B) :
-    i.val.IsPrime :=
-  Ideal.IsMinimalPrime.isPrime i.property
 
 /-- A reduced ring embeds into the product of its quotients by its minimal primes: the
 intersection of the minimal primes is the nilradical, which is `0`. -/

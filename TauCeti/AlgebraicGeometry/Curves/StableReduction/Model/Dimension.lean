@@ -8,23 +8,15 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
-import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
-
 /-!
-# Relative dimension of models over a discrete valuation ring
+# Relative dimension and total-space dimension of models over a discrete valuation ring
 
 Let `R` be a discrete valuation ring with fraction field `K`, and let `M` be a model over `R` of a
-scheme `C` over `K`. If `C` has relative dimension at most `d` over `K`, then `M` has relative
-dimension at most `d` over `R`: its special fibre has Krull dimension at most `d`, its total space
-has Krull dimension at most `d + 1`, and every point of its total space has codimension at most
-`d + 1`. No excellence or catenarity hypothesis on `R` is needed.
-
-On an affine open `U` of the total space of `M`, the ring `A = Γ(M.total, U)` is of finite type
-over `R` and embeds into `B = Γ(C, M.genericι ⁻¹ᵁ U)`, so `A` is `R`-torsion-free while `B` is the
-pushout of `A` along `R → K`. Since `C` has Krull dimension at most `d`, so does its affine open
-`Spec B`, and `TauCeti.IsDiscreteValuationRing.ringKrullDim_fiber_le` bounds every fibre ring
-`κ(p) ⊗[R] A` by `d`.
+scheme `C` over `K`. Since `M` is flat over `R`, its special fibre is no larger than its generic
+fibre (`TauCeti.Model.relativeDimensionLE_toBase` in `Fibers.lean`): if `C` has relative dimension
+at most `d` over `K`, then `M` has relative dimension at most `d` over `R`, its total space has
+Krull dimension at most `d + 1`, and every point of its total space has codimension at most `d + 1`.
+No excellence or catenarity hypothesis on `R` is needed.
 
 When `d = 1` and `M` is proper, this makes `M.toBase` a `FamilyOfCurves`, giving the converse to
 `TauCeti.Model.familyOfCurves_toK`. Combined with `SmoothOfRelativeDimension`, any proper model of
@@ -32,18 +24,12 @@ a smooth curve over `K` is a family of curves over `Spec R`.
 
 ## Main results
 
-* `TauCeti.Model.relativeDimensionLE_toBase`: if `RelativeDimensionLE d toK`, then
-  `RelativeDimensionLE d M.toBase`.
 * `TauCeti.Model.topologicalKrullDim_total_le` and `TauCeti.Model.coheight_le`: if
   `RelativeDimensionLE d toK`, then `topologicalKrullDim M.total ≤ d + 1` and every point of
   `M.total` has codimension at most `d + 1`.
 * `TauCeti.Model.familyOfCurves_toBase` and `TauCeti.Model.familyOfCurves_toBase_iff`: a model is
   a family of curves over `Spec R` if and only if it is proper and `toK` has relative dimension at
   most `1`.
-
-## References
-
-* [Stacks Project, Lemma 55.3.2 (0B2J)](https://stacks.math.columbia.edu/tag/0B2J).
 -/
 
 public section
@@ -59,39 +45,6 @@ namespace Model
 variable {R K : Type u} [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R]
   [Field K] [Algebra R K] [IsFractionRing R K]
   {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
-
-/-- Over an affine open `U` of `M.total`, the chart `Spec Γ(M.total, U) ⟶ Spec R` has relative
-dimension at most `d` when `toK` has relative dimension at most `d`. -/
-private lemma relativeDimensionLE_fromSpec_toBase (M : Model R K C toK) {d : ℕ}
-    [RelativeDimensionLE d toK] {U : M.total.Opens} (hU : IsAffineOpen U) :
-    RelativeDimensionLE d (hU.fromSpec ≫ M.toBase) := by
-  have hV : IsAffineOpen (M.genericι ⁻¹ᵁ U) := hU.preimage M.genericι
-  refine with_finiteType_algebraIsPushout_of_isPullback M.isPullback_genericι hU
-    fun hcomp _ hXY ↦ ?_
-  have : Module.IsTorsionFree R Γ(C, M.genericι ⁻¹ᵁ U) := .trans K
-  have hinj : Function.Injective (IsScalarTower.toAlgHom R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U)) :=
-    hXY ▸ M.genericι.app_injective U
-  have : Module.IsTorsionFree R Γ(M.total, U) := hinj.moduleIsTorsionFree _ (map_smul _)
-  have hdimB : ringKrullDim Γ(C, M.genericι ⁻¹ᵁ U) ≤ d := by
-    rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
-    exact hV.fromSpec.isOpenEmbedding.isInducing.topologicalKrullDim_le.trans
-      ((relativeDimensionLE_iff_of_field toK).mp inferInstance)
-  rw [hcomp]
-  refine (relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mpr fun p _ ↦
-    (TauCeti.IsDiscreteValuationRing.ringKrullDim_fiber_le
-      (K := K) (B := Γ(C, M.genericι ⁻¹ᵁ U)) p).trans hdimB
-
-/-- **Relative dimension of a model.** If the generic fibre `C` has relative dimension at most `d`
-over `K`, then the model `M` has relative dimension at most `d` over `R`. -/
-@[stacks 0B2J]
-instance relativeDimensionLE_toBase (M : Model R K C toK) {d : ℕ} [RelativeDimensionLE d toK] :
-    RelativeDimensionLE d M.toBase := by
-  refine IsZariskiLocalAtSource.of_iSup_eq_top (fun U : M.total.affineOpens ↦ U.val)
-    (iSup_affineOpens_eq_top M.total) fun U ↦ ?_
-  have hU : IsAffineOpen U.val := U.property
-  have := relativeDimensionLE_fromSpec_toBase (d := d) M hU
-  rw [← hU.isoSpec_hom_fromSpec, Category.assoc]
-  exact RelativeDimensionLE.isPreimmersion_comp hU.isoSpec.hom _
 
 /-- If `C` has relative dimension at most `d` over `K`, then the total space of any model `M` of
 `C` over `R` has Krull dimension at most `d + 1`. -/

@@ -17,7 +17,6 @@ import Mathlib.RingTheory.Ideal.UFD
 import Mathlib.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Ideal.Height
 import TauCeti.RingTheory.KrullDimension.Basic
-import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
 # Krull dimension of finitely generated algebras over a field
@@ -37,6 +36,13 @@ For a domain `A`, the same Noether normalization identifies `s` with the transce
 `A` over `k`: the variables form a transcendence basis because `A` is integral over them. The
 transcendence degree only sees the fraction field, so an algebraic extension of finitely generated
 domains, such as a localization `A[1/f]` with `f ≠ 0`, does not change the Krull dimension.
+
+For an arbitrary finitely generated algebra `A`, the Krull dimension is the largest number of
+elements of `A` algebraically independent over `k`. Such a family stays algebraically independent
+modulo a prime `Q` meeting the polynomial subalgebra it generates in `0`, and `dim (A ⧸ Q)` is a
+transcendence degree. Conversely, a chain of primes of length `n` starts at a prime `Q` with
+`n ≤ dim (A ⧸ Q)`, and a transcendence basis of the domain `A ⧸ Q` can be chosen among the images
+of any generators of `A`.
 
 Every maximal ideal of the polynomial ring `k[X₁, …, Xₛ]` has height `s`, by induction on `s`: a
 maximal ideal of `R[X]`, for `R` a Jacobson ring, contracts to a maximal ideal of `R`, and its
@@ -72,8 +78,6 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 * `TauCeti.finiteRingKrullDim_of_finiteType` and `TauCeti.ringKrullDim_lt_top_of_finiteType`: a
   nontrivial finitely generated algebra over a field has finite Krull dimension, and every finitely
   generated algebra over a field has Krull dimension strictly below `⊤`.
-* `TauCeti.exists_finite_aeval_of_krullDimLE_one`: a finite-type algebra of Krull dimension at most
-  `1` over a field `k` is module-finite over `k[X]` along `Polynomial.aeval x₀` for some `x₀`.
 * `TauCeti.ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType`:
   `dim (K ⊗[k] A) = dim K + dim A` for a Noetherian `k`-algebra `K`.
 * `TauCeti.ringKrullDim_tensorProduct_field_of_finiteType`: `dim (K ⊗[k] A) = dim A` for a field
@@ -82,11 +86,10 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   its transcendence degree over `k`.
 * `TauCeti.ringKrullDim_eq_toNat_trdeg_of_isFractionRing`: a finitely generated domain over `k` has
   Krull dimension the transcendence degree of its fraction field.
-* `TauCeti.trdeg_eq_of_ringKrullDim_eq_of_isFractionRing`: a finite-type `k`-domain of Krull
-  dimension `n` has fraction field of transcendence degree `n` over `k`.
-* `TauCeti.krullDimLE_of_forall_minimalPrimes_trdeg_le`: if every minimal prime of a finite-type
-  `k`-algebra `B` has residue field of transcendence degree at most `n`, then `B` has Krull
-  dimension at most `n`.
+* `AlgebraicIndependent.natCard_le_ringKrullDim` and
+  `TauCeti.exists_algebraicIndependent_of_le_ringKrullDim`: a finitely generated algebra over `k`
+  has Krull dimension at least `n` if and only if it contains `n` elements algebraically
+  independent over `k`, which can be taken among any given generators.
 * `TauCeti.ringKrullDim_eq_of_isAlgebraic`: an algebraic extension of finitely generated domains
   over `k` preserves the Krull dimension; `TauCeti.ringKrullDim_localization_away` is the case of
   `A[1/f]` with `f ≠ 0`.
@@ -263,6 +266,63 @@ theorem ringKrullDim_eq_toNat_trdeg_of_isFractionRing (A K : Type*) [CommRing A]
   have h := lift_trdeg_add_eq k A K
   rw [trdeg_eq_zero (R := A) (A := K), Cardinal.lift_zero, add_zero] at h
   rw [ringKrullDim_eq_toNat_trdeg k A, ← Cardinal.toNat_lift, h, Cardinal.toNat_lift]
+
+/-- A finitely generated algebra over a field which contains a family of elements algebraically
+independent over the field has Krull dimension at least the number of members of the family. -/
+theorem _root_.AlgebraicIndependent.natCard_le_ringKrullDim {ι A : Type*} [CommRing A]
+    [Algebra k A] [Algebra.FiniteType k A] {x : ι → A} (hx : AlgebraicIndependent k x) :
+    (Nat.card ι : WithBot ℕ∞) ≤ ringKrullDim A := by
+  -- Some prime `Q` of `A` meets `k[x]` in `0`, so the images of `x` in the domain `A ⧸ Q` stay
+  -- algebraically independent, and `dim (A ⧸ Q)` is the transcendence degree of `A ⧸ Q`.
+  obtain ⟨Q, _, hQ⟩ := Ideal.exists_comap_eq_of_mem_minimalPrimes_of_injective
+    (f := (MvPolynomial.aeval x).toRingHom) hx ⊥
+    (by rw [IsDomain.minimalPrimes_eq_singleton_bot]; exact Set.mem_singleton _)
+  have hxQ : AlgebraicIndependent k fun i ↦ Ideal.Quotient.mkₐ k Q (x i) := by
+    refine algebraicIndependent_iff.mpr fun p hp ↦ ?_
+    rw [← MvPolynomial.comp_aeval_apply, Ideal.Quotient.mkₐ_eq_mk,
+      Ideal.Quotient.eq_zero_iff_mem] at hp
+    rwa [← RingHom.coe_coe, ← AlgHom.toRingHom_eq_coe, ← Ideal.mem_comap, hQ, Ideal.mem_bot] at hp
+  have hle : Nat.card ι ≤ (Algebra.trdeg k (A ⧸ Q)).toNat := by
+    have := Cardinal.toNat_le_toNat hxQ.lift_cardinalMk_le_trdeg
+      (Cardinal.lift_lt_aleph0.mpr trdeg_lt_aleph0_of_finiteType)
+    rwa [Cardinal.toNat_lift, Cardinal.toNat_lift] at this
+  calc (Nat.card ι : WithBot ℕ∞) ≤ ((Algebra.trdeg k (A ⧸ Q)).toNat : WithBot ℕ∞) := by
+        exact_mod_cast hle
+    _ = ringKrullDim (A ⧸ Q) := (ringKrullDim_eq_toNat_trdeg k (A ⧸ Q)).symm
+    _ ≤ ringKrullDim A := ringKrullDim_quotient_le Q
+
+variable (k) in
+/-- If a finitely generated algebra `A` over a field `k` is generated by a set `s` and has Krull
+dimension at least `n`, then some `n` members of `s` are algebraically independent over `k`. -/
+theorem exists_algebraicIndependent_of_le_ringKrullDim {A : Type*} [CommRing A] [Algebra k A]
+    [Algebra.FiniteType k A] {s : Set A} (hs : Algebra.adjoin k s = ⊤) {n : ℕ}
+    (hn : (n : WithBot ℕ∞) ≤ ringKrullDim A) :
+    ∃ x : Fin n → A, (∀ i, x i ∈ s) ∧ AlgebraicIndependent k x := by
+  -- A chain of primes of length `n` starts at a prime `Q` with `n ≤ dim (A ⧸ Q)`, the
+  -- transcendence degree of the domain `A ⧸ Q`; a transcendence basis of `A ⧸ Q` can be chosen
+  -- among the images of `s`, and lifting `n` of its members gives `x`.
+  obtain ⟨l, hl⟩ := Order.le_krullDim_iff.mp hn
+  let Q := l.head.asIdeal
+  have hQ : (n : WithBot ℕ∞) ≤ ringKrullDim (A ⧸ Q) := by
+    rw [← PrimeSpectrum.coheight_eq_ringKrullDim_quotient, ← hl]
+    exact_mod_cast Order.length_le_coheight_head
+  rw [ringKrullDim_eq_toNat_trdeg k (A ⧸ Q)] at hQ
+  have hs' : Algebra.adjoin k (Ideal.Quotient.mkₐ k Q '' s) = ⊤ := by
+    rw [Algebra.adjoin_image, hs, Algebra.map_top, AlgHom.range_eq_top]
+    exact Ideal.Quotient.mkₐ_surjective k Q
+  -- Every `a` is the image of `⟨a, _⟩` under the inclusion `algebraMap` of `⊤ = adjoin k s'`.
+  have : Algebra.IsAlgebraic (Algebra.adjoin k (Ideal.Quotient.mkₐ k Q '' s)) (A ⧸ Q) :=
+    ⟨fun a ↦ isAlgebraic_algebraMap (⟨a, hs' ▸ Algebra.mem_top⟩ :
+      Algebra.adjoin k (Ideal.Quotient.mkₐ k Q '' s))⟩
+  obtain ⟨t, hts, ht⟩ := exists_isTranscendenceBasis_subset (R := k) (Ideal.Quotient.mkₐ k Q '' s)
+  obtain ⟨e⟩ : Nonempty (Fin n ↪ t) := by
+    refine Cardinal.lift_mk_le'.mp ?_
+    rw [Cardinal.mk_fin, Cardinal.lift_natCast, Cardinal.lift_uzero, ht.cardinalMk_eq_trdeg]
+    exact (Nat.cast_le.mpr (by exact_mod_cast hQ)).trans (Cardinal.natCast_toNat_le _)
+  choose x hxs hx using fun i ↦ hts (e i).property
+  refine ⟨x, hxs, AlgebraicIndependent.of_comp (Ideal.Quotient.mkₐ k Q) ?_⟩
+  rw [show Ideal.Quotient.mkₐ k Q ∘ x = Subtype.val ∘ e from funext hx]
+  exact ht.1.comp _ e.injective
 
 variable (k) in
 /-- An algebraic extension `B / A` of finitely generated domains over a field `k` does not change
@@ -523,78 +583,3 @@ theorem topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg_resid
     Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField k]
 
 end PrimeSpectrum
-
-namespace TauCeti
-
-variable {k : Type*} [Field k]
-
-open scoped Polynomial in
-/-- **One-dimensional Noether normalization.** Every finite-type algebra `A₀` of Krull dimension at
-most `1` over a field `k` is module-finite over `k[X]` via `Polynomial.aeval x₀` for some
-`x₀ : A₀`. -/
-theorem exists_finite_aeval_of_krullDimLE_one (k A₀ : Type*) [Field k] [CommRing A₀]
-    [Algebra k A₀] [Algebra.FiniteType k A₀] [Ring.KrullDimLE 1 A₀] :
-    ∃ x₀ : A₀, (Polynomial.aeval (R := k) x₀).toRingHom.Finite := by
-  rcases subsingleton_or_nontrivial A₀ with _ | _
-  · exact ⟨0, RingHom.Finite.of_surjective _ fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-  · obtain ⟨s, g, hinj, hfin⟩ := exists_finite_inj_algHom_of_fg k A₀
-    have hdim : ringKrullDim A₀ = s := by
-      simpa using
-        ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hfin.to_isIntegral
-    have hs : s ≤ 1 := by
-      have hle : (s : WithBot ℕ∞) ≤ (1 : ℕ) := hdim ▸ Ring.krullDimLE_iff.mp ‹_›
-      exact mod_cast hle
-    have : Subsingleton (Fin s) := ⟨fun a b ↦ Fin.ext (by omega)⟩
-    obtain ⟨φ, hφ⟩ := MvPolynomial.exists_surjective_algHom_of_subsingleton k (Fin s)
-    refine ⟨g (φ Polynomial.X), ?_⟩
-    have heq : Polynomial.aeval (R := k) (g (φ Polynomial.X)) = g.comp φ := by
-      ext
-      simp
-    rw [heq]
-    exact RingHom.Finite.comp hfin (RingHom.Finite.of_surjective _ hφ)
-
-variable (k) in
-/-- If `D` is a finite-type `k`-domain of Krull dimension `n` and `F` is a fraction field of `D`,
-then `Algebra.trdeg k F = n`. -/
-theorem trdeg_eq_of_ringKrullDim_eq_of_isFractionRing {D F : Type*} [CommRing D]
-    [Algebra k D] [Algebra.FiniteType k D] [Field F] [Algebra k F] [Algebra D F]
-    [IsScalarTower k D F] [IsFractionRing D F] {n : ℕ} (hdim : ringKrullDim D = n) :
-    Algebra.trdeg k F = n := by
-  have : IsDomain D := (IsFractionRing.injective D F).isDomain _
-  have htrNat : (Algebra.trdeg k F).toNat = n := by
-    have h := ringKrullDim_eq_toNat_trdeg_of_isFractionRing k D F
-    rw [hdim] at h
-    exact mod_cast h.symm
-  have : FaithfulSMul D F :=
-    (faithfulSMul_iff_algebraMap_injective D F).mpr (IsFractionRing.injective D F)
-  have ht := lift_trdeg_add_eq k D F
-  rw [trdeg_eq_zero_iff.mpr (IsFractionRing.comap_isAlgebraic_iff.mpr
-    (inferInstance : Algebra.IsAlgebraic F F)), Cardinal.lift_zero, add_zero] at ht
-  have hlt : Algebra.trdeg k F < Cardinal.aleph0 :=
-    Cardinal.lift_lt_aleph0.mp
-      (ht ▸ Cardinal.lift_lt_aleph0.mpr (trdeg_lt_aleph0_of_finiteType (R := k) (S := D)))
-  rw [← Cardinal.cast_toNat_of_lt_aleph0 hlt, htrNat]
-
-variable (k) in
-/-- If every minimal-prime residue field of a finite-type `k`-algebra `B` has transcendence degree
-at most `n` over `k`, then `B` has Krull dimension at most `n`. -/
-theorem krullDimLE_of_forall_minimalPrimes_trdeg_le {B : Type*} [CommRing B] [Algebra k B]
-    [Algebra.FiniteType k B] {n : ℕ}
-    (h : ∀ (P : Ideal B) (hP : P ∈ minimalPrimes B), haveI := hP.1.1;
-      Algebra.trdeg k P.ResidueField ≤ n) :
-    Ring.KrullDimLE n B := by
-  rw [Ring.krullDimLE_iff, ringKrullDim, Order.krullDim_eq_iSup_coheight]
-  refine iSup_le fun q ↦ (PrimeSpectrum.coheight_eq_ringKrullDim_quotient q).trans_le ?_
-  obtain ⟨P, hP, hPq⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ q.asIdeal)
-  have : P.IsPrime := hP.1.1
-  have hle : (Algebra.trdeg k P.ResidueField).toNat ≤ n := by
-    rw [← Cardinal.toNat_natCast n]
-    exact Cardinal.toNat_le_toNat (h P hP) Cardinal.natCast_lt_aleph0
-  calc ringKrullDim (B ⧸ q.asIdeal)
-      ≤ ringKrullDim (B ⧸ P) :=
-        ringKrullDim_le_of_surjective _ (Ideal.Quotient.factor_surjective hPq)
-    _ = (Algebra.trdeg k P.ResidueField).toNat :=
-        ringKrullDim_eq_toNat_trdeg_of_isFractionRing k (B ⧸ P) P.ResidueField
-    _ ≤ n := mod_cast hle
-
-end TauCeti

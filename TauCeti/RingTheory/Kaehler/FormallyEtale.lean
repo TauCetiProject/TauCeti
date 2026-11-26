@@ -10,9 +10,7 @@ public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Kaehler.JacobiZariski
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import Mathlib.RingTheory.RingHom.Etale
-public import Mathlib.RingTheory.Smooth.StandardSmooth
 import Mathlib.RingTheory.TensorProduct.Quotient
-import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
@@ -46,12 +44,6 @@ the common zero locus `T ⧸ (aᵢ)` of such elements is then étale over `R`
 * `TauCeti.kaehlerBasisOfFormallyEtale`: the induced basis of `Ω[T⁄R]`, with coordinates
   computed by `TauCeti.kaehlerBasisOfFormallyEtale_repr_map` and determinants by
   `TauCeti.kaehlerBasisOfFormallyEtale_det_map`;
-* `TauCeti.finrank_kaehlerDifferential_of_isStandardSmoothOfRelativeDimension`: if `S` is standard
-  smooth of relative dimension `n` over `R` and a field `F` is formally étale over `S`, then
-  `Module.finrank F Ω[F⁄R] = n`;
-* `TauCeti.finrank_kaehlerDifferential_residueField_of_isStandardSmoothOfRelativeDimension`: at a
-  minimal prime `P` of a reduced `R`-algebra `B` admitting a standard-smooth localization of
-  relative dimension `n`, `Ω[P.ResidueField⁄R]` has dimension `n` over `P.ResidueField`;
 * `TauCeti.formallyEtale_of_bijective_mapBaseChange` and
   `TauCeti.formallyEtale_iff_bijective_mapBaseChange`: formal étaleness of `T` over `S` when `T`
   is formally smooth over `R`;
@@ -119,36 +111,6 @@ theorem kaehlerBasisOfFormallyEtale_det_map {ι : Type*} [Fintype ι] [Decidable
   simp [Basis.toMatrix_apply]
 
 end Basis
-
-/-- If `S` is standard smooth of relative dimension `n` over `R` and a field `F` is formally étale
-over `S`, then `Ω[F⁄R]` has `F`-dimension `n`. -/
-theorem finrank_kaehlerDifferential_of_isStandardSmoothOfRelativeDimension
-    {R S F : Type*} [CommRing R] [CommRing S] [Field F] [Algebra R S] [Algebra R F]
-    [Algebra S F] [IsScalarTower R S F] (n : ℕ)
-    [Algebra.IsStandardSmoothOfRelativeDimension n R S] [Algebra.FormallyEtale S F] :
-    Module.finrank F Ω[F⁄R] = n := by
-  have : Nontrivial S := (algebraMap S F).domain_nontrivial
-  have : Algebra.IsStandardSmooth R S :=
-    Algebra.IsStandardSmoothOfRelativeDimension.isStandardSmooth n
-  rw [← (KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale R S F).finrank_eq,
-    Module.finrank_baseChange,
-    Module.finrank_eq_of_rank_eq
-      (Algebra.IsStandardSmoothOfRelativeDimension.rank_kaehlerDifferential n)]
-
-/-- If a localization `S` of a reduced `R`-algebra `B` at a submonoid `M ≤ P.primeCompl` is
-standard smooth of relative dimension `n` over `R` at a minimal prime `P` of `B`, then the Kähler
-differentials `Ω[P.ResidueField⁄R]` have dimension `n` over `P.ResidueField`. -/
-theorem finrank_kaehlerDifferential_residueField_of_isStandardSmoothOfRelativeDimension
-    {R B S : Type*} [CommRing R] [CommRing B] [Algebra R B] [IsReduced B]
-    {P : Ideal B} [P.IsPrime] (hP : P ∈ minimalPrimes B) (M : Submonoid B) (hM : M ≤ P.primeCompl)
-    [CommRing S] [Algebra R S] [Algebra B S] [IsScalarTower R B S] [IsLocalization M S]
-    (n : ℕ) [Algebra.IsStandardSmoothOfRelativeDimension n R S] :
-    Module.finrank P.ResidueField (KaehlerDifferential R P.ResidueField) = n := by
-  refine with_residueField_isLocalization_of_mem_minimalPrimes (R := R) (S := S) hP M hM
-    fun {_ _ _ _ _} ↦ ?_
-  have : Algebra.FormallyEtale S P.ResidueField :=
-    Algebra.FormallyEtale.of_isLocalization (P.primeCompl.map (algebraMap B S))
-  exact finrank_kaehlerDifferential_of_isStandardSmoothOfRelativeDimension (R := R) (S := S) n
 
 variable {R S T}
 

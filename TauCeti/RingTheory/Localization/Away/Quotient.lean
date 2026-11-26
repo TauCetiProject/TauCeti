@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import TauCeti.RingTheory.Localization.Ideal
+public import Mathlib.RingTheory.Localization.Ideal
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -18,8 +18,7 @@ of `B` away from `b`.
 
 In the other direction, localization away from an element commutes with quotients: if `S` is a
 localization of `R` away from `f`, then `S ⧸ I S` is a localization of `R ⧸ I` away from the
-image of `f`. Moreover, if `A → B` is a localization away from `r` factoring through `A ⧸ I`, then
-`B` is a localization of `A ⧸ I` away from the image of `r`.
+image of `f`.
 
 Combining a quotient comparison with localization lifts primes: if `R → R'` induces an isomorphism
 `R ⧸ (f) ≃ R' ⧸ (f')`, then a prime of `R` containing `f` comes from `R'` and a prime avoiding `f`
@@ -31,8 +30,6 @@ comes from `R_f`, a localization of `R` away from `f`.
   of `b` is a localization of `B` away from `b`.
 * `IsLocalization.Away.quotient`: `S ⧸ I S` is a localization of `R ⧸ I` away from the image of
   `f` whenever `S` is a localization of `R` away from `f`.
-* `IsLocalization.Away.of_quotient`: if a localization `B` of `A` away from `r` factors through
-  `A ⧸ I`, then `B` is a localization of `A ⧸ I` away from the image of `r`.
 * `TauCeti.exists_isPrime_comap_eq_of_bijective_quotientMap`: if `R → R'` induces an isomorphism
   `R ⧸ (f) ≃ R' ⧸ (f')`, then every prime of `R` comes from a prime of `R'` or of `R_f`.
 
@@ -70,15 +67,6 @@ instance IsLocalization.Away.quotient {R S : Type*} [CommRing R] [CommRing S] [A
   have := (inferInstance : IsLocalization
     (Algebra.algebraMapSubmonoid (R ⧸ I) (Submonoid.powers f)) (S ⧸ I.map (algebraMap R S)))
   rwa [Algebra.algebraMapSubmonoid, Submonoid.map_powers] at this
-
-/-- If `B` is a localization of `A` away from `r` and `A → B` factors through `A ⧸ I`, then `B` is
-a localization of `A ⧸ I` away from the image of `r`. -/
-theorem IsLocalization.Away.of_quotient {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    (r : A) [IsLocalization.Away r B] (I : Ideal A) [Algebra (A ⧸ I) B]
-    [IsScalarTower A (A ⧸ I) B] :
-    IsLocalization.Away (Ideal.Quotient.mk I r) B := by
-  have h := IsLocalization.of_quotient (Submonoid.powers r) I (B := B)
-  rwa [Algebra.algebraMapSubmonoid, Submonoid.map_powers, Ideal.Quotient.algebraMap_eq] at h
 
 namespace TauCeti
 
