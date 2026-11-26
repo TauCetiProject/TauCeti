@@ -32,6 +32,13 @@ than the ordinary one: on the cylinder `ℝ × AddCircle p` a shear supported in
 zero flux but nonzero compactly supported flux (`TauCeti.Geometry.Symplectic.Flux.Cylinder`).
 On a compact manifold every form is compactly supported and the two fluxes determine each other.
 
+The compactly supported flux is a homomorphism on compactly supported diffeotopies: it is additive
+on pointwise composites and changes sign under pointwise inversion
+(`TauCeti.Diffeotopy.compactFlux_trans`, `TauCeti.Diffeotopy.compactFlux_symm`). The ordinary laws
+hold modulo exact forms; here the correction is the differential of a function vanishing at every
+point which the first diffeotopy never moves
+(`TauCeti.Diffeotopy.exists_fluxForm_trans_sub_sub_eq_mextDerivₗ`), so it is compactly supported.
+
 For an exact two-form `σ = dθ` the primitive `θ` need not be compactly supported, but the flux
 form is still `φ₁^* θ - θ` up to the exterior derivative of a function vanishing outside `K`
 (`TauCeti.Diffeotopy.fluxForm_mextDerivₗ_sub_mem_exactCompactlySupportedForms`). Hence the
@@ -47,6 +54,12 @@ a smooth function `g` vanishing wherever `F (x, ·) = 0`. If `F` vanishes outsid
 at every time, so does `g`, and the compactly supported flux is zero
 (`TauCeti.Diffeotopy.HasHamiltonian.compactFlux_eq_zero`).
 
+On a Hausdorff boundaryless finite-dimensional manifold with a closed nondegenerate two-form `σ`,
+compact or not, every class `[α] ∈ H¹_c(M)` is a compactly supported flux
+(`TauCeti.Diffeotopy.exists_compactFlux_eq`): the vector field `(σ♭)⁻¹ α` vanishes outside the
+support of `α`, so its flow is complete and is the identity outside that compact set, and its
+time-one flow has compactly supported flux `[α]`.
+
 ## Main definitions
 
 * `TauCeti.Diffeotopy.compactFlux`: the class in `H¹_c(M)` of a compactly supported flux form.
@@ -61,12 +74,17 @@ at every time, so does `g`, and the compactly supported flux is zero
   is compactly supported and closed.
 * `TauCeti.Diffeotopy.toDeRhamCohomology_compactFlux`: forgetting supports sends the compactly
   supported flux to the flux.
+* `TauCeti.Diffeotopy.compactFlux_trans`, `TauCeti.Diffeotopy.compactFlux_symm`,
+  `TauCeti.Diffeotopy.compactFlux_symm_trans`: the compactly supported flux of pointwise
+  composites, inverses and quotients of compactly supported diffeotopies.
 * `TauCeti.Diffeotopy.fluxForm_mextDerivₗ_sub_mem_exactCompactlySupportedForms`,
   `TauCeti.Diffeotopy.compactFlux_mextDerivₗ`: for `σ = dθ`, the compactly supported flux is the
   class of `φ₁^* θ - θ` in `H¹_c(M)`.
 * `TauCeti.Diffeotopy.compactFlux_eq_of_final_eq`,
   `TauCeti.Diffeotopy.compactFlux_eq_zero_of_final_eq_refl`: for exact `σ`, the compactly
   supported flux depends only on the final diffeomorphism, and vanishes on loops.
+* `TauCeti.Diffeotopy.exists_compactFlux_eq`: for a closed nondegenerate two-form, every class of
+  `H¹_c(M)` is the compactly supported flux of a compactly supported symplectic flow.
 * `TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactCompactlySupportedForms`,
   `TauCeti.Diffeotopy.HasHamiltonian.compactFlux_eq_zero`: a diffeotopy with a compactly
   supported Hamiltonian has compactly supported exact flux form and zero compactly supported flux.
@@ -190,6 +208,81 @@ theorem compactFlux_refl (σ : closedForms J M 2)
   rw [compactFlux_def, compactlySupportedDeRhamCohomology.mk_eq_zero_iff]
   simp only [fluxForm_refl, zero_mem]
 
+/-! ### The compactly supported flux homomorphism -/
+
+section Trans
+
+variable (Ψ : Diffeotopy J ∞ M)
+
+/-- **The compactly supported flux homomorphism.** For a closed two-form `σ` preserved by the
+final diffeomorphisms `φ₁` and `ψ₁`, where `φ_t` is the identity outside a compact set at every
+time, the compactly supported flux of the pointwise composite `ψ_t ∘ φ_t` is the sum of the
+compactly supported fluxes of `φ` and `ψ`. -/
+theorem compactFlux_trans [R1Space M] (σ : closedForms J M 2)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : (Φ.trans Ψ).final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hcΦ : Φ.fluxForm σ.val ∈ compactlySupportedForms J M 1)
+    (hcΨ : Ψ.fluxForm σ.val ∈ compactlySupportedForms J M 1)
+    (hc : (Φ.trans Ψ).fluxForm σ.val ∈ compactlySupportedForms J M 1) {K : Set M}
+    (hK : IsCompact K) (hΦK : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) :
+    (Φ.trans Ψ).compactFlux σ h hc = Ψ.compactFlux σ hΨ hcΨ + Φ.compactFlux σ hΦ hcΦ := by
+  obtain ⟨g, hg0, hg⟩ := Φ.exists_fluxForm_trans_sub_sub_eq_mextDerivₗ Ψ
+    ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.val).mp σ.property))
+  rw [SmoothForm.mem_diffeomorphStabilizer.mp hΨ] at hg
+  -- The primitive `g` vanishes outside `K`, so it is compactly supported.
+  have hgc : g ∈ compactlySupportedForms J M 0 :=
+    (mem_compactlySupportedForms J).mpr
+      (HasCompactSupport.intro hK fun x hx ↦ hg0 x fun t ↦ hΦK t hx)
+  rw [compactFlux_def, compactFlux_def, compactFlux_def, ← map_add,
+    compactlySupportedDeRhamCohomology.mk_eq_mk_iff, Submodule.coe_add, ← sub_sub, hg,
+    exactCompactlySupportedForms_succ]
+  exact Submodule.mem_map_of_mem hgc
+
+/-- **The compactly supported flux of the reversed diffeotopy.** For a closed two-form `σ`
+preserved by `φ₁`, where `φ_t` is the identity outside a compact set at every time, the
+diffeotopy `φ_t⁻¹` has the negated compactly supported flux of `φ`. -/
+theorem compactFlux_symm [T2Space M] (σ : closedForms J M 2)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : Φ.symm.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hcΦ : Φ.fluxForm σ.val ∈ compactlySupportedForms J M 1)
+    (hc : Φ.symm.fluxForm σ.val ∈ compactlySupportedForms J M 1) {K : Set M}
+    (hK : IsCompact K) (hΦK : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) :
+    Φ.symm.compactFlux σ h hc = -Φ.compactFlux σ hΦ hcΦ := by
+  have hzero : ∀ (h' : (Φ.trans Φ.symm).final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+      (hc' : (Φ.trans Φ.symm).fluxForm σ.val ∈ compactlySupportedForms J M 1),
+      (Φ.trans Φ.symm).compactFlux σ h' hc' = 0 := by
+    rw [self_trans_symm]
+    exact compactFlux_refl σ
+  have h' : (Φ.trans Φ.symm).final ∈ SmoothForm.diffeomorphStabilizer σ.val := by
+    rw [self_trans_symm, final_refl]
+    exact (SmoothForm.diffeomorphStabilizer σ.val).one_mem
+  rw [eq_neg_iff_add_eq_zero, ← hzero h' ((Φ.trans Φ.symm).fluxForm_mem_compactlySupportedForms
+    σ.val (hK.union hK) (eqOn_id_trans hΦK (eqOn_id_symm hΦK))),
+    compactFlux_trans Φ Φ.symm σ hΦ h h' hcΦ hc _ hK hΦK]
+
+/-- **The compactly supported flux of a quotient of diffeotopies.** For a closed two-form `σ`
+preserved by `φ₁` and `ψ₁`, where `ψ_t` is the identity outside a compact set at every time, the
+diffeotopy `φ_t ∘ ψ_t⁻¹` has the compactly supported flux of `φ` minus that of `ψ`. -/
+theorem compactFlux_symm_trans [T2Space M] (σ : closedForms J M 2)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : (Ψ.symm.trans Φ).final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hcΦ : Φ.fluxForm σ.val ∈ compactlySupportedForms J M 1)
+    (hcΨ : Ψ.fluxForm σ.val ∈ compactlySupportedForms J M 1)
+    (hc : (Ψ.symm.trans Φ).fluxForm σ.val ∈ compactlySupportedForms J M 1) {L : Set M}
+    (hL : IsCompact L) (hΨL : ∀ t, EqOn (fun x ↦ Ψ (t, x)) id Lᶜ) :
+    (Ψ.symm.trans Φ).compactFlux σ h hc = Φ.compactFlux σ hΦ hcΦ - Ψ.compactFlux σ hΨ hcΨ := by
+  have hΨs : Ψ.symm.final ∈ SmoothForm.diffeomorphStabilizer σ.val := by
+    rw [final_symm, ← Diffeomorph.inv_def]
+    exact (SmoothForm.diffeomorphStabilizer σ.val).inv_mem hΨ
+  have hcΨs : Ψ.symm.fluxForm σ.val ∈ compactlySupportedForms J M 1 :=
+    Ψ.symm.fluxForm_mem_compactlySupportedForms σ.val hL (eqOn_id_symm hΨL)
+  rw [compactFlux_trans Ψ.symm Φ σ hΨs hΦ h hcΨs hcΦ hc hL (eqOn_id_symm hΨL),
+    compactFlux_symm Ψ σ hΨ hΨs hcΨ hcΨs hL hΨL, sub_eq_add_neg]
+
+end Trans
+
 /-! ### Exact forms -/
 
 /-- **The compactly supported flux form of an exact form.** For an exact two-form `dθ` and a
@@ -300,6 +393,50 @@ theorem HasHamiltonian.compactFlux_eq_zero [R1Space M] {σ : closedForms J M 2}
   exact h.fluxForm_mem_exactCompactlySupportedForms hK hFK
 
 end Hamiltonian
+
+/-! ### Every compactly supported class is a compactly supported flux -/
+
+section Flow
+
+variable [FiniteDimensional ℝ E] [J.Boundaryless] [T2Space M]
+
+/-- **Every compactly supported first de Rham class is a compactly supported flux.** On a
+Hausdorff boundaryless finite-dimensional manifold with a closed nondegenerate two-form `σ`, every
+class in `H¹_c(M)` is the compactly supported flux of a diffeotopy all of whose maps preserve `σ`
+and which is the identity outside a compact set: the time-one flow of the symplectic vector field
+`(σ♭)⁻¹ α`, for a compactly supported closed representative `α` of the class, which vanishes
+outside the support of `α`. -/
+theorem exists_compactFlux_eq (σ : closedForms J M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) (c : compactlySupportedDeRhamCohomology J M 1) :
+    ∃ (Φ : Diffeotopy J ∞ M) (K : Set M) (hK : IsCompact K)
+      (hΦK : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ)
+      (hΦ : ∀ t, Φ.timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ.val),
+      Φ.compactFlux σ (SmoothForm.final_mem_diffeomorphStabilizer hΦ)
+        (Φ.fluxForm_mem_compactlySupportedForms σ.val hK hΦK) = c := by
+  obtain ⟨α, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective J 1 c
+  obtain ⟨hαc, hαcl⟩ := (mem_compactlySupportedClosedForms J).mp α.property
+  set K := _root_.tsupport (α := E [⋀^Fin 1]→L[ℝ] ℝ) α.val.val
+  have hK : IsCompact K := (mem_compactlySupportedForms J).mp hαc
+  -- The vector field `X = (σ♭)⁻¹ α` contracts to `α` and vanishes outside the support of `α`.
+  set X := hσ.interiorEquiv.symm α.val
+  have hX : X ∈ SmoothTwoForm.symplecticVectorFields σ.val := by
+    rw [SmoothTwoForm.mem_symplecticVectorFields_iff, hσ.interior_interiorEquiv_symm]
+    exact (mem_closedForms J _).mp hαcl
+  have hXK (x : M) (hx : x ∉ K) : X x = 0 :=
+    (hσ.interiorEquiv_symm_apply_eq_zero_iff α.val x).2 (image_eq_zero_of_notMem_tsupport hx)
+  have hc : IsCompleteVectorField X :=
+    isCompleteVectorField_of_isCompact_of_eq_zero_off (X.contMDiff.of_le (by simp)) hK hXK
+  have hσc : SmoothForm.IsClosed σ.val :=
+    (SmoothForm.isClosed_def _).2 ((mem_closedForms J σ.val).1 σ.property)
+  refine ⟨globalFlowDiffeotopy le_top X.contMDiff hc 1, K, hK,
+    fun t x hx ↦ globalFlowDiffeotopy_apply_of_eq_zero le_top X.contMDiff hc 1 (hXK x hx) t,
+    timeSlice_globalFlowDiffeotopy_mem_diffeomorphStabilizer hσc hX hc 1, ?_⟩
+  rw [compactFlux_def]
+  congr 1
+  exact Subtype.ext ((fluxForm_globalFlowDiffeotopy hX hc 1).trans
+    ((one_smul ℝ _).trans (hσ.interiorₗ_interiorEquiv_symm α.val)))
+
+end Flow
 
 end Diffeotopy
 
