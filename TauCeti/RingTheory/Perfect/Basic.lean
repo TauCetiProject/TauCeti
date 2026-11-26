@@ -21,7 +21,6 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 
 * `TauCeti.iterateFrobeniusEquiv_symm_pow`: the `p ^ n`-th power of the `p ^ n`-th root of `x`
   is `x`.
-* `TauCeti.pow_p_pow_injective`: raising to the `p ^ n`-th power is injective.
 * `TauCeti.iterateFrobeniusEquiv_symm_add_pow`: the `p ^ n`-th power of the `p ^ (m + n)`-th root
   of `x` is its `p ^ m`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_succ_pow`: the `p`-th power of the `p ^ (n + 1)`-th root
@@ -57,10 +56,6 @@ variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p] [PerfectRing R p]
 theorem iterateFrobeniusEquiv_symm_pow (x : R) (n : ℕ) :
     (iterateFrobeniusEquiv R p n).symm x ^ p ^ n = x := by
   rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
-
-/-- Raising to the `p ^ n`-th power is injective on a perfect ring. -/
-theorem pow_p_pow_injective (n : ℕ) : Function.Injective fun x : R ↦ x ^ p ^ n := by
-  simpa only [← iterateFrobeniusEquiv_def] using (iterateFrobeniusEquiv R p n).injective
 
 /-- The `p ^ n`-th power of the `p ^ (m + n)`-th root of `x` is its `p ^ m`-th root. -/
 @[simp]

@@ -11,6 +11,7 @@ import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Algebra.Polynomial.Div
 import TauCeti.RingTheory.Perfect.Basic
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Twisted Teichmüller lifts in equal characteristic
@@ -166,9 +167,9 @@ private theorem X_pow_succ_dvd_iterate_eval_sub_of_le (hf : f ≠ 0)
   rw [Function.iterate_add_apply]
   refine X_pow_succ_dvd_iterate_eval_sub hf hQ k (X_dvd_iff.2 ?_)
   rw [map_sub, sub_eq_zero, constantCoeff_iterate_eval hQ]
-  refine pow_p_pow_injective (p := p) (f * k) ?_
-  dsimp only
-  rw [pow_mul, hb', ← pow_mul, ← pow_add, add_comm, hb]
+  refine (iterateFrobeniusEquiv S p (f * k)).injective ?_
+  rw [iterateFrobeniusEquiv_def, iterateFrobeniusEquiv_def, pow_mul, hb', ← pow_mul, ← pow_add,
+    add_comm, hb]
 
 /-- The coefficients of `Q_n(b)` up to degree `n` are those of `[a]_Q`, for every lift `b` of a
 `(p ^ f) ^ n`-th root of `a`. -/
@@ -200,16 +201,15 @@ theorem eq_twistedTeichmuller_iff (hf : f ≠ 0) (hQ : Q.map constantCoeff = Pol
     {a : S} {y : S⟦X⟧} :
     y = twistedTeichmuller p f Q a ↔ ∀ n, ∃ b : S⟦X⟧, constantCoeff b ^ (p ^ f) ^ n = a ∧
       X ^ (n + 1) ∣ y - (Q.eval ·)^[n] b := by
-  refine ⟨?_, fun h ↦ ext fun n ↦ ?_⟩
+  refine ⟨?_, fun h ↦ eq_of_forall_X_pow_dvd_sub fun n ↦ ?_⟩
   · rintro rfl n
     exact ⟨C ((iterateFrobeniusEquiv S p (f * n)).symm a),
       constantCoeff_C_iterateFrobeniusEquiv_symm_pow n a,
       X_pow_succ_dvd_twistedTeichmuller_sub hf hQ
         (constantCoeff_C_iterateFrobeniusEquiv_symm_pow n a)⟩
   · obtain ⟨b, hb, hy⟩ := h n
-    have hdvd := dvd_sub hy (X_pow_succ_dvd_twistedTeichmuller_sub hf hQ hb)
-    rw [sub_sub_sub_cancel_right, X_pow_dvd_iff] at hdvd
-    simpa [sub_eq_zero] using hdvd n (Nat.lt_succ_self n)
+    simpa only [sub_sub_sub_cancel_right] using
+      dvd_sub hy (X_pow_succ_dvd_twistedTeichmuller_sub hf hQ hb)
 
 /-- The `Q`-Teichmüller lift reduces to `a` modulo `X`. -/
 @[simp]
@@ -258,9 +258,9 @@ theorem map_twistedTeichmuller {T : Type*} [CommRing T] [CharP T p] [PerfectRing
     map g (twistedTeichmuller p f Q a) = twistedTeichmuller p f (Q.map (map g)) (g a) := by
   have hroot (n : ℕ) : g ((iterateFrobeniusEquiv S p (f * n)).symm a) =
       (iterateFrobeniusEquiv T p (f * n)).symm (g a) :=
-    pow_p_pow_injective (p := p) (f * n) <| by
-      dsimp only
-      rw [← map_pow, iterateFrobeniusEquiv_symm_pow, iterateFrobeniusEquiv_symm_pow]
+    (iterateFrobeniusEquiv T p (f * n)).injective <| by
+      rw [iterateFrobeniusEquiv_def, iterateFrobeniusEquiv_def, ← map_pow,
+        iterateFrobeniusEquiv_symm_pow, iterateFrobeniusEquiv_symm_pow]
   have hcomm : Function.Semiconj (map g) (Q.eval ·) ((Q.map (map g)).eval ·) := fun x ↦
     (Polynomial.eval_map_apply (map g) x).symm
   ext n
