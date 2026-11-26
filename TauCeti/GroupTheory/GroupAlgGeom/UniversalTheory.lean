@@ -360,8 +360,8 @@ theorem realize_iff_multiplicative_int_of_isMulCommutative_of_isMulTorsionFree_o
   · -- A finitely generated subgroup is isomorphic to some `ℤᵏ`, which is discriminated by `ℤ`.
     obtain ⟨k, -, ⟨e⟩⟩ := Subgroup.exists_mulEquiv_closure_of_pairwise_commute
       (s := S) fun a _ b _ _ => mul_comm' a b
-    exact (e.realize_sentence_iff σ).2
-      ((isDiscriminatedBy_multiplicative_pi_int (Fin k)).realize_of_isUniversal hσ hZ)
+    exact ((e.trans (MulEquiv.funMultiplicative (Fin k) ℤ)).realize_sentence_iff σ).2
+      ((isDiscriminatedBy_pi (Fin k)).realize_of_isUniversal hσ hZ)
 
 end TorsionFree
 
