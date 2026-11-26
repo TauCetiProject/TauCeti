@@ -82,7 +82,9 @@ theorem degree_eq_of_pretransitive
   exact (e.degree_eq i).symm
 
 open Finset in
-/-- A vertex outside `s` is adjacent, in exactly one of `G` and `Gᶜ`, to each vertex of `s`. -/
+/-- A vertex `v` outside `s` has `#s` neighbours in `s` in `G` and `Gᶜ` together:
+`#{w ∈ s | G.Adj v w} + #{w ∈ s | Gᶜ.Adj v w} = #s`, since `v` is adjacent to each vertex of
+`s` in exactly one of `G` and `Gᶜ`. -/
 theorem card_filter_adj_add_card_filter_compl_adj {V : Type*} {G : SimpleGraph V}
     [DecidableEq V] [DecidableRel G.Adj] {s : Finset V} {v : V} (hv : v ∉ s) :
     #{w ∈ s | G.Adj v w} + #{w ∈ s | Gᶜ.Adj v w} = #s := by
