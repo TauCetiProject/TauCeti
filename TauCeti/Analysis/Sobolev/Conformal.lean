@@ -15,6 +15,7 @@ public import TauCeti.Analysis.Sobolev.JetOperator
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Calculus.BumpFunction.Capacity
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
@@ -69,6 +70,13 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   of a test section `ξ` this is the first-order operator `ξ ↦ M (√ρ ξ, ∂s ξ, ∂t ξ)`
   (`TauCeti.ConformalSobolev.jetOperator_toLp_jet_ae_eq`), and its restriction to `H1` is the
   realization of that operator from `W^{1,2}_0(U, V)` to `L²(U, W)`.
+* **Sections of finite energy on the whole plane.** For an integrable weight on the plane, such as
+  the weight `(1 + |w|²)⁻²` of the round metric of the Riemann sphere, the jet of every `C²`
+  section that is bounded and has square-integrable derivative lies in `H1`
+  (`TauCeti.ConformalSobolev.toLp_jet_mem_H1_of_integrable`), although the section need not have
+  compact support: it is the limit of its products with the cutoffs of small Dirichlet energy of
+  `TauCeti.exists_seq_contDiff_cutoff_tendsto_integral_norm_fderiv_sq`. This is the sense in
+  which the point at infinity has capacity zero.
 * **Peetre's argument.** An operator `D` on `H1` satisfying an estimate
   `‖x‖ ≤ C (‖D x‖ + ‖√ρ ξ‖_{L²(K)})` on the jets `x` of test sections `ξ` has finite-dimensional
   kernel (`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`) and closed range
@@ -729,5 +737,177 @@ theorem isClosed_range_of_estimate [FiniteDimensional ℝ V] (hρ : IsWeight U �
   exact ContinuousLinearMap.isClosed_range_of_compact_estimate D hc hb
 
 end Peetre
+
+/-! ### Sections of finite energy on the whole plane -/
+
+section Plane
+
+/-- A derivative in the direction `(1, 0)` is bounded by the full derivative. -/
+private theorem norm_apply_one_zero_le (L : ℝ × ℝ →L[ℝ] V) : ‖L (1, 0)‖ ≤ ‖L‖ := by
+  simpa using L.le_opNorm_of_le (by simp : ‖((1 : ℝ), (0 : ℝ))‖ ≤ 1)
+
+/-- A derivative in the direction `(0, 1)` is bounded by the full derivative. -/
+private theorem norm_apply_zero_one_le (L : ℝ × ℝ →L[ℝ] V) : ‖L (0, 1)‖ ≤ ‖L‖ := by
+  simpa using L.le_opNorm_of_le (by simp : ‖((0 : ℝ), (1 : ℝ))‖ ≤ 1)
+
+/-- **Jets of sections of finite energy are square integrable.** Let `ρ` be an integrable
+conformal weight on the whole plane. The jet `(√ρ ξ, ∂s ξ, ∂t ξ)` of a `C¹` section `ξ` that is
+bounded and whose derivative is square integrable is square integrable on the plane. -/
+theorem memLp_jet_of_integrable (hρ : IsWeight univ ρ) (hρi : Integrable ρ)
+    (hξ : ContDiff ℝ 1 ξ) {M : ℝ} (hM : ∀ z, ‖ξ z‖ ≤ M)
+    (hdξ : Integrable fun z ↦ ‖fderiv ℝ ξ z‖ ^ 2) :
+    MemLp (jet ρ ξ) 2 (volume.restrict univ) := by
+  rw [Measure.restrict_univ]
+  have hρc : Continuous ρ := continuousOn_univ.1 hρ.continuousOn
+  have hd := hξ.continuous_fderiv one_ne_zero
+  have hc : Continuous (jet ρ ξ) := (hρc.sqrt.smul hξ.continuous).prodMk
+    ((hd.clm_apply continuous_const).prodMk (hd.clm_apply continuous_const))
+  refine (memLp_two_iff_integrable_sq_norm hc.aestronglyMeasurable).2 ?_
+  refine ((hρi.mul_const (M ^ 2)).add (hdξ.const_mul 2)).mono' (by fun_prop)
+    (.of_forall fun z ↦ ?_)
+  have hρ0 := (hρ.pos z (mem_univ z)).le
+  rw [Real.norm_of_nonneg (sq_nonneg _)]
+  refine (sq_norm_jet_le hρ0 ξ).trans ?_
+  have h₁ := pow_le_pow_left₀ (norm_nonneg _) (norm_apply_one_zero_le (fderiv ℝ ξ z)) 2
+  have h₂ := pow_le_pow_left₀ (norm_nonneg _) (norm_apply_zero_one_le (fderiv ℝ ξ z)) 2
+  have h₃ := mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (hM z) 2) hρ0
+  simp only [Pi.add_apply]
+  linarith
+
+/-- The jet of `(χ - 1) ξ` for a cutoff `χ` and a section `ξ` bounded by `M` is controlled by
+`1 - χ` and the derivative of `χ`:
+`‖jet ρ ((χ - 1) ξ)‖² ≤ (1 - χ)² (ρ M² + 4 ‖Dξ‖²) + 4 M² ‖Dχ‖²`. -/
+private theorem sq_norm_jet_sub_one_smul_le {χ : ℝ × ℝ → ℝ} (hχ : Differentiable ℝ χ)
+    (hξ : Differentiable ℝ ξ) {M : ℝ} (hM : ∀ z, ‖ξ z‖ ≤ M) {z : ℝ × ℝ} (hρ : 0 ≤ ρ z) :
+    ‖jet ρ (fun w ↦ (χ w - 1) • ξ w) z‖ ^ 2 ≤
+      (1 - χ z) ^ 2 * (ρ z * M ^ 2 + 4 * ‖fderiv ℝ ξ z‖ ^ 2) +
+        4 * M ^ 2 * ‖fderiv ℝ χ z‖ ^ 2 := by
+  have hfd : fderiv ℝ (fun w ↦ (χ w - 1) • ξ w) z =
+      (χ z - 1) • fderiv ℝ ξ z + (fderiv ℝ χ z).smulRight (ξ z) := by
+    rw [fderiv_fun_smul ((hχ.sub_const 1) z) (hξ z), fderiv_sub_const]
+  have hD : ‖fderiv ℝ (fun w ↦ (χ w - 1) • ξ w) z‖ ≤
+      |1 - χ z| * ‖fderiv ℝ ξ z‖ + ‖fderiv ℝ χ z‖ * M := by
+    rw [hfd]
+    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+    · rw [norm_smul, Real.norm_eq_abs, abs_sub_comm]
+    · rw [ContinuousLinearMap.norm_smulRight_apply]
+      exact mul_le_mul_of_nonneg_left (hM z) (norm_nonneg _)
+  have hDsq : ‖fderiv ℝ (fun w ↦ (χ w - 1) • ξ w) z‖ ^ 2 ≤
+      2 * ((1 - χ z) ^ 2 * ‖fderiv ℝ ξ z‖ ^ 2) + 2 * (M ^ 2 * ‖fderiv ℝ χ z‖ ^ 2) := by
+    have := pow_le_pow_left₀ (norm_nonneg _) hD 2
+    nlinarith [sq_abs (1 - χ z), sq_nonneg (|1 - χ z| * ‖fderiv ℝ ξ z‖ - ‖fderiv ℝ χ z‖ * M)]
+  have h₁ := pow_le_pow_left₀ (norm_nonneg _)
+    (norm_apply_one_zero_le (fderiv ℝ (fun w ↦ (χ w - 1) • ξ w) z)) 2
+  have h₂ := pow_le_pow_left₀ (norm_nonneg _)
+    (norm_apply_zero_one_le (fderiv ℝ (fun w ↦ (χ w - 1) • ξ w) z)) 2
+  have h₀ : ‖(χ z - 1) • ξ z‖ ^ 2 ≤ (1 - χ z) ^ 2 * M ^ 2 := by
+    rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, ← neg_sub, neg_sq]
+    exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (hM z) 2) (sq_nonneg _)
+  have := sq_norm_jet_le hρ (fun w ↦ (χ w - 1) • ξ w) (z := z)
+  nlinarith [mul_le_mul_of_nonneg_left h₀ hρ]
+
+/-- For cutoffs `χ_k` with values in `[0, 1]`, equal to `1` on the ball of radius `k` and of
+Dirichlet energy tending to zero, and a bounded section `ξ` of finite energy, the squared `L²`
+norms of the jets of `(χ_k - 1) ξ` tend to zero. -/
+private theorem tendsto_integral_sq_norm_jet_sub_one_smul (hρ : IsWeight univ ρ)
+    (hρi : Integrable ρ) (hξ : ContDiff ℝ 1 ξ) {M : ℝ} (hM : ∀ z, ‖ξ z‖ ≤ M)
+    (hdξ : Integrable fun z ↦ ‖fderiv ℝ ξ z‖ ^ 2) {χ : ℕ → ℝ × ℝ → ℝ}
+    (hχs : ∀ k, ContDiff ℝ 1 (χ k)) (hχc : ∀ k, HasCompactSupport (χ k))
+    (hχI : ∀ k z, χ k z ∈ Icc (0 : ℝ) 1) (hχ1 : ∀ (k : ℕ) z, ‖z‖ ≤ k → χ k z = 1)
+    (hχe : Tendsto (fun k ↦ ∫ z, ‖fderiv ℝ (χ k) z‖ ^ 2) atTop (𝓝 0))
+    (hJi : ∀ k, Integrable fun z ↦ ‖jet ρ (fun w ↦ (χ k w - 1) • ξ w) z‖ ^ 2) :
+    Tendsto (fun k ↦ ∫ z, ‖jet ρ (fun w ↦ (χ k w - 1) • ξ w) z‖ ^ 2) atTop (𝓝 0) := by
+  set B : ℝ × ℝ → ℝ := fun z ↦ ρ z * M ^ 2 + 4 * ‖fderiv ℝ ξ z‖ ^ 2 with hB_def
+  have hρc : Continuous ρ := continuousOn_univ.1 hρ.continuousOn
+  have hBi : Integrable B := (hρi.mul_const _).add (hdξ.const_mul 4)
+  have hBc : Continuous B := (hρc.mul continuous_const).add
+    (continuous_const.mul ((hξ.continuous_fderiv one_ne_zero).norm.pow 2))
+  have hB0 (z : ℝ × ℝ) : 0 ≤ B z := by
+    have := (hρ.pos z (mem_univ z)).le
+    simp only [hB_def]
+    positivity
+  -- The terms `(1 - χ_k)² B` are dominated by `B` and tend to zero pointwise.
+  have hGle (k : ℕ) (z : ℝ × ℝ) : ‖(1 - χ k z) ^ 2 * B z‖ ≤ B z := by
+    obtain ⟨h0, h1⟩ := hχI k z
+    rw [Real.norm_of_nonneg (by positivity [hB0 z])]
+    exact mul_le_of_le_one_left (hB0 z) (by nlinarith)
+  have hGi (k : ℕ) : Integrable fun z ↦ (1 - χ k z) ^ 2 * B z :=
+    hBi.mono' (((continuous_const.sub (hχs k).continuous).pow 2).mul hBc).aestronglyMeasurable
+      (.of_forall (hGle k))
+  have hG : Tendsto (fun k ↦ ∫ z, (1 - χ k z) ^ 2 * B z) atTop (𝓝 0) := by
+    have := tendsto_integral_of_dominated_convergence (f := fun _ ↦ (0 : ℝ)) B
+      (fun k ↦ (hGi k).aestronglyMeasurable) hBi (fun k ↦ .of_forall (hGle k))
+      (.of_forall fun z ↦ tendsto_const_nhds.congr' ((eventually_ge_atTop ⌈‖z‖⌉₊).mono
+        fun k hk ↦ by simp [hχ1 k z ((Nat.le_ceil _).trans (by exact_mod_cast hk))]))
+    simpa using this
+  have hDχi (k : ℕ) : Integrable fun z ↦ ‖fderiv ℝ (χ k) z‖ ^ 2 := by
+    have hc : Continuous fun z ↦ ‖fderiv ℝ (χ k) z‖ ^ 2 :=
+      ((hχs k).continuous_fderiv one_ne_zero).norm.pow 2
+    exact hc.integrable_of_hasCompactSupport
+      (((hχc k).fderiv (𝕜 := ℝ)).comp_left (g := fun L ↦ ‖L‖ ^ 2) (by simp))
+  have hupper : Tendsto (fun k ↦ (∫ z, (1 - χ k z) ^ 2 * B z) +
+      4 * M ^ 2 * ∫ z, ‖fderiv ℝ (χ k) z‖ ^ 2) atTop (𝓝 0) := by
+    simpa using hG.add (hχe.const_mul (4 * M ^ 2))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hupper
+    (fun k ↦ integral_nonneg fun _ ↦ sq_nonneg _) fun k ↦ ?_
+  rw [← integral_const_mul, ← integral_add (hGi k) ((hDχi k).const_mul _)]
+  exact integral_mono (hJi k) ((hGi k).add ((hDχi k).const_mul _)) fun z ↦
+    sq_norm_jet_sub_one_smul_le ((hχs k).differentiable one_ne_zero)
+      (hξ.differentiable one_ne_zero) hM (hρ.pos z (mem_univ z)).le
+
+/-- **Sections of finite energy lie in `W^{1,2}` of an integrable weight.** Let `ρ` be an
+integrable conformal weight on the whole plane, such as the weight of the round metric of the
+Riemann sphere. Then the jet of every `C²` section `ξ` that is bounded and has square-integrable
+derivative lies in `H1 V univ ρ`, the closure of the jets of compactly supported sections. In
+particular `ξ` need not have compact support: the point at infinity has capacity zero.
+
+The approximating test sections are `χ_k ξ` for the cutoffs `χ_k` of
+`TauCeti.exists_seq_contDiff_cutoff_tendsto_integral_norm_fderiv_sq`: the error is at most
+`∫ (1 - χ_k)² (ρ ‖ξ‖² + 4 ‖Dξ‖²)`, which tends to zero by dominated convergence, plus
+`4 (sup ‖ξ‖)² ∫ ‖Dχ_k‖²`, which tends to zero. -/
+theorem toLp_jet_mem_H1_of_integrable (hρ : IsWeight univ ρ) (hρi : Integrable ρ)
+    (hξ : ContDiff ℝ 2 ξ) {M : ℝ} (hM : ∀ z, ‖ξ z‖ ≤ M)
+    (hdξ : Integrable fun z ↦ ‖fderiv ℝ ξ z‖ ^ 2) :
+    (memLp_jet_of_integrable hρ hρi (hξ.of_le one_le_two) hM hdξ).toLp (jet ρ ξ) ∈
+      H1 V univ ρ := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  obtain ⟨χ, hχs, hχc, hχI, hχ1, hχe⟩ :=
+    TauCeti.exists_seq_contDiff_cutoff_tendsto_integral_norm_fderiv_sq (E := ℝ × ℝ) (by simp)
+      volume
+  have hξ1 : ContDiff ℝ 1 ξ := hξ.of_le one_le_two
+  have hξd : Differentiable ℝ ξ := hξ1.differentiable one_ne_zero
+  -- The truncated sections `χ_k ξ` are test sections.
+  have htest (k : ℕ) : (fun z ↦ χ k z • ξ z) ∈ testSection V univ :=
+    ⟨((hχs k).of_le (by simp)).smul hξ, (hχc k).smul_right, subset_univ _⟩
+  have hjm := memLp_jet_of_integrable hρ hρi hξ1 hM hdξ
+  -- The difference of the jets is the jet of `(χ_k - 1) ξ`.
+  have hjet (k : ℕ) : jet ρ (fun z ↦ χ k z • ξ z) - jet ρ ξ =
+      jet ρ (fun z ↦ (χ k z - 1) • ξ z) := by
+    have hηd : Differentiable ℝ fun z ↦ (χ k z - 1) • ξ z :=
+      (((hχs k).differentiable (by simp)).sub_const 1).smul hξd
+    have hsum : (fun z ↦ χ k z • ξ z) = (fun z ↦ (χ k z - 1) • ξ z) + ξ := by
+      funext z
+      simp [sub_smul]
+    rw [sub_eq_iff_eq_add, hsum]
+    exact jet_add hηd hξd
+  have hlim := tendsto_integral_sq_norm_jet_sub_one_smul hρ hρi hξ1 hM hdξ
+    (fun k ↦ (hχs k).of_le (by simp)) hχc hχI hχ1 hχe fun k ↦ by
+      have := ((memLp_jet hρ (htest k)).sub hjm).integrable_norm_pow two_ne_zero
+      rwa [Measure.restrict_univ, hjet k] at this
+  -- So the classes of the jets of `χ_k ξ` converge to the class of the jet of `ξ` in `H1`.
+  refine isClosed_H1.mem_of_tendsto (b := atTop)
+    (f := fun k ↦ (memLp_jet hρ (htest k)).toLp (jet ρ (fun z ↦ χ k z • ξ z))) ?_
+    (.of_forall fun k ↦ jetSubmodule_le_H1 (toLp_jet_mem_jetSubmodule hρ (htest k)))
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hnorm (k : ℕ) : ‖(memLp_jet hρ (htest k)).toLp (jet ρ (fun z ↦ χ k z • ξ z)) -
+      hjm.toLp (jet ρ ξ)‖ = √(∫ z, ‖jet ρ (fun w ↦ (χ k w - 1) • ξ w) z‖ ^ 2) := by
+    rw [← MemLp.toLp_sub, ← Real.sqrt_sq (norm_nonneg _), MemLp.norm_toLp_sq,
+      Measure.restrict_univ, hjet k]
+  simp_rw [hnorm]
+  have := (Real.continuous_sqrt.tendsto 0).comp hlim
+  rw [Real.sqrt_zero] at this
+  exact this
+
+end Plane
 
 end TauCeti.ConformalSobolev

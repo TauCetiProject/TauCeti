@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Sphere
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Conformal
+import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 
 /-!
 # The linearized Floer operator on `W^{1,2}` of the Riemann sphere
@@ -26,8 +27,14 @@ a conformal weight on the whole plane (`TauCeti.Floer.isWeight_sphereWeight`). T
 `TauCeti.ConformalSobolev.H1 V univ ρ` of `TauCeti.Analysis.Sobolev.Conformal` is the completion
 of the compactly supported sections of the plane in the norm `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)`,
 the squared `W^{1,2}` norm of the sphere up to the constant `4` in front of `ρ`, since the
-Dirichlet energy is conformally invariant. A point of the plane has capacity zero, so these
-sections are dense in `W^{1,2}` of the sphere.
+Dirichlet energy is conformally invariant. The weight is integrable
+(`TauCeti.Floer.integrable_sphereWeight`): the round sphere has finite area.
+
+* **The point at infinity has capacity zero.** The space is not smaller than `W^{1,2}` of the
+  sphere near the point at infinity: the jet of every `C²` section that is bounded and has finite
+  Dirichlet energy lies in it (`TauCeti.ConformalSobolev.toLp_jet_mem_H1_of_integrable`), although
+  such a section need not have compact support in the plane. In particular the constant sections
+  lie in it (`TauCeti.SymplecticForm.toLp_jet_const_mem_H1_sphereWeight`).
 
 * **The coefficient field.** Suppose that on `‖w‖ ≥ T` the almost complex structures are a fixed
   `J₀` and the Hamiltonian perturbation vanishes. There the zeroth-order part of `D_u` vanishes,
@@ -44,6 +51,14 @@ sections are dense in `W^{1,2}` of the sphere.
   (`finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base`) and closed range
   (`isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base`), both in the namespace
   `TauCeti.SymplecticForm`.
+
+* **Constant sections.** For unperturbed data, a fixed `J₀` and zero Hamiltonian perturbation,
+  the realization is the Cauchy–Riemann operator `∂s + J₀ ∂t` and vanishes on the constant
+  sections (`floerConformalSobolevOperator_sphereWeight_const_apply_const`). For compatible `J₀`
+  its finite-dimensional kernel therefore has dimension at least `dim V`
+  (`finrank_le_finrank_ker_floerConformalSobolevOperator_sphereWeight_const`), both in the
+  namespace `TauCeti.SymplecticForm`. These are the deformations of a constant sphere along the
+  target.
 
 The target is a symplectic vector space. The finiteness of the cokernel and the index are not
 treated here.
@@ -90,6 +105,29 @@ theorem isWeight_sphereWeight : IsWeight univ sphereWeight where
   pos z _ := by
     rw [sphereWeight_apply]
     positivity
+
+/-- The conformal weight of the Riemann sphere is integrable on the plane: the round sphere has
+finite area. It is at most `4 (1 + ‖w‖)⁻⁴`. -/
+theorem integrable_sphereWeight : Integrable sphereWeight := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have h := (integrable_one_add_norm (E := ℝ × ℝ) (μ := volume) (r := 4)
+    (by simp; norm_num)).const_mul 4
+  refine h.mono' (continuousOn_univ.1 isWeight_sphereWeight.continuousOn).aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  have hm : ‖z‖ ^ 2 ≤ z.1 ^ 2 + z.2 ^ 2 := by
+    rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
+    rcases max_choice |z.1| |z.2| with h | h <;> rw [h, sq_abs] <;> nlinarith [sq_nonneg z.1,
+      sq_nonneg z.2]
+  have hq : (1 + ‖z‖) ^ 4 / 4 ≤ (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 := by
+    have h₁ : (1 + ‖z‖) ^ 2 ≤ 2 * (1 + z.1 ^ 2 + z.2 ^ 2) := by
+      nlinarith [sq_nonneg (1 - ‖z‖)]
+    have h₂ := pow_le_pow_left₀ (by positivity) h₁ 2
+    nlinarith
+  have hρ : 0 ≤ sphereWeight z := (isWeight_sphereWeight.pos z (mem_univ z)).le
+  rw [Real.norm_of_nonneg hρ, sphereWeight_apply, Real.rpow_neg (by positivity),
+    show (1 + ‖z‖) ^ (4 : ℝ) = (1 + ‖z‖) ^ (4 : ℕ) by norm_cast]
+  calc ((1 + z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ ≤ ((1 + ‖z‖) ^ 4 / 4)⁻¹ := inv_anti₀ (by positivity) hq
+    _ = 4 * ((1 + ‖z‖) ^ 4)⁻¹ := by rw [inv_div, div_eq_mul_inv]
 
 end Floer
 
@@ -175,6 +213,125 @@ theorem isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base
     hJ₀ hKs₀ hKt₀ hJ hKs hKt hu hc
   simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
     isClosed_range_of_estimate isWeight_sphereWeight (isCompact_closedBall 0 R) (subset_univ _) _ hA
+
+omit [FiniteDimensional ℝ V] in
+/-- **Constant sections lie in `W^{1,2}` of the sphere.** The jet `(√ρ v, 0, 0)` of the constant
+section `v` lies in the Sobolev space of the sphere, the closure of the jets of sections with
+compact support in the plane: the point at infinity has capacity zero
+(`TauCeti.ConformalSobolev.toLp_jet_mem_H1_of_integrable`). -/
+theorem toLp_jet_const_mem_H1_sphereWeight (v : V) :
+    (memLp_jet_of_integrable isWeight_sphereWeight integrable_sphereWeight contDiff_const
+        (M := ‖v‖) (fun _ ↦ le_rfl) (by simp)).toLp (jet sphereWeight fun _ ↦ v) ∈
+      H1 V univ sphereWeight :=
+  toLp_jet_mem_H1_of_integrable isWeight_sphereWeight integrable_sphereWeight contDiff_const
+    (fun _ ↦ le_rfl) (by simp)
+
+omit [FiniteDimensional ℝ V] in
+/-- The class of the jet of the constant section `v` is represented by `(√ρ v, 0, 0)`. -/
+private theorem coeFn_toLp_jet_const (v : V) :
+    ((⟨_, toLp_jet_const_mem_H1_sphereWeight v⟩ : H1 V univ sphereWeight) :
+      Lp (V × V × V) 2 (volume.restrict univ)) =ᵐ[volume.restrict univ]
+        fun z ↦ (√(sphereWeight z) • v, 0, 0) :=
+  (memLp_jet_of_integrable isWeight_sphereWeight integrable_sphereWeight contDiff_const
+    (M := ‖v‖) (fun _ ↦ le_rfl) (by simp)).coeFn_toLp.trans
+      (.of_forall fun z ↦ by simp [jet_apply])
+
+/-- For unperturbed data, a fixed `J₀` and zero Hamiltonian perturbation on the whole plane, the
+coefficient field of the linearized operator on conformal jets is that of `∂s + J₀ ∂t`. -/
+private theorem floerConformalJetCoeff_const (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+    (J₀ : V →L[ℝ] V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerConformalJetCoeff ρ (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
+      firstOrderJetCoeff J₀ 0 := by
+  rw [floerConformalJetCoeff_def,
+    ω.floerLinearizationCoeff_eq_zero_of_eq_base u (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl),
+    smul_zero]
+
+/-- **Constant sections are in the kernel of the unperturbed operator on the sphere.** For the
+unperturbed Floer data on the sphere, a fixed `J₀` and zero Hamiltonian perturbation, the
+realization of the linearized operator from `W^{1,2}` of the sphere is the Cauchy–Riemann operator
+`∂s + J₀ ∂t` along every map `u`, and it vanishes on the constant sections. -/
+theorem floerConformalSobolevOperator_sphereWeight_const_apply_const (ω : SymplecticForm V)
+    (J₀ : V →L[ℝ] V) (u : ℝ × ℝ → V) (v : V) :
+    ω.floerConformalSobolevOperator univ sphereWeight (fun _ _ ↦ J₀) (fun _ _ ↦ 0)
+      (fun _ _ ↦ 0) u ⟨_, toLp_jet_const_mem_H1_sphereWeight v⟩ = 0 := by
+  have hM : MemLp (ω.floerConformalJetCoeff sphereWeight (fun _ _ ↦ J₀) (fun _ _ ↦ 0)
+      (fun _ _ ↦ 0) u) ∞ (volume.restrict univ) := by
+    rw [funext (floerConformalJetCoeff_const ω sphereWeight J₀ u)]
+    exact memLp_top_const _
+  refine Lp.ext ?_
+  filter_upwards [coeFn_floerConformalSobolevOperator ω hM _, coeFn_toLp_jet_const v,
+    Lp.coeFn_zero V 2 (volume.restrict univ)] with z h₁ h₂ h₃
+  rw [h₁, h₃, Pi.zero_apply, floerConformalJetCoeff_const, firstOrderJetCoeff_apply, h₂]
+  simp
+
+/-- The constant sections give an injective linear map from `V` to the kernel of the unperturbed
+operator on the sphere. -/
+private theorem exists_injective_linearMap_ker_floerConformalSobolevOperator_sphereWeight_const
+    (ω : SymplecticForm V) (J₀ : V →L[ℝ] V) (u : ℝ × ℝ → V) :
+    ∃ L : V →ₗ[ℝ] (ω.floerConformalSobolevOperator univ sphereWeight (fun _ _ ↦ J₀)
+      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).ker, Function.Injective L := by
+  let c : V → H1 V univ sphereWeight := fun v ↦ ⟨_, toLp_jet_const_mem_H1_sphereWeight v⟩
+  let L : V →ₗ[ℝ] (ω.floerConformalSobolevOperator univ sphereWeight (fun _ _ ↦ J₀)
+      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).ker :=
+    { toFun := fun v ↦ ⟨c v, floerConformalSobolevOperator_sphereWeight_const_apply_const ω J₀
+        u v⟩
+      map_add' := fun v w ↦ by
+        refine Subtype.ext (Subtype.ext (Lp.ext ?_))
+        filter_upwards [coeFn_toLp_jet_const (v + w), coeFn_toLp_jet_const v,
+          coeFn_toLp_jet_const w, Lp.coeFn_add (c v).val (c w).val] with z h₁ h₂ h₃ h₄
+        simp only [Submodule.coe_add] at h₄ ⊢
+        rw [h₁, h₄, Pi.add_apply, h₂, h₃]
+        simp [smul_add]
+      map_smul' := fun a v ↦ by
+        refine Subtype.ext (Subtype.ext (Lp.ext ?_))
+        filter_upwards [coeFn_toLp_jet_const (a • v), coeFn_toLp_jet_const v,
+          Lp.coeFn_smul a (c v).val] with z h₁ h₂ h₃
+        simp only [Submodule.coe_smul, RingHom.id_apply] at h₃ ⊢
+        rw [h₁, h₃, Pi.smul_apply, h₂, Prod.smul_mk, Prod.smul_mk, smul_zero, smul_comm] }
+  refine ⟨L, (injective_iff_map_eq_zero L).2 fun v hv ↦ ?_⟩
+  have h0 : (c v).val = 0 := by simpa [L] using congrArg (fun x ↦ x.val.val) hv
+  -- The weighted value `√ρ v` vanishes almost everywhere, and `ρ > 0`.
+  have hae : (fun z ↦ (√(sphereWeight z) • v, (0 : V), (0 : V))) =ᵐ[volume] 0 := by
+    rw [← Measure.restrict_univ (μ := volume)]
+    refine (coeFn_toLp_jet_const v).symm.trans ?_
+    have h0' : (⟨_, toLp_jet_const_mem_H1_sphereWeight v⟩ : H1 V univ sphereWeight).val = 0 := h0
+    rw [h0']
+    exact Lp.coeFn_zero _ _ _
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have : (ae (volume : Measure (ℝ × ℝ))).NeBot := ae_neBot.2 (NeZero.ne _)
+  obtain ⟨z, hz⟩ := hae.exists
+  have hρ : √(sphereWeight z) ≠ 0 :=
+    (Real.sqrt_pos.2 (isWeight_sphereWeight.pos z (mem_univ z))).ne'
+  simpa [hρ] using congrArg Prod.fst hz
+
+/-- **The unperturbed operator on the sphere has kernel of dimension at least `dim V`.** For a
+fixed `ω`-compatible `J₀` and zero Hamiltonian perturbation, the realization of the linearized
+operator from `W^{1,2}` of the sphere has finite-dimensional kernel, which contains the constant
+sections, a copy of `V`: the infinitesimal deformations of a constant sphere along the
+target. -/
+theorem finrank_le_finrank_ker_floerConformalSobolevOperator_sphereWeight_const
+    (ω : SymplecticForm V) {J₀ : AlmostComplexStructure V} (hc : ω.Compatible J₀)
+    (u : ℝ × ℝ → V) :
+    Module.finrank ℝ V ≤ Module.finrank ℝ (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).ker := by
+  set J₁ : V →L[ℝ] V := J₀.toLinearMap.toContinuousLinearMap
+  -- The operator does not depend on `u`, and along `u = 0` its kernel is finite-dimensional.
+  have hu : ω.floerConformalSobolevOperator univ sphereWeight (fun _ _ ↦ J₁) (fun _ _ ↦ 0)
+      (fun _ _ ↦ 0) u = ω.floerConformalSobolevOperator univ sphereWeight (fun _ _ ↦ J₁)
+        (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 := by
+    rw [floerConformalSobolevOperator_def, floerConformalSobolevOperator_def,
+      funext (floerConformalJetCoeff_const ω sphereWeight J₁ u),
+      funext (floerConformalJetCoeff_const ω sphereWeight J₁ 0)]
+  have : FiniteDimensional ℝ (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun _ _ ↦ J₁) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).ker := by
+    rw [hu]
+    exact finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base ω
+      (J := fun _ _ ↦ J₀) (T := 0) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl)
+      (fun _ ↦ contDiffAt_const) (fun _ ↦ contDiffAt_const) (fun _ ↦ contDiffAt_const)
+      contDiff_const fun _ ↦ hc
+  obtain ⟨L, hL⟩ :=
+    exists_injective_linearMap_ker_floerConformalSobolevOperator_sphereWeight_const ω J₁ u
+  exact LinearMap.finrank_le_finrank_of_injective hL
 
 end SymplecticForm
 
