@@ -21,9 +21,12 @@ curvature term of the Weitzenböck formula for `V`-valued two-forms is the bilin
 `𝔉_F(ω)_ij = ∑ₗ (⁅F_il, ω_lj⁆ - ⁅F_jl, ω_li⁆)`
 
 (`TauCeti.weitzenbockCurvatureTerm`), defined without a frame through the metric trace. Reading
-two-forms as skew-symmetric matrices with entries in `V`, it is the commutator of matrices in
-which the products of entries are Lie brackets. For the curvature `F` of a harmonic Yang–Mills
-connection on `ℝ⁴` it is the zeroth-order term of the Weitzenböck formula
+two-forms as skew-symmetric matrices with entries in `V`, it is `F ⬝ ω + ω ⬝ F`, where the
+products of entries in the matrix products are Lie brackets. Equivalently, for
+`F = ∑ₐ Aₐ ⊗ Xₐ` and `ω = ∑_b B_b ⊗ Y_b` with scalar skew-symmetric matrices `Aₐ`, `B_b` and
+`Xₐ`, `Y_b` in `V`, it is `∑ₐ ∑_b [Aₐ, B_b] ⊗ ⁅Xₐ, Y_b⁆`, built from the commutators of the
+scalar matrices. For the curvature `F` of a harmonic Yang–Mills connection on `ℝ⁴` it is the
+zeroth-order term of the Weitzenböck formula
 `½ Δ|F⁺|² = |∇F⁺|² - ⟨F⁺, 𝔉_{F⁺}(F⁺)⟩`, and the cubic bound below, which controls it by the norm
 `γ₀` of the Lie bracket (`QuadraticMap.lieBracketNorm`), is the pointwise input of the energy gap
 for harmonic Yang–Mills connections.
