@@ -32,6 +32,16 @@ of `CommRingCat.{0}`, then Ext groups in `C ⥤ AddCommGrpCat.{1}` lie in `Type 
 
 * `CategoryTheory.Functor.isGrothendieckAbelian`: the instance
   `IsGrothendieckAbelian.{w} (C ⥤ A)` for `EssentiallySmall.{w} C`.
+
+## References
+
+* A. Grothendieck, *Sur quelques points d'algèbre homologique*, Tôhoku Math. J. (2) 9 (1957),
+  119–221, for Grothendieck abelian categories.
+* [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
+  `src/Lib/Cohomology/Etale/Basic.lean` (the anonymous instance
+  `IsGrothendieckAbelian.{1} (AbFunctor C)` in section `Functoriality`, for functors from a small
+  category to abelian groups); Apache 2.0, Copyright 2026 Anthropic, PBC. The instance here is
+  adapted from it, for an arbitrary Grothendieck abelian target and an essentially small source.
 -/
 
 public section

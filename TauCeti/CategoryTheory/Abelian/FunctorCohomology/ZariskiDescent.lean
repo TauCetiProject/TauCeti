@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import TauCeti.CategoryTheory.Abelian.FunctorCohomology.Basic
+public import TauCeti.CategoryTheory.Subfunctor.Basic
 
 /-!
 # Zariski descent and partitions for functors on categories of rings
@@ -31,8 +32,9 @@ functors on `C` to the Zariski topology of the rings `ι A`.
   out of `A` identify `ι A` with a product of rings, they identify `F A` with the product of the
   corresponding groups.
 
-Zariski-locally everything subfunctors contain the whole functor, are stable under enlarging and
-under finite intersections, and under restriction along a functor `φ : C' ⥤ C`. Over local rings
+The whole functor is Zariski-locally everything, and such subfunctors are stable under enlarging,
+under finite intersections, and under restriction along a functor `φ : C' ⥤ C`
+(`CategoryTheory.Subfunctor.whiskerLeft`). Over local rings
 they contain every point, so every coefficient functor has Zariski descent when all the rings
 `ι A` are local (`CategoryTheory.hasZariskiDescent_of_isLocalRing`). A coefficient functor with
 partitions vanishes on objects whose ring is zero (`CategoryTheory.HasPartitions.subsingleton`).
@@ -112,19 +114,13 @@ lemma IsZariskiLocallyTop.inf {U V : Subfunctor Y} (hU : U.IsZariskiLocallyTop �
   rw [map_mul] at hf
   exact ⟨hU B f (isUnit_of_mul_isUnit_left hf), hV B f (isUnit_of_mul_isUnit_right hf)⟩
 
-/-- The restriction of a subfunctor `U` of `Y` along `φ : C' ⥤ C`, as a subfunctor of `φ ⋙ Y`. -/
-def whiskerLeft {C' : Type u'} [Category.{v'} C'] (φ : C' ⥤ C) (U : Subfunctor Y) :
-    Subfunctor (φ ⋙ Y) where
-  obj A := U.obj (φ.obj A)
-  map f := U.map (φ.map f)
-
 /-- Restricting along `φ : C' ⥤ C` preserves being Zariski-locally everything, for the rings
 `ι (φ A')`. -/
 lemma IsZariskiLocallyTop.whiskerLeft {C' : Type u'} [Category.{v'} C'] (φ : C' ⥤ C)
     {U : Subfunctor Y} (hU : U.IsZariskiLocallyTop ι) :
     (U.whiskerLeft φ).IsZariskiLocallyTop (φ ⋙ ι) := fun A y m hm ↦ by
   obtain ⟨a, ha, hU⟩ := hU (φ.obj A) y m hm
-  exact ⟨a, ha, fun B f hf ↦ hU (φ.obj B) (φ.map f) hf⟩
+  exact ⟨a, ha, fun B f hf ↦ (U.mem_whiskerLeft_obj_iff φ _).2 (hU (φ.obj B) (φ.map f) hf)⟩
 
 /-- Over a local ring a Zariski-locally everything subfunctor contains every point: an element
 outside the maximal ideal is already a unit. -/

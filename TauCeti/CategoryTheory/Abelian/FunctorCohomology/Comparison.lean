@@ -112,8 +112,7 @@ lemma mk₀_comp_extComparison (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') {a' : M' �
       extComparison φ β b n ((Ext.mk₀ γ).comp x (zero_add n)) := by
   rw [extComparison_apply, extComparison_apply, Ext.mk₀_comp_mk₀_assoc, h,
     ← Ext.mk₀_comp_mk₀_assoc, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
-    Ext.comp_assoc_of_third_deg_zero]
-  rfl
+    Ext.comp_assoc_of_third_deg_zero, whiskeringLeft_obj_map]
 
 /-- Comparison maps are natural in the coefficients: if `γ : F ⟶ G` and `γ' : F' ⟶ G'` are
 compatible with `β` and `β'`, in the sense that `φ.whiskerLeft γ ≫ β' = β ≫ γ'`, then the
@@ -139,8 +138,8 @@ lemma extComparison_extComparison (φ : C' ⥤ C) (ψ : C'' ⥤ C') (β : φ ⋙
         ((whiskeringLeft C'' C' AddCommGrpCat.{w}).obj ψ) :=
     Ext.comp_mapExactFunctor x ((whiskeringLeft C' C _).obj φ) ((whiskeringLeft C'' C' _).obj ψ)
   simp only [extComparison_apply, h, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
-    ← Ext.mk₀_comp_mk₀, Ext.comp_assoc_of_second_deg_zero, Ext.comp_assoc_of_third_deg_zero]
-  rfl
+    ← Ext.mk₀_comp_mk₀, Ext.comp_assoc_of_second_deg_zero, Ext.comp_assoc_of_third_deg_zero,
+    whiskeringLeft_obj_map]
 
 /-- Bijective comparisons compose: if `(φ, β)` is bijective along `α` and `(ψ, β')` is bijective
 along `α'`, the composite `(ψ ⋙ φ, ψ.whiskerLeft β ≫ β')` is bijective along

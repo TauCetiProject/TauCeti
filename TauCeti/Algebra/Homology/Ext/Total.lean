@@ -22,7 +22,7 @@ become products with classes of degree zero and degrees need no tracking.
 
 An exact functor `G` acts on total Ext groups (`CategoryTheory.Abelian.TotalExt.map`) compatibly
 with products (`CategoryTheory.Abelian.TotalExt.map_comp`), with composition of functors, and with
-natural transformations (`CategoryTheory.Abelian.TotalExt.mk₀_comp_map`).
+natural transformations (`CategoryTheory.Abelian.TotalExt.comp_map_mk₀`).
 
 The long exact sequence of a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` in the first variable
 becomes, in all degrees at once, an exact triangle
@@ -161,6 +161,7 @@ lemma map_id (x : TotalExt X Y) : map (𝟭 C) x = x := by
   | add x x' hx hx' => simp_all
   | of a x =>
     rw [map_of, Ext.id_mapExactFunctor]
+    -- `(𝟭 C).obj X` and `(𝟭 C).obj Y` are `X` and `Y` by definition.
     rfl
 
 /-- The action of a composite of exact functors is the composite of the actions. -/
@@ -191,7 +192,7 @@ variable {M N F G : C}
 
 /-- The degree-`m` component of a product `comp (of e ξ) y` with a homogeneous class on the left
 is the composite of `ξ` with the degree-`n` component of `y`, where `e + n = m`. -/
-private lemma comp_of_apply {e n m : ℕ} (ξ : Ext.{w} G M e) (y : TotalExt M F) (h : e + n = m) :
+lemma comp_of_apply {e n m : ℕ} (ξ : Ext.{w} G M e) (y : TotalExt M F) (h : e + n = m) :
     comp (of _ e ξ) y m = ξ.comp (y n) h := by
   classical
   induction y using DirectSum.induction_on with
@@ -244,12 +245,8 @@ theorem exact_triangle :
   · obtain rfl : n = m := by lia
     cases n with
     | zero =>
-      left
-      obtain ⟨f, rfl⟩ := (Ext.mk₀_bijective _ _).2 y
-      have hf : S.g ≫ f = S.g ≫ 0 := by
-        simpa using (Ext.mk₀_bijective _ _).1 (by simpa using hy)
       have := hS.epi_g
-      simp [(cancel_epi S.g).1 hf]
+      exact .inl (Ext.precomp_mk₀_injective_of_epi Y S.g (by simpa using hy))
     | succ n =>
       obtain ⟨x, hx⟩ := Ext.contravariant_sequence_exact₃ hS Y y hy (add_comm 1 n)
       exact .inr ⟨n, add_comm 1 n, x, hx⟩

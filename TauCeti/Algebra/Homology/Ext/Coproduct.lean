@@ -35,6 +35,12 @@ cohomology of a disjoint union of functors as the product of the cohomology grou
 
 * C. A. Weibel, *An Introduction to Homological Algebra*, Section 2.6.
 * The Stacks Project, Lemma 15.91.8 (05EG), for the cyclic-quotient reduction in formal glueing.
+* [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
+  `src/Lib/General/Algebra/LongExactSequences.lean` (declaration `New.Variety.H.sigma_bijective`,
+  the case of free abelian functors on a disjoint union, proved by dimension shifting in the
+  second variable); Apache 2.0, Copyright 2026 Anthropic, PBC. The extension of
+  `CategoryTheory.Abelian.Ext.coproductAddEquiv` to every degree is adapted from it and stated for
+  an arbitrary abelian category with enough injectives.
 -/
 
 public section
