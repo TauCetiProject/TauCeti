@@ -40,7 +40,8 @@ extension of `φ` by zero, and in the complex plane it is entire of exponential 
 * `TauCeti.paleyWienerFunction_eq_paleyWienerFunction_indicator`: for `0 ≤ s ≤ t`, a Paley–Wiener
   function for the interval `[-s, s]` is one for `[-t, t]`, so that `PW_s ⊆ PW_t`.
 * `TauCeti.paleyWienerFunction_cexp_mul`: the Paley–Wiener function of the exponential
-  `e^{isw}` is `2 sin(t(z + w))/(z + w)`; for `w = 0` it is `2 sin(tz)/z`.
+  `e^{isw}` is `2 sin(t(z + w))/(z + w)` for `z + w ≠ 0`; for `w = 0` it is `2 sin(tz)/z` for
+  `z ≠ 0`.
 * `TauCeti.paleyWienerFunction_eq_integral_mul_conj_paleyWienerKernel`: the reproducing property
   `F(λ) = ∫_ℝ F(x) conj(k_t(λ, x)) dx` of the kernel
   `k_t(λ, z) = sin(t(z - conj λ))/(π(z - conj λ))` (`TauCeti.paleyWienerKernel`), which lies in
@@ -272,7 +273,8 @@ theorem paleyWienerFunction_eq_paleyWienerFunction_indicator {s : ℝ} (hs : 0 �
 
 /-! ### Exponentials and the reproducing kernel -/
 
-/-- The Paley–Wiener function of the exponential `e^{isw}` is `2 sin(t(z + w))/(z + w)`. -/
+/-- The Paley–Wiener function of the exponential `e^{isw}` is `2 sin(t(z + w))/(z + w)` for
+`z + w ≠ 0`. -/
 theorem paleyWienerFunction_cexp_mul (t : ℝ) {w z : ℂ} (h : z + w ≠ 0) :
     paleyWienerFunction t (fun s ↦ cexp (I * s * w)) z = 2 * sin (t * (z + w)) / (z + w) := by
   have hc : I * (z + w) ≠ 0 := mul_ne_zero I_ne_zero h
@@ -287,7 +289,7 @@ theorem paleyWienerFunction_cexp_mul (t : ℝ) {w z : ℂ} (h : z + w ≠ 0) :
     div_eq_div_iff hc h]
   linear_combination (cexp (t * (z + w) * I) - cexp (-(t * (z + w)) * I)) * (z + w) * I_sq
 
-/-- The Paley–Wiener function of the constant `1` is `2 sin(tz)/z`. -/
+/-- The Paley–Wiener function of the constant `1` is `2 sin(tz)/z` for `z ≠ 0`. -/
 theorem paleyWienerFunction_one (t : ℝ) {z : ℂ} (hz : z ≠ 0) :
     paleyWienerFunction t 1 z = 2 * sin (t * z) / z := by
   have h := paleyWienerFunction_cexp_mul t (w := 0) (z := z) (by simpa using hz)
