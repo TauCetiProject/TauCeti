@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.WeilRestriction
-public import TauCeti.RingTheory.Etale.Galois
+public import TauCeti.RingTheory.TotallySplit
 
 /-!
 # Split points of the Weil restriction of the general linear group
@@ -28,6 +28,8 @@ open scoped TensorProduct
 
 namespace TauCeti.Algebra.WeilRestriction
 
+open TauCeti.Algebra.IsFiniteSplit
+
 variable (K B Ω : Type*) [Field K] [CommRing B] [Algebra K B] [Module.Finite K B]
   [Algebra.Etale K B] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] (n : ℕ)
 
@@ -39,7 +41,7 @@ noncomputable def generalLinearSplitPoints :
   (generalLinearPoints K B n Ω).trans
     ((GeneralLinearGroup.mapEquiv (Fin n)
       ((Algebra.TensorProduct.comm K B Ω).toRingEquiv.trans
-        (Algebra.Etale.tensorProductEquivPi K Ω B).toRingEquiv)).trans
+        (tensorProductEquivPiBaseChange K Ω B Ω).toRingEquiv)).trans
       (GeneralLinearGroup.piEquiv (n := Fin n) fun _ : B →ₐ[K] Ω ↦ Ω))
 
 variable {K B Ω n}
@@ -56,7 +58,8 @@ theorem generalLinearSplitPoints_apply
   apply Units.ext
   ext i j
   -- The general linear group equivalences apply the scalar splitting entrywise.
-  exact Algebra.Etale.tensorProductEquivPi_comm (generalLinearPoints K B n Ω x i j) τ
+  exact AlgHom.congr_fun (evalAlgHom_comp_tensorProductEquivPiBaseChange_comm τ)
+    (generalLinearPoints K B n Ω x i j)
 
 /-- In matrix coordinates, the inverse splitting assembles the tuple over the product ring
 and transports it back along the étale splitting. -/
@@ -64,7 +67,7 @@ and transports it back along the étale splitting. -/
 theorem generalLinearSplitPoints_symm_apply (g : (B →ₐ[K] Ω) → GL (Fin n) Ω) :
     generalLinearPoints K B n Ω ((generalLinearSplitPoints K B Ω n).symm g) =
       GeneralLinearGroup.mapEquiv (Fin n) ((Algebra.TensorProduct.comm K B Ω).toRingEquiv.trans
-        (Algebra.Etale.tensorProductEquivPi K Ω B).toRingEquiv).symm
+        (tensorProductEquivPiBaseChange K Ω B Ω).toRingEquiv).symm
         ((GeneralLinearGroup.piEquiv (n := Fin n) fun _ : B →ₐ[K] Ω ↦ Ω).symm g) := by
   simp only [generalLinearSplitPoints, MulEquiv.symm_trans_apply, MulEquiv.apply_symm_apply,
     GeneralLinearGroup.symm_mapEquiv]
