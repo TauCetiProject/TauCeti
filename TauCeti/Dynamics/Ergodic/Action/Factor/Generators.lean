@@ -18,7 +18,7 @@ quasi-measure-preservingly on the source (`TauCeti.IsFactorMapSMul.of_submonoidC
 For a group it suffices to intertwine a generating set of the group whose elements and their
 inverses act quasi-measure-preservingly on the source
 (`TauCeti.IsFactorMapSMul.of_subgroupClosure_eq_top`), since a map intertwining `g` also
-intertwines `g⁻¹`.
+intertwines `g⁻¹` (`MeasureTheory.QuasiMeasurePreserving.comp_inv_smul_ae_eq`).
 
 This identifies the action interface for `ℕ` and `ℤ` with the interface for a single map
 `TauCeti.IsFactorMap` applied to the generator `1 +ᵥ ·`
@@ -28,15 +28,13 @@ iterates, and an invertible map, through its integer powers.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory Filter Function
 open scoped Pointwise
 
 variable {M G X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X}
   {ν : Measure Y} {π : X → Y}
 
-namespace IsFactorMapSMul
+namespace MeasureTheory.QuasiMeasurePreserving
 
 omit [MeasurableSpace Y] in
 /-- If `π` intertwines `g • ·` almost everywhere and `g⁻¹ • ·` is quasi-measure-preserving on the
@@ -49,6 +47,12 @@ theorem comp_inv_smul_ae_eq [Group G] [MulAction G X] [MulAction G Y] {g : G}
     π ∘ (g⁻¹ • ·) =ᵐ[μ] (g⁻¹ • ·) ∘ π := by
   filter_upwards [(hg.ae_eq_comp h).fun_comp (g⁻¹ • ·)] with x hx
   simpa using hx.symm
+
+end MeasureTheory.QuasiMeasurePreserving
+
+namespace TauCeti
+
+namespace IsFactorMapSMul
 
 /-- **Factor maps from generators of a monoid.** A measure-preserving map that intertwines almost
 everywhere every parameter of a set `s` generating the monoid `M` is a factor map of the
@@ -95,7 +99,7 @@ theorem of_subgroupClosure_eq_top [Group G] [MulAction G X] [MulAction G Y]
   · rw [← Subgroup.closure_toSubmonoid, hs, Subgroup.top_toSubmonoid]
   · rcases hg with hg | hg
     · exact h g hg
-    · simpa using comp_inv_smul_ae_eq (hX g⁻¹ hg).2 (h g⁻¹ hg)
+    · simpa using (hX g⁻¹ hg).2.comp_inv_smul_ae_eq (h g⁻¹ hg)
 
 end IsFactorMapSMul
 
