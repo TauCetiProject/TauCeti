@@ -106,8 +106,9 @@ theorem padicIntPowDiagGL_natCast (e : Fin n → ℕ) :
 /-- `padicNatPowDiagGL` at `0` is `1`. -/
 @[simp]
 theorem padicNatPowDiagGL_zero : padicNatPowDiagGL n p 0 = 1 := by
-  rw [padicNatPowDiagGL_def, show (fun i : Fin n ↦ p ^ (0 : Fin n → ℕ) i) = fun _ ↦ 1 from
-    funext fun _ ↦ pow_zero p, natDiagGL_one, map_one]
+  have hzero : (fun i : Fin n ↦ p ^ (0 : Fin n → ℕ) i) = fun _ ↦ 1 :=
+    funext fun _ ↦ pow_zero p
+  rw [padicNatPowDiagGL_def, hzero, natDiagGL_one, map_one]
 
 /-- `padicIntPowDiagGL` at `0` is `1`. -/
 @[simp]
@@ -215,9 +216,10 @@ theorem exists_padicNatPowDiagGL_mem_doubleCoset {g : GL (Fin n) ℚ_[p]}
       _root_.inv_zpow'] at hnorm
     exact neg_nonpos.mp
       ((zpow_le_one_iff_right₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)).mp hnorm)
+  have ha_eq : (fun i ↦ ((a i).toNat : ℤ)) = a :=
+    funext fun i ↦ Int.toNat_of_nonneg (hnonneg i)
   refine ⟨fun i ↦ (a i).toNat, fun _ _ hij ↦ Int.toNat_le_toNat (ha hij), ?_⟩
-  rwa [← padicIntPowDiagGL_natCast,
-    show (fun i ↦ ((a i).toNat : ℤ)) = a from funext fun i ↦ Int.toNat_of_nonneg (hnonneg i)]
+  rwa [← padicIntPowDiagGL_natCast, ha_eq]
 
 /-- Distinct monotone tuples `e₁, e₂ : Fin n → ℕ` define disjoint `GL_n(ℤ_p)` double cosets. -/
 theorem eq_of_padicNatPowDiagGL_mem_doubleCoset {e₁ e₂ : Fin n → ℕ}

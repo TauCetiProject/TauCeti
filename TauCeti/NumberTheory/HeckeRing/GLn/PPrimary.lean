@@ -148,8 +148,8 @@ private theorem exists_int_matrix_natDiagGL_mul_inv {g : GL (Fin n) ℚ} {k m : 
           B.map (Int.cast : ℤ → ℚ) := by
   have hp_pos : 0 < p := (Fact.out : p.Prime).pos
   let B : Matrix (Fin n) (Fin n) ℤ := (p : ℤ) ^ k • A.adjugate
-  have hAm : A.det = (p : ℤ) ^ m := by
-    exact_mod_cast (show (A.det : ℚ) = (p : ℚ) ^ m by rw [Int.cast_det, ← hA, hm])
+  have hAm_Q : (A.det : ℚ) = (p : ℚ) ^ m := by rw [Int.cast_det, ← hA, hm]
+  have hAm : A.det = (p : ℤ) ^ m := by exact_mod_cast hAm_Q
   have hBA : B * A = (p : ℤ) ^ (m + k) • 1 := by
     rw [Matrix.smul_mul, Matrix.adjugate_mul, hAm, smul_smul, ← pow_add, add_comm]
   refine ⟨B, hBA, ?_⟩
@@ -194,8 +194,9 @@ private theorem inv_mem_pLocalPosGL_aux {g : GL (Fin n) ℚ} (hg : g ∈ Matrix.
   obtain ⟨r, -, hr⟩ :=
     Matrix.exists_natAbs_det_eq_pow_of_mul_eq_pow_smul_one (Fact.out : p.Prime) hBA
   refine ⟨m, ⟨(mem_posDetInt_iff n).mpr ⟨(hasIntEntries_iff n).mpr ⟨B, hBmat⟩, hdet_pos⟩, r, ?_⟩⟩
-  rw [← hBdet_Q, show B.det = (p : ℤ) ^ r from by
-    rw [← Int.natAbs_of_nonneg hBdet_pos.le, hr, Nat.cast_pow]]
+  have hBdet : B.det = (p : ℤ) ^ r := by
+    rw [← Int.natAbs_of_nonneg hBdet_pos.le, hr, Nat.cast_pow]
+  rw [← hBdet_Q, hBdet]
   simp
 
 /-- The `p`-local positive-determinant subgroup of `GL_n(ℚ)`: elements of `GL_n^+(ℚ)` whose

@@ -386,40 +386,30 @@ def intermediateSublatticeOrderIso {A C : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
     {L : Submodule ℤ (Fin n → ℤ) // intSublattice n C ≤ L ∧ L ≤ intSublattice n A} ≃o
       {M : Submodule ℤ_[p] (Fin n → ℤ_[p]) //
         padicSublattice n p (C.map (Int.castRingHom ℤ_[p])) ≤ M ∧
-          M ≤ padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))} where
-  toFun L :=
-    ⟨(pPowerSublatticeEquiv (Fin n) p k
-        ⟨L.val, (ker_intVectorReduction_le_intSublattice n p hC).trans L.property.1⟩).val,
-      by
-        rw [← pPowerSublatticeEquiv_intSublattice n p
-            (ker_intVectorReduction_le_intSublattice n p hC),
-          ← pPowerSublatticeEquiv_intSublattice n p
-            (ker_intVectorReduction_le_intSublattice n p hA)]
-        exact ⟨(pPowerSublatticeEquiv (Fin n) p k).monotone L.property.1,
-          (pPowerSublatticeEquiv (Fin n) p k).monotone L.property.2⟩⟩
-  invFun M :=
-    ⟨((pPowerSublatticeEquiv (Fin n) p k).symm
-        ⟨M.val, (ker_padicVectorReduction_le_padicSublattice_map n p hC).trans M.property.1⟩).val,
-      by
-        rw [← pPowerSublatticeEquiv_symm_padicSublattice n p
-            (ker_intVectorReduction_le_intSublattice n p hC)
-            (ker_padicVectorReduction_le_padicSublattice_map n p hC),
-          ← pPowerSublatticeEquiv_symm_padicSublattice n p
-            (ker_intVectorReduction_le_intSublattice n p hA)
-            (ker_padicVectorReduction_le_padicSublattice_map n p hA)]
-        exact ⟨(pPowerSublatticeEquiv (Fin n) p k).symm.monotone M.property.1,
-          (pPowerSublatticeEquiv (Fin n) p k).symm.monotone M.property.2⟩⟩
-  left_inv L := by
-    apply Subtype.ext; dsimp only
-    exact congrArg Subtype.val ((pPowerSublatticeEquiv (Fin n) p k).symm_apply_apply
-      ⟨L.val, (ker_intVectorReduction_le_intSublattice n p hC).trans L.property.1⟩)
-  right_inv M := by
-    apply Subtype.ext; dsimp only
-    exact congrArg Subtype.val ((pPowerSublatticeEquiv (Fin n) p k).apply_symm_apply
-      ⟨M.val, _⟩)
-  map_rel_iff' {L₁ L₂} :=
-    (pPowerSublatticeEquiv (Fin n) p k).map_rel_iff
-      (a := ⟨L₁.val, _⟩) (b := ⟨L₂.val, _⟩)
+          M ≤ padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))} :=
+  let hkerC := ker_intVectorReduction_le_intSublattice n p hC
+  let hkerA := ker_intVectorReduction_le_intSublattice n p hA
+  let hkerCp := ker_padicVectorReduction_le_padicSublattice_map n p hC
+  let hkerAp := ker_padicVectorReduction_le_padicSublattice_map n p hA
+  have hC_eq : pPowerSublatticeEquiv (Fin n) p k ⟨intSublattice n C, hkerC⟩ =
+      ⟨padicSublattice n p (C.map (Int.castRingHom ℤ_[p])), hkerCp⟩ :=
+    Subtype.ext (pPowerSublatticeEquiv_intSublattice n p hkerC)
+  have hA_eq : pPowerSublatticeEquiv (Fin n) p k ⟨intSublattice n A, hkerA⟩ =
+      ⟨padicSublattice n p (A.map (Int.castRingHom ℤ_[p])), hkerAp⟩ :=
+    Subtype.ext (pPowerSublatticeEquiv_intSublattice n p hkerA)
+  OrderIso.trans
+    { toEquiv := (Equiv.subtypeSubtypeEquivSubtype
+        (q := fun L ↦ intSublattice n C ≤ L ∧ L ≤ intSublattice n A)
+        fun h ↦ hkerC.trans h.1).symm
+      map_rel_iff' := Iff.rfl } <|
+    ((pPowerSublatticeEquiv (Fin n) p k).Icc
+        ⟨intSublattice n C, hkerC⟩ ⟨intSublattice n A, hkerA⟩).trans <|
+      (Set.orderIsoOfEq _ _ (congrArg₂ Set.Icc hC_eq hA_eq)).trans
+        { toEquiv := Equiv.subtypeSubtypeEquivSubtype
+            (q := fun M ↦ padicSublattice n p (C.map (Int.castRingHom ℤ_[p])) ≤ M ∧
+              M ≤ padicSublattice n p (A.map (Int.castRingHom ℤ_[p])))
+            fun h ↦ hkerCp.trans h.1
+          map_rel_iff' := Iff.rfl }
 
 /-- Coercing `intermediateSublatticeOrderIso n p hC hA L` to a `ℤ_p`-submodule applies
 `TauCeti.pPowerSublatticeEquiv`. -/
@@ -429,7 +419,10 @@ theorem coe_intermediateSublatticeOrderIso {A C : Matrix (Fin n) (Fin n) ℤ} {k
     (L : {L : Submodule ℤ (Fin n → ℤ) // intSublattice n C ≤ L ∧ L ≤ intSublattice n A}) :
     (intermediateSublatticeOrderIso n p hC hA L : Submodule ℤ_[p] (Fin n → ℤ_[p])) =
       (pPowerSublatticeEquiv (Fin n) p k
-        ⟨L.val, (ker_intVectorReduction_le_intSublattice n p hC).trans L.property.1⟩).val := (rfl)
+        ⟨L.val, (ker_intVectorReduction_le_intSublattice n p hC).trans L.property.1⟩).val :=
+  -- `OrderIso.Icc`, `Set.orderIsoOfEq`, and `Equiv.subtypeSubtypeEquivSubtype` all preserve the
+  -- underlying submodule definitionally.
+  (rfl)
 
 /-- Coercing `(intermediateSublatticeOrderIso n p hC hA).symm M` to a `ℤ`-submodule applies
 `(TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm`. -/
@@ -443,6 +436,8 @@ theorem coe_intermediateSublatticeOrderIso_symm {A C : Matrix (Fin n) (Fin n) �
       ((pPowerSublatticeEquiv (Fin n) p k).symm
         ⟨M.val,
           (ker_padicVectorReduction_le_padicSublattice_map n p hC).trans M.property.1⟩).val :=
+  -- Every factor of `(intermediateSublatticeOrderIso n p hC hA).symm` preserves the underlying
+  -- submodule definitionally.
   (rfl)
 
 private theorem finrank_eq_of_ker_intVectorReduction_le {k : ℕ}
