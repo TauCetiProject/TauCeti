@@ -39,6 +39,8 @@ introducing an elliptic-curve-specific copy of the inverse-limit machinery.
 * `TauCeti.TateModule.lift`: the map into the Tate module induced by compatible finite-level
   maps.
 * `TauCeti.TateModule.mapLinearMap`: the `ℤ_p`-linear map induced by an additive homomorphism.
+* `TauCeti.TateModule.quotientEquivLevel`: `T_p A / p^n ≅ A[p^n]` when the transition maps are
+  surjective.
 
 ## Main results
 
@@ -59,7 +61,9 @@ introducing an elliptic-curve-specific copy of the inverse-limit machinery.
 * `TauCeti.TateModule.proj_eq_zero_iff`: the kernel of the projection to `A[p^n]` is
   `p^n T_p A`. So `T_p A` has no `p`-torsion (`TauCeti.TateModule.eq_zero_of_pow_nsmul_eq_zero`)
   and only `0` is divisible by every power of `p`
-  (`TauCeti.TateModule.eq_zero_of_forall_exists_eq_pow_nsmul`).
+  (`TauCeti.TateModule.eq_zero_of_forall_exists_eq_pow_nsmul`). As a subgroup statement this is
+  `TauCeti.TateModule.ker_proj`; when the transition maps are surjective, the projection induces
+  `T_p A / p^n ≅ A[p^n]` (`TauCeti.TateModule.quotientEquivLevel`).
 * `TauCeti.TateModule.eq_one_of_isOfFinOrder_of_forall_proj_eq`: **Serre's lemma**. An
   endomorphism of finite order of `T_p A` inducing the identity on `A[p^k]`, with `p^k ≥ 3`, is the
   identity.
@@ -720,6 +724,33 @@ theorem proj_eq_zero_iff {x : TateModule p A} {n : ℕ} :
   · rintro ⟨y, rfl⟩
     rw [map_nsmul]
     exact AddSubgroup.torsionBy.nsmul _
+
+/-- **The kernel of the projection to `A[p ^ n]` is the subgroup `p ^ n T_p A`.** -/
+theorem ker_proj (n : ℕ) :
+    (proj (p := p) (A := A) n).ker =
+      (nsmulAddMonoidHom (p ^ n) : TateModule p A →+ TateModule p A).range := by
+  ext x
+  rw [AddMonoidHom.mem_ker, proj_eq_zero_iff, AddMonoidHom.mem_range]
+  simp [eq_comm]
+
+/-- **`T_p A / p ^ n ≅ A[p ^ n]`**: if every transition map is surjective, the projection to
+`A[p ^ n]` induces an isomorphism from the quotient by `p ^ n T_p A`, which is its kernel
+(`ker_proj`). -/
+def quotientEquivLevel (h : ∀ n, Function.Surjective (tateModuleTransition p A n)) (n : ℕ) :
+    TateModule p A ⧸ (nsmulAddMonoidHom (p ^ n) : TateModule p A →+ TateModule p A).range ≃+
+      TateModuleLevel p A n :=
+  (QuotientAddGroup.quotientAddEquivOfEq (ker_proj n).symm).trans
+    (QuotientAddGroup.quotientKerEquivOfSurjective _ (proj_surjective h n))
+
+/-- The isomorphism `T_p A / p ^ n ≅ A[p ^ n]` sends a class to the projection of a
+representative. -/
+@[simp]
+theorem quotientEquivLevel_mk (h : ∀ n, Function.Surjective (tateModuleTransition p A n))
+    (n : ℕ) (x : TateModule p A) :
+    quotientEquivLevel h n (x : TateModule p A ⧸
+        (nsmulAddMonoidHom (p ^ n) : TateModule p A →+ TateModule p A).range) =
+      proj n x :=
+  (rfl)
 
 /-- **The Tate module has no `p`-torsion.** -/
 theorem eq_zero_of_pow_nsmul_eq_zero {x : TateModule p A} {k : ℕ} (h : p ^ k • x = 0) :

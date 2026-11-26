@@ -13,7 +13,10 @@ public import TauCeti.RingTheory.RootsOfUnity.PadicTateTwist
 Let `K` be a commutative monoid. The projection `TauCeti.PadicTateTwist.proj n` of the `p`-adic
 Tate twist `ℤ_p(1) = PadicTateTwist p K` to the group `μ_{p^n}(K)` of `p^n`-th roots of unity has
 kernel `p^n ℤ_p(1)` (`TauCeti.PadicTateTwist.ker_proj`). When `K` has enough `p`-power
-roots of unity it is surjective (`TauCeti.PadicTateTwist.proj_surjective`), so it induces
+roots of unity the transition maps are surjective
+(`TauCeti.PadicTateTwist.tateModuleTransition_surjective`), hence so is the projection
+(`TauCeti.PadicTateTwist.proj_surjective`), and the general Tate-module isomorphism
+`TauCeti.TateModule.quotientEquivLevel` gives
 `ℤ_p(1) / p^n ≅ μ_{p^n}(K)` (`TauCeti.PadicTateTwist.quotientEquivRootsOfUnity`). For a field
 extension `K / F`, the projection intertwines the Galois action on `ℤ_p(1)` with the action of
 `Gal(K / F)` on `μ_{p^n}(K)` (`TauCeti.PadicTateTwist.proj_galoisRepresentation`), so the
@@ -28,7 +31,8 @@ isomorphism is Galois-equivariant
 
 * `TauCeti.PadicTateTwist.proj_eq_zero_iff`, `TauCeti.PadicTateTwist.ker_proj`: the kernel of
   `proj n` is `p^n ℤ_p(1)`.
-* `TauCeti.PadicTateTwist.proj_surjective`: `proj n` is surjective.
+* `TauCeti.PadicTateTwist.tateModuleTransition_surjective`,
+  `TauCeti.PadicTateTwist.proj_surjective`: the transition maps and `proj n` are surjective.
 * `TauCeti.PadicTateTwist.natCard_quotient_range_nsmulAddMonoidHom`: `ℤ_p(1) / p^n` has `p^n`
   elements.
 * `TauCeti.PadicTateTwist.proj_galoisRepresentation`: `proj n` is Galois-equivariant.
@@ -61,8 +65,15 @@ theorem ker_proj (n : ℕ) :
     (proj (p := p) (K := K) n).ker =
       (nsmulAddMonoidHom (p ^ n) : PadicTateTwist p K →+ PadicTateTwist p K).range := by
   ext x
-  rw [AddMonoidHom.mem_ker, proj_eq_zero_iff, AddMonoidHom.mem_range]
-  simp [eq_comm]
+  rw [AddMonoidHom.mem_ker, proj_def, AddEquiv.map_eq_zero_iff, ← AddMonoidHom.mem_ker,
+    TateModule.ker_proj]
+
+/-- The transition maps `μ_{p^(n+1)} → μ_{p^n}` of `ℤ_p(1)` are surjective when `K` has enough
+`p`-power roots of unity. -/
+theorem tateModuleTransition_surjective [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)]
+    (n : ℕ) : Function.Surjective (tateModuleTransition p (Additive Kˣ) n) :=
+  TateModule.tateModuleTransition_surjective_of_natCard (r := 1) (NeZero.ne p)
+    (fun k ↦ by simpa using natCard_tateModuleLevel (K := K) k) n
 
 /-- **Every `p^n`-th root of unity is a component of `ℤ_p(1)`**, when `K` has enough `p`-power
 roots of unity. -/
@@ -70,34 +81,35 @@ theorem proj_surjective [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n :
     Function.Surjective (proj (p := p) (K := K) n) := by
   rw [show ⇑(proj (p := p) (K := K) n) = levelAddEquivRootsOfUnity n ∘ TateModule.proj n from
     funext (proj_def n)]
-  exact (levelAddEquivRootsOfUnity n).surjective.comp <| TateModule.proj_surjective
-    (TateModule.tateModuleTransition_surjective_of_natCard (r := 1) (NeZero.ne p)
-      fun k ↦ by simpa using natCard_tateModuleLevel (K := K) k) n
+  exact (levelAddEquivRootsOfUnity n).surjective.comp <|
+    TateModule.proj_surjective tateModuleTransition_surjective n
 
 /-- **`ℤ_p(1) / p^n ≅ μ_{p^n}`**: the projection to `μ_{p^n}` induces an isomorphism from the
-quotient by `p^n ℤ_p(1)`, which is its kernel (`ker_proj`). -/
+quotient by `p^n ℤ_p(1)`, which is its kernel (`ker_proj`). It is the general
+`TateModule.quotientEquivLevel` followed by `levelAddEquivRootsOfUnity`. -/
 def quotientEquivRootsOfUnity [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ) :
     PadicTateTwist p K ⧸
         (nsmulAddMonoidHom (p ^ n) : PadicTateTwist p K →+ PadicTateTwist p K).range ≃+
       Additive (rootsOfUnity (p ^ n) K) :=
-  (QuotientAddGroup.quotientAddEquivOfEq (ker_proj n).symm).trans
-    (QuotientAddGroup.quotientKerEquivOfSurjective _ (proj_surjective n))
+  (TateModule.quotientEquivLevel tateModuleTransition_surjective n).trans
+    (levelAddEquivRootsOfUnity n)
 
 @[simp]
 theorem quotientEquivRootsOfUnity_mk [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ)
     (x : PadicTateTwist p K) :
     quotientEquivRootsOfUnity n (x : PadicTateTwist p K ⧸
         (nsmulAddMonoidHom (p ^ n) : PadicTateTwist p K →+ PadicTateTwist p K).range) =
-      proj n x :=
-  (rfl)
+      proj n x := by
+  rw [quotientEquivRootsOfUnity, AddEquiv.trans_apply, TateModule.quotientEquivLevel_mk,
+    proj_def]
 
 /-- **`ℤ_p(1) / p^n` has `p^n` elements** when `K` has enough `p`-power roots of unity. -/
 theorem natCard_quotient_range_nsmulAddMonoidHom [NeZero p]
     [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ) :
     Nat.card (PadicTateTwist p K ⧸
         (nsmulAddMonoidHom (p ^ n) : PadicTateTwist p K →+ PadicTateTwist p K).range) = p ^ n :=
-  (Nat.card_congr ((quotientEquivRootsOfUnity n).trans
-    (levelAddEquivRootsOfUnity n).symm).toEquiv).trans (natCard_tateModuleLevel n)
+  (Nat.card_congr (TateModule.quotientEquivLevel tateModuleTransition_surjective n).toEquiv).trans
+    (natCard_tateModuleLevel n)
 
 section Galois
 
