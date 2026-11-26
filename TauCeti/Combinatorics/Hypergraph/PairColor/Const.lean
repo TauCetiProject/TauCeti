@@ -138,13 +138,6 @@ and so have density zero against density one on `(A, A)`. -/
 theorem isRegularPair_const_self_iff {A : Finset V} (hε : 0 ≤ ε) (c : κ) :
     (const c).IsRegularPair ε A A ↔ #A ≤ 1 ∨ 1 < ε * #A := by
   classical
-  -- A rectangle whose first side has two elements and whose second side is nonempty contains an
-  -- ordered distinct pair.
-  have hsupp {s t : Finset V} (hs : 1 < #s) (ht : t.Nonempty) :
-      ((s ×ˢ t).filter fun p ↦ p.1 ≠ p.2).Nonempty := by
-    obtain ⟨y, hy⟩ := ht
-    obtain ⟨x, hx, hxy⟩ := exists_mem_ne hs y
-    exact ⟨(x, y), mem_filter.2 ⟨mem_product.2 ⟨hx, hy⟩, hxy⟩⟩
   constructor
   · intro h
     by_contra! hA
@@ -153,7 +146,7 @@ theorem isRegularPair_const_self_iff {A : Finset V} (hε : 0 ≤ ε) (c : κ) :
     have hv' := singleton_subset_iff.2 hv
     have := isRegularPair_iff.1 h c {v} hv' {v} hv' (by simpa using hA₂) (by simpa using hA₂)
     rw [pairColorDensity_singleton_self, pairColorDensity_const_self
-      (hsupp hA₁ ⟨v, hv⟩)] at this
+      (filter_ne_product_nonempty hA₁ ⟨v, hv⟩)] at this
     simp only [Rat.cast_zero, Rat.cast_one, zero_sub, abs_neg, abs_one] at this
     -- The singleton tests force `1 ≤ ε`, so `ε * #A ≥ 2`, against `ε * #A ≤ 1`.
     have h₂ : (2 : ℝ) ≤ #A := by exact_mod_cast hA₁
@@ -174,8 +167,8 @@ theorem isRegularPair_const_self_iff {A : Finset V} (hε : 0 ≤ ε) (c : κ) :
       have hs₁ : 1 < #s' := by exact_mod_cast hA₂.trans_le hs
       have ht₁ : 1 < #t' := by exact_mod_cast hA₂.trans_le ht
       rw [pairColorDensity_const_eq
-        (hsupp (not_le.1 hA₁) (card_pos.1 (by omega : 0 < #A)))
-        (hsupp hs₁ (card_pos.1 (by omega : 0 < #t'))),
+        (filter_ne_product_nonempty (not_le.1 hA₁) (card_pos.1 (by omega : 0 < #A)))
+        (filter_ne_product_nonempty hs₁ (card_pos.1 (by omega : 0 < #t'))),
         sub_self, abs_zero]
       exact hε
 
