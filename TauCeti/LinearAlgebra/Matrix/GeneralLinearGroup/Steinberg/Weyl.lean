@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.UniversalCentralExtension
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 import TauCeti.GroupTheory.Commutator
 
 /-!
@@ -43,6 +44,11 @@ commutator formula `⁅h_{ij}(u), h_{ik}(v)⁆ = h_{ij}(u) h_{ij}(v) h_{ij}(v u)
 * `TauCeti.IndexedSteinbergGroup.w_mul_x_mul_inv_ik` and its five companions: conjugation of the
   generators by `w_{ij}(u)`; `TauCeti.IndexedSteinbergGroup.h_mul_x_mul_inv_ik` and its companions
   for `h_{ij}(u)`.
+* `TauCeti.IndexedSteinbergGroup.w_mul_x_mul_inv`,
+  `TauCeti.IndexedSteinbergGroup.h_mul_x_mul_inv`: the unified conjugation formulas: with `σ` the
+  transposition of `i` and `j`, `w_{ij}(u) x_{kl}(t) w_{ij}(u)⁻¹ = x_{σk, σl}(v_k t v_l⁻¹)` for
+  `v_i = -u⁻¹`, `v_j = u`, `v_k = 1` otherwise, and `h_{ij}(u) x_{kl}(t) h_{ij}(u)⁻¹ =
+  x_{kl}(d_k t d_l⁻¹)` for `d_i = u`, `d_j = u⁻¹`, `d_k = 1` otherwise.
 * `TauCeti.IndexedSteinbergGroup.w_symm_neg_inv`: `w_{ji}(-u⁻¹) = w_{ij}(u)`.
 * `TauCeti.IndexedSteinbergGroup.commutatorElement_h_h`: the commutator of `h_{ij}(u)` and
   `h_{ik}(v)`.
@@ -51,6 +57,8 @@ commutator formula `⁅h_{ij}(u), h_{ik}(v)⁆ = h_{ij}(u) h_{ij}(v) h_{ij}(v u)
 * `TauCeti.IndexedSteinbergGroup.commutatorElement_h_h_inv_of_add_eq_one`,
   `TauCeti.IndexedSteinbergGroup.commutatorElement_h_neg_h_inv`: the exact relations
   `{u, v⁻¹} = 1` for `u + v = 1` and `{-u, u⁻¹} = 1`.
+* `TauCeti.IndexedSteinbergGroup.toGL_w`: the image of `w_{ij}(u)` in `GL ι R` is the permutation
+  matrix of `(i j)` times `diag(v)`.
 * `TauCeti.IndexedSteinbergGroup.toGL_h`, `TauCeti.SteinbergGroup.toStableGL_h`: the image of
   `h_{ij}(u)` in `GL ι R`, respectively `GL_∞(R)`, is a diagonal matrix.
 * `TauCeti.SteinbergGroup.commutatorElement_h_h_mem_ker`: over a commutative ring, symbols lie in
@@ -116,6 +124,12 @@ theorem w_neg_mul_w {i j : ι} (hij : i ≠ j) (u : Rˣ) : w hij (-u) * w hij u 
 @[simp]
 theorem h_one {i j : ι} (hij : i ≠ j) : h hij (1 : Rˣ) = 1 := by
   rw [h_def, ← w_inv, mul_inv_cancel]
+
+/-- Congruence of the diagonal element `h_{ij}(u)` in its dependent indices and its unit. -/
+theorem h_congr {i j i' j' : ι} {hij : i ≠ j} {hij' : i' ≠ j'} (hi : i = i') (hj : j = j')
+    {u u' : Rˣ} (hu : u = u') : h hij u = h hij' u' := by
+  subst hi hj hu
+  rfl
 
 /-- A product of two Weyl elements at the same pair of indices, in terms of diagonal elements:
 `w_{ij}(u) w_{ij}(v) = h_{ij}(u) h_{ij}(-v)⁻¹`. -/
@@ -269,6 +283,43 @@ theorem w_mul_w_mul_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j �
     ← w_symm_neg_inv hij hik hjk, w_def]
   simp [mul_assoc]
 
+/-- **Conjugation by a Weyl element permutes the root generators.** Let `σ` be the
+transposition of `i` and `j`, and let `v` be the family of units with `v_i = -u⁻¹`, `v_j = u` and
+`v_k = 1` otherwise, so that `w_{ij}(u)` lifts the monomial matrix `P_σ diag(v)`. If some index lies
+outside `{i, j}`, then `w_{ij}(u) x_{kl}(t) w_{ij}(u)⁻¹ = x_{σk, σl}(v_k t v_l⁻¹)`. -/
+theorem w_mul_x_mul_inv [DecidableEq ι] {i j k l : ι} (hij : i ≠ j) (hkl : k ≠ l)
+    (h3 : ∃ m, m ≠ i ∧ m ≠ j) (u : Rˣ) (t : R) :
+    w hij u * x hkl t * (w hij u)⁻¹ =
+      x ((Equiv.swap i j).injective.ne hkl)
+        ((Pi.mulSingle i (-u⁻¹) * Pi.mulSingle j u : ι → Rˣ) k * t *
+          ↑((Pi.mulSingle i (-u⁻¹) * Pi.mulSingle j u : ι → Rˣ) l)⁻¹) := by
+  obtain ⟨m, hmi, hmj⟩ := h3
+  rcases eq_or_ne k i with rfl | hki
+  · rcases eq_or_ne l j with rfl | hlj
+    · rw [w_mul_x_mul_inv_ij hij hmi.symm hmj.symm]
+      exact x_congr (by simp) (by simp) (by simp [hij, mul_assoc])
+    · rw [w_mul_x_mul_inv_ik hij hkl hlj.symm]
+      exact x_congr (by simp) (by simp [Equiv.swap_apply_of_ne_of_ne hkl.symm hlj])
+        (by simp [hij, hkl.symm, hlj])
+  rcases eq_or_ne k j with rfl | hkj
+  · rcases eq_or_ne l i with rfl | hli
+    · rw [w_mul_x_mul_inv_ji hij hmi.symm hmj.symm]
+      exact x_congr (by simp) (by simp) (by simp [hij, mul_assoc])
+    · rw [w_mul_x_mul_inv_jk hij hli.symm hkl]
+      exact x_congr (by simp) (by simp [Equiv.swap_apply_of_ne_of_ne hli hkl.symm])
+        (by simp [hij.symm, hli, hkl.symm])
+  rcases eq_or_ne l i with rfl | hli
+  · rw [w_mul_x_mul_inv_ki hij hki.symm hkj.symm]
+    exact x_congr (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj]) (by simp)
+      (by simp [hki, hkj, hij])
+  rcases eq_or_ne l j with rfl | hlj
+  · rw [w_mul_x_mul_inv_kj hij hki.symm hkj.symm]
+    exact x_congr (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj]) (by simp)
+      (by simp [hki, hkj, hij.symm])
+  rw [(commute_w_x hij hkl hki.symm hli.symm hkj.symm hlj.symm u t).eq, mul_inv_cancel_right]
+  exact x_congr (by simp [Equiv.swap_apply_of_ne_of_ne hki hkj])
+    (by simp [Equiv.swap_apply_of_ne_of_ne hli hlj]) (by simp [hki, hkj, hli, hlj])
+
 /-! ### Conjugation by diagonal elements -/
 
 /-- Conjugation by `h_{ij}(u)` unfolded into conjugations by its two Weyl factors. -/
@@ -319,6 +370,30 @@ theorem h_mul_x_mul_inv_ji {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j
     h hij u * x hij.symm v * (h hij u)⁻¹ = x hij.symm ((u⁻¹ : Rˣ) * v * (u⁻¹ : Rˣ)) := by
   rw [h_mul_mul_inv, w_mul_x_mul_inv_ji hij hik hjk, w_mul_x_mul_inv_ij hij hik hjk]
   simp [mul_assoc]
+
+private theorem mulSingle_swap_mul_mulSingle [DecidableEq ι] {i j : ι} (hij : i ≠ j) (u : Rˣ)
+    (m : ι) :
+    (Pi.mulSingle i (-u⁻¹) * Pi.mulSingle j u : ι → Rˣ) (Equiv.swap i j m) *
+        (Pi.mulSingle i (-(-1)⁻¹) * Pi.mulSingle j (-1) : ι → Rˣ) m =
+      (Pi.mulSingle i u * Pi.mulSingle j u⁻¹ : ι → Rˣ) m := by
+  rcases eq_or_ne m i with rfl | hmi
+  · simp [hij, hij.symm]
+  rcases eq_or_ne m j with rfl | hmj
+  · simp [hij, hij.symm]
+  simp [Equiv.swap_apply_of_ne_of_ne hmi hmj, hmi, hmj]
+
+/-- **Conjugation by a diagonal element rescales the root generators.** Let `d` be the family of
+units with `d_i = u`, `d_j = u⁻¹` and `d_k = 1` otherwise, so that `h_{ij}(u)` lifts `diag(d)`. If
+some index lies outside `{i, j}`, then `h_{ij}(u) x_{kl}(t) h_{ij}(u)⁻¹ = x_{kl}(d_k t d_l⁻¹)`. -/
+theorem h_mul_x_mul_inv [DecidableEq ι] {i j k l : ι} (hij : i ≠ j) (hkl : k ≠ l)
+    (h3 : ∃ m, m ≠ i ∧ m ≠ j) (u : Rˣ) (t : R) :
+    h hij u * x hkl t * (h hij u)⁻¹ =
+      x hkl ((Pi.mulSingle i u * Pi.mulSingle j u⁻¹ : ι → Rˣ) k * t *
+        ↑((Pi.mulSingle i u * Pi.mulSingle j u⁻¹ : ι → Rˣ) l)⁻¹) := by
+  rw [h_mul_mul_inv, w_mul_x_mul_inv hij hkl h3, w_mul_x_mul_inv hij _ h3]
+  refine x_congr (by simp) (by simp) ?_
+  rw [← mulSingle_swap_mul_mulSingle hij u k, ← mulSingle_swap_mul_mulSingle hij u l]
+  simp only [Units.val_mul, mul_inv_rev, mul_assoc]
 
 /-- Conjugating `w_{ij}(u)` by `h_{ik}(v)`, for pairwise distinct `i, j, k`, gives
 `w_{ij}(v u)`. -/
@@ -383,35 +458,34 @@ theorem coe_toGL_w {i j : ι} (hij : i ≠ j) (u : Rˣ) :
     hij.symm, ← Matrix.single_neg]
   abel
 
+/-- The image of `w_{ij}(u)` in `GL ι R` is the monomial matrix `P_σ diag(v)`, where `σ` is the
+transposition of `i` and `j`, `v_i = -u⁻¹`, `v_j = u` and `v_k = 1` otherwise: it has entries `u` at
+`(i, j)` and `-u⁻¹` at `(j, i)`, and agrees with the identity off the coordinates `i, j`. -/
+@[simp]
+theorem toGL_w {i j : ι} (hij : i ≠ j) (u : Rˣ) :
+    toGL (w hij u) = permutationGL (Equiv.swap i j) *
+      diagGL (Pi.mulSingle i (-u⁻¹) * Pi.mulSingle j u) := by
+  ext a b
+  rw [coe_toGL_w, Units.val_mul, permutationGL_coe, diagGL_coe, Matrix.mul_diagonal]
+  simp only [Matrix.add_apply, Matrix.sub_apply, Matrix.single_apply, Matrix.one_apply,
+    PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, Option.mem_def, Option.some.injEq,
+    Equiv.swap_inv, Pi.mul_apply, Units.val_mul]
+  by_cases hia : i = a <;> by_cases hja : j = a <;> by_cases hib : i = b <;>
+    by_cases hjb : j = b <;> simp_all [Equiv.swap_apply_def, eq_comm]
+
 /-- The image of `h_{ij}(u)` in `GL ι R` is the diagonal matrix with `u` at `i`, `u⁻¹` at `j` and
 `1` elsewhere. -/
 @[simp]
 theorem toGL_h {i j : ι} (hij : i ≠ j) (u : Rˣ) :
     toGL (h hij u) = diagGL (Pi.mulSingle i u * Pi.mulSingle j u⁻¹) := by
-  apply Units.ext
-  have hprod : (toGL (h hij u) : Matrix ι ι R) = 1 - Matrix.single i i 1 - Matrix.single j j 1 +
-      Matrix.single i i (u : R) + Matrix.single j j ((u⁻¹ : Rˣ) : R) := by
-    rw [h_def, map_mul, Units.val_mul, coe_toGL_w, coe_toGL_w]
-    simp only [sub_eq_add_neg, Matrix.single_neg]
-    simp [mul_add, add_mul, Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne, hij,
-      hij.symm]
-    simp only [← Matrix.single_neg]
-    abel
-  rw [hprod, diagGL_coe]
-  ext p q
-  rw [Matrix.diagonal_apply]
-  by_cases hpq : p = q
-  · subst hpq
-    by_cases hpi : p = i
-    · subst hpi
-      simp [hij.symm]
-    · by_cases hpj : p = j
-      · subst hpj
-        simp [hij]
-      · simp [Ne.symm hpi, Ne.symm hpj, hpi, hpj]
-  · have hi : ¬(i = p ∧ i = q) := fun h ↦ hpq (h.1.symm.trans h.2)
-    have hj : ¬(j = p ∧ j = q) := fun h ↦ hpq (h.1.symm.trans h.2)
-    simp [hpq, hi, hj]
+  -- Move the first permutation matrix past `diag(v)`; the two copies of `P_σ` then cancel.
+  rw [h_def, map_mul, toGL_w, toGL_w,
+    mul_diagGL_of_coe_eq_permMatrix _ _ (permutationGL_coe _), mul_assoc,
+    ← mul_assoc (permutationGL _), ← map_mul, Equiv.swap_mul_self, map_one, one_mul, ← map_mul]
+  congr 1
+  funext m
+  rw [Pi.mul_apply, Function.comp_apply, Equiv.swap_inv]
+  exact mulSingle_swap_mul_mulSingle hij u m
 
 end FiniteIndex
 

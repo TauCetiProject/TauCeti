@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Sobolev.Cylinder.Frame
 import TauCeti.Analysis.Sobolev.Circle.LinearODE.DeterminantLine
 import TauCeti.Geometry.Symplectic.AlmostComplex.Frame
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -132,7 +133,8 @@ private theorem exists_loop_eq_trivializedCoeff
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
   have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
   have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by norm_num)
-  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp hx hxp
+  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp
+    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx) hxp
   have hSv : (fun t : ℝ ↦ S t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
     funext hS
   have hSvp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 := fun t ↦ by
@@ -191,10 +193,9 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
   -- `D_u (Φ ζ) = Φ (D_F ζ)` for every test section `ζ` of `F`.
   have hgen (ζ : testSection F) :
       mult (DF ⟨jetLp 2 (testSection F) ζ, jetLp_mem_jetClosure ζ⟩) ∈ Set.range D := by
-    obtain ⟨hζ, hζp, R, hR⟩ := mem_testSection_iff.1 ζ.property
-    have hξ : (fun w : ℝ × ℝ ↦ Φ w.2 ((ζ : ℝ × ℝ → F) w)) ∈ testSection V :=
-      mem_testSection_iff.2 ⟨(hΦ.comp contDiff_snd).clm_apply hζ,
-        fun s t ↦ by simp only [hΦp t, hζp s t], R, fun s t hs ↦ by simp only [hR s t hs, map_zero]⟩
+    have hζ := (mem_testSection_iff.1 ζ.property).1
+    have hξ := frame_mem_testSection (Φ := fun w : ℝ × ℝ ↦ Φ w.2)
+      (hΦ.comp contDiff_snd) (fun _ t ↦ hΦp t) ζ.property
     refine ⟨⟨jetLp 2 (testSection V) ⟨_, hξ⟩, jetLp_mem_jetClosure _⟩, Lp.ext ?_⟩
     filter_upwards [Floer.stationarySobolevOperator_jetLp_ae_eq hJc hSc ⟨_, hξ⟩, hmult _,
       Floer.stationarySobolevOperator_jetLp_ae_eq continuous_const hS'₁.continuous ζ]

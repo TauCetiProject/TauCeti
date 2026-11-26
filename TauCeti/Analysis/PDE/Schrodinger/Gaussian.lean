@@ -554,30 +554,11 @@ theorem two_mul_inv_add_finrank_mul_inv_eq_of_eLpNorm_schrodingerPropagator_le {
         C * (ENNReal.ofReal (c ^ (-(n / 2) / 2)) * Γ) := fun c hc ↦ by
     have hsp := h ((SchwartzMap.gaussian (b := c) (by simpa using hc) : 𝓢(E, ℂ)).toLp 2)
     rwa [eLpNorm_eLpNorm_schrodingerPropagator_toLp_gaussian hc hq, eNorm_toLp_gaussian hc] at hsp
-  have hΦ : Φ ≠ ∞ := by
-    intro hΦt
-    have h1 := hscale 1 one_pos
-    simp only [Real.one_rpow, mul_one, ENNReal.ofReal_one, one_mul, hΦt] at h1
-    exact (ENNReal.mul_ne_top ENNReal.coe_ne_top hΓ) (top_le_iff.1 h1)
-  have hΦr : 0 < Φ.toReal := ENNReal.toReal_pos hΦ0 hΦ
   -- In real terms: `c ^ e ≤ C Γ / Φ` with `e = n/4 - n/(2r) - 1/q`, so `e = 0`.
   have he := Real.eq_zero_of_forall_rpow_le (K := C * Γ.toReal / Φ.toReal)
-    (e := n / 4 - n / r.toReal / 2 - q.toReal⁻¹) fun c hc ↦ by
-    have hreal := ENNReal.toReal_mono
-      (ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hΓ))
-      (hscale c hc)
-    have h1 : 0 ≤ c ^ (-(n / r.toReal) / 2) * c ^ (-q.toReal⁻¹) := by positivity
-    have h2 : 0 ≤ c ^ (-(n / 2) / 2) := by positivity
-    simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal h1,
-      ENNReal.toReal_ofReal h2] at hreal
-    have hsplit : c ^ (-(n / r.toReal) / 2) * c ^ (-q.toReal⁻¹) =
-        c ^ (-(n / 2) / 2) * c ^ (n / 4 - n / r.toReal / 2 - q.toReal⁻¹) := by
-      rw [← Real.rpow_add hc, ← Real.rpow_add hc]
-      congr 1
-      ring
-    rw [hsplit, mul_assoc, mul_left_comm (C : ℝ)] at hreal
-    rw [le_div_iff₀ hΦr]
-    exact le_of_mul_le_mul_left hreal (by positivity)
+    (e := -(n / r.toReal) / 2 + -q.toReal⁻¹ - -(n / 2) / 2) fun c hc ↦
+    Real.rpow_sub_le_div_of_ofReal_rpow_mul_le hc hΦ0 hΓ (by
+      simpa only [Real.rpow_add hc] using hscale c hc)
   rw [ENNReal.toReal_inv, ENNReal.toReal_inv]
   rw [div_eq_mul_inv n r.toReal] at he
   linarith
