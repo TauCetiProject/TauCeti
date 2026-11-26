@@ -17,8 +17,9 @@ The real Heisenberg group `H(ℝ)` (`TauCeti.HeisenbergGroup ℝ`), the group of
 unitriangular `3 × 3` matrices with product
 `(x, y, z) * (x', y', z') = (x + x', y + y', z + z' + x y')`, carries Lebesgue measure in its
 coordinates `(x, y, z)`. Left and right multiplications are affine maps of `ℝ³` whose linear parts
-are shears (`TauCeti.measurePreserving_affine`, `TauCeti.measurePreserving_affine'`), so this
-measure is a left and right invariant Haar measure: `H(ℝ)` is unimodular.
+are shears (`TauCeti.measurePreserving_prod3_add_shear_fst`,
+`TauCeti.measurePreserving_prod3_add_shear_snd`), so this measure is a left and right invariant
+Haar measure: `H(ℝ)` is unimodular.
 
 The integer Heisenberg group `H(ℤ)`, the image of `TauCeti.HeisenbergGroup.map` for the cast
 `ℤ → ℝ`, is a uniform lattice of covolume one. The half-open unit cube `[0, 1)³` is a fundamental
@@ -125,7 +126,8 @@ theorem measurePreserving_homeomorphProd :
 instance instIsMulLeftInvariant : (volume : Measure (HeisenbergGroup ℝ)).IsMulLeftInvariant := by
   refine ⟨fun g ↦ ?_⟩
   have h := (measurePreserving_measurableEquivProd.symm _).comp
-    ((measurePreserving_affine' g.x g.y g.z g.x).comp measurePreserving_measurableEquivProd)
+    ((measurePreserving_prod3_add_shear_snd g.x g.y g.z g.x).comp
+      measurePreserving_measurableEquivProd)
   refine Eq.trans ?_ h.map_eq
   congr 1
   ext a <;> simp [add_comm]
@@ -136,7 +138,8 @@ instance instIsMulRightInvariant :
     (volume : Measure (HeisenbergGroup ℝ)).IsMulRightInvariant := by
   refine ⟨fun g ↦ ?_⟩
   have h := (measurePreserving_measurableEquivProd.symm _).comp
-    ((measurePreserving_affine g.x g.y g.z g.y).comp measurePreserving_measurableEquivProd)
+    ((measurePreserving_prod3_add_shear_fst g.x g.y g.z g.y).comp
+      measurePreserving_measurableEquivProd)
   refine Eq.trans ?_ h.map_eq
   congr 1
   ext a <;> simp [mul_comm]

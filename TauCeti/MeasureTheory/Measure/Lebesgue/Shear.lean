@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.MeasureTheory.Group.Prod
 
 /-!
 # Shears preserve Lebesgue measure on `ℝ × ℝ` and `ℝ × ℝ × ℝ`
@@ -13,19 +14,16 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 A shear adds to one coordinate a multiple of another, which leaves Lebesgue measure unchanged:
 on each fibre it is a translation. Composed with a translation, it gives an affine map of
 determinant one. These are the coordinate forms of left and right multiplication in the real
-Heisenberg group.
+Heisenberg group. All three results specialise `TauCeti.measurePreserving_skew_add_right`.
 
 ## Main results
 
-* `TauCeti.measurePreserving_skew_mul_right`: for right invariant s-finite measures,
-  `(x, y) ↦ (x * a, y * g x)` preserves the product measure for measurable `g`; its additive form
-  is `TauCeti.measurePreserving_skew_add_right`.
-* `TauCeti.measurePreserving_shear`: `(y, z) ↦ (y + b, z + c + a y)` preserves Lebesgue measure
-  on `ℝ × ℝ`.
-* `TauCeti.measurePreserving_affine`: `(x, y, z) ↦ (x + a, y + b, z + c + d x)` preserves Lebesgue
-  measure on `ℝ × ℝ × ℝ`.
-* `TauCeti.measurePreserving_affine'`: `(x, y, z) ↦ (x + a, y + b, z + c + d y)` preserves
-  Lebesgue measure on `ℝ × ℝ × ℝ`.
+* `TauCeti.measurePreserving_prod_add_shear`: `(y, z) ↦ (y + b, z + c + a y)` preserves Lebesgue
+  measure on `ℝ × ℝ`.
+* `TauCeti.measurePreserving_prod3_add_shear_fst`: `(x, y, z) ↦ (x + a, y + b, z + c + d x)`
+  preserves Lebesgue measure on `ℝ × ℝ × ℝ`.
+* `TauCeti.measurePreserving_prod3_add_shear_snd`: `(x, y, z) ↦ (x + a, y + b, z + c + d y)`
+  preserves Lebesgue measure on `ℝ × ℝ × ℝ`.
 -/
 
 public section
@@ -34,30 +32,16 @@ open MeasureTheory
 
 namespace TauCeti
 
-/-- On a product of right invariant s-finite measures, the skew translation
-`(x, y) ↦ (x * a, y * g x)` preserves the product measure for every measurable `g`: it translates
-the base and each fibre. -/
-@[to_additive /-- On a product of right invariant s-finite measures, the skew translation
-`(x, y) ↦ (x + a, y + g x)` preserves the product measure for every measurable `g`: it translates
-the base and each fibre. -/]
-theorem measurePreserving_skew_mul_right {G H : Type*} [MeasurableSpace G] [Mul G]
-    [MeasurableMul G] [MeasurableSpace H] [Mul H] [MeasurableMul₂ H] (μ : Measure G)
-    (ν : Measure H) [SFinite μ] [SFinite ν] [μ.IsMulRightInvariant] [ν.IsMulRightInvariant]
-    (a : G) {g : G → H} (hg : Measurable g) :
-    MeasurePreserving (fun p : G × H ↦ (p.1 * a, p.2 * g p.1)) (μ.prod ν) (μ.prod ν) :=
-  (measurePreserving_mul_right μ a).skew_product (g := fun x y ↦ y * g x)
-    (measurable_snd.mul (hg.comp measurable_fst))
-    (Filter.Eventually.of_forall fun x ↦ (measurePreserving_mul_right ν (g x)).map_eq)
-
-/-- On `ℝ × ℝ`, the shear `(y, z) ↦ (y + b, z + c + a y)` preserves Lebesgue measure. -/
-theorem measurePreserving_shear (a b c : ℝ) :
+/-- On `ℝ × ℝ`, the translated shear `(y, z) ↦ (y + b, z + c + a y)` preserves Lebesgue measure. -/
+theorem measurePreserving_prod_add_shear (a b c : ℝ) :
     MeasurePreserving (fun q : ℝ × ℝ ↦ (q.1 + b, q.2 + c + a * q.1)) volume volume := by
   simp_rw [add_assoc _ c, Measure.volume_eq_prod]
   exact measurePreserving_skew_add_right volume volume b (g := fun y ↦ c + a * y) (by fun_prop)
 
-/-- On `ℝ × ℝ × ℝ`, the map `(x, y, z) ↦ (x + a, y + b, z + c + d x)` preserves Lebesgue measure:
-on each fibre over `x` it is a translation of `ℝ × ℝ`. -/
-theorem measurePreserving_affine (a b c d : ℝ) :
+/-- On `ℝ × ℝ × ℝ`, the translated shear `(x, y, z) ↦ (x + a, y + b, z + c + d x)`, sheared along
+the first coordinate, preserves Lebesgue measure: on each fibre over `x` it is a translation of
+`ℝ × ℝ`. -/
+theorem measurePreserving_prod3_add_shear_fst (a b c d : ℝ) :
     MeasurePreserving (fun p : ℝ × ℝ × ℝ ↦ (p.1 + a, p.2.1 + b, p.2.2 + c + d * p.1))
       volume volume := by
   have h := measurePreserving_skew_add_right volume ((volume : Measure ℝ).prod volume) a
@@ -66,12 +50,13 @@ theorem measurePreserving_affine (a b c d : ℝ) :
   convert h using 2 with p
   simp [Prod.ext_iff, add_assoc]
 
-/-- On `ℝ × ℝ × ℝ`, the map `(x, y, z) ↦ (x + a, y + b, z + c + d y)` preserves Lebesgue measure:
-it is the product of a translation of `x` and the shear `measurePreserving_shear` of `(y, z)`. -/
-theorem measurePreserving_affine' (a b c d : ℝ) :
+/-- On `ℝ × ℝ × ℝ`, the translated shear `(x, y, z) ↦ (x + a, y + b, z + c + d y)`, sheared along
+the second coordinate, preserves Lebesgue measure: it is the product of a translation of `x` and
+the shear `measurePreserving_prod_add_shear` of `(y, z)`. -/
+theorem measurePreserving_prod3_add_shear_snd (a b c d : ℝ) :
     MeasurePreserving (fun p : ℝ × ℝ × ℝ ↦ (p.1 + a, p.2.1 + b, p.2.2 + c + d * p.2.1))
       volume volume := by
   rw [Measure.volume_eq_prod]
-  exact (measurePreserving_add_right volume a).prod (measurePreserving_shear d b c)
+  exact (measurePreserving_add_right volume a).prod (measurePreserving_prod_add_shear d b c)
 
 end TauCeti
