@@ -507,6 +507,32 @@ theorem Flow.arrowSum_le_arrowSum_univ [PartialOrder K] [IsOrderedAddMonoid K]
           (arrowSum_mono_right f.mem_Icc.1 univ (subset_univ T))
     _ ≤ arrowSum cap univ univ := arrowSum_mono f.mem_Icc.2 univ univ
 
+/-- Every bounded `s`–`t` assignment `g` whose value is at least that of `f` is the residual
+update of `f` by an ordinary `s`–`t` flow. -/
+theorem BoundedFlow.exists_update_eq_of_le [Lattice K] [IsOrderedAddMonoid K]
+    {lo hi : Assignment Q K} {s t : V} (f g : BoundedFlow lo hi s t) (hfg : f.val ≤ g.val) :
+    ∃ r : Flow (residualCapacity lo hi f.toFun) s t, f.update r.toBoundedFlow = g := by
+  obtain ⟨r, hr⟩ := f.exists_update_eq g
+  have hval : r.val = g.val - f.val := by
+    rw [← hr, BoundedFlow.val_update, add_sub_cancel_left]
+  refine ⟨⟨r, ?_⟩, hr⟩
+  rw [← BoundedFlow.val_def, hval]
+  exact sub_nonneg.mpr hfg
+
+/-- Every bounded `s`–`t` assignment `g` whose value is at most that of `f` is the residual
+update of `f` by an ordinary `t`–`s` flow, viewed with its terminals exchanged. -/
+theorem BoundedFlow.exists_update_swap_eq_of_le [Lattice K] [IsOrderedAddMonoid K]
+    {lo hi : Assignment Q K} {s t : V} (f g : BoundedFlow lo hi s t) (hgf : g.val ≤ f.val) :
+    ∃ r : Flow (residualCapacity lo hi f.toFun) t s,
+      f.update r.toBoundedFlow.swap = g := by
+  obtain ⟨r, hr⟩ := f.exists_update_eq g
+  have hrval : r.val = g.val - f.val := by
+    rw [← hr, BoundedFlow.val_update, add_sub_cancel_left]
+  have hval : 0 ≤ r.swap.val := by
+    rw [BoundedFlow.val_swap, hrval, neg_sub]
+    exact sub_nonneg.mpr hgf
+  exact ⟨⟨r.swap, hval⟩, by simpa using hr⟩
+
 /-- Every ordinary `s`–`t` flow `g` of value at least that of `f` is the augmentation of `f` by an
 ordinary `s`–`t` flow of the residual network of `f`, necessarily of value `g.val - f.val`. -/
 theorem Flow.exists_augment_eq [Lattice K] [IsOrderedAddMonoid K] {cap : Assignment Q K}
