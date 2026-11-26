@@ -764,6 +764,13 @@ theorem mem_vertexChart_source_iff {q : DelzantQuotient i u c} :
   refine ⟨fun h j hj ↦ by_contra fun hjv ↦ (h j hjv).ne hj.symm, fun h j hj ↦ ?_⟩
   exact (hq j).lt_of_ne fun he ↦ hj (h j he.symm)
 
+/-- The point over `v` lies in the source of the vertex chart at `v`. -/
+theorem mem_vertexChart_source_of_reducedMomentMap_eq {q : DelzantQuotient i u c}
+    (h : haveI := hi.finiteDimensional
+      reducedMomentMap (hv.surjective_linearCombination_real hi) q = v) :
+    q ∈ (vertexChart hv hi hvP).source :=
+  (mem_vertexChart_source_iff hv hi hvP).2 (by rw [h])
+
 /-- The class of a point of the level lies in the source of the vertex chart exactly when its
 coordinates outside `A` do not vanish. -/
 theorem mk_mem_vertexChart_source_iff {x : delzantLevel i u c} :

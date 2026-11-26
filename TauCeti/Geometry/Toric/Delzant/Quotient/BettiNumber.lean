@@ -138,7 +138,7 @@ private theorem mem_vertexChart_source_self {q : DelzantQuotient i u c}
     letI := hΔ.delzantQuotientChartedSpace hi
     q ∈ (hΔ.vertexDarbouxChart hi (hΔ.isSmoothVertex _ hq) hq.1).source := by
   rw [vertexDarbouxChart_source]
-  exact (mem_vertexChart_source_iff _ hi hq.1).2 subset_rfl
+  exact mem_vertexChart_source_of_reducedMomentMap_eq _ hi hq.1 rfl
 
 /-- **The points over the vertices are critical.** At the point of the Delzant quotient over a
 vertex of `Δ`, every moment component `q ↦ μ_Δ(q)(X)` has a critical point: it is fixed by the
