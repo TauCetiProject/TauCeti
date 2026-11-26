@@ -172,6 +172,12 @@ theorem filtration_val (x : Apartment φ) (i : ι) (r : ℝ) :
     x.val.filtration i r = φ.filtration i (r - P.root' i x.displacement) := by
   rw [val_def, Valuation.filtration_shift]
 
+/-- The strict filtration at an apartment point uses the base valuation with the threshold
+decreased by the root evaluated on the point's displacement. -/
+theorem filtrationGT_val (x : Apartment φ) (i : ι) (r : ℝ) :
+    x.val.filtrationGT i r = φ.filtrationGT i (r - P.root' i x.displacement) := by
+  rw [val_def, Valuation.filtrationGT_shift]
+
 /-! ### Change of base point -/
 
 /-- The change of base point: a point `b` of the apartment of `φ` is the base point of the

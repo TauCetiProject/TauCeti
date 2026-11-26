@@ -6,28 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.CyclicFamily.RayClass
+public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder.Family
 
 /-!
 # Riesz remainders for cyclic families
 
-The weighted remainder on rational ray class characters becomes a finite sum indexed by the
-primitive Dirichlet characters of the cyclic family. The individual prime-sum formulas are
-available in `TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz`.
+The weighted remainder on rational ray class characters becomes a finite sum of Dirichlet
+remainders indexed by the primitive characters of the cyclic family.
 -/
 
 public section
 
 namespace TauCeti.PrimitiveDirichletCharacter
 
-/-- The Riesz remainder of the transferred weights is the weighted sum over the original cyclic
-family, with each character evaluated through the rational ray class dictionary. -/
+/-- The Riesz remainder of the transferred weights is the weighted sum of the real parts of
+the Dirichlet remainders over the original cyclic family. -/
 theorem familyRieszRemainder_cyclicFamilyWeights (ψ : PrimitiveDirichletCharacter)
     (w : PrimitiveDirichletCharacter → ℝ) (y : ℝ) :
     (ψ.cyclicFamilyWeights w).familyRieszRemainder y =
-      ∑ κ ∈ ψ.cyclicFamily, w κ * ((toPrimitiveRayClassCharacter κ).rieszRemainder y).re := by
+      ∑ κ ∈ ψ.cyclicFamily, w κ * (κ.rieszRemainder y).re := by
   rw [Finsupp.familyRieszRemainder_apply]
-  simpa only [smul_eq_mul] using
+  simpa only [smul_eq_mul, rieszRemainder_toPrimitiveRayClassCharacter] using
     ψ.sum_cyclicFamilyWeights w (fun η ↦ (η.rieszRemainder y).re)
 
 end TauCeti.PrimitiveDirichletCharacter
