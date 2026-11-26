@@ -22,15 +22,15 @@ homomorphisms preserve the BCH product, so `BCHGroup` is a functor to groups. Th
 applies to a Lie algebra over a commutative `ℚ`-algebra through its restriction of scalars to `ℚ`
 (`LieAlgebra.restrictScalars`).
 
-The group axioms are proved universally. For any Lie algebra `L` over `ℚ`, the image of the BCH
+Associativity is proved universally. For any Lie algebra `L` over `ℚ`, the image of the BCH
 product of two classes of `L ⧸ lowerCentralSeries c` in the truncated enveloping algebra
 `U(L) ⧸ U⁺(L) ^ (c + 1)` has as exponential the product of their exponentials
 (`TauCeti.exp_lowerCentralQuotientι_bch`). On the free nilpotent Lie algebra on three generators
 this map is injective, which gives associativity there; evaluating the three generators at
 `x`, `y` and `z` gives associativity everywhere. Through degree two, the BCH elements give
-`bch x y = x + y` when `⁅x, y⁆ = 0`, and `bch x y = x + y + ½ ⁅x, y⁆` when `⁅x, y⁆` commutes with
-`x` and `y`; these give the inverse, the powers `exp (n • x) = exp x ^ n`, and the commutator
-formula `exp x * exp y = exp y * exp ⁅x, y⁆ * exp x`.
+`bch x y = x + y + ½ ⁅x, y⁆` when `⁅x, y⁆` commutes with `x` and `y`, and in particular
+`bch x y = x + y` when `⁅x, y⁆ = 0`; these give the identity and inverse laws, the powers
+`exp (n • x) = exp x ^ n`, and the commutator formula `exp x * exp y = exp y * exp ⁅x, y⁆ * exp x`.
 
 ## Main definitions
 
@@ -47,8 +47,8 @@ formula `exp x * exp y = exp y * exp ⁅x, y⁆ * exp x`.
 * `TauCeti.exp_lowerCentralQuotientι_bch`: in a truncated enveloping algebra, the BCH product
   exponentiates to the product of exponentials.
 * `TauCeti.bch_assoc`: the BCH product is associative.
-* `TauCeti.bch_eq_add_of_lie_eq_zero` and `TauCeti.bch_eq_of_lie_lie_eq_zero`: the BCH product
-  of commuting elements, and of elements whose bracket commutes with both.
+* `TauCeti.bch_eq_of_lie_lie_eq_zero` and `TauCeti.bch_eq_add_of_lie_eq_zero`: the BCH product
+  of elements whose bracket commutes with both, and of commuting elements.
 * `TauCeti.BCHGroup.exp_mul_exp_eq_exp_mul_exp_lie_mul_exp`: the commutator formula.
 
 ## References
@@ -111,11 +111,13 @@ theorem _root_.LieHom.map_bch [LieRing.IsNilpotent L'] (f : L →ₗ⁅ℚ⁆ L'
     f (bch x y) = bch (f x) (f y) := by
   obtain ⟨c, hc⟩ := LieModule.IsNilpotent.nilpotent ℚ L L
   have hφ : _root_.FreeLieAlgebra.lift ℚ ![f x, f y] =
-      f.comp (_root_.FreeLieAlgebra.lift ℚ ![x, y]) :=
-    _root_.FreeLieAlgebra.hom_ext fun i => by fin_cases i <;> simp
+      f.comp (_root_.FreeLieAlgebra.lift ℚ ![x, y]) := by
+    rw [FreeLieAlgebra.comp_lift, ← FinVec.map_eq]
+    rfl
   have h := LieHom.lowerCentralSeries_le_ker (_root_.FreeLieAlgebra.lift ℚ ![x, y]) hc
-  have h' : lcs 𝔣 𝔣 c ≤ (_root_.FreeLieAlgebra.lift ℚ ![f x, f y]).ker := fun z hz => by
-    rw [LieHom.mem_ker, hφ, LieHom.comp_apply, (LieHom.mem_ker).mp (h hz), map_zero]
+  have h' : lcs 𝔣 𝔣 c ≤ (_root_.FreeLieAlgebra.lift ℚ ![f x, f y]).ker := by
+    rw [hφ, LieHom.ker_comp]
+    exact h.trans (LieHom.ker_le_comap _ _)
   obtain ⟨b, hb⟩ := LieIdeal.surjective_mkQ _ (FreeLieAlgebra.bchElement c)
   rw [bch_eq_liftQ x y h, bch_eq_liftQ _ _ h', ← hb, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply,
     LieIdeal.liftQ_apply, hφ, LieHom.comp_apply]
@@ -123,10 +125,6 @@ theorem _root_.LieHom.map_bch [LieRing.IsNilpotent L'] (f : L →ₗ⁅ℚ⁆ L'
 end Product
 
 section Enveloping
-
-local notation "J" L =>
-  HopfIdeal.toIdeal (HopfIdeal.augmentation ℚ (_root_.UniversalEnvelopingAlgebra ℚ L))
-local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι ℚ
 
 variable (L) in
 /-- **The BCH product exponentiates to the product.** For a Lie algebra `L` over `ℚ`, the
@@ -142,23 +140,20 @@ theorem exp_lowerCentralQuotientι_bch (c : ℕ) (x y : L ⧸ LieModule.lowerCen
   set f := _root_.FreeLieAlgebra.lift ℚ ![x, y]
   have hf : _root_.FreeLieAlgebra.lift ℚ
       ![(LieIdeal.mkQ (lcs L L c)) x, (LieIdeal.mkQ (lcs L L c)) y] =
-      (LieIdeal.mkQ (lcs L L c)).comp f :=
-    _root_.FreeLieAlgebra.hom_ext fun i => by fin_cases i <;> simp [f]
-  -- The enveloping-algebra map induced by `f`, on the truncations.
-  have hΦ : ∀ z : 𝔣, Ideal.quotientMapₐ ((J L) ^ (c + 1)) (UniversalEnvelopingAlgebra.map ℚ f)
-      (UniversalEnvelopingAlgebra.augmentation_toIdeal_pow_le_comap_map ℚ f (c + 1))
-        (Ideal.Quotient.mk ((J 𝔣) ^ (c + 1)) (ι z)) =
-      Ideal.Quotient.mk ((J L) ^ (c + 1)) (ι (f z)) := fun z => by
-    rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, UniversalEnvelopingAlgebra.map_ι]
+      (LieIdeal.mkQ (lcs L L c)).comp f := by
+    rw [FreeLieAlgebra.comp_lift, ← FinVec.map_eq]
+    rfl
   have key := FreeLieAlgebra.exp_lowerCentralQuotientι_bchElement c
   rw [← hb, LieIdeal.mkQ_apply, UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk] at key
   rw [bch_eq_liftQ _ _ (LieHom.lowerCentralSeries_le_ker _
       (lowerCentralSeries_quotient_lowerCentralSeries_eq_bot ℚ L c)), hf, ← hb]
   simp only [LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, LieHom.comp_apply,
     UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk]
-  rw [← hΦ, ← (UniversalEnvelopingAlgebra.isNilpotent_mk_ι ℚ 𝔣 c b).map_exp, key, map_mul,
+  -- Transport `key` along the map of truncated enveloping algebras induced by `f`.
+  rw [← UniversalEnvelopingAlgebra.quotientMapₐ_mk_ι ℚ f (c + 1),
+    ← (UniversalEnvelopingAlgebra.isNilpotent_mk_ι ℚ 𝔣 c b).map_exp, key, map_mul,
     (UniversalEnvelopingAlgebra.isNilpotent_mk_ι ℚ 𝔣 c _).map_exp,
-    (UniversalEnvelopingAlgebra.isNilpotent_mk_ι ℚ 𝔣 c _).map_exp, hΦ, hΦ]
+    (UniversalEnvelopingAlgebra.isNilpotent_mk_ι ℚ 𝔣 c _).map_exp]
   simp [f]
 
 end Enveloping
@@ -191,27 +186,19 @@ theorem bch_assoc [LieRing.IsNilpotent L] (x y z : L) : bch (bch x y) z = bch x 
   rw [← hx, ← hy, ← hz, ← g.map_bch, ← g.map_bch, ← g.map_bch, ← g.map_bch,
     bch_assoc_free]
 
+/-- The BCH product of `x` and `y` is `x + y + ½ ⁅x, y⁆` when `⁅x, y⁆` commutes with `x` and
+`y`. -/
+theorem bch_eq_of_lie_lie_eq_zero [LieRing.IsNilpotent L] {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
+    (hy : ⁅y, ⁅x, y⁆⁆ = 0) : bch x y = x + y + (1 / 2 : ℚ) • ⁅x, y⁆ := by
+  rw [bch_eq_liftQ x y (FreeLieAlgebra.lowerCentralSeries_two_le_ker_lift hx hy),
+    FreeLieAlgebra.bchElement_two, LieIdeal.liftQ_apply]
+  simp
+
 /-- The BCH product of two commuting elements is their sum. -/
 theorem bch_eq_add_of_lie_eq_zero [LieRing.IsNilpotent L] {x y : L} (h : ⁅x, y⁆ = 0) :
     bch x y = x + y := by
-  -- The evaluation at `(x, y)` factors through the abelian Lie subalgebra generated by `x`, `y`.
-  let K := LieSubalgebra.lieSpan ℚ L {x, y}
-  have hK : IsLieAbelian K := LieSubalgebra.isLieAbelian_lieSpan_iff.mpr <| by
-    rintro a (rfl | rfl) b (rfl | rfl)
-    · exact lie_self _
-    · exact h
-    · rw [← lie_skew, h, neg_zero]
-    · exact lie_self _
-  let φ : 𝔣 →ₗ⁅ℚ⁆ K := _root_.FreeLieAlgebra.lift ℚ
-    ![⟨x, LieSubalgebra.subset_lieSpan (by simp)⟩, ⟨y, LieSubalgebra.subset_lieSpan (by simp)⟩]
-  have hφ : _root_.FreeLieAlgebra.lift ℚ ![x, y] = K.incl.comp φ :=
-    _root_.FreeLieAlgebra.hom_ext fun i => by fin_cases i <;> simp [φ]
-  have h₁ : lcs 𝔣 𝔣 1 ≤ (_root_.FreeLieAlgebra.lift ℚ ![x, y]).ker := fun w hw => by
-    rw [LieHom.mem_ker, hφ, LieHom.comp_apply,
-      LieHom.mem_ker.mp (φ.lowerCentralSeries_le_ker
-        ((LieModule.trivial_iff_lower_central_eq_bot ℚ K K).mp hK) hw), map_zero]
-  rw [bch_eq_liftQ x y h₁, FreeLieAlgebra.bchElement_one, LieIdeal.liftQ_apply]
-  simp
+  rw [bch_eq_of_lie_lie_eq_zero (by rw [h, lie_zero]) (by rw [h, lie_zero]), h, smul_zero,
+    add_zero]
 
 /-- `0` is a right identity for the BCH product. -/
 @[simp]
@@ -222,92 +209,6 @@ theorem bch_zero [LieRing.IsNilpotent L] (x : L) : bch x 0 = x := by
 @[simp]
 theorem zero_bch [LieRing.IsNilpotent L] (x : L) : bch 0 x = x := by
   rw [bch_eq_add_of_lie_eq_zero (zero_lie x), zero_add]
-
-/-- If `⁅x, y⁆` commutes with `x` and `y`, it commutes with every element of the span of `x`, `y`
-and `⁅x, y⁆`. -/
-private theorem lie_lie_eq_zero_of_mem_span {x y v : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
-    (hy : ⁅y, ⁅x, y⁆⁆ = 0) (hv : v ∈ Submodule.span ℚ {x, y, ⁅x, y⁆}) : ⁅v, ⁅x, y⁆⁆ = 0 := by
-  induction hv using Submodule.span_induction with
-  | mem v hv =>
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hv
-    rcases hv with hv | hv | hv <;> rw [hv] <;> simp [hx, hy]
-  | zero => exact zero_lie _
-  | add u v _ _ hu hv => rw [add_lie, hu, hv, add_zero]
-  | smul a v _ hv => rw [smul_lie, hv, smul_zero]
-
-/-- If `⁅x, y⁆` commutes with `x` and `y`, the bracket of two elements of the span of `x`, `y` and
-`⁅x, y⁆` is a multiple of `⁅x, y⁆`. -/
-private theorem lie_mem_span_singleton_of_mem_span {x y u v : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
-    (hy : ⁅y, ⁅x, y⁆⁆ = 0) (hu : u ∈ Submodule.span ℚ {x, y, ⁅x, y⁆})
-    (hv : v ∈ Submodule.span ℚ {x, y, ⁅x, y⁆}) : ⁅u, v⁆ ∈ ℚ ∙ ⁅x, y⁆ := by
-  induction hu using Submodule.span_induction with
-  | mem u hu =>
-    induction hv using Submodule.span_induction with
-    | mem v hv =>
-      have hzx : ⁅⁅x, y⁆, x⁆ = 0 := by rw [← lie_skew, hx, neg_zero]
-      have hzy : ⁅⁅x, y⁆, y⁆ = 0 := by rw [← lie_skew, hy, neg_zero]
-      have hyx : ⁅y, x⁆ = -⁅x, y⁆ := by rw [← lie_skew]
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hu hv
-      rcases hu with hu | hu | hu <;> rcases hv with hv | hv | hv <;> rw [hu, hv] <;>
-        first
-        | exact Submodule.mem_span_singleton_self _
-        | exact hyx ▸ neg_mem (Submodule.mem_span_singleton_self _)
-        | simp [hx, hy, hzx, hzy]
-    | zero => simp
-    | add v w _ _ hv hw => rw [lie_add]; exact add_mem hv hw
-    | smul a v _ hv => rw [lie_smul]; exact Submodule.smul_mem _ a hv
-  | zero => simp
-  | add u w _ _ hu hw => rw [add_lie]; exact add_mem hu hw
-  | smul a u _ hu => rw [smul_lie]; exact Submodule.smul_mem _ a hu
-
-/-- If `⁅x, y⁆` commutes with `x` and `y`, then evaluation at `(x, y)` kills the second term of
-the lower central series of the free Lie algebra. -/
-private theorem lowerCentralSeries_two_le_ker_lift {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
-    (hy : ⁅y, ⁅x, y⁆⁆ = 0) : lcs 𝔣 𝔣 2 ≤ (_root_.FreeLieAlgebra.lift ℚ ![x, y]).ker := by
-  -- The evaluation factors through the Lie subalgebra spanned by `x`, `y` and `⁅x, y⁆`.
-  let K : LieSubalgebra ℚ L :=
-    { Submodule.span ℚ {x, y, ⁅x, y⁆} with
-      lie_mem' := fun {u v} hu hv =>
-        Submodule.span_mono (by simp) (lie_mem_span_singleton_of_mem_span hx hy hu hv) }
-  let φ : 𝔣 →ₗ⁅ℚ⁆ K := _root_.FreeLieAlgebra.lift ℚ
-    ![⟨x, Submodule.subset_span (by simp)⟩, ⟨y, Submodule.subset_span (by simp)⟩]
-  have hφ : _root_.FreeLieAlgebra.lift ℚ ![x, y] = K.incl.comp φ :=
-    _root_.FreeLieAlgebra.hom_ext fun i => by fin_cases i <;> simp [φ]
-  have hK : ∀ a, _root_.FreeLieAlgebra.lift ℚ ![x, y] a ∈ Submodule.span ℚ {x, y, ⁅x, y⁆} :=
-    fun a => by rw [hφ]; exact (φ a).property
-  -- The first term of the lower central series maps into `ℚ ∙ ⁅x, y⁆`.
-  have h₁ : ∀ m ∈ lcs 𝔣 𝔣 1, _root_.FreeLieAlgebra.lift ℚ ![x, y] m ∈ ℚ ∙ ⁅x, y⁆ :=
-    fun m hm => by
-      rw [LieModule.lowerCentralSeries_succ, ← LieSubmodule.mem_toSubmodule,
-        LieSubmodule.lieIdeal_oper_eq_linear_span'] at hm
-      induction hm using Submodule.span_induction with
-      | mem m hm =>
-        obtain ⟨a, -, b, -, rfl⟩ := hm
-        rw [LieHom.map_lie]
-        exact lie_mem_span_singleton_of_mem_span hx hy (hK a) (hK b)
-      | zero => simp
-      | add u w _ _ hu hw => rw [map_add]; exact add_mem hu hw
-      | smul a u _ hu => rw [map_smul]; exact Submodule.smul_mem _ a hu
-  intro m hm
-  rw [LieModule.lowerCentralSeries_succ, ← LieSubmodule.mem_toSubmodule,
-    LieSubmodule.lieIdeal_oper_eq_linear_span'] at hm
-  rw [LieHom.mem_ker]
-  induction hm using Submodule.span_induction with
-  | mem m hm =>
-    obtain ⟨a, -, b, hb, rfl⟩ := hm
-    obtain ⟨q, hq⟩ := Submodule.mem_span_singleton.mp (h₁ b hb)
-    rw [LieHom.map_lie, ← hq, lie_smul, lie_lie_eq_zero_of_mem_span hx hy (hK a), smul_zero]
-  | zero => simp
-  | add u w _ _ hu hw => rw [map_add, hu, hw, add_zero]
-  | smul a u _ hu => rw [map_smul, hu, smul_zero]
-
-/-- The BCH product of `x` and `y` is `x + y + ½ ⁅x, y⁆` when `⁅x, y⁆` commutes with `x` and
-`y`. -/
-theorem bch_eq_of_lie_lie_eq_zero [LieRing.IsNilpotent L] {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
-    (hy : ⁅y, ⁅x, y⁆⁆ = 0) : bch x y = x + y + (1 / 2 : ℚ) • ⁅x, y⁆ := by
-  rw [bch_eq_liftQ x y (lowerCentralSeries_two_le_ker_lift hx hy),
-    FreeLieAlgebra.bchElement_two, LieIdeal.liftQ_apply]
-  simp
 
 end Laws
 
@@ -407,6 +308,16 @@ theorem exp_zsmul (n : ℤ) (x : L) : exp (n • x) = exp x ^ n := by
   | ofNat n => rw [Int.ofNat_eq_natCast, natCast_zsmul, exp_nsmul, zpow_natCast]
   | negSucc n => rw [negSucc_zsmul, exp_neg, exp_nsmul, zpow_negSucc]
 
+/-- The logarithm of a power is the corresponding multiple of the logarithm. -/
+@[simp]
+theorem log_pow (a : BCHGroup L) (n : ℕ) : log (a ^ n) = n • log a := by
+  rw [← exp_log a, ← exp_nsmul, log_exp, log_exp]
+
+/-- The logarithm of an integer power is the corresponding multiple of the logarithm. -/
+@[simp]
+theorem log_zpow (a : BCHGroup L) (n : ℤ) : log (a ^ n) = n • log a := by
+  rw [← exp_log a, ← exp_zsmul, log_exp, log_exp]
+
 /-- The group homomorphism `BCHGroup L →* BCHGroup L'` induced by a Lie algebra homomorphism of
 nilpotent Lie algebras: the same map on the underlying sets. -/
 noncomputable def map [LieRing.IsNilpotent L'] (f : L →ₗ⁅ℚ⁆ L') : BCHGroup L →* BCHGroup L' where
@@ -437,9 +348,12 @@ theorem exp_mul_exp_eq_exp_mul_exp_lie_mul_exp {x y : L} (hx : ⁅x, ⁅x, y⁆�
     (hy : ⁅y, ⁅x, y⁆⁆ = 0) : exp x * exp y = exp y * exp ⁅x, y⁆ * exp x := by
   have hyx : ⁅y + ⁅x, y⁆, x⁆ = -⁅x, y⁆ := by
     rw [add_lie, ← lie_skew y x, ← lie_skew ⁅x, y⁆ x, hx, neg_zero, add_zero]
-  rw [← exp_add_of_lie_eq_zero hy, exp_mul_exp, exp_mul_exp,
-    bch_eq_of_lie_lie_eq_zero hx hy, bch_eq_of_lie_lie_eq_zero (by rw [hyx, lie_neg, add_lie, hy,
-      lie_self, add_zero, neg_zero]) (by rw [hyx, lie_neg, hx, neg_zero]), hyx]
+  -- The bracket `⁅y + ⁅x, y⁆, x⁆ = -⁅x, y⁆` commutes with `y + ⁅x, y⁆` and with `x`.
+  have h₁ : ⁅y + ⁅x, y⁆, ⁅y + ⁅x, y⁆, x⁆⁆ = 0 := by
+    rw [hyx, lie_neg, add_lie, hy, lie_self, add_zero, neg_zero]
+  have h₂ : ⁅x, ⁅y + ⁅x, y⁆, x⁆⁆ = 0 := by rw [hyx, lie_neg, hx, neg_zero]
+  rw [← exp_add_of_lie_eq_zero hy, exp_mul_exp, exp_mul_exp, bch_eq_of_lie_lie_eq_zero hx hy,
+    bch_eq_of_lie_lie_eq_zero h₁ h₂, hyx]
   congr 1
   module
 

@@ -36,6 +36,8 @@ generate the presented algebra, rather than merely determine maps out of it.
 
 * `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`: the generators of a free Lie algebra generate it
   as a Lie subalgebra.
+* `TauCeti.FreeLieAlgebra.comp_lift`: composing the lift of a family with a Lie homomorphism
+  lifts the composed family.
 
 ## Applications
 
@@ -68,6 +70,13 @@ theorem lieSpan_range_of_eq_top :
   have hy : K.incl (g y) = y :=
     congrArg (fun F : FreeLieAlgebra R X →ₗ⁅R⁆ FreeLieAlgebra R X => F y) hid
   exact hy ▸ (g y).property
+
+variable {R X} in
+/-- Composing the lift of a family with a Lie homomorphism lifts the composed family. -/
+theorem comp_lift {L L' : Type*} [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+    (F : L →ₗ⁅R⁆ L') (v : X → L) :
+    F.comp (_root_.FreeLieAlgebra.lift R v) = _root_.FreeLieAlgebra.lift R (F ∘ v) :=
+  _root_.FreeLieAlgebra.hom_ext fun x => by simp
 
 end FreeLieAlgebra
 

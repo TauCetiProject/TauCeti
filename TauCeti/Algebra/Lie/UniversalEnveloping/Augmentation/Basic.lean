@@ -55,6 +55,8 @@ central `p`-polynomials of positive characteristic, both live inside `U⁺(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.augmentation_toIdeal_pow_le_comap_map`: the map of
   enveloping algebras induced by a Lie homomorphism preserves the powers of the augmentation
   ideal, so it induces maps of the truncated enveloping algebras.
+* `TauCeti.UniversalEnvelopingAlgebra.quotientMapₐ_mk_ι`: the induced map of truncated
+  enveloping algebras sends the class of `ι x` to the class of `ι (f x)`.
 * `TauCeti.UniversalEnvelopingAlgebra.ι_mem_augmentation_toIdeal_pow_of_mem_lowerCentralSeries`:
   the `n`-th term of the lower central series maps into the `(n + 1)`-st power of the
   augmentation ideal.
@@ -234,6 +236,21 @@ theorem augmentation_toIdeal_pow_le_comap_map {L' : Type*} [LieRing L'] [LieAlge
     intro a ha b hb
     rw [Ideal.mem_comap, map_mul, Submodule.pow_succ]
     exact Ideal.mul_mem_mul (ih ha) (h₁ hb)
+
+variable {L} in
+/-- The map of truncated enveloping algebras induced by a Lie homomorphism `f` sends the class of
+a Lie generator `ι x` to the class of `ι (f x)`. -/
+theorem quotientMapₐ_mk_ι {L' : Type*} [LieRing L'] [LieAlgebra R L'] (f : L →ₗ⁅R⁆ L') (n : ℕ)
+    (x : L) :
+    Ideal.quotientMapₐ
+        ((HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal ^ n)
+        (map R f) (augmentation_toIdeal_pow_le_comap_map R f n)
+        (Ideal.Quotient.mk ((HopfIdeal.augmentation R U).toIdeal ^ n)
+          (_root_.UniversalEnvelopingAlgebra.ι R x)) =
+      Ideal.Quotient.mk
+        ((HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal ^ n)
+        (_root_.UniversalEnvelopingAlgebra.ι R (f x)) := by
+  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, map_ι]
 
 end Generators
 

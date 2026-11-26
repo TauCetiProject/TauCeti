@@ -82,6 +82,16 @@ theorem lie_lowerCentralSeries_le (M : Type*) [AddCommGroup M] [Module R M]
     · intro s a _ ha r
       simpa [smul_smul] using ha (r * s)
 
+/-- A submodule contains the `(k + 1)`-st lower central term as soon as it contains every bracket
+`⁅x, m⁆` with `m` in the `k`-th term. -/
+theorem toSubmodule_lowerCentralSeries_succ_le {M : Type*} [AddCommGroup M] [Module R M]
+    [LieRingModule L M] [LieModule R L M] {N : Submodule R M} {k : ℕ}
+    (h : ∀ (x : L), ∀ m ∈ lowerCentralSeries R L M k, ⁅x, m⁆ ∈ N) :
+    (lowerCentralSeries R L M (k + 1)).toSubmodule ≤ N := by
+  rw [lowerCentralSeries_succ, LieSubmodule.lieIdeal_oper_eq_linear_span', Submodule.span_le]
+  rintro _ ⟨x, -, m, hm, rfl⟩
+  exact h x m hm
+
 /-- A bracket has zero coordinates below the sum of the weights of its two inputs in a
 basis adapted to the lower central series. -/
 theorem _root_.Module.Basis.repr_lie_eq_zero_of_weight_lt {ι : Type*}
@@ -108,6 +118,49 @@ theorem _root_.Module.Basis.repr_lie_eq_zero_of_weight_lt {ι : Type*}
   omega
 
 end Bracket
+
+section ClassTwo
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- If `⁅x, y⁆` commutes with `x` and `y`, it commutes with every element of the span of `x`, `y`
+and `⁅x, y⁆`. -/
+theorem lie_lie_eq_zero_of_mem_span {x y v : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
+    (hy : ⁅y, ⁅x, y⁆⁆ = 0) (hv : v ∈ Submodule.span R {x, y, ⁅x, y⁆}) : ⁅v, ⁅x, y⁆⁆ = 0 := by
+  induction hv using Submodule.span_induction with
+  | mem v hv =>
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hv
+    rcases hv with hv | hv | hv <;> rw [hv] <;> simp [hx, hy]
+  | zero => exact zero_lie _
+  | add u v _ _ hu hv => rw [add_lie, hu, hv, add_zero]
+  | smul a v _ hv => rw [smul_lie, hv, smul_zero]
+
+/-- If `⁅x, y⁆` commutes with `x` and `y`, the bracket of two elements of the span of `x`, `y` and
+`⁅x, y⁆` is a multiple of `⁅x, y⁆`. -/
+theorem lie_mem_span_singleton_of_mem_span {x y u v : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
+    (hy : ⁅y, ⁅x, y⁆⁆ = 0) (hu : u ∈ Submodule.span R {x, y, ⁅x, y⁆})
+    (hv : v ∈ Submodule.span R {x, y, ⁅x, y⁆}) : ⁅u, v⁆ ∈ R ∙ ⁅x, y⁆ := by
+  induction hu using Submodule.span_induction with
+  | mem u hu =>
+    induction hv using Submodule.span_induction with
+    | mem v hv =>
+      have hzx : ⁅⁅x, y⁆, x⁆ = 0 := by rw [← lie_skew, hx, neg_zero]
+      have hzy : ⁅⁅x, y⁆, y⁆ = 0 := by rw [← lie_skew, hy, neg_zero]
+      have hyx : ⁅y, x⁆ = -⁅x, y⁆ := by rw [← lie_skew]
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hu hv
+      rcases hu with hu | hu | hu <;> rcases hv with hv | hv | hv <;> rw [hu, hv] <;>
+        first
+        | exact Submodule.mem_span_singleton_self _
+        | exact hyx ▸ neg_mem (Submodule.mem_span_singleton_self _)
+        | simp [hx, hy, hzx, hzy]
+    | zero => simp
+    | add v w _ _ hv hw => rw [lie_add]; exact add_mem hv hw
+    | smul a v _ hv => rw [lie_smul]; exact Submodule.smul_mem _ a hv
+  | zero => simp
+  | add u w _ _ hu hw => rw [add_lie]; exact add_mem hu hw
+  | smul a u _ hu => rw [smul_lie]; exact Submodule.smul_mem _ a hu
+
+end ClassTwo
 
 section Quotient
 
