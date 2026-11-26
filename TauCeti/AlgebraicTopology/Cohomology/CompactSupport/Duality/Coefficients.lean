@@ -57,8 +57,9 @@ a unique multiple of that class. So for every homological orientation of `X`, wh
 structure, its fundamental class over `k` is a nonzero multiple `c e⁻¹_*([Sᵈ⁺¹] × [M]_k)`
 (`HomologicalOrientation.exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross`); for
 `X = Sᵈ⁺¹ × M` and `e` the identity it is `c ([Sᵈ⁺¹] × [M]_k)`. Pulling back along `e⁻¹`, which is
-an isomorphism on cohomology, identifies the cup pairing against `e⁻¹_* z` with the cup pairing on
-`Sᵈ⁺¹ × M` against `z` (`TopCat.singularCupPairing_naturality`), and scaling the cup pairing by `c`
+an isomorphism on cohomology, identifies the quadratic form of the cup pairing against `e⁻¹_* z`
+with that of the cup pairing on `Sᵈ⁺¹ × M` against `z`
+(`TopCat.equivalent_toQuadraticMap_singularCupPairing_map`), and scaling the cup pairing by `c`
 keeps or exchanges its two indices of inertia, according to the sign of `c`, and these are equal.
 Hence both indices of inertia of the cup pairing against `[X]_k` are `dim Hᵖ(M; k)`
 (`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph`,
@@ -310,14 +311,7 @@ private theorem exists_ne_zero_equivalent_smul_singularCupPairing :
   obtain ⟨c, hc0, hc⟩ :=
     o.exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross hn (k := k) oX hX e
       (by omega)
-  -- Pulling back along `e⁻¹ : Sᵈ⁺¹ × M → X` identifies the cohomology of `X` with that of the
-  -- product, and carries the cup pairing on `e⁻¹_* z` to the cup pairing on `z`.
   let g : TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M ≅ TopCat.of X := TopCat.isoOfHomeo e.symm
-  let L : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) (p + (d + 1))
-      ≃ₗ[k] (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
-        (𝟙_ (ModuleCat k)) (p + (d + 1)) :=
-    ((singularCohomologyFunctor (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k))
-      (p + (d + 1))).mapIso g.op).toLinearEquiv
   -- The cross product `[Sᵈ⁺¹] × [M]_k`, with coefficients `k`.
   let z := (((singularHomologyFunctor (ModuleCat k) (p + p + (d + 1) + (d + 1))).map
       (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
@@ -325,25 +319,28 @@ private theorem exists_ne_zero_equivalent_smul_singularCupPairing :
         (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) (p + p + (d + 1))
         (p + p + (d + 1) + (d + 1)) (by omega)
         (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)))
-  let Q := c • LinearMap.BilinMap.toQuadraticMap
-    ((TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
-      (q := p + (d + 1)) (by omega) z)
+  -- The cup pairing against `[X]_k = c • e⁻¹_* z` is `c` times the cup pairing against `e⁻¹_* z`.
   have hQ : LinearMap.BilinMap.toQuadraticMap
       ((TopCat.of X).singularCupPairing k (p := p + (d + 1)) (q := p + (d + 1)) (by omega)
-        (oX.fundamentalClassOver hX k)) = Q.comp (L : _ →ₗ[k] _) := by
-    ext α
-    have hnat := TopCat.singularCupPairing_naturality k g.hom
-      (p := p + (d + 1)) (q := p + (d + 1)) (by omega) z α α
+        (oX.fundamentalClassOver hX k)) = c • LinearMap.BilinMap.toQuadraticMap
+      ((TopCat.of X).singularCupPairing k (p := p + (d + 1)) (q := p + (d + 1)) (by omega)
+        ((((singularHomologyFunctor (ModuleCat k) (p + p + (d + 1) + (d + 1))).obj
+          (𝟙_ (ModuleCat k))).map g.hom).hom z)) := by
     rw [hc]
-    simp only [LinearMap.BilinMap.toQuadraticMap_apply, QuadraticMap.comp_apply, Q,
-      smul_apply, LinearEquiv.coe_coe, TopCat.singularCupPairing_apply, map_smul] at hnat ⊢
-    -- `L` is the pullback along `g`, by its definition through `singularCohomologyFunctor`.
-    have hL : L α = TopCat.singularCohomologyMap g.hom (p + (d + 1)) α := rfl
-    rw [hL]
-    exact congrArg (c • ·) hnat.symm
+    ext α
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply, smul_apply,
+      TopCat.singularCupPairing_apply, map_smul]
+    -- `g.hom` is `e⁻¹` as a morphism of `TopCat`.
+    rfl
+  -- Pulling back along `e⁻¹` carries the cup pairing on `e⁻¹_* z` to the cup pairing on `z`.
+  obtain ⟨f⟩ := TopCat.equivalent_toQuadraticMap_singularCupPairing_map k g
+    (p := p + (d + 1)) (by omega) z
   refine ⟨c, hc0, ?_⟩
   rw [hQ]
-  exact ⟨(QuadraticMap.isometryEquivOfCompLinearEquiv Q L).symm⟩
+  exact ⟨{ f.toLinearEquiv with
+    map_app' := fun α ↦ by
+      rw [smul_apply, smul_apply]
+      exact congrArg (c • ·) (f.map_app α) }⟩
 
 include o hn e in
 /-- **The positive index of inertia of the intersection form of a manifold homeomorphic to

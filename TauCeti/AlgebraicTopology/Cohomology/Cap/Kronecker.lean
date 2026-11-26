@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.AbsoluteRelative
@@ -36,7 +37,9 @@ the cup product under the Kronecker pairing.
 For a class `μ ∈ Hₙ(X; k)`, evaluating cup products on `μ` is the bilinear cup pairing
 `TopCat.singularCupPairing`, `(α, β) ↦ ⟨α ⌣ β, μ⟩`, and the identity above says that it is
 `⟨β, μ ⌢ α⟩` (`TopCat.singularCupPairing_eq_singularKronecker_singularCapLinearMap`). The cup
-pairing is natural in `X` (`TopCat.singularCupPairing_naturality`) and graded commutative
+pairing is natural in `X` (`TopCat.singularCupPairing_naturality`), so in a middle degree its
+quadratic form against `g_* μ`, for a homeomorphism `g`, is equivalent to the one against `μ`
+(`TopCat.equivalent_toQuadraticMap_singularCupPairing_map`), and it is graded commutative
 (`TopCat.singularCupPairing_gradedComm`), so in a middle degree it is reflexive
 (`TopCat.isRefl_singularCupPairing`), symmetric in even degree
 (`TopCat.isSymm_singularCupPairing`) and, in odd degree, twice the pairing of a class with itself
@@ -215,6 +218,34 @@ theorem singularCupPairing_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) {p q n : 
         α β := by
   rw [singularCupPairing_apply, singularCupPairing_apply, singularCup_naturality,
     singularKronecker_naturality, ModuleCat.hom_comp, LinearMap.comp_apply]
+
+/-- **Invariance of the quadratic form of the cup pairing under homeomorphisms**: for an
+isomorphism `g : X ≅ Y` in `TopCat` and `p + p = n`, the quadratic form `α ↦ ⟨α ⌣ α, g_* μ⟩` on
+`Hᵖ(Y; k)` is equivalent to the quadratic form `α ↦ ⟨α ⌣ α, μ⟩` on `Hᵖ(X; k)`, through the
+pullback `g^*`. So both have the same indices of inertia. -/
+theorem equivalent_toQuadraticMap_singularCupPairing_map {X Y : TopCat.{w}} (g : X ≅ Y)
+    {p n : ℕ} (h : p + p = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+    (LinearMap.BilinMap.toQuadraticMap (Y.singularCupPairing k h
+      ((((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).map
+        g.hom).hom μ))).Equivalent
+      (LinearMap.BilinMap.toQuadraticMap (X.singularCupPairing k h μ)) := by
+  -- The pullback `g^* : Hᵖ(Y; k) ≃ Hᵖ(X; k)`.
+  let L : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p ≃ₗ[k]
+      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p :=
+    ((TauCeti.singularCohomologyFunctor (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p).mapIso
+      g.op).toLinearEquiv
+  let Q := LinearMap.BilinMap.toQuadraticMap (X.singularCupPairing k h μ)
+  have hQ : LinearMap.BilinMap.toQuadraticMap (Y.singularCupPairing k h
+      ((((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).map
+        g.hom).hom μ)) = Q.comp (L : _ →ₗ[k] _) := by
+    ext α
+    -- `L` is the pullback along `g`, by its definition through `singularCohomologyFunctor`.
+    have hL : L α = TopCat.singularCohomologyMap g.hom p α := rfl
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply, QuadraticMap.comp_apply,
+      LinearEquiv.coe_coe, Q, hL, singularCupPairing_naturality]
+  rw [hQ]
+  exact ⟨(QuadraticMap.isometryEquivOfCompLinearEquiv Q L).symm⟩
 
 /-- **Graded commutativity of the cup pairing**: `⟨β ⌣ α, μ⟩ = (-1)^(p * q) ⟨α ⌣ β, μ⟩` for `α` of
 degree `p` and `β` of degree `q`. -/

@@ -9,8 +9,8 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Product
 public import TauCeti.AlgebraicTopology.Singular.AddCircle
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
-import TauCeti.AlgebraicTopology.Singular.Torus.AddCircle
 import TauCeti.Geometry.Manifold.Instances.AddCircle
+import TauCeti.Geometry.Sphere.Circle
 
 /-!
 # The cohomology of `ℝ / pℤ` and of products `(ℝ / pℤ) × Y`

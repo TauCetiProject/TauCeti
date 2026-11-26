@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Coefficients
-public import TauCeti.AlgebraicTopology.Singular.Torus.AddCircle
+
+import TauCeti.Geometry.Sphere.Circle
 
 /-!
 # The intersection form of `(ℝ / Tℤ) × M`
