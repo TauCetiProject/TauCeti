@@ -114,23 +114,29 @@ theorem baseChangeEquiv_symm_elementary {n : ℕ} (c : B) (v : Fin n → B) :
       1 ⊗ₜ elementary A c v := by
   rw [LinearEquiv.symm_apply_eq, baseChangeEquiv_tmul_elementary, map_one, one_mul]
 
+/-- `A'`-linear maps out of `A' ⊗[A] Ωⁿ_(B/A)` agree once they agree on every
+`1 ⊗ c • dv₀ ∧ ⋯ ∧ dvₙ₋₁`. -/
+theorem baseChange_forms_hom_ext {n : ℕ} {M : Type*} [AddCommGroup M] [Module A M] [Module A' M]
+    [IsScalarTower A A' M] {f g : A' ⊗[A] Forms A B n →ₗ[A'] M}
+    (h : ∀ (c : B) (v : Fin n → B), f (1 ⊗ₜ elementary A c v) = g (1 ⊗ₜ elementary A c v)) :
+    f = g :=
+  TensorProduct.AlgebraTensorModule.curry_injective <| LinearMap.ext_ring <| forms_hom_ext h
+
 /-- Base change of forms is the `A'`-linear extension of the comparison
 `Ωⁿ_(B/A) → Ωⁿ_(B'/A) → Ωⁿ_(B'/A')`: pullback along `B → B'`, followed by the map induced by
 `Ω[B'⁄A] → Ω[B'⁄A']`. -/
 theorem baseChangeEquiv_tmul {n : ℕ} (a' : A') (ω : Forms A B n) :
     baseChangeEquiv A A' B B' n (a' ⊗ₜ ω) =
       a' • exteriorPower.map n (map A A' B' B') (pullback (IsScalarTower.toAlgHom A B B') n ω) := by
-  have h : (baseChangeEquiv A A' B B' n).toLinearMap.restrictScalars A ∘ₗ
-      TensorProduct.mk A A' _ a' =
-      a' • ((exteriorPower.map n (map A A' B' B')).restrictScalars A ∘ₗ
-        pullbackLinear (IsScalarTower.toAlgHom A B B') n) := by
-    refine forms_hom_ext fun c v => ?_
-    simp only [LinearMap.comp_apply, LinearMap.coe_restrictScalars, LinearEquiv.coe_coe,
-      TensorProduct.mk_apply, LinearMap.smul_apply, pullbackLinear_apply, pullback_elementary,
-      baseChangeEquiv_tmul_elementary]
-    simp [elementary_def, exteriorPower.map_apply_ιMulti, Function.comp_def, mul_smul,
-      algebraMap_smul]
-  simpa using LinearMap.congr_fun h ω
+  have h : (baseChangeEquiv A A' B B' n).toLinearMap =
+      ((exteriorPower.map n (map A A' B' B')).restrictScalars A ∘ₗ
+        pullbackLinear (IsScalarTower.toAlgHom A B B') n).liftBaseChange A' :=
+    baseChange_forms_hom_ext fun c v => by
+      simp only [LinearEquiv.coe_coe, LinearMap.liftBaseChange_tmul, one_smul,
+        LinearMap.comp_apply, LinearMap.coe_restrictScalars, pullbackLinear_apply,
+        pullback_elementary, baseChangeEquiv_tmul_elementary]
+      simp [elementary_def, exteriorPower.map_apply_ιMulti, Function.comp_def, algebraMap_smul]
+  simpa using LinearMap.congr_fun h (a' ⊗ₜ ω)
 
 /-- **Base change preserves wedge products**: `(ab) ⊗ (α ∧ β)` goes to the wedge product of the
 images of `a ⊗ α` and `b ⊗ β`. -/
@@ -145,40 +151,32 @@ theorem baseChangeEquiv_wedge {m n : ℕ} (a b : A') (α : Forms A B m) (β : Fo
 
 /-- **Base change commutes with the de Rham differential**: the base change of `d` along
 `A → A'` corresponds to the de Rham differential of `B'` over `A'`. -/
+@[simp]
 theorem baseChangeEquiv_d {n : ℕ} (x : A' ⊗[A] Forms A B n) :
     baseChangeEquiv A A' B B' (n + 1) ((d A B n).baseChange A' x) =
       d A' B' n (baseChangeEquiv A A' B B' n x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul a' ω =>
-    rw [LinearMap.baseChange_tmul]
-    suffices h : (baseChangeEquiv A A' B B' (n + 1)).toLinearMap.restrictScalars A ∘ₗ
-        TensorProduct.mk A A' _ a' ∘ₗ d A B n =
-        (d A' B' n).restrictScalars A ∘ₗ
-          (baseChangeEquiv A A' B B' n).toLinearMap.restrictScalars A ∘ₗ
-            TensorProduct.mk A A' _ a' from LinearMap.congr_fun h ω
-    refine forms_hom_ext fun c v => ?_
-    simp only [LinearMap.comp_apply, LinearMap.coe_restrictScalars, LinearEquiv.coe_coe,
-      TensorProduct.mk_apply, d_elementary, baseChangeEquiv_tmul_ιMulti,
-      baseChangeEquiv_tmul_elementary, Fin.comp_cons]
-    simp only [Function.comp_def, map_D, Derivation.leibniz, Derivation.map_algebraMap, smul_zero,
-      add_zero]
-    rw [← algebraMap_smul B' a' (ιMulti B' (n + 1) _)]
-    exact ((ιMulti B' (n + 1)).map_vecCons_smul _ _ _).symm
+  have h : (baseChangeEquiv A A' B B' (n + 1)).toLinearMap ∘ₗ (d A B n).baseChange A' =
+      d A' B' n ∘ₗ (baseChangeEquiv A A' B B' n).toLinearMap :=
+    baseChange_forms_hom_ext fun c v => by
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.baseChange_tmul,
+        d_elementary, baseChangeEquiv_tmul_ιMulti, baseChangeEquiv_tmul_elementary, Fin.comp_cons]
+      simp [Function.comp_def]
+  exact LinearMap.congr_fun h x
 
 /-- In degree zero, base change of forms is the pushout identification `A' ⊗[A] B ≃ B'`:
 under `Ω⁰ ≃ B` and `Ω⁰ ≃ B'`, it sends `a' ⊗ b` to `a' • b`. -/
+@[simp]
 theorem zeroEquiv_baseChangeEquiv (a' : A') (ω : Forms A B 0) :
     zeroEquiv B' Ω[B'⁄A'] (baseChangeEquiv A A' B B' 0 (a' ⊗ₜ ω)) =
       a' • algebraMap B B' (zeroEquiv B Ω[B⁄A] ω) := by
   obtain ⟨b, rfl⟩ : ∃ b : B, b • ιMulti B 0 ![] = ω :=
     ⟨zeroEquiv B Ω[B⁄A] ω, (zeroEquiv B Ω[B⁄A]).injective <| by simp⟩
-  rw [baseChangeEquiv_tmul_smul, baseChangeEquiv_tmul_ιMulti, ← algebraMap_smul B' a', smul_smul,
-    map_smul, zeroEquiv_ιMulti, map_smul, zeroEquiv_ιMulti, smul_eq_mul, smul_eq_mul, mul_one,
-    mul_one, Algebra.smul_def, mul_comm]
+  rw [baseChangeEquiv_tmul_smul, baseChangeEquiv_tmul_ιMulti, ← algebraMap_smul B' a', smul_smul]
+  simp [Algebra.smul_def, mul_comm]
 
 /-- In degree one, base change of forms is Mathlib's `KaehlerDifferential.tensorKaehlerEquivBase`
 under the identifications `Ω¹ ≃ Ω[B⁄A]` and `Ω¹ ≃ Ω[B'⁄A']`. -/
+@[simp]
 theorem oneEquiv_baseChangeEquiv (x : A' ⊗[A] Forms A B 1) :
     oneEquiv B' Ω[B'⁄A'] (baseChangeEquiv A A' B B' 1 x) =
       tensorKaehlerEquivBase A A' B B'
