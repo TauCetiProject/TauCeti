@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 import TauCeti.Algebra.Group.Pow
 import Mathlib.GroupTheory.FiniteAbelian.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # Quadratic refinements of symmetric pairings
@@ -389,9 +390,7 @@ theorem isometryOfBilinearIsometryOfOdd_refl (A : FiniteQuadraticModule.{u})
     isometryOfBilinearIsometryOfOdd hA
         (FiniteBilinearModule.Isometry.refl A.toFiniteBilinearModule) =
       QuadraticMap.IsometryEquiv.refl A.quadratic :=
-  DFunLike.ext _ _ fun x ↦ by
-    rw [isometryOfBilinearIsometryOfOdd_apply, FiniteBilinearModule.Isometry.refl_apply,
-      ← Isometry.toHom_apply, Isometry.refl_toHom, Hom.id_apply]
+  DFunLike.ext _ _ fun _ ↦ by simp
 
 /-- Upgrading a composite bilinear isometry at odd order gives the composite upgraded quadratic
 isometry. -/

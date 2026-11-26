@@ -244,6 +244,20 @@ theorem iIsOrtho.equivalent_of_card_eq_of_isSquare_prod_mul_prod (h2 : IsUnit (2
       exact hsq m)
   exact ⟨⟨f.toLinearEquiv, fun x y ↦ by simp⟩⟩
 
+omit [HenselianLocalRing R] [Finite (IsLocalRing.ResidueField R)] in
+/-- If `π ^ m • U` is the restriction of `B` to the `m`-th exponent fiber of an orthogonal basis
+with self-pairings `u i * π ^ k i`, then the Gram determinant of `U` in the spanned fiber basis is
+the product of the units `u i` over that fiber. -/
+private theorem iIsOrtho.det_toMatrix_span_of_smul_eq (hb : B.iIsOrtho b)
+    (hbu : ∀ i, B (b i) (b i) = u i * π ^ k i) {m : ℕ} [DecidableEq {i // k i = m}]
+    (hπm : IsLeftRegular (π ^ m))
+    {U : BilinForm R (Submodule.span R (Set.range fun i : {i // k i = m} ↦ b i.val))}
+    (hU : π ^ m • U = B.restrict _) :
+    (U.toMatrix (Basis.span (b.linearIndependent.comp (Subtype.val : {i // k i = m} → ι)
+      Subtype.val_injective))).det = ((∏ i : {i // k i = m}, u i.val : Rˣ) : R) := by
+  rw [hb.toMatrix_span_of_smul_eq Subtype.val_injective hπm
+    (fun i ↦ by rw [hbu i.val, i.property, mul_comm]) hU, Matrix.det_diagonal, Units.coe_prod]
+
 /-- **Diagonal Jordan classification at odd residue characteristic.** Over a Henselian local domain
 with finite residue field and two invertible, two forms with orthogonal bases of diagonal entries
 `u i * π ^ k i` and `v j * π ^ l j` (for units `u i`, `v j` and a nonzero non-unit `π`) are
@@ -280,20 +294,14 @@ theorem iIsOrtho.equivalent_iff_forall_occCount_eq_and_isSquare [IsDomain R]
   -- Divide out `π ^ m` on the `m`-th Jordan constituents and compare their diagonal determinants.
   obtain ⟨UB, hUB, -⟩ := isModular_def.mp (hS.isModular m)
   obtain ⟨UC, hUC, -⟩ := isModular_def.mp (hS'.isModular m)
-  have hπm : π ^ m ≠ 0 := pow_ne_zero m hπ
+  have hπm : IsRegular (π ^ m) := IsRegular.of_ne_zero (pow_ne_zero m hπ)
   have heq : (B.restrict _).Equivalent (B'.restrict _) := ⟨e⟩
   rw [← hUB, ← hUC] at heq
-  have hUeq : UB.Equivalent UC :=
-    (equivalent_smul_iff (IsRegular.of_ne_zero hπm)).mp heq
+  have hUeq : UB.Equivalent UC := (equivalent_smul_iff hπm).mp heq
   have hdet := hUeq.isSquare_det_mul_det bm (cm.reindex (Fintype.equivOfCardEq hcard.symm))
-  rw [det_toMatrix_reindex,
-    hb.toMatrix_span_of_smul_eq Subtype.val_injective (fun _ _ hab ↦ mul_left_cancel₀ hπm hab)
-      (fun i ↦ by rw [hbu i.val, i.property, mul_comm]) hUB,
-    hc.toMatrix_span_of_smul_eq Subtype.val_injective (fun _ _ hab ↦ mul_left_cancel₀ hπm hab)
-      (fun j ↦ by rw [hcv j.val, j.property, mul_comm]) hUC,
-    Matrix.det_diagonal, Matrix.det_diagonal,
-    ← Units.coe_prod, ← Units.coe_prod, ← Units.val_mul, Units.isSquare_coe_iff] at hdet
-  exact hdet
+  simpa only [bm, cm, det_toMatrix_reindex, hb.det_toMatrix_span_of_smul_eq hbu hπm.left hUB,
+    hc.det_toMatrix_span_of_smul_eq hcv hπm.left hUC, ← Units.val_mul,
+    Units.isSquare_coe_iff] using hdet
 
 end OrthogonalBasis
 

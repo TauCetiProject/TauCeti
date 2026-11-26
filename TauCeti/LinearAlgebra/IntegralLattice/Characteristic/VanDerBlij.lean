@@ -216,16 +216,18 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
     (natCard_comap_primaryComponent_two_evenSublattice_sq L hodd).trans (A.natCard_restrict P).symm
   let a₂ : A₂ := ⟨Submodule.Quotient.mk (halfCharacteristicDual L hw),
     halfCharacteristicDual_mem_primaryComponent_two L hw⟩
-  have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ :=
-    (A.restrict_quadratic P (a₂ + (h : A₂))).trans <|
-      (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice _).trans <|
-        (quadratic_halfCharacteristicDual_add L hw ⟨h.val.val, h.property⟩).trans <|
-          (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
-            a₂.val).symm.trans (A.restrict_quadratic P a₂).symm
-  have hqa₂ : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) :=
-    (A.restrict_quadratic P a₂).trans <|
-      (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
-        a₂.val).trans (quadratic_halfCharacteristicDual L hw)
+  have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ := by
+    rw [A.restrict_quadratic P (a₂ + (h : A₂)), A.restrict_quadratic P a₂]
+    dsimp only [A]
+    rw [L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
+        (a₂ + (h : A₂)).val,
+      L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice a₂.val]
+    exact quadratic_halfCharacteristicDual_add L hw ⟨h.val.val, AddSubgroup.mem_comap.mp h.property⟩
+  have hqa₂ : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) := by
+    rw [A.restrict_quadratic P a₂]
+    dsimp only [A]
+    rw [L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice a₂.val]
+    exact quadratic_halfCharacteristicDual L hw
   refine FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq A₂ ?_
   rw [FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian a₂
     hH₂_lag ha₂, hqa₂, ← hsq, Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _),

@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Torsion
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 import Mathlib.Data.Nat.Factorization.Basic
 import TauCeti.Algebra.Group.Primary.Card
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # Primary components of finite bilinear and quadratic modules
@@ -338,9 +339,7 @@ theorem Isometry.refl_restrictPrimaryComponent (A : FiniteQuadraticModule.{u}) (
         (A.restrict (AddCommGroup.primaryComponent A n)).quadratic :=
   DFunLike.ext _ _ fun _ ↦ by
     apply Subtype.ext
-    rw [Isometry.coe_restrictPrimaryComponent_apply,
-      ← Isometry.toHom_apply, Isometry.refl_toHom, Hom.id_apply,
-      ← Isometry.toHom_apply, Isometry.refl_toHom, Hom.id_apply]
+    simp
 
 /-- Restricting the inverse quadratic isometry to `n`-primary components gives the inverse of the
 restricted isometry. -/
