@@ -198,6 +198,15 @@ theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a :=
 theorem neg_ofUnit_neg_one : -ofUnit (-1 : Rˣ) = ofUnit (-1) := by
   rw [← ofUnit_inv, inv_neg_one]
 
+/-- `{-1}` is killed by `2`, since `(-1) ^ 2 = 1`. -/
+theorem two_nsmul_ofUnit_neg_one : 2 • ofUnit (-1 : Rˣ) = 0 := by
+  rw [← ofUnit_pow, neg_one_sq, ofUnit_one]
+
+/-- The symbol `{-1, …, -1}` with `n ≠ 0` entries is killed by `2`. -/
+theorem two_nsmul_ofUnit_neg_one_pow {n : ℕ} (hn : n ≠ 0) : 2 • ofUnit (-1 : Rˣ) ^ n = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [pow_succ, ← mul_smul_comm, two_nsmul_ofUnit_neg_one, mul_zero]
+
 /-- The **Steinberg relation**: `{a} {b} = 0` whenever the units `a` and `b` add up to one. -/
 theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
@@ -222,6 +231,11 @@ theorem symbol_singleton (a : Rˣ) : symbol [a] = ofUnit a := by
 /-- The product of two symbols is the symbol of the concatenated list, in that order. -/
 @[simp]
 theorem symbol_append (l₁ l₂ : List Rˣ) : symbol (l₁ ++ l₂) = symbol l₁ * symbol l₂ := by
+  simp [symbol]
+
+/-- The symbol `{a, …, a}` with `n` entries is the `n`-th power of `{a}`. -/
+@[simp]
+theorem symbol_replicate (n : ℕ) (a : Rˣ) : symbol (List.replicate n a) = ofUnit a ^ n := by
   simp [symbol]
 
 /-- Milnor symbols are additive in every entry. -/
@@ -353,6 +367,9 @@ theorem symbol_mem_degree (l : List Rˣ) : symbol l ∈ degree R l.length :=
 
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 := by
   simpa using symbol_mem_degree [a]
+
+theorem ofUnit_pow_mem_degree (a : Rˣ) (n : ℕ) : ofUnit a ^ n ∈ degree R n := by
+  simpa using symbol_mem_degree (List.replicate n a)
 
 private theorem mul_mem_degree {i j : ℕ} {x y : MilnorK R} (hx : x ∈ degree R i)
     (hy : y ∈ degree R j) : x * y ∈ degree R (i + j) := by
