@@ -283,7 +283,8 @@ private theorem continuousOn_mixedDeriv_coefficient (a : ParameterSymbol n Λ V 
     rw [mixedDeriv_eq_iteratedFDeriv α β ((a.contDiff_coefficient_slice p.1).of_le
       (by exact_mod_cast le_top)),
       (a.contDiffAt_coefficient (p := (p.2, p.1)) hp').iteratedFDeriv_prod_left _ hN]
-    rfl
+    simp only [ContinuousMultilinearMap.compContinuousLinearMapL_apply,
+      ContinuousMultilinearMap.compContinuousLinearMap_apply]
   refine ContinuousAt.congr ?_ heq.symm
   have hc : ContinuousAt (fun p : ℂ × (CoordinateSpace n × CoordinateSpace n) =>
       iteratedFDeriv ℝ (mixedDirections α β).length a.coefficient (p.2, p.1)) p :=

@@ -166,9 +166,7 @@ theorem quantizeSchwartzValue_contourIntegral :
       (fun ξ ↦ coefficient_contourIntegral ..) u,
     quantizeSchwartzValue_integral_of_integrable_bound volume
       (fun t p ↦ g t • a.coefficient (p, γ t)) u x (m := 0)
-      (a.aestronglyMeasurable_smul_coefficient hγ hγΛ hg x)
-      (fun ξ ↦ hg.smul (a.continuous_coefficient_comp hγ hγΛ continuous_const
-        continuous_id).aestronglyMeasurable) hG fun t ξ ↦ by
+      (a.aestronglyMeasurable_smul_coefficient hγ hγΛ hg x) hG fun t ξ ↦ by
         simpa [norm_smul] using hGb t x rfl ξ]
   simp only [a.quantizeSchwartzValue_smul_coefficient u]
 
@@ -321,7 +319,10 @@ theorem quantizeSobolev_contourIntegral :
       ContinuousLinearMap.apply ℂ _ (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)
   have hL (T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{s - m'}(CoordinateSpace n, W)) :
       L T = (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ := by
-    simp [L]
+    simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
+      BesselPotentialSpace.toDistrCLM_apply, PointwiseConvergenceCLM.evalCLM_apply]
+    -- `evalCLM_apply` evaluates through the coercion of `E →L[ℂ] F`, while `𝓢'(E, F)` is the
+    -- type synonym `E →Lₚₜ[ℂ] F` with its own coercion; the two agree by definition.
     rfl
   rw [← hL, ← hL, ← L.integral_comp_comm hint]
   simp only [map_smul]

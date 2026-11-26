@@ -180,6 +180,20 @@ private theorem exists_norm_indicator_rpow_le (σ : ℝ) :
   · rw [indicator_of_notMem (notMem_Ioi.2 ht), norm_zero, one_mul]
     positivity
 
+/-- The integral against the weight `t ^ (-σ)` on `t > 0` along the path `t ↦ -|t|` is the
+integral over `t > 0` along `t ↦ -t`. -/
+private theorem integral_indicator_rpow_smul_neg_abs {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] (σ : ℝ) (f : ℂ → E) :
+    ∫ t : ℝ, (Ioi 0).indicator (fun t : ℝ ↦ ((t ^ (-σ) : ℝ) : ℂ)) t • f (-((|t| : ℝ) : ℂ)) =
+      ∫ t in Ioi (0 : ℝ), t ^ (-σ) • f (-(t : ℂ)) := by
+  rw [← integral_indicator measurableSet_Ioi]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rcases lt_or_ge 0 t with ht | ht
+  · rw [indicator_of_mem (mem_Ioi.2 ht), indicator_of_mem (mem_Ioi.2 ht), abs_of_pos ht,
+      Complex.coe_smul]
+  · rw [indicator_of_notMem (notMem_Ioi.2 ht), indicator_of_notMem (notMem_Ioi.2 ht), zero_smul]
+
 variable (hΛ : ∀ t : ℝ, t ≤ 0 → (t : ℂ) ∈ Λ) (hσ : σ < 1)
 
 section
@@ -213,15 +227,7 @@ theorem coefficient_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
       ∫ t in Ioi (0 : ℝ), t ^ (-σ) • b.coefficient (p, -(t : ℂ)) := by
   simp only [balakrishnanIntegral, Symbol.coefficient_inclusion, Symbol.coefficient_smul,
     Pi.smul_apply, coefficient_contourIntegral]
-  rw [← integral_indicator measurableSet_Ioi, Complex.coe_smul]
-  congr 1
-  refine integral_congr_ae (.of_forall fun t ↦ ?_)
-  dsimp only
-  rcases lt_or_ge 0 t with ht | ht
-  · rw [indicator_of_mem (mem_Ioi.2 ht), indicator_of_mem (mem_Ioi.2 ht),
-      abs_of_pos ht, Complex.coe_smul]
-  · rw [indicator_of_notMem (notMem_Ioi.2 ht),
-      indicator_of_notMem (notMem_Ioi.2 ht), zero_smul]
+  rw [integral_indicator_rpow_smul_neg_abs σ fun z ↦ b.coefficient (p, z), Complex.coe_smul]
 
 @[simp]
 theorem balakrishnanIntegral_zero :
@@ -313,14 +319,8 @@ theorem quantizeSchwartzValue_balakrishnanIntegral (b : ParameterSymbol n Λ V W
           t ^ (-σ) • quantizeSchwartzValue (b.toSymbol (-(t : ℂ))).coefficient u x := by
   rw [balakrishnanIntegral, Symbol.coefficient_inclusion, Symbol.coefficient_smul,
     quantizeSchwartzValue_smul_left, quantizeSchwartzValue_contourIntegral,
-    ← integral_indicator measurableSet_Ioi, Complex.coe_smul]
-  congr 1
-  refine integral_congr_ae (.of_forall fun t ↦ ?_)
-  dsimp only
-  rcases lt_or_ge 0 t with ht | ht
-  · rw [indicator_of_mem (mem_Ioi.2 ht), indicator_of_mem (mem_Ioi.2 ht), abs_of_pos ht,
-      Complex.coe_smul]
-  · rw [indicator_of_notMem (notMem_Ioi.2 ht), indicator_of_notMem (notMem_Ioi.2 ht), zero_smul]
+    integral_indicator_rpow_smul_neg_abs σ fun z ↦
+      quantizeSchwartzValue (b.toSymbol z).coefficient u x, Complex.coe_smul]
 
 /-- If `b` vanishes at the positions outside a compact set `K`, for every frequency and spectral
 parameter, then so does its Balakrishnan integral. -/
@@ -374,15 +374,11 @@ theorem quantizeSobolev_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
       rw [Symbol.quantizeSobolev_smul hc, b.quantizeSobolev_contourIntegral continuous_neg_abs
         (neg_abs_mem hΛ) (aestronglyMeasurable_indicator_rpow σ) exists_one_add_abs_le_neg_abs
         (exists_norm_indicator_rpow_le σ) hσ' hm₁ hm₂ hm'0 K hb s,
-        ← integral_indicator measurableSet_Ioi, Complex.coe_smul]
-      congr 1
-      refine integral_congr_ae (.of_forall fun t ↦ ?_)
-      dsimp only
-      rcases lt_or_ge 0 t with ht | ht
-      · rw [indicator_of_mem (mem_Ioi.2 ht), indicator_of_mem (mem_Ioi.2 ht), abs_of_pos ht,
-          Complex.coe_smul]
-      · rw [indicator_of_notMem (notMem_Ioi.2 ht), indicator_of_notMem (notMem_Ioi.2 ht),
-          zero_smul]
+        integral_indicator_rpow_smul_neg_abs σ fun z ↦
+          (Symbol.inclusion (m' := m') (by linarith) (b.toSymbol z)).quantizeSobolev
+            ((b.hasCompactSpatialSupport_toSymbol _ K.isCompact fun x hx ξ ↦ hb x hx ξ _).inclusion
+              (by linarith)) s,
+        Complex.coe_smul]
 
 end Quantization
 

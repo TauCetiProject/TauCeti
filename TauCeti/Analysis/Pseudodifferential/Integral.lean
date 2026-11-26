@@ -91,12 +91,12 @@ private theorem integrable_quantizeSchwartzValue_family_integrand
     (mul_le_mul_of_nonneg_right (hbound p.1 _) (norm_nonneg _))
 
 /-- **Quantization commutes with a parameter integral.** Let the coefficients `a y` at the
-position `x` be jointly a.e. strongly measurable in the parameter and the frequency, measurable in
-the parameter at each frequency, and dominated by `G y ⟨ξ⟩ ^ m` with `G` integrable. Then the
-quantization at `x` of `∫ a y dμ(y)` is the integral of the quantizations at `x`. -/
+position `x` be jointly a.e. strongly measurable in the parameter and the frequency, and dominated
+by `G y ⟨ξ⟩ ^ m` with `G` integrable. Then the quantization at `x` of `∫ a y dμ(y)` is the integral
+of the quantizations at `x`. -/
 theorem quantizeSchwartzValue_integral_of_integrable_bound
     (hmeas : AEStronglyMeasurable (fun p : Y × E ↦ a p.1 (x, p.2)) (μ.prod volume))
-    (hmeas' : ∀ ξ, AEStronglyMeasurable (fun y ↦ a y (x, ξ)) μ) (hG : Integrable G μ)
+    (hG : Integrable G μ)
     (hbound : ∀ y ξ, ‖a y (x, ξ)‖ ≤ G y * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
     quantizeSchwartzValue (fun p ↦ ∫ y, a y p ∂μ) u x =
       ∫ y, quantizeSchwartzValue (a y) u x ∂μ := by
@@ -107,9 +107,11 @@ theorem quantizeSchwartzValue_integral_of_integrable_bound
   calc
     _ = ∫ ξ, ∫ y, H y ξ ∂μ := by
       apply integral_congr_ae
-      filter_upwards [] with ξ
+      -- For almost every frequency, the coefficients are measurable in the parameter.
+      filter_upwards [(Measure.quasiMeasurePreserving_smul (volume : Measure E)
+        Real.two_pi_pos.ne').ae hmeas.prodMk_right] with ξ hξ
       have hi : Integrable (fun y ↦ a y (x, (2 * π) • ξ)) μ :=
-        (hG.mul_const _).mono' (hmeas' _) (.of_forall fun y ↦ hbound y _)
+        (hG.mul_const _).mono' hξ (.of_forall fun y ↦ hbound y _)
       simp only [H, ContinuousLinearMap.integral_apply hi, Circle.smul_def, integral_smul]
     _ = ∫ y, (∫ ξ, H y ξ) ∂μ := (integral_integral_swap hHi).symm
     _ = _ := by simp only [H, quantizeSchwartzValue_def]
@@ -147,16 +149,13 @@ theorem quantizeSchwartzValue_integral_of_uniform_bound
     quantizeSchwartzValue (fun p ↦ ∫ y, a y p ∂μ) u x =
       ∫ y, quantizeSchwartzValue (a y) u x ∂μ := by
   obtain ⟨C, -, h⟩ := hbound
-  refine quantizeSchwartzValue_integral_of_integrable_bound μ a u x ?_ (fun ξ ↦ ?_)
-    (integrable_const C) h
-  · borelize (V →L[ℂ] W)
-    refine (stronglyMeasurable_iff_measurable_separable.2 ⟨hc.measurable, ?_⟩).aestronglyMeasurable
-    -- The continuous image of the sigma-compact parameter/frequency space is separable.
-    obtain ⟨K, hK, hcover⟩ := isSigmaCompact_range hc
-    rw [← hcover]
-    exact TopologicalSpace.IsSeparable.iUnion (fun k ↦ (hK k).isSeparable)
-  · exact ((hc.comp (continuous_id.prodMk continuous_const)).integrable_of_hasCompactSupport
-      (HasCompactSupport.of_compactSpace _)).aestronglyMeasurable
+  refine quantizeSchwartzValue_integral_of_integrable_bound μ a u x ?_ (integrable_const C) h
+  borelize (V →L[ℂ] W)
+  refine (stronglyMeasurable_iff_measurable_separable.2 ⟨hc.measurable, ?_⟩).aestronglyMeasurable
+  -- The continuous image of the sigma-compact parameter/frequency space is separable.
+  obtain ⟨K, hK, hcover⟩ := isSigmaCompact_range hc
+  rw [← hcover]
+  exact TopologicalSpace.IsSeparable.iUnion (fun k ↦ (hK k).isSeparable)
 
 end Coefficients
 
