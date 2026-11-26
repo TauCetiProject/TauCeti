@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
-public import Mathlib.CategoryTheory.Limits.FullSubcategory
 public import Mathlib.CategoryTheory.Linear.Basic
-public import Mathlib.CategoryTheory.Preadditive.Opposite
-public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 
 /-!
