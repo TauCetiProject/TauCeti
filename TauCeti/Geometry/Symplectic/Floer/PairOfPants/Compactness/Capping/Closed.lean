@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the capping family in a closed manifold
@@ -194,18 +195,14 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   -- Each component `(L, z) ↦ K_L(z)(w)` of the data is `C³` jointly in the neck length, the point
   -- of the capped plane and the target point, so its Hamiltonian vector field is `C²` in every
   -- chart.
-  have hg : ContMDiff (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 3
-      (fun p : (ℝ × (ℝ × ℝ)) × M ↦ (p.1.1, (equivRealProdCLM.symm p.1.2, p.2))) :=
-    (contDiff_fst.contMDiff.comp contMDiff_fst).prodMk
-      (((equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)
   have hK (w : ℂ) (p : ℝ × (ℝ × ℝ)) (hp : p ∈ Ioi 4 ×ˢ S₀) (x : M) :
       ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
         (uncurry fun (p : ℝ × (ℝ × ℝ)) x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one
           p.1 (equivRealProdCLM.symm p.2) x w) (p, x) :=
     (((contMDiffAt_plumbedPerturbation_single_inf_family (n := 3) (q := one) (by simp) hHb hHbs
-      hp.1 (eq_endCenter_one_or_of_ne_zero hp.2) x).comp (p, x) hg.contMDiffAt).clm_apply
-        contMDiffAt_const).of_le (by norm_num)
+      hp.1 (eq_endCenter_one_or_of_ne_zero hp.2) x).comp (p, x)
+        contMDiff_prodMk_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const).of_le
+          (by norm_num)
   have hS₀ : IsOpen S₀ := isOpen_ne_fun equivRealProdCLM.symm.continuous continuous_const
   have hWS : IsOpen (W ∩ Ioi 4 ×ˢ S₀) := hW.inter (isOpen_Ioi.prod hS₀)
   have hCDWS : C ×ˢ D ⊆ W ∩ Ioi 4 ×ˢ S₀ := subset_inter hCDW (prod_mono hC₄ hD₀)
