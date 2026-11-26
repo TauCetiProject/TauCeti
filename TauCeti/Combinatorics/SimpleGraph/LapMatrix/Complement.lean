@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.LapMatrix.Eigenvalues
-import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Combinatorics.SimpleGraph.LapMatrix.Basic
 
@@ -59,14 +58,9 @@ private theorem lapEigenvalues_compl_castSucc {m : ℕ} (hm : Fintype.card V = m
       simp [Matrix.of_apply, Matrix.vecMulVec]
     rw [hone]
     exact Matrix.rank_vecMulVec_le _ _
-  have hneg (i : Fin (Fintype.card V)) :
-      hG.neg.eigenvalues₀ i = -hG.eigenvalues₀ i.rev := by
-    have hT := isSymmetric_toEuclideanLin_iff.mpr hG
-    simp only [Matrix.IsHermitian.eigenvalues₀]
-    rw [LinearMap.IsSymmetric.eigenvalues_congr (map_neg toEuclideanLin _) _ hT.neg]
-    exact hT.eigenvalues_neg finrank_euclideanSpace i
   have hreflect (i : Fin (Fintype.card V)) : hA.eigenvalues₀ i = n - G.lapEigenvalues i.rev := by
-    rw [hG.neg.eigenvalues₀_add_smul_one n hA, Pi.add_apply, hneg, lapEigenvalues_def]
+    rw [hG.neg.eigenvalues₀_add_smul_one n hA, Pi.add_apply, hG.eigenvalues₀_neg,
+      lapEigenvalues_def]
     abel
   let e : Fin (m + 1) ≃ Fin (Fintype.card V) := Fin.castOrderIso hm.symm
   have hfirst : hA.eigenvalues₀ (e 0) = n := by
@@ -95,7 +89,8 @@ number of vertices (Brouwer–Haemers, §1.3.2). -/
 theorem lapEigenvalues_compl {i j : Fin (Fintype.card V)}
     (h : (i : ℕ) + j + 2 = Fintype.card V) :
     Gᶜ.lapEigenvalues i = Fintype.card V - G.lapEigenvalues j := by
-  obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero (show Fintype.card V ≠ 0 by omega)
+  have hn : Fintype.card V ≠ 0 := by omega
+  obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero hn
   let k : Fin m := ⟨i, by omega⟩
   have hi : k.castSucc.cast hm.symm = i := Fin.ext rfl
   have hj : (k.succ.cast hm.symm).rev = j := by

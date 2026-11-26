@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.Matrix.EntrywiseOpNorm
+import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.LinearAlgebra.Matrix.Rank
 
@@ -227,6 +228,14 @@ theorem IsHermitian.charpoly_eq_prod_eigenvalues₀ (hA : A.IsHermitian) :
     A.charpoly = ∏ k, (X - C (hA.eigenvalues₀ k : 𝕜)) := by
   rw [hA.charpoly_eq]
   exact hA.prod_comp_eigenvalues fun x ↦ X - C (x : 𝕜)
+
+/-- The sorted eigenvalues of `-A` are the negatives of those of `A` in reverse order. -/
+theorem IsHermitian.eigenvalues₀_neg (hA : A.IsHermitian) (i : Fin (Fintype.card ι)) :
+    hA.neg.eigenvalues₀ i = -hA.eigenvalues₀ i.rev := by
+  have hT := isSymmetric_toEuclideanLin_iff.mpr hA
+  simp only [IsHermitian.eigenvalues₀]
+  rw [LinearMap.IsSymmetric.eigenvalues_congr (map_neg toEuclideanLin _) _ hT.neg]
+  exact hT.eigenvalues_neg finrank_euclideanSpace i
 
 open Polynomial in
 /-- **Scalar shifts.** The sorted eigenvalues of `A + t • 1` are those of `A` shifted by `t`. -/

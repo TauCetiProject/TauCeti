@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
+import TauCeti.Combinatorics.SimpleGraph.AdjMatrix
 
 /-!
-# Additivity of the graph Laplacian
+# Laplacian of a graph complement
 
 The Laplacian of an edge-disjoint union is the sum of the two Laplacians. In particular,
 the Laplacians of a graph and its complement sum to the Laplacian of the complete graph.
@@ -19,19 +20,6 @@ public section
 namespace SimpleGraph
 
 variable {V : Type*} [Fintype V] [DecidableEq V]
-
-/-- The Laplacian is additive over the union of two edge-disjoint graphs. -/
-theorem lapMatrix_sup_of_disjoint (R : Type*) [AddGroupWithOne R]
-    {G H : SimpleGraph V} [DecidableRel G.Adj] [DecidableRel H.Adj] (h : Disjoint G H) :
-    (G ⊔ H).lapMatrix R = G.lapMatrix R + H.lapMatrix R := by
-  have hdeg (v : V) : (G ⊔ H).degree v = G.degree v + H.degree v := by
-    simp only [degree, neighborFinset_sup_of_disjoint v h, Finset.card_disjUnion]
-  ext v w
-  rcases eq_or_ne v w with rfl | hvw
-  · simp [lapMatrix, degMatrix, hdeg, adjMatrix_apply]
-  by_cases hG : G.Adj v w <;> by_cases hH : H.Adj v w
-  · exact (Set.disjoint_left.mp (disjoint_neighborSet.mpr h v) hG hH).elim
-  all_goals simp [lapMatrix, degMatrix, Matrix.diagonal_apply_ne _ hvw, adjMatrix_apply, hG, hH]
 
 /-- The Laplacians of a graph and its complement sum to the vertex count times the identity
 minus the all-ones matrix. -/
