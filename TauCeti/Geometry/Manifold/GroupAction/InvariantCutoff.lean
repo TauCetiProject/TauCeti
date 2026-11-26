@@ -54,9 +54,7 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset_of_smul_mem {K W : S
     ∃ σ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ σ ∧ (∀ᶠ x in 𝓝ˢ K, σ x = 1) ∧ HasCompactSupport σ ∧
       tsupport σ ⊆ W ∧ (∀ x, σ x ∈ Icc 0 1) ∧ ∀ (a : G) x, σ (a • x) = σ x := by
   borelize G
-  have hsmul : Continuous fun p : G × M ↦ p.1 • p.2 :=
-    (contMDiff_smul (I := IG) (I' := I) (n := ∞)).continuous
-  have : ContinuousSMul G M := ⟨hsmul⟩
+  have := ContMDiffSMul.continuousSMul (I := IG) (I' := I) (G := G) (M := M) ∞
   -- An ordinary cutoff supported in the largest invariant open subset of `W`.
   obtain ⟨ρ, hρ, hρ1, hρc, hρW, hρI⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I
     (TauCeti.isOpen_setOf_forall_smul_mem (G := G) hW) fun x hx a ↦ hKW (hKG a x hx)
@@ -66,7 +64,7 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset_of_smul_mem {K W : S
       |>.integrableOn_compact isCompact_univ)
   -- The average vanishes off the compact set `G • tsupport ρ`, which lies in `W`.
   set S := (fun p : G × M ↦ p.1 • p.2) '' (univ ×ˢ tsupport ρ)
-  have hS : IsCompact S := (isCompact_univ.prod hρc).image hsmul
+  have hS : IsCompact S := (isCompact_univ.prod hρc).image continuous_smul
   have hsupp : (Function.support fun x ↦ ∫ a, ρ (a • x) ∂μ) ⊆ S := by
     intro x hx
     by_contra hxS

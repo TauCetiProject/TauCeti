@@ -67,13 +67,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [CompactSpace G] [T2Space G] [ChartedSpace HG G] [IsManifold IG ∞ G] [MulAction G M]
   [ContMDiffSMul IG I ∞ G M]
 
-variable (IG) in
-/-- The action of a group element, as a diffeomorphism. -/
-private def smulDiffeomorph (a : G) : M ≃ₘ⟮I, I⟯ M where
-  toEquiv := MulAction.toPerm a
-  contMDiff_toFun := ContMDiffSMul.contMDiff_const_smul (I := IG) (I' := I) a
-  contMDiff_invFun := ContMDiffSMul.contMDiff_const_smul (I := IG) (I' := I) a⁻¹
-
 variable (G IG) in
 include IG in
 /-- **The equivariant relative Moser theorem.** Let a compact Lie group `G` act smoothly on a
@@ -99,7 +92,7 @@ theorem exists_equivariant_diffeomorph_fix_eventually_mpullback_eq {σ₀ σ₁ 
         ∀ x ∈ K, mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x)) ∧
       ∀ (a : G) (x : M), Φ (a • x) = a • Φ x := by
   borelize G
-  have : ContinuousSMul G M := ⟨(contMDiff_smul (I := IG) (I' := I) (n := ∞)).continuous⟩
+  have := ContMDiffSMul.continuousSMul (I := IG) (I' := I) (G := G) (M := M) ∞
   set μ := TauCeti.haarProb G
   set β' := SmoothForm.measureAverage IG μ β
   -- On the largest invariant open subset of `U`, the average primitive still has
@@ -126,8 +119,8 @@ theorem exists_equivariant_diffeomorph_fix_eventually_mpullback_eq {σ₀ σ₁ 
     (fun x hx ↦ SmoothForm.measureAverage_eq_zero_of_forall_smul IG μ β fun a ↦
       hβK _ (hKG a x hx)) hρ1
   refine ⟨Φ, hΦK, ⟨tsupport ρ, hρc, hΦρ⟩, hΦ, fun hjet x hx ↦ hΦ1 x hx ?_, fun a x ↦
-    hΦG (smulDiffeomorph IG a) (hG₀ a) (hG₁ a) (SmoothForm.mpullback_smul_measureAverage IG μ β a)
-      (hρG a) x⟩
+    hΦG (Diffeomorph.smul IG I ∞ a) (hG₀ a) (hG₁ a)
+      (SmoothForm.mpullback_smul_measureAverage IG μ β a) (hρG a) x⟩
   -- Averaging keeps the zero first jet along the invariant set `K`.
   exact SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul IG μ β
     (fun a ↦ hβK _ (hKG a x hx)) fun a ↦ hjet _ (hKG a x hx)
