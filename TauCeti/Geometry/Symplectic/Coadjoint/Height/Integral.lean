@@ -39,7 +39,7 @@ Since the integral homology is free, hence projective, in every degree
 `Hom(Hⱼ(O; ℤ), M)` for every abelian group `M`. So the same holds for cohomology, by
 `TopCat.isZero_singularCohomology_of_projective_homology_lt`,
 `TopCat.free_singularCohomology_of_projective_homology_lt` and
-`TopCat.finite_singularCohomology_of_projective_homology_le`:
+`TopCat.finite_singularCohomology_of_projective_homology_lt`:
 
 * `Hʲ(O; ℤ, M)` vanishes in odd degrees, for every abelian group `M`
   (`Module.Dual.isZero_singularCohomology_int_quotient_stabilizer_coadjointRepresentation_of_odd`);
@@ -48,8 +48,7 @@ Since the integral homology is free, hence projective, in every degree
   `Module.Dual.finite_singularCohomology_int_quotient_stabilizer_coadjointRepresentation`).
 
 In particular the integral cohomology `Hʲ(O; ℤ)` is free of finite rank and concentrated in even
-degrees. The cohomology statements are made for groups in the lowest universe, where Tau Ceti's
-singular cohomology with integer coefficients lives.
+degrees.
 
 ## Main results
 
@@ -87,13 +86,11 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {G : Type u} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [CompactSpace G]
 
 namespace Module.Dual
 
-section Homology
-
-variable {G : Type u} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-  [CompactSpace G] (ν : Module.Dual ℝ (GroupLieAlgebra I G))
+variable (ν : Module.Dual ℝ (GroupLieAlgebra I G))
 
 /-- **The integral homology of a coadjoint orbit is finitely generated.** For a coadjoint orbit `O`
 of a compact Lie group, `Hⱼ(O; ℤ)` is a finitely generated abelian group in every degree. -/
@@ -137,14 +134,11 @@ instance projective_singularHomology_int_quotient_stabilizer_coadjointRepresenta
   have := ν.free_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
   inferInstance
 
-end Homology
-
 /-! ### Integral cohomology -/
 
 section Cohomology
 
-variable {G : Type} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-  [CompactSpace G] (ν : Module.Dual ℝ (GroupLieAlgebra I G)) (M : Type) [AddCommGroup M]
+variable (M : Type u) [AddCommGroup M]
 
 /-- **Odd cohomology of coadjoint orbits vanishes.** For a coadjoint orbit `O` of a compact Lie
 group, `Hʲ(O; ℤ, M) = 0` for every odd `j` and every abelian group `M` of coefficients: by the
@@ -152,7 +146,7 @@ universal coefficient theorem it is `Hom(Hⱼ(O; ℤ), M)`, and `Hⱼ(O; ℤ) = 
 theorem isZero_singularCohomology_int_quotient_stabilizer_coadjointRepresentation_of_odd {j : ℕ}
     (hj : Odd j) :
     IsZero ((TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)).singularCohomology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M) j) :=
+      (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ (ModuleCat.of ℤ M) j) :=
   TopCat.isZero_singularCohomology_of_projective_homology_lt _ _ (fun _ _ ↦ inferInstance)
     (ν.isZero_singularHomology_int_quotient_stabilizer_coadjointRepresentation_of_odd hj)
 
@@ -161,7 +155,7 @@ compact Lie group and a free abelian group `M`, `Hʲ(O; ℤ, M)` is free in ever
 universal coefficient theorem it is `Hom(Hⱼ(O; ℤ), M)`, with `Hⱼ(O; ℤ)` free of finite rank. -/
 theorem free_singularCohomology_int_quotient_stabilizer_coadjointRepresentation [Module.Free ℤ M]
     (j : ℕ) :
-    Module.Free ℤ (TopCat.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M)
+    Module.Free ℤ (TopCat.singularCohomology (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ (ModuleCat.of ℤ M)
       (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)) j) :=
   have := ν.free_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
   have := ν.finite_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
@@ -173,10 +167,11 @@ generated in every degree: by the universal coefficient theorem it is `Hom(Hⱼ(
 `Hⱼ(O; ℤ)` free of finite rank. -/
 theorem finite_singularCohomology_int_quotient_stabilizer_coadjointRepresentation
     [Module.Finite ℤ M] (j : ℕ) :
-    Module.Finite ℤ (TopCat.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M)
+    Module.Finite ℤ (TopCat.singularCohomology (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ (ModuleCat.of ℤ M)
       (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)) j) :=
   have := ν.finite_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
-  TopCat.finite_singularCohomology_of_projective_homology_le _ _ j fun _ _ ↦ inferInstance
+  have := ν.free_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
+  TopCat.finite_singularCohomology_of_projective_homology_lt _ _ j fun _ _ ↦ inferInstance
 
 end Cohomology
 

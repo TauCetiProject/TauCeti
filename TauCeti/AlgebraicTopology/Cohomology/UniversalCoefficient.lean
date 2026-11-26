@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
+import TauCeti.Algebra.Module.Projective.LinearMap
 import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
@@ -68,7 +69,7 @@ free in that degree and zero above it, while in the top degree it need not be to
   `TopPair.singularKroneckerLinearEquivOfProjectiveHomology`: the same isomorphisms into the
   modules of `k`-linear maps `Hₙ(X; R) →ₗ[k] M` and `Hₙ(X, A; R) →ₗ[k] M`.
 * `TopCat.isZero_singularCohomology_of_projective_homology_lt`,
-  `TopCat.finite_singularCohomology_of_projective_homology_le` and
+  `TopCat.finite_singularCohomology_of_projective_homology_lt` and
   `TopCat.free_singularCohomology_of_projective_homology_lt`: with projective homology below
   degree `n`, `Hⁿ(X; R, M)` vanishes when `Hₙ(X; R)` does, is finitely generated when `Hₙ(X; R)`
   is projective and finitely generated and `M` is finitely generated, and is free when `Hₙ(X; R)`
@@ -125,7 +126,7 @@ namespace TopCat
 
 section ProjectiveHomologyBelow
 
-variable {k : Type w} [CommRing k] (X : TopCat.{w}) {R : ModuleCat.{w} k} [Module.Projective k R]
+variable {k : Type*} [CommRing k] (X : TopCat.{w}) {R : ModuleCat.{w} k} [Module.Projective k R]
 
 /-- **The universal coefficient theorem below the first non-projective homology**, over any
 commutative ring `k`: for a projective coefficient module `R`, if the singular homology modules
@@ -220,25 +221,18 @@ theorem isZero_singularCohomology_of_projective_homology_lt (M : ModuleCat.{w} k
   have := (X.singularKronecker_bijective_of_projective_homology_lt M n h).1.subsingleton
   exact ModuleCat.isZero_of_subsingleton _
 
-/-- **Cohomology is finitely generated where projective homology is**: for a projective coefficient
-module `R`, if `Hⱼ(X; R)` is projective for `j ≤ n`, `Hₙ(X; R)` is finitely generated and `M` is
-finitely generated, then `Hⁿ(X; R, M)` is finitely generated, being `Hom(Hₙ(X; R), M)` by the
-universal coefficient theorem. -/
-theorem finite_singularCohomology_of_projective_homology_le (M : ModuleCat.{w} k) (n : ℕ)
-    (h : ∀ j ≤ n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+/-- **Cohomology is finitely generated where homology is finitely generated and projective**: for a
+projective coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n`, `Hₙ(X; R)` is finitely
+generated and projective and `M` is finitely generated, then `Hⁿ(X; R, M)` is finitely generated,
+being `Hom(Hₙ(X; R), M)` by the universal coefficient theorem
+(`Module.Finite.linearMap_of_projective`). -/
+theorem finite_singularCohomology_of_projective_homology_lt (M : ModuleCat.{w} k) (n : ℕ)
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+    [Module.Projective k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
     [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
-    [Module.Finite k M] : Module.Finite k (X.singularCohomology R k M n) := by
-  have := h n le_rfl
-  have : Module.Projective k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) :=
-    ModuleCat.projective_of_module_projective _
-  -- `Hₙ(X; R)` is a retract of some `kᵐ`, so `Hom(Hₙ(X; R), M)` is a quotient of `Mᵐ`.
-  obtain ⟨m, s, hs⟩ := Module.Finite.exists_fin' k
-    (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)
-  obtain ⟨i, hi⟩ := Module.projective_lifting_property s LinearMap.id hs
-  have := Module.Finite.of_surjective (LinearMap.lcomp k M i) fun f ↦
-    ⟨f ∘ₗ s, by rw [LinearMap.lcomp_apply', LinearMap.comp_assoc, hi, LinearMap.comp_id]⟩
-  exact Module.Finite.equiv (LinearEquiv.ofBijective _
-    (X.singularKronecker_bijective_of_projective_homology_lt M n fun j hj ↦ h j hj.le) ≪≫ₗ
+    [Module.Finite k M] : Module.Finite k (X.singularCohomology R k M n) :=
+  Module.Finite.equiv (LinearEquiv.ofBijective _
+    (X.singularKronecker_bijective_of_projective_homology_lt M n h) ≪≫ₗ
       ModuleCat.homLinearEquiv).symm
 
 /-- **Cohomology is free where homology is free of finite rank above projective homology**: for a
@@ -258,7 +252,7 @@ end ProjectiveHomologyBelow
 
 section ProjectiveHomology
 
-variable {k : Type w} [CommRing k] (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
+variable {k : Type*} [CommRing k] (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
   [hX : ∀ n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
 
 /-- **The universal coefficient theorem with projective homology**, over any commutative ring `k`:

@@ -389,7 +389,7 @@ theorem lerayHirsch_fst_bijective_of_fiberwise_basis (n : ℕ)
   -- of the finitely generated modules `Hᵖ(F; k)`.
   have hfin (p : ℕ) (hp : p ≤ n) : Fintype (ι p) :=
     have := hF p hp
-    have := F.finite_singularCohomology_of_projective_homology_le (R := 𝟙_ (ModuleCat.{w} k))
+    have := F.finite_singularCohomology_of_projective_homology_lt (R := 𝟙_ (ModuleCat.{w} k))
       (𝟙_ (ModuleCat.{w} k)) p fun _ _ ↦ inferInstance
     have := Module.Finite.finite_basis (bx x₀ p hp)
     Fintype.ofFinite _
