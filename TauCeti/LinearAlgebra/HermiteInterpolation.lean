@@ -17,7 +17,7 @@ import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Hermite interpolation

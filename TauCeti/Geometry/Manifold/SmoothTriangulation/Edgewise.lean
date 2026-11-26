@@ -176,20 +176,6 @@ open TauCeti
 variable {ι : Type*} [LinearOrder ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {K : AbstractSimplicialComplex ι} {k : ℕ}
 
-/-- The vertex `a` of a simplex `ρ` of the edgewise subdivision, placed at `edgewisePoint a` in
-the closed simplex on a set `σ` containing the entries of all vertices of `ρ`. -/
-noncomputable def edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (a : ρ) : StandardSimplex σ :=
-  ⟨edgewisePoint a.val.val, by
-    simpa only [coe_image] using edgewisePoint_mem_convexHull a.val.ne_zero (hρσ a.val a.property)⟩
-
-/-- The placed vertex `edgewiseVertexPoint hρσ a` has coordinates `edgewisePoint a`. -/
-@[simp]
-theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (a : ρ) :
-    (edgewiseVertexPoint hρσ a : ι →₀ ℝ) = edgewisePoint a.val.val :=
-  (rfl)
-
 /-- On a simplex `ρ` of the edgewise subdivision whose vertices have their entries in a face `σ`
 of `K`, the secant map of `f` pulled back to the subdivision is the secant map of `f` on `σ`
 through the points `edgewisePoint a` of the vertices `a` of `ρ`. -/
@@ -266,9 +252,7 @@ theorem eventually_norm_secantMap_sub_lt_edgewiseSubdivision {f : Realization K 
   rw [← hy, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ,
     ← Function.comp_apply (f := edgewiseSubdivisionRealizationMap K k),
     edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ]
-  refine hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) y _ fun i =>
-      ?_
-  rw [edgewiseSubdivisionFaceMap_apply]
-  exact (Finset.sum_coe_sort ρ.val fun a => y.val a * edgewisePoint a.val i).symm
+  exact hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) y _ fun i =>
+    edgewiseSubdivisionFaceMap_apply_eq_sum_edgewiseVertexPoint hρσ y i
 
 end Continuous

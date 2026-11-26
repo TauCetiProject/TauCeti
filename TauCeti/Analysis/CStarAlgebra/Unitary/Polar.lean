@@ -11,7 +11,7 @@ public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
-import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Basic
 
 /-!
 # Polar unitaries in C⋆-algebras: path-connectedness, norm perturbation, and unitization

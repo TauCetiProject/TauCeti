@@ -99,6 +99,16 @@ theorem mextDerivSection_apply
     mextDerivSection I M k s x = mextDeriv (⇑s) x := by
   simp [mextDerivSection, mextDerivₗ_apply]
 
+/-- The section `d s` is the exterior derivative of the smooth form `s`. -/
+@[simp]
+theorem ofContMDiffSection_mextDerivSection
+    (s : Cₛ^∞⟮I; E [⋀^Fin k]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Trivial M ℝ x⟯) :
+    SmoothBundleForm.ofContMDiffSection (mextDerivSection I M k s) =
+      mextDerivₗ I k (SmoothBundleForm.ofContMDiffSection s) :=
+  Subtype.ext (funext fun x ↦ by
+    rw [SmoothBundleForm.coe_ofContMDiffSection, mextDerivSection_apply, mextDerivₗ_apply,
+      SmoothBundleForm.coe_ofContMDiffSection])
+
 /-- `d ∘ d = 0` on the smooth sections of the form bundles. -/
 @[simp]
 theorem mextDerivSection_comp_mextDerivSection :
@@ -130,8 +140,7 @@ theorem mextDerivSection_smul_apply (f : C^∞⟮I, M; ℝ⟯)
         f x * mextDerivSection I M k s x v := by
   have h := SmoothForm.mextDerivₗ_funSMulₗ_apply f (SmoothBundleForm.ofContMDiffSection s) x v
   rw [RoughForm.wedge_def, RoughForm.wedgeWith_apply', mextDeriv_ofFunction] at h
-  have hfs : ⇑(f • s) = fun y ↦ f y • s y := funext (ContMDiffSection.smul_apply f s)
-  simpa [mextDerivₗ_apply, hfs] using h
+  simpa [mextDerivₗ_apply, ContMDiffSection.coe_smul_contMDiffMap, Pi.smul_def'] using h
 
 variable (I M k) in
 /-- **The exterior derivative is a differential operator of order at most one**: by the Leibniz
