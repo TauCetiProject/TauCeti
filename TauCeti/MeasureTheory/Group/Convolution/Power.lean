@@ -221,7 +221,7 @@ theorem compProd_conv_compProd {A B : Type*} [AddMonoid A] [AddMonoid B] [Measur
   have hK' (a' : A) : ∫⁻ e, f (a + a', e) ∂K (a + a') =
       ∫⁻ b, ∫⁻ b', f ((a, b) + (a', b')) ∂K a' ∂K a := by
     rw [hK, lintegral_conv (f := fun e => f (a + a', e)) (hf.comp measurable_prodMk_left)]
-    rfl
+    simp only [Prod.mk_add_mk]
   simp only [hK']
   refine lintegral_lintegral_swap (Measurable.aemeasurable ?_)
   have h := Measurable.lintegral_kernel_prod_right (κ := K.comap Prod.snd measurable_snd)
