@@ -26,14 +26,15 @@ Two properties of DG Morse homology `H_*(M; 𝓕)` of Barraud, Damian, Humilièr
   induces a quasi-isomorphism of DG Morse complexes
   (`TauCeti.IsAdaptedPseudoGradient.quasiIso_dgMorseComplexFunctor_map`), since the Barraud–Cornea
   cocycle is a twisting cocycle on the finite set of critical points, hence semi-free
-  (`TauCeti.TwistingCocycle.quasiIso_twistedCochainComplexMap`). For a map `p : E → Y` with a
+  (`TauCeti.TwistingCocycle.quasiIso_twistedCochainComplexMap`). For a map `p : E' → Y` with a
   transitive Moore lifting function `Φ`, transport `C_*(F') → C_*(F)_Φ` is a quasi-isomorphism of
   DG local systems (`TauCeti.isQuasiIso_transportLocalSystemHom`), so the DG Morse complexes with
   coefficients in the chains on the fibre of the Moore-path replacement and in the chains on the
   fibre of `p` are quasi-isomorphic
   (`TauCeti.IsAdaptedPseudoGradient.quasiIso_dgMorseComplexFunctor_map_transportLocalSystemHom`).
-  This is the transport step of the fibration theorem `H_*(Y; C_*(F')) ≅ H_*(E)`, from fibrations
-  with a transitive lifting function to all Hurewicz fibrations.
+  So transport does not change DG Morse homology, which is what the transport step of the
+  fibration theorem `H_*(Y; C_*(F')) ≅ H_*(E')` uses to pass from fibrations with a transitive
+  lifting function to all Hurewicz fibrations.
 * **Naturality of the independence of the chain system.** Under the Morse–Smale condition, a
   homotopy `T` of chain systems gives an isomorphism of DG Morse complexes
   (`TauCeti.IsAdaptedPseudoGradient.dgMorseComplexIsoOfHomotopy`). It acts on the critical points

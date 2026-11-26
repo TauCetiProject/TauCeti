@@ -28,9 +28,9 @@ maps of continuation cocycles, which act on the generators only
 finitely supported, and the equivalence `(P → M) ≃ (P →₀ M)` identifies the twisted complex with
 the coefficient complex of the row-finite form `TauCeti.TwistingCocycle.toRowFinite` of the
 cocycle (`TauCeti.TwistingCocycle.twistedCochainComplexIsoToRowFinite`), naturally in the
-coefficients. A twisting cocycle on a finite set is one-sided, `m x y = 0` whenever
-`ind x ≤ ind y`, and its indices are bounded below, so it is semi-free: the relation saying that
-`y` occurs in the row of `x` is well-founded
+coefficients. A twisting cocycle is one-sided by definition, `m x y = 0` whenever
+`ind x ≤ ind y`, and on a finite set its indices are bounded below, so it is semi-free: the
+relation saying that `y` occurs in the row of `x` is well-founded
 (`TauCeti.RowFiniteTwistingCocycle.wellFounded_mem_support`). The row-finite theorem
 `TauCeti.RowFiniteTwistingCocycle.quasiIso_coefficientCochainComplexMap` then concludes. So the
 homology of a twisted complex depends on its DG coefficient module only up to quasi-isomorphism.
@@ -99,15 +99,6 @@ theorem compLeft_mem_twistedTotalGrading (f : DGRightModuleHom hM hN) {n : ℤ} 
     LinearMap.compLeft (f.toLinearMap.restrictScalars R) P g ∈ twistedTotalGrading 𝒩 ind n := by
   rw [mem_twistedTotalGrading_iff] at hg ⊢
   exact fun x ↦ f.map_mem' (hg x)
-
-omit [Fintype P] in
-/-- A morphism of DG right modules, applied to every coefficient, is homogeneous of degree zero for
-the total gradings. -/
-theorem isHomogeneous_compLeft (f : DGRightModuleHom hM hN) :
-    LinearMap.IsHomogeneous (LinearMap.compLeft (f.toLinearMap.restrictScalars R) P)
-      (twistedTotalGrading ℳ ind) (twistedTotalGrading 𝒩 ind) 0 :=
-  LinearMap.isHomogeneous_def.mpr fun _ _ hg ↦ by
-    simpa only [add_zero] using f.compLeft_mem_twistedTotalGrading hg
 
 /-- A morphism of DG right modules, applied to every coefficient, commutes with the twisted
 differentials of any matrix `m`. -/
@@ -236,6 +227,18 @@ theorem coefficientCochainComplexXEquiv_twistedCochainComplexIsoToRowFinite_hom_
       (Finsupp.linearEquivFunOnFinite R M P).symm
         (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n x) := by
   simp [twistedCochainComplexIsoToRowFinite, LinearEquiv.ofSubmodules_symm_apply]
+
+/-- Under the identifications of the complex terms with coefficient vectors, the inverse of the
+isomorphism `TauCeti.TwistingCocycle.twistedCochainComplexIsoToRowFinite` is the
+function/finite-support equivalence. -/
+@[simp]
+theorem twistedCochainComplexXEquiv_twistedCochainComplexIsoToRowFinite_inv_f_apply (n : ℤ)
+    (x : (m.toRowFinite.coefficientCochainComplex hM).X n) :
+    (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n
+        (((m.twistedCochainComplexIsoToRowFinite hM).inv.f n).hom x) : P → M) =
+      Finsupp.linearEquivFunOnFinite R M P
+        (m.toRowFinite.coefficientCochainComplexXEquiv hM n x) := by
+  simp [twistedCochainComplexIsoToRowFinite, LinearEquiv.ofSubmodules_apply]
 
 /-- The isomorphism with the row-finite twisted complex is natural in the coefficients: it carries
 the morphism of twisted complexes induced by a morphism of DG right modules to the coefficient map
