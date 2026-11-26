@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.Support.DegreeOne
+public import TauCeti.AlgebraicGeometry.Cohomology.Support.BasicOpen
 
 /-!
 # Example: `H¹_Z(𝔸¹, 𝒪) = R[t, t⁻¹] / R[t]` for `Z` the origin
