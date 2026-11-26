@@ -14,7 +14,7 @@ import Mathlib.Analysis.Real.Sqrt
 import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.FieldTheory.Separable
 import Mathlib.Topology.Instances.ENNReal.Lemmas
-import TauCeti.NumberTheory.Enclosure.Archimedean
+public import TauCeti.NumberTheory.Enclosure.Archimedean
 import TauCeti.Topology.Algebra.Polynomial.Root.Isolated
 
 /-!
@@ -48,6 +48,10 @@ alone prove nothing: `[1, 2]` isolates both `√2` (as a root of `X² - 2`) and 
 * `TauCeti.RootIsolation.ofSubset`: the isolation given by a squarefree annihilator and a region
   containing `σ z` and no other root; `TauCeti.RootIsolation.restrict` shrinks the region of an
   isolation.
+* `TauCeti.RootIsolation.toComplexEnclosureOfBox`: the complex enclosure of `σ z` given by the
+  rectangle of an isolation.
+* `TauCeti.RootIsolation.refineBox D h n`: the refinement of an isolation by a rectangle at level
+  `n`, the same polynomial with both sides of the rectangle bisected `n` times.
 
 ## Main results
 
@@ -70,8 +74,10 @@ alone prove nothing: `[1, 2]` isolates both `√2` (as a root of `X² - 2`) and 
   and the inverse of isolated values.
 * `TauCeti.RootIsolation.exists_pairwise_disjoint`: finitely many algebraic values have isolations
   with pairwise disjoint regions.
-* `TauCeti.RootIsolation.exists_refine_box`: the rectangle of an isolation can be refined to
-  nested rectangles of `2⁻ⁿ` times its widths, isolating the same value by the same polynomial.
+* `TauCeti.RootIsolation.refineBox_region_antitone`: the rectangles of the refinements of an
+  isolation are nested; `TauCeti.RootIsolation.exists_refine_box`: for every `n`, the rectangle
+  has a sub-rectangle with `2⁻ⁿ` times its widths isolating the same value by the same
+  polynomial.
 * `TauCeti.RootIsolation.eq_iff_exists_aeval_gcd_eq_zero`: the exact equality test by the gcd of
   the two polynomials.
 
@@ -334,6 +340,67 @@ theorem restrict_region (D : RootIsolation σ z) (R : RationalRegion) (hmem : σ
     (hR : R.toSet ⊆ D.region.toSet) : (D.restrict R hmem hR).region = R :=
   (rfl)
 
+/-- The complex enclosure of `σ z` whose box is the rectangle `R × J` of an isolation. -/
+def toComplexEnclosureOfBox (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) : ComplexEnclosure (σ z) :=
+  have hmem := RationalRegion.mem_toSet_box.mp (h ▸ D.mem_region)
+  ⟨⟨R, hmem.1.1, hmem.1.2⟩, ⟨J, hmem.2.1, hmem.2.2⟩⟩
+
+@[simp]
+theorem toComplexEnclosureOfBox_re_interval (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) : (D.toComplexEnclosureOfBox h).re.interval = R :=
+  (rfl)
+
+@[simp]
+theorem toComplexEnclosureOfBox_im_interval (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) : (D.toComplexEnclosureOfBox h).im.interval = J :=
+  (rfl)
+
+/-- The refinement at level `n` of an isolation whose region is the rectangle `R × J`: the same
+polynomial, with both sides of the rectangle bisected `n` times, keeping each time the half
+containing `σ z`. The rectangles are nested (`TauCeti.RootIsolation.refineBox_region_antitone`)
+and have `2⁻ⁿ` times the original widths (`TauCeti.RealEnclosure.length_refine`). -/
+noncomputable def refineBox (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) (n : ℕ) : RootIsolation σ z :=
+  D.restrict (.box ((D.toComplexEnclosureOfBox h).re.refine n).interval
+      ((D.toComplexEnclosureOfBox h).im.refine n).interval)
+    (RationalRegion.mem_toSet_box.mpr ⟨((D.toComplexEnclosureOfBox h).re.refine n).mem_Icc,
+      ((D.toComplexEnclosureOfBox h).im.refine n).mem_Icc⟩) <| by
+    have hR := (D.toComplexEnclosureOfBox h).re.refine_interval_le n
+    have hJ := (D.toComplexEnclosureOfBox h).im.refine_interval_le n
+    rw [toComplexEnclosureOfBox_re_interval] at hR
+    rw [toComplexEnclosureOfBox_im_interval] at hJ
+    rw [h, RationalRegion.toSet_box, RationalRegion.toSet_box]
+    exact reProdIm_subset_iff.mpr <| Set.prod_mono
+      (NonemptyInterval.Icc_ratCast_subset_Icc_ratCast hR)
+      (NonemptyInterval.Icc_ratCast_subset_Icc_ratCast hJ)
+
+@[simp]
+theorem refineBox_poly (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) (n : ℕ) : (D.refineBox h n).poly = D.poly :=
+  (rfl)
+
+@[simp]
+theorem refineBox_region (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) (n : ℕ) :
+    (D.refineBox h n).region = .box ((D.toComplexEnclosureOfBox h).re.refine n).interval
+      ((D.toComplexEnclosureOfBox h).im.refine n).interval :=
+  (rfl)
+
+/-- The rectangle of the refinement at level `n` is the box of the refinement at level `n` of the
+complex enclosure given by the original rectangle. -/
+theorem refineBox_region_toSet (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) (n : ℕ) :
+    (D.refineBox h n).region.toSet = ((D.toComplexEnclosureOfBox h).refine n).box := by
+  rw [refineBox_region, RationalRegion.toSet_box, ComplexEnclosure.box_def,
+    ComplexEnclosure.refine_re, ComplexEnclosure.refine_im]
+
+/-- The rectangles of the refinements of an isolation are nested. -/
+theorem refineBox_region_antitone (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) : Antitone fun n => (D.refineBox h n).region.toSet := by
+  simp only [refineBox_region_toSet]
+  exact (D.toComplexEnclosureOfBox h).refine_box_antitone
+
 /-- The rectangle of an isolation can be refined arbitrarily: for every `n` there is an isolation
 by the same polynomial whose rectangle lies inside the original one, with both sides of width
 `2⁻ⁿ` times the original widths. -/
@@ -341,22 +408,12 @@ theorem exists_refine_box (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
     (h : D.region = .box R J) (n : ℕ) :
     ∃ (R' J' : NonemptyInterval ℚ) (D' : RootIsolation σ z), D'.poly = D.poly ∧
       D'.region = .box R' J' ∧ R' ≤ R ∧ J' ≤ J ∧ R'.length = R.length / 2 ^ n ∧
-      J'.length = J.length / 2 ^ n := by
-  have hmem := D.mem_region
-  rw [h, RationalRegion.mem_toSet_box] at hmem
-  -- The rectangle of `D` is the box of a complex enclosure of `σ z`; refine that enclosure.
-  let E : ComplexEnclosure (σ z) := ⟨⟨R, hmem.1.1, hmem.1.2⟩, ⟨J, hmem.2.1, hmem.2.2⟩⟩
-  have hbox (F : ComplexEnclosure (σ z)) :
-      F.box = (RationalRegion.box F.re.interval F.im.interval).toSet := by
-    rw [ComplexEnclosure.box_def, RationalRegion.toSet_box]
-  refine ⟨(E.refine n).re.interval, (E.refine n).im.interval,
-    D.restrict (.box _ _) (hbox _ ▸ (E.refine n).self_mem_box) ?_, rfl, rfl, ?_, ?_, ?_, ?_⟩
-  · rw [← hbox, h, ← hbox E]
-    simpa using E.antitone_box_refine n.zero_le
-  · exact (E.refine_re n).symm ▸ E.re.refine_interval_le n
-  · exact (E.refine_im n).symm ▸ E.im.refine_interval_le n
-  · exact (E.refine_re n).symm ▸ E.re.length_refine n
-  · exact (E.refine_im n).symm ▸ E.im.length_refine n
+      J'.length = J.length / 2 ^ n :=
+  ⟨_, _, D.refineBox h n, rfl, D.refineBox_region h n,
+    (D.toComplexEnclosureOfBox h).re.refine_interval_le n,
+    (D.toComplexEnclosureOfBox h).im.refine_interval_le n,
+    (D.toComplexEnclosureOfBox h).re.length_refine n,
+    (D.toComplexEnclosureOfBox h).im.length_refine n⟩
 
 /-- For every squarefree annihilator `f` of `z` and every neighbourhood `V` of `σ z`, there is an
 isolation of `z` by `f` whose region is a closed disc `|w - (a + b i)| ≤ r` contained in `V`, with

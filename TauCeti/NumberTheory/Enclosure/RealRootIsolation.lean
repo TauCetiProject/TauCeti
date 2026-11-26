@@ -24,7 +24,7 @@ interval and keeping the half that contains the root gives, at level `n`, a nest
 width `2⁻ⁿ` times the original width (`TauCeti.RealRootIsolation.refine`), and the subinterval
 still isolates the same root because it lies in the original interval. A singleton interval
 `[q, q]` stays a singleton. The same bisection refines the rectangle of an exact algebraic datum
-of a complex value (`TauCeti.RootIsolation.exists_refine_box`), and the real side of such a
+of a complex value (`TauCeti.RootIsolation.refineBox`), and the real side of such a
 rectangle isolates the value as a real root when the value is real
 (`TauCeti.RootIsolation.toRealRootIsolationOfBox`).
 
@@ -54,7 +54,7 @@ read off a numerical approximation.
 * `TauCeti.RealRootIsolation.refine_toRealEnclosure`: the enclosure of the refinement at level
   `n` is `TauCeti.RealEnclosure.refine`, so its interval lies in the original one
   (`TauCeti.RealEnclosure.refine_interval_le`), the intervals are nested
-  (`TauCeti.RealEnclosure.antitone_refine_interval`) and the width is `2⁻ⁿ` times the original
+  (`TauCeti.RealEnclosure.refine_interval_antitone`) and the width is `2⁻ⁿ` times the original
   width (`TauCeti.RealEnclosure.length_refine`).
 * `TauCeti.RealRootIsolation.nonempty_iff_isAlgebraic`: a real number has an isolation exactly
   when it is algebraic over `ℚ`.
@@ -126,9 +126,7 @@ def restrict (D : RealRootIsolation r) (E : RealEnclosure r) (h : E.interval ≤
   poly := D.poly
   poly_ne_zero := D.poly_ne_zero
   aeval_poly := D.aeval_poly
-  eq_of_mem_Icc u hu := D.eq_of_mem_Icc u <| Set.Icc_subset_Icc
-    (by exact_mod_cast (NonemptyInterval.le_def.mp h).1)
-    (by exact_mod_cast (NonemptyInterval.le_def.mp h).2) hu
+  eq_of_mem_Icc u hu := D.eq_of_mem_Icc u (NonemptyInterval.Icc_ratCast_subset_Icc_ratCast h hu)
 
 @[simp]
 theorem restrict_toRealEnclosure (D : RealRootIsolation r) (E : RealEnclosure r)
