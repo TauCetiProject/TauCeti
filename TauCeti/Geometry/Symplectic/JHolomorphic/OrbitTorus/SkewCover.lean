@@ -75,10 +75,11 @@ For the orbit traversed `n` times, `T = n d` and `Ψ(T) = P ^ n`
 **The absolute determinant sign.** Since the operator on a skew cover is `(J₀ L_S) ⊕ D'` with `D'`
 invertible along every path of infinitesimally symplectic loops, transporting the complex
 orientation of a complex-linear reference operator, such as `∂s + J₀ ∂t`, along such a path follows
-the return maps (`TauCeti.sign_detLineEquivOfBijective_prodMap_loopOperator_eq_sign_det`). At a
+the return maps (`TauCeti.detLineOrientationTransport_rayOfNeZero_prodMap_loopOperator`). At a
 bijective endpoint the transported orientation therefore reads with the sign of `det (1 - Ψ(T))`
 against the orientation given by bijectivity
-(`TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det`). On the finite covers of an
+(`TauCeti.sign_detLineEquivOfBijective_prodMap_loopOperator_eq_sign_det`,
+`TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det`). On the finite covers of an
 orbit torus this is the sign `sgn det (1 - P ^ n)` of the untwisted operator on the cover, whatever
 the shear (`TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_coverPullback_eq_sign_det`).
 
@@ -448,6 +449,14 @@ theorem skewTorusOperator_apply (ℓ σ : ℝ) (S : C(AddCircle T, F →L[ℝ] F
         (AddCircle.coverPullback_add_coe_period q S) x.2) :=
   (rfl)
 
+/-- `TauCeti.skewTorusOperator` is `(J₀ L_S) ⊕ B` for the operator `B` on the modes of nonzero
+frequency. -/
+theorem skewTorusOperator_eq_prodMap (ℓ σ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
+    skewTorusOperator T q ℓ σ S = (I • loopOperator T S).prodMap
+      (skewTorusModeOperator ((q : ℝ) * T) ℓ σ _ (AddCircle.coverPullback q S)
+        (AddCircle.coverPullback_add_coe_period q S)) :=
+  (rfl)
+
 /-- **Complex linearity.** For a loop `S` of complex-linear maps the orbit-torus operator on a skew
 cover commutes with multiplication by complex scalars, the complex structure of the Sobolev spaces
 acting by `J₀`. -/
@@ -469,14 +478,6 @@ theorem skewTorusOperator_zero_apply_smul (ℓ σ : ℝ) (c : ℂ)
     (x : CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T))) :
     skewTorusOperator T q ℓ σ 0 (c • x) = c • skewTorusOperator T q ℓ σ 0 x :=
   skewTorusOperator_apply_smul T q ℓ σ (fun _ _ ↦ by simp) c x
-
-/-- `TauCeti.skewTorusOperator` is `(J₀ L_S) ⊕ B` for the operator `B` on the modes of nonzero
-frequency. -/
-private theorem skewTorusOperator_eq_prodMap (ℓ σ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
-    skewTorusOperator T q ℓ σ S = (I • loopOperator T S).prodMap
-      (skewTorusModeOperator ((q : ℝ) * T) ℓ σ _ (AddCircle.coverPullback q S)
-        (AddCircle.coverPullback_add_coe_period q S)) :=
-  (rfl)
 
 /-- The operator of a skew cover on the modes of nonzero frequency depends continuously on the
 loop. -/

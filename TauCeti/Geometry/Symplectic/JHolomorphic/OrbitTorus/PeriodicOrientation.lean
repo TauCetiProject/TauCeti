@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Fredholm.DeterminantLine.Complex
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Antiperiodic
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.ComplexOrientation
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.PeriodicSobolev
-import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
 # The determinant signs of the orbit-torus operators periodic along the circle factor
@@ -197,15 +196,6 @@ section Coherence
 
 variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
-
-omit [CompleteSpace E] [CompleteSpace E'] in
-/-- **Continuous dependence on the loop and the operator.** The operators `(J₀ L_{M x}) ⊕ B x`
-depend continuously, in operator norm, on `x` where the loops `M x` and the operators `B x` do. -/
-theorem continuousOn_prodMap_loopOperator {X : Type*} [TopologicalSpace X]
-    {M : X → C(AddCircle T, F →L[ℝ] F)} {B : X → E →L[ℝ] E'} {s : Set X}
-    (hM : ContinuousOn M s) (hB : ContinuousOn B s) :
-    ContinuousOn (fun x ↦ (I • loopOperator T (M x)).prodMap (B x)) s :=
-  ContinuousOn.prod_mapL ℝ (((continuous_loopOperator T).const_smul I).comp_continuousOn hM) hB
 
 /-- **The determinant lines of a family of asymptotic operators beside invertible operators and of
 its return maps are coherently identified.** Let `M` be a family of continuous loops and `B` a
@@ -419,13 +409,6 @@ end Complex
 section Periodic
 
 variable {M : ℝ → C(AddCircle T, F →L[ℝ] F)} {a b : ℝ}
-
-/-- `TauCeti.periodicTorusOperator` is `(J₀ L_S) ⊕ B` for the operator `B` on the modes of nonzero
-frequency. -/
-private theorem periodicTorusOperator_eq_prodMap (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
-    periodicTorusOperator T ℓ S =
-      (I • loopOperator T S).prodMap (torusModeOperator T (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) S) :=
-  ContinuousLinearMap.ext fun _ ↦ Prod.ext (by simp) (by simp)
 
 /-- **The untwisted orbit-torus operator has determinant sign `sgn det (1 - P)`.** Let `M` be a
 path of infinitesimally symplectic loops, continuous on `[a, b]`, whose loop `M a` consists of
