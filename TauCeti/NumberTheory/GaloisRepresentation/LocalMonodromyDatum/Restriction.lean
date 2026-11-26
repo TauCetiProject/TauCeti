@@ -319,11 +319,11 @@ the inclusion of a closed subgroup `H'`, this is the restricted datum `D|_{H'}`.
 def comap : LocalMonodromyDatum ℓ K where
   inertia := D.inertia.comap (φ : K →* H)
   isClosed_inertia := D.isClosed_inertia.preimage φ.continuous
-  tame := D.tame.comp
-    ⟨(φ : K →* H).subgroupComap D.inertia, (φ.continuous.comp continuous_subtypeVal).subtype_mk _⟩
+  tame := D.tame.comp (φ.subgroupComap D.inertia)
   tame_ne_one hne := by
     obtain ⟨σ, hσ, hne'⟩ := h.exists_tame_ne_one
-    exact hne' (DFunLike.congr_fun hne ⟨σ, hσ⟩)
+    exact hne' <| (congrArg D.tame <| Subtype.ext <|
+      φ.subgroupComap_apply_coe D.inertia ⟨σ, hσ⟩).symm.trans (DFunLike.congr_fun hne ⟨σ, hσ⟩)
   q := D.q ^ h.residueIndex
   two_le_q := D.two_le_q.trans (Nat.le_self_pow h.residueIndex_pos.ne' _)
   coprime_q := D.coprime_q.pow_left _
@@ -336,14 +336,11 @@ def comap : LocalMonodromyDatum ℓ K where
     have hφΦ : (φ Φ : H ⧸ D.inertia) = D.frobClass ^ h.residueIndex :=
       (congrArg (D.residueMap φ) hΦ).trans
         h.exists_coe_eq_frobClass_pow.choose_spec
-    have hconj : (φ : K →* H).subgroupComap D.inertia (MulAut.conjNormal Φ σ) =
-        MulAut.conjNormal (φ Φ) ((φ : K →* H).subgroupComap D.inertia σ) :=
-      Subtype.ext <| (congrArg φ (MulAut.conjNormal_apply Φ σ)).trans <| by
-        rw [map_mul, map_mul, map_inv, MulAut.conjNormal_apply]
-        -- `subgroupComap` is `φ` on underlying elements. The `simps` lemma
-        -- `MonoidHom.subgroupComap_apply_coe` is stated for elements of the submonoid preimage
-        -- `Submonoid.comap f H'.toSubmonoid`, so `rw` does not find it on this subgroup preimage.
-        rfl
+    have hconj : φ.subgroupComap D.inertia (MulAut.conjNormal Φ σ) =
+        MulAut.conjNormal (φ Φ) (φ.subgroupComap D.inertia σ) :=
+      Subtype.ext <| by
+        simp only [ContinuousMonoidHom.subgroupComap_apply_coe, MulAut.conjNormal_apply, map_mul,
+          map_inv]
     rw [Nat.cast_pow]
     exact (congrArg (fun x ↦ (D.tame x).toAdd) hconj).trans
       (D.tame_conj_of_coe_eq_frobClass_pow hφΦ _)
@@ -357,7 +354,7 @@ theorem comap_inertia : (D.comap φ h).inertia = D.inertia.comap (φ : K →* H)
 @[simp]
 theorem comap_tame_apply (σ : K) (hσ : σ ∈ (D.comap φ h).inertia) :
     (D.comap φ h).tame ⟨σ, hσ⟩ = D.tame ⟨φ σ, (comap_inertia D φ h).le hσ⟩ :=
-  (rfl)
+  congrArg D.tame <| Subtype.ext <| φ.subgroupComap_apply_coe D.inertia ⟨σ, hσ⟩
 
 /-- The integer of the restricted datum is `q ^ f`, for the residue index `f`. -/
 @[simp]
@@ -402,7 +399,9 @@ theorem IsAdmissible.comp {ψ : L →ₜ* K} (h' : (D.comap φ h).IsAdmissible �
       h'.residueIndex_pos.ne',
       let ⟨l, hl⟩ := h'.exists_coe_eq_frobClass_pow
       ⟨l, (coe_eq_comap_frobClass_pow_iff D φ h (ψ l) _).1 hl⟩⟩
-  exists_tame_ne_one := h'.exists_tame_ne_one
+  exists_tame_ne_one :=
+    let ⟨σ, hσ, hne⟩ := h'.exists_tame_ne_one
+    ⟨σ, hσ, fun h1 ↦ hne ((comap_tame_apply D φ h (ψ σ) hσ).trans h1)⟩
 
 /-- **Residue indices multiply** under composition. -/
 theorem IsAdmissible.residueIndex_comp {ψ : L →ₜ* K} (h' : (D.comap φ h).IsAdmissible ψ) :
@@ -422,7 +421,10 @@ along `φ ∘ ψ`. -/
 theorem comap_comap [IsTopologicalGroup L] [T2Space L] [TotallyDisconnectedSpace L]
     {ψ : L →ₜ* K} (h' : (D.comap φ h).IsAdmissible ψ) :
     (D.comap φ h).comap ψ h' = D.comap (φ.comp ψ) (h.comp h') := by
-  refine LocalMonodromyDatum.ext rfl (fun _ _ _ ↦ rfl) (Set.ext fun Φ ↦ ?_) ?_
+  refine LocalMonodromyDatum.ext rfl
+    (fun σ hσ hσ' ↦ ((comap_tame_apply _ ψ h' σ hσ).trans (comap_tame_apply D φ h _ _)).trans
+      (comap_tame_apply D _ (h.comp h') σ hσ').symm)
+    (Set.ext fun Φ ↦ ?_) ?_
   · rw [mem_comap_frobenius, mem_comap_frobenius, coe_eq_comap_frobClass_pow_iff,
       h.residueIndex_comp h', ContinuousMonoidHom.coe_comp, Function.comp_apply]
   · rw [comap_q, comap_q, comap_q, h.residueIndex_comp h', pow_mul]
@@ -430,7 +432,8 @@ theorem comap_comap [IsTopologicalGroup L] [T2Space L] [TotallyDisconnectedSpace
 variable (D) in
 /-- **Restriction along the identity** gives back the datum. -/
 theorem comap_id : D.comap (ContinuousMonoidHom.id H) (isAdmissible_id D) = D := by
-  refine LocalMonodromyDatum.ext (Subgroup.comap_id _) (fun _ _ _ ↦ rfl) (Set.ext fun Φ ↦ ?_) ?_
+  refine LocalMonodromyDatum.ext (Subgroup.comap_id _) (fun _ _ _ ↦ by simp)
+    (Set.ext fun Φ ↦ ?_) ?_
   · rw [mem_comap_frobenius, residueIndex_isAdmissible_id, pow_one, ContinuousMonoidHom.coe_id, id,
       mem_frobenius]
   · rw [comap_q, residueIndex_isAdmissible_id, pow_one]
@@ -493,7 +496,9 @@ theorem comap [IsTopologicalGroup K] [T2Space K] [TotallyDisconnectedSpace K]
       hα.residueIndex_isAdmissible_comp h]
     exact hα.coe_apply_eq_frobClass_pow_iff (φ k) _
   q_eq := by rw [comap_q, comap_q, hα.residueIndex_isAdmissible_comp h, hα.q_eq]
-  toAdd_tame_map k hk hk' := hα.toAdd_tame_map (φ k) hk hk'
+  toAdd_tame_map k hk hk' := by
+    rw [comap_tame_apply, comap_tame_apply]
+    exact hα.toAdd_tame_map (φ k) hk _
 
 end IsIso
 
