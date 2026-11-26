@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
 public import TauCeti.Topology.VectorBundle.Smul
 
 /-!
-# The first Chern number of a cotangent bundle vanishes on spheres
+# The first Chern number of a cotangent bundle vanishes on spheres and tori
 
 Let `T*M = TauCeti.CotangentBundle I M` be the cotangent bundle of a manifold with a
 finite-dimensional model, with its canonical symplectic form `ω = -dλ`
@@ -34,11 +34,18 @@ So the first Chern number of every sphere is its own negative
 the same vanishing is read off the zero section, along which `T(T*M)` is the complexification
 `TM ⊗ ℂ` of `TM`, a bundle isomorphic to its own conjugate.
 
-The first Chern number is defined on Hausdorff σ-compact manifolds, so the base is assumed
-Hausdorff and σ-compact; then so is `T*M` (`TauCeti.CotangentBundle.sigmaCompactSpace`), and the
-model of the base is finite-dimensional. The
-base may have boundary or corners. The vanishing on tori, the atoroidality of cotangent bundles, is
-not treated here.
+The same argument applies to maps of the torus, read as maps of the square agreeing on opposite
+edges: for every almost complex structure `J` tamed by `ω`, the clutching number of
+`(T(T*M), J)` (`TauCeti.torusClutchingNumber`) vanishes on every map of the torus
+(`TauCeti.CotangentBundle.torusClutchingNumber_symplecticForm_eq_zero`). Together with the exactness
+of `ω`, which makes the symplectic area of every torus vanish, this is the symplectic atoroidality
+of cotangent bundles, under which Hamiltonian Floer theory on `T*M` is graded on every free
+homotopy class of loops.
+
+The first Chern number on spheres is defined on Hausdorff σ-compact manifolds, so the base is
+assumed Hausdorff and σ-compact there; then so is `T*M`
+(`TauCeti.CotangentBundle.sigmaCompactSpace`), and the model of the base is finite-dimensional. The
+base may have boundary or corners.
 
 ## Main results
 
@@ -47,6 +54,9 @@ not treated here.
 * `TauCeti.CotangentBundle.fiberNegHomotopy`: the fibre negation is homotopic to the identity.
 * `TauCeti.CotangentBundle.firstChernHom_symplecticForm_eq_zero`: the first Chern number of the
   canonical symplectic form vanishes on `π₂(T*M, p)`.
+* `TauCeti.CotangentBundle.torusClutchingNumber_symplecticForm_eq_zero`: the first Chern number of
+  `(T(T*M), J)`, for `J` tamed by the canonical symplectic form, vanishes on every map of the
+  torus.
 
 ## References
 
@@ -115,7 +125,24 @@ theorem fiberNegHomotopy_apply (t : unitInterval) (p : CotangentBundle I M) :
     fiberNegHomotopy I M (t, p) = ⟨p.proj, (1 - 2 * (t : ℝ)) • p.snd⟩ :=
   (rfl)
 
-variable [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
+variable [FiniteDimensional ℝ E]
+
+/-- **The first Chern number of a cotangent bundle vanishes on tori.** For every almost complex
+structure `J` on `T*M` tamed by the canonical symplectic form `ω`, regarded at any smoothness level
+`n` and with any complex model fibre `G`, the clutching number of `(T(T*M), J)` vanishes on every
+map `u` of the torus, read as a map of the square agreeing on opposite edges. -/
+theorem torusClutchingNumber_symplecticForm_eq_zero (G : Type*) [NormedAddCommGroup G]
+    [NormedSpace ℂ G] [FiniteDimensional ℂ G]
+    [Fact (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) = 2 * Module.finrank ℂ G)]
+    {J : SmoothAlmostComplexStructure (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M)}
+    (hJ : (symplecticForm I M).Tames J) (n : ℕ∞)
+    (u : C(Fin 2 → unitInterval, CotangentBundle I M)) (hR : ∀ t, u ![1, t] = u ![0, t])
+    (hT : ∀ s, u ![s, 1] = u ![s, 0]) :
+    torusClutchingNumber G (J.toContMDiff n).toContinuousComplexStructure.Fiber u = 0 :=
+  hJ.torusClutchingNumber_eq_zero_of_mpullback_eq_neg G n (fiberNeg I M)
+    mpullback_fiberNeg_symplecticForm (fiberNegHomotopy I M) u hR hT
+
+variable [T2Space M] [SigmaCompactSpace M]
 
 /-- **The first Chern number of a cotangent bundle vanishes on spheres.** For the canonical
 symplectic form `ω` of `T*M`, the first Chern number `c₁ : π₂(T*M, p) → ℤ` is zero at every point

@@ -29,6 +29,8 @@ measure `(u - k)⁺` is the positive part of `u - k`, and taking positive parts 
 * `TauCeti.W1p.mem_w1p0Submodule_of_continuousOn_closure`: a Sobolev function on a bounded
   domain that agrees with a function continuous on the closure and vanishing on the frontier
   lies in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.posPart_add_mem_w1p0Submodule`: the positive part of `ψ + G`, for `ψ ∈ W^{1,p}_0(Ω)`
+  and `G` continuous up to the boundary and nonpositive there, lies in `W^{1,p}_0(Ω)`.
 
 ## References
 
@@ -144,5 +146,33 @@ theorem W1p.mem_w1p0Submodule_of_continuousOn_closure (hp : p ≠ ∞)
     (posPart_mem_w1p0Submodule_of_continuousOn_closure hp hb hg hg0 hu)
     (posPart_mem_w1p0Submodule_of_continuousOn_closure hp hb hg.neg
       (fun x hx => by simp [hg0 x hx]) hneg)
+
+/-- **Positive parts below continuous boundary values.** Let `Ω` be bounded and `1 ≤ p < ∞`. If
+`ψ ∈ W^{1,p}_0(Ω)` and `G ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with a function `g`
+continuous on `closure Ω` and nonpositive on `frontier Ω`, then `(ψ + G)⁺ ∈ W^{1,p}_0(Ω)`: the
+boundary values of `ψ + G` are nonpositive. -/
+theorem W1p.posPart_add_mem_w1p0Submodule (hp : p ≠ ∞) (hb : Bornology.IsBounded (Omega : Set E))
+    {ψ G : W1p mu Omega p} (hψ : ψ ∈ w1p0Submodule mu Omega p) {g : E → ℝ}
+    (hg : ContinuousOn g (closure (Omega : Set E)))
+    (hg0 : ∀ x ∈ frontier (Omega : Set E), g x ≤ 0) (hG : W1p.value G =ᵐ[mu.restrict Omega] g) :
+    W1p.posPart hp (ψ + G) ∈ w1p0Submodule mu Omega p := by
+  -- Squeeze: `0 ≤ (ψ + G)⁺ ≤ ψ⁺ + G⁺`, and `G⁺` vanishes continuously on the boundary.
+  have hGp : W1p.posPart hp G ∈ w1p0Submodule mu Omega p := by
+    refine W1p.mem_w1p0Submodule_of_continuousOn_closure hp hb (g := fun x => max (g x) 0)
+      (ContinuousOn.sup hg continuousOn_const) (fun x hx => max_eq_right (hg0 x hx)) ?_
+    filter_upwards [Lp.coeFn_posPart (W1p.value G), hG] with x h1 h2
+    rw [W1p.value_posPart, h1, h2]
+  refine W1p.mem_w1p0Submodule_of_nonneg_of_le hp
+    (add_mem (W1p.posPart_mem_w1p0Submodule hp hψ) hGp) ?_ ?_
+  · filter_upwards [Lp.coeFn_posPart (W1p.value (ψ + G))] with x h
+    rw [W1p.value_posPart, h]
+    exact le_max_right _ _
+  · filter_upwards [Lp.coeFn_posPart (W1p.value (ψ + G)), Lp.coeFn_posPart (W1p.value ψ),
+      Lp.coeFn_posPart (W1p.value G), W1p.value_add_ae ψ G,
+      W1p.value_add_ae (W1p.posPart hp ψ) (W1p.posPart hp G)] with x h1 h2 h3 h4 h5
+    rw [W1p.value_posPart, h1, h4, h5, Pi.add_apply, W1p.value_posPart, W1p.value_posPart,
+      Pi.add_apply, h2, h3]
+    exact max_le (add_le_add (le_max_left _ _) (le_max_left _ _))
+      (add_nonneg (le_max_right _ _) (le_max_right _ _))
 
 end TauCeti

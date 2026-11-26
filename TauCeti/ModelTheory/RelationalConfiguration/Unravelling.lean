@@ -45,6 +45,8 @@ No step uses symmetry or irreflexivity.
 
 * `TauCeti.RelationalConfiguration.unravelColor_eq_iff`: two colours agree exactly when the nodes
   have the same length and the same atomic diagram;
+* `TauCeti.RelationalConfiguration.continuous_unravelColor`: the colour of a node depends
+  continuously on the code (it reads finitely many coordinates);
 * `TauCeti.RelationalConfiguration.unravelColor_eq_iff_sameAtomicType`: two nodes of the same length
   have the same colour exactly when their vertex tuples have the same atomic type;
 * `TauCeti.RelationalConfiguration.unravelColor_map`: the colour for a relabelled code `σ • c` of
@@ -72,6 +74,35 @@ namespace TauCeti.RelationalConfiguration
 noncomputable def ratColor (r : ℚ) : ℕ := multiplicity 2 r.den
 
 theorem ratColor_def (r : ℚ) : ratColor r = multiplicity 2 r.den := (rfl)
+
+/-- Integers have colour `0`. -/
+@[simp]
+theorem ratColor_intCast (n : ℤ) : ratColor n = 0 := by
+  simp [ratColor_def]
+
+/-- Natural numbers have colour `0`. -/
+@[simp]
+theorem ratColor_natCast (n : ℕ) : ratColor n = 0 := by
+  simp [ratColor_def]
+
+/-- Numerals have colour `0`. -/
+@[simp]
+theorem ratColor_ofNat (n : ℕ) : ratColor (no_index (OfNat.ofNat n)) = 0 := by
+  simp [ratColor_def]
+
+/-- The colour of `1 / 2 ^ k` is `k`. -/
+@[simp]
+theorem ratColor_inv_two_pow (k : ℕ) : ratColor (2 ^ k)⁻¹ = k := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have h : ((2 : ℚ) ^ k)⁻¹.den = 2 ^ k := by
+    rw [show (2 : ℚ) ^ k = ((2 ^ k : ℕ) : ℚ) by norm_cast, Rat.inv_natCast_den]
+    simp
+  rw [ratColor_def, h, Nat.multiplicity_prime_pow]
+
+/-- The colour of `1 / 2` is `1`. -/
+@[simp]
+theorem ratColor_inv_two : ratColor 2⁻¹ = 1 := by
+  simpa using ratColor_inv_two_pow 1
 
 /-- Every natural number is the colour of some rational. -/
 theorem exists_ratColor_eq (m : ℕ) : ∃ r, ratColor r = m := by
@@ -136,6 +167,22 @@ theorem unravelColor_eq_iff {c d : RelationalConfiguration Language.graph ℕ} {
     rw [← hn]
     refine List.map_inj_left.2 fun i hi ↦ List.map_inj_left.2 fun j hj ↦ ?_
     exact h i (List.mem_range.1 hi) j (List.mem_range.1 hj)
+
+open Filter Topology in
+/-- **The colour of a node depends continuously on the code**: it reads the finitely many
+coordinates `c.eval (adjAtom a_i a_j)` of the vertex tuple `a` of the node. -/
+theorem continuous_unravelColor (x : List ℚ) :
+    Continuous fun c : RelationalConfiguration Language.graph ℕ => unravelColor c x := by
+  refine continuous_iff_continuousAt.2 fun c => ?_
+  have hev (a : Atom Language.graph ℕ) : ∀ᶠ d in 𝓝 c, d.eval a = c.eval a :=
+    (continuous_eval a).continuousAt ((isOpen_discrete {c.eval a}).mem_nhds rfl)
+  have h : ∀ᶠ d in 𝓝 c, ∀ i : Fin x.length, ∀ j : Fin x.length,
+      d.eval (adjAtom (unravelVertex x i) (unravelVertex x j)) =
+        c.eval (adjAtom (unravelVertex x i) (unravelVertex x j)) :=
+    eventually_all.2 fun i => eventually_all.2 fun j => hev _
+  refine (continuousAt_const (y := unravelColor c x)).congr (h.mono fun d hd => ?_)
+  refine unravelColor_eq_iff.2 ⟨rfl, fun i hi j hj => ?_⟩
+  exact Prod.ext (by simp) (by simpa using (hd ⟨i, hi⟩ ⟨j, hj⟩).symm)
 
 /-- Nodes of the same colour have the same length. -/
 theorem length_eq_of_unravelColor_eq {c d : RelationalConfiguration Language.graph ℕ}

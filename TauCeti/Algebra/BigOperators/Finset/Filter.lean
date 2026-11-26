@@ -37,11 +37,22 @@ level `m ≥ 1`.
   last coordinate off a filtered product or sum over `s ×ˢ t ×ˢ u` with a conjunctive predicate.
 * `Finset.prod_prod_filter_eq_prod_pow_card`, `Finset.sum_sum_filter_eq_sum_card_nsmul`: a product
   or sum over `k` of filtered products or sums over `i` counts, for each `i`, the `k` selecting it.
+* `Finset.prod_ite_one_eq_pow`, `Finset.sum_ite_zero_eq_nsmul`: multiplying (or summing) a constant
+  gated by `p` over `s` raises it to (or scales it by) `#{i ∈ s | p i}`.
 -/
 
 public section
 
 namespace Finset
+
+/-- Multiplying `if p i then a else 1` over `s` raises `a` to the number of elements of `s`
+satisfying `p`. -/
+@[to_additive /-- Summing `if p i then a else 0` over `s` scales `a` by the
+number of elements of `s` satisfying `p`. -/]
+theorem prod_ite_one_eq_pow {ι M : Type*} [CommMonoid M] (s : Finset ι) (p : ι → Prop)
+    [DecidablePred p] (a : M) :
+    (∏ i ∈ s, if p i then a else 1) = a ^ #{i ∈ s | p i} := by
+  rw [← prod_filter, prod_const]
 
 /-- Adjoining a point `c` with `¬P c` to the condition `P` of a filtered product over `s`
 multiplies it by the factor at `c` exactly when `c ∈ s`. -/

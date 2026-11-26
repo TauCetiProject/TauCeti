@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Charpoly
 import TauCeti.RepresentationTheory.Dual
 import TauCeti.RepresentationTheory.Quotient
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
@@ -40,6 +40,9 @@ lift (`frobCharpoly_eq_charpoly`). Frobenius is arithmetic: the geometric varian
 * `TauCeti.ContinuousRep.IsUnramified.apply_eq_of_isArithFrobeniusLift`: an unramified
   representation takes the same value at all arithmetic Frobenius lifts, and likewise at their
   inverses (`IsUnramified.apply_inv_eq_of_isArithFrobeniusLift`).
+* `TauCeti.ContinuousRep.IsUnramified.apply_eq_pow_of_restrictMaximalUnramifiedHom_eq_pow`: an
+  unramified representation factors through `Gal(K^{ur}/K)`, so it takes the value `ρ(σ₀)^m` at
+  every `σ` acting on `K^{ur}` as the `m`-th power of `σ₀`.
 * `TauCeti.ContinuousRep.frobCharpoly`: the Frobenius polynomial, monic of degree the rank
   (`frobCharpoly_monic`, `natDegree_frobCharpoly`), with `nextCoeff` minus the trace of Frobenius
   (`nextCoeff_frobCharpoly`) and constant term `(-1)^n det ρ(Φ)` (`coeff_zero_frobCharpoly`);
@@ -148,6 +151,18 @@ theorem IsUnramified.apply_eq_of_isArithFrobeniusLift (h : ρ.IsUnramified)
     (hΦ' : IsArithFrobeniusLift K Φ') : ρ Φ = ρ Φ' := by
   have hmem := (hΦ.isArithFrobeniusLift_iff_inv_mul_mem).1 hΦ'
   rw [← mul_inv_cancel_left Φ Φ', map_mul, isUnramified_iff.1 h _ hmem, mul_one]
+
+/-- **Unramified representations factor through `Gal(K^{ur}/K)`.** If `σ` acts on the maximal
+unramified extension as the `m`-th power of `σ₀`, then an unramified representation takes the
+value `ρ(σ₀)^m` at `σ`, since `σ₀^{-m} σ` lies in inertia. -/
+theorem IsUnramified.apply_eq_pow_of_restrictMaximalUnramifiedHom_eq_pow (h : ρ.IsUnramified)
+    {σ σ₀ : Field.absoluteGaloisGroup K} {m : ℕ}
+    (hσ : restrictMaximalUnramifiedHom K σ = restrictMaximalUnramifiedHom K σ₀ ^ m) :
+    ρ σ = ρ σ₀ ^ m := by
+  have hmem : (σ₀ ^ m)⁻¹ * σ ∈ inertiaSubgroup K := by
+    rw [← ker_restrictMaximalUnramifiedHom, MonoidHom.mem_ker, map_mul, map_inv, map_pow, hσ,
+      inv_mul_cancel]
+  rw [← mul_inv_cancel_left (σ₀ ^ m) σ, map_mul, isUnramified_iff.1 h _ hmem, mul_one, map_pow]
 
 /-- An unramified representation takes the value `ρ(Φ)` at every arithmetic Frobenius lift `Φ`
 also at the chosen lift `TauCeti.arithFrobLift K`. -/

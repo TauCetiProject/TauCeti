@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Data.Finset.Interval
+import Mathlib.Data.Set.Finite.Lattice
+import TauCeti.Combinatorics.SimpleGraph.Basic
 
 /-!
 # Finite simple graphs
@@ -27,8 +29,13 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
 * `SimpleGraph.Iso.sum_neighborFinset_comp` — neighbour sums commute with graph isomorphisms.
 * `SimpleGraph.sum_neighborFinset_comm` — swapping the order of summation in a double sum over
   neighbours.
+* `SimpleGraph.finite_setOf_exists_mem_and_mem` — in a locally finite graph only finitely many
+  edges share a vertex with an edge of a finite set of edges.
 * `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
   graph it generates.
+* `SimpleGraph.edgeFinset_symmDiff` — the edge finset of `G₁ ∆ G₂` is
+  `G₁.edgeFinset ∆ G₂.edgeFinset`.
+* `SimpleGraph.degree_sup_of_disjoint` — degrees add over the union of edge-disjoint graphs.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -38,6 +45,7 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
 public section
 
 open Finset
+open scoped symmDiff
 
 namespace SimpleGraph
 
@@ -85,12 +93,44 @@ theorem sum_neighborFinset_comm (G : SimpleGraph V) [Fintype V] [G.LocallyFinite
     simp only [mem_univ, true_and, and_true, mem_neighborFinset]
     exact ⟨Adj.symm, Adj.symm⟩
 
+/-- For a locally finite graph, only finitely many edges share a vertex with an edge of a finite
+set `F`. -/
+theorem finite_setOf_exists_mem_and_mem (G : SimpleGraph V) [G.LocallyFinite]
+    (F : Finset G.edgeSet) :
+    {e : G.edgeSet | ∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)}.Finite := by
+  classical
+  have hv (v : V) : {e : G.edgeSet | v ∈ (e : Sym2 V)}.Finite :=
+    Set.Finite.of_finite_image (f := fun e => (e : Sym2 V))
+      ((G.incidenceSet v).toFinite.subset fun _ ⟨e, he, hee⟩ => hee ▸ ⟨e.property, he⟩)
+      Subtype.val_injective.injOn
+  refine ((F.finite_toSet.biUnion fun f _ => (f : Sym2 V).toFinset.finite_toSet.biUnion
+    fun v _ => hv v)).subset ?_
+  rintro e ⟨f, hf, v, hve, hvf⟩
+  simp only [Set.mem_iUnion]
+  exact ⟨f, hf, v, by simpa using hvf, hve⟩
+
 /-- A set of pairs contained in the edges of a graph `G` carries no diagonal pair, so it is the
 edge set of the graph it generates. -/
 theorem edgeSet_fromEdgeSet_of_subset {G : SimpleGraph V} {s : Set (Sym2 V)}
     (hs : s ⊆ G.edgeSet) : (fromEdgeSet s).edgeSet = s := by
   rw [edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
   exact fun e he ↦ not_isDiag_of_mem_edgeSet G (hs he)
+
+/-- The edge finset of `G₁ ∆ G₂` is the symmetric difference of their edge finsets. -/
+@[simp]
+theorem edgeFinset_symmDiff {G₁ G₂ : SimpleGraph V} [Fintype G₁.edgeSet] [Fintype G₂.edgeSet]
+    [Fintype (edgeSet (G₁ ∆ G₂))] [DecidableEq V] :
+    (G₁ ∆ G₂).edgeFinset = G₁.edgeFinset ∆ G₂.edgeFinset := by
+  ext e
+  simp only [mem_edgeFinset, edgeSet_symmDiff, Finset.mem_symmDiff, Set.mem_symmDiff]
+
+/-- In the union of two edge-disjoint graphs, the degree of a vertex is the sum of its degrees in
+the two graphs. -/
+theorem degree_sup_of_disjoint {G₁ G₂ : SimpleGraph V} (v : V)
+    [Fintype ((G₁ ⊔ G₂).neighborSet v)] [Fintype (G₁.neighborSet v)] [Fintype (G₂.neighborSet v)]
+    (h : Disjoint G₁ G₂) : (G₁ ⊔ G₂).degree v = G₁.degree v + G₂.degree v := by
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_sup_of_disjoint _ h,
+    card_disjUnion]
 
 variable [Fintype V] [DecidableEq V] [CommMonoid M]
 

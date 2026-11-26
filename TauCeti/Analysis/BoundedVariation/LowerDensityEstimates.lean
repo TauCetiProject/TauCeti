@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import Mathlib.Analysis.Calculus.Monotone
-import TauCeti.Analysis.BoundedVariation.CutByBall
+import TauCeti.Analysis.BoundedVariation.CutByBall.Basic
 import TauCeti.Analysis.BoundedVariation.DensityEstimates
 import TauCeti.Analysis.BoundedVariation.Isometry
 import TauCeti.Analysis.BoundedVariation.Real

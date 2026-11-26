@@ -49,10 +49,10 @@ cover `V`.
 Hence `P(s \ G; V) ≤ P(G) ≤ ∑ n μ(B(0, 1)) ρᵢ ^ (n - 1)`. As `δ → 0` the volume of `G` tends to
 zero, so `s \ G → s` in measure, and lower semicontinuity of the perimeter bounds `P(s; V)`.
 
-## Main gap
-
 The criterion stated with the essential boundary in place of the topological frontier, which
-Federer proves by slicing, is not proved here.
+Federer proves by slicing, is
+`TauCeti.exists_perimeter_ne_top_of_euclideanHausdorffMeasure_essentialBoundary_inter_ne_top`
+in `TauCeti.Analysis.BoundedVariation.Slicing.Criterion`.
 
 ## References
 
@@ -245,5 +245,11 @@ theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finran
     hfin]
   exact measure_mono (subset_inter (reducedBoundary_subset_frontier.trans frontier_interior_subset)
     reducedBoundary_subset)
+
+/-- **The perimeter is at most the Hausdorff measure of the frontier, in the whole space.** In
+dimension `n ≥ 2`, every set `s`, measurable or not, has `P(s) ≤ Hⁿ⁻¹(∂s)`. -/
+theorem perimeter_le_euclideanHausdorffMeasure_frontier (hn : 2 ≤ finrank ℝ E) (s : Set E) :
+    perimeter volume ⊤ s ≤ μHE[finrank ℝ E - 1] (frontier s) := by
+  simpa using perimeter_le_euclideanHausdorffMeasure_frontier_inter hn ⊤ s
 
 end TauCeti

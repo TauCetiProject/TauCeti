@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Holder
-public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 public import TauCeti.Probability.Ergodic.FixedSpace
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 

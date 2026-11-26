@@ -9,8 +9,8 @@ public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Algebra.Order.Star.Unitization
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import Mathlib.Analysis.CStarAlgebra.Hom
-import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 
@@ -57,6 +57,23 @@ it further to `A` gives `φ` and restriction does not increase norms. It is pure
 is, because a convex decomposition of it extends to one of the extension.
 
 Pure states are the extreme points `extremePoints ℝ (stateSpace A)` of the state space.
+
+Along a star homomorphism `f : B → A` of possibly nonunital C⋆-algebras, a positive functional `γ`
+of `A` with `‖γ‖ ≤ ‖τ‖` restricting to a positive functional `τ` of `B` satisfies
+`γ(a) = lim_e γ(f(e) a f(e))` along every increasing approximate unit `e` of `B`
+(`PositiveContinuousLinearMap.tendsto_apply_map_mul_mul_map`, with
+`PositiveContinuousLinearMap.norm_eq_of_apply_map_eq` for `‖γ‖ = ‖τ‖`), by the approximate unit
+estimate `PositiveContinuousLinearMap.norm_apply_sub_apply_mul_mul_le`. Such an extension is
+therefore unique when the range of `f` absorbs `f(b) a f(b)`
+(`PositiveContinuousLinearMap.eq_of_apply_map_eq`), and every positive functional extends along an
+injective `f` to one of the same norm (`PositiveContinuousLinearMap.exists_apply_map_eq`): a state
+extends by `TauCeti.surjOn_pullbackFunctional_stateSpace`, and a nonzero `τ` is reduced to the
+state `τ / ‖τ‖`.
+
+For the ideal `A` of `Unitization ℂ A` this extension is the unitization extension `τ⁺¹`
+(`PositiveContinuousLinearMap.eq_unitization_of_apply_inr_eq`), and
+`τ⁺¹(x) = lim_e τ⁺¹(e x e)` along every increasing approximate unit `e` of `A`
+(`PositiveContinuousLinearMap.tendsto_unitization_apply_inr_mul_mul_inr`).
 
 ## References
 
@@ -313,3 +330,126 @@ theorem exists_mem_extremePoints_stateSpace_forall_apply_coe_eq (S : NonUnitalSt
   exact ⟨ψ, hψ, fun s => by simp⟩
 
 end NonUnitalStarSubalgebra
+
+open Filter Topology
+open scoped NNReal
+
+namespace PositiveContinuousLinearMap
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+section Hom
+
+variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  [FunLike F B A] [NonUnitalAlgHomClass F ℂ B A] [StarHomClass F B A]
+
+omit [StarOrderedRing A] [StarOrderedRing B] in
+/-- A positive functional `γ` on `A` with `‖γ‖ ≤ ‖τ‖` that restricts along a star homomorphism
+`f : B → A` to a positive functional `τ` of `B` has `‖γ‖ = ‖τ‖`. -/
+theorem norm_eq_of_apply_map_eq (f : F) {τ : B →P[ℂ] ℂ} {γ : A →P[ℂ] ℂ}
+    (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h : ∀ b, γ (f b) = τ b) :
+    ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : B →L[ℂ] ℂ)‖ := by
+  refine le_antisymm hγ (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun b ↦ ?_)
+  rw [coe_toContinuousLinearMap, ← h b]
+  exact ((γ : A →L[ℂ] ℂ).le_opNorm (f b)).trans
+    (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f b) (norm_nonneg _))
+
+/-- **The extension formula.** If a positive functional `γ` on `A` with `‖γ‖ ≤ ‖τ‖` restricts
+along a star homomorphism `f : B → A` to a positive functional `τ` of `B`, then
+`γ(a) = lim_e γ(f(e) a f(e))` along every increasing approximate unit `e` of `B`. -/
+theorem tendsto_apply_map_mul_mul_map (f : F) {τ : B →P[ℂ] ℂ} {γ : A →P[ℂ] ℂ}
+    (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h : ∀ b, γ (f b) = τ b) {l : Filter B}
+    (hl : l.IsIncreasingApproximateUnit) (a : A) :
+    Tendsto (fun e : B ↦ γ (f e * a * f e)) l (𝓝 (γ a)) := by
+  have hN := norm_eq_of_apply_map_eq f hγ h
+  set N := ‖(τ : B →L[ℂ] ℂ)‖
+  have hlim : Tendsto (fun e : B ↦ 2 * Real.sqrt (N * (N - (τ e).re)) * ‖a‖) l (𝓝 0) := by
+    have hre : Tendsto (fun e : B ↦ (τ e).re) l (𝓝 N) := by
+      simpa [Function.comp_def] using
+        (Complex.continuous_re.tendsto _).comp (τ.tendsto_nhds_opNorm hl)
+    have := ((((hre.const_sub N).const_mul N).sqrt).const_mul 2).mul_const ‖a‖
+    simpa using this
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ hlim
+  filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he he1
+  rw [norm_sub_rev, ← hN, ← h e]
+  exact norm_apply_sub_apply_mul_mul_le γ (map_nonneg f he)
+    ((NonUnitalStarAlgHom.norm_apply_le f e).trans he1) a
+
+/-- **Uniqueness of the extension.** Let `f : B → A` be a star homomorphism whose range absorbs
+`f(b) a f(b)` for all `b` and `a` (as for the inclusion of a closed ideal, or of a hereditary
+subalgebra). Two positive functionals `γ₁`, `γ₂` on `A` of norm at most `‖τ‖` that restrict along
+`f` to the same positive functional `τ` of `B` are equal. -/
+theorem eq_of_apply_map_eq (f : F) (hf : ∀ (b : B) (a : A), ∃ c, f c = f b * a * f b)
+    {τ : B →P[ℂ] ℂ} {γ₁ γ₂ : A →P[ℂ] ℂ} (hγ₁ : ‖(γ₁ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖)
+    (hγ₂ : ‖(γ₂ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h₁ : ∀ b, γ₁ (f b) = τ b)
+    (h₂ : ∀ b, γ₂ (f b) = τ b) : γ₁ = γ₂ := by
+  have hl := CStarAlgebra.increasingApproximateUnit (A := B)
+  have := hl.neBot
+  refine ext fun a ↦ tendsto_nhds_unique (tendsto_apply_map_mul_mul_map f hγ₁ h₁ hl a) ?_
+  refine (tendsto_apply_map_mul_mul_map f hγ₂ h₂ hl a).congr fun e ↦ ?_
+  obtain ⟨c, hc⟩ := hf e a
+  rw [← hc, h₁, h₂]
+
+/-- A positive functional of norm one on `B` is the restriction, along an injective star
+homomorphism `f : B → A`, of a positive functional of norm one on `A`. -/
+private theorem exists_apply_map_eq_of_norm_eq_one (f : F) (hf : Function.Injective f)
+    {τ : B →P[ℂ] ℂ} (hτ : ‖(τ : B →L[ℂ] ℂ)‖ = 1) :
+    ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ b, γ (f b) = τ b := by
+  have hτ' : StrongDual.toWeakDual (τ : B →L[ℂ] ℂ) ∈ TauCeti.stateSpace B := by
+    rwa [toWeakDual_mem_stateSpace_iff]
+  obtain ⟨φ, hφ, hφτ⟩ := TauCeti.surjOn_pullbackFunctional_stateSpace f hf hτ'
+  obtain ⟨ω, hω1, hωφ⟩ := TauCeti.mem_stateSpace_iff_exists_positiveLinearMap.mp hφ
+  refine ⟨ofClass ω, hω1, fun b ↦ ?_⟩
+  have h1 := DFunLike.congr_fun hφτ b
+  have h2 := DFunLike.congr_fun hωφ (f b)
+  simp only [TauCeti.pullbackFunctional_apply, StrongDual.toWeakDual_apply] at h1 h2
+  rw [← h2] at h1
+  simpa using h1
+
+/-- **Existence of the extension.** Every positive functional `τ` on `B` is the restriction,
+along an injective star homomorphism `f : B → A`, of a positive functional on `A` of the same
+norm. -/
+theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) (τ : B →P[ℂ] ℂ) :
+    ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : B →L[ℂ] ℂ)‖ ∧ ∀ b, γ (f b) = τ b := by
+  -- for `τ ≠ 0`, extend the state `τ / ‖τ‖` and rescale
+  set c := ‖(τ : B →L[ℂ] ℂ)‖₊ with hc
+  rcases eq_zero_or_pos c with h0 | hc0
+  · have hτ : (τ : B →L[ℂ] ℂ) = 0 := nnNorm_eq_zero.mp h0
+    refine ⟨0, by simp [hτ], fun b ↦ ?_⟩
+    simpa using (DFunLike.congr_fun hτ b).symm
+  obtain ⟨γ, hγ, h⟩ := exists_apply_map_eq_of_norm_eq_one f hf (τ := c⁻¹ • τ) (by
+    rw [opNorm_smul, ← coe_nnNorm, ← hc, ← NNReal.coe_mul, inv_mul_cancel₀ hc0.ne',
+      NNReal.coe_one])
+  refine ⟨c • γ, by rw [opNorm_smul, hγ, mul_one, hc, coe_nnNorm], fun b ↦ ?_⟩
+  rw [smul_apply, h, smul_apply, smul_smul, mul_inv_cancel₀ hc0.ne', one_smul]
+
+end Hom
+
+section Unitization
+
+/-- **The unitization extension is the extension from `A ⊆ A⁺¹`.** A positive functional of norm
+at most `‖τ‖` on `Unitization ℂ A` that restricts to `τ` on `A` is the unitization extension
+`τ⁺¹`. -/
+theorem eq_unitization_of_apply_inr_eq {τ : A →P[ℂ] ℂ} {γ : Unitization ℂ A →P[ℂ] ℂ}
+    (hγ : ‖(γ : Unitization ℂ A →L[ℂ] ℂ)‖ ≤ ‖(τ : A →L[ℂ] ℂ)‖) (h : ∀ a : A, γ a = τ a) :
+    γ = τ.unitization :=
+  eq_of_apply_map_eq (Unitization.inrNonUnitalStarAlgHom ℂ A)
+    (fun b x ↦ ⟨x.fst • b * b + b * x.snd * b, by ext <;> simp [add_mul, smul_mul_assoc]⟩) hγ
+    (norm_unitization τ).le (fun a ↦ by rw [Unitization.inrNonUnitalStarAlgHom_apply, h])
+    (fun a ↦ by rw [Unitization.inrNonUnitalStarAlgHom_apply, unitization_apply_inr])
+
+/-- **The extension formula for the unitization.** For a positive functional `τ` of `A`,
+`τ⁺¹(x) = lim_e τ⁺¹(e x e)` along every increasing approximate unit `e` of `A`; here `e x e` lies
+in `A`, where `τ⁺¹` is `τ`. -/
+theorem tendsto_unitization_apply_inr_mul_mul_inr (τ : A →P[ℂ] ℂ) {l : Filter A}
+    (hl : l.IsIncreasingApproximateUnit) (x : Unitization ℂ A) :
+    Tendsto (fun e : A ↦ τ.unitization ((e : Unitization ℂ A) * x * e)) l
+      (𝓝 (τ.unitization x)) := by
+  simpa only [Unitization.inrNonUnitalStarAlgHom_apply] using
+    tendsto_apply_map_mul_mul_map (Unitization.inrNonUnitalStarAlgHom ℂ A) (norm_unitization τ).le
+      (fun a ↦ by rw [Unitization.inrNonUnitalStarAlgHom_apply, unitization_apply_inr]) hl x
+
+end Unitization
+
+end PositiveContinuousLinearMap

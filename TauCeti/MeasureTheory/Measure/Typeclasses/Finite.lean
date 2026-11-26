@@ -13,7 +13,8 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 In an order with a least element whose closed intervals are compact, such as `ℝ≥0` or `ℕ`, a
 locally finite measure gives finite mass to each interval `Iic a = Icc ⊥ a`. Dually, with a
 greatest element, it gives finite mass to each `Ici a`. These complement Mathlib's
-`MeasureTheory.measure_Icc_lt_top`.
+`MeasureTheory.measure_Icc_lt_top`. Measures finite on compact sets have finite restrictions to
+bounded left-open, right-closed intervals.
 
 A compact exhaustion also gives a countable criterion for local finiteness and for finiteness
 on compact sets. This criterion is useful when checking these properties simultaneously
@@ -43,6 +44,19 @@ open Set
 open scoped ENNReal NNReal
 
 namespace MeasureTheory
+
+section CompactIntervals
+
+variable {α : Type*} [Preorder α] [TopologicalSpace α] [CompactIccSpace α]
+  [MeasurableSpace α]
+
+/-- A measure finite on compact sets is finite on each bounded left-open, right-closed interval. -/
+instance Measure.isFiniteMeasure_restrict_Ioc (μ : Measure α) [IsFiniteMeasureOnCompacts μ]
+    (a b : α) : IsFiniteMeasure (μ.restrict (Ioc a b)) :=
+  ⟨by simpa using
+    (measure_mono Ioc_subset_Icc_self).trans_lt (isCompact_Icc.measure_lt_top (μ := μ))⟩
+
+end CompactIntervals
 
 /-- A measure on a linearly ordered space is locally finite if every closed initial interval
 has finite mass and strict lower rays are open. -/

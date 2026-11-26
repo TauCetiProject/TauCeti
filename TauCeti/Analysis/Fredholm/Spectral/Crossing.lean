@@ -12,7 +12,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Topology.Algebra.Indicator
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Eigenvector
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Analysis.Normed.Operator.Restrict

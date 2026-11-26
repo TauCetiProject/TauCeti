@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.BernoulliPolynomials
+public import Mathlib.NumberTheory.Primorial
+public import TauCeti.NumberTheory.Bernoulli.Basic
 public import TauCeti.RingTheory.PowerSeries.CharacteristicSeries
 
 /-!
@@ -42,6 +44,9 @@ polylogarithms.
 * `TauCeti.bernoulli_eval_inv_two_eq_zero_of_odd`: `Bₙ(1/2) = 0` for odd `n`.
 * `TauCeti.sum_choose_mul_two_pow_mul_bernoulli`:
   `∑_{j ≤ n} C(n, j) 2ʲ Bⱼ = 2ⁿ Bₙ(1/2)`.
+* `TauCeti.pow_mul_bernoulli_eval_div`: `Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ`, and
+  `TauCeti.exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval`: `Pₖ₊₁ Mᵏ Bₖ(x / M)` is an
+  integer for `Pₖ₊₁ = primorial (k + 1)`.
 
 ## References
 
@@ -136,5 +141,35 @@ theorem sum_choose_mul_two_pow_mul_bernoulli (n : ℕ) :
   linear_combination bernoulli j * (n.choose j : ℚ) * hpow.symm
 
 end Midpoint
+
+section Homogenized
+
+/-- **Homogenized Bernoulli polynomials.** For `M ≠ 0`,
+`Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ`. -/
+theorem pow_mul_bernoulli_eval_div {M : ℚ} (hM : M ≠ 0) (k : ℕ) (x : ℚ) :
+    M ^ k * (Polynomial.bernoulli k).eval (x / M) =
+      ∑ i ∈ range (k + 1), (k.choose i : ℚ) * bernoulli i * x ^ (k - i) * M ^ i := by
+  rw [Polynomial.bernoulli, Polynomial.eval_finsetSum, mul_sum]
+  refine sum_congr rfl fun i hi ↦ ?_
+  have hik : M ^ k = M ^ (k - i) * M ^ i := by
+    rw [← pow_add, Nat.sub_add_cancel (Nat.lt_succ_iff.1 (mem_range.1 hi))]
+  rw [Polynomial.eval_monomial, div_pow, hik]
+  field_simp
+
+/-- For `M ≠ 0` and an integer `x`, `Pₖ₊₁ Mᵏ Bₖ(x / M)` is an integer, where
+`Pₖ₊₁ = primorial (k + 1)`. -/
+theorem exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval (k : ℕ) {M : ℕ} (hM : M ≠ 0)
+    (x : ℤ) :
+    ∃ z : ℤ, (z : ℚ) = primorial (k + 1) * M ^ k * (Polynomial.bernoulli k).eval ((x : ℚ) / M) := by
+  choose! c hc using fun i (hi : i < k + 1) ↦
+    exists_intCast_eq_primorial_mul_bernoulli (Nat.lt_succ_iff.1 hi)
+  refine ⟨∑ i ∈ range (k + 1), (k.choose i : ℤ) * c i * x ^ (k - i) * M ^ i, ?_⟩
+  rw [mul_assoc, pow_mul_bernoulli_eval_div (by exact_mod_cast hM), mul_sum]
+  push_cast
+  refine sum_congr rfl fun i hi ↦ ?_
+  rw [hc i (mem_range.1 hi)]
+  ring
+
+end Homogenized
 
 end TauCeti

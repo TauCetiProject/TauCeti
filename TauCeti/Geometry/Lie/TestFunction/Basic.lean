@@ -330,6 +330,10 @@ theorem involution_apply (a : LieTestFunction I G) (x : G) :
     involution a x = starRingEnd ℂ (a x⁻¹) :=
   (rfl)
 
+theorem involution_eq_conj_inversion (a : LieTestFunction I G) :
+    involution a = conj (inversion a) :=
+  (rfl)
+
 @[simp]
 theorem involution_involution (a : LieTestFunction I G) : involution (involution a) = a :=
   ext fun x ↦ by simp

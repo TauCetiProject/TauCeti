@@ -19,7 +19,9 @@ description retains the scheme-theoretic center in positive characteristic and i
 no smoothness, connectedness, reducedness or finite-type hypothesis. When the augmentation
 cotangent space is finite-dimensional, the same subspace is the fixed subspace of the
 adjoint comodule. In positive characteristic, the center of the tangent Lie algebra can
-be larger; universal adjoint invariance is the condition relevant to the group center.
+be larger; universal adjoint invariance is the condition relevant to the group center. In
+particular a commutative group acts trivially on its Lie algebra
+(`CommHopfAlgCat.coact_adjointComodule_eq_tmul_one_of_isCocomm`).
 
 The comparison uses `HopfIdeal.mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff`
 to pass between the tangent space of a closed subgroup and its dual-number points, and
@@ -121,5 +123,15 @@ theorem coact_adjointComodule_eq_tmul_one_iff_mem_lieSubalgebra_centerDefiningId
     rw [Derivation.adjointComodule_coact_apply,
       Derivation.adjointPointRepresentation_action, hact]
     simp
+
+/-- **A commutative group acts trivially on its Lie algebra.** If the coordinate Hopf algebra is
+cocommutative, every vector of the Lie algebra is fixed by the adjoint comodule: the center is the
+whole group, so its Lie algebra is everything. -/
+theorem coact_adjointComodule_eq_tmul_one_of_isCocomm [_root_.Coalgebra.IsCocomm k H]
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
+    Comodule.coact (R := k) (C := H) x = x ⊗ₜ[k] 1 := by
+  rw [coact_adjointComodule_eq_tmul_one_iff_mem_lieSubalgebra_centerDefiningIdeal,
+    (centerDefiningIdeal_eq_bot_iff_isCocomm H).mpr ‹_›, HopfIdeal.lieSubalgebra_bot]
+  exact LieSubalgebra.mem_top _
 
 end CommHopfAlgCat

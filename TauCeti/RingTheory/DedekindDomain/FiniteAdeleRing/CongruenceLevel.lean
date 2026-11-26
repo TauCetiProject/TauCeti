@@ -40,7 +40,8 @@ the residue fields of `R` are finite.
 
 * `IsDedekindDomain.FiniteAdeleRing.integralGL`: the inclusion `GL_n(Ô) → GL_n(𝔸_f)`, an open
   embedding (`isOpenEmbedding_integralGL`) with range the matrices whose entries and inverse
-  entries are integral (`mem_range_integralGL_iff`).
+  entries are integral (`mem_range_integralGL_iff`), compatible with determinants
+  (`det_integralGL`).
 * `IsDedekindDomain.FiniteAdeleRing.mem_range_mapGL_of_det_eq_one`: a matrix in `GL_n(K)` of
   determinant `1` whose diagonal image lies in `GL_n(Ô)` comes from `SL_n(R)`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel`, `level1`, `level0`: the levels `K(N)`,
@@ -50,7 +51,10 @@ the residue fields of `R` are finite.
   monotonicity lemmas `principalLevel_mono`, `level1_mono`, `level0_mono`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel_bot`: `K(0) = {1}`.
 * `IsDedekindDomain.FiniteAdeleRing.map_algebraMap_mem_principalLevel`: the image of a matrix of
-  `GL₂(R)` congruent to `1` modulo `N` lies in `K(N)`.
+  `GL₂(R)` congruent to `1` modulo `N` lies in `K(N)`; for `N ≠ ⊥`,
+  `map_algebraMap_mem_principalLevel_iff`, `map_algebraMap_mem_level1_iff` and
+  `map_algebraMap_mem_level0_iff` give the congruence conditions on the entries for the three
+  levels.
 * `IsDedekindDomain.FiniteAdeleRing.upperRightHom_mem_level1`,
   `upperRightHom_mem_principalLevel_iff` and `upperRightHom_algebraMap_mem_principalLevel_iff`:
   the unipotent matrices `[[1, b], [0, 1]]` in `K₁(N)` and `K(N)`.
@@ -98,6 +102,15 @@ theorem integralGL_inv_apply (g : GL (Fin n) (integralAdeles R K)) (i j : Fin n)
     (↑(integralGL K n g)⁻¹ : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j =
       (↑g⁻¹ : Matrix (Fin n) (Fin n) (integralAdeles R K)) i j :=
   (rfl)
+
+/-- The determinant of the image in `GL_n(𝔸_f)` of a matrix of `GL_n(Ô)` is the image in `𝔸_f^×`
+of its determinant. -/
+@[simp]
+theorem det_integralGL (g : GL (Fin n) (integralAdeles R K)) :
+    Matrix.GeneralLinearGroup.det (integralGL K n g) =
+      Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])
+        (Matrix.GeneralLinearGroup.det g) :=
+  Matrix.GeneralLinearGroup.map_det _ g
 
 variable (K n) in
 /-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is injective. -/
@@ -260,20 +273,75 @@ theorem mem_level0_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
     fun _ ↦ GL2K0.mem_iff]
   simp only [Matrix.of_apply]
 
+/-- The entries of the diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` are integral. -/
+private theorem map_algebraMap_apply_mem_integralAdeles (g : GL (Fin 2) R) (i j : Fin 2) :
+    (Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K])
+      i j ∈ integralAdeles R K := by
+  rw [Matrix.GeneralLinearGroup.map_apply]
+  exact (integralAdeles R K).algebraMap_mem _
+
+/-- The entries of the inverse of the diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` are
+integral. -/
+private theorem map_algebraMap_inv_apply_mem_integralAdeles (g : GL (Fin 2) R) (i j : Fin 2) :
+    (↑(Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g)⁻¹ :
+      Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K := by
+  rw [← map_inv]
+  exact map_algebraMap_apply_mem_integralAdeles (K := K) g⁻¹ i j
+
 /-- The diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` congruent to `1` modulo `N` lies in
 the principal level `K(N)`. -/
 theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL (Fin 2) R}
     (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N) :
     Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N := by
   rw [mem_principalLevel_iff]
-  refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
-  · rw [Matrix.GeneralLinearGroup.map_apply]
-    exact (integralAdeles R K).algebraMap_mem _
-  · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
-    exact (integralAdeles R K).algebraMap_mem _
-  · convert algebraMap_mem_completedIdeal (K := K) (hg i j) using 1
-    ext
-    simp [Matrix.one_apply, apply_ite]
+  refine ⟨map_algebraMap_apply_mem_integralAdeles g, map_algebraMap_inv_apply_mem_integralAdeles g,
+    fun i j ↦ ?_⟩
+  convert algebraMap_mem_completedIdeal (K := K) (hg i j) using 1
+  ext
+  simp [Matrix.one_apply, apply_ite]
+
+/-- An entry of the diagonal image of a matrix of `GL₂(R)`, read in `Ô`, is the image of the
+entry. -/
+private theorem mk_map_algebraMap_apply (g : GL (Fin 2) R) (i j : Fin 2) :
+    (⟨_, map_algebraMap_apply_mem_integralAdeles (K := K) g i j⟩ : integralAdeles R K) =
+      algebraMap R (integralAdeles R K) ((g : Matrix (Fin 2) (Fin 2) R) i j) :=
+  Subtype.ext (by simp [Matrix.GeneralLinearGroup.map_apply])
+
+/-- For `N ≠ ⊥`, the diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` lies in the principal
+level `K(N)` exactly when the matrix is congruent to `1` modulo `N`. -/
+theorem map_algebraMap_mem_principalLevel_iff {N : Ideal R} (hN : N ≠ ⊥) {g : GL (Fin 2) R} :
+    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N ↔
+      ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N := by
+  refine ⟨fun hg i j ↦ ?_, map_algebraMap_mem_principalLevel⟩
+  obtain ⟨_, _, h⟩ := mem_principalLevel_iff.mp hg
+  rw [← algebraMap_mem_completedIdeal_iff (K := K) hN, map_sub]
+  convert h i j using 2
+  · exact (mk_map_algebraMap_apply (K := K) g i j).symm
+  · rw [← Matrix.map_one (algebraMap R (integralAdeles R K)) (map_zero _) (map_one _),
+      Matrix.map_apply]
+
+/-- For `N ≠ ⊥`, the diagonal image in `GL₂(𝔸_f)` of `[[a, b], [c, d]] ∈ GL₂(R)` lies in `K₁(N)`
+exactly when `c ∈ N` and `d - 1 ∈ N`. -/
+theorem map_algebraMap_mem_level1_iff {N : Ideal R} (hN : N ≠ ⊥) {g : GL (Fin 2) R} :
+    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ level1 K N ↔
+      (g : Matrix (Fin 2) (Fin 2) R) 1 0 ∈ N ∧ (g : Matrix (Fin 2) (Fin 2) R) 1 1 - 1 ∈ N := by
+  rw [mem_level1_iff, ← algebraMap_mem_completedIdeal_iff (K := K) hN,
+    ← algebraMap_mem_completedIdeal_iff (K := K) hN, map_sub, map_one]
+  refine ⟨fun ⟨_, _, h₀, h₁⟩ ↦ ⟨h₀, h₁⟩, fun ⟨h₀, h₁⟩ ↦
+    ⟨map_algebraMap_apply_mem_integralAdeles (K := K) g,
+      map_algebraMap_inv_apply_mem_integralAdeles (K := K) g, ?_, ?_⟩⟩
+  · rwa [mk_map_algebraMap_apply]
+  · rwa [mk_map_algebraMap_apply]
+
+/-- For `N ≠ ⊥`, the diagonal image in `GL₂(𝔸_f)` of `[[a, b], [c, d]] ∈ GL₂(R)` lies in `K₀(N)`
+exactly when `c ∈ N`. -/
+theorem map_algebraMap_mem_level0_iff {N : Ideal R} (hN : N ≠ ⊥) {g : GL (Fin 2) R} :
+    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ level0 K N ↔
+      (g : Matrix (Fin 2) (Fin 2) R) 1 0 ∈ N := by
+  rw [mem_level0_iff, ← algebraMap_mem_completedIdeal_iff (K := K) hN]
+  refine ⟨fun ⟨_, _, h⟩ ↦ h, fun h ↦ ⟨map_algebraMap_apply_mem_integralAdeles (K := K) g,
+    map_algebraMap_inv_apply_mem_integralAdeles (K := K) g, ?_⟩⟩
+  rwa [mk_map_algebraMap_apply]
 
 variable (K)
 

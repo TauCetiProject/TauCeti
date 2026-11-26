@@ -7,12 +7,15 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.IntegrabilityGain
+import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Analysis.Sobolev.Trace.OddReflection
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Integrability gain on a half-space
@@ -52,8 +55,8 @@ upgrades the integrability of strong solutions that vanish on the boundary.
   (`TauCeti.exists_continuousLinearEquiv_preimage_normalHalfSpace`). Then `e` maps a half-space
   `H'` onto `H`, and `v = u ∘ e` solves on `H'` an equation whose coefficient
   `e⁻¹ ((b + b†) / 2)(e ·) e⁻†` lies within `δ` of the identity
-  (`TauCeti.norm_conj_symmPart_sub_id_le`), with zero boundary values. The first case applies to
-  `v`, and composing with `e⁻¹` returns to `u`.
+  (`ContinuousLinearMap.norm_conj_symmPart_sub_id_le`), with zero boundary values. The first case
+  applies to `v`, and composing with `e⁻¹` returns to `u`.
 
 ## References
 
@@ -92,19 +95,6 @@ private def reflectCoeff (a : ℝ)
       (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator
         (fun y => b y - ContinuousLinearMap.id ℝ _) (normalReflection E a x) ∘L
       (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Conjugating by the linear normal reflection commutes with subtracting the identity. -/
-private theorem normalLinearReflection_comp_comp_sub_id
-    (M : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-    (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L M ∘L
-        (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) -
-        ContinuousLinearMap.id ℝ _ =
-      (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
-        (M - ContinuousLinearMap.id ℝ _) ∘L
-        (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
-  rw [ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_sub, ContinuousLinearMap.id_comp,
-    normalLinearReflection_comp_normalLinearReflection]
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The trace pairing is invariant under conjugating both factors by the linear normal
@@ -197,9 +187,9 @@ private theorem ae_norm_reflectCoeff_sub_id_le {a δ : ℝ} (hδ : 0 ≤ δ)
   · rw [reflectCoeff_of_mem b hx]
     exact h₁ hx
   · by_cases hρx : normalReflection E a x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
-    · rw [reflectCoeff_of_mem_normalReflection b hx hρx, normalLinearReflection_comp_comp_sub_id,
-        ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
-        ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+    · have h := (normalLinearReflection E).norm_comp_comp_symm_sub_id (b (normalReflection E a x))
+      rw [normalLinearReflection_symm] at h
+      rw [reflectCoeff_of_mem_normalReflection b hx hρx, h]
       exact h₂ hρx
     · rw [reflectCoeff_of_notMem b hx hρx, sub_self, ContinuousLinearMap.opNorm_zero]
       exact hδ
@@ -341,37 +331,32 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfS
   -- A linear change of variables `e` with `e e† = (A + A†) / 2` maps the half-space
   -- `H' = {a / c < x.fst}` onto `H = {a < x.fst}`.
   obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA
-  have hHe : ((normalHalfSpace (E := E) a : Opens (WithLp 2 (ℝ × E))) :
-      Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' (normalHalfSpace (E := E) (a / c)) := by
-    rw [hH a]; ext x; simp
-  have hq := e.quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := volume) (hH a)
-  have hq' := e.symm.quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := volume) hHe
+  have hq := e.quasiMeasurePreserving_restrict (volume : Measure (WithLp 2 (ℝ × E)))
+    ((mapsTo_preimage e _).mono_left (hH a).subset)
   have hMN : (e : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
       (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) = ContinuousLinearMap.id ℝ _ := by
     ext x; simp
   -- `w = u ∘ e ∈ W^{2,p}(H')` has zero boundary values and weak Hessian `e† D²u(e ·) e`.
   obtain ⟨w, hwv, hwD, hw0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
   -- It solves `tr (B D²w) = f ∘ e` with `B(y) = e⁻¹ ((b + b†) / 2)(e y) e⁻†` close to `1`.
-  obtain ⟨v', hv', -⟩ := hid (a / c) (aestronglyMeasurable_conj_symmPart hb e hq)
+  obtain ⟨v', hv', -⟩ := hid (a / c)
+    (b := fun y => (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+      ((2⁻¹ : ℝ) • (b (e y) + (b (e y)).adjoint)) ∘L
+        (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)).adjoint)
+    ((ContinuousLinearMap.continuous_conj_symmPart _).comp_aestronglyMeasurable
+      (hb.comp_quasiMeasurePreserving hq))
     (by
       filter_upwards [hq.ae hbA] with y hy
-      refine (norm_conj_symmPart_sub_id_le hlam e hee he (b (e y))).trans ?_
-      calc lam⁻¹ * ‖b (e y) - A‖ ≤ lam⁻¹ * (δ * lam) := by gcongr
-        _ = δ := by field_simp)
+      exact ContinuousLinearMap.norm_conj_symmPart_sub_id_le_of_norm_sub_le hlam e hee he hy)
     w (hw0 hu) (hH a ▸ hf.comp_continuousLinearEquiv_restrict_preimage e)
     ((hH a ▸ hur.comp_continuousLinearEquiv_restrict_preimage e).ae_eq hwv.symm)
     (by
       filter_upwards [hwD, hq.ae (Wkp.adjoint_iteratedGradient_one_ae_eq u), hq.ae htr]
         with y h₁ h₂ h₃
-      rw [h₁, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id hMN,
-        ContinuousLinearMap.traceCLM_symmPart_comp _ _ h₂, h₃])
-  -- Composing with `e⁻¹` returns to `u`.
-  obtain ⟨v, hv, -, -⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hr_top e.symm hHe v'
-  have hvu : (Wkp.value 2 v : WithLp 2 (ℝ × E) → ℝ)
-      =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a)]
-        Wkp.value 2 u := by
-    filter_upwards [hv, hq'.ae (hv'.trans hwv)] with x h₁ h₂
-    rw [h₁, h₂, ContinuousLinearEquiv.apply_symm_apply]
+      rw [h₁, ContinuousLinearMap.traceCLM_conj_symmPart_comp_of_comp_eq_id hMN _ _ h₂, h₃])
+  -- Composing back with `e⁻¹` returns to `u`.
+  obtain ⟨v, hvu⟩ := Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv hr_top e
+    (hH a) (hv'.trans hwv)
   exact ⟨v, hvu, Wkp.iteratedGradient_ae_eq_of_value_ae_eq 1 hvu⟩
 
 end TauCeti

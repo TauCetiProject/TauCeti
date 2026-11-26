@@ -30,7 +30,9 @@ function.
   `TauCeti.tendsto_limUnder_of_harmonicAt_of_isBoundedUnder`). It suffices that `u` is bounded on
   the punctured neighbourhood (`TauCeti.harmonicOnNhd_update_limUnder_of_bddAbove`), and a
   function harmonic on a punctured neighbourhood of `a` is harmonic at `a` exactly when it is
-  continuous there (`TauCeti.harmonicOnNhd_sdiff_singleton_and_continuousAt_iff`).
+  continuous there (`TauCeti.harmonicOnNhd_sdiff_singleton_and_continuousAt_iff`). A harmonic
+  function on a punctured neighbourhood of `a` with a limit at `a` extends harmonically by that
+  limit (`TauCeti.harmonicOnNhd_update_of_tendsto`).
 
 Both fail in dimension one. On `(-1, 1) \ {0}` the function `1 - |x|` is harmonic, vanishes at
 `±1` and is positive, and the function equal to `0` on `(-1, 0)` and to `1` on `(0, 1)` is
@@ -259,6 +261,17 @@ theorem tendsto_limUnder_of_harmonicAt_of_isBoundedUnder (hE : 2 ≤ Module.finr
   exact continuousAt_update_same.1 (H a (mem_of_mem_nhds hu)).1.continuousAt
 
 omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Singularities with a limit are removable.** In dimension at least two, a function harmonic
+on `s \ {a}`, for a neighbourhood `s` of `a`, that tends to `b` at `a` is harmonic on `s` once its
+value at `a` is set to `b`. -/
+theorem harmonicOnNhd_update_of_tendsto [DecidableEq E] (hE : 2 ≤ Module.finrank ℝ E) {b : ℝ}
+    (hs : s ∈ 𝓝 a) (hu : HarmonicOnNhd u (s \ {a})) (hb : Tendsto u (𝓝[≠] a) (𝓝 b)) :
+    HarmonicOnNhd (update u a b) s := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  simpa only [hb.limUnder_eq] using
+    harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs hu hb.abs.isBoundedUnder_le
+
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- **Removable singularity theorem for harmonic functions.** In dimension at least two, let `s`
 be a neighbourhood of `a` and let `u` be harmonic and bounded on `s \ {a}`. Then `u` redefined to
 be `limUnder (𝓝[≠] a) u` at `a` is harmonic on `s`. -/
@@ -277,9 +290,6 @@ theorem harmonicOnNhd_sdiff_singleton_and_continuousAt_iff (hE : 2 ≤ Module.fi
   classical
   refine ⟨fun ⟨hu, hc⟩ ↦ ?_, fun hu ↦
     ⟨hu.mono sdiff_subset, (hu a (mem_of_mem_nhds hs)).1.continuousAt⟩⟩
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  have htend : Tendsto u (𝓝[≠] a) (𝓝 (u a)) := hc.tendsto.mono_left nhdsWithin_le_nhds
-  simpa [htend.limUnder_eq] using
-    harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs hu htend.abs.isBoundedUnder_le
+  simpa using harmonicOnNhd_update_of_tendsto hE hs hu (hc.tendsto.mono_left nhdsWithin_le_nhds)
 
 end TauCeti

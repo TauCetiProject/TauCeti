@@ -69,8 +69,8 @@ theorem MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas (hk : k ≤ 1)
   simpa only [OpenPartialHomeomorph.coe_trans, Function.comp_apply] using
     hu.comp_contDiffOn_diffeo hk (φ.symm.trans ψ).open_source
       (contDiffOn_symm_trans_of_mem_maximalAtlas hφ hψ)
-      ((φ.symm.trans ψ).injOn.mono inter_subset_left)
-      (fun y hy ↦ det_fderiv_symm_trans_ne_zero one_ne_zero hφ hψ hy.1) inter_subset_left
+      (fun y (hy : y ∈ (φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U) ↦
+        det_fderiv_symm_trans_ne_zero one_ne_zero hφ hψ hy.1) inter_subset_left
       fun y hy ↦ hy.2
 
 /-- **Changes of chart preserve the local classes of every order.** Let `n ≠ 0` and `k ≤ n`, and

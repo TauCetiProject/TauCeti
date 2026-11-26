@@ -72,6 +72,12 @@ of the solution. This is the linear step of the regularity bootstrap for quasili
   continuous representatives of the second weak derivatives give `C¹` representatives of the first
   derivatives (`TauCeti.W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative`),
   which assemble into a `C¹` derivative of `u`.
+* `exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm`: the divergence datum
+  `G = -f e - (∂ₑa) P` of the differentiated equation is Hölder on a compact set where the
+  derivatives of the coefficients, the data and the field `P` are.
+* `energyFormH1_eq_setIntegral_inner_of_eq_neg_sub`: the differentiated equation written with the
+  divergence datum `G = -f e - (∂ₑa) ∇u`, for any representative of `∇u` and on any relatively
+  compact `V ≤ Ω`, such as a half-ball at a flat boundary.
 
 ## References
 
@@ -94,25 +100,41 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- On a compact subset of `Ω`, the bilinear forms of the transposed coefficient field
-`x ↦ (∂ₑaʲⁱ(x))ᵢⱼ` are `α`-Hölder when the derivatives of the entries of `a` are `α`-Hölder near
-each point of `Ω`. -/
-private theorem exists_holderOnWith_matrixBilinearForm_transpose_fderiv {Omega : Opens E}
-    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {α : ℝ≥0}
+/-- **The datum of the differentiated equation is Hölder.** Let the derivatives of the entries of
+`a` and the function `f` be `α`-Hölder near each point of a set `Ω`, and let `P` be `α`-Hölder on a
+compact set `S ⊆ Ω`. Then the field `G = -f e - (∂ₑa) P`, the divergence datum of the equation
+differentiated along `e` when `P` is the gradient of the solution, is `α`-Hölder on `S`. -/
+theorem exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm {Omega : Set E}
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {α : ℝ≥0} (hα : 0 < α)
     (hda : ∀ x ∈ Omega, ∃ r > 0, ∃ L : ℝ≥0, ∀ i j,
       HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x r))
-    {S : Set E} (hS : IsCompact S) (hSΩ : S ⊆ Omega) (e : E) :
-    ∃ K : ℝ≥0, HolderOnWith K α
-      (fun x => matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e)) S := by
+    {f : E → ℝ} (hfH : ∀ x ∈ Omega, ∃ r > 0, ∃ L : ℝ≥0, HolderOnWith L α f (ball x r))
+    {S : Set E} (hS : IsCompact S) (hSΩ : S ⊆ Omega) {P : E → E} {CP : ℝ≥0}
+    (hP : HolderOnWith CP α P S) (e : E) :
+    ∃ K : ℝ≥0, HolderOnWith K α (fun x => f x • (-e) - (toDual ℝ E).symm
+      (matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e) (P x))) S := by
+  -- The transposed derivatives `(∂ₑa)ᵀ` are Hölder on `S`: the entry `∂ₑaʲⁱ` is the derivative of
+  -- `aʲⁱ` evaluated at `e`.
   choose δ hδ L M hL _ using fun i j => hS.exists_holderOnWith_thickening_and_norm_le
     (f := fderiv ℝ (fun y => a y i j)) fun x hx => by
       obtain ⟨r, hr, L, hL⟩ := hda x (hSΩ hx)
       exact ⟨r, hr, L, hL i j⟩
-  refine ⟨_, holderOnWith_matrixBilinearForm_of_forall
-    (L := fun i j => ‖ContinuousLinearMap.apply ℝ ℝ e‖₊ * L j i) fun i j => ?_⟩
-  -- The entry `∂ₑaʲⁱ` is the derivative of `aʲⁱ` evaluated at `e`.
-  exact (ContinuousLinearMap.apply ℝ ℝ e).lipschitzWith.comp_holderOnWith
-    ((hL j i).mono (self_subset_thickening (hδ j i) S))
+  have hKd := holderOnWith_matrixBilinearForm_of_forall
+    (a := fun x => Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e)
+    (L := fun i j => ‖ContinuousLinearMap.apply ℝ ℝ e‖₊ * L j i) fun i j =>
+      (ContinuousLinearMap.apply ℝ ℝ e).lipschitzWith.comp_holderOnWith
+        ((hL j i).mono (self_subset_thickening (hδ j i) S))
+  -- Its product with `P` is Hölder on the compact set `S`, and so is `f e`.
+  obtain ⟨KT, hT⟩ := ContinuousLinearMap.exists_holderOnWith_comp₂_of_isCompact (𝕜 := ℝ) (𝕜₂ := ℝ)
+    (𝕜₃ := ℝ) (σ₁₃ := RingHom.id ℝ) (σ₂₃ := RingHom.id ℝ)
+    (ContinuousLinearMap.id ℝ (E →L[ℝ] E →L[ℝ] ℝ)) hS hα hKd hP
+  obtain ⟨δf, hδf, Lf, -, hLf, -⟩ :=
+    hS.exists_holderOnWith_thickening_and_norm_le fun x hx => hfH x (hSΩ hx)
+  have hF : HolderOnWith (‖e‖₊ * Lf) α (fun x => f x • (-e)) S := by
+    have h := (ContinuousLinearMap.toSpanSingleton ℝ (-e)).lipschitzWith.comp_holderOnWith
+      (hLf.mono (self_subset_thickening hδf _))
+    rwa [ContinuousLinearMap.nnNorm_toSpanSingleton, nnNorm_neg] at h
+  exact ⟨_, (hF.sub ((toDual ℝ E).symm.isometry.comp_holderOnWith hT)).congr fun _ _ => rfl⟩
 
 /-- **The gradient is Hölder.** For a weak solution `u` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω` with uniformly
 elliptic `a` whose entries are `C¹`, and `f ∈ L²(Ω)` which is `α`-Hölder near each point, the
@@ -153,27 +175,26 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_contDiffOn
   filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ] with x hx
   rw [hx]
 
-/-- **The differentiated equation in divergence form.** Let `closure V` be compact and contained
-in `Ω`, let the entries of `a` be `C¹` on `Ω`, and let `d ∈ H¹(V)` satisfy
-`a(d, φ) = -∫_V f ∂ₑφ - ∫_V ⟨∇φ, (∂ₑa) ∇u⟩` for a test function `φ` on `V`. Then
-`a(d, φ) = ∫_V ⟨G, ∇φ⟩` for the field `G = -f e - (∂ₑa) ∇u`, with `∇u` taken as its precise
-representative. -/
-private theorem energyFormH1_eq_setIntegral_inner_of_eq_neg_sub {Omega V : Opens E}
-    (hV : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Omega)
-    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) Omega) {f : E → ℝ}
-    (hf : MemLp f 2 (volume.restrict Omega)) {u : W1p volume Omega 2} {e : E}
-    {d : W1p volume V 2} {φ : 𝓓(V, ℝ)}
+/-- **The differentiated equation in divergence form.** Let `V ≤ Ω` have compact closure,
+contained in an open set `W` on which the entries of `a` are `C¹`, and let `d ∈ H¹(V)` satisfy
+`a(d, φ) = -∫_V f ∂ₑφ - ∫_V ⟨∇φ, (∂ₑa) ∇u⟩` for a test function `φ` on `V`, where `f ∈ L²(Ω)` and
+`u ∈ H¹(Ω)`. Then `a(d, φ) = ∫_V ⟨G, ∇φ⟩` for the field `G = -f e - (∂ₑa) P`, for every `P` equal
+to `∇u` almost everywhere on `V`, such as a precise representative of `∇u`. The closure of `V`
+need not lie in `Ω`: at a flat boundary, `V` is a half-ball. -/
+theorem energyFormH1_eq_setIntegral_inner_of_eq_neg_sub {Omega V : Opens E} {W : Set E}
+    (hV : IsCompact (closure (V : Set E))) (hVΩ : V ≤ Omega) (hW : IsOpen W)
+    (hVW : closure (V : Set E) ⊆ W) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) W) {f : E → ℝ}
+    (hf : MemLp f 2 (volume.restrict Omega)) {u : W1p volume Omega 2} {e : E} {P : E → E}
+    (hP : P =ᵐ[volume.restrict V] W1p.gradient u) {d : W1p volume V 2} {φ : 𝓓(V, ℝ)}
     (hdeq : energyFormH1 a 0 0 d (W1p.ofTestFunctionₗ volume V 2 φ) =
         -(∫ x in V, f x * lineDeriv ℝ (φ : E → ℝ) x e) -
           ∫ x in V, matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y i j) x e)
             (∇ (φ : E → ℝ) x) (W1p.gradient u x)) :
     energyFormH1 a 0 0 d (W1p.ofTestFunctionₗ volume V 2 φ) =
       ∫ x in V, ⟪f x • (-e) - (toDual ℝ E).symm
-        (matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e)
-          (preciseRepresentative volume (W1p.gradient u : E → E) x)), ∇ (φ : E → ℝ) x⟫_ℝ := by
-  set P := preciseRepresentative volume (W1p.gradient u : E → E)
-  have hVΩ' : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)
+        (matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e) (P x)),
+          ∇ (φ : E → ℝ) x⟫_ℝ := by
   -- Pointwise, `⟨G, ∇φ⟩ = -f ∂ₑφ - ⟨∇φ, (∂ₑa) P⟩`.
   have hpt : ∀ x, ⟪f x • (-e) - (toDual ℝ E).symm
       (matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e) (P x)),
@@ -187,29 +208,26 @@ private theorem energyFormH1_eq_setIntegral_inner_of_eq_neg_sub {Omega V : Opens
     rw [inner_sub_left, toDual_symm_apply, hT, matrixBilinearForm_transpose_apply,
       inner_gradient_right, (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
     simp
-  -- `P` is `∇u` almost everywhere on `V`.
-  have hP : P =ᵐ[volume.restrict V] W1p.gradient u :=
-    ae_restrict_of_ae_restrict_of_subset (subset_closure.trans hVΩ)
-      (ae_eq_restrict_preciseRepresentative Omega.isOpen (W1p.locallyIntegrableOn_gradient u)).symm
   have hI₁ : Integrable (fun x => f x * lineDeriv ℝ (φ : E → ℝ) x e) (volume.restrict V) :=
     (integrable_lineDeriv_smul_of_locallyIntegrableOn
       ((locallyIntegrableOn_of_locallyIntegrable_restrict
-        (hf.locallyIntegrable one_le_two)).mono_set (subset_closure.trans hVΩ)) φ e).restrict.congr
+        (hf.locallyIntegrable one_le_two)).mono_set
+          (SetLike.coe_subset_coe.mpr hVΩ)) φ e).restrict.congr
       (Filter.Eventually.of_forall fun x => (smul_eq_mul _ _).trans (mul_comm _ _))
   -- The coefficients `∂ₑa` are bounded on `V`, so the energy density is integrable there.
   have hB : ContinuousOn (fun x => Matrix.of fun i j => fderiv ℝ (fun y => a y i j) x e)
       (closure (V : Set E)) := fun x hx => by
     refine continuousWithinAt_pi.2 fun i => continuousWithinAt_pi.2 fun j => ?_
-    exact ((((ha i j).continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl).clm_apply
-      continuousOn_const).mono hVΩ) x hx
+    exact ((((ha i j).continuousOn_fderiv_of_isOpen hW le_rfl).clm_apply
+      continuousOn_const).mono hVW) x hx
   have hI₂ : Integrable (fun x => matrixBilinearForm
       (Matrix.of fun i j => fderiv ℝ (fun y => a y i j) x e) (∇ (φ : E → ℝ) x) (P x))
       (volume.restrict V) := by
     refine (integrable_energyIntegrand_jetField (memLp_energyIntegrand_of_continuousOn
-      (b := 0) (c := 0) hV hB continuousOn_const continuousOn_const) (W1p.restrictL hVΩ' u)
+      (b := 0) (c := 0) hV hB continuousOn_const continuousOn_const) (W1p.restrictL hVΩ u)
         (W1p.ofTestFunctionₗ volume V 2 φ)).congr ?_
     filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 φ,
-      W1p.gradient_restrictL_ae hVΩ' u, hP] with x hx hux hPx
+      W1p.gradient_restrictL_ae hVΩ u, hP] with x hx hux hPx
     simp only [energyIntegrand_apply, jetField_apply, W1p.gradient_ofTestFunctionₗ, hx, hux, hPx]
     simp
   rw [hdeq]
@@ -251,6 +269,11 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradien
   obtain ⟨d, hd, hdeq⟩ :=
     hell.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_sub_of_contDiffOn ha hf hu hV hVΩ e
   refine ⟨d, hd, fun K hKV hK => ?_⟩
+  -- The precise representative of `∇u` is `∇u` almost everywhere on `V`.
+  have hP' : preciseRepresentative volume (W1p.gradient u : E → E) =ᵐ[volume.restrict V]
+      W1p.gradient u :=
+    ae_restrict_of_ae_restrict_of_subset (subset_closure.trans hVΩ)
+      (ae_eq_restrict_preciseRepresentative Omega.isOpen (W1p.locallyIntegrableOn_gradient u)).symm
   obtain ⟨δ, hδ, hKδ⟩ := hK.exists_cthickening_subset_open V.isOpen hKV
   have hC : IsCompact (cthickening δ K) := hK.cthickening
   have hCΩ : cthickening δ K ⊆ Omega := hKδ.trans (subset_closure.trans hVΩ)
@@ -260,30 +283,15 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradien
     exists_holderOnWith_preciseRepresentative_gradient_of_contDiffOn hα hα1 hell ha hf hfH hu hC hCΩ
   obtain ⟨Ka, hKa⟩ :=
     exists_holderOnWith_matrixBilinearForm_of_contDiffOn Omega.isOpen ha hC hCΩ hα1.le
-  obtain ⟨Kd, hKd⟩ := exists_holderOnWith_matrixBilinearForm_transpose_fderiv hda hC hCΩ e
-  obtain ⟨δf, hδf, Lf, -, hLf, -⟩ :=
-    hC.exists_holderOnWith_thickening_and_norm_le fun x hx => hfH x (hCΩ hx)
   -- Hence so is the divergence datum `G = -f e - (∂ₑa) ∇u` of the equation for `∂ₑu`.
-  obtain ⟨KT, hT⟩ := ContinuousLinearMap.exists_holderOnWith_comp₂_of_isCompact (𝕜 := ℝ) (𝕜₂ := ℝ)
-    (𝕜₃ := ℝ) (σ₁₃ := RingHom.id ℝ) (σ₂₃ := RingHom.id ℝ)
-    (ContinuousLinearMap.id ℝ (E →L[ℝ] E →L[ℝ] ℝ)) hC hα hKd hP
-  have hF : HolderOnWith (‖e‖₊ * Lf) α (fun x => f x • (-e)) (cthickening δ K) := by
-    have h := (ContinuousLinearMap.toSpanSingleton ℝ (-e)).lipschitzWith.comp_holderOnWith
-      (hLf.mono (self_subset_thickening hδf _))
-    rwa [ContinuousLinearMap.nnNorm_toSpanSingleton, nnNorm_neg] at h
-  have hT' : HolderOnWith KT α (fun x => (toDual ℝ E).symm
-      (matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e)
-        (preciseRepresentative volume (W1p.gradient u : E → E) x))) (cthickening δ K) :=
-    (toDual ℝ E).symm.isometry.comp_holderOnWith hT
-  have hG : HolderOnWith (‖e‖₊ * Lf + KT) α (fun x => f x • (-e) - (toDual ℝ E).symm
-      (matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e)
-        (preciseRepresentative volume (W1p.gradient u : E → E) x))) (cthickening δ K) :=
-    (hF.sub hT').congr fun _ _ => rfl
+  obtain ⟨KG, hG⟩ := exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm hα hda hfH hC
+    hCΩ hP e
   obtain ⟨C, -, h⟩ :=
     exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm
       (n := n) hα hα1 (lam := lam) (Lam := Lam) (M := Ka * δ ^ (α : ℝ))
   exact ⟨_, h (hell.mono_set (hKV.trans (subset_closure.trans hVΩ))) (hKa.mono hth) (hG.mono hth)
-    le_rfl (fun φ => energyFormH1_eq_setIntegral_inner_of_eq_neg_sub hV hVΩ ha hf (hdeq φ)) hδ
+    le_rfl (fun φ => energyFormH1_eq_setIntegral_inner_of_eq_neg_sub hV
+      (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) Omega.isOpen hVΩ ha hf hP' (hdeq φ)) hδ
     (hth.trans hKδ)⟩
 
 /-- On the ball `B(x, r / 2)`, where `closedBall x r ⊆ Ω`, each directional derivative `∂ₑu` of a

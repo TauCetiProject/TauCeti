@@ -38,6 +38,9 @@ or target are also sent to locally closed subsets of the ambient space.
 * `OpenPartialHomeomorph.isLocallyClosed_image_of_subset_source`,
   `OpenPartialHomeomorph.isLocallyClosed_image_symm_of_subset_target`: an open partial homeomorphism
   and its inverse preserve locally closed subsets contained in their source or target.
+* `OpenPartialHomeomorph.mem_source_and_apply_eq_of_eqOn_symm`: if the inverses of two open
+  partial homeomorphisms agree on a subset `s` of the second target, a point of the first source
+  mapped into `s` lies in the second source, with the same image.
 * `OpenPartialHomeomorph.sourceRestrict`: the restriction of an open partial homeomorphism to its
   source, as a continuous map.
 * `OpenPartialHomeomorph.isOpenEmbedding_domRestrict`: its restriction to an open subset of the
@@ -83,6 +86,18 @@ theorem isLocallyClosed_image_symm_of_subset_target {s : Set Y} (hs : IsLocallyC
 /-- Every point is in the source of the identity partial homeomorphism. -/
 theorem mem_refl_source (x : X) : x ∈ (OpenPartialHomeomorph.refl X).source :=
   Set.mem_univ x
+
+/-- **Charts with the same inverse on a set.** If the inverses of `e₁` and `e₂` agree on a subset
+`s` of the target of `e₂`, a point of the source of `e₁` mapped into `s` by `e₁` lies in the source
+of `e₂`, and `e₂` maps it to the same point. -/
+theorem mem_source_and_apply_eq_of_eqOn_symm {e₁ e₂ : OpenPartialHomeomorph X Y} {s : Set Y}
+    (hs : s ⊆ e₂.target) (h : Set.EqOn e₁.symm e₂.symm s) {x : X} (hx : x ∈ e₁.source)
+    (hxs : e₁ x ∈ s) :
+    x ∈ e₂.source ∧ e₂ x = e₁ x := by
+  have hx' : e₂.symm (e₁ x) = x := by rw [← h hxs, e₁.left_inv hx]
+  refine ⟨hx' ▸ e₂.map_target (hs hxs), ?_⟩
+  conv_lhs => rw [← hx']
+  exact e₂.right_inv (hs hxs)
 
 /-- The restriction of an open partial homeomorphism to its source, as a continuous map. -/
 def sourceRestrict : C(e.source, Y) :=
