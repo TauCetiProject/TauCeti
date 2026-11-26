@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Analysis.PDE.Quasilinear.GlobalHolder
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Global
-import TauCeti.Analysis.Holder.Localization
-import TauCeti.Analysis.PDE.Quasilinear.Regularity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SegmentChain
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
+import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
 import TauCeti.Topology.Instances.Matrix
+import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -49,11 +49,11 @@ A weak solution `u` solves the linear equation with the frozen coefficient `a(x)
   Hölder estimate (`Set.IsLipschitzDomain.exists_ae_eq_and_holderOnWith_quasilinear`) makes `u`
   agree with a function `v` that is `γ₀`-Hölder on `closure Ω` for some `γ₀ > 0`.
 * **Schauder.** Then `x ↦ A(x, v(x))` is `β₁`-Hölder on `closure Ω`, `β₁ = min γ₀ β`
-  (`TauCeti.PDE.holderOnWith_matrixBilinearForm_comp`), and the global Schauder estimate makes
+  (`HolderOnWith.comp_of_lipschitzWith_right`), and the global Schauder estimate makes
   `∇u` agree with a bounded function that is `β₁`-Hölder on `closure Ω`. The estimate takes the
   same exponent for the coefficient and the boundary charts, so the charts are first replaced by
   charts with bounded `β₁`-Hölder derivative that agree with them on the cylinders
-  (`ContDiff.exists_eqOn_ball_holderWith_fderiv_and_norm_le`).
+  (`TauCeti.PDE.forall_graph_holderWith_fderiv_of_le`).
 * **Lipschitz.** A continuous function with a bounded continuous weak gradient is `C¹`
   (`TauCeti.HasWeakFDerivOn.hasFDerivAt_of_continuousOn`), and on a bounded Lipschitz domain a
   bounded derivative gives a Lipschitz bound between nearby points
@@ -92,35 +92,6 @@ namespace PDE
 variable {n : ℕ} {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {E : Type*} [NormedAddCommGroup E]
   [InnerProductSpace ℝ E]
 
-/-- **Lowering the exponent of the boundary charts.** A `C^{1,α}` boundary is `C^{1,β}` for
-`β ≤ α`, `β ≤ 1`, with the same rigid coordinates and cylinders: each graph is replaced by one
-agreeing with it on the cylinder and with bounded `β`-Hölder derivative. -/
-private theorem forall_graph_of_le {α β : ℝ≥0} (hβα : β ≤ α) (hβ1 : β ≤ 1)
-    (hbdry : ∀ x ∈ frontier (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-          HolderWith Kγ α (fderiv ℝ γ) ∧
-          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst)) :
-    ∀ x ∈ frontier (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-          HolderWith Kγ β (fderiv ℝ γ) ∧
-          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst) := by
-  intro x hx
-  obtain ⟨e, γ, h₀, r₀, Kγ, hex, hh₀, hr₀, hγ0, hγ, hγK, hgraph⟩ := hbdry x hx
-  -- The tangential space is finite-dimensional, being a factor of `ℝⁿ⁺¹` up to isometry.
-  have : FiniteDimensional ℝ (WithLp 2 (ℝ × E)) :=
-    e.linearIsometryEquiv.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ (ℝ × E) := (WithLp.linearEquiv 2 ℝ (ℝ × E)).finiteDimensional
-  have : FiniteDimensional ℝ E :=
-    Module.Finite.of_surjective (LinearMap.snd ℝ ℝ E) LinearMap.snd_surjective
-  obtain ⟨γ', hγ', heq, K', -, hK', -⟩ :=
-    hγ.exists_eqOn_ball_holderWith_fderiv_and_norm_le hγK hβα hβ1 0 hr₀
-  refine ⟨e, γ', h₀, r₀, K', hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hγ0], hγ', hK',
-    fun z hz ↦ ?_⟩
-  rw [heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]
-  exact hgraph z hz
-
 variable {A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
   {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {u : W1p0 volume Ω 2} {lam Lam : ℝ}
@@ -148,27 +119,40 @@ private theorem forall_testFunction_of_forall_w1p0
     filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ] with y hy
     rw [hy]
 
-/-- The frozen coefficients are measurable in `x` and continuous in `s` on `Ω`, and the datum
-`-G` is bounded on `Ω`: the hypotheses of the global Hölder estimate and of the existence theorem
-for quasilinear problems. -/
-private theorem aestronglyMeasurable_and_continuous_and_memLp (hα : 0 < α)
+/-- **The data in the form of the global Hölder estimates.** For `q > n + 1` there is an exponent
+`r` with `n + 1 < r < q`, so that `f ∈ Lʳ(Ω)`; the bounded datum `-G` lies in `L^{n + 3}(Ω)`; the
+frozen coefficients are measurable in `x` and continuous in `s` on `Ω`; and the zero boundary
+datum has value zero. These are the hypotheses of the global Hölder estimate and of the existence
+theorem for quasilinear problems, with the exponents `r` and `n + 3`. -/
+private theorem exists_memLp_and_aestronglyMeasurable (hα : 0 < α) (hqn : (n : ℝ≥0∞) + 1 < q)
     (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s))
       (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
     (hAs : ∀ x ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
       LipschitzWith L fun s => matrixBilinearForm (A x s))
-    (hG : HolderOnWith KG α G (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :
-    (∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Ω)) ∧
-      (∀ᵐ x ∂volume.restrict Ω, Continuous (A x)) ∧ MemLp (-G) ⊤ (volume.restrict Ω) := by
+    (hG : HolderOnWith KG α G (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
+    (hf : MemLp f q (volume.restrict Ω)) :
+    ∃ r : ℝ≥0, 1 < r ∧ (n + 1 : ℝ) < 2 * r ∧ (2 : ℝ) < ((n + 3 : ℝ≥0) : ℝ) ∧
+      MemLp f r (volume.restrict Ω) ∧
+      MemLp (-G) (n + 3 : ℝ≥0) (volume.restrict Ω) ∧
+      (∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Ω)) ∧
+      (∀ᵐ x ∂volume.restrict Ω, Continuous (A x)) ∧
+      W1p.value (0 : W1p volume Ω 2) =ᵐ[volume.restrict Ω] 0 := by
+  obtain ⟨r, hnr, hrq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hqn
+  have hnr' : (n : ℝ) + 1 < r := by exact_mod_cast hnr
+  have : (0 : ℝ) ≤ n := n.cast_nonneg
+  have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
   have hΩm : MeasurableSet (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) := Ω.isOpen.measurableSet
-  have hGΩ := hG.mono subset_closure
-  obtain ⟨MG, hMG⟩ := (hGΩ.isBounded_image hΩ).exists_norm_le
-  refine ⟨fun s => (continuousOn_of_continuousOn_matrixBilinearForm
-      (((hAx s).continuousOn hα).mono subset_closure)).aestronglyMeasurable hΩm,
-    ae_restrict_of_forall_mem hΩm fun x hx =>
-      continuous_of_continuous_matrixBilinearForm (hAs x (subset_closure hx)).continuous, ?_⟩
-  exact (memLp_top_of_bound ((hGΩ.continuousOn hα).aestronglyMeasurable hΩm) MG
-    (ae_restrict_of_forall_mem hΩm (forall_mem_image.1 hMG))).neg
+  obtain ⟨hAm, hAc⟩ := aestronglyMeasurable_and_ae_continuous_of_continuousOn_matrixBilinearForm
+    hΩm (fun s => ((hAx s).continuousOn hα).mono subset_closure)
+    fun x hx => (hAs x (subset_closure hx)).continuous
+  refine ⟨r, by exact_mod_cast (show (1 : ℝ) < r by linarith), by linarith, by push_cast; linarith,
+    hf.mono_exponent (by exact_mod_cast hrq.le),
+    ((MeasureTheory.memLp_top_of_holderOnWith hΩm hΩ hα (hG.mono subset_closure)).neg
+      ).mono_exponent le_top, hAm, hAc, ?_⟩
+  rw [W1p.value_zero]
+  exact Lp.coeFn_zero _ _ _
 
 /-- The right-hand side of the weak formulation with the divergence datum `-G`, in the form of
 the global Hölder estimate. -/
@@ -199,24 +183,15 @@ private theorem exists_holderOnWith_closure_value (hα : 0 < α) (hqn : (n : ℝ
     ∃ γ₀ : ℝ≥0, 0 < γ₀ ∧ ∃ v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ,
       W1p.value (u : W1p volume Ω 2) =ᵐ[volume.restrict Ω] v ∧
         ∃ C : ℝ≥0, HolderOnWith C γ₀ v (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
-  -- The exponents for the global De Giorgi estimate: `f ∈ Lʳ` with `n + 1 < r < q`, and the
-  -- bounded divergence datum in `L^{n + 3}`.
-  obtain ⟨r, hnr, hrq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hqn
-  have hnr' : (n : ℝ) + 1 < r := by exact_mod_cast hnr
-  have hcard : (Fintype.card (Fin (n + 1)) : ℝ) = n + 1 := by simp
-  have : (0 : ℝ) ≤ n := n.cast_nonneg
+  -- The global De Giorgi estimate with `f ∈ Lʳ`, `n + 1 < r < q`, and `-G ∈ L^{n + 3}`.
+  obtain ⟨r, hr, hrn, hq3, hfr, hG3, hAm, hAc, h0⟩ :=
+    exists_memLp_and_aestronglyMeasurable hα hqn hΩ hAx hAs hG hf
   obtain ⟨γ₀, C, hγ₀, -, -, hreg⟩ :=
-    hLip.exists_ae_eq_and_holderOnWith_quasilinear (mu := volume) hΩ (lam := lam) (Lam := Lam)
-      (r := r) (q := n + 3) (by exact_mod_cast (show (1 : ℝ) < r by linarith))
-      (by rw [hcard]; linarith) (by push_cast; linarith) (by rw [hcard]; push_cast; linarith)
-  have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
-  obtain ⟨hAm, hAc, hGtop⟩ := aestronglyMeasurable_and_continuous_and_memLp hα hΩ hAx hAs hG
+    hLip.exists_ae_eq_and_holderOnWith_quasilinear (mu := volume) hΩ (lam := lam) (Lam := Lam) hr
+      (by simpa using hrn) hq3 (by simp)
   obtain ⟨v, hv, hvH⟩ := hreg (u := u) (g := 0) (G := 0) (K₀ := 0) (K₁ := 0)
-    (fun s => (hA s).mono_set subset_closure) hAm hAc
-    (hf.mono_exponent (by exact_mod_cast hrq.le)) (hGtop.mono_exponent le_top) (by simp)
-    (fun φ => (hu φ).trans (setIntegral_sub_setIntegral_neg_eq _).symm)
-    (by rw [W1p.value_zero]; exact Lp.coeFn_zero _ _ _)
+    (fun s => (hA s).mono_set subset_closure) hAm hAc hfr hG3 (by simp)
+    (fun φ => (hu φ).trans (setIntegral_sub_setIntegral_neg_eq _).symm) h0
     (LipschitzWith.const (0 : ℝ)).lipschitzOnWith (fun x _ => by simp)
   obtain ⟨w, hwv, hwH⟩ := hvH.exists_eqOn_holderOnWith_closure hγ₀
   exact ⟨γ₀, hγ₀, w, hv.trans (ae_restrict_of_forall_mem Ω.isOpen.measurableSet fun x hx =>
@@ -258,13 +233,11 @@ private theorem exists_holderOnWith_gradient_of_holderOnWith_value {β' γ : ℝ
   -- A bound for the distances in the bounded set `closure Ω`.
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
       ∀ y ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), edist x y ≤ D :=
-    ⟨(Metric.ediam (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))).toNNReal,
-      fun x hx y hy => by
-        rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 hΩ.closure)]
-        exact Metric.edist_le_ediam_of_mem hx hy⟩
-  have haK := holderOnWith_matrixBilinearForm_comp hD hAx hAs hβ'α (hvH.of_le hD hβ'γ)
+    ⟨_, fun _ hx _ hy => Metric.edist_le_diam_of_mem hΩ.closure hx hy⟩
+  have haK := HolderOnWith.comp_of_lipschitzWith_right (F := fun x s => matrixBilinearForm (A x s))
+    hD hAx hAs hβ'α (hvH.of_le hD hβ'γ)
   obtain ⟨C, -, h⟩ := exists_holderOnWith_gradient_closure_of_forall_graph hβ' hβ'1 le_rfl hq2
-    hβ'q hΩ (forall_graph_of_le hβ'α hβ'1.le hbdry) lam Lam
+    hβ'q hΩ (forall_graph_holderWith_fderiv_of_le hβ'α hβ'1.le hbdry) lam Lam
     ((Kx * D ^ ((α : ℝ) - β') + L * (Cv * D ^ ((γ : ℝ) - β')) : ℝ≥0) : ℝ)
   have htest := forall_testFunction_of_forall_w1p0 (a := fun x => A x (v x))
     (by filter_upwards [hv] with x hx; rw [hx]) hu
@@ -308,17 +281,6 @@ private theorem exists_holderOnWith_closure_of_gradient {β γ β₁ : ℝ≥0} 
       (Real.le_coe_toNNReal Dv)) hβ1 hδ
   exact ⟨_, hH.of_subset_closure subset_rfl fun x hx => (hvc x hx).mono subset_closure⟩
 
-/-- The datum costs `(n + 1) / q < 1` of a derivative, so `q > n + 1`. -/
-private theorem natCast_add_one_lt_of_le {β : ℝ≥0} (hβ : 0 < β) (hq2 : 2 ≤ q)
-    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
-  have hβ' : (0 : ℝ) < β := hβ
-  rcases eq_or_ne q ⊤ with rfl | hqt
-  · simp
-  · have hq0 : 0 < q.toReal := ENNReal.toReal_pos (by rintro rfl; simp at hq2) hqt
-    refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
-    rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
-    exact (div_lt_one hq0).1 (by linarith)
-
 /-- A `C^{1,α}` boundary is Lipschitz. -/
 private theorem isLipschitzDomain_of_forall_graph
     (hbdry : ∀ x ∈ frontier (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
@@ -343,7 +305,7 @@ independent of `x`. Let `G` be `α`-Hölder on `closure Ω` and `f ∈ L^q(Ω)` 
 that is `∫_Ω ⟨A(x, u) ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩ + ∫_Ω f φ` for every `φ ∈ H¹₀(Ω)`, then `∇u`
 agrees almost everywhere on `Ω` with a function that is `β`-Hölder on `closure Ω`, for every
 `0 < β < 1` with `β ≤ α` and `β ≤ 1 - (n + 1) / q`, where `(n + 1) / ∞ = 0`; such `β` exist
-exactly when `q > n + 1`. These are the exponents of the linear estimate
+exactly when `0 < α` and `q > n + 1`. These are the exponents of the linear estimate
 `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_forall_graph`. -/
 theorem exists_holderOnWith_gradient_closure_quasilinear {β : ℝ≥0} (hβ : 0 < β) (hβ1 : β < 1)
     (hβα : β ≤ α) (hq2 : 2 ≤ q) (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal)
@@ -374,7 +336,8 @@ theorem exists_holderOnWith_gradient_closure_quasilinear {β : ℝ≥0} (hβ : 0
   have hLip := isLipschitzDomain_of_forall_graph hbdry
   -- De Giorgi: `u` agrees with a `γ₀`-Hölder function `v` on `closure Ω`.
   obtain ⟨γ₀, hγ₀, v, hv, Cv, hvH⟩ :=
-    exists_holderOnWith_closure_value hα (natCast_add_one_lt_of_le hβ hq2 hβq) hΩ hLip hA hAx
+    exists_holderOnWith_closure_value hα
+      (natCast_add_one_lt_of_le_one_sub_div (zero_lt_two.trans_le hq2).ne' hβ hβq) hΩ hLip hA hAx
       hAs hG hf hu
   -- First Schauder pass, with the small positive exponent `β₁ = min γ₀ β`.
   have hβ₁ : 0 < min γ₀ β := lt_min hγ₀ hβ
@@ -425,24 +388,15 @@ theorem exists_forall_energyFormH1_quasilinear_eq_and_holderOnWith_gradient_clos
           EuclideanSpace ℝ (Fin (n + 1))) =ᵐ[volume.restrict Ω] g ∧
         ∃ C : ℝ≥0, HolderOnWith C β g (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
   -- The existence theorem with the exponents `n + 1 < r < q` for `f` and `n + 3` for `-G`.
-  obtain ⟨r, hnr, hrq⟩ :=
-    ENNReal.lt_iff_exists_nnreal_btwn.1 (natCast_add_one_lt_of_le (n := n) hβ hq2 hβq)
-  have hnr' : (n : ℝ) + 1 < r := by exact_mod_cast hnr
-  have : (0 : ℝ) ≤ n := n.cast_nonneg
-  have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
-  obtain ⟨hAm, hAc, hGtop⟩ :=
-    aestronglyMeasurable_and_continuous_and_memLp (hβ.trans_le hβα) hΩ hAx hAs hG
-  have hLip := isLipschitzDomain_of_forall_graph hbdry
+  obtain ⟨r, hr, hrn, hq3, hfr, hG3, hAm, hAc, h0⟩ :=
+    exists_memLp_and_aestronglyMeasurable (hβ.trans_le hβα)
+      (natCast_add_one_lt_of_le_one_sub_div (zero_lt_two.trans_le hq2).ne' hβ hβq) hΩ hAx hAs hG hf
   obtain ⟨_, _, -, -, -, hex⟩ :=
-    hLip.exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq_and_holderOnWith hΩ
-      (lam := lam) (Lam := Lam) (r := r) (q := n + 3)
-      (by exact_mod_cast (show (1 : ℝ) < r by linarith)) (by linarith) (by push_cast; linarith)
-      (by push_cast; linarith)
+    (isLipschitzDomain_of_forall_graph hbdry
+      ).exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq_and_holderOnWith hΩ
+      (lam := lam) (Lam := Lam) hr hrn hq3 (by simp)
   obtain ⟨u, hu0, hu, -⟩ := hex (A := A) (g := 0) (G := 0) (K₀ := 0) (K₁ := 0)
-    (fun s => (hA s).mono_set subset_closure) hAm hAc
-    (hf.mono_exponent (by exact_mod_cast hrq.le)) (hGtop.mono_exponent le_top)
-    (by rw [W1p.value_zero]; exact Lp.coeFn_zero _ _ _)
+    (fun s => (hA s).mono_set subset_closure) hAm hAc hfr hG3 h0
     (LipschitzWith.const (0 : ℝ)).lipschitzOnWith (fun x _ => by simp)
   have hu' := fun φ : W1p0 volume Ω 2 => (hu φ).trans (setIntegral_sub_setIntegral_neg_eq _)
   exact ⟨⟨u, by simpa using hu0⟩, hu', exists_holderOnWith_gradient_closure_quasilinear hβ hβ1

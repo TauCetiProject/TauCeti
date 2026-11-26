@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -20,10 +21,15 @@ Let `G` be `α`-Hölder with constant `K` on a ball `B(x₀, ρ)` of a proper me
 `K ρ^α` of its value at the centre, so `G - G x₀` is a bounded measurable function on a set of
 finite measure.
 
+More generally, a function that is `α`-Hölder with `α > 0` on a bounded measurable set is bounded
+and measurable there, so it is essentially bounded on that set for every measure.
+
 ## Main declarations
 
 * `TauCeti.MeasureTheory.memLp_sub_of_holderOnWith`: `G - G x₀` lies in every `Lᵖ(B)`, for every
   measurable `B ⊆ B(x₀, ρ)`.
+* `TauCeti.MeasureTheory.memLp_top_of_holderOnWith`: a Hölder function on a bounded measurable
+  set `B` lies in `L^∞(B)`.
 * `TauCeti.MeasureTheory.setIntegral_ball_norm_sub_sq_le_of_holderOnWith`:
   `∫_{B(x₀, ρ)} ‖G x₀ - G‖² ≤ μ(B(x₀, ρ)) (K ρ^α)²`.
 -/
@@ -55,6 +61,15 @@ theorem memLp_sub_of_holderOnWith {B : Set X} (hB : MeasurableSet B) {x₀ : X} 
   intro x hx
   rw [← dist_eq_norm]
   exact hGK.dist_le_mul_rpow_of_mem_ball (hBρ hx)
+
+omit [IsFiniteMeasureOnCompacts μ] in
+/-- A function `G` that is `α`-Hölder on a bounded measurable set `B`, with `α > 0`, is continuous
+and bounded on `B`, so it lies in `L^∞(B)`. -/
+theorem memLp_top_of_holderOnWith {B : Set X} (hB : MeasurableSet B)
+    (hBb : Bornology.IsBounded B) {α K : ℝ≥0} (hα : 0 < α) {G : X → E}
+    (hGK : HolderOnWith K α G B) : MemLp G ⊤ (μ.restrict B) := by
+  obtain ⟨M, hM⟩ := (hGK.isBounded_image hBb).exists_norm_le
+  exact (hGK.continuousOn hα).memLp_top_restrict_of_bound hB M (forall_mem_image.1 hM)
 
 /-- A function `G` that is `α`-Hölder with constant `K` on `B(x₀, ρ)`, with `α > 0`, stays within
 `K ρ^α` of `G x₀`, so `∫_{B(x₀, ρ)} ‖G x₀ - G‖² ≤ μ(B(x₀, ρ)) (K ρ^α)²`. -/

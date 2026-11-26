@@ -83,6 +83,9 @@ the sum of these.
 * `TauCeti.PDE.aestronglyMeasurable_of_holderOnWith_matrixBilinearForm` and
   `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a ball on which `a` is `α`-Hölder,
   `a` is measurable and its energy integrands are essentially bounded where it is elliptic.
+* `TauCeti.PDE.aestronglyMeasurable_and_ae_continuous_of_continuousOn_matrixBilinearForm`: a
+  coefficient field `A(x, s)` continuous in each variable is measurable in `x` and continuous in
+  `s`, the hypotheses of the measurability of `x ↦ A(x, v(x))`.
 * `TauCeti.PDE.memLp_energyIntegrand_and_memLp_of_holderOnWith`: on an open set of finite
   measure, Hölder elliptic coefficients give an essentially bounded energy integrand and a
   bounded Hölder field is square integrable.
@@ -314,6 +317,21 @@ theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B : Set (Euclid
     AEStronglyMeasurable a (mu.restrict B) :=
   (continuousOn_of_continuousOn_matrixBilinearForm
     ((haK.continuousOn hα).mono hBρ)).aestronglyMeasurable hB
+
+omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
+/-- **A Carathéodory coefficient field.** On a measurable set `T`, let `A(x, s)` be a field of
+matrices whose bilinear forms are continuous in `x` on `T` for every `s` and continuous in `s` at
+every point of `T`. Then every `A(·, s)` is almost everywhere strongly measurable on `T`, and
+`A(x, ·)` is continuous for almost every `x ∈ T`. -/
+theorem aestronglyMeasurable_and_ae_continuous_of_continuousOn_matrixBilinearForm
+    {T : Set (EuclideanSpace ℝ ι)} (hT : MeasurableSet T)
+    {A : EuclideanSpace ℝ ι → ℝ → Matrix ι ι ℝ}
+    (hAx : ∀ s, ContinuousOn (fun x => matrixBilinearForm (A x s)) T)
+    (hAs : ∀ x ∈ T, Continuous fun s => matrixBilinearForm (A x s)) :
+    (∀ s, AEStronglyMeasurable (fun x => A x s) (mu.restrict T)) ∧
+      ∀ᵐ x ∂mu.restrict T, Continuous (A x) :=
+  ⟨fun s => (continuousOn_of_continuousOn_matrixBilinearForm (hAx s)).aestronglyMeasurable hT,
+    ae_restrict_of_forall_mem hT fun x hx => continuous_of_continuous_matrixBilinearForm (hAs x hx)⟩
 
 omit [mu.IsAddHaarMeasure] in
 /-- On an open set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are

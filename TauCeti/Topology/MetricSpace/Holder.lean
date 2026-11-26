@@ -105,6 +105,8 @@ positive exponent, is equicontinuous on that set
   in both directions.
 * `LipschitzWith.comp_holderOnWith`, `LipschitzWith.comp_holderWith`: postcomposition with a
   `K`-Lipschitz map keeps the exponent and multiplies the Hölder constant by `K`.
+* `HolderOnWith.comp_of_lipschitzWith_right`: a map `F x s` Hölder in `x` and Lipschitz in `s`,
+  with its second argument frozen at a `γ`-Hölder function, is `γ`-Hölder on a bounded set.
 * `HolderWith.comp_lipschitzWith_one`: precomposition with a `1`-Lipschitz map keeps the Hölder
   constant and exponent.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
@@ -252,6 +254,26 @@ theorem LipschitzWith.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X]
     [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {K : ℝ≥0} {g : Y → Z} (hg : LipschitzWith K g)
     {C r : ℝ≥0} {f : X → Y} (hf : HolderWith C r f) : HolderWith (K * C) r (g ∘ f) :=
   holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
+
+/-- **Freezing the second argument at a Hölder function.** On a set `T` of extended diameter at
+most `D`, let `F x s` be `α`-Hölder in `x` with constant `Kx` for every `s`, and `L`-Lipschitz in
+`s` at every point of `T`. Then `x ↦ F x (v x)` is `γ`-Hölder on `T` for every `γ`-Hölder `v` with
+`γ ≤ α`, with constant `Kx D^(α - γ) + L Cv`. -/
+theorem HolderOnWith.comp_of_lipschitzWith_right {X Y Z : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] [PseudoMetricSpace Z] {T : Set X} {D : ℝ≥0}
+    (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D) {F : X → Y → Z} {Kx L α : ℝ≥0}
+    (hFx : ∀ s, HolderOnWith Kx α (F · s) T) (hFs : ∀ x ∈ T, LipschitzWith L (F x))
+    {γ Cv : ℝ≥0} (hγα : γ ≤ α) {v : X → Y} (hv : HolderOnWith Cv γ v T) :
+    HolderOnWith (Kx * D ^ ((α : ℝ) - γ) + L * Cv) γ (fun x => F x (v x)) T := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have h1 := ((hFx (v x)).of_le hD hγα).dist_le hx hy
+  have h2 := (hFs y hy).dist_le_mul (v x) (v y)
+  have h3 := hv.dist_le hx hy
+  calc dist (F x (v x)) (F y (v y)) ≤ dist (F x (v x)) (F y (v x)) + dist (F y (v x)) (F y (v y)) :=
+        dist_triangle _ _ _
+    _ ≤ ↑(Kx * D ^ ((α : ℝ) - γ)) * dist x y ^ (γ : ℝ) + L * (Cv * dist x y ^ (γ : ℝ)) :=
+        add_le_add h1 (h2.trans (mul_le_mul_of_nonneg_left h3 L.coe_nonneg))
+    _ = ↑(Kx * D ^ ((α : ℝ) - γ) + L * Cv) * dist x y ^ (γ : ℝ) := by push_cast; ring
 
 /-- Precomposition with a `1`-Lipschitz map preserves a global Hölder bound, with the same constant
 and exponent. -/

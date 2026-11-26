@@ -35,6 +35,10 @@ A function which is `C^n` at every point of a sphere can be filled in across the
 bounds: it agrees near every point outside the ball with a function which is `C^n` at every point
 of the closed ball (`TauCeti.exists_contDiffAt_closedBall_eventuallyEq`).
 
+A smooth map is the identity on a ball `B(c, r)`, takes values in `closedBall c (2 r)` and differs
+from `c` by a compactly supported map (`TauCeti.exists_contDiff_eqOn_ball_id_and_mem_closedBall`).
+Precomposing with it keeps a map on `B(c, r)` and uses only its values on `closedBall c (2 r)`.
+
 These general calculus lemmas are used by the parameter-dependent ODE construction for the
 Lie-group exponential, and by the construction of a local flow out of the global solution of a
 globally Lipschitz field. Filling in a hole reduces Stokes' formula on a disc with
@@ -178,5 +182,29 @@ theorem exists_contDiffAt_closedBall_eventuallyEq [FiniteDimensional ℝ E] {n :
     filter_upwards [(isOpen_lt continuous_const (continuous_id.dist continuous_const)).mem_nhds
       hx'] with y hy
     rw [χ.zero_of_le_dist (x := y) hy.le, sub_zero, one_smul]
+
+
+open scoped ContDiff in
+/-- **A smooth map into a ball fixing a smaller ball.** For `r > 0` some smooth map `ρ` is the
+identity on `B(c, r)`, takes values in `closedBall c (2 r)`, and differs from the constant `c` by a
+compactly supported map. It is `x ↦ ψ x • (x - c) + c` for a bump function `ψ` equal to one on
+`B(c, r)` and supported in `B(c, 2 r)`. -/
+theorem exists_contDiff_eqOn_ball_id_and_mem_closedBall [FiniteDimensional ℝ E] (c : E) {r : ℝ}
+    (hr : 0 < r) :
+    ∃ ρ : E → E, ContDiff ℝ ∞ ρ ∧ Set.EqOn ρ id (ball c r) ∧
+      (∀ x, ρ x ∈ closedBall c (2 * r)) ∧ HasCompactSupport fun x ↦ ρ x - c := by
+  let ψ : ContDiffBump c := ⟨r, 2 * r, hr, by linarith⟩
+  refine ⟨fun x ↦ ψ x • (x - c) + c, (ψ.contDiff.smul (contDiff_id.sub contDiff_const)).add
+    contDiff_const, fun x hx ↦ ?_, fun x ↦ ?_, ?_⟩
+  · simp [ψ.one_of_mem_closedBall (ball_subset_closedBall hx)]
+  · rw [mem_closedBall, dist_eq_norm, add_sub_cancel_right]
+    by_cases hx : x ∈ ball c (2 * r)
+    · rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ψ.nonneg]
+      exact (mul_le_mul ψ.le_one (mem_ball_iff_norm.1 hx).le (norm_nonneg _) zero_le_one).trans
+        (one_mul _).le
+    · rw [ψ.zero_of_le_dist (not_lt.1 (by simpa [mem_ball] using hx)), zero_smul, norm_zero]
+      positivity
+  · simp only [add_sub_cancel_right]
+    exact ψ.hasCompactSupport.smul_right (f' := fun x ↦ x - c)
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.Leibniz
 public import TauCeti.Analysis.Holder.Iterated
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Topology.MetricSpace.Thickening
@@ -169,28 +170,6 @@ theorem holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ} {s 
       exact (hball y hy).dist_le (mem_ball_self (by exact_mod_cast hδ)) (by rwa [mem_ball])
     rw [hzero x hx, hzero y hy, dist_self]
     positivity
-
-/-- **A smooth map into a ball fixing a smaller ball.** For `r > 0` some smooth map `ρ` is the
-identity on `B(c, r)`, takes values in `closedBall c (2 r)`, and differs from the constant `c` by a
-compactly supported map. It is `x ↦ ψ x • (x - c) + c` for a bump function `ψ` equal to one on
-`B(c, r)` and supported in `B(c, 2 r)`. -/
-theorem exists_contDiff_eqOn_ball_id_and_mem_closedBall [FiniteDimensional ℝ E] (c : E) {r : ℝ}
-    (hr : 0 < r) :
-    ∃ ρ : E → E, ContDiff ℝ ∞ ρ ∧ EqOn ρ id (ball c r) ∧ (∀ x, ρ x ∈ closedBall c (2 * r)) ∧
-      HasCompactSupport fun x ↦ ρ x - c := by
-  let ψ : ContDiffBump c := ⟨r, 2 * r, hr, by linarith⟩
-  refine ⟨fun x ↦ ψ x • (x - c) + c, (ψ.contDiff.smul (contDiff_id.sub contDiff_const)).add
-    contDiff_const, fun x hx ↦ ?_, fun x ↦ ?_, ?_⟩
-  · simp [ψ.one_of_mem_closedBall (ball_subset_closedBall hx)]
-  · rw [mem_closedBall, dist_eq_norm, add_sub_cancel_right]
-    by_cases hx : x ∈ ball c (2 * r)
-    · rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ψ.nonneg]
-      exact (mul_le_mul ψ.le_one (mem_ball_iff_norm.1 hx).le (norm_nonneg _) zero_le_one).trans
-        (one_mul _).le
-    · rw [ψ.zero_of_le_dist (not_lt.1 (by simpa [mem_ball] using hx)), zero_smul, norm_zero]
-      positivity
-  · simp only [add_sub_cancel_right]
-    exact ψ.hasCompactSupport.smul_right (f' := fun x ↦ x - c)
 
 /-- **Localizing a `C^{1,α}` map to a bounded one.** Let `γ` be `C¹` with `α`-Hölder derivative,
 let `β ≤ α` with `β ≤ 1`, and let `B(c, r)` be a ball. Some `C¹` map `γ'` agrees with `γ` on
