@@ -695,7 +695,9 @@ theorem toOrientedFrames_op_smul (s : SpinStructure F E n)
     (g : realCliffordSpinGroupZero n) (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
     s.toOrientedFrames o (op g • p) =
       op (realCliffordSpinToEuclideanSpecialOrthogonal n g) • s.toOrientedFrames o p :=
-  Subtype.ext (s.toFrame_op_smul g p)
+  Subtype.ext <| by
+    rw [OrthonormalFrameBundle.SMulMemIff.coe_smul]
+    exact s.toFrame_op_smul g p
 
 @[simp]
 theorem toOrientedFrames_negOne_smul [NeZero n] (s : SpinStructure F E n)
