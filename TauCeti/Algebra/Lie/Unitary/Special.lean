@@ -90,13 +90,6 @@ variable (ι κ : Type*) [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq
 
 /-! ### The special unitary Lie algebra -/
 
-/-- The bracket of two skew-Hermitian matrices is skew-Hermitian and trace-free. -/
-private theorem lie_mem_specialUnitaryLieAlgebra_aux {X Y : Matrix ι ι ℂ}
-    (hX : X ∈ unitaryLieAlgebra ι) (hY : Y ∈ unitaryLieAlgebra ι) :
-    ⁅X, Y⁆ᴴ = -⁅X, Y⁆ ∧ ⁅X, Y⁆.trace = 0 :=
-  ⟨mem_unitaryLieAlgebra_iff.mp <| LieSubalgebra.lie_mem _ hX hY,
-    matrix_trace_commutator_zero _ _ X Y⟩
-
 /-- The **special unitary Lie algebra** `𝔰𝔲(n)`: the real Lie subalgebra of `Matrix ι ι ℂ`
 consisting of the trace-free skew-Hermitian matrices, `Xᴴ = -X` and `tr X = 0`. It is the Lie
 algebra of the special unitary group. -/
@@ -107,8 +100,9 @@ def specialUnitaryLieAlgebra : LieSubalgebra ℝ (Matrix ι ι ℂ) where
   zero_mem' := ⟨by rw [conjTranspose_zero, neg_zero], trace_zero _ _⟩
   smul_mem' r X hX := ⟨by rw [conjTranspose_smul, star_trivial, hX.1, smul_neg], by
     rw [trace_smul, hX.2, smul_zero]⟩
-  lie_mem' hX hY := lie_mem_specialUnitaryLieAlgebra_aux ι
-    (mem_unitaryLieAlgebra_iff.mpr hX.1) (mem_unitaryLieAlgebra_iff.mpr hY.1)
+  lie_mem' hX hY := ⟨mem_unitaryLieAlgebra_iff.mp <| LieSubalgebra.lie_mem _
+    (mem_unitaryLieAlgebra_iff.mpr hX.1) (mem_unitaryLieAlgebra_iff.mpr hY.1),
+    matrix_trace_commutator_zero _ _ _ _⟩
 
 variable {ι κ}
 
@@ -138,7 +132,8 @@ bracket of two skew-Hermitian matrices is trace-free. -/
 theorem lie_mem_specialUnitaryLieAlgebra_of_mem_unitaryLieAlgebra {X Y : Matrix ι ι ℂ}
     (hX : X ∈ unitaryLieAlgebra ι) (hY : Y ∈ unitaryLieAlgebra ι) :
     ⁅X, Y⁆ ∈ specialUnitaryLieAlgebra ι :=
-  lie_mem_specialUnitaryLieAlgebra_aux ι hX hY
+  ⟨mem_unitaryLieAlgebra_iff.mp <| LieSubalgebra.lie_mem _ hX hY,
+    matrix_trace_commutator_zero _ _ X Y⟩
 
 instance : FiniteDimensional ℝ (specialUnitaryLieAlgebra ι) :=
   Module.Finite.of_injective (LieSubalgebra.inclusion

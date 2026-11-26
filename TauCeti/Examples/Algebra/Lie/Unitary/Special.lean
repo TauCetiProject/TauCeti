@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Unitary.Special
+public import TauCeti.RepresentationTheory.SU2.Weyl.Basic
 
 /-!
 # Checks: the Cartan three-form on a root `𝔰𝔲(2)` of `𝔰𝔲(3)`
@@ -123,8 +124,10 @@ theorem killingForm_specialUnitaryBlockInclusion_suTwoE₁ :
 /-- **`f^*ω(e₁, e₂, e₃) = B(df e₁, df e₁) = -3`** for the Cartan three-form of the Killing form
 `B(X, Y) = 6 Re tr(X Y)` of `𝔰𝔲(3)`. -/
 example : ω₃.compLinearMap df.toLinearMap ![suTwoE₁, suTwoE₂, suTwoE₃] = -3 := by
-  rw [AlternatingMap.compLinearMap_apply]
-  simp [← LieHom.map_lie, lie_suTwoE₂_suTwoE₃, killingForm_specialUnitaryBlockInclusion_suTwoE₁]
+  rw [← LinearMap.BilinMap.cartanThreeForm_compl₁₂,
+    LinearMap.BilinMap.cartanThreeForm_apply_of_lie_eq lie_suTwoE₂_suTwoE₃,
+    LinearMap.compl₁₂_apply]
+  exact killingForm_specialUnitaryBlockInclusion_suTwoE₁
 
 /-- **The Killing form of `𝔰𝔲(2)` itself gives `4 Re tr(e₁²) = -2`**, so its own Cartan
 three-form takes the value `-2` on `(e₁, e₂, e₃)`: the value depends on the ambient group, the sign
@@ -138,12 +141,10 @@ example : (killingForm ℝ (specialUnitaryLieAlgebra (Fin 2))).cartanThreeForm
 
 /-! ### The other representative -/
 
-/-- The Weyl element `w = [[0, 1], [-1, 0]]` of `SU(2)`, as a unitary matrix. -/
+/-- The Weyl element `w = [[0, 1], [-1, 0]]` of `SU(2)`, the inverse of `TauCeti.SU2.weylElement`,
+as a unitary matrix. -/
 def suTwoWeyl : unitaryGroup (Fin 2) ℂ :=
-  ⟨!![0, 1; -1, 0], by
-    rw [mem_unitaryGroup_iff]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]⟩
+  ⟨_, specialUnitaryGroup_le_unitaryGroup (SU2.weylElement⁻¹).property⟩
 
 /-- Conjugation by the Weyl element reverses the coroot: `w diag(i, -i) wᴴ = -diag(i, -i)`. -/
 theorem specialUnitaryAdjoint_suTwoWeyl_suTwoCoroot :
@@ -152,7 +153,7 @@ theorem specialUnitaryAdjoint_suTwoWeyl_suTwoCoroot :
   rw [coe_specialUnitaryAdjoint_apply]
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [suTwoWeyl, suTwoCoroot, Matrix.mul_apply, Fin.sum_univ_two]
+    simp [suTwoWeyl, SU2.coe_weylElement_inv, suTwoCoroot, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- **The representative `f ∘ c_w` sends `diag(i, -i)` to `-α^∨`.** -/
 example : (df (specialUnitaryAdjoint suTwoWeyl suTwoCoroot) :
@@ -166,7 +167,10 @@ example : ω₃.compLinearMap (df.comp (specialUnitaryAdjoint suTwoWeyl)).toLine
     ![suTwoE₁, suTwoE₂, suTwoE₃] = -3 := by
   have hw : specialUnitaryAdjoint suTwoWeyl suTwoE₁ = -suTwoE₁ := by
     rw [suTwoE₁, map_smul, specialUnitaryAdjoint_suTwoWeyl_suTwoCoroot, smul_neg]
-  rw [AlternatingMap.compLinearMap_apply]
-  simp [← LieHom.map_lie, lie_suTwoE₂_suTwoE₃, hw, killingForm_specialUnitaryBlockInclusion_suTwoE₁]
+  rw [← LinearMap.BilinMap.cartanThreeForm_compl₁₂,
+    LinearMap.BilinMap.cartanThreeForm_apply_of_lie_eq lie_suTwoE₂_suTwoE₃,
+    LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LieHom.comp_apply, hw, map_neg,
+    LinearMap.map_neg₂, LinearMap.map_neg, neg_neg]
+  exact killingForm_specialUnitaryBlockInclusion_suTwoE₁
 
 end TauCeti
