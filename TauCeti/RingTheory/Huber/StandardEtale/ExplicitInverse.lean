@@ -22,25 +22,27 @@ becomes invertible in $C$ with $\varpi^k \cdot \pi(J)^{-1} \in C^+$. Adjoining o
 variable $T_{N+1}$ and the equation $F'_{N+1} = T_{N+1} \cdot J - \varpi^k$ promotes this implicit
 witness to an explicit coordinate without changing $(C, C^+)$, while squaring the formal Jacobian
 determinant to $J^2$ with scale exponent $2k$. Conversely, for any $A^+$-integral system $F'$ and
-$k' : \mathbb{N}$, the model quotient of `explicitInverse` automatically carries a canonical
+$k' : \mathbb{N}$, the model quotient of `explicitInverseSystem` automatically carries a canonical
 `StandardEtalePresentation` with scale exponent $2k'$.
 
 ## Main definitions and results
 
-* `TauCeti.Huber.explicitInverse`: enlarges `F' : Fin N' → tateSeries N' A` to
+* `TauCeti.Huber.explicitInverseSystem`: enlarges `F' : Fin N' → tateSeries N' A` to
   `Fin (N' + 1) → tateSeries (N' + 1) A` by appending
   `T_{N'+1} * castSuccAlgHom (jacobian F') - algebraMap A _ (ϖ ^ k')`.
-* `TauCeti.Huber.jacobian_explicitInverse` and `TauCeti.Huber.pderiv_explicitInverse_last_castSucc`:
-  partial derivatives of the appended relation and the formal Jacobian identity
-  `jacobian (explicitInverse A ϖ F' k') = tateSeries.castSuccAlgHom (tateSeries.jacobian F') ^ 2`.
+* `TauCeti.Huber.jacobian_explicitInverseSystem` and
+  `TauCeti.Huber.pderiv_explicitInverseSystem_last_castSucc`: partial derivatives of the appended
+  relation and the formal Jacobian identity
+  `jacobian (explicitInverseSystem A ϖ F' k') =
+    tateSeries.castSuccAlgHom (tateSeries.jacobian F') ^ 2`.
 * `TauCeti.Huber.StandardEtalePresentation.ofExplicitInverse` and
   `TauCeti.Huber.StandardEtalePresentation.π_X_last_sq_mul_jacobian_of_explicitInverse`:
-  canonical presentation of the model quotient pair of `explicitInverse A ϖ F' k'` with scale
+  canonical presentation of the model quotient pair of `explicitInverseSystem A ϖ F' k'` with scale
   exponent `2 * k'`, and the characteristic identity `π(T_{N'}) ^ 2 * π(jacobian) = ϖ ^ (2 * k')`.
 * `TauCeti.Huber.StandardEtalePresentation.withInverseHom` and
   `TauCeti.Huber.StandardEtalePresentation.withInverse`: upgrades any
   `P : StandardEtalePresentation Aplus ϖ Cplus` to a presentation of `Cplus` in `P.N + 1`
-  variables using `explicitInverse A ϖ P.F P.k` and scale exponent `2 * P.k`.
+  variables using `explicitInverseSystem A ϖ P.F P.k` and scale exponent `2 * P.k`.
 
 ## References
 
@@ -68,7 +70,7 @@ variables keeps the embedded equations `F'_0, …, F'_{N'-1}` and appends
 the relation `T_{N'} * J(F') = ϖ ^ k'`; when `ϖ` is a unit in `A` (in particular, a
 pseudouniformiser of a Tate ring), this forces the image of `J(F')` to be invertible in the
 quotient with `T_{N'} = ϖ ^ k' * J(F')⁻¹`. -/
-noncomputable def explicitInverse (A : Type*) [CommRing A] [TopologicalSpace A]
+noncomputable def explicitInverseSystem (A : Type*) [CommRing A] [TopologicalSpace A]
     [NonarchimedeanRing A] (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
     Fin (N' + 1) → tateSeries (N' + 1) A :=
   Fin.snoc (fun i ↦ tateSeries.castSuccAlgHom (F' i))
@@ -77,119 +79,122 @@ noncomputable def explicitInverse (A : Type*) [CommRing A] [TopologicalSpace A]
       algebraMap A (tateSeries (N' + 1) A) (ϖ ^ k'))
 
 @[simp]
-theorem explicitInverse_castSucc (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ)
+theorem explicitInverseSystem_castSucc (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ)
     (i : Fin N') :
-    explicitInverse A ϖ F' k' i.castSucc = tateSeries.castSuccAlgHom (F' i) := by
-  simp [explicitInverse]
+    explicitInverseSystem A ϖ F' k' i.castSucc = tateSeries.castSuccAlgHom (F' i) := by
+  simp [explicitInverseSystem]
 
 @[simp]
-theorem explicitInverse_last (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
-    explicitInverse A ϖ F' k' (Fin.last N') =
+theorem explicitInverseSystem_last (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
+    explicitInverseSystem A ϖ F' k' (Fin.last N') =
       tateSeries.X (N' + 1) A (Fin.last N') *
         tateSeries.castSuccAlgHom (tateSeries.jacobian F') -
         algebraMap A (tateSeries (N' + 1) A) (ϖ ^ k') := by
-  simp [explicitInverse]
+  simp [explicitInverseSystem]
 
 /-- If `ϖ ∈ Aplus` and every equation of `F'` has coefficients in `Aplus`, then every equation of
-`explicitInverse A ϖ F' k'` has coefficients in `Aplus`. -/
-theorem explicitInverse_mem_tateSeriesPlus {Aplus : Subring A} {ϖ : A} (hϖ : ϖ ∈ Aplus)
+`explicitInverseSystem A ϖ F' k'` has coefficients in `Aplus`. -/
+theorem explicitInverseSystem_mem_tateSeriesPlus {Aplus : Subring A} {ϖ : A} (hϖ : ϖ ∈ Aplus)
     {N' : ℕ} {F' : Fin N' → tateSeries N' A}
     (hF' : ∀ i, F' i ∈ tateSeriesPlus N' A Aplus) (k' : ℕ) (j : Fin (N' + 1)) :
-    explicitInverse A ϖ F' k' j ∈ tateSeriesPlus (N' + 1) A Aplus := by
+    explicitInverseSystem A ϖ F' k' j ∈ tateSeriesPlus (N' + 1) A Aplus := by
   refine Fin.lastCases ?_ (fun i ↦ ?_) j
-  · rw [explicitInverse_last]
+  · rw [explicitInverseSystem_last]
     exact sub_mem (mul_mem (tateSeries.X_mem_tateSeriesPlus Aplus _)
       (tateSeries.renameAlgHom_mem_tateSeriesPlus Fin.castSuccEmb
         (tateSeries.jacobian_mem_tateSeriesPlus hF')))
       (algebraMap_mem_tateSeriesPlus_iff.mpr (pow_mem hϖ k'))
-  · rw [explicitInverse_castSucc]
+  · rw [explicitInverseSystem_castSucc]
     exact tateSeries.renameAlgHom_mem_tateSeriesPlus Fin.castSuccEmb (hF' i)
 
-theorem pderiv_explicitInverse_castSucc_castSucc (ϖ : A) {N' : ℕ}
+theorem pderiv_explicitInverseSystem_castSucc_castSucc (ϖ : A) {N' : ℕ}
     (F' : Fin N' → tateSeries N' A) (k' : ℕ) (i j : Fin N') :
-    tateSeries.pderiv j.castSucc (explicitInverse A ϖ F' k' i.castSucc) =
+    tateSeries.pderiv j.castSucc (explicitInverseSystem A ϖ F' k' i.castSucc) =
       tateSeries.castSuccAlgHom (tateSeries.pderiv j (F' i)) := by
-  rw [explicitInverse_castSucc]
+  rw [explicitInverseSystem_castSucc]
   exact tateSeries.pderiv_renameAlgHom_apply Fin.castSuccEmb j (F' i)
 
-theorem pderiv_explicitInverse_castSucc_last (ϖ : A) {N' : ℕ}
+theorem pderiv_explicitInverseSystem_castSucc_last (ϖ : A) {N' : ℕ}
     (F' : Fin N' → tateSeries N' A) (k' : ℕ) (i : Fin N') :
-    tateSeries.pderiv (Fin.last N') (explicitInverse A ϖ F' k' i.castSucc) = 0 := by
-  rw [explicitInverse_castSucc, tateSeries.pderiv_castSuccAlgHom_last]
+    tateSeries.pderiv (Fin.last N') (explicitInverseSystem A ϖ F' k' i.castSucc) = 0 := by
+  rw [explicitInverseSystem_castSucc, tateSeries.pderiv_castSuccAlgHom_last]
 
-theorem pderiv_explicitInverse_last_last (ϖ : A) {N' : ℕ}
+theorem pderiv_explicitInverseSystem_last_last (ϖ : A) {N' : ℕ}
     (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
-    tateSeries.pderiv (Fin.last N') (explicitInverse A ϖ F' k' (Fin.last N')) =
+    tateSeries.pderiv (Fin.last N') (explicitInverseSystem A ϖ F' k' (Fin.last N')) =
       tateSeries.castSuccAlgHom (tateSeries.jacobian F') := by
-  rw [explicitInverse_last, map_sub, tateSeries.pderiv_mul, tateSeries.pderiv_X_self,
+  rw [explicitInverseSystem_last, map_sub, tateSeries.pderiv_mul, tateSeries.pderiv_X_self,
     tateSeries.pderiv_castSuccAlgHom_last, tateSeries.pderiv_algebraMap]
   simp
 
-theorem pderiv_explicitInverse_last_castSucc (ϖ : A) {N' : ℕ}
+theorem pderiv_explicitInverseSystem_last_castSucc (ϖ : A) {N' : ℕ}
     (F' : Fin N' → tateSeries N' A) (k' : ℕ) (j : Fin N') :
-    tateSeries.pderiv j.castSucc (explicitInverse A ϖ F' k' (Fin.last N')) =
+    tateSeries.pderiv j.castSucc (explicitInverseSystem A ϖ F' k' (Fin.last N')) =
       tateSeries.X (N' + 1) A (Fin.last N') *
         tateSeries.castSuccAlgHom (tateSeries.pderiv j (tateSeries.jacobian F')) := by
-  rw [explicitInverse_last, map_sub, tateSeries.pderiv_mul, tateSeries.pderiv_algebraMap, sub_zero,
-    tateSeries.pderiv_X_of_ne (Fin.castSucc_ne_last j).symm, mul_zero, add_zero]
+  rw [explicitInverseSystem_last, map_sub, tateSeries.pderiv_mul, tateSeries.pderiv_algebraMap,
+    sub_zero, tateSeries.pderiv_X_of_ne (Fin.castSucc_ne_last j).symm, mul_zero, add_zero]
   exact congrArg (tateSeries.X (N' + 1) A (Fin.last N') * ·)
     (tateSeries.pderiv_renameAlgHom_apply Fin.castSuccEmb j (tateSeries.jacobian F'))
 
-/-- **The formal Jacobian determinant of `explicitInverse A ϖ F' k'` is the square of the embedded
-Jacobian determinant of `F'`.** -/
+/-- **The formal Jacobian determinant of `explicitInverseSystem A ϖ F' k'` is the square of the
+embedded Jacobian determinant of `F'`.** -/
 @[simp]
-theorem jacobian_explicitInverse (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
-    tateSeries.jacobian (explicitInverse A ϖ F' k') =
+theorem jacobian_explicitInverseSystem (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
+    tateSeries.jacobian (explicitInverseSystem A ϖ F' k') =
       tateSeries.castSuccAlgHom (tateSeries.jacobian F') ^ 2 := by
   rw [tateSeries.jacobian_def,
-    Matrix.det_succ_column (tateSeries.jacobianMatrix (explicitInverse A ϖ F' k')) (Fin.last N'),
+    Matrix.det_succ_column (tateSeries.jacobianMatrix (explicitInverseSystem A ϖ F' k'))
+      (Fin.last N'),
     Fin.sum_univ_castSucc]
   have htop : ∑ i : Fin N',
       (-1 : tateSeries (N' + 1) A) ^ ((i.castSucc : ℕ) + (Fin.last N' : ℕ)) *
-        tateSeries.jacobianMatrix (explicitInverse A ϖ F' k') i.castSucc (Fin.last N') *
-        ((tateSeries.jacobianMatrix (explicitInverse A ϖ F' k')).submatrix
+        tateSeries.jacobianMatrix (explicitInverseSystem A ϖ F' k') i.castSucc (Fin.last N') *
+        ((tateSeries.jacobianMatrix (explicitInverseSystem A ϖ F' k')).submatrix
           i.castSucc.succAbove (Fin.last N').succAbove).det = 0 :=
-    Finset.sum_eq_zero fun i _ ↦ by simp [tateSeries.jacobianMatrix_apply]
+    Finset.sum_eq_zero fun i _ ↦ by
+      simp [tateSeries.jacobianMatrix_apply]
   rw [htop, zero_add, Fin.val_last, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul,
-    tateSeries.jacobianMatrix_apply, pderiv_explicitInverse_last_last, Fin.succAbove_last]
-  have hsub : (tateSeries.jacobianMatrix (explicitInverse A ϖ F' k')).submatrix
+    tateSeries.jacobianMatrix_apply, pderiv_explicitInverseSystem_last_last, Fin.succAbove_last]
+  have hsub : (tateSeries.jacobianMatrix (explicitInverseSystem A ϖ F' k')).submatrix
       Fin.castSucc Fin.castSucc =
       tateSeries.castSuccAlgHom.toRingHom.mapMatrix (tateSeries.jacobianMatrix F') :=
     Matrix.ext fun i j ↦ by
       simp only [Matrix.submatrix_apply, RingHom.mapMatrix_apply, Matrix.map_apply,
         tateSeries.jacobianMatrix_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-        pderiv_explicitInverse_castSucc_castSucc]
+        pderiv_explicitInverseSystem_castSucc_castSucc]
   rw [hsub, ← RingHom.map_det, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← tateSeries.jacobian_def,
     sq]
 
 private theorem mk_last_mul_mk_castSucc_jacobian (ϖ : A) {N' : ℕ}
     (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
-    let I := (Ideal.span (Set.range (explicitInverse A ϖ F' k'))).closure
+    let I := (Ideal.span (Set.range (explicitInverseSystem A ϖ F' k'))).closure
     Ideal.Quotient.mk I (tateSeries.X (N' + 1) A (Fin.last N')) *
         Ideal.Quotient.mk I (tateSeries.castSuccAlgHom (tateSeries.jacobian F')) =
       Ideal.Quotient.mk I (algebraMap A (tateSeries (N' + 1) A) (ϖ ^ k')) := by
   intro I
-  have h0 : Ideal.Quotient.mk I (explicitInverse A ϖ F' k' (Fin.last N')) = 0 :=
+  have h0 : Ideal.Quotient.mk I (explicitInverseSystem A ϖ F' k' (Fin.last N')) = 0 :=
     Ideal.Quotient.eq_zero_iff_mem.mpr (subset_closure (Ideal.subset_span ⟨Fin.last N', rfl⟩))
-  rw [explicitInverse_last, map_sub, map_mul] at h0
+  rw [explicitInverseSystem_last, map_sub, map_mul] at h0
   exact sub_eq_zero.mp h0
 
-private theorem map_last_sq_mul_jacobian_explicitInverse {C : Type*} [CommRing C] [Algebra A C]
-    {ϖ : A} {N' : ℕ} {F' : Fin N' → tateSeries N' A} {k' : ℕ}
+private theorem map_last_sq_mul_jacobian_explicitInverseSystem {C : Type*} [CommRing C]
+    [Algebra A C] {ϖ : A} {N' : ℕ} {F' : Fin N' → tateSeries N' A} {k' : ℕ}
     (φ : tateSeries (N' + 1) A →ₐ[A] C)
-    (hlast : φ (explicitInverse A ϖ F' k' (Fin.last N')) = 0) :
+    (hlast : φ (explicitInverseSystem A ϖ F' k' (Fin.last N')) = 0) :
     φ (tateSeries.X (N' + 1) A (Fin.last N')) ^ 2 *
-        φ (tateSeries.jacobian (explicitInverse A ϖ F' k')) = algebraMap A C (ϖ ^ (2 * k')) := by
+        φ (tateSeries.jacobian (explicitInverseSystem A ϖ F' k')) =
+      algebraMap A C (ϖ ^ (2 * k')) := by
   have hmul : φ (tateSeries.X (N' + 1) A (Fin.last N')) *
       φ (tateSeries.castSuccAlgHom (tateSeries.jacobian F')) = algebraMap A C (ϖ ^ k') := by
-    rw [explicitInverse_last, map_sub, map_mul, AlgHom.commutes] at hlast
+    rw [explicitInverseSystem_last, map_sub, map_mul, AlgHom.commutes] at hlast
     exact sub_eq_zero.mp hlast
   calc
     φ (tateSeries.X (N' + 1) A (Fin.last N')) ^ 2 *
-        φ (tateSeries.jacobian (explicitInverse A ϖ F' k'))
+        φ (tateSeries.jacobian (explicitInverseSystem A ϖ F' k'))
       = (φ (tateSeries.X (N' + 1) A (Fin.last N')) *
           φ (tateSeries.castSuccAlgHom (tateSeries.jacobian F'))) ^ 2 := by
-          rw [jacobian_explicitInverse, map_pow, mul_pow]
+          rw [jacobian_explicitInverseSystem, map_pow, mul_pow]
     _ = algebraMap A C (ϖ ^ (2 * k')) := by
           rw [hmul, ← map_pow, mul_comm 2 k', pow_mul]
 
@@ -202,22 +207,17 @@ section OfExplicitInverse
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [IsTateRing A] [CompleteSpace A] [T2Space A]
 
-/-- **Canonical standard étale presentation of the quotient by `explicitInverse A ϖ F' k'`.**
-For any `A⁺`-integral system `F' : Fin N' → tateSeries N' A` and `k' : ℕ`, the equation
-`T_{N'} · J(F') = ϖ ^ k'` forces `J(F')` to divide the unit `ϖ ^ k'` in the quotient ring, so
-`J(explicitInverse) = J(F') ^ 2` maps to a unit `u` with `ϖ ^ (2 * k') · u⁻¹ = T_{N'} ^ 2 ∈ plus`.
--/
-noncomputable def ofExplicitInverse (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
-    {N' : ℕ} (F' : Fin N' → tateSeries N' A) (hF' : ∀ i, F' i ∈ tateSeriesPlus N' A Aplus.plus)
-    (k' : ℕ) :
-    StandardEtalePresentation Aplus ϖ
-      ((tateSeriesPair (N' + 1) A Aplus).quotient
-        (Ideal.span (Set.range (explicitInverse A ϖ F' k'))).closure) := by
-  let F := explicitInverse A ϖ F' k'
-  let I := (Ideal.span (Set.range F)).closure
-  have hϖ_mem : ϖ ∈ Aplus.plus :=
-    Aplus.isRingOfIntegralElements.mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent
-  refine ofQuotient Aplus hϖ F (explicitInverse_mem_tateSeriesPlus hϖ_mem hF' k') (2 * k') ?_
+omit [IsUniformAddGroup A] [CompleteSpace A] [T2Space A] in
+private theorem exists_unit_jacobian_explicitInverseSystem (Aplus : Pair A) {ϖ : A}
+    (hϖ : IsPseudoUniformizer ϖ) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
+    let F := explicitInverseSystem A ϖ F' k'
+    let I := (Ideal.span (Set.range F)).closure
+    ∃ u : (tateSeries (N' + 1) A ⧸ I)ˣ,
+      (u : tateSeries (N' + 1) A ⧸ I) =
+        Ideal.Quotient.mk I (tateSeries.jacobian F) ∧
+      algebraMap A (tateSeries (N' + 1) A ⧸ I) (ϖ ^ (2 * k')) * ↑u⁻¹ ∈
+        ((tateSeriesPair (N' + 1) A Aplus).quotient I).plus := by
+  intro F I
   let s : tateSeries (N' + 1) A ⧸ I :=
     Ideal.Quotient.mk I (tateSeries.X (N' + 1) A (Fin.last N'))
   let jbar : tateSeries (N' + 1) A ⧸ I :=
@@ -227,7 +227,8 @@ noncomputable def ofExplicitInverse (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUni
       mk_last_mul_mk_castSucc_jacobian ϖ F' k'
   obtain ⟨u₀, hu₀⟩ := isUnit_of_mul_isUnit_right
     (hsj ▸ (hϖ.isUnit.pow k').map (algebraMap A (tateSeries (N' + 1) A ⧸ I)))
-  refine ⟨u₀ ^ 2, by rw [Units.val_pow_eq_pow_val, hu₀, ← map_pow, ← jacobian_explicitInverse], ?_⟩
+  refine ⟨u₀ ^ 2,
+    by rw [Units.val_pow_eq_pow_val, hu₀, ← map_pow, ← jacobian_explicitInverseSystem], ?_⟩
   have hinv : algebraMap A (tateSeries (N' + 1) A ⧸ I) (ϖ ^ (2 * k')) * ↑(u₀ ^ 2)⁻¹ = s ^ 2 := by
     apply (u₀ ^ 2).mul_left_inj.mp
     rw [mul_assoc, Units.inv_mul, mul_one, mul_comm 2 k', pow_mul, map_pow, ← hsj,
@@ -241,29 +242,46 @@ noncomputable def ofExplicitInverse (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUni
     (by simpa only [tateSeriesPair_plus] using
       tateSeries.X_mem_tateSeriesPlus Aplus.plus (Fin.last N'))
 
+/-- **Canonical standard étale presentation of the quotient by `explicitInverseSystem A ϖ F' k'`.**
+For any `A⁺`-integral system `F' : Fin N' → tateSeries N' A` and `k' : ℕ`, the equation
+`T_{N'} · J(F') = ϖ ^ k'` forces `J(F')` to divide the unit `ϖ ^ k'` in the quotient ring, so
+`J(explicitInverseSystem) = J(F') ^ 2` maps to a unit `u` with
+`ϖ ^ (2 * k') · u⁻¹ = T_{N'} ^ 2 ∈ plus`. -/
+noncomputable def ofExplicitInverse (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {N' : ℕ} (F' : Fin N' → tateSeries N' A) (hF' : ∀ i, F' i ∈ tateSeriesPlus N' A Aplus.plus)
+    (k' : ℕ) :
+    StandardEtalePresentation Aplus ϖ
+      ((tateSeriesPair (N' + 1) A Aplus).quotient
+        (Ideal.span (Set.range (explicitInverseSystem A ϖ F' k'))).closure) :=
+  ofQuotient Aplus hϖ (explicitInverseSystem A ϖ F' k')
+    (explicitInverseSystem_mem_tateSeriesPlus
+      (Aplus.isRingOfIntegralElements.mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent)
+      hF' k')
+    (2 * k') (exists_unit_jacobian_explicitInverseSystem Aplus hϖ F' k')
+
 @[simp]
 theorem ofExplicitInverse_N (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
     {N' : ℕ} (F' : Fin N' → tateSeries N' A) (hF' : ∀ i, F' i ∈ tateSeriesPlus N' A Aplus.plus)
     (k' : ℕ) :
-    (ofExplicitInverse Aplus hϖ F' hF' k').N = N' + 1 := by
-  simp [ofExplicitInverse]
+    (ofExplicitInverse Aplus hϖ F' hF' k').N = N' + 1 :=
+  ofQuotient_N _ _ _ _ _ _
 
 @[simp]
 theorem ofExplicitInverse_k (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
     {N' : ℕ} (F' : Fin N' → tateSeries N' A) (hF' : ∀ i, F' i ∈ tateSeriesPlus N' A Aplus.plus)
     (k' : ℕ) :
-    (ofExplicitInverse Aplus hϖ F' hF' k').k = 2 * k' := by
-  simp [ofExplicitInverse]
+    (ofExplicitInverse Aplus hϖ F' hF' k').k = 2 * k' :=
+  ofQuotient_k _ _ _ _ _ _
 
-/-- The defining equation family of `ofExplicitInverse` is `explicitInverse A ϖ F' k'`
+/-- The defining equation family of `ofExplicitInverse` is `explicitInverseSystem A ϖ F' k'`
 (transported along `ofExplicitInverse_N`). -/
 @[simp]
 theorem ofExplicitInverse_F (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
     {N' : ℕ} (F' : Fin N' → tateSeries N' A) (hF' : ∀ i, F' i ∈ tateSeriesPlus N' A Aplus.plus)
     (k' : ℕ) :
     cast (congrArg (fun n ↦ Fin n → tateSeries n A) (ofExplicitInverse_N Aplus hϖ F' hF' k'))
-      (ofExplicitInverse Aplus hϖ F' hF' k').F = explicitInverse A ϖ F' k' := by
-  simp [ofExplicitInverse]
+      (ofExplicitInverse Aplus hϖ F' hF' k').F = explicitInverseSystem A ϖ F' k' :=
+  ofQuotient_F _ _ _ _ _ _
 
 /-- The presenting map of `ofExplicitInverse` evaluates on a series as `Ideal.Quotient.mk`
 (transported along `ofExplicitInverse_N`). -/
@@ -273,12 +291,11 @@ theorem ofExplicitInverse_π_apply (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUnif
     (k' : ℕ) (f : tateSeries (N' + 1) A) :
     (ofExplicitInverse Aplus hϖ F' hF' k').π
       (cast (congrArg (tateSeries · A) (ofExplicitInverse_N Aplus hϖ F' hF' k').symm) f) =
-      Ideal.Quotient.mk (Ideal.span (Set.range (explicitInverse A ϖ F' k'))).closure f := by
-  unfold ofExplicitInverse
-  exact ofQuotient_π_apply _ _ _ _ _ _ f
+      Ideal.Quotient.mk (Ideal.span (Set.range (explicitInverseSystem A ϖ F' k'))).closure f :=
+  ofQuotient_π_apply _ _ _ _ _ _ f
 
 /-- **Characteristic Jacobian identity for explicit-inverse presentations:** for any presentation
-`Q` whose defining system is `explicitInverse A ϖ F' k'`, the square of the last coordinate
+`Q` whose defining system is `explicitInverseSystem A ϖ F' k'`, the square of the last coordinate
 satisfies `Q.π(T_{N'}) ^ 2 * Q.π(Q.jacobian) = algebraMap A C (ϖ ^ (2 * k'))`. -/
 theorem π_X_last_sq_mul_jacobian_of_explicitInverse
     {Aplus : Pair A} {ϖ : A}
@@ -288,22 +305,22 @@ theorem π_X_last_sq_mul_jacobian_of_explicitInverse
     (Q : StandardEtalePresentation Aplus ϖ Cplus)
     (hN : Q.N = N' + 1)
     (hF : cast (congrArg (fun n ↦ Fin n → tateSeries n A) hN) Q.F =
-      explicitInverse A ϖ F' k') :
+      explicitInverseSystem A ϖ F' k') :
     Q.π (tateSeries.X Q.N A (Fin.cast hN.symm (Fin.last N'))) ^ 2 * Q.π Q.jacobian =
       algebraMap A C (ϖ ^ (2 * k')) := by
   rw [Q.jacobian_def]
   have h_aux : ∀ {N : ℕ} (F : Fin N → tateSeries N A) (π : tateSeries N A →ₐ[A] C)
       (hN' : N = N' + 1)
       (hF' : cast (congrArg (fun n ↦ Fin n → tateSeries n A) hN') F =
-        explicitInverse A ϖ F' k')
+        explicitInverseSystem A ϖ F' k')
       (_hπ : π (F (Fin.cast hN'.symm (Fin.last N'))) = 0),
       π (tateSeries.X N A (Fin.cast hN'.symm (Fin.last N'))) ^ 2 * π (tateSeries.jacobian F) =
         algebraMap A C (ϖ ^ (2 * k')) := by
     intro N F π hN' hF' hπ
     subst hN'
-    have hFeq : F = explicitInverse A ϖ F' k' := hF'
+    have hFeq : F = explicitInverseSystem A ϖ F' k' := hF'
     rw [hFeq] at hπ ⊢
-    exact map_last_sq_mul_jacobian_explicitInverse π hπ
+    exact map_last_sq_mul_jacobian_explicitInverseSystem π hπ
   exact h_aux Q.F Q.π hN hF (Q.π_F _)
 
 /-- In `ofExplicitInverse`, the last coordinate satisfies
@@ -317,7 +334,7 @@ theorem ofExplicitInverse_π_X_last_sq_mul_jacobian (Aplus : Pair A) {ϖ : A}
         (ofExplicitInverse Aplus hϖ F' hF' k').π
           (ofExplicitInverse Aplus hϖ F' hF' k').jacobian =
       algebraMap A ((tateSeries (N' + 1) A) ⧸
-        (Ideal.span (Set.range (explicitInverse A ϖ F' k'))).closure) (ϖ ^ (2 * k')) :=
+        (Ideal.span (Set.range (explicitInverseSystem A ϖ F' k'))).closure) (ϖ ^ (2 * k')) :=
   (ofExplicitInverse Aplus hϖ F' hF' k').π_X_last_sq_mul_jacobian_of_explicitInverse
     (ofExplicitInverse_N Aplus hϖ F' hF' k') (ofExplicitInverse_F Aplus hϖ F' hF' k')
 
@@ -360,50 +377,51 @@ private theorem withInverseTuple_mem_plus
   exact P.toPairHom.map_mem_plus _
     (by rw [tateSeriesPair_plus]; exact tateSeries.X_mem_tateSeriesPlus Aplus.plus i)
 
-private theorem isWeightBounded_withInverseTuple (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    IsWeightBounded (algebraMap A C) (fun _ : Fin (P.N + 1) ↦ ({1} : Set A)) P.withInverseTuple :=
-  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun j ↦
-    Cplus.isRingOfIntegralElements.isPowerBounded_of_mem (P.withInverseTuple_mem_plus j)
+private structure WithInverseHomData (P : StandardEtalePresentation Aplus ϖ Cplus) where
+  toAlgHom : tateSeries (P.N + 1) A →ₐ[A] C
+  continuous_toAlgHom : Continuous toAlgHom
+  apply_eq : ∀ f, toAlgHom f =
+    weightedEval (algebraMap A C) P.withInverseTuple (f : MvPowerSeries (Fin (P.N + 1)) A)
 
-/-- **Extended `A`-algebra quotient homomorphism `tateSeries (P.N + 1) A →ₐ[A] C`** extending `P.π`
-along `tateSeries.castSuccAlgHom` and sending `T_{P.N}` to `ϖ ^ P.k · P.π(P.jacobian)⁻¹ ∈ C⁺`. -/
-noncomputable def withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    tateSeries (P.N + 1) A →ₐ[A] C := by
+private noncomputable def mkWithInverseHomData
+    (P : StandardEtalePresentation Aplus ϖ Cplus) : WithInverseHomData P :=
   let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
   have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
   have : T2Space C := P.t2Space
   have : CompleteSpace C := P.completeSpace
-  let ev := weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt
-    P.isWeightBounded_withInverseTuple
-  exact
+  let hb :=
+    isWeightBounded_one_weight_of_mem_plus (algebraMap A C) Cplus P.withInverseTuple_mem_plus
+  let ev := weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt hb
+  let hom : tateSeries (P.N + 1) A →ₐ[A] C :=
     { toFun := ev
       map_one' := ev.map_one
       map_mul' := ev.map_mul
       map_zero' := ev.map_zero
       map_add' := ev.map_add
       commutes' a := by rw [algebraMap_weightedRestrictedSubring, weightedEvalHom_weightedC] }
+  { toAlgHom := hom
+    continuous_toAlgHom := continuous_weightedEvalHom isWeightFamily_one_weight
+      P.continuous_algebraMap.continuousAt hb
+    apply_eq := coe_weightedEvalHom isWeightFamily_one_weight
+      P.continuous_algebraMap.continuousAt hb }
+
+/-- **Extended `A`-algebra quotient homomorphism `tateSeries (P.N + 1) A →ₐ[A] C`** extending `P.π`
+along `tateSeries.castSuccAlgHom` and sending `T_{P.N}` to `ϖ ^ P.k · P.π(P.jacobian)⁻¹ ∈ C⁺`. -/
+noncomputable def withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
+    tateSeries (P.N + 1) A →ₐ[A] C :=
+  (mkWithInverseHomData P).toAlgHom
 
 /-- `P.withInverseHom` is continuous. -/
 theorem continuous_withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    Continuous P.withInverseHom := by
-  let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
-  have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
-  have : T2Space C := P.t2Space
-  have : CompleteSpace C := P.completeSpace
-  exact continuous_weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt
-    P.isWeightBounded_withInverseTuple
+    Continuous P.withInverseHom :=
+  (mkWithInverseHomData P).continuous_toAlgHom
 
 private theorem withInverseHom_apply
     (P : StandardEtalePresentation Aplus ϖ Cplus) (f : tateSeries (P.N + 1) A) :
     P.withInverseHom f =
       weightedEval (algebraMap A C) P.withInverseTuple
-        (f : MvPowerSeries (Fin (P.N + 1)) A) := by
-  let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
-  have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
-  have : T2Space C := P.t2Space
-  have : CompleteSpace C := P.completeSpace
-  exact coe_weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt
-    P.isWeightBounded_withInverseTuple f
+        (f : MvPowerSeries (Fin (P.N + 1)) A) :=
+  (mkWithInverseHomData P).apply_eq f
 
 private theorem withInverseHom_X_apply
     (P : StandardEtalePresentation Aplus ϖ Cplus) (j : Fin (P.N + 1)) :
@@ -461,9 +479,9 @@ theorem isQuotientMap_withInverseHom (P : StandardEtalePresentation Aplus ϖ Cpl
 
 private theorem ker_withInverseHom_le (P : StandardEtalePresentation Aplus ϖ Cplus) :
     RingHom.ker P.withInverseHom ≤
-      (Ideal.span (Set.range (explicitInverse A ϖ P.F P.k))).closure := by
+      (Ideal.span (Set.range (explicitInverseSystem A ϖ P.F P.k))).closure := by
   have : T2Space C := P.t2Space
-  let F := explicitInverse A ϖ P.F P.k
+  let F := explicitInverseSystem A ϖ P.F P.k
   let K' := (Ideal.span (Set.range F)).closure
   let u : Cˣ := P.exists_unit_jacobian.choose
   have hu_eq : (u : C) = P.π P.jacobian := by
@@ -476,14 +494,11 @@ private theorem ker_withInverseHom_le (P : StandardEtalePresentation Aplus ϖ Cp
   have hφ₀_cont : Continuous φ₀ :=
     continuous_quotient_mk'.comp (tateSeries.continuous_renameAlgHom Fin.castSuccEmb)
   have hI_le : P.ideal ≤ RingHom.ker φ₀ := by
-    have hclosed : IsClosed (RingHom.ker φ₀ : Set (tateSeries P.N A)) :=
-      isClosed_singleton.preimage hφ₀_cont
-    rw [← SetLike.coe_subset_coe, P.ideal_def, Ideal.coe_closure]
-    refine hclosed.closure_subset_iff.mpr (SetLike.coe_subset_coe.mpr (Ideal.span_le.mpr ?_))
-    rintro _ ⟨i, rfl⟩
-    simp only [SetLike.mem_coe, RingHom.mem_ker, φ₀, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-      RingHom.coe_coe, ← explicitInverse_castSucc ϖ P.F P.k i, Ideal.Quotient.eq_zero_iff_mem]
-    exact subset_closure (Ideal.subset_span ⟨i.castSucc, rfl⟩)
+    rw [P.ideal_def]
+    exact Ideal.closure_span_le_ker_of_continuous hφ₀_cont fun i ↦ by
+      simp only [φ₀, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        ← explicitInverseSystem_castSucc ϖ P.F P.k i, Ideal.Quotient.eq_zero_iff_mem]
+      exact subset_closure (Ideal.subset_span ⟨i.castSucc, rfl⟩)
   let ψ : C →+* tateSeries (P.N + 1) A ⧸ K' :=
     (Ideal.Quotient.lift P.ideal φ₀ fun g hg ↦ hI_le hg).comp P.targetToQuotient.toRingHom
   have hψ_cont : Continuous ψ :=
@@ -510,10 +525,18 @@ private theorem ker_withInverseHom_le (P : StandardEtalePresentation Aplus ϖ Cp
             Ideal.Quotient.mk K' (algebraMap A (tateSeries (P.N + 1) A) (ϖ ^ P.k)) := by
           rw [P.jacobian_def]
           exact mk_last_mul_mk_castSucc_jacobian ϖ P.F P.k
-        apply uQ.mul_left_inj.mp
-        rw [Units.coe_map, MonoidHom.coe_ofClass, hu_eq, ← map_mul,
-          P.withInverseHom_last_mul_jacobian, ← P.π.commutes, hψ_π, AlgHom.commutes, ← hlast, ← huQ,
-          Units.coe_map, MonoidHom.coe_ofClass, hu_eq, hψ_π]
+        have hmul : ψ (P.withInverseHom (tateSeries.X (P.N + 1) A (Fin.last P.N))) * (uQ : _) =
+            Ideal.Quotient.mk K' (tateSeries.X (P.N + 1) A (Fin.last P.N)) * (uQ : _) := by
+          calc
+            ψ (P.withInverseHom (tateSeries.X (P.N + 1) A (Fin.last P.N))) * (uQ : _)
+              = ψ (P.withInverseHom (tateSeries.X (P.N + 1) A (Fin.last P.N)) *
+                  P.π P.jacobian) := by
+                  rw [Units.coe_map, MonoidHom.coe_ofClass, hu_eq, map_mul]
+            _ = ψ (P.π (algebraMap A (tateSeries P.N A) (ϖ ^ P.k))) := by
+                  rw [P.withInverseHom_last_mul_jacobian, P.π.commutes]
+            _ = Ideal.Quotient.mk K' (tateSeries.X (P.N + 1) A (Fin.last P.N)) * (uQ : _) := by
+                  rw [hψ_π, AlgHom.commutes, ← hlast, huQ]
+        exact uQ.mul_left_inj.mp hmul
       · have hi : i.castSucc = Fin.castSuccEmb i := rfl
         rw [hi, ← tateSeries.renameAlgHom_X Fin.castSuccEmb, withInverseHom_castSuccAlgHom, hψ_π]
   intro f hf
@@ -521,45 +544,43 @@ private theorem ker_withInverseHom_le (P : StandardEtalePresentation Aplus ϖ Cp
     (by rw [← hcomp]; simp [RingHom.comp_apply, RingHom.mem_ker.mp hf])
 
 private theorem le_ker_withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    (Ideal.span (Set.range (explicitInverse A ϖ P.F P.k))).closure ≤
+    (Ideal.span (Set.range (explicitInverseSystem A ϖ P.F P.k))).closure ≤
       RingHom.ker P.withInverseHom := by
   have : T2Space C := P.t2Space
-  have hclosed : IsClosed (RingHom.ker P.withInverseHom : Set (tateSeries (P.N + 1) A)) :=
-    isClosed_singleton.preimage P.continuous_withInverseHom
-  refine hclosed.closure_subset_iff.mpr (Ideal.span_le.mpr ?_)
-  rintro _ ⟨j, rfl⟩
-  rw [SetLike.mem_coe, RingHom.mem_ker]
+  refine Ideal.closure_span_le_ker_of_continuous P.continuous_withInverseHom fun j ↦ ?_
   refine Fin.lastCases ?_ (fun i ↦ by simp [P.π_F]) j
-  simp only [explicitInverse_last, map_sub, map_mul, AlgHom.commutes, withInverseHom_castSuccAlgHom]
+  simp only [explicitInverseSystem_last, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    map_sub, map_mul, AlgHom.commutes, withInverseHom_castSuccAlgHom]
   rw [← P.jacobian_def, P.withInverseHom_last_mul_jacobian, sub_self]
 
 /-- The kernel of `P.withInverseHom` is the closure of the ideal generated by the enlarged system
-`explicitInverse A ϖ P.F P.k`. -/
+`explicitInverseSystem A ϖ P.F P.k`. -/
 theorem ker_withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
     RingHom.ker P.withInverseHom =
-      (Ideal.span (Set.range (explicitInverse A ϖ P.F P.k))).closure :=
+      (Ideal.span (Set.range (explicitInverseSystem A ϖ P.F P.k))).closure :=
   le_antisymm P.ker_withInverseHom_le P.le_ker_withInverseHom
 
 /-- On `P.withInverseHom`, the last coordinate satisfies
 `P.withInverseHom T_{P.N} ^ 2 * P.withInverseHom J_new = algebraMap A C (ϖ ^ (2 * P.k))`. -/
 theorem withInverseHom_last_sq_mul_jacobian (P : StandardEtalePresentation Aplus ϖ Cplus) :
     P.withInverseHom (tateSeries.X (P.N + 1) A (Fin.last P.N)) ^ 2 *
-        P.withInverseHom (tateSeries.jacobian (explicitInverse A ϖ P.F P.k)) =
+        P.withInverseHom (tateSeries.jacobian (explicitInverseSystem A ϖ P.F P.k)) =
       algebraMap A C (ϖ ^ (2 * P.k)) :=
-  map_last_sq_mul_jacobian_explicitInverse P.withInverseHom
+  map_last_sq_mul_jacobian_explicitInverseSystem P.withInverseHom
     (RingHom.mem_ker.mp (P.le_ker_withInverseHom (subset_closure
       (Ideal.subset_span ⟨Fin.last P.N, rfl⟩))))
 
 /-- **Upgrade a `StandardEtalePresentation` by adjoining an explicit scaled Jacobian inverse.**
 Given `P : StandardEtalePresentation Aplus ϖ Cplus`, this produces a new presentation of the *same*
-Huber pair `Cplus` in `P.N + 1` variables with equations `explicitInverse A ϖ P.F P.k`, projection
-`P.withInverseHom`, and scale exponent `2 * P.k`. -/
+Huber pair `Cplus` in `P.N + 1` variables with equations `explicitInverseSystem A ϖ P.F P.k`,
+projection `P.withInverseHom`, and scale exponent `2 * P.k`. -/
 noncomputable def withInverse (P : StandardEtalePresentation Aplus ϖ Cplus) :
     StandardEtalePresentation Aplus ϖ Cplus where
   isPseudoUniformizer := P.isPseudoUniformizer
   N := P.N + 1
-  F := explicitInverse A ϖ P.F P.k
-  F_mem_plus := explicitInverse_mem_tateSeriesPlus P.mem_plus_pseudoUniformizer P.F_mem_plus P.k
+  F := explicitInverseSystem A ϖ P.F P.k
+  F_mem_plus :=
+    explicitInverseSystem_mem_tateSeriesPlus P.mem_plus_pseudoUniformizer P.F_mem_plus P.k
   k := 2 * P.k
   π := P.withInverseHom
   isQuotientMap_π := P.isQuotientMap_withInverseHom
@@ -579,20 +600,14 @@ noncomputable def withInverse (P : StandardEtalePresentation Aplus ϖ Cplus) :
       exact IsIntegral.tower_top (R := R₁) (A := R₂) ((P.mem_plus_iff c).mp hc)
     · have := Cplus.isRingOfIntegralElements.isIntegrallyClosedIn
       have hmap_le : (tateSeriesPlus (P.N + 1) A Aplus.plus).map P.withInverseHom.toRingHom
-          ≤ Cplus.plus := by
-        rw [Subring.map_le_iff_le_comap]
-        exact le_trans (Pair.weighted_plus_one_weight (k := P.N + 1) Aplus).symm.le
-          (Aplus.weighted_plus_le_comap isWeightFamily_one_weight Cplus
-            P.continuous_withInverseHom
-            (fun a ha ↦ by
-              simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-                ← algebraMap_weightedRestrictedSubring, AlgHom.commutes] using
-                P.algebraMap_mem_plus ha)
-            (fun i t ht ↦ by
-              obtain rfl : t = 1 := Set.mem_singleton_iff.mp ht
-              simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_one, one_mul,
-                ← tateSeries.X_eq_weightedX, P.withInverseHom_X_apply] using
-                P.withInverseTuple_mem_plus i))
+          ≤ Cplus.plus :=
+        tateSeriesPlus_map_le_of_continuous Aplus Cplus P.continuous_withInverseHom
+          (fun a ha ↦ by
+            simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes] using
+              P.algebraMap_mem_plus ha)
+          (fun i ↦ by
+            simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, P.withInverseHom_X_apply] using
+              P.withInverseTuple_mem_plus i)
       exact fun hc ↦ Subring.integralClosure_subring_le_iff.mpr hmap_le
         ((mem_integralClosure_iff _ _).mpr hc)
   exists_unit_jacobian := by
@@ -600,7 +615,7 @@ noncomputable def withInverse (P : StandardEtalePresentation Aplus ϖ Cplus) :
     have hu_eq : (u : C) = P.π P.jacobian := by
       rw [P.jacobian_def]; exact P.exists_unit_jacobian.choose_spec.1
     refine ⟨u ^ 2, ?_, ?_⟩
-    · rw [Units.val_pow_eq_pow_val, hu_eq, jacobian_explicitInverse, map_pow,
+    · rw [Units.val_pow_eq_pow_val, hu_eq, jacobian_explicitInverseSystem, map_pow,
         withInverseHom_castSuccAlgHom, P.jacobian_def]
     · have hu_inv_sq : (↑(u ^ 2)⁻¹ : C) = (↑u⁻¹ : C) ^ 2 := by
         apply (u ^ 2).mul_right_inj.mp
@@ -618,12 +633,12 @@ theorem withInverse_N (P : StandardEtalePresentation Aplus ϖ Cplus) :
 theorem withInverse_k (P : StandardEtalePresentation Aplus ϖ Cplus) :
     P.withInverse.k = 2 * P.k := (rfl)
 
-/-- The defining equation family of `P.withInverse` is `explicitInverse A ϖ P.F P.k`
+/-- The defining equation family of `P.withInverse` is `explicitInverseSystem A ϖ P.F P.k`
 (transported along `P.withInverse_N`). -/
 @[simp]
 theorem withInverse_F (P : StandardEtalePresentation Aplus ϖ Cplus) :
     cast (congrArg (fun n ↦ Fin n → tateSeries n A) P.withInverse_N) P.withInverse.F =
-      explicitInverse A ϖ P.F P.k := (rfl)
+      explicitInverseSystem A ϖ P.F P.k := (rfl)
 
 /-- The presenting map of `P.withInverse` evaluates on a series as `P.withInverseHom`
 (transported along `P.withInverse_N`). -/
