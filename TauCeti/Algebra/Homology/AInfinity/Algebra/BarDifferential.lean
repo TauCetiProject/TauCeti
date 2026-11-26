@@ -61,10 +61,9 @@ theorem m_eq_of_taylor_eq_on_filtration {𝒜 𝒜' : AInfinityAlgebra R A}
   rcases Nat.eq_zero_or_pos k with rfl | hk0
   · rw [m_zero, m_zero]
   refine MultilinearMap.ext fun x ↦ ?_
-  have ht := h _ (ReducedTensorWords.of_mem_filtration R A (k := ⟨k, hk0⟩) hkn
-    (PiTensorProduct.tprod R fun i ↦ 𝒜.grading.koszulTwist ((k : ℤ) - 1 - i) (x i)))
-  rw [taylor_of_tprod, taylor_of_tprod, ← hG] at ht
-  simpa only [InternalGrading.koszulTwist_koszulTwist] using ht
+  rw [𝒜.m_apply_eq_taylor_of_tprod_koszulTwist hk0,
+    𝒜'.m_apply_eq_taylor_of_tprod_koszulTwist hk0, hG]
+  exact h _ (ReducedTensorWords.of_mem_filtration R A (k := ⟨k, hk0⟩) hkn _)
 
 /-- The Taylor map of the higher bar operations, obtained by removing the unary component. -/
 noncomputable def higherTaylor (𝒜 : AInfinityAlgebra R A) :

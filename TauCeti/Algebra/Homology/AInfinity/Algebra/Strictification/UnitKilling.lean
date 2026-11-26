@@ -315,22 +315,16 @@ private theorem unitKillingCochain_barDifferential_prefix {𝒜 : AInfinityAlgeb
       exact unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
         (i := ⟨i.val - 1, by omega⟩) (by dsimp only; omega)
         ((congrArg w (Fin.ext (by simp; omega))).trans hwi)
-    have hcancel := h𝒜.negOnePowCast_smul_splice_two_add_succ_eq_zero he (n := m + 2)
-      (p := i.val - 1) (x := w) (𝒟 := 𝒟) (by omega) (hw _)
-      ((congrArg w (Fin.ext (by dsimp only; omega))).trans hwi)
-    rw [htail, (PiTensorProduct.tprod R).map_coord_zero (1 : Fin 2) rfl, map_zero, map_zero,
-      Finset.sum_range_succ, ← Nat.sub_add_cancel hipos, Finset.sum_range_succ,
-      Finset.sum_eq_zero fun p hp ↦ by
-        rw [Finset.mem_range] at hp
-        rw [splice_two_eq_of_tprod R (by omega) w _,
-          unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
-            (i := ⟨i.val - 1, by omega⟩) (by dsimp only; omega) (by
-              dsimp only; split_ifs
-              · omega
-              · omega
-              · exact (congrArg w (Fin.ext (by simp; omega))).trans hwi),
-          smul_zero],
-      zero_add, ← map_smul, ← map_smul, ← map_add, hcancel, map_zero]
+    rw [htail, (PiTensorProduct.tprod R).map_coord_zero (1 : Fin 2) rfl, map_zero, map_zero]
+    refine h𝒜.sum_negOnePowCast_smul_map_splice_two_eq_zero he (unitKillingCochain 𝒜 e π m j)
+      hipos (by omega) (hw _) ((congrArg w (Fin.ext rfl)).trans hwi) fun p hp ↦ ?_
+    rw [splice_two_eq_of_tprod R (by omega) w _,
+      unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
+        (i := ⟨i.val - 1, by omega⟩) (by dsimp only; omega) (by
+          dsimp only; split_ifs
+          · omega
+          · omega
+          · exact (congrArg w (Fin.ext (by simp; omega))).trans hwi)]
 
 private theorem hochschildDifferential_unitKillingCochain_of_lt {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) (π : Module.Dual R A) (m : ℕ)

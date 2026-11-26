@@ -88,11 +88,8 @@ theorem IsMinimal.strictUnit_of_taylor_of_tprod_eq_zero {𝒜 : AInfinityAlgebra
     rintro ⟨i, hi⟩
     rcases Nat.eq_zero_or_pos n with rfl | hn0
     · rw [m_zero, zero_apply]
-    have hyi : 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) (x i) = e := by
-      rw [hi, 𝒜.grading.koszulTwist_apply_of_mem_zero he.degree_zero]
-    have hz := h ⟨n, hn0⟩ hn (fun r ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - r) (x r)) ⟨i, hyi⟩
-    rw [taylor_of_tprod] at hz
-    simpa only [InternalGrading.koszulTwist_koszulTwist] using hz
+    rw [𝒜.m_apply_eq_taylor_of_tprod_koszulTwist hn0]
+    exact h ⟨n, hn0⟩ hn _ ⟨i, by rw [hi, 𝒜.grading.koszulTwist_apply_of_mem_zero he.degree_zero]⟩
 
 /-- On a minimal `A∞` algebra, `e` is a strict unit iff it is a cohomological unit and `𝒜.taylor`
 vanishes on pure tensor words of length `k ≠ 2` containing `e`. -/

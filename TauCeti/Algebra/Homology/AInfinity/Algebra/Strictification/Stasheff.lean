@@ -129,6 +129,29 @@ theorem IsMinimal.negOnePowCast_smul_splice_two_add_succ_eq_zero {𝒜 : AInfini
   rw [hp_val, hsucc_val, splice_two_succ_eq_splice_two_pred R (Nat.succ_pos p) hpn x, splice_smul]
   simp [prefixSum_succ (by omega : p < n + 1), negOnePowCast_add, smul_smul]
 
+/-- In a minimal `A∞` algebra with cohomological unit `e`, if an `(n + 1)`-tuple `x` of suspended
+degrees `𝒟` has `e` at an interior slot `0 < i < n`, and an `R`-linear map `F` kills binary
+splices at positions `p < i - 1`, then the alternating prefix sum of `F` on binary collapses of `x`
+up to `i` vanishes. -/
+theorem IsMinimal.sum_negOnePowCast_smul_map_splice_two_eq_zero {𝒜 : AInfinityAlgebra R A}
+    (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) {B : Type*} [AddCommMonoid B]
+    [Module R B] (F : ReducedTensorWords R A →ₗ[R] B) {n i : ℕ} (hi0 : 0 < i) (hin : i < n)
+    {x : Fin (n + 1) → A} {𝒟 : Fin (n + 1) → ℤ}
+    (hx : x ⟨i - 1, by omega⟩ ∈ (𝒜.grading.shift 1).piece (𝒟 ⟨i - 1, by omega⟩))
+    (hxe : x ⟨i, by omega⟩ = e)
+    (hF : ∀ p < i - 1, F (splice R x 0 (n + 1) p 2 (𝒜.taylor (subword R x p 2))) = 0) :
+    (∑ p ∈ Finset.range (i + 1),
+      negOnePowCast R (prefixSum p 𝒟) •
+        F (splice R x 0 (n + 1) p 2 (𝒜.taylor (subword R x p 2)))) = 0 := by
+  have hi_pred : (i - 1) + 1 = i := Nat.sub_add_cancel hi0
+  have hcancel := h𝒜.negOnePowCast_smul_splice_two_add_succ_eq_zero he (n := n) (p := i - 1)
+    (x := x) (𝒟 := 𝒟) (by omega) hx ((congrArg x (Fin.ext hi_pred)).trans hxe)
+  rw [Finset.sum_range_succ, ← hi_pred, Finset.sum_range_succ,
+    Finset.sum_eq_zero fun p hp ↦ by
+      rw [Finset.mem_range] at hp
+      rw [hF p hp, smul_zero],
+    zero_add, ← map_smul, ← map_smul, ← map_add, hcancel, map_zero]
+
 /-! ### Stasheff identity on duplicated-unit words -/
 
 /-- Non-binary, non-`(m + 3)` collapses of `duplicateAt e j w` vanish. -/
@@ -249,21 +272,16 @@ private theorem taylor_barDifferential_duplicateAt_binary_prefix {𝒜 : AInfini
     simp
   · -- For `j > 0`, binary collapses before `j - 1` vanish by `hIH`, and slots `j - 1` and `j`
     -- cancel around the interior unit `duplicateAt e j w j = e`.
-    have hj_pred : (j.val - 1) + 1 = j.val := Nat.sub_add_cancel hjpos
-    have hcancel := h𝒜.negOnePowCast_smul_splice_two_add_succ_eq_zero he (n := m + 3)
-      (p := j.val - 1) (x := duplicateAt e j w) (𝒟 := duplicateAt (-1 : ℤ) j 𝒟) (by omega)
+    rw [ite_eq_right (Nat.ne_of_gt hjpos)]
+    refine h𝒜.sum_negOnePowCast_smul_map_splice_two_eq_zero he 𝒜.taylor hjpos hjlt
       (duplicateAt_mem_piece he.mem_shift_one_piece j hw ⟨j.val - 1, by omega⟩)
       (by
-        have hj_cast : (⟨(j.val - 1) + 1, by omega⟩ : Fin (m + 4)) = j.castSucc :=
-          Fin.ext (by simp [hj_pred])
+        have hj_cast : (⟨j.val, by omega⟩ : Fin (m + 4)) = j.castSucc := Fin.ext rfl
         rw [hj_cast, duplicateAt_castSucc])
-    rw [ite_eq_right (Nat.ne_of_gt hjpos), Finset.sum_range_succ, ← hj_pred,
-      Finset.sum_range_succ, Finset.sum_eq_zero fun p hp ↦ by
-        rw [Finset.mem_range] at hp
-        obtain ⟨u, hu, hsp⟩ := splice_two_duplicateAt_of_lt R e (by omega : p + 2 ≤ j.val) w
-          (𝒜.taylor (subword R (duplicateAt e j w) p 2))
-        rw [hsp, hIH u ⟨j.val - 1, by omega⟩ (by dsimp only; omega) hu, smul_zero],
-      zero_add, ← map_smul, ← map_smul, ← map_add, hcancel, map_zero]
+      fun p hp ↦ ?_
+    obtain ⟨u, hu, hsp⟩ := splice_two_duplicateAt_of_lt R e (by omega : p + 2 ≤ j.val) w
+      (𝒜.taylor (subword R (duplicateAt e j w) p 2))
+    rw [hsp, hIH u ⟨j.val - 1, by omega⟩ (by dsimp only; omega) hu]
 
 private theorem taylor_barDifferential_duplicateAt_row {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) {m : ℕ}
