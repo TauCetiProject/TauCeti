@@ -86,6 +86,18 @@ theorem isBigO_sum_Icc_one {F : Type*} [NormedField F]
 
 end Level
 
+/-- A level-zero Dirichlet character contributes only at `1` on the naturals, so its
+weighted sum vanishes if the weight vanishes at `1`. -/
+theorem sum_mul_eq_zero_of_level_zero {R : Type*} [CommSemiring R]
+    (χ : DirichletCharacter R 0) (s : Finset ℕ) (f : ℕ → R) (hf : f 1 = 0) :
+    ∑ n ∈ s, χ n * f n = 0 := by
+  refine sum_eq_zero fun n _ ↦ ?_
+  by_cases hn : n = 1
+  · simp only [hn, hf, mul_zero]
+  · have hunit : ¬ IsUnit (n : ZMod 0) := by
+      simpa only [ZMod.isUnit_iff_coprime, Nat.coprime_zero_right] using hn
+    rw [χ.map_nonunit hunit, zero_mul]
+
 /-- The partial sums of `χ(n) log n / n` are uniformly bounded for any nonprincipal
 complex Dirichlet character. -/
 theorem exists_norm_sum_mul_log_div_le (χ : DirichletCharacter ℂ N) (hχ : χ ≠ 1) :
@@ -93,14 +105,9 @@ theorem exists_norm_sum_mul_log_div_le (χ : DirichletCharacter ℂ N) (hχ : χ
   by_cases hN : N = 0
   · subst N
     refine ⟨0, fun m ↦ ?_⟩
-    have hsum : ∑ n ∈ Ioc 0 m, χ n * (Real.log n : ℂ) / (n : ℂ) = 0 := by
-      refine sum_eq_zero fun n _ ↦ ?_
-      by_cases hn : n = 1
-      · simp [hn]
-      · have hunit : ¬ IsUnit (n : ZMod 0) := by
-          simpa [ZMod.isUnit_iff_coprime, Nat.coprime_zero_right] using hn
-        simp [χ.map_nonunit hunit]
-    rw [hsum, norm_zero]
+    simp_rw [mul_div_assoc]
+    rw [χ.sum_mul_eq_zero_of_level_zero (Ioc 0 m) (fun n ↦ (Real.log n : ℂ) / n) (by simp),
+      norm_zero]
   let _ : NeZero N := ⟨hN⟩
   let w (n : ℕ) : ℝ := Real.log n / (n : ℝ)
   have hanti : AntitoneOn w (Set.Ioi 2) := by

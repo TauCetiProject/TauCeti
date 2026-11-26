@@ -106,14 +106,9 @@ theorem exists_norm_sum_mul_vonMangoldt_div_le (hχ : χ ≠ 1) :
   by_cases hN : N = 0
   · subst N
     refine ⟨0, fun m ↦ ?_⟩
-    have hsum : ∑ d ∈ Ioc 0 m, χ d * (Λ d : ℂ) / (d : ℂ) = 0 := by
-      refine sum_eq_zero fun d _ ↦ ?_
-      by_cases hd : d = 1
-      · simp [hd]
-      · have hunit : ¬ IsUnit (d : ZMod 0) := by
-          simpa [ZMod.isUnit_iff_coprime, Nat.coprime_zero_right] using hd
-        simp [χ.map_nonunit hunit]
-    simp [hsum]
+    simp_rw [mul_div_assoc]
+    rw [χ.sum_mul_eq_zero_of_level_zero (Ioc 0 m) (fun d ↦ (Λ d : ℂ) / d) (by simp),
+      norm_zero]
   let _ : NeZero N := ⟨hN⟩
   obtain ⟨B, hB⟩ := χ.exists_norm_sum_mul_log_div_le hχ
   let l := χ.LFunction 1
