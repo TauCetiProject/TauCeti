@@ -236,11 +236,6 @@ theorem reciprocity (hs : IsMennickeSymbol s) {p p' : MennickePair I} {q : A}
     exact hs.map_eq_of_snd_eq_neg (p := rae) (q := rane) rfl (by simp [rane, rae])
   rw [h₁, h₂]
 
-private theorem dvd_mul_sub_one {y a₁ a₂ : A} (h₁ : y ∣ a₁ - 1) (h₂ : y ∣ a₂ - 1) :
-    y ∣ a₁ * a₂ - 1 := by
-  rw [show a₁ * a₂ - 1 = a₁ * (a₂ - 1) + (a₁ - 1) by ring]
-  exact (dvd_mul_of_dvd_right h₂ _).add h₁
-
 /-- Lam's identity for numerators of the form `d y` with `a₁ ≡ a₂ ≡ d ≡ 1` modulo `y`: by
 reciprocity it is the multiplicativity of `[a y / d]` in `a`. -/
 private theorem map_eq_mul_of_fst_eq_mul_of_snd_eq_mul (hs : IsMennickeSymbol s)
@@ -260,7 +255,7 @@ private theorem map_eq_mul_of_fst_eq_mul_of_snd_eq_mul (hs : IsMennickeSymbol s)
       exact h.of_mul_right_left.symm.mul_right hdy
     exact ⟨⟨d, r.fst * y, hdI, I.mul_mem_left _ hy, hcop⟩, rfl, rfl,
       hs.reciprocity ⟨k, hk⟩ (q := y) (p' := r) hry rfl (by rw [hr])⟩
-  have hqy : y ∣ q.fst - 1 := hfst ▸ dvd_mul_sub_one h₁ h₂
+  have hqy : y ∣ q.fst - 1 := by simpa [hfst] using dvd_mul_sub_mul h₁ h₂
   obtain ⟨D₁, hD₁, hD₁', hsD₁⟩ := hD p₁ h₁ hp₁
   obtain ⟨D₂, hD₂, hD₂', hsD₂⟩ := hD p₂ h₂ hp₂
   obtain ⟨Dq, hDq, hDq', hsDq⟩ := hD q hqy hq
@@ -279,7 +274,7 @@ theorem map_eq_mul_of_fst_eq_mul_of_dvd (hs : IsMennickeSymbol s) {p₁ p₂ q :
     (h₂ : p₂.snd = q.snd) (hfst : q.fst = p₁.fst * p₂.fst) : s q = s p₁ * s p₂ := by
   -- With `a₁ a₂ = 1 + y e`, adding `t a₁ a₂` with `t = (y - b) (1 - y e) ∈ I` to `b` turns it
   -- into `y d` with `d = 1 - (y - b) y e² ≡ 1` modulo `y`.
-  obtain ⟨e, he⟩ := dvd_mul_sub_one hy₁ hy₂
+  obtain ⟨e, he⟩ : y ∣ p₁.fst * p₂.fst - 1 := by simpa using dvd_mul_sub_mul hy₁ hy₂
   have ht : (y - q.snd) * (1 - y * e) ∈ I := I.mul_mem_right _ (I.sub_mem hy q.snd_mem)
   have H := map_eq_mul_of_fst_eq_mul_of_snd_eq_mul hs (y := y) (d := 1 - (y - q.snd) * y * e ^ 2)
     (p₁ := p₁.shiftSnd _ (I.mul_mem_right p₂.fst ht))
