@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Interval.Basic
 public import Mathlib.Basic.Complex.Basic
+public import TauCeti.Algebra.Order.Interval.Basic
 import Mathlib.Analysis.Real.Sqrt
 import TauCeti.Algebra.Order.Archimedean.Basic
 
@@ -32,8 +32,6 @@ An enclosure of width zero, on the other hand, determines the enclosed number
 
 ## Main definitions
 
-* `NonemptyInterval.lowerHalf`, `NonemptyInterval.upperHalf`: the halves `[a, (a + b) / 2]` and
-  `[(a + b) / 2, b]` of an interval `[a, b]`.
 * `TauCeti.RealEnclosure t`: a rational interval containing the real number `t`.
 * `TauCeti.RealEnclosure.HasPrecision E n`: the interval of `E` has width at most `2⁻ⁿ`.
 * `TauCeti.RealEnclosure.bisect`, `TauCeti.RealEnclosure.refine`: the half of the interval that
@@ -62,9 +60,8 @@ An enclosure of width zero, on the other hand, determines the enclosed number
   `|z|² ≤ max (l_R², u_R²) + max (l_I², u_I²)`.
 * `TauCeti.ComplexEnclosure.hasPrecision_ofReal_iff`: a real enclosure viewed as a complex one
   keeps its absolute precision.
-* `NonemptyInterval.Icc_ratCast_subset_Icc_ratCast`,
-  `NonemptyInterval.reProdIm_Icc_ratCast_subset`: nested rational intervals and rectangles span
-  nested real intervals and complex rectangles.
+* `NonemptyInterval.reProdIm_Icc_ratCast_subset`: nested rational rectangles span nested complex
+  rectangles.
 * `TauCeti.RealEnclosure.bisect_interval_of_le`, `TauCeti.RealEnclosure.bisect_interval_of_lt`:
   the half kept by a bisection.
 * `TauCeti.RealEnclosure.length_refine`, `TauCeti.RealEnclosure.refine_interval_antitone`: the
@@ -84,13 +81,6 @@ An enclosure of width zero, on the other hand, determines the enclosed number
 
 public section
 
-/-- Nested rational intervals span nested intervals of every ordered field. -/
-theorem NonemptyInterval.Icc_ratCast_subset_Icc_ratCast {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] {I J : NonemptyInterval ℚ} (h : I ≤ J) :
-    Set.Icc (I.fst : K) I.snd ⊆ Set.Icc (J.fst : K) J.snd :=
-  Set.Icc_subset_Icc (Rat.cast_le.mpr (NonemptyInterval.le_def.mp h).1)
-    (Rat.cast_le.mpr (NonemptyInterval.le_def.mp h).2)
-
 open Complex in
 /-- Nested rational rectangles span nested rectangles of `ℂ`. -/
 theorem NonemptyInterval.reProdIm_Icc_ratCast_subset {R R' J J' : NonemptyInterval ℚ}
@@ -99,56 +89,6 @@ theorem NonemptyInterval.reProdIm_Icc_ratCast_subset {R R' J J' : NonemptyInterv
       Set.Icc (R.fst : ℝ) R.snd ×ℂ Set.Icc (J.fst : ℝ) J.snd :=
   reProdIm_subset_iff.mpr <| Set.prod_mono (Icc_ratCast_subset_Icc_ratCast hR)
     (Icc_ratCast_subset_Icc_ratCast hJ)
-
-namespace NonemptyInterval
-
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] (I : NonemptyInterval K)
-
-/-- The lower half `[a, (a + b) / 2]` of an interval `[a, b]`. -/
-def lowerHalf : NonemptyInterval K :=
-  ⟨(I.fst, (I.fst + I.snd) / 2), by dsimp only; linarith [I.fst_le_snd]⟩
-
-/-- The upper half `[(a + b) / 2, b]` of an interval `[a, b]`. -/
-def upperHalf : NonemptyInterval K :=
-  ⟨((I.fst + I.snd) / 2, I.snd), by dsimp only; linarith [I.fst_le_snd]⟩
-
-@[simp]
-theorem lowerHalf_fst : I.lowerHalf.fst = I.fst :=
-  (rfl)
-
-@[simp]
-theorem lowerHalf_snd : I.lowerHalf.snd = (I.fst + I.snd) / 2 :=
-  (rfl)
-
-@[simp]
-theorem upperHalf_fst : I.upperHalf.fst = (I.fst + I.snd) / 2 :=
-  (rfl)
-
-@[simp]
-theorem upperHalf_snd : I.upperHalf.snd = I.snd :=
-  (rfl)
-
-/-- The lower half of an interval lies in the interval. -/
-theorem lowerHalf_le : I.lowerHalf ≤ I :=
-  NonemptyInterval.le_def.mpr ⟨le_rfl, by simp only [lowerHalf_snd]; linarith [I.fst_le_snd]⟩
-
-/-- The upper half of an interval lies in the interval. -/
-theorem upperHalf_le : I.upperHalf ≤ I :=
-  NonemptyInterval.le_def.mpr ⟨by simp only [upperHalf_fst]; linarith [I.fst_le_snd], le_rfl⟩
-
-/-- The lower half of an interval has half its length. -/
-@[simp]
-theorem length_lowerHalf : I.lowerHalf.length = I.length / 2 := by
-  simp only [length, lowerHalf_fst, lowerHalf_snd]
-  ring
-
-/-- The upper half of an interval has half its length. -/
-@[simp]
-theorem length_upperHalf : I.upperHalf.length = I.length / 2 := by
-  simp only [length, upperHalf_fst, upperHalf_snd]
-  ring
-
-end NonemptyInterval
 
 namespace TauCeti
 
@@ -272,12 +212,12 @@ theorem hasPrecision_ofRat (q : ℚ) (n : ℕ) : (ofRat q).HasPrecision n := by
 noncomputable def bisect (E : RealEnclosure t) : RealEnclosure t :=
   if h : t ≤ ((E.interval.fst + E.interval.snd) / 2 : ℚ) then
     { interval := E.interval.lowerHalf
-      fst_le := E.fst_le
-      le_snd := h }
+      fst_le := by rw [NonemptyInterval.lowerHalf_fst]; exact E.fst_le
+      le_snd := by rwa [NonemptyInterval.lowerHalf_snd] }
   else
     { interval := E.interval.upperHalf
-      fst_le := (not_le.mp h).le
-      le_snd := E.le_snd }
+      fst_le := by rw [NonemptyInterval.upperHalf_fst]; exact (not_le.mp h).le
+      le_snd := by rw [NonemptyInterval.upperHalf_snd]; exact E.le_snd }
 
 /-- When `t` lies in the lower half of the interval `[l, u]`, bisection keeps `[l, (l + u) / 2]`. -/
 theorem bisect_interval_of_le (E : RealEnclosure t)
