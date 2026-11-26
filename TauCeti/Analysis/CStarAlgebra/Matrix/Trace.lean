@@ -37,6 +37,8 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   (`CStarMatrix.normalizedTraceMap_mul_comm`), of norm at most `1`
   (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and invariant under
   reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
+* `CStarMatrix.normalizedTrace_blockDiagonal'`: the normalized trace of a block-diagonal matrix
+  weights the block `i` by `|n i| / |Σ i, n i|`.
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
 * `CStarMatrix.normalizedTwoNorm_matrixUnit`: `‖e_ij‖₂ = k^{-1/2}`.
@@ -661,5 +663,40 @@ theorem normalizedTwoNorm_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m
   rw [normalizedTwoNorm_ofMatrix_kronecker, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
 end BlockTensor
+
+end CStarMatrix
+
+namespace CStarMatrix
+
+section BlockDiagonal
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {n : ι → Type*} [∀ i, Fintype (n i)]
+
+/-- The normalized trace of a block-diagonal matrix weights the normalized trace of the block `i`
+by `|n i| / |Σ i, n i|`. -/
+@[simp]
+theorem normalizedTrace_blockDiagonal' (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
+    normalizedTrace (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) =
+      ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℂ) * normalizedTrace (x i) := by
+  simp only [normalizedTrace_def, Equiv.symm_apply_apply, Matrix.trace_blockDiagonal',
+    Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rcases eq_or_ne (Fintype.card (n i)) 0 with h | h
+  · have := Fintype.card_eq_zero_iff.mp h
+    simp [Matrix.trace]
+  · field_simp
+
+/-- The normalized trace of the corner embedding at `i` is that of the block, weighted by
+`|n i| / |Σ i, n i|`. -/
+@[simp]
+theorem normalizedTrace_blockDiagonalSingle (i : ι) (x : CStarMatrix (n i) (n i) ℂ) :
+    normalizedTrace (blockDiagonalSingle ℂ ℂ i x) =
+      (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℂ) * normalizedTrace x := by
+  have h := normalizedTrace_blockDiagonal' (Pi.single i x)
+  rw [← sum_blockDiagonalSingle (R := ℂ), Fintype.sum_eq_single i (fun j hj => by simp [hj]),
+    Fintype.sum_eq_single i (fun j hj => by simp [hj]), Pi.single_eq_same] at h
+  exact h
+
+end BlockDiagonal
 
 end CStarMatrix

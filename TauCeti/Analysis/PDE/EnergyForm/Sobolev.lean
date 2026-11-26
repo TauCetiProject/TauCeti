@@ -117,6 +117,8 @@ estimates do not see the boundary.
 * `TauCeti.PDE.integrable_value_mul_inner_gradient`: the density `u ⟪e, ∇w⟫` of a bounded
   lower-order term in divergence form is integrable, and
   `TauCeti.PDE.integral_value_sub_mul_inner_gradient`: its integral is linear in `u`.
+* `TauCeti.PDE.energyFormH1_le_energyFormH1_of_mass_nonneg_ae`: an almost everywhere
+  nonnegative mass coefficient increases the energy on the diagonal.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_matrixBilinearForm_gradient`: the principal
   density `⟨a ∇u, ∇w⟩` of two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.continuous_energyFormIntegral_jetField_left`: for
@@ -135,6 +137,8 @@ estimates do not see the boundary.
   the mass-floor bound with any positive Young parameter.
 * `TauCeti.PDE.UniformlyEllipticOn.min_mul_norm_sq_le_energyFormH1_self_of_mass_lower_bound`:
   the `H¹`-norm lower bound with constant `min (λ/2) (δ - β²/(2λ))`.
+* `TauCeti.PDE.mul_norm_sq_le_of_gradient_sub_value_bound`: a Poincaré inequality turns a
+  lower bound `A ‖∇u‖² - B ‖u‖² ≤ q` into `(A - BP²)/(P² + 1) · ‖u‖²_{H¹} ≤ q`.
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_poincare`: the lower bound
   by `‖u‖²_{H¹}` obtained from a Poincaré inequality, and
   `TauCeti.PDE.energyFormH1_poincare_constant_pos`,
@@ -689,9 +693,14 @@ theorem max_mul_two_mul_max_lt_of_mul_two_mul_lt {R : ℝ} (hlam : 0 < lam)
   rwa [show max (2 * R) 0 = 2 * max R 0 by
     rw [mul_max_of_nonneg _ _ zero_le_two, mul_zero]] at this
 
-/-- Convert a gradient-minus-value lower bound into a full `H¹`-norm lower bound using a
-Poincaré inequality. -/
-private theorem mul_norm_sq_le_of_gradient_sub_value_bound {A B q : ℝ}
+/-- **From a gradient-minus-value lower bound to an `H¹`-norm lower bound.** If
+`A ‖∇u‖²_{L²} - B ‖u‖²_{L²} ≤ q` with `0 ≤ A + B` and `u` satisfies the Poincaré inequality
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}`, then
+
+`(A - B P²)/(P² + 1) · ‖u‖²_{H¹} ≤ q`.
+
+This is the `H¹` algebra shared by the Poincaré lower bounds for the energy form. -/
+theorem mul_norm_sq_le_of_gradient_sub_value_bound {A B q : ℝ}
     {u : W1p mu Omega 2} (hAB : 0 ≤ A + B)
     (hlower : A * ‖W1p.gradient u‖ ^ 2 - B * ‖W1p.value u‖ ^ 2 ≤ q)
     (hu : ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
@@ -809,6 +818,22 @@ theorem energyFormH1_mass_sub_const
   rw [energyFormH1_mass_add hcoeff (memLp_top_const (-kappa)) u v,
     W1p.inner_value_eq_setIntegral, ← integral_const_mul]
   simp only [neg_mul, integral_neg, mul_assoc]
+
+/-- **A nonnegative mass coefficient increases the energy on the diagonal**: if `c ≥ 0` almost
+everywhere on `Ω`, then `B_{a,b,0}(u, u) ≤ B_{a,b,c}(u, u)` for every `u ∈ H¹(Ω)`, the difference
+being the weighted mass `∫_Ω c u²`. -/
+theorem energyFormH1_le_energyFormH1_of_mass_nonneg_ae
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (hc_nonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c x)
+    (u : W1p mu Omega 2) :
+    energyFormH1 a b 0 u u ≤ energyFormH1 a b c u u := by
+  have hmass := energyFormH1_mass_add hcoeff hc.neg u u
+  rw [show (fun x ↦ c x + (-c) x) = 0 from funext fun x ↦ add_neg_cancel (c x)] at hmass
+  have hint : 0 ≤ ∫ x in Omega, c x * W1p.value u x * W1p.value u x ∂mu :=
+    integral_nonneg_of_ae <| hc_nonneg.mono fun x hx ↦ by
+      simpa only [Pi.zero_apply, mul_assoc] using mul_nonneg hx (mul_self_nonneg (W1p.value u x))
+  simp only [Pi.neg_apply, neg_mul, integral_neg] at hmass
+  linarith
 
 /-- The energy form on `H¹(Ω)` as a continuous bilinear form, obtained by restricting the
 existing variable-coefficient `L²` energy form along the continuous Sobolev jet inclusion. -/

@@ -16,8 +16,9 @@ For `0 ≤ a`, multiplying by `(√a)⁻¹` and squaring divides the square by `
 `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a`. This is the change of variables `x ↦ (√a)⁻¹ * x` that turns the
 kernel `1 + x ^ 2 / a` into `1 + y ^ 2`. A square factor comes out of a square root as its
 absolute value: `√(x ^ 2 * y) = |x| * √y`, so a nonnegative factor `y` comes out against the
-quotient by it: `√(x * y) = y * √(x / y)`. Doubling the argument does not decrease the square
-root, with no sign hypothesis since `√x = 0` for `x ≤ 0`. Powers of `(√a)⁻¹` absorb integer
+quotient by it: `√(x * y) = y * √(x / y)`. Conjugating `t` by `√(u / t)` recovers `u`.
+Doubling the argument does not decrease the square root, with no sign hypothesis since `√x = 0`
+for `x ≤ 0`. Powers of `(√a)⁻¹` absorb integer
 powers of `a`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `a > 0` and `2p ≤ n`, the
 normalisation that leaves a factor `(√N)⁻¹ ^ (n - 2p)` in a central limit theorem.
 
@@ -61,8 +62,10 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 * `Real.sqrt_sq_mul`, `Real.sqrt_mul_sq`: `√(x ^ 2 * y) = |x| * √y` and
   `√(x * y ^ 2) = √x * |y|`.
 * `Real.sqrt_mul_eq_mul_sqrt_div`: `√(x * y) = y * √(x / y)` for `0 ≤ y`.
+* `Real.sqrt_div_mul_mul_sqrt_div`: `√(u / t) * t * √(u / t) = u` for `0 ≤ u / t` and `t ≠ 0`.
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
 * `Real.inv_sqrt_pow_mul_pow`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `0 < a` and `2p ≤ n`.
+* `Real.sqrt_natCast_pow_self_pos`: `0 < √n ^ n` for every natural number `n`.
 * `Real.one_sub_sq_two_mul_sqrt_div_one_add`: the complementary square of `2√k / (1 + k)`.
 * `Real.sq_two_mul_sqrt_div_one_add_lt_one`: this square is less than `1` for `k ≠ 1`.
 * `Real.two_mul_sqrt_div_one_add_eq_abs`: the two rational square-root transformations
@@ -202,6 +205,12 @@ theorem sqrt_mul_eq_mul_sqrt_div (x : ℝ) {y : ℝ} (hy : 0 ≤ y) : √(x * y)
     rw [sq, mul_assoc, mul_div_cancel₀ x hy.ne', mul_comm]
   rw [h, sqrt_sq_mul, abs_of_pos hy]
 
+/-- Conjugating `t` by `√(u / t)` recovers `u`: `√(u / t) * t * √(u / t) = u` when `u / t` is
+nonnegative and `t ≠ 0`. -/
+theorem sqrt_div_mul_mul_sqrt_div {u t : ℝ} (h : 0 ≤ u / t) (ht : t ≠ 0) :
+    √(u / t) * t * √(u / t) = u := by
+  rw [mul_right_comm, mul_self_sqrt h, div_mul_cancel₀ _ ht]
+
 /-- Doubling the argument does not decrease the square root. There is no sign hypothesis: both
 sides vanish when `x ≤ 0`. -/
 theorem sqrt_le_sqrt_two_mul (x : ℝ) : √x ≤ √(2 * x) := by
@@ -218,6 +227,12 @@ theorem inv_sqrt_pow_mul_pow {a : ℝ} (ha : 0 < a) {n p : ℕ} (h : 2 * p ≤ n
   have ha' : a ^ p = √a ^ (2 * p) := by rw [pow_mul, sq_sqrt ha.le]
   rw [Nat.add_sub_cancel_left, ha', pow_add, mul_right_comm, ← mul_pow,
     inv_mul_cancel₀ (sqrt_pos.2 ha).ne', one_pow, one_mul]
+
+/-- The power `√n ^ n` (the constant `n^{n/2}`) is positive; it is `1` for `n = 0`. -/
+theorem sqrt_natCast_pow_self_pos (n : ℕ) : 0 < √(n : ℝ) ^ n := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  · exact pow_pos (sqrt_pos.mpr (Nat.cast_pos.mpr hn)) n
 
 /-- The complementary square of `2√k / (1 + k)` is `((1 - k) / (1 + k))²`. -/
 theorem one_sub_sq_two_mul_sqrt_div_one_add {k : ℝ} (hk : 0 ≤ k) :

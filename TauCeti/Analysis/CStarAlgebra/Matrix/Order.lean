@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.Matrix.Order
+import Mathlib.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
@@ -21,6 +22,8 @@ preserves and reflects order, independently of their different norm instances.
 More generally, for a complex Hilbert space `H`, `M : CStarMatrix n n (H →L[ℂ] H)` is positive in
 the spectral order if and only if all vector quadratic forms `∑ i, ∑ j, ⟪ξ i, M i j (ξ j)⟫_ℂ` are
 nonnegative in `ℂ`.
+
+A complex C⋆-matrix has finite real spectrum (`CStarMatrix.finite_real_spectrum`).
 -/
 
 public section
@@ -63,5 +66,15 @@ theorem nonneg_iff_forall_sum_inner_nonneg {n H : Type*} [Fintype n]
         ContinuousLinearMap.comp_apply, ContinuousLinearMap.star_eq_adjoint, inner_sum,
         ContinuousLinearMap.adjoint_inner_right] using hξ fun i => X i v
     exact ⟨(Complex.eq_re_of_ofReal_le hv).symm, (RCLike.nonneg_iff.mp hv).1⟩
+
+/-- A complex C⋆-matrix has finite real spectrum. -/
+theorem finite_real_spectrum {n : Type*} [Fintype n] [DecidableEq n] (x : CStarMatrix n n ℂ) :
+    (spectrum ℝ x).Finite := by
+  -- transport `Matrix.finite_real_spectrum` along `CStarMatrix.ofMatrixStarAlgEquiv`
+  have h := AlgEquiv.spectrum_eq
+    ((ofMatrixStarAlgEquiv (n := n) (A := ℂ)).toAlgEquiv.restrictScalars ℝ) (ofMatrix.symm x)
+  simp only [AlgEquiv.coe_restrictScalars, StarAlgEquiv.coe_toAlgEquiv,
+    ← ofMatrix_eq_ofMatrixStarAlgEquiv, Equiv.apply_symm_apply] at h
+  exact h ▸ (ofMatrix.symm x).finite_real_spectrum
 
 end CStarMatrix
