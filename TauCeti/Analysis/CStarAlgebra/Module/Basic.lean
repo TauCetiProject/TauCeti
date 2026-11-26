@@ -54,7 +54,8 @@ Riesz theorem.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
   `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`.
 * `TauCeti.CStarModule.inner_self_le_of_norm_smul_le`,
-  `TauCeti.CStarModule.inner_map_map_le_of_norm_le`, `CStarModule.inner_map_map_le_norm_sq_smul`:
+  `TauCeti.CStarModule.inner_map_map_le_of_norm_le`,
+  `ContinuousLinearMap.inner_map_map_le_norm_sq_smul`:
   two-vector Paschke inequality `⟪y, y⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` from
   `∀ a : A, ‖a • y‖ ≤ C * ‖a • x‖`, Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for
   any action-preserving function with pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded
@@ -594,22 +595,17 @@ end Paschke
 
 end TauCeti.CStarModule
 
-namespace CStarModule
-
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+namespace ContinuousLinearMap
 
 /-- Paschke's inequality for bounded `A`-linear operators between Hilbert C⋆-modules:
 `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`, with no adjointability or completeness assumptions
 (Lance, Proposition 1.2). -/
-theorem inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
-    [SMul A E] [CStarModule A E] [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F]
-    [CStarModule A F] (T : E →L[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
+theorem inner_map_map_le_norm_sq_smul {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+    [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
     inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x :=
   TauCeti.CStarModule.inner_map_map_le_of_norm_le T T.le_opNorm hT x
-
-end CStarModule
-
-namespace ContinuousLinearMap
 
 /-- Right-module form of Paschke's inequality for a bounded right `A`-linear map `T : E →L[ℂ] F`
 (commuting with the right `A`-action): `⟨T x, T x⟩_A ≤ ‖T‖ ^ 2 • ⟨x, x⟩_A`. -/

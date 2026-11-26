@@ -1010,7 +1010,7 @@ for every `T : AdjointableMap A E F` (no completeness of `E` or `F` is needed). 
 theorem inner_map_map_le_norm_sq_smul (T : AdjointableMap A E F) (x : E) :
     inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x := by
   simpa only [toContinuousLinearMap_apply, norm_toContinuousLinearMap] using
-    CStarModule.inner_map_map_le_norm_sq_smul T.toContinuousLinearMap
+    ContinuousLinearMap.inner_map_map_le_norm_sq_smul T.toContinuousLinearMap
       (fun a y ↦ by simpa only [toContinuousLinearMap_apply] using T.map_smul_coeff a y) x
 
 section RightOrder

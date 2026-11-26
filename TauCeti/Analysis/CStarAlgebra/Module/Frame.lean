@@ -367,7 +367,7 @@ variable {A ι E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] 
 
 variable [Fintype ι]
 
-/-/-- Synthesis after analysis equals the identity when `x` is a Parseval frame. -/
+/-- Synthesis after analysis equals the identity when `x` is a Parseval frame. -/
 theorem _root_.CStarModule.IsParsevalFrame.frameSynthesisLinearMap_comp_frameAnalysisLinearMap_eq_id
     {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x) :
     (frameSynthesisLinearMap A x).comp (frameAnalysisLinearMap A x) = LinearMap.id := by
