@@ -23,10 +23,11 @@ The other data of the pinning already commute with base change:
 `Symplectic.splitMaximalTorus_baseChange_comapOfIso` treats the parametrized torus,
 and `Symplectic.IsotropicFlag.map_baseChangeHopfIdeal_definingHopfIdeal` treats the
 Borel. Together with the root-space comparison, these identify all the chosen data
-of the integral pinning after extension to a connected nontrivial base:
-`Symplectic.comapOfIso_baseChange_standardPinning` shows that, along an injective map
-`R → K`, the base change `Pinning.baseChange` of the standard pinning over `R`, transported
-along the coordinate base-change isomorphism, is the standard pinning over `K`.
+of the integral pinning after extension to a connected nontrivial base. Along an injective
+map `R → K` they identify the whole pinning:
+`Symplectic.comapOfIso_baseChange_standardPinning` shows that the base change
+`Pinning.baseChange` of the standard pinning over `R`, transported along the coordinate
+base-change isomorphism, is the standard pinning over `K`.
 
 ## References
 
@@ -124,22 +125,17 @@ ring: transported along the coordinate base-change isomorphism, the base change
 theorem comapOfIso_baseChange_standardPinning :
     ((standardPinning R m).baseChange K).comapOfIso
         (coordinateHopfAlgebraBaseChangeIso R K m).symm = standardPinning K m := by
-  refine Pinning.ext_rootVector ?_ ?_ fun α hP hQ ↦ ?_
-  · rw [Pinning.comapOfIso_torus, Pinning.baseChange_torus, standardPinning_torus,
-      standardPinning_torus, splitMaximalTorus_baseChange_comapOfIso]
-  · rw [Pinning.comapOfIso_borel, Pinning.baseChange_borel, standardPinning_borel,
-      standardPinning_borel]
-    exact (CommHopfAlgCat.comapOfSurjective_inv_eq_map_hom _ _).trans
-      (IsotropicFlag.map_baseChangeHopfIdeal_definingHopfIdeal R K m)
-  · obtain ⟨i, hi⟩ := (standardPinningSimpleRootEquiv (R := K) (m := m)).surjective ⟨α, hQ⟩
-    have hα : α = (diagonalRootDatum.{u} m).root (diagonalSimpleRootIndex m i) := by
-      rw [← standardPinningSimpleRootEquiv_apply (R := K), hi]
-    subst hα
-    rw [Pinning.comapOfIso_rootVector, Pinning.baseChange_rootVector, CategoryTheory.Iso.symm_hom,
-      dualCotangentMap_coordinateHopfAlgebraBaseChangeIso_inv_cotangentDualBaseChangeEquiv, ← hi]
-    convert (cotangentDualBaseChangeEquiv_tmul_standardPinning_rootVector R K m i 1).trans
-      (one_smul _ _) using 4
-    exact Subtype.ext (standardPinningSimpleRootEquiv_apply i).symm
+  refine Pinning.comapOfIso_baseChange_eq K (standardPinning R m) (standardPinning K m) _ ?_ ?_
+    fun α hQ ↦ ?_
+  · rw [standardPinning_torus, standardPinning_torus, splitMaximalTorus_baseChange_comapOfIso]
+  · rw [standardPinning_borel, standardPinning_borel]
+    exact IsotropicFlag.map_baseChangeHopfIdeal_definingHopfIdeal R K m
+  · obtain ⟨i, rfl⟩ := (standardPinningSimpleRootEquiv (R := R) (m := m)).surjective α
+    rw [dualCotangentMap_coordinateHopfAlgebraBaseChangeIso_inv_cotangentDualBaseChangeEquiv,
+      cotangentDualBaseChangeEquiv_tmul_standardPinning_rootVector, one_smul]
+    exact congrArg (standardPinning K m).rootVector (Subtype.ext
+      ((standardPinningSimpleRootEquiv_apply i).trans
+        (standardPinningSimpleRootEquiv_apply i).symm))
 
 end Pinning
 

@@ -613,15 +613,13 @@ theorem dualCotangentMap_coordinateHopfAlgebraBaseChangeIso_inv_cotangentDualBas
     (z : K ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R n))) :
     Derivation.dualCotangentMap (coordinateHopfAlgebraBaseChangeIso R K n).inv.hom
         (Derivation.cotangentDualBaseChangeEquiv R K (coordinateHopfAlgebra R n) z) =
-      cotangentDualBaseChangeEquiv R K n z := by
-  apply (Derivation.cotangentLinearEquiv (R := K) (A := coordinateHopfAlgebra K n)
-    (B := K)).injective
-  rw [Derivation.cotangentLinearEquiv_dualCotangentMap,
-    Derivation.cotangentLinearEquiv_cotangentDualBaseChangeEquiv,
-    cotangentLinearEquiv_cotangentDualBaseChangeEquiv, ← derivationComp_tangentCoefficientLieEquiv,
-    ← LinearMap.comp_apply, ← derivationComp_comp, ← _root_.CommHopfAlgCat.hom_comp,
-    CategoryTheory.Iso.inv_hom_id, CommHopfAlgCat.hom_id_eq_bialgHom_id, derivationComp_id,
-    LinearMap.id_apply]
+      cotangentDualBaseChangeEquiv R K n z :=
+  Derivation.dualCotangentMap_eq_of_derivationComp_cotangentLinearEquiv _ _
+    (by rw [← _root_.CommHopfAlgCat.hom_comp, CategoryTheory.Iso.inv_hom_id,
+      CommHopfAlgCat.hom_id_eq_bialgHom_id])
+    (by rw [cotangentLinearEquiv_cotangentDualBaseChangeEquiv,
+      derivationComp_tangentCoefficientLieEquiv,
+      Derivation.cotangentLinearEquiv_cotangentDualBaseChangeEquiv])
 
 /-- The differential of a transported matrix-valued morphism is computed by restricting its
 source tangent vector to the original coordinate algebra. This transports matrix differential

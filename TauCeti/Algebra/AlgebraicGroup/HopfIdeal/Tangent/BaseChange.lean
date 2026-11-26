@@ -63,17 +63,6 @@ theorem mem_lieSubalgebra_baseChangeHopfIdeal_iff (J : HopfIdeal k H) {B : Type 
 variable [Module.Finite k (Bialgebra.CotangentSpace k H)]
   [Module.Projective k (Bialgebra.CotangentSpace k H)]
 
-/-- The derivation attached to the scalar extension `s ⊗ x` of a tangent vector takes the value
-`s * x (dh)` on `1 ⊗ h`. -/
-private theorem algEquivSelf_cotangentLinearEquiv_cotangentDualBaseChangeEquiv_tmul_apply
-    (s : K) (y : Module.Dual k (Bialgebra.CotangentSpace k H)) (h : H) :
-    Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[k] H) K
-        (Derivation.cotangentLinearEquiv (B := K)
-          (Derivation.cotangentDualBaseChangeEquiv k K H (s ⊗ₜ y)) (1 ⊗ₜ h)) =
-      s * algebraMap k K (y (Bialgebra.cotangentMap k H h)) := by
-  rw [Derivation.algEquivSelf_cotangentLinearEquiv_apply,
-    Derivation.cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap]
-
 /-- **Scalar extension preserves the Lie algebra of a closed subgroup**: if the tangent vector `x`
 of `Spec H` lies in the Lie algebra of the subgroup cut out by `J`, then every `s ⊗ x` lies in the
 Lie algebra of the base-changed subgroup. -/
@@ -89,8 +78,8 @@ theorem cotangentDualBaseChangeEquiv_tmul_mem_lieSubalgebra_baseChangeHopfIdeal
   apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[k] H) K).injective
   have hyh := congrArg (Bialgebra.CounitAlgebra.algEquivSelf k H k) (hy h hh)
   rw [Derivation.algEquivSelf_cotangentLinearEquiv_apply, map_zero] at hyh
-  rw [algEquivSelf_cotangentLinearEquiv_cotangentDualBaseChangeEquiv_tmul_apply, hyh, map_zero,
-    mul_zero, map_zero]
+  rw [Derivation.algEquivSelf_cotangentLinearEquiv_cotangentDualBaseChangeEquiv_tmul_apply, hyh,
+    map_zero, mul_zero, map_zero]
 
 /-- **Along an injective scalar map, the Lie algebra of a closed subgroup is detected after base
 change**: the extension `1 ⊗ x` of a tangent vector `x` of `Spec H` lies in the Lie algebra of the
@@ -108,8 +97,8 @@ theorem cotangentDualBaseChangeEquiv_one_tmul_mem_lieSubalgebra_baseChangeHopfId
   intro h hh
   apply (Bialgebra.CounitAlgebra.algEquivSelf k H k).injective
   have hyh := congrArg (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[k] H) K) (hy h hh)
-  rw [algEquivSelf_cotangentLinearEquiv_cotangentDualBaseChangeEquiv_tmul_apply, one_mul,
-    map_zero, FaithfulSMul.algebraMap_eq_zero_iff] at hyh
+  rw [Derivation.algEquivSelf_cotangentLinearEquiv_cotangentDualBaseChangeEquiv_tmul_apply,
+    one_mul, map_zero, FaithfulSMul.algebraMap_eq_zero_iff] at hyh
   rw [Derivation.algEquivSelf_cotangentLinearEquiv_apply, hyh, map_zero]
 
 end TauCeti.CommHopfAlgCat

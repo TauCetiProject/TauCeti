@@ -247,10 +247,10 @@ theorem baseChangeHopfIdeal_comapOfIso (J : HopfIdeal k L) (e : H ≅ L) :
 @[simp]
 theorem baseChangeHopfIdeal_comapOfSurjective_baseChangeSelfIso_inv
     {H : _root_.CommHopfAlgCat.{u} k} (J : HopfIdeal k H) :
-    (baseChangeHopfIdeal (K := k) J).comapOfSurjective (baseChangeSelfIso H).inv.hom
-        (ConcreteCategory.bijective_of_isIso (baseChangeSelfIso H).inv).2 = J := by
+    (baseChangeHopfIdeal (K := k) J).comapOfSurjective H.baseChangeSelfIso.inv.hom
+        (ConcreteCategory.bijective_of_isIso H.baseChangeSelfIso.inv).2 = J := by
   ext h
-  rw [HopfIdeal.mem_comapOfSurjective, baseChangeSelfIso_inv_apply]
+  rw [HopfIdeal.mem_comapOfSurjective, _root_.CommHopfAlgCat.baseChangeSelfIso_inv_apply]
   refine ⟨fun hh ↦ ?_, one_tmul_mem_baseChangeHopfIdeal⟩
   rw [mem_baseChangeHopfIdeal_iff, baseChangeMap_apply_tmul] at hh
   rw [← mkQuotient_eq_zero_iff H J h]

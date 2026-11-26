@@ -52,7 +52,8 @@ geometric comparison of root spaces `Derivation.adjointWeightSpaceBaseChangeEqui
 (`TauCeti.Pinning.coe_rootSpaceBaseChangeEquiv_baseChange_apply`). For the standard pinnings of
 `GL_{r+1}`, `SL_{r+1}` and `Sp_{2m}`, the base change is the standard pinning over the new ring
 (`GeneralLinear.comapOfIso_baseChange_standardPinning` and its special-linear and symplectic
-counterparts).
+counterparts), each checked through `TauCeti.Pinning.comapOfIso_baseChange_eq`, which recognizes
+a base change transported along an isomorphism from its torus, Borel subgroup and root vectors.
 
 ## Main declarations
 
@@ -65,6 +66,7 @@ counterparts).
 * `TauCeti.Pinning.comapOfIso_baseChange_self`, `TauCeti.Pinning.baseChange_baseChange` and
   `TauCeti.Pinning.baseChange_comapOfIso`: the laws for the identity, for composites and for
   transport along isomorphisms.
+* `TauCeti.Pinning.comapOfIso_baseChange_eq`: recognizing a transported base change of a pinning.
 
 ## References
 
@@ -312,6 +314,28 @@ theorem baseChange_baseChange (S' : Type u) [CommRing S'] [Algebra R S'] [Algebr
       baseChange_rootVector, CommHopfAlgCat.hom_baseChangeTowerIso_hom]
     exact (Derivation.dualCotangentMap_baseChangeTowerBialgEquiv_cotangentDualBaseChangeEquiv_tmul
       (T := S') 1 _).symm
+
+/-- **Recognizing a transported base change of a pinning.** For an isomorphism
+`e : S ⊗[R] H ≅ L` and a pinning `Q` of `L`, the base change of `P` transported along `e` is `Q`
+once the transported torus and Borel subgroup are those of `Q` and the differential of `e⁻¹` sends
+each extended root vector `1 ⊗ X_α` of `P` to the root vector of `Q` at the same simple root. -/
+theorem comapOfIso_baseChange_eq {L : CommHopfAlgCat.{u} S} [Algebra.FiniteType S L]
+    [Algebra.Smooth S L] (P : Pinning R H r) (Q : Pinning S L r)
+    (e : CommHopfAlgCat.baseChange (K := S) H ≅ L)
+    (htorus : (P.torus.baseChange S).comapOfIso e.symm = Q.torus)
+    (hborel : (CommHopfAlgCat.baseChangeHopfIdeal (K := S) P.borel).map e.hom.hom = Q.borel)
+    (hroot : ∀ (α : {α // P.torus.IsSimpleRoot P.borel α})
+      (hQ : Q.torus.IsSimpleRoot Q.borel α.val),
+      Derivation.dualCotangentMap e.inv.hom
+          (Derivation.cotangentDualBaseChangeEquiv R S H (1 ⊗ₜ P.rootVector α)) =
+        Q.rootVector ⟨α.val, hQ⟩) :
+    (P.baseChange S).comapOfIso e.symm = Q := by
+  refine ext_rootVector ?_ ?_ fun α _ hQ ↦ ?_
+  · rw [comapOfIso_torus, baseChange_torus, htorus]
+  · rw [comapOfIso_borel, baseChange_borel]
+    exact (CommHopfAlgCat.comapOfSurjective_inv_eq_map_hom _ _).trans hborel
+  · rw [comapOfIso_rootVector, baseChange_rootVector, Iso.symm_hom]
+    exact hroot _ hQ
 
 -- The map `ℤ → K` to a field of characteristic zero is injective (`FaithfulSMul ℤ K`), so a pinning
 -- over `ℤ`, for instance of a Chevalley group, base-changes to every such field.

@@ -257,26 +257,26 @@ end Tower
 section Self
 
 /-- **Base change along the identity is trivial**: `k ⊗[k] H ≅ H`. -/
-noncomputable def baseChangeSelfIso (H : _root_.CommHopfAlgCat.{u} k) :
-    baseChange (K := k) H ≅ H :=
+noncomputable def _root_.CommHopfAlgCat.baseChangeSelfIso (H : _root_.CommHopfAlgCat.{u} k) :
+    TauCeti.CommHopfAlgCat.baseChange (K := k) H ≅ H :=
   _root_.CommHopfAlgCat.isoMk (_root_.Bialgebra.TensorProduct.lid k H)
 
 /-- The identification `k ⊗[k] H ≅ H` multiplies the two factors. -/
 @[simp]
-lemma baseChangeSelfIso_hom_apply (H : _root_.CommHopfAlgCat.{u} k) (c : k) (h : H) :
-    (baseChangeSelfIso H).hom.hom (c ⊗ₜ[k] h) = c • h :=
+lemma _root_.CommHopfAlgCat.baseChangeSelfIso_hom_apply (H : _root_.CommHopfAlgCat.{u} k) (c : k)
+    (h : H) : H.baseChangeSelfIso.hom.hom (c ⊗ₜ[k] h) = c • h :=
   _root_.Bialgebra.TensorProduct.lid_tmul c h
 
 /-- The inverse of the identification `k ⊗[k] H ≅ H` is `h ↦ 1 ⊗ h`. -/
 @[simp]
-lemma baseChangeSelfIso_inv_apply (H : _root_.CommHopfAlgCat.{u} k) (h : H) :
-    (baseChangeSelfIso H).inv.hom h = (1 : k) ⊗ₜ[k] h :=
+lemma _root_.CommHopfAlgCat.baseChangeSelfIso_inv_apply (H : _root_.CommHopfAlgCat.{u} k)
+    (h : H) : H.baseChangeSelfIso.inv.hom h = (1 : k) ⊗ₜ[k] h :=
   _root_.Bialgebra.TensorProduct.lid_symm_apply h
 
 /-- The inverse of the identification `k ⊗[k] H ≅ H` is the inverse of the bialgebra equivalence
 `Bialgebra.TensorProduct.lid`. -/
-lemma hom_baseChangeSelfIso_inv (H : _root_.CommHopfAlgCat.{u} k) :
-    (baseChangeSelfIso H).inv.hom =
+lemma _root_.CommHopfAlgCat.hom_baseChangeSelfIso_inv (H : _root_.CommHopfAlgCat.{u} k) :
+    H.baseChangeSelfIso.inv.hom =
       ((_root_.Bialgebra.TensorProduct.lid k H).symm : H →ₐc[k] k ⊗[k] H) :=
   (rfl)
 

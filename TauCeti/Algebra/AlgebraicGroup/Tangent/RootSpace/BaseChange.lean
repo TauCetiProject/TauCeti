@@ -150,19 +150,11 @@ theorem adjointWeightSpace_baseChange_eq_bot_iff (π : H →ₐc[R] MonoidAlgebr
     (hπ : ∀ h, πS (1 ⊗ₜ h) = MonoidAlgebra.mapAlgHom M (Algebra.ofId R S) (π h)) (α : M) :
     adjointWeightSpace πS α = ⊥ ↔ adjointWeightSpace π α = ⊥ := by
   -- The Lie algebra is projective, hence flat, so `x ↦ 1 ⊗ x` is injective along `R → S`.
-  have hinj : Function.Injective
-      (TensorProduct.mk R S (Module.Dual R (Bialgebra.CotangentSpace R H)) 1) := by
-    have : ⇑(TensorProduct.mk R S (Module.Dual R (Bialgebra.CotangentSpace R H)) 1) =
-        (Algebra.linearMap R S).rTensor _ ∘ (TensorProduct.lid R _).symm := by
-      funext x
-      simp
-    rw [this]
-    exact (Module.Flat.rTensor_preserves_injective_linearMap _
-      (FaithfulSMul.algebraMap_injective R S)).comp (LinearEquiv.injective _)
   rw [adjointWeightSpace_baseChange π πS hπ α,
     Submodule.map_eq_bot_iff (e := cotangentDualBaseChangeEquiv R S H), ← le_bot_iff,
     Submodule.baseChange_le_iff_le_comap, Submodule.restrictScalars_bot, ← LinearMap.ker,
-    LinearMap.ker_eq_bot.mpr hinj, le_bot_iff]
+    LinearMap.ker_eq_bot.mpr (Module.Flat.tensorProduct_mk_injective R
+      (Module.Dual R (Bialgebra.CotangentSpace R H)) S), le_bot_iff]
 
 /-- **The nontrivial adjoint weights are invariant under base change along an injective scalar
 map**, in particular under every faithfully flat base change, every field extension and the map
