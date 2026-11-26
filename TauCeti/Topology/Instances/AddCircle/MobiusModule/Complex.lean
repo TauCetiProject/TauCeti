@@ -99,6 +99,24 @@ theorem coe_mobiusSectionsExtendEquiv_tmul (φ : A →ₐ[ℝ] B) (hφ : Continu
   simp only [mobiusSectionsExtendEquiv, LinearEquiv.trans_apply, BalancedExtension.congr_tmul,
     LinearEquiv.coe_ofEq_apply, BalancedExtension.coe_rangeVecMulLinearEquiv_tmul]
 
+/-- Explicit formula for the inverse of `mobiusSectionsExtendEquiv` through the rows of the
+projection `p = (1 + ρ) / 2`: a section `w` of `mobiusSections B` maps to `∑ i, wᵢ ⊗ pᵢ`. -/
+theorem mobiusSectionsExtendEquiv_symm_apply (φ : A →ₐ[ℝ] B) (hφ : Continuous φ)
+    (w : mobiusSections B) :
+    (mobiusSectionsExtendEquiv φ hφ).symm w =
+      ∑ i : Fin 2, BalancedExtension.tmul
+        ((φ : A →+* B).compLeftContinuous (AddCircle (1 : ℝ)) hφ)
+        ((w : Fin 2 → C(AddCircle (1 : ℝ), B)) i)
+        ⟨mobiusProjection A i, by
+          rw [← range_vecMulLinear_mobiusProjection]
+          exact row_mem_range_vecMulLinear _ i⟩ := by
+  simp only [mobiusSectionsExtendEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    LinearEquiv.ofEq_symm, BalancedExtension.congr_symm,
+    BalancedExtension.rangeVecMulLinearEquiv_symm_apply, map_sum, BalancedExtension.congr_tmul,
+    LinearEquiv.coe_ofEq_apply]
+  exact Finset.sum_congr rfl fun i _ ↦
+    congrArg _ (Subtype.ext (LinearEquiv.coe_ofEq_apply _ _))
+
 end ScalarExtension
 
 local notation "𝓒" => C(AddCircle (1 : ℝ), ℝ)
@@ -121,6 +139,17 @@ theorem coe_mobiusSectionsComplexifyEquiv_tmul (c : 𝓒ℂ) (w : mobiusSections
     (mobiusSectionsComplexifyEquiv (BalancedExtension.tmul ofRealCM c w) : Fin 2 → 𝓒ℂ) =
       fun i ↦ c * ofRealCM ((w : Fin 2 → 𝓒) i) :=
   coe_mobiusSectionsExtendEquiv_tmul (Algebra.ofId ℝ ℂ) Complex.continuous_ofReal c w
+
+/-- Explicit formula for the inverse of `mobiusSectionsComplexifyEquiv`: a section `w` of the
+complex Möbius module maps to `∑ i, wᵢ ⊗ pᵢ`, through the rows `pᵢ` of the real projection
+`p = (1 + ρ) / 2`. -/
+theorem mobiusSectionsComplexifyEquiv_symm_apply (w : mobiusSections ℂ) :
+    mobiusSectionsComplexifyEquiv.symm w =
+      ∑ i : Fin 2, BalancedExtension.tmul ofRealCM ((w : Fin 2 → 𝓒ℂ) i)
+        ⟨mobiusProjection ℝ i, by
+          rw [← range_vecMulLinear_mobiusProjection]
+          exact row_mem_range_vecMulLinear _ i⟩ :=
+  mobiusSectionsExtendEquiv_symm_apply (Algebra.ofId ℝ ℂ) Complex.continuous_ofReal w
 
 /-! ### The complex frame -/
 
