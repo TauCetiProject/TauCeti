@@ -9,9 +9,10 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FreeLoop
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Complex
-public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Rotation
 
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Sign
+import TauCeti.AlgebraicTopology.Singular.Sphere
 
 /-!
 # Torus classes of loops of free loops
@@ -60,6 +61,15 @@ at a constant loop they are again the Hurewicz classes of `π₂(Q, x)`
 class (`TauCeti.cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const`,
 `TauCeti.MooreFreeLoopSpace.torusClassHom_mapOfEq_constMap`).
 
+The torus class is natural in the space: postcomposing a loop of free loops with a map `f` pushes
+its torus class forward along `f` (`TauCeti.cubicalFreeLoopTorusClassHom_map`). Rotating a free
+Moore loop `γ` once around itself (`TauCeti.MooreFreeLoopSpace.rotationLoop`) is, after
+reparametrization to circle maps, the image of the rotation `t ↦ (z ↦ z exp (2πit))` of the circle
+under postcomposition with `γ` (`TauCeti.MooreFreeLoopSpace.toCircleMap_rotate`). So the torus it
+sweeps out, `(s, t) ↦ γ(s + t)`, factors through the circle, which has no second homology, and the
+rotation loop has zero torus class
+(`TauCeti.MooreFreeLoopSpace.torusClassHom_fundamentalGroupHom_rotationLoop`).
+
 ## Main definitions
 
 * `TauCeti.uliftCircleGenLoop`: the standard loop of the circle as a generalized loop.
@@ -84,6 +94,9 @@ class (`TauCeti.cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const`,
   torus class.
 * `TauCeti.MooreFreeLoopSpace.range_torusClassHom_const`: at a constant free Moore loop, the torus
   classes are the Hurewicz classes of `π₂(Q, x)`.
+* `TauCeti.cubicalFreeLoopTorusClassHom_map`: the torus class is natural in the space.
+* `TauCeti.MooreFreeLoopSpace.torusClassHom_fundamentalGroupHom_rotationLoop`: the loop rotating a
+  free Moore loop once around itself has zero torus class.
 
 ## References
 
@@ -368,6 +381,40 @@ theorem cubicalFreeLoopTorusClassHom_mk {γ : C(Circle, Q)} (Λ : Ω^ (Fin 1) C(
     _ = _ := freeLoopTorusHomology_homologyπ R 1 w z (by
       rw [hz, hw]
       exact (freeLoopTorusChain_ofCube R 1 _).symm)
+
+/-- **The torus swept out by a loop of free loops is a cycle**: some cycle has the torus as its
+underlying chain. -/
+theorem exists_iCycles_eq_ofCube_freeLoopTorusCube {γ : C(Circle, Q)}
+    (Λ : Ω^ (Fin 1) C(Circle, Q) γ) :
+    ∃ z : ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).cycles 2,
+      ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).iCycles 2 z =
+        NormalizedCubicalChain.ofCube Q R (freeLoopTorusCube (Λ : SingularCube C(Circle, Q) 1)) :=
+  ⟨_, (iCycles_cyclesMap_cyclesMap_cyclesCross_uliftCircleGenLoop R 1
+    (GenLoop.cubicalCycle R Λ)).trans <| by
+      rw [GenLoop.iCycles_cubicalCycle]
+      exact freeLoopTorusChain_ofCube R 1 _⟩
+
+/-- **The torus class is natural in the space**: the torus class of the image of a loop of free
+loops of `P` under postcomposition with a map `f : P → Q` is the push-forward along `f` of its
+torus class. -/
+theorem cubicalFreeLoopTorusClassHom_map {P : Type u} [TopologicalSpace P] (f : C(P, Q))
+    {γ : C(Circle, P)} {δ : C(Circle, Q)} (hf : f.comp γ = δ)
+    (a : HomotopyGroup (Fin 1) C(Circle, P) γ) :
+    cubicalFreeLoopTorusClassHom Q R δ (Additive.ofMul (HomotopyGroup.map
+        ⟨fun g ↦ f.comp g, ContinuousMap.continuous_postcomp f⟩ hf a)) =
+      HomologicalComplex.homologyMap ((normalizedCubicalChainComplex R).map (TopCat.ofHom f)) 2
+        (cubicalFreeLoopTorusClassHom P R γ (Additive.ofMul a)) :=
+  Quotient.inductionOn a fun Λ ↦ by
+    obtain ⟨z, hz⟩ := exists_iCycles_eq_ofCube_freeLoopTorusCube R Λ
+    rw [cubicalFreeLoopTorusClassHom_mk R Λ hz, HomotopyGroup.map_mk,
+      cubicalFreeLoopTorusClassHom_mk R _ (z := HomologicalComplex.cyclesMap
+        ((normalizedCubicalChainComplex R).map (TopCat.ofHom f)) 2 z)]
+    · exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ 2) z).symm
+    · rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hz,
+        normalizedCubicalChainComplex_map_f_apply, NormalizedCubicalChain.map_ofCube]
+      congr 1
+      ext t
+      simp [GenLoop.map_apply]
 
 /-- The torus swept out by a loop of free loops at the constant loop at `x`, all of whose loops
 start at `x`, is a generalized loop of `Q` at `x`: its boundary is sent to `x`. -/
@@ -721,6 +768,45 @@ Hurewicz map `π₂(Q, x) → H₂(Q; ℤ)`. -/
 theorem range_torusClassHom_const (x : Q) :
     (const x).torusClassHom.range = (hurewiczIntHom Q x 1).range := by
   rw [range_torusClassHom, toCircleMap_const, range_freeLoopTorusClassHom_const]
+
+/-- The loop of circle maps `t ↦ (z ↦ z exp (2πit))` at the identity of the circle, which rotates
+the circle once around itself. -/
+private def circleRotationGenLoop : Ω^ (Fin 1) C(Circle, Circle) (ContinuousMap.id Circle) :=
+  ⟨ContinuousMap.curry ⟨fun p : (Fin 1 → I) × Circle ↦ p.2 * unitToCircle (p.1 0), by fun_prop⟩, by
+    rintro t ⟨i, hi⟩
+    rw [Subsingleton.elim i 0] at hi
+    ext z
+    rcases hi with hi | hi <;> simp [hi]⟩
+
+private theorem circleRotationGenLoop_apply (t : Fin 1 → I) (z : Circle) :
+    circleRotationGenLoop t z = z * unitToCircle (t 0) :=
+  (rfl)
+
+/-- **The rotation loop has zero torus class**: rotating a free loop `γ` once around itself sweeps
+out the torus `(s, t) ↦ γ(s + t)`, which factors through the circle, and the circle has no second
+homology. -/
+theorem torusClassHom_fundamentalGroupHom_rotationLoop (γ : MooreFreeLoopSpace Q) :
+    γ.torusClassHom (Additive.ofMul (MooreLoopSpace.fundamentalGroupHom γ γ.rotationLoop)) = 0 := by
+  -- Reparametrized to circle maps, the rotation loop of `γ` is the image of the rotation of the
+  -- circle under postcomposition with `γ`.
+  have hΛ : (genLoopEquivOfUnique (Fin 1)).symm
+      (γ.rotationLoop.toPath.map toCircleMap.continuous) =
+        GenLoop.map ⟨fun g ↦ (toCircleMap γ).comp g, ContinuousMap.continuous_postcomp _⟩
+          (ContinuousMap.comp_id _) circleRotationGenLoop := by
+    ext t : 2
+    simp [GenLoop.map_apply, circleRotationGenLoop_apply, toCircleMap_rotate]
+  -- The circle has no second homology, so the torus class of the rotation of the circle vanishes.
+  have h₂ : CategoryTheory.Limits.IsZero
+      (((normalizedCubicalChainComplex ℤ).obj (TopCat.of Circle)).homology 2) :=
+    (isZero_singularHomology_circle_of_two_le (ModuleCat.of ℤ ℤ) le_rfl).of_iso
+      (singularCubicalHomologyIso ℤ (TopCat.of Circle) 2).symm
+  have h := cubicalFreeLoopTorusClassHom_map ℤ (toCircleMap γ) (ContinuousMap.comp_id _)
+    (⟦circleRotationGenLoop⟧ : HomotopyGroup (Fin 1) C(Circle, Circle) _)
+  rw [HomotopyGroup.map_mk, ← hΛ,
+    (ModuleCat.isZero_iff_subsingleton.1 h₂).elim (cubicalFreeLoopTorusClassHom _ _ _ _) 0,
+    map_zero] at h
+  rw [torusClassHom_fundamentalGroupHom, neg_eq_zero, freeLoopTorusClassHom_apply, h]
+  exact map_zero _
 
 end MooreFreeLoopSpace
 
