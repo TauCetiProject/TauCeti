@@ -27,10 +27,14 @@ distance `ρ_R(u, v)` of Thurston's tileability criterion.
 
 ## Main statements
 
+* `TauCeti.isPositiveStep_add_latticeDir`, `TauCeti.not_isPositiveStep_sub_latticeDir`: every step
+  `u → u + e_k` is positive and no step `u → u − e_k` is.
 * `TauCeti.exists_eq_add_or_eq_sub_of_regionGraph_adj`: every dart of `regionGraph R` goes from
   some `u` to `u + e_k` or to `u − e_k`.
 * `TauCeti.isPositiveStep_iff_not_isPositiveStep_of_regionGraph_adj`: exactly one of a dart and
   its reverse is a positive step.
+* `TauCeti.ite_isPositiveStep_add_ite_isPositiveStep_of_regionGraph_adj`: a dart and its reverse
+  together contribute exactly one positive step.
 * `TauCeti.positiveSteps_nil`, `TauCeti.positiveSteps_cons`, `TauCeti.positiveSteps_append`:
   `positiveSteps` vanishes on the empty walk and is additive under concatenation.
 * `TauCeti.positiveSteps_add_positiveSteps_reverse`: `positiveSteps p` plus `positiveSteps` of
@@ -64,6 +68,18 @@ theorem isPositiveStep_iff :
   simp only [isPositiveStep_def, Fin.exists_fin_succ, Fin.exists_fin_zero, sub_eq_iff_eq_add']
   simp
 
+/-- Every step `u → u + e_k` is positive. -/
+@[simp] theorem isPositiveStep_add_latticeDir (u : ℤ × ℤ) (k : Fin 3) :
+    IsPositiveStep u (u + latticeDir k) :=
+  ⟨k, rfl⟩
+
+/-- No step `u → u − e_k` is positive. -/
+@[simp] theorem not_isPositiveStep_sub_latticeDir (u : ℤ × ℤ) (k : Fin 3) :
+    ¬ IsPositiveStep u (u - latticeDir k) := by
+  rw [isPositiveStep_iff, sub_sub_cancel_left]
+  revert k
+  simp [Fin.forall_fin_succ, Prod.ext_iff]
+
 instance instDecidableRelIsPositiveStep : DecidableRel IsPositiveStep := fun _ _ =>
   decidable_of_iff _ isPositiveStep_iff.symm
 
@@ -90,10 +106,17 @@ theorem exists_eq_add_or_eq_sub_of_regionGraph_adj (h : (regionGraph R).Adj u u'
 theorem isPositiveStep_iff_not_isPositiveStep_of_regionGraph_adj
     (h : (regionGraph R).Adj u u') :
     IsPositiveStep u u' ↔ ¬ IsPositiveStep u' u := by
-  refine ⟨IsPositiveStep.asymm, fun h' => ?_⟩
-  obtain ⟨k, hk | hk⟩ := exists_eq_add_or_eq_sub_of_regionGraph_adj h
-  · exact ⟨k, hk⟩
-  · exact absurd ⟨k, by rw [hk, sub_add_cancel]⟩ h'
+  obtain ⟨k, rfl | rfl⟩ := exists_eq_add_or_eq_sub_of_regionGraph_adj h
+  · simpa using IsPositiveStep.asymm (isPositiveStep_add_latticeDir u k)
+  · simpa using isPositiveStep_add_latticeDir (u - latticeDir k) k
+
+/-- For a dart of `regionGraph R`, the dart and its reverse together contribute exactly one
+positive step. -/
+theorem ite_isPositiveStep_add_ite_isPositiveStep_of_regionGraph_adj
+    (h : (regionGraph R).Adj u u') :
+    ((if IsPositiveStep u u' then 1 else 0) + if IsPositiveStep u' u then 1 else 0) = 1 := by
+  have := isPositiveStep_iff_not_isPositiveStep_of_regionGraph_adj h
+  split_ifs <;> simp_all
 
 /-- The number of positive steps of a walk in the edge graph of a region: its darts from some `u`
 to `u + e_k`. -/
@@ -129,10 +152,8 @@ theorem positiveSteps_add_positiveSteps_reverse (p : (regionGraph R).Walk u v) :
   induction p with
   | nil => rfl
   | @cons a b _ hab p ih =>
-    rw [SimpleGraph.Walk.reverse_cons, positiveSteps_append, positiveSteps_cons,
-      positiveSteps_cons, positiveSteps_nil, SimpleGraph.Walk.length_cons, ← ih]
-    have := isPositiveStep_iff_not_isPositiveStep_of_regionGraph_adj hab
-    by_cases h : IsPositiveStep b a <;>
-      simp only [this, h, not_true_eq_false, not_false_eq_true, ↓reduceIte] <;> omega
+    have := ite_isPositiveStep_add_ite_isPositiveStep_of_regionGraph_adj hab
+    simp [SimpleGraph.Walk.reverse_cons, ← ih]
+    omega
 
 end TauCeti
