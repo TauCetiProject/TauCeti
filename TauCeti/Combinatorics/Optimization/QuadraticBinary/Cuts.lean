@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Order.Group.OrderIso
 import Mathlib.Data.Fintype.Option
 import Mathlib.Tactic.Ring
+import TauCeti.Combinatorics.SimpleGraph.Bipartite
 import TauCeti.Order.Filter.Extr
 
 /-!
@@ -206,7 +207,7 @@ theorem isMinOn_ising_ancilla_iff [Fintype ι] (J : Matrix ι ι ℝ) (h : ι �
       IsMinOn (ising J h) Set.univ fun i ↦ xor (y (some i)) (y none) := by
   rw [show ising (isingAncillaMatrix J h) 0 =
       ising J h ∘ fun z i ↦ xor (z (some i)) (z none) from funext (ising_ancilla J h)]
-  exact isMinOn_univ_comp_iff (xor_option_surjective ι) (ising J h) y
+  exact (xor_option_surjective ι).isMinOn_univ_comp_iff (ising J h) y
 
 end Ancilla
 
@@ -273,33 +274,12 @@ theorem cutWeight_not_of_isSymm {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι �
     cutWeight w (fun i ↦ !x i) = cutWeight w x := by
   rw [cutWeight_not, hw.eq]
 
-private theorem sum_card_filter_adj_eq_card_between (G : SimpleGraph ι) [DecidableRel G.Adj]
-    [DecidableEq ι] (s : Finset ι) :
-    (∑ v ∈ s, ((#{w ∈ sᶜ | G.Adj v w} : ℕ) : ℝ)) =
-      ((G.between (s : Set ι) (s : Set ι)ᶜ).edgeFinset.card : ℝ) := by
-  classical
-  let B := G.between (s : Set ι) (s : Set ι)ᶜ
-  have hbip : B.IsBipartiteWith (s : Set ι) ((sᶜ : Finset ι) : Set ι) := by
-    simpa [B] using G.between_isBipartiteWith (s := (s : Set ι)) disjoint_compl_right
-  have hdeg_sum := SimpleGraph.isBipartiteWith_sum_degrees_eq_card_edges hbip
-  have hdeg (v : ι) (hv : v ∈ s) : B.degree v = #{w ∈ sᶜ | G.Adj v w} := by
-    rw [← B.card_neighborFinset_eq_degree, SimpleGraph.isBipartiteWith_neighborFinset hbip hv]
-    refine congrArg Finset.card (Finset.filter_congr fun w hw ↦ ?_)
-    have hvw_mem : v ∈ (s : Set ι) ∧ w ∈ (s : Set ι)ᶜ := by
-      simpa [Finset.mem_compl] using And.intro hv hw
-    simp [B, SimpleGraph.between_adj, hvw_mem]
-  have hnat : ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} = B.edgeFinset.card := by
-    rw [← hdeg_sum]
-    exact Finset.sum_congr rfl fun v hv ↦ (hdeg v hv).symm
-  exact_mod_cast hnat
-
 private theorem cutWeight_adjMatrix_eq_sum_card_filter (G : SimpleGraph ι) [DecidableRel G.Adj]
     [DecidableEq ι] (x : ι → Bool) :
     cutWeight (G.adjMatrix ℝ) x =
       ∑ v ∈ Finset.univ.filter (fun i ↦ x i = true),
         ((#{w ∈ (Finset.univ.filter fun i ↦ x i = true)ᶜ | G.Adj v w} : ℕ) : ℝ) := by
-  let s : Finset ι := Finset.univ.filter fun i ↦ x i = true
-  change cutWeight (G.adjMatrix ℝ) x = ∑ v ∈ s, ((#{w ∈ sᶜ | G.Adj v w} : ℕ) : ℝ)
+  set s : Finset ι := Finset.univ.filter fun i ↦ x i = true
   simp only [cutWeight_def, SimpleGraph.adjMatrix_apply, Finset.card_filter]
   have houter (v : ι) :
       (∑ j : ι, (if G.Adj v j then (1 : ℝ) else 0) * bit x v * (1 - bit x j)) =
@@ -335,12 +315,15 @@ theorem cutWeight_adjMatrix_eq_card_between (G : SimpleGraph ι) [DecidableRel G
   classical
   let s : Finset ι := Finset.univ.filter fun i ↦ x i = true
   have hs : (s : Set ι) = {i | x i = true} := by ext i; simp [s]
+  have hcard :
+      #(G.between (s : Set ι) (s : Set ι)ᶜ).edgeFinset = ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} :=
+    SimpleGraph.card_edgeFinset_between_compl G s
   have hB :
       (G.between (s : Set ι) (s : Set ι)ᶜ).edgeFinset =
         (G.between {i | x i = true} {i | x i = true}ᶜ).edgeFinset := by
     ext e
     simp [hs]
-  rw [cutWeight_adjMatrix_eq_sum_card_filter, sum_card_filter_adj_eq_card_between G s, hB]
+  rw [cutWeight_adjMatrix_eq_sum_card_filter, ← Nat.cast_sum, ← hcard, hB]
 
 /-- For symmetric weights `w`, the cut weight is an explicit affine shift of the field-free Ising
 energy with coupling matrix `(1 / 4) • w`. -/
@@ -454,7 +437,11 @@ theorem qubo_eq_neg_cutWeight (Q : Matrix ι ι ℝ) (y : Option ι → Bool) :
           (1 / 2 : ℝ) • (isingAncillaMatrix ((1 / 4 : ℝ) • Q) h +
             (isingAncillaMatrix ((1 / 4 : ℝ) • Q) h)ᵀ) := by
       ext a b
-      cases a <;> cases b <;> simp [h] <;> ring
+      cases a <;> cases b <;>
+        simp only [Matrix.smul_apply, Matrix.add_apply, Matrix.transpose_apply, smul_eq_mul,
+          quboCutMatrix_none_none, quboCutMatrix_none_some, quboCutMatrix_some_none,
+          quboCutMatrix_some_some, isingAncillaMatrix_none_none, isingAncillaMatrix_none_some,
+          isingAncillaMatrix_some_none, isingAncillaMatrix_some_some, h] <;> ring
     rw [hsymm, ising_symmetrize]
   rw [cutWeight_eq_ising (isSymm_quboCutMatrix Q) y, htotal, hising_eq, ising_ancilla,
     qubo_eq_ising]
@@ -477,7 +464,7 @@ theorem iInf_qubo_eq_neg_iSup_cutWeight (Q : Matrix ι ι ℝ) :
 theorem isMinOn_qubo_iff_isMaxOn_cutWeight (Q : Matrix ι ι ℝ) (y : Option ι → Bool) :
     IsMinOn (qubo Q) Set.univ (fun i ↦ xor (y (some i)) (y none)) ↔
       IsMaxOn (cutWeight (quboCutMatrix Q)) Set.univ y := by
-  rw [← isMinOn_univ_comp_iff (xor_option_surjective ι) (qubo Q) y,
+  rw [← (xor_option_surjective ι).isMinOn_univ_comp_iff (qubo Q) y,
     show qubo Q ∘ (fun z i ↦ xor (z (some i)) (z none)) =
       fun z ↦ -cutWeight (quboCutMatrix Q) z from funext (qubo_eq_neg_cutWeight Q)]
   exact ⟨fun h ↦ by simpa using h.neg, IsMaxOn.neg⟩
