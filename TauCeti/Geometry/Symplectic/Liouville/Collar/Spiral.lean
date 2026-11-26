@@ -127,8 +127,8 @@ private theorem differentiableAt_of_differentiableAt_polarCurve {θ : ℝ}
     (h : DifferentiableAt ℝ (polarCurve ρ) θ) : DifferentiableAt ℝ ρ θ := by
   have hρ : ρ = fun t : ℝ ↦ (polarCurve ρ t * exp (-((t : ℂ) * I))).re := by
     funext t
-    rw [polarCurve_eq_mul, mul_assoc, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero,
-      mul_one, ofReal_re]
+    rw [polarCurve_eq_mul]
+    simp [mul_assoc, ← Complex.exp_add]
   rw [hρ]
   exact reCLM.differentiableAt.comp θ
     (h.mul ((ofRealCLM.differentiableAt.mul_const I).neg.cexp))
@@ -281,11 +281,12 @@ theorem not_injOn_flowOf_polarCurve
   · have := congrArg Prod.snd heq
     simp only at this
     linarith [Real.pi_pos]
-  · simp only [flowOf_dilation]
-    rw [show 2⁻¹ * (2 * Real.log (ρ (θ + 2 * π) / ρ θ)) = Real.log (ρ (θ + 2 * π) / ρ θ) by ring,
-      Real.exp_log hk, mul_zero, Real.exp_zero, one_smul, polarCurve_apply, polarCurve_apply,
-      periodic_circleMap 0 (ρ (θ + 2 * π)) θ, circleMap_zero, circleMap_zero, real_smul]
-    rw [← mul_assoc, ← ofReal_mul, div_mul_cancel₀ _ hρθ]
+  · -- Both points lie on the ray of angle `θ`, and the flow rescales one onto the other.
+    have hexp : Real.exp (2⁻¹ * (2 * Real.log (ρ (θ + 2 * π) / ρ θ))) = ρ (θ + 2 * π) / ρ θ := by
+      rw [inv_mul_cancel_left₀ two_ne_zero, Real.exp_log hk]
+    simp only [flowOf_dilation, hexp, polarCurve_apply,
+      periodic_circleMap 0 (ρ (θ + 2 * π)) θ]
+    simp [circleMap_zero, ← mul_assoc, div_mul_cancel₀ _ (ofReal_ne_zero.2 hρθ)]
 
 /-! ### The spiral radius -/
 
