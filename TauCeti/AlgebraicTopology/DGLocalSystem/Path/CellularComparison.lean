@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ModuleCat.Cokernel
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BaseChain
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Pair
@@ -79,13 +78,6 @@ section Basis
 
 variable {X : Type} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
 
-/-- The characteristic cube of an `n`-cell lies in the `n`-skeleton `Xⁿ = skeletonLT C (n + 1)`. -/
-theorem cellCube_mem_skeletonLT_succ (n : ℕ) (j : cell C n) (d : Fin n → I) :
-    cellCube C n j d ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
-  rw [cellCube_apply]
-  exact map_mem_skeletonLT_succ j
-    (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall (Fin n) d).property)
-
 /-- The **characteristic cube** `TauCeti.cellCube C n j` of the `n`-cell `j`, as a cube of the
 `n`-skeleton `Xⁿ`, the ambient space of the skeletal pair `TauCeti.skeletonPair C n`. -/
 def skeletonCellCube (n : ℕ) (j : cell C n) : SingularCube (skeletonPair C n).fst n :=
@@ -125,7 +117,8 @@ theorem mapsTo_skeletonCellCube_boundary (n : ℕ) (j : cell C n) :
     rw [cellCube_apply]
     exact cellFrontier_subset_skeletonLT n j ⟨_, mem_sphere_zero_iff_norm.2
       ((norm_cubeHomeomorphClosedBall_eq_one_iff d).2 hd), rfl⟩
-  -- The point of the skeleton is `cellCube C n j d` by `skeletonCellCube_apply`.
+  refine mem_preimage.2 ?_
+  rw [skeletonCellCube_apply]
   exact h
 
 /-- The disk of the `n`-cell `j` read on the cube, as a map of pairs
@@ -273,9 +266,7 @@ theorem cellCubeBasis_apply (j : cell C (m + 1)) :
   classical
   simp only [cellCubeBasis, Module.Basis.coe_ofRepr, LinearEquiv.symm_trans_apply,
     LinearEquiv.symm_symm]
-  rw [show (finsuppLEquivDirectSum k k (cell C (m + 1))) (Finsupp.single j 1) =
-      DirectSum.lof k _ (fun _ ↦ k) j 1 from finsuppLEquivDirectSum_single ..]
-  rw [cellCubeHomologyEquiv_lof, cellCubeHomologyLeg_apply, one_smul]
+  rw [finsuppLEquivDirectSum_single, cellCubeHomologyEquiv_lof, cellCubeHomologyLeg_apply, one_smul]
 
 /-- The characteristic cube of the `(m + 1)`-cell `j` represents the basis vector of `j`. -/
 theorem isCubicalRepresentative_ofCube_skeletonCellCube (j : cell C (m + 1)) :

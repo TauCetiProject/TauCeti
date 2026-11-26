@@ -313,6 +313,14 @@ theorem cellCube_apply (n : ℕ) (j : cell C n) (d : Fin n → I) :
     cellCube C n j d = map n j (cubeHomeomorphClosedBall (Fin n) d) := by
   rw [cellCube, ContinuousMap.comp_apply, cellCubeMap_apply, sigmaCellMap_apply]
 
+variable (C) in
+/-- The characteristic cube of an `n`-cell lies in the `n`-skeleton `Xⁿ = skeletonLT C (n + 1)`. -/
+theorem cellCube_mem_skeletonLT_succ [T2Space B] (n : ℕ) (j : cell C n) (d : Fin n → I) :
+    cellCube C n j d ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) := by
+  rw [cellCube_apply]
+  exact map_mem_skeletonLT_succ j
+    (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall (Fin n) d).property)
+
 /-- The characteristic cube of a `0`-cell is the `0`-cube at the point of the cell. -/
 theorem cellCube_zero (j : cell C 0) : cellCube C 0 j = SingularCube.point (map 0 j 0) := by
   rw [SingularCube.eq_point (cellCube C 0 j), cellCube_apply]
