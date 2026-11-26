@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.FunctorCategory
+public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
@@ -35,6 +36,10 @@ It also shows that pulling back morphisms between pullbacks commutes with restri
 functor `p : D ⥤ C`: for the pseudofunctor `p.op.toPseudofunctor.comp F`, pulling back along `g`
 is pulling back along `p.map g` for `F`
 (`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`).
+
+If `M` and `N` admit morphisms after pullback along the arrows of a covering sieve, the objects of
+`Over S` over which `presheafHom M N` has a section cover the slice site
+(`CategoryTheory.Pseudofunctor.coversTop_presheafHom`).
 
 For a prestack `F` for a Grothendieck topology `J`, this gives the descent of morphisms along a
 covering sieve in the form used to build descent data by hand: a morphism is determined by its
@@ -258,6 +263,21 @@ lemma inv_pullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂
   IsIso.inv_eq_of_hom_inv_id (by simp [← pullHom_comp])
 
 end LocallyDiscreteOpToCat
+
+/-- If there are morphisms from `M` to `N` after pullback along every arrow of a covering sieve of
+`S`, the objects of `Over S` over which the presheaf of morphisms from `M` to `N` has a section
+cover the slice site `(Over S, J.over S)`. -/
+lemma coversTop_presheafHom {J : GrothendieckTopology C} {M N : F.obj (.mk (op S))}
+    (h : ∃ R ∈ J S, ∀ ⦃V : C⦄ (f : V ⟶ S), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj M ⟶ (F.map f.op.toLoc).toFunctor.obj N)) :
+    (J.over S).CoversTop
+      fun T : {T : Over S // Nonempty ((F.presheafHom M N).obj (op T))} ↦ T.val := by
+  obtain ⟨R, hR, hMN⟩ := h
+  intro T
+  rw [GrothendieckTopology.mem_over_iff]
+  refine J.superset_covering (fun V g hg ↦ ?_) (J.pullback_stable T.hom hR)
+  rw [Sieve.overEquiv_iff]
+  exact ⟨⟨Over.mk (g ≫ T.hom), (hMN _ hg)⟩, ⟨𝟙 _⟩⟩
 
 namespace IsPrestack
 
