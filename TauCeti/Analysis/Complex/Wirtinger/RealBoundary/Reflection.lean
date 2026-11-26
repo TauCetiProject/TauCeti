@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Weyl
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
+public import TauCeti.Analysis.Complex.LaplaceReflection
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.Analysis.Sobolev.Local.Basic
@@ -64,7 +65,9 @@ provides the nontrivial examples `z²` and `z e^{-conj z}`.
   doubled domain.
 * `TauCeti.MemLpLoc.ite_conj` and `TauCeti.MemWkpLoc.ite_conj`: local `Lᵖ` and `W^{1,p}` bounds up
   to the boundary pass to the reflection twisted by a continuous linear map, the latter for maps
-  continuous up to the axis whose values there the map fixes.
+  continuous up to the axis whose values there the map fixes; `TauCeti.MemLpLoc.twistedReflection`
+  is the local `Lᵖ` bound for the twisted reflection `TauCeti.twistedReflection`, which vanishes on
+  the axis.
 * `HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_starSchwarzReflection`:
   on a conjugation-invariant open set, the reflections of a weak solution with real boundary
   values solve the distributional equation `\bar∂ (Rξ) = Rη` on the doubled domain.
@@ -163,6 +166,13 @@ theorem MemLpLoc.ite_conj {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) 
     refine L.comp_memLp' (h2.mono_measure (Measure.restrict_mono ?_ le_rfl))
     exact fun z hz ↦ ⟨by simpa using hz.2, by simpa using hz.1.out.le⟩
 
+/-- The twisted reflection of a map locally `Lᵖ` up to the real axis is locally `Lᵖ` on the
+conjugation-invariant set `U`. -/
+theorem MemLpLoc.twistedReflection {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) U U)
+    (L : F →L[ℝ] F) {f : ℂ → F} (hf : MemLpLoc p (U ∩ {z | 0 ≤ z.im}) f) :
+    MemLpLoc p U (TauCeti.twistedReflection L f) :=
+  (hf.ite_conj hU L).congr_ae (ae_restrict_of_ae (ite_conj_ae_eq_twistedReflection L f))
+
 /-- **Sobolev regularity of the reflection.** For `1 ≤ p`, a map continuous and `W^{1,p}` up to
 the real axis on `Ω ∩ {0 ≤ im}`, whose values on the axis are fixed by a continuous linear map `L`,
 has a reflection twisted by `L`, equal to `f` on `0 ≤ im` and to `L (f (conj z))` below, in
@@ -177,8 +187,8 @@ theorem MemWkpLoc.ite_conj (hp : 1 ≤ p) {Ω : Opens ℂ} (hΩ : MapsTo (starRi
   set L' := (ContinuousLinearMap.compL ℝ ℂ F F L).comp
     ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip (conjCLE : ℂ →L[ℝ] ℂ))
   refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hfp.ite_conj hΩ L, twistedReflection L' D,
-    hD.ite_conj (fun _ hz _ ↦ hΩ hz) L hfc hL (hDp.mono_exponent hp), memWkpLoc_zero_iff.2 ?_⟩
-  exact (hDp.ite_conj hΩ L').congr_ae (ae_restrict_of_ae (ite_conj_ae_eq_twistedReflection L' D))
+    hD.ite_conj (fun _ hz _ ↦ hΩ hz) L hfc hL (hDp.mono_exponent hp),
+    memWkpLoc_zero_iff.2 (hDp.twistedReflection hΩ L')⟩
 
 variable [StarAddMonoid F] [StarModule ℝ F] [ContinuousStar F]
 

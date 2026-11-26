@@ -29,7 +29,7 @@ almost everywhere. Assume the totally real boundary condition `R ξ(s) = ξ(s)` 
 
 Reflecting by `ξ(conj z) = R ξ(z)`, `J(conj z) = -R J(z) R⁻¹` and `C(conj z) = R C(z) R⁻¹` gives a
 weak solution of the reflected equation on all of `Ω`
-(`TauCeti.IsWeakLinearCauchyRiemannOn.isWeakLinearCauchyRiemannOn_ite_conj`): the sign in the
+(`TauCeti.IsWeakLinearCauchyRiemannOn.ite_conj`): the sign in the
 reflection of `J` is forced by `∂ₜ (ξ ∘ conj) = -(∂ₜξ) ∘ conj`. If moreover `J` is continuous and
 `W^{1,p}` up to the axis with `J² = -1`, and `J(s)` anticommutes with `R` on `Ω ∩ ℝ` (for
 `R = conj`, this holds when `J(s) = i`), then the reflected structure is continuous and `W^{1,p}`
@@ -42,7 +42,7 @@ McDuff–Salamon reduce to by reflection in Appendix B.4; the structure `i` was 
 
 ## Main results
 
-* `TauCeti.IsWeakLinearCauchyRiemannOn.isWeakLinearCauchyRiemannOn_ite_conj`: the reflection of a
+* `TauCeti.IsWeakLinearCauchyRiemannOn.ite_conj`: the reflection of a
   weak solution on `Ω⁺` with the boundary condition is a weak solution on `Ω`.
 * `TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg`: near every point of
   `Ω`, boundary points included, `ξ = Φ σ` on the upper part of a disc, with `Φ` a continuous
@@ -75,21 +75,11 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {p : ℝ≥0∞} {Ω : Opens ℂ}
   {R : V ≃L[ℝ] V} {J C : ℂ → V →L[ℝ] V} {ξ : ℂ → V}
 
-/-- An almost-everywhere property on the open upper part `Ω ∩ {0 < im}` of a conjugation-invariant
-open set, read at the conjugate point, holds almost everywhere on the lower part. -/
-private theorem ae_restrict_im_neg_of_ae_restrict_im_pos (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
-    {P : ℂ → Prop} (h : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 < z.im}), P z) :
-    ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | z.im < 0}), P (conj z) := by
-  have hconj := (conjLIE.measurePreserving.restrict_preimage_emb
-    conjLIE.toHomeomorph.measurableEmbedding ((Ω : Set ℂ) ∩ {z | 0 < z.im})).quasiMeasurePreserving
-  refine ae_restrict_of_ae_restrict_of_subset (fun z hz ↦ ?_) (by simpa using hconj.ae h)
-  exact ⟨hΩ hz.1, by simpa using hz.2⟩
-
 /-- **The reflected equation.** Let `Ω` be conjugation invariant and `1 ≤ p`, and let `ξ` be a
 weak solution of `∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω ∩ {0 ≤ im}` with `R ξ(s) = ξ(s)` on `Ω ∩ ℝ`. Then
 its reflection `ξ(conj z) = R ξ(z)` is a weak solution on `Ω` of the reflected equation, with
 `J(conj z) = -R J(z) R⁻¹` and `C(conj z) = R C(z) R⁻¹`. -/
-theorem IsWeakLinearCauchyRiemannOn.isWeakLinearCauchyRiemannOn_ite_conj (hp : 1 ≤ p)
+theorem IsWeakLinearCauchyRiemannOn.ite_conj (hp : 1 ≤ p)
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hξ : IsWeakLinearCauchyRiemannOn p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) J C ξ)
     (hξR : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (ξ x) = ξ x) :
@@ -104,8 +94,7 @@ theorem IsWeakLinearCauchyRiemannOn.isWeakLinearCauchyRiemannOn_ite_conj (hp : 1
   refine isWeakLinearCauchyRiemannOn_iff_of_isOpen.2
     ⟨ContinuousOn.ite_conj (fun _ hz _ ↦ hΩ hz) R.continuous hc hξR,
     hu.ite_conj hΩ (R : V →L[ℝ] V), twistedReflection L' D, hD',
-    (hDp.ite_conj hΩ L').congr_ae (ae_restrict_of_ae (ite_conj_ae_eq_twistedReflection L' D)),
-    ?_⟩
+    hDp.twistedReflection hΩ L', ?_⟩
   -- The equation above the axis, and at the conjugate point below it.
   rw [interior_inter_setOf_im_nonneg Ω.isOpen] at hae
   have hup := (ae_restrict_iff' (measurableSet_lt measurable_const Complex.measurable_im)).1
@@ -172,21 +161,23 @@ private theorem reflection_hypotheses (hp : 1 ≤ p) (hΩ : MapsTo (starRingEnd 
   -- The twisting maps `X ↦ R X R⁻¹` of the coefficient and `X ↦ -R X R⁻¹` of the structure.
   let K : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V :=
     (R.conjContinuousAlgEquiv.toContinuousLinearEquiv : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)
-  have hK (z : ℂ) : K (C (conj z)) = R.conjContinuousAlgEquiv (C (conj z)) := rfl
-  have hLJ (z : ℂ) : (-K) (J (conj z)) = -R.conjContinuousAlgEquiv (J (conj z)) := rfl
+  have hK (z : ℂ) : K (C (conj z)) = R.conjContinuousAlgEquiv (C (conj z)) := by
+    simp [K]
+  have hLJ (z : ℂ) : (-K) (J (conj z)) = -R.conjContinuousAlgEquiv (J (conj z)) := by
+    simp [K]
   have hL : ∀ x : ℝ, (x : ℂ) ∈ Ω → (-K) (J x) = J x := fun x hx ↦
     ContinuousLinearMap.ext fun v ↦ by simp [K, hJR x hx]
   simp only [← hLJ, ← hK]
   exact ⟨hJ.ite_conj hp hΩ (-K) hJc hL,
     ContinuousOn.ite_conj (fun _ hz _ ↦ hΩ hz) (-K).continuous hJc hL,
     by simpa only [hLJ] using ite_conj_comp_self hΩ hJ2, hC.ite_conj hΩ K,
-    by simpa only [hLJ, hK] using hξ.isWeakLinearCauchyRiemannOn_ite_conj hp hΩ hξR⟩
+    by simpa only [hLJ, hK] using hξ.ite_conj hp hΩ hξR⟩
 
 /-! ### The similarity principle and its consequences -/
 
 /-- **The similarity principle up to a totally real boundary** (Carleman; McDuff–Salamon,
-Theorem 2.3.5, with the reflection of Appendix B.4). Let `V` be a finite-dimensional complex normed
-space, `2 < p < ∞`, `Ω` conjugation invariant, and `R` a real-linear automorphism of `V`. Let `J`
+Theorem 2.3.5, with the reflection of Appendix B.4). Let `W` be a finite-dimensional complex normed
+space, `2 < p < ∞`, `Ω` conjugation invariant, and `R` a real-linear automorphism of `W`. Let `J`
 be continuous and `W^{1,p}` up to the real axis on `Ω ∩ {0 ≤ im}`, with `J² = -1` there and `J(s)`
 anticommuting with `R` on `Ω ∩ ℝ`, let `C` be locally `Lᵖ` up to the axis, and let `ξ` be a weak
 solution of `∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω ∩ {0 ≤ im}` with `R ξ(s) = ξ(s)` on `Ω ∩ ℝ`. Then every
