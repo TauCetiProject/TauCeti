@@ -60,8 +60,9 @@ of `c`, and these are equal. Hence both indices of inertia of the cup pairing ag
 `[Sᵈ⁺¹ × M]_k` are `dim Hᵖ(M; k)`
 (`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_sphere_prod_fundamentalClassOver`,
 `TauCeti.HomologicalOrientation.sigNeg_singularCupPairing_sphere_prod_fundamentalClassOver`). For a
-closed connected oriented three-manifold `Y` this is `b₂⁺(S¹ × Y) = b₂⁻(S¹ × Y) = b₁(Y)` for the
-real intersection form of either orientation of `S¹ × Y`.
+closed connected oriented three-manifold `Y` with finite-dimensional real cohomology, `k = ℝ`,
+`d = 0` and `p = 1`, this is `b₂⁺(S¹ × Y) = b₂⁻(S¹ × Y) = b₁(Y)` for the real intersection form of
+either orientation of `S¹ × Y`.
 
 ## References
 
@@ -163,6 +164,66 @@ theorem isFundamentalClass_fundamentalClassOver [CompactSpace M] [ConnectedSpace
 
 end Field
 
+section Prod
+
+/-! ### The fundamental class of `Sᵈ⁺¹ × M` -/
+
+variable [CompactSpace M] [ConnectedSpace M] {n : ℕ} (o : HomologicalOrientation M E n)
+  (hn : finrank ℝ E = n) {k : Type} [Field k] {d N : ℕ} {E' : Type} [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [ChartedSpace E' (TopCat.sphere.{0} (d + 1) × M)]
+  (oX : HomologicalOrientation (TopCat.sphere.{0} (d + 1) × M) E' N) (hX : finrank ℝ E' = N)
+  (h : d + 1 + n = N)
+
+/-- **The fundamental class of `Sᵈ⁺¹ × M` over a field.** For a compact connected oriented manifold
+`M` of dimension `n` and any homological orientation of the product `Sᵈ⁺¹ × M`, for any manifold
+structure on it, the fundamental class `[Sᵈ⁺¹ × M]_k` over a field `k` is a nonzero multiple of the
+cross product `[Sᵈ⁺¹] × [M]_k`, read with coefficients `k` through `k ⊗ k ≅ k`. -/
+theorem exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross :
+    ∃ c : k, c ≠ 0 ∧ oX.fundamentalClassOver hX k =
+      c • ((singularHomologyFunctor (ModuleCat k) N).map
+        (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
+        (TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
+          (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) n N h
+          (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)) := by
+  subst h
+  -- The cross product is a fundamental class of the product.
+  have hcross : IsFundamentalClass (M := TopCat.sphere.{0} (d + 1) × M)
+      ((TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
+        (ModuleCat.of k k) (ModuleCat.of k k) (d + 1) n (d + 1 + n) rfl).hom
+        (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)) :=
+    IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross hn
+      (o.isFundamentalClass_fundamentalClassOver hn k)
+  have hz := (isFundamentalClass_singularHomologyFunctor_map_app_iff (λ_ (𝟙_ (ModuleCat k)))
+    _).2 hcross
+  -- On the connected product, every top class is a multiple of this fundamental class.
+  obtain ⟨c, hc, -⟩ := hz.existsUnique_eq_smul hX (oX.fundamentalClassOver hX k)
+  have : Nonempty (TopCat.sphere.{0} (d + 1) × M) := ConnectedSpace.toNonempty
+  refine ⟨c, ?_, hc⟩
+  rintro rfl
+  exact oX.fundamentalClassOver_ne_zero hX k (hc.trans (zero_smul k _))
+
+/-- The cup pairing against the fundamental class of `Sᵈ⁺¹ × M` is a nonzero multiple of the cup
+pairing against `[Sᵈ⁺¹] × [M]_k`. -/
+private theorem exists_ne_zero_singularCupPairing_fundamentalClassOver_eq_smul {i j : ℕ}
+    (hij : i + j = N) :
+    ∃ c : k, c ≠ 0 ∧ (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k hij
+      (oX.fundamentalClassOver hX k) =
+      c • (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k hij
+        (((singularHomologyFunctor (ModuleCat k) N).map
+          (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
+          (TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
+            (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) n N h
+            (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ
+              o.fundamentalClassOver hn k))) := by
+  obtain ⟨c, hc0, hc⟩ :=
+    o.exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross hn (k := k) oX hX h
+  refine ⟨c, hc0, ?_⟩
+  rw [hc]
+  ext α β
+  simp
+
+end Prod
+
 section Signature
 
 variable {k : Type} [Field k] [CompactSpace M] {d p : ℕ}
@@ -231,66 +292,10 @@ theorem sigNeg_singularCupPairing_sphere_fundamentalClassOver (hp : Even (p + (d
   TopCat.sigNeg_singularCupPairing_sphere_singularHomologyCross_of_injective_flip hn (by omega)
     hp _ (o.injective_flip_singularCupPairing_fundamentalClassOver hn)
 
-/-! ### The fundamental class of `Sᵈ⁺¹ × M` -/
-
 variable [ConnectedSpace M] {E' : Type} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [FiniteDimensional ℝ E'] [ChartedSpace E' (TopCat.sphere.{0} (d + 1) × M)]
   (oX : HomologicalOrientation (TopCat.sphere.{0} (d + 1) × M) E' (p + p + (d + 1) + (d + 1)))
   (hX : finrank ℝ E' = p + p + (d + 1) + (d + 1))
-
-omit [LinearOrder k] [IsStrictOrderedRing k] in
-/-- **The fundamental class of `Sᵈ⁺¹ × M` over a field.** For a compact connected oriented manifold
-`M` of dimension `2p + d + 1` and any homological orientation of the product `Sᵈ⁺¹ × M`, for any
-manifold structure on it, the fundamental class `[Sᵈ⁺¹ × M]_k` over a field `k` is a nonzero
-multiple of the cross product `[Sᵈ⁺¹] × [M]_k`, read with coefficients `k` through `k ⊗ k ≅ k`. -/
-theorem exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross :
-    ∃ c : k, c ≠ 0 ∧ oX.fundamentalClassOver hX k =
-      c • ((singularHomologyFunctor (ModuleCat k) (p + p + (d + 1) + (d + 1))).map
-        (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
-        (TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
-          (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) (p + p + (d + 1))
-          (p + p + (d + 1) + (d + 1)) (by omega)
-          (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)) := by
-  -- The cross product is a fundamental class of the product. The product theorem states it in
-  -- degree `d + 1 + n`; generalizing the degree reads it in degree `n + (d + 1)`.
-  have hcross : ∀ (N : ℕ) (h : d + 1 + (p + p + (d + 1)) = N),
-      IsFundamentalClass (M := TopCat.sphere.{0} (d + 1) × M)
-        ((TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
-          (ModuleCat.of k k) (ModuleCat.of k k) (d + 1) (p + p + (d + 1)) N h).hom
-          (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)) := by
-    rintro N rfl
-    exact IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross hn
-      (o.isFundamentalClass_fundamentalClassOver hn k)
-  have hz := (isFundamentalClass_singularHomologyFunctor_map_app_iff (λ_ (𝟙_ (ModuleCat k)))
-    _).2 (hcross (p + p + (d + 1) + (d + 1)) (by omega))
-  -- On the connected product, every top class is a multiple of this fundamental class.
-  obtain ⟨c, hc, -⟩ := hz.existsUnique_eq_smul hX (oX.fundamentalClassOver hX k)
-  have : Nonempty (TopCat.sphere.{0} (d + 1) × M) := ConnectedSpace.toNonempty
-  refine ⟨c, ?_, hc⟩
-  rintro rfl
-  exact oX.fundamentalClassOver_ne_zero hX k (hc.trans (zero_smul k _))
-
-omit [LinearOrder k] [IsStrictOrderedRing k] in
-/-- The cup pairing against the fundamental class of `Sᵈ⁺¹ × M` is a nonzero multiple of the cup
-pairing against `[Sᵈ⁺¹] × [M]_k`. -/
-private theorem exists_ne_zero_singularCupPairing_fundamentalClassOver_eq_smul :
-    ∃ c : k, c ≠ 0 ∧ (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k
-      (p := p + (d + 1)) (q := p + (d + 1)) (by omega) (oX.fundamentalClassOver hX k) =
-      c • (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k
-        (p := p + (d + 1)) (q := p + (d + 1)) (by omega)
-        (((singularHomologyFunctor (ModuleCat k) (p + p + (d + 1) + (d + 1))).map
-          (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
-          (TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
-            (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) (p + p + (d + 1))
-            (p + p + (d + 1) + (d + 1)) (by omega)
-            (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ
-              o.fundamentalClassOver hn k))) := by
-  obtain ⟨c, hc0, hc⟩ :=
-    o.exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross hn (k := k) oX hX
-  refine ⟨c, hc0, ?_⟩
-  rw [hc]
-  ext α β
-  simp
 
 include o hn in
 /-- **The positive index of inertia of the intersection form of `Sᵈ⁺¹ × M`.** For a compact
@@ -311,6 +316,7 @@ theorem sigPos_singularCupPairing_sphere_prod_fundamentalClassOver (hp : Even (p
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) p) := by
   obtain ⟨c, hc0, hc⟩ :=
     exists_ne_zero_singularCupPairing_fundamentalClassOver_eq_smul o hn (k := k) oX hX
+      (by omega) (i := p + (d + 1)) (j := p + (d + 1)) (by omega)
   rw [hc, LinearMap.BilinMap.toQuadraticMap_smul]
   rcases hc0.lt_or_gt with hneg | hpos
   · rw [QuadraticForm.sigPos_smul_of_neg _ hneg]
@@ -323,8 +329,8 @@ include o hn in
 hypotheses of
 `TauCeti.HomologicalOrientation.sigPos_singularCupPairing_sphere_prod_fundamentalClassOver`, the
 cup pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × M; k)` against `[Sᵈ⁺¹ × M]_k` has negative index of inertia
-`dim Hᵖ(M; k)`. For a closed connected oriented three-manifold `Y`, this is
-`b₂⁻(S¹ × Y) = b₁(Y)`. -/
+`dim Hᵖ(M; k)`. For a closed connected oriented three-manifold `Y` with finite-dimensional real
+cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁻(S¹ × Y) = b₁(Y)`. -/
 theorem sigNeg_singularCupPairing_sphere_prod_fundamentalClassOver (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) (p + (d + 1)))]
@@ -336,6 +342,7 @@ theorem sigNeg_singularCupPairing_sphere_prod_fundamentalClassOver (hp : Even (p
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) p) := by
   obtain ⟨c, hc0, hc⟩ :=
     exists_ne_zero_singularCupPairing_fundamentalClassOver_eq_smul o hn (k := k) oX hX
+      (by omega) (i := p + (d + 1)) (j := p + (d + 1)) (by omega)
   rw [hc, LinearMap.BilinMap.toQuadraticMap_smul]
   rcases hc0.lt_or_gt with hneg | hpos
   · rw [QuadraticForm.sigNeg_smul_of_neg _ hneg]
