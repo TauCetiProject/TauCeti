@@ -351,8 +351,10 @@ theorem hessianQuadraticForm_sphericalPendulumHamiltonian_comp_sphericalPendulum
     exact this.contDiffAt.comp 0 (contDiffAt_sphericalPendulumUpperParam (by simp))
   have hφL : ContDiffAt ℝ 2 (-((2 : ℝ) • (φ ∘ L))) 0 :=
     ((hφ.comp 0 L.contDiff.contDiffAt).const_smul (2 : ℝ)).neg
-  rw [sphericalPendulumHamiltonian_comp_sphericalPendulumLowerParam,
-    show (fun z ↦ 2 * √(1 - ‖z.1‖ ^ 2)) = (2 : ℝ) • (φ ∘ L) from rfl, sub_eq_add_neg,
+  have hφL_eq : (fun z ↦ 2 * √(1 - ‖z.1‖ ^ 2)) = (2 : ℝ) • (φ ∘ L) := by
+    funext z
+    simp [φ, L]
+  rw [sphericalPendulumHamiltonian_comp_sphericalPendulumLowerParam, hφL_eq, sub_eq_add_neg,
     hessianQuadraticForm_add hH hφL, hessianQuadraticForm_neg, hessianQuadraticForm_smul,
     L.hessianQuadraticForm_comp hφ]
   simp only [add_apply, neg_apply, smul_apply, QuadraticMap.comp_apply,
