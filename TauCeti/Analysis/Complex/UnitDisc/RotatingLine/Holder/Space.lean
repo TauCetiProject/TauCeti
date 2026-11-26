@@ -105,6 +105,7 @@ def rotatingLineHolderSubspace (k : ℤ) (α : ℝ≥0) :
       Complex.conj_ofReal]
     linear_combination (c : ℂ) * hu w hw
 
+@[simp]
 theorem mem_rotatingLineHolderSubspace_iff {k : ℤ}
     {u : CkHolderSpaceOn 1 α ⟨ball (0 : ℂ) 1, isOpen_ball⟩ ℂ} :
     u ∈ rotatingLineHolderSubspace k α ↔
@@ -125,7 +126,7 @@ theorem isClosed_rotatingLineHolderSubspace (k : ℤ) (α : ℝ≥0) :
           w ^ k * conj (CkHolderSpaceOn.closureExtendL convex_unitDisc
             (mem_closure_unitDisc_of_mem_sphere hw) u)} := by
     ext u
-    simp [mem_rotatingLineHolderSubspace_iff]
+    simp
   rw [hset]
   exact isClosed_iInter fun w ↦ isClosed_iInter fun hw ↦ isClosed_eq
     (ContinuousLinearMap.continuous _)
