@@ -13,9 +13,10 @@ import TauCeti.Analysis.Analytic.ZeroCount
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Analysis.Complex.Wirtinger.Green
 import TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic
+import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 import TauCeti.Analysis.Contour.Argument.PowerSum
+import TauCeti.MeasureTheory.Integral.Circle.IntegrationByParts
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
 /-!
 # The weighted argument principle for `bar∂α = a α`
@@ -55,8 +56,8 @@ to the boundary framing and to integrals of the connection.
 The proof applies the argument principle for holomorphic functions,
 `TauCeti.Contour.sum_map_zeroMultiset_eq_circleIntegral`, to `f = exp (-g) α`. Along the circle
 the logarithmic derivative of `f` is that of `α` minus the derivative of `g`, and integrating by
-parts on the closed curve and applying Green's formula on the disc turns
-`∫ φ(γ θ) (g ∘ γ)'(θ) dθ` into `-2i ∫ φ' a`.
+parts on the closed curve (`TauCeti.intervalIntegral_smul_deriv_comp_circleMap`) and applying
+Green's formula on the disc turns `∫ φ(γ θ) (g ∘ γ)'(θ) dθ` into `-2i ∫ φ' a`.
 
 ## Main results
 
@@ -138,51 +139,6 @@ private lemma deriv_circleMap_mul_logDeriv_exp_neg_mul {g : ℂ → ℂ} {θ : �
   field_simp
   linear_combination heq
 
-/-- For `g` of class `C¹` on a neighbourhood `Ω` of the closed disc, the derivative of `g` along
-the circle is continuous. -/
-private lemma continuous_deriv_comp_circleMap {g : ℂ → ℂ} (hR : 0 ≤ R) (hΩ : IsOpen Ω)
-    (hsub : closedBall c R ⊆ Ω) (hg : ContDiffOn ℝ 1 g Ω) :
-    Continuous fun θ ↦ deriv (fun t ↦ g (circleMap c R t)) θ := by
-  have hmem (θ : ℝ) : circleMap c R θ ∈ Ω := hsub (circleMap_mem_closedBall c hR θ)
-  have heq : (fun θ ↦ deriv (fun t ↦ g (circleMap c R t)) θ) =
-      fun θ ↦ fderiv ℝ g (circleMap c R θ) (deriv (circleMap c R) θ) := funext fun θ ↦
-    (((hg.differentiableOn one_ne_zero _ (hmem θ)).differentiableAt
-      (hΩ.mem_nhds (hmem θ))).hasFDerivAt.comp_hasDerivAt θ
-        (hasDerivAt_circleMap c R θ)).deriv.trans (by rw [(hasDerivAt_circleMap c R θ).deriv])
-  rw [heq, funext (deriv_circleMap c R)]
-  exact ((hg.continuousOn_fderiv_of_isOpen hΩ le_rfl).comp_continuous
-    (continuous_circleMap c R) hmem).clm_apply (by fun_prop)
-
-/-- **Integration by parts on the circle.** For `φ` holomorphic and `g` of class `C¹` on a
-neighbourhood of the closed disc, `∫₀^{2π} φ(γ θ) (g ∘ γ)'(θ) dθ = -∮ φ' g dz`. -/
-private lemma intervalIntegral_mul_deriv_comp_circleMap {g : ℂ → ℂ} (hR : 0 ≤ R) (hΩ : IsOpen Ω)
-    (hsub : closedBall c R ⊆ Ω) (hg : ContDiffOn ℝ 1 g Ω) (hφ : DifferentiableOn ℂ φ Ω) :
-    ∫ θ in 0..2 * π, φ (circleMap c R θ) * deriv (fun t ↦ g (circleMap c R t)) θ =
-      -∮ z in C(c, R), deriv φ z * g z := by
-  have hmem (θ : ℝ) : circleMap c R θ ∈ Ω := hsub (circleMap_mem_closedBall c hR θ)
-  have hu (θ : ℝ) : HasDerivAt (fun t ↦ φ (circleMap c R t))
-      (deriv φ (circleMap c R θ) * deriv (circleMap c R) θ) θ :=
-    ((hφ.differentiableAt (hΩ.mem_nhds (hmem θ))).hasDerivAt.comp θ
-      (hasDerivAt_circleMap c R θ)).congr_deriv (by rw [(hasDerivAt_circleMap c R θ).deriv])
-  have hv (θ : ℝ) : HasDerivAt (fun t ↦ g (circleMap c R t))
-      (deriv (fun t ↦ g (circleMap c R t)) θ) θ :=
-    (((hg.differentiableOn one_ne_zero _ (hmem θ)).differentiableAt
-      (hΩ.mem_nhds (hmem θ))).comp θ (hasDerivAt_circleMap c R θ).differentiableAt).hasDerivAt
-  have hu' : Continuous fun θ ↦ deriv φ (circleMap c R θ) * deriv (circleMap c R) θ := by
-    rw [funext (deriv_circleMap c R)]
-    exact (((hφ.deriv hΩ).continuousOn).comp_continuous (continuous_circleMap c R) hmem).mul
-      (by fun_prop)
-  rw [integral_mul_deriv_eq_deriv_mul (fun θ _ ↦ hu θ) (fun θ _ ↦ hv θ)
-    (hu'.intervalIntegrable _ _)
-    ((continuous_deriv_comp_circleMap hR hΩ hsub hg).intervalIntegrable _ _)]
-  have hper : circleMap c R (2 * π) = circleMap c R 0 := by
-    simpa using periodic_circleMap c R 0
-  rw [hper, sub_self, zero_sub, circleIntegral]
-  congr 1
-  refine integral_congr fun θ _ ↦ ?_
-  simp only [smul_eq_mul]
-  ring
-
 /-- **Green's formula for the derivative of a holomorphic function.** If `bar∂g = a` on a
 neighbourhood `Ω` of the closed disc and `φ` is holomorphic on `Ω`, then
 `∮ φ' g dz = 2i ∫_{|z - c| < R} φ' a dA`. -/
@@ -199,9 +155,30 @@ private lemma circleIntegral_deriv_mul_eq {g : ℂ → ℂ} (hR : 0 ≤ R) (hΩ 
     have hz' := hsub (ball_subset_closedBall hz)
     rw [hga z hz', (hφ'.differentiableAt (hΩ.mem_nhds hz')).conjWirtingerDeriv_eq_zero]] at h
   simp only [smul_eq_mul, zero_apply, zero_mul, add_zero] at h
-  rw [h, ← mul_assoc, mul_inv_cancel₀ (mul_ne_zero two_ne_zero I_ne_zero), one_mul]
+  rw [h]
+  field_simp
 
 /-! ### The weighted argument principle -/
+
+/-- On a closed disc in `Ω` on whose boundary circle `α` does not vanish, the global integrating
+factor `exp (-g)` makes `exp (-g) α` analytic on the closed disc and nonvanishing on its boundary
+circle. -/
+private lemma exists_analyticOnNhd_exp_neg_mul (hΩ : IsOpen Ω) (hsub : closedBall c R ⊆ Ω)
+    (hα : DifferentiableOn ℝ α Ω) (ha : ContDiffOn ℝ 1 a Ω)
+    (heq : ∀ z ∈ Ω, conjWirtingerDeriv α z 1 = a z * α z)
+    (hsphere : ∀ z ∈ sphere c R, α z ≠ 0) :
+    ∃ g : ℂ → ℂ, ContDiffOn ℝ 1 g Ω ∧ (∀ z ∈ Ω, conjWirtingerDeriv g z 1 = a z) ∧
+      DifferentiableOn ℂ (fun w ↦ exp (-g w) * α w) Ω ∧
+      (∀ z ∈ ball c R, ContinuousAt g z) ∧
+      AnalyticOnNhd ℂ (fun w ↦ exp (-g w) * α w) (closedBall c R) ∧
+      ∀ z ∈ sphere c R, exp (-g z) * α z ≠ 0 := by
+  obtain ⟨g, hg, hga, hf⟩ :=
+    exists_contDiffOn_differentiableOn_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul hΩ hα ha
+      heq
+  exact ⟨g, hg, hga, hf, fun z hz ↦ hg.continuousOn.continuousAt
+      (hΩ.mem_nhds (hsub (ball_subset_closedBall hz))),
+    fun z hz ↦ hf.analyticAt (hΩ.mem_nhds (hsub hz)),
+    fun z hz ↦ mul_ne_zero (exp_ne_zero _) (hsphere z hz)⟩
 
 /-- **The zeros of a solution of `bar∂α = a α` in a disc.** Let `α` be real-differentiable on an
 open set `Ω` containing the closed disc `|z - c| ≤ R`, with `bar∂α = a α` on `Ω` for a `C¹`
@@ -215,13 +192,8 @@ theorem exists_multiset_eventually_eq_pow_mul_of_conjWirtingerDeriv_apply_one_eq
     ∃ D : Multiset ℂ, (∀ z ∈ D, z ∈ ball c R) ∧ ∀ z ∈ ball c R, ∃ v : ℂ → ℂ,
       ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, α w = (w - z) ^ D.count z * v w := by
   classical
-  obtain ⟨g, hg, -, hf⟩ :=
-    exists_contDiffOn_differentiableOn_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul hΩ hα ha
-      heq
-  have hfa : AnalyticOnNhd ℂ (fun w ↦ exp (-g w) * α w) (closedBall c R) := fun z hz ↦
-    hf.analyticAt (hΩ.mem_nhds (hsub hz))
-  have hfs : ∀ z ∈ sphere c R, exp (-g z) * α z ≠ 0 := fun z hz ↦
-    mul_ne_zero (exp_ne_zero _) (hsphere z hz)
+  obtain ⟨g, -, -, -, hgc, hfa, hfs⟩ :=
+    exists_analyticOnNhd_exp_neg_mul hΩ hsub hα ha heq hsphere
   refine ⟨AnalyticOnNhd.zeroMultiset (fun w ↦ exp (-g w) * α w) (ball c R),
     fun z hz ↦ AnalyticOnNhd.mem_of_mem_zeroMultiset hz, fun z hz ↦ ?_⟩
   have hzc := ball_subset_closedBall hz
@@ -230,13 +202,13 @@ theorem exists_multiset_eventually_eq_pow_mul_of_conjWirtingerDeriv_apply_one_eq
   have hN : analyticOrderNatAt (fun w ↦ exp (-g w) * α w) z =
       (AnalyticOnNhd.zeroMultiset (fun w ↦ exp (-g w) * α w) (ball c R)).count z := by
     rw [AnalyticOnNhd.count_zeroMultiset hfa, indicator_of_mem hz]
-  have hgz : ContinuousAt g z :=
-    (hg.continuousOn.continuousAt (hΩ.mem_nhds (hsub hzc)))
-  refine ⟨fun w ↦ exp (g w) * h w, hgz.cexp.mul hh.continuousAt,
+  refine ⟨fun w ↦ exp (g w) * h w, (hgc z hz).cexp.mul hh.continuousAt,
     mul_ne_zero (exp_ne_zero _) hh₀, ?_⟩
   filter_upwards [hfh] with w hw
   simp only [smul_eq_mul] at hw
-  rw [← hN, ← mul_left_comm, ← hw, ← mul_assoc, ← exp_add, add_neg_cancel, exp_zero, one_mul]
+  have he : exp (g w) * exp (-g w) = 1 := by simp [← exp_add]
+  rw [← hN]
+  linear_combination exp (g w) * hw - α w * he
 
 /-- The multiset `D` of exponents of the local factorizations of `α` in the open disc is the
 multiset of zeros of the holomorphic function `exp (-g) α` there. -/
@@ -272,6 +244,8 @@ private lemma circleIntegral_mul_logDeriv_exp_neg_mul {g : ℂ → ℂ} (hΩ : I
         2 * I * ∫ z in ball c R, deriv φ z * a z := by
   set f : ℂ → ℂ := fun w ↦ exp (-g w) * α w
   have hmem (θ : ℝ) : circleMap c R θ ∈ Ω := hsub (circleMap_mem_closedBall c hR θ)
+  have hsph : sphere c R ⊆ Ω := sphere_subset_closedBall.trans hsub
+  have hsph' : sphere c |R| ⊆ Ω := by rwa [abs_of_nonneg hR]
   set I₁ : ℝ → ℂ := fun θ ↦ φ (circleMap c R θ) * logDeriv (fun t ↦ α (circleMap c R t)) θ
   set I₂ : ℝ → ℂ := fun θ ↦ φ (circleMap c R θ) * deriv (fun t ↦ g (circleMap c R t)) θ
   -- Along the circle the logarithmic derivative of `f` splits into those of `α` and `exp (-g)`.
@@ -289,9 +263,8 @@ private lemma circleIntegral_mul_logDeriv_exp_neg_mul {g : ℂ → ℂ} (hΩ : I
     linear_combination φ (circleMap c R θ) * hθ
   have hI₂ : IntervalIntegrable I₂ volume 0 (2 * π) :=
     ((((hφ.continuousOn).comp_continuous (continuous_circleMap c R) hmem).mul
-      (continuous_deriv_comp_circleMap hR hΩ hsub hg)).intervalIntegrable _ _)
+      (continuous_deriv_comp_circleMap hΩ hsph' hg)).intervalIntegrable _ _)
   have hcont : ContinuousOn (fun z ↦ φ z * logDeriv f z) (sphere c R) := by
-    have hsph : sphere c R ⊆ Ω := sphere_subset_closedBall.trans hsub
     refine (hφ.continuousOn.mono hsph).mul ?_
     simp only [logDeriv]
     exact (((hf.deriv hΩ).continuousOn.mono hsph).div (hf.continuousOn.mono hsph)
@@ -301,8 +274,9 @@ private lemma circleIntegral_mul_logDeriv_exp_neg_mul {g : ℂ → ℂ} (hΩ : I
       (hcont.circleIntegrable hR).out.congr fun θ _ ↦ by
         rw [← hpt θ, deriv_circleMap, smul_eq_mul]
     simpa using hdiff.add hI₂
-  rw [circleIntegral, integral_congr fun θ _ ↦ hpt θ, integral_sub hI₁ hI₂,
-    intervalIntegral_mul_deriv_comp_circleMap hR hΩ hsub hg hφ,
+  have hparts := intervalIntegral_smul_deriv_comp_circleMap hΩ hsph' hg hφ
+  simp only [smul_eq_mul] at hparts
+  rw [circleIntegral, integral_congr fun θ _ ↦ hpt θ, integral_sub hI₁ hI₂, hparts,
     circleIntegral_deriv_mul_eq hR hΩ hsub hg hga hφ]
   ring
 
@@ -326,18 +300,11 @@ theorem sum_map_eq_intervalIntegral_add_integral_of_conjWirtingerDeriv_apply_one
     (D.map φ).sum = (2 * π * I)⁻¹ * (∫ θ in 0..2 * π,
         φ (circleMap c R θ) * logDeriv (fun t ↦ α (circleMap c R t)) θ) +
       (π : ℂ)⁻¹ * ∫ z in ball c R, deriv φ z * a z := by
-  obtain ⟨g, hg, hga, hf⟩ :=
-    exists_contDiffOn_differentiableOn_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul hΩ hα ha
-      heq
-  have hfa : AnalyticOnNhd ℂ (fun w ↦ exp (-g w) * α w) (closedBall c R) := fun z hz ↦
-    hf.analyticAt (hΩ.mem_nhds (hsub hz))
-  have hfs : ∀ z ∈ sphere c R, exp (-g z) * α z ≠ 0 := fun z hz ↦
-    mul_ne_zero (exp_ne_zero _) (hsphere z hz)
+  obtain ⟨g, hg, hga, hf, hgc, hfa, hfs⟩ :=
+    exists_analyticOnNhd_exp_neg_mul hΩ hsub hα ha heq hsphere
   -- `D` is the multiset of zeros of the holomorphic function `exp (-g) α`, so the holomorphic
   -- argument principle applies.
-  rw [eq_zeroMultiset_exp_neg_mul hfa hfs
-      (fun z hz ↦ hg.continuousOn.continuousAt (hΩ.mem_nhds (hsub (ball_subset_closedBall hz))))
-      hD hDα,
+  rw [eq_zeroMultiset_exp_neg_mul hfa hfs hgc hD hDα,
     Contour.sum_map_zeroMultiset_eq_circleIntegral hR hfa hfs
       fun z hz ↦ hφ.analyticAt (hΩ.mem_nhds (hsub hz)),
     circleIntegral_mul_logDeriv_exp_neg_mul hΩ hR hsub hα hg hga hf hsphere hφ]
