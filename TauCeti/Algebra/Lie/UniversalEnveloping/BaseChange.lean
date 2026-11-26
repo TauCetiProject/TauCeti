@@ -91,6 +91,10 @@ noncomputable def baseChangeRingHom :
 
 variable {R A L}
 
+private theorem baseChangeLieHom_apply (x : L) :
+    baseChangeLieHom R A L x = ι A ((1 : A) ⊗ₜ[R] x) :=
+  rfl
+
 private theorem baseChangeRingHom_apply (u : UniversalEnvelopingAlgebra R L) :
     baseChangeRingHom R A L u = lift R (baseChangeLieHom R A L) u :=
   rfl
@@ -100,16 +104,14 @@ private theorem baseChangeRingHom_apply (u : UniversalEnvelopingAlgebra R L) :
 theorem baseChangeRingHom_ι (x : L) :
     baseChangeRingHom R A L (ι R x) =
       ι A ((1 : A) ⊗ₜ[R] x) := by
-  rw [baseChangeRingHom_apply, lift_ι_apply]
-  rfl
+  rw [baseChangeRingHom_apply, lift_ι_apply, baseChangeLieHom_apply]
 
 /-- `baseChangeRingHom` sends the scalar `r` of `U_R(L)` to the scalar `algebraMap R A r`. -/
 @[simp]
 theorem baseChangeRingHom_algebraMap (r : R) :
     baseChangeRingHom R A L (algebraMap R _ r) =
       algebraMap A _ (algebraMap R A r) := by
-  rw [baseChangeRingHom_apply, AlgHom.commutes]
-  rfl
+  rw [baseChangeRingHom_apply, AlgHom.commutes, IsScalarTower.algebraMap_apply R A]
 
 /-- `baseChangeRingHom` is the only ring homomorphism `U_R(L) →+* U_A(A ⊗[R] L)` sending `ι x`
 to `ι (1 ⊗ x)` and the scalar `r` to the scalar `algebraMap R A r`. -/
@@ -118,8 +120,11 @@ theorem baseChangeRingHom_unique
     (hι : ∀ x, g (ι R x) = ι A ((1 : A) ⊗ₜ[R] x))
     (halg : ∀ r, g (algebraMap R _ r) = algebraMap A _ (algebraMap R A r)) :
     g = baseChangeRingHom R A L := by
-  have h : ({ g with commutes' := halg } : _ →ₐ[R] _) = lift R (baseChangeLieHom R A L) :=
-    hom_ext R (LieHom.ext fun x => (hι x).trans (lift_ι_apply R (baseChangeLieHom R A L) x).symm)
+  have hcomm (r : R) : g (algebraMap R _ r) = algebraMap R _ r :=
+    (halg r).trans (IsScalarTower.algebraMap_apply R A _ r).symm
+  have h : ({ g with commutes' := hcomm } : _ →ₐ[R] _) = lift R (baseChangeLieHom R A L) :=
+    hom_ext R (LieHom.ext fun x => ((hι x).trans (baseChangeLieHom_apply x).symm).trans
+      (lift_ι_apply R (baseChangeLieHom R A L) x).symm)
   exact RingHom.ext fun u => congrArg (· u) h
 
 end Lift
