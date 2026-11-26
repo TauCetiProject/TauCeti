@@ -54,6 +54,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `IsMorseSmale.signedMorseComplex_zmod_two`: modulo two it is the mod-two Morse complex.
 * `IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_two`: `∂² = 0`
   in dimension at most two when the minimum is unique.
+* `free_signedMorseComplex_X`: its terms are free modules.
 * `isZero_homology_signedMorseComplex_of_finrank_lt`: the homology vanishes above the dimension.
 * `free_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero`,
   `finrank_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero`: with zero boundary, the
@@ -178,14 +179,18 @@ theorem signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero
       (signedMorseBoundaryAt_eq_zero_of_signedMorseBoundary_eq_zero h0 j)
   · exact (hX.signedMorseComplex 𝔬 hf R hsq).shape i j hij
 
+/-- The terms of the integral Morse chain complex are free `R`-modules, on the critical points of
+each index. -/
+instance free_signedMorseComplex_X (n : ℕ) :
+    Module.Free R ((hX.signedMorseComplex 𝔬 hf R hsq).X n) := by
+  rw [signedMorseComplex_X]
+  exact Module.Free.finsupp R R _
+
 /-- **Integral Morse homology with zero boundary is free.** If the integral Morse boundary
 vanishes, the Morse homology in each degree is a free `R`-module. -/
 theorem free_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero
     (h0 : hX.signedMorseBoundary 𝔬 hf R = 0) (n : ℕ) :
     Module.Free R ((hX.signedMorseComplex 𝔬 hf R hsq).homology n) :=
-  have : Module.Free R ((hX.signedMorseComplex 𝔬 hf R hsq).X n) := by
-    rw [signedMorseComplex_X]
-    exact Module.Free.finsupp R R _
   Module.Free.of_equiv ((hX.signedMorseComplex 𝔬 hf R hsq).XIsoHomologyOfDEqZero n
     (signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero hsq h0 _ _)
     (signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero hsq h0 _ _)).toLinearEquiv

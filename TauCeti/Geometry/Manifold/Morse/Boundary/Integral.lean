@@ -28,7 +28,9 @@ trajectories from `p` to `q` (`TauCeti.IsAdaptedPseudoGradient.signedTrajectoryC
 `ind p = ind q + 1`, and `0` otherwise. The boundary
 (`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary`) is its linear extension to the free
 `R`-module on the critical points, for any ring `R`. It lowers the index by one and the critical
-value. It is compatible with every change of coefficients along an additive map
+value; in particular it anticommutes with the sign `p ↦ (-1) ^ ind p • p`
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_comp_signEquiv`). It is compatible with
+every change of coefficients along an additive map
 (`TauCeti.IsAdaptedPseudoGradient.mapRange_signedMorseBoundary`); in particular the integral
 boundary is the boundary with coefficients in `ℤ`. Under the Morse–Smale condition, the boundary
 with coefficients in `ZMod 2` is the mod-two Morse boundary, whatever the orientations
@@ -70,6 +72,8 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
   the boundary lowers the index by one.
 * `TauCeti.IsAdaptedPseudoGradient.value_lt_of_signedMorseBoundaryCoeff_ne_zero`: the boundary
   lowers the critical value.
+* `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_comp_signEquiv`: the boundary anticommutes
+  with the parity sign.
 * `TauCeti.IsAdaptedPseudoGradient.mapRange_signedMorseBoundary`: change of coefficients.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundary_eq_morseBoundary`: with
   coefficients in `ZMod 2` it is the mod-two Morse boundary.
@@ -293,6 +297,15 @@ theorem signedMorseBoundary_single_apply (p q : criticalPoints 𝓘(ℝ, E) f) (
   haveI := hf.finite_criticalPoints.to_subtype
   Finsupp.intMatrixMap_single_apply _ p a q
 
+/-- The integral Morse boundary of a critical point of index `0` vanishes: no critical point has
+index one less. -/
+theorem signedMorseBoundary_single_eq_zero_of_morseIndex_eq_zero {p : criticalPoints 𝓘(ℝ, E) f}
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = 0) (a : R) :
+    hX.signedMorseBoundary 𝔬 hf R (Finsupp.single p a) = 0 := by
+  ext q
+  rw [signedMorseBoundary_single_apply, signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one
+    (by omega), Int.cast_zero, mul_zero, Finsupp.coe_zero, Pi.zero_apply]
+
 /-- **Change of coefficients.** An additive map `g : R → R'`, for instance a ring homomorphism,
 applied to the coefficients of the chains, intertwines the Morse boundaries with coefficients in `R`
 and in `R'`: the boundary coefficients are integers, and `g` commutes with integer multiples. -/
@@ -314,6 +327,24 @@ theorem signedMorseBoundary_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f))
         (Finsupp.signReversal R S).toLinearMap :=
   haveI := hf.finite_criticalPoints.to_subtype
   Finsupp.intMatrixMap_eq_signReversal_comp _ S S (signedMorseBoundaryCoeff_reverse S)
+
+/-- **The integral boundary anticommutes with the parity sign.** The boundary lowers the Morse
+index by one, so composing it with the sign change `p ↦ (-1) ^ ind p • p` (`Finsupp.signEquiv`)
+on either side gives opposite results. This is the identity that makes the Koszul sign of a
+tensor product of Morse complexes cancel the mixed terms of its square. -/
+theorem signedMorseBoundary_comp_signEquiv :
+    hX.signedMorseBoundary 𝔬 hf R ∘ₗ (Finsupp.signEquiv (A := R) R
+        fun p : criticalPoints 𝓘(ℝ, E) f ↦ (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p).toLinearMap =
+      -((Finsupp.signEquiv (A := R) R
+        fun p : criticalPoints 𝓘(ℝ, E) f ↦ (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p).toLinearMap ∘ₗ
+          hX.signedMorseBoundary 𝔬 hf R) := by
+  refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.neg_apply,
+    Finsupp.signEquiv_single, Finsupp.coe_neg, Pi.neg_apply, Finsupp.signEquiv_apply,
+    signedMorseBoundary_single_apply]
+  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
+  · simp [hpq, pow_succ, mul_assoc]
+  · simp [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hpq]
 
 /-- **The mod-two reduction of the boundary coefficients.** Under the Morse–Smale condition, the
 integral boundary coefficient `signedMorseBoundaryCoeff` of `q` in the boundary of `p`, reduced
