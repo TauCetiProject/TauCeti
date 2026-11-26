@@ -238,14 +238,13 @@ theorem
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
             Complex.I) u ξ z‖ ^ 2 := by
-  set ψ := realChart fun z ↦ c i + a i * zero.cylindricalEndLift z with hψ
+  set ψ := realChart fun z ↦ c i + a i * zero.cylindricalEndLift z
   have hpb (ζ : ℝ × ℝ) (hζ : 2 < ζ.1) :=
     Floer.perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le (Hout := Hout) hH ha
       hsep hout i hζ.le
   -- Beyond `s = 0` the chart avoids the centers.
-  have hψne (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j := by
-    rw [hψ, equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
+  have hψne (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j :=
+    equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i) hζ j
   obtain ⟨C, R, hR, hest⟩ :=
     ω.exists_forall_setIntegral_comp_le_mul_integral_floerLinearization_of_chart (R₁ := 2) hX
       (hHs i) hx hnd hJe hJex (fun ζ _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)

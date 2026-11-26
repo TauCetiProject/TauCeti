@@ -41,6 +41,9 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
   with `R` (`puncturedSphereTruncation_mono`), exhausts the sphere minus its punctures
   (`iUnion_puncturedSphereTruncation`), and specializes to the truncation of the thrice-punctured
   sphere (`puncturedSphereTruncation_eq_truncation`).
+* `isCompact_preimage_puncturedSphereTruncation` and `preimage_puncturedSphereTruncation_subset`:
+  in real coordinates, `Σ_R` is compact and, for nonzero scales, lies in the plane minus the
+  centers.
 * `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end.
 * `det_fderiv_realChart_add_mul_cylindricalEndLift`: its Jacobian in real coordinates is
   `4π² |w - c|²` at the point `w` it reaches.
@@ -48,11 +51,14 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
   lift of an input end is injective on every horizontal strip of height one.
 * `realChart_add_mul_cylindricalEndLift_add_one`: in real coordinates it has period one in the
   angular coordinate.
+* `norm_symm_realChart_add_mul_cylindricalEndLift_sub_le`: the part `s ≥ 0` of the chart
+  `realChart (z ↦ c + a φ₀(z))` of an input end lies in the disc of radius `‖a‖ / 2` about `c`.
 * `add_mul_cylindricalEndLift_mem_puncturedSphereTruncation` and
   `cylindricalEndLift_inf_mem_puncturedSphereTruncation`: the end pieces lie in `Σ_R`.
 * `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
   is `Puncture.exists_cylindricalEndLift_inf_eq`.
-* `add_mul_cylindricalEndLift_ne`: a point with `s > 0` on an input end is no center.
+* `add_mul_cylindricalEndLift_ne`: a point with `s > 0` on an input end is no center, and
+  `equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne`: the same in real coordinates.
 -/
 
 public section
@@ -120,6 +126,19 @@ theorem ne_of_mem_puncturedSphereTruncation {i : ι} (ha : a i ≠ 0) {w : ℂ}
     positivity
   rw [sub_self, norm_zero] at h
   linarith
+
+/-- The truncation `Σ_R` of a sphere with moving input ends, in real coordinates, is compact. -/
+theorem isCompact_preimage_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_puncturedSphereTruncation c a R)
+
+/-- For nonzero scales, the truncation `Σ_R` of a sphere with moving input ends, in real
+coordinates, lies in the plane minus the centers. -/
+theorem preimage_puncturedSphereTruncation_subset (ha : ∀ i, a i ≠ 0) (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R ⊆
+      {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
+  fun _ hz i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hz
 
 /-- For finitely many input ends with nonzero scales, the truncations exhaust the sphere minus
 its punctures: the plane minus the centers of the input ends. -/
@@ -290,5 +309,31 @@ theorem realChart_add_mul_cylindricalEndLift_add_one (c a : ℂ) (s t : ℝ) :
   simp only [Complex.ofReal_add, Complex.ofReal_one] at h
   rw [TauCeti.Complex.realChart_mk, TauCeti.Complex.realChart_mk, Complex.ofReal_add,
     Complex.ofReal_one, h]
+
+/-- On the part `s ≥ 0` of the input end with center `c` and scale `a`, the point
+`ψ(ζ) = c + a φ₀(ζ)` of the chart `ψ = realChart (z ↦ c + a φ₀(z))` lies at distance at most
+`‖a‖ / 2` from `c`. -/
+theorem norm_symm_realChart_add_mul_cylindricalEndLift_sub_le (c a : ℂ) {ζ : ℝ × ℝ}
+    (hζ : 0 ≤ ζ.1) :
+    ‖Complex.equivRealProdCLM.symm (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) -
+      c‖ ≤ ‖a‖ / 2 := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_realChart, norm_add_mul_cylindricalEndLift_sub]
+  have : Real.exp (-(2 * π * (Complex.equivRealProdCLM.symm ζ).re)) ≤ 1 :=
+    Real.exp_le_one_iff.2 (by
+      simp only [Complex.equivRealProdCLM_symm_apply_re]
+      nlinarith [pi_pos])
+  have := norm_nonneg a
+  nlinarith
+
+/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint, then a point with `s > 0` of the
+chart `ψ_i = realChart (z ↦ c i + a i φ₀(z))` of an input end with nonzero scale is not the
+center of any input end. -/
+theorem equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖) {i : ι} (ha : a i ≠ 0)
+    {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) (j : ι) :
+    Complex.equivRealProdCLM.symm
+      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_realChart]
+  exact add_mul_cylindricalEndLift_ne hsep ha (by simpa using hζ) j
 
 end TauCeti.ThricePuncturedSphere

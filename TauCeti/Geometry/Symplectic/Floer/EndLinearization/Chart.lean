@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Pullback
-import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.Topology.Instances.Real.TSupport
@@ -64,6 +65,12 @@ Jacobian of the chart, read on the surface, which is comparable to the inverse o
 factor of a metric that is cylindrical on the end. Since the half-cylinder estimate is stated for
 `C²` fields, `ψ` is assumed `C³` and `J` and `u` `C²` far out on the end, so that `η'` is `C²`.
 
+The same comparison bounds the coefficient field of `D_u` on the conformal jets of a weight `ρ`
+at `ψ(ζ)` by the coefficient field on the jets of the end datum along `u ∘ ψ` at `ζ`, when
+`ρ(ψ ζ)^(-1/2)` is at most a multiple of the chart scale `|dψ_ζ (1, 0)|`
+(`TauCeti.SymplecticForm.norm_floerConformalJetCoeff_le_of_perturbationPullback`). This is what
+realizes `D_u` from `W^{1,2}` to `L²` on surfaces whose ends are read in holomorphic charts.
+
 ## References
 
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
@@ -103,6 +110,59 @@ private theorem differentiableAt_of_perturbationPullback (ω : SymplecticForm V)
   exact ⟨fun y ↦ ((hh.differentiable two_ne_zero) y).const_mul c₁,
     fun y ↦ ((hh.differentiable two_ne_zero) y).const_mul c₂, fun y ↦ (hXh y).const_smul c₁,
     fun y ↦ (hXh y).const_smul c₂⟩
+
+/-- **The coefficient field on conformal jets in a holomorphic end chart.** Let `ψ` be a chart
+with complex-linear derivative at `ζ`, with `(a, b) = dψ_ζ (1, 0)` and `a² + b² = r² > 0`, in
+which the perturbation `(K_s, K_t)` pulls back at `ζ` to `H_e(t) dt` for a `C²` Hamiltonian
+`H_e(t)`, the structures at `ψ(ζ)` are `J_e(t)`, and `u` solves the Floer
+equation at `ψ(ζ)`. If `B` bounds the coefficient field on jets of the end datum `H_e(t) dt`, with
+the structures `J_e(t)`, along `u ∘ ψ` at `ζ`, and `ρ(ψ ζ)^(-1/2) ≤ κ r` with `κ ≥ 0`, then the
+coefficient field on the conformal jets of `ρ` is at most `1 + B + κ (1 + B) B` at `ψ(ζ)`. -/
+theorem norm_floerConformalJetCoeff_le_of_perturbationPullback (ω : SymplecticForm V)
+    {ρ : ℝ × ℝ → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Je : ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {He : ℝ → V → ℝ}
+    {ψ : ℝ × ℝ → ℝ × ℝ} {u : ℝ × ℝ → V} {ζ : ℝ × ℝ} {B κ r : ℝ}
+    (hHe : ContDiff ℝ 2 (He ζ.2))
+    (hψJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ ψ ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hr : (fderiv ℝ ψ ζ stdComplexLineReal).1 ^ 2 + (fderiv ℝ ψ ζ stdComplexLineReal).2 ^ 2 =
+      r ^ 2) (hr0 : 0 < r)
+    (hKs : perturbationPullback ψ Ks Kt stdComplexLineReal ζ = 0)
+    (hKt : perturbationPullback ψ Ks Kt stdComplexLineImag ζ = He ζ.2)
+    (hJz : J (ψ ζ) = Je ζ.2) (hu : DifferentiableAt ℝ u (ψ ζ))
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (ψ ζ) (u (ψ ζ)))
+      (ω.perturbedFDeriv Ks Kt u (ψ ζ) : ℝ × ℝ →ₗ[ℝ] V))
+    (hB : ‖ω.floerJetCoeff (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ He w.2) (u ∘ ψ) ζ‖ ≤ B)
+    (hρ : (√(ρ (ψ ζ)))⁻¹ ≤ κ * r) (hκ : 0 ≤ κ) :
+    ‖ω.floerConformalJetCoeff ρ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
+      (ψ ζ)‖ ≤ 1 + B + κ * ((1 + B) * B) := by
+  -- The scale `r > 0` makes `dψ_ζ` nonzero, so `ψ` is differentiable at `ζ`.
+  have hψ₀ : fderiv ℝ ψ ζ ≠ 0 := fun h ↦ by
+    rw [h] at hr
+    simp only [zero_apply, Prod.fst_zero, Prod.snd_zero] at hr
+    nlinarith
+  have hψ : DifferentiableAt ℝ ψ ζ :=
+    by_contra fun h ↦ hψ₀ (fderiv_zero_of_not_differentiableAt h)
+  -- At `ψ(ζ)` the components of the perturbation and their Hamiltonian vector fields are
+  -- differentiable in the target point.
+  obtain ⟨hKsd, hKtd, hXs, hXt⟩ :=
+    ω.differentiableAt_of_perturbationPullback hHe hψJ hψ₀ hKs hKt
+  -- The zeroth-order part of the end operator is `(a - b J) C` for the zeroth-order part `C` at
+  -- `ψ(ζ)`.
+  have hid := ω.floerLinearizationCoeff_perturbationPullback (J := J) hψ hψJ hu
+    (Eventually.of_forall hKsd) (Eventually.of_forall hKtd) (hXs _) (hXt _)
+    ((floerOperator_eq_zero_iff ω J Ks Kt u (ψ ζ)).2 hF)
+  rw [ω.floerLinearizationCoeff_congr_data (u ∘ ψ) rfl (Ks' := fun _ _ ↦ 0)
+    (Kt' := fun w ↦ He w.2) hKs hKt] at hid
+  have hC := (J (ψ ζ) (u (ψ ζ))).mul_opNorm_le_of_eq_smul_sub_smul
+    (A := ω.floerLinearizationCoeff (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
+      (ψ ζ))
+    (B := ω.floerLinearizationCoeff (fun w' y ↦ (J (ψ w') y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ He w.2) (u ∘ ψ) ζ) (fun v ↦ by rw [hid]; simp) hr hr0
+  exact ω.norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le
+    (Je := fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (φ := ψ)
+    (by simp only [hJz]) hB hC hρ hκ
 
 /-- **The operator of an end, read in a holomorphic chart.** Beyond the height `R₁` of the chart
 `ψ`, where the structures are `J_e(t)`, bounded by `B` along `u`, the pulled-back perturbation is

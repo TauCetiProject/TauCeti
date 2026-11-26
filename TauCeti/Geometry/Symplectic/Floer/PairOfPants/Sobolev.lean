@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Complex.RealChart
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The Sobolev space `W^{1,2}` of the pair of pants
@@ -210,12 +211,9 @@ theorem inv_norm_sub_endCenter_sq_le_cylindricalWeight (q : Puncture) (z : ℝ �
 most the distance `|z - c_q|`. -/
 theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
-    (√(cylindricalWeight z))⁻¹ ≤ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ := by
-  have hd : 0 < ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ :=
-    norm_pos_iff.2 (sub_ne_zero.2 hz)
-  have h := Real.sqrt_le_sqrt (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
-  rw [Real.sqrt_inv, Real.sqrt_sq hd.le] at h
-  simpa using inv_anti₀ (inv_pos.2 hd) h
+    (√(cylindricalWeight z))⁻¹ ≤ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ :=
+  Real.inv_sqrt_le_of_inv_sq_le (norm_pos_iff.2 (sub_ne_zero.2 hz))
+    (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
 
 /-- **The cylindrical weight under a horizontal translation.** Far from the punctures, at
 `|w| ≥ 4`, translating by `c ∈ [0, 1]` changes the cylindrical weight `ρ` of the pair of pants by
