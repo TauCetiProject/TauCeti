@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
@@ -53,6 +54,9 @@ basic properties of Morse pseudo-gradients are the ones proved here.
 * `TauCeti.IsBottAdaptedPseudoGradient.neg`: `-X` is adapted to `-f`.
 * `TauCeti.IsBottAdaptedPseudoGradient.strictAnti_comp`: `f` is strictly antitone along an integral
   curve that never meets a critical point.
+* `TauCeti.IsBottAdaptedPseudoGradient.mdifferentiable` and
+  `TauCeti.IsBottAdaptedPseudoGradient.antitone_comp`: `f` is differentiable, and antitone along
+  every integral curve.
 * `TauCeti.MorseBottChart.linearFlow`: the linear flow in the coordinates of a Morse–Bott chart,
   with its flow law `TauCeti.MorseBottChart.linearFlow_add`.
 * `TauCeti.MorseBottChart.isMIntegralCurveOn_toChart_symm_linearFlow`: when `X` is linear in the
@@ -308,6 +312,20 @@ theorem strictAnti_comp (hX : IsBottAdaptedPseudoGradient f X) (hγ : IsMIntegra
     (fun t ↦ Manifold.hasDerivAt_comp_curve
       (by_contra fun h ↦ hcrit t (mfderiv_zero_of_not_mdifferentiableAt h)) (hγ t))
     fun t ↦ hX.mvfderiv_apply_lt_zero _ (hcrit t)
+
+/-- **`f` is differentiable.** Where `mfderiv` is nonzero, `f` is differentiable by definition of
+`mfderiv`; a zero of the derivative has a Morse–Bott chart, in which `f` is the smooth quadratic
+normal form. -/
+theorem mdifferentiable (hX : IsBottAdaptedPseudoGradient f X) : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f :=
+  fun p ↦ by
+  by_contra hd
+  obtain ⟨φ, -⟩ := hX.exists_morseBottChart p (mfderiv_zero_of_not_mdifferentiableAt hd)
+  exact hd ((φ.contMDiffAt φ.mem_source).mdifferentiableAt (by simp))
+
+/-- **`f` is antitone along every integral curve of an adapted pseudo-gradient.** -/
+theorem antitone_comp (hX : IsBottAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X) :
+    Antitone (f ∘ γ) :=
+  hγ.antitone_comp (fun t ↦ hX.mdifferentiable (γ t)) fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
 
 /-- **Reversing a pseudo-gradient.** If `X` is adapted to `f` in the Morse–Bott sense, then `-X`
 is adapted to `-f`. -/

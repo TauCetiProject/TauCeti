@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
+public import TauCeti.Geometry.Manifold.Morse.Bott.Flow
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
@@ -27,7 +27,8 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 ## Main declarations
 
 * `TauCeti.IsAdaptedPseudoGradient.flow`: the flow of an adapted pseudo-gradient on a compact
-  manifold.
+  manifold, which is its flow as a pseudo-gradient adapted in the Morse–Bott sense
+  (`TauCeti.IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient_flow`).
 * `TauCeti.IsAdaptedPseudoGradient.contMDiff_flow_uncurry` and
   `TauCeti.IsAdaptedPseudoGradient.flowDiffeomorph`: the flow is smooth in time and space, and its
   time-`t` map is a diffeomorphism.
@@ -115,6 +116,12 @@ variable (hX : IsAdaptedPseudoGradient f X)
 /-- The flow at time `t` is the maximal integral curve of the pseudo-gradient at time `t`. -/
 theorem flow_apply (t : ℝ) (y : M) : hX.flow t y = maximalIntegralCurve X y t := by
   rw [flow, globalFlow_apply]
+
+/-- The flow of a pseudo-gradient adapted to a Morse function is its flow as a pseudo-gradient
+adapted in the Morse–Bott sense. -/
+theorem isBottAdaptedPseudoGradient_flow : hX.isBottAdaptedPseudoGradient.flow = hX.flow := by
+  ext t y
+  rw [hX.flow_apply, IsBottAdaptedPseudoGradient.flow_apply]
 
 /-- The orbits of the flow are integral curves of the pseudo-gradient. -/
 theorem isMIntegralCurve_flow (y : M) : IsMIntegralCurve (fun t ↦ hX.flow t y) X :=
@@ -241,13 +248,10 @@ theorem mem_unstableSet_inter_stableSet_of_isMIntegralCurve {γ : ℝ → M} {p 
 
 /-- A point along whose orbit `f` is constant is a critical point of `f`. -/
 theorem mfderiv_eq_zero_of_forall_eq {z : M}
-    (hz : ∀ t, f (hX.flow t z) = f z) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 := by
-  by_contra hcrit
-  -- `f` is constant along the orbit, so `df(X)` vanishes where the orbit starts.
-  have h := (hX.isMIntegralCurve_flow z).isMIntegralCurveAt 0
-    |>.mfderiv_apply_eq_zero_of_eventuallyEq_const (hX.mdifferentiable _) (.of_forall hz)
-  rw [Flow.map_zero_apply] at h
-  exact (hX.mvfderiv_apply_lt_zero z hcrit).ne h
+    (hz : ∀ t, f (hX.flow t z) = f z) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 :=
+  hX.isBottAdaptedPseudoGradient.mfderiv_eq_zero_of_forall_eq fun t ↦ by
+    rw [hX.isBottAdaptedPseudoGradient_flow]
+    exact hz t
 
 /-- A point with a nonempty stable set is a critical point of `f`: it is fixed by the flow. -/
 theorem mfderiv_eq_zero_of_mem_stableSet {a y : M} (hy : y ∈ hX.flow.stableSet a) :
