@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Bicategory.CatEnriched
 public import Mathlib.CategoryTheory.Bicategory.Functor.StrictPseudofunctor
 public import TauCeti.CategoryTheory.DoubleCategory.Globular
 public import TauCeti.CategoryTheory.DoubleCategory.Functor
@@ -18,13 +19,10 @@ associators and unitors are induced by the equalities in the horizontal edge cat
 Interchange supplies the exchange law. Applying the construction to the transpose gives the
 vertical strict bicategory, with globular cells read from left to right.
 
-For a double category with free path boundaries, this constructs the strict path 2-category
-in which chosen representations compare paths with singleton generators. In particular its
-coherence is derived from the double category laws, without extra coherence assumptions.
-
-The construction uses Mathlib's `Bicategory` and `Bicategory.Strict`. Object wrappers keep the
+Mathlib's `CatEnriched` construction supplies the `Bicategory` and `Bicategory.Strict`
+instances from the globular hom-categories and horizontal pasting. Object wrappers keep the
 two directions separate from the explicitly supplied edge category structures.
-`StrictDoubleFunctor.toHorizontalBicategory` sends a strict double functor to a strict
+`StrictDoubleFunctor.mapHorizontalBicategory` sends a strict double functor to a strict
 pseudofunctor, including its action on globular cells and coherence maps.
 
 ## References
@@ -55,6 +53,44 @@ namespace HorizontalBicategory
 
 open HorizontalGlobular
 
+/-- Horizontal globular hom-categories, enriched over categories by horizontal pasting. -/
+instance : EnrichedCategory Cat.{s, h} D.HorizontalBicategory where
+  Hom a b := Cat.of (D.HorizontalGlobular a.obj b.obj)
+  id a := (Cat.fromChosenTerminalEquiv.symm
+    (⟨edgeId H a.obj⟩ : D.HorizontalGlobular a.obj a.obj)).toCatHom
+  comp _ _ _ := D.hCompFunctor.toCatHom
+  id_comp a b := by
+    apply Cat.Hom.ext
+    -- Compute the terminal-category insertion before dependent functor extensionality.
+    change D.hWhiskerLeft (edgeId H a.obj) = 𝟭 (D.HorizontalGlobular a.obj b.obj)
+    refine CategoryTheory.Functor.ext
+      (fun f ↦ HorizontalGlobular.ext (Category.id_comp (self := H) f.edge)) ?_
+    intro f g α
+    apply HorizontalGlobular.hom_ext
+    rw [eqToHom_comp_eqToHom_cell]
+    simp
+  comp_id a b := by
+    apply Cat.Hom.ext
+    -- Compute the terminal-category insertion before dependent functor extensionality.
+    change D.hWhiskerRight (edgeId H b.obj) = 𝟭 (D.HorizontalGlobular a.obj b.obj)
+    refine CategoryTheory.Functor.ext
+      (fun f ↦ HorizontalGlobular.ext (Category.comp_id (self := H) f.edge)) ?_
+    intro f g α
+    apply HorizontalGlobular.hom_ext
+    rw [eqToHom_comp_eqToHom_cell]
+    simp
+  assoc a b c d := by
+    apply Cat.Hom.ext
+    refine CategoryTheory.Functor.ext (fun f ↦ HorizontalGlobular.ext
+      (Category.assoc (self := H) f.1.edge f.2.1.edge f.2.2.edge)) ?_
+    intro f g α
+    apply HorizontalGlobular.hom_ext
+    rw [eqToHom_comp_eqToHom_cell]
+    -- Compute Cat's product associator and composition bifunctors at the cell level.
+    change D.hComp (D.hComp α.1.cell α.2.1.cell) α.2.2.cell =
+      (D.hComp α.1.cell (D.hComp α.2.1.cell α.2.2.cell)).cast _ _ rfl rfl
+    exact D.hComp_assoc _ _ _
+
 instance : CategoryStruct D.HorizontalBicategory where
   Hom a b := D.HorizontalGlobular a.obj b.obj
   id a := ⟨edgeId H a.obj⟩
@@ -62,6 +98,18 @@ instance : CategoryStruct D.HorizontalBicategory where
 
 instance homCategory (a b : D.HorizontalBicategory) : Category.{s} (a ⟶ b) :=
   D.instCategoryHorizontalGlobular a.obj b.obj
+
+/-- Horizontal globular cells form the strict bicategory of the Cat-enriched structure. -/
+instance : Bicategory.{s, h} D.HorizontalBicategory :=
+  -- Keep edge and hom-category projections computable in boundary-indexed cell formulas.
+  { (inferInstanceAs (Bicategory (CatEnriched D.HorizontalBicategory)) :
+      Bicategory D.HorizontalBicategory) with
+    toCategoryStruct := inferInstance
+    homCategory := homCategory D }
+
+/-- The coherence maps are induced by the strict edge-category laws. -/
+instance : Bicategory.Strict D.HorizontalBicategory :=
+  inferInstanceAs (Bicategory.Strict (CatEnriched D.HorizontalBicategory))
 
 variable {D} {a b c d : D.HorizontalBicategory}
 
@@ -72,70 +120,6 @@ theorem id_edge (a : D.HorizontalBicategory) : (𝟙 a : a ⟶ a).edge = edgeId 
 @[simp]
 theorem comp_edge (f : a ⟶ b) (g : b ⟶ c) : (f ≫ g).edge = edgeComp H f.edge g.edge :=
   rfl
-
-/-- Horizontal edges and horizontal globular cells form a bicategory. Coherence maps come from
-edge equalities, and their laws follow from the strict double category laws. -/
-instance : Bicategory.{s, h} D.HorizontalBicategory where
-  toCategoryStruct := inferInstance
-  homCategory := homCategory D
-  whiskerLeft {_ _ _} f {_ _} α := ⟨D.hComp (D.vId f.edge) α.cell⟩
-  whiskerRight α g := ⟨D.hComp α.cell (D.vId g.edge)⟩
-  associator f g h := eqToIso
-    (HorizontalGlobular.ext (Category.assoc (self := H) f.edge g.edge h.edge))
-  leftUnitor f := eqToIso (HorizontalGlobular.ext (Category.id_comp (self := H) f.edge))
-  rightUnitor f := eqToIso (HorizontalGlobular.ext (Category.comp_id (self := H) f.edge))
-  whiskerLeft_id f g := (D.hWhiskerLeft f.edge).map_id g
-  whiskerLeft_comp {_ _ _} f {_ _ _} α β := (D.hWhiskerLeft f.edge).map_comp α β
-  id_whiskerRight f g := (D.hWhiskerRight g.edge).map_id f
-  comp_whiskerRight α β g := (D.hWhiskerRight g.edge).map_comp α β
-  id_whiskerLeft α := by
-    apply HorizontalGlobular.hom_ext
-    simp only [eqToIso.hom, eqToIso.inv]
-    rw [eqToHom_comp_cell, comp_cell, eqToHom_cell]
-    simp
-  comp_whiskerLeft {_ _ _ _} f g {_ _} α := by
-    apply HorizontalGlobular.hom_ext
-    simp only [eqToIso.hom, eqToIso.inv]
-    rw [eqToHom_comp_cell, comp_cell, eqToHom_cell]
-    simp only [vComp_cast_bottom, vComp_vId, Cell.cast_cast]
-    simp [D.vId_comp, D.hComp_assoc]
-  whiskerRight_id α := by
-    apply HorizontalGlobular.hom_ext
-    simp only [eqToIso.hom, eqToIso.inv]
-    rw [eqToHom_comp_cell, comp_cell, eqToHom_cell]
-    simp
-  whiskerRight_comp α g h := by
-    apply HorizontalGlobular.hom_ext
-    simp only [eqToIso.hom, eqToIso.inv]
-    rw [eqToHom_comp_cell, comp_cell, eqToHom_cell]
-    simp only [vComp_cast_bottom, vComp_vId, Cell.cast_cast]
-    simp [D.vId_comp, D.hComp_assoc]
-  whisker_assoc {_ _ _ _} f {_ _} α h := by
-    apply HorizontalGlobular.hom_ext
-    simp only [eqToIso.hom, eqToIso.inv]
-    rw [eqToHom_comp_cell, comp_cell, eqToHom_cell]
-    simp [D.hComp_assoc]
-  whisker_exchange α β := by
-    apply hom_ext
-    rw [comp_cell, comp_cell]
-    simp [D.interchange]
-  pentagon f g h i := by
-    simp only [eqToIso.hom]
-    rw [HorizontalGlobular.hComp_eqToHom_vId, HorizontalGlobular.hComp_vId_eqToHom]
-    simp only [eqToHom_trans]
-  triangle f g := by
-    simp only [eqToIso.hom]
-    rw [HorizontalGlobular.hComp_eqToHom_vId, HorizontalGlobular.hComp_vId_eqToHom]
-    simp only [eqToHom_trans]
-
-/-- The horizontal globular bicategory is strict, including its specified coherence maps. -/
-instance : Bicategory.Strict D.HorizontalBicategory where
-  id_comp f := HorizontalGlobular.ext (Category.id_comp (self := H) f.edge)
-  comp_id f := HorizontalGlobular.ext (Category.comp_id (self := H) f.edge)
-  assoc f g h := HorizontalGlobular.ext (Category.assoc (self := H) f.edge g.edge h.edge)
-  leftUnitor_eqToIso _ := rfl
-  rightUnitor_eqToIso _ := rfl
-  associator_eqToIso _ _ _ := rfl
 
 open scoped Bicategory
 
@@ -193,8 +177,8 @@ variable {O₁ : Type u₁} {H₁ : Category.{h₁} O₁} {V₁ : Category.{v₁
   {D₁ : StrictDoubleCategory.{s₁} O₁ H₁ V₁} {D₂ : StrictDoubleCategory.{s₂} O₂ H₂ V₂}
 
 /-- A strict double functor acts on horizontal globular hom-categories. Vertical identity
-boundaries are identified using preservation of vertical identities. The body is exposed so
-that the boundary types of its cell formulas compute. -/
+boundaries are identified using preservation of vertical identities. -/
+-- Exposure lets the boundary types of mapped cells compute.
 @[expose]
 def horizontalGlobularFunctor (F : StrictDoubleFunctor D₁ D₂) (a b : O₁) :
     D₁.HorizontalGlobular a b ⥤ D₂.HorizontalGlobular (F.obj a) (F.obj b) where
@@ -221,89 +205,112 @@ theorem horizontalGlobularFunctor_map_cell (F : StrictDoubleFunctor D₁ D₂) {
   (rfl)
 
 /-- A strict double functor induces a strict pseudofunctor of horizontal globular bicategories.
-Mathlib's constructor for strict bicategories derives preservation of the coherence maps.
-The body is exposed so that the object and edge maps compute in the types of mapped cells. -/
+It acts on objects, horizontal edges and globular cells by their double-functor maps. -/
+-- Exposure lets the object and edge maps compute in mapped-cell types.
 @[expose]
-def toHorizontalBicategory (F : StrictDoubleFunctor D₁ D₂) :
+def mapHorizontalBicategory (F : StrictDoubleFunctor D₁ D₂) :
     StrictPseudofunctor D₁.HorizontalBicategory D₂.HorizontalBicategory :=
   StrictPseudofunctor.mk'' {
     obj a := ⟨F.obj a.obj⟩
     map f := ⟨F.hMap f.edge⟩
-    map₂ {a b} {_ _} α := ⟨(F.map α.cell).cast rfl rfl (F.vMap_id a.obj) (F.vMap_id b.obj)⟩
+    map₂ {a b} {_ _} α := (F.horizontalGlobularFunctor a.obj b.obj).map α
     map₂_id f := (F.horizontalGlobularFunctor _ _).map_id f
     map₂_comp α β := (F.horizontalGlobularFunctor _ _).map_comp α β
     map_id a := HorizontalGlobular.ext (F.hMap_id a.obj)
     map_comp f g := HorizontalGlobular.ext (F.hMap_comp f.edge g.edge)
     map₂_whisker_left f _ _ α := by
+      dsimp only [horizontalGlobularFunctor]
       apply HorizontalGlobular.hom_ext
-      rw [HorizontalGlobular.eqToHom_comp_cell, HorizontalGlobular.comp_cell,
-      HorizontalGlobular.eqToHom_cell]
-      simp only [vComp_cast_bottom, vComp_vId, Cell.cast_cast,
-        HorizontalBicategory.whiskerLeft_cell, map_hComp, map_vId]
-      have hid : D₂.vId (F.hMap f.edge) = (F.map (D₁.vId f.edge)).cast rfl rfl
-          (F.vMap_id _) (F.vMap_id _) := by simp
-      rw [hid]
-      simp only [hComp_cast_cast]
-      simp only [Cell.cast_cast, Cell.cast_rfl]
+      rw [HorizontalGlobular.eqToHom_comp_eqToHom_cell,
+        HorizontalBicategory.whiskerLeft_cell, HorizontalBicategory.whiskerLeft_cell]
+      have hid := congrArg HorizontalGlobular.Hom.cell
+        ((F.horizontalGlobularFunctor _ _).map_id f)
+      dsimp only [horizontalGlobularFunctor, HorizontalGlobular.id_cell] at hid
+      rw [← hid]
+      simp only [map_hComp, hComp_cast_cast, Cell.cast_cast]
     map₂_whisker_right α g := by
+      dsimp only [horizontalGlobularFunctor]
       apply HorizontalGlobular.hom_ext
-      rw [HorizontalGlobular.eqToHom_comp_cell, HorizontalGlobular.comp_cell,
-      HorizontalGlobular.eqToHom_cell]
-      simp only [vComp_cast_bottom, vComp_vId, Cell.cast_cast,
-        HorizontalBicategory.whiskerRight_cell, map_hComp, map_vId]
-      have hid : D₂.vId (F.hMap g.edge) = (F.map (D₁.vId g.edge)).cast rfl rfl
-          (F.vMap_id _) (F.vMap_id _) := by simp
-      rw [hid]
-      simp only [hComp_cast_cast]
-      simp only [Cell.cast_cast, Cell.cast_rfl] }
+      rw [HorizontalGlobular.eqToHom_comp_eqToHom_cell,
+        HorizontalBicategory.whiskerRight_cell, HorizontalBicategory.whiskerRight_cell]
+      have hid := congrArg HorizontalGlobular.Hom.cell
+        ((F.horizontalGlobularFunctor _ _).map_id g)
+      dsimp only [horizontalGlobularFunctor, HorizontalGlobular.id_cell] at hid
+      rw [← hid]
+      simp only [map_hComp, hComp_cast_cast, Cell.cast_cast] }
 
 @[simp]
-theorem toHorizontalBicategory_obj_obj (F : StrictDoubleFunctor D₁ D₂)
+theorem mapHorizontalBicategory_obj_obj (F : StrictDoubleFunctor D₁ D₂)
     (a : D₁.HorizontalBicategory) :
-    (F.toHorizontalBicategory.obj a).obj = F.obj a.obj :=
+    (F.mapHorizontalBicategory.obj a).obj = F.obj a.obj :=
   (rfl)
 
 @[simp]
-theorem toHorizontalBicategory_map_edge (F : StrictDoubleFunctor D₁ D₂)
+theorem mapHorizontalBicategory_map_edge (F : StrictDoubleFunctor D₁ D₂)
     {a b : D₁.HorizontalBicategory} (f : a ⟶ b) :
-    (F.toHorizontalBicategory.map f).edge = F.hMap f.edge :=
+    (F.mapHorizontalBicategory.map f).edge = F.hMap f.edge :=
   (rfl)
 
 @[simp]
-theorem toHorizontalBicategory_map₂_cell (F : StrictDoubleFunctor D₁ D₂)
+theorem mapHorizontalBicategory_map₂_cell (F : StrictDoubleFunctor D₁ D₂)
     {a b : D₁.HorizontalBicategory} {f g : a ⟶ b} (α : f ⟶ g) :
-    (F.toHorizontalBicategory.map₂ α).cell =
+    (F.mapHorizontalBicategory.map₂ α).cell =
       (F.map α.cell).cast rfl rfl (F.vMap_id a.obj) (F.vMap_id b.obj) :=
-  (rfl)
+  (horizontalGlobularFunctor_map_cell F α)
 
 /-- The identity double functor acts identically on each globular hom-category. -/
 @[simp]
-theorem horizontalGlobularFunctor_id (a b : O₁) :
+theorem id_horizontalGlobularFunctor (a b : O₁) :
     (StrictDoubleFunctor.id D₁).horizontalGlobularFunctor a b =
       𝟭 (D₁.HorizontalGlobular a b) :=
   (rfl)
 
 /-- The identity double functor induces the identity strict pseudofunctor. -/
 @[simp]
-theorem toHorizontalBicategory_id :
-    (StrictDoubleFunctor.id D₁).toHorizontalBicategory =
+theorem id_mapHorizontalBicategory :
+    (StrictDoubleFunctor.id D₁).mapHorizontalBicategory =
       StrictPseudofunctor.id D₁.HorizontalBicategory := by
   rfl
 
 /-- The action on globular hom-categories preserves composition of double functors. -/
 @[simp]
-theorem horizontalGlobularFunctor_comp {O₃ : Type u₃} {H₃ : Category.{h₃} O₃}
+theorem comp_horizontalGlobularFunctor {O₃ : Type u₃} {H₃ : Category.{h₃} O₃}
     {V₃ : Category.{v₃} O₃} {D₃ : StrictDoubleCategory.{s₃} O₃ H₃ V₃}
     (F : StrictDoubleFunctor D₁ D₂) (G : StrictDoubleFunctor D₂ D₃) (a b : O₁) :
     (F.comp G).horizontalGlobularFunctor a b =
       F.horizontalGlobularFunctor a b ⋙ G.horizontalGlobularFunctor (F.obj a) (F.obj b) := by
   -- Compute the object maps before applying dependent functor extensionality.
   dsimp only [horizontalGlobularFunctor, StrictDoubleFunctor.comp]
-  refine Functor.ext ?_ ?_
+  refine CategoryTheory.Functor.ext ?_ ?_
   · intro p
     rfl
   · intro p q α
     apply HorizontalGlobular.hom_ext
     simp
+
+/-- The induced strict pseudofunctor preserves composition of double functors. -/
+@[simp]
+theorem comp_mapHorizontalBicategory {O₃ : Type u₃} {H₃ : Category.{h₃} O₃}
+    {V₃ : Category.{v₃} O₃} {D₃ : StrictDoubleCategory.{s₃} O₃ H₃ V₃}
+    (F : StrictDoubleFunctor D₁ D₂) (G : StrictDoubleFunctor D₂ D₃) :
+    (F.comp G).mapHorizontalBicategory =
+      F.mapHorizontalBicategory.comp G.mapHorizontalBicategory := by
+  -- Compute the object and edge maps before comparing the dependent bundled data.
+  dsimp only [mapHorizontalBicategory, StrictDoubleFunctor.comp,
+    StrictPseudofunctor.mk'', StrictPseudofunctor.comp,
+    StrictlyUnitaryPseudofunctor.comp, Pseudofunctor.comp, PrelaxFunctor.comp,
+    PrelaxFunctorStruct.comp, horizontalGlobularFunctor]
+  congr 3 <;> try exact proof_irrel_heq _ _
+  · dsimp only [Prefunctor.comp]
+    congr 2
+    funext a b f g α
+    apply HorizontalGlobular.hom_ext
+    simp
+  · funext a
+    rw [PrelaxFunctor.map₂Iso_eqToIso]
+    exact (eqToIso_trans _ _).symm
+  · funext a b c f g
+    rw [PrelaxFunctor.map₂Iso_eqToIso]
+    exact (eqToIso_trans _ _).symm
 
 end TauCeti.StrictDoubleFunctor

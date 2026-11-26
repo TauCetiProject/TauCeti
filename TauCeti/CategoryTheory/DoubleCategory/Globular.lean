@@ -231,23 +231,14 @@ theorem eqToHom_comp_cell {p p' q : D.HorizontalGlobular a b} (h : p = p') (α :
   cases h
   simp
 
-/-- Left pasting with an identity sends equality morphisms to equality morphisms. -/
-theorem hComp_vId_eqToHom {c : O} (f : Edge H a b) {p q : D.HorizontalGlobular b c}
-    (h : p = q) :
-    (⟨D.hComp (D.vId f) (eqToHom h).cell⟩ :
-      (⟨edgeComp H f p.edge⟩ : D.HorizontalGlobular a c) ⟶ ⟨edgeComp H f q.edge⟩) =
-        eqToHom (congrArg (fun p : D.HorizontalGlobular b c ↦
-          (⟨edgeComp H f p.edge⟩ : D.HorizontalGlobular a c)) h) :=
-  eqToHom_map (D.hWhiskerLeft f) h
-
-/-- Right pasting with an identity sends equality morphisms to equality morphisms. -/
-theorem hComp_eqToHom_vId {c : O} {p q : D.HorizontalGlobular a b} (h : p = q)
-    (f : Edge H b c) :
-    (⟨D.hComp (eqToHom h).cell (D.vId f)⟩ :
-      (⟨edgeComp H p.edge f⟩ : D.HorizontalGlobular a c) ⟶ ⟨edgeComp H q.edge f⟩) =
-        eqToHom (congrArg (fun p : D.HorizontalGlobular a b ↦
-          (⟨edgeComp H p.edge f⟩ : D.HorizontalGlobular a c)) h) :=
-  eqToHom_map (D.hWhiskerRight f) h
+/-- Equality morphisms on both sides transport the top and bottom boundaries of a cell. -/
+theorem eqToHom_comp_eqToHom_cell {p p' q q' : D.HorizontalGlobular a b}
+    (h : p = p') (α : p' ⟶ q) (h' : q = q') :
+    (eqToHom h ≫ α ≫ eqToHom h').cell =
+      α.cell.cast (congrArg edge h).symm (congrArg edge h') rfl rfl := by
+  cases h
+  cases h'
+  simp
 
 end HorizontalGlobular
 
