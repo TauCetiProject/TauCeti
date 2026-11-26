@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Hessian
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Calculus.FDeriv.Homothety
+import TauCeti.Analysis.InnerProductSpace.LinearMap
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -281,37 +282,6 @@ theorem IsChangeOfVariables.memLp_gradient_firstOrder_compL
   rw [LinearIsometryEquiv.norm_map]
   exact mul_le_mul_of_nonneg_right (h.norm_fderiv_le x hx) (norm_nonneg _)
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The pointwise bound behind the Hessian bounds along a change of variables: if
-`⟪D f, g⟫ = ⟪H (T f), T g⟫ + ⟪G, S f g⟫` for all `f` and `g`, with `‖T‖ ≤ L` and `‖S‖ ≤ M`, then
-`‖D‖ ≤ L² ‖H‖ + M ‖G‖`. -/
-private theorem norm_le_of_forall_inner_eq {D H T : E →L[ℝ] E} {S : E →L[ℝ] E →L[ℝ] E} {G : E}
-    {M : ℝ} (hD : ∀ f g : E, ⟪D f, g⟫_ℝ = ⟪H (T f), T g⟫_ℝ + ⟪G, S f g⟫_ℝ) (hT : ‖T‖ ≤ L)
-    (hS : ‖S‖ ≤ M) :
-    ‖D‖ ≤ L ^ 2 * ‖H‖ + M * ‖G‖ := by
-  have hL : 0 ≤ L := (norm_nonneg _).trans hT
-  have hM : 0 ≤ M := (norm_nonneg S).trans hS
-  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (by positivity) fun f g hf hg => ?_
-  rw [RCLike.re_to_real, hD f g]
-  have hTv (w : E) (hw : ‖w‖ = 1) : ‖T w‖ ≤ L :=
-    (T.le_opNorm w).trans (by rw [hw, mul_one]; exact hT)
-  have h1 : ⟪H (T f), T g⟫_ℝ ≤ L ^ 2 * ‖H‖ :=
-    calc _ ≤ ‖H (T f)‖ * ‖T g‖ := real_inner_le_norm _ _
-      _ ≤ (‖H‖ * L) * L := by
-        gcongr
-        · exact (H.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hTv f hf) (norm_nonneg _))
-        · exact hTv g hg
-      _ = L ^ 2 * ‖H‖ := by ring
-  have h2 : ⟪G, S f g⟫_ℝ ≤ M * ‖G‖ :=
-    calc _ ≤ ‖G‖ * ‖S f g‖ := real_inner_le_norm _ _
-      _ ≤ ‖G‖ * M := by
-        gcongr
-        refine (S.le_opNorm₂ f g).trans ?_
-        rw [hf, hg, mul_one, mul_one]
-        exact hS
-      _ = M * ‖G‖ := mul_comm _ _
-  linarith
-
 /-- **The Hessian under a change of variables.** Let `Φ` be a change of variables of order two
 from `U` into `V` with constant `L`, and `1 ≤ p < ∞`. For `u ∈ W^{2,p}(V)`, the weak Hessian of
 `u ∘ Φ` satisfies `‖D²(u ∘ Φ)(x)‖ ≤ L² ‖D²u(Φ x)‖ + L ‖∇u(Φ x)‖` for almost every `x ∈ U`. -/
@@ -321,7 +291,7 @@ theorem norm_iteratedGradient_compL_le_ae (h : IsChangeOfVariables 2 U V Φ L c)
       L ^ 2 * ‖iteratedGradient 1 u (Φ x)‖ + L * ‖iteratedGradient 0 (lowerOrder 1 u) (Φ x)‖ := by
   filter_upwards [inner_iteratedGradient_compL_ae h hp u, ae_restrict_mem U.isOpen.measurableSet]
     with x hx hxU
-  exact norm_le_of_forall_inner_eq hx (h.norm_fderiv_le x hxU)
+  exact ContinuousLinearMap.opNorm_le_of_forall_inner_eq hx (h.norm_fderiv_le x hxU)
     (h.norm_fderiv_fderiv_le (k := 0) x hxU)
 
 /-- **The Hessian under a change of variables of class `C^{1,1}`.** Let `Φ` be a change of
@@ -334,7 +304,7 @@ theorem norm_iteratedGradient_compOfLipschitzFDerivL_le_ae (h : IsChangeOfVariab
       L ^ 2 * ‖iteratedGradient 1 u (Φ x)‖ + M * ‖iteratedGradient 0 (lowerOrder 1 u) (Φ x)‖ := by
   filter_upwards [inner_iteratedGradient_compOfLipschitzFDerivL_ae h hM hp u,
     ae_restrict_mem U.isOpen.measurableSet] with x hx hxU
-  exact norm_le_of_forall_inner_eq hx (h.norm_fderiv_le x hxU)
+  exact ContinuousLinearMap.opNorm_le_of_forall_inner_eq hx (h.norm_fderiv_le x hxU)
     (norm_fderiv_le_of_lipschitzOn ℝ (U.isOpen.mem_nhds hxU) hM)
 
 /-- **Pushing `W^{k,p}` forward along a change of variables.** Let `Φ` be a change of variables

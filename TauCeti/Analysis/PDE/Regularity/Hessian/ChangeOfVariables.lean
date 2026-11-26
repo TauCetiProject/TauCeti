@@ -59,8 +59,9 @@ Rademacher's theorem
 it holds along changes of variables of class `C^{1,1}`
 (`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compOfLipschitzFDerivL_add_inner_add_mul_eq`), the
 ones that flatten the boundary of a domain of class `C^{1,1}`. Its first-order coefficient is
-bounded when `N`, `A`, `b` and `D²Φ` are (`TauCeti.PDE.norm_apply_sub_sum_le`) and measurable when
-`N`, `A ∘ Φ` and `b ∘ Φ` are (`TauCeti.PDE.aestronglyMeasurable_apply_sub_sum`).
+bounded when `N`, `A`, `b` and `D²Φ` are (`OrthonormalBasis.norm_apply_sub_sum_le`) and
+measurable when `N`, `A ∘ Φ` and `b ∘ Φ` are
+(`OrthonormalBasis.aestronglyMeasurable_apply_sub_sum`).
 
 For the standard orthonormal basis, the coefficients `A'` and `b'` of the first equation are
 `TauCeti.PDE.nondivPullbackPrincipal` and `TauCeti.PDE.nondivPullbackDrift`, and the transformed
@@ -201,6 +202,14 @@ theorem norm_fderiv_apply_add_sum_le {F : Type*} [NormedAddCommGroup F] [InnerPr
   · refine (norm_sum_le _ _).trans ?_
     simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) => hterm i
 
+end Coefficients
+
+end TauCeti.PDE
+
+namespace OrthonormalBasis
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
 /-- **The drift of the equation transformed with a right inverse is bounded.** For an orthonormal
 basis `(eᵢ)`, operators with `‖N‖ ≤ L'` and `‖A₀‖ ≤ Λ`, a bilinear map with `‖S‖ ≤ M` and a vector
 with `‖b₀‖ ≤ β`, the first-order coefficient `N (b₀ - ∑ᵢ S eᵢ (N A₀† N† eᵢ))` of
@@ -259,7 +268,11 @@ theorem aestronglyMeasurable_apply_sub_sum {F : Type*} [NormedAddCommGroup F]
     (happly.comp_aestronglyMeasurable₂ hN (happly.comp_aestronglyMeasurable₂ (hadj hA)
       ((hadj hN).apply_continuousLinearMap (e i))))
 
-end Coefficients
+end OrthonormalBasis
+
+namespace TauCeti.PDE
+
+open Wkp
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 

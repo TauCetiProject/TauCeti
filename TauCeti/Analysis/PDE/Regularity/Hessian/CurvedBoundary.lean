@@ -64,7 +64,7 @@ This is the proof of Gilbarg–Trudinger, Theorem 9.13, by flattening the bounda
   (`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compOfLipschitzFDerivL_add_inner_add_mul_eq`,
   with the right inverse `DΨ(Φ x)` of `DΦ(x)`), with principal part `DΨ ∘ A ∘ DΨ†` and a
   first-order coefficient involving `A`, `DΨ` and the almost everywhere defined, bounded `D²Φ`
-  (`TauCeti.PDE.norm_apply_sub_sum_le`). The principal part is again continuous and elliptic at
+  (`OrthonormalBasis.norm_apply_sub_sum_le`). The principal part is again continuous and elliptic at
   the points of `Ψ(K)`. The new first-order coefficient is bounded once `A` is: since `A` is
   continuous within `Ω` at the points of `K`, it is bounded near `K`, and the chart is first
   restricted there. Zero boundary values are carried along by cutting off
@@ -296,7 +296,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
       (volume.restrict (Ω' : Set (WithLp 2 (ℝ × E)))) :=
     ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen U.isOpen le_rfl).comp hΦcΩ'
       hΦU).aestronglyMeasurable hΩ'm
-  have hb' := PDE.aestronglyMeasurable_apply_sub_sum (Φ := Φ) (A := A) (b := b) e hN hAΦ
+  have hb' := e.aestronglyMeasurable_apply_sub_sum (Φ := Φ) (A := A) (b := b) hN hAΦ
     ((hb.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable)
   refine exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_normalHalfSpace hp hp_top a
     (Omega := Ω') (U := U') (β := L' * (β + Fintype.card ι * (M * (L' ^ 2 * Λ))))
@@ -324,7 +324,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
     exact ⟨_, h⟩
   · filter_upwards [hΦ'.ae_comp (ae_restrict_of_ae_restrict_of_subset hD hbβ),
       ae_restrict_mem hΩ'm] with x hx hxΩ'
-    exact PDE.norm_apply_sub_sum_le e (hΨ.norm_fderiv_le _ (hΦmaps hxΩ').2)
+    exact e.norm_apply_sub_sum_le (hΨ.norm_fderiv_le _ (hΦmaps hxΩ').2)
       (norm_fderiv_le_of_lipschitzOn ℝ (U'.isOpen.mem_nhds hxΩ'.2) hΦM)
       (hAΛ _ (hΦmaps hxΩ')) hx
 
