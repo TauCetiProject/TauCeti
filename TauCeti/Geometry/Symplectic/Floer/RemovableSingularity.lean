@@ -60,8 +60,10 @@ on the open disc `B(z₀, R)`; off `z₀` the solution is smooth, which extends 
   `(du - X_K)^{0,1} = 0` on `Ω \ {z₀}` for an open `Ω ⊆ ℝ × ℝ`, with integrable Floer energy
   density and `J` tamed by `ω`.
 
-None of these results asserts differentiability at the puncture; that needs elliptic regularity of
-the extension.
+None of these results asserts differentiability at the puncture. For the coordinate form with
+`C^ℓ` data, `2 ≤ ℓ`, elliptic regularity makes the extension `C^ℓ` on the whole disc, solving the
+equation at the puncture too, in `TauCeti.Geometry.Symplectic.Floer.RemovableSingularity.Smooth`
+(`TauCeti.Floer.exists_contDiffOn_update_of_finite_energy`).
 
 ## References
 
