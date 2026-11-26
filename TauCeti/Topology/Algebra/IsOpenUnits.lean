@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.IsOpenUnits
+public import Mathlib.Topology.Connected.LocallyPathConnected
 
 /-!
 # Rings with open units: the inverse and embeddings
@@ -22,6 +23,8 @@ soon as its own units form an open subset.
   with open units.
 * `IsOpenUnits.of_isEmbedding`: a monoid embedding into a monoid with open units whose units
   form an open subset has open units.
+* `Units.instLocallyPathConnectedSpace`: the units of a locally path-connected monoid with open
+  units are locally path connected; for instance the units of a real Banach algebra.
 -/
 
 public section
@@ -42,6 +45,12 @@ theorem IsOpenUnits.of_isEmbedding {M N : Type*} [Monoid M] [TopologicalSpace M]
       rw [e]
       exact IsOpenUnits.isOpenEmbedding_unitsVal.isEmbedding.comp hf.units_map
     exact this.of_comp Units.continuous_val hf.continuous
+
+/-- The units of a locally path-connected topological monoid with open units are locally path
+connected, being an open subspace. For instance, the units of a real Banach algebra. -/
+instance Units.instLocallyPathConnectedSpace {M : Type*} [Monoid M] [TopologicalSpace M]
+    [IsOpenUnits M] [LocallyPathConnectedSpace M] : LocallyPathConnectedSpace Mˣ :=
+  IsOpenUnits.isOpenEmbedding_unitsVal.locallyPathConnectedSpace
 
 variable {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [IsOpenUnits R]
 
