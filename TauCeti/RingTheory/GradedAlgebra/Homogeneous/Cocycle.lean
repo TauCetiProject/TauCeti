@@ -343,7 +343,7 @@ theorem IsGradingCocycle.exists_mul_eq_T {u : A[T;T⁻¹]} (hu : IsGradingCocycl
     ∃ (v : Aˣ) (c : ℤ), decomposeLaurent 𝒜 v * u = C (v : A) * T c := by
   let := hu.decomposition
   obtain ⟨c, v, hv, hmem⟩ := exists_isUnit_mem_of_connected 𝒜 (cocycleGrading 𝒜 u)
-  exact ⟨hv.unit, c, hmem⟩
+  exact ⟨hv.unit, c, by rw [hv.unit_spec]; exact (mem_cocycleGrading_iff 𝒜).mp hmem⟩
 
 end Ring
 
