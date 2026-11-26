@@ -117,6 +117,17 @@ theorem slComplexRestrictedRoot_apply (i j : n) (H : slComplexRealDiagonal n) :
 theorem slComplexRestrictedRoot_self (k : n) : slComplexRestrictedRoot n k k = 0 :=
   LinearMap.ext fun H ↦ by simp
 
+/-- `-(e_i - e_j) = e_j - e_i`. -/
+@[simp]
+theorem neg_slComplexRestrictedRoot (i j : n) :
+    -slComplexRestrictedRoot n i j = slComplexRestrictedRoot n j i :=
+  LinearMap.ext fun H ↦ by simp
+
+/-- `(e_i - e_k) - (e_j - e_k) = e_i - e_j`. -/
+theorem slComplexRestrictedRoot_sub_slComplexRestrictedRoot (i j k : n) :
+    slComplexRestrictedRoot n i k - slComplexRestrictedRoot n j k = slComplexRestrictedRoot n i j :=
+  LinearMap.ext fun H ↦ by simp
+
 variable (n) in
 /-- The element `E_kk - E_ll` of `𝔞`, used to separate the functionals `e_i - e_j`. -/
 noncomputable def slComplexRealDiagonalSingleSubSingle (k l : n) : slComplexRealDiagonal n :=
