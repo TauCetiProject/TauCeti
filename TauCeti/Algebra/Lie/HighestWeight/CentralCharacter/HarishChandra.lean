@@ -357,9 +357,9 @@ private noncomputable def vermaCoeff : VermaModule b lam →ₗ[K] K :=
 
 /-- An ordered product `f h e` acts on `v_lam` as `ε(e) lam(h) f`, so the coefficient of `v_lam`
 in `f h e · v_lam` is `ε(f) ε(e) lam(h)`, the value of the Cartan projection at `lam`. -/
-private theorem vermaCoeff_vermaMk_mul_mul (f : U (negativeNilradical H b)) (h : U H)
+private theorem vermaCoeff_cyclicMk_mul_mul (f : U (negativeNilradical H b)) (h : U H)
     (e : U (positiveNilradical H b)) :
-    vermaCoeff b lam (vermaMk b lam
+    vermaCoeff b lam (UniversalEnvelopingAlgebra.cyclicMk (vermaIdeal b lam)
         (UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
           UniversalEnvelopingAlgebra.map K H.incl h *
             UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e)) =
@@ -383,16 +383,19 @@ private theorem vermaCoeff_vermaMk_mul_mul (f : U (negativeNilradical H b)) (h :
   have hmem :=
     _root_.UniversalEnvelopingAlgebra.map_sub_algebraMap_lift_mem_span_range_ι_sub_algebraMap
       (borelSubalgebra H b) (borelCharacter H b lam) r
-  rw [← vermaIdeal_eq_span_range_ι_sub_algebraMap, ← vermaMk_eq_iff, hr, hχ] at hmem
+  rw [← vermaIdeal_eq_span_range_ι_sub_algebraMap, ← UniversalEnvelopingAlgebra.cyclicMk_eq_iff, hr,
+    hχ] at hmem
   -- so `f h e · v_lam = (lam(h) ε(e)) f · v_lam`, which is the image of `f` under `U(n⁻) ≃ M(lam)`
-  have hL : vermaMk b lam
+  have hL : UniversalEnvelopingAlgebra.cyclicMk (vermaIdeal b lam)
       (UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
         UniversalEnvelopingAlgebra.map K H.incl h *
           UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e) =
       (cartanEval lam h * Coalgebra.counit (R := K) e) •
         universalEnvelopingEquivVermaModule b lam f := by
-    rw [mul_assoc, ← smul_vermaMk, hmem, smul_vermaMk, ← Algebra.commutes, ← smul_vermaMk,
-      algebraMap_smul, universalEnvelopingEquivVermaModule_apply, smul_vermaGenerator]
+    rw [mul_assoc, ← UniversalEnvelopingAlgebra.smul_cyclicMk, hmem,
+      UniversalEnvelopingAlgebra.smul_cyclicMk, ← Algebra.commutes,
+      ← UniversalEnvelopingAlgebra.smul_cyclicMk, algebraMap_smul,
+      universalEnvelopingEquivVermaModule_apply, UniversalEnvelopingAlgebra.smul_cyclicGenerator]
   rw [hL, cartanProjection_mul_mul, map_smul, map_smul]
   simp only [vermaCoeff, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
     LinearEquiv.symm_apply_apply, smul_eq_mul]
@@ -400,8 +403,9 @@ private theorem vermaCoeff_vermaMk_mul_mul (f : U (negativeNilradical H b)) (h :
 
 /-- The coefficient of `v_lam` in `u · v_lam` is the value at `lam` of the Cartan projection of
 `u`, for every `u` in `U(L)`: both sides are linear in `u`, and they agree on ordered products. -/
-private theorem vermaCoeff_vermaMk (u : U L) :
-    vermaCoeff b lam (vermaMk b lam u) = cartanEval lam (cartanProjection b u) := by
+private theorem vermaCoeff_cyclicMk (u : U L) :
+    vermaCoeff b lam (UniversalEnvelopingAlgebra.cyclicMk (vermaIdeal b lam) u) =
+      cartanEval lam (cartanProjection b u) := by
   obtain ⟨t, rfl⟩ := (UniversalEnvelopingAlgebra.triangularMulEquiv H b).surjective u
   induction t using TensorProduct.inductionOn with
   | add t t' ht ht' => rw [map_add, map_add, map_add, map_add, ht, ht', map_add]
@@ -411,7 +415,7 @@ private theorem vermaCoeff_vermaMk (u : U L) :
       rw [TensorProduct.tmul_add, map_add, map_add, map_add, map_add, ht, ht', map_add]
     | tmul h e =>
       rw [UniversalEnvelopingAlgebra.triangularMulEquiv_tmul]
-      exact vermaCoeff_vermaMk_mul_mul b lam f h e
+      exact vermaCoeff_cyclicMk_mul_mul b lam f h e
 
 /-- **The central character of a weight is evaluation of the Cartan projection at that weight**:
 for a central `z` in `U(L)`, `χ_lam(z)` is the value at `lam` of `cartanProjection b z`, read as a
@@ -423,12 +427,13 @@ theorem vermaCentralCharacter_eq_lift_cartanProjection (z : Subalgebra.center K 
           (cartanProjection b (z : U L))) := by
   have hz :=
     (isHighestWeightVector_vermaGenerator b lam).representation_eq_vermaCentralCharacter_smul z
-  rw [representation_vermaModule_apply, smul_vermaGenerator] at hz
+  rw [UniversalEnvelopingAlgebra.representation_cyclicModule_apply,
+    UniversalEnvelopingAlgebra.smul_cyclicGenerator] at hz
   have hv : vermaCoeff b lam (vermaGenerator b lam) = 1 := by
     rw [vermaCoeff, LinearMap.comp_apply, ← universalEnvelopingEquivVermaModule_one,
       LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, Bialgebra.counit_one]
   have hcoeff := congrArg (vermaCoeff b lam) hz
-  rw [vermaCoeff_vermaMk, map_smul, hv, smul_eq_mul, mul_one, cartanEval_apply] at hcoeff
+  rw [vermaCoeff_cyclicMk, map_smul, hv, smul_eq_mul, mul_one, cartanEval_apply] at hcoeff
   exact hcoeff.symm
 
 /-! ### The Harish-Chandra projection -/

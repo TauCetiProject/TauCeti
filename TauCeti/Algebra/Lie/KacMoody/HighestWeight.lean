@@ -155,13 +155,10 @@ theorem lie_mem_iSup_weightSpace (x : PresentedLieAlgebra R) {m : M}
 theorem iSup_weightSpace_eq_top {lam : Module.Dual K H} {v : M} (hv : v ∈ weightSpace R M lam)
     (hgen : LieSubmodule.lieSpan K (PresentedLieAlgebra R) {v} = ⊤) :
     ⨆ μ, weightSpace R M μ = ⊤ := by
-  let S : LieSubmodule K (PresentedLieAlgebra R) M :=
-    { (⨆ μ, weightSpace R M μ) with lie_mem := fun {x _} hm => lie_mem_iSup_weightSpace x hm }
-  have hle : LieSubmodule.lieSpan K (PresentedLieAlgebra R) {v} ≤ S :=
-    LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr (Submodule.mem_iSup_of_mem lam hv))
-  rw [hgen, top_le_iff] at hle
-  simpa only [LieSubmodule.top_toSubmodule, LieSubmodule.toSubmodule_mk] using
-    congrArg LieSubmodule.toSubmodule hle
+  have hle := LieSubmodule.lieSpan_toSubmodule_le_of_lie_mem
+    (Set.singleton_subset_iff.mpr (Submodule.mem_iSup_of_mem lam hv))
+    fun x _ hm => lie_mem_iSup_weightSpace x hm
+  rwa [hgen, LieSubmodule.top_toSubmodule, top_le_iff] at hle
 
 /-! ## Lowering words -/
 
@@ -257,37 +254,17 @@ theorem span_range_negativeWord_eq_lieSpan (hv : v ∈ weightSpace R M lam)
     (hpos : ∀ i, ⁅positiveGenerator R i, v⁆ = 0) :
     Submodule.span K (Set.range (negativeWord R v)) =
       (LieSubmodule.lieSpan K (PresentedLieAlgebra R) {v}).toSubmodule := by
-  set S := Submodule.span K (Set.range (negativeWord R v))
   refine le_antisymm (Submodule.span_le.mpr ?_) ?_
   · rintro _ ⟨w, rfl⟩
     exact negativeWord_mem_lieSpan v w
-  -- Every element of `𝔤` maps `S` into itself, since the generators do.
-  have hstable : ∀ x : PresentedLieAlgebra R, ∀ m ∈ S, ⁅x, m⁆ ∈ S := by
-    intro x
-    have hx : x ∈ LieSubalgebra.lieSpan K (PresentedLieAlgebra R) (Set.range (cartanElement R) ∪
-        Set.range (positiveGenerator R) ∪ Set.range (negativeGenerator R)) := by
-      rw [lieSpan_generators_eq_top]
-      exact LieSubalgebra.mem_top x
-    induction hx using LieSubalgebra.lieSpan_induction with
-    | mem y hy =>
-      intro m hm
-      rcases hy with (⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨j, rfl⟩
-      · exact lie_cartanElement_mem_span hv hm x
-      · exact lie_mem_span_negativeWord (lie_positiveGenerator_negativeWord_mem_span hv hpos i) hm
-      · exact lie_negativeGenerator_mem_span hm j
-    | zero => intro m _; rw [zero_lie]; exact zero_mem _
-    | add y z _ _ hy hz => intro m hm; rw [add_lie]; exact add_mem (hy m hm) (hz m hm)
-    | smul c y _ hy => intro m hm; rw [smul_lie]; exact Submodule.smul_mem _ c (hy m hm)
-    | lie y z _ _ hy hz =>
-      intro m hm
-      rw [lie_lie]
-      exact sub_mem (hy _ (hz m hm)) (hz _ (hy m hm))
-  let S' : LieSubmodule K (PresentedLieAlgebra R) M :=
-    { S with lie_mem := fun {x m} hm => hstable x m hm }
-  have hle : LieSubmodule.lieSpan K (PresentedLieAlgebra R) {v} ≤ S' :=
-    LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr (Submodule.subset_span ⟨[], rfl⟩))
-  simpa only [LieSubmodule.toSubmodule_mk] using
-    (LieSubmodule.toSubmodule_le_toSubmodule _ _).mpr hle
+  -- The span contains `v`, and every element of `𝔤` maps it into itself since the generators do.
+  refine LieSubmodule.lieSpan_toSubmodule_le_of_lie_mem
+    (Set.singleton_subset_iff.mpr (Submodule.subset_span ⟨[], rfl⟩))
+    (LieSubalgebra.lie_mem_of_lieSpan_eq_top (lieSpan_generators_eq_top R) ?_)
+  rintro _ ((⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨j, rfl⟩) m hm
+  · exact lie_cartanElement_mem_span hv hm x
+  · exact lie_mem_span_negativeWord (lie_positiveGenerator_negativeWord_mem_span hv hpos i) hm
+  · exact lie_negativeGenerator_mem_span hm j
 
 variable (hv : v ∈ weightSpace R M lam) (hpos : ∀ i, ⁅positiveGenerator R i, v⁆ = 0)
   (hgen : LieSubmodule.lieSpan K (PresentedLieAlgebra R) {v} = ⊤)
