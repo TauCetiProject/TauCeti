@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.ComplexConjugation.Friendly
+public import TauCeti.NumberTheory.NumberField.ComplexConjugation.Friendly.Basic
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealSubfield
 import TauCeti.RingTheory.RamificationInertia.Bijective
