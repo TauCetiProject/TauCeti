@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Convenient.HomSpace
+public import TauCeti.Topology.Convenient.GeneratedBy
 
 /-!
 # Comparison between `G`-probed mapping spaces and the compact-open topology
@@ -19,11 +20,18 @@ This file compares `ContinuousMapGeneratedBy G Y Z` with the compact-open mappin
 * Every continuous map `Y → Z` is `G`-continuous (`ContinuousMap.toContinuousMapGeneratedBy`), and
   the resulting inclusion `C(Y, Z) → ContinuousMapGeneratedBy G Y Z` is continuous
   (`ContinuousMap.continuous_toContinuousMapGeneratedBy`).
+* When `Y` is nonempty and `Z` is nontrivial, `ContinuousMapGeneratedBy G Y Z` is nontrivial
+  (`Topology.ContinuousMapGeneratedBy.instNontrivial`).
 * When `Y` is `G`-generated, `ContinuousMapGeneratedBy G Y Z` has the same underlying maps as
   `C(Y, Z)` (`Topology.ContinuousMapGeneratedBy.toContinuousMap`,
   `Topology.ContinuousMapGeneratedBy.equivContinuousMap`).
+* When every `G i` is locally compact and every `G i × G j` is `G`-generated, the `G`-generated
+  refinements `WithGeneratedByTopology G (ContinuousMapGeneratedBy G Y Z)` and
+  `WithGeneratedByTopology G C(Y, Z)` are homeomorphic for every `G`-generated source `Y`
+  (`Topology.ContinuousMapGeneratedBy.generatedByHomeomorphContinuousMap`), with no local
+  compactness, separation, or size assumption on `Y`.
 * When, in addition, every compact subset of `Y` is the continuous image of a compact subset of
-  some generator `G i`, the two topologies coincide
+  some generator `G i`, the unrefined topologies already coincide
   (`Topology.ContinuousMapGeneratedBy.continuous_toContinuousMap`,
   `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMap`).
 
@@ -33,6 +41,8 @@ This file compares `ContinuousMapGeneratedBy G Y Z` with the compact-open mappin
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
   (Basel) 22 (1971), 545–555.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix,
+  Proposition A.16.
 -/
 
 public section
@@ -67,6 +77,14 @@ end ContinuousMap
 
 namespace Topology.ContinuousMapGeneratedBy
 
+instance instNontrivial [Nonempty Y] [Nontrivial Z] :
+    Nontrivial (ContinuousMapGeneratedBy G Y Z) := by
+  obtain ⟨y₀⟩ := ‹Nonempty Y›
+  obtain ⟨z₁, z₂, hz⟩ := exists_pair_ne Z
+  exact ⟨(ContinuousMap.const Y z₁).toContinuousMapGeneratedBy G,
+    (ContinuousMap.const Y z₂).toContinuousMapGeneratedBy G,
+    fun h ↦ hz (by simpa using congr($h y₀))⟩
+
 /-- When the source `Y` is `G`-generated, every `G`-continuous map `Y → Z` is continuous. -/
 @[expose]
 def toContinuousMap [IsGeneratedBy G Y] (f : ContinuousMapGeneratedBy G Y Z) : C(Y, Z) :=
@@ -80,13 +98,22 @@ theorem toContinuousMap_apply [IsGeneratedBy G Y] (f : ContinuousMapGeneratedBy 
 theorem coe_toContinuousMap [IsGeneratedBy G Y] (f : ContinuousMapGeneratedBy G Y Z) :
     (f.toContinuousMap : Y → Z) = f := rfl
 
+@[simp]
+theorem toContinuousMap_toContinuousMapGeneratedBy [IsGeneratedBy G Y] (f : C(Y, Z)) :
+    (f.toContinuousMapGeneratedBy G).toContinuousMap = f := by ext; rfl
+
+@[simp]
+theorem toContinuousMapGeneratedBy_toContinuousMap [IsGeneratedBy G Y]
+    (g : ContinuousMapGeneratedBy G Y Z) :
+    g.toContinuousMap.toContinuousMapGeneratedBy G = g := by ext; rfl
+
 /-- When `Y` is `G`-generated, `G`-continuous maps `Y → Z` coincide with continuous maps `Y → Z`. -/
 @[expose]
 def equivContinuousMap [IsGeneratedBy G Y] : ContinuousMapGeneratedBy G Y Z ≃ C(Y, Z) where
   toFun := toContinuousMap
   invFun := ContinuousMap.toContinuousMapGeneratedBy G
-  left_inv _ := by ext; rfl
-  right_inv _ := by ext; rfl
+  left_inv := toContinuousMapGeneratedBy_toContinuousMap
+  right_inv := toContinuousMap_toContinuousMapGeneratedBy
 
 @[simp]
 theorem equivContinuousMap_apply [IsGeneratedBy G Y] (f : ContinuousMapGeneratedBy G Y Z) :
@@ -95,6 +122,46 @@ theorem equivContinuousMap_apply [IsGeneratedBy G Y] (f : ContinuousMapGenerated
 @[simp]
 theorem equivContinuousMap_symm_apply [IsGeneratedBy G Y] (f : C(Y, Z)) :
     (equivContinuousMap (G := G)).symm f = f.toContinuousMapGeneratedBy G := (rfl)
+
+/-- Suppose `[∀ i, LocallyCompactSpace (G i)]` and `[∀ i j, IsGeneratedBy G (G i × G j)]`. For any
+`G`-generated source `Y` (with no local compactness, Hausdorffness, or smallness assumption on
+`Y`), the `G`-generated refinements `WithGeneratedByTopology G (ContinuousMapGeneratedBy G Y Z)`
+and `WithGeneratedByTopology G C(Y, Z)` are homeomorphic via `equivContinuousMap`. -/
+def generatedByHomeomorphContinuousMap [IsGeneratedBy G Y]
+    [∀ i, LocallyCompactSpace (G i)] [∀ i j, IsGeneratedBy G (G i × G j)] :
+    WithGeneratedByTopology G (ContinuousMapGeneratedBy G Y Z) ≃ₜ
+      WithGeneratedByTopology G C(Y, Z) where
+  toEquiv := WithGeneratedByTopology.equiv.trans
+    (equivContinuousMap.trans WithGeneratedByTopology.equiv.symm)
+  continuous_toFun := (WithGeneratedByTopology.continuous_from_iff _).2 fun i f ↦ by
+    simp only [Equiv.toFun_as_coe, Equiv.coe_trans, Function.comp_def, Equiv.apply_symm_apply]
+    refine (IsGeneratedBy.equiv_symm_comp_continuous_iff G
+      (fun x : G i ↦ equivContinuousMap (f x))).2 ?_
+    have hf := (continuousGeneratedBy_iff_uncurry _).1 f.continuous.continuousGeneratedBy
+    have : IsGeneratedBy G (G i × Y) := IsGeneratedBy.prod_of_locallyCompactSpace_left
+    exact (ContinuousMap.curry ⟨fun p : G i × Y ↦ f p.1 p.2, (IsGeneratedBy.continuous_iff G _).2
+      fun _ r ↦ (hf (ContinuousMap.fst.comp r) (ContinuousMap.snd.comp r)).comp
+        (continuous_id.prodMk continuous_id)⟩).continuous
+  continuous_invFun := (WithGeneratedByTopology.continuous_from_iff _).2 fun _ f ↦ by
+    simp only [Equiv.invFun_as_coe, Equiv.symm_trans_apply, Equiv.symm_symm, Function.comp_def,
+      Equiv.apply_symm_apply]
+    exact (IsGeneratedBy.equiv_symm_comp_continuous_iff G
+      (fun x ↦ (equivContinuousMap (G := G)).symm (f x))).2
+      (ContinuousMap.continuous_toContinuousMapGeneratedBy.comp f.continuous)
+
+@[simp]
+theorem generatedByHomeomorphContinuousMap_apply [IsGeneratedBy G Y]
+    [∀ i, LocallyCompactSpace (G i)] [∀ i j, IsGeneratedBy G (G i × G j)]
+    (g : WithGeneratedByTopology G (ContinuousMapGeneratedBy G Y Z)) :
+    WithGeneratedByTopology.equiv (generatedByHomeomorphContinuousMap g) =
+      (WithGeneratedByTopology.equiv g).toContinuousMap := (rfl)
+
+@[simp]
+theorem generatedByHomeomorphContinuousMap_symm_apply [IsGeneratedBy G Y]
+    [∀ i, LocallyCompactSpace (G i)] [∀ i j, IsGeneratedBy G (G i × G j)]
+    (f : WithGeneratedByTopology G C(Y, Z)) :
+    WithGeneratedByTopology.equiv (generatedByHomeomorphContinuousMap.symm f) =
+      (WithGeneratedByTopology.equiv f).toContinuousMapGeneratedBy G := (rfl)
 
 /-- If every compact subset of `Y` is the image of a compact subset of some generator `G i` along a
 continuous map `G i → Y`, then `toContinuousMap` is continuous into the compact-open topology on

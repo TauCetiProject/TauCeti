@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Small.Basic
-public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Instances.Shrink
 public import Mathlib.Topology.UnitInterval
+public import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 public import TauCeti.Topology.Convenient.GeneratedBy
 public import TauCeti.Topology.Convenient.HomSpace
 
@@ -16,26 +16,36 @@ public import TauCeti.Topology.Convenient.HomSpace
 # Compact Hausdorff generators, products, and mapping spaces
 
 Mathlib provides both compact generation (`TopologicalSpace.compactlyGenerated`,
-`UCompactlyGeneratedSpace`) and generation by a family (`TopologicalSpace.generatedBy`,
-`Topology.IsGeneratedBy`). Here we identify them for `CompHaus.{u}` in an explicit test universe `u`
-and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
+`UCompactlyGeneratedSpace`, `CompactlyGeneratedSpace`) and generation by a family
+(`TopologicalSpace.generatedBy`, `Topology.IsGeneratedBy`). Here we identify them for
+`CompHaus.{u}` in an explicit test universe `u` and establish the point-set inputs for
+`CompactlyGenerated.{u, w}`:
 
 * `TopologicalSpace.generatedBy_compHaus`, `Topology.isGeneratedBy_compHaus_iff`, and idempotence
   `TopologicalSpace.compactlyGenerated_compactlyGenerated`.
 * Compact subsets as `CompHaus.{u}` images (`IsCompact.exists_compHaus_range_eq`), giving
   `TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2` and the compact-open comparison
   `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus`.
-* Locally compact Hausdorff product preservation (`UCompactlyGeneratedSpace.prod_right`,
-  `UCompactlyGeneratedSpace.prod_left`).
+* Whitehead's product theorem for `u`-compactly generated spaces without separation or size
+  hypotheses (`UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_left`, `right`), its
+  specialization to `u`-small locally compact Hausdorff factors
+  (`UCompactlyGeneratedSpace.prod_right`, `UCompactlyGeneratedSpace.prod_left`), and the
+  universe-polymorphic topological version
+  (`CompactlyGeneratedSpace.prod_of_locallyCompactSpace_left`, `right`).
 
 ## References
 
+* R. H. Fox, *On topologies for function spaces*, Bull. Amer. Math. Soc. 51 (1945), 429–432.
+* J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
+  1125–1132.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
   (Basel) 22 (1971), 545–555.
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
 * N. E. Steenrod, *A convenient category of topological spaces*, Michigan Math. J. 14 (1967),
   133–152.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix,
+  Propositions A.15–A.16.
 -/
 
 public section
@@ -146,21 +156,37 @@ end TauCeti
 
 namespace UCompactlyGeneratedSpace
 
+/-- **Whitehead's product theorem (left factor locally compact)**: if `X` and `Y` are
+`u`-compactly generated and `X` is locally compact, then `X × Y` is `u`-compactly generated. -/
+theorem prod_of_locallyCompactSpace_left {X : Type v} {Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y]
+    [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y] [LocallyCompactSpace X] :
+    UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (Topology.isGeneratedBy_compHaus_iff.{u} (X × Y)).1
+    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left (G := fun K : CompHaus.{u} ↦ K))
+
+/-- **Whitehead's product theorem (right factor locally compact)**: if `X` and `Y` are
+`u`-compactly generated and `Y` is locally compact, then `X × Y` is `u`-compactly generated. -/
+theorem prod_of_locallyCompactSpace_right {X : Type v} {Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y]
+    [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y] [LocallyCompactSpace Y] :
+    UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (Topology.isGeneratedBy_compHaus_iff.{u} (X × Y)).1
+    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right (G := fun K : CompHaus.{u} ↦ K))
+
 /-- Taking the product on the right with a `u`-small locally compact Hausdorff space preserves
 `u`-compact generation. -/
 theorem prod_right {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
     [UCompactlyGeneratedSpace.{u} X] [LocallyCompactSpace Y] [T2Space Y] [Small.{u} Y] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
-  (Topology.isGeneratedBy_compHaus_iff.{u} (X × Y)).1
-    (Topology.IsGeneratedBy.prod_right (G := fun K : CompHaus.{u} ↦ K))
+  prod_of_locallyCompactSpace_right
 
 /-- Taking the product on the left with a `u`-small locally compact Hausdorff space preserves
 `u`-compact generation. -/
 theorem prod_left {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
     [LocallyCompactSpace X] [T2Space X] [Small.{u} X] [UCompactlyGeneratedSpace.{u} Y] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
-  (Topology.isGeneratedBy_compHaus_iff.{u} (X × Y)).1
-    (Topology.IsGeneratedBy.prod_left (G := fun K : CompHaus.{u} ↦ K))
+  prod_of_locallyCompactSpace_left
 
 instance instProdUnitIntervalRight (X : Type v) [TopologicalSpace X]
     [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (X × unitInterval) := prod_right
@@ -169,6 +195,24 @@ instance instProdUnitIntervalLeft (X : Type v) [TopologicalSpace X]
     [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (unitInterval × X) := prod_left
 
 end UCompactlyGeneratedSpace
+
+/-- If `X : Type u` and `Y : Type v` are compactly generated and `X` is locally compact, then
+`X × Y` is compactly generated. -/
+theorem CompactlyGeneratedSpace.prod_of_locallyCompactSpace_left {X : Type u} {Y : Type v}
+    [TopologicalSpace X] [TopologicalSpace Y] [CompactlyGeneratedSpace X]
+    [CompactlyGeneratedSpace Y] [LocallyCompactSpace X] : CompactlyGeneratedSpace (X × Y) :=
+  have := UCompactlyGeneratedSpace.ulift.{v, u} (X := X)
+  have := UCompactlyGeneratedSpace.ulift.{u, v} (X := Y)
+  UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_left
+
+/-- If `X : Type u` and `Y : Type v` are compactly generated and `Y` is locally compact, then
+`X × Y` is compactly generated. -/
+theorem CompactlyGeneratedSpace.prod_of_locallyCompactSpace_right {X : Type u} {Y : Type v}
+    [TopologicalSpace X] [TopologicalSpace Y] [CompactlyGeneratedSpace X]
+    [CompactlyGeneratedSpace Y] [LocallyCompactSpace Y] : CompactlyGeneratedSpace (X × Y) :=
+  have := UCompactlyGeneratedSpace.ulift.{v, u} (X := X)
+  have := UCompactlyGeneratedSpace.ulift.{u, v} (X := Y)
+  UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_right
 
 namespace Topology.ContinuousMapGeneratedBy
 

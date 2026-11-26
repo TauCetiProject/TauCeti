@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
-public import Mathlib.CategoryTheory.Monoidal.Closed.InternalCurrying
+public import TauCeti.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Topology.Category.CompactlyGenerated.Coreflection
 public import TauCeti.Topology.Category.TopCat.MappingSpace
+import Mathlib.CategoryTheory.Elementwise
 import TauCeti.CategoryTheory.Monoidal.Closed.Unit
 
 /-!
@@ -25,9 +26,12 @@ object universe `w`.
   giving `CartesianMonoidalCategory` and `BraidedCategory` with binary product carrier `k(X × Y)`.
 * `CompactlyGenerated.tensorRightLocallyCompactHomeomorph`,
   `CompactlyGenerated.tensorLeftLocallyCompactHomeomorph`,
+  `CompactlyGenerated.preservesLimit_pair_compactlyGeneratedToTop`,
   `CompactlyGenerated.toCompactlyGeneratedProdRightIso`,
-  `CompactlyGenerated.toCompactlyGeneratedProdLeftIso`: for `u`-small locally compact Hausdorff
-  `L`, `Y ⊗ of L` agrees with `Y × L` and `k(X × L) ≅ kX ⊗ of L` by the identity on points.
+  `CompactlyGenerated.toCompactlyGeneratedProdLeftIso`: for locally compact `u`-compactly
+  generated `L`, `Y ⊗ of L` agrees with `Y × L` and `compactlyGeneratedToTop` preserves the binary
+  product; for `u`-small locally compact Hausdorff `L`, `k(X × L) ≅ kX ⊗ of L` for arbitrary
+  `X : TopCat`.
 * `CompactlyGenerated.ihomFunctor`, `CompactlyGenerated.curryEquiv`,
   `CompactlyGenerated.tensorLeftAdjunction`: the `MonoidalClosed` structure on
   `CompactlyGenerated.{u, w}` with internal hom `k(ContinuousMapGeneratedBy CompHaus.{u} Y Z)`.
@@ -35,9 +39,9 @@ object universe `w`.
   `CompactlyGenerated.ihomIsoToCompactlyGeneratedMappingSpace`,
   `CompactlyGenerated.toCompactlyGeneratedMappingSpaceCurryIso`,
   `CompactlyGenerated.toCompactlyGeneratedMappingSpaceCurryHomeomorph`,
-  `CompactlyGenerated.ihomULiftBoolIso`, `CompactlyGenerated.ihomULiftBoolHomeomorph`: compact-open
-  comparisons, exponential law `k(C(X ⊗ Y, Z)) ≃ₜ k(C(X, k(C(Y, Z))))`, and
-  `(ihom S⁰).obj Z ≅ Z ⊗ Z`.
+  `CompactlyGenerated.ihomULiftBoolIso`, `CompactlyGenerated.ihomULiftBoolHomeomorph`:
+  unconditional compact-open comparisons `(ihom Y).obj Z ≃ₜ k(C(Y, Z))`, exponential law
+  `k(C(X ⊗ Y, Z)) ≃ₜ k(C(X, k(C(Y, Z))))`, and `(ihom S⁰).obj Z ≅ Z ⊗ Z`.
 
 ## References
 
@@ -128,6 +132,14 @@ instance (X Y : CompactlyGenerated.{u, w}) [T2Space X] [T2Space Y] : T2Space ↑
 instance (X Y : CompactlyGenerated.{u, w}) [Small.{v₁} X] [Small.{v₁} Y] : Small.{v₁} ↑(X ⊗ Y) :=
   inferInstanceAs (Small.{v₁} (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of (X × Y))))
 
+instance instNontrivialTensorLeft (X Y : CompactlyGenerated.{u, w}) [Nontrivial X] [Nonempty Y] :
+    Nontrivial ↑(X ⊗ Y) :=
+  inferInstanceAs (Nontrivial (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of (X × Y))))
+
+instance instNontrivialTensorRight (X Y : CompactlyGenerated.{u, w}) [Nonempty X] [Nontrivial Y] :
+    Nontrivial ↑(X ⊗ Y) :=
+  inferInstanceAs (Nontrivial (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of (X × Y))))
+
 @[simp]
 theorem tensor_apply {W X Y Z : CompactlyGenerated.{u, w}} (f : W ⟶ X) (g : Y ⟶ Z)
     (p : ↑(W ⊗ Y)) : (f ⊗ₘ g) p = (f p.1, g p.2) := rfl
@@ -184,44 +196,89 @@ theorem braiding_hom_apply {X Y : CompactlyGenerated.{u, w}} (x : X) (y : Y) :
 theorem braiding_inv_apply {X Y : CompactlyGenerated.{u, w}} (x : X) (y : Y) :
     (β_ X Y).inv (y, x) = (x, y) := rfl
 
-/-- When `L` is `u`-small, locally compact, and Hausdorff, the convenient product `Y ⊗ of L` in
-`CompactlyGenerated.{u, w}` is homeomorphic to the ordinary product `Y × L` by the identity on
-points. -/
+@[simp]
+theorem prodComparison_compactlyGeneratedToTop_apply (X Y : CompactlyGenerated.{u, w})
+    (p : ↑(X ⊗ Y)) :
+    dsimp% CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y p = p :=
+  Prod.ext
+    (congr($(CartesianMonoidalCategory.prodComparison_fst compactlyGeneratedToTop.{u, w} X Y) p))
+    (congr($(CartesianMonoidalCategory.prodComparison_snd compactlyGeneratedToTop.{u, w} X Y) p))
+
+/-- Whenever the ordinary product `X × Y` is already `u`-compactly generated, the forgetful functor
+`compactlyGeneratedToTop` preserves the binary product of `X` and `Y`. -/
+instance preservesLimit_pair_compactlyGeneratedToTop (X Y : CompactlyGenerated.{u, w})
+    [UCompactlyGeneratedSpace.{u} (X × Y)] :
+    PreservesLimit (pair X Y) compactlyGeneratedToTop.{u, w} := by
+  have h : CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y =
+      (TopCat.isoOfHomeo (counitHomeomorph.{u, w} (TopCat.of (X × Y)))).hom :=
+    TopCat.ext (prodComparison_compactlyGeneratedToTop_apply X Y)
+  have : IsIso (CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y) :=
+    h ▸ Iso.isIso_hom (TopCat.isoOfHomeo (counitHomeomorph.{u, w} (TopCat.of (X × Y))))
+  exact CartesianMonoidalCategory.preservesLimit_pair_of_isIso_prodComparison
+    compactlyGeneratedToTop.{u, w} X Y
+
+@[simp]
+theorem prodComparisonIso_compactlyGeneratedToTop_inv_apply (X Y : CompactlyGenerated.{u, w})
+    [PreservesLimit (pair X Y) compactlyGeneratedToTop.{u, w}] (p : X × Y) :
+    dsimp% (CartesianMonoidalCategory.prodComparisonIso compactlyGeneratedToTop.{u, w} X Y).inv p =
+      p :=
+  (prodComparison_compactlyGeneratedToTop_apply X Y _).symm.trans <|
+    congr($((CartesianMonoidalCategory.prodComparisonIso
+      compactlyGeneratedToTop.{u, w} X Y).inv_hom_id)
+      (p : ↑(compactlyGeneratedToTop.{u, w}.obj X ⊗ compactlyGeneratedToTop.{u, w}.obj Y)))
+
+instance preservesLimit_pair_compactlyGeneratedToTop_of_locallyCompactSpace_left
+    (X Y : CompactlyGenerated.{u, w}) [LocallyCompactSpace X] :
+    PreservesLimit (pair X Y) compactlyGeneratedToTop.{u, w} :=
+  have := UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_left.{u} (X := X) (Y := Y)
+  inferInstance
+
+instance preservesLimit_pair_compactlyGeneratedToTop_of_locallyCompactSpace_right
+    (X Y : CompactlyGenerated.{u, w}) [LocallyCompactSpace Y] :
+    PreservesLimit (pair X Y) compactlyGeneratedToTop.{u, w} :=
+  have := UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_right.{u} (X := X) (Y := Y)
+  inferInstance
+
+/-- When `L` is locally compact and `u`-compactly generated (in particular when `L` is `u`-small,
+locally compact, and Hausdorff), the convenient product `Y ⊗ of L` in `CompactlyGenerated.{u, w}`
+is homeomorphic to the ordinary product `Y × L` by the identity on points. -/
 @[expose]
 def tensorRightLocallyCompactHomeomorph (Y : CompactlyGenerated.{u, w}) (L : Type w)
-    [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L] :
+    [TopologicalSpace L] [LocallyCompactSpace L] [UCompactlyGeneratedSpace.{u} L] :
     ↑(Y ⊗ (of L : CompactlyGenerated.{u, w})) ≃ₜ Y × L :=
-  have : UCompactlyGeneratedSpace.{u} (Y × L) := UCompactlyGeneratedSpace.prod_right
+  have : UCompactlyGeneratedSpace.{u} (Y × L) :=
+    UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_right
   counitHomeomorph.{u, w} (TopCat.of (Y × L))
 
 @[simp]
 theorem tensorRightLocallyCompactHomeomorph_apply (Y : CompactlyGenerated.{u, w}) (L : Type w)
-    [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
+    [TopologicalSpace L] [LocallyCompactSpace L] [UCompactlyGeneratedSpace.{u} L]
     (p : ↑(Y ⊗ (of L : CompactlyGenerated.{u, w}))) :
     tensorRightLocallyCompactHomeomorph Y L p = p := rfl
 
 @[simp]
 theorem tensorRightLocallyCompactHomeomorph_symm_apply (Y : CompactlyGenerated.{u, w}) (L : Type w)
-    [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L] (p : Y × L) :
+    [TopologicalSpace L] [LocallyCompactSpace L] [UCompactlyGeneratedSpace.{u} L] (p : Y × L) :
     (tensorRightLocallyCompactHomeomorph Y L).symm p = p := rfl
 
 /-- Symmetric version of `tensorRightLocallyCompactHomeomorph`: `of L ⊗ Y ≃ₜ L × Y`. -/
 @[expose]
 def tensorLeftLocallyCompactHomeomorph (L : Type w) (Y : CompactlyGenerated.{u, w})
-    [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L] :
+    [TopologicalSpace L] [LocallyCompactSpace L] [UCompactlyGeneratedSpace.{u} L] :
     ↑((of L : CompactlyGenerated.{u, w}) ⊗ Y) ≃ₜ L × Y :=
-  have : UCompactlyGeneratedSpace.{u} (L × Y) := UCompactlyGeneratedSpace.prod_left
+  have : UCompactlyGeneratedSpace.{u} (L × Y) :=
+    UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_left
   counitHomeomorph.{u, w} (TopCat.of (L × Y))
 
 @[simp]
 theorem tensorLeftLocallyCompactHomeomorph_apply (L : Type w) (Y : CompactlyGenerated.{u, w})
-    [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
+    [TopologicalSpace L] [LocallyCompactSpace L] [UCompactlyGeneratedSpace.{u} L]
     (p : ↑((of L : CompactlyGenerated.{u, w}) ⊗ Y)) :
     tensorLeftLocallyCompactHomeomorph L Y p = p := rfl
 
 @[simp]
 theorem tensorLeftLocallyCompactHomeomorph_symm_apply (L : Type w) (Y : CompactlyGenerated.{u, w})
-    [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L] (p : L × Y) :
+    [TopologicalSpace L] [LocallyCompactSpace L] [UCompactlyGeneratedSpace.{u} L] (p : L × Y) :
     (tensorLeftLocallyCompactHomeomorph L Y).symm p = p := rfl
 
 /-- Isomorphism `k(X × L) ≅ kX ⊗ of L` in `CompactlyGenerated.{u, w}` for any `X : TopCat.{w}` and
@@ -338,6 +395,11 @@ instance instMonoidalClosed : MonoidalClosed CompactlyGenerated.{u, w} where
 instance instFunLikeIhom (Y Z : CompactlyGenerated.{u, w}) : FunLike ↑((ihom Y).obj Z) Y Z :=
   inferInstanceAs (FunLike (ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z) Y Z)
 
+instance instNontrivialIhom (Y Z : CompactlyGenerated.{u, w}) [Nonempty Y] [Nontrivial Z] :
+    Nontrivial ↑((ihom Y).obj Z) :=
+  inferInstanceAs (Nontrivial (TopCat.toCompactlyGenerated.{u, w}.obj
+    (TopCat.of (ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z))))
+
 instance instFunLikeTensorLeftCompIhom (Y Z : CompactlyGenerated.{u, w}) :
     FunLike ↑((tensorLeft Y ⋙ ihom Y).obj Z) Y ↑(Y ⊗ Z) :=
   inferInstanceAs (FunLike ↑((ihom Y).obj (Y ⊗ Z)) Y ↑(Y ⊗ Z))
@@ -414,6 +476,22 @@ theorem ihomCurry_apply (Y X Z : CompactlyGenerated.{u, w})
     _ = (ihom.ev (Y ⊗ X)).app Z yx_g := congrArg _ (associator_inv_apply y x g)
     _ = g (y, x) := ihom_ev_app_apply (Y ⊗ X) Z yx_g
 
+@[simp]
+theorem ihomTensorIso_hom_apply (X Y Z : CompactlyGenerated.{u, w})
+    (g : ↑((ihom (X ⊗ Y)).obj Z)) (x : X) (y : Y) :
+    (((MonoidalClosed.ihomTensorIso X Y Z).hom g) x) y = g (x, y) := by
+  let yx : ↑(Y ⊗ X) := (y, x)
+  rw [MonoidalClosed.ihomTensorIso_hom, CategoryTheory.comp_apply, ihomCurry_apply]
+  exact (pre_app_apply (β_ Y X).hom Z g yx).trans (congrArg g (braiding_hom_apply y x))
+
+@[simp]
+theorem ihomTensorIso_inv_apply (X Y Z : CompactlyGenerated.{u, w})
+    (h : ↑((ihom X).obj ((ihom Y).obj Z))) (p : ↑(X ⊗ Y)) :
+    ((MonoidalClosed.ihomTensorIso X Y Z).inv h) p = (h p.1) p.2 := by
+  rcases p with ⟨x, y⟩
+  simpa [Iso.inv_hom_id_apply] using
+    (ihomTensorIso_hom_apply X Y Z ((MonoidalClosed.ihomTensorIso X Y Z).inv h) x y).symm
+
 /-- Evaluation at a point `y : Y` as a morphism `(ihom Y).obj Z ⟶ Z` in
 `CompactlyGenerated.{u, w}`. -/
 @[expose]
@@ -434,36 +512,48 @@ instance (Y Z : CompactlyGenerated.{u, w}) :
       TopCat.toCompactlyGenerated.{u, w}).obj Z) Y Z :=
   inferInstanceAs (FunLike C(Y, Z) Y Z)
 
-/-- When `Y : CompactlyGenerated.{u, w}` is `u`-small and Hausdorff, the internal hom
-`(ihom Y).obj Z` is homeomorphic to `k(C(Y, Z))`, the compact-generation coreflection of the
-compact-open mapping space `C(Y, Z)`. -/
+/-- For arbitrary `Y, Z : CompactlyGenerated.{u, w}` (with no local compactness, separation, or
+smallness assumption), the internal hom `(ihom Y).obj Z` is homeomorphic to `k(C(Y, Z))`, the
+compact-generation coreflection of the compact-open mapping space `C(Y, Z)`. -/
 @[expose]
-def ihomHomeomorphToCompactlyGeneratedContinuousMap (Y Z : CompactlyGenerated.{u, w})
-    [T2Space Y] [Small.{u} Y] :
+def ihomHomeomorphToCompactlyGeneratedContinuousMap (Y Z : CompactlyGenerated.{u, w}) :
     ↑((ihom Y).obj Z) ≃ₜ TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)) :=
-  let e := Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus.{u} Y Z
-  { toEquiv := e.toEquiv
-    continuous_toFun := (ContinuousMap.toCompactlyGenerated.{u} ⟨e, e.continuous⟩).continuous
-    continuous_invFun :=
-      (ContinuousMap.toCompactlyGenerated.{u} ⟨e.symm, e.symm.continuous⟩).continuous }
+  let e := (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w}
+      (TopCat.of (ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z))).trans <|
+    (ContinuousMapGeneratedBy.generatedByHomeomorphContinuousMap
+      (G := fun K : CompHaus.{u} ↦ K) (Y := Y) (Z := Z)).trans <|
+      (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w} (TopCat.of C(Y, Z))).symm
+  { toEquiv := ContinuousMapGeneratedBy.equivContinuousMap (G := fun K : CompHaus.{u} ↦ K)
+    continuous_toFun := e.continuous.congr fun f ↦ DFunLike.ext _ _ fun y ↦ by
+      dsimp [e]
+      exact (congrArg (fun h : C(Y, Z) ↦ h y)
+        (ContinuousMapGeneratedBy.generatedByHomeomorphContinuousMap_apply
+          (G := fun K : CompHaus.{u} ↦ K)
+          (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w}
+            (TopCat.of (ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z)) f))).trans rfl
+    continuous_invFun := e.symm.continuous.congr fun f ↦ DFunLike.ext _ _ fun y ↦ by
+      dsimp [e]
+      exact (congrArg (fun h : ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z ↦ h y)
+        (ContinuousMapGeneratedBy.generatedByHomeomorphContinuousMap_symm_apply
+          (G := fun K : CompHaus.{u} ↦ K) (Y := Y) (Z := Z)
+          (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w} (TopCat.of C(Y, Z)) f))).trans rfl }
 
 @[simp]
 theorem ihomHomeomorphToCompactlyGeneratedContinuousMap_apply (Y Z : CompactlyGenerated.{u, w})
-    [T2Space Y] [Small.{u} Y] (f : ↑((ihom Y).obj Z)) (y : Y) :
+    (f : ↑((ihom Y).obj Z)) (y : Y) :
     (ihomHomeomorphToCompactlyGeneratedContinuousMap Y Z f) y = f y := (rfl)
 
 @[simp]
 theorem ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply
-    (Y Z : CompactlyGenerated.{u, w}) [T2Space Y] [Small.{u} Y]
+    (Y Z : CompactlyGenerated.{u, w})
     (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))) (y : Y) :
     ((ihomHomeomorphToCompactlyGeneratedContinuousMap Y Z).symm f) y = f y := (rfl)
 
-/-- For a `u`-small Hausdorff space `Y : CompactlyGenerated.{u, w}`, the internal hom functor
-`ihom Y` is naturally isomorphic to forming the compact-open mapping space `TopCat.mappingSpace Y`
-followed by `TopCat.toCompactlyGenerated`. -/
+/-- For every `Y : CompactlyGenerated.{u, w}`, the internal hom functor `ihom Y` is naturally
+isomorphic to forming the compact-open mapping space `TopCat.mappingSpace Y` followed by
+`TopCat.toCompactlyGenerated`. -/
 @[expose]
-def ihomIsoToCompactlyGeneratedMappingSpace (Y : CompactlyGenerated.{u, w})
-    [T2Space Y] [Small.{u} Y] :
+def ihomIsoToCompactlyGeneratedMappingSpace (Y : CompactlyGenerated.{u, w}) :
     ihom Y ≅
       compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
         TopCat.toCompactlyGenerated.{u, w} :=
@@ -473,25 +563,24 @@ def ihomIsoToCompactlyGeneratedMappingSpace (Y : CompactlyGenerated.{u, w})
 
 @[simp]
 theorem ihomIsoToCompactlyGeneratedMappingSpace_hom_app_apply
-    (Y Z : CompactlyGenerated.{u, w}) [T2Space Y] [Small.{u} Y]
-    (f : ↑((ihom Y).obj Z)) (y : Y) :
+    (Y Z : CompactlyGenerated.{u, w}) (f : ↑((ihom Y).obj Z)) (y : Y) :
     dsimp% only [Functor.comp_obj]
       (((ihomIsoToCompactlyGeneratedMappingSpace Y).hom.app Z f) y) = f y :=
   ihomHomeomorphToCompactlyGeneratedContinuousMap_apply Y Z f y
 
 @[simp]
 theorem ihomIsoToCompactlyGeneratedMappingSpace_inv_app_apply
-    (Y Z : CompactlyGenerated.{u, w}) [T2Space Y] [Small.{u} Y]
+    (Y Z : CompactlyGenerated.{u, w})
     (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))) (y : Y) :
     dsimp% only [Functor.comp_obj]
       (((ihomIsoToCompactlyGeneratedMappingSpace Y).inv.app Z f) y) = f y :=
   ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply Y Z f y
 
-/-- When `Y` is locally compact, `u`-small, and Hausdorff, currying `Y ⊗ X ⟶ Z` into `k(C(Y, Z))`
+/-- When `Y : CompactlyGenerated.{u, w}` is locally compact, currying `Y ⊗ X ⟶ Z` into `k(C(Y, Z))`
 agrees with currying on the ordinary product `Y × X` in `TopCat` (`TopCat.curryEquiv`) followed by
 `CompactlyGenerated.adj.homEquiv`. -/
 theorem curry_comp_ihomIsoToCompactlyGeneratedMappingSpace
-    {Y X Z : CompactlyGenerated.{u, w}} [LocallyCompactSpace Y] [T2Space Y] [Small.{u} Y]
+    {Y X Z : CompactlyGenerated.{u, w}} [LocallyCompactSpace Y]
     (f : Y ⊗ X ⟶ Z) :
     MonoidalClosed.curry f ≫ (ihomIsoToCompactlyGeneratedMappingSpace Y).hom.app Z =
       adj.{u, w}.homEquiv X (TopCat.of C(Y, Z))
@@ -511,27 +600,26 @@ theorem curry_comp_ihomIsoToCompactlyGeneratedMappingSpace
     _ = (adj.{u, w}.homEquiv X (TopCat.of C(Y, Z)) g x) y :=
         congrArg (fun h : C(Y, Z) ↦ h y) (adj_homEquiv_apply g x).symm
 
-/-- Exponential isomorphism on `k`-ified compact-open mapping spaces: when both source factors `X`
-and `Y` are `u`-small and Hausdorff (and `Z : CompactlyGenerated.{u, w}` is arbitrary), currying
-identifies `k(C(X ⊗ Y, Z))` with `k(C(X, k(C(Y, Z))))` in `CompactlyGenerated.{u, w}`. -/
+/-- **Exponential isomorphism on `k`-ified compact-open mapping spaces**: for arbitrary
+`X, Y, Z : CompactlyGenerated.{u, w}` (with no local compactness, separation, or smallness
+assumption), currying identifies `k(C(X ⊗ Y, Z))` with `k(C(X, k(C(Y, Z))))` in
+`CompactlyGenerated.{u, w}`. -/
 @[expose]
-def toCompactlyGeneratedMappingSpaceCurryIso (X Y Z : CompactlyGenerated.{u, w})
-    [T2Space X] [Small.{u} X] [T2Space Y] [Small.{u} Y] :
+def toCompactlyGeneratedMappingSpaceCurryIso (X Y Z : CompactlyGenerated.{u, w}) :
     TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(↑(X ⊗ Y), Z)) ≅
       TopCat.toCompactlyGenerated.{u, w}.obj
         (TopCat.of C(X, TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)))) :=
   (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap (X ⊗ Y) Z)).symm ≪≫
-    (MonoidalClosed.internalHom.mapIso (β_ Y X).op).app Z ≪≫ MonoidalClosed.ihomCurryIso Y X Z ≪≫
+    MonoidalClosed.ihomTensorIso X Y Z ≪≫
     (ihom X).mapIso (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap Y Z)) ≪≫
     isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap X
       (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))))
 
-/-- Homeomorphism underlying `toCompactlyGeneratedMappingSpaceCurryIso`: for `u`-small Hausdorff
-`u`-compactly generated `X` and `Y` and arbitrary `u`-compactly generated `Z`, currying gives a
-homeomorphism `k(C(X ⊗ Y, Z)) ≃ₜ k(C(X, k(C(Y, Z))))` sending `f` to `x ↦ (y ↦ f (x, y))`. -/
+/-- Homeomorphism underlying `toCompactlyGeneratedMappingSpaceCurryIso`: for arbitrary
+`X, Y, Z : CompactlyGenerated.{u, w}`, currying gives a homeomorphism
+`k(C(X ⊗ Y, Z)) ≃ₜ k(C(X, k(C(Y, Z))))` sending `f` to `x ↦ (y ↦ f (x, y))`. -/
 @[expose]
-def toCompactlyGeneratedMappingSpaceCurryHomeomorph (X Y Z : CompactlyGenerated.{u, w})
-    [T2Space X] [Small.{u} X] [T2Space Y] [Small.{u} Y] :
+def toCompactlyGeneratedMappingSpaceCurryHomeomorph (X Y Z : CompactlyGenerated.{u, w}) :
     TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(↑(X ⊗ Y), Z)) ≃ₜ
       TopCat.toCompactlyGenerated.{u, w}.obj
         (TopCat.of C(X, TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)))) :=
@@ -540,35 +628,44 @@ def toCompactlyGeneratedMappingSpaceCurryHomeomorph (X Y Z : CompactlyGenerated.
 /-- Pointwise evaluation formula for `toCompactlyGeneratedMappingSpaceCurryIso`. -/
 @[simp]
 theorem toCompactlyGeneratedMappingSpaceCurryIso_hom_apply
-    (X Y Z : CompactlyGenerated.{u, w}) [T2Space X] [Small.{u} X] [T2Space Y] [Small.{u} Y]
+    (X Y Z : CompactlyGenerated.{u, w})
     (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(↑(X ⊗ Y), Z))) (x : X) (y : Y) :
     (((toCompactlyGeneratedMappingSpaceCurryIso X Y Z).hom f) x) y = f (x, y) := by
-  let g4 : ↑((ihom (X ⊗ Y)).obj Z) :=
-    (ihomHomeomorphToCompactlyGeneratedContinuousMap (X ⊗ Y) Z).symm f
-  let g3 : ↑((ihom (Y ⊗ X)).obj Z) := (MonoidalClosed.pre (β_ Y X).hom).app Z g4
-  let yx : ↑(Y ⊗ X) := (y, x)
   let xy : ↑(X ⊗ Y) := (x, y)
-  have hhom : (toCompactlyGeneratedMappingSpaceCurryIso X Y Z).hom =
-      (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap (X ⊗ Y) Z)).inv ≫
-        (MonoidalClosed.pre (β_ Y X).hom).app Z ≫ MonoidalClosed.ihomCurry Y X Z ≫
-        (ihom X).map (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap Y Z)).hom ≫
-        (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap X
-          (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))))).hom := rfl
-  rw [hhom]
-  simp only [CategoryTheory.comp_apply, isoOfHomeo_hom_apply, isoOfHomeo_inv_apply,
-    ihomHomeomorphToCompactlyGeneratedContinuousMap_apply, ihom_map_apply, ihomCurry_apply]
-  calc
-    g3 yx = g4 ((β_ Y X).hom yx) := pre_app_apply (β_ Y X).hom Z g4 yx
-    _ = g4 xy := congrArg g4 (braiding_hom_apply y x)
-    _ = f xy := ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply (X ⊗ Y) Z f xy
+  simp only [toCompactlyGeneratedMappingSpaceCurryIso, Iso.trans_hom, Iso.symm_hom,
+    Functor.mapIso_hom, CategoryTheory.comp_apply, isoOfHomeo_hom_apply, isoOfHomeo_inv_apply,
+    ihomHomeomorphToCompactlyGeneratedContinuousMap_apply, ihom_map_apply,
+    ihomTensorIso_hom_apply]
+  exact ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply (X ⊗ Y) Z f xy
+
+@[simp]
+theorem toCompactlyGeneratedMappingSpaceCurryIso_inv_apply
+    (X Y Z : CompactlyGenerated.{u, w})
+    (g : TopCat.toCompactlyGenerated.{u, w}.obj
+      (TopCat.of C(X, TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)))))
+    (p : ↑(X ⊗ Y)) :
+    ((toCompactlyGeneratedMappingSpaceCurryIso X Y Z).inv g) p = (g p.1) p.2 := by
+  rcases p with ⟨x, y⟩
+  simpa [Iso.inv_hom_id_apply] using
+    (toCompactlyGeneratedMappingSpaceCurryIso_hom_apply X Y Z
+      ((toCompactlyGeneratedMappingSpaceCurryIso X Y Z).inv g) x y).symm
 
 /-- Pointwise evaluation formula for `toCompactlyGeneratedMappingSpaceCurryHomeomorph`. -/
 @[simp]
 theorem toCompactlyGeneratedMappingSpaceCurryHomeomorph_apply
-    (X Y Z : CompactlyGenerated.{u, w}) [T2Space X] [Small.{u} X] [T2Space Y] [Small.{u} Y]
+    (X Y Z : CompactlyGenerated.{u, w})
     (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(↑(X ⊗ Y), Z))) (x : X) (y : Y) :
     (((toCompactlyGeneratedMappingSpaceCurryHomeomorph X Y Z f) x) y) = f (x, y) :=
   toCompactlyGeneratedMappingSpaceCurryIso_hom_apply X Y Z f x y
+
+@[simp]
+theorem toCompactlyGeneratedMappingSpaceCurryHomeomorph_symm_apply
+    (X Y Z : CompactlyGenerated.{u, w})
+    (g : TopCat.toCompactlyGenerated.{u, w}.obj
+      (TopCat.of C(X, TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)))))
+    (p : ↑(X ⊗ Y)) :
+    ((toCompactlyGeneratedMappingSpaceCurryHomeomorph X Y Z).symm g) p = (g p.1) p.2 :=
+  toCompactlyGeneratedMappingSpaceCurryIso_inv_apply X Y Z g p
 
 /-! ### Concrete exponential identifications -/
 

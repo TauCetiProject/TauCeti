@@ -96,8 +96,33 @@ instance (X : TopCat.{w}) [IsEmpty X] : IsEmpty (TopCat.toCompactlyGenerated.{u,
 instance (X : TopCat.{w}) [Unique X] : Unique (TopCat.toCompactlyGenerated.{u, w}.obj X) :=
   ‹Unique X›
 
+instance (X : TopCat.{w}) [Nontrivial X] :
+    Nontrivial (TopCat.toCompactlyGenerated.{u, w}.obj X) :=
+  ‹Nontrivial X›
+
 instance {α : Sort*} {β : α → Sort*} (X : TopCat.{w}) [DFunLike X α β] :
     DFunLike (TopCat.toCompactlyGenerated.{u, w}.obj X) α β := ‹DFunLike X α β›
+
+/-- A subset of `TopCat.toCompactlyGenerated.{u, w}.obj X` is open iff its preimage under every
+continuous probe from a `u`-small compact Hausdorff space into `X` is open. -/
+theorem TopCat.isOpen_toCompactlyGenerated_iff (X : TopCat.{w})
+    (U : Set (TopCat.toCompactlyGenerated.{u, w}.obj X)) :
+    IsOpen U ↔ ∀ (K : CompHaus.{u}) (f : C(K, X)), IsOpen (f ⁻¹' U) :=
+  @TauCeti.isOpen_compactlyGenerated_iff X X.str U
+
+/-- A subset of `TopCat.toCompactlyGenerated.{u, w}.obj X` is closed iff its preimage under every
+continuous probe from a `u`-small compact Hausdorff space into `X` is closed. -/
+theorem TopCat.isClosed_toCompactlyGenerated_iff (X : TopCat.{w})
+    (C : Set (TopCat.toCompactlyGenerated.{u, w}.obj X)) :
+    IsClosed C ↔ ∀ (K : CompHaus.{u}) (f : C(K, X)), IsClosed (f ⁻¹' C) :=
+  @TauCeti.isClosed_compactlyGenerated_iff X X.str C
+
+/-- A map out of `TopCat.toCompactlyGenerated.{u, w}.obj X` is continuous iff its composites with
+all probes from `u`-small compact Hausdorff spaces into `X` are continuous. -/
+theorem TopCat.continuous_from_toCompactlyGenerated_iff {X : TopCat.{w}} {Y : Type v}
+    [tY : TopologicalSpace Y] (g : TopCat.toCompactlyGenerated.{u, w}.obj X → Y) :
+    Continuous g ↔ ∀ (K : CompHaus.{u}) (f : C(K, X)), Continuous (g ∘ f) :=
+  @TauCeti.continuous_compactlyGenerated_iff X X.str Y tY g
 
 namespace CompactlyGenerated
 
@@ -230,6 +255,16 @@ def adjCounit :
 theorem adjCounit_app_apply (X : TopCat.{w})
     (x : (TopCat.toCompactlyGenerated.{u, w} ⋙ compactlyGeneratedToTop.{u, w}).obj X) :
     dsimp% only [Functor.comp_obj, Functor.id_obj] (adjCounit.{u, w}.app X x) = x := rfl
+
+/-- A map from a `u`-compactly generated space `Y` into `TopCat.toCompactlyGenerated.{u, w}.obj X`
+is continuous iff its composite with the counit `adjCounit.app X` into `X` is continuous. -/
+theorem _root_.TopCat.continuous_to_toCompactlyGenerated_iff {X : TopCat.{w}} {Y : Type v}
+    [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} Y]
+    (g : Y → TopCat.toCompactlyGenerated.{u, w}.obj X) :
+    Continuous g ↔ Continuous (adjCounit.{u, w}.app X ∘ g) :=
+  (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w} X).isInducing.continuous_iff.trans
+    (IsGeneratedBy.equiv_symm_comp_continuous_iff (fun K : CompHaus.{u} ↦ K)
+      (adjCounit.{u, w}.app X ∘ g))
 
 /-- The coreflection adjunction `i ⊣ k` between `CompactlyGenerated.{u, w}` and `TopCat.{w}`. -/
 @[expose, simps]
