@@ -10,6 +10,7 @@ public import TauCeti.Algebra.BrauerGroup.Group
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import TauCeti.Algebra.Algebra.Hom
 import TauCeti.Algebra.BrauerGroup.Trivial
 import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
@@ -212,13 +213,10 @@ noncomputable def algEquivEndAdjoinRoot (hζ : IsPrimitiveRoot ζ n) (ha : a ≠
   have := isSimpleRing hζ ha one_ne_zero
   have := finite (a := a) (b := 1) hζ.pow_eq_one
   have := (standardTameCover_free K a n NeZero.one_le).1
-  AlgEquiv.ofBijective (toEndAdjoinRoot a hζ.pow_eq_one) <| by
-    have hinj := (toEndAdjoinRoot a hζ.pow_eq_one).toRingHom.injective
-    have hfin := (standardTameCover_free K a n NeZero.one_le).2
-    refine ⟨hinj, ?_⟩
-    exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f :=
-      (toEndAdjoinRoot a hζ.pow_eq_one).toLinearMap)
-      (by rw [finrank_eq hζ.pow_eq_one, Module.finrank_linearMap, hfin, sq])).1 hinj
+  AlgEquiv.ofBijective (toEndAdjoinRoot a hζ.pow_eq_one) <|
+    (toEndAdjoinRoot a hζ.pow_eq_one).bijective_of_finrank_eq (by
+      rw [finrank_eq hζ.pow_eq_one, Module.finrank_linearMap,
+        (standardTameCover_free K a n NeZero.one_le).2, sq])
 
 @[simp]
 theorem algEquivEndAdjoinRoot_apply (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0)

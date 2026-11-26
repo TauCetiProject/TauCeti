@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-import Mathlib.Analysis.InnerProductSpace.GramMatrix
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 
 /-!
@@ -27,6 +27,8 @@ one.
 
 * `Module.Basis.metricVolumeDensity`: the square root of the Gram determinant of `g` in the
   basis `b`.
+* `Module.Basis.metricVolumeDensity_innerSL_eq_sqrt_det_gram`: the volume density of the inner
+  product in a basis is the square root of its Gram determinant.
 * `OrthonormalBasis.metricVolumeDensity_innerSL`: the density of the inner product in an
   orthonormal basis is one.
 * `Module.Basis.metricVolumeDensity_change_basis`: the density scales by the absolute
@@ -159,6 +161,16 @@ theorem metricVolumeDensity_innerSL_pos {F : Type*} [NormedAddCommGroup F]
   intro v w
   simp only [ContinuousLinearMap.toBilinForm_apply]
   exact real_inner_comm w v
+
+/-- The volume density of the inner product in a basis `b` is the square root of the Gram
+determinant of `b`. -/
+theorem metricVolumeDensity_innerSL_eq_sqrt_det_gram {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (b : Module.Basis ι ℝ F) :
+    b.metricVolumeDensity (innerSL ℝ) = √(Matrix.gram ℝ b).det := by
+  have h : (fun i j ↦ innerSL ℝ (b i) (b j) : Matrix ι ι ℝ) = Matrix.gram ℝ b := by
+    ext i j
+    simp [Matrix.gram_apply, innerSL_apply_apply]
+  rw [metricVolumeDensity_def, h]
 
 end Module.Basis
 

@@ -15,7 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.MvPolynomial.Jacobian
 import TauCeti.Analysis.MvPolynomial.Laplacian
-import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
 /-!

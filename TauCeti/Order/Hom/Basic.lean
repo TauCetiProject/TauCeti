@@ -16,7 +16,9 @@ lifted from `α → β` (`f ≤ g ↔ ∀ x, f x ≤ g x`), matching the Mathlib
 When `α` is a linear order, a strictly monotone map out of `α` is an order embedding
 (`OrderEmbedding.ofStrictMono`), and every order embedding is strictly monotone. Together these
 identify `α ↪o β` with the subtype of strictly monotone maps `α → β`
-(`OrderEmbedding.equivSubtypeStrictMono`).
+(`OrderEmbedding.equivSubtypeStrictMono`). An order embedding `s : α ↪o γ` whose values lie in
+the image `e '' H` of an order embedding `e : β ↪o γ` factors through `e` by an order embedding
+with values in `H` (`OrderEmbedding.exists_trans_eq_of_forall_mem_image`).
 
 `OrderIso.toOrderEmbedding_toEmbedding` records that viewing an order isomorphism `e : α ≃o β`
 as an order embedding preserves its underlying `Function.Embedding`.
@@ -63,6 +65,17 @@ def equivSubtypeStrictMono : (α ↪o β) ≃ {f : α → β // StrictMono f} wh
   invFun f := ofStrictMono f.val f.property
   left_inv _ := DFunLike.coe_injective (coe_ofStrictMono _)
   right_inv _ := Subtype.ext (coe_ofStrictMono _)
+
+/-- **Lifting through an order embedding.** For a linear order `α`, an order embedding
+`s : α ↪o γ` with values in the image `e '' H` of an order embedding `e : β ↪o γ` is `s'.trans e`
+for an order embedding `s' : α ↪o β` with values in `H`. -/
+theorem exists_trans_eq_of_forall_mem_image {γ : Type*} [Preorder γ] (e : β ↪o γ)
+    {H : Set β} (s : α ↪o γ) (hs : ∀ k, s k ∈ e '' H) :
+    ∃ s' : α ↪o β, (∀ k, s' k ∈ H) ∧ s'.trans e = s := by
+  choose f hfH hf using hs
+  refine ⟨.ofStrictMono f fun a b hab ↦ ?_, hfH, RelEmbedding.ext hf⟩
+  rw [← e.lt_iff_lt, hf, hf]
+  exact s.strictMono hab
 
 end StrictMono
 

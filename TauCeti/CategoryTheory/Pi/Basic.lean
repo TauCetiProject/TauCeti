@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Pi.Basic
 public import Mathlib.CategoryTheory.EssentialImage
+public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.CategoryTheory.Functor.FullyFaithful
 
 /-!
@@ -14,7 +15,9 @@ public import Mathlib.CategoryTheory.Functor.FullyFaithful
 
 For families of functors `G i : A i ⥤ B i`, the product functor `Functor.pi G` is fully faithful
 when every `G i` is (`CategoryTheory.Functor.FullyFaithful.pi`), and essentially surjective when
-every `G i` is (`CategoryTheory.Functor.essSurj_pi`).
+every `G i` is (`CategoryTheory.Functor.essSurj_pi`). The automorphism group of an object of a
+product category is the product of the automorphism groups of its components
+(`CategoryTheory.Pi.autMulEquiv`).
 -/
 
 @[expose] public section
@@ -35,5 +38,41 @@ instance Functor.essSurj_pi (G : ∀ i, A i ⥤ B i) [∀ i, (G i).EssSurj] :
     (Functor.pi G).EssSurj where
   mem_essImage Y :=
     ⟨fun i ↦ (G i).objPreimage (Y i), ⟨Pi.isoMk fun i ↦ (G i).objObjPreimageIso (Y i)⟩⟩
+
+end CategoryTheory
+
+end
+
+/-! ### Automorphisms in a product category
+
+`Pi.autMulEquiv` is not exposed: it is computed by `Pi.autMulEquiv_apply_asIso` and
+`Pi.autMulEquiv_symm_apply_asIso`. -/
+
+public section
+
+namespace CategoryTheory
+
+variable {I : Type*} {A : I → Type*} [∀ i, Category (A i)]
+
+/-- The automorphisms of an object `X` of a product category are the families of automorphisms of
+its components `X i`. -/
+def Pi.autMulEquiv (X : ∀ i, A i) : Aut X ≃* ∀ i, Aut (X i) where
+  toFun e i := .of (Pi.isoApp e.asIso i)
+  invFun e := .of (Pi.isoMk fun i ↦ (e i).asIso)
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+/-- The components of the family of automorphisms of an automorphism `e` are its components. -/
+@[simp]
+lemma Pi.autMulEquiv_apply_asIso (X : ∀ i, A i) (e : Aut X) (i : I) :
+    (Pi.autMulEquiv X e i).asIso = Pi.isoApp e.asIso i :=
+  (rfl)
+
+/-- The automorphism with a given family of automorphisms as components. -/
+@[simp]
+lemma Pi.autMulEquiv_symm_apply_asIso (X : ∀ i, A i) (e : ∀ i, Aut (X i)) :
+    ((Pi.autMulEquiv X).symm e).asIso = Pi.isoMk fun i ↦ (e i).asIso :=
+  (rfl)
 
 end CategoryTheory

@@ -61,6 +61,8 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`: the inequality on `W^{1,p}(Ω)`.
 * `TauCeti.W1p.setAverage_norm_sub_setAverage_le_of_convex`: the mean oscillation of `u` over
   `Ω`, by Hölder's inequality.
+* `TauCeti.W1p.isClosed_range_gradientL_of_convex`: the weak gradients of the elements of
+  `W^{1,p}(Ω)` form a closed subset of `Lᵖ(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball`: the constant on a ball of radius `R`
   is `2 ^ (n + 1) * R`.
 * `TauCeti.W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset`: the same bound in `L²`,
@@ -405,6 +407,58 @@ theorem W1p.setAverage_norm_sub_setAverage_le_of_convex
           ring
         rw [h, Real.rpow_neg_one]
         ring
+
+/-- **The gradients of `W^{1,p}(Ω)` form a closed set.**  On a bounded convex open set `Ω`, a limit
+in `Lᵖ(Ω)` of weak gradients of elements of `W^{1,p}(Ω)` is again the weak gradient of an element of
+`W^{1,p}(Ω)`, for `1 ≤ p ≤ ∞`. -/
+theorem W1p.isClosed_range_gradientL_of_convex (hconv : Convex ℝ (Omega : Set E))
+    (hb : Bornology.IsBounded (Omega : Set E)) :
+    IsClosed (range (W1p.gradientL : W1p mu Omega p →L[ℝ] Lp E p (mu.restrict Omega))) := by
+  have : IsFiniteMeasure (mu.restrict (Omega : Set E)) :=
+    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  rcases eq_or_ne (mu Omega) 0 with h0 | h0
+  · -- On a null set every class in `Lᵖ(Ω)` vanishes, so every one is a gradient.
+    have hfalse : ∀ᵐ _ ∂mu.restrict (Omega : Set E), False := ae_iff.2 (by simp [h0])
+    convert isClosed_univ
+    exact eq_univ_of_forall fun g => ⟨0, Lp.ext (hfalse.mono fun _ h => h.elim)⟩
+  have hR : mu.real Omega ≠ 0 := (ENNReal.toReal_pos h0 hb.measure_lt_top.ne).ne'
+  -- Subtracting the mean over `Ω` keeps the gradient and makes the integral vanish.
+  have hmean : ∀ v : W1p mu Omega p,
+      W1p.integralL (v - W1p.const (⨍ x in Omega, W1p.value v x ∂mu)) = 0 := fun v => by
+    rw [map_sub, W1p.integralL_const, W1p.integralL_apply, setAverage_eq, smul_eq_mul,
+      ← mul_assoc, mul_inv_cancel₀ hR, one_mul, sub_self]
+  -- The Poincaré–Wirtinger inequality for functions of mean zero.
+  set C : ℝ := mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) / mu.real Omega
+  have hC : 0 ≤ C := by positivity
+  have hbound : ∀ v : W1p mu Omega p, W1p.integralL v = 0 →
+      ‖v‖ ≤ (C + 1) * ‖W1p.gradientL v‖ := by
+    intro v hv
+    have hint : ∫ x in Omega, W1p.value v x ∂mu = 0 := by
+      rw [← W1p.integralL_apply]
+      exact hv
+    have hP := W1p.eLpNorm_value_sub_setAverage_le_of_convex hconv hb subset_rfl h0 v
+    simp only [setAverage_eq, hint, smul_zero, sub_zero] at hP
+    have hval : ‖W1p.value v‖ ≤ C * ‖W1p.gradient v‖ := by
+      rw [Lp.norm_def, ← toReal_eNorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
+      exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) hP
+    rw [W1p.gradientL_apply]
+    linarith [W1p.norm_le_norm_value_add_norm_gradient v]
+  -- On the closed set of mean-zero functions the gradient map is antilipschitz by `hbound`,
+  -- so its range is closed, and subtracting the mean shows that this range is the whole range.
+  set S : Set (W1p mu Omega p) := {v | W1p.integralL v = 0}
+  have hS : ∀ v : S, W1p.integralL (v : W1p mu Omega p) = 0 := fun v => v.prop
+  have : CompleteSpace S :=
+    (isClosed_eq W1p.integralL.continuous continuous_const).completeSpace_coe
+  have hanti : AntilipschitzWith ⟨C + 1, by positivity⟩
+      fun v : S => W1p.gradientL (v : W1p mu Omega p) := by
+    refine AntilipschitzWith.of_le_mul_dist fun v w => ?_
+    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, ← map_sub]
+    exact hbound _ (by rw [map_sub, hS, hS, sub_self])
+  convert hanti.isClosed_range (W1p.gradientL.uniformContinuous.comp uniformContinuous_subtypeVal)
+    using 1
+  ext g
+  refine ⟨fun ⟨v, hv⟩ => ⟨⟨_, hmean v⟩, ?_⟩, fun ⟨v, hv⟩ => ⟨v, hv⟩⟩
+  simp only [← hv, map_sub, W1p.gradientL_apply, W1p.gradient_const, sub_zero]
 
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of

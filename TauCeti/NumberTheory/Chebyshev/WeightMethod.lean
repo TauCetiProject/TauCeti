@@ -45,6 +45,8 @@ known.
 * `Chebyshev.weightConstant_mul_sub_le_psi`, `Chebyshev.psi_sub_psi_div_six_le`: the lower bound
   `a x − 5 log x + 5 ≤ ψ(x)` and the upper bound `ψ(x) − ψ(x / 6) ≤ a x + 5 log x − 5`, for
   `x ≥ 30`; `Chebyshev.mul_sub_le_psi` is the lower bound with `a` replaced by `0.92129`.
+* `Chebyshev.psi_le_three_mul_self`: the unconditional bound `ψ(x) ≤ 3 x` for `x ≥ 0`, from
+  Mathlib's `Chebyshev.psi_le`.
 * `Chebyshev.psi_le_of_forall_psi_le_mul`: if `ψ(y) ≤ 1.015 y` for `0 < y ≤ 30`, then
   `ψ(x) ≤ (6a / 5) x + (log (x / 5) / log 6) (5 log x − 5)` for `x ≥ 30`.
 * `Chebyshev.psi_le_mul_of_forall_psi_le_mul`: if `ψ(y) ≤ 1.11 y` for `0 < y ≤ 11723`, then
@@ -263,6 +265,35 @@ theorem psi_sub_psi_div_six_le {x : ℝ} (hx : 30 ≤ x) :
     ψ x - ψ (x / 6) ≤ weightConstant * x + 5 * log x - 5 := by
   have := (abs_le.mp (abs_weightedLogFactorial_sub_le hx)).2
   linarith [psi_sub_psi_div_six_le_weightedLogFactorial x]
+
+/-! ### An unconditional linear upper bound -/
+
+/-- Chebyshev's bound `ψ x ≤ 3 x` for `x ≥ 0`. It follows from `Chebyshev.psi_le` and
+`log x ≤ (2 / e) √x`, as `log 4 + 4 / e < 3`; compare `Chebyshev.psi_le_const_mul_self`, whose
+constant is `log 4 + 4`. -/
+theorem psi_le_three_mul_self {x : ℝ} (hx : 0 ≤ x) : ψ x ≤ 3 * x := by
+  rcases lt_or_ge x 1 with hx1 | hx1
+  · rw [psi_eq_zero_of_lt_two (by linarith)]
+    positivity
+  have hs : 0 < √x := Real.sqrt_pos.2 (by linarith)
+  have hlog : Real.log x ≤ 2 * √x / Real.exp 1 := by
+    have h := Real.log_le_sub_one_of_pos (div_pos hs (Real.exp_pos 1))
+    rw [Real.log_div hs.ne' (Real.exp_pos 1).ne', Real.log_exp, Real.log_sqrt hx] at h
+    have h' : 2 * √x / Real.exp 1 = 2 * (√x / Real.exp 1) := by ring
+    linarith
+  have h4 : Real.log 4 < 1.39 := by
+    rw [show (4 : ℝ) = 2 * 2 by norm_num, Real.log_mul two_ne_zero two_ne_zero]
+    linarith [Real.log_two_lt_d9]
+  have he : 4 / Real.exp 1 < 1.5 := by
+    rw [div_lt_iff₀ (Real.exp_pos 1)]
+    linarith [Real.exp_one_gt_d9]
+  calc ψ x ≤ Real.log 4 * x + 2 * √x * Real.log x := psi_le hx1
+    _ ≤ Real.log 4 * x + 2 * √x * (2 * √x / Real.exp 1) := by gcongr
+    _ = (Real.log 4 + 4 / Real.exp 1) * x := by
+      rw [show 2 * √x * (2 * √x / Real.exp 1) = 4 / Real.exp 1 * (√x * √x) by ring,
+        Real.mul_self_sqrt hx]
+      ring
+    _ ≤ 3 * x := by gcongr; linarith
 
 /-! ### Upper bounds by iteration -/
 
