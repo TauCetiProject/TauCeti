@@ -47,8 +47,9 @@ the kernel of `ε - P` with its cokernel, the map `x ↦ [ε • E (J Ψ(·) x)]
   (`TauCeti.det_pos_symm_comp_kerTwistedLinearOperatorToQuotientRange`).
 
 So the two ways of identifying the determinant line `det (ker L) ⊗ (det (coker L))^*` with
-`det (ker (ε - P)) ⊗ (det (ker (ε - P)))^*`, through pointwise `J` and through the endpoint map
-followed by `x ↦ [J x]`, induce the same orientation, whether or not `ε - P` is invertible. When
+`det (ker (ε - P)) ⊗ (det (ker (ε - P)))^*`, through `ε` times pointwise `J` and through the
+endpoint map followed by `x ↦ [J x]`, induce the same orientation, whether or not `ε - P` is
+invertible; pointwise `J` itself changes this orientation by the sign `ε ^ dim ker (ε - P)`. When
 `J` is an orthogonal complex structure, `J` carries the kernel of `L` onto the kernel of its formal
 adjoint, which is how the cokernel of the normal operator of an orbit torus is computed; this
 fixes the sign of that identification. With `J₀ ^ 2 = -1` and `M = J₀ S`, the endpoint of the
@@ -115,21 +116,15 @@ def kerTwistedLinearOperatorToQuotientRange (hM : Continuous M) (hper : Function
     (ε : ℝ) :
     LinearMap.ker (twistedLinearOperator hM hper ε) →ₗ[ℝ]
       twistedContinuous X d ε ⧸ LinearMap.range (twistedLinearOperator hM hper ε) :=
-  (LinearMap.range (twistedLinearOperator hM hper ε)).mkQ ∘ₗ
-    { toFun w := ⟨fun t => J ((w.val : ℝ → X) t), mem_twistedContinuous.2
-        ⟨J.continuous.comp (mem_twistedContDiff.1 w.val.property).1.continuous,
-          fun t => by simp [(mem_twistedContDiff.1 w.val.property).2 t]⟩⟩
-      map_add' _ _ := by ext; simp
-      map_smul' _ _ := by ext; simp }
+  (LinearMap.range (twistedLinearOperator hM hper ε)).mkQ ∘ₗ twistedContDiffCompLeft J ∘ₗ
+    (LinearMap.ker (twistedLinearOperator hM hper ε)).subtype
 
 /-- The class `[J w]` of the pointwise image of a twisted solution `w` of `w' = M w`. -/
 @[simp]
 theorem kerTwistedLinearOperatorToQuotientRange_apply (hM : Continuous M)
     (hper : Function.Periodic M d) (w : LinearMap.ker (twistedLinearOperator hM hper ε)) :
     kerTwistedLinearOperatorToQuotientRange J hM hper ε w =
-      Submodule.Quotient.mk ⟨fun t => J ((w.val : ℝ → X) t), mem_twistedContinuous.2
-        ⟨J.continuous.comp (mem_twistedContDiff.1 w.val.property).1.continuous,
-          fun t => by simp [(mem_twistedContDiff.1 w.val.property).2 t]⟩⟩ :=
+      Submodule.Quotient.mk (twistedContDiffCompLeft J (w : twistedContDiff X d ε)) :=
   (rfl)
 
 section Complete
@@ -158,7 +153,8 @@ theorem kerQuotientRangePairing_kerTwistedLinearOperatorToQuotientRange (hM : Co
         X →ₗ[ℝ] X))
         (inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply_of_skew hM hskew d)
         hε (fun x => by simp) y
-        (quotientRangeTwistedLinearOperatorEquiv hM hper hd (by rintro rfl; norm_num at hε)
+        (quotientRangeTwistedLinearOperatorEquiv hM hper hd
+          (IsUnit.of_pow_eq_one hε two_ne_zero).ne_zero
           (kerTwistedLinearOperatorToQuotientRange J hM hper ε
             ((kerTwistedLinearOperatorEquiv hM hper ε).symm x))) =
       ε * ∫ s in 0..d, ⟪J (dysonSeriesLeft M s y), J (dysonSeriesLeft M s x)⟫ := by
@@ -196,7 +192,8 @@ theorem kerQuotientRangePairing_smul_kerTwistedLinearOperatorToQuotientRange_pos
         X →ₗ[ℝ] X))
         (inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply_of_skew hM hskew d)
         hε (fun x => by simp) x
-        (quotientRangeTwistedLinearOperatorEquiv hM hper hd (by rintro rfl; norm_num at hε)
+        (quotientRangeTwistedLinearOperatorEquiv hM hper hd
+          (IsUnit.of_pow_eq_one hε two_ne_zero).ne_zero
           (ε • kerTwistedLinearOperatorToQuotientRange J hM hper ε
             ((kerTwistedLinearOperatorEquiv hM hper ε).symm x))) := by
   rw [map_smul, map_smul, smul_eq_mul,
@@ -231,7 +228,7 @@ theorem det_pos_symm_comp_kerTwistedLinearOperatorToQuotientRange
           (inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply_of_skew hM hskew d)
           hε (fun x => by simp)).symm.toLinearMap ∘ₗ
         (quotientRangeTwistedLinearOperatorEquiv hM hper hd
-          (by rintro rfl; norm_num at hε)).toLinearMap ∘ₗ
+          (IsUnit.of_pow_eq_one hε two_ne_zero).ne_zero).toLinearMap ∘ₗ
         (ε • kerTwistedLinearOperatorToQuotientRange J hM hper ε) ∘ₗ
         (kerTwistedLinearOperatorEquiv hM hper ε).symm.toLinearMap).det :=
   det_pos_kerEquivQuotientRangeOfInnerApplyEq_symm_comp _ _ _ _ fun _ hx =>
@@ -246,7 +243,7 @@ theorem bijective_kerTwistedLinearOperatorToQuotientRange (hM : Continuous M)
     (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ^ 2 = 1) (hJ : Function.Injective J)
     (hskew : ∀ r u w, ⟪J (M r u), w⟫ + ⟪J u, M r w⟫ = 0) :
     Function.Bijective (kerTwistedLinearOperatorToQuotientRange J hM hper ε) := by
-  have hε₀ : ε ≠ 0 := by rintro rfl; norm_num at hε
+  have hε₀ : ε ≠ 0 := (IsUnit.of_pow_eq_one hε two_ne_zero).ne_zero
   set κ := kerTwistedLinearOperatorEquiv hM hper ε
   set c := quotientRangeTwistedLinearOperatorEquiv hM hper hd hε₀
   set j := kerTwistedLinearOperatorToQuotientRange J hM hper ε

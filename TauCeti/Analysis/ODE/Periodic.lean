@@ -192,6 +192,20 @@ theorem deriv_mem_twistedContinuous (w : twistedContDiff X d ε) :
   ⟨w.property.1.continuous_deriv le_rfl, fun t => by
     simp only [← fderiv_apply_one_eq_deriv, fderiv_add_eq_smul w.property.2 t, smul_apply]⟩
 
+/-- Pointwise application of a bounded operator `J`, `w ↦ J ∘ w`, from the `C¹` maps twisted by
+`ε` along `d` to the continuous maps twisted by `ε` along `d`. -/
+def twistedContDiffCompLeft (J : X →L[ℝ] X) : twistedContDiff X d ε →ₗ[ℝ] twistedContinuous X d ε
+    where
+  toFun w := ⟨fun t => J ((w : ℝ → X) t),
+    J.continuous.comp w.property.1.continuous, fun t => by simp [w.property.2 t]⟩
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+
+@[simp]
+theorem twistedContDiffCompLeft_apply (J : X →L[ℝ] X) (w : twistedContDiff X d ε) (t : ℝ) :
+    (twistedContDiffCompLeft J w : ℝ → X) t = J ((w : ℝ → X) t) :=
+  (rfl)
+
 /-- A map twisted by `1` along `d` is `d`-periodic. -/
 theorem periodic_of_mem_twistedContinuous {f : ℝ → X} (hf : f ∈ twistedContinuous X d 1) :
     Function.Periodic f d := fun t => (hf.2 t).trans (one_smul ℝ _)
