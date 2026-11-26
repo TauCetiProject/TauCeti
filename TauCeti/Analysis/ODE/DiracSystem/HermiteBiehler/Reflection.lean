@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.DiracSystem.HermiteBiehler
+public import TauCeti.Analysis.ODE.DiracSystem.HermiteBiehler.Basic
 public import TauCeti.Analysis.ODE.DiracSystem.Symmetry
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Reflections of the Hermite–Biehler functions of a Dirac system
@@ -20,7 +21,7 @@ functions (`TauCeti.diracHermiteBiehler`, `TauCeti.diracHermiteBiehlerDirichlet`
 * `E# = A + iC` and `E~# = B + iD` (`TauCeti.conj_diracHermiteBiehler_conj`,
   `TauCeti.conj_diracHermiteBiehlerDirichlet_conj`), hence
   `A = (E + E#) / 2`, `C = (E# - E) / (2i)`, `B = (E~ + E~#) / 2` and `D = (E~# - E~) / (2i)`
-  (`TauCeti.diracFundamentalMatrix_zero_zero_eq_hermiteBiehler` and its three companions);
+  (`TauCeti.diracFundamentalMatrix_zero_zero_eq_diracHermiteBiehler` and its three companions);
 * `det [[E, E~], [E#, E~#]] = E E~# - E~ E# = 2i`
   (`TauCeti.diracHermiteBiehler_mul_conj_sub_mul_conj`), from `det M = 1`;
 * the integral equations take the form `E(t, z) = 1 + ∫₀ᵗ (-iz E(s, z) + q(s) E#(s, z)) ds` and
@@ -53,12 +54,6 @@ section Reflection
 variable (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t) (z : ℂ)
 include hq ht
 
-/-- The entries of the fundamental matrix are real entire functions:
-`conj M_q(t, conj z) = M_q(t, z)` entrywise. -/
-private theorem conj_diracFundamentalMatrix_conj (i j : Fin 2) :
-    conj (diracFundamentalMatrix q t (conj z) i j) = diracFundamentalMatrix q t z i j := by
-  rw [diracFundamentalMatrix_conj hq ht z, map_apply, conj_conj]
-
 /-- **The reflection of `E`.** `E#(t, z) = conj E(t, conj z) = A(t, z) + i C(t, z)`. -/
 theorem conj_diracHermiteBiehler_conj :
     conj (diracHermiteBiehler q t (conj z)) =
@@ -76,21 +71,21 @@ theorem conj_diracHermiteBiehlerDirichlet_conj :
   ring
 
 /-- `A = (E + E#) / 2`. -/
-theorem diracFundamentalMatrix_zero_zero_eq_hermiteBiehler :
+theorem diracFundamentalMatrix_zero_zero_eq_diracHermiteBiehler :
     diracFundamentalMatrix q t z 0 0 =
       (diracHermiteBiehler q t z + conj (diracHermiteBiehler q t (conj z))) / 2 := by
   rw [conj_diracHermiteBiehler_conj hq ht, diracHermiteBiehler_def]
   ring
 
 /-- `C = (E# - E) / (2i)`. -/
-theorem diracFundamentalMatrix_one_zero_eq_hermiteBiehler :
+theorem diracFundamentalMatrix_one_zero_eq_diracHermiteBiehler :
     diracFundamentalMatrix q t z 1 0 =
       (conj (diracHermiteBiehler q t (conj z)) - diracHermiteBiehler q t z) / (2 * I) := by
   rw [conj_diracHermiteBiehler_conj hq ht, diracHermiteBiehler_def, eq_div_iff (by simp)]
   ring
 
 /-- `B = (E~ + E~#) / 2`. -/
-theorem diracFundamentalMatrix_zero_one_eq_hermiteBiehlerDirichlet :
+theorem diracFundamentalMatrix_zero_one_eq_diracHermiteBiehlerDirichlet :
     diracFundamentalMatrix q t z 0 1 =
       (diracHermiteBiehlerDirichlet q t z + conj (diracHermiteBiehlerDirichlet q t (conj z))) /
         2 := by
@@ -98,7 +93,7 @@ theorem diracFundamentalMatrix_zero_one_eq_hermiteBiehlerDirichlet :
   ring
 
 /-- `D = (E~# - E~) / (2i)`. -/
-theorem diracFundamentalMatrix_one_one_eq_hermiteBiehlerDirichlet :
+theorem diracFundamentalMatrix_one_one_eq_diracHermiteBiehlerDirichlet :
     diracFundamentalMatrix q t z 1 1 =
       (conj (diracHermiteBiehlerDirichlet q t (conj z)) - diracHermiteBiehlerDirichlet q t z) /
         (2 * I) := by
@@ -111,8 +106,7 @@ theorem diracFundamentalMatrix_one_one_eq_hermiteBiehlerDirichlet :
 theorem diracHermiteBiehler_mul_conj_sub_mul_conj :
     diracHermiteBiehler q t z * conj (diracHermiteBiehlerDirichlet q t (conj z)) -
       diracHermiteBiehlerDirichlet q t z * conj (diracHermiteBiehler q t (conj z)) = 2 * I := by
-  have hdet := det_diracFundamentalMatrix
-    (hq.integrableOn_compact_subset (uIcc_of_le ht ▸ Icc_subset_Ici_self) isCompact_uIcc) z
+  have hdet := det_diracFundamentalMatrix (hq.integrableOn_uIcc_of_Ici ht) z
   rw [det_fin_two] at hdet
   rw [conj_diracHermiteBiehler_conj hq ht, conj_diracHermiteBiehlerDirichlet_conj hq ht,
     diracHermiteBiehler_def, diracHermiteBiehlerDirichlet_def]
@@ -127,8 +121,7 @@ theorem diracHermiteBiehler_eq_one_add_integral_conj (hq : LocallyIntegrableOn q
     diracHermiteBiehler q t z =
       1 + ∫ s in (0 : ℝ)..t, (-I * z * diracHermiteBiehler q s z +
         q s * conj (diracHermiteBiehler q s (conj z))) := by
-  rw [diracHermiteBiehler_eq_one_add_integral
-    (hq.integrableOn_compact_subset (uIcc_of_le ht ▸ Icc_subset_Ici_self) isCompact_uIcc) z]
+  rw [diracHermiteBiehler_eq_one_add_integral (hq.integrableOn_uIcc_of_Ici ht) z]
   congr 1
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
   rw [uIcc_of_le ht] at hs
@@ -141,8 +134,7 @@ theorem diracHermiteBiehlerDirichlet_eq_neg_I_add_integral_conj
     diracHermiteBiehlerDirichlet q t z =
       -I + ∫ s in (0 : ℝ)..t, (-I * z * diracHermiteBiehlerDirichlet q s z +
         q s * conj (diracHermiteBiehlerDirichlet q s (conj z))) := by
-  rw [diracHermiteBiehlerDirichlet_eq_neg_I_add_integral
-    (hq.integrableOn_compact_subset (uIcc_of_le ht ▸ Icc_subset_Ici_self) isCompact_uIcc) z]
+  rw [diracHermiteBiehlerDirichlet_eq_neg_I_add_integral (hq.integrableOn_uIcc_of_Ici ht) z]
   congr 1
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
   rw [uIcc_of_le ht] at hs
@@ -154,7 +146,7 @@ theorem diracHermiteBiehler_neg_potential (hq : LocallyIntegrableOn q (Ici 0)) (
     (z : ℂ) : diracHermiteBiehler (-q) t z = I * diracHermiteBiehlerDirichlet q t z := by
   rw [diracHermiteBiehler_def, diracFundamentalMatrix_neg_potential hq ht,
     diracHermiteBiehlerDirichlet_def]
-  simp only [of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
+  simp
   linear_combination diracFundamentalMatrix q t z 1 1 * I_sq
 
 /-- **The sign of the potential for `E~`.** For `q` locally integrable on `[0, ∞)` and `t ≥ 0`,
@@ -164,7 +156,7 @@ theorem diracHermiteBiehlerDirichlet_neg_potential (hq : LocallyIntegrableOn q (
     diracHermiteBiehlerDirichlet (-q) t z = -I * diracHermiteBiehler q t z := by
   rw [diracHermiteBiehlerDirichlet_def, diracFundamentalMatrix_neg_potential hq ht,
     diracHermiteBiehler_def]
-  simp only [of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
+  simp
   linear_combination (-diracFundamentalMatrix q t z 1 0) * I_sq
 
 end TauCeti

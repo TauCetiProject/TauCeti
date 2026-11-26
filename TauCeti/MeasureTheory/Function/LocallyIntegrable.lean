@@ -438,6 +438,20 @@ theorem integrableOn_Ioc_of_Ici (hf : LocallyIntegrableOn f (Ici a) μ) (b : X) 
 
 end OrderIntervals
 
+section LatticeIntervals
+
+variable {X ε : Type*} [MeasurableSpace X] [TopologicalSpace X] [Lattice X] [CompactIccSpace X]
+  [TopologicalSpace ε] [ContinuousENorm ε] [PseudoMetrizableSpace ε] {μ : Measure X} {f : X → ε}
+  {a b : X}
+
+/-- A function locally integrable on `[a, ∞)` is integrable on `[[a, b]]` for every `b ≥ a`. -/
+theorem integrableOn_uIcc_of_Ici (hf : LocallyIntegrableOn f (Ici a) μ) (hab : a ≤ b) :
+    IntegrableOn f (uIcc a b) μ := by
+  rw [uIcc_of_le hab]
+  exact hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
+
+end LatticeIntervals
+
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
 
 section RelativeExtension
