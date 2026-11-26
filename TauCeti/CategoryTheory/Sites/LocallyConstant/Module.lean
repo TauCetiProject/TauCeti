@@ -162,13 +162,14 @@ theorem exists_mem_overPullback_map_eq_of_iso {F G : Sheaf J (ModuleCat.{w} Λ)}
     (b := eF.hom ≫ (J.overPullback (ModuleCat.{w} Λ) Y).map
       ((constantSheaf J (ModuleCat.{w} Λ)).map g)) ?_
     (Over.homMk W.unop.hom (by simp) : (Over.map f).obj W.unop ⟶ Over.mk (f ≫ 𝟙 Y))
-  have hη := congr_app (toSheafify_naturality J ((Functor.const Cᵒᵖ).map g)) (op Z)
   simp only [Over.mk_hom] at hg
-  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, reassoc_of% hg]
-  simp only [constToOver_comp_hom_app, constToOver_comp_hom_app_assoc]
+  -- `hg` must rewrite before `constantSheaf` and `Sheaf.over` are unfolded.
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, reassoc_of% hg,
+    constToOver_comp_hom_app, constToOver_comp_hom_app_assoc]
+  have hη := congr_app (toSheafify_naturality J ((Functor.const Cᵒᵖ).map g)) (op Z)
   simp only [constantSheaf, Functor.comp_map, Over.mk_left,
-    Functor.sheafPushforwardContinuous_map_hom_app, Over.forget_obj]
-  simp only [NatTrans.comp_app, Functor.const_map_app] at hη
+    Functor.sheafPushforwardContinuous_map_hom_app, Over.forget_obj, NatTrans.comp_app,
+    Functor.const_map_app] at hη ⊢
   -- The terms now agree; the stated objects differ by unfolding `Functor.const` and `Sheaf.over`.
   exact hη
 
@@ -186,9 +187,10 @@ def locallyConstantMapSieve {F G : Sheaf J (ModuleCat.{w} Λ)} (φ : F ⟶ G) (X
     refine ⟨M, N, hM, hN, g, overIsoRestrict eF h, overIsoRestrict eG h, ?_⟩
     ext W : 3
     have := congr_app congr($(w).hom) (op ((Over.map h).obj W.unop))
-    simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app] at this
     simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-      overIsoRestrict_hom_hom_app]
+      overIsoRestrict_hom_hom_app, Functor.sheafPushforwardContinuous_map_hom_app,
+      Over.forget_obj, Over.map_obj_left] at this ⊢
+    -- The terms now agree; the stated objects differ by unfolding `Over.map` and `Sheaf.over`.
     exact this
 
 omit [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)] in
