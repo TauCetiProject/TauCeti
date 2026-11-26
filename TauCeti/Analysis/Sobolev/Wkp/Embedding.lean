@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
 public import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 
 /-!
 # Higher-order embeddings from a first-order embedding

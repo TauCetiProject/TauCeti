@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
@@ -22,10 +23,10 @@ order `j + 1 ≤ k` of `u ∈ TauCeti.Wkp mu Omega p k` is accessed uniformly as
 each intermediate weak derivative (`1 ≤ j ≤ k`) defines the standard family of Sobolev seminorms
 `TauCeti.Wkp.seminorm k j h` on `W^{k,p}(Ω)`, bundled as Mathlib `Seminorm`s over `ℝ`.
 
-Order truncation (`TauCeti.Wkp.toOrderL`), subdomain restriction (`TauCeti.Wkp.restrictL`), and
-exponent lowering on finite-measure domains (`TauCeti.Wkp.ofExponentLEL`) obey the natural seminorm
-identities and estimates. On smooth representatives, each seminorm agrees with the classical
-multilinear derivative `Lᵖ` norm
+Order truncation (`TauCeti.Wkp.toOrderL`), subdomain restriction (`TauCeti.Wkp.restrictL`),
+exponent lowering on finite-measure domains (`TauCeti.Wkp.ofExponentLEL`), and directional
+differentiation (`TauCeti.Wkp.lineDerivL`) obey the natural seminorm identities and estimates. On
+smooth representatives, each seminorm agrees with the classical multilinear derivative `Lᵖ` norm
 `MeasureTheory.lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict Omega)`.
 
 At `p = 2`, the iterated graph norm on `W^{k,2}(Ω)` equals the Euclidean combination
@@ -53,8 +54,10 @@ Consequently `S(u)` and `‖u‖` are equivalent up to a universal factor of `�
   `TauCeti.Wkp.norm_iteratedFDeriv_le_seminorm_exponent_top_of_contDiffOn`: classical
   identification, finite-exponent integral formula, and pointwise `L^∞` bounds for `C^j`
   representatives.
-* `TauCeti.Wkp.seminorm_restrictL_le`, `TauCeti.Wkp.seminorm_ofExponentLEL_le`: monotonicity under
-  subdomain restriction and Hölder scaling `μ(Ω) ^ (1/p - 1/q)` under exponent lowering.
+* `TauCeti.Wkp.seminorm_restrictL_le`, `TauCeti.Wkp.seminorm_ofExponentLEL_le`,
+  `TauCeti.Wkp.seminorm_lineDerivL_le`: monotonicity under subdomain restriction, Hölder scaling
+  `μ(Ω) ^ (1/p - 1/q)` under exponent lowering, and componentwise bound under directional
+  differentiation.
 * `TauCeti.Wkp.norm_eq_sqrt_sum_seminorm_sq`, `TauCeti.Wkp.norm_le_sqrt_two_mul`,
   `TauCeti.Wkp.sqrt_le_sqrt_two_mul_norm`, `TauCeti.Wkp.tendsto_iff_forall_seminorm_sub`: exact
   `p = 2` identity, sharp `√2` norm comparisons for every `k` and `p`, and characterization of
@@ -229,6 +232,21 @@ theorem seminorm_ofExponentLEL_le [IsFiniteMeasure (mu.restrict (Omega : Set E))
         iteratedGradient_ofExponentLEL]
       simpa only [Measure.restrict_apply_univ] using
         Lp.norm_ofExponentLEL_apply_le (𝕜 := ℝ) hpq (iteratedGradient j (toOrderL h u))
+
+/-- Componentwise Sobolev seminorm bound for `lineDerivL`: for every `j ≤ k`,
+`|∂ᵥ u|_{j,p} ≤ ‖v‖ * |u|_{j+1,p}`. -/
+theorem seminorm_lineDerivL_le (v : E) {j k : ℕ} (h : j ≤ k)
+    (u : Wkp mu Omega p (k + 1)) :
+    seminorm k j h (lineDerivL v k u) ≤
+      ‖v‖ * seminorm (k + 1) (j + 1) (Nat.succ_le_succ h) u := by
+  cases j with
+  | zero =>
+      rw [seminorm_zero_apply, seminorm_succ_apply, ← value_toOrderL h,
+        toOrderL_lineDerivL, value_zero]
+      exact norm_lineDerivL_zero_apply_le v _
+  | succ j =>
+      rw [seminorm_succ_apply, seminorm_succ_apply, toOrderL_lineDerivL]
+      exact norm_iteratedGradient_lineDerivL_le v j _
 
 /-- If `u ∈ W^{k,p}(Ω)` is represented almost everywhere on `Ω` by a `C^j` function `f` with
 `j ≤ k`, then its order-`j` Sobolev seminorm equals the classical `Lᵖ` derivative seminorm

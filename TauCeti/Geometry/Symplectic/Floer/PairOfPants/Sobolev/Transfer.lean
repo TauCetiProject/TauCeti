@@ -296,6 +296,20 @@ theorem coeFn_positiveEndChartLp (q : Puncture) (h : Lp W 2 StripSobolev.stripMe
   rw [heq]
   exact MemLp.coeFn_toLp _
 
+/-- Multiplication by a function `β` on `S` is, through the `L²` isometry along an end chart,
+multiplication by `β` read in the chart. -/
+theorem positiveEndChartLp_ae_eq_smul (q : Puncture) {β : ℝ × ℝ → ℝ}
+    (g : Lp W 2 (volume.restrict thricePuncturedSphereReal))
+    {f : Lp W 2 StripSobolev.stripMeasure} (hf : f =ᵐ[StripSobolev.stripMeasure]
+      fun ζ ↦ β (positiveEndChart q ζ) • (positiveEndChartLp q).symm g ζ) :
+    positiveEndChartLp q f =ᵐ[volume.restrict thricePuncturedSphereReal] fun z ↦ β z • g z := by
+  filter_upwards [coeFn_positiveEndChartLp q f, (quasiMeasurePreserving_endBandCoord q).ae hf,
+    (quasiMeasurePreserving_endBandCoord q).ae (coeFn_positiveEndChartLp_symm q g),
+    ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z h₁ h₂ h₃ hz
+  have hφ := positiveEndChart_endBandCoord q
+    (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
+  rw [h₁, h₂, h₃, hφ, smul_comm, inv_smul_smul₀ (positiveEndChartScale_pos q _).ne']
+
 end Lp
 
 /-! ### Jets read along an end chart -/

@@ -8,9 +8,13 @@ module
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Site
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Subdomain
 public import TauCeti.Topology.GTopology.Points
+public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 
+import TauCeti.RingTheory.AdicCompletion.AlgHom
+import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Affinoid.Subdomain.Kernel
+import TauCeti.RingTheory.Ideal.KrullIntersection
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 import Mathlib.RingTheory.Filtration
 
@@ -30,11 +34,20 @@ vanish at `x`: a section `f` over `U ∋ x` with `f(x) ≠ 0` is invertible on t
 subdomain `{|ϖⁿ| ≤ |f|}` of `U` for large `n`. Membership of a germ in an extended ideal is
 witnessed on a single affinoid neighbourhood, so the infinitesimal comparison passes to the
 colimit from the isomorphisms `A ⧸ 𝔪ₓⁿ ≃ B ⧸ 𝔪ₓⁿ B` for each subdomain. Injectivity of
-`A_𝔪 → 𝒪_{Sp A,x}` is Krull's intersection theorem in `A_𝔪`.
+`A_𝔪 → 𝒪_{Sp A,x}` is Krull's intersection theorem in `A_𝔪`. Passing to the limit, the germ
+map identifies the `𝔪ₓ`-adic completion of `A` with the `𝔪`-adic completion of the stalk.
+
+The stalk is moreover noetherian. A finitely generated ideal `J` of the stalk is extended from an
+ideal `I` of the coordinate algebra `B` of one affinoid neighbourhood of `x`, and it is closed for
+the `𝔪`-adic topology: a germ lying in every `J + 𝔪ⁿ` comes from a section lying in every
+`I + 𝔪ₓⁿ B`, using the isomorphisms `B ⧸ (I + 𝔪ₓⁿ B) ≃ C ⧸ (I + 𝔪ₓⁿ B) C` for smaller
+neighbourhoods, so by Krull's intersection theorem in `B` it lies in `I` after multiplication by a
+section not vanishing at `x`, whose germ is a unit. Closed finitely generated ideals are recovered
+from their extensions to the noetherian `𝔪`-adic completion of the stalk, so ascending chains of
+them stabilise.
 
 These local statements are what the stalk maps of morphisms of affinoid spaces, and hence the
-local description of immersions, are built on; they also give the comparison of the `𝔪`-adic
-completions of `A_𝔪` and `𝒪_{Sp A,x}` through their quotients by powers of the maximal ideal.
+local description of immersions, are built on.
 
 ## Main definitions
 
@@ -43,6 +56,8 @@ completions of `A_𝔪` and `𝒪_{Sp A,x}` through their quotients by powers of
 * `TauCeti.AffinoidSubdomain.toStalk`: the germ map `A → 𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.localizationToStalk`: the factorisation `A_𝔪 → 𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.quotientPowEquiv`: `A ⧸ 𝔪ₓⁿ ≃ 𝒪_{Sp A,x} ⧸ 𝔪ⁿ`.
+* `TauCeti.AffinoidSubdomain.completionRingEquiv`: the `𝔪ₓ`-adic completion of `A` is the
+  `𝔪`-adic completion of `𝒪_{Sp A,x}`.
 
 ## Main results
 
@@ -50,11 +65,16 @@ completions of `A_𝔪` and `𝒪_{Sp A,x}` through their quotients by powers of
 * `TauCeti.AffinoidSubdomain.instIsLocalRingStalk`: the stalk is a local ring.
 * `TauCeti.AffinoidSubdomain.maximalIdeal_stalk`: its maximal ideal is `𝔪ₓ 𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.localizationToStalk_injective`: `A_𝔪 → 𝒪_{Sp A,x}` is injective.
+* `TauCeti.AffinoidSubdomain.germ_mem_map_germ_iff`: membership of a germ in an ideal extended
+  from the sections over a neighbourhood is witnessed on a smaller neighbourhood.
+* `TauCeti.AffinoidSubdomain.iInf_sup_maximalIdeal_stalk_pow_eq`: finitely generated ideals of the
+  stalk are closed for its `𝔪`-adic topology.
+* `TauCeti.AffinoidSubdomain.instIsNoetherianRingStalk`: the stalk is noetherian.
 
 ## References
 
 * S. Bosch, *Lectures on Formal and Rigid Geometry*, Lecture Notes in Mathematics 2105,
-  Springer, 2014, §4.1, Propositions 1 and 2.
+  Springer, 2014, §4.1, Propositions 1, 2 and 6.
 -/
 
 public section
@@ -141,11 +161,56 @@ theorem germ_eq_germ_iff {U V : AffinoidSubdomain K A} (hU : x ∈ U) (hV : x �
   -- The fibre maps of `ringPresheaf` are `germ`, by definition.
   exact this
 
+/-- Germs at `x` of sections over `U` factor through restriction to a smaller neighbourhood. -/
+theorem germ_comp_restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) (hx : x ∈ U) :
+    (germ U hx).comp (restrict h).toRingHom = germ V (h hx) :=
+  RingHom.ext (germ_restrict h hx)
+
+/-- Extending an ideal `J` of `A` to `𝒪(U)` and then to the stalk at `x ∈ U` gives
+`J 𝒪_{Sp A,x}`. -/
+theorem map_toSections_map_germ {U : AffinoidSubdomain K A} (hx : x ∈ U) (J : Ideal A) :
+    (J.map U.toSections).map (germ U hx) = J.map (toStalk K x) := by
+  rw [← germ_comp_toSections hx, ← Ideal.map_map, AlgHom.toRingHom_eq_coe, Ideal.map_coe]
+
 /-- The germ of a section in `J 𝒪(U)` lies in `J 𝒪_{Sp A,x}`. -/
 theorem germ_mem_map_toStalk {U : AffinoidSubdomain K A} (hx : x ∈ U) {J : Ideal A}
     {f : U.sections} (hf : f ∈ J.map U.toSections) : germ U hx f ∈ J.map (toStalk K x) := by
-  rw [← germ_comp_toSections hx, ← Ideal.map_map]
+  rw [← map_toSections_map_germ hx]
   exact Ideal.mem_map_of_mem _ hf
+
+/-- **Membership in an extended ideal is local.** For an ideal `I` of the sections over an affinoid
+neighbourhood `U` of `x`, the germ of `f` lies in `I 𝒪_{Sp A,x}` iff some restriction of `f` to an
+affinoid neighbourhood `W ⊆ U` of `x` lies in `I 𝒪(W)`. -/
+theorem germ_mem_map_germ_iff {U : AffinoidSubdomain K A} (hx : x ∈ U) (f : U.sections)
+    (I : Ideal U.sections) :
+    germ U hx f ∈ I.map (germ U hx) ↔
+      ∃ (W : AffinoidSubdomain K A) (hWU : W ≤ U), x ∈ W ∧
+        restrict hWU f ∈ I.map (restrict hWU) := by
+  refine ⟨fun hf ↦ ?_, fun ⟨W, hWU, hxW, hW⟩ ↦ ?_⟩
+  · -- Every element of `I 𝒪_{Sp A,x}` is the germ of an element of some `I 𝒪(V)`.
+    obtain ⟨V, hVU, hxV, g, hg, hgf⟩ : ∃ (V : AffinoidSubdomain K A) (hVU : V ≤ U) (hxV : x ∈ V)
+        (g : V.sections), g ∈ I.map (restrict hVU) ∧ germ V hxV g = germ U hx f := by
+      refine Submodule.span_induction (p := fun s _ ↦ ∃ (V : AffinoidSubdomain K A) (hVU : V ≤ U)
+        (hxV : x ∈ V) (g : V.sections), g ∈ I.map (restrict hVU) ∧ germ V hxV g = s)
+        ?_ ?_ ?_ ?_ hf
+      · rintro _ ⟨a, ha, rfl⟩
+        exact ⟨U, le_rfl, hx, _, Ideal.mem_map_of_mem _ ha, germ_restrict _ _ a⟩
+      · exact ⟨U, le_rfl, hx, 0, zero_mem _, map_zero _⟩
+      · rintro _ _ - - ⟨V₁, hV₁, hx₁, g₁, hg₁, rfl⟩ ⟨V₂, hV₂, hx₂, g₂, hg₂, rfl⟩
+        refine ⟨V₁ ⊓ V₂, inf_le_left.trans hV₁, (mem_inf _ _ _).mpr ⟨hx₁, hx₂⟩,
+          restrict inf_le_left g₁ + restrict inf_le_right g₂,
+          add_mem (restrict_mem_map_restrict _ _ hg₁) (restrict_mem_map_restrict _ _ hg₂), ?_⟩
+        rw [map_add, germ_restrict, germ_restrict]
+      · rintro c _ - ⟨V₁, hV₁, hx₁, g₁, hg₁, rfl⟩
+        obtain ⟨V₂, hx₂, g₂, rfl⟩ := exists_germ_eq c
+        refine ⟨V₁ ⊓ V₂, inf_le_left.trans hV₁, (mem_inf _ _ _).mpr ⟨hx₁, hx₂⟩,
+          restrict inf_le_right g₂ * restrict inf_le_left g₁,
+          Ideal.mul_mem_left _ _ (restrict_mem_map_restrict _ _ hg₁), ?_⟩
+        rw [map_mul, germ_restrict, germ_restrict, smul_eq_mul]
+    obtain ⟨W, hWV, hWU, hxW, hW⟩ := (germ_eq_germ_iff hxV hx g f).mp hgf
+    exact ⟨W, hWU, hxW, hW ▸ restrict_mem_map_restrict hWV hVU hg⟩
+  · rw [← germ_restrict hWU hxW, ← germ_comp_restrict hWU hxW, ← Ideal.map_map]
+    exact Ideal.mem_map_of_mem _ hW
 
 /-- **Membership in an extended ideal is local.** The germ of `f` lies in `J 𝒪_{Sp A,x}` iff some
 restriction of `f` to an affinoid neighbourhood `W` of `x` lies in `J 𝒪(W)`. -/
@@ -153,30 +218,8 @@ theorem germ_mem_map_toStalk_iff {U : AffinoidSubdomain K A} (hx : x ∈ U) (f :
     (J : Ideal A) :
     germ U hx f ∈ J.map (toStalk K x) ↔
       ∃ (W : AffinoidSubdomain K A) (hWU : W ≤ U), x ∈ W ∧ restrict hWU f ∈ J.map W.toSections := by
-  refine ⟨fun hf ↦ ?_, fun ⟨W, hWU, hxW, hW⟩ ↦ ?_⟩
-  · -- Every element of `J 𝒪_{Sp A,x}` is the germ of an element of some `J 𝒪(V)`.
-    obtain ⟨V, hxV, g, hg, hgf⟩ : ∃ (V : AffinoidSubdomain K A) (hxV : x ∈ V) (g : V.sections),
-        g ∈ J.map V.toSections ∧ germ V hxV g = germ U hx f := by
-      refine Submodule.span_induction (p := fun s _ ↦ ∃ (V : AffinoidSubdomain K A) (hxV : x ∈ V)
-        (g : V.sections), g ∈ J.map V.toSections ∧ germ V hxV g = s) ?_ ?_ ?_ ?_ hf
-      · rintro _ ⟨a, ha, rfl⟩
-        exact ⟨⊤, mem_top x, _, Ideal.mem_map_of_mem _ ha, germ_toSections _ a⟩
-      · exact ⟨⊤, mem_top x, 0, zero_mem _, map_zero _⟩
-      · rintro _ _ - - ⟨V₁, hx₁, g₁, hg₁, rfl⟩ ⟨V₂, hx₂, g₂, hg₂, rfl⟩
-        refine ⟨V₁ ⊓ V₂, (mem_inf _ _ _).mpr ⟨hx₁, hx₂⟩,
-          restrict inf_le_left g₁ + restrict inf_le_right g₂,
-          add_mem (restrict_mem_map _ hg₁) (restrict_mem_map _ hg₂), ?_⟩
-        rw [map_add, germ_restrict, germ_restrict]
-      · rintro c _ - ⟨V₁, hx₁, g₁, hg₁, rfl⟩
-        obtain ⟨V₂, hx₂, g₂, rfl⟩ := exists_germ_eq c
-        refine ⟨V₁ ⊓ V₂, (mem_inf _ _ _).mpr ⟨hx₁, hx₂⟩,
-          restrict inf_le_right g₂ * restrict inf_le_left g₁,
-          Ideal.mul_mem_left _ _ (restrict_mem_map _ hg₁), ?_⟩
-        rw [map_mul, germ_restrict, germ_restrict, smul_eq_mul]
-    obtain ⟨W, hWV, hWU, hxW, hW⟩ := (germ_eq_germ_iff hxV hx g f).mp hgf
-    exact ⟨W, hWU, hxW, hW ▸ restrict_mem_map hWV hg⟩
-  · rw [← germ_restrict hWU hxW]
-    exact germ_mem_map_toStalk hxW hW
+  rw [← map_toSections_map_germ hx, germ_mem_map_germ_iff]
+  simp only [Ideal.map_mapₐ, restrict_comp_toSections]
 
 /-- A section that does not vanish at `x` is invertible on a smaller affinoid neighbourhood of
 `x`, namely on a rational subdomain `{y ∈ U : |ϖ|ⁿ ≤ |f(y)|}`. -/
@@ -355,5 +398,116 @@ germ. -/
 theorem quotientPowEquiv_mk (n : ℕ) (a : A) :
     quotientPowEquiv K x n (Ideal.Quotient.mk _ a) = Ideal.Quotient.mk _ (toStalk K x a) :=
   (rfl)
+
+variable (K x) in
+/-- **The completions agree.** The germ map induces an isomorphism from the `𝔪ₓ`-adic completion
+of `A` to the `𝔪`-adic completion of the stalk `𝒪_{Sp A,x}`. -/
+noncomputable def completionRingEquiv :
+    AdicCompletion x.asIdeal A ≃+* AdicCompletion (maximalIdeal (stalk K x)) (stalk K x) :=
+  RingEquiv.ofBijective (AdicCompletion.mapₐ (toStalk K x).toIntAlgHom
+      (comap_maximalIdeal_stalk (K := K) (x := x)).ge)
+    (AdicCompletion.mapₐ_bijective _ _ fun n ↦ (quotientPowEquiv K x n).bijective)
+
+/-- The comparison of completions extends the germ map. -/
+@[simp]
+theorem completionRingEquiv_of (a : A) :
+    completionRingEquiv K x (AdicCompletion.of x.asIdeal A a) =
+      AdicCompletion.of _ _ (toStalk K x a) :=
+  AdicCompletion.mapₐ_of _ _ a
+
+/-- Modulo `𝔪ⁿ`, the comparison of completions is `quotientPowEquiv`. -/
+@[simp]
+theorem evalₐ_completionRingEquiv (n : ℕ) (a : AdicCompletion x.asIdeal A) :
+    AdicCompletion.evalₐ _ n (completionRingEquiv K x a) =
+      quotientPowEquiv K x n (AdicCompletion.evalₐ _ n a) :=
+  AdicCompletion.evalₐ_mapₐ _ _ n a
+
+/-- Modulo `𝔪ₓⁿ`, the inverse of the comparison of completions is the inverse of
+`quotientPowEquiv`. -/
+@[simp]
+theorem evalₐ_completionRingEquiv_symm (n : ℕ)
+    (s : AdicCompletion (maximalIdeal (stalk K x)) (stalk K x)) :
+    AdicCompletion.evalₐ _ n ((completionRingEquiv K x).symm s) =
+      (quotientPowEquiv K x n).symm (AdicCompletion.evalₐ _ n s) := by
+  rw [RingEquiv.eq_symm_apply, ← evalₐ_completionRingEquiv, RingEquiv.apply_symm_apply]
+
+/-- Finitely many germs at `x` are germs of sections over one common affinoid neighbourhood. -/
+theorem exists_germ_eq_of_finite {ι : Type*} [Finite ι] (s : ι → stalk K x) :
+    ∃ (U : AffinoidSubdomain K A) (hx : x ∈ U) (f : ι → U.sections),
+      ∀ i, germ U hx (f i) = s i := by
+  choose V hxV g hg using fun i ↦ exists_germ_eq (s i)
+  have := Fintype.ofFinite ι
+  have hU (i : ι) : Finset.univ.inf V ≤ V i := Finset.inf_le (Finset.mem_univ i)
+  have hxU : x ∈ Finset.univ.inf V :=
+    Finset.inf_induction (p := (x ∈ ·)) (mem_top x)
+      (fun _ h₁ _ h₂ ↦ (mem_inf _ _ _).mpr ⟨h₁, h₂⟩) fun i _ ↦ hxV i
+  exact ⟨_, hxU, fun i ↦ restrict (hU i) (g i), fun i ↦ by rw [germ_restrict, hg]⟩
+
+/-- A section over `U ∋ x` whose germ lies in every `I 𝒪_{Sp A,x} + 𝔪ⁿ` has its germ in
+`I 𝒪_{Sp A,x}`. -/
+private theorem germ_mem_map_germ_of_mem_iInf {U : AffinoidSubdomain K A} (hx : x ∈ U)
+    {I : Ideal U.sections} {f : U.sections}
+    (hf : germ U hx f ∈ ⨅ n : ℕ, I.map (germ U hx) ⊔ maximalIdeal (stalk K x) ^ n) :
+    germ U hx f ∈ I.map (germ U hx) := by
+  have hB := U.isAffinoidAlgebra
+  have := hB.isNoetherianRing
+  -- The maximal ideal `𝔪ₓ 𝒪(U)` of the point of `Sp 𝒪(U)` over `x`.
+  have hy := U.isAffinoidSubdomainMap.isMaximal_map hA.out hx
+  -- First, `f ∈ I + (𝔪ₓ 𝒪(U))ⁿ` for every `n`.
+  have hmem : f ∈ ⨅ n : ℕ, I ⊔ x.asIdeal.map U.toSections ^ n := by
+    refine Ideal.mem_iInf.mpr fun n ↦ ?_
+    have hfn : germ U hx f ∈ (I ⊔ x.asIdeal.map U.toSections ^ n).map (germ U hx) := by
+      rw [Ideal.map_sup, ← Ideal.map_pow, map_toSections_map_germ, ← maximalIdeal_stalk_pow]
+      exact Ideal.mem_iInf.mp hf n
+    obtain ⟨W, hWU, hxW, hW⟩ := (germ_mem_map_germ_iff hx f _).mp hfn
+    -- The only maximal ideal of `𝒪(U)` containing `I + (𝔪ₓ 𝒪(U))ⁿ` lies over `x ∈ W`, so
+    -- restriction to `W` is injective modulo this ideal.
+    have hV (z : MaximalSpectrum U.sections) (hz : I ⊔ x.asIdeal.map U.toSections ^ n ≤ z.asIdeal) :
+        z ∈ hB.maximalSpectrumComap U.toSections ⁻¹' (W : Set (MaximalSpectrum A)) := by
+      have hzy : x.asIdeal.map U.toSections = z.asIdeal :=
+        hy.eq_of_le z.isMaximal.ne_top (z.isMaximal.isPrime.le_of_pow_le (le_sup_right.trans hz))
+      have hzx : hB.maximalSpectrumComap U.toSections z = x := MaximalSpectrum.ext <| by
+        rw [IsAffinoidAlgebra.maximalSpectrumComap_asIdeal, ← hzy,
+          U.isAffinoidSubdomainMap.comap_map_of_mem hA.out hx]
+      rw [Set.mem_preimage, hzx]
+      exact hxW
+    rw [← Ideal.Quotient.eq_zero_iff_mem] at hW ⊢
+    apply ((isAffinoidSubdomainMap_restrict hWU).quotientAlgEquiv hB hV).injective
+    rw [IsAffinoidSubdomainMap.quotientAlgEquiv_mk, hW, map_zero]
+  -- By Krull's intersection theorem, `(1 - r) f ∈ I` for some `r ∈ 𝔪ₓ 𝒪(U)`, and the germ of
+  -- `1 - r` is a unit.
+  obtain ⟨r, hr, hrf⟩ := (Ideal.mem_iInf_sup_pow_iff _ I f).mp hmem
+  have hu : IsUnit (germ U hx (1 - r)) := (isUnit_germ_iff hx).mpr fun h ↦
+    hy.ne_top ((Ideal.eq_top_iff_one _).mpr (by simpa using add_mem h hr))
+  rw [← Ideal.unit_mul_mem_iff_mem _ hu, ← map_mul]
+  exact Ideal.mem_map_of_mem _ hrf
+
+/-- **Finitely generated ideals of the analytic stalk are closed** for its `𝔪`-adic topology:
+`⋂ₙ (J + 𝔪ⁿ) = J`. -/
+theorem iInf_sup_maximalIdeal_stalk_pow_eq {J : Ideal (stalk K x)} (hJ : J.FG) :
+    ⨅ n : ℕ, J ⊔ maximalIdeal (stalk K x) ^ n = J := by
+  refine le_antisymm (fun s hs ↦ ?_) (le_iInf fun _ ↦ le_sup_left)
+  obtain ⟨r, g, rfl⟩ := Submodule.fg_iff_exists_fin_generating_family.mp hJ
+  -- Represent `s` and the generators of `J` on one affinoid neighbourhood `U` of `x`.
+  obtain ⟨U, hx, f, hf⟩ := exists_germ_eq_of_finite fun i : Option (Fin r) ↦ i.elim s g
+  have hJU : Submodule.span (stalk K x) (Set.range g) =
+      (Ideal.span (Set.range (f ∘ some))).map (germ U hx) := by
+    rw [Ideal.map_span, ← Set.range_comp]
+    exact congrArg _ (congrArg Set.range (funext fun i ↦ (hf (some i)).symm))
+  have hs' : germ U hx (f none) = s := hf none
+  rw [hJU, ← hs'] at hs ⊢
+  exact germ_mem_map_germ_of_mem_iInf hx hs
+
+/-- The maximal ideal of the analytic stalk is finitely generated. -/
+theorem maximalIdeal_stalk_fg : (maximalIdeal (stalk K x)).FG := by
+  have := hA.out.isNoetherianRing
+  rw [maximalIdeal_stalk]
+  exact Ideal.FG.map (IsNoetherian.noetherian x.asIdeal) _
+
+/-- **The analytic stalks are noetherian.** -/
+instance instIsNoetherianRingStalk : IsNoetherianRing (stalk K x) :=
+  let := Ideal.Quotient.field (maximalIdeal (stalk K x))
+  Ideal.isNoetherianRing_of_iInf_sup_pow_eq maximalIdeal_stalk_fg fun _ ↦
+    iInf_sup_maximalIdeal_stalk_pow_eq
 
 end TauCeti.AffinoidSubdomain

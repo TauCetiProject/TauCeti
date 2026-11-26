@@ -62,6 +62,22 @@ resolvent `(A - z)⁻¹`, before their asymptotic summation.
   `TauCeti.ParameterSymbol.IsQuasiHomogeneous.sharpTerms`) and for the parametrix of a single
   homogeneous symbol (`TauCeti.ParameterSymbol.isQuasiHomogeneous_leftInverseTerms`,
   `TauCeti.ParameterSymbol.isQuasiHomogeneous_rightInverseTerms`).
+* `TauCeti.ParameterSymbol.isQuasiHomogeneousAbove_expansionLeftInverseTerms`,
+  `TauCeti.ParameterSymbol.isQuasiHomogeneousAbove_expansionRightInverseTerms`: the same at large
+  frequencies. If each `aⱼ` is quasi-homogeneous of degree `μ - j` above the radius `R`
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove`), the `k`-th term of either formal inverse is
+  quasi-homogeneous of degree `-μ - k` above every radius `R' > R`. If `0` is a spectral
+  parameter, a quasi-homogeneous symbol of positive degree vanishes at `(ξ, z) = (0, 0)` and is not
+  elliptic with parameter. So for `P` elliptic of order `2` and `z` near the closed negative real
+  axis, the leading part `p₂ - z` of the symbol of `P - z` has to be modified near
+  `(ξ, z) = (0, 0)`; the formal inverse of the modified expansion consists of the terms of
+  Seeley's resolvent parametrix in this cut-off form. The radius grows because frequency
+  derivatives are only quasi-homogeneous above larger radii. The same holds for the composition
+  terms
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.sharpTerm`,
+  `TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.sharpTerms`) and for the parametrix of a single
+  symbol (`TauCeti.ParameterSymbol.isQuasiHomogeneousAbove_leftInverseTerms`,
+  `TauCeti.ParameterSymbol.isQuasiHomogeneousAbove_rightInverseTerms`).
 
 The definition and closed form of `TauCeti.ParameterSymbol.sharpTerm` follow
 `TauCeti.HomogeneousSymbol.sharpTerm` and `TauCeti.Symbol.sharpTerm`, the formal composition
@@ -231,6 +247,27 @@ theorem IsQuasiHomogeneous.sharpTerm {μ μ' : ℝ} {b : ParameterSymbol n Λ W 
     exact ((ih (hb.frequencyDeriv _) (ha.spatialDeriv _)).inclusion _).congr_degree
       (by push_cast; ring)
 
+/-- **Homogeneity of the composition terms at large frequencies.** If `b` and `a` are
+quasi-homogeneous of degrees `μ'` and `μ` above the radius `R`, the term `sharpTerm b a k` is
+quasi-homogeneous of degree `μ' + μ - k` above every larger radius `R'`. The radius grows because
+a frequency derivative is only quasi-homogeneous above larger radii
+(`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.frequencyDeriv`). -/
+theorem IsQuasiHomogeneousAbove.sharpTerm {μ μ' R R' : ℝ} {b : ParameterSymbol n Λ W U m'}
+    {a : ParameterSymbol n Λ V W m} (hb : b.IsQuasiHomogeneousAbove μ' R)
+    (ha : a.IsQuasiHomogeneousAbove μ R) (hR : R < R') (k : ℕ) :
+    (b.sharpTerm a k).IsQuasiHomogeneousAbove (μ' + μ - k) R' := by
+  induction k generalizing m' μ' b μ a R with
+  | zero =>
+    rw [sharpTerm_zero]
+    exact (((hb.comp ha).mono hR.le).inclusion _).congr_degree (by simp)
+  | succ k ih =>
+    rw [sharpTerm_succ]
+    refine (IsQuasiHomogeneousAbove.sum fun j _ => ?_).smul _
+    have hR₁ : R < (R + R') / 2 := by linarith
+    have hR₂ : (R + R') / 2 < R' := by linarith
+    exact ((ih (hb.frequencyDeriv hR₁ _) ((ha.spatialDeriv _).mono hR₁.le) hR₂).inclusion
+      _).congr_degree (by push_cast; ring)
+
 /-! ### The formal composition of two expansions -/
 
 section SharpTerms
@@ -302,6 +339,19 @@ theorem IsQuasiHomogeneous.sharpTerms {μ μ' : ℝ} (hq : ∀ i, (q i).IsQuasiH
   · exact (((hq i).sharpTerm (hp j) _).inclusion _).congr_degree
       (by rw [Nat.cast_sub h]; push_cast; ring)
   · exact isQuasiHomogeneous_zero
+
+/-- **Homogeneity of the formal composition at large frequencies.** If `qᵢ` and `pⱼ` are
+quasi-homogeneous of degrees `μ' - i` and `μ - j` above the radius `R`, the term `cₖ` of
+`sharpTerms q p` is quasi-homogeneous of degree `μ' + μ - k` above every larger radius `R'`. -/
+theorem IsQuasiHomogeneousAbove.sharpTerms {μ μ' R R' : ℝ}
+    (hq : ∀ i, (q i).IsQuasiHomogeneousAbove (μ' - i) R)
+    (hp : ∀ j, (p j).IsQuasiHomogeneousAbove (μ - j) R) (hR : R < R') (k : ℕ) :
+    (sharpTerms q p k).IsQuasiHomogeneousAbove (μ' + μ - k) R' := by
+  refine IsQuasiHomogeneousAbove.sum fun i _ => IsQuasiHomogeneousAbove.sum fun j _ => ?_
+  split_ifs with h
+  · exact (((hq i).sharpTerm (hp j) hR _).inclusion _).congr_degree
+      (by rw [Nat.cast_sub h]; push_cast; ring)
+  · exact isQuasiHomogeneousAbove_zero
 
 end SharpTerms
 
@@ -558,6 +608,33 @@ theorem isQuasiHomogeneous_expansionLeftInverseTerms {μ : ℝ}
         (by rw [Nat.cast_sub h]; push_cast; ring)
     · exact isQuasiHomogeneous_zero
 
+/-- **Homogeneity of the formal left inverse at large frequencies.** If each term `aⱼ` is
+quasi-homogeneous of degree `μ - j` above the radius `R`, the term `q_k` of the formal left
+inverse is quasi-homogeneous of degree `-μ - k` above every larger radius `R'`. These are the
+terms of Seeley's resolvent parametrix cut off near `(ξ, z) = (0, 0)`, the form in which the
+Balakrishnan integral of their asymptotic sum is classical
+(`TauCeti.ParameterSymbol.classicalBalakrishnanIntegral`). -/
+theorem isQuasiHomogeneousAbove_expansionLeftInverseTerms {μ R R' : ℝ}
+    (hhom : ∀ j, (a j).IsQuasiHomogeneousAbove (μ - j) R) (hR : R < R') (k : ℕ) :
+    (expansionLeftInverseTerms a ha k).IsQuasiHomogeneousAbove (-μ - k) R' := by
+  induction k using Nat.strong_induction_on generalizing R' with | _ k ih
+  cases k with
+  | zero =>
+    rw [expansionLeftInverseTerms]
+    exact ((((hhom 0).inverse ha).mono hR.le).inclusion _).congr_degree (by simp)
+  | succ k =>
+    rw [expansionLeftInverseTerms]
+    have hR₁ : R < (R + R') / 2 := by linarith
+    have hR₂ : (R + R') / 2 < R' := by linarith
+    refine IsQuasiHomogeneousAbove.inclusion (IsQuasiHomogeneousAbove.neg ?_) _
+    refine (IsQuasiHomogeneousAbove.comp (μ' := -((k + 1 : ℕ) : ℝ))
+      (IsQuasiHomogeneousAbove.sum fun i _ => IsQuasiHomogeneousAbove.sum fun j _ => ?_)
+      (((hhom 0).inverse ha).mono hR.le)).congr_degree (by push_cast; ring)
+    split_ifs with h
+    · exact (((ih i (Finset.mem_range.1 i.property) hR₁).sharpTerm ((hhom j).mono hR₁.le) hR₂
+        _).inclusion _).congr_degree (by rw [Nat.cast_sub h]; push_cast; ring)
+    · exact isQuasiHomogeneousAbove_zero
+
 /-- The terms `q_k` of order `-m - k` of the formal right inverse of an expansion `a ∼ ∑ᵢ aᵢ`
 whose leading term is elliptic with parameter: `q₀ = a₀⁻¹` and, for `k ≥ 0`,
 `q_{k+1} = -a₀⁻¹ ∘ ∑' sharpTerm aᵢ qⱼ r`, where the sum runs over the terms of `c_{k+1}` in
@@ -669,6 +746,30 @@ theorem isQuasiHomogeneous_expansionRightInverseTerms {μ : ℝ}
         (by rw [Nat.cast_sub h]; push_cast; ring)
     · exact isQuasiHomogeneous_zero
 
+/-- **Homogeneity of the formal right inverse at large frequencies.** If each term `aᵢ` is
+quasi-homogeneous of degree `μ - i` above the radius `R`, the term `q_k` of the formal right
+inverse is quasi-homogeneous of degree `-μ - k` above every larger radius `R'`. -/
+theorem isQuasiHomogeneousAbove_expansionRightInverseTerms {μ R R' : ℝ}
+    (hhom : ∀ i, (a i).IsQuasiHomogeneousAbove (μ - i) R) (hR : R < R') (k : ℕ) :
+    (expansionRightInverseTerms a ha k).IsQuasiHomogeneousAbove (-μ - k) R' := by
+  induction k using Nat.strong_induction_on generalizing R' with | _ k ih
+  cases k with
+  | zero =>
+    rw [expansionRightInverseTerms]
+    exact ((((hhom 0).inverse ha).mono hR.le).inclusion _).congr_degree (by simp)
+  | succ k =>
+    rw [expansionRightInverseTerms]
+    have hR₁ : R < (R + R') / 2 := by linarith
+    have hR₂ : (R + R') / 2 < R' := by linarith
+    refine IsQuasiHomogeneousAbove.inclusion (IsQuasiHomogeneousAbove.neg ?_) _
+    refine ((((hhom 0).inverse ha).mono hR.le).comp (μ := -((k + 1 : ℕ) : ℝ))
+      (IsQuasiHomogeneousAbove.sum fun j _ =>
+        IsQuasiHomogeneousAbove.sum fun i _ => ?_)).congr_degree (by push_cast; ring)
+    split_ifs with h
+    · exact ((((hhom i).mono hR₁.le).sharpTerm (ih j (Finset.mem_range.1 j.property) hR₁) hR₂
+        _).inclusion _).congr_degree (by rw [Nat.cast_sub h]; push_cast; ring)
+    · exact isQuasiHomogeneousAbove_zero
+
 end ExpansionParametrix
 
 /-! ### Single symbols as one-term expansions -/
@@ -713,23 +814,28 @@ theorem expansionRightInverseTerms_eq_rightInverseTerms (h₀ : (e 0).coefficien
 omit [CompleteSpace V] in
 include ha in
 /-- A symbol of order `m` is the one-term expansion `(a, 0, 0, …)`, elliptic with parameter and
-homogeneous whenever `a` is. -/
+homogeneous, or homogeneous above a radius, whenever `a` is. -/
 private theorem exists_oneTermExpansion :
     ∃ (e : (j : ℕ) → ParameterSymbol n Λ V W (m - j)) (_ : (e 0).IsElliptic),
       (e 0).coefficient = a.coefficient ∧ (∀ j, e (j + 1) = 0) ∧
-        ∀ μ, a.IsQuasiHomogeneous μ → ∀ j, (e j).IsQuasiHomogeneous (μ - j) := by
+        (∀ μ, a.IsQuasiHomogeneous μ → ∀ j, (e j).IsQuasiHomogeneous (μ - j)) ∧
+        ∀ μ R, a.IsQuasiHomogeneousAbove μ R → ∀ j, (e j).IsQuasiHomogeneousAbove (μ - j) R := by
   refine ⟨fun j => if h : j = 0 then inclusion (by simp [h]) a else 0,
     ⟨fun x ξ z hz => by simpa using ha.isInvertible x ξ z hz,
-      fun K hK => by simpa using ha.exists_bound K hK⟩, by simp, by simp, fun μ hμ j => ?_⟩
-  rcases j with _ | j
-  · simpa using hμ
-  · simp
+      fun K hK => by simpa using ha.exists_bound K hK⟩, by simp, by simp, fun μ hμ j => ?_,
+    fun μ R hμ j => ?_⟩
+  · rcases j with _ | j
+    · simpa using hμ
+    · simp
+  · rcases j with _ | j
+    · simpa using hμ
+    · simp
 
 /-- **Homogeneity of the left parametrix.** If `a` is homogeneous of degree `μ` under
 `(ξ, z) ↦ (t ξ, t² z)`, the term `bₖ` of its left parametrix is homogeneous of degree `-μ - k`. -/
 theorem isQuasiHomogeneous_leftInverseTerms {μ : ℝ} (hμ : a.IsQuasiHomogeneous μ) (k : ℕ) :
     (a.leftInverseTerms ha k).IsQuasiHomogeneous (-μ - k) := by
-  obtain ⟨e, he, h₀, h₁, hhom⟩ := exists_oneTermExpansion ha
+  obtain ⟨e, he, h₀, h₁, hhom, -⟩ := exists_oneTermExpansion ha
   rw [← expansionLeftInverseTerms_eq_leftInverseTerms ha he h₀ h₁]
   exact isQuasiHomogeneous_expansionLeftInverseTerms e he (hhom μ hμ) k
 
@@ -737,9 +843,29 @@ theorem isQuasiHomogeneous_leftInverseTerms {μ : ℝ} (hμ : a.IsQuasiHomogeneo
 `(ξ, z) ↦ (t ξ, t² z)`, the term `bₖ` of its right parametrix is homogeneous of degree `-μ - k`. -/
 theorem isQuasiHomogeneous_rightInverseTerms {μ : ℝ} (hμ : a.IsQuasiHomogeneous μ) (k : ℕ) :
     (a.rightInverseTerms ha k).IsQuasiHomogeneous (-μ - k) := by
-  obtain ⟨e, he, h₀, h₁, hhom⟩ := exists_oneTermExpansion ha
+  obtain ⟨e, he, h₀, h₁, hhom, -⟩ := exists_oneTermExpansion ha
   rw [← expansionRightInverseTerms_eq_rightInverseTerms ha he h₀ h₁]
   exact isQuasiHomogeneous_expansionRightInverseTerms e he (hhom μ hμ) k
+
+/-- **Homogeneity of the left parametrix at large frequencies.** If `a` is quasi-homogeneous of
+degree `μ` above the radius `R`, the term `bₖ` of its left parametrix is quasi-homogeneous of
+degree `-μ - k` above every larger radius `R'`. -/
+theorem isQuasiHomogeneousAbove_leftInverseTerms {μ R R' : ℝ}
+    (hμ : a.IsQuasiHomogeneousAbove μ R) (hR : R < R') (k : ℕ) :
+    (a.leftInverseTerms ha k).IsQuasiHomogeneousAbove (-μ - k) R' := by
+  obtain ⟨e, he, h₀, h₁, -, hhom⟩ := exists_oneTermExpansion ha
+  rw [← expansionLeftInverseTerms_eq_leftInverseTerms ha he h₀ h₁]
+  exact isQuasiHomogeneousAbove_expansionLeftInverseTerms e he (hhom μ R hμ) hR k
+
+/-- **Homogeneity of the right parametrix at large frequencies.** If `a` is quasi-homogeneous of
+degree `μ` above the radius `R`, the term `bₖ` of its right parametrix is quasi-homogeneous of
+degree `-μ - k` above every larger radius `R'`. -/
+theorem isQuasiHomogeneousAbove_rightInverseTerms {μ R R' : ℝ}
+    (hμ : a.IsQuasiHomogeneousAbove μ R) (hR : R < R') (k : ℕ) :
+    (a.rightInverseTerms ha k).IsQuasiHomogeneousAbove (-μ - k) R' := by
+  obtain ⟨e, he, h₀, h₁, -, hhom⟩ := exists_oneTermExpansion ha
+  rw [← expansionRightInverseTerms_eq_rightInverseTerms ha he h₀ h₁]
+  exact isQuasiHomogeneousAbove_expansionRightInverseTerms e he (hhom μ R hμ) hR k
 
 end OneTermExpansion
 
