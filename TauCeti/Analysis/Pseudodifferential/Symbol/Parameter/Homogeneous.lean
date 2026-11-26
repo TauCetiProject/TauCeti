@@ -34,7 +34,11 @@ behaviour under the operations of the symbol calculus.
   implied by quasi-homogeneity
   (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.isQuasiHomogeneousAbove`) and preserved by the
   linear operations, finite sums, the inclusions, pointwise composition and the inverse of a
-  parameter-elliptic symbol (`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.inverse`).
+  parameter-elliptic symbol (`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.inverse`). A position
+  derivative keeps the degree and the radius
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.spatialDeriv`), and a frequency derivative
+  lowers the degree by one above every larger radius
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.frequencyDeriv`).
 * Examples: the quasi-homogeneous symbols `TauCeti.ParameterSymbol.ofQuasiHomogeneous`
   (`TauCeti.ParameterSymbol.isQuasiHomogeneous_ofQuasiHomogeneous`), such as the spectral
   parameter `z`, and the symbol `‖ξ‖² - z` of `-Δ - z`, of degree `2`
@@ -321,6 +325,72 @@ theorem IsQuasiHomogeneousAbove.inverse [CompleteSpace V] {a : ParameterSymbol n
     rw [coefficient_inverse, coefficient_inverse, ha x ξ hξ z hz t ht htz,
       ContinuousLinearMap.inverse_smul_of_isScalarTower,
       Real.rpow_neg (zero_le_one.trans ht)]
+
+/-- Differentiating the relation of quasi-homogeneity above `R` along a line `s ↦ p + s • d` whose
+frequencies have norm at least `R` near `s = 0`: the derivative at the dilated point along the
+dilated direction is `t ^ μ` times the derivative. -/
+private theorem IsQuasiHomogeneousAbove.fderiv_apply {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) {p d : (CoordinateSpace n × CoordinateSpace n) × ℂ}
+    (hp : p.2 ∈ Λ) {t : ℝ} (ht : 1 ≤ t) (htp : (parameterDilation n t p).2 ∈ Λ)
+    (hR : ∀ᶠ s : ℝ in 𝓝 0, R ≤ ‖(p + s • d).1.2‖) :
+    fderiv ℝ a.coefficient (parameterDilation n t p) (parameterDilation n t d) =
+      t ^ μ • fderiv ℝ a.coefficient p d := by
+  set D := parameterDilation n t
+  have hl : Continuous fun s : ℝ => p + s • d := by fun_prop
+  have hΛ : ∀ᶠ s : ℝ in 𝓝 0, (p + s • d).2 ∈ Λ :=
+    (continuous_snd.comp hl).continuousAt.preimage_mem_nhds
+      (Λ.isOpen.mem_nhds (by simpa using hp))
+  have hDΛ : ∀ᶠ s : ℝ in 𝓝 0, (D (p + s • d)).2 ∈ Λ :=
+    (continuous_snd.comp (D.continuous.comp hl)).continuousAt.preimage_mem_nhds
+      (Λ.isOpen.mem_nhds (by simpa using htp))
+  have hline : HasDerivAt (fun s : ℝ => p + s • d) d 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const d).const_add p
+  have h₁ : HasDerivAt (fun s : ℝ => a.coefficient (D (p + s • d)))
+      (fderiv ℝ a.coefficient (D p) (D d)) 0 :=
+    (a.differentiableAt_coefficient htp).hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ)
+      (D.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hline) (by simp)
+  have h₂ : HasDerivAt (fun s : ℝ => t ^ μ • a.coefficient (p + s • d))
+      (t ^ μ • fderiv ℝ a.coefficient p d) 0 :=
+    ((a.differentiableAt_coefficient hp).hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hline
+      (by simp)).const_smul (t ^ μ)
+  refine h₁.unique (h₂.congr_of_eventuallyEq ?_)
+  filter_upwards [hR, hΛ, hDΛ] with s hs hsΛ hDs
+  rw [show D (p + s • d) = (((p + s • d).1.1, t • (p + s • d).1.2), (t ^ 2 : ℝ) • (p + s • d).2)
+    from parameterDilation_apply t _] at hDs ⊢
+  exact ha _ _ hs _ hsΛ t ht hDs
+
+/-- A position derivative of a symbol quasi-homogeneous above the radius `R` is quasi-homogeneous
+of the same degree above `R`. -/
+theorem IsQuasiHomogeneousAbove.spatialDeriv {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (v : CoordinateSpace n) :
+    (a.spatialDeriv v).IsQuasiHomogeneousAbove μ R := by
+  intro x ξ hξ z hz t ht htz
+  have h := ha.fderiv_apply (p := ((x, ξ), z)) (d := ((v, 0), 0)) hz ht (by simpa using htz)
+    (.of_forall fun s => by simpa using hξ)
+  simp only [parameterDilation_apply, smul_zero] at h
+  rw [coefficient_spatialDeriv_eq_fderiv a v x _ htz, coefficient_spatialDeriv_eq_fderiv a v x ξ hz,
+    h]
+
+/-- A frequency derivative of a symbol quasi-homogeneous of degree `μ` above the radius `R` is
+quasi-homogeneous of degree `μ - 1` above every larger radius `R'`. -/
+theorem IsQuasiHomogeneousAbove.frequencyDeriv {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (hR : R < R') (w : CoordinateSpace n) :
+    (a.frequencyDeriv w).IsQuasiHomogeneousAbove (μ - 1) R' := by
+  intro x ξ hξ z hz t ht htz
+  have ht0 : 0 < t := zero_lt_one.trans_le ht
+  have hc : Continuous fun s : ℝ => ‖ξ + s • w‖ := by fun_prop
+  have h := ha.fderiv_apply (p := ((x, ξ), z)) (d := ((0, w), 0)) hz ht (by simpa using htz)
+    (((hc.tendsto 0).eventually_const_lt (by simpa using hR.trans_le hξ)).mono
+      fun s hs => by simpa using hs.le)
+  have hd : (((0, t • w), (t ^ 2 : ℝ) • (0 : ℂ)) : (CoordinateSpace n × CoordinateSpace n) × ℂ) =
+      t • ((0, w), 0) := by
+    simp
+  simp only [parameterDilation_apply, hd, ContinuousLinearMap.map_smul] at h
+  rw [coefficient_frequencyDeriv_eq_fderiv a w x _ htz,
+    coefficient_frequencyDeriv_eq_fderiv a w x ξ hz]
+  refine smul_right_injective _ ht0.ne' ?_
+  beta_reduce
+  rw [h, smul_smul, Real.rpow_sub_one ht0.ne', mul_div_cancel₀ _ ht0.ne']
 
 end ParameterSymbol
 
