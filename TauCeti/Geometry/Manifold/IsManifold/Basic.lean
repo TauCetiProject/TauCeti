@@ -33,6 +33,8 @@ by `tangentSpaceCast`.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
   the identity.
 * `TauCeti.tangentSpaceCast_self`: identifying a tangent space with itself is the identity.
+* `TauCeti.apply_eq_of_tangentSpaceCast`: evaluating a basepoint-dependent expression at equal
+  base points and `tangentSpaceCast`-related tangent vectors gives equal values.
 * `TauCeti.tangentSpaceCast_trans`: composing two `tangentSpaceCast` identifications across equal
   base points gives the direct identification.
 * `TauCeti.eq_tangentSpaceCast_iff_tangentSpaceCast_eq`: tangent vectors over base points equal to
@@ -106,6 +108,16 @@ theorem heq_tangentSpaceCast {x y : M} (hxy : x = y) (w : TangentSpace I x) :
 theorem tangentSpaceCast_self {x : M} (w : TangentSpace I x) :
     tangentSpaceCast I x x w = w :=
   (rfl)
+
+/-- Evaluating a basepoint-dependent expression at equal base points and `tangentSpaceCast`-related
+tangent vectors gives equal values. -/
+theorem apply_eq_of_tangentSpaceCast {β : Sort*} (P : ∀ y : M, TangentSpace I y → β)
+    {y₁ y₂ : M} (hy : y₁ = y₂) {v₁ : TangentSpace I y₁} {v₂ : TangentSpace I y₂}
+    (hv : tangentSpaceCast I y₁ y₂ v₁ = v₂) : P y₁ v₁ = P y₂ v₂ := by
+  subst hy
+  rw [tangentSpaceCast_self] at hv
+  subst hv
+  rfl
 
 /-- Composing two `tangentSpaceCast` identifications across equal base points gives the direct
 identification. -/

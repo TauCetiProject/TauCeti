@@ -37,6 +37,8 @@ with all three vertices in `V`, which is Aggarwal's induced-subgraph convention.
 
 * `TauCeti.regionVertices_eq`: the vertices of `R` are the endpoints of its edges.
 * `TauCeti.regionGraph_adj`, `TauCeti.boundaryGraph_adj`: the edges of the two graphs.
+* `TauCeti.adj_of_mem_regionEdges`: the endpoints of an edge of `R` are adjacent in
+  `regionGraph R`.
 * `TauCeti.isConnectedRegion_singleton`: a single face is a connected region, and
   `TauCeti.isConnectedRegion_iff_reachable` restates connectedness through the edges of `R`.
 * `TauCeti.IsConnectedRegion.insert_of_mem_regionVertices`: adding a face that shares a vertex
@@ -117,6 +119,10 @@ def facesOf (V : Set (ℤ × ℤ)) : Set TriFace :=
 variable {R S : Set TriFace} {e : TriEdge} {f : TriFace} {u u' : ℤ × ℤ}
 
 theorem mem_regionVertices : u ∈ regionVertices R ↔ ∃ f ∈ R, u ∈ f.vertices := Iff.rfl
+
+@[simp] theorem mem_regionVertices_univ (u : ℤ × ℤ) :
+    u ∈ regionVertices (Set.univ : Set TriFace) :=
+  mem_regionVertices.2 ⟨⟨u, true⟩, Set.mem_univ _, by simp⟩
 
 theorem mem_regionEdges : e ∈ regionEdges R ↔ ∃ f ∈ R, e ∈ f.edges := Iff.rfl
 
@@ -282,10 +288,14 @@ theorem regionGraph_mono (h : R ⊆ S) : regionGraph R ≤ regionGraph S := fun 
   obtain ⟨e, he, h'⟩ := regionGraph_adj.1 huu
   exact regionGraph_adj.2 ⟨e, regionEdges_mono h he, h'⟩
 
+/-- In `regionGraph R`, the endpoints of an edge of `R` are adjacent. -/
+theorem adj_of_mem_regionEdges (he : e ∈ regionEdges R) : (regionGraph R).Adj e.v e.target :=
+  regionGraph_adj.2 ⟨e, he, TriEdge.endpoints_def e⟩
+
 /-- In `regionGraph R`, the endpoints of an edge of `R` are reachable from each other. -/
 theorem reachable_of_mem_regionEdges (he : e ∈ regionEdges R) :
     (regionGraph R).Reachable e.v e.target :=
-  (regionGraph_adj.2 ⟨e, he, TriEdge.endpoints_def e⟩).reachable
+  (adj_of_mem_regionEdges he).reachable
 
 theorem regionGraph_edgeSet (R : Set TriFace) :
     (regionGraph R).edgeSet = TriEdge.endpoints '' regionEdges R := by

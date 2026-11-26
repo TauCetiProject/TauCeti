@@ -79,6 +79,14 @@ to `f n (θ_g v)`. It pairs `(v, u)` and `(w, u')` at `(g, n)` to
   relates `Φ (g, a)` to `Φ (g h, Ad*_{h⁻¹} a)`.
 * `TauCeti.CotangentBundle.momentMap_leftTrivialization`: the cotangent moment map of left
   multiplication is `(g, a) ↦ Ad*_g a`.
+* `TauCeti.CotangentBundle.fundamentalVectorField_leftTrivialization`: the fundamental vector
+  field of `ξ` at `(g, a)` is `(ξ^R(g), 0)`.
+* `TauCeti.CotangentBundle.coadjointRepresentation_proj_inv_momentMap`: the left-trivialized value
+  of a covector `z` over `g` is `Ad*_{g⁻¹} μ(z)`.
+* `TauCeti.CotangentBundle.eq_of_proj_eq_of_momentMap_eq`: a covector of `T*G` is determined by
+  its base point and its moment map.
+* `TauCeti.CotangentBundle.exists_momentMap_eq_and_proj_eq`: every pair of a base point and a
+  value of the moment map is realized by a covector of `T*G`.
 * `TauCeti.CotangentBundle.mpullback_leftTrivialization_liouvilleForm_apply`: the Liouville form is
   `⟨a, θ⟩`.
 * `TauCeti.CotangentBundle.eval₂_mpullback_leftTrivialization_symplecticForm`: the symplectic form
@@ -290,6 +298,63 @@ theorem momentMap_leftTrivialization (p : G × (E →L[ℝ] ℝ)) :
   -- map has the same values. Rewriting cannot see this because the covector at `1` is typed on
   -- `TangentSpace I 1`, which is only definitionally the model space `E`.
   rfl
+
+/-- The fundamental vector field of `ξ` for the cotangent lift of left multiplication, read in the
+left trivialization: at `(g, a)` it is `(ξ^R(g), 0)`, as `h • Φ (g, a) = Φ (h g, a)`. -/
+theorem fundamentalVectorField_leftTrivialization (ξ : GroupLieAlgebra I G)
+    (p : G × (E →L[ℝ] ℝ)) :
+    fundamentalVectorField (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ξ (leftTrivialization I G p) =
+      mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (leftTrivialization I G) p
+        ((mulRightInvariantVectorField ξ p.1, 0) : E × (E →L[ℝ] ℝ)) := by
+  obtain ⟨k, a⟩ := p
+  -- `h • Φ (k, a) = Φ (h k, a)`, so the orbit map of `Φ (k, a)` at `1` is that of `Φ (1, a)` at
+  -- `k`, which is `Φ` composed with the slice `x ↦ (x, a)`.
+  have hfun : (fun h : G ↦ h • leftTrivialization I G (1, a)) =
+      leftTrivialization I G ∘ fun x : G ↦ (x, a) := by
+    funext h
+    simp [← leftTrivialization_mul]
+  have hs : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun x : G ↦ (x, a)) k :=
+    mdifferentiableAt_id.prodMk mdifferentiableAt_const
+  have hΦ : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
+      (leftTrivialization I G) (k, a) :=
+    ((leftTrivialization I G).contMDiff _).mdifferentiableAt (by simp)
+  have h := mfderiv_smul_mulRightInvariantVectorField (I' := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ξ k
+    (leftTrivialization I G (1, a))
+  rw [← leftTrivialization_mul, mul_one, hfun, mfderiv_comp_apply k hΦ hs, mfderiv_prod_left] at h
+  -- `ContinuousLinearMap.inl` is `v ↦ (v, 0)` by definition. Its codomain, the product of the
+  -- coordinate tangent spaces, is the tangent space of the product only by definition, so
+  -- `ContinuousLinearMap.inl_apply` cannot be rewritten here.
+  exact h.symm
+
+/-- **The left-trivialized value from the moment map.** The covector `z` over `g` translates to the
+identity as `Ad*_{g⁻¹} μ(z)`, the second component of `Φ⁻¹ z`. -/
+theorem coadjointRepresentation_proj_inv_momentMap (z : CotangentBundle I G) :
+    Lie.coadjointRepresentation ℝ I G z.proj⁻¹ (momentMap I G z) =
+      (((leftTrivialization I G).symm z).2 : E →ₗ[ℝ] ℝ) := by
+  obtain ⟨p, rfl⟩ : ∃ p, leftTrivialization I G p = z :=
+    ⟨_, (leftTrivialization I G).apply_symm_apply z⟩
+  rw [momentMap_leftTrivialization, proj_leftTrivialization, Diffeomorph.symm_apply_apply]
+  exact Representation.inv_self_apply _ _ _
+
+/-- A covector of `T*G` is determined by its base point and its moment map for the cotangent lift
+of left multiplication. -/
+theorem eq_of_proj_eq_of_momentMap_eq {z z' : CotangentBundle I G} (hπ : z.proj = z'.proj)
+    (hμ : momentMap I G z = momentMap I G z') : z = z' := by
+  have h := coadjointRepresentation_proj_inv_momentMap z
+  rw [hπ, hμ, coadjointRepresentation_proj_inv_momentMap] at h
+  rw [← (leftTrivialization I G).apply_symm_apply z, ← (leftTrivialization I G).apply_symm_apply z']
+  exact congrArg _ (Prod.ext hπ (ContinuousLinearMap.coe_injective h.symm))
+
+/-- Every point `g` of `G` is the base point of a covector with any prescribed moment map `c` for
+the cotangent lift of left multiplication, namely the left translate of `Ad*_{g⁻¹} c`. -/
+theorem exists_momentMap_eq_and_proj_eq [FiniteDimensional ℝ E]
+    (c : Module.Dual ℝ (GroupLieAlgebra I G)) (g : G) :
+    ∃ z : CotangentBundle I G, momentMap I G z = c ∧ z.proj = g := by
+  refine ⟨leftTrivialization I G
+    (g, LinearMap.toContinuousLinearMap (Lie.coadjointRepresentation ℝ I G g⁻¹ c : E →ₗ[ℝ] ℝ)),
+    ?_, proj_leftTrivialization _⟩
+  rw [momentMap_leftTrivialization]
+  exact Representation.self_inv_apply _ _ _
 
 /-! ### The canonical forms in the left trivialization -/
 

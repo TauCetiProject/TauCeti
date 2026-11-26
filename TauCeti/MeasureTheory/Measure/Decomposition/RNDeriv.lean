@@ -11,10 +11,11 @@ public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Decomposition.IntegralRNDeriv
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.Real.Sqrt
 
 /-!
-# Radon–Nikodym derivatives: real conversion and square roots
+# Radon–Nikodym derivatives: real conversion, square roots and bounds
 
 For a σ-finite measure `μ`, embedding the real-valued Radon–Nikodym derivative
 `(μ.rnDeriv ν ·).toReal` back into `ℝ≥0∞` recovers `μ.rnDeriv ν` `ν`-almost everywhere
@@ -30,6 +31,10 @@ For finite `μ` and `ν` and any reference measure `κ`, the geometric mean `√
 the two densities is integrable, being dominated by their arithmetic mean, and so is the squared
 difference `(√(dμ/dκ) - √(dν/dκ))²` of their square roots.
 
+A measure dominated by a multiple of a σ-finite measure, `μ ≤ c • ν`, has density at most `c`:
+`dμ/dν ≤ c` holds `ν`-almost everywhere. For `c = ENNReal.ofReal M` this gives a measurable
+real density `f` with `0 ≤ f ≤ M` everywhere and `μ = f ν`.
+
 ## Main results
 
 * `MeasureTheory.Measure.ofReal_toReal_rnDeriv`: `ENNReal.ofReal ∘ (μ.rnDeriv ν ·).toReal`
@@ -39,11 +44,15 @@ difference `(√(dμ/dκ) - √(dν/dκ))²` of their square roots.
   `κ`-integrable for finite `μ` and `ν`.
 * `MeasureTheory.Measure.integrable_sq_sqrt_toReal_rnDeriv_sub`: `(√(dμ/dκ) - √(dν/dκ))²` is
   `κ`-integrable for finite `μ` and `ν`.
+* `MeasureTheory.Measure.rnDeriv_le_of_le_smul`: `dμ/dν ≤ c` almost everywhere if `μ ≤ c • ν`.
+* `MeasureTheory.Measure.exists_eq_withDensity_of_le_smul`: `μ ≤ M • ν` is `f ν` for a measurable
+  `f` with values in `[0, M]`.
 -/
 
 public section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
@@ -84,5 +93,30 @@ theorem integrable_sq_sqrt_toReal_rnDeriv_sub (μ ν κ : Measure α) [IsFiniteM
   simp only [Real.sq_sqrt_sub_sqrt ENNReal.toReal_nonneg ENNReal.toReal_nonneg]
   exact (integrable_toReal_rnDeriv.add integrable_toReal_rnDeriv).sub
     ((integrable_sqrt_toReal_rnDeriv_mul μ ν κ).const_mul 2)
+
+/-- If `μ ≤ c • ν` for a σ-finite `ν`, the Radon–Nikodym derivative `dμ/dν` is at most `c`
+`ν`-almost everywhere. This generalises `MeasureTheory.Measure.rnDeriv_le_one_of_le` (the case
+`c = 1`), whose proof it follows. -/
+theorem rnDeriv_le_of_le_smul {μ ν : Measure α} [SigmaFinite ν] {c : ℝ≥0∞} (h : μ ≤ c • ν) :
+    μ.rnDeriv ν ≤ᵐ[ν] fun _ ↦ c := by
+  refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite (μ.measurable_rnDeriv ν) fun s _ _ ↦ ?_
+  rw [setLIntegral_const, ← smul_eq_mul, ← smul_apply]
+  exact (setLIntegral_rnDeriv_le s).trans (h s)
+
+/-- A measure with `μ ≤ M • ν`, for a σ-finite `ν` and `0 ≤ M`, is `f ν` for a measurable density
+`f` with `0 ≤ f ≤ M` everywhere. -/
+theorem exists_eq_withDensity_of_le_smul {μ ν : Measure α} [SigmaFinite ν] {M : ℝ} (hM : 0 ≤ M)
+    (h : μ ≤ ENNReal.ofReal M • ν) :
+    ∃ f : α → ℝ, Measurable f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ M) ∧
+      μ = ν.withDensity fun x ↦ ENNReal.ofReal (f x) := by
+  have : SigmaFinite μ := sigmaFinite_of_le (M.toNNReal • ν) h
+  refine ⟨fun x ↦ min (μ.rnDeriv ν x).toReal M,
+    (μ.measurable_rnDeriv ν).ennreal_toReal.min measurable_const,
+    fun x ↦ le_min ENNReal.toReal_nonneg hM, fun x ↦ min_le_right _ _, ?_⟩
+  conv_lhs => rw [← withDensity_rnDeriv_eq μ ν (absolutelyContinuous_of_le_smul h)]
+  refine withDensity_congr_ae ?_
+  filter_upwards [rnDeriv_le_of_le_smul h] with x hx
+  rw [min_eq_left (ENNReal.toReal_le_of_le_ofReal hM hx),
+    ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hx)]
 
 end MeasureTheory.Measure

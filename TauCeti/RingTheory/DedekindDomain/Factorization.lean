@@ -47,6 +47,8 @@ the divisors of a nonzero element. All of them hold in an arbitrary Dedekind dom
 * `FractionalIdeal.mem_closure_unitOfPrime_of_count_eq_zero`: an invertible fractional ideal
   whose multiplicities vanish outside a set `T` of height one primes lies in the subgroup generated
   by the primes of `T`.
+* `FractionalIdeal.count_coeIdeal_eq_zero_iff`: the multiplicity of `v` in a nonzero integral
+  ideal vanishes exactly when `v` does not divide it.
 * `FractionalIdeal.count_div`: the multiplicity of `I / J` is the difference of the multiplicities
   of `I` and `J`, for nonzero `I` and `J`. Mathlib's `count` API has `count_mul`, `count_inv`,
   `count_pow` and `count_zpow` but no division form.
@@ -62,6 +64,8 @@ the divisors of a nonzero element. All of them hold in an arbitrary Dedekind dom
 * `IsDedekindDomain.HeightOneSpectrum.hasFiniteMulSupport_zpow_neg_log_valuation`: a family of
   powers indexed by the height-one primes with `-WithZero.log (v.valuation K a)` as exponents has
   finite multiplicative support.
+* `FractionalIdeal.valuation_le_exp_neg_count_of_mem`: every element of a fractional ideal `I`
+  has valuation at most `exp (-count K v I)` at `v`.
 * `FractionalIdeal.valuation_le_one_of_mem_of_count_nonneg`: nonnegative multiplicity makes
   every element of a fractional ideal integral at that prime.
 
@@ -228,6 +232,14 @@ lemma mem_closure_unitOfPrime_of_count_eq_zero {T : Set (HeightOneSpectrum R)}
   by_contra hvT
   exact hfin.mem_toFinset.mp hv (by simp only [h v hvT, zpow_zero])
 
+/-- The multiplicity of a prime `v` in a nonzero integral ideal `I` vanishes exactly when `v` does
+not divide `I`. -/
+theorem count_coeIdeal_eq_zero_iff {v : HeightOneSpectrum R} {I : Ideal R} (hI : I ≠ 0) :
+    count K v (I : FractionalIdeal R⁰ K) = 0 ↔ ¬v.asIdeal ∣ I := by
+  classical
+  rw [count_coeIdeal K v hI, Nat.cast_eq_zero, ← Associates.count_ne_zero_iff_dvd hI v.irreducible,
+    not_not]
+
 /-- **The multiplicity of a quotient of nonzero fractional ideals is the difference of the
 multiplicities.** Mathlib's `count` API has `count_mul`, `count_inv`, `count_pow` and `count_zpow`
 but no division form. -/
@@ -305,18 +317,26 @@ theorem count_spanSingleton_eq_neg_log_valuation (v : HeightOneSpectrum A) (a : 
 
 end PrincipalIdeal
 
-/-- Nonnegative multiplicity at a prime makes every element of a fractional ideal integral
-at that prime. -/
-theorem valuation_le_one_of_mem_of_count_nonneg {R K : Type*} [CommRing R]
+/-- **Every element of a fractional ideal `I` has valuation at most `exp (-count K v I)` at `v`.**
+For `I = 0` the only element is `0`. -/
+theorem valuation_le_exp_neg_count_of_mem {R K : Type*} [CommRing R]
     [IsDedekindDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
-    (I : FractionalIdeal R⁰ K) (v : HeightOneSpectrum R) (hI : 0 ≤ count K v I)
-    {x : K} (hx : x ∈ I) : v.valuation K x ≤ 1 := by
+    (v : HeightOneSpectrum R) {I : FractionalIdeal R⁰ K} {x : K} (hx : x ∈ I) :
+    v.valuation K x ≤ WithZero.exp (-count K v I) := by
   rcases eq_or_ne x 0 with rfl | hx0
   · simp
   have hcount := count_mono K v (spanSingleton_ne_zero_iff.mpr hx0)
     (spanSingleton_le_iff_mem.mpr hx)
   rw [count_spanSingleton_eq_neg_log_valuation] at hcount
-  exact WithZero.le_exp_of_log_le (neg_nonneg.mp (hI.trans hcount))
+  exact WithZero.le_exp_of_log_le (by lia)
+
+/-- Nonnegative multiplicity at a prime makes every element of a fractional ideal integral
+at that prime. -/
+theorem valuation_le_one_of_mem_of_count_nonneg {R K : Type*} [CommRing R]
+    [IsDedekindDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
+    (I : FractionalIdeal R⁰ K) (v : HeightOneSpectrum R) (hI : 0 ≤ count K v I)
+    {x : K} (hx : x ∈ I) : v.valuation K x ≤ 1 :=
+  (valuation_le_exp_neg_count_of_mem v hx).trans (WithZero.exp_le_one_iff.mpr (by lia))
 
 end FractionalIdeal
 
