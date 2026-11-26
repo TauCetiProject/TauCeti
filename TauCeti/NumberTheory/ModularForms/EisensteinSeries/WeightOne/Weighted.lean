@@ -395,9 +395,9 @@ lattice series along rows, the parts `x ∑_n (m z + n)⁻²` of the rows cancel
 private lemma hasSum_zetaValue_lift {a : Fin 2 → ZMod N} (ha : a ≠ 0) (z : ℍ) :
     HasSum (fun m ↦ zetaRow a m z) (zetaValue N (lift a) z) := by
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have hx : ((a 0).val * (z : ℂ) + (a 1).val) / N ∉ z.periodPair.lattice := fun h ↦ ha <| by
-    rw [← intCast_comp_lift a]
-    exact intCast_comp_eq_zero_of_div_mem_lattice_periodPair (by simpa [lift] using h)
+  have hx : ((a 0).val * (z : ℂ) + (a 1).val) / N ∉ z.periodPair.lattice := by
+    simpa only [periodPair_ω₁, periodPair_ω₂, mul_one] using
+      (z.periodPair.val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff a).not.mpr ha
   have h₁ := hasSum_weierstrassZeta_periodPair_rows z hx
   have h₂ := hasSum_weierstrassZeta_periodPair_rows z z.periodPair.ω₁_div_two_notMem_lattice
   have h₃ := hasSum_weierstrassZeta_periodPair_rows z z.periodPair.ω₂_div_two_notMem_lattice
@@ -657,6 +657,10 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     simp only [hm.ne', ↓reduceIte]
     simpa [cotRow, sub_add_add_cancel] using h₁.add h₂
 
+/-- `cot (π / 2) = 0`, in the form `cot (π * 2⁻¹)` produced by `simp`. -/
+private lemma cot_pi_mul_inv_two : cot ((π : ℂ) * 2⁻¹) = 0 := by
+  rw [← div_eq_mul_inv, Complex.cot_pi_div_two]
+
 /-- The constant term of the corrected division value of `a`: `π cot (π a₁ / N)` if `a₀ = 0`, and
 `π i (2 a₀ / N - 1)` otherwise, `a₀, a₁` being the least nonnegative representatives. -/
 private def zetaValueLimit (a : Fin 2 → ZMod N) : ℂ :=
@@ -682,16 +686,12 @@ private lemma tendsto_zetaValue_lift_atImInfty (a : Fin 2 → ZMod N) :
     unfold zetaRow
     convert (t₁.sub (t₂.const_mul (2 * (a 0).val / N : ℂ))).sub
       (t₃.const_mul (2 * (a 1).val / N : ℂ)) using 2
-    -- `cot (π / 2) = 0`, in the two forms produced by `simp`
-    have hcot : cot (π * (1 / 2)) = 0 := by
-      rw [Complex.cot_eq_cos_div_sin, ← div_eq_mul_one_div, Complex.cos_pi_div_two, zero_div]
-    have hcot' : cot (π * 2⁻¹) = 0 := by
-      rw [← one_div, hcot]
     rcases eq_or_ne m 0 with rfl | hm
     · by_cases hb₀ : (a 0).val = 0
-      · simp [zetaValueLimit, hb₀, hcot']
+      · simp [zetaValueLimit, hb₀, cot_pi_mul_inv_two]
       · simp only [zetaValueLimit, hb₀]
-        simp only [Nat.cast_one, Nat.cast_ofNat, hcot, ↓reduceIte, one_ne_zero, mul_zero]
+        simp only [Nat.cast_one, Nat.cast_ofNat, one_div, cot_pi_mul_inv_two, ↓reduceIte,
+          one_ne_zero, mul_zero]
         ring
     · simp [hm]
   rw [hfun]
@@ -779,10 +779,6 @@ private lemma hasSum_zetaValue_lift_sub (a : Fin 2 → ZMod N) (z : ℍ) :
   by_cases ha : a = 0
   · subst ha
     simp [lift_zero, zetaValue_zero, zetaValueLimit, divCoeff]
-  have hcot : cot (π * (1 / 2)) = 0 := by
-    rw [Complex.cot_eq_cos_div_sin, ← div_eq_mul_one_div, Complex.cos_pi_div_two, zero_div]
-  have hcot' : cot (π * 2⁻¹) = 0 := by
-    rw [← one_div, hcot]
   -- the cotangent rows at the division point `(b₀ z + b₁) / M`
   have hdiv {M b₀ : ℕ} [NeZero M] (hb : b₀ < M) (b₁ : ℕ) :
       HasSum (fun m ↦ cotRow ((b₀ * (z : ℂ) + b₁) / M) m z)
@@ -799,7 +795,7 @@ private lemma hasSum_zetaValue_lift_sub (a : Fin 2 → ZMod N) (z : ℍ) :
   have h₂' : HasSum (fun m ↦ cotRow (z / 2) m z) (-(π * Complex.I)) := by
     simpa [divCoeff_two_one_zero] using h₂
   have h₃' : HasSum (fun m ↦ cotRow (1 / 2) m z) 0 := by
-    simpa [divCoeff_two_zero_one, hcot'] using h₃
+    simpa [divCoeff_two_zero_one, cot_pi_mul_inv_two] using h₃
   have hrow : HasSum (fun m ↦ zetaRow a m z) _ :=
     (h₁.sub (h₂'.mul_left (2 * (a 0).val / N : ℂ))).sub (h₃'.mul_left (2 * (a 1).val / N : ℂ))
   rw [(hasSum_zetaValue_lift ha z).unique hrow, zetaValueLimit]

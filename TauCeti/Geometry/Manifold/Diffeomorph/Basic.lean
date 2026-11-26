@@ -15,8 +15,9 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 # Differentials of diffeomorphisms
 
 The differentials of a diffeomorphism and its inverse undo each other, so the differential is
-nonzero wherever the tangent space is nontrivial, and the differential of a diffeomorphism undoes
-the pullback of vector fields along it.
+nonzero wherever the tangent space is nontrivial, pulls back only the zero covector to zero
+(`Diffeomorph.comp_mfderiv_eq_zero_iff`), and undoes the pullback of vector fields along the
+diffeomorphism.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, so the chain rule for such compositions holds without differentiability
 assumptions, including for maps conjugated by a diffeomorphism near a point, injectivity of the
@@ -24,10 +25,10 @@ differential is preserved by precomposition and postcomposition, and the tangent
 the ranges of its differentials, are unchanged by precomposition with a diffeomorphism and are
 mapped by the differential under postcomposition.
 These facts support inverse isometries, calibrated immersions, and transport of curve
-differentiability through diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as
-a partial diffeomorphism is also characterized, for composition with partial coordinates, and
-pulling back a `C^m` maximal-atlas chart along a `C^n` diffeomorphism (`m ≤ n`) preserves
-membership in the maximal `C^m` atlas (`Diffeomorph.trans_mem_maximalAtlas`,
+differentiability through diffeomorphisms. The underlying equivalence and function of a
+diffeomorphism viewed as a partial diffeomorphism are also characterized, for composition with
+partial coordinates, and pulling back a `C^m` maximal-atlas chart along a `C^n` diffeomorphism
+(`m ≤ n`) preserves membership in the maximal `C^m` atlas (`Diffeomorph.trans_mem_maximalAtlas`,
 `Diffeomorph.trans_mem_maximalAtlas_iff`).
 The linear map underlying the differential of a diffeomorphism viewed as a linear equivalence
 (`Diffeomorph.mfderivToContinuousLinearEquiv_toLinearMap`) is the differential.
@@ -49,11 +50,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace Diffeomorph
 
+/-- The inverse of the inverse of a diffeomorphism is the diffeomorphism itself. -/
+@[simp]
+theorem symm_symm (h : M ≃ₘ^n⟮I, J⟯ N) : h.symm.symm = h :=
+  Diffeomorph.ext fun _ ↦ rfl
+
 /-- The partial equivalence underlying a diffeomorphism viewed as a partial diffeomorphism
 is its everywhere-defined equivalence. -/
 @[simp]
 theorem toPartialDiffeomorph_toPartialEquiv (h : M ≃ₘ^n⟮I, J⟯ N) :
     h.toPartialDiffeomorph.toPartialEquiv = h.toEquiv.toPartialEquiv := (rfl)
+
+/-- A diffeomorphism viewed as a partial diffeomorphism has the diffeomorphism as its function.
+Not a simp lemma: `toPartialDiffeomorph_toPartialEquiv` already lets simp prove it. -/
+theorem coe_toPartialDiffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) : ⇑h.toPartialDiffeomorph = h := (rfl)
 
 /-- Pulling back a chart `φ` of the maximal `C^m` atlas of `N'` along a `C^n` diffeomorphism
 `h : M ≃ₘ^n⟮I, I⟯ N'` (`m ≤ n`) produces a chart of the maximal `C^m` atlas of `M`. -/
@@ -98,9 +108,8 @@ theorem mfderiv_apply_mfderiv_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
 theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (x : M) (v : TangentSpace I x) :
     mfderiv J I h.symm (h x) (mfderiv I J h x v) = v := by
-  have hss : h.symm.symm = h := Diffeomorph.ext (fun _ => rfl)
   have hh := mfderiv_apply_mfderiv_symm_apply h.symm hn (h x) v
-  rw [hss, h.symm_apply_apply] at hh
+  rw [h.symm_symm, h.symm_apply_apply] at hh
   exact hh
 
 /-- The differential of a diffeomorphism at a point with a nontrivial tangent space is nonzero. -/
@@ -111,6 +120,20 @@ theorem mfderiv_ne_zero (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {x : M}
   have hv' := h.mfderiv_apply_mfderiv_symm_apply hn x v
   rw [h0] at hv'
   exact hv (hv'.symm.trans (zero_apply _))
+
+/-- Pulling a covector back along the differential of a diffeomorphism gives zero only for the
+zero covector. -/
+@[simp]
+theorem comp_mfderiv_eq_zero_iff {G : Type*} [TopologicalSpace G] [AddCommMonoid G]
+    [Module 𝕜 G] (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M)
+    {ξ : TangentSpace J (h x) →L[𝕜] G} : ξ.comp (mfderiv I J h x) = 0 ↔ ξ = 0 := by
+  refine ⟨fun hξ ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun hξ ↦ by
+    rw [hξ, ContinuousLinearMap.zero_comp]⟩
+  -- Evaluate `ξ ∘ dh_x = 0` at `dh⁻¹ v`, and use `dh_x (dh⁻¹ v) = v`. The vector `dh⁻¹ v` lies in
+  -- the tangent space at `h⁻¹ (h x)`, equal to the one at `x` only definitionally, so `h'` is
+  -- read through `ContinuousLinearMap.comp_apply` by unfolding rather than by rewriting.
+  have h' := DFunLike.congr_fun hξ (mfderiv J I h.symm (h x) v)
+  exact (congrArg ξ (h.mfderiv_apply_mfderiv_symm_apply hn x v)).symm.trans h'
 
 /-- The differential of a diffeomorphism maps the pullback of a vector field at `x` to the value
 of the field at `h x`. -/
@@ -137,9 +160,8 @@ diffeomorphism returns the original tangent vector. -/
 theorem tangentMap_apply_symm (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (z : TangentBundle J N) :
     tangentMap I J h (tangentMap J I h.symm z) = z := by
-  have hss : h.symm.symm = h := Diffeomorph.ext fun _ ↦ rfl
   have hh := tangentMap_symm_apply h.symm hn z
-  rw [hss] at hh
+  rw [h.symm_symm] at hh
   exact hh
 
 /-- The tangent map of the inverse acts on a fibre by the inverse differential. This holds
@@ -272,6 +294,15 @@ theorem range_mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
   rw [h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.toLinearMap_comp,
     LinearMap.range_comp_of_range_eq_top]
   exact LinearMap.range_eq_top.mpr (h.isInvertible_mfderiv hn).surjective
+
+/-- Precomposition with a diffeomorphism does not change the range of the differential of a
+vector-valued map: the range of `mvfderiv I (f ∘ h) x` is the range of `mvfderiv J f (h x)`. No
+differentiability of `f` is assumed. -/
+theorem range_mvfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : N → E') (x : M) :
+    (mvfderiv I (f ∘ h) x).range = (mvfderiv J f (h x)).range := by
+  rw [h.mvfderiv_comp_diffeomorph hn, ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp_of_range_eq_top]
+  exact LinearMap.range_eq_top.2 (h.isInvertible_mfderiv hn).surjective
 
 /-- Postcomposition with a diffeomorphism preserves injectivity of the differential at the point.
 No differentiability of `f` is assumed. -/

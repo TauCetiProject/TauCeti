@@ -15,6 +15,7 @@ import TauCeti.Analysis.Complex.Fuchsian.Compactification.FiniteHolomorphicMap
 import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
 import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Degree
+import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Integral
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 
 /-!
@@ -51,6 +52,9 @@ with `j` gives a finite holomorphic map `β : X_H → ℙ¹(ℂ)` whose fibres o
 these orbits, so `F` is constant along all but one fibre of `β`, and is therefore the pullback of
 its trace along `β` divided by `deg β`
 (`TauCeti.RiemannSurface.MeromorphicFunction.exists_comap_eq_of_eventually_subsingleton_image`).
+The same map `β` identifies the integral closure of `ℂ[j]` in the meromorphic functions on `X_H`
+with the functions having no poles on the upper half-plane
+(`Subgroup.isIntegral_adjoin_jMeromorphicFunction_iff`).
 
 ## Main definitions
 
@@ -70,6 +74,8 @@ its trace along `β` divided by `deg β`
 * `TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_bot`: `F₁ = ℚ(j)`.
 * `Subgroup.exists_compactifiedQuotientComap_eq_iff`: the meromorphic functions on
   `X_H` pulled back from `X(1)` are those invariant under `SL(2, ℤ)`.
+* `Subgroup.isIntegral_adjoin_jMeromorphicFunction_iff`: a meromorphic function on `X_H` is
+  integral over `ℂ[j]` exactly when it has no poles on the upper half-plane.
 
 ## References
 
@@ -333,5 +339,34 @@ theorem _root_.Subgroup.exists_compactifiedQuotientComap_eq_iff (H : _root_.Subg
     ext fun x ↦ ?_⟩
   rw [← hg, _root_.Subgroup.compactifiedQuotientComap_apply, comap_apply, comap_apply]
   simp [β]
+
+/-- For a finite-index subgroup `H` of `SL(2, ℤ)`, a meromorphic function on `X_H` is integral
+over `ℂ[j]` exactly when it has no poles on the upper half-plane. Poles at the cusps are
+allowed. -/
+theorem _root_.Subgroup.isIntegral_adjoin_jMeromorphicFunction_iff (H : _root_.Subgroup SL(2, ℤ))
+    [H.FiniteIndex] (F : MeromorphicFunction (H.map sl2zToPSL2R).CompactifiedQuotient) :
+    IsIntegral (Algebra.adjoin ℂ
+      {_root_.Subgroup.compactifiedQuotientComap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
+        jMeromorphicFunction}) F ↔
+      ∀ τ : ℍ, F (ofQuotient (Quotient.mk _ τ)) ≠ ∞ := by
+  have := (_root_.Subgroup.isCofinite_map_sl2zToPSL2R H).compactSpace_compactifiedQuotient
+  let β := jFiniteHolomorphicMap.comp
+    (Fuchsian.compactifiedQuotientFiniteHolomorphicMap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R)
+  have hj : comapₐ β β.holomorphic β.nonconstant coordinate =
+      _root_.Subgroup.compactifiedQuotientComap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
+        jMeromorphicFunction := by
+    ext x
+    simp [β, coe_jMeromorphicFunction]
+  rw [← hj, isIntegral_adjoin_comap_coordinate_iff]
+  constructor
+  · intro h τ
+    apply h _
+    simp [β]
+  · intro h x hx
+    cases x with
+    | ofQuotient p =>
+      induction p using Quotient.inductionOn with
+      | h τ => exact h τ
+    | ofCusp C => exact (hx (by simp [β])).elim
 
 end TauCeti.ModularGroup

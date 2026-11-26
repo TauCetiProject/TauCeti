@@ -10,9 +10,8 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import TauCeti.Topology.Algebra.InfiniteSum.LinearRecurrence
 import TauCeti.Algebra.Ring.Commute
-import TauCeti.Algebra.Algebra.PowMulRecurrence
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # The Fredholm resolvent of a row-compact operator
@@ -579,13 +578,13 @@ theorem IsRowCompact.one_sub_smul_pow_succ_mul_resolventHasseDerivAt
     (hH : ∀ j < h, (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a = 0) :
     (1 - a • u) ^ (h + 1) * u.resolventHasseDerivAt h a =
       (PowerSeries.hasseDeriv h u.matrixCoeff.charPowerSeries).evalAt a • (1 - a • u) ^ h :=
-  Commute.pow_succ_mul_eq_smul_pow_of_mul_eq (A := C₀(I, R) →L[R] C₀(I, R))
+  (Commute.pow_succ_mul_eq_pow_mul_of_mul_eq (A := C₀(I, R) →L[R] C₀(I, R))
     (W := fun j ↦ u.resolventHasseDerivAt j a)
-    (c := fun j ↦ (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a)
-    (Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_right u)
-      ((Commute.refl u).smul_right a))
+    (d := fun j ↦ (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a • 1)
+    ((Commute.refl u).one_sub_smul_right a)
     (by simpa [PowerSeries.hasseDeriv_zero] using hu.one_sub_smul_mul_resolventAt a)
-    (hu.one_sub_smul_mul_resolventHasseDerivAt_succ · a) hH
+    (fun k _ ↦ hu.one_sub_smul_mul_resolventHasseDerivAt_succ k a)
+    fun j hj ↦ by ext; simp [hH j hj]).trans (mul_smul_one _ _)
 
 /-- **The Riesz identity at a good zero.** Let `u` be row compact, put `C = 1 - a • u`, and
 suppose `ΔʲH_u(a) = 0` for `j < h` while `c = ΔʰH_u(a)` is a unit, so that `a` is a good zero

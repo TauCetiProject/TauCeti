@@ -11,6 +11,7 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.LinearAlgebra.Matrix.Charpoly.DetSign
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Dynamics.FixedPoints.Topology
@@ -74,6 +75,36 @@ fixed point is `df_x` conjugated by the derivative of the transition map
 computed in any chart, also on manifolds with boundary or corners
 (`TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`).
 
+The determinant `det (1 - df_x)`, with `df_x` read by `mfderiv` in the charts at `x` and `f x`, is
+the **fixed-point determinant** `TauCeti.fixedPointDet I f x`, defined at every point; over `ℝ`
+the **Lefschetz sign** `TauCeti.fixedPointSign I f x` is `1` when it is positive and `-1`
+otherwise. At a nondegenerate fixed point the Lefschetz sign is `sgn det (1 - df_x)`
+(`TauCeti.fixedPointSign_eq_sign`), the contribution of the fixed point to the Lefschetz
+fixed-point formula `∑ₓ sgn det (1 - df_x) = ∑ᵢ (-1) ^ i tr (f_* | Hᵢ(M; ℚ))` and the local
+fixed-point index of `f` at `x` read in a chart (`ContinuousMap.localFixedPointIndex_eq_sign_det`).
+With this convention a fixed point at which every eigenvalue of `df_x` has modulus less than `1`
+(a hyperbolic attracting fixed point) has sign `1`; a degenerate attracting fixed point, such as
+`0` for `x ↦ x - x ^ 3` on `ℝ`, has `fixedPointDet = 0` and sign `-1`. At a fixed point
+`fixedPointDet` is computed from the fixed-point derivative
+(`TauCeti.fixedPointDet_eq_det_id_sub_fixedPointDerivative`). So, when `f` is continuous at `x`
+and `M` is a `C¹` manifold, it can be computed in any chart
+(`TauCeti.fixedPointDet_eq_det_id_sub_fderivWithin_extChartAt`). When `f` is differentiable at
+`x`, it is `det (1 - D ^ n)` for `f^[n]` (`TauCeti.fixedPointDet_iterate`), and if moreover the
+model space is finite-dimensional, it is nonzero exactly when `x` is a nondegenerate fixed point
+(`TauCeti.fixedPointDet_ne_zero_iff`). Conjugation by a diffeomorphism
+preserves it, whether or not the diffeomorphism preserves an orientation
+(`Diffeomorph.fixedPointDet_eq_of_semiconj`). On a zero-dimensional manifold every point has
+`fixedPointDet I f x = 1` and Lefschetz sign `1`. Along the iterates of a fixed point, the
+Lefschetz signs form a geometric sequence (`TauCeti.fixedPointSign_iterate_succ`): if `f` is
+differentiable at `x` and `x` is a nondegenerate fixed point of `f^[k + 1]`, then
+`sgn det (1 - D ^ (k + 1)) = sgn det (1 - D) * ((-1) ^ i₋) ^ k`, where `i₋` counts the real
+eigenvalues of `D` below `-1`. The signs themselves are read off the eigenvalues
+(`TauCeti.fixedPointSign_iterate`): if `f` is differentiable at the fixed point `x` and
+`fixedPointDet I f^[k] x ≠ 0`, the Lefschetz sign of `f^[k]` at `x` is
+`(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)`, where `i₊` counts the real eigenvalues of `D` above `1`, both
+with algebraic multiplicity. At a nondegenerate fixed point it is `(-1) ^ i₊`
+(`TauCeti.IsNondegenerateFixedPt.fixedPointSign_eq`).
+
 ## Main definitions
 
 * `TauCeti.IsNondegenerateFixedPt I f x`: `x` is a fixed point of `f`, `f` is differentiable at
@@ -82,6 +113,10 @@ computed in any chart, also on manifolds with boundary or corners
   nondegenerate fixed point of `f^[k]`.
 * `TauCeti.fixedPointDerivative I f x`: the differential of `f` at a fixed point `x`, as an
   endomorphism of `T_x M`.
+* `TauCeti.fixedPointDet I f x`: the determinant `det (1 - df_x)`, with `df_x` read in the charts
+  at `x` and `f x`.
+* `TauCeti.fixedPointSign I f x`: over `ℝ`, `1` when `fixedPointDet I f x` is positive and `-1`
+  otherwise.
 
 ## Main results
 
@@ -89,6 +124,8 @@ computed in any chart, also on manifolds with boundary or corners
   conjugation by a diffeomorphism.
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
   finite-dimensional space over a complete field, nondegenerate fixed points are isolated.
+* `TauCeti.IsNondegenerateFixedPt.exists_pos_forall_mem_closedBall_isFixedPt_eq`: on a metric
+  manifold, some closed ball around a nondegenerate fixed point contains no other fixed point.
 * `IsCompact.finite_of_isNondegenerateFixedPt`: on a manifold modelled on a finite-dimensional
   space over a complete field, a compact set of nondegenerate fixed points is finite.
 * `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold modelled on a
@@ -101,6 +138,8 @@ computed in any chart, also on manifolds with boundary or corners
 * `TauCeti.IsNondegenerateUpToPeriod.finite_ptsOfPeriod`,
   `TauCeti.IsNondegenerateUpToPeriod.finite_setOf_isPeriodicPt`: finitely many periodic points of
   period at most `N` on a compact manifold.
+* `TauCeti.finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod`: a map nondegenerate up to
+  every period has finitely many fixed points of each positive iterate.
 * `TauCeti.IsNondegenerateUpToPeriod.eq_zero_of_pow_apply_eq_smul`,
   `TauCeti.IsNondegenerateUpToPeriod.det_smul_one_sub_pow_ne_zero`: nondegeneracy up to period
   `N` excludes every `ε` with `ε ^ j = 1` as an eigenvalue of the return map of the `m`-fold cover
@@ -113,12 +152,42 @@ computed in any chart, also on manifolds with boundary or corners
   `f^[j] x` of the orbit.
 * `HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub`: on a normed space, a fixed point at
   which `f` has derivative `D` is nondegenerate exactly when `1 - D` is injective.
+* `HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub`: in finite dimensions, exactly when
+  `1 - D` is invertible.
+* `TauCeti.IsNondegenerateFixedPt.isInvertible_id_sub_fderiv`: so `1 - Df(x)` is invertible at a
+  nondegenerate fixed point of a map of a finite-dimensional normed space.
+* `TauCeti.IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero`: on a finite-dimensional normed
+  space, `det (1 - df_x) ≠ 0` at a nondegenerate fixed point `x`.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
+* `TauCeti.isNondegenerateFixedPt_iterate_apply_iterate_iff`: in finite dimensions, the points of
+  a periodic orbit of period `n` are all nondegenerate fixed points of `f^[n]` or none is.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
   point can be computed in any chart.
 * `TauCeti.isNondegenerateFixedPt_iff_injective_sub_id_of_hasFDerivWithinAt`: so can
   nondegeneracy, as injectivity of `B - 1` for the derivative `B` of the coordinate expression.
+* `TauCeti.fixedPointDet_eq_det_id_sub_fixedPointDerivative`,
+  `TauCeti.fixedPointDet_eq_det_id_sub_fderivWithin_extChartAt`: at a fixed point,
+  `fixedPointDet` is `det (1 - df_x)` for the fixed-point derivative, and, when `f` is continuous
+  at `x` on a `C¹` manifold, can be computed in any chart.
+* `TauCeti.fixedPointDet_ne_zero_iff`: in finite dimensions, a fixed point at which `f` is
+  differentiable is nondegenerate exactly when `fixedPointDet I f x ≠ 0`.
+* `Diffeomorph.fixedPointDet_eq_of_semiconj`, `Diffeomorph.fixedPointSign_eq_of_semiconj`:
+  invariance under conjugation by a diffeomorphism.
+* `TauCeti.fixedPointDet_iterate`: `fixedPointDet I f^[n] x = det (1 - D ^ n)` at a fixed point
+  where `f` is differentiable.
+* `TauCeti.fixedPointSign_eq_sign`: where `fixedPointDet I f x ≠ 0`, the Lefschetz sign is its
+  sign.
+* `TauCeti.fixedPointSign_iterate_apply_iterate`: the Lefschetz sign of `f^[n]` is constant along
+  a periodic orbit of period `n`.
+* `TauCeti.fixedPointSign_iterate_succ`: at a fixed point `x` where `f` is differentiable, the
+  Lefschetz signs of the iterates `f^[k + 1]` at which `x` is nondegenerate form a geometric
+  sequence.
+* `TauCeti.fixedPointSign_iterate`, `TauCeti.IsNondegenerateFixedPt.fixedPointSign_eq`: on a
+  finite-dimensional real model, at a fixed point where `f` is differentiable with fixed-point
+  derivative `D`, the Lefschetz sign of `f^[k]` is `(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)` when
+  `fixedPointDet I f^[k] x ≠ 0`, and that of a nondegenerate fixed point is `(-1) ^ i₊`, for the
+  numbers `i₊` and `i₋` of real eigenvalues of `D` in `(1, ∞)` and `(-∞, -1)`.
 
 ## References
 
@@ -127,6 +196,8 @@ computed in any chart, also on manifolds with boundary or corners
   local Lefschetz number, the sign of the determinant of `df_x - I`).
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
   Section 11.1 (nondegenerate fixed points of Hamiltonian symplectomorphisms).
+* M. Hutchings, *Reidemeister torsion in generalized Morse theory*, Forum Math. 14 (2002),
+  209–244, §1.1 (the sign `sgn det (1 - df_x)` of a nondegenerate fixed point).
 -/
 
 public section
@@ -195,14 +266,6 @@ theorem _root_.Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj {F H' N : Type
     exact Φ.injective.eq_iff
   have hdiff : MDifferentiableAt J J g (Φ x) ↔ MDifferentiableAt I I f x := by
     rw [← Φ.mdifferentiableAt_comp_diffeomorph_iff hn, ← hcomp, Φ.mdifferentiableAt_comp_iff hn]
-  -- The differentials are maps between the model spaces `E` and `F`, the tangent spaces of `M`
-  -- and `N` at every point; stating them so lets `f x = x` be substituted without transport.
-  -- Differentiating `Φ ∘ f = g ∘ Φ` at `x` gives `dg ∘ dΦ = dΦ ∘ df`.
-  have hder : ((mfderiv J J g (Φ x)).comp (mfderiv I J Φ x) : E →L[𝕜] F) =
-      (mfderiv I J Φ (f x)).comp (mfderiv I I f x) := by
-    refine (Φ.mfderiv_comp_diffeomorph hn g x).symm.trans ?_
-    rw [← hcomp]
-    exact Φ.mfderiv_diffeomorph_comp hn f x
   have hl (w : E) : (mfderiv J I Φ.symm (Φ x) (mfderiv I J Φ x w) : E) = w :=
     Φ.mfderiv_symm_apply_mfderiv_apply hn x w
   have hr (v : F) : (mfderiv I J Φ x (mfderiv J I Φ.symm (Φ x) v) : F) = v :=
@@ -212,8 +275,8 @@ theorem _root_.Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj {F H' N : Type
   have hfg (hfx : f x = x) (w : E) :
       (mfderiv J J g (Φ x) (mfderiv I J Φ x w) : F) = mfderiv I J Φ x (mfderiv I I f x w) := by
     have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = mfderiv I J Φ x := by rw [hfx]
-    rw [hΦ] at hder
-    exact congrArg (fun A : E →L[𝕜] F ↦ A w) hder
+    exact (Φ.mfderiv_apply_mfderiv_of_comp_eventuallyEq hn (.of_forall h) w).trans
+      (congrArg (fun L : E →L[𝕜] F ↦ L (mfderiv I I f x w)) hΦ)
   constructor
   · rintro ⟨hgx, hgd, hg⟩
     have hfx : f x = x := (hfix.1 hgx).eq
@@ -270,6 +333,16 @@ theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x) :
   filter_upwards [htends.eventually hne, hsource, hfsource] with y hy hys _ hfix
   apply hy
   rw [(extChartAt I x).left_inv hys, hfix.eq, sub_self]
+
+/-- **A closed ball isolating a nondegenerate fixed point.** On a metric manifold modelled on a
+finite-dimensional space over a complete field, a nondegenerate fixed point `x` of `g` is the only
+fixed point of `g` in some closed ball of positive radius around `x`. -/
+theorem exists_pos_forall_mem_closedBall_isFixedPt_eq {X : Type*} [PseudoMetricSpace X]
+    [ChartedSpace H X] {g : X → X} {x : X} (h : IsNondegenerateFixedPt I g x) :
+    ∃ r > 0, ∀ y ∈ Metric.closedBall x r, IsFixedPt g y → y = x := by
+  obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis Metric.nhds_basis_closedBall _).eventually_iff.1
+    h.eventually_not_isFixedPt
+  exact ⟨r, hr, fun y hy hyfix ↦ by_contra fun hyx ↦ hr' ⟨hy, hyx⟩ hyfix⟩
 
 end IsNondegenerateFixedPt
 
@@ -452,6 +525,15 @@ theorem finite_setOf_isPeriodicPt (h : IsNondegenerateUpToPeriod I f N) (hf : Co
 
 end IsNondegenerateUpToPeriod
 
+/-- On a compact manifold modelled on a finite-dimensional space over a complete field, a
+continuous map nondegenerate up to every period has only finitely many fixed points of each
+positive iterate. -/
+theorem finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] [CompactSpace M] [T2Space M]
+    (h : ∀ N, IsNondegenerateUpToPeriod I f N) (hf : Continuous f) :
+    ∀ n, 0 < n → (ptsOfPeriod f n).Finite :=
+  fun n hn ↦ (h n).finite_ptsOfPeriod hf hn le_rfl
+
 /-! ### The fixed-point derivative
 
 At a fixed point `x` of `f` the differential `df_x : T_x M → T_{f x} M` becomes an endomorphism of
@@ -516,6 +598,26 @@ theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub {f : E �
   -- The tangent space `TangentSpace 𝓘(𝕜, E) x` is `E` by definition.
   exact forall_congr' fun v ↦ imp_congr_left
     ⟨fun h ↦ sub_eq_zero.2 h.symm, fun h ↦ (sub_eq_zero.1 h).symm⟩
+
+/-- **Nondegeneracy on a finite-dimensional space.** If `f` has Fréchet derivative `D` at a fixed
+point `x` of a finite-dimensional normed space over a complete field, with its trivial chart, then
+`x` is nondegenerate exactly when `1 - D` is invertible. -/
+theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {f : E → E} {D : E →L[𝕜] E} {x : E} (hD : HasFDerivAt f D x)
+    (hx : IsFixedPt f x) :
+    IsNondegenerateFixedPt 𝓘(𝕜, E) f x ↔ (ContinuousLinearMap.id 𝕜 E - D).IsInvertible := by
+  rw [hD.isNondegenerateFixedPt_iff_injective_id_sub hx]
+  refine ⟨fun h ↦ ⟨(LinearEquiv.ofInjectiveEndo _ h).toContinuousLinearEquiv, by ext; simp⟩, ?_⟩
+  rintro ⟨e, he⟩
+  exact he ▸ e.injective
+
+/-- At a nondegenerate fixed point `x` of a map `f` of a finite-dimensional normed space over a
+complete field, with its trivial chart, the operator `1 - Df(x)` is invertible. -/
+theorem IsNondegenerateFixedPt.isInvertible_id_sub_fderiv [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {f : E → E} {x : E} (h : IsNondegenerateFixedPt 𝓘(𝕜, E) f x) :
+    (ContinuousLinearMap.id 𝕜 E - fderiv 𝕜 f x).IsInvertible :=
+  ((mdifferentiableAt_iff_differentiableAt.1 h.mdifferentiableAt).hasFDerivAt
+    |>.isNondegenerateFixedPt_iff_isInvertible_id_sub h.isFixedPt).1 h
 
 /-- **The fixed-point derivative of an iterate.** If `f` is differentiable at a fixed point `x`,
 the fixed-point derivative of `f^[n]` at `x` is the `n`-th power of that of `f`. -/
@@ -623,6 +725,28 @@ theorem isNondegenerateFixedPt_iff_det_id_sub_ne_zero [FiniteDimensional 𝕜 E]
   exact ⟨fun h v hv ↦ h.eq_zero_of_mfderiv_apply_eq (sub_eq_zero.1 hv).symm,
     fun h ↦ ⟨x.property, hf, fun v hv ↦ h v (sub_eq_zero.2 hv.symm)⟩⟩
 
+/-- **Nondegeneracy is constant along a periodic orbit.** If `x` is a periodic point of period `n`
+of a map `f` differentiable at every point of the orbit of `x`, then every point `f^[j] x` of the
+orbit is a nondegenerate fixed point of `f^[n]` exactly when `x` is. -/
+theorem isNondegenerateFixedPt_iterate_apply_iterate_iff [FiniteDimensional 𝕜 E] {n : ℕ}
+    (hx : IsPeriodicPt f n x) (hf : ∀ m, MDifferentiableAt I I f (f^[m] x)) (j : ℕ) :
+    IsNondegenerateFixedPt I f^[n] (f^[j] x) ↔ IsNondegenerateFixedPt I f^[n] x := by
+  have hfj : MDifferentiableAt I I f^[n] (f^[j] x) :=
+    mdifferentiableAt_iterate fun m _ ↦ by rw [← iterate_add_apply]; exact hf _
+  rw [isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨f^[j] x, (hx.apply_iterate j).eq⟩ hfj,
+    isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, hx.eq⟩ (mdifferentiableAt_iterate
+      fun m _ ↦ hf m), det_id_sub_fixedPointDerivative_apply_iterate hx hf j]
+
+/-- **Nondegeneracy gives a nonzero determinant.** At a nondegenerate fixed point `x` of a self-map
+`f` of a finite-dimensional normed space, with its trivial chart, `det (1 - df_x) ≠ 0`. -/
+theorem IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero [FiniteDimensional 𝕜 E] {f : E → E}
+    {x : E} (h : IsNondegenerateFixedPt 𝓘(𝕜, E) f x) : (1 - fderiv 𝕜 f x).det ≠ 0 := by
+  have hdet := (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, h.isFixedPt⟩
+    h.mdifferentiableAt).1 h
+  rw [det_id_sub_fixedPointDerivative_modelSpace] at hdet
+  -- `ContinuousLinearMap.det` is the determinant of the underlying linear map, and `1` is `id`.
+  simpa [ContinuousLinearMap.det, Module.End.one_eq_id] using hdet
+
 /-- On a compact manifold over a complete field (whose model space is then finite-dimensional when
 the manifold is nonempty), a continuous map that is differentiable at its fixed points, with
 `det (1 - df_x) ≠ 0` at each of them, has only finitely many fixed points. -/
@@ -703,5 +827,306 @@ theorem isNondegenerateFixedPt_iff_injective_sub_id_of_hasFDerivWithinAt [Finite
   refine forall_congr' fun w ↦ imp_congr_left ?_
   rw [← neg_eq_zero]
   simp
+
+/-! ### The fixed-point determinant and the Lefschetz sign
+
+The determinant `det (1 - df_x)`, with `df_x` read by `mfderiv` in the charts at `x` and `f x`, is
+`TauCeti.fixedPointDet I f x`; over `ℝ`, the sign `TauCeti.fixedPointSign I f x` is `1` when it is
+positive and `-1` otherwise. At a fixed point the two charts coincide, so `fixedPointDet` is the
+determinant of `1` minus the fixed-point derivative, and the API above applies to it. -/
+
+section Det
+
+variable (I) in
+/-- The **fixed-point determinant** `det (1 - df_x)` of `f : M → M` at `x`, with the differential
+`df_x` read by `mfderiv` in the charts at `x` and at `f x`. At a fixed point these charts coincide,
+so it is the determinant of `1 - df_x` for the fixed-point derivative, an endomorphism of `T_x M`
+(`TauCeti.fixedPointDet_eq_det_id_sub_fixedPointDerivative`), and it does not depend on the chart
+(`TauCeti.fixedPointDet_eq_det_id_sub_fderivWithin_extChartAt`). When `f` is not differentiable
+at `x` the differential is zero and `fixedPointDet I f x = 1`. -/
+noncomputable def fixedPointDet (f : M → M) (x : M) : 𝕜 :=
+  LinearMap.det (LinearMap.id - (mfderiv I I f x).toLinearMap)
+
+/-- `fixedPointDet I f x` is the determinant of `1 - df_x`, for the differential read in the charts
+at `x` and `f x`. -/
+theorem fixedPointDet_def (f : M → M) (x : M) :
+    fixedPointDet I f x =
+      LinearMap.det (LinearMap.id - (mfderiv I I f x).toLinearMap) :=
+  (rfl)
+
+/-- If `f` has differential `D` at `x`, then `fixedPointDet I f x = det (1 - D)`. -/
+theorem _root_.HasMFDerivAt.fixedPointDet_eq {D : E →L[𝕜] E} (hD : HasMFDerivAt I I f x D) :
+    fixedPointDet I f x = LinearMap.det (LinearMap.id - (D : E →ₗ[𝕜] E)) := by
+  rw [fixedPointDet_def, hD.mfderiv]
+  -- The two sides differ only in reading the tangent spaces at `x` and `f x` as `E`.
+  rfl
+
+/-- Where `f` is not differentiable its differential is zero, so `fixedPointDet I f x = 1`. -/
+theorem fixedPointDet_eq_one_of_not_mdifferentiableAt (hf : ¬MDifferentiableAt I I f x) :
+    fixedPointDet I f x = 1 := by
+  rw [fixedPointDet_def, mfderiv_zero_of_not_mdifferentiableAt hf]
+  -- The zero map between the tangent spaces at `x` and `f x` is the zero map of `E`.
+  exact (congrArg LinearMap.det (sub_zero LinearMap.id)).trans LinearMap.det_id
+
+/-- On a zero-dimensional model space the determinant of every endomorphism is `1`, so
+`fixedPointDet I f x = 1`. -/
+theorem fixedPointDet_eq_one_of_subsingleton [Subsingleton E] : fixedPointDet I f x = 1 :=
+  -- The tangent space at `x` is the model space `E`.
+  have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
+  LinearMap.det_eq_one_of_subsingleton _
+
+/-- At a fixed point `x`, `fixedPointDet I f x` is `det (1 - df_x)` for the fixed-point
+derivative, the differential viewed as an endomorphism of `T_x M`. -/
+theorem fixedPointDet_eq_det_id_sub_fixedPointDerivative (hx : IsFixedPt f x) :
+    fixedPointDet I f x = LinearMap.det (LinearMap.id - fixedPointDerivative I f ⟨x, hx⟩) := by
+  rw [fixedPointDet_def]
+  congr 2
+  exact LinearMap.ext fun v ↦ (fixedPointDerivative_apply (I := I) ⟨x, hx⟩ v).symm
+
+/-- On a normed space, with its trivial chart, `fixedPointDet` is `det (1 - f')` for the Fréchet
+derivative `f'` of `f`. -/
+@[simp]
+theorem fixedPointDet_modelSpace (f : E → E) (x : E) :
+    fixedPointDet 𝓘(𝕜, E) f x = LinearMap.det (LinearMap.id - (fderiv 𝕜 f x : E →ₗ[𝕜] E)) := by
+  rw [fixedPointDet_def, mfderiv_eq_fderiv]
+  -- `NormedSpace.fromTangentSpace` is the identity of the model space.
+  rfl
+
+/-- **`fixedPointDet` is intrinsic.** If `f` is continuous at a fixed point `x`, then
+`fixedPointDet I f x` is `det (1 - B)` for the derivative `B` at `x`, within the range of the
+model, of the coordinate expression of `f` in any extended chart whose source contains `x`. The
+manifold may have boundary or corners. -/
+theorem fixedPointDet_eq_det_id_sub_fderivWithin_extChartAt [IsManifold I 1 M] {x' : M}
+    (hx : IsFixedPt f x) (hf : ContinuousAt f x) (hx' : x ∈ (extChartAt I x').source) :
+    fixedPointDet I f x = LinearMap.det (LinearMap.id -
+      (fderivWithin 𝕜 (extChartAt I x' ∘ f ∘ (extChartAt I x').symm) (range I)
+        (extChartAt I x' x) : E →ₗ[𝕜] E)) := by
+  rw [fixedPointDet_eq_det_id_sub_fixedPointDerivative hx,
+    det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm ⟨x, hx⟩ hf hx']
+
+/-- **`fixedPointDet` is invariant under conjugation by a diffeomorphism.** If a diffeomorphism
+`Φ` intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, and `x` is a fixed point of `f`, then
+`fixedPointDet J g (Φ x) = fixedPointDet I f x`: the differential of `Φ` at `x` conjugates `df_x`
+to `dg_{Φ x}`. No differentiability of `f` is needed, since `g` is differentiable at `Φ x` exactly
+when `f` is differentiable at `x`. -/
+theorem _root_.Diffeomorph.fixedPointDet_eq_of_semiconj {F H' N : Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
+    [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
+    (h : Semiconj Φ f g) (hx : IsFixedPt f x) :
+    fixedPointDet J g (Φ x) = fixedPointDet I f x := by
+  -- The tangent spaces of `M` and `N` are the model spaces `E` and `F`; read the differentials
+  -- of `f`, `g` and `Φ` there.
+  let A : E →L[𝕜] E := mfderiv I I f x
+  let B : F →L[𝕜] F := mfderiv J J g (Φ x)
+  let T : E →L[𝕜] F := mfderiv I J Φ x
+  have hA : fixedPointDet I f x = LinearMap.det (LinearMap.id - (A : E →ₗ[𝕜] E)) := rfl
+  have hB : fixedPointDet J g (Φ x) = LinearMap.det (LinearMap.id - (B : F →ₗ[𝕜] F)) := rfl
+  -- At the fixed point `x`, the differential of `Φ` at `f x` is `T`.
+  have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = T := by rw [hx.eq]
+  -- The differential `T` of `Φ` is a linear equivalence `e`.
+  let e : E ≃ₗ[𝕜] F := (Φ.mfderivToContinuousLinearEquiv hn x).toLinearEquiv
+  have he (w : E) : e w = T w :=
+    congrArg (fun L : E →L[𝕜] F ↦ L w) (Φ.mfderivToContinuousLinearEquiv_coe hn)
+  -- So `1 - B` is the conjugate of `1 - A` by `e`.
+  have hconj : LinearMap.id - (B : F →ₗ[𝕜] F) =
+      (e : E →ₗ[𝕜] F) ∘ₗ (LinearMap.id - (A : E →ₗ[𝕜] E)) ∘ₗ (e.symm : F →ₗ[𝕜] E) := by
+    refine LinearMap.ext fun v ↦ ?_
+    obtain ⟨w, rfl⟩ := e.surjective v
+    -- Differentiating `Φ ∘ f = g ∘ Φ` at `x` gives `B (T w) = T (A w)`.
+    have hw : B (T w) = T (A w) :=
+      (Φ.mfderiv_apply_mfderiv_of_comp_eventuallyEq hn (.of_forall h) w).trans
+        (congrArg (fun L : E →L[𝕜] F ↦ L (A w)) hΦ)
+    simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, map_sub, ContinuousLinearMap.coe_coe]
+    simp only [he]
+    exact congrArg (T w - ·) hw
+  rw [hB, hconj, LinearMap.det_conj, hA]
+
+/-- **Nondegeneracy as a determinant condition.** On a manifold modelled on a finite-dimensional
+space, a fixed point `x` at which `f` is differentiable is nondegenerate exactly when
+`fixedPointDet I f x ≠ 0`. Differentiability is needed: without it `fixedPointDet I f x = 1`. -/
+theorem fixedPointDet_ne_zero_iff [FiniteDimensional 𝕜 E] (hx : IsFixedPt f x)
+    (hf : MDifferentiableAt I I f x) :
+    fixedPointDet I f x ≠ 0 ↔ IsNondegenerateFixedPt I f x := by
+  rw [fixedPointDet_eq_det_id_sub_fixedPointDerivative hx,
+    isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, hx⟩ hf]
+
+/-- At a nondegenerate fixed point, on a manifold modelled on a finite-dimensional space,
+`fixedPointDet I f x ≠ 0`. -/
+theorem IsNondegenerateFixedPt.fixedPointDet_ne_zero [FiniteDimensional 𝕜 E]
+    (h : IsNondegenerateFixedPt I f x) : fixedPointDet I f x ≠ 0 :=
+  (fixedPointDet_ne_zero_iff h.isFixedPt h.mdifferentiableAt).2 h
+
+/-- **The fixed-point determinant of an iterate.** If `f` is differentiable at a fixed point `x`,
+then `fixedPointDet I f^[n] x = det (1 - D ^ n)` for the fixed-point derivative `D` of `f` at
+`x`. -/
+theorem fixedPointDet_iterate (hx : IsFixedPt f x) (hf : MDifferentiableAt I I f x) (n : ℕ) :
+    fixedPointDet I f^[n] x =
+      LinearMap.det (LinearMap.id - fixedPointDerivative I f ⟨x, hx⟩ ^ n) := by
+  rw [fixedPointDet_eq_det_id_sub_fixedPointDerivative (hx.iterate n),
+    fixedPointDerivative_iterate ⟨x, hx⟩ hf]
+
+/-- **The fixed-point determinant is constant along a periodic orbit.** If `x` is a periodic point
+of period `n` of a map `f` differentiable at every point of the orbit of `x`, then
+`fixedPointDet I f^[n]` takes the same value at every point `f^[j] x` of that orbit. -/
+theorem fixedPointDet_iterate_apply_iterate [FiniteDimensional 𝕜 E] {n : ℕ}
+    (hx : IsPeriodicPt f n x) (hf : ∀ m, MDifferentiableAt I I f (f^[m] x)) (j : ℕ) :
+    fixedPointDet I f^[n] (f^[j] x) = fixedPointDet I f^[n] x := by
+  rw [fixedPointDet_eq_det_id_sub_fixedPointDerivative (hx.apply_iterate j),
+    fixedPointDet_eq_det_id_sub_fixedPointDerivative hx,
+    det_id_sub_fixedPointDerivative_apply_iterate hx hf j]
+
+end Det
+
+end TauCeti
+
+/-! ### The Lefschetz sign of a fixed point -/
+
+namespace TauCeti
+
+section Sign
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {f : M → M} {x : M}
+
+variable (I) in
+/-- The **Lefschetz sign** of `f : M → M` at `x`: `1` when `fixedPointDet I f x = det (1 - df_x)`
+is positive and `-1` otherwise. At a nondegenerate fixed point it is the sign of
+`det (1 - df_x)` (`TauCeti.fixedPointSign_eq_sign`), the contribution of the fixed point to the
+Lefschetz fixed-point formula. -/
+noncomputable def fixedPointSign (f : M → M) (x : M) : ℤ :=
+  if 0 < fixedPointDet I f x then 1 else -1
+
+/-- `fixedPointSign I f x` is `1` when `fixedPointDet I f x` is positive and `-1` otherwise. -/
+theorem fixedPointSign_def (f : M → M) (x : M) :
+    fixedPointSign I f x = if 0 < fixedPointDet I f x then 1 else -1 :=
+  (rfl)
+
+theorem fixedPointSign_eq_one_iff : fixedPointSign I f x = 1 ↔ 0 < fixedPointDet I f x := by
+  rw [fixedPointSign_def]
+  split_ifs with h <;> simp [h]
+
+theorem fixedPointSign_eq_neg_one_iff : fixedPointSign I f x = -1 ↔ fixedPointDet I f x ≤ 0 := by
+  rw [fixedPointSign_def]
+  split_ifs with h
+  · simp [h.not_ge]
+  · simp [not_lt.mp h]
+
+/-- Where `fixedPointDet I f x ≠ 0`, the Lefschetz sign is the sign of `fixedPointDet I f x`. -/
+theorem fixedPointSign_eq_sign (h : fixedPointDet I f x ≠ 0) :
+    fixedPointSign I f x = SignType.sign (fixedPointDet I f x) := by
+  rw [fixedPointSign_def]
+  split_ifs with hpos
+  · simp [hpos]
+  · simp [sign_neg (lt_of_le_of_ne (not_lt.mp hpos) h)]
+
+/-- At a nondegenerate fixed point, on a manifold modelled on a finite-dimensional space, the
+Lefschetz sign is the sign of `det (1 - df_x)`. -/
+theorem IsNondegenerateFixedPt.fixedPointSign_eq_sign [FiniteDimensional ℝ E]
+    (h : IsNondegenerateFixedPt I f x) :
+    fixedPointSign I f x = SignType.sign (fixedPointDet I f x) :=
+  TauCeti.fixedPointSign_eq_sign h.fixedPointDet_ne_zero
+
+/-- On a zero-dimensional model space every point has Lefschetz sign `1`. -/
+theorem fixedPointSign_eq_one_of_subsingleton [Subsingleton E] : fixedPointSign I f x = 1 :=
+  fixedPointSign_eq_one_iff.2 (by rw [fixedPointDet_eq_one_of_subsingleton]; exact one_pos)
+
+/-- **The Lefschetz sign is invariant under conjugation by a diffeomorphism**, whether or not the
+diffeomorphism preserves an orientation. -/
+theorem _root_.Diffeomorph.fixedPointSign_eq_of_semiconj {F H' N : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+    [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
+    (h : Semiconj Φ f g) (hx : IsFixedPt f x) :
+    fixedPointSign J g (Φ x) = fixedPointSign I f x := by
+  rw [fixedPointSign_def, fixedPointSign_def, Φ.fixedPointDet_eq_of_semiconj hn h hx]
+
+/-- **The Lefschetz sign is constant along a periodic orbit.** If `x` is a periodic point of period
+`n` of a map `f` differentiable at every point of the orbit of `x`, then all points `f^[j] x` of
+the orbit have the same Lefschetz sign as fixed points of `f^[n]`. -/
+theorem fixedPointSign_iterate_apply_iterate [FiniteDimensional ℝ E] {n : ℕ}
+    (hx : IsPeriodicPt f n x) (hf : ∀ m, MDifferentiableAt I I f (f^[m] x)) (j : ℕ) :
+    fixedPointSign I f^[n] (f^[j] x) = fixedPointSign I f^[n] x := by
+  rw [fixedPointSign_def, fixedPointSign_def, fixedPointDet_iterate_apply_iterate hx hf j]
+
+/-- **The Lefschetz signs of the iterates form a geometric sequence.** Let `x` be a fixed point of
+`f`, at which `f` is differentiable with fixed-point derivative `D`, and suppose `x` is a
+nondegenerate fixed point of `f^[k + 1]`. Then the Lefschetz sign of `f^[k + 1]` at `x` is that of
+`f` times `σ ^ k`, with ratio `σ = (-1) ^ i₋`, where `i₋` counts the real roots of the
+characteristic polynomial of `D` in `(-∞, -1)`, with multiplicity. -/
+theorem fixedPointSign_iterate_succ [FiniteDimensional ℝ E] (hx : IsFixedPt f x)
+    (hf : MDifferentiableAt I I f x) {k : ℕ} (h : IsNondegenerateFixedPt I f^[k + 1] x) :
+    fixedPointSign I f^[k + 1] x = fixedPointSign I f x *
+      (-1) ^ (k * ((fixedPointDerivative I f ⟨x, hx⟩).charpoly.roots.filter (· < -1)).card) := by
+  -- The tangent space is the model space `E`.
+  have : FiniteDimensional ℝ (TangentSpace I x) := ‹FiniteDimensional ℝ E›
+  set D := fixedPointDerivative I f ⟨x, hx⟩
+  have hk : (1 - D ^ (k + 1)).det ≠ 0 := by
+    have := h.fixedPointDet_ne_zero
+    rwa [fixedPointDet_iterate hx hf, ← Module.End.one_eq_id] at this
+  rw [h.fixedPointSign_eq_sign, (h.of_iterate hf hx).fixedPointSign_eq_sign,
+    fixedPointDet_iterate hx hf, fixedPointDet_eq_det_id_sub_fixedPointDerivative hx,
+    ← Module.End.one_eq_id, D.sign_det_one_sub_pow_succ k hk]
+  simp [D, pow_mul']
+
+/-- **The Lefschetz signs of the iterates from the eigenvalues.** Let `x` be a fixed point of `f`,
+at which `f` is differentiable with fixed-point derivative `D`, and suppose
+`fixedPointDet I f^[k] x ≠ 0`. Then the Lefschetz sign of `f^[k]` at `x` is
+`(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)`, where `i₊` and `i₋` count the real roots of the characteristic
+polynomial of `D` in `(1, ∞)` and in `(-∞, -1)`, with multiplicity. -/
+theorem fixedPointSign_iterate [FiniteDimensional ℝ E] (hx : IsFixedPt f x)
+    (hf : MDifferentiableAt I I f x) {k : ℕ} (h : fixedPointDet I f^[k] x ≠ 0) :
+    fixedPointSign I f^[k] x =
+      (-1) ^ ((fixedPointDerivative I f ⟨x, hx⟩).charpoly.roots.filter (1 < ·)).card *
+        (-1) ^ ((k + 1) *
+          ((fixedPointDerivative I f ⟨x, hx⟩).charpoly.roots.filter (· < -1)).card) := by
+  -- The tangent space is the model space `E`.
+  have : FiniteDimensional ℝ (TangentSpace I x) := ‹FiniteDimensional ℝ E›
+  set D := fixedPointDerivative I f ⟨x, hx⟩
+  have hk : (1 - D ^ k).det ≠ 0 := by
+    rwa [fixedPointDet_iterate hx hf, ← Module.End.one_eq_id] at h
+  rw [fixedPointSign_eq_sign h, fixedPointDet_iterate hx hf, ← Module.End.one_eq_id,
+    D.sign_det_one_sub_pow k hk]
+  simp
+
+/-- **The Lefschetz sign from the eigenvalues.** At a nondegenerate fixed point `x` of `f`, on a
+manifold modelled on a finite-dimensional real space, the Lefschetz sign is `(-1) ^ i₊`, where
+`i₊` counts the real roots of the characteristic polynomial of the fixed-point derivative in
+`(1, ∞)`, with multiplicity. -/
+theorem IsNondegenerateFixedPt.fixedPointSign_eq [FiniteDimensional ℝ E]
+    (h : IsNondegenerateFixedPt I f x) :
+    fixedPointSign I f x =
+      (-1) ^ ((fixedPointDerivative I f ⟨x, h.isFixedPt⟩).charpoly.roots.filter (1 < ·)).card := by
+  -- The tangent space is the model space `E`.
+  have : FiniteDimensional ℝ (TangentSpace I x) := ‹FiniteDimensional ℝ E›
+  have hdet := h.fixedPointDet_ne_zero
+  rw [fixedPointDet_eq_det_id_sub_fixedPointDerivative h.isFixedPt, ← Module.End.one_eq_id] at hdet
+  rw [h.fixedPointSign_eq_sign, fixedPointDet_eq_det_id_sub_fixedPointDerivative h.isFixedPt,
+    ← Module.End.one_eq_id, LinearMap.sign_det_one_sub _ hdet]
+  simp
+
+end Sign
+
+/-! ### Examples
+
+On `ℝ`, the fixed point `0` of `x ↦ -x` has `det (1 - df_0) = 2` and Lefschetz sign `1`, and that of
+`x ↦ 2 * x` has `det (1 - df_0) = -1` and Lefschetz sign `-1`. -/
+
+example : fixedPointDet 𝓘(ℝ, ℝ) (fun x : ℝ ↦ -x) 0 = 2 := by
+  have h : fderiv ℝ (fun x : ℝ ↦ -x) 0 = -ContinuousLinearMap.id ℝ ℝ :=
+    (hasFDerivAt_id (0 : ℝ)).neg.fderiv
+  rw [fixedPointDet_modelSpace, h]
+  norm_num [sub_neg_eq_add, ← two_smul ℝ LinearMap.id, LinearMap.det_smul]
+
+example : fixedPointSign 𝓘(ℝ, ℝ) (fun x : ℝ ↦ -x) 0 = 1 := by
+  have h : fderiv ℝ (fun x : ℝ ↦ -x) 0 = -ContinuousLinearMap.id ℝ ℝ :=
+    (hasFDerivAt_id (0 : ℝ)).neg.fderiv
+  rw [fixedPointSign_eq_one_iff, fixedPointDet_modelSpace, h]
+  norm_num [sub_neg_eq_add, ← two_smul ℝ LinearMap.id, LinearMap.det_smul]
+
+example : fixedPointDet 𝓘(ℝ, ℝ) (fun x : ℝ ↦ 2 * x) 0 = -1 := by
+  norm_num
+
+example : fixedPointSign 𝓘(ℝ, ℝ) (fun x : ℝ ↦ 2 * x) 0 = -1 :=
+  fixedPointSign_eq_neg_one_iff.2 (by norm_num)
 
 end TauCeti

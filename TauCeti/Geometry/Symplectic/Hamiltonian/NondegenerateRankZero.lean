@@ -35,17 +35,20 @@ This file sets up this notion on a symplectic vector space, the local model of t
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily ω Q`: the Hamiltonian endomorphisms of a
   family `Q` of quadratic forms generate a Cartan subalgebra of `sp(V, ω)`. This depends only on
   the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`), and is
-  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`). In
+  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`); a family
+  of multiples `c j • Q`, not all zero, is nondegenerate exactly when `Q` is
+  (`isNondegenerateQuadraticFamily_smul_iff`). In
   particular, forms on `V` and the forms they induce on the reduced space of `⊤` are nondegenerate
-  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`). By
+  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`), and reduced forms may be
+  tested on any symplectic slice of the reduced space
+  (`isNondegenerateQuadraticFamily_reduction_iff_of_slice`). By
   Mathlib's `LieSubalgebra.normalizer_eq_self_of_engel_le`, a Poisson-commuting family is
   nondegenerate as soon as it contains the Engel subalgebra of one Hamiltonian endomorphism
   (`isNondegenerateQuadraticFamily_of_engel_le`).
 * `TauCeti.SymplecticForm.IsNondegenerateRankZeroPoint ω F x`: `x` is a `C²` critical point of
   `F : E → G` at which the Hessians of the functions `ℓ ∘ F`, `ℓ` a linear functional on `G`, form
   a nondegenerate family. For `G = ℝⁿ` these may be replaced by the Hessians of the components
-  (`isNondegenerateRankZeroPoint_pi_iff`), and the notion is invariant under composition with
-  maps `g : G → G'` whose differential is injective (`isNondegenerateRankZeroPoint_comp_iff`).
+  (`isNondegenerateRankZeroPoint_pi_iff`).
 
 In dimension two the notion reduces to Morse theory: a single quadratic form is a nondegenerate
 family exactly when it is a nondegenerate quadratic form
@@ -311,6 +314,39 @@ theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {U : Submodule �
   ext v
   simp
 
+/-- A family of multiples `c i • Q` of a single quadratic form, not all zero, is nondegenerate
+exactly when `Q` alone is: both span the line of `Q`. -/
+theorem isNondegenerateQuadraticFamily_smul_iff {c : ι → ℝ} {i : ι} (hi : c i ≠ 0)
+    (Q : QuadraticForm ℝ V) :
+    ω.IsNondegenerateQuadraticFamily (fun j ↦ c j • Q) ↔
+      ω.IsNondegenerateQuadraticFamily fun _ : Unit ↦ Q := by
+  refine isNondegenerateQuadraticFamily_iff_of_span_eq
+    (le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_))
+  · rintro _ ⟨j, rfl⟩
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨(), rfl⟩)
+  · rintro _ ⟨-, rfl⟩
+    have h := Submodule.smul_mem _ (c i)⁻¹ (Submodule.subset_span (R := ℝ) ⟨i, rfl⟩ :
+      c i • Q ∈ Submodule.span ℝ (Set.range fun j ↦ c j • Q))
+    rwa [smul_smul, inv_mul_cancel₀ hi, one_smul] at h
+
+/-- **Reduced families in the coordinates of a symplectic slice.** If `j : V₀ → V` has image in
+`U`, pulls `ω` back to the symplectic form `ω₀` and `V₀` has the dimension of the reduced space of
+`U`, then a family of reduced quadratic forms is nondegenerate exactly when the pullbacks `Q i ∘ j`
+of the original forms are nondegenerate for `ω₀`. -/
+theorem isNondegenerateQuadraticFamily_reduction_iff_of_slice {V₀ : Type*} [AddCommGroup V₀]
+    [Module ℝ V₀] [FiniteDimensional ℝ V₀] {ω₀ : SymplecticForm V₀} {U : Submodule ℝ V}
+    {j : V₀ →ₗ[ℝ] V} (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) (Q : ι → QuadraticForm ℝ V)
+    (hQ : ∀ i, ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q i) w u = 0) :
+    (ω.reduction U).IsNondegenerateQuadraticFamily
+        (fun i ↦ ω.reducedQuadraticForm U (Q i) (hQ i)) ↔
+      ω₀.IsNondegenerateQuadraticFamily fun i ↦ (Q i).comp j := by
+  rw [← isNondegenerateQuadraticFamily_comp_iff
+    (isSymplectomorphism_reducedSpaceEquivOfSlice hjU hjω hd)]
+  congr! with i
+  ext a
+  simp
+
 /-- **Regular elements give Cartan subalgebras.** A family of pairwise Poisson-commuting quadratic
 forms is nondegenerate as soon as the Engel subalgebra of the Hamiltonian endomorphism of some
 quadratic form `P` is contained in the Lie subalgebra the family generates. -/
@@ -501,8 +537,8 @@ end Linear
 
 section Function
 
-variable {E G G' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G']
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup G] [NormedSpace ℝ G]
   (ω : SymplecticForm E)
 
 /-- A point `x` is a **nondegenerate rank-zero point** of a `C²` map `F : E → G` on a symplectic
@@ -551,24 +587,6 @@ theorem isNondegenerateRankZeroPoint_pi_iff {ι : Type*} [Fintype ι] {F : E →
     ω.IsNondegenerateRankZeroPoint F x ↔ ContDiffAt ℝ 2 F x ∧ fderiv ℝ F x = 0 ∧
       ω.IsNondegenerateQuadraticFamily fun i ↦ hessianQuadraticForm (fun y ↦ F y i) x :=
   isNondegenerateRankZeroPoint_iff_of_span_eq fun hF _ ↦ span_range_hessianQuadraticForm_pi hF
-
-/-- **Invariance under reparametrization of the values.** Composing `F` with a `C²` map `g` whose
-differential at `F x` is injective preserves and reflects nondegenerate rank-zero points. -/
-theorem isNondegenerateRankZeroPoint_comp_iff [FiniteDimensional ℝ G'] {g : G → G'}
-    (hg : ContDiffAt ℝ 2 g (F x)) (hinj : Function.Injective (fderiv ℝ g (F x)))
-    (hF : ContDiffAt ℝ 2 F x) :
-    ω.IsNondegenerateRankZeroPoint (g ∘ F) x ↔ ω.IsNondegenerateRankZeroPoint F x := by
-  have hgF : fderiv ℝ (g ∘ F) x = (fderiv ℝ g (F x)).comp (fderiv ℝ F x) :=
-    fderiv_comp x (hg.differentiableAt (by norm_num)) (hF.differentiableAt (by norm_num))
-  have h0 : fderiv ℝ (g ∘ F) x = 0 ↔ fderiv ℝ F x = 0 := by
-    rw [hgF]
-    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ hinj ?_,
-      fun h ↦ by rw [h, ContinuousLinearMap.comp_zero]⟩
-    simpa using congr($h v)
-  rw [isNondegenerateRankZeroPoint_iff_of_span_eq fun _ h ↦
-    congrArg (Submodule.span ℝ) (range_hessianQuadraticForm_comp hg hinj hF (h0.1 h))]
-  exact ⟨fun ⟨_, h, hQ⟩ ↦ ⟨hF, h0.1 h, hQ⟩,
-    fun h ↦ ⟨hg.comp x hF, h0.2 h.fderiv_eq_zero, h.isNondegenerateQuadraticFamily⟩⟩
 
 /-- **Nondegenerate rank-zero points of one Hamiltonian on a symplectic plane.** On a
 two-dimensional symplectic vector space, a point is a nondegenerate rank-zero point of a function

@@ -39,6 +39,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   constant `c`, every derivative of `f` at an interior point is within `c` of `L`.
 * `HasStrictFDerivAt.exists_mem_nhds_injOn`: a map with an invertible strict derivative at a point
   is injective near it, without completeness.
+* `ContDiffAt.exists_mem_nhds_injOn`: hence a `C¹` map over `ℝ` or `ℂ` with invertible derivative
+  at a point is injective near it.
 * `HasStrictFDerivAt.approximatesLinearOn_toOpenPartialHomeomorph_source`: the source of the
   inverse function theorem's homeomorphism carries the approximation estimate its construction
   chose.
@@ -47,6 +49,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `HasStrictFDerivAt.contDiffAt_toOpenPartialHomeomorph_symm` and
   `HasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm`: the local inverse is `C^n` at every
   point of the target, and hence on the target.
+* `OpenPartialHomeomorph.contDiffOn_symm_inter_preimage`: inverse regularity on the part of the
+  target corresponding to an open portion of the source.
 * `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
   homeomorphism from a complete normed space whose derivative is invertible on its source has a
   `C^n` inverse on its target.
@@ -159,6 +163,21 @@ end HasStrictFDerivAt
 
 end Approximation
 
+section LocalInjectivity
+
+variable {𝕂 E F : Type*} [RCLike 𝕂] [NormedAddCommGroup E] [NormedSpace 𝕂 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕂 F]
+
+/-- **Local injectivity of a `C¹` map.** A map that is `C^n`, `n ≠ 0`, at `a` over `ℝ` or `ℂ`,
+with invertible derivative at `a`, is injective on a neighbourhood of `a`. -/
+theorem ContDiffAt.exists_mem_nhds_injOn {n : WithTop ℕ∞} {f : E → F} {a : E}
+    (hf : ContDiffAt 𝕂 n f a) (hn : n ≠ 0) (hf' : (fderiv 𝕂 f a).IsInvertible) :
+    ∃ s ∈ 𝓝 a, InjOn f s := by
+  obtain ⟨L, hL⟩ := hf'
+  exact (hL ▸ hf.hasStrictFDerivAt_fderiv hn).exists_mem_nhds_injOn
+
+end LocalInjectivity
+
 section ContDiffInverse
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -180,6 +199,22 @@ theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSp
   refine (ψ.contDiffAt_symm hy (f₀' := e) ?_ hat).contDiffWithinAt
   rw [he]
   exact (hat.differentiableAt hn).hasFDerivAt
+
+/-- Regularity and invertibility on a local part of the source give inverse regularity on
+the corresponding part of the target. -/
+theorem OpenPartialHomeomorph.contDiffOn_symm_inter_preimage [CompleteSpace E] {n : ℕ∞ω}
+    (ψ : OpenPartialHomeomorph E F) {s : Set E} (hs : IsOpen s)
+    (hψ : ContDiffOn 𝕜 n ψ (ψ.source ∩ s))
+    (hinv : ∀ x ∈ ψ.source ∩ s, (fderiv 𝕜 ψ x).IsInvertible) :
+    ContDiffOn 𝕜 n ψ.symm (ψ.target ∩ ψ.symm ⁻¹' s) := by
+  have hcoe : ⇑(ψ.restr s) = ψ := ψ.restr_apply s
+  have hsource : (ψ.restr s).source = ψ.source ∩ s := ψ.restr_source' s hs
+  have hC : ContDiffOn 𝕜 n (ψ.restr s) (ψ.restr s).source := by
+    simpa only [hcoe, hsource] using hψ
+  have hInv : ∀ x ∈ (ψ.restr s).source, (fderiv 𝕜 (ψ.restr s) x).IsInvertible := by
+    simpa only [hcoe, hsource] using hinv
+  simpa only [ψ.restr_symm_apply, ψ.restr_target, hs.interior_eq] using
+    (ψ.restr s).contDiffOn_symm_of_isInvertible_fderiv hC hInv
 
 /-- A map that is `C^n` on an open set `s` and approximates a continuous linear equivalence `L`
 there with a constant less than `‖L⁻¹‖⁻¹` restricts to an open partial homeomorphism with source

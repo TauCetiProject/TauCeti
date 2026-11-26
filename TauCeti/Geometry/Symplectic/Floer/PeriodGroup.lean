@@ -51,9 +51,13 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
 * `PeriodGroup.chern_injective_iff`, `PeriodGroup.area_injective_iff`: the Chern number (resp.
   the area) embeds `Γ` into `ℤ` (resp. `ℝ`) exactly when its kernel on `S` lies in the kernel of
   the area (resp. the Chern number).
+* `PeriodGroup.exists_degree_quotient_ker_area_iff`: the degree descends to the quotient by the
+  kernel of the area alone exactly when that kernel lies in the kernel of the Chern number.
 * `PeriodGroup.chern_injective_of_area_eq_mul_chern`,
   `PeriodGroup.isAddCyclic_of_area_eq_mul_chern`: if the area is a fixed multiple of the Chern
   number (spherical monotonicity), then the Chern number embeds `Γ` into `ℤ`, so `Γ` is cyclic.
+* `PeriodGroup.area_injective_of_area_eq_mul_chern`: if moreover the multiple is nonzero, the
+  area embeds `Γ` into `ℝ` too.
 * `PeriodGroup.area_injective_of_chern_eq_zero`: if the Chern number vanishes, then the area
   embeds `Γ` into `ℝ`.
 * `PeriodGroup.negOnePow_eq_negOnePow_of_quotientMk_eq`: degrees are even, so the residue of an
@@ -190,31 +194,19 @@ variable {ω c} in
 class, as they do on a symplectically aspherical manifold. -/
 theorem subsingleton_iff :
     Subsingleton (PeriodGroup ω c) ↔ ∀ s, ω s = 0 ∧ c s = 0 := by
-  constructor
-  · intro _ s
-    simpa using (mk_eq_mk_iff (ω := ω) (c := c) (s := s) (t := 0)).1 (Subsingleton.elim _ _)
-  · intro h
-    refine ⟨fun γ γ' => ?_⟩
-    induction γ using QuotientAddGroup.induction_on with
-    | H s =>
-    induction γ' using QuotientAddGroup.induction_on with
-    | H t => exact mk_eq_mk_iff.2 ⟨by rw [(h s).1, (h t).1], by rw [(h s).2, (h t).2]⟩
+  -- The quotient is trivial exactly when the kernel of `s ↦ (ω s, c s)` is everything.
+  rw [QuotientAddGroup.subsingleton_iff, AddSubgroup.eq_top_iff']
+  simp
 
 variable {ω c} in
 /-- The area vanishes on the period group exactly when `ω` vanishes on every spherical class. -/
 theorem area_eq_zero_iff : area ω c = 0 ↔ ω = 0 := by
-  refine ⟨fun h => AddMonoidHom.ext fun s => by
-    simpa using DFunLike.congr_fun h (s : PeriodGroup ω c), fun h => AddMonoidHom.ext fun γ => ?_⟩
-  induction γ using QuotientAddGroup.induction_on with
-  | H s => simp [h]
+  simp [DFunLike.ext_iff, QuotientAddGroup.mk_surjective.forall]
 
 variable {ω c} in
 /-- The degree vanishes on the period group exactly when `c` vanishes on every spherical class. -/
 theorem degree_eq_zero_iff : degree ω c = 0 ↔ c = 0 := by
-  refine ⟨fun h => AddMonoidHom.ext fun s => by
-    simpa using DFunLike.congr_fun h (s : PeriodGroup ω c), fun h => AddMonoidHom.ext fun γ => ?_⟩
-  induction γ using QuotientAddGroup.induction_on with
-  | H s => simp [h]
+  simp [DFunLike.ext_iff, QuotientAddGroup.mk_surjective.forall]
 
 section Injective
 
@@ -223,30 +215,40 @@ variable {ω c}
 /-- The first Chern number embeds the period group into `ℤ` exactly when every spherical class
 with vanishing first Chern number has vanishing area. -/
 theorem chern_injective_iff : Function.Injective (chern ω c) ↔ c.ker ≤ ω.ker := by
-  rw [injective_iff_map_eq_zero]
-  constructor
-  · intro h s hs
-    have hs' := (mk_eq_mk_iff (s := s) (t := 0)).1 (h s (by simpa using hs))
-    simpa using hs'.1
-  · intro h γ hγ
-    induction γ using QuotientAddGroup.induction_on with
-    | H s =>
-      refine ext ?_ (by rw [hγ, map_zero])
-      simpa using h (by simpa using hγ)
+  -- `chern` is the lift of `c` to the quotient by `(ω.prod c).ker = ω.ker ⊓ c.ker`, and a lift is
+  -- injective exactly when the subgroup is the whole kernel of `c`.
+  have hle : (ω.prod c).ker ≤ c.ker := AddMonoidHom.ker_prod ω c ▸ inf_le_right
+  have h : chern ω c = QuotientAddGroup.lift _ c hle := by
+    ext s
+    simp
+  rw [h, QuotientAddGroup.injective_lift_iff, AddMonoidHom.ker_prod, inf_eq_right]
 
 /-- The area embeds the period group into `ℝ` exactly when every spherical class with vanishing
 area has vanishing first Chern number. -/
 theorem area_injective_iff : Function.Injective (area ω c) ↔ ω.ker ≤ c.ker := by
-  rw [injective_iff_map_eq_zero]
-  constructor
-  · intro h s hs
-    have hs' := (mk_eq_mk_iff (s := s) (t := 0)).1 (h s (by simpa using hs))
-    simpa using hs'.2
-  · intro h γ hγ
-    induction γ using QuotientAddGroup.induction_on with
-    | H s =>
-      refine ext (by rw [hγ, map_zero]) ?_
-      simpa using h (by simpa using hγ)
+  -- `area` is the lift of `ω` to the quotient by `(ω.prod c).ker = ω.ker ⊓ c.ker`, and a lift is
+  -- injective exactly when the subgroup is the whole kernel of `ω`.
+  have hle : (ω.prod c).ker ≤ ω.ker := AddMonoidHom.ker_prod ω c ▸ inf_le_left
+  have h : area ω c = QuotientAddGroup.lift _ ω hle := by
+    ext s
+    simp
+  rw [h, QuotientAddGroup.injective_lift_iff, AddMonoidHom.ker_prod, inf_eq_left]
+
+/-- The degree `2 c` is a function on the quotient of the spherical classes by the kernel of the
+area alone exactly when every spherical class with vanishing area has vanishing first Chern
+number, which is also when that quotient is the period group (`PeriodGroup.area_injective_iff`).
+Otherwise a class `B` of zero area and nonzero first Chern number becomes `0` in that quotient,
+while its degree `2 c B` is not the degree `0` of `0`, so the monomial `e^B` would carry two
+degrees. -/
+theorem exists_degree_quotient_ker_area_iff :
+    (∃ d : S ⧸ ω.ker → ℤ, ∀ s : S, d s = 2 * c s) ↔ ω.ker ≤ c.ker := by
+  refine ⟨fun ⟨d, hd⟩ s hs => ?_, fun h => ⟨QuotientAddGroup.lift _ (2 • c) fun s hs => ?_,
+    fun s => by simp⟩⟩
+  · have hs' : (s : S ⧸ ω.ker) = (0 : S) := (QuotientAddGroup.eq_zero_iff s).2 hs
+    have h0 := hd s
+    rw [hs', hd, map_zero] at h0
+    exact AddMonoidHom.mem_ker.2 (by omega)
+  · simp [AddMonoidHom.mem_ker.1 (h hs)]
 
 /-- The degree is injective exactly when the first Chern number is. -/
 theorem degree_injective_iff :
@@ -299,6 +301,14 @@ the first Chern number embeds the period group into `ℤ`. -/
 theorem chern_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
     Function.Injective (chern ω c) :=
   chern_injective_iff.2 (ker_le_ker_of_area_eq_mul_chern h)
+
+/-- For a spherically monotone pair with nonzero monotonicity constant, where the area is a fixed
+nonzero multiple of the first Chern number, the area embeds the period group into `ℝ`. -/
+theorem area_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) (hτ : τ ≠ 0) :
+    Function.Injective (area ω c) := fun γ γ' hγ =>
+  chern_injective_of_area_eq_mul_chern h <| by
+    rw [area_eq_mul_chern h, area_eq_mul_chern h] at hγ
+    exact_mod_cast mul_left_cancel₀ hτ hγ
 
 /-- For a spherically monotone pair, the degree embeds the period group into `ℤ`. -/
 theorem degree_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
@@ -354,9 +364,9 @@ theorem chern_chernEquivInt_symm_pos (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) :
 theorem chern_chernEquivInt_symm (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) (k : ℤ) :
     chern ω c ((chernEquivInt hker hc).symm k) =
       k * chern ω c ((chernEquivInt hker hc).symm 1) := by
-  have hk : k = k • (1 : ℤ) := by simp
-  conv_lhs => rw [hk]
-  rw [map_zsmul, map_zsmul, zsmul_eq_mul, Int.cast_id]
+  -- An additive map out of `ℤ` is determined by its value at `1`.
+  simpa only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, smul_eq_mul] using
+    AddMonoidHom.apply_int _ ((chern ω c).comp (chernEquivInt hker hc).symm.toAddMonoidHom) k
 
 /-- The Chern number of a period class determines its integer exponent by multiplication by
 the minimal Chern number. -/

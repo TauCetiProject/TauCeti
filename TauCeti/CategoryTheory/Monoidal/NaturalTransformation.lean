@@ -29,6 +29,9 @@ A natural transformation between lax monoidal functors that is an epimorphism at
 and compatible with the tensorators is already monoidal: compatibility with the unit comparisons
 follows (`CategoryTheory.NatTrans.IsMonoidal.of_tensor`).
 
+For strong monoidal functors, compatibility with the oplax comparisons suffices
+(`CategoryTheory.NatTrans.IsMonoidal.of_oplax`).
+
 Bundled strong monoidal functors `TauCeti.MonoidalFunctor C D`, with the monoidal natural
 transformations as morphisms, embed fully faithfully into `LaxMonoidalFunctor C D`
 (`TauCeti.MonoidalFunctor.fullyFaithfulForget`). Their isomorphisms are the monoidal natural
@@ -98,6 +101,19 @@ open MonoidalCategory Functor.LaxMonoidal
 
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+open Functor.OplaxMonoidal in
+/-- A natural transformation between strong monoidal functors is monoidal if it commutes
+with the oplax unit and tensor comparisons. -/
+theorem of_oplax {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G)
+    (hη : τ.app (𝟙_ C) ≫ η G = η F)
+    (hδ : ∀ X Y, τ.app (X ⊗ Y) ≫ δ G X Y = δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y)) :
+    τ.IsMonoidal where
+  unit := by
+    rw [← cancel_mono (η G), Category.assoc, hη, Functor.Monoidal.ε_η, Functor.Monoidal.ε_η]
+  tensor X Y := by
+    rw [← cancel_epi (δ F X Y), ← cancel_mono (δ G X Y), Functor.Monoidal.δ_μ_assoc,
+      Category.assoc, Category.assoc, Functor.Monoidal.μ_δ, Category.comp_id, hδ]
 
 /-- **The unit condition follows from the tensor condition.** A natural transformation `τ` between
 lax monoidal functors that is an epimorphism at the tensor unit and compatible with the

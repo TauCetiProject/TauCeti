@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Analysis.Calculus.Morse.Parametric
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
@@ -17,8 +18,8 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Topology.FiberBundle.Countable
+import TauCeti.Topology.FiberBundle.LocallyCompact
 import TauCeti.Topology.FiberBundle.Separation
-import TauCeti.Topology.LocallyFinite.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -30,10 +31,11 @@ finite-dimensional, boundaryless, Hausdorff and second-countable manifold, and l
 zero vector `0_b` is a critical point of the fibre restriction `g_b = g ⟨b, ·⟩` and the vertical
 Hessian `H_b = D²g_b(0)` is invertible. The value `g (0_b)` may vary with `b`.
 This file proves the **parametric Morse lemma on the bundle**
-(`TauCeti.exists_parametric_morse_partialDiffeomorph`): there is a single `C^n` partial
-diffeomorphism `Φ x = ⟨x.proj, ψ x⟩` of the total space, defined on a neighbourhood of the whole
-zero section, which preserves the fibres, fixes the zero section, and puts `g` in fibrewise normal
-form
+(`TauCeti.exists_parametric_morse_partialDiffeomorph`): the canonical Morse coordinate
+`ψ = TauCeti.bundleMorseCoord F g` is a change of coordinates near the whole zero section. That
+is, `Φ x = ⟨x.proj, ψ x⟩` is a `C^n` partial diffeomorphism of the total space, defined on a
+neighbourhood of the whole zero section, which preserves the fibres, fixes the zero section, and
+puts `g` in fibrewise normal form
 
 `g x = g (0_b) + ½ H_b (ψ x, ψ x)`,  `b = x.proj`.
 
@@ -42,24 +44,21 @@ read on the normal bundle of a Morse–Bott critical submanifold through a tubul
 where moreover `g (0_b)` is locally constant; there the result is the Morse–Bott lemma on the
 normal bundle.
 
-In the chart of the total space at a zero vector, `g` is a family `G (y, w)` on the product of the
-base model with the model fibre, and the parametric Morse lemma along the zero section
+In the chart of the total space at a zero vector `0_a`, `g` is a family `G (y, w)` on the product
+of the base model with the model fibre, and the parametric Morse lemma along the zero section
 (`TauCeti.exists_parametricMorseCoord_partialDiffeomorph_prod_ball`) puts it in normal form by the
-canonical coordinate `(y, w) ↦ (y, TauCeti.parametricMorseCoord G (y, w))`. Near the zero
-section the chart families of two charts differ by a change of base chart and a fibrewise linear
-change of coordinates, so their coordinates agree there
-(`TauCeti.eventually_parametricMorseCoord_transition`). They are glued along a locally finite
-closed cover of the base subordinate to the charts: over each base point the coordinate of the
-chart at one chosen member of the cover is used. Near a zero vector `0_a` only the finitely many
-members containing `a` are chosen, and the coordinate of each of their charts agrees with that of
-the chart at `0_a` near `0_a`. The glued map is therefore a local diffeomorphism near the zero
-section and fixes it, so it is injective on a neighbourhood of the zero section
-(`IsLocalDiffeomorphOn.exists_partialDiffeomorph_near_section`).
+canonical coordinate `(y, w) ↦ (y, TauCeti.parametricMorseCoord G (y, w))`. That coordinate only
+reads `g` along the fibres, so over the domain of the chart it is the canonical Morse coordinate
+`ψ` read in the trivialization at `a`. Hence `x ↦ ⟨x.proj, ψ x⟩` is a local diffeomorphism near
+the zero section and fixes it, so it is injective on a neighbourhood of the zero section
+(`IsLocalDiffeomorphOn.exists_partialDiffeomorph_near_section`). No choice of charts enters the
+coordinate itself.
 
 ## Main results
 
 * `TauCeti.exists_parametric_morse_partialDiffeomorph`: the parametric Morse lemma on a vector
-  bundle, by one fibre-preserving partial diffeomorphism defined near the whole zero section.
+  bundle: the canonical Morse coordinate `TauCeti.bundleMorseCoord` gives one fibre-preserving
+  partial diffeomorphism defined near the whole zero section.
 
 ## References
 
@@ -191,14 +190,6 @@ private def localCoord (g : TotalSpace F E → ℝ) (a : B) (x : TotalSpace F E)
     (parametricMorseCoord (chartFamily IB g a)
       (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a) x))
 
-omit [FiniteDimensional ℝ EB] [FiniteDimensional ℝ F] [IB.Boundaryless] in
-/-- The coordinate read in the chart at `0_i` vanishes at the zero vectors over the base set of the
-trivialization at `i`. -/
-private theorem localCoord_zeroSection (i : B) {b : B}
-    (hb : b ∈ (trivializationAt F E i).baseSet) : localCoord IB g i (zeroSection F E b) = 0 := by
-  rw [localCoord, Bundle.extChartAt_zeroSection_of_mem_baseSet i hb, parametricMorseCoord_mk_zero]
-  exact (Trivialization.symmL_apply (R := ℝ) _ hb 0).symm.trans (map_zero _)
-
 /-- **The parametric Morse lemma in the chart at a zero vector.** Near `0_a`, the map
 `x ↦ ⟨x.proj, localCoord IB g a x⟩` is a `C^n` partial diffeomorphism of the total space, with
 source in `W`, in which `g` is in fibrewise normal form. -/
@@ -269,95 +260,46 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
     rfl
 
 omit [FiniteDimensional ℝ EB] [FiniteDimensional ℝ F] [IB.Boundaryless] in
-/-- **The coordinates of two charts agree near the zero section.** If the base point `a` lies over
-the base set of the trivialization at `i` and in the chart at `i`, the coordinates read in the
-charts of the total space at `0_i` and at `0_a` agree near `0_a`. -/
-private theorem eventually_localCoord_eq {a i : B} (hai : a ∈ (trivializationAt F E i).baseSet)
-    (hai' : a ∈ (extChartAt IB i).source) :
-    ∀ᶠ x in 𝓝 (zeroSection F E a), localCoord IB g i x = localCoord IB g a x := by
-  set c := extChartAt IB a
-  set ea := trivializationAt F E a
-  set ei := trivializationAt F E i
-  have ha : a ∈ ea.baseSet := mem_baseSet_trivializationAt F E a
-  -- The chart at `0_i` reads the chart at `0_a` through the change of base chart `σ` and the
-  -- coordinate change `T` of the trivializations.
-  let σ : EB → EB := fun y ↦ extChartAt IB i (c.symm y)
-  let T : EB → F ≃L[ℝ] F := fun y ↦ Trivialization.coordChangeL ℝ ea ei (c.symm y)
-  have hbase : {y | c.symm y ∈ ea.baseSet ∩ ei.baseSet ∩ (extChartAt IB i).source} ∈ 𝓝 (c a) :=
-    (continuousAt_extChartAt_symm a).preimage_mem_nhds (by
-      rw [extChartAt_to_inv]
-      exact inter_mem (inter_mem (ea.open_baseSet.mem_nhds ha) (ei.open_baseSet.mem_nhds hai))
-        ((isOpen_extChartAt_source i).mem_nhds hai'))
-  have hcomp : ∀ᶠ z in 𝓝 (c a, (0 : F)),
-      chartFamily IB g i (σ z.1, T z.1 z.2) = chartFamily IB g a z := by
-    filter_upwards [continuousAt_fst.preimage_mem_nhds hbase] with z hzb
-    obtain ⟨⟨hb₁, hb₂⟩, hb₃⟩ := hzb
-    rw [chartFamily_apply i ((extChartAt IB i).left_inv hb₃) hb₂, chartFamily_apply a rfl hb₁,
-      Trivialization.coordChangeL_apply ea ei ⟨hb₁, hb₂⟩, ei.symm_apply_apply_mk hb₂]
-  have htrans := eventually_parametricMorseCoord_transition hcomp
-  -- Pull back to the total space along the chart at `0_a`.
-  have hτ : Tendsto (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a))
-      (𝓝 (zeroSection F E a)) (𝓝 (c a, 0)) := by
-    rw [← Bundle.extChartAt_zeroSection_self (IB := IB) (F := F) (V := E) a]
-    exact (continuousAt_extChartAt _).tendsto
-  have hproj : {x : TotalSpace F E | x.proj ∈ ea.baseSet ∩ (extChartAt IB a).source ∩
-      ei.baseSet ∩ (extChartAt IB i).source} ∈ 𝓝 (zeroSection F E a) :=
-    (FiberBundle.continuous_proj F E).continuousAt.preimage_mem_nhds
-      (inter_mem (inter_mem (inter_mem (ea.open_baseSet.mem_nhds ha)
-        ((isOpen_extChartAt_source a).mem_nhds (mem_extChartAt_source a)))
-        (ei.open_baseSet.mem_nhds hai)) ((isOpen_extChartAt_source i).mem_nhds hai'))
-  filter_upwards [hτ.eventually htrans, hproj] with x ht hxb
-  obtain ⟨b, v⟩ := x
-  obtain ⟨⟨⟨hba, hbc⟩, hbi⟩, hbci⟩ := hxb
-  dsimp only at hba hbc hbi hbci
-  have hτa : extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a) ⟨b, v⟩ = (c b, (ea ⟨b, v⟩).2) :=
-    Bundle.extChartAt_apply_of_mem_baseSet _ hba
-  have hτi : extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E i) ⟨b, v⟩ =
-      (extChartAt IB i b, (ei ⟨b, v⟩).2) :=
-    Bundle.extChartAt_apply_of_mem_baseSet _ hbi
-  rw [hτa] at ht
-  dsimp only [σ, T] at ht
-  rw [(extChartAt IB a).left_inv hbc,
-    Trivialization.coordChangeL_apply_snd ℝ ea ei (p := ⟨b, v⟩) hba hbi] at ht
-  rw [localCoord, localCoord, hτi, hτa]
-  dsimp only
-  rw [ht, Trivialization.coordChangeL_apply ea ei ⟨hba, hbi⟩, ei.symm_apply_apply_mk hbi]
+/-- **The chart coordinate is the canonical Morse coordinate.** Over the base set of the
+trivialization at `a` and the source of the chart at `a`, the coordinate read in the chart of the
+total space at `0_a` is the canonical Morse coordinate `TauCeti.bundleMorseCoord` of `g`. -/
+private theorem localCoord_eq_bundleMorseCoord {a : B} {x : TotalSpace F E}
+    (hxe : x.proj ∈ (trivializationAt F E a).baseSet) (hxc : x.proj ∈ (extChartAt IB a).source) :
+    localCoord IB g a x = bundleMorseCoord F g x := by
+  rw [localCoord, Bundle.extChartAt_apply_of_mem_baseSet _ hxe,
+    (trivializationAt F E a).bundleMorseCoord_eq hxe]
+  -- The canonical coordinate only reads the slice over the base point, on which the chart family
+  -- is `g` read in the trivialization at `a`.
+  simp only [zeroSection_proj, parametricMorseCoord_def,
+    chartFamily_apply a ((extChartAt IB a).left_inv hxc) hxe]
 
 omit [FiniteDimensional ℝ EB] [FiniteDimensional ℝ F] [IB.Boundaryless] in
-/-- **Gluing the chart coordinates.** Let `K` be a locally finite family of closed sets of the
-base, each inside the base set of the trivialization and the source of the chart at its index,
-and let `j b` be an index with `b ∈ K (j b)`. Near `0_a`, the coordinate read over each base point
-`b` in the chart at `0_{j b}` is the coordinate read in the chart at `0_a`. -/
-private theorem eventually_localCoord_choice_eq {K : B → Set B} (hKc : ∀ i, IsClosed (K i))
-    (hKlf : LocallyFinite K)
-    (hKsub : ∀ i, K i ⊆ (trivializationAt F E i).baseSet ∩ (extChartAt IB i).source)
-    {j : B → B} (hj : ∀ b, b ∈ K (j b)) (a : B) :
-    ∀ᶠ x in 𝓝 (zeroSection F E a), localCoord IB g (j x.proj) x = localCoord IB g a x := by
-  -- Only the finitely many members containing `a` are chosen near `a`.
-  have hall : ∀ᶠ x in 𝓝 (zeroSection F E a), ∀ i ∈ {i | a ∈ K i},
-      localCoord IB g i x = localCoord IB g a x :=
-    ((hKlf.point_finite a).eventually_all).2 fun i hi ↦
-      eventually_localCoord_eq (hKsub i hi).1 (hKsub i hi).2
-  filter_upwards [hall, ((FiberBundle.continuous_proj F E).tendsto
-    (zeroSection F E a)).eventually (hKlf.eventually_subset hKc a)] with x hx hxK
-  exact hx (j x.proj) (hxK (hj x.proj))
+/-- Near `0_a`, the canonical Morse coordinate of `g` is the coordinate read in the chart of the
+total space at `0_a`. -/
+private theorem eventually_bundleMorseCoord_eq_localCoord (a : B) :
+    ∀ᶠ x in 𝓝 (zeroSection F E a), bundleMorseCoord F g x = localCoord IB g a x := by
+  filter_upwards [(FiberBundle.continuous_proj F E).continuousAt.preimage_mem_nhds
+    (((trivializationAt F E a).open_baseSet.inter (isOpen_extChartAt_source (I := IB) a)).mem_nhds
+      ⟨mem_baseSet_trivializationAt F E a, mem_extChartAt_source (I := IB) a⟩)] with x hx
+  exact (localCoord_eq_bundleMorseCoord hx.1 hx.2).symm
 
-/-- A fibrewise map which agrees near `0_a` with the coordinate of the chart at `0_a` is a
-local diffeomorphism at `0_a`, near which `g` is in fibrewise normal form. -/
+/-- **The canonical Morse coordinate near a zero vector.** The fibre-preserving map
+`x ↦ ⟨x.proj, bundleMorseCoord F g x⟩` is a local diffeomorphism at `0_a`, near which `g` is in
+fibrewise normal form in the canonical Morse coordinate. -/
 private theorem isLocalDiffeomorphAt_and_eventually_normalForm (a : B) (hW : IsOpen W)
     (hzero : ∀ b, zeroSection F E b ∈ W)
     (hg : ContMDiffOn (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ) (n + 2) g W)
     (hcrit : ∀ b, fderiv ℝ (fun v : E b ↦ g ⟨b, v⟩) 0 = 0)
-    (hH : ∀ b, (fderiv ℝ (fderiv ℝ fun v : E b ↦ g ⟨b, v⟩) 0).IsInvertible) (hn : n ≠ 0)
-    {ψ : (x : TotalSpace F E) → E x.proj}
-    (hψ : ∀ᶠ x in 𝓝 (zeroSection F E a), ψ x = localCoord IB g a x) :
+    (hH : ∀ b, (fderiv ℝ (fderiv ℝ fun v : E b ↦ g ⟨b, v⟩) 0).IsInvertible) (hn : n ≠ 0) :
     IsLocalDiffeomorphAt (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) n
-      (fun x ↦ (⟨x.proj, ψ x⟩ : TotalSpace F E)) (zeroSection F E a) ∧
+      (fun x ↦ (⟨x.proj, bundleMorseCoord F g x⟩ : TotalSpace F E)) (zeroSection F E a) ∧
     ∀ᶠ x in 𝓝 (zeroSection F E a), g x = g (zeroSection F E x.proj) + 2⁻¹ *
-      fderiv ℝ (fderiv ℝ fun v : E x.proj ↦ g ⟨x.proj, v⟩) 0 (ψ x) (ψ x) := by
+      fderiv ℝ (fderiv ℝ fun v : E x.proj ↦ g ⟨x.proj, v⟩) 0
+        (bundleMorseCoord F g x) (bundleMorseCoord F g x) := by
   obtain ⟨D, haD, -, hDeq, hDnf⟩ := exists_partialDiffeomorph_localCoord a hW hzero hg hcrit hH hn
-  have hev : ∀ᶠ x in 𝓝 (zeroSection F E a), x ∈ D.source ∧ ψ x = localCoord IB g a x :=
-    (D.open_source.eventually_mem haD).and hψ
+  have hev : ∀ᶠ x in 𝓝 (zeroSection F E a),
+      x ∈ D.source ∧ bundleMorseCoord F g x = localCoord IB g a x :=
+    (D.open_source.eventually_mem haD).and (eventually_bundleMorseCoord_eq_localCoord a)
   obtain ⟨N, hNsub, hNo, haN⟩ := eventually_nhds_iff.1 hev
   refine ⟨isLocalDiffeomorphAt_of_eqOn (Φ := D.restrOpen N hNo) ?_ fun x hx ↦ ?_, ?_⟩
   · rw [PartialDiffeomorph.restrOpen_source]
@@ -381,47 +323,38 @@ variable [IB.Boundaryless] [∀ b, NormedSpace ℝ (E b)] [VectorBundle ℝ F E]
 with finite-dimensional normed fibres over a finite-dimensional, boundaryless, Hausdorff and
 second-countable manifold, `1 ≤ n ≤ ∞`, and let `g` be `C^{n+2}` on an open neighbourhood `W` of
 the zero section. Suppose that every zero vector `0_b` is a critical point
-of the fibre restriction `v ↦ g ⟨b, v⟩` with invertible Hessian `H_b`. Then there is a single
-`C^n` partial diffeomorphism `Φ` of the total space, with source in `W` containing the whole zero
-section, of the form `Φ x = ⟨x.proj, ψ x⟩`, so preserving the fibres in both directions and fixing
-the zero section, in which `g` is in fibrewise normal form:
+of the fibre restriction `v ↦ g ⟨b, v⟩` with invertible Hessian `H_b`. Then the canonical Morse
+coordinate `ψ = TauCeti.bundleMorseCoord F g` is a change of coordinates near the zero section:
+there is a `C^n` partial diffeomorphism `Φ x = ⟨x.proj, ψ x⟩` of the total space, with source in
+`W` containing the whole zero section, so preserving the fibres in both directions and fixing the
+zero section (`TauCeti.bundleMorseCoord_zeroSection`), in which `g` is in fibrewise normal form:
 `g x = g (0_b) + ½ H_b (ψ x) (ψ x)` for `x` over `b` in the source. -/
 theorem exists_parametric_morse_partialDiffeomorph (hW : IsOpen W)
     (hzero : ∀ b, zeroSection F E b ∈ W) (hg : ContMDiffOn (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ) (n + 2) g W)
     (hcrit : ∀ b, fderiv ℝ (fun v : E b ↦ g ⟨b, v⟩) 0 = 0)
     (hH : ∀ b, (fderiv ℝ (fderiv ℝ fun v : E b ↦ g ⟨b, v⟩) 0).IsInvertible) (hn : n ≠ 0) :
-    ∃ (ψ : (x : TotalSpace F E) → E x.proj)
-      (Φ : PartialDiffeomorph (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F))
-        (TotalSpace F E) (TotalSpace F E) n),
-      (∀ b, zeroSection F E b ∈ Φ.source) ∧ Φ.source ⊆ W ∧ (∀ x, Φ x = ⟨x.proj, ψ x⟩) ∧
-      (∀ x ∈ Φ.target, (Φ.symm x).proj = x.proj) ∧ (∀ b, ψ (zeroSection F E b) = 0) ∧
+    ∃ Φ : PartialDiffeomorph (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F))
+        (TotalSpace F E) (TotalSpace F E) n,
+      (∀ b, zeroSection F E b ∈ Φ.source) ∧ Φ.source ⊆ W ∧
+      (∀ x, Φ x = ⟨x.proj, bundleMorseCoord F g x⟩) ∧
+      (∀ x ∈ Φ.target, (Φ.symm x).proj = x.proj) ∧
       ∀ x ∈ Φ.source, g x = g (zeroSection F E x.proj) + 2⁻¹ *
-        fderiv ℝ (fderiv ℝ fun v : E x.proj ↦ g ⟨x.proj, v⟩) 0 (ψ x) (ψ x) := by
+        fderiv ℝ (fderiv ℝ fun v : E x.proj ↦ g ⟨x.proj, v⟩) 0
+          (bundleMorseCoord F g x) (bundleMorseCoord F g x) := by
   rcases isEmpty_or_nonempty B with hB | hB
   · have : IsEmpty (TotalSpace F E) := ⟨fun x ↦ isEmptyElim x.proj⟩
-    exact ⟨fun x ↦ isEmptyElim x, (Diffeomorph.refl _ (TotalSpace F E) n).toPartialDiffeomorph,
+    exact ⟨(Diffeomorph.refl _ (TotalSpace F E) n).toPartialDiffeomorph,
       fun b ↦ isEmptyElim b, fun x _ ↦ isEmptyElim x, fun x ↦ isEmptyElim x,
-      fun x _ ↦ isEmptyElim x, fun b ↦ isEmptyElim b, fun x _ ↦ isEmptyElim x⟩
-  have : LocallyCompactSpace (ModelProd HB F) := (IB.prod 𝓘(ℝ, F)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace F E) :=
-    ChartedSpace.locallyCompactSpace (ModelProd HB F) _
-  have : MetrizableSpace (TotalSpace F E) := Manifold.metrizableSpace (IB.prod 𝓘(ℝ, F)) _
-  have : Nonempty (TotalSpace F E) := hB.map (zeroSection F E)
-  -- Over each base point `b`, use the coordinate of the chart at a member `j b` of a locally
-  -- finite closed cover containing `b`.
+      fun x _ ↦ isEmptyElim x, fun x _ ↦ isEmptyElim x⟩
   have : LocallyCompactSpace HB := IB.locallyCompactSpace
   have : LocallyCompactSpace B := ChartedSpace.locallyCompactSpace HB B
-  obtain ⟨K, hKc, hKcov, hKlf, hKsub⟩ := precise_closed_refinement
-    (fun i : B ↦ (trivializationAt F E i).baseSet ∩ (extChartAt IB i).source)
-    (fun i ↦ (trivializationAt F E i).open_baseSet.inter (isOpen_extChartAt_source i))
-    (iUnion_eq_univ_iff.2 fun b ↦ ⟨b, mem_baseSet_trivializationAt F E b, mem_extChartAt_source b⟩)
-  choose j hj using iUnion_eq_univ_iff.1 hKcov
-  let ψ : (x : TotalSpace F E) → E x.proj := fun x ↦ localCoord IB g (j x.proj) x
-  let Φ₀ : TotalSpace F E → TotalSpace F E := fun x ↦ ⟨x.proj, ψ x⟩
+  have : MetrizableSpace (TotalSpace F E) := Manifold.metrizableSpace (IB.prod 𝓘(ℝ, F)) _
+  have : Nonempty (TotalSpace F E) := hB.map (zeroSection F E)
+  let Φ₀ : TotalSpace F E → TotalSpace F E := fun x ↦ ⟨x.proj, bundleMorseCoord F g x⟩
   let NF : TotalSpace F E → Prop := fun x ↦ g x = g (zeroSection F E x.proj) + 2⁻¹ *
-    fderiv ℝ (fderiv ℝ fun v : E x.proj ↦ g ⟨x.proj, v⟩) 0 (ψ x) (ψ x)
+    fderiv ℝ (fderiv ℝ fun v : E x.proj ↦ g ⟨x.proj, v⟩) 0
+      (bundleMorseCoord F g x) (bundleMorseCoord F g x)
   have hlocal (a : B) := isLocalDiffeomorphAt_and_eventually_normalForm a hW hzero hg hcrit hH hn
-    (eventually_localCoord_choice_eq hKc hKlf hKsub hj a)
   -- On the open set `O` where `Φ₀` is a local diffeomorphism and `g` is in normal form, which
   -- contains the zero section, `Φ₀` is injective near the zero section, which it fixes.
   let O : Set (TotalSpace F E) :=
@@ -433,11 +366,9 @@ theorem exists_parametric_morse_partialDiffeomorph (hW : IsOpen W)
   have hzO : range (zeroSection F E) ⊆ O := by
     rintro _ ⟨a, rfl⟩
     exact ⟨⟨(hlocal a).1, mem_interior_iff_mem_nhds.2 (hlocal a).2⟩, hzero a⟩
-  have hψ0 (b : B) : ψ (zeroSection F E b) = 0 :=
-    localCoord_zeroSection (j b) (hKsub _ (hj b)).1
   have hind : IsInducing (Φ₀ ∘ zeroSection F E) := by
     have h : Φ₀ ∘ zeroSection F E = zeroSection F E := funext fun b ↦ by
-      simp only [comp_apply, Φ₀, hψ0]
+      simp only [comp_apply, Φ₀, bundleMorseCoord_zeroSection]
       -- `zeroSection F E b` is `⟨b, 0⟩` by definition.
       rfl
     rw [h]
@@ -448,8 +379,8 @@ theorem exists_parametric_morse_partialDiffeomorph (hW : IsOpen W)
   obtain ⟨Φ, hzΦ, hΦO, -, hΦ⟩ := hOloc.exists_partialDiffeomorph_near_section hO hzO
     (Trivialization.continuous_zeroSection ℝ) TotalSpace.proj (FiberBundle.continuous_proj F E)
     (zeroSection_proj F E) hind
-  refine ⟨ψ, Φ, fun b ↦ hzΦ (mem_range_self b), fun x hx ↦ (hΦO hx).2, fun x ↦ by rw [hΦ],
-    fun x hx ↦ ?_, hψ0, fun x hx ↦ interior_subset (hΦO hx).1.2⟩
+  refine ⟨Φ, fun b ↦ hzΦ (mem_range_self b), fun x hx ↦ (hΦO hx).2, fun x ↦ by rw [hΦ],
+    fun x hx ↦ ?_, fun x hx ↦ interior_subset (hΦO hx).1.2⟩
   -- `Φ` preserves the base point, hence so does its inverse.
   have h : Φ (Φ.symm x) = x := Φ.toPartialEquiv.right_inv hx
   calc (Φ.symm x).proj = (Φ (Φ.symm x)).proj := by rw [hΦ]

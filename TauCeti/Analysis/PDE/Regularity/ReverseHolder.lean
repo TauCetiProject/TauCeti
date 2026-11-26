@@ -974,14 +974,10 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv [Nonempt
     set δ : ℝ := 1 / ((k : ℝ) + 1)
     have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
     set w := W1p.restrictL hU u + W1p.const δ
-    have hwv : ∀ᵐ y ∂mu.restrict (Metric.ball x₀ R), W1p.value w y = W1p.value u y + δ := by
-      filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) δ,
-        W1p.value_restrictL_ae hU u] with y h1 h2
-      rw [h1, h2]
-    have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y := by
-      filter_upwards [hwv, hu0R] with y h1 h2
-      rw [h1]
-      linarith
+    have hwv : ∀ᵐ y ∂mu.restrict (Metric.ball x₀ R), W1p.value w y = W1p.value u y + δ :=
+      W1p.value_restrictL_add_const_ae hU u δ
+    have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y :=
+      W1p.le_value_restrictL_add_const_ae hU hu0R δ
     obtain ⟨hHi, hH⟩ := hpos (h.mono_set hball)
       (ha.mono_measure (Measure.restrict_mono hball le_rfl))
       (energyFormH1_restrictL_add_const_nonneg hU hu δ) hδ0 hδw (x₀ := x₀) (R := R) subset_rfl

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
-public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Topology.Algebra.Group.Perm
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
 
 /-!
 # Topology of relational configurations
@@ -16,13 +16,25 @@ public import TauCeti.Topology.Algebra.Group.Perm
 The product topology on relational configurations is compact Hausdorff, and relabelling by a
 permutation of the carrier is continuous. Restriction along a vertex map is continuous, and
 jointly continuous in the vertex map when the target carrier is discrete. Specifying an atom's
-truth value gives a clopen, measurable cylinder. On countable carriers in countable relational
+truth value gives a clopen, measurable cylinder (`isClopen_setOf_eval`,
+`measurableSet_setOf_eval`). Specifying the truth values of a finite set of atoms gives Mathlib's
+finite cylinder `SymbolicDynamics.FullShift.cylinder`, whose results live in modules this one does
+not import: it is clopen by `SymbolicDynamics.FullShift.isOpen_cylinder` and
+`SymbolicDynamics.FullShift.isClosed_cylinder` in `Mathlib.Dynamics.SymbolicDynamics.Basic`,
+measurable by `SymbolicDynamics.FullShift.measurableSet_cylinder` in
+`TauCeti.MeasureTheory.Constructions.Cylinder.FullShift`, and these cylinders form a basis of the
+topology by `SymbolicDynamics.FullShift.isTopologicalBasis_cylinders` in
+`TauCeti.Dynamics.SymbolicDynamics.Basic`. On countable carriers in countable relational
 vocabularies the topology is Polish and its Borel σ-algebra is the existing product σ-algebra.
 The same construction handles finite and empty carriers.
 
 For a discrete carrier, the *logic action* of its permutation group, with the topology of
 pointwise convergence, is jointly continuous, for every language, so stabilizers of
-configurations are closed subgroups (`TauCeti.isClosed_stabilizer`).
+configurations are closed subgroups (`TauCeti.isClosed_stabilizer`). On a countable discrete
+carrier in a countable relational vocabulary both spaces are second countable and carry their
+Borel σ-algebras, so the action is jointly measurable (Mathlib's instance
+`ContinuousSMul.measurableSMul₂`): the coding space on `ℕ` is a Borel `S∞`-space, whose orbit
+relation is isomorphism (`TauCeti.RelationalConfiguration.isoSetoid_eq_orbitRel`).
 
 These are the usual spaces of structures used for the logic action; see Gao,
 *Invariant Descriptive Set Theory*. The measurable coordinates and encoding of structures are
@@ -58,6 +70,14 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → RelationalCon
     Continuous f ↔ ∀ a, Continuous (fun x => (f x).eval a) := by
   simp only [eval_def]
   exact continuous_pi_iff
+
+/-- Convergence of configurations is convergence of every atom coordinate. -/
+theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → RelationalConfiguration L V}
+    {c : RelationalConfiguration L V} :
+    Filter.Tendsto f l (nhds c) ↔
+      ∀ a, Filter.Tendsto (fun i => (f i).eval a) l (nhds (c.eval a)) := by
+  simp only [eval_def]
+  exact tendsto_pi_nhds
 
 /-- Building a configuration from its atom values is continuous. -/
 @[fun_prop]
@@ -116,14 +136,5 @@ instance [∀ n, Countable (L.Relations n)] [Countable V] :
 instance [∀ n, Countable (L.Relations n)] [Countable V] :
     BorelSpace (RelationalConfiguration L V) :=
   inferInstanceAs (BorelSpace (Atom L V → Bool))
-
-/-- There are at most continuum many configurations on a countable carrier in a countable
-relational vocabulary. Function symbols play no role. -/
-theorem mk_le_continuum (L : FirstOrder.Language) (V : Type*)
-    [∀ n, Countable (L.Relations n)] [Countable V] :
-    Cardinal.mk (RelationalConfiguration L V) ≤ Cardinal.continuum := by
-  rw [RelationalConfiguration, Cardinal.mk_arrow, Cardinal.mk_bool, Cardinal.lift_ofNat]
-  exact (Cardinal.power_le_power_left (by norm_num) Cardinal.mk_le_aleph0).trans_eq
-    Cardinal.two_power_aleph0
 
 end TauCeti.RelationalConfiguration

@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.FieldDivision
+public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 import Mathlib.Algebra.Polynomial.BigOperators
+import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.PrincipalIdealDomain
@@ -51,15 +53,26 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
   exactly when the polynomial is irreducible.
 * `Polynomial.count_one_map_natDegree_normalizedFactors`: a nonzero squarefree polynomial has as
   many linear normalized factors as distinct roots.
+* `Polynomial.sum_natDegree_toFinset_normalizedFactors`: the degrees of the distinct normalized
+  factors of a squarefree polynomial add up to its degree.
 * `Polynomial.monic_squarefree_normalizedFactors_prod`: a product of distinct monic irreducible
   polynomials is monic and squarefree, and its normalized factors are those polynomials.
+* `Polynomial.filter_aroots_eq_count_normalizedFactors_nsmul_aroots`: the roots of `g` in an
+  extension field at which a monic irreducible `p` vanishes are the roots of `p`, repeated with the
+  multiplicity of `p` in the normalized factorization of `g`.
+* `Polynomial.card_filter_aroots_eq_count_normalizedFactors_mul_natDegree`: their number, for `g`
+  split over the extension.
+* `Polynomial.Monic.eq_of_forall_card_filter_aroots_eq`: monic polynomials which split over an
+  extension are equal if every monic irreducible polynomial vanishes at equally many of their
+  roots there.
 
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`, section `EtaleDecomposition`. The source is written against
-Lean `v4.32.0`; this is a forward port.
+Lean `v4.32.0`; this is a forward port. The section on the roots of the normalized irreducible
+factors is not taken from that source.
 -/
 
 public section
@@ -281,6 +294,18 @@ lemma count_one_map_natDegree_normalizedFactors {g : K[X]} (hsq : Squarefree g) 
   rw [hlin, Nat.card_congr Factors.linearEquivRoots, ← Nat.card_eq_finsetCard]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ by simp [hg])
 
+/-- For a squarefree polynomial over a field, the degrees of its distinct normalized irreducible
+factors add up to its degree. -/
+lemma sum_natDegree_toFinset_normalizedFactors {g : K[X]} (hsq : Squarefree g) :
+    ∑ p ∈ (normalizedFactors g).toFinset, p.natDegree = g.natDegree := by
+  -- Squarefreeness means that no normalized factor is repeated.
+  have hnodup : (normalizedFactors g).Nodup :=
+    (squarefree_iff_nodup_normalizedFactors hsq.ne_zero).mp hsq
+  calc ∑ p ∈ (normalizedFactors g).toFinset, p.natDegree
+      = ((normalizedFactors g).map natDegree).sum := by
+        rw [Finset.sum_eq_multiset_sum, Multiset.toFinset_val, hnodup.dedup]
+    _ = g.natDegree := sum_natDegree_normalizedFactors g
+
 /-- The product of a duplicate-free multiset of monic irreducible polynomials is monic and
 squarefree, and its normalized factors are the multiset itself. -/
 theorem monic_squarefree_normalizedFactors_prod {s : Multiset K[X]}
@@ -293,6 +318,98 @@ theorem monic_squarefree_normalizedFactors_prod {s : Multiset K[X]}
   rw [squarefree_iff_nodup_normalizedFactors
     (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
   exact snodup
+
+/-! ### Roots of the normalized irreducible factors
+
+In an extension field `L`, the roots of `g` at which a monic irreducible `p` vanishes
+are the roots of `p`, repeated as often as `p` occurs among the normalized irreducible factors of
+`g`: a root of a monic irreducible polynomial has it as its minimal polynomial, so it is a root of
+no other monic irreducible factor. Counting these roots therefore recovers the factorization of a
+polynomial which splits over `L`.
+-/
+
+section Roots
+
+variable {L : Type*} [Field L] [Algebra K L] [DecidableEq L]
+
+/-- The roots in `L` of `g`, counted with multiplicity, at which a monic irreducible `p` vanishes
+are the roots of `p`, each repeated as often as `p` occurs in the normalized factorization of
+`g`. -/
+theorem filter_aroots_eq_count_normalizedFactors_nsmul_aroots (g : K[X]) {p : K[X]}
+    (hp : Irreducible p) (hpm : p.Monic) :
+    (g.aroots L).filter (fun a ↦ aeval a p = 0) = (normalizedFactors g).count p • p.aroots L := by
+  rcases eq_or_ne g 0 with rfl | hg
+  · simp
+  have hmem {q : K[X]} (hq : q ∈ normalizedFactors g) :=
+    (Polynomial.mem_normalizedFactors_iff hg).1 hq
+  -- The roots of `g` are those of its normalized factors.
+  have haroots : g.aroots L = (normalizedFactors g).bind fun q ↦ q.aroots L := by
+    conv_lhs => rw [← leadingCoeff_mul_prod_normalizedFactors g]
+    rw [aroots_C_mul _ (leadingCoeff_ne_zero.2 hg), aroots, Polynomial.map_multiset_prod,
+      roots_multiset_prod, Multiset.bind_map]
+    simp only [Multiset.mem_map, not_exists, not_and]
+    exact fun q hq h ↦ (hmem hq).1.ne_zero
+      ((Polynomial.map_eq_zero_iff (algebraMap K L).injective).1 h)
+  -- At a root of a normalized factor `q`, the polynomial `p` vanishes exactly when `p = q`.
+  have hfactor : ∀ q ∈ normalizedFactors g, (q.aroots L).filter (fun a ↦ aeval a p = 0) =
+      if q = p then p.aroots L else 0 := fun q hq ↦ by
+    obtain ⟨hqi, hqm, -⟩ := hmem hq
+    split_ifs with h
+    · exact h ▸ Multiset.filter_eq_self.2 fun a ha ↦ (mem_aroots.1 (h ▸ ha)).2
+    · refine Multiset.filter_eq_nil.2 fun a ha hpa ↦ h ?_
+      rw [minpoly.eq_of_irreducible_of_monic hqi (mem_aroots.1 ha).2 hqm,
+        minpoly.eq_of_irreducible_of_monic hp hpa hpm]
+  rw [haroots, Multiset.filter_bind, Multiset.bind_congr hfactor]
+  induction normalizedFactors g using Multiset.induction_on with
+  | empty => simp
+  | cons q s ih =>
+    obtain rfl | h := eq_or_ne q p
+    · simp [ih, succ_nsmul, add_comm]
+    · simp [h, ih, Multiset.count_cons_of_ne h.symm]
+
+/-- If `g` splits over `L`, the number of its roots in `L`, counted with multiplicity, at which a
+monic irreducible `p` vanishes is the multiplicity of `p` in the normalized factorization of `g`
+times the degree of `p`. -/
+theorem card_filter_aroots_eq_count_normalizedFactors_mul_natDegree {g p : K[X]}
+    (hs : (g.map (algebraMap K L)).Splits) (hp : Irreducible p) (hpm : p.Monic) :
+    ((g.aroots L).filter fun a ↦ aeval a p = 0).card =
+      (normalizedFactors g).count p * p.natDegree := by
+  rw [filter_aroots_eq_count_normalizedFactors_nsmul_aroots g hp hpm, Multiset.card_nsmul]
+  rcases eq_or_ne g 0 with rfl | hg
+  · simp
+  by_cases hpg : p ∈ normalizedFactors g
+  · rw [aroots, ← (hs.of_dvd ((Polynomial.map_ne_zero_iff (algebraMap K L).injective).2 hg)
+      (Polynomial.map_dvd _ (dvd_of_mem_normalizedFactors hpg))).natDegree_eq_card_roots,
+      natDegree_map]
+  · simp [Multiset.count_eq_zero.2 hpg]
+
+omit [DecidableEq K] in
+/-- Two monic polynomials which split over `L` are equal if every monic irreducible polynomial
+vanishes at equally many of their roots in `L`, counted with multiplicity. -/
+theorem Monic.eq_of_forall_card_filter_aroots_eq {g₁ g₂ : K[X]} (hg₁ : g₁.Monic)
+    (hg₂ : g₂.Monic) (hs₁ : (g₁.map (algebraMap K L)).Splits)
+    (hs₂ : (g₂.map (algebraMap K L)).Splits)
+    (h : ∀ p : K[X], Irreducible p → p.Monic →
+      ((g₁.aroots L).filter fun a ↦ aeval a p = 0).card =
+        ((g₂.aroots L).filter fun a ↦ aeval a p = 0).card) :
+    g₁ = g₂ := by
+  classical
+  have hfac : normalizedFactors g₁ = normalizedFactors g₂ := by
+    ext p
+    by_cases hp : Irreducible p ∧ p.Monic
+    · have := h p hp.1 hp.2
+      rw [card_filter_aroots_eq_count_normalizedFactors_mul_natDegree hs₁ hp.1 hp.2,
+        card_filter_aroots_eq_count_normalizedFactors_mul_natDegree hs₂ hp.1 hp.2] at this
+      exact Nat.eq_of_mul_eq_mul_right hp.1.natDegree_pos this
+    · have hnot {g : K[X]} (hg : g ≠ 0) : p ∉ normalizedFactors g := fun hm ↦
+        hp ⟨((Polynomial.mem_normalizedFactors_iff hg).1 hm).1,
+          ((Polynomial.mem_normalizedFactors_iff hg).1 hm).2.1⟩
+      rw [Multiset.count_eq_zero.2 (hnot hg₁.ne_zero), Multiset.count_eq_zero.2 (hnot hg₂.ne_zero)]
+  have hprod {g : K[X]} (hg : g.Monic) : (normalizedFactors g).prod = g := by
+    simpa [hg.leadingCoeff] using leadingCoeff_mul_prod_normalizedFactors g
+  rw [← hprod hg₁, ← hprod hg₂, hfac]
+
+end Roots
 
 end Polynomial
 

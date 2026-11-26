@@ -15,7 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 
@@ -102,7 +102,7 @@ theorem exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq (hp : 1 < p) (hp
   -- Schwartz functions.
   have hΔ : Δ T = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp F) := by
     refine ext_real fun φ hφ ↦ ?_
-    rw [laplacian_apply_apply, laplacian_postcompCLM,
+    rw [laplacian_apply_apply, SchwartzMap.laplacian_postcompCLM,
       Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
       Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM]
     congr 1

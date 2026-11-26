@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.Data.Matrix.Mul
 
 /-!
 # Block matrix identities
@@ -17,6 +18,9 @@ The determinant of a block-diagonal matrix `Matrix.blockDiagonal' M` whose block
 different index types is the product of the determinants of its blocks. This is the dependent
 version of Mathlib's `Matrix.det_blockDiagonal`, and computes the determinant of a coordinatewise
 endomorphism of a finite dependent product.
+
+Multiplying a matrix indexed by `n × ι` on both sides by block-diagonal matrices multiplies each
+of its blocks on both sides by the corresponding diagonal blocks.
 
 On a set of indices that is down-closed for a ranking `b`, the square block of a product with a
 block lower triangular left factor, or a block upper triangular right factor, is the product of
@@ -40,11 +44,19 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
   `Matrix.toBlocks₂₁_eq_submatrix`, and `Matrix.toBlocks₂₂_eq_submatrix`: block extraction
   as submatrix restriction.
+* `Matrix.toSquareBlockProp_eq_submatrix`: a square block is the submatrix along the subtype
+  inclusion.
 * `Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero`: a matrix with vanishing
   off-diagonal blocks is block diagonal.
 * `Matrix.det_blockDiagonal'`: `(blockDiagonal' M).det = ∏ i, (M i).det`.
+* `Matrix.submatrix_blockDiagonal_mul_mul_blockDiagonal`: the blocks of
+  `blockDiagonal d * X * blockDiagonal d'`.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
+* `Matrix.submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular`: rectangular leading
+  submatrices of `L * M * U` only involve the corresponding blocks of the factors.
+* `Matrix.det_toSquareBlockProp_mul_mul`: the minor of `L * M * U` on a down-closed set is the
+  product of the minors of `L`, `M` and `U`.
 * `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
   the leading blocks on the strict initial segments.
 * `Matrix.BlockTriangular.isUnit_det_toSquareBlockProp`: leading blocks of an invertible
@@ -89,6 +101,11 @@ public theorem toBlocks₂₂_eq_submatrix {m n p q α : Type*} (M : Matrix (m �
     M.toBlocks₂₂ = M.submatrix Sum.inr Sum.inr :=
   (rfl)
 
+/-- The square block on `{a | p a}` is the submatrix along the subtype inclusion. -/
+public theorem toSquareBlockProp_eq_submatrix {m α : Type*} (M : Matrix m m α) (p : m → Prop) :
+    M.toSquareBlockProp p = M.submatrix (Subtype.val : {a // p a} → m) Subtype.val :=
+  (rfl)
+
 /-- A matrix with vanishing off-diagonal blocks is the block-diagonal matrix of its diagonal
 blocks. -/
 public theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero {m n p q α : Type*}
@@ -113,6 +130,17 @@ public theorem det_blockDiagonal' {o R : Type*} {m : o → Type*} [Fintype o] [D
   -- The `@[simps]` lemmas of `Equiv.sigmaSubtype` only give the first component of
   -- `(Equiv.sigmaSubtype i).symm j`, so the definition is unfolded to see that it is `⟨i, j⟩`.
   simp [toSquareBlock_def, Equiv.sigmaSubtype]
+
+/-- Multiplying on the left by `blockDiagonal d` and on the right by `blockDiagonal d'` sends the
+block `X_(i,j)` to `d i * X_(i,j) * d' j`. -/
+public theorem submatrix_blockDiagonal_mul_mul_blockDiagonal {n ι R : Type*} [Fintype n]
+    [Fintype ι] [DecidableEq ι] [NonUnitalNonAssocSemiring R] (d d' : ι → Matrix n n R)
+    (X : Matrix (n × ι) (n × ι) R) (i j : ι) :
+    (blockDiagonal d * X * blockDiagonal d').submatrix (·, i) (·, j) =
+      d i * X.submatrix (·, i) (·, j) * d' j := by
+  ext a b
+  simp [Matrix.mul_apply, blockDiagonal_apply, Fintype.sum_prod_type, Finset.sum_mul, ite_mul,
+    mul_ite]
 
 /-- Restricting to a square block commutes with any entrywise map. -/
 @[simp]
@@ -175,6 +203,22 @@ public theorem BlockTriangular.toSquareBlockProp_mul [NonUnitalNonAssocSemiring 
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => B i k * A k j) fun k => ?_, add_zero]
   rw [hA (lt_of_not_ge fun h => k.property (hp h j.property)), mul_zero]
 
+/-- A rectangular submatrix on initial segments of the rows and columns of `L * X * U`
+can be computed using only those rows and columns. The row and column embeddings need not
+have the same domain. -/
+public theorem submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular
+    {m n p q R : Type*} [Fintype m] [Fintype n] [Fintype p] [Fintype q]
+    [LinearOrder m] [LinearOrder n] [NonUnitalNonAssocSemiring R]
+    {L : Matrix m m R} {U : Matrix n n R} (X : Matrix m n R)
+    (hL : L.IsLowerTriangular) (hU : U.IsUpperTriangular) (r : p ↪ m) (c : q ↪ n)
+    (hr : IsLowerSet (Set.range r)) (hc : IsLowerSet (Set.range c)) :
+    (L * X * U).submatrix r c = L.submatrix r r * X.submatrix r c * U.submatrix c c := by
+  have hleft := submatrix_mul_of_injective L X r r c r.injective fun i j hj ↦
+    hr (le_of_not_gt fun h ↦ hj (hL h)) ⟨i, rfl⟩
+  have hright := submatrix_mul_of_injective_right (L * X) U r c c c.injective fun j k hj ↦
+    hc (le_of_not_gt fun h ↦ hj (hU h)) ⟨k, rfl⟩
+  rw [hright, hleft]
+
 /-- If every leading block of `M` has a unit determinant, so does every leading block on a strict
 initial segment `{j | b j < b i}`: that segment is either empty or a leading segment itself. -/
 public theorem isUnit_det_toSquareBlockProp_lt [DecidableEq m] [CommRing R] (M : Matrix m m R)
@@ -188,6 +232,15 @@ public theorem isUnit_det_toSquareBlockProp_lt [DecidableEq m] [CommRing R] (M :
   exact hM k
 
 variable [DecidableEq m] [CommRing R] {A L M U : Matrix m m R} {p : m → Prop} [DecidablePred p]
+
+/-- **Minors of `L * M * U` on down-closed sets.** For a block lower triangular `L` and a block
+upper triangular `U`, the determinant of the square block of `L * M * U` on a down-closed set of
+indices is the product of the determinants of the square blocks of `L`, `M` and `U`. -/
+public theorem det_toSquareBlockProp_mul_mul (hL : L.BlockTriangular (toDual ∘ b))
+    (hU : U.BlockTriangular b) (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) :
+    ((L * M * U).toSquareBlockProp p).det =
+      (L.toSquareBlockProp p).det * (M.toSquareBlockProp p).det * (U.toSquareBlockProp p).det := by
+  rw [hU.toSquareBlockProp_mul hp, hL.toSquareBlockProp_mul_of_toDual hp, det_mul, det_mul]
 
 /-- A leading block of a block upper triangular matrix with unit determinant also has unit
 determinant. The set of indices may be any down-closed union of blocks. -/
