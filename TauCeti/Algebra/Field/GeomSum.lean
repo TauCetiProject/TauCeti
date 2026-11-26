@@ -85,10 +85,15 @@ theorem one_sub_mul_sum_Icc_zpow {𝕜 : Type*} [DivisionRing 𝕜] {z : 𝕜} (
   -- `1 - z` commutes with the powers of `z`.
   have hc : Commute (1 - z) (z ^ (-(n : ℤ))) :=
     (Commute.one_left _).sub_left ((Commute.refl z).zpow_right₀ _)
-  rw [hsum, ← mul_assoc, hc.eq, mul_assoc, mul_neg_geom_sum, mul_sub, mul_one,
-    ← zpow_natCast z (2 * n + 1), ← zpow_add₀ hz, ← zpow_natCast]
-  congr 2
-  push_cast
-  ring
+  calc (1 - z) * ∑ j ∈ Icc (-(n : ℤ)) n, z ^ j
+      = z ^ (-(n : ℤ)) * ((1 - z) * ∑ k ∈ range (2 * n + 1), z ^ k) := by
+        rw [hsum, ← mul_assoc, hc.eq, mul_assoc]
+    _ = z ^ (-(n : ℤ)) - z ^ (-(n : ℤ) + (2 * n + 1 : ℕ)) := by
+        rw [mul_neg_geom_sum, mul_sub, mul_one, zpow_add₀ hz, zpow_natCast]
+    _ = z ^ (-(n : ℤ)) - z ^ (n + 1) := by
+        rw [← zpow_natCast]
+        congr 2
+        push_cast
+        ring
 
 end TauCeti

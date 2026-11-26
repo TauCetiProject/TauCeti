@@ -9,7 +9,7 @@ public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Numerator
 import Mathlib.Algebra.Order.Interval.Finset.SuccPred
-import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.Algebra.MonoidAlgebra.Telescope
 
 /-!
 # Characters at multiples of the Weyl vector
@@ -91,15 +91,6 @@ private theorem mapDomainRingHom_single_weylVector_mul_weylNumerator_zero (k : �
   rw [mapDomainRingHom_apply, mapDomain_single, DistribSMul.toAddMonoidHom_apply, zero_add,
     ← smul_comm w (k + 1), succ_nsmul]
 
-/-- `1 - e^{-(k + 1) α}` is `1 - e^{-α}` times the geometric sum `∑_{j=0}^{k} e^{-j α}`. -/
-private theorem one_sub_single_neg_nsmul_eq (x : M) (k : ℕ) :
-    (1 - single (-((k + 1) • x)) 1 : AddMonoidAlgebra ℤ M) =
-      (1 - single (-x) 1) * ∑ j ∈ range (k + 1), single (-(j • x)) 1 := by
-  have hpow (j : ℕ) : (single (-x) 1 : AddMonoidAlgebra ℤ M) ^ j = single (-(j • x)) 1 := by
-    rw [single_pow, one_pow, smul_neg]
-  simp_rw [← hpow]
-  exact (mul_neg_geom_sum _ _).symm
-
 variable {P b}
 
 /-- **The character at a multiple of the Weyl vector.** If `f · Δ = N(k ρ)`, and the denominator
@@ -122,7 +113,7 @@ theorem eq_single_nsmul_weylVector_mul_prod_of_mul_weylDenominator_eq
         single ((k + 1) • weylVector P b) 1 * (weylDenominator P b * G) := by
     simp only [map_mul, weylDenominator_def, map_prod, map_sub, map_one, mapDomainRingHom_apply,
       mapDomain_single, DistribSMul.toAddMonoidHom_apply, smul_neg, G, ← prod_mul_distrib,
-      one_sub_single_neg_nsmul_eq]
+      one_sub_single_neg_nsmul_eq_mul_sum]
   have key : single (weylVector P b) 1 * f * weylDenominator P b =
       single (weylVector P b) 1 * (single (k • weylVector P b) 1 * G) * weylDenominator P b := by
     have hsplit : single ((k + 1) • weylVector P b) (1 : ℤ) =
