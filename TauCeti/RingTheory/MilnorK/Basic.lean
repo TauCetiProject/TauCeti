@@ -56,7 +56,8 @@ the Milnor ring is not an exterior algebra. The grade involution `σ`, which is 
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_of_add_eq_one`: the Steinberg relation `{a} {b} = 0` for
   `a + b = 1`, and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring
   entries of any symbol.
-* `TauCeti.MilnorK.symbol_append_cons_mul`: symbols are additive in every entry.
+* `TauCeti.MilnorK.symbol_append_cons_mul`, `TauCeti.MilnorK.symbol_append_cons_pow`: symbols
+  are additive in every entry.
 * `TauCeti.MilnorK.ringHom_ext`: ring homomorphisms out of `MilnorK R` agreeing on degree-one
   classes are equal.
 * `TauCeti.MilnorK.lift_mem_of_mem_degree`: `lift` sends `degree R n` into the `n`-th piece of a
@@ -198,6 +199,19 @@ theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a :=
 theorem neg_ofUnit_neg_one : -ofUnit (-1 : Rˣ) = ofUnit (-1) := by
   rw [← ofUnit_inv, inv_neg_one]
 
+/-- `{a} = {-1} + {-a}`, since `a = (-1) * (-a)`. -/
+theorem ofUnit_neg_one_add_ofUnit_neg (a : Rˣ) : ofUnit (-1) + ofUnit (-a) = ofUnit a := by
+  rw [← ofUnit_mul, neg_one_mul, neg_neg]
+
+/-- `{-1}` is killed by `2`, since `(-1) ^ 2 = 1`. -/
+theorem two_nsmul_ofUnit_neg_one : 2 • ofUnit (-1 : Rˣ) = 0 := by
+  rw [← ofUnit_pow, neg_one_sq, ofUnit_one]
+
+/-- The symbol `{-1, …, -1}` with `n ≠ 0` entries is killed by `2`. -/
+theorem two_nsmul_ofUnit_neg_one_pow {n : ℕ} (hn : n ≠ 0) : 2 • ofUnit (-1 : Rˣ) ^ n = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [pow_succ, ← mul_smul_comm, two_nsmul_ofUnit_neg_one, mul_zero]
+
 /-- The **Steinberg relation**: `{a} {b} = 0` whenever the units `a` and `b` add up to one. -/
 theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
@@ -224,10 +238,20 @@ theorem symbol_singleton (a : Rˣ) : symbol [a] = ofUnit a := by
 theorem symbol_append (l₁ l₂ : List Rˣ) : symbol (l₁ ++ l₂) = symbol l₁ * symbol l₂ := by
   simp [symbol]
 
+/-- The symbol `{a, …, a}` with `n` entries is the `n`-th power of `{a}`. -/
+@[simp]
+theorem symbol_replicate (n : ℕ) (a : Rˣ) : symbol (List.replicate n a) = ofUnit a ^ n := by
+  simp [symbol]
+
 /-- Milnor symbols are additive in every entry. -/
 theorem symbol_append_cons_mul (l₁ l₂ : List Rˣ) (a b : Rˣ) :
     symbol (l₁ ++ (a * b) :: l₂) = symbol (l₁ ++ a :: l₂) + symbol (l₁ ++ b :: l₂) := by
   simp [add_mul, mul_add]
+
+/-- Milnor symbols turn an `m`-th power in any entry into an `m`-th multiple. -/
+theorem symbol_append_cons_pow (l₁ l₂ : List Rˣ) (a : Rˣ) (m : ℕ) :
+    symbol (l₁ ++ a ^ m :: l₂) = m • symbol (l₁ ++ a :: l₂) := by
+  simp only [symbol_append, symbol_cons, ofUnit_pow, smul_mul_assoc, mul_smul_comm]
 
 /-- A Milnor symbol with an entry equal to `1` vanishes. -/
 theorem symbol_append_cons_one (l₁ l₂ : List Rˣ) : symbol (l₁ ++ 1 :: l₂) = 0 := by
@@ -239,6 +263,20 @@ theorem symbol_append_cons_cons_of_add_eq_one (l₁ l₂ : List Rˣ) {a b : Rˣ}
   simp [← mul_assoc, ofUnit_mul_ofUnit_of_add_eq_one h]
 
 /-! ### The universal property -/
+
+/-- Ring homomorphisms out of the Milnor K-ring are determined by their values on the degree-one
+classes. -/
+@[ext]
+theorem ringHom_ext {A : Type*} [Semiring A] {f g : MilnorK R →+* A}
+    (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g := by
+  refine ringHom_ext_mk (RingHom.ext fun t ↦ ?_)
+  induction t using TensorAlgebra.induction with
+  | algebraMap r =>
+    exact RingHom.congr_fun (RingHom.ext_int ((f.comp mk).comp (algebraMap ℤ _))
+      ((g.comp mk).comp (algebraMap ℤ _))) r
+  | ι x => simpa using h x.toMul
+  | mul a b ha hb => simp only [RingHom.comp_apply, map_mul] at *; rw [ha, hb]
+  | add a b ha hb => simp only [RingHom.comp_apply, map_add] at *; rw [ha, hb]
 
 section Lift
 
@@ -273,18 +311,6 @@ theorem lift_symbol (f : Additive Rˣ →+ A)
   induction l with
   | nil => simp
   | cons a l ih => simp [ih]
-
-/-- Ring homomorphisms out of the Milnor K-ring are determined by their values on the degree-one
-classes. -/
-@[ext]
-theorem ringHom_ext {f g : MilnorK R →+* A} (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) :
-    f = g := by
-  refine ringHom_ext_mk (RingHom.ext fun t ↦ ?_)
-  induction t using TensorAlgebra.induction with
-  | algebraMap r => simp [eq_intCast (algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))) r]
-  | ι x => simpa using h x.toMul
-  | mul a b ha hb => simp only [RingHom.comp_apply, map_mul] at *; rw [ha, hb]
-  | add a b ha hb => simp only [RingHom.comp_apply, map_add] at *; rw [ha, hb]
 
 /-- `lift f hf` is the unique ring homomorphism sending each `{a}` to `f a`. -/
 theorem eq_lift_iff (f : Additive Rˣ →+ A)
@@ -353,6 +379,9 @@ theorem symbol_mem_degree (l : List Rˣ) : symbol l ∈ degree R l.length :=
 
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 := by
   simpa using symbol_mem_degree [a]
+
+theorem ofUnit_pow_mem_degree (a : Rˣ) (n : ℕ) : ofUnit a ^ n ∈ degree R n := by
+  simpa using symbol_mem_degree (List.replicate n a)
 
 private theorem mul_mem_degree {i j : ℕ} {x y : MilnorK R} (hx : x ∈ degree R i)
     (hy : y ∈ degree R j) : x * y ∈ degree R (i + j) := by
