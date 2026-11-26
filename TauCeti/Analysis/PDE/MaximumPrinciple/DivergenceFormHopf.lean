@@ -29,13 +29,14 @@ import TauCeti.Topology.Instances.Matrix
 
 Let `B = ball y R` be a ball in an open set `Ω ⊆ ℝ^{n+1}` and let `x₀` lie on its bounding sphere.
 Let `a` be uniformly elliptic on `B` with constants `0 < λ ≤ Λ`, not necessarily symmetric, and
-`α`-Hölder on `closedBall y R` for some `α > 0`. Let `u ∈ H¹(Ω)` be a weak supersolution of
+`α`-Hölder on `closedBall y R` for some `α > 0`, and let the drift `b` be measurable and bounded
+on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
 
-`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≥ 0` in `Ω`,
 
-that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and suppose that `u` agrees almost
-everywhere on `B` with a function `g` continuous on `closedBall y R` that attains a strict minimum
-over `B` at `x₀`: `g x₀ < g x` for `x ∈ B`. **Hopf's lemma**
+that is `a(u, v) + ∫ ⟪b, ∇u⟫ v ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and suppose that `u` agrees
+almost everywhere on `B` with a function `g` continuous on `closedBall y R` that attains a strict
+minimum over `B` at `x₀`: `g x₀ < g x` for `x ∈ B`. **Hopf's lemma**
 (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg`) says that `g` leaves `x₀` at a
 positive linear rate along the inward normal: with `ν = (x₀ - y) / R`,
 
@@ -45,8 +46,10 @@ In particular an inward derivative of `g` at `x₀`, if it exists, is positive.
 
 The same conclusion holds with a zeroth-order term
 (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos`): for a weak
-supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≥ 0` with `c` measurable and `0 ≤ c ≤ M` on `B`, provided
-`g x₀ ≤ 0`. In Rosales's sign convention this is the term `d u` with `d ≤ 0` bounded. When
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` with `c` measurable and `0 ≤ c ≤ M` on `B`,
+provided `g x₀ ≤ 0`. In Rosales's sign convention the drift is the term `cⁱ Dᵢu` and the mass term
+is `d u` with `d ≤ 0`; Rosales allows `cⁱ ∈ L^q` for some `q > n + 1` and `d` in an `L^{q/2}` Morrey
+space, while here both are bounded. When
 `g x₀ = 0` a bounded `c` of either sign is allowed, since then `u ≥ 0` on `B` and the negative
 part of `c` may be dropped. The sign condition on `g x₀` is needed: on the interval `(0, 2)`,
 `cosh` solves `-u'' + u = 0`, and its minimum `cosh 0 = 1 > 0` over `[0, 2)` is attained only at
@@ -65,27 +68,33 @@ small by the `C^{1,β}` estimate up to the boundary.
 
 * **Rescaling.** For `0 < ε ≤ R` the homothety `T z = ε z + y + (R - ε) ν` maps the closed unit ball
   into `closedBall y R`, the open unit ball into `ball y R`, and `ν` to `x₀`. The composition
-  `u ∘ T` is a weak supersolution on the annulus `D = {1/2 < ‖z‖ < 1}` for the coefficients
-  `b = a ∘ T`, which are `α`-Hölder with constant `K_a ε^α` and within `K_a (2 ε)^α` of the frozen
-  matrix `A = a x₀`.
+  `u ∘ T` is a weak supersolution on the annulus `D = {1/2 < ‖z‖ < 1}` for the principal
+  coefficients `a ∘ T`, which are `α`-Hölder with constant `K_a ε^α` and within `K_a (2 ε)^α` of
+  the frozen matrix `A = a x₀`, the drift `ε b ∘ T` and the mass coefficient `ε² c ∘ T`
+  (`TauCeti.PDE.exists_supersolution_comp_smul_add_const`).
 * **The barrier.** The Gaussian `Φ(z) = e^{-κ‖z‖²} - e^{-κ}` vanishes on the unit sphere, is a
   strict classical subsolution of `div (A ∇·)` on `D`, `div (A ∇Φ) ≥ λ κ e^{-κ}`, once `κ` is large
   compared with `tr A / λ`, and grows like `κ e^{-κ} t` along the inward normal at `ν`. Unlike
   Rosales, who solves the frozen Dirichlet problem and appeals to the classical Hopf lemma, we use
   this explicit barrier, so `A` need not be symmetric.
-* **The correction.** Lax–Milgram gives `ψ ∈ H¹₀(D)` with `-div (b ∇ψ) = div ((b - A) ∇Φ)`, so that
-  `Φ + ψ` is a weak subsolution for `b`. Its `H¹` norm and the Hölder constant of `(b - A) ∇Φ` are
-  of order `‖b - A‖ + [b]_α`. The `C^{1,β}` estimate near the boundary point `ν`
-  (`TauCeti.PDE.exists_holderOnWith_gradient_ball_inter_closure_of_graph`), in the chart
-  `TauCeti.unitSphereChart` in which the unit sphere is the graph of the smooth function
-  `TauCeti.unitSphereGraph`, bounds `∇ψ` near `ν` by the same order. So for `ε` small the
-  correction has a representative that is Lipschitz near `ν` with a constant below
-  `κ e^{-κ} / 2` and vanishes at `ν`
+* **The correction.** Lax–Milgram gives `ψ ∈ H¹₀(D)` with
+  `-div ((a ∘ T) ∇ψ) = div ((a ∘ T - A) ∇Φ)`, so that `Φ + ψ` is a weak subsolution for `a ∘ T`.
+  Its `H¹` norm and the Hölder constant of `(a ∘ T - A) ∇Φ` are of order
+  `‖a ∘ T - A‖ + [a ∘ T]_α`. The boundary of `D` is of class `C^{1,α}`: near the outer sphere `D`
+  is the region above the graph of a `C^{1,α}` function in rigid coordinates
+  (`TauCeti.exists_affineIsometryEquiv_graph_ball`), and so it is near the inner sphere
+  (`TauCeti.exists_affineIsometryEquiv_graph_compl_closedBall`). So the global `C^{1,β}` estimate
+  (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_isBounded`) bounds `∇ψ` on `D` by the same
+  order, and for `ε` small the correction has a representative that is Lipschitz near `ν` with a
+  constant below `κ e^{-κ} / 2` and vanishes at `ν`
   (`TauCeti.W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le`). Stampacchia's global bound
   (`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_divergence`) bounds `ψ` by the same order.
-* **The mass term.** After rescaling, the mass coefficient is `ε² c ∘ T`, at most `ε² M`. Since
-  `Φ ≤ 1` and `ψ` is bounded, for `ε` small the mass term `ε² c (Φ + ψ)` is absorbed by the margin
-  `λ κ e^{-κ}` of the barrier, and the term `ε² c g x₀` is nonpositive.
+* **The lower-order terms.** After rescaling, the drift `ε b ∘ T` is at most `ε M` and the mass
+  coefficient `ε² c ∘ T` at most `ε² M`. Since `Φ ≤ 1`, `ψ` is bounded and `∇Φ` and `∇ψ` are bounded
+  on `D`, for `ε` small the drift term `⟪ε b ∘ T, ∇(Φ + ψ)⟫` and the mass term `ε² c (Φ + ψ)` are
+  absorbed by the margin `λ κ e^{-κ}` of the barrier, and the term `ε² c g x₀` is nonpositive. A
+  small drift also keeps the energy form coercive on `H¹₀(D)`, which the comparison principle
+  needs.
 * **Comparison.** On the boundary of `D`, `u ∘ T ≥ g x₀` on the outer sphere and
   `u ∘ T ≥ g x₀ + θ Φ` on the inner one for some `θ > 0`. So `g x₀ + θ (Φ + ψ)` is a weak
   subsolution below `u ∘ T` on the boundary, and the weak comparison principle
@@ -95,7 +104,8 @@ small by the `C^{1,β}` estimate up to the boundary.
 ## Main declarations
 
 * `TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg`: Hopf's boundary-point lemma
-  for weak supersolutions of divergence-form equations with Hölder coefficients.
+  for weak supersolutions of divergence-form equations with Hölder principal coefficients and a
+  bounded drift.
 * `TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos`: the same with a
   bounded zeroth-order term, nonnegative at a minimum `g x₀ < 0` and of either sign at a minimum
   `g x₀ = 0`.
@@ -124,7 +134,7 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-! ### The unit annulus and its boundary chart at a point of the outer sphere -/
+/-! ### The unit annulus and its `C^{1,α}` boundary charts -/
 
 /-- The open annulus `{z | 1/2 < ‖z‖ < 1}`. -/
 private def unitAnnulus : Opens E :=
@@ -164,19 +174,48 @@ private theorem aestronglyMeasurable_restrict_unitAnnulus
     AEStronglyMeasurable b (volume.restrict (unitAnnulus (n := n) : Set E)) :=
   (hbc.mono unitAnnulus_subset_closedBall).aestronglyMeasurable unitAnnulus.isOpen.measurableSet
 
-/-- In the cylinder of half-height and radius `1/4` at a point `ν` of the unit sphere, the
-annulus is the region above the cut-off sphere graph: there the points of the unit ball are
-automatically outside `closedBall 0 (1/2)`. -/
-private theorem unitSphereChart_symm_mem_unitAnnulus_iff (ν : E) (hν : ‖ν‖ = 1)
-    {z : WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ)} (hz : z ∈ normalCylinder (1 / 4) (1 / 4)) :
-    (unitSphereChart ν hν).symm z ∈ (unitAnnulus (n := n) : Set E) ↔
-      unitSphereGraph z.snd < z.fst := by
-  rw [← unitSphereChart_symm_mem_ball_iff ν hν hz, coe_unitAnnulus, mem_inter_iff,
-    and_iff_left_iff_imp, mem_compl_iff, mem_closedBall_zero_iff, not_le]
-  intro _
-  have hsq := norm_unitSphereChart_symm_sq ν hν z
-  rw [mem_normalCylinder] at hz
-  nlinarith [norm_nonneg ((unitSphereChart ν hν).symm z), norm_nonneg z.snd]
+/-- **The annulus has `C^{1,α}` boundary charts.** At every frontier point the annulus is, in rigid
+coordinates of the fixed model `ℝ × ℝⁿ`, the region above the graph of a `C¹` function with
+`α`-Hölder derivative: near the outer sphere it agrees with the unit ball, and near the inner sphere
+with the complement of `closedBall 0 (1/2)`. -/
+private theorem unitAnnulus_chart {α : ℝ≥0} (hα : α ≤ 1) :
+    ∀ x ∈ frontier (unitAnnulus (n := n) : Set E),
+      ∃ (e : E ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n)))
+        (γ : EuclideanSpace ℝ (Fin n) → ℝ) (h₀ r₀ : ℝ) (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧
+        γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧ HolderWith Kγ α (fderiv ℝ γ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀,
+          (e.symm z ∈ (unitAnnulus (n := n) : Set E) ↔ γ z.snd < z.fst) := by
+  have : Fact (Module.finrank ℝ E = n + 1) := ⟨finrank_euclideanSpace_fin⟩
+  -- In a cylinder of radii `h₀, r₀` about the chart centre `x`, points lie within `h₀ + r₀` of `x`.
+  have hdist {e : E ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))} {x : E} (he : e x = 0)
+      {h₀ r₀ : ℝ} {z : WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))} (hz : z ∈ normalCylinder h₀ r₀) :
+      dist (e.symm z) x < h₀ + r₀ := by
+    rw [← e.symm_apply_apply x, he, e.symm.dist_map, dist_zero_right, ← mem_ball_zero_iff]
+    exact normalCylinder_subset_ball h₀ r₀ hz
+  intro x hx
+  rcases frontier_unitAnnulus_subset hx with h | h
+  · obtain ⟨e, γ, Kγ, he, h0, hγ, hK, H⟩ :=
+      exists_affineIsometryEquiv_graph_ball (n := n) one_pos h hα
+    rw [mem_sphere_zero_iff_norm] at h
+    refine ⟨e, γ, 1 / 4, 1 / 4, Kγ, he, by norm_num, by norm_num, h0, hγ, hK, fun z hz => ?_⟩
+    rw [← H z hz, coe_unitAnnulus, mem_inter_iff, and_iff_left_iff_imp, mem_compl_iff,
+      mem_closedBall_zero_iff, not_le]
+    have hd := hdist he hz
+    have := norm_sub_norm_le x (e.symm z)
+    rw [← dist_eq_norm, dist_comm] at this
+    intro
+    linarith
+  · obtain ⟨e, γ, Kγ, he, h0, hγ, hK, H⟩ :=
+      exists_affineIsometryEquiv_graph_compl_closedBall (n := n) (by norm_num) h hα
+    rw [mem_sphere_zero_iff_norm] at h
+    refine ⟨e, γ, 1 / 2 / 4, 1 / 2 / 4, Kγ, he, by norm_num, by norm_num, h0, hγ, hK,
+      fun z hz => ?_⟩
+    rw [← H z hz, coe_unitAnnulus, mem_inter_iff, and_iff_right_iff_imp, mem_ball_zero_iff]
+    have hd := hdist he hz
+    have := norm_sub_norm_le (e.symm z) x
+    rw [← dist_eq_norm] at this
+    intro
+    linarith
 
 /-! ### The Gaussian barrier on the annulus -/
 
@@ -458,17 +497,63 @@ private theorem exists_ae_abs_correction_le {lam : ℝ} (hlam : 0 < lam) (B : �
   calc _ ≤ CS * (Vq * (η * B)) / lam * Vs := by gcongr
     _ = CS * (Vq * B) / lam * Vs * η := by ring
 
-/-- **The correction is small near the boundary point.** Fix a point `ν` of the unit sphere, an
-exponent `0 < α ≤ 1`, ellipticity constants and `κ`. There are `ρ > 0` and `C ≥ 0` such that for
-every coefficient field `b`, uniformly elliptic on the closed unit ball with these constants and
-`α`-Hölder there with constant at most `η ≤ 1`, and every matrix `A` with `‖b - A‖ ≤ η` there, the
-correction `ψ ∈ H¹₀` of `exists_correction_of_uniformlyEllipticOn` is bounded by `C η` almost
-everywhere and has a representative that is `C η`-Lipschitz on `B(ν, ρ)` and vanishes at `ν`. This
-combines the energy bound for `ψ` with Stampacchia's global bound and the `C^{1,β}` estimate up to
-the boundary of the annulus at `ν`. -/
+/-- **The gradient of the correction is bounded.** Fix `0 < α ≤ 1`, ellipticity constants and
+`κ`. There is `C ≥ 0` such that for coefficients `b`, uniformly elliptic on the closed unit ball
+with these constants and `α`-Hölder there with constant at most `1`, whose correction field
+`(b - A) ∇Φ` is `α`-Hölder with constant `K_G` there, every solution `ψ ∈ H¹₀` of
+`-div (b ∇ψ) = div ((b - A) ∇Φ)` on the annulus satisfies `‖∇ψ‖ ≤ C (K_G + ‖ψ‖)` almost
+everywhere. This is the global `C^{1,β}` estimate on the annulus, whose boundary is of class
+`C^{1,α}`. -/
+private theorem exists_ae_norm_gradient_correction_le {α : ℝ≥0} (hα : 0 < α) (hα1 : α ≤ 1)
+    (lam Lam κ : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+      {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Kb KG : ℝ≥0}
+      {ψ : W1p0 volume (unitAnnulus (n := n)) 2},
+      UniformlyEllipticOn (closedBall (0 : E) 1) b lam Lam →
+      HolderOnWith Kb α (fun z => matrixBilinearForm (b z)) (closedBall 0 1) → (Kb : ℝ) ≤ 1 →
+      HolderOnWith KG α (correctionField b A κ) (closedBall 0 1) →
+      (∀ v : W1p0 volume (unitAnnulus (n := n)) 2,
+        energyFormH1 b 0 0 (ψ : W1p volume unitAnnulus 2) (v : W1p volume unitAnnulus 2) =
+          -∫ z in (unitAnnulus (n := n) : Set E),
+            ⟪correctionField b A κ z, W1p.gradient (v : W1p volume unitAnnulus 2) z⟫_ℝ) →
+      ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
+        ‖W1p.gradient (ψ : W1p volume unitAnnulus 2) z‖ ≤ C * (KG + ‖ψ‖) := by
+  set β : ℝ≥0 := min α (1 / 2)
+  have hβ : 0 < β := lt_min hα (by norm_num)
+  have hβ1 : β < 1 := (min_le_right _ _).trans_lt (by norm_num)
+  have hΩ : Bornology.IsBounded (unitAnnulus (n := n) : Set E) :=
+    isBounded_ball.subset unitAnnulus_subset_ball
+  obtain ⟨C, hC, H⟩ := exists_holderOnWith_gradient_closure_of_isBounded (n := n)
+    hβ hβ1 (min_le_left _ _) (q := ⊤) le_top (by simp [hβ1.le]) hΩ (unitAnnulus_chart hα1)
+    lam Lam 1
+  refine ⟨C, hC, fun {b A Kb KG ψ} hb hbh hKb hHh hψ => ?_⟩
+  -- The global estimate for the equation `-div (b ∇ψ) = -div (-(b - A) ∇Φ)` on the annulus.
+  obtain ⟨g, hg, -, hgb⟩ := H (u := ψ) (a := b) (G := -correctionField b A κ) (f := 0)
+    (Ka := Kb) (KG := KG) (hb.mono_set closure_unitAnnulus_subset)
+    (hbh.mono closure_unitAnnulus_subset) hKb (hHh.neg.mono closure_unitAnnulus_subset)
+    MemLp.zero (fun φ => by
+      rw [hψ ⟨W1p.ofTestFunctionₗ volume unitAnnulus 2 φ, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩]
+      simp only [Pi.neg_apply, inner_neg_left, integral_neg, Pi.zero_apply, zero_mul,
+        integral_zero, add_zero]
+      congr 1
+      refine integral_congr_ae ?_
+      filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 φ] with z hz
+      rw [W1p.gradient_ofTestFunctionₗ, hz])
+  filter_upwards [hg, ae_restrict_mem unitAnnulus.isOpen.measurableSet] with z hz hzD
+  rw [hz]
+  simpa only [eLpNorm_zero, ENNReal.toReal_zero, add_zero] using hgb z (subset_closure hzD)
+
+/-- **The correction is small.** Fix a point `ν` of the unit sphere, an exponent `0 < α ≤ 1`,
+ellipticity constants and `κ`. There is `C ≥ 0` such that for every coefficient field `b`, uniformly
+elliptic on the closed unit ball with these constants and `α`-Hölder there with constant at most
+`η ≤ 1`, and every matrix `A` with `‖b - A‖ ≤ η` there, the correction `ψ ∈ H¹₀` of
+`exists_correction_of_uniformlyEllipticOn` and its gradient are bounded by `C η` almost everywhere,
+and `ψ` has a representative that is `C η`-Lipschitz on `B(ν, 1)` and vanishes at `ν`. This
+combines the energy bound for `ψ` with Stampacchia's global bound and the global `C^{1,β}` estimate
+on the annulus. -/
 private theorem exists_correction (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (hα : 0 < α) (hα1 : α ≤ 1)
     {lam : ℝ} (hlam : 0 < lam) (Lam κ : ℝ) :
-    ∃ ρ > 0, ∃ C : ℝ, 0 ≤ C ∧ ∀ {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
       {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Kb : ℝ≥0} {η : ℝ},
       UniformlyEllipticOn (closedBall (0 : E) 1) b lam Lam →
       HolderOnWith Kb α (fun z => matrixBilinearForm (b z)) (closedBall 0 1) → (Kb : ℝ) ≤ η →
@@ -480,69 +565,49 @@ private theorem exists_correction (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (
             -∫ z in (unitAnnulus (n := n) : Set E),
               ⟪correctionField b A κ z, W1p.gradient (v : W1p volume unitAnnulus 2) z⟫_ℝ) ∧
         W1p.value (ψ : W1p volume unitAnnulus 2) =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)]
-          ψ' ∧ LipschitzOnWith (C * η).toNNReal ψ' (ball ν ρ) ∧ ψ' ν = 0 ∧
+          ψ' ∧ LipschitzOnWith (C * η).toNNReal ψ' (ball ν 1) ∧ ψ' ν = 0 ∧
+        (∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
+          |W1p.value (ψ : W1p volume unitAnnulus 2) z| ≤ C * η) ∧
         ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
-          |W1p.value (ψ : W1p volume unitAnnulus 2) z| ≤ C * η := by
+          ‖W1p.gradient (ψ : W1p volume unitAnnulus 2) z‖ ≤ C * η := by
   obtain ⟨K, B, hK, hB⟩ := exists_holderOnWith_gradient_gaussBarrier (n := n) κ hα1
   obtain ⟨C₂, hC₂, HS⟩ := exists_ae_abs_correction_le (n := n) hlam B
-  obtain ⟨Kγ, hγK⟩ := exists_holderWith_fderiv_unitSphereGraph (K := (ℝ ∙ ν)ᗮ) hα1
-  set β : ℝ≥0 := min α (1 / 2)
-  have hβ : 0 < β := lt_min hα (by norm_num)
-  have hβ1 : β < 1 := (min_le_right _ _).trans_lt (by norm_num)
-  have hΩ : Bornology.IsBounded (unitAnnulus (n := n) : Set E) :=
-    isBounded_ball.subset unitAnnulus_subset_ball
-  obtain ⟨ρ, hρ, κ', H⟩ := exists_holderOnWith_gradient_ball_inter_closure_of_graph (n := n)
-    hβ hβ1 (min_le_left _ _) (q := ⊤) le_top (by simp [hβ1.le]) hΩ
-    (unitSphereChart_apply_self ν hν) (by norm_num : (0 : ℝ) < 1 / 4)
-    (by norm_num : (0 : ℝ) < 1 / 4) unitSphereGraph_zero contDiff_unitSphereGraph hγK
-    (fun z hz => unitSphereChart_symm_mem_unitAnnulus_iff ν hν hz) lam Lam 1
+  obtain ⟨κ', hκ', H⟩ := exists_ae_norm_gradient_correction_le (n := n) hα hα1 lam Lam κ
   -- The volume factor in the `L²` bound of the correction field.
   set V : ℝ := (measureUnivNNReal (volume.restrict (unitAnnulus (n := n) : Set E)) : ℝ) ^
     ((2 : ℝ≥0∞).toReal⁻¹)
   have : 0 ≤ V := by positivity
   set C₁ := κ' * ((K + B) + 10 / lam * (V * B))
-  refine ⟨ρ, hρ, C₁ + C₂, by positivity, fun {b A Kb η} hb hbh hKb hη1 hbA => ?_⟩
+  refine ⟨C₁ + C₂, by positivity, fun {b A Kb η} hb hbh hKb hη1 hbA => ?_⟩
   have hη : 0 ≤ η := Kb.coe_nonneg.trans hKb
   obtain ⟨hHh, hHb⟩ := holderOnWith_correctionField (κ := κ) hK hB hbh hKb hbA
   obtain ⟨ψ, hψ, hψn⟩ := exists_correction_of_uniformlyEllipticOn hb
     (continuousOn_of_continuousOn_matrixBilinearForm (hbh.continuousOn hα)) (hHh.continuousOn hα)
   have hψb := hψn (η * B) (by positivity) hHb
-  -- The estimate up to the boundary at `ν`, for the equation `-div (b ∇ψ) = -div (-(b - A) ∇Φ)`.
-  obtain ⟨g, hg, -, hgb⟩ := H (u := ψ) (a := b) (G := -correctionField b A κ) (f := 0)
-    (Ka := Kb) (KG := (η * (K + B)).toNNReal) (hb.mono_set closure_unitAnnulus_subset)
-    (hbh.mono closure_unitAnnulus_subset) (hKb.trans hη1) (hHh.neg.mono closure_unitAnnulus_subset)
-    MemLp.zero (fun φ => by
-      rw [hψ ⟨W1p.ofTestFunctionₗ volume unitAnnulus 2 φ, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩]
-      simp only [Pi.neg_apply, inner_neg_left, integral_neg, Pi.zero_apply, zero_mul,
-        integral_zero, add_zero]
-      congr 1
-      refine integral_congr_ae ?_
-      filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 φ] with z hz
-      rw [W1p.gradient_ofTestFunctionₗ, hz])
-  have hgb' : ∀ z ∈ ball ν ρ ∩ closure (unitAnnulus (n := n) : Set E),
-      ‖g z‖ ≤ C₁ * η := by
-    intro z hz
-    refine (hgb z hz).trans ?_
-    rw [Real.coe_toNNReal _ (by positivity), eLpNorm_zero, ENNReal.toReal_zero, add_zero]
-    calc (κ' : ℝ) * (η * (K + B) + ‖ψ‖) ≤ κ' * (η * (K + B) + 10 / lam * (V * (η * B))) := by
+  have hgrad : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
+      ‖W1p.gradient (ψ : W1p volume unitAnnulus 2) z‖ ≤ C₁ * η := by
+    filter_upwards [H hb hbh (hKb.trans hη1) hHh hψ] with z hz
+    refine hz.trans ?_
+    rw [Real.coe_toNNReal _ (by positivity)]
+    calc κ' * (η * (K + B) + ‖ψ‖) ≤ κ' * (η * (K + B) + 10 / lam * (V * (η * B))) := by
           gcongr
       _ = C₁ * η := by ring
   obtain ⟨ψ', hae, hLip, h0⟩ := W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le
     isClosed_closedBall unitAnnulus_subset_closedBall ψ (x := ν)
-    (by rw [closure_compl, interior_closedBall _ one_ne_zero]; simp [hν]) hρ
+    (by rw [closure_compl, interior_closedBall _ one_ne_zero]; simp [hν]) one_pos
     (M := (C₁ * η).toNNReal) (by
-      filter_upwards [(ae_restrict_iff' (unitAnnulus.isOpen.inter isOpen_ball).measurableSet).1 hg]
-        with z hz hzD
-      rw [hz hzD]
-      exact (hgb' z ⟨hzD.2, subset_closure hzD.1⟩).trans (Real.le_coe_toNNReal _))
+      filter_upwards [(ae_restrict_iff' unitAnnulus.isOpen.measurableSet).1 hgrad] with z hz hzD
+      exact (hz hzD.1).trans (Real.le_coe_toNNReal _))
   -- Stampacchia's bound: `|ψ| ≤ C₂ η`, since the correction field is bounded by `η B`.
   have habs := HS hb (continuousOn_of_continuousOn_matrixBilinearForm (hbh.continuousOn hα))
     (hHh.continuousOn hα) hη hHb hψ
   have hC₁η : 0 ≤ C₁ * η := mul_nonneg (by positivity) hη
   have hC₂η : 0 ≤ C₂ * η := mul_nonneg hC₂ hη
-  refine ⟨ψ, ψ', hψ, hae, hLip.weaken (Real.toNNReal_le_toNNReal (by linarith)), h0, ?_⟩
-  filter_upwards [habs] with z hz
-  linarith
+  refine ⟨ψ, ψ', hψ, hae, hLip.weaken (Real.toNNReal_le_toNNReal (by linarith)), h0, ?_, ?_⟩
+  · filter_upwards [habs] with z hz
+    linarith
+  · filter_upwards [hgrad] with z hz
+    linarith
 
 /-! ### The comparison -/
 
@@ -603,21 +668,94 @@ private theorem value_smul_add_add_const_ae {κ : ℝ} {W : W1p volume (unitAnnu
     W1p.value_add_ae W ψ, hWv] with z e1 e2 e3 e4
   simp only [e1, e2, Pi.smul_apply, smul_eq_mul, e3, Pi.add_apply, e4]
 
-/-- **The corrected barrier is a weak subsolution with a mass term.** For a mass coefficient
-`0 ≤ c ≤ γ` with `c s₀ ≤ 0`, a correction `|ψ| ≤ Ψ` and `γ (1 + Ψ) ≤ λ κ e^{-κ}`, the function
-`s₀ + θ (Φ + ψ)`, `θ ≥ 0`, satisfies `-div (b ∇·) + c · ≤ 0` weakly on the annulus: the strict
-margin `λ κ e^{-κ}` of the barrier absorbs the mass term. -/
+/-- **The mass term of the corrected barrier.** For a mass coefficient `0 ≤ c ≤ γ` with
+`c s₀ ≤ 0`, a correction `|ψ| ≤ Ψ` and `θ ≥ 0`, the mass term of `s₀ + θ (Φ + ψ)` tested against
+`w ≥ 0` is at most `θ γ (1 + Ψ) ∫ w`, since `Φ ≤ 1`. -/
+private theorem setIntegral_mass_mul_le {c : E → ℝ} {κ γ Ψ : ℝ} (hκ : 1 ≤ κ)
+    (hcL : MemLp c ⊤ (volume.restrict (unitAnnulus (n := n) : Set E)))
+    (hc0 : ∀ z ∈ (unitAnnulus (n := n) : Set E), 0 ≤ c z)
+    (hcγ : ∀ z ∈ (unitAnnulus (n := n) : Set E), c z ≤ γ)
+    {ψ : W1p volume (unitAnnulus (n := n)) 2}
+    (hψb : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E), |W1p.value ψ z| ≤ Ψ)
+    {W : W1p volume (unitAnnulus (n := n)) 2}
+    (hWv : W1p.value W =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] gaussBarrier κ)
+    {s₀ θ : ℝ} (hcs : ∀ z ∈ (unitAnnulus (n := n) : Set E), c z * s₀ ≤ 0) (hθ : 0 ≤ θ)
+    (w : W1p volume (unitAnnulus (n := n)) 2)
+    (hw : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E), 0 ≤ W1p.value w z) :
+    ∫ z in (unitAnnulus (n := n) : Set E),
+        c z * W1p.value (θ • (W + ψ) + W1p.const s₀) z * W1p.value w z ≤
+      θ * (γ * (1 + Ψ)) * ∫ z in (unitAnnulus (n := n) : Set E), W1p.value w z := by
+  have hcV : MemLp (fun z => c z * W1p.value (θ • (W + ψ) + W1p.const s₀) z) 2
+      (volume.restrict (unitAnnulus (n := n) : Set E)) := hcL.fun_mul (Lp.memLp _)
+  rw [← integral_const_mul]
+  refine integral_mono_ae (hcV.integrable_mul (Lp.memLp _))
+    (((Lp.memLp _).integrable one_le_two).const_mul _) ?_
+  filter_upwards [value_smul_add_add_const_ae hWv θ ψ s₀, hψb, hw,
+    ae_restrict_mem unitAnnulus.isOpen.measurableSet] with z e1 e6 e7 hz
+  rw [e1]
+  have hΦ1 := gaussBarrier_le_one (zero_le_one.trans hκ) z
+  have hψz := (le_abs_self _).trans e6
+  have hΨ : 0 ≤ Ψ := (abs_nonneg _).trans e6
+  -- `c (θ (Φ + ψ) + s₀) ≤ θ γ (1 + Ψ)`, tested against `w ≥ 0`.
+  have h3 : c z * (gaussBarrier κ z + W1p.value ψ z) ≤ γ * (1 + Ψ) :=
+    (mul_le_mul_of_nonneg_left (by linarith) (hc0 z hz)).trans
+      (mul_le_mul_of_nonneg_right (hcγ z hz) (by linarith))
+  have hpt : c z * (θ * (gaussBarrier κ z + W1p.value ψ z) + s₀) ≤ θ * (γ * (1 + Ψ)) :=
+    calc _ = θ * (c z * (gaussBarrier κ z + W1p.value ψ z)) + c z * s₀ := by ring
+      _ ≤ θ * (γ * (1 + Ψ)) + 0 := add_le_add (mul_le_mul_of_nonneg_left h3 hθ) (hcs z hz)
+      _ = _ := add_zero _
+  exact mul_le_mul_of_nonneg_right hpt e7
+
+/-- **The drift term of the corrected barrier.** For a drift `‖β‖ ≤ δ`, gradient bounds
+`‖∇Φ‖ ≤ B` and `‖∇ψ‖ ≤ Ψ'` and `θ ≥ 0`, the drift term of `s₀ + θ (Φ + ψ)` tested against `w ≥ 0`
+is at most `θ δ (B + Ψ') ∫ w`, since `∇(s₀ + θ (Φ + ψ)) = θ (∇Φ + ∇ψ)`. -/
+private theorem setIntegral_inner_gradient_mul_le {β : E → E} {κ δ B Ψ' : ℝ}
+    (hβL : MemLp β ⊤ (volume.restrict (unitAnnulus (n := n) : Set E)))
+    (hβδ : ∀ z ∈ (unitAnnulus (n := n) : Set E), ‖β z‖ ≤ δ)
+    (hΦB : ∀ z ∈ closedBall (0 : E) 1, ‖∇ (gaussBarrier κ) z‖ ≤ B)
+    {ψ : W1p volume (unitAnnulus (n := n)) 2}
+    (hψg : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E), ‖W1p.gradient ψ z‖ ≤ Ψ')
+    {W : W1p volume (unitAnnulus (n := n)) 2}
+    (hWg : W1p.gradient W =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)]
+      ∇ (gaussBarrier κ)) (s₀ : ℝ) {θ : ℝ} (hθ : 0 ≤ θ) (w : W1p volume (unitAnnulus (n := n)) 2)
+    (hw : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E), 0 ≤ W1p.value w z) :
+    ∫ z in (unitAnnulus (n := n) : Set E),
+        ⟪β z, W1p.gradient (θ • (W + ψ) + W1p.const s₀) z⟫_ℝ * W1p.value w z ≤
+      θ * (δ * (B + Ψ')) * ∫ z in (unitAnnulus (n := n) : Set E), W1p.value w z := by
+  rw [← integral_const_mul]
+  refine integral_mono_ae ((memLp_inner_gradient hβL _).integrable_mul (Lp.memLp _))
+    (((Lp.memLp _).integrable one_le_two).const_mul _) ?_
+  rw [W1p.gradient_add_const]
+  filter_upwards [W1p.gradient_smul_ae θ (W + ψ), W1p.gradient_add_ae W ψ, hWg, hψg, hw,
+    ae_restrict_mem unitAnnulus.isOpen.measurableSet] with z e1 e2 e3 e4 e5 hz
+  rw [e1, Pi.smul_apply, e2, Pi.add_apply, e3, inner_smul_right]
+  have hδ : 0 ≤ δ := (norm_nonneg _).trans (hβδ z hz)
+  have hpt : θ * ⟪β z, ∇ (gaussBarrier κ) z + W1p.gradient ψ z⟫_ℝ ≤ θ * (δ * (B + Ψ')) := by
+    refine mul_le_mul_of_nonneg_left ((real_inner_le_norm _ _).trans ?_) hθ
+    exact mul_le_mul (hβδ z hz) ((norm_add_le _ _).trans (add_le_add
+      (hΦB z (unitAnnulus_subset_closedBall hz)) e4)) (norm_nonneg _) hδ
+  exact mul_le_mul_of_nonneg_right hpt e5
+
+/-- **The corrected barrier is a weak subsolution with lower-order terms.** For a drift `‖β‖ ≤ δ`, a
+mass coefficient `0 ≤ c ≤ γ` with `c s₀ ≤ 0`, a correction with `|ψ| ≤ Ψ` and `‖∇ψ‖ ≤ Ψ'`, a bound
+`‖∇Φ‖ ≤ B` and `γ (1 + Ψ) + δ (B + Ψ') ≤ λ κ e^{-κ}`, the function `s₀ + θ (Φ + ψ)`, `θ ≥ 0`,
+satisfies `-div (b ∇·) + ⟪β, ∇·⟫ + c · ≤ 0` weakly on the annulus: the strict margin `λ κ e^{-κ}` of
+the barrier absorbs the lower-order terms. -/
 private theorem energyFormH1_add_mul_correction_nonpos
     {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {c : E → ℝ} {κ lam Lam T γ Ψ : ℝ} (hb : UniformlyEllipticOn (closedBall (0 : E) 1) b lam Lam)
+    {β : E → E} {c : E → ℝ} {κ lam Lam T δ γ B Ψ Ψ' : ℝ}
+    (hb : UniformlyEllipticOn (closedBall (0 : E) 1) b lam Lam)
     (hA : ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) (hT : A.trace ≤ T) (hκ : 1 ≤ κ)
     (hκT : 2 * |T| + lam ≤ lam * κ)
     (hcb : MemLp (fun z => energyIntegrand (b z) ((0 : E → E) z) ((0 : E → ℝ) z)) ⊤
       (volume.restrict (unitAnnulus (n := n) : Set E)))
+    (hβL : MemLp β ⊤ (volume.restrict (unitAnnulus (n := n) : Set E)))
+    (hβδ : ∀ z ∈ (unitAnnulus (n := n) : Set E), ‖β z‖ ≤ δ)
     (hcL : MemLp c ⊤ (volume.restrict (unitAnnulus (n := n) : Set E)))
     (hc0 : ∀ z ∈ (unitAnnulus (n := n) : Set E), 0 ≤ c z)
     (hcγ : ∀ z ∈ (unitAnnulus (n := n) : Set E), c z ≤ γ)
-    (hγ : γ * (1 + Ψ) ≤ lam * κ * Real.exp (-κ))
+    (hΦB : ∀ z ∈ closedBall (0 : E) 1, ‖∇ (gaussBarrier κ) z‖ ≤ B)
+    (hγ : γ * (1 + Ψ) + δ * (B + Ψ') ≤ lam * κ * Real.exp (-κ))
     {ψ : W1p0 volume (unitAnnulus (n := n)) 2}
     (hψ : ∀ v : W1p0 volume (unitAnnulus (n := n)) 2,
       energyFormH1 b 0 0 (ψ : W1p volume unitAnnulus 2) (v : W1p volume unitAnnulus 2) =
@@ -625,6 +763,8 @@ private theorem energyFormH1_add_mul_correction_nonpos
           ⟪correctionField b A κ z, W1p.gradient (v : W1p volume unitAnnulus 2) z⟫_ℝ)
     (hψb : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
       |W1p.value (ψ : W1p volume unitAnnulus 2) z| ≤ Ψ)
+    (hψg : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
+      ‖W1p.gradient (ψ : W1p volume unitAnnulus 2) z‖ ≤ Ψ')
     {W : W1p volume (unitAnnulus (n := n)) 2}
     (hWv : W1p.value W =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] gaussBarrier κ)
     (hWg : W1p.gradient W =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)]
@@ -633,62 +773,89 @@ private theorem energyFormH1_add_mul_correction_nonpos
     (w : W1p0 volume (unitAnnulus (n := n)) 2)
     (hw : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
       0 ≤ W1p.value (w : W1p volume unitAnnulus 2) z) :
-    energyFormH1 b 0 c (θ • (W + (ψ : W1p volume unitAnnulus 2)) + W1p.const s₀)
+    energyFormH1 b β c (θ • (W + (ψ : W1p volume unitAnnulus 2)) + W1p.const s₀)
       (w : W1p volume unitAnnulus 2) ≤ 0 := by
-  set Vf := θ • (W + (ψ : W1p volume unitAnnulus 2)) + W1p.const s₀
-  have hprin : energyFormH1 b 0 0 Vf (w : W1p volume unitAnnulus 2) =
+  have hprin : energyFormH1 b 0 0 (θ • (W + (ψ : W1p volume unitAnnulus 2)) + W1p.const s₀)
+      (w : W1p volume unitAnnulus 2) =
       θ * energyFormH1 (fun _ => A) 0 0 W (w : W1p volume unitAnnulus 2) := by
     rw [energyFormH1_add_const_left, energyFormH1_smul_left,
       energyFormH1_add_correction hcb hWg hψ w]
   have hΦ := energyFormH1_gaussBarrier_le hb.pos.le hA hT hκ hκT hWv w hw
-  -- The mass term is at most `θ λ κ e^{-κ} ∫ w`.
-  have hmass : ∫ z in (unitAnnulus (n := n) : Set E),
-      c z * W1p.value Vf z * W1p.value (w : W1p volume unitAnnulus 2) z ≤
-      θ * (lam * κ * Real.exp (-κ)) * ∫ z in (unitAnnulus (n := n) : Set E),
-        W1p.value (w : W1p volume unitAnnulus 2) z := by
-    have hcV : MemLp (fun z => c z * W1p.value Vf z) 2
-        (volume.restrict (unitAnnulus (n := n) : Set E)) := hcL.fun_mul (Lp.memLp _)
-    rw [← integral_const_mul]
-    refine integral_mono_ae (hcV.integrable_mul (Lp.memLp _))
-      (((Lp.memLp _).integrable one_le_two).const_mul _) ?_
-    filter_upwards [value_smul_add_add_const_ae hWv θ ψ s₀, hψb, hw,
-      ae_restrict_mem unitAnnulus.isOpen.measurableSet] with z e1 e6 e7 hz
-    simp only [Vf, e1]
-    have hΦ1 := gaussBarrier_le_one (zero_le_one.trans hκ) z
-    have hψz := (le_abs_self _).trans e6
-    have hΨ : 0 ≤ Ψ := (abs_nonneg _).trans e6
-    -- `c (θ (Φ + ψ) + s₀) ≤ θ γ (1 + Ψ) ≤ θ λ κ e^{-κ}`, tested against `w ≥ 0`.
-    have h3 : c z * (gaussBarrier κ z + W1p.value (ψ : W1p volume unitAnnulus 2) z) ≤
-        γ * (1 + Ψ) :=
-      (mul_le_mul_of_nonneg_left (by linarith) (hc0 z hz)).trans
-        (mul_le_mul_of_nonneg_right (hcγ z hz) (by linarith))
-    have hpt : c z * (θ * (gaussBarrier κ z + W1p.value (ψ : W1p volume unitAnnulus 2) z) +
-        s₀) ≤ θ * (lam * κ * Real.exp (-κ)) :=
-      calc _ = θ * (c z * (gaussBarrier κ z + W1p.value (ψ : W1p volume unitAnnulus 2) z)) +
-            c z * s₀ := by ring
-        _ ≤ θ * (lam * κ * Real.exp (-κ)) + 0 :=
-          add_le_add (mul_le_mul_of_nonneg_left (h3.trans hγ) hθ) (hcs z hz)
-        _ = _ := add_zero _
-    exact mul_le_mul_of_nonneg_right hpt e7
-  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral hcb hcL, hprin]
-  linarith [mul_le_mul_of_nonneg_left hΦ hθ]
+  have hw0 : 0 ≤ ∫ z in (unitAnnulus (n := n) : Set E),
+      W1p.value (w : W1p volume unitAnnulus 2) z := integral_nonneg_of_ae hw
+  have hmass := setIntegral_mass_mul_le hκ hcL hc0 hcγ hψb hWv hcs hθ _ hw
+  have hdrift := setIntegral_inner_gradient_mul_le hβL hβδ hΦB hψg hWg s₀ hθ _ hw
+  have hcb' : MemLp (fun z => energyIntegrand (b z) 0 0) ⊤
+      (volume.restrict (unitAnnulus (n := n) : Set E)) := by
+    simpa only [Pi.zero_apply] using hcb
+  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner hcb' hβL hcL,
+    energyFormH1_eq_energyFormH1_zero_add_setIntegral hcb hcL, hprin]
+  generalize (∫ z in (unitAnnulus (n := n) : Set E),
+    W1p.value (w : W1p volume unitAnnulus 2) z) = I at hΦ hw0 hmass hdrift
+  have hθm := mul_le_mul_of_nonneg_left hΦ hθ
+  have hsum : θ * (γ * (1 + Ψ)) * I + θ * (δ * (B + Ψ')) * I ≤
+      θ * (lam * κ * Real.exp (-κ)) * I := by
+    rw [← add_mul, ← mul_add]
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hγ hθ) hw0
+  linarith
+
+/-- **Boundary values of the comparison.** If `ĝ ≥ s₀` on the outer sphere and `ĝ ≥ s₀ + θ Φ` on
+the inner sphere, the positive part of `s₀ + θ (Φ + ψ) - uε`, for `ψ ∈ H¹₀` and `uε = ĝ` almost
+everywhere, vanishes on the frontier of the annulus in the Sobolev sense. -/
+private theorem posPart_sub_mem_w1p0Submodule {κ : ℝ} {W : W1p volume (unitAnnulus (n := n)) 2}
+    (hWv : W1p.value W =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] gaussBarrier κ)
+    (ψ : W1p0 volume (unitAnnulus (n := n)) 2) {uε : W1p volume (unitAnnulus (n := n)) 2}
+    {ĝ : E → ℝ} (hĝ : ContinuousOn ĝ (closedBall 0 1))
+    (huĝ : W1p.value uε =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] ĝ) {s₀ θ : ℝ}
+    (h1 : ∀ z ∈ sphere (0 : E) 1, s₀ ≤ ĝ z)
+    (h2 : ∀ z ∈ sphere (0 : E) (1 / 2), s₀ + θ * gaussBarrier κ z ≤ ĝ z) :
+    W1p.posPart (by norm_num) (θ • (W + (ψ : W1p volume unitAnnulus 2)) + W1p.const s₀ - uε) ∈
+      w1p0Submodule volume unitAnnulus 2 := by
+  have hrw : θ • (W + (ψ : W1p volume unitAnnulus 2)) + W1p.const s₀ - uε =
+      θ • (ψ : W1p volume unitAnnulus 2) + (θ • W + W1p.const s₀ - uε) := by
+    simp only [smul_add]
+    abel
+  rw [hrw]
+  refine W1p.posPart_add_mem_w1p0Submodule _ (isBounded_ball.subset unitAnnulus_subset_ball)
+    (Submodule.smul_mem _ θ ψ.property) (g := fun z => s₀ + θ * gaussBarrier κ z - ĝ z)
+    (((continuousOn_const.add (continuousOn_const.mul
+      (contDiff_gaussBarrier κ (k := 0)).continuous.continuousOn)).sub hĝ).mono
+      closure_unitAnnulus_subset) (fun z hz => ?_) ?_
+  · rcases frontier_unitAnnulus_subset hz with h | h
+    · have h0 : gaussBarrier κ z = 0 := by
+        rw [gaussBarrier, mem_sphere_zero_iff_norm.1 h]
+        simp
+      rw [h0, mul_zero, add_zero]
+      linarith [h1 z h]
+    · linarith [h2 z h]
+  · filter_upwards [W1p.value_sub_ae (θ • W + W1p.const s₀) uε,
+      W1p.value_add_ae (θ • W) (W1p.const s₀), W1p.value_smul_ae θ W,
+      W1p.value_const_ae (mu := volume) (Omega := unitAnnulus (n := n)) (p := 2) s₀,
+      hWv, huĝ] with z e1 e2 e3 e4 e5 e6
+    simp only [e1, Pi.sub_apply, e2, Pi.add_apply, e3, e4, Pi.smul_apply, smul_eq_mul, e5, e6]
+    ring
 
 /-- **The comparison on the annulus.** Let `uε ∈ H¹` of the annulus be a weak supersolution of
-`-div (b ∇uε) + c uε ≥ 0` for coefficients `b`, uniformly elliptic and continuous on the closed
-unit ball, and a measurable mass coefficient `0 ≤ c ≤ γ`, and let `uε` equal almost everywhere a
-function `ĝ` continuous there. If `ĝ ≥ s₀` on the outer sphere and `ĝ ≥ s₀ + θ Φ` on the inner
-sphere, with `θ ≥ 0` and `c s₀ ≤ 0`, then `s₀ + θ (Φ + ψ) ≤ ĝ` almost everywhere on the annulus,
-where `Φ` is the Gaussian barrier and `ψ` its correction, provided `|ψ| ≤ Ψ` and
-`γ (1 + Ψ) ≤ λ κ e^{-κ}`: the mass term is then absorbed by the margin of the barrier. -/
+`-div (b ∇uε) + ⟪β, ∇uε⟫ + c uε ≥ 0` for coefficients `b`, uniformly elliptic and continuous on the
+closed unit ball, a measurable drift `‖β‖ ≤ δ` with `4 δ ≤ λ`, and a measurable mass coefficient
+`0 ≤ c ≤ γ`, and let `uε` equal almost everywhere a function `ĝ` continuous there. If `ĝ ≥ s₀` on
+the outer sphere and `ĝ ≥ s₀ + θ Φ` on the inner sphere, with `θ ≥ 0` and `c s₀ ≤ 0`, then
+`s₀ + θ (Φ + ψ) ≤ ĝ` almost everywhere on the annulus, where `Φ` is the Gaussian barrier and `ψ` its
+correction, provided `|ψ| ≤ Ψ`, `‖∇ψ‖ ≤ Ψ'`, `‖∇Φ‖ ≤ B` and `γ (1 + Ψ) + δ (B + Ψ') ≤ λ κ e^{-κ}`:
+the lower-order terms are then absorbed by the margin of the barrier. -/
 private theorem ae_add_mul_le_of_supersolution {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c : E → ℝ} {κ lam Lam T γ Ψ : ℝ}
+    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {β : E → E} {c : E → ℝ}
+    {κ lam Lam T δ γ B Ψ Ψ' : ℝ}
     (hb : UniformlyEllipticOn (closedBall (0 : E) 1) b lam Lam)
     (hbc : ContinuousOn b (closedBall 0 1)) (hA : ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hT : A.trace ≤ T) (hκ : 1 ≤ κ) (hκT : 2 * |T| + lam ≤ lam * κ)
+    (hβm : AEStronglyMeasurable β (volume.restrict (unitAnnulus (n := n) : Set E)))
+    (hβδ : ∀ z ∈ (unitAnnulus (n := n) : Set E), ‖β z‖ ≤ δ) (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ lam)
     (hcm : AEStronglyMeasurable c (volume.restrict (unitAnnulus (n := n) : Set E)))
     (hc0 : ∀ z ∈ (unitAnnulus (n := n) : Set E), 0 ≤ c z)
     (hcγ : ∀ z ∈ (unitAnnulus (n := n) : Set E), c z ≤ γ)
-    (hγ : γ * (1 + Ψ) ≤ lam * κ * Real.exp (-κ))
+    (hΦB : ∀ z ∈ closedBall (0 : E) 1, ‖∇ (gaussBarrier κ) z‖ ≤ B)
+    (hγ : γ * (1 + Ψ) + δ * (B + Ψ') ≤ lam * κ * Real.exp (-κ))
     {ψ : W1p0 volume (unitAnnulus (n := n)) 2}
     (hψ : ∀ v : W1p0 volume (unitAnnulus (n := n)) 2,
       energyFormH1 b 0 0 (ψ : W1p volume unitAnnulus 2) (v : W1p volume unitAnnulus 2) =
@@ -696,11 +863,13 @@ private theorem ae_add_mul_le_of_supersolution {b : E → Matrix (Fin (n + 1)) (
           ⟪correctionField b A κ z, W1p.gradient (v : W1p volume unitAnnulus 2) z⟫_ℝ)
     (hψb : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
       |W1p.value (ψ : W1p volume unitAnnulus 2) z| ≤ Ψ)
+    (hψg : ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
+      ‖W1p.gradient (ψ : W1p volume unitAnnulus 2) z‖ ≤ Ψ')
     {uε : W1p volume (unitAnnulus (n := n)) 2}
     (huε : ∀ v : W1p0 volume (unitAnnulus (n := n)) 2,
       (∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
         0 ≤ W1p.value (v : W1p volume unitAnnulus 2) z) →
-      0 ≤ energyFormH1 b 0 c uε (v : W1p volume unitAnnulus 2))
+      0 ≤ energyFormH1 b β c uε (v : W1p volume unitAnnulus 2))
     {ĝ : E → ℝ} (hĝ : ContinuousOn ĝ (closedBall 0 1))
     (huĝ : W1p.value uε =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] ĝ) {s₀ θ : ℝ}
     (hcs : ∀ z ∈ (unitAnnulus (n := n) : Set E), c z * s₀ ≤ 0)
@@ -717,102 +886,93 @@ private theorem ae_add_mul_le_of_supersolution {b : E → Matrix (Fin (n + 1)) (
   have hcb := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
     hbD.upper_nonneg hm aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi => hbD.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
-  -- The mass coefficient is essentially bounded, so the energy form splits off its mass term.
+  -- The lower-order coefficients are essentially bounded, so the energy form splits them off.
   have hcbd : ∀ z ∈ (unitAnnulus (n := n) : Set E), ‖c z‖ ≤ γ := fun z hz => by
     rw [Real.norm_eq_abs, abs_of_nonneg (hc0 z hz)]
     exact hcγ z hz
   have hcL : MemLp c ⊤ (volume.restrict (unitAnnulus (n := n) : Set E)) :=
     memLp_top_of_bound hcm γ ((ae_restrict_iff' unitAnnulus.isOpen.measurableSet).2
       (ae_of_all _ hcbd))
-  have hcbc := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0) hbD.upper_nonneg hm
-    aestronglyMeasurable_const hcm (fun _x hx eta xi => hbD.upper_bound hx eta xi)
-    (fun _ _ => by simp) hcbd
+  have hβL : MemLp β ⊤ (volume.restrict (unitAnnulus (n := n) : Set E)) :=
+    memLp_top_of_bound hβm δ ((ae_restrict_iff' unitAnnulus.isOpen.measurableSet).2
+      (ae_of_all _ hβδ))
+  have hcbc := memLp_energyIntegrand_of_bounds hbD.upper_nonneg hm hβm hcm
+    (fun _x hx eta xi => hbD.upper_bound hx eta xi) hβδ hcbd
   set Vf := θ • (W + (ψ : W1p volume unitAnnulus 2)) + W1p.const s₀
   have huv : ∀ w : W1p0 volume (unitAnnulus (n := n)) 2,
       (∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
         0 ≤ W1p.value (w : W1p volume unitAnnulus 2) z) →
-      energyFormH1 b 0 c Vf (w : W1p volume unitAnnulus 2) ≤
-        energyFormH1 b 0 c uε (w : W1p volume unitAnnulus 2) := fun w hw =>
-    (energyFormH1_add_mul_correction_nonpos hb hA hT hκ hκT hcb hcL hc0 hcγ hγ hψ hψb hWv hWg
-      hcs hθ w hw).trans (huε w hw)
+      energyFormH1 b β c Vf (w : W1p volume unitAnnulus 2) ≤
+        energyFormH1 b β c uε (w : W1p volume unitAnnulus 2) := fun w hw =>
+    (energyFormH1_add_mul_correction_nonpos hb hA hT hκ hκT hcb hβL hβδ hcL hc0 hcγ hΦB hγ hψ hψb
+      hψg hWv hWg hcs hθ w hw).trans (huε w hw)
   -- On the frontier `Vf - uε` is at most `0`; the correction vanishes there in the Sobolev sense.
-  have hbd : W1p.posPart (by norm_num) (Vf - uε) ∈ w1p0Submodule volume unitAnnulus 2 := by
-    have hrw : Vf - uε = θ • (ψ : W1p volume unitAnnulus 2) + (θ • W + W1p.const s₀ - uε) := by
-      simp only [Vf, smul_add]
-      abel
-    rw [hrw]
-    refine W1p.posPart_add_mem_w1p0Submodule _ (isBounded_ball.subset unitAnnulus_subset_ball)
-      (Submodule.smul_mem _ θ ψ.property) (g := fun z => s₀ + θ * gaussBarrier κ z - ĝ z)
-      (((continuousOn_const.add (continuousOn_const.mul
-        (contDiff_gaussBarrier κ (k := 0)).continuous.continuousOn)).sub hĝ).mono
-        closure_unitAnnulus_subset) (fun z hz => ?_) ?_
-    · rcases frontier_unitAnnulus_subset hz with h | h
-      · have h0 : gaussBarrier κ z = 0 := by
-          rw [gaussBarrier, mem_sphere_zero_iff_norm.1 h]
-          simp
-        rw [h0, mul_zero, add_zero]
-        linarith [h1 z h]
-      · linarith [h2 z h]
-    · filter_upwards [W1p.value_sub_ae (θ • W + W1p.const s₀) uε,
-        W1p.value_add_ae (θ • W) (W1p.const s₀), W1p.value_smul_ae θ W,
-        W1p.value_const_ae (mu := volume) (Omega := unitAnnulus (n := n)) (p := 2) s₀,
-        hWv, huĝ] with z e1 e2 e3 e4 e5 e6
-      simp only [e1, Pi.sub_apply, e2, Pi.add_apply, e3, e4, Pi.smul_apply, smul_eq_mul, e5, e6]
-      ring
-  -- The energy form with a nonnegative mass term is coercive on `H¹₀`.
+  have hbd := posPart_sub_mem_w1p0Submodule hWv ψ hĝ huĝ h1 h2
+  -- The energy form with a small drift and a nonnegative mass term is coercive on `H¹₀`, by the
+  -- Poincaré inequality in the unit ball.
+  have hlam := hb.pos
+  have hC : 0 < (lam ^ 2 - δ ^ 2 * (2 * 1) ^ 2) / (2 * lam * ((2 * 1) ^ 2 + 1)) :=
+    div_pos (by nlinarith) (by positivity)
   have hlower : ∀ w : W1p0 volume (unitAnnulus (n := n)) 2,
-      lam / 10 * ‖w‖ ^ 2 ≤
-        energyFormH1 b 0 c (w : W1p volume unitAnnulus 2) (w : W1p volume unitAnnulus 2) :=
-    fun w => (div_ten_mul_norm_sq_le_energyFormH1 hbD hm w).trans
-      (energyFormH1_le_energyFormH1_of_mass_nonneg_ae hcbc hcL
-        ((ae_restrict_iff' unitAnnulus.isOpen.measurableSet).2 (ae_of_all _ hc0)) _)
-  have hcomp := value_le_of_energyFormH1_le hcbc hbd (C := lam / 10)
-    (by have := hb.pos; positivity) hlower huv
+      (lam ^ 2 - δ ^ 2 * (2 * 1) ^ 2) / (2 * lam * ((2 * 1) ^ 2 + 1)) * ‖w‖ ^ 2 ≤
+        energyFormH1 b β c (w : W1p volume unitAnnulus 2) (w : W1p volume unitAnnulus 2) :=
+    fun w => hbD.mul_norm_sq_le_energyFormH1_self_of_subset_ball hm hβm hcm hβδ hcbd hc0
+      unitAnnulus_subset_ball w.property
+  have hcomp := value_le_of_energyFormH1_le hcbc hbd hC hlower huv
   filter_upwards [hcomp, value_smul_add_add_const_ae hWv θ ψ s₀, huĝ] with z h e2 e7
-  simp only [Vf, e2, e7] at h
+  simp only [e2, e7] at h
   linarith
 
 /-- **Linear growth along the normal on the annulus.** For coefficients close to a frozen matrix
-`A` in the sense of `exists_correction`, closely enough that `C η ≤ κ e^{-κ} / 2`, and a mass
-coefficient `0 ≤ c ≤ γ` small enough that `γ (1 + C η) ≤ λ κ e^{-κ}`, a weak supersolution of
-`-div (b ∇uε) + c uε ≥ 0` on the annulus whose continuous representative `ĝ` is at least `s₀` on
-the outer sphere and at least `s₀ + θ Φ` on the inner sphere, with `c s₀ ≤ 0`, grows linearly into
-the annulus along the inward normal at `ν`: `s₀ + θ κ e^{-κ} t / 2 ≤ ĝ ((1 - t) ν)` for small
-`t > 0`. -/
+`A` in the sense of `exists_correction`, closely enough that `C η ≤ κ e^{-κ} / 2`, a drift
+`‖β‖ ≤ δ` with `4 δ ≤ λ` and a mass coefficient `0 ≤ c ≤ γ`, small enough that
+`γ (1 + C η) + δ C ≤ λ κ e^{-κ}`, a weak supersolution of `-div (b ∇uε) + ⟪β, ∇uε⟫ + c uε ≥ 0` on
+the annulus whose continuous representative `ĝ` is at least `s₀` on the outer sphere and at least
+`s₀ + θ Φ` on the inner sphere, with `c s₀ ≤ 0`, grows linearly into the annulus along the inward
+normal at `ν`: `s₀ + θ κ e^{-κ} t / 2 ≤ ĝ ((1 - t) ν)` for `0 < t < 1/2`. -/
 private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (hα : 0 < α)
     (hα1 : α ≤ 1) {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) {κ : ℝ} (hκ : 1 ≤ κ) :
-    ∃ ρ > 0, ∃ C : ℝ, 0 ≤ C ∧ ∀ {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-      {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c : E → ℝ} {Kb : ℝ≥0} {η T γ : ℝ}
-      {uε : W1p volume (unitAnnulus (n := n)) 2} {ĝ : E → ℝ} {s₀ θ : ℝ},
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+      {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {β : E → E} {c : E → ℝ} {Kb : ℝ≥0}
+      {η T δ γ : ℝ} {uε : W1p volume (unitAnnulus (n := n)) 2} {ĝ : E → ℝ} {s₀ θ : ℝ},
       UniformlyEllipticOn (closedBall (0 : E) 1) b lam Lam →
       HolderOnWith Kb α (fun z => matrixBilinearForm (b z)) (closedBall 0 1) → (Kb : ℝ) ≤ η →
       η ≤ 1 → (∀ z ∈ closedBall (0 : E) 1,
         ‖matrixBilinearForm (b z) - matrixBilinearForm A‖ ≤ η) →
       C * η ≤ κ * Real.exp (-κ) / 2 → (∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
       A.trace ≤ T → 2 * |T| + lam ≤ lam * κ →
+      AEStronglyMeasurable β (volume.restrict (unitAnnulus (n := n) : Set E)) →
+      (∀ z ∈ (unitAnnulus (n := n) : Set E), ‖β z‖ ≤ δ) → 0 ≤ δ → 4 * δ ≤ lam →
       AEStronglyMeasurable c (volume.restrict (unitAnnulus (n := n) : Set E)) →
       (∀ z ∈ (unitAnnulus (n := n) : Set E), 0 ≤ c z) →
-      (∀ z ∈ (unitAnnulus (n := n) : Set E), c z ≤ γ) →
-      γ * (1 + C * η) ≤ lam * κ * Real.exp (-κ) →
+      (∀ z ∈ (unitAnnulus (n := n) : Set E), c z ≤ γ) → 0 ≤ γ →
+      γ * (1 + C * η) + δ * C ≤ lam * κ * Real.exp (-κ) →
       (∀ v : W1p0 volume (unitAnnulus (n := n)) 2,
         (∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
           0 ≤ W1p.value (v : W1p volume unitAnnulus 2) z) →
-        0 ≤ energyFormH1 b 0 c uε (v : W1p volume unitAnnulus 2)) →
+        0 ≤ energyFormH1 b β c uε (v : W1p volume unitAnnulus 2)) →
       ContinuousOn ĝ (closedBall 0 1) →
       W1p.value uε =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] ĝ →
       (∀ z ∈ (unitAnnulus (n := n) : Set E), c z * s₀ ≤ 0) → 0 ≤ θ →
       (∀ z ∈ sphere (0 : E) 1, s₀ ≤ ĝ z) →
       (∀ z ∈ sphere (0 : E) (1 / 2), s₀ + θ * gaussBarrier κ z ≤ ĝ z) →
-      ∀ t ∈ Ioo 0 (min ρ (1 / 2)), s₀ + θ * (κ * Real.exp (-κ) / 2) * t ≤ ĝ ((1 - t) • ν) := by
-  obtain ⟨ρ, hρ, C, hC, H⟩ := exists_correction (n := n) ν hν hα hα1 hlam Lam κ
-  refine ⟨ρ, hρ, C, hC, fun {b A c Kb η T γ uε ĝ s₀ θ} hb hbh hKb hη1 hbA hCη hA hT hκT hcm hc0
-    hcγ hγ huε hĝ huĝ hcs hθ h1 h2 t ht => ?_⟩
-  obtain ⟨ψ, ψ', hψ, hae, hLip, h0, hψb⟩ := H hb hbh hKb hη1 hbA
+      ∀ t ∈ Ioo 0 (1 / 2), s₀ + θ * (κ * Real.exp (-κ) / 2) * t ≤ ĝ ((1 - t) • ν) := by
+  obtain ⟨C, hC, H⟩ := exists_correction (n := n) ν hν hα hα1 hlam Lam κ
+  obtain ⟨-, B, -, hB⟩ := exists_holderOnWith_gradient_gaussBarrier (n := n) κ hα1
+  refine ⟨C + B, by positivity, fun {b A β c Kb η T δ γ uε ĝ s₀ θ} hb hbh hKb hη1 hbA hCη hA hT hκT
+    hβm hβδ hδ0 hδ hcm hc0 hcγ hγ0 hγ huε hĝ huĝ hcs hθ h1 h2 t ht => ?_⟩
+  have hη : 0 ≤ η := Kb.coe_nonneg.trans hKb
+  have hCη' : C * η ≤ (C + B) * η := mul_le_mul_of_nonneg_right (by simp) hη
+  obtain ⟨ψ, ψ', hψ, hae, hLip, h0, hψb, hψg⟩ := H hb hbh hKb hη1 hbA
+  -- The lower-order terms are absorbed, since `C η ≤ (C + B) η` and `B + C η ≤ C + B`.
+  have hγ' : γ * (1 + C * η) + δ * (B + C * η) ≤ lam * κ * Real.exp (-κ) := by
+    have hBC : (B : ℝ) + C * η ≤ C + B := by nlinarith
+    nlinarith [mul_le_mul_of_nonneg_left hCη' hγ0, mul_le_mul_of_nonneg_left hBC hδ0]
   have hcomp := ae_add_mul_le_of_supersolution hb
-    (continuousOn_of_continuousOn_matrixBilinearForm (hbh.continuousOn hα)) hA hT hκ hκT hcm hc0
-    hcγ hγ hψ hψb huε hĝ huĝ hcs hθ h1 h2
-  -- On the open set `O = annulus ∩ B(ν, ρ)` the comparison holds pointwise, by continuity.
-  set O : Set E := (unitAnnulus (n := n) : Set E) ∩ ball ν ρ
+    (continuousOn_of_continuousOn_matrixBilinearForm (hbh.continuousOn hα)) hA hT hκ hκT hβm hβδ
+    hδ0 hδ hcm hc0 hcγ hB hγ' hψ hψb hψg huε hĝ huĝ hcs hθ h1 h2
+  -- On the open set `O = annulus ∩ B(ν, 1)` the comparison holds pointwise, by continuity.
+  set O : Set E := (unitAnnulus (n := n) : Set E) ∩ ball ν 1
   have hO : IsOpen O := unitAnnulus.isOpen.inter isOpen_ball
   set F : E → ℝ := fun z => max (s₀ + θ * (gaussBarrier κ z + ψ' z) - ĝ z) 0
   have hF : ContinuousOn F O :=
@@ -829,8 +989,7 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
     rw [← h2]
     exact max_eq_right (by linarith)
   have ht0 := ht.1
-  have htρ : t < ρ := ht.2.trans_le (min_le_left _ _)
-  have ht2 : t < 1 / 2 := ht.2.trans_le (min_le_right _ _)
+  have ht2 : t < 1 / 2 := ht.2
   have hdist : dist ((1 - t) • ν) ν = t := by
     rw [dist_eq_norm, sub_smul, one_smul, sub_sub_cancel_left, norm_neg, norm_smul, hν, mul_one,
       Real.norm_eq_abs, abs_of_pos ht0]
@@ -839,17 +998,17 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
     · rw [norm_smul, hν, mul_one, Real.norm_eq_abs, abs_of_pos (by linarith)]
       constructor <;> linarith
     · rw [mem_ball, hdist]
-      exact htρ
+      linarith
   have hFz := hF0 hzt
   simp only [F, Pi.zero_apply, max_eq_right_iff, sub_nonpos] at hFz
   -- The barrier grows like `κ e^{-κ} t`, and the correction is `C η`-Lipschitz and vanishes at `ν`.
   have hΦ := mul_le_gaussBarrier_smul (zero_le_one.trans hκ) hν ht0.le (by linarith)
   have hψ' : -(C * η * t) ≤ ψ' ((1 - t) • ν) := by
-    have hd := hLip.dist_le_mul ((1 - t) • ν) hzt.2 ν (mem_ball_self hρ)
-    rw [h0, dist_zero_right, Real.norm_eq_abs, hdist,
-      Real.coe_toNNReal _ (mul_nonneg hC (hKb.trans' Kb.coe_nonneg))] at hd
+    have hd := hLip.dist_le_mul ((1 - t) • ν) hzt.2 ν (mem_ball_self one_pos)
+    rw [h0, dist_zero_right, Real.norm_eq_abs, hdist, Real.coe_toNNReal _ (mul_nonneg hC hη)] at hd
     linarith [neg_abs_le (ψ' ((1 - t) • ν))]
-  have hCt : C * η * t ≤ κ * Real.exp (-κ) / 2 * t := mul_le_mul_of_nonneg_right hCη ht0.le
+  have hCt : C * η * t ≤ κ * Real.exp (-κ) / 2 * t :=
+    mul_le_mul_of_nonneg_right (hCη'.trans hCη) ht0.le
   nlinarith [mul_le_mul_of_nonneg_left (show κ * Real.exp (-κ) / 2 * t ≤
     gaussBarrier κ ((1 - t) • ν) + ψ' ((1 - t) • ν) by linarith) hθ]
 
@@ -934,6 +1093,24 @@ private theorem rescaled_mass {c : E → ℝ} {y p : E} {R M ε s₀ : ℝ}
   rw [mul_assoc]
   exact mul_nonpos_of_nonneg_of_nonpos (sq_nonneg ε) (hcs _ (hmaps hz))
 
+/-- **Rescaled drift.** If `b` is measurable on `ball y R` with `‖b‖ ≤ M` there, and the homothety
+`T z = ε z + p`, `ε > 0`, maps the annulus into `ball y R`, then `ε (b ∘ T)` is measurable on the
+annulus, with `‖ε (b ∘ T)‖ ≤ ε |M|` there. -/
+private theorem rescaled_drift {b : E → E} {y p : E} {R M ε : ℝ}
+    (hbm : AEStronglyMeasurable b (volume.restrict (ball y R)))
+    (hbM : ∀ x ∈ ball y R, ‖b x‖ ≤ M) (hε : 0 < ε)
+    (hmaps : MapsTo (fun z : E => ε • z + p) (unitAnnulus (n := n) : Set E) (ball y R)) :
+    AEStronglyMeasurable (fun z => ε • b (ε • z + p))
+        (volume.restrict (unitAnnulus (n := n) : Set E)) ∧
+      ∀ z ∈ (unitAnnulus (n := n) : Set E), ‖ε • b (ε • z + p)‖ ≤ ε * |M| := by
+  have hcov := Wkp.IsChangeOfVariables.smul_add_const (k := 1) hε p (U := unitAnnulus)
+    (V := ⟨ball y R, isOpen_ball⟩) hmaps
+  refine ⟨((hbm.mono_ac (Measure.absolutelyContinuous_of_le_smul
+      (hcov.map_restrict_le volume))).comp_aemeasurable hcov.aemeasurable).const_smul ε,
+    fun z hz => ?_⟩
+  rw [norm_smul, Real.norm_eq_abs, abs_of_pos hε]
+  exact mul_le_mul_of_nonneg_left ((hbM _ (hmaps hz)).trans (le_abs_self M)) hε.le
+
 /-- A scale `ε ∈ (0, R]` at which `η = K (2 ε)^α` satisfies `η ≤ 1` and `C η ≤ m / 2`. -/
 private theorem exists_scale {K C m R α : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C) (hm : 0 < m) (hR : 0 < R)
     (hα : 0 < α) : ∃ ε, 0 < ε ∧ ε ≤ R ∧ K * (2 * ε) ^ α ≤ 1 ∧ C * (K * (2 * ε) ^ α) ≤ m / 2 := by
@@ -954,17 +1131,35 @@ private theorem exists_scale {K C m R α : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C) (h
   exact ⟨hη.trans (min_le_left _ _), by nlinarith [mul_nonneg hK (Real.rpow_nonneg
     (by positivity : (0 : ℝ) ≤ 2 * min R (r / 2)) α)]⟩
 
-/-- A scale `ε ∈ (0, R]` as in `exists_scale` at which moreover `ε² N ≤ m'`, so that a mass term
-of size `N`, rescaled by `ε²`, is at most `m'`. -/
-private theorem exists_scale_of_sq_mul_le {K C m R α N m' : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C)
+/-- A scale `ε ∈ (0, R]` as in `exists_scale` at which moreover `ε N ≤ m'`, so that lower-order
+terms of size `N`, rescaled by `ε`, are at most `m'`. -/
+private theorem exists_scale_of_mul_le {K C m R α N m' : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C)
     (hm : 0 < m) (hR : 0 < R) (hα : 0 < α) (hN : 0 < N) (hm' : 0 < m') :
     ∃ ε, 0 < ε ∧ ε ≤ R ∧ K * (2 * ε) ^ α ≤ 1 ∧ C * (K * (2 * ε) ^ α) ≤ m / 2 ∧
-      ε ^ 2 * N ≤ m' := by
-  obtain ⟨ε, hε, hεR, h1, h2⟩ :=
-    exists_scale hK hC hm (lt_min hR (Real.sqrt_pos.2 (div_pos hm' hN))) hα
+      ε * N ≤ m' := by
+  obtain ⟨ε, hε, hεR, h1, h2⟩ := exists_scale hK hC hm (lt_min hR (div_pos hm' hN)) hα
   refine ⟨ε, hε, hεR.trans (min_le_left _ _), h1, h2, ?_⟩
-  have h := pow_le_pow_left₀ hε.le (hεR.trans (min_le_right _ _)) 2
-  rwa [Real.sq_sqrt (div_pos hm' hN).le, le_div_iff₀ hN] at h
+  have h := hεR.trans (min_le_right _ _)
+  rwa [le_div_iff₀ hN] at h
+
+/-- **The lower-order terms are absorbed at a small scale.** If `0 < ε ≤ 1`, `0 ≤ η ≤ 1`, `C ≥ 0`
+and `ε N ≤ min m (λ / 4)` for `N = (|M| + 1) (1 + 2 C)`, then the rescaled drift bound `ε |M|`
+satisfies `4 ε |M| ≤ λ` and, with the rescaled mass bound `ε² |M|`,
+`ε² |M| (1 + C η) + ε |M| C ≤ m`. -/
+private theorem rescaled_lowerOrder_le {ε η C M m lam : ℝ} (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (hη0 : 0 ≤ η) (hη1 : η ≤ 1) (hC : 0 ≤ C)
+    (hεN : ε * ((|M| + 1) * (1 + 2 * C)) ≤ min m (lam / 4)) :
+    4 * (ε * |M|) ≤ lam ∧ ε ^ 2 * |M| * (1 + C * η) + ε * |M| * C ≤ m := by
+  have hM := abs_nonneg M
+  have hεM : ε * |M| ≤ ε * ((|M| + 1) * (1 + 2 * C)) :=
+    mul_le_mul_of_nonneg_left (by nlinarith) hε.le
+  refine ⟨by linarith [hεN.trans (min_le_right _ _)], ?_⟩
+  have hCη1 : C * η ≤ C := by nlinarith
+  have hε2 : ε ^ 2 ≤ ε := by nlinarith
+  calc ε ^ 2 * |M| * (1 + C * η) + ε * |M| * C ≤ ε * |M| * (1 + C) + ε * |M| * C := by
+        gcongr
+    _ ≤ ε * ((|M| + 1) * (1 + 2 * C)) := by nlinarith [mul_nonneg hε.le hM, mul_nonneg hε.le hC]
+    _ ≤ m := hεN.trans (min_le_left _ _)
 
 /-- **Undoing the rescaling.** Linear growth of `g` along `t ↦ x₀ - ε t ν` for `0 < t < τ` is linear
 growth along `s ↦ x₀ - s ν` for `0 < s < ε τ`. -/
@@ -1008,19 +1203,47 @@ private theorem exists_pos_add_mul_gaussBarrier_le {g : E → ℝ} {y x₀ : E} 
   rw [hΦ, div_mul_cancel₀ _ hm₀.ne']
   linarith [isMinOn_iff.1 hmin₀ z hz]
 
-/-- **Hopf's lemma with a mass term, under the sign condition `c g(x₀) ≤ 0`.** This is the common
-form of `exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg` (no mass term, no sign condition on
-`g x₀`) and `exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos` (`c ≥ 0` and
-`g x₀ ≤ 0`). -/
+/-- **The rescaled supersolution.** If `u` is a weak supersolution in `Ω ⊇ ball y R` equal almost
+everywhere on the ball to `g`, and the homothety `T z = ε z + p` maps the unit ball into the ball,
+then `u ∘ T` is a weak supersolution on the annulus for the rescaled coefficients, equal almost
+everywhere there to `g ∘ T`. -/
+private theorem exists_rescaled_supersolution {Ω : Opens E} {u : W1p volume Ω 2}
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c g : E → ℝ} {y p : E} {R ε : ℝ}
+    (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
+      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a b c u (v : W1p volume Ω 2))
+    (hε : 0 < ε) (hB : ball y R ⊆ Ω)
+    (hmapsO : MapsTo (fun z : E => ε • z + p) (ball 0 1) (ball y R))
+    (hug : W1p.value u =ᵐ[volume.restrict (ball y R)] g) :
+    ∃ uε : W1p volume (unitAnnulus (n := n)) 2,
+      W1p.value uε =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] (fun z => g (ε • z + p)) ∧
+      ∀ v : W1p0 volume (unitAnnulus (n := n)) 2,
+        (∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
+          0 ≤ W1p.value (v : W1p volume unitAnnulus 2) z) →
+        0 ≤ energyFormH1 (fun z => a (ε • z + p)) (fun z => ε • b (ε • z + p))
+          (fun z => ε ^ 2 * c (ε • z + p)) uε (v : W1p volume unitAnnulus 2) := by
+  have hcov := Wkp.IsChangeOfVariables.smul_add_const (k := 1) hε p (U := unitAnnulus)
+    (V := ⟨ball y R, isOpen_ball⟩) (fun z hz => hmapsO (unitAnnulus_subset_ball hz))
+  obtain ⟨uε, huεv, huε⟩ := exists_supersolution_comp_smul_add_const hu hε p unitAnnulus
+    (fun z hz => hB (hmapsO (unitAnnulus_subset_ball hz)))
+  refine ⟨uε, ?_, huε⟩
+  filter_upwards [huεv, hcov.ae_comp hug] with z h1 h2
+  rw [h1, h2]
+
+/-- **Hopf's lemma with lower-order terms, under the sign condition `c g(x₀) ≤ 0`.** This is the
+common form of `exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg` (no mass term, no sign
+condition on `g x₀`) and `exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos` (`c ≥ 0`
+and `g x₀ ≤ 0`). -/
 private theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpos {Ω : Opens E}
-    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c g : E → ℝ} {y x₀ : E}
-    {R lam Lam M : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
+    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c g : E → ℝ}
+    {y x₀ : E} {R lam Lam M : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
     (hB : ball y R ⊆ Ω) (hell : UniformlyEllipticOn (ball y R) a lam Lam)
     (hhol : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (closedBall y R))
+    (hbm : AEStronglyMeasurable b (volume.restrict (ball y R)))
+    (hbM : ∀ x ∈ ball y R, ‖b x‖ ≤ M)
     (hcm : AEStronglyMeasurable c (volume.restrict (ball y R)))
     (hc0 : ∀ x ∈ ball y R, 0 ≤ c x) (hcM : ∀ x ∈ ball y R, c x ≤ M)
     (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
-      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 c u (v : W1p volume Ω 2))
+      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a b c u (v : W1p volume Ω 2))
     (hg : ContinuousOn g (closedBall y R))
     (hug : W1p.value u =ᵐ[volume.restrict (ball y R)] g)
     (hmin : ∀ x ∈ ball y R, g x₀ < g x) (hcg : ∀ x ∈ ball y R, c x * g x₀ ≤ 0) :
@@ -1052,47 +1275,42 @@ private theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpo
   have hκ1 : 1 ≤ κ := le_add_of_nonneg_left (by positivity)
   have hκT : 2 * |(a x₀).trace| + lam ≤ lam * κ := by
     rw [mul_add, mul_div_cancel₀ _ hlam.ne', mul_one]
-  obtain ⟨ρ, hρ, C, hC, HF⟩ := exists_add_mul_le_of_supersolution (n := n) ν hν hα₁
+  obtain ⟨C, hC, HF⟩ := exists_add_mul_le_of_supersolution (n := n) ν hν hα₁
     (min_le_right _ _) hlam Lam hκ1
-  -- A scale `ε` at which the rescaled coefficients are close enough to the frozen matrix, and at
-  -- which the rescaled mass term `ε² c` is absorbed by the margin `λ κ e^{-κ}` of the barrier.
+  -- A scale `ε ≤ 1` at which the rescaled coefficients are close enough to the frozen matrix, and
+  -- at which the rescaled drift `ε b` and mass term `ε² c` are absorbed by the margin
+  -- `λ κ e^{-κ}` of the barrier and keep the energy form coercive.
   set m := lam * κ * Real.exp (-κ)
   have hm : 0 < m := by positivity
-  set N := (|M| + 1) * (1 + C)
-  have hN : 0 < N := by positivity
-  obtain ⟨ε, hε, hεR, hη1, hCη, hεN⟩ := exists_scale_of_sq_mul_le K₁.coe_nonneg hC
-    (by positivity : 0 < κ * Real.exp (-κ)) hR (NNReal.coe_pos.2 hα₁) hN hm
+  obtain ⟨ε, hε, hεR, hη1, hCη, hεN⟩ := exists_scale_of_mul_le K₁.coe_nonneg hC
+    (by positivity : 0 < κ * Real.exp (-κ)) (lt_min hR one_pos) (NNReal.coe_pos.2 hα₁)
+    (by positivity : 0 < (|M| + 1) * (1 + 2 * C)) (lt_min hm (by positivity : 0 < lam / 4))
+  have hε1 : ε ≤ 1 := hεR.trans (min_le_right _ _)
+  replace hεR : ε ≤ R := hεR.trans (min_le_left _ _)
   set p : E := y + (R - ε) • ν
   obtain ⟨hmaps, hmapsO, hbell, hbh, hbA⟩ := rescaled_coefficient hν hell hhol₁ hε hεR
   have hT : Continuous fun z : E => ε • z + p := (continuous_id.const_smul ε).add continuous_const
-  have hcov := Wkp.IsChangeOfVariables.smul_add_const (k := 1) hε p (U := unitAnnulus)
-    (V := ⟨ball y R, isOpen_ball⟩) (fun z hz => hmapsO (unitAnnulus_subset_ball hz))
   -- The rescaled supersolution on the annulus, its continuous representative and boundary values.
-  obtain ⟨uε, huεv, huε⟩ := exists_supersolution_comp_smul_add_const hu hε p unitAnnulus
-    (fun z hz => hB (hmapsO (unitAnnulus_subset_ball hz)))
-  have huĝ : W1p.value uε =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)]
-      fun z => g (ε • z + p) := by
-    filter_upwards [huεv, hcov.ae_comp hug] with z h1 h2
-    rw [h1, h2]
+  obtain ⟨uε, huĝ, huε⟩ := exists_rescaled_supersolution hu hε hB hmapsO hug
   obtain ⟨θ, hθ, h1, h2⟩ := exists_pos_add_mul_gaussBarrier_le hR hg hmin hT hmaps hmapsO hκ
   have hKb : ((K₁ * ε.toNNReal ^ (α₁ : ℝ) : ℝ≥0) : ℝ) ≤ K₁ * (2 * ε) ^ (α₁ : ℝ) := by
     rw [NNReal.coe_mul, NNReal.coe_rpow, Real.coe_toNNReal _ hε.le]
     exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow hε.le (by linarith) α₁.coe_nonneg)
       K₁.coe_nonneg
-  -- The rescaled mass coefficient `ε² c ∘ T`, bounded by `ε² |M|`, is absorbed at this scale.
-  obtain ⟨hcm', hc0', hcM', hcs⟩ := rescaled_mass hcm hc0 hcM hcg hε
-    (fun z hz => hmapsO (unitAnnulus_subset_ball hz))
-  have hγ : ε ^ 2 * |M| * (1 + C * (K₁ * (2 * ε) ^ (α₁ : ℝ))) ≤ m := by
-    have hCη1 : C * (K₁ * (2 * ε) ^ (α₁ : ℝ)) ≤ C := by nlinarith
-    calc ε ^ 2 * |M| * (1 + C * (K₁ * (2 * ε) ^ (α₁ : ℝ))) ≤ ε ^ 2 * N := by
-          simp only [N]
-          nlinarith [abs_nonneg M, mul_nonneg (sq_nonneg ε) (abs_nonneg M)]
-      _ ≤ m := hεN
+  -- The rescaled drift `ε b ∘ T` and mass coefficient `ε² c ∘ T`, bounded by `ε |M|` and
+  -- `ε² |M|`, are absorbed at this scale.
+  have hmaps' : MapsTo (fun z : E => ε • z + p) (unitAnnulus (n := n) : Set E) (ball y R) :=
+    fun z hz => hmapsO (unitAnnulus_subset_ball hz)
+  obtain ⟨hβm, hβδ⟩ := rescaled_drift hbm hbM hε hmaps'
+  obtain ⟨hcm', hc0', hcM', hcs⟩ := rescaled_mass hcm hc0 hcM hcg hε hmaps'
+  obtain ⟨hδ, hγ⟩ := rescaled_lowerOrder_le hε hε1 (mul_nonneg K₁.coe_nonneg (by positivity))
+    hη1 hC hεN
   have hlin := HF hbell hbh hKb hη1 (by rw [hx₀ν] at hbA; exact hbA) hCη hA (le_abs_self _)
-    (by rwa [abs_abs]) hcm' hc0' hcM' hγ huε (hg.comp hT.continuousOn hmaps) huĝ hcs hθ.le h1 h2
+    (by rwa [abs_abs]) hβm hβδ (by positivity) hδ hcm' hc0' hcM' (by positivity) hγ huε
+    (hg.comp hT.continuousOn hmaps) huĝ hcs hθ.le h1 h2
   -- Undo the rescaling: the point `(1 - t) ν` of the annulus is `x₀ - ε t ν`.
   refine exists_pos_mul_le_sub_of_rescaled (c := θ * (κ * Real.exp (-κ) / 2))
-    (τ := min ρ (1 / 2)) hε (lt_min hρ (by norm_num)) (by positivity) fun t ht => ?_
+    (τ := 1 / 2) hε (by norm_num) (by positivity) fun t ht => ?_
   have hpt : ε • ((1 - t) • ν) + p = x₀ - (ε * t) • ν := by
     rw [← hx₀ν, smul_smul, mul_sub, mul_one]
     simp only [p, sub_smul]
@@ -1102,50 +1320,56 @@ private theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpo
 
 /-- **Hopf's boundary-point lemma for divergence-form equations with Hölder coefficients.** Let
 `B = ball y R ⊆ Ω` and let `x₀` lie on its bounding sphere. Let `a` be uniformly elliptic on `B`
-with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`. Let
-`u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`, that is `a(u, v) ≥ 0` for every
-nonnegative `v ∈ H¹₀(Ω)`, equal almost everywhere on `B` to a function `g` continuous on
-`closedBall y R` with `g x₀ < g x` for every `x ∈ B`. Then `g` leaves its minimum `x₀` at a positive
-linear rate along the inward normal: with `ν = (x₀ - y) / R` the outer unit normal of `B` at `x₀`,
+with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`, and
+let the drift `b` be measurable with `‖b‖ ≤ M` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≥ 0` in `Ω`, that is `a(u, v) + ∫ ⟪b, ∇u⟫ v ≥ 0` for every nonnegative
+`v ∈ H¹₀(Ω)`, equal almost everywhere on `B` to a function `g` continuous on `closedBall y R` with
+`g x₀ < g x` for every `x ∈ B`. Then `g` leaves its minimum `x₀` at a positive linear rate along the
+inward normal: with `ν = (x₀ - y) / R` the outer unit normal of `B` at `x₀`,
 `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`. -/
 theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg {Ω : Opens E}
-    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {g : E → ℝ} {y x₀ : E}
-    {R lam Lam : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
+    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {g : E → ℝ}
+    {y x₀ : E} {R lam Lam M : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
     (hB : ball y R ⊆ Ω) (hell : UniformlyEllipticOn (ball y R) a lam Lam)
     (hhol : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (closedBall y R))
+    (hbm : AEStronglyMeasurable b (volume.restrict (ball y R)))
+    (hbM : ∀ x ∈ ball y R, ‖b x‖ ≤ M)
     (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
-      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 0 u (v : W1p volume Ω 2))
+      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a b 0 u (v : W1p volume Ω 2))
     (hg : ContinuousOn g (closedBall y R))
     (hug : W1p.value u =ᵐ[volume.restrict (ball y R)] g)
     (hmin : ∀ x ∈ ball y R, g x₀ < g x) :
     ∃ ε > 0, ∃ δ > 0, ∀ t ∈ Ioo 0 δ, ε * t ≤ g (x₀ - t • (R⁻¹ • (x₀ - y))) - g x₀ :=
-  exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpos (M := 0) hα hR hx₀ hB hell hhol
-    aestronglyMeasurable_const (fun _ _ => le_rfl) (fun _ _ => le_rfl) hu hg hug hmin
-    (fun _ _ => by simp)
+  exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpos hα hR hx₀ hB hell hhol hbm
+    (fun x hx => (hbM x hx).trans (le_max_left M 0)) aestronglyMeasurable_const (fun _ _ => le_rfl)
+    (fun _ _ => le_max_right M 0) hu hg hug hmin (fun _ _ => by simp)
 
-/-- **Hopf's boundary-point lemma for divergence-form equations with a mass term.** Let
+/-- **Hopf's boundary-point lemma for divergence-form equations with lower-order terms.** Let
 `B = ball y R ⊆ Ω` and let `x₀` lie on its bounding sphere. Let `a` be uniformly elliptic on `B`
 with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`, and
-let `c` be measurable with `|c| ≤ M` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≥ 0` in `Ω`, that is `a(u, v) + ∫ c u v ≥ 0` for every nonnegative
-`v ∈ H¹₀(Ω)`, equal almost everywhere on `B` to a function `g` continuous on `closedBall y R` with
-`g x₀ < g x` for every `x ∈ B` and `g x₀ ≤ 0`. Suppose moreover that `c ≥ 0` on `B` or
-`g x₀ = 0`. Then, with `ν = (x₀ - y) / R` the outer unit normal of `B` at `x₀`,
-`ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`.
+let the drift `b` and the mass coefficient `c` be measurable with `‖b‖ ≤ M` and `|c| ≤ M` on `B`.
+Let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` in `Ω`, that is
+`a(u, v) + ∫ ⟪b, ∇u⟫ v + ∫ c u v ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, equal almost everywhere on
+`B` to a function `g` continuous on `closedBall y R` with `g x₀ < g x` for every `x ∈ B` and
+`g x₀ ≤ 0`. Suppose moreover that `c ≥ 0` on `B` or `g x₀ = 0`. Then, with `ν = (x₀ - y) / R` the
+outer unit normal of `B` at `x₀`, `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small
+`t > 0`.
 
 When `g x₀ = 0`, `u ≥ 0` on `B`, so the negative part of `c` may be dropped and `c` may have
 either sign. The sign condition `g x₀ ≤ 0` cannot be dropped: on the interval `(0, 2)`, `cosh`
 solves `-u'' + u = 0`, and its minimum `cosh 0 = 1` over `[0, 2)` is attained only at the boundary
 point `0`, where its derivative vanishes. -/
 theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos {Ω : Opens E}
-    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c g : E → ℝ} {y x₀ : E}
-    {R lam Lam M : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
+    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c g : E → ℝ}
+    {y x₀ : E} {R lam Lam M : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
     (hB : ball y R ⊆ Ω) (hell : UniformlyEllipticOn (ball y R) a lam Lam)
     (hhol : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (closedBall y R))
+    (hbm : AEStronglyMeasurable b (volume.restrict (ball y R)))
+    (hbM : ∀ x ∈ ball y R, ‖b x‖ ≤ M)
     (hcm : AEStronglyMeasurable c (volume.restrict (ball y R)))
     (hcM : ∀ x ∈ ball y R, |c x| ≤ M)
     (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
-      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 c u (v : W1p volume Ω 2))
+      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a b c u (v : W1p volume Ω 2))
     (hg : ContinuousOn g (closedBall y R))
     (hug : W1p.value u =ᵐ[volume.restrict (ball y R)] g)
     (hmin : ∀ x ∈ ball y R, g x₀ < g x) (hg₀ : g x₀ ≤ 0)
@@ -1153,7 +1377,7 @@ theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos {Ω : Open
     ∃ ε > 0, ∃ δ > 0, ∀ t ∈ Ioo 0 δ, ε * t ≤ g (x₀ - t • (R⁻¹ • (x₀ - y))) - g x₀ := by
   rcases hsign with hc0 | hg0
   · exact exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpos hα hR hx₀ hB hell hhol
-      hcm hc0 (fun x hx => (le_abs_self _).trans (hcM x hx)) hu hg hug hmin
+      hbm hbM hcm hc0 (fun x hx => (le_abs_self _).trans (hcM x hx)) hu hg hug hmin
       fun x hx => mul_nonpos_of_nonneg_of_nonpos (hc0 x hx) hg₀
   -- When `g x₀ = 0`, `u ≥ 0` on `B`, so on `B` the mass coefficient may be replaced by `c⁺`.
   set U : Opens E := ⟨ball y R, isOpen_ball⟩
@@ -1169,17 +1393,17 @@ theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos {Ω : Open
   have ham : AEStronglyMeasurable a (volume.restrict (ball y R)) :=
     ((continuousOn_of_continuousOn_matrixBilinearForm (hhol.continuousOn hα)).mono
       ball_subset_closedBall).aestronglyMeasurable measurableSet_ball
-  have ha := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    (Omega := U) hell.upper_nonneg ham aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => hell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  have hab := memLp_energyIntegrand_of_bounds (c := 0) (gamma := 0)
+    (Omega := U) hell.upper_nonneg ham hbm aestronglyMeasurable_const
+    (fun _x hx eta xi => hell.upper_bound hx eta xi) hbM (fun _ _ => by simp)
   have hu0 : ∀ᵐ x ∂volume.restrict (ball y R), 0 ≤ W1p.value u x := by
     filter_upwards [hug, ae_restrict_mem measurableSet_ball] with x h hx
     rw [h, ← hg0]
     exact (hmin x hx).le
   exact exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpos (Ω := U) hα hR hx₀
-    le_rfl hell hhol hcm' (fun _ _ => le_max_right _ _)
+    le_rfl hell hhol hbm hbM hcm' (fun _ _ => le_max_right _ _)
     (fun x hx => (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hcM' x hx)))
-    (energyFormH1_restrictL_max_nonneg hU ha
+    (energyFormH1_restrictL_max_nonneg hU hab
       (hbd hcm fun x hx => (Real.norm_eq_abs _).trans_le (hcM x hx)) hu hu0) hg
     ((W1p.value_restrictL_ae hU u).trans hug) hmin fun x _ => by rw [hg0, mul_zero]
 
