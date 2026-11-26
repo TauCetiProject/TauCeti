@@ -117,13 +117,9 @@ theorem sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det (hℓ : ℓ �
     (B := fun τ ↦ skewTorusModeOperator ((q : ℝ) * T) ℓ σ _ (AddCircle.coverPullback q (M τ))
       (AddCircle.coverPullback_add_coe_period q (M τ)))
     (fun τ ↦ ContinuousLinearMap.ext (skewTorusOperator_apply T q ℓ σ (M τ))) _ _ hM
-    (((continuous_skewTorusModeOperator _ ℓ σ _).comp
-      (f := fun S : C(AddCircle T, F →L[ℝ] F) ↦
-        (⟨AddCircle.coverPullback q S, AddCircle.coverPullback_add_coe_period q S⟩ :
-          {S' : C(AddCircle ((q : ℝ) * T), F →L[ℝ] F) // ∀ t, S' (t + (T : ℝ)) = S' t}))
-      ((AddCircle.continuous_coverPullback q).subtype_mk _)).comp_continuousOn hM)
-    (fun τ hτ ↦ isInvertible_skewTorusModeOperator _ hℓ σ _
-      (im_inner_coverPullback_add_eq_zero q (hMs τ hτ)) _) hMa hf hz hb hx hxz
+    ((continuous_skewTorusModeOperator_coverPullback T q ℓ σ).comp_continuousOn hM)
+    (fun τ hτ ↦ isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ (M τ) (hMs τ hτ))
+    hMa hf hz hb hx hxz
 
 /-- **The operator on a skew cover twisted along the orbit has determinant sign
 `sgn det (1 + Ψ(T))`.** Let `M` be a path of infinitesimally symplectic loops of period `T`,
