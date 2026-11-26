@@ -176,10 +176,11 @@ theorem exists_eq_integral_upperHalfPlanePoissonKernel_mul_of_abs_le {u : ℂ �
 
 /-- **Bounded holomorphic functions are Poisson integrals.** If `F` is holomorphic on the upper
 half-plane with `‖F‖ ≤ S` there, then `F = P[w]` on `ℂ₊` for a measurable `w : ℝ → ℂ` whose real
-and imaginary parts are bounded by `S`. -/
+and imaginary parts are bounded by `S`; in particular `w` is integrable for the Poisson measure. -/
 theorem exists_eq_upperHalfPlanePoissonIntegralFun_of_norm_le {F : ℂ → ℂ} {S : ℝ}
     (hF : DifferentiableOn ℂ F upperHalfPlaneSet) (hS : ∀ z ∈ upperHalfPlaneSet, ‖F z‖ ≤ S) :
     ∃ w : ℝ → ℂ, Measurable w ∧ (∀ x, |(w x).re| ≤ S ∧ |(w x).im| ≤ S) ∧
+      Integrable w upperHalfPlanePoissonMeasure ∧
       ∀ z ∈ upperHalfPlaneSet, F z = upperHalfPlanePoissonIntegralFun w z := by
   have hFa : AnalyticOnNhd ℂ F upperHalfPlaneSet :=
     hF.analyticOnNhd UpperHalfPlane.isOpen_upperHalfPlaneSet
@@ -191,11 +192,11 @@ theorem exists_eq_upperHalfPlanePoissonIntegralFun_of_norm_le {F : ℂ → ℂ} 
   have hwm : Measurable w := by fun_prop
   have hwre (x : ℝ) : (w x).re = a x := by simp [w]
   have hwim (x : ℝ) : (w x).im = b x := by simp [w]
-  refine ⟨w, hwm, fun x ↦ by rw [hwre, hwim]; exact ⟨haS x, hbS x⟩, fun z hz ↦ ?_⟩
   have hw : Integrable w upperHalfPlanePoissonMeasure := by
     refine Integrable.of_bound hwm.aestronglyMeasurable (S + S) (.of_forall fun x ↦ ?_)
     calc ‖w x‖ ≤ |(w x).re| + |(w x).im| := norm_le_abs_re_add_abs_im _
       _ ≤ S + S := by rw [hwre, hwim]; exact add_le_add (haS x) (hbS x)
+  refine ⟨w, hwm, fun x ↦ by rw [hwre, hwim]; exact ⟨haS x, hbS x⟩, hw, fun z hz ↦ ?_⟩
   refine Complex.ext ?_ ?_
   · rw [re_upperHalfPlanePoissonIntegralFun hw, hre z hz]
     simp only [hwre]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Fatou.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Bounded
+import TauCeti.Topology.LimUnder
 
 /-!
 # The boundary function of a bounded holomorphic function on the upper half-plane
@@ -28,7 +29,9 @@ For `F` holomorphic and bounded on `ℂ₊`, by `‖F‖ ≤ S` say:
 * Hence `F = P[F*]` on `ℂ₊`
   (`TauCeti.eq_upperHalfPlanePoissonIntegralFun_upperHalfPlaneBoundaryFun`) and `‖F*‖ ≤ S`
   almost everywhere (`TauCeti.ae_norm_upperHalfPlaneBoundaryFun_le`), so
-  `‖F*‖_∞ ≤ sup_{ℂ₊} ‖F‖`; `F*` is almost everywhere strongly measurable.
+  `‖F*‖_∞ ≤ sup_{ℂ₊} ‖F‖`. In particular `F* ∈ L^∞(ℝ)`
+  (`TauCeti.memLp_top_upperHalfPlaneBoundaryFun`) and `F* ∈ L¹(Π)`
+  (`TauCeti.integrable_upperHalfPlanePoissonMeasure_upperHalfPlaneBoundaryFun`).
 * `F ↦ F*` is linear and multiplicative almost everywhere on bounded holomorphic functions
   (`TauCeti.upperHalfPlaneBoundaryFun_add_ae_eq`, `TauCeti.upperHalfPlaneBoundaryFun_smul_ae_eq`,
   `TauCeti.upperHalfPlaneBoundaryFun_mul_ae_eq`).
@@ -94,20 +97,13 @@ theorem upperHalfPlaneBoundaryFun_const (c : ℂ) :
 theorem upperHalfPlaneBoundaryFun_congr {F G : ℂ → ℂ} (h : EqOn F G upperHalfPlaneSet) :
     upperHalfPlaneBoundaryFun F = upperHalfPlaneBoundaryFun G := by
   funext x
-  rw [upperHalfPlaneBoundaryFun_def, upperHalfPlaneBoundaryFun_def, limUnder, limUnder]
-  refine congrArg lim (Filter.map_congr ?_)
+  refine limUnder_congr ?_
   filter_upwards [eventually_nontangentialFilter_abs_re_sub_le 1 x one_pos] with z hz
   exact h hz.1
 
 section Bounded
 
 variable {F G : ℂ → ℂ} {S T : ℝ}
-
-/-- A bounded measurable function is integrable for the Poisson measure. -/
-private theorem integrable_upperHalfPlanePoissonMeasure_of_abs_le {w : ℝ → ℂ} (hw : Measurable w)
-    (hS : ∀ x, |(w x).re| ≤ S ∧ |(w x).im| ≤ S) : Integrable w upperHalfPlanePoissonMeasure :=
-  Integrable.of_bound hw.aestronglyMeasurable (S + S) (.of_forall fun x ↦
-    (norm_le_abs_re_add_abs_im _).trans (add_le_add (hS x).1 (hS x).2))
 
 /-- For `F` bounded and holomorphic on `ℂ₊`, the density of a Poisson representation `F = P[w]` is
 the boundary function, almost everywhere, and `F → F*(x)` nontangentially through cones of every
@@ -118,8 +114,7 @@ private theorem exists_ae_eq_upperHalfPlaneBoundaryFun
       (∀ z ∈ upperHalfPlaneSet, F z = upperHalfPlanePoissonIntegralFun w z) ∧
       ∀ᵐ x, upperHalfPlaneBoundaryFun F x = w x ∧
         ∀ α : ℝ, Tendsto F (nontangentialFilter α x) (𝓝 (w x)) := by
-  obtain ⟨w, hwm, hwS, hFw⟩ := exists_eq_upperHalfPlanePoissonIntegralFun_of_norm_le hF hS
-  have hwi := integrable_upperHalfPlanePoissonMeasure_of_abs_le hwm hwS
+  obtain ⟨w, hwm, -, hwi, hFw⟩ := exists_eq_upperHalfPlanePoissonIntegralFun_of_norm_le hF hS
   refine ⟨w, hwm, hwi, hFw, ?_⟩
   filter_upwards [ae_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegralFun hwi] with x hx
   have hlim (α : ℝ) : Tendsto F (nontangentialFilter α x) (𝓝 (w x)) := by
@@ -157,6 +152,22 @@ theorem ae_norm_upperHalfPlaneBoundaryFun_le (hF : DifferentiableOn ℂ F upperH
   refine le_of_tendsto (hx 1).norm ?_
   filter_upwards [eventually_nontangentialFilter_abs_re_sub_le 1 x one_pos] with z hz
   exact hS z hz.1
+
+/-- **The boundary function is essentially bounded**: for `F` bounded and holomorphic on `ℂ₊`,
+`F* ∈ L^∞(ℝ)`. -/
+theorem memLp_top_upperHalfPlaneBoundaryFun (hF : DifferentiableOn ℂ F upperHalfPlaneSet)
+    (hS : ∀ z ∈ upperHalfPlaneSet, ‖F z‖ ≤ S) : MemLp (upperHalfPlaneBoundaryFun F) ⊤ :=
+  memLp_top_of_bound (aestronglyMeasurable_upperHalfPlaneBoundaryFun hF hS) S
+    (ae_norm_upperHalfPlaneBoundaryFun_le hF hS)
+
+/-- The boundary function of a bounded holomorphic function on `ℂ₊` is integrable for the Poisson
+measure `dx / (1 + x ^ 2)`. -/
+theorem integrable_upperHalfPlanePoissonMeasure_upperHalfPlaneBoundaryFun
+    (hF : DifferentiableOn ℂ F upperHalfPlaneSet) (hS : ∀ z ∈ upperHalfPlaneSet, ‖F z‖ ≤ S) :
+    Integrable (upperHalfPlaneBoundaryFun F) upperHalfPlanePoissonMeasure := by
+  obtain ⟨w, -, hwi, -, hw⟩ := exists_ae_eq_upperHalfPlaneBoundaryFun hF hS
+  exact hwi.congr (upperHalfPlanePoissonMeasure_absolutelyContinuous.ae_le
+    (hw.mono fun x hx ↦ hx.1.symm))
 
 /-- **A bounded holomorphic function is the Poisson integral of its boundary function**:
 `F = P[F*]` on `ℂ₊`. -/

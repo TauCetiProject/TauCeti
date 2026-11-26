@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.BoundaryFunction
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Boundary.Function
+import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
 # Checks for boundary functions of bounded holomorphic functions on the half-plane
@@ -58,23 +59,10 @@ theorem exp_mul_I_eq_upperHalfPlanePoissonIntegralFun {z : ℂ} (hz : z ∈ uppe
 
 /-! ### A Blaschke factor -/
 
-/-- `(z - i) / (z + i)` is continuous on the closed upper half-plane, where `z + i ≠ 0`. -/
-theorem continuousOn_blaschke :
-    ContinuousOn (fun z : ℂ ↦ (z - I) / (z + I)) {z | 0 ≤ z.im} := by
-  refine ContinuousOn.div (by fun_prop) (by fun_prop) fun z hz h ↦ ?_
-  have := congrArg im h
-  simp only [add_im, I_im, zero_im] at this
-  linarith [show (0 : ℝ) ≤ z.im from hz]
-
 /-- The boundary function of `(z - i) / (z + i)` has modulus `1` everywhere. -/
 theorem norm_upperHalfPlaneBoundaryFun_blaschke (x : ℝ) :
     ‖upperHalfPlaneBoundaryFun (fun z ↦ (z - I) / (z + I)) x‖ = 1 := by
-  rw [upperHalfPlaneBoundaryFun_eq_of_continuousOn continuousOn_blaschke, norm_div]
-  have h : ‖(x : ℂ) + I‖ ≠ 0 := by
-    rw [norm_ne_zero_iff]
-    intro h
-    simpa using congrArg im h
-  have hc : (x : ℂ) - I = (starRingEnd ℂ) ((x : ℂ) + I) := by simp [sub_eq_add_neg]
-  rw [hc, norm_conj, div_self h]
+  rw [upperHalfPlaneBoundaryFun_eq_of_continuousWithinAt
+    (continuousAt_sub_I_div_add_I x).continuousWithinAt, norm_div, norm_sub_I_div_norm_add_I_ofReal]
 
 end TauCeti.Examples.BoundaryFunction
