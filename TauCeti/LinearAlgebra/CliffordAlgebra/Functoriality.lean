@@ -282,6 +282,24 @@ theorem equivOfIsometry_mem_evenOdd_iff (e : Q₁.IsometryEquiv Q₂) {x : Cliff
   rw [← map_evenOdd_equivOfIsometry e i]
   exact ⟨fun ⟨y, hy, hxy⟩ ↦ (equivOfIsometry e).injective hxy ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
 
+/-- The equivalence induced by an isometry equivalence sends the generator `ι Q₁ v` to
+`ι Q₂ (e v)`. This is not a `simp` lemma, because `simp` rewrites `equivOfIsometry e x` to
+`map e.toIsometry x` by `equivOfIsometry_apply`. -/
+theorem equivOfIsometry_ι (e : Q₁.IsometryEquiv Q₂) (v : M₁) :
+    equivOfIsometry e (ι Q₁ v) = ι Q₂ (e v) := by
+  rw [equivOfIsometry_apply, map_apply_ι, IsometryEquiv.toIsometry_apply]
+
+/-- Mapping a unit along the equivalence induced by an isometry equivalence `e`, and back along
+the one induced by `e.symm`, gives it back. -/
+@[simp]
+theorem units_map_equivOfIsometry_symm_units_map (e : Q₁.IsometryEquiv Q₂)
+    (x : (CliffordAlgebra Q₁)ˣ) :
+    Units.map (equivOfIsometry e.symm : CliffordAlgebra Q₂ →* CliffordAlgebra Q₁)
+      (Units.map (equivOfIsometry e : CliffordAlgebra Q₁ →* CliffordAlgebra Q₂) x) = x :=
+  Units.ext <| by
+    rw [Units.coe_map, Units.coe_map, MonoidHom.coe_ofClass, MonoidHom.coe_ofClass,
+      ← equivOfIsometry_symm, AlgEquiv.symm_apply_apply]
+
 /-- The Clifford-algebra equivalence induced by a quadratic isometry equivalence, restricted to
 the even subalgebras. -/
 noncomputable def evenEquivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
