@@ -86,6 +86,16 @@ theorem stageMap_mul (he : ∀ i, IsIdempotentElem (e i)) {S T : Finset ι} (h :
     | add y y' hy hy' => rw [mul_add, map_add, hy, hy', map_add, mul_add]
   | add x x' hx hx' => rw [add_mul, map_add, hx, hx', map_add, add_mul]
 
+omit [DecidableEq ι] in
+/-- If `f` and `g` differ from the idempotents `e` at finitely many places, so does `f * g`. -/
+theorem finite_mul_ne (he : ∀ i, IsIdempotentElem (e i)) {f g : ∀ i, A i}
+    (hf : {i | f i ≠ e i}.Finite) (hg : {i | g i ≠ e i}.Finite) :
+    {i | (f * g) i ≠ e i}.Finite :=
+  (hf.union hg).subset fun i hi ↦ by
+    by_contra h
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at h
+    exact hi (by rw [Pi.mul_apply, h.1, h.2, (he i).eq])
+
 variable (R e) in
 /-- The transition map adjoining idempotents, as a morphism of nonunital algebras. -/
 def stageNonUnitalAlgHom (he : ∀ i, IsIdempotentElem (e i)) {S T : Finset ι} (h : S ⊆ T) :
@@ -209,17 +219,16 @@ theorem ofFinite_eq_ofFinite_iff {S T : Finset ι} (x : ⨂[R] i : S, A i) (y : 
 
 /-- **Restricted pure tensors multiply factorwise**: `(⨂ f i) (⨂ g i) = ⨂ f i g i`. -/
 theorem linearEquiv_symm_tprod_mul_linearEquiv_symm_tprod (f g : ∀ i, A i)
-    (hf : {i | f i ≠ e i}.Finite) (hg : {i | g i ≠ e i}.Finite)
-    (hfg : {i | (f * g) i ≠ e i}.Finite) :
+    (hf : {i | f i ≠ e i}.Finite) (hg : {i | g i ≠ e i}.Finite) :
     (linearEquiv he).symm (RestrictedTensor.tprod R e f hf) *
         (linearEquiv he).symm (RestrictedTensor.tprod R e g hg) =
-      (linearEquiv he).symm (RestrictedTensor.tprod R e (f * g) hfg) := by
+      (linearEquiv he).symm (RestrictedTensor.tprod R e (f * g) (finite_mul_ne he hf hg)) := by
   have hfS : ∀ i ∉ hf.toFinset ∪ hg.toFinset, f i = e i := fun i hi ↦ by
     simpa using (Finset.notMem_union.mp hi).1
   have hgS : ∀ i ∉ hf.toFinset ∪ hg.toFinset, g i = e i := fun i hi ↦ by
     simpa using (Finset.notMem_union.mp hi).2
   rw [RestrictedTensor.tprod_eq_ofFinite f hf _ hfS, RestrictedTensor.tprod_eq_ofFinite g hg _ hgS,
-    RestrictedTensor.tprod_eq_ofFinite (f * g) hfg _ fun i hi ↦ by
+    RestrictedTensor.tprod_eq_ofFinite (f * g) _ _ fun i hi ↦ by
       rw [Pi.mul_apply, hfS i hi, hgS i hi, (he i).eq],
     linearEquiv_symm_ofFinite, linearEquiv_symm_ofFinite, linearEquiv_symm_ofFinite,
     ofFinite_tprod_mul_ofFinite_tprod]
