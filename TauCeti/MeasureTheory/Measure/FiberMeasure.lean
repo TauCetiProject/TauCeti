@@ -137,21 +137,22 @@ theorem _root_.Measurable.isLeFiberMeasure_of_coordinates
     _ ≤ ∫⁻ x, (π ⁻¹' S).indicator K x ∂μ := h_le _ (hK_meas.indicator hπS)
     _ ≤ C * ν S := (lintegral_indicator hπS K).trans_le (hS hS_open)
 
-/-- If `μ` is the image of `ν.prod ρ` under a map `φ` with `π (φ (t, p)) = t`, and `φ (·, p)`
-is continuous at `b` for almost every `p`, then `ρ.map (fun p ↦ φ (b, p))` is at most the fiber
-measure `dμ / dν` of `π` over `b`, provided `ν` is finite on some neighborhood of `b`. -/
+/-- If `μ` is the image of `ν.prod ρ` under a map `φ` with `π (φ (t, p)) = t` for almost every `p`
+at each `t`, and `φ (·, p)` is continuous at `b` for almost every `p`, then
+`ρ.map (fun p ↦ φ (b, p))` is at most the fiber measure `dμ / dν` of `π` over `b`, provided `ν` is
+finite on some neighborhood of `b`. -/
 theorem _root_.MeasureTheory.MeasurePreserving.isLeFiberMeasure
     [OpensMeasurableSpace X] [OpensMeasurableSpace B]
     [IsCountablyGenerated (𝓝 b)] [ν.IsOpenPosMeasure] {ρ : Measure P}
     [SFinite ρ] {φ : B × P → X} (hφ : MeasurePreserving φ (ν.prod ρ) μ) (hπ : Measurable π)
     (hν : ν.FiniteAtFilter (𝓝 b))
-    (h_fiber : ∀ (t : B) (p : P), π (φ (t, p)) = t)
+    (h_fiber : ∀ t : B, ∀ᵐ p : P ∂ρ, π (φ (t, p)) = t)
     (h_cont : ∀ᵐ p : P ∂ρ, ContinuousAt (fun t : B ↦ φ (t, p)) b) :
     IsLeFiberMeasure μ ν π b (ρ.map fun p : P ↦ φ (b, p)) := by
   rw [← withDensity_one (μ := ρ)]
   exact hπ.isLeFiberMeasure_of_coordinates (ψ := fun t p ↦ φ (t, p)) (w := 1)
     hν (fun _ ↦ hφ.measurable.comp (measurable_const.prodMk measurable_id))
-    (fun _ ↦ measurable_const) univ_mem (fun t _ ↦ .of_forall fun p _ ↦ h_fiber t p)
+    (fun _ ↦ measurable_const) univ_mem (fun t _ ↦ (h_fiber t).mono fun _ hp _ ↦ hp)
     (h_cont.mono fun _ hp ↦ ⟨hp, continuousAt_const.lowerSemicontinuousAt⟩) fun K hK ↦ by
       simpa [← hφ.lintegral_comp hK] using
         (lintegral_prod _ (hK.comp hφ.measurable).aemeasurable).ge
