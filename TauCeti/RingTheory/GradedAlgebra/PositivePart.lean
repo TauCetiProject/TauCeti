@@ -314,8 +314,8 @@ def lift {M : Type*} [AddCommGroup M] [Module R M] (g : A →ₗ[R] M)
 @[simp]
 theorem lift_mk {M : Type*} [AddCommGroup M] [Module R M] (g : A →ₗ[R] M)
     (hg : ∀ a ∈ positivePart 𝒜, ∀ b ∈ positivePart 𝒜, g (a * b) = 0) (a : positivePart 𝒜) :
-    lift g hg (mk 𝒜 a) = g a :=
-  (rfl)
+    lift g hg (mk 𝒜 a) = g a := by
+  rw [lift, mk_apply, Submodule.liftQ_apply, LinearMap.comp_apply, Submodule.subtype_apply]
 
 /-- Linear maps out of the indecomposables agree when they agree on the classes of the elements of
 positive degree: the uniqueness half of the universal property of `lift`. -/
@@ -488,8 +488,8 @@ private noncomputable def grading : InternalGrading R (Indecomposables 𝒜) ℤ
 variable (𝒜) in
 private theorem grading_piece (p : ℤ) : (grading 𝒜).piece p = homogeneousSubmodule 𝒜 p := by
   rw [grading, InternalGrading.quotient_piece, InternalGrading.submodule_piece,
-    InternalGrading.ofDecomposition_piece]
-  rfl
+    InternalGrading.ofDecomposition_piece, LinearMap.restrictScalars_self,
+    LinearMap.restrictScalars_self, homogeneousSubmodule, mk]
 
 /-- The indecomposables have no component of degree `p ≤ 0`. -/
 theorem homogeneousSubmodule_eq_bot {p : ℤ} (hp : p ≤ 0) : homogeneousSubmodule 𝒜 p = ⊥ := by
@@ -519,9 +519,7 @@ noncomputable def homogeneousSubmoduleEquiv {p : ℤ} (hp : 0 < p) :
 theorem homogeneousSubmoduleEquiv_mk {p : ℤ} (hp : 0 < p) (a : 𝒜 p) :
     (homogeneousSubmoduleEquiv hp (Submodule.Quotient.mk a) : Indecomposables 𝒜) =
       mk 𝒜 ⟨a, mem_positivePart_of_mem hp a.property⟩ := by
-  rw [homogeneousSubmoduleEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk, LinearEquiv.coe_ofEq_apply, LinearMap.quotKerEquivRange_apply_mk,
-    LinearMap.comp_apply, Submodule.inclusion_apply]
+  simp [homogeneousSubmoduleEquiv, Submodule.inclusion_apply]
 
 @[simp]
 theorem homogeneousSubmoduleEquiv_symm_mk {p : ℤ} (hp : 0 < p) (a : 𝒜 p) :
@@ -584,8 +582,8 @@ def homogeneousMap (f : 𝒜 →ₐᵍ[R] ℬ) (p : ℤ) :
 @[simp]
 theorem homogeneousMap_mk (f : 𝒜 →ₐᵍ[R] ℬ) {p : ℤ} {a : positivePart 𝒜} (ha : (a : A) ∈ 𝒜 p) :
     (homogeneousMap f p ⟨mk 𝒜 a, mk_mem_homogeneousSubmodule ha⟩ : Indecomposables ℬ) =
-      mk ℬ ⟨f a, f.map_positivePart_le ⟨a, a.property, rfl⟩⟩ :=
-  (rfl)
+      mk ℬ ⟨f a, f.map_positivePart_le ⟨a, a.property, rfl⟩⟩ := by
+  simp [homogeneousMap]
 
 /-- The identity induces the identity on the degree-`p` indecomposables. -/
 @[simp]
@@ -593,14 +591,19 @@ theorem homogeneousMap_id (p : ℤ) :
     homogeneousMap (GradedAlgHom.id R 𝒜) p = LinearMap.id := by
   ext ⟨x, hx⟩
   obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
-  rw [homogeneousMap_mk _ ha, LinearMap.id_apply]
-  simp only [GradedAlgHom.id_apply]
+  simp [homogeneousMap_mk _ ha]
 
 /-- The maps induced on the degree-`p` indecomposables are functorial. -/
 theorem homogeneousMap_comp (g : ℬ →ₐᵍ[R] 𝒞) (f : 𝒜 →ₐᵍ[R] ℬ) (p : ℤ) :
     homogeneousMap (g.comp f) p = homogeneousMap g p ∘ₗ homogeneousMap f p := by
   ext ⟨x, hx⟩
   obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
-  exact homogeneousMap_mk _ ha
+  have hf : homogeneousMap f p ⟨mk 𝒜 a, hx⟩ =
+      ⟨mk ℬ ⟨f a, f.map_positivePart_le ⟨a, a.property, rfl⟩⟩,
+        mk_mem_homogeneousSubmodule (Graded.map_mem f ha)⟩ :=
+    Subtype.ext (homogeneousMap_mk f ha)
+  rw [LinearMap.comp_apply, hf, homogeneousMap_mk _ ha,
+    homogeneousMap_mk g (a := ⟨f a, _⟩) (Graded.map_mem f ha)]
+  simp only [GradedAlgHom.comp_apply]
 
 end TauCeti.Indecomposables
