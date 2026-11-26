@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.RayClass
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.RemainderMellin
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
+public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder.Basic
 import Mathlib.NumberTheory.LSeries.Injectivity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.VonMangoldtCoeff
 
@@ -16,8 +17,9 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Von
 
 Under `PrimitiveDirichletCharacter.toPrimitiveRayClassCharacter`, the ideal von Mangoldt
 coefficients grouped by norm become `χ(n) Λ(n)`. This identifies the inputs to first Riesz
-smoothing on the two sides. Their meromorphic Mellin expressions also agree, including at
-conductor one: the expression is normalized from punctured germs, so it does not depend on
+smoothing on the two sides. The main-term correction uses the Dirichlet logarithmic derivative
+for nontrivial characters and Euler's constant for the trivial character. The meromorphic
+Mellin expressions also agree: their normalization from punctured germs does not depend on
 which value the input L-function takes at its pole.
 -/
 
@@ -65,6 +67,43 @@ by norm gives the twisted von Mangoldt coefficients of the corresponding Dirichl
     rw [← χ.toIdealArithmeticFunction_eq_val] at hlog
     rw [LSeries_normCoeff ℚ (hsum hx'), ← neg_inj, ← hlog, hseries, logDeriv_apply,
       DirichletCharacter.LSeries_twist_vonMangoldt_eq _ hx', neg_div, neg_neg]
+
+/-- The rational ray class remainder of a nontrivial primitive Dirichlet character uses the
+Dirichlet coefficients and the Dirichlet logarithmic derivative at `1`. -/
+theorem rieszRemainder_toPrimitiveRayClassCharacter_of_ne_one
+    (ψ : PrimitiveDirichletCharacter) (hψ : ψ ≠ 1) (y : ℝ) :
+    (toPrimitiveRayClassCharacter ψ).rieszRemainder y =
+      rieszSum (fun n ↦ ψ.character n * Λ n) y + (y : ℂ) * logDeriv ψ.character.LFunction 1 := by
+  have hη : toPrimitiveRayClassCharacter ψ ≠ 1 := by
+    rw [← toPrimitiveRayClassCharacter_one]
+    exact fun h ↦ hψ (toPrimitiveRayClassCharacter.injective h)
+  have hχ : ψ.character ≠ 1 := by
+    intro h
+    exact hψ (by rw [← of_character ψ, h, of_one])
+  have hL : heckeLFunctionC (toPrimitiveRayClassCharacter ψ).character = ψ.character.LFunction :=
+    funext fun _ ↦ ψ.heckeLFunctionC_toPrimitiveRayClassCharacter_apply (.inr hχ)
+  have hcoeff : (toPrimitiveRayClassCharacter ψ).rieszCoeff = fun n : ℕ ↦ ψ.character n * Λ n :=
+    (PrimitiveRayClassCharacter.rieszCoeff_def _).trans
+      (funext (normCoeff_vonMangoldtTransform_toPrimitiveRayClassCharacter ψ))
+  rw [PrimitiveRayClassCharacter.rieszRemainder_of_ne_one _ hη, hcoeff, hL]
+
+/-- For the trivial rational ray class character the coefficients are `Λ(n)` and the
+logarithmic main term uses Euler's constant. -/
+theorem rieszRemainder_one_rat (y : ℝ) :
+    (1 : PrimitiveRayClassCharacter ℚ).rieszRemainder y =
+      rieszSum (fun n ↦ (Λ n : ℂ)) y +
+        ((y * (1 + Real.eulerMascheroniConstant) - y * Real.log y : ℝ) : ℂ) := by
+  have h := funext (normCoeff_vonMangoldtTransform_toPrimitiveRayClassCharacter 1)
+  simp only [← PrimitiveRayClassCharacter.rieszCoeff_def, toPrimitiveRayClassCharacter_one,
+    PrimitiveRayClassCharacter.rieszCoeff_one] at h
+  have hχ (n : ℕ) : (1 : PrimitiveDirichletCharacter).character n = 1 := by
+    rw [character_one, MulChar.one_apply]
+    have : Subsingleton (ZMod (1 : PrimitiveDirichletCharacter).level) := by
+      rw [level_one]
+      exact (inferInstance : Subsingleton (ZMod 1))
+    exact isUnit_of_subsingleton _
+  simp only [PrimitiveRayClassCharacter.rieszRemainder_one,
+    NumberField.eulerKroneckerConstant_rat, h, hχ, one_mul]
 
 /-- The first Riesz Mellin expressions of a primitive Dirichlet character and its rational
 ray class character agree as meromorphic normal forms. -/
