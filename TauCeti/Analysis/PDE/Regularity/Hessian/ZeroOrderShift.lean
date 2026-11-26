@@ -15,6 +15,9 @@ import TauCeti.Analysis.Matrix.Contraction.LpNorm
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Analysis.Sobolev.Wkp.Interpolation
 import TauCeti.Analysis.Matrix.EuclideanLin.Measurable
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.Calculus.BumpFunction.LpNorm
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 
 /-!
 # The whole-space `W^{2,p}` estimate with a zero-order shift, for VMO coefficients
@@ -48,7 +51,7 @@ The estimate for the zero-order term is Agmon's device of an extra variable.
   `g = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼφ - μ φ`, and let `η(t) = ζ(t) cos(k t + θ)` for a fixed bump function `ζ`.
   Then `v(t, x) = φ(x) η(t)` solves `∑ᵢⱼ ãᵢⱼ ∂ᵢ∂ⱼv = g(x) η(t) + φ(x) (η'' + k² η)(t)`, and
   `η'' + k² η = ζ'' cos - 2 k ζ' sin` involves no factor `k²`. The estimate for `v`, whose
-  `Lᵖ` norms factor (`EuclideanSpace.lpNorm_mul_comp_consEquivL_symm`), and the lower bound
+  `Lᵖ` norms factor (`EuclideanSpace.lpNorm_smul_comp_consEquivL_symm`), and the lower bound
   `‖D²v‖ ≥ ‖∂ₜ²v‖ = ‖φ‖ ‖η''‖` give `k² ‖η‖ ‖φ‖ ≤ C (‖ζ‖ ‖g‖ + (1 + k + r₀⁻²) ‖φ‖)` up to
   constants depending on `ζ`.
 * **Two phases.** Since `|cos| + |sin| ≥ 1`, the phases `θ = 0` and `θ = -π/2` together carry the
@@ -207,6 +210,14 @@ section Tensor
 
 variable {m : ℕ}
 
+/-- The projection `(t, x) ↦ x` of `ℝ^{m+1} = ℝ × ℝ^m` onto the old variables. -/
+private abbrev consSndCLM (m : ℕ) : EuclideanSpace ℝ (Fin (m + 1)) →L[ℝ] EuclideanSpace ℝ (Fin m) :=
+  ContinuousLinearMap.snd ℝ ℝ _ ∘L (consEquivL ℝ m).symm.toContinuousLinearMap
+
+/-- The projection `(t, x) ↦ t` of `ℝ^{m+1} = ℝ × ℝ^m` onto the new variable. -/
+private abbrev consFstCLM (m : ℕ) : EuclideanSpace ℝ (Fin (m + 1)) →L[ℝ] ℝ :=
+  ContinuousLinearMap.fst ℝ ℝ _ ∘L (consEquivL ℝ m).symm.toContinuousLinearMap
+
 /-- The second derivative of `y ↦ φ(x) η(t)`, `y = (t, x)`, in the new direction is
 `φ(x) η''(t)`. -/
 private theorem fderiv_fderiv_tensor_single_zero {φ : EuclideanSpace ℝ (Fin m) → ℝ}
@@ -214,9 +225,7 @@ private theorem fderiv_fderiv_tensor_single_zero {φ : EuclideanSpace ℝ (Fin m
     fderiv ℝ (fderiv ℝ fun y => φ ((consEquivL ℝ m).symm y).2 * η ((consEquivL ℝ m).symm y).1) y
         (EuclideanSpace.single 0 1) (EuclideanSpace.single 0 1) =
       φ ((consEquivL ℝ m).symm y).2 * iteratedDeriv 2 η ((consEquivL ℝ m).symm y).1 := by
-  have h := fderiv_fderiv_mul_comp_apply (φ := φ) (η := η)
-    ((ContinuousLinearMap.snd ℝ ℝ _).comp ((consEquivL ℝ m).symm.toContinuousLinearMap))
-    ((ContinuousLinearMap.fst ℝ ℝ _).comp ((consEquivL ℝ m).symm.toContinuousLinearMap)) (y := y)
+  have h := fderiv_fderiv_mul_comp_apply (φ := φ) (η := η) (consSndCLM m) (consFstCLM m) (y := y)
     hφ.contDiffAt hη.contDiffAt (EuclideanSpace.single 0 1) (EuclideanSpace.single 0 1)
   simpa using h
 
@@ -229,9 +238,7 @@ private theorem fderiv_fderiv_tensor_single_succ {φ : EuclideanSpace ℝ (Fin m
         (EuclideanSpace.single i.succ 1) (EuclideanSpace.single j.succ 1) =
       η ((consEquivL ℝ m).symm y).1 * fderiv ℝ (fderiv ℝ φ) ((consEquivL ℝ m).symm y).2
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
-  have h := fderiv_fderiv_mul_comp_apply (φ := φ) (η := η)
-    ((ContinuousLinearMap.snd ℝ ℝ _).comp ((consEquivL ℝ m).symm.toContinuousLinearMap))
-    ((ContinuousLinearMap.fst ℝ ℝ _).comp ((consEquivL ℝ m).symm.toContinuousLinearMap)) (y := y)
+  have h := fderiv_fderiv_mul_comp_apply (φ := φ) (η := η) (consSndCLM m) (consFstCLM m) (y := y)
     hφ.contDiffAt hη.contDiffAt (EuclideanSpace.single i.succ 1) (EuclideanSpace.single j.succ 1)
   simpa using h
 
@@ -270,11 +277,8 @@ private theorem exists_wkp_tensor {φ : EuclideanSpace ℝ (Fin m) → ℝ} {η 
               (EuclideanSpace.single j 1) := by
   set v := fun y => φ ((consEquivL ℝ m).symm y).2 * η ((consEquivL ℝ m).symm y).1
   have hv : ContDiff ℝ 2 v :=
-    (hφ.comp (ContinuousLinearMap.snd ℝ ℝ _ ∘L
-      (consEquivL ℝ m).symm.toContinuousLinearMap).contDiff).mul
-    (hη.comp (ContinuousLinearMap.fst ℝ ℝ _ ∘L
-      (consEquivL ℝ m).symm.toContinuousLinearMap).contDiff)
-  have hvc : HasCompactSupport v := hφc.mul_comp_consEquivL_symm hηc
+    (hφ.comp (consSndCLM m).contDiff).mul (hη.comp (consFstCLM m).contDiff)
+  have hvc : HasCompactSupport v := hφc.smul_comp_consEquivL_symm hηc
   obtain ⟨V, hV, -⟩ := Wkp.exists_value_ae_eq_and_norm_le (p := p) (k := 2)
     (mu := (volume : Measure (EuclideanSpace ℝ (Fin (m + 1))))) hv fun i hi =>
       (hv.continuous_iteratedFDeriv (by exact_mod_cast hi)).memLp_of_hasCompactSupport
@@ -288,6 +292,48 @@ private theorem exists_wkp_tensor {φ : EuclideanSpace ℝ (Fin m) → ℝ} {η 
 
 /-! ### Agmon's inequality -/
 
+/-- The Calderón–Zygmund estimate `‖D²V‖ ≤ C (‖∑ᵢⱼ ãᵢⱼ ∂ᵢ∂ⱼV‖ + r₀⁻² ‖V‖)` on
+`W^{2,p}(ℝ^{m+1})` for the coefficient `ã = diag(1, a)`, the hypothesis of Agmon's argument. -/
+private def ExtCoeffEstimate (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (a : EuclideanSpace ℝ (Fin m) → Matrix (Fin m) (Fin m) ℝ) (C r₀ : ℝ) : Prop :=
+  ∀ (V : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (m + 1)))) ⊤ p 2)
+    (F : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (m + 1)))).restrict
+      (⊤ : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (m + 1)))))),
+    (∀ᵐ y, ∑ i, ∑ j, extCoeff a y i j * ⟪Wkp.iteratedGradient 1 V y
+      (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = F y) →
+    ‖Wkp.iteratedGradient 1 V‖ ≤ C * (‖F‖ + (r₀ ^ 2)⁻¹ * ‖Wkp.value 2 V‖)
+
+omit [Fact (1 ≤ p)] in
+/-- The second derivative of a `C²` function with compact support on `ℝ` is in every `Lᵖ`. -/
+private theorem memLp_iteratedDeriv_two {η : ℝ → ℝ} (hη : ContDiff ℝ 2 η)
+    (hηc : HasCompactSupport η) : MemLp (iteratedDeriv 2 η) p volume :=
+  hη.memLp_iteratedFDeriv_apply_of_hasCompactSupport le_rfl hηc fun _ => 1
+
+omit [Fact (1 ≤ p)] in
+/-- Multiplying by a measurable function bounded by `1` keeps a function in `Lᵖ` and does not
+increase its `Lᵖ` norm. -/
+private theorem memLp_mul_and_lpNorm_mul_le {f ψ : ℝ → ℝ} (hf : MemLp f p volume)
+    (hψ : AEStronglyMeasurable ψ volume) (hψ1 : ∀ t, |ψ t| ≤ 1) :
+    MemLp (fun t => f t * ψ t) p volume ∧
+      lpNorm (fun t => f t * ψ t) p volume ≤ lpNorm f p volume := by
+  refine ⟨hf.of_le_mul (c := 1) (hf.aestronglyMeasurable.mul hψ) (.of_forall fun t => ?_), ?_⟩
+  · rw [norm_mul, one_mul]
+    exact mul_le_of_le_one_right (norm_nonneg _) (by simpa using hψ1 t)
+  · have h := lpNorm_smul_le_mul_lpNorm_of_ae_le (c := 1) hf (.of_forall fun t => by
+      simpa using hψ1 t) (ψ := ψ)
+    simp only [smul_eq_mul, one_mul] at h
+    simpa only [mul_comm] using h
+
+omit [Fact (1 ≤ p)] in
+/-- Multiplying by `cos (k t + θ)` keeps a function in `Lᵖ` and does not increase its `Lᵖ`
+norm. -/
+private theorem memLp_mul_cos_and_lpNorm_le {f : ℝ → ℝ} (hf : MemLp f p volume) (k θ : ℝ) :
+    MemLp (fun t => f t * Real.cos (k * t + θ)) p volume ∧
+      lpNorm (fun t => f t * Real.cos (k * t + θ)) p volume ≤ lpNorm f p volume :=
+  memLp_mul_and_lpNorm_mul_le hf
+    ((by fun_prop : Continuous fun t => Real.cos (k * t + θ)).aestronglyMeasurable)
+    fun t => Real.abs_cos_le_one _
+
 /-- **Agmon's inequality for a tensor product.** Suppose the Calderón–Zygmund estimate
 `‖D²V‖ ≤ C (‖∑ᵢⱼ ãᵢⱼ ∂ᵢ∂ⱼV‖ + r₀⁻² ‖V‖)` holds on `W^{2,p}(ℝ^{m+1})` for the coefficient
 `ã = diag(1, a)`. Let `φ` and `η` be `C²` with compact support and
@@ -295,12 +341,7 @@ private theorem exists_wkp_tensor {φ : EuclideanSpace ℝ (Fin m) → ℝ} {η 
 `‖η''‖ ‖φ‖ ≤ C (‖η‖ ‖g‖ + ‖η'' + μ η‖ ‖φ‖ + r₀⁻² ‖η‖ ‖φ‖)`. -/
 private theorem lpNorm_iteratedDeriv_two_mul_lpNorm_le {C r₀ μ : ℝ} (hC : 0 ≤ C)
     {a : EuclideanSpace ℝ (Fin m) → Matrix (Fin m) (Fin m) ℝ}
-    (hest : ∀ (V : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (m + 1)))) ⊤ p 2)
-      (F : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (m + 1)))).restrict
-        (⊤ : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (m + 1)))))),
-      (∀ᵐ y, ∑ i, ∑ j, extCoeff a y i j * ⟪Wkp.iteratedGradient 1 V y
-        (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = F y) →
-      ‖Wkp.iteratedGradient 1 V‖ ≤ C * (‖F‖ + (r₀ ^ 2)⁻¹ * ‖Wkp.value 2 V‖))
+    (hest : ExtCoeffEstimate p a C r₀)
     {φ : EuclideanSpace ℝ (Fin m) → ℝ} (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
     {η : ℝ → ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
     {g : EuclideanSpace ℝ (Fin m) → ℝ} (hg : MemLp g p volume)
@@ -312,14 +353,16 @@ private theorem lpNorm_iteratedDeriv_two_mul_lpNorm_le {C r₀ μ : ℝ} (hC : 0
           (r₀ ^ 2)⁻¹ * (lpNorm η p volume * lpNorm φ p volume)) := by
   obtain ⟨V, hV, hH⟩ := exists_wkp_tensor (p := p) hφ hφc hη hηc
   set ρ := fun t => iteratedDeriv 2 η t + μ * η t
-  have hη2 : iteratedDeriv 2 η = deriv (deriv η) := by simp [iteratedDeriv_succ]
   have hφp : MemLp φ p volume := hφ.continuous.memLp_of_hasCompactSupport hφc
   have hηp : MemLp η p volume := hη.continuous.memLp_of_hasCompactSupport hηc
-  have hη2p : MemLp (iteratedDeriv 2 η) p volume :=
-    (hη.continuous_iteratedDeriv 2 le_rfl).memLp_of_hasCompactSupport (hη2 ▸ hηc.deriv.deriv)
-  have h1 := hg.mul_comp_consEquivL_symm hηp
+  have hη2p : MemLp (iteratedDeriv 2 η) p volume := memLp_iteratedDeriv_two hη hηc
+  have h1 : MemLp (fun y => g ((consEquivL ℝ m).symm y).2 * η ((consEquivL ℝ m).symm y).1) p
+      volume :=
+    hg.smul_comp_consEquivL_symm hηp
   have hρp : MemLp ρ p volume := hη2p.add (hηp.const_mul μ)
-  have h2 := hφp.mul_comp_consEquivL_symm hρp
+  have h2 : MemLp (fun y => φ ((consEquivL ℝ m).symm y).2 * ρ ((consEquivL ℝ m).symm y).1) p
+      volume :=
+    hφp.smul_comp_consEquivL_symm hρp
   have hF := h1.add h2
   rw [← Measure.restrict_coe_opens_top volume] at hF
   have heq : ∀ᵐ y, ∑ i, ∑ j, extCoeff a y i j * ⟪Wkp.iteratedGradient 1 V y
@@ -334,13 +377,13 @@ private theorem lpNorm_iteratedDeriv_two_mul_lpNorm_le {C r₀ μ : ℝ} (hC : 0
   have hFn : ‖hF.toLp _‖ ≤ lpNorm η p volume * lpNorm g p volume +
       lpNorm ρ p volume * lpNorm φ p volume := by
     rw [Lp.norm_toLp, ← lpNorm, Measure.restrict_coe_opens_top,
-      ← lpNorm_mul_comp_consEquivL_symm hg.aestronglyMeasurable hηp.aestronglyMeasurable,
-      ← lpNorm_mul_comp_consEquivL_symm hφp.aestronglyMeasurable hρp.aestronglyMeasurable]
+      ← lpNorm_smul_comp_consEquivL_symm hg.aestronglyMeasurable hηp.aestronglyMeasurable,
+      ← lpNorm_smul_comp_consEquivL_symm hφp.aestronglyMeasurable hρp.aestronglyMeasurable]
     exact lpNorm_add_le h1 Fact.out
   have hVn : ‖Wkp.value 2 V‖ = lpNorm η p volume * lpNorm φ p volume := by
     rw [Lp.norm_eq_lpNorm_of_ae_eq (hV.filter_mono (Measure.ae_restrict_coe_opens_top _).le),
-      Measure.restrict_coe_opens_top,
-      lpNorm_mul_comp_consEquivL_symm hφp.aestronglyMeasurable hηp.aestronglyMeasurable]
+      Measure.restrict_coe_opens_top]
+    exact lpNorm_smul_comp_consEquivL_symm hφp.aestronglyMeasurable hηp.aestronglyMeasurable
   have hDn : lpNorm (iteratedDeriv 2 η) p volume * lpNorm φ p volume ≤
       ‖Wkp.iteratedGradient 1 V‖ := by
     have hae : ∀ᵐ y, ‖φ ((consEquivL ℝ m).symm y).2 * iteratedDeriv 2 η ((consEquivL ℝ m).symm y).1‖
@@ -350,9 +393,9 @@ private theorem lpNorm_iteratedDeriv_two_mul_lpNorm_le {C r₀ μ : ℝ} (hC : 0
       refine (PiLp.norm_apply_le _ _).trans ((ContinuousLinearMap.le_opNorm _ _).trans ?_)
       simp
     have h := lpNorm_le_mul_lpNorm_of_ae_le_mul
-      (hφp.mul_comp_consEquivL_symm hη2p).aestronglyMeasurable
+      (hφp.smul_comp_consEquivL_symm hη2p).aestronglyMeasurable
       (Lp.memLp_of_restrict_coe_opens_top (Wkp.iteratedGradient 1 V)) hae
-    rwa [one_mul, lpNorm_mul_comp_consEquivL_symm hφp.aestronglyMeasurable
+    rwa [one_mul, lpNorm_smul_comp_consEquivL_symm hφp.aestronglyMeasurable
       hη2p.aestronglyMeasurable, ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top] at h
   calc _ ≤ ‖Wkp.iteratedGradient 1 V‖ := hDn
     _ ≤ _ := key
@@ -360,40 +403,10 @@ private theorem lpNorm_iteratedDeriv_two_mul_lpNorm_le {C r₀ μ : ℝ} (hC : 0
 
 /-! ### The oscillating cutoffs -/
 
-/-- The second derivative of `t ↦ ζ(t) cos(k t + θ)`. -/
-private theorem iteratedDeriv_two_mul_cos {ζ : ℝ → ℝ} (hζ : ContDiff ℝ 2 ζ) (k θ t : ℝ) :
-    iteratedDeriv 2 (fun t => ζ t * Real.cos (k * t + θ)) t =
-      iteratedDeriv 2 ζ t * Real.cos (k * t + θ) -
-        2 * k * (deriv ζ t * Real.sin (k * t + θ)) - k ^ 2 * (ζ t * Real.cos (k * t + θ)) := by
-  have hζ1 : Differentiable ℝ ζ := hζ.differentiable two_ne_zero
-  have hζ2 : Differentiable ℝ (deriv ζ) :=
-    (hζ.iterate_deriv' 1 1).differentiable one_ne_zero
-  have hc (t : ℝ) : HasDerivAt (fun t => k * t + θ) k t := by
-    simpa using ((hasDerivAt_id' t).const_mul k).add_const θ
-  have hd : deriv (fun t => ζ t * Real.cos (k * t + θ)) =
-      fun t => deriv ζ t * Real.cos (k * t + θ) - k * (ζ t * Real.sin (k * t + θ)) := by
-    ext t
-    refine ((hζ1 t).hasDerivAt.mul (hc t).cos).deriv.trans ?_
-    ring
-  have hd2 := ((hζ2 t).hasDerivAt.mul (hc t).cos).sub
-    (((hζ1 t).hasDerivAt.mul (hc t).sin).const_mul k)
-  rw [iteratedDeriv_succ, iteratedDeriv_one, hd, iteratedDeriv_succ, iteratedDeriv_one]
-  refine hd2.deriv.trans ?_
-  ring
-
-/-- `t ↦ ζ(t) cos(k t + θ)` is `C²` with compact support when `ζ` is. -/
+/-- `t ↦ ζ(t) cos(k t + θ)` is `C²` when `ζ` is. -/
 private theorem contDiff_mul_cos {ζ : ℝ → ℝ} (hζ : ContDiff ℝ 2 ζ) (k θ : ℝ) :
     ContDiff ℝ 2 fun t => ζ t * Real.cos (k * t + θ) :=
   hζ.mul (Real.contDiff_cos.comp ((contDiff_const.mul contDiff_id).add contDiff_const))
-
-omit [Fact (1 ≤ p)] in
-/-- Multiplying by `cos (k t + θ)` does not increase an `Lᵖ` norm. -/
-private theorem lpNorm_mul_cos_le {f : ℝ → ℝ} (hf : MemLp f p volume) (k θ : ℝ) :
-    lpNorm (fun t => f t * Real.cos (k * t + θ)) p volume ≤ lpNorm f p volume := by
-  have h := lpNorm_smul_le_mul_lpNorm_of_ae_le (ψ := fun t => Real.cos (k * t + θ)) (c := 1)
-    hf (.of_forall fun t => by simpa using Real.abs_cos_le_one _)
-  simp only [smul_eq_mul, one_mul] at h
-  simpa only [mul_comm] using h
 
 /-- The remainder `η'' + k² η = ζ'' cos(k t + θ) - 2 k ζ' sin(k t + θ)` of
 `η(t) = ζ(t) cos(k t + θ)` has `Lᵖ` norm at most `‖ζ''‖ + 2 |k| ‖ζ'‖`. -/
@@ -402,32 +415,21 @@ private theorem lpNorm_iteratedDeriv_two_mul_cos_add_le {ζ : ℝ → ℝ} (hζ 
     lpNorm (fun t => iteratedDeriv 2 (fun t => ζ t * Real.cos (k * t + θ)) t +
         k ^ 2 * (ζ t * Real.cos (k * t + θ))) p volume ≤
       lpNorm (iteratedDeriv 2 ζ) p volume + 2 * |k| * lpNorm (deriv ζ) p volume := by
-  have h2 : MemLp (iteratedDeriv 2 ζ) p volume :=
-    (hζ.continuous_iteratedDeriv 2 le_rfl).memLp_of_hasCompactSupport
-      (by simpa [iteratedDeriv_succ] using hζc.deriv.deriv)
   have h1 : MemLp (deriv ζ) p volume :=
     (hζ.continuous_deriv one_le_two).memLp_of_hasCompactSupport hζc.deriv
-  have hsin : lpNorm (fun t => deriv ζ t * Real.sin (k * t + θ)) p volume ≤
-      lpNorm (deriv ζ) p volume := by
-    have h := lpNorm_smul_le_mul_lpNorm_of_ae_le (ψ := fun t => Real.sin (k * t + θ)) (c := 1)
-      h1 (.of_forall fun t => by simpa using Real.abs_sin_le_one _)
-    simp only [smul_eq_mul, one_mul] at h
-    simpa only [mul_comm] using h
-  have hc : MemLp (fun t => iteratedDeriv 2 ζ t * Real.cos (k * t + θ)) p volume := by
-    refine h2.of_le_mul (c := 1) ((h2.aestronglyMeasurable.mul (Real.continuous_cos.comp
-      ((continuous_const.mul continuous_id).add continuous_const)).aestronglyMeasurable))
-      (.of_forall fun t => ?_)
-    rw [norm_mul, one_mul]
-    exact mul_le_of_le_one_right (norm_nonneg _) (by simpa using Real.abs_cos_le_one _)
+  obtain ⟨hc, hcn⟩ := memLp_mul_cos_and_lpNorm_le (memLp_iteratedDeriv_two (p := p) hζ hζc) k θ
+  have hsin := (memLp_mul_and_lpNorm_mul_le h1
+    ((by fun_prop : Continuous fun t => Real.sin (k * t + θ)).aestronglyMeasurable)
+    fun t => Real.abs_sin_le_one _).2
   simp_rw [iteratedDeriv_two_mul_cos hζ, sub_add_cancel]
   calc _ ≤ lpNorm (fun t => iteratedDeriv 2 ζ t * Real.cos (k * t + θ)) p volume +
         lpNorm (fun t => 2 * k * (deriv ζ t * Real.sin (k * t + θ))) p volume :=
         lpNorm_sub_le hc Fact.out
     _ ≤ _ := by
         gcongr
-        · exact lpNorm_mul_cos_le h2 k θ
         · rw [show (fun t => 2 * k * (deriv ζ t * Real.sin (k * t + θ))) =
-            (2 * k) • fun t => deriv ζ t * Real.sin (k * t + θ) from rfl, lpNorm_const_smul]
+            (2 * k) • fun t => deriv ζ t * Real.sin (k * t + θ) by
+              ext t; simp only [Pi.smul_apply, smul_eq_mul], lpNorm_const_smul]
           simp only [nnNorm_mul, Real.nnNorm_ofNat, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm,
             Real.norm_eq_abs]
           gcongr
@@ -438,12 +440,7 @@ private theorem lpNorm_le_lpNorm_mul_cos_add_lpNorm_mul_cos {ζ : ℝ → ℝ} (
     (k : ℝ) :
     lpNorm ζ p volume ≤ lpNorm (fun t => ζ t * Real.cos (k * t + 0)) p volume +
       lpNorm (fun t => ζ t * Real.cos (k * t + -(Real.pi / 2))) p volume := by
-  have hm (θ : ℝ) : MemLp (fun t => ζ t * Real.cos (k * t + θ)) p volume := by
-    refine hζ.of_le_mul (c := 1) ((hζ.aestronglyMeasurable.mul (Real.continuous_cos.comp
-      ((continuous_const.mul continuous_id).add continuous_const)).aestronglyMeasurable))
-      (.of_forall fun t => ?_)
-    rw [norm_mul, one_mul]
-    exact mul_le_of_le_one_right (norm_nonneg _) (by simpa using Real.abs_cos_le_one _)
+  have hm (θ : ℝ) := (memLp_mul_cos_and_lpNorm_le hζ k θ).1
   have hsum := (hm 0).norm.add (hm (-(Real.pi / 2))).norm
   have h := lpNorm_le_mul_lpNorm_of_ae_le_mul (c := 1) hζ.aestronglyMeasurable hsum
     (.of_forall fun t => ?_)
@@ -464,12 +461,7 @@ private theorem lpNorm_le_lpNorm_mul_cos_add_lpNorm_mul_cos {ζ : ℝ → ℝ} (
 `R = ‖ζ''‖ + 2 |k| ‖ζ'‖`, `k² ‖η‖ ‖φ‖ ≤ C (‖ζ‖ ‖g‖ + R ‖φ‖ + r₀⁻² ‖ζ‖ ‖φ‖) + R ‖φ‖`. -/
 private theorem sq_mul_lpNorm_mul_cos_mul_lpNorm_le {C r₀ k : ℝ} (hC : 0 ≤ C)
     {a : EuclideanSpace ℝ (Fin m) → Matrix (Fin m) (Fin m) ℝ}
-    (hest : ∀ (V : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (m + 1)))) ⊤ p 2)
-      (F : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (m + 1)))).restrict
-        (⊤ : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (m + 1)))))),
-      (∀ᵐ y, ∑ i, ∑ j, extCoeff a y i j * ⟪Wkp.iteratedGradient 1 V y
-        (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = F y) →
-      ‖Wkp.iteratedGradient 1 V‖ ≤ C * (‖F‖ + (r₀ ^ 2)⁻¹ * ‖Wkp.value 2 V‖))
+    (hest : ExtCoeffEstimate p a C r₀)
     {ζ : ℝ → ℝ} (hζ : ContDiff ℝ 2 ζ) (hζc : HasCompactSupport ζ)
     {φ : EuclideanSpace ℝ (Fin m) → ℝ} (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
     {g : EuclideanSpace ℝ (Fin m) → ℝ} (hg : MemLp g p volume)
@@ -486,10 +478,9 @@ private theorem sq_mul_lpNorm_mul_cos_mul_lpNorm_le {C r₀ k : ℝ} (hC : 0 ≤
   have hag := lpNorm_iteratedDeriv_two_mul_lpNorm_le hC hest hφ hφc hη hηc hg hgeq
   have hρ := lpNorm_iteratedDeriv_two_mul_cos_add_le (p := p) hζ hζc k θ
   have hζp : MemLp ζ p volume := hζ.continuous.memLp_of_hasCompactSupport hζc
-  have hN := lpNorm_mul_cos_le hζp k θ
+  have hN := (memLp_mul_cos_and_lpNorm_le hζp k θ).2
   have hη2 : MemLp (iteratedDeriv 2 fun t => ζ t * Real.cos (k * t + θ)) p volume :=
-    (hη.continuous_iteratedDeriv 2 le_rfl).memLp_of_hasCompactSupport
-      (by simpa [iteratedDeriv_succ] using hηc.deriv.deriv)
+    memLp_iteratedDeriv_two hη hηc
   have hlow : k ^ 2 * lpNorm (fun t => ζ t * Real.cos (k * t + θ)) p volume ≤
       lpNorm (iteratedDeriv 2 fun t => ζ t * Real.cos (k * t + θ)) p volume +
         lpNorm (fun t => iteratedDeriv 2 (fun t => ζ t * Real.cos (k * t + θ)) t +
@@ -511,28 +502,13 @@ private theorem sq_mul_lpNorm_mul_cos_mul_lpNorm_le {C r₀ k : ℝ} (hC : 0 ≤
       have hG := lpNorm_nonneg (f := g) (p := p) (μ := volume)
       gcongr
 
-/-- A fixed bump function on `ℝ` has positive `Lᵖ` norm. -/
-private theorem lpNorm_bump_pos (ζ : ContDiffBump (0 : ℝ)) : 0 < lpNorm ζ p volume := by
-  have hζp : MemLp ζ p volume := ζ.continuous.memLp_of_hasCompactSupport ζ.hasCompactSupport
-  refine lpNorm_nonneg.lt_of_ne fun h => ?_
-  have h0 := ((Continuous.ae_eq_iff_eq volume ζ.continuous continuous_const).1
-    ((lpNorm_eq_zero hζp (zero_lt_one.trans_le Fact.out).ne').1 h.symm))
-  have h1 : ζ 0 = 1 := ζ.one_of_mem_closedBall (mem_closedBall_self ζ.rIn_pos.le)
-  have h2 : (ζ : ℝ → ℝ) 0 = 0 := congrFun h0 0
-  exact one_ne_zero (h1.symm.trans h2)
-
 /-- **The zero-order shift for smooth functions.** If the Calderón–Zygmund estimate holds for
 `diag(1, a)` on `W^{2,p}(ℝ^{m+1})` with constants `C` and `r₀`, then there is `λ₀ > 0` such that
 every `C²` function `φ` with compact support on `ℝ^m` satisfies `μ ‖φ‖ ≤ 4 C ‖g‖` for
 `g = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼφ - μ φ` and every `μ ≥ λ₀`. -/
 private theorem exists_mul_lpNorm_le_of_contDiff {C r₀ : ℝ} (hC : 0 ≤ C)
     {a : EuclideanSpace ℝ (Fin m) → Matrix (Fin m) (Fin m) ℝ}
-    (hest : ∀ (V : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (m + 1)))) ⊤ p 2)
-      (F : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (m + 1)))).restrict
-        (⊤ : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (m + 1)))))),
-      (∀ᵐ y, ∑ i, ∑ j, extCoeff a y i j * ⟪Wkp.iteratedGradient 1 V y
-        (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = F y) →
-      ‖Wkp.iteratedGradient 1 V‖ ≤ C * (‖F‖ + (r₀ ^ 2)⁻¹ * ‖Wkp.value 2 V‖)) :
+    (hest : ExtCoeffEstimate p a C r₀) :
     ∃ lam₀ : ℝ, 0 < lam₀ ∧ ∀ μ, lam₀ ≤ μ →
       ∀ {φ : EuclideanSpace ℝ (Fin m) → ℝ}, ContDiff ℝ 2 φ → HasCompactSupport φ →
       ∀ {g : EuclideanSpace ℝ (Fin m) → ℝ}, MemLp g p volume →
@@ -545,7 +521,7 @@ private theorem exists_mul_lpNorm_le_of_contDiff {C r₀ : ℝ} (hC : 0 ≤ C)
   set Z := lpNorm ζ p volume
   set Z₁ := lpNorm (deriv ζ) p volume
   set Z₂ := lpNorm (iteratedDeriv 2 ζ) p volume
-  have hZ : 0 < Z := lpNorm_bump_pos ζ
+  have hZ : 0 < Z := ζ.lpNorm_pos (zero_lt_one.trans_le Fact.out).ne' volume
   set K₁ := (2 * (C + 1) * Z₂ + 2 * C * (r₀ ^ 2)⁻¹ * Z) / Z
   set K₂ := 4 * (C + 1) * Z₁ / Z
   refine ⟨max (4 * K₁) ((4 * K₂) ^ 2) + 1, by positivity, fun μ hμ φ hφ hφc g hg hgeq => ?_⟩
@@ -606,7 +582,8 @@ private theorem memLp_contraction_sub_mul_and_lpNorm_le
   have h1 : lpNorm (Wkp.iteratedGradient 1 w) p volume ≤ ‖w‖ := by
     rw [← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top]; exact Wkp.norm_iteratedGradient_le 1 w
   have h2 : lpNorm (fun x => μ * Wkp.value 2 w x) p volume ≤ |μ| * ‖w‖ := by
-    rw [show (fun x => μ * Wkp.value 2 w x) = μ • ⇑(Wkp.value 2 w) from rfl, lpNorm_const_smul,
+    rw [show (fun x => μ * Wkp.value 2 w x) = μ • ⇑(Wkp.value 2 w) by
+        ext x; simp only [Pi.smul_apply, smul_eq_mul], lpNorm_const_smul,
       ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top]
     simpa using mul_le_mul_of_nonneg_left (Wkp.norm_value_le 2 w) (abs_nonneg μ)
   calc _ ≤ m ^ 2 * Λ * ‖w‖ + |μ| * ‖w‖ :=

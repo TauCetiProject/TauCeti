@@ -16,13 +16,14 @@ Splitting off the first coordinate, `EuclideanSpace.consEquivL ℝ n`, identifie
 `ℝ × ℝⁿ` and its volume with the product of the volumes of `ℝ` and `ℝⁿ`
 (`EuclideanSpace.measurePreserving_consEquivL`). Write `y = (t, x)` accordingly. This file records
 how this identification acts on functions of one of the two variables and on products
-`g(x) h(t)` of such functions:
+`g(x) • h(t)` of such functions:
 
-* `EuclideanSpace.eLpNorm_mul_comp_consEquivL_symm`: the `Lᵖ` seminorm of `y ↦ g(x) h(t)` is the
-  product of the `Lᵖ` seminorms of `h` on `ℝ` and of `g` on `ℝⁿ`, for every `p`; with its `lpNorm`
-  and `MemLp` forms `EuclideanSpace.lpNorm_mul_comp_consEquivL_symm` and
-  `MeasureTheory.MemLp.mul_comp_consEquivL_symm`, and the support statement
-  `HasCompactSupport.mul_comp_consEquivL_symm`.
+* `EuclideanSpace.eLpNorm_smul_comp_consEquivL_symm`: the `Lᵖ` seminorm of `y ↦ g(x) • h(t)` is
+  the product of the `Lᵖ` seminorms of `h` on `ℝ` and of `g` on `ℝⁿ`, for every `p` and every
+  scalar action compatible with the extended norms; with its `lpNorm` and `MemLp` forms
+  `EuclideanSpace.lpNorm_smul_comp_consEquivL_symm` and
+  `MeasureTheory.MemLp.smul_comp_consEquivL_symm`, and the support statement
+  `HasCompactSupport.smul_comp_consEquivL_symm`.
 * `EuclideanSpace.setLIntegral_ball_comp_snd_consEquivL_symm_le` and
   `EuclideanSpace.setLAverage_ball_comp_snd_consEquivL_symm_le`: for a function `G` of `x` alone,
   the integral of `G` over a ball `B(c, s)` of `ℝⁿ⁺¹` is at most `2 s` times its integral over the
@@ -54,74 +55,69 @@ theorem AEStronglyMeasurable.comp_snd_consEquivL_symm {f : EuclideanSpace ℝ (F
     exact hf.comp_snd
   exact h.comp_measurePreserving hmp.symm
 
-/-- A function of the first coordinate of `ℝⁿ⁺¹` is a.e. strongly measurable when it is on
-`ℝ`. -/
-theorem AEStronglyMeasurable.comp_fst_consEquivL_symm {h : ℝ → F}
-    (hh : AEStronglyMeasurable h volume) :
-    AEStronglyMeasurable (fun y => h ((EuclideanSpace.consEquivL ℝ n).symm y).1)
-      (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) := by
-  have hmp : MeasurePreserving (EuclideanSpace.consEquivL ℝ n).toHomeomorph.toMeasurableEquiv
-      volume volume :=
-    EuclideanSpace.measurePreserving_consEquivL n
-  have h : AEStronglyMeasurable (fun z : ℝ × EuclideanSpace ℝ (Fin n) => h z.1) volume := by
-    rw [Measure.volume_eq_prod]
-    exact hh.comp_fst
-  exact h.comp_measurePreserving hmp.symm
-
 end MeasureTheory
 
-/-- The product `y ↦ g(x) h(t)` of two functions with compact support has compact support. -/
-theorem HasCompactSupport.mul_comp_consEquivL_symm {n : ℕ} {g : EuclideanSpace ℝ (Fin n) → ℝ}
-    {h : ℝ → ℝ} (hg : HasCompactSupport g) (hh : HasCompactSupport h) :
-    HasCompactSupport fun y => g ((EuclideanSpace.consEquivL ℝ n).symm y).2 *
+/-- The product `y ↦ g(x) • h(t)` of two functions with compact support has compact support. -/
+theorem HasCompactSupport.smul_comp_consEquivL_symm {n : ℕ} {𝕜 E : Type*} [Zero 𝕜] [Zero E]
+    [SMulWithZero 𝕜 E] {g : EuclideanSpace ℝ (Fin n) → 𝕜} {h : ℝ → E} (hg : HasCompactSupport g)
+    (hh : HasCompactSupport h) :
+    HasCompactSupport fun y => g ((EuclideanSpace.consEquivL ℝ n).symm y).2 •
       h ((EuclideanSpace.consEquivL ℝ n).symm y).1 := by
   refine HasCompactSupport.intro
     ((hh.prod hg).image (EuclideanSpace.consEquivL ℝ n).continuous) fun y hy => ?_
   have hy' : (EuclideanSpace.consEquivL ℝ n).symm y ∉ tsupport h ×ˢ tsupport g := fun hmem =>
     hy ⟨_, hmem, (EuclideanSpace.consEquivL ℝ n).apply_symm_apply y⟩
   rcases not_and_or.1 (mem_prod.not.1 hy') with h1 | h2
-  · rw [image_eq_zero_of_notMem_tsupport h1, mul_zero]
-  · rw [image_eq_zero_of_notMem_tsupport h2, zero_mul]
+  · rw [image_eq_zero_of_notMem_tsupport h1, smul_zero]
+  · rw [image_eq_zero_of_notMem_tsupport h2, zero_smul]
 
 namespace EuclideanSpace
 
 variable {n : ℕ} {p : ℝ≥0∞}
 
 /-- **The `Lᵖ` seminorm of a function of separated variables.** On `ℝⁿ⁺¹ = ℝ × ℝⁿ`, the `Lᵖ`
-seminorm of `y ↦ g(x) h(t)` is the product of those of `h` and `g`, for every exponent. -/
-theorem eLpNorm_mul_comp_consEquivL_symm {g : EuclideanSpace ℝ (Fin n) → ℝ} {h : ℝ → ℝ}
+seminorm of `y ↦ g(x) • h(t)` is the product of those of `h` and `g`, for every exponent. -/
+theorem eLpNorm_smul_comp_consEquivL_symm {𝕜 ε : Type*} [TopologicalSpace 𝕜]
+    [ContinuousENorm 𝕜] [TopologicalSpace ε] [ContinuousENorm ε] [SMul 𝕜 ε] [ContinuousSMul 𝕜 ε]
+    [ENormSMulClass 𝕜 ε] {g : EuclideanSpace ℝ (Fin n) → 𝕜} {h : ℝ → ε}
     (hg : AEStronglyMeasurable g volume) (hh : AEStronglyMeasurable h volume) :
-    eLpNorm (fun y => g ((consEquivL ℝ n).symm y).2 * h ((consEquivL ℝ n).symm y).1) p volume =
+    eLpNorm (fun y => g ((consEquivL ℝ n).symm y).2 • h ((consEquivL ℝ n).symm y).1) p volume =
       eLpNorm h p volume * eLpNorm g p volume := by
-  have hmp : MeasurePreserving (consEquivL ℝ n).toHomeomorph.toMeasurableEquiv volume volume :=
-    measurePreserving_consEquivL n
-  have hprod := TauCeti.eLpNorm_prod_smul (p := p) (μ := (volume : Measure ℝ))
-    (ν := (volume : Measure (EuclideanSpace ℝ (Fin n)))) hh hg
-  rw [← Measure.volume_eq_prod] at hprod
-  rw [← hprod, ← eLpNorm_comp_measurePreserving (p := p) ?_ hmp.symm]
-  · congr 1
-    ext y
-    simp [mul_comm]
-  · rw [Measure.volume_eq_prod]
-    exact hh.comp_fst.smul hg.comp_snd
+  -- `y ↦ (x, t)` carries the volume of `ℝⁿ⁺¹` to the product volume on `ℝⁿ × ℝ`.
+  have hmp : MeasurePreserving (fun y => ((consEquivL ℝ n).symm y).swap) volume
+      ((volume : Measure (EuclideanSpace ℝ (Fin n))).prod (volume : Measure ℝ)) := by
+    have he : MeasurePreserving (consEquivL ℝ n).toHomeomorph.toMeasurableEquiv volume volume :=
+      measurePreserving_consEquivL n
+    have he' := he.symm
+    rw [Measure.volume_eq_prod] at he'
+    exact Measure.measurePreserving_swap.comp he'
+  have hgh : AEStronglyMeasurable (fun z : EuclideanSpace ℝ (Fin n) × ℝ => g z.1 • h z.2)
+      (volume.prod volume) :=
+    hg.comp_fst.smul hh.comp_snd
+  rw [mul_comm, ← TauCeti.eLpNorm_prod_smul hg hh, ← eLpNorm_comp_measurePreserving hgh hmp]
+  -- The two integrands agree pointwise: `((t, x).swap).1 = x` and `((t, x).swap).2 = t`.
+  rfl
 
-/-- The `lpNorm` form of `EuclideanSpace.eLpNorm_mul_comp_consEquivL_symm`. -/
-theorem lpNorm_mul_comp_consEquivL_symm {g : EuclideanSpace ℝ (Fin n) → ℝ} {h : ℝ → ℝ}
+/-- The `lpNorm` form of `EuclideanSpace.eLpNorm_smul_comp_consEquivL_symm`. -/
+theorem lpNorm_smul_comp_consEquivL_symm {𝕜 E : Type*} [NormedAddCommGroup 𝕜]
+    [NormedAddCommGroup E] [SMul 𝕜 E] [ContinuousSMul 𝕜 E] [ENormSMulClass 𝕜 E]
+    {g : EuclideanSpace ℝ (Fin n) → 𝕜} {h : ℝ → E}
     (hg : AEStronglyMeasurable g volume) (hh : AEStronglyMeasurable h volume) :
-    lpNorm (fun y => g ((consEquivL ℝ n).symm y).2 * h ((consEquivL ℝ n).symm y).1) p volume =
+    lpNorm (fun y => g ((consEquivL ℝ n).symm y).2 • h ((consEquivL ℝ n).symm y).1) p volume =
       lpNorm h p volume * lpNorm g p volume := by
-  rw [lpNorm, eLpNorm_mul_comp_consEquivL_symm hg hh, ENNReal.toReal_mul, lpNorm, lpNorm]
+  rw [lpNorm, eLpNorm_smul_comp_consEquivL_symm hg hh, ENNReal.toReal_mul, lpNorm, lpNorm]
 
 end EuclideanSpace
 
-/-- The product `y ↦ g(x) h(t)` of an `Lᵖ` function on `ℝⁿ` and an `Lᵖ` function on `ℝ` is an
+/-- The product `y ↦ g(x) • h(t)` of an `Lᵖ` function on `ℝⁿ` and an `Lᵖ` function on `ℝ` is an
 `Lᵖ` function on `ℝⁿ⁺¹`. -/
-theorem MeasureTheory.MemLp.mul_comp_consEquivL_symm {n : ℕ} {p : ℝ≥0∞}
-    {g : EuclideanSpace ℝ (Fin n) → ℝ} {h : ℝ → ℝ} (hg : MemLp g p volume)
-    (hh : MemLp h p volume) :
-    MemLp (fun y => g ((EuclideanSpace.consEquivL ℝ n).symm y).2 *
+theorem MeasureTheory.MemLp.smul_comp_consEquivL_symm {n : ℕ} {p : ℝ≥0∞} {𝕜 ε : Type*}
+    [TopologicalSpace 𝕜] [ContinuousENorm 𝕜] [TopologicalSpace ε] [ContinuousENorm ε] [SMul 𝕜 ε]
+    [ContinuousSMul 𝕜 ε] [ENormSMulClass 𝕜 ε] {g : EuclideanSpace ℝ (Fin n) → 𝕜} {h : ℝ → ε}
+    (hg : MemLp g p volume) (hh : MemLp h p volume) :
+    MemLp (fun y => g ((EuclideanSpace.consEquivL ℝ n).symm y).2 •
       h ((EuclideanSpace.consEquivL ℝ n).symm y).1) p volume := by
-  rw [memLp_iff, EuclideanSpace.eLpNorm_mul_comp_consEquivL_symm hg.aestronglyMeasurable
+  rw [memLp_iff, EuclideanSpace.eLpNorm_smul_comp_consEquivL_symm hg.aestronglyMeasurable
     hh.aestronglyMeasurable]
   exact ENNReal.mul_lt_top hh.eLpNorm_lt_top hg.eLpNorm_lt_top
 
@@ -174,6 +170,30 @@ theorem ofReal_mul_volume_ball_le_volume_ball (c : EuclideanSpace ℝ (Fin (n + 
         measure_mono (hc ▸ ball_prod_ball_subset_preimage_consEquivL_ball w hs)
     _ = volume (ball c s) := hmp.measure_preimage_emb hemb _
 
+/-- The ball `B(x, s)` of `ℝⁿ` has `2ⁿ` times the volume of the ball `B(x, s / 2)`. -/
+private theorem volume_ball_eq_two_pow_mul (x : EuclideanSpace ℝ (Fin n)) (s : ℝ) :
+    volume (ball x s) = 2 ^ n * volume (ball x (s / 2)) := by
+  have h := Measure.addHaar_ball_mul_of_pos (volume : Measure (EuclideanSpace ℝ (Fin n))) x
+    two_pos (s / 2)
+  rw [mul_div_cancel₀ s two_ne_zero] at h
+  rw [h, Measure.addHaar_ball_center volume x, finrank_euclideanSpace_fin,
+    ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
+
+/-- The arithmetic of `EuclideanSpace.setLAverage_ball_comp_snd_consEquivL_symm_le`:
+`2 s I / (s V) = 2ⁿ⁺¹ (I / (2ⁿ V))` for `s > 0`. -/
+private theorem ofReal_two_mul_mul_div_ofReal_mul_eq {s : ℝ} (hs : 0 < s) (I V : ℝ≥0∞) :
+    ENNReal.ofReal (2 * s) * I / (ENNReal.ofReal s * V) = 2 ^ (n + 1) * (I / (2 ^ n * V)) := by
+  have hs0 : ENNReal.ofReal s ≠ 0 := (ENNReal.ofReal_pos.2 hs).ne'
+  have h2n : (2 : ℝ≥0∞) ^ n ≠ 0 := pow_ne_zero _ two_ne_zero
+  have h2n' : (2 : ℝ≥0∞) ^ n ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
+  rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
+  calc 2 * ENNReal.ofReal s * I / (ENNReal.ofReal s * V)
+      = ENNReal.ofReal s * (2 * I) / (ENNReal.ofReal s * V) := by congr 1; ring
+    _ = 2 ^ n * (2 * I) / (2 ^ n * V) := by
+      rw [ENNReal.mul_div_mul_left _ _ hs0 ENNReal.ofReal_ne_top,
+        ENNReal.mul_div_mul_left _ _ h2n h2n']
+    _ = 2 ^ (n + 1) * (I / (2 ^ n * V)) := by simp only [div_eq_mul_inv]; ring
+
 /-- The average over a ball `B(c, s)` of `ℝⁿ⁺¹` of a function of the last `n` coordinates is at
 most `2ⁿ⁺¹` times its average over the ball `B(x_c, s)` of `ℝⁿ`, `x_c` the last `n` coordinates of
 `c`. -/
@@ -184,25 +204,10 @@ theorem setLAverage_ball_comp_snd_consEquivL_symm_le {G : EuclideanSpace ℝ (Fi
   rcases le_or_gt s 0 with hs | hs
   · simp [ball_eq_empty.2 hs]
   set x₀ := ((consEquivL ℝ n).symm c).2
-  set V := volume (ball x₀ (s / 2))
-  have hball : volume (ball x₀ s) = 2 ^ n * V := by
-    simp only [V]
-    rw [Measure.addHaar_ball_of_pos _ _ hs, Measure.addHaar_ball_of_pos _ _ (half_pos hs),
-      finrank_euclideanSpace_fin, ← mul_assoc, show s ^ n = 2 ^ n * (s / 2) ^ n by
-        rw [← mul_pow]; ring_nf, ENNReal.ofReal_mul (by positivity),
-      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
-  have hs0 : ENNReal.ofReal s ≠ 0 := (ENNReal.ofReal_pos.2 hs).ne'
-  rw [setLAverage_eq, setLAverage_eq, hball]
-  calc (∫⁻ y in ball c s, G ((consEquivL ℝ n).symm y).2) / volume (ball c s)
-      ≤ (ENNReal.ofReal (2 * s) * ∫⁻ x in ball x₀ s, G x) / (ENNReal.ofReal s * V) :=
-        ENNReal.div_le_div (setLIntegral_ball_comp_snd_consEquivL_symm_le hG c s)
-          (ofReal_mul_volume_ball_le_volume_ball c hs)
-    _ = 2 ^ (n + 1) * ((∫⁻ x in ball x₀ s, G x) / (2 ^ n * V)) := by
-      have h2n : (2 : ℝ≥0∞) ^ n ≠ 0 := pow_ne_zero _ two_ne_zero
-      have h2n' : (2 : ℝ≥0∞) ^ n ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
-      rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat, mul_assoc, mul_left_comm,
-        ENNReal.mul_div_mul_left _ _ hs0 ENNReal.ofReal_ne_top, ← mul_div_assoc, pow_succ,
-        mul_assoc, ENNReal.mul_div_mul_left _ _ h2n h2n', mul_div_assoc]
+  rw [setLAverage_eq, setLAverage_eq, volume_ball_eq_two_pow_mul x₀ s,
+    ← ofReal_two_mul_mul_div_ofReal_mul_eq hs]
+  exact ENNReal.div_le_div (setLIntegral_ball_comp_snd_consEquivL_symm_le hG c s)
+    (ofReal_mul_volume_ball_le_volume_ball c hs)
 
 end EuclideanSpace
 
