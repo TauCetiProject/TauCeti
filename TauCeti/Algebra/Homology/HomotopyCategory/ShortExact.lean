@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.ShortExact
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.Triangulated
+public import Mathlib.CategoryTheory.Abelian.Refinements
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
@@ -38,6 +40,17 @@ complexes, with monomorphic first map `(f₂, -f₃)` and second map `g₂ + g�
 quasi-isomorphism from its cokernel, to one whose Mayer–Vietoris map out of the mapping cone of
 `(f₂, f₃)` is a quasi-isomorphism
 (`CochainComplex.mappingCone.quasiIso_desc_extendMap_of_quasiIso_cokernelDesc`).
+
+Finally, mapping cones carry short exact sequences to short exact sequences. For a morphism
+`φ : S₁ ⟶ S₂` of short exact sequences of cochain complexes, the mapping cones of its three
+components, with the maps of mapping cones induced by `S₁` and `S₂`, form a short exact sequence
+(`CochainComplex.mappingCone.shortExact_mapShortComplex`): in degree `n` it is the direct sum of
+the sequences of `S₁` in degree `n + 1` and of `S₂` in degree `n`. And for `φ : K ⟶ L`, the
+inclusion of `L` in the mapping cone of `φ` is followed by the degreewise split epimorphism onto
+the mapping cone of `K ⟶ 0`, which is `K` shifted by one
+(`CochainComplex.mappingCone.shortExact_inrShortComplex`). Short exactness is checked through the
+degreewise components of a short complex of complexes
+(`HomologicalComplex.shortExact_iff_forall_shortExact_mk`).
 -/
 
 public section
@@ -167,5 +180,122 @@ lemma quasiIso_desc_extendMap_of_quasiIso_cokernelDesc {ι : Type*} {c : Complex
     simp only [E, ComplexShape.Embedding.extendFunctor_map]
     infer_instance
   exact quasiIso_desc_of_shortExact hS _ hψ eq
+
+end CochainComplex.mappingCone
+
+/-! ### Short exact sequences of mapping cones -/
+
+namespace HomologicalComplex
+
+variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι}
+
+/-- A short complex of homological complexes is short exact exactly when, in each degree `i`, the
+short complex `S.X₁.X i ⟶ S.X₂.X i ⟶ S.X₃.X i` of its components is short exact. This is
+`HomologicalComplex.shortExact_iff_degreewise_shortExact`, with the degreewise short complexes
+written through the components `S.f.f i` and `S.g.f i`. -/
+lemma shortExact_iff_forall_shortExact_mk (S : ShortComplex (HomologicalComplex C c)) :
+    S.ShortExact ↔ ∀ i, (ShortComplex.mk (S.f.f i) (S.g.f i) (by
+      rw [← comp_f, S.zero, zero_f])).ShortExact := by
+  rw [shortExact_iff_degreewise_shortExact]
+  exact forall_congr' fun i ↦ ShortComplex.shortExact_iff_of_iso
+    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp))
+
+end HomologicalComplex
+
+namespace CochainComplex.mappingCone
+
+open HomComplex
+
+variable {C : Type*} [Category* C] [Abelian C]
+
+section MapShortComplex
+
+variable {S₁ S₂ : ShortComplex (CochainComplex C ℤ)} (φ : S₁ ⟶ S₂)
+
+/-- The mapping cones `cone φ.τ₁ ⟶ cone φ.τ₂ ⟶ cone φ.τ₃` of the components of a morphism
+`φ : S₁ ⟶ S₂` of short complexes of cochain complexes, with the maps of mapping cones induced by
+the maps of `S₁` and `S₂`. -/
+noncomputable abbrev mapShortComplex : ShortComplex (CochainComplex C ℤ) :=
+  ShortComplex.mk (map φ.τ₁ φ.τ₂ S₁.f S₂.f φ.comm₁₂) (map φ.τ₂ φ.τ₃ S₁.g S₂.g φ.comm₂₃) (by
+    have h₁ (p : ℤ) : S₁.f.f p ≫ S₁.g.f p = 0 := by
+      rw [← HomologicalComplex.comp_f, S₁.zero, HomologicalComplex.zero_f]
+    have h₂ (p : ℤ) : S₂.f.f p ≫ S₂.g.f p = 0 := by
+      rw [← HomologicalComplex.comp_f, S₂.zero, HomologicalComplex.zero_f]
+    ext n
+    apply ext_from _ (n + 1) n rfl <;> simp [reassoc_of% h₁, reassoc_of% h₂])
+
+/-- **Mapping cones of a morphism of short exact sequences form a short exact sequence.** In degree
+`n` the sequence of mapping cones is the direct sum of the sequences of `S₁` in degree `n + 1` and
+of `S₂` in degree `n`. -/
+lemma shortExact_mapShortComplex (h₁ : S₁.ShortExact) (h₂ : S₂.ShortExact) :
+    (mapShortComplex φ).ShortExact := by
+  refine (HomologicalComplex.shortExact_iff_forall_shortExact_mk _).2 fun n ↦ ?_
+  have e₁ := (HomologicalComplex.shortExact_iff_forall_shortExact_mk S₁).1 h₁ (n + 1)
+  have e₂ := (HomologicalComplex.shortExact_iff_forall_shortExact_mk S₂).1 h₂ n
+  have : Mono (S₁.f.f (n + 1)) := e₁.mono_f
+  have : Mono (S₂.f.f n) := e₂.mono_f
+  have : Epi (S₁.g.f (n + 1)) := e₁.epi_g
+  have : Epi (S₂.g.f n) := e₂.epi_g
+  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
+  · rw [ShortComplex.exact_iff_exact_up_to_refinements]
+    intro A x₂ (hx₂ : x₂ ≫ (map φ.τ₂ φ.τ₃ S₁.g S₂.g φ.comm₂₃).f n = 0)
+    -- lift the two components of `x₂` along `S₁.f` and `S₂.f`, up to refinements
+    obtain ⟨A₁, π₁, _, y₁, hy₁⟩ := e₁.exact.exact_up_to_refinements
+      (x₂ ≫ (fst φ.τ₂).val.v n (n + 1) rfl) (by simpa using hx₂ =≫ (fst φ.τ₃).val.v n (n + 1) rfl)
+    obtain ⟨A₂, π₂, _, y₂, hy₂⟩ := e₂.exact.exact_up_to_refinements
+      (π₁ ≫ x₂ ≫ (snd φ.τ₂).v n n (add_zero n))
+      (by simpa using π₁ ≫= hx₂ =≫ (snd φ.τ₃).v n n (add_zero n))
+    refine ⟨A₂, π₂ ≫ π₁, inferInstance,
+      π₂ ≫ y₁ ≫ (inl φ.τ₁).v (n + 1) n (by lia) + y₂ ≫ (inr φ.τ₁).f n, ?_⟩
+    apply ext_to φ.τ₂ n (n + 1) rfl
+    · simpa using π₂ ≫= hy₁
+    · simpa using hy₂
+  · rw [Preadditive.mono_iff_cancel_zero]
+    intro A x (hx : x ≫ (map φ.τ₁ φ.τ₂ S₁.f S₂.f φ.comm₁₂).f n = 0)
+    apply ext_to φ.τ₁ n (n + 1) rfl
+    · rw [← cancel_mono (S₁.f.f (n + 1))]
+      simpa using hx =≫ (fst φ.τ₂).val.v n (n + 1) rfl
+    · rw [← cancel_mono (S₂.f.f n)]
+      simpa using hx =≫ (snd φ.τ₂).v n n (add_zero n)
+  · rw [epi_iff_surjective_up_to_refinements]
+    intro A y
+    -- lift the two components of `y` along `S₁.g` and `S₂.g`, up to refinements
+    obtain ⟨A₁, π₁, _, a, ha⟩ := surjective_up_to_refinements_of_epi (S₁.g.f (n + 1))
+      (y ≫ (fst φ.τ₃).val.v n (n + 1) rfl)
+    obtain ⟨A₂, π₂, _, b, hb⟩ := surjective_up_to_refinements_of_epi (S₂.g.f n)
+      (π₁ ≫ y ≫ (snd φ.τ₃).v n n (add_zero n))
+    refine ⟨A₂, π₂ ≫ π₁, inferInstance,
+      π₂ ≫ a ≫ (inl φ.τ₂).v (n + 1) n (by lia) + b ≫ (inr φ.τ₂).f n, ?_⟩
+    apply ext_to φ.τ₃ n (n + 1) rfl
+    · simpa using π₂ ≫= ha
+    · simpa using hb
+
+end MapShortComplex
+
+section Inr
+
+variable {K L Z : CochainComplex C ℤ} (φ : K ⟶ L) (α : K ⟶ Z) (hZ : IsZero Z)
+
+/-- For `φ : K ⟶ L` and a map `α` from `K` to a zero complex, the sequence
+`L ⟶ cone φ ⟶ cone α`: the inclusion of `L`, followed by the map of cones which forgets the summand
+`L`. The mapping cone `cone α` is `K` shifted by one, with negated differential. -/
+noncomputable abbrev inrShortComplex : ShortComplex (CochainComplex C ℤ) :=
+  ShortComplex.mk (inr φ) (map φ α (𝟙 K) 0 (by simp [hZ.eq_of_tgt α 0])) (by ext n; simp)
+
+/-- The sequence `L ⟶ cone φ ⟶ cone α` of a mapping cone, for `α` a map from `K` to a zero
+complex, is short exact, and split in each degree. -/
+lemma shortExact_inrShortComplex : (inrShortComplex φ α hZ).ShortExact := by
+  refine (HomologicalComplex.shortExact_iff_forall_shortExact_mk _).2 fun n ↦
+    ShortComplex.Splitting.shortExact
+      { r := (snd φ).v n n (add_zero n)
+        s := (fst α).val.v n (n + 1) rfl ≫ (inl φ).v (n + 1) n (by lia)
+        f_r := by simp
+        s_g := by
+          apply ext_from α (n + 1) n rfl
+          · simp
+          · exact ((HomologicalComplex.eval C _ n).map_isZero hZ).eq_of_src _ _
+        id := by simpa [add_comm] using id_X φ n (n + 1) rfl }
+
+end Inr
 
 end CochainComplex.mappingCone
