@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.Regular.Basic
 public import Mathlib.Algebra.Ring.NegOnePow
 import Mathlib.Algebra.Module.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # Powers of negative one in a ground ring
@@ -23,6 +26,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 ## Main results
 
 * `TauCeti.negOnePowCast_eq_of_even_sub`: exponents of the same parity give the same sign.
+* `TauCeti.negOnePowCast_mul_finsum`: multiplication by a ground-ring sign commutes with `finsum`.
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
 * `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
   factor is replaced by a two-term correction, telescopes.
@@ -84,6 +88,16 @@ theorem negOnePowCast_two_mul (a : ℤ) : negOnePowCast R (2 * a) = 1 := by
 @[simp]
 theorem negOnePowCast_mul_self (e : ℤ) : negOnePowCast R e * negOnePowCast R e = 1 := by
   rw [← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul]
+
+/-- The scalar `(-1) ^ e` is left-regular, since it is its own inverse. -/
+theorem isLeftRegular_negOnePowCast (e : ℤ) : IsLeftRegular (negOnePowCast R e) :=
+  isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self e)
+
+/-- Multiplication by the scalar `(-1) ^ e` commutes with `finsum`, without any finiteness
+assumption on the support. -/
+theorem negOnePowCast_mul_finsum {ι : Type uI} (e : ℤ) (f : ι → R) :
+    negOnePowCast R e * ∑ᶠ i, f i = ∑ᶠ i, negOnePowCast R e * f i :=
+  (isLeftRegular_negOnePowCast e).mul_finsum f
 
 theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
   simp [negOnePowCast, Int.negOnePow_even _ he]
