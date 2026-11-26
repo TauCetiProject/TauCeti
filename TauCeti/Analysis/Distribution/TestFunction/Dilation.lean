@@ -18,9 +18,7 @@ transport the test-field pairings that define distributional variation and perim
 dilations, and the homogeneous Sobolev norms of test functions.
 Combining dilation with translation rescales a test vector field around a point `x`
 (`TestFunction.exists_eq_comp`); for small ratios the rescaled support stays inside any
-open neighbourhood of `x` (`TauCeti.eventually_forall_tsupport_add_smul_mem`). If `V` is the
-preimage of `Ω` under a dilation, then `Ω` is the preimage of `V` under the inverse dilation
-(`TauCeti.coe_eq_preimage_inv_smul`).
+open neighbourhood of `x` (`TauCeti.eventually_forall_tsupport_add_smul_mem`).
 -/
 
 public section
@@ -34,13 +32,6 @@ open scoped Distributions Gradient Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω V : Opens E} {r : ℝ}
-
-open scoped Pointwise in
-/-- If `V` is the preimage of `Ω` under the dilation by a nonzero ratio `r`, then `Ω` is the
-preimage of `V` under the inverse dilation. -/
-theorem coe_eq_preimage_inv_smul (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
-    (Ω : Set E) = (r⁻¹ • ·) ⁻¹' V := by
-  rw [hVO, preimage_smul_inv₀ hr, preimage_smul₀ hr, smul_inv_smul₀ hr]
 
 /-- Dilate the support of a test function by `r`, regarding it as a test function on any open
 set containing the dilated original domain. -/

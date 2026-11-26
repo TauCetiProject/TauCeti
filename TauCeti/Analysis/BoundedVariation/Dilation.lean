@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.Analysis.BoundedVariation.Space
 public import TauCeti.Analysis.Distribution.TestFunction.Dilation
+public import TauCeti.Topology.Algebra.ConstMulAction
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.BoundedVariation.Translation
 
@@ -253,7 +254,8 @@ theorem memBV_comp_smul_iff (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹
     rw [hind, integrable_comp_smul_iff μ _ hr]
     exact integrable_indicator_iff Ω.isOpen.measurableSet
   · rw [totalVariationOn_comp_smul (mapsTo_iff_subset_preimage.mpr hVO.subset)
-      (mapsTo_iff_subset_preimage.mpr (coe_eq_preimage_inv_smul hr hVO).subset)]
+      (mapsTo_iff_subset_preimage.mpr
+        (eq_preimage_inv_smul_of_eq_preimage_smul₀ hr hVO).subset)]
     simp only [lt_top_iff_ne_top, ne_eq, ENNReal.mul_eq_top, hc, ENNReal.ofReal_ne_top, false_and,
       or_false, not_false_eq_true, true_and]
 
@@ -331,7 +333,7 @@ private theorem totalVariationOn_compSmulAux (hr : r ≠ 0) (hVO : (V : Set E) =
       ENNReal.ofReal (|r| / |r| ^ Module.finrank ℝ E) * totalVariationOn μ Ω u :=
   (totalVariationOn_congr_ae (coeFn_compSmulAux hr hVO u)).trans <|
     totalVariationOn_comp_smul (mapsTo_iff_subset_preimage.mpr hVO.subset)
-      (mapsTo_iff_subset_preimage.mpr (coe_eq_preimage_inv_smul hr hVO).subset)
+      (mapsTo_iff_subset_preimage.mpr (eq_preimage_inv_smul_of_eq_preimage_smul₀ hr hVO).subset)
 
 private theorem norm_compSmulAux (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω)
     (u : BV μ Ω) :
@@ -354,13 +356,13 @@ precomposition with `y ↦ r⁻¹ • y` (`TauCeti.BV.compSmul_symm`). -/
 def compSmul (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) : BV μ Ω ≃L[ℝ] BV μ V :=
   LinearEquiv.toContinuousLinearEquivOfBounds
     { toFun := compSmulAux hr hVO
-      invFun := compSmulAux (inv_ne_zero hr) (coe_eq_preimage_inv_smul hr hVO)
+      invFun := compSmulAux (inv_ne_zero hr) (eq_preimage_inv_smul_of_eq_preimage_smul₀ hr hVO)
       map_add' := compSmulAux_add hr hVO
       map_smul' := compSmulAux_smul hr hVO
       left_inv := compSmulAux_compSmulAux hr (inv_ne_zero hr) (mul_inv_cancel₀ hr) hVO _
       right_inv := compSmulAux_compSmulAux (inv_ne_zero hr) hr (inv_mul_cancel₀ hr) _ hVO }
     _ _ (norm_compSmulAux_le hr hVO)
-    (norm_compSmulAux_le (inv_ne_zero hr) (coe_eq_preimage_inv_smul hr hVO))
+    (norm_compSmulAux_le (inv_ne_zero hr) (eq_preimage_inv_smul_of_eq_preimage_smul₀ hr hVO))
 
 private theorem compSmul_apply (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) (u : BV μ Ω) :
     compSmul hr hVO u = compSmulAux hr hVO u := by
@@ -392,7 +394,7 @@ theorem compSmul_ofFunction (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹
 @[simp]
 theorem compSmul_symm (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
     (compSmul hr hVO).symm = compSmul (μ := μ) (inv_ne_zero hr)
-      (coe_eq_preimage_inv_smul hr hVO) := by
+      (eq_preimage_inv_smul_of_eq_preimage_smul₀ hr hVO) := by
   refine ContinuousLinearEquiv.ext (funext fun v => (compSmul hr hVO).injective ?_)
   rw [ContinuousLinearEquiv.apply_symm_apply, compSmul_apply, compSmul_apply]
   exact (compSmulAux_compSmulAux (inv_ne_zero hr) hr (inv_mul_cancel₀ hr) _ hVO v).symm

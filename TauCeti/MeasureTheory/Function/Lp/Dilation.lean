@@ -107,16 +107,16 @@ theorem eLpNorm_comp_smul_restrict_preimage (u : E → G) {c : ℝ} (hc : c ≠ 
     (s : Set E) :
     eLpNorm (fun x => u (c • x)) p (μ.restrict ((c • ·) ⁻¹' s)) =
       ENNReal.ofReal (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ * eLpNorm u p (μ.restrict s) := by
-  let e : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
-  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) = c ^ finrank ℝ E := by
-    rw [show (e : E →ₗ[ℝ] E) = c • LinearMap.id from rfl, LinearMap.det_smul, LinearMap.det_id,
-      mul_one]
-  change eLpNorm (u ∘ e) p (μ.restrict (e ⁻¹' s)) = _
-  rw [eLpNorm_comp_continuousLinearEquiv_restrict_preimage, hdet]
-  congr 1
-  rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) ENNReal.toReal_nonneg, abs_inv, abs_pow,
-    Real.inv_rpow (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg c), one_div,
-    ENNReal.toReal_inv, div_eq_mul_inv]
+  have he := measurableEmbedding_const_smul₀ (α := E) hc
+  rw [← Function.comp_def, ← he.eLpNorm_map_measure, ← he.restrict_map, map_addHaar_smul μ hc,
+    restrict_smul, eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
+  -- The Jacobian factor: `|c ^ n|⁻¹ ^ (1 / p) = (|c| ^ (n / p))⁻¹`.
+  have hfac : |(c ^ finrank ℝ E)⁻¹| ^ (1 / p).toReal =
+      (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ := by
+    rw [abs_inv, abs_pow, Real.inv_rpow (by positivity), ← Real.rpow_natCast,
+      ← Real.rpow_mul (abs_nonneg c)]
+    simp [div_eq_mul_inv]
+  rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) ENNReal.toReal_nonneg, hfac]
 
 variable {μ} in
 /-- Precomposition with a linear automorphism `e` maps `Lᵖ` on a set `s` to `Lᵖ` on `e ⁻¹' s`, for

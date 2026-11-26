@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
 import TauCeti.Analysis.Calculus.FDeriv.ConstSMul
-import TauCeti.Analysis.Distribution.TestFunction.Dilation
+import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Dilations in `W^{1,p}`
@@ -127,7 +128,8 @@ theorem W1p.norm_gradient_compSMulL (hp : p ≠ ⊤) (hc : c ≠ 0)
     (hUV : (U : Set E) = (c • ·) ⁻¹' V) (u : W1p mu V p) :
     ‖W1p.gradient (W1p.compSMulL mu hp hc hUV u)‖ =
       |c| * (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ * ‖W1p.gradient u‖ := by
-  have h : (fun x => c • W1p.gradient u (c • x)) = c • fun x => W1p.gradient u (c • x) := rfl
+  have h : (fun x => c • W1p.gradient u (c • x)) = c • fun x => W1p.gradient u (c • x) :=
+    (Pi.smul_def c _).symm
   rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (W1p.gradient_compSMulL_ae hp hc hUV u), h,
     eLpNorm_const_smul, hUV, Measure.eLpNorm_comp_smul_restrict_preimage mu _ hc]
   have hk : 0 ≤ (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ := by positivity
@@ -150,13 +152,11 @@ theorem W1p.setAverage_value_compSMulL (hp : p ≠ ⊤) (hc : c ≠ 0)
     ⨍ y in (c • ·) ⁻¹' S, W1p.value (W1p.compSMulL mu hp hc hUV u) y ∂mu =
       ⨍ y in S, W1p.value u y ∂mu := by
   have hSU : (c • ·) ⁻¹' S ⊆ (U : Set E) := (preimage_mono hS).trans hUV.symm.subset
-  -- Change variables by `x ↦ c • x`: the integral and the measure both pick up `|c ^ n|⁻¹`.
-  rw [setAverage_eq, setAverage_eq, integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hSU
-      (W1p.value_compSMulL_ae hp hc hUV u)), Measure.setIntegral_comp_smul mu _ _ hc,
-    measureReal_def, Measure.addHaar_preimage_smul mu hc, preimage_smul₀ hc, smul_inv_smul₀ hc,
-    smul_smul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _), ← measureReal_def]
-  -- The two factors `|c ^ n|⁻¹` cancel.
-  rw [mul_inv_rev, inv_mul_cancel_right₀ (by positivity)]
+  rw [average_congr (ae_restrict_of_ae_restrict_of_subset hSU (W1p.value_compSMulL_ae hp hc hUV u))]
+  -- Change variables by `x ↦ c • x`, which pushes `mu` forward to `|c ^ n|⁻¹ • mu`.
+  exact setAverage_comp_preimage_of_map_eq_smul
+    (e := (Homeomorph.smulOfNeZero c hc).toMeasurableEquiv) (Measure.map_addHaar_smul mu hc)
+    (by simp [hc]) ENNReal.ofReal_ne_top _ S
 
 /-- Dilating by `d` and then by `c` with `d * c = 1` is the identity: for `u ∈ W^{1,p}(U)`,
 `(u (d • ·)) (c • ·) = u`. -/
@@ -181,7 +181,7 @@ theorem W1p.compSMulL_mem_w1pVanishingOnSubmodule_iff (hp : p ≠ ⊤) (hc : c �
   exact W1p.compL_mem_w1pVanishingOnSubmodule_iff _ hp _ _ _ _ _ _ (contDiff_const_smul c)
     (Homeomorph.smulOfNeZero c hc).isProperMap (contDiff_const_smul c⁻¹)
     (Homeomorph.smulOfNeZero c⁻¹ (inv_ne_zero hc)).isProperMap
-    (mapsTo_iff_subset_preimage.mpr (coe_eq_preimage_inv_smul hc hUV).subset)
+    (mapsTo_iff_subset_preimage.mpr (eq_preimage_inv_smul_of_eq_preimage_smul₀ hc hUV).subset)
     (fun y _ => norm_fderiv_const_smul_le c⁻¹ y) (pow_pos (abs_pos.2 (inv_ne_zero hc)) _)
     (fun y _ => by rw [det_fderiv_const_smul, abs_pow]) (fun y => smul_inv_smul₀ hc y)
 

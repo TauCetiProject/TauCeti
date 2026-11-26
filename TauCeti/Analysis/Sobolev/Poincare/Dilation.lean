@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Dilation
-import TauCeti.Analysis.Distribution.TestFunction.Dilation
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Dilation scaling of the Poincaré constants
@@ -74,7 +74,7 @@ theorem W1p.forall_norm_value_le_mul_norm_gradient_iff_of_preimage_smul (hp : p 
     linarith
   · -- Test the inequality on `V` with the dilate `u (c⁻¹ • ·)`.
     intro h u hu
-    have hVU := coe_eq_preimage_inv_smul hc hUV
+    have hVU := eq_preimage_inv_smul_of_eq_preimage_smul₀ hc hUV
     have hu' : W1p.compSMulL mu hp (inv_ne_zero hc) hVU u ∈ w1pVanishingOnSubmodule mu V p Γ := by
       rw [← W1p.compSMulL_mem_w1pVanishingOnSubmodule_iff hp (inv_ne_zero hc) hVU,
         LeftInverse.preimage_preimage (f := fun x : E => c⁻¹ • x) (fun x => smul_inv_smul₀ hc x)]
@@ -118,7 +118,7 @@ theorem W1p.forall_eLpNorm_value_sub_setAverage_le_iff_of_preimage_smul (hp : p 
       _ = _ := by ring
   · -- Test the inequality on `V` with the dilate `u (c⁻¹ • ·)`.
     intro h u
-    have hVU := coe_eq_preimage_inv_smul hc hUV
+    have hVU := eq_preimage_inv_smul_of_eq_preimage_smul₀ hc hUV
     have hSU : (c • ·) ⁻¹' S ⊆ (U : Set E) := (preimage_mono hS).trans hUV.symm.subset
     have h' := h (W1p.compSMulL mu hp (inv_ne_zero hc) hVU u)
     rw [← LeftInverse.preimage_preimage (f := fun x : E => c⁻¹ • x)
