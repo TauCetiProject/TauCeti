@@ -36,6 +36,8 @@ local frame.
 * `CovariantDerivative.alongVectorField`: hence a smooth covariant derivative along a smooth vector
   field `X` is a linear operator `∇_X` on smooth sections.
 * `CovariantDerivative.apply_smul`: the Leibniz rule `∇(a σ) = a ∇σ + da ⊗ σ` for smooth sections.
+* `CovariantDerivative.apply_smul_smul_sub`: hence the double commutator of `∇` with
+  multiplication by two smooth functions vanishes on smooth sections.
 * `CovariantDerivative.alongVectorField_smul`: the Leibniz rule for `∇_X`.
 * `ContMDiffCovariantDerivativeOn.mono_of_isOpen_of_eventuallyEq`: on a smooth real manifold, an
   operator from sections to one-forms which is `C^n` on a set and local at the points of an open
@@ -131,6 +133,18 @@ theorem apply_smul (cov : CovariantDerivative I F V) (a : C^∞⟮I, M; 𝕜⟯)
   rw [ContMDiffSection.coe_smul_contMDiffMap,
     cov.isCovariantDerivativeOnUniv.leibniz σ.mdifferentiableAt
       (a.contMDiff.mdifferentiableAt (by simp))]
+
+omit [IsManifold I 1 M] in
+/-- The double commutator of a connection `∇` with multiplication by smooth functions `f` and `g`
+vanishes on smooth sections: `∇` is a first-order operator. -/
+theorem apply_smul_smul_sub (cov : CovariantDerivative I F V) (f g : C^∞⟮I, M; 𝕜⟯)
+    (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    cov ⇑(f • g • σ) x - f x • cov ⇑(g • σ) x - g x • cov ⇑(f • σ) x + (f x * g x) • cov σ x =
+      0 := by
+  simp only [cov.apply_smul, ContMDiffSection.smul_apply]
+  ext u
+  simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.smulRight_apply, zero_apply]
+  module
 
 /-- **The Leibniz rule for `∇_X`**: `∇_X (a σ) = a ∇_X σ + X(a) σ` for a smooth function `a`. -/
 theorem alongVectorField_smul (cov : CovariantDerivative I F V)

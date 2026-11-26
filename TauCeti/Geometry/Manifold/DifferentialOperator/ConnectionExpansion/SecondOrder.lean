@@ -316,68 +316,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 omit [BoundarylessManifold I M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
   [ContMDiffCovariantDerivative covT ∞] in
-/-- The covariant derivative of `∇σ` for the connection induced on `Hom(TM, V)`, evaluated on two
-tangent vectors, is the second covariant derivative `∇²σ`. -/
-private theorem hom_apply_eq_secondCovariantDerivative (σ : Cₛ^∞⟮I; F, V⟯) (x : M)
-    (u v : TangentSpace I x) :
-    covT.hom cov (cov σ) x u v = cov.secondCovariantDerivative covT σ x u v :=
-  (secondCovariantDerivative_eq_hom_apply cov covT σ.contMDiff x u v).symm
-
-omit [BoundarylessManifold I M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
-  [ContMDiffCovariantDerivative covT ∞] in
-/-- `∇²` is additive on smooth sections. -/
-private theorem hom_covariantDerivative_add (σ τ : Cₛ^∞⟮I; F, V⟯) (x : M) :
-    covT.hom cov (cov (⇑σ + ⇑τ)) x = covT.hom cov (cov σ) x + covT.hom cov (cov τ) x := by
-  ext u v
-  rw [← ContMDiffSection.coe_add]
-  simp only [add_apply, hom_apply_eq_secondCovariantDerivative]
-  rw [ContMDiffSection.coe_add, secondCovariantDerivative_add cov covT σ.contMDiff τ.contMDiff,
-    LinearMap.add_apply, LinearMap.add_apply]
-
-omit [BoundarylessManifold I M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
-  [ContMDiffCovariantDerivative covT ∞] in
-/-- `∇²` commutes with multiplication by constants. -/
-private theorem hom_covariantDerivative_smul (c : ℝ) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
-    covT.hom cov (cov (c • ⇑σ)) x = c • covT.hom cov (cov σ) x := by
-  ext u v
-  rw [← ContMDiffSection.coe_smul]
-  simp only [smul_apply, hom_apply_eq_secondCovariantDerivative]
-  rw [ContMDiffSection.coe_smul, secondCovariantDerivative_const_smul, LinearMap.smul_apply,
-    LinearMap.smul_apply]
-
-omit [BoundarylessManifold I M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
-  [ContMDiffCovariantDerivative covT ∞] in
-/-- The double commutator of `∇²` with multiplication by `f` and `g` is
-`(df ⊗ dg + dg ⊗ df) σ`. -/
-private theorem hom_covariantDerivative_smul_smul_sub (f g : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯)
-    (x : M) :
-    covT.hom cov (cov ⇑(f • g • σ)) x - f x • covT.hom cov (cov ⇑(g • σ)) x -
-        g x • covT.hom cov (cov ⇑(f • σ)) x + (f x * g x) • covT.hom cov (cov σ) x =
-      (mvfderiv I f x).smulRight ((mvfderiv I g x).smulRight (σ x)) +
-        (mvfderiv I g x).smulRight ((mvfderiv I f x).smulRight (σ x)) := by
-  ext u v
-  have h := secondCovariantDerivative_smul_smul_sub cov covT f.contMDiff g.contMDiff
-    σ.contMDiff x u v
-  simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-    hom_apply_eq_secondCovariantDerivative]
-  simp only [ContMDiffSection.coe_smul_contMDiffMap]
-  rw [h]
-  module
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M]
-  [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] [ContMDiffCovariantDerivative cov ∞] in
-/-- The double commutator of `∇` with multiplication by `f` and `g` vanishes. -/
-private theorem apply_smul_smul_sub (f g : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
-    cov ⇑(f • g • σ) x - f x • cov ⇑(g • σ) x - g x • cov ⇑(f • σ) x + (f x * g x) • cov σ x =
-      0 := by
-  simp only [cov.apply_smul, ContMDiffSection.smul_apply]
-  ext u
-  simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-    zero_apply]
-  module
-
-omit [BoundarylessManifold I M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
-  [ContMDiffCovariantDerivative covT ∞] in
 /-- For an operator of the form `A ∘ ∇² + B ∘ ∇ + C`, the double commutator with multiplication by
 `f` and `g` is `σ ↦ A((df ⊗ dg + dg ⊗ df) σ)`. -/
 private theorem apply_smul_smul_sub_of_forall_apply_eq_add
@@ -389,8 +327,11 @@ private theorem apply_smul_smul_sub_of_forall_apply_eq_add
     Q (f • g • σ) x - f x • Q (g • σ) x - g x • Q (f • σ) x + (f x * g x) • Q σ x =
       A x ((mvfderiv I f x).smulRight ((mvfderiv I g x).smulRight (σ x)) +
         (mvfderiv I g x).smulRight ((mvfderiv I f x).smulRight (σ x))) := by
-  have hA := congrArg (A x) (hom_covariantDerivative_smul_smul_sub cov covT f g σ x)
-  have hB := congrArg (B x) (apply_smul_smul_sub cov f g σ x)
+  have hA := congrArg (A x) (hom_covariantDerivative_smul_smul_sub cov covT f.contMDiff
+    g.contMDiff σ.contMDiff x)
+  rw [← ContMDiffSection.coe_smul_contMDiffMap g σ, ← ContMDiffSection.coe_smul_contMDiffMap f,
+    ← ContMDiffSection.coe_smul_contMDiffMap f σ] at hA
+  have hB := congrArg (B x) (cov.apply_smul_smul_sub f g σ x)
   simp only [map_add, map_sub, map_smul, map_zero] at hA hB
   rw [map_add, ← hA, h, h, h, h]
   simp only [ContMDiffSection.smul_apply, map_smul]
@@ -412,9 +353,9 @@ def secondOrderPart (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞
     contMDiff_sectionSecondOrderCoefficient P
       (contMDiff_hom_covariantDerivative cov (covT := covT) σ.contMDiff)⟩
   map_add' σ τ := ContMDiffSection.ext fun x ↦ by
-    simp [hom_covariantDerivative_add]
+    simp [hom_covariantDerivative_add cov covT σ.contMDiff τ.contMDiff]
   map_smul' c σ := ContMDiffSection.ext fun x ↦ by
-    simp [hom_covariantDerivative_smul]
+    simp [hom_covariantDerivative_const_smul cov covT c σ.contMDiff]
 
 @[simp]
 theorem secondOrderPart_apply
