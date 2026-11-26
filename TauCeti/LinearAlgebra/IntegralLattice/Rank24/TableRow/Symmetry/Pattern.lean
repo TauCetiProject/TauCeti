@@ -148,8 +148,9 @@ theorem exists_coupledPatternIsometryHom_a5FourthD4_eq_pow {p : GluePattern}
     rcases h with rfl
     obtain ⟨k, hk, hgk, hact⟩ := exists_a5FourthD4CyclicSymmetryHom_eq_pow g
     refine ⟨k, hk, ?_, ?_⟩
-    · exact ((congrArg (·.permCongr (g.val : Equiv.Perm (Fin 5)))
-        (finCongr_refl (rfl : 5 = 5))).trans (Equiv.refl_permCongr _)).trans hgk
+    · exact (by ext x; rfl : (finCongr (length_eq_of_mem_gluePatterns
+        cyclic_mem_gluePatterns_a5FourthD4)).permCongr g.val =
+          (g.val : Equiv.Perm (Fin 5))).trans hgk
     · rw [coupledPatternIsometryHom_a5FourthD4_cyclic, hact]
 
 /-- Every pattern symmetry of `A₅⁴ D₄` acts on `niemeierA5FourthD4` with determinant `1`. -/

@@ -405,18 +405,6 @@ theorem typeD4TrialityLabelPerm_two : typeD4TrialityLabelPerm 2 = 3 := by decide
 @[simp]
 theorem typeD4TrialityLabelPerm_three : typeD4TrialityLabelPerm 3 = 1 := by decide
 
-@[simp]
-theorem typeD4TrialityLabelPerm_symm_zero : typeD4TrialityLabelPerm.symm 0 = 0 := by decide
-
-@[simp]
-theorem typeD4TrialityLabelPerm_symm_one : typeD4TrialityLabelPerm.symm 1 = 3 := by decide
-
-@[simp]
-theorem typeD4TrialityLabelPerm_symm_two : typeD4TrialityLabelPerm.symm 2 = 1 := by decide
-
-@[simp]
-theorem typeD4TrialityLabelPerm_symm_three : typeD4TrialityLabelPerm.symm 3 = 2 := by decide
-
 /-- The triality permutation of the `D₄` labels has order three. -/
 @[simp]
 theorem typeD4TrialityLabelPerm_pow_three : typeD4TrialityLabelPerm ^ 3 = 1 := by decide

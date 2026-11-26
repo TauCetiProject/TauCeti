@@ -190,11 +190,12 @@ of the shell of the same norm of the target. -/
 theorem map_span_val_image_vectorsOfNorm (e : Isometry L M) (n : ℚ) :
     (Submodule.span ℤ ((Subtype.val : L → V) '' L.vectorsOfNorm n)).map e.ambientEquiv.toLinearMap =
       Submodule.span ℤ ((Subtype.val : M → W) '' M.vectorsOfNorm n) := by
-  rw [Submodule.map_span]
+  rw [← Submodule.coe_subtype (p := L.carrier), ← Submodule.map_span,
+    ← Submodule.coe_subtype (p := M.carrier), ← Submodule.map_span,
+    ← e.map_span_vectorsOfNorm n, ← Submodule.map_comp, ← Submodule.map_comp]
   congr 1
-  rw [← Set.image_comp, ← e.carrierEquiv_image_vectorsOfNorm n, Set.image_image]
-  simp only [Function.comp_apply, LinearEquiv.coe_coe, Isometry.ambientEquiv_apply,
-    Isometry.coe_carrierEquiv_apply]
+  ext x
+  exact (e.ambientEquiv_apply (x : V)).trans (e.coe_carrierEquiv_apply x).symm
 
 /-- An isometry preserves membership in the ambient `ℤ`-span of each shell. -/
 theorem apply_mem_span_val_image_vectorsOfNorm_iff (e : Isometry L M) (n : ℚ) (x : V) :

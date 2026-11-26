@@ -520,8 +520,8 @@ isometries is the identity. -/
 theorem IsometryEquiv.piCongr'_refl :
     IsometryEquiv.piCongr' (Equiv.refl ι) (fun i ↦ IsometryEquiv.refl (Q₁ i)) =
       IsometryEquiv.refl (QuadraticMap.pi Q₁) := by
-  refine DFunLike.ext _ _ fun x ↦ funext fun i ↦ ?_
-  exact piCongr'_apply (Equiv.refl ι) _ x i
+  unfold IsometryEquiv.piCongr'
+  exact congrArg IsometryEquiv.symm IsometryEquiv.piCongr_refl
 
 /-- Composing two `QuadraticMap.IsometryEquiv.piCongr'` maps composes the index equivalences and
 pulled-back summand isometries. -/
@@ -532,10 +532,9 @@ theorem IsometryEquiv.piCongr'_trans {μ : Type*} [Fintype μ] {K : μ → Type*
     (g : ∀ m, (Q₂ (e'.symm m)).IsometryEquiv (Q₃ m)) :
     (IsometryEquiv.piCongr' e f).trans (IsometryEquiv.piCongr' e' g) =
       IsometryEquiv.piCongr' (e.trans e') fun m ↦ (f (e'.symm m)).trans (g m) := by
-  refine DFunLike.ext _ _ fun x ↦ funext fun m ↦ ?_
-  rw [IsometryEquiv.trans_apply, piCongr'_apply, piCongr'_apply]
-  exact ((IsometryEquiv.trans_apply _ _ _).symm).trans
-    (piCongr'_apply (e.trans e') (fun m ↦ (f (e'.symm m)).trans (g m)) x m).symm
+  unfold IsometryEquiv.piCongr'
+  exact congrArg IsometryEquiv.symm
+    (IsometryEquiv.piCongr_trans e'.symm (fun m ↦ (g m).symm) e.symm (fun k ↦ (f k).symm))
 
 end PiCongr
 

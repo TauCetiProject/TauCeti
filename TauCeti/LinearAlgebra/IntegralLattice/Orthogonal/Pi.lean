@@ -434,9 +434,17 @@ identity. -/
 theorem piCongr'_refl :
     piCongr' (Equiv.refl ι) (fun i ↦ Isometry.refl (L i)) =
       Isometry.refl (IntegralLattice.pi L) := by
-  ext x i
-  exact (piCongr'_apply (Equiv.refl ι) _ x i).trans
-    ((refl_apply (L i) _).trans (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm)
+  have hrefl {i : ι} : (Isometry.refl (L i)).symm = Isometry.refl (L i) :=
+    (trans_refl _).symm.trans (symm_trans_self _)
+  unfold piCongr'
+  have hfn : (fun k ↦ (Isometry.refl (L k)).symm) = fun k ↦ Isometry.refl (L k) :=
+    funext fun _ ↦ hrefl
+  have hpi : piCongr (Equiv.refl ι) (fun k ↦ (Isometry.refl (L k)).symm) =
+      Isometry.refl (IntegralLattice.pi L) := by
+    rw [hfn, piCongr_refl]
+  exact (congrArg Isometry.symm hpi).trans
+    ((trans_refl (Isometry.refl (IntegralLattice.pi L)).symm).symm.trans
+      (symm_trans_self (Isometry.refl (IntegralLattice.pi L))))
 
 /-- Composing two `Isometry.piCongr'` maps composes the index equivalences and the pulled-back
 summand isometries. -/
@@ -447,10 +455,13 @@ theorem piCongr'_trans {μ : Type*} [Fintype μ] {X : μ → Type*} [∀ m, AddC
     (g : ∀ m, Isometry (M' (τ.symm m)) (N m)) :
     (piCongr' σ f).trans (piCongr' τ g) =
       piCongr' (σ.trans τ) fun m ↦ (f (τ.symm m)).trans (g m) := by
-  ext x m
-  rw [trans_apply, piCongr'_apply, piCongr'_apply]
-  exact ((trans_apply _ _ _).symm).trans
-    (piCongr'_apply (σ.trans τ) (fun m ↦ (f (τ.symm m)).trans (g m)) x m).symm
+  unfold piCongr'
+  rw [← symm_trans, piCongr_trans]
+  have hfn :
+      (fun m ↦ (g m).symm.trans (f (τ.symm m)).symm) =
+        (fun m ↦ ((f (τ.symm m)).trans (g m)).symm) :=
+    funext fun m ↦ (symm_trans _ _).symm
+  exact congrArg Isometry.symm (congrArg (piCongr (σ.trans τ).symm) hfn)
 
 end PiCongr
 

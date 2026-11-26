@@ -113,9 +113,9 @@ private theorem mem_symmetries_cyclic_a5FourthD4_iff_mem_zpowers
       g ∈ Subgroup.zpowers a5FourthD4BlockRotation := by
   have he : (finCongr (length_eq_of_mem_gluePatterns
       cyclic_mem_gluePatterns_a5FourthD4)).permCongr
-        (show Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length) from g) = g :=
-    (congrArg (·.permCongr (g : Equiv.Perm (Fin 5)))
-      (finCongr_refl (rfl : 5 = 5))).trans (Equiv.refl_permCongr _)
+        (show Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length) from g) = g := by
+    ext x
+    rfl
   rw [← map_symmetries_cyclic_a5FourthD4, ← he]
   exact (Subgroup.mem_map_iff_mem (f := (finCongr (length_eq_of_mem_gluePatterns
     cyclic_mem_gluePatterns_a5FourthD4)).permCongrHom.toMonoidHom)
