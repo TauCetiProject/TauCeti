@@ -311,13 +311,6 @@ theorem Wkp.lineDerivL_smul_left (c : ℝ) (v : E) (k : ℕ) :
   rw [smul_apply, Wkp.value_smul]
   exact (Lp.coeFn_smul c (Wkp.value k (Wkp.lineDerivL v k w))).symm
 
-/-- Differentiating in the zero direction is the zero operator. -/
-@[simp]
-theorem Wkp.lineDerivL_zero_left (k : ℕ) :
-    Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (0 : E) k = 0 := by
-  have h := Wkp.lineDerivL_smul_left (mu := mu) (Omega := Omega) (p := p) 0 (0 : E) k
-  rwa [zero_smul, zero_smul] at h
-
 /-- The bundled directional derivative is additive in the direction. -/
 @[simp]
 theorem Wkp.lineDerivL_add_left (v₁ v₂ : E) (k : ℕ) :
@@ -328,21 +321,6 @@ theorem Wkp.lineDerivL_add_left (v₁ v₂ : E) (k : ℕ) :
     (Wkp.hasWeakLineDerivOn_lineDerivL v₂ k w)).congr_ae_deriv ?_
   rw [add_apply, Wkp.value_add]
   exact (Lp.coeFn_add _ _).symm
-
-/-- Negating the direction negates `TauCeti.Wkp.lineDerivL`. -/
-@[simp]
-theorem Wkp.lineDerivL_neg_left (v : E) (k : ℕ) :
-    Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (-v) k =
-      -Wkp.lineDerivL v k := by
-  have h := Wkp.lineDerivL_smul_left (mu := mu) (Omega := Omega) (p := p) (-1) v k
-  rwa [neg_one_smul, neg_one_smul] at h
-
-/-- Subtracting directions subtracts the corresponding directional derivative operators. -/
-@[simp]
-theorem Wkp.lineDerivL_sub_left (v₁ v₂ : E) (k : ℕ) :
-    Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (v₁ - v₂) k =
-      Wkp.lineDerivL v₁ k - Wkp.lineDerivL v₂ k := by
-  rw [sub_eq_add_neg, Wkp.lineDerivL_add_left, Wkp.lineDerivL_neg_left, sub_eq_add_neg]
 
 /-- **The directional derivative, bundled in both the direction and the function.** Because `E` is
 finite-dimensional, the linear dependence `v ↦ TauCeti.Wkp.lineDerivL v k` is continuous. -/
@@ -397,14 +375,6 @@ theorem Wkp.lowerOrder_lineDerivL (v : E) (k : ℕ) (w : Wkp mu Omega p (k + 2))
     ← Wkp.toOrderL_le_succ k (Nat.le_succ k),
     ← Wkp.toOrderL_le_succ (k + 1) (Nat.le_succ (k + 1)),
     Wkp.toOrderL_lineDerivL]
-
-/-- Operator form of `TauCeti.Wkp.lowerOrder_lineDerivL`. -/
-theorem Wkp.lowerOrderL_comp_lineDerivL (v : E) (k : ℕ) :
-    (Wkp.lowerOrderL k).comp (Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) v (k + 1)) =
-      (Wkp.lineDerivL v k).comp (Wkp.lowerOrderL (k + 1)) := by
-  rw [← Wkp.toOrderL_le_succ k (Nat.le_succ k),
-    ← Wkp.toOrderL_le_succ (k + 1) (Nat.le_succ (k + 1)),
-    Wkp.toOrderL_comp_lineDerivL]
 
 /-- At every positive order, the `Lᵖ` value of `TauCeti.Wkp.lineDerivL v k w` is the `v`-component
 of the weak gradient of the first-order part of `w`. -/
@@ -866,10 +836,8 @@ theorem Wkp.norm_lineDerivL_zero_le (v : E) :
 weak gradient of `firstOrder k u`. -/
 theorem Wkp.norm_value_lineDerivL_le (v : E) (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     ‖Wkp.value k (Wkp.lineDerivL v k u)‖ ≤ ‖v‖ * ‖W1p.gradient (Wkp.firstOrder k u)‖ := by
-  rw [← Wkp.toOrderL_zero_left_apply k (Nat.zero_le k),
-    Wkp.toOrderL_lineDerivL v (Nat.zero_le k) u]
-  refine (Wkp.norm_lineDerivL_zero_apply_le v _).trans_eq ?_
-  rw [Wkp.iteratedGradient_zero, Wkp.toOrderL_one_left_apply]
+  rw [Wkp.value_lineDerivL]
+  exact ((innerSL ℝ v).norm_compLp_le _).trans_eq (by rw [innerSL_apply_norm])
 
 /-- Componentwise `Lᵖ` bound on the highest weak derivative of `lineDerivL v (j + 1) u`. -/
 theorem Wkp.norm_iteratedGradient_lineDerivL_le (v : E) (j : ℕ) (u : Wkp mu Omega p (j + 2)) :

@@ -15,7 +15,10 @@ import Mathlib.Analysis.Normed.Operator.NormedSpace
 Every `G : TauCeti.IteratedGradient E k` over a finite-dimensional real inner product space expands
 along an orthonormal basis into rank-one iterated gradients `TauCeti.IteratedGradient.rankOne`
 weighted by the tuple evaluation functionals `TauCeti.IteratedGradient.evalTupleL`
-(`TauCeti.IteratedGradient.eq_sum_evalTupleL_rankOne`).
+(`TauCeti.IteratedGradient.eq_sum_evalTupleL_rankOne`). Consequently, the operator norm of `G` is
+equivalent to the `ℓ¹` sum of the norms of its entries along any finite orthonormal basis
+(`TauCeti.IteratedGradient.sum_norm_evalTupleL_apply_orthonormalBasis_le`,
+`TauCeti.IteratedGradient.norm_le_sum_norm_evalTupleL_apply_orthonormalBasis`).
 -/
 
 public section
@@ -148,5 +151,37 @@ theorem eq_sum_evalTupleL_rankOne {ι : Type*} [Fintype ι] (b : OrthonormalBasi
       rw [map_smul, eq_sum_evalTupleL_rankOne b k (G (b i)), Finset.smul_sum]
       refine Finset.sum_congr rfl fun J _ => ?_
       rw [Fin.comp_snoc b J i, evalTupleL_snoc_apply, rankOne_snoc]; simp [smul_smul, mul_comm]
+
+/-- Any entry of an iterated gradient along vectors of an orthonormal basis has norm at most the
+operator norm of the field. -/
+theorem norm_evalTupleL_apply_orthonormalBasis_le {ι : Type*} [Fintype ι] (j : ℕ)
+    (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) (r : Fin (j + 1) → ι) :
+    ‖evalTupleL j (fun k => b (r k)) G‖ ≤ ‖G‖ := by
+  refine (norm_evalTupleL_apply_le j (fun k => b (r k)) G).trans_eq ?_
+  rw [Finset.prod_eq_one fun k _ => b.orthonormal.1 (r k), mul_one]
+
+/-- The sum of the norms of all entries of `G : IteratedGradient E j` along an orthonormal basis
+`b` is at most `(card ι) ^ (j + 1) * ‖G‖`. -/
+theorem sum_norm_evalTupleL_apply_orthonormalBasis_le {ι : Type*} [Fintype ι] (j : ℕ)
+    (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) :
+    ∑ r : Fin (j + 1) → ι, ‖evalTupleL j (fun k => b (r k)) G‖ ≤
+      (Fintype.card ι : ℝ) ^ (j + 1) * ‖G‖ := by
+  calc
+    ∑ r : Fin (j + 1) → ι, ‖evalTupleL j (fun k => b (r k)) G‖
+      ≤ ∑ _r : Fin (j + 1) → ι, ‖G‖ :=
+        Finset.sum_le_sum fun r _ => norm_evalTupleL_apply_orthonormalBasis_le j G b r
+    _ = (Fintype.card ι : ℝ) ^ (j + 1) * ‖G‖ := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fun, Fintype.card_fin,
+          nsmul_eq_mul, Nat.cast_pow]
+
+/-- The operator norm of an iterated gradient is bounded by the sum of the norms of its entries
+along a finite orthonormal basis `b`. -/
+theorem norm_le_sum_norm_evalTupleL_apply_orthonormalBasis {ι : Type*} [Fintype ι] (j : ℕ)
+    (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) :
+    ‖G‖ ≤ ∑ r : Fin (j + 1) → ι, ‖evalTupleL j (fun k => b (r k)) G‖ := by
+  conv_lhs => rw [eq_sum_evalTupleL_rankOne b j G]
+  refine (norm_sum_le _ _).trans_eq ?_
+  refine Finset.sum_congr rfl fun r _ => ?_
+  simp [norm_smul, norm_rankOne, b.orthonormal.1, Function.comp_def]
 
 end TauCeti.IteratedGradient

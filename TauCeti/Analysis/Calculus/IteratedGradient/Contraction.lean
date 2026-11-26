@@ -19,11 +19,9 @@ specified number of outer slots along a tuple `m : Fin i → E` is `TauCeti.Iter
 (which is multilinear in each slot: `TauCeti.IteratedGradient.applyL_update_add`,
 `TauCeti.IteratedGradient.applyL_update_smul`, `TauCeti.IteratedGradient.applyL_update_zero`), and
 partial contraction `TauCeti.IteratedGradient.contractL` specializes this to a repeated direction
-`h`. `TauCeti.IteratedGradient.toContinuousMultilinearMap` embeds `IteratedGradient E j` linearly
-and isometrically into `E [×(j + 1)]→L[ℝ] ℝ` without assuming completeness of `E`. Full
-contraction (`TauCeti.IteratedGradient.fullContractL`) contracts every outer slot at `h` and pairs
-the remaining vector with `h`. These operations turn derivative fields into the directional
-Taylor polynomials, without choosing coordinates.
+`h`. Full contraction (`TauCeti.IteratedGradient.fullContractL`) contracts every outer slot at
+`h` and pairs the remaining vector with `h`. These operations turn derivative fields into the
+directional Taylor polynomials, without choosing coordinates.
 
 All of these operations are continuous linear in the field. Evaluating `i` outer slots along `m` has
 operator norm at most `∏ r, ‖m r‖`; partial contraction of `i` slots is homogeneous of degree `i`
@@ -188,40 +186,6 @@ end NormedSpace
 section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-open scoped InnerProductSpace
-
-section
-variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Linear isometric embedding of `IteratedGradient E j` into `E [×(j + 1)]→L[ℝ] ℝ`, without
-assuming completeness of `E`. -/
-def toContinuousMultilinearMap :
-    (j : ℕ) → IteratedGradient E j →ₗᵢ[ℝ] (E [×(j + 1)]→L[ℝ] ℝ)
-  | 0 => (continuousMultilinearCurryFin1 ℝ E ℝ).symm.toLinearIsometry.comp
-      (InnerProductSpace.toDualMap ℝ E)
-  | j + 1 =>
-      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1 + 1) => E)
-        ℝ).symm.toLinearIsometry.comp ((toContinuousMultilinearMap j).postcomp (E := E))
-
-end
-
-/-- At index `0`, `toContinuousMultilinearMap` is the Riesz isometry composed with `Fin 1`
-uncurrying. -/
-theorem toContinuousMultilinearMap_zero :
-    toContinuousMultilinearMap E 0 =
-      (continuousMultilinearCurryFin1 ℝ E ℝ).symm.toLinearIsometry.comp
-        (InnerProductSpace.toDualMap ℝ E) :=
-  (rfl)
-
-/-- Unfolding `toContinuousMultilinearMap` at a successor index curries `m 0` into `G` and
-applies `toContinuousMultilinearMap E j` to the remaining directions `Fin.tail m`. -/
-theorem toContinuousMultilinearMap_succ_apply (j : ℕ) (G : IteratedGradient E (j + 1))
-    (m : Fin (j + 1 + 1) → E) :
-    toContinuousMultilinearMap E (j + 1) G m =
-      toContinuousMultilinearMap E j (G (m 0)) (Fin.tail m) := by
-  simp [toContinuousMultilinearMap, continuousMultilinearCurryLeftEquiv_symm_apply,
-    LinearIsometry.postcomp]
 
 /-- Contract every outer slot at `h` and pair the remaining vector with `h`. Since an
 iterated gradient of index `j` has derivative order `j + 1`, this uses `j + 1` directions. -/

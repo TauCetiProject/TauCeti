@@ -10,12 +10,16 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
-# Multilinear evaluation and orthonormal-basis bounds for iterated gradients
+# Multilinear evaluation of iterated gradients
 
 An iterated gradient `TauCeti.IteratedGradient E j` has `j` outer continuous-linear direction
-slots above a vector in `E`. Evaluating it via `TauCeti.IteratedGradient.evalTupleL` along a
-reversed tuple `m ∘ Fin.rev` agrees with left-to-right multilinear evaluation
-(`TauCeti.IteratedGradient.toContinuousMultilinearMap_apply`). When `E` is complete, Riesz
+slots above a vector in `E`. `TauCeti.IteratedGradient.toContinuousMultilinearMap` embeds
+`IteratedGradient E j` linearly and isometrically into `E [×(j + 1)]→L[ℝ] ℝ` without assuming
+completeness of `E`. Evaluating it via `TauCeti.IteratedGradient.evalTupleL` along a reversed tuple
+`m ∘ Fin.rev` agrees with left-to-right multilinear evaluation
+(`TauCeti.IteratedGradient.toContinuousMultilinearMap_apply`), and evaluating outer slots via
+`TauCeti.IteratedGradient.applyL` appends those directions on the left
+(`TauCeti.IteratedGradient.toContinuousMultilinearMap_applyL_apply`). When `E` is complete, Riesz
 representation and left uncurrying assemble this evaluation into a linear isometric equivalence
 `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ` between `TauCeti.IteratedGradient E j` and
 the space `E [×(j + 1)]→L[ℝ] ℝ` of scalar continuous multilinear maps, sending
@@ -27,14 +31,16 @@ same difference norm
 
 Precomposing with a single outer contraction `TauCeti.IteratedGradient.contractL j 1 h` curries `h`
 into the first argument of the corresponding continuous multilinear map
-(`TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ_contractL_one`). Along a finite orthonormal
-basis `b` of `E`, the operator norm of an iterated gradient and the sum of the norms of its basis
-entries are comparable with explicit constants (`1` and `(card ι) ^ (j + 1)`).
+(`TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ_contractL_one`).
 
 ## Main declarations
 
+* `TauCeti.IteratedGradient.toContinuousMultilinearMap`: linear isometric embedding of
+  `IteratedGradient E j` into `E [×(j + 1)]→L[ℝ] ℝ`.
 * `TauCeti.IteratedGradient.toContinuousMultilinearMap_apply`: compatibility between
   `toContinuousMultilinearMap` and `evalTupleL` along `Fin.rev`.
+* `TauCeti.IteratedGradient.toContinuousMultilinearMap_applyL_apply`: evaluating
+  `toContinuousMultilinearMap` after `applyL`.
 * `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ`: the linear isometric equivalence
   `IteratedGradient E j ≃ₗᵢ[ℝ] (E [×(j + 1)]→L[ℝ] ℝ)` when `E` is complete.
 * `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain`: under this
@@ -43,10 +49,6 @@ entries are comparable with explicit constants (`1` and `(card ι) ^ (j + 1)`).
   `TauCeti.iteratedGradientChain_sub`, and
   `TauCeti.norm_iteratedGradientChain_sub_iteratedGradientChain_eq_norm_iteratedFDeriv_sub`:
   pointwise norm and difference comparisons between `iteratedGradientChain` and `iteratedFDeriv`.
-* `TauCeti.IteratedGradient.norm_le_sum_norm_evalTupleL_apply_orthonormalBasis` and
-  `TauCeti.IteratedGradient.sum_norm_evalTupleL_apply_orthonormalBasis_le`: equivalence between the
-  operator norm of an iterated gradient and the `ℓ¹` sum of its entries along a finite orthonormal
-  basis.
 -/
 
 public section
@@ -59,7 +61,39 @@ open scoped InnerProductSpace
 
 section InnerProductSpace
 
+section
+variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Linear isometric embedding of `IteratedGradient E j` into `E [×(j + 1)]→L[ℝ] ℝ`, without
+assuming completeness of `E`. -/
+def toContinuousMultilinearMap :
+    (j : ℕ) → IteratedGradient E j →ₗᵢ[ℝ] (E [×(j + 1)]→L[ℝ] ℝ)
+  | 0 => (continuousMultilinearCurryFin1 ℝ E ℝ).symm.toLinearIsometry.comp
+      (InnerProductSpace.toDualMap ℝ E)
+  | j + 1 =>
+      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1 + 1) => E)
+        ℝ).symm.toLinearIsometry.comp ((toContinuousMultilinearMap j).postcomp (E := E))
+
+end
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- At index `0`, `toContinuousMultilinearMap` is the Riesz isometry composed with `Fin 1`
+uncurrying. -/
+theorem toContinuousMultilinearMap_zero :
+    toContinuousMultilinearMap E 0 =
+      (continuousMultilinearCurryFin1 ℝ E ℝ).symm.toLinearIsometry.comp
+        (InnerProductSpace.toDualMap ℝ E) :=
+  (rfl)
+
+/-- Unfolding `toContinuousMultilinearMap` at a successor index curries `m 0` into `G` and
+applies `toContinuousMultilinearMap E j` to the remaining directions `Fin.tail m`. -/
+theorem toContinuousMultilinearMap_succ_apply (j : ℕ) (G : IteratedGradient E (j + 1))
+    (m : Fin (j + 1 + 1) → E) :
+    toContinuousMultilinearMap E (j + 1) G m =
+      toContinuousMultilinearMap E j (G (m 0)) (Fin.tail m) := by
+  simp [toContinuousMultilinearMap, continuousMultilinearCurryLeftEquiv_symm_apply,
+    LinearIsometry.postcomp]
 
 /-- Evaluating `toContinuousMultilinearMap E j G` at `m` agrees with
 `evalTupleL j (m ∘ Fin.rev) G`. -/
@@ -75,27 +109,45 @@ theorem toContinuousMultilinearMap_apply :
         evalTupleL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
         Fin.init_comp_rev, Function.comp_apply, Fin.rev_last]
 
-/-- Any entry of an iterated gradient along vectors of an orthonormal basis has norm at most the
-operator norm of the field. -/
-theorem norm_evalTupleL_apply_orthonormalBasis_le {ι : Type*} [Fintype ι] (j : ℕ)
-    (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) (r : Fin (j + 1) → ι) :
-    ‖evalTupleL j (fun k => b (r k)) G‖ ≤ ‖G‖ := by
-  refine (norm_evalTupleL_apply_le j (fun k => b (r k)) G).trans_eq ?_
-  rw [Finset.prod_eq_one fun k _ => b.orthonormal.1 (r k), mul_one]
-
-/-- The sum of the norms of all entries of `G : IteratedGradient E j` along an orthonormal basis
-`b` is at most `(card ι) ^ (j + 1) * ‖G‖`. -/
-theorem sum_norm_evalTupleL_apply_orthonormalBasis_le {ι : Type*} [Fintype ι] (j : ℕ)
-    (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) :
-    ∑ r : Fin (j + 1) → ι, ‖evalTupleL j (fun k => b (r k)) G‖ ≤
-      (Fintype.card ι : ℝ) ^ (j + 1) * ‖G‖ := by
-  calc
-    ∑ r : Fin (j + 1) → ι, ‖evalTupleL j (fun k => b (r k)) G‖
-      ≤ ∑ _r : Fin (j + 1) → ι, ‖G‖ :=
-        Finset.sum_le_sum fun r _ => norm_evalTupleL_apply_orthonormalBasis_le j G b r
-    _ = (Fintype.card ι : ℝ) ^ (j + 1) * ‖G‖ := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fun, Fintype.card_fin,
-          nsmul_eq_mul, Nat.cast_pow]
+/-- Evaluating `toContinuousMultilinearMap E j (applyL j i m G)` at `n` agrees with evaluating
+`toContinuousMultilinearMap E (j + i) G` at `Fin.append m n` (reindexed along
+`j + i + 1 = i + (j + 1)`). -/
+theorem toContinuousMultilinearMap_applyL_apply (j : ℕ) :
+    ∀ (i : ℕ) (m : Fin i → E) (G : IteratedGradient E (j + i)) (n : Fin (j + 1) → E),
+      toContinuousMultilinearMap E j (applyL j i m G) n =
+        toContinuousMultilinearMap E (j + i) G (Fin.append m n ∘ Fin.cast (by omega))
+  | 0, m, G, n => by
+      simp only [applyL_zero, ContinuousLinearMap.id_apply, Nat.add_zero]
+      congr 1
+      ext r
+      have h1 : Fin.cast (by omega : j + 1 = 0 + (j + 1)) r = Fin.natAdd 0 r :=
+        Fin.ext (by simp)
+      simp only [Function.comp_apply, h1, Fin.append_right]
+  | i + 1, m, G, n => by
+      have h0 :
+          (Fin.append m n ∘ Fin.cast (by omega : j + (i + 1) + 1 = i + 1 + (j + 1))) 0 = m 0 := by
+        have hc : Fin.cast (by omega : j + (i + 1) + 1 = i + 1 + (j + 1)) 0 =
+            Fin.castAdd (j + 1) 0 := rfl
+        simp only [Function.comp_apply, hc, Fin.append_left]
+      have htail :
+          Fin.tail (Fin.append m n ∘ Fin.cast (by omega : j + (i + 1) + 1 = i + 1 + (j + 1))) =
+            Fin.append (Fin.tail m) n ∘ Fin.cast (by omega : j + i + 1 = i + (j + 1)) := by
+        ext r
+        rcases Nat.lt_or_ge (r : ℕ) i with hr | hr
+        · have h1 : Fin.cast (by omega : j + i + 1 = i + (j + 1)) r =
+              Fin.castAdd (j + 1) ⟨r, hr⟩ := rfl
+          have h2 : Fin.cast (by omega : j + (i + 1) + 1 = i + 1 + (j + 1)) r.succ =
+              Fin.castAdd (j + 1) ⟨r + 1, Nat.succ_lt_succ hr⟩ := rfl
+          simp only [Function.comp_apply, Fin.tail, h1, h2, Fin.append_left]
+          rfl
+        · have h1 : Fin.cast (by omega : j + i + 1 = i + (j + 1)) r =
+              Fin.natAdd i ⟨r - i, by omega⟩ := Fin.ext (by simp; omega)
+          have h2 : Fin.cast (by omega : j + (i + 1) + 1 = i + 1 + (j + 1)) r.succ =
+              Fin.natAdd (i + 1) ⟨r - i, by omega⟩ := Fin.ext (by simp; omega)
+          simp only [Function.comp_apply, Fin.tail, h1, h2, Fin.append_right]
+      refine Eq.trans ?_ (toContinuousMultilinearMap_succ_apply (j + i) G _).symm
+      rw [applyL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
+        toContinuousMultilinearMap_applyL_apply j i (Fin.tail m) (G (m 0)) n, h0, htail]
 
 end InnerProductSpace
 
@@ -175,9 +227,18 @@ theorem toContinuousMultilinearMapₗᵢ_contractL_one (j : ℕ) (h : E)
     toContinuousMultilinearMapₗᵢ E j (contractL j 1 h G) =
       (toContinuousMultilinearMapₗᵢ E (j + 1) G).curryLeft h := by
   ext m
-  rw [toContinuousMultilinearMapₗᵢ_apply, ContinuousMultilinearMap.curryLeft_apply,
-    toContinuousMultilinearMapₗᵢ_apply, contractL_one, ContinuousLinearMap.apply_apply,
-    Fin.cons_comp_rev, evalTupleL_snoc_apply]
+  rw [coe_toContinuousMultilinearMapₗᵢ, ContinuousMultilinearMap.curryLeft_apply,
+    coe_toContinuousMultilinearMapₗᵢ, ← applyL_const, toContinuousMultilinearMap_applyL_apply]
+  congr 1
+  ext r
+  cases r using Fin.cases with
+  | zero =>
+      have h1 : Fin.cast (by omega : j + 1 + 1 = 1 + (j + 1)) 0 = Fin.castAdd (j + 1) 0 := rfl
+      simp only [Function.comp_apply, h1, Fin.append_left, Fin.cons_zero]
+  | succ r =>
+      have h1 : Fin.cast (by omega : j + 1 + 1 = 1 + (j + 1)) r.succ = Fin.natAdd 1 r :=
+        Fin.ext (by simp; omega)
+      simp only [Function.comp_apply, h1, Fin.append_right, Fin.cons_succ]
 
 /-- Under `toContinuousMultilinearMapₗᵢ`, the classical `j`th iterated-gradient field of any
 scalar function `f` at `x` is `iteratedFDeriv ℝ (j + 1) f x`. No differentiability assumption is
@@ -189,22 +250,24 @@ theorem toContinuousMultilinearMapₗᵢ_iteratedGradientChain (f : E → ℝ) (
   induction j generalizing x with
   | zero =>
       ext m
-      rw [toContinuousMultilinearMapₗᵢ_apply, evalTupleL_zero, innerSL_apply_apply,
-        iteratedGradientChain_zero, iteratedFDeriv_one_apply, gradient, real_inner_comm,
-        InnerProductSpace.toDual_symm_apply, Function.comp_apply, Fin.rev_zero, Fin.last_zero]
+      rw [coe_toContinuousMultilinearMapₗᵢ, toContinuousMultilinearMap_zero,
+        LinearIsometry.coe_comp, Function.comp_apply,
+        ← InnerProductSpace.toLinearIsometry_toDual, LinearIsometryEquiv.coe_toLinearIsometry,
+        LinearIsometryEquiv.coe_toLinearIsometry, continuousMultilinearCurryFin1_symm_apply,
+        iteratedGradientChain_zero, iteratedFDeriv_one_apply, gradient,
+        InnerProductSpace.toDual_apply_apply, InnerProductSpace.toDual_symm_apply]
   | succ j ih =>
       have hfun : (toContinuousMultilinearMapₗᵢ E j ∘ iteratedGradientChain f j) =
           iteratedFDeriv ℝ (j + 1) f := funext ih
       ext m
-      have hfd := congrArg (fun g : E → E [×(j + 1)]→L[ℝ] ℝ => fderiv ℝ g x (m 0) (Fin.tail m)) hfun
+      have hfd := congrArg
+        (fun g : E → E [×(j + 1)]→L[ℝ] ℝ => fderiv ℝ g x (m 0) (Fin.tail m)) hfun
       rw [LinearIsometryEquiv.comp_fderiv] at hfd
       simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-        LinearIsometryEquiv.coe_toContinuousLinearEquiv, toContinuousMultilinearMapₗᵢ_apply] at hfd
-      rw [toContinuousMultilinearMapₗᵢ_apply, iteratedGradientChain_succ,
-        iteratedFDeriv_succ_eq_comp_left, Function.comp_apply,
-        continuousMultilinearCurryLeftEquiv_symm_apply, evalTupleL_succ,
-        ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply, Fin.init_comp_rev,
-        Function.comp_apply, Fin.rev_last]
+        LinearIsometryEquiv.coe_toContinuousLinearEquiv, coe_toContinuousMultilinearMapₗᵢ] at hfd
+      rw [coe_toContinuousMultilinearMapₗᵢ, toContinuousMultilinearMap_succ_apply,
+        iteratedGradientChain_succ, iteratedFDeriv_succ_eq_comp_left, Function.comp_apply,
+        continuousMultilinearCurryLeftEquiv_symm_apply]
       exact hfd
 
 /-- Evaluating `iteratedGradientChain f j x` along `m ∘ Fin.rev` gives
@@ -216,22 +279,6 @@ theorem evalTupleL_comp_rev_iteratedGradientChain (f : E → ℝ) (j : ℕ) (x :
   rw [← toContinuousMultilinearMapₗᵢ_apply, toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
 
 end CompleteSpace
-
-section OrthonormalBasisLowerBound
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The operator norm of an iterated gradient is bounded by the sum of the norms of its entries
-along a finite orthonormal basis `b`. -/
-theorem norm_le_sum_norm_evalTupleL_apply_orthonormalBasis {ι : Type*} [Fintype ι] (j : ℕ)
-    (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) :
-    ‖G‖ ≤ ∑ r : Fin (j + 1) → ι, ‖evalTupleL j (fun k => b (r k)) G‖ := by
-  conv_lhs => rw [eq_sum_evalTupleL_rankOne b j G]
-  refine (norm_sum_le _ _).trans_eq ?_
-  refine Finset.sum_congr rfl fun r _ => ?_
-  simp [norm_smul, norm_rankOne, b.orthonormal.1, Function.comp_def]
-
-end OrthonormalBasisLowerBound
 
 end TauCeti.IteratedGradient
 

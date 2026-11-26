@@ -12,7 +12,7 @@ import Mathlib.GroupTheory.Perm.Sign
 /-!
 # Permutation invariance on finite tuples
 
-This file provides `TauCeti.comp_perm_eq_of_cons_of_swap`: a family of maps `F` on tuples
+This file provides `TauCeti.apply_comp_perm_eq_of_cons_of_swap`: a family of maps `F` on tuples
 `Fin j → α` for which prepending an entry (`Fin.cons v`) respects `F j`-equality and swapping the
 first two entries leaves `F` invariant is invariant under every permutation of `Fin j`.
 -/
@@ -24,7 +24,7 @@ namespace TauCeti
 /-- Any family of maps `F` on tuples `Fin j → α` such that prepending an entry via `Fin.cons`
 respects `F j`-equality (`F j m = F j m' → F (j + 1) (Fin.cons v m) = F (j + 1) (Fin.cons v m')`)
 and `F` is invariant under `Equiv.swap 0 1` is invariant under every permutation of `Fin j`. -/
-theorem comp_perm_eq_of_cons_of_swap {α : Sort*} {β : ℕ → Sort*}
+theorem apply_comp_perm_eq_of_cons_of_swap {α : Sort*} {β : ℕ → Sort*}
     (F : ∀ j, (Fin j → α) → β j)
     (hcons : ∀ j (v : α) (m m' : Fin j → α), F j m = F j m' →
       F (j + 1) (Fin.cons v m : Fin (j + 1) → α) = F (j + 1) (Fin.cons v m' : Fin (j + 1) → α))
