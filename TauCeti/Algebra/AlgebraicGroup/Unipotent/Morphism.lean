@@ -75,8 +75,9 @@ theorem of_injective {A : Type w} [CommRing A] [HopfAlgebra k A] (f : A →ₐc[
   have hinj : Function.Injective ((f : A →ₐc[k] H).toCoalgHom.toLinearMap.lTensor M) :=
     Module.Flat.lTensor_preserves_injective_linearMap _ hf
   apply hinj
-  rw [LinearMap.lTensor_tmul]
-  exact hvc.trans (congrArg (v ⊗ₜ[k] ·) (map_one f).symm)
+  rw [LinearMap.lTensor_def, hvc, TensorProduct.map_tmul, LinearMap.id_apply,
+    CoalgHom.toLinearMap_eq_ofClass, CoalgHom.coe_linearMapOfClass, BialgHom.toCoalgHom_apply,
+    map_one]
 
 /-- **Every homomorphism from a unipotent group to a diagonalizable group is trivial.** If the
 coalgebra `A` is spanned by its group-like elements, in the sense of
