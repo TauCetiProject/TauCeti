@@ -29,8 +29,6 @@ null sets have empty interior.
 ## Main results
 
 * `TauCeti.IsSmoothTriangulation.isPure`: a smooth triangulation is pure of dimension `dim E`.
-* `TauCeti.IsSmoothTriangulation.card_eq_of_maximal`: its maximal simplices have `dim E + 1`
-  vertices.
 * `TauCeti.IsSmoothTriangulation.dimension_eq`: a smooth triangulation of a nonempty manifold has
   dimension `dim E`.
 -/
@@ -56,24 +54,19 @@ private theorem IsSmoothTriangulation.finrank_lt_card_of_maximal
   by_contra! hle
   -- The points whose carrier contains `τ`: the intersection of the open stars of its vertices.
   set O : Set (Realization K) := ⋂ v ∈ τ, K.openStarRealization v
-  have hO : IsOpen O := isOpen_biInter_finset fun v _ ↦ K.isOpen_openStarRealization v
-  have hmem : ∀ y : Realization K, y ∈ O ↔ τ ⊆ y.val.support := by
-    intro y
-    simp only [O, mem_iInter, mem_openStarRealization_iff_mem_support]
-    exact Iff.rfl
   obtain ⟨x, hx⟩ := exists_support_eq hτ.prop
-  have hxO : x ∈ O := (hmem x).2 hx.ge
+  have hxO : x ∈ O := K.mem_biInter_openStarRealization_iff.2 hx.ge
   -- By maximality, every such point lies in the closed simplex `τ`.
   have hsub : O ⊆ range (faceInclusion K ⟨τ, hτ.prop⟩) := by
     intro y hy
     have hτy : τ ⊆ (carrier K y).val := by
       rw [carrier_val]
-      exact (hmem y).1 hy
+      exact K.mem_biInter_openStarRealization_iff.1 hy
     have hc : (carrier K y).val = τ := (hτ.2 (carrier K y).prop hτy).antisymm hτy
     have hcy : carrier K y = ⟨τ, hτ.prop⟩ := Subtype.ext hc
     exact hcy ▸ mem_range_faceInclusion_carrier K y
   have hint : κ '' O ⊆ interior (κ '' range (faceInclusion K ⟨τ, hτ.prop⟩)) :=
-    interior_maximal (image_mono hsub) (κ.isOpenMap O hO)
+    interior_maximal (image_mono hsub) (κ.isOpenMap O (K.isOpen_biInter_openStarRealization τ))
   rw [(h.isNullSet_image_range_faceInclusion ⟨τ, hτ.prop⟩ hle).interior_eq_empty] at hint
   exact hint (mem_image_of_mem κ hxO)
 
@@ -93,18 +86,15 @@ theorem IsSmoothTriangulation.isPure (h : IsSmoothTriangulation I n κ) :
   exact ⟨τ, hτ.prop.1, hτ.prop.2,
     le_antisymm (h.card_le hτ.prop.1) (h.finrank_lt_card_of_maximal hτK)⟩
 
-/-- In a smooth triangulation of a manifold modelled on `E`, every maximal simplex has
-`dim E + 1` vertices. -/
-theorem IsSmoothTriangulation.card_eq_of_maximal (h : IsSmoothTriangulation I n κ)
-    {τ : Finset ι} (hτ : Maximal (· ∈ K) τ) : τ.card = finrank ℝ E + 1 :=
-  h.isPure.card_eq_of_maximal hτ
-
 /-- A smooth triangulation of a nonempty manifold modelled on `E` has dimension `dim E`. -/
 theorem IsSmoothTriangulation.dimension_eq [Nonempty M] (h : IsSmoothTriangulation I n κ) :
     K.dimension = (finrank ℝ E : WithBot ℕ∞) := by
   obtain ⟨x⟩ := (inferInstance : Nonempty M)
-  obtain ⟨τ, hτ, -, hcard⟩ := h.isPure.exists_coface (carrier K (κ.symm x)).prop
-  refine le_antisymm h.dimension_le ?_
-  simpa [hcard] using AbstractSimplicialComplex.le_dimension (K := K) hτ
+  rw [← dimension_toPreAbstractSimplicialComplex]
+  refine h.isPure.dimension_eq fun hK ↦ ?_
+  have hmem : (carrier K (κ.symm x)).val ∈ K.toPreAbstractSimplicialComplex :=
+    (carrier K (κ.symm x)).prop
+  rw [hK] at hmem
+  exact hmem
 
 end TauCeti
