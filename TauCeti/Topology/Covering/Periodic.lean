@@ -100,17 +100,21 @@ theorem exists_relIndex_ne_zero_forall_add_eq [PreconnectedSpace V]
   have hSfin : S.Finite :=
     Finite.of_finite_image (hfin.subset (image_subset_iff.2 fun f hf ↦ hf.2 x₀))
       fun f₁ hf₁ f₂ hf₂ h ↦ hE.eq_of_forall_prodMk_mem hf₁.1 hf₂.1 hf₁.2 hf₂.2 h
-  -- `V` acts on `V → Y` by translation, `ψ ω +ᵥ f = fun x ↦ f (x + ω)`, through `DomAddAct`.
+  -- `V` acts on `V → Y` by translation through `DomAddAct`; `hψ` states this action,
+  -- by `DomAddAct.vadd_apply`.
   let ψ : V →+ DomAddAct Vᵃᵒᵖ := ⟨⟨fun ω ↦ .mk (.op ω), rfl⟩, fun _ _ ↦ rfl⟩
+  have hψ (ω : V) (f : V → Y) : ψ ω +ᵥ f = fun x ↦ f (x + ω) :=
+    funext fun x ↦ DomAddAct.vadd_apply (ψ ω) f x
   -- The periods of `g` in `Λ` form its stabilizer. By orbit–stabilizer, its index is the number
   -- of distinct translates of `g` by `Λ`, which are sections, so there are finitely many.
   refine ⟨(AddAction.stabilizer _ g).comap ψ ⊓ Λ, inf_le_right, ?_,
-    fun ω hω x ↦ congrFun hω.1 x⟩
+    fun ω hω x ↦ by simpa [hψ] using congrFun hω.1 x⟩
   rw [AddSubgroup.inf_relIndex_right, AddSubgroup.relIndex_comap, AddSubgroup.relIndex,
     AddAction.stabilizer_addSubgroupOf, AddAction.index_stabilizer]
   refine ncard_ne_zero_of_mem (AddAction.mem_orbit_self g) (hSfin.subset ?_)
-  rintro _ ⟨⟨_, ω, hω, rfl⟩, rfl⟩
-  change (fun x ↦ g (x + ω)) ∈ S
+  rintro _ ⟨⟨_, hm⟩, rfl⟩
+  obtain ⟨ω, hω, rfl⟩ := AddSubgroup.mem_map.1 hm
+  simp only [AddSubgroup.vadd_def, hψ]
   refine ⟨by fun_prop, fun x ↦ ?_⟩
   simpa using hΛ (-ω) (neg_mem hω) _ (hgE (x + ω))
 
