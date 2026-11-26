@@ -107,9 +107,7 @@ theorem mobiusSectionsExtendEquiv_symm_apply (φ : A →ₐ[ℝ] B) (hφ : Conti
       ∑ i : Fin 2, BalancedExtension.tmul
         ((φ : A →+* B).compLeftContinuous (AddCircle (1 : ℝ)) hφ)
         ((w : Fin 2 → C(AddCircle (1 : ℝ), B)) i)
-        ⟨mobiusProjection A i, by
-          rw [← range_vecMulLinear_mobiusProjection]
-          exact row_mem_range_vecMulLinear _ i⟩ := by
+        ⟨mobiusProjection A i, mobiusProjection_mem_mobiusSections i⟩ := by
   simp only [mobiusSectionsExtendEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
     LinearEquiv.ofEq_symm, BalancedExtension.congr_symm,
     BalancedExtension.rangeVecMulLinearEquiv_symm_apply, map_sum, BalancedExtension.congr_tmul,
@@ -146,9 +144,7 @@ complex Möbius module maps to `∑ i, wᵢ ⊗ pᵢ`, through the rows `pᵢ` o
 theorem mobiusSectionsComplexifyEquiv_symm_apply (w : mobiusSections ℂ) :
     mobiusSectionsComplexifyEquiv.symm w =
       ∑ i : Fin 2, BalancedExtension.tmul ofRealCM ((w : Fin 2 → 𝓒ℂ) i)
-        ⟨mobiusProjection ℝ i, by
-          rw [← range_vecMulLinear_mobiusProjection]
-          exact row_mem_range_vecMulLinear _ i⟩ :=
+        ⟨mobiusProjection ℝ i, mobiusProjection_mem_mobiusSections i⟩ :=
   mobiusSectionsExtendEquiv_symm_apply (Algebra.ofId ℝ ℂ) Complex.continuous_ofReal w
 
 /-! ### The complex frame -/
@@ -248,8 +244,11 @@ function of `t`. -/
 def mobiusSectionsComplexEquiv : 𝓒ℂ ≃ₗ[𝓒ℂ] mobiusSections ℂ where
   toFun g := ⟨g • mobiusComplexFrame,
     Submodule.smul_mem _ g mobiusComplexFrame_mem_mobiusSections⟩
-  map_add' g h := Subtype.ext <| by exact add_smul g h mobiusComplexFrame
-  map_smul' c g := Subtype.ext <| by exact smul_assoc c g mobiusComplexFrame
+  map_add' g h := Subtype.ext <| by
+    simp only [Submodule.coe_add]
+    exact add_smul g h mobiusComplexFrame
+  map_smul' c g := Subtype.ext <| by
+    simp only [Submodule.coe_smul, RingHom.id_apply, smul_assoc]
   invFun w := star mobiusComplexFrame ⬝ᵥ (w : Fin 2 → 𝓒ℂ)
   left_inv g := by
     refine (dotProduct_smul g (star mobiusComplexFrame) mobiusComplexFrame).trans ?_

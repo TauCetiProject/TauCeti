@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.Instances.Matrix
 
+import TauCeti.LinearAlgebra.Matrix.Range
 import TauCeti.Topology.Circle.AddCircle
 import TauCeti.Topology.Order.IntermediateValue
 
@@ -55,6 +56,7 @@ in `K₀`):
 * `TauCeti.mem_mobiusSections_iff`: the pointwise description of `M`.
 * `TauCeti.range_mulVecLin_mobiusProjection`, `TauCeti.range_vecMulLinear_mobiusProjection`:
   `M` is the image of `p`.
+* `TauCeti.mobiusProjection_mem_mobiusSections`: each row of `p` is a section of `M`.
 * `TauCeti.map_mobiusProjection`: a continuous `ℝ`-algebra homomorphism `A → B` carries `p` over
   `A` to `p` over `B`.
 * `TauCeti.apply_eq_mobiusSectionCoeff_mul`: a section of `M` is `⟨u, w⟩ u`.
@@ -376,6 +378,12 @@ theorem range_vecMulLinear_mobiusProjection :
   congr 1
   refine LinearMap.ext fun w ↦ ?_
   rw [vecMulLinear_apply, mulVecLin_apply, ← vecMul_transpose, transpose_mobiusProjection]
+
+/-- Each row `pᵢ` of the projection `p` is a section of the Möbius module. -/
+theorem mobiusProjection_mem_mobiusSections (i : Fin 2) :
+    mobiusProjection A i ∈ mobiusSections A := by
+  rw [← range_vecMulLinear_mobiusProjection]
+  exact row_mem_range_vecMulLinear _ i
 
 end General
 
