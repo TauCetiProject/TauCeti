@@ -49,6 +49,9 @@ two-dimensional bigraded space `W`. So the Poincaré series is the object on whi
   internal direct sum of its homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.totalDim_bigradedFullyBlockedHomologyPoincareSeries`: the
   total dimension of the Poincaré series is the dimension of `GH~`.
+* `TauCeti.OddComponentGridDiagram.coeff_bigradedFullyBlockedHomologyPoincareSeries_of_linearEquiv`:
+  a linear equivalence of fully blocked homologies carrying the homogeneous projections in
+  bidegree `g` to those in bidegree `φ g` identifies the coefficients at `g` and at `φ g`.
 * `TauCeti.OddComponentGridDiagram.bigradedFullyBlockedHomologyPoincareSeries_eq_of_linearEquiv`:
   a linear equivalence of fully blocked homologies commuting with the homogeneous projections
   identifies the Poincaré series.
@@ -322,32 +325,45 @@ theorem totalDim_bigradedFullyBlockedHomologyPoincareSeries :
     AddMonoidAlgebra.coeff_ofCoeff, Finsupp.onFinset_sum _ fun _ => rfl,
     sum_finrank_bigradedFullyBlockedHomologyPiece]
 
-/-- A linear equivalence of fully blocked homologies that commutes with the homogeneous
-projections carries each homogeneous piece onto the piece of the same bidegree. -/
+/-- A linear equivalence of fully blocked homologies that carries the homogeneous projection onto
+each bidegree `g` to the projection onto bidegree `φ g` carries the bidegree-`g` piece onto the
+bidegree-`φ g` piece. -/
 theorem map_bigradedFullyBlockedHomologyPiece {m : ℕ} {G' : OddComponentGridDiagram m}
-    (e : G.val.fullyBlockedHomology ≃ₗ[F] G'.val.fullyBlockedHomology)
+    (e : G.val.fullyBlockedHomology ≃ₗ[F] G'.val.fullyBlockedHomology) (φ : ℤ × ℤ → ℤ × ℤ)
     (he : ∀ g y, e (G.bigradedFullyBlockedHomologyProjection g y) =
-      G'.bigradedFullyBlockedHomologyProjection g (e y)) (g : ℤ × ℤ) :
+      G'.bigradedFullyBlockedHomologyProjection (φ g) (e y)) (g : ℤ × ℤ) :
     (G.bigradedFullyBlockedHomologyPiece g).map e.toLinearMap =
-      G'.bigradedFullyBlockedHomologyPiece g := by
+      G'.bigradedFullyBlockedHomologyPiece (φ g) := by
   have h : e.toLinearMap ∘ₗ G.bigradedFullyBlockedHomologyProjection g =
-      G'.bigradedFullyBlockedHomologyProjection g ∘ₗ e.toLinearMap :=
+      G'.bigradedFullyBlockedHomologyProjection (φ g) ∘ₗ e.toLinearMap :=
     LinearMap.ext (he g)
   rw [bigradedFullyBlockedHomologyPiece, bigradedFullyBlockedHomologyPiece,
     ← LinearMap.range_comp, h, LinearMap.range_comp_of_range_eq_top _ e.range]
 
+/-- A linear equivalence of fully blocked homologies that carries the homogeneous projection onto
+each bidegree `g` to the projection onto bidegree `φ g` identifies the coefficient of the Poincaré
+series in bidegree `g` with the coefficient of the target series in bidegree `φ g`. -/
+theorem coeff_bigradedFullyBlockedHomologyPoincareSeries_of_linearEquiv {m : ℕ}
+    {G' : OddComponentGridDiagram m}
+    (e : G.val.fullyBlockedHomology ≃ₗ[F] G'.val.fullyBlockedHomology) (φ : ℤ × ℤ → ℤ × ℤ)
+    (he : ∀ g y, e (G.bigradedFullyBlockedHomologyProjection g y) =
+      G'.bigradedFullyBlockedHomologyProjection (φ g) (e y)) (g : ℤ × ℤ) :
+    G'.bigradedFullyBlockedHomologyPoincareSeries.coeff (φ g) =
+      G.bigradedFullyBlockedHomologyPoincareSeries.coeff g := by
+  rw [coeff_bigradedFullyBlockedHomologyPoincareSeries,
+    coeff_bigradedFullyBlockedHomologyPoincareSeries,
+    ← G.map_bigradedFullyBlockedHomologyPiece e φ he g, LinearEquiv.finrank_map_eq]
+
 /-- A linear equivalence of fully blocked homologies that commutes with the homogeneous
-projections identifies their Poincaré series. -/
+projections identifies the Poincaré series. -/
 theorem bigradedFullyBlockedHomologyPoincareSeries_eq_of_linearEquiv {m : ℕ}
     {G' : OddComponentGridDiagram m}
     (e : G.val.fullyBlockedHomology ≃ₗ[F] G'.val.fullyBlockedHomology)
     (he : ∀ g y, e (G.bigradedFullyBlockedHomologyProjection g y) =
       G'.bigradedFullyBlockedHomologyProjection g (e y)) :
     G.bigradedFullyBlockedHomologyPoincareSeries =
-      G'.bigradedFullyBlockedHomologyPoincareSeries := by
-  refine AddMonoidAlgebra.coeff_injective (Finsupp.ext fun g => ?_)
-  rw [coeff_bigradedFullyBlockedHomologyPoincareSeries,
-    coeff_bigradedFullyBlockedHomologyPoincareSeries,
-    ← G.map_bigradedFullyBlockedHomologyPiece e he g, LinearEquiv.finrank_map_eq]
+      G'.bigradedFullyBlockedHomologyPoincareSeries :=
+  AddMonoidAlgebra.coeff_injective (Finsupp.ext fun g =>
+    (G.coeff_bigradedFullyBlockedHomologyPoincareSeries_of_linearEquiv e id he g).symm)
 
 end TauCeti.OddComponentGridDiagram
