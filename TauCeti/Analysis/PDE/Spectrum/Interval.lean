@@ -76,6 +76,8 @@ Rellich compactness on `(a, b)` comes from Rellich compactness on a ball, which 
   eigenvalue is `(π / (b - a))²`.
 * `TauCeti.PDE.isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain`: the sharp Poincaré
   inequality on `H¹₀(a, b)`, with constant `(π / (b - a))²`.
+* `TauCeti.PDE.isCompactOperator_valueL_intervalDomain`: Rellich compactness of
+  `W^{1,p}(a, b) → Lᵖ(a, b)`.
 * `TauCeti.PDE.exists_value_ae_eq_cos_and_forall_inner_gradient_eq`: the cosine modes are weak
   Neumann eigenfunctions.
 * `TauCeti.PDE.eq_zero_of_forall_setIntegral_mul_cos_eq_zero`: the cosine modes are complete in
@@ -167,19 +169,10 @@ private theorem integral_sineMode_sq {k : ℕ} (hk : 0 < k) :
   field_simp
   ring
 
-/-- The interval domain `(a, b)` is the ball of radius `(b - a) / 2` about the midpoint. -/
-private theorem coe_intervalDomain_eq_ball :
-    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) =
-      Metric.ball (lineEquiv ((a + b) / 2)) ((b - a) / 2) := by
-  ext x
-  rw [Metric.mem_ball, ← lineEquiv.symm.dist_map]
-  simp only [LinearIsometryEquiv.symm_apply_apply, Real.dist_eq, abs_sub_lt_iff, SetLike.mem_coe,
-    mem_intervalDomain, mem_Ioo, lineEquiv_symm_apply]
-  constructor <;> intro h <;> constructor <;> linarith [h.1, h.2]
-
 /-- **Rellich compactness on an interval.** For `1 ≤ p ≤ ∞`, the value map
-`W^{1,p}(a, b) → Lᵖ(a, b)` is a compact operator. -/
-private theorem isCompactOperator_valueL_intervalDomain {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+`W^{1,p}(a, b) → Lᵖ(a, b)` is a compact operator, since the interval is a ball of the line
+(`TauCeti.PDE.coe_intervalDomain_eq_ball`). -/
+theorem isCompactOperator_valueL_intervalDomain {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := intervalDomain a b) (p := p)) := by
   have h : intervalDomain a b =
       ⟨Metric.ball (lineEquiv ((a + b) / 2)) ((b - a) / 2), Metric.isOpen_ball⟩ :=
