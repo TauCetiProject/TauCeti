@@ -65,6 +65,7 @@ def quotientSheaf.relSieve {T : C} (a b : T ⟶ U) : Sieve T where
     · exact Or.inr (Or.inr ⟨f ≫ r, by simp [h₁], by simp [h₂]⟩)
 
 /-- Membership in `quotientSheaf.relSieve s t a b`. -/
+@[simp]
 theorem quotientSheaf.mem_relSieve {T T' : C} (a b : T ⟶ U) (g : T' ⟶ T) :
     quotientSheaf.relSieve s t a b g ↔ g ≫ a = g ≫ b ∨
       (∃ r : T' ⟶ R, r ≫ t = g ≫ a ∧ r ≫ s = g ≫ b) ∨
@@ -131,14 +132,35 @@ noncomputable def quotientSheaf.isoOfRelSieveMem {q : U ⟶ M} (hq : t ≫ q = s
   asIso (quotientSheaf.desc (J.uliftYoneda.{w}.map q)
     (quotientSheaf.uliftYoneda_map_condition hq))
 
+/-- The isomorphism `quotientSheaf.isoOfRelSieveMem` is the factorisation of `q` through the
+quotient sheaf. -/
+@[simp]
+theorem quotientSheaf.isoOfRelSieveMem_hom {q : U ⟶ M} (hq : t ≫ q = s ≫ q)
+    (hU : Sheaf.IsLocallySurjective (J.uliftYoneda.{w}.map q))
+    (hR : ∀ ⦃T : C⦄ (a b : T ⟶ U), a ≫ q = b ≫ q → quotientSheaf.relSieve s t a b ∈ J T) :
+    (quotientSheaf.isoOfRelSieveMem hq hU hR).hom =
+      quotientSheaf.desc (J.uliftYoneda.{w}.map q)
+        (quotientSheaf.uliftYoneda_map_condition hq) := by
+  rfl
+
 /-- The projection onto the quotient sheaf, followed by `quotientSheaf.isoOfRelSieveMem`, is the
 map `h q`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem quotientSheaf.π_isoOfRelSieveMem_hom {q : U ⟶ M} (hq : t ≫ q = s ≫ q)
     (hU : Sheaf.IsLocallySurjective (J.uliftYoneda.{w}.map q))
     (hR : ∀ ⦃T : C⦄ (a b : T ⟶ U), a ≫ q = b ≫ q → quotientSheaf.relSieve s t a b ∈ J T) :
     quotientSheaf.π J s t ≫ (quotientSheaf.isoOfRelSieveMem hq hU hR).hom =
       J.uliftYoneda.{w}.map q :=
   quotientSheaf.π_desc _ _
+
+/-- The map `h q : h_U ⟶ h_M`, followed by the inverse of `quotientSheaf.isoOfRelSieveMem`, is the
+projection onto the quotient sheaf. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.uliftYoneda_map_isoOfRelSieveMem_inv {q : U ⟶ M} (hq : t ≫ q = s ≫ q)
+    (hU : Sheaf.IsLocallySurjective (J.uliftYoneda.{w}.map q))
+    (hR : ∀ ⦃T : C⦄ (a b : T ⟶ U), a ≫ q = b ≫ q → quotientSheaf.relSieve s t a b ∈ J T) :
+    J.uliftYoneda.{w}.map q ≫ (quotientSheaf.isoOfRelSieveMem hq hU hR).inv =
+      quotientSheaf.π J s t :=
+  (Iso.comp_inv_eq _).2 (quotientSheaf.π_isoOfRelSieveMem_hom hq hU hR).symm
 
 end TauCeti.CategoryTheory
