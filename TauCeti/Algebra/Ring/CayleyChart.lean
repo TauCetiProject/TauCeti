@@ -45,6 +45,11 @@ endomorphism fields. The inverses are `Ring.inverse`.
   `j`-antilinear `η` with `1 + η` invertible onto the square roots `J` of `-1` with `j + J`
   invertible, with inverse `cayleyCoord j`.
 
+At the base point `1`, the same coordinate is the Cayley transform `(1 - x)(1 + x)⁻¹`.
+It is an involution on the elements with `1 + x` invertible when `2` is a unit
+(`TauCeti.cayleyCoord_one_cayleyCoord_one`). This ring-level API also applies to matrices and
+provides the algebra behind Cayley charts of unitary groups.
+
 ## Main results
 
 * `TauCeti.cayleyParam_mul_self`: `cayleyParam j η` is a square root of `-1`.
@@ -177,6 +182,20 @@ lemma one_add_cayleyCoord_mul_add (hJ : IsUnit (j + J)) :
   obtain ⟨u, hu⟩ := hJ
   rw [add_mul, cayleyCoord_def, ← hu, Ring.inverse_unit, Units.inv_mul_cancel_right, hu]
   noncomm_ring
+
+/-- Multiplying the Cayley coordinate by its denominator recovers its numerator:
+`cayleyCoord j J * (j + J) = j - J` for `j + J` invertible. -/
+lemma cayleyCoord_mul_add (hJ : IsUnit (j + J)) : cayleyCoord j J * (j + J) = j - J :=
+  ((cayleyCoord_eq_iff hJ).1 rfl).symm
+
+/-- For `j + J` invertible, `1 + cayleyCoord j J = 2 * j * (j + J)⁻¹`. -/
+lemma one_add_cayleyCoord (hJ : IsUnit (j + J)) :
+    1 + cayleyCoord j J = 2 * j * Ring.inverse (j + J) := by
+  rw [← one_add_cayleyCoord_mul_add hJ, mul_assoc, Ring.mul_inverse_cancel _ hJ, mul_one]
+
+/-- The Cayley coordinate of `-x` is `(j + x)(j - x)⁻¹`. -/
+lemma cayleyCoord_neg (j x : A) : cayleyCoord j (-x) = (j + x) * Ring.inverse (j - x) := by
+  rw [cayleyCoord_def, sub_neg_eq_add, ← sub_eq_add_neg]
 
 /-- For `J` with the same square as `j` and `j + J` invertible, `J + j` carries the Cayley
 coordinate of `J` to `J - j`: `(J + j) * cayleyCoord j J = J - j`. For square roots of `-1` this
@@ -330,5 +349,53 @@ theorem map_cayleyParam {S F : Type*} [Ring S] [EquivLike F A S] [RingEquivClass
 theorem map_cayleyCoord {S F : Type*} [Ring S] [EquivLike F A S] [RingEquivClass F A S]
     (f : F) (j J : A) : f (cayleyCoord j J) = cayleyCoord (f j) (f J) := by
   simp only [cayleyCoord_def, map_mul, map_add, map_sub, map_ringInverse]
+
+/-! ### The Cayley coordinate relative to `1` -/
+
+/-- The Cayley coordinate relative to `1` sends `0` to `1`. -/
+@[simp]
+lemma cayleyCoord_one_zero : cayleyCoord (1 : A) 0 = 1 := by
+  simp [cayleyCoord_def]
+
+/-- The Cayley coordinate vanishes when its denominator is not a unit. -/
+lemma cayleyCoord_of_not_isUnit (hJ : ¬IsUnit (j + J)) : cayleyCoord j J = 0 := by
+  simp [cayleyCoord_def, Ring.inverse_non_unit _ hJ]
+
+/-- The two factors of the Cayley coordinate relative to `1` commute. -/
+lemma cayleyCoord_one_eq_ringInverse_mul (x : A) :
+    cayleyCoord 1 x = Ring.inverse (1 + x) * (1 - x) := by
+  by_cases hx : IsUnit (1 + x)
+  · -- `1 + x` commutes with `1 - x`, hence so does its inverse.
+    have h : Commute (hx.unit : A) (1 - x) := by
+      rw [hx.unit_spec]
+      exact (Commute.one_right _).sub_right ((Commute.one_left x).add_left (Commute.refl x))
+    rw [cayleyCoord_def, ← hx.unit_spec, Ring.inverse_unit]
+    exact h.units_inv_left.eq.symm
+  · simp [cayleyCoord_def, Ring.inverse_non_unit _ hx]
+
+/-- The left multiplication form of the defining equation of the Cayley coordinate at `1`. -/
+lemma one_add_mul_cayleyCoord_one (hx : IsUnit (1 + J)) :
+    (1 + J) * cayleyCoord 1 J = 1 - J := by
+  rw [cayleyCoord_one_eq_ringInverse_mul, ← mul_assoc, Ring.mul_inverse_cancel _ hx, one_mul]
+
+/-- If `2` is a unit, the denominator of the iterated Cayley coordinate at `1` is a unit,
+even when the original denominator is not a unit. -/
+lemma isUnit_one_add_cayleyCoord_one (h2 : IsUnit (2 : A)) (x : A) :
+    IsUnit (1 + cayleyCoord 1 x) := by
+  by_cases hx : IsUnit (1 + x)
+  · rw [one_add_cayleyCoord hx, mul_one]
+    exact h2.mul hx.ringInverse
+  · simp [cayleyCoord_of_not_isUnit hx]
+
+/-- The Cayley coordinate relative to `1` is an involution where its denominator is a unit,
+provided that `2` is a unit. -/
+@[simp]
+lemma cayleyCoord_one_cayleyCoord_one (h2 : IsUnit (2 : A)) (hx : IsUnit (1 + J)) :
+    cayleyCoord 1 (cayleyCoord 1 J) = J := by
+  rw [cayleyCoord_eq_iff (isUnit_one_add_cayleyCoord_one h2 J)]
+  -- Multiply on the right by `1 + J` to clear the denominator on both sides.
+  rw [← hx.mul_left_inj, sub_mul, one_mul, cayleyCoord_mul_add hx,
+    mul_assoc, one_add_cayleyCoord_mul_add hx, mul_one]
+  noncomm_ring
 
 end TauCeti
