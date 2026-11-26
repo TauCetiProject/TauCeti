@@ -579,26 +579,6 @@ theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub
     h₀ h₁ hρ hρc (fun x _ ↦ congrFun hβ x) (fun x hx ↦ hndN x (hρN hx)) hK hβK hρ1
   exact ⟨Φ, hΦK, ⟨tsupport ρ, hρc, hΦρ⟩, hΦ, hΦ1⟩
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- Let `Φ` be a diffeomorphism of `M` which restricts on an open subset `U` to a diffeomorphism `Ψ`
-of `U`. If `Ψ` pulls the restriction of `σ₁` to `U` back to that of `σ₀` near a set `K ⊆ U`, then
-`Φ` pulls `σ₁` back to `σ₀` near the image of `K` in `M`. -/
-theorem eventually_mpullback_eq_of_subtype_val_comp_eq {U : TopologicalSpace.Opens M}
-    {Φ : M ≃ₘ⟮I, I⟯ M} {Ψ : U ≃ₘ⟮I, I⟯ U}
-    (hcomp : ⇑Φ ∘ (Subtype.val : U → M) = Subtype.val ∘ ⇑Ψ) {σ₀ σ₁ : SmoothTwoForm I M}
-    {K : Set U}
-    (hΨ : ∀ᶠ x in 𝓝ˢ K, (SmoothForm.mpullback Ψ Ψ.contMDiff
-      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ₁)).val x =
-        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ₀).val x) :
-    ∀ᶠ x in 𝓝ˢ (Subtype.val '' K), (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x := by
-  obtain ⟨V, ⟨hV, hKV⟩, hVΨ⟩ := (hasBasis_nhdsSet K).mem_iff.1 hΨ
-  refine mem_of_superset ((U.isOpen.isOpenEmbedding_subtypeVal.isOpenMap V hV).mem_nhdsSet.2
-    (image_mono hKV)) ?_
-  rintro _ ⟨z, hz, rfl⟩
-  rw [mem_ofPred_eq, ← SmoothForm.coe_mpullback_subtype_val_apply,
-    SmoothForm.mpullback_mpullback_of_comp_eq _ _ Ψ.contMDiff contMDiff_subtypeVal hcomp]
-  exact (hVΨ hz).trans (SmoothForm.coe_mpullback_subtype_val_apply σ₀ z)
-
 /-- **The relative Moser theorem for forms with equal pullbacks.** Let `σ₀`, `σ₁` be closed
 two-forms on a boundaryless second-countable Hausdorff manifold `M` whose pullbacks along a compact
 embedded submanifold `f : Q → M` agree, and suppose that the path `σ₀ + s (σ₁ - σ₀)`,
@@ -659,7 +639,8 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq
   have hrange : Subtype.val '' range g = range f := (range_comp _ _).symm
   exact ⟨Φ, fun q ↦ (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q))),
     ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩,
-    hrange ▸ eventually_mpullback_eq_of_subtype_val_comp_eq hcomp hΨ, hΦ1⟩
+    hrange ▸ SmoothForm.eventually_mpullback_eq_of_subtype_val_comp_eq Φ.contMDiff Ψ.contMDiff
+      hcomp hΨ, hΦ1⟩
 
 /-- **The relative Moser theorem.** Let `σ₀`, `σ₁` be closed two-forms on a boundaryless
 second-countable Hausdorff manifold `M` which agree, as bilinear forms on the full tangent spaces of

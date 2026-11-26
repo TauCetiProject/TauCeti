@@ -8,11 +8,11 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.RelativeMoser
 public import TauCeti.Geometry.Manifold.DifferentialForm.Average
 import TauCeti.Geometry.Manifold.Algebra.SMul
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Diffeomorph.Extend
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.GroupAction.InvariantCutoff
 import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
+import TauCeti.Geometry.Manifold.GroupAction.Restrict
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 import TauCeti.RepresentationTheory.Compact.Haar
 import TauCeti.Topology.Algebra.ConstMulAction
@@ -64,9 +64,10 @@ neighbourhood of a compact submanifold of fixed points.
 The primitive comes from the relative Poincaré lemma
 (`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`), on a tubular neighbourhood `W`
 of `f(Q)` which need not be invariant. Moser's argument therefore runs on the largest invariant open
-subset `{x | ∀ a, a • x ∈ W}` of `W`, open since `G` is compact, which still contains `f(Q)` and on
-which `G` still acts smoothly. The resulting compactly supported equivariant diffeomorphism of that
-open subset extends by the identity to an equivariant diffeomorphism of `M`.
+subset `{x | ∀ a, a • x ∈ W}` of `W` (`TopologicalSpace.Opens.invariantCore`), open since `G` is
+compact, which still contains `f(Q)` and on which `G` still acts smoothly. The resulting compactly
+supported equivariant diffeomorphism of that open subset extends by the identity to an equivariant
+diffeomorphism of `M`.
 
 Equivariant relative Moser theorems are the input of the equivariant normal forms of Hamiltonian
 group actions: near a fixed point (equivariant Darboux), along a submanifold of fixed points, and
@@ -169,16 +170,17 @@ theorem exists_equivariant_diffeomorph_fix_eventually_mpullback_eq {σ₀ σ₁ 
 
 variable (G IG) in
 include IG in
-/-- Moser's argument on an invariant open subset `U`, with a primitive defined only on `U`: the
-compactly supported equivariant diffeomorphism of `U` given by the equivariant relative Moser
-theorem extends by the identity to an equivariant diffeomorphism of `M`. -/
-private theorem exists_equivariant_diffeomorph_of_opens (U : Opens M) [MulAction G U]
-    [ContMDiffSMul IG I ∞ G U] (hsmul : ∀ (a : G) (x : U), ((a • x : U) : M) = a • (x : M))
+/-- Moser's argument on the largest invariant open subset `U` of an open set `W`, with a primitive
+defined only on `U`: the compactly supported equivariant diffeomorphism of `U` given by the
+equivariant relative Moser theorem extends by the identity to an equivariant diffeomorphism of
+`M`. -/
+private theorem exists_equivariant_diffeomorph_of_opens [ContinuousSMul G M] (W : Opens M)
     {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ₀.IsClosed) (h₁ : σ₁.IsClosed)
     (hG₀ : ∀ a : G, mpullback I I (a • ·) σ₀.val = σ₀.val)
-    (hG₁ : ∀ a : G, mpullback I I (a • ·) σ₁.val = σ₁.val) {β : SmoothForm I U ℝ 1}
-    (hβ : mextDeriv β.val = mpullback I I (Subtype.val : U → M) (σ₁ - σ₀).val)
-    {K : Set U} (hK : IsCompact K) (hKG : ∀ (a : G), ∀ x ∈ K, a • x ∈ K)
+    (hG₁ : ∀ a : G, mpullback I I (a • ·) σ₁.val = σ₁.val)
+    {β : SmoothForm I (W.invariantCore G) ℝ 1}
+    (hβ : mextDeriv β.val = mpullback I I (Subtype.val : W.invariantCore G → M) (σ₁ - σ₀).val)
+    {K : Set (W.invariantCore G)} (hK : IsCompact K) (hKG : ∀ (a : G), ∀ x ∈ K, a • x ∈ K)
     (hβK : ∀ x ∈ K, β.val x = 0)
     (hnd : ∀ x ∈ K, ∀ s ∈ Icc (0 : ℝ) 1, ((σ₀ + s • (σ₁ - σ₀)).bilinFormAt (x : M)).Nondegenerate) :
     ∃ Φ : M ≃ₘ⟮I, I⟯ M, (∀ x ∈ K, Φ x = x) ∧ (∃ C, IsCompact C ∧ ∀ x ∉ C, Φ x = x) ∧
@@ -188,6 +190,7 @@ private theorem exists_equivariant_diffeomorph_of_opens (U : Opens M) [MulAction
         (0 : E →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ) (extChartAt I (a • x) (a • x))) →
         mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I (x : M))) ∧
       ∀ (a : G) (x : M), Φ (a • x) = a • Φ x := by
+  let U := W.invariantCore G
   let res := SmoothForm.mpullback (I := I) (I' := I) (F := ℝ) (k := 2) (Subtype.val : U → M)
     contMDiff_subtypeVal
   have hval : MDifferentiable I I (Subtype.val : U → M) :=
@@ -195,7 +198,8 @@ private theorem exists_equivariant_diffeomorph_of_opens (U : Opens M) [MulAction
   -- The restrictions of invariant forms to `U` are invariant.
   have hres (σ : SmoothTwoForm I M) (hσ : ∀ a : G, mpullback I I (a • ·) σ.val = σ.val) (a : G) :
       mpullback I I (a • ·) (res σ).val = (res σ).val := by
-    have hcomp : (Subtype.val : U → M) ∘ (a • ·) = (a • ·) ∘ Subtype.val := funext (hsmul a)
+    have hcomp : (Subtype.val : U → M) ∘ (a • ·) = (a • ·) ∘ Subtype.val :=
+      funext (Opens.coe_smul_invariantCore W a)
     have hdM : MDifferentiable I I fun x : M ↦ a • x :=
       ContMDiffSMul.mdifferentiable_const_smul (I := IG) (n := ∞) (by simp) a
     have hdU : MDifferentiable I I fun x : U ↦ a • x :=
@@ -213,17 +217,20 @@ private theorem exists_equivariant_diffeomorph_of_opens (U : Opens M) [MulAction
   have hcomp : ⇑Φ ∘ (Subtype.val : U → M) = Subtype.val ∘ ⇑Ψ := funext hΦU
   refine ⟨Φ, fun x hx ↦ (hΦU x).trans (congrArg Subtype.val (hΨK x hx)),
     ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩,
-    eventually_mpullback_eq_of_subtype_val_comp_eq hcomp hΨ, fun x hx hjet ↦
+    SmoothForm.eventually_mpullback_eq_of_subtype_val_comp_eq Φ.contMDiff Ψ.contMDiff hcomp hΨ,
+    fun x hx hjet ↦
       ContinuousLinearMap.ext fun v ↦
         (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I) hcomp.symm v).symm.trans
           (DFunLike.congr_fun (hΨ1 x hx hjet) v), fun a x ↦ ?_⟩
   -- `Φ` is `Ψ` on the invariant set `U` and the identity off it.
   by_cases hx : x ∈ U
-  · rw [← hsmul a ⟨x, hx⟩, hΦU, hΨG, hsmul, ← hΦU ⟨x, hx⟩]
+  · rw [← Opens.coe_smul_invariantCore W a ⟨x, hx⟩, hΦU, hΨG, Opens.coe_smul_invariantCore,
+      ← hΦU ⟨x, hx⟩]
   · have hnot {y : M} (hy : y ∉ U) : y ∉ Subtype.val '' C := by
       rintro ⟨z, -, rfl⟩
       exact hy z.property
-    have hax : a • x ∉ U := fun h ↦ hx (by simpa [hsmul] using (a⁻¹ • (⟨a • x, h⟩ : U)).property)
+    have hax : a • x ∉ U := fun h ↦ hx (by
+      simpa only [inv_smul_smul] using Opens.smul_mem_invariantCore h a⁻¹)
     rw [hΦC _ (hnot hax), hΦC _ (hnot hx)]
 
 variable [SecondCountableTopology M]
@@ -268,23 +275,17 @@ theorem exists_equivariant_diffeomorph_fix_embedding_eventually_mpullback_eq_of_
     ((SmoothForm.isClosed_def _).1 (h₁.sub h₀)) hpull
   -- Moser's argument runs on the largest invariant open subset `W'` of `W`, which still contains
   -- the invariant set `f(Q)`, with the restricted action and primitive.
-  let W' : Opens M := ⟨{x | ∀ a : G, a • x ∈ W}, isOpen_setOf_forall_smul_mem W.isOpen⟩
-  have hW'W : W' ≤ W := fun x hx ↦ by simpa using hx 1
-  let : MulAction G W' :=
-    { smul a x := ⟨a • (x : M), fun b ↦ by simpa [smul_smul] using x.property (b * a)⟩
-      one_smul x := Subtype.ext (one_smul G (x : M))
-      mul_smul a b x := Subtype.ext (mul_smul a b (x : M)) }
-  have : ContMDiffSMul IG I ∞ G W' :=
-    ⟨(ContMDiff.subtypeVal_comp_iff W' _).1 <|
-      contMDiff_smul.comp (contMDiff_fst.prodMk (contMDiff_subtypeVal.comp contMDiff_snd))⟩
+  let W' := W.invariantCore G
+  have hW'W : W' ≤ W := Opens.invariantCore_le G W
   let β : SmoothForm I W' ℝ 1 :=
     ⟨mpullback I I (Opens.inclusion hW'W) βW,
       (hβW.mpullback (contMDiff_inclusion hW'W)).mem_smoothBundleForms⟩
   have hβval : β.val = mpullback I I (Opens.inclusion hW'W) βW := rfl
-  let g : Q → W' := fun q ↦ ⟨f q, fun a ↦ (hfG a q).choose_spec ▸ hfW (mem_range_self _)⟩
+  let g : Q → W' := fun q ↦
+    ⟨f q, Opens.mem_invariantCore.2 fun a ↦ (hfG a q).choose_spec ▸ hfW (mem_range_self _)⟩
   have hgG (a : G) (q : Q) : a • g q = g (hfG a q).choose := Subtype.ext (hfG a q).choose_spec.symm
-  obtain ⟨Φ, hΦK, hΦC, hΦ, hΦ1, hΦG⟩ := exists_equivariant_diffeomorph_of_opens G IG W'
-    (fun _ _ ↦ rfl) h₀ h₁ hG₀ hG₁ (β := β) (K := range g)
+  obtain ⟨Φ, hΦK, hΦC, hΦ, hΦ1, hΦG⟩ := exists_equivariant_diffeomorph_of_opens G IG W h₀ h₁ hG₀ hG₁
+    (β := β) (K := range g)
     (by
       rw [hβval, ← mpullback_inclusion_mextDeriv, hdβW,
         ← mpullback_comp ((contMDiff_inclusion (n := 1) hW'W).mdifferentiable one_ne_zero)
@@ -301,11 +302,12 @@ theorem exists_equivariant_diffeomorph_fix_embedding_eventually_mpullback_eq_of_
   -- at every point of its orbit, by invariance.
   have hη : (σ₁ - σ₀).val (f (hfG a q).choose) = 0 := by
     rw [(hfG a q).choose_spec]
-    refine RoughForm.apply_smul_eq_zero_of_mpullback_smul_eq (fun b ↦ ?_) a ?_
+    refine RoughForm.apply_smul_eq_zero_of_mpullback_inv_smul_eq ?_ ?_
     · rw [AddSubgroupClass.coe_sub, mpullback_sub, hG₀, hG₁]
     · rw [AddSubgroupClass.coe_sub, Pi.sub_apply, hq, sub_self]
-  rw [hgG, hβval]
-  exact RoughForm.hasFDerivAt_inChartAt_mpullback_inclusion hW'W βW _ (hβW1 _ hη)
+  rw [hgG, hβval, ← hasFDerivWithinAt_univ, ← ModelWithCorners.range_eq_univ I]
+  exact hasFDerivWithinAt_inChartAt_mpullback_of_apply_eq_zero
+    (contMDiff_inclusion hW'W).contMDiffAt (hβW0 _) (hβW1 _ hη).hasFDerivWithinAt
 
 variable (G IG) in
 include IG in
