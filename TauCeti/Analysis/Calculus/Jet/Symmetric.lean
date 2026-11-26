@@ -419,7 +419,8 @@ theorem truncate_surjective [CharZero 𝕜] (hr : r' ≤ r) :
   congr 1
   funext i
   rw [jetTruncate_apply, dite_eq_left (by simpa using Nat.lt_succ_iff.mp i.isLt)]
-  rfl
+  -- The two indices have the same value `i.val`.
+  congr 1
 
 /-! ### Symmetric jets with only a top component -/
 
@@ -443,6 +444,9 @@ theorem toJets_ofTop_last [CharZero 𝕜] (A : E [×r]→L[𝕜] F) :
     toJets 𝕜 E F r (ofTop 𝕜 E F r A) (Fin.last r) =
       ContinuousMultilinearMap.symmetrize 𝕜 (Fin r) E F A := by
   rw [ofTop_apply, toJets_symmetrizeJets_apply, Pi.single_eq_same]
+  -- The left side symmetrizes over `Fin (Fin.last r).val`, which is `Fin r` by definition;
+  -- `Fin.val_last` cannot be rewritten there since the type of `Pi.single (Fin.last r) A i`
+  -- depends on `i`.
   rfl
 
 /-- The components of `ofTop A` below the top order vanish. -/

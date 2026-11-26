@@ -441,8 +441,7 @@ theorem commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top {m : ℕ}
     have h := ih ⟨smulCommutator R (a 0) D, smulCommutator_mem_differentialOperators D.property _⟩
       (fun i ↦ ha i.succ)
     rw [smulCommutator_apply_apply, ← mul_smul] at h
-    rw [commutatorSymbol_succ_apply, show Fin.tail a = fun i ↦ a i.succ from rfl,
-      Fin.prod_univ_succ]
+    rw [commutatorSymbol_succ_apply, Fin.tail_def, Fin.prod_univ_succ]
     convert sub_mem h (Submodule.smul_mem_smul (ha 0)
       (Submodule.mem_top (x := (D : M →ₗ[R] N) ((∏ i : Fin m, a i.succ) • x)))) using 1
     abel

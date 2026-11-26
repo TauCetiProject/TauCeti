@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.IteratedFDeriv.LeibnizJet
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -18,9 +19,9 @@ import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 Let `V` be a vector bundle over a manifold `M` and `JᵣV` its bundle of `r`-jets. Forgetting the
 derivatives of order `r` is the truncation `JᵣV → Jᵣ₋₁V`. Its kernel at `x` consists of the jets
-of sections all of whose derivatives of order below `r` vanish at `x`, and the derivative of
-order `r` of such a section is a symmetric multilinear map on the tangent space with values in
-the fibre, independent of the chart: this is the exact sequence
+of sections all of whose derivatives of order below `r` vanish at `x`, and such a jet is
+determined by the derivative of order `r`, a symmetric multilinear map on the tangent space with
+values in the fibre. This is the exact sequence
 
 `0 → Sym^r T*ₓM ⊗ Vₓ → (JᵣV)ₓ → (Jᵣ₋₁V)ₓ → 0`
 
@@ -31,8 +32,11 @@ This file constructs the map `TauCeti.JetBundle.ofTop I F V r x` from the contin
 `r`-multilinear maps `TₓM × ⋯ × TₓM → Vₓ` to the fibre of `JᵣV` at `x`: in the chart and the
 trivialization at `x`, `ofTop A` is the jet whose components of order below `r` vanish and whose
 component of order `r` is the symmetrization of `A`. Its range is exactly the kernel of the
-truncation (`TauCeti.JetBundle.range_ofTop`), and the truncation is onto
-(`TauCeti.JetBundle.truncate_surjective`).
+truncation (`TauCeti.JetBundle.range_ofTop`), the truncation is onto
+(`TauCeti.JetBundle.truncate_surjective`), and `ofTop A` vanishes exactly when the symmetrization
+of `A`, read in the trivialization at `x`, does (`TauCeti.JetBundle.ofTop_eq_zero_iff`). These
+are the three parts of the exact sequence above, with `Sym^r T*ₓM ⊗ Vₓ` represented by the
+multilinear maps modulo those whose symmetrization vanishes.
 
 On a real manifold without boundary the map has an intrinsic description by products of
 functions vanishing at `x`: if `f₁, …, fᵣ` are smooth functions with `fᵢ(x) = 0` and `s` is a
@@ -52,8 +56,9 @@ on the diagonals.
 * `TauCeti.JetBundle.ofTop`: the inclusion of the top-order multilinear maps into the fibre of the
   jet bundle, with its components `TauCeti.JetBundle.toJets_ofTop_last` and
   `TauCeti.JetBundle.toJets_ofTop_of_ne_last`.
-* `TauCeti.JetBundle.truncate_ofTop`, `TauCeti.JetBundle.range_ofTop`,
-  `TauCeti.JetBundle.truncate_surjective`: the exact sequence above.
+* `TauCeti.JetBundle.ofTop_eq_zero_iff`, `TauCeti.JetBundle.truncate_ofTop`,
+  `TauCeti.JetBundle.range_ofTop`, `TauCeti.JetBundle.truncate_surjective`: the exact sequence
+  above.
 * `TauCeti.JetBundle.jet_prod_smul`: the jet of `f₁ ⋯ fᵣ s` for functions `fᵢ` vanishing at `x`.
 
 ## References
@@ -132,16 +137,15 @@ theorem toJets_ofTop_of_ne_last (x : M)
     SymmetricJet.toJets 𝕜 E F r (ofTop I F V r x A) i = 0 :=
   SymmetricJet.toJets_ofTop_of_ne_last _ hi
 
-end Order
+/-- `ofTop A` vanishes exactly when the symmetrization of `A`, read in the trivialization at `x`,
+does. -/
+theorem ofTop_eq_zero_iff (x : M)
+    (A : ContinuousMultilinearMap 𝕜 (fun _ : Fin r ↦ TangentSpace I x) (V x)) :
+    ofTop I F V r x A = 0 ↔ ContinuousMultilinearMap.symmetrize 𝕜 (Fin r) E F
+      (((trivializationAt F V x).continuousLinearMapAt 𝕜 x).compContinuousMultilinearMap A) = 0 :=
+  SymmetricJet.ofTop_eq_zero_iff _
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] in
-/-- The truncation of jets in the fibre at `x` is the truncation of symmetric jets. -/
-private theorem truncate_apply [IsManifold I r M] [ContMDiffVectorBundle r F V I]
-    [IsManifold I r' M] [ContMDiffVectorBundle r' F V I] (hr : r' ≤ r) (x : M)
-    (j : JetBundle I F V r x) :
-    truncate hr x j = SymmetricJet.truncate 𝕜 E F hr j :=
-  SymmetricJet.toJets_injective
-    ((toJets_truncate hr x j).trans (SymmetricJet.toJets_truncate hr j).symm)
+end Order
 
 /-- Jets with only a top component truncate to zero. -/
 @[simp]
@@ -240,13 +244,22 @@ theorem jet_prod_smul {x : M} (f : Fin r → C^∞⟮I, M; ℝ⟯) (hf : ∀ i, 
   · subst hk
     rw [Pi.single_eq_same]
     refine (iteratedFDeriv_prod_smul_apply_const hg hw hg0 h).trans ?_
-    rw [hw0, ← map_smul, ← map_nsmul]
-    simp only [hdg]
-    -- Both sides are the trivialization at `x` applied to `r! • (∏ᵢ dₓfᵢ h) • t x`: the right side
-    -- evaluates the composite multilinear map `e ∘ (r! • mkPiRing (t x) ∘ (dₓfᵢ)ᵢ)` at `(h, …, h)`.
-    rfl
-  · rw [Pi.single_eq_of_ne hk, iteratedFDeriv_prod_smul_eq_zero_of_lt hg hw hg0
-      (Fin.val_lt_last hk)]
+    -- Both sides are the trivialization at `x` applied to `r! • (∏ᵢ dₓfᵢ h) • t x`.
+    have htop : ∀ v : TangentSpace I x,
+        ((trivializationAt F V x).continuousLinearMapAt ℝ x).compContinuousMultilinearMap
+          (r.factorial • (ContinuousMultilinearMap.mkPiRing ℝ (Fin r) (t x)).compContinuousLinearMap
+            fun i ↦ mvfderiv I (f i) x) (fun _ ↦ v) =
+        r.factorial • (∏ i, mvfderiv I (f i) x v) •
+          (trivializationAt F V x).continuousLinearMapAt ℝ x (t x) := fun v ↦ by
+      rw [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply, smul_apply,
+        ContinuousMultilinearMap.compContinuousLinearMap_apply,
+        ContinuousMultilinearMap.mkPiRing_apply, map_nsmul, map_smul]
+    simp only [hdg, hw0]
+    -- The goal evaluates on `Fin (Fin.last r).val → E`, which is `Fin r → E` by definition; the
+    -- dependent type of `Pi.single (Fin.last r) _ k` blocks rewriting `Fin.val_last` there.
+    exact (htop h).symm
+  · rw [Pi.single_eq_of_ne hk, iteratedFDeriv_prod_smul_eq_zero_of_lt
+      (fun i ↦ (hg i).contDiffAt) hw.contDiffAt hg0 (Fin.val_lt_last hk)]
 
 end Real
 

@@ -55,7 +55,8 @@ is why the base is assumed boundaryless.
   (`TauCeti.JetBundle.jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero`). For the trivial
   bundle over a model space it is the tuple of iterated derivatives of the section
   (`TauCeti.JetBundle.toJets_jet_trivial`).
-* `TauCeti.JetBundle.truncate`: the truncation `JᵣV → Jᵣ'V` for `r' ≤ r`, which reads in every
+* `TauCeti.JetBundle.truncate`: the truncation `JᵣV → Jᵣ'V` for `r' ≤ r`, which is the
+  truncation of symmetric jets in each fibre (`TauCeti.JetBundle.truncate_apply`), reads in every
   chart as the truncation of symmetric jets (`TauCeti.JetBundle.coordChange_truncate`) and sends
   `jʳs(x)` to `jʳ's(x)` (`TauCeti.JetBundle.truncate_jet`).
 * `TauCeti.JetBundle.value`: the projection `JᵣV → V`, which sends `jʳs(x)` to `s x`
@@ -351,7 +352,9 @@ theorem jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero {s : ∀ x, V x} 
   rw [map_zero, toJets_jet hs, funext_iff]
   exact ⟨fun h k hk ↦ h ⟨k, Nat.lt_succ_of_le hk⟩, fun h k ↦ h k k.is_le⟩
 
-/-- The `r`-jet of a section only depends on its local representative near the image of `x`. -/
+/-- The `r`-jet of a section at `x` is the symmetrization of the iterated derivatives at
+`extChartAt I x x`, of orders at most `r`, of any function `g` agreeing with the local
+representative of the section near that point. -/
 theorem jet_eq_symmetrizeJets_of_eventuallyEq {s : ∀ x, V x} {x : M} {g : E → F}
     (hg : FirstJetBundle.localRep I F s x =ᶠ[𝓝 (extChartAt I x x)] g) :
     jet I F r s x = symmetrizeJets 𝕜 E F r fun k : Fin (r + 1) ↦
@@ -621,6 +624,11 @@ def truncate (hr : r' ≤ r) (x : M) : JetBundle I F V r x →L[𝕜] JetBundle 
 theorem toJets_truncate (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
     toJets 𝕜 E F r' (truncate hr x j) = jetTruncate hr (toJets 𝕜 E F r j) :=
   SymmetricJet.toJets_truncate hr j
+
+/-- In the fibre at `x`, the truncation of jets is the truncation of symmetric jets. -/
+theorem truncate_apply (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
+    truncate hr x j = SymmetricJet.truncate 𝕜 E F hr j :=
+  (rfl)
 
 /-- Truncating to the same order is the identity. -/
 @[simp]
