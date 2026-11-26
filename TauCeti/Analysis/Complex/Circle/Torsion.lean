@@ -79,13 +79,8 @@ theorem infinite_setOf_pow_eq_one_pi {ι : Type*} [Infinite ι] {n : ℕ} (hn : 
   classical
   have : NeZero n := ⟨by omega⟩
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Circle n
-  have hζ1 : ζ ≠ 1 := hζ.ne_one (by omega)
-  refine infinite_of_injective_forall_mem (f := fun i : ι ↦ Pi.mulSingle i ζ) (fun i j hij ↦ ?_)
+  exact infinite_of_injective_forall_mem (Pi.mulSingle_left_injective (hζ.ne_one (by omega)))
     fun i ↦ by simp [← Pi.mulSingle_pow, hζ.pow_eq_one]
-  by_contra hne
-  have := congrFun hij i
-  simp only [Pi.mulSingle_eq_same, Pi.mulSingle_eq_of_ne hne] at this
-  exact hζ1 this
 
 /-- **An infinite product of circles is not a finite one.** For an infinite index type `ι` and a
 finite index type `κ`, the products `ι → S¹` and `κ → S¹` are not isomorphic as groups: the former
