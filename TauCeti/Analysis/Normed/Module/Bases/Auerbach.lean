@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.LinearAlgebra.Dual.Basis
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.RingTheory.Finiteness.Cardinality
@@ -45,43 +46,6 @@ public section
 
 namespace TauCeti
 
-private lemma det_updateRow_one {K : Type*} [CommRing K] {n : ℕ} (k : Fin n) (v : Fin n → K) :
-    (Matrix.updateRow (1 : Matrix (Fin n) (Fin n) K) k v).det = v k := by
-  classical
-  rw [Matrix.det_apply', Finset.sum_eq_single (1 : Equiv.Perm (Fin n))]
-  · simp [Matrix.updateRow_apply]
-  · intro σ _ hσ
-    suffices h0 : ∏ i : Fin n, Matrix.updateRow (1 : Matrix (Fin n) (Fin n) K) k v (σ i) i = 0 by
-      simp [h0]
-    have hex : ∃ i : Fin n, σ i ≠ i ∧ σ i ≠ k := by
-      by_contra hall
-      push Not at hall
-      obtain ⟨i, hi⟩ : ∃ i : Fin n, σ i ≠ i := by
-        by_contra h
-        push Not at h
-        exact hσ (Equiv.ext h)
-      have h1 : σ i = k := hall i hi
-      have hk : σ k ≠ k := fun hk => hi (by have h2 := σ.injective (h1.trans hk.symm); rw [h2, hk])
-      exact hk (hall k hk)
-    obtain ⟨i, hne, hnek⟩ := hex
-    exact Finset.prod_eq_zero (Finset.mem_univ i)
-      (by simp [Matrix.updateRow_apply, hnek, hne])
-  · intro h; exact (h (Finset.mem_univ _)).elim
-
-private lemma span_range_eq_top_of_separating {K U 𝒜 : Type*} [Field K] [AddCommGroup U]
-    [Module K U] [FiniteDimensional K U] (ℓ : 𝒜 → Module.Dual K U)
-    (hsep : ∀ v : U, (∀ a : 𝒜, ℓ a v = 0) → v = 0) :
-    Submodule.span K (Set.range ℓ) = ⊤ := by
-  by_contra hne
-  obtain ⟨f, hf_ne, hf_ker⟩ :=
-    Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.mpr hne) inferInstance
-  let v : U := (Module.evalEquiv K U).symm f
-  have hv0 : v = 0 := hsep v fun a => by
-    have h0 : f (ℓ a) = 0 := (Submodule.mem_bot K).mp
-      (hf_ker ▸ Submodule.mem_map_of_mem (Submodule.subset_span ⟨a, rfl⟩))
-    simpa [v] using h0
-  exact hf_ne (by simpa [v] using congrArg (Module.evalEquiv K U) hv0)
-
 private lemma exists_evalMatrix_det_ne_zero {K U 𝒜 : Type*} [Field K] [AddCommGroup U]
     [Module K U] [FiniteDimensional K U] (ℓ : 𝒜 → Module.Dual K U)
     (hsep : ∀ v : U, (∀ a : 𝒜, ℓ a v = 0) → v = 0) :
@@ -89,7 +53,10 @@ private lemma exists_evalMatrix_det_ne_zero {K U 𝒜 : Type*} [Field K] [AddCom
     let b := Module.finBasis K U
     ∃ f : Fin n → 𝒜, (Matrix.of fun i j => ℓ (f i) (b j)).det ≠ 0 := by
   intro n b
-  have hspan : Submodule.span K (Set.range ℓ) = ⊤ := span_range_eq_top_of_separating ℓ hsep
+  have hspan : Submodule.span K (Set.range ℓ) = ⊤ :=
+    Submodule.span_eq_top_of_ne_zero fun v hv => by
+      by_contra! h
+      exact hv (hsep v fun a => h _ ⟨a, rfl⟩)
   obtain ⟨s, hs_sub, hs_span, hs_li⟩ := exists_linearIndependent K (Set.range ℓ)
   let bs : Module.Basis s K (Module.Dual K U) :=
     Module.Basis.mk hs_li (by rw [Subtype.range_coe, hs_span, hspan])
@@ -142,7 +109,8 @@ private lemma norm_eval_le_one_of_isMaxOn {K U 𝒜 L : Type*} [Field K] [AddCom
       simpa [M, a', hik, Matrix.mul_apply, Matrix.updateRow_apply] using h
   have hdet_eq : ℓ x (z k) * (M a).det = (M a').det := by
     have h1 := congrArg Matrix.det hprod
-    rw [Matrix.det_mul, det_updateRow_one] at h1
+    rw [Matrix.det_mul, ← Matrix.cramer_transpose_apply, Matrix.transpose_one,
+      Matrix.cramer_one] at h1
     have h2 := congrArg (· * (M a).det) h1
     rw [mul_assoc, ← Matrix.det_mul, Matrix.nonsing_inv_mul (M a) (isUnit_iff_ne_zero.mpr ha_det),
       Matrix.det_one, mul_one] at h2
