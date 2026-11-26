@@ -57,8 +57,8 @@ is small only below some radius, are not covered. The a priori estimate
   `-∂ᵢ((aᵀ)ⁱʲ ∂ⱼw) = -div H` has a solution `w ∈ D^{1,2}(ℝ^{n+1})`
   (`TauCeti.PDE.existsUnique_forall_integral_matrixBilinearForm_eq_integral_inner`). The
   transposed coefficients are uniformly elliptic with the same constants, and their BMO seminorm is
-  at most twice that of `a`, since the operator of `Aᵀ` is the adjoint of that of `A`
-  (`Matrix.bmoSeminorm_toEuclideanCLM_conjTranspose_le`). So the case
+  that of `a`, since the operator of `Aᵀ` is the adjoint of that of `A`
+  (`Matrix.bmoSeminorm_toEuclideanCLM_conjTranspose`). So the case
   `p' > 2` gives `‖∇w‖_{L^{p'}} ≤ C ‖H‖_{L^{p'}}`. Testing the two equations with each other
   (`TauCeti.PDE.integral_matrixBilinearForm_eq_integral_inner_of_forall`),
   `∫ ⟨∇u, H⟩ = ∫ ⟨aᵀ ∇w, ∇u⟩ = ∫ ⟨a ∇u, ∇w⟩ = ∫ ⟨G, ∇w⟩`,
@@ -241,19 +241,14 @@ private theorem exists_memLp_and_eLpNorm_le_of_lt_two {p : ℝ≥0∞} (hp : 1 <
   have : p.HolderConjugate q := ENNReal.HolderConjugate.conjExponent hp.le
   obtain ⟨C, δ, hδ, hreg⟩ := exists_memLp_and_eLpNorm_le_of_two_lt (n := n)
     (ENNReal.HolderConjugate.two_lt hp2) (ENNReal.conjExponent_ne_top hp) lam Lam
-  refine ⟨C, δ / 2, half_pos hδ, fun {a} ha hell hbmo u G hu hG2 => ?_⟩
+  refine ⟨C, δ, hδ, fun {a} ha hell hbmo u G hu hG2 => ?_⟩
   have haT : AEStronglyMeasurable (fun x => (a x)ᵀ) volume :=
     (continuous_id.matrix_transpose).comp_aestronglyMeasurable ha
   have hbmoT : bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)ᵀ) volume ≤
       ENNReal.ofReal δ := by
-    have h := bmoSeminorm_toEuclideanCLM_conjTranspose_le ha
+    have h := bmoSeminorm_toEuclideanCLM_conjTranspose (𝕜 := ℝ) (a := a) (μ := volume)
     simp only [conjTranspose_eq_transpose_of_trivial] at h
-    refine h.trans ?_
-    calc 2 * bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume ≤
-          2 * ENNReal.ofReal (δ / 2) := by gcongr
-      _ = ENNReal.ofReal δ := by
-        rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two]
-        ring_nf
+    rwa [h]
   refine AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le
     (aestronglyMeasurable_and_eLpNorm_ne_top_coe_d1p0 u).1 (𝕜 := ℝ) (q' := q)
     fun H s hs hsupp hH => ?_
