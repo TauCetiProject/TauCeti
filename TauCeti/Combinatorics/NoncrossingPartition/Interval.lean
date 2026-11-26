@@ -29,8 +29,6 @@ factorisation makes the Möbius function of `NC(s)` multiplicative on all interv
 
 ## Main definitions
 
-* `TauCeti.NoncrossingPartition.restrict σ hB` — the restriction `σ|_B` of a noncrossing
-  partition of `s` to a subset `B ⊆ s`.
 * `TauCeti.NoncrossingPartition.iicOrderIso π` — the order isomorphism between the noncrossing
   partitions `σ ≤ π` and the families of noncrossing partitions of the parts of `π`.
 * `TauCeti.NoncrossingPartition.iccOrderIso h` — for `h : σ ≤ π`, the order isomorphism
@@ -58,38 +56,28 @@ namespace TauCeti.NoncrossingPartition
 
 variable {α : Type*} [LinearOrder α] {s : Finset α}
 
-/-- The restriction `σ|_B` of a noncrossing partition `σ` of `s` to a subset `B` of `s`: its parts
-are the nonempty traces on `B` of the parts of `σ`. -/
-def restrict (σ : NoncrossingPartition s) {B : Finset α} (hB : B ≤ s) : NoncrossingPartition B :=
-  ⟨σ.val.restrict hB, σ.property.restrict hB⟩
-
-@[simp, norm_cast]
-theorem coe_restrict (σ : NoncrossingPartition s) {B : Finset α} (hB : B ≤ s) :
-    ((σ.restrict hB : NoncrossingPartition B) : Finpartition B) =
-      (σ : Finpartition s).restrict hB :=
-  (rfl)
-
 /-- Restriction to a subset is monotone. -/
 theorem restrict_mono {σ τ : NoncrossingPartition s} {B : Finset α} (hB : B ≤ s) (h : σ ≤ τ) :
-    σ.restrict hB ≤ τ.restrict hB :=
-  Finpartition.restrict_mono hB h
+    σ.restrict hB ≤ τ.restrict hB := by
+  rw [← Subtype.coe_le_coe, coe_restrict, coe_restrict]
+  exact Finpartition.restrict_mono hB h
 
 /-- The restriction of the partition into one part is the partition into one part. -/
 @[simp]
 theorem restrict_top {B : Finset α} (hB : B ≤ s) : (⊤ : NoncrossingPartition s).restrict hB = ⊤ :=
-  Subtype.ext (Finpartition.restrict_top hB)
+  Subtype.ext <| (coe_restrict _ hB).trans (Finpartition.restrict_top hB)
 
 /-- The restriction of the partition into singletons is the partition into singletons. -/
 @[simp]
 theorem restrict_bot {B : Finset α} (hB : B ≤ s) : (⊥ : NoncrossingPartition s).restrict hB = ⊥ :=
-  Subtype.ext (Finpartition.restrict_bot hB)
+  Subtype.ext <| (coe_restrict _ hB).trans (Finpartition.restrict_bot hB)
 
 /-- The restriction of a noncrossing partition to one of its parts is the partition of that part
 into one part. -/
 @[simp]
 theorem restrict_of_mem_parts (π : NoncrossingPartition s) {B : Finset α}
     (hB : B ∈ π.val.parts) : π.restrict (π.val.le hB) = ⊤ :=
-  Subtype.ext (Finpartition.restrict_of_mem_parts hB)
+  Subtype.ext <| (coe_restrict π _).trans (Finpartition.restrict_of_mem_parts hB)
 
 /-- A member of the lower interval of `π` refines `π` as a finite partition. -/
 private theorem coe_le_of_mem_Iic {π : NoncrossingPartition s} (σ : Set.Iic π) :
@@ -106,12 +94,16 @@ noncomputable def iicOrderIso (π : NoncrossingPartition s) :
   invFun Q := ⟨⟨π.val.bind fun B hB => (Q ⟨B, hB⟩).val, π.property.bind fun B hB => (Q ⟨B,
       hB⟩).property⟩,
     Finpartition.bind_le _ _⟩
-  left_inv σ := Subtype.ext <| Subtype.ext <| Finpartition.bind_restrict (coe_le_of_mem_Iic σ)
-  right_inv Q := funext fun B => Subtype.ext <| Finpartition.restrict_bind B.property
+  left_inv σ := Subtype.ext <| Subtype.ext <| by
+    simpa only [coe_restrict] using Finpartition.bind_restrict (coe_le_of_mem_Iic σ)
+  right_inv Q := funext fun B => Subtype.ext <|
+    (coe_restrict _ _).trans (Finpartition.restrict_bind B.property)
   map_rel_iff' {σ σ'} := by
-    refine ⟨fun h => ?_, fun h B => Finpartition.restrict_mono (π.val.le B.property) h⟩
-    have := Finpartition.bind_mono (P := π.val) (Q := fun B hB => σ.val.val.restrict (π.val.le hB))
-      (Q' := fun B hB => σ'.val.val.restrict (π.val.le hB)) fun B hB => h ⟨B, hB⟩
+    refine ⟨fun h => ?_, fun h B => restrict_mono (π.val.le B.property) h⟩
+    have := Finpartition.bind_mono (P := π.val)
+      (Q := fun B hB => (σ.val.restrict (π.val.le hB)).val)
+      (Q' := fun B hB => (σ'.val.restrict (π.val.le hB)).val) fun B hB => h ⟨B, hB⟩
+    simp only [coe_restrict] at this
     rwa [Finpartition.bind_restrict (coe_le_of_mem_Iic σ),
       Finpartition.bind_restrict (coe_le_of_mem_Iic σ')] at this
 
@@ -123,7 +115,7 @@ theorem iicOrderIso_apply (π : NoncrossingPartition s) (σ : Set.Iic π) (B : �
 theorem coe_iicOrderIso_apply (π : NoncrossingPartition s) (σ : Set.Iic π) (B : π.val.parts) :
     ((π.iicOrderIso σ B : NoncrossingPartition B.val) : Finpartition B.val) =
       (σ.val : Finpartition s).restrict (π.val.le B.property) :=
-  (rfl)
+  coe_restrict _ _
 
 @[simp]
 theorem coe_iicOrderIso_symm_apply (π : NoncrossingPartition s)
