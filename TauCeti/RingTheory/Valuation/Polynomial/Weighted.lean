@@ -15,7 +15,7 @@ import Mathlib.Algebra.Polynomial.Coeff
 This file records the generic weighted coefficient convolution bound for products of polynomials
 under a valuation `v : Valuation R Γ₀`. It is shared between the Gauss valuation multiplicativity
 proof (`TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic`) and the weighted polynomial bounds
-(`TauCeti.RingTheory.Valuation.Polynomial`).
+(`TauCeti.RingTheory.Valuation.Polynomial.Basic`).
 
 ## Main results
 

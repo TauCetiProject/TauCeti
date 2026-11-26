@@ -5,20 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ENat.Basic
-public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic
 import TauCeti.RingTheory.LocalRing.ResidueField.Polynomial
-import TauCeti.RingTheory.Valuation.Polynomial
+import TauCeti.RingTheory.Valuation.Polynomial.Basic
 
 /-!
 # Primitive factorization and generic evaluation for Gauss valuations
 
 Over a valued field `(K, v)` with value group `Γ₀`, every polynomial `p : K[X]` factors as
 `C c * q.map _` where `v c = p.gaussValuation v 1`, `q` has coefficients in `v.valuationSubring`
-with `q.natDegree ≤ p.natDegree`, and `q` has nonzero reduction modulo the maximal ideal
+with `q.natDegree = p.natDegree`, and `q` has nonzero reduction modulo the maximal ideal
 (`Polynomial.exists_eq_C_mul_map_residue_ne_zero`). When `1 + ∑ j ∈ s, (p j).natDegree` is
 strictly less than the cardinality of the residue field of `v.valuationSubring` (in particular,
 whenever the residue field is infinite), the family `p` simultaneously attains its Gauss valuations
@@ -49,13 +48,13 @@ section GenericEvaluation
 variable {K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation K Γ₀)
 
 /-- Every polynomial `p` over a valued field `K` factors as `C c * q.map _` where
-`v c = p.gaussValuation v 1`, `q.natDegree ≤ p.natDegree`, and `q` has coefficients in
+`v c = p.gaussValuation v 1`, `q.natDegree = p.natDegree`, and `q` has coefficients in
 `v.valuationSubring` with nonzero reduction modulo the maximal ideal. -/
 theorem exists_eq_C_mul_map_residue_ne_zero (p : K[X]) :
     ∃ (c : K) (q : v.valuationSubring[X]),
       v c = p.gaussValuation v 1 ∧
       p = C c * q.map (algebraMap v.valuationSubring K) ∧
-      q.natDegree ≤ p.natDegree ∧
+      q.natDegree = p.natDegree ∧
       q.map (IsLocalRing.residue v.valuationSubring) ≠ 0 := by
   rcases eq_or_ne p 0 with rfl | hp
   · exact ⟨0, 1, by simp, by simp, by simp, by simp⟩
@@ -74,8 +73,8 @@ theorem exists_eq_C_mul_map_residue_ne_zero (p : K[X]) :
     rw [map_inv₀, inv_eq_of_mul_eq_one_right hnorm]
   · rw [hq, ← mul_assoc, ← C_mul]
     simp [hd_ne]
-  · rw [← natDegree_map_eq_of_injective (Valuation.valuationSubring.integers v).hom_inj, hq]
-    exact natDegree_C_mul_le d p
+  · rw [← natDegree_map_eq_of_injective (Valuation.valuationSubring.integers v).hom_inj, hq,
+      natDegree_C_mul hd_ne]
   · have hcoeff : (q.map (IsLocalRing.residue v.valuationSubring)).coeff D = 0 := by simp [hzero]
     rw [coeff_map] at hcoeff
     have hqD : q.coeff D = 1 := (Valuation.valuationSubring.integers v).hom_inj <| by
@@ -104,7 +103,7 @@ theorem exists_forall_valuation_eval_eq_gaussValuation_of_sum_natDegree_lt {ι :
     rw [Finset.sum_insertNone]
     refine Nat.add_le_add (by simp) (Finset.sum_le_sum fun j _ ↦ ?_)
     have hcX : (C c * X).natDegree ≤ 1 := (natDegree_C_mul_le c X).trans (by simp)
-    exact natDegree_map_le.trans ((hdeg j).trans <|
+    exact natDegree_map_le.trans ((hdeg j).le.trans <|
       natDegree_comp_le.trans (by simpa using Nat.mul_le_mul_left (p j).natDegree hcX))
   obtain ⟨u, hu⟩ := exists_forall_isUnit_eval_of_sum_natDegree_lt s.insertNone (Option.elim' X q) hF
     ((Nat.cast_le.mpr hdeg_sum).trans_lt hcard)

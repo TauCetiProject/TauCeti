@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
-public import Mathlib.Data.ENat.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Polynomial.Roots
 
 /-!
@@ -40,26 +38,16 @@ theorem exists_forall_isUnit_eval_of_sum_natDegree_lt {R ι : Type*} [CommRing R
     (hcard : ((∑ j ∈ s, ((f j).map (IsLocalRing.residue R)).natDegree : ℕ) : ENat) <
       ENat.card (IsLocalRing.ResidueField R)) :
     ∃ u : R, ∀ j ∈ s, IsUnit ((f j).eval u) := by
-  classical
-  let bad : Finset (IsLocalRing.ResidueField R) :=
-    s.biUnion fun j ↦ ((f j).map (IsLocalRing.residue R)).roots.toFinset
-  have hbad : bad.card ≤ ∑ j ∈ s, ((f j).map (IsLocalRing.residue R)).natDegree :=
-    Finset.card_biUnion_le.trans <| Finset.sum_le_sum fun j _ ↦
-      (Multiset.toFinset_card_le _).trans (card_roots' _)
-  have hy_exists : ∃ y : IsLocalRing.ResidueField R, y ∉ bad := by
-    by_contra! h
-    have : Fintype (IsLocalRing.ResidueField R) := ⟨bad, h⟩
-    have hle : ENat.card (IsLocalRing.ResidueField R) ≤ bad.card := by
-      rw [ENat.card_eq_coe_fintype_card]
-      exact Nat.cast_le.mpr (Finset.card_le_card fun y _ ↦ h y)
-    exact (hle.trans (Nat.cast_le.mpr hbad)).not_gt hcard
-  obtain ⟨y, hy⟩ := hy_exists
+  let P : (IsLocalRing.ResidueField R)[X] := ∏ j ∈ s, (f j).map (IsLocalRing.residue R)
+  have hP : P ≠ 0 := Finset.prod_ne_zero_iff.mpr hf
+  have hdeg : (P.natDegree : Cardinal) < Cardinal.mk (IsLocalRing.ResidueField R) :=
+    Cardinal.natCast_lt_toENat.mp ((Nat.cast_le.mpr (natDegree_prod_le s _)).trans_lt hcard)
+  obtain ⟨y, hy⟩ := exists_eval_ne_zero_of_natDegree_lt_card P hP hdeg
   obtain ⟨u, rfl⟩ := IsLocalRing.residue_surjective y
-  refine ⟨u, fun j hj ↦ ?_⟩
-  rw [← IsLocalRing.residue_ne_zero_iff_isUnit, ← eval_map_apply]
-  intro hzero
-  exact hy (Finset.mem_biUnion.mpr ⟨j, hj,
-    Multiset.mem_toFinset.mpr ((mem_roots (hf j hj)).mpr hzero)⟩)
+  rw [eval_prod, Finset.prod_ne_zero_iff] at hy
+  exact ⟨u, fun j hj ↦ by
+    rw [← IsLocalRing.residue_ne_zero_iff_isUnit, ← eval_map_apply]
+    exact hy j hj⟩
 
 /-- Over a local ring with infinite residue field, finitely many polynomials with nonzero
 reduction modulo the maximal ideal simultaneously evaluate to units at some ring element. -/

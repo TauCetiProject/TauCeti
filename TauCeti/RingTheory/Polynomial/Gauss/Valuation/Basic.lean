@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Coeff
 public import Mathlib.RingTheory.Valuation.Basic
 import Mathlib.Algebra.Polynomial.Eval.Degree
+import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.RingTheory.Valuation.Polynomial.Weighted
 
 /-!
@@ -35,8 +36,8 @@ arbitrary value monoids and groups `Γ₀`, and bundles into a valuation `Valuat
 * `Polynomial.gaussValuation_mul`, `Polynomial.gaussValuation_pow`: multiplicativity and power
   formula.
 * `Valuation.gauss_comap_C`, `Valuation.gauss_comap_mapRingHom`, `Valuation.gauss_zero`,
-  `Valuation.le_gauss_of_comap_C_le`: restriction to constants, coefficient pullback, radius-zero
-  pullback, and pointwise maximality among valuations dominated by `v` on constants with `w X ≤ r`.
+  `Valuation.supp_gauss`, `Valuation.le_gauss_iff`: restriction to constants, coefficient pullback,
+  radius-zero pullback, support ideal at nonzero radius, and pointwise maximality characterization.
 
 ## References
 
@@ -284,16 +285,28 @@ theorem gauss_zero (v : Valuation R Γ₀) :
   ext p
   simp
 
-/-- Maximality of the Gauss valuation: any valuation `w` on `R[X]` dominated by `v` on constants
-with `w X ≤ r` is bounded pointwise by `v.gauss r`. -/
-theorem le_gauss_of_comap_C_le {v : Valuation R Γ₀} {r : Γ₀} {w : Valuation R[X] Γ₀}
-    (hwC : ∀ a, w (Polynomial.C a) ≤ v a) (hwX : w Polynomial.X ≤ r) (p : R[X]) :
-    w p ≤ v.gauss r p := by
+/-- At a nonzero radius `r`, the support ideal of `v.gauss r` is `Ideal.map Polynomial.C v.supp`. -/
+theorem supp_gauss {R : Type*} [CommRing R] (v : Valuation R Γ₀) {r : Γ₀} (hr : r ≠ 0) :
+    (v.gauss r).supp = Ideal.map Polynomial.C v.supp := by
+  ext p
+  rw [Valuation.mem_supp_iff, gauss_apply, Polynomial.gaussValuation_eq_zero_iff v hr,
+    Ideal.mem_map_C_iff]
+  simp only [Valuation.mem_supp_iff]
+
+/-- Maximality of the Gauss valuation: a valuation `w` on `R[X]` is bounded pointwise by
+`v.gauss r` iff `w` is dominated by `v` on constants and satisfies `w X ≤ r`. -/
+theorem le_gauss_iff {v : Valuation R Γ₀} {r : Γ₀} {w : Valuation R[X] Γ₀} :
+    (∀ p, w p ≤ v.gauss r p) ↔ (∀ a, w (Polynomial.C a) ≤ v a) ∧ w Polynomial.X ≤ r := by
+  refine ⟨fun h ↦ ⟨fun a ↦ by simpa using h (Polynomial.C a), by simpa using h Polynomial.X⟩,
+    fun ⟨hwC, hwX⟩ p ↦ ?_⟩
+  rw [gauss_apply]
   calc w p = w (p.eval₂ Polynomial.C Polynomial.X) := by rw [Polynomial.eval₂_C_X]
     _ ≤ p.gaussValuation (w.comap Polynomial.C) r :=
       Polynomial.valuation_eval₂_le_gaussValuation Polynomial.C w r p hwX
-    _ ≤ v.gauss r p := (Polynomial.gaussValuation_le_iff (w.comap Polynomial.C) r).mpr fun i ↦
-      (mul_le_mul_left (hwC (p.coeff i)) _).trans (Polynomial.le_gaussValuation v r p i)
+    _ ≤ p.gaussValuation v r := (Polynomial.gaussValuation_le_iff (w.comap Polynomial.C) r).mpr
+      fun i ↦ by
+        rw [Valuation.comap_apply]
+        exact (mul_le_mul_left (hwC (p.coeff i)) _).trans (Polynomial.le_gaussValuation v r p i)
 
 end Valuation
 
@@ -305,14 +318,14 @@ variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀] (v :
 
 /-- Negation preserves the Gauss valuation. -/
 @[simp]
-theorem gaussValuation_neg (p : R[X]) : (-p).gaussValuation v r = p.gaussValuation v r :=
-  (v.gauss r).map_neg p
+theorem gaussValuation_neg (p : R[X]) : (-p).gaussValuation v r = p.gaussValuation v r := by
+  simpa only [Valuation.gauss_apply] using (v.gauss r).map_neg p
 
 /-- Raising a polynomial to a power raises its Gauss valuation to that power. -/
 @[simp]
 theorem gaussValuation_pow (p : R[X]) (n : ℕ) :
-    (p ^ n).gaussValuation v r = p.gaussValuation v r ^ n :=
-  map_pow (v.gauss r) p n
+    (p ^ n).gaussValuation v r = p.gaussValuation v r ^ n := by
+  simpa only [Valuation.gauss_apply] using map_pow (v.gauss r) p n
 
 end RingDerived
 
