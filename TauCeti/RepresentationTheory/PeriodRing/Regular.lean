@@ -29,7 +29,7 @@ the functor `V ↦ (B ⊗[F] V)^G` well behaved on finite-dimensional representa
 
 We state the first condition without the fraction field: whenever `c ≠ 0` and the fraction
 `b / c` is `G`-invariant, that is `(g • b) * c = b * (g • c)` for all `g`, then `b = e c` for
-some `e ∈ E`. `IsRegularPeriodRing.fixedPoints_eq_range` and
+some `e ∈ E`. `IsRegularPeriodRing.fixedPoints_fractionRing_eq_range_algebraMap` and
 `IsRegularPeriodRing.of_fixedPoints_subset_range` show that this is the condition
 `Frac(B)^G = E` for any fraction field of `B` with the induced action. The invariants of `B` are
 then exactly `E`, `IsRegularPeriodRing.fixedPoints_eq_range_algebraMap`.
@@ -50,7 +50,7 @@ with a relation of minimal length, whose coefficients are forced to be invariant
   over `B`.
 * `TauCeti.IsRegularPeriodRing.of_field`: a field is a regular period ring.
 * `TauCeti.IsRegularPeriodRing.fixedPoints_eq_range_algebraMap`: `B^G = E`.
-* `TauCeti.IsRegularPeriodRing.fixedPoints_eq_range`,
+* `TauCeti.IsRegularPeriodRing.fixedPoints_fractionRing_eq_range_algebraMap`,
   `TauCeti.IsRegularPeriodRing.of_fixedPoints_subset_range`: the first condition of regularity
   says exactly that `Frac(B)^G = E`.
 
@@ -126,7 +126,8 @@ automorphisms is regular, with field of invariants `E` and lines over `F`, when
 * every nonzero `b ∈ B` spanning a `G`-stable `F`-line is a unit.
 
 When `G` fixes `E` the first condition says that `E` is the field of invariants of the fraction
-field of `B` (`IsRegularPeriodRing.fixedPoints_eq_range`), and in particular `B^G = E`. -/
+field of `B` (`IsRegularPeriodRing.fixedPoints_fractionRing_eq_range_algebraMap`), and in
+particular `B^G = E`. -/
 structure IsRegularPeriodRing [Monoid G] [MulSemiringAction G B] : Prop where
   isDomain : IsDomain B
   exists_algebraMap_mul_eq ⦃b c : B⦄ :
@@ -159,7 +160,8 @@ variable (L : Type*) [Field L] [Algebra B L] [IsFractionRing B L] [MulSemiringAc
 
 /-- For a regular period ring `B`, the invariants of a fraction field `L` of `B`, with the
 induced action, are the field of invariant scalars: `Frac(B)^G = E`. -/
-theorem fixedPoints_eq_range [SMulCommClass G E B] (h : IsRegularPeriodRing F E G B) :
+theorem fixedPoints_fractionRing_eq_range_algebraMap [SMulCommClass G E B]
+    (h : IsRegularPeriodRing F E G B) :
     MulAction.fixedPoints G L = Set.range (algebraMap E L) := by
   have := h.isDomain
   ext x
