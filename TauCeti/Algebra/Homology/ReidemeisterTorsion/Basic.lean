@@ -678,8 +678,7 @@ theorem reidemeisterTorsion_eq_det_zpow :
 end TwoDegrees
 
 variable {C c} in
-/-- A complex all of whose bases are empty, such as the zero complex, has torsion `1`: it is
-acyclic and bounded, and every bracket is the determinant of an empty family. -/
+/-- A complex all of whose bases are empty, such as the zero complex, has torsion `1`. -/
 theorem reidemeisterTorsion_eq_one (hn : ∀ i, n i = 0) : C.reidemeisterTorsion c = 1 := by
   have hX (i : ℤ) : Subsingleton (C.X i) := ⟨fun x y ↦ by
     rw [eq_zero_of_eq_zero (c := c) (hn i) x, eq_zero_of_eq_zero (c := c) (hn i) y]⟩

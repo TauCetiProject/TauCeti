@@ -92,8 +92,7 @@ theorem exists_mul_self_eq_one_and_eq_mul {x y : Q} (k : MaximalSpectrum Q → �
 /-- **Extensions of maximal ideals to a reduced Artinian ring.** Let `f : R →+* Q` be a ring
 homomorphism into a reduced Artinian ring such that distinct primes of `Q` contract to distinct
 primes of `R`. Then the extension `p Q` of a maximal ideal `p` of `R` is a maximal ideal of `Q`,
-unless it is the unit ideal. Indeed every prime of `Q` containing `p Q` contracts to `p`, so there
-is only one, and `p Q` is radical because every quotient of `Q` is reduced. -/
+unless it is the unit ideal. -/
 theorem isMaximal_map_of_injective_comap {R : Type*} [CommRing R] (f : R →+* Q)
     (hf : Function.Injective (PrimeSpectrum.comap f)) {p : Ideal R} [hp : p.IsMaximal]
     (hpQ : p.map f ≠ ⊤) : (p.map f).IsMaximal := by
