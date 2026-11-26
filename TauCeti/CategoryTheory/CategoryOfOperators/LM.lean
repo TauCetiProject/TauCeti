@@ -247,6 +247,32 @@ def pushforwardColor (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ Fin
     (j : Fin k) : Color :=
   if ∃ i, f.toFun i.succ = j.succ ∧ X.color i = .m then .m else .a
 
+/-- An output has color `m` exactly when some input over it has color `m`. -/
+@[simp]
+lemma pushforwardColor_eq_m_iff (X : LM.{u}) {k : ℕ}
+    (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) (j : Fin k) :
+    X.pushforwardColor f j = .m ↔ ∃ i, f.toFun i.succ = j.succ ∧ X.color i = .m := by
+  simp [pushforwardColor]
+
+/-- An output has color `a` exactly when every input over it has color `a`. -/
+@[simp]
+lemma pushforwardColor_eq_a_iff (X : LM.{u}) {k : ℕ}
+    (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) (j : Fin k) :
+    X.pushforwardColor f j = .a ↔ ∀ i, f.toFun i.succ = j.succ → X.color i = .a := by
+  have h (c : Color) : c ≠ .m ↔ c = .a := by cases c <;> simp
+  simp [pushforwardColor, h]
+
+/-- Along an inert map, each output has the color of its unique input. -/
+lemma pushforwardColor_eq_of_isInert (X : LM.{u}) {k : ℕ}
+    (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) (hf : f.IsInert)
+    {i : Fin X.len} {j : Fin k} (hi : f.toFun i.succ = j.succ) :
+    X.pushforwardColor f j = X.color i := by
+  have hpre (i' : Fin X.len) : f.toFun i'.succ = j.succ ↔ i' = i := by
+    exact ⟨fun hi' ↦ Fin.succ_injective _
+      (((FinPointed.Hom.isInert_iff f).1 hf j.succ (Fin.succ_ne_zero j)).unique hi' hi),
+      fun h ↦ h ▸ hi⟩
+  cases hc : X.color i <;> simp [hpre, hc]
+
 /-- The lift of an inert map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` with source `X`: its target is `⟨k⟩`
 colored along `f`, and its words are the one-letter fibres of `f`. -/
 def Hom.ofInert (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
@@ -258,13 +284,7 @@ def Hom.ofInert (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPoint
     have hmem (i' : Fin X.len) : f.toFun i'.succ = j.succ ↔ i' = i := by
       simpa [Assoc.Hom.ofBase_word] using congrArg (i' ∈ ·) hi
     rw [hi, List.map_singleton, isProfile_singleton_iff]
-    simp only [pushforwardColor]
-    split_ifs with h
-    · obtain ⟨i', hi', hc⟩ := h
-      rw [← (hmem i').1 hi', hc]
-    · cases hc : X.color i
-      · rfl
-      · exact absurd ⟨i, (hmem i).2 rfl, hc⟩ h
+    exact (X.pushforwardColor_eq_of_isInert f hf ((hmem i).2 rfl)).symm
 
 @[simp]
 lemma Hom.ofInert_toAssoc (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
