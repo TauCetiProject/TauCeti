@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.Tactic.ComputeDegree
 public import TauCeti.Algebra.QuadraticAlgebra.Etale
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+public import TauCeti.RingTheory.DedekindDomain.Localization.AtPrime
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 public import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified

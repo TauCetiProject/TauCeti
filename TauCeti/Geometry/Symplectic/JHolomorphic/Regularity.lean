@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Rigidity
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
+import TauCeti.Geometry.Symplectic.Complex.Line
 
 /-!
 # Regularity of `C¹` pseudoholomorphic maps from the plane into a vector space
@@ -33,6 +34,12 @@ finite. The finite-energy rigidity theorem for planes in a symplectic vector spa
 assumption: a `C¹` pseudoholomorphic plane of finite energy, for a structure which is `C²` near its
 image and tamed by `ω` along it, is constant
 (`TauCeti.SymplecticForm.exists_eq_const_of_isComplexLinearMap_of_contDiff_one`).
+
+This file also provides the corresponding `TauCeti.IsJHolomorphicOn.contDiffOn` and
+`TauCeti.IsJHolomorphic.contDiff` corollaries for maps `u : ℂ → V` holomorphic with respect to the
+standard complex structure `AlmostComplexStructure.ofComplexModule ℂ`. The manifold-level
+smoothness corollaries for `TauCeti.IsPseudoholomorphicOn` and `TauCeti.IsPseudoholomorphic` live
+in `TauCeti.Geometry.Symplectic.Manifold.JHolomorphic.Regularity`.
 
 ## References
 
@@ -72,6 +79,53 @@ theorem contDiffOn_of_isComplexLinearMap_fderiv {J : V → AlmostComplexStructur
     simp
   have hsymm : MapsTo equivRealProdCLM.symm U Ω := fun z hz ↦ by simpa [Ω] using hz
   simpa [Function.comp_def] using hc.comp equivRealProdCLM.symm.contDiff.contDiffOn hsymm
+
+/-- **Local `C^n` regularity of `C¹` `J`-holomorphic maps on planar open sets.** Let `V` be a
+finite-dimensional real normed space, let `W ⊆ V` be an open set on which
+`x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap` is `C^n`, and let `u : ℂ → V` be a `C¹` map
+on an open set `s ⊆ ℂ` mapping `s` into `W` and satisfying
+`IsJHolomorphicOn (fun _ => AlmostComplexStructure.ofComplexModule ℂ) J u s`. Then `u` is `C^n` on
+`s` (McDuff–Salamon, Theorem B.4.1 and Remark B.4.3). -/
+theorem IsJHolomorphicOn.contDiffOn {n : ℕ∞} {s : Set ℂ} {W : Set V}
+    {J : V → AlmostComplexStructure V} {u : ℂ → V}
+    (h : IsJHolomorphicOn (fun _ => AlmostComplexStructure.ofComplexModule ℂ) J u s)
+    (hs : IsOpen s) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ n (fun x => LinearMap.toContinuousLinearMap (J x).toLinearMap) W)
+    (hu : ContDiffOn ℝ 1 u s) (huW : MapsTo u s W) :
+    ContDiffOn ℝ n u s := by
+  let U : Set (ℝ × ℝ) := equivRealProdCLM.symm ⁻¹' s
+  have hU : IsOpen U := hs.preimage equivRealProdCLM.symm.continuous
+  have hCR : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J ((u ∘ equivRealProdCLM.symm) z))
+      (fderiv ℝ (u ∘ equivRealProdCLM.symm) z : ℝ × ℝ →ₗ[ℝ] V) := by
+    intro z hz
+    have hz_hol := (h.isJHolomorphicWithinAt hz).isJHolomorphicAt_of_mem_nhds (hs.mem_nhds hz)
+    have hf : HasFDerivAt (u ∘ equivRealProdCLM.symm)
+        ((fderiv ℝ u (equivRealProdCLM.symm z)).comp equivRealProdCLM.symm.toContinuousLinearMap)
+        z :=
+      hz_hol.differentiableAt.hasFDerivAt.comp z equivRealProdCLM.symm.hasFDerivAt
+    rw [hf.fderiv]
+    exact hz_hol.fderiv_isComplexLinear.comp isComplexLinearMap_equivRealProdCLM_symm
+  have hc : ContDiffOn ℝ n (u ∘ equivRealProdCLM.symm) U :=
+    contDiffOn_of_isComplexLinearMap_fderiv hU hW hJ
+      (hu.comp equivRealProdCLM.symm.contDiff.contDiffOn (mapsTo_preimage _ s))
+      (huW.comp (mapsTo_preimage _ s)) hCR
+  exact (hc.comp equivRealProdCLM.contDiff.contDiffOn
+    (fun z hz => by dsimp [U]; rwa [mem_preimage, equivRealProdCLM.symm_apply_apply])).congr
+    fun z _ => by dsimp [Function.comp_def]; rw [equivRealProdCLM.symm_apply_apply]
+
+/-- **Global `C^n` regularity of `C¹` `J`-holomorphic maps from `ℂ`.** If `V` is a
+finite-dimensional real normed space, `x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap` is
+`C^n`, and `u : ℂ → V` is `C¹` and holomorphic from the standard complex structure
+`AlmostComplexStructure.ofComplexModule ℂ` on `ℂ` to `J`, then `u` is `C^n`. -/
+theorem IsJHolomorphic.contDiff {n : ℕ∞}
+    {J : V → AlmostComplexStructure V} {u : ℂ → V}
+    (h : IsJHolomorphic (fun _ => AlmostComplexStructure.ofComplexModule ℂ) J u)
+    (hJ : ContDiff ℝ n (fun x => LinearMap.toContinuousLinearMap (J x).toLinearMap))
+    (hu : ContDiff ℝ 1 u) :
+    ContDiff ℝ n u :=
+  contDiffOn_univ.1 <| (h.isJHolomorphicOn univ).contDiffOn isOpen_univ isOpen_univ
+    hJ.contDiffOn hu.contDiffOn (mapsTo_univ u univ)
 
 namespace SymplecticForm
 

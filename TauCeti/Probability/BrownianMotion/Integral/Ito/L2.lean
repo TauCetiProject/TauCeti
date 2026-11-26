@@ -9,7 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
-import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
+import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.BrownianMotion.Integral.Simple
 import TauCeti.Probability.BrownianMotion.Integral.Square
@@ -320,13 +320,14 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
     (fun t ↦ (hZ.stronglyAdapted t).pow 2 |>.sub
       (hH.isStronglyPredictable.stronglyAdapted_integral_sq_timeMeasure t)) fun t ↦ ?_⟩
   have hsq_lim : Tendsto (fun k ↦ eLpNorm
-      (fun ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω ^ 2 - Z t ω ^ 2) 1 P) atTop (𝓝 0) :=
-    TauCeti.tendsto_eLpNorm_sq_sub_one (hZmem t).eLpNorm_ne_top (hZlim t)
+      (fun ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω ^ 2 - Z t ω ^ 2) 1 P) atTop (𝓝 0) := by
+    simpa only [Real.norm_eq_abs, sq_abs] using tendsto_eLpNorm_norm_sq_sub (hZmem t) (hZlim t)
   -- Control `‖B_k t - ∫ H^2‖₁` by the `L¹` product-norm difference of the squared integrands.
   have henergy_lim : Tendsto (fun k ↦ eLpNorm
       (fun ω ↦ B k t ω - ∫ s, H s ω ^ 2 ∂timeMeasure t) 1 P) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (TauCeti.tendsto_eLpNorm_sq_sub_one (hH.memLp_timeMeasure t).eLpNorm_ne_top (hlim t))
+      (by simpa only [Real.norm_eq_abs, sq_abs] using
+        tendsto_eLpNorm_norm_sq_sub (hH.memLp_timeMeasure t) (hlim t))
       (fun _ ↦ zero_le) fun k ↦ ?_
     simp_rw [B, ← Finance.integral_sq_simpleHolding_timeMeasure (hτ k) t]
     have hKmem (ω : Ω) : Integrable (fun s ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω ^ 2)
