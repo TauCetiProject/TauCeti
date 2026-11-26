@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
+import TauCeti.MeasureTheory.Measure.BubblingSet
 import TauCeti.Order.Filter.AtTopBot
-import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Compactness.SigmaCompact
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -38,8 +38,9 @@ A point of `Ω` is a bubbling point when it is a bubbling point of every window 
 Off these points the limits on the windows agree, since `M` is Hausdorff, as `e` maps it
 injectively and continuously into `F`, so they glue to one limit in `M`. The bubbling points form
 a set meeting each compact subset of `Ω` in finitely many points, each carrying a positive amount
-of energy. Without an energy threshold uniform over `Ω`, which on cylindrical ends needs the
-translation invariance of the data there, this set is not shown to be finite.
+of energy (`TauCeti.exists_bubblingSet_of_forall_window`). Without an energy threshold uniform
+over `Ω`, which on cylindrical ends needs the translation invariance of the data there, this set is
+not shown to be finite.
 
 ## References
 
@@ -83,13 +84,13 @@ private theorem IsNondegenerate.exists_subseq_forall_window (hω : ω.IsNondegen
         ‖mvfderiv I e x (ω.hamiltonianVectorField (Kt z) x)‖ ≤ B)
     {O : ℕ → Set (ℝ × ℝ)} (hO : ∀ j, IsOpen (O j)) (hOc : ∀ j, IsCompact (closure (O j)))
     (hOΩ : ∀ j, closure (O j) ⊆ Ω) {U : ℕ → Set (ℝ × ℝ)} {u : ℕ → ℝ × ℝ → M} {E₀ : ℝ}
-    (hU : ∀ k, IsOpen (U k)) (hUΩ : ∀ k, U k ⊆ Ω)
-    (hOU : ∀ j, ∀ᶠ k in atTop, closure (O j) ⊆ U k)
+    (hU : ∀ k, IsOpen (U k)) (hOU : ∀ j, ∀ᶠ k in atTop, closure (O j) ⊆ U k)
     (hu : ∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) (U k))
     (hfl : ∀ k, ∀ y ∈ U k, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (u k y))
       (ω.perturbedMFDeriv Ks Kt (u k) y).toLinearMap)
     (hint : ∀ k, IntegrableOn (ω.floerEnergyDensity Ks Kt (u k)) (U k))
-    (hE : ∀ k, ∫ y in U k, ω.floerEnergyDensity Ks Kt (u k) y ≤ E₀) :
+    (hE : ∀ k, ∫ y in U k, ω.floerEnergyDensity Ks Kt (u k) y ≤ E₀)
+    (hf0 : ∀ k, ∀ y ∈ U k, 0 ≤ ω.floerEnergyDensity Ks Kt (u k) y) :
     ∃ (δ : ℕ → ℝ) (φ : ℕ → ℕ), (∀ j, 0 < δ j) ∧ StrictMono φ ∧
       ∀ j, ∃ (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M),
         (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
@@ -99,8 +100,6 @@ private theorem IsNondegenerate.exists_subseq_forall_window (hω : ω.IsNondegen
         ContinuousOn v (O j \ ↑Z) ∧
         TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop (O j \ ↑Z) ∧
         ∀ y ∈ O j \ ↑Z, Tendsto (fun n ↦ u (φ n) y) atTop (𝓝 (v y)) := by
-  have hf0 (k : ℕ) : ∀ y ∈ U k, 0 ≤ ω.floerEnergyDensity Ks Kt (u k) y := fun y hy ↦
-    floerEnergyDensity_nonneg hω (hJt y (hUΩ k hy) _) (hfl k y hy)
   -- The thresholds of the compactness theorem on the windows.
   choose c hc hJc' using fun j ↦ hJc _ (hOc j) (hOΩ j)
   choose B hB' using fun j ↦ hB _ (hOc j) (hOΩ j)
@@ -202,48 +201,27 @@ theorem IsNondegenerate.exists_tendstoLocallyUniformlyOn_comp_subseq_off_discret
   have := hΩ.locallyCompactSpace
   obtain ⟨O, hO, hOc, hOΩ, hmono, hUn⟩ := hΩ.exists_iUnion_isOpen_isCompact_closure
   obtain ⟨δ, φ, hδ, hφ, hPφ⟩ := hω.exists_subseq_forall_window he he_inj hΩ hJ hXs hXt hJt hJc hB
-    hO hOc hOΩ hU hUΩ (fun j ↦ hUC _ (hOc j) (hOΩ j)) hu hfl hint hE
+    hO hOc hOΩ hU (fun j ↦ hUC _ (hOc j) (hOΩ j)) hu hfl hint hE hf0
   choose Zj vj hconc hbd hvc hlim hpt using hPφ
-  -- The bubbling points are the points of `Ω` lying off the regular part `G j` of every window.
-  set G : ℕ → Set (ℝ × ℝ) := fun j ↦ O j \ ↑(Zj j)
-  have hG (j : ℕ) : IsOpen (G j) := (hO j).sdiff (Zj j).finite_toSet.isClosed
-  set Z : Set (ℝ × ℝ) := Ω \ ⋃ j, G j
-  have hΩZ : Ω \ Z = ⋃ j, G j :=
-    sdiff_sdiff_cancel_left
-      (iUnion_subset fun j ↦ sdiff_subset.trans (subset_closure.trans (hOΩ j)))
-  have hmem {y : ℝ × ℝ} (hy : y ∈ Ω \ Z) : ∃ j, y ∈ G j := mem_iUnion.1 (hΩZ ▸ hy)
+  -- The bubbling points are the points of `Ω` lying off the regular part of every window.
+  obtain ⟨Z, hZΩ, hΩZ, hZC, hZconc, hZbd⟩ := exists_bubblingSet_of_forall_window
+    (U := fun n ↦ U (φ n)) (f := fun n ↦ ω.floerEnergyDensity Ks Kt (u (φ n)))
+    (g := fun n ↦ ω.floerEnergyDensity Ks Kt (u (φ n))) hO hmono.directed_le hUn
+    (fun _ ↦ (hU _).measurableSet) (fun _ ↦ hint _) (fun _ ↦ hf0 _)
+    (fun j ↦ (hφ.tendsto_atTop.eventually (hUC _ (hOc j) (hOΩ j))).mono fun _ h ↦
+      subset_closure.trans h) hδ hconc hbd
+  have hG (j : ℕ) : IsOpen (O j \ ↑(Zj j)) := (hO j).sdiff (Zj j).finite_toSet.isClosed
   -- `M` is Hausdorff, since `e` maps it injectively into `F`, so the limits on the windows glue.
   have : T2Space M := .of_injective_continuous he_inj
     (continuous_iff_continuousAt.2 fun x ↦ (he x).continuousAt)
   have : Nonempty M := ⟨u 0 0⟩
   set v : ℝ × ℝ → M := fun y ↦ limUnder atTop fun n ↦ u (φ n) y
-  have hv (j : ℕ) : EqOn v (vj j) (G j) := fun y hy ↦ (hpt j y hy).limUnder_eq
-  refine ⟨φ, Z, v, hφ, sdiff_subset, fun C hC hCΩ ↦ ?_, fun z hz ↦ ?_, fun C hC hCZ ↦ ?_,
-    fun y hy ↦ ?_, hΩZ ▸ tendstoLocallyUniformlyOn_iUnion hG fun j ↦
-      (hlim j).congr_right fun y hy ↦ by simp [hv j hy],
-    fun y hy ↦ (hmem hy).elim fun j hj ↦ hv j hj ▸ hpt j y hj⟩
-  · -- A compact set lies in some window `O m`, so it only meets the bubbling points of `O m`.
-    obtain ⟨m, hm⟩ := hC.elim_directed_cover O hO (hUn ▸ hCΩ) hmono.directed_le
-    exact (Zj m).finite_toSet.subset fun y hy ↦
-      by_contra fun hyZ ↦ hy.1.2 (mem_iUnion.2 ⟨m, hm hy.2, hyZ⟩)
-  · -- Energy concentrates at `z` on a window containing it, which eventually lies in `U (φ n)`.
-    obtain ⟨j, hj⟩ := mem_iUnion.1 (hUn.symm ▸ hz.1 : z ∈ ⋃ j, O j)
-    have hzZ : z ∈ Zj j := by_contra fun h ↦ hz.2 (mem_iUnion.2 ⟨j, hj, h⟩)
-    refine ⟨δ j, hδ j, fun ε hε ↦ ?_⟩
-    filter_upwards [hconc j z hzZ ε hε, hφ.tendsto_atTop.eventually (hUC _ (hOc j) (hOΩ j))]
-      with n hn hOU
-    exact hn.trans (setIntegral_mono_set ((hint _).mono_set inter_subset_right)
-      (ae_restrict_of_forall_mem (measurableSet_ball.inter (hU _).measurableSet)
-        fun y hy ↦ hf0 _ y hy.2)
-      (inter_subset_inter_right _ (subset_closure.trans hOU)).eventuallySubset)
-  · -- Bounds on closed balls about the points of `C`, from their windows, cover `C`.
-    refine hC.exists_eventually_forall_le_of_forall fun y hy ↦ ?_
-    obtain ⟨j, hj⟩ := hmem (hCZ hy)
-    obtain ⟨r, hr, hrG⟩ := Metric.isOpen_iff.1 (hG j) y hj
-    exact ⟨closedBall y (r / 2), mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds y (by positivity)),
-      hbd j _ (isCompact_closedBall y _) ((closedBall_subset_ball (by linarith)).trans hrG)⟩
-  · obtain ⟨j, hj⟩ := hmem hy
-    exact (((hvc j).continuousAt ((hG j).mem_nhds hj)).congr
-      (eventuallyEq_of_mem ((hG j).mem_nhds hj) (hv j).symm)).continuousWithinAt
+  have hv (j : ℕ) : EqOn v (vj j) (O j \ ↑(Zj j)) := fun y hy ↦ (hpt j y hy).limUnder_eq
+  refine ⟨φ, Z, v, hφ, hZΩ, hZC, hZconc, hZbd,
+    hΩZ ▸ ContinuousOn.iUnion_of_isOpen (fun j ↦ (hvc j).congr (hv j)) hG,
+    hΩZ ▸ tendstoLocallyUniformlyOn_iUnion hG fun j ↦
+      (hlim j).congr_right fun y hy ↦ by simp [hv j hy], fun y hy ↦ ?_⟩
+  obtain ⟨j, hj⟩ := mem_iUnion.1 (hΩZ ▸ hy)
+  exact hv j hj ▸ hpt j y hj
 
 end TauCeti.SmoothTwoForm
