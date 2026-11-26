@@ -28,6 +28,14 @@ principal part and taking the value of the meromorphic normal form at `a`. -/
 noncomputable def logDerivFinitePart (f : ℂ → ℂ) (a : ℂ) : ℂ :=
   toMeromorphicNFAt (fun z ↦ logDeriv f z - (meromorphicOrderAt f a).untop₀ / (z - a)) a a
 
+/-- The finite part of a logarithmic derivative depends only on the punctured germ. -/
+theorem logDerivFinitePart_congr_nhdsNE {f g : ℂ → ℂ} {a : ℂ}
+    (h : f =ᶠ[𝓝[≠] a] g) : logDerivFinitePart f a = logDerivFinitePart g a := by
+  unfold logDerivFinitePart
+  apply Filter.EventuallyEq.eq_of_nhds (toMeromorphicNFAt_eventuallyEq_nhds_congr ?_)
+  filter_upwards [logDeriv_congr_nhdsNE h] with z hz
+  rw [meromorphicOrderAt_congr h, hz]
+
 /-- The finite part can be read from any analytic representative of the regular part. -/
 theorem _root_.AnalyticAt.logDerivFinitePart_eq {f g : ℂ → ℂ} {a : ℂ} (hg : AnalyticAt ℂ g a)
     (heq : (fun z ↦ logDeriv f z - (meromorphicOrderAt f a).untop₀ / (z - a)) =ᶠ[𝓝[≠] a] g) :
