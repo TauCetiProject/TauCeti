@@ -61,10 +61,10 @@ applying the map.
   maps on composable words extend to their coalgebra morphisms and graded Taylor expansions.
 * `TauCeti.GradedLinearQuiver.IsWordPathCompatible.eq_of_totalHomMap_eq`: path-compatible maps
   into a quiver induced along a map of objects are determined by their images on composable words.
-* `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_mem_range_homInclusion_of_isComposableString`
-  and `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_eq_zero_of_not_isComposableString`: a
-  path-compatible operation sends a natural-indexed composable string to a morphism between its
-  endpoints, and any other string of morphisms to zero.
+* `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_mem_range_homInclusion_of_pos` and
+  `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_eq_zero_of_not_isComposableString`: a
+  path-compatible operation of positive arity sends a natural-indexed string of morphisms to a
+  morphism between the images of its endpoints, and a string which is not composable to zero.
 
 ## References
 
@@ -321,20 +321,6 @@ variable {D : Type u'} [GradedLinearQuiver.{u', v', w} R D] {φ : C → D} {k : 
   {f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ TotalHom R C) (TotalHom R D)}
   {z : ℕ → TotalHom R C} {a b : ℕ → C}
 
-/-- A path-compatible operation of positive arity sends a composable string of morphisms
-`aᵢ ⟶ bᵢ` to a morphism from the image of the source `a (k - 1)` of its last morphism to the image
-of the target `b 0` of its first. -/
-theorem IsPathCompatible.evalNat_mem_range_homInclusion_of_isComposableString
-    (hf : IsPathCompatible φ f) (hk : 0 < k)
-    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : IsComposableString a b k) :
-    evalNat f z ∈ LinearMap.range (homInclusion (R := R) (φ (a (k - 1))) (φ (b 0))) := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
-  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
-  rw [evalNat_def, funext hg]
-  exact hf.mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
-    (fun j ↦ by simpa using hab.eq j (by omega)) (by simp) (by simp)
-
 /-- A path-compatible operation sends a string of morphisms `aᵢ ⟶ bᵢ` which is not composable to
 zero. -/
 theorem IsPathCompatible.evalNat_eq_zero_of_not_isComposableString (hf : IsPathCompatible φ f)
@@ -354,7 +340,11 @@ theorem IsPathCompatible.evalNat_mem_range_homInclusion_of_pos (hf : IsPathCompa
     (hk : 0 < k) (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) :
     evalNat f z ∈ LinearMap.range (homInclusion (R := R) (φ (a (k - 1))) (φ (b 0))) := by
   by_cases hab : IsComposableString a b k
-  · exact hf.evalNat_mem_range_homInclusion_of_isComposableString hk hz hab
+  · obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
+    obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
+    rw [evalNat_def, funext hg]
+    exact hf.mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
+      (fun j ↦ by simpa using hab.eq j (by omega)) (by simp) (by simp)
   · rw [hf.evalNat_eq_zero_of_not_isComposableString hz hab]
     exact zero_mem _
 
@@ -550,13 +540,8 @@ private theorem isWordPathCompatible_of_isPathCompatible {D : Type u'}
   · intro X Y w hw
     induction hw using Submodule.span_induction with
     | mem w hw =>
-      obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
-      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
-      choose g hg using fun i : Fin (m + 1) ↦ hz i i.isLt
-      have e := (h (m + 1) hn).mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
-        (fun k ↦ by simpa using hab.eq k (by have := k.isLt; omega)) (a := a m) (b := b 0)
-        (by simp) (by simp)
-      simpa [hg] using e
+      obtain ⟨n, hn, a, b, z, hz, -, rfl, rfl, rfl⟩ := hw
+      simpa [MultilinearMap.evalNat_def] using (h n hn).evalNat_mem_range_homInclusion_of_pos hn hz
     | zero => simp
     | add x y _ _ hx hy => simpa using add_mem hx hy
     | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
@@ -564,13 +549,8 @@ private theorem isWordPathCompatible_of_isPathCompatible {D : Type u'}
     induction hw using Submodule.span_induction with
     | mem w hw =>
       obtain ⟨n, hn, a, b, z, hz, hab, rfl⟩ := hw
-      choose g hg using fun i : Fin n ↦ hz i i.isLt
-      obtain ⟨i, hi, hne⟩ : ∃ i, ∃ _ : i + 1 < n, b (i + 1) ≠ a i := by
-        by_contra! hc
-        exact hab ⟨hc⟩
-      have e := (h n hn).eq_zero_of_ne (fun k ↦ a k) (fun k ↦ b k) g ⟨i, by omega⟩ ⟨i + 1, hi⟩
-        rfl hne
-      simpa [hg] using e
+      simpa [MultilinearMap.evalNat_def] using
+        (h n hn).evalNat_eq_zero_of_not_isComposableString hz hab
     | zero => simp
     | add x y _ _ hx hy => simp [hx, hy]
     | smul r x _ hx => simp [hx]

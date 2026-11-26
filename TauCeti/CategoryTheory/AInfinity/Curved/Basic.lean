@@ -192,6 +192,11 @@ private noncomputable def endOperation (X : C) : ∀ n : ℕ,
   | 0 => MultilinearMap.constOfIsEmpty (RingHom.id R) _ (𝒞.curvature X)
   | n + 1 => (𝒞.m (n + 1)).restrictToPath id fun _ ↦ X
 
+/-- In arity zero, the operation of the endomorphism algebra of `X` is the curvature of `X`. -/
+private theorem endOperation_zero_apply (X : C) (v : Fin 0 → homModule (R := R) X X) :
+    𝒞.endOperation X 0 v = 𝒞.curvature X := by
+  simp [endOperation]
+
 /-- In positive arity, the operations of the endomorphism algebra of `X` are those of the
 category on the included endomorphisms. -/
 private theorem homInclusion_endOperation (X : C) {n : ℕ} (hn : 0 < n)
@@ -235,8 +240,9 @@ theorem endAlgebra_grading (X : C) : (𝒞.endAlgebra X).grading = grading (R :=
 
 /-- The curvature of the endomorphism algebra of `X` is the curvature of `X`. -/
 @[simp]
-theorem curvature_endAlgebra (X : C) : (𝒞.endAlgebra X).curvature = 𝒞.curvature X :=
-  ((𝒞.endAlgebra X).m_zero_apply ![]).symm
+theorem curvature_endAlgebra (X : C) : (𝒞.endAlgebra X).curvature = 𝒞.curvature X := by
+  rw [← CurvedAInfinityAlgebra.m_zero_apply _ ![]]
+  exact 𝒞.endOperation_zero_apply X ![]
 
 /-- In positive arity, the operations of the endomorphism algebra of `X` are those of the
 category on the included endomorphisms. -/
