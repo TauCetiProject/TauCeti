@@ -502,8 +502,9 @@ nonvanishing, regularity or equation hypothesis on the field is required. -/
 instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) := by
   apply isCancelSMul_iff_eq_one_of_smul_eq.mpr
   intro u x hu
-  have hup := (mem_framedGaugeGroup _).mp u.property
-  exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
+  exact Subtype.ext (eq_one_of_gaugeTransform_eq_self
+    (differentiable_of_mem_framedGaugeGroup u.property)
+    ((mem_framedGaugeGroup _).mp u.property).2 hu)
 
 /-- The logarithmic derivatives of gauges depending on a parameter, `C^(n+1)` jointly in the
 parameter and the point at `p₀`, are `C^n` jointly in the parameter and the point at `p₀`. -/
