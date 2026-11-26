@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.ConleyZehnder.FrameChange
+public import TauCeti.Geometry.Symplectic.ConleyZehnder.Parity
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 import TauCeti.Geometry.Symplectic.ExistsCompatible
@@ -41,6 +42,13 @@ orbit. Read in a symplectic frame `χ` along `γ`, it becomes the path
   change of frame `y ↦ φ(y)⁻¹ ∘ φ'(y)` is defined on all of `Y`, so its loop along `β` has Maslov
   index zero. So the Conley–Zehnder index of `Φ` along the capped loop depends only on the cap
   `f`, not on the trivialization over it.
+* **Integrality.** When `γ` is a loop, `χ` takes the same values at its two ends, and `Φ` starts at
+  the identity and ends at an endomorphism `P` of `T_(γ 0) M` without the eigenvalue `1`, the index
+  read in `χ` is an integer `k` with `(-1) ^ (n - k) = sign det (1 - P)`, where `2 n` is the
+  dimension of `M` (`TauCeti.SmoothTwoForm.exists_int_frameConleyZehnderIndex_eq`). This is the
+  parity of the index of linear symplectic maps,
+  `TauCeti.SymplecticForm.exists_int_conleyZehnderIndex_eq_of_one`, since the path read in `χ`
+  ends at the conjugate `χ(0)⁻¹ ∘ P ∘ χ(0)`.
 * **Existence.** When `σ` is nondegenerate and `M` is Hausdorff and σ-compact, there is a
   symplectic frame with any model of the right dimension along every continuous map from a
   contractible paracompact R₁ space
@@ -64,6 +72,8 @@ index of the capped orbit, which grades the generators of the capped Floer compl
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`: the change of frame law.
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_comp_eq`: independence of the frame over a cap.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_isSymplecticFrame`: existence of symplectic frames.
+* `TauCeti.SmoothTwoForm.exists_int_frameConleyZehnderIndex_eq`: integrality and parity of the
+  index in a periodic frame.
 
 ## References
 
@@ -341,5 +351,45 @@ theorem frameConleyZehnderIndex_comp_eq [FiniteDimensional ℝ W] [FiniteDimensi
   rw [ω₀.maslovIndex_congr _ (β.map ha) _ fun t ↦ by ext v; simp,
     ω₀.maslovIndex_map_eq_zero ha (hφ''.apply_trans_symm_apply hφ), Int.cast_zero, mul_zero,
     add_zero]
+
+/-- **The parity of the index in a periodic frame.** Let `χ` be a symplectic frame along a loop
+`γ` in a manifold of dimension `2 n` that takes the same values at the two ends of the loop, and
+let `Φ` be a continuous family of linear maps along `γ` preserving `σ`, starting at the identity,
+whose end value is an endomorphism `P` of `T_(γ 0) M` without the eigenvalue `1`, such as the
+linearized flow along a nondegenerate periodic orbit. Then the Conley–Zehnder index of `Φ` read in
+`χ` is an integer `k` with `(-1) ^ (n - k) = sign det (1 - P)`. -/
+theorem exists_int_frameConleyZehnderIndex_eq [FiniteDimensional ℝ W]
+    (hχ : IsSymplecticFrame σ ω₀ γ χ) (hχ₁ : ∀ v, χ 0 v = χ 1 v)
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) (hΦ₀ : ∀ v, Φ 0 v = v)
+    {P : TangentSpace I (γ 0) →ₗ[ℝ] TangentSpace I (γ 0)} (hP : ∀ v, Φ 1 v = P v)
+    (hPdet : LinearMap.det (1 - P) ≠ 0) :
+    ∃ k : ℤ, frameConleyZehnderIndex ω₀ hχ hΦ hΦσ = k ∧
+      ((((finrank ℝ E / 2 : ℕ) : ℤ) - k).negOnePow : ℤ) =
+        SignType.sign (LinearMap.det (1 - P)) := by
+  -- Read in `χ`, the path starts at the identity.
+  have h₀ : ((((χ 0).trans (Φ 0)).trans (χ 0).symm : W ≃L[ℝ] W) : W →L[ℝ] W) = 1 := by
+    ext v
+    simp [hΦ₀]
+  -- Its end value is the conjugate of `P` by `χ 0`, as `χ 1 = χ 0`.
+  have hsymm (w : E) : (χ 1).symm w = (χ 0).symm w := by
+    apply (χ 1).injective
+    exact ((χ 1).apply_symm_apply w).trans (((hχ₁ _).symm).trans ((χ 0).apply_symm_apply w)).symm
+  have hdet : LinearMap.det
+      ((1 - ((((χ 0).trans (Φ 1)).trans (χ 1).symm : W ≃L[ℝ] W) : W →L[ℝ] W) : W →L[ℝ] W) :
+        W →ₗ[ℝ] W) = LinearMap.det (1 - P) := by
+    rw [← LinearMap.det_conj _ (χ 0).symm.toLinearEquiv]
+    congr 1
+    ext v
+    simpa [hP] using hsymm (P (χ 0 v))
+  have hW : finrank ℝ W = finrank ℝ E := (χ 0).toLinearEquiv.finrank_eq
+  obtain ⟨k, hk, hpar⟩ := ω₀.exists_int_conleyZehnderIndex_eq_of_one
+    ((framePath hχ.continuous hΦ).cast h₀.symm rfl) (apply_framePath_apply hχ hΦ hΦσ)
+    (hdet ▸ hPdet)
+  refine ⟨k, ?_, by rwa [hW, hdet] at hpar⟩
+  rw [frameConleyZehnderIndex_def, ω₀.conleyZehnderIndex_congr (framePath hχ.continuous hΦ)
+    ((framePath hχ.continuous hΦ).cast h₀.symm rfl) _ fun _ ↦ rfl]
+  exact hk
 
 end TauCeti.SmoothTwoForm
