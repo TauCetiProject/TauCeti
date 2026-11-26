@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Descent
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.PartialDiffeomorph
 public import TauCeti.Geometry.Manifold.Gluing.PartialDiffeomorph
 
 /-!
@@ -34,7 +35,7 @@ local diffeomorphisms, so the glued form of two smooth forms is smooth
 (`PartialDiffeomorph.mextDerivₗ_glueForm`), and it is closed exactly when both forms are
 (`PartialDiffeomorph.isClosed_glueForm_iff`).
 
-The intended application is the completion `W ∪ (∂W × [0, ∞))` of a Liouville domain `W`,
+The intended application is the completion `W ∪ ([1, ∞) × ∂W)` of a Liouville domain `W`,
 glued from the interior of `W` and the cylinder `ℝ × ∂W` along the Liouville flow of the boundary,
 once the two are modelled on the same space. In the coordinate `t = log r`, the Liouville flow
 pulls the primitive `λ` of the domain back to the symplectization form `eᵗ λ|_{∂W}`
@@ -59,8 +60,6 @@ primitive of the completion, which is `r λ|_{∂W}` on its cylindrical end.
   restrictions.
 * `PartialDiffeomorph.isSmoothForm_glueRoughForm`: forms of class `C^m` glue to a form of class
   `C^m`.
-* `PartialDiffeomorph.mpullback_mextDerivₗ_apply`: if `Φ` pulls `α` back to `β` on its source, it
-  pulls `dα` back to `dβ` there.
 * `PartialDiffeomorph.mextDerivₗ_glueForm`: the exterior derivative of the glued form is the
   glued form of the exterior derivatives.
 * `PartialDiffeomorph.isClosed_glueForm_iff`: the glued form is closed exactly when both forms
@@ -114,14 +113,28 @@ variable {Φ}
 
 variable {α : RoughForm I X F k} {β : RoughForm I Y F k}
 
+/-- At a point in the image of `X`, the glued form is `α` read through the inverse of the
+derivative of the canonical map of `X`. -/
+theorem glueRoughForm_apply_of_mem_range {p : Φ.toOpenPartialHomeomorph.glueData.toGlueData.glued}
+    (hp : p ∈ range Φ.toOpenPartialHomeomorph.glueInl) :
+    Φ.glueRoughForm α β p = RoughForm.descendedForm I I Φ.toOpenPartialHomeomorph.glueInl α p :=
+  ite_eq_left hp
+
+/-- At a point outside the image of `X`, the glued form is `β` read through the inverse of the
+derivative of the canonical map of `Y`. -/
+theorem glueRoughForm_apply_of_notMem_range
+    {p : Φ.toOpenPartialHomeomorph.glueData.toGlueData.glued}
+    (hp : p ∉ range Φ.toOpenPartialHomeomorph.glueInl) :
+    Φ.glueRoughForm α β p = RoughForm.descendedForm I I Φ.toOpenPartialHomeomorph.glueInr β p :=
+  ite_eq_right hp
+
 /-- **The glued form restricts to `α` on `X`.** -/
 @[simp]
 theorem mpullback_glueInl_glueRoughForm
     (hl : IsLocalDiffeomorph I I n Φ.toOpenPartialHomeomorph.glueInl) (hn : n ≠ 0) :
     mpullback I I Φ.toOpenPartialHomeomorph.glueInl (Φ.glueRoughForm α β) = α := by
   funext x
-  rw [mpullback_apply_congr (η := RoughForm.descendedForm I I _ α)
-    (ite_eq_left (mem_range_self x)),
+  rw [mpullback_apply_congr (glueRoughForm_apply_of_mem_range (mem_range_self x)),
     hl.mpullback_descendedForm_of_injective hn (isOpenEmbedding_glueInl _).injective]
 
 /-- Pullback along the canonical map of `X` followed by `Φ` is pullback along the canonical map of
@@ -152,7 +165,7 @@ theorem mpullback_glueInr_glueRoughForm
   · -- Outside the source of `Φ`, the point `ι_Y y` is not in the image of `X`.
     have hyX : Φ.toOpenPartialHomeomorph.glueInr y ∉ range Φ.toOpenPartialHomeomorph.glueInl :=
       fun ⟨x, hx⟩ ↦ hy (glueInl_eq_glueInr_iff.1 hx).1
-    rw [mpullback_apply_congr (η := RoughForm.descendedForm I I _ β) (ite_eq_right hyX),
+    rw [mpullback_apply_congr (glueRoughForm_apply_of_notMem_range hyX),
       hr.mpullback_descendedForm_of_injective hn (isOpenEmbedding_glueInr _).injective]
 
 /-- **Forms on the gluing are determined by their restrictions** to `X` and to `Y`. -/
@@ -210,19 +223,6 @@ end Rough
 section Smooth
 
 variable (Φ : PartialDiffeomorph I I Y X ∞) [IsManifold I ∞ X] [IsManifold I ∞ Y]
-
-/-- **Exterior derivatives of forms related by `Φ` are related by `Φ`.** If `Φ` pulls a smooth form
-`α` on `X` back to the smooth form `β` on its source, then it pulls `dα` back to `dβ` there: the
-source is open, and pullback commutes with the exterior derivative. -/
-theorem mpullback_mextDerivₗ_apply {α : SmoothForm I X F k} {β : SmoothForm I Y F k}
-    (hαβ : ∀ y ∈ Φ.source, mpullback I I Φ α.val y = β.val y)
-    {y : Y} (hy : y ∈ Φ.source) :
-    mpullback I I Φ (mextDerivₗ I k α).val y = (mextDerivₗ I k β).val y := by
-  rw [mextDerivₗ_apply, mextDerivₗ_apply,
-    mpullback_mextDeriv_at ((Φ.contMDiffOn.contMDiffAt (Φ.open_source.mem_nhds hy)).of_le
-      (by simp)) ((α.contMDiff (Φ y)).of_le (by simp))]
-  exact mextDeriv_congr_of_eventuallyEq
-    (eventually_of_mem (Φ.open_source.mem_nhds hy) hαβ)
 
 variable [ChartedSpace H Φ.toOpenPartialHomeomorph.glueData.toGlueData.glued]
   [IsManifold I ∞ Φ.toOpenPartialHomeomorph.glueData.toGlueData.glued]
@@ -285,9 +285,9 @@ theorem mextDerivₗ_glueForm :
 /-- **The glued form is closed exactly when both forms are closed.** -/
 @[simp]
 theorem isClosed_glueForm_iff : (Φ.glueForm hl hr α β hαβ).IsClosed ↔ α.IsClosed ∧ β.IsClosed := by
-  rw [SmoothForm.isClosed_iff_mextDerivₗ_eq_zero, SmoothForm.isClosed_iff_mextDerivₗ_eq_zero,
-    SmoothForm.isClosed_iff_mextDerivₗ_eq_zero, mextDerivₗ_glueForm, eq_comm, eq_glueForm_iff,
-    map_zero, map_zero, eq_comm, @eq_comm _ 0]
+  simp only [SmoothForm.isClosed_iff_mextDerivₗ_eq_zero, mextDerivₗ_glueForm]
+  rw [eq_comm, eq_glueForm_iff]
+  simp [eq_comm]
 
 end Smooth
 

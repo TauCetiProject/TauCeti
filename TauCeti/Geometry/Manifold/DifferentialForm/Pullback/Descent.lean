@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.LinearAlgebra.Multilinear.Quotient
 
 /-!
@@ -114,8 +115,7 @@ theorem isBasic_of_injective (hf : Function.Injective f)
     IsBasic I' f α := by
   refine isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
   obtain rfl := hf hxy
-  -- `tangentSpaceCast` from a tangent space to itself is the identity on vectors.
-  exact congrArg (α x) (funext fun i ↦ hdf x (hvw i))
+  exact congrArg (α x) (funext fun i ↦ hdf x ((hvw i).trans (tangentSpaceCast_self _)))
 
 /-- **Invariant forms killing vertical vectors are basic.** Let `f` be differentiable and let `σ`
 be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that is transitive on the
