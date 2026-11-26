@@ -140,23 +140,16 @@ theorem Convex.exists_nontrivial_support_of_notMem_intrinsicInterior {E : Type*}
     (hC : Convex ℝ C) {x : E} (hx : x ∈ C) (hxi : x ∉ intrinsicInterior ℝ C) :
     ∃ y : E, (∀ c ∈ C, ⟪c, y⟫ ≤ ⟪x, y⟫) ∧ ∃ c ∈ C, ⟪c, y⟫ < ⟪x, y⟫ := by
   -- translate `C` by `-x` into the direction `V` of its affine span, where `0` is a frontier point
-  set V := vectorSpan ℝ C
+  set V := (affineSpan ℝ C).direction
   set D : Set V := {v | x + (v : E) ∈ C}
-  have hD : Convex ℝ D := (hC.translate_preimage_right x).linear_preimage V.subtype
-  have hmem (c : E) (hc : c ∈ C) : (⟨c - x, vsub_mem_vectorSpan ℝ hc hx⟩ : V) ∈ D := by
+  have hmem (c : E) (hc : c ∈ C) : (⟨c - x, AffineSubspace.vsub_mem_direction
+      (subset_affineSpan ℝ C hc) (subset_affineSpan ℝ C hx)⟩ : V) ∈ D := by
     simpa [D] using hc
-  have h0 : (0 : V) ∉ interior D := by
-    intro h0
-    refine hxi (TauCeti.mem_intrinsicInterior_iff_eventually.2 ⟨subset_affineSpan ℝ C hx, ?_⟩)
-    obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 h0)
-    filter_upwards [Metric.ball_mem_nhds x hε] with y hy hyA
-    have hyV : y - x ∈ V :=
-      (direction_affineSpan ℝ C).le
-        (AffineSubspace.vsub_mem_direction hyA (subset_affineSpan ℝ C hx))
-    have := hball (show (⟨y - x, hyV⟩ : V) ∈ Metric.ball 0 ε by simpa [dist_eq_norm] using hy)
-    simpa [D] using this
-  obtain ⟨w, hw0, hw⟩ := hD.exists_ne_zero_forall_closure_inner_sub_nonpos
-    ⟨subset_closure (by simpa [D] using hx), h0⟩
+  have h0 : (0 : V) ∈ frontier D := (TauCeti.add_mem_intrinsicFrontier_iff (c := x) 0).1 (by
+    rw [Submodule.coe_zero, add_zero, ← intrinsicClosure_sdiff_intrinsicInterior]
+    exact ⟨subset_intrinsicClosure hx, hxi⟩)
+  obtain ⟨w, hw0, hw⟩ :=
+    (TauCeti.convex_setOf_add_mem hC).exists_ne_zero_forall_closure_inner_sub_nonpos h0
   have hle (c : E) (hc : c ∈ C) : ⟪c, (w : E)⟫ ≤ ⟪x, (w : E)⟫ := by
     have := hw _ (subset_closure (hmem c hc))
     rwa [sub_zero, Submodule.coe_inner, inner_sub_left, sub_nonpos] at this
@@ -168,7 +161,7 @@ theorem Convex.exists_nontrivial_support_of_notMem_intrinsicInterior {E : Type*}
     rintro _ ⟨c, hc, rfl⟩
     simp [inner_sub_right, real_inner_comm, le_antisymm (hle c hc) (h c hc)]
   have hwV : (w : E) ∈ Submodule.span ℝ ((· -ᵥ x) '' C) :=
-    vectorSpan_eq_span_vsub_set_right ℝ hx ▸ w.property
+    vectorSpan_eq_span_vsub_set_right ℝ hx ▸ direction_affineSpan ℝ C ▸ w.property
   exact hw0 (Subtype.ext (inner_self_eq_zero.1 (hker hwV)))
 
 /-- **Nontrivial support off the relative interior, by a continuous linear functional.** At a
