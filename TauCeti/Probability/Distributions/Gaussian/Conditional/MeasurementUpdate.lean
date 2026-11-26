@@ -15,8 +15,9 @@ A state with covariance `P`, observed through `C` with independent noise of cova
 with the observation a jointly Gaussian vector whose covariance has the blocks `P`, `P Cᵀ`, `C P`
 and the innovation covariance `C P Cᵀ + R`. When the innovation covariance is positive definite,
 the conditional covariance of the state given the observation, `Matrix.gaussianCondCov` of that
-block matrix, is the measurement update of the Kalman filter. This identifies a single step of the
-filter with the conditioning of one block of a Gaussian vector on the other.
+block matrix, is the measurement update of the Kalman filter. This identifies the covariance
+update of one filter step with the Schur-complement conditional covariance
+`Matrix.gaussianCondCov` of the joint block covariance.
 
 ## Main results
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
+import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 /-!
 # The covariance recursion of the discrete-time Kalman filter
@@ -27,8 +28,9 @@ positive semidefinite `P` the innovation covariance is positive definite, hence 
 The completion of the square (the Joseph form of the update) says that for every gain `K`,
 `(1 - K C) P (1 - K C)ᵀ + K R Kᵀ` is the updated covariance plus `(K - K*) S (K - K*)ᵀ`, where
 `K*` is the Kalman gain. So the Kalman gain minimizes the error covariance in the Loewner order,
-and everything else follows: positive semidefiniteness and monotonicity of the updates, and the
-information form `(P⁺)⁻¹ = P⁻¹ + Cᵀ R⁻¹ C` of the measurement update.
+and positive semidefiniteness and monotonicity of the updates follow. The information form
+`(P⁺)⁻¹ = P⁻¹ + Cᵀ R⁻¹ C` of the measurement update comes instead from the Woodbury identity
+`Matrix.add_mul_mul_inv_eq_sub`.
 
 ## Main definitions
 
@@ -186,8 +188,8 @@ theorem joseph_eq_measurementUpdate_add (hP : P.IsSymm) (hR : R.IsSymm)
   set S := innovationCov C R P with hSdef
   have hG : G * S = P * Cᵀ := kalmanGain_mul_innovationCov hS
   have hSsymm : Sᵀ = S := by
-    rw [hSdef, innovationCov_def, transpose_add, transpose_mul, transpose_mul, transpose_transpose,
-      hP.eq, hR.eq, Matrix.mul_assoc]
+    rw [hSdef, innovationCov_def]
+    exact ((hP.mul_mul_transpose C).add hR).eq
   -- The transpose of `G S = P Cᵀ`, by the symmetry of `S` and `P`.
   have hGt : S * Gᵀ = C * P := by
     rw [← hSsymm, ← transpose_mul, hG, transpose_mul, transpose_transpose, hP.eq]
@@ -206,7 +208,7 @@ semidefinite. -/
 theorem PosSemidef.innovationCov (hP : P.PosSemidef) (hR : R.PosSemidef) (C : Matrix κ ι ℝ) :
     (Matrix.innovationCov C R P).PosSemidef := by
   rw [innovationCov_def]
-  simpa only [conjTranspose_eq_transpose_of_trivial] using (hP.mul_mul_conjTranspose_same C).add hR
+  exact (hP.mul_mul_transpose_same C).add hR
 
 omit [Fintype κ] [DecidableEq κ] [DecidableEq ι] in
 /-- The innovation covariance of a positive semidefinite prior and a positive definite
@@ -214,8 +216,7 @@ observation noise is positive definite. -/
 theorem PosSemidef.posDef_innovationCov (hP : P.PosSemidef) (hR : R.PosDef) (C : Matrix κ ι ℝ) :
     (Matrix.innovationCov C R P).PosDef := by
   rw [innovationCov_def]
-  simpa only [conjTranspose_eq_transpose_of_trivial] using
-    PosDef.posSemidef_add (hP.mul_mul_conjTranspose_same C) hR
+  exact PosDef.posSemidef_add (hP.mul_mul_transpose_same C) hR
 
 /-- **The Kalman gain minimizes the error covariance.** For a positive semidefinite `P` and a
 positive definite `R`, the Joseph form of every gain `K` exceeds the measurement update in the
@@ -226,8 +227,7 @@ theorem joseph_sub_measurementUpdate_posSemidef (hP : P.PosSemidef) (hR : R.PosD
   have hS := hP.posDef_innovationCov hR C
   rw [joseph_eq_measurementUpdate_add hP.isHermitian.isSymm hR.isHermitian.isSymm hS.isUnit,
     add_sub_cancel_left]
-  simpa only [conjTranspose_eq_transpose_of_trivial] using
-    hS.posSemidef.mul_mul_conjTranspose_same (K - kalmanGain C R P)
+  exact hS.posSemidef.mul_mul_transpose_same (K - kalmanGain C R P)
 
 /-- **The Kalman gain is the only minimizer.** For a positive semidefinite `P` and a positive
 definite `R`, the Joseph form of a gain `K` equals the measurement update exactly when `K` is the
@@ -260,8 +260,7 @@ theorem PosSemidef.measurementUpdate (hP : P.PosSemidef) (hR : R.PosSemidef)
       (kalmanGain C R P)
     rw [sub_self, Matrix.zero_mul, Matrix.zero_mul, add_zero] at h
     rw [← h]
-    simpa only [conjTranspose_eq_transpose_of_trivial] using
-      (hP.mul_mul_conjTranspose_same _).add (hR.mul_mul_conjTranspose_same (kalmanGain C R P))
+    exact (hP.mul_mul_transpose_same _).add (hR.mul_mul_transpose_same (kalmanGain C R P))
   · rwa [measurementUpdate_of_not_isUnit hS]
 
 omit [DecidableEq κ] in
@@ -270,7 +269,7 @@ noise is positive semidefinite. -/
 theorem PosSemidef.timeUpdate (hP : P.PosSemidef) (hQ : Q.PosSemidef) (A : Matrix ι ι ℝ) :
     (Matrix.timeUpdate A Q P).PosSemidef := by
   rw [timeUpdate_def]
-  simpa only [conjTranspose_eq_transpose_of_trivial] using (hP.mul_mul_conjTranspose_same A).add hQ
+  exact (hP.mul_mul_transpose_same A).add hQ
 
 omit [DecidableEq κ] in
 /-- The time update of a positive semidefinite covariance with a positive definite process noise
@@ -278,8 +277,7 @@ is positive definite. -/
 theorem PosSemidef.posDef_timeUpdate (hP : P.PosSemidef) (hQ : Q.PosDef) (A : Matrix ι ι ℝ) :
     (Matrix.timeUpdate A Q P).PosDef := by
   rw [timeUpdate_def]
-  simpa only [conjTranspose_eq_transpose_of_trivial] using
-    PosDef.posSemidef_add (hP.mul_mul_conjTranspose_same A) hQ
+  exact PosDef.posSemidef_add (hP.mul_mul_transpose_same A) hQ
 
 /-- The Riccati map preserves positive semidefiniteness: if `P`, `Q` and `R` are positive
 semidefinite, so is `riccatiMap A C Q R P`, for every `A` and `C`. -/
@@ -324,7 +322,7 @@ theorem measurementUpdate_sub_posSemidef (hR : R.PosDef) (hP : P.PosSemidef)
     abel
   rw [hdiff]
   refine PosSemidef.add ?_ hJ
-  simpa only [conjTranspose_eq_transpose_of_trivial] using hPP'.mul_mul_conjTranspose_same J
+  exact hPP'.mul_mul_transpose_same J
 
 /-- **Monotonicity of the Riccati map.** If `R` is positive definite, `P` is positive
 semidefinite and `P' - P` is positive semidefinite, then so is
@@ -334,8 +332,7 @@ theorem riccatiMap_sub_posSemidef (hR : R.PosDef) (hP : P.PosSemidef)
     (riccatiMap A C Q R P' - riccatiMap A C Q R P).PosSemidef := by
   rw [riccatiMap_def, riccatiMap_def, timeUpdate_def, timeUpdate_def, add_sub_add_right_eq_sub,
     ← Matrix.sub_mul, ← Matrix.mul_sub]
-  simpa only [conjTranspose_eq_transpose_of_trivial] using
-    (measurementUpdate_sub_posSemidef (C := C) hR hP hPP').mul_mul_conjTranspose_same A
+  exact (measurementUpdate_sub_posSemidef (C := C) hR hP hPP').mul_mul_transpose_same A
 
 end Monotonicity
 
@@ -360,13 +357,6 @@ theorem kalmanGain_eq_measurementUpdate_mul (hS : IsUnit (innovationCov C R P))
     abel
   rw [measurementUpdate_def, hPC, mul_nonsing_inv_cancel_right _ _ hR']
 
-/-- If `P` is positive definite and `R` positive semidefinite, the information matrix
-`P⁻¹ + Cᵀ R⁻¹ C` is positive definite. -/
-theorem PosDef.inv_add_transpose_mul_inv_mul (hP : P.PosDef) (hR : R.PosSemidef)
-    (C : Matrix κ ι ℝ) : (P⁻¹ + Cᵀ * R⁻¹ * C).PosDef := by
-  simpa only [conjTranspose_eq_transpose_of_trivial] using
-    hP.inv.add_posSemidef (hR.inv.conjTranspose_mul_mul_same C)
-
 /-- **The measurement update as an inverse.** If `P` and `R` are positive definite, the updated
 covariance is the inverse of the information matrix `P⁻¹ + Cᵀ R⁻¹ C`: this is the Woodbury
 identity. -/
@@ -384,8 +374,10 @@ theorem measurementUpdate_eq_inv (hP : P.PosDef) (hR : R.PosDef) :
 the inverse of the updated covariance is `P⁻¹ + Cᵀ R⁻¹ C`. -/
 theorem inv_measurementUpdate (hP : P.PosDef) (hR : R.PosDef) :
     (measurementUpdate C R P)⁻¹ = P⁻¹ + Cᵀ * R⁻¹ * C := by
+  have hI := hP.inv_add_conjTranspose_mul_inv_mul hR.posSemidef C
+  rw [conjTranspose_eq_transpose_of_trivial] at hI
   rw [measurementUpdate_eq_inv hP hR, nonsing_inv_nonsing_inv _
-    ((isUnit_iff_isUnit_det _).mp (hP.inv_add_transpose_mul_inv_mul hR.posSemidef C).isUnit)]
+    ((isUnit_iff_isUnit_det _).mp hI.isUnit)]
 
 omit [DecidableEq ι] in
 /-- The measurement update of a positive definite covariance with a positive definite
@@ -393,8 +385,8 @@ observation noise is positive definite, as the inverse of `P⁻¹ + Cᵀ R⁻¹ 
 theorem PosDef.measurementUpdate (hP : P.PosDef) (hR : R.PosDef) (C : Matrix κ ι ℝ) :
     (Matrix.measurementUpdate C R P).PosDef := by
   classical
-  rw [measurementUpdate_eq_inv hP hR]
-  exact (hP.inv_add_transpose_mul_inv_mul hR.posSemidef C).inv
+  rw [measurementUpdate_eq_inv hP hR, ← conjTranspose_eq_transpose_of_trivial C]
+  exact (hP.inv_add_conjTranspose_mul_inv_mul hR.posSemidef C).inv
 
 /-- **The information form of the filtered mean.** If `P` and `R` are positive definite, the
 filtered mean `x̂⁺ = x̂ + K* (y - C x̂)` satisfies `(P⁺)⁻¹ x̂⁺ = P⁻¹ x̂ + Cᵀ R⁻¹ y`, where `K*` is
