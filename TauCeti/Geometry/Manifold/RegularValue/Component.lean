@@ -76,6 +76,18 @@ variable {E H M F G N : Type*}
 variable (hm : 1 ≤ m) (hf : ContMDiff I J m f) (hc : J.IsInteriorPoint (f x))
   (hU : ∀ y : U, IsRegularPoint I J f y) (hLU : connectedComponentIn (f ⁻¹' {f x}) x ⊆ U)
 
+omit [TopologicalSpace N] in
+/-- Read in the fibre `{y : U // f y = f x}`, the component of `x` in its level is the connected
+component of `x` there: every point of the component lies in `U` and in the level, so it is a point
+of the fibre. -/
+private theorem setOf_mem_connectedComponentIn_eq :
+    {z : {y : U // f y = f x} | ((z : U) : M) ∈ connectedComponentIn (f ⁻¹' {f x}) x} =
+      connectedComponent ⟨⟨x, hLU (mem_connectedComponentIn rfl)⟩, rfl⟩ :=
+  IsInducing.preimage_connectedComponentIn (f := fun z : {y : U // f y = f x} ↦ ((z : U) : M))
+    (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal).isInducing (F := f ⁻¹' {f x})
+    (y := ⟨⟨x, hLU (mem_connectedComponentIn rfl)⟩, rfl⟩) (range_subset_iff.2 fun z ↦ z.property)
+    fun w hw ↦ ⟨⟨⟨w, hLU hw⟩, connectedComponentIn_subset _ _ hw⟩, rfl⟩
+
 /-- **The component of a level as an open subset of a regular fibre.** If the connected
 component `L` of `x` in its level `f⁻¹(f x)` lies in an open set `U` of regular points of `f`,
 then `L` is an open subset of the regular fibre `{y : U // f y = f x}` of the restriction of `f`
@@ -89,13 +101,7 @@ def regularFiberComponent : Opens {y : U // f y = f x} where
     have := ChartedSpace.locallyConnectedSpace (Fin (finrank ℝ E - finrank ℝ F) → ℝ)
       {y : U // f y = f x}
     -- Read in the fibre, the component is the connected component of `x` there.
-    rw [show {z : {y : U // f y = f x} | ((z : U) : M) ∈ connectedComponentIn (f ⁻¹' {f x}) x} =
-        connectedComponent ⟨⟨x, hLU (mem_connectedComponentIn rfl)⟩, rfl⟩ from
-      IsInducing.preimage_connectedComponentIn (f := fun z : {y : U // f y = f x} ↦ ((z : U) : M))
-        (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal).isInducing (F := f ⁻¹' {f x})
-        (y := ⟨⟨x, hLU (mem_connectedComponentIn rfl)⟩, rfl⟩)
-        (range_subset_iff.2 fun z ↦ z.property)
-        fun w hw ↦ ⟨⟨⟨w, hLU hw⟩, connectedComponentIn_subset _ _ hw⟩, rfl⟩]
+    rw [setOf_mem_connectedComponentIn_eq hLU]
     exact isOpen_connectedComponent
 
 @[simp]
@@ -109,11 +115,7 @@ fibre. -/
 theorem coe_regularFiberComponent :
     (regularFiberComponent hm hf hc hU hLU : Set {y : U // f y = f x}) =
       connectedComponent ⟨⟨x, hLU (mem_connectedComponentIn rfl)⟩, rfl⟩ :=
-  -- Every point of the component lies in `U` and in the level, so it is a point of the fibre.
-  IsInducing.preimage_connectedComponentIn (f := fun z : {y : U // f y = f x} ↦ ((z : U) : M))
-    (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal).isInducing (F := f ⁻¹' {f x})
-    (y := ⟨⟨x, hLU (mem_connectedComponentIn rfl)⟩, rfl⟩) (range_subset_iff.2 fun z ↦ z.property)
-    fun w hw ↦ ⟨⟨⟨w, hLU hw⟩, connectedComponentIn_subset _ _ hw⟩, rfl⟩
+  setOf_mem_connectedComponentIn_eq hLU
 
 /-- The open subset `TauCeti.regularFiberComponent` of the regular fibre is homeomorphic to the
 component of `x` in its level, with the subspace topology from `M`, by the identity on points. -/
