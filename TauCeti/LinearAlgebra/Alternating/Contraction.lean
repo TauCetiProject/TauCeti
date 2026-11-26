@@ -144,6 +144,21 @@ theorem contract_rayOfNeZero {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ≠
     (Module.Ray.someVector_ray _)).map
       ((LinearMap.applyₗ n).comp AlternatingMap.curryLeftLinearMap)
 
+/-- Contracting a conormal orientation by a positive multiple of a transverse vector
+gives the same orientation. -/
+theorem contract_smul_of_pos (o : Module.Ray R (M [⋀^Fin (k + 1)]→ₗ[R] R))
+    (ho : o.IsConormal W) (hk : finrank R (M ⧸ W) = k + 1)
+    (n : M) (hn : n ∉ W) {a : R} (ha : 0 < a) :
+    o.contract ho hk (a • n) (fun h => hn ((W.smul_mem_iff ha.ne').mp h)) =
+      o.contract ho hk n hn := by
+  induction o using Module.Ray.ind with
+  | h α hα =>
+    rw [contract_rayOfNeZero, contract_rayOfNeZero, ray_eq_iff]
+    have hsmul : α.curryLeft (a • n) = a • α.curryLeft n :=
+      map_smul (AlternatingMap.curryLeftLinearMap α) a n
+    rw [hsmul]
+    exact (SameRay.sameRay_pos_smul_right _ ha).symm
+
 /-- The contracted orientation has the sign of the original orientation with the
 contracting vector placed first. -/
 @[simp]
