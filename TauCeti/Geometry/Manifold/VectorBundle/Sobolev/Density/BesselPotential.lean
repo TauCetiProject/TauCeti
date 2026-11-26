@@ -137,20 +137,11 @@ private theorem isLocallySobolevAt_reconstruction_single_of_mem [DecidableEq ι]
     TemperedDistribution.toDistribution _
       (((Module.finBasis ℝ F).repr v j : ℂ) •
         TemperedDistribution.smulLeftCLM ℂ (A.chartCutoff i : E → ℂ) w)
-  -- The real part is the average of `X` and its complex conjugate.
-  have hre : mapCLM (ofRealCLM ∘L reCLM) X =
-      (2⁻¹ : ℂ) • (X + mapCLM conjCLE.toContinuousLinearMap X) := by
-    ext φ
-    simp only [mapCLM_apply, ContinuousLinearMap.comp_apply, reCLM_apply, ofRealCLM_apply,
-      FunLike.coe_smul, FunLike.coe_add, Pi.smul_apply, Pi.add_apply,
-      ContinuousLinearEquiv.coe_coe, conjCLE_apply, smul_eq_mul, re_eq_add_conj]
-    ring
   have hX : X.IsLocallySobolevAt s ((A.chartData i).chart x) :=
     TemperedDistribution.MemSobolev.isLocallySobolevAt_toDistribution
       ((hw.smulLeftCLM_testFunction ENNReal.one_lt_two ENNReal.ofNat_ne_top
         (A.chartCutoff i)).smul _) ((A.chartData i).chart.map_source hxs)
-  rw [hre]
-  exact (hX.add (isLocallySobolevAt_conj_iff.2 hX)).smul _
+  exact hX.re
 
 /-- Away from the support of `χᵢ`, the functional `s ↦ Re w (sᵢⱼ)` vanishes, and so do its
 components near the image of `x` in a chart of the partition at `x`. -/
