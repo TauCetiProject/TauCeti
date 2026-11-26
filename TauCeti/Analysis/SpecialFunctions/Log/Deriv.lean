@@ -12,7 +12,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at
 `log x`, by evenness of `v ∘ log` for `x < 0`.
-Where `0 < f ≤ 1`, the gradient of `f = exp (log f)` is at most that of `log f`.
+Where `0 < f ≤ 1`, the gradient of `f = exp (log f)` is at most that of `log f`, and at a zero of
+a continuous `f` the derivative of `log f` is `0`.
 The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, and that of
 `r ↦ log (c / r)` wherever `c ≠ 0` and `r ≠ 0`.
 
@@ -22,6 +23,8 @@ The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, and t
   differentiability of `v` at `log x`.
 * `TauCeti.mul_deriv_comp_log`: under `x = e^y` the operator `x d/dx` is `d/dy`.
 * `TauCeti.norm_fderiv_le_norm_fderiv_log`: where `0 < f z ≤ 1`, `‖∇ f‖ ≤ ‖∇ log f‖`.
+* `TauCeti.fderiv_log_comp_eq_zero_of_continuousAt`: where `f` is continuous with `f z = 0`,
+  `∇ log f (z) = 0`.
 * `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
   exponent, assuming `log x ≠ 0`.
 * `Real.hasDerivAt_log_const_div`: the derivative of `log (c / r)` is `-r⁻¹`.
@@ -83,6 +86,30 @@ theorem norm_fderiv_le_norm_fderiv_log {f : E → ℝ} {z : E} (hf : Differentia
   rw [(hf.hasFDerivAt.log h₀.ne').fderiv, norm_smul, norm_inv, Real.norm_of_nonneg h₀.le,
     le_inv_mul_iff₀ h₀]
   exact mul_le_of_le_one_left (norm_nonneg _) h₁
+
+/-- If `f` is continuous at `z` with `f z = 0`, then `log ∘ f` has derivative `0` at `z`: either it
+is not differentiable there, or it is continuous at `z` with value `log 0 = 0`, which forces
+`f = 0` near `z` since `log |f|` tends to `-∞` along the points where `f ≠ 0`. -/
+theorem fderiv_log_comp_eq_zero_of_continuousAt {f : E → ℝ} {z : E} (hf : ContinuousAt f z)
+    (hz : f z = 0) : fderiv ℝ (fun y ↦ log (f y)) z = 0 := by
+  by_cases hd : DifferentiableAt ℝ (fun y ↦ log (f y)) z
+  swap
+  · exact fderiv_zero_of_not_differentiableAt hd
+  have hc : Tendsto (fun y ↦ log (f y)) (𝓝 z) (𝓝 0) := by
+    simpa [hz] using hd.continuousAt.tendsto
+  have hf0 : Tendsto f (𝓝 z) (𝓝 0) := by simpa [hz] using hf.tendsto
+  have h0 : (fun y ↦ log (f y)) =ᶠ[𝓝 z] fun _ ↦ 0 := by
+    filter_upwards [hc.eventually (Ioo_mem_nhds (by norm_num : (-1 : ℝ) < 0) one_pos),
+      hf0.eventually (Ioo_mem_nhds (neg_lt_zero.2 (exp_pos (-1))) (exp_pos (-1)))]
+      with y (hy : log (f y) ∈ Set.Ioo (-1) 1) (hy' : f y ∈ Set.Ioo (-exp (-1)) (exp (-1)))
+    by_contra hne
+    have hfy : f y ≠ 0 := fun h ↦ hne (by simp [h])
+    have : log |f y| < -1 := by
+      rw [log_lt_iff_lt_exp (abs_pos.2 hfy)]
+      exact abs_lt.2 hy'
+    rw [log_abs] at this
+    exact lt_irrefl _ (this.trans hy.1)
+  exact h0.fderiv_eq.trans (fderiv_const_apply 0)
 
 end TauCeti
 
