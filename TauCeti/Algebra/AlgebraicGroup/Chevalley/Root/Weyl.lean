@@ -79,6 +79,25 @@ theorem weylElement_eq_corootPoints_mul (s : Aˣ) :
     corootPoints_apply, coe_torusPoints, MulEquiv.toMonoidHom_eq_coe, ← kostantTorusMatrix_weight,
     basisMatrix_kostantTorusPoints, inv_one, Units.val_one] using h
 
+/-- **Chevalley's identity at a simple root in actual torus coordinates**:
+`nᵢ(s) = torusPoints (simpleCorootParameter i s) * nᵢ(1)` over every commutative ring. -/
+theorem weylElement_simpleIndex_eq_torusPoints_mul (i : Fin t.rank) (s : Aˣ) :
+    D.weylElement (t.simpleIndex ht i) A s =
+      D.torusPoints A (D.simpleCorootParameter i A s) *
+        D.weylElement (t.simpleIndex ht i) A 1 := by
+  rw [D.weylElement_eq_corootPoints_mul, ← D.simpleCorootPoints_eq_corootPoints,
+    D.simpleCorootPoints_eq_torusPoints]
+
+/-- Conjugating by a coroot value rescales each root parameter by `s` raised to the
+corresponding Cartan integer. -/
+theorem corootPoints_conj_rootSubgroupPoints (β : Fin t.numRoots) (s : Aˣ) (u : A) :
+    D.corootPoints γ A s * D.rootSubgroupPoints β A (ofAdd u) *
+        (D.corootPoints γ A s)⁻¹ =
+      D.rootSubgroupPoints β A (ofAdd
+        (((s ^ (t.simplyConnectedRootDatum ht).pairing β γ : Aˣ) : A) * u)) := by
+  rw [corootPoints_eq_torusPoints, D.torusPoints_conj_rootSubgroupPoints,
+    D.torusCharacter_corootParameter_coordinateRoot]
+
 /-- **Quotients of Steinberg's elements are coroot values.** For units `s` and `s'`,
 `n_γ(s) n_γ(s')⁻¹ = h_γ(s s'⁻¹)`, with `h_γ` the coroot of `γ` in the actual torus of the
 datum. -/

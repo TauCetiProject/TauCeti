@@ -109,7 +109,7 @@ private theorem tangentialPart_apply (θ : SmoothTwoForm J M) (i : SmoothEmbeddi
 private theorem mfderiv_tangentialPart (i : SmoothEmbedding I J n Q M)
     (hi : hθ.HasSymplecticTangentImages I i) (q : Q) (hn : n ≠ 0) (v : TangentSpace J (i q)) :
     mfderiv I J i q (tangentialPart θ i q v) =
-      v - i.symplecticNormalRepresentative hi q hn (i.normalClass q hn v) := by
+      v - i.symplecticNormalRepresentative hi q hn (i.isImmersion.normalClass q hn v) := by
   rw [i.symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse hi q hn _
     (i.tangentPairing_comp_apply θ q) v, sub_sub_cancel, tangentialPart_apply]
 
@@ -117,7 +117,9 @@ private theorem tangentialPart_mfderiv (i : SmoothEmbedding I J n Q M)
     (hi : hθ.HasSymplecticTangentImages I i) (q : Q) (hn : n ≠ 0) (u : TangentSpace I q) :
     tangentialPart θ i q (mfderiv I J i q u) = u := by
   apply i.isImmersion.mfderiv_injective hn q
-  rw [mfderiv_tangentialPart i hi q hn, normalClass_mfderiv, map_zero, sub_zero]
+  rw
+      [mfderiv_tangentialPart i hi q hn, Manifold.IsImmersion.normalClass_mfderiv, map_zero,
+          sub_zero]
 
 /-- **The ambient extension of tangent and symplectic normal data.** Along symplectic submanifold
 embeddings `i : Q → M` and `j : Q' → N`, a map `f : Q → Q'` and linear maps
@@ -129,31 +131,33 @@ complement, so these two requirements determine it. -/
 def symplecticNormalExtension (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q M)
     (j : SmoothEmbedding I' K n' Q' N)
     (hj : hσ.HasSymplecticTangentImages I' j) (f : Q → Q') (hn : n ≠ 0) (hn' : n' ≠ 0)
-    (C : ∀ q, i.NormalSpace q hn →L[ℝ] j.NormalSpace (f q) hn') (q : Q) :
+    (C : ∀ q, i.isImmersion.NormalSpace q hn →L[ℝ] j.isImmersion.NormalSpace (f q) hn') (q : Q) :
     TangentSpace J (i q) →L[ℝ] TangentSpace K (j (f q)) :=
   (mfderiv I' K j (f q)).comp ((mfderiv I I' f q).comp (tangentialPart θ i q)) +
-    (j.symplecticNormalRepresentative hj (f q) hn').comp ((C q).comp (i.normalClassL q hn))
+    (j.symplecticNormalRepresentative hj (f q) hn').comp
+        ((C q).comp (i.isImmersion.normalClassL q hn))
 
 
 section Extension
 
 variable (i : SmoothEmbedding I J n Q M) (hi : hθ.HasSymplecticTangentImages I i)
   (j : SmoothEmbedding I' K n' Q' N) (hj : hσ.HasSymplecticTangentImages I' j) (f : Q → Q')
-  (hn : n ≠ 0) (hn' : n' ≠ 0) (C : ∀ q, i.NormalSpace q hn →L[ℝ] j.NormalSpace (f q) hn')
+  (hn : n ≠ 0) (hn' : n' ≠ 0)
+      (C : ∀ q, i.isImmersion.NormalSpace q hn →L[ℝ] j.isImmersion.NormalSpace (f q) hn')
 
 /-- An ambient tangent vector is the sum of its tangential part and the symplectic representative
 of its normal class. -/
 private theorem mfderiv_tangentialPart_add (q : Q) (v : TangentSpace J (i q)) :
     mfderiv I J i q (tangentialPart θ i q v) +
-      i.symplecticNormalRepresentative hi q hn (i.normalClass q hn v) = v := by
+      i.symplecticNormalRepresentative hi q hn (i.isImmersion.normalClass q hn v) = v := by
   rw [mfderiv_tangentialPart i hi q hn, sub_add_cancel]
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
 private theorem symplecticNormalExtension_apply (q : Q) (v : TangentSpace J (i q)) :
     symplecticNormalExtension θ i j hj f hn hn' C q v =
       mfderiv I' K j (f q) (mfderiv I I' f q (tangentialPart θ i q v)) +
-        j.symplecticNormalRepresentative hj (f q) hn' (C q (i.normalClass q hn v)) := by
-  simp [symplecticNormalExtension, normalClassL_apply]
+        j.symplecticNormalRepresentative hj (f q) hn' (C q (i.isImmersion.normalClass q hn v)) := by
+  simp [symplecticNormalExtension, Manifold.IsImmersion.normalClassL_apply]
 
 include hi in
 /-- The ambient extension sends the tangent vector `di_q u` of the submanifold to `dj (df_q u)`. -/
@@ -161,14 +165,16 @@ include hi in
 theorem symplecticNormalExtension_mfderiv (q : Q) (u : TangentSpace I q) :
     symplecticNormalExtension θ i j hj f hn hn' C q (mfderiv I J i q u) =
       mfderiv I' K j (f q) (mfderiv I I' f q u) := by
-  rw [symplecticNormalExtension_apply, tangentialPart_mfderiv i hi q hn, normalClass_mfderiv,
+  rw
+      [symplecticNormalExtension_apply, tangentialPart_mfderiv i hi q hn,
+          Manifold.IsImmersion.normalClass_mfderiv,
     map_zero, map_zero, add_zero]
 
 /-- The ambient extension sends the symplectic representative of a normal class `ν` to the
 symplectic representative of `C q ν`. -/
 @[simp]
 theorem symplecticNormalExtension_symplecticNormalRepresentative (q : Q)
-    (ν : i.NormalSpace q hn) :
+    (ν : i.isImmersion.NormalSpace q hn) :
     symplecticNormalExtension θ i j hj f hn hn' C q (i.symplecticNormalRepresentative hi q hn ν) =
       j.symplecticNormalRepresentative hj (f q) hn' (C q ν) := by
   have h0 : tangentialPart θ i q (i.symplecticNormalRepresentative hi q hn ν) = 0 := by
@@ -182,9 +188,9 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
 /-- The ambient extension induces `C q` on normal spaces. -/
 @[simp]
 theorem normalClass_symplecticNormalExtension (q : Q) (v : TangentSpace J (i q)) :
-    j.normalClass (f q) hn' (symplecticNormalExtension θ i j hj f hn hn' C q v) =
-      C q (i.normalClass q hn v) := by
-  rw [symplecticNormalExtension_apply, map_add, normalClass_mfderiv, zero_add,
+    j.isImmersion.normalClass (f q) hn' (symplecticNormalExtension θ i j hj f hn hn' C q v) =
+      C q (i.isImmersion.normalClass q hn v) := by
+  rw [symplecticNormalExtension_apply, map_add, Manifold.IsImmersion.normalClass_mfderiv, zero_add,
     normalClass_symplecticNormalRepresentative]
 
 /-- **Uniqueness of the ambient extension.** A linear map which sends `di_q u` to `dj (df_q u)`
@@ -232,10 +238,11 @@ theorem isInvertible_symplecticNormalExtension (q : Q) (hf : (mfderiv I I' f q).
     refine (injective_iff_map_eq_zero A).2 fun v hv ↦ ?_
     -- The normal class of `v` is killed by `C q`, so `v = di_q u`; then `dj (df_q u) = 0`
     -- forces `u = 0`.
-    have hν : i.normalClass q hn v = 0 := by
+    have hν : i.isImmersion.normalClass q hn v = 0 := by
       apply hC.injective
       rw [← normalClass_symplecticNormalExtension i j hj f hn hn' C, hv, map_zero, map_zero]
-    obtain ⟨u, rfl⟩ := (i.mem_tangentRange_iff q hn _).1 ((i.normalClass_eq_zero_iff q hn _).1 hν)
+    obtain ⟨u, rfl⟩ := (i.isImmersion.mem_tangentRange_iff q hn _).1
+        ((i.isImmersion.normalClass_eq_zero_iff q hn _).1 hν)
     have h0 : mfderiv I' K j (f q) (mfderiv I I' f q u) = 0 := by
       rw [← symplecticNormalExtension_mfderiv i hi j hj f hn hn' C]
       exact hv
@@ -246,13 +253,13 @@ theorem isInvertible_symplecticNormalExtension (q : Q) (hf : (mfderiv I I' f q).
     intro w
     -- `w` is `dj b` plus the symplectic representative of its class; take
     -- `v = di (df⁻¹ b) + r_i (C⁻¹ [w])`.
-    obtain ⟨b, hb⟩ := (j.mem_tangentRange_iff (f q) hn' _).1
-      ((j.normalClass_eq_zero_iff (f q) hn' _).1 (by
+    obtain ⟨b, hb⟩ := (j.isImmersion.mem_tangentRange_iff (f q) hn' _).1
+      ((j.isImmersion.normalClass_eq_zero_iff (f q) hn' _).1 (by
         rw [map_sub, normalClass_symplecticNormalRepresentative, sub_self] :
-          j.normalClass (f q) hn' (w - j.symplecticNormalRepresentative hj (f q) hn'
-            (j.normalClass (f q) hn' w)) = 0))
+          j.isImmersion.normalClass (f q) hn' (w - j.symplecticNormalRepresentative hj (f q) hn'
+            (j.isImmersion.normalClass (f q) hn' w)) = 0))
     obtain ⟨u, rfl⟩ := hf.surjective b
-    obtain ⟨ν, hν⟩ := hC.surjective (j.normalClass (f q) hn' w)
+    obtain ⟨ν, hν⟩ := hC.surjective (j.isImmersion.normalClass (f q) hn' w)
     refine ⟨mfderiv I J i q u + i.symplecticNormalRepresentative hi q hn ν, ?_⟩
     rw [map_add, symplecticNormalExtension_mfderiv i hi j hj f hn hn' C,
       symplecticNormalExtension_symplecticNormalRepresentative i hi j hj f hn hn' C, hb, hν,
@@ -278,11 +285,12 @@ of `M` along `i`, the ambient extension is smooth on the pulled-back ambient tan
 theorem contMDiff_symplecticNormalExtension (i : SmoothEmbedding I J ∞ Q M)
     (hi : hθ.HasSymplecticTangentImages I i) (j : SmoothEmbedding I' K ∞ Q' N)
     (hj : hσ.HasSymplecticTangentImages I' j) {f : Q → Q'} (hf : ContMDiff I I' ∞ f)
-    (hn : (∞ : ℕ∞ω) ≠ 0) (C : ∀ q, i.NormalSpace q hn →L[ℝ] j.NormalSpace (f q) hn)
+    (hn : (∞ : ℕ∞ω) ≠ 0)
+        (C : ∀ q, i.isImmersion.NormalSpace q hn →L[ℝ] j.isImmersion.NormalSpace (f q) hn)
     (hC : ContMDiff (I.prod 𝓘(ℝ, V)) (K.prod 𝓘(ℝ, F)) ∞
       (fun p : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)) ↦
         (⟨j (f p.proj), j.symplecticNormalRepresentative hj (f p.proj) hn
-          (C p.proj (i.normalClass p.proj hn p.snd))⟩ : TangentBundle K N))) :
+          (C p.proj (i.isImmersion.normalClass p.proj hn p.snd))⟩ : TangentBundle K N))) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (K.prod 𝓘(ℝ, F)) ∞
       (fun p : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)) ↦
         (⟨j (f p.proj), symplecticNormalExtension θ i j hj f hn hn C p.proj p.snd⟩ :
@@ -314,18 +322,20 @@ variable [FiniteDimensional ℝ E'] {P P' : Type*} [NormedAddCommGroup P] [Norme
 `v ↦ r_j (C q [v])` depending smoothly on the ambient tangent vector `v` of `M` along `i`. -/
 theorem contMDiff_symplecticNormalRepresentative_comp_normalClass (i : SmoothEmbedding I J ∞ Q M)
     (j : SmoothEmbedding I' K ∞ Q' N) (hj : hσ.HasSymplecticTangentImages I' j) {f : Q → Q'}
-    (hn : (∞ : ℕ∞ω) ≠ 0) (C : ∀ q, i.NormalSpace q hn →L[ℝ] j.NormalSpace (f q) hn)
+    (hn : (∞ : ℕ∞ω) ≠ 0)
+        (C : ∀ q, i.isImmersion.NormalSpace q hn →L[ℝ] j.isImmersion.NormalSpace (f q) hn)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
     (hdim' : Module.finrank ℝ P' = Module.finrank ℝ F - Module.finrank ℝ E')
     (hC : letI := i.normalSpaceFiberBundle hn hdim
       letI := j.normalSpaceFiberBundle hn hdim'
       ContMDiff (I.prod 𝓘(ℝ, P)) (I'.prod 𝓘(ℝ, P')) ∞
-        (fun p : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦
-          (⟨f p.proj, C p.proj p.snd⟩ : TotalSpace P' (fun q' ↦ j.NormalSpace q' hn)))) :
+        (fun p : TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn) ↦
+          (⟨f p.proj, C p.proj p.snd⟩ : TotalSpace P'
+              (fun q' ↦ j.isImmersion.NormalSpace q' hn)))) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (K.prod 𝓘(ℝ, F)) ∞
       (fun p : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)) ↦
         (⟨j (f p.proj), j.symplecticNormalRepresentative hj (f p.proj) hn
-          (C p.proj (i.normalClass p.proj hn p.snd))⟩ : TangentBundle K N)) := by
+          (C p.proj (i.isImmersion.normalClass p.proj hn p.snd))⟩ : TangentBundle K N)) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := j.normalSpaceFiberBundle hn hdim'
   exact (j.contMDiff_symplecticNormalRepresentative hj hn (m := ∞) (by simp) (by simp) hdim').comp
@@ -360,7 +370,8 @@ theorem exists_diffeomorph_opens_mfderiv_eq_symplecticNormalExtension [I.Boundar
     (f : Q ≃ₘ⟮I, I'⟯ Q')
     (hf : SmoothForm.mpullback (j ∘ f) (j.contMDiff.comp f.contMDiff) σ =
       SmoothForm.mpullback i i.contMDiff θ)
-    (hn : (∞ : ℕ∞ω) ≠ 0) (C : ∀ q, i.NormalSpace q hn →L[ℝ] j.NormalSpace (f q) hn)
+    (hn : (∞ : ℕ∞ω) ≠ 0)
+        (C : ∀ q, i.isImmersion.NormalSpace q hn →L[ℝ] j.isImmersion.NormalSpace (f q) hn)
     (hCinv : ∀ q, (C q).IsInvertible)
     (hCω : ∀ q ν ν', j.symplecticNormalForm hj (f q) hn (C q ν) (C q ν') =
       i.symplecticNormalForm hi q hn ν ν')
@@ -369,8 +380,9 @@ theorem exists_diffeomorph_opens_mfderiv_eq_symplecticNormalExtension [I.Boundar
     (hC : letI := i.normalSpaceFiberBundle hn hdim
       letI := j.normalSpaceFiberBundle hn hdim'
       ContMDiff (I.prod 𝓘(ℝ, P)) (I'.prod 𝓘(ℝ, P')) ∞
-        (fun p : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦
-          (⟨f p.proj, C p.proj p.snd⟩ : TotalSpace P' (fun q' ↦ j.NormalSpace q' hn)))) :
+        (fun p : TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn) ↦
+          (⟨f p.proj, C p.proj p.snd⟩ : TotalSpace P'
+              (fun q' ↦ j.isImmersion.NormalSpace q' hn)))) :
     ∃ (U₀ : Opens M) (U₁ : Opens N) (φ : U₀ ≃ₘ⟮J, K⟯ U₁),
       (∀ q, ∃ h : i q ∈ U₀, (φ ⟨i q, h⟩ : N) = j (f q) ∧
         ∀ v, mfderiv J K φ ⟨i q, h⟩ v = symplecticNormalExtension θ i j hj f hn hn C q v) ∧

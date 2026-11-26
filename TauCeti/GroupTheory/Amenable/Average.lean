@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
 public import TauCeti.GroupTheory.Amenable.Content
 public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.GroupTheory.Amenable.Foelner
 public import TauCeti.GroupTheory.Amenable.WeakStar
 public import TauCeti.MeasureTheory.Group.Foelner.AddContent
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Averages over finite sets and amenability from Følner sets

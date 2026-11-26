@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-public import Mathlib.Analysis.PSeries
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.PSeries.Shifted
 
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
@@ -184,12 +184,8 @@ theorem weight_le_of_le_abs {s : ℝ} (hs : s ≤ 0) {N : ℕ} {n : ℤ} (hn : (
   Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hs
 
 /-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
-theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) := by
-  refine Summable.of_norm_bounded_eventually (Real.summable_abs_int_rpow (b := -r) (by linarith)) ?_
-  filter_upwards [eventually_cofinite_ne 0] with n hn
-  rw [neg_neg, norm_weight]
-  exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
-    (le_add_of_nonneg_left zero_le_one) (by linarith)
+theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) :=
+  (summable_one_add_abs_int_rpow hr).congr fun n ↦ (weight_def r n).symm
 
 /-- Exponential decay beats every polynomial weight: `∑ₙ (1 + |n|) ^ r e^{-a |n|} < ∞` for
 `a > 0` and every real `r`. -/
@@ -1043,6 +1039,19 @@ theorem isOpen_setOf_forall_toContinuousMap_mem (hs : 1 / 2 < s) {U : Set E} (hU
     IsOpen {a : CircleSobolev s E | ∀ x, toContinuousMap T hs a x ∈ U} := by
   simpa [Set.MapsTo] using (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_univ hU).preimage
     (toContinuousMap T hs).continuous
+
+/-- For `s > 1/2` and an open set `U ⊆ ι → E`, the families `u : ι → H^s` whose continuous
+representatives take their joint values `x ↦ (u i x)ᵢ` in `U` form an open set. -/
+theorem isOpen_setOf_forall_toContinuousMap_pi_mem (hs : 1 / 2 < s) {ι : Type*}
+    {U : Set (ι → E)} (hU : IsOpen U) :
+    IsOpen {u : ι → CircleSobolev s E | ∀ x, (fun i ↦ toContinuousMap T hs (u i) x) ∈ U} := by
+  let Φ : (ι → CircleSobolev s E) → C(AddCircle T, ι → E) :=
+    fun u ↦ ContinuousMap.pi fun i ↦ toContinuousMap T hs (u i)
+  have hΦ : Continuous Φ := ContinuousMap.continuous_of_continuous_uncurry _ <|
+    continuous_pi fun i ↦ continuous_eval.comp
+      (((toContinuousMap T hs).continuous.comp ((continuous_apply i).comp
+        continuous_fst)).prodMk continuous_snd)
+  simpa [Set.MapsTo, Φ] using (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_univ hU).preimage hΦ
 
 end Continuous
 

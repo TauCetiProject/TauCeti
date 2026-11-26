@@ -10,6 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.Morse.Prod
 import TauCeti.Analysis.Calculus.Morse.ScalarComposition
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
