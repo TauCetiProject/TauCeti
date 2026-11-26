@@ -14,11 +14,9 @@ import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
 # The trace form of Brauer–Nesbitt in dimension two
 
 The characteristic polynomial of an endomorphism `f` of a two-dimensional space is
-`X ^ 2 - tr(f) X + det(f)`, and `tr(f²) = tr(f)² - 2 det(f)`. So for two-dimensional
-representations of a monoid, the characters determine the characteristic polynomials at every
-element as soon as `2` is invertible. Over a perfect field with `2 ≠ 0` this is the case `d = 2`
-of the trace form of Brauer–Nesbitt
-(`Representation.nonempty_equiv_of_character_eq_of_factorial_ne_zero`).
+`X ^ 2 - tr(f) X + det(f)`, and `tr(f²) = tr(f)² - 2 det(f)`. Over a perfect field with `2 ≠ 0`,
+the resulting statement for two-dimensional representations is the case `d = 2` of the trace
+form of Brauer–Nesbitt (`Representation.nonempty_equiv_of_character_eq_of_factorial_ne_zero`).
 
 Over `𝔽₂` the trace of `f²` does not recover `det f`, but for a group the determinant of `ρ g` is a
 unit of `𝔽₂`, hence `1` (`Representation.det_apply_eq_one`). So the characteristic polynomials
