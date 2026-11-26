@@ -24,7 +24,8 @@ An almost-everywhere inclusion of an open set in another set implies inclusion i
 In particular, two almost-everywhere equal open sets have the same closure. Taking interiors
 then shows that regular open sets are determined by their almost-everywhere classes. Likewise a
 continuous function on the closure of an open set is determined by its values almost everywhere on
-the set.
+the set, and two functions continuous on `closure U ∩ V`, for open `U` and `V`, which agree almost
+everywhere on `U ∩ V` agree on `closure U ∩ V`.
 
 On a discrete space, such a measure charges every point, so the only null set is empty and
 almost everywhere means everywhere. If such a measure gives every point measure zero, on the other
@@ -38,6 +39,10 @@ set whose closure contains the point, for any measure positive on nonempty open 
 * `IsOpen.closure_eq_of_ae_eq`: a.e. equal open sets have equal closures.
 * `IsOpen.ext_closure_of_ae_eq`: a continuous function on the closure of an open set is determined
   by its values at almost every point of the set.
+* `IsOpen.eqOn_closure_inter_of_ae_eq`: two functions continuous on `closure U ∩ V` that agree
+  almost everywhere on `U ∩ V` agree on `closure U ∩ V`.
+* `IsOpen.eqOn_diag_of_forall_ae_eq`: local continuous representatives of one function on balls
+  around the points of `closure U` glue along the diagonal.
 * `TauCeti.eq_of_ae_eq_of_interior_closure_eq`: a.e. equal regular open sets are equal.
 * `Metric.measureReal_ball_pos`: a ball of positive radius has positive real measure.
 * `Metric.measureReal_closedBall_pos`: a closed ball of positive radius has positive real
@@ -107,7 +112,44 @@ theorem ext_closure_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Space Y] {U : S
     exact this
   exact hpos.ne' hnull
 
+/-- Two functions continuous on `closure U ∩ V`, for open sets `U` and `V`, that agree almost
+everywhere on `U ∩ V` agree on `closure U ∩ V`, for a measure which charges every nonempty open
+set. -/
+theorem eqOn_closure_inter_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Space Y] {U V : Set X}
+    (hU : IsOpen U) (hV : IsOpen V) {f g : X → Y} (hf : ContinuousOn f (closure U ∩ V))
+    (hg : ContinuousOn g (closure U ∩ V)) (h : f =ᵐ[μ.restrict (U ∩ V)] g) :
+    EqOn f g (closure U ∩ V) := by
+  have hUV : U ∩ V ⊆ closure U ∩ V := inter_subset_inter_left _ subset_closure
+  refine (Measure.eqOn_open_of_ae_eq h (hU.inter hV) (hf.mono hUV) (hg.mono hUV)).of_subset_closure
+    hf hg hUV fun x hx => ?_
+  rw [inter_comm]
+  exact hV.inter_closure ⟨hx.2, hx.1⟩
+
 end IsOpen
+
+/-- **Gluing local continuous representatives.** Let `U` be an open set in a metric space and, for
+each `x ∈ closure U`, let `g x` be continuous on `closure U ∩ B(x, ρ x)` and agree with a fixed
+function `w` almost everywhere on `U ∩ B(x, ρ x)`. Then the diagonal `y ↦ g y y` agrees with
+`g x` on `closure U ∩ B(x, ρ x)`: two such representatives agree almost everywhere on `U` where
+their balls meet, so by continuity they agree on `closure U` there. -/
+theorem IsOpen.eqOn_diag_of_forall_ae_eq {X Y : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+    {μ : Measure X} [μ.IsOpenPosMeasure] [TopologicalSpace Y] [T2Space Y] {U : Set X}
+    (hU : IsOpen U) {ρ : X → ℝ} (hρ : ∀ x ∈ closure U, 0 < ρ x) {w : X → Y} {g : X → X → Y}
+    (hae : ∀ x ∈ closure U, w =ᵐ[μ.restrict (U ∩ Metric.ball x (ρ x))] g x)
+    (hc : ∀ x ∈ closure U, ContinuousOn (g x) (closure U ∩ Metric.ball x (ρ x))) :
+    ∀ x ∈ closure U, EqOn (fun y => g y y) (g x) (closure U ∩ Metric.ball x (ρ x)) := by
+  intro x hx y hy
+  -- Both representatives live on `closure U ∩ V`, where `V` is the intersection of the balls.
+  have hsub : ∀ z ∈ closure U, ∀ {V : Set X}, V ⊆ Metric.ball z (ρ z) →
+      ContinuousOn (g z) (closure U ∩ V) ∧ w =ᵐ[μ.restrict (U ∩ V)] g z := fun z hz V hV =>
+    ⟨(hc z hz).mono (inter_subset_inter_right _ hV),
+      ae_restrict_of_ae_restrict_of_subset (inter_subset_inter_right _ hV) (hae z hz)⟩
+  obtain ⟨hcy, hay⟩ := hsub y hy.1 (V := Metric.ball x (ρ x) ∩ Metric.ball y (ρ y))
+    inter_subset_right
+  obtain ⟨hcx, hax⟩ := hsub x hx (V := Metric.ball x (ρ x) ∩ Metric.ball y (ρ y))
+    inter_subset_left
+  exact hU.eqOn_closure_inter_of_ae_eq (Metric.isOpen_ball.inter Metric.isOpen_ball) hcy hcx
+    (hay.symm.trans hax) ⟨hy.1, hy.2, Metric.mem_ball_self (hρ y hy.1)⟩
 
 namespace TauCeti
 
@@ -173,6 +215,24 @@ theorem _root_.ContinuousOn.le_of_ae_le {X Y : Type*} [TopologicalSpace X] [Meas
   intro x hx
   by_contra hfg
   exact (hW.eq_empty_of_measure_zero hnull).subset ⟨hx, hfg⟩
+
+/-- An almost-everywhere pairwise comparison for a representative of a continuous real-valued
+function on an open set holds at every pair of points of that set, for a measure positive on
+nonempty open sets. -/
+theorem _root_.ContinuousOn.forall_le_mul_of_ae_ae {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {B : Set X}
+    {f g : X → ℝ} {C : ℝ} (hg : ContinuousOn g B) (hB : IsOpen B)
+    (hval : f =ᵐ[μ.restrict B] g)
+    (hae : ∀ᵐ x ∂μ.restrict B, ∀ᵐ y ∂μ.restrict B, f y ≤ C * f x) :
+    ∀ y ∈ B, ∀ x ∈ B, g y ≤ C * g x := by
+  have hall : ∀ᵐ x ∂μ.restrict B, ∀ y ∈ B, g y ≤ C * g x := by
+    filter_upwards [hae, hval] with x hx hx'
+    refine ContinuousOn.le_of_ae_le (μ := μ) hB hg continuousOn_const ?_
+    filter_upwards [hx, hval] with y hy hy'
+    simpa only [hy', hx'] using hy
+  intro y hy
+  exact ContinuousOn.le_of_ae_le (μ := μ) hB continuousOn_const (continuousOn_const.mul hg)
+    (hall.mono fun _ hx ↦ hx y hy)
 
 /-- Under a measure positive on nonempty open sets, an almost everywhere inequality between
 continuous functions into an order-closed space holds everywhere. -/

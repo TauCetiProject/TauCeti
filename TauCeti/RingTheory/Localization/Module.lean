@@ -30,6 +30,8 @@ submonoid `S`:
   bijective after localizing at `S` if every other factor vanishes there.
 * `LocalizedModule.map_injective_of_ker_le_torsion`: a linear map with torsion kernel stays
   injective after localizing, when the localized source is torsion-free.
+* `LocalizedModule.bijective_map_of_smul_mem_range`: a linear map becomes bijective after
+  localizing at `S` if one element of `S` kills its kernel and multiplies the target into its range.
 * `LocalizedModule.equivLocalization`: the localization of `R` itself as a module is
   `Localization S`, sending `mk r s` to `Localization.mk r s`.
 * `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
@@ -174,6 +176,29 @@ theorem map_injective_of_ker_le_torsion {R M N : Type*} [CommRing R] [AddCommGro
     rw [mkLinearMap_apply, algebraMap_smul, smul'_mk, mul_smul, ← Submonoid.smul_def, hbx,
       zero_mk]
   exact hreg.isSMulRegular (h0.trans (smul_zero _).symm)
+
+variable {R : Type*} [CommRing R] {S : Submonoid R} {M N : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- A linear map `f : M → N` becomes bijective after localizing at `S` if a single element `s ∈ S`
+kills its kernel and multiplies `N` into its range. -/
+theorem bijective_map_of_smul_mem_range {f : M →ₗ[R] N} {s : R} (hs : s ∈ S)
+    (hrange : ∀ n, s • n ∈ LinearMap.range f) (hker : ∀ m, f m = 0 → s • m = 0) :
+    Function.Bijective (map S f) := by
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦ ?_⟩
+  · induction x using induction_on with
+    | h m t =>
+      rw [map_mk, ← zero_mk 1, mk_eq] at hx
+      obtain ⟨u, hu⟩ := hx
+      have hfu : f (u • m) = 0 := by simpa using hu
+      rw [← zero_mk 1, mk_eq]
+      exact ⟨⟨s, hs⟩ * u, by simpa [mul_smul] using hker _ hfu⟩
+  · induction y using induction_on with
+    | h n t =>
+      obtain ⟨m, hm⟩ := hrange n
+      refine ⟨mk m (⟨s, hs⟩ * t), ?_⟩
+      rw [map_mk, hm]
+      exact mk_cancel_common_left ⟨s, hs⟩ t n
 
 end LocalizedModule
 

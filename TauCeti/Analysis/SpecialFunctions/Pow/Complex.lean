@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+public import Mathlib.RingTheory.Binomial
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
@@ -19,6 +20,7 @@ import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -56,6 +58,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.div_ofReal_cpow` -- a principal power splits across division by a nonnegative real.
 * `TauCeti.ofReal_prod_cpow` -- a principal power splits across a finite product of nonnegative
   reals.
 * `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
@@ -78,6 +81,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
   the quotient lies in the slit plane.
+* `TauCeti.hasDerivAt_factorial_mul_choose_mul_cpow` -- the derivatives of `x ↦ x ^ α` on
+  `x > 0`: `i! C(α, i) x ^ (α - i)` has derivative `(i + 1)! C(α, i + 1) x ^ (α - (i + 1))`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   real `r` along the positive real axis; only the last allows `r > 0`.
@@ -94,6 +99,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.mul_cpow_sub_one` -- `x * x ^ (s - 1) = x ^ s` for `x ≠ 0`.
 * `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
@@ -161,6 +167,14 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
+
+/-- A principal complex power splits across division by a nonnegative real scalar:
+`(z / r) ^ w = z ^ w / (r : ℂ) ^ w` for all complex `z` and `w`, without a branch hypothesis on
+`z`.  This generalizes `Complex.div_cpow_ofReal_nonneg` to a complex numerator. -/
+theorem div_ofReal_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
+    (z / r) ^ w = z ^ w / (r : ℂ) ^ w := by
+  rw [div_eq_inv_mul, ← Complex.ofReal_inv, ofReal_mul_cpow (inv_nonneg.mpr hr), Complex.ofReal_inv,
+    Complex.inv_cpow_ofReal_nonneg hr, inv_mul_eq_div]
 
 /-- A principal complex power splits across a finite product of nonnegative reals:
 `((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z`. -/
@@ -397,6 +411,23 @@ theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) �
   rw [cpow_sub _ _ hq, cpow_one]
   field_simp
   ring
+
+/-- The derivatives of `x ↦ x ^ α` on `x > 0`: `i! C(α, i) x ^ (α - i)` has derivative
+`(i + 1)! C(α, i + 1) x ^ (α - (i + 1))`, where `C(α, i) = Ring.choose α i`. -/
+theorem hasDerivAt_factorial_mul_choose_mul_cpow (α : ℂ) (i : ℕ) {x : ℝ} (hx : 0 < x) :
+    HasDerivAt (fun y : ℝ => (i.factorial : ℂ) * Ring.choose α i * (y : ℂ) ^ (α - i))
+      (((i + 1).factorial : ℂ) * Ring.choose α (i + 1) * (x : ℂ) ^ (α - (i + 1 : ℕ))) x := by
+  have h := ((hasStrictDerivAt_cpow_const (c := α - i)
+    (ofReal_mem_slitPlane.2 hx)).hasDerivAt.comp_ofReal).const_mul
+    ((i.factorial : ℂ) * Ring.choose α i)
+  convert h using 1
+  have hrec := Ring.add_one_nsmul_choose_add_one α i
+  rw [nsmul_eq_mul] at hrec
+  push_cast at hrec ⊢
+  have hexp : α - (i + 1) = α - i - 1 := by ring
+  rw [Nat.factorial_succ, Nat.cast_mul, hexp]
+  push_cast
+  linear_combination (i.factorial : ℂ) * (x : ℂ) ^ (α - i - 1) * hrec
 
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/
@@ -744,6 +775,11 @@ theorem norm_natCast_add_two_cpow_neg_sub_sub_le {z : ℂ} (hz : 0 ≤ z.re) {k 
 end TauCeti
 
 namespace Complex
+
+/-- Multiplying a principal power of a nonzero base by the base raises the exponent by one:
+`x * x ^ (s - 1) = x ^ s`. -/
+theorem mul_cpow_sub_one {x : ℂ} (hx : x ≠ 0) (s : ℂ) : x * x ^ (s - 1) = x ^ s := by
+  rw [cpow_sub _ _ hx, cpow_one, mul_div_cancel₀ _ hx]
 
 /-- An exponential based at a principal logarithm splits into a principal power and the
 exponential of the remaining summand. -/
