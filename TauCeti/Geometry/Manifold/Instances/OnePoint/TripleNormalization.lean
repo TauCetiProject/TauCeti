@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Instances.SpecialLinearGroup
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.DistinctTriples
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
 
@@ -141,30 +142,13 @@ private theorem pslHomeomorphDistinctTriples_symm_eq_of_coe_eq_smul
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
   {I : ModelWithCorners ℂ E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
 
-/-- The determinant of two vectors of `ℂ²` is a polynomial in their coordinates, hence analytic. -/
-private theorem contDiff_det_of :
-    ContDiff ℂ ω fun T : (Fin 2 → ℂ) × (Fin 2 → ℂ) ↦ (of ![T.1, T.2]).det := by
-  have h : (fun T : (Fin 2 → ℂ) × (Fin 2 → ℂ) ↦ (of ![T.1, T.2]).det) =
-      fun T ↦ T.1 0 * T.2 1 - T.1 1 * T.2 0 := by
-    funext T
-    simp [det_fin_two]
-  rw [h]
-  fun_prop
-
-/-- The determinant of two vectors depending `C^n` on a parameter is `C^n`. -/
-private theorem contMDiffAt_det_of {v w : M → Fin 2 → ℂ} {x₀ : M}
-    (hv : ContMDiffAt I 𝓘(ℂ, Fin 2 → ℂ) n v x₀)
-    (hw : ContMDiffAt I 𝓘(ℂ, Fin 2 → ℂ) n w x₀) :
-    ContMDiffAt I 𝓘(ℂ) n (fun x ↦ (of ![v x, w x]).det) x₀ :=
-  -- Naming the inner map spares the unifier from unfolding `Matrix.det` to find it.
-  (contDiff_det_of.of_le le_top).contDiffAt.comp_contMDiffAt (f := fun x ↦ (v x, w x))
-    (hv.prodMk_space hw)
-
-/-- The matrix with columns `det(Q, P) R` and `det(R, Q) P` depends analytically on `P`, `Q`,
-`R`. -/
-private theorem contDiff_tripleMatrix :
-    ContDiff ℂ ω fun T : (Fin 2 → ℂ) × (Fin 2 → ℂ) × (Fin 2 → ℂ) ↦
-      tripleMatrix T.1 T.2.1 T.2.2 := by
+/-- The matrix with columns `det(Q, P) R` and `det(R, Q) P` depends `C^n` on vectors `P`, `Q`,
+`R` that depend `C^n` on a parameter. -/
+private theorem contMDiffAt_tripleMatrix {P Q R : M → Fin 2 → ℂ} {x₀ : M}
+    (hP : ContMDiffAt I 𝓘(ℂ, Fin 2 → ℂ) n P x₀) (hQ : ContMDiffAt I 𝓘(ℂ, Fin 2 → ℂ) n Q x₀)
+    (hR : ContMDiffAt I 𝓘(ℂ, Fin 2 → ℂ) n R x₀) :
+    ContMDiffAt I 𝓘(ℂ, Matrix (Fin 2) (Fin 2) ℂ) n
+      (fun x ↦ tripleMatrix (P x) (Q x) (R x)) x₀ := by
   have h : ContDiff ℂ ω fun T : (Fin 2 → ℂ) × (Fin 2 → ℂ) × (Fin 2 → ℂ) ↦
       fun i j : Fin 2 ↦ tripleMatrix T.1 T.2.1 T.2.2 i j := by
     refine contDiff_pi.2 fun i ↦ contDiff_pi.2 fun j ↦ ?_
@@ -172,8 +156,9 @@ private theorem contDiff_tripleMatrix :
       simp only [tripleMatrix, det_fin_two, Fin.isValue, Fin.zero_eta, Fin.mk_one, of_apply,
         cons_val', cons_val_zero, cons_val_one, cons_val_fin_one] <;> fun_prop
   -- `Matrix.of` identifies entry functions with matrices.
-  convert (Matrix.ofContinuousLinearEquiv ℂ).contDiff.comp h using 1
-  ext T i j
+  convert (((Matrix.ofContinuousLinearEquiv ℂ).contDiff.comp h).of_le le_top).contDiffAt
+    |>.comp_contMDiffAt (hP.prodMk_space (hQ.prodMk_space hR)) using 1
+  ext x i j
   simp
 
 /-- **The Möbius transformation through three moving points depends holomorphically on them.**
@@ -198,30 +183,31 @@ theorem contMDiffAt_pslHomeomorphDistinctTriples_symm {p : M → Fin 3 → OnePo
   obtain ⟨R, hR, hRev⟩ := exists_contMDiffAt_eventually_equivProjectivization_eq_mk (hpx 2)
   -- The determinant `d` of the matrix with columns `det(Q, P) R` and `det(R, Q) P` does not
   -- vanish at `x₀`, since the three points are distinct.
-  set d : M → ℂ := fun x ↦ (of ![Q x, P x]).det * (of ![R x, Q x]).det * (of ![R x, P x]).det
+  have hT := contMDiffAt_tripleMatrix hP hQ hR
+  set d : M → ℂ := fun x ↦ (tripleMatrix (P x) (Q x) (R x)).det
+  -- Here and in `hc`, naming the inner map spares the unifier from unfolding the determinants.
   have hd : ContMDiffAt I 𝓘(ℂ) n d x₀ :=
-    ((contMDiffAt_det_of hQ hP).mul (contMDiffAt_det_of hR hQ)).mul (contMDiffAt_det_of hR hP)
+    contDiff_det.contDiffAt.comp_contMDiffAt (f := fun x ↦ tripleMatrix (P x) (Q x) (R x)) hT
   obtain ⟨_, hPx₀⟩ := hPev.self_of_nhds
   obtain ⟨_, hQx₀⟩ := hQev.self_of_nhds
   obtain ⟨_, hRx₀⟩ := hRev.self_of_nhds
-  have hd₀ : d x₀ ≠ 0 :=
-    mul_ne_zero (mul_ne_zero (det_of_ne_zero ((hp x₀).ne (by decide)) hQx₀ hPx₀)
+  have hd₀ : d x₀ ≠ 0 := by
+    simp only [d, det_tripleMatrix]
+    exact mul_ne_zero (mul_ne_zero (det_of_ne_zero ((hp x₀).ne (by decide)) hQx₀ hPx₀)
       (det_of_ne_zero ((hp x₀).ne (by decide)) hRx₀ hQx₀))
       (det_of_ne_zero ((hp x₀).ne (by decide)) hRx₀ hPx₀)
   -- A square root `c` of `d` near `x₀`, analytic in `d`, and the normalized matrix `B`.
   obtain ⟨root, hroot, -, hroot_sq⟩ :=
     TauCeti.exists_analyticAt_pow_eq two_ne_zero hd₀ (Complex.cpow_nat_inv_pow (d x₀) two_ne_zero)
-  -- Here and in `hB`, naming the inner map spares the unifier from unfolding the determinants.
   have hc : ContMDiffAt I 𝓘(ℂ) n (fun x ↦ root (d x)) x₀ :=
     hroot.contDiffAt.comp_contMDiffAt (f := d) hd
   have hc₀ : root (d x₀) ≠ 0 := fun h ↦ hd₀ (by rw [← hroot_sq (d x₀), h, zero_pow two_ne_zero])
   set B : M → Matrix (Fin 2) (Fin 2) ℂ :=
     fun x ↦ (root (d x))⁻¹ • tripleMatrix (P x) (Q x) (R x) with hB_def
   have hB : ContMDiffAt I 𝓘(ℂ, Matrix (Fin 2) (Fin 2) ℂ) n B x₀ :=
-    (hc.inv₀ hc₀).smul ((contDiff_tripleMatrix.of_le le_top).contDiffAt.comp_contMDiffAt
-      (f := fun x ↦ (P x, Q x, R x)) (hP.prodMk_space (hQ.prodMk_space hR)))
+    (hc.inv₀ hc₀).smul hT
   have hBdet {x : M} (hx : d x ≠ 0) : (B x).det = 1 := by
-    rw [hB_def, det_smul, det_tripleMatrix, Fintype.card_fin, inv_pow, hroot_sq]
+    rw [hB_def, det_smul, Fintype.card_fin, inv_pow, hroot_sq]
     exact inv_mul_cancel₀ hx
   have hev : ∀ᶠ x in 𝓝 x₀, d x ≠ 0 := hd.continuousAt.eventually_ne hd₀
   -- The corresponding map `L` into `SL(2, ℂ)` is `C^n` at `x₀`, since its matrix is.
