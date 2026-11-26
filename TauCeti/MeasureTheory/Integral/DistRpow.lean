@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# The tail integral of a negative power of the distance
+# Integrals of negative powers of the distance against growth-bounded weights
 
 In a pseudometric measure space whose balls of radius `r > R` satisfy the growth bound
 `μ (ball y r) ≤ A rⁿ` (with `A : ℝ≥0∞`), the tail integral of `x ↦ dist x y ^ (-s)` obeys,

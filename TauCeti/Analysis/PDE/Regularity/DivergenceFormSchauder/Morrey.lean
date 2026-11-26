@@ -29,7 +29,8 @@ with constant
 
 where `K_G` is the Hölder constant of `G`, `K_f` bounds the Morrey norm of `f`, and `C` depends only
 on `n`, `α`, `λ`, `Λ` and a bound `M ≥ R^α K_a`
-(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_of_morreyNormPow`).
+(`exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_of_morreyNormPow_le`, in the
+`TauCeti.PDE` namespace).
 This is the form of Morrey's `C^{1,α}` estimate in which zero-order terms with coefficients in
 Morrey spaces enter, such as the term `d u`, `d ∈ L^{1, n + α}`, in Hopf's boundary point lemma for
 weak supersolutions.
@@ -79,11 +80,12 @@ and compactly supported, with Morrey norm `‖f‖_{L^{1, n + α}(ℝ^{n+1})} �
 
 The precise representative agrees with `∇u` almost everywhere on `Ω`
 (`TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`). A compactly supported
-`f ∈ L^q`, `q = (n + 1) / (1 - α)`, satisfies the hypothesis
-(`TauCeti.MeasureTheory.morreyNormPow_le_eLpNorm_rpow_mul`), so this contains the case `β = α` of
-`exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`
-for such data. -/
-theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_of_morreyNormPow
+`f ∈ L^q(ℝ^{n+1})`, `q = (n + 1) / (1 - α)`, satisfies the Morrey hypothesis
+(`TauCeti.MeasureTheory.morreyNormPow_le_eLpNorm_rpow_mul`). So, for such `f` and a locally
+integrable `G`, this recovers up to constants the case `β = α` of
+`exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`,
+which needs `f` only in `L^q` of the `R`-thickening of `S` and no integrability of `G`. -/
+theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_of_morreyNormPow_le
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {lam Lam M : ℝ} :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}

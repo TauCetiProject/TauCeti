@@ -49,9 +49,10 @@ accepts data in divergence form: localizing a weak solution of `-div(a ∇u) = -
 ## Data in a Morrey space
 
 For a Schauder estimate the field must be Hölder continuous rather than integrable. Let
-`0 < α < 1` and let `h` lie in the Morrey space `L^{1, d - 1 + α}(E)`: its mass on closed balls is
-`∫_{B(x, r)} |h| ≤ M r^(d - 1 + α)`. Then the same field `H` is `α`-Hölder, with Hölder constant
-`C M` for a constant `C` depending only on `E`, `μ` and `α`
+`0 < α < 1` and let `h` be measurable, compactly supported, and in the Morrey space
+`L^{1, d - 1 + α}(E)`: its mass on closed balls is `∫_{B(x, r)} |h| ≤ M r^(d - 1 + α)`. Then the
+same field `H` is `α`-Hölder, with Hölder constant `C M` for a constant `C` depending only on `E`,
+`μ` and `α`
 (`TauCeti.exists_holderWith_and_integral_inner_gradient_eq_of_morreyNormPow_le`). The space
 contains compactly supported `L^q` data for `q = d / (1 - α)`
 (`TauCeti.MeasureTheory.morreyNormPow_le_eLpNorm_rpow_mul`). The proof is the potential estimate
@@ -513,14 +514,6 @@ private theorem setLIntegral_ball_enorm_divKernel_sub_sub_mul_le (v : E) (hh : I
 
 variable [μ.IsAddHaarMeasure]
 
-omit [Nontrivial E] in
-/-- A component of the field at `x` is the integral of the kernel with pole `x` against `h`. -/
-private theorem convolution_divKernel_eq_integral (v x : E) :
-    (divKernel μ v ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x =
-      ∫ y, divKernel μ v (x - y) * h y ∂μ := by
-  rw [convolution_lsmul, ← integral_sub_left_eq_self _ μ x]
-  simp only [sub_sub_cancel, smul_eq_mul]
-
 /-- **The components of the field are `α`-Hölder.** If the mass of `|h|` on balls of radius `r` is
 at most `M r^(d - 1 + α)`, `0 < α < 1`, the components of the field along a unit vector differ at
 two points by at most a multiple of `M dist x x' ^ α`. -/
@@ -540,8 +533,8 @@ private theorem enorm_convolution_divKernel_sub_le {v : E} (hv : ‖v‖ = 1) (h
     (sub_nonneg.2 (Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith)))
   have hB : 0 ≤ B := div_nonneg (by positivity)
     (sub_nonneg.2 (Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith)))
-  rw [convolution_divKernel_eq_integral, convolution_divKernel_eq_integral,
-    ← integral_sub (integrable_divKernel_sub_mul v x hh hMt hα hM)
+  simp only [convolution_lsmul_swap, smul_eq_mul]
+  rw [← integral_sub (integrable_divKernel_sub_mul v x hh hMt hα hM)
       (integrable_divKernel_sub_mul v x' hh hMt hα hM)]
   simp_rw [← sub_mul]
   refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
@@ -639,16 +632,9 @@ theorem exists_holderWith_and_integral_inner_gradient_eq_of_morreyNormPow_le
       (f := h) (lam := lam) (mem_univ x) hr
     simp only [ENNReal.rpow_one, Measure.restrict_univ] at h1
     exact h1.trans (by rw [mul_comm]; gcongr)
-  -- A compactly supported function of finite Morrey norm is integrable.
-  have hhi : Integrable h μ := by
-    obtain ⟨R, hR⟩ := hhc.isCompact.isBounded.subset_closedBall 0
-    refine ⟨hhm, ?_⟩
-    have hsupp : Function.support (fun x => ‖h x‖ₑ) ⊆ closedBall 0 (max R 1) :=
-      (Function.support_comp_subset eNorm_zero h).trans ((subset_tsupport h).trans
-        (hR.trans (closedBall_subset_closedBall (le_max_left R 1))))
-    rw [HasFiniteIntegral, ← setLIntegral_eq_of_support_subset hsupp]
-    exact (hgrowth 0 _ (by positivity)).trans_lt
-      (ENNReal.mul_lt_top ENNReal.coe_lt_top ENNReal.ofReal_lt_top)
+  have hhi : Integrable h μ :=
+    MeasureTheory.integrable_of_hasCompactSupport_of_morreyNormPow_ne_top hhm hhc
+      (hM.trans_lt ENNReal.coe_lt_top).ne
   refine ⟨divField μ h, ?_, fun φ hφ hφc => integral_inner_divField_gradient hhi hhc hφ hφc⟩
   refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ x' _ => ?_)
   rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
