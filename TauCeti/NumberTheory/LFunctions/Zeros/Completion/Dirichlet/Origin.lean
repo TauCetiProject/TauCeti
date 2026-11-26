@@ -81,10 +81,8 @@ private theorem logDeriv_LFunction_eventuallyEq_nhdsNE_zero (hne : χ ≠ 1) :
   refine ⟨hg, eventuallyEq_of_meromorphic_of_eqOn_halfPlane (σ := 1)
     χ.meromorphic_LFunction.logDeriv (by fun_prop) (fun z hz ↦ ?_) 0⟩
   have hz' : 1 < z.re := hz
-  have hlog := logDeriv_dirichletData_entireCompletion χ hχ hne (one_pos.trans hz')
+  have hlog := χ.logDeriv_dirichletData_entireCompletion_eq_logDeriv_Gammaℝ_add hχ hne
     (χ.LFunction_ne_zero_of_one_le_re (.inl hne) hz'.le)
-  rw [χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
-    (χ.gammaFactor_ne_zero_of_re_pos (one_pos.trans hz'))] at hlog
   rw [χ.logDerivLFunctionRegularPart_apply]
   linear_combination -hlog
 
