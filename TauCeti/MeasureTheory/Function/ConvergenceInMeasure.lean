@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.MeasureTheory.OuterMeasure.AE
 import TauCeti.Probability.Moments.Chebyshev
 
@@ -44,6 +45,13 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   (`TendstoInMeasure.mul`) preserve convergence in measure along an arbitrary filter when the
   limits are almost-everywhere strongly measurable (without measurability assumptions on the
   approximating families).
+* Finite sums preserve convergence in measure (`TendstoInMeasure.finset_sum`), and on finite
+  measure spaces multiplication by a fixed almost-everywhere strongly measurable factor preserves
+  vanishing upper tails of extended nonnegative functions
+  (`MeasureTheory.tendsto_measure_le_enorm_mul`), such as square energies in probability.
+
+Convergence in measure transfers to an absolutely continuous finite measure, and is unchanged
+between equivalent finite measures.
 
 ## Main results
 
@@ -398,6 +406,25 @@ theorem tendstoInMeasure_prod_of_ae_tendstoInMeasure
     (Eventually.of_forall fun _ ↦ ae_of_all _ fun _ ↦ measure_mono (Set.subset_univ _))
     (by rw [lintegral_const]; finiteness) hlim
 
+/-- Convergence in measure transfers to an absolutely continuous finite measure. No
+measurability of the functions, finiteness of the original measure, or countability of the
+index filter is required. In particular, convergence in probability survives an absolutely
+continuous change of probability measure. -/
+theorem TendstoInMeasure.mono_ac {α E ι : Type*} {_ : MeasurableSpace α}
+    {μ ν : Measure α} [IsFiniteMeasure ν] [EDist E] {l : Filter ι}
+    {f : ι → α → E} {g : α → E} (hf : TendstoInMeasure μ f l g) (hνμ : ν ≪ μ) :
+    TendstoInMeasure ν f l g :=
+  fun ε hε ↦ hνμ.tendsto_measure_zero (hf ε hε)
+
+/-- Equivalent finite measures have the same convergent-in-measure families. This does not
+assert preservation of any Lᵖ moment. -/
+theorem tendstoInMeasure_iff_of_mutuallyAbsolutelyContinuous {α E ι : Type*}
+    {_ : MeasurableSpace α} {μ ν : Measure α} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [EDist E] {l : Filter ι} {f : ι → α → E} {g : α → E}
+    (hμν : μ ≪ ν) (hνμ : ν ≪ μ) :
+    TendstoInMeasure μ f l g ↔ TendstoInMeasure ν f l g :=
+  ⟨fun h ↦ h.mono_ac hνμ, fun h ↦ h.mono_ac hμν⟩
+
 /-- If the mean norms tend to zero, every positive norm tail has vanishing measure, even
 on varying measure spaces. Integrability of the norms is only needed eventually. -/
 theorem tendsto_measure_norm_ge_of_tendsto_integral_norm {ι E : Type*}
@@ -535,6 +562,20 @@ theorem TendstoInMeasure.const_smul [SMul 𝕜 E] [PseudoEMetricSpace E]
     TendstoInMeasure μ (fun i x ↦ c • f i x) l (fun x ↦ c • g x) :=
   hf.uniformContinuous_comp (uniformContinuous_const_smul c)
 
+/-- Finite sums preserve convergence in measure in any uniform additive commutative group and on
+any measure space. -/
+theorem TendstoInMeasure.finset_sum {κ : Type*} [AddCommGroup E] [PseudoEMetricSpace E]
+    [IsUniformAddGroup E] (s : Finset κ) {f : κ → ι → α → E} {g : κ → α → E}
+    (hf : ∀ j ∈ s, TendstoInMeasure μ (f j) l (g j)) :
+    TendstoInMeasure μ (fun i x ↦ ∑ j ∈ s, f j i x) l (fun x ↦ ∑ j ∈ s, g j x) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using tendstoInMeasure_const (μ := μ) (l := l) fun _ : α ↦ (0 : E)
+  | insert j s hj ih =>
+    simp_rw [Finset.sum_insert hj]
+    exact (hf j (Finset.mem_insert_self j s)).add
+      (ih fun k hk ↦ hf k (Finset.mem_insert_of_mem hk))
+
 /-- On a finite measure space, the measure of `{x | r ≤ dist (g x) y₀}` tends to `0` as
 `r → ∞` for every almost-everywhere strongly measurable function `g`. Both finiteness of `μ`
 and measurability of `g` are essential. -/
@@ -559,6 +600,40 @@ theorem tendsto_measure_dist_ge_atTop [PseudoMetricSpace E] [IsFiniteMeasure μ]
   refine hlim.congr fun r ↦ measure_congr ?_
   filter_upwards [hg.ae_eq_mk] with x hx
   simp [g', hx]
+
+/-- On a finite measure space, let extended nonnegative functions `f i` tend to zero in measure,
+in the sense that their upper tails `{x | ε ≤ f i x}` have measure tending to zero. Then so do
+their products with the extended norm of a fixed almost-everywhere strongly measurable function.
+The values `f i x = ∞` are allowed, as for lower Lebesgue integrals. -/
+theorem tendsto_measure_le_enorm_mul [SeminormedAddGroup E] [IsFiniteMeasure μ] {g : α → E}
+    (hg : AEStronglyMeasurable g μ) {f : ι → α → ℝ≥0∞}
+    (hf : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ f i x}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ {x | ε ≤ ‖g x‖ₑ * f i x}) l (𝓝 0) := by
+  rw [ENNReal.tendsto_nhds_zero]
+  intro η hη
+  have hη2 : 0 < η / 2 := ENNReal.div_pos hη.ne' ENNReal.ofNat_ne_top
+  -- Outside a set of measure at most `η / 2`, the factor is bounded by some `R`.
+  obtain ⟨R, hR⟩ := ((ENNReal.tendsto_nhds_zero.mp (tendsto_measure_dist_ge_atTop hg 0))
+    (η / 2) hη2).exists
+  have hRε : 0 < ε / ENNReal.ofReal R := ENNReal.div_pos hε.ne' ENNReal.ofReal_ne_top
+  filter_upwards [ENNReal.tendsto_nhds_zero.mp (hf _ hRε) (η / 2) hη2] with i hi
+  have hsub : {x | ε ≤ ‖g x‖ₑ * f i x} ⊆
+      {x | R ≤ dist (g x) 0} ∪ {x | ε / ENNReal.ofReal R ≤ f i x} := by
+    intro x hx
+    rw [Set.mem_ofPred_eq] at hx
+    by_cases hgx : R ≤ dist (g x) 0
+    · exact Or.inl hgx
+    · right
+      have hle : ‖g x‖ₑ ≤ ENNReal.ofReal R := by
+        rw [← ofReal_norm, ← dist_zero_right]
+        exact ENNReal.ofReal_le_ofReal (not_le.mp hgx).le
+      exact ENNReal.div_le_of_le_mul' (hx.trans (mul_le_mul_left hle _))
+  calc μ {x | ε ≤ ‖g x‖ₑ * f i x}
+      ≤ μ {x | R ≤ dist (g x) 0} + μ {x | ε / ENNReal.ofReal R ≤ f i x} :=
+        (measure_mono hsub).trans (measure_union_le _ _)
+    _ ≤ η / 2 + η / 2 := add_le_add hR hi
+    _ = η := ENNReal.add_halves η
 
 /-- Deterministic four-tail deviation estimate for a binary map uniformly continuous on a ball:
 outside the two cutoff tails for the limit pair `(g₁, g₂)` and the two proximity tails for

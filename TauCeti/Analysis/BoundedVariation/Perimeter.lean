@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Lebesgue.Indicator
 
 /-!
 # The perimeter of a set in an open set
@@ -47,6 +48,7 @@ the semicontinuity half of the direct method for perimeter problems.
   `TauCeti.perimeter_eq_of_frontier_inter_subset`: the perimeter is carried by the frontier.
 * `TauCeti.perimeter_diff_le_of_frontier_inter_subset`: cutting out an open neighborhood `G` of
   the frontier in `V` gives `P(s \ G; V) ≤ P(G; V)`.
+* `TauCeti.perimeter_sup_of_disjoint`: additivity over disjoint open sets.
 * `TauCeti.perimeter_union_of_disjoint_closure`: additivity for sets with disjoint closures.
 * `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
 
@@ -103,6 +105,13 @@ theorem perimeter_congr_of_inter_eq [OpensMeasurableSpace E] (h : s ∩ Ω = t �
 /-- The perimeter grows with the open set. -/
 theorem perimeter_mono (h : Ω' ≤ Ω) : perimeter μ Ω' s ≤ perimeter μ Ω s :=
   totalVariationOn_mono h
+
+/-- **Additivity on disjoint open sets.** For a locally finite measure and a set `s` that is
+null-measurable on `Ω ∪ Ω'`, with `Ω` and `Ω'` disjoint, `P(s; Ω ∪ Ω') = P(s; Ω) + P(s; Ω')`. -/
+theorem perimeter_sup_of_disjoint [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
+    (hs : NullMeasurableSet s (μ.restrict (Ω ⊔ Ω' : Opens E))) (h : Disjoint Ω Ω') :
+    perimeter μ (Ω ⊔ Ω') s = perimeter μ Ω s + perimeter μ Ω' s :=
+  totalVariationOn_sup_of_disjoint (locallyIntegrableOn_indicator_const hs 1) h
 
 /-- **Inner continuity in the open set.** The perimeter in the union of a directed family of open
 sets is the supremum of the perimeters in its members. -/
@@ -291,11 +300,9 @@ theorem perimeter_union_of_disjoint_closure (hs : NullMeasurableSet s (μ.restri
     rw [union_inter_distrib_right, union_eq_right]
     rintro x ⟨hxs, -, hxV⟩
     exact (hUV.ne_of_mem (hsU (subset_closure hxs)) hxV rfl).elim
-  have hli : LocallyIntegrableOn ((s ∪ t).indicator (1 : E → ℝ)) (ΩU ⊔ ΩV : Opens E) μ :=
-    locallyIntegrableOn_indicator_const
-      (hst.mono (Measure.restrict_mono_set μ (sup_le inf_le_left inf_le_left))) 1
-  have := totalVariationOn_sup_of_disjoint hli hdisj
-  simp only [← perimeter_def, hstΩ, hsU', htV', hsΩ, htΩ] at this
+  have := perimeter_sup_of_disjoint
+    (hst.mono (Measure.restrict_mono_set μ (sup_le inf_le_left inf_le_left))) hdisj
+  simp only [hstΩ, hsU', htV', hsΩ, htΩ] at this
   exact this
 
 end Haar
@@ -316,12 +323,7 @@ theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
     locallyIntegrableOn_indicator_const (ht.mono Measure.restrict_le_self) 1
   refine totalVariationOn_le_liminf (hs.mono fun i hi => hli hi) (hli hs₀) fun K hK hKΩ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
-    (fun _ => zero_le) fun i => ?_
-  have hpt : ∀ x, ‖(s i).indicator (1 : E → ℝ) x - s₀.indicator 1 x‖ₑ =
-      (s i ∆ s₀).indicator 1 x := fun x => by
-    by_cases h₁ : x ∈ s i <;> by_cases h₂ : x ∈ s₀ <;> simp [mem_symmDiff, h₁, h₂]
-  simp_rw [hpt]
-  exact (lintegral_indicator_one_le _).trans
-    (Measure.restrict_apply' hK.isClosed.measurableSet).le
+    (fun _ => zero_le) fun _ =>
+      μ.setLIntegral_enorm_indicator_one_sub_le _ _ hK.isClosed.nullMeasurableSet
 
 end TauCeti

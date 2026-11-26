@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Measure.SmallPartition
 
 /-!
 # Continuity sets, null-boundary thickenings and finite partitions
@@ -164,9 +165,7 @@ theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsFiniteMeas
     ?_⟩
   · rw [iUnion_disjointed, eq_univ_iff_forall]
     exact fun x ↦ mem_iUnion.2 ⟨Fin.last N, by simp [hf]⟩
-  · refine disjointedRec (p := fun t ↦ μ (frontier t) = 0) (fun t j ht ↦ ?_) (hff i)
-    rw [Set.sdiff_eq]
-    exact null_frontier_inter ht (by rw [frontier_compl]; exact hff j)
+  · exact TauCeti.null_frontier_disjointed hff i
   · have hiN : (i : ℕ) < N := by simpa using Fin.val_lt_last hi
     refine ⟨u i, (disjointed_subset f i).trans ?_⟩
     simp only [hf, hiN, ite_true]

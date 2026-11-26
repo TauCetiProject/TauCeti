@@ -59,8 +59,9 @@ group of `Q` embeds into the automorphism group of the residue extension, so an 
   of the relative Frobenius is `σ` itself, with no power.
 * `NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one`: the same at residue degree
   one, concluding that the restriction is an arithmetic Frobenius rather than assuming one.
-* `NumberField.isArithFrobAt_int_of_absNorm_eq`: a relative Frobenius above an ideal of absolute
-  norm `p` is also a Frobenius over the ideal `(p)` of `ℤ`.
+* `NumberField.isArithFrobAt_int_of_absNorm_eq`,
+  `NumberField.isArithFrobAt_of_isArithFrobAt_int_of_absNorm_eq`: above an ideal of absolute
+  norm `p`, a relative Frobenius is the same as a Frobenius over the ideal `(p)` of `ℤ`.
 * `NumberField.isArithFrobAt_one_of_pow_eq_one` and
   `NumberField.isArithFrobAt_eq_one_of_pow_eq_one`: when an absolute Frobenius at `Q` has order
   dividing `n` and the residue field of `Q ∩ 𝓞 M` has `p ^ n` elements, the relative Frobenius
@@ -106,6 +107,26 @@ theorem isArithFrobAt_int_of_absNorm_eq {p : ℕ}
   change σ • x - x ^ Nat.card (ℤ ⧸ Q.under ℤ) ∈ Q
   rw [Ideal.natCard_quotient_under_of_liesOver (n := p) Q]
   exact hx
+
+/-- **A Frobenius over `(p)` is a relative Frobenius above an ideal of norm `p`.** This is the
+converse of `NumberField.isArithFrobAt_int_of_absNorm_eq`: if `P` lies above `(p)` with absolute
+norm `p` and `Q` lies above `P`, then an automorphism of `L / K` that is an arithmetic Frobenius at
+`Q` relative to `ℤ`, after restricting scalars to `ℚ`, is one relative to `K`. -/
+theorem isArithFrobAt_of_isArithFrobAt_int_of_absNorm_eq {p : ℕ}
+    (P : Ideal (𝓞 K)) [P.LiesOver (Ideal.span {(p : ℤ)})]
+    (hnorm : Ideal.absNorm P = p) (Q : Ideal (𝓞 L)) [Q.LiesOver P]
+    {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt ℤ (σ.restrictScalars ℚ) Q) :
+    IsArithFrobAt (𝓞 K) σ Q := by
+  intro x
+  have hx := hσ x
+  let _ : Q.LiesOver (Ideal.span {(p : ℤ)}) :=
+    Ideal.LiesOver.trans Q P (Ideal.span {(p : ℤ)})
+  have hunderK : Q.under (𝓞 K) = P := Ideal.LiesOver.over
+  rw [hunderK, ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, hnorm]
+  -- As in the forward direction, restricting scalars does not change the action on `𝓞 L`, so the
+  -- hypothesis is the goal once its residue cardinality over `ℤ` is computed.
+  change σ • x - x ^ Nat.card (ℤ ⧸ Q.under ℤ) ∈ Q at hx
+  rwa [Ideal.natCard_quotient_under_of_liesOver (n := p) Q] at hx
 
 end
 

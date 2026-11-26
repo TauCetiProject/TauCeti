@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Data.Fin.Tuple.Take
+public import Mathlib.Data.Fintype.Sort
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
@@ -16,6 +17,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Fiber
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
@@ -41,9 +43,16 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
+* `EuclideanSpace.ext_continuousLinearMap_single`: continuous linear maps on Euclidean space are
+  determined by their values on the standard basis vectors.
+* `EuclideanSpace.add_sub_smul_single_apply`: the point `x + (t - xᵢ) eᵢ` is `x` with its `i`-th
+  coordinate replaced by `t`; the map `t ↦ x + (t - xᵢ) eᵢ` is `1`-Lipschitz
+  (`EuclideanSpace.lipschitzWith_add_sub_smul_single`).
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.isBigO_apply_div_norm`: a real Euclidean coordinate divided by the norm,
+  `x j / ‖x‖`, is `O(1)` along any filter.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
@@ -70,6 +79,9 @@ Borel measurable structure on the scalar field.
   coordinates of the two blocks of `EuclideanSpace.sumEquivProd`.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
+* `EuclideanSpace.finsetComplEquivProd`: splitting the coordinates of `𝕜ⁿ` into those outside a
+  set `Z` of `k` coordinates and those in `Z`, each enumerated in increasing order, identifies
+  `𝕜ⁿ` with `𝕜ⁿ⁻ᵏ × 𝕜ᵏ`.
 * `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
   zero extension `LinearIsometry.piLpExtendByZero` along `Fin.castLEEmb`, and its adjoint
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
@@ -123,11 +135,45 @@ theorem posDef_iff_of_forall_eq_sum_mul_sq {ι : Type*} [Fintype ι]
   refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp _ (WithLp.linearEquiv 2 ℝ (ι → ℝ)).injective⟩
   simpa using h (WithLp.toLp 2 x) (by simpa using hx)
 
+/-- Two continuous linear maps on `EuclideanSpace 𝕜 ι` agreeing on the standard basis vectors
+`EuclideanSpace.single i 1` are equal. -/
+theorem ext_continuousLinearMap_single {𝕜 ι E : Type*} [RCLike 𝕜] [Finite ι] [DecidableEq ι]
+    [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] {L L' : EuclideanSpace 𝕜 ι →L[𝕜] E}
+    (h : ∀ i, L (EuclideanSpace.single i 1) = L' (EuclideanSpace.single i 1)) : L = L' := by
+  have := Fintype.ofFinite ι
+  exact ContinuousLinearMap.coe_injective <| (EuclideanSpace.basisFun ι 𝕜).toBasis.ext fun i ↦ by
+    simpa using h i
+
+/-- The coordinates of the point `x + (t - xᵢ) eᵢ`: the `i`-th one is `t`, the others are
+those of `x`. -/
+theorem add_sub_smul_single_apply {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι]
+    (x : EuclideanSpace 𝕜 ι) (i j : ι) (t : 𝕜) :
+    (x + (t - x i) • EuclideanSpace.single i (1 : 𝕜)) j = if j = i then t else x j := by
+  by_cases h : j = i
+  · subst h; simp
+  · simp [h]
+
+/-- The map `t ↦ x + (t - xᵢ) eᵢ`, replacing the `i`-th coordinate of `x` with `t`, is an
+isometry, so `1`-Lipschitz. -/
+theorem lipschitzWith_add_sub_smul_single {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+    (x : EuclideanSpace 𝕜 ι) (i : ι) :
+    LipschitzWith 1 fun t : 𝕜 ↦ x + (t - x i) • EuclideanSpace.single i (1 : 𝕜) :=
+  LipschitzWith.of_dist_le_mul fun s t ↦ by
+    simp [dist_eq_norm, ← sub_smul, norm_smul]
+
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+
+/-- **A Euclidean coordinate divided by the norm is bounded:** `x j / ‖x‖ = O(1)` on
+`EuclideanSpace ℝ ι`, along any filter. -/
+theorem isBigO_apply_div_norm (l : Filter (EuclideanSpace ℝ ι)) (j : ι) :
+    (fun x : EuclideanSpace ℝ ι ↦ x j / ‖x‖) =O[l] fun _ ↦ (1 : ℝ) :=
+  ((Asymptotics.isBigO_inv_norm_smul_apply _ (fun _ ↦ EuclideanSpace.proj j) id).trans
+    (Asymptotics.isBigO_const_const _ one_ne_zero _)).congr_left fun x ↦ by
+      simp [div_eq_inv_mul]
 
 /-- A real vector lies on the unit sphere of Euclidean space exactly when the dot product of its
 coordinates with themselves is `1`. -/
@@ -589,6 +635,84 @@ theorem adjoint_piLpExtendByZero_castLEEmb_apply (hm : m ≤ n) (x : EuclideanSp
     sumComplEquivProd_symm_finCastLEEquiv]
 
 end finCastLE
+
+section finsetCompl
+
+open scoped Finset
+
+variable {n k : ℕ}
+
+variable (𝕜) in
+/-- Splitting the coordinates of `𝕜ⁿ` into those outside a set `Z` of `k` coordinates and those
+in `Z`, each enumerated in increasing order (`Finset.orderEmbOfFin`), identifies `𝕜ⁿ` with
+`𝕜ⁿ⁻ᵏ × 𝕜ᵏ`. This is `EuclideanSpace.sumEquivProd` read through Mathlib's index splitting
+`finSumEquivOfFinset`, with the two factors swapped. -/
+def finsetComplEquivProd (Z : Finset (Fin n)) (hZ : #Z = k) :
+    EuclideanSpace 𝕜 (Fin n) ≃L[𝕜] EuclideanSpace 𝕜 (Fin (n - k)) × EuclideanSpace 𝕜 (Fin k) :=
+  ((LinearIsometryEquiv.piLpCongrLeft 2 𝕜 𝕜 (finSumEquivOfFinset hZ (by
+      rw [Finset.card_compl, Fintype.card_fin, hZ])).symm).toContinuousLinearEquiv.trans
+    sumEquivProd).trans (ContinuousLinearEquiv.prodComm 𝕜 _ _)
+
+variable {Z : Finset (Fin n)} {hZ : #Z = k}
+
+@[simp]
+theorem finsetComplEquivProd_apply_fst (x : EuclideanSpace 𝕜 (Fin n)) (j : Fin (n - k)) :
+    (finsetComplEquivProd 𝕜 Z hZ x).1 j =
+      x (Zᶜ.orderEmbOfFin (by rw [Finset.card_compl, Fintype.card_fin, hZ]) j) := by
+  simp [finsetComplEquivProd, Equiv.piCongrLeft'_apply]
+
+@[simp]
+theorem finsetComplEquivProd_apply_snd (x : EuclideanSpace 𝕜 (Fin n)) (j : Fin k) :
+    (finsetComplEquivProd 𝕜 Z hZ x).2 j = x (Z.orderEmbOfFin hZ j) := by
+  simp [finsetComplEquivProd, Equiv.piCongrLeft'_apply]
+
+theorem finsetComplEquivProd_symm_apply
+    (z : EuclideanSpace 𝕜 (Fin (n - k)) × EuclideanSpace 𝕜 (Fin k)) (i : Fin n) :
+    (finsetComplEquivProd 𝕜 Z hZ).symm z i =
+      if h : i ∈ Z then z.2 ((Z.orderIsoOfFin hZ).symm ⟨i, h⟩)
+      else z.1 ((Zᶜ.orderIsoOfFin (by rw [Finset.card_compl, Fintype.card_fin, hZ])).symm
+        ⟨i, Finset.mem_compl.2 h⟩) := by
+  obtain ⟨x, rfl⟩ := (finsetComplEquivProd 𝕜 Z hZ).surjective z
+  split_ifs with h <;> simp [← Finset.coe_orderIsoOfFin_apply]
+
+/-- A property holds at every coordinate of the first factor exactly when it holds at every
+coordinate outside `Z`. -/
+theorem forall_fst_finsetComplEquivProd_iff (P : 𝕜 → Prop) (x : EuclideanSpace 𝕜 (Fin n)) :
+    (∀ j, P ((finsetComplEquivProd 𝕜 Z hZ x).1 j)) ↔ ∀ i ∉ Z, P (x i) := by
+  simp only [finsetComplEquivProd_apply_fst]
+  rw [← Set.forall_mem_range (p := fun i ↦ P (x i)), Finset.range_orderEmbOfFin]
+  simp
+
+/-- A property holds at every coordinate of the second factor exactly when it holds at every
+coordinate in `Z`. -/
+theorem forall_snd_finsetComplEquivProd_iff (P : 𝕜 → Prop) (x : EuclideanSpace 𝕜 (Fin n)) :
+    (∀ j, P ((finsetComplEquivProd 𝕜 Z hZ x).2 j)) ↔ ∀ i ∈ Z, P (x i) := by
+  simp only [finsetComplEquivProd_apply_snd]
+  rw [← Set.forall_mem_range (p := fun i ↦ P (x i)), Finset.range_orderEmbOfFin]
+  simp
+
+/-- A vector vanishing on `Z` is recovered from its coordinates outside `Z`. -/
+theorem finsetComplEquivProd_symm_mk_fst_zero {x : EuclideanSpace 𝕜 (Fin n)}
+    (hx : ∀ i ∈ Z, x i = 0) :
+    (finsetComplEquivProd 𝕜 Z hZ).symm ((finsetComplEquivProd 𝕜 Z hZ x).1, 0) = x := by
+  have h2 : (finsetComplEquivProd 𝕜 Z hZ x).2 = 0 := by
+    ext j
+    exact (forall_snd_finsetComplEquivProd_iff (· = 0) x).2 hx j
+  rw [← h2, Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- Inserting a vector `w` of `𝕜ⁿ⁻ᵏ` outside `Z` gives a vector vanishing on `Z`. -/
+theorem finsetComplEquivProd_symm_mk_zero_apply_of_mem (w : EuclideanSpace 𝕜 (Fin (n - k)))
+    {i : Fin n} (hi : i ∈ Z) : (finsetComplEquivProd 𝕜 Z hZ).symm (w, 0) i = 0 := by
+  simp [finsetComplEquivProd_symm_apply, hi]
+
+/-- A property holds for every coordinate of `w` exactly when it holds for every coordinate
+outside `Z` of its insertion. -/
+theorem forall_finsetComplEquivProd_symm_mk_zero_iff (P : 𝕜 → Prop)
+    (w : EuclideanSpace 𝕜 (Fin (n - k))) :
+    (∀ i ∉ Z, P ((finsetComplEquivProd 𝕜 Z hZ).symm (w, 0) i)) ↔ ∀ j, P (w j) := by
+  rw [← forall_fst_finsetComplEquivProd_iff (hZ := hZ), ContinuousLinearEquiv.apply_symm_apply]
+
+end finsetCompl
 
 end EuclideanSpace
 
