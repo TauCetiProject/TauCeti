@@ -85,6 +85,9 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `TauCeti.enorm_integral_inner_comm`: `‖∫ ⟪u, v⟫‖ = ‖∫ ⟪v, u⟫‖`.
 * `TauCeti.tendsto_integral_inner_of_tendsto_eLpNorm_sub`: if `Gᵢ → F` in `Lᵖ` then
   `∫ ⟪Gᵢ, g⟫ → ∫ ⟪F, g⟫` for every `g ∈ L^q`.
+* `TauCeti.tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub`: the same for
+  families converging in a mixed norm `L^q_b Lˢ_x` and almost everywhere in `b`, tested against
+  `θ(b) χ(x)`.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_inner_le`,
   `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q = ∞` and for every `1 ≤ q ≤ ∞`, on a σ-finite measure space, for inner product
@@ -160,6 +163,66 @@ theorem tendsto_integral_inner_of_tendsto_eLpNorm_sub {𝕜 H β : Type*} [RCLik
     (hF.integrable_inner_of_holderConjugate hg), eLpNorm_sub_comm]
   simp_rw [← inner_sub_left]
   exact enorm_integral_inner_le (u := G i - F)
+
+open Filter Topology in
+/-- **Continuity of the pairings `∫ θ(b) ∫ ⟪χ, u(b)⟫` in mixed norm.** Let `uᵢ, U : β → α → H` be
+families of functions such that, along a countably generated filter, `uᵢ(b) → U(b)` in `Lˢ(μ)` for
+`ρ`-almost every `b` and `uᵢ → U` in the mixed norm `L^q_b Lˢ_x`, where `U(b) ∈ Lˢ(μ)` for almost
+every `b`. For `θ ∈ Lᵖ(ρ)` and `χ ∈ L^r(μ)`, with `p, q` and `r, s` Hölder conjugate, the
+pairings `∫ θ(b) ∫ ⟪χ, uᵢ(b)⟫ dμ dρ` then converge to `∫ θ(b) ∫ ⟪χ, U(b)⟫ dμ dρ`. The functions
+`uᵢ(b)` need not lie in `Lˢ(μ)`: their pairings with `χ` are only assumed to exist, to be
+measurable in `b`, and to be integrable against `θ`. -/
+theorem tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub {𝕜 H β ι : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {mβ : MeasurableSpace β}
+    {ρ : Measure β} {p q r s : ℝ≥0∞} [p.HolderConjugate q] [r.HolderConjugate s] {l : Filter ι}
+    [l.IsCountablyGenerated] {θ : β → 𝕜} {χ : α → H} {U : β → α → H} {u : ι → β → α → H}
+    (hθ : MemLp θ p ρ) (hχ : MemLp χ r μ) (hU : ∀ᵐ b ∂ρ, MemLp (U b) s μ)
+    (hu : ∀ᵐ b ∂ρ, ∀ i, Integrable (fun x ↦ ⟪χ x, u i b x⟫_𝕜) μ)
+    (hum : ∀ i, AEStronglyMeasurable (fun b ↦ ∫ x, ⟪χ x, u i b x⟫_𝕜 ∂μ) ρ)
+    (hθu : ∀ i, Integrable (fun b ↦ θ b * ∫ x, ⟪χ x, u i b x⟫_𝕜 ∂μ) ρ)
+    (hae : ∀ᵐ b ∂ρ, Tendsto (fun i ↦ eLpNorm (U b - u i b) s μ) l (𝓝 0))
+    (hlim : Tendsto (fun i ↦ eLpNorm (fun b ↦ eLpNorm (U b - u i b) s μ) q ρ) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫ b, θ b * ∫ x, ⟪χ x, u i b x⟫_𝕜 ∂μ ∂ρ) l
+      (𝓝 (∫ b, θ b * ∫ x, ⟪χ x, U b x⟫_𝕜 ∂μ ∂ρ)) := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact tendsto_bot
+  set P : β → 𝕜 := fun b ↦ ∫ x, ⟪χ x, U b x⟫_𝕜 ∂μ
+  set w : ι → β → 𝕜 := fun i b ↦ ∫ x, ⟪χ x, u i b x⟫_𝕜 ∂μ
+  have hχ' : eLpNorm χ r μ ≠ ⊤ := hχ.eLpNorm_ne_top
+  -- Hölder's inequality in `x` bounds the pairings with `U(b) - uᵢ(b)`.
+  have hle : ∀ᵐ b ∂ρ, ∀ i, ‖P b - w i b‖ₑ ≤ eLpNorm χ r μ * eLpNorm (U b - u i b) s μ := by
+    filter_upwards [hU, hu] with b hb hb' i
+    rw [← integral_sub (hχ.integrable_inner_of_holderConjugate hb) (hb' i)]
+    simp_rw [← inner_sub_right]
+    exact enorm_integral_inner_le (u := χ) (v := U b - u i b)
+  have hP : AEStronglyMeasurable P ρ := by
+    refine aestronglyMeasurable_of_tendsto_ae l hum ?_
+    filter_upwards [hle, hae] with b hb hb'
+    rw [tendsto_iff_edist_tendsto_0]
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (by simpa using ENNReal.Tendsto.const_mul hb' (Or.inr hχ')) (fun _ ↦ zero_le) fun i ↦ ?_
+    rw [edist_comm, eDist_eq_eNorm_sub]
+    exact hb i
+  -- Hölder's inequality in `b` then bounds the pairings against `θ` by the mixed norm.
+  have hmix (i : ι) : eLpNorm (P - w i) q ρ ≤
+      eLpNorm χ r μ * eLpNorm (fun b ↦ eLpNorm (U b - u i b) s μ) q ρ :=
+    eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' q (hP.sub (hum i)) (by
+      filter_upwards [hle] with b hb
+      simpa using hb i)
+  have hlim' := ENNReal.Tendsto.const_mul hlim (Or.inr hχ')
+  rw [mul_zero] at hlim'
+  rw [tendsto_iff_edist_tendsto_0]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa using ENNReal.Tendsto.const_mul hlim' (Or.inr hθ.eLpNorm_ne_top))
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hlim'.eventually_lt_const ENNReal.zero_lt_top] with i hi
+  have hPw : MemLp (P - w i) q ρ := (hmix i).trans_lt hi
+  have hint : Integrable (θ * (P - w i)) ρ := hθ.integrable_mul hPw
+  have hθP : Integrable (fun b ↦ θ b * P b) ρ :=
+    (hint.add (hθu i)).congr (ae_of_all _ fun b ↦ by simp [w, mul_sub])
+  rw [edist_comm, eDist_eq_eNorm_sub, ← integral_sub hθP (hθu i)]
+  simp_rw [← mul_sub]
+  exact enorm_integral_mul_le.trans (by gcongr; exact hmix i)
 
 end TauCeti
 
