@@ -196,9 +196,9 @@ theorem chartValueL_mapL_ae_coord {w : C.sobolevSections μ p k} {s : S}
     C'.chartValueL μ p k i (hf.mapL μ p k w) =ᵐ[μ.restrict (C'.image i)] C'.coord i (f s) :=
   hf.chartValueL_dataL_ae_coord μ p k hs i
 
-/-- If `f'` undoes `f`, then `hf'.mapL` undoes `hf.mapL`. -/
-theorem mapL_mapL {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : ∀ s, f' (f s) = s)
-    (w : C.sobolevSections μ p k) : hf'.mapL μ p k (hf.mapL μ p k w) = w := by
+/-- If `f'` is a left inverse of `f`, then `hf'.mapL` is a left inverse of `hf.mapL`. -/
+theorem leftInverse_mapL {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : Function.LeftInverse f' f) :
+    Function.LeftInverse (hf'.mapL μ p k) (hf.mapL μ p k) := fun w ↦ by
   obtain ⟨s, hs⟩ := C.exists_section μ p k w
   refine eq_of_ae_eq_coord (s := s) (fun i ↦ ?_) hs
   rw [← h s]
@@ -206,22 +206,22 @@ theorem mapL_mapL {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : ∀ s, f' (f s
 
 /-- **Isomorphisms of Sobolev sections.** Mutually inverse maps of sections read as smooth
 operator coefficients induce an isomorphism of the Sobolev sections. -/
-def mapEquivL {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : ∀ s, f' (f s) = s)
-    (h' : ∀ s, f (f' s) = s) : C.sobolevSections μ p k ≃L[ℝ] C'.sobolevSections μ p k :=
+def mapEquivL {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : Function.LeftInverse f' f)
+    (h' : Function.RightInverse f' f) : C.sobolevSections μ p k ≃L[ℝ] C'.sobolevSections μ p k :=
   .ofContinuousLinearMap (hf.mapL μ p k) (hf'.mapL μ p k)
-    (ContinuousLinearMap.ext (hf'.mapL_mapL μ p k hf h'))
-    (ContinuousLinearMap.ext (hf.mapL_mapL μ p k hf' h))
+    (ContinuousLinearMap.ext (hf'.leftInverse_mapL μ p k hf h'))
+    (ContinuousLinearMap.ext (hf.leftInverse_mapL μ p k hf' h))
 
 @[simp]
-theorem coe_mapEquivL {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : ∀ s, f' (f s) = s)
-    (h' : ∀ s, f (f' s) = s) :
+theorem coe_mapEquivL {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : Function.LeftInverse f' f)
+    (h' : Function.RightInverse f' f) :
     (hf.mapEquivL μ p k hf' h h' : C.sobolevSections μ p k →L[ℝ] C'.sobolevSections μ p k) =
       hf.mapL μ p k :=
   (rfl)
 
 @[simp]
-theorem coe_mapEquivL_symm {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : ∀ s, f' (f s) = s)
-    (h' : ∀ s, f (f' s) = s) :
+theorem coe_mapEquivL_symm {f' : S' → S} (hf' : C'.IsCoeffMap C f') (h : Function.LeftInverse f' f)
+    (h' : Function.RightInverse f' f) :
     ((hf.mapEquivL μ p k hf' h h').symm :
       C'.sobolevSections μ p k →L[ℝ] C.sobolevSections μ p k) = hf'.mapL μ p k :=
   (rfl)
