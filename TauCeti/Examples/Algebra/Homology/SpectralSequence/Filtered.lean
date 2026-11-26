@@ -145,7 +145,7 @@ def twoStepFirstPageXZeroIso (q : ℤ) :
 
 /-- The isomorphism between the cokernel of `F_0 ≤ F_1` and the quotient `K / F_0`, induced by the
 inclusion `F_1 ⊆ K`. -/
-def twoStepCokernelIso :
+private def twoStepCokernelIso :
     cokernel (Subobject.ofLE (twoStepFiltration A (1 - 1)) (twoStepFiltration A 1)
       (monotone_twoStepFiltration A (by lia))) ≅ cokernel (twoStepFiltration A (1 - 1)).arrow :=
   cokernel.mapIso _ _ (Iso.refl _) (asIso (twoStepFiltration A 1).arrow) (by simp)
