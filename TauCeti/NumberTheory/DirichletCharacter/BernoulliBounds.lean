@@ -94,14 +94,12 @@ theorem norm_generalizedBernoulli_le (χ : DirichletCharacter ℂ N) (k : ℕ) :
   -- each term `χ(a) Bₖ(ã / N)`, with `ã ∈ [1, N]`, has norm at most `4 k! / (2π)ᵏ`
   have hterm (a : ZMod N) : ‖χ a * algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval
       (((if a = 0 then N else a.val : ℕ) : ℚ) / N))‖ ≤ 4 * k ! / (2 * π) ^ k := by
-    have hn : (if a = 0 then N else a.val) ≤ N := by
-      split_ifs
-      exacts [le_rfl, (ZMod.val_lt a).le]
     rw [norm_mul]
     refine (mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one a)).trans ?_
     rw [eq_ratCast, Complex.norm_ratCast]
-    exact TauCeti.abs_eval_bernoulli_le_four_mul_factorial_div k
-      ⟨by positivity, div_le_one_of_le₀ (mod_cast hn) (Nat.cast_nonneg N)⟩
+    refine TauCeti.abs_eval_bernoulli_natCast_div_le_four_mul_factorial_div k fun _ ↦ ?_
+    split_ifs
+    exacts [le_rfl, (ZMod.val_lt a).le]
   rw [generalizedBernoulli_def, norm_mul, eq_ratCast, Complex.norm_ratCast]
   calc |(((N : ℚ) ^ ((k : ℤ) - 1) : ℚ) : ℝ)| * ‖∑ a : ZMod N, _‖
       ≤ (N : ℝ) ^ ((k : ℤ) - 1) * ∑ _a : ZMod N, 4 * k ! / (2 * π) ^ k := by
@@ -141,12 +139,10 @@ theorem abs_primorialBernoulli_le (M k : ℕ) (t : ZMod M) :
       (((Polynomial.bernoulli k).eval ((t.val : ℚ) / M) : ℚ) : ℝ) := by
     exact_mod_cast congrArg (Rat.cast : ℚ → ℝ) (intCast_primorialBernoulli M k t)
   set b : ℝ := (((Polynomial.bernoulli k).eval ((t.val : ℚ) / M) : ℚ) : ℝ)
-  have h : |b| ≤ 4 * k ! / (2 * π) ^ k := by
-    rcases eq_or_ne M 0 with rfl | hM
-    · simpa [b] using abs_eval_bernoulli_le_four_mul_factorial_div k (x := 0) ⟨le_rfl, zero_le_one⟩
-    · have : NeZero M := ⟨hM⟩
-      exact abs_eval_bernoulli_le_four_mul_factorial_div k
-        ⟨by positivity, div_le_one_of_le₀ (mod_cast (ZMod.val_lt t).le) (Nat.cast_nonneg M)⟩
+  have h : |b| ≤ 4 * k ! / (2 * π) ^ k :=
+    abs_eval_bernoulli_natCast_div_le_four_mul_factorial_div k fun hM ↦
+      have : NeZero M := ⟨hM⟩
+      (ZMod.val_lt t).le
   have hR : (|primorialBernoulli M k t| : ℝ) ≤ 16 * M ^ k * k ! := by
     rw [hcast, abs_mul, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ _),
       abs_of_nonneg (by positivity : (0 : ℝ) ≤ (M : ℝ) ^ k)]
