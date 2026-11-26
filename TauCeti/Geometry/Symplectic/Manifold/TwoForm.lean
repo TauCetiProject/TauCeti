@@ -313,6 +313,14 @@ theorem tames_iff : form.Tames J ↔
     ∀ (x : M) (v : TangentSpace I x), v ≠ 0 → 0 < form.eval₂ x v (J x v) :=
   Iff.rfl
 
+/-- A taming form is nonnegative on every tangent vector and its complex rotation, including the
+zero vector. -/
+theorem Tames.eval₂_nonneg (h : form.Tames J) (x : M) (v : TangentSpace I x) :
+    0 ≤ form.eval₂ x v (J x v) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  · exact (h x v hv).le
+
 /-- Manifold-level tameness is the pointwise linear tameness condition once nondegeneracy has
 identified each tangent-space form as a `SymplecticForm`. -/
 lemma IsNondegenerate.tames_iff (h : form.IsNondegenerate) :
