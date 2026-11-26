@@ -164,18 +164,6 @@ theorem sliceDefect_def (X : ℝ → V → V) (u : ℝ × ℝ → V) (z : ℝ ×
     sliceDefect X u z = fderiv ℝ u z (0, 1) - X z.2 (u z) :=
   (rfl)
 
-/-- The map `(s, t) ↦ x(t)` constant in `s` along a solution of `x' = X(t, x)` has vanishing
-defect. -/
-theorem sliceDefect_comp_snd_eq_zero {x : ℝ → V} (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
-    sliceDefect X (fun w : ℝ × ℝ ↦ x w.2) = 0 := by
-  funext z
-  obtain ⟨s, t⟩ := z
-  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2)
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (X t (x t))).comp
-        (ContinuousLinearMap.snd ℝ ℝ ℝ)) (s, t) :=
-    (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
-  simp [sliceDefect_def, h.fderiv]
-
 /-- A map which agrees near `z` with the map `(s, t) ↦ x(t)` constant in `s`, where `x` solves
 `x' = X(t, x)` at `t = z.2`, has vanishing defect at `z`. -/
 theorem sliceDefect_eq_zero_of_eventuallyEq {x : ℝ → V} {z : ℝ × ℝ}
@@ -184,6 +172,12 @@ theorem sliceDefect_eq_zero_of_eventuallyEq {x : ℝ → V} {z : ℝ × ℝ}
   have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2) _ z :=
     hx.hasFDerivAt.comp z (hasFDerivAt_snd (p := z))
   simp [sliceDefect_def, hu.fderiv_eq, hu.eq_of_nhds, h.fderiv]
+
+/-- The map `(s, t) ↦ x(t)` constant in `s` along a solution of `x' = X(t, x)` has vanishing
+defect. -/
+theorem sliceDefect_comp_snd_eq_zero {x : ℝ → V} (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
+    sliceDefect X (fun w : ℝ × ℝ ↦ x w.2) = 0 :=
+  funext fun z ↦ sliceDefect_eq_zero_of_eventuallyEq (hx z.2) EventuallyEq.rfl
 
 /-- A map which, eventually along a filter `l` in `s`, agrees near every point `(s, t)` with the
 map `(s, t) ↦ x(t)` constant in `s`, along a solution of `x' = X(t, x)`, has loops converging
