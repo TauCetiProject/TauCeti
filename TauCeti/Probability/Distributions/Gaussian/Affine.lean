@@ -34,6 +34,9 @@ allowed, so the result applies both to embeddings and to possibly singular proje
   a translation.
 * `TauCeti.Probability.map_comp_multivariateGaussian`: reindexing the coordinates along a map of
   index types.
+* `TauCeti.Probability.map_toLp_const_gaussianReal`: copying a scalar Gaussian into every
+  coordinate gives the Gaussian with constant mean and covariance, including zero variance and
+  the empty index type.
 * `ProbabilityTheory.HasLaw.affine_multivariateGaussian`,
   `ProbabilityTheory.HasLaw.add_smul_multivariateGaussian`, and
   `ProbabilityTheory.HasLaw.comp_multivariateGaussian`: the corresponding affine, scalar-affine,

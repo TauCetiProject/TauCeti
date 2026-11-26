@@ -23,6 +23,7 @@ their indices: the identity matrix and a product of degree-preserving matrices a
 degree-preserving, and a product of matrices intertwining square matrices intertwines them.
 
 Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
+The outer product of two constant vectors is the constant matrix of their product.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
@@ -47,6 +48,7 @@ factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mut
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
+* `Matrix.vecMulVec_const_const`: the outer product of constant vectors is a constant matrix.
 * `Matrix.transpose_mul_map_op`: transposing a product and passing to the opposite ring reverses
   the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
 -/

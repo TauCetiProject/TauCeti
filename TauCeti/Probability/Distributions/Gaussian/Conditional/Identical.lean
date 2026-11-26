@@ -7,13 +7,24 @@ module
 
 public import TauCeti.Probability.Distributions.Gaussian.Conditional.Basic
 
-/-!
-# Conditioning on two identical Gaussian observations
+import TauCeti.Data.Matrix.Mul
+import TauCeti.Probability.Distributions.Gaussian.Conditional.RankOne
 
-For the centred Gaussian vector `(Z, Z, Z)`, retain the first coordinate and observe the final
-two. The observed covariance is the singular all-ones matrix. Its covariance pseudoinverse gives
-the average of the two displayed observations, so the conditional kernel is Dirac at that average.
-In particular, an observation `(z, z)` determines the retained coordinate to be `z`.
+/-!
+# Conditioning on identical Gaussian observations
+
+For a Gaussian vector with common mean and positive common covariance, the pseudoinverse
+conditional kernel is Dirac at the average of the displayed observations, even off the diagonal.
+The joint law of copies of a scalar Gaussian has these parameters by
+`TauCeti.Probability.map_toLp_const_gaussianReal`.
+
+In particular, for `(Z, Z, Z)` with `Z` standard Gaussian, the covariance of the last two
+coordinates is the singular all-ones matrix. An observation `(z, z)` determines the retained
+coordinate to be `z`.
+
+## References
+
+* T. W. Anderson, *An Introduction to Multivariate Statistical Analysis*, 3rd ed., Wiley, 2003.
 -/
 
 public section
@@ -23,6 +34,59 @@ noncomputable section
 open Matrix MeasureTheory ProbabilityTheory
 
 namespace TauCeti.Probability
+
+section
+
+open EuclideanSpace
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+
+/-- For a constant mean and positive constant covariance, the conditional Gaussian kernel
+uses the average observation at every ambient input, including off the diagonal support. -/
+@[simp 1100]
+theorem gaussianCondKernel_toLp_const_matrixOf_const [Nonempty κ] (μ : ℝ) {c : ℝ}
+    (hc : 0 < c) (x : EuclideanSpace ℝ κ) :
+    gaussianCondKernel (WithLp.toLp 2 (fun _ : ι ⊕ κ ↦ μ))
+        (Matrix.of fun _ _ ↦ c) x =
+      Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ (∑ j, x j) / Fintype.card κ)) := by
+  have hcov : (Matrix.of fun _ _ ↦ c : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) =
+      vecMulVec (fun _ ↦ √c) (fun _ ↦ √c) := by
+    rw [vecMulVec_const_const, Real.mul_self_sqrt hc.le]
+  have hload : ∃ j : κ, (fun _ : ι ⊕ κ ↦ √c) (Sum.inr j) ≠ 0 :=
+    ⟨Classical.arbitrary κ, (Real.sqrt_pos.2 hc).ne'⟩
+  rw [hcov, gaussianCondKernel_vecMulVec_self _ hload]
+  congr 1
+  ext i
+  rw [gaussianCondMean_vecMulVec_self_apply]
+  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Real.sq_sqrt hc.le,
+    ← Finset.mul_sum, Finset.sum_sub_distrib]
+  rw [← mul_assoc, Real.mul_self_sqrt hc.le]
+  have hn : (Fintype.card κ : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  field_simp [hc.ne']
+  ring
+
+/-- At a constant observation, the constant-parameter conditional Gaussian kernel is the
+Dirac law at that observation, for any common mean and positive variance. -/
+@[simp 1200]
+theorem gaussianCondKernel_toLp_const_matrixOf_const_toLp_const [Nonempty κ] (μ : ℝ)
+    {c : ℝ} (hc : 0 < c) (z : ℝ) :
+    gaussianCondKernel (WithLp.toLp 2 (fun _ : ι ⊕ κ ↦ μ))
+        (Matrix.of fun _ _ ↦ c) (WithLp.toLp 2 (fun _ ↦ z)) =
+      Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ z)) := by
+  simpa using gaussianCondKernel_toLp_const_matrixOf_const (ι := ι) μ hc
+    (WithLp.toLp 2 (fun _ : κ ↦ z))
+
+/-- With zero mean and positive constant covariance, regression is the average observation,
+including at ambient inputs outside the diagonal support. -/
+@[simp 1100]
+theorem gaussianCondKernel_zero_matrixOf_const [Nonempty κ] {c : ℝ}
+    (hc : 0 < c) (x : EuclideanSpace ℝ κ) :
+    (0 : EuclideanSpace ℝ (ι ⊕ κ)).gaussianCondKernel (Matrix.of fun _ _ ↦ c) x =
+      Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ (∑ j, x j) / Fintype.card κ)) := by
+  simpa only [← Pi.zero_def, WithLp.toLp_zero] using
+    gaussianCondKernel_toLp_const_matrixOf_const (ι := ι) 0 hc x
+
+end
 
 /-- The covariance of a retained standard Gaussian coordinate together with two identical
 observations of it. -/
@@ -102,10 +166,13 @@ theorem gaussianCondKernel_gaussianIdenticalObservationCovariance
     (0 : EuclideanSpace ℝ (Unit ⊕ Fin 2)).gaussianCondKernel
         gaussianIdenticalObservationCovariance x₂ =
       Measure.dirac (EuclideanSpace.single () ((x₂ 0 + x₂ 1) / 2)) := by
-  rw [EuclideanSpace.gaussianCondKernel_apply,
-    gaussianCondMean_gaussianIdenticalObservationCovariance,
-    gaussianCondCov_gaussianIdenticalObservationCovariance,
-    multivariateGaussian_zero_right]
+  have hcov : gaussianIdenticalObservationCovariance = Matrix.of (fun _ _ ↦ (1 : ℝ)) := by
+    ext i j
+    simp
+  rw [hcov, gaussianCondKernel_zero_matrixOf_const zero_lt_one]
+  congr 1
+  ext i
+  simp [Fin.sum_univ_two]
 
 /-- In particular, observing `(z, z)` determines the retained coordinate to be `z`, despite the
 singular observed covariance. -/
