@@ -17,7 +17,7 @@ gerbe) and `b` an `A`-banding of `F` by a sheaf of abelian groups `A`
 compatible with pullback and with conjugation along isomorphisms.
 
 Since every fibre arrow is invertible, the conjugation equation says that the band automorphisms
-`b(U, x)(a)` are natural in `x` (`AbelianBanding.naturality_mulEquiv_hom`). So for a coefficient
+`b(U, x)(a)` are natural in `x` (`AbelianBanding.mulEquiv_hom_naturality`). So for a coefficient
 `a ∈ A(U)` they form a unit `z_b(U)(a)` of the categorical centre of the fibre over `U`
 (`AbelianBanding.coefficientCenter`), a group homomorphism in `a`, whose components are pulled
 back to those of the restricted coefficient (`AbelianBanding.map_coefficientCenter_app`).
@@ -67,7 +67,7 @@ noncomputable def coefficientCenter (U : C) [IsGroupoid (F.obj (.mk (op U)))] :
     Multiplicative (A.obj.obj (op U)) →* (CatCenter (F.obj (.mk (op U))))ˣ where
   toFun a := (Aut.unitsEndEquivAut (𝟭 _)).symm
     (.of (NatIso.ofComponents (fun x ↦ (b.mulEquiv U x a).asIso)
-      fun f ↦ b.naturality_mulEquiv_hom f a))
+      fun f ↦ b.mulEquiv_hom_naturality f a))
   map_one' := by
     rw [MulEquiv.symm_apply_eq, map_one]
     refine Aut.ext (Iso.ext (NatTrans.ext (funext fun x ↦ ?_)))
