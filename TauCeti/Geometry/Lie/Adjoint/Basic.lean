@@ -11,7 +11,9 @@ public import TauCeti.Geometry.Lie.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Conjugation
 public import TauCeti.Geometry.Lie.RightInvariantVectorField
 public import TauCeti.Geometry.Lie.Tangent.Differential
+import Mathlib.Analysis.Normed.Operator.Mul
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The tangent-space adjoint action of a Lie group
@@ -44,6 +46,8 @@ The construction works over any nontrivially normed field. Its differential only
   trivial.
 * `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism intertwines the
   adjoint actions of its differential at the identity, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
+* `MonoidHom.mvfderiv_adjointContinuousLinearMap`: for a homomorphism `φ` into a normed algebra,
+  the differential of `φ` at the identity carries `Ad_g X` to `φ g * dφ X * φ g⁻¹`.
 * `MonoidHom.adjointContinuousLinearMap_eq_id_of_mem_ker`: when that differential is injective,
   the kernel of the homomorphism acts trivially on the Lie algebra.
 
@@ -196,6 +200,26 @@ theorem _root_.MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap
   -- steps are chained as terms.
   exact (DFunLike.congr_fun (mfderiv_congr (I := J) (I' := I) hfun) ξ).trans <|
     hcomp'.trans (adjointContinuousLinearMap_apply (I := I) (φ k) _).symm
+
+/-- **The adjoint action is conjugation in a normed algebra.** For a homomorphism `φ : G →* R`
+into a normed algebra, the differential `dφ` of `φ` at the identity carries `Ad_g X` to
+`φ g * dφ X * φ g⁻¹` (both sides vanish if `φ` is not differentiable at the identity). -/
+theorem _root_.MonoidHom.mvfderiv_adjointContinuousLinearMap {R : Type*} [NormedRing R]
+    [NormedAlgebra 𝕜 R] (φ : G →* R) (g : G) (X : GroupLieAlgebra I G) :
+    mvfderiv I φ 1 (adjointContinuousLinearMap (I := I) g X) =
+      φ g * mvfderiv I φ 1 X * φ g⁻¹ := by
+  by_cases hφ : MDifferentiableAt I 𝓘(𝕜, R) φ 1
+  swap
+  · simp only [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hφ, ContinuousLinearMap.comp_zero,
+      zero_apply, mul_zero, zero_mul]
+  -- `φ` intertwines conjugation by `g` with the linear map `x ↦ φ g * x * φ g⁻¹`.
+  have hfun : (φ : G → R) ∘ conjDiffeomorph (I := I) (n := 1) g =
+      ContinuousLinearMap.mulLeftRight 𝕜 R (φ g) (φ g⁻¹) ∘ φ := by
+    funext x
+    simp
+  rw [adjointContinuousLinearMap_apply, ← mvfderiv_comp_apply_of_eq 1 hφ
+    ((conjDiffeomorph (I := I) (n := 1) g).mdifferentiable one_ne_zero 1) (by simp), hfun,
+    ContinuousLinearMap.mvfderiv_comp_apply _ hφ, ContinuousLinearMap.mulLeftRight_apply]
 
 /-- **The kernel of a homomorphism with injective differential acts trivially on the Lie
 algebra.** If the differential `dφ` at the identity of `φ : K →* G` is injective, then every

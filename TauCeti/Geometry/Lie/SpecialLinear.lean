@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Lie.Subgroup.SpecialLinear
 public import TauCeti.Geometry.Lie.Functor
 public import TauCeti.Geometry.Lie.Adjoint.Basic
 import TauCeti.Geometry.Lie.Subgroup.Differential
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Lie.AutomaticSmoothness
 
 /-!
@@ -195,17 +194,7 @@ theorem mvfderiv_subtypeVal_adjointContinuousLinearMap (g : S)
     mvfderiv 𝓘(𝕜, E) (fun A : S ↦ (A : Matrix n n 𝕜)) 1
         (adjointContinuousLinearMap (I := 𝓘(𝕜, E)) g X) =
       (g : Matrix n n 𝕜) * mvfderiv 𝓘(𝕜, E) (fun A : S ↦ (A : Matrix n n 𝕜)) 1 X *
-        ((g⁻¹ : S) : Matrix n n 𝕜) := by
-  have hc : MDifferentiable 𝓘(𝕜, E) 𝓘(𝕜, Matrix n n 𝕜) (fun A : S ↦ (A : Matrix n n 𝕜)) :=
-    (contMDiff_subtypeVal (k := 1)).mdifferentiable one_ne_zero
-  -- The inclusion intertwines conjugation by `g` with the linear map `M ↦ g M g⁻¹`.
-  have hfun : (fun A : S ↦ (A : Matrix n n 𝕜)) ∘ conjDiffeomorph (I := 𝓘(𝕜, E)) (n := 1) g =
-      ContinuousLinearMap.mulLeftRight 𝕜 (Matrix n n 𝕜) (g : Matrix n n 𝕜)
-        ((g⁻¹ : S) : Matrix n n 𝕜) ∘ fun A : S ↦ (A : Matrix n n 𝕜) := by
-    funext A
-    simp
-  rw [adjointContinuousLinearMap_apply, ← mvfderiv_comp_apply_of_eq 1 (hc 1)
-    ((conjDiffeomorph (I := 𝓘(𝕜, E)) (n := 1) g).mdifferentiable one_ne_zero 1) (by simp), hfun,
-    ContinuousLinearMap.mvfderiv_comp_apply _ (hc 1), ContinuousLinearMap.mulLeftRight_apply]
+        ((g⁻¹ : S) : Matrix n n 𝕜) :=
+  (coeMonoidHom (ι := n) (R := 𝕜)).mvfderiv_adjointContinuousLinearMap g X
 
 end Matrix.SpecialLinearGroup
