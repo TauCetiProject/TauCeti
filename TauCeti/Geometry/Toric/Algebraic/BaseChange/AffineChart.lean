@@ -181,6 +181,17 @@ theorem faceAffineChartMap_def (hτσ : τ.IsFaceOf σ) :
       Spec.map (CommRingCat.ofHom (faceAffineChartRingMap R hi hτσ).toRingHom) :=
   (rfl)
 
+/-- The chart of a face is dense in the chart of its cone. The restriction on coordinate rings
+is injective because distinct characters remain distinct under the inclusion of dual semigroups. -/
+theorem denseRange_faceAffineChartMap (hτσ : τ.IsFaceOf σ) :
+    DenseRange (faceAffineChartMap R hi hτσ) := by
+  have hinj : Function.Injective (faceAffineChartRingMap R hi hτσ) :=
+    AddMonoidAlgebra.mapDomain_injective (AddSubmonoid.inclusion_injective _)
+  have hker := (RingHom.injective_iff_ker_eq_bot
+    (faceAffineChartRingMap R hi hτσ).toRingHom).mp hinj
+  rw [faceAffineChartMap_def]
+  exact (PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical _).mpr (hker ▸ bot_le)
+
 /-- The chart morphism of a cone viewed as its own face is the identity. -/
 @[simp]
 theorem faceAffineChartMap_id :
