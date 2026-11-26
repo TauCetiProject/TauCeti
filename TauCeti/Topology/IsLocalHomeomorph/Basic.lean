@@ -74,7 +74,8 @@ groupoid.
 * `IsLocalHomeomorph.of_comp_of_surjective`: if `g ∘ f` and a surjective `f` are local
   homeomorphisms, so is `g`.
 * `IsLocalHomeomorph.isClosedEmbedding_of_injective`: an injective local homeomorphism with closed
-  range is a closed embedding.
+  range is a closed embedding. `IsLocalHomeomorph.isClosedEmbedding_of_isCompl_range` gets the
+  closed range from a second local homeomorphism with complementary range.
 * `TauCeti.isLocalHomeomorph_of_discreteTopology`: every map between discrete spaces is a local
   homeomorphism.
 -/
@@ -398,6 +399,14 @@ theorem isClosedEmbedding_of_injective {X Y : Type*} [TopologicalSpace X] [Topol
     (hc : IsClosed (Set.range f)) : IsClosedEmbedding f where
   toIsEmbedding := (hf.isOpenEmbedding_of_injective hi).isEmbedding
   isClosed_range := hc
+
+/-- If two local homeomorphisms have complementary ranges, the first, when injective, is a closed
+embedding: the range of the second is open, so the range of the first is closed. -/
+theorem isClosedEmbedding_of_isCompl_range {X X' Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace X'] [TopologicalSpace Y] {f : X → Y} {g : X' → Y} (hf : IsLocalHomeomorph f)
+    (hi : Function.Injective f) (hg : IsLocalHomeomorph g)
+    (hc : IsCompl (Set.range f) (Set.range g)) : IsClosedEmbedding f :=
+  hf.isClosedEmbedding_of_injective hi (hc.eq_compl ▸ hg.isOpenMap.isOpen_range.isClosed_compl)
 
 /-- Every map between discrete spaces is a local homeomorphism. -/
 theorem _root_.TauCeti.isLocalHomeomorph_of_discreteTopology {X Y : Type*} [TopologicalSpace X]

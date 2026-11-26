@@ -85,8 +85,6 @@ theorem degree_boundaryOrientation_comp_subtypeVal_eq_zero
     {F : W → N} (hF : ContMDiff (𝓡∂ (n + 1)) J ∞ F) (hFp : IsProperMap F) :
     degree (boundaryOrientation o) o' (F ∘ Subtype.val) = 0 := by
   have := hFp.sigmaCompactSpace
-  -- The boundary is closed, so the restriction of `F` to it is proper.
-  have hgp := hFp.restrict ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional W)
   obtain ⟨y⟩ : Nonempty N := inferInstance
   -- Integrate a closed top form of integral one over `N`.
   obtain ⟨θ, -, hθ⟩ :=
@@ -94,7 +92,7 @@ theorem degree_boundaryOrientation_comp_subtypeVal_eq_zero
   have hθc : IsCompact (_root_.tsupport (α := E' [⋀^Fin n]→L[ℝ] ℝ) θ.val.val) :=
     (mem_compactlySupportedForms J).mp ((mem_compactlySupportedClosedForms J).mp θ.property).1
   have h := integralTopForm_mpullback_eq_degree_mul (boundaryOrientation o) o'
-    hF.comp_subtypeVal_boundary hgp θ.val.isSmoothForm hθc
+    hF.comp_subtypeVal_boundary hFp.comp_subtypeVal_boundary θ.val.isSmoothForm hθc
   rw [hθ, mul_one, integralTopForm_mpullback_comp_subtypeVal_eq_zero o (hF.of_le (by simp))
     (θ.val.isSmoothForm.of_le (by simp))
     (mextDeriv_eq_zero_of_finrank_le (by simp [← o'.card_eq]) _)
@@ -110,7 +108,7 @@ theorem degreeAtRegularValue_boundaryOrientation_comp_subtypeVal_eq_zero
       (F ∘ (Subtype.val : (𝓡∂ (n + 1)).boundary W → W)) y) :
     degreeAtRegularValue (boundaryOrientation o) o' (F ∘ Subtype.val) y = 0 := by
   rw [← degree_eq_degreeAtRegularValue (boundaryOrientation o) o' hF.comp_subtypeVal_boundary
-    (hFp.restrict ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional W)) hy,
+    hFp.comp_subtypeVal_boundary hy,
     degree_boundaryOrientation_comp_subtypeVal_eq_zero o o' hF hFp]
 
 /-- **Cobordism invariance of the degree.** Let `F : W → N` be a proper smooth map from an
@@ -139,33 +137,29 @@ theorem degree_eq_of_cobordism {E₀ H₀ M₀ : Type*} [NormedAddCommGroup E₀
     degree o₀ o' f₀ = degree o₁ o' f₁ := by
   set g : (𝓡∂ (n + 1)).boundary W → N := F ∘ Subtype.val
   have hg : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) J ∞ g := hF.comp_subtypeVal_boundary
-  have hgp : IsProperMap g := hFp.restrict ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional W)
+  have hgp : IsProperMap g := hFp.comp_subtypeVal_boundary
   obtain rfl : f₀ = g ∘ j₀ := funext fun x ↦ (h₀ x).symm
   obtain rfl : f₁ = g ∘ j₁ := funext fun x ↦ (h₁ x).symm
   -- The ends are Hausdorff, and each is a closed piece of the boundary, so its map to `N` is
-  -- proper.
+  -- proper. A regular value of `g` from Sard's theorem is regular for both ends.
   have : T2Space M₀ := .of_injective_continuous hi₀ hj₀.contMDiff.continuous
   have : T2Space M₁ := .of_injective_continuous hi₁ hj₁.contMDiff.continuous
-  have hp₀ : IsProperMap (g ∘ j₀) := hgp.comp (hj₀.isLocalHomeomorph.isClosedEmbedding_of_injective
-    hi₀ (hc.eq_compl ▸ hj₁.isOpen_range.isClosed_compl)).isProperMap
-  have hp₁ : IsProperMap (g ∘ j₁) := hgp.comp (hj₁.isLocalHomeomorph.isClosedEmbedding_of_injective
-    hi₁ (hc.symm.eq_compl ▸ hj₀.isOpen_range.isClosed_compl)).isProperMap
-  -- Sard's theorem gives a regular value of `g`, which is regular for both ends.
+  have hc₀ := hj₀.isLocalHomeomorph.isClosedEmbedding_of_isCompl_range hi₀ hj₁.isLocalHomeomorph hc
+  have hc₁ := hj₁.isLocalHomeomorph.isClosedEmbedding_of_isCompl_range hi₁ hj₀.isLocalHomeomorph
+    hc.symm
   have := hgp.sigmaCompactSpace
   have hcard : Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) = Module.finrank ℝ E' := by
     simp [← o'.card_eq]
   obtain ⟨y, hy⟩ := (dense_isRegularValue hcard (hg.mdifferentiable (by simp))).nonempty
-  have hy₀ : IsRegularValue I₀ J (g ∘ j₀) y := isRegularValue_iff.mpr fun x hx ↦
-    ((hj₀ x).isRegularPoint_comp_iff (by simp)).mpr (hy.isRegularPoint hx)
-  have hy₁ : IsRegularValue I₁ J (g ∘ j₁) y := isRegularValue_iff.mpr fun x hx ↦
-    ((hj₁ x).isRegularPoint_comp_iff (by simp)).mpr (hy.isRegularPoint hx)
   have hadd := degreeAtRegularValue_eq_add_of_isCompl_range (boundaryOrientation o) (-o₀) o₁ o'
     hj₀ hj₁ (by simp) hi₀ hi₁ hc (fun x ↦ (isOrientationPreservingAt_neg_left _ _ _ _).mpr (ho₀ x))
     ho₁ (hy.finite_preimage_of_isProperMap hcard hgp)
   rw [degreeAtRegularValue_boundaryOrientation_comp_subtypeVal_eq_zero o o' hF hFp hy,
     degreeAtRegularValue_neg_left] at hadd
-  rw [degree_eq_degreeAtRegularValue o₀ o' (hg.comp hj₀.contMDiff) hp₀ hy₀,
-    degree_eq_degreeAtRegularValue o₁ o' (hg.comp hj₁.contMDiff) hp₁ hy₁]
+  rw [degree_eq_degreeAtRegularValue o₀ o' (hg.comp hj₀.contMDiff) (hgp.comp hc₀.isProperMap)
+      (hj₀.isRegularValue_comp (by simp) hy),
+    degree_eq_degreeAtRegularValue o₁ o' (hg.comp hj₁.contMDiff) (hgp.comp hc₁.isProperMap)
+      (hj₁.isRegularValue_comp (by simp) hy)]
   linarith
 
 end TauCeti
