@@ -15,6 +15,7 @@ public import TauCeti.Topology.Sym.Disjoint
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Polynomial
+import Mathlib.Topology.Algebra.MvPolynomial
 
 /-!
 # The elementary symmetric chart is a homeomorphism
@@ -43,6 +44,8 @@ Both halves are elementary, but neither is formal:
   nontrivially normed field.
 * `Sym.norm_le_norm_coeffEquiv_ofFn_add_one`: Cauchy's bound on the symmetric power, that
   an ordered tuple is bounded by one more than the norm of its coefficient tuple.
+* `Sym.continuous_esymm`: the elementary symmetric functions of an unordered tuple depend
+  continuously on it, over any topological semiring.
 * `Sym.isProperMap_coeffEquiv_comp_ofFn`: consequently the coefficient map
   `(Fin n → K) → (Fin n → K)` is proper.
 * `Sym.coeffHomeomorph`: the **elementary symmetric chart** `Sym K n ≃ₜ (Fin n → K)`.
@@ -167,6 +170,23 @@ theorem analyticAt_coeffEquiv_ofFn (v₀ : Fin n → 𝕜) :
   exact TauCeti.Polynomial.analyticAt_coeff_prod_X_sub_C _ _ _
 
 end Analyticity
+
+/-- The elementary symmetric functions of an unordered tuple depend continuously on it: read on an
+ordered tuple `f`, the `k`-th one is the value at `f` of the elementary symmetric polynomial
+`MvPolynomial.esymm (Fin n) R k`. -/
+@[continuity, fun_prop]
+theorem continuous_esymm {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] {n : ℕ} (k : ℕ) :
+    Continuous fun s : Sym R n => (s : Multiset R).esymm k := by
+  rw [continuous_iff_comp_ofFn]
+  have h : (fun s : Sym R n => (s : Multiset R).esymm k) ∘ ofFn =
+      fun f : Fin n → R => MvPolynomial.eval f (MvPolynomial.esymm (Fin n) R k) := by
+    funext f
+    rw [Function.comp_apply, coe_ofFn, ← Fin.univ_val_map,
+      ← MvPolynomial.aeval_esymm_eq_multiset_esymm (Fin n) R k f]
+    rfl
+  rw [h]
+  exact MvPolynomial.continuous_eval _
 
 section Chart
 
