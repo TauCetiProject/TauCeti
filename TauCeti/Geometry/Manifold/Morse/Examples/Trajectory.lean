@@ -38,9 +38,9 @@ dropped from these statements.
   (`TauCeti.not_isContMDiffRiemannianBundle_singularLineMetric`). For this metric
   `grad f = λ⁻¹`, which is `x²` off `0` and `1` at `0`
   (`TauCeti.mgradient_id_singularLineMetric`). The trajectory of `-grad f` from `x₀ > 0` is
-  `t ↦ x₀ / (1 + x₀ t)` (`TauCeti.isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`). For
-  `x₀ = 1` it stays in the compact interval `[0, 1]` and converges to `0`, which is not a critical
-  point of `f` (`TauCeti.exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`).
+  `t ↦ x₀ / (1 + x₀ t)` (`TauCeti.isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`). It
+  stays in the compact interval `[0, x₀]` and converges to `0`, which is not a critical point of
+  `f` (`TauCeti.exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`).
 * **A lower bound without properness does not trap.** The function `f(x) = exp (-x)` is bounded
   below by `0` and is a Morse function (`TauCeti.isMorse_exp_neg_real`), vacuously, since it has
   no critical points (`TauCeti.criticalPoints_exp_neg_real`), but it is not proper
@@ -362,26 +362,27 @@ theorem isMIntegralCurveOn_neg_mgradient_id_singularLineMetric {x₀ : ℝ} (hx�
   exact hderiv.hasDerivWithinAt.congr_deriv (neg_mgradient_id_singularLineMetric_apply hne).symm
 
 /-- **The regularity of the metric cannot be dropped.** For the discontinuous metric
-`singularLineMetric`, a forward trajectory of `-grad f`, for `f(x) = x`, stays in the compact
-interval `[0, 1]` and converges to a point which is not a critical point of `f`. So, when the
-metric is not `C¹`, the limit of a convergent forward trajectory need not be critical (compare
+`singularLineMetric` and every `x₀ > 0`, a forward trajectory of `-grad f` from `x₀`, for
+`f(x) = x`, stays in the compact interval `[0, x₀]` and converges to a point which is not a critical
+point of `f`. The witness is `t ↦ x₀ / (1 + x₀ t)`, with limit `0`. So, when the metric is not
+`C¹`, the limit of a convergent forward trajectory need not be critical (compare
 `IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient`), and a trapped trajectory need
 not converge to a critical point (compare
 `TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient`). -/
-theorem exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric :
+theorem exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric {x₀ : ℝ} (hx₀ : 0 < x₀) :
     let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) := ⟨singularLineMetric⟩
-    ∃ γ : ℝ → ℝ, IsMIntegralCurveOn γ (-mgradient 𝓘(ℝ, ℝ) (id : ℝ → ℝ)) (Ici 0) ∧
-      MapsTo γ (Ici 0) (Icc 0 1) ∧
+    ∃ γ : ℝ → ℝ, γ 0 = x₀ ∧ IsMIntegralCurveOn γ (-mgradient 𝓘(ℝ, ℝ) (id : ℝ → ℝ)) (Ici 0) ∧
+      MapsTo γ (Ici 0) (Icc 0 x₀) ∧
         ∃ p ∉ criticalPoints 𝓘(ℝ, ℝ) (id : ℝ → ℝ), Tendsto γ atTop (𝓝 p) := by
   intro _
-  refine ⟨fun t ↦ 1 / (1 + 1 * t), isMIntegralCurveOn_neg_mgradient_id_singularLineMetric one_pos,
-    ?_, 0, by simp [criticalPoints_id_real], ?_⟩
+  refine ⟨fun t ↦ x₀ / (1 + x₀ * t), by simp,
+    isMIntegralCurveOn_neg_mgradient_id_singularLineMetric hx₀, ?_, 0,
+    by simp [criticalPoints_id_real], ?_⟩
   · intro t (ht : 0 ≤ t)
-    have hpos : 0 < 1 + 1 * t := by linarith
-    exact ⟨by positivity, (div_le_one hpos).2 (by linarith)⟩
-  · refine (tendsto_inv_atTop_zero.comp (tendsto_atTop_add_const_left atTop 1 tendsto_id)).congr
-      fun t ↦ ?_
-    simp
+    have hle : 1 ≤ 1 + x₀ * t := le_add_of_nonneg_right (mul_nonneg hx₀.le ht)
+    exact ⟨by positivity, div_le_self hx₀.le hle⟩
+  · exact tendsto_const_nhds.div_atTop
+      (tendsto_atTop_add_const_left atTop 1 (tendsto_id.const_mul_atTop hx₀))
 
 end Singular
 
