@@ -46,6 +46,10 @@ theorem algebraMap_surjective_of_eq_top {F : Subfield K} (hF : F = ⊤) :
     Function.Surjective (algebraMap (𝓞 F) (𝓞 K)) := by
   intro x
   have hx : (x : K) ∈ F := hF ▸ Subfield.mem_top _
-  exact ⟨⟨⟨x, hx⟩, (isIntegral_algebraMap_iff (A := F) (B := K)).mp x.isIntegral_coe⟩, rfl⟩
+  refine ⟨⟨⟨x, hx⟩, (isIntegral_algebraMap_iff (A := F) (B := K)).mp x.isIntegral_coe⟩, ?_⟩
+  -- The algebra map `𝓞 F → 𝓞 K` is `mapRingHom (algebraMap F K)`, and `algebraMap F K` is the
+  -- subfield inclusion, which sends `⟨x, hx⟩` to `x`.
+  ext
+  exact mapRingHom_apply (algebraMap F K) _
 
 end NumberField.RingOfIntegers
