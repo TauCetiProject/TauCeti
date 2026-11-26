@@ -21,9 +21,11 @@ additively as in the usual notation `[u]`:
 * the class of a block diagonal matrix is the sum of the classes of its blocks,
   `[diag(u, v)] = [u] + [v]`, which reduces to the contiguous block sum formula
   `TauCeti.AlgebraicK1.mk_blockSumGL` over `Fin`;
-* the class of a block triangular matrix with diagonal blocks `u` and `v` is `[u] + [v]`,
-  whatever its off-diagonal block, and a class is trivial exactly when `u ⊕ 1` is elementary for
-  an identity block of some size;
+* the class of a block matrix `fromBlocks u Y Z W` with invertible upper-left block `u` is
+  `[u] + [W - Z u⁻¹ Y]`, the Schur complement formula; in particular the class of a block
+  triangular matrix with diagonal blocks `u` and `v` is `[u] + [v]`, whatever its off-diagonal
+  block;
+* a class is trivial exactly when `u ⊕ 1` is elementary for an identity block of some size;
 * the class of an invertible diagonal matrix is the sum of the classes of its entries.
 
 It then computes `K₁` of the zero ring, which is trivial, and of a product of two rings,
@@ -49,6 +51,9 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
   `[diag(u, v)] = [u] + [v]`.
 * `TauCeti.AlgebraicK1.elementarySubgroup_le_ker_mkOfFintype`: elementary matrices have trivial
   class.
+* `TauCeti.AlgebraicK1.mkOfFintype_eq_mul_of_coe_eq_fromBlocks`: the Schur complement formula
+  `[g] = [u] + [W - Z u⁻¹ Y]` for an invertible block matrix `g = fromBlocks u Y Z W` with
+  invertible upper-left block `u`.
 * `TauCeti.AlgebraicK1.mkOfFintype_eq_mul_of_coe_eq_fromBlocks_zero₂₁`,
   `TauCeti.AlgebraicK1.mkOfFintype_eq_mul_of_coe_eq_fromBlocks_zero₁₂`: a block triangular matrix
   with invertible diagonal blocks `u` and `v` has class `[u] + [v]`.
@@ -205,25 +210,33 @@ theorem mkOfFintype_eq_one_iff {u : GL ι A} :
   · rw [← mkOfFintype_fromBlocksGL_one (κ := Fin k)]
     exact elementarySubgroup_le_ker_mkOfFintype hk
 
+/-- **The Schur complement formula**: if the upper-left block `u` of an invertible block matrix
+`fromBlocks u Y Z W` is invertible, its class is `[u] [v]`, where `v` is the invertible Schur
+complement `W - Z u⁻¹ Y` (invertible by
+`Matrix.GeneralLinearGroup.isUnit_sub_mul_mul_of_coe_eq_fromBlocks`). -/
+theorem mkOfFintype_eq_mul_of_coe_eq_fromBlocks {g : GL (ι ⊕ κ) A} {u : GL ι A} {v : GL κ A}
+    {Y : Matrix ι κ A} {Z : Matrix κ ι A} {W : Matrix κ κ A}
+    (hg : (g : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = fromBlocks u Y Z W)
+    (hv : (v : Matrix κ κ A) = W - Z * (↑u⁻¹ : Matrix ι ι A) * Y) :
+    mkOfFintype A (ι ⊕ κ) g = mkOfFintype A ι u * mkOfFintype A κ v := by
+  rw [GeneralLinearGroup.eq_lowerBlockGL_mul_fromBlocksGL_mul_upperBlockGL hg hv, map_mul,
+    map_mul, elementarySubgroup_le_ker_mkOfFintype (lowerBlockGL_mem_elementarySubgroup _),
+    elementarySubgroup_le_ker_mkOfFintype (upperBlockGL_mem_elementarySubgroup _),
+    mkOfFintype_fromBlocksGL, one_mul, mul_one]
+
 /-- A block upper triangular matrix with invertible diagonal blocks `u` and `v` has class
 `[u] [v]`, whatever its off-diagonal block. -/
 theorem mkOfFintype_eq_mul_of_coe_eq_fromBlocks_zero₂₁ {g : GL (ι ⊕ κ) A} {u : GL ι A}
     {v : GL κ A} {X : Matrix ι κ A} (hg : (g : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = fromBlocks u X 0 v) :
-    mkOfFintype A (ι ⊕ κ) g = mkOfFintype A ι u * mkOfFintype A κ v := by
-  have hfac : g = fromBlocksGL (u, v) * upperBlockGL ((↑u⁻¹ : Matrix ι ι A) * X) :=
-    Units.ext (by simp [hg, fromBlocks_multiply, ← Matrix.mul_assoc])
-  rw [hfac, map_mul, mkOfFintype_fromBlocksGL,
-    elementarySubgroup_le_ker_mkOfFintype (upperBlockGL_mem_elementarySubgroup _), mul_one]
+    mkOfFintype A (ι ⊕ κ) g = mkOfFintype A ι u * mkOfFintype A κ v :=
+  mkOfFintype_eq_mul_of_coe_eq_fromBlocks hg (by simp)
 
 /-- A block lower triangular matrix with invertible diagonal blocks `u` and `v` has class
 `[u] [v]`, whatever its off-diagonal block. -/
 theorem mkOfFintype_eq_mul_of_coe_eq_fromBlocks_zero₁₂ {g : GL (ι ⊕ κ) A} {u : GL ι A}
     {v : GL κ A} {Y : Matrix κ ι A} (hg : (g : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = fromBlocks u 0 Y v) :
-    mkOfFintype A (ι ⊕ κ) g = mkOfFintype A ι u * mkOfFintype A κ v := by
-  have hfac : g = fromBlocksGL (u, v) * lowerBlockGL ((↑v⁻¹ : Matrix κ κ A) * Y) :=
-    Units.ext (by simp [hg, fromBlocks_multiply, ← Matrix.mul_assoc])
-  rw [hfac, map_mul, mkOfFintype_fromBlocksGL,
-    elementarySubgroup_le_ker_mkOfFintype (lowerBlockGL_mem_elementarySubgroup _), mul_one]
+    mkOfFintype A (ι ⊕ κ) g = mkOfFintype A ι u * mkOfFintype A κ v :=
+  mkOfFintype_eq_mul_of_coe_eq_fromBlocks hg (by simp)
 
 /-! ## Diagonal matrices and the determinant -/
 
