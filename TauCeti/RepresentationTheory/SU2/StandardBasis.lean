@@ -197,16 +197,6 @@ theorem trace_toMatrix_suTwoEquiv_mul (x y : Fin 3 → ℝ) :
 theorem SU2.finrank_lieAlgebra : finrank ℝ SU2.lieAlgebra = 3 := by
   rw [← suTwoEquiv.finrank_eq, finrank_fin_fun]
 
-/-- **`𝔰𝔲(2)` is not abelian**: `⁅-iσ₂/2, -iσ₃/2⁆ = -iσ₁/2`, the cross product `e₂ ⨯₃ e₃ = e₁` in
-the basis `-iσₐ/2`. -/
-theorem SU2.not_isLieAbelian_lieAlgebra : ¬IsLieAbelian SU2.lieAlgebra := by
-  intro h
-  have h₁ : suTwoEquiv ((Pi.single 1 1 : Fin 3 → ℝ) ⨯₃ Pi.single 2 1) = 0 := by
-    rw [← lie_suTwoEquiv]
-    exact trivial_lie_zero _ _ _ _
-  have h₀ := congrFun ((map_eq_zero_iff _ suTwoEquiv.injective).mp h₁) 0
-  simp [cross_apply] at h₀
-
 /-! ### The isomorphism with `so(3)` -/
 
 /-- The isomorphism of real Lie algebras `𝔰𝔲(2) ≃ so(3)` sending `-iσₐ/2` to the infinitesimal
@@ -224,6 +214,11 @@ def suTwoLieEquivSoThree : SU2.lieAlgebra ≃ₗ⁅ℝ⁆ LieAlgebra.Orthogonal.
 theorem suTwoLieEquivSoThree_suTwoEquiv (x : Fin 3 → ℝ) :
     suTwoLieEquivSoThree (suTwoEquiv x) = soThreeEquiv ℝ x :=
   congrArg (soThreeEquiv ℝ) (suTwoEquiv.symm_apply_apply x)
+
+/-- **`𝔰𝔲(2)` is not abelian**, since `so(3)` is not (`TauCeti.not_isLieAbelian_so_three`): in the
+basis `-iσₐ/2`, `⁅-iσ₂/2, -iσ₃/2⁆ = -iσ₁/2`. -/
+theorem SU2.not_isLieAbelian_lieAlgebra : ¬IsLieAbelian SU2.lieAlgebra := fun h ↦
+  not_isLieAbelian_so_three (suTwoLieEquivSoThree.symm.injective.isLieAbelian h)
 
 /-! ### The dual of `𝔰𝔲(2)` and the coadjoint action -/
 

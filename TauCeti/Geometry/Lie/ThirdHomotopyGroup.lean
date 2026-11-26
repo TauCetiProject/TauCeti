@@ -84,16 +84,6 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensiona
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   [CompactSpace G]
 
-/-- In the Lie algebra of compact `Spin(3)`, some bracket is nonzero. -/
-private theorem exists_lie_ne_zero_realSpinThree :
-    ∃ y z : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel 3) (spinGroup (realCliffordForm 3 0)),
-      ⁅y, z⁆ ≠ 0 := by
-  let e := realSpinLieEquivSo 3
-  refine ⟨e.symm (soThreeEquiv ℝ (Pi.single 1 1)), e.symm (soThreeEquiv ℝ (Pi.single 2 1)), ?_⟩
-  rw [← LieEquiv.map_lie, lie_soThreeEquiv]
-  refine e.symm.toLinearEquiv.map_ne_zero_iff.2 ((soThreeEquiv ℝ).map_ne_zero_iff.2 fun h ↦ ?_)
-  simpa [cross_apply] using congrFun h 0
-
 /-- **A compact Lie group with non-abelian Lie algebra receives an essential homomorphism from
 `Spin(3)`.** It is a smooth homomorphism with injective differential which is not
 null-homotopic. -/
@@ -115,13 +105,12 @@ theorem exists_contMDiffMonoidMorphism_realSpinThree_not_nullhomotopic
   have hφ : Function.Injective (lieMap φ) := by
     rw [LieHom.lieMap_integrate]
     exact hf.comp (realSpinLieEquivSo 3).injective
-  refine ⟨φ, hφ, φ.not_nullhomotopic_of_injective_lieMap ?_ (fun h ↦ ?_) hφ⟩
-  · rw [← finrank_leftInvariantDerivation_eq_modelVectorSpace
-      (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, realSpinLieModel 3)) (n := ∞) (by simp)
-        (1 : spinGroup (realCliffordForm 3 0))),
-      (realSpinLieEquivSo 3).toLinearEquiv.finrank_eq, finrank_so_three]
-  · obtain ⟨y, z, hyz⟩ := exists_lie_ne_zero_realSpinThree
-    exact hyz (trivial_lie_zero _ _ y z)
+  refine ⟨φ, hφ, φ.not_nullhomotopic_of_injective_lieMap ?_
+    (fun h ↦ not_isLieAbelian_so_three ((realSpinLieEquivSo 3).symm.injective.isLieAbelian h)) hφ⟩
+  rw [← finrank_leftInvariantDerivation_eq_modelVectorSpace
+    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, realSpinLieModel 3)) (n := ∞) (by simp)
+      (1 : spinGroup (realCliffordForm 3 0))),
+    (realSpinLieEquivSo 3).toLinearEquiv.finrank_eq, finrank_so_three]
 
 /-- **A compact Lie group with non-abelian Lie algebra has nontrivial third homotopy group**, at
 every base point. The nontrivial class is that of an essential homomorphism `Spin(3) → G`
