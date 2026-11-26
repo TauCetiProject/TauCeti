@@ -68,13 +68,16 @@ which, when `φ v ≠ 0` and `φ w ≠ 0`, sends `[1 : 0]` to `[φ(v) w] = [w]`,
   injective linear maps satisfying the conditions differ by a nonzero scalar, which does not
   change the induced map (`Projectivization.map_smul_eq_map`).
 
-The hypotheses cannot be dropped. If `p` lies on `H` but `q` does not, `φ` vanishes at the marked
-points `0` and `1`, hence at the difference `A [1 : 0]` of their representatives, which lies on the
-line `K w` with `φ w ≠ 0`; so `A [1 : 0] = 0` and no marked line exists
+The hypotheses cannot be dropped, except for one case over the field with two elements. If `p`
+lies on `H` but `q` does not, `φ` vanishes at the marked points `0` and `1`, hence at the
+difference `A [1 : 0]` of their representatives, which lies on the line `K w` with `φ w ≠ 0`; so
+`A [1 : 0] = 0` and no marked line exists
 (`TauCeti.not_exists_markedLine_of_mem_projectivization`). If `q` lies on `H` but `p` does not, the
 line through `p` and `q` meets `H` only at `q`, so the marked points `0` and `∞` would both be sent
 to `q`, which an injective `A` cannot do. If `p` and `q` both lie on `H`, so does the whole line
-through them, and each of its points other than `p` and `q` can be the marked point `0`. If
+through them, and each of its points other than `p` and `q` can be the marked point `0`. When `K`
+has more than two elements there are at least two such points, so uniqueness fails; over the field
+with two elements the line has exactly three points, and the marked line is still unique. If
 `p = q`, an injective `A` cannot send the distinct points `[1 : 1]` and `[1 : 0]` to the same
 point.
 
