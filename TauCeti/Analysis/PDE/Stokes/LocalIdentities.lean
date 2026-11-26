@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Stokes.Stress
 public import Mathlib.Analysis.Calculus.FDeriv.Pi
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
-import TauCeti.LinearAlgebra.Matrix.Trace.TransposeMul
 
 /-!
 # Local work and reciprocity identities of Stokes flow
@@ -52,9 +51,11 @@ differentiable at the point (`DifferentiableAt ℝ (fderiv ℝ u) x`), and the p
 differentiable there. Since the stress is symmetric, `σ v = σᵀ v`, so the work flux is the
 flux `σᵀ v` whose normal component `v · σ n` is the work of the traction.
 
-Finally, `TauCeti.Stokes.contDiffAt_stress_apply` and `TauCeti.Stokes.contDiffAt_stress_mulVec`
-give the regularity of the stress and of the work flux from `C^{k+1}` velocities and `C^k`
-pressures, as needed to integrate these identities.
+Finally, `TauCeti.Stokes.contDiffAt_stress_apply`, `TauCeti.Stokes.contDiffAt_stress_mulVec` and
+`TauCeti.Stokes.contDiffAt_reciprocalFlux` give the regularity of the stress, the work flux and the
+reciprocal flux from `C^{k+1}` velocities and `C^k` pressures, as needed to integrate these
+identities; `TauCeti.Stokes.differentiableAt_stress_mulVec` and
+`TauCeti.Stokes.differentiableAt_reciprocalFlux` are their pointwise differentiable counterparts.
 
 ## References
 
@@ -113,6 +114,27 @@ theorem _root_.Filter.EventuallyEq.velocityGradient_eq {u v : (ι → ℝ) → �
 theorem _root_.Filter.EventuallyEq.velocityGradient {u v : (ι → ℝ) → ι → ℝ} {x : ι → ℝ}
     (h : u =ᶠ[𝓝 x] v) : velocityGradient u =ᶠ[𝓝 x] velocityGradient v :=
   h.eventuallyEq_nhds.mono fun _ hy => hy.velocityGradient_eq
+
+/-- The velocity gradient is additive on fields differentiable at the point. -/
+theorem velocityGradient_add {u v : (ι → ℝ) → ι → ℝ} {x : ι → ℝ} (hu : DifferentiableAt ℝ u x)
+    (hv : DifferentiableAt ℝ v x) :
+    velocityGradient (u + v) x = velocityGradient u x + velocityGradient v x := by
+  rw [velocityGradient, velocityGradient, velocityGradient, fderiv_add hu hv,
+    ContinuousLinearMap.toLinearMap_add, map_add]
+
+/-- The velocity gradient commutes with subtraction of fields differentiable at the point. -/
+theorem velocityGradient_sub {u v : (ι → ℝ) → ι → ℝ} {x : ι → ℝ} (hu : DifferentiableAt ℝ u x)
+    (hv : DifferentiableAt ℝ v x) :
+    velocityGradient (u - v) x = velocityGradient u x - velocityGradient v x := by
+  rw [velocityGradient, velocityGradient, velocityGradient, fderiv_sub hu hv,
+    ContinuousLinearMap.toLinearMap_sub, map_sub]
+
+/-- The velocity gradient commutes with scaling a field differentiable at the point. -/
+theorem velocityGradient_const_smul {u : (ι → ℝ) → ι → ℝ} {x : ι → ℝ}
+    (hu : DifferentiableAt ℝ u x) (c : ℝ) :
+    velocityGradient (c • u) x = c • velocityGradient u x := by
+  rw [velocityGradient, velocityGradient, fderiv_const_smul hu c,
+    ContinuousLinearMap.toLinearMap_smul, map_smul]
 
 /-- The Newtonian stress field `σ(u,p)(x) = -p(x) I + μ (Du(x) + Du(x)ᵀ)` of a velocity `u` and a
 pressure `p` with constant viscosity `μ`. -/
@@ -214,6 +236,14 @@ theorem contDiffAt_stress_mulVec (μ : ℝ) {k : WithTop ℕ∞} {u v : (ι → 
   exact ContDiffAt.sum fun j _ =>
     (contDiffAt_stress_apply μ hu hp i j).mul (contDiffAt_pi.1 hv j)
 
+/-- The work flux `σ(u,p) v` is differentiable at `x` when the velocity `u` is twice
+differentiable and the pressure `p` and the velocity `v` are differentiable at `x`. -/
+theorem differentiableAt_stress_mulVec (μ : ℝ) {u v : (ι → ℝ) → ι → ℝ} {p : (ι → ℝ) → ℝ}
+    {x : ι → ℝ} (hu : DifferentiableAt ℝ (fderiv ℝ u) x) (hp : DifferentiableAt ℝ p x)
+    (hv : DifferentiableAt ℝ v x) : DifferentiableAt ℝ (fun y => stress μ u p y *ᵥ v y) x := by
+  simpa only [mulVecCLM_apply] using
+    (differentiableAt_mulVecCLM (differentiableAt_stress_apply μ hu hp)).clm_apply hv
+
 /-! ### The product rule for the divergence of a matrix times a vector -/
 
 /-- The divergence of `A v`, for a differentiable matrix field `A` and vector field `v`, is
@@ -225,9 +255,7 @@ theorem trace_velocityGradient_mulVec {A : (ι → ℝ) → Matrix ι ι ℝ} {v
       (A x * velocityGradient v x).trace + v x ⬝ᵥ stressDivergence (fun y => (A y)ᵀ) x := by
   have hv' : ∀ j, DifferentiableAt ℝ (fun y => v y j) x := differentiableAt_pi.1 hv
   have hAv : DifferentiableAt ℝ (fun y => A y *ᵥ v y) x := by
-    refine differentiableAt_pi.2 fun i => ?_
-    simp only [mulVec, dotProduct]
-    exact DifferentiableAt.fun_sum fun j _ => (hA i j).mul (hv' j)
+    simpa only [mulVecCLM_apply] using (differentiableAt_mulVecCLM hA).clm_apply hv
   have hDv : Matrix.of (fun j i => fderiv ℝ (fun y => v y j) x (Pi.single i 1)) =
       velocityGradient v x := by
     ext j i
@@ -324,6 +352,34 @@ theorem reciprocalFlux_def (μ : ℝ) (u : (ι → ℝ) → ι → ℝ) (p : (ι
     (v : (ι → ℝ) → ι → ℝ) (q : (ι → ℝ) → ℝ) (x : ι → ℝ) :
     reciprocalFlux μ u p v q x = stress μ u p x *ᵥ v x - stress μ v q x *ᵥ u x := (rfl)
 
+/-- The reciprocal flux is the difference of the work fluxes `σ(u,p) v` and `σ(v,q) u`, as
+functions. -/
+theorem reciprocalFlux_eq_sub (μ : ℝ) (u : (ι → ℝ) → ι → ℝ) (p : (ι → ℝ) → ℝ)
+    (v : (ι → ℝ) → ι → ℝ) (q : (ι → ℝ) → ℝ) :
+    reciprocalFlux μ u p v q =
+      (fun y => stress μ u p y *ᵥ v y) - fun y => stress μ v q y *ᵥ u y :=
+  funext fun y => by rw [reciprocalFlux_def, Pi.sub_apply]
+
+/-- The reciprocal flux is differentiable at `x` when the velocities are twice differentiable and
+the pressures are differentiable at `x`. -/
+theorem differentiableAt_reciprocalFlux (μ : ℝ) {u v : (ι → ℝ) → ι → ℝ} {p q : (ι → ℝ) → ℝ}
+    {x : ι → ℝ} (hu₁ : DifferentiableAt ℝ u x) (hv₁ : DifferentiableAt ℝ v x)
+    (hu : DifferentiableAt ℝ (fderiv ℝ u) x) (hv : DifferentiableAt ℝ (fderiv ℝ v) x)
+    (hp : DifferentiableAt ℝ p x) (hq : DifferentiableAt ℝ q x) :
+    DifferentiableAt ℝ (reciprocalFlux μ u p v q) x := by
+  rw [reciprocalFlux_eq_sub]
+  exact (differentiableAt_stress_mulVec μ hu hp hv₁).sub
+    (differentiableAt_stress_mulVec μ hv hq hu₁)
+
+/-- The reciprocal flux of `C^{k+1}` velocities and `C^k` pressures is `C^k`. -/
+theorem contDiffAt_reciprocalFlux (μ : ℝ) {k : WithTop ℕ∞} {u v : (ι → ℝ) → ι → ℝ}
+    {p q : (ι → ℝ) → ℝ} {x : ι → ℝ} (hu : ContDiffAt ℝ (k + 1) u x)
+    (hv : ContDiffAt ℝ (k + 1) v x) (hp : ContDiffAt ℝ k p x) (hq : ContDiffAt ℝ k q x) :
+    ContDiffAt ℝ k (reciprocalFlux μ u p v q) x := by
+  rw [reciprocalFlux_eq_sub]
+  exact (contDiffAt_stress_mulVec μ hu hp (hv.of_le le_self_add)).sub
+    (contDiffAt_stress_mulVec μ hv hq (hu.of_le le_self_add))
+
 /-- The normal component of the reciprocal flux is the difference of the works
 `v · σ(u,p) n - u · σ(v,q) n` of the two tractions on a surface with normal `n`. -/
 theorem reciprocalFlux_dotProduct (μ : ℝ) (u : (ι → ℝ) → ι → ℝ) (p : (ι → ℝ) → ℝ)
@@ -344,25 +400,15 @@ theorem trace_velocityGradient_reciprocalFlux (μ : ℝ) {u v : (ι → ℝ) →
     (velocityGradient (reciprocalFlux μ u p v q) x).trace =
       v x ⬝ᵥ stressDivergence (stress μ u p) x - u x ⬝ᵥ stressDivergence (stress μ v q) x -
         p x * (velocityGradient v x).trace + q x * (velocityGradient u x).trace := by
-  have hflux {u v : (ι → ℝ) → ι → ℝ} {p : (ι → ℝ) → ℝ} (hu : DifferentiableAt ℝ (fderiv ℝ u) x)
-      (hp : DifferentiableAt ℝ p x) (hv : DifferentiableAt ℝ v x) :
-      DifferentiableAt ℝ (fun y => stress μ u p y *ᵥ v y) x := by
-    refine differentiableAt_pi.2 fun i => ?_
-    simp only [mulVec, dotProduct]
-    exact DifferentiableAt.fun_sum fun j _ =>
-      (differentiableAt_stress_apply μ hu hp i j).mul (differentiableAt_pi.1 hv j)
-  have hJ : velocityGradient (reciprocalFlux μ u p v q) x =
-      velocityGradient (fun y => stress μ u p y *ᵥ v y) x -
-        velocityGradient (fun y => stress μ v q y *ᵥ u y) x := by
-    rw [velocityGradient, velocityGradient, velocityGradient, ← map_sub]
-    congr 1
-    exact congrArg _ (fderiv_sub (hflux hu hp hv₁) (hflux hv hq hu₁))
-  rw [hJ, trace_sub, trace_velocityGradient_stress_mulVec μ hu hp hv₁,
-    trace_velocityGradient_stress_mulVec μ hv hq hu₁]
-  have hsym := trace_transpose_mul_comm (coefficientSymmetricPart (velocityGradient u x))
-    (coefficientSymmetricPart (velocityGradient v x))
-  rw [hsym]
-  ring
+  rw [reciprocalFlux_eq_sub, velocityGradient_sub (differentiableAt_stress_mulVec μ hu hp hv₁)
+      (differentiableAt_stress_mulVec μ hv hq hu₁), trace_sub,
+    trace_velocityGradient_mulVec (differentiableAt_stress_apply μ hu hp) hv₁,
+    trace_velocityGradient_mulVec (differentiableAt_stress_apply μ hv hq) hu₁]
+  simp only [transpose_stress]
+  rw [← transpose_stress μ u p x, ← transpose_stress μ v q x, stress_def, stress_def]
+  have h := trace_transpose_newtonianStress_mul_sub μ (p x) (q x) (velocityGradient u x)
+    (velocityGradient v x)
+  linear_combination h
 
 /-- **Local reciprocity.** For incompressible solutions `(u,p)` with force `f` and `(v,q)` with
 force `g` at `x`, of the Stokes equations with the same viscosity `μ`, the reciprocal flux
