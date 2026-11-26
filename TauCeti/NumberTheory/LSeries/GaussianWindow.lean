@@ -62,8 +62,8 @@ private theorem norm_exp_gaussianWindow_le_one {X U : ℝ} {z : ℂ}
 
 private theorem eventually_gaussian_center_gt (A : ℕ) :
     ∀ᶠ X : ℝ in atTop, 3 * X ^ (A + A) < Real.exp (X / 4 - 2) := by
-  have h := (isLittleO_pow_exp_pos_mul_atTop (A + A) (b := 1 / 4) (by norm_num)).bound
-    (show 0 < (6 * Real.exp 2)⁻¹ by positivity)
+  have hε : 0 < (6 * Real.exp 2)⁻¹ := by positivity
+  have h := (isLittleO_pow_exp_pos_mul_atTop (A + A) (b := 1 / 4) (by norm_num)).bound hε
   filter_upwards [h, eventually_ge_atTop (0 : ℝ)] with X hX hX₀
   rw [Real.norm_eq_abs, abs_of_nonneg (pow_nonneg hX₀ _), Real.norm_eq_abs,
     abs_of_pos (Real.exp_pos _)] at hX
@@ -112,17 +112,18 @@ private theorem norm_gaussianWindow_boundary {X U : ℝ} {z F : ℂ} {S M : Fins
 
 /-- A Gaussian boundary estimate forces a prime of the prescribed residue class into the
 logarithmic window. Use disjoint finite index sets `S` (the initial part of the series) and `M`
-(the middle part, with log indices in the window). The holomorphic numerator `F` agrees on the
-right arc `Re z > 1 / U` with `z` times the Dirichlet series at `1 + z`, and at the center it
-has the residue value `1 / φ(q)`. On the left arc require bounds on `F` and the Gaussian-weighted
-initial part; on the right arc require a bound on the weighted tail outside `S ∪ M` and that the
-weighted middle sum would be bounded by `1` if `M` contained no primes of the prescribed class.
+(the middle part, with log indices in the window). The numerator `F` is holomorphic inside the
+disk and continuous on its closure. On the right arc `Re z > 1 / U` it agrees with `z` times the
+Dirichlet series at `1 + z`, and at the center it has the residue value `1 / φ(q)`. On the left
+arc require bounds on `F` and the Gaussian-weighted initial part; on the right arc require a
+bound on the weighted tail outside `S ∪ M` and that the weighted middle sum would be bounded by
+`1` if `M` contained no primes of the prescribed class.
 The threshold for `X` depends only on `A`. -/
 theorem eventually_exists_prime_log_mem_Icc_of_gaussian_bounds (A : ℕ) :
     ∀ᶠ X : ℝ in atTop, ∀ {U : ℝ} {q : ℕ}, q ≠ 0 → X ^ 2 ≤ U → U ≤ X ^ A →
       (q.totient : ℝ) ≤ X ^ A → ∀ (a : ZMod q) (S M : Finset ℕ), Disjoint S M →
       (∀ n ∈ M, Real.log n ∈ Icc U (U + X ^ 2)) →
-      ∀ (F : ℂ → ℂ), DifferentiableOn ℂ F (closedBall 0 X⁻¹) →
+      ∀ (F : ℂ → ℂ), DiffContOnCl ℂ F (ball 0 X⁻¹) →
       F 0 = (q.totient : ℂ)⁻¹ →
       let G : ℂ → ℂ := fun z ↦ Complex.exp ((U : ℂ) * z + (X : ℂ) / 4 * (1 + X * z) ^ 2 - 2)
       let t : ℂ → ℕ → ℂ := fun z ↦
@@ -144,8 +145,8 @@ theorem eventually_exists_prime_log_mem_Icc_of_gaussian_bounds (A : ℕ) :
   have hshift : Differentiable ℂ (fun z : ℂ ↦ 1 + z) := by fun_prop
   have hP : Differentiable ℂ (fun z ↦ ∑ n ∈ S, t z n) :=
     (_root_.LSeries.differentiable_sum_term _ S).comp hshift
-  have hH : DifferentiableOn ℂ H (closedBall 0 X⁻¹) :=
-    hG.differentiableOn.mul (hF.sub (differentiableOn_id.mul hP.differentiableOn))
+  have hH : DiffContOnCl ℂ H (ball 0 X⁻¹) :=
+    hG.diffContOnCl.smul (hF.sub (differentiable_id.mul hP).diffContOnCl)
   by_contra! hno
   have hMfree (n : ℕ) (hn : n ∈ M) : ¬ (n.Prime ∧ (n : ZMod q) = a) :=
     fun h ↦ hno n h.1 h.2 (hM n hn)
@@ -155,11 +156,9 @@ theorem eventually_exists_prime_log_mem_Icc_of_gaussian_bounds (A : ℕ) :
     exact norm_gaussianWindow_boundary hX.le hU hzX hSM
       (fun hr ↦ ⟨hLeft z hzX hr, hInitial z hzX hr⟩)
       (fun hr ↦ ⟨hSeries z hzX hr, hMiddle hMfree z hzX hr, hTail z hzX hr⟩)
-  have hmax := Complex.norm_le_of_forall_mem_frontier_norm_le
-    (isBounded_closedBall (x := (0 : ℂ)) (r := X⁻¹))
-    (isClosed_closedBall.diffContOnCl_iff.mpr hH)
-    (by simpa only [frontier_closedBall _ hXinv.ne'] using hb)
-    (subset_closure (mem_closedBall_self hXinv.le))
+  have hmax := Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball hH
+    (by simpa only [frontier_ball _ hXinv.ne'] using hb)
+    (subset_closure (mem_ball_self hXinv))
   have hval : ‖H 0‖ = Real.exp (X / 4 - 2) * (q.totient : ℝ)⁻¹ := by
     simp [H, G, hF₀, Complex.norm_exp]
   rw [hval] at hmax
