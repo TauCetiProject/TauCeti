@@ -41,6 +41,17 @@ namespace CategoryTheory.NatTrans
 
 variable {C D : Type u} [Category.{v} C] [Category.{v} D] {F G : C ⥤ D}
 
+/-- On a simplex `(x, s)` of `N C ⊗ Δ[1]` with `N C`-coordinate `y` and whose `[1]`-coordinate is
+constant at `b`, as on the ends `N C ⊗ {0}` and `N C ⊗ {1}` of the cylinder, the string of `D`
+assigned by the homotopy induced by `η` is the image of `y` under the end `F` or `G` at `b`. -/
+private lemma prod'_comp_uncurry_mk₁_of_asOrderHom_eq (η : F ⟶ G) {m : SimplexCategoryᵒᵖ}
+    (x : (nerve C ⊗ Δ[1] : SSet.{max u v}).obj m) {y : (nerve C).obj m} (b : Fin 2)
+    (hx : x.1 = y) (hb : ∀ k, stdSimplex.asOrderHom x.2 k = b) :
+    (stdSimplex.asOrderHom x.2).monotone.functor.prod' x.1 ⋙
+      Functor.uncurry.obj (ComposableArrows.mk₁ η) = y ⋙ (ComposableArrows.mk₁ η).obj b := by
+  rw [stdSimplex.asOrderHom_monotone_functor_eq_const _ b hb, ← hx]
+  exact Functor.const_obj_prod'_comp_uncurry_obj _ b x.1
+
 /-- The simplicial homotopy from `nerveMap F` to `nerveMap G` induced by a natural transformation
 `η : F ⟶ G`: the nerve of the functor `[1] × C ⥤ D` given by `η`, precomposed with the
 identification of `N C ⊗ Δ[1]` with the nerve of `[1] × C`. -/
@@ -50,17 +61,13 @@ noncomputable def nerveHomotopy (η : F ⟶ G) : SSet.Homotopy (nerveMap F) (ner
         Functor.uncurry.obj (ComposableArrows.mk₁ η)
       naturality _ _ _ := rfl }
     (by
-      refine NatTrans.ext (funext fun _ ↦ ConcreteCategory.hom_ext _ _ fun x ↦ ?_)
-      -- On `N C ⊗ {0}` the `[1]`-coordinate of every simplex is constant at `0`.
-      change (stdSimplex.asOrderHom (ι₀.app _ x).2).monotone.functor.prod' x ⋙ _ = _
-      rw [stdSimplex.asOrderHom_monotone_functor_eq_const _ 0 fun _ ↦ rfl]
-      exact Functor.const_obj_prod'_comp_uncurry_obj _ 0 x)
+      refine NatTrans.ext (funext fun ⟨⟨n⟩⟩ ↦ ConcreteCategory.hom_ext _ _ fun x ↦ ?_)
+      rw [NatTrans.comp_app, ConcreteCategory.comp_apply]
+      exact prod'_comp_uncurry_mk₁_of_asOrderHom_eq η _ 0 (ι₀_app_fst x) (ι₀_app_snd_apply x))
     (by
-      refine NatTrans.ext (funext fun _ ↦ ConcreteCategory.hom_ext _ _ fun x ↦ ?_)
-      -- On `N C ⊗ {1}` the `[1]`-coordinate of every simplex is constant at `1`.
-      change (stdSimplex.asOrderHom (ι₁.app _ x).2).monotone.functor.prod' x ⋙ _ = _
-      rw [stdSimplex.asOrderHom_monotone_functor_eq_const _ 1 fun _ ↦ rfl]
-      exact Functor.const_obj_prod'_comp_uncurry_obj _ 1 x)
+      refine NatTrans.ext (funext fun ⟨⟨n⟩⟩ ↦ ConcreteCategory.hom_ext _ _ fun x ↦ ?_)
+      rw [NatTrans.comp_app, ConcreteCategory.comp_apply]
+      exact prod'_comp_uncurry_mk₁_of_asOrderHom_eq η _ 1 (ι₁_app_fst x) (ι₁_app_snd_apply x))
 
 /-- The homotopy induced by `η` sends an `n`-simplex `(x, s)` of `N C ⊗ Δ[1]` to the string of
 composable arrows of `D` obtained from the string `(s, x)` of `[1] × C` by the functor
