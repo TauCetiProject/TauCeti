@@ -48,7 +48,7 @@ theorem apply_ne_one_iff_of_mul_self_eq_one {G K : Type*} [Monoid G] [CommRing K
 
 /-- The mean of a linear character off the kernel of a nontrivial quadratic character `q`.
 Only the trivial character and `q` have nonzero mean there. -/
-theorem expect_apply_off_ker_of_mul_self_eq_one {G K : Type*} [Group G] [Fintype G]
+theorem expect_filter_apply_ne_one_apply_of_mul_self_eq_one {G K : Type*} [Group G] [Fintype G]
     [Field K] [CharZero K] (q χ : G →* Kˣ) [DecidablePred fun g ↦ q g ≠ 1]
     [Decidable (χ = 1)] [Decidable (χ = q)] (hq : q * q = 1) (hq₁ : q ≠ 1) :
     (𝔼 g with q g ≠ 1, (χ g : K)) = if χ = 1 then 1 else if χ = q then -1 else 0 := by

@@ -32,7 +32,7 @@ open Classical in
 for nontrivial characters cancel except for `d q`, which enters with a positive sign. The
 principal constant is `b` (arithmetically `1 + γ`). Multiplication by `c` and `τ` matches the
 caps off the kernel with those on the kernel. -/
-theorem expect_off_ker_mul_log_div_sub_sum_conj_mul_eq {G : Type*} [Group G] [Fintype G]
+theorem expect_filter_apply_ne_one_mul_log_div_sub_sum_conj_mul_eq {G : Type*} [Group G] [Fintype G]
     (q : G →* ℂˣ) (hq : q * q = 1) {c τ : G} (hc : (q c : ℂ) = -1) (hτ : q τ = 1)
     (s : Finset (G →* ℂˣ)) (hs : q ∈ s) (d : (G →* ℂˣ) → ℂ) (b : ℂ)
     (a : ℝ) (w : G → ℝ) (hw : ∀ h ∈ q.ker, w h ≠ 0) :
@@ -62,7 +62,7 @@ theorem expect_off_ker_mul_log_div_sub_sum_conj_mul_eq {G : Type*} [Group G] [Fi
     have hconj (χ : G →* ℂˣ) : (𝔼 g ∈ t, conj (χ g : ℂ)) = conj (𝔼 g ∈ t, (χ g : ℂ)) := by
       simp only [Finset.expect_eq_sum_div_card, map_div₀, map_sum, map_natCast]
     simp_rw [← Finset.expect_mul, hconj]
-    simp only [t, q.expect_apply_off_ker_of_mul_self_eq_one _ hq hq₁]
+    simp only [t, q.expect_filter_apply_ne_one_apply_of_mul_self_eq_one _ hq hq₁]
     rw [Finset.sum_eq_single_of_mem q (Finset.mem_erase.mpr ⟨hq₁, hs⟩)]
     · simp [hq₁]
     · intro χ hχ hχq
