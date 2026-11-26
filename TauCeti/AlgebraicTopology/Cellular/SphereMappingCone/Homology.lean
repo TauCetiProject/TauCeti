@@ -37,10 +37,11 @@ homology of this complex and transporting it along the cellular–singular compa
 Only the last two differentials depend on `f`, so `H₀` and the vanishing in the other degrees hold
 for every `f`, and the degree enters only through `H_{n+1}` and `H_{n+2}`.
 
-Integrally `X` is the Moore space `M(ℤ/m, n + 1)`: `H_{n+1}(X; ℤ) ≅ ℤ/m`
-(`TauCeti.sphereMappingConeSingularHomologyIntLinearEquiv`) and `H_{n+2}(X; ℤ) = 0` for `m ≠ 0`
-(`TauCeti.isZero_sphereMappingCone_singularHomology_int_top`). If `m` is a unit in `R`, all
-positive-degree homology with coefficients in `R` vanishes
+Integrally `H_{n+1}(X; ℤ) ≅ ℤ/m` for every `m`
+(`TauCeti.sphereMappingConeSingularHomologyIntLinearEquiv`), and `H_{n+2}(X; ℤ) = 0` for `m ≠ 0`
+(`TauCeti.isZero_sphereMappingCone_singularHomology_int_top`), so for `m ≠ 0` the space `X` is the
+Moore space `M(ℤ/m, n + 1)`; for `m = 0` it has the homology of `Sⁿ⁺¹ ∨ Sⁿ⁺²`. If `m` is a unit
+in `R`, all positive-degree homology with coefficients in `R` vanishes
 (`TauCeti.isZero_sphereMappingCone_singularHomology_of_isUnit`). For instance the Moore space
 `M(ℤ/3, 2) = S² ∪_f D³`, with `f` of degree `3`, has the mod-`2` homology of a point while its
 integral homology is not that of a point.
@@ -58,8 +59,8 @@ integral homology is not that of a point.
 * `TauCeti.isZero_sphereMappingCone_singularHomology_of_isUnit`: the space is `R`-acyclic when the
   degree is a unit of `R`.
 * `TauCeti.sphereMappingConeSingularHomologyIntLinearEquiv`,
-  `TauCeti.isZero_sphereMappingCone_singularHomology_int_top`: the integral homology of the Moore
-  space `M(ℤ/m, n + 1)`.
+  `TauCeti.isZero_sphereMappingCone_singularHomology_int_top`: the integral homology, that of the
+  Moore space `M(ℤ/m, n + 1)` for `m ≠ 0`.
 
 ## References
 
@@ -83,56 +84,6 @@ variable {ι : Type u} [Fintype ι] {n : ℕ} (h : Fintype.card ι = n + 1 + 1)
   (R : Type u) [Ring R]
   (f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1 + 1))) 1, sphere (0 : EuclideanSpace ℝ ι) 1))
 
-/-! ### The cells -/
-
-/-- The sphere mapping cone `Sⁿ⁺¹ ∪_f Dⁿ⁺²` has exactly one cell in each of the dimensions `0`,
-`n + 1` and `n + 2`, and none in any other dimension. -/
-private lemma nat_card_cell (k : ℕ) :
-    letI := sphereMappingConeCWComplex h f
-    Nat.card (cell (sphereMappingCone f) k) =
-      if k = 0 ∨ k = n + 1 ∨ k = n + 1 + 1 then 1 else 0 := by
-  rw [nat_card_cell_sphereMappingConeCWComplex h f k]
-  by_cases h0 : k = 0
-  · subst h0; simp
-  by_cases h1 : k = n + 1
-  · subst h1; simp
-  by_cases h2 : k = n + 1 + 1
-  · subst h2; simp
-  simp [h0, h1, h2]
-
-/-- In a dimension other than `0`, `n + 1` and `n + 2`, the sphere mapping cone has no cell. -/
-private lemma isEmpty_cell {k : ℕ} (h0 : k ≠ 0) (h1 : k ≠ n + 1) (h2 : k ≠ n + 1 + 1) :
-    letI := sphereMappingConeCWComplex h f
-    IsEmpty (cell (sphereMappingCone f) k) := by
-  let := sphereMappingConeCWComplex h f
-  have := finite_sphereMappingConeCWComplex h f
-  have : Finite (cell (sphereMappingCone f) k) := RelCWComplex.FiniteType.finite_cell k
-  have hc := nat_card_cell h f k
-  simp only [show ¬(k = 0 ∨ k = n + 1 ∨ k = n + 1 + 1) by omega, ↓reduceIte] at hc
-  exact Finite.card_eq_zero_iff.mp hc
-
-/-- In the dimensions `0`, `n + 1` and `n + 2`, the sphere mapping cone has a unique cell. -/
-private lemma nat_card_cell_eq_one {k : ℕ} (hk : k = 0 ∨ k = n + 1 ∨ k = n + 1 + 1) :
-    letI := sphereMappingConeCWComplex h f
-    Nat.card (cell (sphereMappingCone f) k) = 1 := by
-  rw [nat_card_cell h f k]
-  simp [hk]
-
-/-- The sphere mapping cone has a single `0`-cell. -/
-private lemma subsingleton_and_nonempty_cell_zero :
-    letI := sphereMappingConeCWComplex h f
-    Subsingleton (cell (sphereMappingCone f) 0) ∧ Nonempty (cell (sphereMappingCone f) 0) := by
-  let := sphereMappingConeCWComplex h f
-  have := finite_sphereMappingConeCWComplex h f
-  have : Finite (cell (sphereMappingCone f) 0) := RelCWComplex.FiniteType.finite_cell 0
-  exact Nat.card_eq_one_iff_unique.mp (nat_card_cell_eq_one h f (by omega))
-
-/-- The `0`-cell of the sphere mapping cone. -/
-private def cellZero :
-    letI := sphereMappingConeCWComplex h f
-    cell (sphereMappingCone f) 0 :=
-  Classical.choice (subsingleton_and_nonempty_cell_zero h f).2
-
 /-! ### The cellular differentials -/
 
 /-- The cellular differential of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` out of degree `n + 1` vanishes. For `n ≥ 1` its
@@ -142,12 +93,12 @@ private lemma cellularChainComplex_d_succ_eq_zero :
     (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).d (n + 1) n = 0 := by
   let := sphereMappingConeCWComplex h f
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have := (subsingleton_and_nonempty_cell_zero h f).1
+  · let := uniqueCellZeroSphereMappingConeCWComplex h f one_ne_zero
     rw [cellularChainComplex_d, (cellularDifferential_eq_zero_iff _ R 0).2 fun i j ↦
       cellularIncidence_zero_eq_zero_of_subsingleton R i j]
     simp
   · exact cellularChainComplex_d_eq_zero_of_isEmpty_or _ _
-      (.inr (isEmpty_cell h f (by omega) (by omega) (by omega)))
+      (.inr (isEmpty_cell_sphereMappingConeCWComplex h f (by omega) (by omega) (by omega)))
 
 /-- The cellular differential of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` out of degree `n + 3` vanishes: its source carries
 no cell. -/
@@ -157,7 +108,7 @@ private lemma cellularChainComplex_d_top_eq_zero :
       (n + 1 + 1) = 0 := by
   let := sphereMappingConeCWComplex h f
   exact cellularChainComplex_d_eq_zero_of_isEmpty_or _ _
-    (.inl (isEmpty_cell h f (by omega) (by omega) (by omega)))
+    (.inl (isEmpty_cell_sphereMappingConeCWComplex h f (by omega) (by omega) (by omega)))
 
 /-- The cellular differential of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` out of degree `1` vanishes: for `n = 0` this is
 `cellularChainComplex_d_succ_eq_zero`, and for `n ≥ 1` there is no `1`-cell. -/
@@ -168,14 +119,14 @@ private lemma cellularChainComplex_d_one_eq_zero :
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact cellularChainComplex_d_succ_eq_zero h R f
   · exact cellularChainComplex_d_eq_zero_of_isEmpty_or _ _
-      (.inl (isEmpty_cell h f (by omega) (by omega) (by omega)))
+      (.inl (isEmpty_cell_sphereMappingConeCWComplex h f (by omega) (by omega) (by omega)))
 
 /-- The cellular homology of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` in degree `0` is `R`. -/
 private def cellularHomologyZeroLinearEquiv :
     letI := sphereMappingConeCWComplex h f
     (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).homology 0 ≃ₗ[R] R :=
   letI := sphereMappingConeCWComplex h f
-  letI := (subsingleton_and_nonempty_cell_zero h f).1
+  letI := uniqueCellZeroSphereMappingConeCWComplex h f n.succ_ne_zero
   let K := cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)
   (K.homologyIsoSc' 1 0 0 (by simp) (by simp) ≪≫
       (K.sc' 1 0 0).asIsoHomologyι (K.shape 0 0 (by simp)) ≪≫
@@ -183,18 +134,7 @@ private def cellularHomologyZeroLinearEquiv :
     Submodule.quotEquivOfEqBot _ (by
       rw [LinearMap.range_eq_bot]
       exact congrArg ModuleCat.Hom.hom (cellularChainComplex_d_one_eq_zero h R f)) ≪≫ₗ
-    cellularChainCoord _ R (cellZero h f)
-
-/-- The `(n + 1)`-cell of the sphere `Sⁿ⁺¹`, the unique cell of positive dimension of
-`TauCeti.sphereCWComplex`. -/
-private def sphereCell :
-    letI := sphereCWComplex h; cell (sphere (0 : EuclideanSpace ℝ ι) 1) (n + 1) :=
-  Classical.choice (by
-    let := sphereCWComplex h
-    have := finite_sphereCWComplex h
-    have hc := nat_card_cell_sphereCWComplex h (n + 1)
-    simp only [Nat.add_eq_zero_iff, one_ne_zero, and_false, ↓reduceIte, zero_add] at hc
-    exact (Nat.card_pos_iff.mp (by omega)).1)
+    cellularChainCoord _ R default
 
 variable (b : OrthonormalBasis (Fin (n + 1 + 1)) ℝ (EuclideanSpace ℝ ι)) {m : ℤ}
   (hf : (reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) (n + 1)).inv ≫
@@ -209,10 +149,12 @@ private lemma map_range_d_eq_span :
     letI := sphereMappingConeCWComplex h f
     (LinearMap.range ((cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).d
         (n + 1 + 1) (n + 1)).hom).map
-        (sphereMappingConeSphereCoord h R b (sphereCell h) f : _ →ₗ[R] R) =
+        (sphereMappingConeSphereCoord h R b (uniqueCellSphereCWComplex h n.succ_ne_zero).default f :
+          _ →ₗ[R] R) =
       R ∙ (m : R) := by
   let := sphereMappingConeCWComplex h f
-  have hd := sphereMappingConeSphereCoord_d h R b (sphereCell h) f m hf
+  have hd := sphereMappingConeSphereCoord_d h R b
+    (uniqueCellSphereCWComplex h n.succ_ne_zero).default f m hf
   ext y
   simp only [Submodule.mem_map, LinearMap.mem_range, Submodule.mem_span_singleton, smul_eq_mul]
   constructor
@@ -231,11 +173,13 @@ private lemma map_ker_d_eq_ker :
         (n + 1 + 1) (n + 1)).hom).map (sphereMappingConeTopCoord h R f : _ →ₗ[R] R) =
       LinearMap.ker (LinearMap.toSpanSingleton R R (m : R)) := by
   let := sphereMappingConeCWComplex h f
-  have hd := sphereMappingConeSphereCoord_d h R b (sphereCell h) f m hf
+  have hd := sphereMappingConeSphereCoord_d h R b
+    (uniqueCellSphereCWComplex h n.succ_ne_zero).default f m hf
   have key (x : (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).X (n + 1 + 1)) :
       (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).d (n + 1 + 1) (n + 1) x =
           0 ↔ sphereMappingConeTopCoord h R f x * m = 0 := by
-    rw [← (sphereMappingConeSphereCoord h R b (sphereCell h) f).map_eq_zero_iff, hd]
+    rw [← (sphereMappingConeSphereCoord h R b
+      (uniqueCellSphereCWComplex h n.succ_ne_zero).default f).map_eq_zero_iff, hd]
   ext y
   simp only [Submodule.mem_map, LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul]
   constructor
@@ -258,7 +202,8 @@ private def cellularHomologyLinearEquiv :
   (K.homologyIsoSc' (n + 1 + 1) (n + 1) n (by simp) (by simp) ≪≫
       (K.sc' (n + 1 + 1) (n + 1) n).asIsoHomologyι (cellularChainComplex_d_succ_eq_zero h R f) ≪≫
         (K.sc' (n + 1 + 1) (n + 1) n).moduleCatOpcyclesIso).toLinearEquiv ≪≫ₗ
-    Submodule.Quotient.equiv _ _ (sphereMappingConeSphereCoord h R b (sphereCell h) f)
+    Submodule.Quotient.equiv _ _
+      (sphereMappingConeSphereCoord h R b (uniqueCellSphereCWComplex h n.succ_ne_zero).default f)
       (map_range_d_eq_span h R f b hf)
 
 include hf in
@@ -324,7 +269,7 @@ theorem isZero_sphereMappingCone_singularHomology_of_ne {k : ℕ} (h0 : k ≠ 0)
       (ModuleCat.of R R)).obj (TopCat.of (sphereMappingCone f))) := by
   let := sphereMappingConeCWComplex h f
   have := finite_sphereMappingConeCWComplex h f
-  have := isEmpty_cell h f h0 h1 h2
+  have := isEmpty_cell_sphereMappingConeCWComplex h f h0 h1 h2
   exact (isZero_singularHomology_complexBasePair_of_isEmpty_cell _ _ k).of_iso
     (singularHomologyIsoCellular h R f k ≪≫ cellularSingularHomologyIso _ _ k)
 
@@ -380,8 +325,9 @@ variable {ι : Type} [Fintype ι] {n : ℕ} (h : Fintype.card ι = n + 1 + 1)
     m • (reducedSingularHomologySphereIso (ModuleCat.of ℤ ℤ) b).inv)
 
 include hf in
-/-- **The Moore space `M(ℤ/m, n + 1)`.** For `f : Sⁿ⁺¹ → Sⁿ⁺¹` of degree `m`,
-`H_{n+1}(Sⁿ⁺¹ ∪_f Dⁿ⁺²; ℤ) ≅ ℤ/m`. -/
+/-- **The integral homology in the dimension of the sphere.** For `f : Sⁿ⁺¹ → Sⁿ⁺¹` of degree
+`m`, `H_{n+1}(Sⁿ⁺¹ ∪_f Dⁿ⁺²; ℤ) ≅ ℤ/m`. For `m ≠ 0` this is the Moore space `M(ℤ/m, n + 1)`
+(`TauCeti.isZero_sphereMappingCone_singularHomology_int_top`), and for `m = 0` it is `ℤ`. -/
 def sphereMappingConeSingularHomologyIntLinearEquiv :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (sphereMappingCone f)) ≃ₗ[ℤ] ZMod m.natAbs :=
