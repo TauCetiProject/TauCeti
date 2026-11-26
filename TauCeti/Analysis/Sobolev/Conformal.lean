@@ -65,7 +65,7 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   below on a compact set `K ⊆ U`, it controls the `L²` norm of `ξ` over `K`
   (`TauCeti.ConformalSobolev.exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq`).
 * **First-order operators.** A coefficient field `M : U → L(V × V × V, W)`, essentially bounded on
-  `U`, acts on `L²` jets by `f ↦ M f` (`TauCeti.jetOperator (volume.restrict U) M`). On the jet
+  `U`, acts on `L²` jets by `f ↦ M f` (`TauCeti.jetOperator 2 (volume.restrict U) M`). On the jet
   of a test section `ξ` this is the first-order operator `ξ ↦ M (√ρ ξ, ∂s ξ, ∂t ξ)`
   (`TauCeti.ConformalSobolev.jetOperator_toLp_jet_ae_eq`), and its restriction to `H1` is the
   realization of that operator from `W^{1,2}_0(U, V)` to `L²(U, W)`.
@@ -669,7 +669,7 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 field `M` is `z ↦ M z (√ρ ξ z, ∂s ξ z, ∂t ξ z)`. -/
 theorem jetOperator_toLp_jet_ae_eq (hρ : IsWeight U ρ) {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ (volume.restrict U)) (hξ : ξ ∈ testSection V U) :
-    jetOperator (volume.restrict U) M ((memLp_jet hρ hξ).toLp (jet ρ ξ)) =ᵐ[volume.restrict U]
+    jetOperator 2 (volume.restrict U) M ((memLp_jet hρ hξ).toLp (jet ρ ξ)) =ᵐ[volume.restrict U]
       fun z ↦ M z (jet ρ ξ z) := by
   filter_upwards [coeFn_jetOperator hM ((memLp_jet hρ hξ).toLp (jet ρ ξ)),
     (memLp_jet hρ hξ).coeFn_toLp] with z h₁ h₂
