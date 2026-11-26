@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
 
-import TauCeti.Analysis.InnerProductSpace.Polar.Finite
+import TauCeti.Analysis.InnerProductSpace.Polar.Norm
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
@@ -118,17 +118,14 @@ theorem exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear (B : E →ₗ[𝕜] F
       LinearMap.range U ≤ LinearMap.range B ∧
       LinearMap.range (LinearMap.adjoint U) ≤ LinearMap.range (LinearMap.adjoint B) ∧
       LinearMap.trace 𝕜 E (LinearMap.adjoint U ∘ₗ B) = (nuclear 𝕜 E F B : 𝕜) := by
-  refine ⟨B.polarFactor, ?_, B.range_polarFactor.le, B.range_adjoint_polarFactor.le, ?_⟩
-  · let := FiniteDimensional.completeSpace 𝕜 E
-    let := FiniteDimensional.completeSpace 𝕜 F
-    rw [opNorm_apply, B.toContinuousLinearMap_polarFactor]
-    exact ContinuousLinearMap.norm_factorThru_le zero_le_one fun x ↦ by simp
-  · rw [B.adjoint_polarFactor_comp, LinearMap.trace_eq_sum_inner _ B.rightSingularBasis,
-      nuclear_apply, ← B.sum_fin_singularValues (fun s ↦ s) rfl, RCLike.ofReal_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [LinearMap.operatorAbs_rightSingularBasis, inner_smul_right,
-      orthonormal_iff_ite.mp B.rightSingularBasis.orthonormal i i]
-    simp
+  refine ⟨B.polarFactor, B.opNorm_polarFactor_le_one, B.range_polarFactor.le,
+    B.range_adjoint_polarFactor.le, ?_⟩
+  rw [B.adjoint_polarFactor_comp, LinearMap.trace_eq_sum_inner _ B.rightSingularBasis,
+    nuclear_apply, ← B.sum_fin_singularValues (fun s ↦ s) rfl, RCLike.ofReal_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [LinearMap.operatorAbs_rightSingularBasis, inner_smul_right,
+    orthonormal_iff_ite.mp B.rightSingularBasis.orthonormal i i]
+  simp
 
 /-- **Variational characterization of the nuclear seminorm**:
 `‖B‖₁ = ⨆_{‖U‖ ≤ 1} ‖tr (U† B)‖`. -/
