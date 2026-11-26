@@ -698,14 +698,10 @@ or a characteristic point of `a`: `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`. -/
 theorem vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet
     (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
     T.vectorWaveFrontSet ⊆
-      (quantizeDistribution ha T).vectorWaveFrontSet ∪ a.characteristicSet := by
-  rintro ⟨x, ξ⟩ hp
-  by_contra h
-  rw [mem_union, not_or, mem_characteristicSet_iff, not_and, not_not] at h
-  obtain ⟨U, hU, Γ, hΓ, hξ, hcone, R', hell⟩ := h.2 (vectorWaveFrontSet_subset _ hp).2
-  exact h.1 (vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn ha T
-    isOpen_interior hΓ hcone (hell.mono fun _ hq ↦ ⟨interior_subset hq.1, hq.2⟩)
-    ⟨hp, mem_interior_iff_mem_nhds.2 hU, hξ⟩)
+      (quantizeDistribution ha T).vectorWaveFrontSet ∪ a.characteristicSet :=
+  subset_union_characteristicSet (fun _ hp ↦ (vectorWaveFrontSet_subset _ hp).2)
+    fun hU hΓ hcone _ hell ↦
+      vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn ha T hU hΓ hcone hell
 
 /-- Off the characteristic set of a symbol `a` with values in `V →L[ℂ] W` whose quantization has
 kernel supported within distance `R` of the diagonal, `Op(a)` neither creates nor removes
@@ -715,10 +711,8 @@ theorem vectorWaveFrontSet_quantizeDistribution_sdiff_characteristicSet_eq
     (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
     (quantizeDistribution ha T).vectorWaveFrontSet \ a.characteristicSet =
       T.vectorWaveFrontSet \ a.characteristicSet :=
-  (sdiff_subset_sdiff_left (vectorWaveFrontSet_quantizeDistribution_subset ha T)).antisymm
-    fun _ hp ↦
-      ⟨((vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet
-        ha T) hp.1).resolve_right hp.2, hp.2⟩
+  sdiff_characteristicSet_eq_of_subset (vectorWaveFrontSet_quantizeDistribution_subset ha T)
+    (vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet ha T)
 
 end Symbol
 
