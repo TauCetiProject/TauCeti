@@ -467,6 +467,14 @@ theorem Hom.categoryComp_eq {R S T : StallingsGraph α} (f : R ⟶ S) (g : S ⟶
     f ≫ g = g.comp f :=
   (rfl)
 
+open CategoryTheory in
+/-- Morphisms of based labelled graphs in the category are equal when their underlying Serre-graph
+morphisms are; the form of `StallingsGraph.Hom.ext` for `⟶`. -/
+@[ext]
+theorem Hom.hom_ext {S T : StallingsGraph α} {f g : S ⟶ T} (h : f.graphHom = g.graphHom) :
+    f = g :=
+  Hom.ext h
+
 /-- The rose with one petal for each generator, labelled by those generators. -/
 @[expose] def rose (α : Type*) : StallingsGraph α where
   graph := SerreGraph.rose α
