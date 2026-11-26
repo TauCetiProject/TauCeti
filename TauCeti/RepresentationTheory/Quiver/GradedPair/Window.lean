@@ -56,6 +56,22 @@ def windowDegree (d : StepDirection) (w : NonemptyInterval ℤ) (i : WindowVerte
   | .up => w.fst + (vertexIndex i).val
   | .down => w.snd - (vertexIndex i).val
 
+/-- For a raising operator, vertex indices are offsets from the lower endpoint. -/
+@[simp]
+theorem windowDegree_up_vertex (w : NonemptyInterval ℤ)
+    (i : Fin ((w.snd - w.fst).toNat + 1)) :
+    StepDirection.up.windowDegree w (DoubledQuiver.OrientedQuiver.vertex _ _ i) =
+      w.fst + (i.val : ℤ) := by
+  simp only [windowDegree, vertexIndex, DoubledQuiver.OrientedQuiver.vertexEquiv_symm_vertex]
+
+/-- For a lowering operator, vertex indices are offsets from the upper endpoint. -/
+@[simp]
+theorem windowDegree_down_vertex (w : NonemptyInterval ℤ)
+    (i : Fin ((w.snd - w.fst).toNat + 1)) :
+    StepDirection.down.windowDegree w (DoubledQuiver.OrientedQuiver.vertex _ _ i) =
+      w.snd - (i.val : ℤ) := by
+  simp only [windowDegree, vertexIndex, DoubledQuiver.OrientedQuiver.vertexEquiv_symm_vertex]
+
 /-- Each vertex of the line quiver is labelled by a degree in the window. -/
 theorem windowDegree_mem (d : StepDirection) (w : NonemptyInterval ℤ) (i : WindowVertex w) :
     d.windowDegree w i ∈ w := by
@@ -244,8 +260,9 @@ spaces. -/
 abbrev FiniteRep (w : NonemptyInterval ℤ) :=
   ObjectProperty.FullSubcategory (IsFinDim.{0, 0, 0, 0} ℂ (StepDirection.WindowVertex w))
 
-/-- Restriction of a graded pair and its morphisms to the consecutive grades in the window. -/
-@[implicit_reducible]
+/-- Restriction of a graded pair and its morphisms to the consecutive grades in the window.
+The object projection reduces to `toRep`, so component morphisms can be typed on the grades. -/
+@[expose, implicit_reducible]
 def toRepFunctor (w : NonemptyInterval ℤ) (d : StepDirection) : InWindow w d ⥤ FiniteRep w where
   obj P := ⟨P.toRep, isFinDim_iff.2 fun i ↦
     inferInstanceAs (FiniteDimensional ℂ (P.space.grade (d.windowDegree w i)))⟩
@@ -587,10 +604,24 @@ def ofRepIso (d : StepDirection) (M : FiniteRep w) :
       rw [toRep_map_arrow]
       exact ModuleCat.hom_ext (LinearMap.ext fun x ↦ (ofRepGradeEquiv_arrow (d := d) M e x).symm))
 
+/-- The forward component of the assembly isomorphism identifies a vertex space with its grade. -/
+@[simp]
+theorem ofRepIso_hom_app (M : FiniteRep w) (i : Paths (WindowVertex w)) :
+    (ofRepIso d M).hom.hom.app i = (ofRepGradeEquiv d M i).toModuleIso.hom :=
+  (rfl)
+
+/-- The inverse component of the assembly isomorphism recovers the original vertex space. -/
+@[simp]
+theorem ofRepIso_inv_app (M : FiniteRep w) (i : Paths (WindowVertex w)) :
+    (ofRepIso d M).inv.hom.app i = (ofRepGradeEquiv d M i).toModuleIso.inv :=
+  (rfl)
+
 end Extension
 
 /-- Extend by zero outside the window and assemble the arrow maps. On morphisms, assemble
-the component maps using the canonical isomorphisms on vertex spaces. -/
+the component maps using the canonical isomorphisms on vertex spaces. The object projection
+reduces to `ofRep`, so the map acts directly on the carrier of the assembled pair. -/
+@[expose]
 def ofRepFunctor (w : NonemptyInterval ℤ) (d : StepDirection) : FiniteRep w ⥤ InWindow w d where
   obj := ofRep d
   map {M N} f := (fullyFaithfulToRepFunctor w d).preimage
@@ -600,6 +631,29 @@ def ofRepFunctor (w : NonemptyInterval ℤ) (d : StepDirection) : FiniteRep w �
     rw [← (fullyFaithfulToRepFunctor w d).preimage_comp]
     congr 1
     simp
+
+/-- The object of the assembly functor is the assembled graded pair. -/
+@[simp]
+theorem ofRepFunctor_obj (M : FiniteRep w) : (ofRepFunctor w d).obj M = ofRep d M :=
+  (rfl)
+
+/-- On each assembled grade, the assembly functor acts by the original vertex map. -/
+@[simp]
+theorem ofRepFunctor_map_apply {M N : FiniteRep w} (f : M ⟶ N)
+    (i : Paths (StepDirection.WindowVertex w)) (x : M.obj.obj i) :
+    ((ofRepFunctor w d).map f).toLinearMap (ofRepGradeEquiv d M i x).val =
+      (ofRepGradeEquiv d N i ((f.hom.app i).hom x)).val := by
+  let g := (ofRepIso d M).inv ≫ f ≫ (ofRepIso d N).hom
+  calc
+    _ = ((g.hom.app i).hom (ofRepGradeEquiv d M i x)).val := ofRepMap_apply g.hom i _
+    -- Composition of representation morphisms is pointwise on the vertex spaces.
+    _ = (((ofRepIso d N).hom.hom.app i).hom
+          ((f.hom.app i).hom (((ofRepIso d M).inv.hom.app i).hom
+            (ofRepGradeEquiv d M i x)))).val := rfl
+    _ = _ := by
+      simp only [ofRepIso_hom_app, ofRepIso_inv_app]
+      exact congrArg (fun y ↦ (ofRepGradeEquiv d N i ((f.hom.app i).hom y)).val)
+        ((ofRepGradeEquiv d M i).symm_apply_apply x)
 
 /-- Restricting to the window grades is an equivalence between coordinate graded pairs
 supported in that window and pointwise finite-dimensional type-A representations. -/
