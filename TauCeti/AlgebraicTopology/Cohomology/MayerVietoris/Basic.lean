@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # The Mayer–Vietoris sequence in singular cohomology

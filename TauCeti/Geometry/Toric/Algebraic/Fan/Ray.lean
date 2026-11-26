@@ -175,6 +175,26 @@ theorem mem_dualSemigroup_iff_forall_ray_le (sigma : Phi.cones) (u : N →+ ℤ)
   · simpa using h (rho.toToricRay Phi sigma hrho)
   · simpa using h (Ray.ofToricRay Phi sigma rho) (Ray.toCone_ofToricRay_le Phi sigma rho)
 
+/-- A character exposing a face is strictly positive on the primitive generator of every ray
+of the larger cone outside the face. -/
+theorem apply_primitiveGenerator_pos_of_inf_ker_eq_face {sigma tau : Phi.cones} {m : N →+ ℤ}
+    (hm : m ∈ dualSemigroup Phi.lattice sigma.val)
+    (htau : sigma.val ⊓
+      PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)) = tau.val)
+    {rho : Phi.Ray} (hσ : rho.toCone ≤ sigma) (hτ : ¬rho.toCone ≤ tau) :
+    0 < m rho.primitiveGenerator := by
+  have hnonneg := (Phi.mem_dualSemigroup_iff_forall_ray_le sigma m).1 hm rho hσ
+  refine lt_of_le_of_ne hnonneg fun hz ↦ hτ ?_
+  have hgen : i rho.primitiveGenerator ∈ tau.val := by
+    rw [← htau]
+    exact ⟨hσ rho.primitiveGenerator_mem, by simp [Phi.lattice.realCharacter_apply, ← hz]⟩
+  let r := rho.toToricRay Phi rho.toCone le_rfl
+  exact r.toPointedCone_le_of_mem
+    ((Phi.isToricCone rho.toCone.property).salient.anti r.val.isFaceOf.le)
+    (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).mem
+    (by simpa only [map_zero] using
+      Phi.lattice.injective.ne rho.primitiveGenerator_isPrimitive.ne_zero) hgen
+
 /-- The fan rays contained in a cone are exactly the toric rays of that cone. -/
 def rayEquiv (sigma : Phi.cones) :
     {rho : Phi.Ray // rho.toCone ≤ sigma} ≃ ToricRay sigma.val where

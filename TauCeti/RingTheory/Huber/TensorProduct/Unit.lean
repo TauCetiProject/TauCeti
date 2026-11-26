@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.FiniteAlgebra
+public import TauCeti.RingTheory.Huber.TensorProduct.Finite.Algebra
 
 /-!
 # The unit of the completed tensor product
@@ -19,7 +19,8 @@ The construction specializes `Pair.finiteAlgebra.baseChangeEquiv` to the rank-on
 `A`, then applies Mathlib's algebraic tensor unit. If `A⁺` maps into `B⁺`, this identifies
 the completed tensor plus ring with the specified `B⁺`. Thus the unit comparison also
 holds for Huber pairs, including pairs whose plus ring is smaller than the power-bounded
-subring.
+subring. Over the base itself, for `A⁺₁ ≤ A⁺₂` on a complete Hausdorff `A`, the right unit
+carries the plus ring of `(A, A⁺₁) ⊗̂_A (A, A⁺₂)` onto the larger `A⁺₂`.
 
 ## References
 
@@ -39,10 +40,6 @@ variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
   [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
   [CompleteSpace B] [T2Space B] [IsAdicHom (algebraMap A B)]
-
-/-- The identity structure map used in the unit tensor is adic. -/
-local instance isAdicHom_self : IsAdicHom (algebraMap A A) := by
-  simpa using (IsAdicHom.id (A := A))
 
 namespace CompletedTensor
 
@@ -150,3 +147,37 @@ noncomputable def rightUnitorHom : Hom (T.completedTensor A S) T where
 end Pair.completedTensor
 
 end TauCeti.Huber
+
+namespace TauCeti.Huber.Pair.completedTensor
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [IsHuberRing A] [CompleteSpace A] [T2Space A] {S T : Pair A}
+
+/-- **The completed tensor plus ring over the base is the larger plus ring.** For
+`A⁺₁ ≤ A⁺₂` on the same complete Hausdorff ring, an element of `A ⊗̂_A A` lies in the plus ring of
+`(A, A⁺₁) ⊗̂_A (A, A⁺₂)` exactly when its image under the right unit lies in `A⁺₂`. -/
+@[simp] theorem rightUnitor_mem_plus_self_iff (hST : S.plus ≤ T.plus)
+    (x : CompletedTensor A A A) :
+    x ∈ (S.completedTensor A T).plus ↔ CompletedTensor.rightUnitor A A x ∈ T.plus := by
+  have := T.isRingOfIntegralElements.isIntegrallyClosedIn
+  constructor
+  · intro hx
+    exact S.completedTensor_plus_le_comap T
+      (f := (CompletedTensor.rightUnitor A A).toRingHom)
+      (T.plus.toAddSubgroup.isClosed_of_isOpen T.isRingOfIntegralElements.isOpen)
+      (CompletedTensor.continuous_rightUnitor A A)
+      (fun b hb ↦ by simpa using hST hb) (fun c hc ↦ by simpa using hc) hx
+  · intro hx
+    have hinr : CompletedTensor.inr A A A (CompletedTensor.rightUnitor A A x) = x :=
+      (CompletedTensor.rightUnitor A A).injective (by simp)
+    simpa only [hinr] using S.inr_mem_completedTensor_plus (A := A) T hx
+
+/-- For `A⁺₁ ≤ A⁺₂`, the right unit carries the plus ring of `(A, A⁺₁) ⊗̂_A (A, A⁺₂)` exactly onto
+`A⁺₂`. -/
+theorem rightUnitor_plus_self (hST : S.plus ≤ T.plus) :
+    (S.completedTensor A T).plus.map (CompletedTensor.rightUnitor A A).toRingHom = T.plus := by
+  ext b
+  rw [RingEquiv.toRingHom_eq_coe, Subring.mem_map_equiv, rightUnitor_mem_plus_self_iff hST,
+    RingEquiv.apply_symm_apply]
+
+end TauCeti.Huber.Pair.completedTensor

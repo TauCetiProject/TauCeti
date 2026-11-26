@@ -76,10 +76,8 @@ theorem dualMellinCutoffKernel_zero_left (G : ℂ → ℂ) (β : ℂ) (x : ℝ) 
 theorem _root_.MellinConvergent.dualMellinCutoffKernel_one_right (hφ : MellinConvergent φ (-2))
     (hV : VerticalIntegrable (fun s ↦ mellin φ (-s) / s) 2) (β : ℂ) (hx : 0 < x) :
     dualMellinCutoffKernel φ 1 β x = mellinCutoffKernel (fun y ↦ φ y⁻¹) x := by
-  have hφ' : MellinConvergent (fun y ↦ φ y⁻¹) (2 : ℝ) := by
-    have h := (MellinConvergent.comp_rpow (f := φ) (s := 2) (a := -1) (by norm_num)).mpr
-      (by convert hφ using 1; norm_num)
-    simpa only [Real.rpow_neg_one, ofReal_ofNat] using h
+  have hφ' : MellinConvergent (fun y ↦ φ y⁻¹) (2 : ℝ) :=
+    (mellinConvergent_comp_inv_iff φ _).mpr (by rwa [ofReal_ofNat])
   have hV' : VerticalIntegrable (fun s ↦ mellin (fun y ↦ φ y⁻¹) s / s) 2 := by
     simpa only [mellin_comp_inv] using hV
   rw [hφ'.mellinCutoffKernel_eq_mellinInv hV' two_pos hx, dualMellinCutoffKernel_def]

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Different
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
 public import TauCeti.Topology.FiberBundle.Countable
+public import TauCeti.Topology.FiberBundle.LocallyCompact
 public import TauCeti.Topology.FiberBundle.Separation
 public import Mathlib.Geometry.Manifold.Metrizable
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
@@ -64,7 +65,7 @@ theorem isLocalDiffeomorphAt_normalExp_zeroSection
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, P)) J m (f.normalExp (P := P) hn)
-      (zeroSection P (fun x ↦ f.NormalSpace x hn) x) := by
+      (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   have h2m : (1 : ℕ∞ω) + 1 ≤ m + 1 := by gcongr
   have : IsManifold I (1 + 1) M := .of_le (n := m + 1) h2m
@@ -93,8 +94,8 @@ theorem exists_partialDiffeomorph_normalExp_subset [SecondCountableTopology N] [
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     ∃ Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) J
-        (TotalSpace P (fun x ↦ f.NormalSpace x hn)) N m,
-      (∀ x, zeroSection P (fun x ↦ f.NormalSpace x hn) x ∈ Φ.source) ∧
+        (TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) N m,
+      (∀ x, zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x ∈ Φ.source) ∧
       Φ.source ⊆ f.normalExpDomain hn ∧ Φ.target ⊆ O ∧
       Φ.target = f.normalExp hn '' Φ.source ∧ ⇑Φ = f.normalExp hn := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
@@ -104,23 +105,23 @@ theorem exists_partialDiffeomorph_normalExp_subset [SecondCountableTopology N] [
   have : SecondCountableTopology M := f.isEmbedding.isInducing.secondCountableTopology
   have : LocallyCompactSpace G := J.locallyCompactSpace
   have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace G N
-  have : LocallyCompactSpace (ModelProd H P) := (I.prod 𝓘(ℝ, P)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
-    ChartedSpace.locallyCompactSpace (ModelProd H P) _
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   have : MetrizableSpace N := Manifold.metrizableSpace J N
-  have : MetrizableSpace (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
+  have : MetrizableSpace (TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :=
     Manifold.metrizableSpace (I.prod 𝓘(ℝ, P)) _
-  have : Nonempty (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
-    Nonempty.map (zeroSection P (fun x ↦ f.NormalSpace x hn)) inferInstance
-  have hcore : f.normalExp (P := P) hn ∘ zeroSection P (fun x ↦ f.NormalSpace x hn) = f :=
+  have : Nonempty (TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :=
+    Nonempty.map (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn)) inferInstance
+  have hcore : f.normalExp (P := P) hn ∘ zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) =
+      f :=
     funext (f.normalExp_zeroSection hn)
   obtain ⟨Φ, hzeroΦ, hΦD, hΦO, htarget, hΦ⟩ :=
     exists_partialDiffeomorph_near_section_of_isLocalDiffeomorphAt
       (f.isLocalDiffeomorphAt_normalExp_zeroSection hn hm hm1 hdim)
       (f.isOpen_normalExpDomain hn hdim) (range_subset_iff.2 (f.zeroSection_mem_normalExpDomain hn))
-      hO (hcore ▸ hfO) (_root_.Bundle.Trivialization.continuous_zeroSection ℝ)
-      (π P (fun x ↦ f.NormalSpace x hn)) (FiberBundle.continuous_proj _ _) (fun _ => rfl)
-      (hcore ▸ f.isEmbedding.isInducing)
+      hO (by rwa [hcore]) (_root_.Bundle.Trivialization.continuous_zeroSection ℝ)
+      (π P (fun x ↦ f.isImmersion.NormalSpace x hn)) (FiberBundle.continuous_proj _ _)
+      (fun _ => rfl) (by rw [hcore]; exact f.isEmbedding.isInducing)
   exact ⟨Φ, fun x => hzeroΦ (mem_range_self x), hΦD, hΦO, htarget, hΦ⟩
 
 omit [ENat.LEInfty m] [IsManifold I (m + 1) M] [I.Boundaryless] in
@@ -135,12 +136,13 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) {O : Set N} :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    ∀ Ψ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) J (TotalSpace P (fun x ↦ f.NormalSpace x hn)) N ∞,
-      (∀ x, zeroSection P (fun x ↦ f.NormalSpace x hn) x ∈ Ψ.source) → Ψ.target ⊆ O →
+    ∀ Ψ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) J
+        (TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) N ∞,
+      (∀ x, zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x ∈ Ψ.source) → Ψ.target ⊆ O →
       ⇑Ψ = f.normalExp hn →
       ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧
-        ∃ Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
-          ∀ x, (Φ (zeroSection P (fun x ↦ f.NormalSpace x hn) x) : N) = f x := by
+        ∃ Φ : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
+          ∀ x, (Φ (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x) : N) = f x := by
   intro hn
   let := f.normalSpaceFiberBundle hn hdim
   intro Ψ hzero htarget hΨ
@@ -151,9 +153,9 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
   -- A smooth auxiliary metric provides fibrewise radial compression, without changing
   -- the quotient topology or the complementary-coordinate atlas of the normal bundle.
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := P)
-    (E := fun x ↦ f.NormalSpace x hn)
+    (E := fun x ↦ f.isImmersion.NormalSpace x hn)
   -- Name the family so instance search can infer it before selecting a particular fibre.
-  let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+  let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
   let : RiemannianBundle ν := ⟨g.toRiemannianMetric⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun x => inferInstance
@@ -169,7 +171,7 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
   have hsymm : ∀ y ∈ W, Ψ.symm y ∈ W₀ := by
     rintro _ ⟨w, hw, rfl⟩
     simpa [Ψ.left_inv (hW₀src w hw)] using hw
-  let Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
+  let Φ : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
     { toFun := fun p => ⟨Ψ (Φ₀ p), Φ₀ p, (Φ₀ p).property, rfl⟩
       invFun := fun y => Φ₀.symm ⟨Ψ.symm y, hsymm y y.property⟩
       left_inv := fun p => by
@@ -189,8 +191,8 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
             fun y => hWt y y.property)) }
   refine ⟨W, fun y hy => htarget (hWt y hy), Φ, fun x => ?_⟩
   -- the value of `Φ` is the `toFun` field above, so this holds by `rfl`
-  have hΦ : ((Φ (zeroSection P (fun x ↦ f.NormalSpace x hn) x) : W) : N) =
-      Ψ (Φ₀ (zeroSection P (fun x ↦ f.NormalSpace x hn) x)).val := rfl
+  have hΦ : ((Φ (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x) : W) : N) =
+      Ψ (Φ₀ (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x)).val := rfl
   rw [hΦ, hzero₀]
   exact (congrFun hΨ _).trans (f.normalExp_zeroSection hn x)
 
@@ -208,8 +210,8 @@ theorem exists_diffeomorph_normalBundle_riemannian_subset
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
     ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧
-      ∃ Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
-        ∀ x, (Φ (zeroSection P (fun x ↦ f.NormalSpace x hn) x) : N) = f x := by
+      ∃ Φ : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
+        ∀ x, (Φ (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x) : N) = f x := by
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
@@ -219,9 +221,10 @@ theorem exists_diffeomorph_normalBundle_riemannian_subset
   cases isEmpty_or_nonempty M with
   | inl hM =>
     let W : TopologicalSpace.Opens N := ⊥
-    have : IsEmpty (TotalSpace P (fun x ↦ f.NormalSpace x hn)) := ⟨fun p => hM.false p.proj⟩
+    have : IsEmpty (TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :=
+        ⟨fun p => hM.false p.proj⟩
     have : IsEmpty W := ⟨fun y => y.property⟩
-    let Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
+    let Φ : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
       { Equiv.equivOfIsEmpty _ _ with
         contMDiff_toFun := fun p => (hM.false p.proj).elim
         contMDiff_invFun := fun y => (IsEmpty.false y).elim }
