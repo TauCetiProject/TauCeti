@@ -26,17 +26,11 @@ open Set
 
 namespace Complex
 
-/-- The norm of the real gamma factor at positive real argument `x`. -/
-theorem norm_Gammaℝ_ofReal {x : ℝ} (hx : 0 < x) :
-    ‖Gammaℝ (x : ℂ)‖ = Real.pi ^ (-x / 2) * Real.Gamma (x / 2) := by
-  rw [norm_Gammaℝ, ofReal_re, ← ofReal_ofNat, ← ofReal_div, Gamma_ofReal, norm_real,
-    Real.norm_eq_abs, abs_of_pos (Real.Gamma_pos_of_pos (by positivity))]
-
 /-- On a vertical line to the right of zero, the norm of the real gamma factor is bounded by
 its norm at height zero. -/
 theorem norm_Gammaℝ_le_norm_Gammaℝ_re {z : ℂ} (hz : 0 < z.re) :
     ‖Gammaℝ z‖ ≤ ‖Gammaℝ (z.re : ℂ)‖ := by
-  rw [norm_Gammaℝ z, norm_Gammaℝ_ofReal hz]
+  rw [norm_Gammaℝ z, norm_Gammaℝ_ofReal hz.le]
   have h := norm_Gamma_le_Gamma_re (s := z / 2) (by rw [div_ofNat_re]; positivity)
   rw [div_ofNat_re] at h
   exact mul_le_mul_of_nonneg_left h (by positivity)
@@ -55,7 +49,7 @@ theorem convexOn_log_norm_Gammaℝ :
   refine (hlin.add hΓ).congr fun x hx ↦ ?_
   have hx' : 0 < x := hx
   simp only [Pi.add_apply]
-  rw [norm_Gammaℝ_ofReal hx', Real.log_mul (by positivity)
+  rw [norm_Gammaℝ_ofReal hx'.le, Real.log_mul (by positivity)
     (Real.Gamma_pos_of_pos (by positivity : 0 < x / 2)).ne', Real.log_rpow Real.pi_pos]
 
 /-- On a closed strip with positive real endpoints, the norm of the real gamma factor is

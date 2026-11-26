@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.RealFactor
 
@@ -33,12 +32,6 @@ open Complex Set
 namespace TauCeti
 
 variable {j : Fin 2} {s : ℂ}
-
-/-- The Gaussian Mellin factor is half the real archimedean gamma factor shifted by the parity. -/
-theorem gaussianMellin_eq_Gammaℝ_div_two (hs : -(j.val : ℝ) < s.re) :
-    gaussianMellin j s = Gammaℝ (s + j.val) / 2 := by
-  rw [gaussianMellin_eq hs, Gammaℝ_def]
-  ring
 
 /-- The Gaussian Mellin factor has no zeros on its half-plane of convergence. -/
 theorem gaussianMellin_ne_zero (hs : -(j.val : ℝ) < s.re) : gaussianMellin j s ≠ 0 := by
