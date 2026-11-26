@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Instances.PositiveDefiniteMatrix
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.LinearAlgebra.Matrix.Hermitian.TraceZero
-import TauCeti.Algebra.Star.SelfAdjoint.Finite
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Geometry.Manifold.Immersion.Basic
@@ -195,6 +194,9 @@ private theorem exists_charts_of_isEmpty [IsEmpty n] :
 real part of the determinant, for which its inclusion into the cone is an analytic embedding. -/
 private theorem exists_charts_of_nonempty [Nonempty n] :
     ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜), IsEmbeddedAtlas c := by
+  -- Mathlib gives the finite dimension through the submodule of self-adjoint elements.
+  have : FiniteDimensional ℝ (selfAdjoint (Matrix n n 𝕜)) :=
+    FiniteDimensional.finiteDimensional_submodule (selfAdjoint.submodule ℝ (Matrix n n 𝕜))
   have hfm (P : posDefOpens n 𝕜) (_ : reDet P = 1) :
       ContMDiffAt 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) 𝓘(ℝ, ℝ) ω reDet P :=
     contMDiff_reDet.contMDiffAt
@@ -309,6 +311,9 @@ def traceZeroExpDiffeomorph (k : ℕ∞ω) :
     exact PosDefDetOne.contMDiff_subtypeVal_comp_iff.1
       ((hermitianExpDiffeomorph n 𝕜 k).contMDiff.comp hι.contMDiff)
   contMDiff_invFun := by
+    -- Mathlib gives the finite dimension through the submodule of self-adjoint elements.
+    have : FiniteDimensional ℝ (selfAdjoint (Matrix n n 𝕜)) :=
+      FiniteDimensional.finiteDimensional_submodule (selfAdjoint.submodule ℝ (Matrix n n 𝕜))
     -- A continuous linear projection onto the trace-free subspace reads the inverse, a map into
     -- the Hermitian matrices, as a map into that subspace.
     obtain ⟨π, hπ⟩ := Submodule.ClosedComplemented.of_finiteDimensional (traceZeroSelfAdjoint n 𝕜)
