@@ -20,7 +20,9 @@ for sequential compactness in `Lᵖ_loc`.
 
 In a second-countable space, a property holding almost everywhere on each member of an open cover
 of a set holds almost everywhere on that set, even if the cover is uncountable: Mathlib's
-`TopologicalSpace.isOpen_iUnion_countable` extracts a countable subcover.
+`TopologicalSpace.isOpen_iUnion_countable` extracts a countable subcover. Likewise, continuous
+local representatives of one function on the neighbourhoods of a Lindelöf set agree on overlaps and
+glue to one representative on the set.
 
 Pieces that are continuous up to the boundary are determined by their almost-everywhere values:
 for a measure charging every nonempty open set, two functions continuous on `closure U ∩ V`, for
@@ -39,6 +41,9 @@ interior and up to the boundary, into global ones.
   function.
 * `TauCeti.ae_restrict_of_subset_iUnion_isOpen`: almost-everywhere statements on the members of an
   open cover hold almost everywhere on the covered set.
+* `IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn`: continuous local
+  representatives of a function on a Lindelöf set glue to a single representative agreeing with
+  each of them on its domain.
 * `IsOpen.exists_holderOnWith_closure_of_forall_ae_eq`: Hölder functions on the balls of a cover
   of a compact closure `closure U`, each agreeing almost everywhere on `U` with one function `F`,
   glue to a single Hölder function on `closure U`, with a constant uniform over all such pieces.
@@ -83,6 +88,37 @@ theorem ae_restrict_of_subset_iUnion_isOpen [TopologicalSpace X] [SecondCountabl
   have : Countable T := hTc.to_subtype
   rw [← hT, Set.biUnion_eq_iUnion] at hs
   exact ae_mono (Measure.restrict_mono_set μ hs) ((ae_restrict_iUnion_iff _ _).2 fun i => h i)
+
+/-- **Continuous local representatives glue.** Let `μ` charge every nonempty open set, and let
+every point `x` of a Lindelöf set `s` have an open neighbourhood `U x ⊆ s` on which `f` agrees
+`μ`-almost everywhere with a function `g x` continuous on `U x`. Then a single function agrees
+with every `g x` on `U x`, and with `f` almost everywhere on `s`. -/
+theorem _root_.IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn
+    [TopologicalSpace X] [OpensMeasurableSpace X] [μ.IsOpenPosMeasure] {Y : Type*}
+    [TopologicalSpace Y] [T2Space Y] {s : Set X} (hs : IsLindelof s) {f : X → Y}
+    {U : X → Set X} {g : X → X → Y} (hU : ∀ x ∈ s, IsOpen (U x)) (hxU : ∀ x ∈ s, x ∈ U x)
+    (hUs : ∀ x ∈ s, U x ⊆ s) (hg : ∀ x ∈ s, ContinuousOn (g x) (U x))
+    (hfg : ∀ x ∈ s, f =ᵐ[μ.restrict (U x)] g x) :
+    ∃ G : X → Y, f =ᵐ[μ.restrict s] G ∧ ∀ x ∈ s, EqOn G (g x) (U x) := by
+  -- Two local representatives agree on the overlap of their domains, so taking at each point
+  -- the value of its own representative agrees with every representative on its domain.
+  have hG : ∀ x ∈ s, EqOn (fun y => g y y) (g x) (U x) := fun x hx y hy => by
+    have hys := hUs x hx hy
+    have hfy : f =ᵐ[μ.restrict (U y ∩ U x)] g y :=
+      ae_restrict_of_ae_restrict_of_subset inter_subset_left (hfg y hys)
+    have hfx : f =ᵐ[μ.restrict (U y ∩ U x)] g x :=
+      ae_restrict_of_ae_restrict_of_subset inter_subset_right (hfg x hx)
+    exact Measure.eqOn_open_of_ae_eq (hfy.symm.trans hfx) ((hU y hys).inter (hU x hx))
+      ((hg y hys).mono inter_subset_left) ((hg x hx).mono inter_subset_right) ⟨hxU y hys, hy⟩
+  refine ⟨fun y => g y y, ?_, hG⟩
+  -- Countably many of the neighbourhoods cover `s`.
+  obtain ⟨t, htc, hts, hst⟩ :=
+    hs.elim_nhds_subcover U fun x hx => (hU x hx).mem_nhds (hxU x hx)
+  refine ae_mono (Measure.restrict_mono_set μ hst)
+    ((ae_restrict_biUnion_iff U htc _).2 fun x hx => ?_)
+  filter_upwards [hfg x (hts x hx), ae_restrict_mem (hU x (hts x hx)).measurableSet]
+    with y hy hyU
+  exact hy.trans (hG x (hts x hx) hyU).symm
 
 /-- **Gluing Hölder pieces that agree almost everywhere.** Let `U` be open with compact closure in
 a pseudometric space with a measure charging every nonempty open set, and assign to each

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Function.Gluing
 
 /-!
 # Gluing local smooth representatives
@@ -52,24 +53,10 @@ theorem exists_contMDiff_ae_eq_of_forall_exists_contMDiffOn [LindelofSpace M]
       f =ᵐ[μ.restrict U] g) :
     ∃ g : M → M', ContMDiff I I' n g ∧ f =ᵐ[μ] g := by
   choose U hU hxU g hg hfg using h
-  -- Two local representatives agree on the overlap of their domains.
-  have hagree (x y : M) : EqOn (g x) (g y) (U x ∩ U y) := by
-    have hx : f =ᵐ[μ.restrict (U x ∩ U y)] g x :=
-      ae_restrict_of_ae_restrict_of_subset inter_subset_left (hfg x)
-    have hy : f =ᵐ[μ.restrict (U x ∩ U y)] g y :=
-      ae_restrict_of_ae_restrict_of_subset inter_subset_right (hfg y)
-    exact Measure.eqOn_open_of_ae_eq (hx.symm.trans hy) ((hU x).inter (hU y))
-      ((hg x).continuousOn.mono inter_subset_left) ((hg y).continuousOn.mono inter_subset_right)
-  set G : M → M' := fun x ↦ g x x
-  have hG (x : M) : EqOn G (g x) (U x) := fun y hy ↦ hagree y x ⟨hxU y, hy⟩
-  refine ⟨G, fun x ↦ ?_, ?_⟩
-  · exact ((hg x).congr (hG x)).contMDiffAt ((hU x).mem_nhds (hxU x))
-  · obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover U fun x ↦
-      (hU x).mem_nhds (hxU x)
-    have hloc : ∀ x ∈ t, f =ᵐ[μ.restrict (U x)] G := fun x _ ↦
-      (hfg x).trans ((ae_restrict_iff' (hU x).measurableSet).2
-        (Filter.Eventually.of_forall fun y hy ↦ (hG x hy).symm))
-    rw [← Measure.restrict_univ (μ := μ), ← hcover]
-    exact (ae_restrict_biUnion_iff U ht _).2 hloc
+  obtain ⟨G, hfG, hG⟩ := isLindelof_univ.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn
+    (μ := μ) (fun x _ ↦ hU x) (fun x _ ↦ hxU x) (fun _ _ ↦ subset_univ _)
+    (fun x _ ↦ (hg x).continuousOn) fun x _ ↦ hfg x
+  refine ⟨G, fun x ↦ ((hg x).congr (hG x trivial)).contMDiffAt ((hU x).mem_nhds (hxU x)), ?_⟩
+  rwa [Measure.restrict_univ] at hfG
 
 end TauCeti

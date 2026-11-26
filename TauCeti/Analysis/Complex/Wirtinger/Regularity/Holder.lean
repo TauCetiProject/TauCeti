@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Higher
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.Localization
+import TauCeti.MeasureTheory.Function.Gluing
 
 /-!
 # Interior Hölder regularity for the distributional `\bar∂` equation
@@ -145,34 +146,15 @@ theorem HasWeakConjWirtingerDerivOn.exists_contDiffOn_ae_eq_of_holderOnWith (hα
   have := FiniteDimensional.completeSpace ℂ F
   choose! r hr hrΩ v hv hvu hvH using fun z (hz : z ∈ (Ω : Set ℂ)) ↦
     exists_ball_contDiffOn_ae_eq hα hα1 h hg hgH hz
-  -- The local representatives are continuous and agree almost everywhere on overlaps, hence
-  -- agree there; so `V z = v z z` agrees with `v z` on the whole ball about `z`.
-  let V : ℂ → F := fun z ↦ v z z
-  have hV : ∀ z ∈ (Ω : Set ℂ), EqOn V (v z) (ball z (r z)) := fun z hz w hw ↦ by
-    have hwΩ : w ∈ (Ω : Set ℂ) := hrΩ z hz hw
-    have huw : u =ᵐ[volume.restrict (ball w (r w) ∩ ball z (r z))] v w :=
-      ae_restrict_of_ae_restrict_of_subset inter_subset_left (hvu w hwΩ)
-    have huz : u =ᵐ[volume.restrict (ball w (r w) ∩ ball z (r z))] v z :=
-      ae_restrict_of_ae_restrict_of_subset inter_subset_right (hvu z hz)
-    have hae := huw.symm.trans huz
-    exact Measure.eqOn_open_of_ae_eq hae (isOpen_ball.inter isOpen_ball)
-      ((hv w hwΩ).continuousOn.mono inter_subset_left)
-      ((hv z hz).continuousOn.mono inter_subset_right) ⟨mem_ball_self (hr w hwΩ), hw⟩
+  -- The local representatives are continuous and agree almost everywhere on overlaps, so they
+  -- glue to one representative `V` on `Ω`, agreeing with `v z` on the whole ball about `z`.
+  obtain ⟨V, hVu, hV⟩ := IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn
+    (HereditarilyLindelofSpace.isLindelof (Ω : Set ℂ)) (U := fun z ↦ ball z (r z))
+    (fun _ _ ↦ isOpen_ball) (fun z hz ↦ mem_ball_self (hr z hz)) hrΩ
+    (fun z hz ↦ (hv z hz).continuousOn) hvu
   have hVcd : ContDiffOn ℝ (k + 1 : ℕ) V Ω := contDiffOn_of_locally_contDiffOn fun z hz ↦
     ⟨ball z (r z), isOpen_ball, mem_ball_self (hr z hz),
       ((hv z hz).congr (hV z hz)).mono inter_subset_right⟩
-  -- Countably many of the balls cover `Ω`.
-  have hVu : u =ᵐ[volume.restrict Ω] V := by
-    obtain ⟨T, hTc, hTU⟩ := isOpen_iUnion_countable
-      (fun z : (Ω : Set ℂ) ↦ ball (z : ℂ) (r z)) fun _ ↦ isOpen_ball
-    have hΩT : (Ω : Set ℂ) = ⋃ z ∈ T, ball (z : ℂ) (r z) := by
-      rw [hTU]
-      exact Subset.antisymm (fun z hz ↦ mem_iUnion.2 ⟨⟨z, hz⟩, mem_ball_self (hr z hz)⟩)
-        (iUnion_subset fun z ↦ hrΩ z z.property)
-    rw [Filter.EventuallyEq, hΩT, ae_restrict_biUnion_iff _ hTc]
-    intro z _
-    filter_upwards [hvu z z.property, ae_restrict_mem measurableSet_ball] with x hx hxb
-    rw [hx, hV z z.property hxb]
   have hV1 : ContDiffOn ℝ 1 V Ω := hVcd.of_le (by exact_mod_cast Nat.le_add_left 1 k)
   refine ⟨V, hVcd, hVu, fun z hz ↦ ?_, fun K hKΩ hK ↦ ?_⟩
   · -- The classical and distributional derivatives agree almost everywhere, and are continuous.
