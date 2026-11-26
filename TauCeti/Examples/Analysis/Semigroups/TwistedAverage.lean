@@ -36,11 +36,6 @@ namespace TauCeti.Examples.TwistedAverageChecks
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-/-- The identity group `ofBounded 0` acts as the identity: `U t = 1`. -/
-theorem ofBounded_zero_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    [CompleteSpace X] (t : ℝ) : ofBounded (0 : X →L[ℝ] X) t = 1 := by
-  simp only [ofBounded_apply, smul_zero, NormedSpace.exp_zero]
-
 /-- The identity group `ofBounded 0` is unitary, being the bounded Stone group `ofBoundedExp 0`. -/
 theorem isUnitary_ofBounded_zero : (ofBounded (0 : H →L[ℝ] H)).IsUnitary := by
   have h : ofBoundedExp (0 : H →L[ℂ] H) = ofBounded 0 := by
