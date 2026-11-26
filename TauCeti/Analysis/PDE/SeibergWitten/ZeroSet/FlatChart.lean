@@ -68,7 +68,8 @@ over the range `σ ≥ c₀ r^(-1/2)`
 (`TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le`).
 
 The curvature geometry of the manifold, which turns the factor `1` in front of `E_r'(σ)` into
-`1 + C σ` in Darboux coordinates, is not treated here.
+`1 + C σ` in Darboux coordinates, is treated in
+`TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.DarbouxChart`.
 
 ## Main results
 
@@ -106,10 +107,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (fin
 
 attribute [local instance] finiteDimensional_of_finrank_four
 
-/-- The smallest-scale lower bound `E_r(B_{c₀ / √r}) ≥ c₁ / r` for the defect energy of `φ` and
-`β` at a zero of `α`, when `|φ| = |α|`
+/-- The smallest-scale lower bound `E_r(B_{c₀ / √r}) ≥ c₁ / r`, `c₁ = c₀⁴ |B₁| / 8`, for the defect
+energy `δ dμ`, `δ = (r / 4) |1 - |φ|² - |β|²|`, at a zero of `α`, when `|φ| = |α|`
 (`TauCeti.SeibergWitten.ofReal_div_le_setLIntegral_of_eq_zero`). -/
-private theorem ofReal_div_le_withDensity_closedBall_of_eq_zero {G G' : Type*}
+theorem ofReal_div_le_withDensity_closedBall_of_eq_zero {G G' : Type*}
     [NormedAddCommGroup G] [NormedAddCommGroup G'] {φ : E → G} {β : E → G'} {α : E → ℂ}
     {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {x₀ : E} {K r c₀ : ℝ} (hK : 0 ≤ K) (hr : 1 ≤ r)
     (hrK : 8 * K ≤ r) (hc₀ : 0 ≤ c₀) (hc₀K : 256 * K * c₀ ^ 2 ≤ 1)
