@@ -38,7 +38,7 @@ open MeasureTheory
 namespace LinearPMap
 
 variable {S 𝕜 E F : Type*} [MeasurableSpace S] {μ : Measure S}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup E] [NormedAddCommGroup F]
 
 section Integrability
 
@@ -53,10 +53,11 @@ theorem integrable_graphSpace_iff (T : E →ₗ.[𝕜] F) (u : S → T.graphSpac
     Isometry (Subtype.val : T.graphSpace → WithLp 2 (E × F)))
   rw [← hsub.lipschitzWith.integrable_comp_iff_of_antilipschitz
     (f := u) hsub.antilipschitzWith (by rfl),
-    ← (WithLp.prodContinuousLinearEquiv 2 ℝ E F).integrable_comp_iff]
-  simpa only [Function.comp_def, WithLp.prodContinuousLinearEquiv_apply,
-    graphFst_apply, graphSnd_apply, WithLp.ofLp_fst, WithLp.ofLp_snd] using
-    (integrable_prod (μ := μ) (f := fun s ↦ WithLp.ofLp (u s : WithLp 2 (E × F))))
+    ← (WithLp.prodContinuousLinearEquiv 2 𝕜 E F).integrable_comp_iff]
+  simp only [Function.comp_def, WithLp.prodContinuousLinearEquiv_apply,
+    graphFst_apply, graphSnd_apply]
+  exact ⟨fun h ↦ ⟨(ContinuousLinearMap.fst 𝕜 E F).integrable_comp h,
+    (ContinuousLinearMap.snd 𝕜 E F).integrable_comp h⟩, fun h ↦ h.1.prodMk h.2⟩
 
 /-- Integrability in the graph norm is equivalent to integrability of the function and its
 image under the partial linear map. The domain here carries its original subspace norm;
@@ -69,7 +70,8 @@ theorem integrable_toGraphSpace_iff (T : E →ₗ.[𝕜] F) (u : S → T.domain)
 
 end Integrability
 
-variable [RCLike 𝕜] [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E]
+variable [NormedSpace ℝ E] [NormedSpace ℝ F]
+  [RCLike 𝕜] [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E]
   [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
 
 /-- **Hille's theorem.** The integral of an integrable pair lying almost everywhere in the
