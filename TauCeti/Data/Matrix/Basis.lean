@@ -165,7 +165,7 @@ theorem single_one_mul_mul_single_one [Fintype m] [Fintype n] [DecidableEq l] [D
     single r j (1 : A) * (X * single p₀ s (1 : A)) = single r s (X j p₀) := by
   rw [mul_mul_single_one, single_mul_mul_single, one_mul, mul_one]
 /-- Entry `(u, v)` of `X * E_{j, r} * Y` is `X u j * Y r v`. -/
-theorem mul_single_one_mul_apply [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+@[simp] theorem mul_single_one_mul_apply [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
     (X : Matrix l m A) (Y : Matrix n o A) (j : m) (r : n) (u : l) (v : o) :
     (X * single j r (1 : A) * Y) u v = X u j * Y r v := by
   rw [Matrix.mul_apply, Finset.sum_eq_single r
