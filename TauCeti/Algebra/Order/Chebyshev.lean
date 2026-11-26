@@ -19,6 +19,8 @@ in which every sum has many terms but at most a fixed number of them are nonzero
 
 public section
 
+namespace TauCeti
+
 open Finset
 open scoped Finset
 
@@ -31,3 +33,5 @@ theorem sq_sum_le_card_filter_ne_zero_mul_sum_sq (s : Finset ι) (f : ι → α)
   rw [← sum_filter_ne_zero, ← sum_filter_of_ne (p := fun i ↦ f i ≠ 0) (s := s)
     (f := fun i ↦ f i ^ 2) fun i _ hi hf ↦ hi (by rw [hf, zero_pow two_ne_zero])]
   exact sq_sum_le_card_mul_sum_sq
+
+end TauCeti
