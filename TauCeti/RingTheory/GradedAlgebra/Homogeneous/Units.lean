@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
-public import TauCeti.Data.ZMod.QuotientGroup
+public import TauCeti.Algebra.Module.LinearMap.End
+public import TauCeti.Data.ZMod.Quotient.Group
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -37,10 +37,9 @@ grading graded-isomorphic to a shift has such a generator.
 
 ## Main results
 
-* `Units.val_inv_mem_graded` and `Units.val_zpow_mem_graded`: the inverse and integer powers of
-  a homogeneous unit of degree `d` are homogeneous of degrees `-d` and `m • d`.
-* `Units.val_mul_mul_inv_mem_graded`: in a ring graded by an additive commutative group,
-  conjugation by a homogeneous unit preserves every graded piece.
+* `Units.val_inv_mem_graded`: the inverse of a homogeneous unit of degree `d` is homogeneous of
+  degree `-d`, and `Units.val_mul_mul_inv_mem_graded`: in a ring graded by an additive commutative
+  group, conjugation by a homogeneous unit preserves every graded piece.
 * `TauCeti.mem_homogeneousUnitDegrees_iff`: a degree lies in `homogeneousUnitDegrees 𝒜` if and
   only if it is the degree of a homogeneous unit.
 * `TauCeti.mul_mem_iff_of_isUnit_mem` and `TauCeti.eq_map_mulLeft_of_isUnit_mem`: a compatible
@@ -51,10 +50,6 @@ grading graded-isomorphic to a shift has such a generator.
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
 * `TauCeti.ShiftClassGroup.equivZMod`: for a `ℤ`-grading whose homogeneous unit degrees are the
   multiples of `e`, the shift class group is `ZMod |e|`.
-* `TauCeti.neg_add_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular` and
-  `TauCeti.neg_add_mem_homogeneousUnitDegrees_of_associated`: associated homogeneous elements `b`
-  and `a` satisfy `-db + da ∈ homogeneousUnitDegrees 𝒜`, either when `b` is left-regular in a
-  graded semiring or when `b ≠ 0` in a graded semiring with left cancellation by nonzero elements.
 
 The group-algebra and Laurent-polynomial examples, `TauCeti.homogeneousUnitDegrees_gradeBy` and
 `TauCeti.shiftClassGroupLaurentPolynomialEquiv`, are in `TauCeti.Algebra.MonoidAlgebra.Grading`
@@ -66,39 +61,18 @@ public section
 
 open DirectSum
 
-section GradedMonoid
-
-variable {ι A σ : Type*} [AddGroup ι] [Monoid A] [SetLike σ A] {𝒜 : ι → σ}
-  [SetLike.GradedMonoid 𝒜]
-
-/-- In a monoid graded by an additive group, an integer power of a unit `u` whose value has
-degree `d` and whose inverse has degree `-d` is homogeneous of degree `m • d`. -/
-theorem Units.val_zpow_mem_graded_of_val_inv_mem (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d)
-    (hinv : ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (-d)) (m : ℤ) :
-    ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) := by
-  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
-  · simpa using SetLike.pow_mem_graded n hu
-  · simpa [zpow_neg, ← inv_zpow, neg_zsmul, ← zsmul_neg] using SetLike.pow_mem_graded n hinv
-
-end GradedMonoid
-
 section Inverse
 
 variable {ι A σ : Type*} [DecidableEq ι] [AddGroup ι] [Semiring A] [SetLike σ A]
   [AddSubmonoidClass σ A] {𝒜 : ι → σ} [GradedRing 𝒜]
 
-/-- In a semiring graded by an additive group, the inverse of a homogeneous unit of degree `d` is
+/-- In a ring graded by an additive group, the inverse of a homogeneous unit of degree `d` is
 homogeneous of degree `-d`. -/
 theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
     ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (-d) :=
-  TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hu u.isRegular.left
-    (by rw [Units.mul_inv, add_neg_cancel]; exact SetLike.one_mem_graded 𝒜)
-
-/-- In a semiring graded by an additive group, an integer power of a homogeneous unit of degree `d`
-is homogeneous of degree `m • d`. -/
-theorem Units.val_zpow_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) (m : ℤ) :
-    ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) :=
-  u.val_zpow_mem_graded_of_val_inv_mem hu (u.val_inv_mem_graded hu) m
+  TauCeti.GradedAlgebra.mem_of_mul_mul_eq_self 𝒜 (add_neg_cancel d) hu
+    (by rw [Units.mul_inv]; exact SetLike.one_mem_graded 𝒜)
+    (by rw [Units.inv_mul]; exact SetLike.one_mem_graded 𝒜) (by rw [Units.inv_mul, one_mul])
 
 end Inverse
 
@@ -205,14 +179,6 @@ theorem ShiftClassGroup.equivZMod_mk {A σ : Type*} [Monoid A] [SetLike σ A] {�
   rw [ShiftClassGroup.equivZMod, AddEquiv.trans_apply, QuotientAddGroup.quotientAddEquivOfEq_mk,
     Int.quotientZMultiplesEquivZMod_mk]
 
-/-- The inverse of `ShiftClassGroup.equivZMod` sends an integer cast `(c : ZMod e.natAbs)` to the
-shift class `(c : ShiftClassGroup 𝒜)`. -/
-@[simp]
-theorem ShiftClassGroup.equivZMod_symm_intCast {A σ : Type*} [Monoid A] [SetLike σ A]
-    {𝒜 : ℤ → σ} {e : ℤ} (h : homogeneousUnitDegrees 𝒜 = AddSubgroup.zmultiples e) (c : ℤ) :
-    (ShiftClassGroup.equivZMod h).symm (c : ZMod e.natAbs) = (c : ShiftClassGroup 𝒜) := by
-  rw [AddEquiv.symm_apply_eq, ShiftClassGroup.equivZMod_mk]
-
 section Shift
 
 variable {ι A σ σM : Type*} [DecidableEq ι] [Semiring A] [SetLike σ A] [AddSubmonoidClass σ A]
@@ -251,9 +217,7 @@ variable {𝒜 ℳ}
 generator of `ℳ`: a unit of degree `-d`. -/
 theorem _root_.LinearEquiv.isUnit_apply_one_and_apply_one_mem {d : ι} (φ : A ≃ₗ[A] A)
     (hφ : ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) : IsUnit (φ 1) ∧ φ 1 ∈ ℳ (-d) := by
-  -- `Module.End A A ≃+* Aᵐᵒᵖ` sends an endomorphism to its value at `1`.
-  refine ⟨(((Module.End.isUnit_iff φ.toLinearMap).2 φ.bijective).map
-    (RingEquiv.moduleEndSelf A).symm).unop, (hφ _ _).mpr ?_⟩
+  refine ⟨φ.isUnit_apply_one, (hφ _ _).mpr ?_⟩
   rw [neg_add_cancel]
   exact SetLike.one_mem_graded 𝒜
 
@@ -270,32 +234,6 @@ theorem exists_linearEquiv_iff_exists_isUnit_mem [AddSubmonoidClass σM A] [Deco
   exact ⟨φ, fun n x ↦ by rw [hφ, sub_neg_eq_add]⟩
 
 end AddGroup
-
-section Associated
-
-variable {ι A σ : Type*} [DecidableEq ι] [AddGroup ι] [Semiring A] [SetLike σ A]
-  [AddSubmonoidClass σ A] {𝒜 : ι → σ} [GradedRing 𝒜]
-
-/-- In a semiring graded by an additive group, if a left-regular homogeneous element `b ∈ 𝒜 db` is
-associated to `a ∈ 𝒜 da`, then `-db + da ∈ homogeneousUnitDegrees 𝒜`: the unit cofactor on the
-right is homogeneous of degree `-db + da`. -/
-theorem neg_add_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular {a b : A} {da db : ι}
-    (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb_reg : IsLeftRegular b) (h : Associated b a) :
-    -db + da ∈ homogeneousUnitDegrees 𝒜 := by
-  obtain ⟨u, rfl⟩ := h
-  exact mem_homogeneousUnitDegrees_of_mem <|
-    GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hb hb_reg (by rwa [add_neg_cancel_left])
-
-/-- In a graded semiring with left cancellation by nonzero elements and grading group an additive
-group, if a nonzero homogeneous element `b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then
-`-db + da ∈ homogeneousUnitDegrees 𝒜`. -/
-theorem neg_add_mem_homogeneousUnitDegrees_of_associated [IsLeftCancelMulZero A] {a b : A}
-    {da db : ι} (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb0 : b ≠ 0) (h : Associated b a) :
-    -db + da ∈ homogeneousUnitDegrees 𝒜 :=
-  neg_add_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular ha hb
-    (fun _ _ ↦ mul_left_cancel₀ hb0) h
-
-end Associated
 
 section AddCommGroup
 

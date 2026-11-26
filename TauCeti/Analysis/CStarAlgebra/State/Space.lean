@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.LocallyConvex.WeakDual
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
+import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
@@ -25,11 +26,20 @@ This file defines the state space `TauCeti.stateSpace A` as a subset of the weak
   linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic continuity of positive maps.
 * `TauCeti.convex_stateSpace`: the state space is convex. No unit is needed, because the norm of
   a positive functional is its limit along an approximate unit.
+* `TauCeti.map_eq_zero_of_mem_openSegment_of_mem_stateSpace`: if a functional in an open
+  segment between two states vanishes at a nonnegative element, so do both states.
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
-  complex-linear map of weak-* duals. By
+  complex-linear map of weak-* duals, injective along surjective star homomorphisms
+  (`TauCeti.pullbackFunctional_injective_of_surjective`). By
   `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
   `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to an affine map of state spaces
-  along surjective star homomorphisms and along unital star homomorphisms.
+  along surjective star homomorphisms and along unital star homomorphisms. Along a surjective
+  `f`, its image on states consists of the states vanishing on the kernel of `f`,
+  `TauCeti.mem_image_pullbackFunctional_stateSpace_iff`.
+* `TauCeti.pullbackFunctional_comp_of_apply` and `TauCeti.pullbackFunctional_eq_id_of_apply`:
+  restriction of functionals along star homomorphisms is a contravariant functor.
+* `TauCeti.mem_stateSpace_of_pullbackFunctional_mem_stateSpace`: a positive functional of norm at
+  most `1` whose restriction along a star homomorphism is a state is itself a state.
 
 For unital `A`:
 
@@ -109,6 +119,20 @@ theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff (ω : A
     StrongDual.toStrongDual_toWeakDual, and_iff_right_iff_imp]
   exact fun _ a ha => ω.map_nonneg ha
 
+/-- **States vanishing at a nonnegative element form a face.** If a functional in an open segment
+between two states vanishes at a nonnegative element `x`, both endpoints vanish at `x`. -/
+theorem map_eq_zero_of_mem_openSegment_of_mem_stateSpace {ψ₁ ψ₂ : WeakDual ℂ A}
+    (hψ₁ : ψ₁ ∈ stateSpace A) (hψ₂ : ψ₂ ∈ stateSpace A) {x : A} (hx : 0 ≤ x)
+    (hφ : φ ∈ openSegment ℝ ψ₁ ψ₂) (hφx : φ x = 0) : ψ₁ x = 0 ∧ ψ₂ x = 0 := by
+  obtain ⟨s, t, hs, ht, -, rfl⟩ := hφ
+  have hsum : (s : ℂ) * ψ₁ x + (t : ℂ) * ψ₂ x = 0 := by simpa [Complex.real_smul] using hφx
+  -- Both terms are nonnegative, and their sum vanishes.
+  obtain ⟨e₁, e₂⟩ := (add_eq_zero_iff_of_nonneg
+    (mul_nonneg (Complex.zero_le_real.2 hs.le) (map_nonneg_of_mem_stateSpace hψ₁ hx))
+    (mul_nonneg (Complex.zero_le_real.2 ht.le) (map_nonneg_of_mem_stateSpace hψ₂ hx))).1 hsum
+  exact ⟨(mul_eq_zero.1 e₁).resolve_left (Complex.ofReal_ne_zero.2 hs.ne'),
+    (mul_eq_zero.1 e₂).resolve_left (Complex.ofReal_ne_zero.2 ht.ne')⟩
+
 variable [StarOrderedRing A]
 
 /-- The states of `A` are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, viewed in the
@@ -184,6 +208,14 @@ theorem pullbackFunctional_toWeakDual (f : F) (σ : B →P[ℂ] ℂ) :
       StrongDual.toWeakDual ((σ.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) :=
   DFunLike.ext _ _ fun _ => by simp
 
+/-- Pullback of functionals along a surjective star homomorphism is injective: `φ ∘ f`
+determines `φ` on the range of `f`, which is all of `B`. -/
+theorem pullbackFunctional_injective_of_surjective (f : F) (hf : Function.Surjective f) :
+    Function.Injective (pullbackFunctional A f) := fun φ ψ h =>
+  DFunLike.ext _ _ fun b => by
+    obtain ⟨a, rfl⟩ := hf b
+    simpa using congrArg (fun χ : WeakDual ℂ A => χ a) h
+
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the
 composite can drop, for instance to `0`. -/
@@ -200,6 +232,107 @@ theorem mapsTo_pullbackFunctional_stateSpace_of_surjective (f : F) (hf : Functio
   refine mem_stateSpace_iff.2 ⟨fun a ha => map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha), ?_⟩
   rw [← hcomp, PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf]
   exact norm_toStrongDual_of_mem_stateSpace hφ
+
+/-- **States factoring through a surjection.** For a surjective star homomorphism `f : A → B`, the
+pullbacks of states of `B` along `f` are exactly the states of `A` vanishing on the kernel of `f`.
+-/
+theorem mem_image_pullbackFunctional_stateSpace_iff (f : F) (hf : Function.Surjective f)
+    {ψ : WeakDual ℂ A} :
+    ψ ∈ pullbackFunctional A f '' stateSpace B ↔ ψ ∈ stateSpace A ∧ ∀ k, f k = 0 → ψ k = 0 := by
+  refine ⟨?_, fun ⟨hψ, hker⟩ => ?_⟩
+  · rintro ⟨φ, hφ, rfl⟩
+    exact ⟨mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hφ, fun k hk => by simp [hk]⟩
+  -- `ψ` vanishes on the kernel of `f`, so it lifts through `f` via `liftOfSurjective`
+  let ψ₀ : A →P[ℂ] ℂ := .mk₀ (toStrongDual ψ) fun a ha =>
+    (map_nonneg_of_mem_stateSpace hψ ha).trans_eq (toStrongDual_apply ψ a).symm
+  let ω : B →P[ℂ] ℂ := ψ₀.liftOfSurjective f hf fun k hk => by
+    simpa [ψ₀] using hker k hk
+  refine ⟨StrongDual.toWeakDual (ω : B →L[ℂ] ℂ), ?_, ?_⟩
+  · rw [PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff,
+      PositiveContinuousLinearMap.opNorm_liftOfSurjective,
+      PositiveContinuousLinearMap.toContinuousLinearMap_mk₀]
+    exact norm_toStrongDual_of_mem_stateSpace hψ
+  · rw [pullbackFunctional_toWeakDual, PositiveContinuousLinearMap.liftOfSurjective_comp_ofClass,
+      PositiveContinuousLinearMap.toContinuousLinearMap_mk₀, toWeakDual_toStrongDual]
+
+/-- **Functoriality of restriction.** If `k = g ∘ f` pointwise, restricting along `k` is
+restricting along `g` and then along `f`. -/
+theorem pullbackFunctional_comp_of_apply {C G K : Type*} [NonUnitalCStarAlgebra C]
+    [PartialOrder C] [StarOrderedRing C] [FunLike G B C] [NonUnitalAlgHomClass G ℂ B C]
+    [StarHomClass G B C] [FunLike K A C] [NonUnitalAlgHomClass K ℂ A C] [StarHomClass K A C]
+    (g : G) (f : F) (k : K) (h : ∀ a, k a = g (f a)) :
+    pullbackFunctional A k = (pullbackFunctional A f).comp (pullbackFunctional B g) :=
+  ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => by simp [h]
+
+/-- Restriction along a star homomorphism `A → A` acting as the identity is the identity. -/
+theorem pullbackFunctional_eq_id_of_apply {E : Type*} [FunLike E A A]
+    [NonUnitalAlgHomClass E ℂ A A] [StarHomClass E A A] (e : E) (h : ∀ a, e a = a) :
+    pullbackFunctional A e = ContinuousLinearMap.id ℂ (WeakDual ℂ A) :=
+  ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => by simp [h]
+
+/-- Restriction of functionals along the identity is the identity. -/
+@[simp]
+theorem pullbackFunctional_id :
+    pullbackFunctional A (NonUnitalStarAlgHom.id ℂ A) = ContinuousLinearMap.id ℂ (WeakDual ℂ A) :=
+  pullbackFunctional_eq_id_of_apply _ fun _ => rfl
+
+/-- **Functoriality of restriction.** Restricting along `g.comp f` is restricting along `g` and
+then along `f`. -/
+theorem pullbackFunctional_comp {C : Type*} [NonUnitalCStarAlgebra C] [PartialOrder C]
+    [StarOrderedRing C] (g : B →⋆ₙₐ[ℂ] C) (f : A →⋆ₙₐ[ℂ] B) :
+    pullbackFunctional A (g.comp f) = (pullbackFunctional A f).comp (pullbackFunctional B g) :=
+  pullbackFunctional_comp_of_apply g f _ fun _ => rfl
+
+/-- The restriction of a state along a star homomorphism is nonnegative on nonnegative
+elements. -/
+theorem map_nonneg_pullbackFunctional_of_mem_stateSpace (f : F) {φ : WeakDual ℂ B}
+    (hφ : φ ∈ stateSpace B) {a : A} (ha : 0 ≤ a) : 0 ≤ pullbackFunctional A f φ a := by
+  rw [pullbackFunctional_apply]
+  exact map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha)
+
+/-- Restriction along a star homomorphism does not increase the norm of a functional. -/
+theorem norm_toStrongDual_pullbackFunctional_le (f : F) (φ : WeakDual ℂ B) :
+    ‖toStrongDual (pullbackFunctional A f φ)‖ ≤ ‖toStrongDual φ‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun x => ?_
+  calc ‖toStrongDual (pullbackFunctional A f φ) x‖ = ‖toStrongDual φ (f x)‖ := by
+        simp only [toStrongDual_apply, pullbackFunctional_apply]
+    _ ≤ ‖toStrongDual φ‖ * ‖f x‖ := (toStrongDual φ).le_opNorm _
+    _ ≤ ‖toStrongDual φ‖ * ‖x‖ :=
+      mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f x) (norm_nonneg _)
+
+/-- The restriction of a state along a star homomorphism has norm at most `1`. -/
+theorem norm_toStrongDual_pullbackFunctional_le_one (f : F) {φ : WeakDual ℂ B}
+    (hφ : φ ∈ stateSpace B) : ‖toStrongDual (pullbackFunctional A f φ)‖ ≤ 1 :=
+  (norm_toStrongDual_pullbackFunctional_le f φ).trans (norm_toStrongDual_of_mem_stateSpace hφ).le
+
+/-- The restriction of a state along a star homomorphism is a state exactly when it has norm
+`1`. -/
+theorem pullbackFunctional_mem_stateSpace_iff (f : F) {φ : WeakDual ℂ B}
+    (hφ : φ ∈ stateSpace B) :
+    pullbackFunctional A f φ ∈ stateSpace A ↔ ‖toStrongDual (pullbackFunctional A f φ)‖ = 1 :=
+  mem_stateSpace_iff.trans
+    (and_iff_right fun _ ha => map_nonneg_pullbackFunctional_of_mem_stateSpace f hφ ha)
+
+/-- A functional `χ` of `B` that is nonnegative on nonnegative elements and has norm at most `1`
+is a state if its restriction along a star homomorphism `f : A → B` is a state. -/
+theorem mem_stateSpace_of_pullbackFunctional_mem_stateSpace (f : F) {χ : WeakDual ℂ B}
+    (hpos : ∀ b, 0 ≤ b → 0 ≤ χ b) (hnorm : ‖toStrongDual χ‖ ≤ 1)
+    (h : pullbackFunctional A f χ ∈ stateSpace A) : χ ∈ stateSpace B := by
+  refine mem_stateSpace_iff.2 ⟨hpos, le_antisymm hnorm ?_⟩
+  rw [← norm_toStrongDual_of_mem_stateSpace h]
+  exact norm_toStrongDual_pullbackFunctional_le f χ
+
+/-- If the restriction of a state of `C` along a composite `A → B → C` of star homomorphisms is a
+state of `A`, then its restriction to `B` is a state of `B`. -/
+theorem pullbackFunctional_mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace
+    {C G : Type*} [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C]
+    [FunLike G B C] [NonUnitalAlgHomClass G ℂ B C] [StarHomClass G B C] (f : F) (g : G)
+    {ψ : WeakDual ℂ C} (hψ : ψ ∈ stateSpace C)
+    (h : pullbackFunctional A f (pullbackFunctional B g ψ) ∈ stateSpace A) :
+    pullbackFunctional B g ψ ∈ stateSpace B :=
+  mem_stateSpace_of_pullbackFunctional_mem_stateSpace f
+    (fun _ hb => map_nonneg_pullbackFunctional_of_mem_stateSpace g hψ hb)
+    (norm_toStrongDual_pullbackFunctional_le_one g hψ) h
 
 end NonUnital
 
@@ -290,6 +423,19 @@ theorem mapsTo_pullbackFunctional_stateSpace (f : F) :
   refine mem_stateSpace_iff_map_one.2 ⟨fun a ha => ?_, ?_⟩
   · simpa using map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha)
   · simpa using map_one_of_mem_stateSpace hφ
+
+/-- Restriction of functionals along the identity unital star homomorphism is the identity. -/
+@[simp]
+theorem pullbackFunctional_starAlgHom_id :
+    pullbackFunctional A (StarAlgHom.id ℂ A) = ContinuousLinearMap.id ℂ (WeakDual ℂ A) :=
+  pullbackFunctional_eq_id_of_apply _ fun _ => rfl
+
+/-- **Functoriality of restriction.** Restricting along the unital star homomorphism `g.comp f` is
+restricting along `g` and then along `f`. -/
+theorem pullbackFunctional_starAlgHom_comp {C : Type*} [CStarAlgebra C] [PartialOrder C]
+    [StarOrderedRing C] (g : B →⋆ₐ[ℂ] C) (f : A →⋆ₐ[ℂ] B) :
+    pullbackFunctional A (g.comp f) = (pullbackFunctional A f).comp (pullbackFunctional B g) :=
+  pullbackFunctional_comp_of_apply g f _ fun _ => rfl
 
 end Unital
 

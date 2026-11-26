@@ -20,22 +20,27 @@ matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero. A submatrix of a product can be computed through part of the inner index, provided the
-relevant rows of the left factor vanish off that part. Products of matrices respect gradings of
-their indices: the identity matrix and a product of degree-preserving matrices are
-degree-preserving, and a product of matrices intertwining square matrices intertwines them.
+relevant rows of the left factor, or the relevant columns of the right factor, vanish off that
+part. Products of matrices respect gradings of their indices: the identity matrix and a product of
+degree-preserving matrices are degree-preserving, and a product of matrices intertwining square
+matrices intertwines them.
 
 Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
+The outer product of two constant vectors is the constant matrix of their product.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
 Transposing a product of rectangular matrices and passing to the opposite ring reverses the
-factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
+factors, intertwines `mulVec` with `vecMul`, and commutes with entrywise ring homomorphisms;
+transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
 
 Sandwiching a matrix over an `R`-algebra between two matrices with entries in `R` gives entries that
 are `R`-linear combinations of the entries of the middle factor. Over a commutative semiring, the
 sum `∑ p, E p * M * E p` over a finite family of square matrices depends on the family only through
-its entry covariance `∑ p, E p a b * E p c d`.
+its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` intertwines `f a` and
+`g a` for every entry `a` of a list `L`, then `U` intertwines the ordered list products
+`(L.map f).prod` and `(L.map g).prod`.
 
 ## Main results
 
@@ -46,6 +51,8 @@ its entry covariance `∑ p, E p a b * E p c d`.
   is nonempty and neither factor is zero.
 * `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
   through an injective inner reindexing whose range carries the relevant rows of the left factor.
+* `Matrix.submatrix_mul_of_injective_right`: the same when the range carries the relevant columns
+  of the right factor.
 * `Matrix.submatrix_val_mul_of_forall`: the same through the inclusions of subtypes, when the
   relevant rows of the left factor vanish off the inner subtype.
 * `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
@@ -56,12 +63,16 @@ its entry covariance `∑ p, E p a b * E p c d`.
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
-* `Matrix.transpose_mul_map_op`: transposing a product and passing to the opposite ring reverses
-  the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
+* `Matrix.vecMulVec_const_const`: the outer product of constant vectors is a constant matrix.
+* `Matrix.transpose_mul_map_op`, `Matrix.transpose_mul_map_unop`, `Matrix.op_comp_mulVec`,
+  `Matrix.transpose_map_op_map_ringHom_op`: transposing a product and passing to or from the
+  opposite ring reverses the factors, intertwines `mulVec` with `vecMul`, and commutes with
+  entrywise ring homomorphisms.
 * `Matrix.map_algebraMap_mul_mul_map_algebraMap_apply`: the entries of `F * u * G`, for `F` and
   `G` with entries in `R` and `u` over an `R`-algebra, are `∑ q, ∑ p, (F i p * G q j) • u p q`.
 * `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
   `∑ p, E p a b * E p c d` of the family `E`.
+* `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
 -/
 
 public section
@@ -69,6 +80,12 @@ public section
 open scoped Matrix
 
 namespace Matrix
+
+/-- The outer product of constant vectors is the constant matrix of their product. -/
+theorem vecMulVec_const_const {α m n : Type*} [Mul α] (a b : α) :
+    vecMulVec (fun _ : m ↦ a) (fun _ : n ↦ b) = of (fun _ _ ↦ a * b) := by
+  ext
+  simp [vecMulVec_apply]
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
@@ -125,6 +142,16 @@ theorem submatrix_mul_of_injective {l o q : Type*} [Fintype o] (A : Matrix m n K
     (A * B).submatrix e₁ e₃ = A.submatrix e₁ e₂ * B.submatrix e₂ e₃ :=
   ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
     (fun j hj ↦ by simp [not_ne_iff.mp (mt (hA i j) hj)]) fun _ ↦ rfl).symm
+
+/-- The rows `e₁` and columns `e₃` of a matrix product can be computed through the inner indices
+`e₂` alone, when `e₂` is injective and the columns `e₃` of the right factor vanish outside its
+range. This is the right-factor version of `Matrix.submatrix_mul_of_injective`. -/
+theorem submatrix_mul_of_injective_right {l o q : Type*} [Fintype o] (A : Matrix m n K)
+    (B : Matrix n p K) (e₁ : l → m) (e₂ : o → n) (e₃ : q → p) (he₂ : Function.Injective e₂)
+    (hB : ∀ j k, B j (e₃ k) ≠ 0 → j ∈ Set.range e₂) :
+    (A * B).submatrix e₁ e₃ = A.submatrix e₁ e₂ * B.submatrix e₂ e₃ :=
+  ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
+    (fun j hj ↦ by simp [not_ne_iff.mp (mt (hB j k) hj)]) fun _ ↦ rfl).symm
 
 /-- The rows satisfying `r` of a matrix product can be computed through the inner indices
 satisfying `s` alone, when the rows satisfying `r` of the left factor vanish at the inner indices
@@ -226,6 +253,28 @@ theorem transpose_mul_map_op [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix
   ext i j
   simp [Matrix.mul_apply]
 
+/-- Transposing a product of matrices over the opposite ring and returning to the ring reverses the
+factors. -/
+theorem transpose_mul_map_unop [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix m n αᵐᵒᵖ)
+    (N : Matrix n p αᵐᵒᵖ) :
+    (M * N)ᵀ.map MulOpposite.unop = Nᵀ.map MulOpposite.unop * Mᵀ.map MulOpposite.unop := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+/-- Applying `MulOpposite.op` to each coordinate intertwines matrix-vector multiplication by `M`
+with vector-matrix multiplication by `Mᵀ.map op`. -/
+theorem op_comp_mulVec [NonUnitalNonAssocSemiring α] [Fintype n]
+    (M : Matrix m n α) (v : n → α) :
+    MulOpposite.op ∘ (M *ᵥ v) = (MulOpposite.op ∘ v) ᵥ* Mᵀ.map MulOpposite.op := by
+  ext i
+  simp [mulVec, vecMul, dotProduct]
+
+/-- Applying `RingHom.op f` entrywise to `Mᵀ.map op` commutes with `(·)ᵀ.map op`. -/
+theorem transpose_map_op_map_ringHom_op {β : Type*} [NonAssocSemiring α] [NonAssocSemiring β]
+    (M : Matrix m n α) (f : α →+* β) :
+    (Mᵀ.map MulOpposite.op).map (RingHom.op f) = (M.map f)ᵀ.map MulOpposite.op :=
+  rfl
+
 end MulOpposite
 
 /-- The entries of a matrix over an `R`-algebra `A` sandwiched between two matrices over `R` are
@@ -250,5 +299,23 @@ theorem sum_mul_mul_apply {ι m R : Type*} [Fintype ι] [Fintype m] [CommSemirin
   exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm.trans <|
     Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
       (mul_right_comm _ _ _).trans (mul_comm _ _)
+
+section Semiring
+
+variable {α m k R : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k] [Semiring R]
+
+/-- **List products preserve intertwiners.** If a rectangular matrix `U` intertwines `f a` and `g a`
+for every entry `a` of a list `L` (`f a * U = U * g a`), then `U` intertwines the ordered products
+`(L.map f).prod` and `(L.map g).prod`. -/
+theorem list_prod_map_mul_eq_mul_list_prod_map (L : List α) (U : Matrix m k R)
+    (f : α → Matrix m m R) (g : α → Matrix k k R) (h : ∀ a ∈ L, f a * U = U * g a) :
+    (L.map f).prod * U = U * (L.map g).prod := by
+  induction L with
+  | nil => simp
+  | cons a t ih =>
+    rw [List.map_cons, List.prod_cons, Matrix.mul_assoc, ih fun x hx => h x (.tail a hx),
+      ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
+
+end Semiring
 
 end Matrix

@@ -21,7 +21,9 @@ Absolutely continuous substitutions satisfy change of variables for continuous i
 For monotone substitutions, the derivative-weighted pushforward of interval volume is interval
 volume on the image, giving change of variables and transformed integrability for arbitrary
 integrable normed-space-valued integrands. This accommodates constant pieces and unbounded
-parameter speeds.
+parameter speeds. The same pushforward sends almost every time at which the derivative does not
+vanish off any null subset of the image interval
+(`AbsolutelyContinuousOnInterval.ae_notMem_of_deriv_ne_zero_of_monotoneOn`).
 
 Substituting the primitive `G u = ∫ v in c..u, g v` of an interval integrable `g` gives
 `|∫ u in c..d, g u * exp |G u|| = exp |G d| - 1`
@@ -96,6 +98,26 @@ theorem map_withDensity_deriv_of_monotoneOn {θ : ℝ → ℝ} {a b : ℝ}
   rw [integral_Icc_eq_integral_Ioc, integral_Icc_eq_integral_Ioc,
     ← intervalIntegral.integral_of_le hab, ← intervalIntegral.integral_of_le hθab]
   exact hθ.integral_comp_mul_deriv_of_continuous f.continuous
+
+/-- A monotone absolutely continuous substitution `θ` maps almost every time of `[a, b]` at which
+its derivative does not vanish outside any null subset of the image interval `[θ a, θ b]`. -/
+theorem ae_notMem_of_deriv_ne_zero_of_monotoneOn {θ : ℝ → ℝ} {a b : ℝ}
+    (hθ : AbsolutelyContinuousOnInterval θ a b) (hmono : MonotoneOn θ (Icc a b)) {N : Set ℝ}
+    (hN : volume.restrict (Icc (θ a) (θ b)) N = 0) :
+    ∀ᵐ t, t ∈ Icc a b → deriv θ t ≠ 0 → θ t ∉ N := by
+  rcases lt_or_ge b a with hba | hab
+  · exact Filter.Eventually.of_forall fun t ht ↦ absurd (ht.1.trans ht.2) (not_le.2 hba)
+  have hθμ : AEMeasurable θ (volume.restrict (Icc a b)) := by
+    simpa only [uIcc_of_le hab] using hθ.continuousOn.aemeasurable measurableSet_uIcc
+  have hθν := hθμ.mono_ac (withDensity_absolutelyContinuous _
+    fun t ↦ ENNReal.ofReal (deriv θ t))
+  have hN' := measure_eq_zero_iff_ae_notMem.1 hN
+  rw [← hθ.map_withDensity_deriv_of_monotoneOn hab hmono] at hN'
+  filter_upwards [(ae_restrict_iff' measurableSet_Icc).1
+      ((ae_withDensity_iff (measurable_deriv θ).ennreal_ofReal).1 (ae_of_ae_map hθν hN')),
+    (ae_restrict_iff' measurableSet_Icc).1 (ae_deriv_nonneg_of_monotoneOn hmono)]
+    with t ht hnn hmem hd
+  exact ht hmem (ENNReal.ofReal_pos.2 ((hnn hmem).lt_of_ne' hd)).ne'
 
 /-- Under a monotone absolutely continuous substitution, integrability of the derivative-weighted
 composition is equivalent to integrability on the image interval. -/

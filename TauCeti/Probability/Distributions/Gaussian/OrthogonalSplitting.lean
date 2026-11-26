@@ -26,6 +26,9 @@ under `stdGaussian E`, so for a unit vector `ν` the half-space `{x | ⟪x, ν�
   onto `F` and `Fᗮ` is `stdGaussian F ⊗ stdGaussian Fᗮ`.
 * `Submodule.map_add_prod_stdGaussian`: the addition map carries
   `stdGaussian F ⊗ stdGaussian Fᗮ` to `stdGaussian E`.
+* `Submodule.stdGaussian_preimage_orthogonalProjectionOnto`: for any `U ⊆ F`, the cylinder
+  `U ⊕ Fᗮ`, the preimage of `U` under the orthogonal projection onto `F` (see
+  `Submodule.preimage_orthogonalProjectionOnto_eq`), has Gaussian measure `γ_F(U)`.
 * `TauCeti.Probability.map_inner_stdGaussian`: the law of `⟪x, ν⟫` is `gaussianReal 0 ‖ν‖²`,
   and `gaussianReal 0 1` for a unit vector (`map_inner_stdGaussian_of_norm_eq_one`).
 * `TauCeti.Probability.measureReal_stdGaussian_setOf_inner_lt`,
@@ -83,6 +86,23 @@ theorem map_add_prod_stdGaussian (F : Submodule ℝ E) :
   convert Measure.map_id
   funext x
   exact F.starProjection_add_starProjection_orthogonal x
+
+/-- **The Gaussian measure of a cylinder.** For any `U ⊆ F`, the cylinder `U ⊕ Fᗮ`, the
+preimage of `U` under the orthogonal projection onto `F`, has standard Gaussian measure
+`γ_E(U ⊕ Fᗮ) = γ_F(U)`. No measurability of `U` is needed, since the addition map
+`F × Fᗮ → E` is a measurable embedding. -/
+theorem stdGaussian_preimage_orthogonalProjectionOnto (F : Submodule ℝ E) (U : Set F) :
+    stdGaussian E (F.orthogonalProjectionOnto ⁻¹' U) = stdGaussian F U := by
+  have he : MeasurableEmbedding (fun p : F × Fᗮ ↦ (p.1 : E) + p.2) := by
+    convert (F.prodEquivOfIsCompl Fᗮ F.isCompl_orthogonal).toContinuousLinearEquiv.toHomeomorph
+      |>.measurableEmbedding using 1
+    funext p
+    simp [Submodule.coe_prodEquivOfIsCompl']
+  have hpre : (fun p : F × Fᗮ ↦ (p.1 : E) + p.2) ⁻¹' (F.orthogonalProjectionOnto ⁻¹' U) =
+      U ×ˢ univ := by
+    ext ⟨y, z⟩
+    simp [F.orthogonalProjectionOnto_eq_zero_iff.2 z.property]
+  rw [← F.map_add_prod_stdGaussian, he.map_apply, hpre, Measure.prod_prod, measure_univ, mul_one]
 
 end Submodule
 

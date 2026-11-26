@@ -244,9 +244,6 @@ noncomputable def IsKnot.partiallyBlockedHomologyInsertEquiv {G : GridDiagram n}
       simp only [DistribSMul.toLinearMap_apply, Submodule.restrictScalars_mem]
       exact exists_sub_X_smul_mem_blockedChains hx)
     (fun _ hm => map_mem_blockedChains _ hm)
-    (fun m => by
-      simp only [LinearMap.restrictScalars_apply, DistribSMul.toLinearMap_apply]
-      exact (G.unblockedDifferential F).map_smul _ m)
     (fun _ hm => by
       simp only [DistribSMul.toLinearMap_apply, Submodule.restrictScalars_mem] at hm ⊢
       exact mem_blockedChains_of_X_smul_mem ht hm)
@@ -285,7 +282,7 @@ theorem IsKnot.partiallyBlockedHomologyInsertEquiv_mk {G : GridDiagram n} (hG : 
             (X_smul_mem_blockedChains (Finset.mem_insert_self t S) b)
             (hS (X_smul_mem_blockedChains hi b))) (hS (map_mem_blockedChains _ hb))))⟩ := by
   rw [partiallyBlockedHomologyInsertEquiv]
-  refine (LinearMap.quotientHomologyProdEquiv_mk _ _ _ _ _ _ _ _ _ _ a b ?_ ?_).trans rfl
+  refine (LinearMap.quotientHomologyProdEquiv_mk _ _ _ _ _ _ _ _ _ a b ?_ ?_).trans rfl
   exacts [ha, hb]
 
 /-- On a knot grid, blocking one more column doubles the dimension of partially blocked

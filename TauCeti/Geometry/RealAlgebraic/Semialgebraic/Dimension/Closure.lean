@@ -22,6 +22,11 @@ coordinates maps it onto a set with nonempty interior. That image lies in the cl
 projection of `s`, which is semialgebraic, so the projection of `s` itself has nonempty interior
 and `s` has dimension at least `d`.
 
+Semialgebraic sets are semianalytic (`TauCeti.IsSemialgebraic.isSemianalytic`), and the same
+statement holds for semianalytic sets (`TauCeti.IsSemianalytic.semialgebraicDim_closure`). That
+proof uses local normal decompositions of semianalytic germs, which are built on the semialgebraic
+dimension theory, so the semialgebraic case is kept here with its direct proof.
+
 ## Main declarations
 
 * `TauCeti.IsSemialgebraic.semialgebraicDim_closure`: the closure of a semialgebraic set has the

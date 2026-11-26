@@ -36,11 +36,22 @@ The two composites are identities because an `R`-derivation of `𝒪_{Spec A}` i
 values on the global sections coming from `A` (`Scheme.Modules.Derivation.Spec_ext`): on a basic
 open `D(f)` every section is a fraction `a / fⁿ`, whose derivative is forced by the Leibniz rule.
 
+Through the isomorphism, an `A`-linear map `g : Ω[A⁄R] → M` to an `A`-module `M` induces a
+morphism of sheaves `Ω_{Spec A/R} ⟶ M~`, which is an epimorphism if `g` is surjective. Since
+`M ↦ M~` is fully faithful, a morphism `M~ ⟶ N~` carrying the morphism induced by `g` to the one
+induced by `h` comes from an `A`-linear map, so the kernel of `g` lies in the kernel of `h`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.relativeDifferentialsSpecIso R A`: the isomorphism
   `Ω_{Spec A/R} ≅ Ω[A⁄R]~`, characterized by `relativeDifferentialsSpecIso_hom_app_d` and
   `relativeDifferentialsSpecIso_inv_app_toOpen`;
+* `TauCeti.AlgebraicGeometry.differentialsSpecToTilde`: the morphism `Ω_{Spec A/R} ⟶ M~`
+  induced by an `A`-linear map `Ω[A⁄R] → M`, characterized by `differentialsSpecToTilde_app_d`;
+* `TauCeti.AlgebraicGeometry.epi_differentialsSpecToTilde`: it is an epimorphism if the linear
+  map is surjective;
+* `TauCeti.AlgebraicGeometry.ker_le_ker_of_differentialsSpecToTilde_comp_eq`: if the morphism
+  induced by `g` factors the one induced by `h`, then `ker g ≤ ker h`;
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_relativeDifferentials_Spec`: `Ω_{Spec A/R}` is
   quasi-coherent;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.Derivation.Spec_ext`: an `R`-derivation of
@@ -310,6 +321,69 @@ instance isQuasicoherent_relativeDifferentials_Spec :
     ((Spec A).relativeDifferentials R).IsQuasicoherent :=
   (SheafOfModules.isQuasicoherent (Spec A).ringCatSheaf).prop_of_iso
     (relativeDifferentialsSpecIso R A).symm (inferInstanceAs (tilde (.of A Ω[A⁄R])).IsQuasicoherent)
+
+/-! ### Morphisms to `M~` induced by linear maps from `Ω[A⁄R]` -/
+
+variable {M N : Type u} [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
+
+/-- The morphism `Ω_{Spec A/R} ⟶ M~` induced by an `A`-linear map `g : Ω[A⁄R] → M` through
+`Ω_{Spec A/R} ≅ Ω[A⁄R]~`. -/
+def differentialsSpecToTilde (g : Ω[A⁄R] →ₗ[A] M) :
+    (Spec A).relativeDifferentials R ⟶ tilde (.of A M) :=
+  (relativeDifferentialsSpecIso R A).hom ≫ (tilde.functor A).map (ModuleCat.ofHom g)
+
+/-- `differentialsSpecToTilde R A g` is `Ω_{Spec A/R} ≅ Ω[A⁄R]~` followed by `g~`. -/
+lemma differentialsSpecToTilde_def (g : Ω[A⁄R] →ₗ[A] M) :
+    differentialsSpecToTilde R A g =
+      (relativeDifferentialsSpecIso R A).hom ≫ (tilde.functor A).map (ModuleCat.ofHom g) :=
+  (rfl)
+
+/-- The morphism induced by `g` sends the differential `d a` of `a ∈ A` to the section `g (D a)`
+of `M~`. -/
+lemma differentialsSpecToTilde_app_d (g : Ω[A⁄R] →ₗ[A] M)
+    (U : (Spec A).Opens) (a : A) :
+    (differentialsSpecToTilde R A g).val.app (.op U)
+        (((Spec A).universalDerivation R).d
+          (((Spec A).presheaf.map (homOfLE le_top).op).hom ((Scheme.ΓSpecIso A).inv.hom a))) =
+      tilde.toOpen (ModuleCat.of A M) U (g (KaehlerDifferential.D R A a)) := by
+  rw [differentialsSpecToTilde_def]
+  -- `(Spec A).Modules` is a type synonym for sheaves of modules on `Spec A`, so `rw` cannot use
+  -- `SheafOfModules.comp_val`; the sections of a composite are the composite by definition.
+  change (tilde.map (ModuleCat.ofHom g)).val.app (.op U)
+    ((relativeDifferentialsSpecIso R A).hom.val.app (.op U) _) = _
+  rw [relativeDifferentialsSpecIso_hom_app_d, tilde_map_val_app_toOpen, ModuleCat.ofHom_apply]
+
+/-- The morphism induced by `ψ ∘ g` is the morphism induced by `g` followed by `ψ~`. -/
+@[reassoc]
+lemma differentialsSpecToTilde_comp (g : Ω[A⁄R] →ₗ[A] M) (ψ : M →ₗ[A] N) :
+    differentialsSpecToTilde R A (ψ ∘ₗ g) =
+      differentialsSpecToTilde R A g ≫ (tilde.functor A).map (ModuleCat.ofHom ψ) := by
+  rw [differentialsSpecToTilde_def, ModuleCat.ofHom_comp, Functor.map_comp]
+  exact (Category.assoc _ _ _).symm
+
+/-- If `g` is surjective, the morphism `Ω_{Spec A/R} ⟶ M~` it induces is an epimorphism, since
+`M ↦ M~` is a left adjoint. -/
+theorem epi_differentialsSpecToTilde {g : Ω[A⁄R] →ₗ[A] M}
+    (hg : Function.Surjective g) : Epi (differentialsSpecToTilde R A g) :=
+  have : Epi (ModuleCat.ofHom g) := (ModuleCat.epi_iff_surjective _).mpr hg
+  epi_comp' inferInstance (Functor.map_epi _ _)
+
+/-- If the morphism induced by `g` followed by a morphism `φ : M~ ⟶ N~` is the morphism induced
+by `h`, then the kernel of `g` lies in the kernel of `h`: as `M ↦ M~` is fully faithful, `φ` comes
+from an `A`-linear map `ψ` with `ψ ∘ g = h`. -/
+theorem ker_le_ker_of_differentialsSpecToTilde_comp_eq
+    (g : Ω[A⁄R] →ₗ[A] M) (h : Ω[A⁄R] →ₗ[A] N) (φ : tilde (.of A M) ⟶ tilde (.of A N))
+    (hφ : differentialsSpecToTilde R A g ≫ φ = differentialsSpecToTilde R A h) :
+    LinearMap.ker g ≤ LinearMap.ker h := by
+  obtain ⟨ψ, rfl⟩ := (tilde.functor A).map_surjective φ
+  have hψ : ModuleCat.ofHom (ψ.hom ∘ₗ g) = ModuleCat.ofHom h := by
+    refine (tilde.functor A).map_injective
+      ((cancel_epi (relativeDifferentialsSpecIso R A).hom).mp ?_)
+    rw [← differentialsSpecToTilde_def, ← differentialsSpecToTilde_def,
+      differentialsSpecToTilde_comp, ModuleCat.ofHom_hom]
+    exact hφ
+  have : ψ.hom ∘ₗ g = h := by simpa using congrArg ModuleCat.Hom.hom hψ
+  exact this ▸ LinearMap.ker_le_ker_comp g ψ.hom
 
 end
 

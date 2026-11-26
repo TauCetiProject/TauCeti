@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
 import TauCeti.Geometry.Lie.Subgroup.OneParameter
@@ -40,6 +41,8 @@ element `diag(1, -1, -1)` is a copy of `O(2)`, which is disconnected.
 ## Main results
 
 * `TauCeti.Lie.isConnected_stabilizer_adjointRepresentation`: `Z_G(ξ)` is connected.
+* `TauCeti.Lie.isConnected_stabilizer_continuousAdjointRepresentation`: the same for the adjoint
+  stabilizer of a left-invariant derivation.
 * `TauCeti.Lie.isConnected_stabilizer_coadjointRepresentation`: `G_ν` is connected.
 
 ## References
@@ -75,6 +78,17 @@ theorem isConnected_stabilizer_adjointRepresentation [ConnectedSpace G]
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   rw [stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgroup]
   exact (isTorus_closedOneParameterSubgroup ξ).isConnected_centralizer I
+
+/-- **Adjoint stabilizers of left-invariant derivations are connected.** In a compact connected
+finite-dimensional real Lie group, the stabilizer `{g | Ad_g Y = Y}` of each left-invariant
+derivation `Y` is connected. -/
+theorem isConnected_stabilizer_continuousAdjointRepresentation [ConnectedSpace G]
+    (Y : LeftInvariantDerivation I G) :
+    IsConnected
+      ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y :
+        Set G) := by
+  rw [stabilizer_continuousAdjointRepresentation_eq_stabilizer_adjointRepresentation]
+  exact isConnected_stabilizer_adjointRepresentation _
 
 omit [T2Space G] in
 /-- **Coadjoint stabilizers are connected.** In a compact connected finite-dimensional real Lie

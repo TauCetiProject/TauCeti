@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.FiberBundle.Trivialization
 public import TauCeti.Geometry.Manifold.PontryaginThom.Basic
 public import TauCeti.Topology.Homotopy.Lifting.Basic
+public import TauCeti.Topology.OpenPartialHomeomorph.Ball
 
 /-!
 # The normal coordinate of a framed tube
@@ -30,6 +32,8 @@ submanifold used to compute the local homology of a fibration along the preimage
 * `TauCeti.IsFramedTube.tubeBall`: the part `τ(S × D)` of the tube over a ball about `0`.
 * `TauCeti.IsFramedTube.tubeBallHomeomorph`: the homeomorphism `S × D ≃ₜ τ(S × D)`.
 * `TauCeti.IsFramedTube.normalCoordinate`: the normal coordinate `τ(S × D) → D`.
+* `TauCeti.IsFramedTube.tubeBallTrivialization`: a bundle trivialization over the tube, read as a
+  product with the ball compatibly with the normal coordinate.
 -/
 
 public section
@@ -159,6 +163,58 @@ lemma hasHomotopyLiftingProperty_normalCoordinate (h : IsFramedTube f τ) (ε : 
     (((h.tubeBallHomeomorph ε).symm.trans (.prodComm _ _)).hasHomotopyLiftingProperty A)
     (Homeomorph.continuous _)
 
+section Trivialization
+
+variable {E Y : Type*} [TopologicalSpace E] [TopologicalSpace Y] {p : E → N}
+  (hτ : IsFramedTube f τ) {ε : ℝ} (T : Bundle.Trivialization Y p) (hT : tubeBall τ ε ⊆ T.baseSet)
+
+/-- Over the part `τ(S × D)` of a framed tube over the ball `D` of radius `ε` about `0`, a
+trivialization of `p` over a base set containing `τ(S × D)` identifies the part of `E` over it with
+`D × (S × Y)`: a point goes to the normal coordinate of its image, the coordinate of its image along
+the core, and its fibre coordinate. -/
+def tubeBallTrivialization : p ⁻¹' tubeBall τ ε ≃ₜ ball (0 : V) ε × (S × Y) :=
+  (T.preimageHomeomorph hT).trans <|
+    (((hτ.tubeBallHomeomorph ε).symm.trans (.prodComm _ _)).prodCongr (.refl Y)).trans
+      (.prodAssoc _ _ _)
+
+/-- The first coordinate of `TauCeti.IsFramedTube.tubeBallTrivialization` is the normal coordinate
+of `p z` (`TauCeti.IsFramedTube.normalCoordinate`). -/
+@[simp]
+lemma tubeBallTrivialization_apply_fst (z : p ⁻¹' tubeBall τ ε) :
+    (hτ.tubeBallTrivialization T hT z).1 = hτ.normalCoordinate ε ⟨p z, z.property⟩ := by
+  simp [tubeBallTrivialization, T.preimageHomeomorph_apply, Homeomorph.prodAssoc]
+
+/-- The second coordinate of `TauCeti.IsFramedTube.tubeBallTrivialization` is the coordinate along
+the core given by the tube, together with the fibre coordinate of `T`. -/
+@[simp]
+lemma tubeBallTrivialization_apply_snd (z : p ⁻¹' tubeBall τ ε) :
+    (hτ.tubeBallTrivialization T hT z).2 =
+      (((hτ.tubeBallHomeomorph ε).symm ⟨p z, z.property⟩).1, (T z.val).2) := by
+  simp [tubeBallTrivialization, T.preimageHomeomorph_apply, Homeomorph.prodAssoc]
+
+/-- The inverse of `TauCeti.IsFramedTube.tubeBallTrivialization` is the inverse of `T` after reading
+the normal coordinate and the coordinate along the core back in `N` through the framed tube. -/
+@[simp]
+lemma coe_tubeBallTrivialization_symm_apply (x : ball (0 : V) ε × (S × Y)) :
+    ((hτ.tubeBallTrivialization T hT).symm x : E) =
+      T.toOpenPartialHomeomorph.symm (τ (x.2.1, x.1), x.2.2) := by
+  simp [tubeBallTrivialization, Homeomorph.prodAssoc]
+
+end Trivialization
+
 end IsFramedTube
+
+section ChartBall
+
+/-- If near `b'` the normal coordinate of `s` is a chart at `b'`, then `s b'` lies on the core. -/
+lemma IsFramedTube.apply_mem_range_of_chartBall {V B B' S : Type*} [SeminormedAddCommGroup V]
+    [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace S] {f : S → B} {τ : S × V → B}
+    (hτ : IsFramedTube f τ) {s : B' → B} (e : OpenPartialHomeomorph B' V) {b' : B'}
+    (hb : b' ∈ e.source) {ε : ℝ} (hs : ∀ x ∈ e.chartBall b' ε, ∃ y, τ (y, e x - e b') = s x)
+    (hε₀ : 0 < ε) : s b' ∈ range f := by
+  obtain ⟨y, hy⟩ := hs b' (e.mem_chartBall_self hb hε₀)
+  exact ⟨y, by rw [← hτ.apply_zero, ← hy, sub_self]⟩
+
+end ChartBall
 
 end TauCeti

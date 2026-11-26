@@ -36,7 +36,9 @@ of a piece of the unit sphere is `tᵐ` times the Jacobian of `ψ`.
 
 The Jacobian of the linear normal graph `x ↦ (A x, x)` of a functional `A` is
 `sqrt (1 + ‖A‖²)`: its Gram matrix in an orthonormal basis is a rank-one perturbation of the
-identity.
+identity. More generally, for `A : U →L[ℝ] V` the Jacobian of the linear graph `v ↦ (v, A v)`
+into `WithLp 2 (U × V)` is `sqrt (det (I + A† A))`: its Gram matrix in an orthonormal basis `b` of
+`U` is `⟪b i, b j⟫ + ⟪A (b i), A (b j)⟫`, the matrix of `I + A† A`.
 
 Over any `RCLike` scalar field `𝕜` and arbitrary (possibly infinite-dimensional) inner product
 codomain `W`, Hadamard's inequality bounds `A.normDet` by `∏ i, ‖A (b i)‖` on any orthonormal
@@ -67,10 +69,16 @@ basis `b` of `U`, and hence by `‖A‖ ^ Module.finrank 𝕜 U`. Equality holds
 * `LinearMap.normDet_toSpanSingleton_coprod`: an orthogonal unit extension of a linear map has the
   same Jacobian.
 * `ContinuousLinearMap.normDet_normalGraphL`: the Jacobian of a linear normal graph.
+* `ContinuousLinearMap.normDet_graphL`: the Jacobian of the linear graph `v ↦ (v, A v)` in every
+  codimension is `sqrt (det (I + A† A))`.
+* `ContinuousLinearMap.normDet_graphL_id_of_finrank_eq_two`: for the identity of a plane it is
+  `2`, not the codimension-one factor `sqrt (1 + ‖id‖²) = sqrt 2`.
 * `LinearMap.normDet_le_prod_norm`, `ContinuousLinearMap.normDet_le_norm_pow`,
   `IsConformalMap.normDet_eq_norm_pow`, `ContinuousLinearMap.norm_apply_eq_of_normDet_eq_norm_pow`,
   `ContinuousLinearMap.normDet_eq_norm_pow_iff`: Hadamard's inequality for `normDet` and its
   conformality equality characterization.
+* `ContinuousLinearMap.normDet_adjoint_le_norm_pow`: the coarea Jacobian `f.adjoint.normDet` is at
+  most `‖f‖ ^ dim F`.
 * `LinearMap.pow_finrank_le_normDet_of_mul_norm_le`, `LinearMap.normDet_le_pow_finrank_of_norm_le`,
   `LinearMap.normDet_eq_pow_finrank_of_norm_eq`: uniform lower, upper, and exact norm bounds on a
   linear map control its `normDet` by the `finrank`-th power of the factor.
@@ -325,6 +333,36 @@ theorem ContinuousLinearMap.normDet_normalGraphL (A : U →L[ℝ] ℝ) :
     rw [h, hgram, Matrix.det_one_add_replicateCol_mul_replicateRow, hu]
   rw [← Real.sqrt_sq A.normalGraphL.normDet_nonneg, hsq]
 
+/-- **The Jacobian of a linear graph.** The graph map `v ↦ (v, A v)` into `WithLp 2 (U × V)` has
+Jacobian `sqrt (det (I + A† A))`. -/
+theorem ContinuousLinearMap.normDet_graphL (A : U →L[ℝ] V) :
+    A.graphL.normDet =
+      Real.sqrt (LinearMap.det (1 + LinearMap.adjoint (A : U →ₗ[ℝ] V) ∘ₗ (A : U →ₗ[ℝ] V))) := by
+  let b := stdOrthonormalBasis ℝ U
+  have hgram : Matrix.gram ℝ (fun i => A.graphL.toLinearMap (b i)) =
+      LinearMap.toMatrix b.toBasis b.toBasis (1 + LinearMap.adjoint (A : U →ₗ[ℝ] V) ∘ₗ A) := by
+    ext i j
+    simp only [Matrix.gram_apply, ContinuousLinearMap.coe_coe, ContinuousLinearMap.graphL_apply,
+      WithLp.prod_inner_apply, LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis,
+      OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply,
+      LinearMap.add_apply, one_apply_eq_self, LinearMap.comp_apply, inner_add_right,
+      LinearMap.adjoint_inner_right]
+  have hsq : A.graphL.normDet ^ 2 =
+      LinearMap.det (1 + LinearMap.adjoint (A : U →ₗ[ℝ] V) ∘ₗ A) := by
+    have h := A.graphL.toLinearMap.normDet_sq_eq_det_gram b
+    simp only [RCLike.ofReal_real_eq_id, id_eq] at h
+    rw [h, hgram, LinearMap.det_toMatrix]
+  rw [← hsq, Real.sqrt_sq A.graphL.normDet_nonneg]
+
+/-- **The graph of the identity of a plane.** If `dim U = 2`, the graph map `x ↦ (x, x)` has
+Jacobian `2 = sqrt (det (2 I))`, whereas the codimension-one factor `sqrt (1 + ‖A‖²)` with
+`‖id‖ = 1` would give `sqrt 2`. -/
+theorem ContinuousLinearMap.normDet_graphL_id_of_finrank_eq_two (hU : Module.finrank ℝ U = 2) :
+    (ContinuousLinearMap.id ℝ U).graphL.normDet = 2 := by
+  have h : (1 + LinearMap.id : U →ₗ[ℝ] U) = (2 : ℝ) • LinearMap.id := by
+    rw [two_smul, Module.End.one_eq_id]
+  simp [normDet_graphL, h, LinearMap.det_smul, hU]
+
 omit [FiniteDimensional ℝ U] in
 /-- The Jacobian of the adjoint of a linear functional is its norm. This is the coarea Jacobian
 of a real-valued map, the norm of its gradient. -/
@@ -430,6 +468,15 @@ theorem ContinuousLinearMap.normDet_eq_norm_pow_iff (A : E →L[𝕜] F) :
     · exact hconf.normDet_eq_norm_pow
 
 end Hadamard
+
+/-- The coarea Jacobian `f.adjoint.normDet` of a continuous linear map `f : E →L[𝕜] F` into a
+finite-dimensional inner product space is at most `‖f‖ ^ dim F`. The domain need only be
+complete, not finite-dimensional. -/
+theorem ContinuousLinearMap.normDet_adjoint_le_norm_pow {𝕜 E F : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] (f : E →L[𝕜] F) :
+    f.adjoint.normDet ≤ ‖f‖ ^ Module.finrank 𝕜 F :=
+  f.adjoint.normDet_le_norm_pow.trans_eq (by rw [LinearIsometryEquiv.norm_map])
 
 namespace LinearMap
 

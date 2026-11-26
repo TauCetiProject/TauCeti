@@ -46,6 +46,8 @@ commutative monoid with zero.
 The values of the lifted characters at odd residues follow from
 `DirichletCharacter.changeLevel_ringHomComp_intCast_apply` and Mathlib's tables
 `ZMod.χ₄_int_eq_if_mod_four`, `ZMod.χ₈_int_eq_if_mod_eight` and `ZMod.χ₈'_int_eq_if_mod_eight`.
+For the lift of `ZMod.χ₄` to level eight, `DirichletCharacter.changeLevel_χ₄_apply_fin_four`
+records the value `(-1) ^ a` at the odd residue `2 * a + 1`.
 
 ## References
 
@@ -114,6 +116,21 @@ theorem eq_one_or_eq_χ₄_or_eq_χ₈_or_eq_χ₈'_of_isQuadratic {χ : Dirichl
         Int.cast_neg, Int.cast_one]
     · rw [h5, MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈ (a := 5) (b := -1) (by decide),
         Int.cast_neg, Int.cast_one]
+
+/-- The lift of `χ₄` to level eight takes the value `(-1) ^ a` at the odd residue
+`2 * a + 1`. -/
+theorem changeLevel_χ₄_apply_fin_four (a : Fin 4) :
+    changeLevel (by norm_num : 4 ∣ 8) (χ₄.ringHomComp (Int.castRingHom R))
+      (2 * (a : ℕ) + 1) = (-1) ^ (a : ℕ) := by
+  have hcast : (2 * (a : ℕ) + 1 : ZMod 8) = (((2 * a + 1 : ℕ) : ℤ) : ZMod 8) := by
+    push_cast
+    ring
+  have hcop : IsCoprime ((2 * a + 1 : ℕ) : ℤ) (8 : ℕ) :=
+    Int.isCoprime_iff_gcd_eq_one.mpr (by fin_cases a <;> rfl)
+  have hval : χ₄ (((2 * a + 1 : ℕ) : ℤ) : ZMod 4) = (-1) ^ (a : ℕ) := by
+    fin_cases a <;> decide
+  rw [hcast, changeLevel_ringHomComp_intCast_apply _ _ hcop, hval, Int.cast_pow, Int.cast_neg,
+    Int.cast_one]
 
 /-! ### The quadratic characters at level `2 ^ k` -/
 

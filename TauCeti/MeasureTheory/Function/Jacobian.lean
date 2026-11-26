@@ -13,6 +13,8 @@ public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
 # Change of variables: pushforward bounds, `Lᵖ` bounds and affine invariance of set integrals
@@ -31,6 +33,8 @@ Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` 
 (`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). If moreover `f` is injective
 and its derivative is invertible on `s`, then almost-everywhere properties on `t` pull back along
 `f` to almost-everywhere properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`).
+They also pull back whenever `f` has a differentiable left inverse on `t`
+(`MeasureTheory.ae_restrict_comp_of_leftInvOn`).
 Conversely, if `f` is `μ`-almost everywhere measurable and admits a differentiable left inverse `g`
 with `|det Dg| ≤ J` everywhere, then `μ.map f ≤ J • μ`
 (`MeasureTheory.map_addHaar_le_smul_of_leftInverse`). More locally, without differentiability of
@@ -48,9 +52,14 @@ inside an open set where `f` is differentiable, with `f` injective on `s` and gi
 transformed derivative `x ↦ D (f x) ∘ Df x` by those of `u` and `D` on `f '' s`
 (`MeasureTheory.eLpNorm_comp_restrict_le`, `MeasureTheory.eLpNorm_comp_fderiv_restrict_le`).
 Such constants exist on every compact set on which a `C¹` map has invertible derivative
-(`MeasureTheory.exists_det_bounds_of_isCompact`), so precomposition with a map that is `C¹`,
-injective and with invertible derivative on an open set preserves local integrability
-(`MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`). For a bijection `φ`, a bound
+(`MeasureTheory.exists_det_bounds_of_isCompact`). Injectivity is not needed on a compact set: by
+the inverse function theorem the map is injective near each of its points, and `Lᵖ` membership on
+finitely many such pieces gives it on the whole set
+(`MeasureTheory.memLp_restrict_of_forall_injOn`). So precomposition with a map that is `C¹` with
+invertible derivative on a compact set maps `Lᵖ` of its image into `Lᵖ` of the set
+(`MeasureTheory.MemLp.comp_restrict_of_isCompact`), and on an open set it preserves local
+integrability (`MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`). The map need not be
+injective, as `z ↦ z²` on `ℂ ∖ {0}` is not. For a bijection `φ`, a bound
 `‖Dφ⁻¹‖ ≤ A` on the derivative of its inverse gives the Jacobian lower bound `A^{-n} ≤ |det Dφ|`
 everywhere, in dimension `n` (`Equiv.inv_pow_le_abs_det_fderiv`).
 
@@ -79,13 +88,16 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   along a map that is injective with invertible derivative on an open set.
 * `MeasureTheory.exists_det_bounds_of_isCompact`: Jacobian and derivative bounds on a compact
   set.
+* `MeasureTheory.memLp_restrict_of_forall_injOn`: `Lᵖ` membership on a compact set from its
+  measurable pieces on which a `C¹` map with invertible derivative is injective.
 * `MeasureTheory.eLpNorm_comp_restrict_le`, `MeasureTheory.eLpNorm_comp_fderiv_restrict_le`: the
   `Lᵖ` bounds for precomposition on a measurable set, given such constants.
 * `MeasureTheory.MemLp.comp_restrict_of_isCompact`,
-  `MeasureTheory.MemLp.comp_fderiv_restrict_of_isCompact`: precomposition on a compact set.
+  `MeasureTheory.MemLp.comp_fderiv_restrict_of_isCompact`: precomposition on a compact set, with
+  no injectivity assumption.
 * `MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`,
   `MeasureTheory.LocallyIntegrableOn.comp_fderiv_contDiffOn_diffeo`: local integrability is
-  preserved.
+  preserved, again with no injectivity assumption.
 * `ContinuousAffineMap.setIntegral_comp_of_image_eq`: integrals over `s` are invariant under a
   continuous affine map carrying `s` onto itself, when `s` has finite measure.
 * `Equiv.inv_pow_le_abs_det_fderiv`: if `‖Dφ⁻¹(φ x)‖ ≤ L`, then `|det Dφ(x)| ≥ L^{-n}` in
@@ -252,6 +264,22 @@ theorem ae_restrict_comp_of_differentiableOn {P : E → Prop} (hs : IsOpen s)
   filter_upwards [self_mem_ae_restrict hs.measurableSet] with x hx
   simpa using hdet x hx
 
+/-- **Null sets pull back along a map with a differentiable left inverse.** If `f` maps a
+measurable set `s` into a measurable set `t`, and `g` is differentiable on `t` with `g (f x) = x`
+on `s`, then a property holding `μ`-almost everywhere on `t` holds at `f x` for `μ`-almost every
+`x ∈ s`: the exceptional points of `s` lie in the image under `g` of a null subset of `t`, and a
+differentiable map carries null sets to null sets. -/
+theorem ae_restrict_comp_of_leftInvOn {P : E → Prop} {g : E → E} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hg : DifferentiableOn ℝ g t) (hmaps : MapsTo f s t)
+    (hinv : ∀ x ∈ s, g (f x) = x) (h : ∀ᵐ y ∂μ.restrict t, P y) :
+    ∀ᵐ x ∂μ.restrict s, P (f x) := by
+  rw [ae_iff, Measure.restrict_apply' ht] at h
+  rw [ae_iff, Measure.restrict_apply' hs]
+  refine measure_mono_null ?_
+    (addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ (hg.mono inter_subset_right) h)
+  rintro x ⟨hP, hx⟩
+  exact ⟨f x, ⟨hP, hmaps hx⟩, hinv x hx⟩
+
 /-! ### Jacobian bounds on compact sets and `Lᵖ` bounds for precomposition -/
 
 section Precomposition
@@ -275,6 +303,22 @@ theorem exists_det_bounds_of_isCompact (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ 1 
   obtain ⟨y, hyK, hy⟩ := hK.exists_isMinOn hne
     ((ContinuousLinearMap.continuous_det.comp_continuousOn hcont).abs)
   exact ⟨_, L, abs_pos.2 (hdet y hyK), fun x hx => hy hx, hL⟩
+
+omit [BorelSpace E] in
+/-- **Patching `Lᵖ` membership over pieces of injectivity.** Let `f` be `C¹` on an open set `Ω`
+with invertible derivative on a compact set `K ⊆ Ω`. If a function `g` is `Lᵖ` on every measurable
+subset of `K` on which `f` is injective, then `g` is `Lᵖ` on `K`. -/
+theorem memLp_restrict_of_forall_injOn [OpensMeasurableSpace E] {G : Type*}
+    [NormedAddCommGroup G] {g : E → G} (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ 1 f Ω)
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hdet : ∀ x ∈ K, (fderiv ℝ f x).det ≠ 0)
+    (hg : ∀ s ⊆ K, MeasurableSet s → InjOn f s → MemLp g p (μ.restrict s)) :
+    MemLp g p (μ.restrict K) := by
+  refine hK.memLp_restrict_of_forall_nhdsWithin fun x hx => ?_
+  obtain ⟨V, hV, hinj⟩ := (hf.contDiffAt (hΩ.mem_nhds (hKΩ hx))).exists_mem_nhds_injOn one_ne_zero
+    ⟨_, ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ (hdet x hx)⟩
+  obtain ⟨W, hWV, hW, hxW⟩ := mem_nhds_iff.1 hV
+  exact ⟨K ∩ W, inter_mem_nhdsWithin K (hW.mem_nhds hxW), hg _ inter_subset_left
+    (hK.isClosed.measurableSet.inter hW.measurableSet) (hinj.mono (inter_subset_right.trans hWV))⟩
 
 variable [μ.IsAddHaarMeasure]
 
@@ -345,38 +389,41 @@ theorem MemLp.comp_fderiv_restrict_of_le_abs_det {D : E → E →L[ℝ] F}
         (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne')) hD))
 
 omit [NormedSpace ℝ F] in
-/-- **Precomposition on a compact set.** If `f` is `C¹` on an open set `Ω`, and injective with
-invertible derivative on a compact set `K ⊆ Ω`, then precomposition with `f` maps `Lᵖ(f K)` into
-`Lᵖ(K)`. -/
+/-- **Precomposition on a compact set.** If `f` is `C¹` on an open set `Ω`, with invertible
+derivative on a compact set `K ⊆ Ω`, then precomposition with `f` maps `Lᵖ(f K)` into `Lᵖ(K)`.
+The map `f` need not be injective on `K`. -/
 theorem MemLp.comp_restrict_of_isCompact {u : E → F} (hu : MemLp u p (μ.restrict (f '' K)))
-    (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ 1 f Ω) (hinj : InjOn f K)
-    (hdet : ∀ x ∈ K, (fderiv ℝ f x).det ≠ 0) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ 1 f Ω) (hdet : ∀ x ∈ K, (fderiv ℝ f x).det ≠ 0)
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     MemLp (fun x => u (f x)) p (μ.restrict K) := by
   obtain ⟨c, L, hc, hcK, -⟩ := exists_det_bounds_of_isCompact hΩ hf hK hKΩ hdet
-  exact hu.comp_restrict_of_le_abs_det hΩ (hf.differentiableOn one_ne_zero) hinj hKΩ
-    hK.measurableSet hc hcK
+  refine memLp_restrict_of_forall_injOn hΩ hf hK hKΩ hdet fun s hsK hs hinj => ?_
+  have hus := hu.mono_measure (Measure.restrict_mono (image_mono hsK) le_rfl)
+  exact hus.comp_restrict_of_le_abs_det hΩ (hf.differentiableOn one_ne_zero) hinj (hsK.trans hKΩ)
+    hs hc fun x hx => hcK x (hsK hx)
 
 /-- **The transformed derivative on a compact set.** Under the hypotheses of
 `MeasureTheory.MemLp.comp_restrict_of_isCompact`, `x ↦ D (f x) ∘ fderiv ℝ f x` is in `Lᵖ(K)`
 whenever `D` is in `Lᵖ(f K)`. -/
 theorem MemLp.comp_fderiv_restrict_of_isCompact {D : E → E →L[ℝ] F}
     (hD : MemLp D p (μ.restrict (f '' K))) (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ 1 f Ω)
-    (hinj : InjOn f K) (hdet : ∀ x ∈ K, (fderiv ℝ f x).det ≠ 0) (hK : IsCompact K)
-    (hKΩ : K ⊆ Ω) :
+    (hdet : ∀ x ∈ K, (fderiv ℝ f x).det ≠ 0) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     MemLp (fun x => (D (f x)).comp (fderiv ℝ f x)) p (μ.restrict K) := by
   obtain ⟨c, L, hc, hcK, hLK⟩ := exists_det_bounds_of_isCompact hΩ hf hK hKΩ hdet
-  exact hD.comp_fderiv_restrict_of_le_abs_det hΩ (hf.differentiableOn one_ne_zero) hinj hKΩ
-    hK.measurableSet hc hcK hLK
+  refine memLp_restrict_of_forall_injOn hΩ hf hK hKΩ hdet fun s hsK hs hinj => ?_
+  have hDs := hD.mono_measure (Measure.restrict_mono (image_mono hsK) le_rfl)
+  exact hDs.comp_fderiv_restrict_of_le_abs_det hΩ (hf.differentiableOn one_ne_zero) hinj
+    (hsK.trans hKΩ) hs hc (fun x hx => hcK x (hsK hx)) fun x hx => hLK x (hsK hx)
 
 omit [NormedSpace ℝ F] in
-/-- Local integrability is preserved by precomposition with a map that is `C¹`, injective and
-with invertible derivative on an open set `U`, mapping `U` into `V`. -/
+/-- Local integrability is preserved by precomposition with a map that is `C¹` with invertible
+derivative on an open set `U`, mapping `U` into `V`. The map need not be injective. -/
 theorem LocallyIntegrableOn.comp_contDiffOn_diffeo {u : E → F} (hu : LocallyIntegrableOn u V μ)
-    (hU : IsOpen U) (hf : ContDiffOn ℝ 1 f U) (hinj : InjOn f U)
-    (hdet : ∀ x ∈ U, (fderiv ℝ f x).det ≠ 0) (hmaps : MapsTo f U V) :
+    (hU : IsOpen U) (hf : ContDiffOn ℝ 1 f U) (hdet : ∀ x ∈ U, (fderiv ℝ f x).det ≠ 0)
+    (hmaps : MapsTo f U V) :
     LocallyIntegrableOn (fun x => u (f x)) U μ := by
   refine (locallyIntegrableOn_iff hU.isLocallyClosed).2 fun K hKU hK => ?_
-  refine memLp_one_iff_integrable.1 (MemLp.comp_restrict_of_isCompact ?_ hU hf (hinj.mono hKU)
+  refine memLp_one_iff_integrable.1 (MemLp.comp_restrict_of_isCompact ?_ hU hf
     (fun x hx => hdet x (hKU hx)) hK hKU)
   exact memLp_one_iff_integrable.2 (hu.integrableOn_compact_subset
     ((image_mono hKU).trans hmaps.image_subset)
@@ -386,12 +433,12 @@ theorem LocallyIntegrableOn.comp_contDiffOn_diffeo {u : E → F} (hu : LocallyIn
 `D` is locally integrable on `V`, under the hypotheses of
 `MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`. -/
 theorem LocallyIntegrableOn.comp_fderiv_contDiffOn_diffeo {D : E → E →L[ℝ] F}
-    (hD : LocallyIntegrableOn D V μ) (hU : IsOpen U) (hf : ContDiffOn ℝ 1 f U) (hinj : InjOn f U)
+    (hD : LocallyIntegrableOn D V μ) (hU : IsOpen U) (hf : ContDiffOn ℝ 1 f U)
     (hdet : ∀ x ∈ U, (fderiv ℝ f x).det ≠ 0) (hmaps : MapsTo f U V) :
     LocallyIntegrableOn (fun x => (D (f x)).comp (fderiv ℝ f x)) U μ := by
   refine (locallyIntegrableOn_iff hU.isLocallyClosed).2 fun K hKU hK => ?_
   refine memLp_one_iff_integrable.1 (MemLp.comp_fderiv_restrict_of_isCompact ?_ hU hf
-    (hinj.mono hKU) (fun x hx => hdet x (hKU hx)) hK hKU)
+    (fun x hx => hdet x (hKU hx)) hK hKU)
   exact memLp_one_iff_integrable.2 (hD.integrableOn_compact_subset
     ((image_mono hKU).trans hmaps.image_subset)
     (hK.image_of_continuousOn (hf.continuousOn.mono hKU)))

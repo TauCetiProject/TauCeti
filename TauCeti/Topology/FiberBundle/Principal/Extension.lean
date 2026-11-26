@@ -524,6 +524,10 @@ end Id
 section Comp
 variable [ContinuousMul H] [ContinuousMul K]
   (ρ : G →* H) (hρ : Continuous ρ) (σ : H →* K) (hσ : Continuous σ)
+/-- In an iterated extension, `[[p, h], k] = [[p, 1], σ h * k]`. -/
+theorem mk_mk {b : B} (p : P b) (h : H) (k : K) :
+    mk σ hσ (mk ρ hρ p h) k = mk σ hσ (inl ρ hρ p) (σ h * k) := by
+  rw [← smul_inl ρ hρ p h, mk_smul]
 /-- Extending along `ρ : G →* H` and then along `σ : H →* K` is fibrewise equivalent to extending
 along `σ.comp ρ`, sending `[[p, h], k]` to `[p, σ h * k]`. -/
 noncomputable def compEquiv (b : B) :
