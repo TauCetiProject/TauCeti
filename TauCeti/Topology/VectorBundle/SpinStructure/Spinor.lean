@@ -685,6 +685,37 @@ theorem exteriorPowerHalfSpinorEquiv_ιMulti
 
 end HalfSpinor
 
+section ExtendSpinC
+
+variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : X → Type} [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The proof that the standard form on `ℝ⁴` is nonzero, on which `Spinᶜ(4)` depends. -/
+local notation "hpos" => QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm 4 0)
+local notation "SpinC" => spinCGroup (realCliffordForm 4 0) hpos
+
+/-- The rotation homomorphism `Spinᶜ(4) → SO(4) ⊆ GL(ℝ⁴)`, along which `Spinᶜ` structures lift the
+orthonormal frame bundle. -/
+local notation "πᶜ" => MonoidHom.comp
+  (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm 4 0)))
+  (spinCGroup.toSpecialOrthogonal (realCliffordForm 4 0) hpos)
+
+/-- The vector frame at `[p, 1]` in the `Spinᶜ` structure induced by a homomorphism
+`σ : Spinᶜ(4) →* Spinᶜ(4)` covering the identity rotation
+(`TauCeti.OrthonormalFrameLift.extendSpinC`) is the vector frame at `p`. -/
+@[simp]
+theorem vectorFrame_extendSpinC_inl (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V)
+    (σ : SpinC →* SpinC) (hσ : Continuous σ) (hσρ : πᶜ.comp σ = πᶜ) {x : X} (p : s.P x) :
+    (s.extendSpinC σ hσ hσρ).vectorFrame b (PrincipalBundle.Extend.inl σ hσ p) =
+      s.vectorFrame b p := by
+  rw [vectorFrame_def s, ← OrthonormalFrameLift.frameAt_extend_inl s σ hσ hσρ
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply]
+  exact vectorFrame_def _ b _
+
+end ExtendSpinC
+
 end SpinCStructure
 
 end TauCeti

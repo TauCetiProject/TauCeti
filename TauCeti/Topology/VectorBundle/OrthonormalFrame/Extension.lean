@@ -43,7 +43,8 @@ extending along `τ ∘ σ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`).
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameLift.toFrame_extend_inl`: the frame of `[p, 1]` is the frame of `p`.
+* `TauCeti.OrthonormalFrameLift.toFrame_extend_inl` and
+  `TauCeti.OrthonormalFrameLift.frameAt_extend_inl`: the frame of `[p, 1]` is the frame of `p`.
 * `TauCeti.OrthonormalFrameLift.toFrame_extend_mk`: the frame of `[p, h]` is the frame of `p`
   composed with `ρ' h`.
 
@@ -180,6 +181,14 @@ theorem toFrame_extend_inl (x : X) (p : s.P x) :
     (s.extend σ hσ hσρ hρ'n hρ'c).toFrame ⟨x, Extend.inl σ hσ p⟩ = s.toFrame ⟨x, p⟩ :=
   OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ by
     rw [Extend.inl_def, toFrame_extend_mk, map_one, FunLike.coe_one_eq_id, id_eq]
+
+/-- **The frame of `E x` at `[p, 1]`** in the extension of a lift is the frame at `p`. -/
+@[simp]
+theorem frameAt_extend_inl {x : X} (p : s.P x) :
+    (s.extend σ hσ hσρ hρ'n hρ'c).frameAt (Extend.inl σ hσ p) = s.frameAt p := by
+  have h := ((s.extend σ hσ hσρ hρ'n hρ'c).toFrame_mk (Extend.inl σ hσ p)).symm.trans
+    ((s.toFrame_extend_inl σ hσ hσρ hρ'n hρ'c x p).trans (s.toFrame_mk p))
+  exact eq_of_heq (OrthonormalFrameBundle.mk.inj h).2
 
 end Construction
 

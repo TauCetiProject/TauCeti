@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.VectorBundle.Associated.Extension
 public import TauCeti.Topology.VectorBundle.SpinStructure.ChargeConjugation
 public import TauCeti.Topology.VectorBundle.SpinStructure.Spinor
 
@@ -23,14 +24,16 @@ spinors of Taubes's charge conjugation `(A, ψ) ↦ (conj A, j ψ)` of Seiberg�
 Clifford multiplication, `j (c(v) w) = c(v) (j w)`, such as the quaternionic structure of the
 spinors of `ℝ⁴`. Then `j` commutes with the chirality element, so it preserves its eigenspaces
 for real eigenvalues `ε`, and restricts to a conjugate-linear isometric equivalence of the model
-half-spinors `S^ε` (`Orientation.HalfSpinModel.conjEquiv`). Since `j` commutes with the Spin
+half-spinors `S^ε` (`Orientation.HalfSpinModel.conjEquiv`, from
+`CliffordAlgebra.eigenspaceChiralityConjEquiv`). Since `j` commutes with the Spin
 action and conjugates the central circle, `j (g • ψ) = χ(g) • j ψ`
 (`Orientation.HalfSpinModel.conjEquiv_smul`, from
 `CliffordAlgebra.map_coe_halfSpinRep_apply`).
 
 **The bundles.** The equivariance makes `[p, ψ] ↦ [[p, 1], j ψ]` well defined: changing `p` to
-`p • g` changes `ψ` to `g • ψ` and `[p, 1]` to `[p, 1] • χ(g)`. This is the fibrewise
-conjugate-linear isometric equivalence
+`p • g` changes `ψ` to `g • ψ` and `[p, 1]` to `[p, 1] • χ(g)`. This is the associated map of the
+equivariant model map `j` (`TauCeti.PrincipalBundle.Extend.associatedEquivOfEquivariant`), a
+fibrewise conjugate-linear isometric equivalence
 `TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv : W^ε(s)_x ≃ W^ε(s.chargeConj)_x`
 (`TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_mk`), continuous on total spaces
 (`TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv`). The frame of `E x` at
@@ -94,53 +97,27 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)} {ε : ℂ}
   (j : W ≃ₗᵢ⋆[ℂ] W) (hj : ∀ v w, j (ρ (ι Q v) w) = ρ (ι Q v) (j w)) (hε : conj ε = ε)
 
-omit [FiniteDimensional ℂ W] in
-include hj hε in
-/-- A conjugate-linear map commuting with Clifford multiplication preserves the eigenspace of the
-chirality element for a real eigenvalue. -/
-private theorem map_mem_eigenspace {w : W} (hw : w ∈ eigenspace (ρ (chirality Q o)) ε) :
-    j w ∈ eigenspace (ρ (chirality Q o)) ε := by
-  have h := map_mem_eigenspace_chirality (fun r ↦ Complex.conj_ofReal r)
-    (U := j.toLinearEquiv.toLinearMap) hj hw
-  rw [hε] at h
-  exact h
-
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
-include hj in
-/-- The inverse of `j` commutes with Clifford multiplication as well. -/
-private theorem symm_apply_comm (v : V) (w : W) : j.symm (ρ (ι Q v) w) = ρ (ι Q v) (j.symm w) := by
-  rw [j.symm_apply_eq, hj, j.apply_symm_apply]
-
 /-- **Charge conjugation of the model half-spinors**: a conjugate-linear isometric equivalence `j`
 of the model Clifford module commuting with Clifford multiplication restricts to a conjugate-linear
 isometric equivalence of the model half-spinors `S^ε`, for a real eigenvalue `ε` of the chirality
-element. -/
+element (`CliffordAlgebra.eigenspaceChiralityConjEquiv`). -/
 def conjEquiv : o.HalfSpinModel hQ b ρ hρ ε ≃ₗᵢ⋆[ℂ] o.HalfSpinModel hQ b ρ hρ ε :=
-  toEigenspace.trans <|
-    (({ toFun ψ := ⟨j ψ, map_mem_eigenspace j hj hε ψ.property⟩
-        invFun ψ := ⟨j.symm ψ, map_mem_eigenspace j.symm (symm_apply_comm j hj) hε ψ.property⟩
-        map_add' ψ φ := Subtype.ext <| by simp
-        map_smul' c ψ := Subtype.ext <| by simp [map_smulₛₗ]
-        left_inv ψ := Subtype.ext (j.symm_apply_apply ψ)
-        right_inv ψ := Subtype.ext (j.apply_symm_apply ψ)
-        norm_map' ψ := j.norm_map (ψ : W) } :
-      eigenspace (ρ (chirality Q o)) ε ≃ₗᵢ⋆[ℂ] eigenspace (ρ (chirality Q o)) ε)).trans
-      toEigenspace.symm
+  toEigenspace.trans ((eigenspaceChiralityConjEquiv o ρ ρ j hj hε).trans toEigenspace.symm)
 
 /-- The restriction of `j` to the model half-spinors is `j`. -/
 @[simp]
 theorem coe_toEigenspace_conjEquiv (ψ : o.HalfSpinModel hQ b ρ hρ ε) :
     (toEigenspace (conjEquiv j hj hε ψ) : W) = j (toEigenspace ψ) := by
-  simp only [conjEquiv, LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.apply_symm_apply]
-  rfl
+  simp only [conjEquiv, LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.apply_symm_apply,
+    coe_eigenspaceChiralityConjEquiv_apply]
 
 /-- The inverse of the restriction of `j` to the model half-spinors is `j⁻¹`. -/
 @[simp]
 theorem coe_toEigenspace_conjEquiv_symm (ψ : o.HalfSpinModel hQ b ρ hρ ε) :
     (toEigenspace ((conjEquiv j hj hε).symm ψ) : W) = j.symm (toEigenspace ψ) := by
-  simp only [conjEquiv, LinearIsometryEquiv.coe_symm_trans, Function.comp_apply,
-    LinearIsometryEquiv.symm_symm, LinearIsometryEquiv.apply_symm_apply]
-  rfl
+  simp only [conjEquiv, LinearIsometryEquiv.symm_trans, LinearIsometryEquiv.symm_symm,
+    LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.apply_symm_apply,
+    coe_eigenspaceChiralityConjEquiv_symm_apply]
 
 /-- **Charge conjugation of spinors intertwines `g` with its charge conjugate**:
 `j (g • ψ) = χ(g) • j ψ` on the model half-spinors, where `χ [s, z] = [s, z⁻¹]` is charge
@@ -193,26 +170,32 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
 
 omit [Fact (finrank ℝ V = 4)] in
 /-- The vector frame `κ : E x ≃ V` at `[p, 1]` in the charge conjugate is the vector frame at
-`p`. -/
+`p` (`TauCeti.SpinCStructure.vectorFrame_extendSpinC_inl`). -/
 @[simp]
 theorem vectorFrame_chargeConj_inl (s : SpinCStructure F E 4) {x : X} (p : s.P x) :
-    s.chargeConj.vectorFrame b (Extend.inl χ hχ p : s.chargeConj.P x) = s.vectorFrame b p := by
-  rw [vectorFrame_def s, ← frameAt_chargeConj_inl]
-  exact vectorFrame_def s.chargeConj b _
+    s.chargeConj.vectorFrame b (Extend.inl χ hχ p : s.chargeConj.P x) = s.vectorFrame b p :=
+  s.vectorFrame_extendSpinC_inl b χ hχ ((MonoidHom.comp_assoc _ _ _).trans
+    (congrArg (MonoidHom.comp _) (spinCGroup.toSpecialOrthogonal_comp_chargeConj _ hpos))) p
 
 variable (o hQ b ρ hρ j hj hε) in
 /-- **Charge conjugation of the half-spinors** of a `Spinᶜ` structure of rank four: the fibrewise
 conjugate-linear isometric equivalence `W^ε(s)_x ≃ W^ε(s.chargeConj)_x`,
 `[p, ψ] ↦ [[p, 1], j ψ]` (`TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_mk`), for a
 conjugate-linear isometric equivalence `j` of the model Clifford module commuting with Clifford
-multiplication and a real eigenvalue `ε` of the chirality element. It is defined in a chosen
-frame. -/
+multiplication and a real eigenvalue `ε` of the chirality element. It is the associated map of the
+`χ`-equivariant model map `j` (`TauCeti.PrincipalBundle.Extend.associatedEquivOfEquivariant`). -/
 def halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) (x : X) :
-    s.halfSpinorBundle o hQ b ρ hρ ε x ≃ₗᵢ⋆[ℂ] s.chargeConj.halfSpinorBundle o hQ b ρ hρ ε x :=
-  let p : s.P x := Classical.arbitrary _
-  ((AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p).symm.trans
-      (Orientation.HalfSpinModel.conjEquiv j hj hε)).trans
-    (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC (P := s.chargeConj.P) (Extend.inl χ hχ p))
+    s.halfSpinorBundle o hQ b ρ hρ ε x ≃ₗᵢ⋆[ℂ] s.chargeConj.halfSpinorBundle o hQ b ρ hρ ε x where
+  toLinearEquiv := (Extend.associatedEquivOfEquivariant χ hχ
+    (Orientation.HalfSpinModel.conjEquiv j hj hε).toContinuousLinearEquiv x).toLinearEquiv
+  norm_map' ψ := by
+    obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
+    refine (congrArg Norm.norm (Extend.associatedEquivOfEquivariant_mk χ hχ _
+      (Orientation.HalfSpinModel.conjEquiv_smul j hj hε) p ψ)).trans ?_
+    -- Both classes have the norm of their model vectors, which `j` preserves.
+    exact (AssociatedBundle.norm_mk _ _).trans
+      (((Orientation.HalfSpinModel.conjEquiv j hj hε).norm_map ψ).trans
+        (AssociatedBundle.norm_mk p ψ).symm)
 
 /-- **Charge conjugation of the half-spinors in a frame**: `[p, ψ] ↦ [[p, 1], j ψ]` for every point
 `p` of the principal bundle over `x`. -/
@@ -221,17 +204,10 @@ theorem halfSpinorBundleChargeConjEquiv_mk (s : SpinCStructure F E 4) {x : X} (p
     (ψ : o.HalfSpinModel hQ b ρ hρ ε) :
     s.halfSpinorBundleChargeConjEquiv o hQ b ρ hρ j hj hε x (AssociatedBundle.mk SpinC p ψ) =
       AssociatedBundle.mk (P := Extend s.P χ hχ) SpinC (Extend.inl χ hχ p)
-        (Orientation.HalfSpinModel.conjEquiv j hj hε ψ) := by
-  simp only [halfSpinorBundleChargeConjEquiv, LinearIsometryEquiv.trans_apply]
-  -- Compare the chosen frame `p₀` with `p = p₀ • g`.
-  generalize (Classical.arbitrary (s.P x)) = p₀
-  rw [AssociatedBundle.mkLinearIsometryEquiv_symm_apply_mk]
-  obtain ⟨g, hg⟩ : ∃ g, PrincipalBundle.division SpinC p₀ p = g := ⟨_, rfl⟩
-  obtain rfl : op g • p₀ = p := hg ▸ PrincipalBundle.smul_division p₀ p
-  rw [hg, Orientation.HalfSpinModel.conjEquiv_smul, Extend.inl_smul, AssociatedBundle.mk_smul,
-    MonoidHom.coe_ofClass]
-  -- The frame `[p₀, 1]` of the charge conjugate is the point `[p₀, 1]` of `P ×_χ Spinᶜ(4)`.
-  exact AssociatedBundle.mkLinearIsometryEquiv_apply ..
+        (Orientation.HalfSpinModel.conjEquiv j hj hε ψ) :=
+  -- By definition, `halfSpinorBundleChargeConjEquiv` applies the associated map of `j`.
+  Extend.associatedEquivOfEquivariant_mk χ hχ _ (Orientation.HalfSpinModel.conjEquiv_smul j hj hε)
+    p ψ
 
 /-- The inverse of charge conjugation of the half-spinors at `[p, 1]`:
 `[[p, 1], φ] ↦ [p, j⁻¹ φ]`. -/
@@ -248,21 +224,9 @@ theorem halfSpinorBundleChargeConjEquiv_symm_mk_inl (s : SpinCStructure F E 4) {
 theorem continuous_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) :
     Continuous fun v : TotalSpace (o.HalfSpinModel hQ b ρ hρ ε) (s.halfSpinorBundle o hQ b ρ hρ ε) ↦
       TotalSpace.mk' (o.HalfSpinModel hQ b ρ hρ ε) v.proj
-        (s.halfSpinorBundleChargeConjEquiv o hQ b ρ hρ j hj hε v.proj v.snd) := by
-  -- The total space of `W^ε(s)` is a quotient of `P × S^ε`, on which the map is
-  -- `(p, ψ) ↦ [[p, 1], j ψ]`.
-  refine (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk SpinC s.P
-    (o.HalfSpinModel hQ b ρ hρ ε)).continuous_comp_iff.1 ?_
-  have hc : Continuous fun y : TotalSpace SpinC s.P × o.HalfSpinModel hQ b ρ hρ ε ↦
-      TotalSpace.mk' (o.HalfSpinModel hQ b ρ hρ ε) y.1.proj
-        (AssociatedBundle.mk (P := Extend s.P χ hχ) SpinC (Extend.inl χ hχ y.1.snd)
-          (Orientation.HalfSpinModel.conjEquiv j hj hε y.2)) :=
-    Continuous.totalSpaceMk_associatedBundleMk
-      (f := fun y : TotalSpace SpinC s.P × o.HalfSpinModel hQ b ρ hρ ε ↦ y.1.proj)
-      ((Extend.continuous_inl s.P χ hχ).comp continuous_fst)
-      ((Orientation.HalfSpinModel.conjEquiv j hj hε).continuous.comp continuous_snd)
-  refine hc.congr fun y ↦ ?_
-  exact (congrArg (TotalSpace.mk _) (halfSpinorBundleChargeConjEquiv_mk s y.1.snd y.2)).symm
+        (s.halfSpinorBundleChargeConjEquiv o hQ b ρ hρ j hj hε v.proj v.snd) :=
+  Extend.continuous_associatedEquivOfEquivariant χ hχ _
+    (Orientation.HalfSpinModel.conjEquiv_smul j hj hε)
 
 /-- **Charge conjugation of the half-spinors commutes with Clifford multiplication**:
 `c(v) (j ψ) = j (c(v) ψ)` for `v ∈ E x`, from `W^ε` to `W^{ε'}`, `ε' = -ε`. -/
