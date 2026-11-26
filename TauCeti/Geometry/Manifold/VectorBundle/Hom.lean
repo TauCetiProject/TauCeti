@@ -48,7 +48,9 @@ trivialization of a `C^n` vector bundle, a `C^n` field of bilinear forms reads a
 bilinear forms on the model fibre (`Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ`). Fibrewise
 inversion preserves smoothness of a hom-bundle section at every point where the section is
 invertible (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle
-form of the smoothness of inversion of continuous linear maps between Banach spaces. A constant
+form of the smoothness of inversion of continuous linear maps between Banach spaces; in
+particular the inverses of a `C^n` family of equivalences are `C^n`
+(`ContMDiff.clm_bundle_equiv_symm`). A constant
 bilinear pairing between trivial bundles is a smooth hom-bundle section
 (`TauCeti.contMDiff_const_bundlePairing`). A hom-bundle section whose coordinate expressions are
 constant on the common frame domains is smooth
@@ -523,6 +525,16 @@ theorem ContMDiff.clm_bundle_inverse
       (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x)) (b m)
         (ϕ m).inverse) :=
   fun x ↦ (hϕ x).clm_bundle_inverse (hinv x)
+
+/-- Consider continuous linear equivalences `Φ m : E₁ (b m) ≃L[𝕜] E₂ (b m)` depending `C^n` on
+`m`, over a base map `b : M → B`. Then their inverses depend `C^n` on `m`. -/
+theorem ContMDiff.clm_bundle_equiv_symm {Φ : ∀ m, E₁ (b m) ≃L[𝕜] E₂ (b m)}
+    (hΦ : CMDiff n (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun (x : B) ↦ (E₁ x →L[𝕜] E₂ x))
+      (b m) (Φ m : E₁ (b m) →L[𝕜] E₂ (b m)))) :
+    CMDiff n (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x))
+      (b m) ((Φ m).symm : E₂ (b m) →L[𝕜] E₁ (b m))) := by
+  simpa only [ContinuousLinearMap.inverse_equiv] using
+    hΦ.clm_bundle_inverse fun _ ↦ ContinuousLinearMap.isInvertible_equiv
 
 end Inverse
 

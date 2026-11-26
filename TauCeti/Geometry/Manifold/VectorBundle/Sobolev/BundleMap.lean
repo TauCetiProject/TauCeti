@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Coordinates
 
@@ -56,7 +55,10 @@ the readings in a chart of the source with larger image acts continuously on the
 * `TauCeti.SobolevSection.chartValueL_bundleMapL_ae_coord`,
   `TauCeti.SobolevSection.chartValueL_tangentHomMapL_ae_coord`: the images of an element with
   section `s` and of a one-form with section `θ` have sections `Φ s` and `Φ ∘ θ`.
+* `TauCeti.SectionChartData.CoeffMap.mapL_congr`: the action only depends on the map of sections.
 * `TauCeti.SobolevSection.bundleMapL_ofContMDiffSection`: on smooth sections the map is `Φ`.
+* `TauCeti.SobolevSection.coe_bundleEquivL_symm`,
+  `TauCeti.SobolevSection.coe_tangentHomEquivL_symm`: the inverses are the maps induced by `Φ⁻¹`.
 -/
 
 public section
@@ -69,35 +71,6 @@ open scoped Manifold ContDiff ENNReal
 universe u
 
 namespace TauCeti
-
-/-! ### Inverses of smooth bundle isomorphisms -/
-
-section Inverse
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
-  {IB : ModelWithCorners 𝕜 EB HB} {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-  {V : B → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
-  [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul 𝕜 (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-  {W : B → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, AddCommGroup (W x)]
-  [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)] [∀ x, IsTopologicalAddGroup (W x)]
-  [∀ x, ContinuousSMul 𝕜 (W x)] [FiberBundle G W] [VectorBundle 𝕜 G W]
-  {n : WithTop ℕ∞} {Φ : ∀ x, V x ≃L[𝕜] W x}
-
-/-- **The inverse of a `Cⁿ` bundle isomorphism is `Cⁿ`.** If a family of fibrewise continuous
-linear equivalences is a `Cⁿ` section of the hom bundle, so is the family of their inverses. -/
-theorem _root_.ContMDiff.clm_bundle_equiv_symm
-    (hΦ : ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] G)) n fun x ↦
-      TotalSpace.mk' (F →L[𝕜] G) (E := fun x ↦ V x →L[𝕜] W x) x (Φ x : V x →L[𝕜] W x)) :
-    ContMDiff IB (IB.prod 𝓘(𝕜, G →L[𝕜] F)) n fun x ↦
-      TotalSpace.mk' (G →L[𝕜] F) (E := fun x ↦ W x →L[𝕜] V x) x ((Φ x).symm : W x →L[𝕜] V x) := by
-  simpa only [ContinuousLinearMap.inverse_equiv] using
-    hΦ.clm_bundle_inverse fun _ ↦ ContinuousLinearMap.isInvertible_equiv
-
-end Inverse
 
 namespace SectionChartData
 
@@ -136,7 +109,7 @@ variable {C : SectionChartData E F S} {C' : SectionChartData E G S'} (Ψ : C.Coe
 /-- The action of `Ψ` on tuples of components: in chart `i` of `C'`, the components of chart
 `Ψ.chart i` of `C` are restricted to the image of chart `i` and multiplied by the matrix of the
 coefficient `Ψ.coeff i`. -/
-def dataL : C.SobolevData μ p k →L[ℝ] C'.SobolevData μ p k :=
+private def dataL : C.SobolevData μ p k →L[ℝ] C'.SobolevData μ p k :=
   ContinuousLinearMap.pi fun i ↦
     (Wkp.contDiffOnCLMApplyL (Ψ.isOpen_domain i).uniqueDiffOn (Ψ.isCompact_closure_image i)
       (Ψ.closure_image_subset_domain i) k (finBasis ℝ F) (finBasis ℝ G)
@@ -145,7 +118,7 @@ def dataL : C.SobolevData μ p k →L[ℝ] C'.SobolevData μ p k :=
       (ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin C.n ↦
         ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p k) (Ψ.chart i)))
 
-theorem dataL_apply (w : C.SobolevData μ p k) (i : Fin C'.n) :
+private theorem dataL_apply (w : C.SobolevData μ p k) (i : Fin C'.n) :
     Ψ.dataL μ p k w i =
       Wkp.contDiffOnCLMApplyL (Ψ.isOpen_domain i).uniqueDiffOn (Ψ.isCompact_closure_image i)
         (Ψ.closure_image_subset_domain i) k (finBasis ℝ F) (finBasis ℝ G) (Ψ.contDiffOn_coeff i)
@@ -154,7 +127,7 @@ theorem dataL_apply (w : C.SobolevData μ p k) (i : Fin C'.n) :
 
 /-- **The chart formula.** In chart `i` of `C'`, the chart data of the image of a tuple are the
 coefficient `Ψ.coeff i` applied to its chart data in chart `Ψ.chart i` of `C`. -/
-theorem chartValueL_dataL_ae (w : C.SobolevData μ p k) (i : Fin C'.n) :
+private theorem chartValueL_dataL_ae (w : C.SobolevData μ p k) (i : Fin C'.n) :
     C'.chartValueL μ p k i (Ψ.dataL μ p k w) =ᵐ[μ.restrict (C'.image i)]
       fun y ↦ Ψ.coeff i y (C.chartValueL μ p k (Ψ.chart i) w y) := by
   have h₂ := ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 (Ψ.image_le i))
@@ -175,7 +148,7 @@ theorem chartValueL_dataL_ae (w : C.SobolevData μ p k) (i : Fin C'.n) :
   simp only [h₁, h₂, h₃, h₄, Basis.sum_repr]
 
 /-- The image of the components of a section `s` consists of the components of `Ψ.toFun s`. -/
-theorem chartValueL_dataL_ae_coord {w : C.SobolevData μ p k} {s : S}
+private theorem chartValueL_dataL_ae_coord {w : C.SobolevData μ p k} {s : S}
     (hs : ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s) (i : Fin C'.n) :
     C'.chartValueL μ p k i (Ψ.dataL μ p k w) =ᵐ[μ.restrict (C'.image i)]
       C'.coord i (Ψ.toFun s) := by
@@ -208,6 +181,16 @@ theorem mapL_mapL {Ψ' : C'.CoeffMap C} (h : ∀ s, Ψ'.toFun (Ψ.toFun s) = s)
   rw [← h s]
   exact chartValueL_mapL_ae_coord (chartValueL_mapL_ae_coord hs) i
 
+/-- `Ψ.mapL` only depends on the map of sections `Ψ.toFun`, not on the charts and coefficients
+reading it. -/
+theorem mapL_congr {Ψ' : C.CoeffMap C'} (h : Ψ.toFun = Ψ'.toFun) :
+    Ψ.mapL μ p k = Ψ'.mapL μ p k := by
+  ext1 w
+  obtain ⟨s, hs⟩ := C.exists_section μ p k w
+  refine eq_of_ae_eq_coord (s := Ψ.toFun s) (chartValueL_mapL_ae_coord hs) fun i ↦ ?_
+  rw [h]
+  exact chartValueL_mapL_ae_coord hs i
+
 /-- **Isomorphisms of Sobolev sections.** Maps of sections read as smooth operator coefficients
 which are mutually inverse induce an isomorphism of the Sobolev sections. -/
 def mapEquivL (Ψ' : C'.CoeffMap C) (h : ∀ s, Ψ'.toFun (Ψ.toFun s) = s)
@@ -238,6 +221,33 @@ end SectionChartData
 /-! ### Smooth bundle morphisms -/
 
 namespace FiniteBundleAtlas
+
+section ImageOfBaseSet
+
+variable {E : Type u} [NormedAddCommGroup E] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace E M] {F : Type*} [TopologicalSpace F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)] [FiberBundle G W] [VectorBundle ℝ G W]
+  (A : FiniteBundleAtlas E M F V)
+  (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt G W (A.center i)).baseSet)
+
+/-- The chart images of the section chart data of `A.ofBaseSet h` are those of `A`. -/
+theorem sectionChartData_image_ofBaseSet (i : Fin A.n) :
+    ((A.ofBaseSet h).sectionChartData.image i : Set E) = A.image i :=
+  congrArg SetLike.coe (image_ofBaseSet (A := A) (h := h) i)
+
+variable [NormedSpace ℝ E] [IsManifold 𝓘(ℝ, E) 1 M] [∀ x, IsTopologicalAddGroup (W x)]
+  [∀ x, ContinuousSMul ℝ (W x)] in
+/-- The chart images of the section chart data of `W`-valued one-forms on `A.ofBaseSet h` are those
+of `A`. -/
+theorem sectionChartData_image_tangentHom_ofBaseSet (i : Fin A.n) :
+    ((A.ofBaseSet h).tangentHom.sectionChartData.image i : Set E) = A.image i :=
+  ((A.ofBaseSet h).sectionChartData_image_tangentHom i).trans
+    (A.sectionChartData_image_ofBaseSet h i)
+
+end ImageOfBaseSet
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -286,16 +296,13 @@ def coeffMap
       ((A.hom (𝕜 := ℝ) h).chart i).symm ⁻¹' ((A.hom (𝕜 := ℝ) h).triv i).baseSet
   isOpen_domain i :=
     ((A.hom (𝕜 := ℝ) h).chart i).isOpen_inter_preimage_symm ((A.hom (𝕜 := ℝ) h).triv i).open_baseSet
-  closure_image_subset_domain i := by
-    have heq : ((A.ofBaseSet h).sectionChartData.image i : Set E) = (A.hom (𝕜 := ℝ) h).image i :=
-      congrArg SetLike.coe ((image_ofBaseSet (A := A) (h := h) i).trans
-        (image_hom (𝕜 := ℝ) (A := A) (h := h) i).symm)
-    rw [heq]
+  closure_image_subset_domain (i : Fin A.n) := by
+    rw [A.sectionChartData_image_ofBaseSet h, ← image_hom (𝕜 := ℝ) (h := h)]
     exact (A.hom (𝕜 := ℝ) h).closure_image_subset_target_inter_preimage_baseSet i
   coeff i := (A.hom (𝕜 := ℝ) h).coord i Φ
   contDiffOn_coeff i := A.contDiffOn_coord_hom h hΦ i
   coord_toFun (i : Fin A.n) s y hy := by
-    have hy' : y ∈ A.image i := by rwa [← image_ofBaseSet (h := h)]
+    have hy' : y ∈ A.image i := (A.sectionChartData_image_ofBaseSet h i).subset hy
     rw [sectionChartData_coord_of_mem _ _ hy, sectionChartData_coord_of_mem _ _ hy',
       A.coord_hom_apply h i Φ s hy']
 
@@ -311,22 +318,16 @@ def tangentHomCoeffMap
   toFun θ x := (Φ x).comp (θ x)
   chart i := i
   image_le (i : Fin A.n) := SetLike.coe_subset_coe.1 <|
-    ((A.ofBaseSet h).sectionChartData_image_tangentHom i).trans
-      ((congrArg SetLike.coe (image_ofBaseSet (A := A) (h := h) i)).trans
-        (A.sectionChartData_image_tangentHom i).symm) |>.subset
+    ((A.sectionChartData_image_tangentHom_ofBaseSet h i).trans
+      (A.sectionChartData_image_tangentHom i).symm).subset
   isCompact_closure_image i := (A.ofBaseSet h).tangentHom.isCompact_closure_image i
   domain i :=
     ((A.hom (𝕜 := ℝ) h).chart i).target ∩
       ((A.hom (𝕜 := ℝ) h).chart i).symm ⁻¹' ((A.hom (𝕜 := ℝ) h).triv i).baseSet
   isOpen_domain i :=
     ((A.hom (𝕜 := ℝ) h).chart i).isOpen_inter_preimage_symm ((A.hom (𝕜 := ℝ) h).triv i).open_baseSet
-  closure_image_subset_domain i := by
-    have heq : ((A.ofBaseSet h).tangentHom.sectionChartData.image i : Set E) =
-        (A.hom (𝕜 := ℝ) h).image i :=
-      congrArg SetLike.coe (((A.ofBaseSet h).image_tangentHom i).trans
-        ((image_ofBaseSet (A := A) (h := h) i).trans
-          (image_hom (𝕜 := ℝ) (A := A) (h := h) i).symm))
-    rw [heq]
+  closure_image_subset_domain (i : Fin A.n) := by
+    rw [A.sectionChartData_image_tangentHom_ofBaseSet h, ← image_hom (𝕜 := ℝ) (h := h)]
     exact (A.hom (𝕜 := ℝ) h).closure_image_subset_target_inter_preimage_baseSet i
   coeff i := ContinuousLinearMap.compL ℝ E F G ∘ (A.hom (𝕜 := ℝ) h).coord i Φ
   contDiffOn_coeff i := by
@@ -334,8 +335,7 @@ def tangentHomCoeffMap
       ContinuousLinearMap.contDiff _
     exact hL.comp_contDiffOn (A.contDiffOn_coord_hom h hΦ i)
   coord_toFun (i : Fin A.n) θ y hy := by
-    have hy' : y ∈ A.image i := (((A.ofBaseSet h).sectionChartData_image_tangentHom i).trans
-      (congrArg SetLike.coe (image_ofBaseSet (A := A) (h := h) i))).subset hy
+    have hy' : y ∈ A.image i := (A.sectionChartData_image_tangentHom_ofBaseSet h i).subset hy
     have hyA : y ∈ A.tangentHom.image i := (A.sectionChartData_image_tangentHom i).symm.subset hy'
     have hx : (A.chart i).symm y ∈ (trivializationAt F V (A.center i)).baseSet :=
       A.dom_subset_baseSet i (A.symm_mem_dom hy')
@@ -448,6 +448,15 @@ theorem coe_bundleEquivL :
       bundleMapL A h hΦ μ p k :=
   (rfl)
 
+/-- The inverse of `bundleEquivL` is `bundleMapL` for `Φ⁻¹` on the atlas `A.ofBaseSet h` (whose
+own `ofBaseSet` atlas of `V` is `A`). -/
+@[simp]
+theorem coe_bundleEquivL_symm :
+    ((bundleEquivL A h μ p k hΦ).symm :
+      SobolevSection (A.ofBaseSet h) μ p k →L[ℝ] SobolevSection A μ p k) =
+      bundleMapL (A.ofBaseSet h) A.closure_dom_subset_baseSet hΦ.clm_bundle_equiv_symm μ p k :=
+  (rfl)
+
 variable {A h μ p k hΦ} in
 /-- The image under the inverse of `bundleEquivL` of an element with section `t` has section
 `Φ⁻¹ t`. -/
@@ -477,6 +486,16 @@ theorem coe_tangentHomEquivL [IsManifold 𝓘(ℝ, E) 1 M] :
     (tangentHomEquivL A h μ p k hΦ :
       SobolevSection A.tangentHom μ p k →L[ℝ] SobolevSection (A.ofBaseSet h).tangentHom μ p k) =
       tangentHomMapL A h hΦ μ p k :=
+  (rfl)
+
+/-- The inverse of `tangentHomEquivL` is `tangentHomMapL` for `Φ⁻¹` on the atlas `A.ofBaseSet h`
+(whose own `ofBaseSet` atlas of `V` is `A`). -/
+@[simp]
+theorem coe_tangentHomEquivL_symm [IsManifold 𝓘(ℝ, E) 1 M] :
+    ((tangentHomEquivL A h μ p k hΦ).symm :
+      SobolevSection (A.ofBaseSet h).tangentHom μ p k →L[ℝ] SobolevSection A.tangentHom μ p k) =
+      tangentHomMapL (A.ofBaseSet h) A.closure_dom_subset_baseSet hΦ.clm_bundle_equiv_symm
+        μ p k :=
   (rfl)
 
 variable {A h μ p k hΦ} in
