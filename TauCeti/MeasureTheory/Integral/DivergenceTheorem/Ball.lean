@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Group.Integral
 
