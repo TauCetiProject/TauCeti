@@ -95,6 +95,22 @@ def SquareAdjoint (i n : ℕ) (κ : I → 𝕜) : Prop :=
     (∀ y : F i (n + 1), ⟪a t i (n + 1) y, z⟫_𝕜 = ⟪y, x⟫_𝕜) ∧
     ∀ y : F (i + 1) n, ⟪d t i n x, y⟫_𝕜 = κ t * ⟪d t i (n + 1) z, a t (i + 1) n y⟫_𝕜
 
+variable {w a d}
+
+/-- Unfolding `SquareCommutes`. -/
+theorem squareCommutes_iff {i n : ℕ} {β : I → 𝕜} :
+    SquareCommutes w a d i n β ↔ ∀ (t : I) (y : F i (n + 1)),
+      (w t n : 𝕜) • a t (i + 1) n (d t i n y) =
+        ((w t (n + 2) : 𝕜) / conj (β t)) • d t i (n + 1) (a t i (n + 1) y) :=
+  Iff.rfl
+
+/-- Unfolding `SquareAdjoint`. -/
+theorem squareAdjoint_iff {i n : ℕ} {κ : I → 𝕜} :
+    SquareAdjoint a d i n κ ↔ ∀ (t : I) (z : F i (n + 1 + 1)), ∃ x : F i (n + 1),
+      (∀ y : F i (n + 1), ⟪a t i (n + 1) y, z⟫_𝕜 = ⟪y, x⟫_𝕜) ∧
+      ∀ y : F (i + 1) n, ⟪d t i n x, y⟫_𝕜 = κ t * ⟪d t i (n + 1) z, a t (i + 1) n y⟫_𝕜 :=
+  Iff.rfl
+
 end ArrowTriangle
 
 open ArrowTriangle
@@ -148,6 +164,7 @@ theorem weightedChain_zero_apply (t : I) (i : ℕ) (y : F i 0) : weightedChain w
 
 /-- The weighted chain of length `n + 1` is the arrow `a t i n`, weighted by `w t n`, after the
 chain of length `n`. -/
+@[simp]
 theorem weightedChain_succ_apply (t : I) (i n : ℕ) (y : F i 0) :
     weightedChain w a t i (n + 1) y = (w t n : 𝕜) • a t i n (weightedChain w a t i n y) := by
   simp [weightedChain]
@@ -169,6 +186,21 @@ def ChainAdjoint (i n : ℕ) (κ : I → 𝕜) : Prop :=
       κ t * ⟪d t i n z, weightedChain w a t (i + 1) n (j (i + 1) y)⟫_𝕜
 
 variable {m w M L a d j}
+
+/-- Unfolding `ChainCommutes`. -/
+theorem chainCommutes_iff {i n : ℕ} {β : I → 𝕜} :
+    ChainCommutes w a d i n β ↔ ∀ (t : I) (y : F i 0),
+      weightedChain w a t (i + 1) n (d t i 0 (a t i 0 y)) =
+        ((w t (n + 1) : 𝕜) / (w t 1 * w t 0 * conj (β t))) •
+          d t i n (weightedChain w a t i (n + 1) y) :=
+  Iff.rfl
+
+/-- Unfolding `ChainAdjoint`. -/
+theorem chainAdjoint_iff {i n : ℕ} {κ : I → 𝕜} :
+    ChainAdjoint w a d j i n κ ↔ ∀ (t : I) (y : V) (z : F i (n + 1)),
+      ⟪z, a t i n (weightedChain w a t i n (j i y))⟫_𝕜 =
+        κ t * ⟪d t i n z, weightedChain w a t (i + 1) n (j (i + 1) y)⟫_𝕜 :=
+  Iff.rfl
 
 /-- One more square extends the commutation of `d` with the chains: from `ChainCommutes` at `n`
 with `β` and `SquareCommutes` at `(i, n)` with `β'` follows `ChainCommutes` at `n + 1` with
