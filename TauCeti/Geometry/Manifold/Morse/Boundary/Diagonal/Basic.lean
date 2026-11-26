@@ -125,6 +125,17 @@ theorem mem_morseYSlice {p q r x : M} :
       x ∈ hX₀.flow.unstableSet p ∧ x ∈ hX₁.flow.stableSet q ∧ x ∈ hX₂.flow.stableSet r := by
   rw [morseYSlice, mem_inter_iff, mem_inter_iff, and_assoc]
 
+/-- The Y-slice is the intersection `W^u_{X₀}(p) ∩ W^s_{X₁}(q) ∩ W^s_{X₂}(r)`. -/
+theorem morseYSlice_def (p q r : M) :
+    hX₀.morseYSlice hX₁ hX₂ p q r =
+      hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet q ∩ hX₂.flow.stableSet r :=
+  (rfl)
+
+/-- Exchanging the two leaves of a Y-slice. -/
+theorem morseYSlice_comm (p q r : M) :
+    hX₀.morseYSlice hX₂ hX₁ p r q = hX₀.morseYSlice hX₁ hX₂ p q r := by
+  rw [morseYSlice_def, morseYSlice_def, inter_right_comm]
+
 /-- **One pseudo-gradient on both leaves gives no Y-flow lines between distinct critical points.**
 The stable manifolds of distinct critical points of `X₁` are disjoint, so the Y-slice with both
 leaves on `X₁` is empty unless the two leaf critical points agree. This is why the two leaves of a
