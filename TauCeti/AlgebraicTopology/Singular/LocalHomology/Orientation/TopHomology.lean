@@ -1,0 +1,102 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Character
+
+/-!
+# The integral top homology of a nonorientable manifold
+
+Let `M` be a compact connected topological manifold of dimension `n`, modelled on a real normed
+space `E`. If `M` carries a homological orientation, its fundamental class freely generates
+`Hₙ(M; ℤ)` (`TauCeti.HomologicalOrientation.fundamentalClassEquiv`). This file proves the converse:
+if `M` is not orientable, then `Hₙ(M; ℤ) = 0`
+(`TauCeti.subsingleton_singularHomology_of_isEmpty_homologicalOrientation`).
+
+Indeed the image of `Hₙ(M; ℤ)` in the local homology `Hₙ(M, M ∖ {x}; ℤ)` consists of local classes
+fixed by transport along every loop at `x` (`TauCeti.mem_range_localHomologySystemCone_π_app_iff`),
+and a nonzero class maps onto that infinite cyclic group
+(`TauCeti.singularHomologyToLocalHomology_surjective_of_ne_zero`). So a nonzero class makes every
+local orientation at `x` invariant under transport along loops: the orientation character is
+trivial, and `M` is orientable (`TauCeti.nonempty_homologicalOrientation_iff`).
+
+Together, `Hₙ(M; ℤ)` is nonzero exactly when `M` is orientable
+(`TauCeti.nontrivial_singularHomology_iff_nonempty_homologicalOrientation`). On a nonorientable
+manifold, `Hₙ(M; ℤ) = 0` while `H⁰(M; ℤ) = ℤ`, so integral Poincaré duality needs coefficients
+twisted by the orientation local system, whose top homology is infinite cyclic for a smooth `M`
+(`TauCeti.Manifold.OrientationCover.twistedFundamentalClassEquiv`).
+
+## Main results
+
+* `TauCeti.nonempty_homologicalOrientation_of_ne_zero`: a compact connected manifold with a nonzero
+  class in its integral top homology is orientable.
+* `TauCeti.subsingleton_singularHomology_of_isEmpty_homologicalOrientation`: the integral top
+  homology of a compact connected nonorientable manifold vanishes.
+* `TauCeti.nontrivial_singularHomology_iff_nonempty_homologicalOrientation`: the integral top
+  homology of a compact connected manifold is nonzero exactly when it is orientable.
+
+## References
+
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Section 3.3, Theorem 3.26.
+-/
+
+public section
+
+open CategoryTheory Module
+
+namespace TauCeti
+
+variable {M E : Type} [TopologicalSpace M] [T2Space M]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+  [CompactSpace M] [ConnectedSpace M] {n : ℕ}
+
+/-- **A nonzero integral top class orients a compact connected manifold.** If `Hₙ(M; ℤ)` contains
+a nonzero class, then transport along every loop fixes the local orientations, since the class
+maps onto the local homology at a point and its image there is invariant under transport. So the
+orientation character is trivial and `M` carries a homological orientation. -/
+theorem nonempty_homologicalOrientation_of_ne_zero (hn : finrank ℝ E = n)
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)} (hμ : μ ≠ 0) :
+    Nonempty (HomologicalOrientation M E n) := by
+  obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := M)
+  obtain ⟨z⟩ := LocalOrientation.nonempty hn x
+  refine (nonempty_homologicalOrientation_iff hn x).2 (MonoidHom.ext fun γ ↦ ?_)
+  rw [MonoidHom.one_apply, orientationCharacter_eq_one_iff hn γ z]
+  -- The local orientation `z` is the image of a global class, hence fixed by transport.
+  obtain ⟨ν, hν⟩ := singularHomologyToLocalHomology_surjective_of_ne_zero
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) ULift.moduleEquiv hn x hμ z.val
+  refine Subtype.ext ?_
+  rw [coe_localOrientationTransport, ← hν]
+  refine (mem_range_localHomologySystemCone_π_app_iff _ hn (FundamentalGroupoid.mk x) _).1
+    ⟨((TopPair.ofSubset ((Set.univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+      (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom ν, ?_⟩
+    γ.asHom
+  rw [localHomologySystemCone_π_app]
+  exact (singularHomologyToLocalHomology_apply _ x ν).symm
+
+/-- **The integral top homology of a nonorientable manifold vanishes.** For a compact connected
+manifold of dimension `n` without a homological orientation, `Hₙ(M; ℤ) = 0`. -/
+theorem subsingleton_singularHomology_of_isEmpty_homologicalOrientation (hn : finrank ℝ E = n)
+    [IsEmpty (HomologicalOrientation M E n)] :
+    Subsingleton ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ) :=
+  subsingleton_of_forall_eq 0 fun _ ↦ by_contra fun hμ ↦
+    (nonempty_homologicalOrientation_of_ne_zero hn hμ).elim isEmptyElim
+
+/-- **Orientability is detected by integral top homology.** A compact connected manifold of
+dimension `n` is orientable exactly when `Hₙ(M; ℤ)` is nonzero; it is then infinite cyclic,
+generated by the fundamental class (`TauCeti.HomologicalOrientation.fundamentalClassEquiv`). -/
+theorem nontrivial_singularHomology_iff_nonempty_homologicalOrientation (hn : finrank ℝ E = n) :
+    Nontrivial ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ) ↔ Nonempty (HomologicalOrientation M E n) := by
+  refine ⟨fun h ↦ ?_, fun ⟨o⟩ ↦ o.nontrivial_singularHomology hn⟩
+  obtain ⟨μ, hμ⟩ := exists_ne (0 : ((TopCat.toSSet.obj (TopCat.of M)).homology
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) n : ModuleCat.{0} ℤ))
+  exact nonempty_homologicalOrientation_of_ne_zero hn hμ
+
+end TauCeti
