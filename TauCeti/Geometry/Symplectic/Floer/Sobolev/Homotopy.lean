@@ -133,8 +133,8 @@ private theorem isFredholm_and_index_eq_of_homotopy_model (ω : SymplecticForm V
     (Kt := fun p ↦ Floer.continuationHomotopy (Hm p.1) (Hp p.1) p.2)
     (Jm := fun _ _ _ ↦ J₀) (Jp := fun _ _ _ ↦ J₀) isPreconnected_Icc hμ₀ hμ₁
     (fun μ _ ↦ isCylindricalNearEnds_continuationHomotopy_const hJ₀ hHm hHp μ u) contDiff_const
-    contDiff_const (Floer.contDiff_uncurry_continuationHomotopy_family hHm hHp) (fun _ _ ↦ hJ₀) hu
-    hXm hxm hndm huxm hδm hXp hxp hndp huxp hδp h
+    contDiff_const (Floer.contDiff_uncurry_continuationHomotopy_family hHm hHp)
+    (fun _ _ _ _ ↦ hJ₀) hu hXm hxm hndm huxm hδm hXp hxp hndp huxp hδp h
 
 /-- The Fredholm property and the index pass from the data `(J, K_s, K_t)` along `u`, with end
 Hamiltonians `H±_0`, to the data `(J', K'_s, K'_t)` along `u'`, with end Hamiltonians `H±_1`,

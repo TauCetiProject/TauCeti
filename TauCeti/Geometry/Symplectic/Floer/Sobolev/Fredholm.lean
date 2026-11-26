@@ -713,8 +713,8 @@ theorem index_floerSobolevOperator_eq_of_cylindrical (ω : SymplecticForm V)
 
 /-- **The Fredholm property and the index along a family of data.** Let `(J_μ, K_{s,μ}, K_{t,μ})`
 be a family of Floer data, `C¹` jointly in the parameter `μ`, the point of the cylinder and the
-target point (with `C²` Hamiltonians), compatible with `ω`, and, for `μ` in a preconnected set
-`P`, cylindrical near the ends with a common radius and end Hamiltonians `H±_μ` whose suspended
+target point (with `C²` Hamiltonians), and, for `μ` in a preconnected set `P`, compatible with
+`ω` and cylindrical near the ends with a common radius and end Hamiltonians `H±_μ` whose suspended
 vector fields are globally Lipschitz; the end data may depend on `μ`. Let `u` be a `C¹` map whose
 loops converge uniformly to loops `x₋` at `-∞` and `x₊` at `+∞` which, for every `μ ∈ P`, are
 nondegenerate orbits of `H±_μ`, and fix `μ₀ ∈ P` such that the slice defects
@@ -731,7 +731,7 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
       (fun w ↦ Kt (μ, w)) (Jm μ) (Jp μ) (Hm μ) (Hp μ) R u)
     (hJ : ContDiff ℝ 1 fun p : (ℝ × (ℝ × ℝ)) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
-    (hJc : ∀ p y, ω.Compatible (J p y)) (hu : ContDiff ℝ 1 u)
+    (hJc : ∀ μ ∈ P, ∀ z y, ω.Compatible (J (μ, z) y)) (hu : ContDiff ℝ 1 u)
     {Km : ℝ → ℝ≥0}
     (hXm : ∀ μ ∈ P, LipschitzWith (Km μ) (ω.timeDependentHamiltonianSuspension (Hm μ)))
     {xm : ℝ → V} (hxm : ∀ μ ∈ P, ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm μ t) (xm t)) t)
@@ -767,12 +767,12 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
       (fun t ↦ (hcyl μ hμ).almostComplex_eq_of_le_neg (_, t) hR')
       (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le_neg (_, t) hR')
       (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ)
-      fun z ↦ hJc (μ, z))
+      (hJc μ hμ))
     (endData_of_eq ω (J := fun w ↦ J (μ, w)) (Kt := fun w ↦ Kt (μ, w)) |R|
       (fun t ↦ (hcyl μ hμ).almostComplex_eq_of_le (_, t) hR)
       (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le (_, t) hR)
       (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ)
-      fun z ↦ hJc (μ, z))
+      (hJc μ hμ))
   -- The slice defects tend to zero for every parameter, since the vector fields `X_{H±_μ}` all
   -- agree along the orbits `x±`.
   have hδm' (μ : ℝ) (hμ : μ ∈ P) :=
@@ -791,7 +791,7 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
       (hδm' μ hμ) (hend μ hμ).2.2.1 (hend μ hμ).2.1 huxp (hδp' μ hμ)
   have hest (μ : ℝ) (hμ : μ ∈ P) : ∃ C T, HasSemiFredholmEstimate (M μ) C T :=
     ω.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (hcyl μ hμ) hu
-      (fun z ↦ hJc (μ, z) _) (hXm μ hμ) (hend μ hμ).1.2.1 (hxm μ hμ) (hndm μ hμ) (hend μ hμ).1.1
+      (fun z ↦ hJc μ hμ z _) (hXm μ hμ) (hend μ hμ).1.2.1 (hxm μ hμ) (hndm μ hμ) (hend μ hμ).1.1
       (fun t ↦ (hend μ hμ).1.2.2 t _) huxm (hδm' μ hμ) (hXp μ hμ) (hend μ hμ).2.2.1 (hxp μ hμ)
       (hndp μ hμ) (hend μ hμ).2.1 (fun t ↦ (hend μ hμ).2.2.2 t _) huxp (hδp' μ hμ)
   -- `u` and its derivative in `t` are bounded on the strip.
@@ -855,9 +855,10 @@ private theorem isFredholm_and_index_eq_of_cylindrical_data (ω : SymplecticForm
     (mem_univ 0) (mem_univ 1)
     (fun μ _ ↦ isCylindricalNearEnds_path h₀ hcyl hcyl' hJt hJ't hJ hJ' hKs hKs' hKt hKt' μ)
     (contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ') (contDiff_pathHamiltonian hKs hKs')
-    (contDiff_pathHamiltonian hKt hKt') (fun p y ↦ compatible_pathAlmostComplex h₀ hJc hJ'c p y)
-    hu (fun _ _ ↦ hXm) (fun _ _ ↦ hxm) (fun _ _ ↦ hndm) huxm hδm (fun _ _ ↦ hXp)
-    (fun _ _ ↦ hxp) (fun _ _ ↦ hndp) huxp hδp
+    (contDiff_pathHamiltonian hKt hKt')
+    (fun μ _ z y ↦ compatible_pathAlmostComplex h₀ hJc hJ'c (μ, z) y) hu (fun _ _ ↦ hXm)
+    (fun _ _ ↦ hxm) (fun _ _ ↦ hndm) huxm hδm (fun _ _ ↦ hXp) (fun _ _ ↦ hxp) (fun _ _ ↦ hndp)
+    huxp hδp
     (by simpa [pathAlmostComplex_zero, pathHamiltonian.eq_unfold] using h)
   simpa [pathAlmostComplex_zero, pathAlmostComplex_one, pathHamiltonian.eq_unfold] using key
 
