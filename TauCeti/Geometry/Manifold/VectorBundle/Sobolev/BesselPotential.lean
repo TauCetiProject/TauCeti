@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Normed.Operator.Banach
 
 /-!
@@ -705,8 +706,9 @@ theorem inclusion_inclusion {t : ℝ} (h₁ : r ≤ s) (h₂ : t ≤ r) (u : A.s
 
 /-- The inclusion `H^s ⊆ H^r` does not increase the norm. -/
 theorem norm_inclusion_apply_le (h : r ≤ s) (u : A.sobolevSpace s) : ‖A.inclusion h u‖ ≤ ‖u‖ := by
-  rw [← Submodule.norm_coe, ← Submodule.norm_coe u, PiLp.norm_eq_of_L2, PiLp.norm_eq_of_L2]
-  gcongr with k
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe u]
+  refine PiLp.norm_mono fun k ↦ ?_
+  rw [inclusion_apply]
   exact BesselPotentialSpace.norm_inclusion_apply_le h _
 
 theorem norm_inclusion_le (h : r ≤ s) : ‖A.inclusion h‖ ≤ 1 :=

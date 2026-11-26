@@ -23,6 +23,7 @@ import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.MeasureTheory.Integral.ComapSubtype
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
@@ -687,6 +688,79 @@ theorem complexPairing_eq_integral_of_continuous_iteratedFDeriv (T : 𝓓'(Ω, �
   rw [complexPairing_apply, hpart, hpart, ← integral_const_mul,
     ← integral_add (hint _) ((hint _).const_mul Complex.I)]
   simp only [complexPairing_apply]
+
+open scoped Pointwise in
+/-- **A distribution passes under an integral of translates.** Let `Ψ` be a continuous compactly
+supported function on `X` and `Φ : X → E` continuous on its support, such that the translates
+`ρ (· - Φ x)` of a test function `ρ` are supported in `Ω` for `x` in the support of `Ψ`. If the test
+function `ψ` is `ψ w = ∫ Ψ x ρ (w - Φ x) dν(x)`, then `T ψ` is the integral of the regularization
+`x ↦ T (ρ (· - x))` along `Φ` against `Ψ`:
+
+`T ψ = ∫ Ψ x • T (ρ (· - Φ x)) dν(x)`.
+
+With `Φ = id` and a continuous `Ψ` this is the identity of
+`Distribution.apply_eq_integral_smul_translatePairing`. -/
+theorem apply_eq_integral_smul_translatePairing_comp (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {X : Type*}
+    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X}
+    [IsFiniteMeasureOnCompacts ν] {Ψ : X → ℝ} (hΨ : Continuous Ψ) (hΨc : HasCompactSupport Ψ)
+    {Φ : X → E} (hΦ : ContinuousOn Φ (tsupport Ψ))
+    (hΦρ : ∀ x ∈ tsupport Ψ, MapsTo (· + Φ x) (tsupport ρ) Ω) {ψ : 𝓓(Ω, ℝ)}
+    (hψ : ∀ w, ψ w = ∫ x, Ψ x * ρ (w - Φ x) ∂ν) :
+    T ψ = ∫ x, Ψ x • T.translatePairing ρ (Φ x) ∂ν := by
+  classical
+  -- Integrate over the compact support `C` of `Ψ`, a compact space with a finite measure.
+  set C := tsupport Ψ
+  have hC : IsCompact C := hΨc.isCompact
+  have hCm : MeasurableSet C := (isClosed_tsupport Ψ).measurableSet
+  have : CompactSpace C := isCompact_iff_compactSpace.1 hC
+  set νC : Measure C := ν.comap Subtype.val
+  have : IsFiniteMeasure νC := ⟨by
+    rw [Measure.comap_apply _ Subtype.val_injective (fun s hs ↦ hCm.subtype_image hs) _
+      MeasurableSet.univ, image_univ, Subtype.range_coe]
+    exact hC.measure_lt_top⟩
+  have hΦc : Continuous fun y : C ↦ Φ y := continuousOn_iff_continuous_domRestrict.1 hΦ
+  let f : C → 𝓓(Ω, ℝ) := fun y ↦ Ψ y • translateOfMapsTo ρ (hΦρ y y.property)
+  have hf_apply (y : C) (w : E) : f y w = Ψ y * ρ (w - Φ y) := by
+    simp [f, translateOfMapsTo_apply]
+  -- The translates are supported in the common compact set `Φ '' C + supp ρ ⊆ Ω`.
+  let K : Compacts E :=
+    ⟨Φ '' C + tsupport ρ, (hC.image_of_continuousOn hΦ).add ρ.hasCompactSupport.isCompact⟩
+  have hKΩ : (K : Set E) ⊆ Ω := by
+    rintro _ ⟨_, ⟨y, hy, rfl⟩, b, hb, rfl⟩
+    simpa [add_comm] using hΦρ y hy hb
+  have hfK (y : C) : tsupport (f y) ⊆ K := by
+    intro w hw
+    have hsub : tsupport (f y) ⊆ tsupport (translateOfMapsTo ρ (hΦρ y y.property)) :=
+      tsupport_smul_subset_right (fun _ : E ↦ Ψ y) (translateOfMapsTo ρ (hΦρ y y.property))
+    have hw' : w - Φ y ∈ tsupport ρ := by
+      simpa [tsupport_translateOfMapsTo] using hsub hw
+    exact ⟨Φ y, ⟨y, y.property, rfl⟩, w - Φ y, hw', add_sub_cancel _ _⟩
+  have hf (k : ℕ) : Continuous fun p : C × E ↦ iteratedFDeriv ℝ k (f p.1) p.2 := by
+    have h (p : C × E) : iteratedFDeriv ℝ k (f p.1) p.2 =
+        Ψ p.1 • iteratedFDeriv ℝ k ρ (p.2 - Φ p.1) := by
+      have hfun : (f p.1 : E → ℝ) = Ψ p.1 • fun w ↦ ρ (w - Φ p.1) := by
+        ext w
+        simp [hf_apply]
+      rw [hfun, iteratedFDeriv_const_smul_apply (f := fun w ↦ ρ (w - Φ p.1))
+        ((ρ.contDiff.comp (contDiff_id.sub contDiff_const)).contDiffAt.of_le (by simp)),
+        iteratedFDeriv_comp_sub]
+    simp only [h]
+    exact (hΨ.comp (continuous_subtypeVal.comp continuous_fst)).smul
+      ((ρ.contDiff.continuous_iteratedFDeriv (by simp)).comp
+        (continuous_snd.sub (hΦc.comp continuous_fst)))
+  -- Integrals over the subtype `C` with respect to `νC` are integrals over `X` of functions
+  -- vanishing off `C` (`MeasureTheory.integral_eq_subtype_comap_of_ae_eq_zero`).
+  have hΨ0 (x : X) (hx : x ∈ Cᶜ) : Ψ x = 0 := image_eq_zero_of_notMem_tsupport hx
+  have hint := T.apply_eq_integral_of_continuous_iteratedFDeriv hKΩ hfK hf (μ := νC) (ψ := ψ)
+    fun w ↦ by
+      simpa only [hf_apply, smul_eq_mul] using (hψ w).trans
+        (integral_eq_subtype_comap_of_ae_eq_zero hCm
+          (ae_restrict_of_forall_mem hCm.compl fun x hx ↦ by simp [hΨ0 x hx]))
+  refine hint.trans (Eq.trans (integral_congr_ae (ae_of_all _ fun y ↦ ?_))
+    (integral_eq_subtype_comap_of_ae_eq_zero hCm
+      (ae_restrict_of_forall_mem hCm.compl fun x hx ↦ by simp [hΨ0 x hx])).symm)
+  simp only [f, map_smul]
+  rw [translatePairing_eq T (translateOfMapsTo_apply ρ (hΦρ y y.property))]
 
 end ParametricIntegral
 

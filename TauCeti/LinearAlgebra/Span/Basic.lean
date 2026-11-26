@@ -29,10 +29,12 @@ well-founded order, where each `z j` is `x j` plus a combination of the earlier 
 the spans of initial segments and of the whole family. A ring homomorphism carries a span over
 `A` into a span over `B` as soon as it carries the generators into the target span and the
 scalars in `A` to scalars in `B`. Over a scalar extension, the image span of a semilinear map is
-spanned by its values on any spanning family of the domain. A property closed under `u + a • v`
-extends from a submodule `S` and a vector `x` to `S ⊔ (R ∙ x)`. The span of any countable set
-admits a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`). If
-`r ↦ r • x` is injective, then `r ↦ r • x` identifies `R` with the line `R ∙ x`
+spanned by its values on any spanning family of the domain, and a family vanishing off the range
+of a map `e` spans the same submodule as its restriction along `e`. A property closed under
+`u + a • v` extends from a submodule `S` and a vector `x` to `S ⊔ (R ∙ x)`. The span of any
+countable set admits a spanning sequence indexed by `ℕ`
+(`Set.Countable.exists_span_range_eq_top`). If `r ↦ r • x` is injective, then `r ↦ r • x`
+identifies `R` with the line `R ∙ x`
 (`LinearEquiv.toSpanSingletonOfInjective`); for instance a non-zero-divisor `x` of a commutative
 ring identifies the ring with the principal ideal it generates.
 -/
@@ -229,6 +231,19 @@ theorem span_range_eq_span_range_comp_of_span_eq_top
   rintro _ ⟨x, rfl⟩
   exact (image_span_subset f _ ((span S (Set.range (f ∘ v))).restrictScalars R')).mpr
     (Set.forall_mem_range.mpr fun i ↦ subset_span ⟨i, rfl⟩) ⟨x, hv ▸ mem_top, rfl⟩
+
+/-- A family that vanishes off the range of `e` spans the same submodule as its restriction
+along `e`. -/
+theorem span_range_eq_span_range_comp_of_eq_zero {R M ι κ : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] (e : κ → ι) {w : ι → M} (h : ∀ i ∉ Set.range e, w i = 0) :
+    span R (Set.range w) = span R (Set.range (w ∘ e)) := by
+  refine le_antisymm (span_le.mpr ?_) (span_mono (Set.range_comp_subset_range _ _))
+  rintro _ ⟨i, rfl⟩
+  by_cases hi : i ∈ Set.range e
+  · obtain ⟨j, rfl⟩ := hi
+    exact subset_span ⟨j, rfl⟩
+  · rw [h i hi]
+    exact zero_mem _
 
 end SpanningFamily
 

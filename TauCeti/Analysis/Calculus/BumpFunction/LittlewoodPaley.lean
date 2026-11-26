@@ -77,10 +77,14 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.hasTemperateGrowth_littlewoodPaley`: each cutoff is a Fourier multiplier.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
-* `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
+* `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`, so that
+  `ContDiffBump.inhomogeneousLittlewoodPaley_mul_one_sub_sum_range`: the tail `1 - ∑_{i ≤ N} ψᵢ`
+  of the partition is the finite sum `∑_{N < i < k + L} ψᵢ` on the support of `ψₖ`.
 * `ContDiffBump.sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le` and
   `ContDiffBump.inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le`: on the ball of radius
-  `2^N φ.rIn`, `∑_{j ≤ N} ψⱼ = 1` and `ψⱼ = 0` for `j > N`.
+  `2^N φ.rIn`, `∑_{j ≤ N} ψⱼ = 1` and `ψⱼ = 0` for `j > N`; outside the ball of radius
+  `2^N φ.rOut`, `∑_{j ≤ N} ψⱼ = 0`
+  (`ContDiffBump.sum_inhomogeneousLittlewoodPaley_range_eq_zero_of_le_norm`).
 * `ContDiffBump.inhomogeneousLittlewoodPaley_neg`: the pieces `ψⱼ` are even.
 * `ContDiffBump.inhomogeneousLittlewoodPaley_dilate`: the partition of the dilation
   `ContDiffBump.dilate` of `φ` is the dilation of the partition of `φ`.
@@ -666,6 +670,16 @@ theorem sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le {N : ℕ} {ξ :
     div_le_iff₀ (pow_pos two_pos _), mul_comm]
   exact hξ
 
+/-- **Finite cutoff.** Outside the open ball of radius `2^N φ.rOut`, the partial sum
+`∑_{j ≤ N} ψⱼ` vanishes. -/
+theorem sum_inhomogeneousLittlewoodPaley_range_eq_zero_of_le_norm {N : ℕ} {ξ : E}
+    (hξ : 2 ^ N * φ.rOut ≤ ‖ξ‖) :
+    ∑ j ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaley j ξ = 0 := by
+  rw [φ.sum_inhomogeneousLittlewoodPaley_range, φ.zero_of_le_dist]
+  rw [dist_zero_right, norm_inv_smul_of_nonneg (pow_nonneg zero_le_two _),
+    le_div_iff₀ (pow_pos two_pos _), mul_comm]
+  exact hξ
+
 /-- **Finite cutoff.** On the closed ball of radius `2^N φ.rIn`, every piece `ψⱼ` with `N < j`
 vanishes. -/
 theorem inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le {N j : ℕ} (hj : N < j) {ξ : E}
@@ -683,6 +697,35 @@ theorem hasSum_inhomogeneousLittlewoodPaley (ξ : E) :
   rw [← φ.sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le hN']
   exact hasSum_sum_of_ne_finset_zero fun j hj =>
     φ.inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le (by simpa using hj) hN'
+
+/-- **The tail of the partition.** If `ψₖ ξ ψᵢ ξ = 0` for `i ≥ k + L`, then
+`ψₖ ξ (1 - ∑_{i ≤ N} ψᵢ ξ) = ψₖ ξ ∑_{N < i < k + L} ψᵢ ξ`, since the pieces sum to one. -/
+theorem inhomogeneousLittlewoodPaley_mul_one_sub_sum_range {L k : ℕ} {ξ : E}
+    (hL : ∀ i, k + L ≤ i →
+      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ = 0)
+    (N : ℕ) :
+    φ.inhomogeneousLittlewoodPaley k ξ *
+        (1 - ∑ i ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaley i ξ) =
+      φ.inhomogeneousLittlewoodPaley k ξ *
+        ∑ i ∈ Finset.Ico (N + 1) (k + L), φ.inhomogeneousLittlewoodPaley i ξ := by
+  -- `ψₖ = ∑_{i < M} ψₖ ψᵢ` for `M = max (N + 1) (k + L)`, the terms with `i ≥ M` vanishing.
+  have hM : φ.inhomogeneousLittlewoodPaley k ξ =
+      φ.inhomogeneousLittlewoodPaley k ξ *
+        ∑ i ∈ Finset.range (max (N + 1) (k + L)), φ.inhomogeneousLittlewoodPaley i ξ := by
+    rw [Finset.mul_sum]
+    have h := (φ.hasSum_inhomogeneousLittlewoodPaley ξ).mul_left
+      (φ.inhomogeneousLittlewoodPaley k ξ)
+    rw [mul_one] at h
+    exact h.unique (hasSum_sum_of_ne_finset_zero fun i hi ↦
+      hL i (by simp only [Finset.mem_range, not_lt] at hi; omega))
+  have hIco : Finset.Ico (N + 1) (max (N + 1) (k + L)) = Finset.Ico (N + 1) (k + L) := by
+    rcases le_total (k + L) (N + 1) with h | h
+    · rw [max_eq_left h, Finset.Ico_self, Finset.Ico_eq_empty_of_le h]
+    · rw [max_eq_right h]
+  rw [mul_sub, mul_one]
+  nth_rw 1 [hM]
+  rw [← Finset.sum_range_add_sum_Ico _ (le_max_left (N + 1) (k + L)), hIco, mul_add,
+    add_sub_cancel_left]
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E] in
 /-- Explicit overlap width between the inhomogeneous Littlewood–Paley partitions of `φ` and `φ'`:

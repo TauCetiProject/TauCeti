@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace

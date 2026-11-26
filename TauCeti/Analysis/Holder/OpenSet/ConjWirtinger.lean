@@ -74,9 +74,7 @@ theorem conjWirtingerDerivL_compLeftL {G : Type*} [NormedAddCommGroup G] [Normed
   rw [conjWirtingerDerivL_apply _ z (extend_compLeftL_eventuallyEq _ u z.property),
     HolderSpace.compLeftL_apply]
   simp only [ContinuousLinearMap.coe_restrictScalars']
-  rw [L.conjWirtingerDeriv_comp_left
-      ((u.contDiffOn_extend.contDiffAt (Ω.isOpen.mem_nhds z.property)).differentiableAt
-        one_ne_zero),
+  rw [L.conjWirtingerDeriv_comp_left (u.differentiableAt_extend z.property),
     conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend, ContinuousLinearMap.comp_apply]
 
 end TauCeti.CkHolderSpaceOn
