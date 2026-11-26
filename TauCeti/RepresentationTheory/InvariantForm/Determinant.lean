@@ -19,8 +19,10 @@ basis `b : Module.Basis (Fin 2) R V` over a commutative ring `R`, if every eleme
 determinant `1`, `b.detBilinForm` is `G`-invariant (`Module.Basis.isInvariantForm_detBilinForm`).
 When `G` is a group, `b.detBilinFormEquivDual` intertwines `ρ` with `ρ.dual`, yielding self-duality
 `Module.Basis.equivDualOfDetEqOne` and `Representation.nonempty_equiv_dual_of_finrank_eq_two` over
-any commutative ring, and hence symmetric tensor multiplicities
-`FDRep.finrank_hom_tensor_comm_of_finrank_eq_two` when `|G|` is invertible in a field `k`.
+any commutative ring, and hence the symmetric Hom-dimension identity
+`FDRep.finrank_hom_tensor_comm_of_finrank_eq_two` (`dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ V ⊗ X)`) when
+`|G|` is invertible in a field `k` (giving multiplicity symmetry for simple `X`, `Y` in the split
+semisimple case).
 
 ## Main definitions and results
 
@@ -30,7 +32,8 @@ any commutative ring, and hence symmetric tensor multiplicities
   self-duality `ρ.Equiv ρ.dual` of a rank-two representation of determinant `1` over a commutative
   ring.
 * `FDRep.finrank_hom_tensor_comm_of_finrank_eq_two`: symmetry of `dim_k (X ⟶ V ⊗ Y)` when `|G|` is
-  invertible in `k`, `dim_k V = 2`, and `∀ g, det (V.ρ g) = 1`.
+  invertible in `k`, `dim_k V = 2`, and `∀ g, det (V.ρ g) = 1` (multiplicity symmetry for simple
+  inputs in the split semisimple case).
 -/
 
 public section
@@ -103,8 +106,9 @@ end Representation
 
 namespace FDRep
 
-/-- **Symmetry of tensor multiplicities** for a two-dimensional representation of determinant
-`1`. -/
+/-- **Hom-dimension symmetry for a two-dimensional representation of determinant `1`**: when
+`|G|` is invertible in `k`, `dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ V ⊗ X)` (which is multiplicity
+symmetry for simple `X`, `Y` in the split semisimple case). -/
 theorem finrank_hom_tensor_comm_of_finrank_eq_two {k : Type u} {G : Type v} [Field k] [Group G]
     [Invertible (Nat.card G : k)] {V : FDRep k G} (hdim : Module.finrank k V = 2)
     (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1) (X Y : FDRep k G) :

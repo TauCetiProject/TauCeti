@@ -73,7 +73,8 @@ non-isomorphic.
   representation with multiplicity its degree.
 * `TauCeti.SimpleFDRepClasses.finrankHom_equivFinCardConjClasses_symm` and
   `FDRep.finrank_eq_sum_finrankHom_mul_finrank`: compatibility with
-  `SimpleFDRepClasses.finrankHom` and the dimension decomposition into simple classes.
+  `SimpleFDRepClasses.finrankHom` and the dimension decomposition into simple classes (for finite
+  groups over an algebraically closed field in which `|G|` is invertible).
 
 ## References
 
@@ -316,7 +317,8 @@ theorem _root_.TauCeti.SimpleFDRepClasses.finrankHom_equivFinCardConjClasses_sym
   rw [SimpleFDRepClasses.equivFinCardConjClasses_symm_apply, SimpleFDRepClasses.finrankHom_mk,
     FDRep.intrinsicMultiplicity_ρ_eq_finrank_hom]
 
-/-- **Dimension decomposition into simple classes.** Every `W : FDRep k G` has dimension
+/-- **Dimension decomposition into simple classes.** For a finite group `G` over an algebraically
+closed field `k` in which `|G|` is invertible, every `W : FDRep k G` has dimension
 `∑ c, c.finrankHom W * c.finrank`. -/
 theorem _root_.FDRep.finrank_eq_sum_finrankHom_mul_finrank
     [Fintype (SimpleFDRepClasses k G)] (W : FDRep k G) :

@@ -124,6 +124,31 @@ namespace TauCeti
 
 open Finset
 
+section Helpers
+
+/-- If rows `a` and `b` of `M` vanish outside `{a, b}`, every vertex reachable from `a` or `b`
+along positive entries lies in `{a, b}`. -/
+private theorem eq_or_eq_of_reflTransGen {ι : Type*} (M : Matrix ι ι ℕ) {a b : ι}
+    (hMa : ∀ j, j ≠ b → M a j = 0) (hMb : ∀ j, j ≠ a → M b j = 0) {x y : ι}
+    (hxy : Relation.ReflTransGen (fun u v ↦ u ≠ v ∧ 0 < M u v) x y) (hx : x = a ∨ x = b) :
+    y = a ∨ y = b := by
+  induction hxy with
+  | refl => exact hx
+  | tail _ hstep ih =>
+    rcases ih with rfl | rfl
+    · exact Or.inr (by_contra fun hyb ↦ by have := hMa _ hyb; have := hstep.2; omega)
+    · exact Or.inl (by_contra fun hya ↦ by have := hMb _ hya; have := hstep.2; omega)
+
+/-- An equivalence `ι ≃ Fin 2` from two distinct elements `x₀ ≠ x₁` covering `ι`. -/
+private def equivFinTwoOfPair {ι : Type*} [DecidableEq ι] {x₀ x₁ : ι} (hne : x₀ ≠ x₁)
+    (hall : ∀ k : ι, k = x₀ ∨ k = x₁) : ι ≃ Fin 2 where
+  toFun x := if x = x₀ then 0 else 1
+  invFun j := if j = 0 then x₀ else x₁
+  left_inv x := by rcases hall x with rfl | rfl <;> simp [hne.symm]
+  right_inv := Fin.forall_fin_two.2 ⟨by simp, by simp [hne.symm]⟩
+
+end Helpers
+
 section MatrixRecognition
 
 variable {ι : Type*} [Fintype ι]
@@ -143,6 +168,7 @@ private theorem exists_affineDynkinType_A_one_of_two_le
     (hδ_sum : ∀ i, ∑ j, M i j * δ j = 2 * δ i) {a b : ι} (hab2 : 2 ≤ M a b) :
     ∃ (t : AffineDynkinType) (e : ι ≃ Fin t.nodes), IsAffineMatrixLabelling M i₀ δ t e := by
   classical
+  -- Step 1: Balance on `(a, b)` forces `δ a = δ b` and `M a b = M b a = 2`.
   have hab : a ≠ b := fun h ↦ by rw [h, hLoop b] at hab2; omega
   have hle (x y : ι) : M x y * δ y ≤ 2 * δ x :=
     hδ_sum x ▸ single_le_sum (f := fun j ↦ M x j * δ j) (fun _ _ ↦ Nat.zero_le _) (mem_univ y)
@@ -156,40 +182,30 @@ private theorem exists_affineDynkinType_A_one_of_two_le
     have : M a b * δ b ≤ 2 * δ b := hδ_ab ▸ hle a b
     nlinarith
   have hMba_eq : M b a = 2 := (hSymm.apply a b).trans hMab_eq
+  -- Step 2: All other entries in rows `a` and `b` vanish, so connectivity confines `ι` to `{a, b}`.
   have hMa_other (j : ι) (hjb : j ≠ b) : M a j = 0 :=
     Matrix.apply_eq_zero_of_mulVec_apply_eq_mul (fun _ ↦ Nat.zero_le _) (fun _ ↦ Nat.zero_le _)
       (by simpa [Matrix.mulVec, dotProduct, hMab_eq, hδ_ab] using hδ_sum a) hjb (hδ_pos j).ne'
   have hMb_other (j : ι) (hja : j ≠ a) : M b j = 0 :=
     Matrix.apply_eq_zero_of_mulVec_apply_eq_mul (fun _ ↦ Nat.zero_le _) (fun _ ↦ Nat.zero_le _)
       (by simpa [Matrix.mulVec, dotProduct, hMba_eq, hδ_ab] using hδ_sum b) hja (hδ_pos j).ne'
-  have hall_ab (k : ι) : k = a ∨ k = b := by
-    suffices ∀ x y : ι, Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < M x y) x y →
-        (x = a ∨ x = b) → (y = a ∨ y = b) from this a k (hReach a k) (Or.inl rfl)
-    intro x y hxy
-    induction hxy with
-    | refl => exact id
-    | tail _ hstep ih =>
-      intro hx; rcases ih hx with rfl | rfl
-      · exact Or.inr (by_contra fun hyb ↦ by have := hMa_other _ hyb; have := hstep.2; omega)
-      · exact Or.inl (by_contra fun hya ↦ by have := hMb_other _ hya; have := hstep.2; omega)
+  have hall_ab (k : ι) : k = a ∨ k = b :=
+    eq_or_eq_of_reflTransGen M hMa_other hMb_other (hReach a k) (Or.inl rfl)
+  -- Step 3: Reorient `{a, b}` around `i₀` and build the `Ã₁` labelling.
   obtain ⟨c, hc_ne, hc_all, hMic, hMci, hδc⟩ :
       ∃ c : ι, i₀ ≠ c ∧ (∀ k : ι, k = i₀ ∨ k = c) ∧ M i₀ c = 2 ∧ M c i₀ = 2 ∧ δ c = 1 := by
     rcases hall_ab i₀ with rfl | rfl
     · exact ⟨b, hab, hall_ab, hMab_eq, hMba_eq, hδ_ab.symm.trans hδ_one⟩
     · exact ⟨a, hab.symm, fun k ↦ (hall_ab k).symm, hMba_eq, hMab_eq, hδ_ab.trans hδ_one⟩
-  let e' : ι ≃ Fin 2 :=
-    { toFun x := if x = i₀ then 0 else 1
-      invFun j := if j = 0 then i₀ else c
-      left_inv x := by rcases hc_all x with rfl | rfl <;> simp [hc_ne.symm]
-      right_inv := Fin.forall_fin_two.2 ⟨by simp, by simp [hc_ne.symm]⟩ }
-  let e : ι ≃ Fin (AffineDynkinType.A 1).nodes := e'
+  let e : ι ≃ Fin (AffineDynkinType.A 1).nodes := equivFinTwoOfPair hc_ne hc_all
   refine ⟨AffineDynkinType.A 1, e, AffineDynkinType.valid_A.mpr le_rfl, fun x y ↦ ?_,
     fun x ↦ ?_, ?_⟩
   · rw [AffineDynkinType.cartanMatrix_A_one_apply]; simp only [e.injective.eq_iff]
     rcases hc_all x with rfl | rfl <;> rcases hc_all y with rfl | rfl <;>
       simp [hLoop, hc_ne, hc_ne.symm, hMic, hMci]
   · rw [AffineDynkinType.marks_A_apply]; rcases hc_all x with rfl | rfl <;> simp [hδ_one, hδc]
-  · rw [AffineDynkinType.affineNode_A]; exact (ite_eq_left rfl : e' i₀ = 0)
+  · rw [AffineDynkinType.affineNode_A]
+    exact (ite_eq_left rfl : (equivFinTwoOfPair hc_ne hc_all) i₀ = 0)
 
 /-- `{0, 1}` graphical branch: recognized by Kac's theorem and normalized at `i₀`. -/
 private theorem exists_affineDynkinType_of_le_one

@@ -132,13 +132,15 @@ theorem tensorLeftHomLinearEquivOfEquivDual_symm_apply {V : FDRep k G}
       (tensorLeftHomEquiv X (ᘁV) V Y).symm (g ≫ (isoLeftDualOfEquivDual e).hom ▷ Y) := by
   simp [tensorLeftHomLinearEquivOfEquivDual, Linear.homCongr_symm_apply]
 
-/-- **Frobenius reciprocity for tensor multiplicities.** When `|G|` is invertible in `k`,
-`dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ (ᘁV) ⊗ X)`. -/
+/-- **Frobenius reciprocity for tensor Hom-dimensions.** When `|G|` is invertible in `k`,
+`dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ (ᘁV) ⊗ X)` (becoming a multiplicity identity for simple `X`, `Y`
+in the split semisimple case). -/
 theorem finrank_hom_tensor_leftDual [Invertible (Nat.card G : k)] (V X Y : FDRep k G) :
     finrank k (X ⟶ V ⊗ Y) = finrank k (Y ⟶ (ᘁV) ⊗ X) := by
   rw [finrank_hom_comm X (V ⊗ Y), (TauCeti.tensorLeftHomLinearEquiv k Y (ᘁV) V X).finrank_eq]
 
-/-- **Symmetry of tensor multiplicities for a self-dual representation.** -/
+/-- **Symmetry of tensor Hom-dimensions for a self-dual representation** (becoming multiplicity
+symmetry for simple `X`, `Y` in the split semisimple case). -/
 theorem finrank_hom_tensor_comm_of_equiv_dual [Invertible (Nat.card G : k)] {V : FDRep k G}
     (he : Nonempty (_root_.Representation.Equiv V.ρ (Representation.dual V.ρ)))
     (X Y : FDRep k G) : finrank k (X ⟶ V ⊗ Y) = finrank k (Y ⟶ V ⊗ X) := by

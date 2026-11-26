@@ -14,6 +14,7 @@ public import TauCeti.CategoryTheory.Simple.Classes
 public import TauCeti.CategoryTheory.Skeletal
 public import TauCeti.RepresentationTheory.Rep.Subrepresentation
 import TauCeti.CategoryTheory.Action.Restriction
+import TauCeti.CategoryTheory.Linear.Biproduct
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.FDRep.Basic
 import TauCeti.RepresentationTheory.Irreducible
@@ -461,14 +462,8 @@ theorem finrankHom_biprod (c : SimpleFDRepClasses k G) (W₁ W₂ : FDRep k G) :
     c.finrankHom (W₁ ⊞ W₂) = c.finrankHom W₁ + c.finrankHom W₂ := by
   induction c using ind with
   | h X hX =>
-    rw [finrankHom_mk, finrankHom_mk, finrankHom_mk, ← Module.finrank_prod]
-    exact ({ toFun := fun f ↦ (f ≫ biprod.fst, f ≫ biprod.snd)
-             invFun := fun p ↦ biprod.lift p.1 p.2
-             left_inv := fun f ↦ biprod.hom_ext _ _ (by simp) (by simp)
-             right_inv := fun p ↦ Prod.ext (by simp) (by simp)
-             map_add' := fun f g ↦ Prod.ext (by simp) (by simp)
-             map_smul' := fun r f ↦ Prod.ext (by simp) (by simp) } :
-      (X ⟶ W₁ ⊞ W₂) ≃ₗ[k] (X ⟶ W₁) × (X ⟶ W₂)).finrank_eq
+    rw [finrankHom_mk, finrankHom_mk, finrankHom_mk,
+      (TauCeti.homToBiprodLinearEquiv k X W₁ W₂).finrank_eq, Module.finrank_prod]
 
 /-- Over an algebraically closed field, `c.finrankHom Y` at a simple object `Y` is `1` at `mk Y`
 and `0` elsewhere (Schur's lemma). -/

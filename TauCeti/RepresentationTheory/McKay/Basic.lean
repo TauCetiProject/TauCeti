@@ -21,9 +21,9 @@ representation at an affine node.
 
 Following Steinberg (1985), `TauCeti.exists_isMcKayLabelling` proves this directly without a prior
 classification of the finite subgroups of `SL₂(ℂ)` by combining symmetry, loop-freeness, the
-dimension null vector, and reachability to the trivial class from
-`TauCeti.RepresentationTheory.McKay.Matrix` with matrix affine-diagram recognition
-(`TauCeti.exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul`).
+dimension eigenvector equation `M δ = 2 δ` (null vector of `2I - M`), and reachability to the
+trivial class from `TauCeti.RepresentationTheory.McKay.Matrix` with matrix affine-diagram
+recognition (`TauCeti.exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul`).
 
 ## Main definitions and results
 
@@ -199,27 +199,14 @@ theorem isMcKayLabelling_res_iff {G₁ : Type u} {G₂ : Type v} [Group G₁] [G
         ((SimpleFDRepClasses.resEquiv ℂ φ).symm.trans e) ↔
       IsMcKayLabelling V t e := by
   rw [isMcKayLabelling_iff_mckayMatrix, isMcKayLabelling_iff_mckayMatrix]
-  refine ⟨fun ⟨hM, hδ, hAff⟩ ↦ ⟨fun c₁ c₂ ↦ ?_, fun c ↦ ?_, ?_⟩,
-      fun ⟨hM, hδ, hAff⟩ ↦ ⟨fun c₁ c₂ ↦ ?_, fun c ↦ ?_, ?_⟩⟩
-  · have h := hM (SimpleFDRepClasses.resEquiv ℂ φ c₁) (SimpleFDRepClasses.resEquiv ℂ φ c₂)
-    rwa [FDRep.mckayMatrix_res_apply, Equiv.trans_apply, Equiv.trans_apply,
-      Equiv.symm_apply_apply, Equiv.symm_apply_apply] at h
-  · have h := hδ (SimpleFDRepClasses.resEquiv ℂ φ c)
-    rwa [SimpleFDRepClasses.finrank_resEquiv, Equiv.trans_apply, Equiv.symm_apply_apply] at h
-  · rw [Equiv.trans_apply, ← SimpleFDRepClasses.resEquiv_trivial (k := ℂ) φ,
-      Equiv.symm_apply_apply] at hAff
-    exact hAff
-  · obtain ⟨c₁', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c₁
-    obtain ⟨c₂', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c₂
-    rw [FDRep.mckayMatrix_res_apply, Equiv.trans_apply, Equiv.trans_apply,
-      Equiv.symm_apply_apply, Equiv.symm_apply_apply]
-    exact hM c₁' c₂'
-  · obtain ⟨c', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c
-    rw [SimpleFDRepClasses.finrank_resEquiv, Equiv.trans_apply, Equiv.symm_apply_apply]
-    exact hδ c'
+  refine and_congr ?_ (and_congr ?_ ?_)
+  · refine ((SimpleFDRepClasses.resEquiv ℂ φ).forall_congr fun c₁ ↦
+      (SimpleFDRepClasses.resEquiv ℂ φ).forall_congr fun c₂ ↦ ?_).symm
+    simp only [FDRep.mckayMatrix_res_apply, Equiv.trans_apply, Equiv.symm_apply_apply]
+  · refine ((SimpleFDRepClasses.resEquiv ℂ φ).forall_congr fun c ↦ ?_).symm
+    simp only [SimpleFDRepClasses.finrank_resEquiv, Equiv.trans_apply, Equiv.symm_apply_apply]
   · rw [Equiv.trans_apply, ← SimpleFDRepClasses.resEquiv_trivial (k := ℂ) φ,
       Equiv.symm_apply_apply]
-    exact hAff
 
 /-- Transport a McKay labelling of `V : FDRep ℂ G₂` along a group isomorphism `φ : G₁ ≃* G₂` to
 the restricted representation `(Action.res (FGModuleCat ℂ) (φ : G₁ →* G₂)).obj V`. -/

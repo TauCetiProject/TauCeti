@@ -33,10 +33,11 @@ multiplicity of `c₁` in `V ⊗ Y`. This file establishes its loop-freeness for
 group `G` on faithful two-dimensional representations of determinant `1` over an algebraically
 closed field of characteristic zero, its duality `(V.mckayMatrix)ᵀ = (ᘁV).mckayMatrix` and
 symmetry under self-duality, its comparison with `TauCeti.fusionMatrix` and with left
-multiplication on `TauCeti.SplitK0 (FDRep k G)`, the column-sum identity and dimension null-vector
-equation `M δ = (dim V) δ` (for finite groups over an algebraically closed field in which the group
-order `|G|` is invertible), the identification `(V.tensorPower n).mckayMatrix = V.mckayMatrix ^ n`
-with its entry formulas, and reachability to the trivial class for faithful complex representations.
+multiplication on `TauCeti.SplitK0 (FDRep k G)`, the column-sum identity and dimension eigenvector
+equation `M δ = (dim V) δ` (equivalently, `δ` is a null vector of `(dim V) I - M`, for finite
+groups over an algebraically closed field in which the group order `|G|` is invertible), the
+identification `(V.tensorPower n).mckayMatrix = V.mckayMatrix ^ n` with its entry formulas, and
+reachability to the trivial class for faithful complex representations.
 
 ## Main definitions and results
 
@@ -55,8 +56,9 @@ with its entry formulas, and reachability to the trivial class for faithful comp
   `SimpleFDRepClasses.equivSimpleClasses` recovers `Algebra.leftMulMatrix` by `SplitK0.of V` in
   `SplitK0.simpleBasis (FDRep k G)` for any `V`.
 * `FDRep.sum_mckayMatrix_mul_finrank_left` and `FDRep.sum_mckayMatrix_mul_finrank`:
-  column-sum identity and null-vector equation `M δ = (dim V) δ` for finite groups over an
-  algebraically closed field in which the group order `|G|` is invertible.
+  column-sum identity and dimension eigenvector equation `M δ = (dim V) δ` (so `δ` is a null
+  vector of `(dim V) I - M`) for finite groups over an algebraically closed field in which the
+  group order `|G|` is invertible.
 * `FDRep.mckayMatrix_tensorPower`, `FDRep.mckayMatrix_pow_apply`, and
   `FDRep.mckayMatrix_pow_apply_trivial`: under split semisimplicity, powers of `V.mckayMatrix`
   compute tensor-power multiplicities.
@@ -143,18 +145,11 @@ private theorem exists_central_no_eigenvalue_one_of_not_isIrreducible [Nontrivia
   obtain ⟨W, W', hWW', hW1, hW'1⟩ :=
     _root_.Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible hdim hρ
   let e := _root_.Subrepresentation.equivProdOfIsCompl hWW'
-  have : FiniteDimensional k W.toSubmodule := Module.finite_of_finrank_pos (by omega)
-  have : FiniteDimensional k W'.toSubmodule := Module.finite_of_finrank_pos (by omega)
-  have he_apply (g : G) (v : W₀) :
-      e (ρ g v) =
-        (LinearMap.det (W.toRepresentation g) • (e v).1,
-          LinearMap.det (W'.toRepresentation g) • (e v).2) := by
-    have h := LinearMap.congr_fun (e.isIntertwining' g) v
-    exact Prod.ext
-      (by simpa [LinearMap.apply_eq_det_smul_of_finrank_eq_one hW1] using congrArg Prod.fst h)
-      (by simpa [LinearMap.apply_eq_det_smul_of_finrank_eq_one hW'1] using congrArg Prod.snd h)
+  have he_apply (g : G) (v : W₀) := e.apply_eq_prod_det_smul_of_finrank_eq_one hW1 hW'1 g v
   have hdet_prod (g : G) :
       LinearMap.det (W.toRepresentation g) * LinearMap.det (W'.toRepresentation g) = 1 :=
+    have : FiniteDimensional k W.toSubmodule := Module.finite_of_finrank_pos (by omega)
+    have : FiniteDimensional k W'.toSubmodule := Module.finite_of_finrank_pos (by omega)
     (e.det_apply_eq_mul_of_prod g).symm.trans (hdet g)
   have hcomm (g h : G) : g * h = h * g :=
     hfaithful <| LinearMap.ext fun v ↦ e.injective <| by
@@ -389,8 +384,9 @@ theorem sum_mckayMatrix_mul_finrank_left [Fintype (SimpleFDRepClasses k G)] (V :
     simp_rw [mckayMatrix_apply_mk, SimpleFDRepClasses.finrank_mk]
     rw [← FDRep.finrank_eq_sum_finrankHom_mul_finrank (V ⊗ Y), FDRep.finrank_tensor]
 
-/-- **Null-vector equation `M δ = (dim V) δ`.** For a finite group `G` over an algebraically closed
-field `k` in which the group order `|G|` is invertible, every `V : FDRep k G` satisfies
+/-- **Dimension eigenvector equation `M δ = (dim V) δ`** (equivalently, `δ` is a null vector
+of `(dim V) I - M`). For a finite group `G` over an algebraically closed field `k` in which the
+group order `|G|` is invertible, every `V : FDRep k G` satisfies
 `∑ c₂, mckayMatrix V c₁ c₂ * c₂.finrank = dim V * c₁.finrank`. -/
 theorem sum_mckayMatrix_mul_finrank [Fintype (SimpleFDRepClasses k G)] (V : FDRep k G)
     (c₁ : SimpleFDRepClasses k G) :
