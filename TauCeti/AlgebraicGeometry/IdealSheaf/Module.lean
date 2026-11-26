@@ -33,12 +33,12 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
   sheaves;
 * `Scheme.IdealSheafData.submodule I`: the submodule `I ⊆ 𝒪_X` of the sheaf of modules `𝒪_X`;
 * `Scheme.IdealSheafData.sheaf I`: the ideal sheaf as an `𝒪_X`-module, with its inclusion
-  `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
-  (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), the ideal
-  `I(U)ⁿ` for the power `Iⁿ` over an affine open `U` (`range_sheafι_app_pow`), and
-  `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`,
-  compatibly with equality, addition and scalar multiplication (`sectionMk_inj`,
-  `sectionMk_add`, `smul_sectionMk`);
+  `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X` (`eqToHom_sheafι` for transport along equality), which
+  is injective on sections (`sheafι_app_injective`) with image `sections I U` over `U`
+  (`range_sheafι_app`), the ideal `I(U)ⁿ` for the power `Iⁿ` over an affine open `U`
+  (`range_sheafι_app_pow`), and `Scheme.IdealSheafData.sectionMk` building a section of `I` from an
+  element of `sections I U`, compatibly with equality, addition and scalar multiplication
+  (`sectionMk_inj`, `sectionMk_add`, `smul_sectionMk`);
 * `Scheme.IdealSheafData.sheafLift`: a morphism into `𝒪_X` whose sections lie in `I` factors
   through `I`;
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
@@ -166,6 +166,13 @@ def sheafι : I.sheaf ⟶ SheafOfModules.unit X.ringCatSheaf :=
 
 instance : Mono I.sheafι :=
   SheafOfModules.Submodule.instMonoι I.submodule
+
+/-- Transport along an equality of ideal sheaves commutes with the inclusions into `𝒪_X`. -/
+@[reassoc]
+lemma eqToHom_sheafι {J K : X.IdealSheafData} {h' : J.sheaf = K.sheaf} (h : J = K) :
+    eqToHom h' ≫ K.sheafι = J.sheafι := by
+  subst h
+  exact Category.id_comp _
 
 /-- A regular function lying in `sections I U`, as a section of the ideal sheaf over `U`. -/
 def sectionMk {U : X.Opens} (s : Γ(X, U)) (hs : s ∈ I.sections U) : Γ(I.sheaf, U) :=

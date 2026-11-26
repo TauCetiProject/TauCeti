@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Characterization
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Divisor.Basic
@@ -162,11 +161,10 @@ theorem zMulHom_app_injective (U : W.projModel.Opens) : Function.Injective (W.zM
     (W.zMulHom_app_apply_val U s x).symm.trans <|
       (congrArg (fun a : Γ(W.projModel, U) ↦ (a.val x).val) hs).trans
         HomogeneousLocalization.val_zero
-  have hreg := IsLocalization.nonZeroDivisors_le_comap x.val.asHomogeneousIdeal.toIdeal.primeCompl
-    (Localization x.val.asHomogeneousIdeal.toIdeal.primeCompl)
-    W.toProjective.coord_two_mem_nonZeroDivisors
-  rw [Localization.mk_one_eq_algebraMap] at hz0
-  exact (mem_nonZeroDivisors_iff_left.mp hreg _ hz0).trans (Proj.twistingSheaf.zero_apply x).symm
+  refine (W.toProjective.isSMulRegular_mk'_coord_two x.val.asHomogeneousIdeal.toIdeal.primeCompl
+    (Localization x.val.asHomogeneousIdeal.toIdeal.primeCompl) 1 ?_).trans
+    (Proj.twistingSheaf.zero_apply x).symm
+  simpa only [smul_eq_mul, mul_zero, ← Localization.mk_eq_mk'] using hz0
 
 /-- Multiplication by `Z` is a monomorphism `𝒪(-1) ⟶ 𝒪_{W.projModel}`. -/
 instance mono_zMulHom : Mono W.zMulHom :=
@@ -284,13 +282,12 @@ noncomputable def zeroSectionDivisorPowThreeSheafIso :
     W.zeroSectionDivisorPowThreeSheafIso.inv ≫ (W.zeroSectionDivisor ^ 3).sheafι = W.zMulHom := by
   have heq : (eqToIso (congrArg Scheme.IdealSheafData.sheaf
       W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf)).inv ≫
-        (W.zeroSectionDivisor ^ 3).sheafι = W.zMulHom.imageIdealSheaf.sheafι :=
-    (congrArg (· ≫ _) (eqToIso.inv _)).trans <|
-      (eqToHom_naturality (f := Scheme.IdealSheafData.sheaf)
-        (g := fun _ ↦ SheafOfModules.unit W.projModel.ringCatSheaf)
-        Scheme.IdealSheafData.sheafι
-        W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf.symm).symm.trans
-        (Category.comp_id _)
+        (W.zeroSectionDivisor ^ 3).sheafι = W.zMulHom.imageIdealSheaf.sheafι := by
+    rw [eqToIso.inv]
+    exact Scheme.IdealSheafData.eqToHom_sheafι
+      W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf.symm
+  -- `Scheme.Modules` is semireducible, so `rw` cannot reassociate across `sheafι` at `implicit`
+  -- transparency; compose `heq` directly as in `reesMul_sheafι`.
   exact (Category.assoc _ _ _).trans <|
     (congrArg (_ ≫ ·) heq).trans W.zMulHom.imageIdealSheafIso_hom_ι
 

@@ -31,8 +31,10 @@ over `R[Y, Z]`. Hence the class of `Z` is a nonzerodivisor of the homogeneous co
   polynomial in projective coordinates is prime.
 * `WeierstrassCurve.Projective.instIsDomainCoordinateRing`: over an integral domain, the
   homogeneous coordinate ring of a Weierstrass curve is an integral domain.
-* `WeierstrassCurve.Projective.coord_two_mem_nonZeroDivisors`: over any commutative ring, the
-  class of `Z` is a nonzerodivisor of the homogeneous coordinate ring.
+* `WeierstrassCurve.Projective.coord_two_mem_nonZeroDivisors`,
+  `WeierstrassCurve.Projective.isSMulRegular_mk'_coord_two`: over any commutative ring, the class of
+  `Z` is a nonzerodivisor of the homogeneous coordinate ring and every fraction `Z / s` is regular
+  in any localization of it.
 
 ## References
 
@@ -102,6 +104,17 @@ theorem coord_two_mem_nonZeroDivisors : W'.coord 2 ∈ nonZeroDivisors W'.Coordi
   -- and `Z` is a nonzerodivisor of `R[Y, Z]`, so it acts injectively on polynomials over it
   rw [key]
   exact isRegular_X.left.isSMulRegular.polynomial.right_eq_zero_of_smul hx
+
+/-- In any localization `S` of the homogeneous coordinate ring of a Weierstrass curve, every
+fraction `Z / s` with numerator `Z` is a nonzerodivisor (`IsSMulRegular`). -/
+theorem isSMulRegular_mk'_coord_two (M : Submonoid W'.CoordinateRing)
+    (S : Type*) [CommRing S] [Algebra W'.CoordinateRing S] [IsLocalization M S] (s : M) :
+    IsSMulRegular S (IsLocalization.mk' S (W'.coord 2) s) := by
+  refine IsSMulRegular.of_right_eq_zero_of_smul fun x hx ↦
+    mem_nonZeroDivisors_iff_left.mp
+      (IsLocalization.nonZeroDivisors_le_comap M S W'.coord_two_mem_nonZeroDivisors) x ?_
+  rw [smul_eq_mul] at hx
+  rw [← IsLocalization.mk'_spec' S (W'.coord 2) s, mul_assoc, hx, mul_zero]
 
 private theorem map_cubic {S : Type*} [CommRing S] (f : R →+* S) :
     (W'.map f).cubic = W'.cubic.map (MvPolynomial.map f) := by

@@ -87,6 +87,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   `I ⊔ J` are controlled by the corresponding power of the left ideal `J`.
 * `Ideal.span_pair_pow_eq_span_singleton`: if `z (1 - t) = x ^ n` with `t ∈ (x, z)` and
   the left ideals `(x, z)` and `(z)` are two-sided, then `(x, z) ^ n = (z)`.
+* `Ideal.span_pair_eq_span_left_of_mul_eq_pow` and `IsSMulRegular.of_mul_eq_pow`: if
+  `z * u = x ^ n` with `u` a unit and `n ≠ 0`, then `(x, z) = (x)`, and `x` is regular when `z` is.
 * `Ideal.pow_pow_sub_pow_pow_mem_pow_succ`: if `n ∈ I` and `a ≡ b` modulo `I`, then
   `a ^ n ^ k ≡ b ^ n ^ k` modulo `I ^ (k + 1)`.
 * `Ideal.isTwoSided_span_of_subset_center`: a left ideal spanned by central elements is two-sided.
@@ -638,6 +640,21 @@ theorem Ideal.span_pair_pow_eq_span_singleton {R : Type*} [Ring R] {x z t : R} {
       rwa [hz'] at this
     exact add_mem (Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hxm n))
       (Ideal.mul_mem_left _ _ (Ideal.pow_mem_pow ht n))
+
+/-- In a commutative semiring, if `z * u = x ^ n` with `u` a unit and `n ≠ 0`, then
+`(x, z) = (x)`. -/
+theorem Ideal.span_pair_eq_span_left_of_mul_eq_pow {R : Type*} [CommSemiring R] {x z u : R}
+    {n : ℕ} (hn : n ≠ 0) (hu : IsUnit u) (h : z * u = x ^ n) :
+    Ideal.span {x, z} = Ideal.span {x} :=
+  Ideal.span_pair_eq_span_left_iff_dvd.mpr (hu.dvd_mul_right.mp (h ▸ dvd_pow_self x hn))
+
+/-- In a commutative semiring, if `z * u = x ^ n` with `z` regular, `u` a unit, and `n ≠ 0`, then
+`x` is regular. -/
+theorem IsSMulRegular.of_mul_eq_pow {R : Type*} [CommSemiring R] {x z u : R} {n : ℕ}
+    (hz : IsSMulRegular R z) (hn : n ≠ 0) (hu : IsUnit u) (h : z * u = x ^ n) :
+    IsSMulRegular R x :=
+  hz.of_span_singleton_le
+    (Ideal.span_pair_eq_span_left_of_mul_eq_pow hn hu h ▸ Ideal.span_mono (by simp))
 
 /-- **A pair whose square is principal.** In a commutative semiring, if `x ^ 2 = z m` with `z`
 and `m` coprime, then `(z, x) ^ 2 = (z)`. For a squarefree integer `d = p m` with `p` prime,

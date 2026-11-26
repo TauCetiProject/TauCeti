@@ -136,23 +136,17 @@ end Chart
 theorem exists_isAffineOpen_isAmple_pullback_poleSheaf {n : ℕ} (hn : 0 < n) (s : S) :
     ∃ U : S.affineOpens, s ∈ U.val ∧ (LineBundleClass.pullback (E.structureMap ⁻¹ᵁ U.val).ι
       (LineBundleClass.mk (E.poleSheaf n))).IsAmple := by
-  obtain ⟨U, hsU, W, _, e, hover, hzero⟩ :=
-    (isLocallyWeierstrass_iff E.zero_comp).mp E.isLocallyWeierstrass s
-  refine ⟨U, hsU, ?_⟩
-  have hg : IsPullback (e.inv ≫ pullback.fst E.structureMap U.val.ι) W.projModelOver E.structureMap
-      (U.property.isoSpec.inv ≫ U.val.ι) :=
-    (IsPullback.of_hasPullback E.structureMap U.val.ι).of_iso e (.refl _) U.property.isoSpec
-      (.refl _) (by simp) hover.symm (by simp) (by simp)
-  have h0 : W.projModelZero ≫ e.inv ≫ pullback.fst E.structureMap U.val.ι =
-      (U.property.isoSpec.inv ≫ U.val.ι) ≫ E.zero := by rw [← hzero]; simp
-  have hpb := hg.pullback_mk_dual_toInvertibleSheaf_ker_pow E.zero_comp
-    W.projModelZero_projModelOver h0 E.zeroSectionDivisor_def W.zeroSectionDivisor_def
-    (E.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
-    (W.isEffectiveCartier_zeroSectionDivisor_pow n)
-  rw [← pullbackRestrictIsoRestrict_inv_fst E.structureMap U.val,
-    ← Iso.hom_inv_id_assoc e (pullback.fst E.structureMap U.val.ι), ← Category.assoc,
-    ← LineBundleClass.pullback_comp, E.poleSheaf_def, hpb, ← W.poleSheaf_def]
-  exact (W.isAmple_poleSheaf hn).pullback _
+  obtain ⟨A⟩ := E.localModel
+  obtain ⟨i, x, rfl⟩ := A.covers s
+  let c := A.chart i
+  have hp : IsPullback c.toTotal (c.toBase ≫ c.baseMap.isoOpensRange.hom) E.structureMap
+      c.baseMap.opensRange.ι :=
+    c.isPullback.of_iso (.refl _) (.refl _) c.baseMap.isoOpensRange (.refl _)
+      (by simp) (by simp) (by simp) (by simp)
+  refine ⟨⟨c.baseMap.opensRange, isAffineOpen_opensRange c.baseMap⟩, ⟨x, rfl⟩, ?_⟩
+  rw [← pullbackRestrictIsoRestrict_inv_fst E.structureMap c.baseMap.opensRange,
+    ← hp.isoPullback_inv_fst, ← Category.assoc, ← LineBundleClass.pullback_comp]
+  exact (E.isAmple_pullback_toTotal_poleSheaf c hn).pullback _
 
 /-- Every `s : S` has an open neighbourhood `U` over which `𝒪_E(n[0])` (`n > 0`) is ample. -/
 theorem exists_opens_isAmple_pullback_poleSheaf {n : ℕ} (hn : 0 < n) (s : S) :

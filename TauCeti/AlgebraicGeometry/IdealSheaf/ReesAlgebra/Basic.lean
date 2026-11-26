@@ -115,13 +115,6 @@ theorem sheafιUnit_def (J : X.IdealSheafData) : J.sheafιUnit = J.sheafι :=
 instance mono_sheafιUnit (J : X.IdealSheafData) : Mono J.sheafιUnit :=
   inferInstanceAs (Mono J.sheafι)
 
-/-- Transport along an equality of ideal sheaves commutes with the inclusions into `𝒪_X`. -/
-@[reassoc]
-lemma eqToHom_sheafιUnit {J K : X.IdealSheafData} (h : J = K) :
-    eqToHom (congrArg sheaf h) ≫ K.sheafιUnit = J.sheafιUnit := by
-  subst h
-  exact Category.id_comp _
-
 /-- Transport along an equality of exponents commutes with the inclusions of the powers of `I`
 into `𝒪_X`. The equality of exponents is a side condition, so that `simp` can apply this to any
 transport between powers of `I`. -/
@@ -143,7 +136,7 @@ theorem reesMul_sheafι (i j : ℕ) :
     I.reesMul i j ≫ (I ^ (i + j)).sheafι =
       ((I ^ i).sheafι ⊗ₘ (I ^ j).sheafι) ≫ (λ_ (𝟙_ X.Modules)).hom :=
   (Category.assoc _ _ _).trans
-    ((congrArg (sheafMul (I ^ i) (I ^ j) ≫ ·) (eqToHom_sheafιUnit (pow_add I i j).symm)).trans
+    ((congrArg (sheafMul (I ^ i) (I ^ j) ≫ ·) (eqToHom_sheafι (pow_add I i j).symm)).trans
       (sheafMul_sheafι (I ^ i) (I ^ j)))
 
 /-- `reesMul_sheafι`, stated with the inclusions read as morphisms to the monoidal unit. -/

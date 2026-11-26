@@ -197,28 +197,14 @@ private theorem span_pow_three_chartOne :
 coordinate ring. -/
 private theorem isSMulRegular_chartPoint_one_two :
     IsSMulRegular (W.toProjective.ChartRing 1) (W.toProjective.chartPoint 1 2) := by
-  rw [← TauCeti.isSMulRegular_map_iff (W.toProjective.awayEquivChartRing 1).symm]
-  set M := Submonoid.powers (W.toProjective.coord 1)
-  set z' := (W.toProjective.awayEquivChartRing 1).symm (W.toProjective.chartPoint 1 2)
-  have hmk := (congrArg (W.toProjective.awayEquivChartRing 1).symm
-    (W.toProjective.chartPoint_apply 1 2)).trans (W.toProjective.awayEquivChartRing_symm_mk_X 1 2)
-  have hz' : z'.val = Localization.mk (W.toProjective.coord 2)
-      (⟨W.toProjective.coord 1 ^ 1, ⟨1, rfl⟩⟩ : M) := by
-    rw [show z' = _ from hmk, HomogeneousLocalization.Away.val_mk]
-  have hz'mul : z'.val * Localization.mk (W.toProjective.coord 1) (1 : M) =
-      algebraMap W.toProjective.CoordinateRing (Localization M) (W.toProjective.coord 2) := by
-    rw [hz', Localization.mk_mul, ← Localization.mk_one_eq_algebraMap, Localization.mk_eq_mk_iff,
-      Localization.r_iff_exists]
-    exact ⟨1, by simp only [OneMemClass.coe_one, Submonoid.coe_mul, pow_one]; ring⟩
-  have hreg := IsLocalization.nonZeroDivisors_le_comap M (Localization M)
-    W.toProjective.coord_two_mem_nonZeroDivisors
+  rw [← TauCeti.isSMulRegular_map_iff (W.toProjective.awayEquivChartRing 1).symm,
+    W.toProjective.chartPoint_apply, W.toProjective.awayEquivChartRing_symm_mk_X]
   intro a b hab
   apply HomogeneousLocalization.val_injective
-  have hsub : z'.val * (a.val - b.val) = 0 := by
-    have hval := congrArg HomogeneousLocalization.val hab
-    simp only [smul_eq_mul, HomogeneousLocalization.val_mul] at hval; linear_combination hval
-  exact sub_eq_zero.mp <| mem_nonZeroDivisors_iff_left.mp hreg _ <| by
-    rw [← hz'mul, mul_comm z'.val, mul_assoc, hsub, mul_zero]
+  apply W.toProjective.isSMulRegular_mk'_coord_two _ _
+    (⟨W.toProjective.coord 1 ^ 1, ⟨1, rfl⟩⟩ : Submonoid.powers (W.toProjective.coord 1))
+  simpa only [smul_eq_mul, HomogeneousLocalization.val_mul, HomogeneousLocalization.Away.val_mk,
+    Localization.mk_eq_mk'] using congrArg HomogeneousLocalization.val hab
 
 /-- Evaluation at the zero section `X/Y = Z/Y = 0` on the chart ring of `D₊(Y)`. -/
 private noncomputable def chartOneEvalZero : W.toProjective.ChartRing 1 →ₐ[R] R :=
@@ -333,40 +319,17 @@ theorem isEffectiveCartier_zeroSectionDivisor :
   obtain ⟨i, hp⟩ := W.exists_mem_range_chartι p
   refine ⟨Spec (.of (W.toProjective.ChartRing i)), W.chartι i, inferInstance, hp, ?_⟩
   by_cases hi : i = 1
-  · subst hi; rw [W.zeroSectionDivisor_comap_chartι_one, isEffectiveCartier_iff]
-    set A := W.toProjective.ChartRing 1; set Y := Spec (.of A)
-    set e := (Scheme.ΓSpecIso (.of A)).inv; set x := W.toProjective.chartPoint 1 0
-    set z := W.toProjective.chartPoint 1 2; set t := W.chartOneT
-    intro q
-    have h1 : e t + e (1 - t) = 1 := by rw [← map_add, add_sub_cancel, map_one]
-    rcases Y.basicOpen_add_le (e t) (e (1 - t)) (by rw [h1, Y.basicOpen_one]; trivial)
-      (x := q) with hqt | hq1t
-    · -- On `D(t)`, `t ∈ (x, z)` becomes a unit, so the ideal is `(1)`.
-      set U : Y.affineOpens := Y.affineBasicOpen (U := ⟨⊤, isAffineOpen_top Y⟩) (e t)
-      have htU : IsUnit (Y.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op (e t)) :=
-        IsLocalization.Away.algebraMap_isUnit (S := Γ(Y, Y.basicOpen (e t))) (e t)
-      refine ⟨U, hqt, 1, IsSMulRegular.one _, ?_⟩
-      rw [ofIdealTop_ideal, Ideal.span_singleton_one]
-      exact Ideal.eq_top_of_isUnit_mem _
-        (Ideal.mem_map_of_mem _ (Ideal.mem_map_of_mem _ W.chartOneT_mem_span)) htU
-    · -- On `D(1 - t)`, `z (1 - t) = x³` with `1 - t` invertible and `z` regular.
-      set U : Y.affineOpens := Y.affineBasicOpen (U := ⟨⊤, isAffineOpen_top Y⟩) (e (1 - t))
-      set φ : Γ(Y, ⊤) →+* Γ(Y, U) := (Y.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op).hom
-      have hu : IsUnit (φ (e (1 - t))) :=
-        IsLocalization.Away.algebraMap_isUnit (S := Γ(Y, Y.basicOpen (e (1 - t)))) (e (1 - t))
-      have hrel : φ (e z) * φ (e (1 - t)) = φ (e x) ^ 3 := by
-        rw [← map_mul, ← map_mul, W.chartOneT_equation, map_pow, map_pow]
-      have hz_reg : IsSMulRegular Γ(Y, ⊤) (e z) :=
-        (TauCeti.isSMulRegular_map_iff (Scheme.ΓSpecIso (.of A)).symm.commRingCatIsoToRingEquiv
-          z).mpr W.isSMulRegular_chartPoint_one_two
-      have hx_reg : IsSMulRegular Γ(Y, U) (φ (e x)) :=
-        (IsSMulRegular.pow_iff (by decide : 0 < 3)).mp
-          (hrel ▸ ((isAffineOpen_top Y).isSMulRegular_map le_top hz_reg).mul
-            (hu.isSMulRegular (M := Γ(Y, U))))
-      refine ⟨U, hq1t, φ (e x), hx_reg, ?_⟩
-      rw [ofIdealTop_ideal, Ideal.map_span, Set.image_pair, Ideal.map_span, Set.image_pair,
-        Ideal.span_pair_eq_span_left_iff_dvd, ← hu.dvd_mul_right, hrel]
-      exact dvd_pow_self _ (by decide : 3 ≠ 0)
+  · subst hi
+    set e := (Scheme.ΓSpecIso (.of (W.toProjective.ChartRing 1))).inv
+    rw [W.zeroSectionDivisor_comap_chartι_one, Ideal.map_span, Set.image_pair]
+    refine isEffectiveCartier_ofIdealTop_span_pair_of_mul_one_sub_eq_pow (by decide : 3 ≠ 0) ?_
+      (by
+        rw [← Set.image_pair, ← Ideal.map_span]
+        exact Ideal.mem_map_of_mem _ W.chartOneT_mem_span)
+      ((TauCeti.isSMulRegular_map_iff
+        (Scheme.ΓSpecIso (.of (W.toProjective.ChartRing 1))).symm.commRingCatIsoToRingEquiv _).mpr
+        W.isSMulRegular_chartPoint_one_two)
+    rw [← map_one e.hom, ← map_sub, ← map_mul, W.chartOneT_equation, map_pow]
   · rw [W.zeroSectionDivisor_comap_chartι_eq_top_of_ne_one hi]; exact isEffectiveCartier_top _
 
 end Chart
