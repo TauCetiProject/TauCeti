@@ -130,13 +130,10 @@ theorem index_sublevel_le_encard [CompactSpace α] (hWc : Continuous W)
     ν {x | W x ≤ b} ≤ {x | (∀ t, ϕ t x = x) ∧ W x ≤ b}.encard := by
   -- Write `g a` for the index of `{W ≤ a}` and `h a` for the number of rest points in it.
   set g : ℝ → ℕ∞ := fun a ↦ ν {x | W x ≤ a} with hg
-  set h : ℝ → ℕ∞ := fun a ↦ {x | (∀ t, ϕ t x = x) ∧ W x ≤ a}.encard with hh
+  set h : ℝ → ℕ∞ := fun a ↦ {x | (∀ t, ϕ t x = x) ∧ W x ≤ a}.encard
   -- `set` abstracts only the lambdas, not their beta-reduced applications at `b` in the goal, so
   -- fold those applications by hand.
   change g b ≤ h b
-  by_cases hfin : {x | (∀ t, ϕ t x = x) ∧ W x ≤ b}.Finite
-  swap
-  · simp [hh, Set.Infinite.encard_eq hfin]
   -- The set `F` of levels `a ≤ b` at which the bound fails is bounded below, since `{W ≤ a}` is
   -- empty below the minimum of `W`. Let `s` be its infimum.
   by_contra hb
@@ -157,8 +154,7 @@ theorem index_sublevel_le_encard [CompactSpace α] (hWc : Continuous W)
   -- The rest points on the level `s` have an open neighbourhood `U` of index at most their number,
   -- and the deformation lemma crosses the level `s` outside `U`.
   set K := {x | (∀ t, ϕ t x = x) ∧ W x = s}
-  have hKfin : K.Finite := hfin.subset fun x hx ↦ ⟨hx.1, hx.2.le.trans hsb⟩
-  obtain ⟨U, hUo, hKU, hU⟩ := hKfin.exists_isOpen_superset_le_encard hmono hempty hunion
+  obtain ⟨U, hUo, hKU, hU⟩ := K.exists_isOpen_superset_le_encard hmono hempty hunion
     fun x hx ↦ hloc x hx.1
   obtain ⟨ε, hε, T, hT, hdef⟩ :=
     exists_pos_forall_apply_le_sub hWc hW s hUo fun x hx hxs ↦ hKU ⟨hx, hxs⟩
