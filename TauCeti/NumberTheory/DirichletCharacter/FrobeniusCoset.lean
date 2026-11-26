@@ -72,6 +72,49 @@ noncomputable def frobeniusCoset (f : (ZMod N)ˣ →* G) (hp : p.Prime) (i : ℕ
   classical
   simp [frobeniusCoset]
 
+/-- The Frobenius coset at a positive prime power, indexed by the natural number itself.
+Off the positive prime powers it is empty. -/
+noncomputable def primePowerFrobeniusCoset (f : (ZMod N)ˣ →* G) (n : ℕ) : Finset G := by
+  classical
+  exact if hn : IsPrimePow n then
+    f.frobeniusCoset (Nat.minFac_prime hn.ne_one) (n.factorization n.minFac) else ∅
+
+open scoped Classical in
+/-- At an arbitrary index, use its least prime factor and its exponent if it is a prime power,
+and return the empty finset otherwise. -/
+theorem primePowerFrobeniusCoset_def (f : (ZMod N)ˣ →* G) (n : ℕ) :
+    f.primePowerFrobeniusCoset n = if hn : IsPrimePow n then
+      f.frobeniusCoset (Nat.minFac_prime hn.ne_one) (n.factorization n.minFac) else ∅ :=
+  (rfl)
+
+/-- Indexing by a positive prime power recovers the coset at that prime and exponent. -/
+@[simp] theorem primePowerFrobeniusCoset_pow (f : (ZMod N)ˣ →* G) {p k : ℕ}
+    (hp : p.Prime) (hk : k ≠ 0) :
+    f.primePowerFrobeniusCoset (p ^ k) = f.frobeniusCoset hp k := by
+  have hexp : (p ^ k).factorization (p ^ k).minFac = k := by
+    rw [hp.pow_minFac hk, Nat.factorization_pow_self hp]
+  rw [primePowerFrobeniusCoset_def, dite_eq_left (hp.isPrimePow.pow hk), hexp]
+  congr
+  exact hp.pow_minFac hk
+
+/-- There is no coset attached to a number that is not a positive prime power. -/
+@[simp] theorem primePowerFrobeniusCoset_of_not_isPrimePow (f : (ZMod N)ˣ →* G) {n : ℕ}
+    (hn : ¬ IsPrimePow n) : f.primePowerFrobeniusCoset n = ∅ := by
+  simp [primePowerFrobeniusCoset_def, hn]
+
+/-- Membership is witnessed by a prime and a positive exponent giving the index and its coset. -/
+@[simp] theorem mem_primePowerFrobeniusCoset_iff (f : (ZMod N)ˣ →* G) {n : ℕ} {g : G} :
+    g ∈ f.primePowerFrobeniusCoset n ↔
+      ∃ (p k : ℕ) (hp : p.Prime), 0 < k ∧ p ^ k = n ∧ g ∈ f.frobeniusCoset hp k := by
+  constructor
+  · intro hg
+    by_cases hn : IsPrimePow n
+    · obtain ⟨p, k, hp, hk, rfl⟩ := (isPrimePow_nat_iff n).mp hn
+      exact ⟨p, k, hp, hk, rfl, by simpa only [f.primePowerFrobeniusCoset_pow hp hk.ne'] using hg⟩
+    · simp [f.primePowerFrobeniusCoset_of_not_isPrimePow hn] at hg
+  · rintro ⟨p, k, hp, hk, rfl, hg⟩
+    rwa [f.primePowerFrobeniusCoset_pow hp hk.ne']
+
 /-- Any lift of `p ^ i` gives a representative of the Frobenius coset modulo inertia. -/
 theorem coe_frobeniusCoset_eq_leftCoset (f : (ZMod N)ˣ →* G) (hp : p.Prime)
     {u : (ZMod N)ˣ} (hu : ZMod.unitsMap (Nat.ordCompl_dvd N p) u =

@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.FrobeniusCoset
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 import Mathlib.Algebra.Order.BigOperators.Expect
-import Mathlib.Data.Nat.Factorization.PrimePow
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Frobenius
 
 /-!
@@ -37,28 +36,6 @@ namespace MonoidHom
 
 variable {N : ℕ} [NeZero N] {G : Type*} [Group G]
 
-/-- The Frobenius coset at a positive prime power, indexed by the integer itself.
-Off the positive prime powers it is empty. -/
-noncomputable def primePowerFrobeniusCoset (f : (ZMod N)ˣ →* G) (n : ℕ) : Finset G := by
-  classical
-  exact if hn : IsPrimePow n then
-    f.frobeniusCoset (Nat.minFac_prime hn.ne_one) (n.factorization n.minFac) else ∅
-
-/-- Indexing by a positive prime power recovers the coset at that prime and exponent. -/
-@[simp] theorem primePowerFrobeniusCoset_pow (f : (ZMod N)ˣ →* G) {p k : ℕ}
-    (hp : p.Prime) (hk : k ≠ 0) :
-    f.primePowerFrobeniusCoset (p ^ k) = f.frobeniusCoset hp k := by
-  have hmin := hp.pow_minFac hk
-  have hexp : (p ^ k).factorization (p ^ k).minFac = k := by
-    rw [hmin, hp.factorization_pow, Finsupp.single_eq_same]
-  rw [primePowerFrobeniusCoset, dite_eq_left (hp.isPrimePow.pow hk), hexp]
-  congr
-
-/-- There is no coset attached to a number that is not a positive prime power. -/
-@[simp] theorem primePowerFrobeniusCoset_of_not_isPrimePow (f : (ZMod N)ˣ →* G) {n : ℕ}
-    (hn : ¬ IsPrimePow n) : f.primePowerFrobeniusCoset n = ∅ := by
-  simp [primePowerFrobeniusCoset, hn]
-
 /-- The Riesz sum of von Mangoldt weights with caps `w g` for `g ∈ S`.
 At each prime power the ramp is averaged over the entire Frobenius coset, with value zero
 outside `S`. For positive caps on `S`, the largest integer part of `a / w g` is a common cutoff. -/
@@ -69,13 +46,21 @@ noncomputable def frobeniusRieszSum (f : (ZMod N)ˣ →* G) (S : Finset G) (w : 
     if g ∈ S then max (a / (n : ℝ) - w g) 0 else 0
 
 open scoped Classical in
+/-- The finite sum formula for the Frobenius Riesz sum, without any positivity assumption
+on the caps. -/
+theorem frobeniusRieszSum_def (f : (ZMod N)ˣ →* G) (S : Finset G) (w : G → ℝ) (a : ℝ) :
+    f.frobeniusRieszSum S w a = ∑ n ∈ Icc 1 (S.sup fun g ↦ ⌊a / w g⌋₊),
+      Λ n * 𝔼 g ∈ f.primePowerFrobeniusCoset n, if g ∈ S then max (a / (n : ℝ) - w g) 0 else 0 :=
+  (rfl)
+
+open scoped Classical in
 /-- A Frobenius Riesz sum is unchanged when evaluated at any common integer cutoff for all
 of its rescaled arguments. -/
 theorem frobeniusRieszSum_eq_sum (f : (ZMod N)ˣ →* G) (S : Finset G) (w : G → ℝ)
     (a : ℝ) (M : ℕ) (hw : ∀ g ∈ S, 0 < w g) (hM : ∀ g ∈ S, ⌊a / w g⌋₊ ≤ M) :
     f.frobeniusRieszSum S w a = ∑ n ∈ Icc 1 M, Λ n * 𝔼 g ∈ f.primePowerFrobeniusCoset n,
       if g ∈ S then max (a / (n : ℝ) - w g) 0 else 0 := by
-  rw [frobeniusRieszSum]
+  rw [frobeniusRieszSum_def]
   refine sum_subset (Icc_subset_Icc_right (Finset.sup_le hM)) fun n hn hout ↦ ?_
   have hn₁ : 1 ≤ n := (mem_Icc.mp hn).1
   have hn₂ : (S.sup fun g ↦ ⌊a / w g⌋₊) < n := by
@@ -94,7 +79,7 @@ theorem frobeniusRieszSum_eq_sum (f : (ZMod N)ˣ →* G) (S : Finset G) (w : G �
 /-- Every Frobenius Riesz sum is nonnegative. -/
 theorem frobeniusRieszSum_nonneg (f : (ZMod N)ˣ →* G) (S : Finset G) (w : G → ℝ)
     (a : ℝ) : 0 ≤ f.frobeniusRieszSum S w a := by
-  rw [frobeniusRieszSum]
+  rw [frobeniusRieszSum_def]
   refine sum_nonneg fun n _ ↦ mul_nonneg vonMangoldt_nonneg (Finset.expect_nonneg fun g _ ↦ ?_)
   split_ifs <;> positivity
 
@@ -137,7 +122,7 @@ theorem ofReal_frobeniusRieszSum_eq_sum_rieszSum [Finite G] [IsMulCommutative G]
           (PrimitiveDirichletCharacter.of (MulChar.ofUnitHom (χ.comp f))).character n)
           (a / w g) := by
   classical
-  rw [frobeniusRieszSum]
+  rw [frobeniusRieszSum_def]
   simp only [Complex.ofReal_sum, Complex.ofReal_mul, Complex.ofReal_expect,
     apply_ite Complex.ofReal, Complex.ofReal_zero]
   have hcut (g : G) (hg : g ∈ S) : ⌊a / w g⌋₊ ≤ S.sup (fun t ↦ ⌊a / w t⌋₊) :=
