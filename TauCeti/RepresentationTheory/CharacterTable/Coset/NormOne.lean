@@ -36,43 +36,14 @@ namespace TauCeti
 
 variable {G : Type} [Group G] {N : Subgroup G}
 
-/-- The normalized squared norm of a linear combination of extensions of distinct irreducible
-characters, on any coset, is the sum of the squares of its coefficient norms. -/
-private theorem extension_sum_normSq {ι : Type*} [Fintype ι] [Finite G] [Fintype N] (x : G)
-    (χ : ι → G → ℂ) (hχ : ∀ i, χ i ∈ irreducibleCharacters ℂ G)
-    (hN : ∀ i, (fun n : N => χ i n) ∈ irreducibleCharacters ℂ N)
-    (hinj : Function.Injective fun i (n : N) => χ i n) (b : ι → ℂ) :
-    (Nat.card N : ℂ)⁻¹ * (∑ n : N, (∑ i, b i * χ i (x * n)) *
-        conj (∑ i, b i * χ i (x * n))) = ∑ i, (Complex.normSq (b i) : ℂ) := by
-  classical
-  have hpair (i j : ι) : (∑ n : N, χ i (x * n) * conj (χ j (x * n))) =
-      if i = j then (Nat.card N : ℂ) else 0 := by
-    have hvirt := irreducibleCharacters_subset_virtualCharacters (hχ j)
-    simp only [conj_apply_of_mem_virtualCharacters hvirt]
-    obtain ⟨d, ρ, -, hρ⟩ := mem_irreducibleCharacters_iff.mp (hχ i)
-    by_cases hij : i = j
-    · subst j
-      rw [ite_eq_left rfl, ← hρ]
-      exact ρ.sum_character_mul_mul_character_mul_inv_eq_card N (hρ ▸ hN i) x
-    · rw [ite_eq_right hij]
-      obtain ⟨e, σ, -, hσ⟩ := mem_irreducibleCharacters_iff.mp (hχ j)
-      exact hρ.symm ▸ hσ.symm ▸
-        ρ.sum_character_mul_mul_character_mul_inv_eq_zero σ N (hρ ▸ hN i) (hσ ▸ hN j)
-          (by simpa [← hρ, ← hσ] using hinj.ne hij) x
-  have hcard : (Nat.card N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  calc
-    _ = (Nat.card N : ℂ)⁻¹ * ∑ i, ∑ j, (b i * conj (b j)) *
-        ∑ n : N, χ i (x * n) * conj (χ j (x * n)) := by
-      congr 1
-      simp only [map_sum, map_mul, Finset.sum_mul_sum]
-      rw [sum_comm]
-      refine sum_congr rfl fun i _ => ?_
-      rw [sum_comm]
-      exact sum_congr rfl fun j _ => by rw [mul_sum]; exact sum_congr rfl fun n _ => by ring
-    _ = _ := by
-      simp only [hpair, mul_ite, mul_zero, sum_ite_eq, mem_univ, ite_true]
-      rw [← sum_mul, mul_comm _ (Nat.card N : ℂ), inv_mul_cancel_left₀ hcard]
-      simp only [Complex.mul_conj]
+/-- An integral combination `∑ j ∈ s, a j * z ^ e j` of powers of an algebraic integer `z` of a
+subfield `K` of `ℂ` is the image in `ℂ` of an algebraic integer of `K`. -/
+private theorem exists_ringOfIntegers_coe_eq_sum {K : IntermediateField ℚ ℂ} {z : K}
+    (hz : IsIntegral ℤ z) {ι : Type*} (s : Finset ι) (a : ι → ℤ) (e : ι → ℕ) :
+    ∃ b : NumberField.RingOfIntegers K, ((b : K) : ℂ) = ∑ j ∈ s, (a j : ℂ) * (z : ℂ) ^ e j := by
+  refine ⟨⟨∑ j ∈ s, (a j : K) * z ^ e j, (mem_integralClosure_iff ℤ K).mpr
+    (IsIntegral.sum _ fun j _ => (isIntegral_algebraMap (x := a j)).mul (hz.pow _))⟩, ?_⟩
+  simp [NumberField.RingOfIntegers.map_mk]
 
 variable [N.Normal]
 
@@ -90,12 +61,13 @@ theorem exists_rootOfUnity_mul_extension_eq_on_coset (hp : N.index.Prime) {x : G
   classical
   have : Finite G := (Subgroup.finite_iff_finite_and_finiteIndex N).mpr
     ⟨inferInstance, N.finiteIndex_iff.mpr hp.ne_zero⟩
-  let I := {i : Fin (Nat.card (ConjClasses N)) //
-    irreducibleCharacter ℂ i ∘ MulAut.conjNormal x = irreducibleCharacter ℂ i}
-  let : Fintype I := Fintype.ofFinite I
+  -- Expansion: `X` is a sum of packets of quotient twists of extensions `χ i` plus an induced
+  -- virtual character.
   obtain ⟨χ, ε, a, Y, hχ, hres, hε, -, hXsum⟩ :=
     exists_sum_quotient_twists_add_indClassFun hp hx hζ hX
   rw [finsum_eq_sum_of_fintype] at hXsum
+  -- The packet coefficients `∑ j, a i j * ζ ^ j` are algebraic integers of the abelian number
+  -- field `K = ℚ(ζ)`.
   let K := IntermediateField.adjoin ℚ ({ζ} : Set ℂ)
   let : NeZero N.index := ⟨hp.ne_zero⟩
   let : IsCyclotomicExtension {N.index} ℚ K := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
@@ -103,17 +75,13 @@ theorem exists_rootOfUnity_mul_extension_eq_on_coset (hp : N.index.Prime) {x : G
   let : IsAbelianGalois ℚ K := IsCyclotomicExtension.isAbelianGalois {N.index} ℚ K
   let z : K := ⟨ζ, IntermediateField.subset_adjoin ℚ _ (Set.mem_singleton _)⟩
   have hz : IsPrimitiveRoot z N.index := hζ.of_map_of_injective K.val.injective
-  let zi : NumberField.RingOfIntegers K := ⟨z, hz.isIntegral hp.pos⟩
-  let b (i : I) : NumberField.RingOfIntegers K :=
-    ∑ j, (a i j : NumberField.RingOfIntegers K) * zi ^ j.val
+  choose b hb using fun i =>
+    exists_ringOfIntegers_coe_eq_sum (hz.isIntegral hp.pos) univ (a i) Fin.val
   let φ := K.val.toRingHom
-  have hb (i : I) : φ (b i) = ∑ j, (a i j : ℂ) * ζ ^ j.val := by
-    let f := φ.comp (algebraMap (NumberField.RingOfIntegers K) K)
-    have hf : f zi = ζ := rfl
-    calc
-      φ (b i) = f (b i) := rfl
-      _ = _ := by simp only [b, map_sum, map_mul, map_intCast, map_pow, hf]
-  have hcoset (n : N) : X (x * n) = ∑ i, φ (b i) * χ i (x * n) := by
+  have hφ (y : K) : φ y = y := by simp [φ]
+  -- Coset evaluation: on `x N` the induced part vanishes and each packet is its coefficient
+  -- times `χ i`.
+  have hcoset (n : N) : X (x * n) = ∑ i, ((b i : K) : ℂ) * χ i (x * n) := by
     have hn : x * n ∉ N := fun h => hx ((N.mul_mem_cancel_right n.property).mp h)
     have hind : N.indClassFun Y (x * n) = 0 := by
       rw [Subgroup.indClassFun_apply]
@@ -126,18 +94,21 @@ theorem exists_rootOfUnity_mul_extension_eq_on_coset (hp : N.index.Prime) {x : G
       QuotientGroup.mk_mul_of_mem x n.property
     simp only [Pi.smul_apply, smul_eq_mul, hq, hε]
     exact sum_congr rfl fun j _ => by ring
-  have hpair := extension_sum_normSq x χ hχ (fun i => by simpa only [hres] using
-    (irreducibleCharacter_mem ℂ i.val)) (fun i j hij => Subtype.ext
-      (irreducibleCharacter_injective (k := ℂ) (funext fun n =>
-        (hres i n).symm.trans ((congrFun hij n).trans (hres j n))))) (fun i => φ (b i))
+  -- Norm sum: coset orthogonality turns the norm-one condition into `∑ i, |b i|² = 1`.
+  have hpair := inv_natCard_mul_sum_mul_conj_eq_sum_normSq x χ hχ
+    (fun i => by simpa only [hres] using irreducibleCharacter_mem ℂ i.val)
+    (fun i j hij => Subtype.ext (irreducibleCharacter_injective (k := ℂ) (funext fun n =>
+        (hres i n).symm.trans ((congrFun hij n).trans (hres j n))))) (fun i => ((b i : K) : ℂ))
   have hsum : ∑ i, Complex.normSq (φ (b i)) = 1 := by
+    simp only [hφ]
     rw [← Complex.ofReal_inj, Complex.ofReal_sum, Complex.ofReal_one, ← hpair]
     refine Eq.trans ?_ hnorm
     congr 1
     exact sum_congr rfl fun n _ => by rw [hcoset n]
+  -- Rigidity: a sum of squared absolute values of algebraic integers of an abelian field equal to
+  -- `1` has a single nonzero term, a root of unity.
   obtain ⟨i, -, hi, hzero⟩ := (Finset.sum_normSq_eq_one_iff_of_isAbelianGalois univ b φ).mp hsum
   refine ⟨_, irreducibleCharacter_mem ℂ i.val, i.property, χ i, hχ i, hres i, b i, hi, fun n => ?_⟩
   rw [hcoset, sum_eq_single_of_mem i (mem_univ _) (fun j hj hji => by simp [hzero j hj hji])]
-  rfl
 
 end TauCeti

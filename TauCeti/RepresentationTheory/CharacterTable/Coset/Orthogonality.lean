@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Table
+import TauCeti.RepresentationTheory.CharacterTable.Gallagher
 
 /-!
 # Orthogonality of characters on a coset of a subgroup
@@ -55,6 +56,10 @@ closed.
 * `Representation.sum_character_mul_mul_character_mul_inv_eq_zero`: over a field of characteristic
   zero, characters restricting to distinct irreducible characters of `N` are orthogonal on every
   coset of `N`.
+* `TauCeti.inv_natCard_mul_sum_mul_conj_eq_sum_normSq`: over `ℂ`, for irreducible characters
+  `χᵢ` of `G` whose restrictions to `N` are distinct irreducible characters of `N`, the normalized
+  squared norm `|N|⁻¹ ∑ n ∈ N, |∑ᵢ bᵢ χᵢ(g n)|²` on any coset `g N` is `∑ᵢ |bᵢ|²` (Parseval on a
+  coset).
 
 ## References
 
@@ -133,3 +138,59 @@ theorem sum_character_mul_mul_character_mul_inv_eq_zero (ρ : Representation k G
     (TauCeti.sum_mul_inv_eq_zero_of_mem_irreducibleCharacters hθ hθ' hne) g
 
 end Representation
+
+namespace TauCeti
+
+open scoped ComplexConjugate
+open Finset
+
+variable {G : Type*} [Group G] {N : Subgroup G}
+
+/-- **Parseval on a coset**: if the `χ i` are irreducible complex characters of `G` whose
+restrictions to the finite subgroup `N` are pairwise distinct irreducible characters of `N`, then on
+every coset `x N` the normalized squared norm of `∑ i, b i * χ i` is `∑ i, |b i|²`. The subgroup `N`
+need not be normal. -/
+theorem inv_natCard_mul_sum_mul_conj_eq_sum_normSq {ι : Type*} [Fintype ι] [Finite G] [Fintype N]
+    (x : G) (χ : ι → G → ℂ) (hχ : ∀ i, χ i ∈ irreducibleCharacters ℂ G)
+    (hN : ∀ i, (fun n : N => χ i n) ∈ irreducibleCharacters ℂ N)
+    (hinj : Function.Injective fun i (n : N) => χ i n) (b : ι → ℂ) :
+    (Nat.card N : ℂ)⁻¹ * (∑ n : N, (∑ i, b i * χ i (x * n)) *
+        conj (∑ i, b i * χ i (x * n))) = ∑ i, (Complex.normSq (b i) : ℂ) := by
+  classical
+  -- The coset pairing of `χ i` and `χ j` is `|N|` on the diagonal and `0` off it.
+  have hpair (i j : ι) : (∑ n : N, χ i (x * n) * conj (χ j (x * n))) =
+      if i = j then (Nat.card N : ℂ) else 0 := by
+    have hvirt := irreducibleCharacters_subset_virtualCharacters (hχ j)
+    simp only [conj_apply_of_mem_virtualCharacters hvirt]
+    obtain ⟨d, ρ, -, hρ⟩ := mem_irreducibleCharacters_iff.mp (hχ i)
+    have hρN : (fun n : N => ρ.character n) ∈ irreducibleCharacters ℂ N := by
+      rw [hρ]
+      exact hN i
+    by_cases hij : i = j
+    · subst j
+      rw [ite_eq_left rfl, ← hρ]
+      exact ρ.sum_character_mul_mul_character_mul_inv_eq_card N hρN x
+    · obtain ⟨e, σ, -, hσ⟩ := mem_irreducibleCharacters_iff.mp (hχ j)
+      have hσN : (fun n : N => σ.character n) ∈ irreducibleCharacters ℂ N := by
+        rw [hσ]
+        exact hN j
+      rw [ite_eq_right hij, ← hρ, ← hσ]
+      exact ρ.sum_character_mul_mul_character_mul_inv_eq_zero σ N hρN hσN
+        (by simpa [← hρ, ← hσ] using hinj.ne hij) x
+  have hcard : (Nat.card N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  -- Expand the squared norm as a double sum of coset pairings, then apply `hpair`.
+  calc
+    _ = (Nat.card N : ℂ)⁻¹ * ∑ i, ∑ j, (b i * conj (b j)) *
+        ∑ n : N, χ i (x * n) * conj (χ j (x * n)) := by
+      congr 1
+      simp only [map_sum, map_mul, Finset.sum_mul_sum]
+      rw [sum_comm]
+      refine sum_congr rfl fun i _ => ?_
+      rw [sum_comm]
+      exact sum_congr rfl fun j _ => by rw [mul_sum]; exact sum_congr rfl fun n _ => by ring
+    _ = _ := by
+      simp only [hpair, mul_ite, mul_zero, sum_ite_eq, mem_univ, ite_true]
+      rw [← sum_mul, mul_comm _ (Nat.card N : ℂ), inv_mul_cancel_left₀ hcard]
+      simp only [Complex.mul_conj]
+
+end TauCeti
