@@ -50,6 +50,8 @@ actual vertex set.
   the numerical invariants record exactly the thresholds at which the predicates hold.
 * `Graph.edgeReachability_ofSimpleGraph`, `Graph.edgeConnectivity_ofSimpleGraph`: agreement with
   the simple-graph numerical edge invariants.
+* `Graph.edgeReachability_mono`, `Graph.edgeConnectivity_mono`: adding edges, without adding
+  actual vertices in the global case, does not decrease the numerical invariants.
 * `Graph.edgeConnectivity_eq_iInf_edgeReachability`: edge connectivity is the least local edge
   reachability between actual vertices.
 * `Graph.edgeReachability_le_nonloopIncidenceCount`: local edge reachability between distinct
@@ -340,6 +342,20 @@ theorem edgeConnectivity_ofSimpleGraph (H : SimpleGraph α) :
   ENat.eq_of_forall_natCast_le_iff fun k ↦ by
     rw [← isEdgeConnected_iff_le_edgeConnectivity,
       ← SimpleGraph.isEdgeConnected_iff_le_edgeConnectivity, isEdgeConnected_ofSimpleGraph_iff]
+
+/-- Local edge reachability is monotone under inclusion of multigraphs.
+This is the multigraph analogue of `SimpleGraph.edgeReachability_mono`. -/
+@[gcongr]
+theorem edgeReachability_mono (hGH : G ≤ H) (x y : α) :
+    G.edgeReachability x y ≤ H.edgeReachability x y :=
+  iSup_mono fun _ ↦ iSup_mono' fun hk ↦ ⟨hk.mono hGH, le_rfl⟩
+
+/-- Edge connectivity is monotone under inclusion of multigraphs with the same actual vertices.
+This is the multigraph analogue of `SimpleGraph.edgeConnectivity_mono`. -/
+@[gcongr]
+theorem edgeConnectivity_mono (hGH : G ≤ H) (hV : V(G) = V(H)) :
+    G.edgeConnectivity ≤ H.edgeConnectivity :=
+  iSup_mono fun _ ↦ iSup_mono' fun hk ↦ ⟨hk.mono hGH hV, le_rfl⟩
 
 theorem edgeReachability_comm (x y : α) : G.edgeReachability x y = G.edgeReachability y x :=
   ENat.eq_of_forall_natCast_le_iff fun k ↦ by

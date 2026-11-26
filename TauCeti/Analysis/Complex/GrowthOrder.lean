@@ -25,6 +25,8 @@ growth input of Hadamard's factorization and of the convexity bounds for L-funct
 * `TauCeti.OrderLE.mono`, `TauCeti.OrderLE.add`, `TauCeti.OrderLE.mul`, `TauCeti.OrderLE.sum`,
   `TauCeti.OrderLE.multisetProd`, `TauCeti.OrderLE.prod`: the predicate is monotone in the
   exponent and closed under the ring operations at a common exponent.
+* `TauCeti.orderLE_of_forall_exists_norm_le_mul_exp_rpow`: global bounds
+  `‖f z‖ ≤ C * exp (‖z‖ ^ b)` at every `b > A` give order at most `A`.
 * `TauCeti.OrderLE.one_le_of_not_isBigO_exp`: a function of order less than one is of
   exponential type.
 * `TauCeti.not_isBigO_exp_mul_norm_of_factorial_le`: a function that is at least `n!` up to a
@@ -134,6 +136,13 @@ theorem mono (h : OrderLE f A) (hAB : A ≤ B) : OrderLE f B :=
   fun A' hA' ↦ h A' (hAB.trans_lt hA')
 
 end OrderLE
+
+/-- A global bound `‖f z‖ ≤ C * exp (‖z‖ ^ b)` at every exponent `b > A` gives order at most `A`.
+For continuous `f` this is the converse of `TauCeti.OrderLE.exists_norm_le_mul_exp_rpow`. -/
+theorem orderLE_of_forall_exists_norm_le_mul_exp_rpow
+    (h : ∀ b > A, ∃ C, ∀ z, ‖f z‖ ≤ C * Real.exp (‖z‖ ^ b)) : OrderLE f A := fun b hb ↦ by
+  obtain ⟨C, hC⟩ := h b hb
+  exact IsBigO.of_bound C (.of_forall fun z ↦ by simpa using hC z)
 
 /-- A function dominated at infinity by a function of order at most `A` has order at most `A`. -/
 theorem _root_.Asymptotics.IsBigO.orderLE (hfg : f =O[cobounded ℂ] g) (hg : OrderLE g A) :

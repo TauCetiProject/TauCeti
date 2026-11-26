@@ -71,7 +71,7 @@ Over the reals this form, packaged as a `SymplecticForm`, is `TauCeti.cotangentS
 
 public section
 
-open LinearMap (BilinForm)
+open LinearMap (BilinForm isometryGroup mem_isometryGroup_iff)
 open LinearMap.BilinForm Module
 
 namespace TauCeti

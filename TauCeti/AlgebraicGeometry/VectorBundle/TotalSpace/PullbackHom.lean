@@ -60,19 +60,20 @@ theorem totalSpaceIhomHomEquiv_comp (E F : FiniteLocallyFreeSheaf Z)
   let s := totalSpaceHomEquiv ((ihom E).obj F) (Over.mk q) t
   change (((pullbackObjUnitIso g).inv ≫ (pullback g).map s ≫
       (pullbackComp g q).hom.app ((ihom E).obj F).obj) ≫
-        (pullbackIhomComparison E.obj (g ≫ q)).app F.obj) ≫
+        ((pullback (g ≫ q)).ihomComparison E.obj).app F.obj) ≫
           (pre ((pullbackComp g q).hom.app E.obj)).app ((pullback (g ≫ q)).obj F.obj) =
       ((pullbackObjUnitIso g).inv ≫
-        (pullback g).map (s ≫ (pullbackIhomComparison E.obj q).app F.obj) ≫
-          (pullbackIhomComparison ((pullback q).obj E.obj) g).app ((pullback q).obj F.obj)) ≫
+        (pullback g).map (s ≫ ((pullback q).ihomComparison E.obj).app F.obj) ≫
+          ((pullback g).ihomComparison ((pullback q).obj E.obj)).app
+            ((pullback q).obj F.obj)) ≫
             (ihom ((pullback g).obj ((pullback q).obj E.obj))).map
               ((pullbackComp g q).hom.app F.obj)
   let p := (pullbackObjUnitIso g).inv
   let a := (pullback g).map s
   let b := (pullbackComp g q).hom.app ((ihom E.obj).obj F.obj)
-  let d := (pullbackIhomComparison E.obj (g ≫ q)).app F.obj
-  let n := (pullbackIhomComparison E.obj q).app F.obj
-  let b' := (pullbackIhomComparison ((pullback q).obj E.obj) g).app ((pullback q).obj F.obj)
+  let d := ((pullback (g ≫ q)).ihomComparison E.obj).app F.obj
+  let n := ((pullback q).ihomComparison E.obj).app F.obj
+  let b' := ((pullback g).ihomComparison ((pullback q).obj E.obj)).app ((pullback q).obj F.obj)
   let d' := (ihom ((pullback g).obj ((pullback q).obj E.obj))).map
     ((pullbackComp g q).hom.app F.obj)
   let e := (pre ((pullbackComp g q).hom.app E.obj)).app ((pullback (g ≫ q)).obj F.obj)
@@ -84,6 +85,6 @@ theorem totalSpaceIhomHomEquiv_comp (E F : FiniteLocallyFreeSheaf Z)
     simpa only [Category.assoc] using
       congrArg (fun m ↦ p ≫ m ≫ b' ≫ d') ((pullback g).map_comp s n)
   exact hl.trans ((congrArg (p ≫ a ≫ ·)
-    (pullbackIhomComparison_comp g q E.obj F.obj).symm).trans hr.symm)
+    (pullback_ihomComparison_comp g q E.obj F.obj).symm).trans hr.symm)
 
 end TauCeti.AlgebraicGeometry

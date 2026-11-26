@@ -20,11 +20,13 @@ are represented by the universe-lifted module `ULift ℤ`. The construction is t
 `1` under the chart computation of local homology. The two generators of a fibre isomorphic to
 `ℤ` differ by sign, and each of them identifies `ℤ` with the fibre
 (`TauCeti.IsLocalOrientation.linearEquiv`); reversal and preservation by local homology
-isomorphisms are also proved, and isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport
-local orientations (`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and
-composites. In the dimension of a manifold, every point has exactly two local orientations, which
-are reversals of each other (`TauCeti.LocalOrientation.nat_card_eq_two`,
-`TauCeti.LocalOrientation.eq_or_eq_neg_of_finrank_eq`, `TauCeti.LocalOrientation.neg_ne`).
+isomorphisms are also proved, so that an isomorphism of local homology groups identifies their
+local orientations (`TauCeti.LocalOrientation.equivOfIso`), and isomorphisms of pairs
+`(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations (`TauCeti.LocalOrientation.map`),
+compatibly with reversal, identities and composites. In the dimension of a manifold, every point
+has exactly two local orientations, which are reversals of each other
+(`TauCeti.LocalOrientation.nat_card_eq_two`, `TauCeti.LocalOrientation.eq_or_eq_neg_of_finrank_eq`,
+`TauCeti.LocalOrientation.neg_ne`).
 
 The local orientation is the generator of `Hₙ(M, M ∖ {x}; ℤ)` described in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -130,6 +132,72 @@ theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalS
     zmultiples_apply_eq_top_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2
       ((isLocalOrientation_iff_zmultiples_eq_top _ _ _).1 hz)
 
+/-- An isomorphism of integral local homology groups identifies their local orientations. The two
+groups may sit in different degrees. -/
+def LocalOrientation.equivOfIso {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    {x : M} {y : N} {d d' : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d') :
+    LocalOrientation M x d ≃ LocalOrientation N y d' :=
+  e.toLinearEquiv.toEquiv.subtypeEquiv fun z ↦
+    ⟨fun hz ↦ hz.map e, fun hz ↦ (e.hom_inv_id_apply z) ▸ hz.map e.symm⟩
+
+@[simp]
+lemma LocalOrientation.coe_equivOfIso {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    {x : M} {y : N} {d d' : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d')
+    (z : LocalOrientation M x d) :
+    (equivOfIso e z).val = e.hom z.val :=
+  (rfl)
+
+/-- The inverse identification acts on classes by the inverse isomorphism. This is not a simp
+lemma: simp reaches it through `equivOfIso_symm` and `coe_equivOfIso`. -/
+lemma LocalOrientation.coe_equivOfIso_symm {M N : Type w} [TopologicalSpace M]
+    [TopologicalSpace N] {x : M} {y : N} {d d' : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d')
+    (z : LocalOrientation N y d') :
+    ((equivOfIso e).symm z).val = e.inv z.val :=
+  (rfl)
+
+/-- The identification of local orientations by an isomorphism commutes with reversal. -/
+@[simp]
+lemma LocalOrientation.equivOfIso_neg {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    {x : M} {y : N} {d d' : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d')
+    (z : LocalOrientation M x d) :
+    equivOfIso e (-z) = -equivOfIso e z :=
+  Subtype.ext (e.hom.hom.map_neg z.val)
+
+/-- The identifications of local orientations by isomorphisms are compatible with composition. -/
+@[simp]
+lemma LocalOrientation.equivOfIso_trans {M N P : Type w} [TopologicalSpace M]
+    [TopologicalSpace N] [TopologicalSpace P] {x : M} {y : N} {p : P} {d d' d'' : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d')
+    (e' : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d' ≅
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({p} : Set P) d'') :
+    (equivOfIso e).trans (equivOfIso e') = equivOfIso (e ≪≫ e') :=
+  (rfl)
+
+/-- The identity isomorphism identifies the local orientations at `x` with themselves. -/
+@[simp]
+lemma LocalOrientation.equivOfIso_refl {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ} :
+    equivOfIso (Iso.refl (localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      ({x} : Set M) d)) = Equiv.refl _ :=
+  (rfl)
+
+/-- The identification by the inverse isomorphism is the inverse identification. -/
+@[simp]
+lemma LocalOrientation.equivOfIso_symm {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    {x : M} {y : N} {d d' : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d') :
+    (equivOfIso e).symm = equivOfIso e.symm :=
+  (rfl)
+
 /-- An isomorphism of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` carries local orientations at `x` to
 local orientations at `y`, through the isomorphism it induces on integral local homology. -/
 def LocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
@@ -137,15 +205,7 @@ def LocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N
     (e : TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)) ≅
       TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N))) :
     LocalOrientation N y d :=
-  ⟨(TopPair.singularHomologyMap e.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) d).hom z.val,
-    z.property.map
-      { hom := TopPair.singularHomologyMap e.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) d
-        inv := TopPair.singularHomologyMap e.inv (ModuleCat.of ℤ (ULift.{w} ℤ)) d
-        hom_inv_id := by
-          rw [← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id]
-        inv_hom_id := by
-          rw [← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
-            TopPair.singularHomologyMap_id] }⟩
+  equivOfIso (TopPair.singularHomologyMapIso (ModuleCat.of ℤ (ULift.{w} ℤ)) e d) z
 
 @[simp]
 lemma LocalOrientation.coe_map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
@@ -164,13 +224,16 @@ lemma LocalOrientation.map_neg {M N : Type w} [TopologicalSpace M] [TopologicalS
     (e : TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)) ≅
       TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N))) :
     (-z).map e = -z.map e :=
-  Subtype.ext (_root_.map_neg _ z.val)
+  equivOfIso_neg _ z
 
 /-- Transport along the identity isomorphism of pairs is the identity. -/
 @[simp]
 lemma LocalOrientation.map_refl {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
-    (z : LocalOrientation M x d) : z.map (Iso.refl _) = z :=
-  Subtype.ext (by rw [coe_map, Iso.refl_hom, TopPair.singularHomologyMap_id, ModuleCat.id_apply])
+    (z : LocalOrientation M x d) : z.map (Iso.refl _) = z := by
+  have he : TopPair.singularHomologyMapIso (ModuleCat.of ℤ (ULift.{w} ℤ))
+      (Iso.refl (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)))) d = Iso.refl _ :=
+    Iso.ext (TopPair.singularHomologyMap_id _ _ d)
+  rw [LocalOrientation.map, he, equivOfIso_refl, Equiv.refl_apply]
 
 /-- Transport along a composite isomorphism of pairs is the composite of the transports. -/
 lemma LocalOrientation.map_trans {M N P : Type w} [TopologicalSpace M] [TopologicalSpace N]
@@ -179,10 +242,12 @@ lemma LocalOrientation.map_trans {M N P : Type w} [TopologicalSpace M] [Topologi
       TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N)))
     (e' : TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N)) ≅
       TopPair.ofSubset ({p}ᶜ : Set (TopCat.of P))) :
-    z.map (e ≪≫ e') = (z.map e).map e' :=
-  Subtype.ext (by
-    rw [coe_map, coe_map, coe_map, Iso.trans_hom, TopPair.singularHomologyMap_comp,
-      ModuleCat.comp_apply])
+    z.map (e ≪≫ e') = (z.map e).map e' := by
+  have he : TopPair.singularHomologyMapIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (e ≪≫ e') d =
+      TopPair.singularHomologyMapIso _ e d ≪≫ TopPair.singularHomologyMapIso _ e' d :=
+    Iso.ext (TopPair.singularHomologyMap_comp _ _ _ d)
+  rw [LocalOrientation.map, LocalOrientation.map, LocalOrientation.map, he, ← equivOfIso_trans,
+    Equiv.trans_apply]
 
 /-- If integral local homology is isomorphic to `ℤ`, its generators are precisely the inverse
 images of `1` and `-1`. In particular a top-degree local homology fibre has two orientations. -/

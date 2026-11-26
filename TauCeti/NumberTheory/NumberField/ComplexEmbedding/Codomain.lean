@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
+public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
 
 import Mathlib.RingTheory.DedekindDomain.Basic
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.Algebra.Module.Torsion.GenericRankOne
 
 /-!
 # `ℂ` as an algebra over a number field through a complex embedding
@@ -20,7 +22,11 @@ For a complex embedding `σ : K → ℂ`, `NumberField.ComplexEmbedding.Codomain
 carrying the `K`-algebra (and `𝓞 K`-algebra) structure given by `σ`, identified with `ℂ` by
 `NumberField.ComplexEmbedding.Codomain.equiv`. This lets the scalar extension
 `Codomain σ ⊗[𝓞 K] E` of an `𝓞 K`-module `E` along `σ`, its complex fibre `E ⊗_{O_K,σ} ℂ`, be
-formed for every `σ` at once.
+formed for every `σ` at once. When `E` is torsion-free of generic rank one and `s ≠ 0`, the
+complex fibre is the line spanned by `1 ⊗ s`
+(`NumberField.ComplexEmbedding.Codomain.exists_eq_smul_one_tmul`). The complex fibres
+of `E × F` and of `E ⊗[𝓞 K] F` are the product and the complex tensor product of those of `E` and
+`F` (`Codomain.prodEquiv`, `Codomain.tensorProductEquiv`).
 
 Complex conjugation is `𝓞 K`-linear from `Codomain σ` to `Codomain (conjugate σ)`
 (`NumberField.ComplexEmbedding.Codomain.conj`), and `Codomain σ` is flat over `𝓞 K` when `K` is a
@@ -121,11 +127,67 @@ theorem one_tmul_ne_zero {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Modul
     {x : E} (hx : x ≠ 0) : (1 : Codomain σ) ⊗ₜ[𝓞 K] x ≠ 0 := fun h =>
   hx (Module.Flat.tensorProduct_mk_injective (𝓞 K) E (Codomain σ) (by simpa using h))
 
-/-- `1 ⊗ (a • x) = σ(a) (1 ⊗ x)` in the complex fibre at `σ`. -/
-theorem one_tmul_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (a : 𝓞 K) (x : E) :
-    (1 : Codomain σ) ⊗ₜ[𝓞 K] (a • x) = σ a • (1 ⊗ₜ[𝓞 K] x) := by
-  rw [← TensorProduct.smul_tmul, tmul_eq_smul, Algebra.smul_def, mul_one,
-    equiv_algebraMap_ringOfIntegers]
+variable {E F : Type*} [AddCommGroup E] [Module (𝓞 K) E] [AddCommGroup F] [Module (𝓞 K) F]
+
+/-- An integer `a` of `K` acts on the complex fibre at `σ` as the complex number `σ a`. -/
+theorem tmul_smul (c : Codomain σ) (a : 𝓞 K) (x : E) :
+    c ⊗ₜ[𝓞 K] (a • x) = σ a • (c ⊗ₜ[𝓞 K] x) := by
+  -- Both sides are `(σ a * c) ⊗ x`: `𝓞 K` acts on `Codomain σ` through `σ`, and `ℂ` by
+  -- multiplication.
+  rw [← TensorProduct.smul_tmul, TensorProduct.smul_tmul']
+  rfl
+
+/-- If `E` is torsion-free of generic rank one and `s ≠ 0`, the complex fibre at `σ` is the line
+spanned by `1 ⊗ s`: every vector is a complex multiple of `1 ⊗ s`. -/
+theorem exists_eq_smul_one_tmul [NumberField K] [Module.IsTorsionFree (𝓞 K) E]
+    (hE : Module.finrank K (K ⊗[𝓞 K] E) = 1) {s : E} (hs : s ≠ 0) (u : Codomain σ ⊗[𝓞 K] E) :
+    ∃ c : ℂ, u = c • (1 ⊗ₜ[𝓞 K] s) := by
+  induction u using TensorProduct.inductionOn with
+  | tmul c x =>
+    obtain ⟨a, b, ha, hab⟩ := Module.exists_smul_eq_smul_of_finrank_eq_one hE hs x
+    have hσa : σ a ≠ 0 := by simpa using ha
+    have h : σ a • (c ⊗ₜ[𝓞 K] x) = σ b • (c ⊗ₜ[𝓞 K] s) := by
+      rw [← tmul_smul, ← tmul_smul, hab]
+    refine ⟨equiv σ c * σ b / σ a, ?_⟩
+    rw [← inv_smul_smul₀ hσa (c ⊗ₜ[𝓞 K] x), h, tmul_eq_smul σ c s, smul_smul, smul_smul]
+    congr 1
+    field_simp
+  | add u v hu hv =>
+    obtain ⟨c, rfl⟩ := hu
+    obtain ⟨d, rfl⟩ := hv
+    exact ⟨c + d, (add_smul c d _).symm⟩
+
+/-- Elements of `Codomain σ` pass between the factors of a complex tensor product of complex
+fibres, since they act as complex numbers. -/
+instance compatibleSMul :
+    TensorProduct.CompatibleSMul ℂ (Codomain σ) (Codomain σ ⊗[𝓞 K] E) (Codomain σ ⊗[𝓞 K] F) :=
+  .of_algebraMap_surjective _ _ fun c ↦ ⟨c, rfl⟩
+
+variable (E F)
+
+/-- The complex fibre of `E × F` at `σ` is the product of the complex fibres of `E` and `F`. -/
+def prodEquiv :
+    Codomain σ ⊗[𝓞 K] (E × F) ≃ₗ[ℂ] (Codomain σ ⊗[𝓞 K] E) × (Codomain σ ⊗[𝓞 K] F) :=
+  (TensorProduct.prodRight (𝓞 K) (Codomain σ) (Codomain σ) E F).restrictScalars ℂ
+
+/-- The complex fibre of `E ⊗[𝓞 K] F` at `σ` is the complex tensor product of the complex fibres
+of `E` and `F`. -/
+def tensorProductEquiv :
+    Codomain σ ⊗[𝓞 K] (E ⊗[𝓞 K] F) ≃ₗ[ℂ] (Codomain σ ⊗[𝓞 K] E) ⊗[ℂ] (Codomain σ ⊗[𝓞 K] F) :=
+  ((TensorProduct.AlgebraTensorModule.distribBaseChange (𝓞 K) (Codomain σ) E F).restrictScalars
+    ℂ).trans (TensorProduct.equivOfCompatibleSMul ℂ (Codomain σ) ℂ _ _)
+
+variable {E F}
+
+@[simp]
+theorem prodEquiv_tmul (c : Codomain σ) (x : E × F) :
+    prodEquiv σ E F (c ⊗ₜ x) = (c ⊗ₜ x.1, c ⊗ₜ x.2) :=
+  (rfl)
+
+@[simp]
+theorem tensorProductEquiv_tmul (c : Codomain σ) (x : E) (y : F) :
+    tensorProductEquiv σ E F (c ⊗ₜ (x ⊗ₜ y)) = (c ⊗ₜ x) ⊗ₜ (1 ⊗ₜ y) :=
+  (rfl)
 
 end Codomain
 

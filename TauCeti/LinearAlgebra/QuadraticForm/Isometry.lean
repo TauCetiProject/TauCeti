@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
@@ -26,6 +27,8 @@ This file records general properties of quadratic-map isometries.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.polarBilin_compl₁₂`: an isometric equivalence pulls the polar
   bilinear form of the target back to that of the source.
+* `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence maps polar
+  orthogonal complements to polar orthogonal complements.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
@@ -128,6 +131,25 @@ theorem _root_.QuadraticMap.IsometryEquiv.map_polarKernel
   simp only [Submodule.mem_map_equiv, LinearMap.mem_ker, polarBilin_apply_apply,
     IsometryEquiv.coe_symm_toLinearEquiv, IsometryEquiv.coe_toLinearEquiv]
   rw [← e.polar_apply x (e.symm y), e.apply_symm_apply]
+
+/-- An isometric equivalence maps the polar orthogonal complement of a submodule onto the polar
+orthogonal complement of its image. -/
+theorem _root_.QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} (e : Q₁.IsometryEquiv Q₂)
+    (W : Submodule R M₁) :
+    (LinearMap.BilinForm.orthogonal Q₁.polarBilin W).map e.toLinearMap =
+      LinearMap.BilinForm.orthogonal Q₂.polarBilin (W.map e.toLinearMap) := by
+  ext y
+  simp only [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
+    polarBilin_apply_apply, IsometryEquiv.coe_symm_toLinearEquiv,
+    IsometryEquiv.coe_toLinearEquiv]
+  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · rw [← e.apply_symm_apply x, ← e.apply_symm_apply y, e.polar_apply]
+    exact h _ hx
+  · rw [← e.polar_apply, e.apply_symm_apply]
+    exact h (e x) (by simpa using hx)
 
 /-- The restriction of an isometric equivalence to the kernels of polarization against
 corresponding vectors. -/

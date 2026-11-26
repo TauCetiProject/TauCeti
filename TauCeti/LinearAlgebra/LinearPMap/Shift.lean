@@ -19,6 +19,8 @@ unchanged.  This file develops the generic construction and its basic normalizat
 * `LinearPMap.subScalar`: the operator `A - omega I` on the domain of `A`.
 * `LinearPMap.subScalar_domain`: scalar shifts preserve the domain.
 * `LinearPMap.subScalar_apply`: pointwise evaluation of a scalar shift.
+* `LinearPMap.mem_ker_subScalar_iff`: the kernel of `A - omega I` consists of the vectors of the
+  domain of `A` on which `A` acts by `omega`.
 * `LinearPMap.vadd_subScalar` and `LinearPMap.subScalar_vadd`: scalar shifts
   commute with adding a globally defined map, and absorb into it.
 -/
@@ -48,6 +50,20 @@ theorem subScalar_apply (A : X →ₗ.[R] X) (omega : R) (x : (subScalar A omega
   -- Unfold the domain-preserving `VAdd` so both sides use its definitionally equal subtype.
   change (-omega) • (x : X) + A x = A x - omega • (x : X)
   module
+
+/-- The kernel of `A - omega I` consists of the vectors `x` of the domain of `A` with
+`A x = omega • x`. -/
+theorem mem_ker_subScalar_iff {A : X →ₗ.[R] X} {omega : R} {x : X} :
+    x ∈ (subScalar A omega).ker ↔ ∃ hx : x ∈ A.domain, A ⟨x, hx⟩ = omega • x := by
+  rw [mem_ker_iff]
+  constructor
+  · rintro ⟨y, rfl, hy⟩
+    rw [subScalar_apply, sub_eq_zero] at hy
+    exact ⟨_, hy⟩
+  · rintro ⟨hx, hAx⟩
+    refine ⟨⟨x, (subScalar_domain A omega).symm ▸ hx⟩, rfl, ?_⟩
+    rw [subScalar_apply, sub_eq_zero]
+    exact hAx
 
 /-- The zero scalar shift is the original operator. -/
 @[simp]

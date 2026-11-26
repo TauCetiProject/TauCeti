@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Flat.CompletelyFlat
+public import TauCeti.RingTheory.Flat.CompletelyFlat
 import TauCeti.RingTheory.AdicCompletion.DerivedComplete.Module
 import Mathlib.Data.ZMod.QuotientRing
-import Mathlib.NumberTheory.Padics.RingHoms
+public import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
@@ -67,14 +67,19 @@ example : ¬ IsDerivedComplete (Ideal.span {(p : ℤ)}) ℤ := by
   have := hp.out.two_le
   rcases Int.eq_one_or_neg_one_of_mul_eq_one h1 with h2 | h2 <;> omega
 
--- `ℤ_p` is `p`-completely faithfully flat over `ℤ`: it is flat, being torsion-free, and the
--- reduction `F_p ⊗ ℤ_p` is a nonzero `F_p`-vector space, as it maps onto `ZMod p`.
-example : IsCompletelyFaithfullyFlatModule ℤ (Ideal.span {(p : ℤ)}) (ModuleCat.of ℤ ℤ_[p]) := by
+/-- `ℤ_p` is `p`-completely faithfully flat over `ℤ`: it is flat, being torsion-free, and the
+reduction `F_p ⊗ ℤ_p` is a nonzero `F_p`-vector space, as it maps onto `ZMod p`. -/
+public theorem isCompletelyFaithfullyFlatModule_padicInt :
+    IsCompletelyFaithfullyFlatModule ℤ (Ideal.span {(p : ℤ)}) (ModuleCat.of ℤ ℤ_[p]) := by
   have : (Ideal.span {(p : ℤ)}).IsMaximal :=
     PrincipalIdealRing.isMaximal_of_irreducible (Nat.prime_iff_prime_int.mp hp.out).irreducible
   have : Nontrivial ((ℤ ⧸ Ideal.span {(p : ℤ)}) ⊗[ℤ] ℤ_[p]) :=
     (Algebra.TensorProduct.lift (Int.quotientSpanNatEquivZMod p).toRingHom.toIntAlgHom
       PadicInt.toZMod.toIntAlgHom fun _ _ ↦ Commute.all _ _).toRingHom.domain_nontrivial
+  -- `ℤ ⧸ (p)` is a field only through the maximality just shown, so its `Field` structure is
+  -- supplied locally. Its ring structure is the quotient's own, so the nonzero module
+  -- `F_p ⊗ ℤ_p` is free, and the instance `Module.FaithfullyFlat` of nontrivial free modules
+  -- applies.
   let := Ideal.Quotient.field (Ideal.span {(p : ℤ)})
   exact isCompletelyFaithfullyFlatModule_iff.mpr
     ⟨isCompletelyFlatModule_of_flat _, inferInstanceAs (Module.FaithfullyFlat _ (_ ⊗[ℤ] ℤ_[p]))⟩
