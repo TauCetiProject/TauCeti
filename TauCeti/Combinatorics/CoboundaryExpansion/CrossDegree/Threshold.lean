@@ -237,28 +237,22 @@ section CochainThreshold
 
 variable {V : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n m : ℕ}
 
-private theorem card_filter_lt_mem_edges_eq (X : TwoComplex V) :
-    (#(univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges) : ℝ) =
-      #X.edges := by
-  simpa using X.sum_filter_lt_mem_edges (fun _ => (1 : ℝ))
-
 /-- Every gauge of unequal degree `m ≠ n` against a degree-`n` cochain on `X` incurs `costErr` at
 least `#X.edges / (n + 1)`. -/
 theorem card_div_add_one_le_costErr_of_ne (α : Cochain X (Perm (Fin n)))
     (β : V → Perm (Fin m)) (hm : m ≠ n) :
     (#X.edges : ℝ) / (n + 1) ≤ α.costErr β := by
-  rw [← card_filter_lt_mem_edges_eq X]
-  exact α.card_div_add_one_le_costErr β hm.symm
+  have h := α.card_div_add_one_le_costErr β hm.symm
+  rwa [← X.orientedEdges_def, X.card_orientedEdges] at h
 
 /-- Whenever the equal-degree `costErr` infimum on `X` is at most `#X.edges / (n + 1)`, it is a
 lower bound for the degree-`m` `costErr` infimum in every degree `m : ℕ`. -/
 theorem ciInf_costErr_le_of_le_card_div_add_one (α : Cochain X (Perm (Fin n)))
     (hle : (⨅ β : V → Perm (Fin n), α.costErr β) ≤ (#X.edges : ℝ) / (n + 1)) (m : ℕ) :
     (⨅ β : V → Perm (Fin n), α.costErr β) ≤ ⨅ β : V → Perm (Fin m), α.costErr β := by
-  set E := univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
-  simp_rw [costErr_def] at hle ⊢
-  rw [← card_filter_lt_mem_edges_eq X] at hle
-  exact E.ciInf_sum_distErr_mul_inv_le_of_le_card_div_add_one α hle m
+  simp_rw [costErr_def, ← X.orientedEdges_def] at hle ⊢
+  rw [← X.card_orientedEdges] at hle
+  exact X.orientedEdges.ciInf_sum_distErr_mul_inv_le_of_le_card_div_add_one α hle m
 
 /-- When `2 ≤ n` and the equal-degree `costErr` infimum on `X` is at most `#X.edges / (n + 1)`,
 `α.gaugeDistErr` equals the equal-degree `costErr` infimum. -/

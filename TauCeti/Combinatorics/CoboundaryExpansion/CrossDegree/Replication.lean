@@ -24,7 +24,8 @@ cross-degree cochain distances (`TauCeti.Cochain`) and arbitrary-vertex-type pul
   adds `(Fintype.card V * (Fintype.card ι).choose 2) * (1 - min n m / max n m)` to
   `Fintype.card ι ^ 2` times the base degree-`m` infimum, multiplies `gaugeDistErr` by
   `Fintype.card ι ^ 2` whenever `gaugeDistErr` is attained at degree `n ≥ 2`, and gives exact
-  `gaugeDistErr = 2` for three-transposition cochains on `complete (Fin 4)`.
+  `gaugeDistErr = 2` for normalised (`α 0 v = 1` for `0 < v`) three-transposition cochains on
+  `complete (Fin 4)`.
 * **Arbitrary-vertex-type pullbacks and multiples of four**
   (`Equiv.ciInf_sum_filter_lt_distErr_prod`,
   `Equiv.ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall_le`,
@@ -32,7 +33,8 @@ cross-degree cochain distances (`TauCeti.Cochain`) and arbitrary-vertex-type pul
   `TauCeti.exists_equiv_fin_four_prod_ciInf₂_sum_distErr_eq_card_sq_div_eight`): pulling the
   cluster replication of a skew-symmetric assignment on `U` back along an arbitrary bijection
   `e : V ≃ U × ι` (requiring neither order preservation of `e` nor any order on `ι`) satisfies the
-  same replication formulas and yields exact cross-degree infimum `Fintype.card V ^ 2 / 8` whenever
+  same replication formulas and, for a normalised (`α 0 v = 1` for `0 < v`) three-transposition seed
+  on `Fin 4`, yields exact cross-degree infimum `Fintype.card V ^ 2 / 8` whenever
   `4 ∣ Fintype.card V`.
 
 ## References
@@ -121,7 +123,8 @@ theorem gaugeDistErr_replicate_of_forall_le
     exact (mul_le_mul_of_nonneg_left (hmin m) (sq_nonneg _)).trans
       (α.card_sq_mul_ciInf_costErr_le_replicate (m + 2))
 
-/-- Exact degree-`m` `costErr` infimum for a three-transposition cochain on `complete (Fin 4)`. -/
+/-- Exact degree-`m` `costErr` infimum for a normalised (`α 0 v = 1` for `0 < v`)
+three-transposition cochain on `complete (Fin 4)`. -/
 theorem ciInf_costErr_fin_four_of_eq_setOf_isSwap
     (α : Cochain (complete (Fin 4)) (Perm (Fin 3)))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
@@ -130,8 +133,8 @@ theorem ciInf_costErr_fin_four_of_eq_setOf_isSwap
   simp_rw [costErr_complete]
   exact TauCeti.ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps m
 
-/-- Degree-`m` (`m ≥ 2`) `costErr` infimum lower bound `2` for a three-transposition cochain on
-`complete (Fin 4)`. -/
+/-- Degree-`m` (`m ≥ 2`) `costErr` infimum lower bound `2` for a normalised (`α 0 v = 1` for
+`0 < v`) three-transposition cochain on `complete (Fin 4)`. -/
 theorem two_le_ciInf_costErr_fin_four_of_eq_setOf_isSwap
     (α : Cochain (complete (Fin 4)) (Perm (Fin 3)))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
@@ -141,7 +144,8 @@ theorem two_le_ciInf_costErr_fin_four_of_eq_setOf_isSwap
   simp_rw [costErr_complete]
   exact le_ciInf (two_le_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps)
 
-/-- A three-transposition cochain on `complete (Fin 4)` has cross-degree gauge distance `2`. -/
+/-- A normalised (`α 0 v = 1` for `0 < v`) three-transposition cochain on `complete (Fin 4)` has
+cross-degree gauge distance `2`. -/
 theorem gaugeDistErr_fin_four_of_eq_setOf_isSwap
     (α : Cochain (complete (Fin 4)) (Perm (Fin 3)))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
@@ -162,34 +166,37 @@ namespace Equiv
 
 open Equiv.Perm TauCeti
 
+private noncomputable def completeOfFn {U : Type*} [Fintype U] {n : ℕ}
+    (α : U → U → Perm (Fin n)) (hα : ∀ u v : U, u ≠ v → α v u = (α u v)⁻¹) :
+    Cochain (TwoComplex.complete U) (Perm (Fin n)) :=
+  Cochain.ofFn (TwoComplex.complete U) α fun u v huv =>
+    hα u v ((TwoComplex.adj_complete u v).mp huv)
+
 private theorem costErr_relabelComplete_replicate
     {V U ι : Type*} [Fintype V] [LinearOrder V] [Fintype U] [DecidableEq U] [Fintype ι]
     {n m : ℕ} (e : V ≃ U × ι) (α : U → U → Perm (Fin n))
     (hα : ∀ u v : U, u ≠ v → α v u = (α u v)⁻¹) (β : V → Perm (Fin m)) :
-    (((Cochain.ofFn (TwoComplex.complete U) α fun u v huv =>
-        hα u v ((TwoComplex.adj_complete u v).mp huv)).replicate ι).relabelComplete
-        (e.trans toLex).symm).costErr β =
+    (((completeOfFn α hα).replicate ι).relabelComplete (e.trans toLex).symm).costErr β =
       ∑ p : V × V with p.1 < p.2,
         distErr (if (e p.1).1 = (e p.2).1 then 1 else α (e p.1).1 (e p.2).1)
           (β p.1 * (β p.2)⁻¹) := by
   rw [Cochain.costErr_complete]
   refine sum_congr rfl fun p _ => ?_
-  rw [Cochain.relabelComplete_apply, symm_symm, trans_apply, trans_apply, Cochain.replicate_apply,
-    ofLex_toLex, ofLex_toLex]
+  simp only [completeOfFn, Cochain.relabelComplete_apply, Cochain.replicate_apply, Equiv.symm_symm,
+    Equiv.trans_apply, ofLex_toLex]
   by_cases h : (e p.1).1 = (e p.2).1
   · simp [h]
   · simp [h, TwoComplex.adj_complete]
 
-private theorem costErr_ofFn_complete
+private theorem costErr_completeOfFn
     {U : Type*} [Fintype U] [LinearOrder U] {n m : ℕ}
     (α : U → U → Perm (Fin n)) (hα : ∀ u v : U, u ≠ v → α v u = (α u v)⁻¹)
     (β : U → Perm (Fin m)) :
-    (Cochain.ofFn (TwoComplex.complete U) α fun u v huv =>
-        hα u v ((TwoComplex.adj_complete u v).mp huv)).costErr β =
+    (completeOfFn α hα).costErr β =
       ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) := by
   rw [Cochain.costErr_complete]
   refine sum_congr rfl fun p hp => ?_
-  simp [TwoComplex.adj_complete, (mem_filter.mp hp).2.ne]
+  simp [completeOfFn, TwoComplex.adj_complete, (mem_filter.mp hp).2.ne]
 
 /-- Pulling the cluster replication of a skew-symmetric assignment on `U` (with identity labels
 inside each cluster `{u} × ι`) back along an arbitrary bijection `e : V ≃ U × ι`—requiring neither
@@ -210,12 +217,9 @@ theorem ciInf_sum_filter_lt_distErr_prod {V U ι : Type*} [Fintype V] [LinearOrd
             ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
   let _ : LinearOrder ι :=
     LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  let base : Cochain (TwoComplex.complete U) (Perm (Fin n)) :=
-    Cochain.ofFn (TwoComplex.complete U) α fun u v huv =>
-      hα u v ((TwoComplex.adj_complete u v).mp huv)
-  simp_rw [← costErr_relabelComplete_replicate e α hα, ← costErr_ofFn_complete α hα]
-  rw [(base.replicate ι).ciInf_costErr_relabelComplete (e.trans toLex).symm m]
-  exact base.ciInf_costErr_replicate m
+  simp_rw [← costErr_relabelComplete_replicate e α hα, ← costErr_completeOfFn α hα]
+  rw [((completeOfFn α hα).replicate ι).ciInf_costErr_relabelComplete (e.trans toLex).symm m]
+  exact (completeOfFn α hα).ciInf_costErr_replicate m
 
 /-- Whenever a skew-symmetric degree-`n` assignment (`2 ≤ n`) on `U` attains its global cross-degree
 infimum over `m + 2 ≥ 2` at its own degree `n`, pulling its cluster replication on `U × ι` back
@@ -239,25 +243,25 @@ theorem ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall
           ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
   let _ : LinearOrder ι :=
     LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  let base : Cochain (TwoComplex.complete U) (Perm (Fin n)) :=
-    Cochain.ofFn (TwoComplex.complete U) α fun u v huv =>
-      hα u v ((TwoComplex.adj_complete u v).mp huv)
-  simp_rw [← costErr_relabelComplete_replicate e α hα, ← costErr_ofFn_complete α hα]
+  simp_rw [← costErr_relabelComplete_replicate e α hα, ← costErr_completeOfFn α hα]
   have hmin' : ∀ m : ℕ,
-      (⨅ β₀ : U → Perm (Fin n), base.costErr β₀) ≤
-        ⨅ β₀ : U → Perm (Fin (m + 2)), base.costErr β₀ := by
-    simpa only [← costErr_ofFn_complete α hα] using hmin
-  have hbase_gd : base.gaugeDistErr = ⨅ β₀ : U → Perm (Fin n), base.costErr β₀ :=
-    le_antisymm (base.gaugeDistErr_le_ciInf_costErr hn)
+      (⨅ β₀ : U → Perm (Fin n), (completeOfFn α hα).costErr β₀) ≤
+        ⨅ β₀ : U → Perm (Fin (m + 2)), (completeOfFn α hα).costErr β₀ := by
+    simpa only [← costErr_completeOfFn α hα] using hmin
+  have hbase_gd : (completeOfFn α hα).gaugeDistErr =
+      ⨅ β₀ : U → Perm (Fin n), (completeOfFn α hα).costErr β₀ :=
+    le_antisymm ((completeOfFn α hα).gaugeDistErr_le_ciInf_costErr hn)
       (by rw [Cochain.gaugeDistErr_def]; exact le_ciInf hmin')
-  rw [← Cochain.gaugeDistErr_def ((base.replicate ι).relabelComplete (e.trans toLex).symm),
+  rw [← Cochain.gaugeDistErr_def
+      (((completeOfFn α hα).replicate ι).relabelComplete (e.trans toLex).symm),
     Cochain.gaugeDistErr_relabelComplete,
-    base.gaugeDistErr_replicate_of_forall_le hn hmin', hbase_gd]
+    (completeOfFn α hα).gaugeDistErr_replicate_of_forall_le hn hmin', hbase_gd]
 
-/-- Pulling the cluster replication of a skew-symmetric three-transposition seed on `Fin 4` back
-along an arbitrary bijection `e : V ≃ Fin 4 × ι` (requiring neither order preservation of `e` nor
-any `Fintype` or `LinearOrder` structure on `ι`) yields exact cross-degree gauge-cost infimum
-`Fintype.card V ^ 2 / 8` across all gauge degrees `m + 2 ≥ 2`. -/
+/-- Pulling the cluster replication of a normalised (`α 0 v = 1` for `0 < v`) skew-symmetric
+three-transposition seed on `Fin 4` back along an arbitrary bijection `e : V ≃ Fin 4 × ι`
+(requiring neither order preservation of `e` nor any `Fintype` or `LinearOrder` structure on `ι`)
+yields exact cross-degree gauge-cost infimum `Fintype.card V ^ 2 / 8` across all gauge degrees
+`m + 2 ≥ 2`. -/
 theorem ciInf₂_sum_filter_lt_distErr_fin_four_prod_of_eq_setOf_isSwap
     {V ι : Type*} [Fintype V] [LinearOrder V] (e : V ≃ Fin 4 × ι)
     (α : Fin 4 → Fin 4 → Perm (Fin 3))
@@ -270,40 +274,23 @@ theorem ciInf₂_sum_filter_lt_distErr_fin_four_prod_of_eq_setOf_isSwap
             (β p.1 * (β p.2)⁻¹)) =
       (Fintype.card V : ℝ) ^ 2 / 8 := by
   have : Finite (Fin 4 × ι) := Finite.of_equiv V e
-  have : Finite ι :=
-    Finite.of_injective (fun i : ι => ((0 : Fin 4), i)) fun _ _ h => (Prod.mk.inj h).2
+  have : Finite ι := Finite.prod_right (Fin 4)
   let _ : Fintype ι := Fintype.ofFinite ι
-  let _ : LinearOrder ι :=
-    LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  let base : Cochain (TwoComplex.complete (Fin 4)) (Perm (Fin 3)) :=
-    Cochain.ofFn (TwoComplex.complete (Fin 4)) α fun u v huv =>
-      hα u v ((TwoComplex.adj_complete u v).mp huv)
-  have h0' : ∀ v : Fin 4, 0 < v → base 0 v = 1 := by
-    intro v hv
-    rw [Cochain.ofFn_apply_of_adj _ ((TwoComplex.adj_complete 0 v).mpr hv.ne), h0 v hv]
-  have h12 : base 1 2 = α 1 2 :=
-    Cochain.ofFn_apply_of_adj _ ((TwoComplex.adj_complete 1 2).mpr (by decide))
-  have h13 : base 1 3 = α 1 3 :=
-    Cochain.ofFn_apply_of_adj _ ((TwoComplex.adj_complete 1 3).mpr (by decide))
-  have h23 : base 2 3 = α 2 3 :=
-    Cochain.ofFn_apply_of_adj _ ((TwoComplex.adj_complete 2 3).mpr (by decide))
-  have hswaps' : ({base 1 2, base 1 3, base 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap} := by
-    rw [h12, h13, h23]
-    exact hswaps
   have hmin : ∀ m : ℕ,
-      (⨅ β₀ : Fin 4 → Perm (Fin 3), base.costErr β₀) ≤
-        ⨅ β₀ : Fin 4 → Perm (Fin (m + 2)), base.costErr β₀ := by
+      (⨅ β₀ : Fin 4 → Perm (Fin 3),
+          ∑ p : Fin 4 × Fin 4 with p.1 < p.2,
+            distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹)) ≤
+        ⨅ β₀ : Fin 4 → Perm (Fin (m + 2)),
+          ∑ p : Fin 4 × Fin 4 with p.1 < p.2,
+            distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
     intro m
-    refine le_trans ?_ (Cochain.two_le_ciInf_costErr_fin_four_of_eq_setOf_isSwap base h0' hswaps' m)
-    rw [Cochain.ciInf_costErr_fin_four_of_eq_setOf_isSwap base h0' hswaps' 3]
-    norm_num
+    refine le_trans ?_ (le_ciInf (two_le_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps))
+    rw [ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap α h0 hswaps]
   have hcard : Fintype.card V = 4 * Fintype.card ι := by
     simpa [Fintype.card_prod] using Fintype.card_congr e
-  simp_rw [← costErr_relabelComplete_replicate e α hα]
-  rw [← Cochain.gaugeDistErr_def ((base.replicate ι).relabelComplete (e.trans toLex).symm),
-    Cochain.gaugeDistErr_relabelComplete,
-    base.gaugeDistErr_replicate_of_forall_le (by decide) hmin,
-    Cochain.gaugeDistErr_fin_four_of_eq_setOf_isSwap base h0' hswaps',
+  rw [e.ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall_le α hα
+      (by decide) hmin,
+    ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap α h0 hswaps,
     hcard, Nat.cast_mul, Nat.cast_ofNat]
   ring
 
@@ -313,9 +300,10 @@ namespace TauCeti
 
 open Equiv Equiv.Perm TwoComplex
 
-/-- When `4 ∣ Fintype.card V`, any skew-symmetric three-transposition seed on `Fin 4` admits a
-replicated pullback along a bijection `e : V ≃ Fin 4 × Fin (Fintype.card V / 4)` with global
-cross-degree gauge-cost infimum `Fintype.card V ^ 2 / 8`. -/
+/-- When `4 ∣ Fintype.card V`, any normalised (`α 0 v = 1` for `0 < v`) skew-symmetric
+three-transposition seed on `Fin 4` admits a replicated pullback along a bijection
+`e : V ≃ Fin 4 × Fin (Fintype.card V / 4)` with global cross-degree gauge-cost infimum
+`Fintype.card V ^ 2 / 8`. -/
 theorem exists_equiv_fin_four_prod_ciInf₂_sum_distErr_eq_card_sq_div_eight
     {V : Type*} [Fintype V] [LinearOrder V] (h4 : 4 ∣ Fintype.card V)
     (α : Fin 4 → Fin 4 → Perm (Fin 3))

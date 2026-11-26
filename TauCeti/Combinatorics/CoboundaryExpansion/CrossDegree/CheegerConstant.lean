@@ -109,11 +109,13 @@ noncomputable def gaugeDistErr (α : Cochain X (Perm (Fin n))) : ℝ :=
 theorem gaugeDistErr_def (α : Cochain X (Perm (Fin n))) :
     α.gaugeDistErr = ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β := (rfl)
 
-private theorem bddBelow_range_iInf_costErr (α : Cochain X (Perm (Fin n))) :
+/-- The fixed-degree `costErr` infima over gauge degrees `m + 2 ≥ 2` are bounded below by `0`. -/
+theorem bddBelow_range_iInf_costErr (α : Cochain X (Perm (Fin n))) :
     BddBelow (Set.range fun m : ℕ => ⨅ β : V → Perm (Fin (m + 2)), α.costErr β) :=
   ⟨0, by rintro _ ⟨m, rfl⟩; exact Real.iInf_nonneg fun β => α.costErr_nonneg β⟩
 
-private theorem bddBelow_range_costErr {m : ℕ} (α : Cochain X (Perm (Fin n))) :
+/-- The `costErr` values over gauges of a fixed degree `m` are bounded below by `0`. -/
+theorem bddBelow_range_costErr {m : ℕ} (α : Cochain X (Perm (Fin n))) :
     BddBelow (Set.range fun β : V → Perm (Fin m) => α.costErr β) :=
   ⟨0, by rintro _ ⟨β, rfl⟩; exact α.costErr_nonneg β⟩
 

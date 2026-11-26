@@ -216,8 +216,8 @@ theorem triangleDefect_nonneg (ℓ : GroupNorm G) (α : Cochain X G) (t : Finset
 /-- `cost` equals the sum of `edgeCost` over the unoriented edges `X.edges`. -/
 theorem cost_eq_sum_edges [Fintype V] [LinearOrder V] (ℓ : GroupNorm G) (α : Cochain X G)
     (β : V → G) : α.cost ℓ β = ∑ e ∈ X.edges, α.edgeCost ℓ β e := by
-  rw [cost_def, ← X.sum_filter_lt_mem_edges (α.edgeCost ℓ β)]
-  exact sum_congr rfl fun p hp => (α.edgeCost_pair ℓ β (mem_filter.mp hp).2.2).symm
+  rw [cost_def, ← X.orientedEdges_def, ← X.sum_orientedEdges (α.edgeCost ℓ β)]
+  exact sum_congr rfl fun p hp => (α.edgeCost_pair ℓ β (X.mem_orientedEdges.mp hp).2).symm
 
 /-- Under a conjugation-invariant norm, the holonomy norm around three mutually adjacent vertices
 is bounded above by the cost of any gauge `β`. -/

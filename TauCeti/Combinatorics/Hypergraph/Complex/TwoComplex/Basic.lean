@@ -424,24 +424,43 @@ theorem sum_edges_edgeEval {M : Type*} [AddCommMonoid M] (X : TwoComplex V) (f :
   rw [edgePairs, sum_image fun e₁ _ e₂ _ h => X.edgePair_injective h, ← sum_attach X.edges]
   exact sum_congr rfl fun e _ => X.edgeEval_edgePair f e
 
-/-- Summing a function of unoriented edges over positively oriented pairs `u < v` equals summing
-over `X.edges`. -/
-theorem sum_filter_lt_mem_edges [Fintype V] [LinearOrder V] {M : Type*} [AddCommMonoid M]
+/-- The finset of positively oriented vertex pairs `(u, v)` (`u < v`) forming edges of `X`. -/
+def orientedEdges [Fintype V] [LinearOrder V] (X : TwoComplex V) : Finset (V × V) :=
+  univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
+
+@[simp]
+theorem mem_orientedEdges [Fintype V] [LinearOrder V] (X : TwoComplex V) {p : V × V} :
+    p ∈ X.orientedEdges ↔ p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges := by
+  simp [orientedEdges]
+
+theorem orientedEdges_def [Fintype V] [LinearOrder V] (X : TwoComplex V) :
+    X.orientedEdges =
+      univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges :=
+  (rfl)
+
+/-- Summing a function of unoriented edges over `X.orientedEdges` equals summing over
+`X.edges`. -/
+theorem sum_orientedEdges [Fintype V] [LinearOrder V] {M : Type*} [AddCommMonoid M]
     (X : TwoComplex V) (f : Finset V → M) :
-    ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
-      f ({p.1, p.2} : Finset V) = ∑ e ∈ X.edges, f e := by
-  refine sum_bij (fun p _ => ({p.1, p.2} : Finset V)) (fun p hp => (mem_filter.mp hp).2.2)
+    ∑ p ∈ X.orientedEdges, f ({p.1, p.2} : Finset V) = ∑ e ∈ X.edges, f e := by
+  refine sum_bij (fun p _ => ({p.1, p.2} : Finset V)) (fun p hp => (X.mem_orientedEdges.mp hp).2)
     ?_ ?_ (fun _ _ => rfl)
   · rintro ⟨u₁, v₁⟩ hp₁ ⟨u₂, v₂⟩ hp₂ hpair
-    have hlt₁ : u₁ < v₁ := (mem_filter.mp hp₁).2.1
-    have hlt₂ : u₂ < v₂ := (mem_filter.mp hp₂).2.1
+    have hlt₁ : u₁ < v₁ := (X.mem_orientedEdges.mp hp₁).1
+    have hlt₂ : u₂ < v₂ := (X.mem_orientedEdges.mp hp₂).1
     rw [← coe_inj, coe_pair, coe_pair, Set.pair_eq_pair_iff] at hpair
     rcases hpair with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · rfl
     · exact (lt_asymm hlt₁ hlt₂).elim
   · intro e he
     obtain ⟨u, v, hlt, hset⟩ := X.exists_increasing_of_mem_edges he
-    exact ⟨(u, v), mem_filter.mpr ⟨mem_univ _, hlt, hset ▸ he⟩, hset⟩
+    exact ⟨(u, v), X.mem_orientedEdges.mpr ⟨hlt, hset ▸ he⟩, hset⟩
+
+/-- The number of positively oriented edges equals the number of unoriented edges of `X`. -/
+@[simp]
+theorem card_orientedEdges [Fintype V] [LinearOrder V] (X : TwoComplex V) :
+    X.orientedEdges.card = X.edges.card := by
+  simpa using X.sum_orientedEdges (fun _ => (1 : ℕ))
 
 end EdgeEval
 

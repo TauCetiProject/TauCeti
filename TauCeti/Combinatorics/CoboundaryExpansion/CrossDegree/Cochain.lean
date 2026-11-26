@@ -22,11 +22,10 @@ non-coboundary lower bounds for `Cochain.costErr`, `Cochain.gaugeDistErr`, and `
   equals the unoriented sum of `edgeCostErr` over `X.edges`, so `costErr`, `gaugeDistErr`, and
   `h1Err` do not depend on the `LinearOrder` chosen on `V`.
 * **Equal-degree `movedNorm` rescaling and upper bounds** (`Cochain.costErr_eq_cost_div`,
-  `Cochain.mul_ciInf_costErr_eq_gaugeDist`, `Cochain.ciInf_costErr_eq_gaugeDist_div`,
-  `Cochain.gaugeDistErr_le_ciInf_costErr`, and `Cochain.gaugeDistErr_le_gaugeDist_div`): in equal
-  nonzero degree `n`, `costErr` and its gauge infimum equal `cost (movedNorm (Fin n)) / n` and
-  `gaugeDist (movedNorm (Fin n)) / n`, so for `2 ≤ n` we have
-  `α.gaugeDistErr ≤ α.gaugeDist (movedNorm (Fin n)) / n`.
+  `Cochain.mul_ciInf_costErr_eq_gaugeDist`, `Cochain.ciInf_costErr_eq_gaugeDist_div`, and
+  `Cochain.gaugeDistErr_le_ciInf_costErr`): in equal nonzero degree `n`, `costErr` and its gauge
+  infimum equal `cost (movedNorm (Fin n)) / n` and `gaugeDist (movedNorm (Fin n)) / n`, and
+  every gauge degree `m ≥ 2` upper-bounds `gaugeDistErr`.
 * **Relabelling invariance and degree-`2` gauge invariance** (`Cochain.costErr_relabel`,
   `Cochain.costErr_relabelComplete`, `Cochain.ciInf_costErr_relabel`,
   `Cochain.ciInf_costErr_relabelComplete`, `Cochain.gaugeDistErr_relabel`,
@@ -136,20 +135,12 @@ variable {V W : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n m : ℕ
 /-- `costErr` equals the sum of `edgeCostErr` over the unoriented edges `X.edges`. -/
 theorem costErr_eq_sum_edges (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) :
     α.costErr β = ∑ e ∈ X.edges, α.edgeCostErr β e := by
-  rw [costErr_def, ← X.sum_filter_lt_mem_edges (α.edgeCostErr β)]
-  exact sum_congr rfl fun p hp => (α.edgeCostErr_pair β (mem_filter.mp hp).2.2).symm
+  rw [costErr_def, ← X.orientedEdges_def, ← X.sum_orientedEdges (α.edgeCostErr β)]
+  exact sum_congr rfl fun p hp => (α.edgeCostErr_pair β (X.mem_orientedEdges.mp hp).2).symm
 
 theorem ciInf_costErr_nonneg (α : Cochain X (Perm (Fin n))) (m : ℕ) :
     0 ≤ ⨅ β : V → Perm (Fin m), α.costErr β :=
   Real.iInf_nonneg α.costErr_nonneg
-
-theorem bddBelow_costErr_range (α : Cochain X (Perm (Fin n))) (m : ℕ) :
-    BddBelow (Set.range (α.costErr (m := m))) :=
-  ⟨0, Set.forall_mem_range.mpr α.costErr_nonneg⟩
-
-theorem bddBelow_ciInf_costErr_range (α : Cochain X (Perm (Fin n))) :
-    BddBelow (Set.range fun m : ℕ => ⨅ β : V → Perm (Fin (m + 2)), α.costErr β) :=
-  ⟨0, Set.forall_mem_range.mpr fun m => α.ciInf_costErr_nonneg (m + 2)⟩
 
 @[simp] theorem costErr_one_one [NeZero n] :
     (1 : Cochain X (Perm (Fin n))).costErr (1 : V → Perm (Fin n)) = 0 := by
@@ -182,14 +173,7 @@ theorem gaugeDistErr_le_ciInf_costErr (α : Cochain X (Perm (Fin n))) (hm : 2 �
     α.gaugeDistErr ≤ ⨅ β : V → Perm (Fin m), α.costErr β := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm
   rw [gaugeDistErr_def]
-  exact ciInf_le α.bddBelow_ciInf_costErr_range k
-
-/-- When `2 ≤ n`, the cross-degree gauge distance is at most `1 / n` times the equal-degree
-`movedNorm (Fin n)` gauge distance. -/
-theorem gaugeDistErr_le_gaugeDist_div (α : Cochain X (Perm (Fin n))) (hn : 2 ≤ n) :
-    α.gaugeDistErr ≤ α.gaugeDist (movedNorm (Fin n)) / n := by
-  have : NeZero n := ⟨by omega⟩
-  exact (α.gaugeDistErr_le_ciInf_costErr hn).trans_eq α.ciInf_costErr_eq_gaugeDist_div
+  exact ciInf_le α.bddBelow_range_iInf_costErr k
 
 /-- `gaugeDist ℓ` equals the infimum of unoriented edge-cost sums over `X.edges`. -/
 theorem gaugeDist_eq_ciInf_sum_edgeCost {G : Type*} [Group G] (ℓ : GroupNorm G)
@@ -249,15 +233,15 @@ action on `α`. -/
 theorem ciInf_costErr_smul_of_le (γ : V → Perm (Fin n)) (α : Cochain X (Perm (Fin n)))
     (hnm : n ≤ m) :
     (⨅ β : V → Perm (Fin m), (γ • α).costErr β) = ⨅ β : V → Perm (Fin m), α.costErr β := by
-  set E := univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
   have hL (β : V → Perm (Fin m)) :
       (γ • α).costErr β =
-        ∑ p ∈ E, distErr ((γ p.1)⁻¹ * α p.1 p.2 * γ p.2) (β p.1 * (β p.2)⁻¹) := by
-    rw [costErr_def]
+        ∑ p ∈ X.orientedEdges, distErr ((γ p.1)⁻¹ * α p.1 p.2 * γ p.2) (β p.1 * (β p.2)⁻¹) := by
+    rw [costErr_def, ← X.orientedEdges_def]
     refine sum_congr rfl fun p hp => ?_
-    rw [smul_apply_of_adj γ α ((X.adj_iff_pair_mem_edges p.1 p.2).mpr (mem_filter.mp hp).2.2)]
-  simp_rw [hL, costErr_def]
-  exact E.ciInf_sum_distErr_inv_mul_mul_of_le α γ hnm
+    rw [smul_apply_of_adj γ α
+      ((X.adj_iff_pair_mem_edges p.1 p.2).mpr (X.mem_orientedEdges.mp hp).2)]
+  simp_rw [hL, costErr_def, ← X.orientedEdges_def]
+  exact X.orientedEdges.ciInf_sum_distErr_inv_mul_mul_of_le α γ hnm
 
 /-- Transforming a degree-`2` cochain by a degree-`2` gauge preserves `gaugeDistErr`. -/
 @[simp] theorem gaugeDistErr_smul (γ : V → Perm (Fin 2)) (α : Cochain X (Perm (Fin 2))) :
@@ -269,46 +253,41 @@ theorem ciInf_costErr_smul_of_le (γ : V → Perm (Fin n)) (α : Cochain X (Perm
 `V → Perm (Fin m)`. -/
 theorem exists_costErr_eq_ciInf (α : Cochain X (Perm (Fin n))) (m : ℕ) :
     ∃ β : V → Perm (Fin m), α.costErr β = ⨅ γ : V → Perm (Fin m), α.costErr γ := by
-  set E := univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
-  simp_rw [costErr_def]
-  exact E.exists_eq_ciInf_sum_distErr_mul_inv α m
+  simp_rw [costErr_def, ← X.orientedEdges_def]
+  exact X.orientedEdges.exists_eq_ciInf_sum_distErr_mul_inv α m
 
 /-- The cross-degree gauge distance `gaugeDistErr` is always attained by some gauge of some degree
 `m + 2 ≥ 2`. -/
 theorem exists_costErr_eq_gaugeDistErr (α : Cochain X (Perm (Fin n))) :
     ∃ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β = α.gaugeDistErr := by
-  set E := univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
-  simp_rw [gaugeDistErr_def, costErr_def]
-  exact E.exists_eq_ciInf₂_sum_distErr_mul_inv α
+  simp_rw [gaugeDistErr_def, costErr_def, ← X.orientedEdges_def]
+  exact X.orientedEdges.exists_eq_ciInf₂_sum_distErr_mul_inv α
 
-private theorem exists_eq_mul_inv_filter_lt_iff_isCoboundary (α : Cochain X (Perm (Fin n))) :
-    (∃ γ : V → Perm (Fin n),
-        ∀ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
-          α p.1 p.2 = γ p.1 * (γ p.2)⁻¹) ↔
+private theorem exists_eq_mul_inv_orientedEdges_iff_isCoboundary (α : Cochain X (Perm (Fin n))) :
+    (∃ γ : V → Perm (Fin n), ∀ p ∈ X.orientedEdges, α p.1 p.2 = γ p.1 * (γ p.2)⁻¹) ↔
       α.IsCoboundary := by
   rw [isCoboundary_def]
   constructor
   · rintro ⟨γ, hγ⟩
     refine ⟨γ, fun u v huv => ?_⟩
     rcases lt_trichotomy u v with h | rfl | h
-    · exact hγ (u, v) (mem_filter.mpr ⟨mem_univ _, h, (X.adj_iff_pair_mem_edges u v).mp huv⟩)
+    · exact hγ (u, v) (X.mem_orientedEdges.mpr ⟨h, (X.adj_iff_pair_mem_edges u v).mp huv⟩)
     · exact (huv.ne rfl).elim
     · have hvu : α v u = γ v * (γ u)⁻¹ := hγ (v, u)
-        (mem_filter.mpr ⟨mem_univ _, h, (X.adj_iff_pair_mem_edges v u).mp huv.symm⟩)
+        (X.mem_orientedEdges.mpr ⟨h, (X.adj_iff_pair_mem_edges v u).mp huv.symm⟩)
       rw [α.apply_swap v u, hvu, mul_inv_rev, inv_inv]
   · rintro ⟨γ, hγ⟩
     exact ⟨γ, fun p hp =>
-      hγ p.1 p.2 ((X.adj_iff_pair_mem_edges p.1 p.2).mpr (mem_filter.mp hp).2.2)⟩
+      hγ p.1 p.2 ((X.adj_iff_pair_mem_edges p.1 p.2).mpr (X.mem_orientedEdges.mp hp).2)⟩
 
 /-- Every non-coboundary cochain of degree `n` incurs `costErr` at least `1 / (n + 1)` against any
 gauge of any degree `m`. -/
 theorem one_div_add_one_le_costErr_of_not_isCoboundary {α : Cochain X (Perm (Fin n))}
     (hncob : ¬ α.IsCoboundary) (β : V → Perm (Fin m)) :
     1 / ((n : ℝ) + 1) ≤ α.costErr β := by
-  rw [costErr_def]
-  exact (univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
-    ).one_div_add_one_le_sum_distErr_mul_inv_of_not_exists α β
-      (mt (exists_eq_mul_inv_filter_lt_iff_isCoboundary α).mp hncob)
+  rw [costErr_def, ← X.orientedEdges_def]
+  exact X.orientedEdges.one_div_add_one_le_sum_distErr_mul_inv_of_not_exists α β
+    (mt (exists_eq_mul_inv_orientedEdges_iff_isCoboundary α).mp hncob)
 
 /-- Every non-coboundary cochain of degree `n` has `gaugeDistErr` at least `1 / (n + 1)`. -/
 theorem one_div_add_one_le_gaugeDistErr_of_not_isCoboundary {α : Cochain X (Perm (Fin n))}
