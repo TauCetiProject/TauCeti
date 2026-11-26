@@ -181,7 +181,8 @@ theorem linearHomComplexTensorDualHomEquiv_symm_apply_eq_whiskerRight_comp (T : 
 
 /-- The operator of the functional `T ▷ B∨ ≫ ε'`, for the right evaluation `ε'` of `B`, is `T`. -/
 @[simp]
-theorem linearHomComplexTensorDualHomEquiv_whiskerRight_comp (T : A ⟶ B) :
+theorem linearHomComplexTensorDualHomEquiv_whiskerRight_comp_linearHomComplexRightEvaluation
+    (T : A ⟶ B) :
     linearHomComplexTensorDualHomEquiv R A B
         (T ▷ linearDual R B ≫ linearHomComplexRightEvaluation R B) = T := by
   rw [← linearHomComplexTensorDualHomEquiv_symm_apply_eq_whiskerRight_comp,
@@ -193,7 +194,8 @@ is the identity of `A` is the right evaluation `a ⊗ φ ↦ (-1)^p φ(a)`, not 
 theorem linearHomComplexTensorDualHomEquiv_linearHomComplexRightEvaluation
     [∀ p, Module.IsReflexive R (A.X p)] :
     linearHomComplexTensorDualHomEquiv R A A (linearHomComplexRightEvaluation R A) = 𝟙 A := by
-  simpa using linearHomComplexTensorDualHomEquiv_whiskerRight_comp (𝟙 A)
+  simpa using
+    linearHomComplexTensorDualHomEquiv_whiskerRight_comp_linearHomComplexRightEvaluation (𝟙 A)
 
 end Functional
 
@@ -265,7 +267,8 @@ theorem linearHomComplexTensorDualHomEquiv_linearHomComplexSewing
     linearHomComplexTensorDualHomEquiv_symm_apply_eq_whiskerRight_comp T,
     linearHomComplexSewing_whiskerRight_comp_linearHomComplexRightEvaluation,
     linearHomComplexTensorDualHomEquiv_symm_apply_eq_whiskerRight_comp, ← Category.assoc,
-    ← comp_whiskerRight, linearHomComplexTensorDualHomEquiv_whiskerRight_comp]
+    ← comp_whiskerRight,
+    linearHomComplexTensorDualHomEquiv_whiskerRight_comp_linearHomComplexRightEvaluation]
 
 /-- **Sewing with the identity functional on the left.** Sewing the right evaluation of `B`, the
 identity functional on `B ⊗ B∨`, with a functional `G` on `B ⊗ C∨` gives `G`. -/
