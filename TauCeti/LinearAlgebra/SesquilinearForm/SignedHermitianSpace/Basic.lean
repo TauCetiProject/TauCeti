@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.Algebra.Ring.Int.Units
 public import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # Signed hermitian spaces and the adjoint of an endomorphism
@@ -108,16 +109,6 @@ theorem isSymm (H : SignedHermitianSpace K V σ 1) : H.form.IsSymm :=
 
 section Diagonal
 
-/-- The sesquilinear form of the diagonal matrix `diag (a₁, …, aₙ)` is
-`∑ σ (x i) * a i * y i`. -/
-private theorem toLinearMapₛₗ₂'_diagonal_apply {n : Type*} [Fintype n] [DecidableEq n]
-    (a x y : n → K) :
-    Matrix.toLinearMapₛₗ₂' K σ (RingHom.id K) (Matrix.diagonal a) x y =
-      ∑ i, σ (x i) * a i * y i := by
-  simp only [Matrix.toLinearMapₛₗ₂'_apply, Matrix.diagonal_apply, RingHom.id_apply, smul_eq_mul,
-    mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  exact Finset.sum_congr rfl fun _ _ ↦ by ring
-
 variable [RingHomInvPair σ σ]
 
 variable (σ ε) in
@@ -128,14 +119,14 @@ def diagonal {n : Type*} [Fintype n] [DecidableEq n] (a : n → K) (ha : ∀ i, 
     (ha₀ : ∀ i, a i ∈ nonZeroDivisors K) : SignedHermitianSpace K (n → K) σ ε where
   form := Matrix.toLinearMapₛₗ₂' K σ (RingHom.id K) (Matrix.diagonal a)
   form_swap x y := by
-    simp only [toLinearMapₛₗ₂'_diagonal_apply, map_sum, map_mul, ha,
+    simp only [Matrix.toLinearMapₛₗ₂'_diagonal_apply, map_sum, map_mul, ha,
       RingHomInvPair.comp_apply_eq₂, Finset.smul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Int.units_smul_eq_cast_mul, Int.units_smul_eq_cast_mul]
     linear_combination (-(σ (y i) * a i * x i)) * Int.cast_units_sq (R := K) ε
   separatingLeft x hx := funext fun j ↦ by
     have hj : σ (x j) * a j = 0 := by
-      simpa [toLinearMapₛₗ₂'_diagonal_apply, Pi.single_apply] using hx (Pi.single j 1)
+      simpa [Matrix.toLinearMapₛₗ₂'_diagonal_apply, Pi.single_apply] using hx (Pi.single j 1)
     have := (mul_right_mem_nonZeroDivisors_eq_zero_iff (ha₀ j)).1 hj
     rw [Pi.zero_apply, ← RingHomInvPair.comp_apply_eq₂ (σ := σ) (σ' := σ) (x := x j), this,
       map_zero]
@@ -145,7 +136,7 @@ def diagonal {n : Type*} [Fintype n] [DecidableEq n] (a : n → K) (ha : ∀ i, 
 theorem diagonal_form_apply {n : Type*} [Fintype n] [DecidableEq n] (a : n → K)
     (ha : ∀ i, σ (a i) = ε • a i) (ha₀ : ∀ i, a i ∈ nonZeroDivisors K) (x y : n → K) :
     (diagonal σ ε a ha ha₀).form x y = ∑ i, σ (x i) * a i * y i :=
-  toLinearMapₛₗ₂'_diagonal_apply a x y
+  Matrix.toLinearMapₛₗ₂'_diagonal_apply σ a x y
 
 end Diagonal
 

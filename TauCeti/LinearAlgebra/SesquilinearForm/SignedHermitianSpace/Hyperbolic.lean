@@ -91,7 +91,7 @@ section CommRing
 variable {K V V₁ V₂ : Type*} [CommRing K] {σ : K →+* K} {ε : ℤˣ} [AddCommGroup V] [Module K V]
   [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂] [Module K V₂]
 
-/-! ### Diagonal and hyperbolic spaces -/
+/-! ### Hyperbolic spaces -/
 
 section Spaces
 
@@ -395,15 +395,15 @@ theorem exists_isHyperbolicFrame (hσ : ∃ z, σ z ≠ z) {ι : Type*} [Finite 
     let _ : LinearOrder ι := LinearOrder.lift' _ (Fintype.equivFin ι).injective
     exact exists_add_smul_add_eq_zero hσ fun i j ↦ by
       rw [H.form_swap (e i), map_zsmul_unit, RingHomInvPair.comp_apply_eq₂]
-  set y : ι → V := fun j ↦ e j + ∑ i, μ i j • x i
+  obtain ⟨y, hy⟩ : ∃ y : ι → V, ∀ j, y j = e j + ∑ i, μ i j • x i := ⟨_, fun _ ↦ rfl⟩
   have hxy (i j : ι) : H.form (x i) (y j) = if i = j then 1 else 0 := by
-    simp [y, map_sum, hxx, hxe]
+    simp [hy, map_sum, hxx, hxe]
   refine ⟨y, ⟨hxx, fun i j ↦ ?_, hxy⟩⟩
   have hey : H.form (e i) (y j) = H.form (e i) (e j) + ε • μ i j := by
-    rw [show y j = e j + ∑ k, μ k j • x k from rfl]
+    rw [hy j]
     simp [map_sum, hex, Int.units_smul_eq_cast_mul, mul_comm]
   have hyy : H.form (y i) (y j) = H.form (e i) (y j) + σ (μ j i) := by
-    rw [show y i = e i + ∑ k, μ k i • x k from rfl]
+    rw [hy i]
     simp [map_sum, hxy]
   rw [hyy, hey]
   exact hμ i j

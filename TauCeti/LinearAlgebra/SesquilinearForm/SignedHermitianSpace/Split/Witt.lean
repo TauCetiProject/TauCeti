@@ -124,11 +124,6 @@ private theorem anisotropic_of_finrank_le_one (hσ : ∀ x, σ x = x.swap)
     rw [← map_smul, smul_eq_inr₁, hb]
     simp
 
-omit [Module.Free (F × F) V] [Module.Finite (F × F) V] in
-/-- The swap is an involution. -/
-private theorem ringHomInvPair_split (hσ : ∀ x, σ x = x.swap) : RingHomInvPair σ σ :=
-  ⟨RingHom.ext fun x ↦ by simp [hσ], RingHom.ext fun x ↦ by simp [hσ]⟩
-
 /-- **Witt decomposition over `F × F`.** Let `σ` be the involution `(a, b) ↦ (b, a)` of
 `F × F`. A finite free `ε`-hermitian space `V` of rank `n` over `F × F` is isometric to
 `H^⌊n/2⌋ ⊥ A` for every space `A` of rank `n % 2`. -/
@@ -143,7 +138,7 @@ theorem equivalent_hyperbolic_prod_split [RingHomInvPair σ σ] (hσ : ∀ x, σ
 finite free `ε`-hermitian space of rank `n` over `F × F` has Witt index `⌊n / 2⌋`. -/
 theorem wittIndex_split (hσ : ∀ x, σ x = x.swap) :
     H.wittIndex = finrank (F × F) V / 2 := by
-  have := ringHomInvPair_split hσ
+  have := RingHomInvPair.of_forall_eq_swap hσ
   refine le_antisymm (by have := H.two_mul_wittIndex_le_finrank; lia) ?_
   -- Compare with `H^⌊n/2⌋ ⊥ ⟨(ε, 1)⟩^(n % 2)`.
   let A := diagonal σ ε (fun _ : Fin (finrank (F × F) V % 2) ↦ (((ε : ℤ) : F), (1 : F)))
@@ -158,7 +153,7 @@ theorem wittIndex_split (hσ : ∀ x, σ x = x.swap) :
 most one. -/
 theorem anisotropic_split_iff (hσ : ∀ x, σ x = x.swap) :
     H.Anisotropic ↔ finrank (F × F) V ≤ 1 := by
-  have := ringHomInvPair_split hσ
+  have := RingHomInvPair.of_forall_eq_swap hσ
   refine ⟨fun h ↦ ?_, H.anisotropic_of_finrank_le_one hσ⟩
   by_contra hV
   obtain ⟨x, y, hxy⟩ := H.exists_isHyperbolicFrame_wittIndex

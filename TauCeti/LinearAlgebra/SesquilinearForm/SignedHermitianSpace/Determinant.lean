@@ -110,9 +110,8 @@ theorem apply_det_toMatrix₂ (H : SignedHermitianSpace K V σ ε) (b : Basis ι
   have : (LinearMap.toMatrix₂ b b H.form).map σ =
       ((ε : ℤ) : K) • (LinearMap.toMatrix₂ b b H.form)ᵀ := by
     ext i j
-    rw [map_apply, LinearMap.toMatrix₂_apply, Matrix.smul_apply, transpose_apply,
-      LinearMap.toMatrix₂_apply, smul_eq_mul, H.form_swap (b i) (b j),
-      Int.units_smul_eq_cast_mul, ← mul_assoc, Int.cast_units_mul_self, one_mul]
+    simp [LinearMap.toMatrix₂_apply, H.form_swap (b i) (b j), Int.units_smul_eq_cast_mul,
+      ← mul_assoc, Int.cast_units_mul_self]
   rw [RingHom.map_det, RingHom.mapMatrix_apply, this, det_smul, det_transpose, zsmul_eq_mul]
   push_cast
   ring

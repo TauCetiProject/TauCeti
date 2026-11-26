@@ -227,7 +227,7 @@ theorem exists_equivalent_hyperbolic_prod [FiniteDimensional K V] (hσ : ∃ z, 
   obtain ⟨x, y, hxy⟩ := H.exists_isHyperbolicFrame_wittIndex
   exact ⟨_, _, hxy.anisotropic_restrict_orthogonalBilin hσ, hxy.equivalent_hyperbolic_prod⟩
 
-/-- `H^s ⊥ B` with `r < s` is the orthogonal sum of `H^r` and a space that is not anisotropic. -/
+/-- For `r < s` and `A` anisotropic, `H^r ⊥ A` is not isometric to `H^s ⊥ B`. -/
 private theorem not_equivalent_hyperbolic_prod_of_lt (hσ : ∃ z, σ z ≠ z) {r s : ℕ} (hrs : r < s)
     {A : SignedHermitianSpace K V₁ σ ε} (B : SignedHermitianSpace K V₂ σ ε) (hA : A.Anisotropic) :
     ¬Equivalent ((hyperbolic K σ ε (Fin r)).prod A) ((hyperbolic K σ ε (Fin s)).prod B) := by
