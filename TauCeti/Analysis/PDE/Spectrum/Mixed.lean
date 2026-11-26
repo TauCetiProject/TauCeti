@@ -258,7 +258,7 @@ private theorem exists_garding_of_isCoercive_mixedForm_zero
   obtain ⟨C, hC, hle⟩ := hB
   refine ⟨C, hC, fun v ↦ ?_⟩
   have hv := hle v
-  rw [mixedForm_zero_apply] at hv
+  rw [mixedForm_zero_apply, ← Submodule.norm_coe] at hv
   rw [zero_mul, add_zero, sq, ← mul_assoc]
   exact hv
 
