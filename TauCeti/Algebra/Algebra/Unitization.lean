@@ -227,7 +227,7 @@ end Subsingleton
 
 section TraceExtension
 
-variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [AddCommMonoid M]
+variable {R A M : Type*} [AddCommMonoid R] [AddCommMonoid A] [AddCommMonoid M]
 
 /-- The extension `f⁺ (r, a) = g r + f a` of an additive map `f : A →+ M` to the unitization,
 with value `g` on the scalars. -/
@@ -239,14 +239,20 @@ theorem traceExtension_apply (g : R →+ M) (f : A →+ M) (x : Unitization R A)
     traceExtension g f x = g x.fst + f x.snd :=
   (rfl)
 
+end TraceExtension
+
+section TraceExtensionMul
+
+variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A] [AddCommMonoid M]
+
 /-- The extension of a tracial map to the unitization is tracial. -/
-theorem traceExtension_mul_comm [Module R A] (g : R →+ M) {f : A →+ M}
+theorem traceExtension_mul_comm (g : R →+ M) {f : A →+ M}
     (hf : ∀ a b, f (a * b) = f (b * a)) (x y : Unitization R A) :
     traceExtension g f (x * y) = traceExtension g f (y * x) := by
   simp only [traceExtension_apply, fst_mul, snd_mul, map_add, hf x.snd y.snd, mul_comm x.fst y.fst]
   abel
 
-end TraceExtension
+end TraceExtensionMul
 
 end Unitization
 
