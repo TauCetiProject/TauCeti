@@ -128,7 +128,7 @@ noncomputable def stages : Fin s → E := by
 
 /-- If the stage equations have exactly one solution, `stages` is a solution. -/
 theorem isStage_stages (hk : ∃! k, T.IsStage f t y h k) : T.IsStage f t y h (T.stages f t y h) := by
-  rw [stages, dite_eq_left_of_eq_true (eq_true hk)]
+  rw [stages, dite_eq_left hk]
   exact hk.choose_spec.1
 
 /-- A stage vector is equal to `stages` as soon as it is the only stage vector. -/
@@ -139,7 +139,7 @@ theorem stages_eq_of_isStage (hk : T.IsStage f t y h k)
 /-- If the stage equations do not have exactly one solution, `stages` takes the junk value `0`.
 -/
 theorem stages_of_not_existsUnique (hk : ¬∃! k, T.IsStage f t y h k) : T.stages f t y h = 0 := by
-  rw [stages, dite_eq_right_of_eq_false (eq_false hk)]
+  rw [stages, dite_eq_right hk]
 
 variable (T f t y h) in
 /-- The **increment function** `∑ i, b i • k i` of the Runge–Kutta method of the tableau, where
