@@ -64,6 +64,9 @@ factor `u`, with `t = σ = 1`.
   of p-adic Chevalley groups*, Publ. Math. IHÉS 25 (1965), §2.
 * W. Casselman, *Introduction to admissible representations of p-adic groups: `GL_n`*, notes,
   §13.
+* The proof route follows [grh-lean](https://github.com/lsernau/grh-lean) (Apache 2.0),
+  `grh/src/Lib/LocalGL/Iwahori/ParahoricStructure.lean`
+  (`New.exists_row_reduction`, `New.exists_iwasawa_bruhat`); the formalization here is independent.
 -/
 
 public section
@@ -112,7 +115,7 @@ theorem mem_map_iwahoriOne_iff {g : GL m K} :
     · exact mem_upperUnitriangularCongruenceSubgroup_iff.mpr ⟨hlowM, hdiagM⟩
     · ext i j
       rw [GeneralLinearGroup.map_apply, GeneralLinearGroup.val_mk'']
-      rfl
+      simp [M, ValuationSubring.algebraMap_apply]
 
 /-! ### Pivots -/
 
@@ -234,26 +237,6 @@ private theorem pivotSet_mono {W W' : Submodule K (m → K)} (h : W ≤ W') :
   obtain ⟨w, hw, hwp⟩ := (mem_pivotSet A).mp hp
   exact (mem_pivotSet A).mpr ⟨w, h hw, hwp⟩
 
-/-- Subtracting from each row of `G` a combination of the rows below it is multiplication on the
-left by an upper-unitriangular matrix. -/
-private theorem exists_isUpperUnitriangular_mul_apply (G : Matrix m m K) {w : m → m → K}
-    (hw : ∀ i, w i ∈ Submodule.span K (G.row '' ↑(Finset.univ.filter fun j ↦ i < j))) :
-    ∃ U : Matrix m m K, U.IsUpperUnitriangular ∧ ∀ i l, (U * G) i l = G i l - w i l := by
-  classical
-  choose c hc using fun i ↦ (Submodule.mem_span_image_finset_iff_exists_fun' K).mp (hw i)
-  let U : Matrix m m K := of fun i j ↦ if i = j then 1 else if i < j then -c i j else 0
-  refine ⟨U, (isUpperUnitriangular_iff U).mpr
-    ⟨fun i j hji ↦ by simp [U, hji.ne', hji.not_gt], fun i ↦ by simp [U]⟩, fun i l ↦ ?_⟩
-  have hterm (j : m) : U i j * G j l =
-      (if i = j then G j l else 0) - (if i < j then c i j * G j l else 0) := by
-    rcases lt_trichotomy i j with h | rfl | h
-    · simp [U, h, h.ne]
-    · simp [U]
-    · simp [U, h.ne', h.not_gt]
-  rw [Matrix.mul_apply, Finset.sum_congr rfl fun j _ ↦ hterm j, Finset.sum_sub_distrib,
-    Finset.sum_ite_eq, ite_eq_left (Finset.mem_univ _), ← Finset.sum_filter, ← hc i]
-  simp [Finset.sum_apply]
-
 /-- Elimination from the bottom up: some upper-unitriangular `U` makes the rows of `U * g` have
 pairwise distinct pivots. -/
 private theorem exists_isUpperUnitriangular_isPivot_mul (g : GL m K) :
@@ -276,7 +259,8 @@ private theorem exists_isUpperUnitriangular_isPivot_mul (g : GL m K) :
     exact hij.trans_le hl
   -- Subtract from the row `i` the vector of `W i` that agrees with it at the pivots of `W i`.
   choose w hwW hw using fun i ↦ exists_mem_eqOn_pivotSet A (W i) (G i)
-  obtain ⟨U, hU, hrow⟩ := exists_isUpperUnitriangular_mul_apply G hwW
+  obtain ⟨U, hU, hrow⟩ := Matrix.exists_isUpperUnitriangular_mul_apply G fun i ↦ by
+    simpa only [W, Finset.coe_filter, Finset.mem_univ, true_and] using hwW i
   have hrow' (i : m) : (U * G) i = G.row i - w i := funext (hrow i)
   refine ⟨U, hU, ?_⟩
   -- The new rows are nonzero, since the rows of `g` are linearly independent.
@@ -320,11 +304,13 @@ theorem exists_eq_mul_diagGL_mul_permutationGL_mul (g : GL m K) :
     π⁻¹, k, ?_, by simp only [k]; group⟩
   -- The row `π i = q i` of `k` is the row `i` of `Y` divided by its pivot entry.
   have hk (i j : m) : (k : Matrix m m K) (π i) j = (Y i (q i))⁻¹ * Y i j := by
-    simp only [k]
-    rw [← map_inv, inv_inv, ← map_inv, mul_assoc, mul_assoc, Units.val_mul, permutationGL_coe,
-      Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, submatrix_apply,
-      Equiv.Perm.inv_def, Equiv.symm_apply_apply, Units.val_mul, diagGL_coe, diagonal_mul,
-      Units.val_mul, hU.coe_toGL, Pi.inv_apply, Units.val_inv_eq_inv_val, Units.val_mk0, id]
+    have hperm (M : GL m K) :
+        ((permutationGL π⁻¹)⁻¹ * M : GL m K) (π i) j = M i j := by
+      simp [← map_inv, permutationGL_coe, Equiv.Perm.permMatrix,
+        PEquiv.toMatrix_toPEquiv_mul]
+    simp only [k, mul_assoc]
+    rw [hperm]
+    simp [← map_inv, diagGL_coe, diagonal_mul, t, Y]
   have hpos (i : m) : 0 < A.valuation (Y i (q i)) :=
     pos_iff_ne_zero.mpr ((A.valuation).ne_zero_iff.mpr (hpiv i).1)
   rw [mem_map_iwahoriOne_iff]
@@ -351,11 +337,14 @@ theorem exists_eq_mul_diagGL_mul_permutationGL_mul_and_isLowerTriangular (g : GL
   · obtain ⟨g', hg', rfl⟩ := Subgroup.mem_map.mp hg
     obtain ⟨u', hu', hl⟩ := exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul
       (IsLocalRing.ringJacobson_eq_maximalIdeal A).ge (iwahoriOne_le_iwahori hg')
-    have hu'1 : u' ∈ iwahoriOne m A := upperUnitriangularCongruenceSubgroup_mono bot_le
-      (upperUnitriangularCongruenceSubgroup_bot (m := m) (R := A) ▸ hu')
+    have hu'1 : u' ∈ iwahoriOne m A := by
+      rw [← upperUnitriangularCongruenceSubgroup_bot] at hu'
+      exact upperUnitriangularCongruenceSubgroup_mono bot_le hu'
+    have hu : GeneralLinearGroup.map (algebraMap A K) u' ∈ upperUnitriangularGroup m K := by
+      simpa only [UpperUnitriangularGroup.coe_map] using
+        (UpperUnitriangularGroup.map (algebraMap A K) ⟨u', hu'⟩).property
     refine ⟨GeneralLinearGroup.map (algebraMap A K) u',
-      UpperUnitriangularGroup.coe_map (algebraMap A K) ⟨u', hu'⟩ ▸
-        (UpperUnitriangularGroup.map (algebraMap A K) ⟨u', hu'⟩).property, 1, 1,
+      hu, 1, 1,
       GeneralLinearGroup.map (algebraMap A K) (u'⁻¹ * g'),
       Subgroup.mem_map_of_mem _ (mul_mem (inv_mem hu'1) hg'), by simp,
       fun _ ↦ ⟨Subgroup.mem_map_of_mem _ hu'1, fun i j hij ↦ ?_⟩⟩

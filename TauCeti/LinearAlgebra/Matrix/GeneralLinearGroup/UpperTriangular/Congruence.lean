@@ -60,8 +60,6 @@ clears the entries of `g` above the diagonal by an upper-unitriangular matrix ac
   `[B(I) : U(I)] = #((R ⧸ I)ˣ) ^ #m`.
 * `TauCeti.index_upperTriangularCongruenceSubgroup`: `[GL_m(R) : B(I)]` is the index of the
   upper-triangular subgroup of `GL_m(R ⧸ I)`.
-* `Matrix.isUnit_det_of_isUpperTriangular_map`: a matrix that is upper triangular with unit
-  diagonal after a local ring homomorphism has a unit determinant.
 * `TauCeti.exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul`: the Iwahori
   factorization of `B(I)` for `I` in the Jacobson radical.
 
@@ -315,16 +313,6 @@ theorem index_upperUnitriangularCongruenceSubgroup (hI : I ≤ Ring.jacobson R) 
   have := isLocalHom_of_le_jacobson hI
   Subgroup.index_comap_of_surjective _
     (GeneralLinearGroup.map_surjective _ Ideal.Quotient.mk_surjective)
-
-/-- A square matrix whose image under a local ring homomorphism `f` is upper triangular, with
-units on the diagonal, has a unit determinant. -/
-theorem _root_.Matrix.isUnit_det_of_isUpperTriangular_map {n : Type*} [Fintype n] [DecidableEq n]
-    [LinearOrder n] {S : Type*} [CommRing S] {f : R →+* S} [IsLocalHom f] {M : Matrix n n R}
-    (htri : (M.map f).IsUpperTriangular)
-    (hdiag : ∀ i, IsUnit (f (M i i))) : IsUnit M.det := by
-  rw [← isUnit_map_iff f, RingHom.map_det, RingHom.mapMatrix_apply, det_of_isUpperTriangular htri,
-    IsUnit.prod_univ_iff]
-  exact hdiag
 
 open OrderDual in
 /-- **The Iwahori factorization.** If `I` lies in the Jacobson radical, every element `g` of the
