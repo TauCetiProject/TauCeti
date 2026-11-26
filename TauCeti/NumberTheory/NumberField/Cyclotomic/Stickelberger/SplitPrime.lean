@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Over
 public import TauCeti.NumberTheory.GaussSum.Basic
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Stickelberger.GaussProduct
@@ -357,7 +358,7 @@ noncomputable def map {K' : Type*} [Field K'] [NumberField K']
   letI := d.isMaximal; letI := d.liesOver; let eO := NumberField.RingOfIntegers.mapRingEquiv e
   { P := d.P.map eO
     isMaximal := Ideal.map_isMaximal_of_equiv eO
-    liesOver := Ideal.liesOver_map_ringOfIntegers_mapRingEquiv d.P e (Ideal.span {(p : ℤ)})
+    liesOver := Ideal.map_equiv_liesOver d.P (Ideal.span {(p : ℤ)}) eO.toIntAlgEquiv
     absNorm_eq := by rw [Ideal.absNorm_map_of_ringEquiv eO d.P, d.absNorm_eq]
     coprime := d.coprime, gen := d.gen, zpowers_gen := d.zpowers_gen
     char := d.char.ringHomComp eO.toRingHom, root := eO d.root
@@ -437,12 +438,6 @@ theorem smul_char [IsCyclotomicExtension {m} ℚ K] (τ : Gal(K/ℚ))
           τ (algebraMap (𝓞 K) K (d.char (t : ZMod p))) from rfl).trans hact)
   simpa [smul, MulChar.pow_apply_coe] using hO
 
-private theorem unit_zpow_eq_of_zmod_eq {G : Type*} [Group G] {m : ℕ} (u : G) (hm : u ^ m = 1)
-    {a b : ℤ} (hab : (a : ZMod m) = (b : ZMod m)) : u ^ a = u ^ b := by
-  obtain ⟨q, hq⟩ : (m : ℤ) ∣ a - b := by
-    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, Int.cast_sub, hab, sub_self]
-  rw [eq_add_of_sub_eq' hq, zpow_add, zpow_mul, zpow_natCast, hm, one_zpow, mul_one]
-
 /-- **Generator reindexing at a fixed prime ideal.** Replacing `d.gen` by another generator `g'`
 of `(ZMod p)ˣ` preserves `d.P` and `d.char`, updating `root` to `d.char g'`. -/
 noncomputable def withGen (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
@@ -517,11 +512,13 @@ theorem gaussSum_eq_of_P_eq (d₁ d₂ : SplitPrimeGaussData m K p) (hP : d₁.P
 theorem withGen_root_eq_of_zpow (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
     (hg' : Subgroup.zpowers g' = ⊤) {k : ℤ} (hg'k : g' = d.gen ^ k) (hk : (k : ZMod m) = 1) :
     (d.withGen g' hg').root = d.root := by
-  have h1 := unit_zpow_eq_of_zmod_eq (d.char.toUnitHom d.gen) (char_unitHom_pow_eq_one d)
-    (hk.trans Int.cast_one.symm)
+  have h1 : d.char.toUnitHom d.gen ^ k = d.char.toUnitHom d.gen := by
+    rw [zpow_eq_zpow_emod' k (char_unitHom_pow_eq_one d),
+      (ZMod.intCast_eq_intCast_iff' k 1 m).mp (by simpa using hk),
+      ← zpow_eq_zpow_emod' 1 (char_unitHom_pow_eq_one d), zpow_one]
   rw [withGen_root]
   change (d.char.toUnitHom g' : 𝓞 K) = d.root
-  rw [hg'k, map_zpow, h1, zpow_one]
+  rw [hg'k, map_zpow, h1]
   exact d.char_gen
 
 /-- **Simultaneous Galois and generator reindexing.** Applying `τ : Gal(K/ℚ)` to `d.P` while
@@ -531,9 +528,12 @@ theorem smul_withGen_root_eq [IsCyclotomicExtension {m} ℚ K] (τ : Gal(K/ℚ))
     (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ) (hg' : Subgroup.zpowers g' = ⊤)
     {k : ℤ} (hgk : g' ^ k = d.gen) (hk : (k : ZMod m) = galEquivZMod m K τ) :
     ((d.smul τ).withGen g' hg').root = d.root := by
-  have hpow := unit_zpow_eq_of_zmod_eq (d.char.toUnitHom g')
-    (char_unitHom_pow_eq_one (d.withGen g' hg'))
-    (a := ((galEquivZMod m K τ : ZMod m).val : ℤ)) (b := k) (by simp [hk])
+  have hm_pow : d.char.toUnitHom g' ^ m = 1 := by
+    simpa using char_unitHom_pow_eq_one (d.withGen g' hg')
+  have hpow : d.char.toUnitHom g' ^ ((galEquivZMod m K τ : ZMod m).val : ℤ) =
+      d.char.toUnitHom g' ^ k := by
+    rw [zpow_eq_zpow_emod' _ hm_pow, zpow_eq_zpow_emod' k hm_pow,
+      (ZMod.intCast_eq_intCast_iff' _ k m).mp (by simp [hk])]
   rw [withGen_root, smul_char, MulChar.pow_apply_coe]
   change ((d.char.toUnitHom g' ^ (galEquivZMod m K τ : ZMod m).val : (𝓞 K)ˣ) : 𝓞 K) = _
   rw [← zpow_natCast, hpow, ← map_zpow, hgk]

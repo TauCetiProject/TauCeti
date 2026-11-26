@@ -100,37 +100,6 @@ theorem coprime_natAbs_discr_of_liesOver {m : ℕ}
   exact ((Nat.Prime.coprime_iff_not_dvd hp.out).mpr fun hdvd ↦
     hpm (prime_dvd_of_dvd_natAbs_discr K m hp.out hdvd)).symm
 
-private theorem galEquivProd_symm_sigma_algebraMap {m : ℕ} [NeZero m]
-    {K L : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
-    [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
-    {p : ℕ} [NeZero p] [IsCyclotomicExtension {p} K L]
-    (hcop : ((NumberField.discr K).natAbs).Coprime p) {ζ : L} (hζ : IsPrimitiveRoot ζ p)
-    (a : (ZMod m)ˣ) (z : K) :
-    (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
-        ((galEquivZMod m K).symm a, 1) (algebraMap K L z) =
-      algebraMap K L (((galEquivZMod m K).symm a) z) := by
-  simp
-
-private theorem galEquivProd_symm_tau_algebraMap
-    {K L : Type*} [Field K] [NumberField K] [IsGalois ℚ K]
-    [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
-    {p : ℕ} [NeZero p] [IsCyclotomicExtension {p} K L]
-    (hcop : ((NumberField.discr K).natAbs).Coprime p) {ζ : L} (hζ : IsPrimitiveRoot ζ p)
-    (b : (ZMod p)ˣ) (z : K) :
-    (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm (1, b) (algebraMap K L z) =
-      algebraMap K L z := by
-  simp
-
-private theorem galEquivProd_symm_tau_zeta
-    {K L : Type*} [Field K] [NumberField K] [IsGalois ℚ K]
-    [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
-    {p : ℕ} [NeZero p] [IsCyclotomicExtension {p} K L]
-    (hcop : ((NumberField.discr K).natAbs).Coprime p) {ζ : L} (hζ : IsPrimitiveRoot ζ p)
-    (b : (ZMod p)ˣ) :
-    (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm (1, b) ζ =
-      ζ ^ (b : ZMod p).val := by
-  simp
-
 private theorem galEquivProd_symm_tau_gaussSum {m : ℕ} [NeZero m]
     {K L : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
     (P : Ideal (𝓞 K)) [P.IsMaximal]
@@ -159,9 +128,8 @@ private theorem galEquivProd_symm_tau_gaussSum {m : ℕ} [NeZero m]
   refine ⟨Ideal.powerResidueSymbol P m (u_b : 𝓞 K ⧸ P),
     Ideal.powerResidueSymbol_pow_eq_one u_b.ne_zero, ?_⟩
   have hact := map_gaussSum_traceAddChar hζ.pow_eq_one χ τ.toRingHom b
-    (fun t ↦ galEquivProd_symm_tau_algebraMap hcop hζ b
-      (algebraMap (𝓞 K) K ((Ideal.powerResidueSymbol P m)⁻¹ t)))
-    (galEquivProd_symm_tau_zeta hcop hζ b)
+    (fun t ↦ by simp [τ, χ, f])
+    (IsCyclotomicExtension.galEquivProd_symm_zeta ℚ K L p hcop hζ (1, b))
   have hχinv : χ⁻¹ = (Ideal.powerResidueSymbol P m).ringHomComp f := by
     simp only [χ, ← MulChar.ringHomComp_inv, inv_inv]
   simpa only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
@@ -209,7 +177,7 @@ private theorem galEquivProd_symm_tau_prod_gaussSum {m : ℕ} [NeZero m]
     have hωK : (algebraMap (𝓞 K) K ω) ^ m = 1 := by rw [← map_pow, hω, map_one]
     have hact := galEquivZMod_apply_of_pow_eq m K ((galEquivZMod m K).symm a) hωK
     rw [MulEquiv.apply_symm_apply] at hact
-    simp only [σ, galEquivProd_symm_sigma_algebraMap, hact, map_pow]
+    simp only [σ, IsCyclotomicExtension.galEquivProd_symm_algebraMap, hact, map_pow]
   have hτ_term (a : (ZMod m)ˣ) :
       τ ((σ a g) ^ x.coeff a) =
         (f ω) ^ (x.coeff a * ((a : ZMod m).val : ℤ)) * (σ a g) ^ x.coeff a := by
@@ -266,7 +234,7 @@ theorem prod_galEquivProd_gaussSum_eq_of_isPrimitiveRoot (m : ℕ) [NeZero m]
   have hb_val : (b : ZMod p).val = k := by
     simp [b, ZMod.coe_unitOfCoprime, Nat.mod_eq_of_lt hk_lt]
   let τ := (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm (1, b)
-  have hτζ : τ ζ = ζ' := by rw [galEquivProd_symm_tau_zeta hcop hζ b, hb_val, hζk]
+  have hτζ : τ ζ = ζ' := by rw [IsCyclotomicExtension.galEquivProd_symm_zeta, hb_val, hζk]
   have hσ_eq (a : (ZMod m)ˣ) :
       (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm ((galEquivZMod m K).symm a, 1) =
         (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ').symm
@@ -390,7 +358,7 @@ private theorem exists_algEquiv_map_prod_galEquivProd_gaussSum {m : ℕ} [NeZero
         change eL ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
           ((galEquivZMod m K).symm a, 1) (eL.symm (algebraMap K' L' k'))) =
           algebraMap K' L' (((galEquivZMod m K').symm a) k')
-        rw [heL_symm_K', galEquivProd_symm_sigma_algebraMap,
+        rw [heL_symm_K', IsCyclotomicExtension.galEquivProd_symm_algebraMap,
           show eL (algebraMap K L _) = eL_K (algebraMap K L _) from rfl, heL_K,
           e.map_galEquivZMod_symm, e.apply_symm_apply]
       · rw [hζ₀.autToPow_eq_one_iff]
@@ -750,8 +718,8 @@ theorem map_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   have : Fact p.Prime := ⟨Nat.absNorm_under_prime P⟩
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   have : P'.LiesOver (Ideal.span {(p : ℤ)}) :=
-    hPP'_equiv ▸ Ideal.liesOver_map_ringOfIntegers_mapRingEquiv P eEquiv.toRingEquiv
-      (Ideal.span {(p : ℤ)})
+    hPP'_equiv ▸ Ideal.map_equiv_liesOver P (Ideal.span {(p : ℤ)})
+      (NumberField.RingOfIntegers.mapRingEquiv eEquiv.toRingEquiv).toIntAlgEquiv
   have hcop : ((NumberField.discr K).natAbs).Coprime p :=
     coprime_natAbs_discr_of_liesOver K P hP p
   have hcop' : ((NumberField.discr K').natAbs).Coprime p :=
@@ -811,7 +779,8 @@ theorem galEquivZMod_symm_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   apply (algebraMap K L).injective
-  rw [← galEquivProd_symm_sigma_algebraMap hcop hζ b,
+  rw [← IsCyclotomicExtension.galEquivProd_symm_algebraMap ℚ K L p hcop hζ
+      ((galEquivZMod m K).symm b, 1),
     algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ x,
     algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ
       (MonoidAlgebra.single b (1 : ℤ) • x),
@@ -859,7 +828,7 @@ theorem pow_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   rw [← zpow_natCast, ← zpow_mul, mul_comm _ (m : ℤ), zpow_mul, zpow_natCast, ← map_pow, hg_pow,
     map_zpow₀]
   refine congrArg (· ^ (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a) ?_
-  rw [RingHom.comp_apply, galEquivProd_symm_sigma_algebraMap,
+  rw [RingHom.comp_apply, IsCyclotomicExtension.galEquivProd_symm_algebraMap,
     ← NumberField.algebraMap_smul_eq_apply]
 
 /-- **Smoothed Gauss descent.** Let `m ≥ 2`, let `K` be an `m`-th cyclotomic extension of `ℚ`, and
