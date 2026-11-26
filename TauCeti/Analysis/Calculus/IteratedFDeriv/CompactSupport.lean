@@ -28,8 +28,10 @@ function are on the whole space (Mathlib's `HasCompactSupport.exists_bound_itera
 
 public section
 
-variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+section NontriviallyNormedField
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The iterated derivatives up to order `m` of a `C^m` function are uniformly bounded on a compact
 set. -/
@@ -47,6 +49,11 @@ theorem IsCompact.exists_bound_iteratedFDeriv {K : Set E} (hK : IsCompact K) {f 
     fun i hi y hy ↦ ?_⟩
   grw [hA i hi y hy, ← le_max_right]
   exact Finset.le_sup' A (by grind)
+
+end NontriviallyNormedField
+
+variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- A compactly supported `Cⁿ` function on a nontrivial space whose `n`-th iterated derivative
 vanishes identically is zero. -/

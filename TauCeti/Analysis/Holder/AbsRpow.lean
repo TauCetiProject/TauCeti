@@ -10,12 +10,12 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Basic.Real.Sign
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Calculus.BumpFunction.Basic
-import Mathlib.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompactSupport
 import TauCeti.Basic.Real.Sign
 import TauCeti.Analysis.Holder.Examples
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.Localization
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularity
 import TauCeti.Analysis.SpecialFunctions.Pow.Holder
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -39,13 +39,12 @@ precomposition (`TauCeti.CkHolderSpace.compLinearL`): `|ℓ x|^(k + β)` agrees 
 with no element of `C_b^{k,α}(E)` for `α > β` (`TauCeti.not_exists_ckHolderSpace_eq_abs_rpow_comp`).
 These are the data that show the data spaces of the parabolic Cauchy problem to be sharp.
 
-The derivatives are computed through the signed powers `|x|^r sgn(x)^j`, which for `r > 1` have
-derivative `r |x|^(r - 1) sgn(x)^(j + 1)` everywhere (`TauCeti.hasDerivAt_abs_rpow_mul_sign_pow`),
-so that `D^j |x|^p = p (p - 1) ⋯ (p - j + 1) |x|^(p - j) sgn(x)^j` for `j < p`
-(`TauCeti.iteratedDeriv_abs_rpow`). For `β ≤ 1` the signed power `|x|^β sgn(x)^j` is
-`β`-Hölder with constant `2` (`TauCeti.holderWith_abs_rpow_mul_sign_pow`), and for `α > β` it is not
-`α`-Hölder on `(-1, 1)` (`TauCeti.not_holderOnWith_abs_rpow_mul_sign_pow_Ioo`), since its absolute
-value is the cusp `|x|^β` of `TauCeti.not_holderOnWith_abs_rpow_Ioo`.
+The `k`-th derivative is computed by `TauCeti.iteratedDeriv_abs_rpow`, through the signed powers
+`|x|^r sgn(x)^j` of `TauCeti.Analysis.SpecialFunctions.Pow.Regularity`. For `β ≤ 1` the signed
+power `|x|^β sgn(x)^j` is `β`-Hölder with constant `2` (`TauCeti.holderWith_abs_rpow_mul_sign_pow`),
+and for `α > β` it is not `α`-Hölder on `(-1, 1)`
+(`TauCeti.not_holderOnWith_abs_rpow_mul_sign_pow_Ioo`), since its absolute value is the cusp
+`|x|^β` of `TauCeti.not_holderOnWith_abs_rpow_Ioo`.
 -/
 
 public section
@@ -57,19 +56,6 @@ namespace TauCeti
 
 /-! ### Signed powers -/
 
-/-- Away from the origin the sign function is locally constant. -/
-private theorem sign_eventuallyEq {x : ℝ} (hx : x ≠ 0) :
-    ∀ᶠ y in 𝓝 x, Real.sign y = Real.sign x := by
-  rcases hx.lt_or_gt with h | h
-  · filter_upwards [Iio_mem_nhds h] with y hy
-    rw [Real.sign_of_neg hy, Real.sign_of_neg h]
-  · filter_upwards [Ioi_mem_nhds h] with y hy
-    rw [Real.sign_of_pos hy, Real.sign_of_pos h]
-
-private theorem abs_sign_pow_le (x : ℝ) (j : ℕ) : |Real.sign x ^ j| ≤ 1 := by
-  rw [abs_pow]
-  exact pow_le_one₀ (abs_nonneg _) (Real.abs_sign_le_one x)
-
 /-- The absolute value of the signed power `|x|^r sgn(x)^j` is `|x|^r`, for `r > 0`. -/
 private theorem abs_abs_rpow_mul_sign_pow {r : ℝ} (hr : 0 < r) (j : ℕ) (x : ℝ) :
     |(|x| ^ r * Real.sign x ^ j)| = |x| ^ r := by
@@ -77,63 +63,6 @@ private theorem abs_abs_rpow_mul_sign_pow {r : ℝ} (hr : 0 < r) (j : ℕ) (x : 
   · simp [Real.zero_rpow hr.ne']
   · rw [abs_mul, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) r), abs_pow,
       Real.abs_sign_of_ne_zero hx, one_pow, mul_one]
-
-private theorem abs_rpow_mul_sign_pow_le {r : ℝ} (j : ℕ) (x : ℝ) :
-    |(|x| ^ r * Real.sign x ^ j)| ≤ |x| ^ r := by
-  rw [abs_mul, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) r)]
-  exact mul_le_of_le_one_right (Real.rpow_nonneg (abs_nonneg x) r) (abs_sign_pow_le x j)
-
-/-- `|x|^(r - 2) x = |x|^(r - 1) sgn(x)`. -/
-private theorem abs_rpow_sub_two_mul (r x : ℝ) :
-    |x| ^ (r - 2) * x = |x| ^ (r - 1) * Real.sign x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [Real.sign_zero]
-  · rw [show r - 1 = r - 2 + 1 by ring, Real.rpow_add_one (abs_pos.2 hx).ne', mul_assoc,
-      Real.abs_mul_sign]
-
-/-- For `r > 1`, the signed power `|x|^r sgn(x)^j` is differentiable everywhere, with derivative
-`r |x|^(r - 1) sgn(x)^(j + 1)`. At the origin both sides vanish, since `|x|^r = o(x)`. -/
-theorem hasDerivAt_abs_rpow_mul_sign_pow {r : ℝ} (hr : 1 < r) (j : ℕ) (x : ℝ) :
-    HasDerivAt (fun y : ℝ ↦ |y| ^ r * Real.sign y ^ j)
-      (r * (|x| ^ (r - 1) * Real.sign x ^ (j + 1))) x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · have h0 : r * (|(0 : ℝ)| ^ (r - 1) * Real.sign 0 ^ (j + 1)) = 0 := by simp [Real.sign_zero]
-    rw [h0, hasDerivAt_iff_isLittleO]
-    have hd := (hasDerivAt_abs_rpow (0 : ℝ) hr).hasFDerivAt.isLittleO
-    have hr0 : r ≠ 0 := by linarith
-    simp only [abs_zero, Real.zero_rpow hr0, sub_zero, mul_zero, zero_mul, smul_zero,
-      ContinuousLinearMap.toSpanSingleton_apply] at hd ⊢
-    refine Asymptotics.IsBigO.trans_isLittleO (Asymptotics.IsBigO.of_bound 1
-      (Eventually.of_forall fun y ↦ ?_)) hd
-    simpa only [Real.norm_eq_abs, one_mul, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg y) r)]
-      using abs_rpow_mul_sign_pow_le (r := r) j y
-  · have hd := (hasDerivAt_abs_rpow x hr).mul_const (Real.sign x ^ j)
-    have heq : (fun y : ℝ ↦ |y| ^ r * Real.sign y ^ j) =ᶠ[𝓝 x]
-        fun y ↦ |y| ^ r * Real.sign x ^ j := by
-      filter_upwards [sign_eventuallyEq hx] with y hy
-      rw [hy]
-    refine (hd.congr_of_eventuallyEq heq).congr_deriv ?_
-    rw [mul_assoc r, abs_rpow_sub_two_mul, pow_succ]
-    ring
-
-/-- For `r > 0`, the signed power `|x|^r sgn(x)^j` is continuous. -/
-theorem continuous_abs_rpow_mul_sign_pow {r : ℝ} (hr : 0 < r) (j : ℕ) :
-    Continuous fun x : ℝ ↦ |x| ^ r * Real.sign x ^ j := by
-  have hpow : Continuous fun x : ℝ ↦ |x| ^ r :=
-    continuous_abs.rpow_const fun _ ↦ Or.inr hr.le
-  rw [continuous_iff_continuousAt]
-  intro x
-  rcases eq_or_ne x 0 with rfl | hx
-  · have h0 : |(0 : ℝ)| ^ r * Real.sign 0 ^ j = 0 := by simp [Real.zero_rpow hr.ne']
-    rw [ContinuousAt, h0]
-    refine squeeze_zero_norm (a := fun y ↦ |y| ^ r) (fun y ↦ ?_) ?_
-    · rw [Real.norm_eq_abs]
-      exact abs_rpow_mul_sign_pow_le j y
-    · simpa [Real.zero_rpow hr.ne'] using hpow.tendsto 0
-  · refine (hpow.mul (continuous_const (y := Real.sign x ^ j))).continuousAt.congr ?_
-    filter_upwards [sign_eventuallyEq hx] with y hy
-    rw [hy]
-    rfl
 
 /-- For `β ≤ 1`, the signed power `|x|^β sgn(x)^j` is `β`-Hölder with constant `2`. -/
 theorem holderWith_abs_rpow_mul_sign_pow {β : ℝ≥0} (hβ1 : β ≤ 1) (j : ℕ) :
@@ -146,7 +75,7 @@ theorem holderWith_abs_rpow_mul_sign_pow {β : ℝ≥0} (hβ1 : β ≤ 1) (j : �
     rw [hs, ← sub_mul, abs_mul]
     calc |(|x| ^ (β : ℝ) - |y| ^ (β : ℝ))| * |Real.sign y ^ j|
         ≤ |(|x| ^ (β : ℝ) - |y| ^ (β : ℝ))| :=
-          mul_le_of_le_one_right (abs_nonneg _) (abs_sign_pow_le y j)
+          mul_le_of_le_one_right (abs_nonneg _) (Real.abs_sign_pow_le_one y j)
       _ ≤ |(|x| - |y|)| ^ (β : ℝ) :=
           Real.abs_rpow_sub_rpow_le (abs_nonneg x) (abs_nonneg y) β.coe_nonneg hβ1
       _ ≤ |x - y| ^ (β : ℝ) :=
@@ -164,7 +93,7 @@ theorem holderWith_abs_rpow_mul_sign_pow {β : ℝ≥0} (hβ1 : β ≤ 1) (j : �
         ≤ |(|x| ^ (β : ℝ) * Real.sign x ^ j)| + |(|y| ^ (β : ℝ) * Real.sign y ^ j)| :=
           abs_sub _ _
       _ ≤ |x| ^ (β : ℝ) + |y| ^ (β : ℝ) :=
-          add_le_add (abs_rpow_mul_sign_pow_le j x) (abs_rpow_mul_sign_pow_le j y)
+          add_le_add (abs_abs_rpow_mul_sign_pow_le j x) (abs_abs_rpow_mul_sign_pow_le j y)
       _ ≤ |x - y| ^ (β : ℝ) + |x - y| ^ (β : ℝ) :=
           add_le_add (Real.rpow_le_rpow (abs_nonneg _) hx β.coe_nonneg)
             (Real.rpow_le_rpow (abs_nonneg _) hy β.coe_nonneg)
@@ -182,39 +111,6 @@ theorem not_holderOnWith_abs_rpow_mul_sign_pow_Ioo {α β C : ℝ≥0} (hβ0 : 0
   rw [Real.dist_eq] at hd ⊢
   rw [← abs_abs_rpow_mul_sign_pow hβ0' j x, ← abs_abs_rpow_mul_sign_pow hβ0' j y]
   exact (abs_abs_sub_abs_le_abs_sub _ _).trans hd
-
-/-! ### The derivatives of `|x|^p` -/
-
-/-- For `j < p`, the `j`-th derivative of `|x|^p` is `p (p - 1) ⋯ (p - j + 1) |x|^(p - j) sgn(x)^j`,
-the falling factorial being `(descPochhammer ℝ j).eval p`. -/
-theorem iteratedDeriv_abs_rpow {p : ℝ} {j : ℕ} (hj : (j : ℝ) < p) :
-    iteratedDeriv j (fun x : ℝ ↦ |x| ^ p) =
-      fun x ↦ (descPochhammer ℝ j).eval p * (|x| ^ (p - j) * Real.sign x ^ j) := by
-  induction j with
-  | zero => funext x; simp
-  | succ j ih =>
-    push_cast at hj
-    rw [iteratedDeriv_succ, ih (by linarith)]
-    funext x
-    rw [((hasDerivAt_abs_rpow_mul_sign_pow (by linarith) j x).const_mul _).deriv,
-      descPochhammer_succ_eval]
-    push_cast
-    rw [show p - j - 1 = p - (j + 1) by ring]
-    ring
-
-/-- For `k < p`, the function `|x|^p` is `C^k`. -/
-theorem contDiff_abs_rpow {k : ℕ} {p : ℝ} (hk : (k : ℝ) < p) :
-    ContDiff ℝ k (fun x : ℝ ↦ |x| ^ p) := by
-  rw [contDiff_nat_iff_iteratedDeriv]
-  refine ⟨fun m hm ↦ ?_, fun m hm ↦ ?_⟩
-  · have hmp : (m : ℝ) < p := lt_of_le_of_lt (by exact_mod_cast hm) hk
-    rw [iteratedDeriv_abs_rpow hmp]
-    exact continuous_const.mul (continuous_abs_rpow_mul_sign_pow (by linarith) m)
-  · have hmk : ((m + 1 : ℕ) : ℝ) ≤ k := by exact_mod_cast hm
-    push_cast at hmk
-    rw [iteratedDeriv_abs_rpow (by linarith)]
-    exact fun x ↦
-      ((hasDerivAt_abs_rpow_mul_sign_pow (by linarith) m x).const_mul _).differentiableAt
 
 /-- For `0 < β ≤ 1`, the `k`-th derivative of `|x|^(k + β)` is `β`-Hölder on `ℝ`. -/
 private theorem holderWith_iteratedFDeriv_abs_rpow (k : ℕ) {β : ℝ≥0} (hβ0 : 0 < β)
