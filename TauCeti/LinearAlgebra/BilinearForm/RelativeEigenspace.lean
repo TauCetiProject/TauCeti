@@ -30,7 +30,8 @@ definite they meet only in `0`. The spectral theory over finite-dimensional real
 * `LinearMap.BilinForm.relativeEigenspace`: the eigenspace of `q` relative to `g` at `μ`.
 * `LinearMap.BilinForm.relativeSpectralSubspace`: the sum of the relative eigenspaces at the
   eigenvalues in `Ω`.
-* `LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂`: naturality under linear
+* `LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂` and
+  `LinearMap.BilinForm.mem_relativeSpectralSubspace_compl₁₂_iff`: naturality under linear
   equivalences.
 * `LinearMap.BilinForm.relativeEigenspace_compLeft`: for left-separating `g`, the eigenspaces of
   `(v, w) ↦ g (f v) w` relative to `g` are the eigenspaces of the endomorphism `f`.
@@ -149,6 +150,25 @@ theorem map_relativeSpectralSubspace_compl₁₂ (e : W ≃ₗ[R] V) :
       g.relativeSpectralSubspace q Ω := by
   simp only [relativeSpectralSubspace, Submodule.map_iSup, relativeEigenspace_compl₁₂,
     Submodule.map_comap_eq_of_surjective e.surjective]
+
+/-- A vector lies in a spectral subspace of the pair pulled back along a linear equivalence `e`
+exactly when its image under `e` lies in the corresponding spectral subspace of the original
+pair. -/
+theorem mem_relativeSpectralSubspace_compl₁₂_iff (e : W ≃ₗ[R] V) {w : W} :
+    w ∈ relativeSpectralSubspace (g.compl₁₂ (e : W →ₗ[R] V) (e : W →ₗ[R] V))
+        (q.compl₁₂ (e : W →ₗ[R] V) (e : W →ₗ[R] V)) Ω ↔
+      e w ∈ g.relativeSpectralSubspace q Ω := by
+  rw [← map_relativeSpectralSubspace_compl₁₂ e, Submodule.mem_map]
+  exact ⟨fun hw ↦ ⟨w, hw, rfl⟩, fun ⟨w', hw', hww'⟩ ↦ e.injective hww' ▸ hw'⟩
+
+/-- Pulling a form with trivial kernel back along a linear equivalence keeps the kernel
+trivial. This is `LinearMap.SeparatingLeft.congr`, read through `compl₁₂`. -/
+theorem ker_compl₁₂_eq_bot (e : W ≃ₗ[R] V) (hq : LinearMap.ker q = ⊥) :
+    LinearMap.ker (q.compl₁₂ (e : W →ₗ[R] V) (e : W →ₗ[R] V)) = ⊥ := by
+  rw [← LinearMap.separatingLeft_iff_ker_eq_bot] at hq ⊢
+  convert hq.congr e.symm e.symm
+  ext
+  simp
 
 /-- Relative to a left-separating form `g`, the eigenspaces of `g.compLeft f`, the form
 `(v, w) ↦ g (f v) w`, are the eigenspaces of the endomorphism `f`. -/

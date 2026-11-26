@@ -33,8 +33,10 @@ normal space `N` is the inverse square root `|K|^(-1/2)` of the operator `K` wit
 (`LinearMap.BilinForm.normalizingTransport`). It preserves `ν⁻` and `ν⁺`, on which it carries
 `Hess` to `-g` and to `g`, and is the only endomorphism of the normal space with these properties
 which is self-adjoint for `Hess` and has `0 ≤ g (N v, v)`. No eigenbasis of the normal Hessian is
-chosen, so no smoothly varying eigenvectors are needed: this characterization glues the local
-normalizations in the normal-bundle trivializations
+chosen, so no smoothly varying eigenvectors are needed: this characterization, with the naturality
+of the normalizing transport under linear equivalences
+(`LinearMap.BilinForm.normalizingTransport_compl₁₂`), glues the local normalizations in the
+normal-bundle trivializations
 (`IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_normalHessian_normalization`), which are
 the same smooth functions of the pair of forms in every chart. So for a `C^k` fibre metric `g`,
 with `f` of class `C^{k+2}` along the submanifold and the embedding of class `C^{k+1}`, `N` is a
@@ -119,8 +121,9 @@ positive normal spaces and carries the normal Hessian to `-g` on the first and t
 second, so that `Hess (N v, N v) = g (v⁺, v⁺) - g (v⁻, v⁻)`
 (`normalHessian_normalHessianNormalization_apply_self`). It is the inverse square root `|K|^(-1/2)`
 of the operator `K` with `g (K v) w = Hess (v, w)`, the normalizing transport of the normal Hessian
-relative to `g` (`LinearMap.BilinForm.normalizingTransport`), and it is characterized by these
-properties (`eq_normalHessianNormalization`). -/
+relative to `g` (`LinearMap.BilinForm.normalizingTransport`). It is characterized by these
+properties together with `0 ≤ g (N v, v)` and self-adjointness for the normal Hessian
+(`eq_normalHessianNormalization`). -/
 def normalHessianNormalization (s : S) :
     i.isImmersion.NormalSpace s hn ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn :=
   .ofBijective ((h.normalHessian hn s).normalizingTransport (g.inner s).toBilinForm)
@@ -304,40 +307,6 @@ theorem adaptedMetric_inner_normalHessianNormalization (u v : i.isImmersion.Norm
     h.negativeNormalProjection_normalHessianNormalization hn g, hNneg, hNpos, hsplit]
   ring
 
-/-- Read through a linear isomorphism `φ` from a vector space `P`, an endomorphism `Ψ` of `P` with
-the properties of the normalization of the normal Hessian is that normalization. -/
-private theorem apply_eq_normalHessianNormalization_apply {P : Type*} [AddCommGroup P]
-    [Module ℝ P] (φ : P ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn) {Ψ : Module.End ℝ P}
-    (hpos : ∀ u, u ≠ 0 → 0 < g.inner s (φ (Ψ u)) (φ u))
-    (hHess : ∀ u v, h.normalHessian hn s (φ (Ψ u)) (φ v) = h.normalHessian hn s (φ u) (φ (Ψ v)))
-    (hneg : ∀ u, φ u ∈ h.negativeNormalSpace hn g s → φ (Ψ u) ∈ h.negativeNormalSpace hn g s ∧
-      h.normalHessian hn s (φ (Ψ u)) (φ (Ψ u)) = -g.inner s (φ u) (φ u))
-    (hposS : ∀ u, φ u ∈ h.positiveNormalSpace hn g s → φ (Ψ u) ∈ h.positiveNormalSpace hn g s ∧
-      h.normalHessian hn s (φ (Ψ u)) (φ (Ψ u)) = g.inner s (φ u) (φ u)) (u : P) :
-    φ (Ψ u) = h.normalHessianNormalization hn g s (φ u) := by
-  set L : Module.End ℝ (i.isImmersion.NormalSpace s hn) :=
-    (φ : P →ₗ[ℝ] _) ∘ₗ Ψ ∘ₗ (φ.symm : _ →ₗ[ℝ] P)
-  have hL (w : P) : L (φ w) = φ (Ψ w) := by simp [L]
-  have hLN : L = h.normalHessianNormalization hn g s := by
-    refine h.eq_normalHessianNormalization hn g (fun v ↦ ?_) (fun v w ↦ ?_) (fun v hv ↦ ?_)
-      (fun v hv ↦ ?_)
-    · obtain ⟨w, rfl⟩ := φ.surjective v
-      rw [hL]
-      rcases eq_or_ne w 0 with rfl | hw
-      · simp
-      · exact (hpos w hw).le
-    · obtain ⟨v, rfl⟩ := φ.surjective v
-      obtain ⟨w, rfl⟩ := φ.surjective w
-      rw [hL, hL]
-      exact hHess v w
-    · obtain ⟨w, rfl⟩ := φ.surjective v
-      rw [hL]
-      exact hneg w hv
-    · obtain ⟨w, rfl⟩ := φ.surjective v
-      rw [hL]
-      exact hposS w hv
-  rw [← hL, hLN, LinearEquiv.coe_coe]
-
 /-- **Compatibility with the normal-bundle trivializations.** Let `e` be a linear trivialization
 of the normal bundle at `s`, in which the fibre metric `g` reads as the form `G` on the fibre model
 `P`. An operator `Ψ` of `P` which is positive definite for `G`, self-adjoint for the normal Hessian
@@ -370,25 +339,31 @@ private theorem symm_apply_eq_normalHessianNormalization_apply {P : Type*} [Norm
   have hGφ : G.toBilinForm = (g.inner s).toBilinForm.compl₁₂ (φ : P →ₗ[ℝ] _) φ := by
     ext w w'
     simp [hGg, hφ]
-  -- The relative spectral subspaces read in `e` are the preimages of those of the normal space.
-  have hmem {Ω : Set ℝ} {w : P} :
-      w ∈ G.toBilinForm.relativeSpectralSubspace
-          ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) Ω ↔
-        φ w ∈ (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) Ω := by
-    rw [hGφ, hsymm, ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ φ,
-      Submodule.mem_map]
-    exact ⟨fun hw ↦ ⟨w, hw, rfl⟩, fun ⟨w', hw', hww'⟩ ↦ φ.injective hww' ▸ hw'⟩
-  simp only [← hφ] at hHess hneg hposS hGg ⊢
-  refine h.apply_eq_normalHessianNormalization_apply hn g φ (fun w hw ↦ ?_) hHess
-    (fun w hw ↦ ?_) (fun w hw ↦ ?_) u
-  · rw [← hGg]
-    exact hpos w hw
-  · rw [IsCriticalSubmanifold.negativeNormalSpace_def] at hw ⊢
-    obtain ⟨hw₁, hw₂⟩ := hneg w (hmem.mpr hw)
-    exact ⟨hmem.mp hw₁, by simpa only [ContinuousLinearMap.coe_coe, hGg] using hw₂⟩
-  · rw [IsCriticalSubmanifold.positiveNormalSpace_def] at hw ⊢
-    obtain ⟨hw₁, hw₂⟩ := hposS w (hmem.mpr hw)
-    exact ⟨hmem.mp hw₁, by simpa only [ContinuousLinearMap.coe_coe, hGg] using hw₂⟩
+  have : FiniteDimensional ℝ P := φ.symm.finiteDimensional
+  -- `Ψ` is the normalizing transport of the normal Hessian relative to `g`, both read in `e`, so by
+  -- naturality it is the normalization read in `e`.
+  have hΨ : (Ψ : Module.End ℝ P) = (φ.symm : _ →ₗ[ℝ] P) ∘ₗ
+      (h.normalHessianNormalization hn g s : Module.End ℝ (i.isImmersion.NormalSpace s hn)) ∘ₗ
+        (φ : P →ₗ[ℝ] _) := by
+    rw [coe_normalHessianNormalization, ← LinearMap.BilinForm.normalizingTransport_compl₁₂
+      (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s) (g.isSymm_toBilinForm_inner s)
+      (g.pos s), ← hGφ, ← hsymm]
+    refine LinearMap.BilinForm.eq_normalizingTransport_of_mem_relativeSpectralSubspace
+      (q := (h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (h := G.toBilinForm)
+      ⟨fun _ _ ↦ (h.isSymm_normalHessian hn s).eq _ _⟩
+      (hsymm ▸ LinearMap.BilinForm.ker_compl₁₂_eq_bot φ (h.ker_normalHessian hn s))
+      (hGφ ▸ ⟨fun _ _ ↦ (g.isSymm_toBilinForm_inner s).eq _ _⟩)
+      (fun w hw ↦ by simpa [hGg, ← hφ] using g.pos s _ ((map_ne_zero_iff _ φ.injective).mpr hw))
+      (fun w ↦ ?_) (fun w w' ↦ by simpa [e.symmₗ_apply hs] using hHess w w')
+      (fun w hw ↦ by simpa [e.symmₗ_apply hs] using hneg w hw)
+      (fun w hw ↦ by simpa [e.symmₗ_apply hs] using hposS w hw)
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · exact (hpos w hw).le
+  have hu := congr(φ ($hΨ u))
+  simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply] at hu
+  rwa [hφ, hφ] at hu
 
 end Pointwise
 
@@ -400,7 +375,7 @@ variable [FiniteDimensional ℝ E'] {P : Type*} [NormedAddCommGroup P] [NormedSp
 /-- In the preferred normal-bundle trivialization at `s₀`, the normalization of the normal Hessian
 relative to a `C^k` fibre metric reads as a `C^k` family of operators of the fibre model. The
 local normalizations of `exists_contMDiffOn_normalHessian_normalization` are the readings of the
-global one, by its characterization `eq_normalHessianNormalization`. -/
+global one, by the characterization and the naturality of the normalizing transport. -/
 private theorem exists_contMDiffOn_normalHessianNormalization_trivializationAt
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
@@ -449,7 +424,7 @@ private theorem exists_contMDiffOn_normalHessianNormalization_trivializationAt
       s ∈ e.baseSet ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet :=
     ⟨hs, by simpa [e] using hs⟩
   refine ⟨Ψ, hΨ.mono fun s hs ↦ hbase s hs, fun s hs u ↦ ?_⟩
-  -- The local normalization reads the normalization, by its characterization.
+  -- The local normalization reads the normalization, by characterization and naturality.
   have hΨs' := hΨs s (hbase s hs)
   simp only [← normalSpaceFiberBundle_trivializationAt] at hΨs'
   obtain ⟨-, -, hGΨ, hQΨ, hnegΨ, hposΨ, -⟩ := hΨs'

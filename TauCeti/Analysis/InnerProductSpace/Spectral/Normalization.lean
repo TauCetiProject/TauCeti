@@ -68,6 +68,8 @@ corresponding operator on a finite-dimensional normed space without a chosen inn
   the normalization identity read on the relative spectral subspaces.
 * `ContinuousLinearEquiv.normalizingTransport_bilinearComp`: naturality.
 * `ContinuousLinearMap.contDiffOn_normalizingTransport`: smooth dependence on `(q, h)`.
+* `LinearEquiv.eq_comp_normalizingTransport_comp`: uniqueness for a pair of bilinear forms on a
+  real vector space without topology, read on a Euclidean model through a linear equivalence.
 * `TauCeti.exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace`: the normalization on a
   finite-dimensional normed space, read through the relative spectral subspaces and determined by
   its listed properties.
@@ -514,35 +516,42 @@ namespace TauCeti
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
-omit [FiniteDimensional ℝ P] in
-/-- Read on a Euclidean model `W` through `T`, an operator on `P` with the properties of the
-normalizing transport is the normalizing transport of the pair pulled back along `T⁻¹`. -/
-private theorem _root_.ContinuousLinearEquiv.eq_comp_normalizingTransport_comp {W : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W)
-    {q h : P →L[ℝ] P →L[ℝ] ℝ}
-    (hqs : ∀ u v, q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P) u v =
-      q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P) v u)
-    (hqi : Function.Injective (q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)))
-    (hhp : IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ)
-      (h.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P))))
-    {S : P →L[ℝ] P} (hpos : ∀ u, 0 ≤ h (S u) u) (hqS : ∀ u v, q (S u) v = q u (S v))
-    (hneg : ∀ u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0),
-      S u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) ∧
-        q (S u) (S u) = -h u u)
-    (hposS : ∀ u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0),
-      S u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0) ∧
-        q (S u) (S u) = h u u) :
-    S = (T.symm : W →L[ℝ] P) ∘L
-      (q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)).normalizingTransport
-        (h.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)) ∘L (T : P →L[ℝ] W) := by
+/-- Read on a Euclidean model `W` through a linear equivalence `T`, an endomorphism of a real vector
+space `V` with the properties of the normalizing transport of a pair of bilinear forms `(q, h)` on
+`V` is the normalizing transport of the pair `(Q, h)` read on `W`, that is, pulled back along
+`T⁻¹`. -/
+theorem _root_.LinearEquiv.eq_comp_normalizingTransport_comp {V W : Type*} [AddCommGroup V]
+    [Module ℝ V] [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+    (T : V ≃ₗ[ℝ] W) {q h : LinearMap.BilinForm ℝ V} {Q H : W →L[ℝ] W →L[ℝ] ℝ}
+    (hQ : ∀ w w', Q w w' = q (T.symm w) (T.symm w'))
+    (hH : ∀ w w', H w w' = h (T.symm w) (T.symm w'))
+    (hQs : ∀ w w', Q w w' = Q w' w) (hQi : Function.Injective Q) (hHp : IsStrictlyPositive H♯)
+    {S : Module.End ℝ V} (hpos : ∀ u, 0 ≤ h (S u) u) (hqS : ∀ u v, q (S u) v = q u (S v))
+    (hneg : ∀ u ∈ h.relativeSpectralSubspace q (Iio 0),
+      S u ∈ h.relativeSpectralSubspace q (Iio 0) ∧ q (S u) (S u) = -h u u)
+    (hposS : ∀ u ∈ h.relativeSpectralSubspace q (Ioi 0),
+      S u ∈ h.relativeSpectralSubspace q (Ioi 0) ∧ q (S u) (S u) = h u u) :
+    S = (T.symm : W →ₗ[ℝ] V) ∘ₗ (Q.normalizingTransport H : W →ₗ[ℝ] W) ∘ₗ (T : V →ₗ[ℝ] W) := by
+  have hc {B : W →L[ℝ] W →L[ℝ] ℝ} {b : LinearMap.BilinForm ℝ V}
+      (hB : ∀ w w', B w w' = b (T.symm w) (T.symm w')) :
+      B.toBilinForm = b.compl₁₂ (T.symm : W →ₗ[ℝ] V) (T.symm : W →ₗ[ℝ] V) := by
+    ext w w'
+    simp [hB]
+  -- A vector of `W` lies in a relative spectral subspace of `(Q, H)` exactly when its image in
+  -- `V` lies in that of `(q, h)`.
+  have hmem {Ω : Set ℝ} {w : W} :
+      w ∈ H.toBilinForm.relativeSpectralSubspace Q.toBilinForm Ω ↔
+        T.symm w ∈ h.relativeSpectralSubspace q Ω := by
+    rw [hc hH, hc hQ]
+    exact LinearMap.BilinForm.mem_relativeSpectralSubspace_compl₁₂_iff T.symm
   have hS := ContinuousLinearMap.eq_normalizingTransport_of_mem_relativeSpectralSubspace
-    (S := (T : P →L[ℝ] W) ∘L S ∘L (T.symm : W →L[ℝ] P)) hhp hqs hqi
-    (fun x ↦ by simpa using hpos (T.symm x))
-    (fun x y ↦ by simpa using hqS (T.symm x) (T.symm y))
-    (fun x hx ↦ by simpa using hneg _ (by simpa using hx))
-    (fun x hx ↦ by simpa using hposS _ (by simpa using hx))
+    (S := LinearMap.toContinuousLinearMap ((T : V →ₗ[ℝ] W) ∘ₗ S ∘ₗ (T.symm : W →ₗ[ℝ] V)))
+    hHp hQs hQi (fun w ↦ by simpa [hH] using hpos (T.symm w))
+    (fun w w' ↦ by simpa [hQ] using hqS (T.symm w) (T.symm w'))
+    (fun w hw ↦ by simpa [hmem, hH, hQ] using hneg _ (hmem.mp hw))
+    (fun w hw ↦ by simpa [hmem, hH, hQ] using hposS _ (hmem.mp hw))
   ext u
-  simpa using congr((T.symm : W →L[ℝ] P) ($hS (T u)))
+  simpa using congr(T.symm ($hS (T u)))
 
 open ContinuousLinearMap in
 /-- **Smooth normalization of nondegenerate forms on a finite-dimensional normed space.** There is
@@ -628,6 +637,9 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
   · simpa [hTsT] using
       apply_normalizingTransport_normalizingTransport_of_mem_relativeSpectralSubspace_Ioi
         hhp hqs hqi (u := T u) (hmem.mpr (by rwa [hTsT]))
-  · exact T.eq_comp_normalizingTransport_comp hqs hqi hhp hpos hqS hneg hposS
+  · have hS := T.toLinearEquiv.eq_comp_normalizingTransport_comp (q := q.toBilinForm)
+      (h := h.toBilinForm) (S := S) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hqs hqi hhp hpos hqS hneg hposS
+    ext u
+    exact LinearMap.congr_fun hS u
 
 end TauCeti

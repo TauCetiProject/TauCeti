@@ -46,7 +46,9 @@ In the namespace `LinearMap.BilinForm`:
   and `metric_apply_normalizingTransport_self_pos`: `N` is self-adjoint for `q`, and self-adjoint
   and positive definite for `h`.
 * `bijective_normalizingTransport`: `N` is invertible.
-* `eq_normalizingTransport_of_mem_relativeSpectralSubspace`: the characterization.
+* `eq_normalizingTransport_of_mem_relativeSpectralSubspace` and `eq_normalizingTransport_iff`:
+  the characterization.
+* `normalizingTransport_compl₁₂`: naturality under linear equivalences.
 
 ## References
 
@@ -84,7 +86,7 @@ with respect to `h` and carries `q` to `-h` on the first and to `h` on the secon
 
 It is read through a linear identification `T` of `V` with a Euclidean space, as the normalizing
 transport `ContinuousLinearMap.normalizingTransport` of the pair of forms pulled back along `T⁻¹`.
-These properties determine it
+These properties, together with `0 ≤ h (N u) u` and self-adjointness for `q`, determine it
 (`LinearMap.BilinForm.eq_normalizingTransport_of_mem_relativeSpectralSubspace`), so it does not
 depend on `T`. -/
 def normalizingTransport (q h : LinearMap.BilinForm ℝ V) : Module.End ℝ V :=
@@ -101,8 +103,17 @@ private theorem normalizingTransport_apply_eq (u : V) :
   (rfl)
 
 private theorem euclideanForm_apply (w w' : EuclideanSpace ℝ (Fin (finrank ℝ V))) :
-    euclideanForm q w w' = q ((euclideanEquiv V).symm w) ((euclideanEquiv V).symm w') :=
-  (rfl)
+    euclideanForm q w w' = q ((euclideanEquiv V).symm w) ((euclideanEquiv V).symm w') := by
+  simp [euclideanForm, LinearMap.toContinuousBilinearMap_apply]
+
+/-- The pulled-back form, read as a bilinear form on the Euclidean model, is the pull-back of `q`
+along `(euclideanEquiv V)⁻¹`. -/
+private theorem toBilinForm_euclideanForm :
+    (euclideanForm q).toBilinForm =
+      q.compl₁₂ ((euclideanEquiv V).symm : EuclideanSpace ℝ (Fin (finrank ℝ V)) →ₗ[ℝ] V)
+        (euclideanEquiv V).symm := by
+  ext w w'
+  simp [euclideanForm_apply]
 
 private theorem euclideanForm_apply_apply (u v : V) :
     euclideanForm q (euclideanEquiv V u) (euclideanEquiv V v) = q u v := by
@@ -138,13 +149,8 @@ private theorem mem_relativeSpectralSubspace_euclideanForm_iff {Ω : Set ℝ} {u
     euclideanEquiv V u ∈
         (euclideanForm h).toBilinForm.relativeSpectralSubspace (euclideanForm q).toBilinForm Ω ↔
       u ∈ h.relativeSpectralSubspace q Ω := by
-  set T := euclideanEquiv V
-  have hc : (euclideanForm h).toBilinForm.relativeSpectralSubspace (euclideanForm q).toBilinForm Ω =
-      relativeSpectralSubspace (h.compl₁₂ (T.symm : _ →ₗ[ℝ] V) T.symm)
-        (q.compl₁₂ (T.symm : _ →ₗ[ℝ] V) T.symm) Ω := rfl
-  rw [hc, ← map_relativeSpectralSubspace_compl₁₂ T.symm, Submodule.mem_map]
-  exact ⟨fun hu ↦ ⟨T u, hu, T.symm_apply_apply u⟩,
-    fun ⟨w, hw, hwu⟩ ↦ by simpa [← hwu] using hw⟩
+  rw [toBilinForm_euclideanForm, toBilinForm_euclideanForm,
+    mem_relativeSpectralSubspace_compl₁₂_iff, LinearEquiv.symm_apply_apply]
 
 /-- The normalizing transport is self-adjoint for `q`. -/
 theorem apply_normalizingTransport_left_eq_right (hh : h.IsSymm) (hh' : ∀ v, v ≠ 0 → 0 < h v v)
@@ -240,34 +246,58 @@ theorem eq_normalizingTransport_of_mem_relativeSpectralSubspace {S : Module.End 
       S u ∈ h.relativeSpectralSubspace q (Iio 0) ∧ q (S u) (S u) = -h u u)
     (hposS : ∀ u ∈ h.relativeSpectralSubspace q (Ioi 0),
       S u ∈ h.relativeSpectralSubspace q (Ioi 0) ∧ q (S u) (S u) = h u u) :
-    S = q.normalizingTransport h := by
-  set T := euclideanEquiv V
-  -- Read `S` in the Euclidean model and apply the characterization there.
-  set SW := LinearMap.toContinuousLinearMap ((T : V →ₗ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ V))) ∘ₗ
-    S ∘ₗ (T.symm : EuclideanSpace ℝ (Fin (finrank ℝ V)) →ₗ[ℝ] V))
-  have hSW (u : V) : SW (T u) = T (S u) := by simp [SW]
-  have hS := ContinuousLinearMap.eq_normalizingTransport_of_mem_relativeSpectralSubspace (S := SW)
-    (isStrictlyPositive_euclideanForm hh hh') (euclideanForm_comm hq) (injective_euclideanForm hq')
-    (fun w ↦ by
-      obtain ⟨u, rfl⟩ := T.surjective w
-      rw [hSW, euclideanForm_apply_apply]
-      exact hpos u)
-    (fun w w' ↦ by
-      obtain ⟨u, rfl⟩ := T.surjective w
-      obtain ⟨v, rfl⟩ := T.surjective w'
-      rw [hSW, hSW, euclideanForm_apply_apply, euclideanForm_apply_apply]
-      exact hqS u v)
-    (fun w hw ↦ by
-      obtain ⟨u, rfl⟩ := T.surjective w
-      obtain ⟨hmem', hval⟩ := hneg u (mem_relativeSpectralSubspace_euclideanForm_iff.mp hw)
-      rw [hSW, euclideanForm_apply_apply, euclideanForm_apply_apply]
-      exact ⟨mem_relativeSpectralSubspace_euclideanForm_iff.mpr hmem', hval⟩)
-    (fun w hw ↦ by
-      obtain ⟨u, rfl⟩ := T.surjective w
-      obtain ⟨hmem', hval⟩ := hposS u (mem_relativeSpectralSubspace_euclideanForm_iff.mp hw)
-      rw [hSW, euclideanForm_apply_apply, euclideanForm_apply_apply]
-      exact ⟨mem_relativeSpectralSubspace_euclideanForm_iff.mpr hmem', hval⟩)
-  ext u
-  rw [normalizingTransport_apply_eq, ← hS, hSW, LinearEquiv.symm_apply_apply]
+    S = q.normalizingTransport h :=
+  (euclideanEquiv V).eq_comp_normalizingTransport_comp (fun _ _ ↦ euclideanForm_apply _ _)
+    (fun _ _ ↦ euclideanForm_apply _ _) (euclideanForm_comm hq) (injective_euclideanForm hq')
+    (isStrictlyPositive_euclideanForm hh hh') hpos hqS hneg hposS
+
+/-- **Characterization of the normalizing transport.** For a symmetric nondegenerate form `q` and
+a positive definite symmetric form `h` on a finite-dimensional real vector space, an endomorphism
+`S` is the normalizing transport of `q` relative to `h` exactly when `0 ≤ h (S u) u` for all `u`,
+`S` is self-adjoint for `q`, maps the negative and the positive relative spectral subspaces of `q`
+with respect to `h` into themselves, and carries `q` to `-h` on the first and to `h` on the
+second. -/
+theorem eq_normalizingTransport_iff {S : Module.End ℝ V} :
+    S = q.normalizingTransport h ↔
+      (∀ u, 0 ≤ h (S u) u) ∧ (∀ u v, q (S u) v = q u (S v)) ∧
+        (∀ u ∈ h.relativeSpectralSubspace q (Iio 0),
+          S u ∈ h.relativeSpectralSubspace q (Iio 0) ∧ q (S u) (S u) = -h u u) ∧
+        ∀ u ∈ h.relativeSpectralSubspace q (Ioi 0),
+          S u ∈ h.relativeSpectralSubspace q (Ioi 0) ∧ q (S u) (S u) = h u u := by
+  refine ⟨?_, fun ⟨hpos, hqS, hneg, hposS⟩ ↦
+    eq_normalizingTransport_of_mem_relativeSpectralSubspace hq hq' hh hh' hpos hqS hneg hposS⟩
+  rintro rfl
+  refine ⟨fun u ↦ ?_, apply_normalizingTransport_left_eq_right hh hh', fun u hu ↦ ⟨?_, ?_⟩,
+    fun u hu ↦ ⟨?_, ?_⟩⟩
+  · rcases eq_or_ne u 0 with rfl | hu
+    · simp
+    · exact (metric_apply_normalizingTransport_self_pos hq hq' hh hh' hu).le
+  · exact normalizingTransport_apply_mem_relativeSpectralSubspace_Iio hq hq' hh hh' hu
+  · exact apply_normalizingTransport_normalizingTransport_of_mem_relativeSpectralSubspace_Iio
+      hq hq' hh hh' hu
+  · exact normalizingTransport_apply_mem_relativeSpectralSubspace_Ioi hq hq' hh hh' hu
+  · exact apply_normalizingTransport_normalizingTransport_of_mem_relativeSpectralSubspace_Ioi
+      hq hq' hh hh' hu
+
+/-- **Naturality of the normalizing transport.** Pulling both forms back along a linear
+equivalence `e` conjugates the normalizing transport by `e`. Normalizations computed in two
+linear identifications of a vector space therefore agree under the transition. -/
+theorem normalizingTransport_compl₁₂ {W : Type*} [AddCommGroup W] [Module ℝ W]
+    [FiniteDimensional ℝ W] (e : W ≃ₗ[ℝ] V) :
+    normalizingTransport (q.compl₁₂ (e : W →ₗ[ℝ] V) (e : W →ₗ[ℝ] V))
+        (h.compl₁₂ (e : W →ₗ[ℝ] V) (e : W →ₗ[ℝ] V)) =
+      (e.symm : V →ₗ[ℝ] W) ∘ₗ q.normalizingTransport h ∘ₗ (e : W →ₗ[ℝ] V) := by
+  obtain ⟨hpos, hqS, hneg, hposS⟩ := (eq_normalizingTransport_iff hq hq' hh hh').mp rfl
+  refine ((eq_normalizingTransport_iff (q := q.compl₁₂ (e : W →ₗ[ℝ] V) (e : W →ₗ[ℝ] V))
+    (h := h.compl₁₂ (e : W →ₗ[ℝ] V) (e : W →ₗ[ℝ] V)) ⟨fun _ _ ↦ hq.eq _ _⟩
+    (ker_compl₁₂_eq_bot e hq') ⟨fun _ _ ↦ hh.eq _ _⟩
+    fun w hw ↦ hh' _ ((map_ne_zero_iff _ e.injective).mpr hw)).mpr
+    ⟨fun w ↦ ?_, fun w w' ↦ ?_, fun w hw ↦ ?_, fun w hw ↦ ?_⟩).symm
+  · simpa using hpos (e w)
+  · simpa using hqS (e w) (e w')
+  · rw [mem_relativeSpectralSubspace_compl₁₂_iff] at hw ⊢
+    simpa using hneg (e w) hw
+  · rw [mem_relativeSpectralSubspace_compl₁₂_iff] at hw ⊢
+    simpa using hposS (e w) hw
 
 end LinearMap.BilinForm
