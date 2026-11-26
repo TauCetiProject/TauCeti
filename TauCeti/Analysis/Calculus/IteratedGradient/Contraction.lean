@@ -21,11 +21,9 @@ polynomials, without choosing coordinates.
 Both operations are continuous linear in the field and continuous in the direction. Partial
 contraction of `i` slots is homogeneous of degree `i` in the direction and has norm at most
 `‖h‖ ^ i`; full contraction of `IteratedGradient E j` has degree `j + 1` and norm at most
-`‖h‖ ^ (j + 1)`, yielding a uniform bound on cutoff-weighted contractions supported in a closed
-ball (`TauCeti.norm_mul_fullContractL_le_of_support_subset_closedBall`). On a complete real inner
-product space, full contraction of `TauCeti.iteratedGradientChain f k x` along `h` recovers
-`iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ h)` without any differentiability hypothesis
-(`TauCeti.fullContractL_iteratedGradientChain`).
+`‖h‖ ^ (j + 1)`. On a complete real inner product space, full contraction of
+`TauCeti.iteratedGradientChain f k x` along `h` recovers `iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ h)`
+without any differentiability hypothesis (`TauCeti.fullContractL_iteratedGradientChain`).
 -/
 
 public section
@@ -209,35 +207,6 @@ example : fullContractL 1 (6 : ℝ) ((2 : ℝ) • ContinuousLinearMap.id ℝ �
 end TauCeti.IteratedGradient
 
 namespace TauCeti
-
-section CutoffBound
-
-open Metric
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- If `support φ ⊆ closedBall x R` (`0 ≤ R`) and `‖φ y‖ ≤ M`, then the cutoff-weighted full
-contraction `φ y * IteratedGradient.fullContractL m (x - y) v` has norm at most
-`M * R ^ (m + 1) * ‖v‖`. -/
-theorem norm_mul_fullContractL_le_of_support_subset_closedBall {φ : E → ℝ} {x y : E} {R M : ℝ}
-    (hR : 0 ≤ R) (hsupp : Function.support φ ⊆ closedBall x R) (hφ : ‖φ y‖ ≤ M) (m : ℕ)
-    (v : IteratedGradient E m) :
-    ‖φ y * IteratedGradient.fullContractL m (x - y) v‖ ≤ M * R ^ (m + 1) * ‖v‖ := by
-  have hM : 0 ≤ M := (norm_nonneg (φ y)).trans hφ
-  by_cases hy : y ∈ Function.support φ
-  · have hxy : ‖x - y‖ ≤ R := by
-      rw [norm_sub_rev, ← dist_eq_norm]
-      exact mem_closedBall.1 (hsupp hy)
-    rw [norm_mul]
-    refine (mul_le_mul hφ
-      ((IteratedGradient.norm_fullContractL_apply_le m (x - y) v).trans
-        (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hxy (m + 1))
-          (norm_nonneg v))) (norm_nonneg _) hM).trans_eq ?_
-    ring
-  · rw [Function.notMem_support.1 hy, zero_mul, norm_zero]
-    positivity
-
-end CutoffBound
 
 section ContractionBridge
 
