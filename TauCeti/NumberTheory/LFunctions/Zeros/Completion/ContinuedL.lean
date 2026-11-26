@@ -29,6 +29,6 @@ theorem meromorphicOrderAt_continuedL_pos_of_entireCompletion_eq_zero
     0 < meromorphicOrderAt d.continuedL s := by
   rw [d.meromorphicOrderAt_continuedL h.meromorphic, LinearOrderedAddCommGroupWithTop.sub_pos]
   exact Or.inl ((d.meromorphicOrderAt_gammaFactor_nonpos s).trans_lt
-    (h.entireCompletion_eq_zero_iff_meromorphicOrderAt_pos.mp hs))
+    (h.entireCompletion_eq_zero_iff_meromorphicOrderAt_completed_pos.mp hs))
 
 end TauCeti.LFunctions.AnalyticLFunctionData.HasMeromorphicContinuation

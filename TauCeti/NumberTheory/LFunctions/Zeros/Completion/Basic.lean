@@ -226,7 +226,7 @@ theorem HasMeromorphicContinuation.entireCompletion_ne_zero_of_pole {s : ℂ}
 
 /-- Zeros of the entire completion are exactly the points of positive order of the completed
 function. In particular this characterization does not read the value at a pole. -/
-theorem HasMeromorphicContinuation.entireCompletion_eq_zero_iff_meromorphicOrderAt_pos
+theorem HasMeromorphicContinuation.entireCompletion_eq_zero_iff_meromorphicOrderAt_completed_pos
     {s : ℂ} : d.entireCompletion s = 0 ↔ 0 < meromorphicOrderAt d.completed s := by
   rw [← (h.analyticAt_entireCompletion s).meromorphicOrderAt_pos_iff_eq_zero]
   by_cases hs : d.polarOrder s = 0
