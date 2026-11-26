@@ -349,8 +349,10 @@ theorem exists_label_fin_absNorm_of_ne_bot {𝔟 : Ideal (𝓞 E)} (h𝔟 : 𝔟
   have h𝔠_ne : 𝔠 ≠ ⊥ := fun h ↦ ha_ne (by simpa [h] using h𝔠)
   have h_index : A.index = Ideal.absNorm 𝔟 := by
     have h_tower : A.index * Ideal.absNorm 𝔠 = Ideal.absNorm (Ideal.span {a}) := by
-      rw [Ideal.absNorm_apply, Ideal.absNorm_apply]
-      exact AddSubgroup.relIndex_mul_index (h𝔠.trans_le Ideal.mul_le_right)
+      -- `AddSubgroup.relIndex` is defined as the index of `addSubgroupOf`, which is `A.index`.
+      have := AddSubgroup.relIndex_mul_index <|
+        (Submodule.toAddSubgroup_le _ _).2 (h𝔠.trans_le Ideal.mul_le_right)
+      rwa [AddSubgroup.relIndex, ← Ideal.absNorm_eq_index, ← Ideal.absNorm_eq_index] at this
     simpa [h𝔠, Ideal.absNorm_eq_zero_iff, h𝔠_ne] using h_tower
   have : Finite (𝔠 ⧸ A) := AddSubgroup.index_ne_zero_iff_finite.1 <| by
     rwa [h_index, Ne, Ideal.absNorm_eq_zero_iff]
