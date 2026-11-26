@@ -449,40 +449,17 @@ theorem pairwise_disjoint_out_smul (hdisj : ∀ g ∉ H, Disjoint (g • V) V) :
 
 end Action
 
-/-- For a bijection `φ : G ≃ G` respecting left congruence modulo `K`, the chosen representative
-of `Quotient.congr φ hφ q` differs from `φ q.out` on the right by an element of `K`. -/
-theorem out_congr_eq_mul {G : Type*} [Group G] {K : Subgroup G} (φ : G ≃ G)
-    (hφ : ∀ a b : G, leftRel K a b ↔ leftRel K (φ a) (φ b)) (q : G ⧸ K) :
-    ∃ k ∈ K, (Quotient.congr φ hφ q).out = φ q.out * k := by
-  obtain ⟨⟨k, hk⟩, hq'⟩ := mk_out_eq_mul K (φ q.out)
-  refine ⟨k, hk, ?_⟩
-  have hq : Quotient.congr φ hφ q = mk (φ q.out) := by
-    simpa only [Quotient.out_eq] using Quotient.congr_mk φ hφ q.out
-  rw [hq, hq']
-
-/-- The chosen representative of a left coset `q : G ⧸ K` lies in `K` iff `q` is the coset of
-`1`. -/
-theorem out_mem_iff_eq_mk_one {G : Type*} [Group G] {K : Subgroup G} {q : G ⧸ K} :
-    q.out ∈ K ↔ q = mk 1 := by
-  constructor
-  · intro h
-    rw [← Quotient.out_eq q]
-    exact QuotientGroup.eq.2 (by simpa [leftRel_apply] using K.inv_mem h)
-  · rintro rfl
-    obtain ⟨⟨k, hk⟩, h1⟩ := mk_out_eq_mul K 1
-    simpa [h1] using hk
-
 /-- Reindex a `finsum` over `G ⧸ K` along left multiplication by `a : G` when the summand is
 right `K`-invariant. -/
 theorem finsum_mulLeft_eq {G M : Type*} [Group G] [AddCommMonoid M] {K : Subgroup G}
     (a : G) (F : G → M) (hF : ∀ g : G, ∀ k ∈ K, F (g * k) = F g) :
     (∑ᶠ q : G ⧸ K, F (a * q.out)) = ∑ᶠ q : G ⧸ K, F q.out := by
-  have hcongr : ∀ x y : G, leftRel K x y ↔ leftRel K (a * x) (a * y) := fun x y ↦ by
-    simp [leftRel_apply, mul_assoc]
-  refine (finsum_congr fun q ↦ ?_).trans
-    (finsum_comp_equiv (Quotient.congr (Equiv.mulLeft a) hcongr))
-  obtain ⟨k, hk, heq⟩ := out_congr_eq_mul (Equiv.mulLeft a) hcongr q
-  rw [heq, Equiv.coe_mulLeft, hF _ k hk]
+  refine (finsum_congr fun q ↦ ?_).trans (finsum_comp_equiv (MulAction.toPerm a))
+  have hk : (a * q.out)⁻¹ * (a • q).out ∈ K :=
+    QuotientGroup.eq.1 (mk_out_smul a q).symm
+  have heq : (a • q).out = a * q.out * ((a * q.out)⁻¹ * (a • q).out) := by
+    rw [mul_inv_cancel_left]
+  rw [MulAction.toPerm_apply, heq, hF _ _ hk]
 
 end QuotientGroup
 
@@ -507,30 +484,19 @@ theorem map_mem_iff_of_inv_mem_doubleCoset {G F : Type*} [Group G] {K : Subgroup
     rw [hg]
     exact K.mul_mem (K.mul_mem ha (K.inv_mem h)) hb
 
-/-- If a monoid homomorphism `τ : G →* G` sends every `g⁻¹` into the double coset `K * g * K`,
-then `τ` respects left congruence modulo `K`. -/
-theorem leftRel_map_iff_of_inv_mem_doubleCoset {G F : Type*} [Group G] {K : Subgroup G}
-    [FunLike F G G] [MonoidHomClass F G G] {τ : F}
-    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (a b : G) :
-    QuotientGroup.leftRel K a b ↔ QuotientGroup.leftRel K (τ a) (τ b) := by
-  simp [QuotientGroup.leftRel_apply, ← map_inv, ← map_mul,
-    K.map_mem_iff_of_inv_mem_doubleCoset hτg]
-
-/-- The equivalence on left cosets `G ⧸ K ≃ G ⧸ K` induced by a multiplicative equivalence `τ`
+/-- The equivalence on left cosets `G ⧸ K ≃ G ⧸ K` induced by a group automorphism `τ : G ≃* G`
 sending every `g⁻¹` into the double coset `K * g * K`. -/
-def quotientEquivOfInvMemDoubleCoset {G F : Type*} [Group G] (K : Subgroup G)
-    [EquivLike F G G] [MonoidHomClass F G G] (τ : F)
-    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) : G ⧸ K ≃ G ⧸ K :=
-  Quotient.congr (EquivLike.toEquiv τ) (K.leftRel_map_iff_of_inv_mem_doubleCoset (τ := τ) hτg)
+noncomputable def quotientEquivOfInvMemDoubleCoset {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) : G ⧸ K ≃ G ⧸ K :=
+  Equiv.ofBijective _
+    (mk_mulEquiv_out_bijective τ (K.map_mem_iff_of_inv_mem_doubleCoset hτg))
 
 /-- The chosen representative of `K.quotientEquivOfInvMemDoubleCoset τ hτg q` differs from
 `τ q.out` on the right by an element of `K`. -/
-theorem out_quotientEquivOfInvMemDoubleCoset_eq_mul {G F : Type*} [Group G] (K : Subgroup G)
-    [EquivLike F G G] [MonoidHomClass F G G] (τ : F)
-    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
+theorem out_quotientEquivOfInvMemDoubleCoset_eq_mul {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
     ∃ k ∈ K, (K.quotientEquivOfInvMemDoubleCoset τ hτg q).out = τ q.out * k := by
-  simpa [quotientEquivOfInvMemDoubleCoset] using
-    QuotientGroup.out_congr_eq_mul (EquivLike.toEquiv τ)
-      (K.leftRel_map_iff_of_inv_mem_doubleCoset (τ := τ) hτg) q
+  obtain ⟨⟨k, hk⟩, hq⟩ := QuotientGroup.mk_out_eq_mul K (τ q.out)
+  exact ⟨k, hk, by simpa [quotientEquivOfInvMemDoubleCoset] using hq⟩
 
 end Subgroup

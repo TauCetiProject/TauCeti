@@ -112,7 +112,7 @@ theorem Subgroup.isHeckeFunction_indicator_one (K : Subgroup G) :
   · have hout : q.out ∈ (K : Set G) := by
       by_contra h
       exact hq (Set.indicator_of_notMem h _)
-    exact Set.mem_singleton_iff.2 (QuotientGroup.out_mem_iff_eq_mk_one.1 hout)
+    exact Set.mem_singleton_iff.2 (QuotientGroup.out_mem_iff.1 hout)
   · by_cases hg : g ∈ K
     · simp [Set.indicator_of_mem (K.mul_mem hk hg), Set.indicator_of_mem hg]
     · have hkg : k * g ∉ (K : Set G) := fun h ↦ hg (by simpa using K.mul_mem (K.inv_mem hk) h)
@@ -193,11 +193,11 @@ theorem Representation.heckeOp_indicator_one {K : Subgroup G} (π : Representati
     π.heckeOp K (Set.indicator (K : Set G) 1) v = v := by
   rw [heckeOp_def, finsum_eq_single _ (QuotientGroup.mk (1 : G))]
   · have hout : ((QuotientGroup.mk (1 : G) : G ⧸ K).out : G) ∈ K :=
-      QuotientGroup.out_mem_iff_eq_mk_one.2 rfl
+      QuotientGroup.out_mem_iff.2 rfl
     simp [hv _ hout]
   · intro q hq
     have hout : q.out ∉ (K : Set G) := fun hmem ↦
-      hq (QuotientGroup.out_mem_iff_eq_mk_one.1 hmem)
+      hq (QuotientGroup.out_mem_iff.1 hmem)
     simp [Set.indicator_of_notMem hout]
 
 /-- The Hecke operator of a bi-`K`-invariant function sends `K`-fixed vectors to `K`-fixed
@@ -334,11 +334,11 @@ functions. -/
   funext x
   rw [heckeConv_def, finsum_eq_single _ (QuotientGroup.mk (1 : G))]
   · have hout : ((QuotientGroup.mk (1 : G) : G ⧸ K).out : G) ∈ K :=
-      QuotientGroup.out_mem_iff_eq_mk_one.2 rfl
+      QuotientGroup.out_mem_iff.2 rfl
     simp [hf x _ (K.inv_mem hout)]
   · intro q hq
     have hout : q.out ∉ (K : Set G) := fun hmem ↦
-      hq (QuotientGroup.out_mem_iff_eq_mk_one.1 hmem)
+      hq (QuotientGroup.out_mem_iff.1 hmem)
     simp [Set.indicator_of_notMem hout]
 
 /-- The indicator function of `K` is a right unit for Hecke convolution on right `K`-invariant
