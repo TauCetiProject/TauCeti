@@ -291,7 +291,7 @@ private theorem integral_kernel_eq {f : ℝ → E} (hfd : Differentiable ℝ f)
       (hfd (x - u)).hasDerivAt.scomp u ((hasDerivAt_id u).const_sub x)
   let C := 2 * Real.sineIntegral π / π
   have hU (u : ℝ) : ‖U u‖ ≤ C := TauCeti.norm_intervalIntegral_sincKernel_le T 0 u
-  have hc : Continuous U := continuous_iff_continuousAt.mpr fun u ↦ (hu u).continuousAt
+  have hc : Continuous U := by fun_prop
   have hVi : Integrable V := hf.comp_sub_left x
   have hV'i : Integrable V' := (hd.comp_sub_left x).neg
   have hUi : Integrable (fun u ↦ U u • V u) :=
@@ -317,9 +317,7 @@ theorem Real.exists_bound_intervalIntegral_fourierInv_fourier :
   refine ⟨C, hC, fun {f} hf hd x T ↦ ?_⟩
   by_cases hI : Integrable f
   · rw [integral_kernel_eq hf hI hd]
-    have hc : Continuous (fun u : ℝ ↦ ∫ t in 0..u, TauCeti.sincKernel T t) :=
-      continuous_iff_continuousAt.mpr fun u ↦
-        ((TauCeti.continuous_sincKernel T).integral_hasStrictDerivAt 0 u).hasDerivAt.continuousAt
+    have hc : Continuous (fun u : ℝ ↦ ∫ t in 0..u, TauCeti.sincKernel T t) := by fun_prop
     have hi : Integrable (fun u : ℝ ↦
         (∫ t in 0..u, TauCeti.sincKernel T t) • deriv f (x - u)) :=
       (hd.comp_sub_left x).bdd_smul (φ := fun u ↦ ∫ t in 0..u, TauCeti.sincKernel T t)
