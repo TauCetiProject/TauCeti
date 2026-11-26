@@ -684,12 +684,6 @@ lemma descentDataEquivalence_functor (hf : Sieve.ofArrows X f ∈ J S) :
 lemma descentDataEquivalence_inverse (hf : Sieve.ofArrows X f ∈ J S) :
     (descentDataEquivalence f hf).inverse = glue J f := (rfl)
 
-/-- For a family `f` generating a covering sieve, the functor from sheaves on `J.over S` to descent
-data of sheaves along `f` is an equivalence (`descentDataEquivalence`). -/
-lemma isEquivalence_toDescentData (hf : Sieve.ofArrows X f ∈ J S) :
-    ((J.pseudofunctorOver (Type (max t u v w))).toDescentData f).IsEquivalence :=
-  (descentDataEquivalence f hf).isEquivalence_functor
-
 end pseudofunctorOver
 
 variable (J)

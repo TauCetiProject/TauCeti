@@ -387,8 +387,8 @@ faithful, because the functor from sheaves to descent data of sheaves is. -/
 lemma faithful_toDescentData (hf : Sieve.ofArrows X f ∈ J S) :
     ((torsorPseudofunctor G).toDescentData f).Faithful where
   map_injective {_ _} {φ φ'} h := by
-    have : ((J.pseudofunctorOver (Type (max t u v w))).toDescentData f).IsEquivalence :=
-      pseudofunctorOver.isEquivalence_toDescentData hf
+    have := isStack_pseudofunctorOver.{max t w} J
+    have := (J.pseudofunctorOver (Type (max t u v w))).isEquivalence_toDescentData f hf
     exact Torsor.hom_ext (((J.pseudofunctorOver _).toDescentData f).map_injective
       (DescentData.hom_ext fun i ↦ congrArg (fun χ ↦ (χ.hom i).hom) h))
 
@@ -403,8 +403,8 @@ lemma full_toDescentData (hf : Sieve.ofArrows X f ∈ J S) :
     let P' : Torsor (G.over S) := P
     let Q' : Torsor (G.over S) := Q
     let e := (torsorPseudofunctorForget G).toDescentDataCompMapDescentDataIso f
-    have : ((J.pseudofunctorOver (Type (max t u v w))).toDescentData f).IsEquivalence :=
-      pseudofunctorOver.isEquivalence_toDescentData hf
+    have := isStack_pseudofunctorOver.{max t w} J
+    have := (J.pseudofunctorOver (Type (max t u v w))).isEquivalence_toDescentData f hf
     let ψ₀ : P'.sheaf ⟶ Q'.sheaf := ((J.pseudofunctorOver _).toDescentData f).preimage
       (e.inv.app P ≫ (toSheafDescentData f).map Φ ≫ e.hom.app Q)
     have hψ₀ (i : ι) : ((J.pseudofunctorOver _).map (f i).op.toLoc).toFunctor.map ψ₀ =
