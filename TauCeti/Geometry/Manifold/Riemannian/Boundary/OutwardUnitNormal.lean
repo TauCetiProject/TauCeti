@@ -250,10 +250,7 @@ theorem eq_outwardUnitNormal_iff_of_dim_one {q : (𝓡∂ (0 + 1)).boundary M}
     v = outwardUnitNormal q ↔ ‖v‖ = 1 ∧ IsOutwardPointing (q : M) v := by
   refine eq_outwardUnitNormal_iff.trans
     ⟨fun h ↦ ⟨h.norm_eq_one, h.isOutwardPointing⟩, fun ⟨hv, ho⟩ ↦ ⟨hv, ho, fun w ↦ ?_⟩⟩
-  -- The boundary is modelled on `EuclideanSpace ℝ (Fin 0)`, so its tangent spaces are trivial.
-  have : Subsingleton (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q) :=
-    inferInstanceAs (Subsingleton (EuclideanSpace ℝ (Fin 0)))
-  rw [Subsingleton.elim w 0, map_zero, inner_zero_right]
+  rw [eq_zero_of_boundaryTangent_of_dim_one w, map_zero, inner_zero_right]
 
 end DimOne
 
