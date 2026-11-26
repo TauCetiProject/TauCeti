@@ -61,6 +61,8 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Spec.map_appLE_basicOpen_algebraMap`: the section map of a spectral
   morphism on principal opens sends a numerator to its ring-map image.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal scheme morphisms induce equal section maps.
+* `AlgebraicGeometry.Scheme.Hom.resLE_appTop_topIso_inv_app_of_comp_eq`: the scalar pulled back
+  along a restricted morphism agrees with the other side of a commutative square.
 * `CategoryTheory.CommSq.preimage_preimage_eq` and
   `CategoryTheory.CommSq.app_comp_app_eq_app_comp_appLE`: the two paths around a commutative
   square induce equal inverse images and equal section maps.
@@ -570,6 +572,7 @@ universe u
 namespace AlgebraicGeometry
 
 open CategoryTheory
+open TauCeti.AlgebraicGeometry (preimage_preimage_eq_of_comp_eq)
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
@@ -595,6 +598,23 @@ theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Op
     f.appLE U V hf = g.appLE U V hg := by
   subst e
   rfl
+
+/-- In a commutative square, pulling a function on the base to an open subscheme and then
+along the restricted morphism agrees with pulling it along the other side of the square. -/
+lemma Scheme.Hom.resLE_appTop_topIso_inv_app_of_comp_eq {X' Y Y' : Scheme.{u}}
+    {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
+    (h : g' ≫ f = f' ≫ g) (V : Y.Opens) (r : Γ(Y, V)) :
+    (g'.resLE (f ⁻¹ᵁ V) (f' ⁻¹ᵁ g ⁻¹ᵁ V) (preimage_preimage_eq_of_comp_eq h V).le).appTop
+        ((f ⁻¹ᵁ V).topIso.inv (f.app V r)) =
+      (f' ⁻¹ᵁ g ⁻¹ᵁ V).topIso.inv (f'.app (g ⁻¹ᵁ V) (g.app V r)) := by
+  rw [Scheme.Hom.appTop, Scheme.Hom.resLE_app_top, CommRingCat.comp_apply,
+    CommRingCat.comp_apply, Iso.inv_hom_id_apply]
+  apply congrArg (f' ⁻¹ᵁ g ⁻¹ᵁ V).topIso.inv
+  have hr := Scheme.Hom.congr_appLE (g' ≫ f) h V (f' ⁻¹ᵁ g ⁻¹ᵁ V)
+    (by simpa only [Scheme.Hom.comp_preimage] using (preimage_preimage_eq_of_comp_eq h V).le)
+    (by simp only [Scheme.Hom.comp_preimage]; exact le_rfl)
+  simpa only [Scheme.Hom.comp_appLE, Scheme.Hom.appLE_eq_app, CommRingCat.comp_apply] using
+    ConcreteCategory.congr_hom hr r
 
 end AlgebraicGeometry
 
