@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Group.Convolution
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
 # Convolution powers of measures
@@ -16,7 +17,8 @@ This file defines the additive convolution powers of a measure on a measurable a
 It records their algebraic, measure-theoretic, measurability, and integration properties, the
 distributivity of convolution over countable sums (`conv_sum`), the bound of the mass of `Iic t`
 under a convolution in a canonically ordered monoid (`conv_Iic_le`), the compatibility of
-mixtures of a convolution-additive family with convolution (`bind_conv_bind`), and the
+mixtures of a convolution-additive family with convolution (`bind_conv_bind`) and of
+composition-products with a convolution-additive kernel (`compProd_conv_compProd`), and the
 characteristic function of a convolution power (`charFun_convolutionPower`).
 -/
 
@@ -198,6 +200,33 @@ theorem bind_conv_bind {E : Type*} [AddMonoid E] [MeasurableSpace E] [Measurable
     _ = ∫⁻ n, ∫⁻ z, f z ∂K (m + n) ∂σ := by
         refine lintegral_congr fun n => ?_
         rw [hK, lintegral_conv hf]
+
+/-- Composition-products with a kernel that turns addition into convolution commute with
+convolution: `(ρ ⊗ₘ K) ∗ (σ ⊗ₘ K) = (ρ ∗ σ) ⊗ₘ K` when `K (a + a') = K a ∗ K a'`. The
+convolution on the left is taken in the product monoid `A × B`. -/
+theorem compProd_conv_compProd {A B : Type*} [AddMonoid A] [AddMonoid B] [MeasurableSpace A]
+    [MeasurableSpace B] [MeasurableAdd₂ A] [MeasurableAdd₂ B] [MeasurableAdd₂ (A × B)]
+    {K : Kernel A B} [IsSFiniteKernel K]
+    (hK : ∀ a a', K (a + a') = K a ∗ K a') (ρ σ : Measure A) [SFinite ρ] [SFinite σ] :
+    (ρ ⊗ₘ K) ∗ (σ ⊗ₘ K) = (ρ ∗ σ) ⊗ₘ K := by
+  refine ext_of_lintegral _ fun f hf => ?_
+  have hg : Measurable fun p : (A × B) × (A × B) => f (p.1 + p.2) := hf.comp measurable_add
+  rw [lintegral_conv hf, lintegral_compProd (hg.lintegral_prod_right'),
+    lintegral_compProd hf, lintegral_conv (hf.lintegral_kernel_prod_right' (κ := K))]
+  refine lintegral_congr fun a => ?_
+  have hin (b : B) : ∫⁻ y, f ((a, b) + y) ∂(σ ⊗ₘ K) =
+      ∫⁻ a', ∫⁻ b', f ((a, b) + (a', b')) ∂K a' ∂σ :=
+    lintegral_compProd (hf.comp (measurable_const_add (a, b)))
+  simp only [hin]
+  have hK' (a' : A) : ∫⁻ e, f (a + a', e) ∂K (a + a') =
+      ∫⁻ b, ∫⁻ b', f ((a, b) + (a', b')) ∂K a' ∂K a := by
+    rw [hK, lintegral_conv (f := fun e => f (a + a', e)) (hf.comp measurable_prodMk_left)]
+    simp only [Prod.mk_add_mk]
+  simp only [hK']
+  refine lintegral_lintegral_swap (Measurable.aemeasurable ?_)
+  have h := Measurable.lintegral_kernel_prod_right (κ := K.comap Prod.snd measurable_snd)
+    (f := fun (p : B × A) b' => f ((a, p.1) + (p.2, b'))) (by fun_prop)
+  simpa only [Kernel.comap_apply, Function.uncurry_def] using h
 
 section CharFun
 

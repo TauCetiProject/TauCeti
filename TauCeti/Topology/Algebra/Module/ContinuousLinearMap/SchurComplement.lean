@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import Mathlib.Tactic.Abel
 
 /-!
 # Schur complements of block operators
@@ -43,6 +44,11 @@ property of `S`:
   (`ContinuousLinearEquiv.injective_coprod_prod_coprod_iff`,
   `ContinuousLinearEquiv.surjective_coprod_prod_coprod_iff`,
   `ContinuousLinearEquiv.isInvertible_coprod_prod_coprod_iff`).
+
+Two Schur complements differ by an explicit expression in the differences of their blocks
+(`ContinuousLinearEquiv.schurComplement_sub_schurComplement`), with the difference of the inverses
+`A⁻¹ - A'⁻¹ = A'⁻¹ (A' - A) A⁻¹` written out. This is what controls the Schur complement of a
+family of block operators by the variation of its blocks.
 
 The Fredholm property and the index are transferred in
 `TauCeti.Analysis.Fredholm.SchurComplement`, and quantitative bounds in
@@ -83,6 +89,13 @@ theorem schurComplement_def :
 theorem schurComplement_apply (x : E₂) :
     A.schurComplement B C D x = D x - C (A.symm (B x)) :=
   (rfl)
+
+/-- The Schur complement written with the inverse `ContinuousLinearMap.inverse` of the block `A`
+viewed as a continuous linear map. This is the form taken by the Schur complement of a family of
+block operators whose upper left block is invertible at the points of interest. -/
+theorem schurComplement_eq_sub_comp_inverse :
+    A.schurComplement B C D = D - C ∘L (A : E₁ →L[R] F₁).inverse ∘L B := by
+  rw [inverse_equiv, schurComplement_def]
 
 variable [ContinuousAdd F₁]
 
@@ -208,5 +221,33 @@ theorem isInvertible_coprod_prod_coprod_iff :
   simp
 
 end Factorization
+
+section Difference
+
+variable [IsTopologicalAddGroup F₁]
+
+omit [ContinuousAdd F₁] in
+/-- **The difference of two Schur complements.** For block operators `(A B; C D)` and
+`(A' B'; C' D')` with invertible upper left blocks,
+
+`(D - C A⁻¹ B) - (D' - C' A'⁻¹ B') =
+  (D - D') - (C - C') A⁻¹ B + C' A'⁻¹ (A - A') A⁻¹ B - C' A'⁻¹ (B - B')`.
+
+Each term on the right contains one difference of blocks, so the Schur complement varies with the
+blocks as long as the inverse `A⁻¹` stays bounded. -/
+theorem schurComplement_sub_schurComplement (A' : E₁ ≃L[R] F₁) (B' : E₂ →L[R] F₁)
+    (C' : E₁ →L[R] F₂) (D' : E₂ →L[R] F₂) :
+    A.schurComplement B C D - A'.schurComplement B' C' D' =
+      D - D' - (C - C') ∘L (A.symm : F₁ →L[R] E₁) ∘L B +
+        C' ∘L (A'.symm : F₁ →L[R] E₁) ∘L ((A : E₁ →L[R] F₁) - (A' : E₁ →L[R] F₁)) ∘L
+          (A.symm : F₁ →L[R] E₁) ∘L B -
+        C' ∘L (A'.symm : F₁ →L[R] E₁) ∘L (B - B') := by
+  ext x
+  simp only [sub_apply, add_apply, comp_apply, schurComplement_apply, coe_coe, map_sub,
+    apply_symm_apply, symm_apply_apply]
+  rw [C'.map_sub, C'.map_sub]
+  abel
+
+end Difference
 
 end ContinuousLinearEquiv
