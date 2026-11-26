@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.NumberTheory.Quaternion.Order.Basic
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 
 /-!
 # Unit groups of quaternion orders
@@ -138,10 +139,12 @@ theorem isUnit_iff_reducedNorm_isUnit (h : IsOrder F Λ) {x : Λ} :
   -- the inverse `star x * u⁻¹` lies in `Λ`, as orders are stable under conjugation
   let y : Λ := ⟨star (x : ℍ[F,c₁,c₂,c₃]) * algebraMap R _ (u⁻¹ : Rˣ),
     mul_mem (h.star_mem x.property) (Λ.algebraMap_mem _)⟩
+  have hF : normForm c₁ c₂ c₃ (x : ℍ[F,c₁,c₂,c₃]) * algebraMap R F (u⁻¹ : Rˣ) = 1 := by
+    rw [← h.algebraMap_reducedNorm, ← hu, ← map_mul, Units.mul_inv, map_one]
   have hnrd : (normForm c₁ c₂ c₃ (x : ℍ[F,c₁,c₂,c₃]) : ℍ[F,c₁,c₂,c₃]) *
       algebraMap R _ (u⁻¹ : Rˣ) = 1 := by
-    rw [← h.algebraMap_reducedNorm, ← hu, ← coe_algebraMap, ← IsScalarTower.algebraMap_apply,
-      ← map_mul, Units.mul_inv, map_one]
+    simpa [IsScalarTower.algebraMap_apply R F ℍ[F,c₁,c₂,c₃]] using
+      congrArg (algebraMap F ℍ[F,c₁,c₂,c₃]) hF
   refine ⟨⟨x, y, Subtype.ext ?_, Subtype.ext ?_⟩, rfl⟩
   · rw [Subalgebra.coe_mul, ← mul_assoc, self_mul_star, hnrd, Subalgebra.coe_one]
   · rw [Subalgebra.coe_mul, mul_assoc, Algebra.commutes, ← mul_assoc, star_mul_self, hnrd,
@@ -199,10 +202,8 @@ theorem algebraMap_unitsReducedNorm (h : IsOrder F Λ) (γ : Λ.toSubmonoid.unit
 theorem ker_unitsReducedNorm (h : IsOrder F Λ) :
     h.unitsReducedNorm.ker = (normOne Λ).subgroupOf Λ.toSubmonoid.units := by
   ext γ
-  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, mem_normOne_iff_mem_units_and_normForm_eq_one,
-    ← Units.val_inj, ← (IsFractionRing.injective R F).eq_iff, algebraMap_unitsReducedNorm,
-    Units.val_one, map_one]
-  exact (and_iff_right γ.property).symm
+  simp [Subgroup.mem_subgroupOf, mem_normOne_iff_mem_units_and_normForm_eq_one, γ.property,
+    ← Units.val_inj, ← (IsFractionRing.injective R F).eq_iff]
 
 /-- The map `Λˣ / Λ¹ →* Rˣ` induced by the reduced norm of an order `Λ`; it is injective
 (`TauCeti.IntegralOrder.IsOrder.unitsQuotientNormOneHom_injective`). -/
@@ -264,15 +265,10 @@ theorem relIndex_normOne_units_eq_one_iff (h : IsOrder F Λ) :
     (normOne Λ).relIndex Λ.toSubmonoid.units = 1 ↔
       ¬ ∃ γ ∈ Λ.toSubmonoid.units, normForm c₁ c₂ c₃ (γ : ℍ[F,c₁,c₂,c₃]) = -1 := by
   rw [← h.range_unitsReducedNorm_eq_top_iff, h.relIndex_normOne_units, Subgroup.card_eq_one]
-  -- `ℤˣ` has two elements, so its subgroups are `⊥` and `⊤`, and `⊥ ≠ ⊤`
-  refine ⟨fun hb ht => ?_, fun ht => eq_bot_iff.2 fun u hu => ?_⟩
-  · have h1 := (hb.symm.trans ht) ▸ Subgroup.mem_top (-1 : ℤˣ)
-    exact absurd (Subgroup.mem_bot.1 h1) (by decide)
-  · rcases Int.units_eq_one_or u with rfl | rfl
-    · exact one_mem _
-    · exact absurd (eq_top_iff.2 fun v _ => by
-        rcases Int.units_eq_one_or v with rfl | rfl
-        exacts [one_mem _, hu]) ht
+  -- `ℤˣ` has prime order `2`, so its subgroups are `⊥` and `⊤`, and `⊥ ≠ ⊤`
+  have : Fact (Nat.card ℤˣ).Prime := ⟨by simp [Nat.card_eq_fintype_card, Nat.prime_two]⟩
+  have : Nontrivial ℤˣ := ⟨⟨-1, 1, by decide⟩⟩
+  rcases h.unitsReducedNorm.range.eq_bot_or_eq_top_of_prime_card with hr | hr <;> simp [hr]
 
 /-- **Definite orders over `ℤ`.** If the reduced norm of `ℍ[F,c₁,c₂,c₃]` takes no negative values,
 as for a definite algebra, then every unit of a `ℤ`-order `Λ` has reduced norm `1`: `Λ¹ = Λˣ`. -/
