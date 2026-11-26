@@ -46,8 +46,8 @@ is unique, with no hypothesis on `f`.
   one stage vector, for every field, point and step.
 * `TauCeti.ButcherTableau.isStage_iff_of_isExplicit`: for an explicit tableau the stage equations
   only involve earlier stages.
-* `TauCeti.ButcherTableau.stages_eq_stageMap_iterate`: for an explicit tableau with `s` stages the
-  stage vector is the `s`-th iterate of `stageMap` from any starting vector.
+* `TauCeti.ButcherTableau.IsExplicit.stages_eq_stageMap_iterate`: for an explicit tableau with
+  `s` stages the stage vector is the `s`-th iterate of `stageMap` from any starting vector.
 * `TauCeti.ButcherTableau.isStage_zero_right_iff` and
   `TauCeti.ButcherTableau.increment_zero_right`: at step `0` the unique stage vector is constant,
   equal to `f t y`, and the increment is `(∑ i, b i) • f t y`.
@@ -205,7 +205,7 @@ theorem existsUnique_isStage_of_isExplicit (hT : T.IsExplicit) (f : ℝ → E �
 
 /-- For an explicit tableau with `s` stages, `stages` is the `s`-th iterate of the stage map from
 any starting vector. -/
-theorem stages_eq_stageMap_iterate (hT : T.IsExplicit) (k₀ : Fin s → E) :
+theorem IsExplicit.stages_eq_stageMap_iterate (hT : T.IsExplicit) (k₀ : Fin s → E) :
     T.stages f t y h = (T.stageMap f t y h)^[s] k₀ :=
   stages_eq_of_isStage (hT.isStage_stageMap_iterate k₀) fun _ hk ↦
     hT.eq_stageMap_iterate_of_isStage hk k₀
@@ -289,7 +289,7 @@ theorem continuous_stages_of_isExplicit (hT : T.IsExplicit) (hf : Continuous (un
     | succ m ih =>
       simp only [iterate_succ_apply']
       exact T.continuous_stageMap hf ih
-  simpa only [stages_eq_stageMap_iterate hT 0] using key s
+  simpa only [hT.stages_eq_stageMap_iterate 0] using key s
 
 variable (T) in
 /-- For an explicit tableau and a jointly continuous field the increment function is jointly
