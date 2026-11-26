@@ -40,7 +40,8 @@ example (hR : R ∈ J U) {z : ∀ i : R.arrows.category, IntrinsicBandSections F
     glue (F := F) hR isCompatible_one = 1 ∧ glue hR hz.inv * glue hR hz = 1 :=
   ⟨glue_one hR, by rw [glue_inv hR hz, inv_mul_cancel]⟩
 
-/-- Over an arrow into an object with empty fibre, the descended centre unit is the identity. -/
+/-- Over an arrow `a : V ⟶ U` whose source `V` has empty fibre, the descended centre unit is the
+identity. -/
 example (hR : R ∈ J U) {z : ∀ i : R.arrows.category, IntrinsicBandSections F i.obj.left}
     (hz : IsCompatible z) {V : C} (a : V ⟶ U) [IsEmpty (F.obj (.mk (op V)))] :
     coverCenterAt hR hz a = 1 :=
