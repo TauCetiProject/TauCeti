@@ -37,7 +37,7 @@ discrete subgroup is unimodular.
   modular character to be trivial.
 * `MeasureTheory.IsFundamentalDomain.isMulRightInvariant_of_measure_ne_top`: under the same
   hypotheses the Haar measure is right invariant.
-* `Subgroup.exists_isFundamentalDomain`: a discrete subgroup of a second countable locally
+* `Subgroup.exists_isFundamentalDomain_mul_left`: a discrete subgroup of a second countable locally
   compact Hausdorff group has a measurable fundamental domain for its left action.
 * `Subgroup.exists_isFundamentalDomain_measure_lt_top`: a discrete subgroup with compact quotient
   has a measurable fundamental domain of finite measure, for every invariant measure that is
@@ -107,7 +107,8 @@ variable [SecondCountableTopology T] [T2Space T] (Λ : Subgroup T) [DiscreteTopo
 
 /-- A discrete subgroup `Λ` of a second countable locally compact Hausdorff group `T` has a
 measurable fundamental domain for its left action on `T`, for every measure. -/
-theorem exists_isFundamentalDomain [MeasurableSpace T] [OpensMeasurableSpace T] (μ : Measure T) :
+theorem exists_isFundamentalDomain_mul_left [MeasurableSpace T] [OpensMeasurableSpace T]
+    (μ : Measure T) :
     ∃ D : Set T, MeasurableSet D ∧ IsFundamentalDomain Λ D μ := by
   have : Countable Λ := countable_of_Lindelof_of_discrete
   have := Λ.properlyDiscontinuousSMul_of_tendsto_cofinite
@@ -129,7 +130,7 @@ theorem exists_isFundamentalDomain_measure_lt_top [MeasurableSpace T] [BorelSpac
     (μ : Measure T) [SMulInvariantMeasure Λ T μ] [IsFiniteMeasureOnCompacts μ] :
     ∃ D : Set T, MeasurableSet D ∧ IsFundamentalDomain Λ D μ ∧ μ D < ∞ := by
   have : Countable Λ := countable_of_Lindelof_of_discrete
-  obtain ⟨D, hDm, hD⟩ := Λ.exists_isFundamentalDomain μ
+  obtain ⟨D, hDm, hD⟩ := Λ.exists_isFundamentalDomain_mul_left μ
   obtain ⟨K, hK, hKΛ⟩ :=
     TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact.mp ‹_›
   refine ⟨D, hDm, hD, lt_of_le_of_lt ?_ (hK.measure_lt_top (μ := μ))⟩
