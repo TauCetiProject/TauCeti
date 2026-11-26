@@ -69,15 +69,33 @@ theorem logDeriv_gammaFactor_eq_digamma {s : ℂ} (hs : χ.gammaFactor s ≠ 0) 
     exact (gammaFactor_eq_zero_iff_of_odd ho).mpr ⟨n, hn⟩
 
 open scoped Classical in
-/-- Off its poles, shifting the real gamma factor by `a`, which is `2` for even and `1` for odd
-characters, moves the gamma pole at the origin into the rational term `(a - 1) / s`. -/
-theorem logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div {s : ℂ} (hs : χ.gammaFactor s ≠ 0) :
-    let a : ℝ := if χ.Even then 2 else 1
-    logDeriv χ.gammaFactor s = logDeriv Gammaℝ (s + a) - (a - 1 : ℝ) / s := by
+/-- The distance from zero to the first strictly negative pole of the archimedean factor:
+`2` for an even character and `1` for an odd character. -/
+noncomputable def gammaPoleOffset : ℝ := if χ.Even then 2 else 1
+
+/-- The first strictly negative gamma pole of an even character is at `-2`. -/
+theorem gammaPoleOffset_of_even (he : χ.Even) : χ.gammaPoleOffset = 2 := by
+  simp [gammaPoleOffset, he]
+
+/-- The first strictly negative gamma pole of an odd character is at `-1`. -/
+theorem gammaPoleOffset_of_odd (ho : χ.Odd) : χ.gammaPoleOffset = 1 := by
+  simp [gammaPoleOffset, ho.not_even]
+
+/-- The offset to the first strictly negative gamma pole is positive. -/
+theorem gammaPoleOffset_pos : 0 < χ.gammaPoleOffset := by
   rcases χ.even_or_odd with he | ho
-  · norm_num [he, he.logDeriv_gammaFactor, one_div]
+  · rw [χ.gammaPoleOffset_of_even he]; norm_num
+  · rw [χ.gammaPoleOffset_of_odd ho]; exact zero_lt_one
+
+/-- Away from the poles, shifting the real gamma factor by the first negative pole's offset
+`a` puts the contribution of the possible pole at the origin into `(a - 1) / s`. -/
+theorem logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div {s : ℂ} (hs : χ.gammaFactor s ≠ 0) :
+    logDeriv χ.gammaFactor s = logDeriv Gammaℝ (s + χ.gammaPoleOffset) -
+      ((χ.gammaPoleOffset : ℂ) - 1) / s := by
+  rcases χ.even_or_odd with he | ho
+  · norm_num [χ.gammaPoleOffset_of_even he, he.logDeriv_gammaFactor, one_div]
     exact (sub_eq_of_eq_add (logDeriv_Gammaℝ_add_two (he.gammaFactor_def s ▸ hs))).symm
-  · simp [ho.not_even, ho.logDeriv_gammaFactor]
+  · simp [χ.gammaPoleOffset_of_odd ho, ho.logDeriv_gammaFactor]
 
 /-- On every compact subset of the positive half-plane, the logarithmic derivatives of the
 archimedean factors of all Dirichlet characters are bounded by one constant. -/

@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.Hadamard.Riesz
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Riesz
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.LogDeriv
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
-import TauCeti.Analysis.LaplaceTransform.Elementary
-import TauCeti.Analysis.LaplaceTransform.Mellin
+import TauCeti.Analysis.MellinTransform.PowerLog
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Origin
@@ -38,25 +38,23 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
-open scoped Classical in
 /-- The completed zero sum with the negative gamma-pole and origin corrections. The gamma
 poles start at `-2` for even characters and at `-1` for odd characters. For nonprincipal
 characters,
 `DirichletCharacter.integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMellin`
 identifies its upper Mellin integral. -/
 noncomputable def rieszZeroSide (y : ℝ) : ℂ :=
-  let a : ℝ := if χ.Even then 2 else 1
-  rieszZeroSeries (dirichletData χ hχ).entireCompletion y + rieszGammaCorrection a 2 y +
+  rieszZeroSeries (dirichletData χ hχ).entireCompletion y +
+    rieszGammaCorrection χ.gammaPoleOffset 2 y +
     (logDerivFinitePart χ.LFunction 0 +
       (meromorphicOrderAt χ.LFunction 0).untop₀ * (1 + (Real.log y : ℂ)))
 
-open scoped Classical in
 /-- Expansion of the spectral side into the completed zero sum, negative gamma-pole sum,
 and the origin term. -/
 theorem rieszZeroSide_def (y : ℝ) :
     χ.rieszZeroSide hχ y =
-      let a : ℝ := if χ.Even then 2 else 1
-      rieszZeroSeries (dirichletData χ hχ).entireCompletion y + rieszGammaCorrection a 2 y +
+      rieszZeroSeries (dirichletData χ hχ).entireCompletion y +
+        rieszGammaCorrection χ.gammaPoleOffset 2 y +
         (logDerivFinitePart χ.LFunction 0 +
           (meromorphicOrderAt χ.LFunction 0).untop₀ * (1 + (Real.log y : ℂ))) := (rfl)
 
@@ -64,40 +62,14 @@ theorem rieszZeroSide_def (y : ℝ) :
 theorem continuousOn_rieszZeroSide : ContinuousOn (χ.rieszZeroSide hχ) (Ici 1) := by
   classical
   rw [funext (χ.rieszZeroSide_def hχ)]
-  let a : ℝ := if χ.Even then 2 else 1
-  have ha : 0 < a := by dsimp [a]; split <;> norm_num
   have hZ := (dirichletData_entireCompletion_orderLE_one χ hχ).continuousOn_rieszZeroSeries
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
     (by norm_num) (fun _ hz ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hz).2.le)
-  refine (hZ.add (continuousOn_rieszGammaCorrection ha (by norm_num))).add ?_
+  refine (hZ.add (continuousOn_rieszGammaCorrection χ.gammaPoleOffset_pos (by norm_num))).add ?_
   have hlog : ContinuousOn (fun y : ℝ ↦ (Real.log y : ℂ)) (Ici 1) :=
     Complex.continuous_ofReal.comp_continuousOn (Real.continuousOn_log.mono fun _ hy ↦
       Set.mem_compl_singleton_iff.mpr (zero_lt_one.trans_le hy).ne')
   exact continuousOn_const.add (continuousOn_const.mul (continuousOn_const.add hlog))
-
-/-- The two terms at the origin, the constant and the logarithm, have elementary Laplace
-transforms in the logarithmic variable. -/
-private theorem integrableOn_origin_mul_cpow_and_setIntegral_eq {s : ℂ} (hs : 0 < s.re) :
-    let c := logDerivFinitePart χ.LFunction 0
-    let m : ℂ := (meromorphicOrderAt χ.LFunction 0).untop₀
-    IntegrableOn (fun y : ℝ ↦ (c + m * (1 + (Real.log y : ℂ))) * (y : ℂ) ^ (-s - 1)) (Ioi 1) ∧
-      (∫ y : ℝ in Ioi 1, (c + m * (1 + (Real.log y : ℂ))) * (y : ℂ) ^ (-s - 1)) =
-        s⁻¹ * (c + m) + m * (1 / s ^ 2) := by
-  let c := logDerivFinitePart χ.LFunction 0
-  let m : ℂ := (meromorphicOrderAt χ.LFunction 0).untop₀
-  have hp : HasLaplace (fun u : ℝ ↦ (u : ℂ)) s (1 / s ^ 2) := by
-    simpa using hasLaplace_pow 1 hs
-  have h := (hasLaplace_const (c + m) hs).add (hp.const_smul m)
-  have heq : (fun y : ℝ ↦ c + m * (1 + (Real.log y : ℂ))) ∘ Real.exp =
-      fun u : ℝ ↦ (c + m) + m • (u : ℂ) := by
-    ext u
-    simp [mul_add, add_assoc]
-  have hmul (y : ℝ) :
-      (y : ℂ) ^ (-s + -1) * (c + m * (1 + (Real.log y : ℂ))) =
-        (c + m * (1 + (Real.log y : ℂ))) * (y : ℂ) ^ (-s + -1) := mul_comm _ _
-  simpa only [Real.exp_zero, neg_add, sub_eq_add_neg, smul_eq_mul, hmul] using
-    (hasLaplace_comp_exp_iff (fun y ↦ c + m * (1 + (Real.log y : ℂ))) s
-      (s⁻¹ * (c + m) + m * (1 / s ^ 2)) 0).mp (heq ▸ h)
 
 /-- The zero side of the first Riesz formula has absolutely convergent Mellin integral on
 `1 < re s`, with value the meromorphic Riesz remainder expression of the L-function. -/
@@ -107,11 +79,11 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
       (∫ y : ℝ in Ioi 1, χ.rieszZeroSide hχ y * (y : ℂ) ^ (-s - 1)) =
         rieszRemainderMellin χ.LFunction s := by
   classical
-  let a : ℝ := if χ.Even then 2 else 1
+  let a := χ.gammaPoleOffset
   let F := (dirichletData χ hχ).entireCompletion
   let c := logDerivFinitePart χ.LFunction 0
   let m : ℂ := (meromorphicOrderAt χ.LFunction 0).untop₀
-  have ha : 0 < a := by dsimp [a]; split <;> norm_num
+  have ha : 0 < a := χ.gammaPoleOffset_pos
   have hσ : ∀ z, F z = 0 → z.re ≤ 1 := fun _ hz ↦
     (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hz).2.le
   have ho := dirichletData_entireCompletion_orderLE_one χ hχ
@@ -119,14 +91,10 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
   have hZ := ho.integrableOn_rieszZeroSeries_mul_cpow hd (by norm_num) hσ hs
   have hG := integrableOn_rieszGammaCorrection_mul_cpow (d := 2) ha (by norm_num)
     (by linarith : -a < s.re)
-  obtain ⟨hE, hEval⟩ := χ.integrableOn_origin_mul_cpow_and_setIntegral_eq (one_pos.trans hs)
-  have hm : ((meromorphicOrderAt χ.LFunction 0).untop₀ : ℂ) = (a : ℂ) - 1 :=
-    χ.untop₀_meromorphicOrderAt_LFunction_zero hχ hne
-  have hc : logDerivFinitePart χ.LFunction 0 = logDeriv F 0 - (Real.log N : ℂ) / 2 -
-      logDeriv Gammaℝ a := χ.logDerivFinitePart_LFunction_zero hχ hne
-  have hneL {z : ℂ} (hz : 1 ≤ z.re) := χ.LFunction_ne_zero_of_one_le_re (.inl hne) hz
+  have hp : (-s - 1).re < -1 := by simp only [sub_re, neg_re, one_re]; linarith
+  have hE := integrableOn_cpow_mul_affine_log_Ioi_one (c + m) m hp
   have hlog {z : ℂ} (hz : 1 ≤ z.re) := logDeriv_dirichletData_entireCompletion χ hχ hne
-    (one_pos.trans_le hz) (hneL hz)
+    (one_pos.trans_le hz) (χ.LFunction_ne_zero_of_one_le_re (.inl hne) hz)
   have h₀ : s ≠ 0 := by rintro rfl; norm_num at hs
   have h₁ : s ≠ 1 := by rintro rfl; simp at hs
   have hF₀ : F 0 ≠ 0 := dirichletData_entireCompletion_ne_zero_of_re_nonpos χ hχ (by simp)
@@ -134,13 +102,14 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
   have hsplit (y : ℝ) : χ.rieszZeroSide hχ y * (y : ℂ) ^ (-s - 1) =
       rieszZeroSeries F y * (y : ℂ) ^ (-s - 1) +
         rieszGammaCorrection a 2 y * (y : ℂ) ^ (-s - 1) +
-          (c + m * (1 + (Real.log y : ℂ))) * (y : ℂ) ^ (-s - 1) := by
-    rw [χ.rieszZeroSide_def hχ, add_mul, add_mul (rieszZeroSeries _ _)]
+          (y : ℂ) ^ (-s - 1) * (c + m + m * (Real.log y : ℂ)) := by
+    rw [χ.rieszZeroSide_def hχ, add_mul, add_mul (rieszZeroSeries _ _), mul_add m, mul_one,
+      ← add_assoc c, mul_comm (c + m + m * (Real.log y : ℂ))]
   simp only [hsplit]
   refine ⟨(hZ.add hG).add hE, ?_⟩
   rw [integral_add (f := fun y : ℝ ↦ rieszZeroSeries F y * (y : ℂ) ^ (-s - 1) +
       rieszGammaCorrection a 2 y * (y : ℂ) ^ (-s - 1)) (hZ.add hG) hE,
-    integral_add hZ hG, hEval,
+    integral_add hZ hG, integral_cpow_mul_affine_log_Ioi_one _ _ hp, sub_add_cancel, neg_neg,
     χ.rieszRemainderMellin_LFunction_of_ne_one hne hs,
     eq_div_iff_mul_eq (mul_ne_zero h₀ (sub_ne_zero.mpr h₁))]
   conv_lhs => rw [mul_comm]
@@ -151,8 +120,8 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
       (χ.gammaFactor_ne_zero_of_re_pos (one_pos.trans hs)),
     χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
       (χ.gammaFactor_ne_zero_of_re_pos (by simp : 0 < (1 : ℂ).re))]
-  rw [hm, hc]
-  push_cast only [ofReal_sub, ofReal_one]
+  dsimp only [c, m]
+  rw [χ.untop₀_meromorphicOrderAt_LFunction_zero hχ hne, χ.logDerivFinitePart_LFunction_zero hχ hne]
   field_simp
   ring
 

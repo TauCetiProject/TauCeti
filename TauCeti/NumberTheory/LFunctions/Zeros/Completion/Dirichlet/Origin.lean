@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Meromorphic.LogDeriv
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.LogDeriv
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 import TauCeti.Analysis.Contour.Residue.LogDeriv
 import TauCeti.Analysis.Contour.Residue.SimplePole
@@ -13,7 +14,6 @@ import TauCeti.Analysis.Meromorphic.Continuation
 import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.LogDeriv
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 
@@ -44,10 +44,9 @@ variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
 variable (hχ : χ.IsPrimitive)
 
-open scoped Classical in
 /-- Near the origin, `L'/L` is an analytic function plus `(a - 1) / z`. -/
 private theorem logDeriv_LFunction_eventuallyEq_nhdsNE_zero (hne : χ ≠ 1) :
-    let a : ℝ := if χ.Even then 2 else 1
+    let a := χ.gammaPoleOffset
     let g := fun z : ℂ ↦ logDeriv (dirichletData χ hχ).entireCompletion z -
       (Real.log N : ℂ) / 2 - logDeriv Gammaℝ (z + a)
     AnalyticAt ℂ g 0 ∧ logDeriv χ.LFunction =ᶠ[𝓝[≠] 0] fun z ↦ g z + ((a : ℂ) - 1) / z := by
@@ -60,10 +59,9 @@ private theorem logDeriv_LFunction_eventuallyEq_nhdsNE_zero (hne : χ ≠ 1) :
     Meromorphic.meromorphic_fun_comp_add_const_iff_meromorphic.mpr meromorphic_Gammaℝ.logDeriv
   have hg' : Meromorphic g := (hmF.logDeriv.fun_sub (Meromorphic.const _)).fun_sub hmG
   have hg : AnalyticAt ℂ g 0 := by
-    have ha : 0 < a := by dsimp [a]; split <;> norm_num
     have hF₀ : F 0 ≠ 0 := dirichletData_entireCompletion_ne_zero_of_re_nonpos χ hχ (by simp)
     have hGa := analyticAt_logDeriv_Gammaℝ (s := (0 : ℂ) + a)
-      (Gammaℝ_ne_zero_of_re_pos (by simpa using ha))
+      (Gammaℝ_ne_zero_of_re_pos (by simpa using χ.gammaPoleOffset_pos))
     have hlog : AnalyticAt ℂ (logDeriv F) 0 := (hF 0).deriv.div (hF 0) hF₀
     have hshift : AnalyticAt ℂ (fun z : ℂ ↦ z + a) 0 := by fun_prop
     exact (hlog.fun_sub analyticAt_const).fun_sub (hGa.fun_comp (f := _) (x := 0) hshift)
@@ -75,7 +73,6 @@ private theorem logDeriv_LFunction_eventuallyEq_nhdsNE_zero (hne : χ ≠ 1) :
   rw [χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
     (χ.gammaFactor_ne_zero_of_re_pos (one_pos.trans hz'))] at hlog
   dsimp only [g]
-  push_cast only [ofReal_sub, ofReal_one] at hlog
   linear_combination -hlog
 
 include hχ in
@@ -89,28 +86,32 @@ theorem meromorphicOrderAt_LFunction_zero (hne : χ ≠ 1) :
   have hres := Contour.residue_logDeriv_eq_meromorphicOrderAt (χ.meromorphic_LFunction 0) hn.symm
   rw [Contour.residue_congr_nhdsNE heq] at hres
   have hpole := Contour.residue_add_div_sub_mul_of_analyticAt
-    (r := ((if χ.Even then 2 else 1 : ℝ) : ℂ) - 1) hg (analyticAt_const (v := (1 : ℂ)))
+    (r := (χ.gammaPoleOffset : ℂ) - 1) hg (analyticAt_const (v := (1 : ℂ)))
   simp only [sub_zero, mul_one] at hpole
   have h := hpole.symm.trans hres
   rw [← hn]
-  split_ifs with he <;> simp only [he, ↓reduceIte] at h <;> norm_num at h <;>
+  rcases χ.even_or_odd with he | ho
+  · rw [ite_eq_left he]
+    norm_num [χ.gammaPoleOffset_of_even he] at h
+    exact_mod_cast h.symm
+  · rw [ite_eq_right ho.not_even]
+    norm_num [χ.gammaPoleOffset_of_odd ho] at h
     exact_mod_cast h.symm
 
 include hχ in
-open scoped Classical in
-/-- The complex order coefficient at the origin is `a - 1`, where `a` is the first strictly
-positive gamma-pole offset (`2` for even characters and `1` for odd characters). -/
+/-- The complex order coefficient at the origin is the gamma-pole offset minus `1`. -/
 theorem untop₀_meromorphicOrderAt_LFunction_zero (hne : χ ≠ 1) :
-    ((meromorphicOrderAt χ.LFunction 0).untop₀ : ℂ) = ((if χ.Even then 2 else 1 : ℝ) : ℂ) - 1 := by
+    ((meromorphicOrderAt χ.LFunction 0).untop₀ : ℂ) = (χ.gammaPoleOffset : ℂ) - 1 := by
   rw [χ.meromorphicOrderAt_LFunction_zero hχ hne]
-  split_ifs <;> norm_num
+  rcases χ.even_or_odd with he | ho
+  · norm_num [he, χ.gammaPoleOffset_of_even he]
+  · norm_num [ho.not_even, χ.gammaPoleOffset_of_odd ho]
 
-open scoped Classical in
 /-- The finite part of `L'/L` at the origin for a primitive nonprincipal Dirichlet character. -/
 theorem logDerivFinitePart_LFunction_zero (hne : χ ≠ 1) :
     logDerivFinitePart χ.LFunction 0 =
       logDeriv (dirichletData χ hχ).entireCompletion 0 - (Real.log N : ℂ) / 2 -
-        logDeriv Gammaℝ (if χ.Even then 2 else 1 : ℝ) := by
+        logDeriv Gammaℝ χ.gammaPoleOffset := by
   obtain ⟨hg, heq⟩ := χ.logDeriv_LFunction_eventuallyEq_nhdsNE_zero hχ hne
   have hpart := hg.logDerivFinitePart_eq (f := χ.LFunction) (by
     filter_upwards [heq] with z hz
