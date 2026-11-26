@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Exact
 public import TauCeti.Geometry.Symplectic.Manifold.Energy.Surface
-public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Geometry.Manifold.DeRham.Integration.Homotopy
 
@@ -22,14 +21,14 @@ area `∫_C u^* form` (`TauCeti.SmoothTwoForm.energy_eq_integralTopForm_mpullbac
 tameness a map of zero energy is constant
 (`TauCeti.SmoothTwoForm.Tames.apply_eq_of_energy_eq_zero`). So `u` is constant as soon as its
 symplectic area vanishes, and Stokes' theorem gives this in the following situations. All the
-results below are in the namespace `TauCeti.SmoothTwoForm.Tames`, except the last one.
+results below are in the namespace `TauCeti.SmoothTwoForm.Tames`.
 
 * **Exact regions.** If `u` maps `C` into an open subset `U` of `X` on which `form` is exact, then
   `u` is constant (`apply_eq_of_isPseudoholomorphic_of_range_subset`). The primitive of `form` on
   `U` need not extend to `X`. Equivalently, a nonconstant closed pseudoholomorphic curve leaves
   every such region (`exists_apply_notMem_of_isPseudoholomorphic`). When `form` is exact on all of
-  `X`, every closed pseudoholomorphic curve is constant
-  (`apply_eq_of_isPseudoholomorphic_of_mem_exactForms`).
+  `X`, every closed pseudoholomorphic curve is constant; this is
+  `TauCeti.apply_eq_of_mem_exactForms`, which only needs `form` to tame `J` along the curve.
 * **Acyclic regions.** For a closed `form`, the region `U` only needs `H²_dR(U) = 0`
   (`apply_eq_of_isPseudoholomorphic_of_subsingleton_deRhamCohomology`).
 * **Null-homotopic curves.** For a closed `form` on a finite-dimensional Hausdorff manifold without
@@ -41,9 +40,9 @@ results below are in the namespace `TauCeti.SmoothTwoForm.Tames`, except the las
   source of a chart whose target is star-shaped, such as a ball
   (`apply_eq_of_isPseudoholomorphic_of_range_subset_source`), and so is every closed
   pseudoholomorphic curve in a contractible manifold
-  (`apply_eq_of_isPseudoholomorphic_of_contractibleSpace`), such as a finite-dimensional symplectic
-  vector space with its constant form, for every tame `J`
-  (`TauCeti.SymplecticForm.apply_eq_of_isPseudoholomorphic_of_tames_constSmooth`).
+  (`apply_eq_of_isPseudoholomorphic_of_contractibleSpace`). For a real normed space with any
+  closed taming form this is `TauCeti.apply_eq_of_mem_closedForms_normedSpace`, which needs
+  neither finite dimension nor tameness away from the curve.
 
 These are the inputs that confine pseudoholomorphic spheres in a localized transversality argument:
 in Gromov's proof of the nonsqueezing theorem the almost complex structure is varied only near the
@@ -59,8 +58,6 @@ In the namespace `TauCeti.SmoothTwoForm.Tames`:
   set on which the taming form is exact is constant.
 * `exists_apply_notMem_of_isPseudoholomorphic`: a nonconstant closed pseudoholomorphic curve
   leaves every open set on which the taming form is exact.
-* `apply_eq_of_isPseudoholomorphic_of_mem_exactForms`: if the taming form is exact, every closed
-  pseudoholomorphic curve is constant.
 * `apply_eq_of_isPseudoholomorphic_of_subsingleton_deRhamCohomology`: a closed pseudoholomorphic
   curve in an open set with vanishing second de Rham cohomology is constant, for a closed taming
   form.
@@ -71,12 +68,6 @@ In the namespace `TauCeti.SmoothTwoForm.Tames`:
   a contractible open set, or in a contractible manifold, are constant.
 * `apply_eq_of_isPseudoholomorphic_of_range_subset_source`: closed pseudoholomorphic curves in the
   source of a chart with star-shaped target are constant.
-
-In the namespace `TauCeti.SymplecticForm`:
-
-* `apply_eq_of_isPseudoholomorphic_of_tames_constSmooth`: in a finite-dimensional symplectic
-  vector space, closed pseudoholomorphic curves are constant for every tame almost complex
-  structure.
 
 ## References
 
@@ -149,17 +140,6 @@ theorem exists_apply_notMem_of_isPseudoholomorphic (htame : form.Tames J)
   by_contra! huU
   exact hne (htame.apply_eq_of_isPseudoholomorphic_of_range_subset ho hu hhol U
     (Set.range_subset_iff.2 huU) hform c₀ c₁)
-
-/-- **Closed pseudoholomorphic curves for an exact taming form are constant.** If `form` is exact
-and tames `J`, every smooth pseudoholomorphic map from a compact connected boundaryless surface
-`(C, j)`, oriented so that the frames `(e, j e)` are positive, is constant. -/
-theorem apply_eq_of_isPseudoholomorphic_of_mem_exactForms (htame : form.Tames J)
-    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
-      b.orientation = o.orientationAt c)
-    (hu : ContMDiff I' I ∞ u) (hhol : IsPseudoholomorphic j J u)
-    (hform : form ∈ exactForms I X 2) (c c' : C) : u c = u c' :=
-  htame.apply_eq_of_integralTopForm_mpullback_eq_zero ho hu hhol
-    (integralTopForm_mpullback_eq_zero_of_mem_exactForms o hu hform) c c'
 
 /-- **Closed pseudoholomorphic curves in acyclic regions are constant.** Let the closed two-form
 `form` tame `J`, and let `u` be a smooth pseudoholomorphic map from a compact connected
@@ -244,30 +224,5 @@ theorem apply_eq_of_isPseudoholomorphic_of_contractibleSpace [ContractibleSpace 
 end Tames
 
 end SmoothTwoForm
-
-namespace SymplecticForm
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {H' : Type*}
-  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} {C : Type*} [TopologicalSpace C]
-  [ChartedSpace H' C] [IsManifold I' ∞ C] [BoundarylessManifold I' C] [T2Space C]
-  [CompactSpace C] [PreconnectedSpace C]
-  {j : SmoothAlmostComplexStructure I' C} {o : Manifold.Orientation I' C (Fin 2)}
-
-/-- **There are no nonconstant closed pseudoholomorphic curves in a symplectic vector space.** Let
-`σ` be a linear symplectic form on a finite-dimensional real vector space `V`, viewed as a constant
-symplectic form on the manifold `V`, and let it tame an almost complex structure `J` on `V`, which
-may vary from point to point. Then every smooth `J`-holomorphic map from a compact connected
-boundaryless surface `(C, j)`, oriented so that the frames `(e, j e)` are positive, is constant. -/
-theorem apply_eq_of_isPseudoholomorphic_of_tames_constSmooth (σ : SymplecticForm V)
-    {J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V} (htame : σ.constSmooth.Tames J)
-    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
-      b.orientation = o.orientationAt c)
-    {u : C → V} (hu : ContMDiff I' 𝓘(ℝ, V) ∞ u) (hhol : IsPseudoholomorphic j J u) (c c' : C) :
-    u c = u c' :=
-  htame.apply_eq_of_isPseudoholomorphic_of_contractibleSpace (isClosed_constSmooth σ) ho hu
-    hhol c c'
-
-end SymplecticForm
 
 end TauCeti
