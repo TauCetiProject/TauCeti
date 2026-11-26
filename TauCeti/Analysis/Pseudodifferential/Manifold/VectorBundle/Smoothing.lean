@@ -98,7 +98,8 @@ theorem mem_sectionSmoothingPseudodifferentialOperators_iff :
 
 /-- An operator of order `-∞` between bundles is a classical pseudodifferential operator of every
 order `m`. -/
-theorem sectionSmoothingPseudodifferentialOperators_le (m : ℝ) :
+theorem sectionSmoothingPseudodifferentialOperators_le_sectionClassicalPseudodifferentialOperators
+    (m : ℝ) :
     sectionSmoothingPseudodifferentialOperators (n := n) (M := M) (V := V) (E := E) (W := W)
       (F := F) ≤ sectionClassicalPseudodifferentialOperators m :=
   iInf_le _ m
