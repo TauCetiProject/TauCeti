@@ -11,8 +11,9 @@ public import TauCeti.Geometry.Euclidean.PolarGraph.Descent
 # Failures of adjacent-sheet tests on disconnected polar domains
 
 Two narrow annular sectors separated by two turns have no one-turn overlap. The graph map of
-a constant height is still noninjective on the two strips, and distinct constant heights on
-the two sectors fail descent.
+a constant height is still noninjective on the two strips. The step height, zero on the lower
+sector and one on the upper, is continuous on the domain but fails to descend, although the
+one-turn test holds vacuously.
 -/
 
 public noncomputable section
