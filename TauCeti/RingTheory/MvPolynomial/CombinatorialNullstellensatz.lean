@@ -57,6 +57,17 @@ private noncomputable def weightedBasis (κ : ι → ℕ) (g : ι → MvPolynomi
     (α γ : ι →₀ ℕ) : MvPolynomial ι K :=
   monomial α 1 * aeval (fun u : ι ↦ X u ^ κ u - g u) (monomial γ (1 : K))
 
+/-- `weightedBasis κ g α 0` is the monomial `X ^ α`. -/
+private lemma weightedBasis_zero (κ : ι → ℕ) (g : ι → MvPolynomial ι K) (α : ι →₀ ℕ) :
+    weightedBasis κ g α 0 = monomial α 1 := by
+  simp only [weightedBasis, aeval_monomial, Finsupp.prod_zero_index, map_one, mul_one]
+
+/-- Multiplying `weightedBasis κ g β γ` by `X ^ δ` shifts its monomial part to `X ^ (δ + β)`. -/
+private lemma monomial_mul_weightedBasis (κ : ι → ℕ) (g : ι → MvPolynomial ι K)
+    (δ β γ : ι →₀ ℕ) :
+    monomial δ 1 * weightedBasis κ g β γ = weightedBasis κ g (δ + β) γ := by
+  rw [weightedBasis, weightedBasis, ← mul_assoc, monomial_mul_monomial, one_mul]
+
 /-- Weighted division by `ψ u = X u ^ κ u - g u`, where `u` has cost `1 / κ u` and every monomial
 of `g u` has cost `< 1`. If a submodule `N` contains `weightedBasis κ g α γ` whenever `α < κ` and
 `γ.degree + cost α ≤ r`, then it contains all `weightedBasis κ g α γ` with
@@ -88,11 +99,30 @@ private lemma weightedBasis_mem_of_weight_le [Finite ι] {κ : ι → ℕ}
     ring
   rw [cost_eq] at ih h_le
   rw [h_split]
-  refine add_mem (ih β (by simp) _ (by simpa [add_assoc, add_comm, add_left_comm] using h_le)) ?_
+  have h_le' : ((single u 1 + γ).degree : ℝ) + cost β ≤ r := by
+    rw [map_add, degree_single]
+    push_cast
+    linarith
+  refine add_mem (ih β (by simp) _ h_le') ?_
+  -- `g u * b ∈ N` is the statement that `g u` lies in the preimage of `N` under `· * b`.
   suffices g u ∈ N.comap (LinearMap.mulRight K (weightedBasis κ g β γ)) by simpa
   refine mem_submodule_of_forall_monomial_mem fun δ hδ ↦ ?_
   have h_lt : cost (δ + β) < 1 + cost β := by simpa using hg u δ hδ
-  simpa [weightedBasis, ← mul_assoc] using ih (δ + β) h_lt γ (by linarith)
+  rw [Submodule.mem_comap, LinearMap.mulRight_apply, monomial_mul_weightedBasis]
+  exact ih (δ + β) h_lt γ (by linarith)
+
+/-- A submodule `N` contains a polynomial `p` as soon as, for every monomial `X ^ α` of `p`, it
+contains `weightedBasis κ g β γ` whenever `β < κ` and `γ.degree + cost β ≤ cost α`. -/
+private lemma mem_of_forall_weightedBasis_mem [Finite ι] {κ : ι → ℕ}
+    (hκ : ∀ u : ι, 0 < κ u) {g : ι → MvPolynomial ι K}
+    (hg : ∀ u : ι, ∀ α ∈ (g u).support, weight (fun u : ι ↦ (κ u : ℝ))⁻¹ α < 1)
+    {N : Submodule K (MvPolynomial ι K)} {p : MvPolynomial ι K}
+    (hN : ∀ α ∈ p.support, ∀ β γ : ι →₀ ℕ, (∀ u : ι, β u < κ u) →
+      γ.degree + weight (fun u : ι ↦ (κ u : ℝ))⁻¹ β ≤ weight (fun u : ι ↦ (κ u : ℝ))⁻¹ α →
+        weightedBasis κ g β γ ∈ N) :
+    p ∈ N :=
+  mem_submodule_of_forall_monomial_mem fun α hα ↦ weightedBasis_zero κ g α ▸
+    weightedBasis_mem_of_weight_le hκ hg (hN α hα) α 0 (by simp)
 
 /-- **Weighted Combinatorial Nullstellensatz with multiplicity.** Give each variable `u : ι` the
 weight `1 / κ u`. Take at least `∏ u, κ u` distinct points `z t : ι → K` at which each `X u ^ κ u`
@@ -125,10 +155,8 @@ theorem exists_le_weight_of_mem_vanishingIdeal_pow [Fintype ι] [Fintype S] (κ 
     mem_ker fun t ↦ mul_mem_left _ _
       (aeval_monomial_mem_vanishingIdeal_pow (fun u ↦ by simp [hg_eval]) hγ)
   have mem_sup (p : MvPolynomial ι K) : p ∈ span K (Set.range v) ⊔ J.ker :=
-    mem_submodule_of_forall_monomial_mem fun α _ ↦ by
-      suffices weightedBasis κ g α 0 ∈ span K (Set.range v) ⊔ J.ker by simpa [weightedBasis]
-      refine weightedBasis_mem_of_weight_le hκ hg_cost (fun β γ hβ _ ↦ ?_) α 0 le_rfl
-      exact (lt_or_ge γ.degree d).elim (fun h ↦ mem_sup_left (b_span β γ hβ h))
+    mem_of_forall_weightedBasis_mem hκ hg_cost fun _ _ β γ hβ _ ↦
+      (lt_or_ge γ.degree d).elim (fun h ↦ mem_sup_left (b_span β γ hβ h))
         (fun h ↦ mem_sup_right (b_ker β γ h))
   have h_span : ⊤ ≤ span K (Set.range (J ∘ v)) := fun y _ ↦ by
     obtain ⟨p, rfl⟩ := J_surj y
@@ -138,14 +166,12 @@ theorem exists_le_weight_of_mem_vanishingIdeal_pow [Fintype ι] [Fintype S] (κ 
     linearIndependent_of_top_le_span_of_card_le_finrank h_span
       (by simpa using Nat.mul_le_mul_right Γ.card h_card)
   by_contra! h_low
-  have hf_span : f ∈ span K (Set.range v) := mem_submodule_of_forall_monomial_mem fun α hα ↦ by
-    suffices weightedBasis κ g α 0 ∈ span K (Set.range v) by simpa [weightedBasis]
-    refine weightedBasis_mem_of_weight_le hκ hg_cost (fun β γ hβ h_le ↦ ?_) α 0 le_rfl
-    have h_nonneg : 0 ≤ weight (fun u : ι ↦ (κ u : ℝ))⁻¹ β :=
-      Finsupp.weight_nonneg (w := (fun u : ι ↦ (κ u : ℝ))⁻¹)
-        (fun u ↦ inv_nonneg.2 (Nat.cast_nonneg _)) β
-    simp only [map_zero, Nat.cast_zero, zero_add] at h_le
-    exact b_span β γ hβ ((Nat.cast_lt (α := ℝ)).1 (by linarith [h_low α hα]))
+  have hf_span : f ∈ span K (Set.range v) :=
+    mem_of_forall_weightedBasis_mem hκ hg_cost fun α hα β γ hβ h_le ↦ by
+      have h_nonneg : 0 ≤ weight (fun u : ι ↦ (κ u : ℝ))⁻¹ β :=
+        Finsupp.weight_nonneg (w := (fun u : ι ↦ (κ u : ℝ))⁻¹)
+          (fun u ↦ inv_nonneg.2 (Nat.cast_nonneg _)) β
+      exact b_span β γ hβ ((Nat.cast_lt (α := ℝ)).1 (by linarith [h_low α hα]))
   exact hf_ne ((range_ker_disjoint h_indep).le_bot ⟨hf_span, mem_ker hf⟩)
 
 end TauCeti
