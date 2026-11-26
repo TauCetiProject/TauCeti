@@ -115,6 +115,16 @@ theorem neutralIncrement_def (e : TriEdge) :
 
 @[simp] theorem neutralIncrement_mk_two (v : ℤ × ℤ) : neutralIncrement ⟨v, 2⟩ = 1 := (rfl)
 
+/-- The edge of direction `k` of a face has neutral increment `1` if `k = 2` and `0` otherwise. -/
+theorem TriFace.neutralIncrement_edge (f : TriFace) (k : Fin 3) :
+    neutralIncrement (f.edge k) = if k = 2 then 1 else 0 := by
+  rw [neutralIncrement_def, TriFace.edge_k]
+
+theorem neutralIncrement_eq_zero_or_eq_one (e : TriEdge) :
+    neutralIncrement e = 0 ∨ neutralIncrement e = 1 := by
+  rw [neutralIncrement_def]
+  split_ifs <;> simp
+
 theorem IsClosedCochainOn.mono (h : IsClosedCochainOn S c) (hRS : R ⊆ S) :
     IsClosedCochainOn R c :=
   fun f hf => h f (hRS hf)
@@ -272,6 +282,10 @@ theorem IsConnectedRegion.sub_eq_sub_of_isCochainPrimitiveOn (hR : IsConnectedRe
 section Translation
 
 variable (w : ℤ × ℤ)
+
+@[simp] theorem neutralIncrement_vadd (e : TriEdge) :
+    neutralIncrement (w +ᵥ e) = neutralIncrement e := by
+  simp [neutralIncrement_def]
 
 @[simp] theorem isClosedCochainOn_vadd_iff :
     IsClosedCochainOn (w +ᵥ R) c ↔ IsClosedCochainOn R fun e => c (w +ᵥ e) := by
@@ -515,5 +529,19 @@ theorem IsClosedCochainOn.isExactCochainOn_univ (hc : IsClosedCochainOn Set.univ
 /-- **The plane is simply connected.** -/
 theorem isSimplyConnectedRegion_univ : IsSimplyConnectedRegion Set.univ :=
   ⟨⟨⟨0, true⟩, Set.mem_univ _⟩, isConnectedRegion_univ, fun _ hc => hc.isExactCochainOn_univ⟩
+
+/-- A primitive on the plane is a function whose increment along every edge is the cochain. -/
+theorem isCochainPrimitiveOn_univ_iff :
+    IsCochainPrimitiveOn Set.univ c g ↔ ∀ e : TriEdge, c e = g e.target - g e.v := by
+  rw [isCochainPrimitiveOn_def]
+  exact ⟨fun h e => h e (mem_regionEdges_iff.2 (Or.inl (Set.mem_univ _))), fun h e _ => h e⟩
+
+/-- Two primitives on the plane of the same cochain that agree at `0` are equal. -/
+theorem eq_of_isCochainPrimitiveOn_univ (hg : IsCochainPrimitiveOn Set.univ c g)
+    (hg' : IsCochainPrimitiveOn Set.univ c g') (h0 : g 0 = g' 0) : g = g' := by
+  funext u
+  have := isConnectedRegion_univ.sub_eq_sub_of_isCochainPrimitiveOn hg hg'
+    (mem_regionVertices_univ u) (mem_regionVertices_univ 0)
+  omega
 
 end TauCeti
