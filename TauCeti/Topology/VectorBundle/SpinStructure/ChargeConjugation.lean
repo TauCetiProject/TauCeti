@@ -39,15 +39,15 @@ charge conjugation is involutive: `[[p, h], k] ↦ p • χ(h) k` is an equivale
 **Relation to twisting.** Twisting a `Spinᶜ` structure by a principal `U(1)`-bundle is
 `TauCeti.SpinCStructure.twist`. Since `χ x = x [1, (det x)⁻¹]`
 (`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`), `s.chargeConj` is equivalent
-to the twist of `s` by the inverse of the `U(1)`-bundle of its determinant line, and the charge
-conjugate of `s ⊗ E` to `s ⊗ (L⁻¹ ⊗ E⁻¹)`. Moreover charge conjugation turns a twist by `L` into
-a twist by an inverse `L'` of `L`, `(s.twist L).chargeConj ≃ s.chargeConj.twist L'`
-(`TauCeti.SpinCStructure.chargeConjTwistEquiv`). These equivalences are in
-`TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation`, with `L⁻¹ ⊗ E⁻¹` realised
-as a circle bundle built from `P` and the circle bundle of `E`. On a symplectic four-manifold the
-second gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` after identifying that circle bundle with the
-circle bundle of `K ⊗ E⁻¹`; that identification is not made in `Twist.ChargeConjugation`. The
-identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
+to the twist of `s` by the inverse determinant bundle `P ×_{det⁻¹} U(1)`, and the charge
+conjugate of `s ⊗ E` to `s ⊗ (L⁻¹ ⊗ E⁻¹)`, with `L⁻¹ ⊗ E⁻¹` realised either as a circle bundle
+built from `P` and the circle bundle of `E` or as the tensor product `(P ×_{det⁻¹} U(1)) ⊗ E⁻¹`.
+Moreover charge conjugation turns a twist by `L` into a twist by an inverse `L'` of `L`,
+`(s.twist L).chargeConj ≃ s.chargeConj.twist L'` (`TauCeti.SpinCStructure.chargeConjTwistEquiv`).
+These equivalences are in `TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation`.
+On a symplectic four-manifold the second gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` once the
+determinant line of `s_ω` is identified with `K⁻¹`, which is not proved there. The identity
+`c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
 
 **The half-spinor bundles.** In rank four, let `j : W ≃ W'` be a conjugate-linear isometric
 equivalence of model Hermitian Clifford modules commuting with Clifford multiplication, such as
@@ -216,15 +216,13 @@ theorem chargeConjChargeConjEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) 
     (h k : spinCGroup (realCliffordForm n 0) hQ) :
     (chargeConjChargeConjEquiv s).toEquiv x (Extend.mk χ hχ (Extend.mk χ hχ p h) k) =
       op (spinCGroup.chargeConj _ hQ h * k) • p := by
-  simp only [chargeConjChargeConjEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv,
-    OrthonormalFrameLift.Equiv.symm_toEquiv]
-  -- `[[p, h], k] = [[p, 1], χ(h) k]` is the image of `[p, χ(h) k]` under `extendCompEquiv`.
-  have hcomp := (Equiv.symm_apply_eq _).2 ((s.extendCompEquiv_toEquiv_mk χ hχ hπχ
-    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
-    χ hχ hπχ spinCGroup.norm_toLp_toSpecialOrthogonal_apply
-    spinCGroup.continuous_toSpecialOrthogonal_apply x p (χ h * k)).trans
-      (Extend.mk_mk χ hχ χ hχ p h k).symm).symm
-  exact (Equiv.trans_apply _ _ _).trans <| (congrArg _ hcomp).trans <|
+  simp only [chargeConjChargeConjEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv]
+  -- `[[p, h], k]` is the image of `[p, χ(h) k]` under `extendCompEquiv`.
+  exact (Equiv.trans_apply _ _ _).trans <| (congrArg _ (s.extendCompEquiv_symm_toEquiv_mk_mk χ hχ
+    hπχ spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+    spinCGroup.continuous_toSpecialOrthogonal_apply χ hχ hπχ
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+    spinCGroup.continuous_toSpecialOrthogonal_apply x p h k)).trans <|
     OrthonormalFrameLift.extendSpinCEquivOfEquivariant_toEquiv_mk (x := x) (p := p) ..
 
 end SpinCStructure

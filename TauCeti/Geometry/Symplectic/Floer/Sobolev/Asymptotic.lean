@@ -13,7 +13,7 @@ import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 # The linearized Floer operator is asymptotic to its end models
 
 Let `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` be the Sobolev realization
-(`TauCeti.SymplecticForm.floerSobolevOperator`) of the linearized Floer operator along a map `u`
+(`TauCeti.SymplecticForm.floerSobolevOperator 2`) of the linearized Floer operator along a map `u`
 of the cylinder, for Floer data that are cylindrical near the ends: equal to `(J₋_t, 0, H₋_t)` for
 `s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`, with the loops of `u` converging uniformly to
 orbits `x₋` of `H₋` at `-∞` and `x₊` of `H₊` at `+∞`, and with the slice defects

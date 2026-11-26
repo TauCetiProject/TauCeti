@@ -25,6 +25,8 @@ point, splicing a fixed point into another orbit, and merging two orbits. The fi
 permutation with one of a *different* type and are stated to allow that; the third compares two
 permutations of the same type.
 
+* `TauCeti.orbitCount_eq_natCard_orbitRelQuotient_zpowers`: the orbit count is the number of
+  orbits of the cyclic subgroup `⟨σ⟩`.
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
 * `TauCeti.orbitCount_mul_comm` and `Equiv.Perm.sameCycle_mul_comm_iff`: the two products `σ * τ`
   and `τ * σ` are conjugate, so they have the same number of orbits, and their cycles correspond
@@ -54,7 +56,8 @@ permutations of the same type.
 * `Equiv.Perm.card_le_orderOf_mul_orbitCount`: conversely, the number of points is at most the
   order of the permutation times its number of orbits, each orbit length dividing the order.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
-  the number of points minus the number of orbits.
+  the number of points minus the number of orbits, and `Equiv.Perm.neg_one_pow_card_mul_sign`
+  restates this as `(-1) ^ |α| * sign σ = (-1) ^ orbitCount σ` in any ring.
 * `Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one`: if `σ ^ p = 1` for a prime `p`, then
   `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
   points.
@@ -115,6 +118,12 @@ noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
 /-- The orbit count is the cardinality of the type of orbits. -/
 theorem orbitCount_def (σ : Equiv.Perm α) :
     orbitCount σ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) := (rfl)
+
+/-- The orbit count is the number of orbits of the cyclic subgroup `⟨σ⟩`. -/
+theorem orbitCount_eq_natCard_orbitRelQuotient_zpowers (σ : Equiv.Perm α) :
+    orbitCount σ = Nat.card (MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α) := by
+  rw [orbitCount_def]
+  exact Nat.card_congr (Quotient.congrRight fun _ _ ↦ (Equiv.Perm.orbitRel_zpowers_apply σ).symm)
 
 /-- An invariant colouring uses at most one colour per orbit. -/
 theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_le_orbitCount
@@ -298,6 +307,18 @@ theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Pe
       (Fintype.card α - orbitCount σ) + 2 * orbitCount σ := by
     omega
   rw [h, pow_add, pow_mul]
+  simp
+
+/-- The sign of a finite permutation times `(-1) ^ |α|` is `(-1)` to the number of orbits, in any
+ring. -/
+theorem _root_.Equiv.Perm.neg_one_pow_card_mul_sign {R : Type*} [Ring R] (σ : Equiv.Perm α) :
+    (-1 : R) ^ Fintype.card α * ((Equiv.Perm.sign σ : ℤ) : R) = (-1 : R) ^ orbitCount σ := by
+  have hle := σ.orbitCount_le_card.trans_eq Nat.card_eq_fintype_card
+  have hadd : Fintype.card α + (Fintype.card α - orbitCount σ) =
+      orbitCount σ + 2 * (Fintype.card α - orbitCount σ) := by
+    omega
+  rw [Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount, Units.val_pow_eq_pow_val, Units.val_neg,
+    Units.val_one, Int.cast_pow, Int.cast_neg, Int.cast_one, ← pow_add, hadd, pow_add, pow_mul]
   simp
 
 /-- If `σ ^ p = 1` for a prime `p`, every orbit of `σ` is a fixed point or has exactly `p` points,

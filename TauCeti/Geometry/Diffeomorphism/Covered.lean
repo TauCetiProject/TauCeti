@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.Geometry.Diffeomorphism.Evaluation
+public import TauCeti.Geometry.Diffeomorphism.LieGroup
 public import TauCeti.Topology.MappingSpace.Evaluation
 
 /-!
@@ -163,7 +164,8 @@ theorem isCoveredByDiffeomorphisms_of_section {x₀ : M} (σ : C(M, M ≃ₘ^n�
 /-- **Covering through a smooth group action.** Let a group `G`, a `C^n` manifold, act on `M` by a
 jointly `C^n` action. If the orbit map `f : G → M`, `g ↦ g • x₀`, sends a class
 `a ∈ H_d(G; ℤ)` to `ℓ • [M]`, then `M` is `ℓ`-covered by diffeomorphisms at `x₀`: the action is a
-continuous map `G → Diff(M)` whose composite with evaluation at `x₀` is the orbit map. -/
+continuous map `G → Diff(M)` (`Diffeomorph.smulContinuousMonoidHom`) whose composite with
+evaluation at `x₀` is the orbit map. -/
 theorem isCoveredByDiffeomorphisms_of_smul {F H : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [TopologicalSpace H] {I : ModelWithCorners ℝ F H} {G : Type} [TopologicalSpace G]
     [ChartedSpace H G] [IsManifold I n G] [Group G] [MulAction G M]
@@ -173,10 +175,7 @@ theorem isCoveredByDiffeomorphisms_of_smul {F H : Type} [NormedAddCommGroup F] [
     (h : (((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
       (TopCat.ofHom f)).hom a = ℓ • o.mapFundamentalClass hd (ContinuousMap.id M)) :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
-  refine .of_homologyMap (Diffeomorph.ofSmoothFamily (fun g ↦ Diffeomorph.smul I 𝓘(ℝ, E) n g)
-    (by
-      simp only [Diffeomorph.smul_apply]
-      exact ContMDiffSMul.contMDiff_smul (I := I) (I' := 𝓘(ℝ, E)))) a ?_
+  refine .of_homologyMap (Diffeomorph.smulContinuousMonoidHom I 𝓘(ℝ, E) n G M) a ?_
   convert h
   ext g
   simp [hf]
@@ -250,14 +249,12 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensiona
 
 /-- **Compact Lie groups are covered by diffeomorphisms** (Example 6.30 of
 Barraud–Damian–Humilière–Oancea). For a compact `C^n` Lie group `M`, the left translations by
-`g * x₀⁻¹` form a continuous section of evaluation at `x₀`. -/
+`g * x₀⁻¹` form a continuous section of evaluation at `x₀` (`TauCeti.Lie.leftTranslationSection`).
+-/
 theorem isCoveredByDiffeomorphisms_of_lieGroup (x₀ : M) :
-    o.IsCoveredByDiffeomorphisms hd n x₀ 1 := by
-  refine o.isCoveredByDiffeomorphisms_of_section hd n
-    (Diffeomorph.ofSmoothFamily (fun g ↦ Diffeomorph.smul 𝓘(ℝ, E) 𝓘(ℝ, E) n (g * x₀⁻¹)) (by
-      simp only [Diffeomorph.smul_apply, smul_eq_mul]
-      exact (contMDiff_fst.mul contMDiff_const).mul contMDiff_snd)) fun g ↦ ?_
-  simp
+    o.IsCoveredByDiffeomorphisms hd n x₀ 1 :=
+  o.isCoveredByDiffeomorphisms_of_section hd n (Lie.leftTranslationSection 𝓘(ℝ, E) n x₀)
+    (Lie.leftTranslationSection_apply_self x₀)
 
 end LieGroup
 

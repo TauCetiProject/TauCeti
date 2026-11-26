@@ -16,7 +16,7 @@ import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 Let `F` be a finite-dimensional complex inner product space with symplectic form
 `ω = Im ⟪·, ·⟫`, and let `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` be the Sobolev realization
-(`TauCeti.SymplecticForm.floerSobolevOperator`) of the linearized Floer operator along a map
+(`TauCeti.SymplecticForm.floerSobolevOperator 2`) of the linearized Floer operator along a map
 `u : ℝ × ℝ → F`, for Floer data `(i, K_s, K_t)` with the complex structure `i` of `F` and
 Hamiltonian perturbations that are cylindrical near the ends: `(K_s, K_t) = (0, H₋_t)` for
 `s ≤ -R` and `(0, H₊_t)` for `s ≥ R` (`TauCeti.Floer.IsCylindricalNearEnds`). This file proves
@@ -371,7 +371,7 @@ theorem isFredholm_floerSobolevOperator_of_cylindrical (ω : SymplecticForm F)
     (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t) (hxpper : Periodic xp 1)
     (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
     (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         Ks Kt u).IsFredholm := by
   -- This is the weighted theorem with slope `c = 0`: an orbit is `C¹`, and at a nondegenerate
@@ -405,7 +405,7 @@ theorem isFredholm_floerSobolevOperator (ω : SymplecticForm F)
     {u : ℝ × ℝ → F} (hu : Continuous u)
     (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
     (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) u).IsFredholm :=
   ω.isFredholm_floerSobolevOperator_of_cylindrical hω
