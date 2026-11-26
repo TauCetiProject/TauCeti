@@ -431,6 +431,12 @@ private def shiftIdx {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
      have : shiftExp p S i ≤ S - 1 - i.2.val := min_le_right _ _
      have := i.2.isLt; omega⟩)
 
+private theorem neg_one_pow_add_eq_sub {R : Type*} [Ring R] {m h : ℕ} (hm : m ≤ h) :
+    (-1 : R) ^ (m + h) = (-1 : R) ^ (h - m) := by
+  have hexp : m + h = (h - m) + 2 * m := by omega
+  rw [hexp, pow_add, pow_mul]
+  simp
+
 private theorem shiftPoly_term_eq (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
     (m : Fin (shiftExp p S i)) :
     Polynomial.C (Polynomial.X ^ i.2.val : (ℤ√d)[X]) *
@@ -441,13 +447,7 @@ private theorem shiftPoly_term_eq (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin 
             ((shiftExp p S i).choose m.val : (ℤ√d)[X][X]))) =
       ((-1 : ℤ) ^ (shiftExp p S i - m.val) * (shiftExp p S i).choose m.val) •
         basePoly d (shiftIdx hp i m) := by
-  have hsign : (-1 : (ℤ√d)[X][X]) ^ (m.val + shiftExp p S i) =
-      (-1) ^ (shiftExp p S i - m.val) := by
-    have : m.val ≤ shiftExp p S i := m.isLt.le
-    have hexp : m.val + shiftExp p S i = (shiftExp p S i - m.val) + 2 * m.val := by omega
-    have hneg_sq : (-1 : (ℤ√d)[X][X]) ^ 2 = 1 := by norm_num
-    rw [hexp, pow_add, pow_mul, hneg_sq, one_pow, mul_one]
-  rw [hsign]
+  rw [neg_one_pow_add_eq_sub m.isLt.le]
   simp only [basePoly, shiftIdx, pow_add, C_mul, pow_mul, ← C_pow, zsmul_eq_mul]
   push_cast
   ring
@@ -468,10 +468,8 @@ private theorem shiftPoly_eq_add_sum (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : F
           (C (X : (ℤ√d)[X])) ^ (shiftExp p S i - m) *
           ((shiftExp p S i).choose m : (ℤ√d)[X][X])) +
         (X ^ p) ^ shiftExp p S i := by
-    have hexp : shiftExp p S i + shiftExp p S i = 2 * shiftExp p S i := by omega
-    have hneg_sq : (-1 : (ℤ√d)[X][X]) ^ 2 = 1 := by norm_num
-    rw [sub_pow, Finset.sum_range_succ, hexp, pow_mul, hneg_sq, one_pow, one_mul,
-      Nat.sub_self, pow_zero, mul_one, Nat.choose_self, Nat.cast_one, mul_one]
+    rw [sub_pow, Finset.sum_range_succ, neg_one_pow_add_eq_sub le_rfl]
+    simp
   dsimp only [shiftPoly]
   rw [hsub_pow, mul_add, mul_add, htop, add_comm _ (basePoly d i), Finset.mul_sum,
     Finset.mul_sum, ← Fin.sum_univ_eq_sum_range]
@@ -530,11 +528,11 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
     simp only [map_sum, map_zsmul, Int.cast_smul_eq_zsmul, baseVec]
   have hdetU : (U.map (Int.castRingHom ℝ)).det = 1 := by
     rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_shiftMatrix_eq_one hp, map_one]
-  exact_mod_cast (by
+  have hR : ((Zsqrtd.intGram d (shiftFam d p N R S)).det : ℝ) =
+      ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) := by
     rw [Zsqrtd.intCast_det_intGram, Zsqrtd.intCast_det_intGram, funext hvec]
-    exact Matrix.det_gram_sum_smul_of_det_eq_one hdetU (baseVec d N R S) :
-    ((Zsqrtd.intGram d (shiftFam d p N R S)).det : ℝ) =
-      ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ))
+    exact Matrix.det_gram_sum_smul_of_det_eq_one hdetU (baseVec d N R S)
+  exact_mod_cast hR
 
 /-- Every jet evaluation of `shiftPoly d p i` at an inert prime `p` is divisible by `p ^ h`. -/
 private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime)
