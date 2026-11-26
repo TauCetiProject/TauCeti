@@ -23,8 +23,8 @@ import TauCeti.Topology.MetricSpace.SeparatedBalls
 This module defines the canonical abscissa-independent separating-contour Mellin–Barnes integral
 `Complex.mellinBarnesIntegral` representing `Γ(a) Γ(b) 𝐅(a, b; c; z)` for `a, b ∉ -ℕ`,
 `-z ∈ Complex.slitPlane`, and all `c : ℂ` (and hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when
-`c ∉ -ℕ`), and proves its joint four-variable holomorphy
-`Complex.analyticOnNhd_mellinBarnesIntegral` on
+`c ∉ -ℕ`), and proves joint four-variable holomorphy of both `Complex.hypergeometricMellinBarnes`
+(at fixed `σ < 0`) and `Complex.mellinBarnesIntegral` on
 `{(a, b, c, z) | a ∉ -ℕ ∧ b ∉ -ℕ ∧ -z ∈ Complex.slitPlane}` across all lower parameters `c : ℂ`,
 including resonant integer differences `a - b ∈ ℤ` where simple pole candidates coalesce
 (potentially producing double poles, though reciprocal Gamma zeros can lower their order or
@@ -41,14 +41,14 @@ circle integrals around isolating circles.
 ## Main definitions and results
 
 * `Complex.mellinBarnesIntegral`, `Complex.mellinBarnesIntegral_symm`,
-  `Complex.mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral`,
-  `Complex.exists_mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral`,
+  `Complex.mellinBarnesIntegral_eq_hypergeometricMellinBarnes`,
+  `Complex.exists_mellinBarnesIntegral_eq_hypergeometricMellinBarnes`,
   `Complex.mellinBarnesIntegral_of_neg_re_lt`.
-* `Complex.analyticOnNhd_integral_mellinBarnesIntegrand`: joint four-variable holomorphy of the
-  vertical-line integral along any fixed `Re t = σ` (`σ ∉ ℕ`).
-* `Complex.analyticOnNhd_mellinBarnesSeparatingIntegral`,
+* `Complex.analyticOnNhd_integral_hypergeometricMellinBarnesIntegrand`: joint four-variable
+  holomorphy of the vertical-line integral along any fixed `Re t = σ` (`σ ∉ ℕ`).
+* `Complex.analyticOnNhd_hypergeometricMellinBarnes`,
   `Complex.analyticOnNhd_mellinBarnesIntegral`, `AnalyticAt.mellinBarnesIntegral`: joint
-  four-variable holomorphy and analytic composition of `mellinBarnesSeparatingIntegral` (for fixed
+  four-variable holomorphy and analytic composition of `hypergeometricMellinBarnes` (for fixed
   `σ < 0`) and `mellinBarnesIntegral` in `(a, b, c, z)`.
 
 ## References
@@ -116,32 +116,32 @@ private theorem mellinBarnesAbscissa_avoid (a b : ℂ) :
 /-- **Canonical separating-contour Mellin–Barnes integral**, representing
 `Γ(a) Γ(b) 𝐅(a, b; c; z)` for `a, b ∉ -ℕ`, `-z ∈ Complex.slitPlane`, and all `c : ℂ` (and hence
 `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when `c ∉ -ℕ`). Evaluated at a canonical negative abscissa
-avoiding `-Re a - ℕ` and `-Re b - ℕ`, this agrees with `mellinBarnesSeparatingIntegral a b c z σ`
+avoiding `-Re a - ℕ` and `-Re b - ℕ`, this agrees with `hypergeometricMellinBarnes a b c z σ`
 for every admissible negative abscissa `σ < 0` when `-z ∈ slitPlane`. -/
 def mellinBarnesIntegral (a b c z : ℂ) : ℂ :=
-  mellinBarnesSeparatingIntegral a b c z (mellinBarnesAbscissa a b)
+  hypergeometricMellinBarnes a b c z (mellinBarnesAbscissa a b)
 
 /-- Symmetry of `mellinBarnesIntegral` in `a` and `b`. -/
 theorem mellinBarnesIntegral_symm (a b c z : ℂ) :
     mellinBarnesIntegral a b c z = mellinBarnesIntegral b a c z := by
   rw [mellinBarnesIntegral, mellinBarnesIntegral, mellinBarnesAbscissa_symm a b,
-    mellinBarnesSeparatingIntegral_symm a b c z]
+    hypergeometricMellinBarnes_comm a b c z]
 
 /-- On `-z ∈ slitPlane`, `mellinBarnesIntegral a b c z` equals
-`mellinBarnesSeparatingIntegral a b c z σ` for every negative abscissa `σ < 0` avoiding
+`hypergeometricMellinBarnes a b c z σ` for every negative abscissa `σ < 0` avoiding
 `-Re a - ℕ` and `-Re b - ℕ`. -/
-theorem mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral {a b : ℂ} (c : ℂ) {z : ℂ} {σ : ℝ}
+theorem mellinBarnesIntegral_eq_hypergeometricMellinBarnes {a b : ℂ} (c : ℂ) {z : ℂ} {σ : ℝ}
     (hσ : σ < 0) (ha : ∀ k : ℕ, a.re + σ ≠ -k) (hb : ∀ k : ℕ, b.re + σ ≠ -k)
     (hz : -z ∈ slitPlane) :
-    mellinBarnesIntegral a b c z = mellinBarnesSeparatingIntegral a b c z σ :=
-  mellinBarnesSeparatingIntegral_eq_of_lt_zero c (mellinBarnesAbscissa_lt_zero a b) hσ
-    (mellinBarnesAbscissa_avoid a b).1 (mellinBarnesAbscissa_avoid a b).2 ha hb hz
+    mellinBarnesIntegral a b c z = hypergeometricMellinBarnes a b c z σ :=
+  hypergeometricMellinBarnes_eq a b c hz (mellinBarnesAbscissa_lt_zero a b) hσ
+    (mellinBarnesAbscissa_avoid a b).1 (mellinBarnesAbscissa_avoid a b).2 ha hb
 
 /-- Every `(a, b, c, z)` admits a negative abscissa `σ < 0` avoiding `-Re a - ℕ` and `-Re b - ℕ`
-at which `mellinBarnesIntegral a b c z = mellinBarnesSeparatingIntegral a b c z σ`. -/
-theorem exists_mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral (a b c z : ℂ) :
+at which `mellinBarnesIntegral a b c z = hypergeometricMellinBarnes a b c z σ`. -/
+theorem exists_mellinBarnesIntegral_eq_hypergeometricMellinBarnes (a b c z : ℂ) :
     ∃ σ : ℝ, σ < 0 ∧ (∀ k : ℕ, a.re + σ ≠ -k) ∧ (∀ k : ℕ, b.re + σ ≠ -k) ∧
-      mellinBarnesIntegral a b c z = mellinBarnesSeparatingIntegral a b c z σ :=
+      mellinBarnesIntegral a b c z = hypergeometricMellinBarnes a b c z σ :=
   ⟨mellinBarnesAbscissa a b, mellinBarnesAbscissa_lt_zero a b,
     (mellinBarnesAbscissa_avoid a b).1, (mellinBarnesAbscissa_avoid a b).2, rfl⟩
 
@@ -150,18 +150,18 @@ integral reduces to the straight vertical-line integral along `Re t = σ`. -/
 theorem mellinBarnesIntegral_of_neg_re_lt {a b : ℂ} (c : ℂ) {z : ℂ} {σ : ℝ}
     (ha : -a.re < σ) (hb : -b.re < σ) (hσ : σ < 0) (hz : -z ∈ slitPlane) :
     mellinBarnesIntegral a b c z =
-      (2 * π : ℂ)⁻¹ * ∫ y : ℝ, mellinBarnesIntegrand a b c z (σ + y * I) := by
-  rw [mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral c hσ
+      (2 * π : ℂ)⁻¹ * ∫ y : ℝ, hypergeometricMellinBarnesIntegrand a b c z (σ + y * I) := by
+  rw [mellinBarnesIntegral_eq_hypergeometricMellinBarnes c hσ
       (fun k _ => by linarith [k.cast_nonneg (α := ℝ)])
       (fun k _ => by linarith [k.cast_nonneg (α := ℝ)]) hz,
-    mellinBarnesSeparatingIntegral_of_neg_re_le c z ha.le hb.le]
+    hypergeometricMellinBarnes_eq_integral a b c z ha.le hb.le]
 
 private theorem analyticAt_truncated_vertical_mellinBarnes {p : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
     (hσ : ∀ m : ℕ, σ ≠ m) (ha : ∀ k : ℕ, p.1.re + σ ≠ -k) (hb : ∀ k : ℕ, p.2.1.re + σ ≠ -k)
     (hz : -p.2.2.2 ∈ slitPlane) (n : ℕ) :
     AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
       ∫ y : ℝ in (-(n : ℝ))..(n : ℝ),
-        mellinBarnesIntegrand q.1 q.2.1 q.2.2.1 q.2.2.2 (σ + y * I)) p := by
+        hypergeometricMellinBarnesIntegrand q.1 q.2.1 q.2.2.1 q.2.2.2 (σ + y * I)) p := by
   have hn_le : -(n : ℝ) ≤ (n : ℝ) := by linarith [n.cast_nonneg (α := ℝ)]
   let γ : ℝ → ℂ := fun y => (σ : ℂ) + (projIcc (-(n : ℝ)) n hn_le y : ℝ) * I
   let K : Set ℂ := (fun y : ℝ => (σ : ℂ) + y * I) '' Icc (-(n : ℝ)) n
@@ -170,10 +170,10 @@ private theorem analyticAt_truncated_vertical_mellinBarnes {p : ℂ × ℂ × �
       (continuous_subtypeVal.comp continuous_projIcc)).mul continuous_const)
   have hkernel : ∀ t ∈ K, AnalyticAt ℂ
       (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ =>
-        mellinBarnesIntegrand x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2 x.2)
+        hypergeometricMellinBarnesIntegrand x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2 x.2)
       (p, t) := by
     rintro _ ⟨y, _, rfl⟩
-    exact analyticAt_mellinBarnesIntegrand_uncurry_vertical ha hb hσ hz y
+    exact analyticAt_hypergeometricMellinBarnesIntegrand_uncurry_vertical ha hb hσ hz y
   refine (TauCeti.analyticAt_integral_smul (isCompact_Icc.image (by fun_prop)) hγ
     (fun y => ⟨_, (projIcc (-(n : ℝ)) n hn_le y).property, rfl⟩) hkernel
     (integrable_const (1 : ℂ) : Integrable _ (volume.restrict (Ioc (-(n : ℝ)) n)))).congr
@@ -195,9 +195,9 @@ private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ �
     TendstoUniformlyOn
       (fun (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) =>
         ∫ y : ℝ in (-(n : ℝ))..(n : ℝ),
-          mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I))
+          hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I))
       (fun p : ℂ × ℂ × ℂ × ℂ =>
-        ∫ y : ℝ, mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) atTop
+        ∫ y : ℝ, hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) atTop
       (ball p₀.1 δ₀ ×ˢ ball p₀.2.1 δ₁ ×ˢ ball p₀.2.2.1 1 ×ˢ ball p₀.2.2.2 ρ) := by
   -- Fix a common parameter radius `R` and slit-plane sector margin `δ` on the product box.
   let δ : ℝ := (π - |(-p₀.2.2.2).arg|) / 4
@@ -217,8 +217,8 @@ private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ �
       (norm_le_norm_add_const_of_dist_le
         ((mem_ball.1 hp.2.1).le.trans (hδ₁_le.trans (by norm_num)))).trans hR₂,
       (norm_le_norm_add_const_of_dist_le (mem_ball.1 hp.2.2.1).le).trans hR₃, hRσ⟩
-  obtain ⟨B, Y₀, _, _, hdom, htail⟩ := exists_norm_mellinBarnesIntegrand_vertical_le (R := R)
-    (r₂ := 2 * ‖p₀.2.2.2‖) hr₁ hδ
+  obtain ⟨B, Y₀, _, _, hdom, htail⟩ := exists_norm_hypergeometricMellinBarnesIntegrand_vertical_le
+    (R := R) (r₂ := 2 * ‖p₀.2.2.2‖) hr₁ hδ
   have hcov : AECover (volume : Measure ℝ) atTop (fun n : ℕ => Ioc (-(n : ℝ)) n) :=
     aecover_Ioc (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
       tendsto_natCast_atTop_atTop
@@ -226,18 +226,16 @@ private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ �
   have heq :
       (fun (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) =>
         ∫ y : ℝ in (-(n : ℝ))..(n : ℝ),
-          mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) =
+          hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) =
       fun (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) =>
         ∫ y in Ioc (-(n : ℝ)) n,
-          mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I) := by
+          hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I) := by
     ext n p
     exact intervalIntegral.integral_of_le (by linarith [n.cast_nonneg (α := ℝ)])
   rw [heq]
   refine hcov.tendstoUniformlyOn_setIntegral
-    (fun p hp => by
-      simpa only [VerticalIntegrable] using
-        verticalIntegrable_mellinBarnesIntegrand p.2.2.1 (hav₀ p.1 hp.1) (hav₁ p.2.1 hp.2.1)
-          hσ (hz_sub p.2.2.2 hp.2.2.2).1)
+    (fun p hp => integrable_hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1
+      (hz_sub p.2.2.2 hp.2.2.2).1 (hav₀ p.1 hp.1) (hav₁ p.2.1 hp.2.1) hσ)
     hdom ?_
   filter_upwards [eventually_ge_atTop (⌈Y₀⌉₊ + 1)] with n hn_Y p hp
   filter_upwards [ae_restrict_mem measurableSet_Ioc.compl] with y hy
@@ -256,7 +254,7 @@ private theorem analyticAt_vertical_mellinBarnes {p₀ : ℂ × ℂ × ℂ × �
     (hσ : ∀ m : ℕ, σ ≠ m) (ha₀ : ∀ k : ℕ, p₀.1.re + σ ≠ -k)
     (hb₀ : ∀ k : ℕ, p₀.2.1.re + σ ≠ -k) (hz₀ : -p₀.2.2.2 ∈ slitPlane) :
     AnalyticAt ℂ (fun p : ℂ × ℂ × ℂ × ℂ =>
-      ∫ y : ℝ, mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) p₀ := by
+      ∫ y : ℝ, hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) p₀ := by
   obtain ⟨δ₀', hδ₀', hav₀'⟩ := p₀.1.exists_ball_re_add_ne_neg_natCast_and_lt_iff ha₀
   obtain ⟨δ₁', hδ₁', hav₁'⟩ := p₀.2.1.exists_ball_re_add_ne_neg_natCast_and_lt_iff hb₀
   let δ₀ : ℝ := min δ₀' (1 / 2)
@@ -287,68 +285,73 @@ private theorem analyticAt_vertical_mellinBarnes {p₀ : ℂ × ℂ × ℂ × �
 
 /-- **Joint four-variable holomorphy of the vertical-line Mellin–Barnes integral.** For any
 abscissa `σ : ℝ` avoiding `ℕ`, the vertical-line integral
-`p ↦ ∫ y : ℝ, mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)` is jointly analytic on
+`p ↦ ∫ y : ℝ, hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)` is
+jointly analytic on
 `{p | (∀ k : ℕ, p.1.re + σ ≠ -k) ∧ (∀ k : ℕ, p.2.1.re + σ ≠ -k) ∧ -p.2.2.2 ∈ slitPlane}`. -/
-theorem analyticOnNhd_integral_mellinBarnesIntegrand {σ : ℝ} (hσ : ∀ m : ℕ, σ ≠ m) :
+theorem analyticOnNhd_integral_hypergeometricMellinBarnesIntegrand {σ : ℝ} (hσ : ∀ m : ℕ, σ ≠ m) :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ × ℂ =>
-      ∫ y : ℝ, mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I))
+      ∫ y : ℝ, hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I))
       {p | (∀ k : ℕ, p.1.re + σ ≠ -k) ∧ (∀ k : ℕ, p.2.1.re + σ ≠ -k) ∧
         -p.2.2.2 ∈ slitPlane} :=
   fun _ ⟨ha₀, hb₀, hz₀⟩ => analyticAt_vertical_mellinBarnes hσ ha₀ hb₀ hz₀
 
-private theorem exists_isolating_radius_mellinBarnesLeftPoles {a₀ b₀ : ℂ} (σ : ℝ)
+private theorem exists_isolating_radius_gammaPolesRightOf_union {a₀ b₀ : ℂ} (σ : ℝ)
     (ha₀ : ∀ k : ℕ, a₀ ≠ -k) (hb₀ : ∀ k : ℕ, b₀ ≠ -k) :
     ∃ r : ℝ, 0 < r ∧
-      (∀ s ∈ mellinBarnesLeftPoles a₀ b₀ σ,
+      (∀ s ∈ gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ,
         closedBall s r ⊆ {t : ℂ | σ < t.re} \ range ((↑) : ℕ → ℂ)) ∧
-      (∀ s₁ ∈ mellinBarnesLeftPoles a₀ b₀ σ, ∀ s₂ ∈ mellinBarnesLeftPoles a₀ b₀ σ,
+      (∀ s₁ ∈ gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ,
+        ∀ s₂ ∈ gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ,
         s₁ ≠ s₂ → 2 * r < dist s₁ s₂) := by
-  set P₀ : Finset ℂ := mellinBarnesLeftPoles a₀ b₀ σ
+  set P₀ : Finset ℂ := gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ
   let U : Set ℂ := {s : ℂ | σ < s.re} \ range ((↑) : ℕ → ℂ)
   have hU_open : IsOpen U := (isOpen_lt continuous_const continuous_re).sdiff isClosed_range_natCast
   have hU_mem : ∀ s ∈ P₀, U ∈ 𝓝 s := fun s hs => by
-    refine hU_open.mem_nhds ⟨(mem_mellinBarnesLeftPoles.1 hs).1, ?_⟩
+    refine hU_open.mem_nhds ⟨(mem_gammaPolesRightOf_union.1 hs).1, ?_⟩
     rintro ⟨m, hm⟩
-    rcases (mem_mellinBarnesLeftPoles.1 hs).2 with ⟨k, rfl⟩ | ⟨k, rfl⟩
+    rcases (mem_gammaPolesRightOf_union.1 hs).2 with ⟨k, rfl | rfl⟩
     · exact ha₀ (k + m) (by push_cast; linear_combination hm)
     · exact hb₀ (k + m) (by push_cast; linear_combination hm)
   exact TauCeti.exists_pos_closedBall_subset_and_lt_dist (T := P₀) hU_mem
 
-private theorem mellinBarnesLeftPoles_cover {a₀ b₀ a b : ℂ} {σ r : ℝ}
+private theorem gammaPolesRightOf_union_cover {a₀ b₀ a b : ℂ} {σ r : ℝ}
     (ha₀_σ : ∀ k : ℕ, a₀.re + σ ≠ -k) (hb₀_σ : ∀ k : ℕ, b₀.re + σ ≠ -k)
     (ha_dist : ‖a - a₀‖ < r / 2) (hb_dist : ‖b - b₀‖ < r / 2)
     (ha_cross : ∀ k : ℕ, (-a₀ - k).re < σ → (-a - k).re < σ)
     (hb_cross : ∀ k : ℕ, (-b₀ - k).re < σ → (-b - k).re < σ) :
-    ∀ w ∈ mellinBarnesLeftPoles a b σ, ∃ s ∈ mellinBarnesLeftPoles a₀ b₀ σ, w ∈ ball s r := by
+    ∀ w ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ,
+      ∃ s ∈ gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ, w ∈ ball s r := by
   intro w hw
-  rcases mem_mellinBarnesLeftPoles.1 hw with ⟨hw_re, ⟨k, rfl⟩ | ⟨k, rfl⟩⟩
+  rcases mem_gammaPolesRightOf_union.1 hw with ⟨hw_re, k, rfl | rfl⟩
   · obtain ⟨hre, hball⟩ := neg_sub_natCast_mem_ball_of_re_gt (ha₀_σ k)
       (r := r) (by linarith [norm_nonneg (a - a₀)]) (ha_cross k) hw_re
-    exact ⟨-a₀ - k, mem_mellinBarnesLeftPoles.2 ⟨hre, Or.inl ⟨k, rfl⟩⟩, hball⟩
+    exact ⟨-a₀ - k, mem_gammaPolesRightOf_union.2 ⟨hre, k, Or.inl rfl⟩, hball⟩
   · obtain ⟨hre, hball⟩ := neg_sub_natCast_mem_ball_of_re_gt (hb₀_σ k)
       (r := r) (by linarith [norm_nonneg (b - b₀)]) (hb_cross k) hw_re
-    exact ⟨-b₀ - k, mem_mellinBarnesLeftPoles.2 ⟨hre, Or.inr ⟨k, rfl⟩⟩, hball⟩
+    exact ⟨-b₀ - k, mem_gammaPolesRightOf_union.2 ⟨hre, k, Or.inr rfl⟩, hball⟩
 
-private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : ℂ} (c z : ℂ) {σ r : ℝ}
-    (hr : 0 < r)
-    (hsub : ∀ s ∈ mellinBarnesLeftPoles a₀ b₀ σ,
+private theorem residueSum_eq_sum_circleIntegral_hypergeometricMellinBarnes {a₀ b₀ a b : ℂ}
+    (c z : ℂ) {σ r : ℝ} (hr : 0 < r)
+    (hsub : ∀ s ∈ gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ,
       closedBall s r ⊆ {t : ℂ | σ < t.re} \ range ((↑) : ℕ → ℂ))
-    (hsep : ∀ s₁ ∈ mellinBarnesLeftPoles a₀ b₀ σ, ∀ s₂ ∈ mellinBarnesLeftPoles a₀ b₀ σ,
+    (hsep : ∀ s₁ ∈ gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ,
+      ∀ s₂ ∈ gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ,
       s₁ ≠ s₂ → 2 * r < dist s₁ s₂)
     (ha₀_σ : ∀ k : ℕ, a₀.re + σ ≠ -k) (hb₀_σ : ∀ k : ℕ, b₀.re + σ ≠ -k)
     (ha_dist : ‖a - a₀‖ < r / 2) (hb_dist : ‖b - b₀‖ < r / 2)
     (ha_cross : ∀ k : ℕ, (-a₀ - k).re < σ → (-a - k).re < σ)
     (hb_cross : ∀ k : ℕ, (-b₀ - k).re < σ → (-b - k).re < σ) :
-    (∑ w ∈ mellinBarnesLeftPoles a b σ,
-      TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) w) =
-      ∑ s ∈ mellinBarnesLeftPoles a₀ b₀ σ,
-        (2 * (π : ℂ) * I)⁻¹ * ∮ ζ in C(s, r), mellinBarnesIntegrand a b c z ζ := by
+    (∑ w ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ,
+      TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z) w) =
+      ∑ s ∈ gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ,
+        (2 * (π : ℂ) * I)⁻¹ *
+          ∮ ζ in C(s, r), hypergeometricMellinBarnesIntegrand a b c z ζ := by
   classical
   -- Partition `P` into the pairwise disjoint isolating balls `B(s, r)` centered at `s ∈ P₀`.
-  set P₀ : Finset ℂ := mellinBarnesLeftPoles a₀ b₀ σ
-  set P : Finset ℂ := mellinBarnesLeftPoles a b σ
+  set P₀ : Finset ℂ := gammaPolesRightOf a₀ σ ∪ gammaPolesRightOf b₀ σ
+  set P : Finset ℂ := gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ
   let F : ℂ → Finset ℂ := fun s => P.filter (· ∈ ball s r)
-  have hcover := mellinBarnesLeftPoles_cover ha₀_σ hb₀_σ ha_dist hb_dist ha_cross hb_cross
+  have hcover := gammaPolesRightOf_union_cover ha₀_σ hb₀_σ ha_dist hb_dist ha_cross hb_cross
   have hclosed_disj : ∀ s₁ ∈ P₀, ∀ s₂ ∈ P₀, s₁ ≠ s₂ →
       Disjoint (closedBall s₁ r) (closedBall s₂ r) := fun s₁ hs₁ s₂ hs₂ hne =>
     closedBall_disjoint_closedBall (by linarith [hsep s₁ hs₁ s₂ hs₂ hne])
@@ -366,13 +369,16 @@ private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : �
   -- Every negative-order pole in `closedBall s r` lies in `F s`, so the circle residue theorem
   -- applies.
   have hsupp : ∀ w ∈ closedBall s r,
-      meromorphicOrderAt (mellinBarnesIntegrand a b c z) w < 0 → w ∈ F s := fun w hw hord => by
+      meromorphicOrderAt (hypergeometricMellinBarnesIntegrand a b c z) w < 0 →
+        w ∈ F s := fun w hw hord => by
     have hw_mem := hsub s hs hw
     have hpole : (∃ k : ℕ, w = -a - k) ∨ (∃ k : ℕ, w = -b - k) := by
       by_contra hno; push Not at hno
-      exact hord.not_ge (analyticAt_mellinBarnesIntegrand a b c z hno.1 hno.2
+      exact hord.not_ge (analyticAt_hypergeometricMellinBarnesIntegrand a b c z hno.1 hno.2
         fun m hm => hw_mem.2 ⟨m, hm.symm⟩).meromorphicOrderAt_nonneg
-    have hwP : w ∈ P := mem_mellinBarnesLeftPoles.2 ⟨hw_mem.1, hpole⟩
+    have hwP : w ∈ P := mem_gammaPolesRightOf_union.2
+      ⟨hw_mem.1, by
+        rcases hpole with ⟨k, h⟩ | ⟨k, h⟩ <;> [exact ⟨k, Or.inl h⟩; exact ⟨k, Or.inr h⟩]⟩
     obtain ⟨s', hs', hws'⟩ := hcover w hwP
     have hs_eq : s' = s := by
       by_contra hne
@@ -380,46 +386,48 @@ private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : �
         (ball_subset_closedBall hws') hw
     subst hs_eq; exact Finset.mem_filter.2 ⟨hwP, hws'⟩
   have hcirc := TauCeti.Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hr (F s)
-    (fun ζ _ => meromorphicAt_mellinBarnesIntegrand a b c z ζ)
+    (fun ζ _ => meromorphicAt_hypergeometricMellinBarnesIntegrand a b c z ζ)
     (fun ζ hζ => (Finset.mem_filter.1 hζ).2) hsupp
   rw [hcirc, inv_mul_cancel_left₀ two_pi_I_ne_zero]
 
-private theorem analyticAt_circleIntegral_mellinBarnes_term {p₀ : ℂ × ℂ × ℂ × ℂ} {σ r : ℝ}
-    (hr : 0 < r)
-    (hsub : ∀ s ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ,
+private theorem analyticAt_circleIntegral_hypergeometricMellinBarnes_term {p₀ : ℂ × ℂ × ℂ × ℂ}
+    {σ r : ℝ} (hr : 0 < r)
+    (hsub : ∀ s ∈ gammaPolesRightOf p₀.1 σ ∪ gammaPolesRightOf p₀.2.1 σ,
       closedBall s r ⊆ {t : ℂ | σ < t.re} \ range ((↑) : ℕ → ℂ))
-    (hsep : ∀ s₁ ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ,
-      ∀ s₂ ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ, s₁ ≠ s₂ → 2 * r < dist s₁ s₂)
+    (hsep : ∀ s₁ ∈ gammaPolesRightOf p₀.1 σ ∪ gammaPolesRightOf p₀.2.1 σ,
+      ∀ s₂ ∈ gammaPolesRightOf p₀.1 σ ∪ gammaPolesRightOf p₀.2.1 σ,
+      s₁ ≠ s₂ → 2 * r < dist s₁ s₂)
     (hz₀ : -p₀.2.2.2 ∈ slitPlane)
-    {s : ℂ} (hs : s ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ) :
+    {s : ℂ} (hs : s ∈ gammaPolesRightOf p₀.1 σ ∪ gammaPolesRightOf p₀.2.1 σ) :
     AnalyticAt ℂ (fun p : ℂ × ℂ × ℂ × ℂ =>
-      (2 * (π : ℂ) * I)⁻¹ * ∮ ζ in C(s, r),
-        mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 ζ) p₀ := by
+      (2 * (π : ℂ) * I)⁻¹ *
+        ∮ ζ in C(s, r), hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 ζ) p₀ := by
   refine analyticAt_const.mul (TauCeti.analyticAt_circleIntegral (c := s) (R := r) (p₀ := p₀)
     (f := fun q : (ℂ × ℂ × ℂ × ℂ) × ℂ =>
-      mellinBarnesIntegrand q.1.1 q.1.2.1 q.1.2.2.1 q.1.2.2.2 q.2)
+      hypergeometricMellinBarnesIntegrand q.1.1 q.1.2.1 q.1.2.2.1 q.1.2.2.2 q.2)
     fun ζ hζ => ?_)
   rw [abs_of_pos hr] at hζ
   have hζ_mem := hsub s hs (sphere_subset_closedBall hζ)
-  have hnot_P₀ : ζ ∉ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ := fun hζP => by
+  have hnot_P₀ : ζ ∉ gammaPolesRightOf p₀.1 σ ∪ gammaPolesRightOf p₀.2.1 σ := fun hζP => by
     by_cases heq : ζ = s
     · subst heq; simp at hζ; linarith
     · linarith [mem_sphere.1 hζ, hsep ζ hζP s hs heq]
-  exact analyticAt_mellinBarnesIntegrand_uncurry
-    (fun k hk => hnot_P₀ (mem_mellinBarnesLeftPoles.2
-      ⟨hζ_mem.1, Or.inl ⟨k, by linear_combination hk⟩⟩))
-    (fun k hk => hnot_P₀ (mem_mellinBarnesLeftPoles.2
-      ⟨hζ_mem.1, Or.inr ⟨k, by linear_combination hk⟩⟩))
+  exact analyticAt_hypergeometricMellinBarnesIntegrand_uncurry
+    (fun k hk => hnot_P₀ (mem_gammaPolesRightOf_union.2
+      ⟨hζ_mem.1, k, Or.inl (by linear_combination hk)⟩))
+    (fun k hk => hnot_P₀ (mem_gammaPolesRightOf_union.2
+      ⟨hζ_mem.1, k, Or.inr (by linear_combination hk)⟩))
     (fun m hm => hζ_mem.2 ⟨m, neg_inj.1 hm.symm⟩) hz₀
 
-private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
+private theorem analyticAt_residueSum_hypergeometricMellinBarnes {p₀ : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
     (ha₀ : ∀ k : ℕ, p₀.1 ≠ -k) (hb₀ : ∀ k : ℕ, p₀.2.1 ≠ -k)
     (ha₀_σ : ∀ k : ℕ, p₀.1.re + σ ≠ -k) (hb₀_σ : ∀ k : ℕ, p₀.2.1.re + σ ≠ -k)
     (hz₀ : -p₀.2.2.2 ∈ slitPlane) :
     AnalyticAt ℂ (fun p : ℂ × ℂ × ℂ × ℂ =>
-      ∑ w ∈ mellinBarnesLeftPoles p.1 p.2.1 σ,
-        TauCeti.Contour.residue (mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2) w) p₀ := by
-  obtain ⟨r, hr, hsub, hsep⟩ := exists_isolating_radius_mellinBarnesLeftPoles σ ha₀ hb₀
+      ∑ w ∈ gammaPolesRightOf p.1 σ ∪ gammaPolesRightOf p.2.1 σ,
+        TauCeti.Contour.residue
+          (hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2) w) p₀ := by
+  obtain ⟨r, hr, hsub, hsep⟩ := exists_isolating_radius_gammaPolesRightOf_union σ ha₀ hb₀
   obtain ⟨δ₀, hδ₀, hav₀⟩ := p₀.1.exists_ball_re_add_ne_neg_natCast_and_lt_iff ha₀_σ
   obtain ⟨δ₁, hδ₁, hav₁⟩ := p₀.2.1.exists_ball_re_add_ne_neg_natCast_and_lt_iff hb₀_σ
   let δ_ab : ℝ := min (r / 2) (min δ₀ δ₁)
@@ -427,11 +435,12 @@ private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × 
   have hU_nhds : (ball p₀.1 δ_ab ×ˢ ball p₀.2.1 δ_ab ×ˢ (univ : Set (ℂ × ℂ))) ∈ 𝓝 p₀ :=
     (isOpen_ball.prod (isOpen_ball.prod isOpen_univ)).mem_nhds
       ⟨mem_ball_self hδ_ab, mem_ball_self hδ_ab, mem_univ _⟩
-  refine (Finset.analyticAt_fun_sum (mellinBarnesLeftPoles p₀.1 p₀.2.1 σ) fun _ hs =>
-    analyticAt_circleIntegral_mellinBarnes_term hr hsub hsep hz₀ hs).congr ?_
+  refine (Finset.analyticAt_fun_sum
+    (gammaPolesRightOf p₀.1 σ ∪ gammaPolesRightOf p₀.2.1 σ) fun _ hs =>
+      analyticAt_circleIntegral_hypergeometricMellinBarnes_term hr hsub hsep hz₀ hs).congr ?_
   filter_upwards [hU_nhds] with p hp
-  exact (residueSum_eq_sum_circleIntegral_mellinBarnes p.2.2.1 p.2.2.2 hr hsub hsep ha₀_σ hb₀_σ
-    ((mem_ball_iff_norm.1 hp.1).trans_le (min_le_left _ _))
+  exact (residueSum_eq_sum_circleIntegral_hypergeometricMellinBarnes p.2.2.1 p.2.2.2 hr hsub hsep
+    ha₀_σ hb₀_σ ((mem_ball_iff_norm.1 hp.1).trans_le (min_le_left _ _))
     ((mem_ball_iff_norm.1 hp.2.1).trans_le (min_le_left _ _))
     (fun k =>
       ((hav₀ p.1 (ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _)) hp.1)).2 k).1)
@@ -440,27 +449,27 @@ private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × 
         k).1)).symm
 
 /-- **Joint four-variable holomorphy of the fixed-abscissa separating-contour Mellin–Barnes
-integral.** For any fixed `σ < 0`, `mellinBarnesSeparatingIntegral a b c z σ` is jointly analytic in
+integral.** For any fixed `σ < 0`, `hypergeometricMellinBarnes a b c z σ` is jointly analytic in
 `(a, b, c, z)` on `{p | (∀ k : ℕ, p.1 ≠ -k) ∧ (∀ k : ℕ, p.2.1 ≠ -k) ∧
 (∀ k : ℕ, p.1.re + σ ≠ -k) ∧ (∀ k : ℕ, p.2.1.re + σ ≠ -k) ∧ -p.2.2.2 ∈ slitPlane}`,
 across all lower parameters `c : ℂ` and across integer differences `a - b ∈ ℤ`. -/
-theorem analyticOnNhd_mellinBarnesSeparatingIntegral {σ : ℝ} (hσ : σ < 0) :
+theorem analyticOnNhd_hypergeometricMellinBarnes {σ : ℝ} (hσ : σ < 0) :
     AnalyticOnNhd ℂ
-      (fun p : ℂ × ℂ × ℂ × ℂ => mellinBarnesSeparatingIntegral p.1 p.2.1 p.2.2.1 p.2.2.2 σ)
+      (fun p : ℂ × ℂ × ℂ × ℂ => hypergeometricMellinBarnes p.1 p.2.1 p.2.2.1 p.2.2.2 σ)
       {p | (∀ k : ℕ, p.1 ≠ -k) ∧ (∀ k : ℕ, p.2.1 ≠ -k) ∧
         (∀ k : ℕ, p.1.re + σ ≠ -k) ∧ (∀ k : ℕ, p.2.1.re + σ ≠ -k) ∧
         -p.2.2.2 ∈ slitPlane} := by
   rintro p₀ ⟨ha₀, hb₀, ha₀_σ, hb₀_σ, hz₀⟩
-  simp_rw [mellinBarnesSeparatingIntegral_def]
+  simp_rw [hypergeometricMellinBarnes_def]
   exact ((analyticAt_const (v := (2 * π : ℂ)⁻¹)).mul
     (analyticAt_vertical_mellinBarnes (fun m _ => by linarith [m.cast_nonneg (α := ℝ)])
       ha₀_σ hb₀_σ hz₀)).add
-    (analyticAt_residueSum_mellinBarnes ha₀ hb₀ ha₀_σ hb₀_σ hz₀)
+    (analyticAt_residueSum_hypergeometricMellinBarnes ha₀ hb₀ ha₀_σ hb₀_σ hz₀)
 
 /-- **Joint four-variable holomorphy of the separating-contour Mellin–Barnes integral.** On
-`{p | (∀ k : ℕ, a ≠ -k) ∧ (∀ k : ℕ, b ≠ -k) ∧ -z ∈ slitPlane}`, `mellinBarnesIntegral a b c z` is
-jointly analytic in `(a, b, c, z)` across all lower parameters `c : ℂ` and across integer
-differences `a - b ∈ ℤ`. -/
+`{p | (∀ k : ℕ, p.1 ≠ -k) ∧ (∀ k : ℕ, p.2.1 ≠ -k) ∧ -p.2.2.2 ∈ slitPlane}`,
+`mellinBarnesIntegral a b c z` is jointly analytic in `(a, b, c, z)` across all lower parameters
+`c : ℂ` and across integer differences `a - b ∈ ℤ`. -/
 theorem analyticOnNhd_mellinBarnesIntegral :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ × ℂ => mellinBarnesIntegral p.1 p.2.1 p.2.2.1 p.2.2.2)
       {p | (∀ k : ℕ, p.1 ≠ -k) ∧ (∀ k : ℕ, p.2.1 ≠ -k) ∧ -p.2.2.2 ∈ slitPlane} := by
@@ -474,10 +483,10 @@ theorem analyticOnNhd_mellinBarnesIntegral :
     (isOpen_ball.prod (isOpen_ball.prod (isOpen_univ.prod
       (isOpen_slitPlane.preimage continuous_neg)))).mem_nhds
       ⟨mem_ball_self hδ₀, mem_ball_self hδ₁, mem_univ _, hz₀⟩
-  refine (analyticOnNhd_mellinBarnesSeparatingIntegral hσ p₀
+  refine (analyticOnNhd_hypergeometricMellinBarnes hσ p₀
     ⟨ha₀, hb₀, ha₀_σ, hb₀_σ, hz₀⟩).congr ?_
   filter_upwards [hU_nhds] with p hp
-  exact (mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral p.2.2.1 hσ
+  exact (mellinBarnesIntegral_eq_hypergeometricMellinBarnes p.2.2.1 hσ
     (hav₀ p.1 hp.1).1 (hav₁ p.2.1 hp.2.1).1 hp.2.2.2).symm
 
 /-- `Complex.mellinBarnesIntegral` composed with four analytic functions is analytic wherever

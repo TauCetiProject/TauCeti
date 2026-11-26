@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Meromorphic.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -116,7 +115,6 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
 * `AnalyticAt.const_cpow` -- `y ↦ w ^ f y` is analytic at `x` whenever `f` is analytic at `x` and
   either `w ≠ 0` or `f x ≠ 0`.
-* `Complex.meromorphic_const_cpow` -- for every fixed `w : ℂ`, `t ↦ w ^ t` is meromorphic on `ℂ`.
 * `Complex.norm_ofReal_cpow_sub_ofReal_cpow_le` -- for `b ≥ 1` and exponents with `re ≤ M`,
   `‖b ^ z - b ^ w‖ ≤ log b · b ^ M · ‖z - w‖`.
 * `Complex.hasDerivAt_add_cpow_mul_exp_mul` -- the derivative of `w ↦ (w + c) ^ b e^{k w}` where
@@ -930,18 +928,6 @@ theorem _root_.AnalyticAt.const_cpow {E : Type*} [NormedAddCommGroup E] [NormedS
   · exact ((differentiable_id.const_cpow (Or.inl hw)).analyticAt (f x)).comp hf
   · exact ((differentiableOn_id.const_cpow (Or.inr fun _ ht => ht)).analyticAt
       (isOpen_ne.mem_nhds hfx)).comp hf
-
-/-- For every fixed complex base `w`, `t ↦ w ^ t` is meromorphic everywhere on `ℂ` (entire when
-`w ≠ 0`, and equal to `0` away from `t = 0` when `w = 0`). -/
-theorem meromorphic_const_cpow (w : ℂ) : Meromorphic (fun t : ℂ => w ^ t) := by
-  intro t₀
-  by_cases h : w ≠ 0 ∨ t₀ ≠ 0
-  · exact (analyticAt_id.const_cpow h).meromorphicAt
-  · push Not at h
-    rcases h with ⟨rfl, rfl⟩
-    refine (analyticAt_const (v := (0 : ℂ))).meromorphicAt.congr ?_
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    simp [Complex.zero_cpow ht]
 
 /-- For a real base `b ≥ 1`, the principal power `b ^ z` is Lipschitz in the exponent on each
 half-plane `re z ≤ M`, with constant `log b · b ^ M`:
