@@ -12,10 +12,10 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import TauCeti.NumberTheory.AlgebraicWeight.Embedding
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RepresentationTheory.Tensor.Pi.External
+public import TauCeti.RingTheory.Etale.Field
 import TauCeti.LinearAlgebra.PiTensorProduct.Dual
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
-import TauCeti.RingTheory.Etale.Field
 
 /-!
 # Algebraic coefficient representations for embedding-indexed weights
@@ -44,8 +44,9 @@ per label. -/
 abbrev CoefficientSpace (a : EmbeddingWeight ι n) :=
   ⨂[ℂ] i, (weylModuleOfShape ℂ n (a i).detShiftShape).toSubmodule
 
-/-- The additive group of the coefficient space uses the additive monoid and scalar action of
-the indexed tensor product. -/
+/-- Register the additive group on the coefficient space directly. The tensor product instance
+requires a dependent family of additive group instances that typeclass search does not
+synthesize for these factors. -/
 noncomputable instance (a : EmbeddingWeight ι n) : AddCommGroup a.CoefficientSpace :=
   Module.addCommMonoidToAddCommGroup ℂ
 
@@ -55,19 +56,30 @@ noncomputable def coefficientRep (a : EmbeddingWeight ι n) :
     Representation ℂ (ι → GL (Fin n) ℂ) a.CoefficientSpace :=
   Representation.piExternalTensor fun i ↦ rationalWeylRep ℂ n (a i)
 
+/-- The coefficient representation on the split group is the indexed external tensor product
+of the rational Weyl representations. -/
+theorem coefficientRep_eq (a : EmbeddingWeight ι n) :
+    a.coefficientRep = Representation.piExternalTensor fun i ↦ rationalWeylRep ℂ n (a i) :=
+  (rfl)
+
 /-- Each coordinate acts through the Weyl representation at its own label. -/
 @[simp]
 theorem coefficientRep_apply_tprod (a : EmbeddingWeight ι n) (g : ι → GL (Fin n) ℂ)
     (v : ∀ i, (weylModuleOfShape ℂ n (a i).detShiftShape).toSubmodule) :
     a.coefficientRep g (PiTensorProduct.tprod ℂ v) =
       PiTensorProduct.tprod ℂ fun i ↦ rationalWeylRep ℂ n (a i) (g i) (v i) := by
-  simp [coefficientRep]
+  simp [coefficientRep_eq]
+
+-- The general tensor product lemmas ask for a dependent family of additive group instances.
+-- Typeclass search finds each factor's instance pointwise, so assemble the family here.
+private noncomputable local instance (a : EmbeddingWeight ι n) :
+    ∀ i, AddCommGroup (weylModuleOfShape ℂ n (a i).detShiftShape).toSubmodule :=
+  fun _ ↦ inferInstance
 
 /-- The coefficient representation for finitely many labels is irreducible. -/
 instance isIrreducible_coefficientRep [Finite ι] (a : EmbeddingWeight ι n) :
     a.coefficientRep.IsIrreducible := by
-  let : ∀ i, AddCommGroup (weylModuleOfShape ℂ n (a i).detShiftShape).toSubmodule :=
-    fun i ↦ inferInstance
+  rw [coefficientRep_eq]
   have : ∀ i, FiniteDimensional ℂ (weylModuleOfShape ℂ n (a i).detShiftShape).toSubmodule :=
     fun _ ↦ inferInstance
   exact Representation.isIrreducible_piExternalTensor _ fun _ ↦ inferInstance
@@ -80,8 +92,6 @@ theorem exists_highestWeightVector [Fintype ι] [DecidableEq ι] (a : EmbeddingW
         (∏ i, (↑(weightChar ℂ (a i).val (t i)) : ℂ)) • v) ∧
       ∀ (i : ι) (p q : Fin n) (h : p < q) (c : ℂ),
         a.coefficientRep (Function.update 1 i (transvectionUnit h.ne c)) v = v := by
-  let : ∀ i, AddCommGroup (weylModuleOfShape ℂ n (a i).detShiftShape).toSubmodule :=
-    fun i ↦ inferInstance
   have : ∀ i, Module.Projective ℂ (weylModuleOfShape ℂ n (a i).detShiftShape).toSubmodule :=
     fun _ ↦ inferInstance
   choose v hv hv₀ using fun i ↦ Submodule.exists_mem_ne_zero_of_ne_bot
@@ -101,9 +111,9 @@ theorem exists_highestWeightVector [Fintype ι] [DecidableEq ι] (a : EmbeddingW
       exact rationalWeylRep_apply_transvectionUnit_eq_self (a i) h (hv i) c
     · simp [Function.update_of_ne hj]
 
-/-- In a tensor product basis the coefficient representation is algebraic: its matrix
-entries are polynomials in the labelled matrix entries divided by a product of powers of
-the component determinants, with one denominator valid for every matrix entry. -/
+/-- In some basis indexed by tuples of factor indices, the matrix entries of the coefficient
+representation are polynomials in the labelled matrix entries divided by a product of powers
+of the component determinants, with one denominator valid for every matrix entry. -/
 theorem exists_toMatrix_coefficientRep_eq [Fintype ι] [DecidableEq ι] (a : EmbeddingWeight ι n) :
     ∃ (d : ι → ℕ) (b : Basis (∀ i, Fin (d i)) ℂ a.CoefficientSpace)
       (P : (∀ i, Fin (d i)) → (∀ i, Fin (d i)) → MvPolynomial (ι × (Fin n × Fin n)) ℂ)
@@ -116,7 +126,7 @@ theorem exists_toMatrix_coefficientRep_eq [Fintype ι] [DecidableEq ι] (a : Emb
   refine ⟨_, Basis.piTensorProduct b,
     fun p q ↦ ∏ i, MvPolynomial.rename (Prod.mk i) (P i (p i) (q i)), m, ?_⟩
   intro g p q
-  rw [coefficientRep, Representation.toMatrix_piExternalTensor]
+  rw [coefficientRep_eq, Representation.toMatrix_piExternalTensor]
   simp only [h, Finset.prod_mul_distrib, map_prod, MvPolynomial.eval_rename_prod_mk]
 
 section NumberField
@@ -136,6 +146,15 @@ noncomputable def weilRestrictionRep (a : EmbeddingWeight (F →+* ℂ) n) :
       Pi.evalMonoidHom (fun _ : F →ₐ[ℚ] ℂ ↦ GL (Fin n) ℂ) τ.toRatAlgHom).comp
       (generalLinearSplitPoints ℚ F ℂ n).toMonoidHom)
 
+/-- The action of a Weil-restriction point is the coefficient action of its tuple of split
+components, indexed by the complex embeddings. -/
+theorem weilRestrictionRep_apply (a : EmbeddingWeight (F →+* ℂ) n)
+    (g : WithConv (WeilRestriction ℚ F (GeneralLinear.coordinateHopfAlgebra F n) →ₐ[ℚ] ℂ)) :
+    haveI : Algebra.Etale ℚ F := Algebra.Etale.of_isSeparable _ _
+    a.weilRestrictionRep g =
+      a.coefficientRep (fun τ ↦ generalLinearSplitPoints ℚ F ℂ n g τ.toRatAlgHom) :=
+  (rfl)
+
 /-- Under the splitting of the Weil restriction, the action on each factor is that of its
 own complex embedding. -/
 @[simp]
@@ -146,7 +165,7 @@ theorem weilRestrictionRep_apply_tprod (a : EmbeddingWeight (F →+* ℂ) n)
       PiTensorProduct.tprod ℂ fun τ ↦ rationalWeylRep ℂ n (a τ)
         (GeneralLinearGroup.map (Algebra.TensorProduct.productMap τ.toRatAlgHom (AlgHom.id ℚ ℂ) :
           F ⊗[ℚ] ℂ →+* ℂ) (generalLinearPoints ℚ F n ℂ g)) (v τ) := by
-  simp [weilRestrictionRep, generalLinearSplitPoints_apply]
+  simp [weilRestrictionRep_apply]
 
 /-- The embedding-wise coefficient representation is irreducible as a representation of the
 complex points of the Weil restriction. -/

@@ -23,6 +23,13 @@ coordinate through its own representation. Over an algebraically closed field, t
 tensor product of a finite family of finite-dimensional irreducibles is irreducible. The proof
 uses Burnside density on the factors and the canonical comparison of the tensor product of the
 endomorphism spaces with the endomorphism space of the tensor product.
+
+## References
+
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, Springer GTM 129 (1991),
+  Exercise 2.36 for the two-factor case.
+* P. Etingof et al., *Introduction to Representation Theory*, AMS (2011),
+  Theorem 3.10.2(i) for the density argument.
 -/
 
 public section
