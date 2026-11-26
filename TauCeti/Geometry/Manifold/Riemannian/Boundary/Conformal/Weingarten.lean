@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Conformal.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten.Basic
 
 /-!
 # The Weingarten map and mean curvature of the boundary under a conformal change
