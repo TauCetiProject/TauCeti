@@ -30,12 +30,11 @@ which is a Gårding inequality (`TauCeti.PDE.isCoercive_mixedForm`). Under the *
 property**, that the value map `H¹(Ω) → L²(Ω)` is compact, as on a bounded Lipschitz domain
 (`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv`):
 
-* the abstract eigenbasis of the coercive shifted form along the compact value map
-  (`IsCoercive.exists_hilbertBasis_forall_apply_eq_smul_inner`) has eigenvalues `κ + ω` with
-  finite sublevel sets, and listing them in nondecreasing order
-  (`exists_equiv_monotone_comp_of_finite_setOf_le`) gives an orthonormal basis `(eₖ)` of `L²(Ω)`
-  with `eₖ` the value of some `uₖ ∈ H¹_Γ(Ω)`, `a(uₖ, v) = λₖ ⟪uₖ, v⟫_{L²}` for every
-  `v ∈ H¹_Γ(Ω)` (`TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue`);
+* the abstract eigenbasis of the coercive shifted form along the compact value map, listed in
+  nondecreasing order of its eigenvalues `κ + ω` (`IsCoercive.exists_hilbertBasis_nat_monotone`),
+  gives an orthonormal basis `(eₖ)` of `L²(Ω)` with `eₖ` the value of some `uₖ ∈ H¹_Γ(Ω)`,
+  `a(uₖ, v) = λₖ ⟪uₖ, v⟫_{L²}` for every `v ∈ H¹_Γ(Ω)`
+  (`TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue`);
 * the min–max infimum is attained (`TauCeti.PDE.isLeast_mixedEigenvalue`), the `λₖ` are
   nondecreasing and tend to infinity (`TauCeti.PDE.monotone_mixedEigenvalue`,
   `TauCeti.PDE.tendsto_mixedEigenvalue_atTop`), and they are exactly the mixed eigenvalues
@@ -46,14 +45,16 @@ The min–max value is identified with the eigenbasis by the abstract min–max 
 `TauCeti.isLeast_minMax_of_hilbertBasis`, applied to the nonnegative shifted form, whose
 eigenvalues are `λₖ + ω` (`TauCeti.PDE.mixedEigenvalue_eq_of_hilbertBasis`).
 
-The variational definition makes the eigenvalues **monotone in the boundary part**: for `Γ ⊆ Γ'`
-the space `H¹_{Γ'}(Ω)` is a subspace of `H¹_Γ(Ω)`, so `λₖ(Γ) ≤ λₖ(Γ')`
-(`TauCeti.PDE.mixedEigenvalue_mono`). For `-Δ` the Neumann, mixed and Dirichlet eigenvalues are
-therefore ordered: `0 = λ₀(∅)` on a nonempty bounded set
-(`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`), and `λₖ(Γ) ≤ λₖ(∂Ω)` for every
-`Γ ⊆ ∂Ω` (`TauCeti.PDE.mixedEigenvalue_laplacian_le_dirichletEigenvalue`). For instance, on
-`(0, 1)` with `Γ = {0}` the least Neumann, mixed and Dirichlet eigenvalues are `0`, `π² / 4` and
-`π²`.
+Under the Rellich property, on a nonempty domain, the eigenvalues are **monotone in the boundary
+part**. Let the form be symmetric on `H¹_Γ(Ω)` and coercive there after a shift, let `Γ ⊆ Γ'` and
+let `Γ'` miss `Ω`. Then `H¹_{Γ'}(Ω)` is a subspace of `H¹_Γ(Ω)`, so every subspace admissible in the
+min–max for `Γ'` is admissible for `Γ`, and since both infima are attained, `λₖ(Γ) ≤ λₖ(Γ')`
+(`TauCeti.PDE.mixedEigenvalue_mono`). For `-Δ`, again under the Rellich property on a nonempty
+domain, the Neumann, mixed and Dirichlet eigenvalues are therefore ordered: `0 = λ₀(∅)` when `Ω`
+is moreover bounded (`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`), and
+`λₖ(Γ) ≤ λₖ(∂Ω)` for every `Γ ⊆ ∂Ω`
+(`TauCeti.PDE.mixedEigenvalue_laplacian_le_dirichletEigenvalue`). For instance, on `(0, 1)` with
+`Γ = {0}` the least Neumann, mixed and Dirichlet eigenvalues are `0`, `π² / 4` and `π²`.
 
 ## Main declarations
 
@@ -254,34 +255,6 @@ private theorem neg_mul_norm_sq_le_energyFormH1 {omega : ℝ}
   rw [mixedForm_apply, real_inner_self_eq_norm_sq] at h
   linarith
 
-/-- **Every mixed eigenvalue occurs in an orthonormal eigenbasis.** If the values of eigenfunctions
-`u_g ∈ H¹_Γ(Ω)` of a symmetric energy form, with eigenvalues `λ_g`, form an orthonormal basis of
-`L²(Ω)`, then the eigenvalue of every nonzero eigenfunction `w` is some `λ_g`: otherwise the value
-of `w` would be orthogonal to the whole basis. -/
-private theorem exists_eq_of_hilbertBasis {s : Type*}
-    (hsymm : ∀ u v : W1pVanishingOn mu Omega 2 Γ,
-      energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
-        energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2))
-    (B : HilbertBasis s ℝ (Lp ℝ 2 (mu.restrict Omega))) {lam : s → ℝ}
-    {u : s → W1pVanishingOn mu Omega 2 Γ} (hvalue : ∀ g, W1p.value (u g : W1p mu Omega 2) = B g)
-    (heq : ∀ (g : s) (v : W1pVanishingOn mu Omega 2 Γ),
-      energyFormH1 a b c (u g : W1p mu Omega 2) (v : W1p mu Omega 2) =
-        lam g * ⟪W1p.value (u g : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ)
-    {kappa' : ℝ} {w : W1pVanishingOn mu Omega 2 Γ} (hw : w ≠ 0)
-    (hweq : ∀ v : W1pVanishingOn mu Omega 2 Γ,
-      energyFormH1 a b c (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
-        kappa' * ⟪W1p.value (w : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) :
-    ∃ g, lam g = kappa' := by
-  by_contra! hne
-  have hwJ : W1pVanishingOn.valueL w ≠ 0 := fun h ↦
-    hw (W1pVanishingOn.valueL_injective (h.trans (map_zero _).symm))
-  refine hwJ (B.repr.map_eq_zero_iff.1 (lp.ext (funext fun g ↦ ?_)))
-  -- Symmetry gives `(λ_g - κ) ⟪w, u_g⟫ = 0`, and `λ_g ≠ κ`.
-  have h := hsymm w (u g)
-  rw [hweq, heq, hvalue, real_inner_comm] at h
-  rw [HilbertBasis.repr_apply_apply, W1pVanishingOn.valueL_apply, lp.coeFn_zero, Pi.zero_apply]
-  exact (mul_eq_mul_right_iff.1 h.symm).resolve_left (hne g)
-
 /-! ### The mixed eigenvalues under the Rellich property -/
 
 section Rellich
@@ -311,51 +284,28 @@ private theorem exists_hilbertBasis_nat_monotone :
           energyFormH1 a b c (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
             kappa' * ⟪W1p.value (w : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) ↔
         ∃ k, kappa k = kappa' := by
-  obtain ⟨s, B, nu, u, hB', hpos, -, hvalue, heq, -⟩ :=
-    hB.exists_hilbertBasis_forall_apply_eq_smul_inner
-      (W1pVanishingOn.isCompactOperator_valueL hK) (W1pVanishingOn.denseRange_valueL_two hΓ)
-      fun v w ↦ by rw [mixedForm_apply, mixedForm_apply, hsymm, real_inner_comm]
+  obtain ⟨basis, nu, u, hmono, htendsto, -, hvalue, heq, hiff, -⟩ :=
+    hB.exists_hilbertBasis_nat_monotone (W1pVanishingOn.isCompactOperator_valueL hK)
+      (W1pVanishingOn.denseRange_valueL_two hΓ)
+      (fun v w ↦ by rw [mixedForm_apply, mixedForm_apply, hsymm, real_inner_comm])
+      (L2.not_finiteDimensional_restrict_of_isOpen mu Omega.isOpen hOmega)
   -- The eigenvalues of the energy form are those of the shifted form, shifted back by `ω`.
-  have hvalue' (g : s) : W1p.value (u g : W1p mu Omega 2) = B g := by
-    rw [← W1pVanishingOn.valueL_apply, hvalue g, hB']
-  have heq' (g : s) (v : W1pVanishingOn mu Omega 2 Γ) :
-      energyFormH1 a b c (u g : W1p mu Omega 2) (v : W1p mu Omega 2) =
-        (nu g - omega) * ⟪W1p.value (u g : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
-    have h := heq g v
-    rw [mixedForm_apply, W1pVanishingOn.valueL_apply, W1pVanishingOn.valueL_apply] at h
-    linarith
-  have hfin (R : ℝ) : {g : s | nu g - omega ≤ R}.Finite :=
-    (hB.finite_setOf_le_of_orthonormal (W1pVanishingOn.isCompactOperator_valueL hK)
-      B.orthonormal hpos (u := u) (fun g ↦ by rw [hvalue g, hB']) heq (R + omega)).subset
-        fun g hg ↦ by simp only [mem_ofPred_eq] at hg ⊢; linarith
-  -- The basis is infinite, since `L²(Ω)` is infinite-dimensional.
-  have : Infinite s := by
-    rw [← not_finite_iff_infinite]
-    intro hs
-    have := Fintype.ofFinite s
-    exact L2.not_finiteDimensional_restrict_of_isOpen (𝕜 := ℝ) mu Omega.isOpen hOmega
-      (Module.Finite.of_basis B.toOrthonormalBasis.toBasis)
-  obtain ⟨e, he⟩ := exists_equiv_monotone_comp_of_finite_setOf_le (fun g ↦ nu g - omega) hfin
-  -- Reindex the eigenbasis along the nondecreasing enumeration `e`.
-  let basis : HilbertBasis ℕ ℝ (Lp ℝ 2 (mu.restrict Omega)) :=
-    HilbertBasis.mk (B.orthonormal.comp e e.injective)
-      (by rw [e.surjective.range_comp, B.dense_span])
-  have hbasis (k : ℕ) : basis k = B (e k) := by
-    simp only [basis, HilbertBasis.coe_mk, Function.comp_apply]
-  have hiff (kappa' : ℝ) :
-      (∃ w : W1pVanishingOn mu Omega 2 Γ, w ≠ 0 ∧ ∀ v : W1pVanishingOn mu Omega 2 Γ,
-        energyFormH1 a b c (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
-          kappa' * ⟪W1p.value (w : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) ↔
-        ∃ k, nu (e k) - omega = kappa' := by
-    refine ⟨fun ⟨w, hw, hweq⟩ ↦ ?_, fun ⟨k, hk⟩ ↦ ⟨u (e k), fun h0 ↦ ?_, hk ▸ heq' (e k)⟩⟩
-    · obtain ⟨g, hg⟩ := exists_eq_of_hilbertBasis hsymm B hvalue' heq' hw hweq
-      exact ⟨e.symm g, by rwa [Equiv.apply_symm_apply]⟩
-    · have h := hvalue' (e k)
-      rw [h0, ZeroMemClass.coe_zero, W1p.value_zero] at h
-      exact B.orthonormal.ne_zero (e k) h.symm
-  exact ⟨basis, fun k ↦ nu (e k) - omega, u ∘ e, he,
-    tendsto_comp_atTop_of_finite_setOf_le hfin e.injective,
-    fun k ↦ by rw [hbasis]; exact hvalue' (e k), fun k v ↦ heq' (e k) v, hiff⟩
+  have hshift (kappa : ℝ) (w : W1pVanishingOn mu Omega 2 Γ) :
+      (∀ v, mixedForm hcoeff Γ omega w v =
+        (kappa + omega) * ⟪W1pVanishingOn.valueL w, W1pVanishingOn.valueL v⟫_ℝ) ↔
+        ∀ v : W1pVanishingOn mu Omega 2 Γ,
+          energyFormH1 a b c (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
+            kappa * ⟪W1p.value (w : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
+    forall_congr' fun v ↦ by
+      rw [mixedForm_apply, W1pVanishingOn.valueL_apply, W1pVanishingOn.valueL_apply, add_mul,
+        add_left_inj]
+  refine ⟨basis, fun k ↦ nu k - omega, u, fun i j hij ↦ sub_le_sub_right (hmono hij) _,
+    by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-omega) htendsto,
+    fun k ↦ by rw [← W1pVanishingOn.valueL_apply, hvalue],
+    fun k ↦ (hshift _ _).1 (by simpa only [sub_add_cancel] using heq k), fun kappa' ↦ ?_⟩
+  have h := hiff (kappa' + omega)
+  simp only [hshift] at h
+  simpa only [sub_eq_iff_eq_add] using h
 
 /-- **The mixed eigenvalues with an eigenbasis.** For a symmetric energy form, coercive on
 `H¹_Γ(Ω)` after the shift by `ω`, on a nonempty domain with the Rellich property and for `Γ`
