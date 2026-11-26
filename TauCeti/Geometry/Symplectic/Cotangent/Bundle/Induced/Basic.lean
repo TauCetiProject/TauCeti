@@ -32,8 +32,9 @@ the Marle–Guillemin–Sternberg local model `G ×_H (𝔪* × V)` of a Hamilto
 orbit. With `H` trivial, `N = 𝔤*` and `f = id` it is the canonical form of `T*G`
 (`TauCeti.CotangentBundle.inducedForm_id_zero`).
 
-The statements here are made on `G × N` itself: the balanced product `G ×_H N`, and the descent of
-`Ω` and of the moment map to it, are not constructed in this file.
+The statements here are made on `G × N` itself. The descent of `Ω` and of the moment map to the
+balanced product `G ×_H N` is
+`TauCeti.Geometry.Symplectic.Cotangent.Bundle.Induced.BalancedProduct`.
 
 * **The formula.** `Ω` pairs `(v, u)` and `(w, u')` at `(g, n)` to
   `df_n u' (θ v) - df_n u (θ w) + f n ⁅θ v, θ w⁆ + σ(u, u')`
