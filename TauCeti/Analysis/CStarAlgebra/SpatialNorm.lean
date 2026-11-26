@@ -61,7 +61,9 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
   `NonUnitalStarSubalgebra.mem_minTensor_iff`, `NonUnitalStarSubalgebra.isClosed_minTensor`,
   `NonUnitalStarSubalgebra.minTensor_le` and `NonUnitalStarSubalgebra.mapLCompletion_mem_minTensor`.
 * `NonUnitalStarSubalgebra.toMinTensor A B`: the star homomorphism `A ⊗[𝕜] B → A ⊗_min B`, with
-  `NonUnitalStarSubalgebra.norm_toMinTensor` and `NonUnitalStarSubalgebra.denseRange_toMinTensor`.
+  `NonUnitalStarSubalgebra.norm_toMinTensor` and `NonUnitalStarSubalgebra.denseRange_toMinTensor`;
+  continuous linear maps out of `A ⊗_min B` are determined on `A ⊗[𝕜] B`
+  (`NonUnitalStarSubalgebra.minTensor_continuousLinearMap_ext`).
 
 ## References
 
@@ -317,5 +319,15 @@ theorem norm_toMinTensor (x : A ⊗[𝕜] B) : ‖toMinTensor A B x‖ = spatial
 theorem denseRange_toMinTensor : DenseRange (toMinTensor A B) := by
   rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
   exact (coe_minTensor A B).subset
+
+variable {A B} in
+/-- Two continuous linear maps out of the spatial tensor product agree when they agree on the
+algebraic tensor product, which is dense. -/
+@[ext]
+theorem minTensor_continuousLinearMap_ext {G : Type*} [TopologicalSpace G] [AddCommMonoid G]
+    [Module 𝕜 G] [T2Space G] {f g : minTensor A B →L[𝕜] G}
+    (h : ∀ x, f (toMinTensor A B x) = g (toMinTensor A B x)) : f = g :=
+  DFunLike.coe_injective <| (denseRange_toMinTensor A B).equalizer
+    (map_continuous f) (map_continuous g) (funext h)
 
 end NonUnitalStarSubalgebra

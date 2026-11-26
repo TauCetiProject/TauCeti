@@ -39,7 +39,9 @@ which on the algebraic tensor product is `LinearMap.tensorComponent φ` after
   `‖L_φ x‖ ≤ ‖φ‖ ‖x‖_min` on the algebraic tensor product.
 * `NonUnitalStarSubalgebra.minSliceRight`, `NonUnitalStarSubalgebra.minSliceLeft`: their bounded
   extensions to `A ⊗_min B`, with `NonUnitalStarSubalgebra.norm_minSliceRight` and
-  `NonUnitalStarSubalgebra.norm_minSliceLeft`. They are linear in the functional
+  `NonUnitalStarSubalgebra.norm_minSliceLeft`, and characterized as the unique such extensions
+  by `NonUnitalStarSubalgebra.eq_minSliceRight_iff` and
+  `NonUnitalStarSubalgebra.eq_minSliceLeft_iff`. They are linear in the functional
   (`NonUnitalStarSubalgebra.minSliceRight_zero`, `_add`, `_smul`, and the `minSliceLeft`
   versions).
 
@@ -217,45 +219,56 @@ theorem minSliceLeft_toMinTensor [CompleteSpace B] (φ : StrongDual 𝕜 A) (x :
   · exact denseRange_toMinTensor A B
   · exact ⟨_, norm_tensorComponent_comm_le' φ⟩
 
+/-- `minSliceRight A B ψ` is the unique bounded linear map `A ⊗_min B → A` that restricts to the
+right slice map on the algebraic tensor product. -/
+theorem eq_minSliceRight_iff [CompleteSpace A] {ψ : StrongDual 𝕜 B}
+    {T : minTensor A B →L[𝕜] A} :
+    T = minSliceRight A B ψ ↔ ∀ x, T (toMinTensor A B x) = tensorComponent (ψ : B →ₗ[𝕜] 𝕜) x :=
+  ⟨by rintro rfl x; exact minSliceRight_toMinTensor ψ x,
+    fun h ↦ minTensor_continuousLinearMap_ext fun x ↦ by rw [h, minSliceRight_toMinTensor]⟩
+
+/-- `minSliceLeft A B φ` is the unique bounded linear map `A ⊗_min B → B` that restricts to the
+left slice map on the algebraic tensor product. -/
+theorem eq_minSliceLeft_iff [CompleteSpace B] {φ : StrongDual 𝕜 A}
+    {T : minTensor A B →L[𝕜] B} :
+    T = minSliceLeft A B φ ↔
+      ∀ x, T (toMinTensor A B x) = tensorComponent (φ : A →ₗ[𝕜] 𝕜) (TensorProduct.comm 𝕜 A B x) :=
+  ⟨by rintro rfl x; exact minSliceLeft_toMinTensor φ x,
+    fun h ↦ minTensor_continuousLinearMap_ext fun x ↦ by rw [h, minSliceLeft_toMinTensor]⟩
+
 /-- The right slice map of the zero functional is zero. -/
 @[simp]
 theorem minSliceRight_zero [CompleteSpace A] : minSliceRight A B (0 : StrongDual 𝕜 B) = 0 :=
-  DFunLike.coe_injective <| (denseRange_toMinTensor A B).equalizer
-    (map_continuous _) (map_continuous _) <| funext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun x ↦ by simp
 
 /-- The left slice map of the zero functional is zero. -/
 @[simp]
 theorem minSliceLeft_zero [CompleteSpace B] : minSliceLeft A B (0 : StrongDual 𝕜 A) = 0 :=
-  DFunLike.coe_injective <| (denseRange_toMinTensor A B).equalizer
-    (map_continuous _) (map_continuous _) <| funext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun x ↦ by simp
 
 /-- The right slice map is additive in the functional. -/
 @[simp]
 theorem minSliceRight_add [CompleteSpace A] (ψ₁ ψ₂ : StrongDual 𝕜 B) :
     minSliceRight A B (ψ₁ + ψ₂) = minSliceRight A B ψ₁ + minSliceRight A B ψ₂ :=
-  DFunLike.coe_injective <| (denseRange_toMinTensor A B).equalizer
-    (map_continuous _) (map_continuous _) <| funext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun x ↦ by simp
 
 /-- The left slice map is additive in the functional. -/
 @[simp]
 theorem minSliceLeft_add [CompleteSpace B] (φ₁ φ₂ : StrongDual 𝕜 A) :
     minSliceLeft A B (φ₁ + φ₂) = minSliceLeft A B φ₁ + minSliceLeft A B φ₂ :=
-  DFunLike.coe_injective <| (denseRange_toMinTensor A B).equalizer
-    (map_continuous _) (map_continuous _) <| funext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun x ↦ by simp
 
 /-- The right slice map is homogeneous in the functional. -/
 @[simp]
 theorem minSliceRight_smul [CompleteSpace A] (c : 𝕜) (ψ : StrongDual 𝕜 B) :
     minSliceRight A B (c • ψ) = c • minSliceRight A B ψ :=
-  DFunLike.coe_injective <| (denseRange_toMinTensor A B).equalizer
-    (map_continuous _) (map_continuous _) <| funext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun x ↦ by simp
 
 /-- The left slice map is homogeneous in the functional. -/
 @[simp]
 theorem minSliceLeft_smul [CompleteSpace B] (c : 𝕜) (φ : StrongDual 𝕜 A) :
     minSliceLeft A B (c • φ) = c • minSliceLeft A B φ :=
-  DFunLike.coe_injective <| (denseRange_toMinTensor A B).equalizer
-    (map_continuous _) (map_continuous _) <| funext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun x ↦ by simp
 
 /-- The right slice map has norm at most `‖ψ‖`. -/
 theorem norm_minSliceRight_le [CompleteSpace A] (ψ : StrongDual 𝕜 B) :
