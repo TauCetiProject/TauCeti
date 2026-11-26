@@ -87,6 +87,17 @@ meromorphic functions at `x`, a normalized discrete valuation of `M(X)` trivial 
 def place (x : X) : Place ℂ (MeromorphicFunction X) :=
   Place.ofAddValuation (order x) (order_surjective x) fun _ hc ↦ order_algebraMap hc
 
+/-- The place at `x` is the place of the additive valuation `ord_x`. -/
+theorem place_def (x : X) :
+    place x = Place.ofAddValuation (order x) (order_surjective x)
+      (fun _ hc ↦ order_algebraMap hc) :=
+  (rfl)
+
+/-- The valuation of the place at `x` is `f ↦ exp (-ord_x f)`. -/
+@[simp]
+theorem valuation_place (x : X) : (place x).valuation = (order x).expNeg :=
+  Place.valuation_ofAddValuation
+
 /-- The order function of the place at `x` is the order `ord_x`, read in `ℤ` with the junk value
 `0` at the zero function. -/
 @[simp]
@@ -102,11 +113,10 @@ theorem coe_ord_place (x : X) {f : MeromorphicFunction X} (hf : f ≠ 0) :
 /-- A meromorphic function is integral at the place at `x` exactly when `x` is not a pole. -/
 theorem mem_integers_place_iff {x : X} {f : MeromorphicFunction X} :
     f ∈ (place x).integers ↔ f x ≠ ∞ := by
-  rw [place, Place.mem_integers_ofAddValuation_iff, order_nonneg_iff]
+  rw [place_def, Place.mem_integers_ofAddValuation_iff, order_nonneg_iff]
 
 /-- The valuation of the place at `x` is at most `1` at `f` exactly when `x` is not a pole of
 `f`. -/
-@[simp]
 theorem valuation_place_le_one_iff {x : X} {f : MeromorphicFunction X} :
     (place x).valuation f ≤ 1 ↔ f x ≠ ∞ := by
   rw [← Place.mem_integers_iff, mem_integers_place_iff]
@@ -119,7 +129,6 @@ theorem ord_place_pos_iff {x : X} {f : MeromorphicFunction X} (hf : f ≠ 0) :
 
 /-- A meromorphic function lies in the maximal ideal of the place at `x` exactly when it
 vanishes at `x`. -/
-@[simp]
 theorem valuation_place_lt_one_iff {x : X} {f : MeromorphicFunction X} :
     (place x).valuation f < 1 ↔ f x = ((0 : ℂ) : OnePoint ℂ) := by
   rcases eq_or_ne f 0 with rfl | hf
