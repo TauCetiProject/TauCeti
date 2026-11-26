@@ -17,7 +17,8 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 /-!
 # Derivatives of trigonometric expressions
 
-The first and second derivatives of `t ↦ cos (c t)` are `-c sin (c t)` and `-c² cos (c t)`
+The derivative of `t ↦ sin (c t)` is `c cos (c t)` (`TauCeti.deriv_sin_mul`). The first and
+second derivatives of `t ↦ cos (c t)` are `-c sin (c t)` and `-c² cos (c t)`
 (`TauCeti.deriv_cos_mul`, `TauCeti.deriv_deriv_cos_mul`).
 Where `cos t ≠ 0`, the first and second derivatives of `log (cos t)` are `-tan t` and
 `-(1 / cos t ^ 2)` (`TauCeti.deriv_log_cos`, `TauCeti.iteratedDeriv_two_log_cos`).
@@ -48,6 +49,10 @@ theorem contDiffOn_one_sub_sq_mul_sin_sq_rpow {n : WithTop ℕ∞} (p : ℝ) :
       {z : ℝ × ℝ | z.1 ^ 2 < 1} :=
   (by fun_prop : ContDiff ℝ n fun z : ℝ × ℝ ↦ 1 - z.1 ^ 2 * sin z.2 ^ 2).contDiffOn
     |>.rpow_const_of_ne fun z hz ↦ (one_sub_mul_sin_sq_pos hz z.2).ne'
+
+/-- The derivative of `t ↦ sin (c t)` is `c cos (c t)`. -/
+theorem deriv_sin_mul (c t : ℝ) : deriv (fun s ↦ sin (c * s)) t = c * cos (c * t) := by
+  rw [deriv_comp_mul_left (f := sin), Real.deriv_sin, smul_eq_mul]
 
 /-- The derivative of `t ↦ cos (c t)` is `-c sin (c t)`. -/
 theorem deriv_cos_mul (c t : ℝ) : deriv (fun s ↦ cos (c * s)) t = -(c * sin (c * t)) := by

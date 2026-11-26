@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.OneEndpoint
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Wirtinger
 
@@ -180,23 +181,6 @@ private theorem integral_sin_sq_and_integral_cos_sq (hab : a < b) :
     field_simp
     linarith
 
-/-- The derivative of `t ↦ sin (k (t - a))` is `t ↦ k cos (k (t - a))`. -/
-private theorem deriv_sin_mul_sub (k : ℝ) :
-    deriv (fun t ↦ Real.sin (k * (t - a))) = fun t ↦ k * Real.cos (k * (t - a)) :=
-  funext fun t ↦ by
-    have h : HasDerivAt (fun t ↦ Real.sin (k * (t - a))) (Real.cos (k * (t - a)) * k) t :=
-      (Real.hasDerivAt_sin _).comp t (by simpa using ((hasDerivAt_id t).sub_const a).const_mul k)
-    rw [h.deriv, mul_comm]
-
-/-- The derivative of `t ↦ cos (k (t - a))` is `t ↦ -k sin (k (t - a))`. -/
-private theorem deriv_cos_mul_sub (k : ℝ) :
-    deriv (fun t ↦ Real.cos (k * (t - a))) = fun t ↦ -(k * Real.sin (k * (t - a))) :=
-  funext fun t ↦ by
-    have h : HasDerivAt (fun t ↦ Real.cos (k * (t - a))) (-Real.sin (k * (t - a)) * k) t :=
-      (Real.hasDerivAt_cos _).comp t (by simpa using ((hasDerivAt_id t).sub_const a).const_mul k)
-    rw [h.deriv]
-    ring
-
 /-- If `k² ‖u‖² ≤ ‖u'‖²` on a set `S` of Sobolev classes and some `u ∈ S` with `‖u‖ ≠ 0` has
 `‖u'‖² = k² ‖u‖²`, then `k²` is the best constant. -/
 private theorem isGreatest_of_mem_of_norm_gradient_sq_eq {Ω : Opens ℝ}
@@ -242,7 +226,8 @@ private theorem exists_mem_singleton_left_norm_gradient_sq_eq (hab : a < b) :
     simp
   · rw [hv, hs]
     linarith
-  · simp_rw [hg, hv, deriv_sin_mul_sub, mul_pow]
+  · simp_rw [hg, hv, deriv_comp_sub_const (f := fun s ↦ Real.sin (k * s)), deriv_sin_mul,
+      mul_pow]
     rw [intervalIntegral.integral_const_mul, hc, hs]
 
 /-- The class of `cos (π (t - a) / (2 (b - a)))` lies in `H¹_{{b}}(a, b)`, is nonzero, and has
@@ -262,7 +247,8 @@ private theorem exists_mem_singleton_right_norm_gradient_sq_eq (hab : a < b) :
     simp [hkb]
   · rw [hv, hc]
     linarith
-  · simp_rw [hg, hv, deriv_cos_mul_sub, neg_sq, mul_pow]
+  · simp_rw [hg, hv, deriv_comp_sub_const (f := fun s ↦ Real.cos (k * s)), deriv_cos_mul,
+      neg_sq, mul_pow]
     rw [intervalIntegral.integral_const_mul, hc, hs]
 
 /-- **The sharp Poincaré–Friedrichs inequality on `H¹_{{a}}(a, b)`, Rayleigh form.** The best
