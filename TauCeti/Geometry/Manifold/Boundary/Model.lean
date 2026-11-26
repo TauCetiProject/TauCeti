@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import Mathlib.Topology.Perfect
 public import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
 
 /-!
 # The boundary model of a Euclidean half-space
@@ -30,7 +32,8 @@ multiple of the boundary coordinate. Multiplication by a positive scalar is a di
 half-space model, `TauCeti.EuclideanHalfSpace.smulDiffeomorph`. The model is not boundaryless
 (`TauCeti.not_boundaryless_modelWithCornersEuclideanHalfSpace`), so results stated for boundaryless
 models, such as the transport `TauCeti.BoundarylessModel` to the model vector space, do not apply
-to it.
+to it. The half-space is Hausdorff (`EuclideanHalfSpace.instT2Space`), and in positive dimension it
+has no isolated points (`EuclideanHalfSpace.instPerfectSpace`).
 -/
 
 public section
@@ -481,3 +484,13 @@ theorem exists_pos_eq_mul_apply_zero_of_eventually_pos {k : ℕ} [NeZero k]
     (EuclideanSpace.projₗ (𝕜 := ℝ) 0) (ν : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] ℝ) he₀ hν_nonneg⟩
 
 end ContinuousLinearMap
+
+/-- The half-space is Hausdorff, as a subspace of `EuclideanSpace ℝ (Fin n)`. -/
+instance EuclideanHalfSpace.instT2Space {n : ℕ} [NeZero n] : T2Space (EuclideanHalfSpace n) :=
+  inferInstanceAs (T2Space {x : EuclideanSpace ℝ (Fin n) // 0 ≤ x 0})
+
+/-- A half-space of positive dimension has no isolated points, as a manifold modelled on itself
+(`ModelWithCorners.perfectSpace`). -/
+instance EuclideanHalfSpace.instPerfectSpace {n : ℕ} [NeZero n] :
+    PerfectSpace (EuclideanHalfSpace n) :=
+  ModelWithCorners.perfectSpace (𝓡∂ n) (EuclideanHalfSpace n)

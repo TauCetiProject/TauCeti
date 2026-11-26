@@ -17,8 +17,7 @@ finite-dimensional model vector space `E`, and `J`, `ν` a domain-dependent almo
 structure on `M` and an inhomogeneous term, both of class `C^ℓ`. A weak pseudoholomorphic map
 `u` on an open set `s ⊆ X` (`TauCeti.IsWeakPseudoholomorphicOn J ν p u s`) gains `ℓ`
 derivatives: for finite `p > 2` it lies in `W^{k+1,p}_loc` on `s` for every `k ≤ ℓ`, and for every
-`p > 2`, including `p = ∞`, it is of class `C^ℓ` on `s`. As a corollary, a `C¹` map that is
-pseudoholomorphic for a smooth almost complex structure is smooth. This is the interior case of
+`p > 2`, including `p = ∞`, it is of class `C^ℓ` on `s`. This is the interior case of
 McDuff–Salamon, Theorem B.4.1 and Remark B.4.3.
 
 The proof is local. In the preferred charts at `x ∈ X` and `y ∈ M`, the coordinate expression
@@ -40,8 +39,6 @@ preferred charts suffices for both conclusions
 * `TauCeti.IsWeakPseudoholomorphicOn.contMDiffOn`, `TauCeti.IsWeakPseudoholomorphic.contMDiff`:
   for every `p > 2`, including `p = ∞`, a weak pseudoholomorphic map is of class `C^ℓ`, and
   smooth when `J` and `ν` are smooth.
-* `TauCeti.IsPseudoholomorphicOn.contMDiffOn`, `TauCeti.IsPseudoholomorphic.contMDiff`: a `C¹`
-  pseudoholomorphic map for a smooth almost complex structure is smooth.
 
 ## Implementation notes
 
@@ -49,7 +46,8 @@ The Sobolev conclusion needs `p < ∞`: a `W^{1,∞}` solution for a `C¹` struc
 `W^{2,∞}` (`TauCeti.not_memWkpLoc_two_top_graph_logLogExample`). The `C^ℓ` conclusion holds for
 `p = ∞` as well, since a `W^{1,∞}_loc` solution is a `W^{1,q}_loc` solution for finite `q > 2`.
 Boundary regularity, for maps sending the boundary of a bordered surface into a totally real
-submanifold, is not treated here.
+submanifold, is in `TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Bordered.Regularity` for a
+structure independent of the domain point and the zero inhomogeneous term.
 
 ## References
 
@@ -163,21 +161,5 @@ theorem contMDiff (h : IsWeakPseudoholomorphic J ν p u) (hp : 2 < p) :
   contMDiffOn_univ.1 ((isWeakPseudoholomorphicOn_univ.2 h).contMDiffOn isOpen_univ hp)
 
 end IsWeakPseudoholomorphic
-
-/-- **`C¹` pseudoholomorphic maps are smooth** (McDuff–Salamon, Remark B.4.3, interior case).
-A map from a Riemann surface that is of class `C¹` and pseudoholomorphic on an open set `s` for a
-smooth almost complex structure `J₀` is smooth on `s`. -/
-theorem IsPseudoholomorphicOn.contMDiffOn {J₀ : SmoothAlmostComplexStructure I M}
-    (h : IsPseudoholomorphicOn (SmoothAlmostComplexStructure.ofComplexManifold ℂ X) J₀ u s)
-    (hs : IsOpen s) (hu : ContMDiffOn 𝓘(ℝ, ℂ) I 1 u s) : ContMDiffOn 𝓘(ℝ, ℂ) I ∞ u s :=
-  ((isWeakPseudoholomorphicOn_iff_isPseudoholomorphicOn (ℓ := ⊤) (p := 3) J₀ hs hu).2 h).contMDiffOn
-    hs (by norm_num)
-
-/-- **`C¹` pseudoholomorphic maps are smooth.** A map from a Riemann surface that is of class
-`C¹` and pseudoholomorphic for a smooth almost complex structure `J₀` is smooth. -/
-theorem IsPseudoholomorphic.contMDiff {J₀ : SmoothAlmostComplexStructure I M}
-    (h : IsPseudoholomorphic (SmoothAlmostComplexStructure.ofComplexManifold ℂ X) J₀ u)
-    (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) : ContMDiff 𝓘(ℝ, ℂ) I ∞ u :=
-  contMDiffOn_univ.1 ((isPseudoholomorphicOn_univ.2 h).contMDiffOn isOpen_univ hu.contMDiffOn)
 
 end TauCeti

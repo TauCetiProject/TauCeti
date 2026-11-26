@@ -58,6 +58,17 @@ fundamental-theorem results to curves.
   `|∫ s in t₀..t, ‖M s‖ * |Λ s| ^ n| = |Λ t| ^ (n + 1) / (n + 1)`, and
   `TauCeti.norm_integral_le_abs_integral_norm_pow_div_factorial_mul`, the resulting inductive step
   of factorial bounds on iterated integrals.
+* `TauCeti.intervalIntegral.intervalIntegrable_mul_add_integral` and
+  `TauCeti.intervalIntegral.sq_add_integral_sub_sq`: integrability and integration by parts for
+  the square of a primitive `c + ∫_{t₀}^· f` valued in a normed ring / finite-dimensional
+  commutative real normed algebra.
+* `TauCeti.intervalIntegral.sub_eq_add_integral_sub_of_eq_add_integral`,
+  `TauCeti.intervalIntegral.intervalIntegrable_sub_mul_sub_of_eq_add_integral`,
+  `TauCeti.intervalIntegral.sub_sq_sub_sub_sq_eq_of_eq_add_integral`,
+  `TauCeti.intervalIntegral.sum_sub_sq_eq_of_eq_add_integral`, and
+  `TauCeti.intervalIntegral.sum_sub_sq_le_of_eq_add_integral`: shared-noise cancellation,
+  integrability, sum-of-squares energy identities, and real `ℓ²`-dissipation bound for two integral
+  equations sharing an additive driving term.
 -/
 
 public section
@@ -403,3 +414,166 @@ theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
   simp only [Pi.add_apply, Function.comp_apply] at hFTC ⊢
   rw [hFTC]
   abel
+
+namespace TauCeti.intervalIntegral
+
+/-! ### Square of a primitive and sum-of-squares energy identities -/
+
+/-- If `f : ℝ → A` is interval integrable on `t₀..a` and `t₀..b`, then
+`s ↦ f s * (c + ∫ u in t₀..s, f u ∂μ)` is interval integrable on `a..b`. -/
+theorem intervalIntegrable_mul_add_integral {A : Type*} [NormedRing A] [NormedSpace ℝ A]
+    {μ : Measure ℝ} [NullSingletonClass μ] {f : ℝ → A} (c : A) {t₀ a b : ℝ}
+    (hfa : IntervalIntegrable f μ t₀ a) (hfb : IntervalIntegrable f μ t₀ b) :
+    IntervalIntegrable (fun s ↦ f s * (c + ∫ u in t₀..s, f u ∂μ)) μ a b := by
+  have hfab : IntervalIntegrable f μ a b := hfa.symm.trans hfb
+  have hcont : ContinuousOn (fun s ↦ c + ∫ u in t₀..s, f u ∂μ) (uIcc a b) := by
+    refine ((continuousOn_const (c := c + ∫ u in t₀..a, f u ∂μ)).add
+      (_root_.intervalIntegral.continuousOn_primitive_interval'
+        (a := a) hfab left_mem_uIcc)).congr fun s hs ↦ ?_
+    rw [Pi.add_apply, add_assoc, _root_.intervalIntegral.integral_add_adjacent_intervals hfa
+      (hfab.mono_set (uIcc_subset_uIcc_left hs))]
+  exact hfab.mul_continuousOn hcont
+
+/-- **Integration by parts for the square of an indefinite integral.** If `f : ℝ → A` is interval
+integrable on `t₀..a` and `t₀..b` with values in a finite-dimensional commutative real normed
+algebra `A`, then
+`(c + ∫ s in t₀..b, f s) ^ 2 - (c + ∫ s in t₀..a, f s) ^ 2 =
+  2 * ∫ s in a..b, f s * (c + ∫ u in t₀..s, f u)`. -/
+theorem sq_add_integral_sub_sq {A : Type*} [NormedCommRing A] [NormedAlgebra ℝ A]
+    [FiniteDimensional ℝ A] {f : ℝ → A} (c : A) {t₀ a b : ℝ}
+    (hfa : IntervalIntegrable f volume t₀ a) (hfb : IntervalIntegrable f volume t₀ b) :
+    (c + ∫ s in t₀..b, f s) ^ 2 - (c + ∫ s in t₀..a, f s) ^ 2 =
+      2 * ∫ s in a..b, f s * (c + ∫ u in t₀..s, f u) := by
+  -- Re-center the primitive at `a` using additivity so all derivatives live on `uIcc a b`.
+  have hfab : IntervalIntegrable f volume a b := hfa.symm.trans hfb
+  let c' : A := c + ∫ u in t₀..a, f u
+  let g : ℝ → A := fun u ↦ c' + ∫ s in a..u, f s
+  have hsplit : ∀ s ∈ uIcc a b, g s = c + ∫ u in t₀..s, f u := fun s hs ↦ by
+    simp only [g, c', add_assoc, _root_.intervalIntegral.integral_add_adjacent_intervals hfa
+      (hfab.mono_set (uIcc_subset_uIcc_left hs))]
+  have hg_ac : AbsolutelyContinuousOnInterval g a b :=
+    (LipschitzWith.const c').lipschitzOnWith.absolutelyContinuousOnInterval.add
+      (hfab.absolutelyContinuousOnInterval_intervalIntegral' left_mem_uIcc)
+  have hg_deriv : ∀ᵐ u, u ∈ uIoc a b → HasDerivAt g (f u) u := by
+    filter_upwards [hfab.ae_hasDerivAt_integral] with u hu hmem
+    exact (hu (uIoc_subset_uIcc hmem) a left_mem_uIcc).const_add c'
+  have hibp := hg_ac.integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt hg_ac hg_deriv hg_deriv
+  have hcomm : (∫ s in a..b, g s * f s) = ∫ s in a..b, f s * g s :=
+    _root_.intervalIntegral.integral_congr fun s _ ↦ mul_comm _ _
+  have hcongr : (∫ s in a..b, f s * g s) = ∫ s in a..b, f s * (c + ∫ u in t₀..s, f u) :=
+    _root_.intervalIntegral.integral_congr fun s hs ↦ by rw [hsplit s hs]
+  rw [← hsplit b right_mem_uIcc, ← hsplit a left_mem_uIcc, ← hcongr, pow_two, pow_two, two_mul]
+  rw [hcomm] at hibp
+  exact (eq_sub_iff_add_eq.1 hibp).symm
+
+/-- If `X = x + w + ∫ u in t₀..t, F u ∂μ` and `Y = y + w + ∫ u in t₀..t, G u ∂μ` with `F` and `G`
+interval integrable on `t₀..t`, then the shared additive term `w` cancels:
+`X - Y = (x - y) + ∫ u in t₀..t, (F u - G u) ∂μ`. -/
+theorem sub_eq_add_integral_sub_of_eq_add_integral {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} {x y w X Y : E} {F G : ℝ → E} {t₀ t : ℝ}
+    (hF : IntervalIntegrable F μ t₀ t) (hG : IntervalIntegrable G μ t₀ t)
+    (hX : X = x + w + ∫ u in t₀..t, F u ∂μ) (hY : Y = y + w + ∫ u in t₀..t, G u ∂μ) :
+    X - Y = (x - y) + ∫ u in t₀..t, (F u - G u) ∂μ := by
+  rw [_root_.intervalIntegral.integral_sub hF hG, hX, hY]
+  abel
+
+/-- On `uIoc t₁ t₂`, if `X` and `Y` satisfy two integral equations sharing an additive driving
+term `w`, then `u ↦ (F u - G u) * (X u - Y u)` is interval integrable on `t₁..t₂` because `w`
+cancels and `X - Y` agrees with the continuous indefinite integral of `F - G`. -/
+theorem intervalIntegrable_sub_mul_sub_of_eq_add_integral {A : Type*} [NormedRing A]
+    [NormedSpace ℝ A] {μ : Measure ℝ} [NullSingletonClass μ] {x y : A} {w X Y F G : ℝ → A}
+    {t₀ t₁ t₂ : ℝ}
+    (hF₁ : IntervalIntegrable F μ t₀ t₁) (hF₂ : IntervalIntegrable F μ t₀ t₂)
+    (hG₁ : IntervalIntegrable G μ t₀ t₁) (hG₂ : IntervalIntegrable G μ t₀ t₂)
+    (hX : ∀ t ∈ uIoc t₁ t₂, X t = x + w t + ∫ u in t₀..t, F u ∂μ)
+    (hY : ∀ t ∈ uIoc t₁ t₂, Y t = y + w t + ∫ u in t₀..t, G u ∂μ) :
+    IntervalIntegrable (fun u ↦ (F u - G u) * (X u - Y u)) μ t₁ t₂ := by
+  refine (intervalIntegrable_mul_add_integral (x - y) (hF₁.sub hG₁) (hF₂.sub hG₂)).congr
+    fun t ht ↦ ?_
+  have hsub : uIcc t₁ t ⊆ uIcc t₁ t₂ := uIcc_subset_uIcc_left (uIoc_subset_uIcc ht)
+  rw [← sub_eq_add_integral_sub_of_eq_add_integral
+    (hF₁.trans ((hF₁.symm.trans hF₂).mono_set hsub))
+    (hG₁.trans ((hG₁.symm.trans hG₂).mono_set hsub)) (hX t ht) (hY t ht)]
+
+/-- **Square-difference identity for two integral equations sharing an additive driving term.**
+If `X` and `Y` take values in a finite-dimensional commutative real normed algebra `A` and satisfy
+`X t = x + w t + ∫ u in t₀..t, F u` and `Y t = y + w t + ∫ u in t₀..t, G u` for all
+`t ∈ uIcc t₁ t₂`, with `F` and `G` interval integrable on `t₀..t₁` and `t₀..t₂`, then
+`(X t₂ - Y t₂) ^ 2 - (X t₁ - Y t₁) ^ 2 = 2 * ∫ u in t₁..t₂, (F u - G u) * (X u - Y u)`. -/
+theorem sub_sq_sub_sub_sq_eq_of_eq_add_integral {A : Type*} [NormedCommRing A] [NormedAlgebra ℝ A]
+    [FiniteDimensional ℝ A] {x y : A} {w X Y F G : ℝ → A} {t₀ t₁ t₂ : ℝ}
+    (hF₁ : IntervalIntegrable F volume t₀ t₁) (hF₂ : IntervalIntegrable F volume t₀ t₂)
+    (hG₁ : IntervalIntegrable G volume t₀ t₁) (hG₂ : IntervalIntegrable G volume t₀ t₂)
+    (hX : ∀ t ∈ uIcc t₁ t₂, X t = x + w t + ∫ u in t₀..t, F u)
+    (hY : ∀ t ∈ uIcc t₁ t₂, Y t = y + w t + ∫ u in t₀..t, G u) :
+    (X t₂ - Y t₂) ^ 2 - (X t₁ - Y t₁) ^ 2 =
+      2 * ∫ u in t₁..t₂, (F u - G u) * (X u - Y u) := by
+  have hsub (t : ℝ) (ht : t ∈ uIcc t₁ t₂) : X t - Y t = (x - y) + ∫ u in t₀..t, (F u - G u) :=
+    sub_eq_add_integral_sub_of_eq_add_integral
+      (hF₁.trans ((hF₁.symm.trans hF₂).mono_set (uIcc_subset_uIcc_left ht)))
+      (hG₁.trans ((hG₁.symm.trans hG₂).mono_set (uIcc_subset_uIcc_left ht)))
+      (hX t ht) (hY t ht)
+  rw [hsub t₂ right_mem_uIcc, hsub t₁ left_mem_uIcc,
+    sq_add_integral_sub_sq (x - y) (hF₁.sub hG₁) (hF₂.sub hG₂)]
+  congr 1
+  exact _root_.intervalIntegral.integral_congr fun u hu ↦ by rw [← hsub u hu]
+
+/-- **Sum-of-squares energy identity for two integral equations sharing an additive driving term.**
+If `X` and `Y` take values in `ι → A` for a finite-dimensional commutative real normed algebra `A`
+and satisfy `X t i = x i + w t i + ∫ u in t₀..t, F u i` and
+`Y t i = y i + w t i + ∫ u in t₀..t, G u i` for all `t ∈ uIcc t₁ t₂` and `i ∈ s`, with `F · i`
+and `G · i` interval integrable on `t₀..t₁` and `t₀..t₂`, then the change in
+`∑ i ∈ s, (X t i - Y t i) ^ 2` from `t₁` to `t₂` equals twice the integrated drift-difference
+pairing `∫ u in t₁..t₂, ∑ i ∈ s, (F u i - G u i) * (X u i - Y u i)`.
+No continuity assumption on `X`, `Y`, or `w` is needed because the shared `w` cancels.
+For `A = ℝ`, this is the `ℓ²`-energy identity. -/
+theorem sum_sub_sq_eq_of_eq_add_integral {ι A : Type*} [NormedCommRing A] [NormedAlgebra ℝ A]
+    [FiniteDimensional ℝ A] (s : Finset ι) {x y : ι → A} {w X Y F G : ℝ → ι → A} {t₀ t₁ t₂ : ℝ}
+    (hF₁ : ∀ i ∈ s, IntervalIntegrable (fun u ↦ F u i) volume t₀ t₁)
+    (hF₂ : ∀ i ∈ s, IntervalIntegrable (fun u ↦ F u i) volume t₀ t₂)
+    (hG₁ : ∀ i ∈ s, IntervalIntegrable (fun u ↦ G u i) volume t₀ t₁)
+    (hG₂ : ∀ i ∈ s, IntervalIntegrable (fun u ↦ G u i) volume t₀ t₂)
+    (hX : ∀ t ∈ uIcc t₁ t₂, ∀ i ∈ s, X t i = x i + w t i + ∫ u in t₀..t, F u i)
+    (hY : ∀ t ∈ uIcc t₁ t₂, ∀ i ∈ s, Y t i = y i + w t i + ∫ u in t₀..t, G u i) :
+    ∑ i ∈ s, (X t₂ i - Y t₂ i) ^ 2 - ∑ i ∈ s, (X t₁ i - Y t₁ i) ^ 2 =
+      2 * ∫ u in t₁..t₂, ∑ i ∈ s, (F u i - G u i) * (X u i - Y u i) := by
+  rw [← Finset.sum_sub_distrib,
+    Finset.sum_congr rfl fun i hi ↦ sub_sq_sub_sub_sq_eq_of_eq_add_integral
+      (hF₁ i hi) (hF₂ i hi) (hG₁ i hi) (hG₂ i hi)
+      (fun t ht ↦ hX t ht i hi) (fun t ht ↦ hY t ht i hi),
+    ← Finset.mul_sum,
+    ← _root_.intervalIntegral.integral_finsetSum fun i hi ↦
+      intervalIntegrable_sub_mul_sub_of_eq_add_integral (hF₁ i hi) (hF₂ i hi) (hG₁ i hi) (hG₂ i hi)
+        (fun t ht ↦ hX t (uIoc_subset_uIcc ht) i hi)
+        (fun t ht ↦ hY t (uIoc_subset_uIcc ht) i hi)]
+
+/-- **`ℓ²`-dissipation for two integral equations sharing an additive driving term.**
+Under the hypotheses of `sum_sub_sq_eq_of_eq_add_integral` with `t₁ ≤ t₂`, if the drift-difference
+pairing is nonpositive on `(t₁, t₂)`, then
+`∑ i ∈ s, (X t₂ i - Y t₂ i) ^ 2 ≤ ∑ i ∈ s, (X t₁ i - Y t₁ i) ^ 2`. -/
+theorem sum_sub_sq_le_of_eq_add_integral {ι : Type*} (s : Finset ι) {x y : ι → ℝ}
+    {w X Y F G : ℝ → ι → ℝ} {t₀ t₁ t₂ : ℝ} (ht : t₁ ≤ t₂)
+    (hF₁ : ∀ i ∈ s, IntervalIntegrable (fun u ↦ F u i) volume t₀ t₁)
+    (hF₂ : ∀ i ∈ s, IntervalIntegrable (fun u ↦ F u i) volume t₀ t₂)
+    (hG₁ : ∀ i ∈ s, IntervalIntegrable (fun u ↦ G u i) volume t₀ t₁)
+    (hG₂ : ∀ i ∈ s, IntervalIntegrable (fun u ↦ G u i) volume t₀ t₂)
+    (hX : ∀ t ∈ uIcc t₁ t₂, ∀ i ∈ s, X t i = x i + w t i + ∫ u in t₀..t, F u i)
+    (hY : ∀ t ∈ uIcc t₁ t₂, ∀ i ∈ s, Y t i = y i + w t i + ∫ u in t₀..t, G u i)
+    (hnonpos : ∀ u ∈ Ioo t₁ t₂, ∑ i ∈ s, (F u i - G u i) * (X u i - Y u i) ≤ 0) :
+    ∑ i ∈ s, (X t₂ i - Y t₂ i) ^ 2 ≤ ∑ i ∈ s, (X t₁ i - Y t₁ i) ^ 2 := by
+  have hid := sum_sub_sq_eq_of_eq_add_integral s hF₁ hF₂ hG₁ hG₂ hX hY
+  have hint : IntervalIntegrable
+      (fun u ↦ ∑ i ∈ s, (F u i - G u i) * (X u i - Y u i)) volume t₁ t₂ :=
+    (IntervalIntegrable.sum s fun i hi ↦
+      intervalIntegrable_sub_mul_sub_of_eq_add_integral (hF₁ i hi) (hF₂ i hi) (hG₁ i hi) (hG₂ i hi)
+        (fun t ht ↦ hX t (uIoc_subset_uIcc ht) i hi)
+        (fun t ht ↦ hY t (uIoc_subset_uIcc ht) i hi)).congr
+      fun u _ ↦ Finset.sum_apply u s _
+  have hint_nonpos :
+      ∫ u in t₁..t₂, ∑ i ∈ s, (F u i - G u i) * (X u i - Y u i) ≤ 0 := by
+    rw [← _root_.intervalIntegral.integral_zero (a := t₁) (b := t₂)]
+    exact _root_.intervalIntegral.integral_mono_on_of_le_Ioo ht hint intervalIntegrable_const
+      hnonpos
+  exact sub_nonpos.mp (hid ▸ mul_nonpos_of_nonneg_of_nonpos zero_le_two hint_nonpos)
+
+end TauCeti.intervalIntegral

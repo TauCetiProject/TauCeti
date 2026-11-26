@@ -18,7 +18,8 @@ Boundary constructions on an `(n + 1)`-dimensional manifold, such as boundary de
 specialize at `n = 0` to the model `𝓡∂ (0 + 1)`. Mathlib's interval charts are stated for the model
 `𝓡∂ 1`, which instance search does not identify with `𝓡∂ (0 + 1)`, so this file also provides the
 same charts and manifold structure at the model dimension `0 + 1`
-(`TauCeti.instChartedSpaceIccZeroAddOne`, `TauCeti.instIsManifoldIccZeroAddOne`).
+(`TauCeti.instChartedSpaceIccZeroAddOne`, `TauCeti.instIsManifoldIccZeroAddOne`). For these charts
+the manifold boundary of the unit interval is `{0, 1}` (`TauCeti.boundary_unitInterval`).
 -/
 
 public section
@@ -41,6 +42,11 @@ instance instChartedSpaceIccZeroAddOne : ChartedSpace (EuclideanHalfSpace (0 + 1
 `instChartedSpaceIccZeroAddOne`. -/
 instance instIsManifoldIccZeroAddOne {k : ℕ∞ω} : IsManifold (𝓡∂ (0 + 1)) k (Icc a b) :=
   instIsManifoldIcc a b
+
+/-- The manifold boundary of the unit interval `[0, 1]`, for its interval charts at the model
+dimension `0 + 1` (`TauCeti.instChartedSpaceIccZeroAddOne`), is `{0, 1}`. -/
+theorem boundary_unitInterval : (𝓡∂ (0 + 1)).boundary unitInterval = {0, 1} :=
+  boundary_Icc
 
 /-- A point of `[a, b]` is a manifold boundary point exactly when it is one of the endpoints. -/
 @[simp]

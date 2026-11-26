@@ -31,7 +31,10 @@ arbitrary path-connected Hausdorff CW complexes
 such `X` into a based space with vanishing higher homotopy groups are in bijection with
 homomorphisms on `π₁`. In particular, pointed homotopy classes `X ⟶ BG` are in bijection with
 homomorphisms `π₁(X) ⟶ G` (`TauCeti.classifyingSpaceHomotopyFunctorHomEquiv`), and
-`TauCeti.classifyingSpaceHomotopyFunctor` is both full and faithful.
+`TauCeti.classifyingSpaceHomotopyFunctor` is fully faithful
+(`TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`): every pointed homotopy class of maps
+`classifyingSpace G → classifyingSpace H` is the class of `classifyingSpaceMap φ` for a unique
+homomorphism `φ`, namely the one it induces on fundamental groups.
 
 The cellular model determines the induced maps up to pointed homotopy, and is isomorphic to
 Milnor's model in `PointedHomotopyCat` (`TauCeti.cellularClassifyingSpacePointedHomotopyIso`).
@@ -44,11 +47,14 @@ the comparison map of `TauCeti.cellularHomotopyEquivClassifyingSpace` followed b
 
 * `TauCeti.classifyingSpaceFunctor`: Milnor's classifying space as a functor to based spaces.
 * `TauCeti.classifyingSpaceHomotopyFunctor`: the classifying space as a functor to the pointed
-  homotopy category (both `Faithful` and `Full`).
+  homotopy category (both `Faithful` and `Full`, via
+  `TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`).
 * `TauCeti.classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`: the natural
   isomorphism `π₁ ∘ B ≅ 𝟭`.
 * `TauCeti.classifyingSpaceHomotopyFunctorHomEquiv`: the bijection
   `(X ⟶ BG) ≃ (π₁(X) ⟶ G)` in `PointedHomotopyCat` for path-connected Hausdorff CW complexes `X`.
+* `TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`: the classifying-space functor to the
+  pointed homotopy category is fully faithful.
 * `TauCeti.cellularClassifyingSpaceBased`: the cellular classifying space as a based space.
 * `TauCeti.cellularHomotopyEquivClassifyingSpaceBasedHom` and
   `TauCeti.cellularClassifyingSpacePointedHomotopyIso`: the comparison of the cellular model with
@@ -159,11 +165,6 @@ theorem classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso_inv_app_ho
       (classifyingSpaceFundamentalGroupMulEquiv G).symm.toMonoidHom :=
   (rfl)
 
-/-- The classifying-space functor to the pointed homotopy category is faithful: the fundamental
-group recovers the homomorphism inducing a map. -/
-instance : classifyingSpaceHomotopyFunctor.{u}.Faithful :=
-  .of_comp_iso classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
-
 instance (G : GrpCat.{u}) : T2Space (classifyingSpaceFunctor.obj G).carrier :=
   inferInstanceAs (T2Space (classifyingSpace G))
 
@@ -174,23 +175,35 @@ instance (G : GrpCat.{u}) :
 instance (G : GrpCat.{u}) : PathConnectedSpace (classifyingSpaceFunctor.obj G).carrier :=
   (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical.pathConnectedSpace
 
-/-- **The classifying-space functor to the pointed homotopy category is full** (and hence fully
-faithful): every pointed homotopy class `BG ⟶ BH` is induced by a group homomorphism `G ⟶ H`. -/
-instance : classifyingSpaceHomotopyFunctor.{u}.Full where
-  map_surjective {G H} f := by
-    let η := classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
-    refine ⟨η.inv.app G ≫ PointedHomotopyCat.fundamentalGroupFunctor.map f ≫ η.hom.app H,
-      (fundamentalGroupFunctor_map_bijective_of_cwComplex
-        (X := classifyingSpaceFunctor.obj G) (Y := classifyingSpaceFunctor.obj H)
-        (fun n ↦ subsingleton_homotopyGroup_classifyingSpace H n _)).1 ?_⟩
-    have h := η.hom.naturality
-      (η.inv.app G ≫ PointedHomotopyCat.fundamentalGroupFunctor.map f ≫ η.hom.app H) =≫
-        η.inv.app H
-    dsimp only [CategoryTheory.Functor.comp_map, CategoryTheory.Functor.id_map,
-      CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj] at h
-    simp only [Category.assoc, Iso.hom_inv_id_app, Iso.hom_inv_id_app_assoc,
-      CategoryTheory.Functor.comp_obj, Category.comp_id] at h
-    exact h
+/-- **The classifying-space functor is fully faithful** (Hatcher, Proposition 1B.9, for maps
+between classifying spaces). A pointed homotopy class of maps
+`classifyingSpace G → classifyingSpace H` is the class of `classifyingSpaceMap φ` for exactly one
+homomorphism `φ : G →* H`, namely the homomorphism it induces on fundamental groups, read through
+`classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`. -/
+def classifyingSpaceHomotopyFunctorFullyFaithful :
+    classifyingSpaceHomotopyFunctor.{u}.FullyFaithful where
+  preimage {G H} a := classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.inv.app G ≫
+    PointedHomotopyCat.fundamentalGroupFunctor.map a ≫
+      classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H
+  map_preimage {G H} a := by
+    let e := classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.{u}
+    -- `B (preimage a)` and `a` induce the same homomorphism of fundamental groups.
+    have key : PointedHomotopyCat.fundamentalGroupFunctor.map (classifyingSpaceHomotopyFunctor.map
+        (e.inv.app G ≫ PointedHomotopyCat.fundamentalGroupFunctor.map a ≫ e.hom.app H)) =
+        PointedHomotopyCat.fundamentalGroupFunctor.map a := by
+      rw [← Functor.comp_map, ← NatIso.naturality_2 e]
+      simp
+    exact (fundamentalGroupFunctor_map_bijective_of_cwComplex
+      (X := classifyingSpaceFunctor.obj G) (Y := classifyingSpaceFunctor.obj H)
+      (fun n ↦ subsingleton_homotopyGroup_classifyingSpace H n _)).1 key
+  preimage_map :=
+    NatIso.naturality_1 classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
+
+instance : classifyingSpaceHomotopyFunctor.{u}.Full :=
+  classifyingSpaceHomotopyFunctorFullyFaithful.full
+
+instance : classifyingSpaceHomotopyFunctor.{u}.Faithful :=
+  classifyingSpaceHomotopyFunctorFullyFaithful.faithful
 
 /-- **Pointed homotopy classes `X ⟶ BG` out of a path-connected Hausdorff CW complex are in
 bijection with homomorphisms `π₁(X) ⟶ G`.** Sending a pointed homotopy class `X ⟶ BG` to the

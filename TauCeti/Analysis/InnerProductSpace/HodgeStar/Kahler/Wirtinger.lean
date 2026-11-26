@@ -5,53 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Power
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
-import TauCeti.Analysis.InnerProductSpace.Complex
-import TauCeti.Analysis.InnerProductSpace.ExteriorPower.NormalForm
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Symplectic.Finrank
-import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
-# The Wirtinger inequality and Kähler calibrations in every degree
+# The Wirtinger inequality and Kähler calibrations on Hermitian vector spaces
 
-On a finite-dimensional real inner product space `V` equipped with an orthogonal almost complex
-structure `J`, the **Wirtinger inequality** states that the normalized `r`-th Kähler power
-`ωʳ / r!` (power index `r`, form degree `2 * r`) has comass at most one in every power index `r`,
-and comass equal to one whenever `2 * r ≤ finrank ℝ V`
-(`AlmostComplexStructure.norm_kahlerPowerForm`).
-
-Its calibrated frames are precisely the real-orthonormal `2r`-frames sharing the same oriented
-exterior product as a `J`-adapted orthonormal frame `(u₀, J u₀, …, u_{r-1}, J u_{r-1})`
-(`AlmostComplexStructure.isCalibratedFrame_kahlerPowerForm_iff`). The proof restricts `ω` to the
-span `P` of an orthonormal `2r`-frame, applies the real normal form and Pfaffian divided-power
-identity (`TauCeti.exists_orthonormalBasis_twoVector_normalForm`) to the skew-adjoint contraction
-`x ↦ P.starProjection (J x)`, and reads off `ωʳ / r! (v) = ± ∏ j, μ j` with `0 ≤ μ j ≤ 1`: a unit
-weight `μ j = 1` makes its corresponding two-plane `(w_{2j}, w_{2j+1})` `J`-invariant
-(`w_{2j+1} = J w_{2j}`), and overall equality `ωʳ / r! (v) = 1` forces every weight `μ j` to be `1`
-(so `J` preserves `P`).
-
-Specializing `J` to multiplication by `i` (`AlmostComplexStructure.ofComplexModule E`) yields the
-all-degree Wirtinger inequality (`TauCeti.norm_kahlerPowerForm_le`, `TauCeti.norm_kahlerPowerForm`)
-and calibrated-frame classification (`TauCeti.isCalibratedFrame_kahlerPowerForm_iff`) on any
-finite-dimensional Hermitian vector space `E` in terms of `TauCeti.complexToRealFamily`.
+On any finite-dimensional Hermitian vector space `E`, specializing the normalized Kähler power
+`AlmostComplexStructure.kahlerPowerForm` (from
+`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Power`) to multiplication by `i`
+(`AlmostComplexStructure.ofComplexModule E`) yields the all-degree Wirtinger inequality
+(`TauCeti.norm_kahlerPowerForm_le`, `TauCeti.norm_kahlerPowerForm`) and the calibrated-frame
+classification (`TauCeti.isCalibratedFrame_kahlerPowerForm_iff`) in terms of
+`TauCeti.complexToRealFamily`.
 
 ## Main results
 
-In the namespace `TauCeti.AlmostComplexStructure`, for an orthogonal `J`:
-
-* `isCalibratedFrame_kahlerPowerForm_iff`: the calibrated-frame classification for every power
-  index `r` (form degree `2 * r`).
-
 On finite-dimensional Hermitian vector spaces:
 
-* `TauCeti.norm_kahlerPowerForm_le`, `TauCeti.norm_kahlerPowerForm`, and
-  `TauCeti.isCalibratedFrame_kahlerPowerForm_iff`: the Wirtinger inequality and calibrated-frame
-  classification on any finite-dimensional Hermitian vector space in every power index `r` (form
-  degree `2 * r`).
+* `TauCeti.norm_kahlerPowerForm_le`: `‖kahlerPowerForm E r‖ ≤ 1` for every power index `r`.
+* `TauCeti.norm_kahlerPowerForm`: `‖kahlerPowerForm E r‖ = 1` whenever `r ≤ finrank ℂ E`.
+* `TauCeti.isCalibratedFrame_kahlerPowerForm_iff`: a `2r`-frame `v` is calibrated by
+  `kahlerPowerForm E r` precisely when `v` is real-orthonormal and shares its exterior product
+  with `TauCeti.complexToRealFamily u` for some complex-orthonormal family `u : Fin r → E`.
 
 ## References
 
@@ -70,113 +48,6 @@ open Module exteriorPower
 open scoped InnerProductSpace RealInnerProductSpace
 
 namespace TauCeti
-
-namespace AlmostComplexStructure
-
-section Wirtinger
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-
-private theorem apply_eq_of_norm_starProjection_eq_one {J : AlmostComplexStructure V}
-    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) {P : Submodule ℝ V} {u w : P}
-    (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (hproj : P.starProjection (J u.val) = w.val) :
-    w.val = J u.val := by
-  have hnorm : ‖P.starProjection (J u.val)‖ = ‖J u.val‖ := by
-    rw [hproj, Submodule.norm_coe, hw, J.norm_apply hJ, Submodule.norm_coe, hu]
-  rw [← hproj]
-  exact (P.eq_starProjection_of_norm_le hnorm.ge).symm
-
-/-- Core normal-form decomposition of `J.kahlerPowerForm r` restricted to the span of an
-orthonormal `2r`-frame `v`: yields a companion orthonormal frame `w` of the same span, weights
-`0 ≤ μ j ≤ 1`, and a sign `ε ∈ {1, -1}` with `v₁ ∧ ⋯ ∧ v_{2r} = ε • (w₁ ∧ ⋯ ∧ w_{2r})`,
-`ωʳ / r! (v) = ε * ∏ j, μ j`, and `μ j = 1 → w_{2j+1} = J w_{2j}`. -/
-private theorem exists_normalForm_eval_of_orthonormal {J : AlmostComplexStructure V}
-    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) {r : ℕ} {v : Fin (2 * r) → V} (hv : Orthonormal ℝ v) :
-    ∃ (w : Fin (2 * r) → V) (μ : Fin r → ℝ) (ε : ℝ),
-      Orthonormal ℝ w ∧
-      (∀ j, 0 ≤ μ j ∧ μ j ≤ 1) ∧
-      |ε| = 1 ∧
-      ιMulti ℝ (2 * r) v = ε • ιMulti ℝ (2 * r) w ∧
-      J.kahlerPowerForm r v = ε * ∏ j, μ j ∧
-      (∀ j : Fin r, μ j = 1 →
-        w ⟨2 * (j : ℕ) + 1, by omega⟩ = J (w ⟨2 * (j : ℕ), by omega⟩)) := by
-  let P : Submodule ℝ V := Submodule.span ℝ (Set.range v)
-  have hP_dim : finrank ℝ P = 2 * r := by simpa using finrank_span_eq_card hv.linearIndependent
-  let vP : Fin (2 * r) → P := fun i ↦ ⟨v i, Submodule.subset_span ⟨i, rfl⟩⟩
-  let FP : ⋀[ℝ]^2 P := (alternatingFormEquiv P 2).symm
-    ((alternatingFormEquiv V 2 J.kahlerForm).compContinuousLinearMap P.subtypeL)
-  obtain ⟨b, μ, hμ0, hcontr0, _, _, hpow⟩ := exists_orthonormalBasis_twoVector_normalForm hP_dim FP
-  have hproj (x : P) : (twoVectorContraction FP x : V) = P.starProjection (J x.val) := by
-    rw [coe_twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap_subtypeL
-      P J.kahlerForm x, twoVectorContraction_kahlerForm hJ]
-  have hμ1 (j : Fin r) : μ j ≤ 1 := by
-    have hnorm := congrArg norm (hcontr0 j)
-    rw [norm_smul, Real.norm_of_nonneg (hμ0 j), b.orthonormal.1, mul_one, ← Submodule.norm_coe,
-      hproj] at hnorm
-    calc μ j = ‖P.starProjection (J (b ⟨2 * (j : ℕ), by omega⟩ : V))‖ := hnorm.symm
-      _ ≤ ‖J (b ⟨2 * (j : ℕ), by omega⟩ : V)‖ := P.norm_starProjection_apply_le _
-      _ = 1 := by rw [J.norm_apply hJ, Submodule.norm_coe, b.orthonormal.1]
-  set ε : ℝ := b.toBasis.det vP
-  have hdetP : ιMulti ℝ (2 * r) vP = ε • ιMulti ℝ (2 * r) b :=
-    b.toBasis.exteriorPower_ιMulti_eq_det_smul vP
-  have hw : Orthonormal ℝ (fun i ↦ (b i : V)) := b.orthonormal.comp_linearIsometry P.subtypeₗᵢ
-  have hι : ιMulti ℝ (2 * r) v = ε • ιMulti ℝ (2 * r) (fun i ↦ (b i : V)) := by
-    simpa only [map_smul, exteriorPower.map_apply_ιMulti, Function.comp_def,
-      Submodule.coe_subtype] using congrArg (exteriorPower.map (2 * r) P.subtype) hdetP
-  have hε : |ε| = 1 := by
-    have hn := congrArg norm hι
-    rw [hv.norm_ιMulti, norm_smul, Real.norm_eq_abs, hw.norm_ιMulti, mul_one] at hn
-    exact hn.symm
-  refine ⟨fun i ↦ (b i : V), μ, ε, hw, fun j ↦ ⟨hμ0 j, hμ1 j⟩, hε, hι, ?_, fun j hμj ↦ ?_⟩
-  · have hcomp : P.subtypeL ∘ vP = v := funext fun _ ↦ Submodule.subtypeL_apply _ _
-    have heval := DFunLike.congr_fun
-      (kahlerPowerForm_compContinuousLinearMap_eq J P.subtypeL FP
-        (LinearEquiv.apply_symm_apply _ _).symm r) vP
-    rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, hcomp,
-      ContinuousAlternatingMap.smul_apply, smul_eq_mul, alternatingFormEquiv_apply,
-      ← real_inner_smul_left, hpow, hdetP,
-      real_inner_smul_left (F := ⋀[ℝ]^(2 * r) P),
-      real_inner_smul_right (F := ⋀[ℝ]^(2 * r) P),
-      real_inner_self_eq_norm_sq, b.orthonormal.norm_ιMulti] at heval
-    rw [heval]
-    ring
-  · exact apply_eq_of_norm_starProjection_eq_one hJ (b.orthonormal.1 _) (b.orthonormal.1 _)
-      (by simpa [hproj, hμj] using congrArg Subtype.val (hcontr0 j))
-
-/-- **Equality case of the Wirtinger inequality** for an orthogonal almost complex structure: a
-`2r`-frame `v` is calibrated by `ωʳ / r!` precisely when `v` is real-orthonormal and shares its
-exterior product with a `J`-adapted orthonormal frame `(w₀, J w₀, …, w_{2r-2}, J w_{2r-2})`. -/
-theorem isCalibratedFrame_kahlerPowerForm_iff {J : AlmostComplexStructure V}
-    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) {r : ℕ} (v : Fin (2 * r) → V) :
-    (J.kahlerPowerForm r).IsCalibratedFrame v ↔
-      Orthonormal ℝ v ∧ ∃ w : Fin (2 * r) → V, Orthonormal ℝ w ∧
-        (∀ j : Fin r, w ⟨2 * (j : ℕ) + 1, by omega⟩ = J (w ⟨2 * (j : ℕ), by omega⟩)) ∧
-        ιMulti ℝ (2 * r) v = ιMulti ℝ (2 * r) w := by
-  constructor
-  · rw [ContinuousAlternatingMap.isCalibratedFrame_iff]
-    rintro ⟨hv, hval⟩
-    obtain ⟨w, μ, ε, hw, hμ, hε, hι, heval, hμ_eq⟩ := exists_normalForm_eval_of_orthonormal hJ hv
-    have hprod_nonneg : 0 ≤ ∏ j, μ j := Finset.prod_nonneg fun j _ ↦ (hμ j).1
-    have hε1 : ε = 1 := by
-      rcases (abs_eq zero_le_one).mp hε with h1 | hneg
-      · exact h1
-      · rw [heval, hneg, neg_one_mul] at hval
-        linarith
-    have hprod1 : ∏ j, μ j = 1 := by rw [hε1, one_mul] at heval; linarith
-    have hall1 : ∀ j, μ j = 1 := fun j ↦ by
-      have h1 : 1 ≤ μ j := by
-        simpa [hprod1] using Finset.prod_le_prod_of_subset_of_le_one₀
-          (Finset.singleton_subset_iff.2 (Finset.mem_univ j))
-          (fun k _ ↦ (hμ k).1) (fun k _ _ ↦ (hμ k).2)
-      exact le_antisymm (hμ j).2 h1
-    exact ⟨hv, w, hw, fun j ↦ hμ_eq j (hall1 j), by simpa [hε1] using hι⟩
-  · rintro ⟨hv, w, hw, hadapt, hι⟩
-    exact (ContinuousAlternatingMap.isCalibratedFrame_iff.2
-      ⟨hw, kahlerPowerForm_apply_of_adapted hw hadapt⟩).of_ιMulti_eq hv hι
-
-end Wirtinger
-
-end AlmostComplexStructure
 
 section HermitianWirtinger
 
@@ -211,32 +82,27 @@ theorem isCalibratedFrame_kahlerPowerForm_iff {r : ℕ} (v : Fin (2 * r) → E) 
         ιMulti ℝ (2 * r) v = ιMulti ℝ (2 * r) (complexToRealFamily u) := by
   rw [kahlerPowerForm_eq_ofComplexModule,
     AlmostComplexStructure.isCalibratedFrame_kahlerPowerForm_iff
-      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule v]
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule]
   refine and_congr_right fun _ ↦ ⟨?_, ?_⟩
-  · rintro ⟨w, hw, hadapt, hι⟩
-    let evenIdx : Fin r → Fin (2 * r) := fun j ↦ ⟨2 * (j : ℕ), by omega⟩
-    let u : Fin r → E := w ∘ evenIdx
-    have huR : Orthonormal ℝ u :=
-      hw.comp evenIdx fun j k h ↦ Fin.ext (by simp [evenIdx] at h; omega)
-    have hu : Orthonormal ℂ u := huR.complex_iff.2 fun j k _ ↦ by
-      dsimp only
-      have him : (inner ℂ (u j) (u k)).im = ⟪Complex.I • u j, u k⟫_ℝ := by
-        simpa [kahlerTwoForm_apply] using kahlerTwoForm_apply_eq_inner (u j) (u k)
-      have hI : Complex.I • u j = w ⟨2 * (j : ℕ) + 1, by omega⟩ := by
-        simpa only [u, evenIdx, Function.comp_apply,
-          AlmostComplexStructure.ofComplexModule_apply] using (hadapt j).symm
-      rw [him, hI]
-      exact hw.2 (Fin.ne_of_val_ne (by dsimp [evenIdx]; omega))
-    have hw_eq : complexToRealFamily u = w := by
+  · rintro ⟨u, hu, hJu, hι⟩
+    have huC : Orthonormal ℂ u :=
+      (hu.complex_iff_forall_real_inner_I_smul_eq_zero).2 fun i j ↦ by
+        simpa [AlmostComplexStructure.ofComplexModule_apply] using hJu i j
+    have hframe : (AlmostComplexStructure.ofComplexModule E).complexRealFrame u =
+        complexToRealFamily u := by
       ext i
       obtain ⟨⟨j, k⟩, rfl⟩ := (complexRealIndexEquiv r).surjective i
-      fin_cases k
-      · simp [u, evenIdx, complexRealIndexEquiv_zero]
-      · simpa [u, evenIdx, complexRealIndexEquiv_one] using (hadapt j).symm
-    exact ⟨u, hu, by rwa [hw_eq]⟩
+      fin_cases k <;> simp
+    exact ⟨u, huC, by rwa [hframe] at hι⟩
   · rintro ⟨u, hu, hι⟩
-    exact ⟨complexToRealFamily u, orthonormal_complexToRealFamily hu,
-      fun _ ↦ by simp, hι⟩
+    have huR : Orthonormal ℝ u := hu.real
+    refine ⟨u, huR, fun i j ↦ ?_, ?_⟩
+    · simpa [AlmostComplexStructure.ofComplexModule_apply] using
+        (huR.complex_iff_forall_real_inner_I_smul_eq_zero).1 hu i j
+    · convert hι using 2
+      ext i
+      obtain ⟨⟨j, k⟩, rfl⟩ := (complexRealIndexEquiv r).surjective i
+      fin_cases k <;> simp
 
 end HermitianWirtinger
 

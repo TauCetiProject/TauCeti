@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Product
+public import TauCeti.Analysis.InnerProductSpace.GraphPatch
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.SegmentChain
 import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Holder.Interpolation
 import TauCeti.Topology.MetricSpace.Bounded
+import TauCeti.Analysis.Sobolev.LipschitzDomain.GraphPatch
 import TauCeti.Analysis.Sobolev.LipschitzDomain.MeasureDensity
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -49,6 +51,9 @@ estimate absorb the norms of `Du` and `D²u` on its right side, leaving only the
 * `Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`: there is a constant `C`,
   depending only on `Ω` and `α`, such that every map with `‖g‖ ≤ M` and `‖fderiv ℝ g‖ ≤ L` on
   `Ω` is `α`-Hölder on `Ω` with constant `C (L + M)`.
+* `Set.HasLipschitzGraphBoundary.exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le`: on a
+  bounded set `Ω` with Lipschitz graph boundary, bounds `N` on `‖φ‖`, `‖Dφ‖` and `‖D²φ‖` on `Ω`
+  make `φ` and `Dφ` `α`-Hölder on `Ω` with constant `C N`.
 * `Set.IsLipschitzDomain.exists_norm_iteratedFDeriv_two_le` and
   `Set.IsLipschitzDomain.exists_norm_fderiv_le`: the interpolation inequalities for the Hessian
   and the gradient on a bounded Lipschitz domain.
@@ -228,6 +233,41 @@ theorem exists_norm_fderiv_le {Ω : Set E} (hΩ : Ω.IsLipschitzDomain E')
           (by positivity : (0 : ℝ) ≤ M / ε)]
 
 end Set.IsLipschitzDomain
+
+namespace Set.HasLipschitzGraphBoundary
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [ProperSpace F]
+
+/-- On a bounded set `Ω` with Lipschitz graph boundary in a real inner product space of dimension
+`n + 1`, and for `α ≤ 1`, there is a constant `C`, depending only on `Ω` and `α`, such that every
+`φ` that is `C²` at each point of `Ω` with `‖φ‖`, `‖Dφ‖` and `‖D²φ‖` bounded by `N` on `Ω` has `φ`
+and `Dφ` `α`-Hölder on `Ω` with constant `C N`. Such a set is a Lipschitz domain
+(`Set.HasLipschitzGraphBoundary.isLipschitzDomain`), so this is
+`Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le` applied to `φ` and `Dφ`. -/
+theorem exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le {n : ℕ}
+    (hF : Module.finrank ℝ F = n + 1) {Ω : Set F} (hbdry : Ω.HasLipschitzGraphBoundary)
+    (hΩ : Bornology.IsBounded Ω) (hα1 : α ≤ 1) :
+    ∃ C : ℝ≥0, ∀ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {φ : F → G} {N : ℝ≥0},
+      (∀ z ∈ Ω, ContDiffAt ℝ 2 φ z) → (∀ z ∈ Ω, ‖φ z‖ ≤ N) →
+      (∀ z ∈ Ω, ‖fderiv ℝ φ z‖ ≤ N) → (∀ z ∈ Ω, ‖iteratedFDeriv ℝ 2 φ z‖ ≤ N) →
+      HolderOnWith (C * N) α φ Ω ∧ HolderOnWith (C * N) α (fderiv ℝ φ) Ω := by
+  have hΩL := hbdry.isLipschitzDomain hF
+  -- Two instances of the Hölder bound, as `φ` and `Dφ` take values in different universes.
+  obtain ⟨C₀, hC₀⟩ := hΩL.exists_holderOnWith_of_norm_fderiv_le hΩ hα1
+  obtain ⟨C₁, hC₁⟩ := hΩL.exists_holderOnWith_of_norm_fderiv_le hΩ hα1
+  refine ⟨2 * (C₀ + C₁), fun {G} _ _ φ N hcd h0 h1 h2 => ?_⟩
+  have hle (C : ℝ≥0) (hC : C ≤ C₀ + C₁) : C * (N + N) ≤ 2 * (C₀ + C₁) * N := by
+    calc C * (N + N) ≤ (C₀ + C₁) * (N + N) := by gcongr
+      _ = 2 * (C₀ + C₁) * N := by ring
+  constructor
+  · exact (hC₀ (fun z hz => (hcd z hz).differentiableAt (by norm_num)) h0 h1).mono_const
+      (hle C₀ le_self_add)
+  · refine (hC₁ (fun z hz => ((hcd z hz).fderiv_right (m := 1) (by norm_num)).differentiableAt
+      (by norm_num)) h1 fun z hz => ?_).mono_const (hle C₁ le_add_self)
+    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+    exact h2 z hz
+
+end Set.HasLipschitzGraphBoundary
 
 namespace TauCeti
 

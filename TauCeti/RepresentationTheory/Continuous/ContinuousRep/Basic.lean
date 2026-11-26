@@ -90,6 +90,8 @@ finitely many vectors.
   jointly continuous action.
 * `TauCeti.ContinuousRep.finite_range`: a continuous representation on a finite carrier has
   finite image.
+* `TauCeti.ContinuousRep.isClosed_ker`: a continuous representation of a group on a Hausdorff
+  module has closed kernel.
 * `TauCeti.ContinuousRep.continuous_toMatrix`: the matrix coefficients in a finite basis are
   continuous.
 * `TauCeti.ContinuousRep.nonempty_iso_ofCharacter_iff`: two character lines are isomorphic
@@ -603,6 +605,22 @@ theorem ofEquiv_symm [TopologicalSpace A] [IsModuleTopology A M] [IsModuleTopolo
 end Iso
 
 end Basic
+
+section Kernel
+
+variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [Semiring A] [AddCommMonoid M]
+  [Module A M] [TopologicalSpace M] [T2Space M]
+
+/-- **The kernel of a continuous representation on a Hausdorff module is closed**: it is the
+intersection over `x : M` of the closed sets `{g | ρ g x = x}`. -/
+theorem isClosed_ker (ρ : ContinuousRep Γ A M) : IsClosed (ρ.toRepresentation.ker : Set Γ) := by
+  have : (ρ.toRepresentation.ker : Set Γ) = ⋂ x : M, {g | ρ g x = x} := by
+    ext g
+    simp [MonoidHom.mem_ker, LinearMap.ext_iff]
+  rw [this]
+  exact isClosed_iInter fun x ↦ isClosed_eq (ρ.continuous_orbit x) continuous_const
+
+end Kernel
 
 section ofCharacter
 
