@@ -439,8 +439,8 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
   obtain ⟨ψ, hψm, hψ, hψ1, P₀, ⟨A₀, rfl, hA₀⟩, hosc'⟩ :=
     TauCeti.exists_forall_setAverage_norm_cutoff_sub_le
       (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)
-      ((memLp_top_of_bound (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha) Lam
-        (.of_forall hbd)).locallyIntegrable le_top)
+      (MemLp.locallyIntegrable (memLp_top_matrixBilinearForm (μ := volume) ha
+        (.of_forall hbd)) le_top)
       (Q := fun c r P => ∃ A, matrixBilinearForm A = P ∧
         UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam)
       (fun c r hr hrr₀ => by

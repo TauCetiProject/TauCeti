@@ -116,9 +116,11 @@ private def datumD1p0 {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
 private theorem datumD1p0_apply {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     (hG : MemLp G 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))))
     (w : D1p0 volume Omega 2) :
-    datumD1p0 hG w = ∫ x in Omega, ⟪G x,
-      (w : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x⟫_ℝ :=
-  L2.toLp_inner_of_ae_eq hG Filter.EventuallyEq.rfl
+    datumD1p0 hG w = ∫ x in Omega, ⟪G x, (w : Lp (EuclideanSpace ℝ ι) 2
+      (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x⟫_ℝ := by
+  rw [datumD1p0, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
+    Submodule.subtypeL_apply]
+  exact L2.toLp_inner_of_ae_eq hG Filter.EventuallyEq.rfl
 
 /-- An integral over `Ω` against the test field of `φ` in `D^{1,2}_0(Ω)` is the integral against
 the gradient of `φ`. -/
