@@ -340,10 +340,8 @@ theorem monotone_smul_right (h : IsOrderUnitNorm e) : Monotone fun r : ℝ => r 
 /-- The closed unit ball around the order unit `e` lies inside the positive cone. -/
 theorem closedBall_subset_Ici_zero (he : IsOrderUnitNorm e) :
     closedBall e 1 ⊆ Ici 0 := fun a ha => by
-  rw [mem_closedBall_iff_norm] at ha
-  have hlo := ((he.norm_le_iff zero_le_one).mp ha).1
-  rw [one_smul] at hlo
-  exact sub_nonneg.mp (by simpa [sub_eq_add_neg, add_comm] using add_le_add_left hlo e)
+  have hlo := ((he.norm_le_iff zero_le_one).mp (mem_closedBall_iff_norm.mp ha)).1
+  rwa [one_smul, neg_le_sub_iff_le_add, le_add_iff_nonneg_left] at hlo
 
 /-- The open unit ball about the unit of an order-unit norm consists of nonnegative vectors. -/
 theorem ball_subset_Ici_zero (h : IsOrderUnitNorm e) : ball e 1 ⊆ Ici 0 :=

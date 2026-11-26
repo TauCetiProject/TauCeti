@@ -146,9 +146,9 @@ yields a state. -/
 theorem _root_.ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace {F : Type*}
     [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [Preorder F] {f : F} (T : E →L[ℝ] F)
     (hT : Monotone T) (hTe : T e = f) :
-    MapsTo T.pullbackFunctional (stateSpace f) (stateSpace e) := fun _ hφ =>
-  ⟨fun _ _ hab => by simpa [ContinuousLinearMap.pullbackFunctional_apply] using hφ.1 (hT hab),
-    by simpa [hTe] using hφ.2⟩
+    MapsTo T.pullbackFunctional (stateSpace f) (stateSpace e) := fun φ hφ => by
+  rw [← toWeakDual_toStrongDual (T.pullbackFunctional φ), T.toStrongDual_pullbackFunctional]
+  exact toWeakDual_comp_mem_stateSpace hT hTe hφ
 
 /-- **Normalization.** A monotone continuous linear functional `g` with `0 < g e`, divided by its
 value at `e`, is a state. -/

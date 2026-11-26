@@ -187,18 +187,14 @@ variable (A) in
 complex-linear map `WeakDual ℂ B →L[ℂ] WeakDual ℂ A`; it is continuous because each evaluation
 `φ ↦ φ (f a)` is. On states it is the pullback of states along `f`, which is affine when `f` is
 surjective or unital. -/
-noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →L[ℂ] WeakDual ℂ A where
-  toFun φ := StrongDual.toWeakDual
-    ((toStrongDual φ).comp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B))
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  cont := continuous_of_continuous_eval fun a => eval_continuous (f a)
+noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →L[ℂ] WeakDual ℂ A :=
+  (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
 
 /-- The pullback of a functional along `f` evaluates as `φ ∘ f`. -/
 @[simp]
 theorem pullbackFunctional_apply (f : F) (φ : WeakDual ℂ B) (a : A) :
     pullbackFunctional A f φ a = φ (f a) :=
-  (rfl)
+  ContinuousLinearMap.pullbackFunctional_apply _ φ a
 
 /-- Restricting the functional induced by a positive functional `σ` of `B` along `f` gives the
 functional induced by `σ ∘ f`. -/
@@ -225,13 +221,13 @@ theorem mapsTo_pullbackFunctional_stateSpace_of_surjective (f : F) (hf : Functio
   let ω : B →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => map_nonneg_of_mem_stateSpace hφ
   have hcomp : ((ω.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) =
       toStrongDual (pullbackFunctional A f φ) := by
-    -- `PositiveContinuousLinearMap.mk₀` has no evaluation lemma; both sides evaluate as
-    -- `φ ∘ f` by definition
-    ext
-    rfl
-  refine mem_stateSpace_iff.2 ⟨fun a ha => map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha), ?_⟩
-  rw [← hcomp, PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf]
-  exact norm_toStrongDual_of_mem_stateSpace hφ
+    ext a
+    exact (pullbackFunctional_apply f φ a).symm
+  refine mem_stateSpace_iff.2 ⟨fun a ha => ?_, ?_⟩
+  · rw [pullbackFunctional_apply]
+    exact map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha)
+  · rw [← hcomp, PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf]
+    exact norm_toStrongDual_of_mem_stateSpace hφ
 
 /-- **States factoring through a surjection.** For a surjective star homomorphism `f : A → B`, the
 pullbacks of states of `B` along `f` are exactly the states of `A` vanishing on the kernel of `f`.

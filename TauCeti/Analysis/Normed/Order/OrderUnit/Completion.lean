@@ -115,8 +115,8 @@ theorem eq_zero_of_mem_completionPosCone_of_neg_mem
     {x : UniformSpace.Completion E} (hx : x ∈ he.completionPosCone)
     (hneg : -x ∈ he.completionPosCone) : x = 0 := by
   have h := he.norm_sub_le_norm_add_of_mem_completionPosCone hx hneg
-  rw [sub_neg_eq_add, add_neg_cancel, norm_zero, ← two_smul ℝ x, norm_smul,
-    Real.norm_eq_abs, abs_of_pos two_pos] at h
+  have hsub : x - -x = (2 : ℝ) • x := by rw [two_smul]; abel
+  simp [hsub, norm_smul] at h
   exact norm_eq_zero.mp (le_antisymm (by linarith) (norm_nonneg x))
 
 private theorem salient_completionPosCone :
@@ -166,6 +166,19 @@ private theorem add_norm_smul_mem_completionPosCone
     have hlo := he.neg_norm_smul_le a
     exact neg_le_iff_add_nonneg.mp hlo
 
+private theorem add_smul_mem_completionPosCone_of_norm_le
+    {x : UniformSpace.Completion E} {r : ℝ} (hx : ‖x‖ ≤ r) :
+    x + r • (e : UniformSpace.Completion E) ∈ he.completionPosCone := by
+  have hrsub : (r - ‖x‖) • (e : UniformSpace.Completion E) ∈ he.completionPosCone := by
+    rw [← UniformSpace.Completion.coe_smul]
+    exact he.coe_mem_completionPosCone_iff.mpr (he.smul_nonneg (sub_nonneg.mpr hx))
+  have heq : x + r • (e : UniformSpace.Completion E) =
+      (x + ‖x‖ • (e : UniformSpace.Completion E)) +
+        (r - ‖x‖) • (e : UniformSpace.Completion E) := by
+    rw [sub_smul]; abel
+  rw [heq]
+  exact he.completionPosCone.add_mem (he.add_norm_smul_mem_completionPosCone x) hrsub
+
 /-- The norm completion of an order-unit space, with the closed positive cone and the image of `e`,
 is an order-unit space with its completion norm. -/
 theorem isOrderUnitNorm_completion :
@@ -174,23 +187,12 @@ theorem isOrderUnitNorm_completion :
   let : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
   refine ⟨by rw [UniformSpace.Completion.norm_coe, he.norm_eq_one], fun {x r} hr => ⟨?_, ?_⟩⟩
   · intro hxr
-    have hrsub : (r - ‖x‖) • (e : UniformSpace.Completion E) ∈ he.completionPosCone := by
-      rw [← UniformSpace.Completion.coe_smul]
-      exact he.coe_mem_completionPosCone_iff.mpr (he.smul_nonneg (sub_nonneg.mpr hxr))
     rw [he.completion_le_iff, he.completion_le_iff]
     refine ⟨?_, ?_⟩
-    · have heq : x - (-(r • (e : UniformSpace.Completion E))) =
-          (x + ‖x‖ • (e : UniformSpace.Completion E)) +
-            (r - ‖x‖) • (e : UniformSpace.Completion E) := by
-        rw [sub_neg_eq_add, sub_smul]; abel
-      rw [heq]
-      exact he.completionPosCone.add_mem (he.add_norm_smul_mem_completionPosCone x) hrsub
-    · have heq : r • (e : UniformSpace.Completion E) - x =
-          (-x + ‖-x‖ • (e : UniformSpace.Completion E)) +
-            (r - ‖x‖) • (e : UniformSpace.Completion E) := by
-        rw [norm_neg, sub_smul]; abel
-      rw [heq]
-      exact he.completionPosCone.add_mem (he.add_norm_smul_mem_completionPosCone (-x)) hrsub
+    · rw [sub_neg_eq_add]
+      exact he.add_smul_mem_completionPosCone_of_norm_le hxr
+    · rw [sub_eq_neg_add]
+      exact he.add_smul_mem_completionPosCone_of_norm_le (x := -x) (norm_neg x ▸ hxr)
   · rw [he.completion_le_iff, he.completion_le_iff]
     rintro ⟨hlo, hhi⟩
     have hlo' : x + r • (e : UniformSpace.Completion E) ∈ he.completionPosCone := by
@@ -201,9 +203,7 @@ theorem isOrderUnitNorm_completion :
     have hadd : (x + r • (e : UniformSpace.Completion E)) +
         (r • (e : UniformSpace.Completion E) - x) =
         (2 * r) • (e : UniformSpace.Completion E) := by rw [mul_smul, two_smul]; abel
-    rw [hsub, hadd, norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos two_pos,
-      abs_of_nonneg (by positivity), UniformSpace.Completion.norm_coe, he.norm_eq_one,
-      mul_one] at hbound
+    simp [hsub, hadd, norm_smul, abs_of_nonneg hr, he.norm_eq_one] at hbound
     linarith
 
 end Completion

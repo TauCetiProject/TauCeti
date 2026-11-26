@@ -12,15 +12,12 @@ import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 # Extension of states on order-unit spaces
 
 This file proves norm-preserving extension results for states on order-unit spaces:
-every state on the domain of a unit-preserving linear isometry (in particular, a unital subspace)
-extends to a state on the codomain.
+every state on the domain of a unit-preserving linear isometry extends to a state on the codomain.
 
 ## Main results
 
 * `TauCeti.IsOrderUnitNorm.surjOn_pullbackFunctional_stateSpace`: extension of states along a
   unit-preserving linear isometry via Hahn–Banach.
-* `TauCeti.IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL`: extension of states from a unital
-  subspace.
 
 ## References
 
@@ -57,15 +54,6 @@ theorem IsOrderUnitNorm.surjOn_pullbackFunctional_stateSpace {E F : Type*}
   refine ⟨StrongDual.toWeakDual g,
     hf.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.mpr ⟨hgnorm.trans hφnorm, hgf⟩, ?_⟩
   exact DFunLike.ext _ _ fun x => by simpa using DFunLike.congr_fun hg x
-
-/-- **Extension of states from a unital subspace.** Restriction of states from `E` to a unital
-subspace `S` is surjective, by Hahn–Banach. -/
-theorem IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
-    (S : Submodule ℝ E) (heS : e ∈ S) :
-    SurjOn S.subtypeL.pullbackFunctional (stateSpace e) (stateSpace (⟨e, heS⟩ : S)) := by
-  simpa [Submodule.subtypeₗᵢ_toContinuousLinearMap] using
-    (he.submodule S heS).surjOn_pullbackFunctional_stateSpace he S.subtypeₗᵢ rfl
 
 end Extension
 

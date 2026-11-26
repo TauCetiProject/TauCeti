@@ -105,8 +105,7 @@ theorem extendFromSelfAdjoint_apply (ψ : WeakDual ℝ (selfAdjoint A)) (a : A) 
 /-- On a self-adjoint element `a`, `extendFromSelfAdjoint ψ` evaluates to `(ψ a : ℂ)`. -/
 theorem extendFromSelfAdjoint_apply_coe (ψ : WeakDual ℝ (selfAdjoint A)) (a : selfAdjoint A) :
     extendFromSelfAdjoint ψ (a : A) = (ψ a : ℂ) := by
-  rw [extendFromSelfAdjoint_apply, selfAdjoint.realPart_coe, selfAdjoint.imaginaryPart_coe,
-    map_zero, Complex.ofReal_zero, mul_zero, add_zero]
+  simp [selfAdjoint.realPart_coe, selfAdjoint.imaginaryPart_coe]
 
 /-- Any complex-linear functional on `A` that agrees with `(ψ · : ℂ)` on `selfAdjoint A` equals
 `extendFromSelfAdjoint ψ`. -/
