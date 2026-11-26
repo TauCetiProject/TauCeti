@@ -49,11 +49,14 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius`: the Frobenius seminorm.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius_apply`: `‖A‖_F = √(∑ᵢ ‖A bᵢ‖²)` for every
   orthonormal basis `(bᵢ)`.
+* `TauCeti.UnitarilyInvariantSeminorm.frobenius_le_frobenius_of_norm_le`: pointwise domination
+  `‖A x‖ ≤ ‖B x‖` gives `‖A‖_F ≤ ‖B‖_F`.
 * `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply_eq_sum_norm_inner_sq`:
   `‖A‖_F² = ∑ᵢ ∑ⱼ ‖⟪cⱼ, A bᵢ⟫‖²` in orthonormal bases `(bᵢ)` of the source and `(cⱼ)` of the
   target.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius_apply_eq_sqrt_sum_sq_singularValues`:
   `‖A‖_F = √(∑ᵢ σᵢ(A)²)`.
+* `TauCeti.UnitarilyInvariantSeminorm.frobenius_adjoint`: `‖A†‖_F = ‖A‖_F`.
 * `LinearMap.frobenius_apply_eq_sqrt_sum_range_sq_singularValues`: the same as a sum over
   `Finset.range (dim E)`.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius_rankOne`: `‖u ⊗ v‖_F = ‖u‖ ‖v‖`.
@@ -157,6 +160,15 @@ source. -/
 theorem sq_frobenius_apply (b : OrthonormalBasis ι 𝕜 E) (A : E →ₗ[𝕜] F) :
     frobenius 𝕜 E F A ^ 2 = ∑ i, ‖A (b i)‖ ^ 2 := by
   rw [frobenius_apply b, Real.sq_sqrt (by positivity)]
+
+/-- **Domination of Frobenius seminorms.** If `‖A x‖ ≤ ‖B x‖` for every `x`, then
+`‖A‖_F ≤ ‖B‖_F`. -/
+theorem frobenius_le_frobenius_of_norm_le {G : Type*} [NormedAddCommGroup G]
+    [InnerProductSpace 𝕜 G] {A : E →ₗ[𝕜] F} {B : E →ₗ[𝕜] G}
+    (h : ∀ x, ‖A x‖ ≤ ‖B x‖) : frobenius 𝕜 E F A ≤ frobenius 𝕜 E G B := by
+  rw [frobenius_apply (stdOrthonormalBasis 𝕜 E), frobenius_apply (stdOrthonormalBasis 𝕜 E)]
+  gcongr with i
+  exact h _
 
 open scoped InnerProductSpace in
 /-- The square of the Frobenius seminorm is the sum of the squared moduli of the matrix
@@ -271,6 +283,13 @@ theorem frobenius_apply_eq_sqrt_sum_sq_singularValues (A : E →ₗ[𝕜] F) :
   congr 1
   exact_mod_cast (A.trace_adjoint_comp_self_eq_sum_norm_apply_sq _).symm.trans
     A.trace_adjoint_comp_self_eq_sum_sq_singularValues
+
+/-- **Adjoint invariance of the Frobenius seminorm**: `‖A†‖_F = ‖A‖_F`, since `A` and `A†` have
+the same singular values. Not `@[simp]`: `simp` already proves it from
+`frobenius_apply_eq_sqrt_sum_sq_singularValues` and `LinearMap.singularValues_adjoint`, so the
+`simpNF` linter rejects the attribute. -/
+theorem frobenius_adjoint (A : E →ₗ[𝕜] F) : frobenius 𝕜 F E A.adjoint = frobenius 𝕜 E F A := by
+  simp only [frobenius_apply_eq_sqrt_sum_sq_singularValues, LinearMap.singularValues_adjoint]
 
 end TauCeti.UnitarilyInvariantSeminorm
 
