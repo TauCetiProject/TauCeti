@@ -15,7 +15,8 @@ Let `π` be a continuous representation of a real Lie group `G` on a normed spac
 `X` of left-invariant derivations (`ContRepresentation.wordSeminorm`).
 
 The comparison is proved once for the word seminorms `P^D_k` of a seminorm `p` along families `D`
-of operators on any module (`Seminorm.endWordSeminorm`), with coefficients in the scalar ring. With
+of operators on any module (`Seminorm.endWordSeminorm_le_of_eq_sum`, in
+`TauCeti.Analysis.Normed.Module.Seminorm.Word`), with coefficients in the scalar ring. With
 the recursion `P^D_{k+1}(x) = p(x) + ∑ i, P^D_k(D_i x)` (`Seminorm.endWordSeminorm_succ`) and the
 derivative estimate `P^D_k(A x) ≤ (∑ i, ‖c i‖) P^D_{k+1}(x)` for `A = ∑ i, c i • D i`, induction on
 `k` compares the word seminorms along two families: if `D' j = ∑ i, c j i • D i` for every `j`, then
@@ -29,9 +30,6 @@ seminorms (for instance through `WithSeminorms.congr`) does not depend on the ba
 
 ## Main results
 
-* `Seminorm.endWordSeminorm_le_of_eq_sum`: the comparison for the word seminorms along
-  families of operators (`Seminorm.endWordSeminorm`): if `D' j = ∑ i, c j i • D i`, then
-  `P^{D'}_k ≤ (1 + ∑ j, ∑ i, ‖c j i‖)^k P^D_k`.
 * `ContRepresentation.wordSeminorm_le_of_eq_sum`: if `Y j = ∑ i, c j i • X i`, then
   `P^Y_k ≤ (1 + ∑ j, ∑ i, |c j i|)^k P^X_k`.
 * `ContRepresentation.wordSeminorm_le_basis`: the comparison of any finite family with a real
@@ -50,41 +48,6 @@ public section
 noncomputable section
 
 open scoped ContDiff Manifold
-
-namespace Seminorm
-
-variable {𝕜 M ι κ : Type*} [SeminormedCommRing 𝕜] [AddCommGroup M] [Module 𝕜 M]
-  [Fintype ι] [Fintype κ]
-
-/-- **Comparison of the word seminorms along two families of operators.** If
-`D' j = ∑ i, c j i • D i` for every `j`, then `P^{D'}_k ≤ (1 + ∑ j, ∑ i, ‖c j i‖)^k P^D_k`. -/
-theorem endWordSeminorm_le_of_eq_sum (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M)
-    {D' : κ → Module.End 𝕜 M} (c : κ → ι → 𝕜) (hD : ∀ j, D' j = ∑ i, c j i • D i) (k : ℕ)
-    (x : M) :
-    p.endWordSeminorm D' k x ≤ (1 + ∑ j, ∑ i, ‖c j i‖) ^ k * p.endWordSeminorm D k x := by
-  set S := ∑ j, ∑ i, ‖c j i‖
-  have hS : 0 ≤ S := Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
-  induction k generalizing x with
-  | zero => simp
-  | succ k ih =>
-    have hC : 1 ≤ (1 + S) ^ k := one_le_pow₀ (le_add_of_nonneg_right hS)
-    have hx : p x ≤ (1 + S) ^ k * p.endWordSeminorm D (k + 1) x := by
-      rw [← p.endWordSeminorm_zero D]
-      exact (p.endWordSeminorm_mono D (Nat.zero_le _) x).trans
-        (le_mul_of_one_le_left (apply_nonneg _ _) hC)
-    have hsum : ∑ j, p.endWordSeminorm D' k (D' j x) ≤
-        (1 + S) ^ k * (S * p.endWordSeminorm D (k + 1) x) := by
-      rw [Finset.sum_mul, Finset.mul_sum]
-      refine Finset.sum_le_sum fun j _ ↦ (ih _).trans ?_
-      exact mul_le_mul_of_nonneg_left
-        (p.endWordSeminorm_apply_le_of_eq_sum D k (c j) (hD j) x) (pow_nonneg (by positivity) _)
-    rw [endWordSeminorm_succ]
-    calc p x + ∑ j, p.endWordSeminorm D' k (D' j x)
-      _ ≤ (1 + S) ^ k * p.endWordSeminorm D (k + 1) x +
-          (1 + S) ^ k * (S * p.endWordSeminorm D (k + 1) x) := add_le_add hx hsum
-      _ = (1 + S) ^ (k + 1) * p.endWordSeminorm D (k + 1) x := by ring
-
-end Seminorm
 
 namespace ContRepresentation
 
