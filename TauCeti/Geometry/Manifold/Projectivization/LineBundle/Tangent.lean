@@ -44,8 +44,11 @@ the line in the chart `a`, and multiplying its tangent coordinate by `εₐ`, gi
 total spaces over `ℙ¹`.
 
 Combined with the vanishing `H¹(ℂP¹, 𝒪(k)) = 0` for `k ≥ -1`, the splitting
-`ℓ* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ* TℂPⁿ) = 0`: the linearized Cauchy–Riemann operator
-along `ℓ` is onto, so `ℓ` is regular as a holomorphic sphere in `ℂPⁿ`.
+`ℓ* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ* TℂPⁿ) = 0`
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`, in
+`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Cohomology`). This group is the cokernel
+of the linearized Cauchy–Riemann operator along `ℓ`, so its vanishing makes `ℓ` regular as a
+holomorphic sphere in `ℂPⁿ`.
 
 ## Main declarations
 
