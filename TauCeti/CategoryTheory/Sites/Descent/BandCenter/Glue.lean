@@ -20,7 +20,7 @@ For a covering sieve `R` of `U` and a compatible family `z` on `R`
 `IntrinsicBandSections.coverCenter` lives over `U` only. Pulling `R` back along an arbitrary arrow
 `a : V ⟶ U` and descending the family `h ↦ z_(h ≫ a)` gives a unit `c_(R, z, a)` of the
 categorical centre of the fibre over `V` (`IntrinsicBandSections.coverCenterAt`). These units are
-compatible with pullback along every arrow `g : W ⟶ V`, whether or not `g` lies in `R`
+compatible with pullback along every arrow `g : W ⟶ V`, whether or not `g ≫ a` lies in `R`
 (`IntrinsicBandSections.coverCenterAt_compatible`); the proof transports the local formula along
 the composition isomorphisms of `F` (`IntrinsicBandSections.center_map_comp`). So they form a
 central section `glue(R, z) ∈ ZF(U)` (`IntrinsicBandSections.glue`), the unique one restricting to
@@ -30,7 +30,7 @@ central section `glue(R, z) ∈ ZF(U)` (`IntrinsicBandSections.glue`), the uniqu
 Consequently the presheaf of abelian groups `U ↦ Additive ZF(U)`
 (`IntrinsicBandSections.presheaf`) is a sheaf for `J` (`IntrinsicBandSections.isSheaf_of_prestack`).
 Neither groupoid fibres, gerbe locality nor commutativity of the automorphism groups is needed. This
-is the varying-base conclusion of the Stacks Project, Lemma 8.11.8 (06NY), with morphism sheaves as
+is the varying-base conclusion of the Stacks Project, Lemma 8.11.8 (0CJY), with morphism sheaves as
 in Definition 8.4.1 (026F).
 
 ## Main definitions
@@ -51,7 +51,7 @@ in Definition 8.4.1 (026F).
 
 ## References
 
-* [The Stacks Project, Lemma 8.11.8 (06NY)](https://stacks.math.columbia.edu/tag/06NY)
+* [The Stacks Project, Lemma 8.11.8 (0CJY)](https://stacks.math.columbia.edu/tag/0CJY)
 * [The Stacks Project, Definition 8.4.1 (026F)](https://stacks.math.columbia.edu/tag/026F)
 -/
 
@@ -168,8 +168,8 @@ theorem coverCenterAt_restrict (hR : R ∈ J U) (s : IntrinsicBandSections F U) 
     coverCenterAt hR (isCompatible_restrict s) a = s.val V a :=
   (coverCenterAt_unique hR _ a _ fun x i ↦ by simp [map_app]).symm
 
-/-- **Compatibility with pullback along any arrow.** For every `g : W ⟶ V`, whether or not it
-lies in `R`, `g^*` carries `c_(R, z, a)` at `x` to `c_(R, z, g ≫ a)` at `g^* x`. -/
+/-- **Compatibility with pullback along any arrow.** For every `g : W ⟶ V`, whether or not
+`g ≫ a` lies in `R`, `g^*` carries `c_(R, z, a)` at `x` to `c_(R, z, g ≫ a)` at `g^* x`. -/
 theorem coverCenterAt_compatible (hR : R ∈ J U) (hz : IsCompatible z) {V W : C} (a : V ⟶ U)
     (g : W ⟶ V) (x : F.obj (.mk (op V))) :
     (F.map g.op.toLoc).toFunctor.map ((coverCenterAt hR hz a).val.app x) =
