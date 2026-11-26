@@ -301,31 +301,6 @@ theorem IsNondegenerateCriticalPoint.comp {φ : F → E} {b : F}
     IsNondegenerateCriticalPoint (f ∘ φ) b :=
   (isNondegenerateCriticalPoint_comp_iff h.contDiffAt hφ hinv).2 h
 
-/-- Negating the function preserves nondegenerate critical points: the differential and the second
-derivative are both negated, and negation of the dual is a linear homeomorphism. This is the
-symmetry exchanging the forward and backward directions of a negative gradient trajectory. -/
-theorem IsNondegenerateCriticalPoint.neg (h : IsNondegenerateCriticalPoint f x) :
-    IsNondegenerateCriticalPoint (-f) x := by
-  have hfun : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
-  refine ⟨ContDiffAt.neg h.contDiffAt, by rw [hfun]; simp [h.fderiv_eq_zero], ?_⟩
-  have hsnd : fderiv ℝ (fderiv ℝ (-f)) x = -fderiv ℝ (fderiv ℝ f) x := by
-    rw [hfun, fderiv_neg]
-  have hcomp : -fderiv ℝ (fderiv ℝ f) x =
-      (ContinuousLinearEquiv.neg ℝ : (E →L[ℝ] ℝ) ≃L[ℝ] (E →L[ℝ] ℝ)) ∘L
-        fderiv ℝ (fderiv ℝ f) x := by
-    ext v w
-    simp
-  rw [hsnd, hcomp]
-  exact ContinuousLinearMap.isInvertible_equiv.comp h.isInvertible
-
-/-- **Nondegeneracy of a critical point is invariant under negating the function.** Negation is
-involutive, so the one-way implication `TauCeti.IsNondegenerateCriticalPoint.neg` applied twice
-gives both directions. -/
-@[simp]
-theorem isNondegenerateCriticalPoint_neg :
-    IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
-  ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
-
 /-- **Nondegeneracy of a critical point is invariant under scaling the function** by a nonzero
 constant, which scales the differential and the second derivative. -/
 @[simp]
@@ -339,6 +314,22 @@ theorem isNondegenerateCriticalPoint_const_smul_iff {c : ℝ} (hc : c ≠ 0) :
       by rw [fderiv_fderiv_const_smul, ContinuousLinearMap.isInvertible_smul_iff hc]
          exact h.isInvertible⟩
   exact ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using key (inv_ne_zero hc) h, key hc⟩
+
+/-- Negating the function preserves nondegenerate critical points: negation is scaling by `-1`
+(`TauCeti.isNondegenerateCriticalPoint_const_smul_iff`). This is the symmetry exchanging the
+forward and backward directions of a negative gradient trajectory. -/
+theorem IsNondegenerateCriticalPoint.neg (h : IsNondegenerateCriticalPoint f x) :
+    IsNondegenerateCriticalPoint (-f) x := by
+  rw [← neg_one_smul ℝ f]
+  exact (isNondegenerateCriticalPoint_const_smul_iff (by norm_num)).2 h
+
+/-- **Nondegeneracy of a critical point is invariant under negating the function.** Negation is
+involutive, so the one-way implication `TauCeti.IsNondegenerateCriticalPoint.neg` applied twice
+gives both directions. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_neg :
+    IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
+  ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
 
 /-- **Nondegeneracy of a critical point is invariant under adding a constant**, which changes
 neither the differential nor the second derivative. -/

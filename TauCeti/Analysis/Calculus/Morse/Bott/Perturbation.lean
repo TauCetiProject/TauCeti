@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Bott
 public import TauCeti.Analysis.Calculus.Morse.Prod
-import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Perturbing a Morse–Bott function by a function on its critical submanifold
@@ -18,16 +16,18 @@ Let `f (b, v)` be a function on a product `P × F` of finite-dimensional real no
 zero section `P × {0}` is a nondegenerate (Morse–Bott) critical submanifold, as in
 `TauCeti.Analysis.Calculus.Morse.Bott`. A function `h` on the critical submanifold `P` extends to
 `P × F` by making it constant in the normal directions, `(b, v) ↦ h b`, and cut off away from the
-zero section by a function `ρ` of the normal coordinate equal to `1` near `0`. This file shows that
+zero section by a function `ρ` of the normal coordinate equal to `1` near `0`. This file studies
 the small perturbation
 
-`f_ε (b, v) = f (b, v) + ε ρ(v) h(b)`
+`f_ε (b, v) = f (b, v) + ε ρ(v) h(b)`.
 
-is a Morse function near the critical submanifold as soon as `h` is a Morse function on it: its
-critical points there are the critical points `(b, 0)` of `h` on the zero section, with Morse
-index `ind_h(b) + ind_f(b, 0)`, the index of `h` plus the index of the normal Hessian. This is the
-perturbation through which the cascade complex of a Morse–Bott function, built from auxiliary
-Morse functions on the critical components, is compared with the Morse complex of a Morse function.
+Over a compact set `K ⊆ P` of Morse–Bott points, in a tube `‖v‖ ≤ r` of fixed radius and for small
+`ε ≠ 0`, the critical points `(b, v)` of `f_ε` with `b ∈ K` are exactly the points `(b, 0)` of the
+zero section with `b` critical for `h`. Each of them is nondegenerate for `f_ε` exactly when `b`
+is nondegenerate for `h`, and for `ε > 0` its Morse index is `ind_h(b) + ind_f(b, 0)`, the index
+of `h` plus the index of the normal Hessian. This is the perturbation through which the cascade
+complex of a Morse–Bott function, built from auxiliary Morse functions on the critical components,
+is compared with the Morse complex of a Morse function.
 
 **Near the zero section.** Where `ρ = 1` the perturbation is `f + h ∘ Prod.fst`, after absorbing
 `ε` into `h`, and no smallness is needed. The derivative of `h ∘ Prod.fst` vanishes in the fibre
@@ -53,9 +53,6 @@ indices are `ind_h(b) + ind_f(b, 0)` (`TauCeti.morseIndex_add_mul_mul`).
 
 ## Main results
 
-* `TauCeti.exists_mul_norm_snd_le_norm_fderiv_comp_inr`: near a Morse–Bott point of the zero
-  section, the fibre derivative of `f` is bounded below by a multiple of the distance to the zero
-  section.
 * `TauCeti.isNondegenerateCriticalPoint_slice_right_of_ker_le`: at a Morse–Bott point, the
   restriction of `f` to the normal fibre has a nondegenerate critical point at `0`.
 * `TauCeti.eventually_forall_fderiv_add_comp_fst_eq_zero_iff`: near a Morse–Bott point, the
@@ -91,35 +88,6 @@ variable {P F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
 /-! ### The fibre derivative near a Morse–Bott zero section -/
 
-/-- **Near a Morse–Bott zero section the fibre derivative grows linearly with the distance to
-it.** If `f` is `C²` at `(a, 0)`, every point `(b, 0)` with `b` near `a` is critical, and the
-kernel of the Hessian at `(a, 0)` consists of base directions, then near `(a, 0)` the derivative of
-`f` in the fibre directions, `Df(z) ∘ inr`, has norm at least a fixed positive multiple of
-`‖z.2‖`. -/
-theorem exists_mul_norm_snd_le_norm_fderiv_comp_inr [FiniteDimensional ℝ F]
-    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
-    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
-    ∃ c > 0, ∀ᶠ z in 𝓝 (a, (0 : F)),
-      c * ‖z.2‖ ≤ ‖fderiv ℝ f z ∘L ContinuousLinearMap.inr ℝ P F‖ := by
-  -- Restriction of covectors to the fibre directions.
-  let T : (P × F →L[ℝ] ℝ) →L[ℝ] F →L[ℝ] ℝ :=
-    ContinuousLinearMap.precomp ℝ (ContinuousLinearMap.inr ℝ P F)
-  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
-  have hstrict : HasStrictFDerivAt (fderiv ℝ f) (fderiv ℝ (fderiv ℝ f) (a, 0)) (a, 0) :=
-    hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero
-  have hzero : ∀ᶠ b in 𝓝 a, T (fderiv ℝ f (b, 0)) = 0 :=
-    hcrit.mono fun b hb ↦ by simp [T, hb]
-  -- On the fibre directions the derivative of `T ∘ Df` is the vertical Hessian, which is
-  -- invertible.
-  have hinj : Function.Injective
-      ((T ∘L fderiv ℝ (fderiv ℝ f) (a, 0)) ∘L ContinuousLinearMap.inr ℝ P F) := by
-    refine (injective_iff_map_eq_zero _).2 fun v hv ↦
-      (isInvertible_fderiv_fderiv_slice_right_of_ker_le hf hcrit hker).injective ?_
-    rw [map_zero]
-    ext w
-    simpa [T, fderiv_fderiv_slice_right_apply hf] using congr($hv w)
-  exact (T.hasStrictFDerivAt.comp (a, 0) hstrict).exists_mul_norm_snd_le_norm_apply hzero hinj
-
 /-- **The normal restriction at a Morse–Bott point is nondegenerate.** If `f` is `C²` at `(a, 0)`,
 every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)`
 consists of base directions, then the restriction `v ↦ f (a, v)` of `f` to the fibre over `a` has a
@@ -127,15 +95,27 @@ nondegenerate critical point at `0`. -/
 theorem isNondegenerateCriticalPoint_slice_right_of_ker_le [FiniteDimensional ℝ F]
     (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
     (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
-    IsNondegenerateCriticalPoint (fun v ↦ f (a, v)) 0 := by
-  have hd : HasFDerivAt (fun v ↦ f (a, v))
-      (fderiv ℝ f (a, 0) ∘L ContinuousLinearMap.inr ℝ P F) 0 :=
-    (hf.differentiableAt two_ne_zero).hasFDerivAt.comp 0 (hasFDerivAt_prodMk_right a 0)
-  refine ⟨hf.comp 0 (contDiffAt_const.prodMk contDiffAt_id),
-    by rw [hd.fderiv, hcrit.self_of_nhds, ContinuousLinearMap.zero_comp],
+    IsNondegenerateCriticalPoint (fun v ↦ f (a, v)) 0 :=
+  ⟨hf.comp 0 (contDiffAt_const.prodMk contDiffAt_id),
+    by rw [fderiv_slice_right (hf.differentiableAt two_ne_zero), hcrit.self_of_nhds,
+      ContinuousLinearMap.zero_comp],
     isInvertible_fderiv_fderiv_slice_right_of_ker_le hf hcrit hker⟩
 
 /-! ### Perturbing by a function on the base -/
+
+/-- Near a Morse–Bott point of the zero section, `f` is `C²`, critical along the zero section, and
+its fibre derivative vanishes only on the zero section. -/
+private theorem eventually_fderiv_comp_inr_eq_zero_imp [FiniteDimensional ℝ F]
+    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
+    ∀ᶠ z in 𝓝 (a, (0 : F)), ContDiffAt ℝ 2 f z ∧ fderiv ℝ f (z.1, 0) = 0 ∧
+      (fderiv ℝ f z ∘L ContinuousLinearMap.inr ℝ P F = 0 → z.2 = 0) := by
+  obtain ⟨c, hc, hcz⟩ := exists_mul_norm_snd_le_norm_fderiv_comp_inr hf hcrit hker
+  filter_upwards [hf.eventually (by simp), (continuous_fst.tendsto' _ _ rfl).eventually hcrit, hcz]
+    with z hz hz0 hzc
+  refine ⟨hz, hz0, fun hv ↦ ?_⟩
+  rw [hv, norm_zero] at hzc
+  exact norm_le_zero_iff.1 (nonpos_of_mul_nonpos_right hzc hc)
 
 /-- The critical points of `f + h ∘ Prod.fst` at a point `z` where `f` is critical on the zero
 section through `z`, and where the fibre derivative of `f` vanishes only on the zero section. -/
@@ -171,12 +151,9 @@ theorem eventually_forall_fderiv_add_comp_fst_eq_zero_iff [FiniteDimensional ℝ
     (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
     ∀ᶠ z in 𝓝 (a, (0 : F)), ∀ h : P → ℝ, DifferentiableAt ℝ h z.1 →
       (fderiv ℝ (fun y ↦ f y + h y.1) z = 0 ↔ z.2 = 0 ∧ fderiv ℝ h z.1 = 0) := by
-  obtain ⟨c, hc, hcz⟩ := exists_mul_norm_snd_le_norm_fderiv_comp_inr hf hcrit hker
-  filter_upwards [hcz, hf.eventually (by simp), (continuous_fst.tendsto' _ _ rfl).eventually hcrit]
-    with z hz hzf hz0 h hh
-  refine fderiv_add_comp_fst_eq_zero_iff (hzf.differentiableAt two_ne_zero) hh hz0 fun hv ↦ ?_
-  rw [hv, norm_zero] at hz
-  exact norm_le_zero_iff.1 (nonpos_of_mul_nonpos_right hz hc)
+  filter_upwards [eventually_fderiv_comp_inr_eq_zero_imp hf hcrit hker]
+    with z ⟨hzf, hz0, hzv⟩ h hh
+  exact fderiv_add_comp_fst_eq_zero_iff (hzf.differentiableAt two_ne_zero) hh hz0 hzv
 
 variable {h : P → ℝ}
 
@@ -191,7 +168,7 @@ theorem hessianQuadraticForm_add_comp_fst (hf : ContDiffAt ℝ 2 f (a, 0))
   have hfst : hessianQuadraticForm (fun z : P × F ↦ h z.1) (a, 0) =
       (hessianQuadraticForm h a).comp (LinearMap.fst ℝ P F) :=
     (ContinuousLinearMap.fst ℝ P F).hessianQuadraticForm_comp hh
-  rw [show (fun z ↦ f z + h z.1) = f + fun z ↦ h z.1 from rfl,
+  rw [← Pi.add_def f (fun z ↦ h z.1),
     hessianQuadraticForm_add (g := fun z : P × F ↦ h z.1) hf (hh.comp (a, 0) contDiffAt_fst), hfst,
     hessianQuadraticForm_eq_prod_slice_right hf hcrit]
   ext ⟨u, v⟩
@@ -264,18 +241,9 @@ private theorem exists_pos_forall_fderiv_comp_inr_eq_zero_imp [FiniteDimensional
       (fderiv ℝ f (b, v) ∘L ContinuousLinearMap.inr ℝ P F = 0 → v = 0) := by
   have hloc : ∀ a ∈ K, ∀ᶠ w : F × P in 𝓝 ((0 : F), a), ContDiffAt ℝ 2 f (w.2, w.1) ∧
       fderiv ℝ f (w.2, 0) = 0 ∧
-        (fderiv ℝ f (w.2, w.1) ∘L ContinuousLinearMap.inr ℝ P F = 0 → w.1 = 0) := by
-    intro a ha
-    obtain ⟨c, hc, hcz⟩ := exists_mul_norm_snd_le_norm_fderiv_comp_inr (hf a ha) (hcrit a ha)
-      (hker a ha)
-    have hev : ∀ᶠ z : P × F in 𝓝 (a, 0), ContDiffAt ℝ 2 f z ∧ fderiv ℝ f (z.1, 0) = 0 ∧
-        (fderiv ℝ f z ∘L ContinuousLinearMap.inr ℝ P F = 0 → z.2 = 0) := by
-      filter_upwards [(hf a ha).eventually (by simp),
-        (continuous_fst.tendsto' _ _ rfl).eventually (hcrit a ha), hcz] with z hz hz0 hzc
-      refine ⟨hz, hz0, fun hv ↦ ?_⟩
-      rw [hv, norm_zero] at hzc
-      exact norm_le_zero_iff.1 (nonpos_of_mul_nonpos_right hzc hc)
-    exact (continuous_swap.tendsto' ((0 : F), a) (a, 0) rfl).eventually hev
+        (fderiv ℝ f (w.2, w.1) ∘L ContinuousLinearMap.inr ℝ P F = 0 → w.1 = 0) := fun a ha ↦
+    (continuous_swap.tendsto' ((0 : F), a) (a, 0) rfl).eventually
+      (eventually_fderiv_comp_inr_eq_zero_imp (hf a ha) (hcrit a ha) (hker a ha))
   obtain ⟨r, hr, hball⟩ :=
     Metric.eventually_nhds_iff_ball.1 (hK.eventually_forall_of_forall_eventually
       (P := fun (v : F) (b : P) ↦ ContDiffAt ℝ 2 f (b, v) ∧ fderiv ℝ f (b, 0) = 0 ∧
@@ -312,8 +280,9 @@ private theorem fderiv_add_mul_mul_ne_zero {ρ : F → ℝ} {h : P → ℝ} {z :
       -(ε • (h z.1 • fderiv ℝ ρ z.2)) := by
     ext w
     have := congr($(hd.fderiv.symm.trans h0) (0, w))
-    simp at this
-    simp
+    simp only [smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.inr_apply,
+      neg_apply, map_zero, smul_eq_mul, mul_zero, zero_add, zero_apply] at this ⊢
     linarith
   rw [hcancel, norm_neg, norm_smul, Real.norm_eq_abs] at hm
   linarith
