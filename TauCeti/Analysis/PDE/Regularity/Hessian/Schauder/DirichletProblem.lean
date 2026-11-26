@@ -57,12 +57,12 @@ gives the unique solvability of the Dirichlet problem for every such `L`.
   that is `C²` on the whole space (`TauCeti.CkHolderSpaceOn.exists_contDiff_eq`, which uses the
   `C^{2,α}` boundary). Since `u` vanishes on `∂Ω`, so does `g`, and `D²g` is `α`-Hölder on
   `closure Ω` by continuity. The coefficients extend to `closure Ω` with the same Hölder constants
-  (`TauCeti.HolderSpace.exists_holderOnWith_closure`), and ellipticity passes to the closure by
-  continuity. The global Schauder estimate for a nonpositive potential
+  and bounds (`TauCeti.HolderSpace.exists_holderOnWith_closure_and_norm_le`), and ellipticity
+  passes to the closure by continuity. The global Schauder estimate for a nonpositive potential
   (`exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_add_fderiv_add_mul_of_nonpos`, in
   the `TauCeti.PDE` namespace) then bounds `|g|`, `‖Dg‖`, `‖D²g‖` and the Hölder constant of `D²g`
   on `closure Ω` by a multiple of the `C^{0,α}(Ω)` norm of `L u`, and these four quantities bound
-  the norm of `u`.
+  the norm of `u` (`TauCeti.CkHolderSpaceOn.norm_le_sum_add_of_apply_eq`).
 * **The method of continuity.** Along the segment `t ↦ (1 - t) L₀ + t L₁`, `t ∈ [0, 1]`, the
   operator is that of the segment of coefficients
   (`TauCeti.CkHolderSpaceOn.nonDivergenceOperatorL_lineMap`), and these coefficients stay
@@ -99,21 +99,6 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 /-! ### Coefficients on the closure -/
 
-/-- A coefficient in the bounded `α`-Hölder functions on `Ω` with norm at most `K` agrees on `Ω`
-with a function that is `α`-Hölder with constant `K` on `closure Ω` and bounded by `K` there. -/
-private theorem exists_holderOnWith_closure_and_abs_le (hα₀ : 0 < α) {K : ℝ≥0}
-    (f : HolderSpace α Ω ℝ) (hf : ‖f‖ ≤ K) :
-    ∃ g : E → ℝ, (∀ x : Ω, g x = f x) ∧ HolderOnWith K α g (closure (Ω : Set E)) ∧
-      ∀ z ∈ closure (Ω : Set E), |g z| ≤ K := by
-  obtain ⟨g, hg, hgH⟩ := f.exists_holderOnWith_closure (s := (Ω : Set E)) hα₀
-  have hK : ‖f‖₊ ≤ K := by exact_mod_cast hf
-  refine ⟨g, hg, hgH.mono_const hK, fun z hz ↦ ?_⟩
-  refine ContinuousWithinAt.closure_le (f := fun z ↦ |g z|) hz
-    (((hgH.continuousOn hα₀) z hz).mono subset_closure).abs continuousWithinAt_const
-    fun y hy ↦ ?_
-  rw [show g y = f ⟨y, hy⟩ from hg ⟨y, hy⟩]
-  exact (HolderSpace.abs_apply_le_norm f _).trans hf
-
 /-- The principal coefficients on the closure: a matrix of bounded `α`-Hölder functions on `Ω`
 with norms at most `K` and ellipticity constant `λ` on `Ω` agrees on `Ω` with a matrix field whose
 entries are `α`-Hölder with constant `K` and bounded by `K` on `closure Ω`, and which has
@@ -125,9 +110,10 @@ private theorem exists_coeff_closure (hα₀ : 0 < α) {K : ℝ≥0}
       (∀ i j, HolderOnWith K α (fun z ↦ A z i j) (closure (Ω : Set E))) ∧
       (∀ z ∈ closure (Ω : Set E), ∀ i j, |A z i j| ≤ K) ∧
       ∀ z ∈ closure (Ω : Set E), ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (A z).toQuadraticForm' ξ := by
-  choose g hg hgH hgM using fun i j ↦ exists_holderOnWith_closure_and_abs_le hα₀ (a i j) (hak i j)
+  choose g hg hgH hgM using fun i j ↦
+    (a i j).exists_holderOnWith_closure_and_norm_le (s := (Ω : Set E)) hα₀ (hak i j)
   refine ⟨fun z ↦ Matrix.of fun i j ↦ g i j z, fun x i j ↦ hg i j x, hgH,
-    fun z hz i j ↦ hgM i j z hz, fun z hz ξ ↦ ?_⟩
+    fun z hz i j ↦ (Real.norm_eq_abs _).symm.trans_le (hgM i j z hz), fun z hz ξ ↦ ?_⟩
   -- The quadratic form at `ξ` is continuous on `closure Ω`, and at least `λ ‖ξ‖²` on `Ω`.
   have hc : ContinuousOn (fun z ↦ (Matrix.of fun i j ↦ g i j z).toQuadraticForm' ξ)
       (closure (Ω : Set E)) := by
@@ -147,21 +133,14 @@ private theorem exists_drift (hα₀ : 0 < α) {K : ℝ≥0} {b : Fin (n + 1) �
     (hbk : ∀ i, ‖b i‖ ≤ K) :
     ∃ B : E → E, (∀ x : Ω, B x = ∑ i, b i x • EuclideanSpace.single i (1 : ℝ)) ∧
       HolderOnWith ((n + 1) * K) α B Ω ∧ ∀ z ∈ (Ω : Set E), ‖B z‖ ≤ (n + 1) * K := by
-  choose g hg hgH _ using fun i ↦ exists_holderOnWith_closure_and_abs_le hα₀ (b i) (hbk i)
-  have he (i : Fin (n + 1)) : ‖EuclideanSpace.single i (1 : ℝ)‖ = 1 := by simp
-  refine ⟨fun z ↦ ∑ i, g i z • EuclideanSpace.single i (1 : ℝ), fun x ↦ by simp only [hg],
-    HolderOnWith.of_dist_le fun x hx y hy ↦ ?_, fun z hz ↦ ?_⟩
-  · rw [dist_eq_norm, ← Finset.sum_sub_distrib]
-    calc ‖∑ i, (g i x • EuclideanSpace.single i (1 : ℝ) - g i y • EuclideanSpace.single i 1)‖
-        ≤ ∑ i, ‖g i x • EuclideanSpace.single i (1 : ℝ) - g i y • EuclideanSpace.single i 1‖ :=
-          norm_sum_le _ _
-      _ ≤ ∑ _i : Fin (n + 1), (K : ℝ) * dist x y ^ (α : ℝ) := Finset.sum_le_sum fun i _ ↦ by
-          rw [← sub_smul, norm_smul, he, mul_one, ← dist_eq_norm]
-          exact ((hgH i).mono subset_closure).dist_le hx hy
-      _ = _ := by
-          simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-          push_cast
-          ring
+  choose g hg hgH _ using fun i ↦
+    (b i).exists_holderOnWith_closure_and_norm_le (s := (Ω : Set E)) hα₀ (hbk i)
+  refine ⟨fun z ↦ ∑ i, g i z • EuclideanSpace.single i (1 : ℝ), fun x ↦ by simp only [hg], ?_,
+    fun z hz ↦ ?_⟩
+  · have hiso (i : Fin (n + 1)) : Isometry fun r : ℝ ↦ r • EuclideanSpace.single i (1 : ℝ) :=
+      Isometry.of_dist_eq fun x y ↦ by simp [dist_eq_norm, ← sub_smul, norm_smul]
+    simpa using HolderOnWith.fintype_sum fun i ↦
+      (hiso i).comp_holderOnWith ((hgH i).mono subset_closure)
   · have h := HolderSpace.norm_sum_apply_smul_single_le_sum_norm b ⟨z, hz⟩
     simp only [← hg] at h
     refine h.trans ((Finset.sum_le_sum fun i _ ↦ hbk i).trans_eq ?_)
@@ -186,29 +165,6 @@ private theorem exists_contDiff_eq_of_mem_vanishingOnFrontierSubmodule (hα₀ :
     EqOn.of_subset_closure (fun y hy ↦ (hgu ⟨y, hy⟩).trans (u.extend_apply ⟨y, hy⟩).symm)
       hg.continuous.continuousOn (continuousOn_extend_closure hu) subset_closure subset_rfl
   rw [hext (frontier_subset_closure hz), u.extend_apply_of_mem_frontier hz]
-
-/-- The norm of an element `u` of `C^{2,α}(Ω)` is at most `3 N + H` when a function `g` agreeing
-with `u` on `Ω` has `|g|`, `‖Dg‖` and `‖D²g‖` bounded by `N` on `Ω` and `D²g` `α`-Hölder with
-constant `H` on `Ω`. -/
-private theorem norm_le_of_eq_of_norm_le {u : CkHolderSpaceOn 2 α Ω ℝ} {g : E → ℝ}
-    (hgu : ∀ x : Ω, g x = u x) {N : ℝ} (hN : 0 ≤ N) {H : ℝ≥0}
-    (h0 : ∀ z ∈ (Ω : Set E), |g z| ≤ N) (h1 : ∀ z ∈ (Ω : Set E), ‖fderiv ℝ g z‖ ≤ N)
-    (h2 : ∀ z ∈ (Ω : Set E), ‖_root_.iteratedFDeriv ℝ 2 g z‖ ≤ N)
-    (hH : HolderOnWith H α (_root_.iteratedFDeriv ℝ 2 g) Ω) :
-    ‖u‖ ≤ 3 * N + H := by
-  have hfield (i : Fin 3) (x : Ω) : ‖u.iteratedFDeriv i x‖ ≤ N := by
-    rw [← u.iteratedFDeriv_eq hgu]
-    fin_cases i
-    · simpa [_root_.norm_iteratedFDeriv_zero] using h0 x x.property
-    · simpa [_root_.norm_iteratedFDeriv_one] using h1 x x.property
-    · simpa using h2 x x.property
-  have he : (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ 2 g) =
-      (u.iteratedFDeriv (Fin.last 2) : Ω → E [×2]→L[ℝ] ℝ) :=
-    funext fun x ↦ u.iteratedFDeriv_eq hgu (Fin.last 2) x
-  refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith (fun _ ↦ hN) hfield
-    (he ▸ HolderWith.restrict_iff.2 hH)).trans_eq ?_
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-  norm_num
 
 /-! ### The a priori estimate -/
 
@@ -239,7 +195,8 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα₀ : 0 < α) (hα₁
   refine ⟨8 * C, by positivity, fun a b c ha hc0 hak hbk hck u hu ↦ ?_⟩
   obtain ⟨A, hA, hAH, hAM, hAell⟩ := exists_coeff_closure hα₀ hak ha
   obtain ⟨B, hB, hBH, hBM⟩ := exists_drift hα₀ hbk
-  obtain ⟨c', hc', hcH, hcM⟩ := exists_holderOnWith_closure_and_abs_le hα₀ c hck
+  obtain ⟨c', hc', hcH, hcM⟩ :=
+    c.exists_holderOnWith_closure_and_norm_le (s := (Ω : Set E)) hα₀ hck
   obtain ⟨g, hg, hgu, hg0, V, hV⟩ :=
     exists_contDiff_eq_of_mem_vanishingOnFrontierSubmodule hα₀ hb hbdry hu
   set f := nonDivergenceOperatorL hΩ hb hα₁.le a b c u
@@ -255,7 +212,7 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα₀ : 0 < α) (hα₁
     (hBH.mono_const (by exact_mod_cast le_add_of_nonneg_right K.coe_nonneg))
     (fun z hz ↦ (hBM z hz).trans (le_add_of_nonneg_right K.coe_nonneg))
     ((hcH.mono subset_closure).mono_const (by exact_mod_cast hK))
-    (fun z hz ↦ (hcM z (subset_closure hz)).trans hK)
+    (fun z hz ↦ ((Real.norm_eq_abs _).symm.trans_le (hcM z (subset_closure hz))).trans hK)
     (fun z hz ↦ (hc' ⟨z, hz⟩).trans_le (hc0 ⟨z, hz⟩)) (U := univ) (u := g) (K := ‖f‖₊)
     (F := ‖f‖₊) isOpen_univ (subset_univ _) hg.contDiffOn hg0 hV
     ((f.holderOnWith_of_apply_eq fun x ↦ (hLu x).symm))
@@ -266,11 +223,15 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα₀ : 0 < α) (hα₁
   have hCf : (↑(C * ‖f‖₊) : ℝ) ≤ 2 * C * ‖f‖ := by
     push_cast
     nlinarith [C.coe_nonneg, norm_nonneg f]
-  refine (norm_le_of_eq_of_norm_le hgu (by positivity)
-    (fun z hz ↦ (h0 z (subset_closure hz)).trans hCf)
-    (fun z hz ↦ (h1 z (subset_closure hz)).trans_eq hf)
-    (fun z hz ↦ (h2 z (subset_closure hz)).trans_eq hf) (hH.mono subset_closure)).trans_eq ?_
-  rw [hf]
+  have hN (i : Fin 3) (z : E) (hz : z ∈ (Ω : Set E)) :
+      ‖_root_.iteratedFDeriv ℝ i g z‖ ≤ 2 * C * ‖f‖ := by
+    fin_cases i
+    · simpa [_root_.norm_iteratedFDeriv_zero] using (h0 z (subset_closure hz)).trans hCf
+    · simpa [_root_.norm_iteratedFDeriv_one] using (h1 z (subset_closure hz)).trans_eq hf
+    · simpa using (h2 z (subset_closure hz)).trans_eq hf
+  refine (norm_le_sum_add_of_apply_eq hgu (fun _ ↦ by positivity) hN
+    (hH.mono subset_closure)).trans_eq ?_
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hf]
   ring
 
 /-! ### The method of continuity -/

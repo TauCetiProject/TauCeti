@@ -36,6 +36,8 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.exists_holderOnWith_closure`: for a positive exponent and a complete
   codomain, an element of the Hölder space of `s` extends to a function Hölder on the closure of
   `s`, with constant its Hölder-space norm.
+* `TauCeti.HolderSpace.exists_holderOnWith_closure_and_norm_le`: the same extension, with a
+  bound `K` on the norm of the element serving as Hölder constant and bound on the closure.
 * `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set, which is
   closed (`TauCeti.isClosed_supportedHolderSubmodule`) and hence complete for a complete codomain.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
@@ -460,6 +462,20 @@ theorem exists_holderOnWith_closure [CompleteSpace Y] (hα : 0 < α) {s : Set X}
   obtain ⟨g, hgg₀, hg⟩ :=
     (f.holderOnWith_of_apply_eq fun x ↦ (hg₀ x).symm).exists_eqOn_holderOnWith_closure hα
   exact ⟨g, fun x ↦ (hgg₀ x.property).trans (hg₀ x), hg⟩
+
+/-- An element `f` of the Hölder space of a set `s` with norm at most `K`, for a positive exponent
+and complete values, extends to a function on `X` which is `α`-Hölder on the closure of `s` with
+constant `K` and bounded in norm by `K` there. -/
+theorem exists_holderOnWith_closure_and_norm_le [CompleteSpace Y] (hα : 0 < α) {s : Set X}
+    (f : HolderSpace α s Y) {K : ℝ≥0} (hf : ‖f‖ ≤ K) :
+    ∃ g : X → Y, (∀ x : s, g x = f x) ∧ HolderOnWith K α g (closure s) ∧
+      ∀ z ∈ closure s, ‖g z‖ ≤ K := by
+  obtain ⟨g, hg, hgH⟩ := f.exists_holderOnWith_closure hα
+  refine ⟨g, hg, hgH.mono_const (by exact_mod_cast hf), fun z hz ↦ ?_⟩
+  refine ContinuousWithinAt.closure_le (f := fun z ↦ ‖g z‖) hz
+    (((hgH.continuousOn hα) z hz).mono subset_closure).norm continuousWithinAt_const
+    fun y hy ↦ ?_
+  exact ((congrArg norm (hg ⟨y, hy⟩)).trans_le (norm_apply_le f _)).trans hf
 
 /-- A constant function as an element of the bounded Hölder space. -/
 def const (c : Y) : HolderSpace α X Y :=

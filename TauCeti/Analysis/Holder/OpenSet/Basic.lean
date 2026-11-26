@@ -54,6 +54,8 @@ domain `Ω`, shared with `TauCeti.CkHolderSpace`.
   with bounded derivatives through order `k` on `Ω` and `α`-Hölder `k`-th derivative on `Ω`.
 * `TauCeti.CkHolderSpaceOn.norm_eq`: the norm is the sum of the supremum norms of the
   derivative fields through order `k` and the `α`-Hölder seminorm of the `k`-th field.
+  `TauCeti.CkHolderSpaceOn.norm_le_sum_add_of_apply_eq` bounds the norm by bounds on the
+  derivatives of any function on `E` that agrees with the element on `Ω`.
 * `TauCeti.CkHolderSpaceOn.extend`: the extension by zero of an element, a canonical function on
   `E` agreeing with it on `Ω`; `TauCeti.CkHolderSpaceOn.toBoundedContinuousFunctionCLM`: forgetting
   the derivatives, a continuous linear map of norm at most one to `Ω →ᵇ F`.
@@ -449,6 +451,23 @@ theorem norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpa
   gcongr with i
   · exact (BoundedContinuousFunction.norm_le (hM0 i)).2 (hM i)
   · exact_mod_cast hK.nnholderNorm_le
+
+/-- The `C^{k,α}(Ω)` norm of `f` is at most `∑ᵢ Mᵢ + K` when a function `g` on the whole space
+agreeing with `f` on `Ω` has its `i`-th derivative bounded by `Mᵢ ≥ 0` on `Ω` and its `k`-th
+derivative `α`-Hölder with constant `K` on `Ω`. -/
+theorem norm_le_sum_add_of_apply_eq {f : CkHolderSpaceOn k α Ω F} {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) {M : Fin (k + 1) → ℝ} (hM0 : ∀ i, 0 ≤ M i)
+    (hM : ∀ (i : Fin (k + 1)), ∀ z ∈ (Ω : Set E), ‖_root_.iteratedFDeriv ℝ i g z‖ ≤ M i)
+    {K : ℝ≥0}
+    (hK : HolderOnWith K α (_root_.iteratedFDeriv ℝ k g) Ω) :
+    ‖f‖ ≤ ∑ i, M i + K := by
+  refine norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith hM0 (fun i x ↦ ?_) ?_
+  · rw [← f.iteratedFDeriv_eq hg]
+    exact hM i x x.property
+  · have he : (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) =
+        (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) :=
+      funext fun x ↦ f.iteratedFDeriv_eq hg (Fin.last k) x
+    exact he ▸ HolderWith.restrict_iff.2 hK
 
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields on `Ω`.
 It is bounded by the `C^{k,α}(Ω)` norm pointwise, by `CkHolderSpaceOn.norm_iteratedFDeriv_le`. -/
