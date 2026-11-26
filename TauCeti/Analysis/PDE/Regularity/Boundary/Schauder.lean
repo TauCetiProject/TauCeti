@@ -109,39 +109,6 @@ variable {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n 
   {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
   {z₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} {α Ka KG : ℝ≥0}
 
-/-- The field `x ↦ a(x) p` of a constant vector `p`, written through the Riesz representation: its
-inner product with `ξ` is `ξᵀ a(x) p`. -/
-private def coefficientField
-    (a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
-    (p : EuclideanSpace ℝ (Fin (n + 1))) (x : EuclideanSpace ℝ (Fin (n + 1))) :
-    EuclideanSpace ℝ (Fin (n + 1)) :=
-  (toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm ((matrixBilinearForm (a x)).flip p)
-
-private theorem inner_coefficientField (p x ξ : EuclideanSpace ℝ (Fin (n + 1))) :
-    ⟪coefficientField a p x, ξ⟫_ℝ = matrixBilinearForm (a x) ξ p := by
-  rw [coefficientField, toDual_symm_apply, ContinuousLinearMap.flip_apply]
-
-/-- If the bilinear forms of `a` are `α`-Hölder with constant `K_a`, then `x ↦ a(x) p` is `α`-Hölder
-with constant `K_a ‖p‖`. -/
-private theorem holderOnWith_coefficientField {s : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s)
-    (p : EuclideanSpace ℝ (Fin (n + 1))) :
-    HolderOnWith (Ka * ‖p‖₊) α (coefficientField a p) s := by
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  rw [dist_eq_norm, coefficientField, coefficientField, ← map_sub, LinearIsometryEquiv.norm_map]
-  have hle : ‖(matrixBilinearForm (a x)).flip p - (matrixBilinearForm (a y)).flip p‖ ≤
-      ‖matrixBilinearForm (a x) - matrixBilinearForm (a y)‖ * ‖p‖ := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun ξ => ?_
-    have h := (matrixBilinearForm (a x) - matrixBilinearForm (a y)).le_opNorm₂ ξ p
-    simp only [FunLike.coe_sub, Pi.sub_apply, ContinuousLinearMap.flip_apply] at h ⊢
-    linarith
-  calc _ ≤ _ := hle
-    _ ≤ (Ka : ℝ) * dist x y ^ (α : ℝ) * ‖p‖ := by
-        have hd := haK.dist_le hx hy
-        rw [dist_eq_norm] at hd
-        exact mul_le_mul_of_nonneg_right hd (norm_nonneg _)
-    _ = _ := by push_cast; ring
-
 /-- **Subtracting a linear function.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on
 `Ω`, and let `B ⊆ Ω ∩ B(z₀, R)` be open, with `a` uniformly elliptic on `B` and `a`, `G` Hölder on
 `B(z₀, R)`. For a constant vector `p`, the restriction of `u - ⟪p, ·⟫` to `B` lies in `H¹(B)`, has
@@ -163,7 +130,7 @@ private theorem exists_gradient_ae_eq_sub_and_energyFormH1
           =ᵐ[volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))]
         (fun x => W1p.gradient u x - p) ∧
       ∀ φ : 𝓓(B, ℝ), energyFormH1 a 0 0 v (W1p.ofTestFunctionₗ volume B 2 φ) =
-        (∫ x in B, ⟪G x - coefficientField a p x,
+        (∫ x in B, ⟪G x - continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip p,
           ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) + ∫ x in B, f x * φ x := by
   -- The Sobolev class `ℓ` on `B` of the linear function `⟪p, ·⟫`, whose gradient is `p`.
   obtain ⟨ℓ, -, hℓ⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := volume)
@@ -186,13 +153,15 @@ private theorem exists_gradient_ae_eq_sub_and_energyFormH1
     have hℓφ : ∫ x in B,
         matrixBilinearForm (a x) (W1p.gradient (W1p.ofTestFunctionₗ volume B 2 φ) x)
         (W1p.gradient ℓ x) =
-        ∫ x in B, ⟪coefficientField a p x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
+        ∫ x in B, ⟪continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip p,
+          ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
       refine integral_congr_ae ?_
       filter_upwards [hℓ, gradientTestFunctionLp_apply_ae (mu := volume) (2 : ℝ≥0∞) φ] with y h1 h2
-      rw [W1p.gradient_ofTestFunctionₗ, h1, h2, inner_coefficientField]
+      rw [W1p.gradient_ofTestFunctionₗ, h1, h2, continuousLinearMapOfBilin_apply,
+        ContinuousLinearMap.flip_apply]
     rw [hℓφ]
     -- Split `∫_B ⟪G - a p, ∇φ⟫` through the `L²` pairings.
-    have hwK := holderOnWith_coefficientField haK p
+    have hwK := holderOnWith_continuousLinearMapOfBilin_flip_matrixBilinearForm haK p
     have hwc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBR hα hwK
     have hGwc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBR hα
       (hGK.sub hwK)
@@ -247,8 +216,9 @@ private theorem exists_setIntegral_ball_norm_gradient_sub_sq_le_of_sub {α : ℝ
   set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x r, isOpen_ball⟩
   obtain ⟨v, hv, hveq⟩ :=
     exists_gradient_ae_eq_sub_and_energyFormH1 (B := B) hxΩ hxR (h.mono_set hxR) hα haK hGK hf hu p
-  have hKG' : HolderOnWith (KG + Ka * ‖p‖₊) α (fun y => G y - coefficientField a p y)
-      (ball x r) := (hGK.sub (holderOnWith_coefficientField haK p)).mono hxR
+  have hKG' : HolderOnWith (KG + Ka * ‖p‖₊) α
+      (fun y => G y - continuousLinearMapOfBilin (matrixBilinearForm (a y)).flip p) (ball x r) :=
+    (hGK.sub (holderOnWith_continuousLinearMapOfBilin_flip_matrixBilinearForm haK p)).mono hxR
   have hMr : (Ka : ℝ) * r ^ (α : ℝ) ≤ M := (mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow hr.le hrR α.property) Ka.property).trans hM
   -- The energy of `v` on `B(x, r)` is the square mean distance of `∇u` from `p`.
@@ -256,7 +226,8 @@ private theorem exists_setIntegral_ball_norm_gradient_sub_sq_le_of_sub {α : ℝ
     refine le_of_eq_of_le (integral_congr_ae ?_) hW
     filter_upwards [hv] with y hy
     rw [hy]
-  have h' := hdec (Omega := B) (u := v) (G := fun y => G y - coefficientField a p y)
+  have h' := hdec (Omega := B) (u := v)
+    (G := fun y => G y - continuousLinearMapOfBilin (matrixBilinearForm (a y)).flip p)
     (s := ball z₀ R) (z := x) (R := r) (V := W) (KG := KG + Ka * ‖p‖₊) h (hxR (mem_ball_self hr))
     (haK.mono hxR)
     hKG' hveq hf subset_rfl hr hMr (fun s hs hsr => by push_cast; exact hD s hs hsr) hvW t ht htθ
