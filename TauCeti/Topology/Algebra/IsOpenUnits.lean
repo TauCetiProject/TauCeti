@@ -83,7 +83,8 @@ theorem IsTopologicallyNilpotent.isUnit_one_sub_of_isOpenUnits
   have hcomm : Commute (1 - x) (∑ i ∈ range m, x ^ i) :=
     (mul_neg_geom_sum x m).trans (geom_sum_mul_neg x m).symm
   rw [← mul_neg_geom_sum x m] at hm
-  exact (hcomm.isUnit_mul_iff.1 hm).1
+  obtain ⟨u, hu⟩ := hm
+  exact (hcomm.isUnit_mul_iff.1 ⟨u, hu⟩).1
 
 /-- In a topological ring with open units, if `x` is topologically nilpotent, then the partial
 geometric sums `∑ i ∈ range n, x ^ i` tend to the inverse of `1 - x`. -/
