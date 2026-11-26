@@ -100,14 +100,16 @@ noncomputable def homologyIsoOfAntidiagonal
     rcases i with _ | i
     · obtain rfl : k = n := by omega
       exact hD.epi _
-    · have := iso i (k + 1) (by omega)
+    · -- `τ₁` is `φ (i + 1 - 1) (k + 1)`, and `i + 1 - 1` reduces to `i` by definition.
+      have := iso i (k + 1) (by omega)
       exact inferInstanceAs (Epi (φ i (k + 1)))
   haveI : IsIso (scMapOfAntidiagonal C D φ comm hC hD hik).τ₂ := iso i k hik
   haveI : Mono (scMapOfAntidiagonal C D φ comm hC hD hik).τ₃ := by
     rcases k with _ | k
     · obtain rfl : i = n := by omega
       exact hC.mono _
-    · have := iso (i + 1) k (by omega)
+    · -- `τ₃` is `φ (i + 1) (k + 1 - 1)`, and `k + 1 - 1` reduces to `k` by definition.
+      have := iso (i + 1) k (by omega)
       exact inferInstanceAs (Mono (φ (i + 1) k))
   C.homologyIsoSc' (i - 1) i (i + 1) (by rcases i with _ | i <;> simp) (by simp) ≪≫
     asIso (ShortComplex.homologyMap (scMapOfAntidiagonal C D φ comm hC hD hik)) ≪≫

@@ -74,15 +74,13 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 public section
 
-universe u
-
 open Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type u} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
@@ -221,18 +219,16 @@ theorem IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_z
     (hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R ∘ₗ
         (hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R = 0 ↔
       hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 := by
-  -- A linear map on a free module vanishes when it vanishes on the basis, and the boundary of
-  -- `a • p` is `a` times the boundary of `p`.
-  have key : ∀ {N : Type u} {φ : (N →₀ R) →ₗ[R] (N →₀ R)},
-      φ = 0 ↔ ∀ x y : N, φ (Finsupp.single x 1) y = 0 := fun {N φ} ↦ by
-    refine ⟨fun h x y ↦ by simp [h], fun h ↦ Finsupp.lhom_ext fun x a ↦ Finsupp.ext fun y ↦ ?_⟩
-    rw [← Finsupp.smul_single_one, map_smul]
-    simp [h]
-  simp only [key, LinearMap.comp_apply,
-    hMS.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply 𝔬 hf oM, neg_eq_zero]
-  refine ⟨fun h p r ↦ ?_, fun h r p ↦ h _ _⟩
-  simpa using
-    h ((Set.equivOfEq criticalPoints_neg).symm r) ((Set.equivOfEq criticalPoints_neg).symm p)
+  -- Compare the two maps on the basis: by the transposition identity, the coefficient of `p` in
+  -- `∂∂r` for `-f` is minus the coefficient of `r` in `∂∂p` for `f`.
+  refine ⟨fun h ↦ Finsupp.basisSingleOne.ext fun p ↦ Finsupp.ext fun r ↦ ?_,
+    fun h ↦ Finsupp.basisSingleOne.ext fun r ↦ Finsupp.ext fun p ↦ ?_⟩
+  · simpa [hMS.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply 𝔬 hf oM] using
+      congr($h (Finsupp.single ((Set.equivOfEq criticalPoints_neg).symm r) 1)
+        ((Set.equivOfEq criticalPoints_neg).symm p))
+  · simpa [hMS.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply 𝔬 hf oM] using
+      congr($h (Finsupp.single (Set.equivOfEq criticalPoints_neg p) 1)
+        (Set.equivOfEq criticalPoints_neg r))
 
 end Ring
 
