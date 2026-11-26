@@ -468,7 +468,7 @@ variable (w) in
 theorem congr_refl :
     congr (w := w) (fun i ↦ LinearEquiv.refl R (W i)) (fun _ ↦ rfl) = LinearEquiv.refl R _ :=
   LinearEquiv.toLinearMap_injective <| by
-    rw [toLinearMap_congr]
+    simp only [toLinearMap_congr, LinearEquiv.refl_toLinearMap]
     exact map_id w
 
 /-- The equivalence induced by composites of factorwise equivalences is the composite of the
@@ -480,7 +480,7 @@ theorem congr_trans {W'' : ι → Type*} [∀ i, AddCommMonoid (W'' i)] [∀ i, 
     (congr e he).trans (congr e' he') =
       congr (fun i ↦ (e i).trans (e' i)) fun i ↦ by rw [LinearEquiv.trans_apply, he, he'] :=
   LinearEquiv.toLinearMap_injective <| by
-    rw [LinearEquiv.coe_trans, toLinearMap_congr, toLinearMap_congr, toLinearMap_congr]
+    simp only [LinearEquiv.coe_trans, toLinearMap_congr]
     exact (map_comp _ he' _ he).symm
 
 end map
