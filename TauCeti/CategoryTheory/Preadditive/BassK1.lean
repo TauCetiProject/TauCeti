@@ -49,7 +49,8 @@ naturally isomorphic functors induce the same map, so that `BassK1` is invariant
 equivalences of categories (`TauCeti.BassK1.mapEquiv`).
 
 No smallness is assumed: `BassK1 C` lives in the universe of the objects and morphisms of `C`.
-Every element of `BassK1 C` is the class of a single automorphism (`TauCeti.BassK1.exists_eq_of`).
+Every element of `BassK1 C` of a nonempty category `C` is the class of a single automorphism
+(`TauCeti.BassK1.exists_eq_of`).
 
 ## Main definitions
 
@@ -68,7 +69,8 @@ Every element of `BassK1 C` is the class of a single automorphism (`TauCeti.Bass
 * `TauCeti.BassK1.of_commutatorElement`: commutators of automorphisms have trivial class.
 * `TauCeti.BassK1.of_eq_add_of_inl_comp_eq`, `TauCeti.BassK1.of_eq_add_of_inr_comp_eq`: the
   triangular relation.
-* `TauCeti.BassK1.exists_eq_of`: every element is the class of one automorphism.
+* `TauCeti.BassK1.exists_eq_of`: if `C` is nonempty, every element is the class of one
+  automorphism.
 
 ## References
 
