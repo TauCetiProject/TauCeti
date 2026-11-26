@@ -241,7 +241,8 @@ theorem σ_hom {n : ℕ} (i : Fin (n + 1)) :
 /-- `⟨⦋0⦌⟩` is terminal in `LastPreserving`. -/
 instance {x : LastPreserving} : Unique (x ⟶ ⟨⦋0⦌⟩) where
   default := ⟨const x.obj ⦋0⦌ 0,
-    (Hom.preservesLast_iff _).mpr (Subsingleton.elim (α := Fin 1) _ _)⟩
+    (Hom.preservesLast_iff _).mpr
+      ((Hom.preservesEndpoints_iff _).mp (preservesEndpoints_const_to_zero x.obj)).2⟩
   uniq f := WideSubcategory.hom_ext _ (eq_const_to_zero f.hom)
 
 /-- `LastPreserving.δ 0` sends `0` to `1 ≠ 0`, witnessing that `Δ_∂` is strictly contained in
@@ -409,10 +410,6 @@ theorem constToZero_hom (x : _root_.SimplexCategory) : (constToZero x).hom = con
 instance {x : EndpointPreserving} : Unique (x ⟶ ⟨⦋0⦌⟩) where
   default := constToZero x.obj
   uniq f := WideSubcategory.hom_ext _ ((eq_const_to_zero f.hom).trans (constToZero_hom x.obj).symm)
-
-/-- Any two morphisms in `Δ_∂` with codomain `⟨⦋0⦌⟩` are equal. -/
-theorem hom_to_zero_ext {x : EndpointPreserving} (u v : x ⟶ ⟨⦋0⦌⟩) : u = v :=
-  Subsingleton.elim u v
 
 /-- There is no endpoint-preserving map `⦋0⦌ ⟶ ⦋m + 1⦌`. -/
 theorem isEmpty_hom_zero_succ (m : ℕ) : IsEmpty ((⟨⦋0⦌⟩ : EndpointPreserving) ⟶ ⟨⦋m + 1⦌⟩) :=

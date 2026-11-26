@@ -14,12 +14,12 @@ import Mathlib.Order.Interval.Finset.Fin
 This file supplements `Mathlib.AlgebraicTopology.SimplicialObject.II` with characterizations of
 Gabriel–Zisman's cut map `SimplexCategory.II.map'` and `SimplexCategory.II.map`:
 
-* `SimplexCategory.II.map'_val_eq_card`: `(SimplexCategory.II.map' α x : ℕ)` equals the
+* `SimplexCategory.II.val_map'_eq_card`: `(SimplexCategory.II.map' α x : ℕ)` equals the
   cardinality of `{i | (α i).castSucc < x}`.
 * `SimplexCategory.II.map'_le_castSucc_iff`:
   `SimplexCategory.II.map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc`, showing that
   `SimplexCategory.II.map' α` is left adjoint to `α` across the `castSucc` embedding.
-* `SimplexCategory.Hom.iiMap_unop_toOrderHom_apply`:
+* `SimplexCategory.II_map_unop_toOrderHom_apply`:
   `(SimplexCategory.II.map α).unop.toOrderHom t = SimplexCategory.II.map' α.toOrderHom t`.
 -/
 
@@ -29,7 +29,7 @@ namespace SimplexCategory.II
 
 /-- Cut-counting formula for `SimplexCategory.II.map'`: for `α : Fin (k + 1) →o Fin (m + 1)` and
 cut `x : Fin (m + 2)`, `(II.map' α x : ℕ)` counts the indices `i` with `(α i).castSucc < x`. -/
-theorem map'_val_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2)) :
+theorem val_map'_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2)) :
     (map' α x : ℕ) = (Finset.univ.filter fun i : Fin (k + 1) ↦ (α i).castSucc < x).card := by
   obtain ⟨y, hy⟩ | hx := Fin.eq_castSucc_or_eq_last (map' α x)
   · rw [hy, Fin.val_castSucc]
@@ -65,12 +65,12 @@ theorem map'_le_castSucc_iff {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x 
 
 end SimplexCategory.II
 
-namespace SimplexCategory.Hom
+namespace SimplexCategory
 
 /-- Underlying monotone-map evaluation of `(SimplexCategory.II.map α).unop`. -/
 @[simp]
-theorem iiMap_unop_toOrderHom_apply {x y : SimplexCategory} (α : x ⟶ y) (t : Fin (y.len + 2)) :
+theorem II_map_unop_toOrderHom_apply {x y : SimplexCategory} (α : x ⟶ y) (t : Fin (y.len + 2)) :
     (II.map α).unop.toOrderHom t = II.map' α.toOrderHom t :=
   rfl
 
-end SimplexCategory.Hom
+end SimplexCategory

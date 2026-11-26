@@ -99,10 +99,20 @@ theorem galoisConnection_predAbove_castSucc_succAbove {n : ℕ} (i : Fin (n + 1)
 map `i.predAbove`. -/
 theorem galoisConnection_succ_succAbove_predAbove {n : ℕ} (i : Fin (n + 1)) :
     GaloisConnection i.succ.succAbove i.predAbove := by
-  intro y x
-  have h := (galoisConnection_predAbove_castSucc_succAbove i.rev x.rev y.rev).symm
-  rwa [← Fin.rev_succ, ← Fin.rev_succAbove, ← Fin.rev_predAbove,
-    Fin.rev_le_rev, Fin.rev_le_rev] at h
+  refine GaloisConnection.monotone_intro (Fin.predAbove_right_monotone i)
+    (Fin.succAboveOrderEmb i.succ).monotone (fun y ↦ ?_) fun x ↦ ?_
+  · obtain hy | hy := le_or_gt y i
+    · rw [Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_succ_iff.mpr hy),
+        Fin.predAbove_of_le_castSucc _ _ (Fin.castSucc_le_castSucc_iff.mpr hy),
+        Fin.castPred_castSucc]
+    · rw [Fin.succAbove_of_le_castSucc _ _ (Fin.succ_le_castSucc_iff.mpr hy),
+        Fin.predAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_succ_iff.mpr hy.le),
+        Fin.pred_succ]
+  · by_cases hx : x = i.succ
+    · subst hx
+      rw [Fin.predAbove_succ_self, Fin.succAbove_succ_self]
+      exact Fin.castSucc_le_succ i
+    · rw [Fin.succ_succAbove_predAbove hx]
 
 /-- A tuple `w` separated by a `ℤ`-indexed sequence `a`, in the sense that
 `a k < w k < a (k + 1)` for every index `k`, is strictly increasing. -/

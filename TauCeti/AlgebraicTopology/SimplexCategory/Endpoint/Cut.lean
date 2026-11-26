@@ -150,7 +150,7 @@ to the terminal morphism `EndpointPreserving.constToZero ⦋x.len + 1⦌`. -/
 theorem augmentedOpToEndpointPreserving_map_to_star (x : _root_.SimplexCategory)
     (f : (op (WithInitial.of x) : AugmentedSimplexCategoryᵒᵖ) ⟶ op WithInitial.star) :
     augmentedOpToEndpointPreserving.map f = EndpointPreserving.constToZero ⦋x.len + 1⦌ :=
-  EndpointPreserving.hom_to_zero_ext _ _
+  Subsingleton.elim (α := _ ⟶ (⟨⦋0⦌⟩ : EndpointPreserving)) _ _
 
 /-- `augmentedOpToEndpointPreserving` sends the opposite coface `(inclusion.map (δ i)).op`
 (`⦋n + 1⦌ ⟶ ⦋n⦌` in `Δ₊ᵒᵖ`) to `EndpointPreserving.σ i : ⦋n + 2⦌ ⟶ ⦋n + 1⦌`. -/
@@ -223,7 +223,7 @@ theorem iiOpToEndpointPreserving_map_cutInv {n m : ℕ}
     funext fun (x : Fin (n + 2)) ↦ ?_
   have hmap : (iiOpToEndpointPreserving.map (EndpointPreserving.cutInv g).op).hom.toOrderHom x =
       II.map' (EndpointPreserving.cutInv g).toOrderHom x :=
-    Hom.iiMap_unop_toOrderHom_apply (EndpointPreserving.cutInv g) x
+    II_map_unop_toOrderHom_apply (EndpointPreserving.cutInv g) x
   rw [hmap]
   refine Fin.eq_iff_forall_castSucc_lt_and_le.mpr ⟨fun y hy ↦ ?_, fun y hy ↦ ?_⟩
   · have hiff : II.map' (EndpointPreserving.cutInv g).toOrderHom x ≤ y.castSucc ↔
@@ -240,16 +240,15 @@ theorem iiOpToEndpointPreserving_map_cutInv {n m : ℕ}
 @[simp]
 theorem EndpointPreserving.cutInv_iiOpToEndpointPreserving_map {n m : ℕ} (α : ⦋m⦌ ⟶ ⦋n⦌) :
     EndpointPreserving.cutInv (iiOpToEndpointPreserving.map α.op) = α := by
+  let g : (⟨⦋n + 1⦌⟩ : EndpointPreserving) ⟶ ⟨⦋m + 1⦌⟩ := iiOpToEndpointPreserving.map α.op
+  change EndpointPreserving.cutInv g = α
   refine Hom.ext _ _ <| OrderHom.ext _ _ <| funext fun (y : Fin (m + 1)) ↦ ?_
   have h (x : Fin (n + 1)) :
-      x ≤ (EndpointPreserving.cutInv (iiOpToEndpointPreserving.map α.op)).toOrderHom y ↔
-        x ≤ α.toOrderHom y := by
-    refine (EndpointPreserving.le_cutInv_iff _ x y).trans ?_
-    have hmap : (iiOpToEndpointPreserving.map α.op).hom.toOrderHom x.castSucc =
-        II.map' α.toOrderHom x.castSucc :=
-      Hom.iiMap_unop_toOrderHom_apply α x.castSucc
-    exact (congrArg (· ≤ y.castSucc) hmap).to_iff.trans
-      ((II.map'_le_castSucc_iff α.toOrderHom x.castSucc y).trans Fin.castSucc_le_castSucc_iff)
+      x ≤ (EndpointPreserving.cutInv g).toOrderHom y ↔ x ≤ α.toOrderHom y := by
+    have hmap : g.hom.toOrderHom x.castSucc = II.map' α.toOrderHom x.castSucc :=
+      II_map_unop_toOrderHom_apply α x.castSucc
+    rw [EndpointPreserving.le_cutInv_iff g x y, hmap, II.map'_le_castSucc_iff,
+      Fin.castSucc_le_castSucc_iff]
   exact le_antisymm ((h _).mp le_rfl) ((h _).mpr le_rfl)
 
 /-- `EndpointPreserving.cutInv` preserves identities on positive-length boundary objects
@@ -260,6 +259,7 @@ theorem EndpointPreserving.cutInv_id (n : ℕ) :
   have hc : iiOpToEndpointPreserving.map (𝟙 ⦋n⦌).op =
       𝟙 (⟨⦋n + 1⦌⟩ : EndpointPreserving) := by
     rw [op_id, CategoryTheory.Functor.map_id]
+    -- `iiOpToEndpointPreserving.obj (op ⦋n⦌)` is definitionally `⟨⦋n + 1⦌⟩`.
     rfl
   rw [← hc]
   exact EndpointPreserving.cutInv_iiOpToEndpointPreserving_map (𝟙 ⦋n⦌)
@@ -275,6 +275,7 @@ theorem EndpointPreserving.cutInv_comp {n m p : ℕ}
       EndpointPreserving.cutInv f).op = f ≫ g := by
     rw [op_comp, Functor.map_comp]
     simp only [iiOpToEndpointPreserving_map_cutInv]
+    -- `iiOpToEndpointPreserving.obj (op ⦋_⦌)` is definitionally `⟨⦋_ + 1⦌⟩`.
     rfl
   rw [← hc]
   exact EndpointPreserving.cutInv_iiOpToEndpointPreserving_map _
@@ -351,10 +352,6 @@ theorem endpointPreservingToAugmentedOp_map_succ {n m : ℕ}
     endpointPreservingToAugmentedOp.map f = (EndpointPreserving.cutInv f).op :=
   (rfl)
 
-private theorem hom_to_op_star_ext {a : AugmentedSimplexCategoryᵒᵖ}
-    (u v : a ⟶ op (WithInitial.star : AugmentedSimplexCategory)) : u = v :=
-  Subsingleton.elim u v
-
 /-- `augmentedOpToEndpointPreserving` and `endpointPreservingToAugmentedOp` are strict left/right
 inverses on `Δ₊ᵒᵖ`. -/
 @[simp]
@@ -369,9 +366,11 @@ theorem augmentedOpToEndpointPreserving_comp_endpointPreservingToAugmentedOp :
       -- `implicit` transparency under `endpointPreservingToAugmentedOp.map`.
       change EndpointPreserving.cutInv (iiOpToEndpointPreserving.map (f.unop : ny ⟶ nx).op) = _
       exact EndpointPreserving.cutInv_iiOpToEndpointPreserving_map (f.unop : ny ⟶ nx)
-    · exact heq_of_eq (hom_to_op_star_ext _ _)
+    · exact heq_of_eq
+        (Subsingleton.elim (α := _ ⟶ op (WithInitial.star : AugmentedSimplexCategory)) _ _)
     · exact (WithInitial.false_of_to_star f.unop).elim
-    · exact heq_of_eq (hom_to_op_star_ext _ _)
+    · exact heq_of_eq
+        (Subsingleton.elim (α := _ ⟶ op (WithInitial.star : AugmentedSimplexCategory)) _ _)
 
 /-- `endpointPreservingToAugmentedOp` and `augmentedOpToEndpointPreserving` are strict left/right
 inverses on `Δ_∂`. -/
@@ -380,9 +379,9 @@ theorem endpointPreservingToAugmentedOp_comp_augmentedOpToEndpointPreserving :
     endpointPreservingToAugmentedOp ⋙ augmentedOpToEndpointPreserving = 𝟭 EndpointPreserving :=
   CategoryTheory.Functor.hext (fun x ↦ by rcases x with ⟨⟨_ | _⟩⟩ <;> rfl) fun x y f ↦ by
     rcases x with ⟨⟨_ | n⟩⟩ <;> rcases y with ⟨⟨_ | m⟩⟩
-    · exact heq_of_eq (EndpointPreserving.hom_to_zero_ext _ _)
+    · exact heq_of_eq (Subsingleton.elim (α := _ ⟶ (⟨⦋0⦌⟩ : EndpointPreserving)) _ _)
     · exact ((EndpointPreserving.isEmpty_hom_zero_succ m).false f).elim
-    · exact heq_of_eq (EndpointPreserving.hom_to_zero_ext _ _)
+    · exact heq_of_eq (Subsingleton.elim (α := _ ⟶ (⟨⦋0⦌⟩ : EndpointPreserving)) _ _)
     · refine heq_of_eq ?_
       simp only [Functor.comp_map, endpointPreservingToAugmentedOp_map_succ]
       exact (augmentedOpToEndpointPreserving_map_of (EndpointPreserving.cutInv f)).trans
