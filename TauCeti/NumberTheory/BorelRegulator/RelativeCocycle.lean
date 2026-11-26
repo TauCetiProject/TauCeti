@@ -119,6 +119,7 @@ theorem borelRelativeCochain_apply (k : ℕ) (v : Fin (2 * k + 1) → Matrix ι 
   simp [borelRelativeCochain]
 
 /-- The Borel representative is annihilated by all unitary Lie derivatives. -/
+@[simp]
 theorem lie_borelRelativeCochain (k : ℕ) {Y : Matrix ι ι ℂ}
     (hY : Y ∈ unitaryLieAlgebra ι) : ⁅Y, borelRelativeCochain ι k⁆ = 0 := by
   ext v
@@ -153,6 +154,7 @@ theorem borelRelativeCochain_mem (k : ℕ) :
 
 /-- The relative Borel representative is a cocycle for the actual Chevalley–Eilenberg
 differential. The Hermitian complement has skew-Hermitian commutators. -/
+@[simp]
 theorem d_borelRelativeCochain (k : ℕ) :
     LieModule.Cohomology.d ℝ (Matrix ι ι ℂ)
       (TrivialLieModule ℝ (Matrix ι ι ℂ) (Complex.realTateLine k))
