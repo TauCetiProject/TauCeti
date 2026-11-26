@@ -14,7 +14,7 @@ import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Algebra.Polynomial.RingDivision
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.Algebra.Squarefree
-import TauCeti.RingTheory.Polynomial.Monic.Irreducible
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Counting squarefree monic polynomials over a finite field

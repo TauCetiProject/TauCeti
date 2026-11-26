@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.SpecificDegree
-public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.SpecificDegree
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Monic irreducible polynomials of a fixed degree
@@ -30,9 +30,6 @@ monic quadratic factors, in the domain itself.
 ## Main results
 
 * `Polynomial.mem_monicIrreduciblesOfDegree_iff`: the defining membership condition.
-* `Polynomial.finite_setOf_monic_natDegree_eq`, `Polynomial.ncard_setOf_monic_natDegree_eq`:
-  over a finite coefficient ring there are finitely many monic polynomials of degree `d`, and over
-  a nontrivial one there are `#R ^ d` of them.
 * `Polynomial.finite_monicIrreduciblesOfDegree`: over a finite coefficient ring there are
   finitely many.
 * `Polynomial.ncard_monicIrreduciblesOfDegree_one`: over a domain the monic irreducibles of degree
@@ -64,22 +61,6 @@ variable {R} in
 theorem mem_monicIrreduciblesOfDegree_iff {d : ℕ} {g : R[X]} :
     g ∈ monicIrreduciblesOfDegree R d ↔ g.Monic ∧ Irreducible g ∧ g.natDegree = d :=
   Iff.rfl
-
-/-- Over a finite semiring there are finitely many monic polynomials of each degree: such a
-polynomial is determined by its lower coefficients. -/
-theorem finite_setOf_monic_natDegree_eq [Finite R] (d : ℕ) :
-    {g : R[X] | g.Monic ∧ g.natDegree = d}.Finite := by
-  nontriviality R
-  have : Finite (degreeLT R d) := .of_equiv _ (degreeLTEquiv R d).toEquiv.symm
-  exact Set.finite_coe_iff.mp (.of_equiv _ (monicEquivDegreeLT d).symm)
-
-/-- Over a nontrivial semiring `R` there are `#R ^ d` monic polynomials of degree `d`, one for each
-choice of the `d` lower coefficients. For infinite `R` (and `d ≥ 1`) both sides are `0`. -/
-theorem ncard_setOf_monic_natDegree_eq [Nontrivial R] (d : ℕ) :
-    {g : R[X] | g.Monic ∧ g.natDegree = d}.ncard = Nat.card R ^ d := by
-  rw [← Nat.card_coe_set_eq, Set.coe_ofPred,
-    Nat.card_congr ((monicEquivDegreeLT d).trans (degreeLTEquiv R d).toEquiv), Nat.card_fun,
-    Nat.card_fin]
 
 /-- **Over a finite coefficient ring there are finitely many monic irreducibles of each
 degree.** -/
