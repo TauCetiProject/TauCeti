@@ -21,7 +21,8 @@ The `n`-th iterated barycentric subdivision `sd^n K` of an abstract simplicial c
 its vertices after one more step are the faces of `sd^n K`. Composing the canonical subdivision
 homeomorphisms `|sd L| ≃ₜ |L|` gives the canonical homeomorphism `b_n : |sd^n K| ≃ₜ |K|`
 (`AbstractSimplicialComplex.iteratedBarycentricSubdivisionRealizationHomeomorph`), which sends each
-new vertex to the barycenter of the face it stands for and is affine on every simplex of `sd^n K`.
+new vertex to the barycenter of the face it stands for and is affine on every simplex of `sd^n K`
+(`AbstractSimplicialComplex.iteratedBarycentricSubdivisionRealizationHomeomorph_val_eq_sum`).
 It maps the closed simplex of every face of `sd^n K` into the closed simplex of a face of `K`
 (`exists_support_iteratedBarycentricSubdivisionRealizationHomeomorph_subset`).
 
@@ -69,6 +70,8 @@ Theorem 2C.1. Its realization is homotopic to `φ ∘ b_n`
   `AbstractSimplicialComplex.finite_iteratedBarycentricSubdivision_fst` and
   `AbstractSimplicialComplex.finite_faces_iteratedBarycentricSubdivision`: it keeps finitely many
   vertices or faces finite.
+* `AbstractSimplicialComplex.iteratedBarycentricSubdivisionRealizationHomeomorph_val_eq_sum`:
+  `b_n` is affine on every closed simplex of `sd^n K`.
 * `exists_support_iteratedBarycentricSubdivisionRealizationHomeomorph_subset`: `b_n` maps every
   closed simplex of `sd^n K` into a closed simplex of `K`.
 * `AbstractSimplicialComplex.eventually_forall_exists_image_openStarRealization_subset`: for a
@@ -194,42 +197,68 @@ theorem card_le_of_mem_iteratedBarycentricSubdivision {D : ℕ} (hD : ∀ σ ∈
     exact TauCeti.PreAbstractSimplicialComplex.card_le_of_mem_barycentricSubdivision
       (fun τ hτ => ih hτ) hσ
 
+/-- **`b_n` is affine on every closed simplex of `sd^n K`.** If the support of `x` lies in `ρ`,
+then the barycentric coordinates of `b_n x` are the combination, with the coordinates of `x`, of
+those of the images of the vertices in `ρ`. -/
+theorem iteratedBarycentricSubdivisionRealizationHomeomorph_val_eq_sum (n : ℕ)
+    {ρ : Finset (K.iteratedBarycentricSubdivision n).1}
+    {x : Realization (K.iteratedBarycentricSubdivision n).2} (hx : x.val.support ⊆ ρ) :
+    (K.iteratedBarycentricSubdivisionRealizationHomeomorph n x).val =
+      ∑ w ∈ ρ, x.val w • (K.iteratedBarycentricSubdivisionRealizationHomeomorph n
+        (vertex (K.iteratedBarycentricSubdivision n).2 w)).val := by
+  induction n with
+  | zero =>
+    have h {y : Realization K} {s : Finset ι} (hy : y.val.support ⊆ s) :
+        y.val = ∑ w ∈ s, y.val w • (vertex K w).val := by
+      simp only [vertex_val, Finsupp.smul_single_one]
+      conv_lhs => rw [← Finsupp.sum_single y.val]
+      exact Finsupp.sum_of_support_subset _ hy _ fun _ _ => Finsupp.single_zero _
+    exact h hx
+  | succ n ih =>
+    set β := barycentricSubdivisionRealizationMap (K.iteratedBarycentricSubdivision n).2
+    set b := K.iteratedBarycentricSubdivisionRealizationHomeomorph n
+    obtain ⟨hne, hchain⟩ :=
+      TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp (support_mem _ x)
+    obtain ⟨σ, -, hσ⟩ :=
+      hchain.exists_isGreatest x.val.support.finite_toSet (Finset.coe_nonempty.mpr hne)
+    have hβ {y : Realization (K.iteratedBarycentricSubdivision (n + 1)).2}
+        (hy : y.val.support ⊆ x.val.support) : (β y).val.support ⊆ σ.val :=
+      support_barycentricSubdivisionRealizationMap_subset _
+        (fun _ hτ => face_le_iff.mp (hσ hτ)) hy
+    have hvert {τ} (hτ : τ ∈ x.val.support) :
+        (K.iteratedBarycentricSubdivisionRealizationHomeomorph (n + 1)
+          (vertex (K.iteratedBarycentricSubdivision (n + 1)).2 τ)).val =
+          ∑ u ∈ σ.val, faceBarycenter (K.iteratedBarycentricSubdivision n).2 τ u •
+            (b (vertex (K.iteratedBarycentricSubdivision n).2 u)).val := by
+      have hτv : (β (vertex (K.iteratedBarycentricSubdivision (n + 1)).2 τ)).val =
+          faceBarycenter (K.iteratedBarycentricSubdivision n).2 τ :=
+        barycentricSubdivisionRealizationMap_vertex _ τ
+      rw [iteratedBarycentricSubdivisionRealizationHomeomorph_succ_apply,
+        ih (hβ (by rw [support_vertex, Finset.singleton_subset_iff]; exact hτ)), hτv]
+    rw [← Finset.sum_subset hx fun w _ hw => by
+        rw [Finsupp.notMem_support_iff.mp hw, zero_smul],
+      Finset.sum_congr rfl fun τ hτ => by rw [hvert hτ],
+      iteratedBarycentricSubdivisionRealizationHomeomorph_succ_apply, ih (hβ subset_rfl)]
+    have hβx (u) : (β x).val u =
+        ∑ τ ∈ x.val.support, x.val τ * faceBarycenter (K.iteratedBarycentricSubdivision n).2 τ u :=
+      barycentricSubdivisionRealizationMap_apply_eq_sum _ subset_rfl u
+    simp only [hβx, Finset.sum_smul, Finset.smul_sum, mul_smul]
+    exact Finset.sum_comm
+
 /-! ### Contraction of the `ℓ¹` distance -/
 
-/-- The `ℓ¹` distance between two finitely supported coordinate vectors. -/
-private def l1Dist {κ : Type*} (x y : κ →₀ ℝ) : ℝ :=
-  (x - y).sum fun _ a => |a|
-
-private theorem l1Dist_eq_sum_of_subset {κ : Type*} {x y : κ →₀ ℝ} {s : Finset κ}
-    (hx : x.support ⊆ s) (hy : y.support ⊆ s) : l1Dist x y = ∑ v ∈ s, |x v - y v| := by
-  have hs : (x - y).support ⊆ s := Finsupp.support_sub.trans (Finset.union_subset hx hy)
-  rw [l1Dist, Finsupp.sum_of_support_subset _ hs _ fun _ _ => abs_zero]
-  simp only [Finsupp.sub_apply]
-
-/-- Barycentric coordinates supported on a finite set `s` are bounded in sup norm on `s` by their
-`ℓ¹` distance. -/
-private theorem norm_restrict_sub_le_l1Dist {κ : Type*} {s : Finset κ} {x y : κ →₀ ℝ}
-    (hx : x.support ⊆ s) (hy : y.support ⊆ s) :
-    ‖(fun v : s => x v) - fun v : s => y v‖ ≤ l1Dist x y := by
-  rw [l1Dist_eq_sum_of_subset hx hy]
-  refine (pi_norm_le_iff_of_nonneg (Finset.sum_nonneg fun _ _ => abs_nonneg _)).2 fun v => ?_
-  rw [Pi.sub_apply, Real.norm_eq_abs]
-  exact Finset.single_le_sum (f := fun v => |x v - y v|) (fun _ _ => abs_nonneg _) v.property
-
-/-- Two points of a realization are at `ℓ¹` distance at most `2`. -/
-private theorem l1Dist_le_two {κ : Type*} {L : AbstractSimplicialComplex κ}
-    (x y : Realization L) : l1Dist x.val y.val ≤ 2 := by
-  have hsum (z : Realization L) (hz : z.val.support ⊆ x.val.support ∪ y.val.support) :
-      ∑ v ∈ x.val.support ∪ y.val.support, z.val v = 1 :=
-    Realization.sum_eq_one_of_support_subset L z hz
-  rw [l1Dist_eq_sum_of_subset Finset.subset_union_left Finset.subset_union_right]
-  calc ∑ v ∈ x.val.support ∪ y.val.support, |x.val v - y.val v|
-      ≤ ∑ v ∈ x.val.support ∪ y.val.support, (x.val v + y.val v) :=
+/-- Two points of a realization are at `ℓ¹` distance at most `2`, measured on any finite set
+containing both supports. -/
+private theorem sum_abs_sub_le_two {κ : Type*} {L : AbstractSimplicialComplex κ}
+    {x y : Realization L} {s : Finset κ} (hx : x.val.support ⊆ s) (hy : y.val.support ⊆ s) :
+    ∑ v ∈ s, |x.val v - y.val v| ≤ 2 := by
+  calc ∑ v ∈ s, |x.val v - y.val v|
+      ≤ ∑ v ∈ s, (x.val v + y.val v) :=
         Finset.sum_le_sum fun v _ => (abs_sub _ _).trans (by
           rw [abs_of_nonneg (Realization.nonneg L x v), abs_of_nonneg (Realization.nonneg L y v)])
     _ = 2 := by
-        rw [Finset.sum_add_distrib, hsum x Finset.subset_union_left,
-          hsum y Finset.subset_union_right]
+        rw [Finset.sum_add_distrib, Realization.sum_eq_one_of_support_subset L x hx,
+          Realization.sum_eq_one_of_support_subset L y hy]
         norm_num
 
 /-- **The carrier of `b_n`.** The image under `b_n : |sd^n K| ≃ₜ |K|` of the closed simplex of a
@@ -254,9 +283,10 @@ theorem exists_support_iteratedBarycentricSubdivisionRealizationHomeomorph_subse
 /-- **One subdivision step contracts `ℓ¹` distances within a closed simplex.** Let every face of
 `L` have at most `D` vertices, and let `x` and `y` be two points of the closed simplex of `sd L`
 spanned by a chain `ρ` of faces of `L`. Their images in `|L|` lie in the closed simplex of the
-largest face of `ρ`, and their `ℓ¹` distance is at most `1 - 1 / D` times that of `x` and `y`. -/
-private theorem exists_support_subset_and_l1Dist_le {κ : Type*} {L : AbstractSimplicialComplex κ}
-    {D : ℕ} (hD : ∀ σ ∈ L, σ.card ≤ D)
+largest face `σ` of `ρ`, and their `ℓ¹` distance on `σ` is at most `1 - 1 / D` times the `ℓ¹`
+distance of `x` and `y` on `ρ`. -/
+private theorem exists_support_subset_and_sum_abs_sub_le {κ : Type*}
+    {L : AbstractSimplicialComplex κ} {D : ℕ} (hD : ∀ σ ∈ L, σ.card ≤ D)
     {ρ : Finset (TauCeti.SetLike.Face L.toPreAbstractSimplicialComplex)}
     (hρ : ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       L.toPreAbstractSimplicialComplex)
@@ -264,9 +294,9 @@ private theorem exists_support_subset_and_l1Dist_le {κ : Type*} {L : AbstractSi
       L.toPreAbstractSimplicialComplex)} (hx : x.val.support ⊆ ρ) (hy : y.val.support ⊆ ρ) :
     ∃ σ ∈ L, (barycentricSubdivisionRealizationMap L x).val.support ⊆ σ ∧
       (barycentricSubdivisionRealizationMap L y).val.support ⊆ σ ∧
-      l1Dist (barycentricSubdivisionRealizationMap L x).val
-          (barycentricSubdivisionRealizationMap L y).val ≤
-        (1 - (D : ℝ)⁻¹) * l1Dist x.val y.val := by
+      ∑ v ∈ σ, |(barycentricSubdivisionRealizationMap L x).val v -
+          (barycentricSubdivisionRealizationMap L y).val v| ≤
+        (1 - (D : ℝ)⁻¹) * ∑ τ ∈ ρ, |x.val τ - y.val τ| := by
   obtain ⟨hne, hchain⟩ :=
     TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp hρ
   obtain ⟨σ, -, hσ⟩ := hchain.exists_isGreatest ρ.finite_toSet (Finset.coe_nonempty.mpr hne)
@@ -302,52 +332,60 @@ private theorem exists_support_subset_and_l1Dist_le {κ : Type*} {L : AbstractSi
     rw [barycentricSubdivisionRealizationMap_apply_eq_sum L hx,
       barycentricSubdivisionRealizationMap_apply_eq_sum L hy, ← Finset.sum_sub_distrib]
     exact Finset.sum_congr rfl fun _ _ => (sub_mul _ _ _).symm
-  rw [l1Dist_eq_sum_of_subset (hsupp hx) (hsupp hy), l1Dist_eq_sum_of_subset hx hy]
   simp only [hpt]
   exact TauCeti.sum_abs_sum_mul_le hdiff (fun τ hτ v _ => hδle hτ v)
     (fun τ hτ => sum_faceBarycenter_of_subset L τ (hτσ hτ)) hδsum
 
 /-- **`n` subdivision steps contract `ℓ¹` distances within a closed simplex by `(1 - 1 / D) ^ n`**,
-when every face of `K` has at most `D` vertices. -/
-private theorem l1Dist_iteratedBarycentricSubdivisionRealizationHomeomorph_le
+when every face of `K` has at most `D` vertices: the images under `b_n` of two points of the closed
+simplex of a face `ρ` of `sd^n K` lie in the closed simplex of a face `σ` of `K`, and their `ℓ¹`
+distance on `σ` is at most `(1 - 1 / D) ^ n` times that of the two points on `ρ`. -/
+private theorem exists_support_subset_and_sum_abs_sub_iteratedBarycentricSubdivision_le
     {D : ℕ} (hD : ∀ σ ∈ K, σ.card ≤ D) (n : ℕ) {ρ : Finset (K.iteratedBarycentricSubdivision n).1}
     (hρ : ρ ∈ (K.iteratedBarycentricSubdivision n).2)
     {x y : Realization (K.iteratedBarycentricSubdivision n).2} (hx : x.val.support ⊆ ρ)
     (hy : y.val.support ⊆ ρ) :
-    l1Dist (K.iteratedBarycentricSubdivisionRealizationHomeomorph n x).val
-        (K.iteratedBarycentricSubdivisionRealizationHomeomorph n y).val ≤
-      (1 - (D : ℝ)⁻¹) ^ n * l1Dist x.val y.val := by
+    ∃ σ ∈ K, (K.iteratedBarycentricSubdivisionRealizationHomeomorph n x).val.support ⊆ σ ∧
+      (K.iteratedBarycentricSubdivisionRealizationHomeomorph n y).val.support ⊆ σ ∧
+      ∑ v ∈ σ, |(K.iteratedBarycentricSubdivisionRealizationHomeomorph n x).val v -
+          (K.iteratedBarycentricSubdivisionRealizationHomeomorph n y).val v| ≤
+        (1 - (D : ℝ)⁻¹) ^ n * ∑ τ ∈ ρ, |x.val τ - y.val τ| := by
   induction n with
-  | zero => rw [pow_zero, one_mul]; exact le_rfl
+  | zero => exact ⟨ρ, hρ, hx, hy, by rw [pow_zero, one_mul]; exact le_rfl⟩
   | succ n ih =>
     simp only [iteratedBarycentricSubdivisionRealizationHomeomorph_succ_apply]
-    obtain ⟨σ, hσ, hxσ, hyσ, hle⟩ := exists_support_subset_and_l1Dist_le
+    obtain ⟨σ, hσ, hxσ, hyσ, hle⟩ := exists_support_subset_and_sum_abs_sub_le
       (fun τ hτ => card_le_of_mem_iteratedBarycentricSubdivision hD n hτ) hρ hx hy
-    refine (ih hσ hxσ hyσ).trans ?_
+    obtain ⟨σ', hσ', hxσ', hyσ', hle'⟩ := ih hσ hxσ hyσ
+    refine ⟨σ', hσ', hxσ', hyσ', hle'.trans ?_⟩
     have hc : 0 ≤ 1 - (D : ℝ)⁻¹ := sub_nonneg.mpr (Nat.cast_inv_le_one D)
     rw [pow_succ, mul_assoc]
     exact mul_le_mul_of_nonneg_left hle (pow_nonneg hc n)
 
-/-- The image under `b_n` of the open star of a vertex `w` of `sd^n K` lies within `ℓ¹` distance
-`2 (1 - 1 / D) ^ n` of the image of `w`. -/
-private theorem l1Dist_iteratedBarycentricSubdivisionRealizationHomeomorph_vertex_le {D : ℕ}
-    (hD : ∀ σ ∈ K, σ.card ≤ D) (n : ℕ) {w : (K.iteratedBarycentricSubdivision n).1}
+/-- The image under `b_n` of a point `x` of the open star of a vertex `w` of `sd^n K` and the image
+of `w` lie in the closed simplex of a face `σ` of `K`, at `ℓ¹` distance at most `2 (1 - 1 / D) ^ n`
+on `σ`. -/
+private theorem exists_support_subset_and_sum_abs_sub_iteratedBarycentricSubdivision_vertex_le
+    {D : ℕ} (hD : ∀ σ ∈ K, σ.card ≤ D) (n : ℕ) {w : (K.iteratedBarycentricSubdivision n).1}
     {x : Realization (K.iteratedBarycentricSubdivision n).2}
     (hx : x ∈ (K.iteratedBarycentricSubdivision n).2.openStarRealization w) :
-    l1Dist (K.iteratedBarycentricSubdivisionRealizationHomeomorph n x).val
-        (K.iteratedBarycentricSubdivisionRealizationHomeomorph n
-          (vertex (K.iteratedBarycentricSubdivision n).2 w)).val ≤
-      2 * (1 - (D : ℝ)⁻¹) ^ n := by
+    ∃ σ ∈ K, (K.iteratedBarycentricSubdivisionRealizationHomeomorph n x).val.support ⊆ σ ∧
+      (K.iteratedBarycentricSubdivisionRealizationHomeomorph n
+        (vertex (K.iteratedBarycentricSubdivision n).2 w)).val.support ⊆ σ ∧
+      ∑ v ∈ σ, |(K.iteratedBarycentricSubdivisionRealizationHomeomorph n x).val v -
+          (K.iteratedBarycentricSubdivisionRealizationHomeomorph n
+            (vertex (K.iteratedBarycentricSubdivision n).2 w)).val v| ≤
+        2 * (1 - (D : ℝ)⁻¹) ^ n := by
   have hw : (vertex (K.iteratedBarycentricSubdivision n).2 w).val.support ⊆ x.val.support := by
     rw [support_vertex, Finset.singleton_subset_iff]
     exact Finsupp.mem_support_iff.mpr ((mem_openStarRealization _).mp hx).ne'
-  have hle := l1Dist_iteratedBarycentricSubdivisionRealizationHomeomorph_le hD n
-    (support_mem _ x) subset_rfl hw
+  obtain ⟨σ, hσ, hxσ, hwσ, hle⟩ :=
+    exists_support_subset_and_sum_abs_sub_iteratedBarycentricSubdivision_le hD n
+      (support_mem _ x) subset_rfl hw
+  refine ⟨σ, hσ, hxσ, hwσ, hle.trans ?_⟩
   have hc : 0 ≤ 1 - (D : ℝ)⁻¹ := sub_nonneg.mpr (Nat.cast_inv_le_one D)
-  calc _ ≤ (1 - (D : ℝ)⁻¹) ^ n *
-        l1Dist x.val (vertex (K.iteratedBarycentricSubdivision n).2 w).val := hle
-    _ ≤ (1 - (D : ℝ)⁻¹) ^ n * 2 := mul_le_mul_of_nonneg_left (l1Dist_le_two _ _) (pow_nonneg hc n)
-    _ = 2 * (1 - (D : ℝ)⁻¹) ^ n := mul_comm _ _
+  rw [mul_comm 2]
+  exact mul_le_mul_of_nonneg_left (sum_abs_sub_le_two subset_rfl hw) (pow_nonneg hc n)
 
 /-! ### The simplicial approximation theorem -/
 
@@ -389,9 +427,22 @@ theorem eventually_forall_exists_image_openStarRealization_subset (hfin : K.face
   refine ⟨i, ?_⟩
   rintro _ ⟨x, hx, rfl⟩
   refine hi _ ?_
+  -- The sup norm on `V` is bounded by the `ℓ¹` distance on a face containing both supports.
+  obtain ⟨σ, -, hxσ, hwσ, hle⟩ :=
+    exists_support_subset_and_sum_abs_sub_iteratedBarycentricSubdivision_vertex_le hD n hx
   rw [dist_eq_norm]
-  exact ((norm_restrict_sub_le_l1Dist (hV _) (hV _)).trans
-    (l1Dist_iteratedBarycentricSubdivisionRealizationHomeomorph_vertex_le hD n hx)).trans_lt hn
+  refine ((pi_norm_le_iff_of_nonneg (Finset.sum_nonneg fun _ _ => abs_nonneg _)).2
+    fun v => ?_).trans_lt (hle.trans_lt hn)
+  rw [Pi.sub_apply, Real.norm_eq_abs]
+  by_cases hv : v.val ∈ σ
+  · exact Finset.single_le_sum (f := fun u =>
+      |(K.iteratedBarycentricSubdivisionRealizationHomeomorph n x).val u -
+        (K.iteratedBarycentricSubdivisionRealizationHomeomorph n
+          (vertex (K.iteratedBarycentricSubdivision n).2 w)).val u|)
+      (fun _ _ => abs_nonneg _) hv
+  · simp only [g, Finsupp.notMem_support_iff.mp fun h => hv (hxσ h),
+      Finsupp.notMem_support_iff.mp fun h => hv (hwσ h), sub_self, abs_zero]
+    exact Finset.sum_nonneg fun _ _ => abs_nonneg _
 
 /-- **The simplicial approximation theorem.** Let `K` be a simplicial complex with finitely many
 faces and `φ : |K| → |L|` a continuous map. For all large `n`, the map `φ ∘ b_n : |sd^n K| → |L|`,
