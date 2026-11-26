@@ -25,17 +25,17 @@ nonzero in the field, it maps pairs in `slₙ` into `slₙ`, giving the bilinear
 
 public section
 
-namespace TauCeti.AdjointSquare
+namespace LieAlgebra.SpecialLinear
 
 open Matrix
 
 variable {K : Type*} [Field K] {n : ℕ}
 
-/-- The symmetric product as a bilinear map on Mathlib's actual trace-zero Lie algebra. -/
+/-- The symmetric product as a bilinear map on the trace-zero Lie algebra. -/
 def symmetricProduct [NeZero (n : K)] :
-    LieAlgebra.SpecialLinear.sl (Fin n) K →ₗ[K]
-      LieAlgebra.SpecialLinear.sl (Fin n) K →ₗ[K]
-        LieAlgebra.SpecialLinear.sl (Fin n) K :=
+    sl (Fin n) K →ₗ[K]
+      sl (Fin n) K →ₗ[K]
+        sl (Fin n) K :=
   LinearMap.mk₂ K (fun X Y => ⟨tracelessAnticommutator X.val Y.val,
     trace_tracelessAnticommutator X.val Y.val⟩)
     (fun X Y Z => Subtype.ext (tracelessAnticommutator_add_left X.val Y.val Z.val))
@@ -43,15 +43,15 @@ def symmetricProduct [NeZero (n : K)] :
     (fun X Y Z => Subtype.ext (tracelessAnticommutator_add_right X.val Y.val Z.val))
     (fun a X Y => Subtype.ext (tracelessAnticommutator_smul_right a X.val Y.val))
 
-/-- The bilinear map has the advertised matrix formula. -/
+/-- The underlying matrix is the trace-corrected anticommutator. -/
 @[simp]
-theorem coe_symmetricProduct [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
+theorem coe_symmetricProduct [NeZero (n : K)] (X Y : sl (Fin n) K) :
     (symmetricProduct X Y).val = tracelessAnticommutator X.val Y.val := by
   simp only [symmetricProduct, LinearMap.mk₂_apply]
 
-/-- Symmetry holds on the native adjoint carrier. -/
-theorem symmetricProduct_comm [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
+/-- Exchanging the two traceless inputs preserves their symmetric product. -/
+theorem symmetricProduct_comm [NeZero (n : K)] (X Y : sl (Fin n) K) :
     symmetricProduct X Y = symmetricProduct Y X :=
   Subtype.ext (tracelessAnticommutator_comm _ _)
 
-end TauCeti.AdjointSquare
+end LieAlgebra.SpecialLinear

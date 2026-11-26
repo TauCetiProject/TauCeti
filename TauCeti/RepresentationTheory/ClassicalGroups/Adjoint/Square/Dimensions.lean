@@ -45,10 +45,10 @@ theorem disjoint_range_alternatingEmbeddingMap_symmetricEmbeddingMap [NeZero (2 
     exact (congrArg (fun z => z + x) hneg.symm).trans (neg_add_cancel x)
   exact (smul_eq_zero.mp htwo).resolve_left (NeZero.ne (2 : K))
 
-/-- The alternating image has the same dimension as the adjoint when the size is at least three. -/
-theorem finrank_range_alternatingEmbeddingMap (hn : 3 ≤ n) :
+/-- When the size is nonzero in the field, the alternating image has dimension `n ^ 2 - 1`. -/
+theorem finrank_range_alternatingEmbeddingMap :
     Module.finrank K (LinearMap.range (alternatingEmbeddingMap K n).toLinearMap) = n ^ 2 - 1 := by
-  rw [LinearMap.finrank_range_of_inj (alternatingEmbeddingMap_injective K n hn)]
+  rw [LinearMap.finrank_range_of_inj (alternatingEmbeddingMap_injective K n)]
   simp [TauCeti.finrank_sl]
 
 /-- The symmetric image has the same dimension as the adjoint when the size is at least three. -/
@@ -67,7 +67,7 @@ theorem finrank_range_alternatingEmbeddingMap_sup_range_symmetricEmbeddingMap [N
     (LinearMap.range (alternatingEmbeddingMap K n).toLinearMap)
     (LinearMap.range (symmetricEmbeddingMap K n).toLinearMap)
   rw [(disjoint_range_alternatingEmbeddingMap_symmetricEmbeddingMap K n).eq_bot, finrank_bot,
-    add_zero, finrank_range_alternatingEmbeddingMap K n hn,
+    add_zero, finrank_range_alternatingEmbeddingMap K n,
     finrank_range_symmetricEmbeddingMap K n hn] at h
   simpa only [two_mul] using h
 
@@ -80,7 +80,7 @@ variable (K : Type*) [Field K] [NeZero (3 : K)]
 /-- The alternating image in size three has dimension eight. -/
 theorem finrank_range_alternatingEmbeddingMap_three :
     Module.finrank K (LinearMap.range (alternatingEmbeddingMap K 3).toLinearMap) = 8 :=
-  finrank_range_alternatingEmbeddingMap K 3 le_rfl
+  finrank_range_alternatingEmbeddingMap K 3
 
 /-- The symmetric image in size three has dimension eight. -/
 theorem finrank_range_symmetricEmbeddingMap_three :

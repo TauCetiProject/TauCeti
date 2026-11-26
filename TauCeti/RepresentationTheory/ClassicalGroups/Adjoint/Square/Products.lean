@@ -6,7 +6,7 @@ Authors: Jeromie Beasley
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Basic
+public import TauCeti.Algebra.Lie.SpecialLinear.SymmetricProduct
 public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
@@ -23,7 +23,7 @@ public section
 
 namespace TauCeti.AdjointSquare
 
-open Matrix TauCeti.SLAdjoint
+open Matrix TauCeti.SLAdjoint LieAlgebra.SpecialLinear
 open scoped TensorProduct
 
 section
@@ -55,6 +55,7 @@ theorem alternatingProductMap_tmul (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K)
     TensorProduct.lift.tmul, LieHom.coe_toLinearMap, LieAlgebra.ad_apply]
 
 /-- Swapping the tensor factors negates the alternating intertwiner. -/
+@[simp]
 theorem alternatingProductMap_comm_eq_neg
     (T : LieAlgebra.SpecialLinear.sl (Fin n) K ⊗[K]
       LieAlgebra.SpecialLinear.sl (Fin n) K) :
@@ -97,6 +98,7 @@ theorem symmetricProductMap_tmul (X Y : V) :
   simp only [symmetricProductMap, Representation.IntertwiningMap.coe_mk, TensorProduct.lift.tmul]
 
 /-- Swapping the tensor factors fixes the symmetric intertwiner. -/
+@[simp]
 theorem symmetricProductMap_comm (T : V ⊗[K] V) :
     symmetricProductMap K n (TensorProduct.comm K _ _ T) = symmetricProductMap K n T := by
   have h : (symmetricProductMap K n).toLinearMap.comp (TensorProduct.comm K _ _).toLinearMap =

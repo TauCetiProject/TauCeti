@@ -6,7 +6,7 @@ Authors: Jeromie Beasley
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Basic
+public import TauCeti.Algebra.Lie.SpecialLinear.SymmetricProduct
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Products
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
@@ -15,8 +15,9 @@ import Mathlib.Data.Fin.Basic
 /-! # Surjectivity of the two adjoint-square contractions
 
 For matrix size at least three, the Lie-bracket contraction onto trace-zero matrices is
-surjective over any commutative ring. The traceless symmetric contraction is surjective
-over a field in which the size is nonzero. These results give the injectivity of the two
+surjective over any commutative ring. The bracket is also surjective in every size that is a
+unit in the ring. The traceless symmetric contraction is surjective for sizes at least three
+that are nonzero in the scalar field. These results give the injectivity of the two
 trace-transpose embeddings.
 -/
 
@@ -29,7 +30,7 @@ variable {K : Type*} {n : ℕ}
 variable [CommRing K]
 local notation "𝔰" => LieAlgebra.SpecialLinear.sl (Fin n)
 
-open LieAlgebra.SpecialLinear (single val_single)
+open LieAlgebra.SpecialLinear (single val_single coe_symmetricProduct)
 
 
 private def pair (i j k l : Fin n) (h : i ≠ j) (h' : k ≠ l) (c : K) : 𝔰 K ⊗[K] 𝔰 K :=
@@ -52,12 +53,28 @@ private theorem alternating_cycle (i j : Fin n) (h : i ≠ j) (c : K) :
 ring when the matrix size is at least three. -/
 theorem alternatingProductMap_surjective (K : Type*) [CommRing K] (n : ℕ) (hn : 3 ≤ n) :
     Function.Surjective (alternatingProductMap K n) := by
-  apply TauCeti.surjective_to_sl_of_matrix_units (alternatingProductMap K n).toLinearMap
+  apply (alternatingProductMap K n).toLinearMap.surjective_to_sl_of_matrix_units
   · intro i j hij c
     obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     exact ⟨_, alternating_chain i k j hik hkj hij c⟩
   · intro i j h c
     exact ⟨_, alternating_cycle i j h c⟩
+
+/-- If the matrix size is a unit in the scalar ring, the bracket contraction is surjective
+in every size: subtracting a scalar from a diagonal unit makes it traceless without changing
+its commutator with an off-diagonal unit. -/
+theorem alternatingProductMap_surjective_of_isUnit (K : Type*) [CommRing K] (n : ℕ)
+    (hn : IsUnit (n : K)) : Function.Surjective (alternatingProductMap K n) := by
+  apply (alternatingProductMap K n).toLinearMap.surjective_to_sl_of_matrix_units
+  · intro i j hij c
+    obtain ⟨X, r, hX⟩ := exists_sl_add_smul_one_eq (fun _ => by simpa using hn)
+      (Matrix.single i i (1 : K))
+    refine ⟨X ⊗ₜ[K] single i j hij c, ?_⟩
+    rw [Representation.IntertwiningMap.toLinearMap_apply, alternatingProductMap_tmul,
+      LieAlgebra.SpecialLinear.sl_bracket, val_single, eq_sub_of_add_eq hX]
+    simp [sub_mul, mul_sub, hij.symm]
+  · intro i j hij c
+    exact ⟨_, alternating_cycle i j hij c⟩
 
 private theorem symmetric_chain {K : Type*} [Field K] [NeZero (n : K)]
     (i k j : Fin n) (hik : i ≠ k) (hkj : k ≠ j) (hij : i ≠ j) (c : K) :
@@ -76,7 +93,7 @@ at least three that are nonzero in the scalar field. -/
 theorem symmetricProductMap_surjective (K : Type*) [Field K] (n : ℕ) [NeZero (n : K)]
     (hn : 3 ≤ n) :
     Function.Surjective (symmetricProductMap K n) := by
-  apply TauCeti.surjective_to_sl_of_matrix_units (symmetricProductMap K n).toLinearMap
+  apply (symmetricProductMap K n).toLinearMap.surjective_to_sl_of_matrix_units
   · intro i j hij c
     obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     exact ⟨_, symmetric_chain i k j hik hkj hij c⟩

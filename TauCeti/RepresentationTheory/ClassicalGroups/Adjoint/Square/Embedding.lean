@@ -16,7 +16,9 @@ import TauCeti.RepresentationTheory.Intertwining
 # Trace transposes into the tensor square of the adjoint representation
 
 The tensor product of the two trace pairings is a perfect invariant pairing.
-Its inverse turns the dual of each contraction into an equivariant embedding.
+Its inverse turns the dual of each contraction into an equivariant map. The alternating map is
+injective whenever the size is nonzero in the field. The symmetric map is injective in sizes
+at least three under the same field hypothesis.
 The evaluation formulas characterize the images on arbitrary test tensors.
 -/
 
@@ -33,16 +35,17 @@ local notation "σ" => Representation.tprod ρ ρ
 
 private noncomputable def liftMap (f : Representation.IntertwiningMap σ ρ) :
     Representation.IntertwiningMap ρ σ :=
-  let hf : Representation.IsIntertwiningMap σ ρ f.toLinearMap := ⟨f.isIntertwining⟩
   squareTraceEquiv.symm.toIntertwiningMap.comp
-    ((f.toLinearMap.dualMap.intertwiningMap_of_isIntertwiningMap _ _ hf.dualMap.isIntertwining).comp
-      (SLAdjoint.traceDualEquiv K n).toIntertwiningMap)
+    (f.dualMap.comp (SLAdjoint.traceDualEquiv K n).toIntertwiningMap)
 
 private theorem liftMap_apply (f : Representation.IntertwiningMap σ ρ) (x : V) :
     liftMap f x =
       squareTraceEquiv.symm (f.toLinearMap.dualMap (SLAdjoint.traceDualEquiv K n x)) := by
   simp only [liftMap, Representation.IntertwiningMap.comp_apply,
-    Representation.Equiv.coe_toIntertwiningMap, LinearMap.toIntertwiningMap]
+    Representation.Equiv.coe_toIntertwiningMap]
+  congr 1
+  ext t
+  simp
 
 private theorem liftMap_injective (f : Representation.IntertwiningMap σ ρ)
     (hf : Function.Surjective f) : Function.Injective (liftMap f) := by
@@ -62,10 +65,10 @@ variable (K n)
 noncomputable def alternatingEmbeddingMap : Representation.IntertwiningMap ρ σ :=
   liftMap (alternatingProductMap K n)
 
-/-- For sizes at least three, the transpose of the Lie-bracket contraction is injective. -/
-theorem alternatingEmbeddingMap_injective (hn : 3 ≤ n) :
+/-- The Lie bracket has injective trace transpose when the size is nonzero in the field. -/
+theorem alternatingEmbeddingMap_injective :
     Function.Injective (alternatingEmbeddingMap K n) :=
-  liftMap_injective _ (alternatingProductMap_surjective K n hn)
+  liftMap_injective _ (alternatingProductMap_surjective_of_isUnit K n (NeZero.ne (n : K)).isUnit)
 
 variable {K n}
 
@@ -88,7 +91,8 @@ theorem symmetricEmbeddingMap_injective (hn : 3 ≤ n) :
 
 variable {K n}
 
-/-- The trace pairing on the tensor square characterizes the symmetric embedding. -/
+/-- The trace pairing on the tensor square characterizes the symmetric transpose, which is
+injective for sizes at least three. -/
 theorem symmetricEmbeddingMap_pairing (x : V) (t : T) :
     squareTrace (symmetricEmbeddingMap K n x) t =
       (SLAdjoint.traceDualEquiv K n x) (symmetricProductMap K n t) :=
