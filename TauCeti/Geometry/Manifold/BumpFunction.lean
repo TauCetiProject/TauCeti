@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.BumpFunction
+public import Mathlib.Geometry.Manifold.ContMDiffMap
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.Notation
 
@@ -15,7 +16,9 @@ import Mathlib.Geometry.Manifold.Notation
 Mathlib's `SmoothBumpFunction.contMDiff` shows that a smooth bump function on a smooth manifold is
 smooth. A smooth bump function is supported in a single chart, where it is a smooth function read
 in that chart, so on a `C^n` manifold, `n ≤ ∞`, it is `C^n`
-(`SmoothBumpFunction.contMDiff_of_isManifold`).
+(`SmoothBumpFunction.contMDiff_of_isManifold`). So every neighbourhood of a point `x` of a
+finite-dimensional Hausdorff `C^n` manifold contains the topological support of a real `C^n`
+function equal to `1` near `x` (`ContMDiffMap.exists_tsupport_subset_eventually_eq_one`).
 
 On a manifold modelled on a real normed space `E` itself, a closed coordinate ball of radius `r'`
 inside the preferred chart at `c` carries the bump function with radii `r < r'`
@@ -27,7 +30,7 @@ coordinate ball of radius `rOut`
 
 public section
 
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace SmoothBumpFunction
 
@@ -93,3 +96,19 @@ theorem tsupport_subset_chartAt_symm_image_closedBall [T2Space M]
 end Model
 
 end SmoothBumpFunction
+
+namespace ContMDiffMap
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [T2Space M]
+
+/-- On a finite-dimensional Hausdorff `C^n` manifold, `n ≤ ∞`, every neighbourhood `s` of `x`
+contains the topological support of a real `C^n` function equal to `1` near `x`. -/
+theorem exists_tsupport_subset_eventually_eq_one {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M]
+    {x : M} {s : Set M} (hs : s ∈ 𝓝 x) :
+    ∃ ρ : C^n⟮I, M; ℝ⟯, tsupport ρ ⊆ s ∧ ∀ᶠ y in 𝓝 x, ρ y = 1 := by
+  obtain ⟨f, -, hf⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1 hs
+  exact ⟨⟨f, f.contMDiff_of_isManifold⟩, hf, f.eventuallyEq_one⟩
+
+end ContMDiffMap
