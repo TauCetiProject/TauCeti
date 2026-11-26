@@ -164,16 +164,13 @@ theorem commutatorElement_mem_cross {i j k l : ℕ} (hij : i ≠ j) (hkl : k ≠
 theorem cross_le_kerFst : cross I ≤ kerFst I := by
   refine closure_le _ |>.2 ?_
   rintro _ ⟨i, j, k, l, hij, hkl, u, v, hu, hv, rfl⟩
-  rw [SetLike.mem_coe, mem_kerFst_iff, map_commutatorElement, IndexedSteinbergGroup.map_x,
-    doubleFst_doubleInr, IndexedSteinbergGroup.x_zero, commutatorElement_one_left]
+  simp
 
 /-- The addition map kills the cross commutators. -/
 theorem cross_le_ker_map_doubleSnd : cross I ≤ (IndexedSteinbergGroup.map I.doubleSnd).ker := by
   refine closure_le _ |>.2 ?_
   rintro _ ⟨i, j, k, l, hij, hkl, u, v, hu, hv, rfl⟩
-  rw [SetLike.mem_coe, MonoidHom.mem_ker, map_commutatorElement, IndexedSteinbergGroup.map_x,
-    IndexedSteinbergGroup.map_x, doubleSnd_doubleInl, IndexedSteinbergGroup.x_zero,
-    commutatorElement_one_right]
+  simp
 
 /-- **The cross commutators lie in `K₂(R ⊕ I)`.** -/
 theorem cross_le_ker_toStableGL : cross I ≤ (SteinbergGroup.toStableGL I.double).ker := by
@@ -283,9 +280,7 @@ theorem kerFst_bot : kerFst (⊥ : TwoSidedIdeal R) = ⊥ := by
   have hinj := (doubleFst_injective_iff (I := (⊥ : TwoSidedIdeal R))).2 rfl
   have hid : (⊥ : TwoSidedIdeal R).doubleDiag.comp (⊥ : TwoSidedIdeal R).doubleFst =
       RingHom.id _ :=
-    RingHom.ext fun p ↦ hinj (by
-      rw [RingHom.comp_apply, ← RingHom.comp_apply _ (doubleDiag _), doubleFst_comp_doubleDiag,
-        RingHom.id_apply, RingHom.id_apply])
+    RingHom.ext fun p ↦ hinj (by simp)
   refine (eq_bot_iff_forall _).2 fun z hz ↦ ?_
   calc z = IndexedSteinbergGroup.map (RingHom.id _) z := by
         rw [IndexedSteinbergGroup.map_id, MonoidHom.id_apply]
@@ -383,6 +378,7 @@ def ofKerFst : kerFst I →* idealAlgebraicK2 I :=
       coe_mem_kerFst)).codRestrict _
     fun x ↦ IdealSteinbergGroup.mk_mem_idealAlgebraicK2_iff.2 (x : AlgebraicK2 I.double).property
 
+@[simp]
 theorem coe_ofKerFst_apply (x : kerFst I) :
     (ofKerFst I x : IdealSteinbergGroup I) = IdealSteinbergGroup.mk I ⟨_, coe_mem_kerFst x⟩ :=
   (rfl)
@@ -391,7 +387,7 @@ theorem ofKerFst_surjective : Function.Surjective (ofKerFst I) := by
   rintro ⟨w, hw⟩
   obtain ⟨y, rfl⟩ := IdealSteinbergGroup.mk_surjective I w
   have hy := IdealSteinbergGroup.mk_mem_idealAlgebraicK2_iff.1 hw
-  refine ⟨⟨⟨y, hy⟩, ?_⟩, rfl⟩
+  refine ⟨⟨⟨y, hy⟩, ?_⟩, Subtype.ext (coe_ofKerFst_apply I _)⟩
   rw [kerFst, MonoidHom.mem_ker, ← OneMemClass.coe_eq_one, AlgebraicK2.coe_map_apply]
   exact IdealSteinbergGroup.mem_kerFst_iff.1 y.property
 
@@ -401,8 +397,8 @@ theorem ker_ofKerFst :
       ((SteinbergGroup.toStableGL I.double).ker.subtype.comp (kerFst I).subtype) := by
   ext x
   rw [MonoidHom.mem_ker, Subgroup.mem_comap, ← OneMemClass.coe_eq_one, coe_ofKerFst_apply,
-    IdealSteinbergGroup.mk_eq_one_iff]
-  rfl
+    IdealSteinbergGroup.mk_eq_one_iff, MonoidHom.coe_comp, Function.comp_apply,
+    Subgroup.coe_subtype, Subgroup.coe_subtype]
 
 /-- **`K₂(R, I) ≃* K₂'(R, I) / C`**: relative `K₂` is the kernel of `K₂(R ⊕ I) →* K₂(R)` induced
 by the projection, modulo the cross commutators. -/
@@ -438,8 +434,7 @@ namespace IdealSteinbergGroup
 /-- A morphism of pairs carries `St'(R, I)` into `St'(S, J)`. -/
 theorem map_doubleMap_mem_kerFst (f : R →+* S) (h : I ≤ comap f J) {z : SteinbergGroup I.double}
     (hz : z ∈ kerFst I) : IndexedSteinbergGroup.map (doubleMap f h) z ∈ kerFst J := by
-  rw [mem_kerFst_iff, IndexedSteinbergGroup.map_map, doubleFst_comp_doubleMap,
-    ← IndexedSteinbergGroup.map_map, mem_kerFst_iff.1 hz, map_one]
+  simpa using congrArg (IndexedSteinbergGroup.map f) (mem_kerFst_iff.1 hz)
 
 /-- A morphism of pairs carries cross commutators to cross commutators. -/
 theorem map_cross_le (f : R →+* S) (h : I ≤ comap f J) :
@@ -462,17 +457,18 @@ def map (f : R →+* S) (h : I ≤ comap f J) : IdealSteinbergGroup I →* Ideal
     rw [Subgroup.mem_comap, mem_subgroupOf]
     exact map_cross_le f h (mem_map_of_mem _ (mem_subgroupOf.1 hy))
 
+@[simp]
 theorem map_mk (f : R →+* S) (h : I ≤ comap f J) (y : kerFst I) :
     map f h (mk I y) =
       mk J ⟨IndexedSteinbergGroup.map (doubleMap f h) y, map_doubleMap_mem_kerFst f h y.property⟩ :=
   (rfl)
 
 /-- The homomorphism `St(R, I) →* St(R)` is natural in morphisms of pairs. -/
+@[simp]
 theorem toSteinbergGroup_map (f : R →+* S) (h : I ≤ comap f J) (w : IdealSteinbergGroup I) :
     toSteinbergGroup J (map f h w) = IndexedSteinbergGroup.map f (toSteinbergGroup I w) := by
   obtain ⟨y, rfl⟩ := mk_surjective I w
-  rw [map_mk, toSteinbergGroup_mk, toSteinbergGroup_mk, IndexedSteinbergGroup.map_map,
-    IndexedSteinbergGroup.map_map, doubleSnd_comp_doubleMap]
+  simp
 
 variable (I) in
 @[simp]
@@ -500,9 +496,7 @@ namespace idealAlgebraicK2
 `I` into `J`. -/
 def map (f : R →+* S) (h : I ≤ comap f J) : idealAlgebraicK2 I →* idealAlgebraicK2 J :=
   ((IdealSteinbergGroup.map f h).comp (idealAlgebraicK2 I).subtype).codRestrict _ fun x ↦ by
-    rw [MonoidHom.comp_apply, Subgroup.coe_subtype, mem_idealAlgebraicK2_iff,
-      IdealSteinbergGroup.toSteinbergGroup_map,
-      SteinbergGroup.toStableGL_map, mem_idealAlgebraicK2_iff.1 x.property, map_one]
+    simp [SteinbergGroup.toStableGL_map, mem_idealAlgebraicK2_iff.1 x.property]
 
 @[simp]
 theorem coe_map_apply (f : R →+* S) (h : I ≤ comap f J) (x : idealAlgebraicK2 I) :
@@ -510,11 +504,11 @@ theorem coe_map_apply (f : R →+* S) (h : I ≤ comap f J) (x : idealAlgebraicK
   (rfl)
 
 /-- The forgetful map `K₂(R, I) →* K₂(R)` is natural in morphisms of pairs. -/
+@[simp]
 theorem toAlgebraicK2_map (f : R →+* S) (h : I ≤ comap f J) (x : idealAlgebraicK2 I) :
     toAlgebraicK2 J (map f h x) = AlgebraicK2.map f (toAlgebraicK2 I x) := by
   ext
-  rw [coe_toAlgebraicK2_apply, coe_map_apply, IdealSteinbergGroup.toSteinbergGroup_map,
-    AlgebraicK2.coe_map_apply, coe_toAlgebraicK2_apply]
+  simp
 
 variable (I) in
 @[simp]
@@ -527,8 +521,8 @@ theorem map_comp (f : R →+* S) (g : S →+* T) (hf : I ≤ comap f J) (hg : J 
     map (g.comp f) (fun _ hx ↦ (mem_comap _).2 ((mem_comap g).1 (hg ((mem_comap f).1 (hf hx))))) =
       (map g hg).comp (map f hf) := by
   ext x
-  rw [MonoidHom.comp_apply, coe_map_apply, coe_map_apply, coe_map_apply,
-    IdealSteinbergGroup.map_comp, MonoidHom.comp_apply]
+  simpa using
+    DFunLike.congr_fun (IdealSteinbergGroup.map_comp f g hf hg) (x : IdealSteinbergGroup I)
 
 end idealAlgebraicK2
 
