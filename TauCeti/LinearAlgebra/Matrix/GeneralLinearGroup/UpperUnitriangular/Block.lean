@@ -232,22 +232,9 @@ theorem blockDiagonalGL_mul_mul_inv_mem (g : ι → GL n R) {u : GL (n × ι) R}
     (hu : u ∈ unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
     blockDiagonalGL n ι R g * u * (blockDiagonalGL n ι R g)⁻¹ ∈
       unitriangularSubgroup (Prod.snd : n × ι → ι) R := by
-  rw [mem_unitriangularSubgroup] at hu ⊢
-  refine blockUnitriangular_iff.mpr ⟨?_, fun x y hxy => ?_⟩
-  · simp only [Units.val_mul, coe_blockDiagonalGL, coe_blockDiagonalGL_inv]
-    exact ((blockTriangular_blockDiagonal _).mul hu.blockTriangular).mul
-      (blockTriangular_blockDiagonal _)
-  · obtain ⟨a, i⟩ := x
-    obtain ⟨b, i'⟩ := y
-    obtain rfl : i = i' := hxy
-    have hu1 : (u : Matrix (n × ι) (n × ι) R).submatrix (·, i) (·, i) = 1 := by
-      ext c d
-      simpa [Matrix.one_apply] using hu.apply_of_eq (i := (c, i)) (j := (d, i)) rfl
-    have h := congr_fun₂ (submatrix_blockDiagonalGL_mul_mul_inv g
-      (u : Matrix (n × ι) (n × ι) R) i i) a b
-    rw [hu1, Matrix.mul_one, Units.mul_inv, submatrix_apply] at h
-    rw [Units.val_mul, Units.val_mul, h]
-    simp [Matrix.one_apply]
+  have hd : (blockDiagonalGL n ι R g)⁻¹ ∈ blockTriangularSubgroup (Prod.snd : n × ι → ι) :=
+    inv_mem (by simpa [mem_blockTriangularSubgroup] using blockTriangular_blockDiagonal _)
+  simpa using conj_mem_unitriangularSubgroup hd hu
 
 theorem blockDiagonalGL_mem_normalizer (g : ι → GL n R) :
     blockDiagonalGL n ι R g ∈
