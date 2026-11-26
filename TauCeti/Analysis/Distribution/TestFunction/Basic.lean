@@ -37,6 +37,8 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   open set does not change the underlying function.
 * `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
   open set is the extension by zero of a test function on that set.
+* `TestFunction.exists_coe_eq_of_tsupport_subset`: a `C^n` function supported in the support of a
+  test function on `Ω` is a test function on `Ω`.
 * `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a `C^n` test function on `Ω`
   with a function `C^n` on `Ω` is a `C^n` test function on `Ω`.
 * `TestFunction.tsupport_subset_inter_of_apply_eq_smul`: a test function with values `g x • φ x`
@@ -97,6 +99,14 @@ function on `Ω'`. -/
 theorem exists_monoCLM_eq_of_tsupport_subset {Ω' : Opens E} (h : Ω' ≤ Ω) {φ : 𝓓^{n}(Ω, F)}
     (hφ : tsupport φ ⊆ Ω') : ∃ ψ : 𝓓^{n}(Ω', F), monoCLM ℝ ψ = φ :=
   ⟨⟨φ, φ.contDiff, φ.hasCompactSupport, hφ⟩, TestFunction.ext fun x ↦ by simp [h]⟩
+
+/-- A `C^n` function supported in the support of a test function on `Ω` is a `C^n` test function
+on `Ω`. -/
+theorem exists_coe_eq_of_tsupport_subset {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {m : ℕ∞} {f : E → F} (hf : ContDiff ℝ n f) {φ : 𝓓^{m}(Ω, G)} (h : tsupport f ⊆ tsupport φ) :
+    ∃ ψ : 𝓓^{n}(Ω, F), ⇑ψ = f :=
+  ⟨⟨f, hf, φ.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) h,
+    h.trans φ.tsupport_subset⟩, rfl⟩
 
 /-- **A test function times a function `C^n` on `Ω` is a test function.** If `g` is `C^n` on
 `Ω`, with no condition off `Ω`, and `φ ∈ 𝓓^{n}(Ω, F)`, then `x ↦ g x • φ x` is again a `C^n` test

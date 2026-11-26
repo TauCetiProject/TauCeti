@@ -45,6 +45,8 @@ in `Type`.
 * `TauCeti.homologyPeriodHom_homologyπ`: its value on the class of a cycle `Σ nᵢ σᵢ` is
   `Σ nᵢ ∫_{σᵢ} φ`.
 * `TauCeti.homologyPeriodHom_hurewicz₁`: the period of a loop is the value on its Hurewicz class.
+* `TauCeti.pathIntegral_eq_zero_of_loopClass_eq_zero`: the line integral along a `C¹` loop whose
+  class in `H₁(M; ℤ)` vanishes is zero.
 * `TauCeti.homologyPeriodHom_mextDeriv`: exact forms have vanishing periods, for any coefficients.
 * `TauCeti.homologyPeriodHom_mapCoeff`: the periods commute with continuous linear maps of the
   coefficients.
@@ -114,6 +116,21 @@ theorem homologyPeriodHom_loopClass {x : M} (γ : Path x x) :
       pathClassIntegral φ (.mk γ) := by
   rw [homologyPeriodHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     AddEquiv.symm_apply_apply, H₁.liftPathClass_loopClass (fun p q ↦ pathClassIntegral_trans p q)]
+
+/-- **Null-homologous loops have zero periods.** Let `c` be a `C¹` curve whose restriction to
+`[a, b]`, reparametrized affinely by `[0, 1]`, is a loop `γ` whose class in `H₁(M; ℤ)` vanishes.
+Then the line integral of a closed `C¹` `1`-form along `c` from `a` to `b` is zero. -/
+theorem pathIntegral_eq_zero_of_loopClass_eq_zero (hφ : IsSmoothForm I 1 φ)
+    (hclosed : mextDeriv φ = 0) {c : ℝ → M} (hc : ContMDiff 𝓘(ℝ, ℝ) I 1 c) {a b : ℝ} {x : M}
+    {γ : Path x x} (hγ : ∀ t : unitInterval, γ t = c ((b - a) * t + a))
+    (h0 : H₁AddEquivHomology ℤ (.of M) (loopClass ℤ (X := .of M) γ) = 0) :
+    pathIntegral φ c a b = 0 := by
+  have hc' : ContMDiff 𝓘(ℝ, ℝ) I 1 fun t : ℝ ↦ c ((b - a) * t + a) :=
+    hc.comp (contMDiff_iff_contDiff.mpr ((contDiff_const.mul contDiff_id).add contDiff_const))
+  have h := pathIntegral_comp_mul_add (hφ.of_le (by norm_num)) hc (b - a) a 0 1
+  rw [mul_zero, zero_add, mul_one, sub_add_cancel, ← pathClassIntegral_mk_eq_pathIntegral hφ
+    hclosed hc' hγ, ← homologyPeriodHom_loopClass, h0, map_zero] at h
+  exact h.symm
 
 /-- **The periods factor through `H₁(M; ℤ)`**: the period of a loop class `g` at any base point is
 the value of `homologyPeriodHom φ` on the Hurewicz class of `g`. -/

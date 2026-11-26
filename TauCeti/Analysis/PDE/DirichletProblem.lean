@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Analysis.PDE.EnergyForm.Poincare
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.L2Space.Pairing
 import TauCeti.MeasureTheory.Function.Lp.Duality
 
 /-!
@@ -190,20 +191,21 @@ attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
 /-- The **right-hand side of the Dirichlet problem** as a continuous linear functional on
 `H¹₀(Ω)`: an `L²(Ω)` function `f` acts by `v ↦ ∫_Ω f v`, pairing against the value component of
 the Sobolev jet. Continuity is automatic from the construction, the value map
-`TauCeti.W1p0.valueL` being continuous and the pairing being the `L²` inner product. -/
+`TauCeti.W1p0.valueL` being continuous and the pairing `MeasureTheory.Lp.pairingL` being the `L²`
+inner product. -/
 def dirichletForcing (f : Lp ℝ 2 (mu.restrict Omega)) : StrongDual ℝ (W1p0 mu Omega 2) :=
-  (innerSL ℝ f).comp W1p0.valueL
-
-/-- The forcing functional is the `L²` inner product against the value component. -/
-@[simp] theorem dirichletForcing_apply (f : Lp ℝ 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
-    dirichletForcing f v = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
-  rw [dirichletForcing, ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p0.valueL_apply]
+  Lp.pairingL f W1p0.valueL
 
 /-- The forcing functional written as the integral `∫_Ω f v` it names. -/
 theorem dirichletForcing_apply_eq_setIntegral (f : Lp ℝ 2 (mu.restrict Omega))
     (v : W1p0 mu Omega 2) :
     dirichletForcing f v = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  rw [dirichletForcing_apply, L2.inner_def]
+  rw [dirichletForcing, Lp.pairingL_apply, W1p0.valueL_apply]
+
+/-- The forcing functional is the `L²` inner product against the value component. -/
+@[simp] theorem dirichletForcing_apply (f : Lp ℝ 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
+    dirichletForcing f v = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  rw [dirichletForcing_apply_eq_setIntegral, L2.inner_def]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [RCLike.inner_apply, mul_comm])
 
@@ -931,9 +933,7 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_measure_ne_to
       have := ENNReal.toReal_mono (ENNReal.mul_ne_top hPfin eNorm_ne_top) (hP v)
       rwa [ENNReal.toReal_mul, toReal_eNorm, ← Lp.norm_def] at this
   -- The energy form is coercive on `H¹₀(Ω)`, by the Poincaré inequality.
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0)
-    h.upper_nonneg ha aestronglyMeasurable_const hc
-    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) hc_bound
+  have hcoeff := h.memLp_energyIntegrand_zero_drift ha hc hc_bound
   have hlower : ∀ w : W1p0 mu Omega 2, lam / (P.toReal ^ 2 + 1) * ‖w‖ ^ 2 ≤
       energyFormH1 a 0 c (w : W1p mu Omega 2) (w : W1p mu Omega 2) := fun w =>
     h.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift (b := 0) ha hc (fun _ _ => rfl)
@@ -1151,6 +1151,16 @@ theorem min_mul_norm_sq_le_energyFormH1_one_zero_zero_add [DecidableEq ι] (omeg
     W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
   nlinarith [min_le_left 1 omega, min_le_right 1 omega, sq_nonneg ‖W1p.value v‖,
     sq_nonneg ‖W1p.gradient v‖]
+
+open scoped InnerProductSpace in
+/-- The energy form of `-Δ + c` (`a = 1`, no drift, constant mass `c`) is the Dirichlet form of
+`-Δ` plus `c` times the `L²` inner product of the values. -/
+theorem energyFormH1_one_zero_const [DecidableEq ι] (c : ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 (fun _ => c) u v =
+      energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 0 u v + c * ⟪W1p.value u, W1p.value v⟫_ℝ := by
+  simpa only [Pi.zero_apply, neg_mul, sub_neg_eq_add, zero_add] using
+    energyFormH1_mass_sub_const (c := 0)
+      (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) 1) (-c) u v
 
 /-- The weak formulation of the Laplacian model `-Δ` is the classical one: `u ∈ H¹₀(Ω)` solves
 `-Δu = f` weakly exactly when `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. -/
