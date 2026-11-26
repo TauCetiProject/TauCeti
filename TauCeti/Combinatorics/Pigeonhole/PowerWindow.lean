@@ -14,8 +14,9 @@ import TauCeti.Combinatorics.Pigeonhole.Scales
 
 The additive pigeonhole on scales, applied to logarithms, selects a single interval
 `[Y, Y²]` throughout which every exceptional value lies outside `(x ^ (1 / B), x]`.
-For the window in §2.2 of the uniform wild kernel bounds roadmap, take
-`B = 2 C κ / δ` and use the exceptional values raised to the power `1 / κ`.
+Equivalently, for positive exceptional values `e`, no `log e` lies in `(log x / B, log x]`.
+For instance, applying the lemma to the values `e ^ (1 / κ)` of finitely many positive `e`,
+with `κ > 0`, gives that each such `e` satisfies `x ^ κ < e` or `e ≤ x ^ (κ / B)`.
 -/
 
 public section
