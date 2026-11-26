@@ -195,29 +195,6 @@ private theorem periodic_of_comp_eq_id (hΦp : ∀ s t, Φ (s, t + 1) = Φ (s, t
   rw [← ContinuousLinearMap.inverse_eq (hΦΨ (s, t + 1)) (hΨΦ (s, t + 1)),
     ← ContinuousLinearMap.inverse_eq (hΦΨ (s, t)) (hΨΦ (s, t)), hΦp]
 
-/-- The derivative of a pointwise two-sided inverse `Ψ` of a frame `Φ` is `dΨ = -Ψ dΦ Ψ`, so it
-is bounded by `D B' D` when `‖Ψ‖ ≤ D` and `‖dΦ‖ ≤ B'`. -/
-private theorem norm_fderiv_le_of_comp_eq_id (hΦ : Differentiable ℝ Φ) (hΨ : Differentiable ℝ Ψ)
-    (hΨB : ∀ z, ‖Ψ z‖ ≤ D) (hΦ'B : ∀ z, ‖fderiv ℝ Φ z‖ ≤ B')
-    (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.id ℝ V)
-    (hΦΨ : ∀ z, (Φ z).comp (Ψ z) = ContinuousLinearMap.id ℝ W) (z : ℝ × ℝ) :
-    ‖fderiv ℝ Ψ z‖ ≤ D * B' * D := by
-  have hD : 0 ≤ D := (norm_nonneg _).trans (hΨB z)
-  have hB' : 0 ≤ B' := (norm_nonneg (fderiv ℝ Φ z)).trans (hΦ'B z)
-  obtain rfl : Ψ = fun w ↦ (Φ w).inverse :=
-    funext fun w ↦ (ContinuousLinearMap.inverse_eq (hΦΨ w) (hΨΦ w)).symm
-  have hd := ((hΦ z).hasFDerivAt.clm_inverse
-    (ContinuousLinearMap.IsInvertible.of_inverse (hΦΨ z) (hΨΦ z)) (hΨ z)).fderiv
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun e ↦ ?_
-  simp only [hd, neg_apply, ContinuousLinearMap.comp_apply, norm_neg]
-  calc ‖(Φ z).inverse.comp ((fderiv ℝ Φ z e).comp (Φ z).inverse)‖
-      ≤ D * ((B' * ‖e‖) * D) := by
-        refine ((Φ z).inverse.opNorm_comp_le _).trans (mul_le_mul (hΨB z) ?_ (by positivity) hD)
-        refine (ContinuousLinearMap.opNorm_comp_le _ _).trans
-          (mul_le_mul ?_ (hΨB z) (norm_nonneg _) (by positivity))
-        exact ((fderiv ℝ Φ z).le_opNorm e).trans (by gcongr; exact hΦ'B z)
-    _ = D * B' * D * ‖e‖ := by ring
-
 /-- **Reading in a frame is an isomorphism of Sobolev spaces.** For a `C²` frame `Φ` of period one
 in `t`, bounded together with its derivative, whose pointwise inverse `Ψ` is `C²` and bounded,
 reading sections in the frame `Φ` is an isomorphism `W^{1,2}(ℝ × S¹, V) ≃ W^{1,2}(ℝ × S¹, W)`, with
@@ -226,8 +203,8 @@ derivative `dΨ = -Ψ dΦ Ψ` automatically. -/
 def frameEquiv (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.id ℝ V)
     (hΦΨ : ∀ z, (Φ z).comp (Ψ z) = ContinuousLinearMap.id ℝ W) : H1 V ≃L[ℝ] H1 W :=
   have hΨp := periodic_of_comp_eq_id hΦp hΨΦ hΦΨ
-  have hΨ'B := norm_fderiv_le_of_comp_eq_id (hΦ.differentiable (by norm_num))
-    (hΨ.differentiable (by norm_num)) hΨB hΦ'B hΨΦ hΦΨ
+  have hΨ'B z := norm_fderiv_le_of_comp_eq_id (hΦ.differentiable (by norm_num) z)
+    (hΨ.differentiable (by norm_num) z) (hΨB z) (hΦ'B z) hΨΦ hΦΨ
   .ofContinuousLinearMap (frameL hΦ hΦp hΦB hΦ'B) (frameL hΨ hΨp hΨB hΨ'B)
     (frameL_comp_frameL_of_comp_eq_id hΨ hΨp hΨB hΨ'B hΦ hΦp hΦB hΦ'B hΦΨ)
     (frameL_comp_frameL_of_comp_eq_id hΦ hΦp hΦB hΦ'B hΨ hΨp hΨB hΨ'B hΨΦ)

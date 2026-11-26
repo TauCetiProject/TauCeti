@@ -101,6 +101,7 @@ theorem jetOperator_add {μ : Measure (ℝ × ℝ)} {M N : ℝ × ℝ → V × V
 
 /-- The first-order operator of the constant identity coefficient field is the identity of `L²`
 jets. -/
+@[simp]
 theorem jetOperator_id {μ : Measure (ℝ × ℝ)} :
     jetOperator μ (fun _ ↦ ContinuousLinearMap.id ℝ (V × V × V)) =
       ContinuousLinearMap.id ℝ (Lp (V × V × V) 2 μ) := by

@@ -51,6 +51,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `HasFDerivAt.clm_inverse`, `HasFDerivAt.clm_inverse_of_completeSpace`,
   `DifferentiableAt.fderiv_clm_inverse`: the derivative `∂ᵥ(f⁻¹) = -f⁻¹ (∂ᵥ f) f⁻¹` of an inverse
   family along a direction.
+* `TauCeti.norm_fderiv_le_of_comp_eq_id`: the bound `‖dg‖ ≤ D B' D` on the derivative of a
+  pointwise two-sided inverse `g` of `f`, from `‖g‖ ≤ D` and `‖df‖ ≤ B'`.
 * `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for a one-variable
   inverse family.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
@@ -289,6 +291,29 @@ theorem DifferentiableAt.fderiv_clm_inverse [CompleteSpace G] (hf : Differentiab
     fderiv 𝕜 (fun y => (f y).inverse) x v =
       -((f x).inverse.comp ((fderiv 𝕜 f x v).comp (f x).inverse)) := by
   simp [(hf.hasFDerivAt.clm_inverse_of_completeSpace hx).fderiv]
+
+/-- The derivative of a pointwise two-sided inverse `g` of a family `f` of continuous linear maps
+is `dg = -g (df) g`, so it is bounded by `D B' D` at a point where `‖g‖ ≤ D` and `‖df‖ ≤ B'`. -/
+theorem TauCeti.norm_fderiv_le_of_comp_eq_id {g : E → H →L[𝕜'] G} {D B' : ℝ}
+    (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) (hgB : ‖g x‖ ≤ D)
+    (hf'B : ‖fderiv 𝕜 f x‖ ≤ B') (hgf : ∀ y, (g y).comp (f y) = ContinuousLinearMap.id 𝕜' G)
+    (hfg : ∀ y, (f y).comp (g y) = ContinuousLinearMap.id 𝕜' H) :
+    ‖fderiv 𝕜 g x‖ ≤ D * B' * D := by
+  have hD : 0 ≤ D := (norm_nonneg _).trans hgB
+  have hB' : 0 ≤ B' := (norm_nonneg (fderiv 𝕜 f x)).trans hf'B
+  obtain rfl : g = fun y ↦ (f y).inverse :=
+    funext fun y ↦ (ContinuousLinearMap.inverse_eq (hfg y) (hgf y)).symm
+  have hd := (hf.hasFDerivAt.clm_inverse
+    (ContinuousLinearMap.IsInvertible.of_inverse (hfg x) (hgf x)) hg).fderiv
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun e ↦ ?_
+  simp only [hd, neg_apply, ContinuousLinearMap.comp_apply, norm_neg]
+  calc ‖(f x).inverse.comp ((fderiv 𝕜 f x e).comp (f x).inverse)‖
+      ≤ D * ((B' * ‖e‖) * D) := by
+        refine ((f x).inverse.opNorm_comp_le _).trans (mul_le_mul hgB ?_ (by positivity) hD)
+        refine (ContinuousLinearMap.opNorm_comp_le _ _).trans
+          (mul_le_mul ?_ hgB (norm_nonneg _) (by positivity))
+        exact ((fderiv 𝕜 f x).le_opNorm e).trans (by gcongr)
+    _ = D * B' * D * ‖e‖ := by ring
 
 end ScalarTower
 
