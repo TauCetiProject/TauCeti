@@ -20,6 +20,8 @@ This file collects supplementary results about continuous linear maps on indexed
 * `ContinuousLinearMap.update_proj_apply`: the family `Function.update (fun m ↦ proj m) i α`,
   which replaces the projection to the coordinate `i` by `α`, evaluates at `j` and `v` to the
   coordinate `j` of `Function.update v i (α v)`.
+* `ContinuousLinearMap.pi_ext_one`: a continuous linear map on a finite coordinate space `ι → R`
+  is determined by its values at the coordinate vectors `Pi.single i 1`.
 * `ContinuousLinearMap.mem_ker_pi_proj_comp`: a vector lies in the kernel of the coordinates of
   `q` labelled by a set `t` exactly when these coordinates of `q` vanish at it.
 -/
@@ -56,6 +58,13 @@ theorem update_proj_apply {ι R : Type*} [DecidableEq ι] [Semiring R]
     (i : ι) (α : (∀ m, φ m) →L[R] φ i) (j : ι) (v : ∀ m, φ m) :
     Function.update (fun m ↦ proj m) i α j v = Function.update v i (α v) j :=
   Function.apply_update (fun _ g ↦ g v) (fun m ↦ proj m) i α j
+
+/-- A continuous linear map on a finite coordinate space `ι → R` is determined by its values at the
+coordinate vectors `Pi.single i 1`. -/
+theorem pi_ext_one {ι R M : Type*} [Finite ι] [DecidableEq ι] [Semiring R] [TopologicalSpace R]
+    [TopologicalSpace M] [AddCommMonoid M] [Module R M] {f g : (ι → R) →L[R] M}
+    (h : ∀ i, f (Pi.single i 1) = g (Pi.single i 1)) : f = g :=
+  coe_injective (LinearMap.pi_ext' fun i ↦ LinearMap.ext_ring (h i))
 
 section Pi
 

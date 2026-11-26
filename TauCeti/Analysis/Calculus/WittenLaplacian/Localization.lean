@@ -92,7 +92,9 @@ quasimodes at different critical points combine into a low-energy space.
   quadratic form of `Δ_t`.
 * `TauCeti.sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul` and
   `TauCeti.sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`: lower bounds for the
-  localized pieces give a lower bound for the quadratic form of `Δ_t`.
+  localized pieces give a lower bound for the quadratic form of `Δ_t`;
+  `TauCeti.sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one`
+  is the uniform bound for a partition of unity `J₀, (J p)_{p ∈ P}` at a finite set of points.
 * `TauCeti.sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul`: the
   pointwise lower bound for `⟨Δ_t φ, φ⟩`.
 * `TauCeti.integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul` and
@@ -308,13 +310,6 @@ theorem sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul {α : 
     · simp [hx]
     exact mul_le_mul_of_nonneg_right (hK x hx) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
 
-omit [Fintype ι] [LinearOrder ι] in
-/-- A point where the localized form `u • φ` does not vanish is one where neither `u` nor `φ`
-vanishes. -/
-theorem ne_zero_and_ne_zero_of_smul_apply_ne_zero {u : (ι → ℝ) → ℝ}
-    {φ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hx : (u • φ) x ≠ 0) : u x ≠ 0 ∧ φ x ≠ 0 :=
-  smul_ne_zero_iff.1 (by simpa only [Pi.smul_apply'] using hx)
-
 /-- A form of degree `m` has no component at a multi-index `S` of another cardinality, so omitting
 that component does not change its pointwise squared norm. -/
 theorem sum_erase_sq_eq_sum_sq_of_card_ne {φ : (ι → ℝ) → Finset ι → ℝ} {m : ℕ}
@@ -351,6 +346,33 @@ theorem sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul {α : Type
     simp only [← Finset.sum_mul, hJA x hx, one_mul]
   simp only [hsq, ← Finset.mul_sum, hN] at key
   linarith
+
+/-- **A uniform lower bound from IMS localization at a finite set of points.** Let `J₀` and `J p`
+(`p ∈ P`) be `C²` on the support of `φ`, with `J₀² + ∑ₚ (J p)² = 1` and
+`∑ᵢ (∂ᵢJ₀)² + ∑ₚ ∑ᵢ (∂ᵢ J p)² ≤ K` wherever `φ` does not vanish. If the quadratic form of `Δ_t` at
+`J₀ φ` and at every `J p φ` is at least `κ` times its squared norm, then
+`(κ - K) ∫ |φ|² ≤ ∫ ⟨Δ_t φ, φ⟩`. This is
+`TauCeti.sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul` for the partition of unity
+indexed by `P.insertNone`, with `none` for `J₀`. -/
+theorem sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one
+    {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ} {P : Finset (ι → ℝ)} {J₀ : (ι → ℝ) → ℝ}
+    {J : (ι → ℝ) → (ι → ℝ) → ℝ} (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x)
+    (hJ₀ : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 J₀ x)
+    (hJ : ∀ p ∈ P, ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 (J p) x) (hφ : ContDiff ℝ 2 φ)
+    (hφc : HasCompactSupport φ) (hJ1 : ∀ x, φ x ≠ 0 → J₀ x ^ 2 + ∑ p ∈ P, J p x ^ 2 = 1)
+    {K : ℝ} (hK : ∀ x, φ x ≠ 0 → ∑ i, fderiv ℝ J₀ x (Pi.single i 1) ^ 2 +
+      ∑ p ∈ P, ∑ i, fderiv ℝ (J p) x (Pi.single i 1) ^ 2 ≤ K) {t κ : ℝ}
+    (h₀ : κ * ∫ x, ∑ s, (J₀ • φ) x s ^ 2 ≤
+      ∫ x, ∑ s, euclideanWittenLaplacian f t (J₀ • φ) x s * (J₀ • φ) x s)
+    (hκ : ∀ p ∈ P, κ * ∫ x, ∑ s, (J p • φ) x s ^ 2 ≤
+      ∫ x, ∑ s, euclideanWittenLaplacian f t (J p • φ) x s * (J p • φ) x s) :
+    (κ - K) * ∫ x, ∑ s, φ x s ^ 2 ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s :=
+  sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul (A := P.insertNone)
+    (J := fun o ↦ o.elim J₀ J) hf
+    (by rintro (_ | p) hp; exacts [hJ₀, hJ p (Finset.some_mem_insertNone.1 hp)]) hφ hφc
+    (fun x hx ↦ by simpa [Finset.sum_insertNone] using hJ1 x hx)
+    (fun x hx ↦ by simpa [Finset.sum_insertNone] using hK x hx)
+    (by rintro (_ | p) hp; exacts [h₀, hκ p (Finset.some_mem_insertNone.1 hp)])
 
 /-! ### The lower bound away from the critical points -/
 

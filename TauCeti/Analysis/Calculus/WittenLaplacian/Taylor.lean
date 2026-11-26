@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Gap
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.Morse.Pi
-import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # The gap of the Witten Laplacian at nondegenerate critical points
@@ -37,16 +36,19 @@ small plus `(1 - θ) ∑ᵢ |aᵢ|` (`TauCeti.eventually_sum_mul_sq_le_and_sum_s
 gradient of `f` is `diag(a) (x - p)` up to `o(|x - p|)` and the Hessian is continuous.
 
 **The gap.** Combining these local bounds with the bound away from the critical points by IMS
-localization (`TauCeti.sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`) gives the
-gap: if `f` is `C²`, the points of a finite set `P` are critical points with diagonal Hessians with
-every `|aᵢ| ≥ c > 0`, every critical point within distance `ρ` of `P` lies in `P`, and at distance
-more than `ρ` from `P` the gradient is bounded below and the Hessian bounded above, then in every
-degree `m` that is no Morse index the quadratic form of `Δ_t` is at least `t c ‖φ‖²` for all large
-`t` (`exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_fderiv_eq_zero`).
+localization
+(`TauCeti.sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one`)
+gives the gap: if `f` is `C²`, the points of a finite set `P` are critical points with diagonal
+Hessians with every `|aᵢ| ≥ c > 0`, every critical point within distance `ρ` of `P` lies in `P`,
+and at distance more than `ρ` from `P` the gradient is bounded below and the Hessian bounded
+above, then in every degree `m` that is no Morse index the quadratic form of `Δ_t` is at least
+`t c ‖φ‖²` for all large `t`
+(`exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_fderiv_eq_zero`).
 The localization scale is dictated by the Taylor remainders, so it may be smaller than `ρ`; between
-the two scales the gradient does not vanish on a compact set and is bounded below there. If `f` is
-exactly the quadratic model near each point of `P`, then the point is its only critical point
-nearby, which gives the gap for exact models
+the two scales the gradient does not vanish on a compact set and is bounded below there
+(`TauCeti.exists_pos_forall_le_sum_fderiv_apply_single_sq_and_le`). If `f` is exactly the
+quadratic model near each point of `P`, then the point is its only critical point nearby, which
+gives the gap for exact models
 (`TauCeti.exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`). As in
 `TauCeti.Analysis.Calculus.WittenLaplacian.Gap`, the statements concern the quadratic form on
 compactly supported forms, not the spectrum of a self-adjoint realization of `Δ_t`.
@@ -170,52 +172,6 @@ private theorem exists_pos_forall_mem_ball_and_two_mul_le_dist {f : (ι → ℝ)
     · filter_upwards [Ioo_mem_nhdsGT (half_pos (dist_pos.2 hpq))] with r hr _
       linarith [hr.2]
 
-/-- If the critical points of `f` within distance `ρ` of `P` all lie in `P`, then lower bounds for
-the gradient and upper bounds for the Hessian of `f` at distance more than `ρ` from `P` extend to
-distance more than any `ρ' > 0`: in between, the gradient does not vanish on a compact set. -/
-private theorem exists_pos_forall_le_sum_fderiv_apply_single_sq_and_le {f : (ι → ℝ) → ℝ}
-    (hf : ContDiff ℝ 2 f) {P : Finset (ι → ℝ)} {ρ : ℝ}
-    (hcrit : ∀ x, fderiv ℝ f x = 0 → (∃ p ∈ P, dist x p ≤ ρ) → x ∈ P) {c₀ : ℝ} (hc₀ : 0 < c₀)
-    (hdf : ∀ x, (∀ p ∈ P, ρ < dist x p) → c₀ ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2)
-    {h : ℝ} (hh : ∀ x, (∀ p ∈ P, ρ < dist x p) →
-      ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| ≤ h)
-    {ρ' : ℝ} (hρ' : 0 < ρ') :
-    ∃ c₁ > 0, ∃ h₁, ∀ x, (∀ p ∈ P, ρ' < dist x p) →
-      c₁ ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2 ∧
-        ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| ≤ h₁ := by
-  -- The compact region at distance at most `ρ` from some point of `P` and at least `ρ'` from all.
-  set S := (⋃ p ∈ P, closedBall p ρ) ∩ {x | ∀ p ∈ P, ρ' ≤ dist x p}
-  have hS : IsCompact S := by
-    refine (P.isCompact_biUnion fun p _ ↦ isCompact_closedBall p ρ).inter_right ?_
-    simp only [Set.ofPred_forall]
-    exact isClosed_biInter fun p _ ↦
-      isClosed_le continuous_const (continuous_id.dist continuous_const)
-  have hg : Continuous fun x ↦ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2 :=
-    continuous_finsetSum _ fun i _ ↦
-      ((hf.continuous_fderiv two_ne_zero).clm_apply continuous_const).pow 2
-  have hH : Continuous fun x ↦
-      ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| :=
-    continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦
-      (hf.continuous_fderiv_fderiv_apply le_rfl _ _).abs
-  -- On `S` the gradient does not vanish, so `|df|²` has a positive minimum there.
-  obtain ⟨c₂, hc₂, hc₂S⟩ := hS.exists_forall_le' hg.continuousOn (a := 0) fun x hx ↦ by
-    have hxP : ∃ p ∈ P, dist x p ≤ ρ := by simpa only [mem_iUnion, mem_closedBall, exists_prop]
-      using hx.1
-    have hx₀ : fderiv ℝ f x ≠ 0 := fun h₀ ↦
-      absurd ((hx.2 x (hcrit x h₀ hxP)).trans_eq (dist_self x)) (not_le.2 hρ')
-    refine (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _).lt_of_ne fun h₀ ↦ hx₀ ?_
-    have hi := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ sq_nonneg _).1 h₀.symm
-    exact ContinuousLinearMap.coe_injective ((Pi.basisFun ℝ ι).ext fun i ↦ by
-      simpa using hi i (Finset.mem_univ i))
-  obtain ⟨H, hHS⟩ := hS.bddAbove_image hH.continuousOn
-  refine ⟨min c₀ c₂, lt_min hc₀ hc₂, max h H, fun x hx ↦ ?_⟩
-  by_cases hxρ : ∀ p ∈ P, ρ < dist x p
-  · exact ⟨(min_le_left _ _).trans (hdf x hxρ), (hh x hxρ).trans (le_max_left _ _)⟩
-  push Not at hxρ
-  obtain ⟨p, hp, hxp⟩ := hxρ
-  have hxS : x ∈ S := ⟨mem_biUnion hp (mem_closedBall.2 hxp), fun q hq ↦ (hx q hq).le⟩
-  exact ⟨(min_le_right _ _).trans (hc₂S x hxS), (hHS ⟨x, hxS, rfl⟩).trans (le_max_right _ _)⟩
-
 /-- The gap at one critical point in a degree `m` that is not its Morse index: let `c ≤ |aᵢ|` for
 every `i`, with `0 < c`, and `0 ≤ t`. If the form `ψ` of degree `m` is supported where `f` satisfies
 the hypotheses of the gap near the weakened model `θ a`, with `7/8 ≤ θ` and error at most `c / 4`,
@@ -298,31 +254,26 @@ theorem exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_
   have ht₂ : 2 * (K₀ + ∑ p ∈ P, K p) ≤ t * c :=
     (div_le_iff₀ hc).1 ((le_max_right _ _).trans ((le_max_left _ _).trans ht))
   -- IMS localization, with the bound `3 t c / 2` at every piece.
-  have key := sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
-    (A := P.insertNone) (J := fun o ↦ o.elim J₀ J) (fun x _ ↦ hf.contDiffAt)
-    (by rintro (_ | p) _ x _; exacts [hJ₀.contDiffAt, (hJ p).contDiffAt]) hφ hφc
-    (fun x _ ↦ by simpa [Finset.sum_insertNone] using hJ1 x)
-    (fun x _ ↦ by
-      simpa [Finset.sum_insertNone] using
-        add_le_add (hK₀ x) (Finset.sum_le_sum fun p (_ : p ∈ P) ↦ hK p x))
-    (t := t) (κ := 3 / 2 * t * c) ?_
+  have key := sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one
+    (t := t) (κ := 3 / 2 * t * c) (fun x _ ↦ hf.contDiffAt) (fun x _ ↦ hJ₀.contDiffAt)
+    (fun p _ x _ ↦ (hJ p).contDiffAt) hφ hφc (fun x _ ↦ hJ1 x)
+    (fun x _ ↦ add_le_add (hK₀ x) (Finset.sum_le_sum fun p (_ : p ∈ P) ↦ hK p x)) ?_
+    fun p hp ↦ ?_
   · have hN : 0 ≤ ∫ x, ∑ s, φ x s ^ 2 :=
       integral_nonneg fun x ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
     nlinarith
-  rintro (_ | p) hp
   · -- Away from `P`, the potential `t² c₁ - t h₁` is at least `3 t c / 2`.
     rw [show 3 / 2 * t * c = t * (3 / 2 * c) by ring]
     exact mul_mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul_of_add_le_mul
       (fun x _ ↦ hf.contDiffAt) (hJ₀.smul hφ) hφc.smul_left
-      (fun x hx ↦ (hb x (hJ₀ρ x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1)).1)
-      (fun x hx ↦ (hb x (hJ₀ρ x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1)).2) ht₀ ht₁
+      (fun x hx ↦ (hb x (hJ₀ρ x (Function.support_smul_subset_left J₀ φ hx))).1)
+      (fun x hx ↦ (hb x (hJ₀ρ x (Function.support_smul_subset_left J₀ φ hx))).2) ht₀ ht₁
   · -- Near `p`, the gap of the weakened model.
-    have hp' := Finset.some_mem_insertNone.1 hp
     have hball : ∀ x, (J p • φ) x ≠ 0 → x ∈ ball p r := fun x hx ↦
-      mem_ball.2 (hJr p x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1)
+      mem_ball.2 (hJr p x (Function.support_smul_subset_left (J p) φ hx))
     exact three_div_two_mul_mul_integral_le_of_card_ne hf ((hJ p).smul hφ) hφc.smul_left
-      (fun x s hx ↦ hφm x s (right_ne_zero_of_mul hx)) (hm p hp') (hca p hp') hc hθ₀ le_rfl ht₀
-      (fun x hx ↦ ((hrQ p hp').1 x (hball x hx)).1) (fun x hx ↦ ((hrQ p hp').1 x (hball x hx)).2)
+      (fun x s hx ↦ hφm x s (right_ne_zero_of_mul hx)) (hm p hp) (hca p hp) hc hθ₀ le_rfl ht₀
+      (fun x hx ↦ ((hrQ p hp).1 x (hball x hx)).1) (fun x hx ↦ ((hrQ p hp).1 x (hball x hx)).2)
 
 /-- **The gap of the Witten Laplacian in a degree that is no Morse index, for exact quadratic
 models.** Let `f` be a `C²` function on `ℝ^ι` and `P` a finite set of points. Suppose that on the
@@ -354,8 +305,7 @@ theorem exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
       rw [(hfe p hp x hx).fderiv_eq, fderiv_const_add,
         fderiv_diagonalQuadratic_comp_sub_apply_single]
   have hP : ∀ p ∈ P, fderiv ℝ f p = 0 := fun p hp ↦
-    ContinuousLinearMap.coe_injective ((Pi.basisFun ℝ ι).ext fun i ↦ by
-      simp [hd p hp p (mem_ball_self hr) i])
+    ContinuousLinearMap.pi_ext_one fun i ↦ by simp [hd p hp p (mem_ball_self hr) i]
   have ha : ∀ p ∈ P, ∀ v w, fderiv ℝ (fderiv ℝ f) p v w = ∑ i, a p i * v i * w i :=
     fun p hp v w ↦ by
       have hmod : fderiv ℝ (fun y ↦ f p + diagonalQuadratic (a p) (y - p)) =

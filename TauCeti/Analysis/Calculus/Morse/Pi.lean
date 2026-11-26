@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
 public import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 public import TauCeti.Analysis.Calculus.Morse.Index
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # Nondegenerate critical points of separated sums of functions of one variable
@@ -27,7 +28,10 @@ the Morse index is the number of negative `aᵢ`.
 Conversely, at a `C²` critical point `p` of an arbitrary function `f` whose Hessian is the
 diagonal form `∑ᵢ aᵢ vᵢ wᵢ`, the translated model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` is the second-order
 Taylor approximation of `f`: the partial derivatives of `f` are `aᵢ (xᵢ - pᵢ)` up to
-`o(|x - p|)`, and its second partial derivatives are close to `aᵢ δᵢⱼ` near `p`.
+`o(|x - p|)`, and its second partial derivatives are close to `aᵢ δᵢⱼ` near `p`. Away from a
+finite set `P` containing every critical point near it, compactness extends lower bounds for the
+gradient and upper bounds for the Hessian of a `C²` function from far away to any positive
+distance from `P`.
 
 This is the calculus behind the standard Morse function `∑ i, cos (2π xᵢ / pᵢ)` on a torus
 `∀ i, AddCircle (p i)`, whose charts have the real coordinates of the factors as coordinates. The
@@ -48,12 +52,16 @@ diagonal second derivative `TauCeti.fderiv_fderiv_sum_comp_eval_apply` is in
   `TauCeti.morseIndex_diagonalQuadratic`: the origin is a nondegenerate critical point of
   `∑ i, aᵢ xᵢ² / 2` exactly when every `aᵢ` is nonzero, of Morse index the number of negative
   `aᵢ`.
-* `TauCeti.eventually_sum_sq_fderiv_apply_single_sub_le`: at a `C²` critical point with Hessian
-  `∑ᵢ aᵢ vᵢ wᵢ`, the gradient is `(aᵢ (xᵢ - pᵢ))ᵢ` up to `o(|x - p|)`.
+* `TauCeti.eventually_sum_sq_fderiv_apply_single_sub_le`: at a twice differentiable critical point
+  with Hessian `∑ᵢ aᵢ vᵢ wᵢ`, the gradient is `(aᵢ (xᵢ - pᵢ))ᵢ` up to `o(|x - p|)`.
 * `TauCeti.eventually_sum_mul_sq_le_sum_fderiv_apply_single_sq` and
   `TauCeti.eventually_sum_mul_sq_le_and_sum_sum_abs_sub_le`: if moreover every `|aᵢ| ≥ c > 0`, then
   near `p` the gradient is at least that of the weakened model `θ a` for `θ² < 1`, and the Hessian
   is close to `diag(θ a)`.
+* `TauCeti.exists_pos_forall_le_sum_fderiv_apply_single_sq_and_le`: if the critical points of a
+  `C²` function near a finite set `P` lie in `P`, then a lower bound for the gradient and an upper
+  bound for the Hessian far from `P` extend, with other constants, to any positive distance
+  from `P`.
 
 ## References
 
@@ -131,16 +139,15 @@ open Filter Topology
 
 variable [DecidableEq ι] {f : (ι → ℝ) → ℝ} {a p : ι → ℝ}
 
-/-- At a `C²` critical point `p` with Hessian `∑ᵢ aᵢ vᵢ wᵢ`, the gradient of `f` is
-`(aᵢ (xᵢ - pᵢ))ᵢ` up to `o(|x - p|)`: for every `ε > 0`, near `p`,
+/-- At a critical point `p` at which `fderiv ℝ f` is differentiable, with Hessian `∑ᵢ aᵢ vᵢ wᵢ`,
+the gradient of `f` is `(aᵢ (xᵢ - pᵢ))ᵢ` up to `o(|x - p|)`: for every `ε > 0`, near `p`,
 `∑ᵢ (∂ᵢf(x) - aᵢ (xᵢ - pᵢ))² ≤ ε ∑ᵢ (xᵢ - pᵢ)²`. -/
-theorem eventually_sum_sq_fderiv_apply_single_sub_le (hf : ContDiffAt ℝ 2 f p)
+theorem eventually_sum_sq_fderiv_apply_single_sub_le (hf : DifferentiableAt ℝ (fderiv ℝ f) p)
     (hp : fderiv ℝ f p = 0) (ha : ∀ v w, fderiv ℝ (fderiv ℝ f) p v w = ∑ i, a i * v i * w i)
     {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ x in 𝓝 p, ∑ i, (fderiv ℝ f x (Pi.single i 1) - a i * (x i - p i)) ^ 2 ≤
       ε * ∑ i, (x i - p i) ^ 2 := by
-  have hd : HasFDerivAt (fderiv ℝ f) (fderiv ℝ (fderiv ℝ f) p) p :=
-    ((hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).hasFDerivAt
+  have hd : HasFDerivAt (fderiv ℝ f) (fderiv ℝ (fderiv ℝ f) p) p := hf.hasFDerivAt
   set n : ℝ := (Fintype.card ι : ℝ)
   set δ := min 1 (ε / (n + 1))
   have hn : 0 ≤ n := Nat.cast_nonneg _
@@ -179,10 +186,11 @@ theorem eventually_sum_sq_fderiv_apply_single_sub_le (hf : ContDiffAt ℝ 2 f p)
       rw [Real.sq_sqrt hs] at h'
       exact mul_le_mul hnδ h' (sq_nonneg _) hε.le
 
-/-- At a `C²` critical point `p` with Hessian `∑ᵢ aᵢ vᵢ wᵢ`, where every `|aᵢ| ≥ c > 0`, the
-gradient of `f` is at least `θ` times that of the quadratic model near `p` for every `θ² < 1`:
-`∑ᵢ (θ aᵢ (xᵢ - pᵢ))² ≤ |df(x)|²`. -/
-theorem eventually_sum_mul_sq_le_sum_fderiv_apply_single_sq (hf : ContDiffAt ℝ 2 f p)
+/-- At a critical point `p` at which `fderiv ℝ f` is differentiable, with Hessian `∑ᵢ aᵢ vᵢ wᵢ`,
+where every `|aᵢ| ≥ c > 0`, the gradient of `f` is at least `θ` times that of the quadratic model
+near `p` for every `θ² < 1`: `∑ᵢ (θ aᵢ (xᵢ - pᵢ))² ≤ |df(x)|²`. -/
+theorem eventually_sum_mul_sq_le_sum_fderiv_apply_single_sq
+    (hf : DifferentiableAt ℝ (fderiv ℝ f) p)
     (hp : fderiv ℝ f p = 0) (ha : ∀ v w, fderiv ℝ (fderiv ℝ f) p v w = ∑ i, a i * v i * w i)
     {c : ℝ} (hc : 0 < c) (hca : ∀ i, c ≤ |a i|) {θ : ℝ} (hθ : θ ^ 2 < 1) :
     ∀ᶠ x in 𝓝 p, ∑ i, (θ * a i * (x i - p i)) ^ 2 ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2 := by
@@ -237,7 +245,8 @@ theorem eventually_sum_mul_sq_le_and_sum_sum_abs_sub_le (hf : ContDiffAt ℝ 2 f
     exact tendsto_finsetSum _ fun i _ ↦ tendsto_finsetSum _ fun j _ ↦
       (((hf₂.clm_apply continuousAt_const).clm_apply continuousAt_const).sub
         continuousAt_const).abs
-  filter_upwards [eventually_sum_mul_sq_le_sum_fderiv_apply_single_sq hf hp ha hc hca
+  filter_upwards [eventually_sum_mul_sq_le_sum_fderiv_apply_single_sq
+    ((hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero) hp ha hc hca
     (θ := θ) (by nlinarith), hcont.eventually_lt continuousAt_const (by simpa using hη)]
     with x h₁ h₂
   refine ⟨h₁, ?_⟩
@@ -265,6 +274,62 @@ theorem eventually_sum_mul_sq_le_and_sum_sum_abs_sub_le (hf : ContDiffAt ℝ 2 f
     _ ≤ η + (1 - θ) * ∑ i, |a i| := by linarith [h₂]
 
 end Taylor
+
+/-! ### Bounds away from isolated critical points -/
+
+section Isolated
+
+open Metric Set
+
+variable [DecidableEq ι]
+
+/-- If the critical points of a `C²` function `f` within distance `ρ` of a finite set `P` all lie
+in `P`, then lower bounds for the gradient and upper bounds for the Hessian of `f` at distance more
+than `ρ` from `P` extend to distance more than any `ρ' > 0`: in between, the gradient does not
+vanish on a compact set. -/
+theorem exists_pos_forall_le_sum_fderiv_apply_single_sq_and_le {f : (ι → ℝ) → ℝ}
+    (hf : ContDiff ℝ 2 f) {P : Finset (ι → ℝ)} {ρ : ℝ}
+    (hcrit : ∀ x, fderiv ℝ f x = 0 → (∃ p ∈ P, dist x p ≤ ρ) → x ∈ P) {c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hdf : ∀ x, (∀ p ∈ P, ρ < dist x p) → c₀ ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2)
+    {h : ℝ} (hh : ∀ x, (∀ p ∈ P, ρ < dist x p) →
+      ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| ≤ h)
+    {ρ' : ℝ} (hρ' : 0 < ρ') :
+    ∃ c₁ > 0, ∃ h₁, ∀ x, (∀ p ∈ P, ρ' < dist x p) →
+      c₁ ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2 ∧
+        ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| ≤ h₁ := by
+  -- The compact region at distance at most `ρ` from some point of `P` and at least `ρ'` from all.
+  set S := (⋃ p ∈ P, closedBall p ρ) ∩ {x | ∀ p ∈ P, ρ' ≤ dist x p}
+  have hS : IsCompact S := by
+    refine (P.isCompact_biUnion fun p _ ↦ isCompact_closedBall p ρ).inter_right ?_
+    simp only [Set.ofPred_forall]
+    exact isClosed_biInter fun p _ ↦
+      isClosed_le continuous_const (continuous_id.dist continuous_const)
+  have hg : Continuous fun x ↦ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2 :=
+    continuous_finsetSum _ fun i _ ↦
+      ((hf.continuous_fderiv two_ne_zero).clm_apply continuous_const).pow 2
+  have hH : Continuous fun x ↦
+      ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| :=
+    continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦
+      (hf.continuous_fderiv_fderiv_apply le_rfl _ _).abs
+  -- On `S` the gradient does not vanish, so `|df|²` has a positive minimum there.
+  obtain ⟨c₂, hc₂, hc₂S⟩ := hS.exists_forall_le' hg.continuousOn (a := 0) fun x hx ↦ by
+    have hxP : ∃ p ∈ P, dist x p ≤ ρ := by simpa only [mem_iUnion, mem_closedBall, exists_prop]
+      using hx.1
+    have hx₀ : fderiv ℝ f x ≠ 0 := fun h₀ ↦
+      absurd ((hx.2 x (hcrit x h₀ hxP)).trans_eq (dist_self x)) (not_le.2 hρ')
+    refine (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _).lt_of_ne fun h₀ ↦ hx₀ ?_
+    have hi := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ sq_nonneg _).1 h₀.symm
+    exact ContinuousLinearMap.pi_ext_one fun i ↦ by simpa using hi i (Finset.mem_univ i)
+  obtain ⟨H, hHS⟩ := hS.bddAbove_image hH.continuousOn
+  refine ⟨min c₀ c₂, lt_min hc₀ hc₂, max h H, fun x hx ↦ ?_⟩
+  by_cases hxρ : ∀ p ∈ P, ρ < dist x p
+  · exact ⟨(min_le_left _ _).trans (hdf x hxρ), (hh x hxρ).trans (le_max_left _ _)⟩
+  push Not at hxρ
+  obtain ⟨p, hp, hxp⟩ := hxρ
+  have hxS : x ∈ S := ⟨mem_biUnion hp (mem_closedBall.2 hxp), fun q hq ↦ (hx q hq).le⟩
+  exact ⟨(min_le_right _ _).trans (hc₂S x hxS), (hHS ⟨x, hxS, rfl⟩).trans (le_max_right _ _)⟩
+
+end Isolated
 
 end TauCeti
 

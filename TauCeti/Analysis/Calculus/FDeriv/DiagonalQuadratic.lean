@@ -129,15 +129,22 @@ theorem fderiv_fderiv_diagonalQuadratic_apply_single_single [DecidableEq ι] (a 
   by_cases h : i = j
   · subst h
     simp [Pi.single_apply]
-  · simpa [Pi.single_apply, h] using fun h' ↦ absurd h'.symm h
+  · -- Every term `aₖ δᵢₖ δⱼₖ` vanishes, since `k` cannot be both `i` and `j`.
+    simp only [h, ↓reduceIte, fderiv_fderiv_diagonalQuadratic_apply]
+    refine Finset.sum_eq_zero fun k _ ↦ ?_
+    by_cases hk : k = i
+    · simp [hk, h]
+    · simp [hk]
 
 /-- The partial derivatives of the translated quadratic model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` are
 `aᵢ (xᵢ - pᵢ)`. -/
+@[simp]
 theorem fderiv_diagonalQuadratic_comp_sub_apply_single [DecidableEq ι] (a p x : ι → ℝ) (i : ι) :
     fderiv ℝ (fun y ↦ diagonalQuadratic a (y - p)) x (Pi.single i 1) = a i * (x i - p i) := by
   rw [fderiv_comp_sub, fderiv_diagonalQuadratic_apply_single, Pi.sub_apply]
 
 /-- The Hessian of the translated quadratic model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` is `diag(a)`. -/
+@[simp]
 theorem fderiv_fderiv_diagonalQuadratic_comp_sub_apply_single [DecidableEq ι] (a p x : ι → ℝ)
     (i j : ι) :
     fderiv ℝ (fderiv ℝ fun y ↦ diagonalQuadratic a (y - p)) x (Pi.single i 1) (Pi.single j 1) =
