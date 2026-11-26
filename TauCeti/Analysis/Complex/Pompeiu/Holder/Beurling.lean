@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Pompeiu.Holder.Higher
 public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.IteratedFDeriv
 import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
-import TauCeti.Analysis.Complex.Wirtinger.Holder
+import TauCeti.Analysis.Complex.Wirtinger.Holder.Basic
 
 /-!
 # The Beurling operator on `C^{k,α}` data

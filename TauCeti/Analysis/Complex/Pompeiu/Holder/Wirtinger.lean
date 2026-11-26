@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Holder.Gain
-public import TauCeti.Analysis.Complex.Wirtinger.Holder
+public import TauCeti.Analysis.Complex.Wirtinger.Holder.Basic
 
 /-!
 # Hölder bounds for the complex derivative of the Cauchy transform
