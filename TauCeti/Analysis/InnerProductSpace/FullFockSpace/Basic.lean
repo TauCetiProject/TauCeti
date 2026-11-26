@@ -810,17 +810,6 @@ theorem vacuumState_annihilation_mul_annihilation (h k : H) :
     vacuumState 𝕜 H (annihilation 𝕜 h * annihilation 𝕜 k) = 0 := by
   simp
 
-/-- Any operator product with a left creation factor on the left has zero vacuum expectation. -/
-theorem vacuumState_creation_mul (h : H) (T : FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) :
-    vacuumState 𝕜 H (creation 𝕜 h * T) = 0 := by
-  simp
-
-/-- Any operator product with a left annihilation factor on the right has zero vacuum
-expectation. -/
-theorem vacuumState_mul_annihilation (T : FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) (h : H) :
-    vacuumState 𝕜 H (T * annihilation 𝕜 h) = 0 := by
-  simp
-
 end
 
 end VacuumState
