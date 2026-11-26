@@ -301,6 +301,7 @@ variable {H gr}
 
 /-- A chain of `CF⁻` has degree `q` exactly when each of its terms `U ^ k x` has
 `gr(x) - 2 k = q`. -/
+@[simp]
 theorem mem_minusGradedPiece_iff {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]} :
     c ∈ H.minusGradedPiece gr q ↔ ∀ x (k : ℕ), (c x).coeff k ≠ 0 → gr x - 2 * k = q := by
   rw [minusGradedPiece, Module.Basis.mem_span_image]
@@ -308,6 +309,7 @@ theorem mem_minusGradedPiece_iff {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]} 
 
 /-- A chain of `CF^∞` has degree `q` exactly when each of its terms `U ^ k x` has
 `gr(x) - 2 k = q`. -/
+@[simp]
 theorem mem_infinityGradedPiece_iff {q : ℚ} {c : H.Generator →₀ (ZMod 2)[T;T⁻¹]} :
     c ∈ H.infinityGradedPiece gr q ↔ ∀ x (k : ℤ), (c x).coeff k ≠ 0 → gr x - 2 * k = q := by
   rw [infinityGradedPiece, Module.Basis.mem_span_image]
