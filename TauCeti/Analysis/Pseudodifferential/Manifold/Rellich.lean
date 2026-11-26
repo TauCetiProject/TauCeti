@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.Manifold.Parametrix
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+import TauCeti.Geometry.Manifold.Sobolev.ChartReading
 
 /-!
 # Rellich compactness and finite-dimensional kernels on a compact manifold
@@ -23,7 +23,7 @@ chart `e` of the maximal atlas through a cutoff `ψ` as the Schwartz function `�
 (`IsCompact.exists_sum_cutoffPullback_eq_one`), the sum `∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^s}` is a norm
 defining `H^s(M)` up to equivalence, as in Taylor. It is a norm on the smooth functions: a function
 all of whose readings vanish is zero, since `u = ∑ᵢ Ψᵢ u`
-(`TauCeti.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`).
+(`OpenPartialHomeomorph.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`).
 
 **Rellich's theorem for pseudodifferential operators.** If `P` is a classical pseudodifferential
 operator of order `m` (`TauCeti.classicalPseudodifferentialOperators`) and `r < s - m`, the readings
@@ -59,8 +59,6 @@ the other half concerns the range of its extension to the Sobolev spaces of `M`.
 
 ## Main results
 
-* `TauCeti.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function is determined by its
-  readings through cutoffs whose readings on `M` add up to `1`.
 * `TauCeti.isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz`: Rellich's
   theorem for a classical pseudodifferential operator of order `m` on a compact manifold, from
   `H^s` to `H^r` for `r < s - m`.
@@ -95,62 +93,14 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   [T2Space M]
   {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {m : ℝ}
-
-/-- **A function is determined by its readings.** If the readings `ψᵢ ∘ e'ᵢ` on `M` of finitely
-many cutoffs `ψᵢ` in charts `eᵢ` add up to `1`, a smooth function `u` on `M` all of whose readings
-`ψᵢ · (u ∘ eᵢ⁻¹)` vanish is zero, since `u = ∑ᵢ (ψᵢ ∘ eᵢ) u`. -/
-theorem eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero {ι : Type*} [Fintype ι]
-    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
-    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
-    {u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-    (hu : ∀ i, (e i).cutoffPushforwardSchwartz (he i) (ψ i) u = 0) : u = 0 := by
-  ext x
-  have hx : u x = ∑ i, ((e i).cutoffPullback (he i) (ψ i) 1 x : ℂ) * u x := by
-    rw [← Finset.sum_mul, ← Complex.ofReal_sum, hψ x, Complex.ofReal_one, one_mul]
-  rw [hx, Finset.sum_eq_zero fun i _ ↦ ?_]
-  · rfl
-  by_cases hxi : x ∈ (e i).source
-  · simpa [cutoffPullback_one_apply_of_mem (he i) _ hxi, (e i).left_inv hxi, Complex.real_smul]
-      using DFunLike.congr_fun (hu i) (e i x)
-  · rw [cutoffPullback_apply_of_notMem (he i) _ _ hxi, Complex.ofReal_zero, zero_mul]
-
-omit [T2Space M] in
-/-- A reading `φ · (u ∘ e⁻¹)` is fixed by multiplication by a Schwartz function `χ`, chosen
-independently of `u` and equal to `1` on the support of `φ`. -/
-private theorem exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz
-    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
-    ∃ χ : 𝓢(CoordinateSpace n, ℂ), ∀ (t : ℝ) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯),
-      BesselPotentialSpace.smulLeftCLM t χ
-          (SchwartzMap.toBesselPotentialSpaceCLM t 2 (e.cutoffPushforwardSchwartz he φ u)) =
-        SchwartzMap.toBesselPotentialSpaceCLM t 2 (e.cutoffPushforwardSchwartz he φ u) := by
-  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤) φ.hasCompactSupport.isCompact φ.tsupport_subset
-  let χ : 𝓢(CoordinateSpace n, ℂ) :=
-    (θ.hasCompactSupport.comp_left Complex.ofReal_zero).toSchwartzMap
-      (Complex.ofRealCLM.contDiff.comp θ.contDiff)
-  refine ⟨χ, fun t u ↦ BesselPotentialSpace.ext ?_⟩
-  rw [BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
-    TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
-  congr 1
-  ext y
-  rw [SchwartzMap.smulLeftCLM_apply_apply χ.hasTemperateGrowth, cutoffPushforwardSchwartz_apply]
-  have hχ : χ y = θ y := rfl
-  by_cases hy : y ∈ tsupport φ
-  · simp [hχ, hθ.self_of_nhdsSet y hy]
-  · simp [image_eq_zero_of_notMem_tsupport hy]
-
-variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+  [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
 
 /-- **Rellich's theorem for pseudodifferential operators on a compact manifold.** Let `P` be a
 classical pseudodifferential operator of order `m`, `φⱼ` finitely many cutoffs in charts `eⱼ`, and
 `ψᵢ` finitely many cutoffs in charts `e'ᵢ` whose readings `ψᵢ ∘ e'ᵢ` on `M` add up to `1`. For
 `r < s - m`, the readings `(φⱼ · ((P u) ∘ eⱼ⁻¹))ⱼ` in `H^r` of the functions `P u` with
-`∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^s} ≤ B` form a set with compact closure. For `m < 0` and `r = s`, this is
-the compactness of operators of negative order on `H^s(M)`. -/
+`∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^s} ≤ B` form a set with compact closure. For `m < 0`, `r = s` and
+`φ = ψ`, this is the compactness of `P`, on smooth functions, in the chart-reading `H^s` norm. -/
 theorem isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz
     (hP : P ∈ classicalPseudodifferentialOperators m) {κ : Type*}
     {e : κ → OpenPartialHomeomorph M (CoordinateSpace n)}
