@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 
+import TauCeti.Algebra.Module.LinearMap.CompHom
 import TauCeti.Algebra.Module.Projective.Semilinear
 import TauCeti.LinearAlgebra.Matrix.Idempotent.RightRange
 
@@ -63,6 +64,9 @@ The extension of the zero module is zero by the `Subsingleton` instances of
   natural in the module.
 * `TauCeti.BalancedExtension.includeRight_surjective`: along a surjective ring homomorphism,
   every element of `S ⊗_R P` is a tensor `1 ⊗ p`.
+* `TauCeti.BalancedExtension.exists_map_eq_of_surjective`: along a surjective ring homomorphism,
+  every `S`-linear map out of the extension of a projective module is extended from an
+  `R`-linear map.
 * Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
   `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
   generated projective modules to finitely generated projective modules. No flatness or
@@ -602,6 +606,21 @@ instance [Module.Projective R P] : Module.Projective S (BalancedExtension f P) :
   refine .of_lifting_property'' fun F hF ↦ ?_
   obtain ⟨h, hh⟩ := Module.projective_lifting_property_semilinear F hF (includeRight f P)
   exact ⟨lift h, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
+
+/-- **Maps out of the extension of a projective module lift along a surjection.** If `f` is
+surjective and `P` is projective, every `S`-linear map `S ⊗_R P → S ⊗_R P'` is the extension
+`S ⊗_R g` of an `R`-linear map `g : P → P'`: the map `p' ↦ 1 ⊗ p'` is onto
+(`includeRight_surjective`), so `p ↦ φ (1 ⊗ p)` lifts through it. -/
+theorem exists_map_eq_of_surjective (hf : Function.Surjective f) [Module.Projective R P]
+    (φ : BalancedExtension f P →ₗ[S] BalancedExtension f P') : ∃ g : P →ₗ[R] P', map f g = φ := by
+  -- Let `R` act on `S ⊗_R P'` through `f`, so that both `p' ↦ 1 ⊗ p'` and `p ↦ φ (1 ⊗ p)` are
+  -- `R`-linear.
+  let : Module R (BalancedExtension f P') := Module.compHom _ f
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property
+    ((includeRight f P').toLinearMapOfCompHom fun _ _ ↦ rfl)
+    ((φ.comp (includeRight f P)).toLinearMapOfCompHom fun _ _ ↦ rfl)
+    (by simpa using includeRight_surjective (P := P') hf)
+  exact ⟨g, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hg p⟩
 
 end FiniteProjective
 
