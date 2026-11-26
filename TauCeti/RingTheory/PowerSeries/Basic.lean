@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Complements on power series
@@ -30,6 +31,9 @@ coefficientwise membership.
   coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
 * `PowerSeries.map_liftOfSurjective`: mapping `MvPowerSeries.liftOfSurjective hπ f` back along
   `π` recovers `f` as a univariate power series.
+* `PowerSeries.mk_mul_one_sub_X_eq`: if `b d + a (d + 1) = a d + c (d + 1)` for all integers `d`
+  and `a`, `b` vanish at `d₀ - 1`, then the series of `a`, `b`, `c` from degree `d₀` satisfy
+  `(1 - X) H_a = H_c - X H_b`.
 * `PowerSeries.mvCoeff_mem_of_coeff_mem`: converts univariate coefficient membership
   `∀ n, coeff n f ∈ I` to multivariate coefficient membership `∀ d, MvPowerSeries.coeff d f ∈ I`.
 * `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
@@ -94,6 +98,31 @@ theorem map_liftOfSurjective {π : R →+* S} (hπ : Function.Surjective π) (f 
       ← coeff_def (s := Finsupp.single () n) Finsupp.single_eq_same]
 
 end Map
+
+section OneSubX
+
+variable {R : Type*} [CommRing R]
+
+/-- If `b d + a (d + 1) = a d + c (d + 1)` for every integer `d`, and `a` and `b` vanish at
+`d₀ - 1`, then the series of `a`, `b` and `c` starting in degree `d₀` satisfy
+`(1 - X) H_a = H_c - X H_b`. This is the identity of Hilbert series obtained from exact sequences
+`0 → K_d → M_d → M_{d+1} → C_{d+1} → 0`. -/
+theorem mk_mul_one_sub_X_eq {a b c : ℤ → R} {d₀ : ℤ}
+    (h : ∀ d, b d + a (d + 1) = a d + c (d + 1)) (ha : a (d₀ - 1) = 0) (hb : b (d₀ - 1) = 0) :
+    mk (fun n : ℕ ↦ a (d₀ + n)) * (1 - X) =
+      mk (fun n : ℕ ↦ c (d₀ + n)) - X * mk (fun n : ℕ ↦ b (d₀ + n)) := by
+  ext n
+  rw [mul_sub, mul_one, map_sub, map_sub]
+  rcases n with _ | n
+  · have h₀ := h (d₀ - 1)
+    rw [sub_add_cancel, ha, hb] at h₀
+    simp only [coeff_zero_mul_X, coeff_zero_X_mul, coeff_mk, Nat.cast_zero, add_zero]
+    linear_combination h₀
+  · have hn := h (d₀ + n)
+    simp only [coeff_succ_mul_X, coeff_succ_X_mul, coeff_mk, Nat.cast_succ, ← add_assoc]
+    linear_combination hn
+
+end OneSubX
 
 section Coeff
 
