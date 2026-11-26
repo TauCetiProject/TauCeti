@@ -132,7 +132,7 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
     have hYc : HasCompactSupport Y := hasCompactSupport_testField φ
     have hvalue (j : Fin 4) : W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤]
         fun z ↦ Y z j :=
-      W1p.value_ofTestFunctionₗ_ae (φ j)
+      (W1p.value_ofTestFunctionₗ_ae (p := 2) (φ j)).mono fun z hz ↦ by simp [Y, hz]
     have hT := (sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax
       (y := Pi.map (fun _ ↦ W1p.ofTestFunctionₗ volume ⊤ 2) φ) hY hvalue).filter_mono
         (ae_mono (Measure.restrict_coe_opens_top _).ge)

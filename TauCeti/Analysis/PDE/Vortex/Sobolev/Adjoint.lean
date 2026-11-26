@@ -91,10 +91,7 @@ operator, whose zeroth-order coefficients are given by the `L∞` class `a` of t
 leading part acts on the weak gradients of the four coordinates. -/
 def sobolevGaugeFixedAdjoint (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
     (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
-  ∑ j : Fin 4, ((gaugeFixedAdjointFirstOrder.comp
-      (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)).compLpL 2 μ⊤).comp
-        ((W1p.gradientL).comp (ContinuousLinearMap.proj j)) +
-    (gaugeFixedAdjointZerothOrder.holderL μ⊤ ∞ 2 2 a).comp sobolevFieldValues
+  sobolevFirstOrderOperator gaugeFixedAdjointFirstOrder gaugeFixedAdjointZerothOrder a
 
 /-- Almost everywhere, the realization is given by the formula of `L_x*` with the weak gradients
 and the values of the coordinates. -/
@@ -102,30 +99,8 @@ theorem sobolevGaugeFixedAdjoint_apply_ae (a : Lp (EuclideanSpace ℝ (Fin 4)) �
     (η : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevGaugeFixedAdjoint a η =ᵐ[μ⊤] fun z ↦
       gaugeFixedAdjointFirstOrder (fun j ↦ W1p.gradient (η j) z) +
-        gaugeFixedAdjointZerothOrder (a z) (WithLp.toLp 2 fun j ↦ W1p.value (η j) z) := by
-  simp only [sobolevGaugeFixedAdjoint, add_apply,
-    FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.proj_apply,
-    W1p.gradientL_apply]
-  have hg : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
-      (ContinuousLinearMap.compLpL 2 μ⊤
-        (gaugeFixedAdjointFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
-          (W1p.gradient (η j))) z =
-        gaugeFixedAdjointFirstOrder (Pi.single j (W1p.gradient (η j) z)) :=
-    ae_all_iff.2 fun j ↦ (gaugeFixedAdjointFirstOrder.comp
-      (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)).coeFn_compLpL (W1p.gradient (η j))
-  set G := ∑ j : Fin 4, ContinuousLinearMap.compLpL 2 μ⊤
-    (gaugeFixedAdjointFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
-      (W1p.gradient (η j))
-  filter_upwards [Lp.coeFn_add G (gaugeFixedAdjointZerothOrder.holder 2 a (sobolevFieldValues η)),
-    Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
-      ContinuousLinearMap.compLpL 2 μ⊤
-        (gaugeFixedAdjointFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
-          (W1p.gradient (η j)),
-    gaugeFixedAdjointZerothOrder.coeFn_holder (r := 2) a (sobolevFieldValues η), hg,
-    sobolevFieldValues_ae_eq η] with z h₁ h₂ h₃ h₄ h₅
-  rw [h₁, Pi.add_apply, h₂, h₃, h₅]
-  simp only [Finset.sum_apply, h₄, ← map_sum, Finset.univ_sum_single]
+        gaugeFixedAdjointZerothOrder (a z) (WithLp.toLp 2 fun j ↦ W1p.value (η j) z) :=
+  sobolevFirstOrderOperator_apply_ae _ _ a η
 
 /-- On a variation `η` whose coordinates have the coordinates of a `C¹` field `Y` as
 representatives, the realization at the `L∞` class of a field `x` is the classical formal adjoint
@@ -136,13 +111,9 @@ theorem sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint
     {Y : ℂ → EuclideanSpace ℝ (Fin 4)} (hY : ContDiff ℝ 1 Y)
     (hηY : ∀ j, W1p.value (η j) =ᵐ[μ⊤] fun z ↦ Y z j) :
     sobolevGaugeFixedAdjoint a η =ᵐ[μ⊤] gaugeFixedAdjoint x Y := by
-  have hg : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4, W1p.gradient (η j) z = ∇ (fun w ↦ Y w j) z :=
-    ae_all_iff.2 fun j ↦
-      W1p.gradient_ae_eq_of_contDiffOn (η j) ((contDiff_piLp 2).1 hY j).contDiffOn (hηY j)
-  filter_upwards [sobolevGaugeFixedAdjoint_apply_ae a η, hax, hg, ae_all_iff.2 hηY]
-    with z h₁ h₂ h₃ h₄
-  rw [h₁, gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add, h₂]
-  simp_rw [h₃, h₄]
+  filter_upwards [sobolevFirstOrderOperator_ae_eq _ _ hax hY hηY] with z h
+  rw [gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add]
+  exact h
 
 /-! ### Dependence on the coefficient -/
 
@@ -152,64 +123,28 @@ coefficient `a - b`. -/
 theorem sobolevGaugeFixedAdjoint_sub_apply_ae (a b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
     (η : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
     (sobolevGaugeFixedAdjoint a - sobolevGaugeFixedAdjoint b) η =ᵐ[μ⊤] fun z ↦
-      gaugeFixedAdjointZerothOrder (a z - b z) (WithLp.toLp 2 fun j ↦ W1p.value (η j) z) := by
-  filter_upwards [Lp.coeFn_sub (sobolevGaugeFixedAdjoint a η) (sobolevGaugeFixedAdjoint b η),
-    sobolevGaugeFixedAdjoint_apply_ae a η, sobolevGaugeFixedAdjoint_apply_ae b η]
-    with z h h₁ h₂
-  rw [sub_apply, h, Pi.sub_apply, h₁, h₂, map_sub, sub_apply]
-  abel
+      gaugeFixedAdjointZerothOrder (a z - b z) (WithLp.toLp 2 fun j ↦ W1p.value (η j) z) :=
+  sobolevFirstOrderOperator_sub_apply_ae _ _ a b η
 
 /-- The realization is affine in the `L∞` class of the coefficient: it is the realization at `0`
 plus the zeroth-order part with coefficient `a`. -/
 theorem sobolevGaugeFixedAdjoint_eq_add (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
     sobolevGaugeFixedAdjoint a = sobolevGaugeFixedAdjoint 0 +
-      (gaugeFixedAdjointZerothOrder.holderL μ⊤ ∞ 2 2 a).comp sobolevFieldValues := by
-  simp only [sobolevGaugeFixedAdjoint, map_zero, ContinuousLinearMap.zero_comp, add_zero]
+      (gaugeFixedAdjointZerothOrder.holderL μ⊤ ∞ 2 2 a).comp sobolevFieldValues :=
+  sobolevFirstOrderOperator_eq_add _ _ a
 
 /-- The realization is a smooth function of the `L∞` class of the coefficient: it is affine in
 it, the realization at `0` plus the zeroth-order part with coefficient `a`. -/
 theorem contDiff_sobolevGaugeFixedAdjoint {n : WithTop ℕ∞} :
-    ContDiff ℝ n sobolevGaugeFixedAdjoint := by
-  rw [funext sobolevGaugeFixedAdjoint_eq_add]
-  exact contDiff_const.add
-    ((gaugeFixedAdjointZerothOrder.holderL μ⊤ ∞ 2 2).contDiff.clm_comp contDiff_const)
+    ContDiff ℝ n sobolevGaugeFixedAdjoint :=
+  contDiff_sobolevFirstOrderOperator _ _
 
 /-- The realization depends continuously, in operator norm, on the `L∞` class of the
 coefficient. -/
 theorem continuous_sobolevGaugeFixedAdjoint : Continuous sobolevGaugeFixedAdjoint :=
   contDiff_sobolevGaugeFixedAdjoint.continuous (n := 0)
 
-/-! ### Test fields -/
-
-section TestField
-
-variable (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ))
-
-/-- The values of the element of `H¹(ℂ)⁴` given by a quadruple of test functions are the field of
-those test functions. -/
-private theorem sobolevFieldValues_ofTestFunctionₗ_ae :
-    sobolevFieldValues (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤] testField φ := by
-  filter_upwards [sobolevFieldValues_ae_eq (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)),
-    ae_all_iff.2 fun j ↦ W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) (φ j)] with z h₁ h₂
-  rw [h₁]
-  ext j
-  simp [h₂ j]
-
-end TestField
-
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-
-/-- On a field of test functions, the squared `L²` norm of the realization is the integral of the
-squared classical formal adjoint. -/
-private theorem norm_sobolevGaugeFixedAdjoint_ofTestFunctionₗ_sq (hax : a =ᵐ[μ⊤] x)
-    (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
-    ‖sobolevGaugeFixedAdjoint a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
-      ∫ z, ‖gaugeFixedAdjoint x (testField φ) z‖ ^ 2 := by
-  rw [← Lp.integral_norm_sq_eq_norm_sq]
-  have h := sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax
-    ((contDiff_testField φ).of_le (by simp)) fun j ↦ W1p.value_ofTestFunctionₗ_ae (φ j)
-  simp only [Opens.coe_top, Measure.restrict_univ] at h ⊢
-  exact integral_congr_ae (h.mono fun z hz ↦ by simp only [hz])
 
 /-! ### Duality with the realization of `L_x` -/
 
@@ -229,7 +164,8 @@ theorem inner_sobolevGaugeFixedOperator_sobolevFieldValues (hx : Continuous x)
       (continuous_const.inner (sobolevGaugeFixedAdjoint a).continuous)
   · have hV := sobolevFieldValues_ofTestFunctionₗ_ae φ
     have hA := sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax
-      ((contDiff_testField φ).of_le (by simp)) fun j ↦ W1p.value_ofTestFunctionₗ_ae (φ j)
+      (η := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) ((contDiff_testField φ).of_le (by simp))
+      fun j ↦ (W1p.value_ofTestFunctionₗ_ae (p := 2) (φ j)).mono fun z hz ↦ by simp [hz]
     have hy := sobolevFieldValues_ae_eq y
     have h := integral_inner_sobolevGaugeFixedOperator hx hax y
       ((contDiff_testField φ).of_le (by simp)) (hasCompactSupport_testField φ)
@@ -312,7 +248,11 @@ private theorem norm_sq_le_of_testFunction (hx : Continuous x) {M : ℝ} (hM : �
   have hYle : ∫ z, ‖Y z‖ ^ 2 ≤ c⁻¹ * ∫ z, ‖gaugeFixedAdjoint x Y z‖ ^ 2 := by
     rw [le_inv_mul_iff₀ hc]
     exact hgap'
-  rw [norm_sobolevGaugeFixedAdjoint_ofTestFunctionₗ_sq hax]
+  have hL : ‖sobolevGaugeFixedAdjoint a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
+      ∫ z, ‖gaugeFixedAdjoint x Y z‖ ^ 2 := by
+    simp_rw [gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add]
+    exact norm_sobolevFirstOrderOperator_ofTestFunctionₗ_sq _ _ hax φ
+  rw [hL]
   nlinarith [mul_le_mul_of_nonneg_left hYle (by positivity : (0 : ℝ) ≤ 1 + 2 * K ^ 2)]
 
 /-- **The coercive estimate for `L_x*` on `H¹`.** At a `C¹` vortex `x` with `|α| → 1` at infinity
@@ -451,8 +391,8 @@ theorem sobolevGaugeFixedAdjointCokernelEquiv_symm_apply (hx : ContDiff ℝ 1 x)
       Submodule.Quotient.mk (sobolevFieldValues (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)) := by
   simp only [sobolevGaugeFixedAdjointCokernelEquiv, LinearEquiv.symm_trans_apply,
     LinearEquiv.symm_symm, Submodule.quotientEquivOfIsCompl_symm_apply]
-  rw [LinearEquiv.symm_apply_eq, Submodule.quotEquivOfEq_mk]
-  rfl
+  rw [LinearEquiv.symm_apply_eq, Submodule.quotEquivOfEq_mk,
+    Submodule.coe_equivMapOfInjective_apply, ContinuousLinearMap.coe_coe]
 
 /-- **The realization of `L_x*` on `H¹` is Fredholm** at a `C¹` vortex `x` with `|α| → 1` at
 infinity and with `L∞` class `a`, when the kernel of the realization of `L_x` is finite
