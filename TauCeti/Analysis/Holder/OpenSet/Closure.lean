@@ -13,7 +13,7 @@ import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Values on the closure of an element of `C^{k+1,α}(Ω)`
+# Values on the closure of an element of `C^{k,α}(Ω)`
 
 Let `Ω` be a convex open set of a real normed space `E` and `F` a Banach space. An element `f` of
 `C^{k+1,α}(Ω, F)` has derivative bounded by its norm, so on the convex set `Ω` it is Lipschitz with
@@ -63,10 +63,10 @@ variable {k : ℕ} {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [NormedSpac
 
 /-- The extension of an element of `C^{k,α}(Ω)` to the closure of `Ω`, Mathlib's
 `extendFrom Ω`. It agrees with the element on `Ω` (`TauCeti.CkHolderSpaceOn.closureExtend_apply`).
-When `Ω` is convex and `F` complete, its value at a point of the closure is the limit of the
-element along `Ω` there (`TauCeti.CkHolderSpaceOn.tendsto_closureExtend`); in general no such limit
-need exist, and its values at the remaining points of the closure, as outside the closure, carry no
-meaning. -/
+When `Ω` is convex, `F` complete and the element lies in `C^{k+1,α}(Ω)`, its value at a point of
+the closure is the limit of the element along `Ω` there
+(`TauCeti.CkHolderSpaceOn.tendsto_closureExtend`); in general no such limit need exist, and its
+values at the remaining points of the closure, as outside the closure, carry no meaning. -/
 def closureExtend (f : CkHolderSpaceOn k α Ω F) : E → F :=
   extendFrom (Ω : Set E) f.extend
 
