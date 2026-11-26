@@ -456,11 +456,8 @@ filtration. -/
 @[simp]
 theorem filtrationGT_shift (i : ι) (v : N) (k : ℝ) :
     (φ.shift v).filtrationGT i k = φ.filtrationGT i (k - P.root' i v) := by
-  have hk : ((k - P.root' i v : ℝ) : WithTop ℝ) + ↑(P.root' i v) = ↑k := by
-    rw [← WithTop.coe_add, sub_add_cancel]
   ext g
-  simp only [mem_filtrationGT_iff, shift_apply, ← hk,
-    WithTop.add_lt_add_iff_right WithTop.coe_ne_top]
+  simp only [mem_filtrationGT_iff, shift_apply, WithTop.coe_lt_add_coe_iff]
 
 /-- Shifting by `v` translates the value set of `a` by `a v`. -/
 @[simp]

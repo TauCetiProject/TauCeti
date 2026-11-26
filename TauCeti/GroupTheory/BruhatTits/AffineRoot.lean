@@ -65,7 +65,8 @@ theorem primedValueSet_subset_valueSet (i : ι) : φ.primedValueSet i ⊆ φ.val
 
 /-- If twice the root is absent, every value of the root valuation supplies an affine root
 constant. -/
-theorem primedValueSet_eq_of_not_multipliable (hi : ∀ j, P.root j ≠ (2 : R) • P.root i) :
+theorem primedValueSet_eq_valueSet_of_forall_root_ne_two_smul
+    (hi : ∀ j, P.root j ≠ (2 : R) • P.root i) :
     φ.primedValueSet i = φ.valueSet i := by
   refine Set.Subset.antisymm (φ.primedValueSet_subset_valueSet i) fun _k hk ↦ ?_
   obtain ⟨u, hu⟩ := φ.mem_valueSet_iff.mp hk
@@ -79,7 +80,7 @@ theorem primedValueSet_eq_of_not_multipliable (hi : ∀ j, P.root j ≠ (2 : R) 
 theorem primedValueSet_eq_valueSet [CharZero R] [P.IsReduced] (i : ι) :
     φ.primedValueSet i = φ.valueSet i := by
   let := HasUniqueDiv.of_isTorsionFree R M
-  exact φ.primedValueSet_eq_of_not_multipliable fun j hj ↦
+  exact φ.primedValueSet_eq_valueSet_of_forall_root_ne_two_smul fun j hj ↦
     P.nsmul_notMem_range_root (n := 2) ⟨j, hj.trans (ofNat_smul_eq_nsmul R 2 _)⟩
 
 /-- A depth is an affine-root constant precisely when there is an element of the filtration
@@ -244,11 +245,18 @@ theorem rootSubgroup_def (α : AffineRoot φ) : α.rootSubgroup = φ.filtration 
 theorem rootSubgroup_le (α : AffineRoot φ) : α.rootSubgroup ≤ D.U α.gradient :=
   φ.filtration_le_U _ _
 
+/-- The affine-root subgroup contains an element whose valuation equals the constant of the
+affine root. -/
+theorem exists_mem_rootSubgroup_eq_constant (α : AffineRoot φ) :
+    ∃ u : D.U α.gradient, (u : G) ∈ α.rootSubgroup ∧ φ α.gradient u = α.constant := by
+  obtain ⟨u, hu, _⟩ := φ.mem_primedValueSet_iff.mp α.constant_mem
+  rw [α.rootSubgroup_def]
+  exact ⟨u, (φ.coe_mem_filtration_iff u).mpr hu.ge, hu⟩
+
 /-- An affine root has an element of its exact depth, so its subgroup is nontrivial. -/
 theorem rootSubgroup_ne_bot (α : AffineRoot φ) : α.rootSubgroup ≠ ⊥ := by
-  obtain ⟨u, hu⟩ := φ.mem_valueSet_iff.mp (φ.primedValueSet_subset_valueSet _ α.constant_mem)
+  obtain ⟨u, hm, hu⟩ := α.exists_mem_rootSubgroup_eq_constant
   intro h
-  have hm : (u : G) ∈ α.rootSubgroup := (φ.coe_mem_filtration_iff u).mpr hu.ge
   have h1 : u = 1 := Subtype.ext (Subgroup.mem_bot.mp (h ▸ hm))
   simp [h1] at hu
 
@@ -256,11 +264,14 @@ theorem rootSubgroup_ne_bot (α : AffineRoot φ) : α.rootSubgroup ≠ ⊥ := by
 exactly when the value of the root at `x` is at least `r`. -/
 theorem rootSubgroup_le_filtration_iff (α : AffineRoot φ) (x : Apartment φ) (r : ℝ) :
     α.rootSubgroup ≤ x.val.filtration α.gradient r ↔ r ≤ α.eval x := by
-  rw [α.rootSubgroup_def, x.filtration_val, α.eval_def]
-  refine ⟨fun h ↦ ?_, fun h ↦ φ.filtration_antitone _ (sub_le_iff_le_add'.mpr h)⟩
-  obtain ⟨u, hu⟩ := φ.mem_valueSet_iff.mp (φ.primedValueSet_subset_valueSet _ α.constant_mem)
-  have hm := h ((φ.coe_mem_filtration_iff u).mpr hu.ge)
-  exact sub_le_iff_le_add'.mp (WithTop.coe_le_coe.mp (hu ▸ (φ.coe_mem_filtration_iff u).mp hm))
+  rw [x.filtration_val, α.eval_def]
+  constructor
+  · intro h
+    obtain ⟨u, hm, hu⟩ := α.exists_mem_rootSubgroup_eq_constant
+    exact sub_le_iff_le_add'.mp
+      (WithTop.coe_le_coe.mp (hu ▸ (φ.coe_mem_filtration_iff u).mp (h hm)))
+  · rw [α.rootSubgroup_def]
+    exact fun h ↦ φ.filtration_antitone _ (sub_le_iff_le_add'.mpr h)
 
 /-- For affine roots with the same gradient, subgroup inclusion is the reverse of the pointwise
 order. -/
@@ -276,14 +287,14 @@ theorem rootSubgroup_le_rootSubgroup_iff {α β : AffineRoot φ} (hgrad : α.gra
 exactly when the root takes a value strictly above `r` there. -/
 theorem rootSubgroup_le_filtrationGT_iff (α : AffineRoot φ) (x : Apartment φ) (r : ℝ) :
     α.rootSubgroup ≤ x.val.filtrationGT α.gradient r ↔ r < α.eval x := by
-  rw [α.rootSubgroup_def, Apartment.val_def, Valuation.filtrationGT_shift, α.eval_def]
+  rw [x.filtrationGT_val, α.eval_def]
   constructor
   · intro h
-    obtain ⟨u, hu⟩ := φ.mem_valueSet_iff.mp (φ.primedValueSet_subset_valueSet _ α.constant_mem)
-    have hm := h ((φ.coe_mem_filtration_iff u).mpr hu.ge)
+    obtain ⟨u, hm, hu⟩ := α.exists_mem_rootSubgroup_eq_constant
     exact sub_lt_iff_lt_add'.mp
-      (WithTop.coe_lt_coe.mp (hu ▸ (φ.coe_mem_filtrationGT_iff u).mp hm))
+      (WithTop.coe_lt_coe.mp (hu ▸ (φ.coe_mem_filtrationGT_iff u).mp (h hm)))
   · intro hr g hg
+    rw [α.rootSubgroup_def] at hg
     obtain ⟨hgU, hgk⟩ := φ.mem_filtration_iff.mp hg
     exact φ.mem_filtrationGT_iff.mpr
       ⟨hgU, (WithTop.coe_lt_coe.mpr (sub_lt_iff_lt_add'.mpr hr)).trans_le hgk⟩
@@ -335,6 +346,20 @@ theorem eval_transport (α : AffineRoot φ) (b x : Apartment φ) :
     (α.transport b).eval (b.transport x) = α.eval x := by
   simp [eval_def]
   ring
+
+/-- Pulling back the wall in the new coordinates recovers the original wall. -/
+@[simp]
+theorem preimage_wall_transport (α : AffineRoot φ) (b : Apartment φ) :
+    b.transport ⁻¹' (α.transport b).wall = α.wall := by
+  ext x
+  simp
+
+/-- Pulling back the closed half-apartment in the new coordinates recovers the original one. -/
+@[simp]
+theorem preimage_halfApartment_transport (α : AffineRoot φ) (b : Apartment φ) :
+    b.transport ⁻¹' (α.transport b).halfApartment = α.halfApartment := by
+  ext x
+  simp
 
 /-- The affine-root subgroup is independent of the choice of base point. -/
 @[simp]
