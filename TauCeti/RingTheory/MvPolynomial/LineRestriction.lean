@@ -79,6 +79,18 @@ theorem eval_aeval_C_add_C_mul_X (p : MvPolynomial σ R) (a v : σ → R) (t : R
     simp [mul_comm]
   rw [heq, aeval_eq_eval, hpoint]
 
+/-- Evaluation of the affine-line restriction after a change of coefficients `f` is evaluation of
+the polynomial with changed coefficients at the corresponding point. -/
+@[simp]
+theorem eval_map_aeval_C_add_C_mul_X (f : R →+* S) (p : MvPolynomial σ R) (a v : σ → R)
+    (t : S) :
+    ((aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).map f).eval t =
+      eval ((fun i ↦ f (a i)) + t • fun i ↦ f (v i)) (p.map f) := by
+  rw [← Polynomial.coe_mapRingHom, map_aeval_eq_aeval_map f _ (by ext; simp)]
+  simp only [Polynomial.coe_mapRingHom, Polynomial.map_add, Polynomial.map_mul, Polynomial.map_C,
+    Polynomial.map_X]
+  exact eval_aeval_C_add_C_mul_X (p.map f) (fun i ↦ f (a i)) (fun i ↦ f (v i)) t
+
 /-- Restriction to an affine line, after changing coefficients, has degree at most the original
 total degree. -/
 theorem natDegree_eval₂_C_add_C_mul_X_le (p : MvPolynomial σ R) (f : R →+* S)
