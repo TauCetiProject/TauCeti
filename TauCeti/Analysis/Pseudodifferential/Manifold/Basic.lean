@@ -70,6 +70,9 @@ values on compactly supported functions, and hence by its chart compressions.
   `ContMDiffMap.locallyFiniteSum P hP = ∑ᵢ Pᵢ` of classical pseudodifferential operators of
   order `m` is one, provided each `Pᵢ` has outputs supported in a compact set `Sᵢ` and only sees its
   input near `Sᵢ`, with `(Sᵢ)` locally finite. Near a compact set only finitely many `Pᵢ` matter.
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_forall_isCompact`: a properly supported
+  operator which agrees on every compact set with a classical pseudodifferential operator of
+  order `m` is one.
 * `TauCeti.conj_mem_classicalPseudodifferentialOperators_iff`: invariance under diffeomorphisms.
   For a diffeomorphism `Φ : N → M`, the transport `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` of `P` to `N` is a
   classical pseudodifferential operator of order `m` exactly when `P` is one; proper support is
@@ -89,6 +92,10 @@ values on compactly supported functions, and hence by its chart compressions.
   Grothendieck's sense, is a classical pseudodifferential operator of order `m`. Its symbol in a
   chart is the polynomial symbol of the compression, with no smoothing remainder
   (`ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression`).
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_mem_differentialOperators`: more generally,
+  a complex-linear differential operator of order at most `m` on the complex-valued smooth
+  functions, for commutators with complex-valued functions, is a classical pseudodifferential
+  operator of order `m`, being `A + i B` for complexifications `A` and `B` of real ones.
 
 ## References
 
@@ -457,6 +464,27 @@ theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyF
 
 end LocallyFiniteSum
 
+/-- **The class is determined on compact sets.** A properly supported operator `P` is a classical
+pseudodifferential operator of order `m` as soon as it agrees on every compact set `K` with one:
+there is a classical pseudodifferential operator `Q` of order `m` with `P f = Q f` on `K` for
+every `f`. Indeed a chart compression of `P` only evaluates its outputs on a compact set. -/
+theorem mem_classicalPseudodifferentialOperators_of_forall_isCompact {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P)
+    (h : ∀ K : Set M, IsCompact K → ∃ Q ∈ classicalPseudodifferentialOperators m,
+      ∀ f, ∀ x ∈ K, P f x = Q f x) :
+    P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨Q, hQ, hPQ⟩ := h _ (e.isCompact_symm_image_tsupport φ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hQ).2 e he φ ψ
+  refine ⟨a, fun u x ↦ ?_⟩
+  rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+    OpenPartialHomeomorph.complexChartCompression_apply]
+  by_cases hx : φ x = 0
+  · simp [hx]
+  · rw [hPQ _ _ ⟨x, subset_tsupport _ hx, rfl⟩]
+
 /-! ### Invariance under diffeomorphisms -/
 
 section Diffeomorph
@@ -503,8 +531,9 @@ section Multiplication
 
 /-- The cutoff `φ · L (g ∘ e⁻¹)` in a chart `e`, for a complex-valued smooth function `g` on `M`
 and a real-linear functional `L` on `ℂ`. For `L` the real and the imaginary part, these cutoffs
-split `φ · (g ∘ e⁻¹)`, as the next lemma shows. -/
-private def chartPartCutoff {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+split `φ · (g ∘ e⁻¹)` (`TauCeti.chartPartCutoff_re_add_im`), so that multiplying an operator by `g`
+splits its chart compressions (`TauCeti.complexChartCompression_mulLeft_comp`). -/
+def chartPartCutoff {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (L : ℂ →L[ℝ] ℝ)
     (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) : 𝓓(⟨e.target, e.open_target⟩, ℝ) :=
@@ -512,18 +541,45 @@ private def chartPartCutoff {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (g.contMDiff.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas he)))) φ
 
 omit [T2Space M] in
+/-- The cutoff `φ · L (g ∘ e⁻¹)` evaluated at a point of the chart. -/
+@[simp]
+theorem chartPartCutoff_apply {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (L : ℂ →L[ℝ] ℝ)
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (y : CoordinateSpace n) :
+    chartPartCutoff he g L φ y = L (g (e.symm y)) * φ y :=
+  TestFunction.smulLeftCLMOfContDiffOn_apply _ φ y
+
+omit [T2Space M] in
 /-- The cutoffs by the real and imaginary parts of `g` in the chart add up to `φ · (g ∘ e⁻¹)`. -/
-private theorem chartPartCutoff_re_add_im {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+theorem chartPartCutoff_re_add_im {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (y : CoordinateSpace n) :
     (chartPartCutoff he g Complex.reCLM φ y : ℂ) +
         Complex.I * chartPartCutoff he g Complex.imCLM φ y = φ y * g (e.symm y) := by
-  simp only [chartPartCutoff, TestFunction.smulLeftCLMOfContDiffOn_apply, Function.comp_apply,
-    Complex.reCLM_apply, Complex.imCLM_apply, smul_eq_mul]
+  simp only [chartPartCutoff_apply, Complex.reCLM_apply, Complex.imCLM_apply]
   conv_rhs => rw [← Complex.re_add_im (g (e.symm y))]
   push_cast
   ring
+
+/-- **Chart compressions of a product with a function.** In a chart `e`, the compression of `g P`
+by `φ` and `ψ` is the compression of `P` by `φ (Re g)` and `ψ` plus `i` times its compression by
+`φ (Im g)` and `ψ`, where `g` is read in the chart (`TauCeti.chartPartCutoff`). -/
+theorem complexChartCompression_mulLeft_comp {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
+    e.complexChartCompression he φ ψ (LinearMap.mulLeft ℂ g ∘ₗ P) f y =
+      e.complexChartCompression he (chartPartCutoff he g Complex.reCLM φ) ψ P f y +
+        Complex.I *
+          e.complexChartCompression he (chartPartCutoff he g Complex.imCLM φ) ψ P f y := by
+  simp only [OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
+    LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply, Complex.real_smul]
+  linear_combination
+    -P (e.complexCutoffPullback he ψ f) (e.symm y) * chartPartCutoff_re_add_im he g φ y
 
 /-- **The identity in a chart.** The compression of the identity by `φ` and `ψ` in a chart is
 multiplication by `φ ψ`, the quantization of the symbol `φ(x) ψ(x)` of order `0`. -/
@@ -570,12 +626,8 @@ theorem mulLeft_comp_mem_classicalPseudodifferentialOperators {m : ℝ}
   obtain ⟨a₂, ha₂⟩ := hP.2 e he (chartPartCutoff he g Complex.imCLM φ) ψ
   refine ⟨a₁ + Complex.I • a₂, fun u x ↦ ?_⟩
   rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add,
-    ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂, smul_eq_mul]
-  simp only [OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
-    LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply, Complex.real_smul]
-  linear_combination
-    P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) (e.symm x) *
-      chartPartCutoff_re_add_im he g φ x
+    ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂, smul_eq_mul,
+    complexChartCompression_mulLeft_comp]
 
 /-- **Multiplication on the right.** If `P` is a classical pseudodifferential operator of order
 `m`, then so is `u ↦ P (g u)` for every complex-valued smooth function `g`. In a chart, the
@@ -703,5 +755,43 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
       fun e he φ ψ ↦ ⟨_,
       ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression he φ
         ψ ⟨D, hD⟩⟩⟩
+
+/-- **Complex differential operators are classical pseudodifferential operators.** A
+complex-linear operator `Q` on the complex-valued smooth functions on `M` which is a differential
+operator of order at most `m` in Grothendieck's sense, for commutators with multiplication by
+complex-valued smooth functions, is a classical pseudodifferential operator of order `m`. This
+extends `TauCeti.complexifyLinearMap_mem_classicalPseudodifferentialOperators` from
+complexifications of real differential operators to all complex ones. -/
+theorem mem_classicalPseudodifferentialOperators_of_mem_differentialOperators
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℕ}
+    {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      m) :
+    Q ∈ classicalPseudodifferentialOperators (n := n) (M := M) m := by
+  -- `Q = A + i B` for the complexifications of `A u = Re (Q u)` and `B u = Im (Q u)`. Reading `Q`
+  -- on real-valued functions and taking real or imaginary parts gives a real differential
+  -- operator: the inclusion of real functions and the real and imaginary parts intertwine
+  -- multiplication by a real function `b` with multiplication by `b` as a complex function.
+  have hreal {σ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℝ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
+      (hσ : ∀ (b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) y,
+        σ (ContMDiffMap.ofReal b * y) = b * σ y) :
+      σ ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈ differentialOperators ℝ
+        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
+        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m :=
+    comp_comp_mem_differentialOperators
+      (fun b ↦ ⟨ContMDiffMap.ofReal b, fun x ↦ map_mul ContMDiffMap.ofReal b x, hσ b⟩)
+      (restrictScalars_mem_differentialOperators hQ)
+  have hre := hreal (σ := ContMDiffMap.re) fun b y ↦ by
+    ext x
+    simp [ContMDiffMap.re_apply]
+  have him := hreal (σ := ContMDiffMap.im) fun b y ↦ by
+    ext x
+    simp [ContMDiffMap.im_apply]
+  rw [← ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp Q]
+  exact add_mem (complexifyLinearMap_mem_classicalPseudodifferentialOperators hre)
+    (Submodule.smul_mem _ _ (complexifyLinearMap_mem_classicalPseudodifferentialOperators him))
 
 end TauCeti

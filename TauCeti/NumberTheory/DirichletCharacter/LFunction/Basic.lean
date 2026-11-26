@@ -42,6 +42,9 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
   `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
   its analytic orders agree with `ζ`.
+* `DirichletCharacter.entireLFunction`, with `DirichletCharacter.entireLFunction_one` and
+  `DirichletCharacter.entireLFunction_of_ne_one`: the entire function `E_χ`, which is `χ.LFunction`
+  for `χ ≠ 1` and `LFunctionTrivChar₁ N` for `χ = 1`.
 * `DirichletCharacter.meromorphicOrderAt_LFunction_ne_top`,
   `DirichletCharacter.analyticOrderAt_LFunction_ne_top`,
   `DirichletCharacter.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt`,
@@ -60,6 +63,9 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
 * D. Loeffler, M. Stoll, `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
 * M. Stoll, D. Loeffler, T. Tao, `Mathlib.NumberTheory.LSeries.Nonvanishing`.
 * H. Davenport, *Multiplicative Number Theory*, Ch. 4.
+* The function `E_χ` (`DirichletCharacter.entireLFunction`) follows the formal proof in the
+  folder `grh` of https://github.com/lsernau/grh-lean at commit
+  72fead102f663d5c7a407964a13dc0cf9d977207, where it enters `New.logDerivMean`.
 
 The order lemmas are adapted, with the hypothesis `χ ≠ 1` weakened, from chrisflav's
 file `LFunction/Order.lean` in
@@ -106,6 +112,23 @@ theorem analyticOrderAt_LFunctionTrivChar₁_one {ρ : ℂ} (hρ : ρ ≠ 1) :
   have hlin : AnalyticAt ℂ (fun z : ℂ ↦ z - 1) ρ := by fun_prop
   rw [analyticOrderAt_congr hev, analyticOrderAt_mul hlin (analyticOn_riemannZeta ρ hρ),
     hlin.analyticOrderAt_eq_zero.mpr (sub_ne_zero.mpr hρ), zero_add]
+
+/-- The **entire `L`-function** `E_χ` of a Dirichlet character `χ`: its `L`-function if `χ` is
+not principal, and the entire continuation `DirichletCharacter.LFunctionTrivChar₁ N` of
+`(s - 1) L(s, χ)` if it is. -/
+noncomputable def entireLFunction {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) : ℂ → ℂ :=
+  open Classical in if χ = 1 then LFunctionTrivChar₁ N else χ.LFunction
+
+/-- `E_χ` of the principal character is `DirichletCharacter.LFunctionTrivChar₁`. -/
+@[simp]
+theorem entireLFunction_one (N : ℕ) [NeZero N] :
+    entireLFunction (1 : DirichletCharacter ℂ N) = LFunctionTrivChar₁ N := by
+  simp [entireLFunction]
+
+/-- `E_χ` of a non-principal character `χ` is its `L`-function. -/
+theorem entireLFunction_of_ne_one {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N} (hχ : χ ≠ 1) :
+    entireLFunction χ = χ.LFunction := by
+  simp [entireLFunction, hχ]
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 

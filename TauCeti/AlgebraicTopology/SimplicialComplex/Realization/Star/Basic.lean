@@ -66,6 +66,17 @@ theorem mem_openStarRealization_iff_mem_support {v : ι} {x : Realization K} :
 theorem isOpen_openStarRealization (v : ι) : IsOpen (K.openStarRealization v) :=
   isOpen_lt continuous_const ((continuous_apply v).comp (continuous_realization_coe K))
 
+/-- A point lies in the open stars of all vertices of `σ` exactly when its carrier contains
+`σ`. -/
+theorem mem_biInter_openStarRealization_iff {σ : Finset ι} {x : Realization K} :
+    x ∈ ⋂ v ∈ σ, K.openStarRealization v ↔ σ ⊆ x.val.support := by
+  simp only [mem_iInter₂, mem_openStarRealization_iff_mem_support, Finset.subset_iff]
+
+/-- The intersection of the open stars of the vertices of a finite set is open. -/
+theorem isOpen_biInter_openStarRealization (σ : Finset ι) :
+    IsOpen (⋂ v ∈ σ, K.openStarRealization v) :=
+  isOpen_biInter_finset fun v _ => K.isOpen_openStarRealization v
+
 /-- Every realization point belongs to an open vertex star. -/
 theorem exists_mem_openStarRealization (x : Realization K) :
     ∃ v, x ∈ K.openStarRealization v := by
@@ -118,13 +129,10 @@ theorem mem_closedStarRealization_iff {σ : Finset ι} {x : Realization K} :
 finite vertex set. In particular this applies to the face barycentre. -/
 theorem closedStarRealization_mem_nhds {σ : Finset ι} {x : Realization K}
     (hx : σ ⊆ x.val.support) : K.closedStarRealization σ ∈ 𝓝 x := by
-  have hopen := isOpen_biInter_finset fun i (_ : i ∈ σ) => K.isOpen_openStarRealization i
-  have hmem : x ∈ ⋂ i ∈ σ, K.openStarRealization i :=
-    mem_iInter₂.mpr fun i hi => K.mem_openStarRealization_iff_mem_support.mpr (hx hi)
-  refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
-  have hsub : σ ⊆ y.val.support := fun i hi =>
-    K.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
-  rw [mem_closedStarRealization_iff, Finset.union_eq_left.mpr hsub]
+  refine Filter.mem_of_superset ((K.isOpen_biInter_openStarRealization σ).mem_nhds
+    (K.mem_biInter_openStarRealization_iff.mpr hx)) fun y hy => ?_
+  rw [mem_closedStarRealization_iff,
+    Finset.union_eq_left.mpr (K.mem_biInter_openStarRealization_iff.mp hy)]
   exact support_mem K y
 
 variable (v : ι)
@@ -500,14 +508,11 @@ theorem setOf_support_mem_closedStar_mem_nhds (K : PreAbstractSimplicialComplex 
     {x : {x : Realization A // x.val.support ∈ K}} (hx : σ ⊆ x.val.val.support) :
     {y : {x : Realization A // x.val.support ∈ K} |
       y.val.val.support ∈ closedStar K σ} ∈ 𝓝 x := by
-  have hopen := (isOpen_biInter_finset fun i (_ : i ∈ σ) =>
-    A.isOpen_openStarRealization i).preimage
-      (continuous_subtypeVal (p := fun x : Realization A => x.val.support ∈ K))
-  have hmem : x.val ∈ ⋂ i ∈ σ, A.openStarRealization i :=
-    mem_iInter₂.mpr fun i hi => A.mem_openStarRealization_iff_mem_support.mpr (hx hi)
-  refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
-  have hsub : σ ⊆ y.val.val.support := fun i hi =>
-    A.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
+  have hopen := (A.isOpen_biInter_openStarRealization σ).preimage
+    (continuous_subtypeVal (p := fun x : Realization A => x.val.support ∈ K))
+  refine Filter.mem_of_superset
+    (hopen.mem_nhds (A.mem_biInter_openStarRealization_iff.mpr hx)) fun y hy => ?_
+  have hsub : σ ⊆ y.val.val.support := A.mem_biInter_openStarRealization_iff.mp hy
   exact mem_closedStar.mpr ⟨y.property,
       by simpa only [Finset.union_eq_left.mpr hsub] using y.property⟩
 

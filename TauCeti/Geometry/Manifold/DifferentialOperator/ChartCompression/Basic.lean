@@ -248,6 +248,27 @@ theorem exists_cutoffPullback_one_eq [FiniteDimensional ℝ E] {g : C^∞⟮𝓘
   · rw [cutoffPullback_apply_of_notMem he _ _ hp,
       image_eq_zero_of_notMem_tsupport fun h ↦ hp (hg h)]
 
+/-- **A cutoff around a chart region, localized in an open set.** If `ψ` is a cutoff with compact
+support in the target of the chart `e` and `O` is an open subset of `M` containing `e⁻¹(supp ψ)`,
+there is a smooth function `ρ` on `M`, supported in `O`, equal to `1` on `e⁻¹(supp ψ)`. It is read
+from a cutoff in the chart through `OpenPartialHomeomorph.cutoffPullback`. For instance, `O` may be
+the base set of a trivialization of a vector bundle, over which `ρ` cuts off its frames. -/
+theorem exists_tsupport_subset_eq_one [FiniteDimensional ℝ E]
+    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {O : Set M} (hO : IsOpen O)
+    (hψO : e.symm '' tsupport ψ ⊆ O) :
+    ∃ ρ : C^∞⟮𝓘(ℝ, E), M; ℝ⟯, tsupport ρ ⊆ O ∧ ∀ y ∈ tsupport ψ, ρ (e.symm y) = 1 := by
+  -- A cutoff `χ` in the chart, equal to `1` near the support of `ψ` and supported in
+  -- `e(O ∩ e.source)`, read on `M`.
+  obtain ⟨χ, -, hχ, hχO⟩ := TestFunction.exists_cutoff_tsupport_subset
+    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤) ψ.hasCompactSupport.isCompact
+    (e.isOpen_inter_preimage_symm hO)
+    (fun y hy ↦ ⟨ψ.tsupport_subset hy, hψO (mem_image_of_mem _ hy)⟩) inter_subset_left
+  refine ⟨e.cutoffPullback he χ 1, (e.tsupport_cutoffPullback_subset he χ 1).trans
+    (image_subset_iff.2 fun y hy ↦ (hχO hy).2), fun y hy ↦ ?_⟩
+  have hyt : y ∈ e.target := ψ.tsupport_subset hy
+  rw [cutoffPullback_one_apply_of_mem he _ (e.map_target hyt), e.right_inv hyt]
+  exact hχ.self_of_nhdsSet y hy
+
 /-! ### Chart compressions -/
 
 /-- The **chart compression** of an operator `D` on the smooth functions on `M` by cutoffs `φ`

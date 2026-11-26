@@ -14,10 +14,10 @@ import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 For a morphism of schemes `f : X ⟶ Y` and an open `U` of `Y`, Mathlib's `f ∣_ U` is the
 restriction `f ⁻¹ᵁ U ⟶ U`. A property local on the target passes from this restriction to
-every smaller open. A property local on the source holds for a morphism that has it on an open
-neighbourhood of every point of its source, and for a morphism out of a binary coproduct that has
-it on both summands. An open immersion restricts to an isomorphism over
-opens in its range.
+every smaller open, and from the restrictions over a family of opens to their union. A property
+local on the source holds for a morphism that has it on an open neighbourhood of every point of
+its source, and for a morphism out of a binary coproduct that has it on both summands. An open
+immersion restricts to an isomorphism over opens in its range.
 Restricting the source to an open equal to the full preimage gives a pullback square, which
 transfers properties stable under base change to `Scheme.Hom.resLE`. Between affine opens, a
 property attached to a ring-hom property holds for `Scheme.Hom.resLE` iff the ring-hom property
@@ -27,8 +27,12 @@ global functions of the base change.
 
 ## Main results
 
+* `AlgebraicGeometry.morphismRestrictRestrictOfLE`: for opens `V ≤ U`, restricting `f` over `U`
+  and then over the preimage of `V` is isomorphic to restricting `f` over `V`.
 * `AlgebraicGeometry.IsZariskiLocalAtTarget.restrict_of_le`: a property local on the target
   passes from `f ∣_ U` to `f ∣_ V` when `V ≤ U`.
+* `AlgebraicGeometry.IsZariskiLocalAtTarget.restrict_iSup`: a property local on the target passes
+  from `f ∣_ U i` for every `i` to `f ∣_ ⨆ i, U i`.
 * `AlgebraicGeometry.IsZariskiLocalAtSource.of_forall_exists_ι_comp`: a property local on the
   source holds for `f` if every point of `X` has an open neighbourhood `U` with `P (U.ι ≫ f)`.
 * `AlgebraicGeometry.IsZariskiLocalAtSource.coprodDesc`: a property local on the source holds for
@@ -69,17 +73,30 @@ namespace AlgebraicGeometry
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
+/-- For opens `V ≤ U` of the target, restricting `f` over `U` and then over the preimage of `V`
+is isomorphic to restricting `f` over `V`. -/
+noncomputable def morphismRestrictRestrictOfLE {U V : Y.Opens} (hVU : V ≤ U) :
+    Arrow.mk (f ∣_ U ∣_ U.ι ⁻¹ᵁ V) ≅ Arrow.mk (f ∣_ V) :=
+  morphismRestrictRestrict f _ _ ≪≫ morphismRestrictEq f (by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+    exact inf_eq_right.mpr hVU)
+
 /-- A property local on the target passes from the restriction over `U` to the restriction
 over every open `V ≤ U`. -/
 theorem IsZariskiLocalAtTarget.restrict_of_le (P : MorphismProperty Scheme.{u})
     [IsZariskiLocalAtTarget P] {f : X ⟶ Y} {U V : Y.Opens} (h : P (f ∣_ U)) (hVU : V ≤ U) :
-    P (f ∣_ V) := by
-  have himage : U.ι ''ᵁ (U.ι ⁻¹ᵁ V) = V := by
-    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-    exact inf_eq_right.mpr hVU
-  exact (P.arrow_mk_iso_iff
-    (morphismRestrictRestrict f _ _ ≪≫ morphismRestrictEq f himage)).mp
+    P (f ∣_ V) :=
+  (P.arrow_mk_iso_iff (morphismRestrictRestrictOfLE f hVU)).mp
     (IsZariskiLocalAtTarget.restrict h _)
+
+/-- A property local on the target that holds for the restrictions of `f` over a family of opens
+holds for the restriction of `f` over their union. -/
+theorem IsZariskiLocalAtTarget.restrict_iSup (P : MorphismProperty Scheme.{u})
+    [IsZariskiLocalAtTarget P] {f : X ⟶ Y} {ι : Sort*} {U : ι → Y.Opens}
+    (h : ∀ i, P (f ∣_ U i)) : P (f ∣_ ⨆ i, U i) := by
+  refine IsZariskiLocalAtTarget.of_forall_exists_morphismRestrict fun x ↦ ?_
+  obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp x.property
+  exact ⟨_, hi, (P.arrow_mk_iso_iff (morphismRestrictRestrictOfLE f (le_iSup U i))).mpr (h i)⟩
 
 /-- A property local on the source holds for a morphism if every point of its source has an
 open neighbourhood on which it holds. -/
