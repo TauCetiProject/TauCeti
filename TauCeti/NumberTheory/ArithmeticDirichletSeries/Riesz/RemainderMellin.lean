@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.LogDeriv
 import Mathlib.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Meromorphic Mellin expression for a first Riesz remainder
@@ -189,5 +190,30 @@ theorem _root_.Meromorphic.rieszRemainderMellin_simplePole {L : ℂ → ℂ}
   have hm := (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
   refine ⟨?_, (ha.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hH hrepr).trans hval⟩
   exact (meromorphicOrderAt_eq_int_iff hm).mpr ⟨H, ha, hH, hrepr⟩
+
+/-- Away from `0` and `1`, the Mellin expression has a pole exactly where the input has
+nonzero order, provided the order of the input is finite. In particular a regular nonvanishing
+germ does not produce a pole, even if the totalized input is not in normal form. -/
+theorem _root_.Meromorphic.meromorphicOrderAt_rieszRemainderMellin_neg_iff {L : ℂ → ℂ}
+    (hL : Meromorphic L) {z : ℂ} (hz₀ : z ≠ 0) (hz₁ : z ≠ 1)
+    (hfin : meromorphicOrderAt L z ≠ ⊤) :
+    meromorphicOrderAt (rieszRemainderMellin L) z < 0 ↔ meromorphicOrderAt L z ≠ 0 := by
+  lift meromorphicOrderAt L z to ℤ using hfin with n hn
+  rcases eq_or_ne n 0 with rfl | hne
+  · suffices 0 ≤ meromorphicOrderAt (rieszRemainderMellin L) z by simp [not_lt.mpr this]
+    obtain ⟨H, hH, hz, heq⟩ := hL.exists_analyticAt_mul_rieszRemainderMellin hz₀ hz₁ hn.symm
+    have hord := hH.meromorphicOrderAt_pos_iff_eq_zero.mpr (by simpa using hz)
+    have hlin : MeromorphicAt (fun s : ℂ ↦ s - z) z :=
+      (analyticAt_id.sub analyticAt_const).meromorphicAt
+    have hmul := meromorphicOrderAt_mul hlin
+      (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
+    simp only [Pi.mul_def, meromorphicOrderAt_id_sub_const] at hmul
+    rw [← meromorphicOrderAt_congr heq, hmul] at hord
+    by_contra! hneg
+    lift meromorphicOrderAt (rieszRemainderMellin L) z to ℤ using (hneg.trans_le le_top).ne with m
+    norm_cast at hord hneg
+    omega
+  · have hneg : (-1 : WithTop ℤ) < 0 := by decide
+    simp [(hL.rieszRemainderMellin_simplePole hz₀ hz₁ hn.symm hne).1, hne, hneg]
 
 end TauCeti
