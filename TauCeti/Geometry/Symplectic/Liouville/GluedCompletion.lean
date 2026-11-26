@@ -262,11 +262,6 @@ theorem mfderiv_glueInr_apply_prodVectorField
   · rw [mextDerivₗ_apply]
     exact SmoothForm.interior_mextDeriv_symplectization β
 
-/-- The constant vector field `1` on `ℝ`, read through the canonical identification of each
-tangent space of `ℝ` with `ℝ`, is the constant function `1`. -/
-private theorem constVectorField_one_eq : constVectorField (1 : ℝ) = fun _ ↦ (1 : ℝ) :=
-  funext fun z ↦ by rw [constVectorField_apply, NormedSpace.fromTangentSpace_symm_apply]
-
 /-- **The integral curves of the Liouville field on the end** are the lines `τ ↦ (t + τ, s)` of
 the cylinder, read in the glued manifold. -/
 theorem isMIntegralCurve_glueInr
@@ -280,7 +275,7 @@ theorem isMIntegralCurve_glueInr
   have hline : IsMIntegralCurve (fun τ : ℝ ↦ ((y.1 + τ, y.2) : ℝ × S))
       (prodVectorField (constVectorField (1 : ℝ)) (0 : (s : S) → TangentSpace J s)) := by
     refine isMIntegralCurve_prodVectorField_iff.2 ⟨?_, isMIntegralCurve_const rfl⟩
-    rw [constVectorField_one_eq]
+    rw [constVectorField_eq]
     simpa only [smul_eq_mul, mul_one] using isMIntegralCurve_translation (1 : ℝ) y.1
   rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hline ⊢
   exact hline.map_of_mfderiv_eq (fun _ _ ↦ (hr _).mdifferentiableAt (by simp))
@@ -338,7 +333,7 @@ private theorem contMDiffAt_extend_glueInr_and_mvfderiv
   -- The tangent space of `ℝ × S` is a product only up to unfolding `TangentSpace`, so
   -- `ContinuousLinearMap.coe_fst'` does not rewrite here; the projection `fst v = v.1` holds by
   -- unfolding, and `prodVectorField_fst` computes `v.1`.
-  exact (prodVectorField_fst _ _ y).trans (congrFun constVectorField_one_eq y.1)
+  exact (prodVectorField_fst _ _ y).trans (congrFun (constVectorField_eq (1 : ℝ)) y.1)
 
 variable [T2Space Φ.toOpenPartialHomeomorph.glueData.toGlueData.glued] [J.Boundaryless]
 
@@ -421,12 +416,17 @@ theorem isLiouvilleCompletion_glueForm [FiniteDimensional ℝ F] [CompactSpace S
   have hZ := hω.interior_interiorEquiv_symm (Φ.glueForm hl hr α β.symplectization hαβ)
   have hZs : ContMDiff (𝓘(ℝ).prod J) (𝓘(ℝ).prod J).tangent ∞ (T% Z) :=
     (hω.interiorEquiv.symm (Φ.glueForm hl hr α β.symplectization hαβ)).contMDiff
-  refine ⟨⟨hω, (mextDerivₗ_apply _ _ _).symm, isCompact_compl_image_glueInr_Ioi hsource hc' hK',
-    by simp [ModelWithCorners.interior_eq_univ], ⟨Z, hZs, hZ,
-      extend Φ.toOpenPartialHomeomorph.glueInr (fun y : ℝ × S ↦ max y.1 c') (fun _ ↦ c'), 0,
-      continuous_extend_glueInr hsource hc'.le, compl_image_glueInr_Ioi_eq_setOf_extend_le hc'.le,
-      ?_⟩⟩, Z, hZ,
-    isCompleteVectorField_of_interior_glueForm hω hZ (hZs.of_le (by simp)) hcompl, ?_⟩
+  refine
+    { isNondegenerate := hω
+      mextDeriv_eq := (mextDerivₗ_apply _ _ _).symm
+      isCompact := isCompact_compl_image_glueInr_Ioi hsource hc' hK'
+      subset_interior := by simp [ModelWithCorners.interior_eq_univ]
+      exists_liouville_outward := ⟨Z, hZs, hZ,
+        extend Φ.toOpenPartialHomeomorph.glueInr (fun y : ℝ × S ↦ max y.1 c') (fun _ ↦ c'), 0,
+        continuous_extend_glueInr hsource hc'.le, compl_image_glueInr_Ioi_eq_setOf_extend_le hc'.le,
+        ?_⟩
+      exists_isCompleteVectorField := ⟨Z, hZ,
+        isCompleteVectorField_of_interior_glueForm hω hZ (hZs.of_le (by simp)) hcompl, ?_⟩ }
   · -- Along the level `{f = 0}`, the boundary `{0} × S`, `f` is the collar coordinate.
     intro p hp
     by_cases hq : ∃ y, Φ.toOpenPartialHomeomorph.glueInr y = p
