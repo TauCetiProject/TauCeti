@@ -142,6 +142,13 @@ end Span
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {θ : L ≃ₗ⁅ℝ⁆ L} {𝔞 : Submodule ℝ L}
   (hθ : θ.IsCartanInvolution) (h𝔞 : θ.IsMaximalAbelianInP 𝔞)
 
+include hθ h𝔞 in
+/-- The span of the restricted roots, in the form `RootPairing.mk''` takes it. -/
+private theorem span_range_restrictedRoots_eq_top :
+    Submodule.span ℝ (range (Function.Embedding.subtype (· ∈ 𝔞.restrictedRoots))) = ⊤ := by
+  rw [Function.Embedding.coe_subtype, Subtype.range_coe]
+  exact hθ.span_restrictedRoots_eq_top h𝔞.le_cartanP fun _ hx _ hy ↦ h𝔞.lie_eq_zero hx hy
+
 /-- **The restricted root pairing.** For a Cartan involution `θ` of a real Lie algebra and a
 maximal abelian subspace `𝔞` of `𝔭`, the root pairing indexed by the restricted roots `Σ`, on
 `(𝔞*, 𝔞)` with the evaluation pairing, with roots `λ` and coroots
@@ -158,9 +165,7 @@ noncomputable def restrictedRootPairing : RootPairing 𝔞.restrictedRoots ℝ (
       exact ⟨⟨_, hθ.sub_smul_mem_restrictedRoots h𝔞 μ.property ν.property⟩, by
         simp only [Function.Embedding.coe_subtype, preReflection_apply, LinearMap.flip_apply,
           LinearMap.id_apply, restrictedCorootEmbedding_apply]⟩)
-    (by
-      rw [Function.Embedding.coe_subtype, Subtype.range_coe]
-      exact hθ.span_restrictedRoots_eq_top h𝔞.le_cartanP fun _ hx _ hy ↦ h𝔞.lie_eq_zero hx hy)
+    (hθ.span_range_restrictedRoots_eq_top h𝔞)
 
 @[simp]
 theorem restrictedRootPairing_toLinearMap_apply (f : Dual ℝ 𝔞) (H : 𝔞) :
@@ -178,6 +183,7 @@ theorem restrictedRootPairing_coroot (μ : 𝔞.restrictedRoots) :
   (rfl)
 
 /-- The pairing of `λ` with the coroot of `μ` is `λ(H'_μ)`. -/
+@[simp]
 theorem restrictedRootPairing_pairing (μ ν : 𝔞.restrictedRoots) :
     (hθ.restrictedRootPairing h𝔞).pairing μ ν =
       (μ : Dual ℝ 𝔞) (hθ.restrictedCoroot h𝔞.le_cartanP ν) :=
@@ -189,7 +195,7 @@ instance isCrystallographic_restrictedRootPairing :
   refine ⟨fun μ ν ↦ ?_⟩
   obtain ⟨z, hz⟩ := hθ.exists_int_apply_restrictedCoroot h𝔞 ν.property
     (Submodule.mem_restrictedRoots.mp μ.property).2
-  exact ⟨z, by simp [restrictedRootPairing_pairing, hz]⟩
+  exact ⟨z, by simp [hz]⟩
 
 /-- **The restricted root pairing is a root system**: the roots span `𝔞*` and the coroots span
 `𝔞`. -/
@@ -197,12 +203,8 @@ instance isRootSystem_restrictedRootPairing :
     (hθ.restrictedRootPairing h𝔞).IsRootSystem := by
   have := hθ.finiteDimensional
   have : Finite 𝔞.restrictedRoots := (hθ.finite_restrictedRoots 𝔞).to_subtype
-  refine RootPairing.isRootSystem_mk'' (hsp := ?_) fun μ ν ↦ ?_
-  · rw [Function.Embedding.coe_subtype, Subtype.range_coe]
-    exact hθ.span_restrictedRoots_eq_top h𝔞.le_cartanP fun _ hx _ hy ↦ h𝔞.lie_eq_zero hx hy
-  obtain ⟨z, hz⟩ := hθ.exists_int_apply_restrictedCoroot h𝔞 ν.property
-    (Submodule.mem_restrictedRoots.mp μ.property).2
-  exact ⟨z, by simp [hz, restrictedCorootEmbedding_apply]⟩
+  exact RootPairing.isRootSystem_mk'' (hsp := hθ.span_range_restrictedRoots_eq_top h𝔞)
+    (hθ.isCrystallographic_restrictedRootPairing h𝔞).exists_value
 
 include hθ h𝔞 in
 /-- **The restricted root system**: the restricted roots of a Cartan involution of a real Lie
