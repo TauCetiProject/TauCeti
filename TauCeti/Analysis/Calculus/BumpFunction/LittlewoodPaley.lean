@@ -81,7 +81,9 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   of the partition is the finite sum `∑_{N < i < k + L} ψᵢ` on the support of `ψₖ`.
 * `ContDiffBump.sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le` and
   `ContDiffBump.inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le`: on the ball of radius
-  `2^N φ.rIn`, `∑_{j ≤ N} ψⱼ = 1` and `ψⱼ = 0` for `j > N`.
+  `2^N φ.rIn`, `∑_{j ≤ N} ψⱼ = 1` and `ψⱼ = 0` for `j > N`; outside the ball of radius
+  `2^N φ.rOut`, `∑_{j ≤ N} ψⱼ = 0`
+  (`ContDiffBump.sum_inhomogeneousLittlewoodPaley_range_eq_zero_of_le_norm`).
 * `ContDiffBump.inhomogeneousLittlewoodPaley_neg`: the pieces `ψⱼ` are even.
 * `ContDiffBump.inhomogeneousLittlewoodPaley_dilate`: the partition of the dilation
   `ContDiffBump.dilate` of `φ` is the dilation of the partition of `φ`.
@@ -663,6 +665,16 @@ theorem sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le {N : ℕ} {ξ :
   rw [φ.sum_inhomogeneousLittlewoodPaley_range, φ.one_of_mem_closedBall]
   rw [mem_closedBall_zero_iff, norm_inv_smul_of_nonneg (pow_nonneg zero_le_two _),
     div_le_iff₀ (pow_pos two_pos _), mul_comm]
+  exact hξ
+
+/-- **Finite cutoff.** Outside the open ball of radius `2^N φ.rOut`, the partial sum
+`∑_{j ≤ N} ψⱼ` vanishes. -/
+theorem sum_inhomogeneousLittlewoodPaley_range_eq_zero_of_le_norm {N : ℕ} {ξ : E}
+    (hξ : 2 ^ N * φ.rOut ≤ ‖ξ‖) :
+    ∑ j ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaley j ξ = 0 := by
+  rw [φ.sum_inhomogeneousLittlewoodPaley_range, φ.zero_of_le_dist]
+  rw [dist_zero_right, norm_inv_smul_of_nonneg (pow_nonneg zero_le_two _),
+    le_div_iff₀ (pow_pos two_pos _), mul_comm]
   exact hξ
 
 /-- **Finite cutoff.** On the closed ball of radius `2^N φ.rIn`, every piece `ψⱼ` with `N < j`

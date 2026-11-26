@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 
 /-!
 # The periodic little Besov spaces
@@ -33,15 +34,14 @@ at `p = ∞` as well.
 ## The argument
 
 The decay of the weighted blocks is a closed condition
-(`TauCeti.UnitAddTorus.BesovSpace.isClosed_setOf_tendsto_rpow_mul_norm_littlewoodPaleyBlockLp`,
-proved as `TauCeti.BesovSpace.isClosed_setOf_tendsto_rpow_mul_norm_block` is on `ℝᵈ`), since each
-weighted block is at most the norm, and it holds for trigonometric polynomials, which
-have only finitely many nonzero blocks. Conversely, let `S_N c = ∑_{i ≤ N} ψᵢ c` be the smooth
-truncation of the coefficients, a trigonometric polynomial. Since `∑ᵢ ψᵢ = 1` and `ψₖ ψᵢ = 0` for
-`|i - k| ≥ L`, the block `Δₖ (c - S_N c)` is the finite sum `∑_{N < i < k + L} Δₖ (ψᵢ c)`, whose
-nonzero terms have `|i - k| < L` and are bounded in `Lᵖ` by `‖Δᵢ c‖_p`, uniformly in the indices.
-So `‖c - S_N c‖_{B^s_{p,∞}}` is at most a constant times `sup_{i > N} 2^{is} ‖Δᵢ c‖_p`, which tends
-to `0` when the weighted blocks of `c` do.
+(`TauCeti.UnitAddTorus.BesovSpace.isClosed_setOf_tendsto_rpow_mul_norm_littlewoodPaleyBlockLp`):
+each weighted block is at most the norm, so that the weighted blocks are equicontinuous. It holds
+for trigonometric polynomials, which have only finitely many nonzero blocks. Conversely, let
+`S_N c = ∑_{i ≤ N} ψᵢ c` be the smooth truncation of the coefficients, a trigonometric polynomial.
+Since `∑ᵢ ψᵢ = 1` and `ψₖ ψᵢ = 0` for `|i - k| ≥ L`, the block `Δₖ (c - S_N c)` is the finite sum
+`∑_{N < i < k + L} Δₖ (ψᵢ c)`, whose nonzero terms have `|i - k| < L` and are bounded in `Lᵖ` by
+`‖Δᵢ c‖_p`, uniformly in the indices. So `‖c - S_N c‖_{B^s_{p,∞}}` is at most a constant times
+`sup_{i > N} 2^{is} ‖Δᵢ c‖_p`, which tends to `0` when the weighted blocks of `c` do.
 
 ## Main declarations
 
@@ -116,11 +116,8 @@ private theorem finite_support_truncation (N : ℕ) (c : (d → ℤ) → ℂ) :
   simp only [Set.mem_ofPred_eq, not_le] at hlt
   refine hn ?_
   simp only [truncation]
-  rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range, φ.zero_of_le_dist,
+  rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range_eq_zero_of_le_norm hlt.le,
     Complex.ofReal_zero, zero_mul]
-  rw [dist_zero_right, norm_smul, norm_inv, Real.norm_of_nonneg (by positivity),
-    le_inv_mul_iff₀ (by positivity)]
-  exact hlt.le
 
 /-- The blocks of the remainder `c - S_N c` of the smooth truncation are the finite sums
 `Δₖ (c - S_N c) = ∑_{N < i < k + L} Δₖ (ψᵢ c)`, when `ψₖ ψᵢ = 0` for `i ≥ k + L`. -/
@@ -141,39 +138,6 @@ private theorem littlewoodPaleyBlockLp_sub_truncation {L k : ℕ}
   simp only [truncation, Pi.sub_apply, Finset.sum_apply, ← Finset.sum_mul]
   linear_combination h
 
-/-- **A near-diagonal term of the remainder.** If `ψᵢ ψₖ = 0` for `|i - k| ≥ L` and
-`‖Δₖ (ψᵢ c)‖_p ≤ C ‖Δᵢ c‖_p` for all indices, then the term `Δₖ (ψᵢ c)`, weighted at `k`, vanishes
-unless `k < i + L`, and is then at most `C 2^{|s| L} 2^{is} ‖Δᵢ c‖_p` when `i < k + L`. -/
-private theorem rpow_mul_norm_littlewoodPaleyBlockLp_mul_le {L : ℕ}
-    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ,
-      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
-    {C : ℝ} (hC : ∀ (j k : ℕ) (c : (d → ℤ) → ℂ), ‖littlewoodPaleyBlockLp φ p j
-      (fun n ↦ (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * c n)‖ ≤
-        C * ‖littlewoodPaleyBlockLp φ p k c‖)
-    {i k : ℕ} (hik : i < k + L) (c : (d → ℤ) → ℂ) :
-    2 ^ (s * k) * ‖littlewoodPaleyBlockLp φ p k
-        (fun n ↦ (φ.inhomogeneousLittlewoodPaley i (latticePoint n) : ℂ) * c n)‖ ≤
-      if k < i + L then C * 2 ^ (|s| * L) * (2 ^ (s * i) * ‖littlewoodPaleyBlockLp φ p i c‖)
-      else 0 := by
-  split_ifs with hki
-  · -- `|k - i| ≤ L`, so the weight at `k` is at most `2^{|s| L}` times the weight at `i`.
-    have hw : (2 : ℝ) ^ (s * k) ≤ 2 ^ (|s| * L) * 2 ^ (s * i) := by
-      rw [← Real.rpow_add two_pos]
-      refine Real.rpow_le_rpow_of_exponent_le one_le_two ?_
-      have h₁ : (i : ℝ) ≤ k + L := by exact_mod_cast hik.le
-      have h₂ : (k : ℝ) ≤ i + L := by exact_mod_cast hki.le
-      have hd : |(k : ℝ) - i| ≤ L := abs_le.2 ⟨by linarith, by linarith⟩
-      have := abs_mul s ((k : ℝ) - i) ▸ le_abs_self (s * ((k : ℝ) - i))
-      nlinarith [abs_nonneg s, abs_nonneg ((k : ℝ) - i)]
-    calc 2 ^ (s * k) * ‖littlewoodPaleyBlockLp φ p k
-          (fun n ↦ (φ.inhomogeneousLittlewoodPaley i (latticePoint n) : ℂ) * c n)‖
-        ≤ 2 ^ (|s| * L) * 2 ^ (s * i) * (C * ‖littlewoodPaleyBlockLp φ p i c‖) := by
-          gcongr
-          exact hC k i c
-      _ = C * 2 ^ (|s| * L) * (2 ^ (s * i) * ‖littlewoodPaleyBlockLp φ p i c‖) := by ring
-  · rw [littlewoodPaleyBlockLp_mul_eq_zero (fun ξ ↦ by
-      rw [mul_comm]; exact hL i k (by omega) ξ), norm_zero, mul_zero]
-
 variable (φ s) in
 /-- **The truncation estimate.** There is `K ≥ 0`, depending only on `φ` and `s`, such that for
 every `1 ≤ p ≤ ∞`, every `N`, every `ε ≥ 0` and every formal Fourier series `c` whose weighted
@@ -184,41 +148,37 @@ private theorem exists_rpow_mul_norm_littlewoodPaleyBlockLp_sub_truncation_le :
       0 ≤ ε → (∀ i, N < i → 2 ^ (s * i) * ‖littlewoodPaleyBlockLp φ p i c‖ ≤ ε) →
       ∀ k : ℕ, 2 ^ (s * k) * ‖littlewoodPaleyBlockLp φ p k (c - truncation φ N c)‖ ≤ K * ε := by
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
-  obtain ⟨C, hC0, hC⟩ := exists_norm_littlewoodPaleyBlockLp_mul_le φ
-  refine ⟨2 * L * (C * 2 ^ (|s| * L)), by positivity, fun p _ N ε c hε hc k ↦ ?_⟩
-  rw [littlewoodPaleyBlockLp_sub_truncation (fun i hi ξ ↦ hL k i hi ξ)]
-  -- Only the indices `N < i < k + L` with `k < i + L` contribute, each with at most
-  -- `C 2^{|s| L} ε`; there are at most `2 L` of them.
-  set S := (Finset.Ico (N + 1) (k + L)).filter fun i ↦ k < i + L
-  have hterm : ∀ i ∈ Finset.Ico (N + 1) (k + L),
-      2 ^ (s * k) * ‖littlewoodPaleyBlockLp φ p k
-          (fun n ↦ (φ.inhomogeneousLittlewoodPaley i (latticePoint n) : ℂ) * c n)‖ ≤
-        if k < i + L then C * 2 ^ (|s| * L) * ε else 0 := fun i hi ↦ by
-    rw [Finset.mem_Ico] at hi
-    refine (rpow_mul_norm_littlewoodPaleyBlockLp_mul_le hL (fun j k c ↦ hC φ p j k c) hi.2
-      c).trans ?_
-    split_ifs
-    exacts [by gcongr; exact hc i (by omega), le_rfl]
-  have hcard : (S.card : ℝ) ≤ 2 * L := by
-    have hsub : S ⊆ Finset.Ico (k + 1 - L) (k + L) := fun i hi ↦ by
-      simp only [S, Finset.mem_filter, Finset.mem_Ico] at hi ⊢
+  obtain ⟨C, -, hC⟩ := exists_norm_littlewoodPaleyBlockLp_mul_le φ
+  refine ⟨max C 0 * 2 ^ (|s| * L) * (2 * L), by positivity, fun p _ N ε c hε hc k ↦ ?_⟩
+  -- The remainder block is the sum over the window `k - L ≤ i < k + L` of the terms `Δₖ (ψᵢ c)`
+  -- with `N < i`: the terms with `i < k - L` vanish, as then `ψᵢ ψₖ = 0`.
+  have hsum : littlewoodPaleyBlockLp φ p k (c - truncation φ N c) =
+      ∑ i ∈ Finset.Ico (k - L) (k + L), if N < i then littlewoodPaleyBlockLp φ p k
+        (fun n ↦ (φ.inhomogeneousLittlewoodPaley i (latticePoint n) : ℂ) * c n) else 0 := by
+    rw [littlewoodPaleyBlockLp_sub_truncation (fun i hi ξ ↦ hL k i hi ξ), ← Finset.sum_filter]
+    refine (Finset.sum_subset (fun i hi ↦ ?_) fun i hi hi' ↦ ?_).symm
+    · simp only [Finset.mem_filter, Finset.mem_Ico] at hi ⊢
       omega
-    have h := Finset.card_le_card hsub
-    rw [Nat.card_Ico] at h
-    exact_mod_cast h.trans (by omega : k + L - (k + 1 - L) ≤ 2 * L)
-  calc 2 ^ (s * k) * ‖∑ i ∈ Finset.Ico (N + 1) (k + L), littlewoodPaleyBlockLp φ p k
-        (fun n ↦ (φ.inhomogeneousLittlewoodPaley i (latticePoint n) : ℂ) * c n)‖
-      ≤ ∑ i ∈ Finset.Ico (N + 1) (k + L), 2 ^ (s * k) * ‖littlewoodPaleyBlockLp φ p k
-          (fun n ↦ (φ.inhomogeneousLittlewoodPaley i (latticePoint n) : ℂ) * c n)‖ := by
-        rw [← Finset.mul_sum]
+    · simp only [Finset.mem_filter, Finset.mem_Ico] at hi hi'
+      exact littlewoodPaleyBlockLp_mul_eq_zero (fun ξ ↦ by
+        rw [mul_comm]; exact hL i k (by omega) ξ) c
+  rw [hsum]
+  refine (TauCeti.two_rpow_mul_norm_sum_Ico_le s (C := C)
+    (x := fun i ↦ if N < i then littlewoodPaleyBlockLp φ p i c else 0) (fun i ↦ ?_) k L).trans ?_
+  · split_ifs
+    exacts [hC φ p k i c, by rw [norm_zero, mul_zero]]
+  -- Each weighted term is at most `ε`, and the window has at most `2 L` indices.
+  rw [mul_assoc _ (2 * (L : ℝ))]
+  gcongr
+  calc ∑ i ∈ Finset.Ico (k - L) (k + L),
+        2 ^ (s * i) * ‖if N < i then littlewoodPaleyBlockLp φ p i c else 0‖
+      ≤ ∑ _i ∈ Finset.Ico (k - L) (k + L), ε := Finset.sum_le_sum fun i _ ↦ by
+        split_ifs with hi
+        exacts [hc i hi, by rwa [norm_zero, mul_zero]]
+    _ ≤ 2 * L * ε := by
+        rw [Finset.sum_const, Nat.card_Ico, nsmul_eq_mul]
         gcongr
-        exact norm_sum_le _ _
-    _ ≤ ∑ i ∈ Finset.Ico (N + 1) (k + L), if k < i + L then C * 2 ^ (|s| * L) * ε else 0 :=
-        Finset.sum_le_sum hterm
-    _ = S.card * (C * 2 ^ (|s| * L) * ε) := by
-        rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul]
-    _ ≤ 2 * L * (C * 2 ^ (|s| * L) * ε) := by gcongr
-    _ = 2 * L * (C * 2 ^ (|s| * L)) * ε := by ring
+        exact_mod_cast (by omega : k + L - (k - L) ≤ 2 * L)
 
 namespace BesovSpace
 
@@ -232,22 +192,15 @@ theorem isClosed_setOf_tendsto_rpow_mul_norm_littlewoodPaleyBlockLp :
     IsClosed {u : BesovSpace φ s p q |
       Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖) atTop
         (𝓝 0)} := by
-  refine closure_subset_iff_isClosed.mp fun u hu ↦ Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  obtain ⟨v, hv, hvu⟩ := Metric.mem_closure_iff.1 hu (ε / 2) (half_pos hε)
-  rw [dist_eq_norm] at hvu
-  obtain ⟨J, hJ⟩ := Metric.tendsto_atTop.1 hv (ε / 2) (half_pos hε)
-  refine ⟨J, fun j hj ↦ ?_⟩
-  have hvj := hJ j hj
-  rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hvj ⊢
-  have hsub := rpow_mul_norm_littlewoodPaleyBlockLp_le (u - v) j
-  rw [coeff_sub, map_sub] at hsub
-  calc (2 : ℝ) ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖
-      ≤ 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff -
-          littlewoodPaleyBlockLp φ p j v.coeff‖ +
-        2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j v.coeff‖ := by
-        rw [← mul_add]; gcongr; exact norm_le_norm_sub_add _ _
-    _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt (hsub.trans hvu.le) hvj
-    _ = ε := add_halves ε
+  -- Each weighted block is `1`-Lipschitz, being at most the norm, so they are equicontinuous.
+  refine (Metric.equicontinuous_of_continuity_modulus id tendsto_id
+    (fun (j : ℕ) (u : BesovSpace φ s p q) ↦
+      (2 : ℝ) ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖)
+    fun u v j ↦ ?_).isClosed_setOfPred_tendsto continuous_const
+  have h := rpow_mul_norm_littlewoodPaleyBlockLp_le (u - v) j
+  rw [coeff_sub, map_sub] at h
+  rw [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos (by positivity), id, dist_eq_norm]
+  exact (mul_le_mul_of_nonneg_left (abs_norm_sub_norm_le _ _) (by positivity)).trans h
 
 /-! ### The periodic little Besov space -/
 
