@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Module.ULift
 public import Mathlib.LinearAlgebra.Finsupp.LSum
 
 /-!
@@ -27,6 +29,10 @@ coefficients are integers cast into `R`.
 * `Finsupp.intLinearMapEquiv`: additive maps on `S →₀ ℤ` are `R`-linear maps on `S →₀ R`.
 * `Finsupp.intLinearMapEquiv_apply_single`, `Finsupp.intLinearMapEquiv_apply_mapRange`: its values
   on the points of `S`, and on the chains with integer coefficients.
+* `Finsupp.intLinearMapEquiv_symm_apply_single`: the additive map recovered from an `R`-linear map.
+* `Finsupp.intLinearMapEquivModuleCat`: the same identification for additive maps into `R`, with
+  the `R`-linear forms read as morphisms of `ModuleCat R` into `R` lifted to the universe of `S`,
+  as in the `R`-dual of a chain complex of free modules.
 -/
 
 public section
@@ -85,5 +91,43 @@ theorem intLinearMapEquiv_apply_mapRange (a : (S →₀ ℤ) →ₗ[ℤ] M) (c :
   conv_rhs => rw [← sum_single c, map_finsuppSum]
   exact sum_congr fun p _ ↦ by
     rw [Int.coe_castAddHom, Int.cast_smul_eq_zsmul, ← map_single_int]
+
+/-- The additive map recovered from an `R`-linear map `b` on the free `R`-module on `S` sends
+`single p k` to `k` times the value of `b` at `single p 1`. -/
+@[simp]
+theorem intLinearMapEquiv_symm_apply_single (b : (S →₀ R) →ₗ[R] M) (p : S) (k : ℤ) :
+    (intLinearMapEquiv S R M).symm b (single p k) = k • b (single p 1) := by
+  rw [map_single_int]
+  conv_rhs => rw [← (intLinearMapEquiv S R M).apply_symm_apply b]
+  rw [intLinearMapEquiv_apply_single, one_smul]
+
+end Finsupp
+
+/-! ### Linear forms as morphisms of `ModuleCat` -/
+
+namespace Finsupp
+
+universe u
+
+variable (S : Type u) (R : Type*) [CommRing R]
+
+/-- `Finsupp.intLinearMapEquiv` for additive maps into `R`, with the `R`-linear forms read as
+morphisms of `ModuleCat R` into `R` lifted to the universe of `S`: the form in which the `R`-dual of
+a chain complex of free `R`-modules is taken. -/
+noncomputable def intLinearMapEquivModuleCat :
+    ((S →₀ ℤ) →ₗ[ℤ] R) ≃ₗ[R] (ModuleCat.of R (S →₀ R) ⟶ ModuleCat.of R (ULift.{u} R)) :=
+  intLinearMapEquiv S R R ≪≫ₗ (LinearEquiv.congrRight ULift.moduleEquiv).symm ≪≫ₗ
+    (ModuleCat.homLinearEquiv (S := R) (M := ModuleCat.of R (S →₀ R))
+      (N := ModuleCat.of R (ULift.{u} R))).symm
+
+variable {S R}
+
+/-- The value of `Finsupp.intLinearMapEquivModuleCat` is that of `Finsupp.intLinearMapEquiv`. -/
+theorem intLinearMapEquivModuleCat_apply (a : (S →₀ ℤ) →ₗ[ℤ] R) (c : S →₀ R) :
+    (intLinearMapEquivModuleCat S R a c).down = intLinearMapEquiv S R R a c :=
+  -- The two outer equivalences only wrap the linear map into a morphism of `ModuleCat` and its
+  -- values into `ULift`, and `simp` does not see through the coercion of the morphism to a function
+  -- (`ConcreteCategory.hom`), so the identity is closed by unfolding.
+  (rfl)
 
 end Finsupp

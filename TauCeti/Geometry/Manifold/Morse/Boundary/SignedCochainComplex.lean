@@ -49,6 +49,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `signedMorseCochainComplex`: the Morse cochain complex `Hom_ℤ(CM_*(f; ℤ), R)`.
 * `signedMorseCochainComplex_X`, `signedMorseCochainComplex_d_apply`: its terms and its coboundary
   `δa = a ∘ ∂`.
+* `signedMorseCochainComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero`,
+  `signedMorseCochainComplex_d_eq_zero_of_signedMorseBoundary_eq_zero`: the coboundary vanishes
+  where the integral boundary does.
 * `isZero_homology_signedMorseCochainComplex_of_finrank_lt`: the Morse cohomology vanishes above
   the dimension.
 * `nonempty_linearEquiv_homology_zero_signedMorseCochainComplex`: with a unique minimum and zero
@@ -137,6 +140,28 @@ theorem signedMorseCochainComplex_d_apply (n : ℕ)
   -- which are the modules of additive maps only by definition, so `simp` does not fire.
   exact ModuleCat.ofHom_apply _ a
 
+/-- If the graded integral Morse boundary from index `n + 1` vanishes, so does the coboundary of the
+Morse cochain complex from degree `n` to degree `n + 1`. -/
+theorem signedMorseCochainComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero (n : ℕ)
+    (h0 : hX.signedMorseBoundaryAt 𝔬 hf ℤ n = 0) :
+    (hX.signedMorseCochainComplex 𝔬 hf R hsq).d n (n + 1) = 0 := by
+  rw [signedMorseCochainComplex_d, h0]
+  ext a c
+  -- Both sides are zero; the zero morphism is typed between the terms of the complex.
+  simp only [ModuleCat.hom_ofHom, LinearMap.lcomp_apply', LinearMap.comp_zero]
+  rfl
+
+/-- If the total integral Morse boundary vanishes, every coboundary of the Morse cochain complex is
+zero. -/
+theorem signedMorseCochainComplex_d_eq_zero_of_signedMorseBoundary_eq_zero
+    (h0 : hX.signedMorseBoundary 𝔬 hf ℤ = 0) (i j : ℕ) :
+    (hX.signedMorseCochainComplex 𝔬 hf R hsq).d i j = 0 := by
+  by_cases hij : (ComplexShape.up ℕ).Rel i j
+  · obtain rfl : i + 1 = j := hij
+    exact signedMorseCochainComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq i
+      (signedMorseBoundaryAt_eq_zero_of_signedMorseBoundary_eq_zero h0 i)
+  · exact (hX.signedMorseCochainComplex 𝔬 hf R hsq).shape i j hij
+
 /-- The Morse cochain complex vanishes above the dimension of `M`. -/
 theorem isZero_signedMorseCochainComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
     IsZero ((hX.signedMorseCochainComplex 𝔬 hf R hsq).X n) := by
@@ -167,11 +192,8 @@ theorem nonempty_linearEquiv_homology_zero_signedMorseCochainComplex
   -- boundary into degree `0`, which vanishes.
   have h₁ : K.d ((ComplexShape.up ℕ).prev 0) 0 = 0 := K.shape _ _ (by simp)
   have h₂ : K.d 0 ((ComplexShape.up ℕ).next 0) = 0 := by
-    rw [CochainComplex.next, signedMorseCochainComplex_d, h0]
-    ext a c
-    -- Both sides are zero; the zero morphism is typed between the terms of `K`.
-    simp only [ModuleCat.hom_ofHom, LinearMap.lcomp_apply', LinearMap.comp_zero]
-    rfl
+    rw [CochainComplex.next]
+    exact signedMorseCochainComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq 0 h0
   exact ⟨(K.XIsoHomologyOfDEqZero 0 h₁ h₂).toLinearEquiv.symm.trans
     ((Finsupp.llift R ℤ R _).symm.trans (LinearEquiv.funUnique _ R R))⟩
 
@@ -181,42 +203,23 @@ section CommRing
 
 variable {R : Type v} [CommRing R]
 
-/-- `Finsupp.intLinearMapEquiv`, with its values read as morphisms of modules into `R` lifted to
-the universe of `S`, the form in which the Morse chain complex with coefficients in `R` is
-dualized. -/
-private noncomputable def intLinearMapEquivModuleCat (S : Type u) :
-    ((S →₀ ℤ) →ₗ[ℤ] R) ≃ₗ[R]
-      (ModuleCat.of R (S →₀ R) ⟶ ModuleCat.of R (ULift.{u} R)) :=
-  Finsupp.intLinearMapEquiv S R R ≪≫ₗ (LinearEquiv.congrRight ULift.moduleEquiv).symm ≪≫ₗ
-    (ModuleCat.homLinearEquiv (S := R) (M := ModuleCat.of R (S →₀ R))
-      (N := ModuleCat.of R (ULift.{u} R))).symm
-
-/-- The value of `intLinearMapEquivModuleCat` is that of `Finsupp.intLinearMapEquiv`. -/
-private theorem intLinearMapEquivModuleCat_apply {S : Type u} (a : (S →₀ ℤ) →ₗ[ℤ] R)
-    (c : S →₀ R) :
-    (intLinearMapEquivModuleCat S a c).down = Finsupp.intLinearMapEquiv S R R a c :=
-  -- The two outer equivalences only wrap the linear map into a morphism of `ModuleCat` and its
-  -- values into `ULift`, and `simp` does not see through the coercion of the morphism to a function
-  -- (`ConcreteCategory.hom`), so the identity is closed by unfolding.
-  (rfl)
-
 /-- The `R`-linear form associated with an integral cochain `a`, evaluated on the boundary of
 `r • p` with coefficients in `R`, is `r` times the value of `a` on the integral boundary of `p`:
 it is the value at `r • p` of the form associated with the coboundary `a ∘ ∂`. -/
 private theorem intLinearMapEquiv_signedMorseBoundaryAt {n : ℕ}
     (a : ({q : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f q = n} →₀ ℤ) →ₗ[ℤ] R)
     (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1}) (r : R) :
-    (intLinearMapEquivModuleCat _ a
+    (Finsupp.intLinearMapEquivModuleCat _ R a
         (hX.signedMorseBoundaryAt 𝔬 hf R n (Finsupp.single p r))).down =
-      (intLinearMapEquivModuleCat _ (a ∘ₗ hX.signedMorseBoundaryAt 𝔬 hf ℤ n)
+      (Finsupp.intLinearMapEquivModuleCat _ R (a ∘ₗ hX.signedMorseBoundaryAt 𝔬 hf ℤ n)
         (Finsupp.single p r)).down := by
   have hp : hX.signedMorseBoundaryAt 𝔬 hf R n (Finsupp.single p r) =
       r • Finsupp.mapRange (Int.castAddHom R) (map_zero _)
         (hX.signedMorseBoundaryAt 𝔬 hf ℤ n (Finsupp.single p 1)) := by
     rw [mapRange_signedMorseBoundaryAt, ← map_smul]
     simp
-  rw [intLinearMapEquivModuleCat_apply, intLinearMapEquivModuleCat_apply, hp, map_smul,
-    Finsupp.intLinearMapEquiv_apply_mapRange, Finsupp.intLinearMapEquiv_apply_single,
+  rw [Finsupp.intLinearMapEquivModuleCat_apply, Finsupp.intLinearMapEquivModuleCat_apply, hp,
+    map_smul, Finsupp.intLinearMapEquiv_apply_mapRange, Finsupp.intLinearMapEquiv_apply_single,
     LinearMap.comp_apply]
 
 variable (R) in
@@ -232,14 +235,14 @@ noncomputable def signedMorseCochainComplexIso :
         (signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_int hsq R)).linearYonedaObj R
         (ModuleCat.of R (ULift.{u} R)) :=
   HomologicalComplex.Hom.isoOfComponents
-    (fun n ↦ (intLinearMapEquivModuleCat
-      {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}).toModuleIso)
+    (fun n ↦ (Finsupp.intLinearMapEquivModuleCat
+      {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} R).toModuleIso)
     fun i j hij ↦ by
       obtain rfl : i + 1 = j := hij
       rw [ChainComplex.linearYonedaObj_d, signedMorseComplex_d, signedMorseCochainComplex_d]
       ext a : 2
       refine ModuleCat.hom_ext (Finsupp.lhom_ext fun p r ↦ ULift.ext ?_)
-      -- The terms of both complexes are the modules of `intLinearMapEquivModuleCat` only by
+      -- The terms of both complexes are the modules of `Finsupp.intLinearMapEquivModuleCat` only by
       -- definition (`signedMorseCochainComplex_X`, `signedMorseComplex_X`), so the elementwise
       -- identity is applied with `exact` rather than rewritten into the goal.
       exact intLinearMapEquiv_signedMorseBoundaryAt a p r
@@ -256,7 +259,8 @@ theorem signedMorseCochainComplexIso_hom_f_apply_single {n : ℕ}
     (ConcreteCategory.hom (X := ModuleCat.of R (_ →₀ R)) (Y := ModuleCat.of R (ULift.{u} R))
       ((hX.signedMorseCochainComplexIso hsq R).hom.f n a) (Finsupp.single p r)).down =
       r * a (Finsupp.single p 1) :=
-  (intLinearMapEquivModuleCat_apply a _).trans (Finsupp.intLinearMapEquiv_apply_single a p r)
+  (Finsupp.intLinearMapEquivModuleCat_apply a _).trans
+    (Finsupp.intLinearMapEquiv_apply_single a p r)
 
 end CommRing
 
