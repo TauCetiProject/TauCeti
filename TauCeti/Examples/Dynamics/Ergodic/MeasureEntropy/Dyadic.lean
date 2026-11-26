@@ -34,15 +34,15 @@ namespace TauCeti.DyadicEntropyExamples
 theorem countablePartitionEntropy_cellIdx_two_pow (k : ℕ) :
     countablePartitionEntropy volume (unitInterval.cellIdx (2 ^ k)) =
       ENNReal.ofReal (k * log 2) := by
-  have hreal {j : ℕ} (hj : j < 2 ^ k) :
-      (volume : Measure I).real (unitInterval.cellIdx (2 ^ k) ⁻¹' {j}) = 2⁻¹ ^ k := by
-    simp [Measure.real, unitInterval.volume_preimage_cellIdx hj]
-  rw [countablePartitionEntropy_def, tsum_eq_sum (s := Finset.range (2 ^ k)) fun j hj ↦ by
-    have hempty : unitInterval.cellIdx (2 ^ k) ⁻¹' {j} = ∅ := eq_empty_of_forall_notMem fun x hx ↦
-      Finset.mem_range.not.mp hj (hx ▸ unitInterval.cellIdx_lt (by positivity) x)
-    simp [hempty]]
-  rw [Finset.sum_congr rfl fun j hj ↦ by rw [hreal (Finset.mem_range.mp hj)]]
-  simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  have hreal (i : Fin (2 ^ k)) :
+      (volume : Measure I).real (unitInterval.cellIdx (2 ^ k) ⁻¹' {(i : ℕ)}) = 2⁻¹ ^ k := by
+    simp [Measure.real, unitInterval.volume_preimage_cellIdx i.isLt]
+  rw [show unitInterval.cellIdx (2 ^ k) = Fin.val ∘ unitInterval.cellFin (2 ^ k) from
+      funext fun x ↦ (unitInterval.coe_cellFin x).symm,
+    countablePartitionEntropy_comp_of_injective _ Fin.val_injective,
+    countablePartitionEntropy_def, tsum_fintype]
+  simp only [unitInterval.preimage_cellFin_singleton, hreal, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
   rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   simp only [negMulLog_def, log_pow, log_inv, inv_pow]
