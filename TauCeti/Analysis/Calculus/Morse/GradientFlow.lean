@@ -389,10 +389,9 @@ value `f p` all along it, so its gradient vanishes there and the trajectory stay
 theorem eq_const_of_tendsto (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
     (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p : E} (hfp : ContinuousAt f p)
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 p)) : γ = fun _ ↦ p := by
-  have hanti := antitone_comp_neg_gradient hγ hf
   have hval : ∀ t, f (γ t) = f p := fun t ↦
-    le_antisymm (hanti.ge_of_tendsto (hfp.tendsto.comp hbot) t)
-      (hanti.le_of_tendsto (hfp.tendsto.comp htop) t)
+    have h := hγ.mem_Icc_comp_neg_gradient hf hfp hfp hbot htop t
+    le_antisymm h.2 h.1
   have hconst : ∀ t, γ t = γ 0 := fun t ↦
     is_const_of_deriv_eq_zero (fun t ↦ (hγ t).differentiableAt) (fun u ↦ by
       simp only [(hγ u).deriv, gradient_eq_zero_of_eventually_const_value hγ
