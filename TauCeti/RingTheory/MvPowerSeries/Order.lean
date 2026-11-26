@@ -314,6 +314,15 @@ theorem homogeneousComponent_degree_prod_pow {ι : Type*} {a : ι → MvPowerSer
 
 end Products
 
+/-- Substitution by a substitutable family of series with zero constant coefficient cannot
+decrease order. -/
+theorem order_le_order_subst {σ τ R : Type*} [CommRing R] {Z : σ → MvPowerSeries τ R}
+    (ha : HasSubst Z) (hZ : ∀ x, constantCoeff (Z x) = 0) (f : MvPowerSeries σ R) :
+    f.order ≤ (f.subst Z).order :=
+  (ENat.self_le_mul_left _ (ne_of_gt (lt_of_lt_of_le zero_lt_one
+    (le_iInf fun x ↦ one_le_order_iff_constCoeff_eq_zero.2 (hZ x))))).trans
+    (le_order_subst ha f)
+
 section Subst
 
 variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
