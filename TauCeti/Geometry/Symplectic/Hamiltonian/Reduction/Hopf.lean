@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
 import TauCeti.Geometry.Symplectic.Manifold.Sphere.Area
-import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Hopf reduction: the reduced spaces of `ℂ²` by the diagonal circle
@@ -142,15 +141,14 @@ theorem hamiltonianVectorField_half_norm_sq_eq_neg_I_smul {ι : Type*} [Fintype 
     {Ω : SymplecticForm (EuclideanSpace ℂ ι)} (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_ℂ).im)
     (x : EuclideanSpace ℂ ι) :
     Ω.hamiltonianVectorField (fun y ↦ ‖y‖ ^ 2 / 2) x = -(I • x) := by
-  refine ((Ω.eq_hamiltonianVectorField_iff _ x _).2 fun v ↦ ?_).symm
-  have hd : HasFDerivAt (fun y : EuclideanSpace ℂ ι ↦ ‖y‖ ^ 2 / 2) (innerSL ℝ x) x := by
-    convert (hasStrictFDerivAt_norm_sq x).hasFDerivAt.mul_const (1 / 2 : ℝ) using 1
-    · ext y
-      ring
-    · ext v
-      simp
-  rw [hd.fderiv, innerSL_apply_apply, EuclideanSpace.real_inner_eq_re_inner, hΩ, inner_neg_left,
-    inner_smul_left]
+  have hg : ∀ v w, Ω v (AlmostComplexStructure.ofComplexModule _ w) = ⟪v, w⟫_ℝ := fun v w ↦ by
+    rw [AlmostComplexStructure.ofComplexModule_apply, hΩ, inner_smul_right,
+      EuclideanSpace.real_inner_eq_re_inner]
+    simp
+  have hQ : (fun y : EuclideanSpace ℂ ι ↦ ‖y‖ ^ 2 / 2) = fun y ↦ 1 / 2 * ‖y‖ ^ 2 := by
+    funext y
+    ring
+  rw [hQ, Ω.hamiltonianVectorField_div_two_mul_norm_sq hg 1]
   simp
 
 /-- The parametrization `z ↦ √(2c) z` of the level `‖x‖² / 2 = c` of `ℂ²` by `S³` is smooth. -/

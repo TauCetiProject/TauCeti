@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.Data.ZMod.Pow
 
 /-!
 # Primitive additive characters
@@ -26,8 +27,13 @@ these are the only primitive shifts: Mathlib's `AddChar.not_isPrimitive_mulShift
 nonunits. This is what identifies the primitive characters among the shifts of one primitive
 character.
 
+For Mathlib's character `AddChar.zmodChar n hζ : i ↦ ζ ^ i` of `ZMod n`, this file also records
+that its order, as a monoid hom out of `Multiplicative (ZMod n)`, is the order of `ζ`.
+
 ## Main results
 
+* `AddChar.orderOf_toMonoidHom_zmodChar`: the character `i ↦ ζ ^ i` of `ZMod n` has the order of
+  `ζ`.
 * `AddChar.IsPrimitive.ne_one`: a primitive additive character on a nontrivial ring is
   nontrivial.
 * `AddChar.IsPrimitive.mulShift_eq_one_iff`: the shift of a primitive character by `a` is
@@ -74,6 +80,16 @@ theorem IsPrimitive.isPrimitive_mulShift_iff [Finite R] (hψ : ψ.IsPrimitive) {
   ⟨fun h ↦ by_contra fun ha ↦ not_isPrimitive_mulShift ψ ha h, hψ.mulShift⟩
 
 end Shift
+
+/-- The character `i ↦ ζ ^ i` of `ZMod n` (`AddChar.zmodChar`), as a monoid hom out of
+`Multiplicative (ZMod n)`, has the same order as `ζ`. -/
+theorem orderOf_toMonoidHom_zmodChar {C : Type*} [CommMonoid C] {n : ℕ} [NeZero n] {ζ : C}
+    (hζ : ζ ^ n = 1) : orderOf (zmodChar n hζ).toMonoidHom = orderOf ζ := by
+  refine orderOf_eq_orderOf_iff.mpr fun m ↦ ⟨fun h ↦ ?_, fun h ↦ MonoidHom.ext fun x ↦ ?_⟩
+  · have := congr($h (Multiplicative.ofAdd 1))
+    simpa [zmodChar_apply, TauCeti.pow_val_one hζ, ← pow_mul] using this
+  · simp only [MonoidHom.pow_apply, toMonoidHom_apply, zmodChar_apply, MonoidHom.one_apply]
+    rw [← pow_mul, pow_mul', h, one_pow]
 
 variable {R R' : Type*} [CommRing R] [Nontrivial R] [CommMonoid R']
 

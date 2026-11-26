@@ -13,7 +13,9 @@ public import Mathlib.Topology.Order.OrderClosed
 
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -167,6 +169,23 @@ theorem le_one_half_of_mem_orderedSimplex {x : Fin d → ℝ} (hx : x ∈ ordere
   have : x i ≤ ∑ k, x k :=
     Finset.single_le_sum (fun k _ => hx.1 k) (Finset.mem_univ i)
   linarith [hx.2.2 i]
+
+/-- On the ordered simplex `1 + ∑ xᵢ` is positive, since the chart coordinates are
+nonnegative. -/
+theorem one_add_sum_pos_of_mem_orderedSimplex {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
+    0 < 1 + ∑ k, x k := by
+  linarith [Finset.sum_nonneg fun k (_ : k ∈ Finset.univ) => hx.1 k]
+
+/-- On the ordered simplex `(d - i) xᵢ ≤ ∑ xₖ`: the `d - i` chart coordinates from `xᵢ` on are
+each at least `xᵢ`, and the others are nonnegative. -/
+theorem sub_mul_le_sum_of_mem_orderedSimplex {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) (i : Fin d) : ((d - i : ℕ) : ℝ) * x i ≤ ∑ k, x k := by
+  obtain ⟨h0, hmono, -⟩ := mem_orderedSimplex_iff.mp hx
+  have h := Finset.card_nsmul_le_sum (Finset.Ici i) x (x i)
+    fun k hk => hmono (Finset.mem_Ici.mp hk)
+  rw [Fin.card_Ici, nsmul_eq_mul] at h
+  exact h.trans (Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _)
+    fun k _ _ => h0 k)
 
 /-- The ordered simplex lies in the cube `[0, 1 / 2]^d`. -/
 theorem orderedSimplex_subset_Icc : orderedSimplex d ⊆ Icc 0 (fun _ => 1 / 2) :=
@@ -360,6 +379,11 @@ theorem simplexLift_castSucc (x : Fin d → ℝ) (i : Fin (d + 1)) :
 @[simp]
 theorem simplexLift_last (x : Fin d → ℝ) : simplexLift x (Fin.last _) = 1 :=
   Fin.snoc_last ..
+
+/-- The lift `(w, 1)` with the full point `w = (x, 1 - ∑ xᵢ)` written out. -/
+theorem simplexLift_eq_snoc_snoc (x : Fin d → ℝ) :
+    simplexLift x = Fin.snoc (Fin.snoc x (1 - ∑ k, x k) : Fin (d + 1) → ℝ) 1 :=
+  (rfl)
 
 @[simp]
 theorem simplexChart_simplexLift (x : Fin d → ℝ) : simplexChart (simplexLift x) = x := by
