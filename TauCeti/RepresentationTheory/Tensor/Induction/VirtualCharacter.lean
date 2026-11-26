@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import TauCeti.GroupTheory.Index.Indicator
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Trace
@@ -18,8 +19,8 @@ import Mathlib.LinearAlgebra.PiTensorProduct.Finite
 import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Finset
+import TauCeti.GroupTheory.GroupAction.FinRotate
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
-import TauCeti.GroupTheory.Index.Indicator
 import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.GroupTheory.Perm.WreathProduct.Monomial
@@ -45,15 +46,11 @@ at each `g : G`, expanding `∏ ω, (χ_A(m_ω) - χ_B(m_ω))` sums over `g`-inv
 `c(T)`. Grouping invariant subsets by their `G`-orbit matches the alternating sum
 `∑ O, (-1)^{|O.out|} • (MulAction.stabilizer G O.out).indClassFun W_{O.out}.character`.
 
-In prime index `l` for a normal subgroup `H ≤ G`, this specializes to the explicit decomposition
-`Subgroup.tensorIndClassFun_sub_of_index_prime` of `H.tensorIndClassFun (ψ₁ - ψ₂)` using the sign
-character `H.primeIndexSignChar hH` and induced class functions indexed by cyclic-shift orbits
-on nonempty proper subsets of `Fin l`.
-
-## Main definitions
-
-* `Subgroup.primeIndexSignChar`: the linear character of `G` factoring through `G ⧸ H` sending
-  `g ∈ H` to `1` and `g ∉ H` to `(-1) ^ (l - 1)` when `H` has prime index `l`.
+In prime index `l` for a normal subgroup `H ≤ G`, the explicit formula
+`Subgroup.tensorIndClassFun_sub_of_index_prime` decomposes `H.tensorIndClassFun (ψ₁ - ψ₂)`, for
+`H`-conjugation-invariant functions `ψ₁, ψ₂`, using the sign `H.quotientSign` of the action of `G`
+on `G ⧸ H` and induced class functions indexed by cyclic-shift orbits on nonempty proper subsets
+of `Fin l`.
 
 ## Main results
 
@@ -61,8 +58,9 @@ on nonempty proper subsets of `Fin l`.
   character of a finite-index subgroup is a virtual character of `G`.
 * `Subgroup.tensorIndClassFun_mem_virtualCharacters`: tensor induction of any virtual character of
   a finite-index subgroup is a virtual character of `G`.
-* `Subgroup.tensorIndClassFun_sub_of_index_prime`: explicit prime-index virtual-character
-  decomposition of `H.tensorIndClassFun (ψ₁ - ψ₂)`.
+* `Subgroup.tensorIndClassFun_sub_of_index_prime`: prime-index decomposition of
+  `H.tensorIndClassFun (ψ₁ - ψ₂)` for conjugation-invariant functions `ψ₁, ψ₂`; for characters
+  `ψ₁, ψ₂` each term is a signed induced character.
 
 ## References
 
@@ -76,13 +74,6 @@ public section
 open scoped Pointwise CategoryTheory.MonoidalCategory TensorProduct
 
 namespace Subgroup
-
-private theorem neg_one_pow_smul_mem_virtualCharacters {k G : Type*} [Field k] [Monoid G]
-    (n : ℕ) {f : G → k} (hf : f ∈ TauCeti.virtualCharacters k G) :
-    ((-1 : k) ^ n • f) ∈ TauCeti.virtualCharacters k G := by
-  rcases Nat.even_or_odd n with h | h
-  · simpa [h.neg_one_pow] using hf
-  · simpa [h.neg_one_pow] using neg_mem hf
 
 /-- Tensor induction of a genuine character of a finite-index subgroup is a virtual character. -/
 theorem tensorIndClassFun_character_mem_virtualCharacters {k G : Type*} [Field k] [Group G]
@@ -101,27 +92,6 @@ theorem tensorIndClassFun_character_mem_virtualCharacters {k G : Type*} [Field k
   rw [hch]
   exact TauCeti.character_mem_virtualCharacters W
 
-private theorem neg_one_pow_card_mul_sign {k α : Type*} [CommRing k]
-    [Fintype α] [DecidableEq α] (σ : Equiv.Perm α)
-    [Fintype (MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α)] :
-    (-1 : k) ^ Fintype.card α * ((Equiv.Perm.sign σ : ℤ) : k) =
-      (-1 : k) ^ Fintype.card (MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α) := by
-  have qEquiv : Quotient (Equiv.Perm.SameCycle.setoid σ) ≃
-      MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α :=
-    Quotient.congrRight fun x y ↦ by
-      rw [MulAction.orbitRel_apply, ← Equiv.Perm.sameCycle_iff_mem_orbit_zpowers]
-      exact Equiv.Perm.sameCycle_comm
-  let c := Fintype.card (MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α)
-  have hc : TauCeti.orbitCount σ = c := by
-    rw [TauCeti.orbitCount_def, Nat.card_congr qEquiv, Nat.card_eq_fintype_card]
-  have hle : c ≤ Fintype.card α :=
-    Fintype.card_le_of_injective Quotient.out Quotient.out_injective
-  have hadd : Fintype.card α + (Fintype.card α - c) = c + 2 * (Fintype.card α - c) := by omega
-  rw [Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount, hc, Units.val_pow_eq_pow_val,
-    Units.val_neg, Units.val_one, Int.cast_pow, Int.cast_neg, Int.cast_one,
-    ← pow_add, hadd, pow_add, pow_mul]
-  simp [c]
-
 private noncomputable def subsetMonomialHom {G : Type*} [Group G] (U : Subgroup G)
     (s : U.LeftTransversal) [DecidableEq (G ⧸ U)] (H : Subgroup G) (T : Finset (G ⧸ U))
     (hT : ∀ x : H, (x : G) • T = T) : H →* TauCeti.WreathProduct U ↥T where
@@ -132,8 +102,9 @@ private noncomputable def subsetMonomialHom {G : Type*} [Group G] (U : Subgroup 
     rw [Subgroup.coe_mul, map_mul, TauCeti.PermutationWreathProduct.mul_left,
       TauCeti.PermutationWreathProduct.mul_left]
     congr 1
-    rw [Equiv.Perm.smul_def, Subgroup.monomialHom_right_inv]
-    rfl
+    dsimp only
+    rw [Equiv.Perm.smul_def, Subgroup.monomialHom_right_inv, Equiv.Perm.smul_def, ← map_inv,
+      MulAction.subsetPermOn_apply, InvMemClass.coe_inv]
 
 private theorem subsetMonomialHom_right {G : Type*} [Group G] (U : Subgroup G)
     (s : U.LeftTransversal) [DecidableEq (G ⧸ U)] (H : Subgroup G) (T : Finset (G ⧸ U))
@@ -259,12 +230,11 @@ private theorem neg_one_pow_mul_stabilizerRep_character {k G : Type*} [Field k] 
         (fun x ↦ MulAction.mem_stabilizer_iff.mp x.property) y) : ℤ) : k) =
       (-1 : k) ^ (Finset.univ.filter (fun ω : MulAction.orbitRel.Quotient
           (Subgroup.zpowers y.val) (G ⧸ U) ↦ ω.out ∈ S)).card := by
-    rw [← Fintype.card_coe S,
-      neg_one_pow_card_mul_sign (MulAction.subsetPermOn _ S
-        (fun x ↦ MulAction.mem_stabilizer_iff.mp x.property) y),
-      Fintype.card_congr
+    rw [← Fintype.card_coe S, Equiv.Perm.neg_one_pow_card_mul_sign,
+      TauCeti.orbitCount_eq_natCard_orbitRelQuotient_zpowers,
+      Nat.card_congr
         (MulAction.subsetOrbitEquiv S (fun x ↦ MulAction.mem_stabilizer_iff.mp x.property) y),
-      Fintype.card_subtype]
+      Nat.card_eq_fintype_card, Fintype.card_subtype]
   rw [hsign, character_subsetWreathRep, character_subsetWreathRep]
   congr 1
   rw [Finset.prod_neg]
@@ -277,50 +247,8 @@ private theorem conjOrbitEquiv_mem_iff {G : Type*} [Group G] (U : Subgroup G)
   have hgT : g • (r • S) = r • S := by
     have hs : (r⁻¹ * g * r) • S = S := hr
     simpa [mul_smul, smul_inv_smul] using congrArg (r • ·) hs
-  have hq : MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω = Quotient.mk'' (r • ω.out) := by
-    conv_lhs => rw [← Quotient.out_eq ω]
-    exact MulAction.conjOrbitEquiv_mk g r ω.out
-  have horb : MulAction.orbitRel (Subgroup.zpowers g) (G ⧸ U)
-      (r • ω.out) (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out :=
-    Quotient.exact' (hq.symm.trans (Quotient.out_eq _).symm)
-  rw [← MulAction.zpow_smul_mem_of_smul_eq hgT horb, Finset.smul_mem_smul_finset_iff]
-
-private theorem conjOrbitEquiv_monodromy_eq {R G : Type*} [Group G] (U : Subgroup G)
-    (s : U.LeftTransversal) {f : U → R} (hf : ∀ u v : U, f (v * u * v⁻¹) = f u)
-    (g r : G) (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers (r⁻¹ * g * r)) (G ⧸ U)) :
-    f ⟨(U.leftTransversalRep s ω.out)⁻¹ * (r⁻¹ * g * r) ^ Function.minimalPeriod
-          ((r⁻¹ * g * r) • ·) ω.out * U.leftTransversalRep s ω.out,
-        conj_pow_minimalPeriod_mem U (r⁻¹ * g * r) (U.leftTransversalRep_mk s ω.out)⟩ =
-      f ⟨(U.leftTransversalRep s (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out)⁻¹ *
-          g ^ Function.minimalPeriod
-            (g • ·) (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out *
-          U.leftTransversalRep s (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out,
-        conj_pow_minimalPeriod_mem U g
-          (U.leftTransversalRep_mk s (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out)⟩ := by
-  have hq : MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω = Quotient.mk'' (r • ω.out) := by
-    conv_lhs => rw [← Quotient.out_eq ω]
-    exact MulAction.conjOrbitEquiv_mk g r ω.out
-  have horb : MulAction.orbitRel (Subgroup.zpowers g) (G ⧸ U)
-      (r • ω.out) (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out :=
-    Quotient.exact' (hq.symm.trans (Quotient.out_eq _).symm)
-  have hrep : (QuotientGroup.mk (r * U.leftTransversalRep s ω.out) : G ⧸ U) = r • ω.out := by
-    -- Rewrite left multiplication on cosets as the left action of `G` on `G ⧸ U`.
-    change r • (QuotientGroup.mk (U.leftTransversalRep s ω.out) : G ⧸ U) = r • ω.out
-    rw [U.leftTransversalRep_mk s ω.out]
-  refine Eq.trans ?_ (apply_conj_pow_minimalPeriod_eq_of_orbitRel hf g horb hrep
-    (U.leftTransversalRep_mk s (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out)).symm
-  congr 1
-  apply Subtype.ext
-  dsimp only
-  have hm : Function.minimalPeriod ((r⁻¹ * g * r) • ·) ω.out =
-      Function.minimalPeriod (g • ·) (r • ω.out) := by
-    simpa [inv_inv, inv_smul_smul] using
-      (MulAction.minimalPeriod_conj_smul g r⁻¹ (r • ω.out))
-  have hp : (r⁻¹ * g * r) ^ Function.minimalPeriod (g • ·) (r • ω.out) =
-      r⁻¹ * g ^ Function.minimalPeriod (g • ·) (r • ω.out) * r := by
-    simpa [inv_inv] using (conj_pow (a := r⁻¹) (b := g))
-  rw [hm, hp]
-  simp [mul_assoc]
+  rw [← MulAction.mem_iff_mem_of_orbitRel_zpowers_of_smul_eq hgT
+    (MulAction.orbitRel_smul_out_conjOrbitEquiv_out g r ω), Finset.smul_mem_smul_finset_iff]
 
 private theorem neg_one_pow_mul_stabilizerRep_character_conj {k G : Type*} [Field k] [Group G]
     (U : Subgroup G) [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
@@ -348,7 +276,8 @@ private theorem neg_one_pow_mul_stabilizerRep_character_conj {k G : Type*} [Fiel
     have hm := conjOrbitEquiv_mem_iff U S g r hr ω
     by_cases hω : ω.out ∈ S
     · simp only [hω, hm.mp hω, ↓reduceIte,
-        conjOrbitEquiv_monodromy_eq U s (fun u v ↦ B.char_conj u v) g r ω]
+        apply_conj_pow_minimalPeriod_conjOrbitEquiv (fun u v ↦ B.char_conj u v)
+          (U.leftTransversalRep s) (U.leftTransversalRep_mk s) g r ω]
     · have hmr : (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out ∉ r • S := fun h ↦ hω (hm.mpr h)
       simp only [hω, hmr, ↓reduceIte]
   · refine Fintype.prod_equiv (MulAction.conjOrbitEquiv (α := G ⧸ U) g r) _ _ fun ω ↦ ?_
@@ -358,7 +287,8 @@ private theorem neg_one_pow_mul_stabilizerRep_character_conj {k G : Type*} [Fiel
       simp only [Finset.mem_compl, hω, hmr, not_true_eq_false, ↓reduceIte]
     · have hmr : (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out ∉ r • S := fun h ↦ hω (hm.mpr h)
       simp only [Finset.mem_compl, hω, hmr, not_false_eq_true, ↓reduceIte,
-        conjOrbitEquiv_monodromy_eq U s (fun u v ↦ A.char_conj u v) g r ω]
+        apply_conj_pow_minimalPeriod_conjOrbitEquiv (fun u v ↦ A.char_conj u v)
+          (U.leftTransversalRep s) (U.leftTransversalRep_mk s) g r ω]
 
 private noncomputable def evalOrbitFactor {k G : Type*} [Field k] [Group G] (U : Subgroup G)
     [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
@@ -408,15 +338,10 @@ private theorem indClassFun_stabilizerRep_apply {k G : Type*} [Field k] [Group G
   · exact absurd (hiff.mp hmem) hg
   · simp
 
-private theorem selfEquivSigmaOrbits_symm_coe {G α : Type*} [Group G] [MulAction G α]
-    (p : Σ q : MulAction.orbitRel.Quotient G α, MulAction.orbit G q.out) :
-    (MulAction.selfEquivSigmaOrbits G α).symm p = p.snd.val :=
-  rfl
-
 private noncomputable def orbitStabTerm {k G : Type*} [Field k] [Group G] (U : Subgroup G)
     [U.FiniteIndex] [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
     (A B : FDRep k U) (O : MulAction.orbitRel.Quotient G (Finset (G ⧸ U))) : G → k :=
-  let := MulAction.stabilizer_finset_finiteIndex (G := G) O.out
+  let := MulAction.finiteIndex_stabilizer_finset (G := G) O.out
   (-1 : k) ^ O.out.card • (MulAction.stabilizer G O.out).indClassFun
     (stabilizerRep U s O.out A B).character
 
@@ -425,10 +350,10 @@ private theorem orbitStabTerm_mem_virtualCharacters {k G : Type*} [Field k] [Gro
     (s : U.LeftTransversal) (A B : FDRep k U)
     (O : MulAction.orbitRel.Quotient G (Finset (G ⧸ U))) :
     orbitStabTerm U s A B O ∈ TauCeti.virtualCharacters k G := by
-  let := MulAction.stabilizer_finset_finiteIndex (G := G) O.out
+  let := MulAction.finiteIndex_stabilizer_finset (G := G) O.out
   dsimp only [orbitStabTerm]
   rw [Subgroup.indClassFun_ofFDRep_character]
-  exact neg_one_pow_smul_mem_virtualCharacters _ (TauCeti.character_mem_virtualCharacters _)
+  exact TauCeti.neg_one_pow_smul_mem_virtualCharacters _ (TauCeti.character_mem_virtualCharacters _)
 
 private theorem sum_orbitStabTerm_apply {k G : Type*} [Field k] [Group G] (U : Subgroup G)
     [U.FiniteIndex] [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
@@ -445,7 +370,7 @@ private theorem sum_orbitStabTerm_apply {k G : Type*} [Field k] [Group G] (U : S
           ∑ T : MulAction.orbit G O.out,
             if g • T.val = T.val then evalOrbitFactor U s A B g T.val else 0 := by
     refine Finset.sum_congr rfl fun O _ ↦ ?_
-    let := MulAction.stabilizer_finset_finiteIndex (G := G) O.out
+    let := MulAction.finiteIndex_stabilizer_finset (G := G) O.out
     let := Fintype.ofFinite (MulAction.orbit G O.out)
     exact indClassFun_stabilizerRep_apply U s O.out A B g
   have hsig :
@@ -457,8 +382,8 @@ private theorem sum_orbitStabTerm_apply {k G : Type*} [Field k] [Group G] (U : S
     let := fun O : MulAction.orbitRel.Quotient G (Finset (G ⧸ U)) ↦
       Fintype.ofFinite (MulAction.orbit G O.out)
     rw [← Fintype.sum_sigma']
-    exact Fintype.sum_equiv (MulAction.selfEquivSigmaOrbits G (Finset (G ⧸ U))).symm _ _ fun p ↦ by
-      rw [selfEquivSigmaOrbits_symm_coe]
+    exact Fintype.sum_equiv (MulAction.selfEquivSigmaOrbits G (Finset (G ⧸ U))).symm _ _
+      fun _ ↦ rfl
   rw [hterm, hsig, ← Finset.sum_filter]
   exact Finset.sum_subtype (Finset.univ.filter fun T : Finset (G ⧸ U) ↦ g • T = T)
     (p := fun T : Finset (G ⧸ U) ↦ g • T = T) (fun T ↦ by simp)
@@ -505,63 +430,6 @@ theorem tensorIndClassFun_mem_virtualCharacters {k G : Type*} [Field k] [Group G
   rw [hfilt, ← Fintype.prod_add]
   refine Finset.prod_congr rfl fun ω _ ↦ ?_
   simp [sub_eq_neg_add]
-
-/-- **Prime-index sign character.** For a subgroup `H ≤ G` of prime index `l` and a commutative
-ring `k`, the homomorphism `G →* kˣ` sending elements of `H` to `1` and elements outside `H` to
-`(-1 : kˣ) ^ (l - 1)`. For `l = 2` it is the sign indicator `H.signIndicatorHom` of `H`; for every
-other index it is trivial, which for odd prime `l` is `(-1) ^ (l - 1) = 1` off `H`. -/
-noncomputable def primeIndexSignChar {k G : Type*} [CommRing k] [Group G]
-    (H : Subgroup G) {l : ℕ} (hH : H.index = l) : G →* kˣ :=
-  if h2 : l = 2 then
-    (Units.map (Int.castRingHom k).toMonoidHom).comp (H.signIndicatorHom (by simp [hH, h2]))
-  else 1
-
-/-- Evaluating `Subgroup.primeIndexSignChar` on elements of `H` gives `1`. -/
-@[simp]
-theorem primeIndexSignChar_apply_of_mem {k G : Type*} [CommRing k] [Group G]
-    (H : Subgroup G) {l : ℕ} (hH : H.index = l) {g : G} (hg : g ∈ H) :
-    H.primeIndexSignChar (k := k) hH g = 1 := by
-  unfold primeIndexSignChar
-  split_ifs <;> simp [hg]
-
-/-- Evaluating `Subgroup.primeIndexSignChar` outside `H` gives `(-1 : kˣ) ^ (l - 1)`. -/
-@[simp]
-theorem primeIndexSignChar_apply_of_notMem {k G : Type*} [CommRing k] [Group G]
-    (H : Subgroup G) {l : ℕ} (hl : l.Prime) (hH : H.index = l) {g : G} (hg : g ∉ H) :
-    H.primeIndexSignChar (k := k) hH g = (-1 : kˣ) ^ (l - 1) := by
-  unfold primeIndexSignChar
-  split_ifs with h2
-  · subst h2
-    simp [hg]
-  · have heven : Even (l - 1) :=
-      Nat.even_iff.mpr (by have := (hl.eq_two_or_odd).resolve_left h2; omega)
-    simp [heven.neg_one_pow]
-
-private theorem zpowers_finRotate_stabilizer_eq_bot {l : ℕ} (hl : l.Prime)
-    {S : Finset (Fin l)} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
-    MulAction.stabilizer (Subgroup.zpowers (finRotate l)) S = ⊥ := by
-  have : NeZero l := ⟨hl.ne_zero⟩
-  have hcard : Nat.card (Subgroup.zpowers (finRotate l)) = l := by
-    rw [Nat.card_zpowers, TauCeti.orderOf_finRotate hl.ne_zero]
-  have : Fact (Nat.card (Subgroup.zpowers (finRotate l))).Prime := ⟨by rw [hcard]; exact hl⟩
-  refine (Subgroup.eq_bot_or_eq_top_of_prime_card _).resolve_right fun htop ↦ hS ?_
-  obtain ⟨a, ha⟩ := hne
-  refine Finset.eq_univ_of_forall fun b ↦ ?_
-  let k : ℕ := (b - a : Fin l).val
-  have hmem : (⟨finRotate l ^ k,
-      (Subgroup.zpowers (finRotate l)).pow_mem (Subgroup.mem_zpowers _) _⟩ :
-      Subgroup.zpowers (finRotate l)) ∈
-      MulAction.stabilizer (Subgroup.zpowers (finRotate l)) S :=
-    htop ▸ Subgroup.mem_top _
-  rw [MulAction.mem_stabilizer_iff, Subgroup.smul_def] at hmem
-  have hsm := Finset.smul_mem_smul_finset (a := finRotate l ^ k) ha
-  have hrot : (finRotate l ^ k) • a = b := by
-    rw [Equiv.Perm.smul_def]
-    ext
-    have heq : (a + (b - a) : Fin l) = b := add_sub_cancel a b
-    rw [Fin.coe_finRotate_pow, ← heq, Fin.val_add]
-  rw [hmem, hrot] at hsm
-  exact hsm
 
 private theorem conjNormal_prod_conj {k G : Type*} [CommMonoid k] [Group G]
     (H : Subgroup G) [H.Normal] {l : ℕ} (x : G) {ψ₁ ψ₂ : H → k}
@@ -657,28 +525,20 @@ private theorem sum_orbit_finRotate_eq {k : Type*} [AddCommMonoid k] {l : ℕ} (
       ∑ T : MulAction.orbit (Subgroup.zpowers (finRotate l)) S, F T.val := by
   have hord : orderOf (finRotate l) = l := TauCeti.orderOf_finRotate hl.ne_zero
   have hfin : IsOfFinOrder (finRotate l) := orderOf_pos_iff.mp (hord.symm ▸ hl.pos)
+  have := TauCeti.isPretransitive_of_finRotate_mem (Subgroup.mem_zpowers (finRotate l))
+  have hbot : MulAction.stabilizer (Subgroup.zpowers (finRotate l)) S = ⊥ :=
+    TauCeti.stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive
+      (by rwa [Nat.card_zpowers, hord]) hne hS
   -- `j ↦ finRotate l ^ j` enumerates `⟨finRotate l⟩`, which acts freely on the orbit of `S`.
   let e : Fin l ≃ MulAction.orbit (Subgroup.zpowers (finRotate l)) S :=
     (finCongr hord.symm).trans <| (finEquivZPowers hfin).trans <|
       QuotientGroup.quotientBot.symm.toEquiv.trans <|
-        (Subgroup.quotientEquivOfEq (zpowers_finRotate_stabilizer_eq_bot hl hne hS).symm).trans
+        (Subgroup.quotientEquivOfEq hbot.symm).trans
           (MulAction.orbitEquivQuotientStabilizer _ S).symm
   refine Fintype.sum_equiv e _ _ fun j ↦ congrArg F ?_
   rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.trans_apply, Equiv.trans_apply,
     finEquivZPowers_apply]
   exact (MulAction.orbitEquivQuotientStabilizer_symm_apply _ S _).symm
-
-private theorem orbitRel_finRotate_prop {l : ℕ} {S T : Finset (Fin l)}
-    (h : MulAction.orbitRel (Subgroup.zpowers (finRotate l)) (Finset (Fin l)) S T) :
-    S.card = T.card ∧ ((S.Nonempty ∧ S ≠ Finset.univ) ↔ (T.Nonempty ∧ T ≠ Finset.univ)) := by
-  obtain ⟨⟨σ, _⟩, rfl⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
-  refine ⟨Finset.card_smul_finset σ T, ?_⟩
-  constructor <;> rintro ⟨hne, hne_univ⟩
-  · refine ⟨Finset.smul_finset_nonempty.mp hne, fun hT ↦ hne_univ ?_⟩
-    rw [hT, Finset.smul_finset_univ]
-  · refine ⟨Finset.smul_finset_nonempty.mpr hne, fun hsm ↦ hne_univ ?_⟩
-    have := congrArg (σ⁻¹ • ·) hsm
-    simpa [inv_smul_smul, Finset.smul_finset_univ] using this
 
 private theorem sum_finRotate_orbit_indClassFun_eq {k G : Type*} [CommRing k] [Group G]
     (H : Subgroup G) [H.Normal] [H.FiniteIndex] {l : ℕ} (hl : l.Prime) (hH : H.index = l)
@@ -719,12 +579,14 @@ private theorem sum_finRotate_orbit_indClassFun_eq {k G : Type*} [CommRing k] [G
         (sum_orbit_finRotate_eq hl hO.1 hO.2 fun T ↦ φ T h)).trans ?_
       rw [Finset.mul_sum]
       refine Finset.sum_congr rfl fun T _ ↦ ?_
-      have hrel := orbitRel_finRotate_prop (MulAction.orbitRel_apply.mpr T.property)
-      rw [hrel.1, ite_eq_left_of_eq_true _ _ (eq_true (hrel.2.mpr hO))]
+      have hrel := MulAction.orbitRel_apply.mpr T.property
+      rw [MulAction.card_eq_of_orbitRel_finset hrel, ite_eq_left_of_eq_true _ _
+        (eq_true ((MulAction.nonempty_and_ne_univ_iff_of_orbitRel_finset hrel).mpr hO))]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false hO)]
       refine (Finset.sum_eq_zero fun T _ ↦ ?_).symm
-      have hrel := orbitRel_finRotate_prop (MulAction.orbitRel_apply.mpr T.property)
-      have hnt : ¬ (T.val.Nonempty ∧ T.val ≠ Finset.univ) := fun hT ↦ hO (hrel.2.mp hT)
+      have hrel := MulAction.orbitRel_apply.mpr T.property
+      have hnt : ¬ (T.val.Nonempty ∧ T.val ≠ Finset.univ) := fun hT ↦
+        hO ((MulAction.nonempty_and_ne_univ_iff_of_orbitRel_finset hrel).mp hT)
       rw [ite_eq_right_of_eq_false _ _ (eq_false hnt)]
   rw [horb]
   dsimp only [φ]
@@ -733,7 +595,7 @@ private theorem sum_finRotate_orbit_indClassFun_eq {k G : Type*} [CommRing k] [G
   rw [← Fintype.sum_sigma']
   exact Fintype.sum_equiv
     (MulAction.selfEquivSigmaOrbits (Subgroup.zpowers (finRotate l)) (Finset (Fin l))).symm
-    _ _ fun p ↦ by rw [selfEquivSigmaOrbits_symm_coe]
+    _ _ fun _ ↦ rfl
 
 private theorem tensorIndClassFun_sub_of_index_prime_mem {k G : Type*} [CommRing k] [Group G]
     (H : Subgroup G) [H.Normal] [H.FiniteIndex] {l : ℕ} (hl : l.Prime) (hH : H.index = l)
@@ -743,7 +605,7 @@ private theorem tensorIndClassFun_sub_of_index_prime_mem {k G : Type*} [CommRing
     (h : H) :
     H.tensorIndClassFun (ψ₁ - ψ₂) h =
       H.tensorIndClassFun ψ₁ h +
-        (-1 : k) ^ l * ((H.primeIndexSignChar (k := k) hH h : k) * H.tensorIndClassFun ψ₂ h) +
+        (-1 : k) ^ l * (((H.quotientSign h : ℤ) : k) * H.tensorIndClassFun ψ₂ h) +
         ∑ O ∈ Finset.univ.filter (fun O : MulAction.orbitRel.Quotient
             (Subgroup.zpowers (finRotate l)) (Finset (Fin l)) ↦
             O.out.Nonempty ∧ O.out ≠ Finset.univ),
@@ -756,7 +618,7 @@ private theorem tensorIndClassFun_sub_of_index_prime_mem {k G : Type*} [CommRing
   rw [tensorIndClassFun_apply_of_mem_of_index_prime H hl hH hx hsub h,
     tensorIndClassFun_apply_of_mem_of_index_prime H hl hH hx hψ₁ h,
     tensorIndClassFun_apply_of_mem_of_index_prime H hl hH hx hψ₂ h,
-    primeIndexSignChar_apply_of_mem H hH h.property, Units.val_one, one_mul,
+    quotientSign_apply_of_mem H h.property, Units.val_one, Int.cast_one, one_mul,
     sum_finRotate_orbit_indClassFun_eq H hl hH hx hψ₁ hψ₂ h]
   simp only [Pi.sub_apply]
   rw [Finset.prod_sub, Finset.powerset_univ]
@@ -785,10 +647,10 @@ private theorem tensorIndClassFun_sub_of_index_prime_mem {k G : Type*} [CommRing
           mul_assoc, mul_comm (∏ _ ∈ Finset.univ \ S, _)]
   simp only [hsplit, Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
 
-/-- **Prime-index virtual-character decomposition (6.1 (b)).** For a normal subgroup `H ≤ G` of
+/-- **Prime-index decomposition of tensor induction.** For a normal subgroup `H ≤ G` of
 prime index `l`, `x ∉ H`, and `H`-conjugation-invariant functions `ψ₁, ψ₂ : H → k` over a
 commutative ring `k`, `H.tensorIndClassFun (ψ₁ - ψ₂)` decomposes as `H.tensorIndClassFun ψ₁`,
-`(-1) ^ l • (primeIndexSignChar * H.tensorIndClassFun ψ₂)`, and the alternating sum over
+`(-1) ^ l • (H.quotientSign * H.tensorIndClassFun ψ₂)`, and the alternating sum over
 cyclic-shift orbits on nonempty proper subsets of `Fin l` of `H.indClassFun` applied to the twisted
 product along the subset. -/
 theorem tensorIndClassFun_sub_of_index_prime {k G : Type*} [CommRing k] [Group G]
@@ -798,7 +660,7 @@ theorem tensorIndClassFun_sub_of_index_prime {k G : Type*} [CommRing k] [Group G
     [Fintype (MulAction.orbitRel.Quotient (Subgroup.zpowers (finRotate l)) (Finset (Fin l)))] :
     H.tensorIndClassFun (ψ₁ - ψ₂) =
       H.tensorIndClassFun ψ₁ +
-        (-1 : k) ^ l • ((fun g ↦ (H.primeIndexSignChar (k := k) hH g : k)) *
+        (-1 : k) ^ l • ((fun g ↦ ((H.quotientSign g : ℤ) : k)) *
           H.tensorIndClassFun ψ₂) +
         ∑ O ∈ Finset.univ.filter (fun O : MulAction.orbitRel.Quotient
             (Subgroup.zpowers (finRotate l)) (Finset (Fin l)) ↦
@@ -816,11 +678,12 @@ theorem tensorIndClassFun_sub_of_index_prime {k G : Type*} [CommRing k] [Group G
     rw [tensorIndClassFun_apply_of_notMem_of_index_prime H hl hH hsub hg (h := ⟨g ^ l, hgl⟩) rfl,
       tensorIndClassFun_apply_of_notMem_of_index_prime H hl hH hψ₁ hg (h := ⟨g ^ l, hgl⟩) rfl,
       tensorIndClassFun_apply_of_notMem_of_index_prime H hl hH hψ₂ hg (h := ⟨g ^ l, hgl⟩) rfl,
-      primeIndexSignChar_apply_of_notMem H hl hH hg]
-    have hpow : (-1 : k) ^ l * ((((-1 : kˣ) ^ (l - 1)).val : k)) = -1 := by
+      quotientSign_apply_of_notMem_of_index_prime H hl hH hg]
+    have hpow : (-1 : k) ^ l * ((((-1 : ℤˣ) ^ (l - 1) : ℤˣ) : ℤ) : k) = -1 := by
       have hlpos : 1 ≤ l := hl.pos
       have hadd : l + (l - 1) = 1 + 2 * (l - 1) := by omega
-      rw [Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, ← pow_add, hadd, pow_add, pow_mul]
+      rw [Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, Int.cast_pow, Int.cast_neg,
+        Int.cast_one, ← pow_add, hadd, pow_add, pow_mul]
       simp
     have hind_zero : ∀ f : H → k, H.indClassFun f g = 0 := fun f ↦ by
       rw [Subgroup.indClassFun_apply]

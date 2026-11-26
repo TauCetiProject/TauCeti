@@ -57,6 +57,8 @@ complex character that is an integer combination of characters of representation
   its forward direction.
 * `TauCeti.mul_mem_virtualCharacters` and `TauCeti.one_mem_virtualCharacters`: the lattice is
   closed under the pointwise product and contains the constant `1`.
+* `TauCeti.neg_one_pow_smul_mem_virtualCharacters`: the lattice is closed under multiplication by
+  the signs `(-1) ^ n`.
 * `TauCeti.comp_mem_virtualCharacters`: pulling back along a monoid homomorphism preserves virtual
   characters.
 * `TauCeti.irreducibleCharacters_subset_virtualCharacters`: every irreducible character is a
@@ -195,6 +197,13 @@ theorem mul_mem_virtualCharacters {f g : G → k} (hf : f ∈ virtualCharacters 
   | add_right y z x hy hz hx ihy ihz => rw [mul_add]; exact AddSubgroup.add_mem _ ihy ihz
   | neg_left x y hx hy ih => rw [neg_mul]; exact AddSubgroup.neg_mem _ ih
   | neg_right x y hx hy ih => rw [mul_neg]; exact AddSubgroup.neg_mem _ ih
+
+/-- Virtual characters are closed under multiplication by the signs `(-1) ^ n`. -/
+theorem neg_one_pow_smul_mem_virtualCharacters (n : ℕ) {f : G → k}
+    (hf : f ∈ virtualCharacters k G) : ((-1 : k) ^ n • f) ∈ virtualCharacters k G := by
+  rcases Nat.even_or_odd n with h | h
+  · simpa [h.neg_one_pow] using hf
+  · simpa [h.neg_one_pow] using neg_mem hf
 
 /-- **The constant function `1` is a virtual character**, being the character of the trivial
 one-dimensional representation. -/

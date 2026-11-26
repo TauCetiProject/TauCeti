@@ -24,7 +24,7 @@ the original group. It is the `Nat.card` shadow of the coset-space bijection
   index of `H ⊔ N` in `G`.
 * `Subgroup.index_comap_subtype_eq_card_map`: the index of the preimage of `N` in `H` is the order
   of the image of `H` in `G ⧸ N`.
-* `Subgroup.orderOf_mk_eq_index_of_prime_of_notMem`, `Subgroup.quotientPrimeEquiv`: an element
+* `Subgroup.orderOf_mk_eq_index_of_index_prime_of_notMem`, `Subgroup.quotientPrimeEquiv`: an element
   outside a normal subgroup `H` of prime index generates `G ⧸ H`, of order `H.index`, giving an
   equivalence between `G ⧸ H` and `Fin H.index`.
 -/
@@ -62,7 +62,7 @@ theorem zpowers_mk_eq_top_of_index_prime {G : Type*} [Group G] (H : Subgroup G) 
 
 /-- In the quotient `G ⧸ H` by a normal subgroup of prime index `l`, every element `x ∉ H`
 projects to an element of order `l`. -/
-theorem orderOf_mk_eq_index_of_prime_of_notMem {G : Type*} [Group G] (H : Subgroup G)
+theorem orderOf_mk_eq_index_of_index_prime_of_notMem {G : Type*} [Group G] (H : Subgroup G)
     [H.Normal] {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) :
     orderOf (QuotientGroup.mk x : G ⧸ H) = l := by
   rw [orderOf_eq_card_of_zpowers_eq_top (zpowers_mk_eq_top_of_index_prime H hl hH hx),
@@ -74,7 +74,7 @@ theorem orderOf_mk_eq_index_of_prime_of_notMem {G : Type*} [Group G] (H : Subgro
 noncomputable def quotientPrimeEquiv {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
     {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) : Fin l ≃ G ⧸ H :=
   have hq : orderOf (QuotientGroup.mk x : G ⧸ H)⁻¹ = l := by
-    rw [orderOf_inv, orderOf_mk_eq_index_of_prime_of_notMem H hl hH hx]
+    rw [orderOf_inv, orderOf_mk_eq_index_of_index_prime_of_notMem H hl hH hx]
   have htop : zpowers (QuotientGroup.mk x : G ⧸ H)⁻¹ = ⊤ := by
     rw [zpowers_inv, zpowers_mk_eq_top_of_index_prime H hl hH hx]
   (finCongr hq.symm).trans <| (finEquivZPowers (orderOf_pos_iff.mp (hq ▸ hl.pos))).trans <|

@@ -206,30 +206,8 @@ private theorem tensorIndClassFun_inv_mul_mul {R G : Type*} [CommMonoid R] [Grou
   let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers (r⁻¹ * g * r)) (G ⧸ U))
   let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U))
   rw [tensorIndClassFun_def, tensorIndClassFun_def]
-  let e := MulAction.conjOrbitEquiv (α := G ⧸ U) g r
-  refine Fintype.prod_equiv e _ _ fun q ↦ ?_
-  have hrep : (QuotientGroup.mk (r * q.out.out) : G ⧸ U) = r • q.out := by
-    -- Rewrite left multiplication on cosets as the left action of `G` on `G ⧸ U`.
-    change r • (QuotientGroup.mk q.out.out : G ⧸ U) = r • q.out
-    rw [QuotientGroup.out_eq']
-  have hq : e q = Quotient.mk'' (r • q.out) := by
-    conv_lhs => rw [← Quotient.out_eq q]
-    exact MulAction.conjOrbitEquiv_mk g r q.out
-  have horb : MulAction.orbitRel (Subgroup.zpowers g) (G ⧸ U) (e q).out (r • q.out) :=
-    Quotient.exact' ((Quotient.out_eq (e q)).trans hq)
-  rw [← apply_conj_pow_minimalPeriod_eq_of_orbitRel hf g horb
-    (QuotientGroup.out_eq' (e q).out) hrep]
-  congr 1
-  apply Subtype.ext
-  dsimp only
-  have hm : Function.minimalPeriod ((r⁻¹ * g * r) • ·) q.out =
-      Function.minimalPeriod (g • ·) (r • q.out) := by
-    simpa [mul_assoc] using (MulAction.minimalPeriod_conj_smul (r⁻¹ * g * r) r q.out).symm
-  have hp : (r⁻¹ * g * r) ^ Function.minimalPeriod (g • ·) (r • q.out) =
-      r⁻¹ * g ^ Function.minimalPeriod (g • ·) (r • q.out) * r := by
-    simpa [inv_inv] using (conj_pow (a := r⁻¹) (b := g))
-  rw [hm, hp]
-  simp [mul_assoc]
+  exact Fintype.prod_equiv (MulAction.conjOrbitEquiv (α := G ⧸ U) g r) _ _ fun q ↦
+    apply_conj_pow_minimalPeriod_conjOrbitEquiv hf Quotient.out QuotientGroup.out_eq' g r q
 
 /-- **Conjugation invariance of `Subgroup.tensorIndClassFun`.** If `f : U → R` is invariant under
 `U`-conjugation, then `U.tensorIndClassFun f` is invariant under `G`-conjugation. -/

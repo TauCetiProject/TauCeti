@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.List.Rotate
 public import Mathlib.LinearAlgebra.Trace
 
 import Mathlib.LinearAlgebra.Dimension.Free
@@ -25,6 +26,9 @@ endomorphism mapping a basis into itself, as the number of basis vectors it fixe
   finite basis.
 * `TauCeti.LinearMap.trace_eq_zero_of_not_finite`: the trace vanishes on a module that is not
   finite.
+* `TauCeti.LinearMap.trace_eq_zero_of_subsingleton`: the trace vanishes on a subsingleton module.
+* `TauCeti.LinearMap.trace_list_prod_rotate`, `TauCeti.LinearMap.trace_list_prod_of_isRotated`:
+  the trace of a product of endomorphisms is invariant under cyclic rotation of the factors.
 * `LinearMap.eq_trace_smul_one_of_finrank_eq_one`: on a free module of rank one, an
   endomorphism is its trace times the identity.
 * `LinearMap.trace_eq_sum_of_range_le_of_apply_single_eq`: the trace of an endomorphism whose
@@ -50,6 +54,30 @@ theorem trace_eq_zero_of_not_exists_basis (h : ¬∃ s : Finset M, Nonempty (Mod
 /-- The trace vanishes on a module that is not finite. -/
 theorem trace_eq_zero_of_not_finite (h : ¬Module.Finite R M) : _root_.LinearMap.trace R M = 0 :=
   trace_eq_zero_of_not_exists_basis fun ⟨_, ⟨b⟩⟩ ↦ h (.of_basis b)
+
+/-- The trace vanishes on a subsingleton module. -/
+theorem trace_eq_zero_of_subsingleton [Subsingleton M] (f : M →ₗ[R] M) :
+    _root_.LinearMap.trace R M f = 0 := by
+  rw [Subsingleton.elim f 0, map_zero]
+
+/-- **Cyclic invariance of the trace of a product.** Rotating the list of factors of a product of
+endomorphisms does not change its trace. -/
+theorem trace_list_prod_rotate (l : List (M →ₗ[R] M)) (n : ℕ) :
+    _root_.LinearMap.trace R M (l.rotate n).prod = _root_.LinearMap.trace R M l.prod := by
+  induction n with
+  | zero => rw [List.rotate_zero]
+  | succ n ih =>
+    rw [← List.rotate_rotate, ← ih]
+    rcases l.rotate n with _ | ⟨a, l'⟩
+    · rfl
+    · rw [List.rotate_cons_succ, List.rotate_zero, List.prod_append, List.prod_singleton,
+        List.prod_cons, _root_.LinearMap.trace_mul_comm]
+
+/-- The trace of a product of endomorphisms depends only on the cyclic order of the factors. -/
+theorem trace_list_prod_of_isRotated {l₁ l₂ : List (M →ₗ[R] M)} (h : l₁ ~r l₂) :
+    _root_.LinearMap.trace R M l₁.prod = _root_.LinearMap.trace R M l₂.prod := by
+  obtain ⟨n, rfl⟩ := h
+  exact (trace_list_prod_rotate l₁ n).symm
 
 end TauCeti.LinearMap
 

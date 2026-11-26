@@ -174,7 +174,7 @@ theorem monomialHom_right_zpow (s : U.LeftTransversal) (g : G) (k : ℤ) (x : G 
 
 /-- Telescoping product of `TauCeti.lWord` along `n` steps of the inverse orbit of `g`: by the
 cocycle law `TauCeti.lWord_mul_lWord`, it is the transversal word of `g ^ n`. -/
-theorem lWord_list_ofFn_prod (t : G ⧸ U → G) (g : G) (q : G ⧸ U) (n : ℕ) :
+theorem prod_ofFn_lWord_eq_lWord_pow (t : G ⧸ U → G) (g : G) (q : G ⧸ U) (n : ℕ) :
     (List.ofFn fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k : ℕ)) • q) g).prod =
       TauCeti.lWord U t q (g ^ n) := by
   induction n generalizing q with
@@ -214,6 +214,6 @@ theorem monomialHom_orbit_prod (s : U.LeftTransversal) (g : G) (q : G ⧸ U) :
     rw [monomialHom_left, hinv]
   have hper : (g ^ Function.minimalPeriod (g • ·) q)⁻¹ • q = q := by
     rw [inv_smul_eq_iff, ← MulAction.period_eq_minimalPeriod, MulAction.pow_period_smul]
-  rw [hval, lWord_list_ofFn_prod, TauCeti.lWord_def, hper]
+  rw [hval, prod_ofFn_lWord_eq_lWord_pow, TauCeti.lWord_def, hper]
 
 end Subgroup

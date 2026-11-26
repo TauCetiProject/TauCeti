@@ -92,17 +92,10 @@ theorem tensorIndClassFun_apply_of_notMem_of_index_prime {R G : Type*} [CommMono
     have hmk : g ^ l • q₁ = QuotientGroup.mk (g ^ l) := by simp [q₁]
     rw [hmk, ← hh]
     exact Quotient.sound' (QuotientGroup.leftRel_apply.mpr (by simp))
-  have hper_ne_one : Function.minimalPeriod (g • ·) q₁ ≠ 1 := fun h1 ↦ hg <| by
-    have hfix := h1 ▸ Function.isPeriodicPt_minimalPeriod (g • ·) q₁
-    rw [Function.IsPeriodicPt, Function.IsFixedPt, Function.iterate_one] at hfix
-    have hg1 : g • q₁ = QuotientGroup.mk g := by simp [q₁]
-    rw [hg1] at hfix
-    have hinv : g⁻¹ ∈ H := by
-      simpa using QuotientGroup.leftRel_apply.mp (Quotient.exact' hfix)
-    exact H.inv_mem_iff.mp hinv
-  have hper1 : Function.minimalPeriod (g • ·) q₁ = l :=
-    (hl.eq_one_or_self_of_dvd _ (Function.IsPeriodicPt.minimalPeriod_dvd hl_fix)).resolve_left
-      hper_ne_one
+  have hnfix : ¬Function.IsFixedPt (g • ·) q₁ := fun hfix ↦ hg <| by
+    simpa using (TauCeti.smul_quotientGroup_mk_eq_self_iff H g 1).mp hfix
+  have : Fact l.Prime := ⟨hl⟩
+  have hper1 : Function.minimalPeriod (g • ·) q₁ = l := Function.minimalPeriod_eq_prime hl_fix hnfix
   let q₀ : MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ H) := Quotient.mk'' q₁
   have hper_q₀ : Function.minimalPeriod (g • ·) q₀.out = l := by
     rw [← MulAction.natCard_orbit_zpowers g q₀.out,
