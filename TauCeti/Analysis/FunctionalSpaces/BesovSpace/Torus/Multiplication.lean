@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Analysis.Fourier.Torus.Smooth
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
-import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Normed.Lp.Reindex
-import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
 # Multiplication by smooth functions on periodic Besov spaces
@@ -30,9 +28,10 @@ an integrable function `f` this is the coefficient sequence of the pointwise pro
 `g = eₘ` it is the shift `(eₘ c)(n) = c(n - m)`
 (`TauCeti.UnitAddTorus.BesovSpace.smulLeftCLM_mFourierSmooth`). The operator norm is
 bounded by a constant times any bound `M` for the derivatives of `g` of order at most
-`⌈|s|⌉₊ + card d + 2` (`TauCeti.UnitAddTorus.BesovSpace.exists_norm_smulLeftCLM_le`), so the
-multiplication depends continuously on `g` in the `C^∞` topology. This is the periodic counterpart
-of `TauCeti.BesovSpace.smulLeftCLM` on `ℝᵈ`.
+`⌈|s|⌉₊ + card d + 2` (`TauCeti.UnitAddTorus.BesovSpace.exists_norm_smulLeftCLM_le`), and it is
+additive and homogeneous in `g` (`TauCeti.UnitAddTorus.BesovSpace.smulLeftCLM_add` and
+`TauCeti.UnitAddTorus.BesovSpace.smulLeftCLM_smul`). This is the periodic counterpart of
+`TauCeti.BesovSpace.smulLeftCLM` on `ℝᵈ`.
 
 ## The argument
 
@@ -76,14 +75,15 @@ namespace TauCeti.UnitAddTorus
 
 open _root_.UnitAddTorus
 
-variable {d : Type*} [Fintype d]
+variable {d : Type*} [Fintype d] {φ : ContDiffBump (0 : EuclideanSpace ℝ d)}
+
+section Blocks
 
 -- The periodic Littlewood–Paley blocks and Mathlib's monomials `mFourierLp` live on `Lᵖ` for the
 -- product of the Haar probability measures on the circle factors, given by this instance; use it
--- here so that the blocks are those of the periodic Besov spaces.
+-- here so that the blocks are those of the periodic Besov spaces. The section ends before the
+-- operators, so that their statements, such as integrability, refer to the ordinary torus volume.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
-
-variable {φ : ContDiffBump (0 : EuclideanSpace ℝ d)}
 
 /-! ### Shifted blocks -/
 
@@ -239,6 +239,8 @@ theorem MemBesov.shift {c : (d → ℤ) → ℂ} (hc : MemBesov φ s p q c) (m :
 
 end MemBesov
 
+end Blocks
+
 namespace BesovSpace
 
 variable {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
@@ -307,6 +309,17 @@ def mulMFourier (m : d → ℤ) : BesovSpace φ s p q →L[ℂ] BesovSpace φ s 
 theorem coeff_mulMFourier (m : d → ℤ) (u : BesovSpace φ s p q) :
     (mulMFourier φ s p q m u).coeff = fun n ↦ u.coeff (n - m) := (rfl)
 
+/-- Multiplication by `e₀ = 1` is the identity. -/
+@[simp]
+theorem mulMFourier_zero : mulMFourier φ s p q (0 : d → ℤ) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun u ↦ ext (by simp)
+
+/-- Multiplication by `e_{m + m'} = eₘ e_{m'}` is the composite of the multiplications by `eₘ` and
+`e_{m'}`. -/
+theorem mulMFourier_add (m m' : d → ℤ) :
+    mulMFourier φ s p q (m + m') = (mulMFourier φ s p q m).comp (mulMFourier φ s p q m') :=
+  ContinuousLinearMap.ext fun u ↦ ext <| funext fun n ↦ by simp [sub_add_eq_sub_sub]
+
 variable (φ s) in
 /-- **The multiplications by Fourier monomials are bounded polynomially.** There is `C`, depending
 only on `φ` and `s`, such that multiplication by `eₘ` on `B^s_{p,q}(𝕋ᵈ)` has operator norm at most
@@ -321,37 +334,36 @@ theorem exists_norm_mulMFourier_le :
 
 /-! ### Multiplication by smooth functions -/
 
-/-- The weighted Fourier coefficients `‖ĝ(m)‖ (1 + ‖m‖)^{|s| + 1}` of a smooth function `g` are
-summable, where `‖m‖` is the Euclidean norm of the lattice point `m`. -/
-private theorem summable_norm_mFourierCoeff_mul_rpow {g : UnitAddTorus d → ℂ}
-    (hg : g ∈ smoothFunctions d) (s : ℝ) :
-    Summable fun m ↦ ‖mFourierCoeff g m‖ * (1 + ‖latticePoint m‖) ^ (|s| + 1) := by
-  refine (summable_norm_mFourierCoeff_mul_pow hg (Nat.cast_nonneg (Fintype.card d))
-    (⌈|s|⌉₊ + 1)).of_nonneg_of_le (fun m ↦ by positivity) fun m ↦ ?_
+variable (φ s) in
+/-- The bound `exists_norm_mulMFourier_le` with a natural exponent and the supremum norm of `m`:
+there is `C ≥ 0`, depending only on `φ` and `s`, such that multiplication by `eₘ` on
+`B^s_{p,q}(𝕋ᵈ)` has operator norm at most `C (1 + ‖m‖)^{⌈|s|⌉₊ + 1}` for all `m`, `p` and `q`. -/
+private theorem exists_norm_mulMFourier_le_pow :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (p q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)] (m : d → ℤ),
+      ‖mulMFourier φ s p q m‖ ≤ C * (1 + ‖m‖) ^ (⌈|s|⌉₊ + 1) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_mulMFourier_le φ (d := d) s
+  refine ⟨C * (1 + Fintype.card d) ^ (⌈|s|⌉₊ + 1), by positivity,
+    fun p q _ _ m ↦ (hC p q m).trans ?_⟩
   have hx : (1 : ℝ) ≤ 1 + ‖latticePoint m‖ := le_add_of_nonneg_right (norm_nonneg _)
-  gcongr
-  calc (1 + ‖latticePoint m‖) ^ (|s| + 1)
-      ≤ (1 + ‖latticePoint m‖) ^ ((⌈|s|⌉₊ + 1 : ℕ) : ℝ) := by
+  calc C * (1 + ‖latticePoint m‖) ^ (|s| + 1)
+      ≤ C * (1 + ‖latticePoint m‖) ^ ((⌈|s|⌉₊ + 1 : ℕ) : ℝ) := by
         gcongr
         push_cast
         linarith [Nat.le_ceil |s|]
-    _ = (1 + ‖latticePoint m‖) ^ (⌈|s|⌉₊ + 1) := Real.rpow_natCast _ _
-    _ ≤ (1 + Fintype.card d * ‖m‖) ^ (⌈|s|⌉₊ + 1) := by
+    _ = C * (1 + ‖latticePoint m‖) ^ (⌈|s|⌉₊ + 1) := by rw [Real.rpow_natCast]
+    _ ≤ C * ((1 + Fintype.card d) * (1 + ‖m‖)) ^ (⌈|s|⌉₊ + 1) := by
         gcongr
-        exact norm_latticePoint_le m
+        nlinarith [norm_latticePoint_le m, norm_nonneg m,
+          (Nat.cast_nonneg (Fintype.card d) : (0 : ℝ) ≤ Fintype.card d)]
+    _ = _ := by rw [mul_pow, mul_assoc]
 
 /-- The series `∑ₘ ĝ(m) eₘ` of multiplications by Fourier monomials converges absolutely in the
 operator norm on `B^s_{p,q}(𝕋ᵈ)`, for every smooth `g`. -/
 private theorem summable_mFourierCoeff_smul_mulMFourier {g : UnitAddTorus d → ℂ}
     (hg : g ∈ smoothFunctions d) :
     Summable fun m ↦ mFourierCoeff g m • mulMFourier φ s p q m := by
-  obtain ⟨C, -, hC⟩ := exists_norm_mulMFourier_le φ (d := d) s
-  refine Summable.of_norm_bounded ((summable_norm_mFourierCoeff_mul_rpow hg s).mul_left C)
-    fun m ↦ ?_
-  rw [norm_smul]
-  calc ‖mFourierCoeff g m‖ * ‖mulMFourier φ s p q m‖
-      ≤ ‖mFourierCoeff g m‖ * (C * (1 + ‖latticePoint m‖) ^ (|s| + 1)) := by gcongr; exact hC p q m
-    _ = C * (‖mFourierCoeff g m‖ * (1 + ‖latticePoint m‖) ^ (|s| + 1)) := by ring
+  obtain ⟨C, -, hC⟩ := exists_norm_mulMFourier_le_pow φ (d := d) s
+  exact summable_mFourierCoeff_smul_of_norm_le hg (hC p q)
 
 variable (φ s p q) in
 /-- **Multiplication by a smooth function on a periodic Besov space.** For a smooth function `g`
@@ -378,6 +390,7 @@ theorem hasSum_coeff_smulLeftCLM (g : smoothFunctions d) (u : BesovSpace φ s p 
     (ContinuousLinearMap.apply ℂ _ u)).mapL (coeffCLM φ s p q n)
   simpa using h
 
+/-- The Fourier coefficients of `g u` are the convolution `∑ₘ ĝ(m) u(n - m)`. -/
 theorem coeff_smulLeftCLM (g : smoothFunctions d) (u : BesovSpace φ s p q) (n : d → ℤ) :
     (smulLeftCLM φ s p q g u).coeff n =
       ∑' m, mFourierCoeff (g : UnitAddTorus d → ℂ) m * u.coeff (n - m) :=
@@ -392,10 +405,29 @@ theorem coeff_smulLeftCLM_eq_mFourierCoeff_mul (g : smoothFunctions d) {u : Beso
   funext n
   refine (hasSum_coeff_smulLeftCLM g u n).unique ?_
   rw [hu]
-  -- `hf` is stated for the file-local volume, the product of the Haar probability measures on
-  -- the circle factors; `volume_eq_pi_haarAddCircle` identifies it with the global volume for
-  -- which `hasSum_mFourierCoeff_mul` is stated.
-  exact hasSum_mFourierCoeff_mul g.property (by rw [volume_eq_pi_haarAddCircle]; exact hf) n
+  have hsum : Summable fun m ↦ ‖mFourierCoeff (g : UnitAddTorus d → ℂ) m‖ := by
+    simpa using summable_norm_mFourierCoeff_mul_pow g.property le_rfl 0
+  exact hasSum_mFourierCoeff_mul (g := ⟨g, continuous_of_mem_smoothFunctions g.property⟩)
+    hsum.of_norm hf n
+
+/-- Multiplication by smooth functions is additive in the function: `(g + g') u = g u + g' u`. -/
+theorem smulLeftCLM_add (g g' : smoothFunctions d) :
+    smulLeftCLM φ s p q (g + g') = smulLeftCLM φ s p q g + smulLeftCLM φ s p q g' := by
+  refine (hasSum_mFourierCoeff_smul_mulMFourier (g + g')).unique ?_
+  convert (hasSum_mFourierCoeff_smul_mulMFourier g).add
+    (hasSum_mFourierCoeff_smul_mulMFourier g') using 1
+  funext m
+  rw [Submodule.coe_add, _root_.UnitAddTorus.mFourierCoeff_add
+    (integrable_of_mem_smoothFunctions g.property)
+    (integrable_of_mem_smoothFunctions g'.property), add_smul]
+
+/-- Multiplication by smooth functions is homogeneous in the function: `(c g) u = c (g u)`. -/
+theorem smulLeftCLM_smul (c : ℂ) (g : smoothFunctions d) :
+    smulLeftCLM φ s p q (c • g) = c • smulLeftCLM φ s p q g := by
+  refine (hasSum_mFourierCoeff_smul_mulMFourier (c • g)).unique ?_
+  convert (hasSum_mFourierCoeff_smul_mulMFourier g).const_smul c using 1
+  funext m
+  rw [Submodule.coe_smul, _root_.UnitAddTorus.mFourierCoeff_smul, smul_eq_mul, mul_smul]
 
 /-- Multiplication by the smooth function `eₘ` is the multiplication by the Fourier monomial `eₘ`,
 the shift of the Fourier coefficients by `m`. -/
@@ -416,51 +448,11 @@ theorem exists_norm_smulLeftCLM_le :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (p q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)] (g : smoothFunctions d)
       {M : ℝ}, DerivBound (⌈|s|⌉₊ + 1 + Fintype.card d + 1) M (g : UnitAddTorus d → ℂ) →
         ‖smulLeftCLM φ s p q g‖ ≤ C * M := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_mulMFourier_le φ (d := d) s
-  set N := ⌈|s|⌉₊ + 1
-  set R : ℝ := (Fintype.card d : ℝ)
-  have hsum : Summable fun m : d → ℤ ↦ ((1 + ‖m‖) ^ (Fintype.card d + 1))⁻¹ :=
-    summable_pi_int_one_add_norm_pow_inv (lt_add_one _)
-  set S := ∑' m : d → ℤ, ((1 + ‖m‖) ^ (Fintype.card d + 1))⁻¹
-  refine ⟨C * (1 + R) ^ N * 2 ^ (N + Fintype.card d + 2) * S, by positivity,
+  obtain ⟨C, hC0, hC⟩ := exists_norm_mulMFourier_le_pow φ (d := d) s
+  refine ⟨C * 2 ^ (⌈|s|⌉₊ + 1 + Fintype.card d + 2) *
+    ∑' m : d → ℤ, ((1 + ‖m‖) ^ (Fintype.card d + 1))⁻¹, by positivity,
     fun p q _ _ g M hM ↦ ?_⟩
-  have hdecay := one_add_norm_pow_mul_norm_mFourierCoeff_le_mul_inv
-    ((mem_smoothFunctions.1 g.property).of_le (mod_cast le_top)) hM
-  -- Each term is bounded by `C (1 + R)^N 2^{N + d + 2} M (1 + ‖m‖)^{-(d + 1)}`.
-  have hterm (m : d → ℤ) : ‖mFourierCoeff (g : UnitAddTorus d → ℂ) m • mulMFourier φ s p q m‖ ≤
-      C * (1 + R) ^ N * 2 ^ (N + Fintype.card d + 2) * M *
-        ((1 + ‖m‖) ^ (Fintype.card d + 1))⁻¹ := by
-    have hx : (1 : ℝ) ≤ 1 + ‖latticePoint m‖ := le_add_of_nonneg_right (norm_nonneg _)
-    have hw : (1 + ‖latticePoint m‖) ^ (|s| + 1) ≤ (1 + R) ^ N * (1 + ‖m‖) ^ N := by
-      calc (1 + ‖latticePoint m‖) ^ (|s| + 1)
-          ≤ (1 + ‖latticePoint m‖) ^ ((N : ℕ) : ℝ) := by
-            gcongr
-            push_cast [N]
-            linarith [Nat.le_ceil |s|]
-        _ = (1 + ‖latticePoint m‖) ^ N := Real.rpow_natCast _ _
-        _ ≤ ((1 + R) * (1 + ‖m‖)) ^ N := by
-            gcongr
-            nlinarith [norm_latticePoint_le m, norm_nonneg m,
-              (Nat.cast_nonneg (Fintype.card d) : (0 : ℝ) ≤ Fintype.card d)]
-        _ = (1 + R) ^ N * (1 + ‖m‖) ^ N := mul_pow _ _ _
-    rw [norm_smul]
-    calc ‖mFourierCoeff (g : UnitAddTorus d → ℂ) m‖ * ‖mulMFourier φ s p q m‖
-        ≤ ‖mFourierCoeff (g : UnitAddTorus d → ℂ) m‖ *
-            (C * ((1 + R) ^ N * (1 + ‖m‖) ^ N)) := by
-          gcongr
-          exact (hC p q m).trans (by gcongr)
-      _ = C * (1 + R) ^ N * ((1 + ‖m‖) ^ N * ‖mFourierCoeff (g : UnitAddTorus d → ℂ) m‖) := by
-          ring
-      _ ≤ C * (1 + R) ^ N * (2 ^ (N + Fintype.card d + 2) * M *
-            ((1 + ‖m‖) ^ (Fintype.card d + 1))⁻¹) :=
-          mul_le_mul_of_nonneg_left (hdecay m) (by positivity)
-      _ = _ := by ring
-  have hbound := hsum.mul_left (C * (1 + R) ^ N * 2 ^ (N + Fintype.card d + 2) * M)
-  calc ‖smulLeftCLM φ s p q g‖
-      ≤ ∑' m, C * (1 + R) ^ N * 2 ^ (N + Fintype.card d + 2) * M *
-          ((1 + ‖m‖) ^ (Fintype.card d + 1))⁻¹ :=
-        tsum_of_norm_bounded hbound.hasSum hterm
-    _ = _ := by rw [tsum_mul_left]; ring
+  exact norm_tsum_mFourierCoeff_smul_le g.property (hC p q) hM
 
 end BesovSpace
 
