@@ -82,13 +82,14 @@ theorem degMatrix_sup_of_disjoint [AddMonoidWithOne R] [Fintype V] [DecidableEq 
 theorem lapMatrix_sup_of_disjoint [AddGroupWithOne R] [Fintype V] [DecidableEq V]
     [DecidableRel (G ⊔ H).Adj] (h : Disjoint G H) :
     (G ⊔ H).lapMatrix R = G.lapMatrix R + H.lapMatrix R := by
-  ext v w
-  by_cases hvw : v = w
-  · subst hvw
-    simp [lapMatrix, degMatrix, degree_sup_of_disjoint _ h]
-  by_cases hG : G.Adj v w
-  · simp [lapMatrix, degMatrix, hvw, hG, disjoint_left.mp h v w hG]
-  · by_cases hH : H.Adj v w <;> simp [lapMatrix, degMatrix, hvw, hG, hH]
+  rw [lapMatrix.eq_1 R (G ⊔ H), degMatrix_sup_of_disjoint R h, adjMatrix_sup_of_disjoint R h]
+  -- `R` need not be commutative, but the matrices involved commute: their entries are casts.
+  refine AddCommute.add_sub_add_comm (Matrix.ext fun v w => ?_) (Matrix.ext fun v w => ?_) <;>
+    by_cases hG : G.Adj v w
+  · simp [hG, disjoint_left.mp h v w hG]
+  · simp [hG]
+  · simp [hG, hG.ne, degMatrix]
+  · simp [hG]
 
 /-- If `G ≤ H`, the Laplacian of the graph `H \ G` of the edges of `H` not in `G` is the
 difference of the Laplacians of `H` and `G`. -/

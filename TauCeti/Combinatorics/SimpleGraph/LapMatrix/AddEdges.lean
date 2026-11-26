@@ -78,11 +78,7 @@ theorem lapEigenvalues_le_of_add_card_sdiff_le {i k : Fin (Fintype.card V)}
   have hrank : ((G ⊔ H).lapMatrix ℝ - G.lapMatrix ℝ).rank ≤ #(H.edgeFinset \ G.edgeFinset) := by
     rw [← lapMatrix_sdiff_of_le ℝ le_sup_left]
     refine (rank_lapMatrix_le_card_edgeFinset _).trans_eq ?_
-    congr 1
-    ext e
-    simp only [mem_edgeFinset, mem_sdiff, edgeSet_sdiff, edgeSet_sup, Set.mem_sdiff,
-      Set.mem_union]
-    tauto
+    simp [edgeFinset]
   rw [lapEigenvalues_def, lapEigenvalues_def]
   exact ((G ⊔ H).isHermitian_lapMatrix ℝ).eigenvalues₀_le_of_rank_sub_le
     (G.isHermitian_lapMatrix ℝ) hrank hk
