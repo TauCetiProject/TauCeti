@@ -93,24 +93,18 @@ theorem mem_normalizer_iff {g : GL (Fin 2) F} :
 `(c, τ)` to the matrix of `v ↦ c τ(v)` in the basis `TauCeti.nonSplitTorusBasis`. -/
 noncomputable def normalizerEquiv :
     Eˣ × (E ≃ₐ[F] E) ≃ Subgroup.normalizer (GL2NonSplitTorus F E : Set (GL (Fin 2) F)) :=
-  Equiv.ofBijective
-    (fun p ↦ ⟨(Matrix.GeneralLinearGroup.toLin' (nonSplitTorusBasis F E)).symm (mulGalois p.1 p.2),
-      mem_normalizer_iff.2 ⟨p.1, p.2, MulEquiv.apply_symm_apply _ _⟩⟩)
-    ⟨fun _ _ h ↦ mulGalois_injective
-      ((Matrix.GeneralLinearGroup.toLin' (nonSplitTorusBasis F E)).symm.injective
-        (congrArg Subtype.val h)),
-      fun ⟨g, hg⟩ ↦ by
-        obtain ⟨c, τ, h⟩ := mem_normalizer_iff.1 hg
-        exact ⟨(c, τ), Subtype.ext (MulEquiv.symm_apply_eq _ |>.2 h.symm)⟩⟩
+  normalizerLmulUnitsRangeEquiv.trans
+    ((MulEquiv.subgroupMap (Matrix.GeneralLinearGroup.toLin' (nonSplitTorusBasis F E)) _).trans
+      (MulEquiv.subgroupCongr (by
+        rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.map_equiv_normalizer_eq, map_toLin']))).symm
 
 /-- `TauCeti.GL2NonSplitTorus.normalizerEquiv` sends `(c, τ)` to the matrix of `v ↦ c τ(v)` in the
 basis `TauCeti.nonSplitTorusBasis`. -/
 @[simp]
 theorem toLin'_normalizerEquiv_apply (p : Eˣ × (E ≃ₐ[F] E)) :
     Matrix.GeneralLinearGroup.toLin' (nonSplitTorusBasis F E) (normalizerEquiv p) =
-      mulGalois p.1 p.2 :=
-  -- `normalizerEquiv p` is by definition the matrix `toLin'⁻¹ (mulGalois p.1 p.2)`
-  MulEquiv.apply_symm_apply _ _
+      mulGalois p.1 p.2 := by
+  simp [normalizerEquiv]
 
 /-- **The order of the normalizer of the non-split torus**: over a field with `q` elements it has
 `2(q² - 1)` elements. -/

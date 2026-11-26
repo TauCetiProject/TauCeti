@@ -9,21 +9,20 @@ public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # The normalizer of `Eˣ` in `GL_F(E)`
 
 Let `E/F` be a field extension. The units of `E` act on the `F`-vector space `E` by left
 multiplication, giving a subgroup `TauCeti.lmulUnitsRange F E` of the general linear group
-`GL_F(E)`. When `E/F` is finite-dimensional, its normalizer consists of the `F`-linear
-automorphisms `v ↦ c τ(v)` of `E` with `c ∈ Eˣ` and `τ` an `F`-algebra automorphism of `E`
-(`TauCeti.mulGalois`), and the pair `(c, τ)` is unique, so the normalizer is in bijection with
-`Eˣ × Gal(E/F)`.
+`GL_F(E)`. Its normalizer consists of the `F`-linear automorphisms `v ↦ c τ(v)` of `E` with
+`c ∈ Eˣ` and `τ` an `F`-algebra automorphism of `E` (`TauCeti.mulGalois`), and the pair `(c, τ)`
+is unique, so the normalizer is in bijection with `Eˣ × Gal(E/F)`.
 
 An automorphism `φ` normalizing `Eˣ` satisfies `φ ∘ (x ·) = (τ x ·) ∘ φ` for a map `τ`, and
-evaluating at `1` gives `φ x = τ(x) φ(1)`, so `τ = φ(1)⁻¹ φ` is multiplicative.
+evaluating at `1` gives `φ x = τ(x) φ(1)`, so `τ = φ(1)⁻¹ φ` is multiplicative
+(`TauCeti.algEquivOfMulLmul`).
 
 ## Main declarations
 
@@ -82,6 +81,16 @@ theorem mulGalois_inv (c : Eˣ) (τ : E ≃ₐ[F] E) :
   refine inv_eq_of_mul_eq_one_right (Units.ext (LinearMap.ext fun v ↦ ?_))
   simp
 
+/-- `v ↦ c τ(v)` multiplies as in `Eˣ ⋊ Gal(E/F)`: `(c, τ) (c', τ') = (c τ(c'), τ τ')`. -/
+theorem mulGalois_mul (c c' : Eˣ) (τ τ' : E ≃ₐ[F] E) :
+    mulGalois c τ * mulGalois c' τ' = mulGalois (c * Units.map (τ : E →* E) c') (τ * τ') :=
+  Units.ext (LinearMap.ext fun v ↦ by simp [mul_assoc])
+
+/-- `v ↦ 1 · id(v)` is the identity. -/
+@[simp]
+theorem mulGalois_one_one : mulGalois (1 : Eˣ) (1 : E ≃ₐ[F] E) = 1 :=
+  Units.ext (LinearMap.ext fun v ↦ by simp)
+
 /-- Conjugation by `v ↦ c τ(v)` maps the units of `E` acting by multiplication into themselves. -/
 theorem mulGalois_conj_mem_lmulUnitsRange (c : Eˣ) (τ : E ≃ₐ[F] E)
     {u : LinearMap.GeneralLinearGroup F E} (hu : u ∈ lmulUnitsRange F E) :
@@ -99,9 +108,33 @@ theorem apply_eq_of_mul_lmul {φ : E →ₗ[F] E} {τ : E → E}
   simpa [Algebra.coe_lmul_eq_mul, LinearMap.mul_apply'] using
     congrArg (fun ψ : E →ₗ[F] E ↦ ψ 1) (h v)
 
-section FiniteDimensional
+private theorem apply_one_ne_zero (φ : LinearMap.GeneralLinearGroup F E) :
+    (φ : E →ₗ[F] E) 1 ≠ 0 :=
+  (LinearMap.GeneralLinearGroup.toLinearEquiv φ).map_ne_zero_iff.2 one_ne_zero
 
-variable [FiniteDimensional F E]
+/-- A linear automorphism `φ` with `φ ∘ (x ·) = (τ x ·) ∘ φ` for some `τ` and every `x` makes `τ`
+an `F`-algebra automorphism of `E`, namely `v ↦ φ(v) φ(1)⁻¹`. -/
+noncomputable def algEquivOfMulLmul (φ : LinearMap.GeneralLinearGroup F E) {τ : E → E}
+    (h : ∀ x, (φ : E →ₗ[F] E) * Algebra.lmul F E x = Algebra.lmul F E (τ x) * φ) :
+    E ≃ₐ[F] E :=
+  AlgEquiv.ofBijective
+    (AlgHom.ofLinearMap (LinearMap.mulRight F ((φ : E →ₗ[F] E) 1)⁻¹ ∘ₗ (φ : E →ₗ[F] E))
+      (mul_inv_cancel₀ (apply_one_ne_zero φ)) fun x y ↦ by
+        have hxy := congrArg (fun ψ : E →ₗ[F] E ↦ ψ y) (h x)
+        simp only [mul_apply_eq_comp, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply'] at hxy
+        simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.mulRight_apply, hxy,
+          apply_eq_of_mul_lmul h x, mul_inv_cancel_right₀ (apply_one_ne_zero φ)]
+        ring)
+    ((Units.mk0 _ (inv_ne_zero (apply_one_ne_zero φ))).mulRight_bijective.comp
+      (LinearMap.GeneralLinearGroup.toLinearEquiv φ).bijective)
+
+/-- `TauCeti.algEquivOfMulLmul` is `τ`. -/
+@[simp]
+theorem algEquivOfMulLmul_apply (φ : LinearMap.GeneralLinearGroup F E) {τ : E → E}
+    (h : ∀ x, (φ : E →ₗ[F] E) * Algebra.lmul F E x = Algebra.lmul F E (τ x) * φ) (v : E) :
+    algEquivOfMulLmul φ h v = τ v :=
+  (congrArg (· * ((φ : E →ₗ[F] E) 1)⁻¹) (apply_eq_of_mul_lmul h v)).trans
+    (mul_inv_cancel_right₀ (apply_one_ne_zero φ) _)
 
 /-- **The normalizer of `Eˣ` in `GL_F(E)`** consists of the maps `v ↦ c τ(v)` with `c ∈ Eˣ` and
 `τ ∈ Gal(E/F)`. -/
@@ -124,38 +157,17 @@ theorem mem_normalizer_lmulUnitsRange_iff {φ : LinearMap.GeneralLinearGroup F E
       simp only [Units.val_mul, Units.coe_map, mul_assoc, Units.inv_mul, mul_one] at this
       exact this.symm
     choose τ hτ using hconj
-    have hφ1 : (φ : E →ₗ[F] E) 1 ≠ 0 := fun h0 ↦ one_ne_zero
-      ((LinearMap.GeneralLinearGroup.toLinearEquiv φ).injective (h0.trans (map_zero _).symm))
-    have hφv := apply_eq_of_mul_lmul hτ
-    have hτv (v : E) : τ v = (φ : E →ₗ[F] E) v * ((φ : E →ₗ[F] E) 1)⁻¹ := by
-      rw [hφv v, mul_inv_cancel_right₀ hφ1]
-    -- `τ` is an `F`-algebra endomorphism of `E`
-    let τ' : E →ₐ[F] E :=
-      { toFun := τ
-        map_one' := by rw [hτv, mul_inv_cancel₀ hφ1]
-        map_mul' := fun x y ↦ by
-          have h := congrArg (fun ψ : E →ₗ[F] E ↦ ψ y) (hτ x)
-          simp only [mul_apply_eq_comp, Algebra.coe_lmul_eq_mul,
-            LinearMap.mul_apply'] at h
-          rw [hτv (x * y), h, hτv y]
-          ring
-        map_zero' := by rw [hτv, map_zero, zero_mul]
-        map_add' := fun x y ↦ by rw [hτv, hτv, hτv, map_add, add_mul]
-        commutes' := fun a ↦ by
-          rw [hτv, Algebra.algebraMap_eq_smul_one, map_smul, smul_mul_assoc,
-            mul_inv_cancel₀ hφ1] }
-    have hτ' (v : E) : τ' v = τ v := rfl
-    refine ⟨Units.mk0 _ hφ1, AlgEquiv.ofBijective τ' (AlgHom.bijective τ'), ?_⟩
+    refine ⟨Units.mk0 _ (apply_one_ne_zero φ), algEquivOfMulLmul φ hτ, ?_⟩
     ext v
-    rw [mulGalois_apply, Units.val_mk0, AlgEquiv.ofBijective_apply, hτ', hφv v, mul_comm]
+    rw [mulGalois_apply, Units.val_mk0, algEquivOfMulLmul_apply, apply_eq_of_mul_lmul hτ v,
+      mul_comm]
   · rintro ⟨c, τ, rfl⟩
     refine Subgroup.mem_normalizer_iff.2 fun u ↦ ?_
     refine ⟨mulGalois_conj_mem_lmulUnitsRange c τ, fun hu ↦ ?_⟩
     have h := mulGalois_conj_mem_lmulUnitsRange (Units.map (τ.symm : E →* E) c⁻¹) τ.symm hu
-    rwa [← mulGalois_inv, inv_inv, ← mul_assoc, ← mul_assoc, inv_mul_cancel, one_mul,
-      mul_assoc, inv_mul_cancel, mul_one] at h
+    rw [← mulGalois_inv, inv_inv] at h
+    simpa [mul_assoc] using h
 
-omit [FiniteDimensional F E] in
 /-- The factorization `v ↦ c τ(v)` is unique. -/
 theorem mulGalois_injective :
     Function.Injective fun p : Eˣ × (E ≃ₐ[F] E) ↦ mulGalois p.1 p.2 := by
@@ -182,7 +194,5 @@ noncomputable def normalizerLmulUnitsRangeEquiv :
 theorem coe_normalizerLmulUnitsRangeEquiv_apply (p : Eˣ × (E ≃ₐ[F] E)) :
     (normalizerLmulUnitsRangeEquiv p : LinearMap.GeneralLinearGroup F E) = mulGalois p.1 p.2 :=
   (rfl)
-
-end FiniteDimensional
 
 end TauCeti
