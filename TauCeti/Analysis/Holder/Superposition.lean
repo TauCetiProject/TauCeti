@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Operator.Holder
 public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Normed.Operator.Prod
+import TauCeti.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -185,9 +186,7 @@ theorem exists_mem_nhds_holderOnWith_fderiv_superposition {A : E → F → G} {u
     (prod_mono ball_subset_closedBall le_rfl).trans (self_subset_thickening hδ _)
   -- A bound for the distances in `s`.
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ y ∈ s, ∀ z ∈ s, edist y z ≤ D :=
-    ⟨(Metric.ediam s).toNNReal, fun y hy z hz ↦ by
-      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 isBounded_ball)]
-      exact Metric.edist_le_ediam_of_mem hy hz⟩
+    ⟨_, fun y hy z hz ↦ Metric.edist_le_diam_of_mem isBounded_ball hy hz⟩
   refine ⟨s, ball_mem_nhds x hρ, _, HolderOnWith.fderiv_superposition (hCA.mono hst)
     (fun p hp ↦ ((hA.differentiableOn one_ne_zero).differentiableAt ((hU.prod isOpen_univ).mem_nhds
       ⟨hsU (ball_subset_closedBall hp.1), mem_univ _⟩)).hasFDerivAt)
