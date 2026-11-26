@@ -7,11 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
-public import Mathlib.RingTheory.Finiteness.Defs
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
-import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 
 /-!
@@ -48,8 +46,6 @@ constants, which is larger than `k` when `k` is not algebraically closed in the 
 * `AlgebraicGeometry.Proj.isClosedImmersion_map_gradedLift`: if degree-one elements `f m`,
   `m ∈ M`, generate every homogeneous element of positive degree of a graded `R`-algebra `A`, then
   `Proj A` is a closed subscheme of `Proj (Sym_R M)`.
-* `TauCeti.SymmetricAlgebra.exists_isClosedImmersion_proj_map_free`: for a finite `R`-module `M`,
-  `Proj (Sym_R M)` embeds as a closed subscheme into `Proj (Sym_R R^{r+2})` via `Proj.map`.
 
 ## References
 
@@ -123,35 +119,3 @@ theorem isClosedImmersion_map_gradedLift {R M : Type u} [CommRing R] [AddCommMon
     (hf i hi).trans (SymmetricAlgebra.adjoin_range_subset_range_gradedLift R 𝒜 f)
 
 end AlgebraicGeometry.Proj
-
-namespace TauCeti.SymmetricAlgebra
-
-open AlgebraicGeometry
-
-universe u
-
-/-- For any finite `R`-module `M`, `Proj (Sym_R M)` embeds as a closed subscheme into
-`Proj (Sym_R (Fin (r + 2) → R))` via `Proj.map` of the graded map induced by a surjective
-`R`-linear map `(Fin (r + 2) → R) →ₗ[R] M`. -/
-theorem exists_isClosedImmersion_proj_map_free (R M : Type u) [CommRing R]
-    [AddCommMonoid M] [Module R M] [Module.Finite R M] :
-    ∃ (r : ℕ) (g : (Fin (r + 2) → R) →ₗ[R] M)
-      (hg : HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) ≤
-        (HomogeneousIdeal.irrelevant (homogeneousSubmodule R (Fin (r + 2) → R))).map
-          (_root_.SymmetricAlgebra.gradedMap R g)),
-      Function.Surjective g ∧
-        IsClosedImmersion (Proj.map (_root_.SymmetricAlgebra.gradedMap R g) hg) := by
-  obtain ⟨r, g₀, hg₀⟩ := Module.Finite.exists_fin' R M
-  let g : (Fin (r + 2) → R) →ₗ[R] M := g₀.comp (LinearMap.funLeft R R (Fin.castAdd 2))
-  have hg_surj : Function.Surjective g :=
-    hg₀.comp (LinearMap.funLeft_surjective_of_injective _ _ _ (Fin.castAdd_injective r 2))
-  have hφ_surj : Function.Surjective (_root_.SymmetricAlgebra.gradedMap R g) := by
-    simpa only [Function.Surjective, _root_.SymmetricAlgebra.gradedMap_apply] using
-      _root_.SymmetricAlgebra.map_surjective R g hg_surj
-  have hg : HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) ≤
-      (HomogeneousIdeal.irrelevant (homogeneousSubmodule R (Fin (r + 2) → R))).map
-        (_root_.SymmetricAlgebra.gradedMap R g) :=
-    HomogeneousIdeal.irrelevant_le_map_of_surjective _ hφ_surj
-  exact ⟨r, g, hg, hg_surj, Proj.isClosedImmersion_map _ hg hφ_surj⟩
-
-end TauCeti.SymmetricAlgebra

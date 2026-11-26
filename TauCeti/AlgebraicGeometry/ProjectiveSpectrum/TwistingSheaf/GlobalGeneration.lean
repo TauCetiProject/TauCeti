@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
+import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 
 /-!
 # Serre's theorem on twists of quasi-coherent sheaves on `Proj`
@@ -101,7 +102,15 @@ theorem eventually_exists_epi_free_tensor_twistingSheaf [CompactSpace (Proj 𝒜
     twistingSheaf.tensorObjIso f hf hcover n (-n) ≪≫
       eqToIso (congrArg (twistingSheaf 𝒜) (add_neg_cancel (n : ℤ))) ≪≫
       (unitIsoTwistingSheafZero 𝒜).symm
-  obtain ⟨π, hπ⟩ := Scheme.Modules.exists_epi_free_tensor_of_generatingSections_tensor σ μ
-  exact ⟨σ.I, inferInstance, π, hπ⟩
+  -- The surjection `𝒪^{⊕I} → F(n)`, as a morphism of `𝒪_{Proj A}`-modules.
+  let P : (Proj 𝒜).Modules := SheafOfModules.free σ.I
+  let p : P ⟶ F ⊗ twistingSheaf 𝒜 n := σ.π
+  have : Epi p := σ.epi
+  -- Tensoring on the right is a left adjoint, as `𝒪_{Proj A}`-modules are braided and closed.
+  have : Epi (p ▷ twistingSheaf 𝒜 (-n)) := (tensorRight _).map_epi p
+  let e : (F ⊗ twistingSheaf 𝒜 n) ⊗ twistingSheaf 𝒜 (-n) ≅ F :=
+    α_ F (twistingSheaf 𝒜 n) (twistingSheaf 𝒜 (-n)) ≪≫ whiskerLeftIso F μ ≪≫ ρ_ F
+  exact ⟨σ.I, inferInstance, p ▷ twistingSheaf 𝒜 (-n) ≫ e.hom,
+    epi_comp' this (IsIso.epi_of_iso e.hom)⟩
 
 end AlgebraicGeometry.Proj

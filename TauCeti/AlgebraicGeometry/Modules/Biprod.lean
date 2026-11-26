@@ -14,14 +14,13 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
 The site-level closure properties of direct sums of sheaves of modules
 (`TauCeti/Algebra/Category/ModuleCat/Sheaf/Quasicoherent/Biprod.lean`) specialize to a scheme `X`
 by taking the sheaf of rings to be the structure sheaf of `X`. Since `X.Modules` carries its own
-category and abelian structures, instance search does not find the site-level instances for finite
-biproducts or `M ⊞ N`, and they are restated here. This file also specializes the zero and
-finite-product closure instances for finite presentation. These specializations pre-elaborate the
-ringed-site hypotheses to stay within the default typeclass search-size bound.
+category and abelian structures, instance search does not find the site-level instances for
+`M ⊞ N`, and they are restated here. This file also specializes the zero and finite-product
+closure instances for finite presentation. These specializations pre-elaborate the ringed-site
+hypotheses to stay within the default typeclass search-size bound.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.hasFiniteBiproducts`: `𝒪ₓ`-modules have finite biproducts.
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_biprod`,
   `AlgebraicGeometry.Scheme.Modules.isFiniteType_biprod`,
   `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_biprod` and
@@ -41,10 +40,6 @@ namespace AlgebraicGeometry.Scheme.Modules
 open AlgebraicGeometry CategoryTheory Limits TauCeti
 
 universe u
-
-/-- `𝒪ₓ`-modules have finite biproducts. -/
-instance hasFiniteBiproducts (X : Scheme.{u}) : HasFiniteBiproducts X.Modules :=
-  TauCeti.SheafOfModules.hasFiniteBiproducts X.ringCatSheaf
 
 variable {X : Scheme.{u}} (M N : X.Modules)
 

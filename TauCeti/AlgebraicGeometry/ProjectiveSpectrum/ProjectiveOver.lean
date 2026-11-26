@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.FiniteSet
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 
 /-!
@@ -96,10 +95,24 @@ theorem IsProjectiveOver.exists_isClosedImmersion_pi [X.IsProjectiveOver R] :
     ∃ (n : ℕ) (f : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Fin (n + 2) → R))),
       IsClosedImmersion f ∧ f.IsOver (Spec (.of R)) := by
   obtain ⟨M, _, _, _, f, _, _⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
-  obtain ⟨n, g, hg, _, _⟩ := TauCeti.SymmetricAlgebra.exists_isClosedImmersion_proj_map_free R M
-  have : (Proj.map (SymmetricAlgebra.gradedMap R g) hg).IsOver (Spec (.of R)) :=
-    ⟨Proj.map_gradedMap_projToSpec R g hg⟩
-  exact ⟨n, f ≫ Proj.map (SymmetricAlgebra.gradedMap R g) hg, inferInstance, inferInstance⟩
+  obtain ⟨n, p, hp⟩ := Module.Finite.exists_fin' R M
+  -- The surjection `R^{n+2} → Rⁿ → M` forgets the last two coordinates.
+  let q : (Fin (n + 2) → R) →ₗ[R] M := p ∘ₗ LinearMap.funLeft R R (Fin.castAdd 2)
+  have hq : Function.Surjective q :=
+    hp.comp (LinearMap.funLeft_surjective_of_injective _ _ _ (Fin.castAdd_injective n 2))
+  let ι₁ : M →ₗ[R] TauCeti.SymmetricAlgebra.homogeneousSubmodule R M 1 :=
+    (SymmetricAlgebra.ι R M).codRestrict _ (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule R M)
+  let g :=
+    SymmetricAlgebra.gradedLift R (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) (ι₁ ∘ₗ q)
+  have hg : Function.Surjective g := by
+    refine SymmetricAlgebra.gradedLift_surjective R _ ?_
+    -- The generators of the lift are the images `ι (q x)` of the generators of `Sym_R M`.
+    have : (fun x ↦ ((ι₁ ∘ₗ q) x : SymmetricAlgebra R M)) = SymmetricAlgebra.ι R M ∘ q :=
+      funext fun _ ↦ by simp [ι₁]
+    rw [this, hq.range_comp, SymmetricAlgebra.adjoin_range_ι]
+  have hirr := HomogeneousIdeal.irrelevant_le_map_of_surjective g hg
+  have := Proj.isClosedImmersion_map g hirr hg
+  exact ⟨n, f ≫ Proj.map g hirr, inferInstance, inferInstance⟩
 
 /-- **A projective scheme is proper**: a scheme projective over `R` is proper over `R`. -/
 instance IsProjectiveOver.isProper [X.IsProjectiveOver R] : IsProper (X ↘ Spec (.of R)) := by
