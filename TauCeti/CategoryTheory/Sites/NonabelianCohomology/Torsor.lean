@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.CartesianMonoidal
 public import Mathlib.Algebra.Category.Grp.ForgetCorepresentable
 public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+public import Mathlib.CategoryTheory.Sites.CartesianMonoidal
 public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
 public import Mathlib.CategoryTheory.Sites.LocalProperties
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
@@ -44,6 +46,8 @@ relative to a fixed family of objects; here no covering is chosen.
   bijective over every object over which a torsor has a section is an isomorphism.
 * `CategoryTheory.Sheaf.Torsor.hom_ext_of_coversTop`: two morphisms of torsors which agree on
   one section over each object of a covering family are equal.
+* `CategoryTheory.Sheaf.Torsor.prod P Q`: the product of a `G`-torsor and an `H`-torsor, a torsor
+  under `G × H`.
 * `CategoryTheory.Sheaf.NonabelianH1 G`: the pointed set of isomorphism classes of `G`-torsors,
   with `NonabelianH1.mk`, `NonabelianH1.lift` and `NonabelianH1.mk_eq_mk_iff`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_eq_one_iff`: a torsor is trivial if and only if it has a
@@ -59,7 +63,7 @@ relative to a fixed family of objects; here no covering is chosen.
 
 public section
 
-open CategoryTheory Limits Opposite
+open CategoryTheory Limits Opposite MonoidalCategory
 
 universe w v u
 
@@ -305,6 +309,47 @@ lemma hom_ext_of_coversTop {P Q : Torsor G} {f g : P ⟶ Q} {I : Type*} {Y : I �
     (hY U.unop)).ext fun V a ⟨i, ⟨b⟩⟩ ↦ ?_
   exact ((NatTrans.naturality_apply f.hom.hom a.op x).symm.trans (key i b _)).trans
     (NatTrans.naturality_apply g.hom.hom a.op x)
+
+section prod
+
+variable {G H : Sheaf J GrpCat.{w}}
+
+/-- The product `P × Q` of a `G`-torsor `P` and an `H`-torsor `Q`, a torsor under the product
+`G × H` of sheaves of groups acting componentwise.
+
+The body is exposed because the sections of `P × Q` are, by definition, the pairs of sections of
+`P` and of `Q`; statements about it apply the action to such pairs. Use `prod_sheaf` and
+`prod_smul` rather than unfolding it. -/
+@[expose] def prod (P : Torsor G) (Q : Torsor H) : Torsor (G ⊗ H) where
+  sheaf := P.sheaf ⊗ Q.sheaf
+  mulAction U :=
+    { smul g x := (g.1 • x.1, g.2 • x.2)
+      one_smul x := Prod.ext (one_smul _ x.1) (one_smul _ x.2)
+      mul_smul g g' x := Prod.ext (mul_smul g.1 g'.1 x.1) (mul_smul g.2 g'.2 x.2) }
+  map_smul U V f g x := Prod.ext (P.map_smul f g.1 x.1) (Q.map_smul f g.2 x.2)
+  coversTop X := J.superset_covering (by
+      rintro W a ⟨⟨⟨V, ⟨p⟩⟩, ⟨b⟩⟩, ⟨⟨V', ⟨q⟩⟩, ⟨b'⟩⟩⟩
+      exact ⟨⟨W, ⟨(P.sheaf.obj.map b.op p, Q.sheaf.obj.map b'.op q)⟩⟩, ⟨𝟙 W⟩⟩)
+    (J.intersection_covering (P.coversTop X) (Q.coversTop X))
+  bijective U :=
+    ((Equiv.prodProdProdComm _ _ _ _).trans
+      (((Equiv.ofBijective _ (P.bijective U)).prodCongr
+        (Equiv.ofBijective _ (Q.bijective U))).trans
+          (Equiv.prodProdProdComm _ _ _ _))).bijective
+
+variable (P : Torsor G) (Q : Torsor H)
+
+/-- The underlying sheaf of the product torsor is the product of the underlying sheaves. -/
+lemma prod_sheaf : (P.prod Q).sheaf = P.sheaf ⊗ Q.sheaf :=
+  (rfl)
+
+/-- `G × H` acts componentwise on the product torsor. -/
+@[simp]
+lemma prod_smul {U : Cᵒᵖ} (g : (G ⊗ H).obj.obj U) (x : (P.prod Q).sheaf.obj.obj U) :
+    g • x = (g.1 • x.1, g.2 • x.2) :=
+  (rfl)
+
+end prod
 
 end Torsor
 

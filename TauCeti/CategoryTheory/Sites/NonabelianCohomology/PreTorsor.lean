@@ -162,7 +162,7 @@ private lemma bijective_sheafify (U : Cᵒᵖ) :
   have hsurj : Presheaf.IsLocallySurjective J β :=
     Presheaf.isLocallySurjective_of_isLocallySurjective_fac J fac
   let Q := (presheafToSheaf J (Type w)).obj F.presheaf
-  let s : (sheafCompose J (forget GrpCat)).obj G ⊗ Q ⟶ Q ⊗ Q :=
+  let s : (sheafCompose J (forget GrpCat.{w})).obj G ⊗ Q ⟶ Q ⊗ Q :=
     ObjectProperty.homMk β
   have : IsIso s := (Sheaf.isLocallyBijective_iff_isIso (A := Type w) s).1
     ⟨hinj, hsurj⟩

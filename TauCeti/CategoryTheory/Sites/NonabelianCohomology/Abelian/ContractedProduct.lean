@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.CartesianMonoidal
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.ContractedProduct
 
 /-!
@@ -30,8 +29,6 @@ constructed here.
 
 * `CategoryTheory.Sheaf.grpMul G`: the multiplication `G × G ⟶ G` of a sheaf of commutative
   groups.
-* `CategoryTheory.Sheaf.Torsor.prod P Q`: the product of a `G`-torsor and an `H`-torsor, a torsor
-  under `G × H`.
 * `CategoryTheory.Sheaf.Torsor.mul P Q`: the contracted product `P ∧ Q`.
 * `CategoryTheory.Sheaf.Torsor.mulMk p q`: the class `[p, q]`, with `Torsor.mulMk_smul_left`,
   `Torsor.mulMk_smul_right` and `Torsor.mulMk_eq_mulMk_iff`.
@@ -74,12 +71,9 @@ variable (G : Sheaf J GrpCat.{w}) [∀ U, IsMulCommutative (G.obj.obj U)]
 morphism of sheaves of groups because the groups of sections are commutative. -/
 def grpMul : G ⊗ G ⟶ G :=
   ObjectProperty.homMk
-    { app U := GrpCat.ofHom
-        { toFun x := @HMul.hMul (G.obj.obj U) (G.obj.obj U) _ _ x.1 x.2
-          map_one' := mul_one (1 : G.obj.obj U)
-          map_mul' x y :=
-            letI : CommGroup (G.obj.obj U) := { mul_comm := mul_comm' }
-            mul_mul_mul_comm x.1 y.1 x.2 y.2 }
+    { app U :=
+        letI : CommGroup (G.obj.obj U) := { mul_comm := mul_comm' }
+        GrpCat.ofHom (mulMonoidHom : G.obj.obj U × G.obj.obj U →* G.obj.obj U)
       naturality U V f := by
         ext x
         exact (map_mul (G.obj.map f).hom x.1 x.2).symm }
@@ -93,47 +87,6 @@ lemma grpMul_hom_app_apply {U : Cᵒᵖ} (a b : G.obj.obj U) :
 end grpMul
 
 namespace Torsor
-
-section prod
-
-variable {G H : Sheaf J GrpCat.{w}}
-
-/-- The product `P × Q` of a `G`-torsor `P` and an `H`-torsor `Q`, a torsor under the product
-`G × H` of sheaves of groups acting componentwise.
-
-The body is exposed because the sections of `P × Q` are, by definition, the pairs of sections of
-`P` and of `Q`; statements about it apply the action to such pairs. Use `prod_sheaf` and
-`prod_smul` rather than unfolding it. -/
-@[expose] def prod (P : Torsor G) (Q : Torsor H) : Torsor (G ⊗ H) where
-  sheaf := P.sheaf ⊗ Q.sheaf
-  mulAction U :=
-    { smul g x := (g.1 • x.1, g.2 • x.2)
-      one_smul x := Prod.ext (one_smul _ x.1) (one_smul _ x.2)
-      mul_smul g g' x := Prod.ext (mul_smul g.1 g'.1 x.1) (mul_smul g.2 g'.2 x.2) }
-  map_smul U V f g x := Prod.ext (P.map_smul f g.1 x.1) (Q.map_smul f g.2 x.2)
-  coversTop X := J.superset_covering (by
-      rintro W a ⟨⟨⟨V, ⟨p⟩⟩, ⟨b⟩⟩, ⟨⟨V', ⟨q⟩⟩, ⟨b'⟩⟩⟩
-      exact ⟨⟨W, ⟨(P.sheaf.obj.map b.op p, Q.sheaf.obj.map b'.op q)⟩⟩, ⟨𝟙 W⟩⟩)
-    (J.intersection_covering (P.coversTop X) (Q.coversTop X))
-  bijective U :=
-    ((Equiv.prodProdProdComm _ _ _ _).trans
-      (((Equiv.ofBijective _ (P.bijective U)).prodCongr
-        (Equiv.ofBijective _ (Q.bijective U))).trans
-          (Equiv.prodProdProdComm _ _ _ _))).bijective
-
-variable (P : Torsor G) (Q : Torsor H)
-
-/-- The underlying sheaf of the product torsor is the product of the underlying sheaves. -/
-lemma prod_sheaf : (P.prod Q).sheaf = P.sheaf ⊗ Q.sheaf :=
-  (rfl)
-
-/-- `G × H` acts componentwise on the product torsor. -/
-@[simp]
-lemma prod_smul {U : Cᵒᵖ} (g : (G ⊗ H).obj.obj U) (x : (P.prod Q).sheaf.obj.obj U) :
-    g • x = (g.1 • x.1, g.2 • x.2) :=
-  (rfl)
-
-end prod
 
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
   {G : Sheaf J GrpCat.{w}} [∀ U, IsMulCommutative (G.obj.obj U)]
