@@ -60,6 +60,9 @@ at `x`, and the sections of `W` in `I_x Γ(W)` vanish at `x`
   through which a differential operator of order at most `r` factors at `x`, characterized by
   `LinearMap.jetFactorOfMemDifferentialOperators_jet` and
   `LinearMap.eq_jetFactorOfMemDifferentialOperators`.
+* `TauCeti.JetBundle.jetProlongation`: the `r`-jet prolongation `s ↦ jʳs` as a linear map of
+  smooth sections, a differential operator of order at most `r`
+  (`TauCeti.JetBundle.jetProlongation_mem_differentialOperators`).
 * `TauCeti.mem_differentialOperators_section_iff_exists_linearMap`: for `W` of finite rank, the
   differential operators of order at most `r` are exactly the linear maps that factor at each point
   through a linear map on the fibre of `JᵣV`.
@@ -181,6 +184,34 @@ theorem mem_differentialOperators_section_iff_exists_linearMap
   obtain ⟨A, hA⟩ := h x
   rw [hA, hA, hst]
 
+/-! ### The jet prolongation -/
+
+variable (I F V r) in
+/-- The **`r`-jet prolongation** `s ↦ jʳs`, sending a smooth section of `V` to the smooth section
+`x ↦ jʳs(x)` of the jet bundle `JᵣV`, as a real-linear map. -/
+def JetBundle.jetProlongation :
+    Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; SymmetricJet ℝ E F r, JetBundle I F V r⟯ where
+  toFun s := ⟨jet I F r s, contMDiff_infty_jet s.contMDiff⟩
+  map_add' s t := ContMDiffSection.ext fun x ↦ by
+    simpa only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_add, Pi.add_apply,
+      jetLinearMap_apply] using map_add (jetLinearMap I F V r x) s t
+  map_smul' c s := ContMDiffSection.ext fun x ↦ by
+    simpa only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_smul, Pi.smul_apply,
+      RingHom.id_apply, jetLinearMap_apply] using map_smul (jetLinearMap I F V r x) c s
+
+omit [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] in
+@[simp]
+theorem JetBundle.jetProlongation_apply (s : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    jetProlongation I F V r s x = jet I F r s x :=
+  (rfl)
+
+/-- The `r`-jet prolongation is a differential operator of order at most `r`: its value at `x`
+only depends on the `r`-jet at `x`. -/
+theorem JetBundle.jetProlongation_mem_differentialOperators :
+    jetProlongation I F V r ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯
+      Cₛ^∞⟮I; SymmetricJet ℝ E F r, JetBundle I F V r⟯ r :=
+  mem_differentialOperators_section_iff_forall_jet_eq.2 fun _ _ _ h ↦ h
+
 /-! ### Smoothness of the jet factor -/
 
 section Smooth
@@ -258,19 +289,15 @@ theorem _root_.LinearMap.eq_jetFactorSection {P : Cₛ^∞⟮I; F, V⟯ →ₗ[�
 private def jetOperator
     (A : Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯) :
     Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯ where
-  toFun s := ⟨fun x ↦ A x (jet I F r s x), A.contMDiff.clm_bundle_apply
-    (contMDiff_infty_jet s.contMDiff)⟩
+  toFun s := ⟨fun x ↦ A x (JetBundle.jetProlongation I F V r s x),
+    A.contMDiff.clm_bundle_apply (JetBundle.jetProlongation I F V r s).contMDiff⟩
   map_add' s t := by
     ext x
-    simp only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_add, Pi.add_apply]
-    rw [← ContMDiffSection.coe_add, ← jetLinearMap_apply, ← jetLinearMap_apply,
-      ← jetLinearMap_apply, map_add, map_add]
+    simp only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_add, Pi.add_apply, map_add]
   map_smul' c s := by
     ext x
     simp only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_smul, Pi.smul_apply,
-      RingHom.id_apply]
-    rw [← ContMDiffSection.coe_smul, ← jetLinearMap_apply, ← jetLinearMap_apply, map_smul,
-      map_smul]
+      RingHom.id_apply, map_smul]
 
 omit [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle ∞ F' W I] in

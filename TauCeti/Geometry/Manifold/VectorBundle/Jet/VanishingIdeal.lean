@@ -42,6 +42,7 @@ geometric one through jets: an operator of order at most `r` kills `I_x ^ (r + 1
   `I_x ^ (r + 1) Γ(V)`, and it is onto the fibre of `JᵣV` at `x`.
 * `TauCeti.JetBundle.smoothSectionJetEquiv`: the induced real-linear equivalence
   `Γ(V) / I_x ^ (r + 1) Γ(V) ≃ (JᵣV)_x`.
+* `TauCeti.JetBundle.truncate_surjective`: truncation of jets to a lower order is onto.
 
 ## References
 
@@ -187,6 +188,14 @@ theorem jetLinearMap_surjective (x : M) : Function.Surjective (jetLinearMap I F 
       (FirstJetBundle.isOpen_baseSet F V x).mem_nhds (FirstJetBundle.mem_baseSet_self F V x)) hs
   rw [nhdsSet_singleton] at hts
   exact ⟨t, (jet_congr_of_eventuallyEq hts).trans hsA⟩
+
+/-- **Truncation of jets is onto.** For `r' ≤ r`, every `r'`-jet at `x` is the truncation of an
+`r`-jet at `x`: both are jets of one global smooth section. -/
+theorem truncate_surjective {r' : ℕ} (hr : r' ≤ r) (x : M) :
+    Function.Surjective (truncate (I := I) (F := F) (V := V) hr x) := by
+  intro B
+  obtain ⟨s, rfl⟩ := jetLinearMap_surjective (r := r') x B
+  exact ⟨jet I F r s x, (truncate_jet hr s x).trans (jetLinearMap_apply x s).symm⟩
 
 variable (I F V r) in
 /-- **The fibre of the jet bundle is the module of sections modulo a power of the vanishing
