@@ -170,7 +170,7 @@ theorem isPeriodicWord_iff_hasPeriod {P w : List (α × Bool)} (hP : P ≠ []) :
     IsPeriodicWord P w ↔
       w.HasPeriod P.length ∧ (w.take P.length ~r P ∨ w.take P.length ~r invRev P) := by
   have h := List.length_le_and_exists_infix_flatten_replicate_iff (w := w) (l := invRev P)
-    (by simpa [invRev] using hP)
+    (by simpa using hP)
   rw [invRev_length] at h
   rw [isPeriodicWord_iff, exists_or, and_or_left,
     List.length_le_and_exists_infix_flatten_replicate_iff hP, h, and_or_left]
@@ -183,7 +183,7 @@ theorem isPeriodicWord_iff_exists_eq_flatten_replicate_append {P w : List (α ×
       A₁ <+: A ∧ A₁.length < A.length ∧ w = (List.replicate r A).flatten ++ A₁ := by
   have h :=
     List.length_le_and_exists_infix_flatten_replicate_iff_exists_eq_flatten_replicate_append
-      (w := w) (l := invRev P) (by simpa [invRev] using hP)
+      (w := w) (l := invRev P) (by simpa using hP)
   rw [invRev_length] at h
   rw [isPeriodicWord_iff, exists_or, and_or_left,
     List.length_le_and_exists_infix_flatten_replicate_iff_exists_eq_flatten_replicate_append hP, h]
@@ -215,7 +215,7 @@ theorem IsPeriodicWord.existsUnique_prefix_drop_flatten_replicate {P w : List (�
     · obtain ⟨o, ho, hwo⟩ := hw.exists_prefix_drop_flatten_replicate hP0
       exact ⟨(true, o), ho, n, hwo⟩
     · obtain ⟨o, ho, hwo⟩ := hw.exists_prefix_drop_flatten_replicate
-        (by simpa [invRev] using hP0)
+        (by simpa using hP0)
       exact ⟨(false, o), by simpa using ho, n, hwo⟩
   -- one orientation forces congruent offsets, and two orientations are impossible
   rintro ⟨b, o⟩ ⟨b', o'⟩ ⟨ho, n, hw⟩ ⟨ho', n', hw'⟩
@@ -240,28 +240,17 @@ theorem isRotated_or_isRotated_invRev_of_isPeriodicWord {P Q w : List (α × Boo
     (hQ : ¬∃ u n, 2 ≤ n ∧ Q = (List.replicate n u).flatten) (hwP : IsPeriodicWord P w)
     (hwQ : IsPeriodicWord Q w) (hw : P.length + Q.length - P.length.gcd Q.length ≤ w.length) :
     Q ~r P ∨ Q ~r invRev P := by
-  -- the prefixes of `w` of lengths `|P|` and `|Q|` are rotations of `P` or `P⁻¹` and of `Q` or
-  -- `Q⁻¹`, so they are not powers, and the two periods agree
-  have hP' := hwP.take_isRotated_or_isRotated_invRev
-  have hQ' := hwQ.take_isRotated_or_isRotated_invRev
-  have hnp {X Y : List (α × Bool)} (hX : ¬∃ u n, 2 ≤ n ∧ X = (List.replicate n u).flatten)
-      (h : Y ~r X ∨ Y ~r invRev X) : ¬∃ u n, 2 ≤ n ∧ Y = (List.replicate n u).flatten := by
-    rcases h with h | h <;> rw [h.exists_eq_flatten_replicate_iff] <;> simpa using hX
-  rw [← hwP.hasPeriod.eq_of_hasPeriod hwQ.hasPeriod (hnp hP hP') (hnp hQ hQ') hw] at hQ'
-  rcases hP' with hP' | hP' <;> rcases hQ' with hQ' | hQ'
-  · exact .inl (hQ'.symm.trans hP')
-  · exact .inr (by simpa using (hQ'.symm.trans hP').invRev)
-  · exact .inr (hQ'.symm.trans hP')
-  · exact .inl (by simpa using (hQ'.symm.trans hP').invRev)
+  -- apply the list version to the orientations, `P` or `P⁻¹` and `Q` or `Q⁻¹`, of the two factors
+  obtain ⟨-, m, hw₁ | hw₁⟩ := hwP <;> obtain ⟨-, m', hw₂ | hw₂⟩ := hwQ
+  · exact .inl (List.isRotated_of_infix_flatten_replicate hP hQ hw₁ hw₂ hw)
+  · exact .inr (by simpa using (List.isRotated_of_infix_flatten_replicate hP
+      (by simpa using hQ) hw₁ hw₂ (by simpa using hw)).invRev)
+  · exact .inr (List.isRotated_of_infix_flatten_replicate (by simpa using hP) hQ hw₁ hw₂
+      (by simpa using hw))
+  · exact .inl (by simpa using (List.isRotated_of_infix_flatten_replicate (by simpa using hP)
+      (by simpa using hQ) hw₁ hw₂ (by simpa using hw)).invRev)
 
 /-! ### Examples -/
-
-/- A word over `{a, b}` whose exponent sum in `b` is `1` is not a power of a word. -/
-private theorem not_exists_eq_flatten_replicate_of_lift_eq {w : List (Fin 2 × Bool)}
-    (h : lift (fun c => if c = 1 then Multiplicative.ofAdd (1 : ℤ) else 1) (mk w) =
-      Multiplicative.ofAdd 1) : ¬∃ u n, 2 ≤ n ∧ w = (List.replicate n u).flatten :=
-  not_exists_eq_flatten_replicate_of_not_isProperPower fun hp =>
-    TauCeti.not_isProperPower_ofAdd_one (h ▸ hp.map _)
 
 /-- The length bound of overlapping periodicities is sharp: in `F(a, b)` the word `aabaa`, of length
 `5 < 3 + 4 - gcd(3, 4)`, is both `aab`-periodic and `aaba`-periodic, and neither `aab` nor `aaba`
@@ -277,8 +266,12 @@ example : (¬∃ u n, 2 ≤ n ∧
     ¬([((0 : Fin 2), true), (0, true), (1, true), (0, true)] ~r [(0, true), (0, true), (1, true)] ∨
       [((0 : Fin 2), true), (0, true), (1, true), (0, true)] ~r
         invRev [(0, true), (0, true), (1, true)]) :=
-  ⟨not_exists_eq_flatten_replicate_of_lift_eq (by decide),
-    not_exists_eq_flatten_replicate_of_lift_eq (by decide),
+  ⟨not_exists_eq_flatten_replicate_of_not_isProperPower
+      (TauCeti.not_isProperPower_of_map_eq_ofAdd_one (lift fun c => if c = 1 then .ofAdd 1 else 1)
+        (by decide)),
+    not_exists_eq_flatten_replicate_of_not_isProperPower
+      (TauCeti.not_isProperPower_of_map_eq_ofAdd_one (lift fun c => if c = 1 then .ofAdd 1 else 1)
+        (by decide)),
     ⟨by decide, 2, .inl (by decide)⟩, ⟨by decide, 2, .inl (by decide)⟩, by decide⟩
 
 end FreeGroup

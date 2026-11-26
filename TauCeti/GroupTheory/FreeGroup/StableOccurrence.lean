@@ -402,11 +402,9 @@ end Examples
 
 /- The element `aba` of the free group on two generators is not a proper power: it has
 exponent sum `1` in `b`. -/
-private theorem not_isProperPower_aba : ¬TauCeti.IsProperPower (of (0 : Fin 2) * of 1 * of 0) := by
-  let f : FreeGroup (Fin 2) →* Multiplicative ℤ :=
-    FreeGroup.lift fun c => if c = 1 then Multiplicative.ofAdd 1 else 1
-  intro h
-  exact TauCeti.not_isProperPower_ofAdd_one (by simpa [f] using h.map f)
+private theorem not_isProperPower_aba : ¬TauCeti.IsProperPower (of (0 : Fin 2) * of 1 * of 0) :=
+  TauCeti.not_isProperPower_of_map_eq_ofAdd_one
+    (FreeGroup.lift fun c => if c = 1 then Multiplicative.ofAdd 1 else 1) (by simp)
 
 /-- Lemma 57 needs `A` not to be a proper power: `A = (ab)²` has stable occurrences at `0` and
 `2` in `(ab)⁷`, whose blocks share `10 ≥ |A|` letters, at positions not congruent modulo

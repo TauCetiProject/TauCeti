@@ -19,10 +19,11 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
-formal inverses and of words of constant sign, powers of a letter, compatibility of formal
-inversion with subwords, concatenation of lists of words (`FreeGroup.invRev_flatten`) and of
-powers of a word (`FreeGroup.invRev_flatten_replicate`; so a word is a power `uⁿ`, `n ≥ 2`,
-exactly when its formal inverse is), cyclic permutations (`List.IsRotated.invRev`), generator
+formal inverses and of words of constant sign, powers of a letter, emptiness of formal inverses
+(`FreeGroup.invRev_eq_nil_iff`), compatibility of formal inversion with subwords, concatenation
+of lists of words (`FreeGroup.invRev_flatten`) and of powers of a word
+(`FreeGroup.invRev_flatten_replicate`; so a word is a power `uⁿ`, `n ≥ 2`, exactly when its
+formal inverse is), cyclic permutations (`List.IsRotated.invRev`), generator
 renaming (`FreeGroup.map_prodMap_invRev`), and factorisations splitting no occurrence of a word
 (`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
 either join, and of words `u⁻¹ v` for reduced `u` and `v` with different first letters
@@ -124,6 +125,11 @@ theorem isReduced_of_forall_snd_eq {w : List (α × Bool)} {e : Bool} (h : ∀ x
     IsReduced w :=
   (List.pairwise_of_forall_mem_list (r := fun a b : α × Bool ↦ a.1 = b.1 → a.2 = b.2)
     fun a ha b hb _ ↦ (h a ha).trans (h b hb).symm).isChain
+
+/-- The formal inverse of a word is empty exactly when the word is. -/
+@[simp]
+theorem invRev_eq_nil_iff {w : List (α × Bool)} : invRev w = [] ↔ w = [] := by
+  rw [← List.length_eq_zero_iff, invRev_length, List.length_eq_zero_iff]
 
 /-- The formal inverse of the concatenation of a list of words is the concatenation of their formal
 inverses in the reverse order. -/
