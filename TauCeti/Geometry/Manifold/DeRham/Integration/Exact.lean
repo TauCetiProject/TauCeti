@@ -58,8 +58,7 @@ namespace TauCeti
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M]
-  [SigmaCompactSpace M] [CompactSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M] [CompactSpace M]
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold I' ∞ N] {n : ℕ}
@@ -86,7 +85,7 @@ theorem integralTopForm_mpullback_eq_zero_of_range_subset
     integralTopForm o (mpullback I I' f φ.val) = 0 := by
   -- `f` is its corestriction `g` to `U` followed by the inclusion of `U`.
   set g : M → U := fun x ↦ ⟨f x, hfU ⟨x, rfl⟩⟩
-  have hg : ContMDiff I I' ∞ g := fun x ↦ (ContMDiffAt.subtypeVal_comp_iff U g x).1 (hf x)
+  have hg : ContMDiff I I' ∞ g := (ContMDiff.subtypeVal_comp_iff U g).1 hf
   have hfg : f = (↑) ∘ g := rfl
   rw [hfg, mpullback_comp ((hg.of_le (by simp)).mdifferentiable one_ne_zero)
     ((contMDiff_subtypeVal (n := 1)).mdifferentiable one_ne_zero),
