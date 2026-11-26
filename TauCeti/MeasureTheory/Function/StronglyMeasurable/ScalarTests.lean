@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 import TauCeti.Analysis.Normed.Operator.Norming
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Metric
 
@@ -46,7 +47,9 @@ In both cases the tests are first reduced to a countable subfamily `T₀ ⊆ T` 
 (`exists_countable_norming_subset`, `exists_countable_separating_subset`).
 
 The single functional `0` generates the trivial σ-algebra (`evalMeasurableSpace_singleton_zero`),
-so the comparison needs some separation of points.
+so the comparison needs some separation of points. Conversely, any family generating the
+norm-Borel σ-algebra separates points (`separating_of_evalMeasurableSpace_eq_borel`), giving
+`evalMeasurableSpace_eq_borel_iff_separating` on a separable Banach space.
 
 ## References
 
@@ -171,6 +174,35 @@ theorem evalMeasurableSpace_eq_borel_of_separating [SecondCountableTopology 𝕜
   intro s hs
   rw [← hΦ.preimage_image s]
   exact hΦm (hemb.measurableSet_image.2 hs)
+
+/-- Any family of continuous functionals generating the norm-Borel σ-algebra separates points.
+This implication does not require a complete or separable target. -/
+theorem separating_of_evalMeasurableSpace_eq_borel {T : Set (StrongDual 𝕜 X)}
+    (hT : evalMeasurableSpace T = borel X) :
+    ∀ x : X, (∀ y ∈ T, y x = 0) → x = 0 := by
+  intro x hx
+  borelize X
+  let f : Bool → X := fun b ↦ if b then x else 0
+  have hf : Measurable[⊥, evalMeasurableSpace T] f := by
+    apply measurable_evalMeasurableSpace_iff.2
+    intro y hy
+    have heq : (fun b ↦ y (f b)) = fun _ ↦ 0 := by
+      funext b
+      cases b <;> simp [f, hx y hy]
+    rw [heq]
+    exact measurable_const
+  rw [hT] at hf
+  obtain ⟨c, hc⟩ := eq_const_of_measurable_bot hf
+  have ht := congrFun hc true
+  have hf := congrFun hc false
+  simpa [f] using ht.trans hf.symm
+
+/-- On a separable Banach space, scalar evaluations from an arbitrary family generate the
+norm-Borel σ-algebra exactly when the family separates points. -/
+theorem evalMeasurableSpace_eq_borel_iff_separating [SecondCountableTopology 𝕜] [BorelSpace 𝕜]
+    [CompleteSpace X] [TopologicalSpace.SeparableSpace X] {T : Set (StrongDual 𝕜 X)} :
+    evalMeasurableSpace T = borel X ↔ ∀ x : X, (∀ y ∈ T, y x = 0) → x = 0 :=
+  ⟨separating_of_evalMeasurableSpace_eq_borel, evalMeasurableSpace_eq_borel_of_separating⟩
 
 /-! ### Pettis' measurability theorem -/
 
