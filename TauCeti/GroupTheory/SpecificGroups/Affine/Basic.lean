@@ -193,11 +193,9 @@ theorem normalCore_affineLinearSubgroup (F : Type*) [Ring F] :
   let t : AffineGroup F := SemidirectProduct.inl (Multiplicative.ofAdd 1)
   have h₀ : g.left.toAdd = 0 := (mem_affineLinearSubgroup_iff g).mp (Subgroup.normalCore_le _ hg)
   have h₁ := (mem_affineLinearSubgroup_iff _).mp (hg t)
-  simp only [t, SemidirectProduct.mul_left, SemidirectProduct.mul_right,
-    SemidirectProduct.inv_left, SemidirectProduct.left_inl, SemidirectProduct.right_inl,
-    toAdd_mul, affineAction_apply_toAdd, toAdd_inv, toAdd_ofAdd, h₀, inv_one, map_one,
-    MulAut.one_apply, one_mul, add_zero, mul_neg, mul_one] at h₁
-  have hv : (g.right : F) = 1 := (add_neg_eq_zero.mp h₁).symm
+  -- The translation part of `t g t⁻¹` is `1 - v` for `g = (0, v)`, and it must vanish.
+  have h₂ : 1 + -(g.right : F) = 0 := by simpa [t, h₀] using h₁
+  have hv : (g.right : F) = 1 := (add_neg_eq_zero.mp h₂).symm
   exact AffineGroup.ext (by simpa using h₀) (by simpa using hv)
 
 /-- The translation subgroup of an affine group is normal. -/
