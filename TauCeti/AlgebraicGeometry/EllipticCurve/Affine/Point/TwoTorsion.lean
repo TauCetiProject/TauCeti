@@ -298,13 +298,6 @@ end WeierstrassCurve.Affine
 
 namespace WeierstrassCurve
 
-/-- The two-torsion polynomial of `y² = x³ + Ax + B` evaluates to `4(x³ + Ax + B)`. -/
-theorem eval_toPoly_twoTorsionPolynomial_shortCurve {R : Type*} [CommRing R] (A B x : R) :
-    (shortCurve A B).twoTorsionPolynomial.toPoly.eval x = 4 * (x ^ 3 + A * x + B) := by
-  rw [eval_toPoly_twoTorsionPolynomial, b₂_of_isShortNF, b₄_of_isShortNF, b₆_of_isShortNF,
-    shortCurve_a₄, shortCurve_a₆]
-  ring
-
 variable {F : Type*} [Field F] [DecidableEq F] [NeZero (2 : F)] {A B : F}
 
 /-- **A point of order two on `y² = x³ + Ax + B` lies over a root of `x³ + Ax + B`**, in
