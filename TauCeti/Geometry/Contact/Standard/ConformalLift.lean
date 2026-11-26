@@ -141,22 +141,22 @@ theorem conformalContactLift_comp (A B : V × V →L[ℝ] V × V) (c d : ℝ) :
   ring
 
 /-- The linear map `(q, p, z) ↦ (q, p)` onto the `(q, p)` coordinates. -/
-def qpProj : V × V × ℝ →L[ℝ] V × V :=
+private def qpProj : V × V × ℝ →L[ℝ] V × V :=
   (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod
     ((ContinuousLinearMap.fst ℝ V ℝ).comp (ContinuousLinearMap.snd ℝ V (V × ℝ)))
 
 /-- `TauCeti.qpProj` forgets the `z` coordinate. -/
 @[simp]
-theorem qpProj_apply (x : V × V × ℝ) : qpProj x = (x.1, x.2.1) :=
+private theorem qpProj_apply (x : V × V × ℝ) : qpProj x = (x.1, x.2.1) :=
   (rfl)
 
 /-- The linear map `(q, p) ↦ (q, p, 0)` onto the hyperplane `z = 0`. -/
-def qpIncl : V × V →L[ℝ] V × V × ℝ :=
+private def qpIncl : V × V →L[ℝ] V × V × ℝ :=
   (ContinuousLinearMap.fst ℝ V V).prod ((ContinuousLinearMap.snd ℝ V V).prod 0)
 
 /-- `TauCeti.qpIncl` adds the `z` coordinate `0`. -/
 @[simp]
-theorem qpIncl_apply (w : V × V) : qpIncl w = (w.1, w.2, 0) :=
+private theorem qpIncl_apply (w : V × V) : qpIncl w = (w.1, w.2, 0) :=
   (rfl)
 
 /-- The contact lift has the derivative obtained by differentiating its defining formula. -/
