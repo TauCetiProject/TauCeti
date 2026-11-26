@@ -380,7 +380,7 @@ private theorem one_le_abs_det_fderiv_transvectionL {e w : E} (hew : ⟪e, w⟫_
 private noncomputable def shearCompOnL {U V : Opens E} (e w : E) (hew : ⟪e, w⟫_ℝ = 0)
     (hmaps : MapsTo (transvectionL e (-w)) U V) : W1p volume V 2 →L[ℝ] W1p volume U 2 :=
   W1p.compL (transvectionL e (-w)) ENNReal.ofNat_ne_top (transvectionL e (-w)).differentiableOn
-    (injective_transvectionL (inner_neg_right_eq_zero hew)).injOn hmaps
+    (transvectionL_injective (inner_neg_right_eq_zero hew)).injOn hmaps
     (norm_fderiv_transvectionL_le e (-w)) one_pos
     (one_le_abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew))
 
@@ -440,7 +440,7 @@ private theorem energyFormH1_shearCompL_eq {H : Opens E} {ν e w : E} {c₀ : �
         ⟪pullbackDrift (transvectionL e (-w)) G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ := by
   have key := energyFormH1_compL_eq_setIntegral_add_setIntegral_inner (U := H) (V := H)
     (transvectionL e (-w)).differentiableOn
-    (injective_transvectionL (inner_neg_right_eq_zero hew)).injOn
+    (transvectionL_injective (inner_neg_right_eq_zero hew)).injOn
     (mapsTo_transvectionL hH (inner_neg_right_eq_zero hνw))
     (norm_fderiv_transvectionL_le e (-w)) one_pos
     (one_le_abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew))

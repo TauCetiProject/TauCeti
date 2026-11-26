@@ -27,7 +27,7 @@ and inverse `x ↦ x - ⟪ν, x⟫ s`.
   `TauCeti.transvectionL_neg_comp_transvectionL` and `TauCeti.transvectionEquivL`: for
   `⟪ν, s⟫ = 0` its inverse is the transvection along `-s`, and it is a continuous linear
   equivalence.
-* `TauCeti.injective_transvectionL`: for `⟪ν, s⟫ = 0` it is injective.
+* `TauCeti.transvectionL_injective`: for `⟪ν, s⟫ = 0` it is injective.
 * `TauCeti.det_transvectionL`: its determinant is `1 + ⟪ν, s⟫`.
 * `TauCeti.abs_det_fderiv_transvectionL`: for `⟪ν, s⟫ = 0` its derivative has determinant of
   absolute value one, as the change of variables formula uses it.
@@ -117,7 +117,7 @@ theorem transvectionEquivL_symm_apply {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : 
     ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- For `⟪ν, s⟫ = 0`, the transvection `x ↦ x + ⟪ν, x⟫ s` is injective. -/
-theorem injective_transvectionL {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) :
+theorem transvectionL_injective {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) :
     Function.Injective (transvectionL ν s) := fun x y hxy => by
   rw [← transvectionEquivL_apply h x, ← transvectionEquivL_apply h y] at hxy
   exact (transvectionEquivL h).injective hxy
