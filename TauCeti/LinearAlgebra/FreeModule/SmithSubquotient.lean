@@ -118,8 +118,10 @@ noncomputable def equivPiProdOfMem :
   invFun p := ⟨∑ j, p.1 j • b (e j) + p.2,
     Z.add_mem (Z.sum_mem fun j _ ↦ Z.smul_mem _ (hZ j)) (Submodule.mem_inf.1 p.2.property).1⟩
   map_add' y z := by
-    ext j <;> simp [add_smul, Finset.sum_add_distrib]
-    abel
+    ext j
+    · simp
+    · simp [add_smul, Finset.sum_add_distrib]
+      abel
   map_smul' r z := by
     ext j <;> simp [mul_smul, Finset.smul_sum, smul_sub]
   left_inv z := by

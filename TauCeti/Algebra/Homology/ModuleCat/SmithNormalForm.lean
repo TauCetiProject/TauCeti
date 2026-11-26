@@ -175,6 +175,10 @@ variable {R : Type u} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R] {ι : T
   {c : ComplexShape ι} (C : HomologicalComplex (ModuleCat.{v} R) c) (i : ι)
   [Module.IsTorsionFree R (C.X (c.next i))]
 
+/-- The term `(C.sc i).X₃` is `C.X (c.next i)` by definition, so it inherits torsion-freeness. -/
+private local instance isTorsionFree_sc_X₃ : Module.IsTorsionFree R (C.sc i).X₃ :=
+  ‹Module.IsTorsionFree R (C.X (c.next i))›
+
 /-- **The homology of a complex of free modules over a PID.** If the term `Cⁱ` of a complex of
 modules over a principal ideal domain is finite free and the next term is torsion-free, a Smith
 normal form of the boundaries `im dⁱ⁻¹` in `Cⁱ`, with diagonal coefficients `eⱼ`, exhibits
@@ -185,7 +189,6 @@ def homologyEquivOfSmithNormalForm {κ : Type*} [Finite κ] {n : ℕ}
       (Fin (finrank R (C.X i) - finrank R (LinearMap.range (C.d i (c.next i)).hom) -
           finrank R (LinearMap.range (C.d (c.prev i) i).hom)) → R) ×
         ∀ j, R ⧸ Ideal.span ({snf.a j} : Set R) :=
-  haveI : Module.IsTorsionFree R (C.sc i).X₃ := ‹Module.IsTorsionFree R (C.X (c.next i))›
   (C.sc i).moduleCatHomologyEquivOfSmithNormalForm snf
 
 /-- The torsion coordinates of the homology class of a cycle `z` of `Cⁱ` are the classes modulo
@@ -196,7 +199,6 @@ theorem homologyEquivOfSmithNormalForm_homologyπ_snd {κ : Type*} [Finite κ] {
     (C.homologyEquivOfSmithNormalForm i snf
       (C.homologyπ i ((C.sc i).moduleCatCyclesIso.inv z))).2 j =
       Ideal.Quotient.mk _ (snf.bM.repr z (snf.f j)) :=
-  haveI : Module.IsTorsionFree R (C.sc i).X₃ := ‹Module.IsTorsionFree R (C.X (c.next i))›
   (C.sc i).moduleCatHomologyEquivOfSmithNormalForm_homologyπ_snd snf z j
 
 /-- **The homology of a complex of free modules from the matrix of its differential.** Let the term
@@ -218,7 +220,6 @@ theorem nonempty_homologyEquiv_of_mul_toMatrix_mul_eq {ι₀ ι₁ κ : Type*} [
   obtain ⟨b, -, hb⟩ :=
     (C.d (c.prev i) i).hom.exists_basis_range_eq_span_range_smul_of_mul_toMatrix_mul_eq b₀ b₁ hL
       hQ h
-  have : Module.IsTorsionFree R (C.sc i).X₃ := ‹Module.IsTorsionFree R (C.X (c.next i))›
   exact ⟨(C.sc i).moduleCatHomologyEquivOfRangeEqSpan b e a ha hb⟩
 
 /-- **Homology of a complex of finite free modules over a PID.** If the term `Cⁱ` of a complex of
