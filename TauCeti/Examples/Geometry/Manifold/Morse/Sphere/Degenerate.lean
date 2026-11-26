@@ -29,7 +29,8 @@ critical points still recognizes `Sᵐ` from it.
 * `f` has exactly two critical points (`TauCeti.totalCriticalCount_cubic_comp_sphereHeight`), so
   the sphere theorem for degenerate critical points
   (`TauCeti.nonempty_homeomorph_sphere_of_two_criticalPoints`) applies and identifies the sphere
-  with the standard `Sᵐ`, in particular `S²` for `m = 2`.
+  with the standard `Sᵐ`; in particular, the unit sphere of any real inner product space of
+  dimension `3` is homeomorphic to the standard `S²`.
 
 ## References
 
@@ -92,12 +93,12 @@ example (v : sphere (0 : E) 1) :
     (totalCriticalCount_cubic_comp_sphereHeight v)
   rwa [finrank_euclideanSpace_fin] at h
 
-/-- **The case of `S²`.** On the unit sphere of `ℝ³`, the sphere theorem for degenerate critical
-points applied to `h - h³ / 3` gives `S²`, although both critical points are degenerate. -/
-example (v : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
-    Nonempty (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 ≃ₜ
-      sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) := by
-  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin 3)) = 2 + 1) := ⟨by simp⟩
+/-- **The case of `S²`.** On the unit sphere of a real inner product space of dimension `3`, the
+sphere theorem for degenerate critical points applied to `h - h³ / 3` identifies the sphere with
+the standard `S²`, although both critical points are degenerate. -/
+example [Fact (finrank ℝ E = 2 + 1)] (v : sphere (0 : E) 1) :
+    Nonempty (sphere (0 : E) 1 ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
   have h := nonempty_homeomorph_sphere_of_two_criticalPoints (I := 𝓡 2)
     ((contDiff_id.sub ((contDiff_id.pow 3).div_const 3)).comp_contMDiff (contMDiff_sphereHeight v))
     (totalCriticalCount_cubic_comp_sphereHeight v)
