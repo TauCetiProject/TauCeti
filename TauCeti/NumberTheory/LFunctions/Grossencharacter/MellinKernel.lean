@@ -336,7 +336,8 @@ theorem isBigO_heckeMellinKernel_sub_rpow (χ : Grossencharacter K 𝔪)
 
 /-- For `Re s > 1`, the centered twisted theta series times the archimedean and Mellin weights
 is absolutely integrable over the cone above a unit fundamental domain. -/
-theorem integrableOn_unitCone_archNorm_cpow_mul_heckeTheta_sub (χ : Grossencharacter K 𝔪)
+theorem integrableOn_unitCone_archNorm_cpow_mul_archWeight_mul_heckeTheta_sub
+    (χ : Grossencharacter K 𝔪)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
     {s : ℂ} (hs : 1 < s.re) :
     IntegrableOn (fun y ↦ (archNorm y : ℂ) ^ (s / 2) *
@@ -385,7 +386,7 @@ private theorem hasMellin_centeredSurfaceAverage (χ : Grossencharacter K 𝔪)
   have havg : HasMellin (fun t ↦ ∫ x in Subtype.val ⁻¹' D,
       f (surfaceScale (x : realSpace K) t) ∂surfaceHaar K) (s / 2) M :=
     hasMellin_integral_surfaceScale hD.measurableSet (s / 2)
-      (χ.integrableOn_unitCone_archNorm_cpow_mul_heckeTheta_sub J hD hs)
+      (χ.integrableOn_unitCone_archNorm_cpow_mul_archWeight_mul_heckeTheta_sub J hD hs)
   have heq : EqOn (fun t ↦ ∫ x in Subtype.val ⁻¹' D,
       f (surfaceScale (x : realSpace K) t) ∂surfaceHaar K)
       (fun t ↦ (t : ℂ) ^ (q : ℂ) • centeredSurfaceAverage χ D J t) (Ioi 0) := by
