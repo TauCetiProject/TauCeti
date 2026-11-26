@@ -517,19 +517,14 @@ theorem finrankAddEquiv_symm_apply (n : ℕ) :
 `IdempotentMonoid D` is canonically isomorphic to `ℤ` via column-range dimension. -/
 noncomputable def grothendieckAddGroupEquivInt :
     _root_.Algebra.GrothendieckAddGroup (IdempotentMonoid D) ≃+ ℤ :=
-  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (IdempotentMonoid D))).addEquivOfAddEquiv
-    _root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap
-    (AddSubmonoid.map_equiv_top (finrankAddEquiv D))
+  _root_.Algebra.GrothendieckAddGroup.addEquivInt (finrankAddEquiv D)
 
 theorem grothendieckAddGroupEquivInt_of_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι D)
     (he : IsIdempotentElem e) :
     grothendieckAddGroupEquivInt D (_root_.Algebra.GrothendieckAddGroup.of (mk e he)) =
-      (Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)) : ℤ) :=
-  ((AddLocalization.addMonoidOf (⊤ : AddSubmonoid (IdempotentMonoid D))).addEquivOfAddEquiv_eq
-    (k := _root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap)
-    (AddSubmonoid.map_equiv_top (finrankAddEquiv D)) (mk e he)).trans
-    ((_root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply _).trans
-      (congrArg Nat.cast (finrankAddEquiv_mk D e he)))
+      (Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)) : ℤ) := by
+  rw [grothendieckAddGroupEquivInt, _root_.Algebra.GrothendieckAddGroup.addEquivInt_of,
+    finrankAddEquiv_mk]
 
 end DivisionRing
 

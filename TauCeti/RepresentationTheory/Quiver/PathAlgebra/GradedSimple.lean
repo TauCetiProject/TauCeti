@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
+public import TauCeti.CategoryTheory.Linear.FullyFaithful
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedProjective
 
 /-!
@@ -311,25 +312,11 @@ def gradedArrowSumHomShiftOneEquiv
       right_inv := fun g => funext fun a =>
         GradedModuleCat.coproductCofan_inj_desc.{w, max u v w, max u v w, max u v} M
           (Limits.Cofan.mk (Y.shiftObj 1) g) a }
-  let eShift (j : Q) : ((gradedVertexProjective k Q j).shiftObj 1 ⟶ Y.shiftObj 1) ≃ₗ[k]
-      (gradedVertexProjective k Q j ⟶ Y) :=
-    { toFun := fun f =>
-        GradedModuleCat.ofHom (M := gradedVertexProjective k Q j) (N := Y) f.hom <|
-          LinearMap.isHomogeneous_def.2 fun p x hx => by
-            have hx' : x ∈ ((gradedVertexProjective k Q j).shiftObj 1).grading.piece (p + 1) := by
-              rw [GradedModuleCat.mem_shiftObj_piece_iff, add_sub_cancel_right]
-              exact hx
-            have hy := GradedModuleCat.map_mem f hx'
-            rw [GradedModuleCat.mem_shiftObj_piece_iff, add_sub_cancel_right] at hy
-            simpa only [add_zero] using hy
-      map_add' := fun _ _ => GradedModuleCat.hom_ext rfl
-      map_smul' := fun _ _ => GradedModuleCat.hom_ext rfl
-      invFun := (GradedModuleCat.shiftFunctor 1).map
-      left_inv := fun _ => GradedModuleCat.hom_ext rfl
-      right_inv := fun _ => GradedModuleCat.hom_ext rfl }
   exact eCoprod.trans <|
     LinearEquiv.piCongrRight fun a =>
-      (eShift a.1).trans (gradedVertexProjectiveHomEquiv k Q a.1 Y)
+      ((GradedModuleCat.shift (integerGrade k Q)).functor.homLinearEquiv k
+        (gradedVertexProjective k Q a.1) Y).symm.trans
+        (gradedVertexProjectiveHomEquiv k Q a.1 Y)
 
 /-- At an arrow `a : i ⟶ j`, `gradedArrowSumHomShiftOneEquiv` evaluates `f` on the summand
 inclusion of `gradedVertexProjectiveGenerator k Q j`. -/
@@ -342,7 +329,18 @@ theorem coe_gradedArrowSumHomShiftOneEquiv_apply
         (((GradedModuleCat.coproductCofan fun b : (j : Q) × (i ⟶ j) =>
             (gradedVertexProjective k Q b.1).shiftObj 1).inj a).hom
           (gradedVertexProjectiveGenerator k Q a.1)) := by
-  simp [gradedArrowSumHomShiftOneEquiv]
+  let _ := integerGradedAlgebra k Q
+  let c := GradedModuleCat.coproductCofan fun b : (j : Q) × (i ⟶ j) =>
+    (gradedVertexProjective k Q b.1).shiftObj 1
+  have hpre := congrArg
+    (fun φ : (gradedVertexProjective k Q a.1).shiftObj 1 ⟶ Y.shiftObj 1 =>
+      φ.hom (gradedVertexProjectiveGenerator k Q a.1))
+    ((GradedModuleCat.shift (integerGrade k Q)).functor.map_preimage (c.inj a ≫ f))
+  dsimp only [gradedArrowSumHomShiftOneEquiv]
+  erw [LinearEquiv.trans_apply, LinearEquiv.piCongrRight_apply,
+    LinearEquiv.trans_apply, coe_gradedVertexProjectiveHomEquiv_apply,
+    Functor.homLinearEquiv_symm_apply]
+  simpa [c] using hpre
 
 /-- Precomposing the inverse of `gradedArrowSumHomShiftOneEquiv` with the `a`th coproduct injection
 gives the shifted map corresponding to `v a`. -/
@@ -356,7 +354,15 @@ theorem coproductCofan_inj_comp_gradedArrowSumHomShiftOneEquiv_symm
       (gradedArrowSumHomShiftOneEquiv k Q i Y).symm v =
       (GradedModuleCat.shiftFunctor 1).map
         ((gradedVertexProjectiveHomEquiv k Q a.1 Y).symm (v a)) := by
-  simp [gradedArrowSumHomShiftOneEquiv]
+  dsimp only [gradedArrowSumHomShiftOneEquiv]
+  erw [LinearEquiv.symm_trans_apply]
+  change (GradedModuleCat.coproductCofan _).inj a ≫
+    GradedModuleCat.coproductDesc _ (Limits.Cofan.mk (Y.shiftObj 1) _) = _
+  rw [GradedModuleCat.coproductCofan_inj_desc]
+  change ((LinearEquiv.piCongrRight _).symm v) a = _
+  erw [LinearEquiv.piCongrRight_symm, LinearEquiv.piCongrRight_apply,
+    LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm, Functor.homLinearEquiv_apply]
+  rfl
 
 /-- On a direct-sum generator in summand `a`, the inverse of `gradedArrowSumHomShiftOneEquiv`
 acts by scalar multiplication on `v a`. -/
