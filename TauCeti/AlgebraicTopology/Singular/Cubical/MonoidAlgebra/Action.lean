@@ -83,6 +83,12 @@ theorem actMap_apply (x : Y × G) : actMap Y G x = op x.2 • x.1 :=
 
 end ActMap
 
+/-- For a topological magma acting on itself by right multiplication, the action map is the
+multiplication map. -/
+theorem actMap_self {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] :
+    actMap G G = mulMap G :=
+  ContinuousMap.ext fun x ↦ by rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
+
 namespace NormalizedCubicalChain
 
 section Act
@@ -214,9 +220,7 @@ variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} 
 Pontryagin product. -/
 theorem act_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
     (b : NormalizedCubicalChain G R q) : act G G R p q a b = mul G R p q a b := by
-  have h : actMap G G = mulMap G :=
-    ContinuousMap.ext fun x ↦ by rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
-  rw [act_def, mul_def, h]
+  rw [act_def, mul_def, actMap_self]
 
 end Self
 
