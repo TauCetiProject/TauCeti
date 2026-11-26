@@ -34,6 +34,8 @@ on bounded Lipschitz domains and iterates the exponent bookkeeping.
   derivative.
 * `TauCeti.Wkp.exists_w1pEmbeddingL_of_isLipschitzDomainWith`: the embedding
   `W^{k+1,p}(Ω) →L[ℝ] W^{1,q}(Ω)` for `1/p - k/n ≤ 1/q ≤ 1/p`, `q < ∞`.
+* `TauCeti.Wkp.memLp_value_and_memLp_gradient_firstOrder_of_isLipschitzDomainWith`: for the same
+  exponents, the value and the weak gradient of `u ∈ W^{k+1,p}(Ω)` lie in `L^q(Ω)`.
 * `TauCeti.Wkp.exists_lpEmbeddingL_of_isLipschitzDomainWith`: the embedding
   `W^{k,p}(Ω) →L[ℝ] L^q(Ω)` for `1/q + k/n = 1/p`, `q < ∞`.
 * `TauCeti.Wkp.exists_eLpNorm_value_le_of_isLipschitzDomainWith`: the estimate
@@ -154,6 +156,27 @@ theorem Wkp.exists_w1pEmbeddingL_of_isLipschitzDomainWith (k : ℕ) {q : ℝ≥0
     rwa [tsub_le_iff_left, mul_comm]
   · rw [ENNReal.mul_div_cancel (Nat.cast_ne_zero.2 hk) (ENNReal.natCast_ne_top k),
       add_tsub_cancel_of_le hq₂]
+
+/-- **The value and the weak gradient in `L^q` on bounded Lipschitz domains.** If `Ω ⊆ ℝ × E` is
+a bounded Lipschitz domain of dimension `n`, `1 ≤ p` and `1/p - k/n ≤ 1/q ≤ 1/p` with `q < ∞`,
+then the value and the weak gradient of every `u ∈ W^{k+1,p}(Ω)` lie in `L^q(Ω)`. -/
+theorem Wkp.memLp_value_and_memLp_gradient_firstOrder_of_isLipschitzDomainWith (k : ℕ)
+    {q : ℝ≥0∞} (hq : q ≠ ∞) (hq₁ : p⁻¹ ≤ q⁻¹ + k * (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)⁻¹)
+    (hq₂ : q⁻¹ ≤ p⁻¹) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : Wkp volume Ω p (k + 1)) :
+    MemLp (Wkp.value (k + 1) u) q (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) ∧
+      MemLp (W1p.gradient (Wkp.firstOrder k u)) q
+        (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) := by
+  let _ : Fact (1 ≤ q) := ⟨(Fact.out : 1 ≤ p).trans (ENNReal.inv_le_inv.1 hq₂)⟩
+  obtain ⟨T, hT⟩ := Wkp.exists_w1pEmbeddingL_of_isLipschitzDomainWith k hq hq₁ hq₂ hΩ hb
+  -- Weak gradients are determined by the values, across exponents.
+  have hg : (W1p.gradient (T u) : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E))
+      =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] W1p.gradient (Wkp.firstOrder k u) := by
+    have hW := (W1p.hasWeakFDerivOn (T u)).congr_ae (w := W1p.value (Wkp.firstOrder k u))
+      (by rw [Wkp.value_firstOrder]; exact hT u)
+    filter_upwards [hW.ae_eq (W1p.hasWeakFDerivOn _)] with x hx
+    exact innerSL_inj.1 hx
+  exact ⟨(Lp.memLp (W1p.value (T u))).ae_eq (hT u), (Lp.memLp (W1p.gradient (T u))).ae_eq hg⟩
 
 /-- **Higher-order Sobolev embedding into Lebesgue spaces on bounded Lipschitz domains.** If
 `Ω ⊆ ℝ × E` is a bounded Lipschitz domain of dimension `n`, `1 ≤ p`, and

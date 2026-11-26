@@ -66,6 +66,9 @@ invariant (`MeasureTheory.Measure.map_div_prod_eq_map_div_abs`).
 A coupling that moves almost every point by less than `r` and is carried in its second marginal
 by a set `s` gives no first-marginal mass to a point at distance at least `r` from every point of
 `s` (`MeasureTheory.measure_fst_singleton_eq_zero_of_ae_edist_lt`).
+
+Projecting the graph pushforward along `(T, id)` onto the second coordinate recovers the original
+measure (`MeasureTheory.Measure.snd_map_prodMk_id₀` and `MeasureTheory.Measure.snd_map_prodMk_id`).
 -/
 
 public section
@@ -532,5 +535,21 @@ theorem map_eval_prod_pi_eq_bind [Fintype I] [MeasurableSingletonClass I]
   rw [map_eval_prod_eq_bind_map]
   apply Measure.bind_congr_right
   exact ae_of_all _ fun i ↦ (measurePreserving_eval K i).map_eq
+
+/-- Projecting the graph pushforward `(μ.map fun x ↦ (T x, x))` onto the second coordinate
+recovers `μ` for any `μ`-almost everywhere measurable map `T`. -/
+@[simp]
+theorem snd_map_prodMk_id₀ {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {T : X → S} (hT : AEMeasurable T μ) :
+    (μ.map fun x ↦ (T x, x)).snd = μ := by
+  rw [Measure.snd_map_prodMk₀ hT aemeasurable_id', Measure.map_id']
+
+/-- Projecting the graph pushforward `(μ.map fun x ↦ (T x, x))` onto the second coordinate
+recovers `μ` for any measurable map `T`. -/
+@[simp]
+theorem snd_map_prodMk_id {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {T : X → S} (hT : Measurable T) :
+    (μ.map fun x ↦ (T x, x)).snd = μ :=
+  snd_map_prodMk_id₀ hT.aemeasurable
 
 end MeasureTheory.Measure
