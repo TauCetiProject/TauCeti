@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Category.Cat.CartesianClosed
 public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
 public import Mathlib.CategoryTheory.Monoidal.Closed.Functor
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.EssImage
+public import TauCeti.CategoryTheory.Monoidal.Closed.Curry
 
 /-!
 # The homotopy category of an internal hom
@@ -40,6 +41,8 @@ lemma, the comparison is therefore an isomorphism after taking nerves.
   a vertex `a` to the evaluation of `f` at `a`.
 * `SSet.ihomHoFunctor_map_homMk_app`: the component at `a` of the natural transformation
   induced by an edge `h` of `Fun(A, B)` is the evaluation of `h` at `a`.
+* `SSet.ihomHoFunctor_obj_mapHomotopyCategory_pre_app`: the comparison is natural in the source,
+  turning precomposition with `f` into precomposition with `ho f`.
 * `SSet.isIso_expComparison_app_nerve`, `SSet.isEquivalence_ihomHoFunctor_nerve`: into a nerve,
   the comparison is an isomorphism of categories.
 -/
@@ -129,6 +132,31 @@ lemma ihomHoFunctor_obj_mk (φ : 𝟙_ SSet ⟶ (ihom A).obj B) :
   have := ihomHoFunctor_obj_mk_map_homMk φ e
   simp only [Iso.refl_hom]
   exact this
+
+/-- Every object of `ho Fun(A, B)` is the vertex given by the global element `curry' g` of a map
+`g : A ⟶ B`. -/
+lemma exists_eq_mk_unitHomEquiv_curry' (b : ((ihom A).obj B).HomotopyCategory) :
+    ∃ g : A ⟶ B, b = .mk (unitHomEquiv _ (MonoidalClosed.curry' g)) := by
+  induction b with | mk v =>
+    exact ⟨MonoidalClosed.uncurry' ((unitHomEquiv _).symm v),
+      by rw [MonoidalClosed.curry'_uncurry', Equiv.apply_symm_apply]⟩
+
+/-- **Naturality of the comparison in the source**: under the comparisons
+`ho Fun(-, B) ⥤ (ho - ⥤ ho B)`, precomposition with `f : A' ⟶ A` on `Fun(A, B)` corresponds to
+precomposition with `ho f`. -/
+lemma ihomHoFunctor_obj_mapHomotopyCategory_pre_app {A' : SSet.{u}} (f : A' ⟶ A)
+    (a : ((ihom A).obj B).HomotopyCategory) :
+    (ihomHoFunctor A' B).obj
+        ((mapHomotopyCategory ((MonoidalClosed.pre f).app B)).obj a) =
+      mapHomotopyCategory f ⋙ (ihomHoFunctor A B).obj a := by
+  obtain ⟨g, rfl⟩ := exists_eq_mk_unitHomEquiv_curry' a
+  -- `unitHomEquiv` evaluates a global element at the unique vertex of the point, so the image of
+  -- the vertex given by `curry' g` is the vertex given by `curry' g ≫ (pre f).app B`.
+  change (ihomHoFunctor A' B).obj
+      (.mk (unitHomEquiv _ (MonoidalClosed.curry' g ≫ (MonoidalClosed.pre f).app B))) = _
+  rw [MonoidalClosed.curry'_pre_app, ihomHoFunctor_obj_mk, ihomHoFunctor_obj_mk,
+    MonoidalClosed.uncurry'_curry', MonoidalClosed.uncurry'_curry']
+  exact congrArg Cat.Hom.toFunctor (hoFunctor.map_comp f g)
 
 open CartesianMonoidalCategory MonoidalClosed in
 /-- Under the comparison `ho Fun(A, N C) ⥤ (ho A ⥤ ho (N C))` followed by the counit

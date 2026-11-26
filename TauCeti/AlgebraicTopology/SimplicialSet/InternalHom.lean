@@ -172,6 +172,12 @@ lemma pre_app_app_ihomObj₀Equiv_symm {Y : SSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z
   rw [← yonedaEquiv_symm_comp, yonedaEquiv_symm_ihomObj₀Equiv_symm,
     yonedaEquiv_symm_ihomObj₀Equiv_symm, curry_pre_app, whiskerRight_fst_assoc]
 
+/-- Every vertex of `Fun(X, Z)` is the vertex given by the global element `curry' g` of a map
+`g : X ⟶ Z`. -/
+lemma exists_unitHomEquiv_curry'_eq (v : ((ihom X).obj Z) _⦋0⦌) :
+    ∃ g : X ⟶ Z, unitHomEquiv _ (curry' g) = v :=
+  ⟨uncurry' ((unitHomEquiv _).symm v), by rw [curry'_uncurry', Equiv.apply_symm_apply]⟩
+
 /-- Precomposition `Fun(Y, Z) ⟶ Fun(X, Z)` with `f : X ⟶ Y` sends the vertex given by the global
 element `curry' g` to the vertex given by `curry' (f ≫ g)`. -/
 @[simp]

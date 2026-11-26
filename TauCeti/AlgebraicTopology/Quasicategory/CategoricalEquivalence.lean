@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.HoFunctorIhom
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FunctorCategory
 public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
+public import TauCeti.CategoryTheory.Bicategory.CatEnriched
 
 /-!
 # Categorical equivalences of quasicategories
@@ -111,19 +112,6 @@ lemma homotopyCategoryFunctor_map {f g : X ⟶ Y} (α : f ⟶ g) :
         eqToHom (homotopyCategoryFunctor_obj_eq_ihomHoFunctor_obj g).symm :=
   ((Category.id_comp _).trans (Category.comp_id _)).symm
 
-/-- The invertible `2`-morphisms `f ≅ g` of the bicategory of quasicategories are the
-isomorphisms between the corresponding objects of the hom-category. -/
-private lemma nonempty_iso_iff_nonempty_iso_homEquiv {f g : X ⟶ Y} :
-    Nonempty (f ≅ g) ↔ Nonempty (CatEnrichedOrdinary.homEquiv f ≅ CatEnrichedOrdinary.homEquiv g) :=
-  ⟨fun ⟨α⟩ ↦ ⟨{ hom := α.hom.base
-                inv := α.inv.base
-                hom_inv_id := congrArg CatEnrichedOrdinary.Hom.base α.hom_inv_id
-                inv_hom_id := congrArg CatEnrichedOrdinary.Hom.base α.inv_hom_id }⟩,
-    fun ⟨β⟩ ↦ ⟨{ hom := .mk β.hom
-                 inv := .mk β.inv
-                 hom_inv_id := CatEnrichedOrdinary.Hom.ext _ _ β.hom_inv_id
-                 inv_hom_id := CatEnrichedOrdinary.Hom.ext _ _ β.inv_hom_id }⟩⟩
-
 /-- An invertible `2`-morphism `h ≅ h'` between maps `X ⟶ Y` of quasicategories gives an
 invertible `2`-morphism between the precomposition maps `Fun(Y, E) ⟶ Fun(X, E)`. -/
 lemma nonempty_iso_homMk_pre_app {h h' : X ⟶ Y} (α : h ≅ h') (E : SSet.{u}) [Quasicategory E] :
@@ -148,10 +136,8 @@ lemma nonempty_iso_homMk_pre_app {h h' : X ⟶ Y} (α : h ≅ h') (E : SSet.{u})
     rw [← curry'_uncurry' (curry' k ≫ c), uncurry', uncurry_natural_left, uncurry_curry,
       BraidedCategory.braiding_naturality_right_assoc, curry'_whiskerRight_comp]
     simp
-  obtain ⟨β⟩ := nonempty_iso_iff_nonempty_iso_homEquiv.1 ⟨α⟩
-  refine (nonempty_iso_iff_nonempty_iso_homEquiv (X := ⟨(ihom Y.obj).obj E, inferInstance⟩)
-    (Y := ⟨(ihom X.obj).obj E, inferInstance⟩)).2 ⟨eqToIso ?_ ≪≫
-      (mapHomotopyCategory c).mapIso β ≪≫ eqToIso ?_⟩
+  refine ⟨CatEnrichedOrdinary.isoEquiv.symm (eqToIso ?_ ≪≫
+    (mapHomotopyCategory c).mapIso (CatEnrichedOrdinary.isoEquiv α) ≪≫ eqToIso ?_)⟩
   · rw [hv, hv]
     exact congrArg HomotopyCategory.mk (hc _).symm
   · rw [hv, hv]
