@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 
@@ -25,6 +26,9 @@ bounds the components of any vector along them
 (`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`). Consequently, by
 `TauCeti.AlmostComplexStructure.norm_re_smul_add_im_smul`, the parametrization
 `z ↦ Re z • n + Im z • J n` of the complex line of a unit vector `n` is isometric.
+
+In finite dimension, a linear map `S` preserving the form `⟪J u, v⟫` satisfies `S J S† = J`
+(`TauCeti.AlmostComplexStructure.apply_apply_adjoint_apply`).
 
 Conversely, on a complex normed space whose norm comes from a real inner product, such as
 `Re ⟪·, ·⟫_ℂ` on a complex inner product space, multiplication by `i` preserves that inner product
@@ -179,6 +183,20 @@ theorem inner_sq_add_inner_sq_le {J : AlmostComplexStructure V}
     Complex.normSq_add_mul_I, mul_pow] at h
   rw [real_inner_comm p d, real_inner_comm (J p) d]
   linarith
+
+/-- **A map preserving the Kähler form satisfies `S J S† = J`.** If `S` preserves the form
+`⟪J u, v⟫` of an almost complex structure `J`, then `S† J S = J`, so `-J S† J` is a left and hence,
+in finite dimension, a right inverse of `S`. -/
+theorem apply_apply_adjoint_apply [FiniteDimensional ℝ V] {J : AlmostComplexStructure V}
+    {S : V →L[ℝ] V} (hS : ∀ u v, ⟪J (S u), S v⟫ = ⟪J u, v⟫) (w : V) :
+    S (J (S.adjoint w)) = J w := by
+  have hL (u : V) : S.adjoint (J (S u)) = J u :=
+    ext_inner_right ℝ fun v ↦ by rw [ContinuousLinearMap.adjoint_inner_left, hS]
+  have hleft : Function.LeftInverse (fun w ↦ -J (S.adjoint (J w))) S := fun u ↦ by
+    simp only [hL, J.apply_apply, neg_neg]
+  have hsurj : Function.Surjective S :=
+    (LinearMap.injective_iff_surjective (f := (S : V →ₗ[ℝ] V))).1 hleft.injective
+  simpa [J.apply_apply] using hleft.rightInverse_of_surjective hsurj (J w)
 
 /-- Multiplication by `i` is an orthogonal complex structure on a complex normed space whose norm
 comes from a real inner product; for a complex inner product space this real inner product is

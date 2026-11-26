@@ -131,6 +131,13 @@ theorem coe_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB
       jetOperator p stripMeasure (cutoffCoeff V β) (x : Lp (V × V × V) p stripMeasure) :=
   (rfl)
 
+/-- The cutoff operator does not depend on the bound used to define it. -/
+theorem cutoffL_congr {β : ℝ → ℝ} (hβ hβ' : ContDiff ℝ 2 β) {B B' : ℝ}
+    (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) (hβB' : ∀ s, |β s| ≤ B')
+    (hβ'B' : ∀ s, |deriv β s| ≤ B') :
+    cutoffL (V := V) p hβ hβB hβ'B = cutoffL p hβ' hβB' hβ'B' :=
+  ContinuousLinearMap.ext fun x ↦ Subtype.ext (by rw [coe_cutoffL, coe_cutoffL])
+
 /-- Multiplication by `β(s)` with `|β| ≤ B` and `|β'| ≤ B` has norm at most `2 B` on `W1p V p`. -/
 theorem norm_cutoffL_apply_le {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
     (hβ'B : ∀ s, |deriv β s| ≤ B) (x : W1p V p) : ‖cutoffL p hβ hβB hβ'B x‖ ≤ (B + B) * ‖x‖ := by
