@@ -423,8 +423,7 @@ theorem comp_centralForceEnergyMomentum (m : ℝ) (U : ℝ → ℝ) (ℓ : (Fin 
       angularMomentum (b 0) (b 1) y • Pi.single 1 1 := by
     ext i
     fin_cases i <;> simp
-  rw [Function.comp_apply, hv, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm,
-    mul_comm (angularMomentum _ _ y)]
+  simp [hv, mul_comm]
 
 /-- **The energy–momentum map is involutive.** For any two linear functionals `ℓ, ℓ'` on `ℝ²`,
 the functions `ℓ ∘ (H, L)` and `ℓ' ∘ (H, L)` Poisson-commute at every point, since `{H, L} = 0`. -/

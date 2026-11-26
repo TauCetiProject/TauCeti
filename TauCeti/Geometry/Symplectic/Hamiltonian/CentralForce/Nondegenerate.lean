@@ -38,8 +38,10 @@ of the effective potential, `U_L''(r) ≠ 0`
 Hessian of the critical function `H - Ω L` on the radial directions is positive definite exactly
 at a minimum, `U_L''(r) > 0`
 (`posDef_hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl_iff`).
-In the two-dimensional transversal space this is the elliptic case of Williamson's
-classification, so a nondegenerate minimum of the effective potential gives one elliptic block.
+By Williamson's theorem
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_eq_sum_smul_elliptic_of_posDef`), a positive
+definite form on the two-dimensional slice is a multiple of one elliptic block; that normal form
+is not restated here.
 
 The components of `F` Poisson-commute everywhere
 (`TauCeti.stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum`), which makes the
@@ -203,6 +205,17 @@ private theorem contDiffAt_centralForceEnergyMomentum_polarCanonical (hU : ContD
   contDiffAt_centralForceEnergyMomentum b (by rwa [norm_fst_polarCanonical_of_pos b hr])
     (fst_polarCanonical_ne_zero_of_pos b hr)
 
+/-- The chain rule for the energy–momentum map in polar coordinates at `(r, 0, θ, L)`, `r > 0`. -/
+private theorem hasFDerivAt_centralForceEnergyMomentum_comp_polarCanonical
+    (hU : ContDiffAt ℝ 2 U r) (hr : 0 < r) :
+    HasFDerivAt (centralForceEnergyMomentum b m U ∘ polarCanonical (b 0) (b 1))
+      ((fderiv ℝ (centralForceEnergyMomentum b m U)
+        (polarCanonical (b 0) (b 1) ((r, 0), (θ, L)))).comp
+        (fderiv ℝ (polarCanonical (b 0) (b 1)) ((r, 0), (θ, L)))) ((r, 0), (θ, L)) :=
+  (((contDiffAt_centralForceEnergyMomentum_polarCanonical b hU hr).differentiableAt
+    two_ne_zero).hasFDerivAt).comp _ ((contDiffAt_polarCanonical (b 0) (b 1) (n := 1)
+      hr.ne').differentiableAt one_ne_zero).hasFDerivAt
+
 /-- At the point with polar coordinates `(r, 0, θ, L)`, `r > 0`, the momentum is orthogonal to the
 position. -/
 private theorem inner_polarCanonical_of_pos (hr : 0 < r) :
@@ -234,17 +247,12 @@ private theorem fderiv_centralForceEnergyMomentum_fderiv_polarCanonical_inl
     fderiv ℝ (centralForceEnergyMomentum b m U) (polarCanonical (b 0) (b 1) ((r, 0), (θ, L)))
       (fderiv ℝ (polarCanonical (b 0) (b 1)) ((r, 0), (θ, L)) (a, 0)) = 0 := by
   set y : (ℝ × ℝ) × (ℝ × ℝ) := ((r, 0), (θ, L))
-  have hFC : ContDiffAt ℝ 2 (centralForceEnergyMomentum b m U) (polarCanonical (b 0) (b 1) y) :=
-    contDiffAt_centralForceEnergyMomentum_polarCanonical b hU hr
-  have hF := (hFC.differentiableAt two_ne_zero).hasFDerivAt
-  have hφ := ((contDiffAt_polarCanonical (b 0) (b 1) (n := 1) (x := y) hr.ne').differentiableAt
-    one_ne_zero).hasFDerivAt
   have hg : HasFDerivAt (centralForceEnergyMomentum b m U ∘ polarCanonical (b 0) (b 1))
       ((fderiv ℝ (centralForceEnergyMomentum b m U) (polarCanonical (b 0) (b 1) y)).comp
         (fderiv ℝ (polarCanonical (b 0) (b 1)) y))
       (y + ContinuousLinearMap.inl ℝ (ℝ × ℝ) (ℝ × ℝ) 0) := by
     rw [ContinuousLinearMap.inl_apply, Prod.mk_zero_zero, add_zero]
-    exact hF.comp y hφ
+    exact hasFDerivAt_centralForceEnergyMomentum_comp_polarCanonical b hU hr
   have h := ((hg.comp (0 : ℝ × ℝ)
     ((ContinuousLinearMap.inl ℝ (ℝ × ℝ) (ℝ × ℝ)).hasFDerivAt.const_add y)).congr_of_eventuallyEq
     (eventuallyEq_centralForceEnergyMomentum_polarCanonical b hr).symm).unique
@@ -317,8 +325,10 @@ mass, at the point with polar coordinates `(r, 0, θ, L)`, `r > 0`, let `ℓ` be
 along the derivative of the polar coordinates to the radial directions `(δr, δp_r)`, is positive
 definite exactly when `U_L''(r) > 0`.
 
-In the two-dimensional transversal space of a circular orbit this is the elliptic case of
-Williamson's classification. -/
+Williamson's theorem
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_eq_sum_smul_elliptic_of_posDef`) turns this positive
+definite form on the two-dimensional slice into one elliptic block; that step is not restated
+here. -/
 theorem
     posDef_hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl_iff
     (hm : 0 < m)
@@ -369,21 +379,16 @@ private theorem fderiv_centralForceEnergyMomentum_fderiv_polarCanonical_one
     (hU : ContDiffAt ℝ 2 U r) (hr : 0 < r) :
     fderiv ℝ (centralForceEnergyMomentum b m U) (polarCanonical (b 0) (b 1) ((r, 0), (θ, L)))
       (fderiv ℝ (polarCanonical (b 0) (b 1)) ((r, 0), (θ, L)) ((0, 0), (0, 1))) 1 = 1 := by
-  set y : (ℝ × ℝ) × (ℝ × ℝ) := ((r, 0), (θ, L))
-  have hFC : ContDiffAt ℝ 2 (centralForceEnergyMomentum b m U) (polarCanonical (b 0) (b 1) y) :=
-    contDiffAt_centralForceEnergyMomentum_polarCanonical b hU hr
-  have hF := (hFC.differentiableAt two_ne_zero).hasFDerivAt
-  have hφ := ((contDiffAt_polarCanonical (b 0) (b 1) (n := 1) (x := y) hr.ne').differentiableAt
-    one_ne_zero).hasFDerivAt
   -- Off `r = 0`, the angular momentum of the point with polar coordinates `z` is `z.2.2`.
   have hev : (fun z ↦ centralForceEnergyMomentum b m U (polarCanonical (b 0) (b 1) z) 1)
-      =ᶠ[𝓝 y] fun z ↦ z.2.2 := by
+      =ᶠ[𝓝 ((r, 0), (θ, L))] fun z ↦ z.2.2 := by
     filter_upwards [(continuous_fst.comp continuous_fst).continuousAt.eventually_ne hr.ne']
       with z hz
     rw [centralForceEnergyMomentum_one]
     exact angularMomentum_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
       (b.inner_eq_zero (by decide)) hz
-  have h := ((((ContinuousLinearMap.proj 1).hasFDerivAt.comp _ hF).comp y hφ).congr_of_eventuallyEq
+  have h := (((ContinuousLinearMap.proj 1).hasFDerivAt.comp _
+    (hasFDerivAt_centralForceEnergyMomentum_comp_polarCanonical b hU hr)).congr_of_eventuallyEq
     hev.symm).unique ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp
       (ContinuousLinearMap.snd ℝ (ℝ × ℝ) (ℝ × ℝ))).hasFDerivAt
   simpa using DFunLike.congr_fun h ((0, 0), (0, 1))

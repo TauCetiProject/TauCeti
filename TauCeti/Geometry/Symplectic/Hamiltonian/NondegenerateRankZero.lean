@@ -36,7 +36,7 @@ This file sets up this notion on a symplectic vector space, the local model of t
   family `Q` of quadratic forms generate a Cartan subalgebra of `sp(V, ω)`. This depends only on
   the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`), and is
   invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`); a family
-  of nonzero multiples of one form is nondegenerate with that form
+  of multiples `c j • Q`, not all zero, is nondegenerate exactly when `Q` is
   (`isNondegenerateQuadraticFamily_smul_iff`). In
   particular, forms on `V` and the forms they induce on the reduced space of `⊤` are nondegenerate
   together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`), and reduced forms may be
