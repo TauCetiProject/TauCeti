@@ -48,11 +48,9 @@ the singular simplices lying in `U` or in `V`, the cochain connecting map of the
 (`TopCat.singularCohomologyMayerVietorisδ_comp_homologyMap`).
 
 Both sides of the identity are therefore equal after restriction from all singular simplices of
-`M` to its smooth simplices lying in `U` or in `V`. That restriction is injective on cohomology:
-it is the smoothing isomorphism (`TauCeti.smoothSingularCohomologyIso`) followed by the
-restriction from smooth simplices to small smooth simplices, a chain homotopy equivalence by the
-small-chain theorem for affinely stable subcomplexes
-(`TauCeti.subcomplexSmallChainHomotopyEquiv`).
+`M` to its smooth simplices lying in `U` or in `V`. That restriction is a quasi-isomorphism
+(`TauCeti.quasiIso_cochainComplexMap_smallSmoothSingularSubcomplex_ι`), by the smoothing theorem
+and the small-chain theorem for affinely stable subcomplexes, so it is injective on cohomology.
 
 ## Main results
 
@@ -149,32 +147,6 @@ private def mayerVietorisIntegration (U V : Opens M) (hUV : U ⊔ V = ⊤) :
         deRhamIntegration_naturality]
     · rw [biprod.inr_map_assoc, biprod.inr_desc, biprod.inr_desc_assoc, Preadditive.comp_neg,
         Preadditive.neg_comp, deRhamIntegration_naturality]
-
-/-- Restriction of singular cochains of `M` to the smooth singular simplices lying in `U` or in
-`V` is injective on cohomology, for an open cover `U ⊔ V = ⊤`. -/
-private theorem injective_homologyMap_cochainComplexMap_smallSmoothSingularSubcomplex_ι
-    (U V : Opens M) (hUV : U ⊔ V = ⊤) (n : ℕ) :
-    Function.Injective (HomologicalComplex.homologyMap
-      (SSet.cochainComplexMap (R := ModuleCat.of ℝ ℝ) (k := ℝ) (M := ModuleCat.of ℝ ℝ)
-        (smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)]).ι) n) := by
-  have hopen : ∀ i, IsOpen (![(U : Set M), (V : Set M)] i) := U.isOpen.vecCons V.isOpen
-  have hcov : ⋃ i, ![(U : Set M), (V : Set M)] i = Set.univ := by
-    rw [Set.iUnion_vecCons_pair, ← Opens.coe_sup, hUV, Opens.coe_top]
-  -- Restriction to small smooth simplices is restriction to smooth simplices, an isomorphism by
-  -- the smoothing theorem, followed by restriction from smooth to small smooth simplices, an
-  -- isomorphism by the small-chain theorem.
-  have hq : QuasiIso (SSet.cochainComplexMap (R := ModuleCat.of ℝ ℝ) (k := ℝ)
-      (M := ModuleCat.of ℝ ℝ) (homOfLE (inf_le_left : smoothSingularSubcomplex I M ⊓
-        (TopCat.of M).smallSingularSubcomplex ![(U : Set M), (V : Set M)] ≤ _))) := by
-    have := ((subcomplexSmallChainHomotopyEquiv (ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M)
-      _ hopen hcov).linearYonedaFunctorMap ℝ (ModuleCat.of ℝ ℝ)).quasiIso_hom
-    rwa [HomotopyEquiv.linearYonedaFunctorMap_hom, subcomplexSmallChainHomotopyEquiv_hom] at this
-  rw [smallSmoothSingularSubcomplex_eq, ← homOfLE_ι (inf_le_left : smoothSingularSubcomplex I M ⊓
-      (TopCat.of M).smallSingularSubcomplex ![(U : Set M), (V : Set M)] ≤ _),
-    SSet.cochainComplexMap_comp,
-    HomologicalComplex.homologyMap_comp,
-    ← smoothSingularCohomologyIso_hom I M (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ) n]
-  exact (ModuleCat.mono_iff_injective _).1 inferInstance
 
 /-- On the de Rham side: restricted to the smooth singular simplices of `M` lying in `U` or in `V`,
 the de Rham homomorphism of the image of `c` under the de Rham connecting map is the cochain
@@ -282,10 +254,13 @@ theorem deRhamHom_map_mayerVietorisδ (U V : Opens M) (hUV : U ⊔ V = ⊤)
       TopCat.singularCohomologyMayerVietorisδ (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ)
         (X := TopCat.of M) U.isOpen V.isOpen
         (by rw [← Opens.coe_sup, hUV, Opens.coe_top]) k (k + 1) rfl
-        (deRhamHom I (U ⊓ V : Opens M) k c) :=
-  -- Both sides agree after restriction to the smooth simplices lying in `U` or in `V`, which is
-  -- injective on cohomology.
-  injective_homologyMap_cochainComplexMap_smallSmoothSingularSubcomplex_ι I U V hUV (k + 1)
+        (deRhamHom I (U ⊓ V : Opens M) k c) := by
+  have := quasiIso_cochainComplexMap_smallSmoothSingularSubcomplex_ι I M (ModuleCat.of ℝ ℝ) ℝ
+    (ModuleCat.of ℝ ℝ) ![(U : Set M), (V : Set M)] (U.isOpen.vecCons V.isOpen)
+    (by rw [Set.iUnion_vecCons_pair, ← Opens.coe_sup, hUV, Opens.coe_top])
+  -- Both sides agree after restriction to the smooth simplices lying in `U` or in `V`, which is a
+  -- quasi-isomorphism and so injective on cohomology.
+  exact (ModuleCat.mono_iff_injective _).1 inferInstance
     ((homologyMap_ι_deRhamHom_map_mayerVietorisδ I U V hUV k c).trans
       (homologyMap_ι_singularCohomologyMayerVietorisδ_deRhamHom I U V hUV k c).symm)
 
@@ -305,14 +280,11 @@ private theorem deRhamHom_map_inclusion_equivOfDiffeomorph_symm (U V W : Opens M
     have hy : Opens.inclusion hW y = T.symm (y : M) :=
       Subtype.ext (Diffeomorph.coe_ofTop_symm_apply (y : M)).symm
     rw [Function.comp_apply, hy, Diffeomorph.symm_apply_apply]
-  have hmap : ∀ (f g : W → M) (hf : ContMDiff I I ∞ f) (hg : ContMDiff I I ∞ g), f = g →
-      deRhamCohomology.map f hf k = deRhamCohomology.map g hg k := by
-    rintro f g hf hg rfl
-    rfl
   have h := LinearMap.congr_fun (deRhamCohomology.map_comp (Opens.inclusion hW) T.symm.symm
     (contMDiff_inclusion hW) T.symm.symm.contMDiff k) x
   rw [LinearMap.comp_apply] at h
-  rw [deRhamCohomology.equivOfDiffeomorph_symm_apply, ← h, hmap _ _ _ contMDiff_subtypeVal hcomp]
+  rw [deRhamCohomology.equivOfDiffeomorph_symm_apply, ← h,
+    deRhamCohomology.map_congr _ contMDiff_subtypeVal hcomp]
   exact deRhamHom_map contMDiff_subtypeVal k x
 
 omit [SigmaCompactSpace M] in
