@@ -18,11 +18,11 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 `π₃(SU(2)) ≅ ℤ` at every base point, and the homotopy groups of a product give
 `π₃(SU(2) × SU(2)) ≅ ℤ²`.
 
-## Main results
+## Main definitions
 
-* `TauCeti.nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int`:
+* `TauCeti.specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt`:
   `π₃(SU(2), g) ≅ ℤ` for every `g`.
-* `TauCeti.nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv`:
+* `TauCeti.specialUnitaryGroupTwoProdHomotopyGroupThreeMulEquiv`:
   `π₃(SU(2) × SU(2), (g, h)) ≅ ℤ²` for all `g` and `h`.
 -/
 
@@ -34,20 +34,21 @@ namespace TauCeti
 
 /-- **`π₃(SU(2)) ≅ ℤ`**, at every base point: `SU(2)` is the three-sphere, the unit sphere of the
 quaternions. -/
-theorem nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int
+noncomputable def specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt
     (g : Matrix.specialUnitaryGroup (Fin 2) ℂ) :
-    Nonempty (π_ 3 (Matrix.specialUnitaryGroup (Fin 2) ℂ) g ≃* Multiplicative ℤ) :=
-  ⟨(HomotopyGroup.homeomorphMulEquiv specialUnitaryGroupTwoHomeomorphSphere g).trans
-    (homotopyGroupSphereQuaternionMulEquiv _)⟩
+    π_ 3 (Matrix.specialUnitaryGroup (Fin 2) ℂ) g ≃* Multiplicative ℤ :=
+  (HomotopyGroup.homeomorphMulEquiv specialUnitaryGroupTwoHomeomorphSphere g).trans
+    (homotopyGroupSphereQuaternionMulEquiv _)
 
 /-- **`π₃(SU(2) × SU(2)) ≅ ℤ²`**, at every base point: the homotopy groups of a product are the
-products of the homotopy groups of the factors. -/
-theorem nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv
+products of the homotopy groups of the factors (`HomotopyGroup.prodMulEquiv`), and each factor is
+identified with `ℤ` by `TauCeti.specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt`. -/
+noncomputable def specialUnitaryGroupTwoProdHomotopyGroupThreeMulEquiv
     (g h : Matrix.specialUnitaryGroup (Fin 2) ℂ) :
-    Nonempty (π_ 3 (Matrix.specialUnitaryGroup (Fin 2) ℂ × Matrix.specialUnitaryGroup (Fin 2) ℂ)
-      (g, h) ≃* Multiplicative ℤ × Multiplicative ℤ) := by
-  obtain ⟨e₁⟩ := nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int g
-  obtain ⟨e₂⟩ := nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int h
-  exact ⟨(HomotopyGroup.prodMulEquiv g h).trans (e₁.prodCongr e₂)⟩
+    π_ 3 (Matrix.specialUnitaryGroup (Fin 2) ℂ × Matrix.specialUnitaryGroup (Fin 2) ℂ) (g, h) ≃*
+      Multiplicative ℤ × Multiplicative ℤ :=
+  (HomotopyGroup.prodMulEquiv g h).trans
+    ((specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt g).prodCongr
+      (specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt h))
 
 end TauCeti

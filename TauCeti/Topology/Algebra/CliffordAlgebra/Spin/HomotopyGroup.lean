@@ -35,8 +35,8 @@ exact sequence `π_n(SO(n + 1)) → π_n(Sⁿ) → π_(n - 1)(SO(n))` of the fib
 (`TauCeti.specialOrthogonalGroupThreeHomotopyGroupMulEquivSphere`,
 `TauCeti.subsingleton_homotopyGroup_specialOrthogonalGroup_three`). In degree three the
 comparison with `S³` gives `π₃(SO(3)) ≅ ℤ` at every basepoint
-(`TauCeti.nonempty_homotopyGroup_three_specialOrthogonalGroup_three_mulEquiv_int`), so `SO(3)` is
-not aspherical (`TauCeti.not_isAspherical_specialOrthogonalGroup_three`).
+(`TauCeti.specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt`), so `SO(3)` is not
+aspherical (`TauCeti.not_isAspherical_specialOrthogonalGroup_three`).
 
 ## Main definitions
 
@@ -46,14 +46,14 @@ not aspherical (`TauCeti.not_isAspherical_specialOrthogonalGroup_three`).
   `π_N(SO(3), 1) ≃* π_N(S³, 1)` for `Nat.card N ≥ 2`.
 * `TauCeti.specialOrthogonalGroupThreeHomotopyGroupMulEquivSphere`: the same isomorphism for the
   matrix group `SO(3)`.
+* `TauCeti.specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt`: `π₃(SO(3), S) ≃* ℤ` for
+  every `S`, for the matrix group.
 
 ## Main results
 
 * `CliffordAlgebra.subsingleton_homotopyGroup_realSpecialOrthogonal_three`: `π₂(SO(3), g)` is
   trivial for every `g`.
 * `TauCeti.subsingleton_homotopyGroup_specialOrthogonalGroup_three`: the same for the matrix group.
-* `TauCeti.nonempty_homotopyGroup_three_specialOrthogonalGroup_three_mulEquiv_int`:
-  `π₃(SO(3), S) ≅ ℤ` for every `S`, for the matrix group.
 * `TauCeti.not_isAspherical_specialOrthogonalGroup_three`: the matrix group `SO(3)` is not
   aspherical at any basepoint.
 
@@ -181,21 +181,20 @@ theorem subsingleton_homotopyGroup_specialOrthogonalGroup_three {N : Type*} (hN 
 
 /-- **`π₃(SO(3)) ≅ ℤ` for the matrix group**, at every basepoint: `π₃(SO(3)) ≅ π₃(S³)` through
 the double cover of `SO(3)` by `Spin(3) ≅ S³`, and `π₃(S³) ≅ ℤ`. -/
-theorem nonempty_homotopyGroup_three_specialOrthogonalGroup_three_mulEquiv_int
+def specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt
     (S : Matrix.specialOrthogonalGroup (Fin 3) ℝ) :
-    Nonempty
-      (HomotopyGroup (Fin 3) (Matrix.specialOrthogonalGroup (Fin 3) ℝ) S ≃* Multiplicative ℤ) :=
+    HomotopyGroup (Fin 3) (Matrix.specialOrthogonalGroup (Fin 3) ℝ) S ≃* Multiplicative ℤ :=
   -- Translate the basepoint to `1`, where the comparison with `S³` is stated.
-  ⟨(HomotopyGroup.homeomorphMulEquivOfEq (Homeomorph.mulLeft S) (mul_one S)).symm.trans <|
+  (HomotopyGroup.homeomorphMulEquivOfEq (Homeomorph.mulLeft S) (mul_one S)).symm.trans <|
     specialOrthogonalGroupThreeHomotopyGroupMulEquivSphere.trans <|
-      homotopyGroupSphereQuaternionMulEquiv 1⟩
+      homotopyGroupSphereQuaternionMulEquiv 1
 
 /-- **`SO(3)` is not aspherical**, at any basepoint, since `π₃(SO(3)) ≅ ℤ` is nontrivial. -/
 theorem not_isAspherical_specialOrthogonalGroup_three
     (S : Matrix.specialOrthogonalGroup (Fin 3) ℝ) :
     ¬IsAspherical (Matrix.specialOrthogonalGroup (Fin 3) ℝ) S := fun hS ↦ by
-  obtain ⟨e⟩ := nonempty_homotopyGroup_three_specialOrthogonalGroup_three_mulEquiv_int S
   have := hS.subsingleton_homotopyGroup 1
-  exact not_subsingleton (Multiplicative ℤ) e.symm.toEquiv.subsingleton
+  exact not_subsingleton (Multiplicative ℤ)
+    (specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt S).symm.toEquiv.subsingleton
 
 end TauCeti

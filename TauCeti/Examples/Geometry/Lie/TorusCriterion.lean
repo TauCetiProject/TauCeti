@@ -23,15 +23,15 @@ on the groups `SU(2)`, `SU(2) × SU(2)` and `SO(3)`.
   hold. In particular its third homotopy group vanishes.
 * **`SU(2)` and `SU(2) × SU(2)`.** `SU(2)` is the three-sphere
   (`TauCeti.specialUnitaryGroupTwoHomeomorphSphere`), so `π₃(SU(2)) ≅ ℤ`
-  (`TauCeti.nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int`), and
+  (`TauCeti.specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt`), and
   `π₃(SU(2) × SU(2)) ≅ ℤ²`
-  (`TauCeti.nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv`). Both are
+  (`TauCeti.specialUnitaryGroupTwoProdHomotopyGroupThreeMulEquiv`). Both are
   proved in `TauCeti.Topology.Algebra.Quaternion.Unitary.HomotopyGroup`.
 * **`SO(3)`.** The finite cover of `SO(3)` by a torus times a simply connected group is the double
   cover `SU(2) → SO(3)` (`TauCeti.SU2.isCoveringMap_toSO3`), with a trivial torus factor. A
   covering map is bijective on the homotopy groups in degrees at least two, so
   `π₃(SO(3)) ≅ π₃(S³) ≅ ℤ` at every base point
-  (`TauCeti.nonempty_homotopyGroup_three_specialOrthogonalGroup_three_mulEquiv_int`), while
+  (`TauCeti.specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt`), while
   `π₂(SO(3)) = 0` (`TauCeti.subsingleton_homotopyGroup_specialOrthogonalGroup_three`). Hence
   `SO(3)` is not aspherical (`TauCeti.not_isAspherical_specialOrthogonalGroup_three`), and it is
   not a torus, since tori are aspherical: both sides fail.
@@ -78,13 +78,13 @@ example (r : ℕ) : Subsingleton (π_ 3 (Fin r → Circle) 1) :=
 /-- **`π₃(SU(2)) ≅ ℤ`**, at every base point: `SU(2)` is the three-sphere, the unit sphere of the
 quaternions. -/
 example (g : SU2) : Nonempty (π_ 3 SU2 g ≃* Multiplicative ℤ) :=
-  nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int g
+  ⟨specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt g⟩
 
 /-- **`π₃(SU(2) × SU(2)) ≅ ℤ²`**, at every base point: the homotopy groups of a product are the
 products of the homotopy groups of the factors. -/
 example (g h : SU2) :
     Nonempty (π_ 3 (SU2 × SU2) (g, h) ≃* Multiplicative ℤ × Multiplicative ℤ) :=
-  nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv g h
+  ⟨specialUnitaryGroupTwoProdHomotopyGroupThreeMulEquiv g h⟩
 
 /-! ### The rotation group `SO(3)` -/
 
