@@ -47,7 +47,7 @@ The proof computes in the left trivialization.
   (`TauCeti.CotangentBundle.eval₂_mpullback_leftTrivialization_symplecticForm`) becomes
   `-a ⁅θ v, θ w⁆`.
 * **Inversion.** The derivative of inversion satisfies `θ_{g⁻¹}(d(inv)_g v) = -Ad_g (θ_g v)`
-  (`TauCeti.Lie.mfderiv_inv_mul_mfderiv_inv`), so the left-invariant Kirillov form `σ_c` of `c`,
+  (`TauCeti.Lie.mfderiv_mul_left_mfderiv_inv`), so the left-invariant Kirillov form `σ_c` of `c`,
   pulled back along `z ↦ π(z)⁻¹`, pairs the same vectors to
   `c ⁅Ad_g θ v, Ad_g θ w⁆ = (Ad*_{g⁻¹} c) ⁅θ v, θ w⁆ = a ⁅θ v, θ w⁆`, since `Ad*_g a = c`. Hence `ω`
   is minus this pullback on `ker dμ`
@@ -218,7 +218,7 @@ theorem eval₂_symplecticForm_eq_neg_of_differential_eq_zero
   -- The translates `θ_{g⁻¹}(d(inv) v)` are typed in tangent spaces of `G` at `g⁻¹`, and the
   -- brackets in the Lie algebra; both are the model space `E`, and `rw` cannot match the lemmas
   -- across these definitionally equal types, so `erw` is used.
-  erw [mfderiv_inv_mul_mfderiv_inv, mfderiv_inv_mul_mfderiv_inv]
+  erw [mfderiv_mul_left_mfderiv_inv, mfderiv_mul_left_mfderiv_inv]
   simp only [map_neg, LinearMap.neg_apply, neg_neg]
   rw [Module.Dual.kirillovForm_apply]
   erw [← adjointContinuousLinearMap_lie]
