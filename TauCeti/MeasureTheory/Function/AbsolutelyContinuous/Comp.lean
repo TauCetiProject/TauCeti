@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -19,7 +20,10 @@ Locally Lipschitz maps preserve the absolute continuity of metric-valued curves 
 and isometries moreover reflect it.
 In particular, a map that is continuously differentiable near every point of the compact trace of
 an absolutely continuous curve preserves absolute continuity: this gives the principal logarithm
-of a curve in the slit plane and the quotient of two curves with nonvanishing denominator.
+of a curve in the slit plane and the quotient of two curves with nonvanishing denominator. The
+star of a curve in a normed star group is absolutely continuous because `star` is an isometry, and
+the product of two curves in a seminormed ring is absolutely continuous because the norm is
+submultiplicative.
 -/
 
 public section
@@ -74,6 +78,46 @@ protected theorem clog {σ : ℝ → ℂ} {a b : ℝ} (hσ : AbsolutelyContinuou
     AbsolutelyContinuousOnInterval (fun t ↦ Complex.log (σ t)) a b :=
   hσ.comp_of_contDiffAt fun _ ⟨t, ht, hσt⟩ ↦
     (Complex.contDiffAt_log (hσt ▸ h t ht)).restrict_scalars ℝ
+
+/-- The star of an absolutely continuous curve in a normed star group is absolutely continuous. -/
+protected theorem star {E : Type*} [SeminormedAddCommGroup E] [StarAddMonoid E]
+    [NormedStarGroup E] {f : ℝ → E} {a b : ℝ} (hf : AbsolutelyContinuousOnInterval f a b) :
+    AbsolutelyContinuousOnInterval (fun t ↦ star (f t)) a b :=
+  star_isometry.absolutelyContinuousOnInterval_comp_iff.2 hf
+
+/-- The product of two absolutely continuous curves in a seminormed (not necessarily unital or
+commutative) ring is absolutely continuous. This generalizes `AbsolutelyContinuousOnInterval.mul`
+from real functions to rings whose norm is only submultiplicative, such as operator algebras.
+The proof is adapted from Mathlib's `AbsolutelyContinuousOnInterval.smul`, with `norm_mul_le`
+in place of the `NormSMulClass` hypothesis. -/
+@[to_fun]
+theorem mul' {A : Type*} [NonUnitalSeminormedRing A] {f g : ℝ → A} {a b : ℝ}
+    (hf : AbsolutelyContinuousOnInterval f a b) (hg : AbsolutelyContinuousOnInterval g a b) :
+    AbsolutelyContinuousOnInterval (f * g) a b := by
+  obtain ⟨C, hC⟩ := hf.exists_bound
+  obtain ⟨D, hD⟩ := hg.exists_bound
+  unfold AbsolutelyContinuousOnInterval at hf hg
+  apply squeeze_zero' ?_ ?_
+    (by simpa using (hg.const_mul C).add (hf.const_mul D))
+  · exact Filter.Eventually.of_forall fun _ ↦ Finset.sum_nonneg fun _ _ ↦ dist_nonneg
+  rw [Filter.eventually_inf_principal]
+  filter_upwards with (n, I) hnI
+  simp only [Finset.mul_sum, ← Finset.sum_add_distrib]
+  gcongr with i hi
+  simp only [disjWithin, mem_ofPred_eq] at hnI
+  calc dist ((f * g) (I i).1) ((f * g) (I i).2)
+      ≤ dist (f (I i).1 * g (I i).1) (f (I i).1 * g (I i).2) +
+          dist (f (I i).1 * g (I i).2) (f (I i).2 * g (I i).2) := dist_triangle _ _ _
+    _ ≤ C * dist (g (I i).1) (g (I i).2) + D * dist (f (I i).1) (f (I i).2) := by
+      simp only [dist_eq_norm, ← mul_sub, ← sub_mul]
+      gcongr
+      · exact (norm_mul_le _ _).trans <| by
+          gcongr
+          exact hC _ (hnI.left i hi).left
+      · exact (norm_mul_le _ _).trans <| by
+          rw [mul_comm]
+          gcongr
+          exact hD _ (hnI.left i hi).right
 
 /-- The inverse of an absolutely continuous curve valued in a normed field is absolutely
 continuous when it does not vanish on the interval. -/
