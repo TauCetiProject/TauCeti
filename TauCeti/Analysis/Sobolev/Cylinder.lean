@@ -22,6 +22,7 @@ import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 import TauCeti.Topology.Algebra.Order.Floor
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The Sobolev space `W^{1,2}` on the cylinder and Peetre's argument

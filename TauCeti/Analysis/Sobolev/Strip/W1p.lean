@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.Sobolev.Strip.Basic
 import TauCeti.Analysis.Sobolev.Strip.Morrey
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The Sobolev spaces `W^{1,p}` of the strip with boundary conditions, and their embedding into
