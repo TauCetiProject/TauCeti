@@ -16,12 +16,14 @@ import TauCeti.RingTheory.DedekindDomain.Prufer
 # Valuation subrings of `F^alg` and primes of the algebraic integers
 
 Let `F` be a number field, `F^alg = AlgebraicClosure F`, `G_F = Field.absoluteGaloisGroup F` and
-`O` the integral closure of `𝓞 F` in `F^alg`. There are two standard ways to describe a finite
-place of `F^alg`: as a prime ideal `Q` of `O`, the language of
-`TauCeti/NumberTheory/NumberField/AbsoluteGaloisGroup/Decomposition.lean` and of Mathlib's
+`O` the integral closure of `𝓞 F` in `F^alg`. There are two standard ways to describe a
+non-archimedean valuation of `F^alg` up to equivalence: as a prime ideal `Q` of `O`, the language
+of `TauCeti/NumberTheory/NumberField/AbsoluteGaloisGroup/Decomposition.lean` and of Mathlib's
 `IsArithFrobAt`; or as a valuation subring `A` of `F^alg`, the language of Mathlib's
 `ValuationSubring.decompositionSubgroup` and `ValuationSubring.inertiaSubgroup`. This file shows
-that they agree, in both directions.
+that they agree, in both directions. The correspondence includes the trivial valuation, given by
+the zero prime of `O` and by `F^alg` itself; the finite places of `F^alg` are the nonzero primes of
+`O`, equivalently the proper valuation subrings of `F^alg`.
 
 Every valuation subring of `F^alg` contains `O`, since it contains `ℤ` and is integrally closed;
 its centre on `O` is a prime of `O`. Conversely, `O` is a Prüfer domain

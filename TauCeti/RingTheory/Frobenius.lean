@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Frobenius
 
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Invariant.Basic
 
 /-!
@@ -191,10 +192,10 @@ theorem mem_stabilizer_of_forall_smul_sub_pow_mem {S G : Type*} [CommRing S] [Gr
     (hg : ∀ b : S, g • b - b ^ q ∈ P) : g ∈ MulAction.stabilizer G P := by
   rcases q.eq_zero_or_pos with rfl | hq
   · exact absurd (by simpa using hg 0) (P.ne_top_iff_one.mp ‹P.IsPrime›.ne_top)
+  have hcomap := comap_eq_self_of_forall_sub_pow_mem ‹P.IsPrime›.isRadical hq.ne'
+    (φ := MulSemiringAction.toRingHom G S g) hg
   have hiff (b : S) : g • b ∈ P ↔ b ∈ P := by
-    refine ⟨fun hb ↦ ‹P.IsPrime›.mem_of_pow_mem q ?_, fun hb ↦ ?_⟩
-    · simpa using P.sub_mem hb (hg b)
-    · simpa using P.add_mem (hg b) (P.pow_mem_of_mem hb q hq)
+    simpa using SetLike.ext_iff.mp hcomap b
   refine MulAction.mem_stabilizer_iff.mpr (SetLike.ext fun b ↦ ?_)
   rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, ← hiff, smul_inv_smul]
 

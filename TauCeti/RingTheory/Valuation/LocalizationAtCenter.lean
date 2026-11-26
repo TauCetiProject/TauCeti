@@ -138,28 +138,6 @@ theorem mem_valuationSubringAtPrime_iff {x : L} :
     Subalgebra.mem_toSubring, Localization.subalgebra.mem_ofField_iff]
   simp only [Ideal.mem_primeCompl_iff]
 
-/-- `B_P` is centred at `P`. -/
-theorem isCenteredAt_valuationSubringAtPrime : (P.valuationSubringAtPrime L).IsCenteredAt P where
-  algebraMap_mem b := mem_valuationSubringAtPrime_iff.mpr
-    ⟨b, 1, P.primeCompl.one_mem, by rw [map_one, inv_one, mul_one]⟩
-  algebraMap_mem_nonunits_iff b := by
-    rw [ValuationSubring.mem_nonunits_iff_or, mem_valuationSubringAtPrime_iff]
-    refine ⟨?_, fun hb ↦ ?_⟩
-    · rintro (h0 | hinv)
-      · exact IsFractionRing.to_map_eq_zero_iff.mp h0 ▸ P.zero_mem
-      · by_contra hb
-        exact hinv ⟨1, b, hb, by rw [map_one, one_mul]⟩
-    · by_cases h0 : algebraMap B L b = 0
-      · exact Or.inl h0
-      refine Or.inr fun ⟨a, s, hs, hbs⟩ ↦ hs ?_
-      -- `b⁻¹ = a / s` gives `s = a * b`, which lies in `P`
-      have hs0 : algebraMap B L s ≠ 0 := algebraMap_ne_zero_of_notMem hs
-      have : algebraMap B L s = algebraMap B L (a * b) := by
-        rw [map_mul]
-        field_simp at hbs
-        linear_combination hbs
-      exact IsFractionRing.injective B L this ▸ P.mul_mem_left a hb
-
 /-- `B_P`, realized inside `L`, is a `B`-algebra through the algebra map `B → L`: the algebra
 structure of Mathlib's `Localization.subalgebra.ofField`, whose underlying subring `B_P` is by
 definition (`Ideal.valuationSubringAtPrime_toSubring`). -/
@@ -183,6 +161,14 @@ Mathlib's `Localization.subalgebra.isLocalization_ofField`. -/
 instance : IsLocalization P.primeCompl (P.valuationSubringAtPrime L) :=
   Localization.subalgebra.isLocalization_ofField L P.primeCompl
     (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L)
+
+/-- `B_P` is centred at `P`. -/
+theorem isCenteredAt_valuationSubringAtPrime : (P.valuationSubringAtPrime L).IsCenteredAt P where
+  algebraMap_mem b := mem_valuationSubringAtPrime_iff.mpr
+    ⟨b, 1, P.primeCompl.one_mem, by rw [map_one, inv_one, mul_one]⟩
+  algebraMap_mem_nonunits_iff b := by
+    rw [← coe_algebraMap_valuationSubringAtPrime (P := P), ValuationSubring.coe_mem_nonunits_iff]
+    exact IsLocalization.AtPrime.to_map_mem_maximal_iff _ P b
 
 end Ideal
 
