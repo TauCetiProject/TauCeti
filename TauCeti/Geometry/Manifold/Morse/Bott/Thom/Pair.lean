@@ -95,7 +95,7 @@ each summand being one such attachment. So `Hₙ({f ≤ b}, {f ≤ a})` is the c
 critical submanifolds on the level of the homologies `Hₙ(ν⁻ j, (ν⁻ j)₀)` of the Thom pairs of their
 negative normal bundles, for finitely many disjoint compact Morse–Bott submanifolds
 (`TauCeti.SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`) and for every
-band with a single critical value of a Morse–Bott function on a compact manifold
+compact band with a single critical value of a Morse–Bott function
 (`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`). The Thom
 isomorphism then computes each summand from the homology of the critical submanifold, shifted by its
 index.
@@ -1371,21 +1371,23 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPai
 
 /-- **The relative homology across a critical level of a Morse–Bott function is the sum of the
 homologies of the Thom pairs of the negative normal bundles on that level.** Let the family
-`i j : S j → M` exhibit `f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily`) on a compact
-Hausdorff second-countable boundaryless manifold, with pieces modelled on boundaryless models and
-Morse index `r j` at every point of `i j`, and let `g j` be a smooth fibre metric on the normal
-bundle of `i j`. Give the total space of the negative normal spaces relative to `g j` the topology
-of a subspace of the normal bundle, so that they form a vector bundle `ν⁻ j` of rank `r j` over
-`S j`. Let `a < c < b` be such that `c` is the only critical value of `f` in `[a, b]`, and index
-the pieces on the level `f = c` by `{j // ∀ s, f (i j s) = c}`.
+`i j : S j → M` exhibit `f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily`) on a Hausdorff
+second-countable boundaryless manifold, not necessarily compact, with pieces modelled on
+boundaryless models and Morse index `r j` at every point of `i j`, and let `g j` be a smooth fibre
+metric on the normal bundle of `i j`. Give the total space of the negative normal spaces relative to
+`g j` the topology of a subspace of the normal bundle, so that they form a vector bundle `ν⁻ j` of
+rank `r j` over `S j`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact and `c` is its
+only critical value, and index the pieces on the level `f = c` by `{j // ∀ s, f (i j s) = c}`; they
+lie in the band, so they are finitely many and compact.
 
 Then the relative singular homology `Hₙ({f ≤ b}, {f ≤ a})` is isomorphic to the coproduct over the
 pieces on the level `c` of the relative homologies `Hₙ(ν⁻ j, (ν⁻ j)₀)` of their Thom pairs, for
 coefficients in any abelian category with coproducts and in every degree. If `c` is not a critical
 value there are no such pieces, and the coproduct is zero. -/
 theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair
-    [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless]
+    [T2Space M] [SecondCountableTopology M] [∀ j, (J j).Boundaryless]
     (h : IsMorseBottFamily i f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
     (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
@@ -1405,21 +1407,21 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomP
       fun j ↦ subbundleTopology (P j)
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
     -- The pieces are finitely many, so the coproduct exists in the abelian category `C`.
-    haveI := h.finite
+    haveI := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
       ∐ fun j : {j // ∀ s, f (i j s) = c} ↦ (thomPair (Fin (r j) → ℝ)
         fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
           (g j).toRiemannianMetric s).singularHomology R n) := by
-  have := h.finite
+  -- The pieces on the level `c` lie in the compact band, so they are finitely many and compact.
+  have := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
   have (j : ι) : Nonempty (S j) := h.nonempty j
-  have (j : ι) : CompactSpace (S j) :=
-    (Topology.IsClosedEmbedding.mk (i j).isEmbedding (h.isClosed_range j)).compactSpace
+  have (j : {j // ∀ s, f (i j s) = c}) : CompactSpace (S j) :=
+    h.compactSpace_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ j.property
   refine SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair
     (ι := {j // ∀ s, f (i j s) = c}) (S := fun j ↦ S j) (P := fun j ↦ P j) (J := fun j ↦ J j)
     (i := fun j ↦ i j) hn (fun j ↦ h.isNondegenerateCriticalSubmanifold j) h.contMDiff
     (fun j ↦ j.property) (fun j k hjk ↦ h.pairwise_disjoint_range fun he ↦ hjk (Subtype.ext he))
-    hac hcb
-    (isClosed_Icc.preimage h.contMDiff.continuous).isCompact (fun x ⟨hx, hfx⟩ ↦ ?_)
+    hac hcb hcompact (fun x ⟨hx, hfx⟩ ↦ ?_)
     (fun j ↦ hdim j) (fun j ↦ g j) (fun j ↦ hr j) R n
   -- A critical point in the band has value `c`, so its piece lies on the level `c`.
   exact h.mem_iUnion_range_of_apply_eq hn hx (hcrit _ hx hfx)

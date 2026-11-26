@@ -31,6 +31,8 @@ the `n`-th cyclotomic field it is the subgroup attached to the maximal real subf
 * `DirichletCharacter.two_mul_card_apply_neg_one_mul_apply_neg_one_eq`: if one of two levels
   exceeds two, exactly half of the pairs of characters at these levels have a given product
   parity.
+* `DirichletCharacter.two_mul_card_apply_neg_one_eq`: above level two, exactly half of the
+  characters have a given parity.
 * `DirichletCharacter.card_apply_neg_one_mul_apply_neg_one_eq_of_le_two`: if neither level
   exceeds two, the only pair of characters has product parity `1`.
 * `DirichletCharacter.two_mul_sum_even`: twice a sum over the even characters is the sum of
@@ -144,6 +146,21 @@ theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [
       (by rw [hq₀, hφ, rootsOfUnity.val_mkOfPowEq_coe] : φ q = φ q₀ ↔ _).symm), hfib,
     ← card_eq_totient_of_hasEnoughRootsOfUnity R a, ← card_eq_totient_of_hasEnoughRootsOfUnity R b,
     ← Nat.card_prod, ← Subgroup.card_ker_mul_card_of_surjective hsurj, hcard, mul_comm]
+
+/-- Above level two, exactly half of the Dirichlet characters have a prescribed parity
+`ε = ±1`. -/
+theorem two_mul_card_apply_neg_one_eq [NeZero n]
+    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) {ε : R}
+    (hε : ε = 1 ∨ ε = -1) :
+    2 * Nat.card {χ : DirichletCharacter R n // χ (-1) = ε} = n.totient := by
+  have : HasEnoughRootsOfUnity R (Monoid.exponent (ZMod 1)ˣ) := by
+    rw [Monoid.exp_eq_one_iff.2 inferInstance]
+    infer_instance
+  have h := two_mul_card_apply_neg_one_mul_apply_neg_one_eq (R := R) (b := 1) (Or.inl hn) hε
+  rw [Nat.totient_one, mul_one] at h
+  rw [← h, Nat.card_congr ((Equiv.prodUnique _ (DirichletCharacter R 1)).symm.subtypeEquiv
+    fun χ ↦ ?_)]
+  simp [Subsingleton.elim (-1 : ZMod 1) 1]
 
 /-- If neither of two levels exceeds `2`, there is a single pair of Dirichlet characters at these
 levels, and it is even: the pairs of product parity `ε` number one when `ε = 1` and none

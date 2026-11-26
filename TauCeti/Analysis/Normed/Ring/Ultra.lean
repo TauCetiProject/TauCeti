@@ -77,6 +77,8 @@ forward differences of a monomial are divisible by `k!`, their norms carry the f
 * `TauCeti.norm_mul_sub_one_le` and `TauCeti.norm_mul_sub_one_lt`: binary multiplication bounds
   near `1` (closed for `0 ≤ B ≤ 1`, strict for `0 < ε ≤ 1`) over any ultrametric seminormed ring
   (without commutativity).
+* `TauCeti.norm_add_add_mul_le`: the group law `a + b + a b` keeps the closed ball of radius
+  `ε ≤ 1` about `0`.
 * `TauCeti.norm_prod_sub_one_le` and `TauCeti.norm_prod_sub_one_lt`: over a commutative
   ultrametric seminormed ring, unordered `Finset.prod` products of elements within `B` of `1`
   (`0 ≤ B ≤ 1`) or strictly within `ε` of `1` (`0 < ε ≤ 1`) satisfy the same bound.
@@ -418,6 +420,16 @@ theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
     {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε) (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε :=
   (norm_mul_sub_one_le ((max_le ha.le hb.le).trans hε) (le_max_left _ _)
     (le_max_right _ _)).trans_lt (max_lt ha hb)
+
+/-- In an ultrametric normed ring, the group law `a ⊕ b = a + b + a b` keeps the closed ball of
+radius `ε ≤ 1` about `0`, since `a ⊕ b = (1 + a) (1 + b) - 1`. -/
+theorem norm_add_add_mul_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
+    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a‖ ≤ ε) (hb : ‖b‖ ≤ ε) : ‖a + b + a * b‖ ≤ ε := by
+  have h := norm_mul_sub_one_le hε (a := 1 + a) (b := 1 + b) (by simpa using ha)
+    (by simpa using hb)
+  convert h using 2
+  simp only [add_mul, mul_add, one_mul, mul_one]
+  abel
 
 /-- In an ultrametric normed division ring, an element `x` within distance less than one of `1`
 has an inverse at the same distance from `1`: `‖x⁻¹ - 1‖ = ‖x - 1‖`. Unlike the Neumann estimate
