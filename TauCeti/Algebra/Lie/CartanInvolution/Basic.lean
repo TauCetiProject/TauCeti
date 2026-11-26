@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Cartan involutions
@@ -40,7 +41,11 @@ derived algebra, the latter semisimple with negative definite Killing form.
   negative definite on `𝔨` and positive definite on `𝔭`.
 * `LieEquiv.IsCartanInvolution.isKilling`, `LieEquiv.IsCartanInvolution.isSemisimple`: a Lie
   algebra with a Cartan involution has nondegenerate Killing form, hence is finite-dimensional
-  (`LieEquiv.IsCartanInvolution.finiteDimensional`) and semisimple.
+  (`LieEquiv.IsCartanInvolution.finiteDimensional`) and semisimple; a nontrivial abelian Lie
+  algebra has none (`LieEquiv.IsCartanInvolution.not_isLieAbelian`).
+* `LieEquiv.IsCartanInvolution.isSymm_twistedKillingForm`,
+  `LieEquiv.IsCartanInvolution.nondegenerate_twistedKillingForm`: `B_θ` is symmetric and
+  nondegenerate.
 * `LieEquiv.IsCartanInvolution.orthogonal_fixedSubalgebra_eq_cartanP`: `𝔭` is the
   Killing-orthogonal complement of `𝔨`.
 * `LieEquiv.IsCartanInvolution.eq_of_fixedSubalgebra_eq`: a Cartan involution is determined by
@@ -172,11 +177,29 @@ theorem nondegenerate_killingForm_restrict (hθ : θ.IsCartanInvolution) {𝔞 :
       by_contra hne
       exact (hθ.killingForm_restrict_pos h𝔞 H hne).ne' hH)
 
+omit [IsStrictOrderedRing K] in
+/-- The twisted Killing form of a Cartan involution is symmetric. -/
+theorem isSymm_twistedKillingForm (hθ : θ.IsCartanInvolution) : θ.twistedKillingForm.IsSymm :=
+  θ.isSymm_twistedKillingForm hθ.involutive
+
+omit [IsStrictOrderedRing K] in
+/-- The twisted Killing form of a Cartan involution is nondegenerate, since it is positive
+definite. -/
+theorem nondegenerate_twistedKillingForm (hθ : θ.IsCartanInvolution) :
+    θ.twistedKillingForm.Nondegenerate :=
+  θ.twistedKillingForm.nondegenerate_of_anisotropic hθ.posDef_twistedKillingForm.anisotropic
+
 /-- A Lie algebra with a Cartan involution is semisimple. -/
 theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
   have := hθ.isKilling
   have := hθ.finiteDimensional
   inferInstance
+
+/-- A nontrivial abelian Lie algebra has no Cartan involution: its Killing form vanishes. -/
+theorem not_isLieAbelian [Nontrivial L] (hθ : θ.IsCartanInvolution) : ¬ IsLieAbelian L :=
+  fun _ ↦
+  have := hθ.isSemisimple
+  not_subsingleton L (LieAlgebra.subsingleton_of_hasTrivialRadical_lie_abelian K L)
 
 /-- The `-1`-eigenspace `𝔭` of a Cartan involution is the Killing-orthogonal complement of its
 fixed subalgebra `𝔨`. -/

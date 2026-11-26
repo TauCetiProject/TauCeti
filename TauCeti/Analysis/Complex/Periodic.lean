@@ -13,15 +13,16 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 # The local parameter under translation, period rescaling, and differentiation
 
 Identities for the local parameter `𝕢 h z = exp (2 π I z / h)` at a cusp: translating
-the argument multiplies by an exponential, the `m`-th power of the local parameter at
-period `m * h` is the local parameter at period `h`, the values at the integer offsets
-`b < p` satisfy the roots-of-unity orthogonality relation, the parameter differentiates to
+the argument multiplies by an exponential, so that `𝕢 h` has period `h`, the `m`-th power of the
+local parameter at period `m * h` is the local parameter at period `h`, the values at the integer
+offsets `b < p` satisfy the roots-of-unity orthogonality relation, the parameter differentiates to
 itself times `2πi/h`, and the logarithmic derivative of any periodic function of
 nonzero width `h` factors through its cusp function along the parameter.
 
 ## Main declarations
 
 * `TauCeti.Periodic.qParam_sub`: `𝕢 h (z - j) = 𝕢 h z * exp (-2 π I j / h)`.
+* `TauCeti.Periodic.periodic_qParam`: the parameter `𝕢 h` has period `h`.
 * `TauCeti.Periodic.qParam_add_half`: translation by half a period negates the parameter.
 * `TauCeti.Periodic.qParam_add_mul_I_pow`: along the vertical ray from `z`, the powers of the
   local parameter acquire the factor `e^{-2πmt/h}`; this decays when `h > 0` and `m > 0`.
@@ -60,6 +61,14 @@ variable {h : ℝ}
 theorem qParam_sub (z j : ℂ) : 𝕢 h (z - j) = 𝕢 h z * exp (-2 * π * I * j / h) := by
   simp only [qParam, ← Complex.exp_add]
   ring_nf
+
+/-- The local parameter `𝕢 h` has period `h`. -/
+theorem periodic_qParam (h : ℝ) : Function.Periodic (𝕢 h) h := fun z ↦ by
+  rcases eq_or_ne h 0 with rfl | hh
+  · simp
+  have : -2 * π * I * -(h : ℂ) / h = 2 * π * I := by
+    field_simp [ofReal_ne_zero.mpr hh]
+  rw [← sub_neg_eq_add, qParam_sub, this, exp_two_pi_mul_I, mul_one]
 
 /-- Translating by half a period negates the local parameter. -/
 theorem qParam_add_half (hh : h ≠ 0) (z : ℂ) :

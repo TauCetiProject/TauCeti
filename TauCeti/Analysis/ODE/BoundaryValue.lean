@@ -35,6 +35,10 @@ only on `M`, `d`, `F₀` and `F₁`. Integrating gives the `L²` estimate `∫�
 (`TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq_of_disjoint`), the passage from
 the pointwise to the `L²` bound being `TauCeti.integral_norm_sq_le_of_forall_norm_le_mul`.
 
+When moreover `dim F₀ + dim F₁ = dim X`, as for two Lagrangian subspaces of a symplectic space,
+the injective map `(v, u) ↦ Ψ(d) v - u` is onto, and variation of constants solves the problem for
+every continuous `f` (`TauCeti.exists_hasDerivAt_and_mem_of_disjoint`).
+
 These are the path counterparts of the estimates for twisted periodic solutions in
 `TauCeti.Analysis.ODE.Periodic`, where the boundary condition `w d = ε • w 0` couples the two ends
 instead of constraining each end separately; both are derived from
@@ -46,6 +50,8 @@ instead of constraining each end separately; both are derived from
   boundary value problem has only the zero solution.
 * `TauCeti.exists_forall_norm_le_mul_integral_norm_of_disjoint`: the pointwise a priori estimate.
 * `TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq_of_disjoint`: the `L²` estimate.
+* `TauCeti.exists_hasDerivAt_and_mem_of_disjoint`: when moreover `dim F₀ + dim F₁ = dim X`, the
+  problem is solvable for every continuous `f`.
 
 ## References
 
@@ -82,31 +88,69 @@ theorem disjoint_map_dysonSeriesLeft_iff (hM : Continuous M) :
   · rintro h _ ⟨v, hv, rfl⟩ h₁
     simpa using congrFun (h (hasDerivAt_dysonSeriesLeft_apply hM v) (by simpa using hv) h₁) d
 
+/-- The map `(v, u) ↦ Ψ(d) v - u` on `F₀ × F₁`, for the propagator `Ψ = dysonSeriesLeft M`. -/
+private noncomputable def endpointMap (M : ℝ → X →L[ℝ] X) (d : ℝ) (F₀ F₁ : Submodule ℝ X) :
+    F₀ × F₁ →ₗ[ℝ] X :=
+  ((↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X) ∘ₗ F₀.subtype).coprod (-F₁.subtype)
+
+omit [CompleteSpace X] in
+private theorem endpointMap_apply (v : F₀) (u : F₁) :
+    endpointMap M d F₀ F₁ (v, u) = dysonSeriesLeft M d v - u := by
+  simp [endpointMap, sub_eq_add_neg]
+
+/-- If `Ψ(d) F₀ ∩ F₁ = 0`, the map `(v, u) ↦ Ψ(d) v - u` on `F₀ × F₁` is injective. -/
+private theorem ker_endpointMap_eq_bot (hM : Continuous M)
+    (hP : Disjoint (F₀.map (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) F₁) :
+    LinearMap.ker (endpointMap M d F₀ F₁) = ⊥ := by
+  refine LinearMap.ker_eq_bot'.2 fun ⟨v, u⟩ h ↦ ?_
+  have hvu : dysonSeriesLeft M d v = u := by
+    rwa [endpointMap_apply, sub_eq_zero] at h
+  have hu : (u : X) = 0 :=
+    Submodule.disjoint_def.1 hP _ ⟨v, v.property, hvu⟩ u.property
+  have hv : (v : X) = 0 := by
+    have h' := (disjoint_map_dysonSeriesLeft_iff hM).1 hP
+      (hasDerivAt_dysonSeriesLeft_apply hM (v : X)) (by simp) (by simp [hvu, hu])
+    simpa using congrFun h' 0
+  ext <;> simp [hu, hv]
+
 /-- If `Ψ(d) F₀ ∩ F₁ = 0` for finite-dimensional `F₀` and `F₁`, the injective map
 `(v, u) ↦ Ψ(d) v - u` on `F₀ × F₁` is bounded below: `‖v‖ ≤ K ‖Ψ(d) v - u‖`. -/
 private theorem exists_forall_norm_le_mul_norm_dysonSeriesLeft_apply_sub [FiniteDimensional ℝ F₀]
     [FiniteDimensional ℝ F₁] (hM : Continuous M)
     (hP : Disjoint (F₀.map (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) F₁) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ v ∈ F₀, ∀ u ∈ F₁, ‖v‖ ≤ K * ‖dysonSeriesLeft M d v - u‖ := by
-  set Φ : F₀ × F₁ →ₗ[ℝ] X :=
-    ((↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X) ∘ₗ F₀.subtype).coprod (-F₁.subtype) with hΦ
-  have hker : LinearMap.ker Φ = ⊥ := by
-    refine LinearMap.ker_eq_bot'.2 fun ⟨v, u⟩ h ↦ ?_
-    have hvu : dysonSeriesLeft M d v = u := by
-      simpa [hΦ, ← sub_eq_add_neg, sub_eq_zero] using h
-    have hu : (u : X) = 0 :=
-      Submodule.disjoint_def.1 hP _ ⟨v, v.property, hvu⟩ u.property
-    have hv : (v : X) = 0 := by
-      have h' := (disjoint_map_dysonSeriesLeft_iff hM).1 hP
-        (hasDerivAt_dysonSeriesLeft_apply hM (v : X)) (by simp) (by simp [hvu, hu])
-      simpa using congrFun h' 0
-    ext <;> simp [hu, hv]
-  obtain ⟨K, -, hK⟩ := Φ.exists_antilipschitzWith hker
+  obtain ⟨K, -, hK⟩ := (endpointMap M d F₀ F₁).exists_antilipschitzWith
+    (ker_endpointMap_eq_bot hM hP)
   refine ⟨K, K.coe_nonneg, fun v hv u hu ↦ ?_⟩
-  have hb := ZeroHomClass.bound_of_antilipschitz Φ hK (⟨v, hv⟩, ⟨u, hu⟩)
+  have hb := ZeroHomClass.bound_of_antilipschitz (endpointMap M d F₀ F₁) hK (⟨v, hv⟩, ⟨u, hu⟩)
   calc ‖v‖ ≤ ‖((⟨v, hv⟩, ⟨u, hu⟩) : F₀ × F₁)‖ := by simp
-    _ ≤ K * ‖Φ (⟨v, hv⟩, ⟨u, hu⟩)‖ := hb
-    _ = K * ‖dysonSeriesLeft M d v - u‖ := by simp [hΦ, sub_eq_add_neg]
+    _ ≤ K * ‖endpointMap M d F₀ F₁ (⟨v, hv⟩, ⟨u, hu⟩)‖ := hb
+    _ = K * ‖dysonSeriesLeft M d v - u‖ := by rw [endpointMap_apply]
+
+/-- **Solvability of the boundary value problem.** Let `Ψ = dysonSeriesLeft M` be the propagator
+of `w' = M w` on a finite-dimensional space `X`, and suppose that `Ψ(d) F₀ ∩ F₁ = 0` and
+`dim F₀ + dim F₁ = dim X`. Then for every continuous `f` the equation `w' = M w + f` has a
+solution with `w 0 ∈ F₀` and `w d ∈ F₁`. The solution is unique, by
+`TauCeti.disjoint_map_dysonSeriesLeft_iff`. -/
+theorem exists_hasDerivAt_and_mem_of_disjoint [FiniteDimensional ℝ X] (hM : Continuous M)
+    (hP : Disjoint (F₀.map (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) F₁)
+    (hdim : Module.finrank ℝ F₀ + Module.finrank ℝ F₁ = Module.finrank ℝ X) {f : ℝ → X}
+    (hf : Continuous f) :
+    ∃ w : ℝ → X, (∀ t, HasDerivAt w (M t (w t) + f t) t) ∧ w 0 ∈ F₀ ∧ w d ∈ F₁ := by
+  -- The injective map `(v, u) ↦ Ψ(d) v - u` is onto by counting dimensions, so the initial value
+  -- of the variation of constants formula can be chosen to meet the endpoint condition.
+  have hsurj : Function.Surjective (endpointMap M d F₀ F₁) := by
+    refine (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1
+      (LinearMap.ker_eq_bot.1 (ker_endpointMap_eq_bot hM hP))
+    rw [Module.finrank_prod, hdim]
+  obtain ⟨⟨v, u⟩, hvu⟩ := hsurj (-dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (f s)))
+  rw [endpointMap_apply] at hvu
+  refine ⟨_, hasDerivAt_dysonSeriesLeft_apply_add_integral hM hf v, by simp [dysonSeriesLeft_zero],
+    ?_⟩
+  have : dysonSeriesLeft M d ((v : X) + ∫ s in 0..d, dysonSeries (-M) s (f s)) = u := by
+    rw [map_add]
+    linear_combination (norm := module) hvu
+  simp only [this, SetLike.coe_mem]
 
 /-- **An a priori estimate for boundary values in two subspaces.** Let `Ψ = dysonSeriesLeft M` be
 the propagator of `w' = M w`, let `F₀` and `F₁` be finite-dimensional, and suppose that

@@ -36,8 +36,9 @@ additive closures inside a submonoid are compared with additive closures in the 
   lies in the additive closure of the family, or its negative does.
 * `AddSubmonoid.forall_pos_iff_of_closure_eq`: an additive map is strictly positive on the nonzero
   elements of a generated submonoid exactly when it is on the nonzero generators.
-* `AddSubmonoid.mem_closure_image_preimage_val_iff`: membership in the additive closure of a family
-  indexed by a subset and valued in a submonoid, read in the ambient monoid.
+* `AddSubmonoid.mem_closure_image_iff_coe`, `AddSubmonoid.mem_closure_image_preimage_val_iff`:
+  membership in the additive closure of a family valued in a submonoid, indexed by all indices or
+  by a subset, read in the ambient monoid.
 
 `AddSubmonoid.forall_pos_iff_of_closure_eq` is adapted from
 `Mei/Algebra/Group/AddSubmonoid/Degree.lean` in
@@ -123,6 +124,19 @@ theorem forall_pos_iff_of_closure_eq {P : AddSubmonoid M} {s : Set M} (hs : clos
     · exact Or.inr (h y hy hy0)
   exact (hPS hx).resolve_left hx0
 
+/-- Membership in the additive closure of a family `f` valued in a submonoid `p`, restricted to the
+indices in `s`, can be read in the ambient monoid: it is membership in the additive closure of any
+family `g` with the same values, restricted to the same indices. -/
+theorem mem_closure_image_iff_coe {ι B S : Type*} [AddMonoid B] [SetLike S B]
+    [AddSubmonoidClass S B] {p : S} {f : ι → p} {g : ι → B} (hfg : ∀ i, (f i : B) = g i)
+    {s : Set ι} {x : p} :
+    x ∈ closure (f '' s) ↔ (x : B) ∈ closure (g '' s) := by
+  have himage : AddSubmonoidClass.subtype p '' (f '' s) = g '' s := by
+    rw [Set.image_image]
+    simp_rw [AddSubmonoidClass.coe_subtype, hfg]
+  rw [← himage, ← AddMonoidHom.map_mclosure]
+  exact (mem_map_iff_mem Subtype.val_injective).symm
+
 /-- Membership in the additive closure of a family `f` indexed by a subset `t` and valued in a
 submonoid `p`, restricted to the indices in `s`, can be read in the ambient monoid: it is
 membership in the additive closure of any family `g` on all indices that extends the values of `f`,
@@ -131,11 +145,7 @@ theorem mem_closure_image_preimage_val_iff {ι B S : Type*} [AddMonoid B] [SetLi
     [AddSubmonoidClass S B] {p : S} {t : Set ι} {f : t → p} {g : ι → B}
     (hfg : ∀ i, (f i : B) = g i) {s : Set ι} {x : p} :
     x ∈ closure (f '' (Subtype.val ⁻¹' s)) ↔ (x : B) ∈ closure (g '' (s ∩ t)) := by
-  have himage : AddSubmonoidClass.subtype p '' (f '' (Subtype.val ⁻¹' s)) = g '' (s ∩ t) := by
-    rw [Set.image_image]
-    simp_rw [AddSubmonoidClass.coe_subtype, hfg]
-    rw [← Set.image_image g Subtype.val, Subtype.image_preimage_coe, Set.inter_comm]
-  rw [← himage, ← AddMonoidHom.map_mclosure]
-  exact (mem_map_iff_mem Subtype.val_injective).symm
+  rw [mem_closure_image_iff_coe (g := g ∘ Subtype.val) hfg, Set.image_comp,
+    Subtype.image_preimage_coe, Set.inter_comm]
 
 end AddSubmonoid

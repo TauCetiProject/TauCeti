@@ -23,6 +23,9 @@ theorem it agrees almost everywhere there with its precise representative
   precise representative.
 * `TauCeti.W1p.ae_eq_preciseRepresentative_indicator`: the same for the precise representative of
   its extension by zero.
+* `TauCeti.W1p.gradient_ae_eq_preciseRepresentative_restrict`: on `s ∩ t ⊆ Ω` with `s` open, the
+  gradient of a Sobolev function agrees almost everywhere with its precise representative for the
+  measure restricted to `t`.
 * `TauCeti.W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative`: a Sobolev
   function whose gradient has a continuous precise representative on an open set has a `C¹`
   representative there.
@@ -59,6 +62,16 @@ theorem W1p.ae_eq_preciseRepresentative_indicator (u : W1p mu Omega p) :
   filter_upwards [ae_restrict_of_ae (MeasureTheory.ae_eq_preciseRepresentative hli),
     ae_restrict_mem hΩ] with x h hx
   rwa [Set.indicator_of_mem hx] at h
+
+/-- For an open set `s` and a set `t` with `s ∩ t ⊆ Ω`, the gradient of `u ∈ W^{1,p}(Ω)` agrees
+almost everywhere on `s ∩ t` with its precise representative for `mu` restricted to `t`. -/
+theorem W1p.gradient_ae_eq_preciseRepresentative_restrict (u : W1p mu Omega p) {s t : Set E}
+    (hs : IsOpen s) (hst : s ∩ t ⊆ Omega) :
+    (W1p.gradient u : E → E) =ᵐ[mu.restrict (s ∩ t)]
+      preciseRepresentative (mu.restrict t) (W1p.gradient u : E → E) :=
+  ae_eq_restrict_inter_preciseRepresentative_restrict hs
+    (((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono hst le_rfl)).locallyIntegrable
+      Fact.out)
 
 /-- If the precise representative of the weak gradient of a Sobolev function is continuous on an
 open subset `V` of its domain, then the function agrees almost everywhere on `V` with a `C¹`

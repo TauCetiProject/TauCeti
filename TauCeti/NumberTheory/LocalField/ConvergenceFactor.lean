@@ -8,7 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.NumberTheory.LocalField.Padic
-import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
 # Form measures on the multiplicative group need convergence factors
@@ -80,29 +81,17 @@ theorem withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one :
       simp [(normalizedAbsoluteValue_eq_one_iff x).2 hx],
     setLIntegral_one, addHaar_setOf_valuation_eq_one]
 
-omit [MeasurableSpace K] [BorelSpace K] in
-/-- The density `|x|_K⁻¹` of the form measure `|dx/x|_K` at `c⁻¹ • y` is `|c|_K |y|_K⁻¹`. -/
-private theorem inv_normalizedAbsoluteValue_inv_smul {c : K} (hc : c ≠ 0) (y : K) :
-    ((normalizedAbsoluteValue K (c⁻¹ • y) : ℝ≥0) : ℝ≥0∞)⁻¹ =
-      ((normalizedAbsoluteValue K c : ℝ≥0) : ℝ≥0∞) *
-        ((normalizedAbsoluteValue K y : ℝ≥0) : ℝ≥0∞)⁻¹ := by
-  rw [smul_eq_mul, map_mul, map_inv₀, NNRat.cast_mul, ENNReal.coe_mul,
-    ENNReal.mul_inv (Or.inr ENNReal.coe_ne_top) (Or.inl ENNReal.coe_ne_top),
-    NNRat.cast_inv, ENNReal.coe_inv (by simpa using hc), inv_inv]
-
 /-- **Invariance of the form measure.** The measure `|x|_K⁻¹ μ` on `K` is invariant under
-multiplication by every nonzero scalar. -/
+multiplication by every nonzero scalar `c`. -/
 theorem map_smul_withDensity_inv_normalizedAbsoluteValue {c : K} (hc : c ≠ 0) :
     (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹).map (c • ·) =
       μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
-  have hc' : (normalizedAbsoluteValue K c : ℝ≥0) ≠ 0 := by simpa using hc
-  rw [← MeasurableEquiv.coe_smul₀ hc, MeasurableEquiv.map_withDensity, MeasurableEquiv.coe_smul₀ hc,
-    map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ hc, ENNReal.smul_def,
-    withDensity_smul_measure, ← withDensity_smul' _ _ ENNReal.coe_ne_top]
-  congr with y
-  rw [Pi.smul_apply, MeasurableEquiv.symm_smul₀, MeasurableEquiv.coe_smul₀,
-    inv_normalizedAbsoluteValue_inv_smul hc, smul_eq_mul, ENNReal.coe_inv hc', ← mul_assoc,
-    ENNReal.inv_mul_cancel (by simpa using hc') ENNReal.coe_ne_top, one_mul]
+  have hc' : ((normalizedAbsoluteValue K c : ℝ≥0) : ℝ≥0∞) ≠ 0 := by simpa using hc
+  refine map_smul_withDensity μ (Units.mk0 c hc) fun x ↦ ?_
+  rw [distribHaarChar_eq_normalizedAbsoluteValue, Units.smul_def, Units.val_mk0, smul_eq_mul,
+    map_mul, NNRat.cast_mul, ENNReal.coe_mul,
+    ENNReal.mul_inv (Or.inl hc') (Or.inl ENNReal.coe_ne_top), ← mul_assoc,
+    ENNReal.mul_inv_cancel hc' ENNReal.coe_ne_top, one_mul]
 
 end MeasureTheory.Measure
 

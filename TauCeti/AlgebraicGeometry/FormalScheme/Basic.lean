@@ -57,6 +57,16 @@ instance : CoeSort FormalScheme Type* := ⟨fun X ↦ X.toLocallyRingedSpace⟩
 instance (X : FormalScheme) : TopologicalSpace X :=
   inferInstanceAs (TopologicalSpace X.toLocallyRingedSpace)
 
+/-- The underlying space of a formal scheme is T₀: two inseparable points lie in a common open
+formal spectrum, whose underlying space is a subspace of a prime spectrum. -/
+instance (X : FormalScheme) : T0Space X := by
+  refine (t0Space_iff_inseparable X).mpr fun x y h ↦ ?_
+  obtain ⟨A, _, _, _, _, f, hf, x', rfl⟩ := X.local_spf x
+  obtain ⟨y', rfl⟩ := (h.mem_open_iff hf.base_open.isOpen_range).mp ⟨x', rfl⟩
+  -- the points of `Spf A` are open primes of `A`, with the subspace topology of `Spec A`
+  have : T0Space (Spf A).toPresheafedSpace := inferInstanceAs (T0Space (Spf.carrier A))
+  exact congrArg f.base (hf.base_open.isInducing.inseparable_iff.mp h).eq
+
 /-- Formal schemes have exactly the morphisms of their underlying locally ringed spaces. -/
 instance : Category FormalScheme :=
   inferInstanceAs (Category (InducedCategory LocallyRingedSpace toLocallyRingedSpace))
@@ -83,21 +93,6 @@ instance : forgetToLocallyRingedSpace.Full :=
 
 instance : forgetToLocallyRingedSpace.Faithful :=
   fullyFaithfulForgetToLocallyRingedSpace.faithful
-
-/-- An open immersion `f : X ⟶ Y` identifies the local ring of `Y` at `f x` with the local ring of
-`X` at `x`. -/
-noncomputable def stalkRingEquivOfIsOpenImmersion {X Y : FormalScheme} (f : X ⟶ Y)
-    [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] (x : X) :
-    Y.presheaf.stalk (f.hom.base x) ≃+* X.presheaf.stalk x :=
-  have := LocallyRingedSpace.IsOpenImmersion.stalk_iso (forgetToLocallyRingedSpace.map f) x
-  (asIso ((forgetToLocallyRingedSpace.map f).stalkMap x)).commRingCatIsoToRingEquiv
-
-/-- The stalk ring equivalence of an open immersion is the stalk map of `f`. -/
-@[simp]
-theorem stalkRingEquivOfIsOpenImmersion_apply {X Y : FormalScheme} (f : X ⟶ Y)
-    [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] (x : X)
-    (a : Y.presheaf.stalk (f.hom.base x)) :
-    stalkRingEquivOfIsOpenImmersion f x a = (f.hom.stalkMap x).hom a := (rfl)
 
 /-- The formal spectrum with its affine formal atlas.
 The carrier is exposed so the opens and points of `Spf A` apply directly to `ofSpf A`. -/

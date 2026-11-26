@@ -55,8 +55,14 @@ one at the origin and derivatives of norm at most two on those discs, while the 
 `c i + ε i • closedBall 0 (R i)` shrink to `z₀`
 (`SymplecticForm.exists_rescale_isComplexLinearMap_perturbedFDeriv`). The extraction of a
 convergent subsequence of these rescaled maps, which needs elliptic estimates for the rescaled
-equation, is `TauCeti.Geometry.Symplectic.Floer.Rescaling.Bubble`; the removal of the singularity
-at infinity of the limit plane is not carried out.
+equation, is `TauCeti.Geometry.Symplectic.Floer.Rescaling.Bubble`. The removal of the singularity
+at infinity of a plane, for a vector-space target, is
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`
+(`SymplecticForm.exists_contDiffOn_update_comp_inv_of_finite_energy` and
+`SymplecticForm.exists_contMDiff_onePoint_elim_of_finite_energy`). It applies to a limit plane that
+is `C³` and holomorphic for the frozen structure `J(z₀, ·)`, has finite energy, has image in a
+compact set on which that structure squares to `-1`, and is tamed by `ω` with a uniform constant;
+these properties of the limit are not established in this file.
 
 ## Main results
 

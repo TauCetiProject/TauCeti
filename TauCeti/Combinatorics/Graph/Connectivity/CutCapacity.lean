@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Basic
+public import TauCeti.Combinatorics.Graph.Simple
 public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 public import Mathlib.Algebra.Notation.Indicator
@@ -290,68 +291,6 @@ theorem ofSimpleGraphCapacity_nonneg [Zero K] [LE K] {c : Sym2 V → K}
   intro e
   rw [Pi.zero_apply, ofSimpleGraphCapacity_apply]
   exact hc e.val (by simpa using e.property)
-
-/-- The canonical equivalence between the vertices of a simple graph and the full vertex set of
-its multigraph realization. -/
-def ofSimpleGraphVertexEquiv : V ≃ (Graph.ofSimpleGraph G).vertexSet where
-  toFun := fun x ↦ ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
-  invFun := Subtype.val
-  left_inv := fun _ ↦ rfl
-  right_inv := fun _ ↦ Subtype.ext rfl
-
-@[simp]
-theorem ofSimpleGraphVertexEquiv_apply_val (x : V) :
-    (G.ofSimpleGraphVertexEquiv x).val = x :=
-  (rfl)
-
-@[simp]
-theorem ofSimpleGraphVertexEquiv_symm_apply
-    (x : (Graph.ofSimpleGraph G).vertexSet) :
-    G.ofSimpleGraphVertexEquiv.symm x = x.val :=
-  (rfl)
-
-/-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
-def toOfSimpleGraphFinset (S : Finset V) :
-    Finset (Graph.ofSimpleGraph G).vertexSet :=
-  S.map G.ofSimpleGraphVertexEquiv.toEmbedding
-
-/-- Including a finite vertex set is the map of the canonical vertex equivalence. This public
-equation exposes the opaque definition across module boundaries. -/
-theorem toOfSimpleGraphFinset_eq_map (S : Finset V) :
-    G.toOfSimpleGraphFinset S = S.map G.ofSimpleGraphVertexEquiv.toEmbedding :=
-  (rfl)
-
-@[simp]
-theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
-    G.ofSimpleGraphVertexEquiv x ∈ G.toOfSimpleGraphFinset S ↔ x ∈ S := by
-  rw [toOfSimpleGraphFinset, Finset.mem_map_equiv, Equiv.symm_apply_apply]
-
-@[simp]
-theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
-    Subtype.val '' (G.toOfSimpleGraphFinset S : Set (Graph.ofSimpleGraph G).vertexSet) =
-      (S : Set V) := by
-  rw [toOfSimpleGraphFinset, Finset.coe_map, Set.image_image]
-  trans id '' (S : Set V)
-  · apply Set.image_congr
-    intro x _
-    exact G.ofSimpleGraphVertexEquiv_apply_val x
-  · exact Set.image_id _
-
-@[simp]
-theorem toOfSimpleGraphFinset_map_val
-    (S : Finset (Graph.ofSimpleGraph G).vertexSet) :
-    G.toOfSimpleGraphFinset (S.map ⟨Subtype.val, Subtype.val_injective⟩) = S := by
-  rw [toOfSimpleGraphFinset, Finset.map_map]
-  have h :
-      (⟨Subtype.val, Subtype.val_injective⟩ :
-          (Graph.ofSimpleGraph G).vertexSet ↪ V).trans
-        G.ofSimpleGraphVertexEquiv.toEmbedding =
-          Function.Embedding.refl _ := by
-    ext x
-    have hx := G.ofSimpleGraphVertexEquiv.apply_symm_apply x
-    rw [G.ofSimpleGraphVertexEquiv_symm_apply] at hx
-    exact congrArg Subtype.val hx
-  rw [h, Finset.map_refl]
 
 /-- The multigraph cut capacity of `Graph.ofSimpleGraph G` agrees with pair cut capacity when
 capacities vanish away from the edges of `G`. -/

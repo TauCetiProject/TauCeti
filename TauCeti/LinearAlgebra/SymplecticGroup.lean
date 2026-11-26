@@ -95,6 +95,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.one_add_mul_mem_symplecticGroup`: over a square-zero ideal `I`, correcting `M` by
   `1 + X`, where `X` has entries in `I` and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix
   when `M * J * Mᵀ - J = E`.
+* `SymplecticGroup.nonsing_inv_mem` and `SymplecticGroup.transpose_nonsing_inv_mem`: the inverse
+  `A⁻¹` and the inverse transpose `A⁻ᵀ` of a symplectic matrix `A` are symplectic.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
   matrix whose `J`-conjugate is its inverse transpose is symplectic.
@@ -105,6 +107,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   symplectic ones are exactly the orthogonal ones, and an orthogonal symplectic matrix commutes
   with `J`. Any two of the three conditions symplectic, orthogonal and commuting with `J` imply the
   third.
+* `SymplecticGroup.mem_iff_toBlocks`: a matrix is symplectic exactly when its blocks satisfy the
+  relations `Aᵀ C = Cᵀ A`, `Bᵀ D = Dᵀ B` and `Aᵀ D - Cᵀ B = 1`.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
@@ -488,6 +492,19 @@ namespace SymplecticGroup
 
 variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
 
+/-- **The inverse of a symplectic matrix is symplectic**, for the inverse `Matrix.nonsing_inv`
+of the underlying matrix: Mathlib's `SymplecticGroup.coe_inv'` identifies it with the group
+inverse in `symplecticGroup l R`. -/
+theorem nonsing_inv_mem {A : Matrix (l ⊕ l) (l ⊕ l) R} (hA : A ∈ symplecticGroup l R) :
+    A⁻¹ ∈ symplecticGroup l R := by
+  rw [← coe_inv' ⟨A, hA⟩]
+  exact (⟨A, hA⟩⁻¹ : symplecticGroup l R).property
+
+/-- **The inverse transpose of a symplectic matrix is symplectic.** -/
+theorem transpose_nonsing_inv_mem {A : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hA : A ∈ symplecticGroup l R) : A⁻¹ᵀ ∈ symplecticGroup l R :=
+  transpose_mem (nonsing_inv_mem hA)
+
 /-- **The transpose of a symplectic matrix is the `J`-conjugate of its inverse.** Mathlib's
 `SymplecticGroup.inv_eq_symplectic_inv` computes the inverse as `-J * Aᵀ * J`; cancelling the
 conjugation by `J` solves that identity for `Aᵀ` instead. -/
@@ -531,6 +548,17 @@ theorem commute_J_of_mem_orthogonalGroup {A : Matrix (l ⊕ l) (l ⊕ l) R}
   rw [mem_orthogonalGroup_iff'] at hO
   calc J l R * A = A * J l R * Aᵀ * A := by rw [hS]
     _ = A * J l R := by rw [Matrix.mul_assoc, hO, Matrix.mul_one]
+
+/-- **The block relations of a symplectic matrix.** A matrix `M = [[A, B], [C, D]]` is symplectic
+exactly when `Aᵀ C = Cᵀ A`, `Bᵀ D = Dᵀ B` and `Aᵀ D - Cᵀ B = 1`; this is
+`SymplecticGroup.fromBlocks_mem_iff` stated for the blocks `M.toBlocksᵢⱼ` of an arbitrary `M`. -/
+theorem mem_iff_toBlocks {M : Matrix (l ⊕ l) (l ⊕ l) R} :
+    M ∈ symplecticGroup l R ↔
+      M.toBlocks₁₁ᵀ * M.toBlocks₂₁ = M.toBlocks₂₁ᵀ * M.toBlocks₁₁ ∧
+        M.toBlocks₁₂ᵀ * M.toBlocks₂₂ = M.toBlocks₂₂ᵀ * M.toBlocks₁₂ ∧
+        M.toBlocks₁₁ᵀ * M.toBlocks₂₂ - M.toBlocks₂₁ᵀ * M.toBlocks₁₂ = 1 := by
+  conv_lhs => rw [← M.fromBlocks_toBlocks]
+  exact fromBlocks_mem_iff
 
 /-- An upper unitriangular block matrix is symplectic when its upper-right block is symmetric. -/
 theorem fromBlocks_upper_mem {B : Matrix l l R} (hB : Bᵀ = B) :

@@ -52,6 +52,11 @@ comparison is in `TauCeti.QuantumGroups.QuantumInteger.Gaussian`.
 * `TauCeti.gaussianBinomial_eq_prod_div`: the quotient formula over a field.
 * `TauCeti.prod_one_add_pow_mul_eq_sum_gaussianBinomial`: **Cauchy's `q`-binomial theorem**
   `∏_{i<n} (1 + t^i z) = ∑_{k ≤ n} t^(k(k-1)/2) [n k]_t z^k` over every commutative semiring.
+* `TauCeti.gaussianBinomial_add_succ_eq_sum`: the column recursion
+  `[e+j+1 j+1]_t = ∑_{i ≤ e} t^i [i+j j]_t`.
+* `TauCeti.gaussianBinomial_add_le_pow`, `TauCeti.gaussianBinomial_add_le_succ_pow_mul_pow`: the
+  bounds `[e+j j]_q ≤ q^(e(j+1))` for `q ≥ 2` and `[e+j j]_q ≤ (e+1)^j q^(ej)` for `q ≥ 1`, at a
+  natural number `q`.
 
 ## References
 
@@ -342,5 +347,71 @@ theorem prod_one_add_pow_mul_eq_sum_gaussianBinomial {R : Type*} [CommSemiring R
     rw [hprod, ih, add_mul, one_mul, mul_sum, hshift, sum_range_succ' _ (n + 1),
       sum_congr rfl fun k _ ↦ hterm k, sum_add_distrib, hzero]
     ring
+
+/-- The column recursion `[e+j+1 j+1]_t = ∑_{i ≤ e} t^i [i+j j]_t`. -/
+theorem gaussianBinomial_add_succ_eq_sum {R : Type*} [Semiring R] (t : R) (e j : ℕ) :
+    gaussianBinomial t (e + j + 1) (j + 1) =
+      ∑ i ∈ range (e + 1), t ^ i * gaussianBinomial t (i + j) j := by
+  -- Iterate the mirrored successor recursion `TauCeti.gaussianBinomial_succ_succ'`.
+  induction e with
+  | zero => simp [gaussianBinomial_self]
+  | succ e ih =>
+    rw [gaussianBinomial_succ_succ', sum_range_succ, show e + 1 + j - j = e + 1 by omega,
+      show e + 1 + j = e + j + 1 by omega, ih, add_comm]
+
+section Bounds
+
+/-- For a nonzero natural number `q`, `[e+j j]_q ≤ (e+1)^j q^(ej)`. -/
+theorem gaussianBinomial_add_le_succ_pow_mul_pow {q : ℕ} (hq : q ≠ 0) (e j : ℕ) :
+    gaussianBinomial q (e + j) j ≤ (e + 1) ^ j * q ^ (e * j) := by
+  -- Each of the at most `(e+1)^j` terms of the iterated column recursion is at most `q^(ej)`.
+  induction j generalizing e with
+  | zero => simp [gaussianBinomial_zero_right]
+  | succ j ih =>
+    rw [← add_assoc, gaussianBinomial_add_succ_eq_sum]
+    calc ∑ i ∈ range (e + 1), q ^ i * gaussianBinomial q (i + j) j
+      _ ≤ ∑ _i ∈ range (e + 1), (e + 1) ^ j * q ^ (e * (j + 1)) := by
+        refine sum_le_sum fun i hi ↦ ?_
+        have hie : i ≤ e := Nat.lt_succ_iff.1 (mem_range.1 hi)
+        calc q ^ i * gaussianBinomial q (i + j) j
+          _ ≤ q ^ i * ((i + 1) ^ j * q ^ (i * j)) := Nat.mul_le_mul_left _ (ih i)
+          _ = (i + 1) ^ j * q ^ (i * (j + 1)) := by ring
+          _ ≤ (e + 1) ^ j * q ^ (e * (j + 1)) :=
+            Nat.mul_le_mul (Nat.pow_le_pow_left (by omega) j)
+              (Nat.pow_le_pow_right (Nat.pos_of_ne_zero hq) (Nat.mul_le_mul_right _ hie))
+      _ = (e + 1) ^ (j + 1) * q ^ (e * (j + 1)) := by
+        rw [sum_const, card_range, smul_eq_mul, pow_succ', mul_assoc]
+
+/-- For a natural number `q ≥ 2`, `[e+j j]_q ≤ q^(e(j+1))`. -/
+theorem gaussianBinomial_add_le_pow {q : ℕ} (hq : 2 ≤ q) (e j : ℕ) :
+    gaussianBinomial q (e + j) j ≤ q ^ (e * (j + 1)) := by
+  -- By symmetry `[e+j j]_q = [e+j e]_q`, and in the product formula
+  -- `[e+j e]_q ∏_{i<e} (q^e - q^i) = ∏_{i<e} (q^(e+j) - q^i)` each factor on the right is at
+  -- most `q^(j+1)` times the corresponding factor on the left.
+  rw [← gaussianBinomial_symm _ (Nat.le_add_left j e), Nat.add_sub_cancel]
+  have hfactor (i : ℕ) (hi : i < e) :
+      (q : ℤ) ^ (e + j) - q ^ i ≤ q ^ (j + 1) * (q ^ e - q ^ i) := by
+    have h1 : (q : ℤ) ^ (i + j + 1) ≤ q ^ (e + j) := pow_le_pow_right₀ (by omega) (by omega)
+    have h2 : (0 : ℤ) ≤ q ^ i := by positivity
+    have h3 : (0 : ℤ) ≤ (q - 2) * q ^ (e + j) := mul_nonneg (by omega) (by positivity)
+    have h4 : (q : ℤ) ^ (j + 1) * (q ^ e - q ^ i) = q * q ^ (e + j) - q ^ (i + j + 1) := by ring
+    rw [h4]
+    nlinarith
+  have hpos : (0 : ℤ) < ∏ i ∈ range e, ((q : ℤ) ^ e - q ^ i) :=
+    prod_pos fun i hi ↦ sub_pos.2 (pow_lt_pow_right₀ (by omega) (mem_range.1 hi))
+  have hprod := gaussianBinomial_mul_prod_pow_sub_pow (q : ℤ) (e + j) e
+  have hle : ∏ i ∈ range e, ((q : ℤ) ^ (e + j) - q ^ i) ≤
+      ∏ i ∈ range e, ((q : ℤ) ^ (j + 1) * (q ^ e - q ^ i)) :=
+    prod_le_prod₀ (fun i hi ↦ sub_nonneg.2 (pow_le_pow_right₀ (by omega)
+      (by have := mem_range.1 hi; omega))) fun i hi ↦ hfactor i (mem_range.1 hi)
+  rw [prod_mul_distrib, prod_const, card_range, ← hprod] at hle
+  have hcast : ((gaussianBinomial q (e + j) e : ℕ) : ℤ) = gaussianBinomial (q : ℤ) (e + j) e := by
+    exact map_gaussianBinomial (Nat.castRingHom ℤ) q (e + j) e
+  have : ((gaussianBinomial q (e + j) e : ℕ) : ℤ) ≤ (q : ℤ) ^ (e * (j + 1)) := by
+    rw [hcast, mul_comm e, pow_mul]
+    exact le_of_mul_le_mul_right hle hpos
+  exact_mod_cast this
+
+end Bounds
 
 end TauCeti

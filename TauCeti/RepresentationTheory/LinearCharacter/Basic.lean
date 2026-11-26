@@ -33,8 +33,8 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter`: the one-dimensional representation associated to a
   unit-valued multiplicative character.
 * `FDRep.ofLinearCharacter`: the same representation as an object of `FDRep k G`.
-* `Representation.ofLinearCharacterIntCastEquivOfDistribMulAction`: the line of the sign character
-  `ℤˣ →* kˣ` is the action of `ℤˣ` on `k` by signs.
+* `Representation.ofLinearCharacterEquivOfDistribMulAction`: the line of a character by which `G`
+  acts on `k`, such as the sign character `ℤˣ →* kˣ`, is that action.
 
 ## Main results
 
@@ -136,20 +136,23 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
     ofLinearCharacter (1 : G →* kˣ) = Representation.trivial k G k :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by simp
 
-/-- **The sign character of `ℤˣ` acts on `k` by signs.** The line of the character `ℤˣ →* kˣ`
-induced by `ℤ → k` is the action `u • x` of `ℤˣ` on `k` (`Representation.ofDistribMulAction`),
-through the identity of `k`. -/
-def ofLinearCharacterIntCastEquivOfDistribMulAction [CommRing k] :
-    (ofLinearCharacter (Units.map (Int.castRingHom k).toMonoidHom)).Equiv
-      (ofDistribMulAction k ℤˣ k) :=
-  .mk (LinearEquiv.refl k k) fun _ ↦ by
-    ext
-    simp [ofLinearCharacter_apply, Units.smul_def]
+/-- **A linear character by which `G` acts on `k` is that action.** If every `g : G` acts on `k` by
+multiplication by `χ g`, the line of `χ` is the action `g • x` of `G` on `k`
+(`Representation.ofDistribMulAction`), through the identity of `k`. For instance the sign character
+`ℤˣ →* kˣ` induced by `ℤ → k` is the action of `ℤˣ` on `k` by signs, and so is its composite
+`TauCeti.uliftIntUnitsSign` with `MulEquiv.ulift`, for the copy `ULift ℤˣ` of `ℤˣ` acting through
+`ULift.down`. -/
+def ofLinearCharacterEquivOfDistribMulAction [CommSemiring k] [Monoid G] [DistribMulAction G k]
+    [SMulCommClass G k k] (χ : G →* kˣ) (hχ : ∀ g x, (χ g : k) * x = g • x) :
+    (ofLinearCharacter χ).Equiv (ofDistribMulAction k G k) :=
+  .mk (LinearEquiv.refl k k) fun g ↦ LinearMap.ext fun x ↦ hχ g x
 
-/-- The identification `ofLinearCharacterIntCastEquivOfDistribMulAction` is the identity of `k`. -/
+/-- The identification `ofLinearCharacterEquivOfDistribMulAction` is the identity of `k`. -/
 @[simp]
-theorem ofLinearCharacterIntCastEquivOfDistribMulAction_apply [CommRing k] (x : k) :
-    ofLinearCharacterIntCastEquivOfDistribMulAction x = x :=
+theorem ofLinearCharacterEquivOfDistribMulAction_apply [CommSemiring k] [Monoid G]
+    [DistribMulAction G k] [SMulCommClass G k k] (χ : G →* kˣ)
+    (hχ : ∀ g x, (χ g : k) * x = g • x) (x : k) :
+    ofLinearCharacterEquivOfDistribMulAction χ hχ x = x :=
   (rfl)
 
 /-- The kernel of the line of a linear character is the kernel of the character. -/

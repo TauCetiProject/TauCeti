@@ -13,7 +13,10 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 
 A map to the actual boundary manifold is smooth exactly when its composite with the boundary
 inclusion is smooth. The reverse implication uses the existing local smooth retractions of a
-smooth embedding with boundaryless source.
+smooth embedding with boundaryless source. Conversely, a smooth map on the ambient manifold
+restricts to a smooth map on the boundary manifold (`ContMDiff.comp_subtypeVal_boundary`), and a
+proper map on it restricts to a proper map on the closed boundary
+(`IsProperMap.comp_subtypeVal_boundary`).
 -/
 
 public section
@@ -53,5 +56,19 @@ theorem contMDiff_iff_comp_subtypeVal_boundary
       ContMDiff I (𝓡∂ (n + 1)) k (Subtype.val ∘ f) := by
   simp only [ContMDiff, ← contMDiffWithinAt_univ,
     contMDiffWithinAt_iff_comp_subtypeVal_boundary]
+
+/-- The restriction of a smooth map to the boundary manifold is smooth. -/
+theorem _root_.ContMDiff.comp_subtypeVal_boundary {F : M → X}
+    (hF : ContMDiff (𝓡∂ (n + 1)) I k F) :
+    ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I k
+      (F ∘ (Subtype.val : (𝓡∂ (n + 1)).boundary M → M)) :=
+  hF.comp (isImmersion_subtypeVal_boundary M).contMDiff
+
+/-- The restriction of a proper map to the boundary manifold is proper, since the boundary is
+closed. -/
+theorem _root_.IsProperMap.comp_subtypeVal_boundary {Y : Type*} [TopologicalSpace Y] {F : M → Y}
+    (hF : IsProperMap F) :
+    IsProperMap (F ∘ (Subtype.val : (𝓡∂ (n + 1)).boundary M → M)) :=
+  hF.restrict ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional M)
 
 end TauCeti

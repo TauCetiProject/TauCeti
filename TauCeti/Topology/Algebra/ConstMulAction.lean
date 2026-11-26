@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Algebra.Group.Submonoid.MulAction
 public import Mathlib.GroupTheory.GroupAction.ConjAct
+public import Mathlib.GroupTheory.GroupAction.IterateAct
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Algebra.Monoid.Defs
@@ -30,7 +31,8 @@ of the whole monoid, and a group action with continuous orbit maps on a `T₁` s
 point stabilisers. If every orbit of a group action is open, then every orbit is also closed.
 Scaling by a nonzero element of a group with zero commutes with taking the frontier.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
-an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
+an ambient scalar action, and the `ℕ`-action `IterateMulAct f` of a continuous map is by
+continuous maps; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
 countable, and that the translates of a compact set under it form a locally finite family.
 Conversely, for a scalar action of a `T₁` topological space `G` with continuous orbit maps, local
@@ -45,11 +47,14 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
 * `TauCeti.continuousSMul_of_forall_smul_eq_self`: a trivial action is jointly continuous.
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
+* `IterateMulAct.continuousConstSMul`: the iterates of a continuous map act by continuous maps.
 * `Continuous.properlyDiscontinuousSMul`: proper discontinuity pulls back along a continuous
   equivariant map; in particular (`SubMulAction.properlyDiscontinuousSMul`) it is inherited by
   every invariant subspace.
 * `Function.Injective.properlyDiscontinuousSMul`: proper discontinuity pulls back along an
   injective map of acting types that is compatible with the actions.
+* `Function.Surjective.properlyDiscontinuousSMul`: proper discontinuity pushes forward along a
+  surjective map of acting types that is compatible with the actions.
 * `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
@@ -331,6 +336,22 @@ instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [SMul 
 
 end Subgroup
 
+/-- The `ℕ`-action of the iterates of a continuous map is by continuous maps. -/
+@[to_additive /-- The additive `ℕ`-action of the iterates of a continuous map is by continuous
+maps. -/]
+theorem _root_.IterateMulAct.continuousConstSMul {X : Type*} [TopologicalSpace X] {f : X → X}
+    (hf : Continuous f) : ContinuousConstSMul (IterateMulAct f) X :=
+  ⟨fun ⟨n⟩ ↦ by simpa only [IterateMulAct.mk_smul] using hf.iterate n⟩
+
+/-- The `ℕ`-action of the iterates of a bundled continuous map, such as a homeomorphism, is by
+continuous maps. -/
+@[to_additive /-- The additive `ℕ`-action of the iterates of a bundled continuous map, such as a
+homeomorphism, is by continuous maps. -/]
+instance _root_.IterateMulAct.instContinuousConstSMul {F X : Type*} [TopologicalSpace X]
+    [FunLike F X X] [ContinuousMapClass F X X] (f : F) :
+    ContinuousConstSMul (IterateMulAct ⇑f) X :=
+  IterateMulAct.continuousConstSMul (map_continuous f)
+
 open scoped Pointwise in
 /-- **Conjugation preserves proper discontinuity**: if `H'` is the conjugate `g H g⁻¹` of a
 subgroup `H` acting properly discontinuously, then `H'` acts properly discontinuously, since
@@ -394,6 +415,24 @@ theorem Function.Injective.properlyDiscontinuousSMul {M N X : Type*} [Topologica
       hf.injOn).subset ?_
     rintro m ⟨_, ⟨x, hx, rfl⟩, hxL⟩
     exact ⟨m • x, ⟨x, hx, hsmul m x⟩, hxL⟩
+
+/-- **Proper discontinuity pushes forward along surjective maps of acting types.** If
+`f : M → N` is surjective, each `f m` acts as `m` does, and `M` acts properly discontinuously on
+`X`, then so does `N`: the elements of `N` moving a compact `K` to meet a compact `L` are images
+of the finitely many such elements of `M`. -/
+@[to_additive
+/-- **Proper discontinuity pushes forward along surjective maps of acting types.** If
+`f : M → N` is surjective, each `f m` acts as `m` does, and `M` acts properly discontinuously on
+`X`, then so does `N`. -/]
+theorem Function.Surjective.properlyDiscontinuousSMul {M N X : Type*} [TopologicalSpace X]
+    [SMul M X] [SMul N X] [ProperlyDiscontinuousSMul M X] {f : M → N} (hf : Surjective f)
+    (hsmul : ∀ (m : M) (x : X), f m • x = m • x) : ProperlyDiscontinuousSMul N X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := M) hK hL).image
+      f).subset ?_
+    intro n hn
+    obtain ⟨m, rfl⟩ := hf n
+    exact ⟨m, by simpa only [Set.mem_ofPred_eq, hsmul] using hn, rfl⟩
 
 namespace SubMulAction
 
