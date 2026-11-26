@@ -31,9 +31,10 @@ the pullback of `T` along `f` on `U`. Its complex-linear extension to complex te
 `f^* T` with `φ` as `T` with the fibre integral of `φ`. Along a linear map `A`, the pullback has
 vanishing derivatives along `ker A`.
 
-Typical submersions are the projections of a product, coordinate charts followed by projections,
-and the maps `(x, y) ↦ x - y`, along which a distribution in one variable becomes a distribution
-constant along parallel hyperplanes.
+Typical submersions are the surjective linear maps
+(`ContinuousLinearMap.surjective_fderiv_of_surjective`), such as the projections of a product and
+the maps `(x, y) ↦ x - y`, along which a distribution in one variable becomes a distribution
+constant along parallel hyperplanes, and coordinate charts followed by projections.
 
 ## Main declarations
 
