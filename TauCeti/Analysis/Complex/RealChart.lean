@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.Analysis.Normed.Module.Basic
@@ -44,7 +45,9 @@ also near `ζ = 0` when it has compact support
 (`TauCeti.Complex.exists_pos_forall_apply_realChart_inv_eq_zero`).
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and so is
 the real chart of a map injective on a set, on the corresponding set
-(`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
+(`TauCeti.Complex.injOn_realChart`). The real chart of a map with a nonzero strict derivative at
+every point is an open map (`TauCeti.Complex.isOpenMap_realChart_of_hasStrictDerivAt`). The real
+chart maps the real coordinates of a set onto those
 of its image (`TauCeti.Complex.image_realChart_preimage`).
 Adding or subtracting a real number `c` is adding or subtracting `(c, 0)` in real coordinates
 (`TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero`,
@@ -263,6 +266,13 @@ theorem injOn_realChart {f : ℂ → ℂ} {s : Set (ℝ × ℝ)}
   fun _ hp _ hq h ↦ Complex.equivRealProdCLM.symm.injective <|
     hf (Set.mem_image_of_mem _ hp) (Set.mem_image_of_mem _ hq)
       (by simpa using congrArg Complex.equivRealProdCLM.symm h)
+
+/-- The real chart of a map of the plane with a nonzero strict derivative at every point is an
+open map. -/
+theorem isOpenMap_realChart_of_hasStrictDerivAt {f f' : ℂ → ℂ}
+    (hf : ∀ w, HasStrictDerivAt f (f' w) w) (h0 : ∀ w, f' w ≠ 0) : IsOpenMap (realChart f) :=
+  Complex.equivRealProdCLM.toHomeomorph.isOpenMap.comp ((isOpenMap_of_hasStrictDerivAt hf h0).comp
+    Complex.equivRealProdCLM.symm.toHomeomorph.isOpenMap)
 
 /-- The real chart of `f` maps the real coordinates of a set `s` onto the real coordinates of
 `f '' s`. -/

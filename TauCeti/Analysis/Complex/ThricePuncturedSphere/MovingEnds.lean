@@ -41,7 +41,8 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
   with `R` (`puncturedSphereTruncation_mono`), exhausts the sphere minus its punctures
   (`iUnion_puncturedSphereTruncation`), and specializes to the truncation of the thrice-punctured
   sphere (`puncturedSphereTruncation_eq_truncation`).
-* `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end.
+* `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end,
+  and `det_fderiv_realChart_add_mul_cylindricalEndLift`: its Jacobian in real coordinates.
 * `injOn_add_mul_cylindricalEndLift` and `injOn_realChart_add_mul_cylindricalEndLift`: the end
   lift of an input end is injective on every horizontal strip of height one.
 * `realChart_add_mul_cylindricalEndLift_add_one`: in real coordinates it has period one in the
@@ -155,6 +156,20 @@ theorem hasDerivAt_add_mul_cylindricalEndLift (c a w : ℂ) :
     HasDerivAt (fun z ↦ c + a * zero.cylindricalEndLift z)
       (a * deriv zero.cylindricalEndLift w) w :=
   ((zero.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt.const_mul a).const_add c
+
+/-- The Jacobian of the end lift `z ↦ c + a φ₀(z)` of an input end, in real coordinates, is
+`4π²` times the square of the distance of the image point from the center `c`: the complex
+derivative is `a φ₀'(z) = -2π a φ₀(z)`. -/
+theorem det_fderiv_realChart_add_mul_cylindricalEndLift (c a : ℂ) (ζ : ℝ × ℝ) :
+    (fderiv ℝ (realChart fun z ↦ c + a * zero.cylindricalEndLift z) ζ).det =
+      4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm
+        (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) - c‖ ^ 2 := by
+  rw [TauCeti.Complex.det_fderiv_realChart (hasDerivAt_add_mul_cylindricalEndLift c a _),
+    TauCeti.Complex.equivRealProdCLM_symm_realChart, deriv_cylindricalEndLift, endCenter_zero,
+    sub_zero, add_sub_cancel_left, ← Complex.sq_norm]
+  simp only [norm_mul, norm_neg, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos Real.pi_pos]
+  ring
 
 /-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc
 `‖w‖ ≤ 2 exp (2π)`, then the part `1 ≤ s ≤ R` of every input end lies in the truncation `Σ_R`. -/
