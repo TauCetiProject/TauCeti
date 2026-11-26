@@ -99,9 +99,9 @@ open QuadraticMap
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M} {e f : M}
 
-/-- **The even Clifford algebra of a hyperbolic plane is `R e f × R f e`**: for a hyperbolic pair
-`(e, f)` spanning the module, over any commutative ring, every even Clifford element is
-`b e f + a f e`. Over a field, a hyperbolic pair spans a two-dimensional space by
+/-- **The even Clifford algebra of a hyperbolic plane is spanned by `e f` and `f e`**: for a
+hyperbolic pair `(e, f)` spanning the module, over any commutative ring, every even Clifford
+element is `b e f + a f e`. Over a field, a hyperbolic pair spans a two-dimensional space by
 `QuadraticForm.span_pair_eq_top_of_polar_eq_one`. -/
 theorem exists_eq_smul_add_smul_of_mem_even_of_polar_eq_one
     (hspan : Submodule.span R {e, f} = ⊤) (he : Q e = 0) (hf : Q f = 0) (hef : polar Q e f = 1)
@@ -125,12 +125,12 @@ theorem exists_eq_smul_add_smul_of_mem_even_of_polar_eq_one
         (a₁ * b₂) • (ι Q e * ι Q f) + (b₁ * a₂) • (ι Q f * ι Q e) := by
       simp only [map_add, map_smul, add_mul, mul_add, smul_mul_assoc, mul_smul_comm, hee, hff,
         smul_zero, zero_add, add_zero, smul_smul]
-      rw [add_comm, mul_comm a₂ b₁, mul_comm b₂ a₁]
+      module
     refine ⟨b₁ * a₂ * a, a₁ * b₂ * b, ?_⟩
     rw [hm, mul_add, mul_smul_comm, mul_smul_comm,
       smul_add_smul_mul_ι_mul_ι_of_polar_eq_one he hef,
-      smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one he hef, smul_smul, smul_smul,
-      mul_comm b (a₁ * b₂), mul_comm a (b₁ * a₂)]
+      smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one he hef]
+    module
 
 end HyperbolicPlane
 

@@ -27,7 +27,7 @@ This file computes the points of the general spin group `GSpin(Q)`
   `Spin(Q)` is `μ₂(K)`;
 * in rank `2`, over a field `K`, for a hyperbolic pair `(e, f)` spanning the space, the torus
   `(c, t) ↦ c u(t)`, `u(t) = t e f + f e`, is an isomorphism `Kˣ × Kˣ ≃* GSpin(Q)`: the even
-  Clifford algebra is `K e f × K f e`.
+  Clifford algebra is spanned by `e f` and `f e`.
 
 ## Main declarations
 
@@ -205,14 +205,10 @@ theorem hyperbolicPlaneTorus_injective (he : Q e = 0) (hf : Q f = 0) (hef : pola
   have h2 := congrArg (· * (ι Q e * ι Q f)) h
   simp only [smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one he hef] at h1
   simp only [smul_add_smul_mul_ι_mul_ι_of_polar_eq_one he hef] at h2
-  have hc : (x.1 : K) = y.1 := by
-    rw [← sub_eq_zero]
-    exact (smul_eq_zero.mp (by rw [sub_smul, h1, sub_self])).resolve_right
-      (ι_mul_ι_swap_ne_zero_of_polar_eq_one hf hef)
-  have hct : (x.1 : K) * x.2 = y.1 * y.2 := by
-    rw [← sub_eq_zero]
-    exact (smul_eq_zero.mp (by rw [sub_smul, h2, sub_self])).resolve_right
-      (ι_mul_ι_ne_zero_of_polar_eq_one he hef)
+  have hc : (x.1 : K) = y.1 :=
+    smul_left_injective K (ι_mul_ι_swap_ne_zero_of_polar_eq_one hf hef) h1
+  have hct : (x.1 : K) * x.2 = y.1 * y.2 :=
+    smul_left_injective K (ι_mul_ι_ne_zero_of_polar_eq_one he hef) h2
   rw [hc] at hct
   exact Prod.ext (Units.ext hc) (Units.ext (mul_left_cancel₀ y.1.ne_zero hct))
 
@@ -227,20 +223,16 @@ theorem hyperbolicPlaneTorus_surjective (hV : Module.finrank K V = 2) (he : Q e 
     (QuadraticForm.span_pair_eq_top_of_polar_eq_one hV he hf hef) he hf hef
     (mem_specialCliffordGroup_iff.mp g.property).2
   set x : CliffordAlgebra Q := ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) with hx
-  have hyx : (((g : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * x = 1 :=
-    Units.inv_mul _
   have ha : a ≠ 0 := by
     rintro rfl
     apply ι_mul_ι_swap_ne_zero_of_polar_eq_one hf hef
-    have : x * (ι Q f * ι Q e) = 0 := by
-      rw [hab, smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one he hef, zero_smul]
-    rw [← one_mul (ι Q f * ι Q e), ← hyx, mul_assoc, this, mul_zero]
+    refine (Units.mul_right_eq_zero (g : (CliffordAlgebra Q)ˣ)).mp ?_
+    rw [← hx, hab, smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one he hef, zero_smul]
   have hb : b ≠ 0 := by
     rintro rfl
     apply ι_mul_ι_ne_zero_of_polar_eq_one he hef
-    have : x * (ι Q e * ι Q f) = 0 := by
-      rw [hab, smul_add_smul_mul_ι_mul_ι_of_polar_eq_one he hef, zero_smul]
-    rw [← one_mul (ι Q e * ι Q f), ← hyx, mul_assoc, this, mul_zero]
+    refine (Units.mul_right_eq_zero (g : (CliffordAlgebra Q)ˣ)).mp ?_
+    rw [← hx, hab, smul_add_smul_mul_ι_mul_ι_of_polar_eq_one he hef, zero_smul]
   refine ⟨(Units.mk0 a ha, Units.mk0 b hb / Units.mk0 a ha), Subtype.ext (Units.ext ?_)⟩
   rw [coe_hyperbolicPlaneTorus_eq_smul_add_smul, ← hx, hab]
   simp only [Units.val_mk0, Units.val_div_eq_div_val]
