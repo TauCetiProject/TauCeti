@@ -44,9 +44,10 @@ The comparison functors `toFiber` form a strong transformation `toPrestackificat
 whose naturality isomorphisms are identities. For a prestack `F` it is an equivalence of
 pseudofunctors (`toPrestackificationEquivalence`). The Hom-sheafification takes values in the
 universes of `F`, so no universe lift is needed; this covers the big site `Over S` of
-`S : Scheme.{u}` with `F` valued in `Cat.{u, u + 1}`, given sheafification of the presheaves of
-morphisms. Both hypotheses on the slice sites hold automatically when the morphisms of `F` lie in
-`Type (max u v)` for `C : Type u` with `Category.{v} C`.
+`S : Scheme.{u}` with `F` valued in `Cat.{u, u + 1}`, given `HasSheafify` and
+`WEqualsLocallyBijective` on the slice sites for the presheaves of morphisms. Both hypotheses on
+the slice sites hold automatically when the morphisms of `F` lie in `Type (max u v)` for
+`C : Type u` with `Category.{v} C`.
 
 ## Main declarations
 
@@ -77,6 +78,23 @@ universe v' u' v u
 open CategoryTheory Limits Opposite MonoidalCategory Bicategory Pseudofunctor
   LocallyDiscreteOpToCat
 
+namespace CategoryTheory.Over
+
+variable {C : Type u} [Category.{v} C] {U : C}
+
+/-- The morphism `(Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T` of `Over U` whose underlying
+morphism is the identity of `T.left`. -/
+abbrev mapObjMkIdHom (T : Over U) : (Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T :=
+  Over.homMk (𝟙 T.left)
+
+/-- For `p : T' ⟶ T` in `Over U`, the identification of `Over.map T'.hom` with the composite of
+`Over.map p.left` and `Over.map T.hom`. -/
+abbrev mapCompOfHom {T T' : Over U} (p : T' ⟶ T) :
+    Over.map T'.hom ≅ Over.map p.left ⋙ Over.map T.hom :=
+  Over.mapCongr T'.hom (p.left ≫ T.hom) (Over.w p).symm ≪≫ Over.mapComp p.left T.hom
+
+end CategoryTheory.Over
+
 namespace TauCeti.Stack.Prestackification
 
 variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
@@ -100,11 +118,6 @@ section restrictSections
 
 variable {U : C} [HasSheafify (J.over U) (Type v')] [(J.over U).WEqualsLocallyBijective (Type v')]
 
-/-- The morphism `(Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T` of `Over U` whose underlying
-morphism is the identity of `T.left`. -/
-abbrev overMapMkIdHom (T : Over U) : (Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T :=
-  Over.homMk (𝟙 T.left)
-
 /-- The sections over `T : Over U` of the sheafification of a presheaf `P` on `Over U`, as
 sections over the terminal object of the sheafification of the restriction of `P` to
 `Over T.left`. This is the restriction of sheafifications along `Over.map T.hom`
@@ -114,7 +127,7 @@ def restrictSectionsOver (T : Over U) [HasSheafify (J.over T.left) (Type v')]
     sheafification (J.over U) (Type v') ⋙ (evaluation _ _).obj (op T) ⟶
       (Functor.whiskeringLeft _ _ (Type v')).obj (Over.map T.hom).op ⋙
         sheafifySections J T.left where
-  app P := (sheafify (J.over U) P).map (overMapMkIdHom T).op ≫
+  app P := (sheafify (J.over U) P).map (Over.mapObjMkIdHom T).op ≫
     ((Over.map T.hom).sheafPushforwardContinuousPresheafToSheafIso (J.over T.left) (J.over U)
       P).hom.hom.app (op (Over.mk (𝟙 T.left)))
   naturality P Q φ := by
@@ -122,11 +135,11 @@ def restrictSectionsOver (T : Over U) [HasSheafify (J.over T.left) (Type v')]
       ((Over.map T.hom).sheafPushforwardContinuousPresheafToSheafIso_hom_naturality
         (J.over T.left) (J.over U) φ)
     dsimp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app] at h
-    -- Both sides are the naturality square of `sheafifyMap φ` along `overMapMkIdHom T` followed by
-    -- `h`; the restriction of `sheafifyMap φ` is `sheafifyMap φ` only after unfolding, so the
-    -- steps are combined by `exact`.
-    exact ((sheafifyMap (J.over U) φ).naturality_assoc (overMapMkIdHom T).op _).symm.trans
-      ((congrArg ((sheafify (J.over U) P).map (overMapMkIdHom T).op ≫ ·) h).trans
+    -- Both sides are the naturality square of `sheafifyMap φ` along `Over.mapObjMkIdHom T`
+    -- followed by `h`; the restriction of `sheafifyMap φ` is `sheafifyMap φ` only after
+    -- unfolding, so the steps are combined by `exact`.
+    exact ((sheafifyMap (J.over U) φ).naturality_assoc (Over.mapObjMkIdHom T).op _).symm.trans
+      ((congrArg ((sheafify (J.over U) P).map (Over.mapObjMkIdHom T).op ≫ ·) h).trans
         (Category.assoc _ _ _).symm)
 
 /-- `restrictSectionsOver` sends the image of a section of `P` over `T` to the image of its
@@ -136,17 +149,17 @@ lemma restrictSectionsOver_app_toSheafify (T : Over U) [HasSheafify (J.over T.le
     (x : P.obj (op T)) :
     (restrictSectionsOver J T).app P ((toSheafify (J.over U) P).app (op T) x) =
       (toSheafifySections J T.left).app ((Over.map T.hom).op ⋙ P)
-        (P.map (overMapMkIdHom T).op x) := by
+        (P.map (Over.mapObjMkIdHom T).op x) := by
   -- The restriction of `toSheafify P` followed by the comparison of sheafifications is
   -- `toSheafify` of the restriction of `P`.
-  have h := congrArg (fun α ↦ α.app (op (Over.mk (𝟙 T.left))) (P.map (overMapMkIdHom T).op x))
+  have h := congrArg (fun α ↦ α.app (op (Over.mk (𝟙 T.left))) (P.map (Over.mapObjMkIdHom T).op x))
     (Functor.whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
       (Over.map T.hom) (J.over T.left) (J.over U) P)
   rw [toSheafifySections_app]
   exact (congrArg (((Over.map T.hom).sheafPushforwardContinuousPresheafToSheafIso (J.over T.left)
     (J.over U) P).hom.hom.app (op (Over.mk (𝟙 T.left))))
       (ConcreteCategory.congr_hom ((toSheafify (J.over U) P).naturality
-        (overMapMkIdHom T).op) x).symm).trans h
+        (Over.mapObjMkIdHom T).op) x).symm).trans h
 
 lemma bijective_restrictSectionsOver_app (T : Over U) [HasSheafify (J.over T.left) (Type v')]
     [(J.over T.left).WEqualsLocallyBijective (Type v')] (P : (Over U)ᵒᵖ ⥤ Type v') :
@@ -181,7 +194,8 @@ lemma restrictSections_app_toSheafifySections (P : (Over U)ᵒᵖ ⥤ Type v')
       (toSheafifySections J V).app ((Over.map f).op ⋙ P)
         (P.map (Over.mkIdTerminal.from ((Over.map f).obj (Over.mk (𝟙 V)))).op x) := by
   have hP : P.map (Over.mkIdTerminal.from ((Over.map f).obj (Over.mk (𝟙 V)))).op =
-      P.map (Over.mkIdTerminal.from (Over.mk f)).op ≫ P.map (overMapMkIdHom (Over.mk f)).op := by
+      P.map (Over.mkIdTerminal.from (Over.mk f)).op ≫
+        P.map (Over.mapObjMkIdHom (Over.mk f)).op := by
     rw [← Functor.map_comp, ← op_comp]
     exact congrArg (fun g ↦ P.map g.op) (Over.mkIdTerminal.hom_ext _ _)
   rw [restrictSections_app, toSheafifySections_app]
@@ -190,20 +204,15 @@ lemma restrictSections_app_toSheafifySections (P : (Over U)ᵒᵖ ⥤ Type v')
       ((restrictSectionsOver_app_toSheafify J (Over.mk f) P _).trans ?_)
   exact congrArg _ (ConcreteCategory.congr_hom hP x).symm
 
-/-- For `p : T' ⟶ T` in `Over U`, the identification of `Over.map T'.hom` with the composite of
-`Over.map p.left` and `Over.map T.hom`. -/
-abbrev overMapCompIso {T T' : Over U} (p : T' ⟶ T) :
-    Over.map T'.hom ≅ Over.map p.left ⋙ Over.map T.hom :=
-  Over.mapCongr T'.hom (p.left ≫ T.hom) (Over.w p).symm ≪≫ Over.mapComp p.left T.hom
-
 /-- Restricting sections over `T` to the terminal object and then along `p.left` is restricting
 them along `p : T' ⟶ T` and then to the terminal object, up to the identification
-`overMapCompIso p` of the restrictions of `P`. -/
+`Over.mapCompOfHom p` of the restrictions of `P`. -/
 lemma restrictSectionsOver_comp {T T' : Over U} [HasSheafify (J.over T.left) (Type v')]
     [(J.over T.left).WEqualsLocallyBijective (Type v')] [HasSheafify (J.over T'.left) (Type v')]
     [(J.over T'.left).WEqualsLocallyBijective (Type v')] (p : T' ⟶ T) (P : (Over U)ᵒᵖ ⥤ Type v')
     (t : (sheafify (J.over U) P).obj (op T)) :
-    (sheafifySections J T'.left).map (Functor.whiskerRight (NatTrans.op (overMapCompIso p).hom) P)
+    (sheafifySections J T'.left).map
+        (Functor.whiskerRight (NatTrans.op (Over.mapCompOfHom p).hom) P)
         ((restrictSections J p.left).app _ ((restrictSectionsOver J T).app P t)) =
       (restrictSectionsOver J T').app P ((sheafify (J.over U) P).map p.op t) := by
   have : (Over.map p.left ⋙ Over.map T.hom).IsContinuous (J.over T'.left) (J.over U) :=
@@ -214,18 +223,19 @@ lemma restrictSectionsOver_comp {T T' : Over U} [HasSheafify (J.over T.left) (Ty
     Functor.whiskerLeft_sheafPushforwardContinuousPresheafToSheafIso_hom_hom_comp_hom_hom
       (Over.map T.hom) (J.over T.left) (J.over U) (Over.map p.left) (J.over T'.left) P
   have hC := Functor.whiskerRight_op_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
-    (Over.map T'.hom) (J.over T'.left) (J.over U) (overMapCompIso p).hom P
+    (Over.map T'.hom) (J.over T'.left) (J.over U) (Over.mapCompOfHom p).hom P
   -- the morphism of `Over U` along which the sections are restricted on the left
   let k : (Over.map T.hom).obj ((Over.map p.left).obj (Over.mk (𝟙 T'.left))) ⟶ T :=
-    (Over.map T.hom).map (overMapMkIdHom (Over.mk p.left) ≫
-      Over.mkIdTerminal.from (Over.mk p.left)) ≫ overMapMkIdHom T
-  have hk : (overMapCompIso p).hom.app (Over.mk (𝟙 T'.left)) ≫ k = overMapMkIdHom T' ≫ p := by
+    (Over.map T.hom).map (Over.mapObjMkIdHom (Over.mk p.left) ≫
+      Over.mkIdTerminal.from (Over.mk p.left)) ≫ Over.mapObjMkIdHom T
+  have hk :
+      (Over.mapCompOfHom p).hom.app (Over.mk (𝟙 T'.left)) ≫ k = Over.mapObjMkIdHom T' ≫ p := by
     ext
     simp [k]
-  -- restricting along `Over.mkIdTerminal.from` and then `overMapMkIdHom` commutes with the
+  -- restricting along `Over.mkIdTerminal.from` and then `Over.mapObjMkIdHom` commutes with the
   -- comparison of sheafifications for `Over.map T.hom`
   have S₁ : (sheafify (J.over T.left) ((Over.map T.hom).op ⋙ P)).map
-      (overMapMkIdHom (Over.mk p.left)).op
+      (Over.mapObjMkIdHom (Over.mk p.left)).op
         ((sheafify (J.over T.left) ((Over.map T.hom).op ⋙ P)).map
           (Over.mkIdTerminal.from (Over.mk p.left)).op
             ((restrictSectionsOver J T).app P t)) =
@@ -233,24 +243,24 @@ lemma restrictSectionsOver_comp {T T' : Over U} [HasSheafify (J.over T.left) (Ty
         P).hom.hom.app _ ((sheafify (J.over U) P).map k.op t) := by
     have n := ConcreteCategory.congr_hom
       (((Over.map T.hom).sheafPushforwardContinuousPresheafToSheafIso
-        (J.over T.left) (J.over U) P).hom.hom.naturality (overMapMkIdHom (Over.mk p.left) ≫
+        (J.over T.left) (J.over U) P).hom.hom.naturality (Over.mapObjMkIdHom (Over.mk p.left) ≫
         Over.mkIdTerminal.from (Over.mk p.left)).op)
-          ((sheafify (J.over U) P).map (overMapMkIdHom T).op t)
+          ((sheafify (J.over U) P).map (Over.mapObjMkIdHom T).op t)
     have m := ConcreteCategory.congr_hom
       ((sheafify (J.over T.left) ((Over.map T.hom).op ⋙ P)).map_comp
-        (Over.mkIdTerminal.from (Over.mk p.left)).op (overMapMkIdHom (Over.mk p.left)).op)
+        (Over.mkIdTerminal.from (Over.mk p.left)).op (Over.mapObjMkIdHom (Over.mk p.left)).op)
         ((restrictSectionsOver J T).app P t)
-    have l := ConcreteCategory.congr_hom ((sheafify (J.over U) P).map_comp (overMapMkIdHom T).op
-      ((Over.map T.hom).map (overMapMkIdHom (Over.mk p.left) ≫
+    have l := ConcreteCategory.congr_hom ((sheafify (J.over U) P).map_comp (Over.mapObjMkIdHom T).op
+      ((Over.map T.hom).map (Over.mapObjMkIdHom (Over.mk p.left) ≫
         Over.mkIdTerminal.from (Over.mk p.left))).op) t
     exact m.symm.trans (n.symm.trans (congrArg _ l.symm))
   -- Unfolding the restrictions on the left, the claim follows from `S₁`, `hB`, `hC` and `hk`.
   refine (congrArg (fun z ↦ (sheafifyMap (J.over T'.left)
-    (Functor.whiskerRight (NatTrans.op (overMapCompIso p).hom) P)).app _
+    (Functor.whiskerRight (NatTrans.op (Over.mapCompOfHom p).hom) P)).app _
       (((Over.map p.left).sheafPushforwardContinuousPresheafToSheafIso (J.over T'.left)
         (J.over T.left) ((Over.map T.hom).op ⋙ P)).hom.hom.app _ z)) S₁).trans ?_
   refine (congrArg ((sheafifyMap (J.over T'.left)
-    (Functor.whiskerRight (NatTrans.op (overMapCompIso p).hom) P)).app _)
+    (Functor.whiskerRight (NatTrans.op (Over.mapCompOfHom p).hom) P)).app _)
       (ConcreteCategory.congr_hom (NatTrans.congr_app hB _) _)).trans ?_
   refine (ConcreteCategory.congr_hom (NatTrans.congr_app hC _) _).symm.trans ?_
   have h := congrArg (fun g ↦ (sheafify (J.over U) P).map g.op t) hk
@@ -271,7 +281,7 @@ lemma restrictSectionsOver_mkId (P : (Over U)ᵒᵖ ⥤ Type v')
     ((ConcreteCategory.congr_hom (NatTrans.congr_app hI _) _).trans ?_)
   have h := congrArg (fun g ↦ (sheafify (J.over U) P).map g.op s)
     (Over.mkIdTerminal.hom_ext ((Over.mapId U).inv.app (Over.mk (𝟙 U)) ≫
-      overMapMkIdHom (Over.mk (𝟙 U))) (𝟙 _))
+      Over.mapObjMkIdHom (Over.mk (𝟙 U))) (𝟙 _))
   simp only [op_comp, Functor.map_comp, op_id] at h
   exact h.trans (ConcreteCategory.congr_hom ((sheafify (J.over U) P).map_id _) s)
 
@@ -442,10 +452,10 @@ lemma sheafifyPresheafHomEquiv_toSheafify (M N : F.obj (.mk (op U))) (T : Over U
   -- Restricting `x` to `(Over.map T.hom).obj (Over.mk (𝟙 T.left))` and conjugating it by the
   -- comparison isomorphisms of `F` gives its pullback along the identity.
   have h : (F.overMapCompPresheafHomIso M N T.hom).hom.app (op (Over.mk (𝟙 T.left)))
-      ((F.presheafHom M N).map (overMapMkIdHom T).op x) = F.presheafHomObjHomEquiv x := by
+      ((F.presheafHom M N).map (Over.mapObjMkIdHom T).op x) = F.presheafHomObjHomEquiv x := by
     -- The restriction of `x` is its `pullHom` along the identity, which conjugates by the same
     -- comparison isomorphisms.
-    have hx : (F.presheafHom M N).map (overMapMkIdHom T).op x = pullHom x (𝟙 T.left)
+    have hx : (F.presheafHom M N).map (Over.mapObjMkIdHom T).op x = pullHom x (𝟙 T.left)
         ((Over.map T.hom).obj (Over.mk (𝟙 T.left))).hom
         ((Over.map T.hom).obj (Over.mk (𝟙 T.left))).hom (by simp) (by simp) := (rfl)
     rw [overMapCompPresheafHomIso_hom_app_apply, presheafHomObjHomEquiv_eq_map, hx]
@@ -486,11 +496,11 @@ lemma toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp (M N : F.obj (.
         (by rw [← Over.w p]; rfl)).inv.toNatTrans.app N) ≫
       presheafHomPrecomp ((F.mapComp' T.hom.op.toLoc p.left.op.toLoc T'.hom.op.toLoc
         (by rw [← Over.w p]; rfl)).hom.toNatTrans.app M) =
-      Functor.whiskerRight (NatTrans.op (overMapCompIso p).hom) (F.presheafHom M N) ≫
+      Functor.whiskerRight (NatTrans.op (Over.mapCompOfHom p).hom) (F.presheafHom M N) ≫
         (F.overMapCompPresheafHomIso M N T'.hom).hom := by
     refine NatTrans.ext (funext fun Z ↦ ConcreteCategory.hom_ext _ _ fun w ↦ ?_)
     have h := mapComp'_conj_eq_pullHom T.hom p.left T'.hom (Over.w p) Z.unop.hom _ _ rfl rfl
-      ((overMapCompIso p).hom.app Z.unop).left (by simp) (Over.w _) M N w
+      ((Over.mapCompOfHom p).hom.app Z.unop).left (by simp) (Over.w _) M N w
     simp only [Category.assoc] at h
     simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, Functor.whiskerLeft_app,
       Functor.whiskerRight_app, presheafHomPostcomp_app_apply, presheafHomPrecomp_app_apply,
