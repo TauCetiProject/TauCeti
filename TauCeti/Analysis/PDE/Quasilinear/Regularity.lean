@@ -50,7 +50,8 @@ A weak solution `u` solves the linear equation with the frozen coefficient `a(x)
 * **De Giorgi.** The frozen coefficient is measurable and uniformly elliptic, so De Giorgi's
   theorem with a right-hand side makes the precise representative `ū` of `u` Hölder continuous
   inside `Ω`, with some exponent `γ₀ > 0` depending on the ellipticity.
-* **Schauder.** Then `x ↦ A(x, ū(x))` is Hölder continuous with exponent `min γ₀ α`, and the
+* **Schauder.** Then `x ↦ A(x, ū(x))` is Hölder continuous with exponent `min γ₀ α`
+  (`TauCeti.PDE.holderOnWith_matrixBilinearForm_comp`), and the
   Schauder estimate for divergence-form equations with Hölder coefficients makes `∇u` Hölder
   continuous with a small positive exponent.
 * **Lipschitz.** A Hölder gradient is locally bounded, so `ū` is locally Lipschitz, hence
@@ -175,19 +176,21 @@ private theorem exists_holderOnWith_preciseRepresentative_value (hα : 0 < α) (
   exact preciseRepresentative_congr_ae_nhds
     (B.isOpen.mem_nhds (hK (self_subset_cthickening _ hx))) (W1p.value_restrictL_ae hB u)
 
-/-- The coefficient `A(x, v(x))` frozen at a `γ`-Hölder function `v` is `γ`-Hölder on a bounded
-set, when `A` is `α`-Hölder in `x`, with `γ ≤ α`, and Lipschitz in `s`. -/
-private theorem holderOnWith_matrixBilinearForm_comp {T : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    {D : ℝ≥0} (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D) (hTΩ : T ⊆ Omega)
-    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) Omega)
-    (hAs : ∀ x ∈ Omega, LipschitzWith L fun s => matrixBilinearForm (A x s))
+/-- **Freezing a coefficient at a Hölder function.** On a set `T` of diameter at most `D`, the
+coefficient `A(x, v(x))` frozen at a `γ`-Hölder function `v` is `γ`-Hölder, when `A` is `α`-Hölder
+in `x` on `T`, with `γ ≤ α`, and Lipschitz in `s` at the points of `T`. Both conditions are on the
+bilinear forms `TauCeti.PDE.matrixBilinearForm` of the matrices. -/
+theorem holderOnWith_matrixBilinearForm_comp {T : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    {D : ℝ≥0} (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D)
+    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) T)
+    (hAs : ∀ x ∈ T, LipschitzWith L fun s => matrixBilinearForm (A x s))
     {γ Cv : ℝ≥0} (hγα : γ ≤ α) {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hv : HolderOnWith Cv γ v T) :
     HolderOnWith (Kx * D ^ ((α : ℝ) - γ) + L * Cv) γ
       (fun x => matrixBilinearForm (A x (v x))) T := by
   refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  have h1 := (((hAx (v x)).mono hTΩ).of_le hD hγα).dist_le hx hy
-  have h2 := (hAs y (hTΩ hy)).dist_le_mul (v x) (v y)
+  have h1 := ((hAx (v x)).of_le hD hγα).dist_le hx hy
+  have h2 := (hAs y hy).dist_le_mul (v x) (v y)
   have h3 := hv.dist_le hx hy
   calc dist (matrixBilinearForm (A x (v x))) (matrixBilinearForm (A y (v y)))
       ≤ dist (matrixBilinearForm (A x (v x))) (matrixBilinearForm (A y (v x))) +
@@ -224,7 +227,8 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
     ⟨(Metric.ediam (thickening ρ S)).toNNReal, fun x hx y hy => by
       rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 hS.thickening)]
       exact Metric.edist_le_ediam_of_mem hx hy⟩
-  have haK := holderOnWith_matrixBilinearForm_comp hD hρS hAx hAs hγα (hv.of_le hD hγγ₀)
+  have haK := holderOnWith_matrixBilinearForm_comp hD (fun s => (hAx s).mono hρS)
+    (fun x hx => hAs x (hρS hx)) hγα (hv.of_le hD hγγ₀)
   have hGK : HolderOnWith (KG * D ^ ((α : ℝ) - γ)) γ G (thickening ρ S) :=
     (hG.mono hρS).of_le hD hγα
   have hell : UniformlyEllipticOn S
