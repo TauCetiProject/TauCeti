@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Holder.Coefficient
 import TauCeti.Analysis.Holder.Interpolation
 import TauCeti.Analysis.Holder.MeanValue
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
+import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
@@ -128,24 +128,16 @@ theorem abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le
         N * ((n + 1) ^ 2 * M + 2 * B) := by
   have hM0 : 0 ≤ M := (abs_nonneg _).trans (hM 0 0)
   have hN0 : 0 ≤ N := (abs_nonneg _).trans h0
-  -- Each entry `∂ᵢⱼφ` is bounded by `‖D²φ‖ ≤ N`.
+  -- The principal part is bounded through `‖D²φ‖ ≤ N`.
   have hsum : |∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1)
       (EuclideanSpace.single j 1)| ≤ (n + 1) ^ 2 * M * N := by
-    calc _ ≤ ∑ i, ∑ j, |a z i j • fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1)
-          (EuclideanSpace.single j 1)| :=
-        (Finset.abs_sum_le_sum_abs _ _).trans
-          (Finset.sum_le_sum fun i _ => Finset.abs_sum_le_sum_abs _ _)
-      _ ≤ ∑ _i : Fin (n + 1), ∑ _j : Fin (n + 1), M * N :=
-        Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => by
-          rw [smul_eq_mul, abs_mul]
-          refine mul_le_mul (hM i j) (le_trans ?_ h2) (abs_nonneg _) hM0
-          simpa [iteratedFDeriv_two_apply, Real.norm_eq_abs] using
-            (iteratedFDeriv ℝ 2 φ z).norm_apply_orthonormalBasis_le (EuclideanSpace.basisFun _ ℝ)
-              i j
-      _ = (n + 1) ^ 2 * M * N := by
-        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        push_cast
-        ring
+    have hP := Matrix.abs_sum_sum_mul_apply_single_single_le hM (fderiv ℝ (fderiv ℝ φ) z)
+    simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one] at hP
+    simp only [smul_eq_mul]
+    refine hP.trans ?_
+    gcongr
+    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+    exact h2
   have hb1 : |fderiv ℝ φ z (b z)| ≤ N * B := by
     rw [← Real.norm_eq_abs]
     exact ((fderiv ℝ φ z).le_opNorm _).trans (mul_le_mul h1 hb (norm_nonneg _) hN0)
