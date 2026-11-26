@@ -408,13 +408,9 @@ theorem coefficientComparison_riemannSphere_single_mem_gradeBy_degree {R : Type*
         (area_ofSingularHomology (sphericalClasses_eq_top_of_simplyConnectedSpace _))
         (single (k • hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧)) r) ∈
       gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _) (-(4 * k)) := by
-  rcases eq_or_ne r 0 with rfl | hr
-  · rw [single_zero, map_zero]
-    exact zero_mem _
-  rw [coefficientComparison_single, map_zsmul, hurewiczIntHom_mk,
-    ofSingularHomology_hurewicz_riemannSphereSquare, ← neg_zsmul,
-    NovikovRing.single_zsmul_riemannSphereGenerator_mem_gradeBy_degree_iff hr]
-  ring
+  rw [PeriodGroup.degree_eq_two_smul_chern]
+  exact coefficientComparison_mem_gradeBy_two_smul _ _ c₁_FS _ (chern_ofSingularHomology _)
+    (single_zsmul_riemannSphereSquare_mem_gradeBy k r)
 
 namespace SphericalCapClass
 

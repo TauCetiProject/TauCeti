@@ -178,6 +178,12 @@ theorem single_mem_gradeBy_iff {f : H → ι} {h : H} {r : R} (hr : r ≠ 0) {i 
   ⟨fun hs => hs (mem_support.2 (by rwa [coeff_single_same])),
     fun hi => hi ▸ single_mem_gradeBy f h r⟩
 
+/-- Composing the degree function with an injective map of degrees does not change the pieces;
+for instance, negating both the degree function and the degree. -/
+theorem gradeBy_comp_of_injective {κ : Type*} {g : ι → κ} (hg : Injective g) (f : H → ι)
+    (i : ι) : gradeBy R N (g ∘ f) (g i) = gradeBy R N f i := by
+  rw [gradeBy, gradeBy, preimage_comp, ← image_singleton, hg.preimage_image]
+
 /-- There are no nonzero series of a degree that no exponent has. -/
 theorem gradeBy_eq_bot {f : H → ι} {i : ι} (hi : i ∉ range f) : gradeBy R N f i = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun a ha => support_eq_empty.1 ?_

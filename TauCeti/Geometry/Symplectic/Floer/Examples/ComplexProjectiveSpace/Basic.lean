@@ -293,13 +293,10 @@ theorem coefficientComparison_projectiveSpace_single_mem_gradeBy_degree {R : Typ
       gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _)
         (-(2 * k * c (hurewiczIntHom _ (mk n v) 1
           (Additive.ofMul ((pi2MulEquivInt v hn).symm (Multiplicative.ofAdd 1)))))) := by
-  rcases eq_or_ne r 0 with rfl | hr
-  · rw [single_zero, map_zero]
-    exact zero_mem _
-  rw [coefficientComparison_single, map_zsmul,
-    ofSingularHomology_hurewiczIntHom_pi2MulEquivInt_symm, ← neg_zsmul,
-    NovikovRing.single_zsmul_projectiveSpaceGenerator_mem_gradeBy_degree_iff v hn hr,
-    chern_projectiveSpaceGenerator]
+  rw [PeriodGroup.degree_eq_two_smul_chern]
+  convert coefficientComparison_mem_gradeBy_two_smul _ _ c _ (chern_ofSingularHomology _)
+    (single_mem_gradeBy (2 • c : _ →+ ℤ) _ r) using 2
+  rw [map_zsmul, AddMonoidHom.smul_apply, smul_eq_mul, two_nsmul]
   ring
 
 namespace SphericalCapClass

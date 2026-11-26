@@ -166,10 +166,9 @@ theorem coefficientComparison_mem_gradeBy_two_smul (c : S →+ ℤ) (c' : Γ →
     (hc : ∀ A, c' (q A) = c A) {k : ℤ} {a : NovikovSeries R S ω}
     (ha : a ∈ gradeBy R ω (2 • c : S →+ ℤ) k) :
     coefficientComparison q hω a ∈ gradeBy R (-Ω) (2 • c' : Γ →+ ℤ) (-k) := by
-  refine coefficientComparison_mem_gradeBy q hω (f := fun A => -(2 • c : S →+ ℤ) A)
+  refine coefficientComparison_mem_gradeBy q hω (f := Neg.neg ∘ (2 • c : S →+ ℤ))
     (fun A => by simp [hc]) ?_
-  simpa only [mem_gradeBy_iff, Set.subset_def, Set.mem_preimage, Set.mem_singleton_iff,
-    neg_inj] using ha
+  rwa [gradeBy_comp_of_injective neg_injective]
 
 end Semiring
 
@@ -247,9 +246,7 @@ theorem periodGroupComparison_mem_gradeBy_degree [Semiring R] {k : ℤ} {a : Nov
     (ha : a ∈ gradeBy R ω (2 • c : S →+ ℤ) k) :
     periodGroupComparison ω c a ∈
       gradeBy R (-PeriodGroup.area ω c) (PeriodGroup.degree ω c) (-k) := by
-  have hdeg : PeriodGroup.degree ω c = 2 • PeriodGroup.chern ω c :=
-    AddMonoidHom.ext fun γ => by simp [two_mul]
-  rw [hdeg]
+  rw [PeriodGroup.degree_eq_two_smul_chern]
   exact coefficientComparison_mem_gradeBy_two_smul _ (PeriodGroup.area_mk ω c) c
     (PeriodGroup.chern ω c) (PeriodGroup.chern_mk ω c) ha
 
