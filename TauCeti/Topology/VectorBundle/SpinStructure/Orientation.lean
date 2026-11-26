@@ -867,15 +867,15 @@ private theorem map_frameAt_op_smul (s : SpinCStructure F E n)
     Orientation.map (Fin n) (s.frameAt (op g • p)).toLinearEquiv o =
       Orientation.map (Fin n) (s.frameAt p).toLinearEquiv o := by
   -- In coordinates, the frame of `p • g` is the frame of `p` after the rotation `R` of `g`.
-  let e := WithLp.linearEquiv 2 ℝ (Fin n → ℝ)
+  let e := (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm
   let R : EuclideanSpace ℝ (Fin n) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) :=
-    (e.trans ((spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) _ g :
-      (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)))).trans e.symm
+    (e.symm.trans ((spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) _ g :
+      (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)))).trans e
   have hR : (s.frameAt (op g • p)).toLinearEquiv = R.trans (s.frameAt p).toLinearEquiv := by
     ext v
     simpa [R, e] using s.frameAt_smul p g v.ofLp
   have hdet : LinearEquiv.det R = 1 := by
-    rw [show R = (e.symm.symm.trans _).trans e.symm from rfl, LinearEquiv.det_conj]
+    rw [LinearEquiv.det_conj]
     exact QuadraticMap.det_coe_specialOrthogonalGroup _
   rw [hR, Orientation.map_trans, (o.map_eq_iff_det_pos R (by simp)).2]
   rw [← LinearEquiv.coe_det, hdet, Units.val_one]

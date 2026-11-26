@@ -28,6 +28,9 @@ This bundled form is what lets the trace commute with limits, continuity and int
 used, for instance, for the continuity of the character of a continuous representation, to move
 the trace through a Bochner integral of operators, and to define the divergence of a vector field
 as the trace of its derivative.
+
+Conjugation by a continuous linear equivalence `e`, `T ↦ e ∘ T ∘ e⁻¹`, preserves the unbundled
+trace (`ContinuousLinearEquiv.trace_conjContinuousAlgEquiv`).
 -/
 
 public section
@@ -92,3 +95,19 @@ theorem _root_.ContinuousLinearEquiv.traceCLM_comp_comp_symm {W : Type*} [AddCom
   ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id (by ext; simp) T
 
 end TauCeti
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 G H : Type*} [NormedField 𝕜] [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
+  [IsTopologicalAddGroup G] [ContinuousConstSMul 𝕜 G] [AddCommGroup H] [Module 𝕜 H]
+  [TopologicalSpace H] [IsTopologicalAddGroup H] [ContinuousConstSMul 𝕜 H]
+
+/-- The trace is invariant under the conjugation `T ↦ e ∘ T ∘ e⁻¹` by a continuous linear
+equivalence, with no finite-dimensionality assumption. -/
+@[simp]
+theorem trace_conjContinuousAlgEquiv (e : G ≃L[𝕜] H) (T : G →L[𝕜] G) :
+    LinearMap.trace 𝕜 H (e.conjContinuousAlgEquiv T) = LinearMap.trace 𝕜 G T :=
+  -- On underlying linear maps, `conjContinuousAlgEquiv` is `LinearEquiv.conj`.
+  LinearMap.trace_conj' (T : G →ₗ[𝕜] G) e.toLinearEquiv
+
+end ContinuousLinearEquiv
