@@ -58,7 +58,8 @@ array `Θ = ∑_k a_k Θ_k` has `∏_b det ψ_b(Θ) = ϖ^{∑_b c_b}` times a un
 
 * `TauCeti.blockSolutions`: the solution module `Sol ⊆ (E^n)^ι` of `Rel` through `ψ`, for any
   `O`-module `E`.
-* `TauCeti.blockRowSpan`: the span `R ⊆ O^{ι × n}` of the rows of the block rows `ψ(θ)`, `θ ∈ Rel`.
+* `TauCeti.blockRowSpan`: the span `R ⊆ O^{ι × n}` of the rows of the block rows `ψ(θ)`, `θ ∈ Rel`;
+  `TauCeti.blockRowSpan_def` unfolds it and `TauCeti.blockRowSpan_le_iff` bounds it from above.
 
 ## Main results
 
@@ -131,9 +132,23 @@ of `ψ(θ)` is the vector `(q, j) ↦ ψ(θ q) i j`. -/
 def blockRowSpan : Submodule O (ι × n → O) :=
   Submodule.span O {v | ∃ θ ∈ Rel, ∃ i : n, v = fun qj ↦ ψ (θ qj.1) i qj.2}
 
+theorem blockRowSpan_def :
+    blockRowSpan ψ Rel =
+      Submodule.span O {v | ∃ θ ∈ Rel, ∃ i : n, v = fun qj ↦ ψ (θ qj.1) i qj.2} :=
+  (rfl)
+
 theorem blockRow_mem_blockRowSpan {θ : ι → 𝒜} (hθ : θ ∈ Rel) (i : n) :
     (fun qj : ι × n ↦ ψ (θ qj.1) i qj.2) ∈ blockRowSpan ψ Rel :=
   Submodule.subset_span ⟨θ, hθ, i, rfl⟩
+
+/-- The row span lies in a submodule `S` exactly when every row of every block row `ψ(θ)`,
+`θ ∈ Rel`, does. -/
+theorem blockRowSpan_le_iff {S : Submodule O (ι × n → O)} :
+    blockRowSpan ψ Rel ≤ S ↔ ∀ θ ∈ Rel, ∀ i : n, (fun qj : ι × n ↦ ψ (θ qj.1) i qj.2) ∈ S := by
+  refine ⟨fun h θ hθ i ↦ h (blockRow_mem_blockRowSpan ψ Rel hθ i), fun h ↦ ?_⟩
+  rw [blockRowSpan_def, Submodule.span_le]
+  rintro _ ⟨θ, hθ, i, rfl⟩
+  exact h θ hθ i
 
 /-- The solution module with values in `E` is the orthogonal of the row span, after currying
 `E^{ι × n} = (E^n)^ι`. -/
@@ -143,7 +158,7 @@ theorem blockSolutions_eq_map_orthogonalBilin [Fintype ι] (E : Type*) [AddCommG
       ((blockRowSpan ψ Rel).orthogonalBilin (Fintype.bilinearCombination O O (M := E)).flip).map
         (LinearEquiv.curry O E ι n).toLinearMap := by
   ext u
-  rw [Submodule.mem_map_equiv, blockRowSpan, Submodule.mem_orthogonalBilin_span,
+  rw [Submodule.mem_map_equiv, blockRowSpan_def, Submodule.mem_orthogonalBilin_span,
     mem_blockSolutions]
   simp only [Set.mem_ofPred_eq, forall_exists_index, and_imp]
   refine ⟨fun h v θ hθ i hv ↦ ?_, fun h θ hθ i ↦ ?_⟩
@@ -168,9 +183,9 @@ private theorem rowSum_apply (t : ι → 𝒜) (qj : ι × n) :
 /-- If `ψ` is surjective, the row span is the set of row sums of elements of `Rel`. -/
 private theorem blockRowSpan_eq_map (hψ : Function.Surjective ψ) :
     blockRowSpan ψ Rel = (Rel.restrictScalars O).map (rowSum ψ) := by
-  refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.map_le_iff_le_comap.2 fun t ht ↦ ?_)
+  refine le_antisymm ((blockRowSpan_le_iff ψ Rel).2 fun θ hθ i ↦ ?_)
+    (Submodule.map_le_iff_le_comap.2 fun t ht ↦ ?_)
   · -- Row `i` of `ψ(θ)` is the row sum of `e θ`, with `ψ(e)` the matrix unit at `(i, i)`.
-    rintro _ ⟨θ, hθ, i, rfl⟩
     obtain ⟨e, he⟩ := hψ (single i i 1)
     refine ⟨e • θ, Rel.smul_mem e hθ, funext fun qj ↦ ?_⟩
     simp [rowSum_apply, he, Matrix.mul_apply, Matrix.single_apply, ite_and]
