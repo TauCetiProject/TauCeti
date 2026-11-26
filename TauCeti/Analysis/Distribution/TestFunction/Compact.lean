@@ -80,6 +80,12 @@ private noncomputable def evalSeqLM {x : ℕ → E} (c : ℕ → ℝ)
   map_add' g h := by ext k; simp [evalSeq_apply, smul_add]
   map_smul' a g := by ext k; simp [evalSeq_apply, smul_comm (c k) a]
 
+@[simp]
+private theorem evalSeqLM_apply {x : ℕ → E} (c : ℕ → ℝ)
+    (hx : ∀ K : Compacts E, (K : Set E) ⊆ Ω → ∃ N, ∀ k ≥ N, x k ∉ K) (g : 𝓓^{n}(Ω, F)) (k : ℕ) :
+    evalSeqLM c hx g k = c k • g (x k) :=
+  rfl
+
 /-- `TestFunction.evalSeq` is continuous: on test functions supported in a compact set `K`, only
 the finitely many coordinates `k` with `x k ∈ K` can be nonzero, and each is a multiple of an
 evaluation. -/
@@ -100,7 +106,7 @@ private theorem continuous_evalSeqLM {x : ℕ → E} (c : ℕ → ℝ)
       NNReal.smul_def, Real.coe_toNNReal _ hC, smul_eq_mul]
     refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun k ↦ ?_
     simp only [A, LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe,
-      coe_ofSupportedInCLM, evalSeqLM, LinearMap.coe_mk, AddHom.coe_mk, evalSeq_apply, norm_smul]
+      coe_ofSupportedInCLM, evalSeqLM_apply, norm_smul]
     by_cases hk : k < N
     · exact mul_le_mul (Finset.single_le_sum (f := fun k ↦ ‖c k‖) (fun _ _ ↦ norm_nonneg _)
         (Finset.mem_range.2 hk)) (ContDiffMapSupportedIn.norm_apply_le_seminorm ℝ) (norm_nonneg _)
@@ -149,7 +155,7 @@ theorem exists_compacts_forall_tsupport_subset_of_isCompact {Q : Set 𝓓^{n}(Ω
   have hle := hR ⟨f k, hf k, rfl⟩
   rw [mem_closedBall_zero_iff] at hle
   have hnorm : ‖evalSeqLM (n := n) c hx (f k) k‖ = k := by
-    simp only [evalSeqLM, LinearMap.coe_mk, AddHom.coe_mk, evalSeq_apply, norm_smul, c,
+    simp only [evalSeqLM_apply, norm_smul, c,
       Real.norm_eq_abs, abs_div, Nat.abs_cast, abs_norm]
     exact div_mul_cancel₀ _ (norm_ne_zero_iff.2 (hfx k))
   have := (BoundedContinuousFunction.norm_coe_le_norm _ k).trans hle

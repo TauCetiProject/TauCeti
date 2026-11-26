@@ -180,10 +180,11 @@ private theorem exists_mem_sphere_dist_lt {V : Set E} (hV0 : (0 : E) ∈ V)
     linarith
   have h2 : ‖s⁻¹ • ζ' - ζ'‖ < 2 * ε := by
     have : s⁻¹ • ζ' - ζ' = (s⁻¹ - 1) • ζ' := by simp [sub_smul]
-    rw [this, norm_smul, Real.norm_eq_abs, show |s⁻¹ - 1| * s = |1 - s| by
-      rw [← abs_of_pos hs0, ← abs_mul, abs_of_pos hs0, sub_mul, inv_mul_cancel₀ hs0.ne', one_mul],
-      abs_sub_comm]
-    exact hs
+    have hs1 : |s⁻¹ - 1| * s = |1 - s| := by
+      rw [← abs_of_pos hs0, ← abs_mul, abs_of_pos hs0]
+      congr 1
+      field_simp
+    rwa [this, norm_smul, Real.norm_eq_abs, hs1, abs_sub_comm]
   refine ⟨s⁻¹ • ζ', ?_, hVcone _ (inv_pos.2 hs0) _ (hVcone _ (inv_pos.2 hr) v hvV), ?_⟩
   · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hs0.ne']
   · rw [dist_eq_norm]
@@ -853,6 +854,30 @@ end Measurable
 
 /-! ### The pullback as a continuous linear map -/
 
+/-- The pullback `ι^* : 𝓓'_Γ(W) → 𝓓'_{ιᵀ Γ}(U)` as a linear map, before its continuity is
+proved. -/
+private def pullbackInlₗ (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (hN : ∀ x ∈ U, ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ Γ) :
+    WaveFrontSpace W Γ →ₗ[ℂ] WaveFrontSpace U (pullbackInlCone Γ) where
+  toFun u := mk (u.toDistribution.pullbackInl hU fun x hx η hη hmem ↦
+      hN x hx η hη (u.waveFrontSet_toDistribution_subset hmem))
+    (waveFrontSet_pullbackInl_subset_pullbackInlCone hU _ u.waveFrontSet_toDistribution_subset)
+  map_add' u v := ext <| by
+    simp only [toDistribution_mk, map_add]
+    exact pullbackInl_add hU (notMem_waveFrontSet hN u) (notMem_waveFrontSet hN v)
+  map_smul' c u := ext <| by
+    simp only [toDistribution_mk, map_smul, RingHom.id_apply]
+    exact pullbackInl_smul hU c (notMem_waveFrontSet hN u)
+
+private theorem toDistribution_pullbackInlₗ
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (hN : ∀ x ∈ U, ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ Γ)
+    (u : WaveFrontSpace W Γ) :
+    (pullbackInlₗ hU hN u).toDistribution =
+      u.toDistribution.pullbackInl hU fun x hx η hη hmem ↦
+        hN x hx η hη (u.waveFrontSet_toDistribution_subset hmem) :=
+  toDistribution_mk _ _
+
 /-- **Continuity of the pullback to `E × {0}` in the normal topology.** Let `Γ` be a cone of
 nonzero covectors over `W`, closed in `W × ((E × D) \ {0})`, containing no conormal covector
 `((x, 0), (0, η))` of `E × {0}` over `U`. Then the pullback `ι^* T` along `ι : x ↦ (x, 0)`
@@ -864,33 +889,22 @@ def pullbackInlCLM (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
     (hN : ∀ x ∈ U, ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ Γ) :
     WaveFrontSpace W Γ →L[ℂ] WaveFrontSpace U (pullbackInlCone Γ) :=
-  let A : WaveFrontSpace W Γ →ₗ[ℂ] WaveFrontSpace U (pullbackInlCone Γ) :=
-    { toFun := fun u ↦ mk (u.toDistribution.pullbackInl hU fun x hx η hη hmem ↦
-          hN x hx η hη (u.waveFrontSet_toDistribution_subset hmem))
-        (waveFrontSet_pullbackInl_subset_pullbackInlCone hU _ u.waveFrontSet_toDistribution_subset)
-      map_add' := fun u v ↦ ext <| by
-        simp only [toDistribution_mk, map_add]
-        exact pullbackInl_add hU (notMem_waveFrontSet hN u) (notMem_waveFrontSet hN v)
-      map_smul' := fun c u ↦ ext <| by
-        simp only [toDistribution_mk, map_smul, RingHom.id_apply]
-        exact pullbackInl_smul hU c (notMem_waveFrontSet hN u) }
-  ⟨A, by
+  ⟨pullbackInlₗ hU hN, by
     borelize E D
-    refine continuous_linearMap_of_le A ?_ fun j ↦ ?_
+    refine continuous_linearMap_of_le _ ?_ fun j ↦ ?_
     · -- Continuity into `𝓓'(U)`: the values on a compact set of test functions.
-      refine continuous_of_tendsto_nhds_zero (toDistribution ∘ₗ A) ?_
+      refine continuous_of_tendsto_nhds_zero (toDistribution ∘ₗ pullbackInlₗ hU hN) ?_
       refine CompactConvergenceCLM.hasBasis_nhds_zero.tendsto_right_iff.2 fun ⟨Q, V'⟩ ⟨hQ, hV'⟩ ↦ ?_
       obtain ⟨r, hr, hrV'⟩ := Metric.mem_nhds_iff.1 hV'
       obtain ⟨p, hp, hpQ⟩ := exists_seminorm_pullbackInl_apply_le hU hΓ hcone hΓ0 hN hQ
       filter_upwards [(hp.tendsto' 0 0 (map_zero p)) (Iio_mem_nhds hr)] with u hu ψ hψ
       have h := hpQ u ψ hψ
-      simp only [LinearMap.coe_comp, Function.comp_apply, A, LinearMap.coe_mk, AddHom.coe_mk,
-        toDistribution_mk]
+      rw [LinearMap.coe_comp, Function.comp_apply, toDistribution_pullbackInlₗ]
       exact hrV' (mem_ball_zero_iff.2 (h.trans_lt hu))
     · -- The seminorms of the target.
       obtain ⟨p, hp, hpj⟩ := exists_seminorm_localFourier_pullbackInl_le hU hΓ hcone hΓ0 hN j
       refine ⟨p, hp, fun u ↦ seminorm_le_bound j _ (apply_nonneg _ _) fun ξ hξ ↦ ?_⟩
-      simpa only [A, LinearMap.coe_mk, AddHom.coe_mk, toDistribution_mk] using hpj u ξ hξ⟩
+      simpa only [toDistribution_pullbackInlₗ] using hpj u ξ hξ⟩
 
 @[simp]
 theorem toDistribution_pullbackInlCLM (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
@@ -900,8 +914,8 @@ theorem toDistribution_pullbackInlCLM (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D)
     (u : WaveFrontSpace W Γ) :
     (pullbackInlCLM hU hΓ hcone hΓ0 hN u).toDistribution =
       u.toDistribution.pullbackInl hU fun x hx η hη hmem ↦
-        hN x hx η hη (u.waveFrontSet_toDistribution_subset hmem) := by
-  simp [pullbackInlCLM]
+        hN x hx η hη (u.waveFrontSet_toDistribution_subset hmem) :=
+  toDistribution_pullbackInlₗ hU hN u
 
 end WaveFrontSpace
 
