@@ -54,7 +54,10 @@ are separate later steps.
   inverts `toMonic`, so `Sym K n` is equivalent to the monic polynomials of degree `n`.
 * `Sym.coeffEquiv`: the resulting chart `Sym K n ≃ (Fin n → K)`, with
   `Sym.coeffEquiv_apply` naming its coordinates as the signed elementary symmetric
-  functions and `Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map.
+  functions, `Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map, and
+  `Sym.coeffEquiv_symm_esymm` recovering a multiset from its elementary symmetric functions.
+* `Sym.exists_esymm_eq`: every tuple of values is the tuple of elementary symmetric functions of
+  some unordered `n`-tuple.
 * `Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`: membership in the basepoint
   divisor is characterized by an affine equation in the chart.
 * `Sym.coeffEquiv_one_apply` and `Sym.coeffEquiv_two_apply`: the chart in degrees
@@ -344,6 +347,29 @@ recovers its roots, counted with multiplicity. -/
 theorem coeffEquiv_symm_coeff_of_monic {p : K[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
     (((coeffEquiv K n).symm (fun i => p.coeff i) : Sym K n) : Multiset K) = p.roots := by
   rw [coeffEquiv_symm_apply, TauCeti.Polynomial.monicOfCoeff_coeff hp hdeg]
+
+/-- The inverse chart recovers an `n`-element multiset from its elementary symmetric functions,
+in decreasing order and with alternating signs. This is `Sym.coeffEquiv_apply` read backwards. -/
+@[simp]
+theorem coeffEquiv_symm_esymm {s : Multiset K} (hs : Multiset.card s = n) :
+    (coeffEquiv K n).symm (fun i : Fin n => (-1) ^ (n - (i : ℕ)) * s.esymm (n - (i : ℕ))) =
+      Sym.mk s hs := by
+  rw [Equiv.symm_apply_eq]
+  funext i
+  exact (coeffEquiv_apply (Sym.mk s hs) i).symm
+
+/-- **Every coefficient tuple comes from a tuple of roots.** For any prescribed values `c j`, there
+is an unordered `n`-tuple whose `j`-th elementary symmetric function is `c j` for `1 ≤ j ≤ n`:
+the roots of `Xⁿ - c₁ Xⁿ⁻¹ + ⋯ + (-1)ⁿ cₙ`. -/
+theorem exists_esymm_eq (c : ℕ → K) :
+    ∃ s : Sym K n, ∀ j ∈ Finset.Icc 1 n, (s : Multiset K).esymm j = c j := by
+  refine ⟨(coeffEquiv K n).symm fun i => (-1) ^ (n - (i : ℕ)) * c (n - i), fun j hj => ?_⟩
+  obtain ⟨hj₁, hjn⟩ := Finset.mem_Icc.1 hj
+  have hi := congrFun ((coeffEquiv K n).apply_symm_apply
+    fun i : Fin n => (-1) ^ (n - (i : ℕ)) * c (n - i)) ⟨n - j, by omega⟩
+  rw [coeffEquiv_apply] at hi
+  simp only [Nat.sub_sub_self hjn] at hi
+  exact mul_left_cancel₀ (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)) hi
 
 /-- **The tuples through a point satisfy an affine equation in the elementary symmetric chart.** A
 point `a` belongs to `s` exactly when the monic polynomial whose lower coefficients are the
