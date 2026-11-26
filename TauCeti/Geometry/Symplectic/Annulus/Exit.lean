@@ -65,9 +65,10 @@ a face. Combining the two orders along a maximal cyclic run of momenta on one fa
   (`TauCeti.exists_hasDerivAt_stripGeneratingSource_snd_and_mul_pos`).
 * Hence, if no face carries all the momenta, a point of the block leaves it immediately exactly
   when it lies in `L` (`TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff`):
-  `L` is the immediate exit set of the block. For a flow with these trajectories, the continuity of
-  the exit time from the block, which makes `L` the exit set of an index pair in Conley's theory, is
-  proved in `TauCeti.Geometry.Symplectic.Annulus.Block.ExitTime`.
+  `L` is the immediate exit set of the block. For a flow with these trajectories, the exit time
+  from the block vanishes exactly on `L` and, for closed `K`, is continuous on `K`, so the flow
+  stopped at the exit deforms `K` relative to `L`; this is proved in
+  `TauCeti.Geometry.Symplectic.Annulus.Block.ExitTime`.
 * A critical configuration, at which `Y_(k-1) = y_k` for every `k`, has no momentum on a face
   `c` unless all momenta are on it, provided `Y_k = c` forces `y_k = c`
   (`TauCeti.stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq`). So a rest point of

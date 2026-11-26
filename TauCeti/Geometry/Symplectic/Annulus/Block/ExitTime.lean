@@ -39,13 +39,14 @@ all the momenta.
   (`TauCeti.exitTime_eq_zero_iff_exists_stripGeneratingSource_snd_mem`).
 * **Interior trajectories.** Before its exit time, the trajectory of a configuration of `K` lies in
   the interior of `K` at every positive time
-  (`TauCeti.apply_mem_interior_of_lt_exitTime_of_hasDerivAt`). At a boundary point reached at a
-  positive time, a momentum of a negative factor on a face would make the trajectory leave `K` at
-  once, and if only positive factors have momenta on faces, the trajectory was outside `K` just
-  before, by `TauCeti.eventually_nhdsLT_stripGeneratingSource_snd_notMem_Icc`.
+  (`TauCeti.apply_mem_interior_of_lt_exitTime_of_hasDerivAt_stripGeneratingSource`). At a
+  boundary point reached at a positive time, a momentum of a negative factor on a face would make
+  the trajectory leave `K` at once, and if only positive factors have momenta on faces, the
+  trajectory was outside `K` just before, by
+  `TauCeti.eventually_nhdsLT_stripGeneratingSource_snd_notMem_Icc`.
 * **Continuity.** If `K` is closed, the exit time is continuous on `K` as a map to `[0, ∞]`
-  (`TauCeti.continuousOn_exitTime_of_hasDerivAt`). Off `L` every momentum on a face belongs to a
-  positive factor and has a velocity pointing strictly into `K`
+  (`TauCeti.continuousOn_exitTime_of_hasDerivAt_stripGeneratingSource`). Off `L` every momentum on
+  a face belongs to a positive factor and has a velocity pointing strictly into `K`
   (`TauCeti.exists_hasDerivAt_stripGeneratingSource_snd_and_mul_pos`). By continuity of the second
   derivatives the velocities at nearby configurations point into `K` too, so the configurations of
   `K` near a point off `L` stay in `K` during a common time interval
@@ -60,9 +61,10 @@ leave `K` by time `t` into `L`.
 
 * `TauCeti.exitTime_eq_zero_iff_exists_stripGeneratingSource_snd_mem`: the exit time vanishes
   exactly on `L`.
-* `TauCeti.apply_mem_interior_of_lt_exitTime_of_hasDerivAt`: trajectories lie in the interior of
-  the block before their exit.
-* `TauCeti.continuousOn_exitTime_of_hasDerivAt`: the exit time is continuous on the block.
+* `TauCeti.apply_mem_interior_of_lt_exitTime_of_hasDerivAt_stripGeneratingSource`: trajectories
+  lie in the interior of the block before their exit.
+* `TauCeti.continuousOn_exitTime_of_hasDerivAt_stripGeneratingSource`: the exit time is continuous
+  on the block.
 
 ## References
 
@@ -188,16 +190,14 @@ theorem exitTime_eq_zero_iff_exists_stripGeneratingSource_snd_mem (hx : x ∈ K)
   refine ⟨fun h ↦ by_contra fun hno ↦ ?_, fun hk ↦ Flow.exitTime_eq_zero_of_eventually_notMem
     (eventually_nhdsGT_apply_notMem hU hKU hK hS hϕ htgt hiff hface hpos hneg hP hfull
       (ϕ.map_zero_apply x) hx hk)⟩
-  -- otherwise the trajectory stays in the block during a time interval `[0, ε)`
-  obtain ⟨ε, hε, hεK⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
-    (eventually_nhdsGT_apply_mem hU hKU hK hS hϕ htgt hiff hface hpos hP (ϕ.map_zero_apply x) hx
-      fun k hk ↦ by_contra fun hkP ↦ hno ⟨k, hkP, hk⟩)
-  have hle := Flow.ofReal_le_exitTime (ϕ := ϕ) (P := K) (x := x) (t := ε / 2) fun s hs ↦ by
-    rcases hs.1.eq_or_lt with rfl | hs₀
-    · rwa [ϕ.map_zero_apply]
-    · exact hεK ⟨hs₀, hs.2.trans_lt (half_lt_self (mem_Ioi.1 hε))⟩
-  rw [h, nonpos_iff_eq_zero, ENNReal.ofReal_eq_zero] at hle
-  linarith [mem_Ioi.1 hε]
+  -- otherwise the trajectory stays in the block at time `0` and just after
+  have hmem : ∀ᶠ s in 𝓝[≥] (0 : ℝ), ϕ s x ∈ K := by
+    rw [← insert_Ioi, nhdsWithin_insert]
+    exact eventually_sup.2 ⟨eventually_pure.2 (by rwa [ϕ.map_zero_apply]),
+      eventually_nhdsGT_apply_mem hU hKU hK hS hϕ htgt hiff hface hpos hP (ϕ.map_zero_apply x) hx
+        fun k hk ↦ by_contra fun hkP ↦ hno ⟨k, hkP, hk⟩⟩
+  obtain ⟨s, hs, hsK⟩ := ((Flow.exitTime_eq_zero_iff_frequently.1 h).and_eventually hmem).exists
+  exact hs hsK
 
 /-! ### Interior trajectories -/
 
@@ -206,8 +206,8 @@ include hU hKU hK hS hϕ htgt hiff hface hpos hneg hP hfull in
 `TauCeti.exitTime_eq_zero_iff_exists_stripGeneratingSource_snd_mem`, the trajectory of a
 configuration lies in the interior of the block `K` at every positive time before its exit time
 from `K`. -/
-theorem apply_mem_interior_of_lt_exitTime_of_hasDerivAt {s : ℝ} (hs : 0 < s)
-    (hsx : ENNReal.ofReal s < ϕ.exitTime K x) : ϕ s x ∈ interior K := by
+theorem apply_mem_interior_of_lt_exitTime_of_hasDerivAt_stripGeneratingSource {s : ℝ}
+    (hs : 0 < s) (hsx : ENNReal.ofReal s < ϕ.exitTime K x) : ϕ s x ∈ interior K := by
   have hzK : ϕ s x ∈ K := Flow.apply_mem_of_lt_exitTime hs.le hsx
   by_cases hneg' : ∃ k ∉ P,
       (stripGeneratingSource (S k) (ϕ s x k, ϕ s x (k + 1))).2 ∈ ({0, 1} : Set ℝ)
@@ -246,8 +246,9 @@ private noncomputable def velocity (S : ZMod N → ℝ × ℝ → ℝ) (q : ZMod
 
 include hS in
 private theorem contDiffAt_momentum {q : ZMod N → ℝ} (hq : q ∈ U) (k : ZMod N) :
-    ContDiffAt ℝ 1 (momentum S k) q :=
-  contDiffAt_stripGeneratingSource_snd (hS q hq k)
+    ContDiffAt ℝ 1 (momentum S k) q := by
+  unfold momentum
+  exact contDiffAt_stripGeneratingSource_snd (hS q hq k)
 
 include hS hϕ in
 /-- Along the flow, the momentum `y_k` has derivative `dy_k(y - Y)` at every configuration of
@@ -255,7 +256,7 @@ include hS hϕ in
 private theorem hasDerivAt_momentum_apply {q : ZMod N → ℝ} (hq : q ∈ U) (k : ZMod N) :
     HasDerivAt (fun t ↦ momentum S k (ϕ t q)) (fderiv ℝ (momentum S k) q (velocity S q)) 0 :=
   ((contDiffAt_momentum hS hq k).differentiableAt one_ne_zero).hasFDerivAt.comp_hasDerivAt_of_eq 0
-    (hϕ q hq) (ϕ.map_zero_apply q).symm
+    (by unfold velocity; exact hϕ q hq) (ϕ.map_zero_apply q).symm
 
 include hS in
 /-- The derivative `dy_k(y - Y)` of a momentum along the flow is continuous on `U`. -/
@@ -275,13 +276,14 @@ private theorem mul_fderiv_momentum_apply_pos (hx : x ∈ K)
     (hk : momentum S k x ∈ ({0, 1} : Set ℝ)) :
     0 < (1 - 2 * momentum S k x) * fderiv ℝ (momentum S k) x (velocity S x) := by
   have hx₀ : ϕ 0 x ∈ K := by rwa [ϕ.map_zero_apply]
+  have hm := hasDerivAt_momentum_apply hS hϕ (hKU hx) k
+  unfold momentum at hm hall hk ⊢
   obtain ⟨y', hy', hy'pos⟩ := exists_hasDerivAt_stripGeneratingSource_snd_and_mul_pos
     (γ := fun t ↦ ϕ t x) (hS _ (hKU hx₀)) (eventually_hasDerivAt_apply hU hϕ (hKU hx₀))
     ((hK _ (hKU hx₀)).1 hx₀) (htgt _ hx₀) (hiff _ hx₀) (hface _ hx₀) (hpos _ hx₀) hP
-    (by simpa only [ϕ.map_zero_apply, momentum] using hall)
-    (by simpa only [ϕ.map_zero_apply, momentum] using hk)
-  rw [hy'.unique (hasDerivAt_momentum_apply hS hϕ (hKU hx) k)] at hy'pos
-  simpa only [ϕ.map_zero_apply, momentum] using hy'pos
+    (by simpa only [ϕ.map_zero_apply] using hall) (by simpa only [ϕ.map_zero_apply] using hk)
+  rw [hy'.unique hm] at hy'pos
+  simpa only [ϕ.map_zero_apply] using hy'pos
 
 include hU hKU hK hS hϕ htgt hiff hface hpos hP in
 /-- **Inflow off the exit set.** If every momentum on a face at `x ∈ K` belongs to a positive
@@ -326,7 +328,7 @@ include hU hKU hK hS hϕ htgt hiff hface hpos hneg hP hfull in
 /-- **Continuity of the exit time.** In the setting of
 `TauCeti.exitTime_eq_zero_iff_exists_stripGeneratingSource_snd_mem`, if the block `K` is closed,
 the exit time from `K` is continuous on `K` as a map to `[0, ∞]`. -/
-theorem continuousOn_exitTime_of_hasDerivAt (hKc : IsClosed K) :
+theorem continuousOn_exitTime_of_hasDerivAt_stripGeneratingSource (hKc : IsClosed K) :
     ContinuousOn (ϕ.exitTime K) K := by
   refine Flow.continuousOn_exitTime hKc (fun x hx hτ ↦ ?_) fun _ _ _ hs hsx ↦ ?_
   · -- off the exit set, every momentum on a face belongs to a positive factor
@@ -334,7 +336,7 @@ theorem continuousOn_exitTime_of_hasDerivAt (hKc : IsClosed K) :
       hiff hface hpos hneg hP hfull hx).2 hτ
     exact exists_pos_eventually_forall_apply_mem hU hKU hK hS hϕ htgt hiff hface hpos hP hx
       fun k hk ↦ by_contra fun hkP ↦ hτ' ⟨k, hkP, hk⟩
-  · exact apply_mem_interior_of_lt_exitTime_of_hasDerivAt hU hKU hK hS hϕ htgt hiff
-      hface hpos hneg hP hfull hs hsx
+  · exact apply_mem_interior_of_lt_exitTime_of_hasDerivAt_stripGeneratingSource hU hKU hK hS hϕ
+      htgt hiff hface hpos hneg hP hfull hs hsx
 
 end TauCeti
