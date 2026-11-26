@@ -137,6 +137,14 @@ theorem complexRealFrame_apply_two_mul_add_one (u : Fin r → V) (i : Fin r) :
     simp [mul_comm, add_comm]
   simp only [complexRealFrame, h, Matrix.cons_val_one, Matrix.cons_val_zero]
 
+/-- The frame of `u` lies in a submodule containing every `u i` and every `J (u i)`. -/
+theorem complexRealFrame_apply_mem {S : Submodule ℝ V} {u : Fin r → V}
+    (h : ∀ i, u i ∈ S ∧ J (u i) ∈ S) (k : Fin (2 * r)) : J.complexRealFrame u k ∈ S := by
+  simp only [complexRealFrame_def]
+  obtain ⟨i, j⟩ := finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 r) k)
+  fin_cases j
+  exacts [(h i).1, (h i).2]
+
 variable {J} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
 include hJ
 
@@ -418,11 +426,7 @@ theorem isCalibratedFrame_kahlerPowerForm_iff {r : ℕ} {v : Fin (2 * r) → V} 
   have hw := (orthonormal_complexRealFrame_iff hJ).2 ⟨hu, hJu⟩
   -- The frame of `u` is an orthonormal frame of the span of `v`, so the two frames differ by a
   -- sign, which is `1` since the form takes the value `1` on both.
-  have hspan (k) : J.complexRealFrame u k ∈ Submodule.span ℝ (Set.range v) := by
-    simp only [complexRealFrame_def]
-    obtain ⟨i, j⟩ := finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 r) k)
-    fin_cases j
-    exacts [(hmem i).1, (hmem i).2]
+  have hspan := J.complexRealFrame_apply_mem hmem
   have hs := (J.kahlerPowerForm r).toAlternatingMap.map_eq_frameSign_smul_of_mem_span
     h.orthonormal hw hspan
   rw [coe_toAlternatingMap, kahlerPowerForm_apply_complexRealFrame hJ hu hJu, h.apply_eq_one,
@@ -449,11 +453,9 @@ theorem apply_mem_span_range_of_isCalibratedFrame_kahlerPowerForm {r : ℕ} {v :
     ⟨by simpa using hmem ⟨2 * l + 1, by omega⟩,
       by simpa [J.apply_apply] using neg_mem (hmem ⟨2 * l, by omega⟩)⟩
   simp only [congrFun hA i, _root_.map_sum, _root_.map_smul]
-  refine Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ ?_
-  simp only [complexRealFrame_def]
-  obtain ⟨l, j⟩ := finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 r) k)
-  fin_cases j
-  exacts [(hJmem l).1, (hJmem l).2]
+  exact Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _
+    (J.complexRealFrame_apply_mem (S := (Submodule.span ℝ (Set.range v)).comap J.toLinearMap)
+      hJmem k)
 
 /-- **Naturality of the normalized Kähler powers**: a complex-linear isometric equivalence pulls
 the normalized Kähler powers back to the normalized Kähler powers. In particular they are
