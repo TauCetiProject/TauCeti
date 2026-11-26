@@ -39,10 +39,8 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
 /-- Every simple summand of the tensor unit has trivial degree in `universalGradingGroup C`. -/
 @[simp] theorem degree_unitSummand (I : UnitSimpleClasses C) :
     universalGradingGroup.degree I.val = 1 := by
-  let a := (UnitSimpleClasses.tensorSelfIso I).symm
-  have ha : a.hom ≠ 0 := fun h ↦
-    CategoryTheory.id_ne_zero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
-  simpa only [SimpleClasses.classOf_repr] using degree_classOf_eq_one_of_hom_tensor_self_ne_zero ha
+  simpa only [SimpleClasses.classOf_repr] using
+    degree_classOf_eq_one_of_hom_tensor_self_ne_zero (UnitSimpleClasses.tensorSelfIso_inv_ne_zero I)
 
 /-- Any simple object mapping nontrivially into `𝟙_ C` has trivial degree in
 `universalGradingGroup C`. -/

@@ -91,27 +91,19 @@ def equiv (e : C ≌ D) [e.functor.Monoidal] : UnitSimpleClasses C ≃ UnitSimpl
   toFun I := ⟨SimpleClasses.equiv e I.val, map_unit_hom_ne_zero e I⟩
   invFun J := letI := e.inverseMonoidal
     ⟨SimpleClasses.equiv e.symm J.val, map_unit_hom_ne_zero e.symm J⟩
-  left_inv I := Subtype.ext <| (SimpleClasses.eq_iff_nonempty_iso _ _).2
-    ⟨SimpleClasses.equivApplyReprIso e.symm _ ≪≫
-      e.inverse.mapIso (SimpleClasses.equivApplyReprIso e I.val) ≪≫ (e.unitIso.app I.repr).symm⟩
-  right_inv J := Subtype.ext <| (SimpleClasses.eq_iff_nonempty_iso _ _).2
-    ⟨SimpleClasses.equivApplyReprIso e _ ≪≫
-      e.functor.mapIso (SimpleClasses.equivApplyReprIso e.symm J.val) ≪≫ e.counitIso.app J.repr⟩
+  left_inv I := Subtype.ext (SimpleClasses.equiv_symm_equiv e I.val)
+  right_inv J := Subtype.ext (SimpleClasses.equiv_equiv_symm e J.val)
 @[simp] theorem val_equiv_apply (e : C ≌ D) [e.functor.Monoidal] (I : UnitSimpleClasses C) :
     (equiv e I).val = SimpleClasses.equiv e I.val := (rfl)
 @[simp] theorem equiv_symm (e : C ≌ D) [e.functor.Monoidal] :
     (equiv e).symm = @equiv D _ _ _ C _ _ _ e.symm e.inverseMonoidal := (rfl)
 @[simp] theorem equiv_refl (I : UnitSimpleClasses C) :
     equiv (CategoryTheory.Equivalence.refl (C := C)) I = I :=
-  Subtype.ext <| (SimpleClasses.eq_iff_nonempty_iso _ _).2
-    ⟨SimpleClasses.equivApplyReprIso CategoryTheory.Equivalence.refl I.val⟩
+  Subtype.ext (SimpleClasses.equiv_refl I.val)
 @[simp] theorem equiv_trans {E : Type u₃} [Category.{v₃} E] [HasZeroMorphisms E]
     [MonoidalCategory E] (e₁ : C ≌ D) (e₂ : D ≌ E) [e₁.functor.Monoidal] [e₂.functor.Monoidal]
     (I : UnitSimpleClasses C) : equiv (e₁.trans e₂) I = equiv e₂ (equiv e₁ I) :=
-  Subtype.ext <| (SimpleClasses.eq_iff_nonempty_iso _ _).2
-    ⟨SimpleClasses.equivApplyReprIso (e₁.trans e₂) I.val ≪≫
-      e₂.functor.mapIso (SimpleClasses.equivApplyReprIso e₁ I.val).symm ≪≫
-      (SimpleClasses.equivApplyReprIso e₂ (equiv e₁ I).val).symm⟩
+  Subtype.ext (SimpleClasses.equiv_trans e₁ e₂ I.val)
 
 end Equivalence
 

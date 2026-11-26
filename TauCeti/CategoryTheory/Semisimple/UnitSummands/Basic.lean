@@ -104,36 +104,50 @@ private structure TensorUnitDecomp (C : Type u₁) [Category.{v₁} C] [Abelian 
   equiv : ι ≃ UnitSimpleClasses C
   summandIso : ∀ i, summands i ≅ (equiv i).repr
 
+private theorem tensorUnit_summand_injective {ι : Type} [Finite ι] (a : ι → C)
+    [∀ i, Simple (a i)] [HasBiproduct a] (e : 𝟙_ C ≅ ⨁ a) :
+    Function.Injective (fun i ↦ UnitSimpleClasses.mkOfHomNeZero
+      (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  intro i j hij
+  let α := {k // SimpleClasses.classOf (a k) = SimpleClasses.classOf (a i)}
+  have hcard : Nat.card α ≤ 1 := by
+    rw [← simpleMultiplicities_apply_eq_card a e]; exact simpleMultiplicities_tensorUnit_le_one _
+  have hsub : Subsingleton α :=
+    Fintype.card_le_one_iff_subsingleton.1 (by rwa [← Nat.card_eq_fintype_card])
+  exact congrArg Subtype.val
+    (@Subsingleton.elim α hsub ⟨i, rfl⟩ ⟨j, by simpa using (congrArg Subtype.val hij).symm⟩)
+
+private theorem tensorUnit_summand_surjective {ι : Type} [Finite ι] (a : ι → C)
+    [∀ i, Simple (a i)] [HasBiproduct a] (e : 𝟙_ C ≅ ⨁ a) :
+    Function.Surjective (fun i ↦ UnitSimpleClasses.mkOfHomNeZero
+      (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  intro I
+  have hcard : Nat.card {k // SimpleClasses.classOf (a k) = I.val} = 1 := by
+    rw [← simpleMultiplicities_apply_eq_card a e,
+      UnitSimpleClasses.simpleMultiplicities_tensorUnit]
+  have hne : Nonempty {k // SimpleClasses.classOf (a k) = I.val} := by
+    rw [← Fintype.card_pos_iff, ← Nat.card_eq_fintype_card, hcard]; omega
+  exact ⟨hne.some.val, Subtype.ext (by simpa using hne.some.property)⟩
+
+private theorem nonempty_tensorUnitDecomp (C : Type u₁) [Category.{v₁} C] [Abelian C]
+    [MonoidalCategory C] [IsFiniteSemisimpleCategory C] : Nonempty (TensorUnitDecomp C) := by
+  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples (𝟙_ C)
+  let _ := hι; let _ := ha; let _ := hba
+  let f : ι → UnitSimpleClasses C := fun i ↦ UnitSimpleClasses.mkOfHomNeZero
+    (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))
+  exact ⟨{ ι := ι, summands := a, iso := e
+           equiv := Equiv.ofBijective f
+             ⟨tensorUnit_summand_injective a e, tensorUnit_summand_surjective a e⟩
+           summandIso := fun i ↦ (SimpleClasses.classOfReprIso (a i)).symm ≪≫
+             eqToIso (congrArg SimpleClasses.repr (UnitSimpleClasses.val_mkOfHomNeZero _).symm) }⟩
+
 private def chosenTensorUnitDecomp (C : Type u₁) [Category.{v₁} C] [Abelian C]
     [MonoidalCategory C] [IsFiniteSemisimpleCategory C] : TensorUnitDecomp C :=
-  let hex := IsFiniteSemisimpleCategory.exists_biproduct_simples (𝟙_ C)
-  let κ := hex.choose; let _ := hex.choose_spec.choose; let a := hex.choose_spec.choose_spec.choose
-  let _ := hex.choose_spec.choose_spec.choose_spec.choose
-  let _ := hex.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e : 𝟙_ C ≅ ⨁ a := hex.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let f : κ → UnitSimpleClasses C := fun i ↦
-    UnitSimpleClasses.mkOfHomNeZero
-      (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))
-  have hf_inj : Function.Injective f := fun i j hij ↦ by
-    classical
-    let α := {k // SimpleClasses.classOf (a k) = SimpleClasses.classOf (a i)}
-    have hcard : Nat.card α ≤ 1 := by
-      rw [← simpleMultiplicities_apply_eq_card a e]; exact simpleMultiplicities_tensorUnit_le_one _
-    have hsub : Subsingleton α :=
-      Fintype.card_le_one_iff_subsingleton.1 (by rwa [← Nat.card_eq_fintype_card])
-    exact congrArg Subtype.val
-      (@Subsingleton.elim α hsub ⟨i, rfl⟩ ⟨j, by simpa [f] using (congrArg Subtype.val hij).symm⟩)
-  have hf_surj : Function.Surjective f := fun I ↦ by
-    classical
-    have hcard : Nat.card {k // SimpleClasses.classOf (a k) = I.val} = 1 := by
-      rw [← simpleMultiplicities_apply_eq_card a e,
-        UnitSimpleClasses.simpleMultiplicities_tensorUnit]
-    have hne : Nonempty {k // SimpleClasses.classOf (a k) = I.val} := by
-      rw [← Fintype.card_pos_iff, ← Nat.card_eq_fintype_card, hcard]; omega
-    exact ⟨hne.some.val, Subtype.ext (by simpa [f] using hne.some.property)⟩
-  { ι := κ, summands := a, iso := e, equiv := Equiv.ofBijective f ⟨hf_inj, hf_surj⟩
-    summandIso := fun i ↦ (SimpleClasses.classOfReprIso (a i)).symm ≪≫
-      eqToIso (congrArg SimpleClasses.repr (UnitSimpleClasses.val_mkOfHomNeZero _).symm) }
+  (nonempty_tensorUnitDecomp C).some
 
 namespace UnitSimpleClasses
 
@@ -266,6 +280,10 @@ def tensorSelfIso (I : UnitSimpleClasses C) : I.repr ⊗ I.repr ≅ I.repr :=
 @[reassoc] theorem tensorSelfIso_inv (I : UnitSimpleClasses C) :
     (tensorSelfIso I).inv = (λ_ I.repr).inv ≫ π I ▷ I.repr :=
   Retract.tensorSelfIso_inv ⟨ι I, π I, ι_comp_π_self I⟩
+
+/-- The inverse of `tensorSelfIso I` is nonzero. -/
+theorem tensorSelfIso_inv_ne_zero (I : UnitSimpleClasses C) : (tensorSelfIso I).inv ≠ 0 :=
+  fun h ↦ CategoryTheory.id_ne_zero I.repr (by rw [← (tensorSelfIso I).inv_hom_id, h, zero_comp])
 
 end UnitSimpleClasses
 

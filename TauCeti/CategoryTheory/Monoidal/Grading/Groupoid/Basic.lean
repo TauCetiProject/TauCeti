@@ -172,12 +172,9 @@ theorem degOf_comp {X Y U : C} [Simple X] [Simple Y] [Simple U] (f : U ⟶ X ⊗
 
 /-- Every simple summand of the tensor unit has trivial degree in any groupoid grading. -/
 @[simp] theorem deg_unitSummand (I : UnitSimpleClasses C) : γ.deg I.val = eqToHom (by simp) := by
-  let a := (UnitSimpleClasses.tensorSelfIso I).symm
-  have ha : a.hom ≠ 0 :=
-    fun h ↦ CategoryTheory.id_ne_zero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
   let g : γ.obj I ⟶ γ.obj I := eqToHom (by simp) ≫ γ.deg I.val ≫ eqToHom (by simp)
   have hidem : g = g ≫ g := by
-    dsimp only [g]; nth_rw 1 [γ.deg_comp a.hom ha]
+    dsimp only [g]; nth_rw 1 [γ.deg_comp _ (UnitSimpleClasses.tensorSelfIso_inv_ne_zero I)]
     simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
       Category.id_comp, Category.comp_id]
   have hg : g = 𝟙 (γ.obj I) := by simpa [Category.assoc] using Groupoid.inv g ≫= hidem.symm
@@ -470,41 +467,38 @@ def mapEquivalence (e : C ≌ D) [e.functor.Monoidal] :
   rw [degree_congr (SimpleClasses.equiv_apply_classOf e X)]
   simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
 @[simp] theorem mapEquivalence_refl :
-    mapEquivalence (CategoryTheory.Equivalence.refl (C := C)) = 𝟭 (universalGradingGroupoid C) := by
-  refine functor_ext (fun _ ↦ by simp) fun S ↦ ?_
-  have hS : SimpleClasses.equiv (CategoryTheory.Equivalence.refl (C := C)) S = S :=
-    (SimpleClasses.eq_iff_nonempty_iso _ _).2
-      ⟨SimpleClasses.equivApplyReprIso CategoryTheory.Equivalence.refl S⟩
-  simp [degree_congr hS, Category.assoc]
+    mapEquivalence (CategoryTheory.Equivalence.refl (C := C)) = 𝟭 (universalGradingGroupoid C) :=
+  functor_ext (fun _ ↦ by simp) fun S ↦ by
+    simp only [mapEquivalence_degree, Functor.id_map]
+    rw [degree_congr (SimpleClasses.equiv_refl S)]
+    simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
 @[simp] theorem mapEquivalence_trans {E : Type u₃} [Category.{v₃} E] [Abelian E]
     [MonoidalCategory E] [MonoidalPreadditive E] [IsFiniteSemisimpleCategory E]
     (e₁ : C ≌ D) (e₂ : D ≌ E) [e₁.functor.Monoidal] [e₂.functor.Monoidal] :
-    mapEquivalence (e₁.trans e₂) = mapEquivalence e₁ ⋙ mapEquivalence e₂ := by
-  refine functor_ext (fun _ ↦ by simp) fun S ↦ ?_
-  have hS : SimpleClasses.equiv (e₁.trans e₂) S =
-      SimpleClasses.equiv e₂ (SimpleClasses.equiv e₁ S) :=
-    (SimpleClasses.eq_iff_nonempty_iso _ _).2 ⟨SimpleClasses.equivApplyReprIso (e₁.trans e₂) S ≪≫
-      e₂.functor.mapIso (SimpleClasses.equivApplyReprIso e₁ S).symm ≪≫
-      (SimpleClasses.equivApplyReprIso e₂ (SimpleClasses.equiv e₁ S)).symm⟩
-  simp [eqToHom_map, degree_congr hS, Category.assoc]
+    mapEquivalence (e₁.trans e₂) = mapEquivalence e₁ ⋙ mapEquivalence e₂ :=
+  functor_ext (fun _ ↦ by simp) fun S ↦ by
+    simp only [mapEquivalence_degree, Functor.comp_map, CategoryTheory.Functor.map_comp,
+      eqToHom_map]
+    rw [degree_congr (SimpleClasses.equiv_trans e₁ e₂ S)]
+    simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
 theorem mapEquivalence_comp_symm (e : C ≌ D) [e.functor.Monoidal] : letI := e.inverseMonoidal
     mapEquivalence e ⋙ mapEquivalence e.symm = 𝟭 (universalGradingGroupoid C) := by
   let _ := e.inverseMonoidal
   refine functor_ext (fun I ↦ by
     simp [-UnitSimpleClasses.equiv_symm, ← UnitSimpleClasses.equiv_symm e]) fun S ↦ ?_
-  have hS : SimpleClasses.equiv e.symm (SimpleClasses.equiv e S) = S :=
-    (SimpleClasses.eq_iff_nonempty_iso _ _).2 ⟨SimpleClasses.equivApplyReprIso e.symm _ ≪≫
-      e.inverse.mapIso (SimpleClasses.equivApplyReprIso e S) ≪≫ (e.unitIso.app S.repr).symm⟩
-  simp [eqToHom_map, degree_congr hS, Category.assoc]
+  simp only [Functor.comp_map, mapEquivalence_degree, CategoryTheory.Functor.map_comp, eqToHom_map,
+    Functor.id_map]
+  rw [degree_congr (SimpleClasses.equiv_symm_equiv e S)]
+  simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
 theorem symm_mapEquivalence_comp (e : C ≌ D) [e.functor.Monoidal] : letI := e.inverseMonoidal
     mapEquivalence e.symm ⋙ mapEquivalence e = 𝟭 (universalGradingGroupoid D) := by
   let _ := e.inverseMonoidal
   refine functor_ext (fun J ↦ by
     simp [-UnitSimpleClasses.equiv_symm, ← UnitSimpleClasses.equiv_symm e]) fun T ↦ ?_
-  have hT : SimpleClasses.equiv e (SimpleClasses.equiv e.symm T) = T :=
-    (SimpleClasses.eq_iff_nonempty_iso _ _).2 ⟨SimpleClasses.equivApplyReprIso e _ ≪≫
-      e.functor.mapIso (SimpleClasses.equivApplyReprIso e.symm T) ≪≫ e.counitIso.app T.repr⟩
-  simp [eqToHom_map, degree_congr hT, Category.assoc]
+  simp only [Functor.comp_map, mapEquivalence_degree, CategoryTheory.Functor.map_comp, eqToHom_map,
+    Functor.id_map]
+  rw [degree_congr (SimpleClasses.equiv_equiv_symm e T)]
+  simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
 
 /-- A monoidal equivalence `C ≌ D` induces an equivalence of universal grading groupoids. -/
 def congrEquivalence (e : C ≌ D) [e.functor.Monoidal] :
