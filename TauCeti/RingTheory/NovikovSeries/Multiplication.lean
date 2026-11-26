@@ -28,8 +28,11 @@ Hamiltonian Floer complexes.
 All ring laws are proved by finite-support arguments. The basic tool is
 `NovikovSeries.coeff_mul_eq_sum`: a coefficient of a product may be computed as a sum over any
 finite set of pairs adding up to the exponent which contains every pair of support exponents.
-Associativity rests on the uniform cutoff lemma `NovikovSeries.finite_setOf_period_add_add_lt`
-for triples of support exponents, from `TauCeti.RingTheory.NovikovSeries.Basic`.
+Associativity is proved once for convolutions along any compatible biadditive coefficient maps
+(`NovikovSeries.convolution_convolution`), and rests on the uniform cutoff lemma
+`NovikovSeries.finite_setOf_period_add_add_lt` for triples of support exponents, from
+`TauCeti.RingTheory.NovikovSeries.Basic`. The same statement gives the module laws of Novikov
+series acting on vector-valued Novikov series, in `TauCeti.RingTheory.NovikovSeries.BaseChange`.
 
 The arrangement of the instances follows Mathlib's `HahnSeries` in
 `Mathlib/RingTheory/HahnSeries/Multiplication.lean`; the support arguments are different, since
@@ -57,6 +60,8 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   the pairs of support exponents.
 * `TauCeti.NovikovSeries.convolution_add_left`, `TauCeti.NovikovSeries.convolution_add_right`: the
   convolution is biadditive.
+* `TauCeti.NovikovSeries.convolution_convolution`: convolution is associative along biadditive
+  maps satisfying `B (B₁ x y) z = B' x (B₂ y z)`.
 * `TauCeti.NovikovSeries.support_mul_subset`: the support of a product lies in the sum of the
   supports.
 * `TauCeti.NovikovSeries.convolution_single_single`, `TauCeti.NovikovSeries.single_mul_single`
@@ -146,6 +151,22 @@ theorem coeff_convolution_eq_sum_of_injOn {ι : Type*} {B : V →+ W →+ U}
     mem_image.2 (hvw u u' huu' hu hu'), sum_image hinj]
   obtain ⟨t, ht, rfl⟩ := mem_image.1 hp
   exact hf t ht
+
+/-- A coefficient of a convolution regrouped along the fibres of a map `f` from a finite set `T`
+onto a set of pairs adding up to `h` which contains every pair of support exponents: if each term
+`B (v.coeff u) (w.coeff u')` is the sum of `g` over the fibre of `f` above `(u, u')`, then the
+coefficient is the sum of `g` over `T`. -/
+private theorem coeff_convolution_eq_sum_fibre {ι : Type*} [DecidableEq H] {B : V →+ W →+ U}
+    {v : NovikovSeries V H N} {w : NovikovSeries W H N} {h : H} {T : Finset ι} {f : ι → H × H}
+    (g : ι → U) (hf : ∀ t ∈ T, (f t).1 + (f t).2 = h)
+    (hvw : ∀ u u', u + u' = h → v.coeff u ≠ 0 → w.coeff u' ≠ 0 → ∃ t ∈ T, f t = (u, u'))
+    (hg : ∀ t ∈ T, B (v.coeff (f t).1) (w.coeff (f t).2) = ∑ t' ∈ T with f t' = f t, g t') :
+    (convolution B v w).coeff h = ∑ t ∈ T, g t := by
+  rw [coeff_convolution_eq_sum (s := T.image f) (fun p hp => ?_) fun u u' huu' hu hu' =>
+    mem_image.2 (hvw u u' huu' hu hu')]
+  · exact sum_image' _ hg
+  · obtain ⟨t, ht, rfl⟩ := mem_image.1 hp
+    exact hf t ht
 
 /-- The coefficient at `h` of the convolution of `v` and `w` as a sum over the union of the pairs
 of support exponents of `v₁, w₁` and of `v₂, w₂` adding up to `h`, provided these cover the pairs
@@ -238,6 +259,91 @@ theorem convolution_zero (B : V →+ W →+ U) (v : NovikovSeries V H N) :
 
 end Convolution
 
+section ConvolutionAssoc
+
+variable [AddMonoid H] {N : H →+ ℝ} {V₁ V₂ V₃ W W' U : Type*} [AddZeroClass V₁] [AddZeroClass V₂]
+  [AddZeroClass V₃] [AddCommMonoid W] [AddCommMonoid W'] [AddCommMonoid U]
+
+/-- The coefficient at `h` of an iterated convolution `(a ⋆ b) ⋆ c`, along `B₁` and then `B`, is
+the sum of `B (B₁ (a.coeff u) (b.coeff v)) (c.coeff w)` over the finitely many triples of support
+exponents with `u + v + w = h`. -/
+theorem coeff_convolution_convolution_eq_sum (B₁ : V₁ →+ V₂ →+ W) (B : W →+ V₃ →+ U)
+    (a : NovikovSeries V₁ H N) (b : NovikovSeries V₂ H N) (c : NovikovSeries V₃ H N) (h : H) :
+    (convolution B (convolution B₁ a b) c).coeff h =
+      ∑ t ∈ (finite_setOf_add_add_eq a b c h).toFinset,
+        B (B₁ (a.coeff t.1) (b.coeff t.2.1)) (c.coeff t.2.2) := by
+  classical
+  set T := (finite_setOf_add_add_eq a b c h).toFinset
+  have hT (t : H × H × H) : t ∈ T ↔ t.1 + t.2.1 + t.2.2 = h ∧ a.coeff t.1 ≠ 0 ∧
+      b.coeff t.2.1 ≠ 0 ∧ c.coeff t.2.2 ≠ 0 :=
+    Set.Finite.mem_toFinset _
+  -- Group the triples by the outer pair `(u + v, w)`.
+  refine coeff_convolution_eq_sum_fibre (f := fun t => (t.1 + t.2.1, t.2.2)) _
+    (fun t ht => ((hT t).1 ht).1) (fun w z hwz hw hz => ?_) fun t ht => ?_
+  · obtain ⟨u, v, huv, hu, hv⟩ := exists_add_eq_of_coeff_convolution_ne_zero hw
+    exact ⟨(u, v, z), (hT _).2 ⟨by rw [huv, hwz], hu, hv, hz⟩, by rw [huv]⟩
+  -- The inner coefficient `(a ⋆ b).coeff (u + v)` is a sum over the fibre through `t`.
+  set F := T.filter fun t' => (t'.1 + t'.2.1, t'.2.2) = (t.1 + t.2.1, t.2.2)
+  have hF (t' : H × H × H) (ht' : t' ∈ F) : t'.1 + t'.2.1 = t.1 + t.2.1 ∧ t'.2.2 = t.2.2 :=
+    Prod.ext_iff.1 (mem_filter.1 ht').2
+  rw [coeff_convolution_eq_sum_of_injOn (F := F) (f := fun t' => (t'.1, t'.2.1))
+    (fun t' ht' => (hF t' ht').1) (fun u v huv hu hv => ?_) fun t₁ ht₁ t₂ ht₂ h₁₂ => ?_,
+    map_sum, AddMonoidHom.finsetSum_apply]
+  · exact sum_congr rfl fun t' ht' => by rw [(hF t' ht').2]
+  · refine ⟨(u, v, t.2.2), mem_filter.2 ⟨(hT _).2 ⟨?_, hu, hv, ((hT t).1 ht).2.2.2⟩,
+      by rw [huv]⟩, rfl⟩
+    rw [huv]
+    exact ((hT t).1 ht).1
+  · simp only [Prod.mk.injEq] at h₁₂
+    exact Prod.ext h₁₂.1 (Prod.ext h₁₂.2 ((hF t₁ ht₁).2.trans (hF t₂ ht₂).2.symm))
+
+/-- The coefficient at `h` of an iterated convolution `a ⋆ (b ⋆ c)`, along `B₂` and then `B'`, is
+the sum of `B' (a.coeff u) (B₂ (b.coeff v) (c.coeff w))` over the finitely many triples of support
+exponents with `u + v + w = h`. -/
+theorem coeff_convolution_convolution_eq_sum' (B₂ : V₂ →+ V₃ →+ W') (B' : V₁ →+ W' →+ U)
+    (a : NovikovSeries V₁ H N) (b : NovikovSeries V₂ H N) (c : NovikovSeries V₃ H N) (h : H) :
+    (convolution B' a (convolution B₂ b c)).coeff h =
+      ∑ t ∈ (finite_setOf_add_add_eq a b c h).toFinset,
+        B' (a.coeff t.1) (B₂ (b.coeff t.2.1) (c.coeff t.2.2)) := by
+  classical
+  set T := (finite_setOf_add_add_eq a b c h).toFinset
+  have hT (t : H × H × H) : t ∈ T ↔ t.1 + t.2.1 + t.2.2 = h ∧ a.coeff t.1 ≠ 0 ∧
+      b.coeff t.2.1 ≠ 0 ∧ c.coeff t.2.2 ≠ 0 :=
+    Set.Finite.mem_toFinset _
+  -- Group the triples by the outer pair `(u, v + w)`.
+  refine coeff_convolution_eq_sum_fibre (f := fun t => (t.1, t.2.1 + t.2.2)) _
+    (fun t ht => by rw [← add_assoc]; exact ((hT t).1 ht).1) (fun u w huw hu hw => ?_)
+    fun t ht => ?_
+  · obtain ⟨v, z, hvz, hv, hz⟩ := exists_add_eq_of_coeff_convolution_ne_zero hw
+    exact ⟨(u, v, z), (hT _).2 ⟨by rw [add_assoc, hvz, huw], hu, hv, hz⟩, by rw [hvz]⟩
+  -- The inner coefficient `(b ⋆ c).coeff (v + w)` is a sum over the fibre through `t`.
+  set F := T.filter fun t' => (t'.1, t'.2.1 + t'.2.2) = (t.1, t.2.1 + t.2.2)
+  have hF (t' : H × H × H) (ht' : t' ∈ F) : t'.1 = t.1 ∧ t'.2.1 + t'.2.2 = t.2.1 + t.2.2 :=
+    Prod.ext_iff.1 (mem_filter.1 ht').2
+  rw [coeff_convolution_eq_sum_of_injOn (F := F) (f := fun t' => t'.2)
+    (fun t' ht' => (hF t' ht').2) (fun v z hvz hv hz => ?_)
+    fun t₁ ht₁ t₂ ht₂ h₁₂ => Prod.ext ((hF t₁ ht₁).1.trans (hF t₂ ht₂).1.symm) h₁₂, map_sum]
+  · exact sum_congr rfl fun t' ht' => by rw [(hF t' ht').1]
+  · refine ⟨(t.1, v, z), mem_filter.2 ⟨(hT _).2 ⟨?_, ((hT t).1 ht).2.1, hv, hz⟩,
+      by rw [hvz]⟩, rfl⟩
+    rw [add_assoc, hvz, ← add_assoc]
+    exact ((hT t).1 ht).1
+
+/-- **Associativity of convolution.** Convolving along `B₁` and then `B` agrees with convolving
+along `B₂` and then `B'` whenever the coefficient maps satisfy
+`B (B₁ x y) z = B' x (B₂ y z)`. For `B₁ = B = B₂ = B'` the multiplication of a semiring this is the
+associativity of the product of Novikov series; for scalar multiplication it is the law
+`(a * b) • v = a • (b • v)`. -/
+theorem convolution_convolution (B₁ : V₁ →+ V₂ →+ W) (B : W →+ V₃ →+ U) (B₂ : V₂ →+ V₃ →+ W')
+    (B' : V₁ →+ W' →+ U) (hB : ∀ x y z, B (B₁ x y) z = B' x (B₂ y z))
+    (a : NovikovSeries V₁ H N) (b : NovikovSeries V₂ H N) (c : NovikovSeries V₃ H N) :
+    convolution B (convolution B₁ a b) c = convolution B' a (convolution B₂ b c) := by
+  ext h
+  rw [coeff_convolution_convolution_eq_sum, coeff_convolution_convolution_eq_sum']
+  exact sum_congr rfl fun t _ => hB _ _ _
+
+end ConvolutionAssoc
+
 section Mul
 
 variable [AddZeroClass H] {N : H →+ ℝ} [NonUnitalNonAssocSemiring R]
@@ -285,21 +391,6 @@ theorem coeff_mul_eq_sum_of_injOn {ι : Type*} {a b : NovikovSeries R H N} {h : 
     (hinj : Set.InjOn f F) :
     (a * b).coeff h = ∑ t ∈ F, a.coeff (f t).1 * b.coeff (f t).2 :=
   coeff_convolution_eq_sum_of_injOn hf hab hinj
-
-/-- A coefficient of a product regrouped along the fibres of a map `f` from a finite set `T` onto a
-set of pairs adding up to `h` which contains every pair of support exponents: if each term
-`a.coeff u * b.coeff v` is the sum of `g` over the fibre of `f` above `(u, v)`, then the
-coefficient is the sum of `g` over `T`. -/
-private theorem coeff_mul_eq_sum_fibre {ι : Type*} [DecidableEq H] {a b : NovikovSeries R H N}
-    {h : H} {T : Finset ι} {f : ι → H × H} (g : ι → R) (hf : ∀ t ∈ T, (f t).1 + (f t).2 = h)
-    (hab : ∀ u v, u + v = h → a.coeff u ≠ 0 → b.coeff v ≠ 0 → ∃ t ∈ T, f t = (u, v))
-    (hg : ∀ t ∈ T, a.coeff (f t).1 * b.coeff (f t).2 = ∑ t' ∈ T with f t' = f t, g t') :
-    (a * b).coeff h = ∑ t ∈ T, g t := by
-  rw [coeff_mul_eq_sum (s := T.image f) (fun p hp => ?_) fun u v huv hu hv =>
-    mem_image.2 (hab u v huv hu hv)]
-  · exact sum_image' _ hg
-  · obtain ⟨t, ht, rfl⟩ := mem_image.1 hp
-    exact hf t ht
 
 /-- Monomials multiply by adding exponents. -/
 @[simp]
@@ -410,70 +501,14 @@ variable [AddMonoid H] {N : H →+ ℝ}
 `u + v + w = h`. -/
 theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
     (a * b * c).coeff h = ∑ t ∈ (finite_setOf_add_add_eq a b c h).toFinset,
-      a.coeff t.1 * b.coeff t.2.1 * c.coeff t.2.2 := by
-  classical
-  set T := (finite_setOf_add_add_eq a b c h).toFinset
-  have hT (t : H × H × H) : t ∈ T ↔ t.1 + t.2.1 + t.2.2 = h ∧ a.coeff t.1 ≠ 0 ∧
-      b.coeff t.2.1 ≠ 0 ∧ c.coeff t.2.2 ≠ 0 :=
-    Set.Finite.mem_toFinset _
-  -- Group the triples by the outer pair `(u + v, w)`.
-  refine coeff_mul_eq_sum_fibre (f := fun t => (t.1 + t.2.1, t.2.2)) _
-    (fun t ht => ((hT t).1 ht).1) (fun w z hwz hw hz => ?_) fun t ht => ?_
-  · obtain ⟨u, v, huv, hu, hv⟩ := exists_add_eq_of_coeff_mul_ne_zero hw
-    exact ⟨(u, v, z), (hT _).2 ⟨by rw [huv, hwz], hu, hv, hz⟩, by rw [huv]⟩
-  -- The inner coefficient `(a * b).coeff (u + v)` is a sum over the fibre through `t`.
-  set F := T.filter fun t' => (t'.1 + t'.2.1, t'.2.2) = (t.1 + t.2.1, t.2.2)
-  have hF (t' : H × H × H) (ht' : t' ∈ F) : t'.1 + t'.2.1 = t.1 + t.2.1 ∧ t'.2.2 = t.2.2 :=
-    Prod.ext_iff.1 (mem_filter.1 ht').2
-  rw [coeff_mul_eq_sum_of_injOn (F := F) (f := fun t' => (t'.1, t'.2.1))
-    (fun t' ht' => (hF t' ht').1) (fun u v huv hu hv => ?_) fun t₁ ht₁ t₂ ht₂ h₁₂ => ?_, sum_mul]
-  · exact sum_congr rfl fun t' ht' => by rw [(hF t' ht').2]
-  · refine ⟨(u, v, t.2.2), mem_filter.2 ⟨(hT _).2 ⟨?_, hu, hv, ((hT t).1 ht).2.2.2⟩,
-      by rw [huv]⟩, rfl⟩
-    rw [huv]
-    exact ((hT t).1 ht).1
-  · simp only [Prod.mk.injEq] at h₁₂
-    exact Prod.ext h₁₂.1 (Prod.ext h₁₂.2 ((hF t₁ ht₁).2.trans (hF t₂ ht₂).2.symm))
-
-/-- The coefficient at `h` of a triple product `a * (b * c)` is the sum of
-`a.coeff u * (b.coeff v * c.coeff w)` over the finitely many triples of support exponents with
-`u + v + w = h`. -/
-private theorem coeff_mul_mul_eq_sum' [NonUnitalSemiring R] (a b c : NovikovSeries R H N)
-    (h : H) :
-    (a * (b * c)).coeff h = ∑ t ∈ (finite_setOf_add_add_eq a b c h).toFinset,
-      a.coeff t.1 * (b.coeff t.2.1 * c.coeff t.2.2) := by
-  classical
-  set T := (finite_setOf_add_add_eq a b c h).toFinset
-  have hT (t : H × H × H) : t ∈ T ↔ t.1 + t.2.1 + t.2.2 = h ∧ a.coeff t.1 ≠ 0 ∧
-      b.coeff t.2.1 ≠ 0 ∧ c.coeff t.2.2 ≠ 0 :=
-    Set.Finite.mem_toFinset _
-  -- Group the triples by the outer pair `(u, v + w)`.
-  refine coeff_mul_eq_sum_fibre (f := fun t => (t.1, t.2.1 + t.2.2)) _
-    (fun t ht => by rw [← add_assoc]; exact ((hT t).1 ht).1) (fun u w huw hu hw => ?_)
-    fun t ht => ?_
-  · obtain ⟨v, z, hvz, hv, hz⟩ := exists_add_eq_of_coeff_mul_ne_zero hw
-    exact ⟨(u, v, z), (hT _).2 ⟨by rw [add_assoc, hvz, huw], hu, hv, hz⟩, by rw [hvz]⟩
-  -- The inner coefficient `(b * c).coeff (v + w)` is a sum over the fibre through `t`.
-  set F := T.filter fun t' => (t'.1, t'.2.1 + t'.2.2) = (t.1, t.2.1 + t.2.2)
-  have hF (t' : H × H × H) (ht' : t' ∈ F) : t'.1 = t.1 ∧ t'.2.1 + t'.2.2 = t.2.1 + t.2.2 :=
-    Prod.ext_iff.1 (mem_filter.1 ht').2
-  rw [coeff_mul_eq_sum_of_injOn (F := F) (f := fun t' => t'.2) (fun t' ht' => (hF t' ht').2)
-    (fun v z hvz hv hz => ?_)
-    fun t₁ ht₁ t₂ ht₂ h₁₂ => Prod.ext ((hF t₁ ht₁).1.trans (hF t₂ ht₂).1.symm) h₁₂, mul_sum]
-  · exact sum_congr rfl fun t' ht' => by rw [(hF t' ht').1]
-  · refine ⟨(t.1, v, z), mem_filter.2 ⟨(hT _).2 ⟨?_, ((hT t).1 ht).2.1, hv, hz⟩,
-      by rw [hvz]⟩, rfl⟩
-    rw [add_assoc, hvz, ← add_assoc]
-    exact ((hT t).1 ht).1
+      a.coeff t.1 * b.coeff t.2.1 * c.coeff t.2.2 :=
+  coeff_convolution_convolution_eq_sum _ _ a b c h
 
 /-- Convolution is associative, by the uniform cutoff lemma
 `NovikovSeries.finite_setOf_period_add_add_lt`. -/
 instance instNonUnitalSemiring [NonUnitalSemiring R] :
     NonUnitalSemiring (NovikovSeries R H N) where
-  mul_assoc a b c := by
-    ext h
-    rw [coeff_mul_mul_eq_sum, coeff_mul_mul_eq_sum']
-    exact sum_congr rfl fun t _ => mul_assoc _ _ _
+  mul_assoc := convolution_convolution _ _ _ _ mul_assoc
 
 instance instSemiring [Semiring R] : Semiring (NovikovSeries R H N) where
 
