@@ -63,6 +63,8 @@ subgroup of `GL(2, ℝ)` stable under transpose, which contains no other point o
   `Subgroup.inv_toUnits_polarUnitary_mul_mem_of_isClosed` and
   `Subgroup.mul_inv_toUnits_polarUnitary_mem_of_isClosed`: the unitary and positive polar factors
   of an element of `H` lie in `H`.
+* `Subgroup.expUnit_smul_mem_of_isClosed`: the same line statement in the form of the hypothesis
+  of `Subgroup.cartanHomeomorph`.
 * `Subgroup.forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra`: the Hermitian part
   `𝔭_H` is the Hermitian part of the Lie algebra `Subgroup.linearLieSubalgebra H`.
 * `Subgroup.cartanHomeomorphOfIsClosed`: the homeomorphism `K_H × 𝔭_H ≃ₜ H`,
@@ -381,7 +383,7 @@ theorem forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra
 /-- For a closed subgroup `H` of `GL n 𝕜` stable under the conjugate transpose and with finitely
 many connected components, the line through a Hermitian `x` with `exp x ∈ H` lies in `H`: the line
 hypothesis of `Subgroup.cartanHomeomorph`. -/
-private theorem expUnit_smul_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
+theorem expUnit_smul_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (x : Matrix n n 𝕜)
     (hx : IsSelfAdjoint x) (hxH : TauCeti.expUnit x ∈ H) (t : ℝ) :
     TauCeti.expUnit (t • x) ∈ H :=
