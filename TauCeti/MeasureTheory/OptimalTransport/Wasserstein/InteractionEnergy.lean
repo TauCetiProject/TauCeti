@@ -10,6 +10,7 @@ public import TauCeti.Probability.Moments.Variance
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Convex.Strong
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # Interaction energy and its displacement convexity
@@ -48,10 +49,11 @@ energy is never `m`-geodesically convex on `P₂(E)`, however strongly convex `w
 
 The first variation of the interaction energy at `μ` is described by the *interaction gradient*
 `ξ x = (1 / 2) ∫ (∇w (x - y) - ∇w (y - x)) dμ(y)` (`TauCeti.interactionGradient`), the convolution
-`∫ ∇w (x - y) dμ(y)` when `w` is even. For a differentiable `m`-strongly convex `w`, with any real
-`m`, whose gradient grows at most linearly, the first-order condition of `w` at `x - x'` towards
-`y - y'`, integrated over two independent pairs `(x, y)` and `(x', y')` drawn from a coupling `γ`
-of `μ` and `ν`, gives (`StrongConvexOn.interactionEnergy_add_le`)
+`∫ ∇w (x - y) dμ(y)` when `w` is even (`TauCeti.interactionGradient_of_even`). For a
+differentiable `m`-strongly convex `w`, with any real `m`, whose gradient grows at most linearly,
+the first-order condition of `w` at `x - x'` towards `y - y'`, integrated over two independent
+pairs `(x, y)` and `(x', y')` drawn from a coupling `γ` of `μ` and `ν`, gives
+(`StrongConvexOn.interactionEnergy_add_le`)
 
 `I(ν) ≥ I(μ) + ∫ ⟪ξ x, y - x⟫ dγ + (m / 4) ∫∫ ‖(x - y) - (x' - y')‖² dγ dγ`.
 
@@ -80,8 +82,14 @@ is the inequality that makes `ξ` a Wasserstein subgradient of the interaction e
 * `StrongConvexOn.exists_isGeodesicSegment_interactionEnergy_le`: on a separable Hilbert space, the
   displacement convexity inequality with the variance-type remainder.
 * `TauCeti.not_geodesicallyConvex_interactionEnergy`: no positive modulus of geodesic convexity.
+* `TauCeti.interactionGradient_of_even`: for an even kernel the interaction gradient is the
+  convolution `∫ ∇w (x - y) dμ(y)`.
+* `TauCeti.stronglyMeasurable_interactionGradient`: the interaction gradient is strongly
+  measurable.
 * `TauCeti.memLp_interactionGradient`: the interaction gradient at a law with finite second moment
   is square integrable.
+* `TauCeti.interactionEnergy_eq_integral_prod`: for a kernel of linear gradient growth, the
+  interaction energy as an integral over two independent copies of a measure carried to the law.
 * `StrongConvexOn.interactionEnergy_add_le`: the first-order inequality of the interaction energy
   along a coupling.
 
@@ -434,8 +442,8 @@ variable {C : ℝ} {μ ν : Measure E}
 `x ↦ (1 / 2) ∫ (∇w (x - y) - ∇w (y - x)) dμ(y)`, the gradient of the symmetrized kernel
 `(w z + w (-z)) / 2` convolved with `μ`. For a differentiable semiconvex `w` whose gradient grows
 at most linearly it is a Wasserstein subgradient of the interaction energy
-(`StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy`). For an even differentiable
-kernel `∇w` is odd, and the field is the convolution `∫ ∇w (x - y) dμ(y)`. -/
+(`StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy`). For an even kernel `∇w` is
+odd, and the field is the convolution `∫ ∇w (x - y) dμ(y)` (`interactionGradient_of_even`). -/
 def interactionGradient (w : E → ℝ) (μ : Measure E) (x : E) : E :=
   (2 : ℝ)⁻¹ • ∫ y, (gradient w (x - y) - gradient w (y - x)) ∂μ
 
@@ -452,13 +460,37 @@ theorem interactionGradient_dirac (w : E → ℝ) (a x : E) :
       (2 : ℝ)⁻¹ • (gradient w (x - a) - gradient w (a - x)) := by
   rw [interactionGradient_def, integral_dirac]
 
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- For an even kernel, `w (-z) = w z`, the interaction gradient is the convolution
+`x ↦ ∫ ∇w (x - y) dμ(y)`, since the gradient of an even function is odd. -/
+theorem interactionGradient_of_even (hw : ∀ z, w (-z) = w z) (μ : Measure E) (x : E) :
+    interactionGradient w μ x = ∫ y, gradient w (x - y) ∂μ := by
+  have hodd (z : E) : gradient w (-z) = -gradient w z := by
+    have h := gradient_comp_linearIsometryEquiv_right (LinearIsometryEquiv.neg ℝ (E := E)) w (-z)
+    have hw' : w ∘ LinearIsometryEquiv.neg ℝ (E := E) = w := funext fun z ↦ hw z
+    rw [hw'] at h
+    simpa using h
+  have h (y : E) : gradient w (x - y) - gradient w (y - x) = (2 : ℝ) • gradient w (x - y) := by
+    rw [← neg_sub x y, hodd, sub_neg_eq_add, two_smul]
+  simp_rw [interactionGradient_def, h, integral_smul, smul_smul]
+  norm_num
+
+/-- The interaction gradient at an s-finite measure is strongly measurable. -/
+theorem stronglyMeasurable_interactionGradient (w : E → ℝ) (μ : Measure E) [SFinite μ] :
+    StronglyMeasurable (interactionGradient w μ) := by
+  have : StronglyMeasurable fun z : E × E ↦ gradient w (z.1 - z.2) - gradient w (z.2 - z.1) :=
+    (((measurable_gradient w).comp (by fun_prop)).sub
+      ((measurable_gradient w).comp (by fun_prop))).stronglyMeasurable
+  exact this.integral_prod_right'.const_smul _
+
 /-- For a gradient of linear growth and a finite measure with finite second moment, the integrand
 of the interaction gradient is integrable at every point. -/
 private theorem integrable_gradient_sub_sub [IsFiniteMeasure μ]
     (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖)) (hμ : HasFiniteMoment 2 μ) (x : E) :
     Integrable (fun y ↦ gradient w (x - y) - gradient w (y - x)) μ := by
-  have h₁ := memLp_gradient_comp_of_norm_gradient_le hw' ((memLp_const x).sub hμ.memLp_id)
-  have h₂ := memLp_gradient_comp_of_norm_gradient_le hw' (hμ.memLp_id.sub (memLp_const x))
+  have hg := (measurable_gradient w).stronglyMeasurable
+  have h₁ := ((memLp_const x).sub hμ.memLp_id).comp_of_norm_le_mul_one_add hg hw'
+  have h₂ := (hμ.memLp_id.sub (memLp_const x)).comp_of_norm_le_mul_one_add hg hw'
   exact (h₁.integrable one_le_two).sub (h₂.integrable one_le_two)
 
 /-- For a gradient of linear growth, `‖∇w z‖ ≤ C (1 + ‖z‖)`, and a finite measure `μ` with finite
@@ -471,12 +503,8 @@ theorem memLp_interactionGradient [IsFiniteMeasure μ]
   -- The field is bounded by an affine function of `‖x‖`.
   have hbound : MemLp (fun x : E ↦ C * (μ.real univ * (1 + ‖x‖) + ∫ y, ‖y‖ ∂μ)) 2 μ :=
     ((((memLp_const 1).add hμ.memLp_id.norm).const_mul _).add (memLp_const _)).const_mul C
-  have hmeas : StronglyMeasurable (interactionGradient w μ) := by
-    have : StronglyMeasurable fun z : E × E ↦ gradient w (z.1 - z.2) - gradient w (z.2 - z.1) :=
-      (((measurable_gradient w).comp (by fun_prop)).sub
-        ((measurable_gradient w).comp (by fun_prop))).stronglyMeasurable
-    exact this.integral_prod_right'.const_smul _
-  refine hbound.of_le hmeas.aestronglyMeasurable (.of_forall fun x ↦ ?_)
+  refine hbound.of_le (stronglyMeasurable_interactionGradient w μ).aestronglyMeasurable
+    (.of_forall fun x ↦ ?_)
   have hle : ∀ y, ‖gradient w (x - y) - gradient w (y - x)‖ ≤ 2 * C * (1 + ‖x‖ + ‖y‖) := by
     intro y
     have h₁ := hw' (x - y)
@@ -518,7 +546,7 @@ private theorem add_inner_sub_inner_add_le (hw : StrongConvexOn univ m w)
 /-- The interaction energy of a measure `ρ` with finite second moment, for a kernel whose gradient
 grows at most linearly, as an integral over two independent copies of a measure `γ` carried to `ρ`
 by a measure-preserving map `f`. -/
-private theorem interactionEnergy_eq_integral_prod (hwd : Differentiable ℝ w)
+theorem interactionEnergy_eq_integral_prod (hwd : Differentiable ℝ w)
     (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖)) {α : Type*} [MeasurableSpace α] {γ : Measure α}
     [SFinite γ] {ρ : Measure E} [IsFiniteMeasure ρ] (hρ : HasFiniteMoment 2 ρ) {f : α → E}
     (hf : MeasurePreserving f γ ρ) :
@@ -560,11 +588,10 @@ private theorem integral_inner_sub_integral_inner (hw' : ∀ x, ‖gradient w x�
   rw [integral_prod _ hHKs, ← integral_const_mul]
   refine integral_congr_ae (.of_forall fun z ↦ ?_)
   have hg := integrable_gradient_sub_sub hw' hμ z.1
-  beta_reduce
-  rw [interactionGradient_def, real_inner_smul_left, ← mul_assoc, mul_inv_cancel₀ two_ne_zero,
-    one_mul, ← hγ.integral_comp_fst hg.1, real_inner_comm,
-    ← integral_inner (hγ.integrable_comp_fst hg)]
-  simp only [real_inner_comm]
+  simp only [real_inner_comm (z.2 - z.1)]
+  rw [integral_inner (hγ.integrable_comp_fst hg), hγ.integral_comp_fst hg.1,
+    interactionGradient_def, real_inner_smul_right]
+  simp
 
 /-- **The first-order inequality of the interaction energy along a coupling.** Let `w` be a
 differentiable `m`-strongly convex function, for any real `m`, whose gradient grows at most
@@ -595,7 +622,7 @@ theorem _root_.StrongConvexOn.interactionEnergy_add_le (hw : StrongConvexOn univ
   have hA : MemLp (fun p : (E × E) × (E × E) ↦ p.1.1 - p.2.1) 2 P :=
     (hx.comp_fst γ).sub (hx.comp_snd γ)
   have hG : MemLp (fun p : (E × E) × (E × E) ↦ gradient w (p.1.1 - p.2.1)) 2 P :=
-    memLp_gradient_comp_of_norm_gradient_le hw' hA
+    hA.comp_of_norm_le_mul_one_add (measurable_gradient w).stronglyMeasurable hw'
   have hwA : Integrable (fun p : (E × E) × (E × E) ↦ w (p.1.1 - p.2.1)) P :=
     integrable_comp_of_norm_gradient_le hwd hw' hA
   have hwB : Integrable (fun p : (E × E) × (E × E) ↦ w (p.1.2 - p.2.2)) P :=

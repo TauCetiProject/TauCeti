@@ -13,8 +13,9 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.EulerLagrange
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Stability
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InteractionEnergy
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # The Wasserstein subdifferential
@@ -457,7 +458,8 @@ theorem _root_.StrongConvexOn.nonempty_wassersteinSubdifferential_potentialEnerg
       (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
       μ).Nonempty := by
   have hgrad : MemLp (gradient V) 2 ((μ : ProbabilityMeasure E) : Measure E) :=
-    memLp_gradient_comp_of_norm_gradient_le hV' μ.hasFiniteMoment.memLp_id
+    μ.hasFiniteMoment.memLp_id.comp_of_norm_le_mul_one_add
+      (measurable_gradient V).stronglyMeasurable hV'
   exact ⟨hgrad.toLp _, hV.mem_wassersteinSubdifferential_potentialEnergy hVd hV'
     hgrad.coeFn_toLp⟩
 
@@ -482,12 +484,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy
   have hφ (ρ : WassersteinSpace 2 E) : interactionEnergy (fun z ↦ w (z.1 - z.2))
       ((ρ : ProbabilityMeasure E) : Measure E) = ((∫ z, w (z.1 - z.2) ∂
         ((ρ : ProbabilityMeasure E) : Measure E).prod ((ρ : ProbabilityMeasure E) : Measure E)) /
-          2 : ℝ) := by
-    have hint : Integrable (fun z : E × E ↦ w (z.1 - z.2))
-        (((ρ : ProbabilityMeasure E) : Measure E).prod ((ρ : ProbabilityMeasure E) : Measure E)) :=
-      integrable_comp_of_norm_gradient_le hwd hw'
-        ((ρ.hasFiniteMoment.memLp_id.comp_fst _).sub (ρ.hasFiniteMoment.memLp_id.comp_snd _))
-    exact interactionEnergy_of_integrable hint
+          2 : ℝ) :=
+    interactionEnergy_eq_integral_prod hwd hw' ρ.hasFiniteMoment (.id _)
   -- Along an optimal coupling the remainder of the first-order inequality of the interaction
   -- energy is at least `(min m 0 / 2) W₂(μ, ν)²`, since its double integral is twice the variance
   -- of the displacement.
