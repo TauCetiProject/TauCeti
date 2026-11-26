@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.SchurComplement
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Quantitative bounds for block operators and their Schur complements
@@ -161,22 +162,12 @@ theorem norm_schurComplement_sub_schurComplement_le (A' : E₁ ≃L[𝕜] F₁) 
         ‖C'‖ * ‖(A'.symm : F₁ →L[𝕜] E₁)‖ * ‖B - B'‖ := by
   set a := (A.symm : F₁ →L[𝕜] E₁)
   set a' := (A'.symm : F₁ →L[𝕜] E₁)
-  have h₂ : ‖(C - C') ∘L a ∘L B‖ ≤ ‖C - C'‖ * ‖a‖ * ‖B‖ := by
-    rw [mul_assoc]
-    exact (opNorm_comp_le _ _).trans (by gcongr; exact opNorm_comp_le _ _)
+  have h₂ : ‖(C - C') ∘L a ∘L B‖ ≤ ‖C - C'‖ * ‖a‖ * ‖B‖ := opNorm_comp_comp_le _ _ _
   have h₃ : ‖C' ∘L a' ∘L ((A : E₁ →L[𝕜] F₁) - (A' : E₁ →L[𝕜] F₁)) ∘L a ∘L B‖ ≤
       ‖C'‖ * ‖a'‖ * ‖(A : E₁ →L[𝕜] F₁) - (A' : E₁ →L[𝕜] F₁)‖ * ‖a‖ * ‖B‖ := by
-    simp only [mul_assoc]
-    refine (opNorm_comp_le _ _).trans ?_
-    gcongr
-    refine (opNorm_comp_le _ _).trans ?_
-    gcongr
-    refine (opNorm_comp_le _ _).trans ?_
-    gcongr
-    exact opNorm_comp_le _ _
-  have h₄ : ‖C' ∘L a' ∘L (B - B')‖ ≤ ‖C'‖ * ‖a'‖ * ‖B - B'‖ := by
-    rw [mul_assoc]
-    exact (opNorm_comp_le _ _).trans (by gcongr; exact opNorm_comp_le _ _)
+    rw [mul_assoc (‖C'‖ * ‖a'‖), mul_assoc (‖C'‖ * ‖a'‖)]
+    exact (opNorm_comp_comp_le _ _ _).trans (by gcongr; exact opNorm_comp_comp_le _ _ _)
+  have h₄ : ‖C' ∘L a' ∘L (B - B')‖ ≤ ‖C'‖ * ‖a'‖ * ‖B - B'‖ := opNorm_comp_comp_le _ _ _
   rw [schurComplement_sub_schurComplement]
   refine (norm_sub_le _ _).trans ?_
   gcongr
