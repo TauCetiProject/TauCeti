@@ -55,8 +55,6 @@ completes the generator direction of Stone's theorem; the converse construction 
   a contractive C₀-group whose forward semigroup is complex linear is unitary;
   `isUnitary_toGroupOfInverse`: a complex-linear contraction semigroup and an inverse
   contraction semigroup glue into a unitary group.
-* `TauCeti.Semigroups.StronglyContinuousGroup.isUnitary_ofBounded_zero`: the identity group
-  `ofBounded 0` is unitary.
 * `TauCeti.Semigroups.StronglyContinuousGroup.complexGenerator_restrictScalars`,
   `complexGenerator_eq_of_generator_eq_restrictScalars` and `eq_of_complexGenerator_eq`: the
   real generator is the real restriction of the complex one, which is therefore determined by
@@ -203,10 +201,6 @@ theorem isUnitary_toGroupOfInverse (S T : ContractionSemigroup H)
       exact S.contracting_real t
     · rw [StronglyContinuousSemigroup.toGroupOfInverse_apply_of_nonpos _ _ _ _ ht.le]
       exact T.contracting_real (-t)
-
-/-- The identity group `ofBounded 0`, with `U t = 1` for every `t`, is unitary. -/
-theorem isUnitary_ofBounded_zero [CompleteSpace H] : (ofBounded (0 : H →L[ℝ] H)).IsUnitary :=
-  .intro fun _ _ _ => by simp
 
 /-- The generator domain of a unitary strongly continuous group, regarded as a complex submodule:
 the complex generator domain of its forward semigroup. Its carrier is the real generator domain. -/

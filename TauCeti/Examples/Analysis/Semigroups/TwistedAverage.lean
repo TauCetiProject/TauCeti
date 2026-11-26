@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Group.SpectralMeasure.Atoms
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.Semigroups.Group.Stone.Basic
 
 /-!
 # Checks: twisted averages of the identity group
@@ -35,6 +36,18 @@ namespace TauCeti.Examples.TwistedAverageChecks
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+/-- The identity group `ofBounded 0` acts as the identity: `U t = 1`. -/
+theorem ofBounded_zero_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    [CompleteSpace X] (t : ℝ) : ofBounded (0 : X →L[ℝ] X) t = 1 := by
+  simp only [ofBounded_apply, smul_zero, NormedSpace.exp_zero]
+
+/-- The identity group `ofBounded 0` is unitary, being the bounded Stone group `ofBoundedExp 0`. -/
+theorem isUnitary_ofBounded_zero : (ofBounded (0 : H →L[ℝ] H)).IsUnitary := by
+  have h : ofBoundedExp (0 : H →L[ℂ] H) = ofBounded 0 := by
+    ext t v
+    simp
+  exact h ▸ isUnitary_ofBoundedExp 0 (.zero _)
+
 /-- Every vector is fixed: the eigenspace of the identity group at frequency `0` is everything. -/
 theorem eigenspace_ofBounded_zero_zero :
     (ofBounded (0 : H →L[ℝ] H)).eigenspace isUnitary_ofBounded_zero.isComplexLinear 0 = ⊤ := by
@@ -45,14 +58,13 @@ theorem eigenspace_ofBounded_zero_zero :
 theorem eigenspace_ofBounded_zero_of_ne_zero {ω : ℝ} (hω : ω ≠ 0) :
     (ofBounded (0 : H →L[ℝ] H)).eigenspace isUnitary_ofBounded_zero.isComplexLinear ω = ⊥ := by
   ext v
-  simp only [mem_eigenspace_iff, ofBounded_apply, smul_zero, NormedSpace.exp_zero,
-    one_apply_eq_self, Submodule.mem_bot]
+  simp only [mem_eigenspace_iff, ofBounded_zero_apply, one_apply_eq_self, Submodule.mem_bot]
   refine ⟨fun h => ?_, fun h t => by simp [h]⟩
   have h' := h (Real.pi / ω)
   have hexp : exp (ω * ((Real.pi / ω : ℝ) : ℂ) * I) = -1 := by
     rw [ofReal_div, mul_div_cancel₀ _ (ofReal_ne_zero.2 hω), exp_pi_mul_I]
-  rw [hexp, neg_one_smul, eq_neg_iff_add_eq_zero, ← two_smul ℂ] at h'
-  exact (smul_eq_zero.1 h').resolve_left two_ne_zero
+  rw [hexp] at h'
+  linear_combination (norm := module) (1 / 2 : ℂ) • h'
 
 /-- The projection onto the fixed space of the identity group is the identity, `P₀ v = v`. -/
 theorem starProjection_eigenspace_ofBounded_zero_zero (v : H) :
@@ -88,7 +100,7 @@ theorem twistedAverage_ofBounded_zero {a : ℝ} (ha : a ≠ 0) (T : ℝ) (v : H)
       ((1 - exp (-(2 * π * a * T * I))) / (2 * π * a * T * I)) • v := by
   have hc : (-(2 * π * a * I) : ℂ) ≠ 0 := by
     simp [Real.pi_ne_zero, ha, I_ne_zero]
-  simp only [ofBounded_apply, smul_zero, NormedSpace.exp_zero, one_apply_eq_self]
+  simp only [ofBounded_zero_apply, one_apply_eq_self]
   rw [intervalIntegral.integral_smul_const, smul_smul]
   congr 1
   have h := integral_exp_mul_complex (a := 0) (b := T) hc
@@ -112,7 +124,8 @@ theorem tendsto_twistedAverage_ofBounded_zero {a : ℝ} (ha : a ≠ 0) (v : H) :
       isUnitary_ofBounded_zero.isComplexLinear (2 * π * a) := by
     rw [mem_eigenspace_iff]
     intro t
-    rw [hw t, ofReal_mul, ofReal_mul, ofReal_ofNat]
+    push_cast
+    exact hw t
   rw [eigenspace_ofBounded_zero_of_ne_zero (by positivity), Submodule.mem_bot] at hmem
   rwa [hmem] at hlim
 
