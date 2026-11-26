@@ -137,9 +137,10 @@ are valuation rings.
   `d`, `deg f^* E = d · deg E`, with `d = [K(X) : f^* K(Y)]` when `X` is integral and `f` is
   dominant;
 * `FixedRank.vectorBundleDegree_pullback_of_finrank_eq_of_isCurveOver` and
-  `FixedRank.vectorBundleDegree_pullback_of_isDominant`: the same formulas for vector bundles of
-  every constant rank, on a proper integral curve `Y` whose codimension-one local rings are
-  discrete valuation rings, the second for a finite dominant morphism from an integral scheme.
+  `FixedRank.vectorBundleDegree_pullback_eq_finrank_functionField_mul_of_isCurveOver`: the same
+  formulas for vector bundles of every constant rank, on a proper integral curve `Y` whose
+  codimension-one local rings are discrete valuation rings, the second for a finite dominant
+  morphism from an integral scheme.
 
 ## References
 
@@ -791,8 +792,8 @@ integral scheme. Then `deg f^* E = [K(X) : f^* K(Y)] · deg E` for every vector 
 constant rank on `Y`, the degree of `f` being that of the function field of `X` over the image of
 the function field of `Y`. Flatness of `f` is automatic, as the local rings of `Y` are valuation
 rings. -/
-theorem vectorBundleDegree_pullback_of_isDominant [IsIntegral X] [IsDominant f]
-    (E : FixedRank Y r) :
+theorem vectorBundleDegree_pullback_eq_finrank_functionField_mul_of_isCurveOver [IsIntegral X]
+    [IsDominant f] (E : FixedRank Y r) :
     vectorBundleDegree k ((pullback f).obj E) =
       Module.finrank f.functionFieldMap.hom.fieldRange X.functionField * vectorBundleDegree k E :=
   have : ∀ y : Y, ValuationRing (Y.presheaf.stalk y) :=
