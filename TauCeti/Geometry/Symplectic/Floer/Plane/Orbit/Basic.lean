@@ -64,8 +64,9 @@ is the positive half-cylinder `s > a` on the positive plane and the negative hal
 on the negative plane, for `a ≥ T₀` large (`floer_comp_realChart_cylindricalEndLift`), and the
 results of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` apply to either.
 
-The case of a manifold target is treated in
-`TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Manifold`.
+Uniform convergence along the entire end under orbit isolation and derivative bounds on cylindrical
+ends are proved in `TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Convergence`. The case of a
+manifold target is treated in `TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Manifold`.
 
 ## References
 

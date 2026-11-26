@@ -51,6 +51,9 @@ discharging both the derivative bound and uniform tameness hypotheses automatica
 `exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindrical_of_isolated`,
 `exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindrical`).
 
+Exponential decay of the exterior energy and `C⁰`/`C¹` exponential convergence at a nondegenerate
+asymptotic orbit are proved in `TauCeti.Geometry.Symplectic.Floer.Plane.ExponentialDecay`.
+
 ## References
 
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum

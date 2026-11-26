@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
-public import TauCeti.Geometry.Symplectic.Floer.Plane.Convergence
+public import TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Convergence
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
@@ -49,8 +49,9 @@ complex structure beyond `T₀` is cylindrical,
 `d(u ∘ realChart φ)(ε R, t)` converges exponentially to `dt ⊗ X_{H_t}(x(t))`
 (`exists_pos_eventually_norm_fderiv_comp_realChart_sub_smulRight_le_exp_of_cylindrical`). When
 every `1`-periodic orbit of `H` in `K` is linearly nondegenerate,
-`TauCeti.SymplecticForm.exists_pos_forall_periodic_eq_of_nondegenerate` supplies orbit isolation on
-the cylindrical end, giving unconditional `C¹` exponential convergence to a `1`-periodic orbit `x`
+`TauCeti.SymplecticForm.exists_pos_forall_periodic_eq_of_nondegenerate` supplies the orbit
+isolation hypothesis of `TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Convergence` on the
+cylindrical end, giving unconditional `C¹` exponential convergence to a `1`-periodic orbit `x`
 along the end (`exists_pos_eventually_norm_sub_and_fderiv_comp_realChart_le_exp_of_cylindrical`),
 its `s → -∞` (`atBot`) form on the negative plane
 (`exists_pos_eventually_atBot_norm_sub_and_fderiv_comp_realChart_negative_le_exp`) matching the
