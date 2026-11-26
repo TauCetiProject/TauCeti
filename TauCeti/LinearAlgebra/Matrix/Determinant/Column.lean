@@ -74,23 +74,10 @@ theorem columnDet_eq_zsmul_of_adjacent (A B : Matrix (Fin n) (Fin n) R) (c : ℤ
   let τ := σ * swap i j
   have hfix k (hi : k ≠ i) (hj : k ≠ j) : τ k = σ k := by
     simp [τ, Equiv.swap_apply_of_ne_of_ne hi hj]
-  have hsplit (f : Fin n → R) (hf : ∀ k, k ≠ i → k ≠ j → f k = a σ k) :
-      (List.ofFn f).prod = ((List.ofFn (a σ)).take i).prod *
-        (f i * f j) * ((List.ofFn (a σ)).drop (j + 1)).prod := by
-    rw [List.prod_ofFn_eq_take_mul_mul_drop f hij]
-    have ht : (List.ofFn f).take i = (List.ofFn (a σ)).take i := by
-      refine List.ext_getElem (by simp) fun k hk _ ↦ ?_
-      simp only [List.length_take, List.length_ofFn, lt_min_iff] at hk
-      simpa only [List.getElem_take, List.getElem_ofFn] using
-        hf ⟨k, hk.2⟩ (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
-    have hd : (List.ofFn f).drop (j + 1) = (List.ofFn (a σ)).drop (j + 1) := by
-      refine List.ext_getElem (by simp) fun k hk _ ↦ ?_
-      simp only [List.length_drop, List.length_ofFn] at hk
-      simpa only [List.getElem_drop, List.getElem_ofFn] using
-        hf ⟨j.val + 1 + k, by omega⟩ (by simp [Fin.ext_iff]; omega)
-          (by simp [Fin.ext_iff]; omega)
-    rw [ht, hd]
   have hB k hi hj : b σ k = a σ k := (hcols _ _ hi hj).symm
+  -- Split every product at the adjacent columns, with the same outer factors from `a σ`.
+  have hsplit (f : Fin n → R) (hf : ∀ k, k ≠ i → k ≠ j → f k = a σ k) :=
+    List.prod_ofFn_eq_take_mul_mul_drop_of_eq f (a σ) hij hf
   rw [hsplit (a τ) (fun k hi hj ↦ by simp [a, hfix k hi hj]),
     hsplit (b τ) (fun k hi hj ↦ by simpa [b, hfix k hi hj] using hB k hi hj),
     hsplit (a σ) (fun _ _ _ ↦ rfl), hsplit (b σ) hB]
