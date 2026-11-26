@@ -218,14 +218,13 @@ theorem coe_orientationCharacter_circleClutchingCore_fromPath_trans {p q : Circl
   have : MemTrivializationAtlas (Z.localTriv true) := ⟨⟨true, rfl⟩⟩
   rw [VectorBundleOrientationCover.coe_orientationCharacter_fromPath_trans hι (Z.localTriv false)
     (Z.localTriv true) γ γ' hγ hγ']
-  -- The composite transition is `A` at `q` followed by the identity at `p`.
-  rw [ContinuousLinearEquiv.trans_toLinearEquiv, LinearEquiv.coe_trans, LinearMap.det_comp,
+  -- The composite transition is `A` at `q` followed by the identity at `p`. Splitting its
+  -- determinant uses `LinearEquiv.coe_trans`, whose reverse `LinearEquiv.comp_coe` is simp.
+  simp [Z, -LinearEquiv.comp_coe, LinearEquiv.coe_trans, LinearMap.det_comp,
     Z.det_coordChangeL_localTriv_eq_det_coordChange (mem_moebiusBaseSet_of_im_ne_zero hp.ne' true)
       (mem_moebiusBaseSet_of_im_ne_zero hp.ne' false),
     Z.det_coordChangeL_localTriv_eq_det_coordChange (mem_moebiusBaseSet_of_im_ne_zero hq.ne false)
-      (mem_moebiusBaseSet_of_im_ne_zero hq.ne true),
-    circleClutchingCore_coordChange_of_pos A _ _ hp,
-    circleClutchingCore_coordChange_false_true_of_neg A hq, ContinuousLinearMap.det_id, one_mul]
+      (mem_moebiusBaseSet_of_im_ne_zero hq.ne true), hp, hq.not_gt]
 
 /-- The **rank-two clutching by `diag(1, -1)`** is not orientable: its orientation character is
 `-1`. -/
