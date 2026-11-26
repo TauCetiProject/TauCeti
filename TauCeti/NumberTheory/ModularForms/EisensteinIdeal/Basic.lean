@@ -86,8 +86,8 @@ theorem quotient_mk_eisensteinIdeal (i : ι) :
   rw [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.eq]
   exact sub_algebraMap_mem_eisensteinIdeal t a i
 
-/-- A character kills the Eisenstein ideal exactly when it takes the prescribed values. -/
-theorem eisensteinIdeal_le_ker_iff {B : Type*} [CommRing B] [Algebra R B] (f : T →ₐ[R] B) :
+/-- An algebra homomorphism kills the Eisenstein ideal iff it takes the prescribed values. -/
+theorem eisensteinIdeal_le_ker_iff {B : Type*} [Ring B] [Algebra R B] (f : T →ₐ[R] B) :
     eisensteinIdeal t a ≤ RingHom.ker f ↔ ∀ i, f (t i) = algebraMap R B (a i) := by
   rw [eisensteinIdeal_le_iff]
   simp only [RingHom.mem_ker, map_sub, AlgHom.commutes, sub_eq_zero]

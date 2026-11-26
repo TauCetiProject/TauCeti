@@ -24,7 +24,7 @@ on tensor products to be read as membership statements in extended ideals.
 A two-sided ideal with flat quotient is recovered by contracting its scalar extension along an
 injective scalar map (`Ideal.comap_map_includeRight_of_flat_quotient_of_injective`). In particular,
 a flat closed subscheme over a domain is the schematic closure of its generic fibre.
-For an ideal in an algebra, contraction to the coefficients commutes with flat scalar extension
+Contraction of a two-sided ideal to the coefficients commutes with flat scalar extension
 (`Ideal.map_comap_algebraMap_eq_of_flat`).
 The extension of a module annihilator is contained in its annihilator after arbitrary
 scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
@@ -111,12 +111,12 @@ end LinearMap
 
 namespace Ideal
 
-variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
+variable {R S T : Type*} [CommRing R] [CommRing S] [Ring T]
   [Algebra R S] [Algebra R T]
 
-/-- Extension along a flat coefficient algebra commutes with contracting an ideal to the
-coefficient ring. The ideal of `T` is extended along the right tensor inclusion. -/
-theorem map_comap_algebraMap_eq_of_flat [Module.Flat R S] (I : Ideal T) :
+/-- Extension along a flat coefficient algebra commutes with contracting a two-sided ideal to
+the coefficient ring. The ideal of `T` is extended along the right tensor inclusion. -/
+theorem map_comap_algebraMap_eq_of_flat [Module.Flat R S] (I : Ideal T) [I.IsTwoSided] :
     (I.comap (algebraMap R T)).map (algebraMap R S) =
       (I.map (Algebra.TensorProduct.includeRight : T →ₐ[R] S ⊗[R] T)).comap
         (algebraMap S (S ⊗[R] T)) := by
