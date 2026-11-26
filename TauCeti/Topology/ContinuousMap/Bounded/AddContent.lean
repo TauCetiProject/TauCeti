@@ -96,27 +96,6 @@ theorem indicator_compContinuous (s : Set X) (hs : IsClopen s) (f : C(Y, X)) :
   ext x
   by_cases hx : f x ∈ s <;> simp [hx]
 
-section compContinuousPositiveLinearMap
-
-variable (𝕜 β : Type*) [NormedField 𝕜] [NormedAddCommGroup β] [Lattice β] [NormedSpace 𝕜 β]
-
-/-- Precomposition with a continuous map, as a positive linear map. -/
-def compContinuousPositiveLinearMap (g : C(Y, X)) : (X →ᵇ β) →ₚ[𝕜] (Y →ᵇ β) where
-  toLinearMap := (compContinuousCLM β 𝕜 g).toLinearMap
-  monotone' _ _ h y := h (g y)
-
-@[simp]
-theorem compContinuousPositiveLinearMap_apply (g : C(Y, X)) (f : X →ᵇ β) :
-    compContinuousPositiveLinearMap 𝕜 β g f = f.compContinuous g :=
-  (rfl)
-
-@[simp]
-theorem compContinuousPositiveLinearMap_toLinearMap (g : C(Y, X)) :
-    (compContinuousPositiveLinearMap 𝕜 β g).toLinearMap = (compContinuousCLM β 𝕜 g).toLinearMap :=
-  (rfl)
-
-end compContinuousPositiveLinearMap
-
 end BoundedContinuousFunction
 
 namespace LinearMap
