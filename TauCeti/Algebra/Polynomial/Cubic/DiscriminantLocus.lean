@@ -139,8 +139,9 @@ theorem isRelPrime_discrPoly_pderiv {K : Type*} [Field K] (h2 : (2 : K) ≠ 0) (
     rw [show (27 : K) = 3 ^ 3 by norm_num]
     exact pow_ne_zero 3 h3
   have hlead : (finSuccEquiv' K (Fin.last 3) (discrPoly K)).coeff 2 = -27 * X 0 ^ 2 := by
-    have := leadingCoeff_finSuccEquiv'_last_discrPoly h27
-    rwa [Polynomial.leadingCoeff, natDegree_finSuccEquiv'_last_discrPoly h27] at this
+    have := Polynomial.coeff_natDegree (p := finSuccEquiv' K (Fin.last 3) (discrPoly K))
+    rwa [natDegree_finSuccEquiv'_last_discrPoly h27,
+      leadingCoeff_finSuccEquiv'_last_discrPoly h27] at this
   have hconst : (finSuccEquiv' K (Fin.last 3) (discrPoly K)).coeff 0 =
       X 1 ^ 2 * X 2 ^ 2 - 4 * X 0 * X 2 ^ 3 := by
     rw [finSuccEquiv'_last_discrPoly, Polynomial.coeff_zero_eq_eval_zero]

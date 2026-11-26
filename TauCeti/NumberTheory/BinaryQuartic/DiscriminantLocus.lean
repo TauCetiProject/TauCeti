@@ -160,8 +160,9 @@ theorem isRelPrime_discPoly_pderiv {K : Type*} [Field K] (h2 : (2 : K) ≠ 0) (h
     rw [show (256 : K) = 2 ^ 8 by norm_num]
     exact pow_ne_zero 8 h2
   have hlead : (finSuccEquiv' K (Fin.last 4) (discPoly K)).coeff 3 = 256 * X 0 ^ 3 := by
-    have := leadingCoeff_finSuccEquiv'_last_discPoly h256
-    rwa [Polynomial.leadingCoeff, natDegree_finSuccEquiv'_last_discPoly h256] at this
+    have := Polynomial.coeff_natDegree (p := finSuccEquiv' K (Fin.last 4) (discPoly K))
+    rwa [natDegree_finSuccEquiv'_last_discPoly h256,
+      leadingCoeff_finSuccEquiv'_last_discPoly h256] at this
   have hconst : (finSuccEquiv' K (Fin.last 4) (discPoly K)).coeff 0 =
       X 3 ^ 2 * Cubic.discrPoly K := by
     rw [finSuccEquiv'_last_discPoly, Polynomial.coeff_zero_eq_eval_zero]
