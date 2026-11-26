@@ -186,22 +186,18 @@ theorem rootSpace_typeDRootWeight_ne_bot (n : ℕ) (hn : 4 ≤ n)
 private theorem exists_typeDRootWeight_eq_typeDWeightSub
     (n : ℕ) (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :
     ∃ k, typeDRootWeight (K := K) n hn k = typeDWeightSub i j := by
-  let x : DynkinType.TypeDRoot n :=
-    ⟨Pi.single i 1 - Pi.single j 1, by
-      simp [dotProduct_sub, dotProduct_single, hij]⟩
-  obtain ⟨k, hk⟩ := (DynkinType.typeDRootEquiv n hn).surjective x
+  obtain ⟨k, hk⟩ :=
+    (DynkinType.typeDRootEquiv n hn).surjective (DynkinType.typeDRootSub hij)
   refine ⟨k, typeDRootWeight_eq_typeDWeightSub_of_val_eq n hn k ?_⟩
-  exact congrArg Subtype.val hk
+  exact (congrArg Subtype.val hk).trans (DynkinType.coe_typeDRootSub hij)
 
 private theorem exists_typeDRootWeight_eq_typeDWeightAdd
     (n : ℕ) (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :
     ∃ k, typeDRootWeight (K := K) n hn k = typeDWeightAdd i j := by
-  let x : DynkinType.TypeDRoot n :=
-    ⟨Pi.single i 1 + Pi.single j 1, by
-      simp [dotProduct_add, dotProduct_single, hij]⟩
-  obtain ⟨k, hk⟩ := (DynkinType.typeDRootEquiv n hn).surjective x
+  obtain ⟨k, hk⟩ :=
+    (DynkinType.typeDRootEquiv n hn).surjective (DynkinType.typeDRootAdd hij)
   refine ⟨k, typeDRootWeight_eq_typeDWeightAdd_of_val_eq n hn k ?_⟩
-  exact congrArg Subtype.val hk
+  exact (congrArg Subtype.val hk).trans (DynkinType.coe_typeDRootAdd hij)
 
 private theorem exists_typeDRootWeight_eq_neg_typeDWeightAdd
     (n : ℕ) (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :

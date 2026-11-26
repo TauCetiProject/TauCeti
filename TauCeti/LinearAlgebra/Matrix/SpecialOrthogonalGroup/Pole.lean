@@ -13,6 +13,8 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Axis
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Stabilizer
 
 import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Fin.Tuple.Sort
+import Mathlib.NumberTheory.ADEInequality
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import TauCeti.GroupTheory.GroupAction.CardCommute
@@ -45,10 +47,15 @@ equation**
 Every stabilizer of a pole contains a nonidentity rotation, so `mⱼ ≥ 2` and each summand lies in
 `[1/2, 1)`, while for nontrivial `K` the right side lies in `[1, 2)`; hence `s = 2` or `s = 3`. When
 `s = 2` the equation forces `m₁ = m₂ = |K|`, so all of `K` fixes every pole: this is the case of a
-group of rotations about a single axis. The three-orbit case is the one that leads to the dihedral,
-tetrahedral, octahedral and icosahedral rotation groups. This is the start of the classical
-classification of the finite subgroups of `SO(3)`, and through the double cover `SU(2) → SO(3)`
-of those of `SU(2)`.
+group of rotations about a single axis. When `s = 3`, ordering the stabilizer orders as
+`m₁ ≤ m₂ ≤ m₃`, the equation reads `1/m₁ + 1/m₂ + 1/m₃ = 1 + 2/|K| > 1`, whose solutions are
+classified in Mathlib (`ADEInequality.classification`). Since every `mⱼ ≥ 2`, the triple is
+`(2, 2, n)`, `(2, 3, 3)`, `(2, 3, 4)` or `(2, 3, 5)`, and the equation then fixes
+`|K| = 2n, 12, 24, 60`: these are the orders of the dihedral, tetrahedral, octahedral and
+icosahedral rotation groups. In particular a finite group of rotations with three orbits of poles
+has even order, so a finite group of rotations of odd order fixes each of its poles. This is the
+start of the classical classification of the finite subgroups of `SO(3)`, and through the double
+cover `SU(2) → SO(3)` of those of `SU(2)`.
 
 ## Main definitions
 
@@ -73,6 +80,12 @@ All declarations are in the namespace `TauCeti.Matrix.SpecialOrthogonalGroup`.
   or three orbits of poles.
 * `stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two`: if there are two orbits, every pole
   is fixed by all of `K`, and `isCyclic_of_card_orbitRel_quotient_poles_eq_two`: `K` is then cyclic.
+* `exists_equiv_cardStabilizerOnOrbit_poles_of_card_orbitRel_quotient_poles_eq_three`: if there
+  are three orbits, their stabilizer orders and the order of `K` are `(2, 2, n; 2n)`,
+  `(2, 3, 3; 12)`, `(2, 3, 4; 24)` or `(2, 3, 5; 60)`.
+* `even_card_of_card_orbitRel_quotient_poles_eq_three`: if there are three orbits, `K` has even
+  order.
+* `stabilizer_eq_top_of_odd_card`: a finite group of rotations of odd order fixes each of its poles.
 * The stabilizer of a pole is cyclic, an instance deduced from
   `isCyclic_stabilizer_of_ne_zero`.
 
@@ -366,5 +379,102 @@ theorem isCyclic_of_card_orbitRel_quotient_poles_eq_two [Finite K]
   rw [← (Subgroup.topEquiv (G := K)).isCyclic,
     ← stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two h ω.out]
   infer_instance
+
+/-- The solutions of the three-orbit pole equation. If `2 ≤ a ≤ b ≤ c` and
+`1/a + 1/b + 1/c = 1 + 2/N` with `N > 0`, then `(a, b, c; N)` is `(2, 2, c; 2c)`, `(2, 3, 3; 12)`,
+`(2, 3, 4; 24)` or `(2, 3, 5; 60)`. -/
+private theorem eq_of_inv_add_inv_add_inv_eq_one_add_two_div {a b c N : ℕ} (ha : 2 ≤ a)
+    (hab : a ≤ b) (hbc : b ≤ c) (hN : 0 < N)
+    (h : (a : ℚ)⁻¹ + (b : ℚ)⁻¹ + (c : ℚ)⁻¹ = 1 + 2 / N) :
+    a = 2 ∧ b = 2 ∧ N = 2 * c ∨ a = 2 ∧ b = 3 ∧ c = 3 ∧ N = 12 ∨
+      a = 2 ∧ b = 3 ∧ c = 4 ∧ N = 24 ∨ a = 2 ∧ b = 3 ∧ c = 5 ∧ N = 60 := by
+  -- The equation says `1/a + 1/b + 1/c > 1`, and Mathlib's classification of the solutions of
+  -- this inequality bounds `a`, then `b`, then `c`.
+  have hbound : a < 3 ∧ (a = 2 → b < 4) ∧ (a = 2 → b = 3 → c < 6) := by
+    lift a to ℕ+ using by omega
+    lift b to ℕ+ using by omega
+    lift c to ℕ+ using by omega
+    have H : 1 < ADEInequality.sumInv {a, b, c} := by
+      rw [ADEInequality.sumInv_pqr, h, lt_add_iff_pos_right]
+      positivity
+    refine ⟨mod_cast ADEInequality.lt_three (mod_cast hab) (mod_cast hbc) H, fun ha ↦ ?_,
+      fun ha hb ↦ ?_⟩
+    · rw [show a = 2 from PNat.coe_injective ha] at H
+      exact mod_cast ADEInequality.lt_four (mod_cast hbc) H
+    · rw [show a = 2 from PNat.coe_injective ha, show b = 3 from PNat.coe_injective hb] at H
+      exact mod_cast ADEInequality.lt_six H
+  obtain rfl : a = 2 := by omega
+  have hN' : (N : ℚ) ≠ 0 := by positivity
+  -- In each remaining case the equation is linear in `N`.
+  obtain rfl | rfl : b = 2 ∨ b = 3 := by have := hbound.2.1 rfl; omega
+  · have hc : (c : ℚ) ≠ 0 := by norm_cast; omega
+    norm_num at h
+    field_simp at h
+    refine Or.inl ⟨rfl, rfl, ?_⟩
+    rw [← Nat.cast_inj (R := ℚ)]
+    push_cast
+    linarith
+  · have := hbound.2.2 rfl rfl
+    obtain rfl | rfl | rfl : c = 3 ∨ c = 4 ∨ c = 5 := by omega
+    all_goals
+      norm_num at h ⊢
+      field_simp at h
+      rw [← Nat.cast_inj (R := ℚ)]
+      push_cast
+      linarith
+
+variable (K) in
+/-- **The three-orbit case of the pole-orbit equation.** If a finite group `K` of rotations has
+three orbits of poles, they can be listed as `e 0`, `e 1`, `e 2` so that their stabilizer orders
+and the order of `K` are `(2, 2, n; 2n)`, `(2, 3, 3; 12)`, `(2, 3, 4; 24)` or `(2, 3, 5; 60)`: the
+dihedral, tetrahedral, octahedral and icosahedral cases. -/
+theorem exists_equiv_cardStabilizerOnOrbit_poles_of_card_orbitRel_quotient_poles_eq_three
+    [Finite K] (h : Nat.card (orbitRel.Quotient K (poles K)) = 3) :
+    ∃ e : Fin 3 ≃ orbitRel.Quotient K (poles K),
+      cardStabilizerOnOrbit (e 0) = 2 ∧ cardStabilizerOnOrbit (e 1) = 2 ∧
+          Nat.card K = 2 * cardStabilizerOnOrbit (e 2) ∨
+        cardStabilizerOnOrbit (e 0) = 2 ∧ cardStabilizerOnOrbit (e 1) = 3 ∧
+          cardStabilizerOnOrbit (e 2) = 3 ∧ Nat.card K = 12 ∨
+        cardStabilizerOnOrbit (e 0) = 2 ∧ cardStabilizerOnOrbit (e 1) = 3 ∧
+          cardStabilizerOnOrbit (e 2) = 4 ∧ Nat.card K = 24 ∨
+        cardStabilizerOnOrbit (e 0) = 2 ∧ cardStabilizerOnOrbit (e 1) = 3 ∧
+          cardStabilizerOnOrbit (e 2) = 5 ∧ Nat.card K = 60 := by
+  classical
+  have := Fintype.ofFinite (orbitRel.Quotient K (poles K))
+  -- List the three orbits in increasing order of their stabilizer orders.
+  let e₀ : Fin 3 ≃ orbitRel.Quotient K (poles K) :=
+    (finCongr h.symm).trans (Finite.equivFin _).symm
+  let σ := Tuple.sort fun i ↦ cardStabilizerOnOrbit (e₀ i)
+  have hmono := Tuple.monotone_sort fun i ↦ cardStabilizerOnOrbit (e₀ i)
+  refine ⟨σ.trans e₀, eq_of_inv_add_inv_add_inv_eq_one_add_two_div
+    (one_lt_cardStabilizerOnOrbit_poles _) (hmono (by decide : (0 : Fin 3) ≤ 1))
+    (hmono (by decide : (1 : Fin 3) ≤ 2)) Nat.card_pos ?_⟩
+  have heq := finsum_one_sub_inv_cardStabilizerOnOrbit_poles_eq_two_sub_two_div_card K
+  rw [finsum_eq_sum_of_fintype, ← (σ.trans e₀).sum_comp, Fin.sum_univ_three] at heq
+  simp only [Equiv.trans_apply] at heq ⊢
+  linarith
+
+variable (K) in
+/-- **A group of rotations with three orbits of poles has even order.** For an infinite group this
+holds because `Nat.card K = 0`. -/
+theorem even_card_of_card_orbitRel_quotient_poles_eq_three
+    (h : Nat.card (orbitRel.Quotient K (poles K)) = 3) : Even (Nat.card K) := by
+  obtain hK | hK := finite_or_infinite K
+  · obtain ⟨e, he | he | he | he⟩ :=
+      exists_equiv_cardStabilizerOnOrbit_poles_of_card_orbitRel_quotient_poles_eq_three K h
+    · exact ⟨_, he.2.2.trans (two_mul _)⟩
+    all_goals rw [he.2.2.2]; decide
+  · simp [Nat.card_eq_zero_of_infinite]
+
+/-- **A finite group of rotations of odd order fixes each of its poles**: it has two orbits of
+poles, since three orbits force even order, so it is a group of rotations about a single axis. -/
+theorem stabilizer_eq_top_of_odd_card (hK : Odd (Nat.card K)) (p : poles K) :
+    stabilizer K p = ⊤ := by
+  have : Finite K := Nat.finite_of_card_ne_zero (by rintro h; simp [h] at hK)
+  have : Nontrivial K := nonempty_poles_iff.mp ⟨p⟩
+  obtain h | h := card_orbitRel_quotient_poles_eq_two_or_three K
+  · exact stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two h p
+  · exact absurd (even_card_of_card_orbitRel_quotient_poles_eq_three K h)
+      (Nat.not_even_iff_odd.mpr hK)
 
 end TauCeti.Matrix.SpecialOrthogonalGroup

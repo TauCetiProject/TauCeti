@@ -49,6 +49,7 @@ hold in the degenerate cases only through those conventions.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: its case `s = 1`,
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` for `t ≥ 0`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
+* `TauCeti.hasGradientAt_heatKernel`: the gradient of `K_t` at `x` is `-(2t)⁻¹ K_t(x) x`.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
 * `TauCeti.memLp_heatKernel`: for `t > 0`, `K_t` belongs to every `Lᵠ`, `0 ≤ q ≤ ∞`.
@@ -113,6 +114,11 @@ theorem heatKernel_le {t : ℝ} (ht : 0 < t) (x : E) :
 theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x := by
   simp [heatKernel_apply]
 
+/-- The heat kernel is radial: it takes the same value at points of equal norm. -/
+theorem heatKernel_eq_of_norm_eq (t : ℝ) {x y : E} (h : ‖x‖ = ‖y‖) :
+    heatKernel t x = heatKernel t y := by
+  rw [heatKernel_apply, heatKernel_apply, h]
+
 /-- At a positive time the heat kernel is radially nonincreasing: it is no larger at the point
 farther from the origin. -/
 theorem heatKernel_le_heatKernel_of_norm_le {t : ℝ} (ht : 0 < t) {x y : E} (h : ‖x‖ ≤ ‖y‖) :
@@ -144,6 +150,23 @@ theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 ≤ t) (x : E) :
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
   contDiff_const.mul (((contDiff_norm_sq ℝ).neg.div_const _).exp)
+
+/-- The gradient of the heat kernel: `∇ K_t(x) = -(2t)⁻¹ K_t(x) x`. The formula holds for every `t`
+(at `t = 0` both sides vanish through Mathlib's conventions for division by zero). -/
+theorem hasGradientAt_heatKernel [CompleteSpace E] (t : ℝ) (x : E) :
+    HasGradientAt (heatKernel t) (-(2 * t)⁻¹ • heatKernel t x • x) x := by
+  have hfun : heatKernel t = fun z : E ↦
+      (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2) * exp (‖id z‖ ^ 2 * -(4 * t)⁻¹) := by
+    funext z
+    rw [heatKernel_apply, id]
+    congr 2
+    ring
+  rw [hasGradientAt_iff_hasFDerivAt, hfun]
+  refine ((((hasFDerivAt_id (𝕜 := ℝ) x).norm_sq).mul_const _).exp.const_mul _).congr_fderiv ?_
+  ext w
+  simp only [id_eq, ContinuousLinearMap.comp_id, smul_apply,
+    coe_innerSL_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul, map_smul, toDual_apply_apply]
+  ring
 
 section Laplacian
 

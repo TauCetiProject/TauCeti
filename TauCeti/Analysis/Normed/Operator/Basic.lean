@@ -92,7 +92,10 @@ both operators and both vectors (`ContinuousLinearMap.norm_smul_apply_add_smul_a
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
-(`ContinuousLinearMap.norm_apply_bounds_of_net`).
+(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra, an operator sending
+the ball `ball 0 r`, `r > 0`, into `ball 0 s` has operator norm at most `s / r`
+(`ContinuousLinearMap.opNorm_le_of_mapsTo_ball`), so at most one when it maps `ball 0 r` into
+itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`).
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
@@ -587,6 +590,40 @@ theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
   exact mul_le_mul_of_nonneg_left (hsphere _ (norm_smul_inv_norm hv)) (norm_nonneg v)
 
 end Net
+
+section MapsToBall
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A continuous linear map sending `ball 0 r`, `r > 0`, into `ball 0 s` has operator norm at most
+`s / r`. -/
+theorem opNorm_le_of_mapsTo_ball {L : E →L[𝕜] F} {r s : ℝ} (hr : 0 < r)
+    (hL : Set.MapsTo L (Metric.ball 0 r) (Metric.ball 0 s)) : ‖L‖ ≤ s / r := by
+  have hs : 0 < s := by simpa using hL (Metric.mem_ball_self hr)
+  -- Rescale `x` to a point of norm just below `r`.
+  refine L.opNorm_le_bound (by positivity) fun x => le_of_forall_pos_lt_add fun ε hε => ?_
+  set c : ℝ := r / (‖x‖ + ε * r / s)
+  have hc : 0 < c := by positivity
+  have hcr : c * (‖x‖ + ε * r / s) = r := div_mul_cancel₀ r (by positivity)
+  have hx : algebraMap ℝ 𝕜 c • x ∈ Metric.ball (0 : E) r := by
+    rw [mem_ball_zero_iff, norm_smul, norm_algebraMap', Real.norm_of_nonneg hc.le, ← hcr]
+    exact mul_lt_mul_of_pos_left (lt_add_of_pos_right ‖x‖ (by positivity)) hc
+  have hLx : c * ‖L x‖ < s := by
+    simpa only [map_smul, mem_ball_zero_iff, norm_smul, norm_algebraMap',
+      Real.norm_of_nonneg hc.le] using hL hx
+  calc ‖L x‖ < s / c := (lt_div_iff₀ hc).2 (by linarith)
+    _ = s / r * ‖x‖ + ε := by
+      simp only [c]
+      field_simp
+
+/-- A continuous linear map sending `ball 0 r`, `r > 0`, into `ball 0 r` has operator norm at most
+one. -/
+theorem opNorm_le_one_of_mapsTo_ball {L : E →L[𝕜] F} {r : ℝ} (hr : 0 < r)
+    (hL : Set.MapsTo L (Metric.ball 0 r) (Metric.ball 0 r)) : ‖L‖ ≤ 1 :=
+  (L.opNorm_le_of_mapsTo_ball hr hL).trans_eq (div_self hr.ne')
+
+end MapsToBall
 
 section MetricQuotient
 

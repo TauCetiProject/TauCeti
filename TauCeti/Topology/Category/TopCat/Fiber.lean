@@ -80,6 +80,13 @@ lemma mapsTo_preimage_of_comp_eq_comp {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E
   rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hg, ConcreteCategory.comp_apply]
   exact hs hx
 
+/-- A map `g` over `s`, that is with `g ≫ p = p' ≫ s`, carries the complement of the part of `E'`
+over `T` into the complement of the part of `E` over `U`, whenever `s` pulls `U` back into `T`. -/
+lemma mapsTo_compl_preimage_of_comp_eq_comp {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E ⟶ B}
+    {p' : E' ⟶ B'} {s : B' ⟶ B} (hg : g ≫ p = p' ≫ s) {T : Set B'} {U : Set B}
+    (hs : ∀ x, s x ∈ U → x ∈ T) : Set.MapsTo g (p' ⁻¹' T)ᶜ (p ⁻¹' U)ᶜ :=
+  g.mapsTo_preimage_of_comp_eq_comp (T := Tᶜ) (U := Uᶜ) hg fun x hx hxu ↦ hx (hs x hxu)
+
 /-- The restriction `p'⁻¹(T) ⟶ p⁻¹(U)` of a map `g` over `s`, that is with `g ≫ p = p' ≫ s`, where
 `s` maps `T` into `U` (`TopCat.Hom.mapsTo_preimage_of_comp_eq_comp`). -/
 def preimageMapOver {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E ⟶ B} {p' : E' ⟶ B'} {s : B' ⟶ B}
