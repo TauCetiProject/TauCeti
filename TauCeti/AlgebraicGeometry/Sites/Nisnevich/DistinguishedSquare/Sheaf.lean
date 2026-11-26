@@ -13,7 +13,7 @@ public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 
 Every sheaf of sets `F` for the Nisnevich topology sends an elementary distinguished square
 `U ×_X V → U, V → X` to a pullback square: the map `F(X) → F(U) ×_{F(U ×_X V)} F(V)` is bijective
-(Morel–Voevodsky, §3.1, the sheaf-condition part of Lemma 1.6). This is the sheaf condition for
+(Morel–Voevodsky, §3.1, the only-if direction of Proposition 1.4). This is the sheaf condition for
 the Nisnevich covering `{j, p}`, and needs no sheafification.
 
 The only point beyond the definition of a sheaf is the compatibility of a section `b ∈ F(V)` with
@@ -29,14 +29,13 @@ with `b` on `U ×_X V`.
 
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isNisnevichCovering_diagonal`:
   the diagonal of `p` and the base change of `j` to `V ×_X V` form a Nisnevich covering.
-* `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isPullback_of_isSheaf`
-  (*distinguishedSquare_mayerVietoris*): a Nisnevich sheaf of sets sends an elementary
-  distinguished square to a pullback square.
+* `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isPullback_of_isSheaf`:
+  a Nisnevich sheaf of sets sends an elementary distinguished square to a pullback square.
 
 ## References
 
 * F. Morel and V. Voevodsky, *𝔸¹-homotopy theory of schemes*, Publ. Math. IHÉS 90 (1999),
-  §3.1, Lemma 1.6.
+  §3.1, Proposition 1.4.
 -/
 
 public section
@@ -71,19 +70,18 @@ private lemma pullback_fst_eq_comp_diagonal
   set h := Limits.pullback.snd (Limits.pullback.fst Q.p Q.p ≫ Q.p) I.subschemeι
   -- The two projections of `g` to `V` agree, as both are determined by `h` through the
   -- isomorphism `p⁻¹(Z) ⟶ Z`.
+  have e : ∀ π : Limits.pullback Q.p Q.p ⟶ Q.V,
+      π ≫ Q.p = Limits.pullback.fst Q.p Q.p ≫ Q.p → g ≫ π =
+        h ≫ inv (Limits.pullback.snd Q.p I.subschemeι) ≫ Limits.pullback.fst Q.p I.subschemeι := by
+    intro π hπ
+    have hl : Limits.pullback.lift (g ≫ π) h
+        (by rw [Category.assoc, hπ]; exact Limits.pullback.condition) =
+          h ≫ inv (Limits.pullback.snd Q.p I.subschemeι) := by
+      rw [← cancel_mono (Limits.pullback.snd Q.p I.subschemeι)]
+      simp
+    rw [← Category.assoc, ← hl, Limits.pullback.lift_fst]
   have key : g ≫ Limits.pullback.fst Q.p Q.p = g ≫ Limits.pullback.snd Q.p Q.p := by
-    have e₁ : g ≫ Limits.pullback.fst Q.p Q.p = Limits.pullback.lift
-        (g ≫ Limits.pullback.fst Q.p Q.p) h
-          (by rw [Category.assoc]; exact Limits.pullback.condition) ≫
-          Limits.pullback.fst Q.p I.subschemeι := by simp
-    have e₂ : g ≫ Limits.pullback.snd Q.p Q.p = Limits.pullback.lift
-        (g ≫ Limits.pullback.snd Q.p Q.p) h
-          (by simp [g, h, ← Limits.pullback.condition]) ≫
-          Limits.pullback.fst Q.p I.subschemeι := by simp
-    rw [e₁, e₂]
-    congr 1
-    rw [← cancel_mono (Limits.pullback.snd Q.p I.subschemeι)]
-    simp
+    rw [e _ rfl, e _ Limits.pullback.condition.symm]
   apply Limits.pullback.hom_ext <;> simp [key]
 
 /-- **The diagonal of `p` and the part of `V ×_X V` over `U` cover `V ×_X V`**: both are open
@@ -140,34 +138,26 @@ theorem map_fst_eq_map_snd_of_isSheaf {a : F.obj (op Q.U)} {b : F.obj (op Q.V)}
   · -- Over `U`, both pullbacks of `b` are pullbacks of `a`.
     set k := Limits.pullback.fst (Limits.pullback.fst Q.p Q.p ≫ Q.p) Q.j
     set l := Limits.pullback.snd (Limits.pullback.fst Q.p Q.p ≫ Q.p) Q.j
-    have h₁ : k ≫ Limits.pullback.fst Q.p Q.p =
-        Limits.pullback.lift l (k ≫ Limits.pullback.fst Q.p Q.p)
-          (by simp [k, l, ← Limits.pullback.condition]) ≫ Limits.pullback.snd Q.j Q.p := by
-      simp
-    have h₂ : k ≫ Limits.pullback.snd Q.p Q.p =
-        Limits.pullback.lift l (k ≫ Limits.pullback.snd Q.p Q.p)
-          (by simp [k, l, ← Limits.pullback.condition]) ≫
-          Limits.pullback.snd Q.j Q.p := by
-      simp
-    have hl₁ : Limits.pullback.lift l (k ≫ Limits.pullback.fst Q.p Q.p)
-        (by simp [k, l, ← Limits.pullback.condition]) ≫ Limits.pullback.fst Q.j Q.p = l := by
-      simp
-    have hl₂ : Limits.pullback.lift l (k ≫ Limits.pullback.snd Q.p Q.p)
-        (by simp [k, l, ← Limits.pullback.condition]) ≫
-          Limits.pullback.fst Q.j Q.p = l := by
-      simp
+    -- Each projection `π` restricted along `k` factors through `U ×_X V`, with first factor `l`.
+    have e : ∀ π : Limits.pullback Q.p Q.p ⟶ Q.V,
+        π ≫ Q.p = Limits.pullback.fst Q.p Q.p ≫ Q.p → F.map (k ≫ π).op b = F.map l.op a := by
+      intro π hπ
+      have hk : k ≫ π = Limits.pullback.lift l (k ≫ π)
+          (by rw [Category.assoc, hπ]; exact Limits.pullback.condition.symm) ≫
+            Limits.pullback.snd Q.j Q.p := by
+        simp
+      rw [hk, op_comp, Functor.map_comp_apply, ← hab, ← Functor.map_comp_apply, ← op_comp,
+        Limits.pullback.lift_fst]
     dsimp
-    rw [← Functor.map_comp_apply, ← Functor.map_comp_apply, ← op_comp, ← op_comp,
-      h₁, h₂, op_comp, op_comp, Functor.map_comp_apply, Functor.map_comp_apply,
-      ← hab, ← Functor.map_comp_apply, ← Functor.map_comp_apply, ← op_comp,
-      ← op_comp, hl₁, hl₂]
+    simp only [← Functor.map_comp_apply, ← op_comp]
+    rw [e _ rfl, e _ Limits.pullback.condition.symm]
   · -- On the diagonal, both projections are the identity.
     dsimp
     rw [← Functor.map_comp_apply, ← Functor.map_comp_apply, ← op_comp, ← op_comp,
       Limits.pullback.diagonal_fst, Limits.pullback.diagonal_snd]
 
-/-- **Nisnevich sheaves on elementary distinguished squares** (*distinguishedSquare_mayerVietoris*,
-Morel–Voevodsky, §3.1, Lemma 1.6): a sheaf of sets `F` for the Nisnevich topology sends an
+/-- **Nisnevich sheaves on elementary distinguished squares** (Morel–Voevodsky, §3.1, the
+only-if direction of Proposition 1.4): a sheaf of sets `F` for the Nisnevich topology sends an
 elementary distinguished square to a pullback square, so
 `F(X) → F(U) ×_{F(U ×_X V)} F(V)` is bijective. -/
 theorem isPullback_of_isSheaf :
@@ -184,14 +174,16 @@ theorem isPullback_of_isSheaf :
       intro c d
       cases c <;> cases d
       · exact Q.map_fst_eq_map_snd_of_isSheaf hF hab
-      · change F.map (Limits.pullback.fst Q.p Q.j).op b = F.map (Limits.pullback.snd Q.p Q.j).op a
+      · -- `Q.arrows` and the family `Bool.rec b a` evaluate by `Bool.rec` reduction.
+        change F.map (Limits.pullback.fst Q.p Q.j).op b = F.map (Limits.pullback.snd Q.p Q.j).op a
         have h₁ : Limits.pullback.fst Q.p Q.j =
             (Limits.pullbackSymmetry Q.p Q.j).hom ≫ Limits.pullback.snd Q.j Q.p := by simp
         have h₂ : Limits.pullback.snd Q.p Q.j =
             (Limits.pullbackSymmetry Q.p Q.j).hom ≫ Limits.pullback.fst Q.j Q.p := by simp
         rw [h₁, h₂, op_comp, op_comp, Functor.map_comp_apply, Functor.map_comp_apply, hab]
       · exact hab
-      · change F.map (Limits.pullback.fst Q.j Q.j).op a = F.map (Limits.pullback.snd Q.j Q.j).op a
+      · -- As above, by `Bool.rec` reduction.
+        change F.map (Limits.pullback.fst Q.j Q.j).op a = F.map (Limits.pullback.snd Q.j Q.j).op a
         rw [Limits.fst_eq_snd_of_mono_eq])
     exact ⟨t, ht true, ht false⟩
 
