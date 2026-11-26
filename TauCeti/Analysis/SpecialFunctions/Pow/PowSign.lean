@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Basic.Real.Sign
+import TauCeti.Basic.Real.Sign
 
 /-!
 # Complex powers of the modulus with the sign kept
@@ -16,13 +18,40 @@ is `sgn(c) |c| ^ w`: it keeps the direction of `c` and replaces its length by th
 (`TauCeti.powSign_one`), and has norm `‖c‖ ^ re w` for `c ≠ 0` (`TauCeti.norm_powSign`) and at most
 `‖c‖ ^ re w` in general (`TauCeti.norm_powSign_le`). Applied pointwise to a function `f`, it gives
 Thorin's analytic family `sgn(f) |f| ^ w` through `f`, used to prove the Riesz–Thorin theorem.
+
+On the real line the signed powers `|x|^r sgn(x)^j` are at most `|x|^r` in absolute value
+(`TauCeti.abs_abs_rpow_mul_sign_pow_le`). For all real `r` and `x`,
+`|x| ^ (r - 2) x = |x| ^ (r - 1) sgn(x)` (`Real.abs_rpow_sub_two_mul_eq_mul_sign`). For `p > 1`,
+where `|x| ^ p` is differentiable everywhere, this turns Mathlib's derivative `p |x| ^ (p - 2) x`
+of `|x| ^ p` (`hasDerivAt_abs_rpow`) into the signed power `p |x| ^ (p - 1) sgn(x)`.
 -/
 
 public section
 
 open Complex
 
+namespace Real
+
+/-- The identity `|x|^(r - 2) x = |x|^(r - 1) sgn(x)`, for all real `r` and `x`. For `r > 1` it
+rewrites Mathlib's derivative `|x|^(r - 2) x` of `|x|^r / r` (`hasDerivAt_abs_rpow`) as a signed
+power. -/
+theorem abs_rpow_sub_two_mul_eq_mul_sign (r x : ℝ) :
+    |x| ^ (r - 2) * x = |x| ^ (r - 1) * sign x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [sign_zero]
+  · -- `Real.rpow_add_one` peels a factor `|x|` off an exponent of the form `a + 1`, so the
+    -- exponent `r - 1` is first written in that form, as `(r - 2) + 1`.
+    rw [show r - 1 = r - 2 + 1 by ring, rpow_add_one (abs_pos.2 hx).ne', mul_assoc, abs_mul_sign]
+
+end Real
+
 namespace TauCeti
+
+/-- The signed power `|x|^r sgn(x)^j` is at most `|x|^r` in absolute value. -/
+theorem abs_abs_rpow_mul_sign_pow_le {r : ℝ} (j : ℕ) (x : ℝ) :
+    |(|x| ^ r * Real.sign x ^ j)| ≤ |x| ^ r := by
+  rw [abs_mul, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) r)]
+  exact mul_le_of_le_one_right (Real.rpow_nonneg (abs_nonneg x) r) (Real.abs_sign_pow_le_one x j)
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
