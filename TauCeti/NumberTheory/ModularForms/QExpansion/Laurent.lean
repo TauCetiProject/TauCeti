@@ -71,9 +71,8 @@ expansion here of the function read in the scaling coordinate of the cusp.
   `Function.Periodic.laurentQExpansion_coeff_eq_coeff_nat_mul`, and
   `TauCeti.UpperHalfPlane.hasBoundedDenominators_laurentQExpansion_pnat_mul_iff`: passing between
   period `h` and period `d * h`.
-* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_pnat_mul` and
-  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_pnat_mul`: meromorphy at `i∞` passes to a
-  multiple of the period and, for holomorphic functions, descends to a smaller period.
+* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_pnat_mul`: meromorphy at `i∞` passes to a
+  multiple of the period.
 * `TauCeti.UpperHalfPlane.laurentQExpansionRingHom`: the Laurent `q`-expansion as a ring
   homomorphism on `meromorphicAtCuspSubring h`.
 * `TauCeti.Subgroup.CuspDatum.laurentQExpansion_eq_upperHalfPlane_laurentQExpansion`: agreement
@@ -516,15 +515,6 @@ theorem meromorphicAt_cuspFunction_pnat_mul (hh : 0 < h) (hfper : Periodic (f �
   (MeromorphicAt.comp_analyticAt (g := (· ^ (d : ℕ))) (by rwa [zero_pow d.ne_zero])
     (by fun_prop)).congr
     (TauCeti.cuspFunction_nat_mul_eventuallyEq_nhdsNE hh.ne' d.ne_zero hfper).symm
-
-/-- **Meromorphy at `i∞` descends to a smaller period.** If `f` is holomorphic and `h`-periodic
-and its cusp function at period `d h` is meromorphic at `0`, then so is its cusp function at
-period `h`. -/
-theorem meromorphicAt_cuspFunction_of_pnat_mul (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
-    (hfhol : MDiff f) (d : ℕ+) (hf : MeromorphicAt (cuspFunction ((d : ℕ) * h) f) 0) :
-    MeromorphicAt (cuspFunction h f) 0 := by
-  have : NeZero (d : ℕ) := ⟨d.ne_zero⟩
-  exact meromorphicAt_cuspFunction_of_nat_mul hh hfhol hfper hf
 
 /-! ### Twisting by integer powers of the `q`-parameter -/
 

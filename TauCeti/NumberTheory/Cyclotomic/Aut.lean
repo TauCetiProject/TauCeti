@@ -166,21 +166,14 @@ theorem aeval_mem_range_intCast {L : Type*} [Field L] [CharZero L]
   let ζK : K := ⟨ζ, IntermediateField.mem_adjoin_simple_self ℚ ζ⟩
   have hζK : IsPrimitiveRoot ζK N := IsPrimitiveRoot.coe_submonoidClass_iff.mp hζ
   let x : K := Polynomial.aeval ζK P
-  have hx_val : (x : L) = Polynomial.aeval ζ P := by
-    simpa [x, ζK] using (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom ζK P).symm
+  have hcoe (y : K) : (Polynomial.aeval y P : L) = Polynomial.aeval (y : L) P :=
+    (Polynomial.aeval_algHom_apply (K.val.restrictScalars ℤ) y P).symm
+  have hx_val : (x : L) = Polynomial.aeval ζ P := hcoe ζK
   have hfix (σ : K ≃ₐ[ℚ] K) : σ x = x := by
-    have hσ : σ x = Polynomial.aeval (σ ζK) P := by
-      simpa [x] using (Polynomial.aeval_algHom_apply (σ : K →+* K).toIntAlgHom ζK P).symm
-    rw [hσ, ← hζK.autToPow_spec ℚ σ]
-    apply Subtype.ext
-    have hval : (Polynomial.aeval (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P : L) =
-        Polynomial.aeval (ζ ^ (hζK.autToPow ℚ σ : ZMod N).val) P := by
-      simpa only [RingHom.toIntAlgHom_apply, RingHom.coe_coe, IntermediateField.coe_val,
-        SubmonoidClass.coe_pow, ζK] using
-        (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom
-          (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P).symm
-    change (Polynomial.aeval (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P : L) = (x : L)
-    rw [hval, hP (hζK.autToPow ℚ σ), hx_val]
+    have hσ : σ x = Polynomial.aeval (σ ζK) P :=
+      (Polynomial.aeval_algHom_apply (σ.toAlgHom.restrictScalars ℤ) ζK P).symm
+    rw [hσ, ← hζK.autToPow_spec ℚ σ, Subtype.ext_iff]
+    rw [hcoe, SubmonoidClass.coe_pow, hP (hζK.autToPow ℚ σ), hx_val]
   obtain ⟨q, hq⟩ := IntermediateField.mem_bot.mp ((IsGalois.mem_bot_iff_fixed x).mpr hfix)
   have hqL : algebraMap ℚ L q = Polynomial.aeval ζ P := by
     rw [IsScalarTower.algebraMap_apply ℚ K L, IntermediateField.algebraMap_apply, hq, hx_val]

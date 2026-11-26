@@ -65,9 +65,7 @@ theorem qExpansion_qPochhammerFun_eq_prod_range_mul (hh : 0 < h) {N : ℕ} (hN :
         (fun τ : ℍ ↦ 1 - w * 𝕢 h τ ^ c) * fun τ : ℍ ↦ qPochhammerFun N (N + c) w (𝕢 h τ) :=
       funext fun τ ↦
         qPochhammerFun_eq_one_sub_mul hN c w (Function.Periodic.norm_qParam_lt_one hh τ.im_pos)
-    have hshift (n : ℕ) : N * n + (N + c) = N * (n + 1) + c := by
-      rw [Nat.mul_succ]
-      ring
+    have hshift (n : ℕ) : N * n + (N + c) = N * (n + 1) + c := by ring
     rw [hfun, _root_.UpperHalfPlane.qExpansion_mul
       (analyticAt_cuspFunction_one_sub_mul_qParam_pow h c w)
       (analyticAt_cuspFunction_qPochhammerFun hh hN _ w),

@@ -276,7 +276,8 @@ theorem isIntegral_natCast_div_siegelFunction_div (N : ℕ) (a : Fin 2 → ℤ) 
       natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase hv τ
   rw [hprod]
   exact IsIntegral.prod _ fun w _ ↦
-    (by simpa using (isIntegral_siegelFunction_div N (fun i ↦ ((w i).val : ℤ)) hj).pow (12 * N))
+    (by simpa only [Int.cast_natCast] using
+      (isIntegral_siegelFunction_div N (fun i ↦ ((w i).val : ℤ)) hj).pow (12 * N))
 
 end GeneralFunctions
 

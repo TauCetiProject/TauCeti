@@ -87,6 +87,8 @@ theorem coeff_qPochhammerSeries_eq_coeff_prod_range {N : ℕ} (hN : 0 < N) (c : 
     simp [(by have := Nat.mul_le_mul hN (Nat.le_add_right (m + 1) d); omega :
       m < N * (m + 1 + d) + c).not_ge]
 
+private theorem mul_add_add_eq (N n c : ℕ) : N * n + (N + c) = N * (n + 1) + c := by ring
+
 /-- **Shift recurrence for `qPochhammerSeries`.** For `0 < N`, splitting off the `n = 0` factor
 gives `qPochhammerSeries N c x = (1 - C x * X ^ c) * qPochhammerSeries N (N + c) x`. -/
 theorem qPochhammerSeries_eq_one_sub_mul {N : ℕ} (hN : 0 < N) (c : ℕ) (x : R) :
@@ -97,8 +99,7 @@ theorem qPochhammerSeries_eq_one_sub_mul {N : ℕ} (hN : 0 < N) (c : ℕ) (x : R
     Finset.prod_range_succ', mul_zero, zero_add, mul_comm, PowerSeries.coeff_mul,
     PowerSeries.coeff_mul]
   refine Finset.sum_congr rfl fun p hp ↦ ?_
-  have hshift (n : ℕ) : N * (n + 1) + c = N * n + (N + c) := by rw [Nat.mul_succ]; ring
-  simp_rw [hshift]
+  simp_rw [← mul_add_add_eq]
   rw [coeff_qPochhammerSeries_eq_coeff_prod_range hN (N + c) x
     (by have := Finset.mem_antidiagonal.mp hp; omega : p.2 + 1 ≤ m + 1)]
 
@@ -110,11 +111,9 @@ theorem qPochhammerSeries_eq_prod_range_mul {N : ℕ} (hN : 0 < N) (c k : ℕ) (
   induction k generalizing c with
   | zero => simp
   | succ k ih =>
-    have hshift (n : ℕ) : N * n + (N + c) = N * (n + 1) + c := by rw [Nat.mul_succ]; ring
     rw [qPochhammerSeries_eq_one_sub_mul hN c x, ih (N + c), Finset.prod_range_succ', mul_zero,
       zero_add]
-    simp_rw [hshift]
-    rw [Nat.mul_succ]
-    ring_nf
+    simp_rw [mul_add_add_eq]
+    ring
 
 end TauCeti

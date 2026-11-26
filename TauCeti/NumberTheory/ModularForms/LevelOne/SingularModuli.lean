@@ -272,9 +272,9 @@ private theorem periodic_eval_cyclicIsogenyPolynomial_j :
 /-- `Φ_n(j(τ), j(τ))` has a meromorphic cusp function at period `1`. -/
 private theorem meromorphicAt_cuspFunction_eval_cyclicIsogenyPolynomial_j :
     MeromorphicAt (cuspFunction 1 fun τ ↦ (cyclicIsogenyPolynomial n j τ).eval (j τ)) 0 :=
-  meromorphicAt_cuspFunction_of_pnat_mul one_pos periodic_eval_cyclicIsogenyPolynomial_j
-    mdifferentiable_eval_cyclicIsogenyPolynomial_j (nPNat n)
-    (by simpa [nPNat] using meromorphicAt_cuspFunction_nat_eval_cyclicIsogenyPolynomial_j)
+  meromorphicAt_cuspFunction_of_nat_mul (d := n) one_pos
+    mdifferentiable_eval_cyclicIsogenyPolynomial_j periodic_eval_cyclicIsogenyPolynomial_j
+    (by simpa only [mul_one] using meromorphicAt_cuspFunction_nat_eval_cyclicIsogenyPolynomial_j)
 
 /-- The Laurent expansion of `Φ_n(j(τ), j(τ))` at period `n` is its expansion at period `1`,
 expanded by `X ↦ X ^ n`. -/
