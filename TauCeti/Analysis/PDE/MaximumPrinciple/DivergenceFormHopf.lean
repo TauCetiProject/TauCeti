@@ -134,7 +134,7 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-! ### The unit annulus and its boundary chart at a point of the outer sphere -/
+/-! ### The unit annulus and its `C^{1,α}` boundary charts -/
 
 /-- The open annulus `{z | 1/2 < ‖z‖ < 1}`. -/
 private def unitAnnulus : Opens E :=

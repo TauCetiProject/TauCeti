@@ -92,21 +92,22 @@ theorem contDiff_unitSphereGraph {k : ℕ∞} : ContDiff ℝ k (unitSphereGraph 
         (by rwa [ContDiffBump.tsupport_eq]), zero_mul]
     exact contDiffAt_const.congr_of_eventuallyEq hev
 
+/-- The cut-off sphere graph is compactly supported. -/
+theorem hasCompactSupport_unitSphereGraph [FiniteDimensional ℝ K] :
+    HasCompactSupport (unitSphereGraph (K := K)) := by
+  have h : unitSphereGraph (K := K) =
+      ⇑(unitSphereBump (K := K)) * fun v : K => 1 - √(1 - ‖v‖ ^ 2) :=
+    rfl
+  rw [h]
+  exact (unitSphereBump (K := K)).hasCompactSupport.mul_right
+
 /-- The cut-off sphere graph has a Hölder continuous derivative, for every exponent at most one. -/
 theorem exists_holderWith_fderiv_unitSphereGraph [FiniteDimensional ℝ K] {α : ℝ≥0} (hα : α ≤ 1) :
     ∃ C : ℝ≥0, HolderWith C α (fderiv ℝ (unitSphereGraph (K := K))) := by
-  have hd : ContDiff ℝ 1 (fderiv ℝ (unitSphereGraph (K := K))) :=
-    (contDiff_unitSphereGraph (k := 2)).fderiv_right (by norm_num)
-  have hs : HasCompactSupport (fderiv ℝ (unitSphereGraph (K := K))) := by
-    have h : unitSphereGraph (K := K) =
-        ⇑(unitSphereBump (K := K)) * fun v : K => 1 - √(1 - ‖v‖ ^ 2) :=
-      rfl
-    rw [h]
-    exact (unitSphereBump (K := K)).hasCompactSupport.mul_right.fderiv ℝ
-  obtain ⟨L, hL⟩ := hd.lipschitzWith_of_hasCompactSupport hs one_ne_zero
-  obtain ⟨M, hM⟩ := hs.exists_bound_of_continuous hd.continuous
-  exact ⟨_, (holderWith_one.2 hL).of_le_of_norm_le (D := M.toNNReal)
-    (fun x => (hM x).trans (Real.le_coe_toNNReal M)) hα one_pos⟩
+  obtain ⟨C, hC, -⟩ := ((contDiff_unitSphereGraph (k := 2)).fderiv_right (m := 1) (by norm_num)
+    ).exists_holderWith_and_norm_le_of_hasCompactSupport
+      ((hasCompactSupport_unitSphereGraph (K := K)).fderiv (𝕜 := ℝ)) hα
+  exact ⟨C, hC⟩
 
 /-- The cut-off sphere graph vanishes at the origin. -/
 @[simp]
@@ -118,6 +119,35 @@ theorem unitSphereGraph_of_norm_le {v : K} (hv : ‖v‖ ≤ 1 / 4) :
     unitSphereGraph v = 1 - √(1 - ‖v‖ ^ 2) := by
   rw [unitSphereGraph,
     (unitSphereBump (K := K)).one_of_mem_closedBall (by simpa [unitSphereBump] using hv), one_mul]
+
+/-- Near the centre of the chart, `ν`-coordinate `r - s` and tangential coordinate `v` describe a
+point of the open ball of radius `r` exactly when `s` lies strictly above the sphere graph
+`r (1 - √(1 - ‖v / r‖²))`, and a point of the closed ball exactly when `s` lies above it. -/
+private theorem sq_add_sq_lt_iff {r s : ℝ} (hr : 0 < r) {v : K}
+    (hs : s < r) (hv : ‖v‖ ≤ r / 4) :
+    ((r - s) ^ 2 + ‖v‖ ^ 2 < r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) < s) ∧
+      ((r - s) ^ 2 + ‖v‖ ^ 2 ≤ r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) ≤ s) := by
+  have hv' : ‖r⁻¹ • v‖ ≤ 1 / 4 := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hr), inv_mul_le_iff₀ hr]
+    linarith
+  have hvr : ‖r⁻¹ • v‖ ^ 2 = ‖v‖ ^ 2 / r ^ 2 := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hr)]
+    field_simp
+  have hq : 0 ≤ 1 - ‖r⁻¹ • v‖ ^ 2 := by nlinarith [norm_nonneg (r⁻¹ • v)]
+  rw [unitSphereGraph_of_norm_le hv']
+  set q := √(1 - ‖r⁻¹ • v‖ ^ 2)
+  have hq2 : q ^ 2 = 1 - ‖v‖ ^ 2 / r ^ 2 := by rw [Real.sq_sqrt hq, hvr]
+  have hrq : (r * q) ^ 2 = r ^ 2 - ‖v‖ ^ 2 := by
+    rw [mul_pow, hq2]
+    field_simp
+  have hlt : r * (1 - q) < s ↔ (r - s) ^ 2 < (r * q) ^ 2 := by
+    rw [sq_lt_sq₀ (by linarith) (by positivity)]
+    constructor <;> intro h <;> linarith
+  have hle : r * (1 - q) ≤ s ↔ (r - s) ^ 2 ≤ (r * q) ^ 2 := by
+    rw [sq_le_sq₀ (by linarith) (by positivity)]
+    constructor <;> intro h <;> linarith
+  rw [hlt, hle, hrq]
+  exact ⟨by constructor <;> intro h <;> linarith, by constructor <;> intro h <;> linarith⟩
 
 end Graph
 
@@ -178,18 +208,9 @@ theorem unitSphereChart_symm_mem_ball_iff (ν : E) (hν : ‖ν‖ = 1)
     (unitSphereChart ν hν).symm z ∈ ball 0 1 ↔ unitSphereGraph z.snd < z.fst := by
   rw [mem_normalCylinder] at hz
   obtain ⟨-, ht2, hv⟩ := hz
-  have hsq := norm_unitSphereChart_symm_sq ν hν z
-  rw [mem_ball_zero_iff, unitSphereGraph_of_norm_le hv.le]
-  have hn0 := norm_nonneg ((unitSphereChart ν hν).symm z)
-  constructor
-  · intro h
-    have hlt : (1 - z.fst) ^ 2 < 1 - ‖z.snd‖ ^ 2 := by nlinarith
-    have := (Real.lt_sqrt (by linarith)).2 hlt
-    linarith
-  · intro h
-    have hlt : 1 - z.fst < √(1 - ‖z.snd‖ ^ 2) := by linarith
-    have hsq' := (Real.lt_sqrt (by linarith)).1 hlt
-    nlinarith
+  have h := (sq_add_sq_lt_iff one_pos (s := z.fst) (by linarith) (v := z.snd) (by linarith)).1
+  rwa [inv_one, one_smul, one_mul, one_pow, ← norm_unitSphereChart_symm_sq ν hν,
+    sq_lt_one_iff₀ (norm_nonneg _), ← mem_ball_zero_iff] at h
 
 end Chart
 
@@ -199,16 +220,6 @@ section GraphChart
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (Module.finrank ℝ E = n + 1)]
-
-/-- The cut-off sphere graph is compactly supported. -/
-theorem hasCompactSupport_unitSphereGraph {K : Type*} [NormedAddCommGroup K]
-    [InnerProductSpace ℝ K] [FiniteDimensional ℝ K] :
-    HasCompactSupport (unitSphereGraph (K := K)) := by
-  have h : unitSphereGraph (K := K) =
-      ⇑(unitSphereBump (K := K)) * fun v : K => 1 - √(1 - ‖v‖ ^ 2) :=
-    rfl
-  rw [h]
-  exact (unitSphereBump (K := K)).hasCompactSupport.mul_right
 
 /-- The rigid coordinates at the point `r • ν` of the sphere of radius `r`, with the orthogonal
 complement of `ν` identified with `EuclideanSpace ℝ (Fin n)` by an orthonormal basis `L` and the
@@ -225,54 +236,32 @@ private theorem sphereChart_apply_smul (σ : ℝ ≃ₗᵢ[ℝ] ℝ) (r : ℝ) (
   have h : r • ν - (r - 1) • ν = ν := by rw [← sub_smul, sub_sub_cancel, one_smul]
   simp [sphereChart, h]
 
+/-- The inverse of `sphereChart`: undo `σ` and the orthonormal basis, then the unit-sphere chart,
+then translate by `(r - 1) • ν`. -/
+@[simp]
+private theorem sphereChart_symm_apply (σ : ℝ ≃ₗᵢ[ℝ] ℝ) (r : ℝ) (ν : E) (hν : ‖ν‖ = 1)
+    (z : WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))) :
+    (sphereChart σ r ν hν).symm z = (unitSphereChart ν hν).symm (WithLp.toLp 2 (σ.symm z.fst,
+      (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+        (norm_ne_zero_iff.1 (hν ▸ one_ne_zero))).repr.symm z.snd)) + (r - 1) • ν := by
+  simp [sphereChart]
+
 /-- The squared norm of the point with coordinates `z` is `(r - σ⁻¹ z.fst)² + ‖z.snd‖²`. -/
 private theorem norm_sphereChart_symm_sq (σ : ℝ ≃ₗᵢ[ℝ] ℝ) (r : ℝ) (ν : E) (hν : ‖ν‖ = 1)
     (z : WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))) :
     ‖(sphereChart σ r ν hν).symm z‖ ^ 2 = (r - σ.symm z.fst) ^ 2 + ‖z.snd‖ ^ 2 := by
   set L := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
     (norm_ne_zero_iff.1 (hν ▸ one_ne_zero))).repr
-  set w : WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ) := WithLp.toLp 2 (σ.symm z.fst, L.symm z.snd)
-  have hz : (sphereChart σ r ν hν).symm z = (unitSphereChart ν hν).symm w + (r - 1) • ν :=
-    rfl
   have hinner : ⟪ν, ((L.symm z.snd : (ℝ ∙ ν)ᗮ) : E)⟫_ℝ = 0 :=
     Submodule.mem_orthogonal_singleton_iff_inner_right.1 (L.symm z.snd).property
   have h1 : (sphereChart σ r ν hν).symm z =
       (r - σ.symm z.fst) • ν + ((L.symm z.snd : (ℝ ∙ ν)ᗮ) : E) := by
-    rw [hz, unitSphereChart_symm_apply]
-    simp only [w, WithLp.toLp_fst, WithLp.toLp_snd]
+    rw [sphereChart_symm_apply, unitSphereChart_symm_apply]
+    simp only [WithLp.toLp_fst, WithLp.toLp_snd]
     module
   rw [h1, norm_add_sq_real, norm_smul, inner_smul_left, hinner, hν, Real.norm_eq_abs,
     Submodule.norm_coe, LinearIsometryEquiv.norm_map]
   simp [sq_abs]
-
-/-- Near the centre of the chart, `ν`-coordinate `r - s` and tangential coordinate `v` describe a
-point of the open ball of radius `r` exactly when `s` lies strictly above the sphere graph
-`r (1 - √(1 - ‖v / r‖²))`, and a point of the closed ball exactly when `s` lies above it. -/
-private theorem sq_add_sq_lt_iff {r s : ℝ} (hr : 0 < r) {v : EuclideanSpace ℝ (Fin n)}
-    (hs : s < r) (hv : ‖v‖ ≤ r / 4) :
-    ((r - s) ^ 2 + ‖v‖ ^ 2 < r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) < s) ∧
-      ((r - s) ^ 2 + ‖v‖ ^ 2 ≤ r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) ≤ s) := by
-  have hv' : ‖r⁻¹ • v‖ ≤ 1 / 4 := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hr), inv_mul_le_iff₀ hr]
-    linarith
-  have hvr : ‖r⁻¹ • v‖ ^ 2 = ‖v‖ ^ 2 / r ^ 2 := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hr)]
-    field_simp
-  have hq : 0 ≤ 1 - ‖r⁻¹ • v‖ ^ 2 := by nlinarith [norm_nonneg (r⁻¹ • v)]
-  rw [unitSphereGraph_of_norm_le hv']
-  set q := √(1 - ‖r⁻¹ • v‖ ^ 2)
-  have hq2 : q ^ 2 = 1 - ‖v‖ ^ 2 / r ^ 2 := by rw [Real.sq_sqrt hq, hvr]
-  have hrq : (r * q) ^ 2 = r ^ 2 - ‖v‖ ^ 2 := by
-    rw [mul_pow, hq2]
-    field_simp
-  have hlt : r * (1 - q) < s ↔ (r - s) ^ 2 < (r * q) ^ 2 := by
-    rw [sq_lt_sq₀ (by linarith) (by positivity)]
-    constructor <;> intro h <;> linarith
-  have hle : r * (1 - q) ≤ s ↔ (r - s) ^ 2 ≤ (r * q) ^ 2 := by
-    rw [sq_le_sq₀ (by linarith) (by positivity)]
-    constructor <;> intro h <;> linarith
-  rw [hlt, hle, hrq]
-  exact ⟨by constructor <;> intro h <;> linarith, by constructor <;> intro h <;> linarith⟩
 
 /-- The cut-off sphere graph rescaled to radius `r`, `v ↦ r g(v / r)`, is smooth, vanishes at the
 origin, is compactly supported, and has an `α`-Hölder derivative for every `α ≤ 1`. -/
@@ -303,8 +292,10 @@ private theorem sphereChart_symm_mem_iff {r : ℝ} (hr : 0 < r) (ν : E) (hν : 
         -1 * (r * unitSphereGraph (r⁻¹ • z.snd)) < z.fst) := by
   rw [mem_normalCylinder] at hz
   obtain ⟨ht1, ht2, hv⟩ := hz
-  have hrefl : (LinearIsometryEquiv.refl ℝ ℝ).symm z.fst = z.fst := rfl
-  have hneg : (LinearIsometryEquiv.neg ℝ).symm z.fst = -z.fst := rfl
+  have hrefl : (LinearIsometryEquiv.refl ℝ ℝ).symm z.fst = z.fst := by
+    rw [LinearIsometryEquiv.symm_apply_eq, LinearIsometryEquiv.coe_refl, id]
+  have hneg : (LinearIsometryEquiv.neg ℝ).symm z.fst = -z.fst := by
+    rw [LinearIsometryEquiv.symm_neg, LinearIsometryEquiv.coe_neg]
   constructor
   · rw [mem_ball_zero_iff, ← sq_lt_sq₀ (norm_nonneg _) hr.le, norm_sphereChart_symm_sq, hrefl]
     exact (sq_add_sq_lt_iff hr (by linarith) hv.le).1
@@ -324,7 +315,9 @@ private theorem sphereChart_translate {σ : ℝ ≃ₗᵢ[ℝ] ℝ} {c x : E} {r
   have hν : ‖r⁻¹ • (x - c)‖ = 1 := by
     rw [norm_smul, hxc, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hr), inv_mul_cancel₀ hr.ne']
   have hxν : r • r⁻¹ • (x - c) = x - c := by rw [smul_smul, mul_inv_cancel₀ hr.ne', one_smul]
-  refine ⟨_, hν, ?_, fun z => rfl⟩
+  refine ⟨_, hν, ?_, fun z => by
+    simp only [AffineIsometryEquiv.coe_symm_trans, Function.comp_apply,
+      AffineIsometryEquiv.symm_symm, AffineIsometryEquiv.coe_vaddConst, vadd_eq_add]⟩
   simp only [AffineIsometryEquiv.coe_trans, Function.comp_apply,
     AffineIsometryEquiv.coe_vaddConst_symm, vsub_eq_sub]
   have h := sphereChart_apply_smul (n := n) σ r _ hν
