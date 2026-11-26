@@ -182,9 +182,10 @@ theorem isHomogeneous_ker_mk (R : Type u) [CommRing R] :
     (RingHom.ker (mk (R := R)).toIntAlgHom).IsHomogeneous
       (fun n : ℕ ↦ (TensorAlgebra.ι ℤ :
         Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n) := by
-  rw [AlgHom.ker_coe]
-  change (RingHom.ker (mk (R := R))).IsHomogeneous _
-  rw [ker_mk_eq_span]
+  have hker : RingHom.ker (mk (R := R)).toIntAlgHom = RingHom.ker (mk (R := R)) := by
+    ext x
+    simp [RingHom.mem_ker]
+  rw [hker, ker_mk_eq_span]
   refine TwoSidedIdeal.homogeneous_span _ ?_
   rintro _ ⟨a, b, _, rfl⟩
   refine ⟨2, ?_⟩

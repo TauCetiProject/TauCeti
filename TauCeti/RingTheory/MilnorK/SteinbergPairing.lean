@@ -118,6 +118,20 @@ theorem comp_ringHom {S : Type w} [Semiring S] {c : Sˣ → Sˣ → A}
   map_one_right a := by rw [map_one, hc.map_one_right]
   map_add_eq_one a b h := hc.map_add_eq_one _ _ (by simp [← map_add, h])
 
+/-- Raising the first argument to a natural power scales the pairing. -/
+theorem map_pow_left {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) :
+    c (a ^ n) b = n • c a b := by
+  induction n with
+  | zero => simp [hc.map_one_left]
+  | succ n ih => rw [pow_succ, hc.map_mul_left, ih, succ_nsmul]
+
+/-- Raising the second argument to a natural power scales the pairing. -/
+theorem map_pow_right {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) :
+    c a (b ^ n) = n • c a b := by
+  induction n with
+  | zero => simp [hc.map_one_right]
+  | succ n ih => rw [pow_succ, hc.map_mul_right, ih, succ_nsmul]
+
 end Semiring
 
 section Ring
@@ -142,20 +156,6 @@ theorem map_inv_left (hc : IsSteinbergPairing c) (a b : Rˣ) : c a⁻¹ b = -c a
 /-- Inverting the second argument of a Steinberg pairing negates its value. -/
 theorem map_inv_right (hc : IsSteinbergPairing c) (a b : Rˣ) : c a b⁻¹ = -c a b :=
   eq_neg_of_add_eq_zero_left (by rw [← hc.map_mul_right, inv_mul_cancel, hc.map_one_right])
-
-/-- Raising the first argument to a natural power scales the pairing. -/
-theorem map_pow_left (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) :
-    c (a ^ n) b = n • c a b := by
-  induction n with
-  | zero => simp [hc.map_one_left]
-  | succ n ih => rw [pow_succ, hc.map_mul_left, ih, succ_nsmul]
-
-/-- Raising the second argument to a natural power scales the pairing. -/
-theorem map_pow_right (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) :
-    c a (b ^ n) = n • c a b := by
-  induction n with
-  | zero => simp [hc.map_one_right]
-  | succ n ih => rw [pow_succ, hc.map_mul_right, ih, succ_nsmul]
 
 /-- Raising the first argument to an integer power scales the pairing. -/
 theorem map_zpow_left (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℤ) :
@@ -410,7 +410,7 @@ theorem induction_on {P : SymbolGroup R → Prop} (x : SymbolGroup R)
 
 /-- Two `ℤ`-linear maps out of `SymbolGroup R` agree if they agree on all symbols. -/
 @[ext]
-theorem linearMap_ext {A : Type v} [AddCommGroup A] {f g : SymbolGroup R →ₗ[ℤ] A}
+theorem linearMap_ext {A : Type v} [AddCommMonoid A] [Module ℤ A] {f g : SymbolGroup R →ₗ[ℤ] A}
     (h : ∀ a b : Rˣ, f (symbol a b) = g (symbol a b)) : f = g := by
   refine LinearMap.ext fun x ↦ ?_
   induction x using SymbolGroup.induction_on with
@@ -419,7 +419,7 @@ theorem linearMap_ext {A : Type v} [AddCommGroup A] {f g : SymbolGroup R →ₗ[
 
 /-- Two additive homomorphisms out of `SymbolGroup R` agree if they agree on all symbols. -/
 @[ext]
-theorem addMonoidHom_ext {A : Type v} [AddCommGroup A] {f g : SymbolGroup R →+ A}
+theorem addMonoidHom_ext {A : Type v} [AddMonoid A] {f g : SymbolGroup R →+ A}
     (h : ∀ a b : Rˣ, f (symbol a b) = g (symbol a b)) : f = g := by
   refine AddMonoidHom.ext fun x ↦ ?_
   induction x using SymbolGroup.induction_on with
