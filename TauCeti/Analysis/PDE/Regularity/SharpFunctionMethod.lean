@@ -303,14 +303,6 @@ private theorem eLpNorm_le_of_le_quarter {g : EuclideanSpace ℝ (Fin (n + 1)) �
     _ = _ := by
         rw [add_right_comm, ← add_mul, ENNReal.add_halves, add_comm, ENNReal.div_eq_inv_mul]
 
-/-- An exponent `q > 1` with `γ q < s`, for `0 < γ < s`: the midpoint of `1` and `s / γ`. -/
-private theorem exists_one_lt_and_mul_lt {γ s : ℝ} (hγ : 0 < γ) (hs : γ < s) :
-    ∃ q : ℝ, 1 < q ∧ γ * q < s := by
-  have hsγ : 1 < s / γ := (one_lt_div hγ).2 hs
-  refine ⟨(1 + s / γ) / 2, by linarith, ?_⟩
-  rw [mul_div_assoc', mul_add, mul_one, mul_div_cancel₀ _ hγ.ne', div_lt_iff₀ two_pos]
-  linarith
-
 /-- **Krylov's sharp function method.** Let `1 ≤ γ < p < ∞` and let `c₁, c₂, c₃, L` be real
 constants. There are constants `C` and `δ > 0`, depending only on `n`, `γ`, `p`, `c₁`, `c₂`, `c₃`
 and `L`, with the following property. Let `g : ℝ^{n+1} → E` and `G : ℝ^{n+1} → F` lie in `Lᵖ`, and
@@ -340,7 +332,8 @@ theorem exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le [CompleteSpace E
     rw [hs_def, ← ENNReal.toReal_ofReal hγ0.le]
     exact (ENNReal.toReal_lt_toReal ENNReal.ofReal_ne_top hp_top).2 hγp
   have hsγ : 1 < s / γ := (one_lt_div hγ0).2 hs
-  obtain ⟨q, hq, hqs⟩ := exists_one_lt_and_mul_lt hγ0 hs
+  obtain ⟨q, hq, hqs'⟩ := exists_between hsγ
+  have hqs : γ * q < s := (lt_div_iff₀' hγ0).1 hqs'
   obtain ⟨q', hqq⟩ : ∃ q' : ℝ, q.HolderConjugate q' :=
     ⟨_, Real.HolderConjugate.conjExponent hq⟩
   have hqp : ENNReal.ofReal (γ * q) ≤ p := by
