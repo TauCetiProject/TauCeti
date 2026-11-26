@@ -50,6 +50,9 @@ this file does not define that group.
 * `CliffordAlgebra.isIdempotentElem_ι_mul_ι`: `e f` is idempotent; with
   `CliffordAlgebra.ι_mul_ι_mul_ι_mul_ι_swap` from `TauCeti.LinearAlgebra.CliffordAlgebra.Basic`,
   `e f` and `f e` are orthogonal idempotents.
+* `CliffordAlgebra.ι_mul_ι_ne_zero_of_polar_eq_one`,
+  `CliffordAlgebra.ι_mul_ι_swap_ne_zero_of_polar_eq_one`: `e f` and `f e` are nonzero when the
+  Clifford algebra is nontrivial.
 * `CliffordAlgebra.hyperbolicPairScaling_mem_even`: `u(a)` lies in the even subalgebra.
 * `CliffordAlgebra.hyperbolicPairScaling_mul`: `u(a b) = u(a) u(b)`.
 * `CliffordAlgebra.hyperbolicPairUnitsHom_mul_ι_left_mul_inv`,
@@ -109,6 +112,25 @@ theorem hyperbolic_relations (he : Q e = 0) (hef : polar Q e f = 1) :
   refine ⟨(isIdempotentElem_ι_mul_ι hef (by rw [he, zero_mul])).eq,
     (isIdempotentElem_ι_mul_ι hfe (by rw [he, mul_zero])).eq, ?_, ?_⟩ <;>
     rw [ι_mul_ι_mul_ι_mul_ι_swap, he] <;> simp
+
+/-- For a hyperbolic pair, `e f` is nonzero in a nontrivial Clifford algebra (for instance that of
+a free module over a nontrivial ring, by `CliffordAlgebra.algebraMap_injective_of_free`). -/
+theorem ι_mul_ι_ne_zero_of_polar_eq_one [Nontrivial (CliffordAlgebra Q)] (he : Q e = 0)
+    (hef : polar Q e f = 1) : ι Q e * ι Q f ≠ 0 := by
+  intro h
+  have he0 : ι Q e = 0 :=
+    calc ι Q e = ι Q e * (ι Q e * ι Q f + ι Q f * ι Q e) := by
+          rw [ι_mul_ι_add_swap_of_polar_eq_one hef, mul_one]
+      _ = 0 := by
+          rw [mul_add, ← mul_assoc, ι_sq_scalar, he, map_zero, zero_mul, zero_add, ← mul_assoc, h,
+            zero_mul]
+  apply one_ne_zero (α := CliffordAlgebra Q)
+  rw [← ι_mul_ι_add_swap_of_polar_eq_one hef, he0, zero_mul, mul_zero, add_zero]
+
+/-- For a hyperbolic pair, `f e` is nonzero in a nontrivial Clifford algebra. -/
+theorem ι_mul_ι_swap_ne_zero_of_polar_eq_one [Nontrivial (CliffordAlgebra Q)] (hf : Q f = 0)
+    (hef : polar Q e f = 1) : ι Q f * ι Q e ≠ 0 :=
+  ι_mul_ι_ne_zero_of_polar_eq_one hf (by rw [polar_comm, hef])
 
 variable (Q) in
 /-- The element `u(a) = a e f + f e` of the Clifford algebra attached to a pair of vectors. For a
