@@ -8,8 +8,11 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.HolderCoefficient
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.WholeSpace
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Holder.Coefficient
 import TauCeti.Analysis.Holder.Interpolation
 import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
@@ -38,6 +41,13 @@ No sign condition on `c` is needed for the estimates.
   the Hölder constant of `D²u` and the bounds of `Du` and `D²u` are at most
   `C ([L u]_α + ‖u‖_∞)`, with `C` depending only on `n`, `α`, the ellipticity constants and the
   bounds on the coefficients.
+
+The file also records bounds for the operator itself on a set: the pointwise bound
+(`TauCeti.PDE.abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le`) and the Hölder constant
+(`TauCeti.PDE.holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul`) of `L φ`, in terms of those
+of the coefficients and of `φ`, `Dφ` and `D²φ`, and the subtraction rule `L (u - φ) = L u - L φ`
+(`TauCeti.PDE.sum_smul_fderiv_fderiv_add_fderiv_add_mul_sub`). The docstrings of these lemmas
+write the operator as `𝓛`, since `L` there names the Hölder constant of `a`.
 
 ## The argument
 
@@ -105,6 +115,91 @@ theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b : E →
   · exact mul_le_of_le_one_left zero_le (by
       rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
   · exact mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le
+
+/-- **The pointwise bound for `𝓛 φ`.** If at a point `z` the entries of `a` are bounded by `M`,
+`‖b z‖` and `|c z|` by `B`, and `|φ z|`, `‖Dφ z‖` and `‖D²φ z‖` by `N`, then
+`|∑ᵢⱼ aᵢⱼ ∂ᵢⱼφ + b · ∇φ + c φ| ≤ N ((n + 1)² M + 2 B)` at `z`. -/
+theorem abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c φ : E → ℝ} {z : E}
+    {M B N : ℝ} (hM : ∀ i j, |a z i j| ≤ M) (hb : ‖b z‖ ≤ B) (hc : |c z| ≤ B)
+    (h0 : |φ z| ≤ N) (h1 : ‖fderiv ℝ φ z‖ ≤ N) (h2 : ‖iteratedFDeriv ℝ 2 φ z‖ ≤ N) :
+    |∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) + fderiv ℝ φ z (b z) + c z * φ z| ≤
+        N * ((n + 1) ^ 2 * M + 2 * B) := by
+  have hM0 : 0 ≤ M := (abs_nonneg _).trans (hM 0 0)
+  have hN0 : 0 ≤ N := (abs_nonneg _).trans h0
+  -- Each entry `∂ᵢⱼφ` is bounded by `‖D²φ‖ ≤ N`.
+  have hsum : |∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)| ≤ (n + 1) ^ 2 * M * N := by
+    calc _ ≤ ∑ i, ∑ j, |a z i j • fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1)| :=
+        (Finset.abs_sum_le_sum_abs _ _).trans
+          (Finset.sum_le_sum fun i _ => Finset.abs_sum_le_sum_abs _ _)
+      _ ≤ ∑ _i : Fin (n + 1), ∑ _j : Fin (n + 1), M * N :=
+        Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => by
+          rw [smul_eq_mul, abs_mul]
+          refine mul_le_mul (hM i j) (le_trans ?_ h2) (abs_nonneg _) hM0
+          simpa [iteratedFDeriv_two_apply, Real.norm_eq_abs] using
+            (iteratedFDeriv ℝ 2 φ z).norm_apply_orthonormalBasis_le (EuclideanSpace.basisFun _ ℝ)
+              i j
+      _ = (n + 1) ^ 2 * M * N := by
+        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        push_cast
+        ring
+  have hb1 : |fderiv ℝ φ z (b z)| ≤ N * B := by
+    rw [← Real.norm_eq_abs]
+    exact ((fderiv ℝ φ z).le_opNorm _).trans (mul_le_mul h1 hb (norm_nonneg _) hN0)
+  have hc1 : |c z * φ z| ≤ B * N := by
+    rw [abs_mul]
+    exact mul_le_mul hc h0 (abs_nonneg _) ((abs_nonneg _).trans hc)
+  calc _ ≤ |∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ φ z (b z)| + |c z * φ z| := abs_add_le _ _
+    _ ≤ _ := by linarith [abs_add_le (∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ φ) z
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) (fderiv ℝ φ z (b z))]
+
+/-- **The Hölder bound for `𝓛 φ` on a set.** If on a set `s` the entries of `a` are `α`-Hölder
+with constant `L` and bounded by `M`, `b` and `c` are `α`-Hölder with constant `B` and bounded by
+`B`, `φ` and `Dφ` are `α`-Hölder with constant `H`, `D²φ` is `α`-Hölder with constant `Q`, and
+`|φ|`, `‖Dφ‖` and `‖D²φ‖` are bounded by `N`, then `𝓛 φ = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼφ + b · ∇φ + c φ` is
+`α`-Hölder on `s` with constant `(n + 1)² (M Q + N L) + 2 B (N + H)`. -/
+theorem holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul {α L M B H Q N : ℝ≥0} {s : Set E}
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c φ : E → ℝ}
+    (hL : ∀ i j, HolderOnWith L α (fun z => a z i j) s) (hM : ∀ z ∈ s, ∀ i j, |a z i j| ≤ M)
+    (hHb : HolderOnWith B α b s) (hb : ∀ z ∈ s, ‖b z‖ ≤ B) (hHc : HolderOnWith B α c s)
+    (hc : ∀ z ∈ s, |c z| ≤ B) (hH0 : HolderOnWith H α φ s) (hH1 : HolderOnWith H α (fderiv ℝ φ) s)
+    (hQ : HolderOnWith Q α (iteratedFDeriv ℝ 2 φ) s) (h0 : ∀ z ∈ s, |φ z| ≤ N)
+    (h1 : ∀ z ∈ s, ‖fderiv ℝ φ z‖ ≤ N) (h2 : ∀ z ∈ s, ‖iteratedFDeriv ℝ 2 φ z‖ ≤ N) :
+    HolderOnWith ((n + 1) ^ 2 * (M * Q + N * L) + 2 * B * (N + H)) α
+      (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ φ z (b z) + c z * φ z) s := by
+  have hprin : HolderOnWith ((n + 1) ^ 2 * (M * Q + N * L)) α (fun z => ∑ i, ∑ j, a z i j •
+      fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) s := by
+    simpa only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+      smul_eq_mul, Fintype.card_fin, Nat.cast_add, Nat.cast_one] using
+      holderOnWith_sum_sum_mul_apply_single hL hM hQ h2
+  refine ((hprin.add (holderOnWith_fderiv_apply_add_mul hH0 hH1 h0 h1 hHb hb hHc hc)).congr
+    fun z _ => by simp only [Pi.add_apply, add_assoc]).mono_const (le_of_eq ?_)
+  ring
+
+/-- **Linearity of the operator under subtraction.** For `u` and `φ` that are `C²` near a point `z`,
+the operator `𝓛 u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u` applied to `u - φ` at `z` is `𝓛 u - 𝓛 φ`. This
+reduces the Dirichlet problem with boundary values `φ` to the one for `w = u - φ`, which vanishes on
+the boundary. -/
+theorem sum_smul_fderiv_fderiv_add_fderiv_add_mul_sub
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c : E → ℝ} {u φ : E → ℝ} {z : E}
+    (hu : ContDiffAt ℝ 2 u z) (hφ : ContDiffAt ℝ 2 φ z) :
+    ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ (u - φ)) z (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (u - φ) z (b z) +
+          c z * (u - φ) z =
+      (∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) + fderiv ℝ u z (b z) + c z * u z) -
+        (∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ φ) z (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) + fderiv ℝ φ z (b z) + c z * φ z) := by
+  have h1 : fderiv ℝ (u - φ) z = fderiv ℝ u z - fderiv ℝ φ z :=
+    fderiv_sub (hu.differentiableAt (by norm_num)) (hφ.differentiableAt (by norm_num))
+  simp only [fderiv_fderiv_sub hu hφ, h1, sub_apply, Pi.sub_apply, smul_sub,
+    Finset.sum_sub_distrib]
+  ring
 
 /-- **The interior Schauder estimate with lower-order terms.** Let `0 < α < 1`, let
 `Ω ⊆ ℝ^{n+1}` be open and `K ⊆ Ω` compact. Let `a` be a matrix-valued coefficient, `b` a

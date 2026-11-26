@@ -125,7 +125,6 @@ theorem exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded
     nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ (1 + 4 * k) * A - 2)
       (by positivity : (0 : ℝ) ≤ M / ε ^ 2), mul_nonneg (by positivity : (0 : ℝ) ≤ 4 * k * A) hH0]
 
-
 /-- **Interpolation inequalities up to the boundary at a fixed scale.** For `Ω` as in
 `TauCeti.exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded`, there is a constant
 `C` such that every `u` which is `C²` on an open set `U ⊇ closure Ω` with `‖u‖ ≤ M` on
@@ -134,7 +133,7 @@ theorem exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded
 
 `‖Du‖ ≤ C (M + H)` and `‖D²u‖ ≤ C (M + H)`.
 
-So `sup |u| + [D²u]_α` controls the whole `C^{2,α}(closure Ω)` norm. -/
+So `sup |u| + [D²u]_α` controls the sup norms of `Du` and `D²u` on `closure Ω`. -/
 theorem exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_mul_add_of_isBounded
     [NormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperSpace E] {Ω : Set E}
     (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧

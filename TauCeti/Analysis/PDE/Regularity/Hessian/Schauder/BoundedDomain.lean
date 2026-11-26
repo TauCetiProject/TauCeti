@@ -105,8 +105,8 @@ Gilbarg–Trudinger's global estimate, Theorem 6.6, for zero boundary values.
   (`Set.HasLipschitzGraphBoundary.isLipschitzDomain`), so on the bounded domain `Ω` the bounds
   `N` on `u`, `Du` and `D²u` make `u` and `Du` `α`-Hölder with constant a multiple of `N`
   (`Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`,
-  `TauCeti.PDE.exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le`). The Hölder constant of
-  `b · ∇u + c u` on `Ω` is then a multiple of `N`
+  `Set.HasLipschitzGraphBoundary.exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le`). The
+  Hölder constant of `b · ∇u + c u` on `Ω` is then a multiple of `N`
   (`TauCeti.PDE.holderOnWith_fderiv_apply_add_mul`), and the estimate for the principal part
   applies to `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = L u - b · ∇u - c u`. The interpolation step then removes the norms of
   `Du` and `D²u` from the right side, as for the principal part.
@@ -550,30 +550,6 @@ private theorem exists_holderOnWith_and_norm_le_of_forall_holderOnWith {α : ℝ
 
 /-! ### Lower-order terms -/
 
-/-- On a bounded domain `Ω` with Lipschitz graph boundary, a function `φ` that is `C²` near
-`closure Ω` with `|φ|`, `‖Dφ‖` and `‖D²φ‖` bounded by `N` there has `φ` and `Dφ` `α`-Hölder on `Ω`
-with constant `C (N + N)`, for `α ≤ 1` and a constant `C` depending only on `Ω` and `α`, since `Ω`
-is a Lipschitz domain (`Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`). -/
-theorem exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le {α : ℝ≥0} (hα1 : α ≤ 1)
-    {Ω : Set E} (hΩ : Bornology.IsBounded Ω) (hbdry : Ω.HasLipschitzGraphBoundary) :
-    ∃ C : ℝ≥0, ∀ {U : Set E} {φ : E → ℝ} {N : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
-      ContDiffOn ℝ 2 φ U → (∀ z ∈ closure Ω, |φ z| ≤ N) →
-      (∀ z ∈ closure Ω, ‖fderiv ℝ φ z‖ ≤ N) → (∀ z ∈ closure Ω, ‖iteratedFDeriv ℝ 2 φ z‖ ≤ N) →
-      HolderOnWith (C * (N + N)) α φ Ω ∧ HolderOnWith (C * (N + N)) α (fderiv ℝ φ) Ω := by
-  obtain ⟨C, hC⟩ := (hbdry.isLipschitzDomain
-    finrank_euclideanSpace_fin).exists_holderOnWith_of_norm_fderiv_le hΩ hα1
-  refine ⟨C, fun {U φ N} hU hΩU hφ h0 h1 h2 => ?_⟩
-  have hcd : ∀ z ∈ Ω, ContDiffAt ℝ 2 φ z := fun z hz =>
-    hφ.contDiffAt (hU.mem_nhds (hΩU (subset_closure hz)))
-  constructor
-  · exact hC (fun z hz => (hcd z hz).differentiableAt (by norm_num))
-      (fun z hz => by rw [Real.norm_eq_abs]; exact h0 z (subset_closure hz))
-      fun z hz => h1 z (subset_closure hz)
-  · refine hC (fun z hz => ((hcd z hz).fderiv_right (m := 1) (by norm_num)).differentiableAt
-      (by norm_num)) (fun z hz => h1 z (subset_closure hz)) fun z hz => ?_
-    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-    exact h2 z (subset_closure hz)
-
 /-- **The global Schauder estimate with lower-order terms on a bounded domain with `C^{2,α}`
 boundary.** Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary
 (`Set.HasC2HolderBoundary`), as in
@@ -614,12 +590,13 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
   -- `Ω` is a bounded Lipschitz domain, so bounds on a function and its derivatives make it and
   -- its derivative `α`-Hölder on `Ω`.
   obtain ⟨C₁, hC₁⟩ :=
-    exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le hα1.le hΩ hbdry.hasLipschitzGraphBoundary
-  set P : ℝ≥0 := 2 * B + 4 * B * C₁
+    hbdry.hasLipschitzGraphBoundary.exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le
+      finrank_euclideanSpace_fin hΩ hα1.le
+  set P : ℝ≥0 := 2 * B + 2 * B * C₁
   refine ⟨C₀ * (1 + P), fun {a b c} hEll hEll' hL hM hHb hb hHc hc {U u N K V} hU hΩU hu hu0
     hN0 hN1 hN2 hV hK => ?_⟩
   have hΩcl : Ω ⊆ closure Ω := subset_closure
-  -- `u` and `Du` are `α`-Hölder on `Ω` with constant `2 C₁ N`.
+  -- `u` and `Du` are `α`-Hölder on `Ω` with constant `C₁ N`.
   obtain ⟨hHu, hHDu⟩ := hC₁ hU hΩU hu hN0 hN1 hN2
   -- The principal part `L u - (b · ∇u + c u)` is `α`-Hölder on `Ω` with constant `K + N P`.
   have hlow := holderOnWith_fderiv_apply_add_mul hHu hHDu (fun z hz => hN0 z (hΩcl hz))
