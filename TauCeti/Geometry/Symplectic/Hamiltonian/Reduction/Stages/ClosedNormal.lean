@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.NormalQuotient
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Stages.Normal
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Stages.Residual
 
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ReducedForm
@@ -36,16 +35,18 @@ for arbitrary presentations of the reduced spaces) takes as input.
   (`IsEquivariantMomentMap.isCancelSMul_subtypeLevelMulAction`).
 * **The first-stage reduced space.** If `N` acts freely on `Z₁`, then `0` is a regular value of
   `μ_N`, the orbit space `Z₁ ⧸ N` is a manifold (`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`)
-  and, for a `G`-invariant symplectic form `σ`, it carries a unique symplectic form `η₁` with
+  and, for an `N`-invariant symplectic form `σ`, it carries a unique symplectic form `η₁` with
   `π₁^* η₁ = i₁^* σ` for the orbit projection `π₁` and the inclusion `i₁ : Z₁ → M`
   (`IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_quotientMk_subtypeLevel`). The
-  vertical directions of `π₁` are the orbit directions `𝔫 · z`, the kernel of `dπ₁` at a free
-  point of a submersion with orbit fibres
-  (`ProperSMul.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt`), which is what the
+  fibres of `π₁` are the `N`-orbits
+  (`IsEquivariantMomentMap.quotientMk_eq_quotientMk_iff_subtypeLevel`), so its vertical directions
+  are the orbit directions `𝔫 · z`, the kernel of `dπ₁` at a free point of a submersion with orbit
+  fibres (`ProperSMul.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt`), which is what the
   descent of `i₁^* σ` (`IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`)
   needs.
 * **The residual moment map.** The quotient Lie group `G ⧸ N` acts smoothly on `Z₁ ⧸ N` by
-  `[g] • [z] = [g • z]` (`Subgroup.contMDiffSMul_orbitRelQuotientOfIsClosed`). For every form
+  `[g] • [z] = [g • z]` (`Subgroup.contMDiffSMul_orbitRelQuotientOfIsClosed`), so `π₁` is
+  equivariant (`IsEquivariantMomentMap.quotientMk_eq_smul_quotientMk_subtypeLevel`). For every form
   `η₁` with `π₁^* η₁ = i₁^* σ` there is a unique `μ₁ : Z₁ ⧸ N → Lie(G ⧸ N)*` with
   `μ₁ [z] ∘ dπ = μ z`, and it is a coadjoint-equivariant moment map of the residual action
   (`IsEquivariantMomentMap.existsUnique_comp_groupLieAlgebraMap_mk'_eq_and_isEquivariantMomentMap`,
@@ -132,8 +133,10 @@ def subtypeLevelMulAction (hμ : σ.IsEquivariantMomentMap μ) :
       (by simp)) (fun _ _ ↦ rfl) (QuotientGroup.mk'_comp_subtype N)
     (Subgroup.ker_groupLieAlgebraMap_mk' hN _).le
 
+
 omit [I'.Boundaryless] in
 /-- The action of `G` on the first-stage level is the restriction of its action on `M`. -/
+@[simp]
 theorem coe_smul_subtypeLevelMulAction (hμ : σ.IsEquivariantMomentMap μ) :
     letI : T2Space G := I.t2Space_of_lieGroup ∞
     letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
@@ -152,6 +155,27 @@ theorem coe_smul_subtypeLevelMulAction (hμ : σ.IsEquivariantMomentMap μ) :
   haveI := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
   hμ.coe_smul_compMonoidHomLevelMulAction _ (fun _ _ ↦ rfl) (QuotientGroup.mk'_comp_subtype N)
     (Subgroup.ker_groupLieAlgebraMap_mk' hN _).le
+
+omit [I'.Boundaryless] in
+/-- The action of `N` on the first-stage level, as a subgroup of `G`, is the restriction of its
+action on `M`. -/
+theorem coe_smul_subtypeLevelMulAction_subgroup (hμ : σ.IsEquivariantMomentMap μ) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
+      (I'' := I') (M := M)
+    letI := hμ.subtypeLevelMulAction hN
+    ∀ (k : N) (z : (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0), ((k • z :
+        (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) : M) = k • (z : M) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  let _ := hμ.subtypeLevelMulAction hN
+  intro k z
+  rw [Subgroup.smul_def, Subgroup.smul_def, hμ.coe_smul_subtypeLevelMulAction hN]
 
 /-- **`G` acts smoothly on the first-stage level**, for its regular-level manifold structure. -/
 theorem contMDiffSMul_subtypeLevelMulAction (hμ : σ.IsEquivariantMomentMap μ) :
@@ -221,9 +245,34 @@ theorem isCancelSMul_subtypeLevelMulAction (hμ : σ.IsEquivariantMomentMap μ) 
     rw [eq_bot_iff, ← hfree z ((hμ.comp_subtype_ofIsClosed hN).mem_levelSubMulAction.1 z.property)]
     intro n hn
     rw [MulAction.mem_stabilizer_iff] at hn ⊢
-    exact (hμ.coe_smul_subtypeLevelMulAction hN n z).symm.trans (congrArg Subtype.val hn)
+    exact (hμ.coe_smul_subtypeLevelMulAction_subgroup hN n z).symm.trans (congrArg Subtype.val hn)
 
 /-! ### The first-stage reduced space -/
+
+omit [I'.Boundaryless] in
+/-- **The fibres of the first-stage projection** `μ_N⁻¹(0) → μ_N⁻¹(0) ⧸ N` are the `N`-orbits:
+two points of the level have the same image exactly when an element of `N` carries the second to
+the first in `M`. -/
+theorem quotientMk_eq_quotientMk_iff_subtypeLevel (hμ : σ.IsEquivariantMomentMap μ) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
+      (I'' := I') (M := M)
+    letI := hμ.subtypeLevelMulAction hN
+    ∀ z z' : (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0, (Quotient.mk (MulAction.orbitRel
+        N ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0))) z = (Quotient.mk
+            (MulAction.orbitRel N ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction
+                0))) z' ↔ ∃ k : N, k • (z' : M) = z := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  let _ := hμ.subtypeLevelMulAction hN
+  intro z z'
+  rw [eq_comm, MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq]
+  simp only [Subtype.ext_iff, hμ.coe_smul_subtypeLevelMulAction_subgroup hN]
 
 /-- The vertical directions of the first-stage orbit projection `μ_N⁻¹(0) → μ_N⁻¹(0) ⧸ N` are
 the vectors that the inclusion of the level carries into the orbit directions `𝔫 · z` of `N`. -/
@@ -254,8 +303,6 @@ private theorem ker_mfderiv_quotientMk_subtypeLevel [ProperSMul G M]
       haveI := hμ.isCancelSMul_subtypeLevelMulAction hN hfree
       letI := Subgroup.orbitRelQuotientChartedSpaceOfIsClosed I 𝓘(ℝ, Fin n₁ → ℝ)
         ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN
-      haveI := Subgroup.isManifold_orbitRelQuotientOfIsClosed (I := I)
-        (I' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN
       ∀ z : (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0,
         (mfderiv 𝓘(ℝ, Fin n₁ → ℝ) 𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup
             (I := I) N).toSubmodule (Fin n₁ → ℝ)) (Quotient.mk (MulAction.orbitRel N
@@ -270,35 +317,29 @@ private theorem ker_mfderiv_quotientMk_subtypeLevel [ProperSMul G M]
                 hN).levelSubMulAction 0 → M) z).toLinearMap := by
   -- Install the instances of the statement.
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let _ := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
-    (I'' := I') (M := M)
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
   intro hfree hn₁
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
-  let _ := (hμ.comp_subtype_ofIsClosed hN).levelSubMulActionChartedSpace 0
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot hσ
-        hfree) hn₁
+  have hreg := (hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot
+    hσ hfree
+  let _ := (hμ.comp_subtype_ofIsClosed hN).levelSubMulActionChartedSpace 0 hreg hn₁
   let _ := hμ.subtypeLevelMulAction hN
-  have := (hμ.comp_subtype_ofIsClosed hN).isManifold_levelSubMulAction
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot hσ
-        hfree) hn₁
-  have := hμ.contMDiffSMul_subtypeLevelMulAction hN
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot hσ
-        hfree) hn₁
+  have := (hμ.comp_subtype_ofIsClosed hN).isManifold_levelSubMulAction hreg hn₁
+  have := hμ.contMDiffSMul_subtypeLevelMulAction hN hreg hn₁
   have := hμ.properSMul_subtypeLevelMulAction hN
   have : IsClosed (N : Set G) := hN
   have := hμ.isCancelSMul_subtypeLevelMulAction hN hfree
   let _ := Subgroup.orbitRelQuotientChartedSpaceOfIsClosed I 𝓘(ℝ, Fin n₁ → ℝ)
     ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN
-  have := Subgroup.isManifold_orbitRelQuotientOfIsClosed (I := I)
-    (I' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN
+  have := d.contMDiffSMul (I'' := 𝓘(ℝ, Fin n₁ → ℝ))
+    (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0)
+  have hfib := hμ.quotientMk_eq_quotientMk_iff_subtypeLevel hN
+  have hsmul := hμ.coe_smul_subtypeLevelMulAction_subgroup hN
   intro z
-  have hemb := (hμ.comp_subtype_ofIsClosed
-      hN).isSmoothEmbedding_coe_levelSubMulAction ((hμ.comp_subtype_ofIsClosed
-          hN).forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn₁
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
-    (I'' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0)
+  have hemb := (hμ.comp_subtype_ofIsClosed hN).isSmoothEmbedding_coe_levelSubMulAction hreg hn₁
   have hinj := hemb.isImmersion.mfderiv_injective (by simp) z
   -- The differential of the inclusion carries `ξ · z` in the level to `ξ · z` in `M`.
   have hξ (ξ : GroupLieAlgebra 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) N).toSubmodule) N) :
@@ -309,18 +350,21 @@ private theorem ker_mfderiv_quotientMk_subtypeLevel [ProperSMul G M]
     mfderiv_fundamentalVectorField_of_map_smul (hemb.contMDiff.mdifferentiableAt (by simp))
       ((ContMDiffSMul.contMDiff_smul_const (I := 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I)
           N).toSubmodule)) (G := N) (I' := 𝓘(ℝ, Fin n₁ → ℝ))
-        (n := ∞) z).mdifferentiableAt (by simp)) (fun n ↦ hμ.coe_smul_subtypeLevelMulAction hN n
-            z) ξ
+        (n := ∞) z).mdifferentiableAt (by simp))
+      (fun n ↦ hsmul n z) ξ
   -- The kernel of `dπ₁` is the orbit tangent space `𝔫 · z` of `N` acting on the level.
+  -- `ProperSMul.ker_mfderiv_quotientMk` is stated for the charts
+  -- `ProperSMul.orbitRelQuotientChartedSpace`, while the first-stage space carries the
+  -- closed-subgroup charts `Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`, whose definition is
+  -- not exposed here; so this applies the kernel criterion to the closed-subgroup submersion.
   rw [ProperSMul.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt (I := 𝓘(ℝ,
       (Lie.lieSubalgebraOfSubgroup (I := I) N).toSubmodule)) (G := N)
       (IsCancelSMul.stabilizer_eq_bot z) ((Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed
-          (I := I)
-      (I' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction
-          0) hN).isSubmersionAt z) (by simp)
+        (I := I) (I' := 𝓘(ℝ, Fin n₁ → ℝ))
+        (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN).isSubmersionAt z) (by simp)
       (Filter.Eventually.of_forall fun _ ↦ MulAction.orbitRel.Quotient.quotient_smul_eq)
-      (Filter.Eventually.of_forall fun _ h ↦
-        MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact h))),
+      (Filter.Eventually.of_forall fun yz h ↦ (hfib yz.1 yz.2).1 h |>.imp fun k hk ↦
+        Subtype.ext ((hsmul k yz.2).trans hk)),
     lieAnnihilator_zero, LieSubalgebra.top_toSubmodule, Submodule.map_top,
     ← InfinitesimalAction.orbitTangent_eq_range]
   ext v
@@ -332,15 +376,15 @@ private theorem ker_mfderiv_quotientMk_subtypeLevel [ProperSMul G M]
   · rintro ⟨ξ, hv⟩
     exact ⟨ξ, hinj ((hξ ξ).trans hv)⟩
 
-/-- **The first-stage reduced space.** Let `G` act properly by symplectomorphisms on `(M, σ)` with
-coadjoint-equivariant moment map `μ`, and let the closed normal subgroup `N` act freely on the
-level `μ_N⁻¹(0)` of the restricted moment map `μ_N = μ ∘ dι`, which is then a regular level. Then
-the orbit space `μ_N⁻¹(0) ⧸ N` carries a unique symplectic form `η₁` with `π₁^* η₁ = i₁^* σ`, for
-the orbit projection `π₁` and the inclusion `i₁ : μ_N⁻¹(0) → M`. -/
+/-- **The first-stage reduced space.** Let `G` act properly on `(M, σ)` with coadjoint-equivariant
+moment map `μ`, let the closed normal subgroup `N` act by symplectomorphisms, and let it act freely
+on the level `μ_N⁻¹(0)` of the restricted moment map `μ_N = μ ∘ dι`, which is then a regular level.
+Then the orbit space `μ_N⁻¹(0) ⧸ N` carries a unique symplectic form `η₁` with
+`π₁^* η₁ = i₁^* σ`, for the orbit projection `π₁` and the inclusion `i₁ : μ_N⁻¹(0) → M`. -/
 theorem existsUnique_isSymplectic_mpullback_quotientMk_subtypeLevel [ProperSMul G M]
     (hμ : σ.IsEquivariantMomentMap μ) (hσ : σ.IsSymplectic)
-    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
+    (hσN : ∀ k : N, SmoothForm.mpullback (fun x : M ↦ (k : G) • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) (k : G)) σ = σ) :
     letI : T2Space G := I.t2Space_of_lieGroup ∞
     letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
     haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
@@ -383,22 +427,18 @@ theorem existsUnique_isSymplectic_mpullback_quotientMk_subtypeLevel [ProperSMul 
                   hσ.isNondegenerate hfree) hn₁).contMDiff σ := by
   -- Install the instances of the statement.
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let _ := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
-    (I'' := I') (M := M)
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
   intro hfree hn₁
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
-  let _ := (hμ.comp_subtype_ofIsClosed hN).levelSubMulActionChartedSpace 0
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot
-        hσ.isNondegenerate hfree) hn₁
+  have hreg := (hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot
+    hσ.isNondegenerate hfree
+  let _ := (hμ.comp_subtype_ofIsClosed hN).levelSubMulActionChartedSpace 0 hreg hn₁
   let _ := hμ.subtypeLevelMulAction hN
-  have := (hμ.comp_subtype_ofIsClosed hN).isManifold_levelSubMulAction
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot
-        hσ.isNondegenerate hfree) hn₁
-  have := hμ.contMDiffSMul_subtypeLevelMulAction hN
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot
-        hσ.isNondegenerate hfree) hn₁
+  have := (hμ.comp_subtype_ofIsClosed hN).isManifold_levelSubMulAction hreg hn₁
+  have := hμ.contMDiffSMul_subtypeLevelMulAction hN hreg hn₁
   have := hμ.properSMul_subtypeLevelMulAction hN
   have : IsClosed (N : Set G) := hN
   have := hμ.isCancelSMul_subtypeLevelMulAction hN hfree
@@ -406,59 +446,32 @@ theorem existsUnique_isSymplectic_mpullback_quotientMk_subtypeLevel [ProperSMul 
     ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN
   have := Subgroup.isManifold_orbitRelQuotientOfIsClosed (I := I)
     (I' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN
-  have hemb := (hμ.comp_subtype_ofIsClosed hN).isSmoothEmbedding_coe_levelSubMulAction
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot
-        hσ.isNondegenerate hfree) hn₁
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
-    (I'' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0)
-  exact (hμ.comp_subtype_ofIsClosed hN).existsUnique_isSymplectic_mpullback_eq_mpullback hσ (fun
-      k ↦ hG k)
-    hemb.contMDiff (fun z ↦ (hμ.comp_subtype_ofIsClosed hN).mem_levelSubMulAction.1 z.property)
-    ((hμ.comp_subtype_ofIsClosed hN).range_mfderiv_coe_levelSubMulAction
-        ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot
-            hσ.isNondegenerate hfree) hn₁) (Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed
-                (I := I)
-    (I' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN)
+  have := d.contMDiffSMul (I'' := 𝓘(ℝ, Fin n₁ → ℝ))
+    (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0)
+  have hfib := hμ.quotientMk_eq_quotientMk_iff_subtypeLevel hN
+  have hsmul := hμ.coe_smul_subtypeLevelMulAction_subgroup hN
+  -- `N` acts on the level through itself, so the abstract `φ : N → N` is the identity.
+  exact (hμ.comp_subtype_ofIsClosed hN).existsUnique_isSymplectic_mpullback_eq_mpullback hσ hσN
+    ((hμ.comp_subtype_ofIsClosed hN).isSmoothEmbedding_coe_levelSubMulAction hreg hn₁).contMDiff
+    (fun z ↦ (hμ.comp_subtype_ofIsClosed hN).mem_levelSubMulAction.1 z.property)
+    ((hμ.comp_subtype_ofIsClosed hN).range_mfderiv_coe_levelSubMulAction hreg hn₁)
+    (Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed (I := I) (I' := 𝓘(ℝ, Fin n₁ → ℝ))
+      (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN)
     Quotient.mk_surjective
     (hμ.ker_mfderiv_quotientMk_subtypeLevel hN hσ.isNondegenerate hfree hn₁)
     (fun k : N ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup
         (I := I) N).toSubmodule)) k)
-    (fun k z ↦ Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit z k)))
-    (fun z z' hzz' ↦
-      MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact hzz'.symm)))
-    id fun k z ↦ hμ.coe_smul_subtypeLevelMulAction hN k z
+    (fun k z ↦ (hfib (k • z) z).2 ⟨k, (hsmul k z).symm⟩)
+    (fun z z' h ↦ (hfib z' z).1 h.symm |>.imp fun k hk ↦ Subtype.ext ((hsmul k z).trans hk))
+    (id : N → N) hsmul
 
 /-! ### The residual moment map -/
 
 omit [I'.Boundaryless] in
-/-- The fibres of the first-stage projection `μ_N⁻¹(0) → μ_N⁻¹(0) ⧸ N` are the `N`-orbits. -/
-private theorem quotientMk_eq_quotientMk_iff_subtypeLevel (hμ : σ.IsEquivariantMomentMap μ) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
-    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
-    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
-      (I'' := I') (M := M)
-    letI := hμ.subtypeLevelMulAction hN
-    ∀ z z' : (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0, (Quotient.mk (MulAction.orbitRel
-        N ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0))) z = (Quotient.mk
-            (MulAction.orbitRel N ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction
-                0))) z' ↔ ∃ k : N, k • (z' : M) = z := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let _ := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
-    (I'' := I') (M := M)
-  let _ := hμ.subtypeLevelMulAction hN
-  intro z z'
-  refine ⟨fun h ↦ ?_, fun ⟨k, hk⟩ ↦ Quotient.sound (MulAction.orbitRel_apply.2 ⟨k, ?_⟩)⟩
-  · obtain ⟨k, hk⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact h))
-    exact ⟨k, (hμ.coe_smul_subtypeLevelMulAction hN k z').symm.trans (congrArg Subtype.val hk)⟩
-  · exact Subtype.ext ((hμ.coe_smul_subtypeLevelMulAction hN k z').trans hk)
-
-omit [I'.Boundaryless] in
-/-- The first-stage projection intertwines the action of `G` on the level with the residual action
-of `G ⧸ N` on `μ_N⁻¹(0) ⧸ N`. -/
-private theorem quotientMk_eq_smul_quotientMk_subtypeLevel (hμ : σ.IsEquivariantMomentMap μ) :
+/-- **The first-stage projection is equivariant** for the residual action: it intertwines the
+action of `G` on the level `μ_N⁻¹(0)` with the action of `G ⧸ N` on `μ_N⁻¹(0) ⧸ N`, so
+`[g • z] = [g] • [z]`. -/
+theorem quotientMk_eq_smul_quotientMk_subtypeLevel (hμ : σ.IsEquivariantMomentMap μ) :
     letI : T2Space G := I.t2Space_of_lieGroup ∞
     letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
     haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
@@ -470,10 +483,10 @@ private theorem quotientMk_eq_smul_quotientMk_subtypeLevel (hμ : σ.IsEquivaria
           0))) z' = QuotientGroup.mk' N g • (Quotient.mk (MulAction.orbitRel N
               ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0))) z := by
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let _ := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
-    (I'' := I') (M := M)
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
   let _ := hμ.subtypeLevelMulAction hN
   intro g z z' h
   rw [show z' = g • z from Subtype.ext (h.trans (hμ.coe_smul_subtypeLevelMulAction hN g z).symm)]
@@ -539,24 +552,20 @@ theorem existsUnique_comp_groupLieAlgebraMap_mk'_eq_and_isEquivariantMomentMap [
                         N)).toLinearMap = μ z) ∧ η₁.IsEquivariantMomentMap μ₁ := by
   -- Install the instances of the statement.
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let _ := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
-  have := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
-    (I'' := I') (M := M)
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I hN
   have := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
   intro hfree hn₁
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
-  let _ := (hμ.comp_subtype_ofIsClosed hN).levelSubMulActionChartedSpace 0
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot hσ
-        hfree) hn₁
+  have hreg := (hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot
+    hσ hfree
+  let _ := (hμ.comp_subtype_ofIsClosed hN).levelSubMulActionChartedSpace 0 hreg hn₁
   let _ := hμ.subtypeLevelMulAction hN
-  have := (hμ.comp_subtype_ofIsClosed hN).isManifold_levelSubMulAction
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot hσ
-        hfree) hn₁
-  have := hμ.contMDiffSMul_subtypeLevelMulAction hN
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot hσ
-        hfree) hn₁
+  have := (hμ.comp_subtype_ofIsClosed hN).isManifold_levelSubMulAction hreg hn₁
+  have := hμ.contMDiffSMul_subtypeLevelMulAction hN hreg hn₁
   have := hμ.properSMul_subtypeLevelMulAction hN
   have : IsClosed (N : Set G) := hN
   have := hμ.isCancelSMul_subtypeLevelMulAction hN hfree
@@ -568,15 +577,12 @@ theorem existsUnique_comp_groupLieAlgebraMap_mk'_eq_and_isEquivariantMomentMap [
     (I' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN
   intro η₁ hη₁
   exact hμ.existsUnique_comp_groupLieAlgebraMap_eq_and_isEquivariantMomentMap
-    ((Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiff_subtypeVal.mdifferentiableAt
-        (by simp)) (fun _ _ ↦ rfl) (QuotientGroup.mk'_surjective
-            N) (Subgroup.surjective_groupLieAlgebraMap_mk' hN)
-    (QuotientGroup.mk'_comp_subtype N) (Subgroup.ker_groupLieAlgebraMap_mk' hN _).le
-    ((hμ.comp_subtype_ofIsClosed hN).forall_differential_surjective_of_stabilizer_eq_bot hσ
-        hfree) hn₁ Quotient.mk_surjective
-    (fun z z' h ↦ (hμ.quotientMk_eq_quotientMk_iff_subtypeLevel hN z z').1 h)
-    (hμ.quotientMk_eq_smul_quotientMk_subtypeLevel
-        hN) (Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed (I := I)
-    (I' := 𝓘(ℝ, Fin n₁ → ℝ)) (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN) hη₁
+    (d.contMDiff_subtypeVal.mdifferentiableAt (by simp)) (fun _ _ ↦ rfl)
+    (QuotientGroup.mk'_surjective N) (Subgroup.surjective_groupLieAlgebraMap_mk' hN)
+    (QuotientGroup.mk'_comp_subtype N) (Subgroup.ker_groupLieAlgebraMap_mk' hN _).le hreg hn₁
+    Quotient.mk_surjective (fun z z' ↦ (hμ.quotientMk_eq_quotientMk_iff_subtypeLevel hN z z').1)
+    (hμ.quotientMk_eq_smul_quotientMk_subtypeLevel hN)
+    (Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed (I := I) (I' := 𝓘(ℝ, Fin n₁ → ℝ))
+      (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN) hη₁
 
 end TauCeti.SmoothTwoForm.IsEquivariantMomentMap
