@@ -167,15 +167,18 @@ theorem exists_le_and_mul_sq_le_one {C c₀ : ℝ} (hC : 0 ≤ C) (hc₀ : 0 < c
 variable [MeasurableSpace E]
 
 /-- The **defect measure** `(r / 4) |1 - |α|² - |β|²| μ` of the normalized spinor `χ = α u₀ + β` at
-parameter `r`. Its value on a set `B` is the defect energy `E_r(B)` (`defectMeasure_apply`). -/
-noncomputable def defectMeasure (μ : Measure E) (r : ℝ) (α : E → ℂ) (β : E → F) : Measure E :=
+parameter `r`. Its value on a set `B` is the defect energy `E_r(B)` (`defectMeasure_apply`). Only
+the norm of `α` enters, so `α` may take values in any normed group; for instance it may be the
+canonical-line component `φ = α u₀` itself. -/
+@[expose] noncomputable def defectMeasure {G : Type*} [NormedAddCommGroup G] (μ : Measure E) (r : ℝ)
+    (α : E → G) (β : E → F) : Measure E :=
   μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|)
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- The defect measure of a set `B` is the defect energy
 `E_r(B) = (r / 4) ∫_B |1 - |α|² - |β|²|`. -/
-theorem defectMeasure_apply (μ : Measure E) [SFinite μ] (r : ℝ) (α : E → ℂ) (β : E → F)
-    (s : Set E) :
+theorem defectMeasure_apply {G : Type*} [NormedAddCommGroup G] (μ : Measure E) [SFinite μ]
+    (r : ℝ) (α : E → G) (β : E → F) (s : Set E) :
     defectMeasure μ r α β s = ∫⁻ y in s, ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) ∂μ :=
   withDensity_apply' _ s
 
