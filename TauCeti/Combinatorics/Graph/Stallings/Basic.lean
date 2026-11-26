@@ -456,14 +456,14 @@ instance instCategory {α : Type u} : Category (StallingsGraph.{u, v, w} α) whe
 open CategoryTheory in
 /-- The categorical identity of a based labelled graph is `StallingsGraph.Hom.id`. -/
 @[simp]
-theorem Hom.categoryId_eq (S : StallingsGraph α) : 𝟙 S = Hom.id S :=
+theorem id_eq_id (S : StallingsGraph α) : 𝟙 S = Hom.id S :=
   (rfl)
 
 open CategoryTheory in
 /-- Categorical composition of based labelled-graph morphisms is `StallingsGraph.Hom.comp`, in
 the opposite order. -/
 @[simp]
-theorem Hom.categoryComp_eq {R S T : StallingsGraph α} (f : R ⟶ S) (g : S ⟶ T) :
+theorem comp_eq_comp {R S T : StallingsGraph α} (f : R ⟶ S) (g : S ⟶ T) :
     f ≫ g = g.comp f :=
   (rfl)
 
@@ -471,7 +471,7 @@ open CategoryTheory in
 /-- Morphisms of based labelled graphs in the category are equal when their underlying Serre-graph
 morphisms are; the form of `StallingsGraph.Hom.ext` for `⟶`. -/
 @[ext]
-theorem Hom.hom_ext {S T : StallingsGraph α} {f g : S ⟶ T} (h : f.graphHom = g.graphHom) :
+theorem hom_ext {S T : StallingsGraph α} {f g : S ⟶ T} (h : f.graphHom = g.graphHom) :
     f = g :=
   Hom.ext h
 
