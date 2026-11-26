@@ -208,11 +208,7 @@ theorem mpullback_smul_mpullback_coe_sphere (c : Circle) :
     refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
     rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
       SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, L.fderiv]
-    have hc (a b : EuclideanSpace ℂ (Fin (n + 1))) :
-        (⟪(c : ℂ) • a, (c : ℂ) • b⟫_ℂ).im = (⟪a, b⟫_ℂ).im := by
-      rw [inner_smul_left, inner_smul_right, ← mul_assoc, Complex.conj_mul', Circle.norm_coe]
-      simp
-    simpa [L] using hc _ _
+    simpa [L] using EuclideanSpace.im_inner_smul_smul_circle c _ _
   rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_coe_sphere L.contMDiff
     (funext fun z ↦ Circle.coe_smul_sphere c z), hL]
 
