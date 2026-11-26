@@ -26,20 +26,19 @@ induced by the Levi form, valued in the contact line. This file shows that these
 smooth vector bundle over a nonempty `N`, of rank `dim M - 2 dim N - 1`: the conformal symplectic
 normal bundle of `f`, the normal data of the isotropic neighbourhood theorem.
 
-* **The Levi orthogonal.** `TauCeti.leviOrthogonal J D f y ⊆ T_(f y) M` is the Levi orthogonal of
-  the tangent image. If a smooth one-form `α` has kernel `D` near `f y`, it consists of the vectors
-  `v` with `α (v) = 0` and `dα (df_y w, v) = 0` for every `w ∈ T_y N`
-  (`TauCeti.mem_leviOrthogonal_iff_of_ker_eq`), and it has dimension `dim M - dim N - 1`
-  (`TauCeti.IsHorizontalMap.finrank_leviOrthogonal_add`).
-* **Local frames.** Near each point of `N`, with a local contact form `α` defining `D` and a local
-  frame `eᵢ` of `TN`, the Levi orthogonals are the kernels of the smooth bundle map
+* **Local frames.** The Levi orthogonal `TauCeti.leviOrthogonal J D f y ⊆ T_(f y) M` of the
+  tangent image is described by a local defining form (`TauCeti.mem_leviOrthogonal_iff_of_ker_eq`)
+  and has dimension `dim M - dim N - 1` (`TauCeti.IsHorizontalMap.finrank_leviOrthogonal_add`).
+  Near each point of `N`, with a local contact form `α` defining `D` and a local frame `eᵢ` of
+  `TN`, the Levi orthogonals are the kernels of the smooth bundle map
   `f^* TM → ℝ^(1 + dim N)`, `v ↦ (α (v), (dα (df eᵢ, v))ᵢ)`, which is fibrewise onto by the
   dimension count. So they form a smooth subbundle of `f^* TM`
   (`TauCeti.hasLocalContMDiffSubbundleFrames_leviOrthogonal`), and, read in `D`, of the pullback
   `f^* D` of the contact structure (`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalBilin`).
-* **The bundle.** The tangent images form a smooth subbundle of the bundle of Levi orthogonals, and
-  the quotient is the conformal symplectic normal bundle
-  (`TauCeti.conformalSymplecticNormalPrebundle`), a smooth vector bundle
+* **The bundle.** The tangent images form a smooth subbundle of the bundle of Levi orthogonals
+  (`TauCeti.hasLocalContMDiffSubbundleFrames_comap_range`), and the quotient is the conformal
+  symplectic normal bundle (`TauCeti.conformalSymplecticNormalPrebundle`,
+  `TauCeti.conformalSymplecticNormalPrebundle_eq`), a smooth vector bundle
   (`TauCeti.contMDiffVectorBundle_conformalSymplecticNormalPrebundle`).
 
 The bundle is defined from `D` alone: no contact form or coorientation is chosen, so it applies to
@@ -48,7 +47,8 @@ the proof that local frames exist.
 
 ## Main definitions
 
-* `TauCeti.leviOrthogonal`: the Levi orthogonal of the tangent image of a map.
+* `TauCeti.leviOrthogonalPullback`: the Levi orthogonals of the tangent images of a map, as
+  subspaces of the fibres of the pullback of the contact structure.
 * `TauCeti.conformalSymplecticNormalPrebundle`: the conformal symplectic normal bundle of a smooth
   isotropic immersion, as a vector prebundle with fibres `TauCeti.ConformalSymplecticNormal`.
 
@@ -57,6 +57,10 @@ the proof that local frames exist.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_leviOrthogonal`,
   `TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalBilin`: the Levi orthogonals of a smooth
   isotropic immersion have smooth local frames.
+* `TauCeti.hasLocalContMDiffSubbundleFrames_comap_range`: the tangent images have smooth local
+  frames inside the bundle of Levi orthogonals.
+* `TauCeti.conformalSymplecticNormalPrebundle_eq`: the conformal symplectic normal bundle is the
+  quotient prebundle of the bundle of Levi orthogonals by the tangent images.
 * `TauCeti.contMDiffVectorBundle_conformalSymplecticNormalPrebundle`: the conformal symplectic
   normal bundle is a smooth vector bundle of rank `dim M - 2 dim N - 1`.
 
@@ -87,126 +91,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpa
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   {D : Π x : M, Submodule ℝ (TangentSpace I x)} {f : N → M} {y : N}
 
-/-! ### The Levi orthogonal of the tangent image -/
-
-variable (J D f y) in
-/-- The **Levi orthogonal** of the tangent image of `f : N → M` at `y` for a hyperplane field `D`:
-the vectors `v ∈ D_(f y)` with `L_D (w, v) = 0` for every `w ∈ D_(f y)` in the tangent image
-`df_y (T_y N)`, as a subspace of `T_(f y) M`. It is the image in `T_(f y) M` of the orthogonal
-whose quotient is the conformal symplectic normal space `TauCeti.ConformalSymplecticNormal`. -/
-def leviOrthogonal : Submodule ℝ (TangentSpace I (f y)) :=
-  (((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
-    (distributionLeviForm D (f y))).map (D (f y)).subtype
-
-/-- A vector lies in the Levi orthogonal of the tangent image exactly when it lies in `D` and the
-Levi form pairs every tangent image vector in `D` with it to zero. -/
-theorem mem_leviOrthogonal_iff {v : TangentSpace I (f y)} :
-    v ∈ leviOrthogonal J D f y ↔ ∃ h : v ∈ D (f y), ∀ w : D (f y),
-      (w : TangentSpace I (f y)) ∈ LinearMap.range (mfderiv J I f y).toLinearMap →
-        distributionLeviForm D (f y) w ⟨v, h⟩ = 0 := by
-  simp only [leviOrthogonal, Submodule.mem_map, Submodule.subtype_apply]
-  constructor
-  · rintro ⟨u, hu, rfl⟩
-    exact ⟨u.property, fun w hw ↦ hu w hw⟩
-  · rintro ⟨h, hv⟩
-    exact ⟨⟨v, h⟩, fun w hw ↦ hv w hw, rfl⟩
-
-/-- The Levi orthogonal lies in `D`. -/
-theorem leviOrthogonal_le : leviOrthogonal J D f y ≤ D (f y) := fun _ hv ↦
-  (mem_leviOrthogonal_iff.1 hv).1
-
-section LocalForm
-
-/-- **The Levi orthogonal in terms of a local defining form.** Let `D` have a `C¹` local frame
-near `f y` and let the smooth one-form `α` have kernel `D` near `f y`. For a map `f` horizontal
-for `D`, a vector `v` lies in the Levi orthogonal of the tangent image of `f` at `y` exactly when
-`α (v) = 0` and `dα (df_y w, v) = 0` for every `w ∈ T_y N`. -/
-theorem mem_leviOrthogonal_iff_of_ker_eq {k : ℕ} (hD : IsContMDiffDistribution I 1 k D)
-    (hf : IsHorizontalMap J D f) {α : SmoothForm I M ℝ 1}
-    (hα : ∀ᶠ z in 𝓝 (f y), RoughForm.ker α.val z = D z) {v : TangentSpace I (f y)} :
-    v ∈ leviOrthogonal J D f y ↔ α.val (f y) ![v] = 0 ∧
-      ∀ w : TangentSpace J y, mextDeriv α.val (f y) ![mfderiv J I f y w, v] = 0 := by
-  obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.1 hD (f y)
-  have hαd : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
-      (fun z ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) z (α.val z)) (f y) :=
-    α.contMDiff.mdifferentiableAt (by simp)
-  have hDα : ∀ᶠ z in 𝓝 (f y), D z ≤ RoughForm.ker α.val z := hα.mono fun _ h ↦ h.ge
-  have hker : ∀ u : TangentSpace I (f y), u ∈ D (f y) ↔ α.val (f y) ![u] = 0 := fun u ↦ by
-    rw [← hα.self_of_nhds, RoughForm.mem_ker]
-  -- The Levi form vanishes on a pair of vectors of `D` exactly when `dα` does.
-  have hL : ∀ u w : D (f y), distributionLeviForm D (f y) u w = 0 ↔
-      mextDeriv α.val (f y) ![(u : TangentSpace I (f y)), (w : TangentSpace I (f y))] = 0 := by
-    intro u w
-    obtain ⟨w', hw'⟩ := (D (f y)).mkQ_surjective (distributionLeviForm D (f y) u w)
-    rw [← RoughForm.apply_eq_mextDeriv_of_mkQ_eq_distributionLeviForm hX (hU.mem_nhds hxU) hαd
-      hDα hw', ← hw', ← hker, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-  rw [mem_leviOrthogonal_iff]
-  constructor
-  · rintro ⟨hvD, hv⟩
-    refine ⟨(hker v).1 hvD, fun w ↦ ?_⟩
-    exact (hL ⟨_, hf.range_mfderiv_le y ⟨w, rfl⟩⟩ ⟨v, hvD⟩).1 (hv _ ⟨w, rfl⟩)
-  · rintro ⟨hv₀, hv⟩
-    refine ⟨(hker v).2 hv₀, fun w ⟨w₀, hw₀⟩ ↦ ?_⟩
-    refine (hL w ⟨v, _⟩).2 ?_
-    rw [← hw₀]
-    exact hv w₀
-
-/-- **The Levi orthogonal in terms of a local defining form and a basis.** If the smooth one-form
-`α` has kernel `D` near `f y`, then `v` lies in the Levi orthogonal of the tangent image of a
-horizontal map `f` at `y` exactly when `α (v) = 0` and `dα (df_y (b i), v) = 0` for every member
-of a basis `b` of `T_y N`. -/
-theorem mem_leviOrthogonal_iff_of_basis {k : ℕ} (hD : IsContMDiffDistribution I 1 k D)
-    (hf : IsHorizontalMap J D f) {α : SmoothForm I M ℝ 1}
-    (hα : ∀ᶠ z in 𝓝 (f y), RoughForm.ker α.val z = D z) {ι : Type*}
-    (b : Module.Basis ι ℝ (TangentSpace J y)) {v : TangentSpace I (f y)} :
-    v ∈ leviOrthogonal J D f y ↔ α.val (f y) ![v] = 0 ∧
-      ∀ i, mextDeriv α.val (f y) ![mfderiv J I f y (b i), v] = 0 := by
-  rw [mem_leviOrthogonal_iff_of_ker_eq hD hf hα]
-  refine and_congr_right fun _ ↦ ⟨fun h i ↦ h (b i), fun h w ↦ ?_⟩
-  -- `w ↦ dα (df_y w, v)` is linear and vanishes on the basis `b`.
-  let L : TangentSpace J y →ₗ[ℝ] ℝ :=
-    (((mextDeriv α.val (f y)).toContinuousMultilinearMap.toContinuousLinearMap
-      ![0, v] 0).comp (mfderiv J I f y) : TangentSpace J y →L[ℝ] ℝ)
-  have hL (w : TangentSpace J y) : L w = mextDeriv α.val (f y) ![mfderiv J I f y w, v] := by
-    have hu : Function.update ![(0 : TangentSpace I (f y)), v] 0 (mfderiv J I f y w) =
-        ![mfderiv J I f y w, v] := by
-      funext j
-      fin_cases j <;> rfl
-    -- `toContinuousLinearMap` evaluates the form with the given slot updated, by definition.
-    change (mextDeriv α.val (f y)).toContinuousMultilinearMap
-      (Function.update ![0, v] 0 (mfderiv J I f y w)) = _
-    rw [hu]
-    rfl
-  have hL0 : L = 0 := b.ext fun i ↦ by rw [hL, LinearMap.zero_apply]; exact h i
-  rw [← hL, hL0, LinearMap.zero_apply]
-
-/-- **The dimension of the Levi orthogonal.** For an isotropic map `f` into a contact manifold
-with injective differential at `y`, the Levi orthogonal of the tangent image has dimension
-`dim M - dim N - 1`. -/
-theorem IsHorizontalMap.finrank_leviOrthogonal_add [FiniteDimensional ℝ E] {n : ℕ∞ω}
-    [IsManifold I (n + 1) M] [IsManifold J 2 N] (hD : IsContactDistribution I n D) (hn : 1 ≤ n)
-    (hf : IsHorizontalMap J D f) (hfy : ContMDiffAt J I 2 f y)
-    (hinj : Injective (mfderiv J I f y)) :
-    finrank ℝ (leviOrthogonal J D f y) + (finrank ℝ E' + 1) = finrank ℝ E := by
-  have hcsn := hf.finrank_conformalSymplecticNormal_add hD hn hfy hinj
-  set Wt := (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype
-  set B := distributionLeviForm D (f y)
-  -- `W^⊥ ⧸ W` is the conformal symplectic normal space, and `W ≤ W^⊥` has dimension `dim N`.
-  have h1 : finrank ℝ (leviOrthogonal J D f y) = finrank ℝ (Wt.orthogonalBilin B) :=
-    Submodule.finrank_map_subtype_eq _ _
-  have h2 := Submodule.finrank_quotient_add_finrank (Wt.comap (Wt.orthogonalBilin B).subtype)
-  have h3 : finrank ℝ (Wt.comap (Wt.orthogonalBilin B).subtype) = finrank ℝ Wt :=
-    LinearEquiv.finrank_eq (Submodule.comapSubtypeEquivOfLe (hf.le_orthogonalBilin hD hn hfy))
-  have h4 : finrank ℝ Wt = finrank ℝ E' := by
-    rw [LinearEquiv.finrank_eq (Submodule.comapSubtypeEquivOfLe (hf.range_mfderiv_le y)),
-      LinearMap.finrank_range_of_inj hinj]
-    rfl
-  have h5 : finrank ℝ (ConformalSymplecticNormal J D f y) =
-      finrank ℝ (Wt.orthogonalBilin B ⧸ Wt.comap (Wt.orthogonalBilin B).subtype) := rfl
-  omega
-
-end LocalForm
-
 /-! ### Local frames of the Levi orthogonal -/
 
 section Frames
@@ -236,11 +120,7 @@ private theorem leviOrthogonalMap_apply {k : ℕ} {f : K} (α : SmoothForm I M �
   · have hu : Function.update ![Y i y, (0 : TangentSpace I (f y))] 1 v = ![Y i y, v] := by
       funext j
       fin_cases j <;> rfl
-    -- `toContinuousLinearMap` evaluates the form with the given slot updated, by definition.
-    change ((mextDerivₗ I 1 α).val (f y)).toContinuousMultilinearMap
-      (Function.update ![Y i y, 0] 1 v) = _
-    rw [hu]
-    rfl
+    exact (ContinuousMultilinearMap.toContinuousLinearMap_apply _ _ _ _).trans (congrArg _ hu)
 
 omit [CompleteSpace E] [FiniteDimensional ℝ E'] [IsManifold I ∞ M] [IsManifold J ∞ N] [T2Space M] in
 /-- The bundle map `TauCeti.leviOrthogonalMap` is smooth at every point where the sections `Y i`
@@ -371,23 +251,6 @@ theorem hasLocalContMDiffSubbundleFrames_leviOrthogonal (hD : IsContactDistribut
   rw [← hX.span_eq hy, ← (finCongr hr).surjective.range_comp]
   rfl
 
-omit [CompleteSpace E] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold J ∞ N]
-  [T2Space M] in
-/-- A section of the pullback `f^* D` of a smooth distribution is smooth as soon as it is smooth
-as a section of `f^* TM`. -/
-private theorem contMDiffAt_pullback_distribution_mk {k : ℕ} (hD : IsContMDiffDistribution I ∞ k D)
-    {f : K} (hf : ContMDiff J I ∞ f) {w : Π y, D (f y)} {y₀ : N}
-    (hw : ContMDiffAt J (J.prod 𝓘(ℝ, E)) ∞ (fun y ↦ TotalSpace.mk' E
-      (E := (f : N → M) *ᵖ (TangentSpace I)) y (w y : TangentSpace I (f y))) y₀) :
-    letI := hD.fiberBundle
-    ContMDiffAt J (J.prod 𝓘(ℝ, Fin k → ℝ)) ∞
-      (fun y ↦ TotalSpace.mk' (Fin k → ℝ) (E := (f : N → M) *ᵖ fun x ↦ D x) y (w y)) y₀ := by
-  let := hD.fiberBundle
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  exact (Bundle.Pullback.contMDiffAt_iff f hf.contMDiffAt).2 ⟨contMDiffAt_id,
-    hD.contMDiffAt_totalSpace_mk ((Bundle.Pullback.contMDiffAt_iff f hf.contMDiffAt).1 hw).2
-      fun y ↦ (w y).property⟩
-
 /-- **The Levi orthogonal inside the contact structure has smooth local frames.** For a smooth
 isotropic immersion `f` into a smooth contact manifold `(M, D)`, the Levi orthogonals
 `(T_y N)^⊥ ⊆ D_(f y)` of the tangent images form a smooth subbundle, of rank
@@ -415,16 +278,13 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalBilin (hD : IsContactDistribu
   have hX' {y : N} (hy : y ∈ U) (i) : (X' i y : TangentSpace I (f y)) = X i y := by
     simp only [X', hXD hy i, ↓reduceDIte]
     rfl
+  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   have hsmooth (i) : ContMDiffOn J (J.prod 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ)) ∞
       (fun y ↦ TotalSpace.mk' (Fin (finrank ℝ E - 1) → ℝ)
         (E := (f : N → M) *ᵖ fun x ↦ D x) y (X' i y)) U := fun y hy ↦
-    (contMDiffAt_pullback_distribution_mk hD.isContMDiffDistribution hf <|
-      ((hXs i).contMDiffAt (hU.mem_nhds hy)).congr_of_eventuallyEq <|
-        eventually_of_mem (hU.mem_nhds hy) fun z hz ↦ by
-          -- The fibres of the pullback are those of `TM`; restated there so that `rw` applies.
-          change (⟨z, (X' i z : TangentSpace I (f z))⟩ :
-            TotalSpace E ((f : N → M) *ᵖ (TangentSpace I))) = ⟨z, X i z⟩
-          rw [hX' hz]).contMDiffWithinAt
+    (hD.isContMDiffDistribution.contMDiffAt_pullback_mk hf.contMDiffAt
+      ((hXs i).contMDiffAt (hU.mem_nhds hy))
+      (eventually_of_mem (hU.mem_nhds hy) fun _ hz ↦ hX' hz i)).contMDiffWithinAt
   refine ⟨U, hU, hy₀, X', ⟨fun i ↦ (hsmooth i).continuousOn, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
     hsmooth⟩
   · refine LinearIndependent.of_comp (D (f y)).subtype ?_
@@ -455,7 +315,7 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold I ∞ 
 variable (J D) in
 /-- The Levi orthogonals of the tangent images of `f` in `D`, as subspaces of the fibres of the
 pullback `f^* D`. -/
-private abbrev leviOrthogonalPullback (f : N → M) (y : N) :
+abbrev leviOrthogonalPullback (f : N → M) (y : N) :
     Submodule ℝ ((f *ᵖ fun x ↦ D x) y) :=
   ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
     (distributionLeviForm D (f y))
@@ -491,8 +351,10 @@ private theorem linearIndependent_and_span_eq_comap_range (hfD : IsHorizontalMap
 
 open Classical in
 /-- The tangent images of a smooth isotropic immersion have smooth local frames inside the bundle
-of their Levi orthogonals (`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalBilin`). -/
-private theorem hasLocalContMDiffSubbundleFrames_comap_range (hD : IsContactDistribution I ∞ D)
+of their Levi orthogonals (`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalBilin`). The
+conformal symplectic normal bundle is the quotient bundle of this subbundle
+(`TauCeti.conformalSymplecticNormalPrebundle_eq`). -/
+theorem hasLocalContMDiffSubbundleFrames_comap_range (hD : IsContactDistribution I ∞ D)
     {f : K} (hf : ContMDiff J I ∞ f) (hfD : IsHorizontalMap J D f)
     (hinj : ∀ y, Injective (mfderiv J I f y)) :
     letI := hD.isContMDiffDistribution.fiberBundle
@@ -538,13 +400,9 @@ private theorem hasLocalContMDiffSubbundleFrames_comap_range (hD : IsContactDist
         (E := fun y ↦ leviOrthogonalPullback J D f y) y (Z i y)) U := by
     refine hW.contMDiffOn_totalSpace_mk (b := id) (w := fun y ↦ zD i y) le_rfl
       (fun y hy ↦ ?_) fun y ↦ (Z i y).property
-    refine (contMDiffAt_pullback_distribution_mk hD.isContMDiffDistribution hf ?_).contMDiffWithinAt
-    refine ((hTs i).contMDiffAt (hU.mem_nhds hy)).congr_of_eventuallyEq <|
-      eventually_of_mem (hU.mem_nhds hy) fun z hz ↦ ?_
-    -- The fibres of the pullback are those of `TM`; restated there so that `rw` applies.
-    change (⟨z, (zD i z : TangentSpace I (f z))⟩ :
-      TotalSpace E ((f : N → M) *ᵖ (TangentSpace I))) = ⟨z, T i z⟩
-    rw [hZ hz]
+    exact (hD.isContMDiffDistribution.contMDiffAt_pullback_mk hf.contMDiffAt
+      ((hTs i).contMDiffAt (hU.mem_nhds hy))
+      (eventually_of_mem (hU.mem_nhds hy) fun _ hz ↦ hZ hz i)).contMDiffWithinAt
   have hbasis {y : N} (hy : y ∈ U) := linearIndependent_and_span_eq_comap_range hfD (hiso y)
     (hT.linearIndependent hy) (hT.span_eq hy) (z := (Z · y)) (hZ hy)
   exact ⟨U, hU, hy₀, Z, ⟨fun i ↦ (hsmooth i).continuousOn, fun hy ↦ (hbasis hy).1,
@@ -592,6 +450,35 @@ def conformalSymplecticNormalPrebundle [Nonempty N] (hD : IsContactDistribution 
   have := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).contMDiffVectorBundle
   (hasLocalContMDiffSubbundleFrames_comap_range hD hf hfD hinj).quotientPrebundle
     (card_add_card_eq_finrank hD hf hfD hinj)
+
+open Classical in
+/-- **The conformal symplectic normal bundle is a quotient bundle.** The prebundle
+`TauCeti.conformalSymplecticNormalPrebundle` is the quotient prebundle of the bundle of Levi
+orthogonals by the smooth subbundle of tangent images
+(`TauCeti.hasLocalContMDiffSubbundleFrames_comap_range`). So the smoothness criteria for the
+quotient map and for local lifts of sections
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiff_totalSpace_mkQ`,
+`TauCeti.HasLocalContMDiffSubbundleFrames.exists_contMDiffOn_mk_eq`) apply to it. -/
+theorem conformalSymplecticNormalPrebundle_eq [Nonempty N] (hD : IsContactDistribution I ∞ D)
+    {f : K} (hf : ContMDiff J I ∞ f) (hfD : IsHorizontalMap J D f)
+    (hinj : ∀ y, Injective (mfderiv J I f y))
+    (hrank : Fintype.card (Fin (finrank ℝ E')) +
+      Fintype.card (Fin (finrank ℝ E - 2 * finrank ℝ E' - 1)) =
+        finrank ℝ (Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ)) :
+    letI := hD.isContMDiffDistribution.fiberBundle
+    letI := hD.isContMDiffDistribution.vectorBundle
+    haveI : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
+    haveI := hD.isContMDiffDistribution.contMDiffVectorBundle
+    haveI := Bundle.Pullback.contMDiffVectorBundle (n := ∞) (F := Fin (finrank ℝ E - 1) → ℝ)
+      (E := fun x ↦ D x) (IB := I) (IB' := J) hf
+    letI := subbundleTopology (Fin (finrank ℝ E - 1) → ℝ) (E := (f : N → M) *ᵖ fun x ↦ D x)
+      (F' := Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ) (leviOrthogonalPullback J D f)
+    letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).fiberBundle
+    letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).vectorBundle
+    haveI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).contMDiffVectorBundle
+    conformalSymplecticNormalPrebundle hD hf hfD hinj =
+      (hasLocalContMDiffSubbundleFrames_comap_range hD hf hfD hinj).quotientPrebundle hrank := by
+  rfl
 
 /-- **The conformal symplectic normal bundle is a smooth vector bundle.** For a smooth isotropic
 immersion `f : N → M` of a nonempty manifold into a smooth contact manifold `(M, D)`, the
