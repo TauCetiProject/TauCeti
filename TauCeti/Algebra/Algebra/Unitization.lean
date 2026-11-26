@@ -227,7 +227,7 @@ end Subsingleton
 
 section TraceExtension
 
-variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [AddCommGroup M]
+variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [AddCommMonoid M]
 
 /-- The extension `f⁺ (r, a) = g r + f a` of an additive map `f : A →+ M` to the unitization,
 with value `g` on the scalars. -/
