@@ -147,6 +147,14 @@ theorem toFrame_chargeConj_inl (s : SpinCStructure F V n) (x : X) (p : s.P x) :
     s.chargeConj.toFrame ⟨x, Extend.inl χ hχ p⟩ = s.toFrame ⟨x, p⟩ :=
   s.toFrame_extendSpinC_inl χ hχ hπχ x p
 
+/-- **The frame of `[p, 1]`** in the charge conjugate of a `Spinᶜ` structure is the frame of `p`,
+as a frame of the fibre. -/
+@[simp]
+theorem frameAt_chargeConj_inl (s : SpinCStructure F V n) {x : X} (p : s.P x) :
+    s.chargeConj.frameAt (Extend.inl χ hχ p) = s.frameAt p :=
+  OrthonormalFrameBundle.mk_eq_mk_iff.1 ((s.chargeConj.toFrame_mk (Extend.inl χ hχ p)).symm.trans
+    ((s.toFrame_chargeConj_inl x p).trans (s.toFrame_mk p)))
+
 /-- **The frame of `[p, h]`** in the charge conjugate of a `Spinᶜ` structure is the frame of `p`
 composed with the rotation of `h`. -/
 theorem toFrame_chargeConj_mk (s : SpinCStructure F V n) (x : X) (p : s.P x)
@@ -362,14 +370,6 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
   (hε : starRingEnd ℂ ε = ε')
 
 namespace SpinCStructure
-
-/-- **The frame of `[p, 1]`** in the charge conjugate of a `Spinᶜ` structure of rank four is the
-frame of `p`, as a frame of the fibre. -/
-@[simp]
-theorem frameAt_chargeConj_inl (s : SpinCStructure F E 4) {x : X} (p : s.P x) :
-    s.chargeConj.frameAt (Extend.inl χ₄ hχ₄ p) = s.frameAt p :=
-  OrthonormalFrameBundle.mk_eq_mk_iff.1 ((s.chargeConj.toFrame_mk (Extend.inl χ₄ hχ₄ p)).symm.trans
-    ((s.toFrame_chargeConj_inl x p).trans (s.toFrame_mk p)))
 
 omit [Fact (Module.finrank ℝ V = 4)] in
 /-- **The vector frame of `[p, 1]`** in the charge conjugate of a `Spinᶜ` structure of rank four
