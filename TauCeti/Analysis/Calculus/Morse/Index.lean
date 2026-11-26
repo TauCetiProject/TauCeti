@@ -53,7 +53,8 @@ Morse complex.
 * `TauCeti.hessianQuadraticForm`: the quadratic form defined by the Hessian at a point.
 * `TauCeti.morseIndex`: the negative index of inertia of the Hessian quadratic form.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
-* `TauCeti.morseIndex_slice_right`: along a critical zero section of a function on a product, the
+* `TauCeti.hessianQuadraticForm_eq_prod_slice_right`, `TauCeti.morseIndex_slice_right`: along a
+  critical zero section of a function on a product, the Hessian is the vertical Hessian and the
   Morse index is the index of the restriction to the fibre.
 * `TauCeti.eventually_morseIndex_le`: the Morse index of a `C²` function is lower
   semicontinuous, also at degenerate and noncritical points.
@@ -364,6 +365,29 @@ theorem morseIndex_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv
       (hessianQuadraticForm f (φ b)) e.toLinearEquiv⟩).symm
 
+/-- **The Hessian along a critical zero section is the vertical Hessian.** If `f` is `C²` at
+`(a, 0)` and every point `(b, 0)` with `b` near `a` is critical, then the Hessian quadratic form of
+`f` at `(a, 0)` is that of the fibre restriction `v ↦ f (a, v)` at `0`, read on the second
+component: the base directions are null for the Hessian and orthogonal to the fibre directions. -/
+theorem hessianQuadraticForm_eq_prod_slice_right {f : E × F → ℝ} {a : E}
+    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0) :
+    hessianQuadraticForm f (a, 0) =
+      (0 : QuadraticForm ℝ E).prod (hessianQuadraticForm (fun v ↦ f (a, v)) 0) := by
+  ext ⟨u, v⟩
+  have hu : fderiv ℝ (fderiv ℝ f) (a, 0) (u, 0) = 0 := fderiv_fderiv_apply_inl_eq_zero hf hcrit u
+  have hvu : fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (u, 0) = 0 := by
+    rw [hf.isSymmSndFDerivAt (by simp) (0, v) (u, 0), hu]
+    rfl
+  have hsplit : ((u, v) : E × F) = (u, 0) + (0, v) := by simp
+  have h1 : fderiv ℝ (fderiv ℝ f) (a, 0) (u, v) = fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) := by
+    rw [hsplit, map_add, hu, zero_add]
+  have h2 : fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (u, v) =
+      fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (0, v) := by
+    rw [hsplit, map_add, hvu, zero_add]
+  simp only [hessianQuadraticForm_apply, QuadraticMap.prod_apply, h1, h2]
+  rw [fderiv_fderiv_slice_right_apply hf]
+  simp
+
 /-- **The Morse index along a critical zero section is the index of the vertical Hessian.** If
 `f` is `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is critical, then the Morse
 index of `f` at `(a, 0)` is the Morse index at `0` of the fibre restriction `v ↦ f (a, v)`: the
@@ -372,25 +396,8 @@ theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
     {a : E} (hf : ContDiffAt ℝ 2 f (a, 0))
     (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0) :
     morseIndex (fun v ↦ f (a, v)) 0 = morseIndex f (a, 0) := by
-  -- The Hessian quadratic form at `(a, 0)` is the vertical one, pulled back along `Prod.snd`.
-  have hQ : hessianQuadraticForm f (a, 0) =
-      (0 : QuadraticForm ℝ E).prod (hessianQuadraticForm (fun v ↦ f (a, v)) 0) := by
-    ext ⟨u, v⟩
-    have hu : fderiv ℝ (fderiv ℝ f) (a, 0) (u, 0) = 0 := fderiv_fderiv_apply_inl_eq_zero hf hcrit u
-    have hvu : fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (u, 0) = 0 := by
-      rw [hf.isSymmSndFDerivAt (by simp) (0, v) (u, 0), hu]
-      rfl
-    have hsplit : ((u, v) : E × F) = (u, 0) + (0, v) := by simp
-    have h1 : fderiv ℝ (fderiv ℝ f) (a, 0) (u, v) = fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) := by
-      rw [hsplit, map_add, hu, zero_add]
-    have h2 : fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (u, v) =
-        fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (0, v) := by
-      rw [hsplit, map_add, hvu, zero_add]
-    simp only [hessianQuadraticForm_apply, QuadraticMap.prod_apply, h1, h2]
-    rw [fderiv_fderiv_slice_right_apply hf]
-    simp
-  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
-    zero_add]
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_eq_prod_slice_right hf hcrit,
+    QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero, zero_add]
 
 /-- **The Morse index on a complement of a null line of the Hessian.** If the Hessian of `φ` at `x`
 has kernel `ℝ v` and `ℓ v = 1`, then the Morse index of `φ` at `x` is the Morse index at `0` of the
