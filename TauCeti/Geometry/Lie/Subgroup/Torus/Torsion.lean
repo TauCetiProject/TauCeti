@@ -19,8 +19,8 @@ every point of `T` is a limit of points of `T` of finite order
 (`TauCeti.Lie.IsTorus.subset_closure_setOf_isOfFinOrder`).
 
 Hence a closed condition holding at the points of finite order of a torus holds on the whole torus.
-For instance, an element of finite order of the closure of a one-parameter subgroup `exp (t ξ)` acts
-nontrivially on a space as soon as one of the `exp (t ξ)` does.
+For instance, some element of finite order of the closure of a one-parameter subgroup `exp (t ξ)`
+acts nontrivially on a space as soon as one of the `exp (t ξ)` does.
 
 ## Main results
 

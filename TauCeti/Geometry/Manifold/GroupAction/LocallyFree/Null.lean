@@ -22,10 +22,11 @@ measure.
 A point `x` with `𝔤_x ≠ 𝔨` is fixed by an element `g` of finite order of `G` which moves some
 point of `M` (`TauCeti.Lie.exists_isOfFinOrder_smul_eq_exists_smul_ne_of_mem_isotropy`). There
 are countably many elements of finite order in `G`, finitely many of each order
-(`TauCeti.Lie.finite_setOf_pow_eq_one`). The fixed set of each such `g` has clopen interior
-(`TauCeti.isClopen_interior_fixedBy`), which on the connected manifold `M` is empty since `g` acts
-nontrivially, so it is a null set (`TauCeti.isNullSet_fixedBy_iff_of_compactSpace`). Hence the
-points with `𝔤_x ≠ 𝔨` lie in a countable union of null sets.
+(`TauCeti.Lie.finite_setOf_pow_eq_one`). The fixed set of each such `g` has clopen interior,
+which on the connected manifold `M` is empty since `g` acts nontrivially
+(`TauCeti.interior_fixedBy_eq_empty`), so it is a null set
+(`TauCeti.isNullSet_fixedBy_iff_of_compactSpace`). Hence the points with `𝔤_x ≠ 𝔨` lie in a
+countable union of null sets.
 
 For an effective action `𝔨 = 0`, so the action is locally free outside a null set
 (`TauCeti.Lie.isNullSet_setOf_isotropy_ne_bot`). This strengthens the density of the locally free
@@ -84,12 +85,8 @@ theorem isNullSet_setOf_isotropy_ne_ker [CompactSpace G] [IsMulCommutative G]
   refine (IsNullSet.biUnion (s := fun g : G ↦ fixedBy M g) hS fun g hg ↦ ?_).mono fun x hx ↦ ?_
   · -- The fixed set of an element of finite order acting nontrivially has empty interior.
     rw [isNullSet_fixedBy_iff_of_compactSpace I g]
-    by_contra hne
-    obtain ⟨y, hy⟩ := hg.2
-    have huniv := (isClopen_interior_fixedBy g hg.1
-      ((ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) g).of_le
-        ENat.LEInfty.out)).eq_univ (ne_empty_iff_nonempty.1 hne)
-    exact hy (interior_subset (huniv ▸ mem_univ y : y ∈ interior (fixedBy M g)))
+    exact interior_fixedBy_eq_empty hg.1 hg.2
+      ((ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) g).of_le ENat.LEInfty.out)
   · -- A point whose isotropy algebra exceeds the kernel is fixed by an element of `S`.
     have hker : LinearMap.ker (InfinitesimalAction.fundamental I G I' M).toLinearMap ≤
         ((InfinitesimalAction.fundamental I G I' M).isotropy x).toSubmodule := fun ξ hξ ↦ by

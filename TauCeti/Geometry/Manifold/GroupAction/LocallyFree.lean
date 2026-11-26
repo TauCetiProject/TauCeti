@@ -157,8 +157,9 @@ theorem exists_isOpen_dense_forall_isotropy_eq_bot [CompactSpace G] [IsMulCommut
   -- The fixed set of an involution `g ≠ 1` has empty interior, by the identity principle.
   have hnd (g : S) : IsNowhereDense (fixedBy M (g : G)) := by
     rw [(hclosed g).isNowhereDense_iff]
-    exact interior_fixedBy_eq_empty (isOfFinOrder_iff_pow_eq_one.2 ⟨2, two_pos, g.property.1⟩)
-      g.property.2 (hsmooth g)
+    refine interior_fixedBy_eq_empty (isOfFinOrder_iff_pow_eq_one.2 ⟨2, two_pos, g.property.1⟩)
+      ?_ (hsmooth g)
+    simpa [Set.eq_univ_iff_forall] using mt fixedBy_eq_univ_iff_eq_one.1 g.property.2
   refine ⟨(⋃ g : S, fixedBy M (g : G))ᶜ, (isClosed_iUnion_of_finite hclosed).isOpen_compl, ?_,
     fun x hx ↦ ?_⟩
   · rw [← interior_eq_empty_iff_dense_compl]

@@ -220,7 +220,8 @@ theorem duistermaatHeckmanMeasure_absolutelyContinuous_map_add [T2Space M] [Sigm
     rw [h.range_differential (hσ.nondegenerate_bilinFormAt x), hiso, ← h.vectorSpan_range hσ]
     exact vsub_mem_vectorSpan ℝ (mem_range_self y) (mem_range_self z)
   obtain ⟨w, hw⟩ := hyz
-  exact ⟨w, (h.mfderiv_toContinuousLinearMap_apply x w).trans (by rw [hw, map_sub]; rfl)⟩
+  exact ⟨w, (h.mfderiv_toContinuousLinearMap_apply x w).trans
+    (by rw [hw, map_sub]; exact (vsub_eq_sub _ _).symm)⟩
 
 end IsMomentMap
 
