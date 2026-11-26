@@ -699,9 +699,8 @@ private theorem memLp_add_sum_sum_fderiv_mul_inner_gradient
         rw [norm_mul]
         exact mul_le_mul_of_nonneg_right (hcM x hx) (norm_nonneg _))
   -- The entries of `a` are `K`-Lipschitz on `Ω`, and their first derivatives `K'`-Lipschitz.
-  have hentry : ∀ i j, LipschitzOnWith K (fun x => a x i j) Omega := fun i j => by
-    simpa [b, matrixBilinearForm_apply, b.orthonormal.1 i, b.orthonormal.1 j] using
-      lipschitzOnWith_matrixBilinearForm_apply_apply hK (b i) (b j)
+  have hentry : ∀ i j, LipschitzOnWith K (fun x => a x i j) Omega :=
+    lipschitzOnWith_apply_apply_of_matrixBilinearForm hK
   have hd1 : ∀ i j, ∀ x ∈ Omega, ‖fderiv ℝ (fun y => a y i j) x τ‖ ≤ K * ‖τ‖ :=
     fun i j x hx => (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
       (norm_fderiv_le_of_lipschitzOn ℝ (Omega.isOpen.mem_nhds hx) (hentry i j))
