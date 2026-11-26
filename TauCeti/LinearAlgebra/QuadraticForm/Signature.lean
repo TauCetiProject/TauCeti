@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
-public import TauCeti.LinearAlgebra.Submodule.Prod
+public import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!

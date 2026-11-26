@@ -345,6 +345,23 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
 
+/-- A homogeneous weak equation holding for smooth compactly supported tests holds for every
+`H¹₀` test when the energy density is essentially bounded. No boundary condition is imposed on
+the solution. -/
+theorem forall_energyFormH1_eq_zero_of_forall_testFunction
+    {U : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} {u : W1p mu U 2}
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict U))
+    (htest : ∀ φ : 𝓓(U, ℝ), energyFormH1 a b c u (W1p.ofTestFunctionₗ mu U 2 φ) = 0) :
+    ∀ w : W1p0 mu U 2, energyFormH1 a b c u (w : W1p mu U 2) = 0 := by
+  have hzero (f : EuclideanSpace ℝ ι → ℝ) :
+      ∫ x in U, (0 : Lp ℝ 2 (mu.restrict U)) x * f x ∂mu = 0 :=
+    integral_eq_zero_of_ae ((Lp.coeFn_zero ℝ 2 (mu.restrict U)).mono fun _ hx ↦ by
+      simp only [hx, Pi.zero_apply, zero_mul])
+  have h := forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff 0 u
+  simp only [hzero] at h
+  exact h.mpr htest
+
 /-- A weak solution satisfies the weak equation `a(u, φ) = ∫_Ω f φ` against every test function
 `φ ∈ C_c^∞(Ω)`. Unlike the converse in
 `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`, this needs no bound on the
@@ -1144,6 +1161,22 @@ theorem norm_sq_eq_energyFormH1_one_zero_zero_add [DecidableEq ι] (w : W1p mu O
     ‖w‖ ^ 2 = energyFormH1 (fun _ => 1) 0 0 w w + ‖W1p.value w‖ ^ 2 := by
   rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
     W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq, add_comm]
+
+/-- The energy form of the Laplacian model `-Δ` is symmetric. -/
+theorem energyFormH1_one_zero_zero_comm [DecidableEq ι] (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => 1) 0 0 u v = energyFormH1 (fun _ => 1) 0 0 v u := by
+  rw [energyFormH1_one_zero_zero_eq_inner, energyFormH1_one_zero_zero_eq_inner, real_inner_comm]
+
+/-- The Gårding inequality of the Laplacian model `-Δ`:
+`min 1 ω ‖v‖²_{H¹} ≤ ∫_Ω |∇v|² + ω ‖v‖²_{L²}` for every `ω`. -/
+theorem min_mul_norm_sq_le_energyFormH1_one_zero_zero_add [DecidableEq ι] (omega : ℝ)
+    (v : W1p mu Omega 2) :
+    min 1 omega * ‖v‖ ^ 2 ≤
+      energyFormH1 (fun _ => 1) 0 0 v v + omega * ‖W1p.value v‖ ^ 2 := by
+  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
+    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  nlinarith [min_le_left 1 omega, min_le_right 1 omega, sq_nonneg ‖W1p.value v‖,
+    sq_nonneg ‖W1p.gradient v‖]
 
 /-- The weak formulation of the Laplacian model `-Δ` is the classical one: `u ∈ H¹₀(Ω)` solves
 `-Δu = f` weakly exactly when `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. -/

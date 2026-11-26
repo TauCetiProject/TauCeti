@@ -608,6 +608,15 @@ theorem endTransferSection_mem_testSection (q : Puncture) {β : ℝ × ℝ → �
         (periodic_zero_prodMk_iff.2 hξp) hzc)).congr_of_eventuallyEq
       (endTransferSection_eventuallyEq q β ξ hzc)
 
+/-- Read along the end chart, a continuous cutoff `β` with `|β| ≤ B` away from the center `c_q` of
+the end is essentially bounded on the strip. -/
+theorem memLp_comp_positiveEndChart (q : Puncture) {β : ℝ × ℝ → ℝ} (hβ : Continuous β)
+    {B : ℝ} (hB : ∀ z, Complex.equivRealProdCLM.symm z ≠ q.endCenter → |β z| ≤ B) :
+    MemLp (fun ζ ↦ β (positiveEndChart q ζ)) ∞ StripSobolev.stripMeasure :=
+  memLp_top_of_bound (hβ.comp (contDiff_positiveEndChart q 0).continuous
+    |>.aestronglyMeasurable) B (ae_of_all _ fun ζ ↦ by
+      simpa using hB _ (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ))
+
 /-- The jet coefficient of the transfer along an end chart is essentially bounded, for a `C¹` cutoff
 `β` vanishing near every point of the plane outside `S` other than the center `c_q` of the end, if
 `|β|`, `|w - c_q| √ρ |β|` and `|w - c_q| ‖dβ‖` are bounded by `B` away from `c_q`. -/
