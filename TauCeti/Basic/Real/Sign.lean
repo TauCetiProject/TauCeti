@@ -14,7 +14,8 @@ public import Mathlib.Basic.Real.Sign
 
 For `a < b`, the function `t ↦ (sign (b - t) - sign (a - t)) / 2` is the indicator of the open
 interval `(a, b)` with half weight at each endpoint (`Real.sign_sub_sub_sign_sub_div_two`). The
-sign itself is bounded by one in absolute value (`Real.abs_sign_le_one`).
+sign itself is bounded by one in absolute value (`Real.abs_sign_le_one`), with absolute value one
+away from zero (`Real.abs_sign_of_ne_zero`), and `|r| sign r = r` (`Real.abs_mul_sign`).
 
 For `|x| < c`, the sign of `x` is the count `⌊x / c⌋ + ⌈x / c⌉`
 (`TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt`).
@@ -29,6 +30,18 @@ namespace Real
 /-- The real sign function is bounded by one in absolute value. -/
 theorem abs_sign_le_one (r : ℝ) : |sign r| ≤ 1 := by
   rcases sign_apply_eq r with h | h | h <;> simp [h]
+
+/-- The real sign of a nonzero number has absolute value one. -/
+theorem abs_sign_of_ne_zero {r : ℝ} (hr : r ≠ 0) : |sign r| = 1 := by
+  rcases sign_apply_eq_of_ne_zero r hr with h | h <;> simp [h]
+
+/-- A real number is its absolute value times its sign. -/
+theorem abs_mul_sign (r : ℝ) : |r| * sign r = r := by
+  rcases lt_trichotomy r 0 with h | rfl | h
+  · rw [abs_of_neg h, sign_of_neg h]
+    ring
+  · simp
+  · rw [abs_of_pos h, sign_of_pos h, mul_one]
 
 /-- For `a < b`, half the difference `sign (b - t) - sign (a - t)` is the indicator of `(a, b)`
 with half weight at the endpoints `a` and `b`. -/

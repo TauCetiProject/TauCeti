@@ -20,12 +20,33 @@ zero Fréchet derivative at every point in Mathlib's convention.
 
 Equivalently, a nonzero compactly supported `Cⁿ` function has a point at which its `n`-th iterated
 derivative is nonzero (`HasCompactSupport.exists_iteratedFDeriv_ne_zero`).
+
+The iterated derivatives through order `m` of a `C^m` function are bounded by one constant on a
+compact set (`IsCompact.exists_bound_iteratedFDeriv`), as those of a smooth compactly supported
+function are on the whole space (Mathlib's `HasCompactSupport.exists_bound_iteratedFDeriv`).
 -/
 
 public section
 
 variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The iterated derivatives up to order `m` of a `C^m` function are uniformly bounded on a compact
+set. -/
+theorem IsCompact.exists_bound_iteratedFDeriv {K : Set E} (hK : IsCompact K) {f : E → F} {m : ℕ}
+    (hf : ContDiff 𝕜 m f) :
+    ∃ C, 0 ≤ C ∧ ∀ i ≤ m, ∀ y ∈ K, ‖iteratedFDeriv 𝕜 i f y‖ ≤ C := by
+  have key (i : ℕ) : ∃ C, i ≤ m → ∀ y ∈ K, ‖iteratedFDeriv 𝕜 i f y‖ ≤ C := by
+    by_cases hi : i ≤ m
+    · obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn
+        (hf.continuous_iteratedFDeriv (mod_cast hi)).continuousOn
+      exact ⟨C, fun _ ↦ hC⟩
+    · exact ⟨0, fun h ↦ absurd h hi⟩
+  choose A hA using key
+  refine ⟨max 0 ((Finset.range (m + 1)).sup' ⟨0, by simp⟩ A), le_max_left _ _,
+    fun i hi y hy ↦ ?_⟩
+  grw [hA i hi y hy, ← le_max_right]
+  exact Finset.le_sup' A (by grind)
 
 /-- A compactly supported `Cⁿ` function on a nontrivial space whose `n`-th iterated derivative
 vanishes identically is zero. -/
